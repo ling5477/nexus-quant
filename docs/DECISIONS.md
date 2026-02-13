@@ -20,6 +20,7 @@
 | ADR-008 | Trade 为最终事实：可纠偏订单状态（处理竞态/乱序） | Accepted | 2026-02-12 | order/trade |
 | ADR-009 | 增加 nq-auth + nq-gateway：Gate A 只做最小骨架 | Accepted | 2026-02-12 | auth/gateway |
 | ADR-010 | traceId 规范：网关透传 + MDC + 事件 Envelope trace_id | Accepted | 2026-02-12 | obs/contracts |
+| ADR-011 | Gate A 落地 backend 可开工骨架（nq-app + 多模块 + Flyway） | Accepted | 2026-02-13 | backend/docs |
 
 > 状态枚举：Proposed / Accepted / Rejected / Superseded
 
@@ -205,3 +206,28 @@
   - 交易所实现拆分：`nq-adapter-okx`、`nq-adapter-binance`
 - 影响：
   - core/risk/ledger 仅依赖 adapter-api 抽象，不依赖具体实现。
+
+## ADR-011：Gate A 落地 backend 可开工骨架（nq-app + 多模块 + Flyway）
+
+- 状态：Accepted
+- 日期：2026-02-13
+- 决策人：帅哥
+- 背景：
+  - Gate A 文档已经冻结，但仓库缺少可执行工程骨架，无法继续分模块实现与验收。
+- 决策：
+  - 在 `backend/` 建立 Maven 多模块父工程，统一 `Java 21 + Spring Boot 3.5.10` 版本管理。
+  - 补齐 `nq-app/nq-common/nq-contracts/nq-infra/nq-core/nq-ledger/nq-risk/nq-config/nq-scheduler/nq-observability/nq-adapter-api/nq-adapter-okx/nq-adapter-binance/nq-auth/nq-security/nq-gateway/nq-api` 骨架。
+  - 在 `nq-infra` 新增 Flyway `V1__init.sql`，冻结最小核心表与幂等/审计索引。
+- 备选方案：
+  1. 仅补文档不建工程：无法执行 `mvn test` 与启动验收，排除。
+  2. 一次性实现业务闭环：违背 Gate A“只做骨架”原则，排除。
+- 关键权衡：
+  - 先保证结构和约束可运行，再逐模块填充业务逻辑，降低返工风险。
+- 影响范围：
+  - `backend/*` 模块结构、根 `README.md`、`docker-compose.yml`、`.env.example`。
+- 落地动作：
+  - [x] 父 POM 与模块骨架
+  - [x] Flyway 初始化脚本
+  - [x] `nq-app` 启动与健康检查
+- 回滚策略：
+  - 回退本次提交或删除 `backend/` 新增骨架与根配置改动即可恢复到文档态仓库。

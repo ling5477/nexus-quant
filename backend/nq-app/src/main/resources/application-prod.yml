@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    # TODO(2026-02-13): 生产环境连接信息占位 -> 完成条件：由密钥系统/环境变量注入真实地址 -> 风险：硬编码凭据导致泄露
+    url: ${NQ_PROD_DB_URL:jdbc:postgresql://db-prod:5432/nexus_quant}
+    username: ${NQ_PROD_DB_USER:postgres}
+    password: ${NQ_PROD_DB_PASSWORD:change_me}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    # TODO(2026-02-13): 生产迁移策略占位 -> 完成条件：发布流程确认迁移窗口后开启 -> 风险：误迁移影响线上可用性
+    enabled: false
+    locations: classpath:db/migration
+
+server:
+  port: ${NQ_PROD_APP_PORT:8080}

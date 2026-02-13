@@ -1,0 +1,18 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    # TODO(2026-02-13): 测试环境连接信息占位 -> 完成条件：接入测试库并由 CI 注入 -> 风险：误连本地库造成数据污染
+    url: ${NQ_TEST_DB_URL:jdbc:postgresql://localhost:5432/nexus_quant_test}
+    username: ${NQ_TEST_DB_USER:postgres}
+    password: ${NQ_TEST_DB_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    # Gate A 阶段先占位；测试环境联调时可按需开启迁移。
+    enabled: false
+    locations: classpath:db/migration
+
+server:
+  # 与本地端口区分，避免同机多环境冲突。
+  port: ${NQ_TEST_APP_PORT:18080}
