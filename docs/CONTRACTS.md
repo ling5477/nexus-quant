@@ -251,3 +251,10 @@ payload：
 - `docs/schema/v1/ledger.event.schema.json`
 
 ---
+
+
+---
+
+## 附录：契约演进规则
+
+事件契约的兼容/破坏性变更规则、双写/迁移建议见：`docs/EVOLUTION_RULES.md`。

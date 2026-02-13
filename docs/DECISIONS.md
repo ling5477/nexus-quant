@@ -167,3 +167,41 @@
 
 ## 变更记录（占位）
 > 当某条 ADR 被替代：写明 “ADR-XXX 被 ADR-YYY Superseded”，原因是什么。
+
+---
+
+## ADR-0004：引入启动载体模块 nq-app（单体起步）
+
+- 状态：ACCEPTED
+- 日期：2026-02-13
+- 背景：现有 `nq-*` 多为“库/服务模块”，缺少实际运行载体，导致“有架构无入口”。
+- 决策：
+  - 增加 `nq-app` 作为唯一 Spring Boot 入口（v1 推荐单体起步）。
+  - `nq-app` 只负责装配、配置与运行骨架；领域逻辑必须位于 core/ledger/risk 等模块。
+- 影响：
+  - 便于 v1.1 后逐步拆分为 worker/replay 等独立进程，但不强制。
+- 备选方案：
+  - 直接多微服务拆分：成本高、联调复杂，v1 不采纳。
+
+## ADR-0005：补齐横切模块（observability/config/scheduler）
+
+- 状态：ACCEPTED
+- 日期：2026-02-13
+- 背景：Gate A 强调可观测、可复盘、可恢复，但缺少模块化落点，容易散落污染核心域。
+- 决策：
+  - 增加 `nq-observability`：日志/trace/metrics 规范与公共组件
+  - 增加 `nq-config`：参数版本化/快照（configSnapshot）口径与接口
+  - 增加 `nq-scheduler`：策略编排/调度骨架
+- 影响：
+  - Gate A 文档与后续代码实现将以这些模块为落点，减少耦合。
+
+## ADR-0006：适配层拆分为 adapter-api 与具体交易所实现
+
+- 状态：ACCEPTED
+- 日期：2026-02-13
+- 背景：多交易所接入必然带来差异化实现，若直接耦合 core，会导致条件分支爆炸与循环依赖风险。
+- 决策：
+  - 冻结接口模块 `nq-adapter-api`
+  - 交易所实现拆分：`nq-adapter-okx`、`nq-adapter-binance`
+- 影响：
+  - core/risk/ledger 仅依赖 adapter-api 抽象，不依赖具体实现。

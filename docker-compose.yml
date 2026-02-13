@@ -1,0 +1,28 @@
+# 本地依赖（Gate A：至少 PostgreSQL）
+# 说明：本文件属于“基础设施配置”，不包含业务代码实现。
+services:
+  postgres:
+    image: postgres:17
+    container_name: nexusquant-postgres
+    environment:
+      POSTGRES_DB: nexusquant
+      POSTGRES_USER: nexusquant
+      POSTGRES_PASSWORD: nexusquant
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusquant -d nexusquant"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Gate A 可占位（后续 Gate B/C 再启用）
+  # kafka:
+  #   image: bitnami/kafka:3.7
+  # redis:
+  #   image: redis:7.2
+
+volumes:
+  pgdata:

@@ -292,3 +292,24 @@ Flyway：`V1__init.sql` 至少包含：
 3) 账本平衡校验恒成立，余额可重算（单测）
 4) 最小恢复可运行且可验证（代码+说明）
 5) docs 四件套完整且与代码一致（ARCHITECTURE/CONTRACTS/CHECKLIST/DECISIONS）
+
+
+---
+
+## 附录 A：模块清单（更新）
+
+Gate A 在原有模块基础上，补齐“启动载体 + 横切能力”模块（仅冻结边界，不实现业务细节）：
+
+- 启动载体：`nq-app`（Spring Boot 入口，装配各模块）
+- 横切能力：`nq-observability`（日志/trace/metrics 规范）、`nq-config`（参数快照）、`nq-scheduler`（编排/调度）
+- 适配层拆分建议：`nq-adapter-api` + `nq-adapter-okx` + `nq-adapter-binance`（Gate A 只冻结接口）
+
+模块边界与依赖方向详见：`docs/MODULES.md`。
+
+## 附录 B：关键策略文档
+
+- 数值精度：`docs/NUMERIC_POLICY.md`
+- 事件演进规则：`docs/EVOLUTION_RULES.md`
+- DB 结构说明：`docs/DB_SCHEMA.md`
+- 恢复/回放：`docs/RECOVERY_RUNBOOK.md`
+- Roadmap：`docs/ROADMAP.md`
