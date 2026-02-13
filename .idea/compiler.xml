@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="backend" target="1.5" />
+      <module name="nq-adapter" target="21" />
+      <module name="nq-api" target="21" />
+      <module name="nq-auth" target="21" />
+      <module name="nq-common" target="21" />
+      <module name="nq-contracts" target="21" />
+      <module name="nq-core" target="21" />
+      <module name="nq-gateway" target="21" />
+      <module name="nq-infra" target="21" />
+      <module name="nq-ledger" target="21" />
+      <module name="nq-risk" target="21" />
+      <module name="nq-security" target="21" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
