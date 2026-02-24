@@ -1,17 +1,24 @@
 # NexusQuant（nexus-quant）
 
-NexusQuant 是面向数字资产交易场景的量化系统工程。当前仓库处于 **Gate A（可开工骨架）** 阶段：
+NexusQuant 是面向数字资产交易场景的量化系统工程。当前仓库处于 **Gate A（可开工骨架，已冻结）** 阶段：
 只落地模块结构、接口契约、DDL、启动与配置骨架，不实现真实交易逻辑。
+
+## 文档结构（按 Gate 冻结）
+
+- 当前阶段入口：`docs/current/`
+- Gate A 冻结快照：`docs/gates/gate-a/`
+- 后续 Gate（B/C/...）：在完成后新增 `docs/gates/gate-b/`、`docs/gates/gate-c/` 并冻结。
+
 
 ## Gate A 范围
 
 - 已做：`backend/` Maven 多模块父工程、模块边界、占位实现、Flyway 初始 DDL、`nq-app` 启动入口、PostgreSQL compose。
 - 不做：真实交易所网络连接、策略算法、生产级风控/账本执行逻辑。
 - 约束来源：
-  - `docs/ARCHITECTURE.md`
-  - `docs/GATE_A_CHECKLIST.md`
-  - `docs/MODULES.md`
-  - `docs/CONTRACTS.md`
+  - `docs/gates/gate-a/ARCHITECTURE.md`
+  - `docs/gates/gate-a/GATE_A_CHECKLIST.md`
+  - `docs/gates/gate-a/MODULES.md`
+  - `docs/gates/gate-a/CONTRACTS.md`
 
 ## 模块总览（backend）
 
@@ -78,10 +85,10 @@ mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
 
 ## Gate A 验收入口
 
-- 主清单：`docs/GATE_A_CHECKLIST.md`
-- 架构基线：`docs/ARCHITECTURE.md`
-- 模块依赖方向：`docs/MODULES.md`
-- 契约规则：`docs/CONTRACTS.md`
+- 主清单：`docs/gates/gate-a/GATE_A_CHECKLIST.md`
+- 架构基线：`docs/gates/gate-a/ARCHITECTURE.md`
+- 模块依赖方向：`docs/gates/gate-a/MODULES.md`
+- 契约规则：`docs/gates/gate-a/CONTRACTS.md`
 
 ## 停止与清理
 

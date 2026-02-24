@@ -1,7 +1,7 @@
 # AGENTS（Codex 开发指引 - NexusQuant）
 
-> 目的：让 Codex 生成代码时严格遵循本仓库 Gate A 的架构/契约/正确性约束。  
-> 当前：Gate A 只补文档与骨架；实现由你触发 Codex 完成。
+> 目的：让 Codex 生成代码时严格遵循本仓库的架构/契约/正确性约束，并始终以“当前阶段入口文档”为准。  
+> 文档分层：`docs/current/` 为当前阶段入口；`docs/gates/gate-a/` 为 Gate A 冻结快照（只读）。
 
 ## 1. 强制约束（必须遵守）
 
@@ -14,14 +14,23 @@
 
 ## 2. 文档即事实（Source of Truth）
 
-实现必须对齐以下文档：
-- `docs/ARCHITECTURE.md`
-- `docs/MODULES.md`
-- `docs/CONTRACTS.md`
-- `docs/EVOLUTION_RULES.md`
-- `docs/NUMERIC_POLICY.md`
-- `docs/DB_SCHEMA.md`
-- `docs/RECOVERY_RUNBOOK.md`
+实现必须对齐以下文档（按优先级）：
+
+**当前阶段入口（必读）**
+- `docs/current/GATE_CHECKLIST.md`
+- `docs/current/WORK_TEMPLATE.md`（模板：阶段完成后记录写入对应 gate 目录）
+
+**历史冻结参考（只读）**
+- `docs/gates/gate-a/ARCHITECTURE.md`
+- `docs/gates/gate-a/MODULES.md`
+- `docs/gates/gate-a/CONTRACTS.md`
+- `docs/gates/gate-a/EVOLUTION_RULES.md`
+- `docs/gates/gate-a/NUMERIC_POLICY.md`
+- `docs/gates/gate-a/DB_SCHEMA.md`
+- `docs/gates/gate-a/RECOVERY_RUNBOOK.md`
+- `docs/gates/gate-a/DECISIONS.md`
+- `docs/gates/gate-a/GATE_A_CHECKLIST.md`
+- `docs/gates/gate-a/WORK.md`
 
 ## 3. 模块实现顺序（推荐）
 
