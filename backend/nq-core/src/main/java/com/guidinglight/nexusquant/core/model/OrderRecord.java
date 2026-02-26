@@ -1,0 +1,64 @@
+package com.guidinglight.nexusquant.core.model;
+
+import com.guidinglight.nexusquant.contracts.model.OrderStatus;
+import java.math.BigDecimal;
+
+/**
+ * OrderRecord 表示订单在持久化层的完整快照。
+ *
+ * Why:
+ * Gate B 需要在下单、撮合、记账阶段共享同一份订单事实，
+ * 通过统一模型避免各服务重复组装字段导致状态与 trace_id 丢失。
+ *
+ * @param orderId 系统订单 ID
+ * @param accountId 账户 ID
+ * @param strategyRunId 策略运行 ID，可空
+ * @param symbol 交易对
+ * @param clientOrderId 客户端幂等键
+ * @param side 买卖方向
+ * @param type 订单类型
+ * @param price 价格，市价可空
+ * @param qty 下单数量
+ * @param status 订单状态
+ * @param reason 状态原因
+ * @param traceId 链路追踪 ID
+ */
+public record OrderRecord(
+        String orderId,
+        Long accountId,
+        String strategyRunId,
+        String symbol,
+        String clientOrderId,
+        String side,
+        String type,
+        BigDecimal price,
+        BigDecimal qty,
+        OrderStatus status,
+        String reason,
+        String traceId
+) {
+
+    /**
+     * 基于当前订单构造新的状态快照。
+     *
+     * @param nextStatus 迁移后的状态
+     * @param nextReason 迁移原因
+     * @return 新的订单快照
+     */
+    public OrderRecord withStatus(OrderStatus nextStatus, String nextReason) {
+        return new OrderRecord(
+                orderId,
+                accountId,
+                strategyRunId,
+                symbol,
+                clientOrderId,
+                side,
+                type,
+                price,
+                qty,
+                nextStatus,
+                nextReason,
+                traceId
+        );
+    }
+}

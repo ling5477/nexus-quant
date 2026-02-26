@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.contracts.command;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * CancelOrderCommand 冻结撤单命令契约。
  *
@@ -10,10 +12,10 @@ package com.guidinglight.nexusquant.contracts.command;
  * @param traceId 链路追踪 ID
  */
 public record CancelOrderCommand(
-        String orderId,
-        Long accountId,
-        String clientOrderId,
-        String reason,
-        String traceId
+        @JsonProperty("order_id") String orderId,
+        @JsonProperty("account_id") Long accountId,
+        @JsonProperty("client_order_id") String clientOrderId,
+        @JsonProperty("reason") String reason,
+        @JsonProperty("trace_id") String traceId
 ) {
 }

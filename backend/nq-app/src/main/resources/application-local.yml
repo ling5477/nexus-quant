@@ -3,7 +3,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: ${NQ_DB_URL:jdbc:postgresql://localhost:${NQ_DB_PORT:5432}/${NQ_DB_NAME:nexus_quant}}
+    url: ${NQ_DB_URL:jdbc:postgresql://localhost:${NQ_DB_PORT:15432}/${NQ_DB_NAME:nexus_quant}}
     username: ${NQ_DB_USER:postgres}
     password: ${NQ_DB_PASSWORD:123456}
     driver-class-name: org.postgresql.Driver
@@ -12,4 +12,4 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: ${NQ_APP_PORT:8080}
+  port: ${NQ_APP_PORT:18888}

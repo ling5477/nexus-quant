@@ -5,6 +5,10 @@ package com.guidinglight.nexusquant.contracts.model;
  */
 public enum OrderStatus {
     NEW,
+    RISK_PASSED,
+    RISK_REJECTED,
+    SENT,
+    ACCEPTED,
     VALIDATED,
     SUBMITTING,
     ACKED,

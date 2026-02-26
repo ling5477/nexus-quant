@@ -7,11 +7,11 @@ services:
       POSTGRES_USER: ${NQ_DB_USER:-postgres}
       POSTGRES_PASSWORD: ${NQ_DB_PASSWORD:-123456}
     ports:
-      - "${NQ_DB_PORT:-5432}:5432"
+      - "${NQ_DB_PORT:-15432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${NQ_DB_USER:-postgres} -d ${NQ_DB_NAME:-nexus_quant}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${NQ_DB_USER:-postgres} -d ${NQ_DB_NAME:-nexus_quant}" ]
       interval: 5s
       timeout: 3s
       retries: 20

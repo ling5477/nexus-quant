@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.contracts.command;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 
 /**
@@ -21,16 +22,16 @@ import java.math.BigDecimal;
  * @param traceId 链路追踪 ID
  */
 public record PlaceOrderCommand(
-        String orderId,
-        Long accountId,
-        String symbol,
-        String clientOrderId,
-        String side,
-        String type,
-        BigDecimal price,
-        BigDecimal qty,
-        String timeInForce,
-        String strategyId,
-        String traceId
+        @JsonProperty("order_id") String orderId,
+        @JsonProperty("account_id") Long accountId,
+        @JsonProperty("symbol") String symbol,
+        @JsonProperty("client_order_id") String clientOrderId,
+        @JsonProperty("side") String side,
+        @JsonProperty("type") String type,
+        @JsonProperty("price") BigDecimal price,
+        @JsonProperty("qty") BigDecimal qty,
+        @JsonProperty("time_in_force") String timeInForce,
+        @JsonProperty("strategy_id") String strategyId,
+        @JsonProperty("trace_id") String traceId
 ) {
 }
