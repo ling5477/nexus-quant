@@ -33,20 +33,24 @@
 ## 2. 关键组件与职责
 
 ### 2.1 nq-scheduler
+
 - 触发策略运行（按策略/账户/交易对）
 - 触发撮合（paper match tick）
 - 触发对账/校验（ledger reconcile）
 
 ### 2.2 nq-core（订单编排与状态机）
+
 - 订单状态机：唯一的订单状态来源
 - 幂等入口：以 `client_order_id` 为幂等键
 - 恢复：重启后能重建“待处理订单/撮合任务”
 
 ### 2.3 nq-risk（风控）
+
 - 最小规则集：kill switch、最大下单金额、最大持仓、频率限制
 - 风控输出必须可审计：risk_events + audit_logs
 
 ### 2.4 nq-adapter-api + (Paper Adapter 逻辑)
+
 - Gate B 不接真实 OKX/Binance 网络
 - 可选两种实现方式（二选一）：
     1) 新增 `nq-adapter-paper`（推荐，最干净）
@@ -54,10 +58,12 @@
 - 适配器只负责“受理/取消/回报”，不得绕过 core 改 DB
 
 ### 2.5 nq-ledger（记账与校验）
+
 - 成交驱动记账：trade -> ledger_events -> ledger_entries
 - 平衡校验：同一 ledger_event 的 entries 借贷必须平衡（不平衡直接 fail + risk_event）
 
 ### 2.6 nq-observability
+
 - traceId 必须贯穿：HTTP -> scheduler -> domain -> events -> DB -> logs
 - 对外只展示必要信息，内部要全量可复盘
 
@@ -66,18 +72,20 @@
 ## 3. 状态机（最小口径）
 
 ### 3.1 Order 状态（建议最小集合）
+
 - NEW（已创建，未风控）
 - RISK_PASSED / RISK_REJECTED
 - SENT（已提交给适配器）
 - ACCEPTED（适配器已受理，可选）
 - PARTIALLY_FILLED
 - FILLED（终态）
-- CANCELED（终态）
+- CANCELLED（终态）
 - REJECTED（终态）
 
 > 规则：任何状态变更必须通过状态机；禁止“直接改 DB 状态”绕过。
 
 ### 3.2 Trade 状态（最小）
+
 - EXECUTED（生成即终态；后续扩展可加撤销/更正）
 
 ---
@@ -85,11 +93,13 @@
 ## 4. 幂等与一致性策略
 
 ### 4.1 client_order_id 幂等
+
 - 入口（HTTP/策略）必须提供 client_order_id（或由系统生成但必须可重放）
 - DB 层：orders(client_order_id) UNIQUE（建议含 tenant_id 维度）
 - 服务层：重复请求返回同一订单结果，不产生副作用
 
 ### 4.2 exactly-once vs at-least-once
+
 - 内部事件/调度按“at-least-once”设计
 - 通过幂等键 + 状态机保证“有效副作用 exactly-once”
 

@@ -57,6 +57,6 @@
 
 ## 5. Stretch（可选加分项）
 
-- [x] 支持撤单（CancelOrder）并进入 CANCELED 终态
+- [x] 支持撤单（CancelOrder）并进入 CANCELLED 终态
 - [x] 支持 LIMIT 基础行为（满足价格才成交）
 - [x] 提供最小对账任务（ledger reconcile）并可输出差异

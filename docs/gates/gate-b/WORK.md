@@ -284,6 +284,7 @@
 -
 
 `backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/repository/JdbcLedgerReconcileRepository.java`
+
 - 新增账本聚合 vs 最新快照差异查询。
 
 - `backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/port/LedgerReconcileRepository.java`
@@ -317,7 +318,7 @@
 
 - `docs/gates/gate-b/GATE_B_CHECKLIST.md`
     - Stretch 三项已勾选：
-        - 支持撤单（CancelOrder）并进入 CANCELED 终态
+        - 支持撤单（CancelOrder）并进入 CANCELLED 终态
         - 支持 LIMIT 基础行为（满足价格才成交）
         - 提供最小对账任务（ledger reconcile）并可输出差异
 
@@ -344,3 +345,29 @@
 
 - 当前环境下，该验收命令可通过。
 - 若终端对 `mvn` 解析不稳定（PATHEXT/PATH 差异），建议在验收脚本中固定使用 `mvn.cmd` 绝对路径。
+
+## 2026-02-26 - 最终可复现配置（Gate B）
+
+> 用途：统一 Gate B 本地复现口径，避免 15432/18888/profile/local 环境变量在多处记录导致偏差。
+
+- `NQ_DB_PORT=15432`
+- `NQ_APP_PORT=18888`
+- `JDBC=jdbc:postgresql://localhost:15432/nexus_quant`
+- `profile=local`
+- `trace_id=trc-gateb-demo-001`
+- `NQ_PAPER_MATCHING_INITIAL_DELAY_MS=30000`（用于“非终态重启验证”，先制造 `orders=1 && trades=0`）
+
+### 推荐本地启动参数（PowerShell）
+
+```powershell
+$env:NQ_DB_PORT = "15432"
+$env:NQ_APP_PORT = "18888"
+$env:NQ_PROFILE = "local"
+$env:NQ_PAPER_MATCHING_INITIAL_DELAY_MS = "30000"
+```
+
+### 推荐启动命令
+
+```powershell
+D:\Tool\Maven\apache-maven-3.9.12\bin\mvn.cmd -q -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--server.port=18888
+```

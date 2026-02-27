@@ -9,6 +9,7 @@
 ## Gate B 目标（必须达成）
 
 在不接真实交易所网络的前提下，跑通一次端到端闭环，并具备：
+
 - 严格状态机：订单状态只能通过显式迁移驱动
 - 幂等：`client_order_id` 全链路贯穿，重复请求不产生重复副作用
 - 可审计：关键动作写入 `audit_logs`，并记录 `trace_id` 与原因
@@ -56,7 +57,7 @@
 - [x] `orders`：新增 1 条，且：
     - [x] `client_order_id` 非空
     - [x] `trace_id` 非空
-    - [x] `status` 进入终态（至少 FILLED 或 RISK_REJECTED/CANCELED）
+    - [x] `status` 进入终态（至少 FILLED 或 RISK_REJECTED/CANCELLED）
 - [x] `risk_events`：至少 1 条（包含 `trace_id`，scope/scope_id 指向订单或成交）
 - [x] `trades`：>= 1 条（包含 `trace_id` 与 `ts`，且关联 `order_id`）
 - [x] `ledger_entries`：>= 2 条（包含 `trace_id`、`ref_type/ref_id` 指向 TRADE、`idempotency_key` 非空）
