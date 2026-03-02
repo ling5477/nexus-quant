@@ -253,6 +253,39 @@
 - `trace_id=trc-gateb-demo-001` 在 `orders/trades/ledger_entries/risk_events/audit_logs/event_store` 全链路可追踪。
 - Gate B 清单未完成项已补齐，并已在 `docs/current/GATE_CHECKLIST.md` 与 `docs/gates/gate-b/GATE_B_CHECKLIST.md` 完成勾选。
 
+## 2026-03-02 - Gate B DB_SCHEMA 第 3 条补齐（增量 DDL）
+
+### 本次目标
+
+- 将 `docs/gates/gate-b/DB_SCHEMA.md` 第 3 节“Gate B 建议的增量变更（可选但很实用）”正式落地为 Gate B 自身的 Flyway
+  migration。
+- 不再使用 `V2__gate_c.sql`，避免将 Gate B 与 Gate C 的 schema 演进混用。
+
+### 本次变更
+
+- 新增 `backend/nq-infra/src/main/resources/db/migration/V2__gate_b_schema_hardening.sql`：
+    - 新增索引：
+        - `idx_orders_strategy_run_id`
+        - `idx_trades_account_ts`
+        - `idx_ledger_entries_trace_id`
+    - 新增 CHECK 约束：
+        - `chk_orders_qty_positive`
+        - `chk_trades_qty_positive`
+        - `chk_trades_price_positive`
+        - `chk_ledger_entries_direction`
+        - `chk_orders_side`
+        - `chk_orders_type`
+- 约束实现方式：
+    - 使用标准 `ALTER TABLE ... ADD CONSTRAINT`，依赖 Flyway 版本化 migration 的“一次性执行”语义，避免 SQL 方言误报。
+
+### 验证命令
+
+- `mvn -q -f backend/pom.xml test`
+
+### 结果
+
+- 通过（代码编译与单测未受新增 migration 影响）。
+
 ## 2026-02-26 - Gate B Stretch（可选加分项）补齐
 
 ### 本次目标
