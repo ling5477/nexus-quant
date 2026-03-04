@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
@@ -8,6 +10,7 @@ import com.guidinglight.nexusquant.contracts.event.TradeExecuted;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.core.execution.AdapterRouter;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
@@ -30,11 +33,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * PaperMatchingService 负责 Gate B 模拟撮合。
+ * PaperMatchingService 负责 GateB/GateC-0 的本地 paper 成交同步。
  * <p>
  * Why:
- * Gate B 明确禁止真实交易所网络调用，因此撮合必须在本地可重放地完成，
- * 并且通过订单状态 + trade 去重保证重复 tick 不产生重复副作用。
+ * GateC-0 虽然仍保留 paper 本地成交能力用于回归，但 scheduler 不能再绕过 adapter 假定订单可撮合。
+ * 因此这里先向 AdapterRouter 查询统一订单快照，再决定是否继续执行本地成交与记账。
  */
 @Component
 public class PaperMatchingService {
@@ -47,6 +50,7 @@ public class PaperMatchingService {
     private final TradeLedgerGateway tradeLedgerGateway;
     private final EventStoreAppender eventStoreAppender;
     private final AuditLogRepository auditLogRepository;
+    private final AdapterRouter adapterRouter;
     private final Clock clock;
 
     /**
@@ -55,22 +59,22 @@ public class PaperMatchingService {
      * @param tradeLedgerGateway    记账网关
      * @param eventStoreAppender    event_store 写入器
      * @param auditLogRepository    审计日志仓储
+     * @param adapterRouter         adapter 路由器
      */
     public PaperMatchingService(
             OrderExecutionGateway orderExecutionGateway,
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
             EventStoreAppender eventStoreAppender,
-            AuditLogRepository auditLogRepository
+            AuditLogRepository auditLogRepository,
+            AdapterRouter adapterRouter
     ) {
         this.orderExecutionGateway = Objects.requireNonNull(orderExecutionGateway, "orderExecutionGateway must not be null");
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
-        this.tradeLedgerGateway = Objects.requireNonNull(
-                tradeLedgerGateway,
-                "tradeLedgerGateway must not be null"
-        );
+        this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
         this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
+        this.adapterRouter = Objects.requireNonNull(adapterRouter, "adapterRouter must not be null");
         this.clock = Clock.systemUTC();
     }
 
@@ -95,6 +99,10 @@ public class PaperMatchingService {
         List<OrderRecord> orders = orderExecutionGateway.findMatchableOrders(limit);
         int newTradeCount = 0;
         for (OrderRecord order : orders) {
+            if (!"PAPER".equals(order.venue())) {
+                // Why: GateC 实盘/模拟盘订单必须由各自 adapter + reconcile 驱动，不能再被 paper 本地撮合器碰到。
+                continue;
+            }
             try {
                 if (matchSingleOrder(order)) {
                     newTradeCount++;
@@ -113,6 +121,34 @@ public class PaperMatchingService {
     }
 
     private boolean matchSingleOrder(OrderRecord order) {
+        AdapterOrderSnapshot adapterSnapshot = adapterRouter.route(order.accountId(), order.venue())
+                .trading()
+                .getOrder(new AdapterOrderQuery(
+                        order.accountId(),
+                        order.venue(),
+                        order.symbol(),
+                        order.clientOrderId(),
+                        order.externalOrderId(),
+                        order.traceId()
+                ));
+        // Why: 只有当 adapter 反馈的状态与本地状态一致时，scheduler 才允许继续做本地成交副作用，
+        // 这样 paper 路径不再是“完全绕过 adapter 的专用链路”。
+        if (!order.status().name().equals(adapterSnapshot.status())) {
+            auditLogRepository.append(
+                    "MATCHING",
+                    "ADAPTER_STATE_NOT_READY",
+                    order.orderId(),
+                    order.traceId(),
+                    detail(
+                            "order_id", order.orderId(),
+                            "order_status", order.status().name(),
+                            "adapter_status", adapterSnapshot.status(),
+                            "venue", order.venue()
+                    )
+            );
+            return false;
+        }
+
         BigDecimal marketPrice = NumericPolicy.normalize(NumericType.PRICE, resolveMarketPrice());
         if (!isExecutable(order, marketPrice)) {
             auditLogRepository.append(
@@ -121,18 +157,15 @@ public class PaperMatchingService {
                     order.orderId(),
                     order.traceId(),
                     detail(
-                            "order_id",
-                            order.orderId(),
-                            "order_type",
-                            order.type(),
-                            "limit_price",
-                            order.price(),
-                            "market_price",
-                            marketPrice
+                            "order_id", order.orderId(),
+                            "order_type", order.type(),
+                            "limit_price", order.price(),
+                            "market_price", marketPrice
                     )
             );
             return false;
         }
+
         Optional<PaperTradeRecord> existingTrade = tradeRepository.findByOrderId(order.orderId());
         PaperTradeRecord trade = existingTrade.orElseGet(() -> createTrade(order, marketPrice));
         if (existingTrade.isEmpty()) {
@@ -193,7 +226,7 @@ public class PaperMatchingService {
                 order.orderId(),
                 order.accountId(),
                 order.symbol(),
-                "PAPER",
+                order.venue(),
                 null,
                 price,
                 qty,
@@ -211,7 +244,9 @@ public class PaperMatchingService {
                 order.clientOrderId(),
                 order.accountId(),
                 order.symbol(),
+                order.venue(),
                 trade.exchange(),
+                order.externalOrderId(),
                 trade.exchangeTradeId(),
                 trade.price(),
                 trade.qty(),
@@ -233,7 +268,7 @@ public class PaperMatchingService {
     }
 
     private BigDecimal resolveMarketPrice() {
-        // Gate B 不接真实行情网络，使用固定价格提供器保证本地验证可重复。
+        // Gate B/GateC-0 不接真实行情网络，使用固定价格提供器保证本地验证可重复。
         return new BigDecimal("100.00000000");
     }
 

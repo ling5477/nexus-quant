@@ -1,90 +1,144 @@
-# 当前 Gate Checklist
+# docs/current/GATE_CHECKLIST.md
 
-> 说明：此文件用于“当前阶段”的验收清单入口。切换 Gate 时只需要更新本文件内容。
-> 本文件是当前 Gate 的唯一验收入口（Source of Truth）。
-> 关联工作记录：完成后将结果写入 `docs/gates/gate-b/WORK.md`。
+# Current Gate Checklist（Gate C：OKX -> Binance）
 
-- 当前阶段：Gate B（模拟盘最小交易闭环）
-
-## Gate B 目标（必须达成）
-
-在不接真实交易所网络的前提下，跑通一次端到端闭环，并具备：
-
-- 严格状态机：订单状态只能通过显式迁移驱动
-- 幂等：`client_order_id` 全链路贯穿，重复请求不产生重复副作用
-- 可审计：关键动作写入 `audit_logs`，并记录 `trace_id` 与原因
-- 可恢复：重启后不重复下单/不重复成交/不重复记账
-- 可回放：关键命令/事件写入 `event_store`
-- 可观测：traceId 串起 orders/trades/ledger/risk/audit/event_store
-
-## 非目标（Gate B 不做）
-
-- 不接真实 OKX/Binance 网络（不得发真实 HTTP/WebSocket）
-- 不实现复杂策略（允许最小示例/定时触发用于闭环）
-- 不实现复杂撮合/盘口/滑点建模（允许极简撮合）
+> 本文件是“当前 Gate 的唯一验收入口（Source of Truth）”。
+> 切换 Gate 时只需要更新本文件内容；历史 Gate 文档固定在 `docs/gates/` 下。
+>
+> 当前阶段：**Gate C（CEX 接入：OKX -> Binance）**
+> 验收优先级：GateC-0 -> GateC-1（OKX REST-only）-> GateC-1.1（OKX WS 可选）-> GateC-2（Binance）
 
 ---
 
-## 验收清单（必须全部勾选）
+## 0. 基础构建门禁（必须）
 
-### A. 构建与测试
-
-- [x] 通过：`mvn -q -f backend/pom.xml test`
-- [x] 单测覆盖（至少具备以下用例）：
-    - [x] 订单状态机：≥5 个非法迁移用例（应失败）
-    - [x] 幂等：重复 PlaceOrder（同 `account_id + client_order_id`）不新增 orders
-    - [x] 撮合幂等：撮合 tick 重复执行不产生重复 trades
-    - [x] 记账幂等：同一 trade 重复记账不新增 ledger_entries（依赖 `idempotency_key`）
-    - [x] 记账平衡校验：PASS 与 FAIL 两类用例（FAIL 必须记录 risk/audit）
-
-### B. 本地环境与启动
-
-- [x] 启动数据库：`docker compose up -d postgres`
-- [x] 数据库健康：`docker inspect -f "{{.State.Health.Status}}" nexusquant-postgres` => `healthy`
-- [x] 启动应用：`mvn -q -f backend/pom.xml -pl nq-app -am spring-boot:run`
-- [x] 探活成功：`GET /actuator/health` => `UP`
-
-### C. 闭环跑通（最小业务闭环）
-
-> 触发方式任选其一：HTTP 触发或 scheduler 定时触发。
-> 触发后必须满足以下“落库证据”。
-
-- [x] 已触发一次下单闭环（记录 trace_id）
-
-#### C1. 数据库落库证据（必须出现）
-
-- [x] `strategy_runs`：新增 1 条（`trace_id` 非空）
-- [x] `orders`：新增 1 条，且：
-    - [x] `client_order_id` 非空
-    - [x] `trace_id` 非空
-    - [x] `status` 进入终态（至少 FILLED 或 RISK_REJECTED/CANCELLED）
-- [x] `risk_events`：至少 1 条（包含 `trace_id`，scope/scope_id 指向订单或成交）
-- [x] `trades`：>= 1 条（包含 `trace_id` 与 `ts`，且关联 `order_id`）
-- [x] `ledger_entries`：>= 2 条（包含 `trace_id`、`ref_type/ref_id` 指向 TRADE、`idempotency_key` 非空）
-- [x] `ledger_events`：数量 >= ledger_entries（每个 entry 至少一条投影事件，含 `trace_id`）
-- [x] `positions`：发生更新（至少对应 `account_id + symbol` 一条记录更新，含 `trace_id`）
-- [x] `audit_logs`：>= 3 条（覆盖下单/风控/成交或记账，含 `trace_id`）
-- [x] `event_store`：至少包含以下 Topic 的记录（topic/type/version/key_value/trace_id 正确）：
-    - [x] `TopicNames.ORDER_COMMAND_V1`（下单命令）
-    - [x] `TopicNames.ORDER_EVENT_V1`（订单事件：created/risk/submitted/filled）
-    - [x] `TopicNames.TRADE_EVENT_V1`（成交事件）
-    - [x] `TopicNames.LEDGER_EVENT_V1`（记账事件：posted 或 failed）
-    - [x] `TopicNames.RISK_EVENT_V1`（风控/异常事件）
-    - [x] `TopicNames.AUDIT_EVENT_V1`（本轮未启用该 topic，按“若选择也写”记为 N/A）
-
-### D. 重启恢复（必须通过）
-
-- [x] 在存在“非终态订单”或“待处理任务”的情况下重启应用
-- [x] 重启后满足：
-    - [x] 不重复创建订单（幂等）
-    - [x] 不重复生成 trades（撮合幂等）
-    - [x] 不重复写 ledger_entries（记账幂等）
-    - [x] trace_id 仍可串联本次恢复相关记录（audit/risk/event_store）
+- [x] `mvn -q -f backend/pom.xml test` 全绿
+- [x] 本地 Postgres 可启动（docker compose）
+- [x] `nq-app` 可启动（profile=local），health 可用（若已有 actuator）
+- [x] GateC 验收入口已就绪（local only）：`POST /__gatec/orders`、`POST /__gatec/orders/cancel`、
+  `POST /__gatec/reconcile/runOnce`、`POST /__gatec/recovery/runOnce`
 
 ---
 
-## 交付记录（Gate B 完成后必须做）
+## 1. GateC-0（必须先做：前置改造门禁）
 
-- [x] 将本次 Gate B 的验收结果、关键命令输出、以及遇到的问题与修复写入：
-    - `docs/gates/gate-b/WORK.md`
-- [x] 更新 `docs/current/` 指向下一 Gate 前，先冻结 `docs/gates/gate-b/` 内容（只读追加勘误）
+目标：把“执行链路”从 PAPER 专用路径升级为“adapter 为中心”的统一链路。
+
+### 1.1 adapter-api 三分法（必须）
+
+- [x] `nq-adapter-api` 定义三接口（Port）：
+    - [x] TradingAdapter：placeOrder/cancelOrder/getOrder/listOpenOrders
+    - [x] MarketDataAdapter：subscribeBars/subscribeTrades/subscribeOrderBook（可先 stub）
+    - [x] AccountAdapter：getBalances/getPositions/getAccountSnapshot（可先 REST 拉取）
+
+### 1.2 AdapterRouter（必须）
+
+- [x] 存在 `AdapterRouter`（建议在 `nq-core.execution` 或 `nq-execution` 模块）
+- [x] 可按 `(accountId, venue)` 路由到 PAPER/OKX/BINANCE 的 adapter
+- [x] core 仅依赖 adapter-api，不依赖 okx/binance 实现类
+
+### 1.3 orders.external_order_id（必须）
+
+- [x] orders 表新增 `external_order_id`
+- [x] 索引：`(venue, external_order_id)`（或字段名为 exchange 时对应 `(exchange, external_order_id)`）
+- [x] placeOrder 成功回执后必须落库 `external_order_id`
+
+### 1.4 回执事件化（必须）
+
+- [x] placeOrder 的外部结果必须转为事件并写 event_store：
+    - [x] OrderAck / OrderReject
+- [x] cancelOrder 的外部结果必须转为事件并写 event_store：
+    - [x] CancelAck / CancelReject
+- [x] fills 必须转为 TradeExecuted 并写 event_store
+
+### 1.5 禁止项（必须满足）
+
+- [x] `OrderCommandService` 不允许出现 “SUBMITTED_TO_PAPER” 这类硬编码分支（或任何 paper-only 分支）
+- [x] `nq-scheduler` 不允许存在绕过 adapter 的 PAPER 专用链路（PAPER 必须是 TradingAdapter 的一种实现）
+
+---
+
+## 2. GateC-1（必须：OKX Spot REST-only 闭环）
+
+目标：仅靠 REST 跑通真实闭环（可复现、可验收、可恢复）。
+
+### 2.1 OKX 基础能力（必须）
+
+- [x] OKX signer/鉴权可用（失败可定位：timestamp/signature/apiKey 权限）
+- [x] public instruments 可拉取并缓存（用于精度/最小下单量校验与 trim）
+- [x] 下单前按 instruments 做 trim（tickSz/lotSz/minSz）
+
+### 2.2 OKX REST 交易链路（必须）
+
+- [x] REST 下单成功：本地订单状态推进到 SENT -> ACCEPTED（由 OrderAck 事件驱动）
+- [x] REST 撤单成功：状态推进到 CANCELED（由 CancelAck 事件驱动）
+- [x] placeOrder 超时/网络异常：禁止盲重试；必须 query-confirm（查单或挂单列表）
+
+### 2.3 REST reconcile 同步器（必须）
+
+> 同步器可以在 `nq-scheduler`，但必须只调用 adapter-api/adapter-okx，不能绕过 core/ledger 规则。
+
+- [x] 同步器每 N 秒扫描非终态订单（SENT/ACCEPTED/PARTIALLY_FILLED 等）
+- [x] 对每个订单执行：
+    - [x] query order（推进订单终态）
+    - [x] pull fills（写 trades，去重生效：UNIQUE(exchange, exchange_trade_id)）
+    - [x] 每笔 fill 触发 ledger posting（ledger_entries.idempotency_key 幂等）
+- [x] WS 未启用时，靠 reconcile 也能推进到终态（FILLED/CANCELED/REJECTED）
+
+### 2.4 账本与持仓（必须）
+
+- [x] trades >= 1（exchange=OKX；exchange_trade_id 去重生效）
+- [x] ledger_entries >= 2（idempotency_key 非空）
+- [x] positions 更新（positions>=1 或对应投影可见）
+- [x] 记账不平衡会走失败路径（写 risk/audit + event_store）
+
+### 2.5 事实链/审计（必须）
+
+- [x] event_store 至少包含：
+    - [x] order.command（Place/Cancel）
+    - [x] order.event（Ack/Reject/CancelAck/CancelReject）
+    - [x] trade.event（TradeExecuted）
+    - [x] ledger.event（LedgerPosted/失败事件若有）
+    - [x] risk/audit 关键节点
+- [x] trace_id 贯穿：orders/trades/ledger/risk/audit/event_store 都可追踪
+
+---
+
+## 3. GateC-1.1（可选后置：OKX 私有 WS + REST 兜底）
+
+目标：WS 做实时加速，但不改变事实来源。
+
+- [ ] orders/account/positions（或 balance_and_position）订阅成功
+- [ ] WS 回报映射为标准事件写入 event_store（order.event/trade.event/position.event）
+- [ ] WS 断线可自动重连并重订阅
+- [ ] WS 异常必须降级触发一次 REST reconcile（限定窗口/非终态订单集合）
+- [ ] WS + REST 同时开启不产生重复 trades/ledger（幂等兜底有效）
+
+---
+
+## 4. GateC-2（Binance Spot）
+
+目标：复用 GateC 框架，仅替换 adapter 实现。
+
+- [ ] adapter-binance 实现 TradingAdapter（place/cancel/get/listOpenOrders）
+- [ ] REST-only 可跑通闭环（同 GateC-1 验收口径）
+- [ ] 私有 WS 后置（同 GateC-1.1 口径）
+- [ ] testnet 通过后再上真实 key（Trade+Read；不启用提现权限）
+
+---
+
+## 5. 重启恢复（GateC 必测门禁）
+
+- [x] 制造非终态订单（SENT/ACCEPTED，trades=0）后重启服务
+- [x] 重启后不重复下单、不重复成交、不重复记账
+- [x] 重启后通过 REST reconcile 推进到终态
+- [x] 全程 trace_id 可追踪、audit/risk 有证据链
+
+---
+
+## 6. 文档对齐检查（必须）
+
+- [ ] `docs/gates/gate-c/ARCHITECTURE.md` 已冻结并与实现一致
+- [ ] `docs/gates/gate-c/CONTRACTS.md` 的事件字段与代码 DTO 一致
+- [ ] `docs/gates/gate-c/DB_SCHEMA.md` 的 DDL 与 Flyway 增量一致
+- [ ] `docs/gates/gate-c/RECOVERY_RUNBOOK.md` 与启动恢复行为一致

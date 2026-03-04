@@ -95,6 +95,7 @@ public class GateBDemoStrategyRunner {
         PlaceOrderResult result = orderCommandService.placeOrder(new PlaceOrderRequest(
                 DEMO_ACCOUNT_ID,
                 DEMO_RUN_ID,
+                "PAPER",
                 DEMO_CLIENT_ORDER_ID,
                 DEMO_SYMBOL,
                 OrderSide.BUY,

@@ -51,6 +51,27 @@ public class JdbcTradeRepository implements TradeRepository {
     }
 
     @Override
+    public Optional<PaperTradeRecord> findByExchangeAndExchangeTradeId(String exchange, String exchangeTradeId) {
+        List<PaperTradeRecord> results = jdbcTemplate.query(
+                """
+                        SELECT trade_id, order_id, account_id, symbol, exchange, exchange_trade_id, price, qty, fee,
+                               fee_currency, trace_id, ts
+                        FROM trades
+                        WHERE exchange = ? AND exchange_trade_id = ?
+                        ORDER BY ts DESC
+                        LIMIT 1
+                        """,
+                TRADE_ROW_MAPPER,
+                exchange,
+                exchangeTradeId
+        );
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(results.getFirst());
+    }
+
+    @Override
     public void insert(PaperTradeRecord trade) {
         jdbcTemplate.update(
                 """

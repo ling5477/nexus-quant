@@ -19,6 +19,7 @@ import com.guidinglight.nexusquant.ledger.model.PositionProjection;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -29,12 +30,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * TradeLedgerPostingService 负责 Gate B 成交记账与仓位投影。
- *
+ * <p>
  * Why:
  * 记账、风险、审计、事件发布必须在同一业务编排里统一执行，
  * 否则容易出现“分录成功但事件缺失”或“仓位更新重复”等不可恢复偏差。
@@ -51,10 +53,10 @@ public class TradeLedgerPostingService {
     private final Clock clock;
 
     /**
-     * @param ledgerPostingRepository 账本与仓位仓储
+     * @param ledgerPostingRepository   账本与仓位仓储
      * @param ledgerRiskAuditRepository 风险/审计仓储
-     * @param eventStoreAppender event_store 写入器
-     * @param objectMapper JSON 序列化器
+     * @param eventStoreAppender        event_store 写入器
+     * @param objectMapper              JSON 序列化器
      */
     public TradeLedgerPostingService(
             LedgerPostingRepository ledgerPostingRepository,
@@ -155,7 +157,7 @@ public class TradeLedgerPostingService {
 
     /**
      * 校验分录是否平衡。
-     *
+     * <p>
      * Why:
      * 该方法用于强制“净额必须归零”的最小口径，防止错误分录进入账本事实层。
      *
@@ -212,12 +214,20 @@ public class TradeLedgerPostingService {
         entries.add(createEntry(request, currency, leftDelta, "1", ts));
         entries.add(createEntry(request, currency, rightDelta, "2", ts));
         if (request.fee() != null && request.fee().compareTo(BigDecimal.ZERO) > 0) {
-            // Gate B 最小实现暂不支持 fee 对应的完整对手分录，故意让平衡校验失败并走风险处理分支。
+            // Why: GateC 接入真实交易所后，fee 已经是稳定事实，不能再沿用 GateB 的“故意不平衡”占位逻辑。
+            // 这里先用成对分录保证账本平衡与幂等，后续再按真实会计科目细化。
             entries.add(createEntry(
                     request,
                     request.feeCurrency() == null ? currency : request.feeCurrency(),
                     NumericPolicy.normalize(NumericType.FEE, request.fee()).negate(),
-                    "FEE",
+                    "FEE_1",
+                    ts
+            ));
+            entries.add(createEntry(
+                    request,
+                    request.feeCurrency() == null ? currency : request.feeCurrency(),
+                    NumericPolicy.normalize(NumericType.FEE, request.fee()),
+                    "FEE_2",
                     ts
             ));
         }
@@ -257,6 +267,14 @@ public class TradeLedgerPostingService {
                         request.traceId()
                 ));
         BigDecimal qtyChange = request.side() == OrderSide.BUY ? request.qty() : request.qty().negate();
+        String baseCurrency = resolveBaseCurrency(request.symbol());
+        if (request.fee() != null
+                && request.fee().compareTo(BigDecimal.ZERO) > 0
+                && request.feeCurrency() != null
+                && request.feeCurrency().equalsIgnoreCase(baseCurrency)) {
+            // Why: 若手续费以 base 资产收取，实际持仓应扣减 fee，避免 positions 高估。
+            qtyChange = qtyChange.subtract(request.fee());
+        }
         BigDecimal nextQty = NumericPolicy.normalize(NumericType.QTY, current.qty().add(qtyChange));
         BigDecimal nextAvgPrice = calculateNextAvgPrice(current, request, nextQty);
         PositionProjection projection = new PositionProjection(
@@ -311,6 +329,19 @@ public class TradeLedgerPostingService {
             return symbol.substring(symbol.indexOf('/') + 1);
         }
         return "USDT";
+    }
+
+    private String resolveBaseCurrency(String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            return "BASE";
+        }
+        if (symbol.contains("-")) {
+            return symbol.substring(0, symbol.indexOf('-'));
+        }
+        if (symbol.contains("/")) {
+            return symbol.substring(0, symbol.indexOf('/'));
+        }
+        return symbol;
     }
 
     private String toJson(Map<String, Object> payload) {

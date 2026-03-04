@@ -38,6 +38,16 @@
         </dependency>
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-adapter-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-adapter-okx</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-infra</artifactId>
             <version>${project.version}</version>
         </dependency>

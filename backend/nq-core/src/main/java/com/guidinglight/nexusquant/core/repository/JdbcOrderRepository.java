@@ -30,7 +30,8 @@ import org.springframework.stereotype.Repository;
 public class JdbcOrderRepository implements OrderRepository {
 
     private static final String BASE_SELECT = """
-            SELECT order_id, account_id, strategy_run_id, symbol, client_order_id, side, type, price, qty, status, reason, trace_id
+            SELECT order_id, account_id, strategy_run_id, venue, symbol, client_order_id, side, type, price, qty,
+                   external_order_id, status, reason, trace_id
             FROM orders
             """;
 
@@ -79,19 +80,21 @@ public class JdbcOrderRepository implements OrderRepository {
         jdbcTemplate.update(
                 """
                         INSERT INTO orders (
-                            order_id, account_id, strategy_run_id, symbol, client_order_id, side, type, price, qty, status,
-                            reason, trace_id, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            order_id, account_id, strategy_run_id, venue, symbol, client_order_id, side, type, price, qty,
+                            external_order_id, status, reason, trace_id, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                 order.orderId(),
                 order.accountId(),
                 order.strategyRunId(),
+                order.venue(),
                 order.symbol(),
                 order.clientOrderId(),
                 order.side(),
                 order.type(),
                 order.price(),
                 order.qty(),
+                order.externalOrderId(),
                 order.status().name(),
                 order.reason(),
                 order.traceId(),
@@ -106,6 +109,16 @@ public class JdbcOrderRepository implements OrderRepository {
                 "UPDATE orders SET status = ?, reason = ?, updated_at = ? WHERE order_id = ?",
                 status.name(),
                 reason,
+                Timestamp.from(now),
+                orderId
+        );
+    }
+
+    @Override
+    public void updateExternalOrderId(String orderId, String externalOrderId, Instant now) {
+        jdbcTemplate.update(
+                "UPDATE orders SET external_order_id = ?, updated_at = ? WHERE order_id = ?",
+                externalOrderId,
                 Timestamp.from(now),
                 orderId
         );
@@ -132,12 +145,14 @@ public class JdbcOrderRepository implements OrderRepository {
                 resultSet.getString("order_id"),
                 resultSet.getLong("account_id"),
                 resultSet.getString("strategy_run_id"),
+                resultSet.getString("venue"),
                 resultSet.getString("symbol"),
                 resultSet.getString("client_order_id"),
                 resultSet.getString("side"),
                 resultSet.getString("type"),
                 resultSet.getBigDecimal("price"),
                 resultSet.getBigDecimal("qty"),
+                resultSet.getString("external_order_id"),
                 OrderStatus.valueOf(resultSet.getString("status")),
                 resultSet.getString("reason"),
                 resultSet.getString("trace_id")

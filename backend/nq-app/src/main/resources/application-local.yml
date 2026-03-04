@@ -13,3 +13,8 @@ spring:
 
 server:
   port: ${NQ_APP_PORT:18888}
+
+nq:
+  gatec:
+    acceptance:
+      enabled: true

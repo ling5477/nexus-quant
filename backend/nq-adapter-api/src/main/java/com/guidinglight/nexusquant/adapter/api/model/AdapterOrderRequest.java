@@ -12,12 +12,14 @@ import java.math.BigDecimal;
 public record AdapterOrderRequest(
         String orderId,
         Long accountId,
+        String venue,
         String symbol,
         String clientOrderId,
         String side,
         String type,
         BigDecimal price,
         BigDecimal qty,
+        String strategyRunId,
         String traceId
 ) {
 }

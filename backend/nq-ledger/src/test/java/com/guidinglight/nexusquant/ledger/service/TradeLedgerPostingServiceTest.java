@@ -15,11 +15,13 @@ import com.guidinglight.nexusquant.ledger.model.PositionProjection;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -58,10 +60,10 @@ class TradeLedgerPostingServiceTest {
     }
 
     /**
-     * fee 非零时触发平衡校验失败，应写风险/审计并返回失败结果。
+     * fee 非零时也应保持分录平衡，并继续完成记账与投影。
      */
     @Test
-    void shouldRecordRiskAndAuditWhenBalanceCheckFails() {
+    void shouldPostBalancedEntriesWhenFeeIsPresent() {
         InMemoryLedgerPostingRepository postingRepository = new InMemoryLedgerPostingRepository();
         RecordingLedgerRiskAuditRepository riskAuditRepository = new RecordingLedgerRiskAuditRepository();
         RecordingJdbcTemplate eventStoreJdbcTemplate = new RecordingJdbcTemplate();
@@ -74,10 +76,11 @@ class TradeLedgerPostingServiceTest {
 
         LedgerPostingResult result = service.postTrade(baseRequest("trd-402", new BigDecimal("0.10000000")));
 
-        assertFalse(result.posted());
-        assertEquals("LEDGER_NOT_BALANCED", result.reason());
-        assertEquals(0, postingRepository.entryCount());
-        assertEquals(1, riskAuditRepository.riskCount());
+        assertTrue(result.posted());
+        assertEquals("POSTED", result.reason());
+        assertEquals(4, postingRepository.entryCount());
+        assertEquals(4, postingRepository.ledgerEventCount());
+        assertEquals(0, riskAuditRepository.riskCount());
         assertEquals(1, riskAuditRepository.auditCount());
         assertEquals(2, eventStoreJdbcTemplate.updateCount());
     }

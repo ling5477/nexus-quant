@@ -33,6 +33,7 @@ class EventEnvelopeSerializationTest {
         PlaceOrderCommand command = new PlaceOrderCommand(
                 "ord-001",
                 1001L,
+                "PAPER",
                 "BTC-USDT",
                 "coid-001",
                 "BUY",
@@ -61,6 +62,7 @@ class EventEnvelopeSerializationTest {
         assertTrue(root.has("event_id"));
         assertTrue(root.has("trace_id"));
         assertTrue(payload.has("client_order_id"));
+        assertTrue(payload.has("venue"));
         assertTrue(payload.has("time_in_force"));
         assertFalse(root.has("eventId"));
         assertFalse(payload.has("clientOrderId"));

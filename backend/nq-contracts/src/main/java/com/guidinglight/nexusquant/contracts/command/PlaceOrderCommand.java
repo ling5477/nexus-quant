@@ -11,6 +11,7 @@ import java.math.BigDecimal;
  *
  * @param orderId 系统订单 ID
  * @param accountId 账户 ID
+ * @param venue 交易场所
  * @param symbol 交易对
  * @param clientOrderId 客户端幂等键
  * @param side 买卖方向
@@ -24,6 +25,7 @@ import java.math.BigDecimal;
 public record PlaceOrderCommand(
         @JsonProperty("order_id") String orderId,
         @JsonProperty("account_id") Long accountId,
+        @JsonProperty("venue") String venue,
         @JsonProperty("symbol") String symbol,
         @JsonProperty("client_order_id") String clientOrderId,
         @JsonProperty("side") String side,

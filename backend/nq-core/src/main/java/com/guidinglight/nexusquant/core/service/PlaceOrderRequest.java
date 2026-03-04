@@ -12,6 +12,7 @@ import java.math.BigDecimal;
  *
  * @param accountId 账户 ID
  * @param strategyRunId 策略运行 ID，可空
+ * @param venue 交易场所
  * @param clientOrderId 客户端幂等键
  * @param symbol 交易对
  * @param side 买卖方向
@@ -23,6 +24,7 @@ import java.math.BigDecimal;
 public record PlaceOrderRequest(
         Long accountId,
         String strategyRunId,
+        String venue,
         String clientOrderId,
         String symbol,
         OrderSide side,

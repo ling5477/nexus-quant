@@ -17,7 +17,7 @@ management:
         include: health,info
 
 server:
-  port: ${NQ_APP_PORT:8080}
+  port: ${NQ_APP_PORT:18888}
 
 logging:
   pattern:

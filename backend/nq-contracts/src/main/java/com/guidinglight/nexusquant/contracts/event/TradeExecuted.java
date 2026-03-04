@@ -12,7 +12,9 @@ import java.time.Instant;
  * @param clientOrderId 客户端幂等键
  * @param accountId 账户 ID
  * @param symbol 交易对
+ * @param venue 交易场所
  * @param exchange 成交来源，Gate B 固定为 PAPER
+ * @param externalOrderId 外部订单号，可空
  * @param exchangeTradeId 外部成交号，paper 可空
  * @param price 成交价格
  * @param qty 成交数量
@@ -26,7 +28,9 @@ public record TradeExecuted(
         @JsonProperty("client_order_id") String clientOrderId,
         @JsonProperty("account_id") Long accountId,
         @JsonProperty("symbol") String symbol,
+        @JsonProperty("venue") String venue,
         @JsonProperty("exchange") String exchange,
+        @JsonProperty("external_order_id") String externalOrderId,
         @JsonProperty("exchange_trade_id") String exchangeTradeId,
         @JsonProperty("price") BigDecimal price,
         @JsonProperty("qty") BigDecimal qty,

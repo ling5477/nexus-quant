@@ -51,6 +51,18 @@ public interface OrderRepository {
     void updateStatus(String orderId, OrderStatus status, String reason, Instant now);
 
     /**
+     * 更新订单外部订单号。
+     * <p>
+     * Why:
+     * GateC-0 要求回执成功后立刻落库 external_order_id，供后续 reconcile/恢复/WS 关联使用。
+     *
+     * @param orderId 系统订单 ID
+     * @param externalOrderId 外部订单号
+     * @param now 更新时间
+     */
+    void updateExternalOrderId(String orderId, String externalOrderId, Instant now);
+
+    /**
      * 查询指定状态集合下的订单。
      *
      * @param statuses 目标状态集合

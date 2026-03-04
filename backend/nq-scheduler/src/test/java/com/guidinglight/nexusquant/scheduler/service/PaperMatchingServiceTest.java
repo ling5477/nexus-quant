@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.core.execution.AdapterRouter;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
@@ -23,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * PaperMatchingServiceTest 验证 paper 撮合幂等。
+ * PaperMatchingServiceTest 验证 GateC-0 后 paper 同步链路仍然保持幂等。
  */
 class PaperMatchingServiceTest {
 
@@ -46,21 +49,24 @@ class PaperMatchingServiceTest {
                 tradeRepository,
                 new AlwaysPostedLedgerGateway(),
                 eventStoreAppender,
-                new NoopAuditLogRepository()
+                new NoopAuditLogRepository(),
+                createAdapterRouter()
         );
 
         orderGateway.addOrder(new OrderRecord(
                 "ord-300",
                 1001L,
                 "run-300",
+                "PAPER",
                 "BTC-USDT",
                 "coid-300",
                 "BUY",
                 "MARKET",
                 null,
                 new BigDecimal("0.01000000"),
-                OrderStatus.SENT,
-                "SUBMITTED_TO_PAPER",
+                "paper-ord-300",
+                OrderStatus.ACCEPTED,
+                "ORDER_ACKED_BY_ADAPTER",
                 "trc-300"
         ));
 
@@ -86,20 +92,23 @@ class PaperMatchingServiceTest {
                 tradeRepository,
                 new AlwaysPostedLedgerGateway(),
                 createEventStoreAppender(),
-                new NoopAuditLogRepository()
+                new NoopAuditLogRepository(),
+                createAdapterRouter()
         );
         orderGateway.addOrder(new OrderRecord(
                 "ord-301",
                 1001L,
                 "run-301",
+                "PAPER",
                 "BTC-USDT",
                 "coid-301",
                 "BUY",
                 OrderType.LIMIT.name(),
                 new BigDecimal("90.00000000"),
                 new BigDecimal("0.01000000"),
-                OrderStatus.SENT,
-                "SUBMITTED_TO_PAPER",
+                "paper-ord-301",
+                OrderStatus.ACCEPTED,
+                "ORDER_ACKED_BY_ADAPTER",
                 "trc-301"
         ));
 
@@ -122,20 +131,23 @@ class PaperMatchingServiceTest {
                 tradeRepository,
                 new AlwaysPostedLedgerGateway(),
                 createEventStoreAppender(),
-                new NoopAuditLogRepository()
+                new NoopAuditLogRepository(),
+                createAdapterRouter()
         );
         orderGateway.addOrder(new OrderRecord(
                 "ord-302",
                 1001L,
                 "run-302",
+                "PAPER",
                 "BTC-USDT",
                 "coid-302",
                 "BUY",
                 OrderType.LIMIT.name(),
                 new BigDecimal("120.00000000"),
                 new BigDecimal("0.01000000"),
-                OrderStatus.SENT,
-                "SUBMITTED_TO_PAPER",
+                "paper-ord-302",
+                OrderStatus.ACCEPTED,
+                "ORDER_ACKED_BY_ADAPTER",
                 "trc-302"
         ));
 
@@ -155,6 +167,14 @@ class PaperMatchingServiceTest {
         );
     }
 
+    private AdapterRouter createAdapterRouter() {
+        return new AdapterRouter(
+                List.of(new PaperTradingAdapter()),
+                List.of(new NoopMarketDataAdapter("PAPER")),
+                List.of(new NoopAccountAdapter("PAPER"))
+        );
+    }
+
     private static final class InMemoryOrderExecutionGateway implements OrderExecutionGateway {
 
         private final Map<String, OrderRecord> orders = new HashMap<>();
@@ -163,7 +183,7 @@ class PaperMatchingServiceTest {
         @Override
         public List<OrderRecord> findMatchableOrders(int limit) {
             return orders.values().stream()
-                    .filter(order -> order.status() == OrderStatus.SENT || order.status() == OrderStatus.ACCEPTED)
+                    .filter(order -> order.status() == OrderStatus.ACCEPTED)
                     .limit(limit)
                     .toList();
         }
@@ -193,6 +213,13 @@ class PaperMatchingServiceTest {
         @Override
         public Optional<PaperTradeRecord> findByOrderId(String orderId) {
             return Optional.ofNullable(tradesByOrderId.get(orderId));
+        }
+
+        @Override
+        public Optional<PaperTradeRecord> findByExchangeAndExchangeTradeId(String exchange, String exchangeTradeId) {
+            return tradesByOrderId.values().stream()
+                    .filter(trade -> exchange.equals(trade.exchange()) && exchangeTradeId.equals(trade.exchangeTradeId()))
+                    .findFirst();
         }
 
         @Override

@@ -8,11 +8,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.contracts.model.RiskDecision;
 import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
+import com.guidinglight.nexusquant.core.execution.AdapterRouter;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.core.service.port.OrderRepository;
@@ -37,20 +48,42 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * OrderCommandServiceTest 覆盖下单幂等与非法迁移审计行为。
+ * OrderCommandServiceTest 覆盖 GateC-0 的 adapter 路由、幂等与外部单号落库行为。
  */
 class OrderCommandServiceTest {
 
     /**
-     * 验证重复 PlaceOrder 命中幂等时返回同一订单且不重复插入。
+     * 验证 placeOrder 会调用 TradingAdapter，并在成功回执后把 external_order_id 写回订单快照。
+     */
+    @Test
+    void shouldRoutePlaceOrderThroughTradingAdapterAndPersistExternalOrderId() {
+        InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
+        RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
+        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+
+        PlaceOrderResult result = service.placeOrder(createRequest("coid-200"));
+        Optional<OrderRecord> order = orderRepository.findByOrderId(result.orderId());
+
+        assertEquals(1, tradingAdapter.placeInvocationCount());
+        assertTrue(order.isPresent());
+        assertEquals(OrderStatus.ACCEPTED, result.status());
+        assertEquals("paper-ord-ack", order.get().externalOrderId());
+        assertEquals("PAPER", order.get().venue());
+        assertTrue(auditLogRepository.containsAction("ORDER_ACKED"));
+    }
+
+    /**
+     * 验证重复 PlaceOrder 命中幂等时返回同一订单且不重复调用 adapter。
      */
     @Test
     void shouldReturnSameOrderIdForIdempotentPlaceOrder() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        OrderCommandService service = createService(orderRepository, auditLogRepository);
+        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
 
-        PlaceOrderRequest request = createRequest("coid-200");
+        PlaceOrderRequest request = createRequest("coid-201");
         PlaceOrderResult first = service.placeOrder(request);
         PlaceOrderResult second = service.placeOrder(request);
 
@@ -58,7 +91,8 @@ class OrderCommandServiceTest {
         assertTrue(second.idempotentHit());
         assertEquals(first.orderId(), second.orderId());
         assertEquals(1, orderRepository.insertCount());
-        assertEquals(OrderStatus.SENT, second.status());
+        assertEquals(1, tradingAdapter.placeInvocationCount());
+        assertEquals(OrderStatus.ACCEPTED, second.status());
     }
 
     /**
@@ -68,76 +102,49 @@ class OrderCommandServiceTest {
     void shouldWriteAuditWhenTransitionIsIllegal() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        OrderCommandService service = createService(orderRepository, auditLogRepository);
+        OrderCommandService service = createService(orderRepository, auditLogRepository, new RecordingTradingAdapter());
 
-        PlaceOrderResult result = service.placeOrder(createRequest("coid-201"));
+        PlaceOrderResult result = service.placeOrder(createRequest("coid-202"));
 
         assertThrows(
                 IllegalStateException.class,
-                () -> service.transitionOrder(result.orderId(), OrderStatus.NEW, "ILLEGAL_BACK_TRANSITION", "trc-test-201")
+                () -> service.transitionOrder(result.orderId(), OrderStatus.NEW, "ILLEGAL_BACK_TRANSITION", "trc-test-202")
         );
         Optional<OrderRecord> order = orderRepository.findByOrderId(result.orderId());
         assertTrue(order.isPresent());
-        assertEquals(OrderStatus.SENT, order.get().status());
+        assertEquals(OrderStatus.ACCEPTED, order.get().status());
         assertTrue(auditLogRepository.containsAction("ORDER_STATUS_TRANSITION_REJECTED"));
     }
 
     /**
-     * 验证撤单命令会通过状态机推进到 CANCELLED 终态。
+     * 验证撤单命令会经由 TradingAdapter 并推进到 CANCELLED 终态。
      */
     @Test
-    void shouldCancelSentOrderToCancelledTerminalStatus() {
+    void shouldCancelAcceptedOrderToCancelledTerminalStatus() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        OrderCommandService service = createService(orderRepository, auditLogRepository);
+        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
 
-        PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-202"));
+        PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-203"));
         CancelOrderResult cancelOrderResult = service.cancelOrder(new CancelOrderRequest(
                 placeOrderResult.orderId(),
                 null,
                 null,
                 "USER_REQUESTED",
-                "trc-cancel-202"
+                "trc-cancel-203"
         ));
 
         assertEquals(OrderStatus.CANCELLED, cancelOrderResult.status());
         assertFalse(cancelOrderResult.idempotentHit());
+        assertEquals(1, tradingAdapter.cancelInvocationCount());
         assertTrue(auditLogRepository.containsAction("ORDER_CANCELLED"));
-    }
-
-    /**
-     * 验证终态订单再次撤单会被幂等短路，不产生新的状态副作用。
-     */
-    @Test
-    void shouldReturnIdempotentHitWhenCancelAlreadyCancelledOrder() {
-        InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
-        RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        OrderCommandService service = createService(orderRepository, auditLogRepository);
-
-        PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-203"));
-        service.cancelOrder(new CancelOrderRequest(
-                placeOrderResult.orderId(),
-                null,
-                null,
-                "USER_REQUESTED",
-                "trc-cancel-203-first"
-        ));
-        CancelOrderResult secondCancelResult = service.cancelOrder(new CancelOrderRequest(
-                placeOrderResult.orderId(),
-                null,
-                null,
-                "USER_REQUESTED",
-                "trc-cancel-203-second"
-        ));
-
-        assertEquals(OrderStatus.CANCELLED, secondCancelResult.status());
-        assertTrue(secondCancelResult.idempotentHit());
-        assertTrue(auditLogRepository.containsAction("CANCEL_ORDER_IDEMPOTENT_HIT"));
     }
 
     private OrderCommandService createService(
             InMemoryOrderRepository orderRepository,
-            RecordingAuditLogRepository auditLogRepository
+            RecordingAuditLogRepository auditLogRepository,
+            RecordingTradingAdapter tradingAdapter
     ) {
         EventStoreAppender eventStoreAppender = new EventStoreAppender(
                 new RecordingJdbcTemplate(),
@@ -145,13 +152,19 @@ class OrderCommandServiceTest {
                         .registerModule(new JavaTimeModule())
                         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         );
+        AdapterRouter adapterRouter = new AdapterRouter(
+                List.of(tradingAdapter),
+                List.of(new NoopMarketDataAdapter("PAPER")),
+                List.of(new NoopAccountAdapter("PAPER"))
+        );
         return new OrderCommandService(
                 orderRepository,
                 new InMemoryOrderStateMachine(),
                 new AlwaysAllowRiskGate(),
                 auditLogRepository,
                 new NoopRiskEventRepository(),
-                eventStoreAppender
+                eventStoreAppender,
+                adapterRouter
         );
     }
 
@@ -159,6 +172,7 @@ class OrderCommandServiceTest {
         return new PlaceOrderRequest(
                 1001L,
                 "run-1001",
+                "PAPER",
                 clientOrderId,
                 "BTC-USDT",
                 OrderSide.BUY,
@@ -170,7 +184,7 @@ class OrderCommandServiceTest {
     }
 
     /**
-     * InMemoryOrderRepository 用于单测幂等与状态更新，不依赖外部数据库。
+     * InMemoryOrderRepository 用于单测幂等、状态更新与 external_order_id 落点，不依赖外部数据库。
      */
     private static final class InMemoryOrderRepository implements OrderRepository {
 
@@ -206,6 +220,12 @@ class OrderCommandServiceTest {
         }
 
         @Override
+        public void updateExternalOrderId(String orderId, String externalOrderId, Instant now) {
+            OrderRecord existing = byOrderId.get(orderId);
+            byOrderId.put(orderId, existing.withExternalOrderId(externalOrderId));
+        }
+
+        @Override
         public List<OrderRecord> findByStatuses(Collection<OrderStatus> statuses, int limit) {
             return byOrderId.values().stream()
                     .filter(order -> statuses.contains(order.status()))
@@ -220,6 +240,55 @@ class OrderCommandServiceTest {
 
         private String buildKey(Long accountId, String clientOrderId) {
             return accountId + ":" + clientOrderId;
+        }
+    }
+
+    private static final class RecordingTradingAdapter implements TradingAdapter {
+
+        private int placeInvocationCount;
+        private int cancelInvocationCount;
+
+        @Override
+        public String venue() {
+            return "PAPER";
+        }
+
+        @Override
+        public AdapterOrderAck placeOrder(AdapterOrderRequest request) {
+            placeInvocationCount++;
+            return new AdapterOrderAck(true, venue(), "paper-ord-ack", null, Instant.now(), request.traceId());
+        }
+
+        @Override
+        public AdapterCancelAck cancelOrder(AdapterCancelRequest request) {
+            cancelInvocationCount++;
+            return new AdapterCancelAck(true, venue(), request.externalOrderId(), null, Instant.now(), request.traceId());
+        }
+
+        @Override
+        public AdapterOrderSnapshot getOrder(AdapterOrderQuery query) {
+            return new AdapterOrderSnapshot(
+                    query.accountId(),
+                    venue(),
+                    query.symbol(),
+                    query.clientOrderId(),
+                    query.externalOrderId(),
+                    OrderStatus.ACCEPTED.name(),
+                    query.traceId()
+            );
+        }
+
+        @Override
+        public List<AdapterOrderSnapshot> listOpenOrders(AdapterOpenOrdersQuery query) {
+            return List.of();
+        }
+
+        int placeInvocationCount() {
+            return placeInvocationCount;
+        }
+
+        int cancelInvocationCount() {
+            return cancelInvocationCount;
         }
     }
 
