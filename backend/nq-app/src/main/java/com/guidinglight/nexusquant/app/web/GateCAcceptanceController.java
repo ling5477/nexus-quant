@@ -29,12 +29,12 @@ import org.springframework.web.server.ResponseStatusException;
  * <p>
  * Why:
  * 当前仓库缺少合规入口去手动触发 place/cancel/reconcile/recovery，导致 Demo 验收必须旁路。
- * 该 controller 只在 `local` 或 `gatec-verify` profile 启用，且只做参数校验与 trace 透传，
+ * 该 controller 只在 `local` profile 且显式开关开启时启用，且只做参数校验与 trace 透传，
  * 真正的业务仍全部委托给 core/scheduler/recovery 服务层。
  */
 @RestController
-@Profile({"local", "gatec-verify"})
-@ConditionalOnProperty(name = "nq.gatec.acceptance.enabled", havingValue = "true")
+@Profile("local")
+@ConditionalOnProperty(name = "nq.gatec.verify.enabled", havingValue = "true")
 @RequestMapping("/__gatec")
 public class GateCAcceptanceController {
 

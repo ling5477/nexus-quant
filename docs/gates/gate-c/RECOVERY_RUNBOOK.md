@@ -42,6 +42,10 @@
    - 写 audit+risk（含原因与指纹），并阻断下单（KillSwitch 可触发）
 - placeOrder 超时：
    - query-confirm 后再处理（确认存在则补写 external_order_id 并继续同步）
+- query order 返回 `51603 Order does not exist`：
+   - 视为 `ORDER_NOT_FOUND/OKX_51603` 可恢复降级，不阻断启动
+   - 写 `audit_logs`（`RECOVERY_QUERY_ORDER_NOT_FOUND`）并写 `event_store`（`audit.event.v1`）
+   - 通过服务层状态机把本地订单推进到终态 `CANCELLED`，继续处理后续订单
 - 限频：
    - 退避/降级并写审计；连续超限可触发 KillSwitch（必须留证据链）
 - WS 断线（若启用）：

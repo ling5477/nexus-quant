@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * OkxInstrumentsCache 负责缓存 `public/instruments?instType=SPOT`。
  * <p>
@@ -21,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OkxInstrumentsCache {
 
+    private static final Logger log = LoggerFactory.getLogger(OkxInstrumentsCache.class);
     private static final String INSTRUMENTS_ENDPOINT = "/api/v5/public/instruments?instType=SPOT";
 
     private final OkxHttpClient publicHttpClient;
@@ -89,14 +93,34 @@ public class OkxInstrumentsCache {
         }
         Map<String, OkxInstrument> refreshed = new ConcurrentHashMap<>();
         for (JsonNode item : payload.path("data")) {
-            OkxInstrument instrument = new OkxInstrument(
-                    item.path("instId").asText(),
-                    decimal(item, "tickSz"),
-                    decimal(item, "lotSz"),
-                    decimal(item, "minSz"),
-                    item.path("state").asText()
-            );
-            refreshed.put(instrument.instId(), instrument);
+            // Why:
+            // OKX 真实盘 instruments 列表会包含 preopen 等非可交易条目，这些条目可能缺少 tickSz/lotSz/minSz。
+            // 启动阶段若因为单个脏条目 fail-fast，会阻断整个恢复与验收链路；因此这里降级为“跳过不可交易条目并记录审计日志”。
+            String instId = item.path("instId").asText();
+            String state = item.path("state").asText();
+            if (isBlank(instId) || isBlank(state) || !"live".equalsIgnoreCase(state)) {
+                continue;
+            }
+            BigDecimal tick = decimalOrNull(item, "tickSz");
+            BigDecimal lot = decimalOrNull(item, "lotSz");
+            BigDecimal min = decimalOrNull(item, "minSz");
+            if (tick == null || lot == null || min == null) {
+                log.warn(
+                        "okx_instrument_skipped_missing_precision trace_id={} inst_id={} state={} tickSz={} lotSz={} minSz={}",
+                        traceId,
+                        instId,
+                        state,
+                        item.path("tickSz").asText(),
+                        item.path("lotSz").asText(),
+                        item.path("minSz").asText()
+                );
+                continue;
+            }
+            OkxInstrument instrument = new OkxInstrument(instId, tick, lot, min, state);
+            refreshed.put(instId, instrument);
+        }
+        if (refreshed.isEmpty()) {
+            throw new IllegalStateException("OKX instruments cache refresh produced zero live entries");
         }
         instrumentsById.clear();
         instrumentsById.putAll(refreshed);
@@ -110,11 +134,15 @@ public class OkxInstrumentsCache {
         refreshNow(traceId);
     }
 
-    private BigDecimal decimal(JsonNode item, String field) {
+    private BigDecimal decimalOrNull(JsonNode item, String field) {
         String raw = item.path(field).asText();
         if (raw == null || raw.isBlank()) {
-            throw new IllegalStateException("OKX instruments missing field: " + field);
+            return null;
         }
         return new BigDecimal(raw);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

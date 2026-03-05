@@ -32,6 +32,8 @@ GateC 目标：在 GateB 的“幂等/状态机/事实链(event_store)/账本(le
 - 路线图：`docs/gates/gate-c/ROADMAP.md`
 - 工作记录：`docs/gates/gate-c/WORK.md`
 - 权威依据：`docs/gates/gate-c/SOURCES.md`
+- 验收清单：`docs/gates/gate-c/GATE_C_CHECKLIST.md`
+- PR 拆分说明：`docs/gates/gate-c/PR_SPLIT_PLAN.md`
 
 ---
 
@@ -39,6 +41,8 @@ GateC 目标：在 GateB 的“幂等/状态机/事实链(event_store)/账本(le
 
 - 统一验收清单：`docs/current/GATE_CHECKLIST.md`
   - 该文件是 GateC 的验收门禁（Source of Truth）。
+- GateC 验收入口 `POST /__gatec/*` 仅在 `local + nq.gatec.verify.enabled=true` 时启用，生产环境不暴露；
+  可重复验收脚本见 `scripts/gatec_okx_dome_verify.ps1`。
 
 ---
 

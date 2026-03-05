@@ -22,3 +22,9 @@ server:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
+
+nq:
+  gatec:
+    verify:
+      # Why: GateC 验收入口默认关闭，避免生产环境误暴露。
+      enabled: ${NQ_GATEC_VERIFY_ENABLED:false}

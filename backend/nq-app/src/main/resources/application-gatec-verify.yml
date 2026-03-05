@@ -16,5 +16,5 @@ server:
 
 nq:
   gatec:
-    acceptance:
-      enabled: true
+    verify:
+      enabled: ${NQ_GATEC_VERIFY_ENABLED:true}

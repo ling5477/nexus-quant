@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * GateCAcceptanceControllerLocalTest 验证 local profile 下 GateC 验收入口可用并触发服务层。
  */
 @ActiveProfiles("local")
-@WebMvcTest(properties = "nq.gatec.acceptance.enabled=true")
+@WebMvcTest(properties = "nq.gatec.verify.enabled=true")
 class GateCAcceptanceControllerLocalTest {
 
     @Autowired

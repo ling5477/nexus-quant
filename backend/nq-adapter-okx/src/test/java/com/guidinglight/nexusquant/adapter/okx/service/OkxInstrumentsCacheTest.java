@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,27 +56,82 @@ class OkxInstrumentsCacheTest {
         }
     }
 
+    /**
+     * 验证当返回 preopen 或缺失精度字段时，缓存会跳过异常条目而不是阻断启动。
+     */
+    @Test
+    void shouldSkipPreopenInstrumentWithoutPrecisionFields() throws Exception {
+        try (TestServer server = new TestServer("""
+                {
+                  "code": "0",
+                  "data": [
+                    {
+                      "instId": "ROBO-USDT",
+                      "tickSz": "",
+                      "lotSz": "",
+                      "minSz": "",
+                      "state": "preopen"
+                    },
+                    {
+                      "instId": "BTC-USDT",
+                      "tickSz": "0.1",
+                      "lotSz": "0.0001",
+                      "minSz": "0.001",
+                      "state": "live"
+                    }
+                  ]
+                }
+                """)) {
+            OkxHttpClient publicClient = new OkxHttpClient(
+                    HttpClient.newHttpClient(),
+                    new ObjectMapper(),
+                    server.baseUrl(),
+                    Duration.ofSeconds(2),
+                    new OkxRequestSigner(),
+                    () -> "2026-03-04T00:00:00Z",
+                    null,
+                    false
+            );
+            OkxInstrumentsCache cache = new OkxInstrumentsCache(
+                    publicClient,
+                    Clock.fixed(Instant.parse("2026-03-04T00:00:00Z"), ZoneOffset.UTC),
+                    Duration.ofMinutes(5)
+            );
+
+            Map<String, com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument> snapshot = cache.snapshot("trc-cache");
+
+            assertTrue(snapshot.containsKey("BTC-USDT"));
+            assertFalse(snapshot.containsKey("ROBO-USDT"));
+        }
+    }
+
     private static final class TestServer implements AutoCloseable {
 
         private final HttpServer server;
+        private final String responseBody;
 
         private TestServer() throws IOException {
-            this.server = HttpServer.create(new InetSocketAddress(0), 0);
-            server.createContext("/api/v5/public/instruments", exchange -> {
-                byte[] response = """
+            this("""
+                    {
+                      "code": "0",
+                      "data": [
                         {
-                          \"code\": \"0\",
-                          \"data\": [
-                            {
-                              \"instId\": \"BTC-USDT\",
-                              \"tickSz\": \"0.1\",
-                              \"lotSz\": \"0.0001\",
-                              \"minSz\": \"0.001\",
-                              \"state\": \"live\"
-                            }
-                          ]
+                          "instId": "BTC-USDT",
+                          "tickSz": "0.1",
+                          "lotSz": "0.0001",
+                          "minSz": "0.001",
+                          "state": "live"
                         }
-                        """.getBytes();
+                      ]
+                    }
+                    """);
+        }
+
+        private TestServer(String responseBody) throws IOException {
+            this.server = HttpServer.create(new InetSocketAddress(0), 0);
+            this.responseBody = responseBody;
+            server.createContext("/api/v5/public/instruments", exchange -> {
+                byte[] response = this.responseBody.getBytes();
                 exchange.sendResponseHeaders(200, response.length);
                 try (OutputStream outputStream = exchange.getResponseBody()) {
                     outputStream.write(response);

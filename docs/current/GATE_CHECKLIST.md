@@ -17,6 +17,7 @@
 - [x] `nq-app` 可启动（profile=local），health 可用（若已有 actuator）
 - [x] GateC 验收入口已就绪（local only）：`POST /__gatec/orders`、`POST /__gatec/orders/cancel`、
   `POST /__gatec/reconcile/runOnce`、`POST /__gatec/recovery/runOnce`
+- [x] GateC 验收入口已硬化（`local + nq.gatec.verify.enabled=true` 双门禁；生产零暴露）
 
 ---
 
@@ -133,12 +134,13 @@
 - [x] 重启后不重复下单、不重复成交、不重复记账
 - [x] 重启后通过 REST reconcile 推进到终态
 - [x] 全程 trace_id 可追踪、audit/risk 有证据链
+- [x] query-confirm 遇到 `OKX 51603 (Order does not exist)` 不阻断启动，且降级证据链完整（audit + event_store + 终态推进）
 
 ---
 
 ## 6. 文档对齐检查（必须）
 
-- [ ] `docs/gates/gate-c/ARCHITECTURE.md` 已冻结并与实现一致
-- [ ] `docs/gates/gate-c/CONTRACTS.md` 的事件字段与代码 DTO 一致
-- [ ] `docs/gates/gate-c/DB_SCHEMA.md` 的 DDL 与 Flyway 增量一致
-- [ ] `docs/gates/gate-c/RECOVERY_RUNBOOK.md` 与启动恢复行为一致
+- [x] `docs/gates/gate-c/ARCHITECTURE.md` 已冻结并与实现一致
+- [x] `docs/gates/gate-c/CONTRACTS.md` 的事件字段与代码 DTO 一致
+- [x] `docs/gates/gate-c/DB_SCHEMA.md` 的 DDL 与 Flyway 增量一致
+- [x] `docs/gates/gate-c/RECOVERY_RUNBOOK.md` 与启动恢复行为一致

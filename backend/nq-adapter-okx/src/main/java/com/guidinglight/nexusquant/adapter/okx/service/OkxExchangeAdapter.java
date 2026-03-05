@@ -399,6 +399,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     : null;
             String itemCode = firstItem == null ? null : firstItem.path("sCode").asText(null);
             String itemMessage = firstItem == null ? null : firstItem.path("sMsg").asText(null);
+            String normalizedCode = itemCode == null || itemCode.isBlank() ? code : itemCode;
             String detail = (itemCode == null || itemCode.isBlank()) && (itemMessage == null || itemMessage.isBlank())
                     ? ""
                     : ", item_code=" + itemCode + ", item_msg=" + itemMessage;
@@ -407,7 +408,8 @@ public class OkxExchangeAdapter implements TradingAdapter {
                             + ", msg=" + payload.path("msg").asText() + detail,
                     200,
                     endpoint,
-                    itemCode == null || itemCode.isBlank() ? code : itemCode,
+                    normalizedCode,
+                    OkxErrorCode.fromRawCode(normalizedCode),
                     traceId
             );
         }

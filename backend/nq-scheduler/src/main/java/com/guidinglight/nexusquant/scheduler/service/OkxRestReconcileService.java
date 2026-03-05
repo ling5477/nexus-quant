@@ -138,9 +138,17 @@ public class OkxRestReconcileService {
     }
 
     private void alignOrderStatus(OrderRecord order, String targetStatusName, String traceId) {
-        OrderStatus currentStatus = order.status();
+        // Why:
+        // reconcile 与 cancel 命令可能并发触发，同一个 order 在本方法执行前后已被其它链路推进到终态。
+        // 这里先读最新状态，避免用过期快照做二次迁移导致非法状态跳转（例如 CANCELLED -> CANCEL_REQUESTED）。
+        OrderStatus currentStatus = orderCommandService.findByOrderId(order.orderId())
+                .map(OrderRecord::status)
+                .orElse(order.status());
         OrderStatus targetStatus = OrderStatus.valueOf(targetStatusName);
         if (currentStatus == targetStatus) {
+            return;
+        }
+        if (isTerminalStatus(currentStatus)) {
             return;
         }
         if (targetStatus == OrderStatus.PARTIALLY_FILLED && currentStatus == OrderStatus.SENT) {
@@ -149,11 +157,25 @@ public class OkxRestReconcileService {
             return;
         }
         if (targetStatus == OrderStatus.CANCELLED && currentStatus != OrderStatus.CANCEL_REQUESTED) {
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCEL_REQUESTED, "RECONCILE_CANCEL_REQUESTED", traceId);
+            try {
+                orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCEL_REQUESTED, "RECONCILE_CANCEL_REQUESTED", traceId);
+            } catch (IllegalStateException ex) {
+                OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
+                        .map(OrderRecord::status)
+                        .orElse(currentStatus);
+                if (latestStatus == OrderStatus.CANCELLED || isTerminalStatus(latestStatus)) {
+                    return;
+                }
+                throw ex;
+            }
             orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCELLED, "RECONCILE_CANCELLED", traceId);
             return;
         }
         orderCommandService.transitionOrder(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+    }
+
+    private boolean isTerminalStatus(OrderStatus status) {
+        return status == OrderStatus.FILLED || status == OrderStatus.CANCELLED || status == OrderStatus.REJECTED;
     }
 
     private int reconcileFills(OrderRecord order) {

@@ -1,78 +1,89 @@
+# AGENTS.md
 # AGENTS（Codex 开发指引 - NexusQuant）
 
-> 目的：让 Codex 生成代码时严格遵循本仓库的架构/契约/正确性约束，并始终以“当前阶段入口文档”为准。  
-> 文档分层：`docs/current/` 为当前阶段入口；`docs/gates/gate-a/` 为 Gate A 冻结快照（只读）。
+> 目的：让 Codex / 开发者在仓库内生成与修改代码时，严格遵循本仓库的架构/契约/正确性约束，并始终以“当前阶段入口文档”为准。  
+> 文档分层：`docs/current/` 为**当前阶段唯一入口（Source of Truth）**；`docs/gates/gate-*/` 为**历史 Gate 冻结快照（只读参考）**。
+
+---
 
 ## 1. 强制约束（必须遵守）
 
 - 语言：除代码/技术名词外，解释与文档输出使用**简体中文**。
-- 严格状态机：不得任意 setStatus；必须通过显式事件驱动迁移。
-- 幂等：`client_order_id` 必须贯穿订单/事件/账本引用。
-- 可审计：所有关键决策点必须记录 traceId 与原因（reason）。
-- 可恢复：投影表允许丢失，但必须能从事实（事件/账本）重建。
-- 可观测：日志为结构化（JSON），并统一字段（trace_id、run_id、strategy_id、account_id、symbol 等）。
+- 严格状态机：不得任意 `setStatus`；必须通过显式事件驱动迁移（命令/回执/同步器确认）。
+- 幂等：`client_order_id` 必须贯穿订单/事件/账本引用，并作为外部 clientId 映射（如 OKX clOrdId / Binance clientOrderId）。
+- 可审计：所有关键决策点必须记录 `trace_id` 与原因（reason），写入 `audit_logs` + `event_store`（必要时写 `risk_events`）。
+- 可恢复：投影表允许丢失，但必须能从事实（`event_store` / `ledger_entries`）重建；恢复流程必须有文档与验收。
+- 可观测：日志字段统一（`trace_id、run_id、strategy_id、account_id、symbol、venue` 等），禁止“只有一条字符串日志”。
+- 交易所差异隔离：交易所方言只允许出现在 `nq-adapter-*`；`nq-core/nq-ledger/nq-risk` 禁止出现 `if (venue==...)` 之类分支。
+
+---
 
 ## 2. 文档即事实（Source of Truth）
 
 实现必须对齐以下文档（按优先级）：
 
-**当前阶段入口（必读）**
+### 2.1 当前阶段入口（必读，唯一事实来源）
+- `docs/current/README.md`
 - `docs/current/GATE_CHECKLIST.md`
-- `docs/current/WORK_TEMPLATE.md`（模板：阶段完成后记录写入对应 gate 目录）
 
-**历史冻结参考（只读）**
-- `docs/gates/gate-a/ARCHITECTURE.md`
-- `docs/gates/gate-a/MODULES.md`
-- `docs/gates/gate-a/CONTRACTS.md`
-- `docs/gates/gate-a/EVOLUTION_RULES.md`
-- `docs/gates/gate-a/NUMERIC_POLICY.md`
-- `docs/gates/gate-a/DB_SCHEMA.md`
-- `docs/gates/gate-a/RECOVERY_RUNBOOK.md`
-- `docs/gates/gate-a/DECISIONS.md`
-- `docs/gates/gate-a/GATE_A_CHECKLIST.md`
-- `docs/gates/gate-a/WORK.md`
+### 2.2 当前 Gate 的权威依据（必须能追溯）
+- `docs/gates/gate-c/SOURCES.md`（当前 Gate 为 GateC 时）
+- 未来 Gate 切换后，应在对应 gate 目录下维护同名 `SOURCES.md`
 
-**当前 Gate 详细规范（必读）**
-- `docs/gates/gate-b/ARCHITECTURE.md`
-- `docs/gates/gate-b/MODULES.md`
-- `docs/gates/gate-b/CONTRACTS.md`
-- `docs/gates/gate-b/EVOLUTION_RULES.md`
-- `docs/gates/gate-b/DB_SCHEMA.md`
-- `docs/gates/gate-b/RECOVERY_RUNBOOK.md`
-- `docs/gates/gate-b/DECISIONS.md`
-- `docs/gates/gate-b/GATE_B_CHECKLIST.md`
-- `docs/gates/gate-b/WORK.md`
+> 规则：当 `docs/current/*` 与 `docs/gates/*` 不一致时，**以 `docs/current/*` 为准**。
+
+---
 
 ## 3. 模块实现顺序（推荐）
 
-1. `nq-contracts` / `nq-common`
-2. `nq-core`（域模型 + 状态机 + 幂等键）
-3. `nq-ledger`（不可变流水 + 平衡校验）
-4. `nq-risk`（规则框架 + 事件记录）
-5. `nq-observability`（日志/trace/metrics）
-6. `nq-config` / `nq-scheduler`（骨架）
-7. `nq-app`（启动载体：装配与健康检查）
-8. `nq-gateway` / `nq-auth` / `nq-security`（最小控制面）
+1) `nq-contracts` / `nq-common`
+2) `nq-core`
+3) `nq-ledger`
+4) `nq-risk`
+5) `nq-observability`
+6) `nq-infra`
+7) `nq-adapter-api`
+8) `nq-adapter-okx` / `nq-adapter-binance`
+9) `nq-scheduler`
+10) `nq-app`
 
-## 4. 阶段约束（以 docs/current 为准）
-
-> 重要：本节约束随 Gate 切换而切换，具体以 `docs/current/` 为准。
-> `docs/gates/gate-a/` 为历史冻结快照（只读），不得以 GateA 禁止项限制 GateB 实现。
-
-### 4.1 通用禁止项（所有 Gate）
-- 禁止在 `nq-infra` 塞领域逻辑（infra 只做技术设施封装）。
-- 禁止提交任何真实密钥/Token/密码；本地用 env 或示例文件。
-
-### 4.2 Gate B（模拟盘闭环）禁止项
-- 禁止实现真实交易所网络连接（不得调用真实 OKX/Binance HTTP/WebSocket）。
-- 禁止实现复杂真实策略（仅允许最小示例/定时触发用于跑通闭环）。
-- 禁止绕过状态机直接写 `orders.status`。
-- 禁止破坏 `nq-contracts` 兼容性（只增不改）。
-
-### 4.3 Gate B 允许项（为闭环所必需）
-- 允许实现 paper/simulated adapter（推荐独立 `nq-adapter-paper`）与极简撮合逻辑。
-- 允许实现订单编排（状态机/幂等）、风控最小规则、记账与平衡校验、回放事件写入、审计日志落库。
 ---
+
+## 4. Gate 通用硬规则（不随阶段变化）
+
+### 4.1 执行链路规则（通用）
+- 任何“下单/撤单/查单/拉成交”的外部交互必须通过 `nq-adapter-api` 接口完成。
+- 任何外部回执必须事件化（OrderAck/Reject/TradeExecuted/CancelAck…）并写入 `event_store`（推荐存 envelope 全量 JSON）。
+
+### 4.2 超时与重试规则（通用）
+- 外部请求超时/网络异常：**禁止盲重试**。必须先 `query-confirm`（查单/挂单/成交）确认外部事实，再进行补偿动作。
+
+### 4.3 数据与精度规则（通用）
+- 禁止 float/double 参与价格/数量/金额计算；必须 BigDecimal（或 long scale 方案，但需统一政策）。
+- TIMESTAMPTZ 入参统一 `Timestamp.from(Instant)`。
+- JSONB 写入统一 `CAST(? AS jsonb)`。
+
+---
+
+## 5. PR 要求（强制）
+
+- PR 必须对应 `docs/current/GATE_CHECKLIST.md` 的条目（写在 PR 描述里）。
+- 若修改了：契约（contracts）、DB（Flyway）、状态机、幂等键、恢复流程 —— 必须同步更新 `docs/current/*`，并在对应 Gate 的 `SOURCES.md` 补齐依据（必要时补链接）。
+
+---
+
+## 6. 快速验证（通用）
+
+- `mvn -q -f backend/pom.xml test`
+- `docker compose up -d postgres`
+- `mvn -q -f backend/pom.xml -pl nq-app spring-boot:run`
+
+## 7. 常见禁止项（强制）
+
+- 禁止在 `nq-core/nq-ledger/nq-risk` 出现交易所方言分支（venue if/else）。
+- 禁止绕过 `OrderCommandService` 直接改 orders 状态。
+- 禁止 adapter 直接写 ledger/positions（adapter 只负责对接与映射，不负责记账与投影）。
+- 禁止为了“先跑通”而删掉审计/幂等/状态机/事实链：这些是 NexusQuant 的底座，不是可选项。
 
 ## MCP 优先策略（IDEA MCP / idea-mcp）
 
@@ -184,49 +195,3 @@
 1. 先 `get_run_configurations` 确认可用目标
 2. 再 `execute_run_configuration`（必要时设置合理超时）
 3. 回复中汇报：**退出状态** + **关键输出摘要**（必要时附报错关键信息）
-
-## Appendix：原英文版本（保留参考）
-
-# Repository Guidelines
-
-## Project Structure & Module Organization
-This repository is currently documentation-first. Use `docs/` as the source of truth:
-- `docs/ARCHITECTURE.md`: target mono-repo layout and module boundaries
-- `docs/CONTRACTS.md`: HTTP/event contracts and trace rules
-- `docs/DECISIONS.md`: ADRs that must be updated before major design changes
-- `docs/GATE_A_CHECKLIST.md`: Gate A acceptance checklist
-
-Planned structure (per architecture baseline): `backend/` (Java services), `research/` (Python research), `frontend/`, `infra/`, and `docs/`.
-
-## Build, Test, and Development Commands
-Use PowerShell from repo root:
-- `Get-ChildItem docs` - quick documentation sanity check.
-- `cd backend; mvn -q test` - run backend unit tests (after backend scaffold exists).
-- `docker compose up -d postgres` - start local PostgreSQL for Flyway migration testing.
-- `docker compose down` - stop local infrastructure.
-
-If a command is not available yet, align the missing files first with `docs/ARCHITECTURE.md` and `docs/GATE_A_CHECKLIST.md`.
-
-## Coding Style & Naming Conventions
-- Java package base: `com.guidinglight.nexusquant`.
-- Module naming: `nq-*` (for example, `nq-core`, `nq-auth`, `nq-gateway`).
-- Use `BigDecimal` for price/qty/amount and `Instant` (UTC) for timestamps.
-- Prefer 4-space indentation, UTF-8, and descriptive names (`OrderStateMachine`, `RecoveryService`).
-- Keep changes minimal and scoped; avoid cross-module refactors in a single commit.
-
-## Testing Guidelines
-- Add unit tests for every core logic change, especially state machine, idempotency, ledger balance, and recovery.
-- Use regression tests for bug fixes.
-- Test naming: `*Test` for unit tests; method names should describe behavior (for example, `shouldRejectInvalidTransition`).
-- Main verification command: `cd backend; mvn -q test`.
-
-## Commit & Pull Request Guidelines
-Current history is bootstrap-level (`init`), so contributors should standardize now:
-- Use Conventional Commits: `feat(scope): ...`, `fix(scope): ...`, `test(scope): ...`, `docs(scope): ...`.
-- Keep one concern per commit (feature vs formatting vs docs).
-- PRs should include: summary, changed paths, linked issue/ADR, and test evidence (command + result).
-
-## Security & Configuration Tips
-- Never commit secrets (tokens, keys, passwords).
-- Use environment variables for credentials and local overrides.
-- Preserve traceability: keep `X-Trace-Id` propagation and audit-related changes aligned with `docs/CONTRACTS.md`.
