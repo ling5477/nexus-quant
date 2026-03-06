@@ -15,6 +15,7 @@ public enum OrderStatus {
     PARTIALLY_FILLED,
     FILLED,
     CANCEL_REQUESTED,
+    CANCEL_REJECTED,
     CANCELLED,
     REJECTED,
     FAILED

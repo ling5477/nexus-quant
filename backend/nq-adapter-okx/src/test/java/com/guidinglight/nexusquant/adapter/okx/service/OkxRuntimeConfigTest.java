@@ -25,6 +25,7 @@ class OkxRuntimeConfigTest {
 
         assertEquals("dome", config.envName());
         assertEquals("https://www.okx.com", config.baseUrl());
+        assertEquals("wss://wspap.okx.com:8443/ws/v5/private", config.wsPrivateUrl());
         assertEquals("abcd1234wxyz", config.credentials().apiKey());
         assertTrue(config.simulatedTrading());
         assertTrue(config.fingerprint().contains("apiKey=abcd...wxyz"));

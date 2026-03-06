@@ -7,6 +7,9 @@ import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
 import com.guidinglight.nexusquant.api.service.NoopTradingQueryFacade;
 import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
 import com.guidinglight.nexusquant.auth.service.AuthService;
@@ -112,6 +115,28 @@ public class ModuleWiringConfiguration {
     @Bean
     public BinanceExchangeAdapter binanceTradingAdapter() {
         return new BinanceExchangeAdapter();
+    }
+
+    /**
+     * 提供 OKX 私有 WS 治理客户端（PR-W1）。
+     * <p>
+     * Why:
+     * 该 bean 只负责连接治理，不做业务落库；是否启动由 `nq.okx.ws.enabled` 控制的 local smoke runner 决定。
+     */
+    @Bean
+    public OkxWsClient okxWsClient() {
+        return new OkxWsClient();
+    }
+
+    /**
+     * 提供 OKX WS 消息映射器（PR-W2）。
+     * <p>
+     * Why:
+     * mapper 只负责把 WS 原始消息转为标准 EventEnvelope，不直接依赖数据库或业务服务。
+     */
+    @Bean
+    public OkxWsEventMapper okxWsEventMapper() {
+        return new OkxWsEventMapper();
     }
 
     /**

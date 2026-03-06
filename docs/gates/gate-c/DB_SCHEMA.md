@@ -30,7 +30,7 @@
 - 必填：exchange（OKX/BINANCE/PAPER）
 - 去重：UNIQUE(exchange, exchange_trade_id) 已存在
 - fee/fee_currency：GateC 要写入（交易所返回则必须落库）
-- external_order_id：若现有 trades 表有对应字段则必须写入；若没有，可通过 orders 外键关系串联
+- external_order_id：GateC 增量已新增，fills 入库时必须写入（用于订单维度回溯）
 
 ### 2.3 ledger_entries / ledger_events
 - ledger_entries.idempotency_key 必须用于幂等（GateB 已具备）
@@ -66,5 +66,8 @@
 
 ---
 
-## 5. 建议 DDL（可选，但推荐在 GateC-0 一并做）
-> 若你希望更强的完整性，可以在 trades 增加 (venue, external_order_id) 索引用于回溯；但不作为 GateC 硬门禁。
+## 5. 建议 DDL（已落地）
+- 已在 `V4__gate_c_trade_external_order_id_index.sql` 落地：
+  - `trades.external_order_id`（varchar）
+  - `idx_trades_exchange_external_order_id (exchange, external_order_id)` 条件索引（`external_order_id IS NOT NULL`）
+- 说明：`trades` 表当前字段为 `exchange`，因此索引使用 `(exchange, external_order_id)` 与文档建议 `(venue, external_order_id)` 语义等价。

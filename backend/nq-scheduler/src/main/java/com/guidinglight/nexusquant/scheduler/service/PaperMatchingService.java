@@ -227,6 +227,7 @@ public class PaperMatchingService {
                 order.accountId(),
                 order.symbol(),
                 order.venue(),
+                order.externalOrderId(),
                 null,
                 price,
                 qty,

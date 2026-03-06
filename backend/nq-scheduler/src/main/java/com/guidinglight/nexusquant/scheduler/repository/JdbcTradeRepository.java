@@ -34,7 +34,7 @@ public class JdbcTradeRepository implements TradeRepository {
     public Optional<PaperTradeRecord> findByOrderId(String orderId) {
         List<PaperTradeRecord> results = jdbcTemplate.query(
                 """
-                        SELECT trade_id, order_id, account_id, symbol, exchange, exchange_trade_id, price, qty, fee,
+                        SELECT trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id, price, qty, fee,
                                fee_currency, trace_id, ts
                         FROM trades
                         WHERE order_id = ?
@@ -54,7 +54,7 @@ public class JdbcTradeRepository implements TradeRepository {
     public Optional<PaperTradeRecord> findByExchangeAndExchangeTradeId(String exchange, String exchangeTradeId) {
         List<PaperTradeRecord> results = jdbcTemplate.query(
                 """
-                        SELECT trade_id, order_id, account_id, symbol, exchange, exchange_trade_id, price, qty, fee,
+                        SELECT trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id, price, qty, fee,
                                fee_currency, trace_id, ts
                         FROM trades
                         WHERE exchange = ? AND exchange_trade_id = ?
@@ -76,15 +76,16 @@ public class JdbcTradeRepository implements TradeRepository {
         jdbcTemplate.update(
                 """
                         INSERT INTO trades (
-                            trade_id, order_id, account_id, symbol, exchange, exchange_trade_id, price, qty,
-                            fee, fee_currency, trace_id, ts
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id,
+                            price, qty, fee, fee_currency, trace_id, ts
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                 trade.tradeId(),
                 trade.orderId(),
                 trade.accountId(),
                 trade.symbol(),
                 trade.exchange(),
+                trade.externalOrderId(),
                 trade.exchangeTradeId(),
                 trade.price(),
                 trade.qty(),
@@ -102,6 +103,7 @@ public class JdbcTradeRepository implements TradeRepository {
                 resultSet.getLong("account_id"),
                 resultSet.getString("symbol"),
                 resultSet.getString("exchange"),
+                resultSet.getString("external_order_id"),
                 resultSet.getString("exchange_trade_id"),
                 resultSet.getBigDecimal("price"),
                 resultSet.getBigDecimal("qty"),

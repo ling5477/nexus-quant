@@ -91,7 +91,13 @@ public class OkxRestReconcileService {
     public int reconcileOnce(int limit) {
         int newTrades = 0;
         for (OrderRecord order : orderCommandService.findOrdersByStatuses(
-                List.of(OrderStatus.SENT, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED, OrderStatus.CANCEL_REQUESTED),
+                List.of(
+                        OrderStatus.SENT,
+                        OrderStatus.ACCEPTED,
+                        OrderStatus.PARTIALLY_FILLED,
+                        OrderStatus.CANCEL_REQUESTED,
+                        OrderStatus.CANCEL_REJECTED
+                ),
                 limit
         )) {
             if (!"OKX".equals(order.venue())) {
@@ -151,6 +157,27 @@ public class OkxRestReconcileService {
         if (isTerminalStatus(currentStatus)) {
             return;
         }
+        // Why:
+        // 旧链路里 cancel reject 可能把订单停留在 CANCEL_REQUESTED。
+        // 当交易所事实回报为“仍存活/已成交/已拒绝”时，先显式落到 CANCEL_REJECTED，再继续对齐，
+        // 避免直接 CANCEL_REQUESTED -> ACCEPTED/PARTIALLY_FILLED 的非法迁移。
+        if (currentStatus == OrderStatus.CANCEL_REQUESTED && targetStatus != OrderStatus.CANCELLED) {
+            try {
+                orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCEL_REJECTED, "RECONCILE_CANCEL_REJECTED", traceId);
+            } catch (IllegalStateException ex) {
+                OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
+                        .map(OrderRecord::status)
+                        .orElse(currentStatus);
+                if (latestStatus == targetStatus || isTerminalStatus(latestStatus)) {
+                    return;
+                }
+                throw ex;
+            }
+            if (targetStatus != OrderStatus.CANCEL_REJECTED) {
+                orderCommandService.transitionOrder(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+            }
+            return;
+        }
         if (targetStatus == OrderStatus.PARTIALLY_FILLED && currentStatus == OrderStatus.SENT) {
             orderCommandService.transitionOrder(order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_CONFIRM_ACCEPTED", traceId);
             orderCommandService.transitionOrder(order.orderId(), OrderStatus.PARTIALLY_FILLED, "RECONCILE_PARTIAL_FILL", traceId);
@@ -203,6 +230,7 @@ public class OkxRestReconcileService {
                     order.accountId(),
                     fill.symbol(),
                     "OKX",
+                    fill.externalOrderId(),
                     fill.exchangeTradeId(),
                     fill.price(),
                     fill.qty(),

@@ -28,3 +28,13 @@ nq:
     verify:
       # Why: GateC 验收入口默认关闭，避免生产环境误暴露。
       enabled: ${NQ_GATEC_VERIFY_ENABLED:false}
+  okx:
+    ws:
+      # Why: WS 是 GateC-1.1 的可选加速层，默认关闭，避免非预期连私有 WS。
+      enabled: ${NQ_OKX_WS_ENABLED:false}
+      smoke:
+        force-reconnect-ms: ${NQ_OKX_WS_SMOKE_FORCE_RECONNECT_MS:0}
+      degrade:
+        reconcile-limit: ${NQ_OKX_WS_DEGRADE_RECONCILE_LIMIT:100}
+        cooldown-ms: ${NQ_OKX_WS_DEGRADE_COOLDOWN_MS:15000}
+        subscribe-fail-threshold: ${NQ_OKX_WS_DEGRADE_SUBSCRIBE_FAIL_THRESHOLD:3}

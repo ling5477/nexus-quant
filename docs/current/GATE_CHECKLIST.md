@@ -109,11 +109,13 @@
 
 目标：WS 做实时加速，但不改变事实来源。
 
-- [ ] orders/account/positions（或 balance_and_position）订阅成功
-- [ ] WS 回报映射为标准事件写入 event_store（order.event/trade.event/position.event）
-- [ ] WS 断线可自动重连并重订阅
-- [ ] WS 异常必须降级触发一次 REST reconcile（限定窗口/非终态订单集合）
-- [ ] WS + REST 同时开启不产生重复 trades/ledger（幂等兜底有效）
+- [x] PR-W1 已完成连接治理层（连接/login/订阅管理/心跳/重连/指标），且不落业务表/不推进状态机
+- [x] orders/account/positions（或 balance_and_position）订阅成功
+- [x] WS 回报映射为标准事件写入 event_store（order.event/audit.event/position.event）
+- [x] WS 断线可自动重连并重订阅
+- [x] WS 异常必须降级触发一次 REST reconcile（限定窗口/非终态订单集合）
+- [x] WS + REST 同时开启不产生重复 trades/ledger（幂等兜底有效）
+- [x] CancelReject 不再停留 `CANCEL_REQUESTED`：状态推进到 `CANCEL_REJECTED`，并可由 REST reconcile 对齐回实时事实
 
 ---
 

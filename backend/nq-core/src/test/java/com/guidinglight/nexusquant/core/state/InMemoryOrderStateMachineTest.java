@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * InMemoryOrderStateMachineTest 覆盖 Gate B 状态机约束。
- *
+ * <p>
  * Why:
  * 非法迁移是闭环里最常见的副作用放大源，必须用回归测试固定“允许/禁止”边界。
  */
@@ -27,6 +27,16 @@ class InMemoryOrderStateMachineTest {
     }
 
     /**
+     * 验证撤单被拒绝后可继续通过状态机推进。
+     */
+    @Test
+    void shouldAllowCancelRejectedRecoveryTransitions() {
+        assertEquals(OrderStatus.CANCEL_REJECTED, stateMachine.transition(OrderStatus.CANCEL_REQUESTED, OrderStatus.CANCEL_REJECTED));
+        assertEquals(OrderStatus.ACCEPTED, stateMachine.transition(OrderStatus.CANCEL_REJECTED, OrderStatus.ACCEPTED));
+        assertEquals(OrderStatus.CANCEL_REQUESTED, stateMachine.transition(OrderStatus.CANCEL_REJECTED, OrderStatus.CANCEL_REQUESTED));
+    }
+
+    /**
      * 验证至少 5 条非法迁移会被拒绝。
      */
     @Test
@@ -37,5 +47,6 @@ class InMemoryOrderStateMachineTest {
         assertThrows(IllegalStateException.class, () -> stateMachine.transition(OrderStatus.FILLED, OrderStatus.NEW));
         assertThrows(IllegalStateException.class, () -> stateMachine.transition(OrderStatus.CANCELLED, OrderStatus.FILLED));
         assertThrows(IllegalStateException.class, () -> stateMachine.transition(OrderStatus.NEW, OrderStatus.CANCELLED));
+        assertThrows(IllegalStateException.class, () -> stateMachine.transition(OrderStatus.CANCEL_REQUESTED, OrderStatus.REJECTED));
     }
 }

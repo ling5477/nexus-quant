@@ -36,3 +36,23 @@
 ## ADR-C09：WS 推送仅加速，不作为最终事实源
 - Decision：WS 所有推送必须可被 REST reconcile 覆盖校正；异常时必须降级 REST。
 - Consequences：断线/乱序/漏推不再是线上 P0。
+
+## ADR-C10：WS 仅加速 Ack/CancelAck/Reject，fills 仍 REST-first
+- Decision：
+  1) WS 只允许加速 `OrderAck/CancelAck/OrderReject/CancelReject` 的状态推进（必须经过 `OrderCommandService` 状态机入口）。
+  2) WS 禁止直接写 `trades/ledger_entries`，成交事实继续以 REST `fills` 为准。
+  3) WS 断线/重连失败/订阅失败达到阈值时，触发一次受限范围 REST reconcile（仅非终态订单集合，带 cooldown 去抖）。
+- Consequences：
+  1) 低延迟确认与稳态一致性同时成立。
+  2) WS 重复/晚到消息不会导致状态回退、重复成交或重复记账。
+  3) 断线窗口内仍可通过 REST 兜底恢复。
+
+## ADR-C11：引入 `CANCEL_REJECTED` 解决撤单拒绝的状态悬挂
+- Decision：
+  1) 订单状态机新增 `CANCEL_REJECTED`，并定义 `CANCEL_REQUESTED -> CANCEL_REJECTED` 合法迁移。
+  2) `CancelReject` 发生后，禁止订单停留在 `CANCEL_REQUESTED`；必须推进到 `CANCEL_REJECTED`。
+  3) REST reconcile 在历史脏状态（`CANCEL_REQUESTED` + 交易所返回存活）下，先过渡 `CANCEL_REJECTED` 再对齐目标状态。
+- Consequences：
+  1) 解决撤单拒绝后状态机无法继续推进的问题。
+  2) 消除 `CANCEL_REQUESTED -> ACCEPTED` 非法迁移异常，启动恢复与轮询对账更稳定。
+  3) 保持“状态单调 + 事实可校正”，不引入 venue 分支或旁路写库。

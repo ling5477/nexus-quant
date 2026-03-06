@@ -446,15 +446,21 @@ public class OrderCommandService {
         String rejectReason = error == null || error.message() == null || error.message().isBlank()
                 ? "adapter rejected cancel"
                 : error.message();
+        OrderRecord cancelRejectedOrder = transitionOrder(
+                cancelRequestedOrder,
+                OrderStatus.CANCEL_REJECTED,
+                rejectCode,
+                request.traceId()
+        );
         publishEvent(
                 TopicNames.ORDER_EVENT_V1,
-                cancelRequestedOrder.clientOrderId(),
-                cancelRequestedOrder.traceId(),
+                cancelRejectedOrder.clientOrderId(),
+                cancelRejectedOrder.traceId(),
                 new CancelReject(
-                        cancelRequestedOrder.accountId(),
-                        cancelRequestedOrder.venue(),
-                        cancelRequestedOrder.clientOrderId(),
-                        cancelRequestedOrder.externalOrderId(),
+                        cancelRejectedOrder.accountId(),
+                        cancelRejectedOrder.venue(),
+                        cancelRejectedOrder.clientOrderId(),
+                        cancelRejectedOrder.externalOrderId(),
                         rejectCode,
                         rejectReason,
                         ackTime
@@ -463,16 +469,17 @@ public class OrderCommandService {
         auditLogRepository.append(
                 "ORDER",
                 "ORDER_CANCEL_REJECTED",
-                cancelRequestedOrder.orderId(),
+                cancelRejectedOrder.orderId(),
                 request.traceId(),
                 detail(
-                        "order_id", cancelRequestedOrder.orderId(),
+                        "order_id", cancelRejectedOrder.orderId(),
+                        "status", cancelRejectedOrder.status().name(),
                         "reject_code", rejectCode,
                         "reject_reason", rejectReason,
-                        "venue", cancelRequestedOrder.venue()
+                        "venue", cancelRejectedOrder.venue()
                 )
         );
-        return new CancelOrderResult(cancelRequestedOrder.orderId(), cancelRequestedOrder.status(), false);
+        return new CancelOrderResult(cancelRejectedOrder.orderId(), cancelRejectedOrder.status(), false);
     }
 
     /**
@@ -521,9 +528,9 @@ public class OrderCommandService {
      * GateC-1 的 query-confirm 与恢复流程可能在初始回执后才确认 ordId，
      * 这里统一通过 core 落库，避免 scheduler 直接写 orders 破坏审计口径。
      *
-     * @param orderId 系统订单 ID
+     * @param orderId         系统订单 ID
      * @param externalOrderId 外部订单号
-     * @param traceId 链路追踪 ID
+     * @param traceId         链路追踪 ID
      * @return 更新后的订单快照
      */
     public OrderRecord linkExternalOrderId(String orderId, String externalOrderId, String traceId) {

@@ -15,24 +15,37 @@ import java.util.Map;
  *
  * @param envName           当前环境名，仅允许 dome/real
  * @param baseUrl           当前环境的 OKX base URL
+ * @param wsPrivateUrl      当前环境的 OKX 私有 WS URL
  * @param timeout           当前环境统一超时
  * @param instrumentRefresh instruments 刷新间隔
+ * @param wsReconnectBase   WS 重连基础退避时长
+ * @param wsReconnectMax    WS 重连最大退避时长
+ * @param wsHeartbeat       WS 心跳周期
  * @param credentials       当前环境凭证
  * @param simulatedTrading  是否启用 OKX 模拟盘请求头
  */
 public record OkxRuntimeConfig(
         String envName,
         String baseUrl,
+        String wsPrivateUrl,
         Duration timeout,
         Duration instrumentRefresh,
+        Duration wsReconnectBase,
+        Duration wsReconnectMax,
+        Duration wsHeartbeat,
         OkxApiCredentials credentials,
         boolean simulatedTrading
 ) {
 
     private static final String DEFAULT_ENV = "dome";
     private static final String DEFAULT_BASE_URL = "https://www.okx.com";
+    private static final String DEFAULT_DOME_WS_PRIVATE_URL = "wss://wspap.okx.com:8443/ws/v5/private";
+    private static final String DEFAULT_REAL_WS_PRIVATE_URL = "wss://ws.okx.com:8443/ws/v5/private";
     private static final long DEFAULT_TIMEOUT_MS = 5_000L;
     private static final long DEFAULT_INSTRUMENT_REFRESH_MS = 300_000L;
+    private static final long DEFAULT_WS_RECONNECT_BASE_DELAY_MS = 1_000L;
+    private static final long DEFAULT_WS_RECONNECT_MAX_DELAY_MS = 30_000L;
+    private static final long DEFAULT_WS_HEARTBEAT_INTERVAL_MS = 20_000L;
 
     /**
      * 从系统环境变量解析运行时配置。
@@ -53,8 +66,25 @@ public record OkxRuntimeConfig(
         boolean simulatedTrading = "dome".equals(envName);
         String prefix = simulatedTrading ? "NQ_OKX_DOME_" : "NQ_OKX_REAL_";
         String baseUrl = read(env, prefix + "BASE_URL", DEFAULT_BASE_URL);
+        String defaultWsUrl = simulatedTrading ? DEFAULT_DOME_WS_PRIVATE_URL : DEFAULT_REAL_WS_PRIVATE_URL;
+        String wsPrivateUrl = read(env, prefix + "WS_URL", defaultWsUrl);
         long timeoutMs = readLong(env, "NQ_OKX_TIMEOUT_MS", readLong(env, "NQ_OKX_HTTP_TIMEOUT_MS", DEFAULT_TIMEOUT_MS));
         long refreshMs = readLong(env, "NQ_OKX_INSTRUMENT_REFRESH_MS", DEFAULT_INSTRUMENT_REFRESH_MS);
+        long wsReconnectBaseDelayMs = readLong(
+                env,
+                "NQ_OKX_WS_RECONNECT_BASE_DELAY_MS",
+                DEFAULT_WS_RECONNECT_BASE_DELAY_MS
+        );
+        long wsReconnectMaxDelayMs = readLong(
+                env,
+                "NQ_OKX_WS_RECONNECT_MAX_DELAY_MS",
+                DEFAULT_WS_RECONNECT_MAX_DELAY_MS
+        );
+        long wsHeartbeatIntervalMs = readLong(
+                env,
+                "NQ_OKX_WS_HEARTBEAT_INTERVAL_MS",
+                DEFAULT_WS_HEARTBEAT_INTERVAL_MS
+        );
         OkxApiCredentials credentials = new OkxApiCredentials(
                 read(env, prefix + "API_KEY", ""),
                 read(env, prefix + "API_SECRET", ""),
@@ -63,8 +93,12 @@ public record OkxRuntimeConfig(
         return new OkxRuntimeConfig(
                 envName,
                 baseUrl,
+                wsPrivateUrl,
                 Duration.ofMillis(timeoutMs),
                 Duration.ofMillis(refreshMs),
+                Duration.ofMillis(wsReconnectBaseDelayMs),
+                Duration.ofMillis(wsReconnectMaxDelayMs),
+                Duration.ofMillis(wsHeartbeatIntervalMs),
                 credentials,
                 simulatedTrading
         );

@@ -11,6 +11,7 @@ import java.time.Instant;
  * @param accountId 账户 ID
  * @param symbol 交易对
  * @param exchange 成交来源，Gate B 固定为 PAPER
+ * @param externalOrderId 外部订单号（OKX ordId / Binance orderId），用于按订单维度回溯成交
  * @param exchangeTradeId 交易所成交号，paper 可空
  * @param price 成交价格
  * @param qty 成交数量
@@ -25,6 +26,7 @@ public record PaperTradeRecord(
         Long accountId,
         String symbol,
         String exchange,
+        String externalOrderId,
         String exchangeTradeId,
         BigDecimal price,
         BigDecimal qty,

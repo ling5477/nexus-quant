@@ -15,4 +15,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+*.pid
+*.txt
+*.cmd
+
 .env

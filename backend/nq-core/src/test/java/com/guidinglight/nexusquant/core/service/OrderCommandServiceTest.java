@@ -141,6 +141,67 @@ class OrderCommandServiceTest {
         assertTrue(auditLogRepository.containsAction("ORDER_CANCELLED"));
     }
 
+    /**
+     * 验证撤单被 adapter 拒绝时，订单状态会从 CANCEL_REQUESTED 推进到 CANCEL_REJECTED。
+     */
+    @Test
+    void shouldMarkOrderAsCancelRejectedWhenAdapterRejectsCancel() {
+        InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
+        RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
+        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
+        tradingAdapter.setCancelAccepted(false);
+        tradingAdapter.setCancelReject("CANCEL_REJECTED_BY_TEST", "reject by test");
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+
+        PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-204"));
+        CancelOrderResult cancelOrderResult = service.cancelOrder(new CancelOrderRequest(
+                placeOrderResult.orderId(),
+                null,
+                null,
+                "USER_REQUESTED",
+                "trc-cancel-204"
+        ));
+
+        assertEquals(OrderStatus.CANCEL_REJECTED, cancelOrderResult.status());
+        assertFalse(cancelOrderResult.idempotentHit());
+        assertEquals(1, tradingAdapter.cancelInvocationCount());
+        assertTrue(auditLogRepository.containsAction("ORDER_CANCEL_REJECTED"));
+    }
+
+    /**
+     * 验证 CANCEL_REJECTED 状态可以再次发起撤单并最终推进到 CANCELLED。
+     */
+    @Test
+    void shouldAllowRetryCancelAfterCancelRejected() {
+        InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
+        RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
+        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
+        tradingAdapter.setCancelAccepted(false);
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+
+        PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-205"));
+        CancelOrderResult firstCancel = service.cancelOrder(new CancelOrderRequest(
+                placeOrderResult.orderId(),
+                null,
+                null,
+                "USER_REQUESTED",
+                "trc-cancel-205-1"
+        ));
+        assertEquals(OrderStatus.CANCEL_REJECTED, firstCancel.status());
+
+        tradingAdapter.setCancelAccepted(true);
+        CancelOrderResult secondCancel = service.cancelOrder(new CancelOrderRequest(
+                placeOrderResult.orderId(),
+                null,
+                null,
+                "USER_REQUESTED",
+                "trc-cancel-205-2"
+        ));
+
+        assertEquals(OrderStatus.CANCELLED, secondCancel.status());
+        assertEquals(2, tradingAdapter.cancelInvocationCount());
+    }
+
     private OrderCommandService createService(
             InMemoryOrderRepository orderRepository,
             RecordingAuditLogRepository auditLogRepository,
@@ -247,6 +308,9 @@ class OrderCommandServiceTest {
 
         private int placeInvocationCount;
         private int cancelInvocationCount;
+        private boolean cancelAccepted = true;
+        private String cancelRejectCode = "CANCEL_REJECTED_BY_TEST";
+        private String cancelRejectReason = "cancel rejected by test adapter";
 
         @Override
         public String venue() {
@@ -262,7 +326,21 @@ class OrderCommandServiceTest {
         @Override
         public AdapterCancelAck cancelOrder(AdapterCancelRequest request) {
             cancelInvocationCount++;
-            return new AdapterCancelAck(true, venue(), request.externalOrderId(), null, Instant.now(), request.traceId());
+            if (cancelAccepted) {
+                return new AdapterCancelAck(true, venue(), request.externalOrderId(), null, Instant.now(), request.traceId());
+            }
+            return new AdapterCancelAck(
+                    false,
+                    venue(),
+                    request.externalOrderId(),
+                    new com.guidinglight.nexusquant.adapter.api.model.AdapterError(
+                            cancelRejectCode,
+                            cancelRejectReason,
+                            false
+                    ),
+                    Instant.now(),
+                    request.traceId()
+            );
         }
 
         @Override
@@ -289,6 +367,15 @@ class OrderCommandServiceTest {
 
         int cancelInvocationCount() {
             return cancelInvocationCount;
+        }
+
+        void setCancelAccepted(boolean cancelAccepted) {
+            this.cancelAccepted = cancelAccepted;
+        }
+
+        void setCancelReject(String code, String reason) {
+            this.cancelRejectCode = code;
+            this.cancelRejectReason = reason;
         }
     }
 

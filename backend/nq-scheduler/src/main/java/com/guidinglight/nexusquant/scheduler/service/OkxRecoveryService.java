@@ -46,7 +46,8 @@ public class OkxRecoveryService implements RecoveryService {
             OrderStatus.SENT,
             OrderStatus.ACCEPTED,
             OrderStatus.PARTIALLY_FILLED,
-            OrderStatus.CANCEL_REQUESTED
+            OrderStatus.CANCEL_REQUESTED,
+            OrderStatus.CANCEL_REJECTED
     );
 
     private final OrderCommandService orderCommandService;
@@ -110,7 +111,8 @@ public class OkxRecoveryService implements RecoveryService {
                         OrderStatus.SENT,
                         OrderStatus.ACCEPTED,
                         OrderStatus.PARTIALLY_FILLED,
-                        OrderStatus.CANCEL_REQUESTED
+                        OrderStatus.CANCEL_REQUESTED,
+                        OrderStatus.CANCEL_REJECTED
                 ),
                 DEFAULT_LIMIT
         ).stream().filter(order -> "OKX".equals(order.venue())).toList();

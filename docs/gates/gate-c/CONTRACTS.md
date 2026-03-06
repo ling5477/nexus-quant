@@ -124,6 +124,8 @@ payload 最小字段：
 - reject_code
 - reject_reason
 - ts
+- 内部状态语义：收到 CancelReject 后，订单从 `CANCEL_REQUESTED` 推进到 `CANCEL_REJECTED`；
+  后续由 REST reconcile 按交易所事实继续对齐到 `ACCEPTED/PARTIALLY_FILLED/FILLED/CANCELLED/REJECTED`
 
 ### 2.3 trade.event.v1
 #### TradeExecuted（必须）

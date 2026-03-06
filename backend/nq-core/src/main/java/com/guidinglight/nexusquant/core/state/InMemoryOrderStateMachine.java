@@ -50,7 +50,16 @@ public class InMemoryOrderStateMachine implements OrderStateMachine {
                 OrderStatus.CANCEL_REQUESTED,
                 OrderStatus.FAILED
         );
-        register(OrderStatus.CANCEL_REQUESTED, OrderStatus.CANCELLED);
+        register(OrderStatus.CANCEL_REQUESTED, OrderStatus.CANCELLED, OrderStatus.CANCEL_REJECTED);
+        register(
+                OrderStatus.CANCEL_REJECTED,
+                OrderStatus.CANCEL_REQUESTED,
+                OrderStatus.ACCEPTED,
+                OrderStatus.PARTIALLY_FILLED,
+                OrderStatus.FILLED,
+                OrderStatus.REJECTED,
+                OrderStatus.FAILED
+        );
     }
 
     @Override

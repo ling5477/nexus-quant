@@ -126,7 +126,8 @@ place/cancel 的外部结果必须映射为内部事件，并写入 event_store�
 注意：
 - WS 断线/重连/乱序/重复必须处理；
 - **必须保留 REST reconcile**（orders-pending + fills）兜底；
-- 启动恢复先用 orders-pending 获取 live orders，再用 WS 增量跟踪。
+- 启动恢复先用 orders-pending 获取 live orders，再用 WS 增量跟踪；
+- CancelReject 的内部语义固定为 `CANCEL_REQUESTED -> CANCEL_REJECTED`，禁止长期停留在 `CANCEL_REQUESTED`。
 
 ---
 

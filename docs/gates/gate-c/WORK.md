@@ -2,7 +2,7 @@
 
 # Gate C WORK 记录
 
-> 最后更新：2026-03-04
+> 最后更新：2026-03-06
 > 范围：Gate C（CEX 接入：OKX -> Binance）
 
 ---
@@ -31,7 +31,9 @@ PR-C3：OKX REST place/cancel + 状态机接入（Ack/Reject 事件）+ event_st
 PR-C4：OKX 同步器（REST 轮询）：query order + pull fills -> trades 去重 -> 状态推进
 PR-C5：复用 ledger/positions + 运行态验收与重启恢复脚本
 PR-C6：GateC-1 收尾硬化（验收入口双门禁 + 验收脚本固化 + 重启窗口复现实验）
-PR-C7（可选）：OKX 私有 WS + reconcile 兜底（orders/account/positions 或 balance_and_position）
+PR-W1（GateC-1.1）：WS 基建与连接治理（连接/login/订阅管理/心跳/重连，不落业务）
+PR-W2（GateC-1.1）：WS 事件映射 + event_store 入链（不落业务表）
+PR-W3（GateC-1.1）：WS-REST 协同与降级策略（WS 加速，REST 永远兜底）
 PR-C8~：Binance（GateC-2）按同样路径复用接入
 
 ---
@@ -93,12 +95,12 @@ PR-C8~：Binance（GateC-2）按同样路径复用接入
       `pwsh -File scripts/gatec_okx_dome_verify.ps1`
       （从本地 `.env` 只读 `NQ_OKX_ENV/NQ_OKX_DOME_*`，不打印 secret/passphrase）
     - 重启窗口推进到终态复现实验（固化步骤）：
-      1) 执行脚本 UseCase-C 下单得到非终态 LIMIT（记录 `trace_id/clientOrderId/orderId`）
-      2) 按脚本提示重启 `nq-app`，继续执行 `recovery/runOnce` 与 `reconcile/runOnce`
-      3) 观察点：
-         - `orders`：状态从非终态推进到 `CANCELLED/FILLED/REJECTED` 之一
-         - `trades/ledger_entries`：不出现重复增长（幂等去重有效）
-         - `event_store`：追加恢复链路证据（recovery/reconcile 相关事件）
+        1) 执行脚本 UseCase-C 下单得到非终态 LIMIT（记录 `trace_id/clientOrderId/orderId`）
+        2) 按脚本提示重启 `nq-app`，继续执行 `recovery/runOnce` 与 `reconcile/runOnce`
+        3) 观察点：
+            - `orders`：状态从非终态推进到 `CANCELLED/FILLED/REJECTED` 之一
+            - `trades/ledger_entries`：不出现重复增长（幂等去重有效）
+            - `event_store`：追加恢复链路证据（recovery/reconcile 相关事件）
 - PR-C7：已完成真实盘启动阻塞修复 + 复验通过（最小风险 UseCase-A）。
     - 改动范围：`nq-adapter-okx`（`OkxInstrumentsCache` 跳过 `preopen/缺精度` 条目，避免启动被单个脏 instrument 阻断）、
       `nq-adapter-okx` 单测（新增 preopen 缺字段回归用例）
@@ -109,11 +111,55 @@ PR-C8~：Binance（GateC-2）按同样路径复用接入
     - 改动范围：`scripts/gatec_okx_dome_verify.ps1`（`-AutoRestart` 稳定化，UseCase-C 补 `cancel` 收敛终态）、
       `nq-scheduler`（`OkxRestReconcileService` 并发状态对齐容错）、`docs/current/GATE_CHECKLIST.md`
     - 验收证据：
-      `pwsh -File scripts/gatec_okx_dome_verify.ps1 -AutoRestart -BaseUrl http://localhost:28081 -StartupTimeoutSec 300` 退出码 0；
+      `pwsh -File scripts/gatec_okx_dome_verify.ps1 -AutoRestart -BaseUrl http://localhost:28081 -StartupTimeoutSec 300`
+      退出码 0；
       最新三单：`g6a0305054548 -> CANCELLED`、`g6b0305054550 -> FILLED`、`g6c0305054552 -> CANCELLED`；
       `trade/ledger` 计数：`A=0/0`、`B=1/4`、`C=0/0`；`docs/current/GATE_CHECKLIST.md` 第 6 节四项已全部勾选
-- 今日收尾：已完成 GateC-0 ~ GateC-1（含 Demo 验收入口与 `dome` 真实验收）的代码与文档沉淀，当前工作区可提交。
-- 明日续做：已完成 整理 PR 拆分说明，补充“重启窗口内推进到终态”的自动化复现实验，并评估是否进入 GateC-1.1（WS）前置准备。
+- PR-W1：已完成 OKX 私有 WS 基建与连接治理（不落业务）。
+    - 改动范围：`nq-adapter-okx`（`OkxWsClient/OkxWsProtocol/OkxWsSubscription/OkxWsMetricsSnapshot`、`OkxRuntimeConfig`）、
+      `nq-app`（`OkxWsSmokeRunner`、`ModuleWiringConfiguration`、`application*.yml`）、`.env.example`、
+      `nq-adapter-okx` 单测（`OkxWsProtocolTest`、`OkxRuntimeConfigTest`）
+    - 验收证据：
+      `mvn -q -f backend/pom.xml test` 通过；
+      `pwsh -File scripts/gatec_okx_dome_verify.ps1 -AutoRestart -BaseUrl http://localhost:28081 -StartupTimeoutSec 300`
+      通过（退出码 0）；
+      `dome` 本地 smoke（`NQ_OKX_WS_ENABLED=true`）连续运行 5+ 分钟，日志包含
+      `okx_ws_connected`、`okx_ws_login_success`、`okx_ws_metrics(ws_connected=1,last_msg_age_ms<2000)`、
+      `okx_ws_reconnect_scheduled` + 重连后再次 `okx_ws_connected/okx_ws_login_success`
+- PR-W2：已完成 WS 事件映射 + event_store 入链（不落业务表）。
+    - 改动范围：`nq-adapter-okx`（`OkxWsEventMapper`）、`nq-app`（`OkxWsEventStoreBridge`）
+    - 映射范围：`orders -> order.event.v1`、`account -> audit.event.v1`、`balance_and_position -> position.event.v1`
+    - 验收证据：
+      `docker exec -i nexusquant-postgres psql -U postgres -d nexus_quant -c "select topic,count(*) from event_store where payload_json->>'source'='OKX_WS' group by topic"`
+      返回 `order.event.v1` 与 `audit.event.v1` 均有入链记录
+- PR-W3：已完成 WS-REST 协同与降级策略（WS 加速，REST 永远兜底）。
+    - 改动范围：
+      `nq-adapter-okx`（`OkxWsClient` 连接事件回调，`OkxWsConnectionListener`）、
+      `nq-scheduler`（`OkxWsOrderAccelerationService`、`OkxWsDegradeReconcileCoordinator` + 单测）、
+      `nq-app`（`OkxWsEventStoreBridge` 接入加速器）、`application*.yml`、`.env.example`
+    - 协同口径：
+      1) 仅加速 `OrderAck/CancelAck/OrderReject/CancelReject`，并通过 `OrderCommandService` 状态机入口推进
+      2) `fills/trades/ledger` 仍 REST-first，不新增 WS 直写路径
+      3) 断线/重连失败/订阅失败阈值触发一次受限 `reconcileOnce(limit)`，带 cooldown 去抖
+    - 验收证据：
+      `mvn -q -f backend/pom.xml test` 通过（新增 `OkxWsOrderAccelerationServiceTest`、`OkxWsDegradeReconcileCoordinatorTest`）；
+      `pwsh -File scripts/gatec_okx_dome_verify.ps1 -BaseUrl http://localhost:28081 -SkipRestartPause -StartupTimeoutSec 120` 通过（WS 开启）；
+      `pwsh -NoProfile -File scripts/gatec_okx_dome_verify.ps1 -BaseUrl http://localhost:28081 -SkipRestartPause -StartupTimeoutSec 120` 复验通过（exit code=0，2026-03-05 18:42）；
+      `UseCase-A` 最新单 `g6a0305101443 -> CANCELLED`，`trades=0`，`ledger_entries=0`；
+      `UseCase-B` 最新单 `g6b0305101445 -> FILLED`，`trades=1`，`ledger_entries=4`；
+      `audit_logs` 出现 `WS_RECONNECT_SCHEDULED/WS_RECONCILE_DEGRADE_COMPLETED/WS_RECONCILE_DEGRADE_SKIPPED_COOLDOWN`，
+      `event_store(topic=audit.event.v1)` 出现对应 `payload.action=WS_*` 证据链
+    - 评审修复（方案 A，`CANCEL_REJECTED`）：
+      1) 新增 `OrderStatus.CANCEL_REJECTED`，并补状态机迁移：`CANCEL_REQUESTED -> CANCEL_REJECTED`、`CANCEL_REJECTED -> ACCEPTED/PARTIALLY_FILLED/FILLED/CANCEL_REQUESTED`
+      2) `OrderCommandService.cancelOrder` 在 `CancelReject` 时推进到 `CANCEL_REJECTED`，不再停留 `CANCEL_REQUESTED`
+      3) `OkxRestReconcileService` 对历史 `CANCEL_REQUESTED` 脏状态先过渡到 `CANCEL_REJECTED` 再对齐，消除非法迁移
+      4) 新增回归测试：`OrderCommandServiceTest`、`OkxWsOrderAccelerationServiceTest`、`OkxRestReconcileServiceTest`
+- 今日收尾：
+  - 已完成 GateC-0 ~ GateC-1.1（含 WS 协同降级与 `CANCEL_REJECTED` 修复）的代码与文档沉淀，当前工作区可提交。
+  - 已完成 GateC-1.1 最终验收回填：`docs/current/GATE_CHECKLIST.md` 与 GateC 文档（`ARCHITECTURE/CONTRACTS/RECOVERY_RUNBOOK/DECISIONS/WORK`）已对齐并冻结。
+- PR-C9：已补齐 `DB_SCHEMA` 第 5 条建议 DDL（trades 订单维度回溯索引）。
+    - 改动范围：`nq-infra`（`V4__gate_c_trade_external_order_id_index.sql`）、`nq-scheduler`（`PaperTradeRecord` / `JdbcTradeRepository` / `OkxRestReconcileService` / `PaperMatchingService`）、`docs/gates/gate-c/DB_SCHEMA.md`
+    - 验收证据：`mvn -q -f backend/pom.xml test` 通过；`trades` 新增 `external_order_id` 并创建 `idx_trades_exchange_external_order_id (exchange, external_order_id)` 条件索引
 
 ---
 
@@ -148,29 +194,25 @@ PR-C8~：Binance（GateC-2）按同样路径复用接入
 - 自动模式命令（会自动 stop/start 本地 `28081` 服务并继续 recovery/reconcile）：
   `pwsh -File scripts/gatec_okx_dome_verify.ps1 -AutoRestart -BaseUrl http://localhost:28081`
 - 前置条件：
-  - `.env` 中 `NQ_OKX_ENV=dome`
-  - `NQ_GATEC_VERIFY_ENABLED=true`
-  - 本地验收入口可访问（`local + enabled=true`）
+    - `.env` 中 `NQ_OKX_ENV=dome`
+    - `NQ_GATEC_VERIFY_ENABLED=true`
+    - 本地验收入口可访问（`local + enabled=true`）
 - 观察点：
-  - UseCase-C 在重启后继续执行 `recovery/runOnce` 与 `reconcile/runOnce`
-  - 订单状态可由非终态推进到终态（`CANCELLED/FILLED/REJECTED`）
-  - `trades/ledger` 不出现重复副作用（依赖去重与幂等）
+    - UseCase-C 在重启后继续执行 `recovery/runOnce` 与 `reconcile/runOnce`
+    - 订单状态可由非终态推进到终态（`CANCELLED/FILLED/REJECTED`）
+    - `trades/ledger` 不出现重复副作用（依赖去重与幂等）
 
 ---
 
-## 8. 是否进入 GateC-1.1（WS）前置准备评估
+## 8. 是否进入 GateC-2（Binance）前置准备评估
 
-- 当前结论：`有条件进入，但建议先补齐文档对齐门禁后再开工`。
+- 当前结论：`GateC-1.1 已完成最终验收回填并冻结文档，可进入 GateC-2 前置准备`。
 - 已满足：
-  - GateC-1（REST-only）主链路已跑通，真实盘 UseCase-A 可复验
-  - 重启恢复门禁已通过，`OKX 51603` 容错不阻断启动
-  - 验收入口已做双门禁，生产零暴露
-- 仍待补齐（来自 `docs/current/GATE_CHECKLIST.md` 第 6 节）：
-  - `docs/gates/gate-c/ARCHITECTURE.md` 与实现一致性复核
-  - `docs/gates/gate-c/CONTRACTS.md` 与 DTO 字段一致性复核
-  - `docs/gates/gate-c/DB_SCHEMA.md` 与 Flyway 一致性复核
-  - `docs/gates/gate-c/RECOVERY_RUNBOOK.md` 与当前恢复行为一致性复核
-- 建议准入门槛（满足后进入 WS）：
-  - 上述 4 项文档对齐全部勾选
-  - 真实盘最小风险用例连续 2 次通过（`LIMIT -> Cancel`）
-  - 自动化 UseCase-C（`-AutoRestart`）至少 1 次通过并留痕
+    - GateC-1（REST-only）主链路稳定，真实盘最小风险 `LIMIT -> Cancel` 可复验
+    - GateC-1.1（WS）已完成连接治理、事件入链、协同降级三段实现
+    - `docs/current/GATE_CHECKLIST.md` 第 3 节（GateC-1.1）已全部勾选
+    - WS+REST 并行下最新 `UseCase-A/B` 计数符合“不重复成交/不重复记账/无状态回退”
+- 进入 GateC-2 前建议门槛：
+    - `dome` 自动化脚本连续 2 次通过（含 `UseCase-C`）
+    - 真实盘最小风险用例连续 2 次通过（仅 `LIMIT -> Cancel`）
+    - PR-W3 代码审查通过（重点审查：WS 去重、断线降级 cooldown、状态机单调性）

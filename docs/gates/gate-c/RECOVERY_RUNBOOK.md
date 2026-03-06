@@ -13,7 +13,7 @@
 ## 1. 启动恢复流程（REST-only 版，GateC-1 必须）
 
 1) 打印连接指纹（server addr/port/db + datasource_url）
-2) 扫描本地非终态 orders（NEW/RISK_PASSED/SENT/ACCEPTED/PARTIALLY_FILLED）
+2) 扫描本地非终态 orders（NEW/RISK_PASSED/SENT/ACCEPTED/PARTIALLY_FILLED/CANCEL_REQUESTED/CANCEL_REJECTED）
 3) 调用交易所 listOpenOrders（OKX orders-pending）获取 live orders（对齐 instType=SPOT）
 4) 对每个订单（按 account+symbol 分组处理）：
    - query order（trade/order）确认状态（尤其处理“下单超时但实际成功”）
@@ -46,6 +46,9 @@
    - 视为 `ORDER_NOT_FOUND/OKX_51603` 可恢复降级，不阻断启动
    - 写 `audit_logs`（`RECOVERY_QUERY_ORDER_NOT_FOUND`）并写 `event_store`（`audit.event.v1`）
    - 通过服务层状态机把本地订单推进到终态 `CANCELLED`，继续处理后续订单
+- cancel reject 后状态悬挂：
+   - 本地状态必须从 `CANCEL_REQUESTED` 推进到 `CANCEL_REJECTED`（禁止长期停留）
+   - reconcile 若看到交易所状态仍为 live/accepted，先落 `CANCEL_REJECTED` 再继续对齐，避免非法状态回退
 - 限频：
    - 退避/降级并写审计；连续超限可触发 KillSwitch（必须留证据链）
 - WS 断线（若启用）：
