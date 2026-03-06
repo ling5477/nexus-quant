@@ -85,6 +85,7 @@
 - 禁止 adapter 直接写 ledger/positions（adapter 只负责对接与映射，不负责记账与投影）。
 - 禁止为了“先跑通”而删掉审计/幂等/状态机/事实链：这些是 NexusQuant 的底座，不是可选项。
 
+
 ## MCP 优先策略（IDEA MCP / idea-mcp）
 
 ### 1) 总则：涉及项目操作优先使用 idea-mcp
