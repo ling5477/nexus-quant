@@ -48,6 +48,11 @@
         </dependency>
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-adapter-binance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-infra</artifactId>
             <version>${project.version}</version>
         </dependency>

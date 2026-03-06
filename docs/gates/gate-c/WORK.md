@@ -34,7 +34,10 @@ PR-C6：GateC-1 收尾硬化（验收入口双门禁 + 验收脚本固化 + 重�
 PR-W1（GateC-1.1）：WS 基建与连接治理（连接/login/订阅管理/心跳/重连，不落业务）
 PR-W2（GateC-1.1）：WS 事件映射 + event_store 入链（不落业务表）
 PR-W3（GateC-1.1）：WS-REST 协同与降级策略（WS 加速，REST 永远兜底）
-PR-C8~：Binance（GateC-2）按同样路径复用接入
+PR-C10：Binance REST 基础设施（Signer + HTTP Client + mock 单测，无 key）
+PR-C11：Binance exchangeInfo/filters 缓存 + 下单前 trim（无 key）
+PR-C12：Binance REST 交易闭环（TradingAdapter + reconcile + 事件/落库串联）
+PR-C13：Binance 运行态验收（有 key 后执行）
 
 ---
 
@@ -160,6 +163,22 @@ PR-C8~：Binance（GateC-2）按同样路径复用接入
 - PR-C9：已补齐 `DB_SCHEMA` 第 5 条建议 DDL（trades 订单维度回溯索引）。
     - 改动范围：`nq-infra`（`V4__gate_c_trade_external_order_id_index.sql`）、`nq-scheduler`（`PaperTradeRecord` / `JdbcTradeRepository` / `OkxRestReconcileService` / `PaperMatchingService`）、`docs/gates/gate-c/DB_SCHEMA.md`
     - 验收证据：`mvn -q -f backend/pom.xml test` 通过；`trades` 新增 `external_order_id` 并创建 `idx_trades_exchange_external_order_id (exchange, external_order_id)` 条件索引
+- PR-C10：已完成 Binance REST 基础设施（无 key 阶段）。
+    - 改动范围：`nq-adapter-binance`（`BinanceRuntimeConfig`、`BinanceRequestSigner`、`BinanceHttpClient`、`BinanceApiException`、mock 单测）、`.env.example`、`docs/current/GATE_CHECKLIST.md`、`docs/gates/gate-c/SOURCES.md`
+    - 配置键：`NQ_BINANCE_ENV`、`NQ_BINANCE_DOME_BASE_URL`、`NQ_BINANCE_DOME_API_KEY`、`NQ_BINANCE_DOME_API_SECRET`、`NQ_BINANCE_REAL_BASE_URL`、`NQ_BINANCE_REAL_API_KEY`、`NQ_BINANCE_REAL_API_SECRET`、`NQ_BINANCE_TIMEOUT_MS`
+    - 验收证据：`mvn -q -f backend/pom.xml test` 通过；mock 单测覆盖 `GET + query` 签名、`POST/DELETE` 签名路径、错误响应 `code/msg` 结构化解析；未访问真实 Binance 网络
+- PR-C11：已完成 Binance exchangeInfo/filters 缓存 + 下单前 trim（无 key 阶段）。
+    - 改动范围：`nq-adapter-binance`（`BinanceExchangeInfoClient`、`BinanceFiltersCache`、`BinanceOrderTrimmer`、`BinanceSymbolFilters`、`BinanceTrimResult`、mock/trim 单测）、`.env.example`、`docs/current/GATE_CHECKLIST.md`、`docs/gates/gate-c/SOURCES.md`
+    - filters 覆盖：`PRICE_FILTER`、`LOT_SIZE`、`MIN_NOTIONAL/NOTIONAL`、`MARKET_LOT_SIZE`
+    - trim 规则：`price -> tickSize` 向下截断、`qty -> stepSize` 向下截断；校验 `TRADING` 状态、`minQty/maxQty`、`minNotional/maxNotional`；symbol 命名差异（`BTC-USDT` / `BTCUSDT`）封装在 adapter-binance cache 内
+    - 配置键：`NQ_BINANCE_EXCHANGE_INFO_REFRESH_MS`
+    - 验收证据：`mvn -q -f backend/pom.xml test` 通过；mock 单测覆盖 `exchangeInfo` 解析与 cache TTL 刷新；trim 单测覆盖价格截断、数量截断、`qty < minQty` 拒单、`notional < minNotional` 拒单、symbol 非 `TRADING`/不存在拒单；未访问真实 Binance 网络
+- PR-C12：已完成 Binance REST-only 闭环的无 key 阶段代码路径与回归测试。
+    - 改动范围：`nq-adapter-binance`（`BinanceExchangeAdapter`、`BinanceTradeFill`、adapter mock 单测）、`nq-scheduler`（`BinanceRestReconcileService`、reconcile 回归测试、`nq-scheduler/pom.xml`）、`nq-app`（`/__gatec/reconcile/runOnce` 新增 `venue=BINANCE` 路由）、`docs/current/GATE_CHECKLIST.md`、`docs/gates/gate-c/SOURCES.md`
+    - REST 接口口径：`POST /api/v3/order`、`DELETE /api/v3/order`、`GET /api/v3/order`、`GET /api/v3/openOrders`、`GET /api/v3/myTrades`
+    - reconcile 口径：扫描 `SENT/ACCEPTED/PARTIALLY_FILLED/CANCEL_REQUESTED/CANCEL_REJECTED` 的 Binance 非终态订单；`getOrder` 对齐状态；`myTrades` 去重写 `trades`；每笔成交写 `TradeExecuted` 到 `event_store` 并复用 `TradeLedgerGateway` 触发幂等记账
+    - 运行态前置说明：当前仍是无 key 阶段，未访问真实 Binance 网络；运行态 UseCase-A（`LIMIT -> Cancel`）留到 PR-C13 / 用户提供 key 后执行
+    - 验收证据：`$env:MAVEN_OPTS='-Xmx2g'; mvn -q -f backend/pom.xml test` 通过；新增 `BinanceExchangeAdapterTest` 覆盖下单/撤单/查单/开单列表 request 组装与结构化拒单；新增 `BinanceRestReconcileServiceTest` 覆盖 `myTrades -> trades/event_store/ledger` 与重复 `tradeId` 去重；既有 OKX 脚本 `pwsh -NoProfile -File scripts/gatec_okx_dome_verify.ps1 -BaseUrl http://localhost:28081 -SkipRestartPause -StartupTimeoutSec 120` 退出码 `0`
 
 ---
 

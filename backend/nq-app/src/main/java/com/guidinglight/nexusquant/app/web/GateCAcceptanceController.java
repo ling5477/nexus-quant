@@ -7,6 +7,7 @@ import com.guidinglight.nexusquant.core.service.CancelOrderResult;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderRequest;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
+import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 
 import java.math.BigDecimal;
@@ -44,22 +45,29 @@ public class GateCAcceptanceController {
 
     private final OrderCommandService orderCommandService;
     private final OkxRestReconcileService okxRestReconcileService;
+    private final BinanceRestReconcileService binanceRestReconcileService;
     private final RecoveryService recoveryService;
 
     /**
-     * @param orderCommandService     订单编排服务
-     * @param okxRestReconcileService OKX REST reconcile 服务
-     * @param recoveryService         恢复服务
+     * @param orderCommandService         订单编排服务
+     * @param okxRestReconcileService     OKX REST reconcile 服务
+     * @param binanceRestReconcileService Binance REST reconcile 服务
+     * @param recoveryService             恢复服务
      */
     public GateCAcceptanceController(
             OrderCommandService orderCommandService,
             OkxRestReconcileService okxRestReconcileService,
+            BinanceRestReconcileService binanceRestReconcileService,
             RecoveryService recoveryService
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.okxRestReconcileService = Objects.requireNonNull(
                 okxRestReconcileService,
                 "okxRestReconcileService must not be null"
+        );
+        this.binanceRestReconcileService = Objects.requireNonNull(
+                binanceRestReconcileService,
+                "binanceRestReconcileService must not be null"
         );
         this.recoveryService = Objects.requireNonNull(recoveryService, "recoveryService must not be null");
     }
@@ -156,11 +164,18 @@ public class GateCAcceptanceController {
             if (limit <= 0) {
                 throw badRequest("limit must be positive");
             }
-            int newTrades = okxRestReconcileService.reconcileOnce(limit);
+            String venue = request == null || request.venue() == null || request.venue().isBlank()
+                    ? "OKX"
+                    : request.venue().trim().toUpperCase();
+            int newTrades = switch (venue) {
+                case "OKX" -> okxRestReconcileService.reconcileOnce(limit);
+                case "BINANCE" -> binanceRestReconcileService.reconcileOnce(limit);
+                default -> throw badRequest("unsupported reconcile venue: " + venue);
+            };
             return new GateCTriggerResponse(
                     "reconcileOnce",
                     traceId,
-                    "limit=" + limit + ", new_trades=" + newTrades
+                    "venue=" + venue + ", limit=" + limit + ", new_trades=" + newTrades
             );
         });
     }

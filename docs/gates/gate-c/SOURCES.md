@@ -93,8 +93,24 @@ Spot REST API - rest-api.md
 - New order (TRADE): POST /api/v3/order
 - Cancel order (TRADE): DELETE /api/v3/order
 - Query order (USER_DATA): GET /api/v3/order
+- Current open orders (USER_DATA): GET /api/v3/openOrders
+- Account trade list (USER_DATA): GET /api/v3/myTrades
+- Exchange information / filters: GET /api/v3/exchangeInfo
+- SIGNED request security: timestamp required, recvWindow optional, HMAC SHA256 signature in query
 来源（原始文件）：
 https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/rest-api.md
+
+Binance Developers - Request Security
+https://developers.binance.com/docs/binance-spot-api-docs/rest-api/request-security
+
+Binance Developers - Exchange Information
+https://developers.binance.com/docs/binance-spot-api-docs/rest-api/general-endpoints#exchange-information
+
+Binance Developers - Query Current Open Orders
+https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints#current-open-orders-user_data
+
+Binance Developers - Account Trade List
+https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints#account-trade-list-user_data
 ```
 
 ---

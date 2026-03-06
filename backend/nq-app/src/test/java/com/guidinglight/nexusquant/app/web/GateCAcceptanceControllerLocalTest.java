@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.CancelOrderResult;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
+import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,9 @@ class GateCAcceptanceControllerLocalTest {
 
     @MockitoBean
     private OkxRestReconcileService okxRestReconcileService;
+
+    @MockitoBean
+    private BinanceRestReconcileService binanceRestReconcileService;
 
     @MockitoBean
     private RecoveryService recoveryService;
@@ -111,7 +115,7 @@ class GateCAcceptanceControllerLocalTest {
         mockMvc.perform(post("/__gatec/reconcile/runOnce")
                         .header("X-NQ-TRACE-ID", "trc-local-3")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsBytes(new GateCReconcileRunOnceHttpRequest(25))))
+                        .content(objectMapper.writeValueAsBytes(new GateCReconcileRunOnceHttpRequest("OKX", 25))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.action").value("reconcileOnce"))
                 .andExpect(jsonPath("$.traceId").value("trc-local-3"));
@@ -124,5 +128,20 @@ class GateCAcceptanceControllerLocalTest {
 
         verify(okxRestReconcileService).reconcileOnce(25);
         verify(recoveryService).rebuild("trc-local-4");
+    }
+
+    @Test
+    void shouldTriggerBinanceReconcileThroughService() throws Exception {
+        when(binanceRestReconcileService.reconcileOnce(eq(12))).thenReturn(1);
+
+        mockMvc.perform(post("/__gatec/reconcile/runOnce")
+                        .header("X-NQ-TRACE-ID", "trc-local-5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new GateCReconcileRunOnceHttpRequest("BINANCE", 12))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.action").value("reconcileOnce"))
+                .andExpect(jsonPath("$.traceId").value("trc-local-5"));
+
+        verify(binanceRestReconcileService).reconcileOnce(12);
     }
 }
