@@ -1,8 +1,13 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.guidinglight.nexusquant.adapter.binance.model.BinanceKeyType;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
 
@@ -39,5 +44,39 @@ class BinanceRuntimeConfigTest {
         ));
 
         assertEquals("dome", config.envName());
+    }
+
+    @Test
+    void shouldSelectEd25519CredentialsFromPrivateKeyPath() throws Exception {
+        Path privateKeyFile = Files.createTempFile("binance-ed25519", ".pem");
+        try {
+            Files.writeString(privateKeyFile, "-----BEGIN PRIVATE KEY-----\nZm9v\n-----END PRIVATE KEY-----");
+            BinanceRuntimeConfig config = BinanceRuntimeConfig.fromEnvironment(Map.of(
+                    "NQ_BINANCE_ENV", "real",
+                    "NQ_BINANCE_KEY_TYPE", "ed25519",
+                    "NQ_BINANCE_REAL_BASE_URL", "https://api.binance.com",
+                    "NQ_BINANCE_REAL_API_KEY", "real-api-key",
+                    "NQ_BINANCE_REAL_PRIVATE_KEY_PATH", privateKeyFile.toString()
+            ));
+
+            assertEquals("real", config.envName());
+            assertEquals(BinanceKeyType.ED25519, config.credentials().keyType());
+            assertEquals(privateKeyFile.toString(), config.credentials().privateKeyPath());
+            assertTrue(config.credentials().isConfigured());
+        } finally {
+            Files.deleteIfExists(privateKeyFile);
+        }
+    }
+
+    @Test
+    void shouldMarkEd25519ConfigAsIncompleteWhenPrivateKeyMissing() {
+        BinanceRuntimeConfig config = BinanceRuntimeConfig.fromEnvironment(Map.of(
+                "NQ_BINANCE_ENV", "real",
+                "NQ_BINANCE_KEY_TYPE", "ed25519",
+                "NQ_BINANCE_REAL_API_KEY", "real-api-key"
+        ));
+
+        assertEquals(BinanceKeyType.ED25519, config.credentials().keyType());
+        assertFalse(config.credentials().isConfigured());
     }
 }

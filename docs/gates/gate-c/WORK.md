@@ -237,9 +237,24 @@ PR-C13：Binance 运行态验收（有 key 后执行）
     - 发现的问题与修复：
       1) 首次 MARKET 尝试被本地 trim 拒绝，根因是 `MARKET_LOT_SIZE.stepSize=0` 未回退；已修复并补回归测试。
       2) 本地 `spring-boot:run` 后台驻留不稳定，因此本次 UseCase-B 采用“单次长脚本启动应用 -> 验收 -> 停止进程”的方式执行；这是本地运行方式问题，不影响 Binance 成交、去重、账本与持仓闭环结论。
-
----
-
+- PR-C14：已完成 Binance Ed25519 signer 支持（最小 PR，仅补签名能力）。
+    - 改动范围：`nq-adapter-binance`（`BinanceKeyType`、`BinanceApiCredentials`、`BinanceRequestSigner`、`BinanceHmacRequestSigner`、`BinanceEd25519RequestSigner`、`BinanceHttpClient`、runtime config/test）、`.env.example`、`docs/current/GATE_CHECKLIST.md`、`docs/gates/gate-c/SOURCES.md`
+    - 配置键：
+      `NQ_BINANCE_KEY_TYPE=hmac|ed25519`
+      `NQ_BINANCE_DOME_PRIVATE_KEY`
+      `NQ_BINANCE_DOME_PRIVATE_KEY_PATH`
+      `NQ_BINANCE_REAL_PRIVATE_KEY`
+      `NQ_BINANCE_REAL_PRIVATE_KEY_PATH`
+    - 设计口径：
+      1) 仅在 `nq-adapter-binance` 内补算法分发，不修改 `nq-core/nq-ledger/nq-risk`
+      2) 保留现有 HMAC `API_KEY + API_SECRET` 路径不变
+      3) Ed25519 私钥支持两种输入：env inline PEM 或本地文件路径；两者都不会进入日志指纹
+      4) signer 配置错误统一包装为 `BINANCE_SIGNER_CONFIG_INVALID`，避免上层拿到非结构化异常
+    - 验收证据：
+      `mvn -q -f backend/pom.xml test` 通过
+      新增 `BinanceRequestSignerTest` 覆盖 HMAC 与 Ed25519 两条签名路径
+      `BinanceRuntimeConfigTest` 覆盖 `hmac|ed25519` 配置选择与缺失私钥场景
+      `BinanceHttpClientTest` 覆盖 Ed25519 URL 编码签名与配置错误结构化异常
 ## 5. 坑与修复（追加）
 
 - `nq-adapter-okx` 在 `-pl nq-adapter-okx test` 下会因为未联动构建 `nq-adapter-api` 的新 DTO 而出现编译噪声；当前以全量

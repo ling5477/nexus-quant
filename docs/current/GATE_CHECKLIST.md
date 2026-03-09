@@ -127,6 +127,7 @@
 - [x] PR-C11（无 key 阶段）：exchangeInfo/filters 缓存 + trim 规则已完成，不依赖真实网络/真实 key
 - [x] PR-C12（无 key 阶段）：adapter-binance 已实现 TradingAdapter（place/cancel/get/listOpenOrders）且 mock 单测覆盖 request 组装/错误解析
 - [x] PR-C12（无 key 阶段）：Binance REST reconcile 已实现 query order + myTrades -> trades 去重 -> ledger posting 幂等回归测试
+- [x] PR-C14（无 key 阶段）：adapter-binance 已支持 `NQ_BINANCE_KEY_TYPE=hmac|ed25519`，且 Ed25519 signer / 配置错误路径有单测覆盖
 - [x] PR-C12（运行态阶段）：REST-only UseCase-A（LIMIT 远离盘口 -> Cancel）通过并在 WORK.md 留存证据链
 - [x] PR-C13（运行态阶段）：REST-only UseCase-B（MARKET 小额成交 -> reconcile -> trades/ledger/positions）通过并在 WORK.md 留存证据链
 - [ ] 私有 WS 后置（同 GateC-1.1 口径）

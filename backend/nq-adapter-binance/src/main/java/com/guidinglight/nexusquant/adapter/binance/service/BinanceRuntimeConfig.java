@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
+import com.guidinglight.nexusquant.adapter.binance.model.BinanceKeyType;
 
 import java.time.Duration;
 import java.util.Locale;
@@ -58,7 +59,10 @@ public record BinanceRuntimeConfig(
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_EXCHANGE_INFO_REFRESH_MS", DEFAULT_EXCHANGE_INFO_REFRESH_MS)),
                 new BinanceApiCredentials(
                         read(env, prefix + "API_KEY", ""),
-                        read(env, prefix + "API_SECRET", "")
+                        read(env, prefix + "API_SECRET", ""),
+                        BinanceKeyType.fromEnv(read(env, "NQ_BINANCE_KEY_TYPE", "hmac")),
+                        read(env, prefix + "PRIVATE_KEY", ""),
+                        read(env, prefix + "PRIVATE_KEY_PATH", "")
                 )
         );
     }

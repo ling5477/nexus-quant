@@ -96,7 +96,7 @@ Spot REST API - rest-api.md
 - Current open orders (USER_DATA): GET /api/v3/openOrders
 - Account trade list (USER_DATA): GET /api/v3/myTrades
 - Exchange information / filters: GET /api/v3/exchangeInfo
-- SIGNED request security: timestamp required, recvWindow optional, HMAC SHA256 signature in query
+- SIGNED request security: timestamp required, recvWindow optional, 支持 HMAC / RSA / Ed25519 key types
 来源（原始文件）：
 https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/rest-api.md
 

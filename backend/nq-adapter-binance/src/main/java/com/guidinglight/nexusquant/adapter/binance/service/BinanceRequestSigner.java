@@ -1,43 +1,50 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
+import com.guidinglight.nexusquant.adapter.binance.model.BinanceKeyType;
 
-import java.nio.charset.StandardCharsets;
-import java.util.HexFormat;
 import java.util.Objects;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
- * BinanceRequestSigner 负责生成 Binance Spot REST 的 HMAC SHA256 签名。
- *
+ * BinanceRequestSigner 负责按 key type 分发 Binance Spot REST 签名实现。
+ * <p>
  * Why:
- * Binance signed endpoint 的签名输入就是最终 query string。
- * 把签名逻辑从 HTTP client 中拆出来，单测才能稳定覆盖 GET / POST / DELETE 的 query 路径。
+ * 现有 HMAC Testnet 路径必须保持不回归，同时还要补齐 Ed25519 signer。
+ * 保留 `BinanceRequestSigner` 作为统一入口，`BinanceHttpClient` 和 `BinanceExchangeAdapter`
+ * 就不需要知道具体算法类型，交易所差异仍然被隔离在 adapter-binance 内。
  */
 public class BinanceRequestSigner {
 
-    private static final String HMAC_SHA256 = "HmacSHA256";
+    private final BinanceHmacRequestSigner hmacSigner;
+    private final BinanceEd25519RequestSigner ed25519Signer;
+
+    public BinanceRequestSigner() {
+        this(new BinanceHmacRequestSigner(), new BinanceEd25519RequestSigner());
+    }
+
+    BinanceRequestSigner(
+            BinanceHmacRequestSigner hmacSigner,
+            BinanceEd25519RequestSigner ed25519Signer
+    ) {
+        this.hmacSigner = Objects.requireNonNull(hmacSigner, "hmacSigner must not be null");
+        this.ed25519Signer = Objects.requireNonNull(ed25519Signer, "ed25519Signer must not be null");
+    }
 
     /**
      * 对编码后的 query string 计算签名。
      *
      * @param encodedQuery 已编码且按最终发送顺序拼接好的 query string
-     * @param credentials Binance 凭证
-     * @return 小写十六进制签名
+     * @param credentials  Binance 凭证
+     * @return HMAC 模式返回十六进制签名；Ed25519 模式返回 Base64 签名
      */
     public String sign(String encodedQuery, BinanceApiCredentials credentials) {
         Objects.requireNonNull(credentials, "credentials must not be null");
         if (!credentials.isConfigured()) {
             throw new IllegalArgumentException("Binance credentials are not fully configured");
         }
-        try {
-            Mac mac = Mac.getInstance(HMAC_SHA256);
-            mac.init(new SecretKeySpec(credentials.secretKey().getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
-            byte[] digest = mac.doFinal(encodedQuery.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (Exception ex) {
-            throw new IllegalStateException("failed to sign Binance request", ex);
-        }
+        return switch (credentials.keyType()) {
+            case HMAC_SHA256 -> hmacSigner.sign(encodedQuery, credentials);
+            case ED25519 -> ed25519Signer.sign(encodedQuery, credentials);
+        };
     }
 }

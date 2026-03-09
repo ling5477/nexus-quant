@@ -19,7 +19,7 @@ import java.util.Objects;
 
 /**
  * BinanceHttpClient 负责统一构建 Binance REST 请求、签名与错误解析。
- *
+ * <p>
  * Why:
  * GateC-2 早期阶段只做基础设施，最容易出错的是 query 拼接、signature 附加和 code/msg 解析。
  * 这些横切约束集中在一个 client 中，后续 TradingAdapter 才能直接复用而不重复造轮子。
@@ -68,7 +68,7 @@ public class BinanceHttpClient {
 
     /**
      * 统一执行请求。
-     *
+     * <p>
      * Why:
      * 当前 PR 明确禁止盲重试，因此这里对 timeout / IO / 业务错误只做结构化抛错，不做任何补偿重试。
      */
@@ -126,8 +126,23 @@ public class BinanceHttpClient {
         String encodedQuery = toEncodedQuery(params);
         String finalQuery = encodedQuery;
         if (signed) {
-            String signature = signer.sign(encodedQuery, credentials);
-            finalQuery = encodedQuery.isBlank() ? "signature=" + signature : encodedQuery + "&signature=" + signature;
+            try {
+                String signature = signer.sign(encodedQuery, credentials);
+                String encodedSignature = encode(signature);
+                finalQuery = encodedQuery.isBlank()
+                        ? "signature=" + encodedSignature
+                        : encodedQuery + "&signature=" + encodedSignature;
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                throw new BinanceApiException(
+                        "Binance signer config invalid, endpoint=" + requestPath + ", trace_id=" + traceId,
+                        0,
+                        requestPath,
+                        "BINANCE_SIGNER_CONFIG_INVALID",
+                        ex.getMessage(),
+                        traceId,
+                        ex
+                );
+            }
         }
         String requestUri = baseUrl + requestPath + (finalQuery.isBlank() ? "" : "?" + finalQuery);
         HttpRequest.Builder builder = HttpRequest.newBuilder()
