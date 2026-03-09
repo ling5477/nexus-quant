@@ -255,6 +255,87 @@ PR-C13：Binance 运行态验收（有 key 后执行）
       新增 `BinanceRequestSignerTest` 覆盖 HMAC 与 Ed25519 两条签名路径
       `BinanceRuntimeConfigTest` 覆盖 `hmac|ed25519` 配置选择与缺失私钥场景
       `BinanceHttpClientTest` 覆盖 Ed25519 URL 编码签名与配置错误结构化异常
+- PR-C15：已执行 Binance 实盘 Ed25519 最小风险复验（UseCase-A），结果真实失败并已留痕。
+    - 运行环境：本地 `.env` 使用 `NQ_BINANCE_ENV=real`、`NQ_BINANCE_KEY_TYPE=ed25519`、`NQ_BINANCE_REAL_BASE_URL=https://api.binance.com`、`NQ_BINANCE_REAL_PRIVATE_KEY_PATH=<local-path>`；未提交任何真实 key/private key。
+    - 启动基线：
+      1) `mvn -q -f backend/pom.xml test` 通过。
+      2) 带 `.env` 注入后 `nq-app` 可正常启动在 `local`，并打印 Binance/OKX 脱敏指纹。
+      3) OKX 既有链路未被本次 Binance 实盘配置破坏：应用启动后仍能完成 OKX smoke 登录与调度，不涉及任何 Binance WS。
+    - 实盘 UseCase-A 输入：
+      `symbol=BTC-USDT`
+      `orderType=LIMIT`
+      `clientOrderId=bra0309172544`
+      `traceId=trc-binance-real-a-place-0309172544`
+      `price=64575.53`
+      `qty=0.00025`
+    - 实际结果：
+      订单已进入本地证据链，但被 Binance 实盘拒单，未进入 `OrderAck/CancelAck`。
+      `orders.order_id=ord-cb254258-a760-4dd7-9bd1-02c41b8bc031`
+      `orders.status=REJECTED`
+      `orders.external_order_id` 为空
+      `trades=0`
+      `ledger_entries(相关 trace)=0`
+    - Binance 返回：
+      `reject_code=-2015`
+      `reject_reason=Invalid API-key, IP, or permissions for action.`
+    - event_store / audit 留痕：
+      1) `event_store` 已记录 `PlaceOrderCommand`、`OrderCreated`、`RiskPassed`、`OrderReject`
+      2) `audit_logs` 已记录 `ORDER_CREATED`、`ORDER_STATUS_TRANSITION(NEW->RISK_PASSED->SENT->REJECTED)`、`ORDER_REJECTED`
+      3) 说明链路已走到 Binance 外部拒单返回，而不是本地 signer/trim 崩溃
+    - 结论与修复建议：
+      当前阻塞不是代码路径缺失，而是 Binance 实盘侧凭证条件未满足；首轮实盘拒单为 `-2015 Invalid API-key, IP, or permissions for action.`。未在本次任务中修改任何业务代码，也未伪造通过结果。
+- PR-C15（复验 2）：在确认 Spot Trade / IP 白名单 / Ed25519 key 绑定均正确后，再次执行 Binance 实盘 Ed25519 最小风险复验，初始 BTC 路径仍因余额不足未通过，但阻塞已收敛为余额问题。
+    - 运行方式：继续只做 `UseCase-A`，不做 MARKET、不做 WS、不改代码；本地 `.env` 保持 `NQ_BINANCE_ENV=real`、`NQ_BINANCE_KEY_TYPE=ed25519`、`NQ_BINANCE_REAL_PRIVATE_KEY_PATH=<local-path>`。
+    - 实盘输入：
+      `symbol=BTC-USDT`
+      `orderType=LIMIT`
+      `clientOrderId=brb0309173738`
+      `traceId=trc-binance-real-a-place-retry-0309173738`
+      `price=64834.12`
+      `qty=0.00025`
+    - 实际结果：
+      `orders.order_id=ord-833c7d3c-2a66-4152-b395-f64ca5034920`
+      `orders.status=REJECTED`
+      `orders.external_order_id` 为空
+      `trades=0`
+      `ledger_entries(相关 trace)=0`
+    - Binance 返回：
+      `reject_code=-2010`
+      `reject_reason=Account has insufficient balance for requested action.`
+    - 证据链：
+      1) `event_store` 已记录 `PlaceOrderCommand`、`OrderCreated`、`RiskPassed`、`OrderReject`
+      2) `audit_logs` 已记录 `ORDER_CREATED`、`ORDER_STATUS_TRANSITION(NEW->RISK_PASSED->SENT->REJECTED)`、`ORDER_REJECTED`
+      3) 说明 Ed25519 实盘请求已通过权限/签名阶段，当前阻塞收敛为账户可用余额不足，尚未进入 `OrderAck` / `CancelAck`
+    - 结论与建议：
+      当时无需改代码。后续只需要选择更低 `minNotional` 的 symbol 并保持最小风险 LIMIT->Cancel 路径即可。
+- PR-C15（复验 3）：在现货资金补到约 `2.9U` 后，改用 `DOGE-USDT` 完成 Binance 实盘 Ed25519 最小风险复验，并真实通过。
+    - Why：`BTC-USDT` 的最小可行买单名义金额明显高于当时可用余额；公开 `exchangeInfo` 显示 `DOGEUSDT` 的 `minNotional=1.0`，适合继续做最小风险验证。
+    - 运行方式：仍然只做 `UseCase-A`，不做 MARKET、不做 WS、不改代码；通过本地 `local + nq.gatec.verify.enabled=true` 验收入口下单/撤单。
+    - 实盘输入：
+      `symbol=DOGE-USDT`
+      `orderType=LIMIT`
+      `clientOrderId=bre0309174403`
+      `placeTraceId=trc-binance-real-doge-a-place2-0309174403`
+      `cancelTraceId=trc-binance-real-doge-a-cancel2-0309174403`
+      `price=0.08191`
+      `qty=15`
+    - 实际结果：
+      `orders.order_id=ord-8fb271d4-db12-40a9-b933-ff110aa88735`
+      `orders.status=CANCELLED`
+      `orders.external_order_id=13975572161`
+      `trades=0`
+      `ledger_entries(相关 trace)=0`
+    - 状态机与证据链：
+      1) `audit_logs` 已记录 `NEW -> RISK_PASSED -> SENT -> ACCEPTED -> CANCEL_REQUESTED -> CANCELLED`
+      2) `event_store` 已记录 `PlaceOrderCommand`、`OrderCreated`、`RiskPassed`、`OrderAck`、`CancelOrderCommand`、`CancelAck`
+      3) `OrderAck` / `CancelAck` 均带 `venue=BINANCE`、`client_order_id=bre0309174403`、`external_order_id=13975572161`
+    - 运行态观察：
+      1) 撤单请求的 HTTP summary 为空，但数据库与证据链已明确表明撤单成功；这是本地验收脚本/响应摘要问题，不影响 Binance 实盘主链路结论。
+      2) 同一订单在 reconcile 中还出现过一次 `BINANCE_RECONCILE_ORDER_FAILED`（`/api/v3/order` 超时）审计事件，但没有影响终态收敛，也没有产生重复成交或重复记账。
+    - 结论：
+      Binance 实盘 Ed25519 `UseCase-A` 已通过，且未破坏幂等、状态机、`event_store`、`audit_logs`、`ledger` 不变量。
+---
+
 ## 5. 坑与修复（追加）
 
 - `nq-adapter-okx` 在 `-pl nq-adapter-okx test` 下会因为未联动构建 `nq-adapter-api` 的新 DTO 而出现编译噪声；当前以全量

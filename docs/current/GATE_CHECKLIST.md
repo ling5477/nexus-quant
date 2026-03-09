@@ -130,6 +130,7 @@
 - [x] PR-C14（无 key 阶段）：adapter-binance 已支持 `NQ_BINANCE_KEY_TYPE=hmac|ed25519`，且 Ed25519 signer / 配置错误路径有单测覆盖
 - [x] PR-C12（运行态阶段）：REST-only UseCase-A（LIMIT 远离盘口 -> Cancel）通过并在 WORK.md 留存证据链
 - [x] PR-C13（运行态阶段）：REST-only UseCase-B（MARKET 小额成交 -> reconcile -> trades/ledger/positions）通过并在 WORK.md 留存证据链
+- [x] Binance 实盘最小复验（Ed25519，LIMIT -> Cancel）通过：`DOGE-USDT` 单 `bre0309174403` 已完成 `SENT -> ACCEPTED -> CANCELLED`，`orders.external_order_id=13975572161`，`trades=0`，`ledger=0`，`event_store/audit` 证据链齐全
 - [ ] 私有 WS 后置（同 GateC-1.1 口径）
 - [x] testnet 通过后再上真实 key（Trade+Read；不启用提现权限）
 
