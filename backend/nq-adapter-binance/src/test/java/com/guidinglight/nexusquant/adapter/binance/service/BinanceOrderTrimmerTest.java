@@ -99,6 +99,33 @@ class BinanceOrderTrimmerTest {
         assertEquals("BINANCE_SYMBOL_NOT_FOUND", result.rejectCode());
     }
 
+    @Test
+    void shouldFallbackToLotSizeWhenMarketLotStepSizeIsZero() {
+        BinanceSymbolFilters filters = new BinanceSymbolFilters(
+                "BTCUSDT",
+                "BTC-USDT",
+                "TRADING",
+                new BigDecimal("0.01"),
+                new BigDecimal("0.01"),
+                new BigDecimal("1000000"),
+                new BigDecimal("0.0001"),
+                new BigDecimal("0.0001"),
+                new BigDecimal("9000"),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                new BigDecimal("9000"),
+                new BigDecimal("5.00"),
+                null,
+                true,
+                false
+        );
+
+        BinanceTrimResult result = trimmer.trimAndValidate(marketOrder("BTC-USDT", "0.00019"), filters);
+
+        assertTrue(result.accepted());
+        assertEquals(0, result.trimmedQty().compareTo(new BigDecimal("0.0001")));
+    }
+
     private AdapterOrderRequest limitOrder(String symbol, String price, String qty) {
         return new AdapterOrderRequest(
                 "ord-binance-test",
@@ -112,6 +139,22 @@ class BinanceOrderTrimmerTest {
                 new BigDecimal(qty),
                 "run-binance-test",
                 "trc-binance-test"
+        );
+    }
+
+    private AdapterOrderRequest marketOrder(String symbol, String qty) {
+        return new AdapterOrderRequest(
+                "ord-binance-market-test",
+                1L,
+                "BINANCE",
+                symbol,
+                "cid-binance-market-test",
+                "BUY",
+                "MARKET",
+                null,
+                new BigDecimal(qty),
+                "run-binance-test",
+                "trc-binance-market-test"
         );
     }
 

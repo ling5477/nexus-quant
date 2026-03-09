@@ -57,9 +57,17 @@ public record BinanceSymbolFilters(
 
     /**
      * 根据订单类型选择实际生效的数量步长。
+     * <p>
+     * Why:
+     * Binance Testnet 的 `MARKET_LOT_SIZE.stepSize` 可能返回 `0`，这表示当前 symbol
+     * 不额外提供 market 专用步长，而不是允许用 0 做截断。
+     * 因此这里必须在 `marketStepSize <= 0` 时回退到 `LOT_SIZE.stepSize`，
+     * 否则 MARKET 单会在 trim 阶段因为除以 0 被本地错误拒绝。
      */
     public BigDecimal effectiveStepSize(String orderType) {
-        if (isMarketOrder(orderType) && marketStepSize != null) {
+        if (isMarketOrder(orderType)
+                && marketStepSize != null
+                && marketStepSize.compareTo(BigDecimal.ZERO) > 0) {
             return marketStepSize;
         }
         return stepSize;

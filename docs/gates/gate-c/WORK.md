@@ -2,7 +2,7 @@
 
 # Gate C WORK 记录
 
-> 最后更新：2026-03-06
+> 最后更新：2026-03-09
 > 范围：Gate C（CEX 接入：OKX -> Binance）
 
 ---
@@ -179,6 +179,64 @@ PR-C13：Binance 运行态验收（有 key 后执行）
     - reconcile 口径：扫描 `SENT/ACCEPTED/PARTIALLY_FILLED/CANCEL_REQUESTED/CANCEL_REJECTED` 的 Binance 非终态订单；`getOrder` 对齐状态；`myTrades` 去重写 `trades`；每笔成交写 `TradeExecuted` 到 `event_store` 并复用 `TradeLedgerGateway` 触发幂等记账
     - 运行态前置说明：当前仍是无 key 阶段，未访问真实 Binance 网络；运行态 UseCase-A（`LIMIT -> Cancel`）留到 PR-C13 / 用户提供 key 后执行
     - 验收证据：`$env:MAVEN_OPTS='-Xmx2g'; mvn -q -f backend/pom.xml test` 通过；新增 `BinanceExchangeAdapterTest` 覆盖下单/撤单/查单/开单列表 request 组装与结构化拒单；新增 `BinanceRestReconcileServiceTest` 覆盖 `myTrades -> trades/event_store/ledger` 与重复 `tradeId` 去重；既有 OKX 脚本 `pwsh -NoProfile -File scripts/gatec_okx_dome_verify.ps1 -BaseUrl http://localhost:28081 -SkipRestartPause -StartupTimeoutSec 120` 退出码 `0`
+- PR-C13：已完成 Binance Spot Testnet 最小风险运行态验收（UseCase-A）。
+    - 运行环境：`NQ_BINANCE_ENV=dome`，本地 `.env` 指向 `https://testnet.binance.vision`；未使用真实盘，未提交任何 key/secret。
+    - 验收命令：
+      `mvn -q -f backend/pom.xml test`
+      `pwsh -NoProfile -File scripts/gatec_okx_dome_verify.ps1 -BaseUrl http://localhost:8080 -SkipRestartPause -StartupTimeoutSec 120`
+      `Invoke-WebRequest -Method Post http://localhost:8080/__gatec/orders ... venue=BINANCE`
+      `Invoke-WebRequest -Method Post http://localhost:8080/__gatec/orders/cancel ...`
+    - UseCase-A 结果：
+      `clientOrderId=bta0309110511`
+      `order_id=ord-db4c67cf-0e41-4297-8f74-4f290f00a3f5`
+      `orders.external_order_id=12564242`
+      订单状态按事件驱动完成 `SENT -> ACCEPTED -> CANCELLED`
+      `event_store` 已包含 `PlaceOrderCommand`、`OrderAck`、`CancelOrderCommand`、`CancelAck`
+      `trades=0`
+      `ledger_entries(相关 trace)=0`
+      `audit_logs` 已记录 `ORDER_CREATED / ORDER_ACKED / ORDER_CANCELLED` 与状态迁移证据链
+    - UseCase-B：本次未执行。
+      Why：当前任务明确要求先完成最小风险 UseCase-A；A 通过后未继续扩大 Testnet 风险暴露。
+    - 恢复门禁：本次未执行。
+      Why：本次聚焦 Binance Testnet 最小风险验收；恢复门禁留待后续在更稳定的长驻进程方式下单独验证，不伪造结果。
+    - 发现的问题与处理：
+      1) 本地 `.env` 初始把 `NQ_BINANCE_DOME_BASE_URL` 配成了 `https://testnet.binance.vision/api`，导致 adapter 访问 `exchangeInfo` 时命中 `/api/api/v3/exchangeInfo` 并被 404 拒绝；已仅在本地修正为 `https://testnet.binance.vision`，仓库占位符未改。
+      2) 初次 LIMIT 价格过远触发 Binance `-1013 Filter failure: PERCENT_PRICE_BY_SIDE`；随后按 Testnet `exchangeInfo` 与公开价格重算为 `BUY 35000 / 0.001 BTC`，成功获得 `OrderAck` 且未成交。
+      3) 本地 `spring-boot:run` 后台进程在验收后续步骤中不够稳定；但撤单已在进程存活窗口内完成，UseCase-A 的订单/事件/审计/零成交证据均已落库。
+- PR-C13：已完成 Binance Spot Testnet 成交闭环验收（UseCase-B）。
+    - 运行环境：继续使用 Binance Spot Testnet；未访问真实盘，未提交任何 key/secret。
+    - 代码修复：
+      `backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/model/BinanceSymbolFilters.java`
+      `backend/nq-adapter-binance/src/test/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceOrderTrimmerTest.java`
+      Why：Binance Testnet 的 `MARKET_LOT_SIZE.stepSize=0`，旧逻辑把它当成有效步长，导致 MARKET 单在 trim 阶段直接抛出 `increment must be positive`。现已改为在 `marketStepSize <= 0` 时回退到 `LOT_SIZE.stepSize`，并补回归测试。
+    - 验收命令：
+      `mvn -q -f backend/pom.xml test`
+      `pwsh -NoProfile -File scripts/gatec_okx_dome_verify.ps1 -BaseUrl http://localhost:8080 -SkipRestartPause -StartupTimeoutSec 120`
+      `POST /__gatec/orders`（`venue=BINANCE,type=MARKET,qty=0.0001`）
+      `POST /__gatec/reconcile/runOnce`（重复 3 次，验证去重）
+    - UseCase-B 结果：
+      `clientOrderId=btb0309114652`
+      `placeTrace=trc-binance-b-place-20260309114652`
+      `order_id=ord-dd13bff3-4ef8-490f-868f-041b56a51b96`
+      `orders.external_order_id=12584602`
+      下单结果：`ACCEPTED`
+      第 1 次 reconcile：`new_trades=1`
+      第 2/3 次 reconcile：`new_trades=0`
+      终态：`FILLED`
+    - 关键表计数：
+      `orders`：1（目标订单终态 `FILLED`）
+      `trades`：1（`exchange=BINANCE`,`exchange_trade_id=2194445`）
+      `ledger_entries`：2（`trace_id=trc-binance-b-place-20260309114652`，`idempotency_key` 已生成）
+      `positions(account_id=2001,symbol=BTC-USDT)`：1 行，`qty=0.00353689`
+      `event_store`：已包含 `PlaceOrderCommand`、`OrderAck`、`TradeExecuted`、`LedgerPosted`、`PositionUpdated`、`AuditRecorded`
+    - 幂等/去重证据：
+      重复 reconcile 两次后 `new_trades=0`
+      `tradeCount` 保持 1
+      `ledger_entries` 保持 2
+      `audit_logs` 出现 `BINANCE_FILL_DEDUP_HIT`
+    - 发现的问题与修复：
+      1) 首次 MARKET 尝试被本地 trim 拒绝，根因是 `MARKET_LOT_SIZE.stepSize=0` 未回退；已修复并补回归测试。
+      2) 本地 `spring-boot:run` 后台驻留不稳定，因此本次 UseCase-B 采用“单次长脚本启动应用 -> 验收 -> 停止进程”的方式执行；这是本地运行方式问题，不影响 Binance 成交、去重、账本与持仓闭环结论。
 
 ---
 

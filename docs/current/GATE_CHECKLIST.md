@@ -127,9 +127,10 @@
 - [x] PR-C11（无 key 阶段）：exchangeInfo/filters 缓存 + trim 规则已完成，不依赖真实网络/真实 key
 - [x] PR-C12（无 key 阶段）：adapter-binance 已实现 TradingAdapter（place/cancel/get/listOpenOrders）且 mock 单测覆盖 request 组装/错误解析
 - [x] PR-C12（无 key 阶段）：Binance REST reconcile 已实现 query order + myTrades -> trades 去重 -> ledger posting 幂等回归测试
-- [ ] PR-C12（运行态阶段）：REST-only UseCase-A（LIMIT 远离盘口 -> Cancel）通过并在 WORK.md 留存证据链
+- [x] PR-C12（运行态阶段）：REST-only UseCase-A（LIMIT 远离盘口 -> Cancel）通过并在 WORK.md 留存证据链
+- [x] PR-C13（运行态阶段）：REST-only UseCase-B（MARKET 小额成交 -> reconcile -> trades/ledger/positions）通过并在 WORK.md 留存证据链
 - [ ] 私有 WS 后置（同 GateC-1.1 口径）
-- [ ] testnet 通过后再上真实 key（Trade+Read；不启用提现权限）
+- [x] testnet 通过后再上真实 key（Trade+Read；不启用提现权限）
 
 ---
 
