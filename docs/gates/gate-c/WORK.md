@@ -37,7 +37,9 @@ PR-W3（GateC-1.1）：WS-REST 协同与降级策略（WS 加速，REST 永远�
 PR-C10：Binance REST 基础设施（Signer + HTTP Client + mock 单测，无 key）
 PR-C11：Binance exchangeInfo/filters 缓存 + 下单前 trim（无 key）
 PR-C12：Binance REST 交易闭环（TradingAdapter + reconcile + 事件/落库串联）
-PR-C13：Binance 运行态验收（有 key 后执行）
+PR-C13：Binance Testnet 运行态验收（UseCase-A/B）
+PR-C14：Binance Ed25519 signer 支持（最小 PR，仅补签名能力）
+PR-C15：Binance 实盘最小风险复验（Ed25519，LIMIT -> Cancel）
 
 ---
 
@@ -377,15 +379,55 @@ PR-C13：Binance 运行态验收（有 key 后执行）
 
 ---
 
-## 8. 是否进入 GateC-2（Binance）前置准备评估
+## 8. 是否进入 GateC-2.1（Binance WS）前置准备评估
 
-- 当前结论：`GateC-1.1 已完成最终验收回填并冻结文档，可进入 GateC-2 前置准备`。
+- 当前结论：`GateC-2 的 REST-only 主链路、Testnet UseCase-A/B、实盘 Ed25519 最小风险 UseCase-A 已全部留痕；当前不建议立即进入 Binance WS，优先冻结 GateC-2 文档与证据链。`
 - 已满足：
-    - GateC-1（REST-only）主链路稳定，真实盘最小风险 `LIMIT -> Cancel` 可复验
-    - GateC-1.1（WS）已完成连接治理、事件入链、协同降级三段实现
-    - `docs/current/GATE_CHECKLIST.md` 第 3 节（GateC-1.1）已全部勾选
-    - WS+REST 并行下最新 `UseCase-A/B` 计数符合“不重复成交/不重复记账/无状态回退”
-- 进入 GateC-2 前建议门槛：
-    - `dome` 自动化脚本连续 2 次通过（含 `UseCase-C`）
-    - 真实盘最小风险用例连续 2 次通过（仅 `LIMIT -> Cancel`）
-    - PR-W3 代码审查通过（重点审查：WS 去重、断线降级 cooldown、状态机单调性）
+    - GateC-2（REST-only）无 key 阶段能力已完成：`PR-C10/PR-C11/PR-C12`
+    - Binance Testnet `UseCase-A/B` 已通过，且 `trades/ledger/positions/event_store` 证据链完整
+    - Binance 实盘 Ed25519 最小风险 `UseCase-A` 已通过：`DOGE-USDT` 单 `bre0309174403` 完成 `SENT -> ACCEPTED -> CANCELLED`
+    - `docs/current/GATE_CHECKLIST.md` 第 4 节（GateC-2）已对齐当前实现与验收结果
+- 进入 GateC-2.1 前建议门槛：
+    - 先把 `PR-C14/PR-C15` 的收尾 PR 描述与 WORK 文档冻结，避免 REST-only 证据链继续漂移
+    - 若后续确有实时性需求，再按 OKX 的拆分路径执行：`连接治理 -> 事件入链 -> 协同降级`
+    - 在 Binance WS 开工前，先确认是否真的需要超越当前 REST reconcile 时延；若没有明确收益，不建议提前引入实时链路复杂度
+
+---
+
+## 9. 收尾 PR 描述（PR-C14 / PR-C15）
+
+- 标题建议：`Gate C 收尾：PR-C14 Ed25519 signer + PR-C15 Binance 实盘最小复验回填`
+- 对应条目：
+    - `docs/current/GATE_CHECKLIST.md` 中的 `PR-C14（无 key 阶段）`
+    - `docs/current/GATE_CHECKLIST.md` 中的 `Binance 实盘最小复验（Ed25519，LIMIT -> Cancel）通过`
+- PR-C14 范围：
+    - `nq-adapter-binance` 的 `BinanceKeyType`、`BinanceApiCredentials`、`BinanceRequestSigner`、`BinanceHmacRequestSigner`、`BinanceEd25519RequestSigner`、`BinanceHttpClient`、`BinanceRuntimeConfig`
+    - 对应单测：`BinanceRequestSignerTest`、`BinanceRuntimeConfigTest`、`BinanceHttpClientTest`
+    - 配套文档：`.env.example`、`docs/gates/gate-c/SOURCES.md`
+- PR-C14 结论：
+    - 已补齐 `NQ_BINANCE_KEY_TYPE=hmac|ed25519`
+    - 已补齐 `PRIVATE_KEY / PRIVATE_KEY_PATH` 配置读取
+    - 已保持 HMAC 路径不回归，配置错误统一落成 `BINANCE_SIGNER_CONFIG_INVALID`
+- PR-C15 范围：
+    - 只做 Binance 实盘 Ed25519 最小风险 `UseCase-A`，不做 MARKET、不做 WS、不改业务代码
+    - 文档留痕位于 `docs/current/GATE_CHECKLIST.md` 与本文件 `PR-C15 / 复验 2 / 复验 3`
+- PR-C15 关键证据：
+    - 实盘成功单：`DOGE-USDT`
+    - `clientOrderId=bre0309174403`
+    - `orders.order_id=ord-8fb271d4-db12-40a9-b933-ff110aa88735`
+    - `orders.external_order_id=13975572161`
+    - 终态：`CANCELLED`
+    - `trades=0`
+    - `ledger_entries(相关 trace)=0`
+- PR-C15 证据链：
+    - `event_store` 已记录 `PlaceOrderCommand`、`OrderCreated`、`RiskPassed`、`OrderAck`、`CancelOrderCommand`、`CancelAck`
+    - `audit_logs` 已记录 `NEW -> RISK_PASSED -> SENT -> ACCEPTED -> CANCEL_REQUESTED -> CANCELLED`
+- 不变量证明：
+    - 未改动 `nq-core/nq-ledger/nq-risk`
+    - 订单状态仍经由现有事件/状态机入口推进，没有直接 update DB
+    - REST-only 主链路未被 Binance Ed25519 接入破坏
+    - 实盘最小复验下 `trades=0`、`ledger=0`，未产生额外副作用
+- 边界说明：
+    - 本收尾 PR 不包含 Binance WS（GateC-2.1）
+    - 本收尾 PR 不包含 Binance 实盘 MARKET 成交复验
+    - 本收尾 PR 不包含任何真实 key/private key；本地 `.env` 仅用于运行态验证，不入库
