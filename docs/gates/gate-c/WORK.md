@@ -2,16 +2,17 @@
 
 # Gate C WORK 记录
 
-> 最后更新：2026-03-09
+> 最后更新：2026-03-10
 > 范围：Gate C（CEX 接入：OKX -> Binance）
 
 ---
 
-## 1. 今日目标与边界
+## 1. 当前目标与边界
 
-- 目标：OKX Spot（REST-only）跑通真实闭环并保留可回放证据链。
-- GateC-0 必须先做：adapter 三分法 + AdapterRouter + orders.external_order_id + 回执事件化。
-- 不做：不做链上/OnchainOS；不做高频；不做复杂做市；不做 nq-engine 大重构。
+- 目标：冻结 GateC-2（Binance REST-only）的代码与验收证据链，确保 `PR-C14 / PR-C15` 收尾信息可直接用于审查与回放。
+- 目标：把 GateC 的阶段进度对齐到“OKX 已完成、Binance REST-only 已完成、Binance WS 尚未开始”的真实状态。
+- 下一阶段若继续推进，只能按 `PR-BW1 -> PR-BW2 -> PR-BW3` 拆分 Binance 私有 WS，不得跨边界混做。
+- 不做：不做链上/OnchainOS；不做高频；不做复杂做市；不做 `nq-core/nq-ledger/nq-risk` 的交易所分支改造。
 
 ---
 
@@ -40,6 +41,9 @@ PR-C12：Binance REST 交易闭环（TradingAdapter + reconcile + 事件/落库�
 PR-C13：Binance Testnet 运行态验收（UseCase-A/B）
 PR-C14：Binance Ed25519 signer 支持（最小 PR，仅补签名能力）
 PR-C15：Binance 实盘最小风险复验（Ed25519，LIMIT -> Cancel）
+PR-BW1（GateC-2.1）：Binance 私有 WS 基建与连接治理（listenKey / 连接 / 心跳 / 重连，不落业务）
+PR-BW2（GateC-2.1）：Binance WS 事件映射 + event_store 入链（不落业务表）
+PR-BW3（GateC-2.1）：Binance WS-REST 协同与降级（WS 加速，REST 永远兜底）
 
 ---
 
@@ -381,16 +385,16 @@ PR-C15：Binance 实盘最小风险复验（Ed25519，LIMIT -> Cancel）
 
 ## 8. 是否进入 GateC-2.1（Binance WS）前置准备评估
 
-- 当前结论：`GateC-2 的 REST-only 主链路、Testnet UseCase-A/B、实盘 Ed25519 最小风险 UseCase-A 已全部留痕；当前不建议立即进入 Binance WS，优先冻结 GateC-2 文档与证据链。`
+- 当前结论：`GateC-2（Binance REST-only）已完成并冻结；若继续推进 Binance 私有 WS，只能作为下一阶段工作，且必须严格按 PR-BW1 / PR-BW2 / PR-BW3 三段拆分。`
 - 已满足：
     - GateC-2（REST-only）无 key 阶段能力已完成：`PR-C10/PR-C11/PR-C12`
     - Binance Testnet `UseCase-A/B` 已通过，且 `trades/ledger/positions/event_store` 证据链完整
     - Binance 实盘 Ed25519 最小风险 `UseCase-A` 已通过：`DOGE-USDT` 单 `bre0309174403` 完成 `SENT -> ACCEPTED -> CANCELLED`
     - `docs/current/GATE_CHECKLIST.md` 第 4 节（GateC-2）已对齐当前实现与验收结果
-- 进入 GateC-2.1 前建议门槛：
-    - 先把 `PR-C14/PR-C15` 的收尾 PR 描述与 WORK 文档冻结，避免 REST-only 证据链继续漂移
-    - 若后续确有实时性需求，再按 OKX 的拆分路径执行：`连接治理 -> 事件入链 -> 协同降级`
-    - 在 Binance WS 开工前，先确认是否真的需要超越当前 REST reconcile 时延；若没有明确收益，不建议提前引入实时链路复杂度
+- GateC-2.1 进入条件：
+    - `PR-C14/PR-C15` 的收尾说明、WORK 文档与 checklist 已冻结，避免 REST-only 证据链继续漂移
+    - 明确遵守 `WS 只加速、REST reconcile 永远兜底`，且下一阶段不改变 GateC-2 的事实口径
+    - 若确有实时性需求，再按 `PR-BW1（连接治理） -> PR-BW2（事件入链） -> PR-BW3（协同降级）` 顺序推进；不得跨 PR 混做
 
 ---
 
