@@ -29,3 +29,13 @@ nq:
         reconcile-limit: ${NQ_OKX_WS_DEGRADE_RECONCILE_LIMIT:100}
         cooldown-ms: ${NQ_OKX_WS_DEGRADE_COOLDOWN_MS:15000}
         subscribe-fail-threshold: ${NQ_OKX_WS_DEGRADE_SUBSCRIBE_FAIL_THRESHOLD:3}
+  binance:
+    ws:
+      # Why: local 开发默认仍关闭，需要显式打开 NQ_BINANCE_WS_ENABLED 才启动 WS smoke runner。
+      enabled: ${NQ_BINANCE_WS_ENABLED:false}
+      smoke:
+        force-reconnect-ms: ${NQ_BINANCE_WS_SMOKE_FORCE_RECONNECT_MS:0}
+      degrade:
+        reconcile-limit: ${NQ_BINANCE_WS_DEGRADE_RECONCILE_LIMIT:100}
+        cooldown-ms: ${NQ_BINANCE_WS_DEGRADE_COOLDOWN_MS:15000}
+        reconnect-fail-threshold: ${NQ_BINANCE_WS_DEGRADE_RECONNECT_FAIL_THRESHOLD:2}

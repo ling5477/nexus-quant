@@ -6,6 +6,8 @@ import com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
+import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapper;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
@@ -137,6 +139,29 @@ public class ModuleWiringConfiguration {
     @Bean
     public OkxWsEventMapper okxWsEventMapper() {
         return new OkxWsEventMapper();
+    }
+
+    /**
+     * 提供 Binance 私有 WS 治理客户端（PR-BW1）。
+     * <p>
+     * Why:
+     * 该 bean 只负责 listenKey 生命周期与连接治理，不做 executionReport 映射、不写业务表；
+     * 是否启动由 `nq.binance.ws.enabled` 控制的 local smoke runner 决定。
+     */
+    @Bean
+    public BinanceWsClient binanceWsClient() {
+        return new BinanceWsClient();
+    }
+
+    /**
+     * 提供 Binance WS 消息映射器（PR-BW2）。
+     * <p>
+     * Why:
+     * mapper 只负责把 Binance WS 原始消息转成标准 EventEnvelope，不直接依赖数据库或业务服务。
+     */
+    @Bean
+    public BinanceWsEventMapper binanceWsEventMapper() {
+        return new BinanceWsEventMapper();
     }
 
     /**
