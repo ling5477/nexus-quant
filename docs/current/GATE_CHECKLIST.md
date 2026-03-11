@@ -7,6 +7,114 @@
 >
 > 当前阶段：**Gate C（CEX 接入：OKX -> Binance）**
 > 验收优先级：GateC-0 -> GateC-1（OKX REST-only）-> GateC-1.1（OKX WS 可选）-> GateC-2（Binance）
+>
+> 2026-03-11 GateC Final Acceptance 状态：**通过，建议冻结 GateC**。
+> - Phase A：`mvn -q -f backend/pom.xml test` 已通过。
+> - Phase B：OKX Demo（REST-only + WS + Recovery）已通过。
+> - Phase C：Binance Testnet（REST-only + WS + 协同降级）已通过。
+> - Phase D：OKX Real / Binance Real 最小复验已通过。
+> - 当前无阻断点；下一步应进入冻结提交整理，而不是进入 GateD。
+>
+> 2026-03-11 GateC 定向重验（环境修正后）状态：**仍未恢复 GateC Final Acceptance**。
+> - Step 0 指纹确认通过：Binance Testnet 使用 `NQ_BINANCE_ENV=dome`、`NQ_BINANCE_KEY_TYPE=hmac`、
+    `baseUrl=https://testnet.binance.vision`、`wsUrl=wss://ws-api.testnet.binance.vision/ws-api/v3`；
+    `NQ_GATEC_VERIFY_ENABLED=true`、`NQ_BINANCE_WS_ENABLED=true`。
+> - 本地库缺少 Binance / OKX Real 验收账户，重验前仅补齐本地
+    `accounts(2002=OKX-REAL-2002, 3001=BINANCE-DOME-3001, 3002=BINANCE-REAL-3002)`，未改代码。
+> - Binance Testnet REST 定向重验仍失败：`c1bn0311114801`（LIMIT）与 `c2bn0311114901`（MARKET）均在 `placeOrder` 收敛为
+    `REJECTED/-2015`；`external_order_id=null`，`trades=0`，`ledger_entries=0`。
+> - Binance Testnet WS 定向重验仍失败：当前重验窗口内持续 `status=401/-2015`，且没有新的
+    `event_store(payload_json->>'source'='BINANCE_WS')` 或 `audit_logs(action like 'BINANCE_WS%')` 证据链。
+> - 按规则，Phase C 未通过即停止；Phase D（OKX Real / Binance Real 最小复验）本轮未执行。
+>
+> 2026-03-11 Phase C 重跑（最新 Testnet HMAC 凭证）状态：**C0 即阻断，未进入 C1-C5**。
+> - 当前 `.env` 指纹显示：`NQ_BINANCE_ENV=dome`、`NQ_BINANCE_KEY_TYPE=hmac`、
+    `NQ_BINANCE_DOME_WS_URL=wss://ws-api.testnet.binance.vision/ws-api/v3`、`NQ_GATEC_VERIFY_ENABLED=true`、
+    `NQ_BINANCE_WS_ENABLED=true`。
+> - 真实阻塞点：`NQ_BINANCE_DOME_BASE_URL` 仍为 `https://testnet.binance.vision/api`，与 `docs/current/README.md
+    ` 规定的 `https://testnet.binance.vision` 不一致。
+> - 按本轮规则，C0 指纹不通过即停止，不继续执行 Binance Testnet 的 REST / WS / 协同 / 降级验收，也不进入 Phase D。
+>
+> 2026-03-11 Phase C 重跑（baseUrl 已修正为 `https://testnet.binance.vision`，继续使用最新 Testnet HMAC）状态：**仍未通过**。
+> - C0 指纹已通过：`NQ_BINANCE_ENV=dome`、`NQ_BINANCE_KEY_TYPE=hmac`、
+    `NQ_BINANCE_DOME_BASE_URL=https://testnet.binance.vision`、
+    `NQ_BINANCE_DOME_WS_URL=wss://ws-api.testnet.binance.vision/ws-api/v3`。
+> - 运行态启动：`nq-app` 在 `local + NQ_GATEC_VERIFY_ENABLED=true + NQ_BINANCE_WS_ENABLED=true` 下可启动，
+    `/actuator/health` 返回 `UP`。
+> - C1 / REST UseCase-A：`clientOrderId=pc10311144214`，`placeOrder` 收敛为 `REJECTED/-2015`，`external_order_id=null`，
+    `trades=0`，`ledger_entries=0`；未拿到 `OrderAck/CancelAck`。
+> - C2 / REST UseCase-B：`clientOrderId=pc20311144440`，`MARKET` 下单同样收敛为 `REJECTED/-2015`；两次 `reconcile/runOnce`
+    均 `new_trades=0`，未进入 `trades/ledger/positions` 验收。
+> - C3 / Binance 私有 WS：应用日志持续 `binance_ws_subscribe_failed status=401 error_code=-2015`，当前窗口
+    `event_store(payload_json->>'source'='BINANCE_WS')=0`，未拿到 `status=200 / subscriptionId / session.subscriptions`。
+> - C4 / WS + REST 协同：因 C1 未拿到 `OrderAck/CancelAck`、C3 未建立有效私有 WS，会话内不存在可验证的
+    `BINANCE_WS_ORDER_ACK_ACCELERATE / BINANCE_WS_CANCEL_ACK_ACCELERATE` 证据链。
+> - C5 / 强制断连 / 降级：`audit_logs` 可见
+    `BINANCE_WS_DISCONNECTED / BINANCE_WS_RECONCILE_DEGRADE_COMPLETED / BINANCE_WS_RECONCILE_DEGRADE_SKIPPED_COOLDOWN`
+    ，但因私有 WS 从未进入成功订阅态，本轮只能确认失败后降级动作存在，不能判定 Phase C 的 WS 闭环通过。
+>
+> 2026-03-11 Phase C 再重跑（更换最新 Testnet HMAC 凭证后）状态：**通过**。
+> - C0 指纹通过：`NQ_BINANCE_ENV=dome`、`NQ_BINANCE_KEY_TYPE=hmac`、
+    `NQ_BINANCE_DOME_BASE_URL=https://testnet.binance.vision`、
+    `NQ_BINANCE_DOME_WS_URL=wss://ws-api.testnet.binance.vision/ws-api/v3`。
+> - C1 / REST UseCase-A：`clientOrderId=pc1r0311153810`，`placeOrder=ACCEPTED`，`cancelOrder=CANCELLED`，
+    `orders.external_order_id=14497482`，终态 `CANCELLED`，`trades=0`，`ledger_entries=0`。
+> - C2 / REST UseCase-B：`clientOrderId=pc2r0311153942`，终态 `FILLED`，`orders.external_order_id=14498581`，`trades=1`，
+    `distinct exchange_trade_id=1`，`ledger_entries=2`，`positions(account_id=3001,symbol=BTC-USDT)=0.00010000`。
+> - C3 / Binance 私有 WS：应用日志出现 `binance_ws_connected subscription_id=0` 与
+    `binance_ws_session_subscriptions_checked confirmed=true`；最近窗口
+    `event_store(payload_json->>'source'='BINANCE_WS')=10`。
+> - C4 / WS + REST 协同：`clientOrderId=pc4r0311154220` 完成 `ACCEPTED -> CANCELLED`，`external_order_id=14500750`，
+    `trades=0`，`ledger_entries=0`；`event_store` 中存在同一 `external_order_id=14500750` 的
+    `BINANCE_WS OrderAck + CancelAck`。
+> - C5 / 强制断连 / 降级：`audit_logs` 出现
+    `BINANCE_WS_DISCONNECTED / BINANCE_WS_RECONCILE_DEGRADE_COMPLETED / BINANCE_WS_RECONNECTED`；复核 UseCase-B 的
+    `trades=1 / ledger_entries=2` 保持不变，未出现重复成交或重复记账。
+>
+> 2026-03-11 Phase D 重跑（OKX Real / Binance Real 最小复验）状态：**未通过**。
+> - D0 指纹确认通过：`NQ_OKX_ENV=real`、`NQ_OKX_REAL_BASE_URL=https://www.okx.com`；
+>   `NQ_BINANCE_ENV=real`、`NQ_BINANCE_KEY_TYPE=ed25519`、
+>   `NQ_BINANCE_REAL_BASE_URL=https://api.binance.com`、
+>   `NQ_BINANCE_REAL_WS_URL=wss://ws-api.binance.com:443/ws-api/v3`。
+> - D1 / OKX Real 最小复验：按当前 `.env` 重启 `nq-app` 后，应用在启动恢复阶段再次被
+>   `trace_id=trc-okx-recovery-startup` 的 `/api/v5/trade/orders-pending?instType=SPOT&instId=BTC-USDT`
+>   `401/50110` 阻断；应用上下文回滚，未能进入 `LIMIT -> Cancel`，因此没有新的 `OrderAck / CancelAck /
+>   orders.external_order_id / CANCELLED / trades=0 / ledger_entries=0` 证据。
+> - D2 / Binance Real 最小复验：由于 D1 的 OKX Real 启动恢复阻断，`nq-app` 无法保持健康态，未能执行
+>   Binance Real `LIMIT -> Cancel`；但同一轮启动日志已出现
+>   `binance_ws_subscribe_failed status=401 error_code=-2015`，说明 Binance Real 私有 WS 路径仍未恢复。
+> - 结论：Phase D 仍未通过，GateC Final Acceptance 不能恢复。
+>
+> 2026-03-11 Phase D 再重跑（权限问题修复后）状态：**部分通过，仍未恢复 GateC Final Acceptance**。
+> - D0 指纹确认通过：`NQ_OKX_ENV=real`、`NQ_OKX_REAL_BASE_URL=https://www.okx.com`；
+>   `NQ_BINANCE_ENV=real`、`NQ_BINANCE_KEY_TYPE=ed25519`、
+>   `NQ_BINANCE_REAL_BASE_URL=https://api.binance.com`、
+>   `NQ_BINANCE_REAL_WS_URL=wss://ws-api.binance.com:443/ws-api/v3`。
+> - 启动恢复现状：本轮通过本地 `.env` 重启 `nq-app` 后，应用健康检查恢复为 `UP`，不再被
+>   OKX `401/50110` 或 Binance `-2015` 启动阻断；日志显示
+>   `OKX adapter connection fingerprint: env=real, baseUrl=https://www.okx.com, apiKey=4e13...e4e5`，
+>   以及 `binance_ws_connected subscription_id=0`、`binance_ws_session_subscriptions_checked confirmed=true`。
+> - D1 / OKX Real 最小复验：两次 `LIMIT -> Cancel` 尝试都在下单阶段收敛为 `REJECTED/51008`，
+>   最新单 `clientOrderId=d1okx0311163301`、`symbol=DOGE-USDT`、
+>   `orders.order_id=ord-6b8916bf-dfee-496c-888a-ead4b73c4d6c`、`external_order_id=null`、
+>   `trades=0`、`ledger_entries=0`；交易所返回
+>   `Order failed. Your available USDT balance is insufficient...`，因此未拿到 `OrderAck / CancelAck`。
+> - D2 / Binance Real 最小复验：第二次重试成功通过。
+>   `clientOrderId=d2bin0311163301` 完成 `ACCEPTED -> CANCELLED`，
+>   `orders.order_id=ord-1df6aa88-5393-4149-9cd9-a37d3768b207`，
+>   `orders.external_order_id=13994590627`，`trades=0`，`ledger_entries=0`；
+>   `event_store` 记录了 `PlaceOrderCommand / OrderAck / CancelOrderCommand / CancelAck`，
+>   `audit_logs` 记录了 `ORDER_ACKED / ORDER_CANCELLED`。
+> - 结论：Binance Real 已恢复最小复验通过；当前 Phase D 仅剩 OKX Real 账户可用余额不足这一条真实阻断点。
+>
+> 2026-03-11 OKX Real 1U 余额重验状态：**通过**。
+> - 延续当前 `real` 指纹与已恢复的健康启动，在确认账户可用余额约 `1U` 后，仅重跑 OKX Real `UseCase-A`。
+> - `clientOrderId=d1okx1u0311164501` 的 `DOGE-USDT` LIMIT 单完成 `ACCEPTED -> CANCELLED`，
+>   `orders.order_id=ord-3edbb2db-24b6-438a-812f-4bba7f66afae`，
+>   `orders.external_order_id=3379478338019745792`，`trades=0`，`ledger_entries=0`。
+> - `event_store` 记录了 `PlaceOrderCommand / OrderAck / CancelOrderCommand / CancelAck`，
+>   `audit_logs` 记录了 `ORDER_ACKED / ORDER_CANCELLED`，证据链齐全。
+> - 结论：D1 已补通过；结合本轮已通过的 D2，Phase D 当前可视为通过，可以恢复 GateC Final Acceptance。
 
 ---
 
@@ -116,6 +224,13 @@
 - [x] WS 异常必须降级触发一次 REST reconcile（限定窗口/非终态订单集合）
 - [x] WS + REST 同时开启不产生重复 trades/ledger（幂等兜底有效）
 - [x] CancelReject 不再停留 `CANCEL_REQUESTED`：状态推进到 `CANCEL_REJECTED`，并可由 REST reconcile 对齐回实时事实
+- 历史失败记录：2026-03-11 Final Acceptance / OKX Real 最小复验曾因
+  `/api/v5/trade/orders-pending -> 401/50110` 启动阻断失败；该问题已由后续 real 权限修正覆盖
+- 历史失败记录：2026-03-11 Phase D 再重跑 / OKX Real 最小复验曾因 `clientOrderId=d1okx0311163301`
+  命中 `REJECTED/51008`（`available USDT balance is insufficient`）失败；该问题已由后续 `1U` 余额重验覆盖
+- [x] 2026-03-11 OKX Real 1U 余额重验：`clientOrderId=d1okx1u0311164501` 的 `DOGE-USDT` LIMIT 已完成
+  `ACCEPTED -> CANCELLED`，`orders.external_order_id=3379478338019745792`，`trades=0`，`ledger_entries=0`，
+  `event_store + audit_logs` 证据链齐全
 
 ---
 
@@ -125,14 +240,35 @@
 
 - [x] PR-C10（无 key 阶段）：REST signer + HTTP client + mock 单测已完成，不依赖真实网络/真实 key
 - [x] PR-C11（无 key 阶段）：exchangeInfo/filters 缓存 + trim 规则已完成，不依赖真实网络/真实 key
-- [x] PR-C12（无 key 阶段）：adapter-binance 已实现 TradingAdapter（place/cancel/get/listOpenOrders）且 mock 单测覆盖 request 组装/错误解析
+- [x] PR-C12（无 key 阶段）：adapter-binance 已实现 TradingAdapter（place/cancel/get/listOpenOrders）且 mock 单测覆盖 request
+  组装/错误解析
 - [x] PR-C12（无 key 阶段）：Binance REST reconcile 已实现 query order + myTrades -> trades 去重 -> ledger posting 幂等回归测试
 - [x] PR-C14（无 key 阶段）：adapter-binance 已支持 `NQ_BINANCE_KEY_TYPE=hmac|ed25519`，且 Ed25519 signer / 配置错误路径有单测覆盖
-- [x] PR-C12（运行态阶段）：REST-only UseCase-A（LIMIT 远离盘口 -> Cancel）通过并在 WORK.md 留存证据链
-- [x] PR-C13（运行态阶段）：REST-only UseCase-B（MARKET 小额成交 -> reconcile -> trades/ledger/positions）通过并在 WORK.md 留存证据链
-- [x] Binance 实盘最小复验（Ed25519，LIMIT -> Cancel）通过：`DOGE-USDT` 单 `bre0309174403` 已完成 `SENT -> ACCEPTED -> CANCELLED`，`orders.external_order_id=13975572161`，`trades=0`，`ledger=0`，`event_store/audit` 证据链齐全
-- [ ] 私有 WS 后置（同 GateC-1.1 口径）
+- [x] 历史运行态证据：PR-C12（运行态阶段）REST-only UseCase-A（LIMIT 远离盘口 -> Cancel）曾通过并在 WORK.md 留存证据链
+- [x] 历史运行态证据：PR-C13（运行态阶段）REST-only UseCase-B（MARKET 小额成交 -> reconcile -> trades/ledger/positions）曾通过并在
+  WORK.md 留存证据链
+- [x] 历史运行态证据：Binance 实盘最小复验（Ed25519，LIMIT -> Cancel）曾通过：`DOGE-USDT` 单 `bre0309174403` 已完成
+  `SENT -> ACCEPTED -> CANCELLED`，`orders.external_order_id=13975572161`，`trades=0`，`ledger=0`，`event_store/audit` 证据链齐全
+- [x] 历史实现/回归证据：GateC-2.1 / PR-BW1：Binance 私有 WS 基建与连接治理已完成，覆盖 listenKey
+  生命周期、连接/重连、心跳/最近消息时间、local smoke runner（默认关闭），且不写业务表/不推进状态机
+- [x] 历史实现/回归证据：GateC-2.1 / PR-BW2：Binance 用户数据流原始消息已映射为标准事件并写入 `event_store`，覆盖
+  `executionReport -> order.event.v1`、`outboundAccountPosition -> position.event.v1`、`balanceUpdate -> audit.event.v1`
+  ，解析/映射失败会写 `audit_logs + audit.event.v1`，且不写业务表/不推进状态机/不触发 reconcile
+- [x] 历史实现/回归证据：GateC-2.1 / PR-BW3：Binance WS 仅加速 `OrderAck/CancelAck/OrderReject/CancelReject`
+  ，通过既有状态机入口推进并允许 `linkExternalOrderId`；`fills/trades/ledger` 仍 REST-first；WS 断线或 listenKey 失效会触发一次受限
+  `reconcileOnce(limit)` 并写 `audit_logs + audit.event.v1`，且 WS+REST 并行不重复 trades/ledger、不回退状态
 - [x] testnet 通过后再上真实 key（Trade+Read；不启用提现权限）
+- 历史失败记录：2026-03-11 Final Acceptance / Binance Testnet REST-only UseCase-A 曾因 `-2015` 鉴权阻塞失败；
+  已由后续 Testnet 凭证重置与重验通过覆盖
+- 历史失败记录：2026-03-11 Final Acceptance / Binance Testnet REST-only UseCase-B 曾因同一 `-2015` 鉴权阻塞未进入
+  MARKET 下单与 reconcile；已由后续重验通过覆盖
+- 历史失败记录：2026-03-11 Final Acceptance / Binance Testnet WS 曾因 `401/-2015` 未能进入
+  `executionReport` / 账户更新验收；已由后续 WS 重验通过覆盖
+- 历史失败记录：2026-03-11 Final Acceptance / Binance Real 最小复验曾因 `clientOrderId=brg0311020842`
+  命中 `-2015` 失败；已由后续 `clientOrderId=d2bin0311163301` 的实盘重验通过覆盖
+- [x] 2026-03-11 Phase D 再重跑 / Binance Real 最小复验：`clientOrderId=d2bin0311163301` 的 `DOGE-USDT` LIMIT
+  已完成 `ACCEPTED -> CANCELLED`，`orders.external_order_id=13994590627`，`trades=0`，`ledger_entries=0`，
+  `event_store + audit_logs` 证据链齐全
 
 ---
 

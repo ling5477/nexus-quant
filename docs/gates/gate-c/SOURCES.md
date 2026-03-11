@@ -121,8 +121,28 @@ https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpo
 Spot User Data Streams - user-data-stream.md
 - Account Update: outboundAccountPosition
 - Order Update: executionReport
+- Start User Data Stream: POST /api/v3/userDataStream
+- Keepalive User Data Stream: PUT /api/v3/userDataStream
+- Close User Data Stream: DELETE /api/v3/userDataStream
+- User data stream WS URL: wss://stream.binance.com:9443/ws/<listenKey>
+- Spot Testnet user data stream WS URL: wss://stream.testnet.binance.vision/ws/<listenKey>
 来源（原始文件）：
 https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/user-data-stream.md
+
+Binance Developers - User Data Streams
+https://developers.binance.com/docs/binance-spot-api-docs/user-data-stream
+
+Binance Developers - WebSocket Streams
+https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
+
+Binance Developers - Event: executionReport
+https://developers.binance.com/docs/binance-spot-api-docs/user-data-stream#order-update
+
+Binance Developers - Event: outboundAccountPosition
+https://developers.binance.com/docs/binance-spot-api-docs/user-data-stream#account-update
+
+Binance Developers - Event: balanceUpdate
+https://developers.binance.com/docs/binance-spot-api-docs/user-data-stream#balance-update
 ```
 
 ---

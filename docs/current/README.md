@@ -60,3 +60,51 @@ GateC 目标：在 GateB 的“幂等/状态机/事实链(event_store)/账本(le
 - GateC 的所有“交易所接口/WS 通道/关键约束”的权威依据统一收敛在：
   - `docs/gates/gate-c/SOURCES.md`
 - 当实现与文档不一致时：以 `docs/current/*` 为准，并在对应 Gate 文档与 SOURCES 中补齐依据链接。
+
+---
+
+## 6. 运行环境切换与执行前校验
+
+GateC 运行态验收只允许在本地 `.env` 中切环境，不允许在命令行临时混入另一套 dome/real 凭证。切换后必须重启 `nq-app`，并在 `docs/gates/gate-c/WORK.md` 或对应验收记录中明确写出本轮使用的是 `dome` 还是 `real`。
+
+### 6.1 环境切换矩阵
+
+- `OKX Demo`
+  - `NQ_OKX_ENV=dome`
+  - 使用 `NQ_OKX_DOME_BASE_URL / NQ_OKX_DOME_API_KEY / NQ_OKX_DOME_API_SECRET / NQ_OKX_DOME_API_PASSPHRASE`
+  - 私有 WS 默认 `NQ_OKX_DOME_WS_URL=wss://wspap.okx.com:8443/ws/v5/private`
+- `OKX Real`
+  - `NQ_OKX_ENV=real`
+  - 使用 `NQ_OKX_REAL_BASE_URL / NQ_OKX_REAL_API_KEY / NQ_OKX_REAL_API_SECRET / NQ_OKX_REAL_API_PASSPHRASE`
+  - 私有 WS 默认 `NQ_OKX_REAL_WS_URL=wss://ws.okx.com:8443/ws/v5/private`
+- `Binance Testnet`
+  - `NQ_BINANCE_ENV=dome`
+  - `NQ_BINANCE_KEY_TYPE=hmac`
+  - 使用 `NQ_BINANCE_DOME_BASE_URL / NQ_BINANCE_DOME_API_KEY / NQ_BINANCE_DOME_API_SECRET`
+  - ws-api 地址必须固定为 `NQ_BINANCE_DOME_WS_URL=wss://ws-api.testnet.binance.vision/ws-api/v3`
+- `Binance Real`
+  - `NQ_BINANCE_ENV=real`
+  - `NQ_BINANCE_KEY_TYPE=ed25519`
+  - 使用 `NQ_BINANCE_REAL_BASE_URL / NQ_BINANCE_REAL_API_KEY / NQ_BINANCE_REAL_PRIVATE_KEY_PATH`
+  - ws-api 地址必须固定为 `NQ_BINANCE_REAL_WS_URL=wss://ws-api.binance.com:443/ws-api/v3`
+
+### 6.2 强制执行规则
+
+- 每次运行态验收前，必须打印当前环境指纹：
+  - OKX：`env / baseUrl / apiKey 前4后4`
+  - Binance：`env / keyType / baseUrl / apiKey 前4后4`
+- 切换 `dome/real` 后，必须重启 `nq-app`。示例命令：
+  - `mvn -q -f backend/pom.xml -pl nq-app spring-boot:run`
+- 同一轮验收不得混用 `dome` 和 `real`。
+- `.env` 只允许本地修改，严禁提交。
+- 后续任何新增配置都必须同时更新 `.env.example` 与本地 `.env`：
+  - 每个配置项都要写中文注释，说明用途、默认值和切换条件。
+  - 非敏感项要固化默认值；敏感项只保留占位提示，不得写入仓库。
+- 如果某轮验收打开了 `NQ_OKX_WS_ENABLED` 或 `NQ_BINANCE_WS_ENABLED`，仍必须保留 REST reconcile 兜底，不得把 WS 当成唯一事实来源。
+
+### 6.3 执行前检查清单
+
+1. 确认 `.env` 中 `NQ_OKX_ENV / NQ_BINANCE_ENV / NQ_BINANCE_KEY_TYPE` 与本轮目标一致。
+2. 确认 OKX 与 Binance 的 `BASE_URL / WS_URL` 指向本轮环境，不使用历史残留地址。
+3. 确认敏感项只保存在本机 `.env`，不写入仓库、日志、文档。
+4. 启动前打印环境指纹，启动后在日志中核对运行时指纹与 `.env` 一致。
