@@ -79,6 +79,11 @@ GateC 像是把各路管线接上；GateD 则是把整套管线拧紧，不再�
 - `RISK_RULES.md`
 - `COMPENSATION_SYNC.md`
 - `TEST_CASES.md`
+- `DECISIONS.md`
+- `EVOLUTION_RULES.md`
+- `NUMERIC_POLICY.md`
+- `PR_SPLIT_PLAN.md`
+- `RECOVERY_RUNBOOK.md`
 - `SOURCES.md`
 - `WORK.md`
 - `adr/*`
@@ -121,3 +126,29 @@ GateD 满足以下条件才允许冻结：
 5. 再读代码
 6. 先改文档，再改代码，再补 `WORK.md`
 
+
+
+## 7. GateD 文档阅读顺序
+
+建议按以下顺序阅读：
+
+1. `README.md`
+2. `GATE_D_CHECKLIST.md`
+3. `MODULES.md`
+4. `CONTRACTS.md`
+5. `STATE_MACHINE.md`
+6. `RISK_RULES.md`
+7. `COMPENSATION_SYNC.md`
+8. `DECISIONS.md`
+9. `EVOLUTION_RULES.md`
+10. `NUMERIC_POLICY.md`
+11. `PR_SPLIT_PLAN.md`
+12. `RECOVERY_RUNBOOK.md`
+13. `WORK.md`
+
+其中：
+- `DECISIONS.md` 负责记录阶段性工程收口
+- `EVOLUTION_RULES.md` 负责约束演化边界
+- `NUMERIC_POLICY.md` 负责数值与精度正确性
+- `PR_SPLIT_PLAN.md` 负责提交拆分
+- `RECOVERY_RUNBOOK.md` 负责恢复与排障操作

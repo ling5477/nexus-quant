@@ -21,6 +21,11 @@
 - [ ] `docs/current/README.md` 已切换到 GateD 定义
 - [ ] `docs/current/GATE_CHECKLIST.md` 已清理 GateC 历史叠层内容，仅保留 GateD 门禁
 - [ ] `docs/gates/gate-d/` 文档已完整建档
+- [ ] `docs/gates/gate-d/DECISIONS.md` 已建立并开始维护
+- [ ] `docs/gates/gate-d/EVOLUTION_RULES.md` 已建立并生效
+- [ ] `docs/gates/gate-d/NUMERIC_POLICY.md` 已建立并落地到实现
+- [ ] `docs/gates/gate-d/PR_SPLIT_PLAN.md` 已建立并作为提交边界依据
+- [ ] `docs/gates/gate-d/RECOVERY_RUNBOOK.md` 已建立并可支撑恢复排障
 - [ ] `docs/ROADMAP.md`、`docs/gates/gate-b/ROADMAP.md`、`docs/gates/gate-c/ROADMAP.md` 中 GateD 定义已统一为“执行闭环与执行域硬化”
 - [ ] `AGENTS.md` 与 `README.md` 已对齐 GateD
 

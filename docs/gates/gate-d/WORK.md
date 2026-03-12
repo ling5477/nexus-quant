@@ -15,6 +15,7 @@ GateD 开工的原因不是“继续接功能”，而是：
 - 正式建立 GateD 文档目录
 - 统一 README / AGENTS / current docs / roadmap 的阶段定义
 - 给出模块改造说明与 checklist
+- 补齐 GateD 的决策、演化规则、数值规范、PR 拆分、恢复手册
 
 ## 3. 后续代码目标
 - 收敛 nq-core 执行入口
@@ -34,3 +35,19 @@ GateD 开工的原因不是“继续接功能”，而是：
 - `docs/gates/gate-d/CONTRACTS.md`
 - 目标代码模块现状
 
+
+## 6. 本轮新增文档
+- `DECISIONS.md`
+- `EVOLUTION_RULES.md`
+- `NUMERIC_POLICY.md`
+- `PR_SPLIT_PLAN.md`
+- `RECOVERY_RUNBOOK.md`
+
+## 7. 入口联动修订
+以下入口文档需同步感知以上新增文档：
+- `AGENTS.md`
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/GATE_CHECKLIST.md`
+- `docs/gates/gate-d/README.md`
+- `docs/gates/gate-d/GATE_D_CHECKLIST.md`

@@ -40,6 +40,11 @@
 - `docs/gates/gate-d/RISK_RULES.md`
 - `docs/gates/gate-d/COMPENSATION_SYNC.md`
 - `docs/gates/gate-d/TEST_CASES.md`
+- `docs/gates/gate-d/DECISIONS.md`
+- `docs/gates/gate-d/EVOLUTION_RULES.md`
+- `docs/gates/gate-d/NUMERIC_POLICY.md`
+- `docs/gates/gate-d/PR_SPLIT_PLAN.md`
+- `docs/gates/gate-d/RECOVERY_RUNBOOK.md`
 - `docs/gates/gate-d/SOURCES.md`
 - `docs/gates/gate-d/WORK.md`
 
@@ -106,6 +111,7 @@ GateD 明确**不做**：
 - `NoopRiskGate` 只能保留给测试桩或显式 local profile，不能作为默认实装。
 - GateD 必须实现规则链：交易开关、精度、最小名义金额、最大下单额、重复请求、限频。
 - 风控返回必须包含 `ruleCode / ruleName / rejectReason / hardReject`。
+- 数值比较、舍入、scale 处理必须对齐 `docs/gates/gate-d/NUMERIC_POLICY.md`。
 
 ### 5.3 nq-scheduler
 - 只承载任务触发、窗口扫描、恢复编排。
@@ -348,3 +354,12 @@ mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
 2. 再 `execute_run_configuration`（必要时设置合理超时）
 3. 回复中汇报：退出状态 + 关键输出摘要（必要时附报错关键信息）
 
+
+
+## 8. GateD 补充施工约束（新增）
+
+- 新增或修改中粒度工程决策时，必须同步更新 `docs/gates/gate-d/DECISIONS.md`。
+- 涉及模块演化、迁移边界、breaking change 控制时，必须遵守 `docs/gates/gate-d/EVOLUTION_RULES.md`。
+- 涉及价格、数量、金额、手续费、均价、最小名义金额的处理时，必须遵守 `docs/gates/gate-d/NUMERIC_POLICY.md`。
+- 提交 PR 时，必须对齐 `docs/gates/gate-d/PR_SPLIT_PLAN.md`；不得一次提交跨越多个主能力边界的巨型 PR。
+- 涉及 reconcile / recovery / query-confirm / degrade / 重启恢复时，必须同步检查并更新 `docs/gates/gate-d/RECOVERY_RUNBOOK.md`。

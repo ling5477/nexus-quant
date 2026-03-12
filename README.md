@@ -43,6 +43,11 @@ GateD 的阶段目标：
 - `docs/gates/gate-d/RISK_RULES.md`
 - `docs/gates/gate-d/COMPENSATION_SYNC.md`
 - `docs/gates/gate-d/TEST_CASES.md`
+- `docs/gates/gate-d/DECISIONS.md`
+- `docs/gates/gate-d/EVOLUTION_RULES.md`
+- `docs/gates/gate-d/NUMERIC_POLICY.md`
+- `docs/gates/gate-d/PR_SPLIT_PLAN.md`
+- `docs/gates/gate-d/RECOVERY_RUNBOOK.md`
 - `docs/gates/gate-d/SOURCES.md`
 - `docs/gates/gate-d/WORK.md`
 
@@ -200,3 +205,14 @@ docker compose down
 docker compose down -v
 ```
 
+
+
+## 10. GateD 施工约束补充
+
+GateD 已进入“可持续施工”阶段，除主文档外，还必须遵守以下约束文档：
+
+- `docs/gates/gate-d/DECISIONS.md`：记录阶段性工程决策
+- `docs/gates/gate-d/EVOLUTION_RULES.md`：规定哪些能改、怎么改、哪些不能乱动
+- `docs/gates/gate-d/NUMERIC_POLICY.md`：统一数值、精度、舍入、比较与持久化策略
+- `docs/gates/gate-d/PR_SPLIT_PLAN.md`：规定 GateD 提交拆分边界
+- `docs/gates/gate-d/RECOVERY_RUNBOOK.md`：规定恢复、补偿与排障操作路径

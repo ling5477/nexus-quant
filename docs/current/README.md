@@ -134,4 +134,22 @@ GateD 修改优先级：
 - 验收：`docs/gates/gate-d/TEST_CASES.md`
 - 依据：`docs/gates/gate-d/SOURCES.md`
 - 工作记录：`docs/gates/gate-d/WORK.md`
+- 决策：`docs/gates/gate-d/DECISIONS.md`
+- 演化规则：`docs/gates/gate-d/EVOLUTION_RULES.md`
+- 数值规范：`docs/gates/gate-d/NUMERIC_POLICY.md`
+- PR 拆分：`docs/gates/gate-d/PR_SPLIT_PLAN.md`
+- 恢复手册：`docs/gates/gate-d/RECOVERY_RUNBOOK.md`
 
+
+
+## 7. 当前 Gate 额外必读文档
+
+以下文档在 GateD 不再是可选项：
+
+1. `docs/gates/gate-d/DECISIONS.md`
+2. `docs/gates/gate-d/EVOLUTION_RULES.md`
+3. `docs/gates/gate-d/NUMERIC_POLICY.md`
+4. `docs/gates/gate-d/PR_SPLIT_PLAN.md`
+5. `docs/gates/gate-d/RECOVERY_RUNBOOK.md`
+
+它们分别约束：阶段决策、模块演化、数值正确性、提交边界、恢复排障。
