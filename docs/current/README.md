@@ -1,110 +1,137 @@
 # docs/current/README.md
 # Current Gate（当前阶段入口）
 
-当前阶段：**Gate C（CEX 接入：OKX -> Binance）**
+当前阶段：**GateD（统一执行闭环与执行域硬化）**。
 
-本目录是“当前 Gate 的唯一入口”。切换 Gate 时，只需要更新本目录内文件内容即可；历史 Gate 文档固定在 `docs/gates/` 下。
-
----
-
-## 1. 当前 Gate 的目标
-
-GateC 目标：在 GateB 的“幂等/状态机/事实链(event_store)/账本(ledger)/审计(audit)/风控(risk)/可恢复”底座上，接入真实 CEX（先 OKX 现货，后 Binance 现货），实现真实下单/撤单/成交同步/记账/持仓投影，并可重启恢复与对账。
-
-关键原则：
-- **REST-first**：先用 REST 跑通闭环（GateC-1），WS 仅作为后置加速（GateC-1.1），且必须保留 REST reconcile 兜底。
-- **adapter 为中心**：PAPER/OKX/BINANCE 都是 adapter 实现，core/ledger/risk 不出现 venue 分支。
-- **超时禁止盲重试**：必须 query-confirm（查单/挂单/成交）后再补偿动作。
-- **幂等/去重/审计不可破坏**：orders 幂等、trades 去重、ledger 幂等、event_store 事实链全量留痕。
+本目录是当前 Gate 的唯一入口。切换 Gate 时，只更新本目录内容；历史 Gate 文档固定在 `docs/gates/` 下冻结保存。
 
 ---
 
-## 2. GateC 文档入口（冻结版）
+## 1. 当前阶段目标
 
-- 总览架构：`docs/gates/gate-c/ARCHITECTURE.md`
-- 契约：`docs/gates/gate-c/CONTRACTS.md`
-- DB 增量：`docs/gates/gate-c/DB_SCHEMA.md`
-- 决策记录：`docs/gates/gate-c/DECISIONS.md`
-- 演进规则：`docs/gates/gate-c/EVOLUTION_RULES.md`
-- 模块职责：`docs/gates/gate-c/MODULES.md`
-- 数值精度：`docs/gates/gate-c/NUMERIC_POLICY.md`
-- 恢复与对账：`docs/gates/gate-c/RECOVERY_RUNBOOK.md`
-- 路线图：`docs/gates/gate-c/ROADMAP.md`
-- 工作记录：`docs/gates/gate-c/WORK.md`
-- 权威依据：`docs/gates/gate-c/SOURCES.md`
-- 验收清单：`docs/gates/gate-c/GATE_C_CHECKLIST.md`
-- PR 拆分说明：`docs/gates/gate-c/PR_SPLIT_PLAN.md`
+GateD 目标：在 GateC 已完成的多交易所适配、REST / WS 基座、reconcile / recovery、ledger posting 能力之上，收敛出一条**稳定统一的执行闭环**。
 
----
+GateD 不是研究平台阶段，也不是再堆一个新交易所阶段。它做的是“把已经能跑的东西，收紧成能冻结、能审计、能补偿、能验收的执行域”。
 
-## 3. 当前 Gate 唯一验收入口
-
-- 统一验收清单：`docs/current/GATE_CHECKLIST.md`
-  - 该文件是 GateC 的验收门禁（Source of Truth）。
-- GateC 验收入口 `POST /__gatec/*` 仅在 `local + nq.gatec.verify.enabled=true` 时启用，生产环境不暴露；
-  可重复验收脚本见 `scripts/gatec_okx_dome_verify.ps1`。
+核心目标：
+- 统一执行入口：place / cancel / query / reconcile / recovery
+- pre-trade 风控硬化：规则链、拒绝码、错误消息、幂等拦截
+- 订单状态机收敛：本地状态与外部事实状态分层
+- Paper / OKX / Binance 的统一执行抽象
+- trade -> ledger -> position -> account 的投影联动
+- WS 加速 + REST 兜底的补偿收敛
+- GateD 验收入口、测试用例、文档与 ADR 冻结
 
 ---
 
-## 4. 当前执行顺序（只做 GateC 主线）
+## 2. GateD 的边界
 
-1) GateC-0（必须）：adapter-api 三分法 + AdapterRouter + orders.external_order_id + 回执事件化
-2) GateC-1（必须）：OKX Spot REST-only 闭环（place/cancel/query/orders-pending/fills + reconcile + ledger + positions）
-3) GateC-1.1（可选后置）：OKX 私有 WS（orders/account/positions 或 balance_and_position）+ REST reconcile 兜底
-4) GateC-2：Binance 复用接入
+### 2.1 GateD 包含
+- 统一执行编排
+- 统一 adapter 契约收敛
+- 风控硬规则
+- 订单状态机硬化
+- 订单 / 成交 / 账本 / 持仓 / 账户快照联动
+- reconcile / recovery / degrade / query-confirm
+- Paper 与真实交易所的统一执行接口
+- trace / audit / event_store / metrics 规范
+
+### 2.2 GateD 不包含
+- 回测系统
+- 因子研究
+- Alpha 研究平台
+- 前端控制台扩建
+- Kafka / Debezium / K8s / Grafana 等生产大基建
+- 合约、杠杆、期货、期权执行域
 
 ---
 
-## 5. 文档依据说明（必须）
+## 3. 代码阶段对齐结论
 
-- GateC 的所有“交易所接口/WS 通道/关键约束”的权威依据统一收敛在：
-  - `docs/gates/gate-c/SOURCES.md`
-- 当实现与文档不一致时：以 `docs/current/*` 为准，并在对应 Gate 文档与 SOURCES 中补齐依据链接。
+根据当前仓库结构，代码已经具备以下 GateD 前置条件：
+
+- `nq-adapter-api` 已有统一 adapter 抽象与归一模型
+- `nq-core` 已有 `OrderCommandService`、`AdapterRouter`、状态机与订单仓储端口
+- `nq-adapter-okx` / `nq-adapter-binance` 已具备真实 venue 接入能力
+- `nq-scheduler` 已有 reconcile、recovery、WS 协调与 paper matching 能力
+- `nq-ledger` 已有 trade posting 与投影链路基础
+- `nq-app` 已有 GateC 验收入口与运行承载能力
+- Flyway 已经演进到可继续承接 GateD 的版本节点
+
+结论：**当前仓库不是“准备开始设计执行域”，而是“必须把执行域正式立卷并收敛边界”的阶段。**
 
 ---
 
-## 6. 运行环境切换与执行前校验
+## 4. GateD 主改模块
 
-GateC 运行态验收只允许在本地 `.env` 中切环境，不允许在命令行临时混入另一套 dome/real 凭证。切换后必须重启 `nq-app`，并在 `docs/gates/gate-c/WORK.md` 或对应验收记录中明确写出本轮使用的是 `dome` 还是 `real`。
+GateD 修改优先级：
 
-### 6.1 环境切换矩阵
+1. `nq-core`
+2. `nq-risk`
+3. `nq-scheduler`
+4. `nq-adapter-api`
+5. `nq-adapter-okx`
+6. `nq-ledger`
+7. `nq-app`
+8. `nq-infra`
+9. `nq-observability`
+10. `nq-adapter-binance`
+11. `nq-api`
 
-- `OKX Demo`
-  - `NQ_OKX_ENV=dome`
-  - 使用 `NQ_OKX_DOME_BASE_URL / NQ_OKX_DOME_API_KEY / NQ_OKX_DOME_API_SECRET / NQ_OKX_DOME_API_PASSPHRASE`
-  - 私有 WS 默认 `NQ_OKX_DOME_WS_URL=wss://wspap.okx.com:8443/ws/v5/private`
-- `OKX Real`
-  - `NQ_OKX_ENV=real`
-  - 使用 `NQ_OKX_REAL_BASE_URL / NQ_OKX_REAL_API_KEY / NQ_OKX_REAL_API_SECRET / NQ_OKX_REAL_API_PASSPHRASE`
-  - 私有 WS 默认 `NQ_OKX_REAL_WS_URL=wss://ws.okx.com:8443/ws/v5/private`
-- `Binance Testnet`
-  - `NQ_BINANCE_ENV=dome`
-  - `NQ_BINANCE_KEY_TYPE=hmac`
-  - 使用 `NQ_BINANCE_DOME_BASE_URL / NQ_BINANCE_DOME_API_KEY / NQ_BINANCE_DOME_API_SECRET`
-  - ws-api 地址必须固定为 `NQ_BINANCE_DOME_WS_URL=wss://ws-api.testnet.binance.vision/ws-api/v3`
-- `Binance Real`
-  - `NQ_BINANCE_ENV=real`
-  - `NQ_BINANCE_KEY_TYPE=ed25519`
-  - 使用 `NQ_BINANCE_REAL_BASE_URL / NQ_BINANCE_REAL_API_KEY / NQ_BINANCE_REAL_PRIVATE_KEY_PATH`
-  - ws-api 地址必须固定为 `NQ_BINANCE_REAL_WS_URL=wss://ws-api.binance.com:443/ws-api/v3`
+不作为 GateD 主改造对象：
+- `nq-auth`
+- `nq-security`
+- `nq-gateway`
+- `frontend`
+- `research`
 
-### 6.2 强制执行规则
+---
 
-- 每次运行态验收前，必须打印当前环境指纹：
-  - OKX：`env / baseUrl / apiKey 前4后4`
-  - Binance：`env / keyType / baseUrl / apiKey 前4后4`
-- 切换 `dome/real` 后，必须重启 `nq-app`。示例命令：
-  - `mvn -q -f backend/pom.xml -pl nq-app spring-boot:run`
-- 同一轮验收不得混用 `dome` 和 `real`。
-- `.env` 只允许本地修改，严禁提交。
-- 后续任何新增配置都必须同时更新 `.env.example` 与本地 `.env`：
-  - 每个配置项都要写中文注释，说明用途、默认值和切换条件。
-  - 非敏感项要固化默认值；敏感项只保留占位提示，不得写入仓库。
-- 如果某轮验收打开了 `NQ_OKX_WS_ENABLED` 或 `NQ_BINANCE_WS_ENABLED`，仍必须保留 REST reconcile 兜底，不得把 WS 当成唯一事实来源。
+## 5. GateD 执行工作流（给 Codex / 开发者）
 
-### 6.3 执行前检查清单
+### 第一步：先读
+按顺序读取：
+1. `AGENTS.md`
+2. `README.md`
+3. `docs/current/README.md`
+4. `docs/current/GATE_CHECKLIST.md`
+5. 对应 GateD 文档
+6. 再读目标代码文件
 
-1. 确认 `.env` 中 `NQ_OKX_ENV / NQ_BINANCE_ENV / NQ_BINANCE_KEY_TYPE` 与本轮目标一致。
-2. 确认 OKX 与 Binance 的 `BASE_URL / WS_URL` 指向本轮环境，不使用历史残留地址。
-3. 确认敏感项只保存在本机 `.env`，不写入仓库、日志、文档。
-4. 启动前打印环境指纹，启动后在日志中核对运行时指纹与 `.env` 一致。
+### 第二步：先改文档
+- 先更新 `docs/current/*`
+- 再更新 `docs/gates/gate-d/*`
+- 最后再动代码
+
+### 第三步：模块内最小修改
+- 只围绕当前 checklist 条目做最小修改集
+- 禁止顺手扩散到 research / frontend / infra 大基建
+
+### 第四步：验证
+必须给出：
+- 修改文件清单
+- 对应 checklist 条目
+- 验证命令
+- 未完成项 / 风险项
+
+### 第五步：回填记录
+更新：
+- `docs/gates/gate-d/WORK.md`
+- 必要时补 ADR
+
+---
+
+## 6. 当前 Gate 文档入口
+
+- 总览：`docs/gates/gate-d/README.md`
+- 架构：`docs/gates/gate-d/ARCHITECTURE.md`
+- 契约：`docs/gates/gate-d/CONTRACTS.md`
+- 模块边界：`docs/gates/gate-d/MODULES.md`
+- 数据库：`docs/gates/gate-d/DB_SCHEMA.md`
+- 状态机：`docs/gates/gate-d/STATE_MACHINE.md`
+- 风控：`docs/gates/gate-d/RISK_RULES.md`
+- 补偿：`docs/gates/gate-d/COMPENSATION_SYNC.md`
+- 验收：`docs/gates/gate-d/TEST_CASES.md`
+- 依据：`docs/gates/gate-d/SOURCES.md`
+- 工作记录：`docs/gates/gate-d/WORK.md`
+

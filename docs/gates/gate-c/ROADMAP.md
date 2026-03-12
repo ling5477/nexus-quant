@@ -1,9 +1,11 @@
-# docs/gates/gate-c/ROADMAP.md
-# Gate C ROADMAP
+# GateC Roadmap（冻结修订版）
 
-- GateC-0：执行链路前置改造（adapter 三分法 + AdapterRouter + external_order_id + 回执事件化）【必须】
-- GateC-1：OKX Spot 接入（REST + 轮询同步）-> 门禁通过【必须】
-- GateC-1.1：OKX 私有 WS（可选优化）+ REST reconcile 兜底
-- GateC-2：Binance Spot 接入（复用框架）-> 门禁通过
-- GateD：研究/回测/产物发布（AlphaCFG / RD-Agent / Alphalens 等放这里）
-- GateE：运营生产化（告警、权限、SLO、回滚、对账增强）
+> GateC 为历史冻结文档，本文件仅修正 GateD 之后的阶段边界，使历史文档与当前阶段保持一致。
+
+- GateC：多交易所接入、Adapter API 稳定、模拟盘与 WS 加速、reconcile / recovery 铺开
+- GateD：**统一执行闭环与执行域硬化**
+- GateE：策略接入与调度编排
+- GateF：研究 / 回测 / 评估体系
+
+说明：GateD 已不再定义为研究 / 回测阶段；研究能力顺延到 GateF。
+
