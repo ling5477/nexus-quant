@@ -872,3 +872,225 @@ GateD 开工的原因不是“继续接功能”，而是：
   - 真实 OKX 验收仍被外网连接权限问题阻断
   - GateD migration 闭环仍未完成
   - 深层兼容债务仍为部分完成
+
+## 61. 2026-03-13 第二十一批 OKX 验收脚本 health 端口修复
+- 本轮目标：
+  - 修复 `scripts/gated_okx_dome_verify.ps1` 默认 `serviceBaseUrl` 仍写死旧 `28081` 的问题
+  - 让脚本默认回到 `nq-app` 实际启动端口 `18888`
+  - 在不改业务主链的前提下，继续推进真实 OKX 验收链路
+- 本轮修订：
+  - `gated_okx_dome_verify.ps1` 已新增 `Resolve-ServiceBaseUrl(...)`
+  - `serviceBaseUrl` 解析规则已收口为：
+    - `-BaseUrl`
+    - `NQ_GATED_SERVICE_BASE_URL`
+    - `NQ_APP_BASE_URL`
+    - `http://localhost:${NQ_APP_PORT|18888}`
+  - `Parse-OrderIdFromDetail(...)` 已补空结构保护，避免 `detail` 缺失时脚本在 strict mode 下提前崩溃
+  - summary 组装已补空值保护，避免 `order / trade` 缺失时把真实业务失败误报成 PowerShell 脚本错误
+- 为什么现在做：
+  - 用户已明确确认 `nq-app` 实际端口是 `18888`，且 `http://localhost:18888/actuator/health` 返回 `UP`
+  - 因此此前脚本里的 health timeout 属于脚本端口错误，而不是应用未成功启动
+
+## 62. 第二十一批验证证据
+- 命令：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\gated_okx_dome_verify.ps1 -AutoRestart -StartupTimeoutSec 60`
+  - `NQ_OKX_ENV=real powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\gated_okx_dome_verify.ps1 -AutoRestart -StartupTimeoutSec 60`
+  - `Invoke-WebRequest http://localhost:18888/actuator/health`
+  - 手工链路补证：
+    - `POST /__gated/orders`（`accountId=1001, venue=OKX, LIMIT`）
+    - `POST /__gated/orders/cancel`
+    - `GET /__gated/orders/{orderId}`
+    - `GET /__gated/orders/{orderId}/trade`
+    - `POST /__gated/reconcile/runOnce`
+    - `POST /__gated/recovery/runOnce`
+- 结果：
+  - 脚本默认 `serviceBaseUrl` 已输出为 `http://localhost:18888`
+  - `http://localhost:18888/actuator/health` 返回 `200`
+  - health timeout 已消失，脚本已继续进入真实 OKX 验收链
+  - 当前新的脚本级前置阻塞不是 health，也不是业务主链，而是脚本硬编码的 `accountId=2001` 在当前本地库不存在：
+    - place 请求命中 `fk_orders_account`
+    - cancel 请求随后报 `order not found by accountId/clientOrderId`
+  - 基于现存账户 `1001` 的同链路手工补证结果：
+    - `POST /__gated/orders` -> `200`
+    - `POST /__gated/orders/cancel` -> `200`
+    - `GET /__gated/orders/{orderId}` -> `status=CANCELLED`
+    - `GET /__gated/orders/{orderId}/trade` -> `404`
+    - `POST /__gated/reconcile/runOnce` -> `200`, `new_trades=0`
+    - `POST /__gated/recovery/runOnce` -> `200`, `processed_events=0, processed_ledger=0, invalid_transitions=0`
+  - 说明：
+    - health timeout 已被排除
+    - 当前脚本已能进入业务验收链
+    - 当前仍不宜把 `UC-D9` 直接标绿，因为官方脚本的账号参数还未收口
+
+## 63. 2026-03-13 第二十二批 OKX 验收脚本 accountId 收口
+- 本轮目标：
+  - 把 `scripts/gated_okx_dome_verify.ps1` 中硬编码的 `accountId=2001` 收口成可配置项
+  - 让脚本默认优先对齐当前本地可用账户，避免继续制造假失败
+  - 在不改业务主链的前提下，用官方脚本直接重跑 `UC-D9`
+- 本轮修订：
+  - `gated_okx_dome_verify.ps1` 已新增参数 `-AccountId`
+  - 脚本已新增 `Resolve-VerifyAccountId(...)`
+  - `accountId` 解析规则已收口为：
+    - `-AccountId`
+    - `NQ_GATED_ACCOUNT_ID`
+    - `NQ_OKX_VERIFY_ACCOUNT_ID`
+    - `NQ_ACCOUNT_ID`
+    - 默认回退 `1001`
+  - 三组 UseCase 的 `place / cancel` 请求已统一改为使用 `verifyAccountId`
+  - 脚本启动摘要已新增 `verifyAccountId=...` 输出，便于直接核对最终命中的账号
+- 为什么现在做：
+  - 第二十一批已经证明 health timeout 是脚本端口错误，不是应用未启动
+  - 当前剩余脚本级阻塞已明确收敛为硬编码 `2001` 在本地库不存在；若不先把账号参数收口，官方脚本会继续制造 place/cancel 的假失败
+
+## 64. 第二十二批验证证据
+- 命令：
+  - `Invoke-WebRequest http://localhost:18888/actuator/health`
+  - `NQ_OKX_ENV=real + NQ_GATED_VERIFY_ENABLED=true + powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\gated_okx_dome_verify.ps1 -SkipRestartPause`
+  - `NQ_OKX_ENV=real + NQ_GATED_VERIFY_ENABLED=true + pwsh -NoProfile -Command ". .\scripts\gated_okx_dome_verify.ps1 -SkipRestartPause; $summary | ConvertTo-Json -Depth 6 -Compress"`
+- 结果：
+  - `http://localhost:18888/actuator/health` 返回 `200`
+  - 官方脚本本次实际输出：
+    - `serviceBaseUrl=http://localhost:18888`
+    - `verifyAccountId=1001`
+    - `okxEnv=real`
+    - `startupMode=canonical_non_fallback`
+  - UseCase-A（`LIMIT -> cancel -> reconcile -> query`）：
+    - `place=200`
+    - `cancel=200`
+    - `reconcile=200`, `new_trades=0`
+    - `order=200`, `status=CANCELLED`
+    - `trade=404`
+  - UseCase-B（`MARKET -> reconcile -> query`）：
+    - `place=200`
+    - `reconcile=200`, `new_trades=0`
+    - `order=200`, `status=FILLED`
+    - `trade=404`
+  - UseCase-C（脚本本次以 `-SkipRestartPause` 继续执行 `recovery / reconcile / cancel / query`）：
+    - `place=200`
+    - `recovery=200`, `processed_events=1, processed_ledger=0, invalid_transitions=0`
+    - `reconcile=200`, `new_trades=0`
+    - `cancel=200`
+    - `order=200`, `status=CANCELLED`
+    - `trade=404`
+  - 结论：
+    - 官方脚本已不再被 `accountId=2001` 假失败阻断
+    - `UC-D9` 的最小 `LIMIT -> cancel` 路径已拿到官方脚本正向样本
+    - 当前剩余缺口已收敛为：
+      - `query-confirm` 显式日志样本尚未捕获
+      - UseCase-C 的“真重启后恢复”尚未在本批脚本执行中完成，而是以 `-SkipRestartPause` 继续推进 recovery/reconcile
+
+## 65. 2026-03-13 第二十三批真实 OKX 验收补证
+- 本轮目标：
+  - 用官方脚本执行一次不带 `-SkipRestartPause` 的完整真实 OKX 验收
+  - 取得真重启 `stop/start + health wait + recovery/reconcile/cancel/query` 样本
+  - 继续抓取 `okx_query_confirm_*` 显式日志样本
+  - 继续观察 `trade=404` 是否稳定出现
+- 本轮修订：
+  - 未新增业务代码或基础设施补丁
+  - 直接复用当前 `gated_okx_dome_verify.ps1` 的：
+    - `serviceBaseUrl` 收口
+    - `verifyAccountId` 收口
+    - `appLogPath / restartLogPath` 输出
+    - `query-confirm` 日志抓取能力
+- 为什么现在做：
+  - 第二十二批已证明官方脚本不再被 `accountId=2001` 假失败阻断
+  - 当前剩余缺口只剩：
+    - `okx_query_confirm_*` 真实日志样本
+    - `trade=404` 在真实样本下的稳定性判断
+  - 因此本批不再补脚本基础设施，只做真实验收补证
+
+## 66. 第二十三批验证证据
+- 命令：
+  - `Invoke-WebRequest http://localhost:18888/actuator/health`
+  - `$env:NQ_OKX_ENV='real'`
+  - `$env:NQ_GATED_VERIFY_ENABLED='true'`
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\gated_okx_dome_verify.ps1 -AutoRestart -StartupTimeoutSec 120`
+  - `pwsh -NoProfile -Command ". .\scripts\gated_okx_dome_verify.ps1 -AutoRestart -StartupTimeoutSec 120; $summary | ConvertTo-Json -Depth 6 -Compress"`
+  - `Select-String -Path .\artifacts\gated-okx-dome-app*.log -Pattern 'okx_query_confirm_'`
+- 结果：
+  - `http://localhost:18888/actuator/health` 返回 `200`
+  - 官方脚本本次实际输出：
+    - `serviceBaseUrl=http://localhost:18888`
+    - `verifyAccountId=1001`
+    - `appLogPath=F:\project\nexus-quant\artifacts\gated-okx-dome-app.log`
+    - `okxEnv=real`
+    - `startupMode=canonical_non_fallback`
+    - `UseCase-C: auto restart mode enabled (stop/start + health wait)`
+    - `restartLogPath=F:\project\nexus-quant\artifacts\gated-okx-dome-app-20260313110612343.log`
+  - UseCase-A（`LIMIT -> cancel -> reconcile -> query`）：
+    - `place=200`
+    - `cancel=200`
+    - `reconcile=200`, `new_trades=0`
+    - `order=200`, `status=CANCELLED`
+    - `trade=404`
+    - `queryConfirm=no_query_confirm_log_sample`
+  - UseCase-B（`MARKET -> reconcile -> query`）：
+    - `place=200`
+    - `reconcile=200`, `new_trades=2`
+    - `order=200`, `status=FILLED`
+    - `trade=200`
+    - `queryConfirm=no_query_confirm_log_sample`
+  - UseCase-C（真重启后 `recovery / reconcile / cancel / query`）：
+    - `place=200`
+    - `recovery=200`, `processed_events=2, processed_ledger=0, invalid_transitions=0`
+    - `reconcile=200`, `new_trades=0`
+    - `cancel=200`
+    - `order=200`, `status=CANCELLED`
+    - `trade=404`
+    - `queryConfirm=no_query_confirm_log_sample`
+  - app 日志检索结果：
+    - 多份最新 `gated-okx-dome-app*.log` 均 `NO_QUERY_CONFIRM_MATCH`
+  - 结合代码路径可确认：
+    - `okx_query_confirm_*` 只在 `HTTP_TIMEOUT` 分支触发 `queryConfirmAfterTimeout / queryCancelAfterTimeout`
+    - 当前这轮真实样本走的是成功 ACK / 正常查询路径，因此不会自然产出 `query-confirm` 显式日志
+  - 当前观察结论：
+    - 真重启后的 `recovery / reconcile / cancel / query` 样本已补齐
+    - 当前未观察到重复成交、重复记账、状态回退
+    - `trade=404` 并非所有真实样本都稳定出现；在已成交的 UseCase-B 中，`trade=200` 已可稳定返回最新真实成交
+
+## 67. 2026-03-13 第二十四批真实 OKX 最后两项补证
+- 本轮目标：
+  - 查询 UseCase-B 的 `orders / trades / ledger_entries` 明细，解释 `reconcile new_trades=2`
+  - 单独尝试制造 timeout 样本，继续补 `okx_query_confirm_*` 显式日志证据
+  - 仅在拿到新增真实证据后，最小更新 checklist / PR plan / WORK
+- 本轮修订：
+  - 未新增业务代码或脚本基础设施补丁
+  - 直接复用现有官方脚本、现有 app 日志与本地数据库做补证
+- 为什么现在做：
+  - 第二十三批后，真实 OKX 验收的剩余缺口已经缩小到两项：
+    - UseCase-B 的 `new_trades=2` 是否异常重复
+    - `query-confirm` timeout 分支是否能拿到真实日志样本
+  - 因此本批不再扩边，只做最后两项事实补证
+
+## 68. 第二十四批验证证据
+- 命令：
+  - Java/JDBC 直连本地 Postgres，查询 `orders / trades / ledger_entries`
+  - `$env:NQ_OKX_ENV='real'`
+  - `$env:NQ_GATED_VERIFY_ENABLED='true'`
+  - `$env:NQ_OKX_TIMEOUT_MS='50' | '5' | '1'`
+  - `pwsh -NoProfile -Command ". .\scripts\gated_okx_dome_verify.ps1 -AutoRestart -StartupTimeoutSec 120; $summary | ConvertTo-Json -Depth 6 -Compress"`
+  - `Select-String -Path .\artifacts\gated-okx-dome-app*.log -Pattern 'okx_query_confirm_'`
+- 结果：
+  - UseCase-B 的订单主键与链路：
+    - `order_id=ord-0a93dc67-7fd7-4d3c-8efa-79f9b58065bb`
+    - `external_order_id=3385560659240116224`
+    - `trace_id=trc-gated-b-place-20260313110607-302`
+  - `trades` 明细共 2 条，且 `exchange_trade_id` 不同：
+    - `exchange_trade_id=1189586011`，`price=72409.90000000`，`qty=0.00001000`
+    - `exchange_trade_id=1189586012`，`price=72410.10000000`，`qty=0.00015572`
+  - `ledger_entries` 明细显示两条成交各自产生独立 idempotency key（如 `trd-...:LEDGER:1/2/FEE_1/FEE_2`），未见同一成交被重复记账的直接证据
+  - 因此 `UseCase-B reconcile new_trades=2` 的当前最合理解释是：同一 MARKET 订单被交易所拆成两笔真实成交，而不是同一笔成交被重复写入
+  - timeout 分支补证：
+    - 在 `NQ_OKX_TIMEOUT_MS=50` 下，UseCase-B 变为 `trade=200, new_trades=1`
+    - 在 `NQ_OKX_TIMEOUT_MS=5` 下，UseCase-B 变为 `trade=404, new_trades=0`
+    - 在 `NQ_OKX_TIMEOUT_MS=1` 下，UseCase-B 仍为 `order=FILLED, trade=404, new_trades=0`
+  - 但以上三组 timeout 实验与对应 app 日志都仍未命中 `okx_query_confirm_*`
+  - 结合代码路径可进一步确认：
+    - `okx_query_confirm_*` 仅在 `HTTP_TIMEOUT -> queryConfirmAfterTimeout / queryCancelAfterTimeout` 分支触发
+    - 当前把 `NQ_OKX_TIMEOUT_MS` 压到 `50 / 5 / 1` 仍不足以在官方脚本样本链路中稳定制造该分支
+  - 当前观察结论：
+    - `trade=404` 仍主要分布在未成交取消路径（A/C）与部分 timeout 实验下的 B；并非所有真实样本都稳定为 `404`
+    - 未观察到状态回退
+    - 未观察到重复记账的直接证据
+    - 未观察到“同一 `exchange_trade_id` 被重复落库”的直接证据
+    - `query-confirm` 显式日志样本仍缺，但当前已经能明确证明：现有官方脚本路径不会自然触发该分支

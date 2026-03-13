@@ -104,8 +104,12 @@
 - [x] Paper executor / adapter 与真实 venue 走统一执行接口
 - [~] Paper 支持 LIMIT -> cancel
 - [x] Paper 支持 MARKET -> fill
-- [ ] OKX 至少完成最小 LIMIT -> cancel 验证
-  当前已补 canonical non-fallback 启动路径与 dome 验收脚本观察点；本机实际执行仍被 `Permission denied: getsockopt` 阻断，尚未转绿。
+- [x] OKX 至少完成最小 LIMIT -> cancel 验证
+  当前官方脚本已把 `accountId` 解析规则收口为 `-AccountId -> NQ_GATED_ACCOUNT_ID / NQ_OKX_VERIFY_ACCOUNT_ID / NQ_ACCOUNT_ID -> 1001`，默认不再写死旧 `2001`。在 `serviceBaseUrl=http://localhost:18888`、`verifyAccountId=1001`、`okxEnv=real` 下，官方脚本已完成不带 `-SkipRestartPause` 的真重启样本：
+  - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
+  - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
+  - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
+  结论：最小 `LIMIT -> cancel` 与真重启后 `recovery / reconcile / cancel / query` 样本均已取得；当前 `trade=404` 只在未成交的取消路径（A/C）稳定出现，已成交的 MARKET 样本（B）能返回 `trade=200`。UseCase-B 的 `new_trades=2` 已通过库内 `orders / trades / ledger_entries` 明细核对：同一 `external_order_id=3385560659240116224` 下存在两条不同 `exchange_trade_id`（`1189586011`、`1189586012`）的真实成交，以及各自独立的 ledger idempotency key，当前更符合“交易所真实拆单”而非重复写入。剩余缺口只收敛为 `query-confirm` 显式日志样本；在 `NQ_OKX_TIMEOUT_MS=50 / 5 / 1` 的连续实验下，官方脚本仍未命中 `okx_query_confirm_*`，且代码中该分支仅在 `HTTP_TIMEOUT` 时触发，因此当前真实样本路径不会自然补齐该证据，不能把“日志点存在但未触发”写成“query-confirm 已完成验收”。
 - [ ] Binance 至少完成最小 LIMIT -> cancel 验证
 - [~] Paper / OKX / Binance 的返回模型在 core 层一致
 
@@ -145,8 +149,12 @@
 - [~] UC-D6：reconcile 能修正非终态订单
 - [~] UC-D7：recovery 能在重启后恢复执行状态
 - [~] UC-D8：WS 断连后触发受限 REST 兜底且不重复成交
-- [ ] UC-D9：OKX 最小 LIMIT -> cancel 通过
-  当前脚本已显式加载 `.env`、支持 `NQ_OKX_ENV=dome|real`、并把所选环境归一映射为 `NQ_OKX_API_* / NQ_OKX_BASE_URL / NQ_OKX_WS_URL`，同时强制 `NQ_OKX_ADAPTER_STUB_ON_BOOTSTRAP_FAILURE=false` 与 `startupMode=canonical_non_fallback`；本机在 `dome / real` 两种模式下均推进到真实 OKX bootstrap，但都阻断于 `Permission denied: getsockopt`，因此 `UC-D9` 仍未转绿。
+- [x] UC-D9：OKX 最小 LIMIT -> cancel 通过
+  当前官方脚本已完成 `accountId` 收口，解析规则为 `-AccountId -> NQ_GATED_ACCOUNT_ID / NQ_OKX_VERIFY_ACCOUNT_ID / NQ_ACCOUNT_ID -> 1001`；在不显式传参的情况下，脚本本次实际输出 `verifyAccountId=1001`，并得到：
+  - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
+  - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
+  - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
+  结论：官方脚本已不再被 `accountId=2001` 的假失败阻断，`UC-D9` 的最小 `LIMIT -> cancel` 路径与真重启恢复路径都已拿到正向样本；当前剩余缺口不是 `UC-D9` 本身，而是 `query-confirm` 显式日志样本。当前 `trade=404` 也已被更精确地验证为“取消且未成交路径的稳定结果”，不是所有真实样本都返回 `404`。UseCase-B 的 `reconcile new_trades=2` 也已通过 DB 明细确认为两条不同 `exchange_trade_id` 的真实成交，而不是直接可见的重复成交/重复记账。
 - [ ] UC-D10：Binance 最小 LIMIT -> cancel 通过
 
 ---

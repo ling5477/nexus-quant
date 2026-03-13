@@ -26,8 +26,12 @@
 - [x] 请求层 canonical `orderType / quantity` 已完成，`GateDOrderHttpRequest` 的旧 `type / qty` 字段、访问器与 `JsonAlias` 均已删除
 - [x] 现行脚本与示例已 canonical 化，当前脚本与 smoke 示例统一使用 `__gated + NQ_GATED_VERIFY_ENABLED + orderType / quantity`
 - [x] current / top-level navigation / archive 三类文档边界已建立
-- [ ] 真实 OKX 验收未完成，local fallback 不能视为真实通道通过
-  当前已补 canonical non-fallback 启动路径、`.env -> dome|real -> NQ_OKX_API_*` 统一映射、query/reconcile/recovery 最小观察点，以及移除旧 GateC 工件路径依赖；本机在 `dome / real` 两种模式下都能推进到真实 OKX bootstrap，但仍因 `Permission denied: getsockopt` 阻断，不能视为真实通道通过。
+- [~] 真实 OKX 验收已拿到最小正向样本，local fallback 仍不能视为真实通道通过
+  当前已补 canonical non-fallback 启动路径、`.env -> dome|real -> NQ_OKX_API_*` 统一映射、query/reconcile/recovery 最小观察点，以及移除旧 GateC 工件路径依赖；第二十一批已进一步修复脚本 `serviceBaseUrl` 的旧 `28081` 默认值，第二十二批再把脚本 `accountId` 收口为 `-AccountId -> NQ_GATED_ACCOUNT_ID / NQ_OKX_VERIFY_ACCOUNT_ID / NQ_ACCOUNT_ID -> 1001`。最新官方脚本在 `serviceBaseUrl=http://localhost:18888`、`verifyAccountId=1001`、`okxEnv=real` 下已完成真重启 `stop/start + health wait` 样本：
+  - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
+  - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
+  - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
+  当前未观察到重复成交、重复记账、状态回退；UseCase-B 的 `new_trades=2` 已通过 DB 明细进一步解释为同一订单下两条不同 `exchange_trade_id`（`1189586011`、`1189586012`）的真实成交，以及各自独立 ledger idempotency key，不是直接可见的重复写入。`query-confirm` 显式日志样本仍未取得；在 `NQ_OKX_TIMEOUT_MS=50 / 5 / 1` 的连续实验下，官方脚本与对应 app 日志仍未命中 `okx_query_confirm_*`，且代码实现仅在 `HTTP_TIMEOUT` 分支触发 `queryConfirmAfterTimeout / queryCancelAfterTimeout`，因此当前真实样本链路不会自动产出该类日志。真实 OKX 验收整体验收态继续保持“部分完成”，剩余缺口已收敛为 timeout 分支的 `query-confirm` 取证，而不再是 health、accountId、真重启恢复能力或 UseCase-B 的 `new_trades=2` 解释本身。
 - [~] 深层兼容债务仍有残留，主要集中在内部领域命名、部分旧构造器与 `__gatec -> 404` regression test 断言
 
 ---

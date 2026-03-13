@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +52,12 @@ public class OkxExchangeAdapter implements TradingAdapter {
     private static final String OPEN_ORDERS_ENDPOINT = "/api/v5/trade/orders-pending";
     private static final String FILLS_ENDPOINT = "/api/v5/trade/fills";
     private static final String OKX_SIMULATED_TRADING_HEADER = "x-simulated-trading";
+    private static final String FORCE_PLACE_TIMEOUT_ONCE_ENV = "NQ_OKX_FORCE_PLACE_TIMEOUT_ONCE";
+    private static final String FORCE_CANCEL_TIMEOUT_ONCE_ENV = "NQ_OKX_FORCE_CANCEL_TIMEOUT_ONCE";
+    private static final String FORCE_PLACE_TIMEOUT_ONCE_PROPERTY = "nq.okx.force.place.timeout.once";
+    private static final String FORCE_CANCEL_TIMEOUT_ONCE_PROPERTY = "nq.okx.force.cancel.timeout.once";
+    private static final AtomicBoolean PLACE_TIMEOUT_EVIDENCE_CONSUMED = new AtomicBoolean(false);
+    private static final AtomicBoolean CANCEL_TIMEOUT_EVIDENCE_CONSUMED = new AtomicBoolean(false);
 
     private final OkxHttpClient authenticatedHttpClient;
     private final OkxInstrumentsCache instrumentsCache;
@@ -117,6 +125,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
         String body = buildPlaceOrderBody(request, trimmedPrice, trimmedQty);
         try {
             JsonNode payload = authenticatedHttpClient.post(TRADE_ORDER_ENDPOINT, body, request.traceId());
+            maybeForcePlaceTimeoutEvidenceOnce(request);
             return parsePlaceOrderAck(payload, request.traceId());
         } catch (OkxApiException ex) {
             if ("HTTP_TIMEOUT".equals(ex.errorCode())) {
@@ -132,9 +141,40 @@ public class OkxExchangeAdapter implements TradingAdapter {
     @Override
     public AdapterCancelAck cancelOrder(AdapterCancelRequest request) {
         validateCancelRequest(request);
+        // Why:
+        // GateD 当前只剩 ForceCancelTimeoutOnce 的真实消费点没有锁死，因此在 cancel 主路径入口
+        // 单独打点，确认请求是否真的进入了 adapter 的 cancel 编排，而不是在更上游就被短路。
+        log.info(
+                "okx_cancel_path_entered trace_id={} client_order_id={} external_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.externalOrderId(),
+                request.symbol()
+        );
         String body = buildCancelOrderBody(request);
         try {
+            // Why:
+            // 如果看到了 path_entered 但没有 before_http_call，说明 cancel 请求在 adapter 内部
+            // 的 body 组装或更前置逻辑被提前中断。
+            log.info(
+                    "okx_cancel_before_http_call trace_id={} client_order_id={} external_order_id={} symbol={}",
+                    request.traceId(),
+                    request.clientOrderId(),
+                    request.externalOrderId(),
+                    request.symbol()
+            );
             JsonNode payload = authenticatedHttpClient.post(CANCEL_ORDER_ENDPOINT, body, request.traceId());
+            // Why:
+            // timeout 强制注入当前设计发生在“真实 HTTP 已成功返回之后”，因此只有看到这个日志，
+            // 才有资格继续判断为什么没有命中 consumed/throwing_http_timeout。
+            log.info(
+                    "okx_cancel_after_http_call_success trace_id={} client_order_id={} external_order_id={} symbol={}",
+                    request.traceId(),
+                    request.clientOrderId(),
+                    request.externalOrderId(),
+                    request.symbol()
+            );
+            maybeForceCancelTimeoutEvidenceOnce(request);
             return parseCancelAck(payload, request.traceId());
         } catch (OkxApiException ex) {
             if ("HTTP_TIMEOUT".equals(ex.errorCode())) {
@@ -219,6 +259,104 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     public OkxInstrumentsCache instrumentsCache() {
         return instrumentsCache;
+    }
+
+    /**
+     * 仅用于 GateD 真实验收补证：在 OKX 已成功受理 place 请求后，一次性伪造本地超时并强制走 query-confirm。
+     * <p>
+     * Why:
+     * 当前真实网络环境下很难稳定把 place 请求压进 `HttpTimeoutException`，但 GateD 冻结前必须补齐
+     * `okx_query_confirm_place_*` 的真实执行证据。这里采用“请求已真实提交，再把本地返回改走 query-confirm”的
+     * 一次性注入方案，只在显式开关开启时生效，默认关闭，不改变默认主链语义。
+     */
+    private void maybeForcePlaceTimeoutEvidenceOnce(AdapterOrderRequest request) {
+        if (!consumePlaceTimeoutEvidenceOnce()) {
+            return;
+        }
+        log.warn(
+                "okx_force_timeout_place_once_consumed trace_id={} client_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.symbol()
+        );
+        // Why:
+        // 这里在真正抛出 HTTP_TIMEOUT 之前单独打点，方便区分“开关已进入 JVM，但请求没有命中”
+        // 与“请求已经命中并准备走 queryConfirmAfterTimeout”两种状态。
+        log.warn(
+                "okx_force_timeout_place_once_throwing_http_timeout trace_id={} client_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.symbol()
+        );
+        throw new OkxApiException(
+                "Forced OKX place timeout for query-confirm evidence, endpoint=" + TRADE_ORDER_ENDPOINT + ", trace_id=" + request.traceId(),
+                0,
+                TRADE_ORDER_ENDPOINT,
+                "HTTP_TIMEOUT",
+                request.traceId()
+        );
+    }
+
+    /**
+     * 仅用于 GateD 真实验收补证：在 OKX 已成功受理 cancel 请求后，一次性伪造本地超时并强制走 cancel query-confirm。
+     * <p>
+     * Why:
+     * cancel timeout 分支的进入条件和 place 一样严格依赖 `HttpTimeoutException`；为避免持续靠真实网络抖动碰运气，
+     * 这里提供同样默认关闭、显式开启、一次性消费的补证开关。
+     */
+    private void maybeForceCancelTimeoutEvidenceOnce(AdapterCancelRequest request) {
+        // Why:
+        // 先记录“已经到达 timeout 注入检查点”，这样可以把问题继续缩小到：
+        // 1) 开关没有进入 JVM
+        // 2) 开关进入 JVM 但在检查点被判定为未启用/已消费
+        // 3) 开关被消费并真正抛出 HTTP_TIMEOUT
+        log.info(
+                "okx_cancel_timeout_injection_check trace_id={} client_order_id={} external_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.externalOrderId(),
+                request.symbol()
+        );
+        if (!consumeCancelTimeoutEvidenceOnce()) {
+            log.info(
+                    "okx_cancel_timeout_injection_skipped trace_id={} client_order_id={} external_order_id={} symbol={}",
+                    request.traceId(),
+                    request.clientOrderId(),
+                    request.externalOrderId(),
+                    request.symbol()
+            );
+            return;
+        }
+        log.warn(
+                "okx_cancel_timeout_injection_consumed trace_id={} client_order_id={} external_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.externalOrderId(),
+                request.symbol()
+        );
+        log.warn(
+                "okx_force_timeout_cancel_once_consumed trace_id={} client_order_id={} external_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.externalOrderId(),
+                request.symbol()
+        );
+        // Why:
+        // cancel 分支和 place 分支一样，需要能从日志中明确看到“一次性开关已被消费，下一步就是伪造 HTTP_TIMEOUT”。
+        log.warn(
+                "okx_force_timeout_cancel_once_throwing_http_timeout trace_id={} client_order_id={} external_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.externalOrderId(),
+                request.symbol()
+        );
+        throw new OkxApiException(
+                "Forced OKX cancel timeout for query-confirm evidence, endpoint=" + CANCEL_ORDER_ENDPOINT + ", trace_id=" + request.traceId(),
+                0,
+                CANCEL_ORDER_ENDPOINT,
+                "HTTP_TIMEOUT",
+                request.traceId()
+        );
     }
 
     private AdapterOrderAck queryConfirmAfterTimeout(AdapterOrderRequest request) {
@@ -644,6 +782,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(runtimeConfig.timeout()).build();
         OkxApiCredentials credentials = runtimeConfig.credentials();
         logConnectionFingerprint(runtimeConfig);
+        logForcedTimeoutEvidenceFlags();
         OkxHttpClient publicHttpClient = new OkxHttpClient(
                 httpClient,
                 objectMapper,
@@ -682,6 +821,77 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     private static void logConnectionFingerprint(OkxRuntimeConfig runtimeConfig) {
         System.out.println("OKX adapter connection fingerprint: " + runtimeConfig.fingerprint());
+    }
+
+    /**
+     * Why:
+     * HTTP_TIMEOUT 取证批的首要问题不是“逻辑有没有写”，而是“强制开关到底有没有进入新 JVM”。
+     * 这里在 adapter 默认依赖创建阶段打印一次启动期日志，直接回答开关是否已被当前进程读取。
+     */
+    private static void logForcedTimeoutEvidenceFlags() {
+        if (isTruthy(System.getProperty(FORCE_PLACE_TIMEOUT_ONCE_PROPERTY))
+                || isTruthy(System.getenv(FORCE_PLACE_TIMEOUT_ONCE_ENV))) {
+            log.warn(
+                    "okx_force_timeout_place_once_enabled property={} env={}",
+                    System.getProperty(FORCE_PLACE_TIMEOUT_ONCE_PROPERTY),
+                    System.getenv(FORCE_PLACE_TIMEOUT_ONCE_ENV)
+            );
+        }
+        if (isTruthy(System.getProperty(FORCE_CANCEL_TIMEOUT_ONCE_PROPERTY))
+                || isTruthy(System.getenv(FORCE_CANCEL_TIMEOUT_ONCE_ENV))) {
+            log.warn(
+                    "okx_force_timeout_cancel_once_enabled property={} env={}",
+                    System.getProperty(FORCE_CANCEL_TIMEOUT_ONCE_PROPERTY),
+                    System.getenv(FORCE_CANCEL_TIMEOUT_ONCE_ENV)
+            );
+        }
+    }
+
+    /**
+     * Why:
+     * 单测需要可控地重置一次性取证开关，否则静态原子状态会污染后续用例。
+     */
+    static void resetTimeoutEvidenceForTest() {
+        PLACE_TIMEOUT_EVIDENCE_CONSUMED.set(false);
+        CANCEL_TIMEOUT_EVIDENCE_CONSUMED.set(false);
+    }
+
+    /**
+     * Why:
+     * place/cancel 取证都要求“默认关闭、显式开启、每个 JVM 只消费一次”。这里把一次性开关做成 package-private，
+     * 既能被单测验证，也不把补证细节暴露到 adapter-api 对外契约。
+     */
+    static boolean consumePlaceTimeoutEvidenceOnce() {
+        return consumeTimeoutEvidenceOnce(
+                FORCE_PLACE_TIMEOUT_ONCE_PROPERTY,
+                FORCE_PLACE_TIMEOUT_ONCE_ENV,
+                PLACE_TIMEOUT_EVIDENCE_CONSUMED
+        );
+    }
+
+    static boolean consumeCancelTimeoutEvidenceOnce() {
+        return consumeTimeoutEvidenceOnce(
+                FORCE_CANCEL_TIMEOUT_ONCE_PROPERTY,
+                FORCE_CANCEL_TIMEOUT_ONCE_ENV,
+                CANCEL_TIMEOUT_EVIDENCE_CONSUMED
+        );
+    }
+
+    private static boolean consumeTimeoutEvidenceOnce(String propertyKey, String envKey, AtomicBoolean consumedMarker) {
+        if (!isTruthy(System.getProperty(propertyKey)) && !isTruthy(System.getenv(envKey))) {
+            return false;
+        }
+        return consumedMarker.compareAndSet(false, true);
+    }
+
+    private static boolean isTruthy(String raw) {
+        if (raw == null) {
+            return false;
+        }
+        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+            case "1", "true", "yes", "on" -> true;
+            default -> false;
+        };
     }
 
     /**

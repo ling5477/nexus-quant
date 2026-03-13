@@ -1,7 +1,11 @@
 ﻿[CmdletBinding()]
 param(
     [string]$BaseUrl,
+    [string]$AccountId,
+    [string]$AppLogPath,
     [string]$EnvFilePath,
+    [switch]$ForcePlaceTimeoutOnce,
+    [switch]$ForceCancelTimeoutOnce,
     [switch]$SkipRestartPause,
     [switch]$AutoRestart,
     [int]$StartupTimeoutSec = 180
@@ -170,6 +174,97 @@ function Apply-OkxRuntimeConfig {
     Set-ProcessConfigValue -Name "NQ_OKX_WS_URL" -Value $RuntimeConfig.WsUrl
 }
 
+function Resolve-ServiceBaseUrl {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$EnvMap,
+        [string]$ExplicitBaseUrl
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitBaseUrl)) {
+        return $ExplicitBaseUrl.TrimEnd("/")
+    }
+
+    $configuredBaseUrl = Select-FirstNonBlankValue -Candidates @(
+        (Get-ConfigValue -EnvMap $EnvMap -Name "NQ_GATED_SERVICE_BASE_URL"),
+        (Get-ConfigValue -EnvMap $EnvMap -Name "NQ_APP_BASE_URL")
+    )
+    if (-not [string]::IsNullOrWhiteSpace($configuredBaseUrl)) {
+        return $configuredBaseUrl.TrimEnd("/")
+    }
+
+    $configuredPort = Get-ConfigValue -EnvMap $EnvMap -Name "NQ_APP_PORT" -DefaultValue "18888"
+    if ([string]::IsNullOrWhiteSpace($configuredPort)) {
+        $configuredPort = "18888"
+    }
+
+    # Why: 第廿一批修复脚本 health timeout 的根因是默认 serviceBaseUrl 仍残留旧 `28081`；
+    # 这里统一收口到应用真实端口配置，未显式提供时默认回退 `http://localhost:18888`，与 nq-app 的 `server.port` 默认值一致。
+    return ("http://localhost:" + $configuredPort)
+}
+
+function Resolve-VerifyAccountId {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$EnvMap,
+        [string]$ExplicitAccountId
+    )
+
+    $configuredAccountId = Select-FirstNonBlankValue -Candidates @(
+        $ExplicitAccountId,
+        (Get-ConfigValue -EnvMap $EnvMap -Name "NQ_GATED_ACCOUNT_ID"),
+        (Get-ConfigValue -EnvMap $EnvMap -Name "NQ_OKX_VERIFY_ACCOUNT_ID"),
+        (Get-ConfigValue -EnvMap $EnvMap -Name "NQ_ACCOUNT_ID")
+    )
+
+    if ([string]::IsNullOrWhiteSpace($configuredAccountId)) {
+        $configuredAccountId = "1001"
+    }
+
+    $parsedAccountId = 0L
+    # Why: 第二十二批开始脚本不再写死 `2001`；这里统一把参数 / 环境变量 / 本地默认账号收口成单一 accountId，
+    # 并在进入真实 OKX 验收链之前做格式校验，避免再次把“账号参数错误”误判成业务链路或 OKX 本身失败。
+    if (-not [long]::TryParse($configuredAccountId, [ref]$parsedAccountId) -or $parsedAccountId -le 0) {
+        throw "Unsupported verify accountId='$configuredAccountId'. Provide -AccountId, NQ_GATED_ACCOUNT_ID, NQ_OKX_VERIFY_ACCOUNT_ID, or NQ_ACCOUNT_ID with a positive integer."
+    }
+
+    return $parsedAccountId
+}
+
+function Resolve-AppLogPath {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$EnvMap,
+        [string]$ExplicitAppLogPath
+    )
+
+    $configuredAppLogPath = Select-FirstNonBlankValue -Candidates @(
+        $ExplicitAppLogPath,
+        (Get-ConfigValue -EnvMap $EnvMap -Name "NQ_GATED_APP_LOG_PATH"),
+        (Get-ConfigValue -EnvMap $EnvMap -Name "NQ_APP_LOG_PATH")
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($configuredAppLogPath)) {
+        return $configuredAppLogPath
+    }
+
+    return (Join-Path (Split-Path -Parent $PSScriptRoot) "artifacts/gated-okx-dome-app.log")
+}
+
+function Resolve-ConfigFlag {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$EnvMap,
+        [string]$ExplicitValue,
+        [Parameter(Mandatory = $true)][string[]]$Names
+    )
+
+    $rawValue = Select-FirstNonBlankValue -Candidates @(
+        $ExplicitValue
+        $(foreach ($name in $Names) { Get-ConfigValue -EnvMap $EnvMap -Name $name })
+    )
+    if ([string]::IsNullOrWhiteSpace($rawValue)) {
+        return $false
+    }
+    return @("1", "true", "yes", "on") -contains $rawValue.Trim().ToLowerInvariant()
+}
+
 function New-TraceId {
     param([Parameter(Mandatory = $true)][string]$Prefix)
     return ("trc-gated-" + $Prefix + "-" + [DateTimeOffset]::UtcNow.ToString("yyyyMMddHHmmss") + "-" + (Get-Random -Minimum 100 -Maximum 999))
@@ -179,6 +274,41 @@ function New-ClientOrderId {
     param([Parameter(Mandatory = $true)][string]$Prefix)
     $seed = [DateTimeOffset]::UtcNow.ToString("MMddHHmmss")
     return ($Prefix + $seed)
+}
+
+function Get-QueryConfirmSamples {
+    param(
+        [Parameter(Mandatory = $true)][string]$LogPath,
+        [Parameter(Mandatory = $true)][string[]]$TraceIds,
+        [int]$WaitSec = 3
+    )
+
+    $normalizedTraceIds = @($TraceIds | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+    if ($normalizedTraceIds.Count -eq 0) {
+        return @()
+    }
+
+    $deadline = (Get-Date).AddSeconds($WaitSec)
+    do {
+        if (Test-Path $LogPath) {
+            $allLines = Get-Content $LogPath -ErrorAction SilentlyContinue
+            $matchedLines = foreach ($line in $allLines) {
+                if ($line -notmatch "okx_query_confirm_") { continue }
+                foreach ($traceId in $normalizedTraceIds) {
+                    if ($line -like "*$traceId*") {
+                        $line
+                        break
+                    }
+                }
+            }
+            if ($matchedLines) {
+                return @($matchedLines | Select-Object -Unique)
+            }
+        }
+        Start-Sleep -Milliseconds 500
+    } while ((Get-Date) -lt $deadline)
+
+    return @()
 }
 
 function Invoke-GatedPost {
@@ -261,7 +391,8 @@ function Wait-ServiceHealth {
 function Restart-LocalGatedApp {
     param(
         [Parameter(Mandatory = $true)][string]$ServiceBaseUrl,
-        [Parameter(Mandatory = $true)][int]$TimeoutSec
+        [Parameter(Mandatory = $true)][int]$TimeoutSec,
+        [Parameter(Mandatory = $true)][string]$StartupLogPath
     )
 
     $uri = [Uri]$ServiceBaseUrl
@@ -273,7 +404,23 @@ function Restart-LocalGatedApp {
     }
 
     $repoRootLocal = Split-Path -Parent $PSScriptRoot
-    $startupLog = Join-Path $repoRootLocal "artifacts/gated-okx-dome-app.log"
+    $startupLog = $StartupLogPath
+    $startupLogDirectory = Split-Path -Parent $startupLog
+    if (-not [string]::IsNullOrWhiteSpace($startupLogDirectory) -and -not (Test-Path $startupLogDirectory)) {
+        New-Item -ItemType Directory -Path $startupLogDirectory -Force | Out-Null
+    }
+    if (Test-Path $startupLog) {
+        try {
+            Remove-Item $startupLog -Force
+        } catch {
+            $startupLog = Join-Path $startupLogDirectory (
+                [System.IO.Path]::GetFileNameWithoutExtension($StartupLogPath) +
+                "-" +
+                [DateTimeOffset]::UtcNow.ToString("yyyyMMddHHmmssfff") +
+                [System.IO.Path]::GetExtension($StartupLogPath)
+            )
+        }
+    }
     $startupCommand = @"
 Set-Location '$repoRootLocal'
 `$env:NQ_DB_PORT='5432'
@@ -295,15 +442,56 @@ mvn -q -o -f backend/pom.xml -pl nq-app -am spring-boot:run *> '$startupLog'
         }
         throw
     }
+    return $startupLog
 }
 
 function Parse-OrderIdFromDetail {
     param([Parameter(Mandatory = $true)][object]$Body)
-    if ($Body -isnot [pscustomobject]) { return $null }
-    if ($null -eq $Body.detail) { return $null }
-    $match = [regex]::Match([string]$Body.detail, "order_id=([^,]+),")
+    if ($null -eq $Body) { return $null }
+    $detailProperty = $Body.PSObject.Properties["detail"]
+    if ($null -eq $detailProperty) { return $null }
+    if ($null -eq $detailProperty.Value) { return $null }
+    $match = [regex]::Match([string]$detailProperty.Value, "order_id=([^,]+),")
     if ($match.Success) { return $match.Groups[1].Value.Trim() }
     return $null
+}
+
+function Get-ResponseStatusToken {
+    param([object]$Response)
+    if ($null -eq $Response) { return "n/a" }
+    $statusProperty = $Response.PSObject.Properties["StatusCode"]
+    if ($null -eq $statusProperty -or $null -eq $statusProperty.Value) { return "n/a" }
+    return [string]$statusProperty.Value
+}
+
+function Get-ResponseRawBodyValue {
+    param([object]$Response)
+    if ($null -eq $Response) { return "" }
+    $rawBodyProperty = $Response.PSObject.Properties["RawBody"]
+    if ($null -eq $rawBodyProperty -or $null -eq $rawBodyProperty.Value) { return "" }
+    return [string]$rawBodyProperty.Value
+}
+
+function Get-BodyPropertyValue {
+    param(
+        [object]$Body,
+        [Parameter(Mandatory = $true)][string]$PropertyName
+    )
+    if ($null -eq $Body) { return $null }
+    $bodyProperty = $Body.PSObject.Properties[$PropertyName]
+    if ($null -eq $bodyProperty) { return $null }
+    return $bodyProperty.Value
+}
+
+function Get-ResponseBodyPropertyValue {
+    param(
+        [object]$Response,
+        [Parameter(Mandatory = $true)][string]$PropertyName
+    )
+    if ($null -eq $Response) { return $null }
+    $bodyProperty = $Response.PSObject.Properties["Body"]
+    if ($null -eq $bodyProperty) { return $null }
+    return Get-BodyPropertyValue -Body $bodyProperty.Value -PropertyName $PropertyName
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -326,14 +514,29 @@ Set-ProcessConfigValue -Name "NQ_GATED_VERIFY_ENABLED" -Value "true"
 # Why: real 环境下绝不允许 fallback 冒充成功；dome 验收脚本也强制 non-fallback，和本地 smoke 区分开。
 Set-ProcessConfigValue -Name "NQ_OKX_ADAPTER_STUB_ON_BOOTSTRAP_FAILURE" -Value "false"
 
-$serviceBaseUrl = if (-not [string]::IsNullOrWhiteSpace($BaseUrl)) { $BaseUrl } else { "http://localhost:28081" }
+$serviceBaseUrl = Resolve-ServiceBaseUrl -EnvMap $envMap -ExplicitBaseUrl $BaseUrl
+$verifyAccountId = Resolve-VerifyAccountId -EnvMap $envMap -ExplicitAccountId $AccountId
+$appLogPath = Resolve-AppLogPath -EnvMap $envMap -ExplicitAppLogPath $AppLogPath
+$forcePlaceTimeoutEvidence = Resolve-ConfigFlag -EnvMap $envMap -ExplicitValue $(if ($ForcePlaceTimeoutOnce) { "true" } else { "" }) -Names @("NQ_OKX_FORCE_PLACE_TIMEOUT_ONCE")
+$forceCancelTimeoutEvidence = Resolve-ConfigFlag -EnvMap $envMap -ExplicitValue $(if ($ForceCancelTimeoutOnce) { "true" } else { "" }) -Names @("NQ_OKX_FORCE_CANCEL_TIMEOUT_ONCE")
+Set-ProcessConfigValue -Name "NQ_GATED_ACCOUNT_ID" -Value ([string]$verifyAccountId)
+Set-ProcessConfigValue -Name "NQ_GATED_APP_LOG_PATH" -Value $appLogPath
+Set-ProcessConfigValue -Name "NQ_OKX_FORCE_PLACE_TIMEOUT_ONCE" -Value $(if ($forcePlaceTimeoutEvidence) { "true" } else { "" })
+Set-ProcessConfigValue -Name "NQ_OKX_FORCE_CANCEL_TIMEOUT_ONCE" -Value $(if ($forceCancelTimeoutEvidence) { "true" } else { "" })
+
+if (($forcePlaceTimeoutEvidence -or $forceCancelTimeoutEvidence) -and -not $AutoRestart) {
+    Write-Host "Forced timeout evidence is enabled without -AutoRestart; ensure the running nq-app process has been restarted with the current env flags."
+}
 
 Write-Host "== GateD OKX Verify =="
 Write-Host "serviceBaseUrl=$serviceBaseUrl"
+Write-Host "verifyAccountId=$verifyAccountId"
+Write-Host "appLogPath=$appLogPath"
 Write-Host "envFilePath=$envPath"
 Write-Host "okxEnv=$($okxRuntime.EnvName)"
 Write-Host "credentialSource=$($okxRuntime.Prefix)* -> NQ_OKX_API_* / NQ_OKX_BASE_URL / NQ_OKX_WS_URL"
 Write-Host "startupMode=canonical_non_fallback (NQ_OKX_ADAPTER_STUB_ON_BOOTSTRAP_FAILURE=false)"
+Write-Host "forcedTimeoutEvidence=$(if ($forcePlaceTimeoutEvidence -and $forceCancelTimeoutEvidence) { 'place_once,cancel_once' } elseif ($forcePlaceTimeoutEvidence) { 'place_once' } elseif ($forceCancelTimeoutEvidence) { 'cancel_once' } else { 'none' })"
 Write-Host ""
 
 try {
@@ -341,7 +544,8 @@ try {
 } catch {
     if ($AutoRestart) {
         Write-Host "Service is not healthy yet, starting canonical non-fallback nq-app..."
-        Restart-LocalGatedApp -ServiceBaseUrl $serviceBaseUrl -TimeoutSec $StartupTimeoutSec
+        $appLogPath = Restart-LocalGatedApp -ServiceBaseUrl $serviceBaseUrl -TimeoutSec $StartupTimeoutSec -StartupLogPath $appLogPath
+        Write-Host "restartLogPath=$appLogPath"
     } else {
         throw
     }
@@ -353,7 +557,7 @@ $summary = @()
 $caseAClientOrderId = New-ClientOrderId -Prefix "g6a"
 $caseATracePlace = New-TraceId -Prefix "a-place"
 $caseAPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders" -TraceId $caseATracePlace -Body @{
-    accountId     = 2001
+    accountId     = $verifyAccountId
     venue         = "OKX"
     clientOrderId = $caseAClientOrderId
     symbol        = "BTC-USDT"
@@ -365,7 +569,7 @@ $caseAPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/o
 $caseAOrderId = Parse-OrderIdFromDetail -Body $caseAPlace.Body
 $caseATraceCancel = New-TraceId -Prefix "a-cancel"
 $caseACancel = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders/cancel" -TraceId $caseATraceCancel -Body @{
-    accountId     = 2001
+    accountId     = $verifyAccountId
     clientOrderId = $caseAClientOrderId
     reason        = "gated_dome_verify_a"
 }
@@ -383,19 +587,20 @@ $caseATrade = if ($caseAOrderId) {
 } else {
     $null
 }
+$caseAQueryConfirmSamples = @(Get-QueryConfirmSamples -LogPath $appLogPath -TraceIds @($caseATracePlace, $caseATraceCancel))
 $summary += [PSCustomObject]@{
     UseCase = "A"
     Step    = "place/cancel/reconcile/query"
     Trace   = "$caseATracePlace | $caseATraceCancel | $caseATraceReconcile | $caseATraceOrder | $caseATraceTrade"
-    Status  = "place=$($caseAPlace.StatusCode), cancel=$($caseACancel.StatusCode), reconcile=$($caseAReconcile.StatusCode), order=$($caseAOrder.StatusCode), trade=$($caseATrade.StatusCode)"
-    Detail  = "orderId=$caseAOrderId; orderStatus=$($caseAOrder.Body.status); tradeBody=$($caseATrade.RawBody); place=$($caseAPlace.RawBody); cancel=$($caseACancel.RawBody); reconcile=$($caseAReconcile.RawBody)"
+    Status  = "place=$(Get-ResponseStatusToken -Response $caseAPlace), cancel=$(Get-ResponseStatusToken -Response $caseACancel), reconcile=$(Get-ResponseStatusToken -Response $caseAReconcile), order=$(Get-ResponseStatusToken -Response $caseAOrder), trade=$(Get-ResponseStatusToken -Response $caseATrade)"
+    Detail  = "orderId=$caseAOrderId; orderStatus=$(Get-ResponseBodyPropertyValue -Response $caseAOrder -PropertyName 'status'); tradeBody=$(Get-ResponseRawBodyValue -Response $caseATrade); place=$(Get-ResponseRawBodyValue -Response $caseAPlace); cancel=$(Get-ResponseRawBodyValue -Response $caseACancel); reconcile=$(Get-ResponseRawBodyValue -Response $caseAReconcile); queryConfirm=$(if ($caseAQueryConfirmSamples.Count -gt 0) { $caseAQueryConfirmSamples -join ' || ' } else { 'no_query_confirm_log_sample' })"
 }
 
 # UseCase B: market order -> reconcile
 $caseBClientOrderId = New-ClientOrderId -Prefix "g6b"
 $caseBTracePlace = New-TraceId -Prefix "b-place"
 $caseBPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders" -TraceId $caseBTracePlace -Body @{
-    accountId     = 2001
+    accountId     = $verifyAccountId
     venue         = "OKX"
     clientOrderId = $caseBClientOrderId
     symbol        = "BTC-USDT"
@@ -418,19 +623,20 @@ $caseBTrade = if ($caseBOrderId) {
 } else {
     $null
 }
+$caseBQueryConfirmSamples = @(Get-QueryConfirmSamples -LogPath $appLogPath -TraceIds @($caseBTracePlace))
 $summary += [PSCustomObject]@{
     UseCase = "B"
     Step    = "place/reconcile/query"
     Trace   = "$caseBTracePlace | $caseBTraceReconcile | $caseBTraceOrder | $caseBTraceTrade"
-    Status  = "place=$($caseBPlace.StatusCode), reconcile=$($caseBReconcile.StatusCode), order=$($caseBOrder.StatusCode), trade=$($caseBTrade.StatusCode)"
-    Detail  = "orderId=$caseBOrderId; orderStatus=$($caseBOrder.Body.status); tradeBody=$($caseBTrade.RawBody); place=$($caseBPlace.RawBody); reconcile=$($caseBReconcile.RawBody)"
+    Status  = "place=$(Get-ResponseStatusToken -Response $caseBPlace), reconcile=$(Get-ResponseStatusToken -Response $caseBReconcile), order=$(Get-ResponseStatusToken -Response $caseBOrder), trade=$(Get-ResponseStatusToken -Response $caseBTrade)"
+    Detail  = "orderId=$caseBOrderId; orderStatus=$(Get-ResponseBodyPropertyValue -Response $caseBOrder -PropertyName 'status'); tradeBody=$(Get-ResponseRawBodyValue -Response $caseBTrade); place=$(Get-ResponseRawBodyValue -Response $caseBPlace); reconcile=$(Get-ResponseRawBodyValue -Response $caseBReconcile); queryConfirm=$(if ($caseBQueryConfirmSamples.Count -gt 0) { $caseBQueryConfirmSamples -join ' || ' } else { 'no_query_confirm_log_sample' })"
 }
 
 # UseCase C: non-terminal order -> restart -> recovery/reconcile
 $caseCClientOrderId = New-ClientOrderId -Prefix "g6c"
 $caseCTracePlace = New-TraceId -Prefix "c-place"
 $caseCPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders" -TraceId $caseCTracePlace -Body @{
-    accountId     = 2001
+    accountId     = $verifyAccountId
     venue         = "OKX"
     clientOrderId = $caseCClientOrderId
     symbol        = "BTC-USDT"
@@ -443,11 +649,14 @@ $caseCPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/o
 Write-Host ""
 if ($AutoRestart) {
     Write-Host "UseCase-C: auto restart mode enabled (stop/start + health wait)."
-    Restart-LocalGatedApp -ServiceBaseUrl $serviceBaseUrl -TimeoutSec $StartupTimeoutSec
+    $appLogPath = Restart-LocalGatedApp -ServiceBaseUrl $serviceBaseUrl -TimeoutSec $StartupTimeoutSec -StartupLogPath $appLogPath
+    Write-Host "restartLogPath=$appLogPath"
 } else {
     Write-Host "UseCase-C: restart nq-app now, then continue."
     if (-not $SkipRestartPause) {
         [void](Read-Host "Press Enter after restart to continue recovery/reconcile")
+        Write-Host "UseCase-C: waiting for service health after manual restart..."
+        Wait-ServiceHealth -ServiceBaseUrl $serviceBaseUrl -TimeoutSec $StartupTimeoutSec
     }
 }
 
@@ -457,7 +666,7 @@ $caseCTraceReconcile = New-TraceId -Prefix "c-reconcile"
 $caseCReconcile = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/reconcile/runOnce" -TraceId $caseCTraceReconcile -Body @{ limit = 200 }
 $caseCTraceCancel = New-TraceId -Prefix "c-cancel"
 $caseCCancel = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders/cancel" -TraceId $caseCTraceCancel -Body @{
-    accountId     = 2001
+    accountId     = $verifyAccountId
     clientOrderId = $caseCClientOrderId
     reason        = "gated_dome_verify_c_finalize"
 }
@@ -474,12 +683,13 @@ $caseCTrade = if ($caseCOrderId) {
 } else {
     $null
 }
+$caseCQueryConfirmSamples = @(Get-QueryConfirmSamples -LogPath $appLogPath -TraceIds @($caseCTracePlace, $caseCTraceCancel))
 $summary += [PSCustomObject]@{
     UseCase = "C"
     Step    = "place/restart/recovery/reconcile/cancel/query"
     Trace   = "$caseCTracePlace | $caseCTraceRecovery | $caseCTraceReconcile | $caseCTraceCancel | $caseCTraceOrder | $caseCTraceTrade"
-    Status  = "place=$($caseCPlace.StatusCode), recovery=$($caseCRecovery.StatusCode), reconcile=$($caseCReconcile.StatusCode), cancel=$($caseCCancel.StatusCode), order=$($caseCOrder.StatusCode), trade=$($caseCTrade.StatusCode)"
-    Detail  = "orderId=$caseCOrderId; orderStatus=$($caseCOrder.Body.status); tradeBody=$($caseCTrade.RawBody); place=$($caseCPlace.RawBody); recovery=$($caseCRecovery.RawBody); reconcile=$($caseCReconcile.RawBody); cancel=$($caseCCancel.RawBody)"
+    Status  = "place=$(Get-ResponseStatusToken -Response $caseCPlace), recovery=$(Get-ResponseStatusToken -Response $caseCRecovery), reconcile=$(Get-ResponseStatusToken -Response $caseCReconcile), cancel=$(Get-ResponseStatusToken -Response $caseCCancel), order=$(Get-ResponseStatusToken -Response $caseCOrder), trade=$(Get-ResponseStatusToken -Response $caseCTrade)"
+    Detail  = "orderId=$caseCOrderId; orderStatus=$(Get-ResponseBodyPropertyValue -Response $caseCOrder -PropertyName 'status'); tradeBody=$(Get-ResponseRawBodyValue -Response $caseCTrade); place=$(Get-ResponseRawBodyValue -Response $caseCPlace); recovery=$(Get-ResponseRawBodyValue -Response $caseCRecovery); reconcile=$(Get-ResponseRawBodyValue -Response $caseCReconcile); cancel=$(Get-ResponseRawBodyValue -Response $caseCCancel); queryConfirm=$(if ($caseCQueryConfirmSamples.Count -gt 0) { $caseCQueryConfirmSamples -join ' || ' } else { 'no_query_confirm_log_sample' })"
 }
 
 Write-Host ""

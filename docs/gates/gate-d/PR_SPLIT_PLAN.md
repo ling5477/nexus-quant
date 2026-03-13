@@ -137,8 +137,13 @@
 ### 当前进展
 - `__gated` canonical 验收入口、order/trade/position/account 本地闭环已完成
 - OKX 验收脚本已改为 canonical non-fallback 启动路径，并显式支持 `.env -> NQ_OKX_ENV=dome|real -> NQ_OKX_API_*` 统一运行时变量映射
-- `dome / real` 两种模式均已推进到真实 OKX bootstrap；当前共同阻断点是 OKX 外网连接失败（`Permission denied: getsockopt`）
-- 真实 `UC-D9: OKX LIMIT -> cancel` 尚未转绿，因此 PR-7 继续保持进行中
+- `serviceBaseUrl` 已从旧 `http://localhost:28081` 收口为 `-BaseUrl -> NQ_GATED_SERVICE_BASE_URL / NQ_APP_BASE_URL -> http://localhost:${NQ_APP_PORT|18888}`，health timeout 已被排除
+- 脚本 `accountId` 已收口为 `-AccountId -> NQ_GATED_ACCOUNT_ID / NQ_OKX_VERIFY_ACCOUNT_ID / NQ_ACCOUNT_ID -> 1001`，官方脚本默认不再写死旧 `2001`
+- 本次官方脚本在 `verifyAccountId=1001` 下已拿到真重启真实样本：
+  - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
+  - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
+  - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
+- 说明：`UC-D9` 的最小 `LIMIT -> cancel` 与真重启后的 `recovery / reconcile / cancel / query` 已取得官方脚本正向样本；UseCase-B 的 `reconcile new_trades=2 / trade=200` 已通过 DB 明细解释为同一订单下两条不同 `exchange_trade_id` 的真实成交，不再是待解释主阻塞。PR-7 继续保持进行中，剩余缺口只收敛为 `query-confirm` timeout 分支的显式日志样本；当前在 `NQ_OKX_TIMEOUT_MS=50 / 5 / 1` 的连续实验下仍未自然触发该分支，因此后续需要单独设计 timeout 样本，而不是继续修改 health、accountId 或真重启链路
 
 ---
 
