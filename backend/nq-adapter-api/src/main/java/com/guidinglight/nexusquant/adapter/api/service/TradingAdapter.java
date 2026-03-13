@@ -11,10 +11,11 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import java.util.List;
 
 /**
- * TradingAdapter 冻结 GateC 的统一交易端口。
+ * TradingAdapter 冻结 GateD 的统一交易端口。
  * <p>
  * Why:
- * GateC-0 的核心目标是把 PAPER/OKX/BINANCE 抽象成同一种交易能力，避免 core 再走 paper 专用链路。
+ * GateD 要求 core 只看到统一的 place / cancel / query / list-open-orders 语义，
+ * 交易所方言必须留在 adapter 层内完成映射。
  */
 public interface TradingAdapter {
 

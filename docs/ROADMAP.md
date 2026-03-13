@@ -1,5 +1,10 @@
 # Roadmap（V1 → V3）
 
+> Archive Notice
+> - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `README.md` 中对 GateD 的阶段说明。
+> - 历史 Gate 冻结快照请优先参考 `docs/gates/` 目录。
+
 > 目的：把迭代边界写清楚，避免模块乱长、闭环未成就提前分叉。
 
 ---
@@ -53,4 +58,3 @@
 
 ## V3：A股（后续）
 - T+1、涨跌停、盘前盘后规则、券商 / CTP / 行情源接入
-

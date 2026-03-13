@@ -178,7 +178,7 @@ class PaperMatchingServiceTest {
     private static final class InMemoryOrderExecutionGateway implements OrderExecutionGateway {
 
         private final Map<String, OrderRecord> orders = new HashMap<>();
-        private int transitionCount;
+        private int lifecycleInvocationCount;
 
         @Override
         public List<OrderRecord> findMatchableOrders(int limit) {
@@ -189,11 +189,11 @@ class PaperMatchingServiceTest {
         }
 
         @Override
-        public OrderRecord transition(String orderId, OrderStatus nextStatus, String reason, String traceId) {
+        public OrderRecord markFilled(String orderId, String reason, String traceId) {
             OrderRecord existing = orders.get(orderId);
-            OrderRecord transitioned = existing.withStatus(nextStatus, reason);
+            OrderRecord transitioned = existing.withStatus(OrderStatus.FILLED, reason);
             orders.put(orderId, transitioned);
-            transitionCount++;
+            lifecycleInvocationCount++;
             return transitioned;
         }
 
@@ -202,7 +202,7 @@ class PaperMatchingServiceTest {
         }
 
         int transitionCount() {
-            return transitionCount;
+            return lifecycleInvocationCount;
         }
     }
 

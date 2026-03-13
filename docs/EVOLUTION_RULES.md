@@ -1,5 +1,10 @@
 # 事件契约演进规则（EVOLUTION_RULES）
 
+> Archive Notice
+> - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-d/EVOLUTION_RULES.md`。
+> - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/EVOLUTION_RULES.md`。
+
 > 目标：保证事件的长期可读、可回放、可升级。  
 > 事件契约是系统的“公共 API”，比内部代码更需要谨慎变更。
 

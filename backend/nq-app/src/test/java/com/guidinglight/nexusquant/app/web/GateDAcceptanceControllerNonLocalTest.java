@@ -1,7 +1,9 @@
 package com.guidinglight.nexusquant.app.web;
 
+import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
 import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +16,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * GateCAcceptanceControllerNonLocalTest 验证非 local profile 下不会暴露 GateC 验收路由。
+ * GateDAcceptanceControllerNonLocalTest 验证非 local profile 下不会暴露 GateD 验收路由。
  */
 @ActiveProfiles("test")
-@WebMvcTest(properties = "nq.gatec.verify.enabled=true")
-class GateCAcceptanceControllerNonLocalTest {
+@WebMvcTest(properties = "nq.gated.verify.enabled=true")
+class GateDAcceptanceControllerNonLocalTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -27,13 +29,21 @@ class GateCAcceptanceControllerNonLocalTest {
     private OrderCommandService orderCommandService;
 
     @MockitoBean
+    private TradingQueryFacade tradingQueryFacade;
+
+    @MockitoBean
     private OkxRestReconcileService okxRestReconcileService;
+
+    @MockitoBean
+    private BinanceRestReconcileService binanceRestReconcileService;
 
     @MockitoBean
     private RecoveryService recoveryService;
 
     @Test
     void shouldReturnNotFoundWhenProfileIsNotLocal() throws Exception {
+        mockMvc.perform(post("/__gated/recovery/runOnce"))
+                .andExpect(status().isNotFound());
         mockMvc.perform(post("/__gatec/recovery/runOnce"))
                 .andExpect(status().isNotFound());
     }

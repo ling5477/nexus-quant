@@ -3,7 +3,6 @@ package com.guidinglight.nexusquant.scheduler.service;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceTradeFill;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
@@ -13,6 +12,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
@@ -47,6 +47,7 @@ public class BinanceRestReconcileService {
     private static final int DEFAULT_LIMIT = 100;
 
     private final OrderCommandService orderCommandService;
+    private final OrderLifecycleService orderLifecycleService;
     private final BinanceExchangeAdapter binanceExchangeAdapter;
     private final TradeRepository tradeRepository;
     private final TradeLedgerGateway tradeLedgerGateway;
@@ -55,7 +56,8 @@ public class BinanceRestReconcileService {
     private final Clock clock;
 
     /**
-     * @param orderCommandService    订单编排服务
+     * @param orderCommandService    订单查询与 external_order_id 绑定服务
+     * @param orderLifecycleService  订单生命周期入口
      * @param binanceExchangeAdapter Binance adapter
      * @param tradeRepository        trades 仓储
      * @param tradeLedgerGateway     ledger 网关
@@ -64,6 +66,7 @@ public class BinanceRestReconcileService {
      */
     public BinanceRestReconcileService(
             OrderCommandService orderCommandService,
+            OrderLifecycleService orderLifecycleService,
             BinanceExchangeAdapter binanceExchangeAdapter,
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
@@ -71,6 +74,10 @@ public class BinanceRestReconcileService {
             AuditLogRepository auditLogRepository
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
+        this.orderLifecycleService = Objects.requireNonNull(
+                orderLifecycleService,
+                "orderLifecycleService must not be null"
+        );
         this.binanceExchangeAdapter = Objects.requireNonNull(
                 binanceExchangeAdapter,
                 "binanceExchangeAdapter must not be null"
@@ -147,7 +154,7 @@ public class BinanceRestReconcileService {
                     updatedOrder.traceId()
             );
         }
-        alignOrderStatus(updatedOrder, snapshot.status(), updatedOrder.traceId());
+        alignOrderStatus(updatedOrder, snapshot.externalStatus(), updatedOrder.traceId());
         OrderRecord latestOrder = orderCommandService.findByOrderId(updatedOrder.orderId()).orElse(updatedOrder);
         return reconcileFills(latestOrder);
     }
@@ -155,28 +162,28 @@ public class BinanceRestReconcileService {
     private void alignOrderStatus(OrderRecord order, String adapterStatus, String traceId) {
         OrderStatus currentStatus = order.status();
         OrderStatus targetStatus = toTargetStatus(adapterStatus);
-        if (currentStatus == targetStatus || isTerminalStatus(currentStatus)) {
+        if (currentStatus == targetStatus || isTerminalStatus(currentStatus) || targetStatus == OrderStatus.SENT) {
             return;
         }
         if ((targetStatus == OrderStatus.ACCEPTED || targetStatus == OrderStatus.PARTIALLY_FILLED)
                 && currentStatus == OrderStatus.CANCEL_REQUESTED) {
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCEL_REJECTED, "RECONCILE_CANCEL_REJECTED", traceId);
+            orderLifecycleService.rejectCancel(order.orderId(), "RECONCILE_CANCEL_REJECTED", traceId);
             if (targetStatus == OrderStatus.ACCEPTED) {
-                orderCommandService.transitionOrder(order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_STATUS_ALIGN", traceId);
+                orderLifecycleService.acknowledge(order.orderId(), "RECONCILE_STATUS_ALIGN", traceId);
                 return;
             }
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_CONFIRM_ACCEPTED", traceId);
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.PARTIALLY_FILLED, "RECONCILE_PARTIAL_FILL", traceId);
+            orderLifecycleService.acknowledge(order.orderId(), "RECONCILE_CONFIRM_ACCEPTED", traceId);
+            orderLifecycleService.markPartiallyFilled(order.orderId(), "RECONCILE_PARTIAL_FILL", traceId);
             return;
         }
         if (targetStatus == OrderStatus.PARTIALLY_FILLED && currentStatus == OrderStatus.SENT) {
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_CONFIRM_ACCEPTED", traceId);
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.PARTIALLY_FILLED, "RECONCILE_PARTIAL_FILL", traceId);
+            orderLifecycleService.acknowledge(order.orderId(), "RECONCILE_CONFIRM_ACCEPTED", traceId);
+            orderLifecycleService.markPartiallyFilled(order.orderId(), "RECONCILE_PARTIAL_FILL", traceId);
             return;
         }
         if (targetStatus == OrderStatus.CANCELLED && currentStatus != OrderStatus.CANCEL_REQUESTED) {
             try {
-                orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCEL_REQUESTED, "RECONCILE_CANCEL_REQUESTED", traceId);
+                orderLifecycleService.requestCancel(order.orderId(), "RECONCILE_CANCEL_REQUESTED", traceId);
             } catch (IllegalStateException ex) {
                 OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
                         .map(OrderRecord::status)
@@ -186,10 +193,10 @@ public class BinanceRestReconcileService {
                 }
                 throw ex;
             }
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCELLED, "RECONCILE_CANCELLED", traceId);
+            orderLifecycleService.cancel(order.orderId(), "RECONCILE_CANCELLED", traceId);
             return;
         }
-        orderCommandService.transitionOrder(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+        orderLifecycleService.applyExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
     }
 
     private int reconcileFills(OrderRecord order) {

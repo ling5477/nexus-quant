@@ -10,8 +10,9 @@ import java.util.Map;
  * OkxRuntimeConfig 负责统一解析 OKX 运行时环境变量。
  * <p>
  * Why:
- * 模拟盘验收要求按 `NQ_OKX_ENV` 在 `DOME/REAL` 两套凭证之间切换，并且严禁把 secret/passphrase 打到日志里。
- * 把环境变量选择、兼容别名和指纹脱敏集中在这里，可以避免这些约束散落到 adapter 各处后失控。
+ * 模拟盘/实盘验收要求按 `NQ_OKX_ENV` 在 `DOME/REAL` 两套凭证之间切换，并且严禁把 secret/passphrase 打到日志里。
+ * 第十九批开始，启动脚本会先把 dome/real 专属变量归一化成统一运行时变量；这里优先读取统一变量，再回退到历史 DOME/REAL 命名，
+ * 可以避免环境切换逻辑散落到 adapter 各处后失控。
  *
  * @param envName           当前环境名，仅允许 dome/real
  * @param baseUrl           当前环境的 OKX base URL
@@ -65,9 +66,9 @@ public record OkxRuntimeConfig(
         String envName = normalizeEnv(rawEnv);
         boolean simulatedTrading = "dome".equals(envName);
         String prefix = simulatedTrading ? "NQ_OKX_DOME_" : "NQ_OKX_REAL_";
-        String baseUrl = read(env, prefix + "BASE_URL", DEFAULT_BASE_URL);
+        String baseUrl = read(env, "NQ_OKX_BASE_URL", read(env, prefix + "BASE_URL", DEFAULT_BASE_URL));
         String defaultWsUrl = simulatedTrading ? DEFAULT_DOME_WS_PRIVATE_URL : DEFAULT_REAL_WS_PRIVATE_URL;
-        String wsPrivateUrl = read(env, prefix + "WS_URL", defaultWsUrl);
+        String wsPrivateUrl = read(env, "NQ_OKX_WS_URL", read(env, prefix + "WS_URL", defaultWsUrl));
         long timeoutMs = readLong(env, "NQ_OKX_TIMEOUT_MS", readLong(env, "NQ_OKX_HTTP_TIMEOUT_MS", DEFAULT_TIMEOUT_MS));
         long refreshMs = readLong(env, "NQ_OKX_INSTRUMENT_REFRESH_MS", DEFAULT_INSTRUMENT_REFRESH_MS);
         long wsReconnectBaseDelayMs = readLong(
@@ -86,9 +87,9 @@ public record OkxRuntimeConfig(
                 DEFAULT_WS_HEARTBEAT_INTERVAL_MS
         );
         OkxApiCredentials credentials = new OkxApiCredentials(
-                read(env, prefix + "API_KEY", ""),
-                read(env, prefix + "API_SECRET", ""),
-                read(env, prefix + "API_PASSPHRASE", "")
+                read(env, "NQ_OKX_API_KEY", read(env, prefix + "API_KEY", "")),
+                read(env, "NQ_OKX_API_SECRET", read(env, prefix + "API_SECRET", "")),
+                read(env, "NQ_OKX_API_PASSPHRASE", read(env, prefix + "API_PASSPHRASE", ""))
         );
         return new OkxRuntimeConfig(
                 envName,

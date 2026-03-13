@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * OkxExchangeAdapter 是 GateC-1 的 OKX Spot REST-only 实现。
@@ -40,6 +42,7 @@ import java.util.Objects;
  */
 public class OkxExchangeAdapter implements TradingAdapter {
 
+    private static final Logger log = LoggerFactory.getLogger(OkxExchangeAdapter.class);
     private static final String VENUE = "OKX";
     private static final String TRADE_ORDER_ENDPOINT = "/api/v5/trade/order";
     private static final String CANCEL_ORDER_ENDPOINT = "/api/v5/trade/cancel-order";
@@ -97,7 +100,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
             return rejectedAck(validationError, request.traceId());
         }
 
-        BigDecimal trimmedQty = trim(request.qty(), instrument.lotSize(), NumericType.QTY);
+        BigDecimal trimmedQty = trim(request.quantity(), instrument.lotSize(), NumericType.QTY);
         if (trimmedQty.compareTo(instrument.minSize()) < 0) {
             return rejectedAck(
                     new AdapterError(
@@ -219,6 +222,12 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     private AdapterOrderAck queryConfirmAfterTimeout(AdapterOrderRequest request) {
+        log.info(
+                "okx_query_confirm_place_started trace_id={} client_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.symbol()
+        );
         try {
             AdapterOrderSnapshot snapshot = getOrder(new AdapterOrderQuery(
                     request.accountId(),
@@ -228,7 +237,25 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     null,
                     request.traceId()
             ));
-            return new AdapterOrderAck(true, venue(), snapshot.externalOrderId(), null, Instant.now(clock), request.traceId());
+            log.info(
+                    "okx_query_confirm_place_resolved trace_id={} strategy=getOrder external_order_id={} external_status={}",
+                    request.traceId(),
+                    snapshot.externalOrderId(),
+                    snapshot.externalStatus()
+            );
+            return new AdapterOrderAck(
+                    true,
+                    venue(),
+                    request.accountId(),
+                    request.symbol(),
+                    request.clientOrderId(),
+                    snapshot.externalOrderId(),
+                    snapshot.externalStatus(),
+                    null,
+                    Instant.now(clock),
+                    snapshot.rawPayload(),
+                    request.traceId()
+            );
         } catch (RuntimeException ignored) {
             for (AdapterOrderSnapshot snapshot : listOpenOrders(new AdapterOpenOrdersQuery(
                     request.accountId(),
@@ -237,16 +264,33 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     request.traceId()
             ))) {
                 if (request.clientOrderId().equals(snapshot.clientOrderId())) {
+                    log.info(
+                            "okx_query_confirm_place_resolved trace_id={} strategy=listOpenOrders external_order_id={} external_status={}",
+                            request.traceId(),
+                            snapshot.externalOrderId(),
+                            snapshot.externalStatus()
+                    );
                     return new AdapterOrderAck(
                             true,
                             venue(),
+                            request.accountId(),
+                            request.symbol(),
+                            request.clientOrderId(),
                             snapshot.externalOrderId(),
+                            snapshot.externalStatus(),
                             null,
                             Instant.now(clock),
+                            snapshot.rawPayload(),
                             request.traceId()
                     );
                 }
             }
+            log.warn(
+                    "okx_query_confirm_place_unconfirmed trace_id={} client_order_id={} symbol={}",
+                    request.traceId(),
+                    request.clientOrderId(),
+                    request.symbol()
+            );
             return rejectedAck(
                     new AdapterError(
                             "OKX_PLACE_TIMEOUT_UNCONFIRMED",
@@ -259,6 +303,13 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     private AdapterCancelAck queryCancelAfterTimeout(AdapterCancelRequest request) {
+        log.info(
+                "okx_query_confirm_cancel_started trace_id={} client_order_id={} external_order_id={} symbol={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.externalOrderId(),
+                request.symbol()
+        );
         try {
             AdapterOrderSnapshot snapshot = getOrder(new AdapterOrderQuery(
                     request.accountId(),
@@ -268,12 +319,30 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     request.externalOrderId(),
                     request.traceId()
             ));
-            if ("CANCELLED".equals(snapshot.status())) {
+            if ("CANCELLED".equals(snapshot.externalStatus())) {
+                log.info(
+                        "okx_query_confirm_cancel_resolved trace_id={} external_order_id={} external_status={}",
+                        request.traceId(),
+                        snapshot.externalOrderId(),
+                        snapshot.externalStatus()
+                );
                 return new AdapterCancelAck(true, venue(), snapshot.externalOrderId(), null, Instant.now(clock), request.traceId());
             }
         } catch (RuntimeException ignored) {
             // Why: timeout 后优先尝试 query-confirm；若查单本身失败，则按拒绝返回，交由恢复流程继续推进。
+            log.warn(
+                    "okx_query_confirm_cancel_lookup_failed trace_id={} client_order_id={} external_order_id={}",
+                    request.traceId(),
+                    request.clientOrderId(),
+                    request.externalOrderId()
+            );
         }
+        log.warn(
+                "okx_query_confirm_cancel_unconfirmed trace_id={} client_order_id={} external_order_id={}",
+                request.traceId(),
+                request.clientOrderId(),
+                request.externalOrderId()
+        );
         return new AdapterCancelAck(
                 false,
                 venue(),
@@ -298,9 +367,14 @@ public class OkxExchangeAdapter implements TradingAdapter {
         return new AdapterOrderAck(
                 true,
                 venue(),
+                null,
+                item.path("instId").asText(null),
+                item.path("clOrdId").asText(null),
                 item.path("ordId").asText(),
+                "ACCEPTED",
                 null,
                 Instant.now(clock),
+                payload.toString(),
                 traceId
         );
     }
@@ -337,6 +411,12 @@ public class OkxExchangeAdapter implements TradingAdapter {
                 item.path("clOrdId").asText(null),
                 item.path("ordId").asText(null),
                 mapOrderState(item.path("state").asText()),
+                decimalOrNull(item, "px"),
+                decimalOrNull(item, "sz"),
+                decimalOrNull(item, "accFillSz"),
+                decimalOrNull(item, "avgPx"),
+                Instant.now(clock),
+                item.toString(),
                 traceId
         );
     }
@@ -358,7 +438,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
                 .append("\"instId\":\"").append(request.symbol()).append("\",")
                 .append("\"tdMode\":\"cash\",")
                 .append("\"side\":\"").append(lower(request.side())).append("\",")
-                .append("\"ordType\":\"").append(mapOrderType(request.type())).append("\",")
+                .append("\"ordType\":\"").append(mapOrderType(request.orderType())).append("\",")
                 .append("\"clOrdId\":\"").append(request.clientOrderId()).append("\",")
                 .append("\"sz\":\"").append(trimmedQty.toPlainString()).append('\"');
         if (trimmedPrice != null) {
@@ -441,7 +521,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     private AdapterOrderAck rejectedAck(AdapterError error, String traceId) {
-        return new AdapterOrderAck(false, venue(), null, error, Instant.now(clock), traceId);
+        return new AdapterOrderAck(false, venue(), null, null, null, null, "REJECTED", error, Instant.now(clock), null, traceId);
     }
 
     private BigDecimal trim(BigDecimal value, BigDecimal step, NumericType numericType) {
@@ -465,6 +545,19 @@ public class OkxExchangeAdapter implements TradingAdapter {
         String raw = item.path(field).asText();
         if (raw == null || raw.isBlank()) {
             return BigDecimal.ZERO.setScale(8, RoundingMode.DOWN);
+        }
+        return new BigDecimal(raw);
+    }
+
+    /**
+     * Why:
+     * 订单快照里的价格和数量字段并不总是存在；GateD 第三批需要把这些字段映射到统一 snapshot，
+     * 但不能在缺字段时直接把查询链路打挂，因此这里提供可空解析。
+     */
+    private BigDecimal decimalOrNull(JsonNode item, String field) {
+        String raw = item.path(field).asText();
+        if (raw == null || raw.isBlank()) {
+            return null;
         }
         return new BigDecimal(raw);
     }
@@ -509,10 +602,10 @@ public class OkxExchangeAdapter implements TradingAdapter {
         if (request.symbol() == null || request.symbol().isBlank()) {
             throw new IllegalArgumentException("symbol must not be blank");
         }
-        if (request.qty() == null || request.qty().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("qty must be positive");
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("quantity must be positive");
         }
-        if ("LIMIT".equals(upper(request.type()))
+        if ("LIMIT".equals(upper(request.orderType()))
                 && (request.price() == null || request.price().compareTo(BigDecimal.ZERO) <= 0)) {
             throw new IllegalArgumentException("price must be positive for LIMIT");
         }

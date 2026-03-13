@@ -31,9 +31,14 @@ public class PaperTradingAdapter implements TradingAdapter {
         return new AdapterOrderAck(
                 true,
                 venue(),
+                request.accountId(),
+                request.symbol(),
+                request.clientOrderId(),
                 "paper-" + request.orderId(),
+                "ACCEPTED",
                 null,
                 Instant.now(),
+                "paper_place_ack",
                 request.traceId()
         );
     }
@@ -59,6 +64,12 @@ public class PaperTradingAdapter implements TradingAdapter {
                 query.clientOrderId(),
                 resolveExternalOrderId(query),
                 "ACCEPTED",
+                null,
+                null,
+                null,
+                null,
+                Instant.now(),
+                "paper_order_snapshot",
                 query.traceId()
         );
     }

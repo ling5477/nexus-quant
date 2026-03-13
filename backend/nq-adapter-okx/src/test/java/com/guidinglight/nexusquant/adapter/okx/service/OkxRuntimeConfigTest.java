@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -40,5 +41,24 @@ class OkxRuntimeConfigTest {
 
         assertEquals("dome", config.envName());
         assertTrue(config.simulatedTrading());
+    }
+
+    @Test
+    void shouldPreferUnifiedRuntimeVariablesForRealEnvironment() {
+        OkxRuntimeConfig config = OkxRuntimeConfig.fromEnvironment(Map.of(
+                "NQ_OKX_ENV", "real",
+                "NQ_OKX_API_KEY", "real-unified-key",
+                "NQ_OKX_API_SECRET", "real-unified-secret",
+                "NQ_OKX_API_PASSPHRASE", "real-unified-pass",
+                "NQ_OKX_BASE_URL", "https://real.example.com",
+                "NQ_OKX_WS_URL", "wss://real.example.com/ws/private",
+                "NQ_OKX_REAL_API_KEY", "legacy-real-key"
+        ));
+
+        assertEquals("real", config.envName());
+        assertEquals("https://real.example.com", config.baseUrl());
+        assertEquals("wss://real.example.com/ws/private", config.wsPrivateUrl());
+        assertEquals("real-unified-key", config.credentials().apiKey());
+        assertFalse(config.simulatedTrading());
     }
 }

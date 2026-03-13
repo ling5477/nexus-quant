@@ -7,8 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
+import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.PositionProjection;
@@ -56,6 +59,13 @@ class TradeLedgerPostingServiceTest {
         assertEquals(2, postingRepository.entryCount());
         assertEquals(2, postingRepository.ledgerEventCount());
         assertEquals(new BigDecimal("0.01000000"), postingRepository.positionQty("BTC-USDT"));
+        assertEquals(2, postingRepository.accountSnapshotCount());
+        assertEquals(new BigDecimal("0.01000000"), postingRepository.accountSnapshotBalance("BTC"));
+        assertEquals(new BigDecimal("0.01000000"), postingRepository.accountSnapshotAvailable("BTC"));
+        assertEquals(NumericPolicy.normalize(NumericType.QTY, BigDecimal.ZERO), postingRepository.accountSnapshotFrozen("BTC"));
+        assertEquals(NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO), postingRepository.accountSnapshotBalance("USDT"));
+        assertEquals(NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO), postingRepository.accountSnapshotAvailable("USDT"));
+        assertEquals(NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO), postingRepository.accountSnapshotFrozen("USDT"));
         assertEquals(2, eventStoreJdbcTemplate.updateCount());
     }
 
@@ -80,6 +90,11 @@ class TradeLedgerPostingServiceTest {
         assertEquals("POSTED", result.reason());
         assertEquals(4, postingRepository.entryCount());
         assertEquals(4, postingRepository.ledgerEventCount());
+        assertEquals(2, postingRepository.accountSnapshotCount());
+        assertEquals(
+                NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO),
+                postingRepository.accountSnapshotBalance("USDT")
+        );
         assertEquals(0, riskAuditRepository.riskCount());
         assertEquals(1, riskAuditRepository.auditCount());
         assertEquals(2, eventStoreJdbcTemplate.updateCount());
@@ -111,6 +126,7 @@ class TradeLedgerPostingServiceTest {
 
         private final Map<String, LedgerPostingEntry> entriesByIdempotencyKey = new HashMap<>();
         private final Map<String, PositionProjection> positions = new HashMap<>();
+        private final Map<String, AccountSnapshotProjection> accountSnapshots = new HashMap<>();
         private int ledgerEventCount;
 
         @Override
@@ -137,6 +153,11 @@ class TradeLedgerPostingServiceTest {
         }
 
         @Override
+        public void insertAccountSnapshot(AccountSnapshotProjection snapshot) {
+            accountSnapshots.put(snapshot.currency(), snapshot);
+        }
+
+        @Override
         public Optional<PositionProjection> findPosition(Long accountId, String symbol) {
             return Optional.ofNullable(positions.get(key(accountId, symbol)));
         }
@@ -156,6 +177,22 @@ class TradeLedgerPostingServiceTest {
 
         BigDecimal positionQty(String symbol) {
             return positions.get(key(1001L, symbol)).qty();
+        }
+
+        int accountSnapshotCount() {
+            return accountSnapshots.size();
+        }
+
+        BigDecimal accountSnapshotBalance(String currency) {
+            return accountSnapshots.get(currency).balance();
+        }
+
+        BigDecimal accountSnapshotAvailable(String currency) {
+            return accountSnapshots.get(currency).available();
+        }
+
+        BigDecimal accountSnapshotFrozen(String currency) {
+            return accountSnapshots.get(currency).frozen();
         }
 
         private String key(Long accountId, String symbol) {

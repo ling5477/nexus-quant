@@ -1,5 +1,12 @@
 # Modules（GateD 对齐版）
 
+> Top-Level Navigation Notice
+> - 本文件是根级导航摘要，用于帮助快速定位 GateD 模块分工，不是当前阶段的 Source of Truth。
+> - 当前阶段的模块职责事实以 `docs/current/*`、`docs/gates/gate-d/MODULES.md`、README/checklist 为准。
+> - 若本文件与当前 Gate 文档不一致，以后者为准。
+> - 只有当模块职责、模块边界、主战场模块优先级发生明显变化时，才需要同步更新本摘要。
+> - 本文件不承担详细阶段状态、细粒度冻结条件或详细实施计划职责。
+
 ## 1. backend 模块职责
 
 ### nq-core
@@ -67,4 +74,3 @@ GateD 的 pre-trade 硬风控模块。负责：
 - nq-gateway
 - frontend
 - research
-

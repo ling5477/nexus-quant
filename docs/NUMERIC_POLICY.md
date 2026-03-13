@@ -1,5 +1,10 @@
 # 数值精度与舍入策略（NUMERIC_POLICY）
 
+> Archive Notice
+> - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-d/NUMERIC_POLICY.md`。
+> - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/NUMERIC_POLICY.md`。
+
 > 目标：避免“同一笔交易在不同模块/语言下结果不一致”，保证可回放与可对账。
 
 ---

@@ -1,5 +1,11 @@
 package com.guidinglight.nexusquant.app.web;
 
+import com.guidinglight.nexusquant.api.model.AccountView;
+import com.guidinglight.nexusquant.api.model.OrderView;
+import com.guidinglight.nexusquant.api.model.PositionView;
+import com.guidinglight.nexusquant.api.model.TradeView;
+import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
+import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
 import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.CancelOrderRequest;
@@ -7,8 +13,6 @@ import com.guidinglight.nexusquant.core.service.CancelOrderResult;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderRequest;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -18,32 +22,37 @@ import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
+import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 
 /**
- * GateCAcceptanceController 提供 GateC 本地验收触发入口。
+ * GateDAcceptanceController 提供 GateD 本地验收触发与最小查询入口。
  * <p>
  * Why:
- * 当前仓库缺少合规入口去手动触发 place/cancel/reconcile/recovery，导致 Demo 验收必须旁路。
- * 该 controller 只在 `local` profile 且显式开关开启时启用，且只做参数校验与 trace 透传，
- * 真正的业务仍全部委托给 core/scheduler/recovery 服务层。
+ * 第四批开始清理 GateC 兼容层，因此 controller 现在只暴露 canonical 的 `/__gated`；
+ * 所有业务动作仍委托给 core / scheduler / recovery / nq-api，自身只负责参数校验、trace 透传与
+ * 最小 HTTP 语义转换。
  */
 @RestController
 @Profile("local")
-@ConditionalOnProperty(name = "nq.gatec.verify.enabled", havingValue = "true")
-@RequestMapping("/__gatec")
-public class GateCAcceptanceController {
+@ConditionalOnProperty(name = "nq.gated.verify.enabled", havingValue = "true")
+@RequestMapping("/__gated")
+public class GateDAcceptanceController {
 
     private static final int DEFAULT_RECONCILE_LIMIT = 100;
     private static final String PRIMARY_TRACE_HEADER = "X-NQ-TRACE-ID";
     private static final String FALLBACK_TRACE_HEADER = "X-Trace-Id";
 
     private final OrderCommandService orderCommandService;
+    private final TradingQueryFacade tradingQueryFacade;
     private final OkxRestReconcileService okxRestReconcileService;
     private final BinanceRestReconcileService binanceRestReconcileService;
     private final RecoveryService recoveryService;
@@ -54,13 +63,15 @@ public class GateCAcceptanceController {
      * @param binanceRestReconcileService Binance REST reconcile 服务
      * @param recoveryService             恢复服务
      */
-    public GateCAcceptanceController(
+    public GateDAcceptanceController(
             OrderCommandService orderCommandService,
+            TradingQueryFacade tradingQueryFacade,
             OkxRestReconcileService okxRestReconcileService,
             BinanceRestReconcileService binanceRestReconcileService,
             RecoveryService recoveryService
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
+        this.tradingQueryFacade = Objects.requireNonNull(tradingQueryFacade, "tradingQueryFacade must not be null");
         this.okxRestReconcileService = Objects.requireNonNull(
                 okxRestReconcileService,
                 "okxRestReconcileService must not be null"
@@ -70,6 +81,117 @@ public class GateCAcceptanceController {
                 "binanceRestReconcileService must not be null"
         );
         this.recoveryService = Objects.requireNonNull(recoveryService, "recoveryService must not be null");
+    }
+
+    /**
+     * 查询订单最小读视图。
+     * <p>
+     * Why:
+     * GateD 第四批继续把最小查询闭环扩展到 trade / position / account，但订单视图仍然是
+     * 本地 smoke 的首要核验项，因此保留在验收 controller 中。
+     *
+     * @param orderId         系统订单 ID
+     * @param primaryTraceId  首选 trace header
+     * @param fallbackTraceId 兼容 trace header
+     * @return 订单最小读视图
+     */
+    @GetMapping("/orders/{orderId}")
+    public OrderView queryOrder(
+            @PathVariable String orderId,
+            @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
+            @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
+    ) {
+        String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
+        return withTrace(traceId, () -> {
+            if (orderId == null || orderId.isBlank()) {
+                throw badRequest("orderId must not be blank");
+            }
+            return tradingQueryFacade.queryOrder(orderId, traceId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "order not found: " + orderId));
+        });
+    }
+
+    /**
+     * 查询订单最近一笔成交视图。
+     *
+     * @param orderId         系统订单 ID
+     * @param primaryTraceId  首选 trace header
+     * @param fallbackTraceId 兼容 trace header
+     * @return 最近一笔成交视图
+     */
+    @GetMapping("/orders/{orderId}/trade")
+    public TradeView queryLatestTrade(
+            @PathVariable String orderId,
+            @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
+            @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
+    ) {
+        String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
+        return withTrace(traceId, () -> {
+            if (orderId == null || orderId.isBlank()) {
+                throw badRequest("orderId must not be blank");
+            }
+            return tradingQueryFacade.queryLatestTrade(orderId, traceId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "trade not found for order: " + orderId));
+        });
+    }
+
+    /**
+     * 查询账户在指定 symbol 上的最小持仓视图。
+     *
+     * @param accountId       账户 ID
+     * @param symbol          交易对
+     * @param primaryTraceId  首选 trace header
+     * @param fallbackTraceId 兼容 trace header
+     * @return 持仓最小读视图
+     */
+    @GetMapping("/positions/{accountId}/{symbol}")
+    public PositionView queryPosition(
+            @PathVariable Long accountId,
+            @PathVariable String symbol,
+            @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
+            @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
+    ) {
+        String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
+        return withTrace(traceId, () -> {
+            if (accountId == null || accountId <= 0) {
+                throw badRequest("accountId must be positive");
+            }
+            if (symbol == null || symbol.isBlank()) {
+                throw badRequest("symbol must not be blank");
+            }
+            return tradingQueryFacade.queryPosition(accountId, symbol, traceId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "position not found: accountId=" + accountId + ", symbol=" + symbol
+                    ));
+        });
+    }
+
+    /**
+     * 查询账户最新余额快照集合。
+     *
+     * @param accountId       账户 ID
+     * @param primaryTraceId  首选 trace header
+     * @param fallbackTraceId 兼容 trace header
+     * @return 账户最新余额视图
+     */
+    @GetMapping("/accounts/{accountId}")
+    public AccountView queryAccount(
+            @PathVariable Long accountId,
+            @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
+            @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
+    ) {
+        String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
+        return withTrace(traceId, () -> {
+            if (accountId == null || accountId <= 0) {
+                throw badRequest("accountId must be positive");
+            }
+            return tradingQueryFacade.queryAccount(accountId, traceId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "account snapshot not found: accountId=" + accountId
+                    ));
+        });
     }
 
     /**
@@ -84,8 +206,8 @@ public class GateCAcceptanceController {
      * @return 触发结果摘要
      */
     @PostMapping("/orders")
-    public GateCTriggerResponse placeOrder(
-            @RequestBody GateCOrderHttpRequest request,
+    public GateDTriggerResponse placeOrder(
+            @RequestBody GateDOrderHttpRequest request,
             @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
             @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
     ) {
@@ -93,18 +215,22 @@ public class GateCAcceptanceController {
         return withTrace(traceId, () -> {
             validateOrderRequest(request);
             PlaceOrderResult result = orderCommandService.placeOrder(new PlaceOrderRequest(
+                    buildRequestId("place", request.clientOrderId()),
                     request.accountId(),
                     request.strategyRunId(),
                     request.venue(),
-                    request.clientOrderId(),
                     request.symbol(),
+                    request.clientOrderId(),
+                    buildPlaceIdempotencyKey(request.accountId(), request.clientOrderId()),
+                    "manual",
                     request.side(),
-                    request.type(),
+                    request.orderType(),
                     request.price(),
-                    request.qty(),
+                    request.quantity(),
+                    defaultTimeInForce(request.orderType()),
                     traceId
             ));
-            return new GateCTriggerResponse(
+            return new GateDTriggerResponse(
                     "placeOrder",
                     traceId,
                     "order_id=" + result.orderId() + ", status=" + result.status() + ", idempotent_hit=" + result.idempotentHit()
@@ -121,8 +247,8 @@ public class GateCAcceptanceController {
      * @return 触发结果摘要
      */
     @PostMapping("/orders/cancel")
-    public GateCTriggerResponse cancelOrder(
-            @RequestBody GateCCancelOrderHttpRequest request,
+    public GateDTriggerResponse cancelOrder(
+            @RequestBody GateDCancelOrderHttpRequest request,
             @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
             @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
     ) {
@@ -130,13 +256,17 @@ public class GateCAcceptanceController {
         return withTrace(traceId, () -> {
             validateCancelRequest(request);
             CancelOrderResult result = orderCommandService.cancelOrder(new CancelOrderRequest(
+                    buildRequestId("cancel", request.orderId() != null ? request.orderId() : request.clientOrderId()),
                     blankToNull(request.orderId()),
                     request.accountId(),
+                    null,
+                    null,
                     blankToNull(request.clientOrderId()),
+                    null,
                     request.reason().trim(),
                     traceId
             ));
-            return new GateCTriggerResponse(
+            return new GateDTriggerResponse(
                     "cancelOrder",
                     traceId,
                     "order_id=" + result.orderId() + ", status=" + result.status() + ", idempotent_hit=" + result.idempotentHit()
@@ -153,8 +283,8 @@ public class GateCAcceptanceController {
      * @return 触发结果摘要
      */
     @PostMapping("/reconcile/runOnce")
-    public GateCTriggerResponse runReconcile(
-            @RequestBody(required = false) GateCReconcileRunOnceHttpRequest request,
+    public GateDTriggerResponse runReconcile(
+            @RequestBody(required = false) GateDReconcileRunOnceHttpRequest request,
             @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
             @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
     ) {
@@ -172,7 +302,7 @@ public class GateCAcceptanceController {
                 case "BINANCE" -> binanceRestReconcileService.reconcileOnce(limit);
                 default -> throw badRequest("unsupported reconcile venue: " + venue);
             };
-            return new GateCTriggerResponse(
+            return new GateDTriggerResponse(
                     "reconcileOnce",
                     traceId,
                     "venue=" + venue + ", limit=" + limit + ", new_trades=" + newTrades
@@ -188,14 +318,14 @@ public class GateCAcceptanceController {
      * @return 触发结果摘要
      */
     @PostMapping("/recovery/runOnce")
-    public GateCTriggerResponse runRecovery(
+    public GateDTriggerResponse runRecovery(
             @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
             @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
     ) {
         String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
         return withTrace(traceId, () -> {
             RecoveryReport report = recoveryService.rebuild(traceId);
-            return new GateCTriggerResponse(
+            return new GateDTriggerResponse(
                     "recoveryRunOnce",
                     traceId,
                     "processed_events=" + report.processedEventCount()
@@ -205,7 +335,7 @@ public class GateCAcceptanceController {
         });
     }
 
-    private void validateOrderRequest(GateCOrderHttpRequest request) {
+    private void validateOrderRequest(GateDOrderHttpRequest request) {
         if (request == null) {
             throw badRequest("request body must not be null");
         }
@@ -218,19 +348,19 @@ public class GateCAcceptanceController {
         if (request.side() == null) {
             throw badRequest("side must not be null");
         }
-        if (request.type() == null) {
-            throw badRequest("type must not be null");
+        if (request.orderType() == null) {
+            throw badRequest("orderType must not be null");
         }
-        if (request.qty() == null || request.qty().compareTo(BigDecimal.ZERO) <= 0) {
-            throw badRequest("qty must be positive");
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw badRequest("quantity must be positive");
         }
-        if (request.type().name().equals("LIMIT")
+        if (request.orderType().name().equals("LIMIT")
                 && (request.price() == null || request.price().compareTo(BigDecimal.ZERO) <= 0)) {
             throw badRequest("price must be positive for LIMIT");
         }
     }
 
-    private void validateCancelRequest(GateCCancelOrderHttpRequest request) {
+    private void validateCancelRequest(GateDCancelOrderHttpRequest request) {
         if (request == null) {
             throw badRequest("request body must not be null");
         }
@@ -260,11 +390,24 @@ public class GateCAcceptanceController {
         if (candidate != null && !candidate.isBlank()) {
             return candidate.trim();
         }
-        return "trc-gatec-" + UUID.randomUUID();
+        return "trc-gated-" + UUID.randomUUID();
     }
 
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String buildRequestId(String action, String businessKey) {
+        String suffix = businessKey == null || businessKey.isBlank() ? UUID.randomUUID().toString() : businessKey.trim();
+        return "req-gated-" + action + "-" + suffix;
+    }
+
+    private String buildPlaceIdempotencyKey(Long accountId, String clientOrderId) {
+        return accountId + ":" + clientOrderId.trim();
+    }
+
+    private String defaultTimeInForce(OrderType orderType) {
+        return orderType == OrderType.MARKET ? "IOC" : "GTC";
     }
 
     private <T> T withTrace(String traceId, java.util.function.Supplier<T> action) {

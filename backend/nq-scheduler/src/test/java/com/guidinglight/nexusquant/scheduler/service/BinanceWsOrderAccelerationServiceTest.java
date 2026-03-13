@@ -2,7 +2,6 @@ package com.guidinglight.nexusquant.scheduler.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -18,6 +17,7 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
@@ -39,10 +39,12 @@ class BinanceWsOrderAccelerationServiceTest {
     @Test
     void shouldIgnoreDuplicateOrderAckWhenAlreadyAccepted() {
         OrderCommandService orderCommandService = mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = mock(EventStoreAppender.class);
         BinanceWsOrderAccelerationService service = new BinanceWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -53,7 +55,7 @@ class BinanceWsOrderAccelerationServiceTest {
 
         service.accelerate(orderAckEvent("bw3-cl-1", "bw3-ext-1"), "trc-binance-ws-ack-1");
 
-        verify(orderCommandService, never()).transitionOrder(any(), any(), any(), any());
+        verify(orderLifecycleService, never()).acknowledge(any(), any(), any());
         verify(orderCommandService, never()).linkExternalOrderId(any(), any(), any());
     }
 
@@ -63,10 +65,12 @@ class BinanceWsOrderAccelerationServiceTest {
     @Test
     void shouldNotRollbackTerminalOrderWhenLateAckArrives() {
         OrderCommandService orderCommandService = mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = mock(EventStoreAppender.class);
         BinanceWsOrderAccelerationService service = new BinanceWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -77,7 +81,7 @@ class BinanceWsOrderAccelerationServiceTest {
 
         service.accelerate(orderAckEvent("bw3-cl-2", "bw3-ext-2"), "trc-binance-ws-ack-2");
 
-        verify(orderCommandService, never()).transitionOrder(any(), any(), any(), any());
+        verify(orderLifecycleService, never()).acknowledge(any(), any(), any());
         verify(auditLogRepository).append(
                 eq("WS"),
                 eq("BINANCE_WS_ORDER_ACK_IGNORED_TERMINAL"),
@@ -94,10 +98,12 @@ class BinanceWsOrderAccelerationServiceTest {
     @Test
     void shouldAccelerateCancelAckThroughStateMachine() {
         OrderCommandService orderCommandService = mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = mock(EventStoreAppender.class);
         BinanceWsOrderAccelerationService service = new BinanceWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -108,9 +114,8 @@ class BinanceWsOrderAccelerationServiceTest {
         when(orderCommandService.findOrdersByStatuses(any(), eq(500))).thenReturn(List.of(acceptedOrder));
         when(orderCommandService.linkExternalOrderId("ord-bw3-3", "bw3-ext-3", "trc-binance-ws-cancel-1")).thenReturn(linkedOrder);
         when(orderCommandService.findByOrderId("ord-bw3-3")).thenReturn(Optional.of(linkedOrder));
-        when(orderCommandService.transitionOrder(
+        when(orderLifecycleService.requestCancel(
                 eq("ord-bw3-3"),
-                eq(OrderStatus.CANCEL_REQUESTED),
                 eq("BINANCE_WS_CANCEL_ACK_ACCELERATE_PREPARE"),
                 eq("trc-binance-ws-cancel-1")
         )).thenReturn(cancelRequestedOrder);
@@ -118,15 +123,13 @@ class BinanceWsOrderAccelerationServiceTest {
         service.accelerate(cancelAckEvent("bw3-cl-3", "bw3-ext-3"), "trc-binance-ws-cancel-1");
 
         verify(orderCommandService).linkExternalOrderId("ord-bw3-3", "bw3-ext-3", "trc-binance-ws-cancel-1");
-        verify(orderCommandService).transitionOrder(
+        verify(orderLifecycleService).requestCancel(
                 "ord-bw3-3",
-                OrderStatus.CANCEL_REQUESTED,
                 "BINANCE_WS_CANCEL_ACK_ACCELERATE_PREPARE",
                 "trc-binance-ws-cancel-1"
         );
-        verify(orderCommandService).transitionOrder(
+        verify(orderLifecycleService).cancel(
                 "ord-bw3-3",
-                OrderStatus.CANCELLED,
                 "BINANCE_WS_CANCEL_ACK_ACCELERATE",
                 "trc-binance-ws-cancel-1"
         );
@@ -138,10 +141,12 @@ class BinanceWsOrderAccelerationServiceTest {
     @Test
     void shouldMarkCancelRejectedWhenCancelRejectArrives() {
         OrderCommandService orderCommandService = mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = mock(EventStoreAppender.class);
         BinanceWsOrderAccelerationService service = new BinanceWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -152,9 +157,8 @@ class BinanceWsOrderAccelerationServiceTest {
 
         service.accelerate(cancelRejectEvent("bw3-cl-4", "bw3-ext-4", "UNKNOWN_ORDER"), "trc-binance-ws-cancel-reject-1");
 
-        verify(orderCommandService).transitionOrder(
+        verify(orderLifecycleService).rejectCancel(
                 "ord-bw3-4",
-                OrderStatus.CANCEL_REJECTED,
                 "UNKNOWN_ORDER",
                 "trc-binance-ws-cancel-reject-1"
         );
@@ -166,10 +170,12 @@ class BinanceWsOrderAccelerationServiceTest {
     @Test
     void shouldIgnoreDuplicateOrderRejectWhenAlreadyRejected() {
         OrderCommandService orderCommandService = mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = mock(EventStoreAppender.class);
         BinanceWsOrderAccelerationService service = new BinanceWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -180,7 +186,7 @@ class BinanceWsOrderAccelerationServiceTest {
 
         service.accelerate(orderRejectEvent("bw3-cl-5", "INSUFFICIENT_BALANCES"), "trc-binance-ws-reject-1");
 
-        verify(orderCommandService, never()).transitionOrder(any(), any(), any(), any());
+        verify(orderLifecycleService, never()).reject(any(), any(), any());
         verify(eventStoreAppender, never()).append(eq(TopicNames.AUDIT_EVENT_V1), any());
     }
 

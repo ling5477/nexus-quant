@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -94,11 +93,11 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         params.put("symbol", trimResult.exchangeSymbol());
         params.put("side", upper(request.side()));
-        params.put("type", upper(request.type()));
+        params.put("type", upper(request.orderType()));
         params.put("newClientOrderId", request.clientOrderId());
         params.put("quantity", trimResult.trimmedQty().toPlainString());
         if (trimResult.trimmedPrice() != null) {
-            params.put("timeInForce", "GTC");
+            params.put("timeInForce", request.timeInForce());
             params.put("price", trimResult.trimmedPrice().toPlainString());
         }
 
@@ -240,7 +239,19 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                     request.traceId()
             ));
             if (snapshot.externalOrderId() != null && !snapshot.externalOrderId().isBlank()) {
-                return new AdapterOrderAck(true, venue(), snapshot.externalOrderId(), null, Instant.now(clock), request.traceId());
+                return new AdapterOrderAck(
+                        true,
+                        venue(),
+                        request.accountId(),
+                        request.symbol(),
+                        request.clientOrderId(),
+                        snapshot.externalOrderId(),
+                        snapshot.externalStatus(),
+                        null,
+                        Instant.now(clock),
+                        snapshot.rawPayload(),
+                        request.traceId()
+                );
             }
         } catch (RuntimeException ignored) {
             // Why: timeout 后优先查单；若查单失败，再退化到 open orders，最终仍不能盲重试。
@@ -255,7 +266,19 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 if (request.clientOrderId().equals(snapshot.clientOrderId())
                         && snapshot.externalOrderId() != null
                         && !snapshot.externalOrderId().isBlank()) {
-                    return new AdapterOrderAck(true, venue(), snapshot.externalOrderId(), null, Instant.now(clock), request.traceId());
+                    return new AdapterOrderAck(
+                            true,
+                            venue(),
+                            request.accountId(),
+                            request.symbol(),
+                            request.clientOrderId(),
+                            snapshot.externalOrderId(),
+                            snapshot.externalStatus(),
+                            null,
+                            Instant.now(clock),
+                            snapshot.rawPayload(),
+                            request.traceId()
+                    );
                 }
             }
         } catch (RuntimeException ignored) {
@@ -278,7 +301,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                     request.externalOrderId(),
                     request.traceId()
             ));
-            if ("CANCELLED".equals(snapshot.status())) {
+            if ("CANCELLED".equals(snapshot.externalStatus())) {
                 return new AdapterCancelAck(true, venue(), snapshot.externalOrderId(), null, Instant.now(clock), request.traceId());
             }
         } catch (RuntimeException ignored) {
@@ -303,7 +326,19 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         if (externalOrderId == null || externalOrderId.isBlank()) {
             return rejectedAck("BINANCE_PLACE_RESPONSE_INVALID", "Binance place response missing orderId", traceId);
         }
-        return new AdapterOrderAck(true, venue(), externalOrderId, null, Instant.now(clock), traceId);
+        return new AdapterOrderAck(
+                true,
+                venue(),
+                null,
+                blankToNull(payload.path("symbol").asText()),
+                blankToNull(payload.path("clientOrderId").asText()),
+                externalOrderId,
+                mapOrderStatus(payload.path("status").asText("NEW")),
+                null,
+                Instant.now(clock),
+                payload.toString(),
+                traceId
+        );
     }
 
     private AdapterCancelAck parseCancelAck(JsonNode payload, String traceId) {
@@ -319,6 +354,12 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 blankToNull(payload.path("clientOrderId").asText()),
                 blankToNull(payload.path("orderId").asText()),
                 mapOrderStatus(payload.path("status").asText()),
+                blankToNullDecimal(payload, "price"),
+                blankToNullDecimal(payload, "origQty"),
+                blankToNullDecimal(payload, "executedQty"),
+                calculateAveragePrice(payload),
+                Instant.now(clock),
+                payload.toString(),
                 traceId
         );
     }
@@ -345,8 +386,8 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         if (request.clientOrderId() == null || request.clientOrderId().isBlank()) {
             throw new IllegalArgumentException("request.clientOrderId must not be blank");
         }
-        if (request.qty() == null || request.qty().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("request.qty must be positive");
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("request.quantity must be positive");
         }
     }
 
@@ -377,8 +418,13 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 false,
                 venue(),
                 null,
+                null,
+                null,
+                null,
+                "REJECTED",
                 new AdapterError(code, message, false),
                 Instant.now(clock),
+                null,
                 traceId
         );
     }
@@ -417,6 +463,23 @@ public class BinanceExchangeAdapter implements TradingAdapter {
             return BigDecimal.ZERO;
         }
         return new BigDecimal(raw).abs();
+    }
+
+    private static BigDecimal blankToNullDecimal(JsonNode payload, String fieldName) {
+        String raw = payload.path(fieldName).asText();
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return new BigDecimal(raw).abs();
+    }
+
+    private static BigDecimal calculateAveragePrice(JsonNode payload) {
+        BigDecimal executedQty = blankToNullDecimal(payload, "executedQty");
+        BigDecimal cumulativeQuoteQty = blankToNullDecimal(payload, "cummulativeQuoteQty");
+        if (executedQty == null || executedQty.compareTo(BigDecimal.ZERO) <= 0 || cumulativeQuoteQty == null) {
+            return null;
+        }
+        return cumulativeQuoteQty.divide(executedQty, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros();
     }
 
     private static Dependencies createDefaultDependencies() {

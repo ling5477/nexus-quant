@@ -11,6 +11,7 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
@@ -44,21 +45,28 @@ public class BinanceWsOrderAccelerationService {
     private static final int LOOKUP_LIMIT = 500;
 
     private final OrderCommandService orderCommandService;
+    private final OrderLifecycleService orderLifecycleService;
     private final AuditLogRepository auditLogRepository;
     private final EventStoreAppender eventStoreAppender;
     private final Clock clock;
 
     /**
-     * @param orderCommandService 订单状态机入口
-     * @param auditLogRepository  审计仓储
-     * @param eventStoreAppender  event_store 写入器
+     * @param orderCommandService   订单查询与 external_order_id 绑定入口
+     * @param orderLifecycleService 订单生命周期入口
+     * @param auditLogRepository    审计仓储
+     * @param eventStoreAppender    event_store 写入器
      */
     public BinanceWsOrderAccelerationService(
             OrderCommandService orderCommandService,
+            OrderLifecycleService orderLifecycleService,
             AuditLogRepository auditLogRepository,
             EventStoreAppender eventStoreAppender
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
+        this.orderLifecycleService = Objects.requireNonNull(
+                orderLifecycleService,
+                "orderLifecycleService must not be null"
+        );
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
         this.clock = Clock.systemUTC();
@@ -127,7 +135,7 @@ public class BinanceWsOrderAccelerationService {
             return;
         }
         try {
-            orderCommandService.transitionOrder(latest.orderId(), OrderStatus.ACCEPTED, "BINANCE_WS_ORDER_ACK_ACCELERATE", traceId);
+            orderLifecycleService.acknowledge(latest.orderId(), "BINANCE_WS_ORDER_ACK_ACCELERATE", traceId);
         } catch (IllegalStateException ex) {
             appendAudit(traceId, "BINANCE_WS_ORDER_ACK_TRANSITION_SKIPPED", latest.orderId(), "FAIL", Map.of(
                     "from_status", latest.status().name(),
@@ -169,17 +177,15 @@ public class BinanceWsOrderAccelerationService {
         }
         try {
             if (latest.status() != OrderStatus.CANCEL_REQUESTED) {
-                latest = orderCommandService.transitionOrder(
+                latest = orderLifecycleService.requestCancel(
                         latest.orderId(),
-                        OrderStatus.CANCEL_REQUESTED,
                         "BINANCE_WS_CANCEL_ACK_ACCELERATE_PREPARE",
                         traceId
                 );
             }
             if (latest.status() != OrderStatus.CANCELLED) {
-                orderCommandService.transitionOrder(
+                orderLifecycleService.cancel(
                         latest.orderId(),
-                        OrderStatus.CANCELLED,
                         "BINANCE_WS_CANCEL_ACK_ACCELERATE",
                         traceId
                 );
@@ -216,7 +222,7 @@ public class BinanceWsOrderAccelerationService {
             return;
         }
         try {
-            orderCommandService.transitionOrder(latest.orderId(), OrderStatus.REJECTED, reject.rejectCode(), traceId);
+            orderLifecycleService.reject(latest.orderId(), reject.rejectCode(), traceId);
         } catch (IllegalStateException ex) {
             appendAudit(traceId, "BINANCE_WS_ORDER_REJECT_TRANSITION_SKIPPED", latest.orderId(), "FAIL", Map.of(
                     "from_status", latest.status().name(),
@@ -270,7 +276,7 @@ public class BinanceWsOrderAccelerationService {
                 ? "BINANCE_WS_CANCEL_REJECTED"
                 : reject.rejectCode();
         try {
-            orderCommandService.transitionOrder(latest.orderId(), OrderStatus.CANCEL_REJECTED, rejectCode, traceId);
+            orderLifecycleService.rejectCancel(latest.orderId(), rejectCode, traceId);
         } catch (IllegalStateException ex) {
             appendAudit(traceId, "BINANCE_WS_CANCEL_REJECT_TRANSITION_SKIPPED", latest.orderId(), "FAIL", Map.of(
                     "from_status", latest.status().name(),

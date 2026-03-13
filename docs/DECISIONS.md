@@ -1,5 +1,10 @@
 # nexus-quant 架构决策记录（DECISIONS / ADR）
 
+> Archive Notice
+> - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-d/DECISIONS.md`。
+> - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/DECISIONS.md`。
+
 > 目的：记录关键决策的“为什么”，避免后续推翻重来  
 > 规则：凡是影响 域模型/状态机/账本/DDL/事件契约/Auth/Gateway 的变更，必须先写 ADR，再改代码  
 > 决策人：帅哥

@@ -18,6 +18,7 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
@@ -32,16 +33,10 @@ import org.mockito.Mockito;
  */
 class OkxRecoveryServiceTest {
 
-    /**
-     * 当 query-confirm 返回 ORDER_NOT_FOUND 时，恢复流程必须不中断并继续处理后续订单。
-     * <p>
-     * Why:
-     * 真实盘历史脏状态下，某些外部订单可能已不存在；恢复流程需要记录证据并推进终态，
-     * 不能因为单笔异常导致应用启动失败。
-     */
     @Test
     void shouldNotFailStartupWhenQueryOrderReturnsOrderNotFound() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
         OkxRestReconcileService okxRestReconcileService = Mockito.mock(OkxRestReconcileService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
@@ -49,6 +44,7 @@ class OkxRecoveryServiceTest {
 
         OkxRecoveryService recoveryService = new OkxRecoveryService(
                 orderCommandService,
+                orderLifecycleService,
                 okxExchangeAdapter,
                 okxRestReconcileService,
                 auditLogRepository,
@@ -78,18 +74,22 @@ class OkxRecoveryServiceTest {
                     query.clientOrderId(),
                     query.externalOrderId(),
                     "ACCEPTED",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "okx_recovery_snapshot",
                     query.traceId()
             );
         });
-        when(orderCommandService.transitionOrder(
+        when(orderLifecycleService.requestCancel(
                 eq("ord-nf-1"),
-                eq(OrderStatus.CANCEL_REQUESTED),
                 eq("ORDER_NOT_FOUND/OKX_51603"),
                 eq("trc-recovery-1")
         )).thenReturn(notFoundOrder.withStatus(OrderStatus.CANCEL_REQUESTED, "ORDER_NOT_FOUND/OKX_51603"));
-        when(orderCommandService.transitionOrder(
+        when(orderLifecycleService.cancel(
                 eq("ord-nf-1"),
-                eq(OrderStatus.CANCELLED),
                 eq("ORDER_NOT_FOUND/OKX_51603"),
                 eq("trc-recovery-1")
         )).thenReturn(notFoundOrder.withStatus(OrderStatus.CANCELLED, "ORDER_NOT_FOUND/OKX_51603"));
@@ -97,18 +97,8 @@ class OkxRecoveryServiceTest {
 
         assertDoesNotThrow(() -> recoveryService.rebuild("trc-recovery-1"));
 
-        verify(orderCommandService).transitionOrder(
-                "ord-nf-1",
-                OrderStatus.CANCEL_REQUESTED,
-                "ORDER_NOT_FOUND/OKX_51603",
-                "trc-recovery-1"
-        );
-        verify(orderCommandService).transitionOrder(
-                "ord-nf-1",
-                OrderStatus.CANCELLED,
-                "ORDER_NOT_FOUND/OKX_51603",
-                "trc-recovery-1"
-        );
+        verify(orderLifecycleService).requestCancel("ord-nf-1", "ORDER_NOT_FOUND/OKX_51603", "trc-recovery-1");
+        verify(orderLifecycleService).cancel("ord-nf-1", "ORDER_NOT_FOUND/OKX_51603", "trc-recovery-1");
         verify(auditLogRepository, atLeastOnce()).append(
                 eq("RECOVERY"),
                 eq("RECOVERY_QUERY_ORDER_NOT_FOUND"),

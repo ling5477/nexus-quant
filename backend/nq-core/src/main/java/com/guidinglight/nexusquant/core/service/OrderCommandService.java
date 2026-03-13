@@ -48,12 +48,12 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 /**
- * OrderCommandService 负责 GateC-0 的统一下单/撤单编排。
+ * OrderCommandService 负责 GateD 的统一下单/撤单编排。
  * <p>
  * Why:
- * 执行链路必须同时满足幂等、状态机、event_store、审计与 adapter 路由五类约束。
- * 如果 place/cancel 仍然保留 paper 专用分支，GateC-1 接真实交易所时就会被迫重写 core，
- * 因此这里先把链路收敛为“命令 -> 风控 -> AdapterRouter -> 回执事件化”。
+ * GateD 需要把 place / cancel 的入口继续保留在一个应用服务内，但也必须避免它重新长成“什么都做”的巨石。
+ * 因此本类只负责执行编排、风控调用、adapter 路由、event_store 与审计写入；
+ * 生命周期语义动作统一收口到 `OrderLifecycleService`，contracts 组装统一收口到 `ExecutionCommandMapper`。
  */
 @Service
 public class OrderCommandService {
@@ -115,7 +115,7 @@ public class OrderCommandService {
                 request.clientOrderId()
         );
         String candidateOrderId = existingOrder.map(OrderRecord::orderId).orElseGet(this::generateOrderId);
-        PlaceOrderCommand command = toCommand(request, candidateOrderId);
+        PlaceOrderCommand command = ExecutionCommandMapper.toPlaceCommand(request, candidateOrderId);
         publishEvent(TopicNames.ORDER_COMMAND_V1, request.clientOrderId(), request.traceId(), command);
 
         if (existingOrder.isPresent()) {
@@ -128,6 +128,8 @@ public class OrderCommandService {
                     detail(
                             "account_id", order.accountId(),
                             "client_order_id", order.clientOrderId(),
+                            "request_id", request.requestId(),
+                            "idempotency_key", request.idempotencyKey(),
                             "status", order.status().name(),
                             "venue", order.venue()
                     )
@@ -145,7 +147,7 @@ public class OrderCommandService {
                 request.side().name(),
                 request.type().name(),
                 request.price(),
-                request.qty(),
+                request.quantity(),
                 null,
                 OrderStatus.NEW,
                 "ORDER_CREATED",
@@ -200,6 +202,9 @@ public class OrderCommandService {
                 detail(
                         "order_id", createdOrder.orderId(),
                         "client_order_id", createdOrder.clientOrderId(),
+                        "request_id", request.requestId(),
+                        "idempotency_key", request.idempotencyKey(),
+                        "source", request.source(),
                         "venue", createdOrder.venue()
                 )
         );
@@ -209,7 +214,7 @@ public class OrderCommandService {
                 "ORDER",
                 createdOrder.orderId(),
                 riskDecision.decision(),
-                riskDecision.reasonCode(),
+                riskDecision.ruleCode(),
                 riskDecision.severity(),
                 request.traceId()
         );
@@ -221,7 +226,7 @@ public class OrderCommandService {
                         "ORDER",
                         createdOrder.orderId(),
                         riskDecision.decision().name(),
-                        riskDecision.reasonCode(),
+                        riskDecision.ruleCode(),
                         riskDecision.severity().name(),
                         now
                 )
@@ -231,7 +236,7 @@ public class OrderCommandService {
             OrderRecord rejectedOrder = transitionOrder(
                     createdOrder,
                     OrderStatus.RISK_REJECTED,
-                    riskDecision.reasonCode(),
+                    riskDecision.ruleCode(),
                     request.traceId()
             );
             publishEvent(
@@ -242,7 +247,7 @@ public class OrderCommandService {
                             rejectedOrder.orderId(),
                             rejectedOrder.clientOrderId(),
                             riskDecision.decision().name(),
-                            riskDecision.reasonCode(),
+                            riskDecision.ruleCode(),
                             riskDecision.severity().name(),
                             now
                     )
@@ -252,7 +257,14 @@ public class OrderCommandService {
                     "RISK_REJECTED",
                     rejectedOrder.orderId(),
                     request.traceId(),
-                    detail("reason", riskDecision.reasonCode(), "venue", rejectedOrder.venue())
+                    detail(
+                            "rule_code", riskDecision.ruleCode(),
+                            "rule_name", riskDecision.ruleName(),
+                            "reject_reason", riskDecision.rejectReason(),
+                            "hard_reject", riskDecision.hardReject(),
+                            "request_id", request.requestId(),
+                            "venue", rejectedOrder.venue()
+                    )
             );
             return new PlaceOrderResult(rejectedOrder.orderId(), rejectedOrder.status(), false);
         }
@@ -260,7 +272,7 @@ public class OrderCommandService {
         OrderRecord riskPassedOrder = transitionOrder(
                 createdOrder,
                 OrderStatus.RISK_PASSED,
-                riskDecision.reasonCode(),
+                riskDecision.ruleCode(),
                 request.traceId()
         );
         publishEvent(
@@ -271,7 +283,7 @@ public class OrderCommandService {
                         riskPassedOrder.orderId(),
                         riskPassedOrder.clientOrderId(),
                         riskDecision.decision().name(),
-                        riskDecision.reasonCode(),
+                        riskDecision.ruleCode(),
                         now
                 )
         );
@@ -283,8 +295,8 @@ public class OrderCommandService {
                 request.traceId()
         );
         TradingAdapter tradingAdapter = adapterRouter.route(sentOrder.accountId(), sentOrder.venue()).trading();
-        AdapterOrderAck adapterAck = invokePlaceOrder(tradingAdapter, sentOrder, request.traceId());
-        Instant ackTime = adapterAck.ts() == null ? Instant.now(clock) : adapterAck.ts();
+        AdapterOrderAck adapterAck = invokePlaceOrder(tradingAdapter, request, sentOrder);
+        Instant ackTime = adapterAck.ackTs() == null ? Instant.now(clock) : adapterAck.ackTs();
 
         if (adapterAck.accepted()) {
             orderRepository.updateExternalOrderId(sentOrder.orderId(), adapterAck.externalOrderId(), ackTime);
@@ -371,16 +383,7 @@ public class OrderCommandService {
     public CancelOrderResult cancelOrder(CancelOrderRequest request) {
         validateCancelRequest(request);
         OrderRecord currentOrder = resolveCancelTarget(request);
-        CancelOrderCommand command = new CancelOrderCommand(
-                currentOrder.orderId(),
-                currentOrder.accountId(),
-                currentOrder.venue(),
-                currentOrder.symbol(),
-                currentOrder.clientOrderId(),
-                currentOrder.externalOrderId(),
-                request.reason(),
-                request.traceId()
-        );
+        CancelOrderCommand command = ExecutionCommandMapper.toCancelCommand(request, currentOrder);
         publishEvent(TopicNames.ORDER_COMMAND_V1, currentOrder.clientOrderId(), request.traceId(), command);
         if (currentOrder.status() == OrderStatus.CANCELLED) {
             auditLogRepository.append(
@@ -402,7 +405,7 @@ public class OrderCommandService {
         publishOrderStatusChanged(cancelRequestedOrder, request.traceId(), "ORDER_CANCEL_REQUESTED");
 
         TradingAdapter tradingAdapter = adapterRouter.route(cancelRequestedOrder.accountId(), cancelRequestedOrder.venue()).trading();
-        AdapterCancelAck cancelAck = invokeCancelOrder(tradingAdapter, cancelRequestedOrder, request.traceId());
+        AdapterCancelAck cancelAck = invokeCancelOrder(tradingAdapter, request, cancelRequestedOrder);
         Instant ackTime = cancelAck.ts() == null ? Instant.now(clock) : cancelAck.ts();
         if (cancelAck.accepted()) {
             OrderRecord cancelledOrder = transitionOrder(
@@ -494,7 +497,7 @@ public class OrderCommandService {
      * @param traceId    链路追踪 ID
      * @return 迁移后的订单快照
      */
-    public OrderRecord transitionOrder(String orderId, OrderStatus nextStatus, String reason, String traceId) {
+    OrderRecord transitionOrder(String orderId, OrderStatus nextStatus, String reason, String traceId) {
         OrderRecord currentOrder = orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("order not found: " + orderId));
         return transitionOrder(currentOrder, nextStatus, reason, traceId);
@@ -584,57 +587,69 @@ public class OrderCommandService {
         }
     }
 
-    private AdapterOrderAck invokePlaceOrder(TradingAdapter tradingAdapter, OrderRecord order, String traceId) {
+    private AdapterOrderAck invokePlaceOrder(TradingAdapter tradingAdapter, PlaceOrderRequest request, OrderRecord order) {
         try {
             return tradingAdapter.placeOrder(new AdapterOrderRequest(
+                    request.requestId(),
                     order.orderId(),
                     order.accountId(),
                     order.venue(),
                     order.symbol(),
                     order.clientOrderId(),
+                    request.idempotencyKey(),
                     order.side(),
                     order.type(),
                     order.price(),
                     order.qty(),
+                    null,
+                    request.timeInForce(),
+                    request.source(),
                     order.strategyRunId(),
-                    traceId
+                    request.traceId()
             ));
         } catch (RuntimeException ex) {
             auditLogRepository.append(
                     "ORDER",
                     "ADAPTER_PLACE_ORDER_FAILED",
                     order.orderId(),
-                    traceId,
+                    request.traceId(),
                     detail("venue", order.venue(), "error", ex.getMessage())
             );
             return new AdapterOrderAck(
                     false,
                     order.venue(),
+                    order.accountId(),
+                    order.symbol(),
+                    order.clientOrderId(),
                     null,
+                    "REJECTED",
                     new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), false),
                     Instant.now(clock),
-                    traceId
+                    null,
+                    request.traceId()
             );
         }
     }
 
-    private AdapterCancelAck invokeCancelOrder(TradingAdapter tradingAdapter, OrderRecord order, String traceId) {
+    private AdapterCancelAck invokeCancelOrder(TradingAdapter tradingAdapter, CancelOrderRequest request, OrderRecord order) {
         try {
             return tradingAdapter.cancelOrder(new AdapterCancelRequest(
+                    request.requestId(),
                     order.orderId(),
                     order.accountId(),
                     order.venue(),
                     order.symbol(),
                     order.clientOrderId(),
                     order.externalOrderId(),
-                    traceId
+                    request.reason(),
+                    request.traceId()
             ));
         } catch (RuntimeException ex) {
             auditLogRepository.append(
                     "ORDER",
                     "ADAPTER_CANCEL_ORDER_FAILED",
                     order.orderId(),
-                    traceId,
+                    request.traceId(),
                     detail("venue", order.venue(), "error", ex.getMessage())
             );
             return new AdapterCancelAck(
@@ -643,7 +658,7 @@ public class OrderCommandService {
                     order.externalOrderId(),
                     new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), false),
                     Instant.now(clock),
-                    traceId
+                    request.traceId()
             );
         }
     }
@@ -662,26 +677,12 @@ public class OrderCommandService {
         eventStoreAppender.append(topic, envelope);
     }
 
-    private PlaceOrderCommand toCommand(PlaceOrderRequest request, String orderId) {
-        return new PlaceOrderCommand(
-                orderId,
-                request.accountId(),
-                request.venue(),
-                request.symbol(),
-                request.clientOrderId(),
-                request.side().name(),
-                request.type().name(),
-                request.price(),
-                request.qty(),
-                "GTC",
-                request.strategyRunId(),
-                request.traceId()
-        );
-    }
-
     private void validateRequest(PlaceOrderRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
+        }
+        if (request.requestId() == null || request.requestId().isBlank()) {
+            throw new IllegalArgumentException("requestId must not be blank");
         }
         if (request.accountId() == null || request.accountId() <= 0) {
             throw new IllegalArgumentException("accountId must be positive");
@@ -701,8 +702,14 @@ public class OrderCommandService {
         if (request.type() == null) {
             throw new IllegalArgumentException("type must not be null");
         }
-        if (request.qty() == null || request.qty().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("qty must be positive");
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("quantity must be positive");
+        }
+        if (request.idempotencyKey() == null || request.idempotencyKey().isBlank()) {
+            throw new IllegalArgumentException("idempotencyKey must not be blank");
+        }
+        if (request.source() == null || request.source().isBlank()) {
+            throw new IllegalArgumentException("source must not be blank");
         }
         if (request.traceId() == null || request.traceId().isBlank()) {
             throw new IllegalArgumentException("traceId must not be blank");
@@ -716,6 +723,9 @@ public class OrderCommandService {
     private void validateCancelRequest(CancelOrderRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
+        }
+        if (request.requestId() == null || request.requestId().isBlank()) {
+            throw new IllegalArgumentException("requestId must not be blank");
         }
         boolean hasOrderId = request.orderId() != null && !request.orderId().isBlank();
         if (!hasOrderId) {
@@ -735,15 +745,37 @@ public class OrderCommandService {
     }
 
     private OrderRecord resolveCancelTarget(CancelOrderRequest request) {
+        OrderRecord target;
         if (request.orderId() != null && !request.orderId().isBlank()) {
-            return orderRepository.findByOrderId(request.orderId())
+            target = orderRepository.findByOrderId(request.orderId())
                     .orElseThrow(() -> new IllegalArgumentException("order not found: " + request.orderId()));
+        } else {
+            target = orderRepository.findByAccountAndClientOrderId(request.accountId(), request.clientOrderId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "order not found by accountId/clientOrderId: "
+                                    + request.accountId() + "/" + request.clientOrderId()
+                    ));
         }
-        return orderRepository.findByAccountAndClientOrderId(request.accountId(), request.clientOrderId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "order not found by accountId/clientOrderId: "
-                                + request.accountId() + "/" + request.clientOrderId()
-                ));
+        validateCancelTargetSemantics(request, target);
+        return target;
+    }
+
+    private void validateCancelTargetSemantics(CancelOrderRequest request, OrderRecord target) {
+        // Why: GateD 要求撤单契约中的 venue / symbol / externalOrderId 具备真实语义，不能只是“可选摆设”。
+        if (request.accountId() != null && !request.accountId().equals(target.accountId())) {
+            throw new IllegalArgumentException("accountId does not match cancel target");
+        }
+        if (request.venue() != null && !request.venue().equalsIgnoreCase(target.venue())) {
+            throw new IllegalArgumentException("venue does not match cancel target");
+        }
+        if (request.symbol() != null && !request.symbol().equalsIgnoreCase(target.symbol())) {
+            throw new IllegalArgumentException("symbol does not match cancel target");
+        }
+        if (request.externalOrderId() != null
+                && target.externalOrderId() != null
+                && !request.externalOrderId().equals(target.externalOrderId())) {
+            throw new IllegalArgumentException("externalOrderId does not match cancel target");
+        }
     }
 
     private void publishOrderStatusChanged(OrderRecord order, String traceId, String reason) {

@@ -133,7 +133,7 @@ public class PaperMatchingService {
                 ));
         // Why: 只有当 adapter 反馈的状态与本地状态一致时，scheduler 才允许继续做本地成交副作用，
         // 这样 paper 路径不再是“完全绕过 adapter 的专用链路”。
-        if (!order.status().name().equals(adapterSnapshot.status())) {
+        if (!order.status().name().equals(adapterSnapshot.externalStatus())) {
             auditLogRepository.append(
                     "MATCHING",
                     "ADAPTER_STATE_NOT_READY",
@@ -142,7 +142,7 @@ public class PaperMatchingService {
                     detail(
                             "order_id", order.orderId(),
                             "order_status", order.status().name(),
-                            "adapter_status", adapterSnapshot.status(),
+                            "adapter_status", adapterSnapshot.externalStatus(),
                             "venue", order.venue()
                     )
             );
@@ -212,7 +212,7 @@ public class PaperMatchingService {
         }
 
         if (order.status() != OrderStatus.FILLED) {
-            orderExecutionGateway.transition(order.orderId(), OrderStatus.FILLED, "PAPER_MATCH_FILLED", order.traceId());
+            orderExecutionGateway.markFilled(order.orderId(), "PAPER_MATCH_FILLED", order.traceId());
         }
         return existingTrade.isEmpty();
     }

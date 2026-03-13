@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.ledger.repository;
 
+import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
 import com.guidinglight.nexusquant.ledger.model.PositionProjection;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
@@ -91,6 +92,24 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                 eventType,
                 payloadJson,
                 traceId
+        );
+    }
+
+    @Override
+    public void insertAccountSnapshot(AccountSnapshotProjection snapshot) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO account_snapshots (
+                            account_id, currency, balance, available, frozen, ts, trace_id
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                snapshot.accountId(),
+                snapshot.currency(),
+                snapshot.balance(),
+                snapshot.available(),
+                snapshot.frozen(),
+                Timestamp.from(snapshot.snapshotTs()),
+                snapshot.traceId()
         );
     }
 

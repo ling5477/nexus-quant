@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
 import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
 import java.time.Clock;
@@ -51,6 +52,7 @@ public class OkxRecoveryService implements RecoveryService {
     );
 
     private final OrderCommandService orderCommandService;
+    private final OrderLifecycleService orderLifecycleService;
     private final OkxExchangeAdapter okxExchangeAdapter;
     private final OkxRestReconcileService okxRestReconcileService;
     private final com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository;
@@ -59,6 +61,7 @@ public class OkxRecoveryService implements RecoveryService {
 
     /**
      * @param orderCommandService     订单编排服务
+     * @param orderLifecycleService   订单生命周期入口
      * @param okxExchangeAdapter      OKX adapter
      * @param okxRestReconcileService REST reconcile 服务
      * @param auditLogRepository      审计仓储
@@ -66,12 +69,14 @@ public class OkxRecoveryService implements RecoveryService {
      */
     public OkxRecoveryService(
             OrderCommandService orderCommandService,
+            OrderLifecycleService orderLifecycleService,
             OkxExchangeAdapter okxExchangeAdapter,
             OkxRestReconcileService okxRestReconcileService,
             com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository,
             EventStoreAppender eventStoreAppender
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
+        this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
         this.okxExchangeAdapter = Objects.requireNonNull(okxExchangeAdapter, "okxExchangeAdapter must not be null");
         this.okxRestReconcileService = Objects.requireNonNull(
                 okxRestReconcileService,
@@ -209,18 +214,16 @@ public class OkxRecoveryService implements RecoveryService {
         try {
             OrderRecord snapshot = order;
             if (snapshot.status() != OrderStatus.CANCEL_REQUESTED && snapshot.status() != OrderStatus.CANCELLED) {
-                snapshot = orderCommandService.transitionOrder(
+                snapshot = orderLifecycleService.requestCancel(
                         snapshot.orderId(),
-                        OrderStatus.CANCEL_REQUESTED,
                         ORDER_NOT_FOUND_REASON,
                         traceId
                 );
                 appendOrderStatusEvent(snapshot, traceId, ORDER_NOT_FOUND_REASON);
             }
             if (snapshot.status() != OrderStatus.CANCELLED) {
-                snapshot = orderCommandService.transitionOrder(
+                snapshot = orderLifecycleService.cancel(
                         snapshot.orderId(),
-                        OrderStatus.CANCELLED,
                         ORDER_NOT_FOUND_REASON,
                         traceId
                 );

@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
@@ -39,6 +40,7 @@ public class OkxRestReconcileService {
     private static final int DEFAULT_LIMIT = 100;
 
     private final OrderCommandService orderCommandService;
+    private final OrderLifecycleService orderLifecycleService;
     private final OkxExchangeAdapter okxExchangeAdapter;
     private final TradeRepository tradeRepository;
     private final TradeLedgerGateway tradeLedgerGateway;
@@ -47,15 +49,17 @@ public class OkxRestReconcileService {
     private final Clock clock;
 
     /**
-     * @param orderCommandService 订单编排服务
-     * @param okxExchangeAdapter  OKX adapter
-     * @param tradeRepository     trades 仓储
-     * @param tradeLedgerGateway  ledger 网关
-     * @param eventStoreAppender  event_store 写入器
-     * @param auditLogRepository  审计仓储
+     * @param orderCommandService   订单编排服务
+     * @param orderLifecycleService 订单生命周期入口
+     * @param okxExchangeAdapter    OKX adapter
+     * @param tradeRepository       trades 仓储
+     * @param tradeLedgerGateway    ledger 网关
+     * @param eventStoreAppender    event_store 写入器
+     * @param auditLogRepository    审计仓储
      */
     public OkxRestReconcileService(
             OrderCommandService orderCommandService,
+            OrderLifecycleService orderLifecycleService,
             OkxExchangeAdapter okxExchangeAdapter,
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
@@ -63,6 +67,7 @@ public class OkxRestReconcileService {
             com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
+        this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
         this.okxExchangeAdapter = Objects.requireNonNull(okxExchangeAdapter, "okxExchangeAdapter must not be null");
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
         this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
@@ -125,7 +130,7 @@ public class OkxRestReconcileService {
                     updatedOrder.traceId()
             );
         }
-        alignOrderStatus(updatedOrder, snapshot.status(), updatedOrder.traceId());
+        alignOrderStatus(updatedOrder, snapshot.externalStatus(), updatedOrder.traceId());
         updatedOrder = orderCommandService.findByOrderId(updatedOrder.orderId()).orElse(updatedOrder);
         int newTrades = reconcileFills(updatedOrder);
         auditLogRepository.append(
@@ -163,7 +168,7 @@ public class OkxRestReconcileService {
         // 避免直接 CANCEL_REQUESTED -> ACCEPTED/PARTIALLY_FILLED 的非法迁移。
         if (currentStatus == OrderStatus.CANCEL_REQUESTED && targetStatus != OrderStatus.CANCELLED) {
             try {
-                orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCEL_REJECTED, "RECONCILE_CANCEL_REJECTED", traceId);
+                orderLifecycleService.rejectCancel(order.orderId(), "RECONCILE_CANCEL_REJECTED", traceId);
             } catch (IllegalStateException ex) {
                 OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
                         .map(OrderRecord::status)
@@ -174,18 +179,18 @@ public class OkxRestReconcileService {
                 throw ex;
             }
             if (targetStatus != OrderStatus.CANCEL_REJECTED) {
-                orderCommandService.transitionOrder(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+                orderLifecycleService.applyExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
             }
             return;
         }
         if (targetStatus == OrderStatus.PARTIALLY_FILLED && currentStatus == OrderStatus.SENT) {
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_CONFIRM_ACCEPTED", traceId);
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.PARTIALLY_FILLED, "RECONCILE_PARTIAL_FILL", traceId);
+            orderLifecycleService.acknowledge(order.orderId(), "RECONCILE_CONFIRM_ACCEPTED", traceId);
+            orderLifecycleService.markPartiallyFilled(order.orderId(), "RECONCILE_PARTIAL_FILL", traceId);
             return;
         }
         if (targetStatus == OrderStatus.CANCELLED && currentStatus != OrderStatus.CANCEL_REQUESTED) {
             try {
-                orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCEL_REQUESTED, "RECONCILE_CANCEL_REQUESTED", traceId);
+                orderLifecycleService.requestCancel(order.orderId(), "RECONCILE_CANCEL_REQUESTED", traceId);
             } catch (IllegalStateException ex) {
                 OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
                         .map(OrderRecord::status)
@@ -195,10 +200,10 @@ public class OkxRestReconcileService {
                 }
                 throw ex;
             }
-            orderCommandService.transitionOrder(order.orderId(), OrderStatus.CANCELLED, "RECONCILE_CANCELLED", traceId);
+            orderLifecycleService.cancel(order.orderId(), "RECONCILE_CANCELLED", traceId);
             return;
         }
-        orderCommandService.transitionOrder(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+        orderLifecycleService.applyExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
     }
 
     private boolean isTerminalStatus(OrderStatus status) {

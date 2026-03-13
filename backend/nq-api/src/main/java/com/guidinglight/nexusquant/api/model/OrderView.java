@@ -1,19 +1,42 @@
 package com.guidinglight.nexusquant.api.model;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
+import com.guidinglight.nexusquant.core.model.OrderRecord;
+
 import java.math.BigDecimal;
-import java.time.Instant;
 
 /**
- * OrderView 是 API 层订单查询视图占位。
+ * OrderView 是 GateD 的最小订单查询视图。
+ * <p>
+ * Why:
+ * 第三批只补齐最小验收所需读模型，因此先冻结订单主键、定位字段、数量价格、状态与 trace 这些
+ * 与执行闭环直接相关的字段，不在本轮扩展成完整报表视图。
  */
 public record OrderView(
         String orderId,
         Long accountId,
+        String venue,
         String symbol,
+        String clientOrderId,
+        String externalOrderId,
         BigDecimal price,
-        BigDecimal qty,
+        BigDecimal quantity,
         OrderStatus status,
-        Instant updatedAt
+        String traceId
 ) {
+
+    public static OrderView from(OrderRecord order) {
+        return new OrderView(
+                order.orderId(),
+                order.accountId(),
+                order.venue(),
+                order.symbol(),
+                order.clientOrderId(),
+                order.externalOrderId(),
+                order.price(),
+                order.qty(),
+                order.status(),
+                order.traceId()
+        );
+    }
 }

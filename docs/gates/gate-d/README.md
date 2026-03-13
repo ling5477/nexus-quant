@@ -9,6 +9,25 @@ GateD 的目标不是再把系统“接得更多”，而是把 GateC 已经接�
 
 ---
 
+## 0. 当前状态摘要（截至 2026-03-13）
+
+> 本摘要用于 GateD 卷宗级概览，细项以 `GATE_D_CHECKLIST.md` 为准。
+> 状态约定：`[x] 已完成`、`[~] 部分完成`、`[ ] 未完成`。
+
+- [x] pre-trade 风控规则链已完成
+- [~] lifecycle 主通道收口部分完成
+- [x] adapter canonical 契约冻结已完成
+- [x] `__gated` canonical 入口已完成
+- [x] order / trade / position / account 本地最小闭环已完成
+- [x] account snapshot 本地产出链已完成
+- [x] 请求层 canonical `orderType / quantity` 已完成
+- [x] 现行脚本与示例 canonical 化已完成
+- [x] current / top-level / archive 文档边界已建立
+- [ ] 真实 OKX 验收未完成
+- [~] 深层兼容债务仍部分完成
+
+---
+
 ## 1. GateD 与 GateC 的区别
 
 ### GateC 解决的问题

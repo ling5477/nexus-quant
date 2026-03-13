@@ -9,13 +9,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
+
 import java.math.BigDecimal;
 import java.time.Instant;
+
 import org.junit.jupiter.api.Test;
 
 /**
  * EventEnvelopeSerializationTest 校验 Gate B 事件序列化字段口径。
- *
+ * <p>
  * Why:
  * event_store 回放依赖 JSON key 稳定；若 key 被无意改成驼峰，会直接破坏审计与恢复链路。
  */
@@ -32,15 +34,18 @@ class EventEnvelopeSerializationTest {
     void shouldSerializeEnvelopeAndPayloadUsingSnakeCaseKeys() throws Exception {
         PlaceOrderCommand command = new PlaceOrderCommand(
                 "ord-001",
+                "req-001",
                 1001L,
                 "PAPER",
                 "BTC-USDT",
                 "coid-001",
+                "1001:coid-001",
                 "BUY",
                 "MARKET",
                 null,
                 new BigDecimal("0.01000000"),
                 "IOC",
+                "manual",
                 "demo-strategy",
                 "trc-001"
         );
@@ -62,11 +67,15 @@ class EventEnvelopeSerializationTest {
         assertTrue(root.has("event_id"));
         assertTrue(root.has("trace_id"));
         assertTrue(payload.has("client_order_id"));
+        assertTrue(payload.has("request_id"));
+        assertTrue(payload.has("idempotency_key"));
         assertTrue(payload.has("venue"));
         assertTrue(payload.has("time_in_force"));
+        assertTrue(payload.has("quantity"));
         assertFalse(root.has("eventId"));
         assertFalse(payload.has("clientOrderId"));
         assertEquals("evt-001", root.get("event_id").asText());
         assertEquals("coid-001", payload.get("client_order_id").asText());
+        assertEquals("req-001", payload.get("request_id").asText());
     }
 }

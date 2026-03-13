@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.app.web;
 
 /**
- * GateCTriggerResponse 统一描述 GateC 本地验收入口的触发结果。
+ * GateDTriggerResponse 统一描述 GateD 本地验收入口的触发结果。
  * <p>
  * Why:
  * 验收入口的职责是触发服务并返回最小可观测结果，因此响应只暴露 traceId、动作名与结果摘要，
@@ -11,7 +11,7 @@ package com.guidinglight.nexusquant.app.web;
  * @param traceId 本次调用 traceId
  * @param detail  最小执行摘要
  */
-public record GateCTriggerResponse(
+public record GateDTriggerResponse(
         String action,
         String traceId,
         String detail

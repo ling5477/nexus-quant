@@ -13,6 +13,7 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.LedgerDirection;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.PositionProjection;
@@ -125,6 +126,7 @@ public class TradeLedgerPostingService {
         }
 
         PositionProjection positionProjection = updatePositionProjection(request);
+        writeAccountSnapshots(request, positionProjection);
         publishEvent(
                 TopicNames.LEDGER_EVENT_V1,
                 request.tradeId(),
@@ -287,6 +289,76 @@ public class TradeLedgerPostingService {
         );
         ledgerPostingRepository.upsertPosition(projection, Instant.now(clock));
         return projection;
+    }
+
+    /**
+     * 写入本地最小账户快照。
+     * <p>
+     * Why:
+     * 第五批要打通 `/__gated/accounts/{accountId}`，而当前 PAPER 成交后只有 ledger_entries 与 positions，
+     * 没有任何 `account_snapshots` 写入。这里按“base 资产来自持仓投影、quote/fee 资产来自账本余额”的
+     * 最小口径补快照，先让本地读链可验证，再留待后续真实交易所同步路径继续细化。
+     *
+     * @param request            成交记账请求
+     * @param positionProjection 最新持仓投影
+     */
+    private void writeAccountSnapshots(TradeLedgerRequest request, PositionProjection positionProjection) {
+        Instant snapshotTs = request.ts() == null ? Instant.now(clock) : request.ts();
+        Map<String, AccountSnapshotProjection> snapshots = new LinkedHashMap<>();
+
+        String baseCurrency = resolveBaseCurrency(request.symbol());
+        snapshots.put(
+                baseCurrency,
+                new AccountSnapshotProjection(
+                        request.accountId(),
+                        baseCurrency,
+                        NumericPolicy.normalize(NumericType.QTY, positionProjection.qty()),
+                        NumericPolicy.normalize(NumericType.QTY, positionProjection.availableQty()),
+                        NumericPolicy.normalize(
+                                NumericType.QTY,
+                                positionProjection.qty().subtract(positionProjection.availableQty())
+                        ),
+                        snapshotTs,
+                        request.traceId()
+                )
+        );
+
+        appendLedgerBackedSnapshot(snapshots, request.accountId(), resolveQuoteCurrency(request.symbol()), snapshotTs, request.traceId());
+        if (request.feeCurrency() != null && !request.feeCurrency().isBlank()) {
+            appendLedgerBackedSnapshot(snapshots, request.accountId(), request.feeCurrency(), snapshotTs, request.traceId());
+        }
+
+        for (AccountSnapshotProjection snapshot : snapshots.values()) {
+            ledgerPostingRepository.insertAccountSnapshot(snapshot);
+        }
+    }
+
+    private void appendLedgerBackedSnapshot(
+            Map<String, AccountSnapshotProjection> snapshots,
+            Long accountId,
+            String currency,
+            Instant snapshotTs,
+            String traceId
+    ) {
+        if (currency == null || currency.isBlank() || snapshots.containsKey(currency)) {
+            return;
+        }
+        BigDecimal balance = NumericPolicy.normalize(
+                NumericType.AMOUNT,
+                ledgerPostingRepository.currentBalance(accountId, currency)
+        );
+        snapshots.put(
+                currency,
+                new AccountSnapshotProjection(
+                        accountId,
+                        currency,
+                        balance,
+                        balance,
+                        NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO),
+                        snapshotTs,
+                        traceId
+                )
+        );
     }
 
     private BigDecimal calculateNextAvgPrice(PositionProjection current, TradeLedgerRequest request, BigDecimal nextQty) {

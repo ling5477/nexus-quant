@@ -38,7 +38,7 @@ public class BinanceOrderTrimmer {
                     null,
                     orderDraft.symbol(),
                     orderDraft.price(),
-                    orderDraft.qty(),
+                    orderDraft.quantity(),
                     "BINANCE_SYMBOL_NOT_FOUND",
                     "symbol filters not found"
             );
@@ -60,36 +60,36 @@ public class BinanceOrderTrimmer {
                     symbolFilters.exchangeSymbol(),
                     symbolFilters.internalSymbol(),
                     orderDraft.price(),
-                    orderDraft.qty(),
+                    orderDraft.quantity(),
                     "BINANCE_SYMBOL_NOT_TRADING",
                     "symbol status is not TRADING"
             );
         }
-        if (orderDraft.qty() == null || orderDraft.qty().compareTo(BigDecimal.ZERO) <= 0) {
+        if (orderDraft.quantity() == null || orderDraft.quantity().compareTo(BigDecimal.ZERO) <= 0) {
             return BinanceTrimResult.rejected(
                     symbolFilters.exchangeSymbol(),
                     symbolFilters.internalSymbol(),
                     orderDraft.price(),
-                    orderDraft.qty(),
+                    orderDraft.quantity(),
                     "BINANCE_QTY_INVALID",
                     "qty must be positive"
             );
         }
-        if (requiresPrice(orderDraft.type()) && (orderDraft.price() == null || orderDraft.price().compareTo(BigDecimal.ZERO) <= 0)) {
+        if (requiresPrice(orderDraft.orderType()) && (orderDraft.price() == null || orderDraft.price().compareTo(BigDecimal.ZERO) <= 0)) {
             return BinanceTrimResult.rejected(
                     symbolFilters.exchangeSymbol(),
                     symbolFilters.internalSymbol(),
                     orderDraft.price(),
-                    orderDraft.qty(),
+                    orderDraft.quantity(),
                     "BINANCE_PRICE_REQUIRED",
                     "LIMIT order requires positive price"
             );
         }
 
-        BigDecimal trimmedQty = trimDown(orderDraft.qty(), symbolFilters.effectiveStepSize(orderDraft.type()));
+        BigDecimal trimmedQty = trimDown(orderDraft.quantity(), symbolFilters.effectiveStepSize(orderDraft.orderType()));
         BigDecimal trimmedPrice = orderDraft.price() == null ? null : trimDown(orderDraft.price(), symbolFilters.tickSize());
 
-        if (trimmedQty.compareTo(symbolFilters.effectiveMinQty(orderDraft.type())) < 0) {
+        if (trimmedQty.compareTo(symbolFilters.effectiveMinQty(orderDraft.orderType())) < 0) {
             return BinanceTrimResult.rejected(
                     symbolFilters.exchangeSymbol(),
                     symbolFilters.internalSymbol(),
@@ -99,8 +99,8 @@ public class BinanceOrderTrimmer {
                     "trimmed qty below minQty"
             );
         }
-        if (symbolFilters.effectiveMaxQty(orderDraft.type()) != null
-                && trimmedQty.compareTo(symbolFilters.effectiveMaxQty(orderDraft.type())) > 0) {
+        if (symbolFilters.effectiveMaxQty(orderDraft.orderType()) != null
+                && trimmedQty.compareTo(symbolFilters.effectiveMaxQty(orderDraft.orderType())) > 0) {
             return BinanceTrimResult.rejected(
                     symbolFilters.exchangeSymbol(),
                     symbolFilters.internalSymbol(),
@@ -138,7 +138,7 @@ public class BinanceOrderTrimmer {
         // 因此当前 PR 仅在存在 price 的情况下校验 notional，下个闭环 PR 再结合实时 quote 做更强约束。
         if (trimmedPrice != null) {
             BigDecimal notional = trimmedPrice.multiply(trimmedQty);
-            if (symbolFilters.shouldValidateMinNotional(orderDraft.type())
+            if (symbolFilters.shouldValidateMinNotional(orderDraft.orderType())
                     && notional.compareTo(symbolFilters.minNotional()) < 0) {
                 return BinanceTrimResult.rejected(
                         symbolFilters.exchangeSymbol(),
@@ -149,7 +149,7 @@ public class BinanceOrderTrimmer {
                         "order notional below minNotional"
                 );
             }
-            if (symbolFilters.shouldValidateMaxNotional(orderDraft.type())
+            if (symbolFilters.shouldValidateMaxNotional(orderDraft.orderType())
                     && notional.compareTo(symbolFilters.maxNotional()) > 0) {
                 return BinanceTrimResult.rejected(
                         symbolFilters.exchangeSymbol(),

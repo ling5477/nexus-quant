@@ -56,6 +56,8 @@ GateD 的阶段目标：
 - `docs/gates/gate-b/`
 - `docs/gates/gate-c/`
 
+根级 `docs/*.md` 中仍标记 Gate A 的旧文档只作 archive 参考，不作为当前实现事实来源；当前阶段仍以 `docs/current/*` 与 `docs/gates/gate-d/*` 为准。
+
 ---
 
 ## 3. 当前实现范围（Scope）

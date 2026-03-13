@@ -2,10 +2,25 @@
 
 > GateD 提交拆分计划。  
 > 原则：单个 PR 只解决一类边界问题，做到能 review、能回滚、能定位。
+> 状态约定：`[x] 已完成`、`[~] 进行中`、`[ ] 未开始`。  
+> 当前状态基线：**截至 2026-03-13 的已实现与已验证事实**。
 
 ---
 
-## PR-1：文档与阶段入口对齐
+## 当前推进状态
+
+- [x] PR-1：文档与阶段入口对齐
+- [~] PR-2：contracts / core 执行入口收敛
+- [x] PR-3：pre-trade 风控规则链
+- [~] PR-4：状态机、事件与执行回执收敛
+- [~] PR-5：scheduler / recovery / reconcile / degrade 收敛
+- [~] PR-6：ledger / projection / db schema
+- [~] PR-7：app / api 验收入口与查询视图
+- [ ] PR-8：integration tests / freeze docs
+
+---
+
+## PR-1：文档与阶段入口对齐（已完成）
 
 ### 目标
 - 修正 GateD 阶段定义
@@ -26,7 +41,7 @@
 
 ---
 
-## PR-2：contracts / core 执行入口收敛
+## PR-2：contracts / core 执行入口收敛（进行中）
 
 ### 目标
 - 统一执行应用服务
@@ -45,7 +60,7 @@
 
 ---
 
-## PR-3：pre-trade 风控规则链
+## PR-3：pre-trade 风控规则链（已完成）
 
 ### 目标
 - 从 `NoopRiskGate` 过渡到规则链
@@ -62,7 +77,7 @@
 
 ---
 
-## PR-4：状态机、事件与执行回执收敛
+## PR-4：状态机、事件与执行回执收敛（进行中）
 
 ### 目标
 - 冻结订单状态机
@@ -78,7 +93,7 @@
 
 ---
 
-## PR-5：scheduler / recovery / reconcile / degrade 收敛
+## PR-5：scheduler / recovery / reconcile / degrade 收敛（进行中）
 
 ### 目标
 - scheduler 瘦身
@@ -93,7 +108,7 @@
 
 ---
 
-## PR-6：ledger / projection / db schema
+## PR-6：ledger / projection / db schema（进行中）
 
 ### 目标
 - fills 去重
@@ -108,7 +123,7 @@
 
 ---
 
-## PR-7：app / api 验收入口与查询视图
+## PR-7：app / api 验收入口与查询视图（进行中）
 
 ### 目标
 - 建立 GateD 最小验收入口
@@ -119,9 +134,15 @@
 - `nq-app`
 - `nq-api`
 
+### 当前进展
+- `__gated` canonical 验收入口、order/trade/position/account 本地闭环已完成
+- OKX 验收脚本已改为 canonical non-fallback 启动路径，并显式支持 `.env -> NQ_OKX_ENV=dome|real -> NQ_OKX_API_*` 统一运行时变量映射
+- `dome / real` 两种模式均已推进到真实 OKX bootstrap；当前共同阻断点是 OKX 外网连接失败（`Permission denied: getsockopt`）
+- 真实 `UC-D9: OKX LIMIT -> cancel` 尚未转绿，因此 PR-7 继续保持进行中
+
 ---
 
-## PR-8：integration tests / freeze docs
+## PR-8：integration tests / freeze docs（未开始）
 
 ### 目标
 - 跑通 GateD 用例

@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
-import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
+
 import java.util.List;
 
 /**
  * OrderExecutionGateway 抽象 scheduler 对订单域的访问能力。
- *
+ * <p>
  * Why:
- * scheduler 只关心“找可撮合订单 + 推进状态”，通过网关隔离后可在单测中替换为内存实现。
+ * scheduler 只关心“找可撮合订单 + 触发有限生命周期动作”，通过网关隔离后可在单测中替换为内存实现。
  */
 public interface OrderExecutionGateway {
 
@@ -21,13 +21,12 @@ public interface OrderExecutionGateway {
     List<OrderRecord> findMatchableOrders(int limit);
 
     /**
-     * 通过状态机推进订单状态。
+     * 将订单推进到 FILLED 终态。
      *
      * @param orderId 订单 ID
-     * @param nextStatus 目标状态
-     * @param reason 迁移原因
+     * @param reason  迁移原因
      * @param traceId 链路追踪 ID
      * @return 迁移后的订单快照
      */
-    OrderRecord transition(String orderId, OrderStatus nextStatus, String reason, String traceId);
+    OrderRecord markFilled(String orderId, String reason, String traceId);
 }

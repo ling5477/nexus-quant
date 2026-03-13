@@ -6,6 +6,8 @@
 - `docs/gates/gate-a/`：GateA 冻结快照
 - `docs/gates/gate-b/`：GateB 冻结快照
 - `docs/gates/gate-c/`：GateC 冻结快照
+
+根级 `docs/*.md` 中多数旧文档主要用于 archive 参考；其中 `docs/ARCHITECTURE.md` 与 `docs/MODULES.md` 保留为顶层导航摘要，但同样不是当前事实来源。若与 `docs/current/*` 或 `docs/gates/*` 冲突，以后者为准。
 - `docs/gates/gate-d/`：GateD 当前权威卷宗与冻结预备目录
 
 ## 使用约定

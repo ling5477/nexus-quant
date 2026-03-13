@@ -1,5 +1,10 @@
 # Gate A 验收清单（个人开发版）
 
+> Archive Notice
+> - 本文件为 Gate A 根级历史留档，不是当前阶段的 Source of Truth。
+> - 当前阶段请优先阅读 `docs/current/GATE_CHECKLIST.md` 与 `docs/gates/gate-d/GATE_D_CHECKLIST.md`。
+> - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/GATE_A_CHECKLIST.md`。
+
 > 项目：nexus-quant  
 > Gate：A（核心内核 + auth/gateway 骨架 + 启动载体/横切模块）  
 > 目标：冻结核心模型与契约，保证闭环“正确性底座”可被实现与验证
@@ -59,4 +64,3 @@
 - [ ] 不要求实现策略逻辑/因子/回测
 - [ ] 不要求实现前端页面
 - [ ] 不要求上线 Kafka/Redis（可占位）
-

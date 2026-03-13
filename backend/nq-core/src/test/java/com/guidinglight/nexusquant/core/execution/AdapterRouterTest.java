@@ -57,7 +57,19 @@ class AdapterRouterTest {
 
         @Override
         public AdapterOrderAck placeOrder(AdapterOrderRequest request) {
-            return new AdapterOrderAck(true, venue, venue + "-external", null, Instant.now(), request.traceId());
+            return new AdapterOrderAck(
+                    true,
+                    venue,
+                    request.accountId(),
+                    request.symbol(),
+                    request.clientOrderId(),
+                    venue + "-external",
+                    "ACCEPTED",
+                    null,
+                    Instant.now(),
+                    venue + "_router_ack",
+                    request.traceId()
+            );
         }
 
         @Override
@@ -74,6 +86,12 @@ class AdapterRouterTest {
                     query.clientOrderId(),
                     query.externalOrderId(),
                     "ACCEPTED",
+                    null,
+                    null,
+                    null,
+                    null,
+                    Instant.now(),
+                    venue + "_router_snapshot",
                     query.traceId()
             );
         }

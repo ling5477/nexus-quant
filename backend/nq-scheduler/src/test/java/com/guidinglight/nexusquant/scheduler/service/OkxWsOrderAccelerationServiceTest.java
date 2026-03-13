@@ -15,6 +15,7 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
@@ -26,20 +27,19 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
- * OkxWsOrderAccelerationServiceTest 覆盖 PR-W3 的 WS 加速幂等约束。
+ * OkxWsOrderAccelerationServiceTest 覆盖 OKX WS 加速的幂等与状态保护约束。
  */
 class OkxWsOrderAccelerationServiceTest {
 
-    /**
-     * 验证重复 OrderAck 在已 ACCEPTED 状态下不会产生重复迁移。
-     */
     @Test
     void shouldIgnoreDuplicateOrderAckWhenAlreadyAccepted() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         OkxWsOrderAccelerationService service = new OkxWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -50,20 +50,19 @@ class OkxWsOrderAccelerationServiceTest {
 
         service.accelerate(orderAckEvent("ws-cl-1", "ws-ext-1"), "trc-ws-ack-1");
 
-        verify(orderCommandService, never()).transitionOrder(any(), any(), any(), any());
+        verify(orderLifecycleService, never()).acknowledge(any(), any(), any());
         verify(orderCommandService, never()).linkExternalOrderId(any(), any(), any());
     }
 
-    /**
-     * 验证晚到 OrderAck 不会把终态订单回退到 ACCEPTED。
-     */
     @Test
     void shouldNotRollbackTerminalOrderWhenLateAckArrives() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         OkxWsOrderAccelerationService service = new OkxWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -74,21 +73,20 @@ class OkxWsOrderAccelerationServiceTest {
 
         service.accelerate(orderAckEvent("ws-cl-2", "ws-ext-2"), "trc-ws-ack-2");
 
-        verify(orderCommandService, never()).transitionOrder(any(), any(), any(), any());
+        verify(orderLifecycleService, never()).acknowledge(any(), any(), any());
         verify(auditLogRepository).append(eq("WS"), eq("WS_ORDER_ACK_IGNORED_TERMINAL"), eq("ord-ws-2"), eq("trc-ws-ack-2"), any());
         verify(eventStoreAppender).append(eq(TopicNames.AUDIT_EVENT_V1), any());
     }
 
-    /**
-     * 验证 CancelAck 会经过状态机推进为 CANCELLED。
-     */
     @Test
     void shouldAccelerateCancelAckThroughStateMachine() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         OkxWsOrderAccelerationService service = new OkxWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -97,39 +95,27 @@ class OkxWsOrderAccelerationServiceTest {
         OrderRecord cancelRequestedOrder = acceptedOrder.withStatus(OrderStatus.CANCEL_REQUESTED, "WS_CANCEL_ACK_ACCELERATE_PREPARE");
         when(orderCommandService.findByAccountAndClientOrderId(2001L, "ws-cl-3")).thenReturn(Optional.of(acceptedOrder));
         when(orderCommandService.findByOrderId("ord-ws-3")).thenReturn(Optional.of(acceptedOrder));
-        when(orderCommandService.transitionOrder(
+        when(orderLifecycleService.requestCancel(
                 eq("ord-ws-3"),
-                eq(OrderStatus.CANCEL_REQUESTED),
                 eq("WS_CANCEL_ACK_ACCELERATE_PREPARE"),
                 eq("trc-ws-cancel-1")
         )).thenReturn(cancelRequestedOrder);
 
         service.accelerate(cancelAckEvent("ws-cl-3", "ws-ext-3"), "trc-ws-cancel-1");
 
-        verify(orderCommandService).transitionOrder(
-                "ord-ws-3",
-                OrderStatus.CANCEL_REQUESTED,
-                "WS_CANCEL_ACK_ACCELERATE_PREPARE",
-                "trc-ws-cancel-1"
-        );
-        verify(orderCommandService).transitionOrder(
-                "ord-ws-3",
-                OrderStatus.CANCELLED,
-                "WS_CANCEL_ACK_ACCELERATE",
-                "trc-ws-cancel-1"
-        );
+        verify(orderLifecycleService).requestCancel("ord-ws-3", "WS_CANCEL_ACK_ACCELERATE_PREPARE", "trc-ws-cancel-1");
+        verify(orderLifecycleService).cancel("ord-ws-3", "WS_CANCEL_ACK_ACCELERATE", "trc-ws-cancel-1");
     }
 
-    /**
-     * 验证 CancelReject 会把 CANCEL_REQUESTED 推进到 CANCEL_REJECTED。
-     */
     @Test
     void shouldMarkCancelRejectedWhenCancelRejectArrives() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         OkxWsOrderAccelerationService service = new OkxWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -140,24 +126,18 @@ class OkxWsOrderAccelerationServiceTest {
 
         service.accelerate(cancelRejectEvent("ws-cl-4", "ws-ext-4", "51604"), "trc-ws-cancel-reject-1");
 
-        verify(orderCommandService).transitionOrder(
-                "ord-ws-4",
-                OrderStatus.CANCEL_REJECTED,
-                "51604",
-                "trc-ws-cancel-reject-1"
-        );
+        verify(orderLifecycleService).rejectCancel("ord-ws-4", "51604", "trc-ws-cancel-reject-1");
     }
 
-    /**
-     * 验证乱序 CancelReject（当前非 CANCEL_REQUESTED）只留证据，不推进状态机。
-     */
     @Test
     void shouldKeepEvidenceOnlyWhenCancelRejectOutOfOrder() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         OkxWsOrderAccelerationService service = new OkxWsOrderAccelerationService(
                 orderCommandService,
+                orderLifecycleService,
                 auditLogRepository,
                 eventStoreAppender
         );
@@ -168,7 +148,7 @@ class OkxWsOrderAccelerationServiceTest {
 
         service.accelerate(cancelRejectEvent("ws-cl-5", "ws-ext-5", "51605"), "trc-ws-cancel-reject-2");
 
-        verify(orderCommandService, never()).transitionOrder(any(), any(), any(), any());
+        verify(orderLifecycleService, never()).rejectCancel(any(), any(), any());
         verify(auditLogRepository).append(
                 eq("WS"),
                 eq("WS_CANCEL_REJECT_OUT_OF_ORDER"),

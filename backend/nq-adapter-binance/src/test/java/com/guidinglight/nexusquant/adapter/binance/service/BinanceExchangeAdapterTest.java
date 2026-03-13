@@ -56,15 +56,20 @@ class BinanceExchangeAdapterTest {
             BinanceExchangeAdapter adapter = createAdapter(server.baseUrl());
 
             AdapterOrderRequest request = new AdapterOrderRequest(
+                    "req-binance-1",
                     "ord-binance-1",
                     2001L,
                     "BINANCE",
                     "BTC-USDT",
                     "cid-binance-1",
+                    "2001:cid-binance-1",
                     "BUY",
                     "LIMIT",
                     new BigDecimal("30000.129"),
                     new BigDecimal("0.123456"),
+                    null,
+                    "GTC",
+                    "strategy",
                     "run-1",
                     "trc-binance-place-1"
             );
@@ -95,12 +100,14 @@ class BinanceExchangeAdapterTest {
         try (TestServer server = new TestServer(cancelExchange, 200, "{\"symbol\":\"BTCUSDT\",\"orderId\":\"889900\",\"status\":\"CANCELED\"}")) {
             BinanceExchangeAdapter adapter = createAdapter(server.baseUrl());
             adapter.cancelOrder(new AdapterCancelRequest(
+                    "req-binance-cancel-1",
                     "ord-binance-2",
                     2001L,
                     "BINANCE",
                     "BTC-USDT",
                     "cid-binance-2",
                     "889900",
+                    "cancel_request",
                     "trc-binance-cancel-1"
             ));
             assertEquals("DELETE", cancelExchange.get().method());
@@ -119,7 +126,7 @@ class BinanceExchangeAdapterTest {
                     "889900",
                     "trc-binance-get-1"
             ));
-            assertEquals("ACCEPTED", snapshot.status());
+            assertEquals("ACCEPTED", snapshot.externalStatus());
             assertEquals("BTC-USDT", snapshot.symbol());
             assertTrue(getExchange.get().uri().contains("orderId=889900"));
         }
@@ -153,15 +160,20 @@ class BinanceExchangeAdapterTest {
         )) {
             BinanceExchangeAdapter adapter = createAdapter(server.baseUrl());
             AdapterOrderRequest request = new AdapterOrderRequest(
+                    "req-binance-3",
                     "ord-binance-3",
                     2001L,
                     "BINANCE",
                     "BTC-USDT",
                     "cid-binance-3",
+                    "2001:cid-binance-3",
                     "BUY",
                     "LIMIT",
                     new BigDecimal("30000.12"),
                     new BigDecimal("0.123"),
+                    null,
+                    "GTC",
+                    "strategy",
                     "run-1",
                     "trc-binance-place-2"
             );
@@ -183,15 +195,20 @@ class BinanceExchangeAdapterTest {
     void shouldRejectBeforeNetworkWhenTrimFails() {
         BinanceExchangeAdapter adapter = createAdapter("http://127.0.0.1:65535");
         AdapterOrderRequest request = new AdapterOrderRequest(
+                "req-binance-4",
                 "ord-binance-4",
                 2001L,
                 "BINANCE",
                 "BTC-USDT",
                 "cid-binance-4",
+                "2001:cid-binance-4",
                 "BUY",
                 "LIMIT",
                 new BigDecimal("100.00"),
                 new BigDecimal("0.000001"),
+                null,
+                "GTC",
+                "strategy",
                 "run-1",
                 "trc-binance-place-3"
         );

@@ -9,6 +9,26 @@
 > 当前业务范围：**数字货币现货**
 >
 > 当前冻结原则：**先闭环、后扩边；先正确、后提速；先统一、后多样。**
+>
+> 状态约定：`[x] 已完成`、`[~] 部分完成`、`[ ] 未完成`。  
+> 当前状态回填基线：**截至 2026-03-13 的已实现与已验证事实**。
+
+---
+
+# 0. 当前状态回填（截至 2026-03-13）
+
+- [x] pre-trade 风控规则链已落地，`KillSwitch / AccountTradingEnabled / SymbolEnabled / OrderPrecision / MinNotional / MaxOrderAmount / DuplicateRequest / RateLimit` 均已实现
+- [~] lifecycle 主通道已收口到 `OrderCommandService + OrderLifecycleService`，OKX / Binance / Paper 主路径已迁移，但 `query-confirm / trade-report` 的冻结与验收仍未全部完成
+- [x] `nq-adapter-api` canonical 契约已冻结一轮，`requestId / idempotencyKey / orderType / quantity / quoteQuantity / timeInForce / source` 已成为当前事实字段
+- [x] `__gated` 已成为 canonical 本地验收入口，`nq.gated.verify.enabled` 已成为 canonical verify 开关
+- [x] order / trade / position / account 本地最小闭环已打通，`/__gated/orders`、`/__gated/orders/{orderId}`、`/__gated/orders/{orderId}/trade`、`/__gated/positions/{accountId}/{symbol}`、`/__gated/accounts/{accountId}` 均已有本地验证
+- [x] account snapshot 本地产出链已打通，PAPER 成交后可生成 `account_snapshots` 并被查询接口读到
+- [x] 请求层 canonical `orderType / quantity` 已完成，`GateDOrderHttpRequest` 的旧 `type / qty` 字段、访问器与 `JsonAlias` 均已删除
+- [x] 现行脚本与示例已 canonical 化，当前脚本与 smoke 示例统一使用 `__gated + NQ_GATED_VERIFY_ENABLED + orderType / quantity`
+- [x] current / top-level navigation / archive 三类文档边界已建立
+- [ ] 真实 OKX 验收未完成，local fallback 不能视为真实通道通过
+  当前已补 canonical non-fallback 启动路径、`.env -> dome|real -> NQ_OKX_API_*` 统一映射、query/reconcile/recovery 最小观察点，以及移除旧 GateC 工件路径依赖；本机在 `dome / real` 两种模式下都能推进到真实 OKX bootstrap，但仍因 `Permission denied: getsockopt` 阻断，不能视为真实通道通过。
+- [~] 深层兼容债务仍有残留，主要集中在内部领域命名、部分旧构造器与 `__gatec -> 404` regression test 断言
 
 ---
 
@@ -588,7 +608,7 @@ GateD 明确不包含以下内容：
 ## 13.1 结论状态
 
 - [ ] 未开始
-- [ ] 进行中
+- [x] 进行中
 - [ ] 可冻结
 - [ ] 已冻结
 - [ ] 冻结失败，需返工

@@ -3,8 +3,11 @@ package com.guidinglight.nexusquant.scheduler.service;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
+
 import java.util.List;
 import java.util.Objects;
+
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,12 +17,21 @@ import org.springframework.stereotype.Component;
 public class CoreOrderExecutionGateway implements OrderExecutionGateway {
 
     private final OrderCommandService orderCommandService;
+    private final OrderLifecycleService orderLifecycleService;
 
     /**
-     * @param orderCommandService 订单编排服务
+     * @param orderCommandService   订单查询服务
+     * @param orderLifecycleService 订单生命周期服务
      */
-    public CoreOrderExecutionGateway(OrderCommandService orderCommandService) {
+    public CoreOrderExecutionGateway(
+            OrderCommandService orderCommandService,
+            OrderLifecycleService orderLifecycleService
+    ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
+        this.orderLifecycleService = Objects.requireNonNull(
+                orderLifecycleService,
+                "orderLifecycleService must not be null"
+        );
     }
 
     @Override
@@ -29,7 +41,7 @@ public class CoreOrderExecutionGateway implements OrderExecutionGateway {
     }
 
     @Override
-    public OrderRecord transition(String orderId, OrderStatus nextStatus, String reason, String traceId) {
-        return orderCommandService.transitionOrder(orderId, nextStatus, reason, traceId);
+    public OrderRecord markFilled(String orderId, String reason, String traceId) {
+        return orderLifecycleService.markFilled(orderId, reason, traceId);
     }
 }

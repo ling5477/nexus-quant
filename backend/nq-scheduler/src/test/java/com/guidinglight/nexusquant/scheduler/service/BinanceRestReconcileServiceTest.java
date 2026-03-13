@@ -15,6 +15,7 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
@@ -41,6 +42,7 @@ class BinanceRestReconcileServiceTest {
     @Test
     void shouldInsertTradesPublishEventAndPostLedger() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         BinanceExchangeAdapter binanceExchangeAdapter = Mockito.mock(BinanceExchangeAdapter.class);
         TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
         TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
@@ -49,6 +51,7 @@ class BinanceRestReconcileServiceTest {
 
         BinanceRestReconcileService service = new BinanceRestReconcileService(
                 orderCommandService,
+                orderLifecycleService,
                 binanceExchangeAdapter,
                 tradeRepository,
                 tradeLedgerGateway,
@@ -93,6 +96,12 @@ class BinanceRestReconcileServiceTest {
                 acceptedOrder.clientOrderId(),
                 "90001",
                 "FILLED",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "binance_reconcile_snapshot",
                 acceptedOrder.traceId()
         ));
         when(orderCommandService.linkExternalOrderId("ord-binance-rec-1", "90001", "trc-binance-rec-1"))
@@ -100,6 +109,12 @@ class BinanceRestReconcileServiceTest {
         when(orderCommandService.findByOrderId("ord-binance-rec-1")).thenReturn(
                 Optional.of(acceptedOrder.withExternalOrderId("90001").withStatus(OrderStatus.FILLED, "RECONCILE_STATUS_ALIGN"))
         );
+        when(orderLifecycleService.applyExternalStatus(
+                "ord-binance-rec-1",
+                OrderStatus.FILLED,
+                "RECONCILE_STATUS_ALIGN",
+                "trc-binance-rec-1"
+        )).thenReturn(acceptedOrder.withExternalOrderId("90001").withStatus(OrderStatus.FILLED, "RECONCILE_STATUS_ALIGN"));
         when(binanceExchangeAdapter.listTrades("BTC-USDT", "90001", "trc-binance-rec-1")).thenReturn(List.of(fill));
         when(tradeRepository.findByExchangeAndExchangeTradeId("BINANCE", "trade-binance-1")).thenReturn(Optional.empty());
         when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "OK"));
@@ -108,7 +123,7 @@ class BinanceRestReconcileServiceTest {
 
         assertEquals(1, newTrades);
         verify(orderCommandService).linkExternalOrderId("ord-binance-rec-1", "90001", "trc-binance-rec-1");
-        verify(orderCommandService).transitionOrder("ord-binance-rec-1", OrderStatus.FILLED, "RECONCILE_STATUS_ALIGN", "trc-binance-rec-1");
+        verify(orderLifecycleService).applyExternalStatus("ord-binance-rec-1", OrderStatus.FILLED, "RECONCILE_STATUS_ALIGN", "trc-binance-rec-1");
         ArgumentCaptor<PaperTradeRecord> tradeCaptor = ArgumentCaptor.forClass(PaperTradeRecord.class);
         verify(tradeRepository).insert(tradeCaptor.capture());
         assertEquals("90001", tradeCaptor.getValue().externalOrderId());
@@ -123,6 +138,7 @@ class BinanceRestReconcileServiceTest {
     @Test
     void shouldSkipDuplicateTradeIdWithoutLedgerSideEffect() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         BinanceExchangeAdapter binanceExchangeAdapter = Mockito.mock(BinanceExchangeAdapter.class);
         TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
         TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
@@ -131,6 +147,7 @@ class BinanceRestReconcileServiceTest {
 
         BinanceRestReconcileService service = new BinanceRestReconcileService(
                 orderCommandService,
+                orderLifecycleService,
                 binanceExchangeAdapter,
                 tradeRepository,
                 tradeLedgerGateway,
@@ -190,6 +207,12 @@ class BinanceRestReconcileServiceTest {
                 acceptedOrder.clientOrderId(),
                 acceptedOrder.externalOrderId(),
                 "PARTIALLY_FILLED",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "binance_reconcile_snapshot",
                 acceptedOrder.traceId()
         ));
         when(orderCommandService.findByOrderId("ord-binance-rec-2")).thenReturn(Optional.of(acceptedOrder));

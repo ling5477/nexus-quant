@@ -1,5 +1,10 @@
 # 恢复与回放 Runbook（RECOVERY_RUNBOOK）
 
+> Archive Notice
+> - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-d/RECOVERY_RUNBOOK.md`。
+> - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/RECOVERY_RUNBOOK.md`。
+
 > 目标：当服务崩溃、事件乱序、或投影表损坏时，能够通过**账本/事件**重建核心状态。
 
 ---
@@ -61,4 +66,3 @@
 - 预期：
   - 重建后余额/仓位一致
   - 不产生额外“重复成交/重复扣款”
-

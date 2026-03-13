@@ -320,7 +320,19 @@ class OrderCommandServiceTest {
         @Override
         public AdapterOrderAck placeOrder(AdapterOrderRequest request) {
             placeInvocationCount++;
-            return new AdapterOrderAck(true, venue(), "paper-ord-ack", null, Instant.now(), request.traceId());
+            return new AdapterOrderAck(
+                    true,
+                    venue(),
+                    request.accountId(),
+                    request.symbol(),
+                    request.clientOrderId(),
+                    "paper-ord-ack",
+                    "ACCEPTED",
+                    null,
+                    Instant.now(),
+                    "paper_test_ack",
+                    request.traceId()
+            );
         }
 
         @Override
@@ -352,6 +364,12 @@ class OrderCommandServiceTest {
                     query.clientOrderId(),
                     query.externalOrderId(),
                     OrderStatus.ACCEPTED.name(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    Instant.now(),
+                    "paper_test_snapshot",
                     query.traceId()
             );
         }
@@ -382,7 +400,7 @@ class OrderCommandServiceTest {
     private static final class AlwaysAllowRiskGate implements RiskGate {
         @Override
         public RiskDecisionResult evaluate(RiskContext context) {
-            return new RiskDecisionResult(RiskDecision.ALLOW, "ALLOW_IN_TEST", RiskSeverity.LOW, context.traceId());
+            return RiskDecisionResult.allow("ALLOW_IN_TEST", "AlwaysAllowRiskGate", context.traceId());
         }
     }
 

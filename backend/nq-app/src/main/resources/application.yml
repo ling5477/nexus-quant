@@ -24,11 +24,18 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
 
 nq:
-  gatec:
+  gated:
     verify:
-      # Why: GateC 验收入口默认关闭，避免生产环境误暴露。
-      enabled: ${NQ_GATEC_VERIFY_ENABLED:false}
+      # Why: 第四批开始清理 GateC 兼容层，验收入口只认 canonical 开关，避免新旧别名并存继续漂移。
+      enabled: ${NQ_GATED_VERIFY_ENABLED:false}
   okx:
+    # Why: 第十九批开始把 dome/real 两套凭证切换收口到统一运行时变量；敏感值仍只从环境变量读取，不写入仓库。
+    env: ${NQ_OKX_ENV:dome}
+    base-url: ${NQ_OKX_BASE_URL:https://www.okx.com}
+    api-key: ${NQ_OKX_API_KEY:}
+    api-secret: ${NQ_OKX_API_SECRET:}
+    api-passphrase: ${NQ_OKX_API_PASSPHRASE:}
+    ws-url: ${NQ_OKX_WS_URL:}
     ws:
       # Why: WS 是 GateC-1.1 的可选加速层，默认关闭，避免非预期连私有 WS。
       enabled: ${NQ_OKX_WS_ENABLED:false}

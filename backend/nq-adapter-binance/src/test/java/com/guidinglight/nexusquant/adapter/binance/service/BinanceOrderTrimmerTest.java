@@ -128,15 +128,20 @@ class BinanceOrderTrimmerTest {
 
     private AdapterOrderRequest limitOrder(String symbol, String price, String qty) {
         return new AdapterOrderRequest(
+                "req-binance-test",
                 "ord-binance-test",
                 1L,
                 "BINANCE",
                 symbol,
                 "cid-binance-test",
+                "1:cid-binance-test",
                 "BUY",
                 "LIMIT",
                 new BigDecimal(price),
                 new BigDecimal(qty),
+                null,
+                "GTC",
+                "strategy",
                 "run-binance-test",
                 "trc-binance-test"
         );
@@ -144,15 +149,20 @@ class BinanceOrderTrimmerTest {
 
     private AdapterOrderRequest marketOrder(String symbol, String qty) {
         return new AdapterOrderRequest(
+                "req-binance-market-test",
                 "ord-binance-market-test",
                 1L,
                 "BINANCE",
                 symbol,
                 "cid-binance-market-test",
+                "1:cid-binance-market-test",
                 "BUY",
                 "MARKET",
                 null,
                 new BigDecimal(qty),
+                null,
+                "IOC",
+                "strategy",
                 "run-binance-test",
                 "trc-binance-market-test"
         );
