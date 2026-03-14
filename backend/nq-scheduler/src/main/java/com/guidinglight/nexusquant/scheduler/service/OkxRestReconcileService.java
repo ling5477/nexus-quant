@@ -101,15 +101,61 @@ public class OkxRestReconcileService {
                         OrderStatus.ACCEPTED,
                         OrderStatus.PARTIALLY_FILLED,
                         OrderStatus.CANCEL_REQUESTED,
-                        OrderStatus.CANCEL_REJECTED
+                        OrderStatus.CANCEL_REJECTED,
+                        OrderStatus.FILLED
                 ),
                 limit
         )) {
             if (!"OKX".equals(order.venue())) {
                 continue;
             }
+            if (order.status() == OrderStatus.FILLED) {
+                if (!shouldBackfillFilledOrder(order)) {
+                    continue;
+                }
+                newTrades += reconcileFilledOrder(order);
+                continue;
+            }
             newTrades += reconcileSingleOrder(order);
         }
+        return newTrades;
+    }
+
+    /**
+     * 仅对“订单已被对齐到终态，但成交事实仍未落库”的 OKX 样本执行补扫。
+     * <p>
+     * Why:
+     * UseCase-B 真实盘样本证明，交易所可能先返回 FILLED，而同一轮 `listFills(...)` 仍拿不到 fill。
+     * 若此时不继续补扫，该订单会因已终态而永久退出 reconcile/recovery 的扫描集合，导致 trades/ledger 永远缺失。
+     */
+    private boolean shouldBackfillFilledOrder(OrderRecord order) {
+        if (order.externalOrderId() == null || order.externalOrderId().isBlank()) {
+            return false;
+        }
+        return tradeRepository.findByOrderId(order.orderId()).isEmpty();
+    }
+
+    /**
+     * 对已终态 FILLED、但仍缺 trade 事实的订单执行 fills 补扫。
+     * <p>
+     * Why:
+     * 这里刻意不再走 `getOrder -> alignOrderStatus(...)`，因为订单已经是终态；
+     * 本批的最小修复目标只是补齐 `fills -> trades -> ledger`，避免为了等 fills 再次改动终态推进时机。
+     */
+    private int reconcileFilledOrder(OrderRecord order) {
+        int newTrades = reconcileFills(order);
+        auditLogRepository.append(
+                "RECONCILE",
+                "OKX_FILLED_ORDER_FILL_BACKFILL_COMPLETED",
+                order.orderId(),
+                order.traceId(),
+                java.util.Map.of(
+                        "order_id", order.orderId(),
+                        "status", order.status().name(),
+                        "external_order_id", String.valueOf(order.externalOrderId()),
+                        "new_trades", newTrades
+                )
+        );
         return newTrades;
     }
 

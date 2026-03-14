@@ -1094,3 +1094,138 @@ GateD 开工的原因不是“继续接功能”，而是：
     - 未观察到重复记账的直接证据
     - 未观察到“同一 `exchange_trade_id` 被重复落库”的直接证据
     - `query-confirm` 显式日志样本仍缺，但当前已经能明确证明：现有官方脚本路径不会自然触发该分支
+
+## 69. 2026-03-14 第二十五批 OKX 可撤样本收口
+- 本轮目标：
+  - 收口 real OKX 的最小可撤 LIMIT 样本，让 A/C 不再先被 `51008` 拒绝
+  - 在 place 成功进入可撤非终态后，继续验证 cancel 是否真正调用到 adapter
+- 本轮修改：
+  - 官方脚本 `scripts/gated_okx_dome_verify.ps1` 新增 `limitCancelProbePrice / limitCancelProbeQuantity`，并把 A/C 的 LIMIT 参数从 `price=10000 / quantity=0.0002` 收口到 `price=10000 / quantity=0.00005`
+  - summary 继续打印实际 `appLogPath / restartLogPath / grepLogFiles`
+- 本轮只读取证：
+  - real 账户 `USDT availBal=0.9988651685332477`
+  - `BTC-USDT` instruments：`state=live`、`tickSz=0.1`、`lotSz=0.00000001`、`minSz=0.00001`
+  - 因此旧样本名义金额 `10000 * 0.0002 = 2 USDT`，稳定高于当前可用余额；新样本名义金额 `10000 * 0.00005 = 0.5 USDT`，低于当前可用余额且仍远离市价
+
+## 70. 第二十五批验证证据
+- 命令：
+  - `$env:NQ_OKX_ENV='real'`
+  - `$env:NQ_GATED_VERIFY_ENABLED='true'`
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File '.\scripts\gated_okx_dome_verify.ps1' -AutoRestart -StartupTimeoutSec 120 -ForceCancelTimeoutOnce`
+- 结果：
+  - UseCase-A：
+    - place 后订单进入 `ACCEPTED`，`external_order_id=3388486521191096320`
+    - cancel 命中 `order_cancel_before_adapter_call`
+    - 真实命中 `okx_force_timeout_cancel_once_consumed`
+    - 真实命中 `okx_query_confirm_cancel_started / okx_query_confirm_cancel_resolved`
+    - `order_cancel_after_adapter_call adapterAccepted=true`
+    - 最终订单 `CANCELLED`，`trades=0`
+  - UseCase-C：
+    - place 后订单进入 `ACCEPTED`，`external_order_id=3388486650308550657`
+    - restart + recovery/reconcile 后 cancel 命中 `order_cancel_before_adapter_call`
+    - `order_cancel_after_adapter_call adapterAccepted=true`
+    - 最终订单 `CANCELLED`，`trades=0`
+  - 未再出现 `REJECTED -> CANCEL_REQUESTED`
+- 当前观察结论：
+  - 本轮真实阻塞已从“place 先被 51008 拒绝”切换为“cancel adapter 与 query-confirm cancel 分支已拿到真实样本”
+  - `ForceCancelTimeoutOnce` 与 cancel 侧 query-confirm 样本已经在官方脚本路径中闭环
+
+## 71. 2026-03-14 第二十六批 place 侧 timeout / query-confirm 补证
+- 本轮目标：
+  - 在不破坏 A/C 成功样本的前提下，用官方脚本补齐 real OKX 的 place 侧 `HTTP_TIMEOUT -> queryConfirmAfterTimeout(...)` 真实样本
+  - 优先采用独立 probe，而不是复用 A/C 或继续依赖自然超时
+- 本轮修改：
+  - `scripts/gated_okx_dome_verify.ps1` 新增独立 `UseCase P`，参数沿用最小可撤 LIMIT 样本：`BTC-USDT / price=10000 / quantity=0.00005`
+  - `UseCase P` 固定在 A/B/C 之前执行，优先消费 `ForcePlaceTimeoutOnce` 的 JVM one-shot
+  - summary 新增独立 probe 的 `clientOrderId / orderId / externalOrderId / placeTimeout` 证据与 cleanup cancel 结果
+
+## 72. 第二十六批验证证据
+- 命令：
+  - `$env:NQ_OKX_ENV='real'`
+  - `$env:NQ_GATED_VERIFY_ENABLED='true'`
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File '.\scripts\gated_okx_dome_verify.ps1' -AutoRestart -StartupTimeoutSec 120 -ForcePlaceTimeoutOnce`
+- 关键日志：
+  - `okx_force_timeout_place_once_enabled property=null env=true`
+  - `okx_force_timeout_place_once_consumed trace_id=trc-gated-p-place-20260314124337-372 client_order_id=g6p0314124337 symbol=BTC-USDT`
+  - `okx_force_timeout_place_once_throwing_http_timeout trace_id=trc-gated-p-place-20260314124337-372 client_order_id=g6p0314124337 symbol=BTC-USDT`
+  - `okx_query_confirm_place_started trace_id=trc-gated-p-place-20260314124337-372 client_order_id=g6p0314124337 symbol=BTC-USDT`
+  - `okx_query_confirm_place_resolved trace_id=trc-gated-p-place-20260314124337-372 strategy=getOrder external_order_id=3388655881851461632 external_status=ACCEPTED`
+- 对应订单结果：
+  - probe 订单 `g6p0314124337 / ord-50368937-842b-47a7-825b-972d79f6fb19 / external_order_id=3388655881851461632` 最终 `CANCELLED`，`reason=gated_dome_verify_place_timeout_probe_cleanup`
+  - UseCase-A `g6a0314124338` 最终 `CANCELLED`
+  - UseCase-C `g6c0314124345` 经 restart + recovery/reconcile 后最终 `CANCELLED`
+  - UseCase-B `g6b0314124342` 仍为 `REJECTED / reason=51008`，继续只作为旁路观察项，不影响 place-timeout 补证闭环
+- 一致性观察：
+  - `trades` 表中 probe / A / C 对应订单均无成交记录，`trade_count=0`
+  - `ledger_entries` 未出现这三笔订单的新增记录，当前未观察到重复记账直接证据
+  - `event_store` 已记录 probe 的 `OrderAck(status=ACCEPTED)` 与后续 `CancelAck(status=CANCELLED)`，未观察到状态回退或 place timeout 重放导致的重复事件
+
+## 73. 2026-03-14 第二十七批 UseCase-B real OKX 样本收口
+
+- 目标：
+  - 把官方脚本 UseCase-B 从 `51008` 余额噪音收口为当前账户条件下可解释、可复现的 real OKX 样本
+  - 不破坏已跑通的 A/C 与 place/cancel query-confirm 样本
+- 真实约束与直接原因：
+  - 通过临时 Java helper 直接查询 real 账户余额，当前 `USDT availBal=0.9988651685332477`，同时 `BTC availBal=0.000380993976`
+  - 通过临时 Java helper 查询 `BTC-USDT` 公开行情与 instruments，当前 `last=70812.2`、`tickSz=0.1`、`lotSz=0.00000001`、`minSz=0.00001`、`state=live`
+  - 因此旧脚本 B 的 `BTC-USDT MARKET BUY quantity=12` 会稳定超余额并命中 `51008`
+- 本轮两次 real 样本：
+  - 第一次把 B 收口为 `BTC-USDT MARKET BUY 0.00001`，订单 `g6b0314135441` 不再命中 `51008`，而是命中 `OrderReject.reject_code=51020`，拒绝原因为 `Your order should meet or exceed the minimum order amount.`
+  - 第二次继续把 B 收口为 `BTC-USDT MARKET SELL 0.00002`，官方脚本最新样本为 `g6b0314135817 / ord-7d936d3f-5b2b-4e50-9761-be5772ea9e37 / external_order_id=3388806192184385536`
+  - 对应 `orders` 结果：`status=FILLED / reason=RECONCILE_STATUS_ALIGN`
+  - 对应 `event_store` 结果：当前已看到 `PlaceOrderCommand -> OrderCreated -> RiskPassed -> OrderAck(status=ACCEPTED)`；B 的最终 `FILLED` 来自 reconcile 对齐，不是 place 直接返回终态
+- 外部成交事实与当前残留：
+  - 再次通过 real 账户余额查询确认，B 运行后余额变为 `BTC availBal=0.000360993976`、`USDT availBal=2.4147938225332477`
+  - 与运行前相比，`BTC` 减少 `0.00002`、`USDT` 增加约 `1.415928654`，与 `BTC-USDT MARKET SELL 0.00002` 的真实成交方向一致
+  - 但当前库内 `trades` 与 `ledger_entries` 对该订单仍为 0 行，因此 B 已不再是余额噪音样本，新的剩余现象变为“订单状态已经由 reconcile 对齐为 FILLED，但 trade/ledger 同步仍未在当前官方脚本窗口内落表”
+- 一致性观察：
+  - A/C 继续保持 `CANCELLED`，未因 B 收口改造而回退
+  - 本轮未观察到重复成交、重复记账、状态回退；但也不能把 B 宣称为“trade/ledger 完整闭环已完成”
+
+## 74. 2026-03-14 第二十八批 UseCase-B FILLED 但 trades/ledger 未落表定位
+
+- 本批范围：
+  - 仅定位与最小文档回填
+  - 不改 UseCase-B 参数，不改 adapter timeout/query-confirm 逻辑，不混 `ledger_reconcile_diff / migration / account sync`
+- 预期链路：
+  - 官方脚本 UseCase-B `POST /__gated/orders -> POST /__gated/reconcile/runOnce`
+  - `OkxRestReconcileService.reconcileOnce(...) -> reconcileSingleOrder(...) -> okxExchangeAdapter.getOrder(...) -> alignOrderStatus(... FILLED, RECONCILE_STATUS_ALIGN, ...) -> reconcileFills(updatedOrder)`
+  - `reconcileFills(...)` 若拿到 fills，则应继续执行 `tradeRepository.insert(...) -> eventStoreAppender.append(TRADE_EVENT_V1, TradeExecuted) -> tradeLedgerGateway.postTrade(...) -> ledger_entries / account_snapshots / positions`
+- 当前真实断点：
+  - 样本固定为 `g6b0314135817 / ord-7d936d3f-5b2b-4e50-9761-be5772ea9e37 / external_order_id=3388806192184385536`
+  - 数据库当前事实：`orders=FILLED / reason=RECONCILE_STATUS_ALIGN`，但 `trades=0`、`ledger_entries=0`
+  - `event_store` 当前只有 `PlaceOrderCommand -> OrderCreated -> RiskPassed -> OrderAck(status=ACCEPTED)`，没有 `TradeExecuted / LedgerPosted`
+  - 外部 OKX 余额前后变化仍可证明真实成交已发生：`BTC 0.000380993976 -> 0.000360993976`，`USDT 0.9988651685332477 -> 2.4147938225332477`
+- 代码链定位结果：
+  - `OkxRestReconcileService` 在同一轮 `reconcileSingleOrder(...)` 中先 `alignOrderStatus(... FILLED ...)`，再只调用一次 `reconcileFills(...)`
+  - `reconcileOnce(...)` 扫描集合只包含 `SENT / ACCEPTED / PARTIALLY_FILLED / CANCEL_REQUESTED / CANCEL_REJECTED`
+  - `OkxRecoveryService.rebuild(...)` 最终仍复用 `okxRestReconcileService.reconcileOnce(DEFAULT_LIMIT)`，同样只会处理非终态订单
+  - `OkxWsEventMapper` 对 OKX `filled/partially_filled` 只写 `OrderStateEvidence` 到 `event_store`，不会直接补 `trades / ledger_entries`
+- 结论：
+  - 当前更符合“`listFills(...)` 在订单被 reconcile 推到 `FILLED` 的那一轮返回空，随后订单终态化且再无后续补扫者”的同步缺口
+  - 这不是单纯窗口延迟，因为一旦订单终态化，现有 reconcile/recovery 调度就不会再次进入 fills 拉取链路
+## 75. 2026-03-14 第二十九批 FILLED 但 trades/ledger 未落表最小修复
+
+- 本批目标：
+  - 只修 real OKX 的 fills -> trades -> ledger 同步缺口
+  - 不改 UseCase-B 参数，不改 A/C 与 place/cancel query-confirm 样本，不重设计状态机
+- 最小修复点：
+  - `OkxRestReconcileService.reconcileOnce(...)` 扫描集合新增 `FILLED`
+  - 仅当 `venue=OKX`、`status=FILLED`、`external_order_id` 非空且 `tradeRepository.findByOrderId(orderId)` 为空时，才走 `reconcileFilledOrder(...)`
+  - `reconcileFilledOrder(...)` 只复用既有 `reconcileFills(...)`，不再重复执行 `getOrder -> alignOrderStatus(...)`
+- 单测：
+  - `mvn -q -f backend/pom.xml -pl nq-scheduler -am "-Dtest=OkxRestReconcileServiceTest,OkxRecoveryServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`
+  - 结果：通过
+- 真实复验：
+  - 命令：`$env:NQ_OKX_ENV='real'; $env:NQ_GATED_VERIFY_ENABLED='true'; powershell -NoProfile -ExecutionPolicy Bypass -File '.\scripts\gated_okx_dome_verify.ps1' -AutoRestart -StartupTimeoutSec 120`
+  - 最新 B 样本：`g6b0314144706 / ord-35fbbfcc-25c8-4974-8de4-2d1146606ac9 / external_order_id=3388904470867566593`
+  - `orders`：先对齐为 `FILLED / RECONCILE_STATUS_ALIGN`
+  - `audit_logs`：`22:47:06` 记录 `OKX_RECONCILE_COMPLETED(new_trades=0)`，`22:47:08` 记录 `OKX_FILLED_ORDER_FILL_BACKFILL_COMPLETED(new_trades=1)`
+  - `trades`：新增 `trd-d3b32592-9a20-4117-a577-da086652f9d8 / exchange_trade_id=976910311 / price=70649.50000000 / qty=0.00002000 / fee=0.00141299`
+  - `ledger_entries`：同一 `trade_id` 下新增 4 条记录
+  - `event_store`：新增 `TradeExecuted` 与 `LedgerPosted`
+  - A/C：`g6a0314144702`、`g6c0314144709` 继续保持 `CANCELLED`，`trades=0`
+- 当前结论：
+  - “订单先终态、fills 空结果后无补扫者”的同步缺口已经在 real OKX 官方脚本样本上收口
+  - 当前未观察到重复成交、重复记账、状态回退
+  - 这并不等于 GateD 全部冻结完成；剩余项仍是 checklist 冻结口径、Paper / Binance 未完项与其他 GateD 收尾项

@@ -143,7 +143,7 @@
   - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
   - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
   - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
-- 说明：`UC-D9` 的最小 `LIMIT -> cancel` 与真重启后的 `recovery / reconcile / cancel / query` 已取得官方脚本正向样本；UseCase-B 的 `reconcile new_trades=2 / trade=200` 已通过 DB 明细解释为同一订单下两条不同 `exchange_trade_id` 的真实成交，不再是待解释主阻塞。PR-7 继续保持进行中，剩余缺口只收敛为 `query-confirm` timeout 分支的显式日志样本；当前在 `NQ_OKX_TIMEOUT_MS=50 / 5 / 1` 的连续实验下仍未自然触发该分支，因此后续需要单独设计 timeout 样本，而不是继续修改 health、accountId 或真重启链路
+- 说明：`UC-D9` 的最小 `LIMIT -> cancel` 与真重启后的 `recovery / reconcile / cancel / query` 已取得官方脚本正向样本；UseCase-B 的 `reconcile new_trades=2 / trade=200` 已通过 DB 明细解释为同一订单下两条不同 `exchange_trade_id` 的真实成交，不再是待解释主阻塞。2026-03-14 新增独立 place-timeout probe（`BTC-USDT / price=10000 / quantity=0.00005`）并在 `-ForcePlaceTimeoutOnce` 下真实命中 `okx_force_timeout_place_once_enabled / consumed / throwing_http_timeout / okx_query_confirm_place_started / okx_query_confirm_place_resolved(strategy=getOrder)`，对应 probe 订单先 `ACCEPTED` 后 cleanup cancel 至 `CANCELLED`、`trades=0`。同日晚些时候继续收口 UseCase-B：先用 `BTC-USDT MARKET BUY 0.00001` 真实命中 `51020`（最小下单额不足），确认 `51008` 余额噪音已被替换为可解释约束；随后将 B 收口为 `BTC-USDT MARKET SELL 0.00002`，订单 `g6b0314135817 / external_order_id=3388806192184385536` 经 reconcile 对齐为 `FILLED / reason=RECONCILE_STATUS_ALIGN`。库内 `trades / ledger_entries` 对该单仍为 0 行，但外部余额已由 `BTC 0.000380993976 / USDT 0.9988651685332477` 变为 `BTC 0.000360993976 / USDT 2.4147938225332477`，说明 B 已从“余额噪音样本”收口为真实成交样本，剩余现象转为 trade/ledger 同步缺口。2026-03-14 最新定位批进一步确认：当前断点不在 B 参数，而在 `OkxRestReconcileService` 的 fills 同步链。该服务在同一轮 `reconcileSingleOrder(...)` 中先 `alignOrderStatus(... FILLED ...)` 再只调用一次 `reconcileFills(...)`；若这一次 `listFills(...)` 返回空，订单已成 `FILLED` 终态，而 `reconcileOnce / OkxRecoveryService` 后续只扫非终态订单，`OkxWsEventMapper` 也只把 filled 证据写入 `event_store`、不会补 `trades / ledger_entries`。因此 `g6b0314135817` 当前呈现为 `orders=FILLED / RECONCILE_STATUS_ALIGN` 且 `trades=0 / ledger_entries=0 / event_store` 无 `TradeExecuted / LedgerPosted`，更符合“终态后无后续补扫者的同步缺口”，不是简单窗口延迟。因此 PR-7 不再以“query-confirm timeout 分支缺真实样本”为主阻塞，后续 remaining work 收敛为 checklist 冻结口径、Paper / Binance 验收与其余文档同步。 2026-03-14 最新最小修复批已在 `OkxRestReconcileService` 增加 `venue=OKX + status=FILLED + external_order_id 非空 + trades 不存在` 的补扫条件；官方脚本最新 B 样本 `g6b0314144706 / ord-35fbbfcc-25c8-4974-8de4-2d1146606ac9 / external_order_id=3388904470867566593` 先记录 `OKX_RECONCILE_COMPLETED(new_trades=0)`，随后在同一脚本窗口内由补扫记录 `OKX_FILLED_ORDER_FILL_BACKFILL_COMPLETED(new_trades=1)`，并落出 `trades(exchange_trade_id=976910311)`、4 条 `ledger_entries`、`TradeExecuted` 与 `LedgerPosted`；A/C 继续保持 `CANCELLED` 且 `trade_count=0`，当前未观察到重复成交、重复记账、状态回退。
 
 ---
 
@@ -173,3 +173,5 @@
 - 写出验证方式
 - 若改动契约 / 状态机 / DB / 恢复逻辑，必须同步更新文档
 - 不接受“文档之后补”的口头承诺
+
+

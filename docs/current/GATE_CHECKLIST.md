@@ -84,7 +84,7 @@
 - [~] recovery 可在启动或手工触发时重新收敛非终态订单与未完成投影
 - [~] WS 断连 / 登录失效 / 订阅异常会触发一次受限 REST 兜底
 - [x] 禁止在补偿链路中直接盲重试下单
-- [ ] query-confirm 规则有文档、有日志、有验收用例
+- [~] query-confirm 规则有文档、有日志、有验收用例
 
 ---
 
@@ -109,7 +109,7 @@
   - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
   - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
   - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
-  结论：最小 `LIMIT -> cancel` 与真重启后 `recovery / reconcile / cancel / query` 样本均已取得；当前 `trade=404` 只在未成交的取消路径（A/C）稳定出现，已成交的 MARKET 样本（B）能返回 `trade=200`。UseCase-B 的 `new_trades=2` 已通过库内 `orders / trades / ledger_entries` 明细核对：同一 `external_order_id=3385560659240116224` 下存在两条不同 `exchange_trade_id`（`1189586011`、`1189586012`）的真实成交，以及各自独立的 ledger idempotency key，当前更符合“交易所真实拆单”而非重复写入。剩余缺口只收敛为 `query-confirm` 显式日志样本；在 `NQ_OKX_TIMEOUT_MS=50 / 5 / 1` 的连续实验下，官方脚本仍未命中 `okx_query_confirm_*`，且代码中该分支仅在 `HTTP_TIMEOUT` 时触发，因此当前真实样本路径不会自然补齐该证据，不能把“日志点存在但未触发”写成“query-confirm 已完成验收”。
+  结论：最小 `LIMIT -> cancel` 与真重启后 `recovery / reconcile / cancel / query` 样本均已取得；当前 `trade=404` 只在未成交的取消路径（A/C）稳定出现，已成交的 MARKET 样本（B）能返回 `trade=200`。UseCase-B 的 `new_trades=2` 已通过库内 `orders / trades / ledger_entries` 明细核对：同一 `external_order_id=3385560659240116224` 下存在两条不同 `exchange_trade_id`（`1189586011`、`1189586012`）的真实成交，以及各自独立的 ledger idempotency key，当前更符合“交易所真实拆单”而非重复写入。2026-03-14 在 real 账户 `USDT availBal=0.9988651685332477`、`BTC-USDT state=live / tickSz=0.1 / lotSz=0.00000001 / minSz=0.00001` 下，官方脚本已把 A/C 的 LIMIT 样本从 `price=10000 / quantity=0.0002` 收口为 `price=10000 / quantity=0.00005`；同日又新增独立 place-timeout probe（`BTC-USDT / price=10000 / quantity=0.00005`），并在 `-ForcePlaceTimeoutOnce` 下真实命中 `okx_force_timeout_place_once_enabled / consumed / throwing_http_timeout / okx_query_confirm_place_started / okx_query_confirm_place_resolved(strategy=getOrder)`。对应 probe 订单 `g6p0314124337 / external_order_id=3388655881851461632` 先收敛为 `ACCEPTED`，随后 cleanup cancel 收敛到 `CANCELLED`，`trades=0`。同日晚些时候继续收口 UseCase-B：先用 `BTC-USDT MARKET BUY 0.00001` 真实命中 `51020`（最小下单额不足），确认 `51008` 余额噪音已被替换为可解释约束；随后将 B 收口为 `BTC-USDT MARKET SELL 0.00002`，订单 `g6b0314135817 / external_order_id=3388806192184385536` 经 reconcile 对齐为 `FILLED / reason=RECONCILE_STATUS_ALIGN`。库内 `trades / ledger_entries` 对该单仍为 0 行，但外部余额已由 `BTC 0.000380993976 / USDT 0.9988651685332477` 变为 `BTC 0.000360993976 / USDT 2.4147938225332477`，说明 B 已从“余额噪音样本”收口为真实成交样本，剩余现象转为 trade/ledger 同步缺口。2026-03-14 最新定位批进一步确认：当前断点不在 B 参数，而在 `OkxRestReconcileService` 的 fills 同步链。该服务在同一轮 `reconcileSingleOrder(...)` 中先 `alignOrderStatus(... FILLED ...)` 再只调用一次 `reconcileFills(...)`；若这一次 `listFills(...)` 返回空，订单已成 `FILLED` 终态，而 `reconcileOnce / OkxRecoveryService` 后续只扫非终态订单，`OkxWsEventMapper` 也只把 filled 证据写入 `event_store`、不会补 `trades / ledger_entries`。因此 `g6b0314135817` 当前呈现为 `orders=FILLED / RECONCILE_STATUS_ALIGN` 且 `trades=0 / ledger_entries=0 / event_store` 无 `TradeExecuted / LedgerPosted`，更符合“终态后无后续补扫者的同步缺口”，不是简单窗口延迟。因此 place / cancel 两侧的 query-confirm 真实样本都已补齐；当前剩余 gap 不再是 real OKX query-confirm 样本缺失，而是 checklist 冻结口径、Paper / Binance 未完项与其他 GateD 收尾项。 2026-03-14 最新最小修复批已在 `OkxRestReconcileService` 增加 `venue=OKX + status=FILLED + external_order_id 非空 + trades 不存在` 的补扫条件；官方脚本最新 B 样本 `g6b0314144706 / ord-35fbbfcc-25c8-4974-8de4-2d1146606ac9 / external_order_id=3388904470867566593` 先记录 `OKX_RECONCILE_COMPLETED(new_trades=0)`，随后在同一脚本窗口内由补扫记录 `OKX_FILLED_ORDER_FILL_BACKFILL_COMPLETED(new_trades=1)`，并落出 `trades(exchange_trade_id=976910311)`、4 条 `ledger_entries`、`TradeExecuted` 与 `LedgerPosted`；A/C 继续保持 `CANCELLED` 且 `trade_count=0`，当前未观察到重复成交、重复记账、状态回退。
 - [ ] Binance 至少完成最小 LIMIT -> cancel 验证
 - [~] Paper / OKX / Binance 的返回模型在 core 层一致
 
@@ -154,7 +154,7 @@
   - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
   - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
   - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
-  结论：官方脚本已不再被 `accountId=2001` 的假失败阻断，`UC-D9` 的最小 `LIMIT -> cancel` 路径与真重启恢复路径都已拿到正向样本；当前剩余缺口不是 `UC-D9` 本身，而是 `query-confirm` 显式日志样本。当前 `trade=404` 也已被更精确地验证为“取消且未成交路径的稳定结果”，不是所有真实样本都返回 `404`。UseCase-B 的 `reconcile new_trades=2` 也已通过 DB 明细确认为两条不同 `exchange_trade_id` 的真实成交，而不是直接可见的重复成交/重复记账。
+  结论：官方脚本已不再被 `accountId=2001` 的假失败阻断，`UC-D9` 的最小 `LIMIT -> cancel` 路径与真重启恢复路径都已拿到正向样本；2026-03-14 又补齐了 real OKX 的可撤样本收口证据：A/C 的 LIMIT 参数已收口为 `price=10000 / quantity=0.00005`，place 能稳定进入 `ACCEPTED`，cancel 能稳定进入 adapter，并在 A 样本命中 `okx_force_timeout_cancel_once_consumed -> okx_query_confirm_cancel_started -> okx_query_confirm_cancel_resolved`，最终 A/C 都为 `CANCELLED` 且 `trades=0`。同日新增的独立 place-timeout probe 也已真实命中 `okx_force_timeout_place_once_consumed -> okx_query_confirm_place_started -> okx_query_confirm_place_resolved(strategy=getOrder)`，说明 real OKX 的 place / cancel 两侧 query-confirm 样本均已闭环。当前 `trade=404` 也已被更精确地验证为“取消且未成交路径的稳定结果”，不是所有真实样本都返回 `404`；UseCase-B 的 `reconcile new_trades=2` 也已通过 DB 明细确认为两条不同 `exchange_trade_id` 的真实成交，而不是直接可见的重复成交/重复记账。
 - [ ] UC-D10：Binance 最小 LIMIT -> cancel 通过
 
 ---
@@ -170,3 +170,6 @@
 - [~] Paper 与真实 venue 契约统一
 - [ ] 测试与验收全通过
 - [~] `docs/gates/gate-d/WORK.md` 已写明完成项、遗留项、下一 Gate 输入项
+
+
+

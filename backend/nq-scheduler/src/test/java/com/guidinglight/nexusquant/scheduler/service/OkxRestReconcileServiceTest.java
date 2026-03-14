@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.scheduler.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -176,5 +177,134 @@ class OkxRestReconcileServiceTest {
         ArgumentCaptor<PaperTradeRecord> tradeCaptor = ArgumentCaptor.forClass(PaperTradeRecord.class);
         verify(tradeRepository, times(1)).insert(tradeCaptor.capture());
         assertEquals("ext-rec-2", tradeCaptor.getValue().externalOrderId());
+    }
+    @Test
+    void shouldBackfillFillsForFilledOrderWithoutTradeFacts() {
+        OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
+        OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
+        TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
+        TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
+        EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
+        AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
+
+        OkxRestReconcileService service = new OkxRestReconcileService(
+                orderCommandService,
+                orderLifecycleService,
+                okxExchangeAdapter,
+                tradeRepository,
+                tradeLedgerGateway,
+                eventStoreAppender,
+                auditLogRepository
+        );
+
+        OrderRecord filledOrder = new OrderRecord(
+                "ord-rec-3",
+                2001L,
+                null,
+                "OKX",
+                "BTC-USDT",
+                "coid-rec-3",
+                "SELL",
+                "MARKET",
+                null,
+                new BigDecimal("0.00002000"),
+                "ext-rec-3",
+                OrderStatus.FILLED,
+                "RECONCILE_STATUS_ALIGN",
+                "trc-rec-3"
+        );
+
+        OkxFillRecord fillRecord = new OkxFillRecord(
+                "fill-rec-3",
+                "ext-rec-3",
+                "BTC-USDT",
+                "SELL",
+                new BigDecimal("70812.20000000"),
+                new BigDecimal("0.00002000"),
+                new BigDecimal("-0.0015"),
+                "USDT",
+                Instant.parse("2026-03-14T05:58:17Z")
+        );
+
+        when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(filledOrder));
+        when(tradeRepository.findByOrderId("ord-rec-3")).thenReturn(Optional.empty());
+        when(okxExchangeAdapter.listFills("BTC-USDT", "ext-rec-3", "trc-rec-3")).thenReturn(List.of(fillRecord));
+        when(tradeRepository.findByExchangeAndExchangeTradeId("OKX", "fill-rec-3")).thenReturn(Optional.empty());
+        when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "OK"));
+
+        int newTrades = service.reconcileOnce(10);
+
+        assertEquals(1, newTrades);
+        verify(okxExchangeAdapter, never()).getOrder(any());
+        verify(orderLifecycleService, never()).applyExternalStatus(any(), any(), any(), any());
+        verify(eventStoreAppender, times(1)).append(eq("trade.event.v1"), any());
+        verify(tradeLedgerGateway, times(1)).postTrade(any());
+    }
+
+    @Test
+    void shouldSkipFilledOrderBackfillWhenTradeAlreadyExists() {
+        OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
+        OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
+        TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
+        TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
+        EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
+        AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
+
+        OkxRestReconcileService service = new OkxRestReconcileService(
+                orderCommandService,
+                orderLifecycleService,
+                okxExchangeAdapter,
+                tradeRepository,
+                tradeLedgerGateway,
+                eventStoreAppender,
+                auditLogRepository
+        );
+
+        OrderRecord filledOrder = new OrderRecord(
+                "ord-rec-4",
+                2001L,
+                null,
+                "OKX",
+                "BTC-USDT",
+                "coid-rec-4",
+                "SELL",
+                "MARKET",
+                null,
+                new BigDecimal("0.00002000"),
+                "ext-rec-4",
+                OrderStatus.FILLED,
+                "RECONCILE_STATUS_ALIGN",
+                "trc-rec-4"
+        );
+
+        PaperTradeRecord existingTrade = new PaperTradeRecord(
+                "trd-rec-4",
+                "ord-rec-4",
+                2001L,
+                "BTC-USDT",
+                "OKX",
+                "ext-rec-4",
+                "fill-rec-4",
+                new BigDecimal("70812.20000000"),
+                new BigDecimal("0.00002000"),
+                new BigDecimal("0.0015"),
+                "USDT",
+                "trc-rec-4",
+                Instant.parse("2026-03-14T05:58:18Z")
+        );
+
+        when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(filledOrder));
+        when(tradeRepository.findByOrderId("ord-rec-4")).thenReturn(Optional.of(existingTrade));
+
+        int newTrades = service.reconcileOnce(10);
+
+        assertEquals(0, newTrades);
+        verify(okxExchangeAdapter, never()).getOrder(any());
+        verify(okxExchangeAdapter, never()).listFills(any(), any(), any());
+        verify(tradeRepository, never()).insert(any());
+        verify(tradeLedgerGateway, never()).postTrade(any());
+        verify(eventStoreAppender, never()).append(eq("trade.event.v1"), any());
     }
 }

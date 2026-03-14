@@ -31,7 +31,7 @@
   - UseCase-A：`place=200 / cancel=200 / reconcile=200(new_trades=0) / order=200(CANCELLED) / trade=404`
   - UseCase-B：`place=200 / reconcile=200(new_trades=2) / order=200(FILLED) / trade=200`
   - UseCase-C：`place=200 / recovery=200(processed_events=2, processed_ledger=0, invalid_transitions=0) / reconcile=200(new_trades=0) / cancel=200 / order=200(CANCELLED) / trade=404`
-  当前未观察到重复成交、重复记账、状态回退；UseCase-B 的 `new_trades=2` 已通过 DB 明细进一步解释为同一订单下两条不同 `exchange_trade_id`（`1189586011`、`1189586012`）的真实成交，以及各自独立 ledger idempotency key，不是直接可见的重复写入。`query-confirm` 显式日志样本仍未取得；在 `NQ_OKX_TIMEOUT_MS=50 / 5 / 1` 的连续实验下，官方脚本与对应 app 日志仍未命中 `okx_query_confirm_*`，且代码实现仅在 `HTTP_TIMEOUT` 分支触发 `queryConfirmAfterTimeout / queryCancelAfterTimeout`，因此当前真实样本链路不会自动产出该类日志。真实 OKX 验收整体验收态继续保持“部分完成”，剩余缺口已收敛为 timeout 分支的 `query-confirm` 取证，而不再是 health、accountId、真重启恢复能力或 UseCase-B 的 `new_trades=2` 解释本身。
+  当前未观察到重复成交、重复记账、状态回退；UseCase-B 的 `new_trades=2` 已通过 DB 明细进一步解释为同一订单下两条不同 `exchange_trade_id`（`1189586011`、`1189586012`）的真实成交，以及各自独立 ledger idempotency key，不是直接可见的重复写入。2026-03-14 在 real 账户 `USDT availBal=0.9988651685332477`、`BTC-USDT state=live / tickSz=0.1 / lotSz=0.00000001 / minSz=0.00001` 下，官方脚本已把 A/C 的 LIMIT 样本从 `price=10000 / quantity=0.0002` 收口为 `price=10000 / quantity=0.00005`；随后新增独立 place-timeout probe（`BTC-USDT / price=10000 / quantity=0.00005`），并在 `-ForcePlaceTimeoutOnce` 下真实命中 `okx_force_timeout_place_once_enabled / consumed / throwing_http_timeout / okx_query_confirm_place_started / okx_query_confirm_place_resolved(strategy=getOrder)`。对应 probe 订单 `g6p0314124337 / external_order_id=3388655881851461632` 先收敛为 `ACCEPTED`，再经 cleanup cancel 收敛到 `CANCELLED`，`trades=0`。同日晚些时候继续收口 UseCase-B：先用 `BTC-USDT MARKET BUY 0.00001` 真实命中 `51020`（最小下单额不足），确认 `51008` 余额噪音已被替换为可解释约束；随后将 B 收口为 `BTC-USDT MARKET SELL 0.00002`，订单 `g6b0314135817 / external_order_id=3388806192184385536` 经 reconcile 对齐为 `FILLED / reason=RECONCILE_STATUS_ALIGN`。库内 `trades / ledger_entries` 对该单仍为 0 行，但外部余额已由 `BTC 0.000380993976 / USDT 0.9988651685332477` 变为 `BTC 0.000360993976 / USDT 2.4147938225332477`，说明 B 已从“余额噪音样本”收口为真实成交样本，剩余现象转为 trade/ledger 同步缺口。2026-03-14 最新定位批进一步确认：当前断点不在 B 参数，而在 `OkxRestReconcileService` 的 fills 同步链。该服务在同一轮 `reconcileSingleOrder(...)` 中先 `alignOrderStatus(... FILLED ...)` 再只调用一次 `reconcileFills(...)`；若这一次 `listFills(...)` 返回空，订单已成 `FILLED` 终态，而 `reconcileOnce / OkxRecoveryService` 后续只扫非终态订单，`OkxWsEventMapper` 也只把 filled 证据写入 `event_store`、不会补 `trades / ledger_entries`。因此 `g6b0314135817` 当前呈现为 `orders=FILLED / RECONCILE_STATUS_ALIGN` 且 `trades=0 / ledger_entries=0 / event_store` 无 `TradeExecuted / LedgerPosted`，更符合“终态后无后续补扫者的同步缺口”，不是简单窗口延迟。因此 `query-confirm` 已同时补齐 place / cancel 两侧真实样本；真实 OKX 验收整体验收态继续保持“部分完成”，当前剩余缺口不再是 place 侧 timeout/query-confirm 取证，而是 checklist 冻结口径、Paper / Binance 未完项与其他 GateD 收尾项。 2026-03-14 最新最小修复批已在 `OkxRestReconcileService` 增加 `venue=OKX + status=FILLED + external_order_id 非空 + trades 不存在` 的补扫条件；官方脚本最新 B 样本 `g6b0314144706 / ord-35fbbfcc-25c8-4974-8de4-2d1146606ac9 / external_order_id=3388904470867566593` 先记录 `OKX_RECONCILE_COMPLETED(new_trades=0)`，随后在同一脚本窗口内由补扫记录 `OKX_FILLED_ORDER_FILL_BACKFILL_COMPLETED(new_trades=1)`，并落出 `trades(exchange_trade_id=976910311)`、4 条 `ledger_entries`、`TradeExecuted` 与 `LedgerPosted`；A/C 继续保持 `CANCELLED` 且 `trade_count=0`，当前未观察到重复成交、重复记账、状态回退。
 - [~] 深层兼容债务仍有残留，主要集中在内部领域命名、部分旧构造器与 `__gatec -> 404` regression test 断言
 
 ---
@@ -360,13 +360,14 @@ GateD 明确不包含以下内容：
 
 ## 6.4 nq-adapter-okx
 
-- [ ] 已作为 GateD 主执行通道完成闭环
-- [ ] 已支持 submit / cancel / query
-- [ ] 已支持 order snapshot 统一映射
-- [ ] 已支持 trade report 统一映射
+- [~] 已作为 GateD 主执行通道完成闭环
+- [x] 已支持 submit / cancel / query
+- [~] 已支持 order snapshot 统一映射
+- [~] 已支持 trade report 统一映射
 - [ ] 已支持 account snapshot 拉取与映射
 - [ ] 已支持 position snapshot 拉取与映射
-- [ ] 已支持 query-confirm 收敛链路
+- [x] 已支持 query-confirm 收敛链路
+  当前已通过官方脚本同时拿到 place / cancel 侧真实样本：place 侧命中 `okx_force_timeout_place_once_consumed / okx_query_confirm_place_started / okx_query_confirm_place_resolved(strategy=getOrder)`，cancel 侧命中 `okx_query_confirm_cancel_started / okx_query_confirm_cancel_resolved`；因此 OKX adapter 的 query-confirm 收敛链路已具备真实补证。
 
 ---
 
@@ -533,7 +534,8 @@ GateD 明确不包含以下内容：
 - [ ] 用例 04：最小名义金额不足，被风控拒绝
 - [ ] 用例 05：重复 idempotency key，被拦截
 - [ ] 用例 06：订单部分成交后最终全成交流转正确
-- [ ] 用例 07：撤单成功后状态进入终态
+- [~] 用例 07：撤单成功后状态进入终态
+  当前已通过 real OKX UseCase-P/A/C 验证 `ACCEPTED -> CANCEL_REQUESTED -> CANCELLED`，并同时拿到 place / cancel 两侧 query-confirm 样本；PAPER LIMIT -> cancel 与全量冻结口径仍未全部补齐。
 - [ ] 用例 08：WS 漏消息时，reconcile 能修正状态
 - [ ] 用例 09：PAPER 与 OKX 返回统一模型一致
 - [ ] 用例 10：全链路事件与日志可追溯
@@ -648,3 +650,6 @@ GateD 明确不包含以下内容：
 > 给定一个标准化订单请求，系统能够在 PAPER 或 OKX 通道中完成前置风控、下单执行、状态推进、成交回写、账户与持仓同步、账本更新、异常补偿与事件留痕，并通过统一日志、指标和查询链路完成全流程验证与追踪。
 
 ---
+
+
+

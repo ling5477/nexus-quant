@@ -44,6 +44,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -58,6 +60,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrderCommandService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderCommandService.class);
     private static final String SOURCE = "nq-core.order-command-service";
 
     private final OrderRepository orderRepository;
@@ -383,9 +386,11 @@ public class OrderCommandService {
     public CancelOrderResult cancelOrder(CancelOrderRequest request) {
         validateCancelRequest(request);
         OrderRecord currentOrder = resolveCancelTarget(request);
+        logCancelPath("order_cancel_path_entered", currentOrder, request.traceId());
         CancelOrderCommand command = ExecutionCommandMapper.toCancelCommand(request, currentOrder);
         publishEvent(TopicNames.ORDER_COMMAND_V1, currentOrder.clientOrderId(), request.traceId(), command);
         if (currentOrder.status() == OrderStatus.CANCELLED) {
+            logCancelPath("order_cancel_short_circuit_already_cancelled", currentOrder, request.traceId());
             auditLogRepository.append(
                     "ORDER",
                     "CANCEL_ORDER_IDEMPOTENT_HIT",
@@ -404,8 +409,20 @@ public class OrderCommandService {
         );
         publishOrderStatusChanged(cancelRequestedOrder, request.traceId(), "ORDER_CANCEL_REQUESTED");
 
+        logCancelPath("order_cancel_before_adapter_call", cancelRequestedOrder, request.traceId());
         TradingAdapter tradingAdapter = adapterRouter.route(cancelRequestedOrder.accountId(), cancelRequestedOrder.venue()).trading();
         AdapterCancelAck cancelAck = invokeCancelOrder(tradingAdapter, request, cancelRequestedOrder);
+        log.info(
+                "order_cancel_after_adapter_call orderId={} clientOrderId={} externalOrderId={} accountId={} currentStatus={} traceId={} venue={} adapterAccepted={}",
+                cancelRequestedOrder.orderId(),
+                cancelRequestedOrder.clientOrderId(),
+                cancelRequestedOrder.externalOrderId(),
+                cancelRequestedOrder.accountId(),
+                cancelRequestedOrder.status().name(),
+                request.traceId(),
+                cancelRequestedOrder.venue(),
+                cancelAck.accepted()
+        );
         Instant ackTime = cancelAck.ts() == null ? Instant.now(clock) : cancelAck.ts();
         if (cancelAck.accepted()) {
             OrderRecord cancelledOrder = transitionOrder(
@@ -483,6 +500,20 @@ public class OrderCommandService {
                 )
         );
         return new CancelOrderResult(cancelRejectedOrder.orderId(), cancelRejectedOrder.status(), false);
+    }
+
+    private void logCancelPath(String eventName, OrderRecord order, String traceId) {
+        log.info(
+                "{} orderId={} clientOrderId={} externalOrderId={} accountId={} currentStatus={} traceId={} venue={}",
+                eventName,
+                order.orderId(),
+                order.clientOrderId(),
+                order.externalOrderId(),
+                order.accountId(),
+                order.status().name(),
+                traceId,
+                order.venue()
+        );
     }
 
     /**

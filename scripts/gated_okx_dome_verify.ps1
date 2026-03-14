@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [string]$BaseUrl,
     [string]$AccountId,
@@ -265,6 +265,21 @@ function Resolve-ConfigFlag {
     return @("1", "true", "yes", "on") -contains $rawValue.Trim().ToLowerInvariant()
 }
 
+function Add-GrepLogFile {
+    param(
+        [Parameter(Mandatory = $true)][object]$Collection,
+        [string]$Path
+    )
+
+    if ($null -eq $Collection -or [string]::IsNullOrWhiteSpace($Path)) {
+        return
+    }
+
+    if (-not ($Collection -contains $Path)) {
+        [void]$Collection.Add($Path)
+    }
+}
+
 function New-TraceId {
     param([Parameter(Mandatory = $true)][string]$Prefix)
     return ("trc-gated-" + $Prefix + "-" + [DateTimeOffset]::UtcNow.ToString("yyyyMMddHHmmss") + "-" + (Get-Random -Minimum 100 -Maximum 999))
@@ -294,6 +309,56 @@ function Get-QueryConfirmSamples {
             $allLines = Get-Content $LogPath -ErrorAction SilentlyContinue
             $matchedLines = foreach ($line in $allLines) {
                 if ($line -notmatch "okx_query_confirm_") { continue }
+                foreach ($traceId in $normalizedTraceIds) {
+                    if ($line -like "*$traceId*") {
+                        $line
+                        break
+                    }
+                }
+            }
+            if ($matchedLines) {
+                return @($matchedLines | Select-Object -Unique)
+            }
+        }
+        Start-Sleep -Milliseconds 500
+    } while ((Get-Date) -lt $deadline)
+
+    return @()
+}
+
+function Get-LogSamples {
+    param(
+        [Parameter(Mandatory = $true)][string]$LogPath,
+        [string[]]$TraceIds = @(),
+        [Parameter(Mandatory = $true)][string[]]$Keywords,
+        [int]$WaitSec = 3
+    )
+
+    $normalizedTraceIds = @($TraceIds | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+    $normalizedKeywords = @($Keywords | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+    if ($normalizedKeywords.Count -eq 0) {
+        return @()
+    }
+
+    $deadline = (Get-Date).AddSeconds($WaitSec)
+    do {
+        if (Test-Path $LogPath) {
+            $allLines = Get-Content $LogPath -ErrorAction SilentlyContinue
+            $matchedLines = foreach ($line in $allLines) {
+                $keywordMatched = $false
+                foreach ($keyword in $normalizedKeywords) {
+                    if ($line -like "*$keyword*") {
+                        $keywordMatched = $true
+                        break
+                    }
+                }
+                if (-not $keywordMatched) { continue }
+
+                if ($normalizedTraceIds.Count -eq 0) {
+                    $line
+                    continue
+                }
+
                 foreach ($traceId in $normalizedTraceIds) {
                     if ($line -like "*$traceId*") {
                         $line
@@ -494,6 +559,28 @@ function Get-ResponseBodyPropertyValue {
     return Get-BodyPropertyValue -Body $bodyProperty.Value -PropertyName $PropertyName
 }
 
+function Parse-ExternalOrderIdFromDetail {
+    param([object]$Body)
+    if ($null -eq $Body) { return $null }
+    $detailProperty = $Body.PSObject.Properties["detail"]
+    if ($null -eq $detailProperty) { return $null }
+    if ($null -eq $detailProperty.Value) { return $null }
+    $match = [regex]::Match([string]$detailProperty.Value, "external_order_id=([^,]+),")
+    if ($match.Success) { return $match.Groups[1].Value.Trim() }
+    return $null
+}
+
+function Should-CancelResidualOrder {
+    param([string]$Status)
+    if ([string]::IsNullOrWhiteSpace($Status)) {
+        return $false
+    }
+
+    # Why: 独立 place-timeout probe 只做取证，不留残余挂单。
+    # 只有订单仍处于可撤非终态时，才执行 cleanup cancel。
+    return $Status -notin @("FILLED", "REJECTED", "CANCELLED", "EXPIRED")
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $envPath = if (-not [string]::IsNullOrWhiteSpace($EnvFilePath)) { $EnvFilePath } else { Join-Path $repoRoot ".env" }
 $envMap = Read-DotEnv -Path $envPath
@@ -537,14 +624,23 @@ Write-Host "okxEnv=$($okxRuntime.EnvName)"
 Write-Host "credentialSource=$($okxRuntime.Prefix)* -> NQ_OKX_API_* / NQ_OKX_BASE_URL / NQ_OKX_WS_URL"
 Write-Host "startupMode=canonical_non_fallback (NQ_OKX_ADAPTER_STUB_ON_BOOTSTRAP_FAILURE=false)"
 Write-Host "forcedTimeoutEvidence=$(if ($forcePlaceTimeoutEvidence -and $forceCancelTimeoutEvidence) { 'place_once,cancel_once' } elseif ($forcePlaceTimeoutEvidence) { 'place_once' } elseif ($forceCancelTimeoutEvidence) { 'cancel_once' } else { 'none' })"
+Write-Host "limitCancelProbePrice=10000"
+Write-Host "limitCancelProbeQuantity=0.00005"
+Write-Host "placeTimeoutProbePrice=10000"
+Write-Host "placeTimeoutProbeQuantity=0.00005"
+Write-Host "marketTradeProbeSymbol=BTC-USDT"
+Write-Host "marketTradeProbeSide=SELL"
+Write-Host "marketTradeProbeQuantity=0.00002"
 Write-Host ""
 
+$restartLogPath = ""
 try {
     Wait-ServiceHealth -ServiceBaseUrl $serviceBaseUrl -TimeoutSec 5
 } catch {
     if ($AutoRestart) {
         Write-Host "Service is not healthy yet, starting canonical non-fallback nq-app..."
         $appLogPath = Restart-LocalGatedApp -ServiceBaseUrl $serviceBaseUrl -TimeoutSec $StartupTimeoutSec -StartupLogPath $appLogPath
+        $restartLogPath = $appLogPath
         Write-Host "restartLogPath=$appLogPath"
     } else {
         throw
@@ -552,6 +648,90 @@ try {
 }
 
 $summary = @()
+$grepLogFiles = New-Object 'System.Collections.Generic.List[string]'
+# Why: real OKX 当前可用 USDT 约为 1，旧样本 `10000 * 0.0002 = 2 USDT` 会稳定触发 51008；
+# 这里把 A/C 收口到低于当前余额、又仍远离市价的最小可撤 LIMIT 样本。
+$limitCancelProbePrice = 10000
+$limitCancelProbeQuantity = 0.00005
+$placeTimeoutProbePrice = $limitCancelProbePrice
+$placeTimeoutProbeQuantity = $limitCancelProbeQuantity
+# Why: UseCase-B 目标是拿到当前余额可承受、可解释、可复现的真实 MARKET 样本；
+# 当前账户同时有 BTC availBal=0.000380993976 与 USDT availBal=0.9988651685332477；
+# 这里改为 BTC-USDT MARKET SELL 0.00002，使名义金额约 1.416 USDT，跨过 51020 的最小下单额门槛，且远低于当前 BTC 可用余额。
+$marketTradeProbeSymbol = "BTC-USDT"
+$marketTradeProbeSide = "SELL"
+$marketTradeProbeQuantity = 0.00002
+
+Add-GrepLogFile -Collection $grepLogFiles -Path $appLogPath
+
+# UseCase P: dedicated place timeout probe -> reconcile/query -> conditional cancel cleanup
+$casePClientOrderId = New-ClientOrderId -Prefix "g6p"
+$casePTracePlace = New-TraceId -Prefix "p-place"
+$casePPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders" -TraceId $casePTracePlace -Body @{
+    accountId     = $verifyAccountId
+    venue         = "OKX"
+    clientOrderId = $casePClientOrderId
+    symbol        = "BTC-USDT"
+    side          = "BUY"
+    orderType     = "LIMIT"
+    price         = $placeTimeoutProbePrice
+    quantity      = $placeTimeoutProbeQuantity
+}
+$casePOrderId = Parse-OrderIdFromDetail -Body $casePPlace.Body
+$casePTraceReconcile = New-TraceId -Prefix "p-reconcile"
+$casePReconcile = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/reconcile/runOnce" -TraceId $casePTraceReconcile -Body @{ limit = 100 }
+$casePTraceOrder = if ($casePOrderId) { New-TraceId -Prefix "p-order" } else { $null }
+$casePOrder = if ($casePOrderId) {
+    Invoke-GatedGet -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders/$casePOrderId" -TraceId $casePTraceOrder
+} else {
+    $null
+}
+$casePTraceTrade = if ($casePOrderId) { New-TraceId -Prefix "p-trade" } else { $null }
+$casePTrade = if ($casePOrderId) {
+    Invoke-GatedGet -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders/$casePOrderId/trade" -TraceId $casePTraceTrade
+} else {
+    $null
+}
+$casePOrderStatusBeforeCleanup = [string](Get-ResponseBodyPropertyValue -Response $casePOrder -PropertyName 'status')
+$casePExternalOrderId = [string](Get-ResponseBodyPropertyValue -Response $casePOrder -PropertyName 'externalOrderId')
+if ([string]::IsNullOrWhiteSpace($casePExternalOrderId)) {
+    $casePExternalOrderId = [string](Parse-ExternalOrderIdFromDetail -Body $casePPlace.Body)
+}
+$casePTraceCancel = $null
+$casePCancel = $null
+if ($casePOrderId -and (Should-CancelResidualOrder -Status $casePOrderStatusBeforeCleanup)) {
+    $casePTraceCancel = New-TraceId -Prefix "p-cancel"
+    $casePCancel = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders/cancel" -TraceId $casePTraceCancel -Body @{
+        accountId     = $verifyAccountId
+        clientOrderId = $casePClientOrderId
+        reason        = "gated_dome_verify_place_timeout_probe_cleanup"
+    }
+}
+$casePTraceFinalOrder = if ($casePOrderId) { New-TraceId -Prefix "p-order-final" } else { $null }
+$casePFinalOrder = if ($casePOrderId) {
+    Invoke-GatedGet -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/orders/$casePOrderId" -TraceId $casePTraceFinalOrder
+} else {
+    $null
+}
+$casePFinalOrderStatus = [string](Get-ResponseBodyPropertyValue -Response $casePFinalOrder -PropertyName 'status')
+if ([string]::IsNullOrWhiteSpace($casePFinalOrderStatus)) {
+    $casePFinalOrderStatus = $casePOrderStatusBeforeCleanup
+}
+$casePEnabledSamples = @(Get-LogSamples -LogPath $appLogPath -Keywords @("okx_force_timeout_place_once_enabled"))
+$casePPlaceEvidenceSamples = @(Get-LogSamples -LogPath $appLogPath -TraceIds @($casePTracePlace) -Keywords @(
+    "okx_force_timeout_place_once_consumed",
+    "okx_force_timeout_place_once_throwing_http_timeout",
+    "okx_query_confirm_place_started",
+    "okx_query_confirm_place_resolved",
+    "okx_query_confirm_place_unconfirmed"
+))
+$summary += [PSCustomObject]@{
+    UseCase = "P"
+    Step    = "place-timeout-probe/reconcile/query/conditional-cancel-cleanup"
+    Trace   = "$casePTracePlace | $casePTraceReconcile | $casePTraceOrder | $casePTraceTrade | $casePTraceCancel | $casePTraceFinalOrder"
+    Status  = "place=$(Get-ResponseStatusToken -Response $casePPlace), reconcile=$(Get-ResponseStatusToken -Response $casePReconcile), order=$(Get-ResponseStatusToken -Response $casePOrder), trade=$(Get-ResponseStatusToken -Response $casePTrade), cancel=$(Get-ResponseStatusToken -Response $casePCancel), finalOrder=$(Get-ResponseStatusToken -Response $casePFinalOrder)"
+    Detail  = "clientOrderId=$casePClientOrderId; orderId=$casePOrderId; externalOrderId=$casePExternalOrderId; orderStatusBeforeCleanup=$casePOrderStatusBeforeCleanup; finalOrderStatus=$casePFinalOrderStatus; place=$(Get-ResponseRawBodyValue -Response $casePPlace); reconcile=$(Get-ResponseRawBodyValue -Response $casePReconcile); tradeBody=$(Get-ResponseRawBodyValue -Response $casePTrade); cancel=$(Get-ResponseRawBodyValue -Response $casePCancel); enabled=$(if ($casePEnabledSamples.Count -gt 0) { $casePEnabledSamples -join ' || ' } else { 'no_place_force_enabled_log_sample' }); placeTimeout=$(if ($casePPlaceEvidenceSamples.Count -gt 0) { $casePPlaceEvidenceSamples -join ' || ' } else { 'no_place_timeout_log_sample' })"
+}
 
 # UseCase A: limit far from market -> cancel -> reconcile
 $caseAClientOrderId = New-ClientOrderId -Prefix "g6a"
@@ -563,8 +743,8 @@ $caseAPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/o
     symbol        = "BTC-USDT"
     side          = "BUY"
     orderType     = "LIMIT"
-    price         = 10000
-    quantity      = 0.0002
+    price         = $limitCancelProbePrice
+    quantity      = $limitCancelProbeQuantity
 }
 $caseAOrderId = Parse-OrderIdFromDetail -Body $caseAPlace.Body
 $caseATraceCancel = New-TraceId -Prefix "a-cancel"
@@ -587,6 +767,7 @@ $caseATrade = if ($caseAOrderId) {
 } else {
     $null
 }
+Add-GrepLogFile -Collection $grepLogFiles -Path $appLogPath
 $caseAQueryConfirmSamples = @(Get-QueryConfirmSamples -LogPath $appLogPath -TraceIds @($caseATracePlace, $caseATraceCancel))
 $summary += [PSCustomObject]@{
     UseCase = "A"
@@ -603,10 +784,10 @@ $caseBPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/o
     accountId     = $verifyAccountId
     venue         = "OKX"
     clientOrderId = $caseBClientOrderId
-    symbol        = "BTC-USDT"
-    side          = "BUY"
+    symbol        = $marketTradeProbeSymbol
+    side          = $marketTradeProbeSide
     orderType     = "MARKET"
-    quantity      = 12
+    quantity      = $marketTradeProbeQuantity
 }
 $caseBTraceReconcile = New-TraceId -Prefix "b-reconcile"
 $caseBReconcile = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/reconcile/runOnce" -TraceId $caseBTraceReconcile -Body @{ limit = 200 }
@@ -623,6 +804,7 @@ $caseBTrade = if ($caseBOrderId) {
 } else {
     $null
 }
+Add-GrepLogFile -Collection $grepLogFiles -Path $appLogPath
 $caseBQueryConfirmSamples = @(Get-QueryConfirmSamples -LogPath $appLogPath -TraceIds @($caseBTracePlace))
 $summary += [PSCustomObject]@{
     UseCase = "B"
@@ -642,14 +824,15 @@ $caseCPlace = Invoke-GatedPost -ServiceBaseUrl $serviceBaseUrl -Path "/__gated/o
     symbol        = "BTC-USDT"
     side          = "BUY"
     orderType     = "LIMIT"
-    price         = 10000
-    quantity      = 0.0002
+    price         = $limitCancelProbePrice
+    quantity      = $limitCancelProbeQuantity
 }
 
 Write-Host ""
 if ($AutoRestart) {
     Write-Host "UseCase-C: auto restart mode enabled (stop/start + health wait)."
     $appLogPath = Restart-LocalGatedApp -ServiceBaseUrl $serviceBaseUrl -TimeoutSec $StartupTimeoutSec -StartupLogPath $appLogPath
+    $restartLogPath = $appLogPath
     Write-Host "restartLogPath=$appLogPath"
 } else {
     Write-Host "UseCase-C: restart nq-app now, then continue."
@@ -683,6 +866,7 @@ $caseCTrade = if ($caseCOrderId) {
 } else {
     $null
 }
+Add-GrepLogFile -Collection $grepLogFiles -Path $appLogPath
 $caseCQueryConfirmSamples = @(Get-QueryConfirmSamples -LogPath $appLogPath -TraceIds @($caseCTracePlace, $caseCTraceCancel))
 $summary += [PSCustomObject]@{
     UseCase = "C"
@@ -694,7 +878,21 @@ $summary += [PSCustomObject]@{
 
 Write-Host ""
 Write-Host "== GateD Dome Verify Summary =="
+$summaryMetadata = [PSCustomObject]@{
+    appLogPath               = $appLogPath
+    restartLogPath           = $(if ([string]::IsNullOrWhiteSpace($restartLogPath)) { "n/a" } else { $restartLogPath })
+    grepLogFiles             = $(if ($grepLogFiles.Count -gt 0) { $grepLogFiles.ToArray() -join " | " } else { "none" })
+    marketTradeProbeSymbol   = $marketTradeProbeSymbol
+    marketTradeProbeSide     = $marketTradeProbeSide
+    marketTradeProbeQuantity = $marketTradeProbeQuantity
+}
+$summaryMetadata | Format-List
 $summary | Format-Table -AutoSize
+
+
+
+
+
 
 
 
