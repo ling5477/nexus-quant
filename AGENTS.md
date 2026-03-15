@@ -9,7 +9,7 @@
 ## 1. 强制约束（必须遵守）
 
 - 语言：除代码、配置键、接口字段、类名外，解释与文档输出使用**简体中文**。
-- 当前阶段：**GateD（统一执行闭环与执行域硬化）**。
+- 当前阶段：**GateE（v1.4：策略接入与调度编排）**。
 - 唯一入口：`docs/current/README.md` 与 `docs/current/GATE_CHECKLIST.md`。
 - 严格状态机：禁止任意 `setStatus`；订单状态只能通过显式事件、同步确认、回执映射推进。
 - 幂等：`client_order_id`、`request_id`、`trace_id` 必须贯穿订单、事件、账本、补偿链路。
@@ -22,6 +22,26 @@
 
 ---
 
+## 1.1 当前阶段切换说明
+
+- GateD 已冻结，`docs/gates/gate-d/*` 仅作为冻结证据，只读参考。
+- GateE 主目标固定为：**v1.4（策略接入与调度编排）**。
+- GateE-0 只是前置治理批，仅用于：
+  - Binance background reconcile 噪音治理
+  - schema / metadata 收口
+  - 返回模型一致性收尾
+- GateE-0 不得改写 GateE 主目标。
+- 当前 source of truth 优先级：
+  - `docs/current/*`
+  - `docs/gates/gate-e/*`
+  - `docs/gates/gate-d/*` 仅作冻结证据
+  - 根 `README.md / docs/ARCHITECTURE.md / docs/MODULES.md` 仅作导航摘要
+- 当前执行顺序：
+  - 先 GateE 文档启动批
+  - 再 GateE-0
+  - 再 GateE-1（策略接入与调度编排）
+- 除非修正文档事实冲突，否则不得继续把新内容写回 GateD 卷宗。
+
 ## 2. 文档即事实（Source of Truth）
 
 实现必须对齐以下文档，优先级从高到低：
@@ -31,24 +51,18 @@
 - `docs/current/GATE_CHECKLIST.md`
 
 ### 2.2 当前 Gate 权威文档（必须能追溯）
-- `docs/gates/gate-d/README.md`
-- `docs/gates/gate-d/ARCHITECTURE.md`
-- `docs/gates/gate-d/CONTRACTS.md`
-- `docs/gates/gate-d/MODULES.md`
-- `docs/gates/gate-d/DB_SCHEMA.md`
-- `docs/gates/gate-d/STATE_MACHINE.md`
-- `docs/gates/gate-d/RISK_RULES.md`
-- `docs/gates/gate-d/COMPENSATION_SYNC.md`
-- `docs/gates/gate-d/TEST_CASES.md`
-- `docs/gates/gate-d/DECISIONS.md`
-- `docs/gates/gate-d/EVOLUTION_RULES.md`
-- `docs/gates/gate-d/NUMERIC_POLICY.md`
-- `docs/gates/gate-d/PR_SPLIT_PLAN.md`
-- `docs/gates/gate-d/RECOVERY_RUNBOOK.md`
-- `docs/gates/gate-d/SOURCES.md`
-- `docs/gates/gate-d/WORK.md`
+- `docs/gates/gate-e/README.md`
+- `docs/gates/gate-e/GATE_E_CHECKLIST.md`
+- `docs/gates/gate-e/PR_SPLIT_PLAN.md`
+- `docs/gates/gate-e/WORK.md`
+- `docs/gates/gate-e/DECISIONS.md`
+- `docs/gates/gate-e/GATE_E_CANDIDATES.md`
+- `docs/gates/gate-e/ARCHITECTURE.md`
+- `docs/gates/gate-e/MODULES.md`
+- `docs/gates/gate-e/adr/README.md`
 
-### 2.3 历史 Gate 冻结快照（只读参考）
+### 2.3 GateD 冻结卷宗与历史 Gate 快照（只读参考）
+- `docs/gates/gate-d/**`
 - `docs/gates/gate-a/**`
 - `docs/gates/gate-b/**`
 - `docs/gates/gate-c/**`
@@ -57,7 +71,7 @@
 
 ---
 
-## 3. GateD 的工作边界
+## 3. GateD 冻结基线（只读参考）
 
 GateD 只做“执行闭环”与“执行域硬化”，包括：
 
@@ -82,21 +96,16 @@ GateD 明确**不做**：
 
 ---
 
-## 4. 模块实现顺序（GateD 推荐）
+## 4. 当前执行顺序（GateE）
 
-1. `nq-core`
-2. `nq-risk`
-3. `nq-adapter-api`
-4. `nq-adapter-okx`
-5. `nq-scheduler`
-6. `nq-ledger`
-7. `nq-app`
-8. `nq-infra`
-9. `nq-observability`
-10. `nq-adapter-binance`
-11. `nq-api`
+1. GateE 文档启动批
+2. GateE-0.1 Binance background reconcile 噪音治理
+3. GateE-0.2 schema / metadata 收口
+4. GateE-0.3 返回模型一致性收尾
+5. GateE-1 策略接入与注册
+6. GateE-2 调度编排主链
 
-> 解释：GateD 先收敛执行中心，再补风控，再统一执行端口，再收敛补偿链路。先把骨头长对，再给它穿衣服。
+> 解释：先把阶段入口与边界写死，再做前置治理清场，最后进入 GateE 主体实现。
 
 ---
 
@@ -135,40 +144,33 @@ GateD 明确**不做**：
 
 ## 6. PR 要求（强制）
 
-- PR 必须对应 `docs/current/GATE_CHECKLIST.md` 的条目，并在 PR 描述中写明勾选项。
+- PR 必须对应 `docs/current/GATE_CHECKLIST.md` 或 `docs/gates/gate-e/GATE_E_CHECKLIST.md` 的条目，并在 PR 描述中写明勾选项。
 - 若修改以下任一内容，必须同步更新当前文档：
-  - 契约
-  - 状态机
-  - Flyway
-  - 风控规则
-  - recovery / reconcile
-  - 幂等键
-  - 日志字段
+  - 策略接入契约
+  - 调度编排边界
+  - schema / metadata
+  - 返回模型
+  - GateE-0 前置治理结论
 - 若改动会影响当前阶段边界，必须同步更新：
   - `docs/current/README.md`
-  - `docs/gates/gate-d/README.md`
-  - `docs/gates/gate-d/MODULES.md`
-  - `docs/gates/gate-d/WORK.md`
+  - `docs/gates/gate-e/README.md`
+  - `docs/gates/gate-e/MODULES.md`
+  - `docs/gates/gate-e/WORK.md`
 
 ---
 
-## 7. 快速验证（GateD 通用）
+## 7. 快速验证（GateE 当前阶段）
 
-### 7.1 最小命令
+### 7.1 文档启动批最小验证
 ```powershell
-mvn -q -f backend/pom.xml test
-docker compose up -d postgres
-mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
+git diff -- AGENTS.md README.md docs/current docs/gates/gate-e
+rg -n "GateE|GateE-0|策略接入|调度编排" AGENTS.md README.md docs/current docs/gates/gate-e
 ```
 
-### 7.2 GateD 最小验收顺序
-1. 启动应用并确认 health `UP`
-2. 执行一个 paper LIMIT -> cancel
-3. 执行一个 paper MARKET -> fill
-4. 核查 `orders / trades / ledger_entries / positions / event_store / audit_logs`
-5. 执行一次 `reconcileOnce`
-6. 执行一次 `recoveryOnce`
-7. 核对未出现重复成交、重复记账、状态回退
+### 7.2 GateE 当前执行顺序
+1. 先 GateE 文档启动批
+2. 再 GateE-0 前置治理
+3. 再 GateE-1（策略接入与调度编排）
 
 ---
 
@@ -179,7 +181,7 @@ mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
 - 禁止 adapter 直接写 ledger / position / account projection。
 - 禁止为“先跑通”删掉审计、幂等、状态机、事实链。
 - 禁止在 recovery / reconcile 中直接重复下单。
-- 禁止把 GateD 需求偷渡成回测 / 研究平台任务。
+- 禁止把当前阶段需求偷渡成回测 / 研究平台任务。
 
 ---
 
@@ -191,7 +193,7 @@ mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
 2. `README.md`
 3. `docs/current/README.md`
 4. `docs/current/GATE_CHECKLIST.md`
-5. 目标改动相关的 GateD 文档
+5. 目标改动相关的 GateE 文档
 6. 再读目标代码文件
 
 ### 第二步：确认边界
@@ -204,9 +206,9 @@ mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
 - 仅测试/验证
 
 ### 第三步：先文档，后代码
-- 先补 `docs/current/*` 或 `docs/gates/gate-d/*`
+- 先补 `docs/current/*` 或 `docs/gates/gate-e/*`
 - 再改代码
-- 最后回填 `docs/gates/gate-d/WORK.md`
+- 最后回填 `docs/gates/gate-e/WORK.md`
 
 ### 第四步：最小修改集
 - 只改与当前 Gate 条目直接相关的文件
@@ -216,7 +218,7 @@ mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
 ### 第五步：验证
 至少给出：
 - 修改文件清单
-- 对应 GateD checklist 条目
+- 对应 GateE checklist 条目
 - 验证方式
 - 未完成项 / 风险项
 
@@ -356,10 +358,10 @@ mvn -q -f backend/pom.xml -pl nq-app spring-boot:run
 
 
 
-## 8. GateD 补充施工约束（新增）
+## 8. GateE 补充施工约束（新增）
 
-- 新增或修改中粒度工程决策时，必须同步更新 `docs/gates/gate-d/DECISIONS.md`。
-- 涉及模块演化、迁移边界、breaking change 控制时，必须遵守 `docs/gates/gate-d/EVOLUTION_RULES.md`。
-- 涉及价格、数量、金额、手续费、均价、最小名义金额的处理时，必须遵守 `docs/gates/gate-d/NUMERIC_POLICY.md`。
-- 提交 PR 时，必须对齐 `docs/gates/gate-d/PR_SPLIT_PLAN.md`；不得一次提交跨越多个主能力边界的巨型 PR。
-- 涉及 reconcile / recovery / query-confirm / degrade / 重启恢复时，必须同步检查并更新 `docs/gates/gate-d/RECOVERY_RUNBOOK.md`。
+- 新增或修改中粒度工程决策时，必须同步更新 `docs/gates/gate-e/DECISIONS.md`。
+- GateE-0 仅限前置治理，不得顺手把策略接入与调度编排主设计做散。
+- schema / metadata 收口必须排在 GateE 前两批，不得过度后置。
+- 提交 PR 时，必须对齐 `docs/gates/gate-e/PR_SPLIT_PLAN.md`；不得一次提交跨越多个主能力边界的巨型 PR。
+- 除非修正文档事实冲突，否则不得继续把新内容写回 GateD 卷宗。 
