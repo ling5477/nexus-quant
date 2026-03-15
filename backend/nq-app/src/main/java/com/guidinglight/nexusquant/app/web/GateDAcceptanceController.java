@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 
@@ -55,12 +56,14 @@ public class GateDAcceptanceController {
     private final TradingQueryFacade tradingQueryFacade;
     private final OkxRestReconcileService okxRestReconcileService;
     private final BinanceRestReconcileService binanceRestReconcileService;
+    private final BinanceRecoveryService binanceRecoveryService;
     private final RecoveryService recoveryService;
 
     /**
      * @param orderCommandService         订单编排服务
      * @param okxRestReconcileService     OKX REST reconcile 服务
      * @param binanceRestReconcileService Binance REST reconcile 服务
+     * @param binanceRecoveryService      Binance 手动 recovery 服务
      * @param recoveryService             恢复服务
      */
     public GateDAcceptanceController(
@@ -68,6 +71,7 @@ public class GateDAcceptanceController {
             TradingQueryFacade tradingQueryFacade,
             OkxRestReconcileService okxRestReconcileService,
             BinanceRestReconcileService binanceRestReconcileService,
+            BinanceRecoveryService binanceRecoveryService,
             RecoveryService recoveryService
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
@@ -79,6 +83,10 @@ public class GateDAcceptanceController {
         this.binanceRestReconcileService = Objects.requireNonNull(
                 binanceRestReconcileService,
                 "binanceRestReconcileService must not be null"
+        );
+        this.binanceRecoveryService = Objects.requireNonNull(
+                binanceRecoveryService,
+                "binanceRecoveryService must not be null"
         );
         this.recoveryService = Objects.requireNonNull(recoveryService, "recoveryService must not be null");
     }
@@ -313,22 +321,35 @@ public class GateDAcceptanceController {
     /**
      * 触发一次恢复流程。
      *
+     * @param request         recovery 请求；可为空，默认保持现有 OKX 行为
      * @param primaryTraceId  首选 trace header
      * @param fallbackTraceId 兼容 trace header
      * @return 触发结果摘要
      */
     @PostMapping("/recovery/runOnce")
     public GateDTriggerResponse runRecovery(
+            @RequestBody(required = false) GateDRecoveryRunOnceHttpRequest request,
             @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
             @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
     ) {
         String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
         return withTrace(traceId, () -> {
-            RecoveryReport report = recoveryService.rebuild(traceId);
+            String venue = request == null || request.venue() == null || request.venue().isBlank()
+                    ? "OKX"
+                    : request.venue().trim().toUpperCase();
+            RecoveryReport report = switch (venue) {
+                // Why:
+                // UC-D10 需要单独观察 Binance recovery，而共享 RecoveryService 目前仍保持历史 OKX 语义；
+                // 因此这里按 venue 显式分发，避免本批为了拿 Binance 证据而重新触发 OKX 主链。
+                case "OKX" -> recoveryService.rebuild(traceId);
+                case "BINANCE" -> binanceRecoveryService.rebuild(traceId);
+                default -> throw badRequest("unsupported recovery venue: " + venue);
+            };
             return new GateDTriggerResponse(
                     "recoveryRunOnce",
                     traceId,
-                    "processed_events=" + report.processedEventCount()
+                    "venue=" + venue
+                            + ", processed_events=" + report.processedEventCount()
                             + ", processed_ledger=" + report.processedLedgerCount()
                             + ", invalid_transitions=" + report.invalidTransitionCount()
             );

@@ -30,8 +30,8 @@ import java.util.Objects;
  * BinanceExchangeAdapter 是 GateC-2 的 Binance Spot REST-only 适配实现。
  * <p>
  * Why:
- * Binance 的 symbol/filters/签名/错误码都属于交易所方言，必须封装在 adapter-binance 内。
- * core 只能看到统一的 `AdapterOrderAck/AdapterOrderSnapshot` 语义，不能感知 `orderId/clientOrderId`
+ * Binance 的 symbol、filters、签名与错误码都属于交易所方言，必须封装在 `adapter-binance` 内。
+ * core 只能看到统一的 `AdapterOrderAck / AdapterOrderSnapshot` 语义，不能感知 `orderId / clientOrderId`
  * 之外的 Binance 细节，更不能自己拼接 query 或处理 filters。
  */
 public class BinanceExchangeAdapter implements TradingAdapter {
@@ -182,7 +182,9 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         JsonNode payload = authenticatedHttpClient.get(OPEN_ORDERS_ENDPOINT, params, true, query.traceId());
         List<AdapterOrderSnapshot> snapshots = new ArrayList<>();
         for (JsonNode item : payload) {
-            String resolvedInternalSymbol = internalSymbol == null ? toInternalSymbol(item.path("symbol").asText(), query.traceId()) : internalSymbol;
+            String resolvedInternalSymbol = internalSymbol == null
+                    ? toInternalSymbol(item.path("symbol").asText(), query.traceId())
+                    : internalSymbol;
             snapshots.add(toOrderSnapshot(item, resolvedInternalSymbol, query.accountId(), query.traceId()));
         }
         return snapshots;
@@ -488,13 +490,21 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         BinanceRuntimeConfig runtimeConfig = BinanceRuntimeConfig.fromSystemEnv();
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(runtimeConfig.timeout()).build();
         BinanceApiCredentials credentials = runtimeConfig.credentials();
+        BinanceTimestampProvider signedTimestampProvider = new BinanceSynchronizedTimestampProvider(
+                httpClient,
+                objectMapper,
+                runtimeConfig.baseUrl(),
+                runtimeConfig.timeout(),
+                clock,
+                runtimeConfig.signedTimestampOffset().toMillis()
+        );
         BinanceHttpClient authenticatedClient = new BinanceHttpClient(
                 httpClient,
                 objectMapper,
                 runtimeConfig.baseUrl(),
                 runtimeConfig.timeout(),
                 new BinanceRequestSigner(),
-                System::currentTimeMillis,
+                signedTimestampProvider,
                 credentials
         );
         BinanceHttpClient publicClient = new BinanceHttpClient(

@@ -24,7 +24,7 @@ GateD 的目标不是再把系统“接得更多”，而是把 GateC 已经接�
 - [x] 现行脚本与示例 canonical 化已完成
 - [x] current / top-level / archive 文档边界已建立
 - [x] 真实 OKX 主验收通道已收口，当前不再是主阻塞
-- [~] 当前剩余冻结阻塞已收敛为 Binance 最小验收、migration 与工程门禁冻结口径
+- [x] 全仓 `mvn test / mvn verify`、Flyway init / upgrade 与 freeze docs 已完成，GateD 已冻结，GateE 待启动
 - [~] 深层兼容债务仍部分完成
 
 ---
@@ -106,6 +106,7 @@ GateC 像是把各路管线接上；GateD 则是把整套管线拧紧，不再�
 - `RECOVERY_RUNBOOK.md`
 - `SOURCES.md`
 - `WORK.md`
+- `FREEZE_SUMMARY.md`
 - `adr/*`
 
 ### 代码
@@ -117,7 +118,7 @@ GateC 像是把各路管线接上；GateD 则是把整套管线拧紧，不再�
 - 验收入口与验证脚本
 
 ### 数据库
-- GateD 迁移脚本，例如 `V5__gate_d_execution_closure.sql`
+- 当前数据库冻结基线为 `V1 -> V4`；本批已验证新库 init 与 `V3 -> V4` upgrade，无额外 GateD migration 必要
 - 关键唯一键、索引、版本字段、审计字段补齐
 
 ---
@@ -172,4 +173,5 @@ GateD 满足以下条件才允许冻结：
 - `NUMERIC_POLICY.md` 负责数值与精度正确性
 - `PR_SPLIT_PLAN.md` 负责提交拆分
 - `RECOVERY_RUNBOOK.md` 负责恢复与排障操作
+
 

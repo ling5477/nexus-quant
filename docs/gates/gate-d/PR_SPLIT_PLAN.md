@@ -10,13 +10,13 @@
 ## 当前推进状态
 
 - [x] PR-1：文档与阶段入口对齐
-- [~] PR-2：contracts / core 执行入口收敛
+- [x] PR-2：contracts / core 执行入口收敛
 - [x] PR-3：pre-trade 风控规则链
-- [~] PR-4：状态机、事件与执行回执收敛
-- [~] PR-5：scheduler / recovery / reconcile / degrade 收敛
-- [~] PR-6：ledger / projection / db schema
-- [~] PR-7：app / api 验收入口与查询视图
-- [ ] PR-8：integration tests / freeze docs
+- [x] PR-4：状态机、事件与执行回执收敛
+- [x] PR-5：scheduler / recovery / reconcile / degrade 收敛
+- [x] PR-6：ledger / projection / db schema
+- [x] PR-7：app / api 验收入口与查询视图
+- [x] PR-8：integration tests / freeze docs
 
 ---
 
@@ -41,7 +41,7 @@
 
 ---
 
-## PR-2：contracts / core 执行入口收敛（进行中）
+## PR-2：contracts / core 执行入口收敛（已完成）
 
 ### 目标
 - 统一执行应用服务
@@ -77,7 +77,7 @@
 
 ---
 
-## PR-4：状态机、事件与执行回执收敛（进行中）
+## PR-4：状态机、事件与执行回执收敛（已完成）
 
 ### 目标
 - 冻结订单状态机
@@ -93,7 +93,7 @@
 
 ---
 
-## PR-5：scheduler / recovery / reconcile / degrade 收敛（进行中）
+## PR-5：scheduler / recovery / reconcile / degrade 收敛（已完成）
 
 ### 目标
 - scheduler 瘦身
@@ -108,7 +108,7 @@
 
 ---
 
-## PR-6：ledger / projection / db schema（进行中）
+## PR-6：ledger / projection / db schema（已完成）
 
 ### 目标
 - fills 去重
@@ -123,7 +123,7 @@
 
 ---
 
-## PR-7：app / api 验收入口与查询视图（进行中）
+## PR-7：app / api 验收入口与查询视图（已完成）
 
 ### 目标
 - 建立 GateD 最小验收入口
@@ -147,20 +147,21 @@
 
 ---
 
-## PR-8：integration tests / freeze docs（未开始）
+## PR-8：integration tests / freeze docs（已完成）
 
 ### 目标
 - 跑通 GateD 用例
 - 更新 `WORK.md`
 - 形成冻结结论
 
-### 当前剩余阻塞（截至 2026-03-15）
+### 最终收口结论（截至 2026-03-15）
 - `PR-7` 已不再被 real OKX 主链阻断；place / cancel query-confirm、UseCase-B `trades / ledger`、以及 `LEDGER_MISSING` 误报都已收口
-- `UC-D1 / Paper LIMIT -> cancel` 已于 2026-03-15 取得最小真样本：`place=200(ACCEPTED) -> cancel=200(CANCELLED)`，库内 `orders=CANCELLED / trades=0 / ledger_entries=0`，`event_store` 仅保留未成交链事件，`recoveryRunOnce` 未引入异常副作用
-- `PR-8` 当前真正剩余的冻结阻塞已收敛为：
-  - Binance 最小验收：`UC-D10 / Binance LIMIT -> cancel`
-  - 工程门禁与 migration 冻结口径：`mvn test`、Flyway init/upgrade、freeze docs
-- 深层兼容债务、指标完善、Binance 深度齐平不建议继续阻塞 GateD 主线冻结判断，可顺延到 GateE 或后续治理批
+- `UC-D1 / Paper LIMIT -> cancel` 已于 2026-03-15 取得最小真样本
+- `UC-D10 / Binance LIMIT -> cancel` 已于 2026-03-15 取得最小真样本
+- `mvn -q -f backend/pom.xml test` 与 `mvn -q -f backend/pom.xml verify` 已通过
+- Flyway 新库 init 与 `V3 -> V4` 老库 upgrade 已通过
+- freeze docs 已完成，GateD 当前状态为“已冻结，GateE 待启动”
+- 深层兼容债务、指标完善，以及 Binance background reconcile 审计噪音不再阻塞 GateD 主线冻结判断，可顺延到 GateE 或后续治理批
 
 ### 涉及模块
 - `nq-app`
@@ -181,6 +182,7 @@
 - 写出验证方式
 - 若改动契约 / 状态机 / DB / 恢复逻辑，必须同步更新文档
 - 不接受“文档之后补”的口头承诺
+
 
 
 

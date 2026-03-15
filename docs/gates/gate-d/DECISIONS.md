@@ -693,3 +693,26 @@
 - 后续影响：
   - 后续 Windows 上的真实 OKX 验收，应默认以 `pwsh 7` 作为 canonical 脚本解释器。
   - 脚本若再次失败，应优先视为真实环境/连通性问题，而不是解释器兼容问题。
+
+---
+
+## D-032：PR-8 冻结批将数据库基线正式收口为 `V1 -> V4`，不再预设额外 GateD migration
+
+- 日期：2026-03-15
+- 状态：已决定
+- 背景：此前 checklist / README 用“例如 `V5__gate_d_execution_closure.sql`”表述 GateD migration，容易让后续实施者误以为 GateD 冻结必须再补一条 schema 变更；但当前代码基线已经通过 `mvn test / verify` 与 Flyway 新库 init / 老库 upgrade 验证，且未暴露新的 schema 差异需求。
+- 决策：
+  - 将 GateD 当前数据库冻结基线正式收口为 `V1 -> V4`
+  - PR-8 真实验证口径固定为：
+    - 空库可直接迁到 `V4`
+    - 旧库可从 `V3` 平滑升级到 `V4`
+  - 不再把“必须新增 `V5` migration”作为 GateD 冻结前置条件
+- 影响文档：
+  - `docs/current/README.md`
+  - `docs/current/GATE_CHECKLIST.md`
+  - `docs/gates/gate-d/README.md`
+  - `docs/gates/gate-d/GATE_D_CHECKLIST.md`
+  - `docs/gates/gate-d/PR_SPLIT_PLAN.md`
+  - `docs/gates/gate-d/WORK.md`
+- 后续影响：
+  - 后续若出现真实 schema 变更，再以 GateE 或独立治理批新增 migration；不得为了迎合历史占位描述而制造空迁移

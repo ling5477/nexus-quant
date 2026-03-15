@@ -12,12 +12,14 @@ import java.util.Map;
  * <p>
  * Why:
  * GateC-2 仍要求沿用 `NQ_*_ENV` 双环境切换与指纹脱敏策略。
- * 这里把 env 选择、超时、exchangeInfo 刷新窗口与凭证读取收敛到单点，避免后续 TradingAdapter/cache 各自散落读取环境变量。
+ * 这里把 env 选择、超时、签名时间偏移、exchangeInfo 刷新窗口与凭证读取收敛到单点，
+ * 避免后续 TradingAdapter / cache / ws client 各自散落读取环境变量。
  *
  * @param envName                     当前环境名，仅允许 dome/real
  * @param baseUrl                     当前环境 Binance REST base URL
  * @param wsUrl                       当前环境 Binance 私有 WS base URL；默认使用 ws-api 用户流订阅地址
  * @param timeout                     单次请求超时
+ * @param signedTimestampOffset       在 serverTime 校准前额外叠加的人工偏移，便于 local/debug 定向排障
  * @param exchangeInfoRefreshInterval exchangeInfo cache 刷新间隔
  * @param wsReconnectBase             WS 重连基础退避时长
  * @param wsReconnectMax              WS 重连最大退避时长
@@ -31,6 +33,7 @@ public record BinanceRuntimeConfig(
         String baseUrl,
         String wsUrl,
         Duration timeout,
+        Duration signedTimestampOffset,
         Duration exchangeInfoRefreshInterval,
         Duration wsReconnectBase,
         Duration wsReconnectMax,
@@ -46,6 +49,7 @@ public record BinanceRuntimeConfig(
     private static final String DEFAULT_DOME_WS_URL = "wss://ws-api.testnet.binance.vision/ws-api/v3";
     private static final String DEFAULT_REAL_WS_URL = "wss://ws-api.binance.com:443/ws-api/v3";
     private static final long DEFAULT_TIMEOUT_MS = 3_000L;
+    private static final long DEFAULT_SIGNED_TIMESTAMP_OFFSET_MS = 0L;
     private static final long DEFAULT_EXCHANGE_INFO_REFRESH_MS = 300_000L;
     private static final long DEFAULT_WS_RECONNECT_BASE_DELAY_MS = 1_000L;
     private static final long DEFAULT_WS_RECONNECT_MAX_DELAY_MS = 30_000L;
@@ -76,6 +80,7 @@ public record BinanceRuntimeConfig(
                 read(env, prefix + "BASE_URL", defaultBaseUrl),
                 normalizeWsUrl(read(env, prefix + "WS_URL", defaultWsUrl), envName),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_TIMEOUT_MS", DEFAULT_TIMEOUT_MS)),
+                Duration.ofMillis(readLong(env, "NQ_BINANCE_SIGNED_TIMESTAMP_OFFSET_MS", DEFAULT_SIGNED_TIMESTAMP_OFFSET_MS)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_EXCHANGE_INFO_REFRESH_MS", DEFAULT_EXCHANGE_INFO_REFRESH_MS)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_WS_RECONNECT_BASE_DELAY_MS", DEFAULT_WS_RECONNECT_BASE_DELAY_MS)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_WS_RECONNECT_MAX_DELAY_MS", DEFAULT_WS_RECONNECT_MAX_DELAY_MS)),
@@ -99,7 +104,21 @@ public record BinanceRuntimeConfig(
         return "env=" + envName
                 + ", baseUrl=" + baseUrl
                 + ", wsUrl=" + wsUrl
+                + ", signedTimestampOffsetMs=" + signedTimestampOffset.toMillis()
                 + ", apiKey=" + maskApiKey(credentials.apiKey());
+    }
+
+    /**
+     * Why:
+     * Binance dome / real 在本地环境里可能因为宿主机轻微时钟漂移触发 `-1021`。
+     * 该方法只负责把人工偏移统一收口，真正的 serverTime 校准由 timestamp provider 完成，
+     * 这样 REST / ws-api 至少共享同一个显式配置口径。
+     *
+     * @param currentEpochMillis 当前本地时间戳
+     * @return 叠加人工偏移后的时间戳
+     */
+    public long signedEpochMillis(long currentEpochMillis) {
+        return currentEpochMillis + signedTimestampOffset.toMillis();
     }
 
     private static String normalizeEnv(String value) {

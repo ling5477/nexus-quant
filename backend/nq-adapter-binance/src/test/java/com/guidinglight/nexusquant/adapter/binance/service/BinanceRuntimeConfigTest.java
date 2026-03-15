@@ -14,7 +14,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * BinanceRuntimeConfigTest 覆盖 Binance 环境选择、刷新窗口与脱敏指纹。
+ * BinanceRuntimeConfigTest 覆盖 Binance 环境切换、时间偏移与脱敏指纹。
  */
 class BinanceRuntimeConfigTest {
 
@@ -27,6 +27,7 @@ class BinanceRuntimeConfigTest {
                 "NQ_BINANCE_DOME_API_SECRET", "secret",
                 "NQ_BINANCE_WS_DIAGNOSTIC_ENABLED", "true",
                 "NQ_BINANCE_TIMEOUT_MS", "3000",
+                "NQ_BINANCE_SIGNED_TIMESTAMP_OFFSET_MS", "-1000",
                 "NQ_BINANCE_EXCHANGE_INFO_REFRESH_MS", "60000"
         ));
 
@@ -34,8 +35,11 @@ class BinanceRuntimeConfigTest {
         assertEquals("https://testnet.binance.vision", config.baseUrl());
         assertEquals("wss://ws-api.testnet.binance.vision/ws-api/v3", config.wsUrl());
         assertEquals("abcd1234wxyz", config.credentials().apiKey());
+        assertEquals(Duration.ofSeconds(-1), config.signedTimestampOffset());
         assertEquals(Duration.ofMinutes(1), config.exchangeInfoRefreshInterval());
         assertTrue(config.wsDiagnosticEnabled());
+        assertEquals(1_699L, config.signedEpochMillis(2_699L));
+        assertTrue(config.fingerprint().contains("signedTimestampOffsetMs=-1000"));
         assertTrue(config.fingerprint().contains("apiKey=abcd...wxyz"));
     }
 

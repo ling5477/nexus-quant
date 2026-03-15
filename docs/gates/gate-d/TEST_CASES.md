@@ -2,10 +2,10 @@
 # GateD 验收用例
 
 > 状态约定：`[x] 已完成`、`[~] 部分完成`、`[ ] 未完成`。  
-> 当前状态基线：**截至 2026-03-13 的已实现与已验证事实**。
+> 当前状态基线：**截至 2026-03-15 的已实现与已验证事实**。
 
 ## UC-D1：Paper LIMIT -> Cancel
-- 当前状态：`[~] 部分完成`
+- 当前状态：`[x] 已完成`
 - 前置：paper profile 可用
 - 步骤：提交远离盘口 LIMIT 单，再发撤单
 - 预期：
@@ -13,6 +13,7 @@
   - `trades=0`
   - `ledger_entries=0`
   - `event_store` 存在 place / ack / cancel / cancelAck
+- 当前证据：`trace_id=trc-paper-ucd1-20260315-1024`，`recoveryRunOnce(processed_events=0, processed_ledger=0, invalid_transitions=0)`，未观察到重复成交、重复记账、状态回退
 
 ## UC-D2：Paper MARKET -> Fill
 - 当前状态：`[x] 已完成`
@@ -27,7 +28,6 @@
   - `GET /__gated/orders/{orderId}/trade` 可读取成交视图
   - `GET /__gated/positions/{accountId}/{symbol}` 可读取持仓视图
   - `GET /__gated/accounts/{accountId}` 可读取账户快照，不再返回 `404`
-  - 本地断言已固定 `BTC / USDT` 两类账户快照结果
 
 ## UC-D3：精度非法拒绝
 - 当前状态：`[x] 已完成`
@@ -51,6 +51,7 @@
 - 当前状态：`[~] 部分完成`
 - 步骤：制造一个停留在非终态的订单，再执行 reconcile
 - 预期：状态与 fills 收敛到真实事实
+- 当前说明：最小样本已证明 reconcile 不会引入异常副作用，但更强的一致性样本仍顺延治理
 
 ## UC-D7：Recovery 重启恢复
 - 当前状态：`[~] 部分完成`
@@ -68,16 +69,17 @@
   - 订单与成交最终仍正确收敛
 
 ## UC-D9：OKX LIMIT -> Cancel
-- 当前状态：`[ ] 未完成`
+- 当前状态：`[x] 已完成`
 - 步骤：真实或 demo 环境执行最小 LIMIT -> cancel
 - 预期：
   - `ACCEPTED -> CANCELLED`
   - `external_order_id` 可见
   - `trades=0`
   - `ledger_entries=0`
+- 当前证据：real OKX UseCase-A / C 与 place/cancel 两侧 query-confirm 样本均已收口
 
 ## UC-D10：Binance LIMIT -> Cancel
-- 当前状态：`[ ] 未完成`
+- 当前状态：`[x] 已完成`
 - 步骤：真实或 testnet 环境执行最小 LIMIT -> cancel
 - 预期：同 UC-D9
-
+- 当前证据：`trace_id=trc-ucd10-binance-place-0315120330 / trc-ucd10-binance-cancel-0315120400`，最终 `orders=CANCELLED / trades=0 / ledger_entries=0`，手工 `reconcile / recovery` 无异常副作用

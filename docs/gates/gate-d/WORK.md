@@ -1312,3 +1312,66 @@ GateD 开工的原因不是“继续接功能”，而是：
   - 当前未观察到重复成交、重复记账、状态回退
   - `GateDAcceptanceController.runReconcile(...)` 当前仅支持 `OKX / BINANCE`，因此 Paper 本批未单独执行 reconcile；但 recovery 已验证对该未成交取消样本无异常副作用
   - GateD 当前剩余冻结阻塞收敛为：`UC-D10 / Binance LIMIT -> cancel` 与 `PR-8(mvn test + Flyway init/upgrade + freeze docs)`
+
+### 32. 2026-03-15：UC-D10 / Binance LIMIT -> cancel 最小验收批
+
+- 本批目标：
+  - 跑通 `UC-D10 / Binance LIMIT -> cancel` 的最小验收链路
+  - 明确 Binance 样本的 `place / order / cancel / trade / reconcile / recovery` 结果与落表路径
+  - 在拿到真实证据后，把 GateD 剩余冻结阻塞从 `Binance + PR-8` 进一步收敛为 `PR-8`
+- 代码与环境收口：
+  - `GateDAcceptanceController` 已支持 `POST /__gated/recovery/runOnce {"venue":"BINANCE"}`，由 `BinanceRecoveryService` 走 Binance 专用恢复入口，不再误拖 OKX recovery 主链
+  - `nq-adapter-binance` 已新增 `BinanceSynchronizedTimestampProvider`，在签名请求前通过 `/api/v3/time` 校准 serverTime，修复 place 主链先前稳定命中的 `-1021`
+  - 本地验收实例使用 `.env + NQ_DB_PORT=5432 + NQ_APP_PORT=18892 + NQ_BINANCE_SIGNED_TIMESTAMP_OFFSET_MS=0`
+- 真实样本：
+  - `account_id=3001 / account_code=BINANCE-DOME-3001`
+  - place：`trace_id=trc-ucd10-binance-place-0315120330 / client_order_id=ucd10b0315120330 / order_id=ord-604b3f24-ad55-4121-8c57-97bcadc48137 / external_order_id=17310629`
+  - 请求参数：`venue=BINANCE / symbol=BTC-USDT / side=BUY / orderType=LIMIT / price=70000 / quantity=0.01`
+  - cancel：`trace_id=trc-ucd10-binance-cancel-0315120400`
+  - reconcile：`trace_id=trc-ucd10-binance-reconcile-0315120410`
+  - recovery：`trace_id=trc-ucd10-binance-recovery-0315120420`
+- 验收结果：
+  - `placeOrder=200`，返回 `status=ACCEPTED`
+  - 首次 `queryOrder=200`，返回 `status=ACCEPTED / external_order_id=17310629`
+  - `cancelOrder=200`，返回 `status=CANCELLED`
+  - 二次 `queryOrder=200`，返回 `status=CANCELLED`
+  - `queryTrade=404`
+  - `reconcileRunOnce=200(venue=BINANCE, limit=20, new_trades=0)`
+  - `recoveryRunOnce=200(venue=BINANCE, processed_events=0, processed_ledger=0, invalid_transitions=0)`
+  - recovery 后再次查询订单仍为 `CANCELLED`
+- 数据库与事件证据：
+  - `orders(order_id=ord-604b3f24-ad55-4121-8c57-97bcadc48137, venue=BINANCE, external_order_id=17310629, status=CANCELLED, reason=uc_d10_limit_cancel)`
+  - `trades=0`、`ledger_entries=0`
+  - `event_store` 出现 `PlaceOrderCommand / OrderCreated / RiskPassed / OrderAck / CancelOrderCommand / OrderStatusChangedPayload / CancelAck`，未出现 `TradeExecuted / LedgerPosted`
+  - `audit_logs` 明确记录 `ORDER_ACKED`、`ORDER_CANCELLED`，且当前未观察到重复终态覆盖或状态回退
+- 结论：
+  - `UC-D10 / Binance LIMIT -> cancel` 已从未完成推进到完成
+  - 当前未观察到重复成交、重复记账、状态回退
+  - 手工 `reconcile / recovery` 对该未成交取消样本未引入异常副作用
+  - 当前 residual risk 为 background Binance reconcile 仍会留下 `BINANCE_RECONCILE_ORDER_FAILED(credentials missing / -1021)` 审计噪音；它没有改变最终订单状态，也未落出多余 trade / ledger，暂不再作为 GateD 冻结阻塞
+  - GateD 当前剩余冻结阻塞收敛为：`PR-8(mvn test + Flyway init/upgrade + freeze docs)`
+
+### 33. 2026-03-15：PR-8 关门批（全仓门禁 + Flyway + freeze docs）
+
+- 本批目标：
+  - 完成全仓 `mvn test / mvn verify` 复核
+  - 完成 Flyway 新库 init 与老库 upgrade 真实验证
+  - 完成 GateD freeze docs 最终收口，并给出冻结判断
+- 工程门禁结果：
+  - `mvn -q -f backend/pom.xml test`：通过
+  - `mvn -q -f backend/pom.xml verify`：通过
+  - 当前仓库未启用独立 `checkstyle / spotless / archunit / integration test` 门禁插件，因此本批未出现额外失败项
+- Flyway 真实验证：
+  - 新库 init：临时库 `nexus_quant_pr8_init` 从空库启动，Flyway 按序执行 `V1 -> V4`，`/actuator/health=200(UP)`，`flyway_schema_history` 记录 4 条成功迁移
+  - 老库 upgrade：临时库 `nexus_quant_pr8_upgrade` 先通过 `SPRING_FLYWAY_TARGET=3` 启动并稳定停在 `V3`，随后移除 target 再启动，Flyway 仅追加 `V4`，`/actuator/health=200(UP)`，`flyway_schema_history` 记录 `V1 -> V4` 全部成功，`idx_trades_exchange_external_order_id` 已存在
+  - 结论：当前数据库冻结基线已验证为 `V1 -> V4`；本批未发现新增 GateD schema delta，因此无额外 `V5` migration 必要
+- freeze docs 收口：
+  - `docs/current/README.md` 与 `docs/gates/gate-d/README.md` 已统一为“GateD 已冻结，GateE 待启动”
+  - `docs/current/GATE_CHECKLIST.md` 已回填：全仓门禁通过、Flyway init / upgrade 通过、数据库基线冻结为 `V1 -> V4`
+  - `docs/gates/gate-d/GATE_D_CHECKLIST.md` 已回填：PR-8 收口、冻结标准满足、冻结结论改为“已冻结”
+  - `docs/gates/gate-d/PR_SPLIT_PLAN.md` 已将 `PR-8` 状态改为完成
+  - `.env.example` 已同步 canonical `NQ_GATED_VERIFY_ENABLED`、默认端口 `18888` 与 `NQ_BINANCE_SIGNED_TIMESTAMP_OFFSET_MS`
+- 最终判断：
+  - GateD 冻结收尾已完成，当前状态记为：`已冻结`
+  - 当前不再存在 GateD 主阻塞项
+  - 深层兼容债务、Binance background reconcile 审计噪音、指标完善与 GateE 扩边项转入后续治理，不再阻塞 GateD 冻结
