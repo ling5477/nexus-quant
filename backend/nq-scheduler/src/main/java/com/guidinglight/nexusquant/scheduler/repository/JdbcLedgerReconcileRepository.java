@@ -96,6 +96,20 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
                                 WHERE le2.account_id = s.account_id
                                   AND le2.currency = s.currency
                         )
+                          AND NOT EXISTS (
+                                SELECT 1
+                                FROM (
+                                    SELECT
+                                        p.account_id,
+                                        split_part(p.symbol, '-', 1) AS currency,
+                                        COALESCE(SUM(p.qty), 0) AS position_qty
+                                    FROM positions p
+                                    GROUP BY p.account_id, split_part(p.symbol, '-', 1)
+                                ) pb
+                                WHERE pb.account_id = s.account_id
+                                  AND pb.currency = s.currency
+                                  AND pb.position_qty = s.balance
+                        )
                         ORDER BY account_id, currency
                         """,
                 DIFF_ROW_MAPPER

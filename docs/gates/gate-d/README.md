@@ -9,7 +9,7 @@ GateD 的目标不是再把系统“接得更多”，而是把 GateC 已经接�
 
 ---
 
-## 0. 当前状态摘要（截至 2026-03-13）
+## 0. 当前状态摘要（截至 2026-03-15）
 
 > 本摘要用于 GateD 卷宗级概览，细项以 `GATE_D_CHECKLIST.md` 为准。
 > 状态约定：`[x] 已完成`、`[~] 部分完成`、`[ ] 未完成`。
@@ -23,7 +23,8 @@ GateD 的目标不是再把系统“接得更多”，而是把 GateC 已经接�
 - [x] 请求层 canonical `orderType / quantity` 已完成
 - [x] 现行脚本与示例 canonical 化已完成
 - [x] current / top-level / archive 文档边界已建立
-- [ ] 真实 OKX 验收未完成
+- [x] 真实 OKX 主验收通道已收口，当前不再是主阻塞
+- [~] 当前剩余冻结阻塞已收敛为 Binance 最小验收、migration 与工程门禁冻结口径
 - [~] 深层兼容债务仍部分完成
 
 ---
@@ -171,3 +172,4 @@ GateD 满足以下条件才允许冻结：
 - `NUMERIC_POLICY.md` 负责数值与精度正确性
 - `PR_SPLIT_PLAN.md` 负责提交拆分
 - `RECOVERY_RUNBOOK.md` 负责恢复与排障操作
+

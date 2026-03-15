@@ -1229,3 +1229,86 @@ GateD 开工的原因不是“继续接功能”，而是：
   - “订单先终态、fills 空结果后无补扫者”的同步缺口已经在 real OKX 官方脚本样本上收口
   - 当前未观察到重复成交、重复记账、状态回退
   - 这并不等于 GateD 全部冻结完成；剩余项仍是 checklist 冻结口径、Paper / Binance 未完项与其他 GateD 收尾项
+## 76. 2026-03-14 第三十批 ledger_reconcile_diff / LEDGER_MISSING 收尾
+
+- 本批目标：
+  - 锁定 `ledger_reconcile_diff / LEDGER_MISSING` 的真实成因
+  - 在不改 OKX A/B/C 样本参数、不重构整套 ledger/reconcile 的前提下，做最小可合并修复
+- 真实成因定位：
+  - 最新持续告警样本为 `account_id=1001 / currency=BTC / ledger_balance=0 / snapshot_balance=0.00996000 / reason=LEDGER_MISSING`
+  - 数据库核对显示：`account_snapshots.BTC` 与 `positions(BTC-USDT).qty` 一致，而 `ledger_entries` 对该账户只存在 `USDT` 分录
+  - 这说明 `BTC` 快照来自 `positions` 投影，不是当前链路漏写 ledger；现有 `JdbcLedgerReconcileRepository` 把“无 ledger_entries 但有 position-backed snapshot”的 base 资产误判成了 `LEDGER_MISSING`
+- 最小修复点：
+  - `JdbcLedgerReconcileRepository.findDiffs()` 的 `LEDGER_MISSING` 分支新增一条排除条件：若 `account_snapshots.currency` 可被 `positions` 按 base 资产聚合后的 `position_qty` 解释，则不再报 diff
+  - 不改 `TradeLedgerPostingService` 的主记账链，不改 `LedgerReconcileScheduler` 的调度逻辑
+- 测试：
+  - `mvn -q -f backend/pom.xml -pl nq-scheduler -am "-Dtest=LedgerReconcileSchedulerTest,JdbcLedgerReconcileRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`
+  - 结果：通过
+- 真实复验：
+  - 命令：`$env:NQ_OKX_ENV='real'; $env:NQ_GATED_VERIFY_ENABLED='true'; powershell -NoProfile -ExecutionPolicy Bypass -File '.\scripts\gated_okx_dome_verify.ps1' -AutoRestart -StartupTimeoutSec 120`
+  - 最新 `LEDGER_RECONCILE` 审计：`2026-03-14 23:24:16.762031+08 / RECONCILE_MATCH / {"diff_count":0}`
+  - 最新样本库证：`account_snapshots(account_id=1001,currency=BTC,balance=0.00994000)` 与 `positions(BTC-USDT).qty=0.00994000` 一致；`ledger_entries` 仍只包含 `USDT` 分录，因此旧告警属于口径误报而非账本漏写
+  - 同轮 UseCase-B：`ord-8a643028-661a-4df5-85d4-4370e65612b7` 仍为 `FILLED / RECONCILE_STATUS_ALIGN`，并已落出 `trade_id=trd-4321cfe2-e2ba-4b39-bf28-7181f238c8b4`、4 条 `ledger_entries`、`TradeExecuted`、`LedgerPosted`
+  - A/C：`g6a0314152355`、`g6c0314152402` 继续保持 `CANCELLED`
+- 当前结论：
+  - `ledger_reconcile_diff / LEDGER_MISSING` 的这组噪音本质上是 position-backed snapshot 的对账口径误报，不再视为 GateD 主阻塞
+  - 本轮未观察到新的重复记账、状态回退、脏快照
+
+## 77. 2026-03-15 第三十一批 GateD 剩余收尾项盘点与排序
+
+- 本批目标：
+  - 基于 docs/current/GATE_CHECKLIST.md、docs/gates/gate-d/GATE_D_CHECKLIST.md、PR_SPLIT_PLAN.md、WORK.md 与最新 OKX / ledger 收口结果，正式盘点 GateD 剩余项
+  - 区分冻结阻塞项、非阻塞治理项、可顺延到 GateE 的项
+  - 给出下一批最小可合并实施建议
+- 盘点结论：
+  - 冻结阻塞项：
+    - PAPER 最小验收闭环仍未转绿，当前 UC-D1 / Paper LIMIT -> cancel 仍为部分完成，且 Paper / OKX / Binance 返回模型一致性未最终冻结
+    - Binance 最小 LIMIT -> cancel 与 UC-D10 仍未补齐；当前已具备代码与局部测试基础，但缺正式验收样本
+    - PR-8 的工程门禁与 migration 冻结口径仍未完成，包括 mvn -q -f backend/pom.xml test、Flyway 新库初始化 / 老库升级、freeze docs 收口
+  - 非阻塞治理项：
+    - 真实 OKX 主链已收口，后续仅剩文档冻结口径同步，不再作为主阻塞
+    - ledger_reconcile_diff / LEDGER_MISSING 已定性为 position-backed snapshot 的对账误报，修复后最新 LEDGER_RECONCILE 已为 RECONCILE_MATCH(diff_count=0)，不再作为主阻塞
+    - 现有日志字段统一、trace 追链与局部审计链已可支撑排障，但指标面与更细粒度可观测性仍未冻结
+  - 可顺延到 GateE 的项：
+    - 深层兼容债务、内部命名与历史 alias 治理
+    - Binance 深度齐平、account/position snapshot 拉取与映射增强
+    - 指标完善、复杂 observability、account sync 扩展
+- 排序建议：
+  - Top 1：下一批优先补 PAPER LIMIT -> cancel / UC-D1
+    - 理由：本地可控、无需外部凭证、改动面最小，同时直接补齐 Paper 与真实 venue 双通道 的最后一块冻结阻塞
+  - Top 2：随后补 Binance LIMIT -> cancel / UC-D10
+    - 理由：这是剩余真实 venue 验收缺口，完成后 GateD 的 Paper + OKX + Binance 最小验收结构才完整
+  - Top 3：深层兼容债务与指标完善顺延 GateE
+    - 理由：这些项偏治理与扩边，不该继续阻塞 GateD 冻结判断；在主闭环已收口的情况下，继续把它们当阻塞项只会稀释主线
+
+
+### 31. 2026-03-15：PAPER LIMIT -> cancel / UC-D1 最小验收闭环批
+
+- 本批目标：
+  - 跑通 `UC-D1 / Paper LIMIT -> cancel` 的最小验收链路
+  - 明确 Paper 样本的 `place / query / cancel / trade / recovery` 结果与落表路径
+  - 在拿到真实证据后，把 GateD 剩余冻结阻塞从 `Paper + Binance + PR-8` 进一步收敛为 `Binance + PR-8`
+- 真实样本：
+  - `trace_id=trc-paper-ucd1-20260315-1024`
+  - `client_order_id=paper-ucd1-20260315-1024`
+  - `order_id=ord-32cd0786-cf03-4f8e-9a83-559ef116f345`
+  - 请求参数：`venue=PAPER / symbol=BTC-USDT / side=BUY / orderType=LIMIT / price=10 / quantity=0.001`
+- 验收结果：
+  - `placeOrder=200`，返回 `status=ACCEPTED`
+  - 首次 `queryOrder=200`，返回 `status=ACCEPTED`
+  - 首次 `queryTrade=404`
+  - `cancelOrder=200`，返回 `status=CANCELLED`
+  - 二次 `queryOrder=200`，返回 `status=CANCELLED`
+  - 二次 `queryTrade=404`
+  - `recoveryRunOnce=200(processed_events=0, processed_ledger=0, invalid_transitions=0)`
+  - recovery 后再次查询订单仍为 `CANCELLED`
+- 数据库与事件证据：
+  - `orders(order_id=ord-32cd0786-cf03-4f8e-9a83-559ef116f345, venue=PAPER, external_order_id=paper-ord-32cd0786-cf03-4f8e-9a83-559ef116f345, status=CANCELLED, reason=paper_ucd1_cancel)`
+  - `trades=0`、`ledger_entries=0`、`positions=0`、`account_snapshots=0`
+  - `event_store` 仅有 `PlaceOrderCommand / OrderCreated / RiskPassed / OrderAck / CancelOrderCommand / OrderStatusChangedPayload / CancelAck`，没有 `TradeExecuted / LedgerPosted`
+  - `audit_logs` 出现两次 `MATCHING / LIMIT_NOT_REACHED`，说明样本在 Paper 固定撮合价 `100` 下未成交，随后由 cancel 正常收敛
+- 结论：
+  - `UC-D1 / Paper LIMIT -> cancel` 已从部分完成推进到完成
+  - 当前未观察到重复成交、重复记账、状态回退
+  - `GateDAcceptanceController.runReconcile(...)` 当前仅支持 `OKX / BINANCE`，因此 Paper 本批未单独执行 reconcile；但 recovery 已验证对该未成交取消样本无异常副作用
+  - GateD 当前剩余冻结阻塞收敛为：`UC-D10 / Binance LIMIT -> cancel` 与 `PR-8(mvn test + Flyway init/upgrade + freeze docs)`
