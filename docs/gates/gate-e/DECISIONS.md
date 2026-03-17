@@ -25,27 +25,43 @@
 
 ---
 
-## E-003：不提前复制 GateD 全套文档到 GateE
+## E-003：GateE 文档从“骨架”升级到“可开工版”
 
-- 日期：2026-03-15
+- 日期：2026-03-16
 - 状态：已决定
-- 决策：GateE 只建立最小可开工文档骨架，不提前复制 `CONTRACTS / DB_SCHEMA / STATE_MACHINE / TEST_CASES` 等强依赖实现细节的文档。
+- 决策：GateE 不再停留在最小骨架文档；基于当前项目文件，补齐 `CONTRACTS / DB_SCHEMA / STATE_MACHINE / TEST_CASES / SOURCES / EVOLUTION_RULES`，作为正式开工基线。
 
 ---
 
-## E-004：current 与 gate-e 的角色分工
+## E-004：`strategyId` 与 `strategyRunId` 必须分义
 
-- 日期：2026-03-15
+- 日期：2026-03-16
 - 状态：已决定
 - 决策：
-  - `docs/current/*` 负责当前阶段入口与摘要
-  - `docs/gates/gate-e/*` 负责 GateE 阶段卷宗
-  - `docs/gates/gate-d/*` 仅作冻结证据
+  - `strategyId` 表示策略定义身份
+  - `strategyRunId` 表示策略运行实例身份
+- 说明：当前代码存在兼容期混用，GateE 实现批次必须收口，不允许继续模糊。
 
 ---
 
-## E-005：schema / metadata 收口必须排在 GateE 前两批
+## E-005：`strategy_runs` 继续作为 GateE 最小运行事实表
 
-- 日期：2026-03-15
+- 日期：2026-03-16
 - 状态：已决定
-- 决策：schema / metadata 收口必须排在 GateE 前两批，不得过度后置，以免后续策略接入与编排设计继续建立在历史噪音之上。
+- 决策：GateE 第一阶段继续复用现有 `strategy_runs`，先冻结运行语义；是否新增 `strategy_definitions / strategy_schedules` 等表，等 GateE-1 契约落定后再发 migration。
+
+---
+
+## E-006：`GateBDemoStrategyRunner` 只保留历史参考角色
+
+- 日期：2026-03-16
+- 状态：已决定
+- 决策：`GateBDemoStrategyRunner` 只作为历史验证入口参考，不作为 GateE 正式调度编排主链。
+
+---
+
+## E-007：GateE scheduler 只负责编排，不接管执行域业务
+
+- 日期：2026-03-16
+- 状态：已决定
+- 决策：GateE 中 `nq-scheduler` 只负责触发、窗口、去重、串行化与运行状态推进；订单状态、账本、持仓仍由 GateD 冻结能力负责。

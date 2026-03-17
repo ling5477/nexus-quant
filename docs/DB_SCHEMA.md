@@ -2,7 +2,7 @@
 
 > Archive Notice
 > - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
-> - 当前阶段请优先阅读 `docs/current/*`、`docs/gates/gate-d/DB_SCHEMA.md` 与相关 GateD 文档。
+> - 当前阶段请优先阅读 `docs/current/*`、`docs/gates/gate-e/DB_SCHEMA.md` 与相关 GateE 文档。
 > - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/DB_SCHEMA.md`。
 
 > Gate A：不要求实现完整 DDL，但要求**表清单、关键字段、索引策略与一致性口径**冻结，便于后续 Flyway 落地。

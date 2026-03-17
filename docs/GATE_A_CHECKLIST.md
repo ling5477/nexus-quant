@@ -2,7 +2,7 @@
 
 > Archive Notice
 > - 本文件为 Gate A 根级历史留档，不是当前阶段的 Source of Truth。
-> - 当前阶段请优先阅读 `docs/current/GATE_CHECKLIST.md` 与 `docs/gates/gate-d/GATE_D_CHECKLIST.md`。
+> - 当前阶段请优先阅读 `docs/current/GATE_CHECKLIST.md` 与 `docs/gates/gate-e/GATE_E_CHECKLIST.md`。
 > - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/GATE_A_CHECKLIST.md`。
 
 > 项目：nexus-quant  

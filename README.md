@@ -13,15 +13,20 @@ NexusQuant 是面向数字资产交易场景的量化系统工程骨架，核心
 
 当前阶段：**GateE（v1.4：策略接入与调度编排）**。
 
-GateD 已冻结。GateE 不是 GateD 尾巴治理阶段，主目标仍然是：
+GateD 已冻结。GateE 现在进入**文档基线完善阶段**，当前先完成两件事：
+- 把 GateE 的边界、契约、状态机、验收口径写实
+- 在写实基础上，明确 GateE-0 / GateE-1 / GateE-2 的开工顺序
+
+当前阶段不是把 GateD 再翻炒一遍。GateE 的主目标仍然是：
 - 策略接入
 - 策略注册与运行状态管理
 - 调度编排主链
 
-当前先执行 **GateE-0 前置治理**，只为 GateE 主体开路，不改写 GateE 主定义：
-- Binance background reconcile 噪音治理
-- schema / metadata 收口
-- 返回模型一致性收尾
+当前优先顺序：
+1. GateE 文档完善批
+2. GateE-0 前置治理
+3. GateE-1 策略接入
+4. GateE-2 调度编排
 
 ---
 
@@ -38,9 +43,15 @@ GateD 已冻结。GateE 不是 GateD 尾巴治理阶段，主目标仍然是：
 - `docs/gates/gate-e/PR_SPLIT_PLAN.md`
 - `docs/gates/gate-e/WORK.md`
 - `docs/gates/gate-e/DECISIONS.md`
-- `docs/gates/gate-e/GATE_E_CANDIDATES.md`
 - `docs/gates/gate-e/ARCHITECTURE.md`
 - `docs/gates/gate-e/MODULES.md`
+- `docs/gates/gate-e/CONTRACTS.md`
+- `docs/gates/gate-e/DB_SCHEMA.md`
+- `docs/gates/gate-e/STATE_MACHINE.md`
+- `docs/gates/gate-e/TEST_CASES.md`
+- `docs/gates/gate-e/SOURCES.md`
+- `docs/gates/gate-e/EVOLUTION_RULES.md`
+- `docs/gates/gate-e/GATE_E_CANDIDATES.md`
 - `docs/gates/gate-e/adr/README.md`
 
 ### GateD 冻结卷宗（只读证据）
@@ -66,16 +77,18 @@ GateD 已冻结。GateE 不是 GateD 尾巴治理阶段，主目标仍然是：
 - `nq-adapter-binance / nq-adapter-api / nq-core / nq-api`：返回模型一致性收尾
 - `nq-infra / nq-ledger / nq-api`：schema / metadata 收口
 
-### GateE 主体（后续）
-- `nq-core`：策略接入契约与策略运行状态
-- `nq-scheduler`：调度编排主链
-- `nq-app / nq-api`：策略接入与编排入口的最小支撑
+### GateE 主体
+- `nq-core`：策略接入契约、策略运行状态、与执行链路边界
+- `nq-scheduler`：调度编排主链、运行窗口、触发与串行化约束
+- `nq-app / nq-api`：策略注册、启动、暂停、查询的最小入口
+- `nq-infra`：GateE 真实需要的最小 schema 迁移
 
 以下目录与能力**不属于当前 Gate 实现范围**：
 - `frontend/`
 - `research/`
 - 生产大基建（Kafka / Debezium / K8s / Grafana 等）
 - 合约 / 杠杆 / 期货 / 期权执行域
+- 回测 / 因子 / 研究平台
 
 ---
 
@@ -89,9 +102,11 @@ GateD 已冻结。GateE 不是 GateD 尾巴治理阶段，主目标仍然是：
 
 ## 5. 当前建议顺序
 
-1. GateE 文档启动批
+1. GateE 文档完善批
 2. GateE-0.1 Binance background reconcile 噪音治理
 3. GateE-0.2 schema / metadata 收口
 4. GateE-0.3 返回模型一致性收尾
-5. GateE-1 策略接入契约与注册
-6. GateE-2 调度编排主链
+5. GateE-1.1 策略接入契约与注册
+6. GateE-1.2 策略运行状态与最小读写面
+7. GateE-2.1 调度编排主链
+8. GateE-2.2 运行窗口、去重与验收样本

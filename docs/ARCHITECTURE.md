@@ -1,30 +1,28 @@
-# Architecture（GateD 对齐版）
+# Architecture（GateE 导航摘要）
 
 > Top-Level Navigation Notice
-> - 本文件是根级导航摘要，用于帮助快速理解 GateD 架构全貌，不是当前阶段的 Source of Truth。
-> - 当前阶段的权威入口仍是 `docs/current/*` 与 `docs/gates/gate-d/ARCHITECTURE.md`。
+> - 本文件是根级导航摘要，用于帮助快速理解 GateE 架构全貌，不是当前阶段的 Source of Truth。
+> - 当前阶段的权威入口是 `docs/current/*` 与 `docs/gates/gate-e/*`。
 > - 若本文件与当前 Gate 文档不一致，以后者为准。
-> - 当执行链路、模块边界、验收状态发生明显变化时，应同步检查本摘要是否需要更新。
-> - 本文件只保留高层概览，不承载细粒度冻结条件、详细契约、详细测试状态。
 
-当前主线架构已经从 GateC 的“交易所接入”推进到 GateD 的“统一执行闭环”。
+当前主线架构已经从 GateD 的“统一执行闭环”推进到 GateE 的“策略接入与调度编排”。
 
-## GateD 核心链路
+## GateE 核心链路
 
-策略意图 / 手工命令
--> 统一执行入口（nq-core）
+策略定义 / 启停命令 / 调度触发
+-> 策略注册与运行管理（GateE）
+-> 运行窗口判定 / 去重 / 串行化（nq-scheduler）
+-> 下单意图组装（nq-core / nq-contracts）
 -> pre-trade 风控（nq-risk）
 -> adapter 路由（nq-adapter-api）
 -> venue 执行（okx / binance / paper）
--> 回执 / 成交归一事件
--> 状态机推进（nq-core）
--> trade / ledger / position / account 投影（nq-ledger）
--> reconcile / recovery / degrade（nq-scheduler）
+-> 订单 / 成交 / 账本 / 持仓 / 账户闭环（GateD 既有能力）
+-> 策略运行结果回传与状态收口（GateE）
 -> audit / event_store / metrics（nq-observability）
 
-## GateD 关键原则
-- WS 只做加速，不做唯一事实来源
-- REST reconcile 是长期兜底，不是一次性补丁
-- 风控前置拦截必须先于真实执行
-- 状态推进统一归口，禁止多点推进
-- 投影可重建，事实链不可丢
+## GateE 关键原则
+- GateE 复用 GateD 执行闭环，不重写执行域
+- 策略状态机与订单状态机分层
+- scheduler 只做编排，不做 venue 业务分支
+- `strategyId` 与 `strategyRunId` 必须分义，不再混用
+- schema 只按真实需求演化，不制造空 migration

@@ -2,7 +2,7 @@
 
 > Archive Notice
 > - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
-> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-d/WORK.md`。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-e/WORK.md`。
 > - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/WORK.md`。
 
 > 最后更新：2026-02-13  

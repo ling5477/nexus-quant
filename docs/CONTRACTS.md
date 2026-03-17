@@ -2,7 +2,7 @@
 
 > Archive Notice
 > - 本文件是早期 Gate A 历史留档，不是当前阶段的 Source of Truth。
-> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-d/CONTRACTS.md`。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-e/CONTRACTS.md`。
 > - 若需查看 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/CONTRACTS.md`。
 
 > 项目：nexus-quant  

@@ -2,7 +2,7 @@
 
 > Archive Notice
 > - 本文件为根级历史留档，不是当前阶段的 Source of Truth。
-> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-d/EVOLUTION_RULES.md`。
+> - 当前阶段请优先阅读 `docs/current/*` 与 `docs/gates/gate-e/*`。
 > - 若需 Gate A 冻结快照，请优先参考 `docs/gates/gate-a/EVOLUTION_RULES.md`。
 
 > 目标：保证事件的长期可读、可回放、可升级。  

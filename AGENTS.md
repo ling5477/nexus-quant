@@ -59,6 +59,12 @@
 - `docs/gates/gate-e/GATE_E_CANDIDATES.md`
 - `docs/gates/gate-e/ARCHITECTURE.md`
 - `docs/gates/gate-e/MODULES.md`
+- `docs/gates/gate-e/CONTRACTS.md`
+- `docs/gates/gate-e/DB_SCHEMA.md`
+- `docs/gates/gate-e/STATE_MACHINE.md`
+- `docs/gates/gate-e/TEST_CASES.md`
+- `docs/gates/gate-e/SOURCES.md`
+- `docs/gates/gate-e/EVOLUTION_RULES.md`
 - `docs/gates/gate-e/adr/README.md`
 
 ### 2.3 GateD 冻结卷宗与历史 Gate 快照（只读参考）
@@ -193,7 +199,7 @@ rg -n "GateE|GateE-0|策略接入|调度编排" AGENTS.md README.md docs/current
 2. `README.md`
 3. `docs/current/README.md`
 4. `docs/current/GATE_CHECKLIST.md`
-5. 目标改动相关的 GateE 文档
+5. 先读目标改动对应的 GateE 文档（至少包含 CONTRACTS / DB_SCHEMA / STATE_MACHINE / TEST_CASES 中相关项）
 6. 再读目标代码文件
 
 ### 第二步：确认边界
