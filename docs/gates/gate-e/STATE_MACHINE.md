@@ -171,6 +171,9 @@ GateE 冻结的最小状态：
 
 `StrategyDefinition.ACTIVE -> TriggerRequest.RECEIVED -> ACCEPTED -> StrategyRun.CREATED -> READY -> DISPATCHING -> RUNNING -> terminal`
 
+GateE-1.2 当前实现的最小子集为：
+
+
 ### 7.2 定时触发
 
 `ScheduleJob.SCHEDULED -> TriggerRequest.RECEIVED -> dedup/window guard -> ACCEPTED|DEDUPED|REJECTED -> StrategyRun`

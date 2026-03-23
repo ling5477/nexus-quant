@@ -245,3 +245,24 @@
   - adapter 内部可保留交易所私有 fill DTO
   - 对 scheduler/reconcile 暴露统一 `AdapterTradeReport`
 - 原因：避免下游继续按交易所私货写双套解释逻辑。
+
+---
+
+## E-026：GateE-1.1 将“策略注册”固定为定义级管理，不提前进入 trigger
+
+- 日期：2026-03-23
+- 状态：已决定
+- 决策：
+  - GateE-1.1 只提供 create / list / detail / enable / disable
+  - 启停粒度固定为策略定义级
+  - 不提前实现手动 trigger、strategyRun、schedule job
+
+---
+
+## E-027：GateE-1.1 继续不引入 `strategyInstanceId`
+
+- 日期：2026-03-23
+- 状态：已决定
+- 决策：当前“注册项”的唯一识别口径继续以 `strategy_id / strategy_code` 为核心，不扩展到实例层。
+
+---

@@ -3,7 +3,7 @@
 
 当前阶段：**GateE（v1.4：策略接入与调度编排）**
 
-当前状态：**GateE-0.1 / GateE-0.2 / GateE-0.3 已完成，下一步进入 GateE-1.1**
+当前状态：**GateE-0.1 / GateE-0.2 / GateE-0.3 / GateE-1.1 已完成，下一步进入 GateE-1.2**
 
 ---
 
@@ -30,7 +30,8 @@
 - GateE-0.1 已完成 Binance background reconcile 噪音治理
 - GateE-0.2 已完成 schema / metadata / contract 收口
 - 当前已落表 `strategy_definitions` 与 `strategy_schedules`
-- 下一步进入 GateE-1.1
+- GateE-1.1 已完成策略定义 / 注册 / 启停最小模型
+- 下一步进入 GateE-1.2
 
 ---
 

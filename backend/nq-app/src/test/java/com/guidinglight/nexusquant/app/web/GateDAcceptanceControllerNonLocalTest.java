@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.app.web;
 import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
 import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
+import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
@@ -32,6 +33,8 @@ class GateDAcceptanceControllerNonLocalTest {
     private BinanceRecoveryService binanceRecoveryService;
     @MockitoBean
     private RecoveryService recoveryService;
+    @MockitoBean
+    private StrategyDefinitionService strategyDefinitionService;
     @Test
     void shouldReturnNotFoundWhenProfileIsNotLocal() throws Exception {
         mockMvc.perform(post("/__gated/recovery/runOnce"))

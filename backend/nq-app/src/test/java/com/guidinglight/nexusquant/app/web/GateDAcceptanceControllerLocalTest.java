@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.CancelOrderResult;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
+import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
@@ -57,6 +58,8 @@ class GateDAcceptanceControllerLocalTest {
     private BinanceRecoveryService binanceRecoveryService;
     @MockitoBean
     private RecoveryService recoveryService;
+    @MockitoBean
+    private StrategyDefinitionService strategyDefinitionService;
     @Test
     void shouldTriggerPlaceOrderThroughService() throws Exception {
         when(orderCommandService.placeOrder(any())).thenReturn(new PlaceOrderResult("ord-1", OrderStatus.ACCEPTED, false));

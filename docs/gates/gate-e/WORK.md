@@ -243,3 +243,37 @@
 - 本批后续待办：
   - GateE-1.1 策略定义 / 注册 / 启停最小模型
   - `PlaceOrderCommand.strategyId` 兼容债务仍待后续迁移
+
+---
+
+## 9. 2026-03-23：GateE-1.1 策略定义 / 注册 / 启停最小模型
+
+- 本批归属：`GateE-1.1`
+- 本批目标：
+  - 基于现有 `strategy_definitions` 表实现最小定义管理能力
+  - 提供 create / list / detail / enable / disable
+  - 不进入手动 trigger 和 strategyRun 主链
+
+- 本批实际落点：
+  - `nq-core`：新增 `StrategyDefinition`、`StrategyDefinitionStatus`、`StrategyDefinitionRepository`、`JdbcStrategyDefinitionRepository`、`StrategyDefinitionService`
+  - `nq-app`：新增 `GateEStrategyDefinitionController` 及请求/响应 DTO
+
+- 本批能力结果：
+  - 创建策略定义
+  - 查询策略定义列表
+  - 查询策略定义详情
+  - 启用策略定义
+  - 停用策略定义
+
+- 本批验证：
+  - `StrategyDefinitionServiceTest`
+  - `JdbcStrategyDefinitionRepositoryTest`
+  - 命令：`mvn --% -q -f backend/pom.xml -pl nq-core,nq-app -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest=StrategyDefinitionServiceTest,JdbcStrategyDefinitionRepositoryTest,OrderCommandServiceTest test`
+
+- 本批明确不做：
+  - 手动 trigger
+  - strategyRun 主链
+  - schedule job
+  - GateE-2.x
+
+---

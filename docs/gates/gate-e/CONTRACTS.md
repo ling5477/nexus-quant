@@ -155,6 +155,42 @@
 
 ---
 
+## 4.3 GateE-1.1 最小管理能力
+
+本阶段“策略注册”固定解释为：
+
+- 创建一条 `StrategyDefinition`
+- 可查询列表
+- 可查询详情
+- 可启用
+- 可停用
+
+不是：
+
+- 调度注册
+- 运行实例注册
+- trigger 注册
+
+当前内部管理接口最小集合为：
+
+- `POST /__gated/strategies`
+- `GET /__gated/strategies`
+- `GET /__gated/strategies/{strategyId}`
+- `POST /__gated/strategies/{strategyId}/enable`
+- `POST /__gated/strategies/{strategyId}/disable`
+
+当前最小服务对象：
+
+- `StrategyDefinition`
+- `StrategyDefinitionStatus`
+- `StrategyDefinitionRepository`
+- `StrategyDefinitionService`
+
+---
+
+
+---
+
 ## 5. 收口后的现有表 contract
 
 ### 5.1 `strategy_runs`
@@ -234,6 +270,12 @@
   - 先不大改主逻辑
   - 在文档与 schema 层写死迁移方向
   - 后续 GateE-1 做字段迁移或兼容桥接
+
+### 6.4 GateE-1.1 不引入 `strategyInstanceId`
+
+- 当前策略管理能力只管理定义级对象
+- 启停粒度固定为策略定义级
+- 运行级对象和手动 trigger 顺延到 GateE-1.2
 
 ---
 
