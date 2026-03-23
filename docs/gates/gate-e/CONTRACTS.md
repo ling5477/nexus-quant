@@ -188,6 +188,48 @@
 
 ---
 
+## 4.4 GateE-1.2 手动 trigger 最小主链
+
+本阶段新增最小对象：
+
+- `StrategyManualTriggerRequest`
+- `StrategyManualTriggerResult`
+- `StrategyRun`
+- `StrategyRunStatus`
+- `StrategyRunRepository`
+- `StrategyManualTriggerService`
+
+当前最小 trigger 入口：
+
+- `POST /__gated/strategies/{strategyId}/trigger`
+
+当前最小请求字段：
+
+- `requestId`
+- `symbol`
+- `side`
+- `orderType`
+- `quantity`
+- `price`
+
+当前最小响应字段：
+
+- `strategyId`
+- `strategyRunId`
+- `requestId`
+- `orderId`
+- `orderStatus`
+- `strategyRunStatus`
+- `idempotentHit`
+
+主链固定为：
+
+- 手动 trigger 请求
+- 生成 `strategyRunId`
+- 写入 `strategy_runs`
+- 映射到现有 `PlaceOrderRequest`
+- 进入 `PlaceOrderCommand -> AdapterOrderRequest -> OrderCommandService`
+- 订单落库绑定 `orders.strategy_run_id`
 
 ---
 

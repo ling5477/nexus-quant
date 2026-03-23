@@ -173,6 +173,15 @@ GateE 冻结的最小状态：
 
 GateE-1.2 当前实现的最小子集为：
 
+- `CREATED`
+- `DISPATCHING`
+- `RUNNING`
+- `FAILED`
+
+说明：
+
+- 本批只实现手动 trigger 的最小状态推进
+- 还没有进入 schedule / dedup / window / terminal result 汇总
 
 ### 7.2 定时触发
 

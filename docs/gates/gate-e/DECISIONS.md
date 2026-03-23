@@ -266,3 +266,32 @@
 - 决策：当前“注册项”的唯一识别口径继续以 `strategy_id / strategy_code` 为核心，不扩展到实例层。
 
 ---
+
+## E-028：GateE-1.2 手动 trigger 只做 definition -> run -> order 最小血缘
+
+- 日期：2026-03-23
+- 状态：已决定
+- 决策：
+  - 以已启用的 `strategy_definitions` 作为 trigger 起点
+  - 每次手动 trigger 生成一个新的 `strategy_run_id`
+  - 通过现有 `PlaceOrderRequest -> OrderCommandService` 进入执行链
+  - `orders.strategy_run_id` 必须绑定本次运行
+
+---
+
+## E-029：GateE-1.2 不做 schedule / window / dedup / serialization
+
+- 日期：2026-03-23
+- 状态：已决定
+- 决策：GateE-1.2 只做手动 trigger，不提前做 GateE-2 的调度编排能力。
+
+---
+
+## E-030：`PlaceOrderCommand.strategyId` 在 GateE-1.2 继续按运行级兼容桥接
+
+- 日期：2026-03-23
+- 状态：已决定
+- 决策：
+  - 现阶段仍不重写 contracts 主结构
+  - 继续由 `ExecutionCommandMapper` 把 `strategyRunId` 传入该兼容位
+  - 不允许新增把 `strategyId` 当运行 ID 的新调用点

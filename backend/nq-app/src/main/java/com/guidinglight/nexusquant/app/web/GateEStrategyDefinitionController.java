@@ -3,6 +3,8 @@ package com.guidinglight.nexusquant.app.web;
 import com.guidinglight.nexusquant.core.model.StrategyDefinition;
 import com.guidinglight.nexusquant.core.service.StrategyDefinitionCreateRequest;
 import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
+import com.guidinglight.nexusquant.core.service.StrategyManualTriggerRequest;
+import com.guidinglight.nexusquant.core.service.StrategyManualTriggerService;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,11 +36,19 @@ public class GateEStrategyDefinitionController {
     private static final String FALLBACK_TRACE_HEADER = "X-Trace-Id";
 
     private final StrategyDefinitionService strategyDefinitionService;
+    private final StrategyManualTriggerService strategyManualTriggerService;
 
-    public GateEStrategyDefinitionController(StrategyDefinitionService strategyDefinitionService) {
+    public GateEStrategyDefinitionController(
+            StrategyDefinitionService strategyDefinitionService,
+            StrategyManualTriggerService strategyManualTriggerService
+    ) {
         this.strategyDefinitionService = Objects.requireNonNull(
                 strategyDefinitionService,
                 "strategyDefinitionService must not be null"
+        );
+        this.strategyManualTriggerService = Objects.requireNonNull(
+                strategyManualTriggerService,
+                "strategyManualTriggerService must not be null"
         );
     }
 
@@ -107,6 +117,28 @@ public class GateEStrategyDefinitionController {
         String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
         return withTrace(traceId, () -> GateEStrategyDefinitionResponse.from(
                 strategyDefinitionService.disable(strategyId)
+        ));
+    }
+
+    @PostMapping("/{strategyId}/trigger")
+    public GateEStrategyManualTriggerResponse trigger(
+            @PathVariable String strategyId,
+            @RequestBody GateEStrategyManualTriggerRequest request,
+            @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
+            @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
+    ) {
+        String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
+        return withTrace(traceId, () -> GateEStrategyManualTriggerResponse.from(
+                strategyManualTriggerService.trigger(new StrategyManualTriggerRequest(
+                        strategyId,
+                        request.requestId(),
+                        request.symbol(),
+                        request.side(),
+                        request.orderType(),
+                        request.quantity(),
+                        request.price(),
+                        traceId
+                ))
         ));
     }
 

@@ -277,3 +277,35 @@
   - GateE-2.x
 
 ---
+
+## 10. 2026-03-23：GateE-1.2 手动 trigger / strategyRun 主链
+
+- 本批归属：`GateE-1.2`
+- 本批目标：
+  - 基于已启用的策略定义发起一次手动 trigger
+  - 生成 `strategyRunId`
+  - 写入并更新 `strategy_runs`
+  - 打通到现有下单主链
+
+- 本批实际落点：
+  - `nq-core`：新增 `StrategyRun`、`StrategyRunStatus`、`StrategyRunRepository`、`JdbcStrategyRunRepository`、`StrategyExecutionGateway`、`OrderCommandStrategyExecutionGateway`、`StrategyManualTriggerService`
+  - `nq-app`：在 `GateEStrategyDefinitionController` 新增 `/trigger` 入口，并补请求/响应 DTO
+
+- 本批能力结果：
+  - 只针对已启用策略定义支持手动 trigger
+  - 每次 trigger 生成新的 `strategyRunId`
+  - `strategy_runs` 会在 trigger 开始时创建记录
+  - `orders.strategy_run_id` 通过现有下单链正确绑定
+  - 下单成功时 run 进入 `RUNNING`
+  - 下单失败时 run 进入 `FAILED` 并写错误摘要
+
+- 本批验证：
+  - `StrategyManualTriggerServiceTest`
+  - `mvn --% -q -f backend/pom.xml -pl nq-core,nq-app -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest=StrategyDefinitionServiceTest,JdbcStrategyDefinitionRepositoryTest,StrategyManualTriggerServiceTest,OrderCommandServiceTest test`
+  - `mvn --% -q -f backend/pom.xml test`
+
+- 本批明确不做：
+  - schedule job
+  - 窗口控制
+  - dedup / serialization
+  - GateE-2.x

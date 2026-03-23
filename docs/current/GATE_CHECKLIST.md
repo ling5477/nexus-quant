@@ -31,7 +31,7 @@
 - [x] GateE-0.2 schema / metadata / contract 收口
 - [x] GateE-0.3 adapter 返回模型一致性
 - [x] GateE-1.1 策略定义与注册模型
-- [ ] GateE-1.2 策略运行主链与手动 trigger
+- [x] GateE-1.2 策略运行主链与手动 trigger
 - [ ] GateE-2.1 调度任务与计划配置
 - [ ] GateE-2.2 窗口 / 去重 / 串行化
 - [ ] GateE-2.3 运行结果回传与查询面
