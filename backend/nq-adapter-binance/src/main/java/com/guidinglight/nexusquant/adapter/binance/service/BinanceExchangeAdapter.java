@@ -10,6 +10,8 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
@@ -45,6 +47,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
     private final BinanceFiltersCache filtersCache;
     private final BinanceOrderTrimmer orderTrimmer;
     private final Clock clock;
+    private final String tradeEnv;
 
     /**
      * 默认构造器供应用装配使用。
@@ -68,6 +71,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         this.filtersCache = Objects.requireNonNull(dependencies.filtersCache(), "filtersCache must not be null");
         this.orderTrimmer = Objects.requireNonNull(dependencies.orderTrimmer(), "orderTrimmer must not be null");
         this.clock = Objects.requireNonNull(dependencies.clock(), "clock must not be null");
+        this.tradeEnv = dependencies.tradeEnv() == null || dependencies.tradeEnv().isBlank() ? "SIM" : dependencies.tradeEnv();
     }
 
     @Override
@@ -87,7 +91,15 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         validatePlaceRequest(request);
         BinanceTrimResult trimResult = orderTrimmer.trimAndValidate(request, filtersCache);
         if (!trimResult.accepted()) {
-            return rejectedAck(trimResult.rejectCode(), trimResult.rejectReason(), request.traceId());
+            return rejectedAck(
+                    new AdapterError(
+                            trimResult.rejectCode(),
+                            trimResult.rejectReason(),
+                            AdapterResultCategory.FATAL_FAILURE,
+                            false
+                    ),
+                    request.traceId()
+            );
         }
 
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
@@ -108,7 +120,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
             if ("HTTP_TIMEOUT".equals(ex.errorCode())) {
                 return queryConfirmAfterTimeout(request, trimResult.exchangeSymbol());
             }
-            return rejectedAck(resolveErrorCode(ex), resolveErrorMessage(ex), request.traceId());
+            return rejectedAck(BinanceErrorClassifier.toAdapterError(ex), request.traceId());
         }
     }
 
@@ -142,9 +154,11 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                     false,
                     venue(),
                     request.externalOrderId(),
-                    new AdapterError(resolveErrorCode(ex), resolveErrorMessage(ex), false),
+                    BinanceErrorClassifier.toAdapterError(ex).category(),
+                    BinanceErrorClassifier.toAdapterError(ex),
                     Instant.now(clock),
-                    request.traceId()
+                    request.traceId(),
+                    tradeEnv
             );
         }
     }
@@ -163,8 +177,12 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         } else {
             params.put("origClientOrderId", query.clientOrderId());
         }
-        JsonNode payload = authenticatedHttpClient.get(ORDER_ENDPOINT, params, true, query.traceId());
-        return toOrderSnapshot(payload, filters.internalSymbol(), query.accountId(), query.traceId());
+        try {
+            JsonNode payload = authenticatedHttpClient.get(ORDER_ENDPOINT, params, true, query.traceId());
+            return toOrderSnapshot(payload, filters.internalSymbol(), query.accountId(), query.traceId());
+        } catch (BinanceApiException ex) {
+            return toErrorSnapshot(query.accountId(), filters.internalSymbol(), query.clientOrderId(), query.externalOrderId(), ex, query.traceId());
+        }
     }
 
     /**
@@ -197,27 +215,55 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      * `TradingAdapter` 接口没有成交拉取方法，但 GateC-2 允许 Binance reconcile 直接依赖 adapter-binance。
      * 该方法仍然把 Binance 字段映射为稳定的 `BinanceTradeFill`，把交易所差异隔离在 adapter 模块内。
      */
-    public List<BinanceTradeFill> listTrades(String symbol, String externalOrderId, String traceId) {
+    public List<AdapterTradeReport> listTradeReports(String symbol, String exchangeOrderId, String traceId) {
         BinanceSymbolFilters filters = filtersCache.getRequired(symbol, traceId);
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         params.put("symbol", filters.exchangeSymbol());
-        if (externalOrderId != null && !externalOrderId.isBlank()) {
-            params.put("orderId", externalOrderId);
+        if (exchangeOrderId != null && !exchangeOrderId.isBlank()) {
+            params.put("orderId", exchangeOrderId);
         }
         JsonNode payload = authenticatedHttpClient.get(MY_TRADES_ENDPOINT, params, true, traceId);
-        List<BinanceTradeFill> fills = new ArrayList<>();
+        List<AdapterTradeReport> fills = new ArrayList<>();
         for (JsonNode item : payload) {
-            fills.add(new BinanceTradeFill(
-                    item.path("id").asText(),
-                    item.path("orderId").asText(),
-                    filters.exchangeSymbol(),
+            fills.add(new AdapterTradeReport(
+                    venue(),
+                    null,
                     filters.internalSymbol(),
+                    blankToNull(item.path("clientOrderId").asText()),
+                    blankToNull(item.path("orderId").asText()),
+                    item.path("id").asText(),
                     item.path("isBuyer").asBoolean(false) ? "BUY" : "SELL",
                     decimal(item, "price"),
                     decimal(item, "qty"),
                     decimalOrZero(item, "commission"),
                     blankToNull(item.path("commissionAsset").asText()),
-                    Instant.ofEpochMilli(item.path("time").asLong())
+                    Instant.ofEpochMilli(item.path("time").asLong()),
+                    item.toString(),
+                    traceId,
+                    tradeEnv
+            ));
+        }
+        return fills;
+    }
+
+    /**
+     * 历史兼容方法：保留 BinanceTradeFill 口径给未迁移调用方。
+     */
+    public List<BinanceTradeFill> listTrades(String symbol, String exchangeOrderId, String traceId) {
+        BinanceSymbolFilters filters = filtersCache.getRequired(symbol, traceId);
+        List<BinanceTradeFill> fills = new ArrayList<>();
+        for (AdapterTradeReport report : listTradeReports(symbol, exchangeOrderId, traceId)) {
+            fills.add(new BinanceTradeFill(
+                    report.exchangeTradeId(),
+                    report.exchangeOrderId(),
+                    filters.exchangeSymbol(),
+                    report.symbol(),
+                    report.side(),
+                    report.price(),
+                    report.quantity(),
+                    report.fee(),
+                    report.feeAsset(),
+                    report.tradeTs()
             ));
         }
         return fills;
@@ -240,19 +286,21 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                     null,
                     request.traceId()
             ));
-            if (snapshot.externalOrderId() != null && !snapshot.externalOrderId().isBlank()) {
+            if (snapshot.found() && snapshot.exchangeOrderId() != null && !snapshot.exchangeOrderId().isBlank()) {
                 return new AdapterOrderAck(
                         true,
                         venue(),
                         request.accountId(),
                         request.symbol(),
                         request.clientOrderId(),
-                        snapshot.externalOrderId(),
+                        snapshot.exchangeOrderId(),
                         snapshot.externalStatus(),
+                        AdapterResultCategory.ACCEPTED,
                         null,
                         Instant.now(clock),
                         snapshot.rawPayload(),
-                        request.traceId()
+                        request.traceId(),
+                        tradeEnv
                 );
             }
         } catch (RuntimeException ignored) {
@@ -262,24 +310,26 @@ public class BinanceExchangeAdapter implements TradingAdapter {
             for (AdapterOrderSnapshot snapshot : listOpenOrders(new AdapterOpenOrdersQuery(
                     request.accountId(),
                     venue(),
-                    request.symbol(),
-                    request.traceId()
+                request.symbol(),
+                request.traceId()
             ))) {
                 if (request.clientOrderId().equals(snapshot.clientOrderId())
-                        && snapshot.externalOrderId() != null
-                        && !snapshot.externalOrderId().isBlank()) {
+                        && snapshot.exchangeOrderId() != null
+                        && !snapshot.exchangeOrderId().isBlank()) {
                     return new AdapterOrderAck(
                             true,
                             venue(),
                             request.accountId(),
                             request.symbol(),
                             request.clientOrderId(),
-                            snapshot.externalOrderId(),
+                            snapshot.exchangeOrderId(),
                             snapshot.externalStatus(),
+                            AdapterResultCategory.ACCEPTED,
                             null,
                             Instant.now(clock),
                             snapshot.rawPayload(),
-                            request.traceId()
+                            request.traceId(),
+                            tradeEnv
                     );
                 }
             }
@@ -287,8 +337,12 @@ public class BinanceExchangeAdapter implements TradingAdapter {
             // Why: query-confirm 只做事实确认；若 open orders 同样失败，则返回未确认拒绝，交由恢复/重试策略处理。
         }
         return rejectedAck(
-                "BINANCE_PLACE_TIMEOUT_UNCONFIRMED",
-                "Binance placeOrder timed out and query-confirm found no external order, symbol=" + exchangeSymbol,
+                new AdapterError(
+                        "BINANCE_PLACE_TIMEOUT_UNCONFIRMED",
+                        "Binance placeOrder timed out and query-confirm found no external order, symbol=" + exchangeSymbol,
+                        AdapterResultCategory.DEFERRED,
+                        true
+                ),
                 request.traceId()
         );
     }
@@ -303,8 +357,8 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                     request.externalOrderId(),
                     request.traceId()
             ));
-            if ("CANCELLED".equals(snapshot.externalStatus())) {
-                return new AdapterCancelAck(true, venue(), snapshot.externalOrderId(), null, Instant.now(clock), request.traceId());
+            if (snapshot.found() && "CANCELLED".equals(snapshot.externalStatus())) {
+                return new AdapterCancelAck(true, venue(), snapshot.exchangeOrderId(), AdapterResultCategory.ACCEPTED, null, Instant.now(clock), request.traceId(), tradeEnv);
             }
         } catch (RuntimeException ignored) {
             // Why: cancel timeout 后优先查单；若失败则按未确认拒绝返回，等待恢复流程继续推进。
@@ -313,20 +367,31 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 false,
                 venue(),
                 request.externalOrderId(),
+                AdapterResultCategory.DEFERRED,
                 new AdapterError(
                         "BINANCE_CANCEL_TIMEOUT_UNCONFIRMED",
                         "Binance cancelOrder timed out and query-confirm did not reach CANCELLED, symbol=" + exchangeSymbol,
-                        false
+                        AdapterResultCategory.DEFERRED,
+                        true
                 ),
                 Instant.now(clock),
-                request.traceId()
+                request.traceId(),
+                tradeEnv
         );
     }
 
     private AdapterOrderAck parsePlaceAck(JsonNode payload, String traceId) {
         String externalOrderId = payload.path("orderId").asText(null);
         if (externalOrderId == null || externalOrderId.isBlank()) {
-            return rejectedAck("BINANCE_PLACE_RESPONSE_INVALID", "Binance place response missing orderId", traceId);
+            return rejectedAck(
+                    new AdapterError(
+                            "BINANCE_PLACE_RESPONSE_INVALID",
+                            "Binance place response missing orderId",
+                            AdapterResultCategory.FATAL_FAILURE,
+                            false
+                    ),
+                    traceId
+            );
         }
         return new AdapterOrderAck(
                 true,
@@ -336,16 +401,18 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 blankToNull(payload.path("clientOrderId").asText()),
                 externalOrderId,
                 mapOrderStatus(payload.path("status").asText("NEW")),
+                AdapterResultCategory.ACCEPTED,
                 null,
                 Instant.now(clock),
                 payload.toString(),
-                traceId
+                traceId,
+                tradeEnv
         );
     }
 
     private AdapterCancelAck parseCancelAck(JsonNode payload, String traceId) {
         String externalOrderId = payload.path("orderId").asText(null);
-        return new AdapterCancelAck(true, venue(), externalOrderId, null, Instant.now(clock), traceId);
+        return new AdapterCancelAck(true, venue(), externalOrderId, AdapterResultCategory.ACCEPTED, null, Instant.now(clock), traceId, tradeEnv);
     }
 
     private AdapterOrderSnapshot toOrderSnapshot(JsonNode payload, String internalSymbol, Long accountId, String traceId) {
@@ -356,13 +423,16 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 blankToNull(payload.path("clientOrderId").asText()),
                 blankToNull(payload.path("orderId").asText()),
                 mapOrderStatus(payload.path("status").asText()),
+                AdapterResultCategory.SUCCESS,
+                null,
                 blankToNullDecimal(payload, "price"),
                 blankToNullDecimal(payload, "origQty"),
                 blankToNullDecimal(payload, "executedQty"),
                 calculateAveragePrice(payload),
                 Instant.now(clock),
                 payload.toString(),
-                traceId
+                traceId,
+                tradeEnv
         );
     }
 
@@ -415,7 +485,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         }
     }
 
-    private AdapterOrderAck rejectedAck(String code, String message, String traceId) {
+    private AdapterOrderAck rejectedAck(AdapterError error, String traceId) {
         return new AdapterOrderAck(
                 false,
                 venue(),
@@ -424,23 +494,13 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 null,
                 null,
                 "REJECTED",
-                new AdapterError(code, message, false),
+                error.category(),
+                error,
                 Instant.now(clock),
                 null,
-                traceId
+                traceId,
+                tradeEnv
         );
-    }
-
-    private String resolveErrorCode(BinanceApiException exception) {
-        return exception.errorCode() == null || exception.errorCode().isBlank()
-                ? "BINANCE_ADAPTER_ERROR"
-                : exception.errorCode();
-    }
-
-    private String resolveErrorMessage(BinanceApiException exception) {
-        return exception.errorMessage() == null || exception.errorMessage().isBlank()
-                ? exception.getMessage()
-                : exception.errorMessage();
     }
 
     private String toInternalSymbol(String exchangeSymbol, String traceId) {
@@ -521,7 +581,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 clock,
                 runtimeConfig.exchangeInfoRefreshInterval()
         );
-        return new Dependencies(authenticatedClient, filtersCache, new BinanceOrderTrimmer(), clock);
+        return new Dependencies(authenticatedClient, filtersCache, new BinanceOrderTrimmer(), clock, resolveTradeEnv(runtimeConfig.envName()));
     }
 
     /**
@@ -531,7 +591,49 @@ public class BinanceExchangeAdapter implements TradingAdapter {
             BinanceHttpClient authenticatedHttpClient,
             BinanceFiltersCache filtersCache,
             BinanceOrderTrimmer orderTrimmer,
-            Clock clock
+            Clock clock,
+            String tradeEnv
     ) {
+        public Dependencies(
+                BinanceHttpClient authenticatedHttpClient,
+                BinanceFiltersCache filtersCache,
+                BinanceOrderTrimmer orderTrimmer,
+                Clock clock
+        ) {
+            this(authenticatedHttpClient, filtersCache, orderTrimmer, clock, null);
+        }
+    }
+
+    private AdapterOrderSnapshot toErrorSnapshot(
+            Long accountId,
+            String internalSymbol,
+            String clientOrderId,
+            String exchangeOrderId,
+            BinanceApiException exception,
+            String traceId
+    ) {
+        AdapterError error = BinanceErrorClassifier.toAdapterError(exception);
+        return new AdapterOrderSnapshot(
+                accountId,
+                venue(),
+                internalSymbol,
+                clientOrderId,
+                exchangeOrderId,
+                null,
+                error.category(),
+                error,
+                null,
+                null,
+                null,
+                null,
+                Instant.now(clock),
+                exception.getMessage(),
+                traceId,
+                tradeEnv
+        );
+    }
+
+    private static String resolveTradeEnv(String envName) {
+        return "real".equalsIgnoreCase(envName) ? "LIVE" : "SIM";
     }
 }

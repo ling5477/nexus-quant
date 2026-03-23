@@ -24,6 +24,10 @@ public interface TradingAdapter {
      */
     String venue();
 
+    default String exchangeCode() {
+        return venue();
+    }
+
     /**
      * 统一下单入口。
      */

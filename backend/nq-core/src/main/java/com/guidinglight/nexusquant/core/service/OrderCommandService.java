@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterError;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.contracts.command.CancelOrderCommand;
 import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
@@ -302,8 +303,8 @@ public class OrderCommandService {
         Instant ackTime = adapterAck.ackTs() == null ? Instant.now(clock) : adapterAck.ackTs();
 
         if (adapterAck.accepted()) {
-            orderRepository.updateExternalOrderId(sentOrder.orderId(), adapterAck.externalOrderId(), ackTime);
-            OrderRecord acceptedSnapshot = sentOrder.withExternalOrderId(adapterAck.externalOrderId());
+            orderRepository.updateExternalOrderId(sentOrder.orderId(), adapterAck.exchangeOrderId(), ackTime);
+            OrderRecord acceptedSnapshot = sentOrder.withExternalOrderId(adapterAck.exchangeOrderId());
             OrderRecord acceptedOrder = transitionOrder(
                     acceptedSnapshot,
                     OrderStatus.ACCEPTED,
@@ -318,7 +319,7 @@ public class OrderCommandService {
                             acceptedOrder.accountId(),
                             acceptedOrder.venue(),
                             acceptedOrder.clientOrderId(),
-                            adapterAck.externalOrderId(),
+                            adapterAck.exchangeOrderId(),
                             acceptedOrder.status().name(),
                             ackTime
                     )
@@ -329,8 +330,9 @@ public class OrderCommandService {
                     acceptedOrder.orderId(),
                     request.traceId(),
                     detail(
-                            "venue", acceptedOrder.venue(),
-                            "external_order_id", adapterAck.externalOrderId(),
+                            "exchange_code", acceptedOrder.venue(),
+                            "exchange_order_id", adapterAck.exchangeOrderId(),
+                            "result_category", adapterAck.resultCategory().name(),
                             "status", acceptedOrder.status().name()
                     )
             );
@@ -338,6 +340,22 @@ public class OrderCommandService {
         }
 
         AdapterError error = adapterAck.error();
+        if (shouldDeferOrderRejection(error)) {
+            auditLogRepository.append(
+                    "ORDER",
+                    "ORDER_ACK_DEFERRED",
+                    sentOrder.orderId(),
+                    request.traceId(),
+                    detail(
+                            "exchange_code", sentOrder.venue(),
+                            "request_id", request.requestId(),
+                            "result_category", adapterAck.resultCategory().name(),
+                            "error_code", error == null ? null : error.code(),
+                            "error_message", error == null ? null : error.message()
+                    )
+            );
+            return new PlaceOrderResult(sentOrder.orderId(), sentOrder.status(), false);
+        }
         String rejectCode = error == null || error.code() == null || error.code().isBlank()
                 ? "ORDER_REJECTED_BY_ADAPTER"
                 : error.code();
@@ -368,7 +386,12 @@ public class OrderCommandService {
                 "ORDER_REJECTED",
                 rejectedOrder.orderId(),
                 request.traceId(),
-                detail("venue", rejectedOrder.venue(), "reject_code", rejectCode, "reject_reason", rejectReason)
+                detail(
+                        "exchange_code", rejectedOrder.venue(),
+                        "result_category", adapterAck.resultCategory().name(),
+                        "reject_code", rejectCode,
+                        "reject_reason", rejectReason
+                )
         );
         return new PlaceOrderResult(rejectedOrder.orderId(), rejectedOrder.status(), false);
     }
@@ -460,6 +483,21 @@ public class OrderCommandService {
         }
 
         AdapterError error = cancelAck.error();
+        if (shouldDeferOrderRejection(error)) {
+            auditLogRepository.append(
+                    "ORDER",
+                    "ORDER_CANCEL_ACK_DEFERRED",
+                    cancelRequestedOrder.orderId(),
+                    request.traceId(),
+                    detail(
+                            "exchange_code", cancelRequestedOrder.venue(),
+                            "result_category", cancelAck.resultCategory().name(),
+                            "error_code", error == null ? null : error.code(),
+                            "error_message", error == null ? null : error.message()
+                    )
+            );
+            return new CancelOrderResult(cancelRequestedOrder.orderId(), cancelRequestedOrder.status(), false);
+        }
         String rejectCode = error == null || error.code() == null || error.code().isBlank()
                 ? "CANCEL_REJECTED_BY_ADAPTER"
                 : error.code();
@@ -494,9 +532,10 @@ public class OrderCommandService {
                 detail(
                         "order_id", cancelRejectedOrder.orderId(),
                         "status", cancelRejectedOrder.status().name(),
+                        "result_category", cancelAck.resultCategory().name(),
                         "reject_code", rejectCode,
                         "reject_reason", rejectReason,
-                        "venue", cancelRejectedOrder.venue()
+                        "exchange_code", cancelRejectedOrder.venue()
                 )
         );
         return new CancelOrderResult(cancelRejectedOrder.orderId(), cancelRejectedOrder.status(), false);
@@ -654,10 +693,12 @@ public class OrderCommandService {
                     order.clientOrderId(),
                     null,
                     "REJECTED",
-                    new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), false),
+                    AdapterResultCategory.REMOTE_UNAVAILABLE,
+                    new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), AdapterResultCategory.REMOTE_UNAVAILABLE, true),
                     Instant.now(clock),
                     null,
-                    request.traceId()
+                    request.traceId(),
+                    null
             );
         }
     }
@@ -687,9 +728,11 @@ public class OrderCommandService {
                     false,
                     order.venue(),
                     order.externalOrderId(),
-                    new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), false),
+                    AdapterResultCategory.REMOTE_UNAVAILABLE,
+                    new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), AdapterResultCategory.REMOTE_UNAVAILABLE, true),
                     Instant.now(clock),
-                    request.traceId()
+                    request.traceId(),
+                    null
             );
         }
     }
@@ -835,5 +878,15 @@ public class OrderCommandService {
             detail.put(String.valueOf(fields[index]), fields[index + 1]);
         }
         return detail;
+    }
+
+    private boolean shouldDeferOrderRejection(AdapterError error) {
+        if (error == null || error.category() == null) {
+            return false;
+        }
+        return switch (error.category()) {
+            case DEFERRED, RETRYABLE_FAILURE, THROTTLED, REMOTE_UNAVAILABLE -> true;
+            default -> false;
+        };
     }
 }

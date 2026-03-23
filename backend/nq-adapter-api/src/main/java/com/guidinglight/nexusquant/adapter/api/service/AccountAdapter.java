@@ -16,6 +16,10 @@ public interface AccountAdapter {
      */
     String venue();
 
+    default String exchangeCode() {
+        return venue();
+    }
+
     /**
      * 拉取余额。
      */

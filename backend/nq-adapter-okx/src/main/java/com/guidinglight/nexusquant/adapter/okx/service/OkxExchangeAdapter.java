@@ -10,6 +10,8 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxFillRecord;
@@ -62,6 +64,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
     private final OkxHttpClient authenticatedHttpClient;
     private final OkxInstrumentsCache instrumentsCache;
     private final Clock clock;
+    private final String tradeEnv;
 
     /**
      * 默认构造器供应用装配使用。
@@ -85,6 +88,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
         );
         this.instrumentsCache = Objects.requireNonNull(dependencies.instrumentsCache(), "instrumentsCache must not be null");
         this.clock = Objects.requireNonNull(dependencies.clock(), "clock must not be null");
+        this.tradeEnv = dependencies.tradeEnv() == null || dependencies.tradeEnv().isBlank() ? "SIM" : dependencies.tradeEnv();
     }
 
     @Override
@@ -131,7 +135,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
             if ("HTTP_TIMEOUT".equals(ex.errorCode())) {
                 return queryConfirmAfterTimeout(request);
             }
-            return rejectedAck(new AdapterError(resolveErrorCode(ex), ex.getMessage(), false), request.traceId());
+            return rejectedAck(OkxErrorClassifier.toAdapterError(ex), request.traceId());
         }
     }
 
@@ -184,9 +188,11 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     false,
                     venue(),
                     request.externalOrderId(),
-                    new AdapterError(resolveErrorCode(ex), ex.getMessage(), false),
+                    OkxErrorClassifier.toAdapterError(ex).category(),
+                    OkxErrorClassifier.toAdapterError(ex),
                     Instant.now(clock),
-                    request.traceId()
+                    request.traceId(),
+                    tradeEnv
             );
         }
     }
@@ -198,9 +204,13 @@ public class OkxExchangeAdapter implements TradingAdapter {
     public AdapterOrderSnapshot getOrder(AdapterOrderQuery query) {
         validateOrderQuery(query);
         String endpoint = ORDER_DETAIL_ENDPOINT + "?instId=" + query.symbol() + buildOrderIdentityQuery(query);
-        JsonNode payload = authenticatedHttpClient.get(endpoint, query.traceId());
-        JsonNode item = requireSingleDataItem(payload, endpoint, query.traceId());
-        return toOrderSnapshot(item, query.accountId(), query.traceId());
+        try {
+            JsonNode payload = authenticatedHttpClient.get(endpoint, query.traceId());
+            JsonNode item = requireSingleDataItem(payload, endpoint, query.traceId());
+            return toOrderSnapshot(item, query.accountId(), query.traceId());
+        } catch (OkxApiException ex) {
+            return toErrorSnapshot(query.accountId(), query.symbol(), query.clientOrderId(), query.externalOrderId(), ex, query.traceId());
+        }
     }
 
     /**
@@ -252,6 +262,30 @@ public class OkxExchangeAdapter implements TradingAdapter {
             ));
         }
         return fills;
+    }
+
+    public List<AdapterTradeReport> listTradeReports(String symbol, String exchangeOrderId, String traceId) {
+        List<AdapterTradeReport> reports = new ArrayList<>();
+        for (OkxFillRecord fill : listFills(symbol, exchangeOrderId, traceId)) {
+            reports.add(new AdapterTradeReport(
+                    venue(),
+                    null,
+                    fill.symbol(),
+                    null,
+                    fill.externalOrderId(),
+                    fill.exchangeTradeId(),
+                    fill.side(),
+                    fill.price(),
+                    fill.qty(),
+                    fill.fee(),
+                    fill.feeCurrency(),
+                    fill.ts(),
+                    null,
+                    traceId,
+                    tradeEnv
+            ));
+        }
+        return reports;
     }
 
     /**
@@ -389,10 +423,12 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     request.clientOrderId(),
                     snapshot.externalOrderId(),
                     snapshot.externalStatus(),
+                    AdapterResultCategory.ACCEPTED,
                     null,
                     Instant.now(clock),
                     snapshot.rawPayload(),
-                    request.traceId()
+                    request.traceId(),
+                    tradeEnv
             );
         } catch (RuntimeException ignored) {
             for (AdapterOrderSnapshot snapshot : listOpenOrders(new AdapterOpenOrdersQuery(
@@ -416,10 +452,12 @@ public class OkxExchangeAdapter implements TradingAdapter {
                             request.clientOrderId(),
                             snapshot.externalOrderId(),
                             snapshot.externalStatus(),
+                            AdapterResultCategory.ACCEPTED,
                             null,
                             Instant.now(clock),
                             snapshot.rawPayload(),
-                            request.traceId()
+                            request.traceId(),
+                            tradeEnv
                     );
                 }
             }
@@ -433,7 +471,8 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     new AdapterError(
                             "OKX_PLACE_TIMEOUT_UNCONFIRMED",
                             "OKX placeOrder timed out and query-confirm found no external order, trace_id=" + request.traceId(),
-                            false
+                            AdapterResultCategory.DEFERRED,
+                            true
                     ),
                     request.traceId()
             );
@@ -464,7 +503,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
                         snapshot.externalOrderId(),
                         snapshot.externalStatus()
                 );
-                return new AdapterCancelAck(true, venue(), snapshot.externalOrderId(), null, Instant.now(clock), request.traceId());
+                return new AdapterCancelAck(true, venue(), snapshot.externalOrderId(), AdapterResultCategory.ACCEPTED, null, Instant.now(clock), request.traceId(), tradeEnv);
             }
         } catch (RuntimeException ignored) {
             // Why: timeout 后优先尝试 query-confirm；若查单本身失败，则按拒绝返回，交由恢复流程继续推进。
@@ -485,13 +524,16 @@ public class OkxExchangeAdapter implements TradingAdapter {
                 false,
                 venue(),
                 request.externalOrderId(),
+                AdapterResultCategory.DEFERRED,
                 new AdapterError(
                         "OKX_CANCEL_TIMEOUT_UNCONFIRMED",
                         "OKX cancelOrder timed out and query-confirm did not reach CANCELLED, trace_id=" + request.traceId(),
-                        false
+                        AdapterResultCategory.DEFERRED,
+                        true
                 ),
                 Instant.now(clock),
-                request.traceId()
+                request.traceId(),
+                tradeEnv
         );
     }
 
@@ -500,7 +542,15 @@ public class OkxExchangeAdapter implements TradingAdapter {
         JsonNode item = requireSingleDataItem(payload, TRADE_ORDER_ENDPOINT, traceId);
         String sCode = item.path("sCode").asText("0");
         if (!"0".equals(sCode)) {
-            return rejectedAck(new AdapterError(sCode, item.path("sMsg").asText("OKX order rejected"), false), traceId);
+            return rejectedAck(
+                    new AdapterError(
+                            sCode,
+                            item.path("sMsg").asText("OKX order rejected"),
+                            AdapterResultCategory.FATAL_FAILURE,
+                            false
+                    ),
+                    traceId
+            );
         }
         return new AdapterOrderAck(
                 true,
@@ -510,10 +560,12 @@ public class OkxExchangeAdapter implements TradingAdapter {
                 item.path("clOrdId").asText(null),
                 item.path("ordId").asText(),
                 "ACCEPTED",
+                AdapterResultCategory.ACCEPTED,
                 null,
                 Instant.now(clock),
                 payload.toString(),
-                traceId
+                traceId,
+                tradeEnv
         );
     }
 
@@ -526,18 +578,22 @@ public class OkxExchangeAdapter implements TradingAdapter {
                     false,
                     venue(),
                     item.path("ordId").asText(null),
-                    new AdapterError(sCode, item.path("sMsg").asText("OKX cancel rejected"), false),
+                    AdapterResultCategory.FATAL_FAILURE,
+                    new AdapterError(sCode, item.path("sMsg").asText("OKX cancel rejected"), AdapterResultCategory.FATAL_FAILURE, false),
                     Instant.now(clock),
-                    traceId
+                    traceId,
+                    tradeEnv
             );
         }
         return new AdapterCancelAck(
                 true,
                 venue(),
                 item.path("ordId").asText(null),
+                AdapterResultCategory.ACCEPTED,
                 null,
                 Instant.now(clock),
-                traceId
+                traceId,
+                tradeEnv
         );
     }
 
@@ -549,13 +605,16 @@ public class OkxExchangeAdapter implements TradingAdapter {
                 item.path("clOrdId").asText(null),
                 item.path("ordId").asText(null),
                 mapOrderState(item.path("state").asText()),
+                AdapterResultCategory.SUCCESS,
+                null,
                 decimalOrNull(item, "px"),
                 decimalOrNull(item, "sz"),
                 decimalOrNull(item, "accFillSz"),
                 decimalOrNull(item, "avgPx"),
                 Instant.now(clock),
                 item.toString(),
-                traceId
+                traceId,
+                tradeEnv
         );
     }
 
@@ -652,6 +711,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
             return new AdapterError(
                     "OKX_INSTRUMENT_NOT_LIVE",
                     "instrument state is not live, instId=" + instrument.instId() + ", trace_id=" + traceId,
+                    AdapterResultCategory.FATAL_FAILURE,
                     false
             );
         }
@@ -659,7 +719,21 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     private AdapterOrderAck rejectedAck(AdapterError error, String traceId) {
-        return new AdapterOrderAck(false, venue(), null, null, null, null, "REJECTED", error, Instant.now(clock), null, traceId);
+        return new AdapterOrderAck(
+                false,
+                venue(),
+                null,
+                null,
+                null,
+                null,
+                "REJECTED",
+                error.category(),
+                error,
+                Instant.now(clock),
+                null,
+                traceId,
+                tradeEnv
+        );
     }
 
     private BigDecimal trim(BigDecimal value, BigDecimal step, NumericType numericType) {
@@ -809,7 +883,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
                 clock,
                 runtimeConfig.instrumentRefresh()
         );
-        return new Dependencies(objectMapper, authenticatedHttpClient, instrumentsCache, clock);
+        return new Dependencies(objectMapper, authenticatedHttpClient, instrumentsCache, clock, runtimeConfig.simulatedTrading() ? "SIM" : "LIVE");
     }
 
     /**
@@ -901,7 +975,45 @@ public class OkxExchangeAdapter implements TradingAdapter {
             ObjectMapper objectMapper,
             OkxHttpClient authenticatedHttpClient,
             OkxInstrumentsCache instrumentsCache,
-            Clock clock
+            Clock clock,
+            String tradeEnv
     ) {
+        public Dependencies(
+                ObjectMapper objectMapper,
+                OkxHttpClient authenticatedHttpClient,
+                OkxInstrumentsCache instrumentsCache,
+                Clock clock
+        ) {
+            this(objectMapper, authenticatedHttpClient, instrumentsCache, clock, null);
+        }
+    }
+
+    private AdapterOrderSnapshot toErrorSnapshot(
+            Long accountId,
+            String symbol,
+            String clientOrderId,
+            String exchangeOrderId,
+            OkxApiException exception,
+            String traceId
+    ) {
+        AdapterError error = OkxErrorClassifier.toAdapterError(exception);
+        return new AdapterOrderSnapshot(
+                accountId,
+                venue(),
+                symbol,
+                clientOrderId,
+                exchangeOrderId,
+                null,
+                error.category(),
+                error,
+                null,
+                null,
+                null,
+                null,
+                Instant.now(clock),
+                exception.getMessage(),
+                traceId,
+                tradeEnv
+        );
     }
 }

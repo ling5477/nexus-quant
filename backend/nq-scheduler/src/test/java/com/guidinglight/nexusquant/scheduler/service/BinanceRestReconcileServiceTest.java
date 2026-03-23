@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceTradeFill;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
@@ -115,7 +117,25 @@ class BinanceRestReconcileServiceTest {
                 "RECONCILE_STATUS_ALIGN",
                 "trc-binance-rec-1"
         )).thenReturn(acceptedOrder.withExternalOrderId("90001").withStatus(OrderStatus.FILLED, "RECONCILE_STATUS_ALIGN"));
-        when(binanceExchangeAdapter.listTrades("BTC-USDT", "90001", "trc-binance-rec-1")).thenReturn(List.of(fill));
+        when(binanceExchangeAdapter.listTradeReports("BTC-USDT", "90001", "trc-binance-rec-1")).thenReturn(List.of(
+                new AdapterTradeReport(
+                        "BINANCE",
+                        acceptedOrder.accountId(),
+                        "BTC-USDT",
+                        acceptedOrder.clientOrderId(),
+                        "90001",
+                        fill.exchangeTradeId(),
+                        fill.side(),
+                        fill.price(),
+                        fill.qty(),
+                        fill.fee(),
+                        fill.feeCurrency(),
+                        fill.ts(),
+                        fill.toString(),
+                        acceptedOrder.traceId(),
+                        "SIM"
+                )
+        ));
         when(tradeRepository.findByExchangeAndExchangeTradeId("BINANCE", "trade-binance-1")).thenReturn(Optional.empty());
         when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "OK"));
 
@@ -216,7 +236,25 @@ class BinanceRestReconcileServiceTest {
                 acceptedOrder.traceId()
         ));
         when(orderCommandService.findByOrderId("ord-binance-rec-2")).thenReturn(Optional.of(acceptedOrder));
-        when(binanceExchangeAdapter.listTrades("BTC-USDT", "90002", "trc-binance-rec-2")).thenReturn(List.of(duplicateFill));
+        when(binanceExchangeAdapter.listTradeReports("BTC-USDT", "90002", "trc-binance-rec-2")).thenReturn(List.of(
+                new AdapterTradeReport(
+                        "BINANCE",
+                        acceptedOrder.accountId(),
+                        "BTC-USDT",
+                        acceptedOrder.clientOrderId(),
+                        "90002",
+                        duplicateFill.exchangeTradeId(),
+                        duplicateFill.side(),
+                        duplicateFill.price(),
+                        duplicateFill.qty(),
+                        duplicateFill.fee(),
+                        duplicateFill.feeCurrency(),
+                        duplicateFill.ts(),
+                        duplicateFill.toString(),
+                        acceptedOrder.traceId(),
+                        "SIM"
+                )
+        ));
         when(tradeRepository.findByExchangeAndExchangeTradeId("BINANCE", "trade-binance-dup-1"))
                 .thenReturn(Optional.of(existingTrade));
 
@@ -226,6 +264,85 @@ class BinanceRestReconcileServiceTest {
         verify(tradeRepository, never()).insert(any());
         verify(tradeLedgerGateway, never()).postTrade(any());
         verify(eventStoreAppender, never()).append(eq(TopicNames.TRADE_EVENT_V1), any());
-        verify(auditLogRepository, times(1)).append(eq("RECONCILE"), eq("BINANCE_FILL_DEDUP_HIT"), eq("ord-binance-rec-2"), eq("trc-binance-rec-2"), any());
+        verify(auditLogRepository, never()).append(eq("RECONCILE"), eq("BINANCE_FILL_DEDUP_HIT"), eq("ord-binance-rec-2"), eq("trc-binance-rec-2"), any());
+    }
+
+    /**
+     * 验证 Binance 订单短暂不可见（-2013）时不记失败审计，也不影响后续扫描。
+     */
+    @Test
+    void shouldSuppressFailureAuditWhenRemoteOrderIsTemporarilyMissing() {
+        OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
+        BinanceExchangeAdapter binanceExchangeAdapter = Mockito.mock(BinanceExchangeAdapter.class);
+        TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
+        TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
+        EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
+        AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
+
+        BinanceRestReconcileService service = new BinanceRestReconcileService(
+                orderCommandService,
+                orderLifecycleService,
+                binanceExchangeAdapter,
+                tradeRepository,
+                tradeLedgerGateway,
+                eventStoreAppender,
+                auditLogRepository
+        );
+
+        OrderRecord acceptedOrder = new OrderRecord(
+                "ord-binance-rec-3",
+                3001L,
+                null,
+                "BINANCE",
+                "BTC-USDT",
+                "cid-binance-rec-3",
+                "BUY",
+                "LIMIT",
+                new BigDecimal("30000.12"),
+                new BigDecimal("0.010"),
+                "90003",
+                OrderStatus.ACCEPTED,
+                "TEST",
+                "trc-binance-rec-3"
+        );
+
+        when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(acceptedOrder));
+        when(binanceExchangeAdapter.getOrder(any())).thenReturn(new AdapterOrderSnapshot(
+                acceptedOrder.accountId(),
+                acceptedOrder.venue(),
+                acceptedOrder.symbol(),
+                acceptedOrder.clientOrderId(),
+                acceptedOrder.externalOrderId(),
+                null,
+                AdapterResultCategory.DEFERRED,
+                new com.guidinglight.nexusquant.adapter.api.model.AdapterError(
+                        "-2013",
+                        "Order does not exist.",
+                        AdapterResultCategory.DEFERRED,
+                        true
+                ),
+                null,
+                null,
+                null,
+                null,
+                Instant.now(),
+                "binance_get_order_deferred",
+                acceptedOrder.traceId(),
+                "SIM"
+        ));
+
+        int newTrades = service.reconcileOnce(10);
+
+        assertEquals(0, newTrades);
+        verify(auditLogRepository, never()).append(
+                eq("RECONCILE"),
+                eq("BINANCE_RECONCILE_ORDER_FAILED"),
+                eq("ord-binance-rec-3"),
+                eq("trc-binance-rec-3"),
+                any()
+        );
+        verify(tradeRepository, never()).insert(any());
+        verify(tradeLedgerGateway, never()).postTrade(any());
     }
 }

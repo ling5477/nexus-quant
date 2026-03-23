@@ -40,6 +40,7 @@ public final class BinanceSynchronizedTimestampProvider implements BinanceTimest
     private final long resyncIntervalMs;
     private final AtomicLong serverOffsetMs;
     private final AtomicLong lastSyncEpochMs;
+    private final AtomicLong nextWarnAllowedEpochMs;
 
     public BinanceSynchronizedTimestampProvider(
             HttpClient httpClient,
@@ -70,6 +71,7 @@ public final class BinanceSynchronizedTimestampProvider implements BinanceTimest
         this.resyncIntervalMs = Math.max(0L, resyncIntervalMs);
         this.serverOffsetMs = new AtomicLong(0L);
         this.lastSyncEpochMs = new AtomicLong(Long.MIN_VALUE);
+        this.nextWarnAllowedEpochMs = new AtomicLong(Long.MIN_VALUE);
     }
 
     /**
@@ -104,12 +106,25 @@ public final class BinanceSynchronizedTimestampProvider implements BinanceTimest
                 syncOffset(localNow);
             } catch (Exception ex) {
                 lastSyncEpochMs.set(localNow);
-                log.warn(
-                        "binance_signed_timestamp_sync_failed base_url={} reason={} manual_offset_ms={}",
-                        baseUrl,
-                        ex.getMessage(),
-                        manualOffsetMs
-                );
+                long nextWarnAllowed = nextWarnAllowedEpochMs.get();
+                if (nextWarnAllowed == Long.MIN_VALUE || localNow >= nextWarnAllowed) {
+                    nextWarnAllowedEpochMs.set(localNow + Math.max(1L, resyncIntervalMs));
+                    log.warn(
+                            "binance_signed_timestamp_sync_failed base_url={} reason={} manual_offset_ms={} effective_offset_ms={}",
+                            baseUrl,
+                            ex.getMessage(),
+                            manualOffsetMs,
+                            manualOffsetMs + serverOffsetMs.get()
+                    );
+                } else {
+                    log.debug(
+                            "binance_signed_timestamp_sync_suppressed base_url={} reason={} manual_offset_ms={} effective_offset_ms={}",
+                            baseUrl,
+                            ex.getMessage(),
+                            manualOffsetMs,
+                            manualOffsetMs + serverOffsetMs.get()
+                    );
+                }
             }
         }
     }
@@ -135,7 +150,7 @@ public final class BinanceSynchronizedTimestampProvider implements BinanceTimest
         long resolvedOffsetMs = serverTime - midpointMs;
         serverOffsetMs.set(resolvedOffsetMs);
         lastSyncEpochMs.set(localNow);
-        log.info(
+        log.debug(
                 "binance_signed_timestamp_synced base_url={} manual_offset_ms={} server_offset_ms={} effective_offset_ms={} server_time={}",
                 baseUrl,
                 manualOffsetMs,

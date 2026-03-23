@@ -77,7 +77,9 @@ class BinanceExchangeAdapterTest {
             var ack = adapter.placeOrder(request);
 
             assertTrue(ack.accepted());
+            assertEquals("BINANCE", ack.exchangeCode());
             assertEquals("889900", ack.externalOrderId());
+            assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.ACCEPTED, ack.resultCategory());
             RecordedExchange exchange = exchangeRef.get();
             assertEquals("POST", exchange.method());
             assertEquals("/api/v3/order", exchange.path());
@@ -127,6 +129,7 @@ class BinanceExchangeAdapterTest {
                     "trc-binance-get-1"
             ));
             assertEquals("ACCEPTED", snapshot.externalStatus());
+            assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.SUCCESS, snapshot.resultCategory());
             assertEquals("BTC-USDT", snapshot.symbol());
             assertTrue(getExchange.get().uri().contains("orderId=889900"));
         }
@@ -183,6 +186,7 @@ class BinanceExchangeAdapterTest {
             assertFalse(ack.accepted());
             assertNotNull(ack.error());
             assertEquals("-2010", ack.error().code());
+            assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.FATAL_FAILURE, ack.resultCategory());
             assertTrue(ack.error().message().contains("insufficient balance"));
             assertEquals("POST", exchangeRef.get().method());
         }

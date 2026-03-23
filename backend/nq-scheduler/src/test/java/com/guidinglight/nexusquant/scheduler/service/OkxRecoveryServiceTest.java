@@ -11,8 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxApiException;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxErrorCode;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
@@ -23,6 +22,7 @@ import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -58,13 +58,28 @@ class OkxRecoveryServiceTest {
         when(okxExchangeAdapter.getOrder(any(AdapterOrderQuery.class))).thenAnswer(invocation -> {
             AdapterOrderQuery query = invocation.getArgument(0);
             if ("coid-nf-1".equals(query.clientOrderId())) {
-                throw new OkxApiException(
-                        "order does not exist",
-                        200,
-                        "/api/v5/trade/order",
-                        "51603",
-                        OkxErrorCode.ORDER_NOT_FOUND,
-                        "trc-recovery-1"
+                return new AdapterOrderSnapshot(
+                        query.accountId(),
+                        query.venue(),
+                        query.symbol(),
+                        query.clientOrderId(),
+                        query.externalOrderId(),
+                        null,
+                        AdapterResultCategory.NOT_FOUND,
+                        new com.guidinglight.nexusquant.adapter.api.model.AdapterError(
+                                "51603",
+                                "order does not exist",
+                                AdapterResultCategory.NOT_FOUND,
+                                false
+                        ),
+                        null,
+                        null,
+                        null,
+                        null,
+                        Instant.now(),
+                        "okx_order_not_found",
+                        query.traceId(),
+                        "SIM"
                 );
             }
             return new AdapterOrderSnapshot(
@@ -74,13 +89,16 @@ class OkxRecoveryServiceTest {
                     query.clientOrderId(),
                     query.externalOrderId(),
                     "ACCEPTED",
+                    AdapterResultCategory.SUCCESS,
                     null,
                     null,
                     null,
                     null,
                     null,
+                    Instant.now(),
                     "okx_recovery_snapshot",
-                    query.traceId()
+                    query.traceId(),
+                    "SIM"
             );
         });
         when(orderLifecycleService.requestCancel(

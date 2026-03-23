@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxFillRecord;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
@@ -92,7 +93,7 @@ class OkxRestReconcileServiceTest {
                 Optional.of(cancelRequestedOrder),
                 Optional.of(cancelRequestedOrder.withStatus(OrderStatus.ACCEPTED, "RECONCILE_STATUS_ALIGN"))
         );
-        when(okxExchangeAdapter.listFills("BTC-USDT", "ext-rec-1", "trc-rec-1")).thenReturn(List.of());
+        when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-1", "trc-rec-1")).thenReturn(List.of());
 
         int newTrades = service.reconcileOnce(10);
 
@@ -167,7 +168,25 @@ class OkxRestReconcileServiceTest {
                 acceptedOrder.traceId()
         ));
         when(orderCommandService.findByOrderId("ord-rec-2")).thenReturn(Optional.of(acceptedOrder));
-        when(okxExchangeAdapter.listFills("BTC-USDT", "ext-rec-2", "trc-rec-2")).thenReturn(List.of(fillRecord));
+        when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-2", "trc-rec-2")).thenReturn(List.of(
+                new AdapterTradeReport(
+                        "OKX",
+                        acceptedOrder.accountId(),
+                        fillRecord.symbol(),
+                        acceptedOrder.clientOrderId(),
+                        fillRecord.externalOrderId(),
+                        fillRecord.exchangeTradeId(),
+                        fillRecord.side(),
+                        fillRecord.price(),
+                        fillRecord.qty(),
+                        fillRecord.fee(),
+                        fillRecord.feeCurrency(),
+                        fillRecord.ts(),
+                        fillRecord.toString(),
+                        acceptedOrder.traceId(),
+                        "SIM"
+                )
+        ));
         when(tradeRepository.findByExchangeAndExchangeTradeId("OKX", "fill-rec-2")).thenReturn(Optional.empty());
         when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "OK"));
 
@@ -229,7 +248,25 @@ class OkxRestReconcileServiceTest {
 
         when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(filledOrder));
         when(tradeRepository.findByOrderId("ord-rec-3")).thenReturn(Optional.empty());
-        when(okxExchangeAdapter.listFills("BTC-USDT", "ext-rec-3", "trc-rec-3")).thenReturn(List.of(fillRecord));
+        when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-3", "trc-rec-3")).thenReturn(List.of(
+                new AdapterTradeReport(
+                        "OKX",
+                        filledOrder.accountId(),
+                        fillRecord.symbol(),
+                        filledOrder.clientOrderId(),
+                        fillRecord.externalOrderId(),
+                        fillRecord.exchangeTradeId(),
+                        fillRecord.side(),
+                        fillRecord.price(),
+                        fillRecord.qty(),
+                        fillRecord.fee(),
+                        fillRecord.feeCurrency(),
+                        fillRecord.ts(),
+                        fillRecord.toString(),
+                        filledOrder.traceId(),
+                        "SIM"
+                )
+        ));
         when(tradeRepository.findByExchangeAndExchangeTradeId("OKX", "fill-rec-3")).thenReturn(Optional.empty());
         when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "OK"));
 
@@ -302,7 +339,7 @@ class OkxRestReconcileServiceTest {
 
         assertEquals(0, newTrades);
         verify(okxExchangeAdapter, never()).getOrder(any());
-        verify(okxExchangeAdapter, never()).listFills(any(), any(), any());
+        verify(okxExchangeAdapter, never()).listTradeReports(any(), any(), any());
         verify(tradeRepository, never()).insert(any());
         verify(tradeLedgerGateway, never()).postTrade(any());
         verify(eventStoreAppender, never()).append(eq("trade.event.v1"), any());

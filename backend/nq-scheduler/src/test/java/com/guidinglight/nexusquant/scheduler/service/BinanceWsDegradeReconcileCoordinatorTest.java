@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,14 +61,14 @@ class BinanceWsDegradeReconcileCoordinatorTest {
                 eq("trc-binance-ws-degrade-1"),
                 any()
         );
-        verify(auditLogRepository).append(
+        verify(auditLogRepository, never()).append(
                 eq("WS"),
                 eq("BINANCE_WS_RECONCILE_DEGRADE_SKIPPED_COOLDOWN"),
                 eq("BINANCE_WS"),
                 eq("trc-binance-ws-degrade-2"),
                 any()
         );
-        verify(eventStoreAppender, times(3)).append(eq(TopicNames.AUDIT_EVENT_V1), any());
+        verify(eventStoreAppender, times(2)).append(eq(TopicNames.AUDIT_EVENT_V1), any());
     }
 
     /**
@@ -100,7 +101,7 @@ class BinanceWsDegradeReconcileCoordinatorTest {
         listenerRef.get().onDisconnected("connect_failed", 2, 1000L, "trc-binance-ws-sub-2");
 
         verify(reconcileService, times(1)).reconcileOnce(66);
-        verify(auditLogRepository).append(
+        verify(auditLogRepository, never()).append(
                 eq("WS"),
                 eq("BINANCE_WS_RECONNECT_FAILED_OBSERVED"),
                 eq("BINANCE_WS"),

@@ -1,81 +1,195 @@
 # GateE TEST_CASES
-# GateE 验收用例
+# GateE 测试与验收清单
 
-> 状态约定：`[x] 已完成`、`[~] 部分完成`、`[ ] 未完成`。  
-> 当前状态基线：**截至 2026-03-16，文档基线已完成，业务实现未开始**。
+状态约定：
 
----
+- `[x]` 已完成
+- `[~]` 已有底座但未完成
+- `[ ]` 未开始
 
-## UC-E0-1：Binance background reconcile 降噪
-- 当前状态：`[ ] 未完成`
-- 前置：Binance WS / reconcile 能触发当前噪音场景
-- 步骤：制造 credential 缺失、timestamp 漂移、cooldown 内重复触发场景
-- 预期：
-  - 不再连续刷屏式报错
-  - 同一窗口内具备去抖
-  - 审计与日志能区分真正失败与降噪跳过
-
-## UC-E0-2：schema / metadata 收口
-- 当前状态：`[ ] 未完成`
-- 步骤：检查 `strategyId / strategyRunId / source / requestId / idempotencyKey` 在 contracts/core/api/schema 中的命名与语义
-- 预期：
-  - 文档与代码口径一致
-  - 不再出现同名不同义 / 同义不同名
-
-## UC-E0-3：返回模型一致性收尾
-- 当前状态：`[ ] 未完成`
-- 步骤：对比 Paper / OKX / Binance 在 place / cancel / reconcile / recovery 下的响应
-- 预期：
-  - 上层不再需要 venue 分支补丁
-  - 未成交、成交、失败、未知态口径一致
+当前基线日期：`2026-03-23`
 
 ---
 
-## UC-E1-1：注册策略
-- 当前状态：`[ ] 未完成`
-- 步骤：创建一条策略定义并查询回读
+## 1. GateE-DOC-2 文档收口验收
+
+- 当前状态：`[x]`
+- 验证点：
+  - `docs/current/*` 与 `docs/gates/gate-e/*` 口径一致
+  - `strategyId / strategyRunId / requestId / dedupKey` 已明确
+  - PR 顺序、状态机、schema、测试清单可直接指导实施
+
+---
+
+## 2. GateE-0 前置治理
+
+### UC-E0-1 Binance background reconcile 降噪
+
+- 当前状态：`[x]`
+- 目标：
+  - credential 缺失不再刷屏
+  - `-1021` 时间漂移有统一抑制
+  - cooldown 内重复触发被降噪
+- 最小验证：
+  - 构造重复成交命中，确认不再写 `BINANCE_FILL_DEDUP_HIT`
+  - 构造 `connect_failed` 阈值内观察与 cooldown 跳过，确认不再写审计事件
+  - 构造 `-2013 order not found`，确认按 deferred 处理
+- 预期：
+  - 日志可区分真实失败与跳过
+  - 同窗口内不重复打爆日志
+
+### UC-E0-2 schema / metadata / contract 收口
+
+- 当前状态：`[x]`
+- 最小验证：
+  - 对比 `PlaceOrderRequest.strategyRunId`
+  - 对比 `AdapterOrderRequest.strategyRunId`
+  - 对比 `PlaceOrderCommand.strategyId`
+  - 对比 `orders.strategy_run_id`
+- 预期：
+  - 不再出现同名不同义或同义不同名
+  - 兼容债务被明确记录并落到具体 PR
+
+### UC-E0-3 返回模型一致性收尾
+
+- 当前状态：`[x]`
+- 最小验证：
+  - `BinanceExchangeAdapterTest` 覆盖 success / fatal_failure
+  - `BinanceErrorClassifierTest` 覆盖 deferred / retryable_failure / auth_failure
+  - `OkxErrorClassifierTest` 覆盖 not_found / throttled / auth_failure
+  - `BinanceRestReconcileServiceTest` 与 `OkxRestReconcileServiceTest` 覆盖统一 trade report 消费
+  - `OkxRecoveryServiceTest` 覆盖 not_found 统一解释
+- 预期：
+  - adapter 返回层统一使用 canonical 字段
+  - reconcile / recovery / query-confirm 不再各自发明 not_found / deferred 解释
+
+---
+
+## 3. GateE-1 策略接入
+
+### UC-E1-1 注册策略定义
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 创建一条 `StrategyDefinition`
+  - 查询该定义
 - 预期：
   - `strategyId` 唯一
   - 状态、参数、调度配置可回读
   - 审计链可追踪
 
-## UC-E1-2：人工触发策略运行
-- 当前状态：`[ ] 未完成`
-- 步骤：对一个已激活策略发起手动触发
-- 预期：
-  - 创建 `strategyRunId`
-  - 运行状态从 `CREATED/READY` 推进到 `RUNNING`
-  - 产生的订单带有 `strategy_run_id`
+### UC-E1-2 启停策略
 
-## UC-E1-3：执行血缘回传
-- 当前状态：`[ ] 未完成`
-- 步骤：触发运行后完成一笔订单闭环
+- 当前状态：`[ ]`
+- 步骤：
+  - `DRAFT -> ACTIVE`
+  - `ACTIVE -> PAUSED -> ACTIVE`
+  - `ACTIVE -> DISABLED`
 - 预期：
-  - 能从 `strategyRunId` 反查订单、成交、账本结果
-  - 能从订单反查到 `strategyRunId`
+  - 状态流转符合文档
+  - `DISABLED` 后不能再被调度
+
+### UC-E1-3 手动触发运行
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 对 `ACTIVE` 策略发起 manual trigger
+- 预期：
+  - 生成 `requestId`
+  - 生成 `strategyRunId`
+  - `strategy_runs` 记录状态从 `CREATED/READY` 推进
+
+### UC-E1-4 执行血缘贯穿
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 手动触发后下发一笔订单
+- 预期：
+  - 订单带 `strategy_run_id`
+  - 能由 `strategyRunId` 反查订单
+  - 能由订单回查 `strategyRunId`
+
+### UC-E1-5 结果回传
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 完成一次下单与成交闭环
+- 预期：
+  - `StrategyRunResult` 可见
+  - `SUCCEEDED / PARTIAL_SUCCESS / FAILED` 能准确区分
 
 ---
 
-## UC-E2-1：调度窗口控制
-- 当前状态：`[ ] 未完成`
-- 步骤：设置窗口内 / 窗口外触发条件
-- 预期：
-  - 窗口内正常运行
-  - 窗口外明确 `SKIPPED`
-  - 不产生脏运行记录
+## 4. GateE-2 调度编排
 
-## UC-E2-2：去重与串行化
-- 当前状态：`[ ] 未完成`
-- 步骤：对同一策略在短窗口内重复触发两次
+### UC-E2-1 定时触发
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 注册一条启用的调度作业
+  - 等待 scheduler 触发
 - 预期：
-  - 第二次被去重或排队
-  - 不产生重复订单
+  - 触发请求进入 `requestId`
+  - 运行被接受后生成 `strategyRunId`
+
+### UC-E2-2 运行窗口控制
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 分别构造窗口内与窗口外触发
+- 预期：
+  - 窗口内正常创建运行
+  - 窗口外被 `REJECTED` 或 `SKIPPED`
+  - 实现方式前后一致
+
+### UC-E2-3 去重
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 对同一 `strategyId`、同一窗口、同一 `dedupKey` 连续触发两次
+- 预期：
+  - 第二次落到 `DEDUPED`
+  - 不产生第二个有效运行
+
+### UC-E2-4 串行化与并发保护
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 在已有 `RUNNING` 运行时再次触发相同策略
+- 预期：
+  - 第二次被阻塞、排队或拒绝
   - 不出现并发双跑
 
-## UC-E2-3：运行失败与恢复
-- 当前状态：`[ ] 未完成`
-- 步骤：模拟运行中断或部分下单失败
+### UC-E2-5 受控 retry / recovery
+
+- 当前状态：`[ ]`
+- 步骤：
+  - 模拟运行在 `DISPATCHING` 或 `RUNNING` 阶段中断
+  - 触发 recovery
 - 预期：
-  - `strategyRunId` 状态可落到 `FAILED / PARTIAL_SUCCESS`
-  - 运行结果摘要可见
-  - 不破坏 GateD 执行闭环恢复规则
+  - 先做请求确认
+  - 不发生重复下单
+  - 运行结果最终可收敛到终态
+
+---
+
+## 5. 测试层级建议
+
+### 单元测试
+
+- 状态机推进
+- dedupKey 生成
+- 窗口判断
+- 运行串行化
+
+### 集成测试
+
+- 注册 / 启停 / 手动 trigger
+- `strategyRunId` 到订单血缘
+- 调度任务到执行链打通
+
+### 回归测试
+
+- `PlaceOrderCommand.strategyId` 兼容债务收口
+- Binance reconcile 降噪不破坏现有恢复链
+- 返回模型统一不破坏 GateD 闭环

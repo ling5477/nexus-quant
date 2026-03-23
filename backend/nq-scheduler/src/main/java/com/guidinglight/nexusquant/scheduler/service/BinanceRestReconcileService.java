@@ -1,8 +1,9 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.binance.model.BinanceTradeFill;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
@@ -30,6 +31,8 @@ import java.util.UUID;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * BinanceRestReconcileService 负责 GateC-2 的 Binance REST-only 同步器。
@@ -42,6 +45,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class BinanceRestReconcileService {
 
+    private static final Logger log = LoggerFactory.getLogger(BinanceRestReconcileService.class);
     private static final String SOURCE = "nq-scheduler.binance-rest-reconcile";
     private static final String EXCHANGE = "BINANCE";
     private static final int DEFAULT_LIMIT = 100;
@@ -124,6 +128,16 @@ public class BinanceRestReconcileService {
             try {
                 newTrades += reconcileSingleOrder(order);
             } catch (Exception ex) {
+                log.warn(
+                        "binance_reconcile_order_failed trace_id={} account_id={} order_id={} client_order_id={} "
+                                + "external_order_id={} reason={}",
+                        order.traceId(),
+                        order.accountId(),
+                        order.orderId(),
+                        order.clientOrderId(),
+                        order.externalOrderId(),
+                        ex.getMessage()
+                );
                 appendAuditEvidence(
                         order,
                         "BINANCE_RECONCILE_ORDER_FAILED",
@@ -144,13 +158,34 @@ public class BinanceRestReconcileService {
                 currentOrder.externalOrderId(),
                 currentOrder.traceId()
         ));
+        if (snapshot.deferred()) {
+            log.debug(
+                    "binance_reconcile_remote_order_deferred trace_id={} account_id={} order_id={} client_order_id={} "
+                            + "exchange_order_id={} category={} error_code={}",
+                    currentOrder.traceId(),
+                    currentOrder.accountId(),
+                    currentOrder.orderId(),
+                    currentOrder.clientOrderId(),
+                    currentOrder.externalOrderId(),
+                    snapshot.resultCategory(),
+                    snapshot.error() == null ? null : snapshot.error().code()
+            );
+            return 0;
+        }
+        if (snapshot.resultCategory() != AdapterResultCategory.SUCCESS) {
+            throw new IllegalStateException(
+                    "binance getOrder failed, category=" + snapshot.resultCategory()
+                            + ", code=" + (snapshot.error() == null ? "UNKNOWN" : snapshot.error().code())
+                            + ", reason=" + (snapshot.error() == null ? "unknown" : snapshot.error().message())
+            );
+        }
         OrderRecord updatedOrder = currentOrder;
         if (updatedOrder.externalOrderId() == null
-                && snapshot.externalOrderId() != null
-                && !snapshot.externalOrderId().isBlank()) {
+                && snapshot.exchangeOrderId() != null
+                && !snapshot.exchangeOrderId().isBlank()) {
             updatedOrder = orderCommandService.linkExternalOrderId(
                     updatedOrder.orderId(),
-                    snapshot.externalOrderId(),
+                    snapshot.exchangeOrderId(),
                     updatedOrder.traceId()
             );
         }
@@ -204,30 +239,24 @@ public class BinanceRestReconcileService {
             return 0;
         }
         int newTrades = 0;
-        for (BinanceTradeFill fill : binanceExchangeAdapter.listTrades(order.symbol(), order.externalOrderId(), order.traceId())) {
-            if (tradeRepository.findByExchangeAndExchangeTradeId(EXCHANGE, fill.exchangeTradeId()).isPresent()) {
-                appendAuditEvidence(
-                        order,
-                        "BINANCE_FILL_DEDUP_HIT",
-                        "SKIP",
-                        Map.of("exchange_trade_id", fill.exchangeTradeId(), "external_order_id", fill.externalOrderId())
-                );
+        for (AdapterTradeReport tradeReport : binanceExchangeAdapter.listTradeReports(order.symbol(), order.externalOrderId(), order.traceId())) {
+            if (tradeRepository.findByExchangeAndExchangeTradeId(EXCHANGE, tradeReport.exchangeTradeId()).isPresent()) {
                 continue;
             }
             PaperTradeRecord trade = new PaperTradeRecord(
                     "trd-" + UUID.randomUUID(),
                     order.orderId(),
                     order.accountId(),
-                    fill.internalSymbol(),
+                    tradeReport.symbol(),
                     EXCHANGE,
-                    fill.externalOrderId(),
-                    fill.exchangeTradeId(),
-                    fill.price(),
-                    fill.qty(),
-                    fill.fee(),
-                    fill.feeCurrency(),
+                    tradeReport.exchangeOrderId(),
+                    tradeReport.exchangeTradeId(),
+                    tradeReport.price(),
+                    tradeReport.quantity(),
+                    tradeReport.fee(),
+                    tradeReport.feeAsset(),
                     order.traceId(),
-                    fill.ts()
+                    tradeReport.tradeTs()
             );
             try {
                 tradeRepository.insert(trade);
@@ -236,25 +265,36 @@ public class BinanceRestReconcileService {
                         order,
                         "BINANCE_FILL_DEDUP_RACE",
                         "SKIP",
-                        Map.of("exchange_trade_id", fill.exchangeTradeId(), "reason", duplicateKeyException.getMessage())
+                        Map.of("exchange_trade_id", tradeReport.exchangeTradeId(), "reason", duplicateKeyException.getMessage())
                 );
                 continue;
             }
-            publishTradeEvent(order, fill, trade.tradeId());
+            publishTradeEvent(order, tradeReport, trade.tradeId());
             LedgerPostingResult postingResult = tradeLedgerGateway.postTrade(new TradeLedgerRequest(
                     trade.tradeId(),
                     order.orderId(),
                     order.accountId(),
-                    fill.internalSymbol(),
-                    OrderSide.valueOf(fill.side()),
-                    fill.price(),
-                    fill.qty(),
-                    fill.fee(),
-                    fill.feeCurrency(),
+                    tradeReport.symbol(),
+                    OrderSide.valueOf(tradeReport.side()),
+                    tradeReport.price(),
+                    tradeReport.quantity(),
+                    tradeReport.fee(),
+                    tradeReport.feeAsset(),
                     order.traceId(),
-                    fill.ts()
+                    tradeReport.tradeTs()
             ));
             if (!postingResult.posted()) {
+                log.warn(
+                        "binance_reconcile_ledger_post_failed trace_id={} account_id={} order_id={} trade_id={} "
+                                + "client_order_id={} external_order_id={} reason={}",
+                        order.traceId(),
+                        order.accountId(),
+                        order.orderId(),
+                        trade.tradeId(),
+                        order.clientOrderId(),
+                        order.externalOrderId(),
+                        postingResult.reason()
+                );
                 appendAuditEvidence(
                         order,
                         "BINANCE_LEDGER_POST_FAILED",
@@ -267,22 +307,22 @@ public class BinanceRestReconcileService {
         return newTrades;
     }
 
-    private void publishTradeEvent(OrderRecord order, BinanceTradeFill fill, String tradeId) {
+    private void publishTradeEvent(OrderRecord order, AdapterTradeReport tradeReport, String tradeId) {
         TradeExecuted payload = new TradeExecuted(
                 tradeId,
                 order.orderId(),
                 order.clientOrderId(),
                 order.accountId(),
-                fill.internalSymbol(),
+                tradeReport.symbol(),
                 order.venue(),
                 EXCHANGE,
-                fill.externalOrderId(),
-                fill.exchangeTradeId(),
-                fill.price(),
-                fill.qty(),
-                fill.fee(),
-                fill.feeCurrency(),
-                fill.ts()
+                tradeReport.exchangeOrderId(),
+                tradeReport.exchangeTradeId(),
+                tradeReport.price(),
+                tradeReport.quantity(),
+                tradeReport.fee(),
+                tradeReport.feeAsset(),
+                tradeReport.tradeTs()
         );
         EventEnvelope<TradeExecuted> envelope = new EventEnvelope<>(
                 "evt-" + UUID.randomUUID(),

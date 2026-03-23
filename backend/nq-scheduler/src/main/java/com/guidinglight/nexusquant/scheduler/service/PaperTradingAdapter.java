@@ -7,6 +7,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 
 import java.time.Instant;
@@ -36,10 +37,12 @@ public class PaperTradingAdapter implements TradingAdapter {
                 request.clientOrderId(),
                 "paper-" + request.orderId(),
                 "ACCEPTED",
+                AdapterResultCategory.ACCEPTED,
                 null,
                 Instant.now(),
                 "paper_place_ack",
-                request.traceId()
+                request.traceId(),
+                "SIM"
         );
     }
 
@@ -49,9 +52,11 @@ public class PaperTradingAdapter implements TradingAdapter {
                 true,
                 venue(),
                 request.externalOrderId(),
+                AdapterResultCategory.ACCEPTED,
                 null,
                 Instant.now(),
-                request.traceId()
+                request.traceId(),
+                "SIM"
         );
     }
 
@@ -64,13 +69,16 @@ public class PaperTradingAdapter implements TradingAdapter {
                 query.clientOrderId(),
                 resolveExternalOrderId(query),
                 "ACCEPTED",
+                AdapterResultCategory.SUCCESS,
+                null,
                 null,
                 null,
                 null,
                 null,
                 Instant.now(),
                 "paper_order_snapshot",
-                query.traceId()
+                query.traceId(),
+                "SIM"
         );
     }
 

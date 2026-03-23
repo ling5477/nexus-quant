@@ -1,27 +1,115 @@
 # GateE STATE_MACHINE
-# GateE 状态机说明
+# GateE 状态机与推进事件
 
-## 1. 目标
-
-GateE 要新增的是**策略定义状态机**和**策略运行状态机**，不是去篡改 GateD 已冻结的订单状态机。
-
-一句话：
-- GateD 管订单怎么活
-- GateE 管策略何时跑、跑成什么样
+GateE 新增的是“策略定义、调度作业、触发请求、策略运行”四层状态机。订单状态机继续以 GateD 为准。
 
 ---
 
-## 2. 状态机分层
+## 1. 总原则
 
-### 2.1 策略定义状态（`strategyId` 级）
-建议最小状态：
+- `strategyId` 级状态与 `strategyRunId` 级状态必须分离
+- 调度状态机不能直接推进订单状态
+- 已终态的 `strategyRunId` 不允许回退到运行态
+- 重试必须先确认是否已触发过，不能把 retry 写成重复下单
+
+---
+
+## 2. StrategyDefinition 状态机
+
+对象：`strategyId`
+
+状态：
+
 - `DRAFT`
 - `ACTIVE`
 - `PAUSED`
 - `DISABLED`
 
-### 2.2 策略运行状态（`strategyRunId` 级）
-建议最小状态：
+推进：
+
+- 注册成功：`null -> DRAFT`
+- 启用：`DRAFT -> ACTIVE`
+- 暂停：`ACTIVE -> PAUSED`
+- 恢复：`PAUSED -> ACTIVE`
+- 禁用：`DRAFT|ACTIVE|PAUSED -> DISABLED`
+
+硬规则：
+
+- `DISABLED` 后不再自动调度
+- `PAUSED` 不产生新的 scheduled trigger
+- 手动 trigger 是否允许命中 `PAUSED`，需在 GateE-1 明确；默认不允许
+
+---
+
+## 3. ScheduleJob 状态机
+
+对象：`scheduleJobId`
+
+当前仓库尚无此表或类，但 GateE-2 必须有清晰语义。
+
+状态：
+
+- `CREATED`
+- `SCHEDULED`
+- `PAUSED`
+- `BLOCKED`
+- `DISABLED`
+
+推进：
+
+- 创建调度配置：`null -> CREATED`
+- 注册到调度器：`CREATED -> SCHEDULED`
+- 暂停：`SCHEDULED -> PAUSED`
+- 恢复：`PAUSED -> SCHEDULED`
+- 因依赖异常阻断：`SCHEDULED -> BLOCKED`
+- 人工恢复：`BLOCKED -> SCHEDULED`
+- 彻底禁用：`CREATED|SCHEDULED|PAUSED|BLOCKED -> DISABLED`
+
+---
+
+## 4. TriggerRequest 状态机
+
+对象：`requestId`
+
+说明：
+
+- 当前不单独落表，但需要明确逻辑状态
+- 触发请求统一覆盖 manual / scheduler / recovery
+
+状态：
+
+- `RECEIVED`
+- `DEDUPED`
+- `REJECTED`
+- `ACCEPTED`
+- `EXPIRED`
+
+推进：
+
+- 请求到达：`null -> RECEIVED`
+- 去重命中：`RECEIVED -> DEDUPED`
+- 窗口 / 状态不满足：`RECEIVED -> REJECTED`
+- 通过校验并生成 `strategyRunId`：`RECEIVED -> ACCEPTED`
+- 超过允许生效时间：`RECEIVED -> EXPIRED`
+
+硬规则：
+
+- `DEDUPED` 不再生成新的 `strategyRunId`
+- `REJECTED` 必须记录原因
+- `ACCEPTED` 后必须能通过 `requestId` 找到对应 `strategyRunId`
+
+---
+
+## 5. StrategyRun 状态机
+
+对象：`strategyRunId`
+
+当前事实：
+
+- `strategy_runs.status` 已存在，但状态值尚未冻结
+
+GateE 冻结的最小状态：
+
 - `CREATED`
 - `READY`
 - `DISPATCHING`
@@ -32,67 +120,74 @@ GateE 要新增的是**策略定义状态机**和**策略运行状态机**，不
 - `CANCELLED`
 - `SKIPPED`
 
-### 2.3 订单状态（GateD 既有）
-- 继续沿用 GateD `NEW / ACCEPTED / FILLED / CANCELLED / REJECTED ...`
-- GateE 不重写、不并表、不偷改语义
+推进：
+
+- 触发请求通过并建运行：`null -> CREATED`
+- 参数 / 窗口 /并发检查通过：`CREATED -> READY`
+- 开始投递执行请求：`READY -> DISPATCHING`
+- 首个执行请求被接受：`DISPATCHING -> RUNNING`
+- 全部动作成功：`RUNNING -> SUCCEEDED`
+- 部分成功部分失败：`RUNNING -> PARTIAL_SUCCESS`
+- 运行失败：`CREATED|READY|DISPATCHING|RUNNING -> FAILED`
+- 人工取消或恢复终止：`CREATED|READY -> CANCELLED`
+- 去重命中或窗口不满足时显式记录：`CREATED -> SKIPPED`
+
+硬规则：
+
+- `SUCCEEDED / PARTIAL_SUCCESS / FAILED / CANCELLED / SKIPPED` 都是终态
+- 终态不允许回退到 `RUNNING`
+- 是否创建 `SKIPPED` 运行必须在实现里保持一致，不能一部分静默拒绝、一部分写记录
 
 ---
 
-## 3. 基本流转
+## 6. ExecutionRequest 逻辑状态
 
-### 3.1 策略定义
-`DRAFT -> ACTIVE -> PAUSED -> ACTIVE -> DISABLED`
+对象：当前文档层概念，对应仓库中的 `PlaceOrderRequest -> PlaceOrderCommand`
 
-规则：
-- `DISABLED` 视为不可再自动调度
-- `PAUSED` 可恢复到 `ACTIVE`
+状态：
 
-### 3.2 策略运行
-`CREATED -> READY -> DISPATCHING -> RUNNING -> SUCCEEDED | PARTIAL_SUCCESS | FAILED | CANCELLED | SKIPPED`
+- `PREPARED`
+- `RISK_CHECKING`
+- `READY_TO_SUBMIT`
+- `SUBMITTING`
+- `SUBMITTED`
+- `REJECTED`
+- `FAILED`
 
-说明：
-- `SKIPPED` 用于窗口不满足、去重命中、调度条件不成立
-- `PARTIAL_SUCCESS` 用于一次运行产生多笔动作，其中部分成功、部分失败
+关系：
 
----
+- 该状态机不替代 GateD 订单状态机
+- 只是说明 StrategyRun 如何观察执行请求阶段
 
-## 4. 推进来源
+映射：
 
-### 4.1 定义层推进
-- 注册策略
-- 启用策略
-- 暂停策略
-- 禁用策略
-
-### 4.2 运行层推进
-- 手动触发
-- scheduler 触发
-- 恢复触发
-- 执行结果回传
-
-### 4.3 执行域反馈
-- 下单成功 / 拒绝 / 失败
-- 订单终态回传
-- 成交与账本完成情况
+- `SUBMITTED` 之后，订单终态继续由 GateD 管理
 
 ---
 
-## 5. 硬规则
+## 7. 主链流转
 
-- `strategyId` 状态与 `strategyRunId` 状态必须分层
-- 已终态的 `strategyRunId` 不允许回退到 `RUNNING`
-- 调度窗口不满足时，不创建伪运行；若已创建，必须显式进入 `SKIPPED`
-- 一次运行是否允许再次触发，必须由去重 / 串行化规则决定
-- scheduler 不允许直接推进订单状态，它只能推进策略运行状态
+### 7.1 手动触发
+
+`StrategyDefinition.ACTIVE -> TriggerRequest.RECEIVED -> ACCEPTED -> StrategyRun.CREATED -> READY -> DISPATCHING -> RUNNING -> terminal`
+
+### 7.2 定时触发
+
+`ScheduleJob.SCHEDULED -> TriggerRequest.RECEIVED -> dedup/window guard -> ACCEPTED|DEDUPED|REJECTED -> StrategyRun`
+
+### 7.3 retry / recovery
+
+GateE 只允许受控 retry：
+
+- 先根据 `requestId / dedupKey / strategyRunId` 判断是否已接受
+- 若运行未生成执行请求，可在同一运行内恢复
+- 若执行链已出单，必须先 `query-confirm`，不得直接重放下单
 
 ---
 
-## 6. 与当前代码的对应关系
+## 8. 与 GateD 的分工
 
-当前代码里：
-- `strategy_runs.status` 已存在，但状态值语义未冻结
-- `StrategyScheduler` 只有 `start/stop/restart`，不足以表达完整 GateE 运行状态机
-- `GateBDemoStrategyRunner` 只证明过“定时触发”能力，不等于 GateE 状态机实现
+- GateD 管 `OrderStatus`
+- GateE 管 `StrategyDefinition / ScheduleJob / TriggerRequest / StrategyRun`
 
-结论：
-- GateE 第一批必须先把状态值和推进动作收口，然后再写正式实现
+任何把二者混成一套状态的实现，都违反当前阶段边界

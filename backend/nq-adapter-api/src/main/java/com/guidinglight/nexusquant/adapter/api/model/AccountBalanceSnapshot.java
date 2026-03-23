@@ -6,7 +6,7 @@ import java.math.BigDecimal;
  * AccountBalanceSnapshot 表示统一余额快照。
  *
  * @param accountId 账户 ID
- * @param venue 交易场所
+ * @param exchangeCode 统一交易所标识
  * @param currency 币种
  * @param balance 总余额
  * @param available 可用余额
@@ -15,11 +15,28 @@ import java.math.BigDecimal;
  */
 public record AccountBalanceSnapshot(
         Long accountId,
-        String venue,
+        String exchangeCode,
         String currency,
         BigDecimal balance,
         BigDecimal available,
         BigDecimal frozen,
-        String traceId
+        String traceId,
+        String tradeEnv
 ) {
+
+    public AccountBalanceSnapshot(
+            Long accountId,
+            String exchangeCode,
+            String currency,
+            BigDecimal balance,
+            BigDecimal available,
+            BigDecimal frozen,
+            String traceId
+    ) {
+        this(accountId, exchangeCode, currency, balance, available, frozen, traceId, null);
+    }
+
+    public String venue() {
+        return exchangeCode;
+    }
 }

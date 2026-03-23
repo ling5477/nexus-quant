@@ -1,152 +1,225 @@
 # GateE PR_SPLIT_PLAN
 
-> 原则：单个 PR 只解决一类边界问题，做到能 review、能回滚、能定位。GateE 不搞一锅炖。
+原则：
+
+- 一个 PR 只解决一类问题
+- 按依赖顺序推进
+- 文档、schema、契约、实现尽量分离，避免巨型 PR
 
 ---
 
-## 当前拆批建议
+## 1. 执行顺序总览
 
-- [x] GateE-DOC-1：文档完善批
-- [ ] GateE-0.1：Binance background reconcile 噪音治理
-- [ ] GateE-0.2：schema / metadata 收口
-- [ ] GateE-0.3：返回模型一致性收尾
-- [ ] GateE-1.1：策略契约与注册模型
-- [ ] GateE-1.2：策略运行状态与最小入口
-- [ ] GateE-2.1：调度编排主链
-- [ ] GateE-2.2：运行窗口 / 去重 / 验收样本
-
----
-
-## GateE-DOC-1：文档完善批（已完成）
-
-### 目标
-- 基于当前项目文件，梳理 GateE 真实起点
-- 补齐 GateE 的契约、schema、状态机、验收与依据索引
-- 把 GateE 从“骨架文档”提升到“可开工文档”
-
-### 边界
-- 只改文档，不改业务代码
-- 不创造假 migration
-- 不假装 GateE 已经开工实现
+- [x] GateE-DOC-2：开工基线收口
+- [x] GateE-0.1：Binance background reconcile 噪音治理
+- [x] GateE-0.2：schema / metadata / contract 收口
+- [ ] GateE-0.3：adapter 返回模型一致性
+- [ ] GateE-1.1：策略定义与注册模型
+- [ ] GateE-1.2：策略运行主链与手动 trigger
+- [ ] GateE-2.1：调度任务与计划配置
+- [ ] GateE-2.2：窗口 / 去重 / 串行化
+- [ ] GateE-2.3：运行结果回传与查询面
 
 ---
 
-## GateE-0.1：Binance background reconcile 噪音治理
+## 2. GateE-DOC-2：开工基线收口
 
-### 目标
-- 收敛 `credentials missing / -1021 / cooldown 内重复触发` 这类高频噪音
-- 统一 scheduler / reconcile 的 credential 与 timestamp 口径
+目标：
 
-### 涉及模块
-- `nq-scheduler`
-- `nq-adapter-binance`
-- `nq-app`
+- 校对仓库现状
+- 冻结对象语义
+- 修正 current 入口
+- 形成可执行 PR 路线
 
-### 不做项
-- account sync 扩展
-- snapshot 拉取增强
-- 把 Binance 适配层全面重写
+范围：
 
----
+- `docs/gates/gate-e/*`
+- `docs/current/*`
 
-## GateE-0.2：schema / metadata 收口
+不做：
 
-### 目标
-- 收敛当前 schema 与 metadata 命名、文档和查询面口径
-- 对齐 `strategyId / strategyRunId / source / requestId / idempotencyKey` 的边界
-
-### 涉及模块
-- `nq-infra`
-- `nq-api`
-- `nq-ledger`
-- `nq-core`
-
-### 不做项
-- 大规模 schema 扩边
-- 为迎合历史占位文案制造空 migration
+- 任何业务代码改动
+- 任何 migration
 
 ---
 
-## GateE-0.3：返回模型一致性收尾
+## 3. GateE-0.1：Binance background reconcile 噪音治理
 
-### 目标
-- 收紧 `Paper / OKX / Binance` 在未成交、成交、恢复、对账场景下的响应口径
-- 让 GateE 上层不用再对 venue 响应写分支补丁
+目标：
 
-### 涉及模块
-- `nq-adapter-api`
-- `nq-adapter-okx`
-- `nq-adapter-binance`
-- `nq-api`
+- 收敛 `credentials missing`
+- 收敛 `-1021`
+- 收敛 cooldown 内重复触发噪音
 
-### 不做项
-- UI 适配
-- 新的 venue 扩接
+建议文件：
 
----
+- `backend/nq-scheduler/**`
+- `backend/nq-adapter-binance/**`
+- 必要的 `docs/gates/gate-e/DECISIONS.md`
+- 必要的 `docs/gates/gate-e/WORK.md`
 
-## GateE-1.1：策略契约与注册模型
+验收：
 
-### 目标
-- 冻结策略定义、注册、启停、人工触发契约
-- 建立最小策略注册存储模型
-
-### 涉及模块
-- `nq-core`
-- `nq-app`
-- `nq-api`
-- `nq-infra`
-- `nq-contracts`
-
-### 不做项
-- 复杂多级调度
-- 多租户权限体系扩边
+- 同窗口内不再重复刷屏
+- 真失败与降噪跳过可区分
 
 ---
 
-## GateE-1.2：策略运行状态与最小入口
+## 4. GateE-0.2：schema / metadata / contract 收口
 
-### 目标
-- 建立策略运行状态最小模型
-- 让策略运行与执行链路完成最小血缘关联
+目标：
 
-### 涉及模块
-- `nq-core`
-- `nq-scheduler`
-- `nq-app`
-- `nq-api`
+- 明确 `PlaceOrderCommand.strategyId` 兼容策略
+- 统一 `strategyRunId` 命名
+- 决定是否在本批引入 `V5__gate_e_contract_alignment.sql`
 
-### 不做项
-- 复杂失败重试矩阵
-- 任务优先级与分片调度
+建议文件：
 
----
+- `backend/nq-contracts/**`
+- `backend/nq-core/**`
+- `backend/nq-api/**`
+- `backend/nq-infra/**`
+- `docs/gates/gate-e/CONTRACTS.md`
+- `docs/gates/gate-e/DB_SCHEMA.md`
+- `docs/gates/gate-e/DECISIONS.md`
 
-## GateE-2.1：调度编排主链
+验收：
 
-### 目标
-- 建立调度编排主链
-- 打通策略触发、运行窗口控制、状态衔接
-
-### 涉及模块
-- `nq-scheduler`
-- `nq-core`
-- `nq-app`
-
-### 不做项
-- 回测 / 研究平台
-- 生产级分布式调度集群
+- 不再出现同义不同名
+- 兼容方案明确且有回归测试
 
 ---
 
-## GateE-2.2：运行窗口 / 去重 / 验收样本
+## 5. GateE-0.3：adapter 返回模型一致性
 
-### 目标
-- 建立去重、串行化与运行窗口规则
-- 建立可回归的 GateE 最小验收样本
+目标：
 
-### 涉及模块
-- `nq-scheduler`
-- `nq-api`
-- `nq-app`
+- 统一 place / cancel / query-confirm / reconcile 的响应口径
+
+建议文件：
+
+- `backend/nq-adapter-api/**`
+- `backend/nq-adapter-binance/**`
+- `backend/nq-adapter-okx/**`
+- `backend/nq-api/**`
+- `docs/gates/gate-e/DECISIONS.md`
+
+验收：
+
+- 上层不再按 venue 打补丁
+
+---
+
+## 6. GateE-1.1：策略定义与注册模型
+
+目标：
+
+- 新增 `StrategyDefinition` 契约
+- 新增注册 / 启停入口
+- 引入最小定义表
+
+建议文件：
+
+- `backend/nq-contracts/**`
+- `backend/nq-app/**`
+- `backend/nq-api/**`
+- `backend/nq-infra/**`
+- `docs/gates/gate-e/DB_SCHEMA.md`
 - `docs/gates/gate-e/TEST_CASES.md`
+
+验收：
+
+- 能注册、查询、启停一个策略定义
+
+---
+
+## 7. GateE-1.2：策略运行主链与手动 trigger
+
+目标：
+
+- 新增 manual trigger
+- 生成 `requestId` 与 `strategyRunId`
+- 打通到现有执行域
+
+建议文件：
+
+- `backend/nq-core/**`
+- `backend/nq-scheduler/**`
+- `backend/nq-app/**`
+- `backend/nq-api/**`
+- 必要的 `backend/nq-infra/**`
+
+验收：
+
+- 手动 trigger 后能产生带 `strategy_run_id` 的订单
+
+---
+
+## 8. GateE-2.1：调度任务与计划配置
+
+目标：
+
+- 新增调度作业模型
+- 建立 schedule 注册与启停
+- 让 scheduler 能安全地产生 trigger 请求
+
+建议文件：
+
+- `backend/nq-scheduler/**`
+- `backend/nq-infra/**`
+- `backend/nq-app/**`
+- `backend/nq-api/**`
+
+验收：
+
+- 一个启用的 schedule 能正常创建 trigger 请求
+
+---
+
+## 9. GateE-2.2：窗口 / 去重 / 串行化
+
+目标：
+
+- 实现 dedupKey
+- 实现窗口控制
+- 实现同策略串行运行保护
+
+建议文件：
+
+- `backend/nq-scheduler/**`
+- `backend/nq-core/**`
+- `backend/nq-infra/**`
+
+验收：
+
+- 重复触发不会双跑
+- 窗口外不会误下单
+
+---
+
+## 10. GateE-2.3：运行结果回传与查询面
+
+目标：
+
+- 输出 `StrategyRunResult`
+- 按 `strategyRunId` 查询订单、成交、账本结果
+
+建议文件：
+
+- `backend/nq-api/**`
+- `backend/nq-core/**`
+- `backend/nq-ledger/**`
+- 必要的 `backend/nq-infra/**`
+
+验收：
+
+- 可从运行结果页反查执行结果
+
+---
+
+## 11. PR 粒度约束
+
+- schema migration 单独成 PR，除非与同批实现不可拆
+- 大规模 rename 单独成 PR
+- 格式化不和业务逻辑混提
+- 每个 PR 必须回填 `docs/gates/gate-e/WORK.md` 与必要 checklist

@@ -15,6 +15,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "nq.binance.ws.enabled", havingValue = "true")
 public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnectionListener {
 
+    private static final Logger log = LoggerFactory.getLogger(BinanceWsDegradeReconcileCoordinator.class);
     private static final String SOURCE = "nq-scheduler.binance-ws-degrade";
     private static final String SUBJECT = "BINANCE_WS";
 
@@ -84,20 +87,20 @@ public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnection
 
     @Override
     public void onReconnected(String reason, String traceId) {
-        appendAudit(traceId, "BINANCE_WS_RECONNECTED", "SUCCESS", Map.of(
-                "reason", String.valueOf(reason)
-        ));
+        log.debug("binance_ws_reconnected trace_id={} reason={}", traceId, reason);
     }
 
     @Override
     public void onDisconnected(String reason, int attempt, long delayMs, String traceId) {
         if (isReconnectFailure(reason) && attempt < reconnectFailThreshold) {
-            appendAudit(traceId, "BINANCE_WS_RECONNECT_FAILED_OBSERVED", "SUCCESS", Map.of(
-                    "reason", reason,
-                    "attempt", attempt,
-                    "delay_ms", delayMs,
-                    "threshold", reconnectFailThreshold
-            ));
+            log.debug(
+                    "binance_ws_reconnect_failed_observed trace_id={} reason={} attempt={} delay_ms={} threshold={}",
+                    traceId,
+                    reason,
+                    attempt,
+                    delayMs,
+                    reconnectFailThreshold
+            );
             return;
         }
         String action = isReconnectFailure(reason)
@@ -123,29 +126,53 @@ public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnection
         long now = Instant.now(clock).toEpochMilli();
         long nextAllowed = nextAllowedEpochMs.get();
         if (now < nextAllowed) {
-            appendAudit(traceId, "BINANCE_WS_RECONCILE_DEGRADE_SKIPPED_COOLDOWN", "SUCCESS", Map.of(
-                    "action", action,
-                    "cooldown_until", nextAllowed,
-                    "now", now,
-                    "detail", detail.toString()
-            ));
+            log.debug(
+                    "binance_ws_reconcile_degrade_skipped_cooldown trace_id={} action={} now={} cooldown_until={} detail={}",
+                    traceId,
+                    action,
+                    now,
+                    nextAllowed,
+                    detail
+            );
             return;
         }
         nextAllowedEpochMs.set(now + cooldownMs);
         MDC.put("trace_id", traceId);
         try {
+            log.info(
+                    "binance_ws_reconcile_degrade_triggered trace_id={} action={} reconcile_limit={} cooldown_ms={} detail={}",
+                    traceId,
+                    action,
+                    reconcileLimit,
+                    cooldownMs,
+                    detail
+            );
             appendAudit(traceId, action, "SUCCESS", Map.of(
                     "detail", detail.toString(),
                     "reconcile_limit", reconcileLimit,
                     "cooldown_ms", cooldownMs
             ));
             int newTrades = binanceRestReconcileService.reconcileOnce(reconcileLimit);
+            log.info(
+                    "binance_ws_reconcile_degrade_completed trace_id={} action={} reconcile_limit={} new_trades={}",
+                    traceId,
+                    action,
+                    reconcileLimit,
+                    newTrades
+            );
             appendAudit(traceId, "BINANCE_WS_RECONCILE_DEGRADE_COMPLETED", "SUCCESS", Map.of(
                     "trigger_action", action,
                     "reconcile_limit", reconcileLimit,
                     "new_trades", newTrades
             ));
         } catch (Exception ex) {
+            log.warn(
+                    "binance_ws_reconcile_degrade_failed trace_id={} action={} reconcile_limit={} reason={}",
+                    traceId,
+                    action,
+                    reconcileLimit,
+                    ex.getMessage()
+            );
             appendAudit(traceId, "BINANCE_WS_RECONCILE_DEGRADE_FAILED", "FAIL", Map.of(
                     "trigger_action", action,
                     "reconcile_limit", reconcileLimit,

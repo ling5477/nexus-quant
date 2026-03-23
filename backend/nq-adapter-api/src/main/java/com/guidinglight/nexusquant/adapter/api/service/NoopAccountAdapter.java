@@ -38,6 +38,6 @@ public class NoopAccountAdapter implements AccountAdapter {
 
     @Override
     public AccountSnapshot getAccountSnapshot(Long accountId, String traceId) {
-        return new AccountSnapshot(accountId, venue, List.of(), List.of(), traceId);
+        return new AccountSnapshot(accountId, venue, List.of(), List.of(), traceId, "SIM");
     }
 }

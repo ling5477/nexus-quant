@@ -1,8 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxApiException;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxErrorCode;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.OrderStatusChangedPayload;
@@ -186,25 +185,27 @@ public class OkxRecoveryService implements RecoveryService {
             if (!QUERY_CONFIRM_STATUSES.contains(order.status())) {
                 continue;
             }
-            try {
-                okxExchangeAdapter.getOrder(new com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery(
-                        order.accountId(),
-                        order.venue(),
-                        order.symbol(),
-                        order.clientOrderId(),
-                        order.externalOrderId(),
-                        traceId
-                ));
-            } catch (OkxApiException ex) {
-                if (ex.errorKind() == OkxErrorCode.ORDER_NOT_FOUND) {
-                    appendOrderNotFoundAudit(order, traceId, ex.errorCode());
-                    appendOrderNotFoundAuditEvent(order, traceId, ex.errorCode());
-                    if (transitionToCancelled(order, traceId)) {
-                        resolvedCount++;
-                    }
-                    continue;
+            AdapterOrderSnapshot snapshot = okxExchangeAdapter.getOrder(new com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery(
+                    order.accountId(),
+                    order.venue(),
+                    order.symbol(),
+                    order.clientOrderId(),
+                    order.externalOrderId(),
+                    traceId
+            ));
+            if (snapshot.resultCategory() == AdapterResultCategory.NOT_FOUND) {
+                appendOrderNotFoundAudit(order, traceId, snapshot.error() == null ? "51603" : snapshot.error().code());
+                appendOrderNotFoundAuditEvent(order, traceId, snapshot.error() == null ? "51603" : snapshot.error().code());
+                if (transitionToCancelled(order, traceId)) {
+                    resolvedCount++;
                 }
-                throw ex;
+                continue;
+            }
+            if (snapshot.resultCategory() != AdapterResultCategory.SUCCESS) {
+                throw new IllegalStateException(
+                        "okx query-confirm failed, category=" + snapshot.resultCategory()
+                                + ", code=" + (snapshot.error() == null ? "UNKNOWN" : snapshot.error().code())
+                );
             }
         }
         return resolvedCount;
@@ -249,25 +250,7 @@ public class OkxRecoveryService implements RecoveryService {
     }
 
     private int safeReconcile(String traceId) {
-        try {
-            return okxRestReconcileService.reconcileOnce(DEFAULT_LIMIT);
-        } catch (OkxApiException ex) {
-            if (ex.errorKind() == OkxErrorCode.ORDER_NOT_FOUND) {
-                auditLogRepository.append(
-                        "RECOVERY",
-                        "RECOVERY_RECONCILE_ORDER_NOT_FOUND",
-                        traceId,
-                        traceId,
-                        Map.of(
-                                "reason_code", ORDER_NOT_FOUND_REASON,
-                                "okx_code", String.valueOf(ex.errorCode()),
-                                "endpoint", String.valueOf(ex.endpoint())
-                        )
-                );
-                return 0;
-            }
-            throw ex;
-        }
+        return okxRestReconcileService.reconcileOnce(DEFAULT_LIMIT);
     }
 
     private void appendOrderNotFoundAudit(OrderRecord order, String traceId, String okxCode) {

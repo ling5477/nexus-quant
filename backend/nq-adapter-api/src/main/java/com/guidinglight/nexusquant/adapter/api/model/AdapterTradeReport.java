@@ -11,11 +11,11 @@ import java.time.Instant;
  * 不能继续留在各交易所私有 DTO 中。
  */
 public record AdapterTradeReport(
-        String venue,
+        String exchangeCode,
         Long accountId,
         String symbol,
         String clientOrderId,
-        String externalOrderId,
+        String exchangeOrderId,
         String exchangeTradeId,
         String side,
         BigDecimal price,
@@ -24,6 +24,50 @@ public record AdapterTradeReport(
         String feeAsset,
         Instant tradeTs,
         String rawPayload,
-        String traceId
+        String traceId,
+        String tradeEnv
 ) {
+
+    public AdapterTradeReport(
+            String exchangeCode,
+            Long accountId,
+            String symbol,
+            String clientOrderId,
+            String exchangeOrderId,
+            String exchangeTradeId,
+            String side,
+            BigDecimal price,
+            BigDecimal quantity,
+            BigDecimal fee,
+            String feeAsset,
+            Instant tradeTs,
+            String rawPayload,
+            String traceId
+    ) {
+        this(
+                exchangeCode,
+                accountId,
+                symbol,
+                clientOrderId,
+                exchangeOrderId,
+                exchangeTradeId,
+                side,
+                price,
+                quantity,
+                fee,
+                feeAsset,
+                tradeTs,
+                rawPayload,
+                traceId,
+                null
+        );
+    }
+
+    public String venue() {
+        return exchangeCode;
+    }
+
+    public String externalOrderId() {
+        return exchangeOrderId;
+    }
 }

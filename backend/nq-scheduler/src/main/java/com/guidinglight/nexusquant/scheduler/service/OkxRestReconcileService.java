@@ -1,7 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.model.OkxFillRecord;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
@@ -168,11 +169,31 @@ public class OkxRestReconcileService {
                 currentOrder.externalOrderId(),
                 currentOrder.traceId()
         ));
+        if (snapshot.resultCategory() == AdapterResultCategory.NOT_FOUND) {
+            auditLogRepository.append(
+                    "RECONCILE",
+                    "OKX_RECONCILE_ORDER_NOT_FOUND",
+                    currentOrder.orderId(),
+                    currentOrder.traceId(),
+                    java.util.Map.of(
+                            "order_id", currentOrder.orderId(),
+                            "client_order_id", currentOrder.clientOrderId(),
+                            "exchange_order_id", String.valueOf(currentOrder.externalOrderId())
+                    )
+            );
+            return 0;
+        }
+        if (snapshot.resultCategory() != AdapterResultCategory.SUCCESS) {
+            throw new IllegalStateException(
+                    "okx getOrder failed, category=" + snapshot.resultCategory()
+                            + ", code=" + (snapshot.error() == null ? "UNKNOWN" : snapshot.error().code())
+            );
+        }
         OrderRecord updatedOrder = currentOrder;
-        if (updatedOrder.externalOrderId() == null && snapshot.externalOrderId() != null && !snapshot.externalOrderId().isBlank()) {
+        if (updatedOrder.externalOrderId() == null && snapshot.exchangeOrderId() != null && !snapshot.exchangeOrderId().isBlank()) {
             updatedOrder = orderCommandService.linkExternalOrderId(
                     updatedOrder.orderId(),
-                    snapshot.externalOrderId(),
+                    snapshot.exchangeOrderId(),
                     updatedOrder.traceId()
             );
         }
@@ -261,49 +282,49 @@ public class OkxRestReconcileService {
             return 0;
         }
         int newTrades = 0;
-        for (OkxFillRecord fill : okxExchangeAdapter.listFills(order.symbol(), order.externalOrderId(), order.traceId())) {
-            if (tradeRepository.findByExchangeAndExchangeTradeId("OKX", fill.exchangeTradeId()).isPresent()) {
+        for (AdapterTradeReport tradeReport : okxExchangeAdapter.listTradeReports(order.symbol(), order.externalOrderId(), order.traceId())) {
+            if (tradeRepository.findByExchangeAndExchangeTradeId("OKX", tradeReport.exchangeTradeId()).isPresent()) {
                 auditLogRepository.append(
                         "RECONCILE",
                         "OKX_FILL_DEDUP_HIT",
                         order.orderId(),
                         order.traceId(),
-                        java.util.Map.of("exchange_trade_id", fill.exchangeTradeId(), "order_id", order.orderId())
+                        java.util.Map.of("exchange_trade_id", tradeReport.exchangeTradeId(), "order_id", order.orderId())
                 );
                 continue;
             }
             // Why: OKX fills 的 fee 常以负数表示“扣减”，而账本入参要求传入非负费用金额。
             // 这里统一转成绝对值，保留“费用大小”语义，避免 reconcile 在成交已落库后因参数校验中断。
-            java.math.BigDecimal normalizedFee = fill.fee() == null ? java.math.BigDecimal.ZERO : fill.fee().abs();
+            java.math.BigDecimal normalizedFee = tradeReport.fee() == null ? java.math.BigDecimal.ZERO : tradeReport.fee().abs();
             PaperTradeRecord trade = new PaperTradeRecord(
                     "trd-" + UUID.randomUUID(),
                     order.orderId(),
                     order.accountId(),
-                    fill.symbol(),
+                    tradeReport.symbol(),
                     "OKX",
-                    fill.externalOrderId(),
-                    fill.exchangeTradeId(),
-                    fill.price(),
-                    fill.qty(),
+                    tradeReport.exchangeOrderId(),
+                    tradeReport.exchangeTradeId(),
+                    tradeReport.price(),
+                    tradeReport.quantity(),
                     normalizedFee,
-                    fill.feeCurrency(),
+                    tradeReport.feeAsset(),
                     order.traceId(),
-                    fill.ts()
+                    tradeReport.tradeTs()
             );
             tradeRepository.insert(trade);
-            publishTradeEvent(order, fill, normalizedFee, trade.tradeId());
+            publishTradeEvent(order, tradeReport, normalizedFee, trade.tradeId());
             LedgerPostingResult postingResult = tradeLedgerGateway.postTrade(new TradeLedgerRequest(
                     trade.tradeId(),
                     order.orderId(),
                     order.accountId(),
-                    fill.symbol(),
-                    OrderSide.valueOf(fill.side()),
-                    fill.price(),
-                    fill.qty(),
+                    tradeReport.symbol(),
+                    OrderSide.valueOf(tradeReport.side()),
+                    tradeReport.price(),
+                    tradeReport.quantity(),
                     normalizedFee,
-                    fill.feeCurrency(),
+                    tradeReport.feeAsset(),
                     order.traceId(),
-                    fill.ts()
+                    tradeReport.tradeTs()
             ));
             if (!postingResult.posted()) {
                 auditLogRepository.append(
@@ -319,22 +340,22 @@ public class OkxRestReconcileService {
         return newTrades;
     }
 
-    private void publishTradeEvent(OrderRecord order, OkxFillRecord fill, java.math.BigDecimal normalizedFee, String tradeId) {
+    private void publishTradeEvent(OrderRecord order, AdapterTradeReport tradeReport, java.math.BigDecimal normalizedFee, String tradeId) {
         TradeExecuted payload = new TradeExecuted(
                 tradeId,
                 order.orderId(),
                 order.clientOrderId(),
                 order.accountId(),
-                fill.symbol(),
+                tradeReport.symbol(),
                 order.venue(),
                 "OKX",
-                fill.externalOrderId(),
-                fill.exchangeTradeId(),
-                fill.price(),
-                fill.qty(),
+                tradeReport.exchangeOrderId(),
+                tradeReport.exchangeTradeId(),
+                tradeReport.price(),
+                tradeReport.quantity(),
                 normalizedFee,
-                fill.feeCurrency(),
-                fill.ts()
+                tradeReport.feeAsset(),
+                tradeReport.tradeTs()
         );
         EventEnvelope<TradeExecuted> envelope = new EventEnvelope<>(
                 "evt-" + UUID.randomUUID(),

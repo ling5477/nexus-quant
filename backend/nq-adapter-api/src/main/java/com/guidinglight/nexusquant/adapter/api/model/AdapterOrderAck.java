@@ -11,15 +11,59 @@ import java.time.Instant;
  */
 public record AdapterOrderAck(
         boolean accepted,
-        String venue,
+        String exchangeCode,
         Long accountId,
         String symbol,
         String clientOrderId,
-        String externalOrderId,
+        String exchangeOrderId,
         String externalStatus,
+        AdapterResultCategory resultCategory,
         AdapterError error,
         Instant ackTs,
         String rawPayload,
-        String traceId
+        String traceId,
+        String tradeEnv
 ) {
+
+    public AdapterOrderAck(
+            boolean accepted,
+            String exchangeCode,
+            Long accountId,
+            String symbol,
+            String clientOrderId,
+            String exchangeOrderId,
+            String externalStatus,
+            AdapterError error,
+            Instant ackTs,
+            String rawPayload,
+            String traceId
+    ) {
+        this(
+                accepted,
+                exchangeCode,
+                accountId,
+                symbol,
+                clientOrderId,
+                exchangeOrderId,
+                externalStatus,
+                accepted ? AdapterResultCategory.ACCEPTED : resolveCategory(error),
+                error,
+                ackTs,
+                rawPayload,
+                traceId,
+                null
+        );
+    }
+
+    public String venue() {
+        return exchangeCode;
+    }
+
+    public String externalOrderId() {
+        return exchangeOrderId;
+    }
+
+    private static AdapterResultCategory resolveCategory(AdapterError error) {
+        return error == null ? AdapterResultCategory.FATAL_FAILURE : error.category();
+    }
 }

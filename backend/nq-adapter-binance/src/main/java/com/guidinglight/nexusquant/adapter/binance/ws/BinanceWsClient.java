@@ -237,7 +237,7 @@ public class BinanceWsClient {
             return;
         }
         if (subscriptionState == SubscriptionState.PENDING) {
-            log.info("binance_ws_smoke_reconnect_skipped state=pending reason={}", reason);
+            log.debug("binance_ws_smoke_reconnect_skipped state=pending reason={}", reason);
             return;
         }
         rememberLifecycleEvent("smoke_trigger_reconnect reason=" + reason);
@@ -350,7 +350,7 @@ public class BinanceWsClient {
         try {
             listenKeyClient.refreshListenKey(listenKey, traceId);
             listenKeyRefreshSuccessCount.incrementAndGet();
-            log.info("binance_ws_listenkey_refresh_success trace_id={} listen_key_suffix={}", traceId, maskListenKey(listenKey));
+            log.debug("binance_ws_listenkey_refresh_success trace_id={} listen_key_suffix={}", traceId, maskListenKey(listenKey));
         } catch (BinanceApiException ex) {
             listenKeyRefreshFailCount.incrementAndGet();
             notifyListenKeyExpired(ex.errorCode(), ex.errorMessage(), traceId);
@@ -456,7 +456,7 @@ public class BinanceWsClient {
         MDC.put("trace_id", traceId);
         try {
             listenKeyClient.closeListenKey(listenKey, traceId);
-            log.info(
+            log.debug(
                     "binance_ws_listenkey_closed trace_id={} reason={} listen_key_suffix={}",
                     traceId,
                     reason,
@@ -497,7 +497,7 @@ public class BinanceWsClient {
             lastSubscribeRequestSummary = buildDiagnosticSubscribeSummary(request);
             lastSubscribeSignaturePayload = signaturePayload;
             if (runtimeConfig.wsDiagnosticEnabled()) {
-                log.info(
+                log.debug(
                         "binance_ws_subscribe_request_summary trace_id={} request={} signature_payload={} recv_window={}",
                         traceId,
                         lastSubscribeRequestSummary,
@@ -509,7 +509,7 @@ public class BinanceWsClient {
             // 独立探针使用“先 request(1)，再同步发送订阅帧”的顺序可以稳定收到首个 200 控制响应。
             // 这里显式等待 sendText 完成，避免 onOpen 返回过快导致订阅帧仍在排队时服务端已经给出 close。
             webSocket.sendText(objectMapper.writeValueAsString(request), true).join();
-            log.info("binance_ws_subscribe_sent trace_id={} reason={} request_id={}", traceId, reason, requestId);
+            log.debug("binance_ws_subscribe_sent trace_id={} reason={} request_id={}", traceId, reason, requestId);
             scheduler.schedule(
                     () -> timeoutPendingSubscription(String.valueOf(requestId), traceId),
                     runtimeConfig.timeout().toMillis(),
@@ -586,7 +586,7 @@ public class BinanceWsClient {
                             break;
                         }
                     }
-                    log.info(
+                    log.debug(
                             "binance_ws_session_subscriptions_checked trace_id={} subscription_id={} confirmed={}",
                             traceId,
                             currentSubscriptionId,
@@ -611,7 +611,7 @@ public class BinanceWsClient {
             request.set("params", objectMapper.createObjectNode());
             pendingSessionSubscriptionsRequestId = String.valueOf(requestId);
             webSocket.sendText(objectMapper.writeValueAsString(request), true).join();
-            log.info(
+            log.debug(
                     "binance_ws_session_subscriptions_sent trace_id={} request_id={} subscription_id={}",
                     traceId,
                     requestId,
@@ -729,7 +729,7 @@ public class BinanceWsClient {
 
     private void notifyDisconnected(String reason, int attempt, long delayMs, String traceId) {
         if (subscriptionState == SubscriptionState.PENDING) {
-            log.info(
+            log.debug(
                     "binance_ws_disconnect_suppressed trace_id={} reason={} state={} pending_ms={}",
                     traceId,
                     reason,
@@ -926,7 +926,7 @@ public class BinanceWsClient {
             rememberLifecycleEvent("transport_open mode=" + mode + " reason=" + connectReason);
             if (mode == SessionMode.WS_API_SIGNATURE) {
                 BinanceWsClient.this.webSocket = webSocket;
-                log.info(
+                log.debug(
                         "binance_ws_transport_connected trace_id={} reason={} ws_url={}",
                         connectTraceId,
                         connectReason,
@@ -988,17 +988,29 @@ public class BinanceWsClient {
                     + ", reason=" + sanitizeDiagnosticText(reason)
                     + ", payload_hex=" + HexFormat.of().formatHex(reason.getBytes(StandardCharsets.UTF_8));
             rememberLifecycleEvent("remote_close " + lastCloseSummary);
-            log.warn(
-                    "binance_ws_closed status_code={} reason={} payload_hex={} local_action={} local_close_sent={} "
-                            + "recent_frames={} recent_lifecycle={}",
-                    statusCode,
-                    reason,
-                    HexFormat.of().formatHex(reason.getBytes(StandardCharsets.UTF_8)),
-                    lastLocalLifecycleAction,
-                    localCloseSent,
-                    runtimeConfig.wsDiagnosticEnabled() ? recentInboundFramesSnapshot() : "[diagnostic-disabled]",
-                    runtimeConfig.wsDiagnosticEnabled() ? recentLifecycleEventsSnapshot() : "[diagnostic-disabled]"
-            );
+            boolean localLifecycleClose = localCloseSent
+                    && ("stop".equals(lastLocalLifecycleAction) || "reconnect".equals(lastLocalLifecycleAction));
+            if (localLifecycleClose) {
+                log.info(
+                        "binance_ws_closed_local status_code={} reason={} local_action={} payload_hex={}",
+                        statusCode,
+                        reason,
+                        lastLocalLifecycleAction,
+                        HexFormat.of().formatHex(reason.getBytes(StandardCharsets.UTF_8))
+                );
+            } else {
+                log.warn(
+                        "binance_ws_closed status_code={} reason={} payload_hex={} local_action={} local_close_sent={} "
+                                + "recent_frames={} recent_lifecycle={}",
+                        statusCode,
+                        reason,
+                        HexFormat.of().formatHex(reason.getBytes(StandardCharsets.UTF_8)),
+                        lastLocalLifecycleAction,
+                        localCloseSent,
+                        runtimeConfig.wsDiagnosticEnabled() ? recentInboundFramesSnapshot() : "[diagnostic-disabled]",
+                        runtimeConfig.wsDiagnosticEnabled() ? recentLifecycleEventsSnapshot() : "[diagnostic-disabled]"
+                );
+            }
             scheduleReconnect("listener_close");
             return CompletableFuture.completedFuture(null);
         }

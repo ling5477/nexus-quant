@@ -135,14 +135,21 @@ public class GateBDemoStrategyRunner {
     private void ensureDemoStrategyRun() {
         jdbcTemplate.update(
                 """
-                        INSERT INTO strategy_runs (run_id, strategy_id, account_id, status, started_at, trace_id)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        ON CONFLICT (run_id) DO NOTHING
+                        INSERT INTO strategy_runs (
+                            strategy_run_id, strategy_id, account_id, status, trigger_type, exchange_code, trade_env,
+                            config_snapshot, started_at, trace_id
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), ?, ?)
+                        ON CONFLICT (strategy_run_id) DO NOTHING
                         """,
                 DEMO_RUN_ID,
                 DEMO_STRATEGY_ID,
                 DEMO_ACCOUNT_ID,
                 "RUNNING",
+                "SCHEDULER",
+                "PAPER",
+                "SIM",
+                "{}",
                 Timestamp.from(Instant.now()),
                 DEMO_TRACE_ID
         );
