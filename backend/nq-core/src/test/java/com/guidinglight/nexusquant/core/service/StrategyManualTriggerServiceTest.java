@@ -219,6 +219,17 @@ class StrategyManualTriggerServiceTest {
         }
 
         @Override
+        public Optional<StrategyRun> findLatestByRequestId(String requestId) {
+            return storage.values().stream().filter(item -> requestId.equals(item.requestId())).findFirst();
+        }
+
+        @Override
+        public boolean existsActiveRunByStrategyId(String strategyId) {
+            return storage.values().stream()
+                    .anyMatch(item -> item.strategyId().equals(strategyId) && item.status() != StrategyRunStatus.FAILED);
+        }
+
+        @Override
         public boolean updateStatus(String strategyRunId, StrategyRunStatus status, Instant finishedAt, String errorMessage) {
             StrategyRun current = storage.get(strategyRunId);
             if (current == null) {

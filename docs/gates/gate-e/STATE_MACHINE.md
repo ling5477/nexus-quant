@@ -187,6 +187,23 @@ GateE-1.2 当前实现的最小子集为：
 
 `ScheduleJob.SCHEDULED -> TriggerRequest.RECEIVED -> dedup/window guard -> ACCEPTED|DEDUPED|REJECTED -> StrategyRun`
 
+GateE-2.2 当前落地的最小 guard 结果为：
+
+- `skipped_disabled`
+- `skipped_strategy_disabled`
+- `skipped_not_due`
+- `skipped_window`
+- `skipped_dedup`
+- `skipped_busy`
+- `triggered`
+- `failed`
+
+说明：
+
+- `skipped_*` 都不创建新的 `strategyRunId`
+- `triggered` 后才进入 GateE-1.2 的 run 创建与下单主链
+- 当前 busy 保护只保证单实例内最小互斥
+
 ### 7.3 retry / recovery
 
 GateE 只允许受控 retry：

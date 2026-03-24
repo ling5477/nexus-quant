@@ -74,6 +74,17 @@ public class StrategyScheduleService {
         return strategyScheduleRepository.listByStrategyId(strategyId);
     }
 
+    /**
+     * 列出当前所有计划配置。
+     * <p>
+     * Why:
+     * GateE-2.2 的 scanOnce 需要把 disabled schedule 也纳入结构化结果，
+     * 否则无法返回 `skipped_disabled`。
+     */
+    public List<StrategySchedule> listAllSchedules() {
+        return strategyScheduleRepository.listAll();
+    }
+
     public StrategySchedule getByScheduleJobId(String scheduleJobId) {
         return strategyScheduleRepository.findByScheduleJobId(requireText(scheduleJobId, "scheduleJobId"))
                 .orElseThrow(() -> new IllegalArgumentException("strategy schedule not found: " + scheduleJobId));

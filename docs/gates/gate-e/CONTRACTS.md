@@ -233,6 +233,75 @@
 
 ---
 
+## 4.5 GateE-2.2 window / dedup / serialization 最小门禁
+
+当前 GateE-2.2 不新增 trigger 表，不新增新的执行主链，只在既有 `scanOnce -> StrategyTriggerGateway -> StrategyManualTriggerService` 之前增加最小门禁。
+
+### `windowConfig`
+
+- 作用层级：schedule -> run 前置门禁
+- 当前最小 JSON 结构：
+  - `startTime`
+  - `endTime`
+  - `timezone`（可选，默认继承 schedule `timezone`）
+  - `daysOfWeek`（可选）
+  - `enabled`（可选，`false` 视为不启用窗口门禁）
+- 当前语义：
+  - 命中 `scanOnce` 后，先判断当前时刻是否落在允许窗口内
+  - 不在窗口内时返回 `skipped_window`
+  - 不创建 `strategy_runs`
+  - 不更新 `last_triggered_at`
+
+### `dedupScope`
+
+- 作用层级：schedule -> run 前置去重
+- 当前支持值：
+  - `SCHEDULE_WINDOW`
+  - `REQUEST`
+  - `STRATEGY`
+- 当前最小语义：
+  - `SCHEDULE_WINDOW`：同一 `schedule_job_id` 在同一 due bucket 只允许触发一次
+  - `REQUEST`：当前阶段无独立 `trigger_id`，因此退化为同一 schedule due bucket 的 request 去重
+  - `STRATEGY`：同一 `strategy_id` 在同一 due bucket 只允许保留一个 schedule trigger
+- 当前实现依赖：
+  - `schedule_job_id`
+  - `request_id`
+  - `last_triggered_at`
+  - `strategy_runs.request_id`
+
+### serialization
+
+- 作用层级：单实例内最小互斥保护
+- 当前语义：
+  - 同一 `schedule_job_id` 的近邻并发扫描不能重复触发
+  - 同一 `strategy_id` 若已有活动态 run，则 schedule trigger 返回 `skipped_busy`
+- 当前边界：
+  - 仅保证单实例 / 单进程内
+  - 不承诺跨实例严格一致
+  - 不引入外部锁中间件
+
+### `scanOnce` 结果分类
+
+- `triggered`
+- `skipped_window`
+- `skipped_dedup`
+- `skipped_disabled`
+- `skipped_strategy_disabled`
+- `skipped_busy`
+- `skipped_not_due`
+- `failed`
+
+### 追踪约束
+
+- 当前仍不持久化 `trigger_id`
+- schedule -> run 的最小追踪依赖：
+  - `schedule_job_id`
+  - `request_id`
+  - `strategy_run_id`
+- 真正允许触发时仍复用 GateE-1.2 主链创建 run 与 order
+
+---
+
 ## 5. 收口后的现有表 contract
 
 ### 5.1 `strategy_runs`

@@ -70,6 +70,38 @@ public class JdbcStrategyRunRepository implements StrategyRunRepository {
     }
 
     @Override
+    public Optional<StrategyRun> findLatestByRequestId(String requestId) {
+        List<StrategyRun> rows = jdbcTemplate.query(
+                """
+                        SELECT strategy_run_id, strategy_id, account_id, exchange_code, trade_env, trigger_type, status,
+                               config_snapshot::text AS config_snapshot, request_id, started_at, finished_at, error_message, trace_id
+                        FROM strategy_runs
+                        WHERE request_id = ?
+                        ORDER BY started_at DESC, strategy_run_id DESC
+                        LIMIT 1
+                        """,
+                ROW_MAPPER,
+                requestId
+        );
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
+    public boolean existsActiveRunByStrategyId(String strategyId) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(1)
+                        FROM strategy_runs
+                        WHERE strategy_id = ?
+                          AND status IN ('CREATED', 'DISPATCHING', 'RUNNING')
+                        """,
+                Integer.class,
+                strategyId
+        );
+        return count != null && count > 0;
+    }
+
+    @Override
     public boolean updateStatus(String strategyRunId, StrategyRunStatus status, Instant finishedAt, String errorMessage) {
         return jdbcTemplate.update(
                 "UPDATE strategy_runs SET status = ?, finished_at = ?, error_message = ? WHERE strategy_run_id = ?",

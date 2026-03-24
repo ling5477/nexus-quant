@@ -3,7 +3,7 @@
 
 当前阶段：**GateE（v1.4：策略接入与调度编排）**
 
-当前状态：**GateE-0.1 / GateE-0.2 / GateE-0.3 / GateE-1.1 / GateE-1.2 / GateE-2.1 已完成，下一步进入 GateE-2.2**
+当前状态：**GateE-0.1 / GateE-0.2 / GateE-0.3 / GateE-1.1 / GateE-1.2 / GateE-2.1 / GateE-2.2 已完成，下一步进入 GateE-2.3**
 
 ---
 
@@ -33,7 +33,8 @@
 - GateE-1.1 已完成策略定义 / 注册 / 启停最小模型
 - GateE-1.2 已完成手动 trigger / strategyRun 主链
 - GateE-2.1 已完成 schedule job / 计划配置
-- 下一步进入 GateE-2.2
+- GateE-2.2 已完成 window / dedup / serialization 最小门禁
+- 下一步进入 GateE-2.3
 
 ---
 

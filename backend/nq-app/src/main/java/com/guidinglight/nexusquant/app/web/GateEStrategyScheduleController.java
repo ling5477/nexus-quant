@@ -115,15 +115,12 @@ public class GateEStrategyScheduleController {
     }
 
     @PostMapping("/strategy-schedules/scanOnce")
-    public List<GateEStrategyScheduleScanResponse> scanOnce(
+    public GateEStrategyScheduleScanResponse scanOnce(
             @RequestHeader(value = PRIMARY_TRACE_HEADER, required = false) String primaryTraceId,
             @RequestHeader(value = FALLBACK_TRACE_HEADER, required = false) String fallbackTraceId
     ) {
         String traceId = resolveTraceId(primaryTraceId, fallbackTraceId);
-        return withTrace(traceId, () -> strategyScheduleScanService.scanOnce(traceId)
-                .stream()
-                .map(GateEStrategyScheduleScanResponse::from)
-                .toList());
+        return withTrace(traceId, () -> GateEStrategyScheduleScanResponse.from(strategyScheduleScanService.scanOnce(traceId)));
     }
 
     private String resolveTraceId(String primaryTraceId, String fallbackTraceId) {

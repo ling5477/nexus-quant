@@ -1,26 +1,36 @@
 package com.guidinglight.nexusquant.app.web;
 
-import com.guidinglight.nexusquant.core.service.StrategyScheduleScanResult;
+import com.guidinglight.nexusquant.core.service.StrategyScheduleScanBatchResult;
+
+import java.util.List;
 
 /**
- * GateEStrategyScheduleScanResponse 描述 GateE-2.1 最小扫描结果。
+ * GateEStrategyScheduleScanResponse 描述 GateE-2.2 的扫描摘要与明细。
  */
 public record GateEStrategyScheduleScanResponse(
-        String scheduleJobId,
-        String strategyId,
-        boolean triggered,
-        String requestId,
-        String strategyRunId,
-        String reason
+        int scannedCount,
+        int triggeredCount,
+        int skippedWindowCount,
+        int skippedDedupCount,
+        int skippedDisabledCount,
+        int skippedStrategyDisabledCount,
+        int skippedBusyCount,
+        int skippedNotDueCount,
+        int failedCount,
+        List<GateEStrategyScheduleScanDetailResponse> details
 ) {
-    public static GateEStrategyScheduleScanResponse from(StrategyScheduleScanResult result) {
+    public static GateEStrategyScheduleScanResponse from(StrategyScheduleScanBatchResult result) {
         return new GateEStrategyScheduleScanResponse(
-                result.scheduleJobId(),
-                result.strategyId(),
-                result.triggered(),
-                result.requestId(),
-                result.strategyRunId(),
-                result.reason()
+                result.scannedCount(),
+                result.triggeredCount(),
+                result.skippedWindowCount(),
+                result.skippedDedupCount(),
+                result.skippedDisabledCount(),
+                result.skippedStrategyDisabledCount(),
+                result.skippedBusyCount(),
+                result.skippedNotDueCount(),
+                result.failedCount(),
+                result.results().stream().map(GateEStrategyScheduleScanDetailResponse::from).toList()
         );
     }
 }

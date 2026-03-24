@@ -87,6 +87,20 @@ public class JdbcStrategyScheduleRepository implements StrategyScheduleRepositor
     }
 
     @Override
+    public List<StrategySchedule> listAll() {
+        return jdbcTemplate.query(
+                """
+                        SELECT schedule_job_id, strategy_id, schedule_type, cron_expr, timezone, enabled,
+                               window_config::text AS window_config, dedup_scope, exchange_code, account_id, trade_env,
+                               last_triggered_at, created_at, updated_at
+                        FROM strategy_schedules
+                        ORDER BY updated_at ASC, schedule_job_id ASC
+                        """,
+                ROW_MAPPER
+        );
+    }
+
+    @Override
     public List<StrategySchedule> listEnabledSchedules() {
         return jdbcTemplate.query(
                 """

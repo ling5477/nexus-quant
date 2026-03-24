@@ -259,6 +259,43 @@
 
 ---
 
+## E-034：GateE-2.2 的 windowConfig 只负责 run 创建前窗口门禁
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - `windowConfig` 在 GateE-2.2 只决定“这次 schedule 命中是否允许创建 run”
+  - 不参与下单后生命周期
+  - 当前最小 JSON 结构只支持 `startTime / endTime / timezone / daysOfWeek / enabled`
+
+---
+
+## E-035：GateE-2.2 的 dedupScope 通过 `request_id` 与 due bucket 落地
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - GateE-2.2 不新增 `trigger_id`
+  - schedule trigger 的去重先通过确定性的 `request_id` + `strategy_runs.request_id` 实现
+  - `SCHEDULE_WINDOW / REQUEST / STRATEGY` 都只作用在 run 创建前
+- 原因：
+  - 当前 schema 已有 `request_id`
+  - 本批不做 schema 扩张
+  - 先把最小去重语义工程化，后续再决定是否需要专门 trigger 事实表
+
+---
+
+## E-036：GateE-2.2 的串行化仅保证单实例内最小互斥
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - 使用进程内 schedule / strategy busy guard 与活动态 run 检查
+  - 命中后返回 `skipped_busy`
+  - 不引入分布式锁、外部锁服务或多实例严格一致语义
+
+---
+
 ## E-027：GateE-1.1 继续不引入 `strategyInstanceId`
 
 - 日期：2026-03-23

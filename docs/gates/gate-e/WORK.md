@@ -309,3 +309,71 @@
   - 窗口控制
   - dedup / serialization
   - GateE-2.x
+
+---
+
+## 11. 2026-03-24：GateE-2.1 调度任务与计划配置
+
+- 本批归属：`GateE-2.1`
+- 本批目标：
+  - 建立 `strategy_schedules` 的最小 domain / repository / service / controller
+  - 提供 create / list / detail / enable / disable
+  - 提供最小 `scanOnce`
+  - 让 schedule 命中后复用 GateE-1.2 主链
+
+- 本批能力结果：
+  - 已落地 `StrategySchedule`、`StrategyScheduleRepository`、`StrategyScheduleService`
+  - 已落地 `GateEStrategyScheduleController`
+  - 已提供 `POST /__gated/strategy-schedules/scanOnce`
+  - `scanOnce` 命中后通过 `StrategyTriggerGateway -> StrategyManualTriggerService` 复用既有 trigger 主链
+  - 真正触发后更新 `last_triggered_at`
+
+- 本批明确不做：
+  - `windowConfig` 执行语义
+  - `dedupScope` 执行语义
+  - serialization
+
+---
+
+## 12. 2026-03-24：GateE-2.2 window / dedup / serialization
+
+- 本批归属：`GateE-2.2`
+- 本批目标：
+  - 把 `windowConfig` 推进到最小可执行门禁
+  - 把 `dedupScope` 推进到最小可执行去重
+  - 增加单实例内最小 busy / serialization 保护
+  - 在不改写 GateE-2.1 主入口的前提下升级 `scanOnce`
+
+- 本批能力结果：
+  - `scanOnce` 返回结构化摘要与逐条明细
+  - 结果分类固定为：
+    - `triggered`
+    - `skipped_window`
+    - `skipped_dedup`
+    - `skipped_disabled`
+    - `skipped_strategy_disabled`
+    - `skipped_busy`
+    - `skipped_not_due`
+    - `failed`
+  - `windowConfig` 当前最小 JSON 结构支持：
+    - `startTime`
+    - `endTime`
+    - `timezone`
+    - `daysOfWeek`
+    - `enabled`
+  - `dedupScope` 当前最小执行支持：
+    - `SCHEDULE_WINDOW`
+    - `REQUEST`
+    - `STRATEGY`
+  - 去重基于确定性 `request_id` + `strategy_runs.request_id`
+  - busy 保护基于进程内 `schedule_job_id / strategy_id` 互斥与活动态 run 检查
+  - 真正允许触发时仍复用 GateE-1.2 主链
+
+- 本批明确不做：
+  - `trigger_id` 持久化
+  - 分布式锁
+  - 多实例严格一致语义
+  - GateE-2.3 结果回传与查询面
+
+- 当前后续待办：
+  1. GateE-2.3 运行结果回传与查询面

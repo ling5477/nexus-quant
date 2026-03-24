@@ -131,6 +131,11 @@ class StrategyScheduleServiceTest {
         }
 
         @Override
+        public List<StrategySchedule> listAll() {
+            return storage.values().stream().toList();
+        }
+
+        @Override
         public List<StrategySchedule> listEnabledSchedules() {
             return storage.values().stream().filter(StrategySchedule::enabled).toList();
         }
