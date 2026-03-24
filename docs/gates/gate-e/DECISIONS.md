@@ -295,3 +295,34 @@
   - 现阶段仍不重写 contracts 主结构
   - 继续由 `ExecutionCommandMapper` 把 `strategyRunId` 传入该兼容位
   - 不允许新增把 `strategyId` 当运行 ID 的新调用点
+
+---
+
+## E-031：GateE-2.1 只实现最小计划配置与 `scanOnce`
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - 2.1 提供 schedule config 管理和最小 `scanOnce`
+  - 不实现复杂后台循环调度器或分布式调度平台
+
+---
+
+## E-032：GateE-2.1 的 schedule 命中复用 GateE-1.2 手动 trigger 主链
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - `StrategyScheduleScanService` 命中 schedule 后，通过 `StrategyTriggerGateway` 复用 1.2 主链
+  - 不复制 run 创建与下单逻辑
+
+---
+
+## E-033：GateE-2.1 中 `windowConfig / dedupScope` 只存不执行
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - 2.1 仅保存 `windowConfig / dedupScope`
+  - 不在本批实现窗口控制、去重或串行化
+  - 这些执行语义顺延 GateE-2.2

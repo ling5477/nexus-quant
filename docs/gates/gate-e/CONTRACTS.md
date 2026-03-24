@@ -395,3 +395,40 @@ adapter 返回层统一使用以下结果分类：
 ### 8.4 统一 trade report
 
 Binance / OKX 的 fills 现统一映射到 `AdapterTradeReport`，不再让 reconcile 直接消费交易所私有 fill DTO 作为主返回语义。
+
+---
+
+## 9. GateE-2.1 schedule job / 计划配置
+
+当前最小对象为：
+
+- `StrategySchedule`
+- `StrategyScheduleStatus`
+- `StrategyScheduleRepository`
+- `StrategyScheduleService`
+- `StrategyScheduleScanService`
+
+当前最小接口为：
+
+- `POST /__gated/strategies/{strategyId}/schedules`
+- `GET /__gated/strategies/{strategyId}/schedules`
+- `GET /__gated/strategy-schedules/{scheduleJobId}`
+- `POST /__gated/strategy-schedules/{scheduleJobId}/enable`
+- `POST /__gated/strategy-schedules/{scheduleJobId}/disable`
+- `POST /__gated/strategy-schedules/scanOnce`
+
+当前最小 due 判断为：
+
+- 只支持 `scheduleType = CRON`
+- 使用 `cronExpr + timezone + lastTriggeredAt` 判断是否应触发
+
+当前与 GateE-1.2 的复用关系：
+
+- schedule 命中后不复制 run 创建与下单链
+- `StrategyScheduleScanService` 通过 `StrategyTriggerGateway -> StrategyManualTriggerService` 复用 GateE-1.2 主链
+
+当前与 GateE-2.2 的边界：
+
+- `windowConfig`：只存不执行
+- `dedupScope`：只存不执行
+- `serialization`：不做

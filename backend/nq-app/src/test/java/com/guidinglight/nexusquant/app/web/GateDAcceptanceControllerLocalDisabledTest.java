@@ -3,6 +3,8 @@ import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
 import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.StrategyManualTriggerService;
+import com.guidinglight.nexusquant.core.service.StrategyScheduleScanService;
+import com.guidinglight.nexusquant.core.service.StrategyScheduleService;
 import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
@@ -38,6 +40,10 @@ class GateDAcceptanceControllerLocalDisabledTest {
     private StrategyDefinitionService strategyDefinitionService;
     @MockitoBean
     private StrategyManualTriggerService strategyManualTriggerService;
+    @MockitoBean
+    private StrategyScheduleService strategyScheduleService;
+    @MockitoBean
+    private StrategyScheduleScanService strategyScheduleScanService;
     @Test
     void shouldReturnNotFoundWhenLocalButVerifyDisabled() throws Exception {
         mockMvc.perform(post("/__gated/recovery/runOnce"))
