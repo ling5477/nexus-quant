@@ -1,7 +1,7 @@
 # GateE README
 # GateE（v1.4：策略接入与调度编排）
 
-当前状态：**GateE-0.1 与 GateE-0.2 已完成，下一步进入 GateE-0.3**。
+当前状态：**GateE-0.x、GateE-1.x、GateE-2.x 已完成，GateF 尚未开始**。
 
 GateE 不是 GateD 的返工阶段，也不是 GateF 的预演阶段。GateD 已冻结，GateE 的正式定义固定为：**策略接入与调度编排**。
 
@@ -155,7 +155,8 @@ GateE 文档基线完成，不代表 GateE 已完成。真正的阶段完成至�
 5. GateE-1.1：策略定义与注册模型
 6. GateE-1.2：运行主链与手动触发
 7. GateE-2.1：调度任务与触发编排
-8. GateE-2.2：窗口、去重、串行化、retry / recovery 收口
+8. GateE-2.2：窗口、去重、串行化
+9. GateE-2.3：运行结果回传与查询面
 
 ---
 

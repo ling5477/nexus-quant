@@ -111,12 +111,14 @@
 
 ### UC-E1-5 结果回传
 
-- 当前状态：`[ ]`
+- 当前状态：`[x]`
 - 步骤：
-  - 完成一次下单与成交闭环
+  - 完成一次 manual 或 schedule trigger
+  - 通过 `strategyRunId` 反查运行详情
 - 预期：
-  - `StrategyRunResult` 可见
-  - `SUCCEEDED / PARTIAL_SUCCESS / FAILED` 能准确区分
+  - `StrategyRunDetail` 可见
+  - 订单 / 成交摘要可按 run 聚合
+  - 当前未直接纳入的 ledger / risk / event 会返回明确限制说明
 
 ---
 

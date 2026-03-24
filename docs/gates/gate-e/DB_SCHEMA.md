@@ -253,6 +253,20 @@ GateE-0.2 的新增与收口全部集中在：
 
 ---
 
+## 8.1 GateE-2.3 查询面约束
+
+- `strategy_runs`、`orders`、`trades` 当前具备稳定的 `strategy_run_id` 血缘，已足够支撑最小 run 查询面
+- `ledger_entries / ledger_events` 当前没有 `strategy_run_id` 外键
+- `risk_events` 当前没有 `strategy_run_id` 外键
+- `event_store / audit_logs` 当前主要按 `trace_id` 与业务键追踪，未形成稳定 run 外键
+
+结论：
+
+- GateE-2.3 直接聚合 `orders` 与 `trades`
+- `ledger / risk / event / audit` 在本阶段只返回限制说明，不扩 schema
+
+---
+
 ## 9. GateE-0.2-comment-fix 与整库注释回补结论
 
 按 migration 实际扫描，当前整库表清单为 16 张：

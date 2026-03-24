@@ -296,6 +296,41 @@
 
 ---
 
+## E-037：GateE-2.3 的查询主轴固定为 `strategyRunId`
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - 单次运行详情统一通过 `strategyRunId` 查询
+  - `strategyId` 只作为最近运行列表筛选维度
+  - `scheduleJobId` 只作为计划触发运行列表筛选维度
+
+---
+
+## E-038：GateE-2.3 不引入独立 `trigger_id` 事实表
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - 本批不新增 `trigger_id` 表
+  - 最小追踪继续依赖 `strategyRunId + requestId + scheduleJobId + triggerType`
+  - 只有后续确实需要更强事实链时，再单独做演进决策
+
+---
+
+## E-039：GateE-2.3 只聚合可稳定按 run 关联的事实
+
+- 日期：2026-03-24
+- 状态：已决定
+- 决策：
+  - 直接聚合 `orders` 与 `trades`
+  - `ledger_entries / ledger_events / risk_events / event_store / audit_logs` 当前只返回限制说明
+- 原因：
+  - 当前这些表没有稳定的 `strategy_run_id` 外键
+  - 不为了查询面完整感而强行扩 schema 或伪造关联
+
+---
+
 ## E-027：GateE-1.1 继续不引入 `strategyInstanceId`
 
 - 日期：2026-03-23

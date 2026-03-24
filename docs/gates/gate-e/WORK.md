@@ -377,3 +377,33 @@
 
 - 当前后续待办：
   1. GateE-2.3 运行结果回传与查询面
+
+---
+
+## 13. 2026-03-24：GateE-2.3 运行结果回传与查询面
+
+- 本批归属：`GateE-2.3`
+- 本批目标：
+  - 以 `strategyRunId` 查询单次运行详情
+  - 以 `strategyId` 查询最近运行列表
+  - 统一 manual / schedule trigger 的结果查询视角
+  - 最小聚合 `orders / trades` 摘要
+
+- 本批实现结果：
+  - 新增 `StrategyRunQueryService`
+  - 新增 `GateEStrategyRunController`
+  - 提供最小查询入口：
+    - `GET /__gated/strategy-runs/{strategyRunId}`
+    - `GET /__gated/strategies/{strategyId}/runs`
+    - `GET /__gated/strategy-schedules/{scheduleJobId}/runs`
+  - `StrategyRunDetail` / `StrategyRunSummary` 统一 manual 与 schedule 结果视角
+  - `orders` 与 `trades` 已稳定纳入运行详情
+  - `ledger / risk / event / audit` 当前仅返回限制说明
+
+- 本批明确不做：
+  - 不新增 `trigger_id` 表
+  - 不扩 schema
+  - 不进入 GateF
+
+- 当前后续待办：
+  1. 评估是否需要在后续版本把 `trigger_id` 与更强事实链建模成独立演进项

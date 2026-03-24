@@ -1,4 +1,5 @@
 package com.guidinglight.nexusquant.app.web;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.api.model.AccountBalanceView;
 import com.guidinglight.nexusquant.api.model.AccountView;
@@ -15,6 +16,7 @@ import com.guidinglight.nexusquant.core.service.CancelOrderResult;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
 import com.guidinglight.nexusquant.core.service.StrategyManualTriggerService;
+import com.guidinglight.nexusquant.core.service.StrategyRunQueryService;
 import com.guidinglight.nexusquant.core.service.StrategyScheduleScanService;
 import com.guidinglight.nexusquant.core.service.StrategyScheduleService;
 import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
@@ -28,10 +30,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -40,8 +44,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 /**
- * GateDAcceptanceControllerLocalTest 楠岃瘉 local profile 涓?GateD 楠屾敹鍏ュ彛涓庢渶灏忔煡璇㈣鍥惧彲鐢ㄣ€? */
+ * GateDAcceptanceControllerLocalTest 楠岃瘉 local profile 涓?GateD 楠屾敹鍏ュ彛涓庢渶灏忔煡璇㈣鍥惧彲鐢ㄣ€?
+ */
 @ActiveProfiles("local")
 @WebMvcTest(properties = "nq.gated.verify.enabled=true")
 class GateDAcceptanceControllerLocalTest {
@@ -66,9 +72,12 @@ class GateDAcceptanceControllerLocalTest {
     @MockitoBean
     private StrategyManualTriggerService strategyManualTriggerService;
     @MockitoBean
+    private StrategyRunQueryService strategyRunQueryService;
+    @MockitoBean
     private StrategyScheduleService strategyScheduleService;
     @MockitoBean
     private StrategyScheduleScanService strategyScheduleScanService;
+
     @Test
     void shouldTriggerPlaceOrderThroughService() throws Exception {
         when(orderCommandService.placeOrder(any())).thenReturn(new PlaceOrderResult("ord-1", OrderStatus.ACCEPTED, false));
@@ -92,6 +101,7 @@ class GateDAcceptanceControllerLocalTest {
                 .andExpect(jsonPath("$.traceId").value("trc-local-1"));
         verify(orderCommandService).placeOrder(any());
     }
+
     @Test
     void shouldTriggerCancelOrderThroughService() throws Exception {
         when(orderCommandService.cancelOrder(any())).thenReturn(new CancelOrderResult("ord-1", OrderStatus.CANCELLED, false));
@@ -105,6 +115,7 @@ class GateDAcceptanceControllerLocalTest {
                 .andExpect(jsonPath("$.traceId").value("trc-local-2"));
         verify(orderCommandService).cancelOrder(any());
     }
+
     @Test
     void shouldTriggerReconcileAndOkxRecoveryServices() throws Exception {
         when(okxRestReconcileService.reconcileOnce(eq(25))).thenReturn(3);
@@ -134,6 +145,7 @@ class GateDAcceptanceControllerLocalTest {
         verify(okxRestReconcileService).reconcileOnce(25);
         verify(recoveryService).rebuild("trc-local-4");
     }
+
     @Test
     void shouldTriggerBinanceReconcileThroughService() throws Exception {
         when(binanceRestReconcileService.reconcileOnce(eq(12))).thenReturn(1);
@@ -146,6 +158,7 @@ class GateDAcceptanceControllerLocalTest {
                 .andExpect(jsonPath("$.traceId").value("trc-local-5"));
         verify(binanceRestReconcileService).reconcileOnce(12);
     }
+
     @Test
     void shouldTriggerBinanceRecoveryThroughService() throws Exception {
         when(binanceRecoveryService.rebuild(eq("trc-local-5b"))).thenReturn(new RecoveryReport(
@@ -166,6 +179,7 @@ class GateDAcceptanceControllerLocalTest {
                 .andExpect(jsonPath("$.traceId").value("trc-local-5b"));
         verify(binanceRecoveryService).rebuild("trc-local-5b");
     }
+
     @Test
     void shouldExposeCanonicalQueryRoutesAndRejectRemovedGateCAlias() throws Exception {
         when(tradingQueryFacade.queryOrder(eq("ord-9"), eq("trc-local-6"))).thenReturn(Optional.of(new OrderView(

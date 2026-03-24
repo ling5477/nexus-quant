@@ -302,6 +302,82 @@
 
 ---
 
+## 4.6 GateE-2.3 运行结果回传与查询面
+
+当前 GateE-2.3 的查询主轴固定为 `strategyRunId`。
+
+### 最小查询能力
+
+- `GET /__gated/strategy-runs/{strategyRunId}`
+- `GET /__gated/strategies/{strategyId}/runs`
+- `GET /__gated/strategy-schedules/{scheduleJobId}/runs`
+
+### `StrategyRunSummary`
+
+最小字段：
+
+- `strategyId`
+- `scheduleJobId`
+- `strategyRunId`
+- `requestId`
+- `triggerType`
+- `status`
+- `exchangeCode`
+- `accountId`
+- `tradeEnv`
+- `startedAt`
+- `finishedAt`
+- `errorMessage`
+
+### `StrategyRunDetail`
+
+最小字段：
+
+- `strategyId`
+- `scheduleJobId`
+- `strategyRunId`
+- `requestId`
+- `triggerType`
+- `status`
+- `exchangeCode`
+- `accountId`
+- `tradeEnv`
+- `startedAt`
+- `finishedAt`
+- `errorMessage`
+- `executionResult`
+
+### `StrategyRunExecutionResult`
+
+当前稳定纳入：
+
+- `orders`
+- `trades`
+
+当前不直接纳入，只返回限制说明：
+
+- `ledger_entries / ledger_events`
+- `risk_events`
+- `event_store / audit_logs`
+
+原因：
+
+- 这些事实表当前没有稳定的 `strategy_run_id` 外键
+- 只能通过 `trace_id`、`ref_type/ref_id`、`scope/scope_id` 等间接线索追踪
+- GateE-2.3 不为追求“看起来全聚合”而硬扩 schema
+
+### manual / schedule 统一规则
+
+- manual trigger 与 schedule trigger 的后续查询统一走 run 视角
+- `triggerType` 只是触发来源差异，不再拆成两套查询模型
+- 当前仍不落独立 `trigger_id` 表
+- 计划触发的最小反查依赖：
+  - `scheduleJobId`
+  - `requestId`
+  - `strategyRunId`
+
+---
+
 ## 5. 收口后的现有表 contract
 
 ### 5.1 `strategy_runs`

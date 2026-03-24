@@ -279,9 +279,10 @@ public class StrategyScheduleScanService {
     private String buildScheduleRequestId(StrategySchedule schedule, Instant dueAt) {
         String bucket = String.valueOf(dueAt.toEpochMilli());
         return switch (schedule.dedupScope()) {
-            case "STRATEGY" -> "req-schedule-strategy-" + schedule.strategyId() + "-" + bucket;
-            case "REQUEST" -> "req-schedule-request-" + schedule.scheduleJobId() + "-" + bucket;
-            case "SCHEDULE_WINDOW" -> "req-schedule-window-" + schedule.scheduleJobId() + "-" + bucket;
+            case "STRATEGY" -> "req-schedule-" + schedule.scheduleJobId()
+                    + "-strategy-" + schedule.strategyId() + "-" + bucket;
+            case "REQUEST" -> "req-schedule-" + schedule.scheduleJobId() + "-request-" + bucket;
+            case "SCHEDULE_WINDOW" -> "req-schedule-" + schedule.scheduleJobId() + "-window-" + bucket;
             default -> throw new IllegalStateException("unsupported dedupScope: " + schedule.dedupScope());
         };
     }

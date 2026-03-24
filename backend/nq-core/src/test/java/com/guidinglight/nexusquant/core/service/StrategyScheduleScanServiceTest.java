@@ -103,7 +103,7 @@ class StrategyScheduleScanServiceTest {
                 "SCHEDULER",
                 StrategyRunStatus.FAILED,
                 "{}",
-                "req-schedule-window-sch-3-1774256460000",
+                "req-schedule-sch-3-window-1774256460000",
                 Instant.parse("2026-03-23T09:01:00Z"),
                 Instant.parse("2026-03-23T09:01:05Z"),
                 "already triggered",
@@ -113,7 +113,7 @@ class StrategyScheduleScanServiceTest {
         StrategyScheduleScanResult result = fixture.scanService.scanOnce("trc-schedule-scan-3").results().getFirst();
 
         assertEquals(StrategyScheduleScanOutcome.SKIPPED_DEDUP, result.outcome());
-        assertEquals("req-schedule-window-sch-3-1774256460000", result.requestId());
+        assertEquals("req-schedule-sch-3-window-1774256460000", result.requestId());
         assertEquals(0, fixture.triggerGateway.invocationCount);
     }
 

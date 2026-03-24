@@ -212,6 +212,16 @@ GateE 只允许受控 retry：
 - 若运行未生成执行请求，可在同一运行内恢复
 - 若执行链已出单，必须先 `query-confirm`，不得直接重放下单
 
+### 7.4 结果查询
+
+GateE-2.3 当前统一规则为：
+
+- `StrategyRunDetail` 是 manual / schedule 共用的唯一运行结果视图
+- 查询主轴固定为 `strategyRunId`
+- `strategyId` 只作为列表筛选维度
+- `scheduleJobId` 只作为计划触发列表筛选维度
+- 不引入独立 `trigger_id` 查询主轴
+
 ---
 
 ## 8. 与 GateD 的分工
