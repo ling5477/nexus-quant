@@ -1,15 +1,15 @@
 # docs/current/WORK_TEMPLATE.md
-# Current Gate Work Template（当前阶段模板）
+# Current Work Template（GateF 待启动模板）
 
-用途：记录 GateE 后续各批次工作，避免只改代码不回填阶段台账。
+用途：记录 GateF 文档启动批与后续实现批次的工作记录。
 
 ---
 
 ## 1. 适用范围
 
-- 仅用于 GateE 当前阶段
-- 具体工作记录回填到 `docs/gates/gate-e/WORK.md`
-- 涉及中粒度决策时同步回填 `docs/gates/gate-e/DECISIONS.md`
+- 当前用于 GateF-DOC-1 与后续 GateF 批次
+- 不用于继续追加 GateE 功能
+- 若仍需追溯 GateE，回填到 `docs/gates/gate-e/WORK.md`
 
 ---
 
@@ -18,40 +18,37 @@
 ### 批次信息
 
 - 批次名称：
-- 阶段归属：`GateE-0 / GateE-1 / GateE-2`
-- 对应 PR：
+- 阶段归属：`GateF-DOC-1 / GateF-1 / GateF-2 / GateF-3 / GateF-4 / GateF-5`
 - 对应 checklist 条目：
 
-### 目标与非目标
+### 启动目标与非目标
 
 - 目标：
 - 不做：
 
-### 当前事实
+### GateE 输入资产
 
-- 依赖的现有表 / 类 / 文档：
-- 本批确认的仓库现状：
-- 本批要收口的兼容债务：
+- 可直接复用：
+- 只能映射、不能直接共用：
+- 必须保持冻结不回写的部分：
 
-### 变更范围
+### 待决策问题
 
-- 文档：
-- 代码：
-- migration / 配置：
+- 回测运行模型：
+- 市场数据边界：
+- 研究配置与执行配置边界：
+- 绩效评估指标口径：
+- 新表 / 新模块 / 新文档目录是否需要：
 
-### 关键决策
+### 风险与限制
 
-- 为什么这样做：
-- 对 GateD 冻结边界是否有影响：
-- 是否新增 `strategy_definitions / strategy_schedules / strategy_runs` 增强字段：
+- 当前无法直接回答的问题：
+- 需要额外事实支撑的部分：
+- 对 GateE 冻结边界的影响：
 
-### 验证
+### 验证与交接
 
-- 运行命令：
-- 关键输出：
-- 剩余风险：
-- 回滚方式：
-
-### 顺延项
-
-- 下一批继续处理：
+- 已核对文档：
+- 已核对代码事实：
+- 结论：
+- 下一步：

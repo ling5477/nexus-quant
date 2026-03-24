@@ -1,7 +1,9 @@
 # GateE README
 # GateE（v1.4：策略接入与调度编排）
 
-当前状态：**GateE-0.x、GateE-1.x、GateE-2.x 已完成，GateF 尚未开始**。
+冻结状态：**GateE 已完成并冻结；本卷宗只作归档与交接，不再继续承载新功能。**
+
+当前状态：**GateE-0.x、GateE-1.x、GateE-2.x 已完成，GateE 已冻结，GateF 尚未开始**。
 
 GateE 不是 GateD 的返工阶段，也不是 GateF 的预演阶段。GateD 已冻结，GateE 的正式定义固定为：**策略接入与调度编排**。
 
@@ -172,3 +174,46 @@ GateE 文档基线完成，不代表 GateE 已完成。真正的阶段完成至�
 - GateE PR 拆分：`docs/gates/gate-e/PR_SPLIT_PLAN.md`
 - GateE 决策：`docs/gates/gate-e/DECISIONS.md`
 - GateE 工作台账：`docs/gates/gate-e/WORK.md`
+
+---
+
+## 9. 冻结结论
+
+- GateE 正式定义固定为：**策略接入与调度编排**
+- GateE 已完成并冻结
+- GateE 不再继续承载新功能
+- GateE 后续只保留冻结卷宗与事实依据
+
+---
+
+## 10. 最终能力边界
+
+已纳入并完成：
+
+- 策略定义管理
+- 手动 trigger / `strategyRunId` 主链
+- schedule config / `scanOnce`
+- `window / dedup / serialization`
+- run 结果查询面
+
+明确不纳入 GateE 冻结范围：
+
+- `trigger_id` 事实表
+- 多实例严格一致 dedup / serialization
+- `ledger / risk / event / audit` 的稳定 run 级完全聚合
+- GateF 的研究 / 回测 / 评估能力
+
+---
+
+## 11. 冻结遗留债务与后续归属
+
+- `PlaceOrderCommand.strategyId`
+  - 归属：后续执行域契约清理 / v1.x 演进
+- `trigger_id` 事实表未落
+  - 归属：后续事实链演进决策，不默认归入 GateF
+- `ledger / risk / event / audit` 未形成稳定 run 级完全聚合
+  - 归属：后续查询与事实链演进，不默认归入 GateF
+- 多实例严格一致 dedup / serialization 未解决
+  - 归属：后续生产编排硬化，不归入 GateF
+- 兼容字段 / 兼容访问器仍存在
+  - 归属：canonical 字段清理批次，不归入 GateF

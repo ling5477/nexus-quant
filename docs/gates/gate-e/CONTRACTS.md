@@ -1,6 +1,8 @@
 # GateE CONTRACTS
 # GateE schema / metadata / contract 统一口径
 
+冻结状态：**GateE 已完成并冻结；本文档只保留冻结后的 contract 口径。**
+
 本文档记录 GateE-0.2 收口后的最终字段语义。重点不是再发明对象，而是把定义级、运行级、请求级、去重级、订单级和交易所级字段一次写死。
 
 ---

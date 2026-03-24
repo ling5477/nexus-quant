@@ -1,92 +1,105 @@
 # docs/current/README.md
-# Current Gate（当前阶段入口）
+# Current Stage（当前阶段入口）
 
-当前阶段：**GateE（v1.4：策略接入与调度编排）**
+当前阶段：**GateF（研究 / 回测 / 评估能力）**
 
-当前状态：**GateE-0.1 / GateE-0.2 / GateE-0.3 / GateE-1.1 / GateE-1.2 / GateE-2.1 / GateE-2.2 / GateE-2.3 已完成，GateF 尚未开始**
+当前状态：**GateE 已完成并冻结；GateF-DOC-1 已完成；后续进入 GateF-1。**
 
 ---
 
 ## 1. 当前阶段结论
 
-- GateD 已冻结，只作历史证据
-- GateE 主定义固定为“策略接入与调度编排”
-- GateE-0 只是前置治理，不改写主目标
-- GateF 研究 / 回测 / 评估能力不提前进入
+- GateD 已冻结，只作历史执行域证据
+- GateE 已完成并冻结，不再继续扩展功能
+- current 目录不再代表 GateE 开发中状态
+- current 目录现在承载 GateF 当前入口
 
 ---
 
-## 2. 基于仓库现状的事实摘要
+## 2. GateE 冻结结论
 
-当前已经确认的真实落点：
+已确认的 GateE 最终完成事实：
 
-- `strategy_runs` 已存在
-- `orders.strategy_run_id` 已存在
-- `PlaceOrderRequest`、`AdapterOrderRequest` 已承接运行血缘
-- `PlaceOrderCommand.strategyId` 仍是兼容债务
-- `StrategyScheduler` 与 `NoopStrategyScheduler` 只提供占位入口
-- `GateBDemoStrategyRunner` 是历史 demo runner，不是 GateE 正式主链
-- 当前没有正式策略定义表、调度表、策略注册 API、策略运行结果查询面
-- GateE-0.1 已完成 Binance background reconcile 噪音治理
-- GateE-0.2 已完成 schema / metadata / contract 收口
-- 当前已落表 `strategy_definitions` 与 `strategy_schedules`
-- GateE-1.1 已完成策略定义 / 注册 / 启停最小模型
-- GateE-1.2 已完成手动 trigger / strategyRun 主链
-- GateE-2.1 已完成 schedule job / 计划配置
-- GateE-2.2 已完成 window / dedup / serialization 最小门禁
-- GateE-2.3 已完成运行结果回传与查询面
-- GateF 尚未开始
+- `strategy_definitions`、`strategy_schedules` 已落表
+- `strategy_runs`、`orders`、`trades` 已完成 GateE 语义收口
+- adapter 返回层 canonical 字段与结果分类已统一
+- 策略定义管理已完成
+- 手动 trigger / `strategyRunId` 主链已完成
+- schedule config / `scanOnce` 已完成
+- `windowConfig / dedupScope / serialization` 已完成最小执行语义
+- run 结果查询面已完成最小闭环
 
----
+GateE 的最终能力边界固定为：
 
-## 3. 当前阶段正式边界
+- 策略定义管理
+- 手动 trigger
+- schedule 管理与 `scanOnce`
+- window / dedup / serialization
+- run 结果查询
 
-### 3.1 GateE 主目标
+GateE 明确不再继续承载：
 
-- 策略定义与注册
-- 策略启停与配置快照
-- 手动 trigger 与 scheduled trigger
-- 运行窗口、去重、串行化
-- `strategyRunId` 到执行域的血缘贯通
-- 执行结果回传与查询
-
-### 3.2 GateE-0
-
-只做：
-
-- Binance background reconcile 噪音治理
-- schema / metadata / contract 收口
-- 返回模型一致性收尾
-
-### 3.3 不做
-
-- GateF 研究 / 回测设计
-- 新交易所扩张
-- 大而全插件体系
+- `trigger_id` 事实表扩张
+- 多实例严格一致 dedup / serialization
+- ledger / risk / event / audit 的稳定 run 级完全聚合
+- GateF 的研究 / 回测 / 评估能力
 
 ---
 
-## 4. 当前阶段顺序
+## 3. GateE 遗留债务与后续归属
 
-1. GateE-DOC-2：开工基线收口
-2. GateE-0.1：Binance background reconcile 噪音治理
-3. GateE-0.2：schema / metadata / contract 收口
-4. GateE-0.3：adapter 返回模型一致性
-5. GateE-1.1：策略定义与注册模型
-6. GateE-1.2：策略运行主链与手动 trigger
-7. GateE-2.1：调度任务与计划配置
-8. GateE-2.2：窗口 / 去重 / 串行化
-9. GateE-2.3：运行结果回传与查询面
+- `PlaceOrderCommand.strategyId`
+  - 仍是兼容债务
+  - 后续归属：**非 GateF**，应放在执行域契约清理 / v1.x 演进中处理
+- `trigger_id` 事实表未落
+  - 后续归属：**非 GateF 默认项**，仅在事实链确有需要时再单独决策
+- `ledger / risk / event / audit` 未形成稳定 run 级直接聚合
+  - 后续归属：**非 GateF 默认项**，应放在事实链与查询模型演进中处理
+- 多实例严格一致的 dedup / serialization 未解决
+  - 后续归属：**非 GateF**，应放在生产编排硬化阶段处理
+- 兼容字段 / 兼容访问器仍存在
+  - 如 `venue / exchange / external_order_id`
+  - 后续归属：**非 GateF**，应放在 canonical 字段清理批次中处理
 
 ---
 
-## 5. 当前入口跳转
+## 4. GateF 当前只允许做什么
 
-- GateE 主文档：`docs/gates/gate-e/README.md`
-- GateE checklist：`docs/gates/gate-e/GATE_E_CHECKLIST.md`
-- GateE 契约：`docs/gates/gate-e/CONTRACTS.md`
-- GateE schema：`docs/gates/gate-e/DB_SCHEMA.md`
-- GateE 状态机：`docs/gates/gate-e/STATE_MACHINE.md`
-- GateE 测试清单：`docs/gates/gate-e/TEST_CASES.md`
-- GateE PR 拆分：`docs/gates/gate-e/PR_SPLIT_PLAN.md`
-- GateE 工作台账：`docs/gates/gate-e/WORK.md`
+当前已完成：
+
+- GateF 输入清单
+- GateF 启动前约束
+- GateF 主卷宗
+- GateF 待决策问题清单
+
+当前明确不允许：
+
+- 编写 GateF 主体设计正文
+- 编写 GateF 业务代码
+- 回头重写 GateE 主链
+
+---
+
+## 5. GateF 输入清单
+
+详见：`docs/current/GATEF_INPUTS.md`
+
+当前已经确认的输入资产：
+
+- `strategy_definitions`
+- `strategy_schedules`
+- `strategy_runs`
+- `orders` / `trades`
+- canonical adapter 结果模型
+- GateE run 查询面
+- GateE 冻结卷宗
+
+---
+
+## 6. 当前入口跳转
+
+- GateF 输入清单：`docs/current/GATEF_INPUTS.md`
+- GateF 主卷宗：`docs/gates/gate-f/README.md`
+- 当前阶段摘要：`docs/current/GATE_CHECKLIST.md`
+- 最近已冻结 Gate：`docs/gates/gate-e/README.md`
+- GateE 冻结 checklist：`docs/gates/gate-e/GATE_E_CHECKLIST.md`

@@ -2,7 +2,9 @@
 
 GateE 名称：**策略接入与调度编排**
 
-当前状态：**GateE-0.x、GateE-1.x、GateE-2.1、GateE-2.2 已完成**
+冻结状态：**GateE 已完成并冻结**
+
+当前状态：**GateE-0.x、GateE-1.x、GateE-2.x 已完成，GateE 已冻结**
 
 状态约定：
 
@@ -56,9 +58,11 @@ GateE 名称：**策略接入与调度编排**
 
 ## 4. 当前已确认的兼容债务
 
- - [~] `PlaceOrderCommand.strategyId` 语义与运行血缘不一致，本批已写死迁移方向，代码收口顺延 GateE-1
+- [~] `PlaceOrderCommand.strategyId` 语义与运行血缘不一致，保留为冻结遗留债务
 - [x] `strategy_definitions` / `strategy_schedules` 已落表
-- [~] 当前不存在正式策略读写 API
+- [~] `trigger_id` 事实表未落
+- [~] `ledger / risk / event / audit` 未形成稳定 run 级完全聚合
+- [~] 多实例严格一致 dedup / serialization 未解决
 
 ---
 
@@ -67,6 +71,6 @@ GateE 名称：**策略接入与调度编排**
 - [x] current 入口与 GateE 卷宗口径一致
 - [x] GateD / GateE / GateF 边界已写死
 - [x] `strategyId` 与 `strategyRunId` 已分义
-- [ ] GateE 相关实现完成后复跑 `mvn -q -f backend/pom.xml test`
-- [ ] GateE 相关实现完成后复跑 `mvn -q -f backend/pom.xml verify`
-- [ ] 所有实现 PR 均回填 `WORK.md` 与 `DECISIONS.md`
+- [x] GateE 相关实现已复跑 `mvn -q -f backend/pom.xml test`
+- [~] `mvn -q -f backend/pom.xml verify` 未单独作为冻结门禁执行
+- [x] 所有主实现批次已回填 `WORK.md` 与 `DECISIONS.md`

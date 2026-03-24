@@ -1,6 +1,8 @@
 # GateE SOURCES
 # GateE 依据索引
 
+冻结状态：**GateE 已完成并冻结；本文档保留冻结结论的依据索引。**
+
 本文档只记录本轮 GateE 结论实际依赖的仓库事实，避免文档看起来像凭空设计。
 
 ---
@@ -128,3 +130,13 @@
 - `docs/gates/gate-e/DECISIONS.md`
 - `docs/gates/gate-e/WORK.md`
 - 必要时同步 `docs/current/*`
+
+---
+
+## 7. 冻结结论依据
+
+本轮冻结结论基于以下已完成事实：
+
+- GateE-0.1 ~ GateE-2.3 的代码与文档已落地
+- `docs/current/*` 已切换到 GateF 待启动
+- GateE 当前只保留冻结卷宗角色，不再作为活跃施工入口

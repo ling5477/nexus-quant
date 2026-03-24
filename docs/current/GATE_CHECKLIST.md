@@ -1,53 +1,46 @@
-# GateE Checklist（当前入口摘要）
+# docs/current/GATE_CHECKLIST.md
+# Current Checklist（GateF 待启动）
 
-当前阶段：**GateE（v1.4：策略接入与调度编排）**
+当前阶段：**GateF（研究 / 回测 / 评估能力）**
 
-当前状态：**开工基线已完成，后续按 GateE-0 / GateE-1 / GateE-2 批次推进**
-
----
-
-## 0. 阶段切换
-
-- [x] GateD 已冻结
-- [x] current 入口已切到 GateE
-- [x] GateD 后续不再承载 GateE 新内容
+当前状态：**GateE 已冻结，GateF-DOC-1 已完成。**
 
 ---
 
-## 1. 当前基线
+## 0. GateE 冻结交接
 
-- [x] 已检查 GateE 相关文档与真实代码落点
-- [x] 已明确 GateE / GateE-0 / GateF 边界
-- [x] 已明确 `strategyId / strategyRunId / requestId / dedupKey`
-- [x] 已明确 `StrategySignal -> ExecutionRequest -> Order/Trade -> Ledger/Position -> StrategyRunResult`
-- [x] 已明确 manual trigger / scheduled trigger / recovery retry 的边界
-- [x] 已落表 `strategy_definitions` / `strategy_schedules`
-
----
-
-## 2. 后续实施顺序
-
-- [x] GateE-0.1 Binance background reconcile 噪音治理
-- [x] GateE-0.2 schema / metadata / contract 收口
-- [x] GateE-0.3 adapter 返回模型一致性
-- [x] GateE-1.1 策略定义与注册模型
-- [x] GateE-1.2 策略运行主链与手动 trigger
-- [x] GateE-2.1 调度任务与计划配置
-- [x] GateE-2.2 窗口 / 去重 / 串行化
-- [x] GateE-2.3 运行结果回传与查询面
+- [x] GateE 已明确写成已冻结
+- [x] GateE 最终能力边界已集中列出
+- [x] GateE 遗留债务已集中列出
+- [x] current 已切换为 GateF 待启动
+- [x] 顶层入口已同步切换
 
 ---
 
-## 3. 当前风险
+## 1. GateF-DOC-1
 
-- [~] `PlaceOrderCommand.strategyId` 仍需收口
-- [x] 调度对象已具备正式持久化模型
-- [~] 运行结果查询面仍未实现
+- [x] 已整理 GateF 输入清单
+- [x] 已明确 GateF 可复用资产
+- [x] 已明确 GateF 前置约束
+- [x] 已明确 GateF 待决策问题
+- [x] 已建立 GateF 主卷宗
+- [x] 已形成 GateF PR_SPLIT_PLAN
 
 ---
 
-## 4. 使用指引
+## 2. GateF 尚未开始的事项
 
-- GateE 当前事实以 `docs/current/*` 与 `docs/gates/gate-e/*` 为准
-- 详细实施顺序看 `docs/gates/gate-e/PR_SPLIT_PLAN.md`
-- 详细对象语义看 `docs/gates/gate-e/CONTRACTS.md`
+- [ ] 回测运行模型
+- [ ] 市场数据输入边界
+- [ ] 研究配置与执行配置边界
+- [ ] 绩效评估指标口径
+- [ ] GateF 文档目录与模块边界
+- [ ] 是否需要新表 / 新模块 / 新 schema
+
+---
+
+## 3. 当前提醒
+
+- GateF 不回头重写 GateE
+- GateE 遗留债务不再作为 GateE “继续进行中”的理由
+- 本目录当前只代表 GateF 待启动状态，不代表 GateF 设计已展开
