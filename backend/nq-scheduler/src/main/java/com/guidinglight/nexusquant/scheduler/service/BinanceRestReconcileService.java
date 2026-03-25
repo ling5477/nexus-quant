@@ -15,7 +15,7 @@ import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
@@ -55,7 +55,7 @@ public class BinanceRestReconcileService {
     private final BinanceExchangeAdapter binanceExchangeAdapter;
     private final TradeRepository tradeRepository;
     private final TradeLedgerGateway tradeLedgerGateway;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final AuditLogRepository auditLogRepository;
     private final Clock clock;
 
@@ -74,7 +74,7 @@ public class BinanceRestReconcileService {
             BinanceExchangeAdapter binanceExchangeAdapter,
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
-            EventStoreAppender eventStoreAppender,
+            EventPublisherPort eventPublisherPort,
             AuditLogRepository auditLogRepository
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
@@ -88,7 +88,7 @@ public class BinanceRestReconcileService {
         );
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
         this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.clock = Clock.systemUTC();
     }
@@ -334,7 +334,7 @@ public class BinanceRestReconcileService {
                 order.clientOrderId(),
                 payload
         );
-        eventStoreAppender.append(TopicNames.TRADE_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.TRADE_EVENT_V1, envelope);
     }
 
     private void appendAuditEvidence(OrderRecord order, String action, String outcome, Map<String, Object> detail) {
@@ -357,7 +357,7 @@ public class BinanceRestReconcileService {
                 order.clientOrderId(),
                 payload
         );
-        eventStoreAppender.append(TopicNames.AUDIT_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
     }
 
     private OrderStatus toTargetStatus(String status) {

@@ -1,11 +1,12 @@
 package com.guidinglight.nexusquant.common.trace;
 
 import java.util.UUID;
+
 import org.slf4j.MDC;
 
 /**
  * TraceIdContext 统一管理 traceId 在 MDC 中的写入与读取。
- *
+ * <p>
  * Why:
  * docs/CONTRACTS.md 强制 traceId 贯穿 HTTP/事件/日志。
  * 骨架阶段先固化上下文键名和生成规则，后续模块直接复用，避免重复实现。
@@ -13,7 +14,9 @@ import org.slf4j.MDC;
 public final class TraceIdContext {
 
     public static final String TRACE_ID_HEADER = "X-Trace-Id";
+    public static final String LEGACY_TRACE_ID_HEADER = "X-NQ-TRACE-ID";
     public static final String TRACE_ID_KEY = "trace_id";
+    public static final String TRACE_ID_REQUEST_ATTRIBUTE = "nexusquant.trace_id";
 
     private TraceIdContext() {
         // 工具类不允许实例化。
@@ -29,6 +32,14 @@ public final class TraceIdContext {
         String resolved = (traceId == null || traceId.isBlank()) ? newTraceId() : traceId;
         MDC.put(TRACE_ID_KEY, resolved);
         return resolved;
+    }
+
+    /**
+     * @return 当前线程上下文中的 traceId；若不存在则生成并写回 MDC。
+     */
+    public static String getOrCreate() {
+        String existing = get();
+        return (existing == null || existing.isBlank()) ? putOrCreate(null) : existing;
     }
 
     /**

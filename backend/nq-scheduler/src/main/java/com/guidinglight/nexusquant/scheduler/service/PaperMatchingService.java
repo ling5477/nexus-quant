@@ -13,7 +13,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.core.execution.AdapterRouter;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
@@ -48,7 +48,7 @@ public class PaperMatchingService {
     private final OrderExecutionGateway orderExecutionGateway;
     private final TradeRepository tradeRepository;
     private final TradeLedgerGateway tradeLedgerGateway;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final AuditLogRepository auditLogRepository;
     private final AdapterRouter adapterRouter;
     private final Clock clock;
@@ -57,7 +57,7 @@ public class PaperMatchingService {
      * @param orderExecutionGateway 订单查询与迁移网关
      * @param tradeRepository       成交仓储端口
      * @param tradeLedgerGateway    记账网关
-     * @param eventStoreAppender    event_store 写入器
+     * @param eventPublisherPort    事件事实链追加端口
      * @param auditLogRepository    审计日志仓储
      * @param adapterRouter         adapter 路由器
      */
@@ -65,14 +65,14 @@ public class PaperMatchingService {
             OrderExecutionGateway orderExecutionGateway,
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
-            EventStoreAppender eventStoreAppender,
+            EventPublisherPort eventPublisherPort,
             AuditLogRepository auditLogRepository,
             AdapterRouter adapterRouter
     ) {
         this.orderExecutionGateway = Objects.requireNonNull(orderExecutionGateway, "orderExecutionGateway must not be null");
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
         this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.adapterRouter = Objects.requireNonNull(adapterRouter, "adapterRouter must not be null");
         this.clock = Clock.systemUTC();
@@ -265,7 +265,7 @@ public class PaperMatchingService {
                 order.clientOrderId(),
                 payload
         );
-        eventStoreAppender.append(TopicNames.TRADE_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.TRADE_EVENT_V1, envelope);
     }
 
     private BigDecimal resolveMarketPrice() {

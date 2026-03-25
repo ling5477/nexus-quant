@@ -4,9 +4,9 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsConnectionListener;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -36,7 +36,7 @@ public class OkxWsDegradeReconcileCoordinator implements OkxWsConnectionListener
 
     private final OkxRestReconcileService okxRestReconcileService;
     private final AuditLogRepository auditLogRepository;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final Clock clock;
     private final int reconcileLimit;
     private final long cooldownMs;
@@ -48,7 +48,7 @@ public class OkxWsDegradeReconcileCoordinator implements OkxWsConnectionListener
      * @param okxWsClient             WS 客户端
      * @param okxRestReconcileService REST reconcile 服务
      * @param auditLogRepository      审计仓储
-     * @param eventStoreAppender      event_store 写入器
+     * @param eventPublisherPort      事件事实链追加端口
      * @param reconcileLimit          每次降级触发的非终态扫描上限
      * @param cooldownMs              降级触发去抖窗口
      * @param subscribeFailThreshold  连续订阅失败阈值
@@ -57,7 +57,7 @@ public class OkxWsDegradeReconcileCoordinator implements OkxWsConnectionListener
             OkxWsClient okxWsClient,
             OkxRestReconcileService okxRestReconcileService,
             AuditLogRepository auditLogRepository,
-            EventStoreAppender eventStoreAppender,
+            EventPublisherPort eventPublisherPort,
             @Value("${nq.okx.ws.degrade.reconcile-limit:100}") int reconcileLimit,
             @Value("${nq.okx.ws.degrade.cooldown-ms:15000}") long cooldownMs,
             @Value("${nq.okx.ws.degrade.subscribe-fail-threshold:3}") int subscribeFailThreshold
@@ -68,7 +68,7 @@ public class OkxWsDegradeReconcileCoordinator implements OkxWsConnectionListener
                 "okxRestReconcileService must not be null"
         );
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.clock = Clock.systemUTC();
         this.reconcileLimit = Math.max(1, reconcileLimit);
         this.cooldownMs = Math.max(0L, cooldownMs);
@@ -172,6 +172,6 @@ public class OkxWsDegradeReconcileCoordinator implements OkxWsConnectionListener
                 subject,
                 payload
         );
-        eventStoreAppender.append(TopicNames.AUDIT_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
     }
 }

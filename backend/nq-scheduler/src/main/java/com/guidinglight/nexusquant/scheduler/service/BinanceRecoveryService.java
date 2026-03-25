@@ -11,7 +11,7 @@ import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -47,22 +47,22 @@ public class BinanceRecoveryService {
     private final BinanceExchangeAdapter binanceExchangeAdapter;
     private final BinanceRestReconcileService binanceRestReconcileService;
     private final AuditLogRepository auditLogRepository;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final Clock clock;
 
     /**
-     * @param orderCommandService        订单查询与 external_order_id 回填入口
-     * @param binanceExchangeAdapter     Binance adapter
+     * @param orderCommandService         订单查询与 external_order_id 回填入口
+     * @param binanceExchangeAdapter      Binance adapter
      * @param binanceRestReconcileService Binance REST reconcile 服务
-     * @param auditLogRepository         审计仓储
-     * @param eventStoreAppender         event_store 写入器
+     * @param auditLogRepository          审计仓储
+     * @param eventStoreAppender          event_store 写入器
      */
     public BinanceRecoveryService(
             OrderCommandService orderCommandService,
             BinanceExchangeAdapter binanceExchangeAdapter,
             BinanceRestReconcileService binanceRestReconcileService,
             AuditLogRepository auditLogRepository,
-            EventStoreAppender eventStoreAppender
+            EventPublisherPort eventPublisherPort
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.binanceExchangeAdapter = Objects.requireNonNull(
@@ -74,7 +74,7 @@ public class BinanceRecoveryService {
                 "binanceRestReconcileService must not be null"
         );
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.clock = Clock.systemUTC();
     }
 
@@ -164,6 +164,6 @@ public class BinanceRecoveryService {
                 traceId,
                 payload
         );
-        eventStoreAppender.append(TopicNames.AUDIT_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
     }
 }

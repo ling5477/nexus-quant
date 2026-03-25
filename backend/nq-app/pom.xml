@@ -12,7 +12,7 @@
 
     <artifactId>nq-app</artifactId>
     <name>nq-app</name>
-    <description>Gate A skeleton module: nq-app</description>
+    <description>Spring Boot composition root for NexusQuant backend.</description>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -110,10 +110,6 @@
             <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-adapter-binance</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

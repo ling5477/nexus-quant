@@ -4,11 +4,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * NexusQuantApplication 是 Gate A 阶段的统一启动载体。
+ * NexusQuantApplication 是后端运行时的统一启动入口。
  *
  * Why:
- * docs/MODULES.md 明确 nq-app 负责装配与运行入口，
- * 并要求领域逻辑不落在启动模块。
+ * `nq-app` 在收口后只负责 Spring Boot 启动、模块扫描与运行时装配，
+ * HTTP controller 和 API 适配逻辑全部下沉到 `nq-api`，避免启动模块继续承载业务边界。
  */
 @SpringBootApplication(scanBasePackages = "com.guidinglight.nexusquant")
 public class NexusQuantApplication {

@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -39,7 +39,7 @@ public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnection
 
     private final BinanceRestReconcileService binanceRestReconcileService;
     private final AuditLogRepository auditLogRepository;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final Clock clock;
     private final int reconcileLimit;
     private final long cooldownMs;
@@ -59,7 +59,7 @@ public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnection
             BinanceWsClient binanceWsClient,
             BinanceRestReconcileService binanceRestReconcileService,
             AuditLogRepository auditLogRepository,
-            EventStoreAppender eventStoreAppender,
+            EventPublisherPort eventPublisherPort,
             @Value("${nq.binance.ws.degrade.reconcile-limit:100}") int reconcileLimit,
             @Value("${nq.binance.ws.degrade.cooldown-ms:15000}") long cooldownMs,
             @Value("${nq.binance.ws.degrade.reconnect-fail-threshold:2}") int reconnectFailThreshold
@@ -70,7 +70,7 @@ public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnection
                 "binanceRestReconcileService must not be null"
         );
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.clock = Clock.systemUTC();
         this.reconcileLimit = Math.max(1, reconcileLimit);
         this.cooldownMs = Math.max(0L, cooldownMs);
@@ -207,6 +207,6 @@ public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnection
                 SUBJECT,
                 payload
         );
-        eventStoreAppender.append(TopicNames.AUDIT_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
     }
 }

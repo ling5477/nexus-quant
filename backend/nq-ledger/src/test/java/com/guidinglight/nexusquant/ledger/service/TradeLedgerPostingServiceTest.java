@@ -9,8 +9,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
+import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
@@ -44,7 +45,7 @@ class TradeLedgerPostingServiceTest {
         TradeLedgerPostingService service = new TradeLedgerPostingService(
                 postingRepository,
                 riskAuditRepository,
-                new EventStoreAppender(eventStoreJdbcTemplate, objectMapper()),
+                new RecordingEventPublisherPort(eventStoreJdbcTemplate),
                 objectMapper()
         );
 
@@ -80,7 +81,7 @@ class TradeLedgerPostingServiceTest {
         TradeLedgerPostingService service = new TradeLedgerPostingService(
                 postingRepository,
                 riskAuditRepository,
-                new EventStoreAppender(eventStoreJdbcTemplate, objectMapper()),
+                new RecordingEventPublisherPort(eventStoreJdbcTemplate),
                 objectMapper()
         );
 
@@ -228,6 +229,19 @@ class TradeLedgerPostingServiceTest {
 
         int auditCount() {
             return auditCount;
+        }
+    }
+
+    private static final class RecordingEventPublisherPort implements EventPublisherPort {
+        private final RecordingJdbcTemplate jdbcTemplate;
+
+        private RecordingEventPublisherPort(RecordingJdbcTemplate jdbcTemplate) {
+            this.jdbcTemplate = jdbcTemplate;
+        }
+
+        @Override
+        public void append(String topic, EventEnvelope<?> envelope) {
+            jdbcTemplate.update("insert into event_store(topic, payload_json) values (?, ?)", topic, envelope);
         }
     }
 

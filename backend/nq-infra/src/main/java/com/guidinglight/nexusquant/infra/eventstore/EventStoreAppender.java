@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.infra.eventstore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.util.Objects;
 
@@ -21,7 +22,7 @@ import org.springframework.stereotype.Repository;
  * 3) payload_json 存整包 envelope，方便离线复盘时一次拿到全部上下文。
  */
 @Repository
-public class EventStoreAppender {
+public class EventStoreAppender implements EventPublisherPort {
 
     // Why: PostgreSQL JSONB 列不能直接接收 VARCHAR 参数，必须在 SQL 层显式 cast 才能避免运行态类型推断错误。
     private static final String INSERT_SQL = """
@@ -52,6 +53,7 @@ public class EventStoreAppender {
      * @throws IllegalArgumentException topic 或 envelope 非法时抛出
      * @throws IllegalStateException    序列化失败时抛出
      */
+    @Override
     public void append(String topic, EventEnvelope<?> envelope) {
         if (topic == null || topic.isBlank()) {
             throw new IllegalArgumentException("topic must not be blank");

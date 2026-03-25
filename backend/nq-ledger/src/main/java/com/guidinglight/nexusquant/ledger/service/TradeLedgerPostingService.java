@@ -4,36 +4,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
-import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.LedgerPostFailed;
-import com.guidinglight.nexusquant.contracts.event.LedgerPosted;
-import com.guidinglight.nexusquant.contracts.event.PositionUpdated;
-import com.guidinglight.nexusquant.contracts.event.RiskEventRaised;
-import com.guidinglight.nexusquant.contracts.event.TopicNames;
+import com.guidinglight.nexusquant.contracts.event.*;
 import com.guidinglight.nexusquant.contracts.model.LedgerDirection;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
-import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.ledger.model.PositionProjection;
-import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.ledger.model.*;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
 
 /**
  * TradeLedgerPostingService 负责 Gate B 成交记账与仓位投影。
@@ -49,20 +33,20 @@ public class TradeLedgerPostingService {
 
     private final LedgerPostingRepository ledgerPostingRepository;
     private final LedgerRiskAuditRepository ledgerRiskAuditRepository;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
     /**
      * @param ledgerPostingRepository   账本与仓位仓储
      * @param ledgerRiskAuditRepository 风险/审计仓储
-     * @param eventStoreAppender        event_store 写入器
+     * @param eventPublisherPort        事件事实链追加端口
      * @param objectMapper              JSON 序列化器
      */
     public TradeLedgerPostingService(
             LedgerPostingRepository ledgerPostingRepository,
             LedgerRiskAuditRepository ledgerRiskAuditRepository,
-            EventStoreAppender eventStoreAppender,
+            EventPublisherPort eventPublisherPort,
             ObjectMapper objectMapper
     ) {
         this.ledgerPostingRepository = Objects.requireNonNull(
@@ -73,7 +57,7 @@ public class TradeLedgerPostingService {
                 ledgerRiskAuditRepository,
                 "ledgerRiskAuditRepository must not be null"
         );
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.clock = Clock.systemUTC();
     }
@@ -387,7 +371,7 @@ public class TradeLedgerPostingService {
                 key,
                 payload
         );
-        eventStoreAppender.append(topic, envelope);
+        eventPublisherPort.append(topic, envelope);
     }
 
     private String resolveQuoteCurrency(String symbol) {

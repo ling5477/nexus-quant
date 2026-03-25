@@ -5,12 +5,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
+
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * TraceIdFilter 负责 HTTP 入口 traceId 透传与生成。
- *
+ * <p>
  * Why:
  * docs/CONTRACTS.md 强制要求网关/后端统一 `X-Trace-Id` 贯穿，
  * 骨架阶段先通过 Filter 固化入口行为，后续模块直接复用 MDC 值。
@@ -23,13 +25,23 @@ public class TraceIdFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        String incomingTraceId = request.getHeader(TraceIdContext.TRACE_ID_HEADER);
+        String incomingTraceId = resolveIncomingTraceId(request);
         String traceId = TraceIdContext.putOrCreate(incomingTraceId);
+        request.setAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE, traceId);
         response.setHeader(TraceIdContext.TRACE_ID_HEADER, traceId);
         try {
             filterChain.doFilter(request, response);
         } finally {
             TraceIdContext.clear();
         }
+    }
+
+    private String resolveIncomingTraceId(HttpServletRequest request) {
+        String standardHeader = request.getHeader(TraceIdContext.TRACE_ID_HEADER);
+        if (standardHeader != null && !standardHeader.isBlank()) {
+            return standardHeader.trim();
+        }
+        String legacyHeader = request.getHeader(TraceIdContext.LEGACY_TRACE_ID_HEADER);
+        return legacyHeader == null || legacyHeader.isBlank() ? null : legacyHeader.trim();
     }
 }

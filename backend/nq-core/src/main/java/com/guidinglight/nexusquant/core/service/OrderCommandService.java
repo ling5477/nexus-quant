@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
 import com.guidinglight.nexusquant.contracts.event.CancelAck;
 import com.guidinglight.nexusquant.contracts.event.CancelReject;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.OrderAck;
 import com.guidinglight.nexusquant.contracts.event.OrderCreated;
 import com.guidinglight.nexusquant.contracts.event.OrderReject;
@@ -29,7 +30,6 @@ import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.core.service.port.OrderRepository;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.core.state.OrderStateMachine;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
@@ -69,7 +69,7 @@ public class OrderCommandService {
     private final RiskGate riskGate;
     private final AuditLogRepository auditLogRepository;
     private final RiskEventRepository riskEventRepository;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final AdapterRouter adapterRouter;
     private final Clock clock;
 
@@ -79,7 +79,7 @@ public class OrderCommandService {
      * @param riskGate            风控服务
      * @param auditLogRepository  审计仓储
      * @param riskEventRepository 风控事件仓储
-     * @param eventStoreAppender  event_store 写入器
+     * @param eventPublisherPort  事件事实链追加端口
      * @param adapterRouter       adapter 路由器
      */
     public OrderCommandService(
@@ -88,7 +88,7 @@ public class OrderCommandService {
             RiskGate riskGate,
             AuditLogRepository auditLogRepository,
             RiskEventRepository riskEventRepository,
-            EventStoreAppender eventStoreAppender,
+            EventPublisherPort eventPublisherPort,
             AdapterRouter adapterRouter
     ) {
         this.orderRepository = Objects.requireNonNull(orderRepository, "orderRepository must not be null");
@@ -96,7 +96,7 @@ public class OrderCommandService {
         this.riskGate = Objects.requireNonNull(riskGate, "riskGate must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.riskEventRepository = Objects.requireNonNull(riskEventRepository, "riskEventRepository must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.adapterRouter = Objects.requireNonNull(adapterRouter, "adapterRouter must not be null");
         this.clock = Clock.systemUTC();
     }
@@ -748,7 +748,7 @@ public class OrderCommandService {
                 key,
                 payload
         );
-        eventStoreAppender.append(topic, envelope);
+        eventPublisherPort.append(topic, envelope);
     }
 
     private void validateRequest(PlaceOrderRequest request) {

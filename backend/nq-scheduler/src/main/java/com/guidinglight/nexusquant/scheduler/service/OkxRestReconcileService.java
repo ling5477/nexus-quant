@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.event.TradeExecuted;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
@@ -12,7 +13,6 @@ import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
@@ -45,7 +45,7 @@ public class OkxRestReconcileService {
     private final OkxExchangeAdapter okxExchangeAdapter;
     private final TradeRepository tradeRepository;
     private final TradeLedgerGateway tradeLedgerGateway;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository;
     private final Clock clock;
 
@@ -55,7 +55,7 @@ public class OkxRestReconcileService {
      * @param okxExchangeAdapter    OKX adapter
      * @param tradeRepository       trades 仓储
      * @param tradeLedgerGateway    ledger 网关
-     * @param eventStoreAppender    event_store 写入器
+     * @param eventPublisherPort    事件事实链追加端口
      * @param auditLogRepository    审计仓储
      */
     public OkxRestReconcileService(
@@ -64,7 +64,7 @@ public class OkxRestReconcileService {
             OkxExchangeAdapter okxExchangeAdapter,
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
-            EventStoreAppender eventStoreAppender,
+            EventPublisherPort eventPublisherPort,
             com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
@@ -72,7 +72,7 @@ public class OkxRestReconcileService {
         this.okxExchangeAdapter = Objects.requireNonNull(okxExchangeAdapter, "okxExchangeAdapter must not be null");
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
         this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.clock = Clock.systemUTC();
     }
@@ -367,6 +367,6 @@ public class OkxRestReconcileService {
                 order.clientOrderId(),
                 payload
         );
-        eventStoreAppender.append(TopicNames.TRADE_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.TRADE_EVENT_V1, envelope);
     }
 }

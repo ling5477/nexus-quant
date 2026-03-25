@@ -5,9 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
@@ -18,6 +15,8 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
+import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
@@ -29,7 +28,6 @@ import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.core.service.port.OrderRepository;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.core.state.InMemoryOrderStateMachine;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
@@ -207,12 +205,6 @@ class OrderCommandServiceTest {
             RecordingAuditLogRepository auditLogRepository,
             RecordingTradingAdapter tradingAdapter
     ) {
-        EventStoreAppender eventStoreAppender = new EventStoreAppender(
-                new RecordingJdbcTemplate(),
-                new ObjectMapper()
-                        .registerModule(new JavaTimeModule())
-                        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        );
         AdapterRouter adapterRouter = new AdapterRouter(
                 List.of(tradingAdapter),
                 List.of(new NoopMarketDataAdapter("PAPER")),
@@ -224,7 +216,7 @@ class OrderCommandServiceTest {
                 new AlwaysAllowRiskGate(),
                 auditLogRepository,
                 new NoopRiskEventRepository(),
-                eventStoreAppender,
+                new RecordingEventPublisherPort(),
                 adapterRouter
         );
     }
@@ -394,6 +386,13 @@ class OrderCommandServiceTest {
         void setCancelReject(String code, String reason) {
             this.cancelRejectCode = code;
             this.cancelRejectReason = reason;
+        }
+    }
+
+    private static final class RecordingEventPublisherPort implements EventPublisherPort {
+        @Override
+        public void append(String topic, EventEnvelope<?> envelope) {
+            // Why: Step 3 单测只验证业务编排，不依赖 infra 的 JDBC event_store 实现。
         }
     }
 

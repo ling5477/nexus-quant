@@ -13,7 +13,7 @@ import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -46,7 +46,7 @@ public class OkxWsOrderAccelerationService {
     private final OrderCommandService orderCommandService;
     private final OrderLifecycleService orderLifecycleService;
     private final AuditLogRepository auditLogRepository;
-    private final EventStoreAppender eventStoreAppender;
+    private final EventPublisherPort eventPublisherPort;
     private final Clock clock;
 
     /**
@@ -59,12 +59,12 @@ public class OkxWsOrderAccelerationService {
             OrderCommandService orderCommandService,
             OrderLifecycleService orderLifecycleService,
             AuditLogRepository auditLogRepository,
-            EventStoreAppender eventStoreAppender
+            EventPublisherPort eventPublisherPort
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
-        this.eventStoreAppender = Objects.requireNonNull(eventStoreAppender, "eventStoreAppender must not be null");
+        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.clock = Clock.systemUTC();
     }
 
@@ -316,7 +316,7 @@ public class OkxWsOrderAccelerationService {
                 subjectId == null || subjectId.isBlank() ? "OKX_WS_UNKNOWN" : subjectId,
                 payload
         );
-        eventStoreAppender.append(TopicNames.AUDIT_EVENT_V1, envelope);
+        eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
         log.info("okx_ws_order_acceleration_audit action={} subject={} outcome={} trace_id={}", action, subjectId, outcome, traceId);
     }
 }
