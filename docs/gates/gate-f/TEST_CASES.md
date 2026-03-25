@@ -26,33 +26,38 @@
 
 ### UC-F1 研究 / 回测配置
 
-- 当前状态：`[ ]`
+- 当前状态：`[x]`
 - 预期：
   - 能创建研究配置
   - 能创建回测配置
+  - 已覆盖：`nq-research` + `research_configs / backtest_configs`
 
 ### UC-F2 发起 backtest run
 
-- 当前状态：`[ ]`
+- 当前状态：`[x]`
 - 预期：
   - 能创建一条 `backtest_run`
   - 状态机推进正常
+  - 已覆盖：`POST /__gated/backtest-runs` + `POST /start`
 
 ### UC-F3 模拟执行
 
-- 当前状态：`[ ]`
+- 当前状态：`[x]`
 - 预期：
   - 能生成 `sim_order / sim_trade / sim_position`
+  - 已覆盖：GateF-3 sim_* 事实链与 `/orders /trades /positions /pnl`
 
 ### UC-F4 评估结果
 
-- 当前状态：`[ ]`
+- 当前状态：`[x]`
 - 预期：
   - 能输出 PnL / drawdown / metrics / summary
+  - 已覆盖：`nq-eval`、`/evaluate`、`/evaluation`
 
 ### UC-F5 研究产物与执行域接口
 
-- 当前状态：`[ ]`
+- 当前状态：`[x]`
 - 预期：
   - 能明确区分研究结果与执行结果
   - 不混用 GateE 实体模型
+  - 已覆盖：显式 `/publish`、`backtest_publish_records`、执行域 `strategy_definition` 安全映射

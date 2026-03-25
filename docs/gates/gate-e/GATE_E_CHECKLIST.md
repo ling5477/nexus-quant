@@ -39,7 +39,7 @@ GateE 名称：**策略接入与调度编排**
 - [x] 新增策略注册入口
 - [x] 新增策略启停入口
 - [x] 新增手动 trigger
-- [ ] `strategyId / strategyRunId` 完成代码收口
+- [~] `strategyId / strategyRunId` 最终代码收口移交后续执行域契约清理，不再作为 GateE 冻结阻塞项
 - [x] 建立定义级最小查询与启停能力
 - [x] 建立运行级最小状态与 trigger 返回
 
@@ -72,5 +72,5 @@ GateE 名称：**策略接入与调度编排**
 - [x] GateD / GateE / GateF 边界已写死
 - [x] `strategyId` 与 `strategyRunId` 已分义
 - [x] GateE 相关实现已复跑 `mvn -q -f backend/pom.xml test`
-- [~] `mvn -q -f backend/pom.xml verify` 未单独作为冻结门禁执行
+- [~] `mvn -q -f backend/pom.xml verify` 已在后续 Gate 复跑，但不是 GateE 冻结时的单独门禁项
 - [x] 所有主实现批次已回填 `WORK.md` 与 `DECISIONS.md`

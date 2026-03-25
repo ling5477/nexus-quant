@@ -1,44 +1,38 @@
-# GateF DB_SCHEMA
 # GateF 数据模型与 schema 约束
 
-当前结论：**GateF-DOC-1 不新增 migration，不改现有 schema。**
+当前结论：**GateF-1 / GateF-2 / GateF-3 / GateF-4 已形成最小研究域、执行域、模拟事实链与评估报告表结构。**
 
 ---
 
-## 1. 当前可复用表
+## 1. 当前已落地表
 
-- `strategy_definitions`
-- `strategy_runs`
-- `orders`
-- `trades`
-
-这些表的作用：
-
-- 作为 GateF 输入参考
-- 作为字段语义参考
-- 不是 GateF 直接落库模型
+- `research_configs`
+- `backtest_configs`
+- `backtest_runs`
+- `sim_orders`
+- `sim_trades`
+- `sim_positions`
+- `sim_pnl_snapshots`
+- `backtest_eval_reports`
 
 ---
 
-## 2. 当前不直接复用的原因
-
-- `strategy_runs` 属于执行运行，不是研究运行
-- `orders / trades` 属于实盘 / 执行事实，不是模拟事实
-- `ledger / risk / event / audit` 当前也不构成完整研究输入面
-
----
-
-## 3. GateF 候选数据对象（仅定义，不落表）
+## 2. 表职责
 
 - `backtest_runs`
-- `backtest_orders`
-- `backtest_trades`
-- `backtest_positions`
-- `backtest_pnl_snapshots`
-- `evaluation_reports`
+  - 保存 run 身份、状态和 run 级执行摘要
+- `sim_orders / sim_trades / sim_positions / sim_pnl_snapshots`
+  - 保存 GateF-3 模拟执行事实
+- `backtest_eval_reports`
+  - 保存 GateF-4 run 级评估报告
+  - `backtest_run_id` 唯一
+  - 支持重复 evaluate 覆盖更新
 
-说明：
+---
 
-- 这些只是 GateF-DOC-1 的候选对象
-- 本批不决定是否落表
-- 后续按 GateF-1 / GateF-2 / GateF-3 再决定是否需要 migration
+## 3. 关键约束
+
+- `backtest_runs.summary_json` 只保存 run 级执行摘要
+- sim_* 明细不回写到 `backtest_runs.summary_json`
+- `backtest_eval_reports.report_json` 保存评估明细
+- 评估域只读消费 sim_* 与 run/config 事实

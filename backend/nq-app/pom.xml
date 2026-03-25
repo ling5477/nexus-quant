@@ -33,6 +33,21 @@
         </dependency>
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-research</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-backtest</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-eval</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-ledger</artifactId>
             <version>${project.version}</version>
         </dependency>

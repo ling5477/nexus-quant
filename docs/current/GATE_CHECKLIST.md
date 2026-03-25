@@ -1,46 +1,27 @@
-# docs/current/GATE_CHECKLIST.md
-# Current Checklist（GateF 待启动）
+# Current Checklist（GateG 待启动）
 
-当前阶段：**GateF（研究 / 回测 / 评估能力）**
+当前阶段：**GateG（待启动）**
 
-当前状态：**GateE 已冻结，GateF-DOC-1 已完成。**
-
----
-
-## 0. GateE 冻结交接
-
-- [x] GateE 已明确写成已冻结
-- [x] GateE 最终能力边界已集中列出
-- [x] GateE 遗留债务已集中列出
-- [x] current 已切换为 GateF 待启动
-- [x] 顶层入口已同步切换
+当前状态：**GateF 已完成并冻结；GateG 尚未开始。**
 
 ---
 
-## 1. GateF-DOC-1
+## 1. GateF 已完成交接
 
-- [x] 已整理 GateF 输入清单
-- [x] 已明确 GateF 可复用资产
-- [x] 已明确 GateF 前置约束
-- [x] 已明确 GateF 待决策问题
-- [x] 已建立 GateF 主卷宗
-- [x] 已形成 GateF PR_SPLIT_PLAN
+- [x] GateF-DOC-1
+- [x] GateF-1 研究 / 回测配置与运行骨架
+- [x] GateF-2 市场数据输入与回测运行主链
+- [x] GateF-3 模拟成交 / 持仓 / PnL
+- [x] GateF-4 评估指标与结果查询
+- [x] GateF-5 研究产物与执行域接口收口
 
----
+## 2. GateG 待启动
 
-## 2. GateF 尚未开始的事项
+- [ ] GateG 主卷宗
+- [ ] GateG 输入 / 输出边界
+- [ ] GateG PR 拆分计划
 
-- [ ] 回测运行模型
-- [ ] 市场数据输入边界
-- [ ] 研究配置与执行配置边界
-- [ ] 绩效评估指标口径
-- [ ] GateF 文档目录与模块边界
-- [ ] 是否需要新表 / 新模块 / 新 schema
+## 3. 当前批次说明
 
----
-
-## 3. 当前提醒
-
-- GateF 不回头重写 GateE
-- GateE 遗留债务不再作为 GateE “继续进行中”的理由
-- 本目录当前只代表 GateF 待启动状态，不代表 GateF 设计已展开
+- [x] 本批是 GateF-Freeze-Fix 冻结收口修复
+- [x] 本批不代表 GateG-1 已启动开发

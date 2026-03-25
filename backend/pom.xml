@@ -24,6 +24,9 @@
         <module>nq-app</module>
         <module>nq-common</module>
         <module>nq-contracts</module>
+        <module>nq-research</module>
+        <module>nq-backtest</module>
+        <module>nq-eval</module>
         <module>nq-infra</module>
         <module>nq-ledger</module>
         <module>nq-risk</module>
