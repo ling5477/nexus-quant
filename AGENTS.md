@@ -1,241 +1,128 @@
 # AGENTS.md
 # AGENTS（Codex 开发指引 - NexusQuant）
 
-> 目的：让 Codex / 开发者在仓库内生成与修改代码时，严格遵循本仓库的架构、契约、正确性与阶段门禁约束，并始终以“当前阶段入口文档”为准。
-> 文档分层：`docs/current/` 为**当前阶段唯一入口（Source of Truth）**；`docs/gates/gate-*/` 为**历史 Gate 冻结快照（只读参考）**。
+> 目的：让 Codex / 开发者在仓库内生成与修改代码时，严格遵循本仓库的架构、契约、阶段门禁与当前卷宗边界。
+> 文档分层：`docs/current/` 为**当前阶段唯一入口（Source of Truth）**；`docs/gates/gate-*/` 为**冻结卷宗（只读参考）**。
 
 ---
 
 ## 1. 强制约束（必须遵守）
 
 - 语言：除代码、配置键、接口字段、类名外，解释与文档输出使用**简体中文**。
-- 当前阶段：**GateF（研究 / 回测 / 评估能力）**。
+- 当前阶段：**GateG（前端控制台与联调）**。
 - 唯一入口：`docs/current/README.md` 与 `docs/current/GATE_CHECKLIST.md`。
-- 严格状态机：禁止任意 `setStatus`；订单状态只能通过显式事件、同步确认、回执映射推进。
-- 幂等：`client_order_id`、`request_id`、`trace_id` 必须贯穿订单、事件、账本、补偿链路。
-- 可审计：所有关键决策点必须记录 `trace_id`、`reason`、`account_id`、`symbol`、`venue`，并写入 `audit_logs` 与 `event_store`。
-- 可恢复：投影表允许丢失，但必须能从事实链（`event_store`、`ledger_entries`、`orders`、`trades`）重建；恢复流程必须文档化且可演练。
-- 可观测：日志字段必须统一，禁止只有纯字符串日志；至少输出 `trace_id、request_id、client_order_id、external_order_id、account_id、symbol、venue`。
-- 交易所差异隔离：交易所方言只允许出现在 `nq-adapter-*`；`nq-core / nq-ledger / nq-risk / nq-scheduler` 禁止出现 `if (venue == ...)` 分支。
-- 禁止盲重试：外部请求超时、断链、未知状态时，必须先 `query-confirm`，不得直接重复下单。
-- 资金与精度：价格、数量、金额必须用 `BigDecimal`（或统一 long-scale 方案，但不得混用）；禁止 float / double 参与业务计算。
+- GateG 目标固定为：**前端工程骨架、登录与鉴权守卫、布局与菜单、策略 / 调度 / 运行页面、研究 / 回测 / 评估 / 发布页面、交易验证操作页、Playwright 回归**。
+- GateG 不以前置数据库大改为条件；联调过程中只允许补最小前端向接口，禁止借 GateG 发散成新的后端大重构。
+- 严格状态机、幂等、事实链、账本、审计、恢复、可观测等 GateD~GateF 已冻结约束继续生效。
+- 交易所差异隔离仍只允许留在 `nq-adapter-*`，禁止把交易所方言带进前端视图契约。
+- 正式 HTTP API 统一使用 `/api/**`；旧 `/__gated/**` 只允许出现在历史文档说明中。
+- 正式认证方式固定为：`POST /api/auth/login` + `Authorization: Bearer <token>` + `GET /api/auth/me`。
 
 ---
 
-## 1.1 当前阶段切换说明
+## 2. 当前阶段切换说明
 
-- GateD 已冻结，`docs/gates/gate-d/*` 仅作为冻结证据，只读参考。
-- GateE 已完成并冻结，`docs/gates/gate-e/*` 作为最近完成阶段的冻结卷宗保留。
-- 当前 `docs/current/*` 表示 GateF 当前入口，`docs/gates/gate-f/*` 表示 GateF 主卷宗。
+- GateD 已冻结，`docs/gates/gate-d/*` 仅作历史参考。
+- GateE 已冻结，`docs/gates/gate-e/*` 仅作策略接入与调度编排的事实卷宗。
+- GateF 已完成并冻结，`docs/gates/gate-f/*` 作为最近完成阶段保留。
+- 当前 `docs/current/*` 表示 GateG 当前入口，`docs/gates/gate-g/*` 表示 GateG 主卷宗。
 - 当前 source of truth 优先级：
-  - `docs/current/*`
-  - `docs/gates/gate-e/*`（最近冻结卷宗，只读参考）
-  - `docs/gates/gate-d/*`（历史冻结证据）
-  - 根 `README.md / docs/ARCHITECTURE.md / docs/MODULES.md` 仅作导航摘要
-- 当前执行顺序：
-  - 先阅读 GateF 输入与启动前约束
-  - 再确定 GateF 文档启动批范围
-  - GateE 若无事实冲突修正需求，不再继续承载新功能
+  1. `docs/current/*`
+  2. `docs/gates/gate-g/*`
+  3. `docs/gates/gate-f/*`
+  4. `docs/gates/gate-e/*`
+  5. 根 `README.md / docs/*.md` 导航摘要
 
-## 2. 文档即事实（Source of Truth）
+---
 
-实现必须对齐以下文档，优先级从高到低：
+## 3. 文档即事实（Source of Truth）
 
-### 2.1 当前阶段入口（必读，唯一事实来源）
+### 3.1 当前阶段入口（必读）
 - `docs/current/README.md`
 - `docs/current/GATE_CHECKLIST.md`
+- `docs/current/GATEG_INPUTS.md`
+- `docs/current/MODULES.md`
+- `docs/current/WORK_TEMPLATE.md`
 
-### 2.2 当前 Gate 权威文档（GateF）
-- `docs/gates/gate-f/README.md`
-- `docs/gates/gate-f/GATE_F_CHECKLIST.md`
-- `docs/gates/gate-f/PR_SPLIT_PLAN.md`
-- `docs/gates/gate-f/WORK.md`
-- `docs/gates/gate-f/DECISIONS.md`
-- `docs/gates/gate-f/ARCHITECTURE.md`
-- `docs/gates/gate-f/MODULES.md`
-- `docs/gates/gate-f/CONTRACTS.md`
-- `docs/gates/gate-f/DB_SCHEMA.md`
-- `docs/gates/gate-f/STATE_MACHINE.md`
-- `docs/gates/gate-f/TEST_CASES.md`
-- `docs/gates/gate-f/SOURCES.md`
+### 3.2 当前 Gate 权威文档（GateG）
+- `docs/gates/gate-g/README.md`
+- `docs/gates/gate-g/GATE_G_CHECKLIST.md`
+- `docs/gates/gate-g/PR_SPLIT_PLAN.md`
+- `docs/gates/gate-g/ARCHITECTURE.md`
+- `docs/gates/gate-g/MODULES.md`
+- `docs/gates/gate-g/CONTRACTS.md`
+- `docs/gates/gate-g/TEST_CASES.md`
+- `docs/gates/gate-g/WORK.md`
+- `docs/gates/gate-g/SOURCES.md`
 
-### 2.3 最近已冻结 Gate 权威文档（GateE，只读参考）
-- `docs/gates/gate-e/README.md`
-- `docs/gates/gate-e/GATE_E_CHECKLIST.md`
-- `docs/gates/gate-e/PR_SPLIT_PLAN.md`
-- `docs/gates/gate-e/WORK.md`
-- `docs/gates/gate-e/DECISIONS.md`
-- `docs/gates/gate-e/GATE_E_CANDIDATES.md`
-- `docs/gates/gate-e/ARCHITECTURE.md`
-- `docs/gates/gate-e/MODULES.md`
-- `docs/gates/gate-e/CONTRACTS.md`
-- `docs/gates/gate-e/DB_SCHEMA.md`
-- `docs/gates/gate-e/STATE_MACHINE.md`
-- `docs/gates/gate-e/TEST_CASES.md`
-- `docs/gates/gate-e/SOURCES.md`
-- `docs/gates/gate-e/EVOLUTION_RULES.md`
-- `docs/gates/gate-e/adr/README.md`
+### 3.3 最近冻结 Gate（GateF，只读参考）
+- `docs/gates/gate-f/*`
 
-### 2.4 GateD 冻结卷宗与历史 Gate 快照（只读参考）
-- `docs/gates/gate-d/**`
-- `docs/gates/gate-a/**`
-- `docs/gates/gate-b/**`
-- `docs/gates/gate-c/**`
-
-> 规则：当 `docs/current/*` 与 `docs/gates/*` 不一致时，**以 `docs/current/*` 为准**。
+> 规则：当 `docs/current/*` 与 `docs/gates/*` 不一致时，以 `docs/current/*` 为准。
 
 ---
 
-## 3. GateD 冻结基线（只读参考）
+## 4. 当前执行顺序（GateG）
 
-GateD 只做“执行闭环”与“执行域硬化”，包括：
-
-- 统一执行入口（place / cancel / query / reconcile / recovery）
-- pre-trade 风控硬规则
-- Paper / OKX / Binance 的统一执行抽象
-- 订单状态机收敛
-- 成交、账本、持仓、账户投影联动
-- WS 加速 + REST 兜底
-- recovery / reconcile / degrade / query-confirm
-- 审计、事件链、指标与日志闭环
-
-GateD 明确**不做**：
-
-- 回测平台
-- 因子研究
-- 组合优化
-- Alpha 研究系统
-- 前端控制台扩建
-- Kafka / Debezium / K8s 等生产化大基建
-- 合约 / 杠杆 / 期货 / 期权
+1. GateG-DOC-1：主卷宗、输入边界、PR 计划、页面与联调清单
+2. GateG-1：前端工程骨架
+3. GateG-2：登录、鉴权守卫、布局、菜单
+4. GateG-3：策略 / 调度 / 运行页面
+5. GateG-4：研究 / 回测 / 评估 / 发布页面
+6. GateG-5：交易验证操作页
+7. GateG-6：Playwright 回归
 
 ---
 
-## 4. 当前执行顺序（GateF）
+## 5. GateG 代码约束（强制）
 
-1. 先 GateF-DOC-1 文档基线
-2. 再 GateF-1 研究 / 回测配置与运行骨架
-3. 再 GateF-2 ~ GateF-5 主链实现
+### 5.1 frontend
+- GateG 前端技术栈固定为：React 19 + TypeScript + Vite 8 + React Router + TanStack Query + Axios + Zustand + Ant Design + Playwright。
+- 页面组织以业务域分组，不允许把所有接口都塞进单一页面。
+- 登录态统一由 token storage + route guard + `/api/auth/me` 初始化完成，不允许页面各自重复鉴权。
+- 所有 API 调用统一走 `frontend/src/api/*` 封装，不允许页面内直接散写请求。
+- 所有列表 / 详情 / tab 页面命名、字段与路由必须对齐后端正式 `/api/**` 契约。
 
-> 解释：GateF 已进入文档基线阶段，但仍不得回头重写 GateE。
-
----
-
-## 5. GateD 代码约束（强制）
-
-### 5.1 nq-core
-- `OrderCommandService` 可以保留，但职责必须收敛为执行域应用服务，不允许继续无边界膨胀。
-- 必须形成统一入口：place / cancel / acknowledge / reject / trade-report / query-confirm。
-- 禁止在 controller / scheduler 中重复实现订单状态推进逻辑。
-
-### 5.2 nq-risk
-- `NoopRiskGate` 只能保留给测试桩或显式 local profile，不能作为默认实装。
-- GateD 必须实现规则链：交易开关、精度、最小名义金额、最大下单额、重复请求、限频。
-- 风控返回必须包含 `ruleCode / ruleName / rejectReason / hardReject`。
-- 数值比较、舍入、scale 处理必须对齐 `docs/gates/gate-d/NUMERIC_POLICY.md`。
-
-### 5.3 nq-scheduler
-- 只承载任务触发、窗口扫描、恢复编排。
-- 不允许演变为新的业务核心。
-- 不允许绕过 `nq-core` 或 `nq-ledger` 直接推进状态或写投影。
-
-### 5.4 nq-adapter-api / nq-adapter-*
-- 统一 port 只负责外部交互与映射。
-- adapter 不允许直接写 ledger、positions、account_snapshots。
-- adapter 返回必须归一到统一模型，不允许把交易所私货扩散到 core。
-
-### 5.5 nq-ledger
-- 只负责成交、账本、持仓、账户投影及其幂等。
-- 账本失败必须可见、可追踪、可补偿。
-
-### 5.6 nq-app / nq-api
-- `nq-app` 只做 wiring、阶段验收入口、运行 profile 约束。
-- `nq-api` 负责正式查询视图，不承担底层恢复或补偿逻辑。
+### 5.2 backend
+- GateG 期间后端只允许补前端联调缺口，不允许大改 GateD~GateF 冻结主链。
+- 非必要不改表；确需改动时，必须证明属于 GateG 页面联调最低必需补口。
+- 认证、trace、错误模型继续沿用现有实现，不重新发明第二套协议。
 
 ---
 
 ## 6. PR 要求（强制）
 
-- PR 必须对应 `docs/current/GATE_CHECKLIST.md` 或 `docs/gates/gate-f/GATE_F_CHECKLIST.md` 的条目，并在 PR 描述中写明勾选项。
-- 若修改当前阶段以下任一内容，必须同步更新当前文档：
-  - GateF 输入 / 输出边界
-  - 回测运行模型边界
-  - 市场数据输入边界
-  - 评估指标口径
-- 若改动会影响当前阶段边界，必须同步更新：
+- PR 必须对应 `docs/current/GATE_CHECKLIST.md` 或 `docs/gates/gate-g/GATE_G_CHECKLIST.md` 的条目。
+- 涉及页面、路由、菜单、接口联调时，必须同步更新：
+  - `docs/gates/gate-g/CONTRACTS.md`
+  - `docs/gates/gate-g/TEST_CASES.md`
+  - `docs/gates/gate-g/WORK.md`
+- 涉及当前阶段边界变更时，必须同步更新：
+  - `README.md`
   - `docs/current/README.md`
-  - `docs/gates/gate-f/README.md`
-  - `docs/gates/gate-f/MODULES.md`
-  - `docs/gates/gate-f/WORK.md`
+  - `docs/current/GATE_CHECKLIST.md`
+  - `docs/gates/gate-g/README.md`
 
 ---
 
-## 7. 快速验证（GateF 当前阶段）
+## 7. 快速验证（GateG 当前阶段）
 
-### 7.1 文档启动批最小验证
 ```powershell
-git diff -- AGENTS.md README.md docs/current docs/gates/gate-f
-rg -n "GateF|研究|回测|评估" AGENTS.md README.md docs/current docs/gates/gate-f
+git diff -- AGENTS.md README.md docs/current docs/gates/gate-g docs/gates/gate-f
+rg -n "GateG|前端|鉴权|Playwright|策略|回测|交易验证" AGENTS.md README.md docs/current docs/gates/gate-g docs/gates/gate-f
 ```
 
-### 7.2 GateF 当前执行顺序
-1. 先 GateF-DOC-1 文档基线
-2. 再 GateF-1 研究 / 回测配置与运行骨架
-3. 再 GateF-2 ~ GateF-5 主链实现
-
 ---
 
-## 8. 常见禁止项（强制）
+## 8. Codex 执行工作流（必须照做）
 
-- 禁止在 `nq-core / nq-ledger / nq-risk / nq-scheduler` 出现交易所方言分支。
-- 禁止绕过统一执行入口直接改 `orders` 状态。
-- 禁止 adapter 直接写 ledger / position / account projection。
-- 禁止为“先跑通”删掉审计、幂等、状态机、事实链。
-- 禁止在 recovery / reconcile 中直接重复下单。
-- 禁止把当前阶段需求偷渡成回测 / 研究平台任务。
+1. 先读 `AGENTS.md`、`README.md`、`docs/current/*`
+2. 再读 `docs/gates/gate-g/*`
+3. 再读目标代码文件
+4. 先补文档，再改代码，再补测试
+5. 提交结果时明确本批归属 GateG-DOC-1 / GateG-1 / GateG-2 / GateG-3 / GateG-4 / GateG-5 / GateG-6
 
----
-
-## 9. Codex 执行工作流（必须照做）
-
-### 第一步：读文档
-按顺序读取：
-1. `AGENTS.md`
-2. `README.md`
-3. `docs/current/README.md`
-4. `docs/current/GATE_CHECKLIST.md`
-5. 若任务涉及最近冻结的 GateE 事实，先读对应 GateE 文档（至少包含 CONTRACTS / DB_SCHEMA / STATE_MACHINE / TEST_CASES 中相关项）
-6. 再读目标代码文件
-
-### 第二步：确认边界
-输出本次任务属于：
-- 文档修订
-- 契约改动
-- 执行域改动
-- 风控改动
-- 补偿改动
-- 仅测试/验证
-
-### 第三步：先文档，后代码
-- 先补 `docs/current/*` 或 `docs/gates/gate-e/*`
-- 再改代码
-- 最后回填 `docs/gates/gate-e/WORK.md`
-
-### 第四步：最小修改集
-- 只改与当前 Gate 条目直接相关的文件
-- 禁止顺手大重构
-- 禁止顺手改无关模块
-
-### 第五步：验证
-至少给出：
-- 修改文件清单
-- 对应 GateE checklist 条目
-- 验证方式
-- 未完成项 / 风险项
-
----
-
-## 10.  MCP / Skills 使用规范（项目级强制）
+## 9. MCP / Skills 使用规范（项目级强制）
 
 ### 0) 总原则
 - 涉及当前项目的检索、读取、编辑、重构、运行、结构分析：**优先使用 `idea-mcp`**。
@@ -252,6 +139,9 @@ rg -n "GateF|研究|回测|评估" AGENTS.md README.md docs/current docs/gates/g
 ### 0.2 修改边界（目录白名单 / 黑名单）
 默认仅允许自动修改以下目录（白名单）：
 - `backend/**`
+- `frontend/**`
+- `research/**`
+- `infra/**`
 - `docs/**`
 - `.github/**`
 - `codex/**`
@@ -367,12 +257,34 @@ rg -n "GateF|研究|回测|评估" AGENTS.md README.md docs/current docs/gates/g
 2. 再 `execute_run_configuration`（必要时设置合理超时）
 3. 回复中汇报：退出状态 + 关键输出摘要（必要时附报错关键信息）
 
+---
 
+### 7) Skills 路由规则
 
-## 8. GateE 补充施工约束（新增）
+当任务命中以下场景时，必须优先使用对应 skill，不要跳过：
 
-- 新增或修改中粒度工程决策时，必须同步更新 `docs/gates/gate-e/DECISIONS.md`。
-- GateE-0 仅限前置治理，不得顺手把策略接入与调度编排主设计做散。
-- schema / metadata 收口必须排在 GateE 前两批，不得过度后置。
-- 提交 PR 时，必须对齐 `docs/gates/gate-e/PR_SPLIT_PLAN.md`；不得一次提交跨越多个主能力边界的巨型 PR。
-- 除非修正文档事实冲突，否则不得继续把新内容写回 GateD 卷宗。 
+#### 前端任务
+- 新增页面、根据接口落地页面：`build-page-from-api`
+- 新建业务组件、弹窗、抽屉、筛选块：`scaffold-component`
+- 接入后端接口、补 query/mutation、整理 query key：`wire-api-module`
+- 修复前端页面、路由、状态、表单、Ant Design 交互问题：`fix-ui-bug`
+- 关键链路回归、Playwright 用例补齐：`e2e-regression`
+- 前端改动收口审查、合并前检查：`frontend-review`
+
+#### 后端任务
+- 修复 Java 后端问题、异常链、事务、幂等、状态流转问题：`fix-prod-bug-java`
+- 审查 DDL、migration、索引、约束、backfill：`review-ddl-and-migration`
+- 补 JUnit、golden case、关键回归测试：`write-junit-and-golden-tests`
+- 收口 service 层、拆分巨型类、整理事务边界：`refactor-service-layer-java`
+- 审查 Spring Boot 模块边界、装配、配置和依赖关系：`spring-boot-module-review`
+- 做 Controller -> Service -> Repository -> DB 闭环回归：`integration-regression-java`
+
+#### Python 辅助任务
+- 编写批处理、修数、迁移、导入导出脚本：`build-batch-script-python`
+- 为 Python 脚本和工具补 pytest 回归：`write-pytest-regression`
+
+#### 执行要求
+1. 先判断任务属于哪一类，再进入对应 skill。
+2. 一个任务只允许以一个主 skill 为主线，其他 skill 只作为补充。
+3. 不允许跳过 skill 直接自由发挥，除非任务明显不属于任何已定义 skill。
+4. 完成后必须输出：新增文件、修改文件、验证步骤、风险与未覆盖项。

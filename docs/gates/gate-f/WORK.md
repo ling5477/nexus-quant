@@ -21,5 +21,11 @@
 - 已支持显式 `evaluate` 与 `evaluation` 查询
 - 已落地 `totalReturnRate / maxDrawdown / maxDrawdownRate / winRate / sharpeRatio`
 
-后续归属：
-- GateF-5：研究产物与执行域接口收口
+## 6. GateF-5
+- 已完成研究产物与执行域接口收口
+- 已补齐 `publish` 写链与查询呈现
+
+## 7. 冻结交接
+- GateF 已完成并冻结
+- 当前阶段已切换到 GateG
+- GateG 不以前置数据库大改为条件，只在联调中补最小前端向接口
