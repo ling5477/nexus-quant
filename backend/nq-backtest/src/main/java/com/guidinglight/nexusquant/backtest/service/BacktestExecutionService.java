@@ -19,15 +19,10 @@ import com.guidinglight.nexusquant.backtest.model.SimPnlSnapshot;
 import com.guidinglight.nexusquant.backtest.model.SimPosition;
 import com.guidinglight.nexusquant.backtest.model.SimTrade;
 import com.guidinglight.nexusquant.backtest.port.HistoricalMarketDataPort;
-import com.guidinglight.nexusquant.backtest.port.SimOrderRepository;
-import com.guidinglight.nexusquant.backtest.port.SimPnlSnapshotRepository;
-import com.guidinglight.nexusquant.backtest.port.SimPositionRepository;
-import com.guidinglight.nexusquant.backtest.port.SimTradeRepository;
 import com.guidinglight.nexusquant.research.model.BacktestConfig;
 import com.guidinglight.nexusquant.research.model.BacktestRun;
 import com.guidinglight.nexusquant.research.model.BacktestRunStatus;
 import com.guidinglight.nexusquant.research.model.ResearchConfig;
-import com.guidinglight.nexusquant.research.port.BacktestRunRepository;
 import com.guidinglight.nexusquant.research.service.BacktestConfigService;
 import com.guidinglight.nexusquant.research.service.BacktestRunService;
 import com.guidinglight.nexusquant.research.service.ResearchConfigService;
@@ -36,9 +31,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -59,11 +56,7 @@ public class BacktestExecutionService {
     private final BacktestRunService backtestRunService;
     private final BacktestConfigService backtestConfigService;
     private final ResearchConfigService researchConfigService;
-    private final BacktestRunRepository backtestRunRepository;
-    private final SimOrderRepository simOrderRepository;
-    private final SimTradeRepository simTradeRepository;
-    private final SimPositionRepository simPositionRepository;
-    private final SimPnlSnapshotRepository simPnlSnapshotRepository;
+    private final BacktestExecutionPersistenceService backtestExecutionPersistenceService;
     private final BacktestSignalPolicy backtestSignalPolicy;
     private final ExecutionPricingPolicy executionPricingPolicy;
     private final FeeModel feeModel;
@@ -76,11 +69,7 @@ public class BacktestExecutionService {
             BacktestRunService backtestRunService,
             BacktestConfigService backtestConfigService,
             ResearchConfigService researchConfigService,
-            BacktestRunRepository backtestRunRepository,
-            SimOrderRepository simOrderRepository,
-            SimTradeRepository simTradeRepository,
-            SimPositionRepository simPositionRepository,
-            SimPnlSnapshotRepository simPnlSnapshotRepository,
+            BacktestExecutionPersistenceService backtestExecutionPersistenceService,
             BacktestSignalPolicy backtestSignalPolicy,
             ExecutionPricingPolicy executionPricingPolicy,
             FeeModel feeModel,
@@ -92,11 +81,7 @@ public class BacktestExecutionService {
                 backtestRunService,
                 backtestConfigService,
                 researchConfigService,
-                backtestRunRepository,
-                simOrderRepository,
-                simTradeRepository,
-                simPositionRepository,
-                simPnlSnapshotRepository,
+                backtestExecutionPersistenceService,
                 backtestSignalPolicy,
                 executionPricingPolicy,
                 feeModel,
@@ -111,11 +96,7 @@ public class BacktestExecutionService {
             BacktestRunService backtestRunService,
             BacktestConfigService backtestConfigService,
             ResearchConfigService researchConfigService,
-            BacktestRunRepository backtestRunRepository,
-            SimOrderRepository simOrderRepository,
-            SimTradeRepository simTradeRepository,
-            SimPositionRepository simPositionRepository,
-            SimPnlSnapshotRepository simPnlSnapshotRepository,
+            BacktestExecutionPersistenceService backtestExecutionPersistenceService,
             BacktestSignalPolicy backtestSignalPolicy,
             ExecutionPricingPolicy executionPricingPolicy,
             FeeModel feeModel,
@@ -136,19 +117,9 @@ public class BacktestExecutionService {
                 researchConfigService,
                 "researchConfigService must not be null"
         );
-        this.backtestRunRepository = Objects.requireNonNull(
-                backtestRunRepository,
-                "backtestRunRepository must not be null"
-        );
-        this.simOrderRepository = Objects.requireNonNull(simOrderRepository, "simOrderRepository must not be null");
-        this.simTradeRepository = Objects.requireNonNull(simTradeRepository, "simTradeRepository must not be null");
-        this.simPositionRepository = Objects.requireNonNull(
-                simPositionRepository,
-                "simPositionRepository must not be null"
-        );
-        this.simPnlSnapshotRepository = Objects.requireNonNull(
-                simPnlSnapshotRepository,
-                "simPnlSnapshotRepository must not be null"
+        this.backtestExecutionPersistenceService = Objects.requireNonNull(
+                backtestExecutionPersistenceService,
+                "backtestExecutionPersistenceService must not be null"
         );
         this.backtestSignalPolicy = Objects.requireNonNull(
                 backtestSignalPolicy,
@@ -168,6 +139,8 @@ public class BacktestExecutionService {
      * 显式启动回测运行。
      * Why:
      * GateF-2 已经冻结“创建”和“执行”分离，本方法继续沿用该边界，但把执行内容升级成模拟事实链闭环。
+     * 本次收口把“历史数据读取 / 逐 bar 计算”与“本地事实落库”拆成两个阶段，
+     * 以避免中途异常留下半套 `sim_*` 数据。
      */
     public BacktestExecutionResult startRun(String backtestRunId) {
         BacktestRun currentRun = backtestRunService.getByBacktestRunId(backtestRunId);
@@ -177,20 +150,15 @@ public class BacktestExecutionService {
         BacktestConfig backtestConfig = backtestConfigService.getByBacktestConfigId(currentRun.backtestConfigId());
         ResearchConfig researchConfig = researchConfigService.getByResearchConfigId(currentRun.researchConfigId());
         Instant executionStartedAt = Instant.now(clock);
-
-        backtestRunRepository.updateExecution(
-                currentRun.backtestRunId(),
-                BacktestRunStatus.PREPARING,
-                executionStartedAt,
-                null,
-                null,
-                null,
-                "{}",
-                executionStartedAt
-        );
+        backtestExecutionPersistenceService.markPreparing(currentRun.backtestRunId(), executionStartedAt);
 
         BacktestExecutionRequest executionRequest = null;
         BacktestExecutionContext executionContext = null;
+        List<HistoricalBar> bars = List.of();
+        List<SimOrder> simulatedOrders = new ArrayList<>();
+        List<SimTrade> simulatedTrades = new ArrayList<>();
+        Map<String, SimPosition> simulatedPositions = new LinkedHashMap<>();
+        List<SimPnlSnapshot> simulatedPnlSnapshots = new ArrayList<>();
         try {
             executionRequest = buildExecutionRequest(currentRun, backtestConfig, researchConfig);
             executionContext = new BacktestExecutionContext(
@@ -198,18 +166,7 @@ public class BacktestExecutionService {
                     executionRequest.datasetSpec().symbol(),
                     backtestConfig.initialCapital()
             );
-            backtestRunRepository.updateExecution(
-                    currentRun.backtestRunId(),
-                    BacktestRunStatus.RUNNING,
-                    executionStartedAt,
-                    null,
-                    null,
-                    null,
-                    "{}",
-                    Instant.now(clock)
-            );
-
-            List<HistoricalBar> bars = historicalMarketDataPort.loadBars(new HistoricalMarketDataQuery(
+            bars = historicalMarketDataPort.loadBars(new HistoricalMarketDataQuery(
                     executionRequest.datasetSpec(),
                     executionRequest.datasetSpec().symbol(),
                     executionRequest.datasetSpec().interval(),
@@ -220,87 +177,16 @@ public class BacktestExecutionService {
                 throw new IllegalStateException("no historical bars found for requested window");
             }
 
-            BigDecimal feeRate = executionSpecDecimal(executionRequest.executionSpecJson(), "feeRate", BigDecimal.ZERO);
-            BigDecimal slippageBps = executionSpecDecimal(
-                    executionRequest.executionSpecJson(),
-                    "slippageBps",
-                    BigDecimal.ZERO
+            simulateFacts(
+                    currentRun.backtestRunId(),
+                    executionRequest,
+                    executionContext,
+                    bars,
+                    simulatedOrders,
+                    simulatedTrades,
+                    simulatedPositions,
+                    simulatedPnlSnapshots
             );
-            BigDecimal defaultOrderQuantity = executionSpecDecimal(
-                    executionRequest.executionSpecJson(),
-                    "orderQuantity",
-                    BigDecimal.ONE
-            );
-
-            int orderCount = 0;
-            int tradeCount = 0;
-            for (int barIndex = 0; barIndex < bars.size(); barIndex++) {
-                HistoricalBar historicalBar = bars.get(barIndex);
-                SignalIntent signalIntent = backtestSignalPolicy.evaluate(
-                        executionRequest.sourceStrategyType(),
-                        historicalBar,
-                        barIndex,
-                        bars.size(),
-                        executionContext
-                );
-
-                if (signalIntent.signalIntentType() == SignalIntentType.HOLD) {
-                    persistPnlSnapshot(executionContext, historicalBar.closeTime(), historicalBar.closePrice());
-                    continue;
-                }
-
-                BigDecimal requestedQuantity = signalIntent.quantity().compareTo(BigDecimal.ZERO) > 0
-                        ? normalize(signalIntent.quantity())
-                        : normalize(defaultOrderQuantity);
-                BigDecimal barClosePrice = executionPricingPolicy.executionPrice(historicalBar.closePrice());
-                String side = toOrderSide(signalIntent.signalIntentType());
-                SimOrder simOrder = createFilledOrder(
-                        currentRun.backtestRunId(),
-                        historicalBar.symbol(),
-                        side,
-                        requestedQuantity,
-                        barClosePrice,
-                        historicalBar.closeTime()
-                );
-
-                if (signalIntent.signalIntentType() == SignalIntentType.BUY) {
-                    validateBuyQuantity(executionContext, barClosePrice, requestedQuantity, feeRate, slippageBps);
-                } else {
-                    validateSellQuantity(executionContext, requestedQuantity);
-                }
-
-                simOrderRepository.insert(simOrder);
-                orderCount++;
-
-                BigDecimal tradePrice = barClosePrice;
-                BigDecimal slippageAmount = slippageModel.calculate(tradePrice, requestedQuantity, slippageBps);
-                BigDecimal feeAmount = feeModel.calculate(tradePrice.multiply(requestedQuantity), feeRate);
-                SimTrade simTrade = new SimTrade(
-                        "st-" + UUID.randomUUID(),
-                        simOrder.simOrderId(),
-                        currentRun.backtestRunId(),
-                        historicalBar.symbol(),
-                        side,
-                        requestedQuantity,
-                        tradePrice,
-                        feeAmount,
-                        slippageAmount,
-                        historicalBar.closeTime(),
-                        historicalBar.closeTime(),
-                        historicalBar.closeTime()
-                );
-                simTradeRepository.insert(simTrade);
-                tradeCount++;
-
-                SimPosition updatedPosition = updatePosition(executionContext, simTrade, historicalBar.closeTime());
-                simPositionRepository.upsert(updatedPosition);
-                if ("BUY".equals(side)) {
-                    executionContext.applyBuy(simTrade, updatedPosition);
-                } else {
-                    executionContext.applySell(simTrade, updatedPosition);
-                }
-                persistPnlSnapshot(executionContext, historicalBar.closeTime(), historicalBar.closePrice());
-            }
 
             Instant executionFinishedAt = Instant.now(clock);
             String summaryJson = buildSuccessSummary(
@@ -309,18 +195,19 @@ public class BacktestExecutionService {
                     bars,
                     executionStartedAt,
                     executionFinishedAt,
-                    orderCount,
-                    tradeCount
+                    simulatedOrders,
+                    simulatedTrades,
+                    simulatedPnlSnapshots
             );
-            backtestRunRepository.updateExecution(
+            backtestExecutionPersistenceService.persistSuccess(
                     currentRun.backtestRunId(),
-                    BacktestRunStatus.SUCCEEDED,
                     executionStartedAt,
                     executionFinishedAt,
-                    null,
-                    null,
-                    summaryJson,
-                    executionFinishedAt
+                    simulatedOrders,
+                    simulatedTrades,
+                    new ArrayList<>(simulatedPositions.values()),
+                    simulatedPnlSnapshots,
+                    summaryJson
             );
             return new BacktestExecutionResult(
                     currentRun.backtestRunId(),
@@ -336,24 +223,119 @@ public class BacktestExecutionService {
             Instant executionFinishedAt = Instant.now(clock);
             String summaryJson = buildFailureSummary(
                     executionRequest,
-                    currentRun,
                     researchConfig,
-                    executionContext,
                     executionStartedAt,
                     executionFinishedAt,
-                    ex
+                    ex,
+                    simulatedOrders,
+                    simulatedTrades,
+                    simulatedPnlSnapshots
             );
-            backtestRunRepository.updateExecution(
+            backtestExecutionPersistenceService.markFailed(
                     currentRun.backtestRunId(),
-                    BacktestRunStatus.FAILED,
                     executionStartedAt,
                     executionFinishedAt,
                     "BACKTEST_EXECUTION_FAILED",
                     safeMessage(ex),
-                    summaryJson,
-                    executionFinishedAt
+                    summaryJson
             );
             throw new IllegalStateException("backtest execution failed: " + safeMessage(ex), ex);
+        }
+    }
+
+    private void simulateFacts(
+            String backtestRunId,
+            BacktestExecutionRequest executionRequest,
+            BacktestExecutionContext executionContext,
+            List<HistoricalBar> bars,
+            List<SimOrder> simulatedOrders,
+            List<SimTrade> simulatedTrades,
+            Map<String, SimPosition> simulatedPositions,
+            List<SimPnlSnapshot> simulatedPnlSnapshots
+    ) {
+        BigDecimal feeRate = executionSpecDecimal(executionRequest.executionSpecJson(), "feeRate", BigDecimal.ZERO);
+        BigDecimal slippageBps = executionSpecDecimal(
+                executionRequest.executionSpecJson(),
+                "slippageBps",
+                BigDecimal.ZERO
+        );
+        BigDecimal defaultOrderQuantity = executionSpecDecimal(
+                executionRequest.executionSpecJson(),
+                "orderQuantity",
+                BigDecimal.ONE
+        );
+
+        for (int barIndex = 0; barIndex < bars.size(); barIndex++) {
+            HistoricalBar historicalBar = bars.get(barIndex);
+            SignalIntent signalIntent = backtestSignalPolicy.evaluate(
+                    executionRequest.sourceStrategyType(),
+                    historicalBar,
+                    barIndex,
+                    bars.size(),
+                    executionContext
+            );
+
+            if (signalIntent.signalIntentType() == SignalIntentType.HOLD) {
+                simulatedPnlSnapshots.add(createPnlSnapshot(
+                        executionContext,
+                        historicalBar.closeTime(),
+                        historicalBar.closePrice()
+                ));
+                continue;
+            }
+
+            BigDecimal requestedQuantity = signalIntent.quantity().compareTo(BigDecimal.ZERO) > 0
+                    ? normalize(signalIntent.quantity())
+                    : normalize(defaultOrderQuantity);
+            BigDecimal barClosePrice = executionPricingPolicy.executionPrice(historicalBar.closePrice());
+            String side = toOrderSide(signalIntent.signalIntentType());
+            if (signalIntent.signalIntentType() == SignalIntentType.BUY) {
+                validateBuyQuantity(executionContext, barClosePrice, requestedQuantity, feeRate, slippageBps);
+            } else {
+                validateSellQuantity(executionContext, requestedQuantity);
+            }
+
+            SimOrder simOrder = createFilledOrder(
+                    backtestRunId,
+                    historicalBar.symbol(),
+                    side,
+                    requestedQuantity,
+                    barClosePrice,
+                    historicalBar.closeTime()
+            );
+            simulatedOrders.add(simOrder);
+
+            BigDecimal tradePrice = barClosePrice;
+            BigDecimal slippageAmount = slippageModel.calculate(tradePrice, requestedQuantity, slippageBps);
+            BigDecimal feeAmount = feeModel.calculate(tradePrice.multiply(requestedQuantity), feeRate);
+            SimTrade simTrade = new SimTrade(
+                    "st-" + UUID.randomUUID(),
+                    simOrder.simOrderId(),
+                    backtestRunId,
+                    historicalBar.symbol(),
+                    side,
+                    requestedQuantity,
+                    tradePrice,
+                    feeAmount,
+                    slippageAmount,
+                    historicalBar.closeTime(),
+                    historicalBar.closeTime(),
+                    historicalBar.closeTime()
+            );
+            simulatedTrades.add(simTrade);
+
+            SimPosition updatedPosition = updatePosition(executionContext.currentPosition(), simTrade, historicalBar.closeTime());
+            simulatedPositions.put(updatedPosition.symbol(), updatedPosition);
+            if ("BUY".equals(side)) {
+                executionContext.applyBuy(simTrade, updatedPosition);
+            } else {
+                executionContext.applySell(simTrade, updatedPosition);
+            }
+            simulatedPnlSnapshots.add(createPnlSnapshot(
+                    executionContext,
+                    historicalBar.closeTime(),
+                    historicalBar.closePrice()
+            ));
         }
     }
 
@@ -458,61 +440,59 @@ public class BacktestExecutionService {
         }
     }
 
-    private SimPosition updatePosition(BacktestExecutionContext executionContext, SimTrade simTrade, Instant updatedAt) {
-        Optional<SimPosition> existingPosition = simPositionRepository.findByBacktestRunIdAndSymbol(
-                executionContext.backtestRunId(),
-                executionContext.symbol()
-        );
-        SimPosition currentPosition = existingPosition.orElse(new SimPosition(
+    private SimPosition updatePosition(SimPosition currentPosition, SimTrade simTrade, Instant updatedAt) {
+        SimPosition effectiveCurrentPosition = currentPosition == null
+                ? new SimPosition(
                 "sp-" + UUID.randomUUID(),
-                executionContext.backtestRunId(),
-                executionContext.symbol(),
+                simTrade.backtestRunId(),
+                simTrade.symbol(),
                 BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
                 BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
                 BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
                 updatedAt,
                 updatedAt
-        ));
+        )
+                : currentPosition;
         if ("BUY".equals(simTrade.side())) {
-            BigDecimal nextQuantity = normalize(currentPosition.quantity().add(simTrade.quantity()));
+            BigDecimal nextQuantity = normalize(effectiveCurrentPosition.quantity().add(simTrade.quantity()));
             BigDecimal nextAverageEntryPrice = nextQuantity.compareTo(BigDecimal.ZERO) == 0
                     ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
                     : normalize(
-                    currentPosition.averageEntryPrice().multiply(currentPosition.quantity())
+                    effectiveCurrentPosition.averageEntryPrice().multiply(effectiveCurrentPosition.quantity())
                             .add(simTrade.tradePrice().multiply(simTrade.quantity()))
                             .divide(nextQuantity, 18, RoundingMode.HALF_UP)
             );
             return new SimPosition(
-                    currentPosition.simPositionId(),
-                    currentPosition.backtestRunId(),
-                    currentPosition.symbol(),
+                    effectiveCurrentPosition.simPositionId(),
+                    effectiveCurrentPosition.backtestRunId(),
+                    effectiveCurrentPosition.symbol(),
                     nextQuantity,
                     nextAverageEntryPrice,
-                    currentPosition.realizedPnl(),
-                    currentPosition.createdAt(),
+                    effectiveCurrentPosition.realizedPnl(),
+                    effectiveCurrentPosition.createdAt(),
                     updatedAt
             );
         }
 
-        BigDecimal remainingQuantity = normalize(currentPosition.quantity().subtract(simTrade.quantity()));
+        BigDecimal remainingQuantity = normalize(effectiveCurrentPosition.quantity().subtract(simTrade.quantity()));
         BigDecimal realizedIncrement = normalize(
-                simTrade.tradePrice().subtract(currentPosition.averageEntryPrice()).multiply(simTrade.quantity())
+                simTrade.tradePrice().subtract(effectiveCurrentPosition.averageEntryPrice()).multiply(simTrade.quantity())
         );
         return new SimPosition(
-                currentPosition.simPositionId(),
-                currentPosition.backtestRunId(),
-                currentPosition.symbol(),
+                effectiveCurrentPosition.simPositionId(),
+                effectiveCurrentPosition.backtestRunId(),
+                effectiveCurrentPosition.symbol(),
                 remainingQuantity,
                 remainingQuantity.compareTo(BigDecimal.ZERO) == 0
                         ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
-                        : currentPosition.averageEntryPrice(),
-                normalize(currentPosition.realizedPnl().add(realizedIncrement)),
-                currentPosition.createdAt(),
+                        : effectiveCurrentPosition.averageEntryPrice(),
+                normalize(effectiveCurrentPosition.realizedPnl().add(realizedIncrement)),
+                effectiveCurrentPosition.createdAt(),
                 updatedAt
         );
     }
 
-    private void persistPnlSnapshot(
+    private SimPnlSnapshot createPnlSnapshot(
             BacktestExecutionContext executionContext,
             Instant snapshotTime,
             BigDecimal referenceClosePrice
@@ -531,7 +511,7 @@ public class BacktestExecutionService {
                 : normalize(currentPosition.realizedPnl());
         BigDecimal equity = normalize(executionContext.cashBalance().add(positionMarketValue));
         BigDecimal netPnl = normalize(equity.subtract(executionContext.initialCapital()));
-        simPnlSnapshotRepository.insert(new SimPnlSnapshot(
+        return new SimPnlSnapshot(
                 "pnl-" + UUID.randomUUID(),
                 executionContext.backtestRunId(),
                 snapshotTime,
@@ -544,7 +524,7 @@ public class BacktestExecutionService {
                 equity,
                 netPnl,
                 snapshotTime
-        ));
+        );
     }
 
     private String buildSuccessSummary(
@@ -553,19 +533,19 @@ public class BacktestExecutionService {
             List<HistoricalBar> bars,
             Instant executionStartedAt,
             Instant executionFinishedAt,
-            int orderCount,
-            int tradeCount
+            List<SimOrder> simulatedOrders,
+            List<SimTrade> simulatedTrades,
+            List<SimPnlSnapshot> simulatedPnlSnapshots
     ) {
-        List<SimPnlSnapshot> pnlSnapshots = simPnlSnapshotRepository.listByBacktestRunId(executionContext.backtestRunId());
-        SimPnlSnapshot finalSnapshot = pnlSnapshots.getLast();
+        SimPnlSnapshot finalSnapshot = simulatedPnlSnapshots.getLast();
         SimPosition finalPosition = executionContext.currentPosition();
         ObjectNode summary = objectMapper.createObjectNode();
         summary.put("sourceStrategyId", executionRequest.sourceStrategyId());
         summary.put("symbol", executionRequest.datasetSpec().symbol());
         summary.put("interval", executionRequest.datasetSpec().interval().wireValue());
         summary.put("barCount", bars.size());
-        summary.put("orderCount", orderCount);
-        summary.put("tradeCount", tradeCount);
+        summary.put("orderCount", simulatedOrders.size());
+        summary.put("tradeCount", simulatedTrades.size());
         summary.put("finalPositionQuantity", finalPosition == null ? "0" : finalPosition.quantity().toPlainString());
         summary.put("finalCashBalance", finalSnapshot.cashBalance().toPlainString());
         summary.put("finalEquity", finalSnapshot.equity().toPlainString());
@@ -582,12 +562,13 @@ public class BacktestExecutionService {
 
     private String buildFailureSummary(
             BacktestExecutionRequest executionRequest,
-            BacktestRun backtestRun,
             ResearchConfig researchConfig,
-            BacktestExecutionContext executionContext,
             Instant executionStartedAt,
             Instant executionFinishedAt,
-            RuntimeException exception
+            RuntimeException exception,
+            List<SimOrder> simulatedOrders,
+            List<SimTrade> simulatedTrades,
+            List<SimPnlSnapshot> simulatedPnlSnapshots
     ) {
         ObjectNode summary = objectMapper.createObjectNode();
         summary.put("sourceStrategyId", researchConfig.sourceStrategyId());
@@ -598,11 +579,9 @@ public class BacktestExecutionService {
             summary.putNull("symbol");
             summary.putNull("interval");
         }
-        summary.put("barCount", executionContext == null
-                ? 0
-                : simPnlSnapshotRepository.listByBacktestRunId(backtestRun.backtestRunId()).size());
-        summary.put("orderCount", simOrderRepository.listByBacktestRunId(backtestRun.backtestRunId()).size());
-        summary.put("tradeCount", simTradeRepository.listByBacktestRunId(backtestRun.backtestRunId()).size());
+        summary.put("barCount", simulatedPnlSnapshots.size());
+        summary.put("orderCount", simulatedOrders.size());
+        summary.put("tradeCount", simulatedTrades.size());
         summary.put("resultStatus", BacktestRunStatus.FAILED.name());
         summary.put("failureMessage", safeMessage(exception));
         summary.put("executionStartedAt", executionStartedAt.toString());

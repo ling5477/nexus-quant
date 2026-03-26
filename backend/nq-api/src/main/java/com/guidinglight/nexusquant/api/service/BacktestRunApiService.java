@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 /**
  * BacktestRunApiService 负责把 HTTP 请求映射到回测运行、评估和发布主链。
@@ -76,12 +78,20 @@ public class BacktestRunApiService {
      * @return 启动后的最新运行事实
      */
     public BacktestRun startExecution(String backtestRunId) {
-        backtestExecutionService.startRun(backtestRunId);
-        return backtestRunService.getByBacktestRunId(backtestRunId);
+        try {
+            backtestExecutionService.startRun(backtestRunId);
+            return backtestRunService.getByBacktestRunId(backtestRunId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
     }
 
     public BacktestRun getByBacktestRunId(String backtestRunId) {
-        return backtestRunService.getByBacktestRunId(backtestRunId);
+        try {
+            return backtestRunService.getByBacktestRunId(backtestRunId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
     }
 
     /**
@@ -92,38 +102,45 @@ public class BacktestRunApiService {
      * @return 运行列表
      */
     public List<BacktestRun> list(String researchConfigId, String backtestConfigId) {
-        return backtestRunService.list(researchConfigId, backtestConfigId);
+        try {
+            return backtestRunService.list(researchConfigId, backtestConfigId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
     }
 
     public List<SimOrder> listOrders(String backtestRunId) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
         return backtestFactQueryService.listOrders(backtestRunId);
     }
 
     public List<SimTrade> listTrades(String backtestRunId) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
         return backtestFactQueryService.listTrades(backtestRunId);
     }
 
     public List<SimPosition> listPositions(String backtestRunId) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
         return backtestFactQueryService.listPositions(backtestRunId);
     }
 
     public List<SimPnlSnapshot> listPnlSnapshots(String backtestRunId) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
         return backtestFactQueryService.listPnlSnapshots(backtestRunId);
     }
 
     public BacktestEvaluationReport evaluate(String backtestRunId) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
         return backtestEvaluationService.evaluate(backtestRunId);
     }
 
     public BacktestEvaluationReport getEvaluation(String backtestRunId) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
         return backtestEvaluationService.getByBacktestRunId(backtestRunId)
-                .orElseThrow(() -> new IllegalArgumentException("evaluation report not found: " + backtestRunId));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "evaluation report not found: " + backtestRunId
+                ));
     }
 
     public BacktestEvaluationReport findEvaluationOrNull(String backtestRunId) {
@@ -131,16 +148,24 @@ public class BacktestRunApiService {
     }
 
     public BacktestPublishRecord publish(String backtestRunId, String displayName) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
         return backtestPublishService.publish(new BacktestPublishRequest(backtestRunId, displayName));
     }
 
     public BacktestPublishRecord getPublish(String backtestRunId) {
-        backtestRunService.getByBacktestRunId(backtestRunId);
-        return backtestPublishService.getByBacktestRunId(backtestRunId);
+        getByBacktestRunId(backtestRunId);
+        try {
+            return backtestPublishService.getByBacktestRunId(backtestRunId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
     }
 
     public BacktestPublishRecord findPublishOrNull(String backtestRunId) {
         return backtestPublishService.findByBacktestRunIdOrNull(backtestRunId);
+    }
+
+    private ResponseStatusException toNotFound(IllegalArgumentException ex) {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
     }
 }

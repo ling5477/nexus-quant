@@ -4,9 +4,12 @@ import com.guidinglight.nexusquant.research.model.ResearchConfig;
 import com.guidinglight.nexusquant.research.service.ResearchConfigCreateRequest;
 import com.guidinglight.nexusquant.research.service.ResearchConfigService;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 /**
  * ResearchConfigApiService 负责把 HTTP 请求映射到研究配置领域服务。
@@ -48,5 +51,33 @@ public class ResearchConfigApiService {
                 parameterDefaults,
                 datasetSpec
         ));
+    }
+
+    /**
+     * 查询研究配置详情。
+     *
+     * @param researchConfigId 研究配置 ID
+     * @return 研究配置详情
+     */
+    public ResearchConfig getByResearchConfigId(String researchConfigId) {
+        try {
+            return researchConfigService.getByResearchConfigId(researchConfigId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
+    }
+
+    /**
+     * 查询研究配置列表。
+     *
+     * @param sourceStrategyId 上游策略定义 ID，可空
+     * @return 研究配置列表
+     */
+    public List<ResearchConfig> list(String sourceStrategyId) {
+        return researchConfigService.list(sourceStrategyId);
+    }
+
+    private ResponseStatusException toNotFound(IllegalArgumentException ex) {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
     }
 }

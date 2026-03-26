@@ -100,8 +100,22 @@ public class ResearchConfigService {
                 ));
     }
 
+    /**
+     * 查询研究配置列表。
+     * Why:
+     * GateG 联调前只提供最小列表面，因此只暴露 `sourceStrategyId` 这一真实存在的轻量过滤维度，
+     * 避免提前引入复杂 DSL、分页协议或额外聚合读模型。
+     *
+     * @param sourceStrategyId 上游策略定义 ID，可空
+     * @return 满足条件的研究配置列表，默认按仓储既有顺序返回
+     */
+    public List<ResearchConfig> list(String sourceStrategyId) {
+        String normalizedSourceStrategyId = normalizeOptionalText(sourceStrategyId);
+        return researchConfigRepository.list(normalizedSourceStrategyId);
+    }
+
     public List<ResearchConfig> listAll() {
-        return researchConfigRepository.listAll();
+        return list(null);
     }
 
     private void validateCreateRequest(ResearchConfigCreateRequest request) {
@@ -134,6 +148,10 @@ public class ResearchConfigService {
 
     private String normalizeNullableText(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String normalizeOptionalText(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String requireText(String value, String fieldName) {

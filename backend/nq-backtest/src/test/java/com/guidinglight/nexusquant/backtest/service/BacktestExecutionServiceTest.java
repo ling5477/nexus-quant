@@ -115,6 +115,101 @@ class BacktestExecutionServiceTest {
         assertEquals("BACKTEST_EXECUTION_FAILED", updatedRun.failureCode());
     }
 
+    @Test
+    void shouldMarkRunFailedWithoutPersistingFactsWhenSuccessPersistenceFails() {
+        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
+        InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
+        InMemoryBacktestRunRepository backtestRunRepository = new InMemoryBacktestRunRepository();
+        InMemorySimOrderRepository simOrderRepository = new InMemorySimOrderRepository();
+        InMemorySimTradeRepository simTradeRepository = new InMemorySimTradeRepository();
+        InMemorySimPositionRepository simPositionRepository = new InMemorySimPositionRepository();
+        InMemorySimPnlSnapshotRepository simPnlSnapshotRepository = new InMemorySimPnlSnapshotRepository();
+        SourceStrategySnapshotRepository sourceStrategySnapshotRepository = strategyId -> Optional.of(new SourceStrategySnapshot(
+                strategyId,
+                "buy-hold-fixture",
+                "Buy Hold Fixture",
+                "BUY_AND_HOLD_FIXTURE",
+                "BINANCE",
+                1001L,
+                "SIM",
+                true,
+                "{\"strategy\":\"fixture\"}",
+                1
+        ));
+        ResearchConfigService researchConfigService = new ResearchConfigService(
+                researchConfigRepository,
+                sourceStrategySnapshotRepository,
+                objectMapper,
+                fixedClock
+        );
+        BacktestConfigService backtestConfigService = new BacktestConfigService(
+                backtestConfigRepository,
+                researchConfigService,
+                objectMapper,
+                fixedClock
+        );
+        BacktestRunService backtestRunService = new BacktestRunService(
+                backtestRunRepository,
+                backtestConfigService,
+                researchConfigService,
+                fixedClock
+        );
+        BacktestExecutionPersistenceService failingPersistenceService = new FailingBacktestExecutionPersistenceService(
+                backtestRunRepository,
+                simOrderRepository,
+                simTradeRepository,
+                simPositionRepository,
+                simPnlSnapshotRepository
+        );
+        BacktestExecutionService backtestExecutionService = new BacktestExecutionService(
+                query -> List.of(
+                        bar("2025-01-01T00:00:00Z", "2025-01-01T00:00:59Z", "43000", "43010", "10"),
+                        bar("2025-01-01T00:01:00Z", "2025-01-01T00:01:59Z", "43010", "43110", "11")
+                ),
+                backtestRunService,
+                backtestConfigService,
+                researchConfigService,
+                failingPersistenceService,
+                new BuiltinFixtureSignalPolicy(),
+                new ExecutionPricingPolicy(),
+                new FeeModel(),
+                new SlippageModel(),
+                objectMapper,
+                fixedClock
+        );
+
+        ResearchConfig researchConfig = researchConfigService.create(new ResearchConfigCreateRequest(
+                "str-demo-3",
+                "Buy Hold Research",
+                null,
+                "{}",
+                "{}",
+                """
+                {"provider":"fixture","datasetId":"btc-sample","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
+                """
+        ));
+        BacktestConfig backtestConfig = backtestConfigService.create(new BacktestConfigCreateRequest(
+                researchConfig.researchConfigId(),
+                "Buy Hold Backtest",
+                null,
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-01T00:01:59Z"),
+                new BigDecimal("100000"),
+                "{\"mode\":\"bar\",\"feeRate\":\"0.001\",\"slippageBps\":\"10\",\"orderQuantity\":\"1\"}",
+                "{}"
+        ));
+        BacktestRun createdRun = backtestRunService.create(new BacktestRunStartRequest(backtestConfig.backtestConfigId()));
+
+        assertThrows(IllegalStateException.class, () -> backtestExecutionService.startRun(createdRun.backtestRunId()));
+
+        BacktestRun updatedRun = backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
+        assertEquals(BacktestRunStatus.FAILED, updatedRun.status());
+        assertEquals(0, simOrderRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
+        assertEquals(0, simTradeRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
+        assertEquals(0, simPositionRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
+        assertEquals(0, simPnlSnapshotRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
+    }
+
     private Scenario createScenario(HistoricalMarketDataPort historicalMarketDataPort) {
         InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
         InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
@@ -153,16 +248,19 @@ class BacktestExecutionServiceTest {
                 researchConfigService,
                 fixedClock
         );
+        BacktestExecutionPersistenceService backtestExecutionPersistenceService = new BacktestExecutionPersistenceService(
+                backtestRunRepository,
+                simOrderRepository,
+                simTradeRepository,
+                simPositionRepository,
+                simPnlSnapshotRepository
+        );
         BacktestExecutionService backtestExecutionService = new BacktestExecutionService(
                 historicalMarketDataPort,
                 backtestRunService,
                 backtestConfigService,
                 researchConfigService,
-                backtestRunRepository,
-                simOrderRepository,
-                simTradeRepository,
-                simPositionRepository,
-                simPnlSnapshotRepository,
+                backtestExecutionPersistenceService,
                 new BuiltinFixtureSignalPolicy(),
                 new ExecutionPricingPolicy(),
                 new FeeModel(),
@@ -261,6 +359,11 @@ class BacktestExecutionServiceTest {
         @Override
         public Optional<BacktestConfig> findByBacktestConfigId(String backtestConfigId) {
             return Optional.ofNullable(storage.get(backtestConfigId));
+        }
+
+        @Override
+        public List<BacktestConfig> listAll() {
+            return new ArrayList<>(storage.values());
         }
 
         @Override
@@ -393,6 +496,39 @@ class BacktestExecutionServiceTest {
         @Override
         public List<SimPnlSnapshot> listByBacktestRunId(String backtestRunId) {
             return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+        }
+    }
+
+    private static final class FailingBacktestExecutionPersistenceService extends BacktestExecutionPersistenceService {
+
+        private FailingBacktestExecutionPersistenceService(
+                BacktestRunRepository backtestRunRepository,
+                SimOrderRepository simOrderRepository,
+                SimTradeRepository simTradeRepository,
+                SimPositionRepository simPositionRepository,
+                SimPnlSnapshotRepository simPnlSnapshotRepository
+        ) {
+            super(
+                    backtestRunRepository,
+                    simOrderRepository,
+                    simTradeRepository,
+                    simPositionRepository,
+                    simPnlSnapshotRepository
+            );
+        }
+
+        @Override
+        public void persistSuccess(
+                String backtestRunId,
+                Instant executionStartedAt,
+                Instant executionFinishedAt,
+                List<SimOrder> simOrders,
+                List<SimTrade> simTrades,
+                List<SimPosition> simPositions,
+                List<SimPnlSnapshot> simPnlSnapshots,
+                String summaryJson
+        ) {
+            throw new IllegalStateException("simulated success persistence failure");
         }
     }
 }

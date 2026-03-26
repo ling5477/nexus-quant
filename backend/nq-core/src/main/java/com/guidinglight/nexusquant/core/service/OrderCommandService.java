@@ -9,30 +9,15 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.contracts.command.CancelOrderCommand;
 import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
-import com.guidinglight.nexusquant.contracts.event.CancelAck;
-import com.guidinglight.nexusquant.contracts.event.CancelReject;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
-import com.guidinglight.nexusquant.contracts.event.OrderAck;
-import com.guidinglight.nexusquant.contracts.event.OrderCreated;
-import com.guidinglight.nexusquant.contracts.event.OrderReject;
-import com.guidinglight.nexusquant.contracts.event.OrderStatusChangedPayload;
-import com.guidinglight.nexusquant.contracts.event.RiskEventRaised;
-import com.guidinglight.nexusquant.contracts.event.RiskPassed;
-import com.guidinglight.nexusquant.contracts.event.RiskRejected;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.contracts.model.RiskDecision;
 import com.guidinglight.nexusquant.core.execution.AdapterRouter;
 import com.guidinglight.nexusquant.core.model.OrderRecord;
 import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
 import com.guidinglight.nexusquant.core.service.port.OrderRepository;
-import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
-import com.guidinglight.nexusquant.core.state.OrderStateMachine;
-import com.guidinglight.nexusquant.risk.model.RiskContext;
-import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
-import com.guidinglight.nexusquant.risk.service.RiskGate;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -47,7 +32,6 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 /**
@@ -65,39 +49,34 @@ public class OrderCommandService {
     private static final String SOURCE = "nq-core.order-command-service";
 
     private final OrderRepository orderRepository;
-    private final OrderStateMachine orderStateMachine;
-    private final RiskGate riskGate;
     private final AuditLogRepository auditLogRepository;
-    private final RiskEventRepository riskEventRepository;
     private final EventPublisherPort eventPublisherPort;
     private final AdapterRouter adapterRouter;
+    private final OrderCommandWriteService orderCommandWriteService;
     private final Clock clock;
 
     /**
-     * @param orderRepository     订单仓储端口
-     * @param orderStateMachine   订单状态机
-     * @param riskGate            风控服务
-     * @param auditLogRepository  审计仓储
-     * @param riskEventRepository 风控事件仓储
-     * @param eventPublisherPort  事件事实链追加端口
-     * @param adapterRouter       adapter 路由器
+     * @param orderRepository          订单仓储端口
+     * @param auditLogRepository       审计仓储
+     * @param eventPublisherPort       事件事实链追加端口
+     * @param adapterRouter            adapter 路由器
+     * @param orderCommandWriteService 本地写阶段事务服务
      */
     public OrderCommandService(
             OrderRepository orderRepository,
-            OrderStateMachine orderStateMachine,
-            RiskGate riskGate,
             AuditLogRepository auditLogRepository,
-            RiskEventRepository riskEventRepository,
             EventPublisherPort eventPublisherPort,
-            AdapterRouter adapterRouter
+            AdapterRouter adapterRouter,
+            OrderCommandWriteService orderCommandWriteService
     ) {
         this.orderRepository = Objects.requireNonNull(orderRepository, "orderRepository must not be null");
-        this.orderStateMachine = Objects.requireNonNull(orderStateMachine, "orderStateMachine must not be null");
-        this.riskGate = Objects.requireNonNull(riskGate, "riskGate must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
-        this.riskEventRepository = Objects.requireNonNull(riskEventRepository, "riskEventRepository must not be null");
         this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.adapterRouter = Objects.requireNonNull(adapterRouter, "adapterRouter must not be null");
+        this.orderCommandWriteService = Objects.requireNonNull(
+                orderCommandWriteService,
+                "orderCommandWriteService must not be null"
+        );
         this.clock = Clock.systemUTC();
     }
 
@@ -141,259 +120,29 @@ public class OrderCommandService {
             return new PlaceOrderResult(order.orderId(), order.status(), true);
         }
 
-        OrderRecord createdOrder = new OrderRecord(
+        OrderCommandWriteService.PlaceOrderPreparation preparation = orderCommandWriteService.preparePlaceOrder(
+                request,
+                command,
                 candidateOrderId,
-                request.accountId(),
-                request.strategyRunId(),
-                request.venue(),
-                request.symbol(),
-                request.clientOrderId(),
-                request.side().name(),
-                request.type().name(),
-                request.price(),
-                request.quantity(),
-                null,
-                OrderStatus.NEW,
-                "ORDER_CREATED",
-                request.traceId()
+                now
         );
-
-        try {
-            orderRepository.insert(createdOrder, now);
-        } catch (DuplicateKeyException ex) {
-            Optional<OrderRecord> duplicated = orderRepository.findByAccountAndClientOrderId(
-                    request.accountId(),
-                    request.clientOrderId()
-            );
-            if (duplicated.isPresent()) {
-                OrderRecord order = duplicated.get();
-                auditLogRepository.append(
-                        "ORDER",
-                        "PLACE_ORDER_IDEMPOTENT_RACE",
-                        order.orderId(),
-                        request.traceId(),
-                        detail("client_order_id", request.clientOrderId(), "reason", "duplicate_key")
-                );
-                return new PlaceOrderResult(order.orderId(), order.status(), true);
-            }
-            throw ex;
+        if (preparation.completedResult() != null) {
+            return preparation.completedResult();
         }
-
-        publishEvent(
-                TopicNames.ORDER_EVENT_V1,
-                createdOrder.clientOrderId(),
-                createdOrder.traceId(),
-                new OrderCreated(
-                        createdOrder.orderId(),
-                        createdOrder.accountId(),
-                        createdOrder.strategyRunId(),
-                        createdOrder.symbol(),
-                        createdOrder.clientOrderId(),
-                        createdOrder.side(),
-                        createdOrder.type(),
-                        createdOrder.price(),
-                        createdOrder.qty(),
-                        createdOrder.status().name(),
-                        createdOrder.reason(),
-                        now
-                )
-        );
-        auditLogRepository.append(
-                "ORDER",
-                "ORDER_CREATED",
-                createdOrder.orderId(),
-                request.traceId(),
-                detail(
-                        "order_id", createdOrder.orderId(),
-                        "client_order_id", createdOrder.clientOrderId(),
-                        "request_id", request.requestId(),
-                        "idempotency_key", request.idempotencyKey(),
-                        "source", request.source(),
-                        "venue", createdOrder.venue()
-                )
-        );
-
-        RiskDecisionResult riskDecision = riskGate.evaluate(new RiskContext(command, now, request.traceId()));
-        riskEventRepository.append(
-                "ORDER",
-                createdOrder.orderId(),
-                riskDecision.decision(),
-                riskDecision.ruleCode(),
-                riskDecision.severity(),
-                request.traceId()
-        );
-        publishEvent(
-                TopicNames.RISK_EVENT_V1,
-                createdOrder.clientOrderId(),
-                createdOrder.traceId(),
-                new RiskEventRaised(
-                        "ORDER",
-                        createdOrder.orderId(),
-                        riskDecision.decision().name(),
-                        riskDecision.ruleCode(),
-                        riskDecision.severity().name(),
-                        now
-                )
-        );
-
-        if (riskDecision.decision() == RiskDecision.REJECT) {
-            OrderRecord rejectedOrder = transitionOrder(
-                    createdOrder,
-                    OrderStatus.RISK_REJECTED,
-                    riskDecision.ruleCode(),
-                    request.traceId()
-            );
-            publishEvent(
-                    TopicNames.ORDER_EVENT_V1,
-                    rejectedOrder.clientOrderId(),
-                    rejectedOrder.traceId(),
-                    new RiskRejected(
-                            rejectedOrder.orderId(),
-                            rejectedOrder.clientOrderId(),
-                            riskDecision.decision().name(),
-                            riskDecision.ruleCode(),
-                            riskDecision.severity().name(),
-                            now
-                    )
-            );
-            auditLogRepository.append(
-                    "ORDER",
-                    "RISK_REJECTED",
-                    rejectedOrder.orderId(),
-                    request.traceId(),
-                    detail(
-                            "rule_code", riskDecision.ruleCode(),
-                            "rule_name", riskDecision.ruleName(),
-                            "reject_reason", riskDecision.rejectReason(),
-                            "hard_reject", riskDecision.hardReject(),
-                            "request_id", request.requestId(),
-                            "venue", rejectedOrder.venue()
-                    )
-            );
-            return new PlaceOrderResult(rejectedOrder.orderId(), rejectedOrder.status(), false);
-        }
-
-        OrderRecord riskPassedOrder = transitionOrder(
-                createdOrder,
-                OrderStatus.RISK_PASSED,
-                riskDecision.ruleCode(),
-                request.traceId()
-        );
-        publishEvent(
-                TopicNames.ORDER_EVENT_V1,
-                riskPassedOrder.clientOrderId(),
-                riskPassedOrder.traceId(),
-                new RiskPassed(
-                        riskPassedOrder.orderId(),
-                        riskPassedOrder.clientOrderId(),
-                        riskDecision.decision().name(),
-                        riskDecision.ruleCode(),
-                        now
-                )
-        );
-
-        OrderRecord sentOrder = transitionOrder(
-                riskPassedOrder,
-                OrderStatus.SENT,
-                "ORDER_ROUTED_TO_ADAPTER",
-                request.traceId()
-        );
+        OrderRecord sentOrder = preparation.sentOrder();
         TradingAdapter tradingAdapter = adapterRouter.route(sentOrder.accountId(), sentOrder.venue()).trading();
         AdapterOrderAck adapterAck = invokePlaceOrder(tradingAdapter, request, sentOrder);
         Instant ackTime = adapterAck.ackTs() == null ? Instant.now(clock) : adapterAck.ackTs();
 
         if (adapterAck.accepted()) {
-            orderRepository.updateExternalOrderId(sentOrder.orderId(), adapterAck.exchangeOrderId(), ackTime);
-            OrderRecord acceptedSnapshot = sentOrder.withExternalOrderId(adapterAck.exchangeOrderId());
-            OrderRecord acceptedOrder = transitionOrder(
-                    acceptedSnapshot,
-                    OrderStatus.ACCEPTED,
-                    "ORDER_ACKED_BY_ADAPTER",
-                    request.traceId()
-            );
-            publishEvent(
-                    TopicNames.ORDER_EVENT_V1,
-                    acceptedOrder.clientOrderId(),
-                    acceptedOrder.traceId(),
-                    new OrderAck(
-                            acceptedOrder.accountId(),
-                            acceptedOrder.venue(),
-                            acceptedOrder.clientOrderId(),
-                            adapterAck.exchangeOrderId(),
-                            acceptedOrder.status().name(),
-                            ackTime
-                    )
-            );
-            auditLogRepository.append(
-                    "ORDER",
-                    "ORDER_ACKED",
-                    acceptedOrder.orderId(),
-                    request.traceId(),
-                    detail(
-                            "exchange_code", acceptedOrder.venue(),
-                            "exchange_order_id", adapterAck.exchangeOrderId(),
-                            "result_category", adapterAck.resultCategory().name(),
-                            "status", acceptedOrder.status().name()
-                    )
-            );
-            return new PlaceOrderResult(acceptedOrder.orderId(), acceptedOrder.status(), false);
+            return orderCommandWriteService.finalizeAcceptedPlaceOrder(request, sentOrder, adapterAck, ackTime);
         }
 
         AdapterError error = adapterAck.error();
         if (shouldDeferOrderRejection(error)) {
-            auditLogRepository.append(
-                    "ORDER",
-                    "ORDER_ACK_DEFERRED",
-                    sentOrder.orderId(),
-                    request.traceId(),
-                    detail(
-                            "exchange_code", sentOrder.venue(),
-                            "request_id", request.requestId(),
-                            "result_category", adapterAck.resultCategory().name(),
-                            "error_code", error == null ? null : error.code(),
-                            "error_message", error == null ? null : error.message()
-                    )
-            );
-            return new PlaceOrderResult(sentOrder.orderId(), sentOrder.status(), false);
+            return orderCommandWriteService.finalizeDeferredPlaceOrder(request, sentOrder, adapterAck);
         }
-        String rejectCode = error == null || error.code() == null || error.code().isBlank()
-                ? "ORDER_REJECTED_BY_ADAPTER"
-                : error.code();
-        String rejectReason = error == null || error.message() == null || error.message().isBlank()
-                ? "adapter rejected order"
-                : error.message();
-        OrderRecord rejectedOrder = transitionOrder(
-                sentOrder,
-                OrderStatus.REJECTED,
-                rejectCode,
-                request.traceId()
-        );
-        publishEvent(
-                TopicNames.ORDER_EVENT_V1,
-                rejectedOrder.clientOrderId(),
-                rejectedOrder.traceId(),
-                new OrderReject(
-                        rejectedOrder.accountId(),
-                        rejectedOrder.venue(),
-                        rejectedOrder.clientOrderId(),
-                        rejectCode,
-                        rejectReason,
-                        ackTime
-                )
-        );
-        auditLogRepository.append(
-                "ORDER",
-                "ORDER_REJECTED",
-                rejectedOrder.orderId(),
-                request.traceId(),
-                detail(
-                        "exchange_code", rejectedOrder.venue(),
-                        "result_category", adapterAck.resultCategory().name(),
-                        "reject_code", rejectCode,
-                        "reject_reason", rejectReason
-                )
-        );
-        return new PlaceOrderResult(rejectedOrder.orderId(), rejectedOrder.status(), false);
+        return orderCommandWriteService.finalizeRejectedPlaceOrder(request, sentOrder, adapterAck, ackTime);
     }
 
     /**
@@ -424,13 +173,7 @@ public class OrderCommandService {
             return new CancelOrderResult(currentOrder.orderId(), currentOrder.status(), true);
         }
 
-        OrderRecord cancelRequestedOrder = transitionOrder(
-                currentOrder,
-                OrderStatus.CANCEL_REQUESTED,
-                request.reason(),
-                request.traceId()
-        );
-        publishOrderStatusChanged(cancelRequestedOrder, request.traceId(), "ORDER_CANCEL_REQUESTED");
+        OrderRecord cancelRequestedOrder = orderCommandWriteService.prepareCancelOrder(request, currentOrder);
 
         logCancelPath("order_cancel_before_adapter_call", cancelRequestedOrder, request.traceId());
         TradingAdapter tradingAdapter = adapterRouter.route(cancelRequestedOrder.accountId(), cancelRequestedOrder.venue()).trading();
@@ -448,97 +191,14 @@ public class OrderCommandService {
         );
         Instant ackTime = cancelAck.ts() == null ? Instant.now(clock) : cancelAck.ts();
         if (cancelAck.accepted()) {
-            OrderRecord cancelledOrder = transitionOrder(
-                    cancelRequestedOrder,
-                    OrderStatus.CANCELLED,
-                    request.reason(),
-                    request.traceId()
-            );
-            publishEvent(
-                    TopicNames.ORDER_EVENT_V1,
-                    cancelledOrder.clientOrderId(),
-                    cancelledOrder.traceId(),
-                    new CancelAck(
-                            cancelledOrder.accountId(),
-                            cancelledOrder.venue(),
-                            cancelledOrder.clientOrderId(),
-                            cancelledOrder.externalOrderId(),
-                            cancelledOrder.status().name(),
-                            ackTime
-                    )
-            );
-            auditLogRepository.append(
-                    "ORDER",
-                    "ORDER_CANCELLED",
-                    cancelledOrder.orderId(),
-                    request.traceId(),
-                    detail(
-                            "order_id", cancelledOrder.orderId(),
-                            "status", cancelledOrder.status().name(),
-                            "reason", request.reason(),
-                            "venue", cancelledOrder.venue()
-                    )
-            );
-            return new CancelOrderResult(cancelledOrder.orderId(), cancelledOrder.status(), false);
+            return orderCommandWriteService.finalizeAcceptedCancelOrder(request, cancelRequestedOrder, ackTime);
         }
 
         AdapterError error = cancelAck.error();
         if (shouldDeferOrderRejection(error)) {
-            auditLogRepository.append(
-                    "ORDER",
-                    "ORDER_CANCEL_ACK_DEFERRED",
-                    cancelRequestedOrder.orderId(),
-                    request.traceId(),
-                    detail(
-                            "exchange_code", cancelRequestedOrder.venue(),
-                            "result_category", cancelAck.resultCategory().name(),
-                            "error_code", error == null ? null : error.code(),
-                            "error_message", error == null ? null : error.message()
-                    )
-            );
-            return new CancelOrderResult(cancelRequestedOrder.orderId(), cancelRequestedOrder.status(), false);
+            return orderCommandWriteService.finalizeDeferredCancelOrder(request, cancelRequestedOrder, cancelAck);
         }
-        String rejectCode = error == null || error.code() == null || error.code().isBlank()
-                ? "CANCEL_REJECTED_BY_ADAPTER"
-                : error.code();
-        String rejectReason = error == null || error.message() == null || error.message().isBlank()
-                ? "adapter rejected cancel"
-                : error.message();
-        OrderRecord cancelRejectedOrder = transitionOrder(
-                cancelRequestedOrder,
-                OrderStatus.CANCEL_REJECTED,
-                rejectCode,
-                request.traceId()
-        );
-        publishEvent(
-                TopicNames.ORDER_EVENT_V1,
-                cancelRejectedOrder.clientOrderId(),
-                cancelRejectedOrder.traceId(),
-                new CancelReject(
-                        cancelRejectedOrder.accountId(),
-                        cancelRejectedOrder.venue(),
-                        cancelRejectedOrder.clientOrderId(),
-                        cancelRejectedOrder.externalOrderId(),
-                        rejectCode,
-                        rejectReason,
-                        ackTime
-                )
-        );
-        auditLogRepository.append(
-                "ORDER",
-                "ORDER_CANCEL_REJECTED",
-                cancelRejectedOrder.orderId(),
-                request.traceId(),
-                detail(
-                        "order_id", cancelRejectedOrder.orderId(),
-                        "status", cancelRejectedOrder.status().name(),
-                        "result_category", cancelAck.resultCategory().name(),
-                        "reject_code", rejectCode,
-                        "reject_reason", rejectReason,
-                        "exchange_code", cancelRejectedOrder.venue()
-                )
-        );
-        return new CancelOrderResult(cancelRejectedOrder.orderId(), cancelRejectedOrder.status(), false);
+        return orderCommandWriteService.finalizeRejectedCancelOrder(request, cancelRequestedOrder, cancelAck, ackTime);
     }
 
     private void logCancelPath(String eventName, OrderRecord order, String traceId) {
@@ -568,9 +228,7 @@ public class OrderCommandService {
      * @return 迁移后的订单快照
      */
     OrderRecord transitionOrder(String orderId, OrderStatus nextStatus, String reason, String traceId) {
-        OrderRecord currentOrder = orderRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("order not found: " + orderId));
-        return transitionOrder(currentOrder, nextStatus, reason, traceId);
+        return orderCommandWriteService.transitionOrder(orderId, nextStatus, reason, traceId);
     }
 
     /**
@@ -610,51 +268,7 @@ public class OrderCommandService {
         if (externalOrderId == null || externalOrderId.isBlank()) {
             throw new IllegalArgumentException("externalOrderId must not be blank");
         }
-        OrderRecord currentOrder = orderRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("order not found: " + orderId));
-        if (externalOrderId.equals(currentOrder.externalOrderId())) {
-            return currentOrder;
-        }
-        Instant now = Instant.now(clock);
-        orderRepository.updateExternalOrderId(orderId, externalOrderId, now);
-        auditLogRepository.append(
-                "ORDER",
-                "ORDER_EXTERNAL_ID_LINKED",
-                orderId,
-                traceId,
-                detail("order_id", orderId, "external_order_id", externalOrderId, "venue", currentOrder.venue())
-        );
-        return currentOrder.withExternalOrderId(externalOrderId);
-    }
-
-    private OrderRecord transitionOrder(OrderRecord currentOrder, OrderStatus nextStatus, String reason, String traceId) {
-        Instant now = Instant.now(clock);
-        try {
-            OrderStatus transitioned = orderStateMachine.transition(currentOrder.status(), nextStatus);
-            orderRepository.updateStatus(currentOrder.orderId(), transitioned, reason, now);
-            auditLogRepository.append(
-                    "ORDER",
-                    "ORDER_STATUS_TRANSITION",
-                    currentOrder.orderId(),
-                    traceId,
-                    detail("from", currentOrder.status().name(), "to", transitioned.name(), "reason", reason)
-            );
-            return currentOrder.withStatus(transitioned, reason);
-        } catch (IllegalStateException ex) {
-            auditLogRepository.append(
-                    "ORDER",
-                    "ORDER_STATUS_TRANSITION_REJECTED",
-                    currentOrder.orderId(),
-                    traceId,
-                    detail(
-                            "from", currentOrder.status().name(),
-                            "to", nextStatus.name(),
-                            "reason", reason,
-                            "error", ex.getMessage()
-                    )
-            );
-            throw ex;
-        }
+        return orderCommandWriteService.linkExternalOrderId(orderId, externalOrderId, traceId);
     }
 
     private AdapterOrderAck invokePlaceOrder(TradingAdapter tradingAdapter, PlaceOrderRequest request, OrderRecord order) {
@@ -850,22 +464,6 @@ public class OrderCommandService {
                 && !request.externalOrderId().equals(target.externalOrderId())) {
             throw new IllegalArgumentException("externalOrderId does not match cancel target");
         }
-    }
-
-    private void publishOrderStatusChanged(OrderRecord order, String traceId, String reason) {
-        publishEvent(
-                TopicNames.ORDER_EVENT_V1,
-                order.clientOrderId(),
-                traceId,
-                new OrderStatusChangedPayload(
-                        order.orderId(),
-                        order.accountId(),
-                        order.clientOrderId(),
-                        order.status(),
-                        reason,
-                        Instant.now(clock)
-                )
-        );
     }
 
     private String generateOrderId() {

@@ -6,9 +6,12 @@ import com.guidinglight.nexusquant.research.service.BacktestConfigService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 /**
  * BacktestConfigApiService 负责把 HTTP 请求映射到回测配置领域服务。
@@ -55,5 +58,37 @@ public class BacktestConfigApiService {
                 executionSpec,
                 evaluationSpec
         ));
+    }
+
+    /**
+     * 查询回测配置详情。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @return 回测配置详情
+     */
+    public BacktestConfig getByBacktestConfigId(String backtestConfigId) {
+        try {
+            return backtestConfigService.getByBacktestConfigId(backtestConfigId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
+    }
+
+    /**
+     * 查询回测配置列表。
+     *
+     * @param researchConfigId 研究配置 ID，可空
+     * @return 回测配置列表
+     */
+    public List<BacktestConfig> list(String researchConfigId) {
+        try {
+            return backtestConfigService.list(researchConfigId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
+    }
+
+    private ResponseStatusException toNotFound(IllegalArgumentException ex) {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
     }
 }

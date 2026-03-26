@@ -5,7 +5,6 @@ package com.guidinglight.nexusquant.auth.dto;
  */
 public record LoginRequest(
         String username,
-        String password,
-        String traceId
+        String password
 ) {
 }

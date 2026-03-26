@@ -15,6 +15,27 @@ server:
   port: ${NQ_APP_PORT:18888}
 
 nq:
+  security:
+    issuer: ${NQ_SECURITY_ISSUER:nexus-quant-local}
+    secret: ${NQ_SECURITY_SECRET:local-change-me-local-change-me-123456}
+    access-token-ttl: ${NQ_SECURITY_ACCESS_TOKEN_TTL:PT1H}
+    users:
+      - username: admin
+        password-hash: ${NQ_LOCAL_ADMIN_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [ADMIN, OPERATOR, VIEWER]
+        enabled: true
+      - username: operator
+        password-hash: ${NQ_LOCAL_OPERATOR_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [OPERATOR, VIEWER]
+        enabled: true
+      - username: viewer
+        password-hash: ${NQ_LOCAL_VIEWER_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [VIEWER]
+        enabled: true
+      - username: disabled
+        password-hash: ${NQ_LOCAL_DISABLED_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [VIEWER]
+        enabled: false
   gated:
     verify:
       # Why: local 下也默认关闭，只有显式打开 canonical 开关才暴露 GateD 验收入口。

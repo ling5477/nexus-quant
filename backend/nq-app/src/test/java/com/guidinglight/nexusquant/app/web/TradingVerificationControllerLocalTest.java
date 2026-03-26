@@ -1,68 +1,52 @@
 package com.guidinglight.nexusquant.app.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.api.model.AccountBalanceView;
-import com.guidinglight.nexusquant.api.model.AccountView;
-import com.guidinglight.nexusquant.api.model.OrderView;
-import com.guidinglight.nexusquant.api.model.PositionView;
-import com.guidinglight.nexusquant.api.model.TradeView;
+import com.guidinglight.nexusquant.api.model.*;
 import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
-import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
-import com.guidinglight.nexusquant.api.web.OrderCancelRequestBody;
-import com.guidinglight.nexusquant.api.web.OrderSubmitRequest;
-import com.guidinglight.nexusquant.api.web.ReconcileRunOnceRequest;
-import com.guidinglight.nexusquant.api.web.RecoveryRunOnceRequest;
-import com.guidinglight.nexusquant.api.web.TradingVerificationController;
+import com.guidinglight.nexusquant.api.web.*;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.observability.web.TraceIdFilter;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
 import com.guidinglight.nexusquant.core.recovery.RecoveryService;
-import com.guidinglight.nexusquant.core.service.CancelOrderResult;
-import com.guidinglight.nexusquant.core.service.OrderCommandService;
-import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
-import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
-import com.guidinglight.nexusquant.core.service.StrategyManualTriggerService;
-import com.guidinglight.nexusquant.core.service.StrategyRunQueryService;
-import com.guidinglight.nexusquant.core.service.StrategyScheduleScanService;
-import com.guidinglight.nexusquant.core.service.StrategyScheduleService;
+import com.guidinglight.nexusquant.core.service.*;
+import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * TradingVerificationControllerLocalTest 验证正式交易 API 的路由、成功响应与统一错误结构。
  */
 @ActiveProfiles("local")
-@Import({ApiExceptionHandler.class, TraceIdFilter.class})
+@WithMockUser(username = "local-admin", roles = {"ADMIN", "OPERATOR", "VIEWER"})
+@Import({ApiExceptionHandler.class, ObservabilityAutoConfiguration.class})
 @WebMvcTest(controllers = TradingVerificationController.class)
 @ContextConfiguration(classes = NexusQuantApplication.class)
 class TradingVerificationControllerLocalTest {
@@ -109,6 +93,7 @@ class TradingVerificationControllerLocalTest {
         );
         mockMvc.perform(post("/api/trading/orders")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(request)))
                 .andExpect(status().isOk())
@@ -124,6 +109,7 @@ class TradingVerificationControllerLocalTest {
         OrderCancelRequestBody request = new OrderCancelRequestBody("ord-1", null, null, "user_cancel");
         mockMvc.perform(post("/api/trading/orders/cancel")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-2")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(request)))
                 .andExpect(status().isOk())
@@ -146,6 +132,7 @@ class TradingVerificationControllerLocalTest {
         ));
         mockMvc.perform(post("/api/trading/reconciliation/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-3")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(new ReconcileRunOnceRequest("OKX", 25))))
                 .andExpect(status().isOk())
@@ -153,6 +140,7 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(jsonPath("$.traceId").value("trc-local-3"));
         mockMvc.perform(post("/api/trading/recovery/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-4")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(new RecoveryRunOnceRequest("OKX"))))
                 .andExpect(status().isOk())
@@ -167,6 +155,7 @@ class TradingVerificationControllerLocalTest {
         when(binanceRestReconcileService.reconcileOnce(eq(12))).thenReturn(1);
         mockMvc.perform(post("/api/trading/reconciliation/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-5")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(new ReconcileRunOnceRequest("BINANCE", 12))))
                 .andExpect(status().isOk())
@@ -188,6 +177,7 @@ class TradingVerificationControllerLocalTest {
         ));
         mockMvc.perform(post("/api/trading/recovery/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-5b")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(new RecoveryRunOnceRequest("BINANCE"))))
                 .andExpect(status().isOk())
@@ -284,6 +274,7 @@ class TradingVerificationControllerLocalTest {
     void shouldReturnUnifiedValidationErrorForMissingRequiredFields() throws Exception {
         mockMvc.perform(post("/api/trading/orders")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-validation")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"accountId":1001,"venue":"","clientOrderId":"","symbol":"","side":"BUY","orderType":"LIMIT","quantity":0}
@@ -300,6 +291,7 @@ class TradingVerificationControllerLocalTest {
     void shouldReturnUnifiedIllegalArgumentError() throws Exception {
         mockMvc.perform(post("/api/trading/recovery/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-invalid-venue")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(new RecoveryRunOnceRequest("UNKNOWN"))))
                 .andExpect(status().isBadRequest())
@@ -326,6 +318,7 @@ class TradingVerificationControllerLocalTest {
         );
         mockMvc.perform(post("/api/trading/orders")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-500")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(request)))
                 .andExpect(status().isInternalServerError())
@@ -340,6 +333,7 @@ class TradingVerificationControllerLocalTest {
     void shouldAcceptLegacyTraceHeaderButRespondWithStandardHeader() throws Exception {
         mockMvc.perform(post("/api/trading/orders")
                         .header(TraceIdContext.LEGACY_TRACE_ID_HEADER, "trc-legacy-api")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"accountId":1001,"venue":"","clientOrderId":"","symbol":"","side":"BUY","orderType":"LIMIT","quantity":0}

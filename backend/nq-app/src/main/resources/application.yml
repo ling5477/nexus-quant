@@ -24,6 +24,11 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
 
 nq:
+  security:
+    issuer: ${NQ_SECURITY_ISSUER:nexus-quant}
+    secret: ${NQ_SECURITY_SECRET:change-me-change-me-change-me-change-me}
+    access-token-ttl: ${NQ_SECURITY_ACCESS_TOKEN_TTL:PT1H}
+    users: []
   gated:
     verify:
       # Why: 第四批开始清理 GateC 兼容层，验收入口只认 canonical 开关，避免新旧别名并存继续漂移。

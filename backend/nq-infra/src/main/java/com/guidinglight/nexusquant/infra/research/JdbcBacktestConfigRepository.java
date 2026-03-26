@@ -70,6 +70,14 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
     }
 
     @Override
+    public List<BacktestConfig> listAll() {
+        return jdbcTemplate.query(
+                BASE_SELECT + " ORDER BY created_at DESC, backtest_config_id DESC",
+                rowMapper()
+        );
+    }
+
+    @Override
     public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
         return jdbcTemplate.query(
                 BASE_SELECT + " WHERE research_config_id = ? ORDER BY created_at DESC, backtest_config_id DESC",

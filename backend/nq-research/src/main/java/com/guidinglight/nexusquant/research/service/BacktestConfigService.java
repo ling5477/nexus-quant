@@ -93,9 +93,25 @@ public class BacktestConfigService {
                 ));
     }
 
+    /**
+     * 查询回测配置列表。
+     * Why:
+     * GateG 联调前的回测配置页面既需要全量列表，也需要 researchConfig 维度的关联子列表，
+     * 这里仅保留 parent 过滤，不提前扩展复杂搜索协议。
+     *
+     * @param researchConfigId 研究配置 ID，可空
+     * @return 满足条件的回测配置列表
+     */
+    public List<BacktestConfig> list(String researchConfigId) {
+        String normalizedResearchConfigId = normalizeOptionalText(researchConfigId);
+        if (normalizedResearchConfigId != null) {
+            researchConfigService.getByResearchConfigId(normalizedResearchConfigId);
+        }
+        return backtestConfigRepository.list(normalizedResearchConfigId);
+    }
+
     public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
-        researchConfigService.getByResearchConfigId(researchConfigId);
-        return backtestConfigRepository.listByResearchConfigId(requireText(researchConfigId, "researchConfigId"));
+        return list(requireText(researchConfigId, "researchConfigId"));
     }
 
     private void validateCreateRequest(BacktestConfigCreateRequest request) {
@@ -141,6 +157,10 @@ public class BacktestConfigService {
 
     private String normalizeNullableText(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String normalizeOptionalText(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String requireText(String value, String fieldName) {

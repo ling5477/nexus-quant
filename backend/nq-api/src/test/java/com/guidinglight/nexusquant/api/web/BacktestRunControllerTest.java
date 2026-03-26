@@ -34,9 +34,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * BacktestRunControllerTest 使用 standalone MockMvc 验证正式回测运行 API 的路由和统一错误结构。
@@ -231,6 +233,40 @@ class BacktestRunControllerTest {
                 .andExpect(jsonPath("$.path").value("/api/backtest-runs"))
                 .andExpect(jsonPath("$.traceId").value("trc-backtest-validation"))
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("backtestConfigId"));
+    }
+
+    @Test
+    void shouldReturnEmptyListAndNotFoundForMissingRunQueries() throws Exception {
+        when(applicationService.list("rcf-empty", null)).thenReturn(List.of());
+        when(applicationService.getByBacktestRunId("brn-missing"))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "backtest run not found: brn-missing"));
+        when(applicationService.listOrders("brn-missing"))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "backtest run not found: brn-missing"));
+        when(applicationService.getEvaluation("brn-missing"))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "evaluation report not found: brn-missing"));
+
+        mockMvc.perform(get("/api/backtest-runs")
+                        .param("researchConfigId", "rcf-empty")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-empty"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+
+        mockMvc.perform(get("/api/backtest-runs/brn-missing")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("backtest run not found: brn-missing"))
+                .andExpect(jsonPath("$.traceId").value("trc-backtest-404"));
+
+        mockMvc.perform(get("/api/backtest-runs/brn-missing/sim-orders")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-orders-404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("backtest run not found: brn-missing"));
+
+        mockMvc.perform(get("/api/backtest-runs/brn-missing/evaluation")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-eval-404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("evaluation report not found: brn-missing"));
     }
 
     private BacktestRun sampleRun(BacktestRunStatus status, String failureCode) {

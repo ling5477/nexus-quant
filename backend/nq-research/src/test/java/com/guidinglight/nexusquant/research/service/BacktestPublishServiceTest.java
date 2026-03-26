@@ -215,6 +215,7 @@ class BacktestPublishServiceTest {
         private final Map<String, BacktestConfig> storage = new LinkedHashMap<>();
         @Override public void insert(BacktestConfig backtestConfig) { storage.put(backtestConfig.backtestConfigId(), backtestConfig); }
         @Override public Optional<BacktestConfig> findByBacktestConfigId(String backtestConfigId) { return Optional.ofNullable(storage.get(backtestConfigId)); }
+        @Override public List<BacktestConfig> listAll() { return new ArrayList<>(storage.values()); }
         @Override public List<BacktestConfig> listByResearchConfigId(String researchConfigId) { return storage.values().stream().filter(item -> item.researchConfigId().equals(researchConfigId)).toList(); }
     }
 

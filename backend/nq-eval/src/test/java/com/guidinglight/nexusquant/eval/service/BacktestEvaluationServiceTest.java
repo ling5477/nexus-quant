@@ -282,6 +282,11 @@ class BacktestEvaluationServiceTest {
         }
 
         @Override
+        public List<BacktestConfig> listAll() {
+            return new ArrayList<>(storage.values());
+        }
+
+        @Override
         public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
             return storage.values().stream().filter(item -> item.researchConfigId().equals(researchConfigId)).toList();
         }

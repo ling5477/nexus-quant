@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * OrderCommandServiceTest 覆盖 GateC-0 的 adapter 路由、幂等与外部单号落库行为。
@@ -200,10 +199,55 @@ class OrderCommandServiceTest {
         assertEquals(2, tradingAdapter.cancelInvocationCount());
     }
 
+    /**
+     * 验证外部下单已被 adapter 接受、但本地确认写失败时，不会把订单误标成 ACCEPTED。
+     * Why:
+     * adapter ack 属于跨边界动作，无法与本地数据库天然原子；当前收口要求至少保证失败时订单停在 `SENT`，
+     * 让 query-confirm / recovery 继续接管，而不是留下“看起来已确认”的假成功状态。
+     */
+    @Test
+    void shouldKeepOrderInSentWhenAcceptedAckPersistenceFails() {
+        InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
+        RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
+        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
+        OrderCommandWriteService writeService = new FailingFinalizeOrderCommandWriteService(
+                orderRepository,
+                new InMemoryOrderStateMachine(),
+                new AlwaysAllowRiskGate(),
+                auditLogRepository,
+                new NoopRiskEventRepository(),
+                new RecordingEventPublisherPort()
+        );
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter, writeService);
+
+        assertThrows(IllegalStateException.class, () -> service.placeOrder(createRequest("coid-206")));
+
+        OrderRecord order = orderRepository.findByAccountAndClientOrderId(1001L, "coid-206").orElseThrow();
+        assertEquals(OrderStatus.SENT, order.status());
+        assertEquals(null, order.externalOrderId());
+    }
+
     private OrderCommandService createService(
             InMemoryOrderRepository orderRepository,
             RecordingAuditLogRepository auditLogRepository,
             RecordingTradingAdapter tradingAdapter
+    ) {
+        OrderCommandWriteService writeService = new OrderCommandWriteService(
+                orderRepository,
+                new InMemoryOrderStateMachine(),
+                new AlwaysAllowRiskGate(),
+                auditLogRepository,
+                new NoopRiskEventRepository(),
+                new RecordingEventPublisherPort()
+        );
+        return createService(orderRepository, auditLogRepository, tradingAdapter, writeService);
+    }
+
+    private OrderCommandService createService(
+            InMemoryOrderRepository orderRepository,
+            RecordingAuditLogRepository auditLogRepository,
+            RecordingTradingAdapter tradingAdapter,
+            OrderCommandWriteService writeService
     ) {
         AdapterRouter adapterRouter = new AdapterRouter(
                 List.of(tradingAdapter),
@@ -212,12 +256,10 @@ class OrderCommandServiceTest {
         );
         return new OrderCommandService(
                 orderRepository,
-                new InMemoryOrderStateMachine(),
-                new AlwaysAllowRiskGate(),
                 auditLogRepository,
-                new NoopRiskEventRepository(),
                 new RecordingEventPublisherPort(),
-                adapterRouter
+                adapterRouter,
+                writeService
         );
     }
 
@@ -431,10 +473,34 @@ class OrderCommandServiceTest {
         }
     }
 
-    private static final class RecordingJdbcTemplate extends JdbcTemplate {
+    private static final class FailingFinalizeOrderCommandWriteService extends OrderCommandWriteService {
+
+        private FailingFinalizeOrderCommandWriteService(
+                OrderRepository orderRepository,
+                InMemoryOrderStateMachine orderStateMachine,
+                RiskGate riskGate,
+                AuditLogRepository auditLogRepository,
+                RiskEventRepository riskEventRepository,
+                EventPublisherPort eventPublisherPort
+        ) {
+            super(
+                    orderRepository,
+                    orderStateMachine,
+                    riskGate,
+                    auditLogRepository,
+                    riskEventRepository,
+                    eventPublisherPort
+            );
+        }
+
         @Override
-        public int update(String sql, Object... args) {
-            return 1;
+        public PlaceOrderResult finalizeAcceptedPlaceOrder(
+                PlaceOrderRequest request,
+                OrderRecord sentOrder,
+                AdapterOrderAck adapterAck,
+                Instant ackTime
+        ) {
+            throw new IllegalStateException("simulated accepted-ack persistence failure");
         }
     }
 }

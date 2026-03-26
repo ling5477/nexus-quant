@@ -16,3 +16,26 @@ spring:
 server:
   # 与本地端口区分，避免同机多环境冲突。
   port: ${NQ_TEST_APP_PORT:18080}
+
+nq:
+  security:
+    issuer: ${NQ_TEST_SECURITY_ISSUER:nexus-quant-test}
+    secret: ${NQ_TEST_SECURITY_SECRET:test-change-me-test-change-me-123456}
+    access-token-ttl: ${NQ_TEST_SECURITY_ACCESS_TOKEN_TTL:PT30M}
+    users:
+      - username: admin
+        password-hash: ${NQ_TEST_ADMIN_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [ADMIN, OPERATOR, VIEWER]
+        enabled: true
+      - username: operator
+        password-hash: ${NQ_TEST_OPERATOR_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [OPERATOR, VIEWER]
+        enabled: true
+      - username: viewer
+        password-hash: ${NQ_TEST_VIEWER_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [VIEWER]
+        enabled: true
+      - username: disabled
+        password-hash: ${NQ_TEST_DISABLED_PASSWORD_HASH:$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S}
+        roles: [VIEWER]
+        enabled: false

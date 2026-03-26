@@ -63,6 +63,7 @@ public class BacktestRunController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "启动成功"),
             @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "运行状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "系统内部错误", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
@@ -81,6 +82,7 @@ public class BacktestRunController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "查询成功"),
             @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "查询状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public BacktestRunResponse detail(@PathVariable @NotBlank(message = "runId must not be blank") String runId) {
@@ -98,6 +100,7 @@ public class BacktestRunController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "查询成功"),
             @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "关联研究配置或回测配置不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "查询状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public List<BacktestRunResponse> list(
@@ -123,6 +126,7 @@ public class BacktestRunController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "评估成功"),
             @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "评估状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "系统内部错误", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
@@ -136,6 +140,7 @@ public class BacktestRunController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "查询成功"),
             @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "评估结果不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "查询状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public BacktestEvaluationResponse evaluation(@PathVariable @NotBlank(message = "runId must not be blank") String runId) {
@@ -148,6 +153,7 @@ public class BacktestRunController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "发布成功"),
             @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "发布状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "系统内部错误", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
@@ -164,6 +170,7 @@ public class BacktestRunController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "查询成功"),
             @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "发布结果不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "查询状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public BacktestPublishResponse publishDetail(@PathVariable @NotBlank(message = "runId must not be blank") String runId) {
@@ -173,6 +180,11 @@ public class BacktestRunController {
 
     @GetMapping("/{runId}/sim-orders")
     @Operation(summary = "查询模拟订单", description = "返回指定回测运行生成的模拟订单事实列表。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     public List<SimOrderResponse> orders(@PathVariable @NotBlank(message = "runId must not be blank") String runId) {
         TraceIdContext.getOrCreate();
         return applicationService.listOrders(runId).stream().map(SimOrderResponse::from).toList();
@@ -180,6 +192,11 @@ public class BacktestRunController {
 
     @GetMapping("/{runId}/sim-trades")
     @Operation(summary = "查询模拟成交", description = "返回指定回测运行生成的模拟成交事实列表。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     public List<SimTradeResponse> trades(@PathVariable @NotBlank(message = "runId must not be blank") String runId) {
         TraceIdContext.getOrCreate();
         return applicationService.listTrades(runId).stream().map(SimTradeResponse::from).toList();
@@ -187,6 +204,11 @@ public class BacktestRunController {
 
     @GetMapping("/{runId}/sim-positions")
     @Operation(summary = "查询模拟持仓", description = "返回指定回测运行生成的模拟持仓事实列表。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     public List<SimPositionResponse> positions(@PathVariable @NotBlank(message = "runId must not be blank") String runId) {
         TraceIdContext.getOrCreate();
         return applicationService.listPositions(runId).stream().map(SimPositionResponse::from).toList();
@@ -194,6 +216,11 @@ public class BacktestRunController {
 
     @GetMapping("/{runId}/pnl-snapshots")
     @Operation(summary = "查询模拟权益快照", description = "返回指定回测运行的权益与 PnL 快照序列。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测运行不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     public List<SimPnlSnapshotResponse> pnlSnapshots(@PathVariable @NotBlank(message = "runId must not be blank") String runId) {
         TraceIdContext.getOrCreate();
         return applicationService.listPnlSnapshots(runId).stream().map(SimPnlSnapshotResponse::from).toList();

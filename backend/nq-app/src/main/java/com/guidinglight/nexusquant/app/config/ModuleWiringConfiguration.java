@@ -18,15 +18,11 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
 import com.guidinglight.nexusquant.api.service.CoreTradingQueryFacade;
 import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
-import com.guidinglight.nexusquant.auth.service.AuthService;
-import com.guidinglight.nexusquant.auth.service.NoopAuthService;
 import com.guidinglight.nexusquant.config.service.ConfigSnapshotService;
 import com.guidinglight.nexusquant.config.service.InMemoryConfigSnapshotService;
 import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.state.InMemoryOrderStateMachine;
 import com.guidinglight.nexusquant.core.state.OrderStateMachine;
-import com.guidinglight.nexusquant.gateway.service.GatewayAuthFacade;
-import com.guidinglight.nexusquant.gateway.service.NoopGatewayAuthFacade;
 import com.guidinglight.nexusquant.ledger.service.LedgerService;
 import com.guidinglight.nexusquant.ledger.service.NoopLedgerService;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
@@ -44,8 +40,6 @@ import com.guidinglight.nexusquant.risk.service.RateLimitRule;
 import com.guidinglight.nexusquant.risk.service.SymbolEnabledRule;
 import com.guidinglight.nexusquant.scheduler.service.PaperTradingAdapter;
 import com.guidinglight.nexusquant.scheduler.service.OkxRecoveryService;
-import com.guidinglight.nexusquant.security.service.StubTokenService;
-import com.guidinglight.nexusquant.security.service.TokenService;
 
 import java.net.http.HttpClient;
 import java.time.Clock;
@@ -112,21 +106,6 @@ public class ModuleWiringConfiguration {
     @Bean
     public ConfigSnapshotService configSnapshotService() {
         return new InMemoryConfigSnapshotService();
-    }
-
-    @Bean
-    public TokenService tokenService() {
-        return new StubTokenService();
-    }
-
-    @Bean
-    public AuthService authService(TokenService tokenService) {
-        return new NoopAuthService(tokenService);
-    }
-
-    @Bean
-    public GatewayAuthFacade gatewayAuthFacade() {
-        return new NoopGatewayAuthFacade();
     }
 
     @Bean
