@@ -1,0 +1,194 @@
+:root {
+  color-scheme: light;
+  --app-bg: #f3f6fb;
+  --app-bg-accent: radial-gradient(circle at top left, rgba(30, 94, 176, 0.12), transparent 38%);
+  --app-sider-bg: linear-gradient(180deg, #11203a 0%, #162946 48%, #10213d 100%);
+  --app-panel: rgba(255, 255, 255, 0.92);
+  --app-border: rgba(15, 23, 42, 0.08);
+  --app-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  --app-text-strong: #1d2736;
+  --app-text-secondary: #61708a;
+  --app-accent: #1f5fb8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Segoe UI Variable', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+  background: var(--app-bg-accent), var(--app-bg);
+  color: var(--app-text-strong);
+}
+
+a {
+  color: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-shell__sider.ant-layout-sider {
+  background: var(--app-sider-bg);
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+.app-shell__logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 72px;
+  margin: 0 16px;
+  color: #f8fbff;
+}
+
+.app-shell__logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(59, 130, 246, 0.35));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.app-shell__brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell__menu.ant-menu {
+  background: transparent;
+  border-inline-end: none;
+  padding: 0 10px 12px;
+}
+
+.app-shell__menu .ant-menu-item,
+.app-shell__menu .ant-menu-submenu-title {
+  margin-block: 6px;
+  width: auto;
+  border-radius: 12px;
+}
+
+.app-shell__content {
+  padding: 24px;
+}
+
+.app-shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.app-shell__header-left,
+.app-shell__header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-shell__main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-shell__breadcrumb {
+  margin-top: 6px;
+}
+
+.page-card,
+.page-section {
+  background: var(--app-panel);
+  border: 1px solid var(--app-border);
+  box-shadow: var(--app-shadow);
+}
+
+.page-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 420px);
+  background:
+    radial-gradient(circle at top left, rgba(31, 95, 184, 0.18), transparent 32%),
+    linear-gradient(135deg, #eef4fb 0%, #f7f9fc 55%, #edf1f8 100%);
+}
+
+.login-page__hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  padding: 64px;
+}
+
+.login-page__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.login-page__card {
+  width: min(100%, 420px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
+}
+
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.loading-screen__panel {
+  min-width: min(100%, 280px);
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-page__hero {
+    padding: 40px 24px 0;
+  }
+
+  .login-page__panel {
+    padding: 24px;
+  }
+
+  .app-shell__content {
+    padding: 16px;
+  }
+}

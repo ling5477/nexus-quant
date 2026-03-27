@@ -19,7 +19,8 @@ NexusQuant 是面向数字资产交易场景的量化系统工程骨架，核心
 - GateE 已冻结
 - GateF 已完成并冻结
 - GateG-DOC-1 已完成
-- GateG-1 尚未开工
+- GateG-1 已完成
+- GateG-2 基础闭环已随骨架落地
 
 当前仓库入口代表：
 
