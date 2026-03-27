@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
+import com.guidinglight.nexusquant.common.runtime.ProcessEnvironmentResolver;
 
 import java.time.Duration;
 import java.util.Locale;
@@ -52,7 +53,7 @@ public record OkxRuntimeConfig(
      * 从系统环境变量解析运行时配置。
      */
     public static OkxRuntimeConfig fromSystemEnv() {
-        return fromEnvironment(System.getenv());
+        return fromEnvironment(ProcessEnvironmentResolver.resolveForCurrentProcess());
     }
 
     /**

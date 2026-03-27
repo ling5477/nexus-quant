@@ -50,6 +50,9 @@ nq:
         reconcile-limit: ${NQ_OKX_WS_DEGRADE_RECONCILE_LIMIT:100}
         cooldown-ms: ${NQ_OKX_WS_DEGRADE_COOLDOWN_MS:15000}
         subscribe-fail-threshold: ${NQ_OKX_WS_DEGRADE_SUBSCRIBE_FAIL_THRESHOLD:3}
+    recovery:
+      # Why: formal 环境默认保留恢复链；local 是否启动由 profile 覆写，避免把交易所恢复任务误下沉到纯前端验收流程。
+      enabled: ${NQ_OKX_RECOVERY_ENABLED:true}
   binance:
     ws:
       # Why: Binance 私有 WS 在 GateC-2.1 只是可选加速层，默认关闭，避免在未验收环境误连用户数据流。

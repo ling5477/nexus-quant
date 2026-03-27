@@ -153,3 +153,75 @@
 - GateG-4B 后续子批：research / backtests / evaluations / publishes 更完整动作
 - GateG-4C 后续子批：trade-validation 更完整操作流与更丰富详情
 - GateG-6 / 冻结后增强：更多 E2E、环境实跑补齐与增强型操作流
+
+## 14. GateG-FREEZE-VERIFY（本地验收补跑）
+
+- 已执行 `npm install`
+- 已执行 `npx tsc -b`
+- 已执行 `npm run build`
+- 已尝试执行 `npm run test:e2e`
+- 已查询本地数据库并确认存在可供 `E2E_TRADE_ORDER_ID` 使用的真实订单数据：`ord-808ce57d-d71f-4210-9856-878deb199d8d`
+- 已补后端最小修复，显式指定以下 Spring 组件的运行时构造器：
+  - `BacktestPublishService`
+  - `JdbcExecutionStrategyDefinitionWriter`
+  - `BacktestExecutionService`
+  - `BacktestEvaluationService`
+- 本批验收结果：
+  - `npm install`：通过
+  - `npx tsc -b`：通过
+  - `npm run build`：在 IDE 终端通过
+  - `npm run test:e2e`：未完成有效实跑
+- 本批后端启动结果：
+  - 先后暴露出 4 个双构造器 Spring 组件的无参实例化问题，已做最小修复
+  - 修复后 `nq-app` 能进入 Tomcat started 阶段
+  - 最终仍在 `OkxRecoveryService` 启动恢复链中因缺少 OKX 凭证抛出 `OkxApiException`，导致应用退出
+- 本批冻结结论：
+  - GateG 当前仍为 `Freeze Candidate`
+  - 当前唯一待办是：在具备可启动 `local` profile 的本地验收环境中补跑 `npm run test:e2e`
+
+## 15. GateG-FREEZE-FIX（DEMO/REAL 凭证命中修复）
+
+- 已确认 `.env` 中的交易所凭证按 `NQ_OKX_DOME_* / NQ_OKX_REAL_* / NQ_BINANCE_DOME_* / NQ_BINANCE_REAL_*` 分组配置
+- 已确认 `OkxRuntimeConfig / BinanceRuntimeConfig` 原先直接读取 `System.getenv()`，而 `mvn spring-boot:run` / IDE Run Configuration 不会自动把 root `.env` 注入为 OS 环境变量
+- 已确认恢复链当前关联的历史 OKX 订单 `trade_env` 为 `SIM`
+- 已确认 OKX 运行时环境组为 `dome`，与 `SIM` 语义对应，但修复前进程看不到 `.env` 中的 `NQ_OKX_DOME_*`，因此命中结果为空
+- 已新增 `ProcessEnvironmentResolver`，统一把 root `.env`、System properties 与 OS env 合并进运行时配置解析
+- 已让 `OkxRuntimeConfig / BinanceRuntimeConfig` 通过该解析器读取 DOME/REAL 分组凭证
+- 已为 `local` 增加 `nq.okx.recovery.enabled=false` 默认值，避免 GateG 本地验收把恢复链误当成硬启动前置
+- 已为 `OkxRecoveryService` 增加日志：`configured_okx_env=dome mapped_trade_env=SIM`
+- 本批运行结果：
+  - `nq-app local`：通过，`18888` 可稳定启动
+  - `npm install`：通过
+  - `npx tsc -b`：通过
+  - `npm run build`：通过
+  - `npm run test:e2e`：已形成有效实跑结果，但当前 `1 passed / 5 failed`
+- 本批冻结结论：
+  - DEMO/REAL 凭证命中问题已修复
+  - GateG 当前仍为 `Freeze Candidate`
+  - 当前唯一待办是修复 5 条 Playwright 失败用例并重跑全量 E2E
+
+## 16. GateG-FREEZE-E2E-FIX（剩余 Playwright 失败用例收口）
+
+- 已逐条核对 5 条失败 spec 的错误上下文与 trace
+- 已确认失败归类：
+  - 登录请求体尾随空格导致 `POST /api/auth/login` 返回 401
+  - `strategies / research / trade-validation` 的查询按钮可访问名称实际为 `查 询`
+  - `trade-validation` 用例对底层网络响应的等待条件脆弱，页面已渲染真实结果时仍可能错过响应匹配
+  - 并发 worker 会把本地单套 backend + dev server 放大成非确定性噪音
+- 已做最小修复：
+  - 登录表单提交前 `trim()`
+  - 失败 spec 的查询按钮选择器改为 `/查\\s*询/`
+  - `trade-validation` 改为等待真实 UI 结果
+  - Playwright worker 固定为 `1`
+  - Playwright 支持 `E2E_EXTERNAL_DEV_SERVER=true`
+- 单条/分组重跑结果：
+  - `strategies-query.spec.ts`：通过
+  - `research-query.spec.ts`：通过
+  - `trade-validation-query.spec.ts`：通过
+  - `strategies-detail.spec.ts`：skip（无预置策略数据）
+  - `research-detail.spec.ts`：skip（无预置研究配置数据）
+- 全量 `npm run test:e2e` 结果：
+  - `4 passed / 2 skipped / 0 failed`
+- 本批冻结结论：
+  - GateG 已满足 `npm install / npx tsc -b / npm run build / npm run test:e2e` 全部冻结条件
+  - GateG 正式 Frozen

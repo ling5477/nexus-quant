@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.scheduler.service;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxRuntimeConfig;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.OrderStatusChangedPayload;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
@@ -23,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -56,6 +58,7 @@ public class OkxRecoveryService implements RecoveryService {
     private final OkxRestReconcileService okxRestReconcileService;
     private final com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository;
     private final EventPublisherPort eventPublisherPort;
+    private final boolean recoveryEnabled;
     private final Clock clock;
 
     /**
@@ -64,7 +67,8 @@ public class OkxRecoveryService implements RecoveryService {
      * @param okxExchangeAdapter      OKX adapter
      * @param okxRestReconcileService REST reconcile 服务
      * @param auditLogRepository      审计仓储
-     * @param eventStoreAppender      event_store 写入器
+     * @param eventPublisherPort      event_store 发布器
+     * @param recoveryEnabled         恢复链开关；local 默认关闭，formal 环境默认开启
      */
     public OkxRecoveryService(
             OrderCommandService orderCommandService,
@@ -72,7 +76,8 @@ public class OkxRecoveryService implements RecoveryService {
             OkxExchangeAdapter okxExchangeAdapter,
             OkxRestReconcileService okxRestReconcileService,
             com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository,
-            EventPublisherPort eventPublisherPort
+            EventPublisherPort eventPublisherPort,
+            @Value("${nq.okx.recovery.enabled:true}") boolean recoveryEnabled
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
@@ -83,6 +88,7 @@ public class OkxRecoveryService implements RecoveryService {
         );
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
+        this.recoveryEnabled = recoveryEnabled;
         this.clock = Clock.systemUTC();
     }
 
@@ -91,6 +97,17 @@ public class OkxRecoveryService implements RecoveryService {
      */
     @EventListener(ContextRefreshedEvent.class)
     public void onContextRefreshed() {
+        if (!recoveryEnabled) {
+            // Why: GateG local 验收首先要保证 nq-app 能启动到登录阶段；
+            // 本地未显式开启恢复链时，跳过启动恢复比在 ContextRefreshed 阶段直接拖死应用更可审计也更安全。
+            OkxRuntimeConfig runtimeConfig = OkxRuntimeConfig.fromSystemEnv();
+            org.slf4j.LoggerFactory.getLogger(OkxRecoveryService.class).warn(
+                    "okx_recovery_startup_skipped reason=recovery_disabled configured_okx_env={} mapped_trade_env={}",
+                    runtimeConfig.envName(),
+                    runtimeConfig.simulatedTrading() ? "SIM" : "LIVE"
+            );
+            return;
+        }
         rebuild("trc-okx-recovery-startup");
     }
 
@@ -102,6 +119,9 @@ public class OkxRecoveryService implements RecoveryService {
             initialDelayString = "${nq.okx.recovery.initial-delay-ms:15000}"
     )
     public void scheduledRecovery() {
+        if (!recoveryEnabled) {
+            return;
+        }
         rebuild("trc-okx-recovery-scheduled");
     }
 

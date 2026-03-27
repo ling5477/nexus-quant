@@ -18,15 +18,19 @@ NexusQuant 是面向数字资产交易场景的量化系统工程骨架，核心
 - GateD 已冻结
 - GateE 已冻结
 - GateF 已完成并冻结
-- GateG-DOC-1 已完成
-- GateG-1 已完成
-- GateG-2 基础闭环已随骨架落地
+- GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 已完成
+- GateG-FREEZE-FIX 已修复 local 启动时的 DEMO/REAL 凭证命中问题
+- `frontend` 的 `npm install`、`npx tsc -b`、`npm run build` 已可复核
+- `nq-app` 已可在 `local` 下稳定启动并驻留 `18888`
+- `npm run test:e2e` 已完成全量重跑，结果为 `4 passed / 2 skipped / 0 failed`
+- GateG 当前状态：`Frozen`
 
 当前仓库入口代表：
 
 - GateF 已完成交接
 - GateG 主卷宗已建立
-- 后续按 GateG PR_SPLIT_PLAN 开工前端与联调批次
+- GateG 页面、详情、最小动作与回归矩阵已收口
+- GateG 已完成本地 build / e2e 验收并正式冻结
 
 ---
 

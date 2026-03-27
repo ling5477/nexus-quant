@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.adapter.binance.service;
 
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceKeyType;
+import com.guidinglight.nexusquant.common.runtime.ProcessEnvironmentResolver;
 
 import java.time.Duration;
 import java.util.Locale;
@@ -60,7 +61,7 @@ public record BinanceRuntimeConfig(
      * 从系统环境变量构建运行时配置。
      */
     public static BinanceRuntimeConfig fromSystemEnv() {
-        return fromEnvironment(System.getenv());
+        return fromEnvironment(ProcessEnvironmentResolver.resolveForCurrentProcess());
     }
 
     /**

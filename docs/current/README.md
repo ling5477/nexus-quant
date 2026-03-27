@@ -2,7 +2,7 @@
 
 当前阶段：**GateG（前端控制台与联调）**
 
-当前状态：**GateF 已完成并冻结；GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 已完成；当前代码、文档与回归矩阵已收口，剩余是受环境限制的实跑验证。**
+当前状态：**GateF 已完成并冻结；GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 / GateG-FREEZE-FIX / GateG-FREEZE-E2E-FIX 已完成；GateG 已正式 Frozen。**
 
 ---
 
@@ -20,6 +20,11 @@
 - GateG-4B 本批已完成 `research / backtests / evaluations / publishes` 四页详情与最小动作闭环
 - GateG-4C 本批已完成 `trade-validation` 的真实联调闭环
 - GateG-5 本批已完成回归矩阵、构建说明、测试说明与冻结结论收口
+- GateG-FREEZE-VERIFY 已确认 `npm install`、`npx tsc -b` 与 `npm run build` 可复核通过
+- GateG-FREEZE-FIX 已确认 `local` 启动链会读取 root `.env` 中按 DOME/REAL 分组的交易所凭证
+- GateG-FREEZE-FIX 已确认 `OkxRecoveryService` 在 `local` 下记录 `configured_okx_env=dome mapped_trade_env=SIM` 并安全跳过恢复链
+- GateG-FREEZE-E2E-FIX 已完成 5 条失败 spec 收口与全量重跑
+- GateG-FREEZE-E2E-FIX 最终结果：`4 passed / 2 skipped / 0 failed`
 
 ---
 
@@ -89,7 +94,7 @@
 - `strategies / schedules / runs` 的更完整动作（如 trigger / scan-once 等）
 - `research / backtests / evaluations / publishes` 的更完整动作
 - `trade-validation` 的更完整操作流和更丰富详情
-- 代理执行环境里的 `vite build / playwright test` 可执行性
+- GateH-PLAN：下一阶段规划与边界冻结
 
 这些未完成项属于 GateG-3 ~ GateG-6 的正常工作范围，不代表前端仍停留在“待启动”状态。
 
@@ -97,13 +102,18 @@
 
 ## 5. 当前阻塞性质
 
-- 当前记录里的 build / Playwright 未在当时执行环境中实跑完成，根因是 **npm registry 网络受限**
+- `npm install` 已通过
+- `npx tsc -b` 已通过
+- `npm run build` 已在 IDE 终端通过；当前 shell 执行器仍会报 `spawn EPERM`
+- `nq-app` 已在 `local` 下稳定启动到 `18888`
+- `npm run test:e2e` 已完成有效实跑，最终结果为 `4 passed / 2 skipped / 0 failed`
+- `research-detail.spec.ts` 与 `strategies-detail.spec.ts` 在无预置数据时按既有设计 skip
 - 这不是数据库结构阻塞
-- 这不是后端架构阻塞
+- 这不是 GateG 前端联调范围缺失
 - 这不是认证协议未定
 - 这也不是前端骨架未完成
 
-因此 GateG 当前的主阻塞是**执行环境网络条件**，不是系统设计边界。
+因此 GateG 已满足本阶段冻结条件，下一步不再是补跑冻结，而是进入下一阶段规划。
 
 ---
 
@@ -132,4 +142,6 @@
 8. GateG-4B：research / backtests / evaluations / publishes 详情与最小动作（已完成）
 9. GateG-4C：trade-validation 真实联调闭环（已完成）
 10. GateG-5：回归、构建与文档收口（已完成）
-11. GateG 后续增强：更完整动作与更完整 E2E
+11. GateG-FREEZE-FIX：修复 local DEMO/REAL 凭证命中与恢复链启动阻塞（已完成）
+12. GateG-FREEZE-E2E-FIX：修复剩余 Playwright 失败用例并完成全量回归（已完成）
+13. GateH-PLAN：下一轮规划与边界定义

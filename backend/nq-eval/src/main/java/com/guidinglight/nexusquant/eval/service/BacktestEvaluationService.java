@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -36,6 +37,13 @@ public class BacktestEvaluationService {
     private final BacktestEvaluationReportRepository backtestEvaluationReportRepository;
     private final Clock clock;
 
+    /**
+     * 显式指定运行时构造器，避免测试专用 Clock 构造器导致容器误走无参实例化路径。
+     * Why:
+     * 评估服务需要保留可注入 Clock 的包级构造器给回归测试控制时间，
+     * 但生产启动必须稳定使用完整依赖注入构造器，否则 GateG 验收无法拉起 nq-app。
+     */
+    @Autowired
     public BacktestEvaluationService(
             BacktestRunService backtestRunService,
             BacktestConfigService backtestConfigService,

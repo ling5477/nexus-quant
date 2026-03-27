@@ -48,7 +48,8 @@ class OkxRecoveryServiceTest {
                 okxExchangeAdapter,
                 okxRestReconcileService,
                 auditLogRepository,
-                eventStoreAppender
+                eventStoreAppender,
+                true
         );
 
         OrderRecord notFoundOrder = order("ord-nf-1", "coid-nf-1", "ext-nf-1", OrderStatus.ACCEPTED);
@@ -128,6 +129,30 @@ class OkxRecoveryServiceTest {
         verify(eventStoreAppender, atLeastOnce()).append(eq(TopicNames.ORDER_EVENT_V1), any());
         verify(okxExchangeAdapter, times(2)).getOrder(any(AdapterOrderQuery.class));
         verify(okxRestReconcileService).reconcileOnce(500);
+    }
+
+    @Test
+    void shouldSkipStartupRecoveryWhenDisabled() {
+        OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
+        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
+        OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
+        OkxRestReconcileService okxRestReconcileService = Mockito.mock(OkxRestReconcileService.class);
+        AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
+        EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
+
+        OkxRecoveryService recoveryService = new OkxRecoveryService(
+                orderCommandService,
+                orderLifecycleService,
+                okxExchangeAdapter,
+                okxRestReconcileService,
+                auditLogRepository,
+                eventStoreAppender,
+                false
+        );
+
+        assertDoesNotThrow(recoveryService::onContextRefreshed);
+        verify(okxRestReconcileService, times(0)).reconcileOnce(anyInt());
+        verify(orderCommandService, times(0)).findOrdersByStatuses(any(), anyInt());
     }
 
     private OrderRecord order(String orderId, String clientOrderId, String externalOrderId, OrderStatus status) {

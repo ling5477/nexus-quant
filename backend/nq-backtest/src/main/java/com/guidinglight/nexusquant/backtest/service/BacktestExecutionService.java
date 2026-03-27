@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -64,6 +65,13 @@ public class BacktestExecutionService {
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
+    /**
+     * 显式指定运行时构造器，避免测试注入 Clock 的辅助构造器干扰 Spring 自动装配。
+     * Why:
+     * 该服务在单测里需要固定 Clock 保证事实链时间戳可预测，
+     * 运行时则必须固定走完整依赖注入构造器，否则容器会退回默认实例化并在启动期失败。
+     */
+    @Autowired
     public BacktestExecutionService(
             HistoricalMarketDataPort historicalMarketDataPort,
             BacktestRunService backtestRunService,
@@ -459,8 +467,8 @@ public class BacktestExecutionService {
                     ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
                     : normalize(
                     effectiveCurrentPosition.averageEntryPrice().multiply(effectiveCurrentPosition.quantity())
-                            .add(simTrade.tradePrice().multiply(simTrade.quantity()))
-                            .divide(nextQuantity, 18, RoundingMode.HALF_UP)
+                    .add(simTrade.tradePrice().multiply(simTrade.quantity()))
+                    .divide(nextQuantity, 18, RoundingMode.HALF_UP)
             );
             return new SimPosition(
                     effectiveCurrentPosition.simPositionId(),

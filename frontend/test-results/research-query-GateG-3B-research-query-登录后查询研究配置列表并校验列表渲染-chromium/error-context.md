@@ -1,0 +1,115 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: NQ
+        - generic [ref=e9]:
+          - strong [ref=e11]: NexusQuant
+          - generic [ref=e12]: Trading Console
+      - menu [ref=e13]:
+        - menuitem "dashboard Dashboard" [ref=e14] [cursor=pointer]:
+          - img "dashboard" [ref=e15]:
+            - img [ref=e16]
+          - generic [ref=e18]: Dashboard
+        - menuitem "setting 策略定义" [ref=e19] [cursor=pointer]:
+          - img "setting" [ref=e20]:
+            - img [ref=e21]
+          - generic [ref=e23]: 策略定义
+        - menuitem "schedule 调度计划" [ref=e24] [cursor=pointer]:
+          - img "schedule" [ref=e25]:
+            - img [ref=e26]
+          - generic [ref=e28]: 调度计划
+        - menuitem "rocket 运行记录" [ref=e29] [cursor=pointer]:
+          - img "rocket" [ref=e30]:
+            - img [ref=e31]
+          - generic [ref=e33]: 运行记录
+        - menuitem "experiment 研究配置" [active] [ref=e34] [cursor=pointer]:
+          - img "experiment" [ref=e35]:
+            - img [ref=e36]
+          - generic [ref=e38]: 研究配置
+        - menuitem "fund-projection-screen 回测配置" [ref=e39] [cursor=pointer]:
+          - img "fund-projection-screen" [ref=e40]:
+            - img [ref=e41]
+          - generic [ref=e44]: 回测配置
+        - menuitem "area-chart 评估结果" [ref=e45] [cursor=pointer]:
+          - img "area-chart" [ref=e46]:
+            - img [ref=e47]
+          - generic [ref=e49]: 评估结果
+        - menuitem "file-search 发布结果" [ref=e50] [cursor=pointer]:
+          - img "file-search" [ref=e51]:
+            - img [ref=e52]
+          - generic [ref=e54]: 发布结果
+        - menuitem "swap 交易验证" [ref=e55] [cursor=pointer]:
+          - img "swap" [ref=e56]:
+            - img [ref=e57]
+          - generic [ref=e59]: 交易验证
+  - generic [ref=e60]:
+    - banner [ref=e61]:
+      - generic [ref=e62]:
+        - button "收起菜单" [ref=e63] [cursor=pointer]:
+          - img "menu-fold" [ref=e65]:
+            - img [ref=e66]
+        - generic [ref=e68]:
+          - strong [ref=e70]: NexusQuant Console
+          - text: GateG-1 Front Skeleton
+      - generic [ref=e71]:
+        - generic [ref=e72]: LOCAL
+        - generic [ref=e73]:
+          - generic [ref=e75]: ADMIN
+          - generic [ref=e77]: OPERATOR
+          - generic [ref=e79]: VIEWER
+        - generic [ref=e80]: admin
+        - button "logout 退出登录" [ref=e81] [cursor=pointer]:
+          - img "logout" [ref=e83]:
+            - img [ref=e84]
+          - generic [ref=e86]: 退出登录
+    - main [ref=e87]:
+      - generic [ref=e88]:
+        - navigation [ref=e89]:
+          - list [ref=e90]:
+            - listitem [ref=e91]: 研究配置
+        - generic [ref=e92]:
+          - generic [ref=e97]:
+            - generic [ref=e99]:
+              - heading "研究配置" [level=2] [ref=e100]
+              - generic [ref=e101]: 当前页面已对接真实列表与详情接口，并提供最小新建动作闭环。
+            - generic [ref=e103]: GateG-4B
+          - generic [ref=e105]:
+            - generic [ref=e107]:
+              - generic [ref=e108]: 查询区
+              - generic [ref=e110]:
+                - button "查 询" [ref=e112] [cursor=pointer]:
+                  - generic [ref=e113]: 查 询
+                - button "重 置" [ref=e115] [cursor=pointer]:
+                  - generic [ref=e116]: 重 置
+            - generic [ref=e119]:
+              - generic [ref=e122]:
+                - generic "源策略 ID" [ref=e124]
+                - textbox "源策略 ID" [ref=e128]:
+                  - /placeholder: 真实请求参数，可空
+              - generic [ref=e131]:
+                - generic "研究配置 ID" [ref=e133]
+                - textbox "研究配置 ID" [ref=e137]:
+                  - /placeholder: 本地筛选字段
+              - generic [ref=e140]:
+                - generic "名称" [ref=e142]
+                - textbox "名称" [ref=e146]:
+                  - /placeholder: 本地筛选字段
+          - generic [ref=e148]:
+            - generic [ref=e150]:
+              - generic [ref=e151]: 动作区
+              - button "新建研究配置" [ref=e153] [cursor=pointer]:
+                - generic [ref=e154]: 新建研究配置
+            - alert [ref=e156]:
+              - img "info-circle" [ref=e157]:
+                - img [ref=e158]
+              - generic [ref=e161]: 当前页面动作区仅接入最小 create 动作；详情抽屉展示为只读，避免扩成大而全编辑页。
+          - generic [ref=e163]:
+            - generic [ref=e166]: 查询结果
+            - generic [ref=e168]:
+              - img "No data" [ref=e170]
+              - generic [ref=e182]: 点击查询后加载研究配置列表。
+```

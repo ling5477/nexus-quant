@@ -127,7 +127,14 @@ export function LoginPage() {
                                 username: 'admin',
                                 password: 'ChangeMe123!',
                             }}
-                            onFinish={(values) => loginMutation.mutate(values)}
+                            onFinish={(values) => loginMutation.mutate({
+                                // Why:
+                                // Playwright 和部分浏览器自动填充链路会把尾随空格一并带进提交体，
+                                // 本地默认账号是固定值时会被放大成稳定 401。登录表单在提交前统一 trim，
+                                // 既能消除这类输入噪音，也不会改变正式认证协议。
+                                username: values.username.trim(),
+                                password: values.password.trim(),
+                            })}
                         >
                             <Form.Item
                                 label="用户名"

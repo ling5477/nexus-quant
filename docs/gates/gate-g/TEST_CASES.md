@@ -99,4 +99,18 @@
   - 已新增研究详情链路用例：登录、查询研究配置列表、进入详情抽屉、校验详情与动作区渲染
   - 已新增交易验证查询/详情链路用例：登录、进入 trade-validation、按订单查询、打开详情抽屉
   - 当前关键链路矩阵已覆盖：登录 -> dashboard、strategies 列表 -> 详情、research 列表 -> 详情、trade-validation 查询 -> 详情
-  - 回测链路、交易验证操作回归仍待 GateG-4 ~ GateG-5 完成后补齐
+  - GateG-FREEZE-FIX / E2E-FIX 实跑结果：
+    - `npm install`：通过
+    - `npx tsc -b`：通过
+    - `npm run build`：在 IDE 终端通过
+    - `npm run test:e2e`：完成有效实跑，结果 `4 passed / 2 skipped / 0 failed`
+  - GateG-FREEZE-FIX 环境结论：
+    - 本地 `nq-app` 已能稳定启动
+    - 恢复链日志已明确：`configured_okx_env=dome mapped_trade_env=SIM`
+    - `local` 下恢复链已安全跳过，不再阻塞登录页与页面联调
+  - GateG-FREEZE-E2E-FIX 修复点：
+    - 登录表单提交前统一 `trim()`，消除 Playwright 提交体尾随空格导致的 401
+    - `strategies / research / trade-validation` 查询按钮断言改为匹配 Ant Design 渲染出来的 `查 询`
+    - `trade-validation` 用例改为等待真实 UI 结果而不是脆弱的底层响应匹配
+    - Playwright worker 固定为串行，支持 `E2E_EXTERNAL_DEV_SERVER=true` 复用外部已启动 dev server
+  - 当前结论：GateG 已 Frozen

@@ -14,7 +14,7 @@ test.describe('GateG-3 strategies query', () => {
             response.url().includes('/api/strategies') && response.request().method() === 'GET'
         ));
 
-        await page.getByRole('button', {name: '查询'}).click();
+        await page.getByRole('button', {name: /查\s*询/}).click();
 
         const response = await responsePromise;
         expect(response.ok()).toBeTruthy();

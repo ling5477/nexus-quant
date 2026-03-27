@@ -1,6 +1,6 @@
 # GateG（前端控制台与联调）
 
-当前状态：**GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 已完成；代码、文档与回归矩阵已收口，剩余是环境受限的实跑验证。**
+当前状态：**GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 / GateG-FREEZE-FIX / GateG-FREEZE-E2E-FIX 已完成；GateG 目前已 Frozen。**
 
 GateG 是 GateF 之后的独立阶段。GateG 不回头重写 GateF，也不以前置数据库大改为条件。
 
@@ -90,8 +90,9 @@ GateG 当前不是“前端是否开工”的讨论阶段，而是**在已完成
 
 当前未完成，但已经不再属于“前端主功能未落地”的范围包括：
 
-- 代理执行环境中的 `vite build / playwright test` 仍受 `spawn EPERM` 限制
-- 本地后端未启动时无法在当前代理执行环境内完成端到端实跑
+- `npm run build` 已在 IDE 终端通过，但当前 shell 执行器仍受 `spawn EPERM` 限制
+- `nq-app` 已能在 `local` 下稳定启动，`.env` 中按 DOME/REAL 分组的凭证已可被运行时命中
+- `npm run test:e2e` 已完成实跑，最终结果为 `4 passed / 2 skipped / 0 failed`
 - 更完整动作和更大范围的 E2E 仍属后续增强项
 
 这些工作属于 GateG-3 ~ GateG-6 的正常收口任务，不构成 GateG 启动阻塞。
@@ -100,12 +101,14 @@ GateG 当前不是“前端是否开工”的讨论阶段，而是**在已完成
 
 ## 5. 环境与阻塞说明
 
-- 当前 build / Playwright 在当前代理执行环境中仍无法完整实跑，直接限制表现为 `spawn EPERM`
-- 该问题属于执行环境条件，不是数据库阻塞
-- 该问题不是后端架构阻塞
-- 该问题也不是前端工程骨架未完成
+- `frontend` 的 `npm install`、`npx tsc -b` 已通过
+- `frontend` 的 `npm run build` 已在 IDE 终端通过
+- `OkxRecoveryService` 当前记录 `configured_okx_env=dome mapped_trade_env=SIM`，说明恢复链命中的仍是 DEMO/SIM 组
+- `npm run test:e2e` 已形成有效实跑结果，最终结果为 `4 passed / 2 skipped / 0 failed`
+- `research-detail` 与 `strategies-detail` 在无预置策略/研究配置数据时按设计 skip，不计为失败
+- 当前 shell 执行器对 `vite / playwright` 仍可能报 `spawn EPERM`
 
-因此 GateG 的后续推进边界是**页面联调与测试补齐**，而不是重新论证系统基础设施。
+因此 GateG 当前已无冻结阻塞，下一步进入 GateH 规划。
 
 ---
 
@@ -129,6 +132,8 @@ GateG 当前不是“前端是否开工”的讨论阶段，而是**在已完成
 5. GateG-3A / GateG-3B：列表联调（已完成）
 6. GateG-4A / GateG-4B / GateG-4C：详情与最小动作（已完成）
 7. GateG-5：回归、构建与文档收口（已完成）
+8. GateG-FREEZE-FIX：修复 local DEMO/REAL 凭证命中与恢复链阻塞（已完成）
+9. GateG-FREEZE-E2E-FIX：修复 5 条 Playwright 失败 spec 并完成全量回归（已完成）
 
 ---
 

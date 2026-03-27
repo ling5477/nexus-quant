@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,6 +35,14 @@ public class BacktestPublishService {
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
+    /**
+     * 显式指定 Spring 使用该构造器做依赖注入。
+     * Why:
+     * 当前类同时保留了一个 package-private 测试构造器用于注入固定 Clock，
+     * 如果不声明运行时构造器，Spring 在双构造器场景下可能退回默认实例化路径，
+     * 最终把启动失败误判成“缺少无参构造器”。
+     */
+    @Autowired
     public BacktestPublishService(
             BacktestRunService backtestRunService,
             ResearchConfigService researchConfigService,

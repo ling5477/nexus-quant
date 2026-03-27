@@ -44,6 +44,9 @@ nq:
     adapter:
       # Why: local smoke 可以显式允许 fallback=true；但 real/dome 真实验收脚本会强制把该值收口为 false，禁止把 stub 冒充成真实 OKX 成功。
       stub-on-bootstrap-failure: ${NQ_OKX_ADAPTER_STUB_ON_BOOTSTRAP_FAILURE:true}
+    recovery:
+      # Why: GateG local 主要验证登录、页面联调和 E2E，不应在启动期强依赖交易所恢复链。
+      enabled: ${NQ_OKX_RECOVERY_ENABLED:false}
     ws:
       # Why: local 开发默认仍关闭，需要显式打开 NQ_OKX_WS_ENABLED 才启动 WS smoke runner。
       enabled: ${NQ_OKX_WS_ENABLED:false}

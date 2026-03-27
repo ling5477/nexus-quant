@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -20,6 +21,13 @@ public class JdbcExecutionStrategyDefinitionWriter implements ExecutionStrategyD
     private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
 
+    /**
+     * 显式指定运行时构造器，避免测试专用构造器干扰 Spring 自动装配。
+     * Why:
+     * 该类保留了一个可注入固定 Clock 的包级构造器给测试使用，
+     * 如果不固定运行时入口，容器可能退回默认实例化路径并报“缺少无参构造器”。
+     */
+    @Autowired
     public JdbcExecutionStrategyDefinitionWriter(JdbcTemplate jdbcTemplate) {
         this(jdbcTemplate, Clock.systemUTC());
     }

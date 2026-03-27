@@ -2,7 +2,7 @@
 
 当前阶段：**GateG（前端控制台与联调）**
 
-当前状态：**GateG 已开工；GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 已完成。**
+当前状态：**GateG 已开工；GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 / GateG-FREEZE-FIX / GateG-FREEZE-E2E-FIX 已完成；GateG 当前结论为 Frozen。**
 
 ---
 
@@ -61,8 +61,14 @@
 - [x] 当前已确认数据库结构不是 GateG 阻塞项
 - [x] 当前已确认后端架构不是 GateG 阻塞项
 - [x] 当前已确认前端骨架不是 GateG 阻塞项
-- [x] 当前 build / Playwright 未在当时执行环境实跑完成的原因是 npm registry 网络受限
-- [x] 当前轮到本批的 `tsc -b` 已通过，`vite build / playwright test` 在当前代理执行环境遇到 `spawn EPERM`
+- [x] `frontend` 的 `npm install` 已通过
+- [x] `frontend` 的 `npx tsc -b` 已通过
+- [x] `frontend` 的 `npm run build` 已在 IDE 终端通过
+- [x] 当前 shell 执行器中的 `vite / playwright` 仍可能遇到 `spawn EPERM`
+- [x] `nq-app` 已在 `local` profile 下稳定启动并驻留 `18888`
+- [x] `OkxRecoveryService` 已记录 `configured_okx_env=dome mapped_trade_env=SIM`，并在 `local` 下安全跳过恢复链
+- [x] `npm run test:e2e` 已形成有效实跑结果，最终结果为 `4 passed / 2 skipped / 0 failed`
+- [x] GateG 当前已满足 Frozen 条件
 
 ## 6. 当前批次说明
 
@@ -74,3 +80,5 @@
 - [x] 本批继续完成 GateG-4B，只覆盖 `research / backtests / evaluations / publishes` 四页详情与最小动作闭环
 - [x] 本批继续完成 GateG-4C，只覆盖 `trade-validation` 的真实联调闭环
 - [x] 本批完成 GateG-5，只做回归矩阵、build/test 说明、文档收口与冻结结论
+- [x] 本批执行 GateG-FREEZE-FIX，只做 DEMO/REAL 凭证命中修复、local 启动修复与冻结状态判定
+- [x] 本批执行 GateG-FREEZE-E2E-FIX，只做 5 条 Playwright 失败 spec 的最小修复与全量重跑
