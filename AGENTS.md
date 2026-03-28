@@ -9,29 +9,32 @@
 ## 1. 强制约束（必须遵守）
 
 - 语言：除代码、配置键、接口字段、类名外，解释与文档输出使用**简体中文**。
-- 当前阶段：**GateG（前端控制台与联调）**。
-- 唯一入口：`docs/current/README.md` 与 `docs/current/GATE_CHECKLIST.md`。
-- GateG 目标固定为：**前端工程骨架、登录与鉴权守卫、布局与菜单、策略 / 调度 / 运行页面、研究 / 回测 / 评估 / 发布页面、交易验证操作页、Playwright 回归**。
-- GateG 不以前置数据库大改为条件；联调过程中只允许补最小前端向接口，禁止借 GateG 发散成新的后端大重构。
-- 严格状态机、幂等、事实链、账本、审计、恢复、可观测等 GateD~GateF 已冻结约束继续生效。
-- 交易所差异隔离仍只允许留在 `nq-adapter-*`，禁止把交易所方言带进前端视图契约。
+- 当前阶段：**RC1（项目收口重构批次）**。
+- 唯一入口：`docs/current/README.md`、`docs/current/REFACTOR_BATCH_RC1.md`、`docs/current/RC1_CHECKLIST.md`。
+- RC1 目标固定为：**仓库清理、表结构重构、账户与凭证模型建立、模块边界整理、包结构收口、历史残留清理、市场数据域落点、前端基础重构、ArchUnit 与全量验证**。
+- RC1 完成前，**禁止恢复 GateH 新功能开发**。
+- RC1 不做新交易所接入、不做复杂研究功能扩展、不做大规模 UI 美化。
 - 正式 HTTP API 统一使用 `/api/**`；旧 `/__gated/**` 只允许出现在历史文档说明中。
-- 正式认证方式固定为：`POST /api/auth/login` + `Authorization: Bearer <token>` + `GET /api/auth/me`。
+- 正式认证方式继续沿用：`POST /api/auth/login` + `Authorization: Bearer <token>` + `GET /api/auth/me`，但认证数据源要切换到 DB-backed `users/roles/user_roles`。
+- 交易所环境 canonical 口径固定为 `SIM / LIVE`；`DOME / REAL` 只允许存在于 legacy 导入映射层。
 
 ---
 
 ## 2. 当前阶段切换说明
 
 - GateD 已冻结，`docs/gates/gate-d/*` 仅作历史参考。
-- GateE 已冻结，`docs/gates/gate-e/*` 仅作策略接入与调度编排的事实卷宗。
-- GateF 已完成并冻结，`docs/gates/gate-f/*` 作为最近完成阶段保留。
-- 当前 `docs/current/*` 表示 GateG 当前入口，`docs/gates/gate-g/*` 表示 GateG 主卷宗。
+- GateE 已冻结，`docs/gates/gate-e/*` 仅作历史参考。
+- GateF 已完成并冻结，`docs/gates/gate-f/*` 只读参考。
+- GateG 已完成并冻结，`docs/gates/gate-g/*` 只读参考。
+- GateH 已暂停，`docs/gates/gate-h/*` 只作为暂停卷宗保留。
+- 当前 `docs/current/*` 表示 RC1 当前入口。
 - 当前 source of truth 优先级：
   1. `docs/current/*`
-  2. `docs/gates/gate-g/*`
-  3. `docs/gates/gate-f/*`
-  4. `docs/gates/gate-e/*`
-  5. 根 `README.md / docs/*.md` 导航摘要
+  2. `docs/gates/gate-h/*`
+  3. `docs/gates/gate-g/*`
+  4. `docs/gates/gate-f/*`
+  5. `docs/gates/gate-e/*`
+  6. 根 `README.md / docs/*.md` 导航摘要
 
 ---
 
@@ -39,77 +42,74 @@
 
 ### 3.1 当前阶段入口（必读）
 - `docs/current/README.md`
-- `docs/current/GATE_CHECKLIST.md`
-- `docs/current/GATEG_INPUTS.md`
+- `docs/current/REFACTOR_BATCH_RC1.md`
+- `docs/current/RC1_CHECKLIST.md`
 - `docs/current/MODULES.md`
 - `docs/current/WORK_TEMPLATE.md`
 
-### 3.2 当前 Gate 权威文档（GateG）
-- `docs/gates/gate-g/README.md`
-- `docs/gates/gate-g/GATE_G_CHECKLIST.md`
-- `docs/gates/gate-g/PR_SPLIT_PLAN.md`
-- `docs/gates/gate-g/ARCHITECTURE.md`
-- `docs/gates/gate-g/MODULES.md`
-- `docs/gates/gate-g/CONTRACTS.md`
-- `docs/gates/gate-g/TEST_CASES.md`
-- `docs/gates/gate-g/WORK.md`
-- `docs/gates/gate-g/SOURCES.md`
+### 3.2 当前 RC1 权威文档
+- `docs/current/REFACTOR_BATCH_RC1.md`
+- `docs/current/RC1_CHECKLIST.md`
+- `docs/current/MODULES.md`
 
-### 3.3 最近冻结 Gate（GateF，只读参考）
+### 3.3 暂停 / 冻结卷宗（只读参考）
+- `docs/gates/gate-h/*`
+- `docs/gates/gate-g/*`
 - `docs/gates/gate-f/*`
 
 > 规则：当 `docs/current/*` 与 `docs/gates/*` 不一致时，以 `docs/current/*` 为准。
 
 ---
 
-## 4. 当前执行顺序（GateG）
+## 4. 当前执行顺序（RC1）
 
-1. GateG-DOC-1：主卷宗、输入边界、PR 计划、页面与联调清单
-2. GateG-1：前端工程骨架
-3. GateG-2：登录、鉴权守卫、布局、菜单
-4. GateG-3：策略 / 调度 / 运行页面
-5. GateG-4：研究 / 回测 / 评估 / 发布页面
-6. GateG-5：交易验证操作页
-7. GateG-6：Playwright 回归
+1. RC1-0：文档切换
+2. RC1-1：仓库清理
+3. RC1-2：表结构与账户/凭证主模型
+4. RC1-3：Java 模块与包结构收口
+5. RC1-4：前端基础重构
+6. RC1-5：marketdata 域与 Python 研究骨架
+7. RC1-6：残留清理、ArchUnit 与全量验证
 
 ---
 
-## 5. GateG 代码约束（强制）
+## 5. RC1 代码约束（强制）
 
 ### 5.1 frontend
-- GateG 前端技术栈固定为：React 19 + TypeScript + Vite 8 + React Router + TanStack Query + Axios + Zustand + Ant Design + Playwright。
-- 页面组织以业务域分组，不允许把所有接口都塞进单一页面。
-- 登录态统一由 token storage + route guard + `/api/auth/me` 初始化完成，不允许页面各自重复鉴权。
-- 所有 API 调用统一走 `frontend/src/api/*` 封装，不允许页面内直接散写请求。
-- 所有列表 / 详情 / tab 页面命名、字段与路由必须对齐后端正式 `/api/**` 契约。
+- RC1 前端技术栈继续固定为：React 19 + TypeScript + Vite 8 + React Router + TanStack Query + Axios + Zustand + Ant Design + Playwright。
+- 必须建立正式账户上下文，不再把“手工输入 `accountId`”作为长期主模式。
+- 账户 / 交易所 / 环境切换必须成为正式 UI 概念。
+- 所有 API 调用继续统一走 `frontend/src/api/*` 封装，不允许页面内散写请求。
+- 页面拆分优先按业务域与页面壳复用，不再继续堆叠巨型页面。
 
 ### 5.2 backend
-- GateG 期间后端只允许补前端联调缺口，不允许大改 GateD~GateF 冻结主链。
-- 非必要不改表；确需改动时，必须证明属于 GateG 页面联调最低必需补口。
-- 认证、trace、错误模型继续沿用现有实现，不重新发明第二套协议。
+- `nq-core` 不再包含 JDBC 实现。
+- `nq-api` 不再直接写 SQL。
+- controller 不再直接依赖 scheduler 具体实现。
+- 包结构按业务域优先整理：`account / auth / strategy / trading / research / marketdata`。
+- 交易所凭证必须进入数据库密文存储模型；正式运行 profile 禁止 legacy env 主读。
 
 ---
 
 ## 6. PR 要求（强制）
 
-- PR 必须对应 `docs/current/GATE_CHECKLIST.md` 或 `docs/gates/gate-g/GATE_G_CHECKLIST.md` 的条目。
-- 涉及页面、路由、菜单、接口联调时，必须同步更新：
-  - `docs/gates/gate-g/CONTRACTS.md`
-  - `docs/gates/gate-g/TEST_CASES.md`
-  - `docs/gates/gate-g/WORK.md`
-- 涉及当前阶段边界变更时，必须同步更新：
-  - `README.md`
-  - `docs/current/README.md`
-  - `docs/current/GATE_CHECKLIST.md`
-  - `docs/gates/gate-g/README.md`
+- PR / 提交必须对应 `RC1-0 ~ RC1-6` 的条目。
+- 提交信息必须标明本次归属的 `RC1-x` 子批次。
+- 每次提交说明必须写清：
+  - 改动内容
+  - 改动原因
+  - 影响范围
+  - 删除项
+  - 验证结果
+  - 兼容字段 / 兼容接口退役计划
 
 ---
 
-## 7. 快速验证（GateG 当前阶段）
+## 7. 快速验证（RC1 当前阶段）
 
 ```powershell
-git diff -- AGENTS.md README.md docs/current docs/gates/gate-g docs/gates/gate-f
-rg -n "GateG|前端|鉴权|Playwright|策略|回测|交易验证" AGENTS.md README.md docs/current docs/gates/gate-g docs/gates/gate-f
+git diff -- AGENTS.md README.md docs/current docs/gates/gate-h docs/gates/gate-g
+rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|account context" AGENTS.md README.md docs/current docs/gates/gate-h docs/gates/gate-g
 ```
 
 ---
@@ -117,10 +117,10 @@ rg -n "GateG|前端|鉴权|Playwright|策略|回测|交易验证" AGENTS.md READ
 ## 8. Codex 执行工作流（必须照做）
 
 1. 先读 `AGENTS.md`、`README.md`、`docs/current/*`
-2. 再读 `docs/gates/gate-g/*`
+2. 再读 `docs/gates/gate-h/*` 与 `docs/gates/gate-g/*`，只用于核对暂停边界与冻结基线
 3. 再读目标代码文件
 4. 先补文档，再改代码，再补测试
-5. 提交结果时明确本批归属 GateG-DOC-1 / GateG-1 / GateG-2 / GateG-3 / GateG-4 / GateG-5 / GateG-6
+5. 提交结果时明确本批归属 `RC1-0 / RC1-1 / RC1-2 / RC1-3 / RC1-4 / RC1-5 / RC1-6`
 
 ## 9. MCP / Skills 使用规范（项目级强制）
 
@@ -288,3 +288,171 @@ rg -n "GateG|前端|鉴权|Playwright|策略|回测|交易验证" AGENTS.md READ
 2. 一个任务只允许以一个主 skill 为主线，其他 skill 只作为补充。
 3. 不允许跳过 skill 直接自由发挥，除非任务明显不属于任何已定义 skill。
 4. 完成后必须输出：新增文件、修改文件、验证步骤、风险与未覆盖项。
+
+## RC1 项目收口重构批次（停止 GateH，先做结构收口）
+
+当前主线不是 GateH 新功能开发，当前主线为 **RC1 项目收口重构批次**。
+RC1 完成前，暂停 GateH 的新增功能、页面扩展、新交易所接入、复杂研究流程深化与非必要 UI 美化。
+所有工作优先围绕：**仓库清理、表结构收口、账户与凭证模型建立、模块边界整理、包结构收口、历史残留删除、市场数据域落点、前端基础骨架重构、全量回归验证** 展开。
+
+### RC1 阶段强制执行原则
+
+1. 不允许继续沿用“边加功能边自然生长”的方式推进项目。
+2. 优先收口结构，再继续后续 Gate 规划。
+3. 任何改动都必须先判断它属于：
+  - 结构收口
+  - 历史清理
+  - 表结构重构
+  - 边界隔离
+  - 前端基础重构
+  - 回归验证
+4. 不属于 RC1 范围的新功能需求，一律延后到 RC1 完成后再规划。
+5. 能复用的复用，但必须是**受控复用**；允许保留必要冗余，但必须是**受控冗余**，不允许无序扩散。
+
+### RC1 阶段的 skill 路由规则
+
+#### 1. 表结构 / Migration / DDL 审查
+涉及以下任务时，优先使用 `review-ddl-and-migration`：
+- 新增或修改表结构
+- 新增 migration
+- 审查字段、索引、唯一约束、外键、回填方案
+- 审查兼容字段退役计划
+- 审查用户 / 账户 / 凭证 / 环境（SIM/LIVE）相关建模
+
+RC1 中该 skill 重点覆盖：
+- `exchange_accounts`
+- `exchange_account_credentials`
+- owner_user_id / exchange_code / trade_env / is_default / status
+- 凭证密文存储与校验状态字段
+- marketdata 第一批表结构
+
+#### 2. Java 模块边界、包结构、服务层重构
+涉及以下任务时，优先组合使用：
+- `spring-boot-module-review`
+- `refactor-service-layer-java`
+- `wire-api-module`
+
+适用场景：
+- `nq-core` 中 JDBC 实现迁出
+- `nq-api` 直写 SQL 下沉
+- controller 与 scheduler 具体实现解耦
+- 按业务域重整包结构
+- 拆分 `nq-app` 过胖装配配置类
+- 审查无用 Bean、重复配置、历史残留实现
+
+RC1 中 Java 结构重构必须遵守：
+- `nq-core` 只留业务核心，不保留 JDBC repository 实现
+- `nq-api` 不直接写 SQL
+- `nq-api` 不直接依赖 `nq-scheduler` 的具体实现类
+- 包结构采用“业务域优先，类型次级分层”，至少覆盖：
+  - `account`
+  - `auth`
+  - `strategy`
+  - `trading`
+  - `research`
+  - `marketdata`
+
+#### 3. 前端基础重构
+涉及以下任务时，优先组合使用：
+- `frontend-review`
+- `scaffold-component`
+- `build-page-from-api`
+
+适用场景：
+- 页面大文件拆分
+- 抽查询区 / 表格区 / 详情抽屉壳
+- 搭账户上下文
+- 搭账户与凭证管理页面骨架
+- 页面与后端新接口联调
+- 清理重复逻辑、废弃页面模式
+
+RC1 中前端重构重点覆盖：
+- `TradeValidationPage`
+- `StrategiesPage`
+- `SchedulesPage`
+- `ResearchPage`
+- `BacktestsPage`
+
+RC1 前端必须遵守：
+- 不再把“手工输入 accountId”作为长期主模式
+- 建立正式的账户上下文
+- 账户 / 交易所 / 环境切换成为正式概念
+- 优先抽公共骨架，而不是继续复制页面
+
+#### 4. Python 研究骨架与批处理脚本
+涉及以下任务时，优先使用：
+- `build-batch-script-python`
+- `write-pytest-regression`
+
+适用场景：
+- market data ingest 脚本
+- research/py 子工程骨架收口
+- pytest 回归
+- Python 数据加载、回测、策略运行基础能力
+
+RC1 中 Python 侧重点：
+- `research/py` 从样例目录升级为正式研究子工程
+- 补 `tests`
+- 补 `pytest`
+- 补 `ruff`
+- 补 `mypy`
+- 建立 `data / strategy / backtest` 包层
+
+#### 5. 回归验证与收口验收
+涉及以下任务时，优先组合使用：
+- `integration-regression-java`
+- `write-junit-and-golden-tests`
+- `e2e-regression`
+
+适用场景：
+- 模块迁移后的回归验证
+- JUnit / golden 补测
+- 前端 E2E smoke 回归
+- 收口批次的最终验收
+
+RC1 最终必须验证：
+- migration 可执行
+- 后端可构建、可启动
+- 前端可 build
+- E2E smoke 可通过
+- 核心边界具备自动化约束
+
+### RC1 阶段的辅助修复 skill
+
+以下 skill 可以使用，但不作为 RC1 设计主导，只用于收口过程中处理回归问题：
+- `fix-prod-bug-java`
+- `fix-ui-bug`
+
+使用原则：
+- 仅用于修复重构过程中暴露出的启动失败、依赖注入异常、SQL 映射错误、接口回归、UI 回归
+- 不得把它们当作架构设计工具
+- 架构与结构决策始终以 RC1 文档和当前主线规则为准
+
+### RC1 阶段输出要求
+
+1. 每次提交必须说明本次改动属于 RC1 的哪个子批次。
+2. 每次提交必须写清：
+  - 改了什么
+  - 为什么改
+  - 是否影响表结构
+  - 是否影响模块边界
+  - 是否删除了历史残留
+  - 做了哪些验证
+3. 涉及删除历史实现时，必须明确归类为：
+  - 直接删除
+  - 迁移到测试夹具 / 历史归档
+  - 保留但仅限 local/test/fallback
+4. 涉及兼容字段或兼容接口时，必须写清退役计划。
+5. RC1 完成前，不得擅自恢复 GateH 开发。
+
+### RC1 结束条件
+
+只有在以下条件全部满足后，才允许重新规划 GateH：
+- 用户 / 账户 / 凭证 / 环境模型正式成立
+- `nq-core / nq-api / nq-infra / nq-scheduler / nq-app` 边界清晰
+- 前端存在正式账户上下文和账户凭证管理入口
+- marketdata 域已建立
+- Python 研究子工程骨架已建立
+- 历史残留实现已明显清理
+- 全量构建、启动、测试、E2E smoke 通过
+- RC1 文档完整闭环

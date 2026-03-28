@@ -1,70 +1,54 @@
-# Current Modules（GateG）
+# Current Modules（RC1）
 
 ## `frontend`
 
-- GateG 当前主改对象
-- 负责 React + TypeScript + Vite 前端工程骨架
-- 负责登录页、路由守卫、基础布局与菜单
-- 负责策略、调度、运行、研究、回测、评估、发布、交易验证页面
-- 负责统一 API client、认证态管理、页面级 loading / error 状态
-- 负责 Playwright e2e 用例与回归脚本
+- RC1 的前端主改对象
+- 负责账户上下文 store、header 上下文入口、账户与凭证管理页面骨架
+- 负责拆分过大的页面组件，抽查询区 / 表格区 / 详情抽屉壳
+- 负责逐步替代长期依赖手工输入 `accountId` 的模式
 
 ## `nq-api`
 
-- 负责 HTTP API 层
-- 承接 `@RestController`
-- 承接 request / response DTO
-- 承接仅服务于 Controller 的 API service、mapper、assembler
-- 对外暴露正式 `/api/**` 路由下的认证、策略、调度、研究、回测、交易验证接口
-- 作为 GateG 页面联调的唯一后端入口
+- 继续作为正式 HTTP API 层
+- 负责 controller、request/response DTO 与 API contract
+- RC1 期间不得再直接写 SQL
+- RC1 期间不得再直接依赖 scheduler 具体实现
 
-## `nq-app`
+## `nq-core`
 
-- 只负责 Spring Boot 启动入口
-- 只负责模块装配、profile、bean wiring、运行时配置
-- 承担 SecurityFilterChain、JWT 过滤器、trace 过滤器与最终运行装配
-- 不承载前端页面逻辑
+- 只保留业务核心、port、domain model 与 application service
+- RC1 期间必须迁出所有 JDBC 实现
 
-## `nq-auth`
+## `nq-infra`
 
-- 提供配置驱动本地账户认证与登录服务
-- 使用 BCrypt 校验 `username / password`
-- 为 GateG 登录页提供后端登录能力
+- 作为 JDBC、Flyway、query adapter 与持久化适配层承接者
+- RC1 期间负责接住从 `nq-core`、`nq-api` 下沉出来的 SQL 与 JDBC 实现
 
-## `nq-security`
+## `nq-app / nq-auth / nq-security / nq-gateway`
 
-- 提供 JWT access token 签发、解析、校验
-- 提供 Bearer token 认证过滤器
-- 为 GateG 路由守卫提供 token 契约基础
+- `nq-app` 只负责装配与 profile 入口
+- `nq-auth` 负责认证应用服务
+- `nq-security` 负责 token 与过滤器
+- `nq-gateway` 负责安全上下文桥接
+- RC1 期间认证数据源要从配置驱动切到 DB-backed `users/roles/user_roles`
 
-## `nq-gateway`
+## `nq-scheduler`
 
-- 提供对 `SecurityContext` 的薄封装，统一读取当前认证主体
-- 为 `/api/auth/me` 与受保护接口提供主体语义
+- 负责调度、reconcile、recovery 等运行时编排实现
+- RC1 期间只允许通过 application-facing service 向上暴露能力
 
-## `nq-research`
+## `nq-research / nq-backtest / nq-eval`
 
-- 承接 `ResearchConfig / BacktestConfig / BacktestRun / BacktestPublishRecord`
-- 作为 GateG 研究与回测页面的数据来源
+- 继续承接研究、回测、评估与发布事实能力
+- RC1 期间要补 `marketdata` 正式域与 DB-backed 历史行情输入路径
 
-## `nq-backtest`
+## `research/py`
 
-- 承接历史数据驱动的模拟执行、`sim_order / sim_trade / sim_position / sim_pnl_snapshot`
-- 作为 GateG 回测详情页的数据来源
+- RC1 期间从样例目录升级为正式研究子工程
+- 负责 `data / strategy / backtest / tests` 包结构与 Python 工具链
 
-## `nq-eval`
+## 本阶段边界
 
-- 承接回测评估报告与 evaluation 查询
-- 作为 GateG evaluation 视图的数据来源
-
-## `nq-core / nq-ledger / nq-risk / nq-scheduler / nq-adapter-*`
-
-- 继续维持 GateD~GateF 已冻结边界
-- 仅在前端联调缺口明确时补最小接口或字段
-
-## 本步边界
-
-- 当前覆盖到 GateG-DOC-1
-- GateG 当前已冻结页面与联调范围
-- 未展开实际前端代码实现
-- 未展开数据库大改或执行域重构
+- 当前阶段只做结构收口、清理、基础模型与验证
+- 当前阶段不恢复 GateH 新功能
+- 当前阶段不做新交易所接入与复杂研究扩张

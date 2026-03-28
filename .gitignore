@@ -1,24 +1,40 @@
-# Maven
-target/
-!.mvn/wrapper/maven-wrapper.jar
+# Backend build outputs
+backend/**/target/
+!backend/.mvn/wrapper/maven-wrapper.jar
 
-# IDE
+# Frontend build outputs
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+
+# Python / tool caches
+research/py/.pytest_cache/
+research/py/.ruff_cache/
+research/py/.mypy_cache/
+research/py/.venv/
+__pycache__/
+*.pyc
+
+# IDE / editor
 .idea/
 *.iml
 *.ipr
 *.iws
 .vscode/
 
-# OS
+# OS / logs / temp
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log
-
 *.pid
-*.txt
-*.cmd
+*.tmp
+*.temp
 
+# Environment files
 .env
+.env.*
+!.env.example
+!frontend/.env.example
+
+# Artifacts
 artifacts/

@@ -9,6 +9,7 @@ import {SchedulesPage} from '@/pages/schedules/SchedulesPage';
 import {RunsPage} from '@/pages/runs/RunsPage';
 import {ResearchPage} from '@/pages/research/ResearchPage';
 import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
+import {AccountsPage} from '@/pages/accounts/AccountsPage';
 import {EvaluationsPage} from '@/pages/evaluations/EvaluationsPage';
 import {PublishesPage} from '@/pages/publishes/PublishesPage';
 import {TradeValidationPage} from '@/pages/trade-validation/TradeValidationPage';
@@ -72,6 +73,11 @@ export const appRouter = createBrowserRouter([
                         path: 'runs',
                         element: <RunsPage/>,
                         handle: createHandle('runs'),
+                    },
+                    {
+                        path: 'accounts',
+                        element: <AccountsPage/>,
+                        handle: createHandle('accounts'),
                     },
                     {
                         path: 'research',

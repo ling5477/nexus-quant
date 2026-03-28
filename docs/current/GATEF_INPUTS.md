@@ -1,6 +1,8 @@
 # docs/current/GATEF_INPUTS.md
 # GateF 输入清单（已作为 GateF-DOC-1 输入落卷宗）
 
+> 历史输入参考：RC1 当前阶段不再以此文档作为执行入口。
+
 本文档只整理 GateF-DOC-1 的输入依据，不展开 GateF 业务实现。
 
 ---

@@ -74,8 +74,13 @@ export function clearStoredSession(): void {
 
 export function toCurrentUser(session: StoredAuthSession): CurrentUser {
     return {
+        userId: 0,
         username: session.username,
         roles: session.roles,
         authenticated: true,
+        defaultExchangeAccountId: null,
+        defaultExchangeCode: null,
+        defaultTradeEnv: null,
+        defaultAccountAlias: null,
     };
 }

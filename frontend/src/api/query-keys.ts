@@ -3,6 +3,11 @@ export const authQueryKeys = {
     currentUser: (accessToken?: string | null) => [...authQueryKeys.all, 'current-user', accessToken ?? 'anonymous'] as const,
 };
 
+export const accountQueryKeys = {
+    all: ['exchange-accounts'] as const,
+    list: (accessToken?: string | null) => [...accountQueryKeys.all, 'list', accessToken ?? 'anonymous'] as const,
+};
+
 export const strategyQueryKeys = {
     all: ['strategies'] as const,
     list: (searchVersion: number) => [...strategyQueryKeys.all, 'list', searchVersion] as const,

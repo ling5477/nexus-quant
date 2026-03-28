@@ -18,7 +18,7 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
@@ -30,6 +30,7 @@ import {
     useTradeValidationLookupQuery,
 } from '@/hooks/useTradeValidation';
 import type {AppApiError} from '@/types/api';
+import {useAccountContextStore} from '@/store/account-context-store';
 import type {
     AccountBalanceView,
     OperationTriggerResponse,
@@ -104,6 +105,10 @@ export function TradeValidationPage() {
     const [detailOpen, setDetailOpen] = useState(false);
     const [activeAction, setActiveAction] = useState<ActionDrawer>(null);
     const [lastActionResult, setLastActionResult] = useState<OperationTriggerResponse | null>(null);
+    const legacyAccountId = useAccountContextStore((state) => state.legacyAccountId);
+    const exchangeCode = useAccountContextStore((state) => state.exchangeCode);
+    const tradeEnv = useAccountContextStore((state) => state.tradeEnv);
+    const accountAlias = useAccountContextStore((state) => state.accountAlias);
 
     const lookupQuery = useTradeValidationLookupQuery(submittedRequest, searchVersion);
     const placeOrderMutation = usePlaceOrderMutation();
@@ -111,6 +116,19 @@ export function TradeValidationPage() {
     const reconcileMutation = useReconcileMutation();
     const recoveryMutation = useRecoveryMutation();
     const hasSearched = searchVersion > 0;
+
+    useEffect(() => {
+        if (legacyAccountId) {
+            queryForm.setFieldValue('accountId', legacyAccountId);
+            placeForm.setFieldValue('accountId', legacyAccountId);
+            cancelForm.setFieldValue('accountId', legacyAccountId);
+        }
+        if (exchangeCode) {
+            placeForm.setFieldValue('venue', exchangeCode);
+            reconcileForm.setFieldValue('venue', exchangeCode);
+            recoveryForm.setFieldValue('venue', exchangeCode);
+        }
+    }, [cancelForm, exchangeCode, legacyAccountId, placeForm, queryForm, reconcileForm, recoveryForm]);
 
     const orderColumns: ColumnsType<OrderView> = [
         {
@@ -195,7 +213,7 @@ export function TradeValidationPage() {
     const handleLookup = (values: TradeValidationQueryForm) => {
         setSubmittedRequest({
             orderId: normalizeOptionalText(values.orderId),
-            accountId: values.accountId,
+            accountId: values.accountId ?? legacyAccountId ?? undefined,
             symbol: normalizeOptionalText(values.symbol),
         });
         setSearchVersion((value) => value + 1);
@@ -217,7 +235,7 @@ export function TradeValidationPage() {
             queryForm.setFieldValue('orderId', orderId);
             setSubmittedRequest((current) => ({
                 orderId,
-                accountId: current?.accountId,
+                accountId: current?.accountId ?? legacyAccountId ?? undefined,
                 symbol: current?.symbol,
             }));
             setSearchVersion((value) => value + 1);
@@ -236,8 +254,8 @@ export function TradeValidationPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="交易验证"
-                        description="当前页面已对接 `/api/trading/**` 的真实查询与动作接口。查询主链以订单视图为主，详情抽屉聚合成交、账户和持仓信息，动作区收口下单、撤单、对账与恢复。"
-                        badge="GateG-4C"
+                        description="当前页面已对接 `/api/trading/**` 的真实查询与动作接口。RC1 起账户上下文成为默认模式，详情抽屉继续聚合成交、账户和持仓信息，动作区收口下单、撤单、对账与恢复。"
+                        badge="RC1-4"
                     />
                 </Card>
                 <Card
@@ -255,6 +273,21 @@ export function TradeValidationPage() {
                         </Space>
                     )}
                 >
+                    {legacyAccountId ? (
+                        <Alert
+                            type="info"
+                            showIcon
+                            style={{marginBottom: 16}}
+                            message={`当前账户上下文：${exchangeCode} / ${tradeEnv} / ${accountAlias}（legacyAccountId=${legacyAccountId}）`}
+                        />
+                    ) : (
+                        <Alert
+                            type="warning"
+                            showIcon
+                            style={{marginBottom: 16}}
+                            message="当前未选择账户上下文；可先到“账户管理”页选择一个默认账户。"
+                        />
+                    )}
                     <Form
                         form={queryForm}
                         layout="vertical"
@@ -272,8 +305,8 @@ export function TradeValidationPage() {
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="账户 ID" name="accountId">
-                                    <InputNumber style={{width: '100%'}} min={1} placeholder="可空，用于账户/持仓辅助查询"/>
+                                <Form.Item label="账户 ID（默认当前上下文）" name="accountId">
+                                    <InputNumber style={{width: '100%'}} min={1} placeholder="未填写时默认使用当前上下文账户"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
@@ -442,7 +475,7 @@ export function TradeValidationPage() {
                 <Form
                     form={placeForm}
                     layout="vertical"
-                    initialValues={{venue: 'OKX', side: 'BUY', orderType: 'LIMIT'}}
+                    initialValues={{accountId: legacyAccountId ?? undefined, venue: exchangeCode ?? 'OKX', side: 'BUY', orderType: 'LIMIT'}}
                     onFinish={(values) => {
                         placeOrderMutation.mutate(
                             {
@@ -527,7 +560,7 @@ export function TradeValidationPage() {
                 <Form
                     form={cancelForm}
                     layout="vertical"
-                    initialValues={{reason: 'manual cancel'}}
+                    initialValues={{accountId: legacyAccountId ?? undefined, reason: 'manual cancel'}}
                     onFinish={(values) => {
                         cancelOrderMutation.mutate(
                             {
@@ -576,7 +609,7 @@ export function TradeValidationPage() {
                 <Form
                     form={reconcileForm}
                     layout="vertical"
-                    initialValues={{venue: 'OKX', limit: 100}}
+                    initialValues={{venue: exchangeCode ?? 'OKX', limit: 100}}
                     onFinish={(values) => {
                         reconcileMutation.mutate(
                             {
@@ -617,7 +650,7 @@ export function TradeValidationPage() {
                 <Form
                     form={recoveryForm}
                     layout="vertical"
-                    initialValues={{venue: 'OKX'}}
+                    initialValues={{venue: exchangeCode ?? 'OKX'}}
                     onFinish={(values) => {
                         recoveryMutation.mutate(
                             {

@@ -225,3 +225,19 @@
 - 本批冻结结论：
   - GateG 已满足 `npm install / npx tsc -b / npm run build / npm run test:e2e` 全部冻结条件
   - GateG 正式 Frozen
+
+## 17. GateG 最终冻结交接（2026-03-27）
+
+- 已确认 GateG 主链页面、详情、最小动作、trade-validation、文档与回归矩阵全部冻结
+- 已确认冻结验收结果：
+  - `npm install`：通过
+  - `npx tsc -b`：通过
+  - `npm run build`：通过
+  - `npm run test:e2e`：`4 passed / 2 skipped / 0 failed`
+- 已确认 `strategies-detail.spec.ts` 与 `research-detail.spec.ts` 的 skip 属于“无预置数据即 skip”的既有设计，不计为失败
+- 自本节点起，以下增强项不再挂回 GateG，而统一移交 GateH：
+  - `strategies / schedules / runs` 更完整动作
+  - `research / backtests / evaluations / publishes` 更深详情与更完整动作
+  - `trade-validation` 更系统的多结果组织方式
+  - 更广覆盖的 E2E 与测试数据治理
+- 自本节点起，除冻结状态说明和历史事实修订外，不再回头修改 GateG 功能主链

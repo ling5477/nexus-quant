@@ -1,6 +1,8 @@
 # docs/current/GATEG_INPUTS.md
 # GateG 输入清单（前端控制台与联调）
 
+> 历史输入参考：RC1 当前阶段不再以此文档作为执行入口。
+
 本文档整理 GateG-DOC-1 的输入依据与开工边界。
 
 ---

@@ -1,7 +1,7 @@
 [project]
 name = "nexus-quant-research"
 version = "0.1.0"
-description = "GateF-2 minimal Python research skeleton for NexusQuant."
+description = "RC1 formal Python research skeleton for NexusQuant."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
@@ -9,3 +9,19 @@ dependencies = []
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["nq_research"]
+warn_unused_configs = true
+disallow_untyped_defs = true

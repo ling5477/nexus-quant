@@ -1,6 +1,7 @@
 import {
     AreaChartOutlined,
     DashboardOutlined,
+    DatabaseOutlined,
     ExperimentOutlined,
     FileSearchOutlined,
     FundProjectionScreenOutlined,
@@ -44,6 +45,14 @@ export const appNavItems: AppNavItem[] = [
         icon: <RocketOutlined/>,
         title: '运行记录',
         description: '策略运行查询、状态追踪和详情入口。',
+    },
+    {
+        key: 'accounts',
+        path: '/accounts',
+        label: '账户管理',
+        icon: <DatabaseOutlined/>,
+        title: '账户与凭证管理',
+        description: '管理当前用户的交易账户上下文与凭证配置入口。',
     },
     {
         key: 'research',

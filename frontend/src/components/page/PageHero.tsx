@@ -7,7 +7,7 @@ interface PageHeroProps {
     tip?: string;
 }
 
-export function PageHero({title, description, badge = 'GateG-1 Skeleton', tip}: PageHeroProps) {
+export function PageHero({title, description, badge = 'RC1', tip}: PageHeroProps) {
     return (
         <div className="page-hero">
             <Space align="start" size={12} wrap>

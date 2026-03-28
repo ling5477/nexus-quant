@@ -1,6 +1,6 @@
 # GateG（前端控制台与联调）
 
-当前状态：**GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 / GateG-FREEZE-FIX / GateG-FREEZE-E2E-FIX 已完成；GateG 目前已 Frozen。**
+当前状态：**GateG-DOC-1 / GateG-DOC-2 / GateG-1 / GateG-2 / GateG-3A / GateG-3B / GateG-4A / GateG-4B / GateG-4C / GateG-5 / GateG-FREEZE-FIX / GateG-FREEZE-E2E-FIX 已完成；GateG 目前已 Frozen，后续增强归属 GateH。**
 
 GateG 是 GateF 之后的独立阶段。GateG 不回头重写 GateF，也不以前置数据库大改为条件。
 
@@ -108,7 +108,7 @@ GateG 当前不是“前端是否开工”的讨论阶段，而是**在已完成
 - `research-detail` 与 `strategies-detail` 在无预置策略/研究配置数据时按设计 skip，不计为失败
 - 当前 shell 执行器对 `vite / playwright` 仍可能报 `spawn EPERM`
 
-因此 GateG 当前已无冻结阻塞，下一步进入 GateH 规划。
+因此 GateG 当前已无冻结阻塞，当前卷宗只作为冻结基线；后续增强与新批次统一归属 GateH。
 
 ---
 

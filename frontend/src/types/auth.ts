@@ -13,7 +13,12 @@ export interface LoginResponse {
 }
 
 export interface CurrentUser {
+    userId: number;
     username: string;
     roles: string[];
     authenticated: boolean;
+    defaultExchangeAccountId: number | null;
+    defaultExchangeCode: string | null;
+    defaultTradeEnv: string | null;
+    defaultAccountAlias: string | null;
 }
