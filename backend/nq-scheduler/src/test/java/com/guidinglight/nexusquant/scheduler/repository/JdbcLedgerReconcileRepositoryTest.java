@@ -16,9 +16,6 @@ import org.mockito.Mockito;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-/**
- * JdbcLedgerReconcileRepositoryTest 锁定 LEDGER_MISSING 的最小口径修正。
- */
 class JdbcLedgerReconcileRepositoryTest {
 
     @Test

@@ -29,7 +29,6 @@ public class SecurityRuntimeProperties {
     private Duration accessTokenTtl = Duration.ofHours(1);
 
     @Valid
-    @NotEmpty
     private List<LocalUserProperties> users = new ArrayList<>();
 
     public String getIssuer() {

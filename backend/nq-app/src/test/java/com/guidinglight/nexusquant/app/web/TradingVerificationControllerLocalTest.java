@@ -5,17 +5,14 @@ import com.guidinglight.nexusquant.api.model.*;
 import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
 import com.guidinglight.nexusquant.api.web.*;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
-import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.*;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -59,13 +56,7 @@ class TradingVerificationControllerLocalTest {
     @MockitoBean
     private TradingQueryFacade tradingQueryFacade;
     @MockitoBean
-    private OkxRestReconcileService okxRestReconcileService;
-    @MockitoBean
-    private BinanceRestReconcileService binanceRestReconcileService;
-    @MockitoBean
-    private BinanceRecoveryService binanceRecoveryService;
-    @MockitoBean
-    private RecoveryService recoveryService;
+    private TradingMaintenanceService tradingMaintenanceService;
     @MockitoBean
     private StrategyDefinitionService strategyDefinitionService;
     @MockitoBean
@@ -76,6 +67,8 @@ class TradingVerificationControllerLocalTest {
     private StrategyScheduleService strategyScheduleService;
     @MockitoBean
     private StrategyScheduleScanService strategyScheduleScanService;
+    @MockitoBean
+    private AuthUserRepository authUserRepository;
 
     @Test
     void shouldTriggerPlaceOrderThroughService() throws Exception {
@@ -120,8 +113,8 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldTriggerReconcileAndOkxRecoveryServices() throws Exception {
-        when(okxRestReconcileService.reconcileOnce(eq(25))).thenReturn(3);
-        when(recoveryService.rebuild(eq("trc-local-4"))).thenReturn(new RecoveryReport(
+        when(tradingMaintenanceService.runReconcile(eq("OKX"), eq(25))).thenReturn(3);
+        when(tradingMaintenanceService.runRecovery(eq("OKX"), eq("trc-local-4"))).thenReturn(new RecoveryReport(
                 Instant.parse("2026-03-04T00:00:00Z"),
                 Instant.parse("2026-03-04T00:00:01Z"),
                 4L,
@@ -146,13 +139,13 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.action").value("recoveryRunOnce"))
                 .andExpect(jsonPath("$.traceId").value("trc-local-4"));
-        verify(okxRestReconcileService).reconcileOnce(25);
-        verify(recoveryService).rebuild("trc-local-4");
+        verify(tradingMaintenanceService).runReconcile("OKX", 25);
+        verify(tradingMaintenanceService).runRecovery("OKX", "trc-local-4");
     }
 
     @Test
     void shouldTriggerBinanceReconcileThroughService() throws Exception {
-        when(binanceRestReconcileService.reconcileOnce(eq(12))).thenReturn(1);
+        when(tradingMaintenanceService.runReconcile(eq("BINANCE"), eq(12))).thenReturn(1);
         mockMvc.perform(post("/api/trading/reconciliation/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-5")
                         .with(csrf())
@@ -161,12 +154,12 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.action").value("reconcileOnce"))
                 .andExpect(jsonPath("$.traceId").value("trc-local-5"));
-        verify(binanceRestReconcileService).reconcileOnce(12);
+        verify(tradingMaintenanceService).runReconcile("BINANCE", 12);
     }
 
     @Test
     void shouldTriggerBinanceRecoveryThroughService() throws Exception {
-        when(binanceRecoveryService.rebuild(eq("trc-local-5b"))).thenReturn(new RecoveryReport(
+        when(tradingMaintenanceService.runRecovery(eq("BINANCE"), eq("trc-local-5b"))).thenReturn(new RecoveryReport(
                 Instant.parse("2026-03-05T00:00:00Z"),
                 Instant.parse("2026-03-05T00:00:01Z"),
                 1L,
@@ -183,7 +176,7 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.action").value("recoveryRunOnce"))
                 .andExpect(jsonPath("$.traceId").value("trc-local-5b"));
-        verify(binanceRecoveryService).rebuild("trc-local-5b");
+        verify(tradingMaintenanceService).runRecovery("BINANCE", "trc-local-5b");
     }
 
     @Test
@@ -289,6 +282,8 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldReturnUnifiedIllegalArgumentError() throws Exception {
+        when(tradingMaintenanceService.runRecovery(eq("UNKNOWN"), eq("trc-local-invalid-venue")))
+                .thenThrow(new IllegalArgumentException("unsupported recovery venue: UNKNOWN"));
         mockMvc.perform(post("/api/trading/recovery/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-invalid-venue")
                         .with(csrf())

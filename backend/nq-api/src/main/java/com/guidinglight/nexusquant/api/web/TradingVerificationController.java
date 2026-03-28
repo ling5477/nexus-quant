@@ -8,15 +8,12 @@ import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
-import com.guidinglight.nexusquant.core.recovery.RecoveryService;
 import com.guidinglight.nexusquant.core.service.CancelOrderRequest;
 import com.guidinglight.nexusquant.core.service.CancelOrderResult;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderRequest;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
+import com.guidinglight.nexusquant.core.service.TradingMaintenanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -55,28 +52,19 @@ public class TradingVerificationController {
 
     private final OrderCommandService orderCommandService;
     private final TradingQueryFacade tradingQueryFacade;
-    private final OkxRestReconcileService okxRestReconcileService;
-    private final BinanceRestReconcileService binanceRestReconcileService;
-    private final BinanceRecoveryService binanceRecoveryService;
-    private final RecoveryService recoveryService;
+    private final TradingMaintenanceService tradingMaintenanceService;
 
     public TradingVerificationController(
             OrderCommandService orderCommandService,
             TradingQueryFacade tradingQueryFacade,
-            OkxRestReconcileService okxRestReconcileService,
-            BinanceRestReconcileService binanceRestReconcileService,
-            BinanceRecoveryService binanceRecoveryService,
-            RecoveryService recoveryService
+            TradingMaintenanceService tradingMaintenanceService
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.tradingQueryFacade = Objects.requireNonNull(tradingQueryFacade, "tradingQueryFacade must not be null");
-        this.okxRestReconcileService = Objects.requireNonNull(okxRestReconcileService, "okxRestReconcileService must not be null");
-        this.binanceRestReconcileService = Objects.requireNonNull(
-                binanceRestReconcileService,
-                "binanceRestReconcileService must not be null"
+        this.tradingMaintenanceService = Objects.requireNonNull(
+                tradingMaintenanceService,
+                "tradingMaintenanceService must not be null"
         );
-        this.binanceRecoveryService = Objects.requireNonNull(binanceRecoveryService, "binanceRecoveryService must not be null");
-        this.recoveryService = Objects.requireNonNull(recoveryService, "recoveryService must not be null");
     }
 
     @GetMapping("/orders/{orderId}")
@@ -214,11 +202,7 @@ public class TradingVerificationController {
         String venue = request == null || request.venue() == null || request.venue().isBlank()
                 ? "OKX"
                 : request.venue().trim().toUpperCase();
-        int newTrades = switch (venue) {
-            case "OKX" -> okxRestReconcileService.reconcileOnce(limit);
-            case "BINANCE" -> binanceRestReconcileService.reconcileOnce(limit);
-            default -> throw new IllegalArgumentException("unsupported reconcile venue: " + venue);
-        };
+        int newTrades = tradingMaintenanceService.runReconcile(venue, limit);
         return new OperationTriggerResponse(
                 "reconcileOnce",
                 traceId,
@@ -238,11 +222,7 @@ public class TradingVerificationController {
         String venue = request == null || request.venue() == null || request.venue().isBlank()
                 ? "OKX"
                 : request.venue().trim().toUpperCase();
-        RecoveryReport report = switch (venue) {
-            case "OKX" -> recoveryService.rebuild(traceId);
-            case "BINANCE" -> binanceRecoveryService.rebuild(traceId);
-            default -> throw new IllegalArgumentException("unsupported recovery venue: " + venue);
-        };
+        RecoveryReport report = tradingMaintenanceService.runRecovery(venue, traceId);
         return new OperationTriggerResponse(
                 "recoveryRunOnce",
                 traceId,

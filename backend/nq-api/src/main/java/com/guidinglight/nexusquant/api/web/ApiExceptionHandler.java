@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.api.web;
 
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
@@ -89,6 +90,12 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiErrorResponse handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, "STATE_CONFLICT", ex.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(AdminNotInitializedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleAdminNotInitializedException(AdminNotInitializedException ex, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, "ADMIN_NOT_INITIALIZED", ex.getMessage(), request, List.of());
     }
 
     @ExceptionHandler({AuthenticationException.class, AuthenticationCredentialsNotFoundException.class})

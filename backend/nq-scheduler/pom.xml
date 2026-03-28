@@ -33,6 +33,11 @@
         </dependency>
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-scheduler-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-contracts</artifactId>
             <version>${project.version}</version>
         </dependency>

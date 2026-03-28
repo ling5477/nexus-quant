@@ -1,7 +1,9 @@
 package com.guidinglight.nexusquant.api.web;
 
+import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.dto.LoginRequest;
 import com.guidinglight.nexusquant.auth.service.AuthService;
+import com.guidinglight.nexusquant.core.account.application.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.gateway.service.GatewayAuthFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,10 +35,25 @@ public class AuthController {
 
     private final AuthService authService;
     private final GatewayAuthFacade gatewayAuthFacade;
+    private final CurrentUserProfileService currentUserProfileService;
+    private final ExchangeAccountQueryService exchangeAccountQueryService;
 
-    public AuthController(AuthService authService, GatewayAuthFacade gatewayAuthFacade) {
+    public AuthController(
+            AuthService authService,
+            GatewayAuthFacade gatewayAuthFacade,
+            CurrentUserProfileService currentUserProfileService,
+            ExchangeAccountQueryService exchangeAccountQueryService
+    ) {
         this.authService = Objects.requireNonNull(authService, "authService must not be null");
         this.gatewayAuthFacade = Objects.requireNonNull(gatewayAuthFacade, "gatewayAuthFacade must not be null");
+        this.currentUserProfileService = Objects.requireNonNull(
+                currentUserProfileService,
+                "currentUserProfileService must not be null"
+        );
+        this.exchangeAccountQueryService = Objects.requireNonNull(
+                exchangeAccountQueryService,
+                "exchangeAccountQueryService must not be null"
+        );
     }
 
     @PostMapping("/login")
@@ -72,6 +89,18 @@ public class AuthController {
     public CurrentUserResponse me() {
         var currentUser = gatewayAuthFacade.currentUser()
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
-        return new CurrentUserResponse(currentUser.username(), currentUser.roles(), true);
+        var userProfile = currentUserProfileService.findByUsername(currentUser.username())
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        var defaultAccount = exchangeAccountQueryService.findDefaultByOwnerUserId(userProfile.userId()).orElse(null);
+        return new CurrentUserResponse(
+                userProfile.userId(),
+                userProfile.username(),
+                userProfile.roles(),
+                true,
+                defaultAccount == null ? null : defaultAccount.exchangeAccountId(),
+                defaultAccount == null ? null : defaultAccount.exchangeCode(),
+                defaultAccount == null ? null : defaultAccount.tradeEnv(),
+                defaultAccount == null ? null : defaultAccount.accountAlias()
+        );
     }
 }

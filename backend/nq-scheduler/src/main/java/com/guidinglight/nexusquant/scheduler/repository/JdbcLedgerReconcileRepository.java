@@ -13,10 +13,6 @@ import org.springframework.stereotype.Repository;
 
 /**
  * JdbcLedgerReconcileRepository 提供最小对账查询。
- * <p>
- * Why:
- * Gate B 阶段不引入复杂对账引擎，先以 SQL 聚合比对账本与快照，
- * 及时暴露余额偏差，避免错误积累到后续 Gate。
  */
 @Repository
 public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository {
@@ -25,9 +21,6 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
 
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * @param jdbcTemplate JDBC 执行器
-     */
     public JdbcLedgerReconcileRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }

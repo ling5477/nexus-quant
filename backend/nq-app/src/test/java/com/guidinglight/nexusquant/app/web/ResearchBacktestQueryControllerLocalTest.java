@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.api.web.BacktestConfigController;
 import com.guidinglight.nexusquant.api.web.BacktestRunController;
 import com.guidinglight.nexusquant.api.web.ResearchConfigController;
 import com.guidinglight.nexusquant.app.config.SecurityConfiguration;
+import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import com.guidinglight.nexusquant.research.model.BacktestConfig;
@@ -68,6 +69,8 @@ class ResearchBacktestQueryControllerLocalTest {
     private BacktestConfigApiService backtestConfigApiService;
     @MockitoBean
     private BacktestRunApiService backtestRunApiService;
+    @MockitoBean
+    private AuthUserRepository authUserRepository;
 
     @Test
     @WithMockUser(username = "local-viewer", roles = {"VIEWER"})

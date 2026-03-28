@@ -19,10 +19,6 @@ public class JdbcLedgerRiskAuditRepository implements LedgerRiskAuditRepository 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
-    /**
-     * @param jdbcTemplate JDBC 执行器
-     * @param objectMapper JSON 序列化器
-     */
     public JdbcLedgerRiskAuditRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;

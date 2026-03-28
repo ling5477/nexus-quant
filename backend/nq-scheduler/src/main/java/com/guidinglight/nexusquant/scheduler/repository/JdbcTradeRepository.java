@@ -23,9 +23,6 @@ public class JdbcTradeRepository implements TradeRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * @param jdbcTemplate JDBC 执行器
-     */
     public JdbcTradeRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }

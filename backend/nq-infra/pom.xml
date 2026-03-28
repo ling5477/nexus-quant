@@ -28,6 +28,16 @@
         </dependency>
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-auth</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-research</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -39,6 +49,16 @@
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-eval</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-ledger-contracts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-scheduler-contracts</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

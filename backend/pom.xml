@@ -28,10 +28,12 @@
         <module>nq-backtest</module>
         <module>nq-eval</module>
         <module>nq-infra</module>
+        <module>nq-ledger-contracts</module>
         <module>nq-ledger</module>
         <module>nq-risk</module>
         <module>nq-core</module>
         <module>nq-config</module>
+        <module>nq-scheduler-contracts</module>
         <module>nq-scheduler</module>
         <module>nq-observability</module>
         <module>nq-adapter-api</module>

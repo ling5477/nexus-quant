@@ -18,9 +18,11 @@ import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.api.web.AuthController;
 import com.guidinglight.nexusquant.api.web.TradingVerificationController;
 import com.guidinglight.nexusquant.app.config.SecurityConfiguration;
+import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.core.recovery.RecoveryService;
+import com.guidinglight.nexusquant.core.account.application.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
 import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
@@ -28,15 +30,14 @@ import com.guidinglight.nexusquant.core.service.StrategyManualTriggerService;
 import com.guidinglight.nexusquant.core.service.StrategyRunQueryService;
 import com.guidinglight.nexusquant.core.service.StrategyScheduleScanService;
 import com.guidinglight.nexusquant.core.service.StrategyScheduleService;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
+import com.guidinglight.nexusquant.core.service.TradingMaintenanceService;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -91,13 +92,7 @@ class AuthSecurityWebMvcTest {
     @MockitoBean
     private TradingQueryFacade tradingQueryFacade;
     @MockitoBean
-    private OkxRestReconcileService okxRestReconcileService;
-    @MockitoBean
-    private BinanceRestReconcileService binanceRestReconcileService;
-    @MockitoBean
-    private BinanceRecoveryService binanceRecoveryService;
-    @MockitoBean
-    private RecoveryService recoveryService;
+    private TradingMaintenanceService tradingMaintenanceService;
     @MockitoBean
     private StrategyDefinitionService strategyDefinitionService;
     @MockitoBean
@@ -108,6 +103,21 @@ class AuthSecurityWebMvcTest {
     private StrategyScheduleService strategyScheduleService;
     @MockitoBean
     private StrategyScheduleScanService strategyScheduleScanService;
+    @MockitoBean
+    private AuthUserRepository authUserRepository;
+    @MockitoBean
+    private ExchangeAccountQueryService exchangeAccountQueryService;
+
+    @BeforeEach
+    void setUpAuthRepository() {
+        when(authUserRepository.hasAdminUser()).thenReturn(true);
+        when(authUserRepository.findByUsername("admin")).thenReturn(Optional.of(profile(1L, "admin", true, "ADMIN", "OPERATOR", "VIEWER")));
+        when(authUserRepository.findByUsername("operator")).thenReturn(Optional.of(profile(2L, "operator", true, "OPERATOR", "VIEWER")));
+        when(authUserRepository.findByUsername("viewer")).thenReturn(Optional.of(profile(3L, "viewer", true, "VIEWER")));
+        when(authUserRepository.findByUsername("disabled")).thenReturn(Optional.of(profile(4L, "disabled", false, "VIEWER")));
+        when(authUserRepository.findByUsername("missing")).thenReturn(Optional.empty());
+        when(exchangeAccountQueryService.findDefaultByOwnerUserId(any())).thenReturn(Optional.empty());
+    }
 
     @Test
     void shouldLoginSuccessfully() throws Exception {
@@ -251,5 +261,15 @@ class AuthSecurityWebMvcTest {
                 .getContentAsString(StandardCharsets.UTF_8);
         JsonNode jsonNode = objectMapper.readTree(body);
         return jsonNode.path("accessToken").asText();
+    }
+
+    private AuthUserProfile profile(Long userId, String username, boolean enabled, String... roles) {
+        return new AuthUserProfile(
+                userId,
+                username,
+                "$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S",
+                java.util.List.of(roles),
+                enabled
+        );
     }
 }

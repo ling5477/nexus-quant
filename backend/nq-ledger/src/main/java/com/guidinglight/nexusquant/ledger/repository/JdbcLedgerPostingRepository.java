@@ -27,9 +27,6 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * @param jdbcTemplate JDBC 执行器
-     */
     public JdbcLedgerPostingRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }

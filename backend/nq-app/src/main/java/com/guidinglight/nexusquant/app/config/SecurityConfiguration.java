@@ -2,17 +2,16 @@ package com.guidinglight.nexusquant.app.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.app.security.ApiSecurityErrorWriter;
-import com.guidinglight.nexusquant.auth.model.LocalUserAccount;
+import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.DbAuthService;
+import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.service.AuthService;
-import com.guidinglight.nexusquant.auth.service.LocalAuthService;
 import com.guidinglight.nexusquant.gateway.service.GatewayAuthFacade;
 import com.guidinglight.nexusquant.gateway.service.SecurityContextGatewayAuthFacade;
 import com.guidinglight.nexusquant.security.service.JwtTokenService;
 import com.guidinglight.nexusquant.security.service.JwtTokenSettings;
 import com.guidinglight.nexusquant.security.service.TokenService;
 import com.guidinglight.nexusquant.security.web.JwtAuthenticationFilter;
-
-import java.util.List;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -53,24 +52,21 @@ public class SecurityConfiguration {
     public AuthService authService(
             TokenService tokenService,
             PasswordEncoder passwordEncoder,
+            AuthUserRepository authUserRepository,
             SecurityRuntimeProperties properties
     ) {
-        List<LocalUserAccount> accounts = properties.getUsers()
-                .stream()
-                .map(user -> new LocalUserAccount(
-                        user.getUsername(),
-                        user.getPasswordHash(),
-                        user.getRoles(),
-                        user.isEnabled()
-                ))
-                .toList();
-        return new LocalAuthService(
+        return new DbAuthService(
                 tokenService,
                 passwordEncoder,
-                accounts,
+                authUserRepository,
                 properties.getIssuer(),
                 properties.getAccessTokenTtl().toSeconds()
         );
+    }
+
+    @Bean
+    public CurrentUserProfileService currentUserProfileService(AuthUserRepository authUserRepository) {
+        return new CurrentUserProfileService(authUserRepository);
     }
 
     @Bean
