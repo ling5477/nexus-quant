@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -40,6 +41,7 @@ public class JdbcOrderRepository implements OrderRepository {
     private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
+    @Autowired
     public JdbcOrderRepository(JdbcTemplate jdbcTemplate) {
         this(jdbcTemplate, new NamedParameterJdbcTemplate(jdbcTemplate));
     }

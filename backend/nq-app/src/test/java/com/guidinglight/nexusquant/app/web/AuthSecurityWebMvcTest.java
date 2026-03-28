@@ -23,6 +23,7 @@ import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.account.application.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.core.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.core.service.OrderCommandService;
 import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
 import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
@@ -168,13 +169,32 @@ class AuthSecurityWebMvcTest {
 
     @Test
     void shouldReturnCurrentUserForAuthenticatedRequest() throws Exception {
+        when(exchangeAccountQueryService.findDefaultByOwnerUserId(1L)).thenReturn(Optional.of(new ExchangeAccountSummary(
+                900001L,
+                900001L,
+                1L,
+                "OKX",
+                "SIM",
+                "rc1-admin-default",
+                null,
+                true,
+                "ACTIVE"
+        )));
         String token = loginAndExtractToken("admin", "ChangeMe123!");
         mockMvc.perform(get("/api/auth/me")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-me-1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.username").value("admin"))
-                .andExpect(jsonPath("$.authenticated").value(true));
+                .andExpect(jsonPath("$.roles[0]").value("ADMIN"))
+                .andExpect(jsonPath("$.roles[1]").value("OPERATOR"))
+                .andExpect(jsonPath("$.roles[2]").value("VIEWER"))
+                .andExpect(jsonPath("$.authenticated").value(true))
+                .andExpect(jsonPath("$.defaultExchangeAccountId").value(900001))
+                .andExpect(jsonPath("$.defaultExchangeCode").value("OKX"))
+                .andExpect(jsonPath("$.defaultTradeEnv").value("SIM"))
+                .andExpect(jsonPath("$.defaultAccountAlias").value("rc1-admin-default"));
     }
 
     @Test

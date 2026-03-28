@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 
 import java.sql.Array;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,8 +87,8 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
                     command.username(),
                     command.passwordHash(),
                     command.enabled(),
-                    now,
-                    now
+                    Timestamp.from(now),
+                    Timestamp.from(now)
             );
             userId = jdbcTemplate.query(
                     "SELECT id FROM users WHERE username = ?",
@@ -100,10 +101,10 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
                             UPDATE users
                             SET password_hash = ?, enabled = ?, updated_at = ?
                             WHERE id = ?
-                            """,
+                    """,
                     command.passwordHash(),
                     command.enabled(),
-                    now,
+                    Timestamp.from(now),
                     userId
             );
         }
@@ -119,10 +120,10 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
                             INSERT INTO user_roles (user_id, role_id, granted_at)
                             VALUES (?, ?, ?)
                             ON CONFLICT (user_id, role_id) DO NOTHING
-                            """,
+                    """,
                     userId,
                     roleId,
-                    now
+                    Timestamp.from(now)
             );
         }
     }
