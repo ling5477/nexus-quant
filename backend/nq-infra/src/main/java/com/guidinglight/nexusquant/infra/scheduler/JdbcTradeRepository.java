@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.repository;
+package com.guidinglight.nexusquant.infra.scheduler;
 
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;

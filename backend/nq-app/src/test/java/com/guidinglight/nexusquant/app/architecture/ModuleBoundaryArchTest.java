@@ -7,7 +7,6 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -22,14 +21,6 @@ class ModuleBoundaryArchTest {
 
     private static final Pattern SQL_KEYWORD_PATTERN = Pattern.compile("\\b(SELECT|INSERT|UPDATE|DELETE)\\b");
     private static final Path API_SOURCE_ROOT = Path.of("..", "nq-api", "src", "main", "java", "com", "guidinglight", "nexusquant", "api");
-    private static final Path LEDGER_REPOSITORY_ROOT = Path.of("..", "nq-ledger", "src", "main", "java", "com", "guidinglight", "nexusquant", "ledger", "repository");
-    private static final Path SCHEDULER_REPOSITORY_ROOT = Path.of("..", "nq-scheduler", "src", "main", "java", "com", "guidinglight", "nexusquant", "scheduler", "repository");
-    private static final Set<String> C1_TEMPORARY_JDBC_MIGRATION_TARGETS = Set.of(
-            "JdbcLedgerPostingRepository.java",
-            "JdbcLedgerRiskAuditRepository.java",
-            "JdbcLedgerReconcileRepository.java",
-            "JdbcTradeRepository.java"
-    );
 
     @ArchTest
     static final ArchRule api_should_not_depend_on_jdbc = noClasses()
@@ -56,7 +47,6 @@ class ModuleBoundaryArchTest {
             .that().haveSimpleNameStartingWith("Jdbc")
             .and().resideOutsideOfPackage("..app.architecture..")
             .and().doNotHaveSimpleName("JdbcTradingQueryFacade")
-            .and().resideOutsideOfPackages("..ledger.repository..", "..scheduler.repository..")
             .should().resideInAPackage("..infra..");
 
     @ArchTest
@@ -89,26 +79,6 @@ class ModuleBoundaryArchTest {
                 .sorted()
                 .toList();
         assertTrue(offenders.isEmpty(), () -> "nq-api source contains SQL keywords: " + offenders);
-    }
-
-    @Test
-    void c1_temporary_jdbc_migration_targets_should_remain_exactly_four_known_classes() throws IOException {
-        Set<String> currentTargets = Files.walk(LEDGER_REPOSITORY_ROOT)
-                .filter(path -> path.toString().endsWith(".java"))
-                .map(Path::getFileName)
-                .map(Path::toString)
-                .filter(name -> name.startsWith("Jdbc"))
-                .collect(java.util.stream.Collectors.toSet());
-        currentTargets.addAll(Files.walk(SCHEDULER_REPOSITORY_ROOT)
-                .filter(path -> path.toString().endsWith(".java"))
-                .map(Path::getFileName)
-                .map(Path::toString)
-                .filter(name -> name.startsWith("Jdbc"))
-                .collect(java.util.stream.Collectors.toSet()));
-        assertTrue(
-                currentTargets.equals(C1_TEMPORARY_JDBC_MIGRATION_TARGETS),
-                () -> "temporary C1 JDBC migration targets drifted: " + currentTargets
-        );
     }
 
     private boolean containsSqlKeyword(Path path) {

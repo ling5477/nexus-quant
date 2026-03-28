@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.repository;
+package com.guidinglight.nexusquant.infra.scheduler;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;

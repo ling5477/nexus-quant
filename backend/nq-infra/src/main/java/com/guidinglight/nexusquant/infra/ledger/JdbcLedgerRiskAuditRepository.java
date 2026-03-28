@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.ledger.repository;
+package com.guidinglight.nexusquant.infra.ledger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.ledger.repository;
+package com.guidinglight.nexusquant.infra.ledger;
 
 import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
