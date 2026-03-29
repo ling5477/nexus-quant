@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsConnectionListener;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -92,3 +92,4 @@ class OkxWsDegradeReconcileCoordinatorTest {
         verify(auditLogRepository).append(eq("WS"), eq("WS_SUBSCRIBE_FAILED_THRESHOLD"), eq("OKX_WS"), eq("trc-ws-sub-2"), any());
     }
 }
+

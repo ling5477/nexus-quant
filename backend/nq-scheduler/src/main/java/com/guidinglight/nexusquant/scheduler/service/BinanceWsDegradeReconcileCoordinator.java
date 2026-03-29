@@ -5,7 +5,7 @@ import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsConnectionListene
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.time.Clock;
@@ -210,3 +210,4 @@ public class BinanceWsDegradeReconcileCoordinator implements BinanceWsConnection
         eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
     }
 }
+

@@ -1,9 +1,9 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.core.model.OrderRecord;
-import com.guidinglight.nexusquant.core.service.OrderCommandService;
-import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 
 import java.util.List;
 import java.util.Objects;
@@ -45,3 +45,4 @@ public class CoreOrderExecutionGateway implements OrderExecutionGateway {
         return orderLifecycleService.markFilled(orderId, reason, traceId);
     }
 }
+

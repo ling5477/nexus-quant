@@ -8,11 +8,11 @@ import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.OrderStatusChangedPayload;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.core.model.OrderRecord;
-import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
-import com.guidinglight.nexusquant.core.recovery.RecoveryService;
-import com.guidinglight.nexusquant.core.service.OrderCommandService;
-import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.application.RecoveryReport;
+import com.guidinglight.nexusquant.trading.application.RecoveryService;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.time.Clock;
@@ -56,7 +56,7 @@ public class OkxRecoveryService implements RecoveryService {
     private final OrderLifecycleService orderLifecycleService;
     private final OkxExchangeAdapter okxExchangeAdapter;
     private final OkxRestReconcileService okxRestReconcileService;
-    private final com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository;
+    private final com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository auditLogRepository;
     private final EventPublisherPort eventPublisherPort;
     private final boolean recoveryEnabled;
     private final Clock clock;
@@ -75,7 +75,7 @@ public class OkxRecoveryService implements RecoveryService {
             OrderLifecycleService orderLifecycleService,
             OkxExchangeAdapter okxExchangeAdapter,
             OkxRestReconcileService okxRestReconcileService,
-            com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository,
+            com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository auditLogRepository,
             EventPublisherPort eventPublisherPort,
             @Value("${nq.okx.recovery.enabled:true}") boolean recoveryEnabled
     ) {
@@ -351,3 +351,4 @@ public class OkxRecoveryService implements RecoveryService {
     ) {
     }
 }
+

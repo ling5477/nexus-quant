@@ -1,12 +1,12 @@
 package com.guidinglight.nexusquant.auth.application;
 
-import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
-import com.guidinglight.nexusquant.auth.dto.LoginRequest;
-import com.guidinglight.nexusquant.auth.dto.LoginResponse;
-import com.guidinglight.nexusquant.auth.service.AuthService;
-import com.guidinglight.nexusquant.security.model.TokenClaims;
-import com.guidinglight.nexusquant.security.service.TokenService;
+import com.guidinglight.nexusquant.auth.application.command.LoginRequest;
+import com.guidinglight.nexusquant.auth.application.result.LoginResponse;
+import com.guidinglight.nexusquant.auth.application.AuthService;
+import com.guidinglight.nexusquant.auth.domain.TokenClaims;
+import com.guidinglight.nexusquant.auth.domain.port.TokenService;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -78,3 +78,4 @@ public class DbAuthService implements AuthService {
         );
     }
 }
+

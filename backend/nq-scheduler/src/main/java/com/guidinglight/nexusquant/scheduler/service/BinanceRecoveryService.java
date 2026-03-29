@@ -7,10 +7,10 @@ import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.core.model.OrderRecord;
-import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
-import com.guidinglight.nexusquant.core.service.OrderCommandService;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.application.RecoveryReport;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.time.Clock;
@@ -167,3 +167,4 @@ public class BinanceRecoveryService {
         eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
     }
 }
+

@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsRawMessage;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.scheduler.service.BinanceWsOrderAccelerationService;
 
@@ -144,3 +144,4 @@ public class BinanceWsEventStoreBridge {
         return eventType == null || eventType.isBlank() ? "UNKNOWN" : eventType;
     }
 }
+

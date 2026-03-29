@@ -10,9 +10,9 @@ import com.guidinglight.nexusquant.contracts.event.TradeExecuted;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.core.execution.AdapterRouter;
-import com.guidinglight.nexusquant.core.model.OrderRecord;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.application.routing.AdapterRouter;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
@@ -317,3 +317,4 @@ public class PaperMatchingService {
         return detail;
     }
 }
+

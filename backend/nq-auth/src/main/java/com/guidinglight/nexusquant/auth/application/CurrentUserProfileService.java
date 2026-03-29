@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.auth.application;
 
-import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 
 import java.util.Objects;
@@ -24,3 +24,4 @@ public class CurrentUserProfileService {
         return authUserRepository.findByUsername(username);
     }
 }
+

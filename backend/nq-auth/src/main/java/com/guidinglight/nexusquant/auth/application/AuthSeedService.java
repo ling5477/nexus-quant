@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.auth.application;
 
-import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,3 +28,5 @@ public class AuthSeedService {
         authUserRepository.upsertSeedUser(command);
     }
 }
+
+

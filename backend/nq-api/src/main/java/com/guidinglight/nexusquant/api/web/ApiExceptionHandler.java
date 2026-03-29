@@ -14,8 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -31,7 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
  * Step 2 要把参数错误、业务拒绝、状态冲突与系统错误统一输出成稳定结构，
  * 避免各个 Controller 自己拼装 `ResponseEntity` 或散落的异常格式。
  */
-@RestControllerAdvice(basePackageClasses = ApiExceptionHandler.class)
+@RestControllerAdvice
 public class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -98,7 +98,7 @@ public class ApiExceptionHandler {
         return build(HttpStatus.CONFLICT, "ADMIN_NOT_INITIALIZED", ex.getMessage(), request, List.of());
     }
 
-    @ExceptionHandler({AuthenticationException.class, AuthenticationCredentialsNotFoundException.class})
+    @ExceptionHandler({BadCredentialsException.class, AuthenticationCredentialsNotFoundException.class})
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiErrorResponse handleAuthenticationException(Exception ex, HttpServletRequest request) {
         return build(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "authentication required", request, List.of());

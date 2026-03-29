@@ -10,9 +10,9 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.event.TradeExecuted;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.core.model.OrderRecord;
-import com.guidinglight.nexusquant.core.service.OrderCommandService;
-import com.guidinglight.nexusquant.core.service.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
@@ -46,7 +46,7 @@ public class OkxRestReconcileService {
     private final TradeRepository tradeRepository;
     private final TradeLedgerGateway tradeLedgerGateway;
     private final EventPublisherPort eventPublisherPort;
-    private final com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository;
+    private final com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository auditLogRepository;
     private final Clock clock;
 
     /**
@@ -65,7 +65,7 @@ public class OkxRestReconcileService {
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
             EventPublisherPort eventPublisherPort,
-            com.guidinglight.nexusquant.core.service.port.AuditLogRepository auditLogRepository
+            com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository auditLogRepository
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
@@ -370,3 +370,4 @@ public class OkxRestReconcileService {
         eventPublisherPort.append(TopicNames.TRADE_EVENT_V1, envelope);
     }
 }
+

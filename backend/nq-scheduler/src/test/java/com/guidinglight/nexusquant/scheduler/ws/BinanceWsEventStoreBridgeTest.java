@@ -13,7 +13,7 @@ import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapper;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsRawMessage;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsRawMessageListener;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.scheduler.service.BinanceWsOrderAccelerationService;
 
@@ -76,3 +76,4 @@ class BinanceWsEventStoreBridgeTest {
         verify(eventStoreAppender).append(eq(TopicNames.AUDIT_EVENT_V1), any());
     }
 }
+

@@ -14,7 +14,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxWsBusinessMessageListe
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.scheduler.service.OkxWsOrderAccelerationService;
 
@@ -84,3 +84,4 @@ class OkxWsEventStoreBridgeTest {
         verify(eventStoreAppender).append(eq(TopicNames.AUDIT_EVENT_V1), any());
     }
 }
+

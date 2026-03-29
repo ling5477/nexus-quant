@@ -1,17 +1,34 @@
 package com.guidinglight.nexusquant.app.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.api.model.*;
-import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
-import com.guidinglight.nexusquant.api.web.*;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
-import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.core.recovery.RecoveryReport;
-import com.guidinglight.nexusquant.core.service.*;
+import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
+import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionService;
+import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerService;
+import com.guidinglight.nexusquant.strategy.application.StrategyRunQueryService;
+import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanService;
+import com.guidinglight.nexusquant.strategy.application.StrategyScheduleService;
+import com.guidinglight.nexusquant.trading.api.web.AccountBalanceView;
+import com.guidinglight.nexusquant.trading.api.web.AccountView;
+import com.guidinglight.nexusquant.trading.api.web.OrderCancelRequestBody;
+import com.guidinglight.nexusquant.trading.api.web.OrderSubmitRequest;
+import com.guidinglight.nexusquant.trading.api.web.OrderView;
+import com.guidinglight.nexusquant.trading.api.web.PositionView;
+import com.guidinglight.nexusquant.trading.api.web.ReconcileRunOnceRequest;
+import com.guidinglight.nexusquant.trading.api.web.RecoveryRunOnceRequest;
+import com.guidinglight.nexusquant.trading.api.web.TradeView;
+import com.guidinglight.nexusquant.trading.api.web.TradingVerificationController;
+import com.guidinglight.nexusquant.trading.application.CancelOrderResult;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
+import com.guidinglight.nexusquant.trading.application.RecoveryReport;
+import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
+import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -338,3 +355,5 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(jsonPath("$.traceId").value("trc-legacy-api"));
     }
 }
+
+

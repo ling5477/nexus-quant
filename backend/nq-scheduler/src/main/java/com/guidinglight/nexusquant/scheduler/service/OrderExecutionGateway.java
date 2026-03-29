@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
-import com.guidinglight.nexusquant.core.model.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 
 import java.util.List;
 
@@ -30,3 +30,4 @@ public interface OrderExecutionGateway {
      */
     OrderRecord markFilled(String orderId, String reason, String traceId);
 }
+

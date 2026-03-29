@@ -9,9 +9,9 @@ import com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.core.execution.AdapterRouter;
-import com.guidinglight.nexusquant.core.model.OrderRecord;
-import com.guidinglight.nexusquant.core.service.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.application.routing.AdapterRouter;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
@@ -263,3 +263,4 @@ class PaperMatchingServiceTest {
         }
     }
 }
+

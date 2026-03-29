@@ -12,26 +12,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.api.model.OrderView;
-import com.guidinglight.nexusquant.api.service.TradingQueryFacade;
+import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
-import com.guidinglight.nexusquant.api.web.AuthController;
-import com.guidinglight.nexusquant.api.web.TradingVerificationController;
-import com.guidinglight.nexusquant.app.config.SecurityConfiguration;
-import com.guidinglight.nexusquant.auth.application.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.api.web.AuthController;
+import com.guidinglight.nexusquant.trading.api.web.OrderView;
+import com.guidinglight.nexusquant.trading.api.web.TradingVerificationController;
+import com.guidinglight.nexusquant.auth.infra.config.SecurityConfiguration;
+import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.core.account.application.ExchangeAccountQueryService;
-import com.guidinglight.nexusquant.core.account.domain.ExchangeAccountSummary;
-import com.guidinglight.nexusquant.core.service.OrderCommandService;
-import com.guidinglight.nexusquant.core.service.PlaceOrderResult;
-import com.guidinglight.nexusquant.core.service.StrategyDefinitionService;
-import com.guidinglight.nexusquant.core.service.StrategyManualTriggerService;
-import com.guidinglight.nexusquant.core.service.StrategyRunQueryService;
-import com.guidinglight.nexusquant.core.service.StrategyScheduleScanService;
-import com.guidinglight.nexusquant.core.service.StrategyScheduleService;
-import com.guidinglight.nexusquant.core.service.TradingMaintenanceService;
+import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
+import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionService;
+import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerService;
+import com.guidinglight.nexusquant.strategy.application.StrategyRunQueryService;
+import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanService;
+import com.guidinglight.nexusquant.strategy.application.StrategyScheduleService;
+import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 
 import java.math.BigDecimal;
@@ -293,3 +293,5 @@ class AuthSecurityWebMvcTest {
         );
     }
 }
+
+
