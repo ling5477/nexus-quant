@@ -6,6 +6,8 @@ export const authQueryKeys = {
 export const accountQueryKeys = {
     all: ['exchange-accounts'] as const,
     list: (accessToken?: string | null) => [...accountQueryKeys.all, 'list', accessToken ?? 'anonymous'] as const,
+    detail: (accountId: number) => [...accountQueryKeys.all, 'detail', accountId] as const,
+    activeCredential: (accountId: number) => [...accountQueryKeys.all, 'active-credential', accountId] as const,
 };
 
 export const strategyQueryKeys = {

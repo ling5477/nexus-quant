@@ -15,6 +15,11 @@ server:
   port: ${NQ_APP_PORT:18888}
 
 nq:
+  account:
+    credentials:
+      master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY:gated-verify-account-credentials-master-key-123456}
+      key-version: ${NQ_ACCOUNT_CREDENTIALS_KEY_VERSION:1}
+      verification-mode: ${NQ_ACCOUNT_CREDENTIALS_VERIFICATION_MODE:STRUCTURAL}
   gated:
     verify:
       # Why: 第四批删除旧 GateC profile 与别名后，`gated-verify` 成为唯一 profile 化验收入口。

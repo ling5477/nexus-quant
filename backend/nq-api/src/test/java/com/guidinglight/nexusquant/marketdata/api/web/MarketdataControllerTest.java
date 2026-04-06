@@ -4,12 +4,15 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataFixtureIngestionResult;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
@@ -26,6 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -34,11 +38,13 @@ class MarketdataControllerTest {
 
     private MockMvc mockMvc;
     private HistoricalMarketDataPort historicalMarketDataPort;
+    private MarketdataBarIngestService marketdataBarIngestService;
 
     @BeforeEach
     void setUp() {
         historicalMarketDataPort = mock(HistoricalMarketDataPort.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new MarketdataController(historicalMarketDataPort))
+        marketdataBarIngestService = mock(MarketdataBarIngestService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new MarketdataController(marketdataBarIngestService, historicalMarketDataPort))
                 .addFilters(new TestTraceIdFilter())
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
@@ -46,7 +52,8 @@ class MarketdataControllerTest {
 
     @Test
     void shouldExposeBarsWithCanonicalRouteAndMappedResponse() throws Exception {
-        when(historicalMarketDataPort.loadBars(argThat(query -> matchesQuery(query)))).thenReturn(List.of(new HistoricalBar(
+        when(historicalMarketDataPort.loadBars(argThat(this::matchesQuery))).thenReturn(List.of(new HistoricalBar(
+                "BINANCE",
                 "BTCUSDT",
                 BarInterval.ONE_MINUTE,
                 Instant.parse("2025-01-01T00:00:00Z"),
@@ -59,6 +66,7 @@ class MarketdataControllerTest {
         )));
 
         mockMvc.perform(get("/api/marketdata/bars")
+                        .param("exchangeCode", "BINANCE")
                         .param("symbol", "BTCUSDT")
                         .param("interval", "1m")
                         .param("startTime", "2025-01-01T00:00:00Z")
@@ -73,9 +81,47 @@ class MarketdataControllerTest {
                 .andExpect(jsonPath("$[0].volume").value(12.34));
     }
 
+    @Test
+    void shouldExposeFixtureIngestionSummary() throws Exception {
+        when(marketdataBarIngestService.ingestFixture(argThat(command ->
+                "BINANCE_BTCUSDT_1M_SAMPLE".equals(command.fixtureId())
+                        && "BINANCE".equals(command.exchangeCode())
+                        && "BTCUSDT".equals(command.symbol())
+                        && "1m".equals(command.interval())
+        ))).thenReturn(new MarketdataFixtureIngestionResult(
+                "BINANCE_BTCUSDT_1M_SAMPLE",
+                "BINANCE",
+                "BTCUSDT",
+                "1m",
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-01T00:05:59Z"),
+                6,
+                6,
+                0,
+                Instant.parse("2026-04-06T00:00:00Z"),
+                Instant.parse("2026-04-06T00:00:01Z")
+        ));
+
+        mockMvc.perform(post("/api/marketdata/bars/ingestions/fixture")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-ingest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"fixtureId":"BINANCE_BTCUSDT_1M_SAMPLE","exchangeCode":"BINANCE","symbol":"BTCUSDT","interval":"1m","startTime":"2025-01-01T00:00:00Z","endTime":"2025-01-01T00:05:59Z"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fixtureId").value("BINANCE_BTCUSDT_1M_SAMPLE"))
+                .andExpect(jsonPath("$.rowsRead").value(6))
+                .andExpect(jsonPath("$.rowsInserted").value(6))
+                .andExpect(jsonPath("$.rowsUpdated").value(0))
+                .andExpect(jsonPath("$.requestedRange.startTime").exists())
+                .andExpect(jsonPath("$.requestedRange.endTime").exists());
+    }
+
     private boolean matchesQuery(HistoricalMarketDataQuery query) {
-        return query.symbol().equals("BTCUSDT")
+        return query.exchangeCode().equals("BINANCE")
+                && query.symbol().equals("BTCUSDT")
                 && query.interval() == BarInterval.ONE_MINUTE
+                && query.datasetSpec().exchangeCode().equals("BINANCE")
                 && query.startTime().equals(Instant.parse("2025-01-01T00:00:00Z"))
                 && query.endTime().equals(Instant.parse("2025-01-01T00:00:59Z"));
     }
@@ -99,4 +145,3 @@ class MarketdataControllerTest {
         }
     }
 }
-

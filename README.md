@@ -11,7 +11,7 @@ NexusQuant 是面向数字资产交易场景的量化系统工程骨架，核心
 
 ## 1. 当前阶段
 
-当前阶段：**RC1（项目收口重构批次）**
+当前阶段：**RC1 冻结完成基线**
 
 当前状态：
 
@@ -21,72 +21,55 @@ NexusQuant 是面向数字资产交易场景的量化系统工程骨架，核心
 - GateG 已完成并冻结
 - GateG-FREEZE-FIX 已完成
 - GateG-FREEZE-E2E-FIX 已完成
-- GateH 已暂停，RC1 完成前不再推进 GateH 新功能
-- 当前主线只做结构收口、表结构重构、账户与凭证模型建立、模块边界整理、市场数据域落点、前端基础重构与全量验证
+- `RC1-0 / 1 / 2 / 3 / 4 / 5 / 6 / 7` 已全部完成
+- RC1 已整体完成并冻结
+- GateH 已暂停，尚未启动开发
+- 下一步不是 GateH 开发，而是 `GateH-PLAN`
 
 当前仓库入口代表：
 
-- `docs/current/REFACTOR_BATCH_RC1.md` 为 RC1 主卷宗
-- `docs/current/RC1_CHECKLIST.md` 为 RC1 验收清单
-- `GateH` 只保留为暂停卷宗，不再作为当前开发入口
+- `docs/current/REFACTOR_BATCH_RC1.md` 为 RC1 冻结说明
+- `docs/current/RC1_CHECKLIST.md` 为 RC1 最终 checklist
+- `GateH` 只保留为暂停卷宗，不是当前开发入口
 
 ---
 
-## 2. RC1 主目标
+## 2. 当前系统已具备的正式能力
 
-- 清理仓库中的无用产物、敏感文件、弃用配置与历史残留实现
-- 建立“用户 - 交易账户 - 凭证 - 环境（SIM/LIVE）”主模型
-- 将交易所凭证从全局 env/yml 切换为数据库密文存储 + 服务端管理 + 前端可配置
-- 收口 Java 模块边界：`nq-core / nq-api / nq-infra / nq-scheduler / nq-app`
-- 建立 `marketdata` 正式域与 Python 研究子工程骨架
-- 为前端建立正式账户上下文与账户/凭证管理入口
-- 增加 ArchUnit 约束与全量验证护栏
+- 用户 / 交易账户 / 凭证 / 环境主模型已成立
+- 默认账户上下文与 `/api/auth/me` 联动已成立
+- 账户与凭证写侧闭环已成立
+- 凭证 active 版本切换与结构性校验已成立
+- JDBC 实现与模块边界收口已完成
+- 后端业务域包结构收口已完成
+- `marketdata` 最小 ingest/query 真闭环已成立
+- `research -> backtest -> eval` 最小 DB-backed happy path 已成立
+- RC1-6 验证闭环已通过
 
 ---
 
-## 3. 当前入口
+## 3. RC1 未纳入范围
+
+- GateH 功能开发未启动
+- publish 深化不在 RC1 必达范围
+- 多交易所历史行情平台化不在 RC1 必达范围
+- research/front-end 深化不在 RC1 必达范围
+- 管理员跨用户账户/凭证运营能力未在 RC1 内展开
+- 凭证真实外网探活未纳入 RC1，当前为结构性校验
+- 更复杂的前端运营台与批量操作未纳入 RC1
+
+---
+
+## 4. 当前入口
 
 - 当前阶段入口：`docs/current/README.md`
-- RC1 主卷宗：`docs/current/REFACTOR_BATCH_RC1.md`
-- RC1 checklist：`docs/current/RC1_CHECKLIST.md`
-- 当前阶段模块边界：`docs/current/MODULES.md`
-- 当前阶段模板：`docs/current/WORK_TEMPLATE.md`
+- RC1 冻结说明：`docs/current/REFACTOR_BATCH_RC1.md`
+- RC1 最终 checklist：`docs/current/RC1_CHECKLIST.md`
+- 当前模块基线：`docs/current/MODULES.md`
 - GateH 暂停卷宗：`docs/gates/gate-h/README.md`
-- GateG 冻结卷宗：`docs/gates/gate-g/README.md`
-- GateF 冻结卷宗：`docs/gates/gate-f/README.md`
 
 ---
 
-## 4. 文档结构
+## 5. 下一步
 
-### 当前入口
-
-- `docs/current/README.md`
-- `docs/current/REFACTOR_BATCH_RC1.md`
-- `docs/current/RC1_CHECKLIST.md`
-- `docs/current/MODULES.md`
-- `docs/current/WORK_TEMPLATE.md`
-
-### 暂停 / 冻结卷宗
-
-- `docs/gates/gate-h/*`
-- `docs/gates/gate-g/*`
-- `docs/gates/gate-f/*`
-- `docs/gates/gate-e/*`
-
-### 更早历史冻结 Gate
-
-- `docs/gates/gate-a/`
-- `docs/gates/gate-b/`
-- `docs/gates/gate-c/`
-- `docs/gates/gate-d/`
-
----
-
-## 5. 当前建议顺序
-
-1. 先阅读 `docs/current/README.md`
-2. 再阅读 `docs/current/REFACTOR_BATCH_RC1.md`
-3. 再阅读 `docs/current/RC1_CHECKLIST.md`
-4. 再阅读 `docs/current/MODULES.md`
-5. 如需核对暂停边界或冻结基线，再回读 `docs/gates/gate-h/README.md` 与 `docs/gates/gate-g/WORK.md`
+下一步不是 GateH 开发，而是：**GateH-PLAN**。

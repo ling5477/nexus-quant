@@ -18,6 +18,11 @@ server:
   port: ${NQ_TEST_APP_PORT:18080}
 
 nq:
+  account:
+    credentials:
+      master-key: ${NQ_TEST_ACCOUNT_CREDENTIALS_MASTER_KEY:test-account-credentials-master-key-123456}
+      key-version: ${NQ_TEST_ACCOUNT_CREDENTIALS_KEY_VERSION:1}
+      verification-mode: ${NQ_TEST_ACCOUNT_CREDENTIALS_VERIFICATION_MODE:STRUCTURAL}
   security:
     issuer: ${NQ_TEST_SECURITY_ISSUER:nexus-quant-test}
     secret: ${NQ_TEST_SECURITY_SECRET:test-change-me-test-change-me-123456}

@@ -34,6 +34,13 @@ public class ExchangeAccountQueryService {
         }
         return exchangeAccountRepository.findDefaultByOwnerUserId(ownerUserId);
     }
+
+    public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) {
+        if (ownerUserId == null || ownerUserId <= 0 || exchangeAccountId == null || exchangeAccountId <= 0) {
+            return Optional.empty();
+        }
+        return exchangeAccountRepository.findByIdForOwner(ownerUserId, exchangeAccountId);
+    }
 }
 
 

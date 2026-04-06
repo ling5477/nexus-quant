@@ -1,41 +1,37 @@
-# Current Checklist（RC1）
+# Current Checklist（RC1 冻结）
 
-当前阶段：**RC1（项目收口重构批次）**
+当前状态：**RC1 已整体完成并冻结；`GateH = paused`；下一步 = `GateH-PLAN`。**
 
-当前状态：**GateH 已暂停；RC1-0 ~ RC1-6 进行中。**
+## 1. RC1 最终完成批次
 
----
+- [x] `RC1-0`：文档切换
+- [x] `RC1-1`：仓库清理
+- [x] `RC1-2`：表结构与账户/凭证主模型
+- [x] `RC1-3`：模块边界与 JDBC 收口
+- [x] `RC1-4`：账户与凭证写侧闭环
+- [x] `RC1-5`：marketdata / research 最小能力闭环
+- [x] `RC1-6`：全量验证闭环
+- [x] `RC1-7`：后端业务域包结构收口
 
-## 1. 冻结与暂停基线
+## 2. RC1 冻结基线能力
 
-- [x] GateF 已完成并冻结
-- [x] GateG 已完成并冻结
-- [x] GateH 已暂停
-- [x] RC1 完成前不恢复 GateH 新功能
+- [x] 用户 / 账户 / 凭证 / 环境主模型成立
+- [x] 默认账户上下文与 `/api/auth/me` 联动成立
+- [x] 账户与凭证写侧闭环成立
+- [x] JDBC 实现与模块边界收口完成
+- [x] `marketdata` 最小 ingest/query 真闭环成立
+- [x] `research -> backtest -> eval` 最小 happy path 成立
+- [x] 全量构建、测试、启动、E2E smoke 通过
 
-## 2. RC1 子批次
+## 3. RC1 未纳入范围
 
-- [x] RC1-0：文档切换
-- [x] RC1-1：仓库清理
-- [x] RC1-2：表结构与账户/凭证主模型
-- [~] RC1-3：Java 模块与包结构收口
-- [~] RC1-4：前端基础重构
-- [~] RC1-5：marketdata 域与 Python 研究骨架
-- [ ] RC1-6：残留清理、ArchUnit 与全量验证
+- [x] GateH 功能开发未启动
+- [x] publish 深化不在 RC1 必达范围
+- [x] 多交易所历史行情平台化不在 RC1 必达范围
+- [x] 更复杂的前端运营台与批量操作未纳入 RC1
 
-## 3. RC1 必达目标
+## 4. 后续入口
 
-- [ ] 支持一个用户多个交易所账户，且模拟盘/实盘分离
-- [ ] 凭证已进入数据库密文存储模型
-- [ ] `nq-core / nq-api / nq-infra / nq-scheduler / nq-app` 边界清晰
-- [ ] 前端存在正式账户上下文与账户/凭证管理入口
-- [ ] `marketdata` 域与 Python 研究骨架已建立
-- [ ] 历史残留实现与无用配置明显减少
-- [ ] 全量构建、测试、启动、E2E smoke 可通过
-
-## 4. 本阶段不做
-
-- [x] 不做 GateH 新功能
-- [x] 不做新交易所接入
-- [x] 不做复杂研究功能扩展
-- [x] 不做大规模 UI 美化
+- [x] `GateH = paused`
+- [x] GateH 尚未启动开发
+- [x] 后续必须先进入 `GateH-PLAN`

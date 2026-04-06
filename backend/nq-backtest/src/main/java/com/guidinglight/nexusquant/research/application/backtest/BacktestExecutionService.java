@@ -180,6 +180,7 @@ public class BacktestExecutionService {
             );
             bars = historicalMarketDataPort.loadBars(new HistoricalMarketDataQuery(
                     executionRequest.datasetSpec(),
+                    executionRequest.datasetSpec().exchangeCode(),
                     executionRequest.datasetSpec().symbol(),
                     executionRequest.datasetSpec().interval(),
                     executionRequest.startTime(),
@@ -374,14 +375,17 @@ public class BacktestExecutionService {
 
     private HistoricalDatasetSpec parseDatasetSpec(String datasetSpecJson) {
         JsonNode jsonNode = readJson(datasetSpecJson);
+        String exchangeCode = requiredText(jsonNode, "exchangeCode", "exchange");
         String symbol = requiredText(jsonNode, "symbol", "instrument");
         String interval = requiredText(jsonNode, "interval", "granularity");
         String provider = optionalText(jsonNode, "provider", "fixture");
-        String datasetId = optionalText(jsonNode, "datasetId", symbol + "-" + interval);
-        String resourcePath = optionalText(jsonNode, "resourcePath", DEFAULT_RESOURCE_PATH);
+        String datasetId = optionalText(jsonNode, "datasetId", exchangeCode + "-" + symbol + "-" + interval);
+        String defaultResourcePath = "db".equalsIgnoreCase(provider) ? "marketdata_bars" : DEFAULT_RESOURCE_PATH;
+        String resourcePath = optionalText(jsonNode, "resourcePath", defaultResourcePath);
         return new HistoricalDatasetSpec(
                 provider,
                 datasetId,
+                exchangeCode,
                 symbol,
                 BarInterval.fromWireValue(interval),
                 resourcePath

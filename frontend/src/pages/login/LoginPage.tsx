@@ -1,11 +1,10 @@
 import {LockOutlined, UserOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Form, Input, Space, Typography} from 'antd';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {useMutation} from '@tanstack/react-query';
 import {startTransition} from 'react';
 import {Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {authApi} from '@/api/auth';
-import {authQueryKeys} from '@/api/query-keys';
 import {formatApiError} from '@/api/errors';
 import {AppLoadingScreen} from '@/components/app/AppLoadingScreen';
 import {selectIsAuthenticated, useAuthStore} from '@/store/auth-store';
@@ -18,7 +17,6 @@ interface LoginFormValues {
 
 export function LoginPage() {
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
     const isAuthenticated = useAuthStore(selectIsAuthenticated);
     const bootstrapStatus = useAuthStore((state) => state.bootstrapStatus);
@@ -31,12 +29,10 @@ export function LoginPage() {
         mutationFn: authApi.login,
         onSuccess: (payload) => {
             startTransition(() => {
+                // Why:
+                // `/api/auth/me` 是默认账户上下文的唯一真源，登录成功后不能再把一个缺少 default 账户字段的
+                // 临时对象塞进 currentUser query cache，否则后续页面会被 stale cache 挡住，误判成“当前没有默认账户”。
                 setSession(payload);
-                queryClient.setQueryData(authQueryKeys.currentUser(payload.accessToken), {
-                    username: payload.username,
-                    roles: payload.roles,
-                    authenticated: true,
-                });
                 navigate(redirectTo, {replace: true});
             });
         },

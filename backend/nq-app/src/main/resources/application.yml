@@ -24,6 +24,11 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
 
 nq:
+  account:
+    credentials:
+      master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY:change-me-account-credentials-master-key-123456}
+      key-version: ${NQ_ACCOUNT_CREDENTIALS_KEY_VERSION:1}
+      verification-mode: ${NQ_ACCOUNT_CREDENTIALS_VERIFICATION_MODE:STRUCTURAL}
   security:
     issuer: ${NQ_SECURITY_ISSUER:nexus-quant}
     secret: ${NQ_SECURITY_SECRET:change-me-change-me-change-me-change-me}

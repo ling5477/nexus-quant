@@ -1,57 +1,51 @@
 # RC1_CHECKLIST
 
-当前状态：**进行中**
+当前状态：**RC1 已整体完成并冻结。**
 
-## RC1-0 文档切换
+## RC1 最终完成批次
 
-- [x] `README.md` 已切换到 RC1 口径
-- [x] `AGENTS.md` 已切换到 RC1 口径
-- [x] `docs/current/*` 已切换到 RC1 入口
-- [x] `docs/gates/gate-h/*` 已明确为暂停卷宗
+- [x] `RC1-0`：文档主线切换
+- [x] `RC1-1`：仓库清理
+- [x] `RC1-2`：用户 / 账户 / 凭证 / 环境主模型
+- [x] `RC1-3`：模块边界与 JDBC 收口
+- [x] `RC1-4`：账户与凭证写侧闭环
+- [x] `RC1-5`：marketdata / research 最小能力闭环
+- [x] `RC1-6`：全量验证闭环
+- [x] `RC1-7`：后端按业务域包结构收口
 
-## RC1-1 仓库清理
+## RC1 已交付能力
 
-- [x] 构建产物已删除
-- [x] 根目录敏感文件已移出仓库工作区
-- [x] `.gitignore` 已收口为精确忽略规则
-- [x] 弃用配置与无用脚本已完成首轮盘点
+- [x] 用户 / 交易账户 / 凭证 / 环境主模型已成立
+- [x] `/api/auth/me` 与默认账户上下文联动已成立
+- [x] 账户与凭证写侧闭环已成立
+- [x] 凭证 active 版本切换与结构性校验已成立
+- [x] JDBC 实现与模块边界收口已完成
+- [x] 后端业务域包结构收口已完成
+- [x] `marketdata` 最小 ingest / query 真闭环已成立
+- [x] `research -> backtest -> eval` 最小 DB-backed happy path 已成立
+- [x] `RC1-6` 验证闭环已通过
 
-## RC1-2 表结构重构
+## RC1 未纳入范围 / 刻意未做项
 
-- [x] `exchange_accounts` 已落地
-- [x] `exchange_account_credentials` 已落地
-- [x] 唯一约束与 active 凭证规则已落地
-- [x] migration 专用用户回填已落地
-- [ ] legacy 凭证导入工具已落地
+- [x] GateH 功能开发未启动
+- [x] publish 深化不在 RC1 必达范围
+- [x] 多交易所历史行情平台化不在 RC1 必达范围
+- [x] research front-end 深化不在 RC1 必达范围
+- [x] 管理员跨用户账户 / 凭证运营能力未在 RC1 内展开
+- [x] 凭证真实外网探活未纳入 RC1，当前为结构性校验
+- [x] 更复杂的前端运营台与批量操作未纳入 RC1
 
-## RC1-3 Java 模块与包结构收口
+## RC1 冻结约束
 
-- [ ] `nq-core` 不再包含 JDBC 实现
-- [x] `nq-api` 不再直接写 SQL
-- [x] controller 不再直接依赖 scheduler 具体实现
-- [~] `nq-app` 总装配已完成首轮拆分
-- [~] 六个业务域包结构已启动建立
+- [x] RC1 已完成并冻结
+- [x] 不允许回退 RC1 已确立的模块边界
+- [x] 不允许回退 RC1 已确立的业务域包结构
+- [x] 不允许回退账户 / 凭证 / 默认账户上下文主链
+- [x] 不允许回退 `marketdata / research` 最小能力闭环
 
-## RC1-4 前端基础重构
+## GateH 状态与后续入口
 
-- [x] 账户上下文 store 已建立
-- [x] header 上下文入口已建立
-- [x] `/accounts` 页面骨架已建立
-- [x] `trade-validation` 已切为上下文优先
-- [~] 巨型页面拆分已启动
-
-## RC1-5 marketdata 域与 Python 研究骨架
-
-- [x] `marketdata` 正式域已建立
-- [x] `marketdata_bars` 与最小 ingest/query 骨架已建立
-- [x] `research/py` 已升级为正式子工程
-- [x] `pytest / ruff / mypy` 骨架已建立
-
-## RC1-6 清理残留与全量验证
-
-- [ ] 历史残留实现已分类处理
-- [ ] ArchUnit 约束已建立
-- [ ] `mvn test` 通过
-- [ ] 前端 build 通过
-- [ ] E2E smoke 通过
-- [ ] migration 验证通过
+- [x] `GateH = paused`
+- [x] GateH 尚未启动开发
+- [x] 后续必须先进入 `GateH-PLAN`
+- [x] 不得绕过 `GateH-PLAN` 直接恢复 GateH 开发

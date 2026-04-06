@@ -5,12 +5,17 @@ import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * JdbcHistoricalMarketDataPort 提供 DB-backed historical bars 查询。
+ * <p>
+ * Why:
+ * RC1-5 要把 `exchangeCode` 纳入 marketdata canonical 查询口径，因此 JDBC 查询必须同步收口
+ * 到 `exchange_code + symbol + interval + range`，不能再依赖隐式默认交易所。
  */
 public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
 
@@ -24,8 +29,9 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
     public List<HistoricalBar> loadBars(HistoricalMarketDataQuery query) {
         return jdbcTemplate.query(
                 """
-                        SELECT symbol,
-                               interval,
+                        SELECT exchange_code,
+                               symbol,
+                               "interval",
                                open_time,
                                close_time,
                                open_price,
@@ -34,13 +40,15 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
                                close_price,
                                volume
                         FROM marketdata_bars
-                        WHERE symbol = ?
-                          AND interval = ?
+                        WHERE exchange_code = ?
+                          AND symbol = ?
+                          AND "interval" = ?
                           AND open_time >= ?
                           AND close_time <= ?
                         ORDER BY open_time
                         """,
                 (resultSet, rowNum) -> new HistoricalBar(
+                        resultSet.getString("exchange_code"),
                         resultSet.getString("symbol"),
                         BarInterval.fromWireValue(resultSet.getString("interval")),
                         resultSet.getTimestamp("open_time").toInstant(),
@@ -51,12 +59,11 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
                         resultSet.getBigDecimal("close_price"),
                         resultSet.getBigDecimal("volume")
                 ),
+                query.exchangeCode(),
                 query.symbol(),
                 query.interval().wireValue(),
-                query.startTime(),
-                query.endTime()
+                Timestamp.from(query.startTime()),
+                Timestamp.from(query.endTime())
         );
     }
 }
-
-

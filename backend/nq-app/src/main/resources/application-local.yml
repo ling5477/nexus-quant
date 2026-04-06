@@ -15,6 +15,12 @@ server:
   port: ${NQ_APP_PORT:18888}
 
 nq:
+  account:
+    credentials:
+      # Why: local 写侧闭环需要真实走 DB 密文路径，但不要求真实外网探活，因此默认启用结构性校验模式。
+      master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY:local-account-credentials-master-key-123456}
+      key-version: ${NQ_ACCOUNT_CREDENTIALS_KEY_VERSION:1}
+      verification-mode: ${NQ_ACCOUNT_CREDENTIALS_VERIFICATION_MODE:STRUCTURAL}
   security:
     issuer: ${NQ_SECURITY_ISSUER:nexus-quant-local}
     secret: ${NQ_SECURITY_SECRET:local-change-me-local-change-me-123456}

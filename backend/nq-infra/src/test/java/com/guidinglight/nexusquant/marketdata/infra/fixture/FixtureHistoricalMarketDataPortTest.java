@@ -20,10 +20,12 @@ class FixtureHistoricalMarketDataPortTest {
                 new HistoricalDatasetSpec(
                         "fixture",
                         "btcusdt-1m-sample",
+                        "BINANCE",
                         "BTCUSDT",
                         BarInterval.ONE_MINUTE,
                         "backtest/fixtures/btcusdt_1m_sample.csv"
                 ),
+                "BINANCE",
                 "BTCUSDT",
                 BarInterval.ONE_MINUTE,
                 Instant.parse("2025-01-01T00:01:00Z"),
@@ -31,9 +33,8 @@ class FixtureHistoricalMarketDataPortTest {
         ));
 
         assertEquals(4, bars.size());
+        assertEquals("BINANCE", bars.getFirst().exchangeCode());
         assertEquals(Instant.parse("2025-01-01T00:01:00Z"), bars.getFirst().openTime());
         assertEquals(Instant.parse("2025-01-01T00:04:59Z"), bars.getLast().closeTime());
     }
 }
-
-

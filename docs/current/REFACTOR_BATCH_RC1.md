@@ -1,39 +1,63 @@
 # RC1（项目收口重构批次）
 
-当前状态：**进行中**
+当前状态：**completed and frozen**
 
-## 1. 目标
+## 1. RC1 最终完成概述
 
-- 清理仓库中的无用产物、敏感文件、弃用配置、历史残留实现
-- 正式建立“用户 - 交易账户 - 凭证 - 环境（SIM/LIVE）”主模型
-- 将交易所凭证从全局 env/yml 配置模式切为数据库密文存储 + 服务端管理 + 前端可配置
-- 重构 Java 模块边界：`nq-core` 不再包含 JDBC 实现，`nq-api` 不再直接写 SQL，controller 不再直接依赖 scheduler 具体实现
-- 按业务域重整包结构，至少覆盖 `account / auth / strategy / trading / research / marketdata`
-- 建立 `marketdata` 正式域与 Python 研究子工程骨架
-- 建立前端账户上下文与账户/凭证管理入口
-- 补 ArchUnit 约束与全量验证
+RC1 已整体完成，`RC1-0 / 1 / 2 / 3 / 4 / 5 / 6 / 7` 全部完成。RC1 不再是进行中批次，当前仓库不再以“结构收口执行中”为主线，而是以 **RC1 冻结基线** 作为后续规划输入。
 
-## 2. 严格范围
+各子批次最终状态：
 
-- 不做 GateH 新功能
-- 不做新交易所接入
-- 不做复杂研究功能扩展
-- 不做大规模 UI 美化
-- compat drop 单独后续处理，RC1 只完成主读写切换与兼容层收口
+- `RC1-0`：完成 RC1 文档主线切换，`docs/current/*` 成为 source of truth。
+- `RC1-1`：完成仓库清理、无用产物与敏感残留移除。
+- `RC1-2`：完成用户 / 账户 / 凭证 / 环境主模型与数据库落库。
+- `RC1-3`：完成模块边界与 JDBC 实现收口，`nq-infra` 成为正式持久化承接层。
+- `RC1-4`：完成账户与凭证写侧闭环、默认账户上下文与 `/api/auth/me` 联动。
+- `RC1-5`：完成 `marketdata` 最小 ingest/query 真闭环，以及 `research -> backtest -> eval` 最小 DB-backed happy path。
+- `RC1-6`：完成 compile / test / E2E / Python 验证链闭环。
+- `RC1-7`：完成后端按业务域的包结构收口。
 
-## 3. 执行顺序
+## 2. RC1 冻结基线已交付能力
 
-1. `RC1-0`：文档切换
-2. `RC1-1`：仓库清理
-3. `RC1-2`：表结构重构
-4. `RC1-3`：Java 模块与包结构收口
-5. `RC1-4`：前端基础重构
-6. `RC1-5`：marketdata 域与 Python 研究骨架
-7. `RC1-6`：残留清理与全量验证
+当前系统已正式具备：
 
-## 4. 关键锁定规则
+- 表结构主模型收口完成。
+- DB-backed auth 已成立。
+- 用户 / 账户 / 凭证 / 默认账户上下文主链已成立。
+- 账户与凭证写侧闭环已成立。
+- 凭证 active 版本切换与结构性校验已成立。
+- JDBC 实现已收口到 `nq-infra`。
+- contracts 模块拆分已完成。
+- 后端按业务域包结构收口已完成。
+- `marketdata` 已具备最小 ingest/query 真闭环。
+- `research -> backtest -> eval` 已具备最小 DB-backed happy path。
+- `RC1-6` 验证链已闭环。
 
-- 正式运行 profile 禁止从 `.env` / `application*.yml` 直接读取交易所凭证作为主数据源
-- legacy env 只允许被显式导入工具读取
-- `trade_env` canonical 固定为 `SIM / LIVE`
-- `GateH` 保持暂停，待 RC1 完成后再重新规划
+## 3. RC1 边界与未纳入范围
+
+以下事项不是遗漏，而是 RC1 的明确边界控制：
+
+- GateH 功能开发未启动。
+- publish 深化不在 RC1 必达范围。
+- 多交易所历史行情平台化不在 RC1 必达范围。
+- research / front-end 深化不在 RC1 必达范围。
+- 管理员跨用户账户 / 凭证运营能力未在 RC1 内展开。
+- 凭证真实外网探活未纳入 RC1，当前为结构性校验。
+- 更复杂的前端运营台与批量操作未纳入 RC1。
+
+## 4. GateH 状态
+
+- `GateH = paused`
+- GateH 尚未启动开发。
+- 后续必须先进入 `GateH-PLAN`，再决定正式开工范围。
+- 任何后续功能开发不得绕过 `GateH-PLAN` 直接恢复 GateH。
+
+## 5. RC1 冻结约束
+
+- RC1 已冻结。
+- 不允许回退 RC1 已确立的模块边界、包结构、账户 / 凭证主链、marketdata / research 最小闭环。
+- 后续 GateH 只能在 RC1 冻结基线之上做增量规划。
+
+## 6. 后续入口
+
+当前下一步不是 GateH 开发，而是：**GateH-PLAN**。

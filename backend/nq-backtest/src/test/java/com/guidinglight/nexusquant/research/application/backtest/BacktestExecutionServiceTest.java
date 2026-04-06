@@ -64,7 +64,7 @@ class BacktestExecutionServiceTest {
         ));
 
         BacktestRun createdRun = scenario.createRun("""
-                {"provider":"fixture","datasetId":"btc-sample","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
+                {"provider":"db","datasetId":"BINANCE_BTCUSDT_1M_SAMPLE","exchangeCode":"BINANCE","resourcePath":"marketdata_bars","symbol":"BTCUSDT","interval":"1m"}
                 """);
         var result = scenario.backtestExecutionService.startRun(createdRun.backtestRunId());
         BacktestRun updatedRun = scenario.backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
@@ -92,10 +92,28 @@ class BacktestExecutionServiceTest {
     }
 
     @Test
+    void shouldForwardExchangeCodeWhenDatasetSpecUsesDbProvider() {
+        CapturingHistoricalMarketDataPort historicalMarketDataPort = new CapturingHistoricalMarketDataPort(List.of(
+                bar("2025-01-01T00:00:00Z", "2025-01-01T00:00:59Z", "43000", "43010", "10")
+        ));
+        Scenario scenario = createScenario(historicalMarketDataPort);
+
+        BacktestRun createdRun = scenario.createRun("""
+                {"provider":"db","datasetId":"BINANCE_BTCUSDT_1M_SAMPLE","exchangeCode":"BINANCE","resourcePath":"marketdata_bars","symbol":"BTCUSDT","interval":"1m"}
+                """);
+        scenario.backtestExecutionService.startRun(createdRun.backtestRunId());
+
+        assertEquals("BINANCE", historicalMarketDataPort.lastQuery.exchangeCode());
+        assertEquals("BINANCE", historicalMarketDataPort.lastQuery.datasetSpec().exchangeCode());
+        assertEquals("db", historicalMarketDataPort.lastQuery.datasetSpec().provider());
+        assertEquals("marketdata_bars", historicalMarketDataPort.lastQuery.datasetSpec().resourcePath());
+    }
+
+    @Test
     void shouldMarkFailedWhenNoBarsReturned() {
         Scenario scenario = createScenario(query -> List.of());
         BacktestRun createdRun = scenario.createRun("""
-                {"provider":"fixture","datasetId":"btc-empty","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
+                {"provider":"fixture","datasetId":"btc-empty","exchangeCode":"BINANCE","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
                 """);
 
         assertThrows(IllegalStateException.class, () -> scenario.backtestExecutionService.startRun(createdRun.backtestRunId()));
@@ -109,7 +127,7 @@ class BacktestExecutionServiceTest {
     void shouldMarkFailedWhenDatasetSpecIsInvalid() {
         Scenario scenario = createScenario(query -> List.of());
         BacktestRun createdRun = scenario.createRun("""
-                {"provider":"fixture","datasetId":"btc-invalid","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","interval":"1m"}
+                {"provider":"fixture","datasetId":"btc-invalid","exchangeCode":"BINANCE","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","interval":"1m"}
                 """);
 
         assertThrows(IllegalStateException.class, () -> scenario.backtestExecutionService.startRun(createdRun.backtestRunId()));
@@ -189,7 +207,7 @@ class BacktestExecutionServiceTest {
                 "{}",
                 "{}",
                 """
-                {"provider":"fixture","datasetId":"btc-sample","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
+                {"provider":"fixture","datasetId":"btc-sample","exchangeCode":"BINANCE","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
                 """
         ));
         BacktestConfig backtestConfig = backtestConfigService.create(new BacktestConfigCreateRequest(
@@ -286,6 +304,7 @@ class BacktestExecutionServiceTest {
 
     private HistoricalBar bar(String openTime, String closeTime, String openPrice, String closePrice, String volume) {
         return new HistoricalBar(
+                "BINANCE",
                 "BTCUSDT",
                 BarInterval.ONE_MINUTE,
                 Instant.parse(openTime),
@@ -296,6 +315,21 @@ class BacktestExecutionServiceTest {
                 new BigDecimal(closePrice),
                 new BigDecimal(volume)
         );
+    }
+
+    private static final class CapturingHistoricalMarketDataPort implements HistoricalMarketDataPort {
+        private final List<HistoricalBar> bars;
+        private HistoricalMarketDataQuery lastQuery;
+
+        private CapturingHistoricalMarketDataPort(List<HistoricalBar> bars) {
+            this.bars = bars;
+        }
+
+        @Override
+        public List<HistoricalBar> loadBars(HistoricalMarketDataQuery query) {
+            this.lastQuery = query;
+            return bars;
+        }
     }
 
     private record Scenario(

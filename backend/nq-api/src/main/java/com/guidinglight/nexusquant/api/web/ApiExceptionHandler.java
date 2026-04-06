@@ -1,13 +1,11 @@
 package com.guidinglight.nexusquant.api.web;
 
-import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialNotFoundException;
+import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundException;
 import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
+import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-
-import java.time.Instant;
-import java.util.List;
-
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +21,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+import java.util.List;
 
 /**
  * ApiExceptionHandler 统一处理 `nq-api` 的对外异常映射。
@@ -96,6 +97,12 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiErrorResponse handleAdminNotInitializedException(AdminNotInitializedException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, "ADMIN_NOT_INITIALIZED", ex.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler({ExchangeAccountNotFoundException.class, ExchangeAccountCredentialNotFoundException.class})
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiErrorResponse handleExchangeAccountNotFound(RuntimeException ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage(), request, List.of());
     }
 
     @ExceptionHandler({BadCredentialsException.class, AuthenticationCredentialsNotFoundException.class})

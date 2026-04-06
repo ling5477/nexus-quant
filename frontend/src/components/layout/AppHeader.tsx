@@ -7,12 +7,10 @@ import {
 import {Button, Dropdown, Space, Tag, Typography} from 'antd';
 import {useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {useQuery} from '@tanstack/react-query';
-import {useQueryClient} from '@tanstack/react-query';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {accountsApi} from '@/api/accounts';
-import {authQueryKeys} from '@/api/query-keys';
-import {accountQueryKeys} from '@/api/query-keys';
+import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
 import type {ExchangeAccountSummary} from '@/types/accounts';
 import {useAuthStore} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
@@ -42,19 +40,21 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
         enabled: Boolean(accessToken),
     });
 
-    const selectedAccount = (accountsQuery.data ?? []).find((item) => item.exchangeAccountId === selectedExchangeAccountId)
-        ?? (accountsQuery.data ?? []).find((item) => item.exchangeAccountId === currentUser?.defaultExchangeAccountId)
-        ?? (accountsQuery.data ?? []).find((item) => item.isDefault);
+    const defaultAccount = (accountsQuery.data ?? []).find((item) => item.exchangeAccountId === currentUser?.defaultExchangeAccountId)
+        ?? (accountsQuery.data ?? []).find((item) => item.isDefault)
+        ?? null;
 
     useEffect(() => {
-        if (!selectedAccount) {
+        if (defaultAccount) {
+            if (selectedExchangeAccountId !== defaultAccount.exchangeAccountId) {
+                setSelectedAccount(defaultAccount);
+            }
             return;
         }
-        if (selectedExchangeAccountId === selectedAccount.exchangeAccountId) {
-            return;
+        if (!currentUser?.defaultExchangeAccountId && selectedExchangeAccountId !== null) {
+            clearAccountContext();
         }
-        setSelectedAccount(selectedAccount);
-    }, [selectedAccount, selectedExchangeAccountId, setSelectedAccount]);
+    }, [clearAccountContext, currentUser?.defaultExchangeAccountId, defaultAccount, selectedExchangeAccountId, setSelectedAccount]);
 
     const handleLogout = () => {
         clearAuth('manual');
@@ -65,9 +65,15 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
 
     const accountItems = (accountsQuery.data ?? []).map((item: ExchangeAccountSummary) => ({
         key: String(item.exchangeAccountId),
-        label: `${item.exchangeCode} / ${item.tradeEnv} / ${item.accountAlias}`,
-        onClick: () => setSelectedAccount(item),
+        label: `${item.exchangeCode} / ${item.tradeEnv} / ${item.accountAlias}${item.isDefault ? '（默认）' : ''}`,
+        disabled: true,
     }));
+
+    const accountLabel = currentUser?.defaultExchangeAccountId && currentUser.defaultExchangeCode && currentUser.defaultTradeEnv
+        ? `${currentUser.defaultExchangeCode} / ${currentUser.defaultTradeEnv} / ${currentUser.defaultAccountAlias ?? '-'}`
+        : selectedExchangeAccountId && exchangeCode && tradeEnv
+            ? `${exchangeCode} / ${tradeEnv} / ${accountAlias ?? '-'}`
+            : '选择账户上下文';
 
     return (
         <header className="app-shell__header">
@@ -88,7 +94,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                 <Tag color="cyan">{appEnv.envLabel}</Tag>
                 <Dropdown menu={{items: accountItems}} trigger={['click']} disabled={accountItems.length === 0}>
                     <Button>
-                        {selectedExchangeAccountId ? `${exchangeCode} / ${tradeEnv} / ${accountAlias}` : '选择账户上下文'} <DownOutlined/>
+                        {accountLabel} <DownOutlined/>
                     </Button>
                 </Dropdown>
                 <Space size={8} wrap>

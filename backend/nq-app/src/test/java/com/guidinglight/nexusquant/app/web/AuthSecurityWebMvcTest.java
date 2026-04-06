@@ -198,6 +198,20 @@ class AuthSecurityWebMvcTest {
     }
 
     @Test
+    void shouldReturnNullDefaultAccountWhenUserHasNoDefaultAccount() throws Exception {
+        when(exchangeAccountQueryService.findDefaultByOwnerUserId(1L)).thenReturn(Optional.empty());
+        String token = loginAndExtractToken("admin", "ChangeMe123!");
+        mockMvc.perform(get("/api/auth/me")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-me-no-default")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.defaultExchangeAccountId").isEmpty())
+                .andExpect(jsonPath("$.defaultExchangeCode").isEmpty())
+                .andExpect(jsonPath("$.defaultTradeEnv").isEmpty())
+                .andExpect(jsonPath("$.defaultAccountAlias").isEmpty());
+    }
+
+    @Test
     void shouldReturnUnauthorizedWhenTokenMissing() throws Exception {
         mockMvc.perform(get("/api/trading/orders/ord-1")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-auth-401"))
