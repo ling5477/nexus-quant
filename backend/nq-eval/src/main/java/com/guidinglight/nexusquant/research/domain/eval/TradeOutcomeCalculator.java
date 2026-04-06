@@ -6,12 +6,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-import org.springframework.stereotype.Component;
 
 /**
  * TradeOutcomeCalculator 负责基于已闭合成交重建最小 trade outcomes。
  */
-@Component
 public class TradeOutcomeCalculator {
 
     public Result calculate(List<SimTrade> simTrades) {

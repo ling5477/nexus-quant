@@ -14,8 +14,8 @@ import com.guidinglight.nexusquant.trading.application.routing.AdapterRouter;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 

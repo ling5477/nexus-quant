@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 
 /**
  * TradeLedgerGateway 抽象 scheduler 到 ledger 的调用。

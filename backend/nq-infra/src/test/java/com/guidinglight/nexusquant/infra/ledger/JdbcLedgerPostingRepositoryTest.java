@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.contracts.model.LedgerDirection;
-import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
-import com.guidinglight.nexusquant.ledger.model.PositionProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
+import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
 
 import java.math.BigDecimal;
 import java.time.Instant;

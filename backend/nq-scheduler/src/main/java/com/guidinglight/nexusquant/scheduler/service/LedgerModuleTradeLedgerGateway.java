@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
-import com.guidinglight.nexusquant.ledger.service.TradeLedgerPostingService;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
 import java.util.Objects;
 import org.springframework.stereotype.Component;
 
@@ -12,20 +12,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class LedgerModuleTradeLedgerGateway implements TradeLedgerGateway {
 
-    private final TradeLedgerPostingService tradeLedgerPostingService;
+    private final TradeLedgerPort tradeLedgerPort;
 
     /**
-     * @param tradeLedgerPostingService ledger 记账编排服务
+     * @param tradeLedgerPort ledger contracts 写侧端口
      */
-    public LedgerModuleTradeLedgerGateway(TradeLedgerPostingService tradeLedgerPostingService) {
-        this.tradeLedgerPostingService = Objects.requireNonNull(
-                tradeLedgerPostingService,
-                "tradeLedgerPostingService must not be null"
+    public LedgerModuleTradeLedgerGateway(TradeLedgerPort tradeLedgerPort) {
+        this.tradeLedgerPort = Objects.requireNonNull(
+                tradeLedgerPort,
+                "tradeLedgerPort must not be null"
         );
     }
 
     @Override
     public LedgerPostingResult postTrade(TradeLedgerRequest request) {
-        return tradeLedgerPostingService.postTrade(request);
+        return tradeLedgerPort.postTrade(request);
     }
 }

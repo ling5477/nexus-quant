@@ -11,7 +11,7 @@ import com.guidinglight.nexusquant.research.domain.BacktestRun;
 import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 import com.guidinglight.nexusquant.research.domain.SourceStrategySnapshot;
-import com.guidinglight.nexusquant.research.application.backtest.BacktestConfigService;
+import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
 import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;

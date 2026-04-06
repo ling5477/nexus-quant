@@ -215,7 +215,7 @@ export function StrategiesPage() {
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="交易环境" name="tradeEnv">
-                                    <Input placeholder="例如：DOME / REAL"/>
+                                    <Input placeholder="例如：SIM / LIVE"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>

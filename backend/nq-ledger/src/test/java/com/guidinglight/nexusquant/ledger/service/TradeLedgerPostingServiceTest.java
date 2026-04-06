@@ -12,11 +12,11 @@ import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
-import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.ledger.model.PositionProjection;
-import com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
 

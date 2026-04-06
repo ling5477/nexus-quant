@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
-import com.guidinglight.nexusquant.research.domain.eval.BacktestEvaluationView;
+import com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView;
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.domain.ExecutionStrategyDefinitionDraft;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;

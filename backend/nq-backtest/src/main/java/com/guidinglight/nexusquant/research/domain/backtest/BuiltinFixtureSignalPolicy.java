@@ -8,7 +8,6 @@ import com.guidinglight.nexusquant.research.domain.backtest.SignalIntentType;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import org.springframework.stereotype.Service;
 
 /**
  * BuiltinFixtureSignalPolicy 提供 GateF-3 的最小内建策略意图。
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
  * Why:
  * 本批不接 Python runtime bridge，但必须把 sim_* 事实链跑通，因此使用稳定可复现的内建 fixture 策略作为过渡。
  */
-@Service
 public class BuiltinFixtureSignalPolicy implements BacktestSignalPolicy {
 
     private static final String BUY_AND_HOLD_FIXTURE = "BUY_AND_HOLD_FIXTURE";

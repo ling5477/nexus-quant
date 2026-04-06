@@ -7,7 +7,12 @@ import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.*;
 import com.guidinglight.nexusquant.contracts.model.LedgerDirection;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
-import com.guidinglight.nexusquant.ledger.model.*;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
+import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
+import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
 import org.springframework.stereotype.Service;
@@ -27,7 +32,7 @@ import java.util.*;
  * 否则容易出现“分录成功但事件缺失”或“仓位更新重复”等不可恢复偏差。
  */
 @Service
-public class TradeLedgerPostingService {
+public class TradeLedgerPostingService implements TradeLedgerPort {
 
     private static final String SOURCE = "nq-ledger.trade-posting";
 
@@ -68,6 +73,7 @@ public class TradeLedgerPostingService {
      * @param request 成交记账请求
      * @return 记账结果
      */
+    @Override
     @Transactional
     public LedgerPostingResult postTrade(TradeLedgerRequest request) {
         validateRequest(request);
@@ -279,7 +285,7 @@ public class TradeLedgerPostingService {
      * 写入本地最小账户快照。
      * <p>
      * Why:
-     * 第五批要打通 `/__gated/accounts/{accountId}`，而当前 PAPER 成交后只有 ledger_entries 与 positions，
+     * RC1 要打通 `/api/trading/accounts/{accountId}`，而当前 PAPER 成交后只有 ledger_entries 与 positions，
      * 没有任何 `account_snapshots` 写入。这里按“base 资产来自持仓投影、quote/fee 资产来自账本余额”的
      * 最小口径补快照，先让本地读链可验证，再留待后续真实交易所同步路径继续细化。
      *

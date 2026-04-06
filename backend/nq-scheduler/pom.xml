@@ -28,7 +28,7 @@
         </dependency>
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
-            <artifactId>nq-ledger</artifactId>
+            <artifactId>nq-ledger-contracts</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

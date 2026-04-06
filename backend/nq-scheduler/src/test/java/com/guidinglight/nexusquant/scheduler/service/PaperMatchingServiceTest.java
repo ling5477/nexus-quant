@@ -241,10 +241,10 @@ class PaperMatchingServiceTest {
 
     private static final class AlwaysPostedLedgerGateway implements TradeLedgerGateway {
         @Override
-        public com.guidinglight.nexusquant.ledger.model.LedgerPostingResult postTrade(
-                com.guidinglight.nexusquant.ledger.model.TradeLedgerRequest request
+        public com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult postTrade(
+                com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest request
         ) {
-            return new com.guidinglight.nexusquant.ledger.model.LedgerPostingResult(true, false, "POSTED");
+            return new com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult(true, false, "POSTED");
         }
     }
 

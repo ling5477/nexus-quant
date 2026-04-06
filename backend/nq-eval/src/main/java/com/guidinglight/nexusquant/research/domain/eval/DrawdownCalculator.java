@@ -6,12 +6,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-import org.springframework.stereotype.Component;
 
 /**
  * DrawdownCalculator 负责基于 equity 序列计算最大回撤。
  */
-@Component
 public class DrawdownCalculator {
 
     public Result calculate(List<SimPnlSnapshot> simPnlSnapshots) {

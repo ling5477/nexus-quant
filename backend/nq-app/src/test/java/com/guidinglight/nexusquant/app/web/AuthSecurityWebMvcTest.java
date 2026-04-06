@@ -15,9 +15,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.auth.api.web.AuthController;
-import com.guidinglight.nexusquant.trading.api.web.OrderView;
+import com.guidinglight.nexusquant.trading.application.query.OrderQueryView;
 import com.guidinglight.nexusquant.trading.api.web.TradingVerificationController;
-import com.guidinglight.nexusquant.auth.infra.config.SecurityConfiguration;
+import com.guidinglight.nexusquant.app.config.auth.SecurityConfiguration;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
@@ -265,7 +265,7 @@ class AuthSecurityWebMvcTest {
     @Test
     void shouldAllowAuthenticatedGetRequest() throws Exception {
         String token = loginAndExtractToken("viewer", "ChangeMe123!");
-        when(tradingQueryFacade.queryOrder(eq("ord-1"), eq("trc-auth-get"))).thenReturn(Optional.of(new OrderView(
+        when(tradingQueryFacade.queryOrder(eq("ord-1"), eq("trc-auth-get"))).thenReturn(Optional.of(new OrderQueryView(
                 "ord-1",
                 1001L,
                 "PAPER",

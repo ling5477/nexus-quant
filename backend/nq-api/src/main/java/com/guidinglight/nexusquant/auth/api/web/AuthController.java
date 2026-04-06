@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.auth.api.web;
 
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginRequestBody;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginResponse;
 import com.guidinglight.nexusquant.auth.api.dto.CurrentUserResponse;
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
-import com.guidinglight.nexusquant.auth.application.command.LoginRequest;
 import com.guidinglight.nexusquant.auth.application.AuthService;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
-import com.guidinglight.nexusquant.auth.application.GatewayAuthFacade;
+import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.command.LoginRequest;
+import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,16 +17,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-
-import java.util.Objects;
-
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 /**
  * AuthController 提供正式登录与当前用户查询接口。

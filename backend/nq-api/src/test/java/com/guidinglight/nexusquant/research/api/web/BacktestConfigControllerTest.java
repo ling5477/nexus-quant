@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.guidinglight.nexusquant.research.application.backtest.BacktestConfigApiService;
+import com.guidinglight.nexusquant.research.api.application.backtest.BacktestConfigApiService;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;

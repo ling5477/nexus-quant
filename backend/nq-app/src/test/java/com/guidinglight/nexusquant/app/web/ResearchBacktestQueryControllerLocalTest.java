@@ -6,14 +6,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.guidinglight.nexusquant.research.application.backtest.BacktestConfigApiService;
-import com.guidinglight.nexusquant.research.application.backtest.BacktestRunApiService;
-import com.guidinglight.nexusquant.research.application.ResearchConfigApiService;
+import com.guidinglight.nexusquant.research.api.application.backtest.BacktestConfigApiService;
+import com.guidinglight.nexusquant.research.api.application.backtest.BacktestRunApiService;
+import com.guidinglight.nexusquant.research.api.application.ResearchConfigApiService;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.research.api.web.BacktestConfigController;
 import com.guidinglight.nexusquant.research.api.web.BacktestRunController;
 import com.guidinglight.nexusquant.research.api.web.ResearchConfigController;
-import com.guidinglight.nexusquant.auth.infra.config.SecurityConfiguration;
+import com.guidinglight.nexusquant.app.config.auth.SecurityConfiguration;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;

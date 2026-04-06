@@ -13,15 +13,15 @@ import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerSer
 import com.guidinglight.nexusquant.strategy.application.StrategyRunQueryService;
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanService;
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleService;
-import com.guidinglight.nexusquant.trading.api.web.AccountBalanceView;
-import com.guidinglight.nexusquant.trading.api.web.AccountView;
+import com.guidinglight.nexusquant.trading.application.query.AccountBalanceQueryView;
+import com.guidinglight.nexusquant.trading.application.query.AccountQueryView;
 import com.guidinglight.nexusquant.trading.api.web.OrderCancelRequestBody;
 import com.guidinglight.nexusquant.trading.api.web.OrderSubmitRequest;
-import com.guidinglight.nexusquant.trading.api.web.OrderView;
-import com.guidinglight.nexusquant.trading.api.web.PositionView;
+import com.guidinglight.nexusquant.trading.application.query.OrderQueryView;
+import com.guidinglight.nexusquant.trading.application.query.PositionQueryView;
 import com.guidinglight.nexusquant.trading.api.web.ReconcileRunOnceRequest;
 import com.guidinglight.nexusquant.trading.api.web.RecoveryRunOnceRequest;
-import com.guidinglight.nexusquant.trading.api.web.TradeView;
+import com.guidinglight.nexusquant.trading.application.query.TradeQueryView;
 import com.guidinglight.nexusquant.trading.api.web.TradingVerificationController;
 import com.guidinglight.nexusquant.trading.application.CancelOrderResult;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
@@ -198,7 +198,7 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldExposeCanonicalQueryRoutes() throws Exception {
-        when(tradingQueryFacade.queryOrder(eq("ord-9"), eq("trc-local-6"))).thenReturn(Optional.of(new OrderView(
+        when(tradingQueryFacade.queryOrder(eq("ord-9"), eq("trc-local-6"))).thenReturn(Optional.of(new OrderQueryView(
                 "ord-9",
                 1001L,
                 "PAPER",
@@ -210,7 +210,7 @@ class TradingVerificationControllerLocalTest {
                 OrderStatus.ACCEPTED,
                 "trc-order-9"
         )));
-        when(tradingQueryFacade.queryLatestTrade(eq("ord-9"), eq("trc-local-6"))).thenReturn(Optional.of(new TradeView(
+        when(tradingQueryFacade.queryLatestTrade(eq("ord-9"), eq("trc-local-6"))).thenReturn(Optional.of(new TradeQueryView(
                 "trd-9",
                 "ord-9",
                 1001L,
@@ -225,7 +225,7 @@ class TradingVerificationControllerLocalTest {
                 Instant.parse("2026-03-12T08:00:00Z"),
                 "trc-trade-9"
         )));
-        when(tradingQueryFacade.queryPosition(eq(1001L), eq("BTC-USDT"), eq("trc-local-6"))).thenReturn(Optional.of(new PositionView(
+        when(tradingQueryFacade.queryPosition(eq(1001L), eq("BTC-USDT"), eq("trc-local-6"))).thenReturn(Optional.of(new PositionQueryView(
                 1001L,
                 "PAPER",
                 "BTC-USDT",
@@ -234,11 +234,11 @@ class TradingVerificationControllerLocalTest {
                 new BigDecimal("100.50"),
                 "trc-position-9"
         )));
-        when(tradingQueryFacade.queryAccount(eq(1001L), eq("trc-local-6"))).thenReturn(Optional.of(new AccountView(
+        when(tradingQueryFacade.queryAccount(eq(1001L), eq("trc-local-6"))).thenReturn(Optional.of(new AccountQueryView(
                 1001L,
                 "PAPER",
                 List.of(
-                        new AccountBalanceView(
+                        new AccountBalanceQueryView(
                                 "BTC",
                                 new BigDecimal("0.01400000"),
                                 new BigDecimal("0.01400000"),
@@ -246,7 +246,7 @@ class TradingVerificationControllerLocalTest {
                                 Instant.parse("2026-03-12T08:00:01Z"),
                                 "trc-account-9"
                         ),
-                        new AccountBalanceView(
+                        new AccountBalanceQueryView(
                                 "USDT",
                                 new BigDecimal("0.00000000"),
                                 new BigDecimal("0.00000000"),

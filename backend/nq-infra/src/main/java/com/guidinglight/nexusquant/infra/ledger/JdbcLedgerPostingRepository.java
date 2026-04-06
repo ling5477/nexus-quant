@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.infra.ledger;
 
-import com.guidinglight.nexusquant.ledger.model.AccountSnapshotProjection;
-import com.guidinglight.nexusquant.ledger.model.LedgerPostingEntry;
-import com.guidinglight.nexusquant.ledger.model.PositionProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
+import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 
 import java.math.BigDecimal;

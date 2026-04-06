@@ -78,6 +78,18 @@ public class TradingVerificationController {
     public OrderView queryOrder(@PathVariable @NotBlank(message = "orderId must not be blank") String orderId) {
         String traceId = TraceIdContext.getOrCreate();
         return tradingQueryFacade.queryOrder(orderId, traceId)
+                .map(queryView -> new OrderView(
+                        queryView.orderId(),
+                        queryView.accountId(),
+                        queryView.venue(),
+                        queryView.symbol(),
+                        queryView.clientOrderId(),
+                        queryView.externalOrderId(),
+                        queryView.price(),
+                        queryView.quantity(),
+                        queryView.status(),
+                        queryView.traceId()
+                ))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "order not found: " + orderId));
     }
 
@@ -91,6 +103,21 @@ public class TradingVerificationController {
     public TradeView queryLatestTrade(@PathVariable @NotBlank(message = "orderId must not be blank") String orderId) {
         String traceId = TraceIdContext.getOrCreate();
         return tradingQueryFacade.queryLatestTrade(orderId, traceId)
+                .map(queryView -> new TradeView(
+                        queryView.tradeId(),
+                        queryView.orderId(),
+                        queryView.accountId(),
+                        queryView.venue(),
+                        queryView.symbol(),
+                        queryView.externalOrderId(),
+                        queryView.exchangeTradeId(),
+                        queryView.price(),
+                        queryView.quantity(),
+                        queryView.fee(),
+                        queryView.feeCurrency(),
+                        queryView.tradeTs(),
+                        queryView.traceId()
+                ))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "trade not found for order: " + orderId));
     }
 
@@ -107,6 +134,15 @@ public class TradingVerificationController {
     ) {
         String traceId = TraceIdContext.getOrCreate();
         return tradingQueryFacade.queryPosition(accountId, symbol, traceId)
+                .map(queryView -> new PositionView(
+                        queryView.accountId(),
+                        queryView.venue(),
+                        queryView.symbol(),
+                        queryView.quantity(),
+                        queryView.availableQuantity(),
+                        queryView.avgPrice(),
+                        queryView.traceId()
+                ))
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "position not found: accountId=" + accountId + ", symbol=" + symbol
@@ -123,6 +159,21 @@ public class TradingVerificationController {
     public AccountView queryAccount(@PathVariable @Positive(message = "accountId must be positive") Long accountId) {
         String traceId = TraceIdContext.getOrCreate();
         return tradingQueryFacade.queryAccount(accountId, traceId)
+                .map(queryView -> new AccountView(
+                        queryView.accountId(),
+                        queryView.venue(),
+                        queryView.balances().stream()
+                                .map(balance -> new AccountBalanceView(
+                                        balance.currency(),
+                                        balance.balance(),
+                                        balance.available(),
+                                        balance.frozen(),
+                                        balance.snapshotTs(),
+                                        balance.traceId()
+                                ))
+                                .toList(),
+                        queryView.traceId()
+                ))
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "account snapshot not found: accountId=" + accountId

@@ -9,7 +9,7 @@ import com.guidinglight.nexusquant.research.domain.eval.port.SimPnlSnapshotQuery
 import com.guidinglight.nexusquant.research.domain.eval.port.SimPositionQueryRepository;
 import com.guidinglight.nexusquant.research.domain.eval.port.SimTradeQueryRepository;
 import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
-import com.guidinglight.nexusquant.research.application.backtest.BacktestConfigService;
+import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 import com.guidinglight.nexusquant.research.application.BacktestRunService;
 
 import java.math.BigDecimal;

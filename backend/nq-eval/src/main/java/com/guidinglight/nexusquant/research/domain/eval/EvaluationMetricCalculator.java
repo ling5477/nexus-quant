@@ -13,12 +13,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.stereotype.Component;
 
 /**
  * EvaluationMetricCalculator 负责基于 sim_* 事实计算 run 级评估报告。
  */
-@Component
 public class EvaluationMetricCalculator {
 
     private final DrawdownCalculator drawdownCalculator;

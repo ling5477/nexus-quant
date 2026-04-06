@@ -8,12 +8,10 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.stereotype.Component;
 
 /**
  * SharpeCalculator 负责计算非年化 SharpeRatio。
  */
-@Component
 public class SharpeCalculator {
 
     private static final MathContext MATH_CONTEXT = new MathContext(18, RoundingMode.HALF_UP);

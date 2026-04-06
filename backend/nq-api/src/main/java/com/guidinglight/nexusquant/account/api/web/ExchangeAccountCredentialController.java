@@ -8,7 +8,7 @@ import com.guidinglight.nexusquant.account.application.ExchangeAccountCredential
 import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
-import com.guidinglight.nexusquant.auth.application.GatewayAuthFacade;
+import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.research.api.web;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
-import com.guidinglight.nexusquant.research.application.ResearchConfigApiService;
+import com.guidinglight.nexusquant.research.api.application.ResearchConfigApiService;
 import com.guidinglight.nexusquant.research.api.dto.ResearchConfigCreateRequestBody;
 import com.guidinglight.nexusquant.research.api.dto.ResearchConfigResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;

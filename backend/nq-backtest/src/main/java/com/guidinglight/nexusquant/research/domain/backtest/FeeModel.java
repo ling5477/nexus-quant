@@ -3,7 +3,6 @@ package com.guidinglight.nexusquant.research.domain.backtest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-import org.springframework.stereotype.Component;
 
 /**
  * FeeModel 提供 GateF-3 的最小手续费计算。
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Component;
  * Why:
  * 手续费必须成为独立口径对象，后续费率模型扩展时才不需要回头拆模拟执行主链。
  */
-@Component
 public class FeeModel {
 
     public BigDecimal calculate(BigDecimal tradeNotional, BigDecimal feeRate) {
