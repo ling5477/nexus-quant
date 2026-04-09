@@ -126,11 +126,13 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 - 涉及当前项目的检索、读取、编辑、重构、运行、结构分析：**优先使用 `idea-mcp`**。
 - 任何工具调用必须遵循：**最小权限、最小改动、可审计**。
 - 不允许“只描述不执行”：能用工具验证的结论必须用工具验证。
+- 工具分层固定为：**工程主操作 MCP > 浏览器/数据库/容器辅助 MCP > 外部检索 MCP > Skills 路由**。
+- `iCSS` 是 **MCP**，不是 skill；只能作为 CSS/视觉实现辅助，不能替代主 skill。
 
 ### 0.1 强制 projectPath（避免多窗口/多项目误操作）
 - 调用 `idea-mcp` 的任何工具时，若该工具支持 `projectPath` 参数，必须显式传入。
 - `projectPath` 取值规则（按优先级）：
-  1) 若本仓库已约定根目录变量：`{{PROJECT_ROOT}}`（推荐在启动脚本或说明中固定）
+  1) 若本仓库已约定根目录变量：`{{PROJECT_ROOT}}`
   2) 否则通过 `get_repositories` / `list_directory_tree` 推断当前打开仓库根路径，并在后续调用中固定使用同一个 `projectPath`
 - 若无法确定唯一 `projectPath`（多窗口/多项目歧义），必须停止自动修改，只给出明确的人工选择步骤。
 
@@ -142,6 +144,8 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 - `infra/**`
 - `docs/**`
 - `.github/**`
+- `.agents/**`
+- `.codex/**`
 - `codex/**`
 - `scripts/**`
 
@@ -150,7 +154,7 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 - `**/*.iml`、`**/*.class`、`**/*.jar`
 - 任何明显的生成产物、缓存目录、IDE 配置目录
 
-若任务要求修改白名单之外路径：必须先在回复中说明风险与原因，并等待用户明确授权后再执行。
+若任务要求修改白名单之外路径：必须先说明风险与原因，再等待用户明确授权后执行。
 
 ---
 
@@ -161,34 +165,64 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 - 用于：项目结构、检索、阅读、编辑、重构、运行配置、问题检查。
 - 约束：
   - 若工具支持 `projectPath`，必须显式传入。
-  - 自动修改仅限白名单目录（见下文“修改边界”）。
+  - 自动修改仅限白名单目录。
   - 编辑流程必须：读文件 → 改 → 格式化 → problems 检查（必要时）。
 
-#### B. 代码托管与变更协作（仅限 GitHub 场景）
+#### B. 仓库文件直接读写 / 兜底文件操作
+**`filesystem`**
+- 用于：当 `idea-mcp` 不可用，或需要直接处理普通文本/配置/脚本/说明文件时的兜底读写。
+- 禁止：绕过 `idea-mcp` 直接对 Java/TS 核心业务代码做大规模盲改。
+- 约束：仅作为工程内文件级兜底工具，不替代 `idea-mcp` 的符号级理解与重构能力。
+
+#### C. 代码托管与变更协作（仅限 GitHub 场景）
 **`github`**
 - 用于：PR/Issue 读取、diff/变更审阅、提交记录查询、仓库信息读取。
 - 禁止：未经明确指令自动创建/合并 PR、强推、删除分支、改仓库设置。
-- 安全：Token 必须用环境变量提供（例如 `GITHUB_MCP_PAT`），不得写入仓库文件。
+- 安全：Token 仅允许通过环境变量提供，例如 `GITHUB_MCP_PAT`。
 
-#### C. 外部资料检索（只用于“资料/对照”，不直接改代码）
+#### D. 外部资料检索（只用于资料/对照，不直接改代码）
 **`brave-search`**
-- 用于：查外部信息、对照官方文档、定位第三方库用法、搜错误码/报错。
-- 禁止：把搜索结果当最终事实；必须给出来源并在项目内用工具验证可落地性。
-- 说明：需要 `BRAVE_API_KEY`（环境变量），启动慢则在 config.toml 配 `startup_timeout_sec`。
+- 用于：查外部信息、官方文档、第三方库用法、错误码、兼容性问题。
+- 禁止：把搜索结果直接当项目事实；必须回到仓库或运行结果验证可落地性。
+- 说明：需要 `BRAVE_API_KEY`。
 
-#### D. Web 自动化/抓取（仅在确有必要时）
-**`playwright`**
-- 用于：自动打开网页、抓取动态内容、模拟交互获取信息（例如登录后页面的公开信息不适用）。
-- 禁止：自动进行敏感操作（提交表单、支付、账号设置更改等）。
-- 说明：启动慢则在 config.toml 配 `startup_timeout_sec`。
+#### E. 浏览器调试 / 前端运行态排查
+**`chrome-devtools`**
+- 用于：查看页面 DOM、网络请求、Console、Storage、路由跳转、前端运行时错误。
+- 适用场景：
+  - 页面白屏
+  - 接口已发出但页面没渲染
+  - 路由守卫异常
+  - 表单交互异常
+  - Ant Design 组件行为与预期不一致
+- 禁止：执行敏感线上操作。
 
-#### E. OpenAI 官方文档查询（API/CLI 参数必须以此为准）
-**`openai-docs-skill`（Skill）**
-- 用于：查询 OpenAI 文档、Responses API、Codex CLI、MCP/skill 官方说明。
-- 约束：涉及 OpenAI 参数/行为结论，若可查证必须先查 docs 再给结论。
+#### F. 数据库核对 / SQL 验证
+**`postgres`**
+- 用于：核对表结构、索引、约束、数据分布、执行 SQL 验证 migration/backfill/查询逻辑。
+- 适用场景：
+  - DDL 审查
+  - migration 验证
+  - 查询性能初查
+  - 闭环联调时校验 DB 状态
+- 禁止：未经明确授权直接修改生产数据。
+
+#### G. 容器 / 本地基础设施联调
+**`MCP_DOCKER`**
+- 用于：查看容器状态、日志、网络、卷、镜像、Compose 相关运行信息。
+- 适用场景：
+  - 本地 PostgreSQL / 中间件 / 服务容器启动失败
+  - 健康检查失败
+  - 联调依赖未就绪
+- 禁止：未经明确说明删除镜像、清卷、破坏性 prune。
+
+#### H. CSS / 动画 / 视觉效果辅助
+**`icss`**
+- 用于：复杂 CSS 布局、渐变、遮罩、滤镜、动画、玻璃拟态、纯 CSS 特效实现参考。
+- 定位：辅助 MCP，不是主实现工具。
+- 禁止：代替业务 skill 负责页面开发主线。
 
 ---
-
 
 ### 1.1 `idea-mcp` 常用能力清单（按场景）
 - 项目与结构：`get_project_modules`、`get_project_dependencies`、`get_repositories`、`list_directory_tree`
@@ -199,43 +233,58 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 
 ### 2) 不可用降级条件（通用）
 当首选工具出现以下任一情况，允许降级到下一优先级工具：
-1. 不可访问/连接失败
-2. 无权限/拒绝访问
+1. 不可访问 / 连接失败
+2. 无权限 / 拒绝访问
 3. 同一问题连续 2 次超时
-4. 返回结果无法覆盖问题（范围不完整/关键文件不可读/结果与事实矛盾）
+4. 返回结果无法覆盖问题（范围不完整 / 关键文件不可读 / 结果与事实矛盾）
 
 ---
 
 ### 3) 降级顺序（按场景固定）
 
-#### 工程内检索（定位文件/符号）
-1) `idea-mcp`（search/find）
-2) `rg`
-3) `Select-String`（PowerShell）
-4) `findstr`
+#### 工程内检索（定位文件 / 符号）
+1) `idea-mcp`
+2) `filesystem`
+3) `rg`
+4) `Select-String`
+5) `findstr`
+
+#### 前端运行态排查
+1) `chrome-devtools`
+2) `idea-mcp`
+3) `filesystem`
+
+#### 数据库结构 / 查询验证
+1) `postgres`
+2) `idea-mcp`
+3) `filesystem`
+
+#### 本地依赖 / 容器联调
+1) `MCP_DOCKER`
+2) `idea-mcp`
+3) 终端命令
 
 #### 外部资料核对
-1) `openai-docs-skill`（涉及 OpenAI）
-2) `brave-search`
-3) 手动引用（必须带来源且标注可信度）
+1) `brave-search`
+2) 手动引用（必须带来源且标注可信度）
 
 ---
 
 ### 4) 降级披露要求（强制）
 一旦发生降级，回复必须包含：
-- **降级原因**
-- **使用的工具**
-- **检索范围**
-- **结果可信度**（高/中/低 + 简述原因）
+- 降级原因
+- 使用的工具
+- 检索范围
+- 结果可信度（高 / 中 / 低 + 原因）
 
 ---
 
 ### 5) 启动与密钥规则（强制）
-- 所有 API Key / Token 仅允许通过 **环境变量** 注入：
+- 所有 API Key / Token 仅允许通过环境变量注入：
   - GitHub：`GITHUB_MCP_PAT`
   - Brave：`BRAVE_API_KEY`
   - 其他：按各 MCP server 文档约定
-- 禁止把密钥写入：仓库文件、Markdown、脚本、截图、日志输出。
+- 禁止把密钥写入仓库文件、Markdown、脚本、截图、日志输出。
 
 ---
 
@@ -244,24 +293,31 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 - 运行：先列出 run configs → 再执行 → 汇报退出状态与关键输出
 
 #### 编辑类任务（强制流程）
-1. 先 `get_file_text_by_path` 读取目标文件，确认上下文
-2. 再执行 `replace_text_in_file` / `rename_refactoring` / `create_new_file`
-3. 修改后必须 `reformat_file`
-4. 最后用 `get_file_problems`（必要时）确认无明显错误/警告激增
-5. 回复中列出：修改的文件清单 + 变更摘要（必要时给出关键片段）
+1. 先读取目标文件，确认上下文
+2. 再执行修改 / 重构 / 新建文件
+3. 修改后必须格式化
+4. 最后确认无明显错误 / 警告激增
+5. 回复中列出：修改文件清单 + 变更摘要
 
-#### 运行/联调类任务（强制流程）
-1. 先 `get_run_configurations` 确认可用目标
-2. 再 `execute_run_configuration`（必要时设置合理超时）
-3. 回复中汇报：退出状态 + 关键输出摘要（必要时附报错关键信息）
+#### 运行 / 联调类任务（强制流程）
+1. 先确认可用目标（run config / 容器 / DB / 页面）
+2. 再执行联调
+3. 回复中汇报：退出状态 + 关键输出摘要 + 关键异常
 
 ---
 
-### 7) Skills 路由规则
+### 7) Skills 路由规则（更新版）
 
-当任务命中以下场景时，必须优先使用对应 skill，不要跳过：
+#### 7.1 总原则
+1. 先判断任务属于哪一层：**业务实现 / 交互设计 / 通用组件 / 视觉抛光 / CSS 特效 / 后端修复 / 测试回归**。
+2. 一个任务只允许一个主 skill，其他 skill 或 MCP 只能作为补充。
+3. 不允许跳过 skill 直接自由发挥，除非任务明显不属于任何已定义 skill。
+4. `UI-UX-Pro-Max`、`shadcn-ui`、`impeccable` 不替代原有业务 skill，它们属于前端增强层。
+5. `icss` 只能作为辅助 MCP，不作为主 skill。
 
-#### 前端任务
+#### 7.2 前端任务路由
+
+##### A. 页面与业务功能实现
 - 新增页面、根据接口落地页面：`build-page-from-api`
 - 新建业务组件、弹窗、抽屉、筛选块：`scaffold-component`
 - 接入后端接口、补 query/mutation、整理 query key：`wire-api-module`
@@ -269,7 +325,29 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 - 关键链路回归、Playwright 用例补齐：`e2e-regression`
 - 前端改动收口审查、合并前检查：`frontend-review`
 
-#### 后端任务
+##### B. 交互与视觉设计层
+以下场景主 skill 改为 `UI-UX-Pro-Max`：
+- 页面从 0 到 1 设计
+- 需要先做信息层级、区域布局、交互动线
+- 需要统一空态、错误态、加载态、禁用态
+- 需要优化工作台、列表页、详情页、表单页整体体验
+- 需要先出结构方案，再进入业务编码
+
+##### C. 通用组件与设计系统层
+以下场景主 skill 改为 `shadcn-ui`：
+- 抽象可复用组件，不是一次性业务页
+- 统一 Button / Dialog / Drawer / Form / Table / Tabs / Sheet 等模式
+- 设计组件 props、variant、size、受控/非受控边界
+- 构建通用过滤器块、页面骨架、操作栏、数据展示组件
+
+##### D. 抛光与一致性收口层
+以下场景主 skill 改为 `impeccable`：
+- 功能已完成，进入 polish 阶段
+- 统一间距、排版、层级、圆角、阴影、hover/focus 反馈
+- 提升整体完成度与一致性
+- 做交付前视觉细节收口
+
+#### 7.3 后端任务路由
 - 修复 Java 后端问题、异常链、事务、幂等、状态流转问题：`fix-prod-bug-java`
 - 审查 DDL、migration、索引、约束、backfill：`review-ddl-and-migration`
 - 补 JUnit、golden case、关键回归测试：`write-junit-and-golden-tests`
@@ -277,15 +355,41 @@ rg -n "RC1|GateH|exchange_accounts|exchange_account_credentials|marketdata|accou
 - 审查 Spring Boot 模块边界、装配、配置和依赖关系：`spring-boot-module-review`
 - 做 Controller -> Service -> Repository -> DB 闭环回归：`integration-regression-java`
 
-#### Python 辅助任务
+#### 7.4 Python 辅助任务路由
 - 编写批处理、修数、迁移、导入导出脚本：`build-batch-script-python`
 - 为 Python 脚本和工具补 pytest 回归：`write-pytest-regression`
 
-#### 执行要求
-1. 先判断任务属于哪一类，再进入对应 skill。
-2. 一个任务只允许以一个主 skill 为主线，其他 skill 只作为补充。
-3. 不允许跳过 skill 直接自由发挥，除非任务明显不属于任何已定义 skill。
-4. 完成后必须输出：新增文件、修改文件、验证步骤、风险与未覆盖项。
+#### 7.5 MCP 辅助规则
+以下 MCP 只作为辅助，不改变主 skill：
+- 前端运行态问题：`chrome-devtools`
+- 复杂 CSS / 动画：`icss`
+- 查询 DB 结构 / 数据：`postgres`
+- 本地依赖与容器联调：`MCP_DOCKER`
+- 读写普通文件或兜底检索：`filesystem`
+
+#### 7.6 组合约束
+- 合法：
+  - `build-page-from-api` + `UI-UX-Pro-Max`
+  - `scaffold-component` + `shadcn-ui`
+  - `frontend-review` + `impeccable`
+  - `fix-ui-bug` + `chrome-devtools`
+  - `fix-ui-bug` + `icss`
+  - `review-ddl-and-migration` + `postgres`
+  - `integration-regression-java` + `MCP_DOCKER`
+- 非法：
+  - 两个业务主 skill 同时并列为主线
+  - `icss` 作为主 skill
+  - `impeccable` 代替业务功能开发主线
+  - `filesystem` 代替 `idea-mcp` 做大规模源码重构
+
+#### 7.7 输出要求
+完成后必须输出：
+1. 主 skill 是什么，为什么命中
+2. 辅助 skill / MCP 是什么，为什么需要
+3. 新增文件
+4. 修改文件
+5. 验证步骤
+6. 风险与未覆盖项
 
 ## RC1 冻结基线（已完成）
 
