@@ -1,5 +1,8 @@
 # GATE_G_CHECKLIST
 
+> 历史卷宗说明：本文件属于 GateG completed/frozen 历史档案，只读参考，不代表当前实现入口。当前事实以 docs/current/* 与最新源码为准.
+
+
 当前状态：**GateG-DOC-1 / GateG-1 已完成；GateG-2 基础闭环已完成；GateG-3 ~ GateG-6 待实现**
 
 ## 已完成

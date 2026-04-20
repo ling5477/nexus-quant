@@ -17,6 +17,8 @@ public interface ExchangeAccountRepository {
 
     List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId);
 
+    Optional<ExchangeAccountSummary> findById(Long exchangeAccountId);
+
     Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId);
 
     Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId);

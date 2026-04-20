@@ -1,8 +1,8 @@
-import {Typography} from 'antd';
-import {Menu} from 'antd';
+import {Menu, Typography} from 'antd';
 import {useLocation, useNavigate} from 'react-router-dom';
 
 import {appNavItems, resolveMenuKey} from '@/router/navigation';
+import type {AppNavItem} from '@/types/navigation';
 
 interface AppSiderMenuProps {
     collapsed: boolean;
@@ -11,6 +11,15 @@ interface AppSiderMenuProps {
 export function AppSiderMenu({collapsed}: AppSiderMenuProps) {
     const location = useLocation();
     const navigate = useNavigate();
+    const groupedItems = Array.from(
+        appNavItems.reduce((map, item) => {
+            const section = item.section ?? '未分组';
+            const current = map.get(section) ?? [];
+            current.push(item);
+            map.set(section, current);
+            return map;
+        }, new Map<string, AppNavItem[]>()),
+    );
 
     return (
         <>
@@ -32,14 +41,17 @@ export function AppSiderMenu({collapsed}: AppSiderMenuProps) {
                 theme="dark"
                 className="app-shell__menu"
                 selectedKeys={[resolveMenuKey(location.pathname)]}
-                items={appNavItems.map((item) => ({
-                    key: item.key,
-                    icon: item.icon,
-                    label: item.label,
+                items={groupedItems.map(([section, items]) => ({
+                    type: 'group' as const,
+                    label: collapsed ? undefined : section,
+                    children: items.map((item) => ({
+                        key: item.key,
+                        icon: item.icon,
+                        label: item.label,
+                    })),
                 }))}
                 onClick={({key}) => {
                     const matched = appNavItems.find((item) => item.key === key);
-
                     if (matched) {
                         navigate(matched.path);
                     }

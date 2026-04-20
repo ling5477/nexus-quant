@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record ExchangeAccountResponse(
         @Schema(description = "exchange account ID")
         Long exchangeAccountId,
-        @Schema(description = "legacy account ID for compatibility")
+        @Schema(description = "过渡兼容字段：历史 trading account_id，不是正式账户上下文主键")
         Long legacyAccountId,
         @Schema(description = "交易所编码")
         String exchangeCode,

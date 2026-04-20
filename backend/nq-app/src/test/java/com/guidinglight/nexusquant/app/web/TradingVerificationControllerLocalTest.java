@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.app.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
@@ -75,6 +77,8 @@ class TradingVerificationControllerLocalTest {
     @MockitoBean
     private TradingMaintenanceService tradingMaintenanceService;
     @MockitoBean
+    private ExchangeAccountQueryService exchangeAccountQueryService;
+    @MockitoBean
     private StrategyDefinitionService strategyDefinitionService;
     @MockitoBean
     private StrategyManualTriggerService strategyManualTriggerService;
@@ -89,6 +93,7 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldTriggerPlaceOrderThroughService() throws Exception {
+        mockExchangeAccount(1001L, 1001L);
         when(orderCommandService.placeOrder(any())).thenReturn(new PlaceOrderResult("ord-1", OrderStatus.ACCEPTED, false));
         OrderSubmitRequest request = new OrderSubmitRequest(
                 1001L,
@@ -115,6 +120,7 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldTriggerCancelOrderThroughService() throws Exception {
+        mockExchangeAccount(1001L, 1001L);
         when(orderCommandService.cancelOrder(any())).thenReturn(new CancelOrderResult("ord-1", OrderStatus.CANCELLED, false));
         OrderCancelRequestBody request = new OrderCancelRequestBody("ord-1", null, null, "user_cancel");
         mockMvc.perform(post("/api/trading/orders/cancel")
@@ -198,6 +204,7 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldExposeCanonicalQueryRoutes() throws Exception {
+        mockExchangeAccount(1001L, 1001L);
         when(tradingQueryFacade.queryOrder(eq("ord-9"), eq("trc-local-6"))).thenReturn(Optional.of(new OrderQueryView(
                 "ord-9",
                 1001L,
@@ -282,6 +289,7 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldReturnUnifiedValidationErrorForMissingRequiredFields() throws Exception {
+        mockExchangeAccount(1001L, 1001L);
         mockMvc.perform(post("/api/trading/orders")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-validation")
                         .with(csrf())
@@ -316,6 +324,7 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldReturnUnifiedInternalError() throws Exception {
+        mockExchangeAccount(1001L, 1001L);
         when(orderCommandService.placeOrder(any())).thenThrow(new RuntimeException("boom"));
         OrderSubmitRequest request = new OrderSubmitRequest(
                 1001L,
@@ -343,6 +352,7 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldAcceptLegacyTraceHeaderButRespondWithStandardHeader() throws Exception {
+        mockExchangeAccount(1001L, 1001L);
         mockMvc.perform(post("/api/trading/orders")
                         .header(TraceIdContext.LEGACY_TRACE_ID_HEADER, "trc-legacy-api")
                         .with(csrf())
@@ -353,6 +363,20 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-legacy-api"))
                 .andExpect(jsonPath("$.traceId").value("trc-legacy-api"));
+    }
+
+    private void mockExchangeAccount(Long exchangeAccountId, Long legacyAccountId) {
+        when(exchangeAccountQueryService.findById(exchangeAccountId)).thenReturn(Optional.of(new ExchangeAccountSummary(
+                exchangeAccountId,
+                legacyAccountId,
+                1L,
+                "OKX",
+                "SIM",
+                "local-admin",
+                null,
+                true,
+                "ACTIVE"
+        )));
     }
 }
 

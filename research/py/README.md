@@ -1,17 +1,44 @@
 # NexusQuant Research Python
 
-本目录在 RC1 中从最小样例目录收口为正式研究子工程。
+本目录是 NexusQuant 的离线研究工具链子工程。
 
-当前骨架包含：
+当前定位：
+
+- 只处理本地研究数据、特征实验、批量实验与离线回测辅助。
+- 不接入 live trading / auth / recovery / ledger 主链。
+- 不作为 Java / Python runtime bridge。
+- 当前正式入口是 `py -m nq_research`；安装为本地包后可使用 `nq-research` script。
+
+当前结构：
 
 - `src/nq_research/data/`
 - `src/nq_research/strategy/`
 - `src/nq_research/backtest/`
 - `tests/`
+- `fixtures/`
 
-当前明确不包含：
+## 验证状态
 
-- notebook 体系
-- Java / Python runtime bridge
-- 复杂研究平台能力
-- 实盘执行接入
+PRE-CLEAN-3B 已完成 Python 工具链闭环：
+
+- `pytest`：已通过。
+- `mypy`：已通过。
+- `ruff`：已通过。
+- `CLI smoke`：已通过。
+
+## 运行方式
+
+在 `research/py` 目录内可直接运行：
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m mypy src\nq_research
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m nq_research --bars-csv ..\fixtures\btcusdt_1m_sample.csv
+```
+
+安装为本地包后也可以使用脚本入口：
+
+```powershell
+nq-research --bars-csv ..\fixtures\btcusdt_1m_sample.csv
+```

@@ -5,6 +5,10 @@ package com.guidinglight.nexusquant.account.domain;
  */
 public record ExchangeAccountSummary(
         Long exchangeAccountId,
+        /*
+         * 过渡兼容字段：用于把正式 exchangeAccountId 映射到历史 trading account_id。
+         * 它不是正式账户上下文主键；新增链路必须优先使用 exchangeAccountId。
+         */
         Long legacyAccountId,
         Long ownerUserId,
         String exchangeCode,
@@ -15,4 +19,3 @@ public record ExchangeAccountSummary(
         String status
 ) {
 }
-

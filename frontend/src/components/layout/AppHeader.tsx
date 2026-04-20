@@ -45,13 +45,14 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
         ?? null;
 
     useEffect(() => {
-        if (defaultAccount) {
-            if (selectedExchangeAccountId !== defaultAccount.exchangeAccountId) {
-                setSelectedAccount(defaultAccount);
-            }
+        if (selectedExchangeAccountId !== null) {
             return;
         }
-        if (!currentUser?.defaultExchangeAccountId && selectedExchangeAccountId !== null) {
+        if (defaultAccount) {
+            setSelectedAccount(defaultAccount);
+            return;
+        }
+        if (!currentUser?.defaultExchangeAccountId) {
             clearAccountContext();
         }
     }, [clearAccountContext, currentUser?.defaultExchangeAccountId, defaultAccount, selectedExchangeAccountId, setSelectedAccount]);
@@ -66,13 +67,12 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
     const accountItems = (accountsQuery.data ?? []).map((item: ExchangeAccountSummary) => ({
         key: String(item.exchangeAccountId),
         label: `${item.exchangeCode} / ${item.tradeEnv} / ${item.accountAlias}${item.isDefault ? '（默认）' : ''}`,
-        disabled: true,
     }));
 
-    const accountLabel = currentUser?.defaultExchangeAccountId && currentUser.defaultExchangeCode && currentUser.defaultTradeEnv
-        ? `${currentUser.defaultExchangeCode} / ${currentUser.defaultTradeEnv} / ${currentUser.defaultAccountAlias ?? '-'}`
-        : selectedExchangeAccountId && exchangeCode && tradeEnv
-            ? `${exchangeCode} / ${tradeEnv} / ${accountAlias ?? '-'}`
+    const accountLabel = selectedExchangeAccountId && exchangeCode && tradeEnv
+        ? `${exchangeCode} / ${tradeEnv} / ${accountAlias ?? '-'}（exchangeAccountId=${selectedExchangeAccountId}）`
+        : currentUser?.defaultExchangeAccountId && currentUser.defaultExchangeCode && currentUser.defaultTradeEnv
+            ? `${currentUser.defaultExchangeCode} / ${currentUser.defaultTradeEnv} / ${currentUser.defaultAccountAlias ?? '-'}（exchangeAccountId=${currentUser.defaultExchangeAccountId}）`
             : '选择账户上下文';
 
     return (
@@ -87,16 +87,31 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                 <div>
                     <Typography.Text strong>{appEnv.appTitle}</Typography.Text>
                     <br/>
-                    <Typography.Text type="secondary">RC1 Account Context</Typography.Text>
+                    <Typography.Text type="secondary">GateH-PRE Account Context</Typography.Text>
                 </div>
             </div>
             <div className="app-shell__header-right">
                 <Tag color="cyan">{appEnv.envLabel}</Tag>
-                <Dropdown menu={{items: accountItems}} trigger={['click']} disabled={accountItems.length === 0}>
+                <Dropdown
+                    menu={{
+                        items: accountItems,
+                        onClick: ({key}) => {
+                            const matched = (accountsQuery.data ?? []).find((item) => String(item.exchangeAccountId) === key);
+                            if (matched) {
+                                setSelectedAccount(matched);
+                            }
+                        },
+                    }}
+                    trigger={['click']}
+                    disabled={accountItems.length === 0}
+                >
                     <Button>
                         {accountLabel} <DownOutlined/>
                     </Button>
                 </Dropdown>
+                <Button onClick={() => navigate('/accounts')}>
+                    账户管理
+                </Button>
                 <Space size={8} wrap>
                     {currentUser?.roles.map((role) => (
                         <Tag key={role}>{role}</Tag>

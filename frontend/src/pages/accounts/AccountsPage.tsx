@@ -277,7 +277,7 @@ export function AccountsPage() {
                         <Typography.Text type="secondary">account-context-store 当前选中：{selectedExchangeAccountId ?? '未同步'}</Typography.Text>
                     </Space>
                 ) : (
-                    <Alert type="info" showIcon message="当前未设置默认账户；设为默认账户后 header 与 trade-validation 会跟随后端真源刷新。"/>
+                    <Alert type="info" showIcon message="当前未设置默认账户；设为默认账户后 header 与交易工作台会跟随后端真源刷新。"/>
                 )}
             </Card>
             <Card className="page-section" bordered={false} title="账户列表">

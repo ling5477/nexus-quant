@@ -1,5 +1,8 @@
 # GateH 工作台账
 
+> 历史卷宗说明：GateH = paused / not started。本文件是历史规划草稿，只读参考，不可直接作为开工依据；恢复 GateH 必须先进入 `GateH-PLAN`。
+
+
 ## 1. GateH-PLAN（2026-03-27）
 
 本批目标：

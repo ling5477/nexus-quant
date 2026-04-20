@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionContext;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionRequest;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionResult;
+import com.guidinglight.nexusquant.marketdata.application.FixtureMarketdataDataset;
+import com.guidinglight.nexusquant.marketdata.application.FixtureMarketdataRegistry;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
@@ -55,9 +57,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class BacktestExecutionService {
 
-    private static final String DEFAULT_RESOURCE_PATH = "backtest/fixtures/btcusdt_1m_sample.csv";
-
     private final HistoricalMarketDataPort historicalMarketDataPort;
+    private final FixtureMarketdataRegistry fixtureMarketdataRegistry;
     private final BacktestRunService backtestRunService;
     private final BacktestConfigService backtestConfigService;
     private final ResearchConfigService researchConfigService;
@@ -78,6 +79,7 @@ public class BacktestExecutionService {
     @Autowired
     public BacktestExecutionService(
             HistoricalMarketDataPort historicalMarketDataPort,
+            FixtureMarketdataRegistry fixtureMarketdataRegistry,
             BacktestRunService backtestRunService,
             BacktestConfigService backtestConfigService,
             ResearchConfigService researchConfigService,
@@ -90,6 +92,7 @@ public class BacktestExecutionService {
     ) {
         this(
                 historicalMarketDataPort,
+                fixtureMarketdataRegistry,
                 backtestRunService,
                 backtestConfigService,
                 researchConfigService,
@@ -105,6 +108,7 @@ public class BacktestExecutionService {
 
     BacktestExecutionService(
             HistoricalMarketDataPort historicalMarketDataPort,
+            FixtureMarketdataRegistry fixtureMarketdataRegistry,
             BacktestRunService backtestRunService,
             BacktestConfigService backtestConfigService,
             ResearchConfigService researchConfigService,
@@ -119,6 +123,10 @@ public class BacktestExecutionService {
         this.historicalMarketDataPort = Objects.requireNonNull(
                 historicalMarketDataPort,
                 "historicalMarketDataPort must not be null"
+        );
+        this.fixtureMarketdataRegistry = Objects.requireNonNull(
+                fixtureMarketdataRegistry,
+                "fixtureMarketdataRegistry must not be null"
         );
         this.backtestRunService = Objects.requireNonNull(backtestRunService, "backtestRunService must not be null");
         this.backtestConfigService = Objects.requireNonNull(
@@ -380,16 +388,43 @@ public class BacktestExecutionService {
         String interval = requiredText(jsonNode, "interval", "granularity");
         String provider = optionalText(jsonNode, "provider", "fixture");
         String datasetId = optionalText(jsonNode, "datasetId", exchangeCode + "-" + symbol + "-" + interval);
-        String defaultResourcePath = "db".equalsIgnoreCase(provider) ? "marketdata_bars" : DEFAULT_RESOURCE_PATH;
-        String resourcePath = optionalText(jsonNode, "resourcePath", defaultResourcePath);
+        BarInterval barInterval = BarInterval.fromWireValue(interval);
+        String resourcePath = resolveResourcePath(provider, datasetId, exchangeCode, symbol, barInterval, jsonNode);
         return new HistoricalDatasetSpec(
                 provider,
                 datasetId,
                 exchangeCode,
                 symbol,
-                BarInterval.fromWireValue(interval),
+                barInterval,
                 resourcePath
         );
+    }
+
+    private String resolveResourcePath(
+            String provider,
+            String datasetId,
+            String exchangeCode,
+            String symbol,
+            BarInterval interval,
+            JsonNode jsonNode
+    ) {
+        if ("db".equalsIgnoreCase(provider)) {
+            return optionalText(jsonNode, "resourcePath", "marketdata_bars");
+        }
+        String explicitResourcePath = optionalText(jsonNode, "resourcePath", null);
+        if (explicitResourcePath != null) {
+            return explicitResourcePath;
+        }
+        FixtureMarketdataDataset fixture = fixtureMarketdataRegistry.find(datasetId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "fixture datasetId is not registered and resourcePath is missing: " + datasetId
+                ));
+        if (!fixture.exchangeCode().equalsIgnoreCase(exchangeCode)
+                || !fixture.symbol().equalsIgnoreCase(symbol)
+                || fixture.interval() != interval) {
+            throw new IllegalArgumentException("fixture dataset scope does not match requested datasetSpec");
+        }
+        return fixture.resourcePath();
     }
 
     private String parseStrategyType(String strategySnapshotJson) {

@@ -1,7 +1,5 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
@@ -10,7 +8,8 @@ import com.guidinglight.nexusquant.contracts.event.TradeExecuted;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.trading.application.routing.AdapterRouter;
+import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSnapshot;
+import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
@@ -36,8 +35,8 @@ import org.springframework.stereotype.Component;
  * PaperMatchingService 负责 GateB/GateC-0 的本地 paper 成交同步。
  * <p>
  * Why:
- * GateC-0 虽然仍保留 paper 本地成交能力用于回归，但 scheduler 不能再绕过 adapter 假定订单可撮合。
- * 因此这里先向 AdapterRouter 查询统一订单快照，再决定是否继续执行本地成交与记账。
+ * GateC-0 虽然仍保留 paper 本地成交能力用于回归，但 scheduler 不能再绕过 trading 边界假定订单可撮合。
+ * 因此这里先向 `TradingVenueGateway` 查询统一订单快照，再决定是否继续执行本地成交与记账。
  */
 @Component
 public class PaperMatchingService {
@@ -50,7 +49,7 @@ public class PaperMatchingService {
     private final TradeLedgerGateway tradeLedgerGateway;
     private final EventPublisherPort eventPublisherPort;
     private final AuditLogRepository auditLogRepository;
-    private final AdapterRouter adapterRouter;
+    private final TradingVenueGateway tradingVenueGateway;
     private final Clock clock;
 
     /**
@@ -59,7 +58,7 @@ public class PaperMatchingService {
      * @param tradeLedgerGateway    记账网关
      * @param eventPublisherPort    事件事实链追加端口
      * @param auditLogRepository    审计日志仓储
-     * @param adapterRouter         adapter 路由器
+     * @param tradingVenueGateway   trading anti-corruption boundary
      */
     public PaperMatchingService(
             OrderExecutionGateway orderExecutionGateway,
@@ -67,14 +66,17 @@ public class PaperMatchingService {
             TradeLedgerGateway tradeLedgerGateway,
             EventPublisherPort eventPublisherPort,
             AuditLogRepository auditLogRepository,
-            AdapterRouter adapterRouter
+            TradingVenueGateway tradingVenueGateway
     ) {
         this.orderExecutionGateway = Objects.requireNonNull(orderExecutionGateway, "orderExecutionGateway must not be null");
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
         this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
         this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
-        this.adapterRouter = Objects.requireNonNull(adapterRouter, "adapterRouter must not be null");
+        this.tradingVenueGateway = Objects.requireNonNull(
+                tradingVenueGateway,
+                "tradingVenueGateway must not be null"
+        );
         this.clock = Clock.systemUTC();
     }
 
@@ -121,16 +123,7 @@ public class PaperMatchingService {
     }
 
     private boolean matchSingleOrder(OrderRecord order) {
-        AdapterOrderSnapshot adapterSnapshot = adapterRouter.route(order.accountId(), order.venue())
-                .trading()
-                .getOrder(new AdapterOrderQuery(
-                        order.accountId(),
-                        order.venue(),
-                        order.symbol(),
-                        order.clientOrderId(),
-                        order.externalOrderId(),
-                        order.traceId()
-                ));
+        TradingOrderStatusSnapshot adapterSnapshot = tradingVenueGateway.getOrderStatus(order, order.traceId());
         // Why: 只有当 adapter 反馈的状态与本地状态一致时，scheduler 才允许继续做本地成交副作用，
         // 这样 paper 路径不再是“完全绕过 adapter 的专用链路”。
         if (!order.status().name().equals(adapterSnapshot.externalStatus())) {
@@ -143,6 +136,7 @@ public class PaperMatchingService {
                             "order_id", order.orderId(),
                             "order_status", order.status().name(),
                             "adapter_status", adapterSnapshot.externalStatus(),
+                            "result_category", adapterSnapshot.resultCategory().name(),
                             "venue", order.venue()
                     )
             );

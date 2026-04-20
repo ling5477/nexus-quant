@@ -78,6 +78,11 @@ class ExchangeAccountCommandServiceTest {
         }
 
         @Override
+        public Optional<ExchangeAccountSummary> findById(Long exchangeAccountId) {
+            return Optional.ofNullable(storage.get(exchangeAccountId));
+        }
+
+        @Override
         public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) {
             ExchangeAccountSummary summary = storage.get(exchangeAccountId);
             return summary != null && summary.ownerUserId().equals(ownerUserId) ? Optional.of(summary) : Optional.empty();

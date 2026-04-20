@@ -116,6 +116,7 @@ class ExchangeAccountCredentialCommandServiceTest {
         }
 
         @Override public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) { return storage.values().stream().toList(); }
+        @Override public Optional<ExchangeAccountSummary> findById(Long exchangeAccountId) { return Optional.ofNullable(storage.get(exchangeAccountId)); }
         @Override public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) { return Optional.ofNullable(storage.get(exchangeAccountId)); }
         @Override public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) { return storage.values().stream().filter(ExchangeAccountSummary::isDefault).findFirst(); }
         @Override public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) { throw new UnsupportedOperationException(); }

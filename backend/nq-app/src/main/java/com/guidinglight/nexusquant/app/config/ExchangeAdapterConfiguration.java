@@ -1,21 +1,12 @@
 package com.guidinglight.nexusquant.app.config;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapper;
-import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxApiException;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxBootstrapFallbackFactory;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxHttpClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxInstrumentsCache;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
-
-import java.net.http.HttpClient;
-import java.time.Clock;
-import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +15,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * ExchangeAdapterConfiguration 负责真实交易所适配器与 WS 连接治理装配。
+ * ExchangeAdapterConfiguration 负责真实交易所适配器与 WS 连接 Bean 装配。
+ * <p>
+ * Why:
+ * PRE-CLEAN-2 后，`nq-app` 只决定 profile/Bean 选择，不再内联 OKX fallback HTTP stub 细节；
+ * 具体 fallback adapter 构造已经下沉到 `nq-adapter-okx`。
  */
 @Configuration
 public class ExchangeAdapterConfiguration {
@@ -45,7 +40,7 @@ public class ExchangeAdapterConfiguration {
                     "okx_adapter_bootstrap_fallback_enabled reason={} impact=okx_calls_return_stub_rejection_until_real_adapter_enabled",
                     ex.getMessage()
             );
-            return createBootstrapSafeOkxAdapter(ex);
+            return OkxBootstrapFallbackFactory.create(ex);
         }
     }
 
@@ -72,78 +67,5 @@ public class ExchangeAdapterConfiguration {
     @Bean
     public BinanceWsEventMapper binanceWsEventMapper() {
         return new BinanceWsEventMapper();
-    }
-
-    private OkxExchangeAdapter createBootstrapSafeOkxAdapter(RuntimeException bootstrapFailure) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Clock clock = Clock.systemUTC();
-        OkxHttpClient publicStubClient = new OkxHttpClient(
-                HttpClient.newHttpClient(),
-                objectMapper,
-                "http://127.0.0.1",
-                Duration.ofSeconds(1),
-                new com.guidinglight.nexusquant.adapter.okx.service.OkxRequestSigner(),
-                () -> "1970-01-01T00:00:00Z",
-                new OkxApiCredentials("", "", ""),
-                false
-        ) {
-            @Override
-            public JsonNode get(String requestPathWithQuery, String traceId) {
-                return buildStubInstrumentsPayload(objectMapper);
-            }
-        };
-        OkxHttpClient authenticatedStubClient = new OkxHttpClient(
-                HttpClient.newHttpClient(),
-                objectMapper,
-                "http://127.0.0.1",
-                Duration.ofSeconds(1),
-                new com.guidinglight.nexusquant.adapter.okx.service.OkxRequestSigner(),
-                () -> "1970-01-01T00:00:00Z",
-                new OkxApiCredentials("", "", ""),
-                false
-        ) {
-            @Override
-            public JsonNode get(String requestPathWithQuery, String traceId) {
-                throw disabledStubException(requestPathWithQuery, traceId, bootstrapFailure);
-            }
-
-            @Override
-            public JsonNode post(String requestPath, String requestBodyJson, String traceId) {
-                throw disabledStubException(requestPath, traceId, bootstrapFailure);
-            }
-        };
-        OkxInstrumentsCache instrumentsCache = new OkxInstrumentsCache(publicStubClient, clock, Duration.ofDays(1));
-        return new OkxExchangeAdapter(new OkxExchangeAdapter.Dependencies(
-                objectMapper,
-                authenticatedStubClient,
-                instrumentsCache,
-                clock
-        ));
-    }
-
-    private JsonNode buildStubInstrumentsPayload(ObjectMapper objectMapper) {
-        var root = objectMapper.createObjectNode();
-        root.put("code", "0");
-        var data = root.putArray("data");
-        var btcUsdt = data.addObject();
-        btcUsdt.put("instId", "BTC-USDT");
-        btcUsdt.put("tickSz", "0.01");
-        btcUsdt.put("lotSz", "0.00000001");
-        btcUsdt.put("minSz", "0.00000001");
-        btcUsdt.put("state", "live");
-        return root;
-    }
-
-    private OkxApiException disabledStubException(String endpoint, String traceId, RuntimeException bootstrapFailure) {
-        return new OkxApiException(
-                "OKX adapter bootstrap fallback active, endpoint=" + endpoint
-                        + ", trace_id=" + traceId
-                        + ", bootstrap_reason=" + bootstrapFailure.getMessage(),
-                0,
-                endpoint,
-                "OKX_ADAPTER_BOOTSTRAP_STUB",
-                traceId,
-                bootstrapFailure
-        );
     }
 }

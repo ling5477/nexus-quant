@@ -7,9 +7,12 @@ import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService
 import java.util.Locale;
 import java.util.Objects;
 
+import org.springframework.stereotype.Component;
+
 /**
  * SchedulerTradingMaintenanceService 收口 scheduler 侧的 reconcile / recovery 具体实现。
  */
+@Component
 public class SchedulerTradingMaintenanceService implements TradingMaintenanceService {
 
     private final OkxRestReconcileService okxRestReconcileService;

@@ -1,10 +1,13 @@
 [project]
 name = "nexus-quant-research"
 version = "0.1.0"
-description = "RC1 formal Python research skeleton for NexusQuant."
+description = "Offline research toolkit for NexusQuant."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
+
+[project.scripts]
+nq-research = "nq_research.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -15,6 +18,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 120

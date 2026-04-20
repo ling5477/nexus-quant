@@ -49,6 +49,16 @@ public class JdbcExchangeAccountRepository implements ExchangeAccountRepository 
     }
 
     @Override
+    public Optional<ExchangeAccountSummary> findById(Long exchangeAccountId) {
+        List<ExchangeAccountSummary> rows = jdbcTemplate.query(
+                BASE_SELECT + " WHERE exchange_account_id = ?",
+                ROW_MAPPER,
+                exchangeAccountId
+        );
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
     public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) {
         List<ExchangeAccountSummary> rows = jdbcTemplate.query(
                 BASE_SELECT + " WHERE owner_user_id = ? AND exchange_account_id = ?",

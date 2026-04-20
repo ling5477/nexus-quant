@@ -12,10 +12,19 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * ModuleBoundaryArchTest 针对 GateH-PRE 的模块边界增加最小可执行护栏。
+ * <p>
+ * Why:
+ * 当前 PRE-1 的重点不是抽象概念，而是阻止三个具体回退：
+ * 1) `nq-core` 的 trading application 重新直接依赖 `adapter-api`
+ * 2) `nq-app` 的 trading config 重新 import infra/scheduler concrete
+ * 3) JDBC/query concrete 重新漂移出 `nq-infra`
+ */
 @AnalyzeClasses(packages = "com.guidinglight.nexusquant")
 class ModuleBoundaryArchTest {
 
@@ -28,25 +37,24 @@ class ModuleBoundaryArchTest {
             .should().dependOnClassesThat().resideInAnyPackage("org.springframework.jdbc..", "..infra..jdbc..");
 
     @ArchTest
-    static final ArchRule core_should_not_depend_on_infra_or_spring_jdbc = noClasses()
-            .that().resideInAPackage("..core..")
-            .should().dependOnClassesThat().resideInAnyPackage("..infra..", "org.springframework.jdbc..");
+    static final ArchRule trading_application_should_not_depend_on_adapter_api = noClasses()
+            .that().resideInAPackage("..trading.application..")
+            .should().dependOnClassesThat().resideInAnyPackage("com.guidinglight.nexusquant.adapter.api..");
 
     @ArchTest
-    static final ArchRule api_should_not_depend_on_scheduler_concrete = noClasses()
-            .that().resideInAPackage("..api..")
-            .should().dependOnClassesThat().resideInAnyPackage("..scheduler.service..");
+    static final ArchRule trading_application_should_not_depend_on_runtime_concrete = noClasses()
+            .that().resideInAPackage("..trading.application..")
+            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler.service..");
 
     @ArchTest
-    static final ArchRule core_should_not_contain_jdbc_implementations = noClasses()
-            .that().resideInAPackage("..core..")
-            .should().haveSimpleNameStartingWith("Jdbc");
+    static final ArchRule app_trading_configuration_should_not_depend_on_trading_runtime_concrete = noClasses()
+            .that().resideInAPackage("..app.config.trading..")
+            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler.service..");
 
     @ArchTest
     static final ArchRule jdbc_repositories_and_query_adapters_should_reside_in_infra = classes()
             .that().haveSimpleNameStartingWith("Jdbc")
             .and().resideOutsideOfPackage("..app.architecture..")
-            .and().doNotHaveSimpleName("JdbcTradingQueryFacade")
             .should().resideInAPackage("..infra..");
 
     @ArchTest

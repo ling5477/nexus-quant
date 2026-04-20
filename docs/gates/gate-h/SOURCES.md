@@ -1,5 +1,8 @@
 # GateH SOURCES
 
+> 历史卷宗说明：GateH = paused / not started。本文件是历史规划草稿，只读参考，不可直接作为开工依据；恢复 GateH 必须先进入 `GateH-PLAN`。
+
+
 GateH-PLAN 的判断依据来自以下已核对资料与代码事实。
 
 ## 1. 当前入口与冻结卷宗

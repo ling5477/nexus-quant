@@ -6,6 +6,9 @@ type BootstrapStatus = 'idle' | 'loading' | 'ready';
 
 interface AccountContextState {
     selectedExchangeAccountId: number | null;
+    /**
+     * legacyAccountId 只保留给后端兼容映射或信息展示，正式上下文一律使用 selectedExchangeAccountId。
+     */
     legacyAccountId: number | null;
     exchangeCode: string | null;
     tradeEnv: string | null;

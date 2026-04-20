@@ -1,20 +1,17 @@
 package com.guidinglight.nexusquant.trading.api.web;
 
+import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
-import com.guidinglight.nexusquant.trading.api.web.AccountView;
-import com.guidinglight.nexusquant.trading.api.web.OrderView;
-import com.guidinglight.nexusquant.trading.api.web.PositionView;
-import com.guidinglight.nexusquant.trading.api.web.TradeView;
-import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.trading.application.RecoveryReport;
 import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 import com.guidinglight.nexusquant.trading.application.CancelOrderResult;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
+import com.guidinglight.nexusquant.trading.application.RecoveryReport;
 import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
+import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,7 +38,9 @@ import org.springframework.web.server.ResponseStatusException;
  * TradingVerificationController 提供正式交易运行触发与最小查询接口。
  * <p>
  * Why:
- * Step 4 要把 trace 入口统一交给过滤器，不再让 Controller 手工解析 header 或包裹 MDC。
+ * PRE-3 之前，前端已经切换到 `exchangeAccountId` 作为正式账户上下文主键，
+ * 但 trading 表仍然保留 legacy account_id。这里先做兼容映射：controller 接收正式账户上下文，
+ * 内部再解析到当前 trading 链路仍使用的 legacy account id，避免继续把兼容字段暴露给前端。
  */
 @Validated
 @RestController
@@ -54,17 +53,23 @@ public class TradingVerificationController {
     private final OrderCommandService orderCommandService;
     private final TradingQueryFacade tradingQueryFacade;
     private final TradingMaintenanceService tradingMaintenanceService;
+    private final ExchangeAccountQueryService exchangeAccountQueryService;
 
     public TradingVerificationController(
             OrderCommandService orderCommandService,
             TradingQueryFacade tradingQueryFacade,
-            TradingMaintenanceService tradingMaintenanceService
+            TradingMaintenanceService tradingMaintenanceService,
+            ExchangeAccountQueryService exchangeAccountQueryService
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.tradingQueryFacade = Objects.requireNonNull(tradingQueryFacade, "tradingQueryFacade must not be null");
         this.tradingMaintenanceService = Objects.requireNonNull(
                 tradingMaintenanceService,
                 "tradingMaintenanceService must not be null"
+        );
+        this.exchangeAccountQueryService = Objects.requireNonNull(
+                exchangeAccountQueryService,
+                "exchangeAccountQueryService must not be null"
         );
     }
 
@@ -133,7 +138,8 @@ public class TradingVerificationController {
             @PathVariable @NotBlank(message = "symbol must not be blank") String symbol
     ) {
         String traceId = TraceIdContext.getOrCreate();
-        return tradingQueryFacade.queryPosition(accountId, symbol, traceId)
+        Long tradingAccountId = resolveTradingAccountId(accountId);
+        return tradingQueryFacade.queryPosition(tradingAccountId, symbol, traceId)
                 .map(queryView -> new PositionView(
                         queryView.accountId(),
                         queryView.venue(),
@@ -158,7 +164,8 @@ public class TradingVerificationController {
     })
     public AccountView queryAccount(@PathVariable @Positive(message = "accountId must be positive") Long accountId) {
         String traceId = TraceIdContext.getOrCreate();
-        return tradingQueryFacade.queryAccount(accountId, traceId)
+        Long tradingAccountId = resolveTradingAccountId(accountId);
+        return tradingQueryFacade.queryAccount(tradingAccountId, traceId)
                 .map(queryView -> new AccountView(
                         queryView.accountId(),
                         queryView.venue(),
@@ -190,14 +197,15 @@ public class TradingVerificationController {
     })
     public OperationTriggerResponse placeOrder(@Valid @RequestBody OrderSubmitRequest request) {
         String traceId = TraceIdContext.getOrCreate();
+        Long tradingAccountId = resolveTradingAccountId(request.accountId());
         PlaceOrderResult result = orderCommandService.placeOrder(new PlaceOrderRequest(
                 buildRequestId("place", request.clientOrderId()),
-                request.accountId(),
+                tradingAccountId,
                 request.strategyRunId(),
                 request.venue(),
                 request.symbol(),
                 request.clientOrderId(),
-                buildPlaceIdempotencyKey(request.accountId(), request.clientOrderId()),
+                buildPlaceIdempotencyKey(tradingAccountId, request.clientOrderId()),
                 "manual",
                 request.side(),
                 request.orderType(),
@@ -223,10 +231,11 @@ public class TradingVerificationController {
     })
     public OperationTriggerResponse cancelOrder(@Valid @RequestBody OrderCancelRequestBody request) {
         String traceId = TraceIdContext.getOrCreate();
+        Long tradingAccountId = request.accountId() == null ? null : resolveTradingAccountId(request.accountId());
         CancelOrderResult result = orderCommandService.cancelOrder(new CancelOrderRequest(
                 buildRequestId("cancel", request.orderId() != null ? request.orderId() : request.clientOrderId()),
                 blankToNull(request.orderId()),
-                request.accountId(),
+                tradingAccountId,
                 null,
                 null,
                 blankToNull(request.clientOrderId()),
@@ -285,6 +294,19 @@ public class TradingVerificationController {
         );
     }
 
+    /**
+     * 将正式 exchangeAccountId 解析为当前 trading 链路仍需使用的历史 account_id。
+     * Why: 这是过渡兼容解析，不是正式主上下文；前端和新 API 语义必须继续使用 exchangeAccountId。
+     */
+    private Long resolveTradingAccountId(Long requestedAccountId) {
+        if (requestedAccountId == null || requestedAccountId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accountId must be positive");
+        }
+        return exchangeAccountQueryService.findById(requestedAccountId)
+                .map(summary -> summary.legacyAccountId() == null ? summary.exchangeAccountId() : summary.legacyAccountId())
+                .orElse(requestedAccountId);
+    }
+
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
@@ -301,6 +323,3 @@ public class TradingVerificationController {
         return orderType == OrderType.MARKET ? "IOC" : "GTC";
     }
 }
-
-
-

@@ -1,18 +1,20 @@
 import {Navigate, createBrowserRouter} from 'react-router-dom';
 
 import {ConsoleLayout} from '@/layouts/ConsoleLayout';
-import {DashboardPage} from '@/pages/dashboard/DashboardPage';
-import {LoginPage} from '@/pages/login/LoginPage';
-import {NotFoundPage} from '@/pages/not-found/NotFoundPage';
-import {StrategiesPage} from '@/pages/strategies/StrategiesPage';
-import {SchedulesPage} from '@/pages/schedules/SchedulesPage';
-import {RunsPage} from '@/pages/runs/RunsPage';
-import {ResearchPage} from '@/pages/research/ResearchPage';
-import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
 import {AccountsPage} from '@/pages/accounts/AccountsPage';
+import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
+import {DashboardPage} from '@/pages/dashboard/DashboardPage';
 import {EvaluationsPage} from '@/pages/evaluations/EvaluationsPage';
+import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
+import {LoginPage} from '@/pages/login/LoginPage';
+import {MarketdataPage} from '@/pages/marketdata/MarketdataPage';
+import {NotFoundPage} from '@/pages/not-found/NotFoundPage';
 import {PublishesPage} from '@/pages/publishes/PublishesPage';
-import {TradeValidationPage} from '@/pages/trade-validation/TradeValidationPage';
+import {ResearchPage} from '@/pages/research/ResearchPage';
+import {RunsPage} from '@/pages/runs/RunsPage';
+import {SchedulesPage} from '@/pages/schedules/SchedulesPage';
+import {StrategiesPage} from '@/pages/strategies/StrategiesPage';
+import {TradingWorkbenchPage} from '@/pages/trading/TradingWorkbenchPage';
 import {RequireAuth} from '@/router/RequireAuth';
 import {appNavItems} from '@/router/navigation';
 import type {RouteHandle} from '@/types/navigation';
@@ -60,6 +62,33 @@ export const appRouter = createBrowserRouter([
                         handle: createHandle('dashboard'),
                     },
                     {
+                        path: 'accounts',
+                        element: <AccountsPage/>,
+                        handle: createHandle('accounts'),
+                    },
+                    {
+                        path: 'trading',
+                        element: <TradingWorkbenchPage/>,
+                        handle: createHandle('trading'),
+                    },
+                    {
+                        // Why:
+                        // `/trade-validation` 是历史路由 alias，不是正式入口；正式入口固定为 `/trading`。
+                        // 退役计划：GateH-PLAN 后确认旧书签和历史 e2e 均迁移完成，再删除该无状态重定向。
+                        path: 'trade-validation',
+                        element: <Navigate to="/trading" replace/>,
+                    },
+                    {
+                        path: 'instruments',
+                        element: <InstrumentsPage/>,
+                        handle: createHandle('instruments'),
+                    },
+                    {
+                        path: 'marketdata',
+                        element: <MarketdataPage/>,
+                        handle: createHandle('marketdata'),
+                    },
+                    {
                         path: 'strategies',
                         element: <StrategiesPage/>,
                         handle: createHandle('strategies'),
@@ -73,11 +102,6 @@ export const appRouter = createBrowserRouter([
                         path: 'runs',
                         element: <RunsPage/>,
                         handle: createHandle('runs'),
-                    },
-                    {
-                        path: 'accounts',
-                        element: <AccountsPage/>,
-                        handle: createHandle('accounts'),
                     },
                     {
                         path: 'research',
@@ -98,11 +122,6 @@ export const appRouter = createBrowserRouter([
                         path: 'publishes',
                         element: <PublishesPage/>,
                         handle: createHandle('publishes'),
-                    },
-                    {
-                        path: 'trade-validation',
-                        element: <TradeValidationPage/>,
-                        handle: createHandle('trade-validation'),
                     },
                 ],
             },

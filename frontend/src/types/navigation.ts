@@ -7,6 +7,7 @@ export interface AppNavItem {
     icon: ReactNode;
     title: string;
     description: string;
+    section?: string;
 }
 
 export interface RouteHandle {

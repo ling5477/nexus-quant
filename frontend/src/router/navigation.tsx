@@ -20,7 +20,44 @@ export const appNavItems: AppNavItem[] = [
         label: 'Dashboard',
         icon: <DashboardOutlined/>,
         title: '控制台总览',
-        description: '查看当前登录态、环境标识与 GateG 入口导航。',
+        description: '查看当前登录态、环境标识与正式控制台入口导航。',
+        section: '概览',
+    },
+    {
+        key: 'accounts',
+        path: '/accounts',
+        label: '账户管理',
+        icon: <DatabaseOutlined/>,
+        title: '账户与凭证管理',
+        description: '管理当前用户的交易账户上下文、默认账户与凭证配置。',
+        section: '账户与交易',
+    },
+    {
+        key: 'trading',
+        path: '/trading',
+        label: '交易工作台',
+        icon: <SwapOutlined/>,
+        title: '交易工作台',
+        description: '围绕正式账户上下文执行下单、撤单、对账、恢复与事实查询。',
+        section: '账户与交易',
+    },
+    {
+        key: 'instruments',
+        path: '/instruments',
+        label: 'Instrument Catalog',
+        icon: <DatabaseOutlined/>,
+        title: 'Instrument Catalog',
+        description: '查看并同步正式 instrument/symbol catalog。',
+        section: '市场与主数据',
+    },
+    {
+        key: 'marketdata',
+        path: '/marketdata',
+        label: '行情查询',
+        icon: <FileSearchOutlined/>,
+        title: 'Marketdata',
+        description: '查询正式 marketdata bars 数据范围。',
+        section: '市场与主数据',
     },
     {
         key: 'strategies',
@@ -29,6 +66,7 @@ export const appNavItems: AppNavItem[] = [
         icon: <SettingOutlined/>,
         title: '策略定义',
         description: '策略列表、策略详情和后续触发操作入口。',
+        section: '策略运行',
     },
     {
         key: 'schedules',
@@ -37,6 +75,7 @@ export const appNavItems: AppNavItem[] = [
         icon: <ScheduleOutlined/>,
         title: '调度计划',
         description: '调度列表、扫描任务和运行编排入口。',
+        section: '策略运行',
     },
     {
         key: 'runs',
@@ -45,14 +84,7 @@ export const appNavItems: AppNavItem[] = [
         icon: <RocketOutlined/>,
         title: '运行记录',
         description: '策略运行查询、状态追踪和详情入口。',
-    },
-    {
-        key: 'accounts',
-        path: '/accounts',
-        label: '账户管理',
-        icon: <DatabaseOutlined/>,
-        title: '账户与凭证管理',
-        description: '管理当前用户的交易账户上下文与凭证配置入口。',
+        section: '策略运行',
     },
     {
         key: 'research',
@@ -61,6 +93,7 @@ export const appNavItems: AppNavItem[] = [
         icon: <ExperimentOutlined/>,
         title: '研究配置',
         description: '研究参数列表和详情扩展点。',
+        section: '研究与回测',
     },
     {
         key: 'backtests',
@@ -69,6 +102,7 @@ export const appNavItems: AppNavItem[] = [
         icon: <FundProjectionScreenOutlined/>,
         title: '回测配置',
         description: '回测配置列表与后续创建入口。',
+        section: '研究与回测',
     },
     {
         key: 'evaluations',
@@ -77,6 +111,7 @@ export const appNavItems: AppNavItem[] = [
         icon: <AreaChartOutlined/>,
         title: '评估结果',
         description: '评估列表、指标摘要和详情扩展点。',
+        section: '研究与回测',
     },
     {
         key: 'publishes',
@@ -85,14 +120,7 @@ export const appNavItems: AppNavItem[] = [
         icon: <FileSearchOutlined/>,
         title: '发布结果',
         description: '发布结果列表与链路审计入口。',
-    },
-    {
-        key: 'trade-validation',
-        path: '/trade-validation',
-        label: '交易验证',
-        icon: <SwapOutlined/>,
-        title: '交易验证',
-        description: '下单、撤单、对账与恢复页面入口。',
+        section: '研究与回测',
     },
 ];
 

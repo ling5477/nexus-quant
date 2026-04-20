@@ -12,6 +12,8 @@ research/py/.pytest_cache/
 research/py/.ruff_cache/
 research/py/.mypy_cache/
 research/py/.venv/
+research/py/.pip-tmp*/
+research/py/pytest-cache-files-*/
 __pycache__/
 *.pyc
 

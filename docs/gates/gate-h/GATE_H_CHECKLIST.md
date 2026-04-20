@@ -1,5 +1,8 @@
 # GATE_H_CHECKLIST
 
+> 历史卷宗说明：GateH = paused / not started。本文件是历史规划草稿，只读参考，不可直接作为开工依据；恢复 GateH 必须先进入 `GateH-PLAN`。
+
+
 当前状态：**GateH paused, not started**
 
 ## 当前结论

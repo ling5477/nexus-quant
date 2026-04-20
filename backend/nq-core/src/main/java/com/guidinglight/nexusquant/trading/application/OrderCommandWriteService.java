@@ -1,8 +1,5 @@
 package com.guidinglight.nexusquant.trading.application;
 
-import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterError;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
 import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
 import com.guidinglight.nexusquant.contracts.event.CancelAck;
 import com.guidinglight.nexusquant.contracts.event.CancelReject;
@@ -19,6 +16,9 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.RiskDecision;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
+import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
+import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
 import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
@@ -269,11 +269,15 @@ public class OrderCommandWriteService {
     public PlaceOrderResult finalizeAcceptedPlaceOrder(
             PlaceOrderRequest request,
             OrderRecord sentOrder,
-            AdapterOrderAck adapterAck,
+            TradingPlaceGatewayResult gatewayResult,
             Instant ackTime
     ) {
-        orderRepository.updateExternalOrderId(sentOrder.orderId(), adapterAck.exchangeOrderId(), ackTime);
-        OrderRecord acceptedSnapshot = sentOrder.withExternalOrderId(adapterAck.exchangeOrderId());
+        String exchangeOrderId = gatewayResult.exchangeOrderId();
+        OrderRecord acceptedSnapshot = sentOrder;
+        if (exchangeOrderId != null && !exchangeOrderId.isBlank()) {
+            orderRepository.updateExternalOrderId(sentOrder.orderId(), exchangeOrderId, ackTime);
+            acceptedSnapshot = sentOrder.withExternalOrderId(exchangeOrderId);
+        }
         OrderRecord acceptedOrder = transitionOrderInternal(
                 acceptedSnapshot,
                 OrderStatus.ACCEPTED,
@@ -288,7 +292,7 @@ public class OrderCommandWriteService {
                         acceptedOrder.accountId(),
                         acceptedOrder.venue(),
                         acceptedOrder.clientOrderId(),
-                        adapterAck.exchangeOrderId(),
+                        exchangeOrderId,
                         acceptedOrder.status().name(),
                         ackTime
                 )
@@ -300,8 +304,8 @@ public class OrderCommandWriteService {
                 request.traceId(),
                 detail(
                         "exchange_code", acceptedOrder.venue(),
-                        "exchange_order_id", adapterAck.exchangeOrderId(),
-                        "result_category", adapterAck.resultCategory().name(),
+                        "exchange_order_id", exchangeOrderId,
+                        "result_category", gatewayResult.resultCategory().name(),
                         "status", acceptedOrder.status().name()
                 )
         );
@@ -318,9 +322,9 @@ public class OrderCommandWriteService {
     public PlaceOrderResult finalizeDeferredPlaceOrder(
             PlaceOrderRequest request,
             OrderRecord sentOrder,
-            AdapterOrderAck adapterAck
+            TradingPlaceGatewayResult gatewayResult
     ) {
-        AdapterError error = adapterAck.error();
+        TradingGatewayFailure failure = gatewayResult.failure();
         auditLogRepository.append(
                 "ORDER",
                 "ORDER_ACK_DEFERRED",
@@ -329,9 +333,9 @@ public class OrderCommandWriteService {
                 detail(
                         "exchange_code", sentOrder.venue(),
                         "request_id", request.requestId(),
-                        "result_category", adapterAck.resultCategory().name(),
-                        "error_code", error == null ? null : error.code(),
-                        "error_message", error == null ? null : error.message()
+                        "result_category", gatewayResult.resultCategory().name(),
+                        "error_code", failure == null ? null : failure.code(),
+                        "error_message", failure == null ? null : failure.message()
                 )
         );
         return new PlaceOrderResult(sentOrder.orderId(), sentOrder.status(), false);
@@ -344,16 +348,16 @@ public class OrderCommandWriteService {
     public PlaceOrderResult finalizeRejectedPlaceOrder(
             PlaceOrderRequest request,
             OrderRecord sentOrder,
-            AdapterOrderAck adapterAck,
+            TradingPlaceGatewayResult gatewayResult,
             Instant ackTime
     ) {
-        AdapterError error = adapterAck.error();
-        String rejectCode = error == null || error.code() == null || error.code().isBlank()
+        TradingGatewayFailure failure = gatewayResult.failure();
+        String rejectCode = failure == null || failure.code() == null || failure.code().isBlank()
                 ? "ORDER_REJECTED_BY_ADAPTER"
-                : error.code();
-        String rejectReason = error == null || error.message() == null || error.message().isBlank()
+                : failure.code();
+        String rejectReason = failure == null || failure.message() == null || failure.message().isBlank()
                 ? "adapter rejected order"
-                : error.message();
+                : failure.message();
         OrderRecord rejectedOrder = transitionOrderInternal(
                 sentOrder,
                 OrderStatus.REJECTED,
@@ -380,7 +384,7 @@ public class OrderCommandWriteService {
                 request.traceId(),
                 detail(
                         "exchange_code", rejectedOrder.venue(),
-                        "result_category", adapterAck.resultCategory().name(),
+                        "result_category", gatewayResult.resultCategory().name(),
                         "reject_code", rejectCode,
                         "reject_reason", rejectReason
                 )
@@ -468,9 +472,9 @@ public class OrderCommandWriteService {
     public CancelOrderResult finalizeDeferredCancelOrder(
             CancelOrderRequest request,
             OrderRecord cancelRequestedOrder,
-            AdapterCancelAck cancelAck
+            TradingCancelGatewayResult gatewayResult
     ) {
-        AdapterError error = cancelAck.error();
+        TradingGatewayFailure failure = gatewayResult.failure();
         auditLogRepository.append(
                 "ORDER",
                 "ORDER_CANCEL_ACK_DEFERRED",
@@ -478,9 +482,9 @@ public class OrderCommandWriteService {
                 request.traceId(),
                 detail(
                         "exchange_code", cancelRequestedOrder.venue(),
-                        "result_category", cancelAck.resultCategory().name(),
-                        "error_code", error == null ? null : error.code(),
-                        "error_message", error == null ? null : error.message()
+                        "result_category", gatewayResult.resultCategory().name(),
+                        "error_code", failure == null ? null : failure.code(),
+                        "error_message", failure == null ? null : failure.message()
                 )
         );
         return new CancelOrderResult(cancelRequestedOrder.orderId(), cancelRequestedOrder.status(), false);
@@ -493,16 +497,16 @@ public class OrderCommandWriteService {
     public CancelOrderResult finalizeRejectedCancelOrder(
             CancelOrderRequest request,
             OrderRecord cancelRequestedOrder,
-            AdapterCancelAck cancelAck,
+            TradingCancelGatewayResult gatewayResult,
             Instant ackTime
     ) {
-        AdapterError error = cancelAck.error();
-        String rejectCode = error == null || error.code() == null || error.code().isBlank()
+        TradingGatewayFailure failure = gatewayResult.failure();
+        String rejectCode = failure == null || failure.code() == null || failure.code().isBlank()
                 ? "CANCEL_REJECTED_BY_ADAPTER"
-                : error.code();
-        String rejectReason = error == null || error.message() == null || error.message().isBlank()
+                : failure.code();
+        String rejectReason = failure == null || failure.message() == null || failure.message().isBlank()
                 ? "adapter rejected cancel"
-                : error.message();
+                : failure.message();
         OrderRecord cancelRejectedOrder = transitionOrderInternal(
                 cancelRequestedOrder,
                 OrderStatus.CANCEL_REJECTED,
@@ -531,7 +535,7 @@ public class OrderCommandWriteService {
                 detail(
                         "order_id", cancelRejectedOrder.orderId(),
                         "status", cancelRejectedOrder.status().name(),
-                        "result_category", cancelAck.resultCategory().name(),
+                        "result_category", gatewayResult.resultCategory().name(),
                         "reject_code", rejectCode,
                         "reject_reason", rejectReason,
                         "exchange_code", cancelRejectedOrder.venue()

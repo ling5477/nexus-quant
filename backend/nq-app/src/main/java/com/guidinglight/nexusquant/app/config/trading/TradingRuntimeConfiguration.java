@@ -1,9 +1,5 @@
 package com.guidinglight.nexusquant.app.config.trading;
 
-import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
-import com.guidinglight.nexusquant.trading.infra.query.JdbcTradingQueryFacade;
-import com.guidinglight.nexusquant.trading.application.RecoveryService;
-import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 import com.guidinglight.nexusquant.trading.domain.state.OrderStateMachine;
 import com.guidinglight.nexusquant.risk.service.AccountTradingEnabledRule;
@@ -19,18 +15,16 @@ import com.guidinglight.nexusquant.risk.service.RateLimitRule;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
 import com.guidinglight.nexusquant.risk.service.RiskRuleRegistry;
 import com.guidinglight.nexusquant.risk.service.SymbolEnabledRule;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRecoveryService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.SchedulerTradingMaintenanceService;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * TradingRuntimeConfiguration 先承接 trading/risk/scheduler 运行时装配，避免继续堆在 account 配置中。
+ * TradingRuntimeConfiguration 负责 trading 域仍需保留在 composition root 的最小运行时装配。
+ * <p>
+ * Why:
+ * PRE-1 要把 infra concrete 与 scheduler 具体实现从 `nq-app` 尽量移出去，
+ * 这里仅保留状态机与风控默认值等真正属于 composition root 的 Bean。
  */
 @Configuration
 public class TradingRuntimeConfiguration {
@@ -38,11 +32,6 @@ public class TradingRuntimeConfiguration {
     @Bean
     public OrderStateMachine orderStateMachine() {
         return new InMemoryOrderStateMachine();
-    }
-
-    @Bean
-    public RecoveryService recoveryService(OkxRecoveryService okxRecoveryService) {
-        return okxRecoveryService;
     }
 
     @Bean
@@ -68,25 +57,4 @@ public class TradingRuntimeConfiguration {
                 new MaxOrderAmountRule(preTradeRiskSettings)
         )));
     }
-
-    @Bean
-    public TradingQueryFacade tradingQueryFacade(JdbcTemplate jdbcTemplate) {
-        return new JdbcTradingQueryFacade(jdbcTemplate);
-    }
-
-    @Bean
-    public TradingMaintenanceService tradingMaintenanceService(
-            OkxRestReconcileService okxRestReconcileService,
-            BinanceRestReconcileService binanceRestReconcileService,
-            BinanceRecoveryService binanceRecoveryService,
-            RecoveryService recoveryService
-    ) {
-        return new SchedulerTradingMaintenanceService(
-                okxRestReconcileService,
-                binanceRestReconcileService,
-                binanceRecoveryService,
-                recoveryService
-        );
-    }
 }
-

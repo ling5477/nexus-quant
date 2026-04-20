@@ -41,6 +41,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
         if (standardHeader != null && !standardHeader.isBlank()) {
             return standardHeader.trim();
         }
+        // 仅兼容历史 trace header；这是观测链路兼容，不属于业务 legacy account 语义。
         String legacyHeader = request.getHeader(TraceIdContext.LEGACY_TRACE_ID_HEADER);
         return legacyHeader == null || legacyHeader.isBlank() ? null : legacyHeader.trim();
     }

@@ -1,12 +1,11 @@
 package com.guidinglight.nexusquant.gateway.infra.security;
 
-import com.guidinglight.nexusquant.security.token.TokenClaims;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.gateway.application.GatewayRequestContext;
+import com.guidinglight.nexusquant.security.token.TokenClaims;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
-
-import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * SecurityContextGatewayAuthFacade 提供当前认证态的统一读取入口。

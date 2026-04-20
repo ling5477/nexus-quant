@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.guidinglight.nexusquant.marketdata.application.FixtureMarketdataRegistry;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
@@ -110,6 +111,33 @@ class BacktestExecutionServiceTest {
     }
 
     @Test
+    void shouldResolveRegisteredFixtureDatasetWithoutHardcodedBtcFallback() {
+        CapturingHistoricalMarketDataPort historicalMarketDataPort = new CapturingHistoricalMarketDataPort(List.of(
+                new HistoricalBar(
+                        "BINANCE",
+                        "ETHUSDT",
+                        BarInterval.ONE_MINUTE,
+                        Instant.parse("2025-01-01T00:00:00Z"),
+                        Instant.parse("2025-01-01T00:00:59Z"),
+                        new BigDecimal("2300"),
+                        new BigDecimal("2305"),
+                        new BigDecimal("2298"),
+                        new BigDecimal("2302"),
+                        new BigDecimal("100")
+                )
+        ));
+        Scenario scenario = createScenario(historicalMarketDataPort);
+
+        BacktestRun createdRun = scenario.createRun("""
+                {"provider":"fixture","datasetId":"BINANCE_ETHUSDT_1M_SAMPLE","exchangeCode":"BINANCE","symbol":"ETHUSDT","interval":"1m"}
+                """);
+        scenario.backtestExecutionService.startRun(createdRun.backtestRunId());
+
+        assertEquals("backtest/fixtures/ethusdt_1m_sample.csv", historicalMarketDataPort.lastQuery.datasetSpec().resourcePath());
+        assertEquals("ETHUSDT", historicalMarketDataPort.lastQuery.datasetSpec().symbol());
+    }
+
+    @Test
     void shouldMarkFailedWhenNoBarsReturned() {
         Scenario scenario = createScenario(query -> List.of());
         BacktestRun createdRun = scenario.createRun("""
@@ -188,6 +216,7 @@ class BacktestExecutionServiceTest {
                         bar("2025-01-01T00:00:00Z", "2025-01-01T00:00:59Z", "43000", "43010", "10"),
                         bar("2025-01-01T00:01:00Z", "2025-01-01T00:01:59Z", "43010", "43110", "11")
                 ),
+                new FixtureMarketdataRegistry(),
                 backtestRunService,
                 backtestConfigService,
                 researchConfigService,
@@ -279,6 +308,7 @@ class BacktestExecutionServiceTest {
         );
         BacktestExecutionService backtestExecutionService = new BacktestExecutionService(
                 historicalMarketDataPort,
+                new FixtureMarketdataRegistry(),
                 backtestRunService,
                 backtestConfigService,
                 researchConfigService,

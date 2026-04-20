@@ -12,7 +12,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsConnectionListener;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -92,4 +92,5 @@ class OkxWsDegradeReconcileCoordinatorTest {
         verify(auditLogRepository).append(eq("WS"), eq("WS_SUBSCRIBE_FAILED_THRESHOLD"), eq("OKX_WS"), eq("trc-ws-sub-2"), any());
     }
 }
+
 

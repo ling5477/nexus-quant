@@ -1,12 +1,5 @@
 package com.guidinglight.nexusquant.trading.application;
 
-import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterError;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.contracts.command.CancelOrderCommand;
 import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
@@ -14,7 +7,11 @@ import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.trading.application.routing.AdapterRouter;
+import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
+import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
+import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
+import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
+import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
@@ -39,7 +36,7 @@ import org.springframework.stereotype.Service;
  * <p>
  * Why:
  * GateD 需要把 place / cancel 的入口继续保留在一个应用服务内，但也必须避免它重新长成“什么都做”的巨石。
- * 因此本类只负责执行编排、风控调用、adapter 路由、event_store 与审计写入；
+ * 因此本类只负责执行编排、风控调用、venue gateway 调用、event_store 与审计写入；
  * 生命周期语义动作统一收口到 `OrderLifecycleService`，contracts 组装统一收口到 `ExecutionCommandMapper`。
  */
 @Service
@@ -51,7 +48,7 @@ public class OrderCommandService {
     private final OrderRepository orderRepository;
     private final AuditLogRepository auditLogRepository;
     private final EventPublisherPort eventPublisherPort;
-    private final AdapterRouter adapterRouter;
+    private final TradingVenueGateway tradingVenueGateway;
     private final OrderCommandWriteService orderCommandWriteService;
     private final Clock clock;
 
@@ -59,20 +56,23 @@ public class OrderCommandService {
      * @param orderRepository          订单仓储端口
      * @param auditLogRepository       审计仓储
      * @param eventPublisherPort       事件事实链追加端口
-     * @param adapterRouter            adapter 路由器
+     * @param tradingVenueGateway      trading anti-corruption boundary
      * @param orderCommandWriteService 本地写阶段事务服务
      */
     public OrderCommandService(
             OrderRepository orderRepository,
             AuditLogRepository auditLogRepository,
             EventPublisherPort eventPublisherPort,
-            AdapterRouter adapterRouter,
+            TradingVenueGateway tradingVenueGateway,
             OrderCommandWriteService orderCommandWriteService
     ) {
         this.orderRepository = Objects.requireNonNull(orderRepository, "orderRepository must not be null");
         this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
-        this.adapterRouter = Objects.requireNonNull(adapterRouter, "adapterRouter must not be null");
+        this.tradingVenueGateway = Objects.requireNonNull(
+                tradingVenueGateway,
+                "tradingVenueGateway must not be null"
+        );
         this.orderCommandWriteService = Objects.requireNonNull(
                 orderCommandWriteService,
                 "orderCommandWriteService must not be null"
@@ -130,19 +130,17 @@ public class OrderCommandService {
             return preparation.completedResult();
         }
         OrderRecord sentOrder = preparation.sentOrder();
-        TradingAdapter tradingAdapter = adapterRouter.route(sentOrder.accountId(), sentOrder.venue()).trading();
-        AdapterOrderAck adapterAck = invokePlaceOrder(tradingAdapter, request, sentOrder);
-        Instant ackTime = adapterAck.ackTs() == null ? Instant.now(clock) : adapterAck.ackTs();
+        TradingPlaceGatewayResult gatewayResult = tradingVenueGateway.placeOrder(sentOrder, request);
+        Instant ackTime = gatewayResult.acknowledgedAt() == null ? Instant.now(clock) : gatewayResult.acknowledgedAt();
 
-        if (adapterAck.accepted()) {
-            return orderCommandWriteService.finalizeAcceptedPlaceOrder(request, sentOrder, adapterAck, ackTime);
+        if (gatewayResult.accepted()) {
+            return orderCommandWriteService.finalizeAcceptedPlaceOrder(request, sentOrder, gatewayResult, ackTime);
         }
 
-        AdapterError error = adapterAck.error();
-        if (shouldDeferOrderRejection(error)) {
-            return orderCommandWriteService.finalizeDeferredPlaceOrder(request, sentOrder, adapterAck);
+        if (shouldDeferOrderRejection(gatewayResult.resultCategory())) {
+            return orderCommandWriteService.finalizeDeferredPlaceOrder(request, sentOrder, gatewayResult);
         }
-        return orderCommandWriteService.finalizeRejectedPlaceOrder(request, sentOrder, adapterAck, ackTime);
+        return orderCommandWriteService.finalizeRejectedPlaceOrder(request, sentOrder, gatewayResult, ackTime);
     }
 
     /**
@@ -176,8 +174,7 @@ public class OrderCommandService {
         OrderRecord cancelRequestedOrder = orderCommandWriteService.prepareCancelOrder(request, currentOrder);
 
         logCancelPath("order_cancel_before_adapter_call", cancelRequestedOrder, request.traceId());
-        TradingAdapter tradingAdapter = adapterRouter.route(cancelRequestedOrder.accountId(), cancelRequestedOrder.venue()).trading();
-        AdapterCancelAck cancelAck = invokeCancelOrder(tradingAdapter, request, cancelRequestedOrder);
+        TradingCancelGatewayResult gatewayResult = tradingVenueGateway.cancelOrder(cancelRequestedOrder, request);
         log.info(
                 "order_cancel_after_adapter_call orderId={} clientOrderId={} externalOrderId={} accountId={} currentStatus={} traceId={} venue={} adapterAccepted={}",
                 cancelRequestedOrder.orderId(),
@@ -187,18 +184,17 @@ public class OrderCommandService {
                 cancelRequestedOrder.status().name(),
                 request.traceId(),
                 cancelRequestedOrder.venue(),
-                cancelAck.accepted()
+                gatewayResult.accepted()
         );
-        Instant ackTime = cancelAck.ts() == null ? Instant.now(clock) : cancelAck.ts();
-        if (cancelAck.accepted()) {
+        Instant ackTime = gatewayResult.acknowledgedAt() == null ? Instant.now(clock) : gatewayResult.acknowledgedAt();
+        if (gatewayResult.accepted()) {
             return orderCommandWriteService.finalizeAcceptedCancelOrder(request, cancelRequestedOrder, ackTime);
         }
 
-        AdapterError error = cancelAck.error();
-        if (shouldDeferOrderRejection(error)) {
-            return orderCommandWriteService.finalizeDeferredCancelOrder(request, cancelRequestedOrder, cancelAck);
+        if (shouldDeferOrderRejection(gatewayResult.resultCategory())) {
+            return orderCommandWriteService.finalizeDeferredCancelOrder(request, cancelRequestedOrder, gatewayResult);
         }
-        return orderCommandWriteService.finalizeRejectedCancelOrder(request, cancelRequestedOrder, cancelAck, ackTime);
+        return orderCommandWriteService.finalizeRejectedCancelOrder(request, cancelRequestedOrder, gatewayResult, ackTime);
     }
 
     private void logCancelPath(String eventName, OrderRecord order, String traceId) {
@@ -269,86 +265,6 @@ public class OrderCommandService {
             throw new IllegalArgumentException("externalOrderId must not be blank");
         }
         return orderCommandWriteService.linkExternalOrderId(orderId, externalOrderId, traceId);
-    }
-
-    private AdapterOrderAck invokePlaceOrder(TradingAdapter tradingAdapter, PlaceOrderRequest request, OrderRecord order) {
-        try {
-            return tradingAdapter.placeOrder(new AdapterOrderRequest(
-                    request.requestId(),
-                    order.orderId(),
-                    order.accountId(),
-                    order.venue(),
-                    order.symbol(),
-                    order.clientOrderId(),
-                    request.idempotencyKey(),
-                    order.side(),
-                    order.type(),
-                    order.price(),
-                    order.qty(),
-                    null,
-                    request.timeInForce(),
-                    request.source(),
-                    order.strategyRunId(),
-                    request.traceId()
-            ));
-        } catch (RuntimeException ex) {
-            auditLogRepository.append(
-                    "ORDER",
-                    "ADAPTER_PLACE_ORDER_FAILED",
-                    order.orderId(),
-                    request.traceId(),
-                    detail("venue", order.venue(), "error", ex.getMessage())
-            );
-            return new AdapterOrderAck(
-                    false,
-                    order.venue(),
-                    order.accountId(),
-                    order.symbol(),
-                    order.clientOrderId(),
-                    null,
-                    "REJECTED",
-                    AdapterResultCategory.REMOTE_UNAVAILABLE,
-                    new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), AdapterResultCategory.REMOTE_UNAVAILABLE, true),
-                    Instant.now(clock),
-                    null,
-                    request.traceId(),
-                    null
-            );
-        }
-    }
-
-    private AdapterCancelAck invokeCancelOrder(TradingAdapter tradingAdapter, CancelOrderRequest request, OrderRecord order) {
-        try {
-            return tradingAdapter.cancelOrder(new AdapterCancelRequest(
-                    request.requestId(),
-                    order.orderId(),
-                    order.accountId(),
-                    order.venue(),
-                    order.symbol(),
-                    order.clientOrderId(),
-                    order.externalOrderId(),
-                    request.reason(),
-                    request.traceId()
-            ));
-        } catch (RuntimeException ex) {
-            auditLogRepository.append(
-                    "ORDER",
-                    "ADAPTER_CANCEL_ORDER_FAILED",
-                    order.orderId(),
-                    request.traceId(),
-                    detail("venue", order.venue(), "error", ex.getMessage())
-            );
-            return new AdapterCancelAck(
-                    false,
-                    order.venue(),
-                    order.externalOrderId(),
-                    AdapterResultCategory.REMOTE_UNAVAILABLE,
-                    new AdapterError("ADAPTER_CALL_FAILED", ex.getMessage(), AdapterResultCategory.REMOTE_UNAVAILABLE, true),
-                    Instant.now(clock),
-                    request.traceId(),
-                    null
-            );
-        }
     }
 
     private void publishEvent(String topic, String key, String traceId, Object payload) {
@@ -478,14 +394,11 @@ public class OrderCommandService {
         return detail;
     }
 
-    private boolean shouldDeferOrderRejection(AdapterError error) {
-        if (error == null || error.category() == null) {
+    private boolean shouldDeferOrderRejection(TradingGatewayResultCategory resultCategory) {
+        if (resultCategory == null) {
             return false;
         }
-        return switch (error.category()) {
-            case DEFERRED, RETRYABLE_FAILURE, THROTTLED, REMOTE_UNAVAILABLE -> true;
-            default -> false;
-        };
+        return resultCategory.shouldDeferDecision();
     }
 }
 

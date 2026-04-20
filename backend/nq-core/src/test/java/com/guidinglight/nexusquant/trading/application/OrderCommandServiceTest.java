@@ -5,16 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter;
-import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
@@ -22,15 +12,20 @@ import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.contracts.model.RiskDecision;
 import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
-import com.guidinglight.nexusquant.trading.application.routing.AdapterRouter;
-import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
-import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
+import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
+import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
+import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
+import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSnapshot;
+import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
+import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
+import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -45,24 +40,28 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * OrderCommandServiceTest 覆盖 GateC-0 的 adapter 路由、幂等与外部单号落库行为。
+ * OrderCommandServiceTest 覆盖 PRE-1 之后的 trading anti-corruption 行为。
+ * <p>
+ * Why:
+ * 本组测试要确保 `OrderCommandService` 只依赖内部 `TradingVenueGateway` 语义，
+ * 同时继续保持幂等、状态推进与 accepted/cancel 回执落库行为不变。
  */
 class OrderCommandServiceTest {
 
     /**
-     * 验证 placeOrder 会调用 TradingAdapter，并在成功回执后把 external_order_id 写回订单快照。
+     * 验证 placeOrder 会经由内部 gateway，并在成功回执后把 external_order_id 写回订单快照。
      */
     @Test
-    void shouldRoutePlaceOrderThroughTradingAdapterAndPersistExternalOrderId() {
+    void shouldRoutePlaceOrderThroughTradingGatewayAndPersistExternalOrderId() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
-        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+        RecordingTradingVenueGateway tradingVenueGateway = new RecordingTradingVenueGateway();
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingVenueGateway);
 
         PlaceOrderResult result = service.placeOrder(createRequest("coid-200"));
         Optional<OrderRecord> order = orderRepository.findByOrderId(result.orderId());
 
-        assertEquals(1, tradingAdapter.placeInvocationCount());
+        assertEquals(1, tradingVenueGateway.placeInvocationCount());
         assertTrue(order.isPresent());
         assertEquals(OrderStatus.ACCEPTED, result.status());
         assertEquals("paper-ord-ack", order.get().externalOrderId());
@@ -71,14 +70,14 @@ class OrderCommandServiceTest {
     }
 
     /**
-     * 验证重复 PlaceOrder 命中幂等时返回同一订单且不重复调用 adapter。
+     * 验证重复 PlaceOrder 命中幂等时返回同一订单且不重复调用 gateway。
      */
     @Test
     void shouldReturnSameOrderIdForIdempotentPlaceOrder() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
-        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+        RecordingTradingVenueGateway tradingVenueGateway = new RecordingTradingVenueGateway();
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingVenueGateway);
 
         PlaceOrderRequest request = createRequest("coid-201");
         PlaceOrderResult first = service.placeOrder(request);
@@ -88,7 +87,7 @@ class OrderCommandServiceTest {
         assertTrue(second.idempotentHit());
         assertEquals(first.orderId(), second.orderId());
         assertEquals(1, orderRepository.insertCount());
-        assertEquals(1, tradingAdapter.placeInvocationCount());
+        assertEquals(1, tradingVenueGateway.placeInvocationCount());
         assertEquals(OrderStatus.ACCEPTED, second.status());
     }
 
@@ -99,7 +98,7 @@ class OrderCommandServiceTest {
     void shouldWriteAuditWhenTransitionIsIllegal() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        OrderCommandService service = createService(orderRepository, auditLogRepository, new RecordingTradingAdapter());
+        OrderCommandService service = createService(orderRepository, auditLogRepository, new RecordingTradingVenueGateway());
 
         PlaceOrderResult result = service.placeOrder(createRequest("coid-202"));
 
@@ -114,14 +113,14 @@ class OrderCommandServiceTest {
     }
 
     /**
-     * 验证撤单命令会经由 TradingAdapter 并推进到 CANCELLED 终态。
+     * 验证撤单命令会经由内部 gateway 并推进到 CANCELLED 终态。
      */
     @Test
     void shouldCancelAcceptedOrderToCancelledTerminalStatus() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
-        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+        RecordingTradingVenueGateway tradingVenueGateway = new RecordingTradingVenueGateway();
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingVenueGateway);
 
         PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-203"));
         CancelOrderResult cancelOrderResult = service.cancelOrder(new CancelOrderRequest(
@@ -134,21 +133,21 @@ class OrderCommandServiceTest {
 
         assertEquals(OrderStatus.CANCELLED, cancelOrderResult.status());
         assertFalse(cancelOrderResult.idempotentHit());
-        assertEquals(1, tradingAdapter.cancelInvocationCount());
+        assertEquals(1, tradingVenueGateway.cancelInvocationCount());
         assertTrue(auditLogRepository.containsAction("ORDER_CANCELLED"));
     }
 
     /**
-     * 验证撤单被 adapter 拒绝时，订单状态会从 CANCEL_REQUESTED 推进到 CANCEL_REJECTED。
+     * 验证撤单被 gateway 拒绝时，订单状态会从 CANCEL_REQUESTED 推进到 CANCEL_REJECTED。
      */
     @Test
-    void shouldMarkOrderAsCancelRejectedWhenAdapterRejectsCancel() {
+    void shouldMarkOrderAsCancelRejectedWhenGatewayRejectsCancel() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
-        tradingAdapter.setCancelAccepted(false);
-        tradingAdapter.setCancelReject("CANCEL_REJECTED_BY_TEST", "reject by test");
-        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+        RecordingTradingVenueGateway tradingVenueGateway = new RecordingTradingVenueGateway();
+        tradingVenueGateway.setCancelAccepted(false);
+        tradingVenueGateway.setCancelReject("CANCEL_REJECTED_BY_TEST", "reject by test");
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingVenueGateway);
 
         PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-204"));
         CancelOrderResult cancelOrderResult = service.cancelOrder(new CancelOrderRequest(
@@ -161,7 +160,7 @@ class OrderCommandServiceTest {
 
         assertEquals(OrderStatus.CANCEL_REJECTED, cancelOrderResult.status());
         assertFalse(cancelOrderResult.idempotentHit());
-        assertEquals(1, tradingAdapter.cancelInvocationCount());
+        assertEquals(1, tradingVenueGateway.cancelInvocationCount());
         assertTrue(auditLogRepository.containsAction("ORDER_CANCEL_REJECTED"));
     }
 
@@ -172,9 +171,9 @@ class OrderCommandServiceTest {
     void shouldAllowRetryCancelAfterCancelRejected() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
-        tradingAdapter.setCancelAccepted(false);
-        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter);
+        RecordingTradingVenueGateway tradingVenueGateway = new RecordingTradingVenueGateway();
+        tradingVenueGateway.setCancelAccepted(false);
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingVenueGateway);
 
         PlaceOrderResult placeOrderResult = service.placeOrder(createRequest("coid-205"));
         CancelOrderResult firstCancel = service.cancelOrder(new CancelOrderRequest(
@@ -186,7 +185,7 @@ class OrderCommandServiceTest {
         ));
         assertEquals(OrderStatus.CANCEL_REJECTED, firstCancel.status());
 
-        tradingAdapter.setCancelAccepted(true);
+        tradingVenueGateway.setCancelAccepted(true);
         CancelOrderResult secondCancel = service.cancelOrder(new CancelOrderRequest(
                 placeOrderResult.orderId(),
                 null,
@@ -196,20 +195,20 @@ class OrderCommandServiceTest {
         ));
 
         assertEquals(OrderStatus.CANCELLED, secondCancel.status());
-        assertEquals(2, tradingAdapter.cancelInvocationCount());
+        assertEquals(2, tradingVenueGateway.cancelInvocationCount());
     }
 
     /**
-     * 验证外部下单已被 adapter 接受、但本地确认写失败时，不会把订单误标成 ACCEPTED。
+     * 验证外部下单已被 gateway 接受、但本地确认写失败时，不会把订单误标成 ACCEPTED。
      * Why:
-     * adapter ack 属于跨边界动作，无法与本地数据库天然原子；当前收口要求至少保证失败时订单停在 `SENT`，
+     * gateway ack 属于跨边界动作，无法与本地数据库天然原子；当前收口要求至少保证失败时订单停在 `SENT`，
      * 让 query-confirm / recovery 继续接管，而不是留下“看起来已确认”的假成功状态。
      */
     @Test
     void shouldKeepOrderInSentWhenAcceptedAckPersistenceFails() {
         InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
         RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
-        RecordingTradingAdapter tradingAdapter = new RecordingTradingAdapter();
+        RecordingTradingVenueGateway tradingVenueGateway = new RecordingTradingVenueGateway();
         OrderCommandWriteService writeService = new FailingFinalizeOrderCommandWriteService(
                 orderRepository,
                 new InMemoryOrderStateMachine(),
@@ -218,7 +217,7 @@ class OrderCommandServiceTest {
                 new NoopRiskEventRepository(),
                 new RecordingEventPublisherPort()
         );
-        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingAdapter, writeService);
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingVenueGateway, writeService);
 
         assertThrows(IllegalStateException.class, () -> service.placeOrder(createRequest("coid-206")));
 
@@ -230,7 +229,7 @@ class OrderCommandServiceTest {
     private OrderCommandService createService(
             InMemoryOrderRepository orderRepository,
             RecordingAuditLogRepository auditLogRepository,
-            RecordingTradingAdapter tradingAdapter
+            RecordingTradingVenueGateway tradingVenueGateway
     ) {
         OrderCommandWriteService writeService = new OrderCommandWriteService(
                 orderRepository,
@@ -240,25 +239,20 @@ class OrderCommandServiceTest {
                 new NoopRiskEventRepository(),
                 new RecordingEventPublisherPort()
         );
-        return createService(orderRepository, auditLogRepository, tradingAdapter, writeService);
+        return createService(orderRepository, auditLogRepository, tradingVenueGateway, writeService);
     }
 
     private OrderCommandService createService(
             InMemoryOrderRepository orderRepository,
             RecordingAuditLogRepository auditLogRepository,
-            RecordingTradingAdapter tradingAdapter,
+            RecordingTradingVenueGateway tradingVenueGateway,
             OrderCommandWriteService writeService
     ) {
-        AdapterRouter adapterRouter = new AdapterRouter(
-                List.of(tradingAdapter),
-                List.of(new NoopMarketDataAdapter("PAPER")),
-                List.of(new NoopAccountAdapter("PAPER"))
-        );
         return new OrderCommandService(
                 orderRepository,
                 auditLogRepository,
                 new RecordingEventPublisherPort(),
-                adapterRouter,
+                tradingVenueGateway,
                 writeService
         );
     }
@@ -338,7 +332,10 @@ class OrderCommandServiceTest {
         }
     }
 
-    private static final class RecordingTradingAdapter implements TradingAdapter {
+    /**
+     * RecordingTradingVenueGateway 使用内部 gateway 契约驱动 OrderCommandService 单测。
+     */
+    private static final class RecordingTradingVenueGateway implements TradingVenueGateway {
 
         private int placeInvocationCount;
         private int cancelInvocationCount;
@@ -347,70 +344,50 @@ class OrderCommandServiceTest {
         private String cancelRejectReason = "cancel rejected by test adapter";
 
         @Override
-        public String venue() {
-            return "PAPER";
-        }
-
-        @Override
-        public AdapterOrderAck placeOrder(AdapterOrderRequest request) {
+        public TradingPlaceGatewayResult placeOrder(OrderRecord order, PlaceOrderRequest request) {
             placeInvocationCount++;
-            return new AdapterOrderAck(
+            return new TradingPlaceGatewayResult(
                     true,
-                    venue(),
-                    request.accountId(),
-                    request.symbol(),
-                    request.clientOrderId(),
                     "paper-ord-ack",
                     "ACCEPTED",
+                    TradingGatewayResultCategory.ACCEPTED,
                     null,
                     Instant.now(),
-                    "paper_test_ack",
-                    request.traceId()
+                    "SIM"
             );
         }
 
         @Override
-        public AdapterCancelAck cancelOrder(AdapterCancelRequest request) {
+        public TradingCancelGatewayResult cancelOrder(OrderRecord order, CancelOrderRequest request) {
             cancelInvocationCount++;
             if (cancelAccepted) {
-                return new AdapterCancelAck(true, venue(), request.externalOrderId(), null, Instant.now(), request.traceId());
+                return new TradingCancelGatewayResult(
+                        true,
+                        TradingGatewayResultCategory.ACCEPTED,
+                        null,
+                        Instant.now(),
+                        "SIM"
+                );
             }
-            return new AdapterCancelAck(
+            return new TradingCancelGatewayResult(
                     false,
-                    venue(),
-                    request.externalOrderId(),
-                    new com.guidinglight.nexusquant.adapter.api.model.AdapterError(
-                            cancelRejectCode,
-                            cancelRejectReason,
-                            false
-                    ),
+                    TradingGatewayResultCategory.FATAL_FAILURE,
+                    new TradingGatewayFailure(cancelRejectCode, cancelRejectReason, false),
                     Instant.now(),
-                    request.traceId()
+                    "SIM"
             );
         }
 
         @Override
-        public AdapterOrderSnapshot getOrder(AdapterOrderQuery query) {
-            return new AdapterOrderSnapshot(
-                    query.accountId(),
-                    venue(),
-                    query.symbol(),
-                    query.clientOrderId(),
-                    query.externalOrderId(),
+        public TradingOrderStatusSnapshot getOrderStatus(OrderRecord order, String traceId) {
+            return new TradingOrderStatusSnapshot(
+                    order.externalOrderId(),
                     OrderStatus.ACCEPTED.name(),
-                    null,
-                    null,
-                    null,
+                    TradingGatewayResultCategory.SUCCESS,
                     null,
                     Instant.now(),
-                    "paper_test_snapshot",
-                    query.traceId()
+                    "SIM"
             );
-        }
-
-        @Override
-        public List<AdapterOrderSnapshot> listOpenOrders(AdapterOpenOrdersQuery query) {
-            return List.of();
         }
 
         int placeInvocationCount() {
@@ -497,11 +474,10 @@ class OrderCommandServiceTest {
         public PlaceOrderResult finalizeAcceptedPlaceOrder(
                 PlaceOrderRequest request,
                 OrderRecord sentOrder,
-                AdapterOrderAck adapterAck,
+                TradingPlaceGatewayResult gatewayResult,
                 Instant ackTime
         ) {
             throw new IllegalStateException("simulated accepted-ack persistence failure");
         }
     }
 }
-

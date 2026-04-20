@@ -1,4 +1,7 @@
 # GateG TEST_CASES
+
+> 历史卷宗说明：本文件属于 GateG completed/frozen 历史档案，只读参考，不代表当前实现入口。当前事实以 docs/current/* 与最新源码为准.
+
 # GateG 测试与验收清单
 
 状态约定：

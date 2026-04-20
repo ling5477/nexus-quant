@@ -1,5 +1,8 @@
 # GateH（暂停中）
 
+> 历史卷宗说明：GateH = paused / not started。本文件是历史规划草稿，只读参考，不可直接作为开工依据；恢复 GateH 必须先进入 `GateH-PLAN`。
+
+
 当前状态：**paused, not started**
 
 GateH 当前尚未启动开发。此前卷宗中的 GateH 增强项、PR 拆分和候选范围，只保留为历史草稿参考，不能视为已批准计划，也不能作为直接开工依据。

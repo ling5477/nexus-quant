@@ -5,16 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter;
-import com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.trading.application.routing.AdapterRouter;
-import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.infra.eventstore.EventStoreAppender;
+import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -26,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * PaperMatchingServiceTest 验证 GateC-0 后 paper 同步链路仍然保持幂等。
+ * PaperMatchingServiceTest 验证 PRE-1 之后 paper 同步链路仍然保持幂等。
  */
 class PaperMatchingServiceTest {
 
@@ -50,7 +49,7 @@ class PaperMatchingServiceTest {
                 new AlwaysPostedLedgerGateway(),
                 eventStoreAppender,
                 new NoopAuditLogRepository(),
-                createAdapterRouter()
+                new AdapterBackedTradingVenueGateway(List.of(new PaperTradingAdapter()))
         );
 
         orderGateway.addOrder(new OrderRecord(
@@ -93,7 +92,7 @@ class PaperMatchingServiceTest {
                 new AlwaysPostedLedgerGateway(),
                 createEventStoreAppender(),
                 new NoopAuditLogRepository(),
-                createAdapterRouter()
+                new AdapterBackedTradingVenueGateway(List.of(new PaperTradingAdapter()))
         );
         orderGateway.addOrder(new OrderRecord(
                 "ord-301",
@@ -132,7 +131,7 @@ class PaperMatchingServiceTest {
                 new AlwaysPostedLedgerGateway(),
                 createEventStoreAppender(),
                 new NoopAuditLogRepository(),
-                createAdapterRouter()
+                new AdapterBackedTradingVenueGateway(List.of(new PaperTradingAdapter()))
         );
         orderGateway.addOrder(new OrderRecord(
                 "ord-302",
@@ -164,14 +163,6 @@ class PaperMatchingServiceTest {
                 new ObjectMapper()
                         .registerModule(new JavaTimeModule())
                         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        );
-    }
-
-    private AdapterRouter createAdapterRouter() {
-        return new AdapterRouter(
-                List.of(new PaperTradingAdapter()),
-                List.of(new NoopMarketDataAdapter("PAPER")),
-                List.of(new NoopAccountAdapter("PAPER"))
         );
     }
 
@@ -241,10 +232,8 @@ class PaperMatchingServiceTest {
 
     private static final class AlwaysPostedLedgerGateway implements TradeLedgerGateway {
         @Override
-        public com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult postTrade(
-                com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest request
-        ) {
-            return new com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult(true, false, "POSTED");
+        public LedgerPostingResult postTrade(TradeLedgerRequest request) {
+            return new LedgerPostingResult(true, false, "POSTED");
         }
     }
 

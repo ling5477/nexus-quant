@@ -1,13 +1,13 @@
-# Frontend（GateG-1）
+# Frontend（Console Baseline）
 
-本目录承载 GateG 正式前端控制台骨架，当前批次已完成：
+本目录承载正式前端控制台基线，当前已包含：
 
 - React 19 + TypeScript + Vite 8 工程初始化
 - 登录页、token 持久化、`/api/auth/me` 恢复登录态
 - 统一 Axios client、401/403/500 基础处理
-- 控制台布局、左侧菜单、基础路由
-- `dashboard / strategies / schedules / runs / research / backtests / evaluations / publishes / trade-validation` 页面壳子
-- Playwright 登录与菜单跳转 smoke
+- 控制台布局、左侧菜单、正式 IA 分组导航
+- `dashboard / accounts / trading / instruments / marketdata / strategies / schedules / runs / research / backtests / evaluations / publishes` 页面域
+- Playwright 登录与关键工作区 smoke
 
 ## 1. 环境变量
 
@@ -73,4 +73,5 @@ npm run test:e2e
 - 打开 `/login`
 - 使用真实账号登录
 - 进入 `/dashboard`
-- 跳转 `/strategies`
+- 跳转 `/accounts`
+- 跳转 `/trading`

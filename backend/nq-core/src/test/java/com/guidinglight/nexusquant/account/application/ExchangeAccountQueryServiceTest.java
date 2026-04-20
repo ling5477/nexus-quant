@@ -80,6 +80,13 @@ class ExchangeAccountQueryServiceTest {
         }
 
         @Override
+        public Optional<ExchangeAccountSummary> findById(Long exchangeAccountId) {
+            findByIdCalls++;
+            lastExchangeAccountId = exchangeAccountId;
+            return Optional.ofNullable(summary);
+        }
+
+        @Override
         public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) {
             findByIdCalls++;
             lastOwnerUserId = ownerUserId;

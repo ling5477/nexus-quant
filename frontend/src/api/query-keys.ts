@@ -70,10 +70,10 @@ export const publishesQueryKeys = {
     detail: (runId: string) => [...publishesQueryKeys.all, 'detail', runId] as const,
 };
 
-export const tradeValidationQueryKeys = {
-    all: ['trade-validation'] as const,
+export const tradingWorkbenchQueryKeys = {
+    all: ['trading-workbench'] as const,
     lookup: (request: { orderId: string; accountId?: number; symbol?: string }, searchVersion: number) => [
-        ...tradeValidationQueryKeys.all,
+        ...tradingWorkbenchQueryKeys.all,
         'lookup',
         request.orderId,
         request.accountId ?? '',

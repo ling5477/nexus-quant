@@ -5,7 +5,7 @@ import {loginToConsole} from '@/../tests/e2e/support';
 /**
  * RC1-4 最小写侧 smoke 只覆盖账户/凭证/默认上下文闭环。
  * Why:
- * 这条用例的目标是确认“创建账户 + 切换默认账户 + 凭证轮换 + 结构性校验 + header/trade-validation 联动”成立，
+ * 这条用例的目标是确认“创建账户 + 切换默认账户 + 凭证轮换 + 结构性校验 + header/交易工作台联动”成立，
  * 不把回归范围扩展成多账户矩阵或真实交易所探活。
  */
 test.describe('RC1-4 account credential write smoke', () => {
@@ -56,9 +56,9 @@ test.describe('RC1-4 account credential write smoke', () => {
         await page.getByRole('dialog', {name: /凭证管理：rc1-admin-alt/}).getByRole('button', {name: 'Close'}).click();
         await expect(page.getByRole('dialog', {name: /凭证管理：rc1-admin-alt/})).toBeHidden({timeout: 30_000});
 
-        await page.getByRole('menuitem', {name: '交易验证'}).click();
-        await expect(page).toHaveURL(/\/trade-validation$/);
-        await expect(page.getByText('当前账户上下文：OKX / SIM / rc1-admin-alt（legacyAccountId=900002）')).toBeVisible({timeout: 30_000});
+        await page.getByRole('menuitem', {name: '交易工作台'}).click();
+        await expect(page).toHaveURL(/\/trading$/);
+        await expect(page.getByText('当前账户上下文：OKX / SIM / rc1-admin-alt（exchangeAccountId=900002）')).toBeVisible({timeout: 30_000});
         await expect(page.getByLabel('账户 ID（默认当前上下文）')).toHaveValue('900002');
     });
 });
