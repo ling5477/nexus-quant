@@ -1,89 +1,41 @@
-# Current Modules（RC1 + GateH-PRE 冻结基线）
+# Current Modules
 
-## 总体结论
+本文记录当前模块 owner 和职责边界。后续 `GateH-PLAN` 与功能开发不得回退 RC1 / GateH-PRE 已冻结的依赖方向。
 
-当前模块边界已稳定成立，以下描述构成 **RC1 completed and frozen + GateH-PRE completed** 的正式基线。后续 `GateH-PLAN` 与任何增量开发，都不得回退这些 owner 与依赖方向。
+## 模块职责
 
-## `frontend`
+| 模块 | 负责什么 | 不负责什么 |
+| --- | --- | --- |
+| `nq-app` | Spring Boot 启动、profile、Bean wiring、composition root | 不承载业务规则，不直接实现交易、行情、研究编排 |
+| `nq-api` | HTTP controller、DTO、web adapter、API contract | 不写 SQL，不承载 research/backtest/eval 编排 |
+| `nq-core` | domain model、policy、port、application service | 不包含 JDBC 实现，不直接依赖交易所 adapter 实现 |
+| `nq-infra` | JDBC、Flyway、repository adapter、query adapter、基础设施实现 | 不定义业务主语义，不反向污染 core |
+| `nq-ledger` | 账本应用服务与账本持久化协作 | 不负责交易所适配和订单主状态机 |
+| `nq-ledger-contracts` | 跨模块账本契约 | 不放实现逻辑 |
+| `nq-scheduler` | 调度、reconcile、recovery、instrument sync 等运行时编排 | 不作为 controller 直接依赖对象，不替代业务 owner |
+| `nq-scheduler-contracts` | 跨模块调度契约 | 不放调度实现 |
+| `nq-research` | research 配置、研究任务应用 owner | 不进入 live trading 主链 |
+| `nq-backtest` | backtest 执行、dataset 消费、回测结果产出 | 不拥有平台级 marketdata owner |
+| `nq-eval` | evaluation、backtest run API 编排 owner | 不负责交易执行 |
+| `nq-observability` | 观测指标、健康、日志与运行可见性支撑 | 不承载业务决策 |
+| `nq-adapter-api` | 交易所 adapter contract | 不实现具体交易所调用 |
+| `nq-adapter-okx` | OKX 交易所适配实现 | 不定义平台交易主语义 |
+| `nq-adapter-binance` | Binance 交易所适配实现 | 不定义平台交易主语义 |
+| `frontend` | React 控制台、账户上下文、交易工作台、研究/回测/评估/行情页面入口 | 不散写 API 请求，不把历史 alias 当正式入口 |
+| `research/py` | Python 离线研究工具链、CLI、pytest/mypy/ruff 验证 | 不进入 auth、recovery、ledger、live trading 主链 |
 
-- 正式前端控制台，技术栈固定为 React 19 + TypeScript + Vite + React Router + TanStack Query + Axios + Zustand + Ant Design。
-- 正式交易入口是 `/trading`，页面域为 `frontend/src/pages/trading` 与 `trading-workbench` API/types/hooks。
-- `/trade-validation` 仅保留历史路由 alias，不是正式页面入口。
-- 已包含账户上下文、Accounts、Trading Workbench、Strategies/Schedules/Runs、Research/Backtests/Evaluations/Publishes、Instruments、Marketdata 等页面域。
+## 禁止依赖规则
 
-## `nq-api`
+- `nq-api` 不直接写 SQL。
+- `nq-core` 不依赖 JDBC、不依赖 `nq-infra`。
+- `nq-infra` 实现 core ports，但不反向定义业务语义。
+- adapter 模块只做交易所适配，不把交易所模型泄漏为平台 application 主语义。
+- scheduler contract 与 scheduler implementation 分离，controller 不直接依赖 scheduler 具体实现。
+- 前端 API 调用统一走 `frontend/src/api/*` 封装。
 
-- 正式 HTTP API 层。
-- 只承担 controller、request/response DTO、web adapter 与 API contract。
-- 不直接写 SQL，不承担 research/backtest/eval 编排层。
-- research orchestration 已从 `nq-api` 移出，回到正式 application owner。
+## 当前阶段禁止新增
 
-## `nq-core`
-
-- 业务核心模块，承载 domain model、policy、port 与 application service。
-- `trading` anti-corruption 已成立，core 不再直接依赖 adapter API model/service 作为 application 主语义。
-- `marketdata` application/domain owner 已收口到正式主链，不再挂在 `nq-backtest` 附属路径。
-- 不保留 JDBC 实现。
-
-## `nq-infra`
-
-- domain-first infra 实现模块，承载 JDBC、Flyway、query adapter、repository adapter 与基础设施实现。
-- 当前 namespace 已收敛，不再保留 `account.infra.*` 与 `infra.account.*` 双轨命名。
-- `infra.config` 只保留横切基础设施配置，不承载业务 owner。
-
-## `nq-app`
-
-- Spring Boot 启动与 composition root。
-- 只负责启动、profile、Bean wiring 与顶层装配。
-- verifier、stub policy、runtime concrete strategy 已下移到更合理 owner，不再把业务实现语义留在 app。
-
-## `nq-auth / nq-security / nq-gateway`
-
-- `nq-auth` 负责认证应用服务与认证领域编排。
-- `nq-security` 负责 token、filter、安全配置与认证基础设施。
-- `nq-gateway` 负责安全上下文桥接。
-- DB-backed auth 已稳定成立。
-
-## `nq-scheduler / nq-scheduler-contracts`
-
-- `nq-scheduler` 负责调度、reconcile、recovery、instrument sync 等运行时编排实现。
-- `nq-scheduler-contracts` 只保留跨模块调度契约。
-- scheduler 不应重新承担 adapter contract 泄漏到 core 的职责。
-
-## `nq-research / nq-backtest / nq-eval`
-
-- `nq-research` 承担 research 配置与研究应用 owner。
-- `nq-backtest` 承担 backtest 执行与 dataset 消费，不再拥有平台级 marketdata owner。
-- `nq-eval` 承担 evaluation 与 backtest run API 编排 owner。
-- 当前已具备 `research -> backtest -> eval` 最小 DB-backed happy path。
-
-## `nq-ledger / nq-ledger-contracts`
-
-- `nq-ledger` 承担账本应用与持久化协作。
-- `nq-ledger-contracts` 只保留跨模块账本 contract。
-- `NoopLedgerService` 仅作为明确的 local/test fallback，不是正式账本主路径。
-
-## `nq-risk`
-
-- 风控域模块。
-- `NoopRiskGate` 仅作为明确的 local/test fallback，不是正式风控主路径。
-
-## `nq-adapter-api / nq-adapter-okx / nq-adapter-binance`
-
-- `nq-adapter-api` 只定义交易所 adapter contract。
-- `nq-adapter-okx` 与 `nq-adapter-binance` 承担具体交易所 adapter 实现。
-- adapter contract 不应重新进入 `nq-core` application orchestration。
-
-## `research/py`
-
-- 离线研究工具链子工程。
-- 正式入口是 `py -m nq_research` 与 `nq-research` script。
-- 已通过 `pytest` / `mypy` / `ruff` / CLI smoke。
-- 不进入 live trading / auth / recovery / ledger 主链，不做 Java/Python runtime bridge。
-
-## 冻结约束
-
-- 不允许回退当前模块边界。
-- 不允许回退当前业务域结构。
-- 不允许重新把 historical alias 当作正式入口。
-- 不允许绕过 `GateH-PLAN` 直接恢复 GateH 开发。
+- 当前阶段不新增 AI 模块。
+- 当前阶段不新增美股模块。
+- 当前阶段不新增 A 股模块。
+- 当前阶段不新增 GateH 业务实现。

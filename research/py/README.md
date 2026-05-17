@@ -28,13 +28,19 @@ PRE-CLEAN-3B 已完成 Python 工具链闭环：
 
 ## 运行方式
 
+首次本地验证前，先安装 Python 子工程和 dev 质量工具：
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
 在 `research/py` 目录内可直接运行：
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -m mypy src\nq_research
-.\.venv\Scripts\python.exe -m ruff check .
-.\.venv\Scripts\python.exe -m nq_research --bars-csv ..\fixtures\btcusdt_1m_sample.csv
+python -m pytest -q
+python -m mypy src
+python -m ruff check .
+python -m nq_research --bars-csv ..\fixtures\btcusdt_1m_sample.csv
 ```
 
 安装为本地包后也可以使用脚本入口：

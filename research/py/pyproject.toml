@@ -6,6 +6,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "mypy>=1.8",
+    "ruff>=0.8",
+]
+
 [project.scripts]
 nq-research = "nq_research.cli:main"
 

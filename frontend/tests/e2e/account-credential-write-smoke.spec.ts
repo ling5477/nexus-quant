@@ -36,8 +36,13 @@ test.describe('RC1-4 account credential write smoke', () => {
             await setDefaultButton.click();
         }
 
-        await expect(page.getByRole('button', {name: /OKX \/ SIM \/ rc1-admin-alt/})).toBeVisible({timeout: 30_000});
         await expect(page.getByText('当前默认账户上下文：OKX / SIM / rc1-admin-alt（exchangeAccountId=900002）')).toBeVisible({timeout: 30_000});
+
+        // Why: 默认账户变更不会强行覆盖 header 里的当前已选账户上下文；这里先确认默认值已写入，
+        // 再模拟用户从 header 切换到账户上下文，验证后续交易工作台按显式选择联动。
+        await page.getByRole('button', {name: /OKX \/ SIM \/ rc1-admin-default/}).click();
+        await page.getByRole('menuitem', {name: /OKX \/ SIM \/ rc1-admin-alt（默认）/}).click();
+        await expect(page.getByRole('button', {name: /OKX \/ SIM \/ rc1-admin-alt/})).toBeVisible({timeout: 30_000});
 
         const refreshedAltRow = page.locator('tr').filter({hasText: 'rc1-admin-alt'}).first();
         await refreshedAltRow.getByRole('button', {name: '凭证'}).click();

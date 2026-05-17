@@ -38,14 +38,18 @@ NexusQuant 是面向数字资产交易场景的量化系统工程骨架，核心
 
 ## 3. 当前入口
 
+- 文档总入口：`docs/README.md`
 - 当前阶段入口：`docs/current/README.md`
+- 当前状态：`docs/current/STATUS.md`
+- 当前架构：`docs/current/ARCHITECTURE.md`
 - 当前模块基线：`docs/current/MODULES.md`
-- RC1 最终 checklist：`docs/current/RC1_CHECKLIST.md`
-- RC1 冻结说明：`docs/current/REFACTOR_BATCH_RC1.md`
-- GateH-PRE 批次说明：
-  - `docs/current/GATEH_PRE_1_TRADING_ANTI_CORRUPTION.md`
-  - `docs/current/GATEH_PRE_2_MARKETDATA_INSTRUMENTS.md`
-  - `docs/current/GATEH_PRE_3_FRONTEND_IA.md`
+- 当前 API：`docs/current/API.md`
+- 当前数据库：`docs/current/DB_SCHEMA.md`
+- 当前验证：`docs/current/TESTING.md`
+- 当前运行手册：`docs/current/RUNBOOK.md`
+- 下一阶段计划：`docs/current/PLAN_GATEH.md`
+- RC1 归档：`docs/archive/rc1/`
+- Gate 输入与 GateH-PRE 归档：`docs/archive/gate-inputs/`
 - GateH 暂停卷宗：`docs/gates/gate-h/README.md`
 
 ---
