@@ -26,6 +26,7 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
             SELECT backtest_run_id, backtest_config_id, research_config_id, source_strategy_id, status,
                    strategy_snapshot::text AS strategy_snapshot,
                    backtest_config_snapshot::text AS backtest_config_snapshot,
+                   dataset_snapshot_json::text AS dataset_snapshot_json,
                    summary_json::text AS summary_json, requested_at, started_at, finished_at,
                    failure_code, failure_message, created_at, updated_at
             FROM backtest_runs
@@ -45,9 +46,9 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 """
                         INSERT INTO backtest_runs (
                             backtest_run_id, backtest_config_id, research_config_id, source_strategy_id, status,
-                            strategy_snapshot, backtest_config_snapshot, summary_json,
+                            strategy_snapshot, backtest_config_snapshot, dataset_snapshot_json, summary_json,
                             requested_at, started_at, finished_at, failure_code, failure_message, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?, ?, ?)
                         """,
                 backtestRun.backtestRunId(),
                 backtestRun.backtestConfigId(),
@@ -56,6 +57,7 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 backtestRun.status().name(),
                 backtestRun.strategySnapshot(),
                 backtestRun.backtestConfigSnapshot(),
+                backtestRun.datasetSnapshotJson(),
                 backtestRun.summaryJson(),
                 Timestamp.from(backtestRun.requestedAt()),
                 toTimestamp(backtestRun.startedAt()),
@@ -143,6 +145,7 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 resultSet.getString("source_strategy_id"),
                 resultSet.getString("strategy_snapshot"),
                 resultSet.getString("backtest_config_snapshot"),
+                resultSet.getString("dataset_snapshot_json"),
                 BacktestRunStatus.valueOf(resultSet.getString("status")),
                 resultSet.getTimestamp("requested_at").toInstant(),
                 startedAt == null ? null : startedAt.toInstant(),

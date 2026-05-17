@@ -66,3 +66,33 @@ export interface MarketdataIngestionRun {
     actualEndTime?: string | null;
     errorMessage?: string | null;
 }
+
+export interface CreateMarketdataDatasetRequest {
+    datasetName: string;
+    exchangeCode: string;
+    marketType: string;
+    symbol: string;
+    interval: string;
+    startTime: string;
+    endTime: string;
+}
+
+export interface MarketdataDataset {
+    datasetId: string;
+    datasetName: string;
+    exchangeCode: string;
+    marketType: string;
+    symbol: string;
+    interval: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    qualityStatus: string;
+    barCount: number;
+    gapCount: number;
+    source: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+    requestJson: string;
+}

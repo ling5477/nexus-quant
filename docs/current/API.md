@@ -25,6 +25,7 @@
 - AI 自动交易 API 当前不存在，也不允许在本次任务新增。
 - GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
 - GateH-2 只新增 OKX / Binance SPOT 历史 OHLCV K 线接入、接入任务与运行记录 API；不新增 dataset/backtest 绑定接口，不新增 AI 接口。
+- GateH-3 新增 marketdata dataset、quality refresh、backtest config dataset binding 与 backtest run dataset snapshot API；不新增 AI 接口。
 
 ## GateH-1 Trading Workspace API
 
@@ -62,3 +63,19 @@ GateH-2 固定范围：
 - 数据类型：OHLCV K 线。
 
 GateH-2 不新增 AI 自动交易、AI 信号接入、dataset/backtest 绑定、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配或复杂因子平台 API。
+
+## GateH-3 Dataset and Backtest Binding API
+
+当前已实现的 GateH-3 数据集与回测绑定入口：
+
+- `GET /api/marketdata/datasets`：查询 marketdata dataset 列表，支持按 `exchangeCode`、`marketType`、`symbol`、`interval` 过滤。
+- `POST /api/marketdata/datasets`：创建 dataset，并立即基于 `marketdata_bars` 计算覆盖范围与质量状态。
+- `GET /api/marketdata/datasets/{datasetId}`：查询 dataset 详情。
+- `POST /api/marketdata/datasets/{datasetId}/refresh-quality`：重新计算 dataset 覆盖率、缺口数、异常 bar 数和质量状态。
+- `PATCH /api/backtest-configs/{configId}/dataset`：把 dataset 绑定到 backtest config，并保存 `dataset_snapshot_json`。
+- `GET /api/backtest-configs/{configId}`：返回 `datasetId` 和 `datasetSnapshotJson`。
+- `GET /api/backtest-runs/{runId}`：返回 run 创建时固化的 `datasetSnapshotJson`。
+
+GateH-3 固定范围：dataset 来源仅为 GateH-2 的 `marketdata_bars`；仅支持 `OKX` / `BINANCE`、`SPOT`、`BTC-USDT` / `ETH-USDT` / `SOL-USDT`、`1m` / `5m` / `15m` / `1h` / `4h` / `1d`。
+
+GateH-3 不新增 AI 自动交易、AI 信号接入、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配、复杂因子平台或高频交易 API。

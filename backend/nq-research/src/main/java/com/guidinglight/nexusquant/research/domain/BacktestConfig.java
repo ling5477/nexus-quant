@@ -20,9 +20,42 @@ public record BacktestConfig(
         BigDecimal initialCapital,
         String executionSpec,
         String evaluationSpec,
+        String datasetId,
+        String datasetSnapshotJson,
         String configSnapshot,
         Instant createdAt,
         Instant updatedAt
 ) {
+    public BacktestConfig(
+            String backtestConfigId,
+            String researchConfigId,
+            String name,
+            String description,
+            Instant startTime,
+            Instant endTime,
+            BigDecimal initialCapital,
+            String executionSpec,
+            String evaluationSpec,
+            String configSnapshot,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        this(
+                backtestConfigId,
+                researchConfigId,
+                name,
+                description,
+                startTime,
+                endTime,
+                initialCapital,
+                executionSpec,
+                evaluationSpec,
+                null,
+                "{}",
+                configSnapshot,
+                createdAt,
+                updatedAt
+        );
+    }
 }
 

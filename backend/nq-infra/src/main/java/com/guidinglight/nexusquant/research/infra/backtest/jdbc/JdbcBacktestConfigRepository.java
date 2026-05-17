@@ -27,6 +27,7 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
     private static final String BASE_SELECT = """
             SELECT backtest_config_id, research_config_id, name, description,
                    config_json::text AS config_json, evaluation_spec_json::text AS evaluation_spec_json,
+                   dataset_id::text AS dataset_id, dataset_snapshot_json::text AS dataset_snapshot_json,
                    created_at, updated_at
             FROM backtest_configs
             """;
@@ -86,6 +87,23 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
         );
     }
 
+    @Override
+    public boolean bindDataset(String backtestConfigId, String datasetId, String datasetSnapshotJson, Instant updatedAt) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE backtest_configs
+                        SET dataset_id = CAST(? AS UUID),
+                            dataset_snapshot_json = CAST(? AS JSONB),
+                            updated_at = ?
+                        WHERE backtest_config_id = ?
+                        """,
+                datasetId,
+                datasetSnapshotJson,
+                Timestamp.from(updatedAt),
+                backtestConfigId
+        ) > 0;
+    }
+
     private RowMapper<BacktestConfig> rowMapper() {
         return this::mapRow;
     }
@@ -102,6 +120,8 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
                 new BigDecimal(textField(configJson, "initialCapital")),
                 jsonField(configJson, "executionSpec"),
                 resultSet.getString("evaluation_spec_json"),
+                resultSet.getString("dataset_id"),
+                resultSet.getString("dataset_snapshot_json"),
                 resultSet.getString("config_json"),
                 resultSet.getTimestamp("created_at").toInstant(),
                 resultSet.getTimestamp("updated_at").toInstant()

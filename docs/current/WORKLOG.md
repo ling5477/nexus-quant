@@ -329,3 +329,102 @@
 - GateH-2 变更完成审查并提交。
 - GateH-3 只能做行情数据质量、dataset、backtest config 绑定与结果追溯。
 - GateH-3 不得夹带 AI、交易核心重构、策略核心逻辑、美股/A 股适配或合约全量接入。
+
+## GateH-3-WO 执行记录
+
+日期：2026-05-17
+
+### 本轮范围
+
+- 新增 marketdata dataset 定义。
+- 新增 dataset 覆盖范围与质量统计。
+- 新增 backtest config 绑定 dataset。
+- 新增 backtest run 创建时的 dataset 快照。
+- 前端增强 `/marketdata` dataset 区域和 `/backtests` dataset 绑定入口。
+- 新增 GateH-3 E2E smoke。
+
+### 修改文件
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/marketdata/api/web/MarketdataController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/BacktestConfigController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/BacktestConfigResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/BacktestRunResponse.java`
+- `backend/nq-backtest/src/main/java/com/guidinglight/nexusquant/research/application/backtest/BacktestExecutionService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/**`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/backtest/jdbc/**`
+- `frontend/src/api/backtests.ts`
+- `frontend/src/api/marketdata.ts`
+- `frontend/src/hooks/useBacktestsListQuery.ts`
+- `frontend/src/pages/backtests/BacktestsPage.tsx`
+- `frontend/src/pages/marketdata/MarketdataPage.tsx`
+- `frontend/src/types/backtests.ts`
+- `frontend/src/types/marketdata.ts`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
+- `docs/current/STATUS.md`
+- `docs/current/WORKLOG.md`
+
+### 新增文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V18__gate_h3_marketdata_dataset_binding.sql`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/MarketdataDatasetService.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/command/CreateMarketdataDatasetCommand.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataDataset.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataDatasetCoverage.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataDatasetStatus.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataQualityStatus.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/port/MarketdataDatasetRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/jdbc/JdbcMarketdataDatasetRepository.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/marketdata/api/dto/CreateMarketdataDatasetRequest.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/marketdata/api/dto/MarketdataDatasetResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/BacktestDatasetBindingRequestBody.java`
+- `frontend/tests/e2e/marketdata-dataset-smoke.spec.ts`
+- `frontend/tests/e2e/backtest-dataset-binding-smoke.spec.ts`
+
+### DB/migration 说明
+
+- `V18` 新增 `marketdata_datasets` 和 `marketdata_dataset_coverage`。
+- `V18` 给 `backtest_configs` 新增 `dataset_id` 和 `dataset_snapshot_json`。
+- `V18` 给 `backtest_runs` 新增 `dataset_snapshot_json`。
+- 所有新增表均有 PostgreSQL `COMMENT ON TABLE`。
+- 所有新增字段均有 PostgreSQL `COMMENT ON COLUMN`。
+- `marketdata_datasets` 唯一约束用于避免同名同范围重复 dataset。
+- `backtest_runs.dataset_snapshot_json` 在 run 创建时从 config 固化，保证历史 run 可追溯。
+
+### 验证结果
+
+- `mvn -f backend/pom.xml test`：通过。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告。
+- 后端 local profile 临时启动：通过，`/actuator/health` 返回 `UP`，Flyway 当前版本为 `18`。
+- `npm run test:e2e`：通过，10 passed、4 skipped。
+- Python 验证本轮未重新执行；本轮未修改 Python，沿用 BASELINE-FIX 已通过基线。
+
+### E2E 说明
+
+- 新增 `marketdata-dataset-smoke`，通过。
+- 新增 `backtest-dataset-binding-smoke`，当前本地库没有可绑定 backtest config 种子，按明确原因 skip。
+- 绑定 API 已通过后端 controller 测试覆盖。
+
+### 未做范围
+
+- 未接入 AI。
+- 未新增 AI 模块或 AI 自动交易接口。
+- 未新增合约全量、资金费率、深度、逐笔成交、链上数据、新闻资讯。
+- 未新增美股/A 股适配。
+- 未修改交易核心状态机。
+- 未修改策略核心逻辑。
+- 未修改回测引擎核心算法。
+
+### 剩余风险
+
+- 当前 E2E 绑定 UI 链路依赖本地存在 backtest config 种子；当前种子为空，因此该用例 skip。
+- dataset 质量统计第一版只做 expected/actual/missing/invalid/duplicate 聚合，不做复杂连续缺口区间明细。
+- `npm audit` 与 Vite chunk 体积警告仍按既有风险记录，未在 GateH-3 处理。
+- Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning 仍存在，本轮不处理。
+
+### 下一步进入 GateI-PLAN 的条件
+
+- GateH-3 变更完成审查并提交。
+- GateI-PLAN 只能规划虚拟币量化 V1 完整闭环。
+- GateI-PLAN 不得夹带 AI 接入；AI 只能在虚拟币 V1 和 Paper Trading 稳定后进入后续 Gate。

@@ -138,3 +138,29 @@ GateH-2 未执行项：
 - 未处理 `npm audit` 依赖漏洞。
 - 未处理 Vite chunk > 500 kB 警告。
 - 未处理 Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning。
+
+## GateH-3-WO 验证记录
+
+日期：2026-05-17
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`；GateH-3 migration、dataset API、backtest dataset binding API、run snapshot 字段和既有回测链路均通过 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告，本轮不处理 |
+| `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local` | 通过 | 为 E2E 临时启动后端；`/actuator/health` 返回 `UP`；Flyway 当前版本到 `18` |
+| `npm run test:e2e` | 通过 | 14 个 Playwright 用例中 10 passed、4 skipped；新增 `marketdata-dataset-smoke` 通过，`backtest-dataset-binding-smoke` 因当前本地库没有可绑定 backtest config 种子而 skip |
+
+GateH-3 E2E 覆盖：
+
+- `/marketdata` 可创建 dataset。
+- dataset 可展示覆盖范围、状态、质量状态、bar/gap 统计。
+- dataset 可触发 `refresh-quality`。
+- `/backtests` 已提供 dataset 绑定入口。
+- 当前本地库没有 `research_configs/backtest_configs` 种子，`backtest-dataset-binding-smoke` 未执行 UI 绑定提交；后端 controller 测试已覆盖 `PATCH /api/backtest-configs/{configId}/dataset`。
+
+GateH-3 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用 BASELINE-FIX 已通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未处理 Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning。

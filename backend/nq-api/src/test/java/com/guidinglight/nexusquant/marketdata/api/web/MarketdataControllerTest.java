@@ -12,14 +12,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataFixtureIngestionResult;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataDataset;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionJob;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionRun;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionStatus;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatus;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 
 import java.math.BigDecimal;
@@ -45,16 +49,19 @@ class MarketdataControllerTest {
     private HistoricalMarketDataPort historicalMarketDataPort;
     private MarketdataBarIngestService marketdataBarIngestService;
     private MarketdataIngestionService marketdataIngestionService;
+    private MarketdataDatasetService marketdataDatasetService;
 
     @BeforeEach
     void setUp() {
         historicalMarketDataPort = mock(HistoricalMarketDataPort.class);
         marketdataBarIngestService = mock(MarketdataBarIngestService.class);
         marketdataIngestionService = mock(MarketdataIngestionService.class);
+        marketdataDatasetService = mock(MarketdataDatasetService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new MarketdataController(
                         marketdataBarIngestService,
                         historicalMarketDataPort,
-                        marketdataIngestionService
+                        marketdataIngestionService,
+                        marketdataDatasetService
                 ))
                 .addFilters(new TestTraceIdFilter())
                 .setControllerAdvice(new ApiExceptionHandler())
@@ -153,6 +160,52 @@ class MarketdataControllerTest {
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.fetchedBars").value(6))
                 .andExpect(jsonPath("$.insertedBars").value(6));
+    }
+
+    @Test
+    void shouldCreateAndRefreshMarketdataDataset() throws Exception {
+        UUID datasetId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        MarketdataDataset dataset = new MarketdataDataset(
+                datasetId,
+                "BINANCE BTC dataset",
+                "BINANCE",
+                "SPOT",
+                "BTC-USDT",
+                BarInterval.ONE_MINUTE,
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-01T00:05:59Z"),
+                MarketdataDatasetStatus.READY,
+                MarketdataQualityStatus.OK,
+                6,
+                0,
+                "marketdata_bars",
+                "local",
+                Instant.parse("2026-04-06T00:00:00Z"),
+                Instant.parse("2026-04-06T00:00:01Z"),
+                "{}"
+        );
+        when(marketdataDatasetService.createDataset(argThat(command ->
+                "BINANCE BTC dataset".equals(command.datasetName())
+                        && "BINANCE".equals(command.exchangeCode())
+                        && "BTC-USDT".equals(command.symbol())
+        ))).thenReturn(dataset);
+        when(marketdataDatasetService.refreshQuality(datasetId)).thenReturn(dataset);
+
+        mockMvc.perform(post("/api/marketdata/datasets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"datasetName":"BINANCE BTC dataset","exchangeCode":"BINANCE","marketType":"SPOT","symbol":"BTC-USDT","interval":"1m","startTime":"2025-01-01T00:00:00Z","endTime":"2025-01-01T00:05:59Z"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.datasetId").value(datasetId.toString()))
+                .andExpect(jsonPath("$.status").value("READY"))
+                .andExpect(jsonPath("$.qualityStatus").value("OK"))
+                .andExpect(jsonPath("$.barCount").value(6));
+
+        mockMvc.perform(post("/api/marketdata/datasets/{datasetId}/refresh-quality", datasetId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.datasetId").value(datasetId.toString()))
+                .andExpect(jsonPath("$.qualityStatus").value("OK"));
     }
 
     @Test

@@ -1,9 +1,11 @@
 package com.guidinglight.nexusquant.research.api.web;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.research.application.api.backtest.BacktestConfigApiService;
 import com.guidinglight.nexusquant.research.api.dto.BacktestConfigCreateRequestBody;
 import com.guidinglight.nexusquant.research.api.dto.BacktestConfigResponse;
+import com.guidinglight.nexusquant.research.api.dto.BacktestDatasetBindingRequestBody;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,6 +24,7 @@ import java.util.Objects;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,9 +46,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class BacktestConfigController {
 
     private final BacktestConfigApiService applicationService;
+    private final MarketdataDatasetService marketdataDatasetService;
 
-    public BacktestConfigController(BacktestConfigApiService applicationService) {
+    public BacktestConfigController(
+            BacktestConfigApiService applicationService,
+            MarketdataDatasetService marketdataDatasetService
+    ) {
         this.applicationService = Objects.requireNonNull(applicationService, "applicationService must not be null");
+        this.marketdataDatasetService = Objects.requireNonNull(
+                marketdataDatasetService,
+                "marketdataDatasetService must not be null"
+        );
     }
 
     /**
@@ -111,6 +122,34 @@ public class BacktestConfigController {
                 request.initialCapital(),
                 request.executionSpec(),
                 request.evaluationSpec()
+        ));
+    }
+
+    /**
+     * 绑定 GateH-3 marketdata dataset 到回测配置。
+     * Why:
+     * controller 只负责 HTTP 参数边界和跨应用服务调用：dataset 详情由 marketdata application 生成快照，
+     * backtest 配置由 research application 持久化绑定；这里不写 SQL、不启动回测、不改变回测算法。
+     */
+    @PatchMapping("/{configId}/dataset")
+    @Operation(summary = "绑定行情数据集", description = "把已创建的 marketdata dataset 绑定到回测配置并保存 dataset 快照。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "绑定成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测配置或数据集不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public BacktestConfigResponse bindDataset(
+            @PathVariable
+            @NotBlank(message = "configId must not be blank")
+            String configId,
+            @Valid @RequestBody BacktestDatasetBindingRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        String datasetSnapshot = marketdataDatasetService.buildDatasetSnapshot(java.util.UUID.fromString(request.datasetId()));
+        return BacktestConfigResponse.from(applicationService.bindDataset(
+                configId,
+                request.datasetId(),
+                datasetSnapshot
         ));
     }
 }

@@ -8,6 +8,8 @@ export interface BacktestConfigListItem {
     initialCapital: number | null;
     executionSpec: string;
     evaluationSpec: string;
+    datasetId?: string | null;
+    datasetSnapshotJson?: string | null;
     configSnapshot: string;
     createdAt: string;
     updatedAt: string;
@@ -34,4 +36,8 @@ export interface BacktestConfigCreateRequest {
     initialCapital: number;
     executionSpec: string;
     evaluationSpec: string;
+}
+
+export interface BacktestDatasetBindingRequest {
+    datasetId: string;
 }

@@ -10,8 +10,10 @@ import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import type {
     CreateMarketdataIngestionJobRequest,
+    CreateMarketdataDatasetRequest,
     MarketdataBar,
     MarketdataBarsQuery,
+    MarketdataDataset,
     MarketdataIngestionJob,
     MarketdataIngestionRun,
 } from '@/types/marketdata';
@@ -71,15 +73,50 @@ const runColumns: ColumnsType<MarketdataIngestionRun> = [
     {title: 'Error', dataIndex: 'errorMessage', key: 'errorMessage', width: 280, ellipsis: true, render: (value?: string | null) => value || '-'},
 ];
 
+const datasetColumns = (
+    onRefreshQuality: (datasetId: string) => void,
+    pendingDatasetId: string | null,
+): ColumnsType<MarketdataDataset> => [
+    {title: 'Dataset ID', dataIndex: 'datasetId', key: 'datasetId', width: 260, ellipsis: true},
+    {title: 'Name', dataIndex: 'datasetName', key: 'datasetName', width: 180},
+    {title: 'Exchange', dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
+    {title: 'Market', dataIndex: 'marketType', key: 'marketType', width: 100},
+    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 130},
+    {title: 'Interval', dataIndex: 'interval', key: 'interval', width: 100},
+    {title: 'Status', dataIndex: 'status', key: 'status', width: 120, render: (value: string) => <Tag color={value === 'READY' ? 'green' : value === 'INVALID' ? 'red' : 'blue'}>{value}</Tag>},
+    {title: 'Quality', dataIndex: 'qualityStatus', key: 'qualityStatus', width: 140, render: (value: string) => <Tag color={value === 'OK' ? 'green' : value === 'GAP_DETECTED' ? 'orange' : 'red'}>{value}</Tag>},
+    {title: 'Bars', dataIndex: 'barCount', key: 'barCount', width: 100},
+    {title: 'Gaps', dataIndex: 'gapCount', key: 'gapCount', width: 100},
+    {title: 'Start', dataIndex: 'startTime', key: 'startTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {title: 'End', dataIndex: 'endTime', key: 'endTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {
+        title: 'Action',
+        key: 'action',
+        fixed: 'right',
+        width: 150,
+        render: (_, record) => (
+            <Button
+                size="small"
+                loading={pendingDatasetId === record.datasetId}
+                onClick={() => onRefreshQuality(record.datasetId)}
+            >
+                Refresh quality
+            </Button>
+        ),
+    },
+];
+
 export function MarketdataPage() {
     const [form] = Form.useForm<MarketdataBarsQuery>();
     const [jobForm] = Form.useForm<CreateMarketdataIngestionJobRequest>();
+    const [datasetForm] = Form.useForm<CreateMarketdataDatasetRequest>();
     const [messageApi, contextHolder] = message.useMessage();
     const queryClient = useQueryClient();
     const contextExchangeCode = useAccountContextStore((state) => state.exchangeCode);
     const [submittedQuery, setSubmittedQuery] = useState<MarketdataBarsQuery | null>(null);
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
     const [pendingJobId, setPendingJobId] = useState<string | null>(null);
+    const [pendingDatasetId, setPendingDatasetId] = useState<string | null>(null);
 
     const barsQuery = useQuery({
         queryKey: ['marketdata-bars', submittedQuery],
@@ -94,6 +131,10 @@ export function MarketdataPage() {
         queryKey: ['marketdata-ingestion-runs', selectedJobId],
         queryFn: () => marketdataApi.listIngestionRuns(selectedJobId as string),
         enabled: selectedJobId !== null,
+    });
+    const datasetsQuery = useQuery({
+        queryKey: ['marketdata-datasets'],
+        queryFn: marketdataApi.listDatasets,
     });
     const createJobMutation = useMutation({
         mutationFn: marketdataApi.createIngestionJob,
@@ -116,6 +157,24 @@ export function MarketdataPage() {
         },
         onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
         onSettled: () => setPendingJobId(null),
+    });
+    const createDatasetMutation = useMutation({
+        mutationFn: marketdataApi.createDataset,
+        onSuccess: async (dataset) => {
+            messageApi.success(`Dataset created: ${dataset.qualityStatus}`);
+            await queryClient.invalidateQueries({queryKey: ['marketdata-datasets']});
+        },
+        onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
+    });
+    const refreshDatasetMutation = useMutation({
+        mutationFn: marketdataApi.refreshDatasetQuality,
+        onMutate: (datasetId) => setPendingDatasetId(datasetId),
+        onSuccess: async (dataset) => {
+            messageApi.info(`Dataset quality: ${dataset.qualityStatus}`);
+            await queryClient.invalidateQueries({queryKey: ['marketdata-datasets']});
+        },
+        onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
+        onSettled: () => setPendingDatasetId(null),
     });
 
     return (
@@ -266,6 +325,79 @@ export function MarketdataPage() {
                     )
                 ) : (
                     <Alert type="info" showIcon message="请选择或创建一个接入任务查看运行结果" />
+                )}
+            </Card>
+            <Card
+                className="page-section"
+                bordered={false}
+                title="Datasets"
+                extra={(
+                    <Button
+                        type="primary"
+                        loading={createDatasetMutation.isPending}
+                        onClick={() => datasetForm.submit()}
+                    >
+                        创建 Dataset
+                    </Button>
+                )}
+            >
+                <Form<CreateMarketdataDatasetRequest>
+                    form={datasetForm}
+                    layout="vertical"
+                    initialValues={{
+                        datasetName: `BINANCE-BTC-USDT-1m-${Date.now()}`,
+                        exchangeCode: 'BINANCE',
+                        marketType: 'SPOT',
+                        symbol: 'BTC-USDT',
+                        interval: '1m',
+                        startTime: '2025-01-01T00:00:00Z',
+                        endTime: '2025-01-01T00:05:59Z',
+                    }}
+                    onFinish={(values) => createDatasetMutation.mutate({
+                        ...values,
+                        datasetName: values.datasetName || `BINANCE-BTC-USDT-1m-${Date.now()}`,
+                    })}
+                >
+                    <Space align="start" size={16} wrap>
+                        <Form.Item label="Dataset Name" name="datasetName">
+                            <Input style={{width: 260}} />
+                        </Form.Item>
+                        <Form.Item label="交易所" name="exchangeCode">
+                            <Select style={{width: 140}} options={[{label: 'BINANCE', value: 'BINANCE'}, {label: 'OKX', value: 'OKX'}]} />
+                        </Form.Item>
+                        <Form.Item label="市场" name="marketType">
+                            <Select style={{width: 120}} options={[{label: 'SPOT', value: 'SPOT'}]} />
+                        </Form.Item>
+                        <Form.Item label="交易对" name="symbol">
+                            <Select style={{width: 160}} options={[
+                                {label: 'BTC-USDT', value: 'BTC-USDT'},
+                                {label: 'ETH-USDT', value: 'ETH-USDT'},
+                                {label: 'SOL-USDT', value: 'SOL-USDT'},
+                            ]} />
+                        </Form.Item>
+                        <Form.Item label="周期" name="interval">
+                            <Select style={{width: 120}} options={['1m', '5m', '15m', '1h', '4h', '1d'].map((value) => ({label: value, value}))} />
+                        </Form.Item>
+                        <Form.Item label="开始时间" name="startTime">
+                            <Input style={{width: 220}} />
+                        </Form.Item>
+                        <Form.Item label="结束时间" name="endTime">
+                            <Input style={{width: 220}} />
+                        </Form.Item>
+                    </Space>
+                </Form>
+                {datasetsQuery.error ? (
+                    <Alert type="error" showIcon message="Marketdata datasets 查询失败" description={formatApiError(datasetsQuery.error as AppApiError)} />
+                ) : (
+                    <Table
+                        rowKey="datasetId"
+                        columns={datasetColumns((datasetId) => refreshDatasetMutation.mutate(datasetId), pendingDatasetId)}
+                        dataSource={datasetsQuery.data ?? []}
+                        loading={datasetsQuery.isLoading || datasetsQuery.isFetching}
+                        pagination={{pageSize: 10, showSizeChanger: false}}
+                        scroll={{x: 1900}}
+                        locale={{emptyText: '暂无 marketdata dataset，可先创建数据集。'}}
+                    />
                 )}
             </Card>
         </Space>

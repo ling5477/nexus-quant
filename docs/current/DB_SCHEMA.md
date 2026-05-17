@@ -52,9 +52,47 @@ GateH-2 新增 `marketdata_ingestion_runs`：
 - `raw_payload_json` 保存单根 K 线的交易所原始 payload 快照，用于审计和排障。
 - `raw_summary_json` 保存单次运行统计摘要，不作为业务查询主结构。
 
+## GateH-3 当前 Dataset 与 Backtest 绑定结构
+
+GateH-3 新增 Flyway migration：
+
+- `V18__gate_h3_marketdata_dataset_binding.sql`
+
+GateH-3 新增 `marketdata_datasets`：
+
+- 范围字段：`dataset_id`、`dataset_name`、`exchange_code`、`market_type`、`symbol`、`interval`、`start_time`、`end_time`。
+- 状态字段：`status`，允许值 `CREATED`、`READY`、`INVALID`、`ARCHIVED`。
+- 质量字段：`quality_status`，允许值 `OK`、`GAP_DETECTED`、`INCOMPLETE`、`INVALID`。
+- 统计字段：`bar_count`、`gap_count`。
+- 审计字段：`source`、`created_by`、`created_at`、`updated_at`、`request_json`。
+- 唯一约束：`dataset_name + exchange_code + market_type + symbol + interval + start_time + end_time`，用于避免同名同范围重复 dataset。
+- 关键索引：`idx_marketdata_datasets_scope_updated` 支持 dataset 列表按范围查询；`idx_marketdata_datasets_quality_status` 支持质量状态筛选。
+
+GateH-3 新增 `marketdata_dataset_coverage`：
+
+- 范围字段：`coverage_id`、`dataset_id`、`range_start_time`、`range_end_time`。
+- 覆盖统计字段：`expected_bars`、`actual_bars`、`missing_bars`、`duplicate_bars`、`invalid_bars`。
+- 质量字段：`quality_status`。
+- 排障字段：`summary_json`、`created_at`。
+- 外键：`dataset_id` 关联 `marketdata_datasets.dataset_id`。
+- 关键索引：`idx_marketdata_dataset_coverage_dataset_created` 支持 dataset 详情按刷新时间查询覆盖记录。
+
+GateH-3 变更 `backtest_configs`：
+
+- 新增 `dataset_id`，可空，外键关联 `marketdata_datasets.dataset_id`。
+- 新增 `dataset_snapshot_json`，默认 `{}`，保存绑定时 dataset 的 exchange、market、symbol、interval、time range、quality、bar/gap 等快照。
+- 新增索引 `idx_backtest_configs_dataset_id`，用于按 dataset 回查绑定配置。
+
+GateH-3 变更 `backtest_runs`：
+
+- 新增 `dataset_snapshot_json`，默认 `{}`。
+- run 创建时从 `backtest_configs.dataset_snapshot_json` 固化快照，后续 config 重新绑定不会改写历史 run。
+
+注释要求：`V18` 新增表均包含 `COMMENT ON TABLE`，新增字段均包含 `COMMENT ON COLUMN`。
+
 ## 当前边界
 
-- GateH-2 不新增 dataset 表。
-- GateH-2 不修改 `backtest_configs` 绑定。
-- GateH-2 不开发 GateH-3 数据集管理、回测配置绑定或结果追溯。
-- GateH-2 不接入 AI。
+- GateH-3 不修改回测引擎核心算法。
+- GateH-3 不新增 AI 模块、不新增 AI 自动交易接口。
+- GateH-3 不接合约、资金费率、深度、逐笔成交、链上数据、新闻资讯。
+- GateH-3 不新增美股/A 股适配。

@@ -16,6 +16,7 @@ public record BacktestRun(
         String sourceStrategyId,
         String strategySnapshot,
         String backtestConfigSnapshot,
+        String datasetSnapshotJson,
         BacktestRunStatus status,
         Instant requestedAt,
         Instant startedAt,
@@ -26,5 +27,41 @@ public record BacktestRun(
         Instant createdAt,
         Instant updatedAt
 ) {
+    public BacktestRun(
+            String backtestRunId,
+            String backtestConfigId,
+            String researchConfigId,
+            String sourceStrategyId,
+            String strategySnapshot,
+            String backtestConfigSnapshot,
+            BacktestRunStatus status,
+            Instant requestedAt,
+            Instant startedAt,
+            Instant finishedAt,
+            String failureCode,
+            String failureMessage,
+            String summaryJson,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        this(
+                backtestRunId,
+                backtestConfigId,
+                researchConfigId,
+                sourceStrategyId,
+                strategySnapshot,
+                backtestConfigSnapshot,
+                "{}",
+                status,
+                requestedAt,
+                startedAt,
+                finishedAt,
+                failureCode,
+                failureMessage,
+                summaryJson,
+                createdAt,
+                updatedAt
+        );
+    }
 }
 

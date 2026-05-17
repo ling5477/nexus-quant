@@ -1,8 +1,10 @@
 import {apiClient} from '@/api/client';
 import type {
     CreateMarketdataIngestionJobRequest,
+    CreateMarketdataDatasetRequest,
     MarketdataBar,
     MarketdataBarsQuery,
+    MarketdataDataset,
     MarketdataIngestionJob,
     MarketdataIngestionRun,
 } from '@/types/marketdata';
@@ -28,6 +30,18 @@ export const marketdataApi = {
     },
     async listIngestionRuns(jobId: string): Promise<MarketdataIngestionRun[]> {
         const {data} = await apiClient.get<MarketdataIngestionRun[]>(`/marketdata/ingestion-jobs/${jobId}/runs`);
+        return data;
+    },
+    async listDatasets(): Promise<MarketdataDataset[]> {
+        const {data} = await apiClient.get<MarketdataDataset[]>('/marketdata/datasets');
+        return data;
+    },
+    async createDataset(request: CreateMarketdataDatasetRequest): Promise<MarketdataDataset> {
+        const {data} = await apiClient.post<MarketdataDataset>('/marketdata/datasets', request);
+        return data;
+    },
+    async refreshDatasetQuality(datasetId: string): Promise<MarketdataDataset> {
+        const {data} = await apiClient.post<MarketdataDataset>(`/marketdata/datasets/${datasetId}/refresh-quality`);
         return data;
     },
 };

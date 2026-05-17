@@ -29,6 +29,10 @@ public record BacktestConfigResponse(
         String executionSpec,
         @Schema(description = "evaluationSpec")
         String evaluationSpec,
+        @Schema(description = "datasetId")
+        String datasetId,
+        @Schema(description = "datasetSnapshotJson")
+        String datasetSnapshotJson,
         @Schema(description = "configSnapshot")
         String configSnapshot,
         @Schema(description = "createdAt")
@@ -47,6 +51,8 @@ public record BacktestConfigResponse(
                 backtestConfig.initialCapital(),
                 backtestConfig.executionSpec(),
                 backtestConfig.evaluationSpec(),
+                backtestConfig.datasetId(),
+                backtestConfig.datasetSnapshotJson(),
                 backtestConfig.configSnapshot(),
                 backtestConfig.createdAt(),
                 backtestConfig.updatedAt()

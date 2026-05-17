@@ -11,16 +11,20 @@ import {
     Input,
     InputNumber,
     Row,
+    Select,
     Space,
     Table,
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
+import {useQuery} from '@tanstack/react-query';
 
 import {formatApiError} from '@/api/errors';
+import {marketdataApi} from '@/api/marketdata';
 import {PageHero} from '@/components/page/PageHero';
 import {
+    useBindBacktestDatasetMutation,
     useBacktestDetailQuery,
     useBacktestsListQuery,
     useCreateBacktestMutation,
@@ -40,6 +44,7 @@ export function BacktestsPage() {
     const {message} = App.useApp();
     const [queryForm] = Form.useForm<BacktestsListFilters>();
     const [createForm] = Form.useForm<BacktestConfigCreateRequest>();
+    const [bindDatasetForm] = Form.useForm<{datasetId: string}>();
     const [submittedFilters, setSubmittedFilters] = useState<BacktestsListFilters>(defaultBacktestsListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
@@ -47,6 +52,12 @@ export function BacktestsPage() {
     const backtestsQuery = useBacktestsListQuery(submittedFilters.researchConfigId, searchVersion);
     const backtestDetailQuery = useBacktestDetailQuery(selectedConfigId);
     const createBacktestMutation = useCreateBacktestMutation();
+    const bindDatasetMutation = useBindBacktestDatasetMutation(selectedConfigId);
+    const datasetsQuery = useQuery({
+        queryKey: ['marketdata-datasets'],
+        queryFn: marketdataApi.listDatasets,
+        enabled: Boolean(selectedConfigId),
+    });
     const hasSearched = searchVersion > 0;
 
     const visibleItems = (backtestsQuery.data ?? []).filter((item) => (
@@ -123,6 +134,11 @@ export function BacktestsPage() {
         },
     ];
 
+    const datasetOptions = (datasetsQuery.data ?? []).map((dataset) => ({
+        label: `${dataset.datasetName} / ${dataset.exchangeCode} ${dataset.symbol} ${dataset.interval} / ${dataset.qualityStatus}`,
+        value: dataset.datasetId,
+    }));
+
     const handleSearch = (values: BacktestsListFilters) => {
         setSubmittedFilters({
             researchConfigId: normalizeOptionalText(values.researchConfigId),
@@ -162,6 +178,21 @@ export function BacktestsPage() {
                 },
             },
         );
+    };
+
+    const handleBindDataset = (values: {datasetId: string}) => {
+        if (!selectedConfigId) {
+            return;
+        }
+        bindDatasetMutation.mutate(values, {
+            onSuccess: () => {
+                message.success('Dataset 已绑定到回测配置。');
+                bindDatasetForm.resetFields();
+            },
+            onError: (error) => {
+                message.error(formatApiError(error as AppApiError));
+            },
+        });
     };
 
     return (
@@ -312,6 +343,16 @@ export function BacktestsPage() {
                                     {backtestDetailQuery.data.evaluationSpec || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
+                            <Descriptions.Item label="Dataset ID" span={2}>
+                                <Typography.Text copyable={Boolean(backtestDetailQuery.data.datasetId)}>
+                                    {backtestDetailQuery.data.datasetId || '未绑定'}
+                                </Typography.Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Dataset Snapshot" span={2}>
+                                <Typography.Paragraph style={{marginBottom: 0}}>
+                                    {backtestDetailQuery.data.datasetSnapshotJson || '{}'}
+                                </Typography.Paragraph>
+                            </Descriptions.Item>
                             <Descriptions.Item label="配置快照" span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.configSnapshot || '-'}
@@ -321,7 +362,41 @@ export function BacktestsPage() {
                         <Card title="动作区" size="small">
                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                                 <Alert type="info" showIcon
-                                       message="当前无基于回测配置详情的写动作，创建入口在页面动作区。"/>
+                                       message="GateH-3 仅允许绑定 marketdata dataset，不会启动回测或修改策略逻辑。"/>
+                                <Form form={bindDatasetForm} layout="inline" onFinish={handleBindDataset}>
+                                    <Form.Item
+                                        label="Dataset"
+                                        name="datasetId"
+                                        rules={[{required: true, message: '请选择 dataset'}]}
+                                    >
+                                        <Select
+                                            showSearch
+                                            style={{width: 420}}
+                                            placeholder="选择 marketdata dataset"
+                                            loading={datasetsQuery.isLoading || datasetsQuery.isFetching}
+                                            options={datasetOptions}
+                                            optionFilterProp="label"
+                                        />
+                                    </Form.Item>
+                                    <Button
+                                        type="primary"
+                                        htmlType="submit"
+                                        loading={bindDatasetMutation.isPending}
+                                        disabled={datasetOptions.length === 0}
+                                    >
+                                        绑定 Dataset
+                                    </Button>
+                                </Form>
+                                {datasetsQuery.error ? (
+                                    <Alert
+                                        type="error"
+                                        showIcon
+                                        message="Dataset 列表加载失败"
+                                        description={formatApiError(datasetsQuery.error as AppApiError)}
+                                    />
+                                ) : datasetOptions.length === 0 ? (
+                                    <Alert type="warning" showIcon message="暂无可绑定 dataset，请先在 Marketdata 页面创建。"/>
+                                ) : null}
                                 <Button onClick={() => backtestDetailQuery.refetch()}>
                                     刷新详情
                                 </Button>

@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.research.api.web.ResearchConfigController;
 import com.guidinglight.nexusquant.app.config.auth.SecurityConfiguration;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
@@ -69,6 +70,8 @@ class ResearchBacktestQueryControllerLocalTest {
     private BacktestConfigApiService backtestConfigApiService;
     @MockitoBean
     private BacktestRunApiService backtestRunApiService;
+    @MockitoBean
+    private MarketdataDatasetService marketdataDatasetService;
     @MockitoBean
     private AuthUserRepository authUserRepository;
 
@@ -167,8 +170,11 @@ class ResearchBacktestQueryControllerLocalTest {
         }
 
         @Bean
-        BacktestConfigController backtestConfigController(BacktestConfigApiService backtestConfigApiService) {
-            return new BacktestConfigController(backtestConfigApiService);
+        BacktestConfigController backtestConfigController(
+                BacktestConfigApiService backtestConfigApiService,
+                MarketdataDatasetService marketdataDatasetService
+        ) {
+            return new BacktestConfigController(backtestConfigApiService, marketdataDatasetService);
         }
 
         @Bean

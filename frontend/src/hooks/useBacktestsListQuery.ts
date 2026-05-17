@@ -2,7 +2,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {backtestsApi} from '@/api/backtests';
 import {backtestsQueryKeys} from '@/api/query-keys';
-import type {BacktestConfigCreateRequest} from '@/types/backtests';
+import type {BacktestConfigCreateRequest, BacktestDatasetBindingRequest} from '@/types/backtests';
 
 export function useBacktestsListQuery(researchConfigId: string, searchVersion: number) {
     return useQuery({
@@ -27,6 +27,20 @@ export function useCreateBacktestMutation() {
         mutationFn: (request: BacktestConfigCreateRequest) => backtestsApi.create(request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: backtestsQueryKeys.all});
+        },
+    });
+}
+
+export function useBindBacktestDatasetMutation(configId: string | null) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (request: BacktestDatasetBindingRequest) => backtestsApi.bindDataset(configId ?? '', request),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: backtestsQueryKeys.all});
+            if (configId) {
+                queryClient.invalidateQueries({queryKey: backtestsQueryKeys.detail(configId)});
+            }
         },
     });
 }

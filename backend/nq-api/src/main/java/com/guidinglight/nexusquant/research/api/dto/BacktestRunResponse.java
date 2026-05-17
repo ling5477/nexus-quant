@@ -29,6 +29,8 @@ public record BacktestRunResponse(
         String strategySnapshot,
         @Schema(description = "backtestConfigSnapshot")
         String backtestConfigSnapshot,
+        @Schema(description = "datasetSnapshotJson")
+        String datasetSnapshotJson,
         @Schema(description = "status")
         BacktestRunStatus status,
         @Schema(description = "requestedAt")
@@ -104,6 +106,7 @@ public record BacktestRunResponse(
                 backtestRun.sourceStrategyId(),
                 backtestRun.strategySnapshot(),
                 backtestRun.backtestConfigSnapshot(),
+                backtestRun.datasetSnapshotJson(),
                 backtestRun.status(),
                 backtestRun.requestedAt(),
                 backtestRun.startedAt(),

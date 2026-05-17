@@ -80,6 +80,8 @@ public class BacktestConfigService {
                 request.initialCapital().stripTrailingZeros(),
                 normalizeJson(request.executionSpec()),
                 normalizeJson(request.evaluationSpec()),
+                null,
+                "{}",
                 buildConfigSnapshot(request),
                 now,
                 now
@@ -114,6 +116,34 @@ public class BacktestConfigService {
 
     public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
         return list(requireText(researchConfigId, "researchConfigId"));
+    }
+
+    /**
+     * 绑定 marketdata dataset 到回测配置。
+     * Why:
+     * GateH-3 需要把“配置选择的数据集”和“当时的数据集状态”同时固化；
+     * 此方法只更新 backtest_config，不启动回测，也不改变 executionSpec，避免把 dataset 绑定扩展成回测算法变更。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @param datasetId marketdata dataset ID
+     * @param datasetSnapshotJson 绑定时的数据集快照 JSON
+     * @return 更新后的回测配置
+     */
+    public BacktestConfig bindDataset(String backtestConfigId, String datasetId, String datasetSnapshotJson) {
+        String normalizedConfigId = requireText(backtestConfigId, "backtestConfigId");
+        getByBacktestConfigId(normalizedConfigId);
+        String normalizedDatasetId = requireText(datasetId, "datasetId");
+        String normalizedSnapshot = normalizeJson(datasetSnapshotJson);
+        boolean updated = backtestConfigRepository.bindDataset(
+                normalizedConfigId,
+                normalizedDatasetId,
+                normalizedSnapshot,
+                Instant.now(clock)
+        );
+        if (!updated) {
+            throw new IllegalArgumentException("backtest config not found: " + normalizedConfigId);
+        }
+        return getByBacktestConfigId(normalizedConfigId);
     }
 
     private void validateCreateRequest(BacktestConfigCreateRequest request) {

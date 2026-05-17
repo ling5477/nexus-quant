@@ -365,7 +365,7 @@ public class BacktestExecutionService {
             BacktestConfig backtestConfig,
             ResearchConfig researchConfig
     ) {
-        HistoricalDatasetSpec datasetSpec = parseDatasetSpec(researchConfig.datasetSpec());
+        HistoricalDatasetSpec datasetSpec = parseDatasetSpec(resolveExecutionDatasetSpec(backtestConfig, researchConfig));
         return new BacktestExecutionRequest(
                 backtestRun.backtestRunId(),
                 researchConfig.researchConfigId(),
@@ -379,6 +379,17 @@ public class BacktestExecutionService {
                 backtestConfig.initialCapital(),
                 backtestConfig.executionSpec()
         );
+    }
+
+    private String resolveExecutionDatasetSpec(BacktestConfig backtestConfig, ResearchConfig researchConfig) {
+        if (backtestConfig.datasetId() != null
+                && !backtestConfig.datasetId().isBlank()
+                && backtestConfig.datasetSnapshotJson() != null
+                && !backtestConfig.datasetSnapshotJson().isBlank()
+                && !"{}".equals(backtestConfig.datasetSnapshotJson().trim())) {
+            return backtestConfig.datasetSnapshotJson();
+        }
+        return researchConfig.datasetSpec();
     }
 
     private HistoricalDatasetSpec parseDatasetSpec(String datasetSpecJson) {
@@ -592,6 +603,10 @@ public class BacktestExecutionService {
         SimPosition finalPosition = executionContext.currentPosition();
         ObjectNode summary = objectMapper.createObjectNode();
         summary.put("sourceStrategyId", executionRequest.sourceStrategyId());
+        summary.put("datasetId", executionRequest.datasetSpec().datasetId());
+        summary.put("datasetProvider", executionRequest.datasetSpec().provider());
+        summary.put("datasetResourcePath", executionRequest.datasetSpec().resourcePath());
+        summary.put("exchangeCode", executionRequest.datasetSpec().exchangeCode());
         summary.put("symbol", executionRequest.datasetSpec().symbol());
         summary.put("interval", executionRequest.datasetSpec().interval().wireValue());
         summary.put("barCount", bars.size());
@@ -624,9 +639,17 @@ public class BacktestExecutionService {
         ObjectNode summary = objectMapper.createObjectNode();
         summary.put("sourceStrategyId", researchConfig.sourceStrategyId());
         if (executionRequest != null) {
+            summary.put("datasetId", executionRequest.datasetSpec().datasetId());
+            summary.put("datasetProvider", executionRequest.datasetSpec().provider());
+            summary.put("datasetResourcePath", executionRequest.datasetSpec().resourcePath());
+            summary.put("exchangeCode", executionRequest.datasetSpec().exchangeCode());
             summary.put("symbol", executionRequest.datasetSpec().symbol());
             summary.put("interval", executionRequest.datasetSpec().interval().wireValue());
         } else {
+            summary.putNull("datasetId");
+            summary.putNull("datasetProvider");
+            summary.putNull("datasetResourcePath");
+            summary.putNull("exchangeCode");
             summary.putNull("symbol");
             summary.putNull("interval");
         }

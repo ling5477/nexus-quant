@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.api.web;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.guidinglight.nexusquant.research.application.api.backtest.BacktestConfigApiService;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 
 import java.math.BigDecimal;
@@ -24,6 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -36,11 +39,13 @@ class BacktestConfigControllerTest {
 
     private MockMvc mockMvc;
     private BacktestConfigApiService applicationService;
+    private MarketdataDatasetService marketdataDatasetService;
 
     @BeforeEach
     void setUp() {
         applicationService = mock(BacktestConfigApiService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new BacktestConfigController(applicationService))
+        marketdataDatasetService = mock(MarketdataDatasetService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new BacktestConfigController(applicationService, marketdataDatasetService))
                 .addFilters(new TestTraceIdFilter())
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
@@ -91,6 +96,41 @@ class BacktestConfigControllerTest {
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-config-empty"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void shouldBindDatasetToBacktestConfig() throws Exception {
+        String datasetId = "33333333-3333-3333-3333-333333333333";
+        String datasetSnapshot = """
+                {"datasetId":"33333333-3333-3333-3333-333333333333","provider":"db","resourcePath":"marketdata_bars","exchangeCode":"BINANCE","marketType":"SPOT","symbol":"BTC-USDT","interval":"1m"}
+                """;
+        BacktestConfig bound = new BacktestConfig(
+                "bcf-1",
+                "rcf-1",
+                "Demo Backtest",
+                "用于联调 dataset 绑定",
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-31T00:00:00Z"),
+                new BigDecimal("100000"),
+                "{\"mode\":\"bar\"}",
+                "{\"benchmark\":\"BTC\"}",
+                datasetId,
+                datasetSnapshot,
+                "{\"startTime\":\"2025-01-01T00:00:00Z\",\"endTime\":\"2025-01-31T00:00:00Z\",\"initialCapital\":\"100000\",\"executionSpec\":{\"mode\":\"bar\"}}",
+                Instant.parse("2026-03-20T00:00:00Z"),
+                Instant.parse("2026-03-21T00:00:00Z")
+        );
+        when(marketdataDatasetService.buildDatasetSnapshot(java.util.UUID.fromString(datasetId)))
+                .thenReturn(datasetSnapshot);
+        when(applicationService.bindDataset("bcf-1", datasetId, datasetSnapshot)).thenReturn(bound);
+
+        mockMvc.perform(patch("/api/backtest-configs/bcf-1/dataset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"datasetId\":\"" + datasetId + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.backtestConfigId").value("bcf-1"))
+                .andExpect(jsonPath("$.datasetId").value(datasetId))
+                .andExpect(jsonPath("$.datasetSnapshotJson").value(datasetSnapshot));
     }
 
     @Test

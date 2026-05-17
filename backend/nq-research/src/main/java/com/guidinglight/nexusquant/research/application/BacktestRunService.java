@@ -82,6 +82,7 @@ public class BacktestRunService {
                 researchConfig.sourceStrategyId(),
                 researchConfig.strategySnapshot(),
                 backtestConfig.configSnapshot(),
+                backtestConfig.datasetSnapshotJson(),
                 BacktestRunStatus.CREATED,
                 now,
                 null,

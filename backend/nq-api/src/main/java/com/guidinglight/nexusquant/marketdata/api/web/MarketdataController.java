@@ -2,13 +2,17 @@ package com.guidinglight.nexusquant.marketdata.api.web;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.CreateMarketdataIngestionJobRequest;
+import com.guidinglight.nexusquant.marketdata.api.dto.CreateMarketdataDatasetRequest;
 import com.guidinglight.nexusquant.marketdata.api.dto.FixtureMarketdataIngestionRequestBody;
 import com.guidinglight.nexusquant.marketdata.api.dto.FixtureMarketdataIngestionResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataBarResponse;
+import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataDatasetResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionJobResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionRunResponse;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
+import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataDatasetCommand;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataIngestionJobCommand;
 import com.guidinglight.nexusquant.marketdata.application.command.FixtureMarketdataIngestionCommand;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
@@ -56,11 +60,13 @@ public class MarketdataController {
     private final MarketdataBarIngestService marketdataBarIngestService;
     private final HistoricalMarketDataPort historicalMarketDataPort;
     private final MarketdataIngestionService marketdataIngestionService;
+    private final MarketdataDatasetService marketdataDatasetService;
 
     public MarketdataController(
             MarketdataBarIngestService marketdataBarIngestService,
             HistoricalMarketDataPort historicalMarketDataPort,
-            MarketdataIngestionService marketdataIngestionService
+            MarketdataIngestionService marketdataIngestionService,
+            MarketdataDatasetService marketdataDatasetService
     ) {
         this.marketdataBarIngestService = Objects.requireNonNull(
                 marketdataBarIngestService,
@@ -73,6 +79,10 @@ public class MarketdataController {
         this.marketdataIngestionService = Objects.requireNonNull(
                 marketdataIngestionService,
                 "marketdataIngestionService must not be null"
+        );
+        this.marketdataDatasetService = Objects.requireNonNull(
+                marketdataDatasetService,
+                "marketdataDatasetService must not be null"
         );
     }
 
@@ -167,6 +177,49 @@ public class MarketdataController {
     @Operation(summary = "执行一次历史 K 线接入", security = @SecurityRequirement(name = "bearerAuth"))
     public MarketdataIngestionRunResponse runIngestionJobOnce(@PathVariable UUID jobId) {
         return MarketdataIngestionRunResponse.from(marketdataIngestionService.runOnce(jobId));
+    }
+
+    @GetMapping("/datasets")
+    @Operation(summary = "查询行情数据集", security = @SecurityRequirement(name = "bearerAuth"))
+    public List<MarketdataDatasetResponse> listDatasets(
+            @RequestParam(required = false) String exchangeCode,
+            @RequestParam(required = false) String marketType,
+            @RequestParam(required = false) String symbol,
+            @RequestParam(required = false) String interval
+    ) {
+        return marketdataDatasetService.listDatasets(exchangeCode, marketType, symbol, interval).stream()
+                .map(MarketdataDatasetResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/datasets")
+    @Operation(summary = "创建行情数据集", security = @SecurityRequirement(name = "bearerAuth"))
+    public MarketdataDatasetResponse createDataset(
+            @Valid @RequestBody CreateMarketdataDatasetRequest request,
+            Principal principal
+    ) {
+        return MarketdataDatasetResponse.from(marketdataDatasetService.createDataset(new CreateMarketdataDatasetCommand(
+                request.datasetName(),
+                request.exchangeCode(),
+                request.marketType(),
+                request.symbol(),
+                request.interval(),
+                request.startTime(),
+                request.endTime(),
+                resolveCreatedBy(principal)
+        )));
+    }
+
+    @GetMapping("/datasets/{datasetId}")
+    @Operation(summary = "查询行情数据集详情", security = @SecurityRequirement(name = "bearerAuth"))
+    public MarketdataDatasetResponse getDataset(@PathVariable UUID datasetId) {
+        return MarketdataDatasetResponse.from(marketdataDatasetService.getDataset(datasetId));
+    }
+
+    @PostMapping("/datasets/{datasetId}/refresh-quality")
+    @Operation(summary = "刷新行情数据集质量", security = @SecurityRequirement(name = "bearerAuth"))
+    public MarketdataDatasetResponse refreshDatasetQuality(@PathVariable UUID datasetId) {
+        return MarketdataDatasetResponse.from(marketdataDatasetService.refreshQuality(datasetId));
     }
 
     @PostMapping("/bars/ingestions/fixture")

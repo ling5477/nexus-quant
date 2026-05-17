@@ -88,6 +88,22 @@ public class BacktestConfigApiService {
         }
     }
 
+    /**
+     * 绑定 GateH-3 marketdata dataset 到回测配置。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @param datasetId dataset ID
+     * @param datasetSnapshotJson dataset 快照 JSON
+     * @return 更新后的回测配置
+     */
+    public BacktestConfig bindDataset(String backtestConfigId, String datasetId, String datasetSnapshotJson) {
+        try {
+            return backtestConfigService.bindDataset(backtestConfigId, datasetId, datasetSnapshotJson);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
+    }
+
     private ResponseStatusException toNotFound(IllegalArgumentException ex) {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
     }
