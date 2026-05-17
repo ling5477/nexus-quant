@@ -12,7 +12,9 @@ import java.time.Duration;
 public enum BarInterval {
     ONE_MINUTE("1m", Duration.ofMinutes(1)),
     FIVE_MINUTES("5m", Duration.ofMinutes(5)),
+    FIFTEEN_MINUTES("15m", Duration.ofMinutes(15)),
     ONE_HOUR("1h", Duration.ofHours(1)),
+    FOUR_HOURS("4h", Duration.ofHours(4)),
     ONE_DAY("1d", Duration.ofDays(1));
 
     private final String wireValue;

@@ -11,19 +11,22 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateH-PRE completed。
 - DOC-CLEAN completed。
 - BASELINE-FIX completed。
-- 当前允许进入 `GateH-PLAN`。
+- GateH-PLAN completed。
+- GateH-1-WO completed。
+- GateH-2-WO completed。
 
 ## 当前执行状态
 
-- 当前只执行 `GateH-PLAN`。
-- GateH 正式功能尚未开工。
-- GateH-PLAN 完成并审阅后，才允许进入 `GateH-1-WO`。
+- 当前刚完成 `GateH-2-WO`。
+- GateH-3 尚未开始。
+- AI 尚未开始。
+- GateH 整体尚未完成。
 
 ## 当前未完成状态
 
 - GateH 尚未完成。
 - 尚未完成虚拟币量化 V1。
-- 尚未完成真实历史行情完整接入。
+- 尚未完成 GateH-3 数据质量、dataset、backtest config 绑定与结果追溯。
 - 尚未完成 Paper Trading 稳定运行。
 - 尚未进入 AI 自动交易。
 - 尚未进入美股/A 股适配。
@@ -63,4 +66,5 @@ GateO：A 股适配
 - 后端 `mvn -f backend/pom.xml test` 已通过。
 - 前端 `npm run build` 已通过。
 - E2E `npm run test:e2e` 已通过，结果为 5 passed / 3 skipped。
+- GateH-2 后 E2E `npm run test:e2e` 已通过，结果为 9 passed / 3 skipped。
 - Python `pytest`、`mypy`、`ruff` 已通过。

@@ -12,9 +12,25 @@ import java.time.Instant;
 public record HistoricalMarketDataQuery(
         HistoricalDatasetSpec datasetSpec,
         String exchangeCode,
+        String marketType,
         String symbol,
         BarInterval interval,
         Instant startTime,
-        Instant endTime
+        Instant endTime,
+        int page,
+        int size
 ) {
+    /**
+     * 兼容 RC1 调用口径，默认查询 SPOT 且限制最大 200 条。
+     */
+    public HistoricalMarketDataQuery(
+            HistoricalDatasetSpec datasetSpec,
+            String exchangeCode,
+            String symbol,
+            BarInterval interval,
+            Instant startTime,
+            Instant endTime
+    ) {
+        this(datasetSpec, exchangeCode, "SPOT", symbol, interval, startTime, endTime, 0, 200);
+    }
 }

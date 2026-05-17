@@ -230,3 +230,102 @@
 - GateH-1 变更完成审查并提交。
 - 若需要更强验收，配置 `E2E_TRADE_ORDER_ID` 后补跑真实订单详情 E2E。
 - GateH-2 开工前再次确认范围只包含 OKX / Binance SPOT 历史 K 线接入，不夹带 dataset 绑定或 AI。
+
+## GateH-2-WO 执行记录
+
+日期：2026-05-17
+
+### 本轮范围
+
+- 实现 OKX / Binance SPOT 历史 OHLCV K 线接入最小闭环。
+- 增强 `marketdata_bars`，新增 `market_type`、`quote_volume`、`trade_count`、`quality_status`、`raw_payload_json`。
+- 新增 `marketdata_ingestion_jobs` 与 `marketdata_ingestion_runs`。
+- 新增接入任务创建、列表、详情、运行记录与 run-once API。
+- 增强 `/marketdata` 页面，展示 K 线查询、接入任务、运行结果。
+- 新增 marketdata E2E smoke。
+
+### 修改文件
+
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/BarInterval.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/HistoricalBar.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/HistoricalMarketDataQuery.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataBarUpsertStats.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/port/MarketdataBarRepository.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/MarketdataIngestionService.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/marketdata/api/web/MarketdataController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/api/web/ApiExceptionHandler.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/jdbc/JdbcMarketdataBarRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/jdbc/JdbcHistoricalMarketDataPort.java`
+- `frontend/src/api/marketdata.ts`
+- `frontend/src/types/marketdata.ts`
+- `frontend/src/pages/marketdata/MarketdataPage.tsx`
+- `frontend/tests/e2e/marketdata-bars-query-smoke.spec.ts`
+- `frontend/tests/e2e/marketdata-ingestion-smoke.spec.ts`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
+- `docs/current/STATUS.md`
+- `docs/current/WORKLOG.md`
+
+### 新增文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V16__gate_h2_marketdata_ingestion.sql`
+- `backend/nq-infra/src/main/resources/db/migration/V17__gate_h2_ingestion_created_by_width.sql`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataIngestionStatus.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataIngestionJob.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataIngestionRun.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/command/CreateMarketdataIngestionJobCommand.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/port/HistoricalKlineProvider.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/port/MarketdataIngestionJobRepository.java`
+- `backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/model/HistoricalKlineRequest.java`
+- `backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/model/HistoricalKlineBar.java`
+- `backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/HistoricalKlineAdapter.java`
+- `backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/HistoricalKlineAdapterException.java`
+- `backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxHistoricalKlineAdapter.java`
+- `backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceHistoricalKlineAdapter.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/adapter/AdapterHistoricalKlineProvider.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/jdbc/JdbcMarketdataIngestionJobRepository.java`
+
+### DB/migration 说明
+
+- `V16` 新增 GateH-2 marketdata ingestion 结构，并为新增表和新增字段补齐 PostgreSQL COMMENT。
+- `V17` 将 `marketdata_ingestion_jobs.created_by` 扩展为 `VARCHAR(512)`，兼容 Spring Security principal 审计名，并补充字段 COMMENT。
+- `marketdata_bars` 唯一约束升级为 `exchange_code + market_type + symbol + interval + open_time`，用于幂等 upsert。
+- 新增索引用于 bars 范围查询、job 列表和 run 列表。
+
+### 未做范围
+
+- 未进入 GateH-3。
+- 未新增 dataset/backtest 绑定。
+- 未接入 AI。
+- 未新增 AI 模块或 AI 自动交易接口。
+- 未接合约、资金费率、深度、逐笔成交、链上数据、新闻资讯。
+- 未新增美股/A 股适配。
+- 未修改交易核心状态机或策略核心逻辑。
+
+### 验证结果
+
+- `mvn -f backend/pom.xml test`：通过。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告。
+- 后端 local profile 临时启动：通过，`/actuator/health` 返回 `UP`。
+- `npm run test:e2e`：通过，9 passed、3 skipped。
+- Python 验证本轮未重新执行；本轮未修改 Python，沿用 BASELINE-FIX 已通过基线。
+
+### E2E 说明
+
+- 新增 `marketdata-bars-query-smoke`。
+- 新增 `marketdata-ingestion-smoke`。
+- E2E 不依赖外网交易所稳定性；目标是验证页面、API、job/run 状态查询闭环。
+
+### 剩余风险
+
+- 真实 OKX/Binance 大范围历史数据回填未在本轮执行。
+- 当前 run-once 在本地网络条件下可能返回空 bars，但会记录明确统计。
+- Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning 仍存在，本轮不处理。
+- `npm audit` 与 Vite chunk 体积警告仍按既有风险记录，未在 GateH-2 处理。
+
+### 下一步进入 GateH-3-WO 的条件
+
+- GateH-2 变更完成审查并提交。
+- GateH-3 只能做行情数据质量、dataset、backtest config 绑定与结果追溯。
+- GateH-3 不得夹带 AI、交易核心重构、策略核心逻辑、美股/A 股适配或合约全量接入。

@@ -13,15 +13,48 @@
 
 当前数据库已包含用户、账户、凭证、订单、成交、持仓、策略、调度、研究、回测、评估、发布、行情基础表。具体字段、索引、约束以 `backend/**/db/migration` 下的 Flyway migration 为准。
 
-## GateH 后续重点
+## GateH-2 当前 Marketdata 结构
 
-- 强化 `instrument_catalog`。
-- 强化 `marketdata_bars`。
-- 强化 marketdata ingestion 相关结构。
-- 明确真实历史行情数据质量、去重、完整性状态。
+GateH-2 新增 Flyway migration：
 
-## 本次任务边界
+- `V16__gate_h2_marketdata_ingestion.sql`
+- `V17__gate_h2_ingestion_created_by_width.sql`
 
-- 当前任务不新增 migration。
-- 当前任务不改业务表结构。
-- 当前任务不开发历史行情抓取实现。
+`marketdata_bars` 当前支持：
+
+- 维度字段：`exchange_code`、`market_type`、`symbol`、`interval`、`open_time`、`close_time`。
+- OHLCV 字段：`open_price`、`high_price`、`low_price`、`close_price`、`volume`、`quote_volume`、`trade_count`。
+- 溯源字段：`source`、`quality_status`、`raw_payload_json`、`ingested_at`。
+- 唯一约束：`exchange_code + market_type + symbol + interval + open_time`，用于保证历史 K 线幂等 upsert。
+- 关键索引：`idx_marketdata_bars_scope_time_desc`，用于按交易所、市场、交易对、周期和时间倒序查询。
+
+GateH-2 新增 `marketdata_ingestion_jobs`：
+
+- 任务字段：`job_id`、`exchange_code`、`market_type`、`symbol`、`interval`、`start_time`、`end_time`。
+- 状态字段：`status`，允许值 `CREATED`、`RUNNING`、`SUCCEEDED`、`FAILED`、`PARTIAL`。
+- 审计字段：`source`、`created_by`、`created_at`、`updated_at`、`request_json`。
+- 关键索引：`idx_marketdata_ingestion_jobs_scope_updated`，用于任务列表按范围和更新时间查询。
+
+GateH-2 新增 `marketdata_ingestion_runs`：
+
+- 运行字段：`run_id`、`job_id`、`status`、`started_at`、`finished_at`。
+- 请求/实际范围字段：`requested_start_time`、`requested_end_time`、`actual_start_time`、`actual_end_time`。
+- 统计字段：`fetched_bars`、`inserted_bars`、`updated_bars`、`skipped_bars`。
+- 排障字段：`error_message`、`raw_summary_json`、`created_at`。
+- 外键：`job_id` 关联 `marketdata_ingestion_jobs.job_id`。
+- 关键索引：`idx_marketdata_ingestion_runs_job_started`，用于任务详情按运行开始时间倒序查询。
+
+## 注释与 JSONB 约定
+
+- GateH-2 新增表均包含 `COMMENT ON TABLE`。
+- GateH-2 新增字段均包含 `COMMENT ON COLUMN`。
+- `request_json` 保存任务创建请求快照，不保存密钥、token、cookie。
+- `raw_payload_json` 保存单根 K 线的交易所原始 payload 快照，用于审计和排障。
+- `raw_summary_json` 保存单次运行统计摘要，不作为业务查询主结构。
+
+## 当前边界
+
+- GateH-2 不新增 dataset 表。
+- GateH-2 不修改 `backtest_configs` 绑定。
+- GateH-2 不开发 GateH-3 数据集管理、回测配置绑定或结果追溯。
+- GateH-2 不接入 AI。

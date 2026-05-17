@@ -40,6 +40,7 @@ public class JdbcMarketdataBarRepository implements MarketdataBarRepository {
                     """
                             INSERT INTO marketdata_bars (
                                 exchange_code,
+                                market_type,
                                 symbol,
                                 "interval",
                                 open_time,
@@ -49,22 +50,31 @@ public class JdbcMarketdataBarRepository implements MarketdataBarRepository {
                                 low_price,
                                 close_price,
                                 volume,
+                                quote_volume,
+                                trade_count,
                                 source,
+                                quality_status,
+                                raw_payload_json,
                                 ingested_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            ON CONFLICT (exchange_code, symbol, "interval", open_time) DO UPDATE
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)
+                            ON CONFLICT (exchange_code, market_type, symbol, "interval", open_time) DO UPDATE
                             SET close_time = EXCLUDED.close_time,
                                 open_price = EXCLUDED.open_price,
                                 high_price = EXCLUDED.high_price,
                                 low_price = EXCLUDED.low_price,
                                 close_price = EXCLUDED.close_price,
                                 volume = EXCLUDED.volume,
+                                quote_volume = EXCLUDED.quote_volume,
+                                trade_count = EXCLUDED.trade_count,
                                 source = EXCLUDED.source,
+                                quality_status = EXCLUDED.quality_status,
+                                raw_payload_json = EXCLUDED.raw_payload_json,
                                 ingested_at = EXCLUDED.ingested_at
                             RETURNING xmax = 0
                             """,
                     Boolean.class,
                     bar.exchangeCode(),
+                    bar.marketType(),
                     bar.symbol(),
                     bar.interval().wireValue(),
                     Timestamp.from(bar.openTime()),
@@ -74,7 +84,11 @@ public class JdbcMarketdataBarRepository implements MarketdataBarRepository {
                     bar.lowPrice(),
                     bar.closePrice(),
                     bar.volume(),
+                    bar.quoteVolume(),
+                    bar.tradeCount(),
                     source,
+                    bar.qualityStatus(),
+                    bar.rawPayloadJson() == null || bar.rawPayloadJson().isBlank() ? "{}" : bar.rawPayloadJson(),
                     Timestamp.from(ingestedAt)
             );
             if (Boolean.TRUE.equals(inserted)) {

@@ -1,4 +1,6 @@
 export interface MarketdataBar {
+    exchangeCode: string;
+    marketType: string;
     symbol: string;
     interval: string;
     openTime: string;
@@ -8,12 +10,59 @@ export interface MarketdataBar {
     lowPrice: number;
     closePrice: number;
     volume: number;
+    quoteVolume?: number | null;
+    tradeCount?: number | null;
+    qualityStatus: string;
 }
 
 export interface MarketdataBarsQuery {
     exchangeCode: string;
+    marketType: string;
     symbol: string;
     interval: string;
     startTime: string;
     endTime: string;
+    page?: number;
+    size?: number;
+}
+
+export interface CreateMarketdataIngestionJobRequest {
+    exchangeCode: string;
+    marketType: string;
+    symbol: string;
+    interval: string;
+    startTime: string;
+    endTime: string;
+}
+
+export interface MarketdataIngestionJob {
+    jobId: string;
+    exchangeCode: string;
+    marketType: string;
+    symbol: string;
+    interval: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    source: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface MarketdataIngestionRun {
+    jobId: string;
+    runId: string;
+    status: string;
+    fetchedBars: number;
+    insertedBars: number;
+    updatedBars: number;
+    skippedBars: number;
+    startedAt: string;
+    finishedAt?: string | null;
+    requestedStartTime: string;
+    requestedEndTime: string;
+    actualStartTime?: string | null;
+    actualEndTime?: string | null;
+    errorMessage?: string | null;
 }

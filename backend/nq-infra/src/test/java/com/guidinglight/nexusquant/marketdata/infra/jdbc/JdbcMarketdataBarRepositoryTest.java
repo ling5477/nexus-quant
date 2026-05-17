@@ -50,8 +50,9 @@ class JdbcMarketdataBarRepositoryTest {
 
         assertEquals(1, stats.insertedCount());
         assertEquals(1, stats.updatedCount());
-        assertTrue(jdbcTemplate.sqls.getFirst().contains("ON CONFLICT (exchange_code, symbol, \"interval\", open_time) DO UPDATE"));
+        assertTrue(jdbcTemplate.sqls.getFirst().contains("ON CONFLICT (exchange_code, market_type, symbol, \"interval\", open_time) DO UPDATE"));
         assertTrue(jdbcTemplate.sqls.getFirst().contains("close_price = EXCLUDED.close_price"));
+        assertTrue(jdbcTemplate.sqls.getFirst().contains("quality_status = EXCLUDED.quality_status"));
         assertTrue(jdbcTemplate.sqls.getFirst().contains("ingested_at = EXCLUDED.ingested_at"));
     }
 

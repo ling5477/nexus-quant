@@ -30,6 +30,7 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
         return jdbcTemplate.query(
                 """
                         SELECT exchange_code,
+                               market_type,
                                symbol,
                                "interval",
                                open_time,
@@ -38,17 +39,25 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
                                high_price,
                                low_price,
                                close_price,
-                               volume
+                               volume,
+                               quote_volume,
+                               trade_count,
+                               quality_status,
+                               raw_payload_json
                         FROM marketdata_bars
                         WHERE exchange_code = ?
+                          AND market_type = ?
                           AND symbol = ?
                           AND "interval" = ?
                           AND open_time >= ?
                           AND close_time <= ?
                         ORDER BY open_time
+                        LIMIT ?
+                        OFFSET ?
                         """,
                 (resultSet, rowNum) -> new HistoricalBar(
                         resultSet.getString("exchange_code"),
+                        resultSet.getString("market_type"),
                         resultSet.getString("symbol"),
                         BarInterval.fromWireValue(resultSet.getString("interval")),
                         resultSet.getTimestamp("open_time").toInstant(),
@@ -57,13 +66,20 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
                         resultSet.getBigDecimal("high_price"),
                         resultSet.getBigDecimal("low_price"),
                         resultSet.getBigDecimal("close_price"),
-                        resultSet.getBigDecimal("volume")
+                        resultSet.getBigDecimal("volume"),
+                        resultSet.getBigDecimal("quote_volume"),
+                        resultSet.getObject("trade_count", Long.class),
+                        resultSet.getString("quality_status"),
+                        resultSet.getString("raw_payload_json")
                 ),
                 query.exchangeCode(),
+                query.marketType(),
                 query.symbol(),
                 query.interval().wireValue(),
                 Timestamp.from(query.startTime()),
-                Timestamp.from(query.endTime())
+                Timestamp.from(query.endTime()),
+                Math.max(1, Math.min(query.size(), 500)),
+                Math.max(0, query.page()) * Math.max(1, Math.min(query.size(), 500))
         );
     }
 }

@@ -67,6 +67,7 @@ class MarketdataControllerLocalIntegrationTest {
         String queryResponseBody = mockMvc.perform(get("/api/marketdata/bars")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-local-query")
                         .param("exchangeCode", "BINANCE")
+                        .param("marketType", "SPOT")
                         .param("symbol", "BTCUSDT")
                         .param("interval", "1m")
                         .param("startTime", "2025-01-01T00:00:00Z")

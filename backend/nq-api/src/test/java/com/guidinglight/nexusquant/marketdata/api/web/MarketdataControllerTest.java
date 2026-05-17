@@ -13,14 +13,19 @@ import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataFixtureIngestionResult;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionJob;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionRun;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionStatus;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -39,12 +44,18 @@ class MarketdataControllerTest {
     private MockMvc mockMvc;
     private HistoricalMarketDataPort historicalMarketDataPort;
     private MarketdataBarIngestService marketdataBarIngestService;
+    private MarketdataIngestionService marketdataIngestionService;
 
     @BeforeEach
     void setUp() {
         historicalMarketDataPort = mock(HistoricalMarketDataPort.class);
         marketdataBarIngestService = mock(MarketdataBarIngestService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new MarketdataController(marketdataBarIngestService, historicalMarketDataPort))
+        marketdataIngestionService = mock(MarketdataIngestionService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new MarketdataController(
+                        marketdataBarIngestService,
+                        historicalMarketDataPort,
+                        marketdataIngestionService
+                ))
                 .addFilters(new TestTraceIdFilter())
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
@@ -67,6 +78,7 @@ class MarketdataControllerTest {
 
         mockMvc.perform(get("/api/marketdata/bars")
                         .param("exchangeCode", "BINANCE")
+                        .param("marketType", "SPOT")
                         .param("symbol", "BTCUSDT")
                         .param("interval", "1m")
                         .param("startTime", "2025-01-01T00:00:00Z")
@@ -74,11 +86,73 @@ class MarketdataControllerTest {
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-1"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-1"))
+                .andExpect(jsonPath("$[0].exchangeCode").value("BINANCE"))
+                .andExpect(jsonPath("$[0].marketType").value("SPOT"))
                 .andExpect(jsonPath("$[0].symbol").value("BTCUSDT"))
                 .andExpect(jsonPath("$[0].interval").value("1m"))
                 .andExpect(jsonPath("$[0].openTime").exists())
                 .andExpect(jsonPath("$[0].closePrice").value(100.50))
                 .andExpect(jsonPath("$[0].volume").value(12.34));
+    }
+
+    @Test
+    void shouldCreateAndRunMarketdataIngestionJob() throws Exception {
+        UUID jobId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID runId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        when(marketdataIngestionService.createJob(argThat(command ->
+                "BINANCE".equals(command.exchangeCode())
+                        && "SPOT".equals(command.marketType())
+                        && "BTC-USDT".equals(command.symbol())
+                        && "1m".equals(command.interval())
+        ))).thenReturn(new MarketdataIngestionJob(
+                jobId,
+                "BINANCE",
+                "SPOT",
+                "BTC-USDT",
+                BarInterval.ONE_MINUTE,
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-01T00:05:59Z"),
+                MarketdataIngestionStatus.CREATED,
+                "EXCHANGE_HISTORICAL",
+                "local",
+                Instant.parse("2026-04-06T00:00:00Z"),
+                Instant.parse("2026-04-06T00:00:00Z"),
+                "{}"
+        ));
+        when(marketdataIngestionService.runOnce(jobId)).thenReturn(new MarketdataIngestionRun(
+                runId,
+                jobId,
+                MarketdataIngestionStatus.SUCCEEDED,
+                Instant.parse("2026-04-06T00:00:01Z"),
+                Instant.parse("2026-04-06T00:00:02Z"),
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-01T00:05:59Z"),
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-01T00:05:59Z"),
+                6,
+                6,
+                0,
+                0,
+                null,
+                "{}",
+                Instant.parse("2026-04-06T00:00:01Z")
+        ));
+
+        mockMvc.perform(post("/api/marketdata/ingestion-jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"exchangeCode":"BINANCE","marketType":"SPOT","symbol":"BTC-USDT","interval":"1m","startTime":"2025-01-01T00:00:00Z","endTime":"2025-01-01T00:05:59Z"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jobId").value(jobId.toString()))
+                .andExpect(jsonPath("$.status").value("CREATED"));
+
+        mockMvc.perform(post("/api/marketdata/ingestion-jobs/{jobId}/run-once", jobId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.runId").value(runId.toString()))
+                .andExpect(jsonPath("$.status").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.fetchedBars").value(6))
+                .andExpect(jsonPath("$.insertedBars").value(6));
     }
 
     @Test
@@ -119,6 +193,7 @@ class MarketdataControllerTest {
 
     private boolean matchesQuery(HistoricalMarketDataQuery query) {
         return query.exchangeCode().equals("BINANCE")
+                && query.marketType().equals("SPOT")
                 && query.symbol().equals("BTCUSDT")
                 && query.interval() == BarInterval.ONE_MINUTE
                 && query.datasetSpec().exchangeCode().equals("BINANCE")

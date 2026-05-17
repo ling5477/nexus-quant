@@ -105,3 +105,36 @@ GateH-1 剩余验证风险：
 
 - 当前本地没有配置 `E2E_TRADE_ORDER_ID`，因此订单详情真实数据链路未在本次 E2E 中执行，通过 skip 明确记录。
 - Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning 和 Vite chunk > 500 kB 警告仍存在，本轮不处理。
+
+## GateH-2-WO 验证记录
+
+日期：2026-05-17
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`；GateH-2 migration、API、adapter bridge 与既有 local integration 均通过 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告，本轮不处理 |
+| `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local` | 通过 | 为 E2E 临时启动后端；`/actuator/health` 返回 `UP`；Flyway 当前版本到 `17` |
+| `npm run test:e2e` | 通过 | 12 个 Playwright 用例中 9 passed、3 skipped；新增 `marketdata-bars-query-smoke` 与 `marketdata-ingestion-smoke` 均通过 |
+
+GateH-2 E2E 覆盖：
+
+- `/marketdata` 可打开。
+- 页面展示 GateH-2 固定查询维度：OKX/BINANCE、SPOT、BTC-USDT、1m。
+- K 线查询不报错，并展示 Bars 表格空态/数据态。
+- 可通过页面创建 `marketdata_ingestion_jobs`。
+- 可通过页面触发 `run-once`。
+- 页面可查询 job/run 状态与运行结果。
+
+GateH-2 交易所访问说明：
+
+- 本轮 E2E 不依赖外网交易所稳定性。
+- `run-once` 走本地后端真实 API 与 adapter 路径；当交易所接口返回空数据或外网不可用时，运行记录仍保存明确状态和统计。
+- 本轮未执行真实生产交易所长时间回填或大范围历史数据下载。
+
+GateH-2 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用 BASELINE-FIX 已通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未处理 Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning。

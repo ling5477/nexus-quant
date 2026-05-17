@@ -9,6 +9,10 @@ package com.guidinglight.nexusquant.marketdata.domain;
  */
 public record MarketdataBarUpsertStats(
         int insertedCount,
-        int updatedCount
+        int updatedCount,
+        int skippedCount
 ) {
+    public MarketdataBarUpsertStats(int insertedCount, int updatedCount) {
+        this(insertedCount, updatedCount, 0);
+    }
 }

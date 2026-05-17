@@ -24,6 +24,7 @@
 - 旧 `/__gated/**` 只允许出现在历史文档说明中。
 - AI 自动交易 API 当前不存在，也不允许在本次任务新增。
 - GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
+- GateH-2 只新增 OKX / Binance SPOT 历史 OHLCV K 线接入、接入任务与运行记录 API；不新增 dataset/backtest 绑定接口，不新增 AI 接口。
 
 ## GateH-1 Trading Workspace API
 
@@ -40,3 +41,24 @@
 - `POST /api/trading/recovery/run-once`：触发既有恢复维护动作。
 
 GateH-1 不新增历史行情抓取、marketdata ingestion、dataset 绑定、AI 下单或策略自动交易接口。
+
+## GateH-2 Marketdata Ingestion API
+
+当前已实现的 GateH-2 行情接入入口：
+
+- `GET /api/marketdata/bars`：按 `exchangeCode`、`marketType`、`symbol`、`interval`、`startTime`、`endTime`、`page`、`size` 查询 `marketdata_bars`。
+- `POST /api/marketdata/ingestion-jobs`：创建 SPOT 历史 K 线接入任务。
+- `GET /api/marketdata/ingestion-jobs`：查询最近接入任务列表。
+- `GET /api/marketdata/ingestion-jobs/{jobId}`：查询接入任务详情。
+- `GET /api/marketdata/ingestion-jobs/{jobId}/runs`：查询任务运行记录。
+- `POST /api/marketdata/ingestion-jobs/{jobId}/run-once`：执行一次接入任务，返回 `runId`、`status`、`fetchedBars`、`insertedBars`、`updatedBars`、`skippedBars`、`startedAt`、`finishedAt`、`errorMessage`。
+
+GateH-2 固定范围：
+
+- `exchangeCode`：`OKX`、`BINANCE`。
+- `marketType`：仅 `SPOT`。
+- `symbol`：`BTC-USDT`、`ETH-USDT`、`SOL-USDT`。
+- `interval`：`1m`、`5m`、`15m`、`1h`、`4h`、`1d`。
+- 数据类型：OHLCV K 线。
+
+GateH-2 不新增 AI 自动交易、AI 信号接入、dataset/backtest 绑定、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配或复杂因子平台 API。
