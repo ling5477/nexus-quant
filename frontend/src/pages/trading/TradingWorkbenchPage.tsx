@@ -18,7 +18,8 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useEffect, useState} from 'react';
+import type {FormInstance} from 'antd';
+import {useEffect, useMemo, useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
@@ -27,10 +28,11 @@ import {
     usePlaceOrderMutation,
     useReconcileMutation,
     useRecoveryMutation,
+    useTradingOrderListQuery,
     useTradingWorkbenchLookupQuery,
 } from '@/hooks/useTradingWorkbench';
-import type {AppApiError} from '@/types/api';
 import {useAccountContextStore} from '@/store/account-context-store';
+import type {AppApiError} from '@/types/api';
 import type {
     AccountBalanceView,
     OperationTriggerResponse,
@@ -39,102 +41,95 @@ import type {
     OrderView,
     ReconcileRunOnceRequest,
     RecoveryRunOnceRequest,
+    TradingOrderListRequest,
     TradingWorkbenchLookupRequest,
+    TradingWorkbenchLookupResult,
 } from '@/types/trading-workbench';
 import {formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
 
 type ActionDrawer = 'place' | 'cancel' | 'reconcile' | 'recovery' | null;
 
-/**
- * TradingWorkbenchPage 是正式交易工作台页面。
- * Why: 页面只围绕正式账户上下文与 trading-workbench API 工作，历史路由 alias 统一在 router 层处理。
- */
-interface TradingWorkbenchQueryForm {
-    orderId: string;
-    accountId?: number;
+interface TradingWorkbenchPageProps {
+    legacyAlias?: boolean;
+}
+
+interface TradingOrderListForm {
+    orderId?: string;
     symbol?: string;
+    status?: string;
 }
 
-function extractOrderId(detail: string): string | null {
-    const matched = /order_id=([^,]+)/.exec(detail);
-    return matched?.[1] ?? null;
-}
-
-const balanceColumns: ColumnsType<AccountBalanceView> = [
-    {
-        title: '币种',
-        dataIndex: 'currency',
-        key: 'currency',
-        width: 120,
-    },
-    {
-        title: '总余额',
-        dataIndex: 'balance',
-        key: 'balance',
-        width: 140,
-        render: (value: number) => formatNumber(value, 8),
-    },
-    {
-        title: '可用',
-        dataIndex: 'available',
-        key: 'available',
-        width: 140,
-        render: (value: number) => formatNumber(value, 8),
-    },
-    {
-        title: '冻结',
-        dataIndex: 'frozen',
-        key: 'frozen',
-        width: 140,
-        render: (value: number) => formatNumber(value, 8),
-    },
-    {
-        title: '快照时间',
-        dataIndex: 'snapshotTs',
-        key: 'snapshotTs',
-        width: 180,
-        render: (value: string) => formatDateTime(value),
-    },
-];
-
-export function TradingWorkbenchPage() {
+/**
+ * TradingWorkbenchPage 是 GateH-1 的正式交易工作台。
+ *
+ * Why:
+ * 页面以 header 中的正式 exchangeAccountId 为唯一账户上下文来源，列表、详情和写动作都围绕该上下文工作；
+ * `/trade-validation` 只作为过渡入口复用本页，不再成为独立业务模式。
+ */
+export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPageProps) {
     const {message} = App.useApp();
-    const [queryForm] = Form.useForm<TradingWorkbenchQueryForm>();
+    const [listForm] = Form.useForm<TradingOrderListForm>();
     const [placeForm] = Form.useForm<OrderSubmitRequest>();
     const [cancelForm] = Form.useForm<OrderCancelRequestBody>();
     const [reconcileForm] = Form.useForm<ReconcileRunOnceRequest>();
     const [recoveryForm] = Form.useForm<RecoveryRunOnceRequest>();
-    const [submittedRequest, setSubmittedRequest] = useState<TradingWorkbenchLookupRequest | null>(null);
-    const [searchVersion, setSearchVersion] = useState(0);
-    const [detailOpen, setDetailOpen] = useState(false);
-    const [activeAction, setActiveAction] = useState<ActionDrawer>(null);
-    const [lastActionResult, setLastActionResult] = useState<OperationTriggerResponse | null>(null);
     const selectedExchangeAccountId = useAccountContextStore((state) => state.selectedExchangeAccountId);
     const exchangeCode = useAccountContextStore((state) => state.exchangeCode);
     const tradeEnv = useAccountContextStore((state) => state.tradeEnv);
     const accountAlias = useAccountContextStore((state) => state.accountAlias);
+    const legacyAccountId = useAccountContextStore((state) => state.legacyAccountId);
+    const [submittedListRequest, setSubmittedListRequest] = useState<TradingOrderListRequest | null>(null);
+    const [listSearchVersion, setListSearchVersion] = useState(0);
+    const [detailRequest, setDetailRequest] = useState<TradingWorkbenchLookupRequest | null>(null);
+    const [detailSearchVersion, setDetailSearchVersion] = useState(0);
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [activeAction, setActiveAction] = useState<ActionDrawer>(null);
+    const [lastActionResult, setLastActionResult] = useState<OperationTriggerResponse | null>(null);
 
-    const lookupQuery = useTradingWorkbenchLookupQuery(submittedRequest, searchVersion);
+    const orderListQuery = useTradingOrderListQuery(submittedListRequest, listSearchVersion);
+    const detailQuery = useTradingWorkbenchLookupQuery(detailRequest, detailSearchVersion);
     const placeOrderMutation = usePlaceOrderMutation();
     const cancelOrderMutation = useCancelOrderMutation();
     const reconcileMutation = useReconcileMutation();
     const recoveryMutation = useRecoveryMutation();
-    const hasSearched = searchVersion > 0;
+
+    const accountContextReady = Boolean(selectedExchangeAccountId && exchangeCode && tradeEnv);
+    const currentContextLabel = accountContextReady
+        ? `${exchangeCode} / ${tradeEnv} / ${accountAlias}（exchangeAccountId=${selectedExchangeAccountId}）`
+        : '当前未选择正式账户上下文';
 
     useEffect(() => {
-        if (selectedExchangeAccountId) {
-            queryForm.setFieldValue('accountId', selectedExchangeAccountId);
-            placeForm.setFieldValue('accountId', selectedExchangeAccountId);
-            cancelForm.setFieldValue('accountId', selectedExchangeAccountId);
+        if (!accountContextReady || !selectedExchangeAccountId) {
+            setSubmittedListRequest(null);
+            return;
         }
-        if (exchangeCode) {
-            placeForm.setFieldValue('venue', exchangeCode);
-            reconcileForm.setFieldValue('venue', exchangeCode);
-            recoveryForm.setFieldValue('venue', exchangeCode);
-        }
-    }, [cancelForm, exchangeCode, placeForm, queryForm, reconcileForm, recoveryForm, selectedExchangeAccountId]);
+        const nextRequest: TradingOrderListRequest = {
+            accountId: selectedExchangeAccountId,
+            venue: exchangeCode ?? undefined,
+            environment: tradeEnv ?? undefined,
+            page: 0,
+            size: 20,
+        };
+        listForm.setFieldsValue({orderId: undefined, symbol: undefined, status: undefined});
+        placeForm.setFieldsValue({accountId: selectedExchangeAccountId, venue: exchangeCode ?? undefined});
+        cancelForm.setFieldsValue({accountId: selectedExchangeAccountId});
+        reconcileForm.setFieldsValue({venue: exchangeCode ?? undefined});
+        recoveryForm.setFieldsValue({venue: exchangeCode ?? undefined});
+        setSubmittedListRequest(nextRequest);
+        setListSearchVersion((value) => value + 1);
+    }, [
+        accountContextReady,
+        cancelForm,
+        exchangeCode,
+        listForm,
+        placeForm,
+        recoveryForm,
+        reconcileForm,
+        selectedExchangeAccountId,
+        tradeEnv,
+    ]);
 
-    const orderColumns: ColumnsType<OrderView> = [
+    const orderColumns = useMemo<ColumnsType<OrderView>>(() => [
         {
             title: '订单 ID',
             dataIndex: 'orderId',
@@ -143,35 +138,35 @@ export function TradingWorkbenchPage() {
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '账户',
-            dataIndex: 'accountId',
-            key: 'accountId',
-            width: 120,
+            title: '环境',
+            dataIndex: 'tradeEnv',
+            key: 'tradeEnv',
+            width: 100,
+            render: (value: string) => <Tag color={value === 'LIVE' ? 'red' : 'blue'}>{value}</Tag>,
         },
         {
             title: 'Venue',
             dataIndex: 'venue',
             key: 'venue',
-            width: 120,
+            width: 110,
         },
         {
             title: '交易对',
             dataIndex: 'symbol',
             key: 'symbol',
-            width: 140,
+            width: 130,
         },
         {
-            title: 'Client Order ID',
-            dataIndex: 'clientOrderId',
-            key: 'clientOrderId',
-            width: 220,
+            title: '方向',
+            dataIndex: 'side',
+            key: 'side',
+            width: 90,
         },
         {
-            title: '外部订单 ID',
-            dataIndex: 'externalOrderId',
-            key: 'externalOrderId',
-            width: 220,
-            render: (value: string | null) => value || '-',
+            title: '类型',
+            dataIndex: 'type',
+            key: 'type',
+            width: 100,
         },
         {
             title: '价格',
@@ -191,62 +186,90 @@ export function TradingWorkbenchPage() {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
-            width: 120,
+            width: 130,
             render: (value: string) => <Tag color="blue">{value}</Tag>,
         },
         {
-            title: 'Trace',
-            dataIndex: 'traceId',
-            key: 'traceId',
-            width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+            title: '创建时间',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            width: 180,
+            render: (value: string | null) => formatDateTime(value),
         },
         {
             title: '操作',
             key: 'action',
             fixed: 'right',
             width: 120,
-            render: () => (
-                <Button type="link" onClick={() => setDetailOpen(true)}>
+            render: (_, record) => (
+                <Button type="link" onClick={() => openDetail(record)}>
                     查看详情
                 </Button>
             ),
         },
-    ];
+    ], []);
 
-    const handleLookup = (values: TradingWorkbenchQueryForm) => {
-        setSubmittedRequest({
+    const handleListSearch = (values: TradingOrderListForm) => {
+        if (!selectedExchangeAccountId) {
+            message.warning('请先选择正式账户上下文。');
+            return;
+        }
+        setSubmittedListRequest({
+            accountId: selectedExchangeAccountId,
             orderId: normalizeOptionalText(values.orderId),
-            accountId: values.accountId ?? selectedExchangeAccountId ?? undefined,
+            venue: exchangeCode ?? undefined,
             symbol: normalizeOptionalText(values.symbol),
+            status: normalizeOptionalText(values.status),
+            environment: tradeEnv ?? undefined,
+            page: 0,
+            size: 20,
         });
-        setSearchVersion((value) => value + 1);
+        setListSearchVersion((value) => value + 1);
     };
 
-    const handleLookupReset = () => {
-        queryForm.resetFields();
-        setSubmittedRequest(null);
-        setSearchVersion(0);
+    const handleListReset = () => {
+        listForm.resetFields();
+        if (!selectedExchangeAccountId) {
+            setSubmittedListRequest(null);
+            return;
+        }
+        setSubmittedListRequest({
+            accountId: selectedExchangeAccountId,
+            venue: exchangeCode ?? undefined,
+            environment: tradeEnv ?? undefined,
+            page: 0,
+            size: 20,
+        });
+        setListSearchVersion((value) => value + 1);
+    };
+
+    const openDetail = (order: OrderView) => {
+        setDetailRequest({
+            orderId: order.orderId,
+            accountId: selectedExchangeAccountId ?? undefined,
+            symbol: order.symbol,
+        });
+        setDetailSearchVersion((value) => value + 1);
+        setDetailOpen(true);
     };
 
     const handleActionSuccess = (result: OperationTriggerResponse, options?: { close?: boolean; refetch?: boolean }) => {
         setLastActionResult(result);
         message.success(`${result.action} 已执行。`);
-
         const orderId = extractOrderId(result.detail);
-
-        if (orderId) {
-            queryForm.setFieldValue('orderId', orderId);
-            setSubmittedRequest((current) => ({
+        if (orderId && selectedExchangeAccountId) {
+            setSubmittedListRequest({
+                accountId: selectedExchangeAccountId,
                 orderId,
-                accountId: current?.accountId ?? selectedExchangeAccountId ?? undefined,
-                symbol: current?.symbol,
-            }));
-            setSearchVersion((value) => value + 1);
-        } else if (options?.refetch && submittedRequest) {
-            setSearchVersion((value) => value + 1);
+                venue: exchangeCode ?? undefined,
+                environment: tradeEnv ?? undefined,
+                page: 0,
+                size: 20,
+            });
+            setListSearchVersion((value) => value + 1);
+        } else if (options?.refetch && submittedListRequest) {
+            setListSearchVersion((value) => value + 1);
         }
-
         if (options?.close) {
             setActiveAction(null);
         }
@@ -255,88 +278,128 @@ export function TradingWorkbenchPage() {
     return (
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                {legacyAlias ? (
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="/trade-validation 是过渡入口"
+                        description="正式交易工作台入口为 /trading；当前旧路径保留兼容，不再作为独立业务入口。"
+                    />
+                ) : null}
+
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="交易工作台"
-                        description="正式交易工作台。当前页围绕 exchangeAccountId 账户上下文执行下单、撤单、对账、恢复与事实查询。"
-                        badge="GateH-PRE / PRE-3"
+                        description="正式交易工作台。当前页围绕 exchangeAccountId 账户上下文查询订单、查看详情，并展示 SIM / LIVE 与风控前置状态。"
+                        badge="GateH-1"
                     />
                 </Card>
+
+                <Card className="page-section" bordered={false} title="账户上下文">
+                    {accountContextReady ? (
+                        <Descriptions bordered size="small" column={2}>
+                            <Descriptions.Item label="当前账户">{currentContextLabel}</Descriptions.Item>
+                            <Descriptions.Item label="兼容 legacyAccountId">{legacyAccountId ?? '-'}</Descriptions.Item>
+                            <Descriptions.Item label="SIM / LIVE">
+                                <Tag color={tradeEnv === 'LIVE' ? 'red' : 'blue'}>{tradeEnv}</Tag>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="边界说明">
+                                当前页面只使用正式 exchangeAccountId；后端负责兼容映射到 legacy trading account。
+                            </Descriptions.Item>
+                        </Descriptions>
+                    ) : (
+                        <Alert
+                            type="warning"
+                            showIcon
+                            message="当前未选择正式账户上下文"
+                            description="请先在 Header 或账户管理页选择 exchange account。交易工作台不会绕过账户上下文执行查询或写动作。"
+                        />
+                    )}
+                </Card>
+
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询区"
+                    title="订单查询"
                     extra={(
                         <Space>
-                            <Button type="primary" onClick={() => queryForm.submit()}>
+                            <Button type="primary" disabled={!accountContextReady} onClick={() => listForm.submit()}>
                                 查询
                             </Button>
-                            <Button onClick={handleLookupReset}>
+                            <Button disabled={!accountContextReady} onClick={handleListReset}>
                                 重置
                             </Button>
                         </Space>
                     )}
                 >
-                    {selectedExchangeAccountId ? (
-                        <Alert
-                            type="info"
-                            showIcon
-                            style={{marginBottom: 16}}
-                            message={`当前账户上下文：${exchangeCode} / ${tradeEnv} / ${accountAlias}（exchangeAccountId=${selectedExchangeAccountId}）`}
-                        />
-                    ) : (
-                        <Alert
-                            type="warning"
-                            showIcon
-                            style={{marginBottom: 16}}
-                            message="当前未选择正式账户上下文；可先在 Header 或“账户管理”页选择一个 exchange account。"
-                        />
-                    )}
-                    <Form
-                        form={queryForm}
-                        layout="vertical"
-                        initialValues={{orderId: ''}}
-                        onFinish={handleLookup}
-                    >
+                    <Form form={listForm} layout="vertical" onFinish={handleListSearch}>
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item
-                                    label="订单 ID"
-                                    name="orderId"
-                                    rules={[{required: true, message: '请输入 orderId'}]}
-                                >
-                                    <Input placeholder="真实查询主键，必填"/>
-                                </Form.Item>
-                            </Col>
-                            <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="账户 ID（默认当前上下文）" name="accountId">
-                                    <InputNumber style={{width: '100%'}} min={1} placeholder="未填写时默认使用当前上下文账户"/>
+                                <Form.Item label="订单 ID" name="orderId">
+                                    <Input placeholder="可空，精确筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="交易对" name="symbol">
-                                    <Input placeholder="可空，与 accountId 组合查询持仓"/>
+                                    <Input placeholder="例如 BTC-USDT"/>
+                                </Form.Item>
+                            </Col>
+                            <Col xs={24} md={12} xl={8}>
+                                <Form.Item label="订单状态" name="status">
+                                    <Select
+                                        allowClear
+                                        options={['CREATED', 'RISK_PASSED', 'ACCEPTED', 'PARTIALLY_FILLED', 'FILLED', 'CANCEL_REQUESTED', 'CANCELLED', 'REJECTED', 'FAILED'].map((value) => ({
+                                            label: value,
+                                            value,
+                                        }))}
+                                    />
                                 </Form.Item>
                             </Col>
                         </Row>
                     </Form>
                 </Card>
+
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="动作区"
+                    title="订单列表"
+                    extra={orderListQuery.data ? <Typography.Text type="secondary">共 {orderListQuery.data.total} 条记录</Typography.Text> : null}
                 >
+                    {!accountContextReady ? (
+                        <Empty description="选择账户上下文后自动加载订单列表。"/>
+                    ) : orderListQuery.error ? (
+                        <Alert
+                            type="error"
+                            showIcon
+                            message="订单列表查询失败"
+                            description={formatApiError(orderListQuery.error as AppApiError)}
+                            action={<Button size="small" onClick={() => setListSearchVersion((value) => value + 1)}>重试</Button>}
+                        />
+                    ) : (
+                        <Table
+                            rowKey="orderId"
+                            columns={orderColumns}
+                            dataSource={orderListQuery.data?.items ?? []}
+                            loading={orderListQuery.isFetching}
+                            pagination={false}
+                            scroll={{x: 1500}}
+                            locale={{emptyText: '当前账户上下文下没有匹配订单。'}}
+                        />
+                    )}
+                </Card>
+
+                <Card className="page-section" bordered={false} title="动作区">
                     <Space wrap>
-                        <Button type="primary" onClick={() => setActiveAction('place')}>
-                            下单
+                        <Button type="primary" disabled={!accountContextReady} onClick={() => setActiveAction('place')}>
+                            下单前检查
                         </Button>
-                        <Button onClick={() => setActiveAction('cancel')}>
+                        <Button disabled={!accountContextReady} onClick={() => setActiveAction('cancel')}>
                             撤单
                         </Button>
-                        <Button onClick={() => setActiveAction('reconcile')}>
+                        <Button disabled={!accountContextReady} onClick={() => setActiveAction('reconcile')}>
                             执行对账
                         </Button>
-                        <Button onClick={() => setActiveAction('recovery')}>
+                        <Button disabled={!accountContextReady} onClick={() => setActiveAction('recovery')}>
                             执行恢复
                         </Button>
                     </Space>
@@ -350,235 +413,59 @@ export function TradingWorkbenchPage() {
                         </Card>
                     ) : null}
                 </Card>
-                <Card
-                    className="page-section"
-                    bordered={false}
-                    title="订单结果"
-                    extra={hasSearched && lookupQuery.data?.order ? <Typography.Text type="secondary">共 1 条记录</Typography.Text> : null}
-                >
-                    {!hasSearched ? (
-                        <Empty description="输入 orderId 后执行查询。"/>
-                    ) : lookupQuery.error ? (
-                        <Alert
-                            type="error"
-                            showIcon
-                            message="交易验证查询失败"
-                            description={formatApiError(lookupQuery.error as AppApiError)}
-                            action={(
-                                <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    重试
-                                </Button>
-                            )}
-                        />
-                    ) : (
-                        <Table
-                            rowKey="orderId"
-                            columns={orderColumns}
-                            dataSource={lookupQuery.data?.order ? [lookupQuery.data.order] : []}
-                            loading={lookupQuery.isFetching}
-                            pagination={false}
-                            scroll={{x: 1800}}
-                            locale={{
-                                emptyText: '当前查询未返回订单记录。',
-                            }}
-                        />
-                    )}
-                </Card>
             </Space>
 
-            <Drawer
-                open={detailOpen}
-                width={860}
-                title="交易工作台详情"
-                onClose={() => setDetailOpen(false)}
-                destroyOnClose
-            >
-                {lookupQuery.isLoading ? (
-                    <Alert type="info" showIcon message="正在加载交易详情..."/>
-                ) : lookupQuery.error ? (
-                    <Alert
-                        type="error"
-                        showIcon
-                        message="交易详情加载失败"
-                        description={formatApiError(lookupQuery.error as AppApiError)}
-                    />
-                ) : lookupQuery.data ? (
-                    <Space direction="vertical" size={16} style={{display: 'flex'}}>
-                        <Descriptions bordered column={2} size="small" title="订单详情">
-                            <Descriptions.Item label="订单 ID">{lookupQuery.data.order.orderId}</Descriptions.Item>
-                            <Descriptions.Item label="账户">{lookupQuery.data.order.accountId}</Descriptions.Item>
-                            <Descriptions.Item label="Venue">{lookupQuery.data.order.venue}</Descriptions.Item>
-                            <Descriptions.Item label="交易对">{lookupQuery.data.order.symbol}</Descriptions.Item>
-                            <Descriptions.Item label="Client Order ID">{lookupQuery.data.order.clientOrderId}</Descriptions.Item>
-                            <Descriptions.Item label="外部订单 ID">{lookupQuery.data.order.externalOrderId || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="价格">{formatNumber(lookupQuery.data.order.price, 8)}</Descriptions.Item>
-                            <Descriptions.Item label="数量">{formatNumber(lookupQuery.data.order.quantity, 8)}</Descriptions.Item>
-                            <Descriptions.Item label="状态">{lookupQuery.data.order.status}</Descriptions.Item>
-                            <Descriptions.Item label="Trace ID">{lookupQuery.data.order.traceId}</Descriptions.Item>
-                        </Descriptions>
-
-                        {lookupQuery.data.latestTrade ? (
-                            <Descriptions bordered column={2} size="small" title="最新成交">
-                                <Descriptions.Item label="成交 ID">{lookupQuery.data.latestTrade.tradeId}</Descriptions.Item>
-                                <Descriptions.Item label="交易所成交 ID">{lookupQuery.data.latestTrade.exchangeTradeId || '-'}</Descriptions.Item>
-                                <Descriptions.Item label="价格">{formatNumber(lookupQuery.data.latestTrade.price, 8)}</Descriptions.Item>
-                                <Descriptions.Item label="数量">{formatNumber(lookupQuery.data.latestTrade.quantity, 8)}</Descriptions.Item>
-                                <Descriptions.Item label="手续费">{formatNumber(lookupQuery.data.latestTrade.fee, 8)}</Descriptions.Item>
-                                <Descriptions.Item label="手续费币种">{lookupQuery.data.latestTrade.feeCurrency || '-'}</Descriptions.Item>
-                                <Descriptions.Item label="成交时间">{formatDateTime(lookupQuery.data.latestTrade.tradeTs)}</Descriptions.Item>
-                                <Descriptions.Item label="Trace ID">{lookupQuery.data.latestTrade.traceId}</Descriptions.Item>
-                            </Descriptions>
-                        ) : (
-                            <Alert type="info" showIcon message="当前订单尚未查询到最新成交，或后端返回 404。"/>
-                        )}
-
-                        {lookupQuery.data.account ? (
-                            <Card title="账户快照" size="small">
-                                <Descriptions bordered size="small" column={2} style={{marginBottom: 16}}>
-                                    <Descriptions.Item label="账户 ID">{lookupQuery.data.account.accountId}</Descriptions.Item>
-                                    <Descriptions.Item label="Venue">{lookupQuery.data.account.venue}</Descriptions.Item>
-                                    <Descriptions.Item label="Trace ID" span={2}>{lookupQuery.data.account.traceId}</Descriptions.Item>
-                                </Descriptions>
-                                <Table
-                                    rowKey={(record) => `${record.currency}-${record.snapshotTs}`}
-                                    columns={balanceColumns}
-                                    dataSource={lookupQuery.data.account.balances}
-                                    pagination={false}
-                                    size="small"
-                                    locale={{emptyText: '当前账户快照没有余额记录。'}}
-                                />
-                            </Card>
-                        ) : (
-                            <Alert type="info" showIcon message="当前未返回账户快照。填写 accountId 后可在查询链路中一并拉取。"/>
-                        )}
-
-                        {lookupQuery.data.position ? (
-                            <Descriptions bordered column={2} size="small" title="持仓快照">
-                                <Descriptions.Item label="账户 ID">{lookupQuery.data.position.accountId}</Descriptions.Item>
-                                <Descriptions.Item label="交易所">{lookupQuery.data.position.venue}</Descriptions.Item>
-                                <Descriptions.Item label="交易对">{lookupQuery.data.position.symbol}</Descriptions.Item>
-                                <Descriptions.Item label="持仓数量">{formatNumber(lookupQuery.data.position.quantity, 8)}</Descriptions.Item>
-                                <Descriptions.Item label="可用数量">{formatNumber(lookupQuery.data.position.availableQuantity, 8)}</Descriptions.Item>
-                                <Descriptions.Item label="均价">{formatNumber(lookupQuery.data.position.avgPrice, 8)}</Descriptions.Item>
-                                <Descriptions.Item label="Trace ID" span={2}>{lookupQuery.data.position.traceId}</Descriptions.Item>
-                            </Descriptions>
-                        ) : (
-                            <Alert type="info" showIcon message="当前未返回持仓快照。填写 accountId + symbol 后可在查询链路中一并拉取。"/>
-                        )}
-                    </Space>
+            <Drawer open={detailOpen} width={860} title="订单详情" onClose={() => setDetailOpen(false)} destroyOnClose>
+                {detailQuery.isLoading ? (
+                    <Alert type="info" showIcon message="正在加载订单详情..."/>
+                ) : detailQuery.error ? (
+                    <Alert type="error" showIcon message="订单详情加载失败" description={formatApiError(detailQuery.error as AppApiError)}/>
+                ) : detailQuery.data ? (
+                    <OrderDetailContent result={detailQuery.data}/>
                 ) : null}
             </Drawer>
 
-            <Drawer
-                open={activeAction === 'place'}
-                width={620}
-                title="下单"
-                onClose={() => setActiveAction(null)}
-                destroyOnClose
-            >
+            <Drawer open={activeAction === 'place'} width={640} title="下单前检查" onClose={() => setActiveAction(null)} destroyOnClose>
+                <Alert
+                    type={tradeEnv === 'LIVE' ? 'warning' : 'info'}
+                    showIcon
+                    style={{marginBottom: 16}}
+                    message="风控摘要"
+                    description={`当前账户 ${currentContextLabel}。提交后后端会执行账户启用、重复请求、最小名义金额、精度、限流、kill switch 等前置风控；当前 GateH-1 未提供独立 dry-run 风控 API，因此下单前只展示上下文摘要和服务端风控不可绕过状态。`}
+                />
                 <Form
                     form={placeForm}
                     layout="vertical"
                     initialValues={{accountId: selectedExchangeAccountId ?? undefined, venue: exchangeCode ?? 'OKX', side: 'BUY', orderType: 'LIMIT'}}
-                    onFinish={(values) => {
-                        placeOrderMutation.mutate(
-                            {
-                                ...values,
-                                strategyRunId: normalizeOptionalText(values.strategyRunId),
-                                venue: normalizeOptionalText(values.venue),
-                                clientOrderId: normalizeOptionalText(values.clientOrderId),
-                                symbol: normalizeOptionalText(values.symbol),
-                            },
-                            {
-                                onSuccess: (result) => handleActionSuccess(result, {close: true}),
-                                onError: (error) => message.error(formatApiError(error as AppApiError)),
-                            },
-                        );
-                    }}
+                    onFinish={(values) => placeOrderMutation.mutate(normalizePlaceOrder(values), {
+                        onSuccess: (result) => handleActionSuccess(result, {close: true}),
+                        onError: (error) => message.error(formatApiError(error as AppApiError)),
+                    })}
                 >
-                    <Row gutter={[16, 0]}>
-                        <Col span={12}>
-                            <Form.Item label="账户 ID" name="accountId" rules={[{required: true, message: '请输入 accountId'}]}>
-                                <InputNumber style={{width: '100%'}} min={1}/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="策略运行 ID" name="strategyRunId">
-                                <Input placeholder="可空"/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="Venue" name="venue" rules={[{required: true, message: '请输入 venue'}]}>
-                                <Select options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="Client Order ID" name="clientOrderId" rules={[{required: true, message: '请输入 clientOrderId'}]}>
-                                <Input/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="交易对" name="symbol" rules={[{required: true, message: '请输入 symbol'}]}>
-                                <Input/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="方向" name="side" rules={[{required: true, message: '请选择方向'}]}>
-                                <Select options={[{label: 'BUY', value: 'BUY'}, {label: 'SELL', value: 'SELL'}]}/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="订单类型" name="orderType" rules={[{required: true, message: '请选择订单类型'}]}>
-                                <Select options={[{label: 'LIMIT', value: 'LIMIT'}, {label: 'MARKET', value: 'MARKET'}]}/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="价格" name="price">
-                                <InputNumber style={{width: '100%'}} min={0}/>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item label="数量" name="quantity" rules={[{required: true, message: '请输入 quantity'}]}>
-                                <InputNumber style={{width: '100%'}} min={0.00000001}/>
-                            </Form.Item>
-                        </Col>
-                    </Row>
+                    <OrderActionFields/>
                     <Space>
                         <Button type="primary" htmlType="submit" loading={placeOrderMutation.isPending}>
-                            执行下单
+                            确认提交
                         </Button>
-                        <Button onClick={() => setActiveAction(null)}>
-                            取消
-                        </Button>
+                        <Button onClick={() => setActiveAction(null)}>取消</Button>
                     </Space>
                 </Form>
             </Drawer>
 
-            <Drawer
-                open={activeAction === 'cancel'}
-                width={560}
-                title="撤单"
-                onClose={() => setActiveAction(null)}
-                destroyOnClose
-            >
+            <Drawer open={activeAction === 'cancel'} width={560} title="撤单" onClose={() => setActiveAction(null)} destroyOnClose>
                 <Form
                     form={cancelForm}
                     layout="vertical"
                     initialValues={{accountId: selectedExchangeAccountId ?? undefined, reason: 'manual cancel'}}
-                    onFinish={(values) => {
-                        cancelOrderMutation.mutate(
-                            {
-                                orderId: normalizeOptionalText(values.orderId),
-                                accountId: values.accountId,
-                                clientOrderId: normalizeOptionalText(values.clientOrderId),
-                                reason: normalizeOptionalText(values.reason),
-                            },
-                            {
-                                onSuccess: (result) => handleActionSuccess(result, {close: true}),
-                                onError: (error) => message.error(formatApiError(error as AppApiError)),
-                            },
-                        );
-                    }}
+                    onFinish={(values) => cancelOrderMutation.mutate({
+                        orderId: normalizeOptionalText(values.orderId),
+                        accountId: values.accountId,
+                        clientOrderId: normalizeOptionalText(values.clientOrderId),
+                        reason: normalizeOptionalText(values.reason),
+                    }, {
+                        onSuccess: (result) => handleActionSuccess(result, {close: true}),
+                        onError: (error) => message.error(formatApiError(error as AppApiError)),
+                    })}
                 >
                     <Form.Item label="订单 ID" name="orderId">
                         <Input placeholder="可空；为空时需填写 accountId + clientOrderId"/>
@@ -593,93 +480,214 @@ export function TradingWorkbenchPage() {
                         <Input/>
                     </Form.Item>
                     <Space>
-                        <Button type="primary" htmlType="submit" loading={cancelOrderMutation.isPending}>
-                            执行撤单
-                        </Button>
-                        <Button onClick={() => setActiveAction(null)}>
-                            取消
-                        </Button>
+                        <Button type="primary" htmlType="submit" loading={cancelOrderMutation.isPending}>执行撤单</Button>
+                        <Button onClick={() => setActiveAction(null)}>取消</Button>
                     </Space>
                 </Form>
             </Drawer>
 
-            <Drawer
+            <MaintenanceDrawer
                 open={activeAction === 'reconcile'}
-                width={520}
                 title="执行对账"
+                form={reconcileForm}
+                defaultVenue={exchangeCode ?? 'OKX'}
+                loading={reconcileMutation.isPending}
                 onClose={() => setActiveAction(null)}
-                destroyOnClose
-            >
-                <Form
-                    form={reconcileForm}
-                    layout="vertical"
-                    initialValues={{venue: exchangeCode ?? 'OKX', limit: 100}}
-                    onFinish={(values) => {
-                        reconcileMutation.mutate(
-                            {
-                                venue: normalizeOptionalText(values.venue),
-                                limit: values.limit,
-                            },
-                            {
-                                onSuccess: (result) => handleActionSuccess(result, {close: true, refetch: true}),
-                                onError: (error) => message.error(formatApiError(error as AppApiError)),
-                            },
-                        );
-                    }}
-                >
-                    <Form.Item label="Venue" name="venue">
-                        <Select options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
-                    </Form.Item>
+                onFinish={(values) => reconcileMutation.mutate({
+                    venue: normalizeOptionalText(values.venue),
+                    limit: values.limit,
+                }, {
+                    onSuccess: (result) => handleActionSuccess(result, {close: true, refetch: true}),
+                    onError: (error) => message.error(formatApiError(error as AppApiError)),
+                })}
+            />
+            <MaintenanceDrawer
+                open={activeAction === 'recovery'}
+                title="执行恢复"
+                form={recoveryForm}
+                defaultVenue={exchangeCode ?? 'OKX'}
+                loading={recoveryMutation.isPending}
+                onClose={() => setActiveAction(null)}
+                onFinish={(values) => recoveryMutation.mutate({venue: normalizeOptionalText(values.venue)}, {
+                    onSuccess: (result) => handleActionSuccess(result, {close: true, refetch: true}),
+                    onError: (error) => message.error(formatApiError(error as AppApiError)),
+                })}
+            />
+        </>
+    );
+}
+
+function OrderDetailContent({result}: { result: TradingWorkbenchLookupResult }) {
+    return (
+        <Space direction="vertical" size={16} style={{display: 'flex'}}>
+            <Descriptions bordered column={2} size="small" title="订单">
+                <Descriptions.Item label="订单 ID">{result.order.orderId}</Descriptions.Item>
+                <Descriptions.Item label="账户">{result.order.accountId}</Descriptions.Item>
+                <Descriptions.Item label="Venue">{result.order.venue}</Descriptions.Item>
+                <Descriptions.Item label="SIM / LIVE"><Tag color={result.order.tradeEnv === 'LIVE' ? 'red' : 'blue'}>{result.order.tradeEnv}</Tag></Descriptions.Item>
+                <Descriptions.Item label="交易对">{result.order.symbol}</Descriptions.Item>
+                <Descriptions.Item label="状态">{result.order.status}</Descriptions.Item>
+                <Descriptions.Item label="方向">{result.order.side}</Descriptions.Item>
+                <Descriptions.Item label="类型">{result.order.type}</Descriptions.Item>
+                <Descriptions.Item label="价格">{formatNumber(result.order.price, 8)}</Descriptions.Item>
+                <Descriptions.Item label="数量">{formatNumber(result.order.quantity, 8)}</Descriptions.Item>
+                <Descriptions.Item label="Client Order ID">{result.order.clientOrderId}</Descriptions.Item>
+                <Descriptions.Item label="外部订单 ID">{result.order.externalOrderId || '-'}</Descriptions.Item>
+                <Descriptions.Item label="创建时间">{formatDateTime(result.order.createdAt)}</Descriptions.Item>
+                <Descriptions.Item label="更新时间">{formatDateTime(result.order.updatedAt)}</Descriptions.Item>
+            </Descriptions>
+            {result.latestTrade ? (
+                <Descriptions bordered column={2} size="small" title="成交">
+                    <Descriptions.Item label="成交 ID">{result.latestTrade.tradeId}</Descriptions.Item>
+                    <Descriptions.Item label="交易所成交 ID">{result.latestTrade.exchangeTradeId || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="价格">{formatNumber(result.latestTrade.price, 8)}</Descriptions.Item>
+                    <Descriptions.Item label="数量">{formatNumber(result.latestTrade.quantity, 8)}</Descriptions.Item>
+                    <Descriptions.Item label="手续费">{formatNumber(result.latestTrade.fee, 8)}</Descriptions.Item>
+                    <Descriptions.Item label="手续费币种">{result.latestTrade.feeCurrency || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="成交时间">{formatDateTime(result.latestTrade.tradeTs)}</Descriptions.Item>
+                    <Descriptions.Item label="Trace ID">{result.latestTrade.traceId}</Descriptions.Item>
+                </Descriptions>
+            ) : (
+                <Alert type="info" showIcon message="当前订单没有可展示的最新成交。"/>
+            )}
+            {result.account ? (
+                <Card title="账户" size="small">
+                    <Table
+                        rowKey={(record) => `${record.currency}-${record.snapshotTs}`}
+                        columns={balanceColumns}
+                        dataSource={result.account.balances}
+                        pagination={false}
+                        size="small"
+                        locale={{emptyText: '当前账户没有余额快照。'}}
+                    />
+                </Card>
+            ) : (
+                <Alert type="info" showIcon message="当前账户没有可展示的余额快照。"/>
+            )}
+            {result.position ? (
+                <Descriptions bordered column={2} size="small" title="持仓">
+                    <Descriptions.Item label="账户 ID">{result.position.accountId}</Descriptions.Item>
+                    <Descriptions.Item label="Venue">{result.position.venue}</Descriptions.Item>
+                    <Descriptions.Item label="交易对">{result.position.symbol}</Descriptions.Item>
+                    <Descriptions.Item label="持仓数量">{formatNumber(result.position.quantity, 8)}</Descriptions.Item>
+                    <Descriptions.Item label="可用数量">{formatNumber(result.position.availableQuantity, 8)}</Descriptions.Item>
+                    <Descriptions.Item label="均价">{formatNumber(result.position.avgPrice, 8)}</Descriptions.Item>
+                </Descriptions>
+            ) : (
+                <Alert type="info" showIcon message="当前账户和交易对没有可展示的持仓快照。"/>
+            )}
+        </Space>
+    );
+}
+
+const balanceColumns: ColumnsType<AccountBalanceView> = [
+    {title: '币种', dataIndex: 'currency', key: 'currency', width: 120},
+    {title: '总余额', dataIndex: 'balance', key: 'balance', width: 140, render: (value: number) => formatNumber(value, 8)},
+    {title: '可用', dataIndex: 'available', key: 'available', width: 140, render: (value: number) => formatNumber(value, 8)},
+    {title: '冻结', dataIndex: 'frozen', key: 'frozen', width: 140, render: (value: number) => formatNumber(value, 8)},
+    {title: '快照时间', dataIndex: 'snapshotTs', key: 'snapshotTs', width: 180, render: (value: string) => formatDateTime(value)},
+];
+
+function OrderActionFields() {
+    return (
+        <Row gutter={[16, 0]}>
+            <Col span={12}>
+                <Form.Item label="账户 ID" name="accountId" rules={[{required: true, message: '请输入 accountId'}]}>
+                    <InputNumber style={{width: '100%'}} min={1}/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="策略运行 ID" name="strategyRunId">
+                    <Input placeholder="可空"/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="Venue" name="venue" rules={[{required: true, message: '请输入 venue'}]}>
+                    <Select options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="Client Order ID" name="clientOrderId" rules={[{required: true, message: '请输入 clientOrderId'}]}>
+                    <Input/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="交易对" name="symbol" rules={[{required: true, message: '请输入 symbol'}]}>
+                    <Input/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="方向" name="side" rules={[{required: true, message: '请选择方向'}]}>
+                    <Select options={[{label: 'BUY', value: 'BUY'}, {label: 'SELL', value: 'SELL'}]}/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="订单类型" name="orderType" rules={[{required: true, message: '请选择订单类型'}]}>
+                    <Select options={[{label: 'LIMIT', value: 'LIMIT'}, {label: 'MARKET', value: 'MARKET'}]}/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="价格" name="price">
+                    <InputNumber style={{width: '100%'}} min={0}/>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item label="数量" name="quantity" rules={[{required: true, message: '请输入 quantity'}]}>
+                    <InputNumber style={{width: '100%'}} min={0.00000001}/>
+                </Form.Item>
+            </Col>
+        </Row>
+    );
+}
+
+function MaintenanceDrawer<T extends ReconcileRunOnceRequest | RecoveryRunOnceRequest>({
+    open,
+    title,
+    form,
+    defaultVenue,
+    loading,
+    onClose,
+    onFinish,
+}: {
+    open: boolean;
+    title: string;
+    form: FormInstance<T>;
+    defaultVenue: string;
+    loading: boolean;
+    onClose: () => void;
+    onFinish: (values: T) => void;
+}) {
+    return (
+        <Drawer open={open} width={520} title={title} onClose={onClose} destroyOnClose>
+            <Form form={form} layout="vertical" initialValues={{venue: defaultVenue, limit: 100}} onFinish={onFinish}>
+                <Form.Item label="Venue" name="venue">
+                    <Select options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
+                </Form.Item>
+                {title === '执行对账' ? (
                     <Form.Item label="扫描上限" name="limit">
                         <InputNumber style={{width: '100%'}} min={1}/>
                     </Form.Item>
-                    <Space>
-                        <Button type="primary" htmlType="submit" loading={reconcileMutation.isPending}>
-                            执行对账
-                        </Button>
-                        <Button onClick={() => setActiveAction(null)}>
-                            取消
-                        </Button>
-                    </Space>
-                </Form>
-            </Drawer>
-
-            <Drawer
-                open={activeAction === 'recovery'}
-                width={520}
-                title="执行恢复"
-                onClose={() => setActiveAction(null)}
-                destroyOnClose
-            >
-                <Form
-                    form={recoveryForm}
-                    layout="vertical"
-                    initialValues={{venue: exchangeCode ?? 'OKX'}}
-                    onFinish={(values) => {
-                        recoveryMutation.mutate(
-                            {
-                                venue: normalizeOptionalText(values.venue),
-                            },
-                            {
-                                onSuccess: (result) => handleActionSuccess(result, {close: true, refetch: true}),
-                                onError: (error) => message.error(formatApiError(error as AppApiError)),
-                            },
-                        );
-                    }}
-                >
-                    <Form.Item label="Venue" name="venue">
-                        <Select options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
-                    </Form.Item>
-                    <Space>
-                        <Button type="primary" htmlType="submit" loading={recoveryMutation.isPending}>
-                            执行恢复
-                        </Button>
-                        <Button onClick={() => setActiveAction(null)}>
-                            取消
-                        </Button>
-                    </Space>
-                </Form>
-            </Drawer>
-        </>
+                ) : null}
+                <Space>
+                    <Button type="primary" htmlType="submit" loading={loading}>{title}</Button>
+                    <Button onClick={onClose}>取消</Button>
+                </Space>
+            </Form>
+        </Drawer>
     );
+}
+
+function normalizePlaceOrder(values: OrderSubmitRequest): OrderSubmitRequest {
+    return {
+        ...values,
+        strategyRunId: normalizeOptionalText(values.strategyRunId),
+        venue: normalizeOptionalText(values.venue),
+        clientOrderId: normalizeOptionalText(values.clientOrderId),
+        symbol: normalizeOptionalText(values.symbol),
+    };
+}
+
+function extractOrderId(detail: string): string | null {
+    const matched = /order_id=([^,]+)/.exec(detail);
+    return matched?.[1] ?? null;
 }

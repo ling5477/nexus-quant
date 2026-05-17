@@ -72,6 +72,19 @@ export const publishesQueryKeys = {
 
 export const tradingWorkbenchQueryKeys = {
     all: ['trading-workbench'] as const,
+    orders: (request: { accountId?: number; orderId?: string; venue?: string; symbol?: string; status?: string; environment?: string; page?: number; size?: number }, searchVersion: number) => [
+        ...tradingWorkbenchQueryKeys.all,
+        'orders',
+        request.accountId ?? '',
+        request.orderId ?? '',
+        request.venue ?? '',
+        request.symbol ?? '',
+        request.status ?? '',
+        request.environment ?? '',
+        request.page ?? 0,
+        request.size ?? 20,
+        searchVersion,
+    ] as const,
     lookup: (request: { orderId: string; accountId?: number; symbol?: string }, searchVersion: number) => [
         ...tradingWorkbenchQueryKeys.all,
         'lookup',

@@ -5,9 +5,14 @@ export interface OrderView {
     symbol: string;
     clientOrderId: string;
     externalOrderId: string | null;
+    side: string;
+    type: string;
     price: number | null;
     quantity: number;
     status: string;
+    tradeEnv: string;
+    createdAt: string | null;
+    updatedAt: string | null;
     traceId: string;
 }
 
@@ -57,6 +62,24 @@ export interface TradingWorkbenchLookupRequest {
     orderId: string;
     accountId?: number;
     symbol?: string;
+}
+
+export interface TradingOrderListRequest {
+    accountId: number;
+    orderId?: string;
+    venue?: string;
+    symbol?: string;
+    status?: string;
+    environment?: string;
+    page?: number;
+    size?: number;
+}
+
+export interface TradingOrderListResponse {
+    items: OrderView[];
+    page: number;
+    size: number;
+    total: number;
 }
 
 export interface TradingWorkbenchLookupResult {

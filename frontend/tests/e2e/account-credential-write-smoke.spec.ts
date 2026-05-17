@@ -1,4 +1,4 @@
-import {expect, test} from 'playwright/test';
+import {expect, type Page, test} from 'playwright/test';
 
 import {loginToConsole} from '@/../tests/e2e/support';
 
@@ -28,7 +28,8 @@ test.describe('RC1-4 account credential write smoke', () => {
         await accountDrawer.getByLabel('账户别名').fill(createdAlias);
         await accountDrawer.getByLabel('外部账户引用').fill(externalAccountRef);
         await accountDrawer.getByRole('button', {name: /保\s*存/}).click();
-        await expect(page.getByRole('cell', {name: createdAlias})).toBeVisible({timeout: 30_000});
+        await expectAccountAliasInPagedTable(page, createdAlias);
+        await page.getByRole('listitem', {name: '1'}).click();
 
         const altRow = page.locator('tr').filter({hasText: 'rc1-admin-alt'}).first();
         const setDefaultButton = altRow.getByRole('button', {name: '设为默认'});
@@ -63,7 +64,23 @@ test.describe('RC1-4 account credential write smoke', () => {
 
         await page.getByRole('menuitem', {name: '交易工作台'}).click();
         await expect(page).toHaveURL(/\/trading$/);
-        await expect(page.getByText('当前账户上下文：OKX / SIM / rc1-admin-alt（exchangeAccountId=900002）')).toBeVisible({timeout: 30_000});
-        await expect(page.getByLabel('账户 ID（默认当前上下文）')).toHaveValue('900002');
+        await expect(page.getByRole('cell', {name: 'OKX / SIM / rc1-admin-alt（exchangeAccountId=900002）'})).toBeVisible({timeout: 30_000});
+        await expect(page.getByText('订单列表')).toBeVisible();
     });
 });
+
+async function expectAccountAliasInPagedTable(page: Page, alias: string) {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+        const cell = page.getByRole('cell', {name: alias});
+        if (await cell.isVisible().catch(() => false)) {
+            await expect(cell).toBeVisible();
+            return;
+        }
+        const nextButton = page.getByRole('button', {name: 'right'}).last();
+        if (!(await nextButton.isEnabled().catch(() => false))) {
+            break;
+        }
+        await nextButton.click();
+    }
+    await expect(page.getByRole('cell', {name: alias})).toBeVisible({timeout: 5_000});
+}

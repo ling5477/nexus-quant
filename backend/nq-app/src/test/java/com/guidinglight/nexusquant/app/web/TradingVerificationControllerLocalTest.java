@@ -212,9 +212,14 @@ class TradingVerificationControllerLocalTest {
                 "BTC-USDT",
                 "cid-9",
                 "paper-ord-9",
+                "BUY",
+                "LIMIT",
                 new BigDecimal("100.01"),
                 new BigDecimal("0.050"),
                 OrderStatus.ACCEPTED,
+                "SIM",
+                Instant.parse("2026-03-12T07:59:00Z"),
+                Instant.parse("2026-03-12T08:00:00Z"),
                 "trc-order-9"
         )));
         when(tradingQueryFacade.queryLatestTrade(eq("ord-9"), eq("trc-local-6"))).thenReturn(Optional.of(new TradeQueryView(
@@ -285,6 +290,58 @@ class TradingVerificationControllerLocalTest {
         verify(tradingQueryFacade).queryLatestTrade("ord-9", "trc-local-6");
         verify(tradingQueryFacade).queryPosition(1001L, "BTC-USDT", "trc-local-6");
         verify(tradingQueryFacade).queryAccount(1001L, "trc-local-6");
+    }
+
+    @Test
+    void shouldExposeTradingWorkspaceOrderListWithAccountContext() throws Exception {
+        mockExchangeAccount(900001L, 1001L);
+        when(tradingQueryFacade.listOrders(
+                eq(1001L),
+                eq(null),
+                eq("OKX"),
+                eq("BTC-USDT"),
+                eq(OrderStatus.ACCEPTED),
+                eq("SIM"),
+                eq(0),
+                eq(20),
+                eq("trc-local-list")
+        )).thenReturn(List.of(new OrderQueryView(
+                "ord-list-1",
+                1001L,
+                "OKX",
+                "BTC-USDT",
+                "cid-list-1",
+                "okx-ord-list-1",
+                "BUY",
+                "LIMIT",
+                new BigDecimal("100.01"),
+                new BigDecimal("0.050"),
+                OrderStatus.ACCEPTED,
+                "SIM",
+                Instant.parse("2026-03-12T07:59:00Z"),
+                Instant.parse("2026-03-12T08:00:00Z"),
+                "trc-order-list"
+        )));
+        when(tradingQueryFacade.countOrders(
+                eq(1001L),
+                eq(null),
+                eq("OKX"),
+                eq("BTC-USDT"),
+                eq(OrderStatus.ACCEPTED),
+                eq("SIM"),
+                eq("trc-local-list")
+        )).thenReturn(1L);
+
+        mockMvc.perform(get("/api/trading/orders")
+                        .param("accountId", "900001")
+                        .param("symbol", "BTC-USDT")
+                        .param("status", "ACCEPTED")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-list"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].orderId").value("ord-list-1"))
+                .andExpect(jsonPath("$.items[0].tradeEnv").value("SIM"))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test

@@ -3,6 +3,8 @@ import type {
     AccountView,
     OperationTriggerResponse,
     OrderCancelRequestBody,
+    TradingOrderListRequest,
+    TradingOrderListResponse,
     OrderSubmitRequest,
     OrderView,
     PositionView,
@@ -12,6 +14,10 @@ import type {
 } from '@/types/trading-workbench';
 
 export const tradingWorkbenchApi = {
+    async listOrders(request: TradingOrderListRequest): Promise<TradingOrderListResponse> {
+        const {data} = await apiClient.get<TradingOrderListResponse>('/trading/orders', {params: request});
+        return data;
+    },
     async getOrder(orderId: string): Promise<OrderView> {
         const {data} = await apiClient.get<OrderView>(`/trading/orders/${orderId}`);
         return data;

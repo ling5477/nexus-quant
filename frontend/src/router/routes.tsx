@@ -76,7 +76,8 @@ export const appRouter = createBrowserRouter([
                         // `/trade-validation` 是历史路由 alias，不是正式入口；正式入口固定为 `/trading`。
                         // 退役计划：GateH-PLAN 后确认旧书签和历史 e2e 均迁移完成，再删除该无状态重定向。
                         path: 'trade-validation',
-                        element: <Navigate to="/trading" replace/>,
+                        element: <TradingWorkbenchPage legacyAlias/>,
+                        handle: createHandle('trading'),
                     },
                     {
                         path: 'instruments',

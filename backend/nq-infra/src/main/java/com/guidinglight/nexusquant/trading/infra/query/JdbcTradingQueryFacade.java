@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,28 +31,68 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
     }
 
     @Override
+    public List<OrderQueryView> listOrders(
+            Long accountId,
+            String orderId,
+            String venue,
+            String symbol,
+            OrderStatus status,
+            String tradeEnv,
+            int page,
+            int size,
+            String traceId
+    ) {
+        if (accountId == null || accountId <= 0) {
+            return List.of();
+        }
+        OrderWhereClause whereClause = buildOrderWhereClause(accountId, orderId, venue, symbol, status, tradeEnv);
+        List<Object> args = new ArrayList<>(whereClause.args());
+        args.add(size);
+        args.add((long) page * size);
+        return jdbcTemplate.query(
+                """
+                        SELECT order_id, account_id, venue, symbol, client_order_id, external_order_id,
+                               side, type, price, qty, status, trade_env, created_at, updated_at, trace_id
+                        FROM orders
+                        """
+                        + whereClause.sql()
+                        + """
+                        
+                        ORDER BY created_at DESC, order_id DESC
+                        LIMIT ? OFFSET ?
+                        """,
+                (resultSet, rowNum) -> mapOrder(resultSet),
+                args.toArray()
+        );
+    }
+
+    @Override
+    public long countOrders(Long accountId, String orderId, String venue, String symbol, OrderStatus status, String tradeEnv, String traceId) {
+        if (accountId == null || accountId <= 0) {
+            return 0L;
+        }
+        OrderWhereClause whereClause = buildOrderWhereClause(accountId, orderId, venue, symbol, status, tradeEnv);
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM orders " + whereClause.sql(),
+                Long.class,
+                whereClause.args().toArray()
+        );
+        return total == null ? 0L : total;
+    }
+
+    @Override
     public Optional<OrderQueryView> queryOrder(String orderId, String traceId) {
         if (orderId == null || orderId.isBlank()) {
             return Optional.empty();
         }
         List<OrderQueryView> rows = jdbcTemplate.query(
                 """
-                        SELECT order_id, account_id, venue, symbol, client_order_id, external_order_id, price, qty, status, trace_id
+                        SELECT order_id, account_id, venue, symbol, client_order_id, external_order_id,
+                               side, type, price, qty, status, trade_env, created_at, updated_at, trace_id
                         FROM orders
                         WHERE order_id = ?
                         """,
-                (resultSet, rowNum) -> new OrderQueryView(
-                        resultSet.getString("order_id"),
-                        resultSet.getLong("account_id"),
-                        resultSet.getString("venue"),
-                        resultSet.getString("symbol"),
-                        resultSet.getString("client_order_id"),
-                        resultSet.getString("external_order_id"),
-                        resultSet.getBigDecimal("price"),
-                        resultSet.getBigDecimal("qty"),
-                        OrderStatus.valueOf(resultSet.getString("status")),
-                        resultSet.getString("trace_id")
-                ),
+                (resultSet, rowNum) -> mapOrder(resultSet),
                 orderId.trim()
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
@@ -164,5 +205,58 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
 
     private static Instant toInstant(Timestamp timestamp) {
         return timestamp == null ? null : timestamp.toInstant();
+    }
+
+    private OrderWhereClause buildOrderWhereClause(
+            Long accountId,
+            String orderId,
+            String venue,
+            String symbol,
+            OrderStatus status,
+            String tradeEnv
+    ) {
+        StringBuilder sql = new StringBuilder("WHERE account_id = ?");
+        List<Object> args = new ArrayList<>();
+        args.add(accountId);
+        appendTextFilter(sql, args, "order_id", orderId);
+        appendTextFilter(sql, args, "venue", venue);
+        appendTextFilter(sql, args, "symbol", symbol);
+        if (status != null) {
+            sql.append(" AND status = ?");
+            args.add(status.name());
+        }
+        appendTextFilter(sql, args, "trade_env", tradeEnv);
+        return new OrderWhereClause(sql.toString(), args);
+    }
+
+    private void appendTextFilter(StringBuilder sql, List<Object> args, String column, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        sql.append(" AND ").append(column).append(" = ?");
+        args.add(value.trim());
+    }
+
+    private OrderQueryView mapOrder(java.sql.ResultSet resultSet) throws java.sql.SQLException {
+        return new OrderQueryView(
+                resultSet.getString("order_id"),
+                resultSet.getLong("account_id"),
+                resultSet.getString("venue"),
+                resultSet.getString("symbol"),
+                resultSet.getString("client_order_id"),
+                resultSet.getString("external_order_id"),
+                resultSet.getString("side"),
+                resultSet.getString("type"),
+                resultSet.getBigDecimal("price"),
+                resultSet.getBigDecimal("qty"),
+                OrderStatus.valueOf(resultSet.getString("status")),
+                resultSet.getString("trade_env"),
+                toInstant(resultSet.getTimestamp("created_at")),
+                toInstant(resultSet.getTimestamp("updated_at")),
+                resultSet.getString("trace_id")
+        );
+    }
+
+    private record OrderWhereClause(String sql, List<Object> args) {
     }
 }

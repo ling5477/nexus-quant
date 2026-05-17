@@ -1,8 +1,10 @@
 package com.guidinglight.nexusquant.trading.api.web;
 
 import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 import com.guidinglight.nexusquant.trading.application.CancelOrderResult;
@@ -19,9 +21,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
@@ -31,6 +36,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -73,6 +79,51 @@ public class TradingVerificationController {
         );
     }
 
+    @GetMapping("/orders")
+    @Operation(summary = "查询交易工作台订单列表", description = "按正式账户上下文查询订单列表，不触发任何写操作。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "查询参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户上下文不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public OrderListResponse listOrders(
+            @RequestParam @Positive(message = "accountId must be positive") Long accountId,
+            @RequestParam(required = false) String orderId,
+            @RequestParam(required = false) String venue,
+            @RequestParam(required = false) String symbol,
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false, name = "environment") String environment,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must not be negative") int page,
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "size must be positive") @Max(value = 100, message = "size must not exceed 100") int size
+    ) {
+        String traceId = TraceIdContext.getOrCreate();
+        ExchangeAccountSummary account = requireExchangeAccount(accountId);
+        String resolvedVenue = resolveVenueFilter(venue, account);
+        String resolvedEnvironment = resolveEnvironmentFilter(environment, account);
+        Long tradingAccountId = resolveTradingAccountId(account);
+        List<OrderView> items = tradingQueryFacade.listOrders(
+                tradingAccountId,
+                blankToNull(orderId),
+                resolvedVenue,
+                blankToNull(symbol),
+                status,
+                resolvedEnvironment,
+                page,
+                size,
+                traceId
+        ).stream().map(this::toOrderView).toList();
+        long total = tradingQueryFacade.countOrders(
+                tradingAccountId,
+                blankToNull(orderId),
+                resolvedVenue,
+                blankToNull(symbol),
+                status,
+                resolvedEnvironment,
+                traceId
+        );
+        return new OrderListResponse(items, page, size, total);
+    }
+
     @GetMapping("/orders/{orderId}")
     @Operation(summary = "查询订单视图", description = "查询单笔订单的最小读模型，不触发任何写操作。")
     @ApiResponses({
@@ -83,18 +134,7 @@ public class TradingVerificationController {
     public OrderView queryOrder(@PathVariable @NotBlank(message = "orderId must not be blank") String orderId) {
         String traceId = TraceIdContext.getOrCreate();
         return tradingQueryFacade.queryOrder(orderId, traceId)
-                .map(queryView -> new OrderView(
-                        queryView.orderId(),
-                        queryView.accountId(),
-                        queryView.venue(),
-                        queryView.symbol(),
-                        queryView.clientOrderId(),
-                        queryView.externalOrderId(),
-                        queryView.price(),
-                        queryView.quantity(),
-                        queryView.status(),
-                        queryView.traceId()
-                ))
+                .map(this::toOrderView)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "order not found: " + orderId));
     }
 
@@ -302,9 +342,64 @@ public class TradingVerificationController {
         if (requestedAccountId == null || requestedAccountId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accountId must be positive");
         }
-        return exchangeAccountQueryService.findById(requestedAccountId)
-                .map(summary -> summary.legacyAccountId() == null ? summary.exchangeAccountId() : summary.legacyAccountId())
-                .orElse(requestedAccountId);
+        return resolveTradingAccountId(requireExchangeAccount(requestedAccountId));
+    }
+
+    /**
+     * 强制把 HTTP 账户上下文限定为已登记的 exchange account。
+     *
+     * <p>Why: GateH-1 后 `/trading` 不能再把任意数字当 legacy accountId 使用，
+     * 否则前端账户上下文、SIM / LIVE 边界和后端查询会重新分叉。</p>
+     */
+    private ExchangeAccountSummary requireExchangeAccount(Long exchangeAccountId) {
+        return exchangeAccountQueryService.findById(exchangeAccountId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "exchange account not found: " + exchangeAccountId));
+    }
+
+    private Long resolveTradingAccountId(ExchangeAccountSummary summary) {
+        return summary.legacyAccountId() == null ? summary.exchangeAccountId() : summary.legacyAccountId();
+    }
+
+    private String resolveVenueFilter(String requestedVenue, ExchangeAccountSummary account) {
+        String normalized = blankToNull(requestedVenue);
+        if (normalized == null) {
+            return account.exchangeCode();
+        }
+        if (!normalized.equalsIgnoreCase(account.exchangeCode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "venue does not match account context");
+        }
+        return normalized.toUpperCase();
+    }
+
+    private String resolveEnvironmentFilter(String requestedEnvironment, ExchangeAccountSummary account) {
+        String normalized = blankToNull(requestedEnvironment);
+        if (normalized == null) {
+            return account.tradeEnv();
+        }
+        if (!normalized.equalsIgnoreCase(account.tradeEnv())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "environment does not match account context");
+        }
+        return normalized.toUpperCase();
+    }
+
+    private OrderView toOrderView(com.guidinglight.nexusquant.trading.application.query.OrderQueryView queryView) {
+        return new OrderView(
+                queryView.orderId(),
+                queryView.accountId(),
+                queryView.venue(),
+                queryView.symbol(),
+                queryView.clientOrderId(),
+                queryView.externalOrderId(),
+                queryView.side(),
+                queryView.type(),
+                queryView.price(),
+                queryView.quantity(),
+                queryView.status(),
+                queryView.tradeEnv(),
+                queryView.createdAt(),
+                queryView.updatedAt(),
+                queryView.traceId()
+        );
     }
 
     private String blankToNull(String value) {

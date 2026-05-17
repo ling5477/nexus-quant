@@ -36,6 +36,7 @@ import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfigu
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -118,6 +119,17 @@ class AuthSecurityWebMvcTest {
         when(authUserRepository.findByUsername("disabled")).thenReturn(Optional.of(profile(4L, "disabled", false, "VIEWER")));
         when(authUserRepository.findByUsername("missing")).thenReturn(Optional.empty());
         when(exchangeAccountQueryService.findDefaultByOwnerUserId(any())).thenReturn(Optional.empty());
+        when(exchangeAccountQueryService.findById(1001L)).thenReturn(Optional.of(new ExchangeAccountSummary(
+                1001L,
+                1001L,
+                2L,
+                "PAPER",
+                "SIM",
+                "operator-paper",
+                null,
+                true,
+                "ACTIVE"
+        )));
     }
 
     @Test
@@ -272,9 +284,14 @@ class AuthSecurityWebMvcTest {
                 "BTC-USDT",
                 "cid-1",
                 "ext-1",
+                "BUY",
+                "MARKET",
                 new BigDecimal("100"),
                 new BigDecimal("0.001"),
                 OrderStatus.ACCEPTED,
+                "SIM",
+                Instant.parse("2026-03-12T08:00:00Z"),
+                Instant.parse("2026-03-12T08:00:01Z"),
                 "trc-auth-get"
         )));
         mockMvc.perform(get("/api/trading/orders/ord-1")

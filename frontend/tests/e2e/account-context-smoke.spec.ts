@@ -17,7 +17,8 @@ test.describe('RC1-6 account context smoke', () => {
 
         await page.getByRole('menuitem', {name: '交易工作台'}).click();
         await expect(page).toHaveURL(/\/trading$/);
-        await expect(page.getByText('当前账户上下文：OKX / SIM / rc1-admin-default（exchangeAccountId=900001）')).toBeVisible();
-        await expect(page.getByLabel('账户 ID（默认当前上下文）')).toHaveValue('900001');
+        await expect(page.getByRole('cell', {name: 'OKX / SIM / rc1-admin-default（exchangeAccountId=900001）'})).toBeVisible();
+        await expect(page.getByText('当前页面只使用正式 exchangeAccountId')).toBeVisible();
+        await expect(page.getByText('订单列表')).toBeVisible();
     });
 });

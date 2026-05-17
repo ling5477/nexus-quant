@@ -23,4 +23,20 @@
 - 正式 HTTP API 统一使用 `/api/**`。
 - 旧 `/__gated/**` 只允许出现在历史文档说明中。
 - AI 自动交易 API 当前不存在，也不允许在本次任务新增。
-- 本次任务不新增行情业务接口，不修改交易核心接口。
+- GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
+
+## GateH-1 Trading Workspace API
+
+当前已实现的 GateH-1 交易工作台读写入口：
+
+- `GET /api/trading/orders`：按正式 `exchangeAccountId` 账户上下文查询订单列表，支持 `orderId`、`symbol`、`status`、`environment`、分页筛选。
+- `GET /api/trading/orders/{orderId}`：查询单笔订单详情。
+- `GET /api/trading/orders/{orderId}/trade`：查询订单最近一笔成交事实。
+- `GET /api/trading/accounts/{accountId}`：查询账户余额快照；`accountId` 仍由后端兼容映射到 legacy trading account。
+- `GET /api/trading/positions/{accountId}/{symbol}`：查询账户和交易对维度持仓快照。
+- `POST /api/trading/orders`：触发既有下单编排，仍走服务端风控与状态机。
+- `POST /api/trading/orders/cancel`：触发既有撤单编排。
+- `POST /api/trading/reconciliation/run-once`：触发既有对账维护动作。
+- `POST /api/trading/recovery/run-once`：触发既有恢复维护动作。
+
+GateH-1 不新增历史行情抓取、marketdata ingestion、dataset 绑定、AI 下单或策略自动交易接口。

@@ -9,6 +9,8 @@ import type {
     OrderSubmitRequest,
     ReconcileRunOnceRequest,
     RecoveryRunOnceRequest,
+    TradingOrderListRequest,
+    TradingOrderListResponse,
     TradingWorkbenchLookupRequest,
     TradingWorkbenchLookupResult,
 } from '@/types/trading-workbench';
@@ -49,6 +51,14 @@ export function useTradingWorkbenchLookupQuery(request: TradingWorkbenchLookupRe
             };
         },
         enabled: Boolean(request?.orderId) && searchVersion > 0,
+    });
+}
+
+export function useTradingOrderListQuery(request: TradingOrderListRequest | null, searchVersion: number) {
+    return useQuery<TradingOrderListResponse>({
+        queryKey: tradingWorkbenchQueryKeys.orders(request ?? {}, searchVersion),
+        queryFn: () => tradingWorkbenchApi.listOrders(request as TradingOrderListRequest),
+        enabled: Boolean(request?.accountId) && searchVersion > 0,
     });
 }
 

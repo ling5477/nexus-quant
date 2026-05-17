@@ -163,3 +163,70 @@
 - 确认 GateH-1 只做交易工作台正式化，不夹带 GateH-2/3 实现。
 - 为 GateH-1 单独开 work order，并按 API、DB、前端、测试矩阵拆解可验收任务。
 - GateH-1 开工前再次确认不接入 AI、不新增历史行情抓取、不修改策略核心逻辑。
+
+## GateH-1-WO 执行记录
+
+日期：2026-05-17
+
+### 本轮范围
+
+- 正式化 `/trading` 交易工作台。
+- 增加 `GET /api/trading/orders` 订单列表查询。
+- 订单详情继续展示订单、最新成交、账户余额快照和持仓快照。
+- 强化账户上下文校验：交易工作台列表查询必须使用已登记的 exchange account。
+- 显示 SIM / LIVE 边界。
+- 下单前展示风控摘要与“服务端风控不可绕过”的明确状态。
+- `/trade-validation` 保持兼容，并在页面内标记为过渡入口。
+- 更新 E2E smoke。
+
+### 修改文件
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/OrderView.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/OrderListResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/query/OrderQueryView.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/query/TradingQueryFacade.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/query/JdbcTradingQueryFacade.java`
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/TradingVerificationControllerLocalTest.java`
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/AuthSecurityWebMvcTest.java`
+- `frontend/src/api/trading-workbench.ts`
+- `frontend/src/api/query-keys.ts`
+- `frontend/src/hooks/useTradingWorkbench.ts`
+- `frontend/src/types/trading-workbench.ts`
+- `frontend/src/pages/trading/TradingWorkbenchPage.tsx`
+- `frontend/src/router/routes.tsx`
+- `frontend/tests/e2e/account-context-smoke.spec.ts`
+- `frontend/tests/e2e/account-credential-write-smoke.spec.ts`
+- `frontend/tests/e2e/trading-workbench-query.spec.ts`
+- `docs/current/API.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 未做范围
+
+- 未开发 GateH-2 历史行情接入。
+- 未新增 marketdata ingestion。
+- 未开发 GateH-3 dataset 绑定。
+- 未新增 DB migration。
+- 未接入 AI。
+- 未新增美股/A 股、合约全量、高频、复杂因子平台。
+- 未修改策略核心逻辑。
+
+### 验证结果
+
+- `mvn -f backend/pom.xml test`：通过。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告。
+- 后端 local profile 临时启动：通过，`/actuator/health` 返回 `UP`。
+- `npm run test:e2e`：通过，7 passed、3 skipped。
+
+### E2E skipped 原因
+
+- `research-detail`：当前环境缺少对应预置 detail 条件，沿用既有 skip。
+- `strategies-detail`：当前环境缺少对应预置 detail 条件，沿用既有 skip。
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID`，跳过真实订单详情查询链路。
+
+### 下一步进入 GateH-2-WO 的条件
+
+- GateH-1 变更完成审查并提交。
+- 若需要更强验收，配置 `E2E_TRADE_ORDER_ID` 后补跑真实订单详情 E2E。
+- GateH-2 开工前再次确认范围只包含 OKX / Binance SPOT 历史 K 线接入，不夹带 dataset 绑定或 AI。

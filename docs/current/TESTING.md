@@ -80,3 +80,28 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 - `npm audit` 仍提示 4 个漏洞（2 moderate、2 high），后续单独处理。
 - Vite build 仍提示 chunk 超过 500 kB，后续单独处理。
 - E2E 中 3 个详情/交易链路用例按当前环境数据条件 skip，不代表对应业务链路已完整验证。
+
+## GateH-1-WO 验证记录
+
+日期：2026-05-17
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`；新增 trading workspace 订单列表 controller 测试通过 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告，本轮不处理 |
+| `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local` | 通过 | 为 E2E 临时启动后端；`/actuator/health` 返回 `UP`；E2E 后已停止监听 `18888` 的临时 Java 进程 |
+| `npm run test:e2e` | 通过 | 10 个 Playwright 用例中 7 passed、3 skipped |
+
+GateH-1 E2E 覆盖：
+
+- `/trading` 正式交易工作台可进入。
+- 页面显示正式账户上下文与 SIM / LIVE。
+- 订单列表表格可加载，空态可见。
+- 下单前检查抽屉展示风控摘要和服务端风控不可绕过状态。
+- `/trade-validation` 旧路径仍可访问，并展示过渡入口提示。
+- `E2E_TRADE_ORDER_ID` 未配置时，真实订单详情链路按原因 skip。
+
+GateH-1 剩余验证风险：
+
+- 当前本地没有配置 `E2E_TRADE_ORDER_ID`，因此订单详情真实数据链路未在本次 E2E 中执行，通过 skip 明确记录。
+- Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning 和 Vite chunk > 500 kB 警告仍存在，本轮不处理。
