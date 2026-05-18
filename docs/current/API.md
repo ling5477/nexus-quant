@@ -1,6 +1,6 @@
 # Current API
 
-当前 API 文档以代码实际 controller 为准。本文只建立统一分类入口，后续 `GateH-PLAN` 需要补齐正式 API 清单、请求响应样例、错误码与权限边界。
+当前 API 文档以代码实际 controller 为准。本文记录当前 API 分类和已完成 GateH API 事实；GateI-PLAN 只新增规划入口，不实现接口。
 
 ## API 分类
 
@@ -26,6 +26,7 @@
 - GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
 - GateH-2 只新增 OKX / Binance SPOT 历史 OHLCV K 线接入、接入任务与运行记录 API；不新增 dataset/backtest 绑定接口，不新增 AI 接口。
 - GateH-3 新增 marketdata dataset、quality refresh、backtest config dataset binding 与 backtest run dataset snapshot API；不新增 AI 接口。
+- GateI-PLAN 只规划虚拟币量化 V1 完整闭环 API；本轮不新增 controller、不新增 API 实现、不接 AI。
 
 ## GateH-1 Trading Workspace API
 
@@ -79,3 +80,22 @@ GateH-2 不新增 AI 自动交易、AI 信号接入、dataset/backtest 绑定、
 GateH-3 固定范围：dataset 来源仅为 GateH-2 的 `marketdata_bars`；仅支持 `OKX` / `BINANCE`、`SPOT`、`BTC-USDT` / `ETH-USDT` / `SOL-USDT`、`1m` / `5m` / `15m` / `1h` / `4h` / `1d`。
 
 GateH-3 不新增 AI 自动交易、AI 信号接入、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配、复杂因子平台或高频交易 API。
+
+## GateI-PLAN API Planning Entry
+
+GateI API 规划入口为 [GATEI_API_PLAN.md](./GATEI_API_PLAN.md)。本轮只做规划，不实现接口。
+
+GateI 规划 API 分类：
+
+- Strategy Version API。
+- Publish Version API。
+- Backtest Config Enhanced API。
+- Evaluation Report API。
+- Paper Trading Run API。
+- Risk Result API。
+- Equity Curve API。
+- Position Curve API。
+- Trade Replay API。
+- Emergency Stop API。
+
+GateI-PLAN 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A 股或合约全量接口。

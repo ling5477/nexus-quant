@@ -428,3 +428,72 @@
 - GateH-3 变更完成审查并提交。
 - GateI-PLAN 只能规划虚拟币量化 V1 完整闭环。
 - GateI-PLAN 不得夹带 AI 接入；AI 只能在虚拟币 V1 和 Paper Trading 稳定后进入后续 Gate。
+
+## GateI-PLAN 执行记录
+
+日期：2026-05-18
+
+### 本轮范围
+
+- 只做 GateI 规划文档。
+- 规划虚拟币量化 V1 完整闭环。
+- 明确 GateI-1 / GateI-2 / GateI-3 / GateI-4 拆分。
+- 同步当前状态、路线、API、DB、测试与工作日志入口。
+
+### 本轮新增文件
+
+- `docs/current/PLAN_GATEI.md`
+- `docs/current/GATEI_API_PLAN.md`
+- `docs/current/GATEI_DB_PLAN.md`
+- `docs/current/GATEI_FRONTEND_PLAN.md`
+- `docs/current/GATEI_TEST_PLAN.md`
+- `docs/current/GATEI_WORK_ORDER.md`
+
+### 本轮修改文件
+
+- `docs/current/STATUS.md`
+- `docs/current/ROADMAP.md`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 本轮执行内容
+
+- 新增 GateI 总计划，明确背景、目标、不做范围、四个子 Gate、规划入口、风险、回滚策略和进入 GateJ 条件。
+- 新增 GateI API 规划，覆盖 Strategy Version、Publish Version、Backtest Config Enhanced、Evaluation Report、Paper Trading Run、Risk Result、Equity Curve、Position Curve、Trade Replay、Emergency Stop。
+- 新增 GateI DB 规划，覆盖策略版本、发布版本、回测增强、评估报告、Paper run、风控结果、资金曲线、持仓曲线、复盘和异常停机事件。
+- 新增 GateI 前端规划，覆盖 `/strategies`、`/publishes`、`/backtests`、`/evaluations`、`/paper-trading`、`/risk`、`/portfolio/equity-curve`、`/portfolio/position-curve`、`/replay`、`/emergency-stop`。
+- 新增 GateI 测试规划，规划后端单元测试、集成测试、API smoke、前端 build、E2E 矩阵、本地启动、migration 验证和冻结标准。
+- 新增 GateI work order 草案，拆分 GateI-1-WO 到 GateI-4-WO。
+- 同步 `STATUS.md` 和 `ROADMAP.md`，写清 GateH completed、当前执行 GateI-PLAN、AI 仍未开始。
+
+### 本轮未执行内容
+
+- 未开发 GateI 功能代码。
+- 未新增 API 实现。
+- 未新增 DB migration。
+- 未新增前端页面实现。
+- 未接入 AI。
+- 未新增 AI 模块、AI 信号、AI Paper Trading 或 AI 自动交易。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机。
+- 未修改策略核心逻辑。
+- 未修改回测核心算法。
+- 未处理 `npm audit`。
+- 未处理 Vite chunk 警告。
+
+### 验证记录
+
+- 本轮只修改文档，未重新执行全量 `mvn`、`npm`、Python 测试。
+- 已执行 `git status --short --branch`。
+- 已检查 GateI 六份规划文档存在。
+- 已检查 `STATUS.md` 写清 GateH completed、当前执行 GateI-PLAN、AI 仍未开始。
+- 已检查本轮变更未新增业务代码、migration、API 实现或前端页面实现。
+
+### 下一步进入 GateI-1-WO 的条件
+
+- GateI-PLAN 文档完成审查。
+- GateI-1-WO 单独开工，并只做策略版本与发布链路正式化。
+- GateI-1-WO 不得夹带 GateI-2/3/4 实现。
+- GateI-1-WO 不得接入 AI，不得修改策略核心算法，不得新增美股/A 股或合约全量能力。

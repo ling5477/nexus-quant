@@ -96,3 +96,25 @@ GateH-3 变更 `backtest_runs`：
 - GateH-3 不新增 AI 模块、不新增 AI 自动交易接口。
 - GateH-3 不接合约、资金费率、深度、逐笔成交、链上数据、新闻资讯。
 - GateH-3 不新增美股/A 股适配。
+
+## GateI-PLAN DB Planning Entry
+
+GateI DB 规划入口为 [GATEI_DB_PLAN.md](./GATEI_DB_PLAN.md)。本轮只做规划，不新增 migration，不修改业务表结构。
+
+GateI 后续规划重点：
+
+- `strategy_versions`。
+- `strategy_publish_versions` 或 `publish_records` 增强。
+- `backtest_configs` 增强。
+- `backtest_runs` 结果追溯增强。
+- `backtest_eval_reports` 指标增强。
+- `paper_trading_runs`。
+- `paper_trading_orders`。
+- `paper_trading_trades`。
+- `risk_check_results`。
+- `equity_curve_snapshots`。
+- `position_curve_snapshots`。
+- `trade_replay_records`。
+- `emergency_stop_events`。
+
+GateI 后续如果新增 migration，所有新增表必须包含 PostgreSQL `COMMENT ON TABLE`，所有新增字段必须包含 `COMMENT ON COLUMN`。JSONB 快照字段必须说明用途、结构边界和敏感信息禁入规则。

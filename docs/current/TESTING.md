@@ -164,3 +164,29 @@ GateH-3 未执行项：
 - 未处理 `npm audit` 依赖漏洞。
 - 未处理 Vite chunk > 500 kB 警告。
 - 未处理 Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning。
+
+## GateI-PLAN 验证记录
+
+日期：2026-05-18
+
+本轮只修改文档，不重新执行全量后端、前端、Python 测试。
+
+必须检查项：
+
+- `git status --short --branch`：已执行，当前仅规划文档变更。
+- `docs/current/PLAN_GATEI.md`：存在。
+- `docs/current/GATEI_API_PLAN.md`：存在。
+- `docs/current/GATEI_DB_PLAN.md`：存在。
+- `docs/current/GATEI_FRONTEND_PLAN.md`：存在。
+- `docs/current/GATEI_TEST_PLAN.md`：存在。
+- `docs/current/GATEI_WORK_ORDER.md`：存在。
+- `docs/current/STATUS.md`：已写清 GateH completed、当前执行 GateI-PLAN、AI 仍未开始。
+- 未新增业务代码、migration、API 实现或前端页面实现。
+- 未接入 AI。
+
+沿用当前验证基线：
+
+- 后端 `mvn -f backend/pom.xml test` 已通过。
+- 前端 `npm run build` 已通过。
+- E2E `npm run test:e2e` 已通过，结果为 10 passed / 4 skipped。
+- Python `pytest`、`mypy`、`ruff` 已通过。
