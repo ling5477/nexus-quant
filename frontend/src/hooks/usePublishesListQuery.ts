@@ -7,6 +7,7 @@ import type {BacktestPublishRequest} from '@/types/publishes';
 interface UsePublishesListQueryRequest {
     researchConfigId?: string;
     backtestConfigId?: string;
+    strategyVersionId?: string;
 }
 
 export function usePublishesListQuery(request: UsePublishesListQueryRequest, searchVersion: number) {

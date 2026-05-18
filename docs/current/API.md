@@ -26,7 +26,7 @@
 - GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
 - GateH-2 只新增 OKX / Binance SPOT 历史 OHLCV K 线接入、接入任务与运行记录 API；不新增 dataset/backtest 绑定接口，不新增 AI 接口。
 - GateH-3 新增 marketdata dataset、quality refresh、backtest config dataset binding 与 backtest run dataset snapshot API；不新增 AI 接口。
-- GateI-PLAN 只规划虚拟币量化 V1 完整闭环 API；本轮不新增 controller、不新增 API 实现、不接 AI。
+- GateI-1 新增策略版本与发布版本绑定 API；不进入 GateI-2/3/4，不接 AI。
 
 ## GateH-1 Trading Workspace API
 
@@ -81,7 +81,31 @@ GateH-3 固定范围：dataset 来源仅为 GateH-2 的 `marketdata_bars`；仅�
 
 GateH-3 不新增 AI 自动交易、AI 信号接入、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配、复杂因子平台或高频交易 API。
 
-## GateI-PLAN API Planning Entry
+## GateI-1 Strategy Version and Publish API
+
+当前已实现的 GateI-1 策略版本与发布链路入口：
+
+- `GET /api/strategies/{strategyCode}`：按 `strategyCode` 查询策略定义详情。
+- `PATCH /api/strategies/{strategyCode}/status`：按 `strategyCode` 启用或停用策略定义。
+- `GET /api/strategies/{strategyCode}/versions`：查询策略版本列表。
+- `POST /api/strategies/{strategyCode}/versions`：创建策略版本，固化 `paramSnapshotJson`、`configSnapshotJson`、`sourceSnapshotJson` 和 `checksum`。
+- `GET /api/strategies/{strategyCode}/versions/{versionId}`：查询策略版本详情，并校验版本归属策略编码。
+- `GET /api/publishes`：查询发布记录列表，可按 `strategyVersionId` 过滤。
+- `GET /api/publishes/{publishId}`：查询发布记录详情。
+- `POST /api/publishes?backtestRunId={runId}`：发布回测结果，可选绑定 `strategyVersionId`。
+- `POST /api/backtest-runs/{runId}/publish`：兼容既有发布入口，可选传入 `strategyVersionId`。
+- `GET /api/backtest-runs/{runId}/publish`：返回发布结果，并包含策略版本绑定与 `versionSnapshotJson`。
+
+GateI-1 固定范围：
+
+- 策略版本状态：`DRAFT`、`ACTIVE`、`ARCHIVED`。
+- 发布绑定只接受存在且 `ACTIVE` 的策略版本。
+- 发布时固化 `versionSnapshotJson`，后续策略版本变化不会改写历史发布记录。
+- 不修改策略核心算法，不启动回测，不进入 Paper Trading。
+
+GateI-1 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A 股、合约全量、高频或复杂因子平台接口。GateI-2/3/4 尚未开始。
+
+## GateI Planning Entry
 
 GateI API 规划入口为 [GATEI_API_PLAN.md](./GATEI_API_PLAN.md)。本轮只做规划，不实现接口。
 
@@ -98,4 +122,4 @@ GateI 规划 API 分类：
 - Trade Replay API。
 - Emergency Stop API。
 
-GateI-PLAN 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A 股或合约全量接口。
+GateI 后续规划不改变当前事实：AI、AI 信号、AI 自动交易和 AI Paper Trading 仍未开始。

@@ -172,7 +172,11 @@ public class BacktestRunController {
             @Valid @RequestBody(required = false) BacktestPublishRequestBody request
     ) {
         TraceIdContext.getOrCreate();
-        return BacktestPublishResponse.from(applicationService.publish(runId, request == null ? null : request.displayName()));
+        return BacktestPublishResponse.from(applicationService.publish(
+                runId,
+                request == null ? null : request.displayName(),
+                request == null ? null : request.strategyVersionId()
+        ));
     }
 
     @GetMapping("/{runId}/publish")

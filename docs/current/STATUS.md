@@ -16,12 +16,14 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateH-2-WO completed。
 - GateH-3-WO completed。
 - GateH completed。
+- GateI-PLAN completed。
+- GateI-1-WO completed。
 
 ## 当前执行状态
 
-- 当前执行 `GateI-PLAN`。
-- 本轮只做虚拟币量化 V1 完整闭环规划文档。
-- GateI 功能代码尚未开始。
+- 当前已完成 `GateI-1-WO`：策略版本与发布链路正式化。
+- 下一步可进入 `GateI-2-WO`，但必须在本轮变更审查/提交后单独开工。
+- GateI-2/3/4 功能尚未开始。
 - AI 尚未开始。
 
 ## 当前未完成状态
@@ -69,13 +71,13 @@ GateO：A 股适配
 - GateH-2 后 E2E `npm run test:e2e` 已通过，结果为 9 passed / 3 skipped。
 - GateH-3 后 E2E `npm run test:e2e` 已通过，结果为 10 passed / 4 skipped。
 - GateH-3 的 backtest dataset binding UI smoke 因当前本地库没有可绑定 backtest config 种子而 skip；后端 controller 测试覆盖绑定 API。
+- GateI-1 后端 `mvn -f backend/pom.xml test` 已通过。
+- GateI-1 前端 `npm run build` 已通过。
+- GateI-1 E2E `npm run test:e2e` 已通过，结果为 13 passed / 3 skipped。
 - Python `pytest`、`mypy`、`ruff` 已通过。
 
-## GateI-PLAN 当前边界
+## GateI 当前边界
 
-- GateI-PLAN 只规划策略版本、发布链路、回测增强、评估报告、Paper Trading、风控回写、资金曲线、持仓曲线、复盘和异常停机。
-- GateI-PLAN 不开发功能代码。
-- GateI-PLAN 不新增 API 实现。
-- GateI-PLAN 不新增 DB migration。
-- GateI-PLAN 不新增前端页面实现。
+- GateI-1 只实现策略版本与发布记录绑定，不进入回测配置增强、评估指标增强、SIM/Paper 运行闭环、风控回写、资金曲线、持仓曲线、复盘或异常停机。
+- GateI-2 只能做回测配置、评估指标、结果追溯增强。
 - AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始。

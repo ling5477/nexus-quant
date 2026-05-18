@@ -190,3 +190,35 @@ GateH-3 未执行项：
 - 前端 `npm run build` 已通过。
 - E2E `npm run test:e2e` 已通过，结果为 10 passed / 4 skipped。
 - Python `pytest`、`mypy`、`ruff` 已通过。
+
+## GateI-1-WO 验证记录
+
+日期：2026-05-18
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`；新增策略版本 service 测试、发布绑定 service 测试、既有 local integration 测试均通过 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告，本轮不处理 |
+| `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local` | 通过 | 为 E2E 临时启动后端；`/actuator/health` 返回 `UP`；Flyway 当前版本到 `19` |
+| `npm run test:e2e` | 通过 | 16 个 Playwright 用例中 13 passed、3 skipped；新增 `strategy-version-smoke` 与 `publish-version-smoke` 均通过 |
+
+GateI-1 E2E 覆盖：
+
+- `/strategies` 可打开并查询策略定义。
+- 当本地库缺少策略定义时，E2E 通过正式 `POST /api/strategies` 创建最小 SIM 策略定义 fixture。
+- 策略详情可展示“策略版本”和“创建策略版本”区域。
+- 可创建 `ACTIVE` 策略版本，并展示参数快照、配置快照和状态。
+- `/publishes` 可展示策略版本 ID 与版本快照入口。
+
+GateI-1 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用 BASELINE-FIX 已通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未处理 Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning。
+
+GateI-1 边界确认：
+
+- 未进入 GateI-2/3/4。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未修改策略核心算法、交易核心状态机或回测核心算法。

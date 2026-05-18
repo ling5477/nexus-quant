@@ -7,13 +7,16 @@ import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.application.command.BacktestPublishRequest;
 import com.guidinglight.nexusquant.research.domain.ExecutionStrategyDefinitionDraft;
 import com.guidinglight.nexusquant.research.domain.PublishStatus;
+import com.guidinglight.nexusquant.research.domain.StrategyVersionSnapshotView;
 import com.guidinglight.nexusquant.research.domain.publish.port.BacktestEvaluationQueryPort;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
 import com.guidinglight.nexusquant.research.domain.port.ExecutionStrategyDefinitionWriter;
+import com.guidinglight.nexusquant.research.domain.port.StrategyVersionSnapshotQueryPort;
 import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -31,6 +34,7 @@ public class BacktestPublishService {
     private final BacktestConfigService backtestConfigService;
     private final BacktestEvaluationQueryPort backtestEvaluationQueryPort;
     private final BacktestPublishRecordRepository backtestPublishRecordRepository;
+    private final StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort;
     private final ResearchToExecutionMapper researchToExecutionMapper;
     private final ExecutionStrategyDefinitionWriter executionStrategyDefinitionWriter;
     private final ObjectMapper objectMapper;
@@ -50,6 +54,7 @@ public class BacktestPublishService {
             BacktestConfigService backtestConfigService,
             BacktestEvaluationQueryPort backtestEvaluationQueryPort,
             BacktestPublishRecordRepository backtestPublishRecordRepository,
+            StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort,
             ResearchToExecutionMapper researchToExecutionMapper,
             ExecutionStrategyDefinitionWriter executionStrategyDefinitionWriter,
             ObjectMapper objectMapper
@@ -60,6 +65,7 @@ public class BacktestPublishService {
                 backtestConfigService,
                 backtestEvaluationQueryPort,
                 backtestPublishRecordRepository,
+                strategyVersionSnapshotQueryPort,
                 researchToExecutionMapper,
                 executionStrategyDefinitionWriter,
                 objectMapper,
@@ -73,6 +79,7 @@ public class BacktestPublishService {
             BacktestConfigService backtestConfigService,
             BacktestEvaluationQueryPort backtestEvaluationQueryPort,
             BacktestPublishRecordRepository backtestPublishRecordRepository,
+            StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort,
             ResearchToExecutionMapper researchToExecutionMapper,
             ExecutionStrategyDefinitionWriter executionStrategyDefinitionWriter,
             ObjectMapper objectMapper,
@@ -95,6 +102,10 @@ public class BacktestPublishService {
                 backtestPublishRecordRepository,
                 "backtestPublishRecordRepository must not be null"
         );
+        this.strategyVersionSnapshotQueryPort = Objects.requireNonNull(
+                strategyVersionSnapshotQueryPort,
+                "strategyVersionSnapshotQueryPort must not be null"
+        );
         this.researchToExecutionMapper = Objects.requireNonNull(
                 researchToExecutionMapper,
                 "researchToExecutionMapper must not be null"
@@ -112,7 +123,8 @@ public class BacktestPublishService {
         Instant now = Instant.now(clock);
         BacktestPublishRecord existing = backtestPublishRecordRepository.findByBacktestRunId(request.backtestRunId()).orElse(null);
         if (existing != null && existing.publishStatus() == PublishStatus.SUCCEEDED
-                && existing.targetStrategyDefinitionId() != null && !existing.targetStrategyDefinitionId().isBlank()) {
+                && existing.targetStrategyDefinitionId() != null && !existing.targetStrategyDefinitionId().isBlank()
+                && sameStrategyVersion(existing.strategyVersionId(), request.strategyVersionId())) {
             return existing;
         }
 
@@ -128,6 +140,7 @@ public class BacktestPublishService {
         if (!"SUCCEEDED".equalsIgnoreCase(evaluationView.evaluationStatus())) {
             return failPublish(existing, backtestRun, evaluationView, now, "EVALUATION_NOT_SUCCEEDED", "evaluation report must be SUCCEEDED");
         }
+        StrategyVersionSnapshotView strategyVersionSnapshot = resolveStrategyVersionSnapshot(request.strategyVersionId());
 
         var researchConfig = researchConfigService.getByResearchConfigId(backtestRun.researchConfigId());
         var backtestConfig = backtestConfigService.getByBacktestConfigId(backtestRun.backtestConfigId());
@@ -151,9 +164,11 @@ public class BacktestPublishService {
                     backtestRun.sourceStrategyId(),
                     evaluationView.evalReportId(),
                     targetStrategyDefinitionId,
+                    strategyVersionSnapshot == null ? null : strategyVersionSnapshot.strategyVersionId(),
                     PublishStatus.SUCCEEDED,
                     publishName,
                     publishSnapshotJson(backtestRun.backtestRunId(), publishName, targetStrategyDefinitionId, draft),
+                    strategyVersionSnapshot == null ? "{}" : versionSnapshotJson(strategyVersionSnapshot),
                     evaluationSummaryJson(evaluationView),
                     null,
                     null,
@@ -177,6 +192,15 @@ public class BacktestPublishService {
         return backtestPublishRecordRepository.findByBacktestRunId(backtestRunId).orElse(null);
     }
 
+    public List<BacktestPublishRecord> listAll() {
+        return backtestPublishRecordRepository.listAll();
+    }
+
+    public BacktestPublishRecord getByPublishRecordId(String publishRecordId) {
+        return backtestPublishRecordRepository.findByPublishRecordId(publishRecordId)
+                .orElseThrow(() -> new IllegalArgumentException("publish record not found: " + publishRecordId));
+    }
+
     private BacktestPublishRecord failPublish(
             BacktestPublishRecord existing,
             com.guidinglight.nexusquant.research.domain.BacktestRun backtestRun,
@@ -193,9 +217,11 @@ public class BacktestPublishService {
                 backtestRun.sourceStrategyId(),
                 evaluationView == null ? null : evaluationView.evalReportId(),
                 existing == null ? null : existing.targetStrategyDefinitionId(),
+                existing == null ? null : existing.strategyVersionId(),
                 PublishStatus.FAILED,
                 existing == null ? backtestRun.backtestRunId() : existing.publishName(),
                 "{}",
+                existing == null ? "{}" : existing.versionSnapshotJson(),
                 evaluationView == null ? "{}" : evaluationSummaryJson(evaluationView),
                 failureCode,
                 failureMessage,
@@ -236,6 +262,51 @@ public class BacktestPublishService {
         node.put("tradeCount", evaluationView.tradeCount());
         node.put("orderCount", evaluationView.orderCount());
         return node.toString();
+    }
+
+    private StrategyVersionSnapshotView resolveStrategyVersionSnapshot(String strategyVersionId) {
+        if (strategyVersionId == null || strategyVersionId.isBlank()) {
+            return null;
+        }
+        StrategyVersionSnapshotView snapshot = strategyVersionSnapshotQueryPort.findById(strategyVersionId.trim())
+                .orElseThrow(() -> new IllegalArgumentException("strategy version not found: " + strategyVersionId));
+        if (!"ACTIVE".equals(snapshot.status())) {
+            throw new IllegalStateException("strategy version must be ACTIVE before publish: " + strategyVersionId);
+        }
+        return snapshot;
+    }
+
+    private boolean sameStrategyVersion(String existingStrategyVersionId, String requestedStrategyVersionId) {
+        if (requestedStrategyVersionId == null || requestedStrategyVersionId.isBlank()) {
+            return true;
+        }
+        return requestedStrategyVersionId.trim().equals(existingStrategyVersionId);
+    }
+
+    private String versionSnapshotJson(StrategyVersionSnapshotView snapshot) {
+        ObjectNode node = objectMapper.createObjectNode();
+        node.put("strategyVersionId", snapshot.strategyVersionId());
+        node.put("strategyCode", snapshot.strategyCode());
+        node.put("version", snapshot.version());
+        node.put("versionName", snapshot.versionName());
+        node.put("status", snapshot.status());
+        node.put("checksum", snapshot.checksum());
+        node.set("paramSnapshot", readSnapshotNode(snapshot.paramSnapshotJson()));
+        node.set("configSnapshot", readSnapshotNode(snapshot.configSnapshotJson()));
+        node.set("sourceSnapshot", readSnapshotNode(snapshot.sourceSnapshotJson()));
+        node.put("snapshotVersion", 1);
+        return node.toString();
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode readSnapshotNode(String json) {
+        try {
+            return objectMapper.readTree(json == null || json.isBlank() ? "{}" : json);
+        } catch (Exception ex) {
+            ObjectNode fallback = objectMapper.createObjectNode();
+            fallback.put("raw", json == null ? "{}" : json);
+            fallback.put("parseError", ex.getClass().getSimpleName());
+            return fallback;
+        }
     }
 
     private String safeMessage(RuntimeException exception) {

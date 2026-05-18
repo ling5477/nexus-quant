@@ -148,8 +148,20 @@ public class BacktestRunApiService {
     }
 
     public BacktestPublishRecord publish(String backtestRunId, String displayName) {
+        return publish(backtestRunId, displayName, null);
+    }
+
+    /**
+     * 发布回测结果，并可选绑定 GateI-1 策略版本。
+     *
+     * @param backtestRunId 回测运行 ID
+     * @param displayName 发布展示名，可空
+     * @param strategyVersionId 策略版本 ID，可空；非空时 publish record 会固化 version snapshot
+     * @return 发布记录
+     */
+    public BacktestPublishRecord publish(String backtestRunId, String displayName, String strategyVersionId) {
         getByBacktestRunId(backtestRunId);
-        return backtestPublishService.publish(new BacktestPublishRequest(backtestRunId, displayName));
+        return backtestPublishService.publish(new BacktestPublishRequest(backtestRunId, displayName, strategyVersionId));
     }
 
     public BacktestPublishRecord getPublish(String backtestRunId) {
@@ -163,6 +175,18 @@ public class BacktestRunApiService {
 
     public BacktestPublishRecord findPublishOrNull(String backtestRunId) {
         return backtestPublishService.findByBacktestRunIdOrNull(backtestRunId);
+    }
+
+    public List<BacktestPublishRecord> listPublishes() {
+        return backtestPublishService.listAll();
+    }
+
+    public BacktestPublishRecord getPublishById(String publishRecordId) {
+        try {
+            return backtestPublishService.getByPublishRecordId(publishRecordId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
     }
 
     private ResponseStatusException toNotFound(IllegalArgumentException ex) {

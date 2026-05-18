@@ -22,6 +22,8 @@ public record BacktestPublishResponse(
         String sourceStrategyId,
         @Schema(description = "targetStrategyDefinitionId")
         String targetStrategyDefinitionId,
+        @Schema(description = "strategyVersionId")
+        String strategyVersionId,
         @Schema(description = "publishStatus")
         String publishStatus,
         @Schema(description = "publishName")
@@ -35,7 +37,9 @@ public record BacktestPublishResponse(
         @Schema(description = "failureMessage")
         String failureMessage,
         @Schema(description = "publishSnapshotJson")
-        String publishSnapshotJson
+        String publishSnapshotJson,
+        @Schema(description = "versionSnapshotJson")
+        String versionSnapshotJson
 ) {
     public static BacktestPublishResponse from(BacktestPublishRecord record) {
         return new BacktestPublishResponse(
@@ -45,13 +49,15 @@ public record BacktestPublishResponse(
                 record.backtestConfigId(),
                 record.sourceStrategyId(),
                 record.targetStrategyDefinitionId(),
+                record.strategyVersionId(),
                 record.publishStatus().name(),
                 record.publishName(),
                 record.publishedAt(),
                 record.evaluationSummaryJson(),
                 record.failureCode(),
                 record.failureMessage(),
-                record.publishSnapshotJson()
+                record.publishSnapshotJson(),
+                record.versionSnapshotJson()
         );
     }
 }

@@ -14,6 +14,13 @@ export const strategyQueryKeys = {
     all: ['strategies'] as const,
     list: (searchVersion: number) => [...strategyQueryKeys.all, 'list', searchVersion] as const,
     detail: (strategyCode: string) => [...strategyQueryKeys.all, 'detail', strategyCode] as const,
+    versions: (strategyCode: string) => [...strategyQueryKeys.all, 'versions', strategyCode] as const,
+    versionDetail: (strategyCode: string, versionId: string) => [
+        ...strategyQueryKeys.all,
+        'version-detail',
+        strategyCode,
+        versionId,
+    ] as const,
 };
 
 export const scheduleQueryKeys = {
@@ -60,14 +67,15 @@ export const evaluationsQueryKeys = {
 
 export const publishesQueryKeys = {
     all: ['publish-runs'] as const,
-    list: (request: { researchConfigId?: string; backtestConfigId?: string }, searchVersion: number) => [
+    list: (request: { researchConfigId?: string; backtestConfigId?: string; strategyVersionId?: string }, searchVersion: number) => [
         ...publishesQueryKeys.all,
         'list',
         request.researchConfigId ?? '',
         request.backtestConfigId ?? '',
+        request.strategyVersionId ?? '',
         searchVersion,
     ] as const,
-    detail: (runId: string) => [...publishesQueryKeys.all, 'detail', runId] as const,
+    detail: (publishId: string) => [...publishesQueryKeys.all, 'detail', publishId] as const,
 };
 
 export const tradingWorkbenchQueryKeys = {

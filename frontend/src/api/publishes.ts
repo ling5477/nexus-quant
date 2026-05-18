@@ -4,21 +4,26 @@ import type {BacktestPublishDetailItem, BacktestPublishListItem, BacktestPublish
 export interface PublishListRequest {
     researchConfigId?: string;
     backtestConfigId?: string;
+    strategyVersionId?: string;
 }
 
 export const publishesApi = {
     async list(request: PublishListRequest): Promise<BacktestPublishListItem[]> {
-        const {data} = await apiClient.get<BacktestPublishListItem[]>('/backtest-runs', {
-            params: request,
+        const {data} = await apiClient.get<BacktestPublishListItem[]>('/publishes', {
+            params: {
+                strategyVersionId: request.strategyVersionId,
+            },
         });
         return data;
     },
-    async detail(runId: string): Promise<BacktestPublishDetailItem> {
-        const {data} = await apiClient.get<BacktestPublishDetailItem>(`/backtest-runs/${runId}/publish`);
+    async detail(publishId: string): Promise<BacktestPublishDetailItem> {
+        const {data} = await apiClient.get<BacktestPublishDetailItem>(`/publishes/${publishId}`);
         return data;
     },
     async publish(runId: string, request?: BacktestPublishRequest): Promise<BacktestPublishDetailItem> {
-        const {data} = await apiClient.post<BacktestPublishDetailItem>(`/backtest-runs/${runId}/publish`, request);
+        const {data} = await apiClient.post<BacktestPublishDetailItem>('/publishes', request, {
+            params: {backtestRunId: runId},
+        });
         return data;
     },
 };

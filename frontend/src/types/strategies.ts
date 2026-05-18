@@ -33,3 +33,26 @@ export const defaultStrategyListFilters: StrategyListFilters = {
 export interface StrategyStatusUpdateRequest {
     enabled: boolean;
 }
+
+export interface StrategyVersionItem {
+    strategyVersionId: string;
+    strategyCode: string;
+    version: number;
+    versionName: string;
+    status: string;
+    paramSnapshotJson: string;
+    configSnapshotJson: string;
+    sourceSnapshotJson: string;
+    checksum: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface StrategyVersionCreateRequest {
+    versionName: string;
+    status?: string;
+    paramSnapshotJson?: string;
+    configSnapshotJson?: string;
+    sourceSnapshotJson?: string;
+}

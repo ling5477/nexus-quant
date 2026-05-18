@@ -23,6 +23,8 @@ import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {
     useStrategyDetailQuery,
+    useStrategyVersionsQuery,
+    useCreateStrategyVersionMutation,
     useStrategyListQuery,
     useUpdateStrategyStatusMutation,
 } from '@/hooks/useStrategyListQuery';
@@ -31,6 +33,8 @@ import {
     defaultStrategyListFilters,
     type StrategyDefinitionListItem,
     type StrategyListFilters,
+    type StrategyVersionCreateRequest,
+    type StrategyVersionItem,
 } from '@/types/strategies';
 import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptionalText} from '@/utils/formatters';
 
@@ -39,12 +43,15 @@ type StrategyRow = StrategyDefinitionListItem;
 export function StrategiesPage() {
     const {message} = App.useApp();
     const [form] = Form.useForm<StrategyListFilters>();
+    const [versionForm] = Form.useForm<StrategyVersionCreateRequest>();
     const [submittedFilters, setSubmittedFilters] = useState<StrategyListFilters>(defaultStrategyListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedStrategyCode, setSelectedStrategyCode] = useState<string | null>(null);
     const strategiesQuery = useStrategyListQuery(searchVersion);
     const strategyDetailQuery = useStrategyDetailQuery(selectedStrategyCode);
+    const strategyVersionsQuery = useStrategyVersionsQuery(selectedStrategyCode);
     const updateStatusMutation = useUpdateStrategyStatusMutation();
+    const createVersionMutation = useCreateStrategyVersionMutation();
     const hasSearched = searchVersion > 0;
 
     const visibleItems = (strategiesQuery.data ?? []).filter((item) => (
@@ -127,6 +134,49 @@ export function StrategiesPage() {
         },
     ];
 
+    const versionColumns: ColumnsType<StrategyVersionItem> = [
+        {
+            title: '版本 ID',
+            dataIndex: 'strategyVersionId',
+            key: 'strategyVersionId',
+            width: 220,
+            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+        },
+        {
+            title: '版本号',
+            dataIndex: 'version',
+            key: 'version',
+            width: 90,
+        },
+        {
+            title: '版本名称',
+            dataIndex: 'versionName',
+            key: 'versionName',
+            width: 180,
+        },
+        {
+            title: '状态',
+            dataIndex: 'status',
+            key: 'status',
+            width: 110,
+            render: (value: string) => <Tag color={value === 'ACTIVE' ? 'success' : 'blue'}>{value}</Tag>,
+        },
+        {
+            title: 'Checksum',
+            dataIndex: 'checksum',
+            key: 'checksum',
+            width: 220,
+            render: (value: string) => <Typography.Text copyable ellipsis>{value}</Typography.Text>,
+        },
+        {
+            title: '创建时间',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            width: 180,
+            render: (value: string) => formatDateTime(value),
+        },
+    ];
+
     const handleSearch = (values: StrategyListFilters) => {
         setSubmittedFilters({
             strategyCode: normalizeOptionalText(values.strategyCode),
@@ -158,6 +208,34 @@ export function StrategiesPage() {
                 onSuccess: () => {
                     message.success(enabled ? '策略已启用。' : '策略已停用。');
                     strategyDetailQuery.refetch();
+                },
+                onError: (error) => {
+                    message.error(formatApiError(error as AppApiError));
+                },
+            },
+        );
+    };
+
+    const handleCreateVersion = (values: StrategyVersionCreateRequest) => {
+        if (!selectedStrategyCode) {
+            return;
+        }
+        createVersionMutation.mutate(
+            {
+                strategyCode: selectedStrategyCode,
+                request: {
+                    versionName: values.versionName,
+                    status: values.status || 'DRAFT',
+                    paramSnapshotJson: values.paramSnapshotJson || '{}',
+                    configSnapshotJson: values.configSnapshotJson || undefined,
+                    sourceSnapshotJson: values.sourceSnapshotJson || '{}',
+                },
+            },
+            {
+                onSuccess: () => {
+                    message.success('策略版本已创建。');
+                    versionForm.resetFields();
+                    strategyVersionsQuery.refetch();
                 },
                 onError: (error) => {
                     message.error(formatApiError(error as AppApiError));
@@ -340,6 +418,93 @@ export function StrategiesPage() {
                                     刷新详情
                                 </Button>
                             </Space>
+                        </Card>
+                        <Card
+                            title="策略版本"
+                            size="small"
+                            extra={<Button onClick={() => strategyVersionsQuery.refetch()}>刷新版本</Button>}
+                        >
+                            {strategyVersionsQuery.error ? (
+                                <Alert
+                                    type="error"
+                                    showIcon
+                                    message="策略版本查询失败"
+                                    description={formatApiError(strategyVersionsQuery.error as AppApiError)}
+                                />
+                            ) : (
+                                <Table
+                                    rowKey="strategyVersionId"
+                                    size="small"
+                                    columns={versionColumns}
+                                    dataSource={strategyVersionsQuery.data ?? []}
+                                    loading={strategyVersionsQuery.isFetching}
+                                    pagination={{pageSize: 5, showSizeChanger: false}}
+                                    scroll={{x: 1000}}
+                                    locale={{emptyText: '当前策略还没有版本。'}}
+                                />
+                            )}
+                        </Card>
+                        <Card title="创建策略版本" size="small">
+                            <Form
+                                form={versionForm}
+                                layout="vertical"
+                                initialValues={{
+                                    status: 'DRAFT',
+                                    paramSnapshotJson: '{}',
+                                    sourceSnapshotJson: '{}',
+                                }}
+                                onFinish={handleCreateVersion}
+                            >
+                                <Row gutter={[16, 0]}>
+                                    <Col xs={24} md={12}>
+                                        <Form.Item
+                                            label="版本名称"
+                                            name="versionName"
+                                            rules={[{required: true, message: '请输入版本名称'}]}
+                                        >
+                                            <Input placeholder="例如：GateI-1 baseline"/>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} md={12}>
+                                        <Form.Item label="版本状态" name="status">
+                                            <Select
+                                                options={[
+                                                    {label: 'DRAFT', value: 'DRAFT'},
+                                                    {label: 'ACTIVE', value: 'ACTIVE'},
+                                                    {label: 'ARCHIVED', value: 'ARCHIVED'},
+                                                ]}
+                                            />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24}>
+                                        <Form.Item label="参数快照 JSON" name="paramSnapshotJson">
+                                            <Input.TextArea rows={3} placeholder='{"threshold":1}'/>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24}>
+                                        <Form.Item label="配置快照 JSON" name="configSnapshotJson">
+                                            <Input.TextArea rows={3} placeholder="留空则使用当前策略配置快照"/>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24}>
+                                        <Form.Item label="来源快照 JSON" name="sourceSnapshotJson">
+                                            <Input.TextArea rows={3} placeholder='{"source":"manual"}'/>
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                                <Space>
+                                    <Button
+                                        type="primary"
+                                        htmlType="submit"
+                                        loading={createVersionMutation.isPending}
+                                    >
+                                        创建版本
+                                    </Button>
+                                    <Button onClick={() => versionForm.resetFields()}>
+                                        清空
+                                    </Button>
+                                </Space>
+                            </Form>
                         </Card>
                     </Space>
                 ) : null}

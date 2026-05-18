@@ -116,6 +116,7 @@ class BacktestRunControllerTest {
         when(applicationService.getEvaluation("brn-1")).thenReturn(evaluationReport);
         when(applicationService.findEvaluationOrNull("brn-1")).thenReturn(evaluationReport);
         when(applicationService.publish("brn-1", "Published Demo")).thenReturn(publishRecord);
+        when(applicationService.publish("brn-1", "Published Demo", null)).thenReturn(publishRecord);
         when(applicationService.getPublish("brn-1")).thenReturn(publishRecord);
         when(applicationService.findPublishOrNull("brn-1")).thenReturn(publishRecord);
         when(applicationService.listOrders("brn-1")).thenReturn(List.of(new SimOrder(

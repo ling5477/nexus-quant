@@ -97,9 +97,41 @@ GateH-3 变更 `backtest_runs`：
 - GateH-3 不接合约、资金费率、深度、逐笔成交、链上数据、新闻资讯。
 - GateH-3 不新增美股/A 股适配。
 
-## GateI-PLAN DB Planning Entry
+## GateI-1 当前 Strategy Version 与 Publish 结构
 
-GateI DB 规划入口为 [GATEI_DB_PLAN.md](./GATEI_DB_PLAN.md)。本轮只做规划，不新增 migration，不修改业务表结构。
+GateI-1 新增 Flyway migration：
+
+- `V19__gate_i1_strategy_versions.sql`
+
+GateI-1 新增 `strategy_versions`：
+
+- 身份字段：`strategy_version_id`，业务主键。
+- 策略归属字段：`strategy_code`，外键关联 `strategy_definitions.strategy_code`。
+- 版本字段：`version`、`version_name`。
+- 状态字段：`status`，允许值 `DRAFT`、`ACTIVE`、`ARCHIVED`。
+- 快照字段：`param_snapshot_json`、`config_snapshot_json`、`source_snapshot_json`，均为 JSONB，不保存密钥、token、cookie。
+- 校验字段：`checksum`，由策略编码、版本号和快照内容计算，用于发布追溯和变更核对。
+- 审计字段：`created_by`、`created_at`、`updated_at`。
+- 唯一约束：`strategy_code + version`，用于保证同一策略编码下版本号不重复。
+- 关键索引：`idx_strategy_versions_code_version` 支持按策略编码和版本号查询；`idx_strategy_versions_status_updated` 支持按状态和更新时间筛选；`idx_strategy_versions_created_at` 支持按创建时间排序。
+
+GateI-1 变更 `backtest_publish_records`：
+
+- 新增 `strategy_version_id`，可空，外键关联 `strategy_versions.strategy_version_id`。
+- 新增 `version_snapshot_json`，默认 `{}`，发布时固化策略版本快照。
+- 新增索引 `idx_backtest_publish_records_strategy_version_id`，用于按策略版本回查发布记录。
+
+注释要求：
+
+- `V19` 新增表包含 PostgreSQL `COMMENT ON TABLE`。
+- `V19` 所有新增字段包含 PostgreSQL `COMMENT ON COLUMN`。
+- `status` 字段注释写明允许值。
+- JSONB 字段注释写明用途、结构边界和敏感信息禁入规则。
+- 时间字段注释写明创建时间、更新时间语义。
+
+## GateI DB Planning Entry
+
+GateI DB 规划入口为 [GATEI_DB_PLAN.md](./GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2/3/4 尚未开始。
 
 GateI 后续规划重点：
 
@@ -118,3 +150,5 @@ GateI 后续规划重点：
 - `emergency_stop_events`。
 
 GateI 后续如果新增 migration，所有新增表必须包含 PostgreSQL `COMMENT ON TABLE`，所有新增字段必须包含 `COMMENT ON COLUMN`。JSONB 快照字段必须说明用途、结构边界和敏感信息禁入规则。
+
+GateI-1 不修改策略核心算法、不修改回测核心算法、不进入 Paper Trading、不接入 AI。

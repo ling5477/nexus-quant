@@ -34,10 +34,10 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                 """
                         INSERT INTO backtest_publish_records (
                             publish_record_id, backtest_run_id, research_config_id, backtest_config_id, source_strategy_id,
-                            eval_report_id, target_strategy_definition_id, publish_status, publish_name,
-                            publish_snapshot_json, evaluation_summary_json, failure_code, failure_message,
+                            eval_report_id, target_strategy_definition_id, strategy_version_id, publish_status, publish_name,
+                            publish_snapshot_json, version_snapshot_json, evaluation_summary_json, failure_code, failure_message,
                             published_at, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?)
                         ON CONFLICT (backtest_run_id) DO UPDATE
                         SET publish_record_id = EXCLUDED.publish_record_id,
                             research_config_id = EXCLUDED.research_config_id,
@@ -45,9 +45,11 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                             source_strategy_id = EXCLUDED.source_strategy_id,
                             eval_report_id = EXCLUDED.eval_report_id,
                             target_strategy_definition_id = EXCLUDED.target_strategy_definition_id,
+                            strategy_version_id = EXCLUDED.strategy_version_id,
                             publish_status = EXCLUDED.publish_status,
                             publish_name = EXCLUDED.publish_name,
                             publish_snapshot_json = EXCLUDED.publish_snapshot_json,
+                            version_snapshot_json = EXCLUDED.version_snapshot_json,
                             evaluation_summary_json = EXCLUDED.evaluation_summary_json,
                             failure_code = EXCLUDED.failure_code,
                             failure_message = EXCLUDED.failure_message,
@@ -61,9 +63,11 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                 record.sourceStrategyId(),
                 record.evalReportId(),
                 record.targetStrategyDefinitionId(),
+                record.strategyVersionId(),
                 record.publishStatus().name(),
                 record.publishName(),
                 record.publishSnapshotJson(),
+                record.versionSnapshotJson(),
                 record.evaluationSummaryJson(),
                 record.failureCode(),
                 record.failureMessage(),
@@ -78,8 +82,9 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
         List<BacktestPublishRecord> rows = jdbcTemplate.query(
                 """
                         SELECT publish_record_id, backtest_run_id, research_config_id, backtest_config_id, source_strategy_id,
-                               eval_report_id, target_strategy_definition_id, publish_status, publish_name,
+                               eval_report_id, target_strategy_definition_id, strategy_version_id, publish_status, publish_name,
                                publish_snapshot_json::text AS publish_snapshot_json,
+                               version_snapshot_json::text AS version_snapshot_json,
                                evaluation_summary_json::text AS evaluation_summary_json,
                                failure_code, failure_message, published_at, created_at, updated_at
                         FROM backtest_publish_records
@@ -87,6 +92,42 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                         """,
                 ROW_MAPPER,
                 backtestRunId
+        );
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
+    public List<BacktestPublishRecord> listAll() {
+        return jdbcTemplate.query(
+                """
+                        SELECT publish_record_id, backtest_run_id, research_config_id, backtest_config_id, source_strategy_id,
+                               eval_report_id, target_strategy_definition_id, strategy_version_id, publish_status, publish_name,
+                               publish_snapshot_json::text AS publish_snapshot_json,
+                               version_snapshot_json::text AS version_snapshot_json,
+                               evaluation_summary_json::text AS evaluation_summary_json,
+                               failure_code, failure_message, published_at, created_at, updated_at
+                        FROM backtest_publish_records
+                        ORDER BY updated_at DESC, publish_record_id DESC
+                        """,
+                ROW_MAPPER
+        );
+    }
+
+    @Override
+    public Optional<BacktestPublishRecord> findByPublishRecordId(String publishRecordId) {
+        List<BacktestPublishRecord> rows = jdbcTemplate.query(
+                """
+                        SELECT publish_record_id, backtest_run_id, research_config_id, backtest_config_id, source_strategy_id,
+                               eval_report_id, target_strategy_definition_id, strategy_version_id, publish_status, publish_name,
+                               publish_snapshot_json::text AS publish_snapshot_json,
+                               version_snapshot_json::text AS version_snapshot_json,
+                               evaluation_summary_json::text AS evaluation_summary_json,
+                               failure_code, failure_message, published_at, created_at, updated_at
+                        FROM backtest_publish_records
+                        WHERE publish_record_id = ?
+                        """,
+                ROW_MAPPER,
+                publishRecordId
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
@@ -101,9 +142,11 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                 resultSet.getString("source_strategy_id"),
                 resultSet.getString("eval_report_id"),
                 resultSet.getString("target_strategy_definition_id"),
+                resultSet.getString("strategy_version_id"),
                 PublishStatus.valueOf(resultSet.getString("publish_status")),
                 resultSet.getString("publish_name"),
                 resultSet.getString("publish_snapshot_json"),
+                resultSet.getString("version_snapshot_json"),
                 resultSet.getString("evaluation_summary_json"),
                 resultSet.getString("failure_code"),
                 resultSet.getString("failure_message"),

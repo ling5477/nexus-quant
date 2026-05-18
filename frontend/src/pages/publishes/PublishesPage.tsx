@@ -38,7 +38,7 @@ type PublishRow = BacktestPublishListItem;
 export function PublishesPage() {
     const {message} = App.useApp();
     const [queryForm] = Form.useForm<PublishesListFilters>();
-    const [publishForm] = Form.useForm<{ displayName?: string }>();
+    const [publishForm] = Form.useForm<{ displayName?: string; strategyVersionId?: string }>();
     const [submittedFilters, setSubmittedFilters] = useState<PublishesListFilters>(defaultPublishesListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedRow, setSelectedRow] = useState<PublishRow | null>(null);
@@ -46,19 +46,30 @@ export function PublishesPage() {
         {
             researchConfigId: submittedFilters.researchConfigId || undefined,
             backtestConfigId: submittedFilters.backtestConfigId || undefined,
+            strategyVersionId: submittedFilters.strategyVersionId || undefined,
         },
         searchVersion,
     );
-    const publishDetailQuery = usePublishDetailQuery(selectedRow?.backtestRunId ?? null);
+    const publishDetailQuery = usePublishDetailQuery(selectedRow?.publishRecordId ?? null);
     const publishMutation = usePublishMutation();
     const hasSearched = searchVersion > 0;
 
     const visibleItems = (publishesQuery.data ?? []).filter((item) => (
         containsIgnoreCase(item.sourceStrategyId, submittedFilters.sourceStrategyId)
+        && containsIgnoreCase(item.researchConfigId, submittedFilters.researchConfigId)
+        && containsIgnoreCase(item.backtestConfigId, submittedFilters.backtestConfigId)
+        && containsIgnoreCase(item.strategyVersionId, submittedFilters.strategyVersionId)
         && containsIgnoreCase(item.publishStatus, submittedFilters.publishStatus)
     ));
 
     const publishColumns: ColumnsType<PublishRow> = [
+        {
+            title: '发布记录 ID',
+            dataIndex: 'publishRecordId',
+            key: 'publishRecordId',
+            width: 220,
+            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+        },
         {
             title: '回测运行 ID',
             dataIndex: 'backtestRunId',
@@ -85,6 +96,13 @@ export function PublishesPage() {
             dataIndex: 'sourceStrategyId',
             key: 'sourceStrategyId',
             width: 180,
+        },
+        {
+            title: '策略版本 ID',
+            dataIndex: 'strategyVersionId',
+            key: 'strategyVersionId',
+            width: 220,
+            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : '-',
         },
         {
             title: '发布状态',
@@ -125,6 +143,7 @@ export function PublishesPage() {
             researchConfigId: normalizeOptionalText(values.researchConfigId),
             backtestConfigId: normalizeOptionalText(values.backtestConfigId),
             sourceStrategyId: normalizeOptionalText(values.sourceStrategyId),
+            strategyVersionId: normalizeOptionalText(values.strategyVersionId),
             publishStatus: normalizeOptionalText(values.publishStatus),
         });
         setSearchVersion((value) => value + 1);
@@ -136,7 +155,7 @@ export function PublishesPage() {
         setSearchVersion(0);
     };
 
-    const handlePublish = (values: { displayName?: string }) => {
+    const handlePublish = (values: { displayName?: string; strategyVersionId?: string }) => {
         if (!selectedRow) {
             return;
         }
@@ -144,7 +163,10 @@ export function PublishesPage() {
         publishMutation.mutate(
             {
                 runId: selectedRow.backtestRunId,
-                request: values.displayName ? {displayName: normalizeOptionalText(values.displayName)} : undefined,
+                request: {
+                    displayName: normalizeOptionalText(values.displayName),
+                    strategyVersionId: normalizeOptionalText(values.strategyVersionId),
+                },
             },
             {
                 onSuccess: () => {
@@ -207,6 +229,11 @@ export function PublishesPage() {
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
+                                <Form.Item label="策略版本 ID" name="strategyVersionId">
+                                    <Input placeholder="可传给 /api/publishes 过滤"/>
+                                </Form.Item>
+                            </Col>
+                            <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="发布状态" name="publishStatus">
                                     <Input placeholder="本地筛选字段"/>
                                 </Form.Item>
@@ -237,7 +264,7 @@ export function PublishesPage() {
                         />
                     ) : (
                         <Table
-                            rowKey="backtestRunId"
+                            rowKey="publishRecordId"
                             columns={publishColumns}
                             dataSource={visibleItems}
                             loading={publishesQuery.isFetching}
@@ -264,6 +291,7 @@ export function PublishesPage() {
                             <Descriptions.Item label="研究配置 ID">{selectedRow.researchConfigId}</Descriptions.Item>
                             <Descriptions.Item label="回测配置 ID">{selectedRow.backtestConfigId}</Descriptions.Item>
                             <Descriptions.Item label="源策略 ID">{selectedRow.sourceStrategyId}</Descriptions.Item>
+                            <Descriptions.Item label="策略版本 ID">{selectedRow.strategyVersionId || '-'}</Descriptions.Item>
                             <Descriptions.Item label="发布状态">{selectedRow.publishStatus || '-'}</Descriptions.Item>
                             <Descriptions.Item
                                 label="发布时间">{formatDateTime(selectedRow.publishedAt)}</Descriptions.Item>
@@ -286,6 +314,8 @@ export function PublishesPage() {
                                 <Descriptions.Item
                                     label="目标策略定义 ID">{publishDetailQuery.data.targetStrategyDefinitionId || '-'}</Descriptions.Item>
                                 <Descriptions.Item
+                                    label="策略版本 ID">{publishDetailQuery.data.strategyVersionId || '-'}</Descriptions.Item>
+                                <Descriptions.Item
                                     label="发布状态">{publishDetailQuery.data.publishStatus}</Descriptions.Item>
                                 <Descriptions.Item
                                     label="发布时间">{formatDateTime(publishDetailQuery.data.publishedAt)}</Descriptions.Item>
@@ -293,12 +323,20 @@ export function PublishesPage() {
                                     label="发布名称">{publishDetailQuery.data.publishName || '-'}</Descriptions.Item>
                                 <Descriptions.Item
                                     label="失败信息">{publishDetailQuery.data.failureMessage || '-'}</Descriptions.Item>
+                                <Descriptions.Item label="版本快照" span={2}>
+                                    <Typography.Paragraph style={{marginBottom: 0}}>
+                                        {publishDetailQuery.data.versionSnapshotJson || '{}'}
+                                    </Typography.Paragraph>
+                                </Descriptions.Item>
                             </Descriptions>
                         ) : null}
                         <Card title="动作区" size="small">
                             <Form form={publishForm} layout="vertical" onFinish={handlePublish}>
                                 <Form.Item label="发布名称" name="displayName">
                                     <Input placeholder="可空，留空则沿用默认命名"/>
+                                </Form.Item>
+                                <Form.Item label="策略版本 ID" name="strategyVersionId">
+                                    <Input placeholder="可空；填写后发布记录会固化 version snapshot"/>
                                 </Form.Item>
                                 <Space wrap>
                                     <Button type="primary" htmlType="submit" loading={publishMutation.isPending}>

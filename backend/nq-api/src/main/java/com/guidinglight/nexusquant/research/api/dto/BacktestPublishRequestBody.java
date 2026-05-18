@@ -10,7 +10,10 @@ import jakarta.validation.constraints.Size;
 public record BacktestPublishRequestBody(
         @Size(max = 128, message = "displayName length must be less than or equal to 128")
         @Schema(description = "发布展示名称；为空时沿用默认命名")
-        String displayName
+        String displayName,
+        @Size(max = 128, message = "strategyVersionId length must be less than or equal to 128")
+        @Schema(description = "可选策略版本 ID；传入时发布记录会绑定并固化 version snapshot")
+        String strategyVersionId
 ) {
 }
 

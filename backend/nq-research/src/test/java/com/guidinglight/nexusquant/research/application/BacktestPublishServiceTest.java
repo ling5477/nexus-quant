@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -16,6 +17,7 @@ import com.guidinglight.nexusquant.research.domain.ExecutionStrategyDefinitionDr
 import com.guidinglight.nexusquant.research.domain.PublishStatus;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 import com.guidinglight.nexusquant.research.domain.SourceStrategySnapshot;
+import com.guidinglight.nexusquant.research.domain.StrategyVersionSnapshotView;
 import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
@@ -49,11 +51,17 @@ class BacktestPublishServiceTest {
     void shouldPublishSucceededRunAndRemainIdempotent() {
         Scenario scenario = createScenario(BacktestRunStatus.SUCCEEDED, succeededEvaluation());
 
-        BacktestPublishRecord first = scenario.service.publish(new BacktestPublishRequest(scenario.run.backtestRunId(), "Published Demo"));
+        BacktestPublishRecord first = scenario.service.publish(new BacktestPublishRequest(
+                scenario.run.backtestRunId(),
+                "Published Demo",
+                "sv-active"
+        ));
         BacktestPublishRecord second = scenario.service.publish(new BacktestPublishRequest(scenario.run.backtestRunId(), "Ignored"));
 
         assertEquals(PublishStatus.SUCCEEDED, first.publishStatus());
         assertNotNull(first.targetStrategyDefinitionId());
+        assertEquals("sv-active", first.strategyVersionId());
+        assertTrue(first.versionSnapshotJson().contains("\"strategyVersionId\":\"sv-active\""));
         assertEquals(first.publishRecordId(), second.publishRecordId());
         assertEquals(1, scenario.publishRecordRepository.storage.size());
         assertEquals(1, scenario.executionWriter.insertCount);
@@ -152,6 +160,17 @@ class BacktestPublishServiceTest {
                 backtestConfigService,
                 backtestRunId -> Optional.ofNullable(evaluationView),
                 publishRecordRepository,
+                strategyVersionId -> Optional.of(new StrategyVersionSnapshotView(
+                        strategyVersionId,
+                        "demo-publish",
+                        1,
+                        "Demo Version",
+                        "ACTIVE",
+                        "{}",
+                        "{\"strategy\":\"fixture\"}",
+                        "{}",
+                        "checksum"
+                )),
                 new ResearchToExecutionMapper(objectMapper),
                 executionWriter,
                 objectMapper,
@@ -244,6 +263,10 @@ class BacktestPublishServiceTest {
         private final Map<String, BacktestPublishRecord> storage = new LinkedHashMap<>();
         @Override public void upsert(BacktestPublishRecord record) { storage.put(record.backtestRunId(), record); }
         @Override public Optional<BacktestPublishRecord> findByBacktestRunId(String backtestRunId) { return Optional.ofNullable(storage.get(backtestRunId)); }
+        @Override public List<BacktestPublishRecord> listAll() { return new ArrayList<>(storage.values()); }
+        @Override public Optional<BacktestPublishRecord> findByPublishRecordId(String publishRecordId) {
+            return storage.values().stream().filter(item -> item.publishRecordId().equals(publishRecordId)).findFirst();
+        }
     }
 
     private static final class InMemoryExecutionStrategyDefinitionWriter implements ExecutionStrategyDefinitionWriter {

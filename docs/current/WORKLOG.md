@@ -497,3 +497,118 @@
 - GateI-1-WO 单独开工，并只做策略版本与发布链路正式化。
 - GateI-1-WO 不得夹带 GateI-2/3/4 实现。
 - GateI-1-WO 不得接入 AI，不得修改策略核心算法，不得新增美股/A 股或合约全量能力。
+
+## GateI-1-WO 执行记录
+
+日期：2026-05-18
+
+### 本轮范围
+
+- 实现策略版本模型、create/list/detail API。
+- 固化策略参数快照、配置快照、来源快照和 checksum。
+- 发布记录可绑定 `strategy_version_id`。
+- 发布时固化 `version_snapshot_json`。
+- 前端 `/strategies` 增加策略版本区域和创建入口。
+- 前端 `/publishes` 展示策略版本绑定与版本快照。
+- 新增 GateI-1 E2E smoke。
+
+### 本轮新增文件
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/PublishController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyVersionCreateRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyVersionResponse.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyVersionService.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/command/StrategyVersionCreateRequest.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/StrategyVersion.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/StrategyVersionSnapshot.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/StrategyVersionStatus.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/StrategyVersionRepository.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/StrategyVersionServiceTest.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/jdbc/JdbcStrategyVersionSnapshotQueryPort.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyVersionRepository.java`
+- `backend/nq-infra/src/main/resources/db/migration/V19__gate_i1_strategy_versions.sql`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/StrategyVersionSnapshotView.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/port/StrategyVersionSnapshotQueryPort.java`
+- `frontend/tests/e2e/publish-version-smoke.spec.ts`
+- `frontend/tests/e2e/strategy-version-smoke.spec.ts`
+
+### 本轮修改文件
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/BacktestPublishRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/BacktestPublishResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/BacktestRunController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyDefinitionController.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyDefinitionService.java`
+- `backend/nq-eval/src/main/java/com/guidinglight/nexusquant/research/application/eval/api/BacktestRunApiService.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/jdbc/JdbcBacktestPublishRecordRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/BacktestPublishService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/command/BacktestPublishRequest.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/BacktestPublishRecord.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/port/BacktestPublishRecordRepository.java`
+- `backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/BacktestPublishServiceTest.java`
+- `frontend/src/api/publishes.ts`
+- `frontend/src/api/query-keys.ts`
+- `frontend/src/api/strategies.ts`
+- `frontend/src/hooks/usePublishesListQuery.ts`
+- `frontend/src/hooks/useStrategyListQuery.ts`
+- `frontend/src/pages/publishes/PublishesPage.tsx`
+- `frontend/src/pages/strategies/StrategiesPage.tsx`
+- `frontend/src/types/publishes.ts`
+- `frontend/src/types/strategies.ts`
+- `frontend/tests/e2e/strategies-query.spec.ts`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/STATUS.md`
+
+### DB/migration 说明
+
+- `V19` 新增 `strategy_versions`。
+- `V19` 给 `backtest_publish_records` 新增 `strategy_version_id` 和 `version_snapshot_json`。
+- `strategy_versions.strategy_code + version` 唯一约束用于保证同一策略下版本号幂等唯一。
+- `backtest_publish_records.strategy_version_id` 索引用于按策略版本追溯发布记录。
+- 所有新增表均有 PostgreSQL `COMMENT ON TABLE`。
+- 所有新增字段均有 PostgreSQL `COMMENT ON COLUMN`。
+
+### 实现说明
+
+- 后端新增策略版本 service/domain/repository/API，`nq-core` 不依赖 JDBC，SQL 位于 `nq-infra`。
+- 发布服务通过 `StrategyVersionSnapshotQueryPort` 读取策略版本快照，避免 `nq-research` 反向依赖 `nq-core`。
+- 发布时如果传入 `strategyVersionId`，必须存在且状态为 `ACTIVE`。
+- 发布记录固化 `version_snapshot_json`，后续策略版本变化不会改写历史发布结果。
+- 修正 `/api/strategies/{strategyCode}` 和 status 更新按 `strategyCode` 查询/更新，避免把业务编码误当内部 `strategyId`。
+- 前端策略定义详情新增版本列表和创建表单；发布结果列表和详情展示策略版本 ID 与版本快照。
+- E2E 在本地库缺少策略定义时，通过正式 `POST /api/strategies` 创建最小 SIM fixture，再验证策略版本创建链路。
+
+### 验证结果
+
+- `mvn -f backend/pom.xml test`：通过。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告。
+- 后端 local profile 临时启动：通过，`/actuator/health` 返回 `UP`，Flyway 当前版本为 `19`。
+- `npm run test:e2e`：通过，13 passed、3 skipped。
+- Python 验证本轮未重新执行；本轮未修改 Python，沿用 BASELINE-FIX 已通过基线。
+
+### 未做范围
+
+- 未进入 GateI-2/3/4。
+- 未接入 AI。
+- 未新增 AI 模块、AI 信号、AI Paper Trading 或 AI 自动交易。
+- 未做 Paper Trading。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+
+### 剩余风险
+
+- `backtest_publish_records.strategy_version_id` 当前为可空，历史发布记录不会自动回填策略版本；后续如需回填必须单独评估。
+- 当前发布绑定仅要求策略版本 `ACTIVE`，尚未进入 GateI-2 的评估指标与回测配置增强。
+- `npm audit` 与 Vite chunk 体积警告仍按既有风险记录，未在 GateI-1 处理。
+- Ant Design React 19 compatibility warning、`Card.bordered` deprecation warning、`useForm` warning 仍存在，本轮不处理。
+
+### 下一步进入 GateI-2-WO 的条件
+
+- GateI-1 变更完成审查并提交。
+- GateI-2-WO 只能做回测配置、评估指标、结果追溯增强。
+- GateI-2-WO 不得夹带 AI、Paper Trading 运行闭环、美股/A 股、合约全量、高频或复杂因子平台。

@@ -6,6 +6,8 @@ import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionCreate
 import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionService;
 import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerService;
+import com.guidinglight.nexusquant.strategy.application.StrategyVersionService;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyVersionCreateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,13 +40,16 @@ public class StrategyDefinitionController {
 
     private final StrategyDefinitionService strategyDefinitionService;
     private final StrategyManualTriggerService strategyManualTriggerService;
+    private final StrategyVersionService strategyVersionService;
 
     public StrategyDefinitionController(
             StrategyDefinitionService strategyDefinitionService,
-            StrategyManualTriggerService strategyManualTriggerService
+            StrategyManualTriggerService strategyManualTriggerService,
+            StrategyVersionService strategyVersionService
     ) {
         this.strategyDefinitionService = Objects.requireNonNull(strategyDefinitionService, "strategyDefinitionService must not be null");
         this.strategyManualTriggerService = Objects.requireNonNull(strategyManualTriggerService, "strategyManualTriggerService must not be null");
+        this.strategyVersionService = Objects.requireNonNull(strategyVersionService, "strategyVersionService must not be null");
     }
 
     @PostMapping
@@ -87,7 +92,7 @@ public class StrategyDefinitionController {
             @PathVariable @NotBlank(message = "strategyCode must not be blank") String strategyCode
     ) {
         TraceIdContext.getOrCreate();
-        return StrategyDefinitionResponse.from(strategyDefinitionService.getByStrategyId(strategyCode));
+        return StrategyDefinitionResponse.from(strategyDefinitionService.getByStrategyCode(strategyCode));
     }
 
     @PatchMapping("/{strategyCode}/status")
@@ -104,8 +109,8 @@ public class StrategyDefinitionController {
     ) {
         TraceIdContext.getOrCreate();
         return StrategyDefinitionResponse.from(Boolean.TRUE.equals(request.enabled())
-                ? strategyDefinitionService.enable(strategyCode)
-                : strategyDefinitionService.disable(strategyCode));
+                ? strategyDefinitionService.enableByStrategyCode(strategyCode)
+                : strategyDefinitionService.disableByStrategyCode(strategyCode));
     }
 
     @PostMapping("/{strategyCode}/trigger")
@@ -131,6 +136,60 @@ public class StrategyDefinitionController {
                 request.price(),
                 traceId
         )));
+    }
+
+    @GetMapping("/{strategyCode}/versions")
+    @Operation(summary = "查询策略版本列表", description = "返回指定策略编码下的 GateI-1 策略版本列表。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "路径参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List<StrategyVersionResponse> versions(
+            @PathVariable @NotBlank(message = "strategyCode must not be blank") String strategyCode
+    ) {
+        TraceIdContext.getOrCreate();
+        return strategyVersionService.listByStrategyCode(strategyCode).stream()
+                .map(StrategyVersionResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/{strategyCode}/versions")
+    @Operation(summary = "创建策略版本", description = "为指定策略定义创建参数、配置和来源快照。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "创建成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "策略定义不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "版本创建冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public StrategyVersionResponse createVersion(
+            @PathVariable @NotBlank(message = "strategyCode must not be blank") String strategyCode,
+            @Valid @RequestBody StrategyVersionCreateRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        return StrategyVersionResponse.from(strategyVersionService.create(new StrategyVersionCreateRequest(
+                strategyCode,
+                request.versionName(),
+                request.status(),
+                request.paramSnapshotJson(),
+                request.configSnapshotJson(),
+                request.sourceSnapshotJson(),
+                "api"
+        )));
+    }
+
+    @GetMapping("/{strategyCode}/versions/{versionId}")
+    @Operation(summary = "查询策略版本详情", description = "返回指定策略版本的快照详情。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "路径参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "策略版本不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public StrategyVersionResponse versionDetail(
+            @PathVariable @NotBlank(message = "strategyCode must not be blank") String strategyCode,
+            @PathVariable @NotBlank(message = "versionId must not be blank") String versionId
+    ) {
+        TraceIdContext.getOrCreate();
+        return StrategyVersionResponse.from(strategyVersionService.getById(strategyCode, versionId));
     }
 }
 

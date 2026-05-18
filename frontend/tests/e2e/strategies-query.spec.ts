@@ -28,7 +28,7 @@ test.describe('GateG-3 strategies query', () => {
         if (payload.length === 0) {
             await expect(page.getByText('当前筛选条件下没有匹配的策略记录。')).toBeVisible();
         } else {
-            await expect(page.locator('.ant-table-tbody tr').first()).toBeVisible();
+            await expect(page.getByRole('button', {name: '查看详情'}).first()).toBeVisible();
         }
     });
 });
