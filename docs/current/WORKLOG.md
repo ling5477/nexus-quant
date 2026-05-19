@@ -750,3 +750,29 @@
 - 未新增 migration。
 - 未新增 API。
 - 未改前端页面。
+
+## 项目入口文档同步记录
+
+日期：2026-05-19
+
+### 本轮范围
+
+- 已同步根目录 `README.md`，使项目总入口反映 DOC-CLEAN、BASELINE-FIX、GateH、GateI-PLAN、GateI-1-WO、GateI-2-WO 已完成，Next 为 GateI-3-WO。
+- 已同步根目录 `AGENTS.md`，使 Codex / Agent 执行纪律切换到 `Current stage: GateI-3-WO preparation`。
+- 明确 GateI-3-WO 只能做 SIM / Paper Trading 运行闭环。
+- 明确 AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始且禁止夹带。
+
+### 边界确认
+
+- 本轮只改入口和 Agent 执行纪律文档。
+- 未改业务代码。
+- 未新增 migration。
+- 未新增 API。
+- 未新增前端页面。
+- 未接入 AI。
+- 未创建 `docs/gates/gate-i/`。
+
+### 验证说明
+
+- 本轮为文档同步任务，不重新执行 `mvn`、`npm`、Python 全量测试。
+- 已按任务要求执行 `git status --short` 与 README / AGENTS / WORKLOG 关键词检查。

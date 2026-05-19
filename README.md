@@ -1,71 +1,80 @@
-# NexusQuant（nexus-quant）
+# NexusQuant
 
-NexusQuant 是面向数字资产交易场景的量化系统工程骨架，核心原则是：
-**幂等（client_order_id） + 严格状态机 + 事实链（event_store） + 账本（ledger_entries） + 可审计 + 可恢复 + 可观测**。
+NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易，后续复用账户、行情、策略、回测、评估、发布、风控、交易、复盘等底座扩展到美股和 A 股。
 
-> 当前事实入口以 `docs/current/` 为准。
-> 历史 Gate 冻结卷宗位于 `docs/gates/gate-*/`，只读参考，不代表当前实现入口。
+当前事实入口以 `docs/current/` 为准。`docs/gates/` 只保存已完成 Gate 的冻结卷宗，`docs/archive/` 只作历史归档参考。
 
----
+## 当前状态
 
-## 1. 当前阶段
+- DOC-CLEAN completed
+- BASELINE-FIX completed
+- GateH completed
+- GateI-PLAN completed
+- GateI-1-WO completed
+- GateI-2-WO completed
+- Next: GateI-3-WO
 
-当前阶段：**RC1 completed and frozen；GateH-PRE completed；下一步进入 `GateH-PLAN`。**
+GateI 当前仍处于 active/current 阶段，尚未整体完成。GateI-3-WO 只能围绕 SIM / Paper Trading 运行闭环单独开工。
 
-当前状态：
+## 当前能力摘要
 
-- GateD / GateE / GateF / GateG 均已冻结，相关文档只作历史参考。
-- `RC1-0 / 1 / 2 / 3 / 4 / 5 / 6 / 7` 已全部完成，RC1 已整体冻结。
-- `GateH = paused / not started`，尚未启动开发。
-- `GateH-PRE` 前置治理已完成，下一步只能进入 `GateH-PLAN`，不得直接恢复 GateH 功能开发。
+- 交易工作台已完成。
+- OKX / Binance SPOT 历史 OHLCV K 线接入已完成。
+- marketdata dataset 与 backtest config 绑定已完成。
+- `strategy_versions` 与 publish workflow 已完成。
+- backtest config / evaluation / traceability 增强已完成。
+- 下一步是 SIM / Paper Trading 运行闭环。
 
----
+## 当前明确不做
 
-## 2. 当前系统正式基线
+- AI
+- AI 信号
+- AI 自动交易
+- AI Paper Trading
+- 美股/A 股
+- 合约全量
+- 高频
+- 复杂因子平台
 
-- 用户 / 交易账户 / 凭证 / 环境主模型已成立。
-- 默认账户上下文与 `/api/auth/me` 联动已成立。
-- 账户与凭证写侧闭环、active 版本切换与结构性校验已成立。
-- `trading` anti-corruption 已成立，`nq-core` 不再把 adapter API model/service 当作 application 主语义。
-- `marketdata` owner 已收口到正式主链，不再作为 `nq-backtest` 附属能力。
-- `nq-api` research 编排层已移出，API 层回到 controller / DTO / web adapter 角色。
-- `nq-app` 更接近纯 composition root，业务实现与 runtime 策略已下移到对应 owner。
-- `nq-infra` namespace 已收敛到 domain-first 持久化与基础设施实现。
-- 前端正式交易入口是 `/trading`，旧 `/trade-validation` 仅为历史路由 alias。
-- Python 子工程定位为离线研究工具链，`pytest` / `mypy` / `ruff` / CLI smoke 已闭环。
+## 当前文档入口
 
----
+- `docs/current/README.md`
+- `docs/current/STATUS.md`
+- `docs/current/ROADMAP.md`
+- `docs/current/PLAN_GATEI.md`
+- `docs/current/GATEI_WORK_ORDER.md`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
 
-## 3. 当前入口
+## 当前验证基线
 
-- 文档总入口：`docs/README.md`
-- 当前阶段入口：`docs/current/README.md`
-- 当前状态：`docs/current/STATUS.md`
-- 当前架构：`docs/current/ARCHITECTURE.md`
-- 当前模块基线：`docs/current/MODULES.md`
-- 当前 API：`docs/current/API.md`
-- 当前数据库：`docs/current/DB_SCHEMA.md`
-- 当前验证：`docs/current/TESTING.md`
-- 当前运行手册：`docs/current/RUNBOOK.md`
-- 下一阶段计划：`docs/current/PLAN_GATEH.md`
-- RC1 归档：`docs/archive/rc1/`
-- Gate 输入与 GateH-PRE 归档：`docs/archive/gate-inputs/`
-- GateH 暂停卷宗：`docs/gates/gate-h/README.md`
+后端：
 
----
+```powershell
+mvn -f backend/pom.xml test
+```
 
-## 4. 当前不做的事
+前端：
 
-- 不直接进入 GateH 功能开发。
-- 不恢复历史前端壳或旧验证页主线。
-- 不把 `/trade-validation` 当作正式页面入口。
-- 不把历史 RC1 包迁移映射当作当前包事实。
-- 不让 Python 进入 live trading / auth / recovery / ledger 主链。
+```powershell
+Set-Location frontend
+npm run build
+npm run test:e2e
+```
 
----
+Python：
 
-## 5. 下一步
+```powershell
+Set-Location research/py
+python -m pytest -q
+python -m mypy src
+python -m ruff check .
+```
 
-下一步是：**GateH-PLAN**。
+## 剩余已知风险
 
-GateH-PLAN 必须以当前冻结基线为输入，先规划 scope、接口、数据、测试与回滚边界，再决定是否进入正式 GateH 开发。
+- `npm audit` 仍有既有告警。
+- Vite chunk > 500 kB 警告仍存在。
+- Ant Design React 19 compatibility / deprecated warning 仍存在。
+- E2E 仍有少量 skipped，原因见 `docs/current/TESTING.md`。

@@ -1,6 +1,6 @@
-# AGENTS（Codex 开发指引 - NexusQuant）
+# CLAUDE（Claude 开发指引 - NexusQuant）
 
-> 目的：让 Codex / 开发者在本仓库内严格遵循当前阶段、模块边界、文档事实源、验证纪律和禁止范围。
+> 目的：让 Claude / 开发者在本仓库内严格遵循当前阶段、模块边界、文档事实源、验证纪律和禁止范围。
 > 当前事实源：`docs/current/`。
 
 ## 1. 当前阶段
@@ -130,10 +130,10 @@ git status --short
 - 不把尚未完成阶段写成 completed。
 - 不创建 `docs/gates/gate-i`，直到 GateI 整体完成并冻结。
 
-## 9. Codex 执行纪律
+## 9. Claude 执行纪律
 
 - 默认使用简体中文说明计划、过程和结论。
-- 先读 `AGENTS.md`、`README.md`、`docs/current/*`，再读目标代码或文档。
+- 先读 `CLAUDE.md`、`README.md`、`docs/current/*`，再读目标代码或文档。
 - 默认最小变更，避免无关重构。
 - 不回退用户已有改动。
 - 能用工具验证的结论必须用工具验证。
