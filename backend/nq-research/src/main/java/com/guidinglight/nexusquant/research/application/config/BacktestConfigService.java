@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
+import com.guidinglight.nexusquant.research.domain.StrategyVersionSnapshotView;
 import com.guidinglight.nexusquant.research.domain.port.BacktestConfigRepository;
+import com.guidinglight.nexusquant.research.domain.port.StrategyVersionSnapshotQueryPort;
 import com.guidinglight.nexusquant.research.application.ResearchConfigService;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
 
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 public class BacktestConfigService {
 
     private final BacktestConfigRepository backtestConfigRepository;
+    private final StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort;
     private final ResearchConfigService researchConfigService;
     private final ObjectMapper objectMapper;
     private final Clock clock;
@@ -36,10 +39,11 @@ public class BacktestConfigService {
     @Autowired
     public BacktestConfigService(
             BacktestConfigRepository backtestConfigRepository,
+            StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort,
             ResearchConfigService researchConfigService,
             ObjectMapper objectMapper
     ) {
-        this(backtestConfigRepository, researchConfigService, objectMapper, Clock.systemUTC());
+        this(backtestConfigRepository, strategyVersionSnapshotQueryPort, researchConfigService, objectMapper, Clock.systemUTC());
     }
 
     public BacktestConfigService(
@@ -48,9 +52,23 @@ public class BacktestConfigService {
             ObjectMapper objectMapper,
             Clock clock
     ) {
+        this(backtestConfigRepository, id -> java.util.Optional.empty(), researchConfigService, objectMapper, clock);
+    }
+
+    public BacktestConfigService(
+            BacktestConfigRepository backtestConfigRepository,
+            StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort,
+            ResearchConfigService researchConfigService,
+            ObjectMapper objectMapper,
+            Clock clock
+    ) {
         this.backtestConfigRepository = Objects.requireNonNull(
                 backtestConfigRepository,
                 "backtestConfigRepository must not be null"
+        );
+        this.strategyVersionSnapshotQueryPort = Objects.requireNonNull(
+                strategyVersionSnapshotQueryPort,
+                "strategyVersionSnapshotQueryPort must not be null"
         );
         this.researchConfigService = Objects.requireNonNull(
                 researchConfigService,
@@ -80,6 +98,10 @@ public class BacktestConfigService {
                 request.initialCapital().stripTrailingZeros(),
                 normalizeJson(request.executionSpec()),
                 normalizeJson(request.evaluationSpec()),
+                null,
+                "{}",
+                "{}",
+                buildConfigSnapshot(request),
                 null,
                 "{}",
                 buildConfigSnapshot(request),
@@ -146,6 +168,35 @@ public class BacktestConfigService {
         return getByBacktestConfigId(normalizedConfigId);
     }
 
+    /**
+     * 绑定策略版本到回测配置，并固化版本快照与参数快照。
+     * Why:
+     * GateI-2 要求回测配置成为 backtest run 的稳定输入边界；这里仅更新配置事实，
+     * 不启动回测、不改策略算法、不改回测算法。run 创建时会复制这些快照，保证历史运行可复盘。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @param strategyVersionId 策略版本 ID
+     * @return 更新后的回测配置
+     */
+    public BacktestConfig bindStrategyVersion(String backtestConfigId, String strategyVersionId) {
+        String normalizedConfigId = requireText(backtestConfigId, "backtestConfigId");
+        getByBacktestConfigId(normalizedConfigId);
+        String normalizedVersionId = requireText(strategyVersionId, "strategyVersionId");
+        StrategyVersionSnapshotView snapshot = strategyVersionSnapshotQueryPort.findById(normalizedVersionId)
+                .orElseThrow(() -> new IllegalArgumentException("strategy version not found: " + normalizedVersionId));
+        boolean updated = backtestConfigRepository.bindStrategyVersion(
+                normalizedConfigId,
+                normalizedVersionId,
+                strategyVersionSnapshotJson(snapshot),
+                normalizeJson(snapshot.paramSnapshotJson()),
+                Instant.now(clock)
+        );
+        if (!updated) {
+            throw new IllegalArgumentException("backtest config not found: " + normalizedConfigId);
+        }
+        return getByBacktestConfigId(normalizedConfigId);
+    }
+
     private void validateCreateRequest(BacktestConfigCreateRequest request) {
         Objects.requireNonNull(request, "request must not be null");
         requireText(request.researchConfigId(), "researchConfigId");
@@ -173,6 +224,24 @@ public class BacktestConfigService {
             return snapshot.toString();
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("failed to build backtest config snapshot", ex);
+        }
+    }
+
+    private String strategyVersionSnapshotJson(StrategyVersionSnapshotView snapshot) {
+        try {
+            com.fasterxml.jackson.databind.node.ObjectNode node = objectMapper.createObjectNode();
+            node.put("strategyVersionId", snapshot.strategyVersionId());
+            node.put("strategyCode", snapshot.strategyCode());
+            node.put("version", snapshot.version());
+            node.put("versionName", snapshot.versionName());
+            node.put("status", snapshot.status());
+            node.set("paramSnapshotJson", objectMapper.readTree(normalizeJson(snapshot.paramSnapshotJson())));
+            node.set("configSnapshotJson", objectMapper.readTree(normalizeJson(snapshot.configSnapshotJson())));
+            node.set("sourceSnapshotJson", objectMapper.readTree(normalizeJson(snapshot.sourceSnapshotJson())));
+            node.put("checksum", snapshot.checksum());
+            return node.toString();
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("failed to build strategy version snapshot", ex);
         }
     }
 

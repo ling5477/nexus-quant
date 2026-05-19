@@ -36,6 +36,10 @@ public record BacktestEvaluationResponse(
         BigDecimal netPnl,
         @Schema(description = "totalReturnRate")
         BigDecimal totalReturnRate,
+        @Schema(description = "totalReturn")
+        BigDecimal totalReturn,
+        @Schema(description = "annualizedReturn")
+        BigDecimal annualizedReturn,
         @Schema(description = "totalFee")
         BigDecimal totalFee,
         @Schema(description = "totalSlippage")
@@ -56,10 +60,14 @@ public record BacktestEvaluationResponse(
         BigDecimal maxDrawdown,
         @Schema(description = "maxDrawdownRate")
         BigDecimal maxDrawdownRate,
+        @Schema(description = "profitLossRatio")
+        BigDecimal profitLossRatio,
         @Schema(description = "sharpeRatio")
         BigDecimal sharpeRatio,
         @Schema(description = "reportJson")
         String reportJson,
+        @Schema(description = "metricsJson")
+        String metricsJson,
         @Schema(description = "failureCode")
         String failureCode,
         @Schema(description = "failureMessage")
@@ -79,6 +87,8 @@ public record BacktestEvaluationResponse(
                 report.unrealizedPnl(),
                 report.netPnl(),
                 report.totalReturnRate(),
+                report.totalReturn(),
+                report.annualizedReturn(),
                 report.totalFee(),
                 report.totalSlippage(),
                 report.orderCount(),
@@ -89,8 +99,10 @@ public record BacktestEvaluationResponse(
                 report.winRate(),
                 report.maxDrawdown(),
                 report.maxDrawdownRate(),
+                report.profitLossRatio(),
                 report.sharpeRatio(),
                 report.reportJson(),
+                report.metricsJson(),
                 report.failureCode(),
                 report.failureMessage()
         );

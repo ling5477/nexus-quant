@@ -40,6 +40,29 @@ public interface BacktestConfigRepository {
     }
 
     /**
+     * 绑定 GateI-2 strategy version 到回测配置。
+     * Why:
+     * 策略版本、参数快照和版本快照必须在配置层先固化，run 创建时才能复制稳定输入；
+     * 仓储只负责字段更新，不校验策略语义、不启动回测。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @param strategyVersionId 策略版本 ID
+     * @param strategyVersionSnapshotJson 策略版本快照 JSON
+     * @param paramSnapshotJson 参数快照 JSON
+     * @param updatedAt 更新时间
+     * @return 是否更新到记录
+     */
+    default boolean bindStrategyVersion(
+            String backtestConfigId,
+            String strategyVersionId,
+            String strategyVersionSnapshotJson,
+            String paramSnapshotJson,
+            java.time.Instant updatedAt
+    ) {
+        return false;
+    }
+
+    /**
      * 按 researchConfigId 过滤回测配置，`null` 表示查询全部。
      * Why:
      * GateG 联调前需要同时支持“全量列表页”和“研究配置详情下的子列表”，

@@ -147,6 +147,29 @@ public class BacktestRunApiService {
         return backtestEvaluationService.getByBacktestRunId(backtestRunId).orElse(null);
     }
 
+    /**
+     * 查询 GateI-2 评估报告列表。
+     *
+     * @return 已生成的评估报告列表
+     */
+    public List<BacktestEvaluationReport> listEvaluations() {
+        return backtestEvaluationService.listAll();
+    }
+
+    /**
+     * 按评估报告 ID 查询详情。
+     *
+     * @param evaluationId 评估报告 ID
+     * @return 评估报告详情
+     */
+    public BacktestEvaluationReport getEvaluationById(String evaluationId) {
+        return backtestEvaluationService.getByEvalReportId(evaluationId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "evaluation report not found: " + evaluationId
+                ));
+    }
+
     public BacktestPublishRecord publish(String backtestRunId, String displayName) {
         return publish(backtestRunId, displayName, null);
     }

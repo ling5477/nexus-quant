@@ -180,6 +180,26 @@ public class BacktestEvaluationService {
         return backtestEvaluationReportRepository.findByBacktestRunId(backtestRunId);
     }
 
+    /**
+     * 按评估报告 ID 查询详情。
+     * Why:
+     * GateI-2 增加独立 Evaluation API，调用方可以从报告列表直接打开详情，
+     * 不再必须先知道 backtestRunId。
+     */
+    public Optional<BacktestEvaluationReport> getByEvalReportId(String evalReportId) {
+        return backtestEvaluationReportRepository.findByEvalReportId(evalReportId);
+    }
+
+    /**
+     * 查询评估报告列表。
+     * Why:
+     * GateI-2 第一版只需要展示已生成报告的核心指标，不引入复杂分页或跨表聚合；
+     * 页面需要 run 血缘时仍可通过 backtest run 详情读取完整输入快照。
+     */
+    public java.util.List<BacktestEvaluationReport> listAll() {
+        return backtestEvaluationReportRepository.listAll();
+    }
+
     private String safeMessage(RuntimeException exception) {
         return exception.getMessage() == null || exception.getMessage().isBlank()
                 ? exception.getClass().getSimpleName()

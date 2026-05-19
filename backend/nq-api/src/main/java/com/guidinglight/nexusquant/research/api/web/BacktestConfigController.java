@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.research.application.api.backtest.BacktestCon
 import com.guidinglight.nexusquant.research.api.dto.BacktestConfigCreateRequestBody;
 import com.guidinglight.nexusquant.research.api.dto.BacktestConfigResponse;
 import com.guidinglight.nexusquant.research.api.dto.BacktestDatasetBindingRequestBody;
+import com.guidinglight.nexusquant.research.api.dto.BacktestStrategyVersionBindingRequestBody;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -150,6 +151,32 @@ public class BacktestConfigController {
                 configId,
                 request.datasetId(),
                 datasetSnapshot
+        ));
+    }
+
+    /**
+     * 绑定 GateI-2 strategy version 到回测配置。
+     * Why:
+     * controller 不接收调用方自带快照，只传递 strategyVersionId 给 application service；
+     * 版本快照、参数快照由后端从 `strategy_versions` 固化，避免前端伪造回测输入血缘。
+     */
+    @PatchMapping("/{configId}/strategy-version")
+    @Operation(summary = "绑定策略版本", description = "把 strategy version 绑定到回测配置，并保存版本快照和参数快照。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "绑定成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "回测配置或策略版本不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public BacktestConfigResponse bindStrategyVersion(
+            @PathVariable
+            @NotBlank(message = "configId must not be blank")
+            String configId,
+            @Valid @RequestBody BacktestStrategyVersionBindingRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        return BacktestConfigResponse.from(applicationService.bindStrategyVersion(
+                configId,
+                request.strategyVersionId()
         ));
     }
 }

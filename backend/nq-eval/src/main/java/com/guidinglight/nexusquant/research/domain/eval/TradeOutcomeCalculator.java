@@ -19,6 +19,8 @@ public class TradeOutcomeCalculator {
         int winning = 0;
         int losing = 0;
         int flat = 0;
+        BigDecimal grossProfit = BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP);
+        BigDecimal grossLoss = BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP);
 
         for (SimTrade simTrade : simTrades) {
             BigDecimal tradeCosts = simTrade.feeAmount().add(simTrade.slippageAmount()).setScale(18, RoundingMode.HALF_UP);
@@ -46,8 +48,10 @@ public class TradeOutcomeCalculator {
             BigDecimal netOutcome = grossPnl.subtract(allocatedEntryCost).subtract(tradeCosts).setScale(18, RoundingMode.HALF_UP);
             if (netOutcome.compareTo(BigDecimal.ZERO) > 0) {
                 winning++;
+                grossProfit = grossProfit.add(netOutcome).setScale(18, RoundingMode.HALF_UP);
             } else if (netOutcome.compareTo(BigDecimal.ZERO) < 0) {
                 losing++;
+                grossLoss = grossLoss.add(netOutcome.abs()).setScale(18, RoundingMode.HALF_UP);
             } else {
                 flat++;
             }
@@ -58,10 +62,16 @@ public class TradeOutcomeCalculator {
                 openEntryCosts = BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP);
             }
         }
-        return new Result(winning, losing, flat);
+        return new Result(winning, losing, flat, grossProfit, grossLoss);
     }
 
-    public record Result(int winningTradeCount, int losingTradeCount, int flatTradeCount) {
+    public record Result(
+            int winningTradeCount,
+            int losingTradeCount,
+            int flatTradeCount,
+            BigDecimal grossProfit,
+            BigDecimal grossLoss
+    ) {
         public BigDecimal winRate() {
             int total = winningTradeCount + losingTradeCount + flatTradeCount;
             if (total == 0) {
@@ -69,6 +79,19 @@ public class TradeOutcomeCalculator {
             }
             return BigDecimal.valueOf(winningTradeCount)
                     .divide(BigDecimal.valueOf(total), 18, RoundingMode.HALF_UP);
+        }
+
+        /**
+         * 计算盈亏比。
+         * Why:
+         * GateI-2 需要评估报告直接展示 profit/loss ratio；亏损总额为 0 时返回 0，
+         * 避免把无亏损样本误表达成无限大并影响前端数值展示。
+         */
+        public BigDecimal profitLossRatio() {
+            if (grossLoss.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP);
+            }
+            return grossProfit.divide(grossLoss, 18, RoundingMode.HALF_UP);
         }
     }
 }

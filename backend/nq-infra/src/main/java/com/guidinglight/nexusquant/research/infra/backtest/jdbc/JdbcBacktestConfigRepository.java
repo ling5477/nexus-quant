@@ -27,6 +27,10 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
     private static final String BASE_SELECT = """
             SELECT backtest_config_id, research_config_id, name, description,
                    config_json::text AS config_json, evaluation_spec_json::text AS evaluation_spec_json,
+                   strategy_version_id,
+                   strategy_version_snapshot_json::text AS strategy_version_snapshot_json,
+                   param_snapshot_json::text AS param_snapshot_json,
+                   config_snapshot_json::text AS config_snapshot_json,
                    dataset_id::text AS dataset_id, dataset_snapshot_json::text AS dataset_snapshot_json,
                    created_at, updated_at
             FROM backtest_configs
@@ -46,8 +50,8 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
                 """
                         INSERT INTO backtest_configs (
                             backtest_config_id, research_config_id, name, description, config_json, evaluation_spec_json,
-                            created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), ?, ?)
+                            param_snapshot_json, config_snapshot_json, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?, ?)
                         """,
                 backtestConfig.backtestConfigId(),
                 backtestConfig.researchConfigId(),
@@ -55,6 +59,8 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
                 backtestConfig.description(),
                 backtestConfig.configSnapshot(),
                 backtestConfig.evaluationSpec(),
+                backtestConfig.paramSnapshotJson(),
+                backtestConfig.configSnapshotJson(),
                 Timestamp.from(backtestConfig.createdAt()),
                 Timestamp.from(backtestConfig.updatedAt())
         );
@@ -104,6 +110,31 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
         ) > 0;
     }
 
+    @Override
+    public boolean bindStrategyVersion(
+            String backtestConfigId,
+            String strategyVersionId,
+            String strategyVersionSnapshotJson,
+            String paramSnapshotJson,
+            Instant updatedAt
+    ) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE backtest_configs
+                        SET strategy_version_id = ?,
+                            strategy_version_snapshot_json = CAST(? AS JSONB),
+                            param_snapshot_json = CAST(? AS JSONB),
+                            updated_at = ?
+                        WHERE backtest_config_id = ?
+                        """,
+                strategyVersionId,
+                strategyVersionSnapshotJson,
+                paramSnapshotJson,
+                Timestamp.from(updatedAt),
+                backtestConfigId
+        ) > 0;
+    }
+
     private RowMapper<BacktestConfig> rowMapper() {
         return this::mapRow;
     }
@@ -120,6 +151,10 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
                 new BigDecimal(textField(configJson, "initialCapital")),
                 jsonField(configJson, "executionSpec"),
                 resultSet.getString("evaluation_spec_json"),
+                resultSet.getString("strategy_version_id"),
+                resultSet.getString("strategy_version_snapshot_json"),
+                resultSet.getString("param_snapshot_json"),
+                resultSet.getString("config_snapshot_json"),
                 resultSet.getString("dataset_id"),
                 resultSet.getString("dataset_snapshot_json"),
                 resultSet.getString("config_json"),

@@ -104,6 +104,21 @@ public class BacktestConfigApiService {
         }
     }
 
+    /**
+     * 绑定 GateI-2 策略版本到回测配置。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @param strategyVersionId 策略版本 ID
+     * @return 更新后的回测配置
+     */
+    public BacktestConfig bindStrategyVersion(String backtestConfigId, String strategyVersionId) {
+        try {
+            return backtestConfigService.bindStrategyVersion(backtestConfigId, strategyVersionId);
+        } catch (IllegalArgumentException ex) {
+            throw toNotFound(ex);
+        }
+    }
+
     private ResponseStatusException toNotFound(IllegalArgumentException ex) {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
     }

@@ -29,6 +29,14 @@ public record BacktestConfigResponse(
         String executionSpec,
         @Schema(description = "evaluationSpec")
         String evaluationSpec,
+        @Schema(description = "strategyVersionId")
+        String strategyVersionId,
+        @Schema(description = "strategyVersionSnapshotJson")
+        String strategyVersionSnapshotJson,
+        @Schema(description = "paramSnapshotJson")
+        String paramSnapshotJson,
+        @Schema(description = "configSnapshotJson")
+        String configSnapshotJson,
         @Schema(description = "datasetId")
         String datasetId,
         @Schema(description = "datasetSnapshotJson")
@@ -51,6 +59,10 @@ public record BacktestConfigResponse(
                 backtestConfig.initialCapital(),
                 backtestConfig.executionSpec(),
                 backtestConfig.evaluationSpec(),
+                backtestConfig.strategyVersionId(),
+                backtestConfig.strategyVersionSnapshotJson(),
+                backtestConfig.paramSnapshotJson(),
+                backtestConfig.configSnapshotJson(),
                 backtestConfig.datasetId(),
                 backtestConfig.datasetSnapshotJson(),
                 backtestConfig.configSnapshot(),

@@ -25,7 +25,11 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
     private static final String BASE_SELECT = """
             SELECT backtest_run_id, backtest_config_id, research_config_id, source_strategy_id, status,
                    strategy_snapshot::text AS strategy_snapshot,
+                   strategy_version_id,
+                   strategy_version_snapshot_json::text AS strategy_version_snapshot_json,
+                   param_snapshot_json::text AS param_snapshot_json,
                    backtest_config_snapshot::text AS backtest_config_snapshot,
+                   config_snapshot_json::text AS config_snapshot_json,
                    dataset_snapshot_json::text AS dataset_snapshot_json,
                    summary_json::text AS summary_json, requested_at, started_at, finished_at,
                    failure_code, failure_message, created_at, updated_at
@@ -46,9 +50,12 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 """
                         INSERT INTO backtest_runs (
                             backtest_run_id, backtest_config_id, research_config_id, source_strategy_id, status,
-                            strategy_snapshot, backtest_config_snapshot, dataset_snapshot_json, summary_json,
+                            strategy_snapshot, strategy_version_id, strategy_version_snapshot_json, param_snapshot_json,
+                            backtest_config_snapshot, config_snapshot_json, dataset_snapshot_json, summary_json,
                             requested_at, started_at, finished_at, failure_code, failure_message, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, CAST(? AS JSONB), ?, CAST(? AS JSONB), CAST(? AS JSONB),
+                                  CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB),
+                                  ?, ?, ?, ?, ?, ?, ?)
                         """,
                 backtestRun.backtestRunId(),
                 backtestRun.backtestConfigId(),
@@ -56,7 +63,11 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 backtestRun.sourceStrategyId(),
                 backtestRun.status().name(),
                 backtestRun.strategySnapshot(),
+                backtestRun.strategyVersionId(),
+                backtestRun.strategyVersionSnapshotJson(),
+                backtestRun.paramSnapshotJson(),
                 backtestRun.backtestConfigSnapshot(),
+                backtestRun.configSnapshotJson(),
                 backtestRun.datasetSnapshotJson(),
                 backtestRun.summaryJson(),
                 Timestamp.from(backtestRun.requestedAt()),
@@ -144,7 +155,11 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 resultSet.getString("research_config_id"),
                 resultSet.getString("source_strategy_id"),
                 resultSet.getString("strategy_snapshot"),
+                resultSet.getString("strategy_version_id"),
+                resultSet.getString("strategy_version_snapshot_json"),
+                resultSet.getString("param_snapshot_json"),
                 resultSet.getString("backtest_config_snapshot"),
+                resultSet.getString("config_snapshot_json"),
                 resultSet.getString("dataset_snapshot_json"),
                 BacktestRunStatus.valueOf(resultSet.getString("status")),
                 resultSet.getTimestamp("requested_at").toInstant(),

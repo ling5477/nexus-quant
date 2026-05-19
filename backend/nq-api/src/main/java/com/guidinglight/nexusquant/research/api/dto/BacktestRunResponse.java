@@ -27,8 +27,16 @@ public record BacktestRunResponse(
         String sourceStrategyId,
         @Schema(description = "strategySnapshot")
         String strategySnapshot,
+        @Schema(description = "strategyVersionId")
+        String strategyVersionId,
+        @Schema(description = "strategyVersionSnapshotJson")
+        String strategyVersionSnapshotJson,
+        @Schema(description = "paramSnapshotJson")
+        String paramSnapshotJson,
         @Schema(description = "backtestConfigSnapshot")
         String backtestConfigSnapshot,
+        @Schema(description = "configSnapshotJson")
+        String configSnapshotJson,
         @Schema(description = "datasetSnapshotJson")
         String datasetSnapshotJson,
         @Schema(description = "status")
@@ -71,10 +79,16 @@ public record BacktestRunResponse(
         Instant evaluatedAt,
         @Schema(description = "totalReturnRate")
         BigDecimal totalReturnRate,
+        @Schema(description = "totalReturn")
+        BigDecimal totalReturn,
+        @Schema(description = "annualizedReturn")
+        BigDecimal annualizedReturn,
         @Schema(description = "maxDrawdownRate")
         BigDecimal maxDrawdownRate,
         @Schema(description = "winRate")
         BigDecimal winRate,
+        @Schema(description = "profitLossRatio")
+        BigDecimal profitLossRatio,
         @Schema(description = "sharpeRatio")
         BigDecimal sharpeRatio,
         @Schema(description = "publishStatus")
@@ -105,7 +119,11 @@ public record BacktestRunResponse(
                 backtestRun.researchConfigId(),
                 backtestRun.sourceStrategyId(),
                 backtestRun.strategySnapshot(),
+                backtestRun.strategyVersionId(),
+                backtestRun.strategyVersionSnapshotJson(),
+                backtestRun.paramSnapshotJson(),
                 backtestRun.backtestConfigSnapshot(),
+                backtestRun.configSnapshotJson(),
                 backtestRun.datasetSnapshotJson(),
                 backtestRun.status(),
                 backtestRun.requestedAt(),
@@ -127,8 +145,11 @@ public record BacktestRunResponse(
                 evaluationSummary == null ? null : evaluationSummary.evaluationStatus().name(),
                 evaluationSummary == null ? null : evaluationSummary.evaluatedAt(),
                 evaluationSummary == null ? null : evaluationSummary.totalReturnRate(),
+                evaluationSummary == null ? null : evaluationSummary.totalReturn(),
+                evaluationSummary == null ? null : evaluationSummary.annualizedReturn(),
                 evaluationSummary == null ? null : evaluationSummary.maxDrawdownRate(),
                 evaluationSummary == null ? null : evaluationSummary.winRate(),
+                evaluationSummary == null ? null : evaluationSummary.profitLossRatio(),
                 evaluationSummary == null ? null : evaluationSummary.sharpeRatio(),
                 publishSummary == null ? null : publishSummary.publishStatus().name(),
                 publishSummary == null ? null : publishSummary.publishedAt(),

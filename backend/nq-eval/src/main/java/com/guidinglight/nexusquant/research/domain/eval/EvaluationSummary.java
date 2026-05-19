@@ -12,8 +12,11 @@ public record EvaluationSummary(
         BigDecimal finalEquity,
         BigDecimal netPnl,
         BigDecimal totalReturnRate,
+        BigDecimal totalReturn,
+        BigDecimal annualizedReturn,
         BigDecimal maxDrawdownRate,
         BigDecimal winRate,
+        BigDecimal profitLossRatio,
         BigDecimal sharpeRatio,
         Integer tradeCount,
         Integer orderCount
