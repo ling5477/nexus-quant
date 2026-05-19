@@ -2,7 +2,11 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {backtestsApi} from '@/api/backtests';
 import {backtestsQueryKeys} from '@/api/query-keys';
-import type {BacktestConfigCreateRequest, BacktestDatasetBindingRequest} from '@/types/backtests';
+import type {
+    BacktestConfigCreateRequest,
+    BacktestDatasetBindingRequest,
+    BacktestStrategyVersionBindingRequest,
+} from '@/types/backtests';
 
 export function useBacktestsListQuery(researchConfigId: string, searchVersion: number) {
     return useQuery({
@@ -42,5 +46,33 @@ export function useBindBacktestDatasetMutation(configId: string | null) {
                 queryClient.invalidateQueries({queryKey: backtestsQueryKeys.detail(configId)});
             }
         },
+    });
+}
+
+export function useBindBacktestStrategyVersionMutation(configId: string | null) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (request: BacktestStrategyVersionBindingRequest) => backtestsApi.bindStrategyVersion(configId ?? '', request),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: backtestsQueryKeys.all});
+            if (configId) {
+                queryClient.invalidateQueries({queryKey: backtestsQueryKeys.detail(configId)});
+            }
+        },
+    });
+}
+
+export function useCreateBacktestRunMutation() {
+    return useMutation({
+        mutationFn: (backtestConfigId: string) => backtestsApi.createRun({backtestConfigId}),
+    });
+}
+
+export function useBacktestRunDetailQuery(runId: string | null) {
+    return useQuery({
+        queryKey: [...backtestsQueryKeys.all, 'run-detail', runId ?? ''],
+        queryFn: () => backtestsApi.getRun(runId ?? ''),
+        enabled: Boolean(runId),
     });
 }

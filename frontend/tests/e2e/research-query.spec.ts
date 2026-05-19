@@ -28,7 +28,7 @@ test.describe('GateG-3B research query', () => {
         if (payload.length === 0) {
             await expect(page.getByText('当前筛选条件下没有匹配的研究配置。')).toBeVisible();
         } else {
-            await expect(page.locator('.ant-table-tbody tr').first()).toBeVisible();
+            await expect(page.locator('.ant-table-tbody tr:not(.ant-table-measure-row)').first()).toBeVisible();
         }
     });
 });

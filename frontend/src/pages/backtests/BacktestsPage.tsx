@@ -25,8 +25,11 @@ import {marketdataApi} from '@/api/marketdata';
 import {PageHero} from '@/components/page/PageHero';
 import {
     useBindBacktestDatasetMutation,
+    useBindBacktestStrategyVersionMutation,
     useBacktestDetailQuery,
+    useBacktestRunDetailQuery,
     useBacktestsListQuery,
+    useCreateBacktestRunMutation,
     useCreateBacktestMutation,
 } from '@/hooks/useBacktestsListQuery';
 import type {AppApiError} from '@/types/api';
@@ -45,14 +48,19 @@ export function BacktestsPage() {
     const [queryForm] = Form.useForm<BacktestsListFilters>();
     const [createForm] = Form.useForm<BacktestConfigCreateRequest>();
     const [bindDatasetForm] = Form.useForm<{datasetId: string}>();
+    const [bindStrategyVersionForm] = Form.useForm<{strategyVersionId: string}>();
     const [submittedFilters, setSubmittedFilters] = useState<BacktestsListFilters>(defaultBacktestsListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
+    const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const backtestsQuery = useBacktestsListQuery(submittedFilters.researchConfigId, searchVersion);
     const backtestDetailQuery = useBacktestDetailQuery(selectedConfigId);
     const createBacktestMutation = useCreateBacktestMutation();
+    const createBacktestRunMutation = useCreateBacktestRunMutation();
+    const backtestRunDetailQuery = useBacktestRunDetailQuery(selectedRunId);
     const bindDatasetMutation = useBindBacktestDatasetMutation(selectedConfigId);
+    const bindStrategyVersionMutation = useBindBacktestStrategyVersionMutation(selectedConfigId);
     const datasetsQuery = useQuery({
         queryKey: ['marketdata-datasets'],
         queryFn: marketdataApi.listDatasets,
@@ -113,6 +121,20 @@ export function BacktestsPage() {
             key: 'initialCapital',
             width: 140,
             render: (value: number | null) => formatNumber(value, 2),
+        },
+        {
+            title: '策略版本 ID',
+            dataIndex: 'strategyVersionId',
+            key: 'strategyVersionId',
+            width: 220,
+            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : '未绑定',
+        },
+        {
+            title: 'Dataset ID',
+            dataIndex: 'datasetId',
+            key: 'datasetId',
+            width: 220,
+            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : '未绑定',
         },
         {
             title: '更新时间',
@@ -188,6 +210,39 @@ export function BacktestsPage() {
             onSuccess: () => {
                 message.success('Dataset 已绑定到回测配置。');
                 bindDatasetForm.resetFields();
+            },
+            onError: (error) => {
+                message.error(formatApiError(error as AppApiError));
+            },
+        });
+    };
+
+    const handleBindStrategyVersion = (values: {strategyVersionId: string}) => {
+        if (!selectedConfigId) {
+            return;
+        }
+        bindStrategyVersionMutation.mutate(
+            {strategyVersionId: normalizeOptionalText(values.strategyVersionId)},
+            {
+                onSuccess: () => {
+                    message.success('Strategy Version 已绑定到回测配置。');
+                    bindStrategyVersionForm.resetFields();
+                },
+                onError: (error) => {
+                    message.error(formatApiError(error as AppApiError));
+                },
+            },
+        );
+    };
+
+    const handleCreateRun = () => {
+        if (!selectedConfigId) {
+            return;
+        }
+        createBacktestRunMutation.mutate(selectedConfigId, {
+            onSuccess: (run) => {
+                message.success('回测运行已创建，已固化当前配置快照。');
+                setSelectedRunId(run.backtestRunId);
             },
             onError: (error) => {
                 message.error(formatApiError(error as AppApiError));
@@ -289,7 +344,7 @@ export function BacktestsPage() {
                             dataSource={visibleItems}
                             loading={backtestsQuery.isFetching}
                             pagination={{pageSize: 10, showSizeChanger: false}}
-                            scroll={{x: 1540}}
+                            scroll={{x: 1980}}
                             locale={{
                                 emptyText: '当前筛选条件下没有匹配的回测配置。',
                             }}
@@ -301,7 +356,10 @@ export function BacktestsPage() {
                 open={Boolean(selectedConfigId)}
                 width={760}
                 title="回测配置详情"
-                onClose={() => setSelectedConfigId(null)}
+                onClose={() => {
+                    setSelectedConfigId(null);
+                    setSelectedRunId(null);
+                }}
                 destroyOnClose
             >
                 {backtestDetailQuery.isLoading ? (
@@ -343,6 +401,21 @@ export function BacktestsPage() {
                                     {backtestDetailQuery.data.evaluationSpec || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
+                            <Descriptions.Item label="Strategy Version ID" span={2}>
+                                <Typography.Text copyable={Boolean(backtestDetailQuery.data.strategyVersionId)}>
+                                    {backtestDetailQuery.data.strategyVersionId || '未绑定'}
+                                </Typography.Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Strategy Version Snapshot" span={2}>
+                                <Typography.Paragraph style={{marginBottom: 0}}>
+                                    {backtestDetailQuery.data.strategyVersionSnapshotJson || '{}'}
+                                </Typography.Paragraph>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Param Snapshot" span={2}>
+                                <Typography.Paragraph style={{marginBottom: 0}}>
+                                    {backtestDetailQuery.data.paramSnapshotJson || '{}'}
+                                </Typography.Paragraph>
+                            </Descriptions.Item>
                             <Descriptions.Item label="Dataset ID" span={2}>
                                 <Typography.Text copyable={Boolean(backtestDetailQuery.data.datasetId)}>
                                     {backtestDetailQuery.data.datasetId || '未绑定'}
@@ -351,6 +424,11 @@ export function BacktestsPage() {
                             <Descriptions.Item label="Dataset Snapshot" span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.datasetSnapshotJson || '{}'}
+                                </Typography.Paragraph>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Config Snapshot JSON" span={2}>
+                                <Typography.Paragraph style={{marginBottom: 0}}>
+                                    {backtestDetailQuery.data.configSnapshotJson || '{}'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
                             <Descriptions.Item label="配置快照" span={2}>
@@ -362,7 +440,27 @@ export function BacktestsPage() {
                         <Card title="动作区" size="small">
                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                                 <Alert type="info" showIcon
-                                       message="GateH-3 仅允许绑定 marketdata dataset，不会启动回测或修改策略逻辑。"/>
+                                       message="GateI-2 仅绑定 strategy version 和 marketdata dataset，不会启动回测或修改策略逻辑。"/>
+                                <Form
+                                    form={bindStrategyVersionForm}
+                                    layout="inline"
+                                    onFinish={handleBindStrategyVersion}
+                                >
+                                    <Form.Item
+                                        label="Strategy Version"
+                                        name="strategyVersionId"
+                                        rules={[{required: true, message: '请输入 strategy version ID'}]}
+                                    >
+                                        <Input style={{width: 360}} placeholder="例如：sv-..."/>
+                                    </Form.Item>
+                                    <Button
+                                        type="primary"
+                                        htmlType="submit"
+                                        loading={bindStrategyVersionMutation.isPending}
+                                    >
+                                        绑定 Strategy Version
+                                    </Button>
+                                </Form>
                                 <Form form={bindDatasetForm} layout="inline" onFinish={handleBindDataset}>
                                     <Form.Item
                                         label="Dataset"
@@ -400,7 +498,58 @@ export function BacktestsPage() {
                                 <Button onClick={() => backtestDetailQuery.refetch()}>
                                     刷新详情
                                 </Button>
+                                <Button
+                                    onClick={handleCreateRun}
+                                    loading={createBacktestRunMutation.isPending}
+                                >
+                                    创建回测运行
+                                </Button>
                             </Space>
+                        </Card>
+                        <Card title="回测运行详情" size="small">
+                            {!selectedRunId ? (
+                                <Empty description="创建回测运行后展示 run 级固化快照。"/>
+                            ) : backtestRunDetailQuery.isLoading ? (
+                                <Alert type="info" showIcon message="正在加载回测运行详情..."/>
+                            ) : backtestRunDetailQuery.error ? (
+                                <Alert
+                                    type="error"
+                                    showIcon
+                                    message="回测运行详情加载失败"
+                                    description={formatApiError(backtestRunDetailQuery.error as AppApiError)}
+                                />
+                            ) : backtestRunDetailQuery.data ? (
+                                <Descriptions bordered column={2} size="small">
+                                    <Descriptions.Item label="回测运行 ID" span={2}>
+                                        <Typography.Text copyable>
+                                            {backtestRunDetailQuery.data.backtestRunId}
+                                        </Typography.Text>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="运行状态">{backtestRunDetailQuery.data.status}</Descriptions.Item>
+                                    <Descriptions.Item
+                                        label="请求时间">{formatDateTime(backtestRunDetailQuery.data.requestedAt)}</Descriptions.Item>
+                                    <Descriptions.Item label="Strategy Version Snapshot" span={2}>
+                                        <Typography.Paragraph style={{marginBottom: 0}}>
+                                            {backtestRunDetailQuery.data.strategyVersionSnapshotJson || '{}'}
+                                        </Typography.Paragraph>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Dataset Snapshot" span={2}>
+                                        <Typography.Paragraph style={{marginBottom: 0}}>
+                                            {backtestRunDetailQuery.data.datasetSnapshotJson || '{}'}
+                                        </Typography.Paragraph>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Param Snapshot" span={2}>
+                                        <Typography.Paragraph style={{marginBottom: 0}}>
+                                            {backtestRunDetailQuery.data.paramSnapshotJson || '{}'}
+                                        </Typography.Paragraph>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Config Snapshot" span={2}>
+                                        <Typography.Paragraph style={{marginBottom: 0}}>
+                                            {backtestRunDetailQuery.data.configSnapshotJson || '{}'}
+                                        </Typography.Paragraph>
+                                    </Descriptions.Item>
+                                </Descriptions>
+                            ) : null}
                         </Card>
                     </Space>
                 ) : null}

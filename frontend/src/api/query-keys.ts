@@ -62,7 +62,7 @@ export const evaluationsQueryKeys = {
         request.backtestConfigId ?? '',
         searchVersion,
     ] as const,
-    detail: (runId: string) => [...evaluationsQueryKeys.all, 'detail', runId] as const,
+    detail: (evaluationId: string) => [...evaluationsQueryKeys.all, 'detail', evaluationId] as const,
 };
 
 export const publishesQueryKeys = {

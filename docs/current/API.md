@@ -26,7 +26,8 @@
 - GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
 - GateH-2 只新增 OKX / Binance SPOT 历史 OHLCV K 线接入、接入任务与运行记录 API；不新增 dataset/backtest 绑定接口，不新增 AI 接口。
 - GateH-3 新增 marketdata dataset、quality refresh、backtest config dataset binding 与 backtest run dataset snapshot API；不新增 AI 接口。
-- GateI-1 新增策略版本与发布版本绑定 API；不进入 GateI-2/3/4，不接 AI。
+- GateI-1 新增策略版本与发布版本绑定 API；不接 AI。
+- GateI-2 增强 backtest config、backtest run 和 evaluation report 追溯 API；不进入 GateI-3/4，不接 AI。
 
 ## GateH-1 Trading Workspace API
 
@@ -103,7 +104,29 @@ GateI-1 固定范围：
 - 发布时固化 `versionSnapshotJson`，后续策略版本变化不会改写历史发布记录。
 - 不修改策略核心算法，不启动回测，不进入 Paper Trading。
 
-GateI-1 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A 股、合约全量、高频或复杂因子平台接口。GateI-2/3/4 尚未开始。
+GateI-1 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A 股、合约全量、高频或复杂因子平台接口。
+
+## GateI-2 Backtest Traceability and Evaluation API
+
+当前已实现的 GateI-2 回测配置、运行追溯与评估报告入口：
+
+- `GET /api/backtest-configs`：返回回测配置列表，包含 `strategyVersionId`、`strategyVersionSnapshotJson`、`paramSnapshotJson`、`configSnapshotJson`、`datasetId`、`datasetSnapshotJson`。
+- `POST /api/backtest-configs`：创建回测配置，并初始化参数快照、配置快照；不启动回测。
+- `GET /api/backtest-configs/{configId}`：返回单条回测配置详情，包含 strategy version、dataset、参数和配置快照。
+- `PATCH /api/backtest-configs/{configId}/strategy-version`：绑定已存在的 strategy version，后端从 `strategy_versions` 读取并固化版本快照和参数快照；请求体只允许传 `strategyVersionId`。
+- `PATCH /api/backtest-configs/{configId}/dataset`：复用 GateH-3 dataset 绑定入口，后端固化 dataset snapshot。
+- `POST /api/backtest-runs`：根据回测配置创建 run，创建时固化 `strategyVersionId`、`strategyVersionSnapshotJson`、`datasetSnapshotJson`、`paramSnapshotJson`、`configSnapshotJson`。
+- `GET /api/backtest-runs/{runId}`：返回 run 详情和完整追溯快照；后续配置重新绑定不会改写历史 run。
+- `GET /api/evaluations`：查询已生成评估报告列表，返回 total return、annualized return、max drawdown、win rate、profit/loss ratio、trade count、Sharpe、metrics JSON 等核心指标。
+- `GET /api/evaluations/{evaluationId}`：按 `evalReportId` 查询评估报告详情。
+
+GateI-2 固定范围：
+
+- 只增强现有 backtest / evaluation 链路。
+- 不修改回测核心算法，不修改策略核心算法，不修改交易核心状态机。
+- 不做 SIM/Paper Trading 运行闭环，不进入 GateI-3/4。
+- 不接 AI，不新增 AI 分析报告、AI 信号、AI 自动交易或 AI Paper Trading。
+- 不新增美股/A 股、合约全量、高频或复杂因子平台 API。
 
 ## GateI Planning Entry
 

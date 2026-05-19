@@ -23,6 +23,7 @@ __pycache__/
 *.ipr
 *.iws
 .vscode/
+.qoder/
 
 # OS / logs / temp
 .DS_Store

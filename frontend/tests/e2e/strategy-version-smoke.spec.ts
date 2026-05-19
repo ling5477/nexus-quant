@@ -4,7 +4,8 @@ import {loginToConsole} from '@/../tests/e2e/support';
 
 test.describe('GateI-1 strategy version smoke', () => {
     test('策略详情可查看并创建策略版本', async ({page}) => {
-        await loginToConsole(page);
+        const defaultAccount = await loginToConsole(page);
+        const legacyAccountId = defaultAccount.legacyAccountId ?? Number(process.env.E2E_STRATEGY_ACCOUNT_ID ?? 3001);
 
         await page.getByRole('menuitem', {name: '策略定义'}).click();
         await expect(page).toHaveURL(/\/strategies$/);
@@ -32,7 +33,7 @@ test.describe('GateI-1 strategy version smoke', () => {
                     strategyName: `GateI-1 E2E Strategy ${Date.now()}`,
                     strategyType: 'E2E_SMOKE',
                     exchangeCode: 'BINANCE',
-                    accountId: 3001,
+                    accountId: legacyAccountId,
                     tradeEnv: 'SIM',
                     configSnapshot: '{"source":"gatei1-e2e"}',
                 },

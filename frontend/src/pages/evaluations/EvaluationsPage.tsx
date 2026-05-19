@@ -48,16 +48,23 @@ export function EvaluationsPage() {
         },
         searchVersion,
     );
-    const evaluationDetailQuery = useEvaluationDetailQuery(selectedRow?.backtestRunId ?? null);
+    const evaluationDetailQuery = useEvaluationDetailQuery(selectedRow?.evalReportId ?? null);
     const evaluateMutation = useEvaluateMutation();
     const hasSearched = searchVersion > 0;
 
     const visibleItems = (evaluationsQuery.data ?? []).filter((item) => (
-        containsIgnoreCase(item.sourceStrategyId, submittedFilters.sourceStrategyId)
+        containsIgnoreCase(item.backtestRunId, submittedFilters.sourceStrategyId)
         && containsIgnoreCase(item.evaluationStatus, submittedFilters.evaluationStatus)
     ));
 
     const evaluationColumns: ColumnsType<EvaluationRow> = [
+        {
+            title: '评估报告 ID',
+            dataIndex: 'evalReportId',
+            key: 'evalReportId',
+            width: 220,
+            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+        },
         {
             title: '回测运行 ID',
             dataIndex: 'backtestRunId',
@@ -66,38 +73,18 @@ export function EvaluationsPage() {
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '研究配置 ID',
-            dataIndex: 'researchConfigId',
-            key: 'researchConfigId',
-            width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
-        },
-        {
-            title: '回测配置 ID',
-            dataIndex: 'backtestConfigId',
-            key: 'backtestConfigId',
-            width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
-        },
-        {
-            title: '源策略 ID',
-            dataIndex: 'sourceStrategyId',
-            key: 'sourceStrategyId',
-            width: 180,
-        },
-        {
-            title: '运行状态',
-            dataIndex: 'status',
-            key: 'status',
-            width: 120,
-            render: (value: string) => <Tag color="default">{value}</Tag>,
-        },
-        {
             title: '评估状态',
             dataIndex: 'evaluationStatus',
             key: 'evaluationStatus',
             width: 120,
-            render: (value: string | null) => value ? <Tag color="blue">{value}</Tag> : '-',
+            render: (value: string) => <Tag color="default">{value}</Tag>,
+        },
+        {
+            title: '净收益',
+            dataIndex: 'netPnl',
+            key: 'netPnl',
+            width: 120,
+            render: (value: number | null) => formatNumber(value, 2),
         },
         {
             title: '评估时间',
@@ -105,6 +92,41 @@ export function EvaluationsPage() {
             key: 'evaluatedAt',
             width: 180,
             render: (value: string | null) => formatDateTime(value),
+        },
+        {
+            title: '总收益',
+            dataIndex: 'totalReturn',
+            key: 'totalReturn',
+            width: 120,
+            render: (value: number | null, record) => formatNumber(value ?? record.totalReturnRate),
+        },
+        {
+            title: '最大回撤',
+            dataIndex: 'maxDrawdownRate',
+            key: 'maxDrawdownRate',
+            width: 120,
+            render: (value: number | null) => formatNumber(value),
+        },
+        {
+            title: '胜率',
+            dataIndex: 'winRate',
+            key: 'winRate',
+            width: 120,
+            render: (value: number | null) => formatNumber(value),
+        },
+        {
+            title: '盈亏比',
+            dataIndex: 'profitLossRatio',
+            key: 'profitLossRatio',
+            width: 120,
+            render: (value: number | null) => formatNumber(value),
+        },
+        {
+            title: '成交数',
+            dataIndex: 'tradeCount',
+            key: 'tradeCount',
+            width: 100,
+            render: (value: number | null) => value ?? '-',
         },
         {
             title: 'Sharpe',
@@ -202,7 +224,7 @@ export function EvaluationsPage() {
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="源策略 ID" name="sourceStrategyId">
+                                <Form.Item label="回测运行 ID" name="sourceStrategyId">
                                     <Input placeholder="本地筛选字段"/>
                                 </Form.Item>
                             </Col>
@@ -242,7 +264,7 @@ export function EvaluationsPage() {
                             dataSource={visibleItems}
                             loading={evaluationsQuery.isFetching}
                             pagination={{pageSize: 10, showSizeChanger: false}}
-                            scroll={{x: 1820}}
+                            scroll={{x: 2460}}
                             locale={{
                                 emptyText: '当前筛选条件下没有匹配的评估结果。',
                             }}
@@ -261,16 +283,22 @@ export function EvaluationsPage() {
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item label="回测运行 ID">{selectedRow.backtestRunId}</Descriptions.Item>
-                            <Descriptions.Item label="研究配置 ID">{selectedRow.researchConfigId}</Descriptions.Item>
-                            <Descriptions.Item label="回测配置 ID">{selectedRow.backtestConfigId}</Descriptions.Item>
-                            <Descriptions.Item label="源策略 ID">{selectedRow.sourceStrategyId}</Descriptions.Item>
-                            <Descriptions.Item label="运行状态">{selectedRow.status}</Descriptions.Item>
-                            <Descriptions.Item
-                                label="评估状态">{selectedRow.evaluationStatus || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="评估报告 ID">{selectedRow.evalReportId}</Descriptions.Item>
+                            <Descriptions.Item label="评估状态">{selectedRow.evaluationStatus || '-'}</Descriptions.Item>
                             <Descriptions.Item
                                 label="评估时间">{formatDateTime(selectedRow.evaluatedAt)}</Descriptions.Item>
-                            <Descriptions.Item
-                                label="Sharpe">{formatNumber(selectedRow.sharpeRatio)}</Descriptions.Item>
+                            <Descriptions.Item label="总收益">{formatNumber(selectedRow.totalReturn ?? selectedRow.totalReturnRate)}</Descriptions.Item>
+                            <Descriptions.Item label="年化收益">{formatNumber(selectedRow.annualizedReturn)}</Descriptions.Item>
+                            <Descriptions.Item label="最大回撤">{formatNumber(selectedRow.maxDrawdownRate)}</Descriptions.Item>
+                            <Descriptions.Item label="胜率">{formatNumber(selectedRow.winRate)}</Descriptions.Item>
+                            <Descriptions.Item label="盈亏比">{formatNumber(selectedRow.profitLossRatio)}</Descriptions.Item>
+                            <Descriptions.Item label="成交数">{selectedRow.tradeCount ?? '-'}</Descriptions.Item>
+                            <Descriptions.Item label="Sharpe">{formatNumber(selectedRow.sharpeRatio)}</Descriptions.Item>
+                            <Descriptions.Item label="Metrics JSON" span={2}>
+                                <Typography.Paragraph style={{marginBottom: 0}}>
+                                    {selectedRow.metricsJson || '{}'}
+                                </Typography.Paragraph>
+                            </Descriptions.Item>
                         </Descriptions>
                         {evaluationDetailQuery.isLoading ? (
                             <Alert type="info" showIcon message="正在加载评估详情..."/>
@@ -296,13 +324,26 @@ export function EvaluationsPage() {
                                 <Descriptions.Item
                                     label="总收益率">{formatNumber(evaluationDetailQuery.data.totalReturnRate)}</Descriptions.Item>
                                 <Descriptions.Item
+                                    label="总收益">{formatNumber(evaluationDetailQuery.data.totalReturn)}</Descriptions.Item>
+                                <Descriptions.Item
+                                    label="年化收益">{formatNumber(evaluationDetailQuery.data.annualizedReturn)}</Descriptions.Item>
+                                <Descriptions.Item
                                     label="最大回撤率">{formatNumber(evaluationDetailQuery.data.maxDrawdownRate)}</Descriptions.Item>
                                 <Descriptions.Item
                                     label="胜率">{formatNumber(evaluationDetailQuery.data.winRate)}</Descriptions.Item>
                                 <Descriptions.Item
+                                    label="盈亏比">{formatNumber(evaluationDetailQuery.data.profitLossRatio)}</Descriptions.Item>
+                                <Descriptions.Item
+                                    label="成交数">{evaluationDetailQuery.data.tradeCount ?? '-'}</Descriptions.Item>
+                                <Descriptions.Item
                                     label="Sharpe">{formatNumber(evaluationDetailQuery.data.sharpeRatio)}</Descriptions.Item>
                                 <Descriptions.Item
                                     label="评估时间">{formatDateTime(evaluationDetailQuery.data.evaluatedAt)}</Descriptions.Item>
+                                <Descriptions.Item label="Metrics JSON" span={2}>
+                                    <Typography.Paragraph style={{marginBottom: 0}}>
+                                        {evaluationDetailQuery.data.metricsJson || '{}'}
+                                    </Typography.Paragraph>
+                                </Descriptions.Item>
                             </Descriptions>
                         ) : null}
                         <Card title="动作区" size="small">

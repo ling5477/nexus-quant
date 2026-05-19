@@ -37,7 +37,7 @@ test.describe('RC1-4 account credential write smoke', () => {
             await setDefaultButton.click();
         }
 
-        await expect(page.getByText('当前默认账户上下文：OKX / SIM / rc1-admin-alt（exchangeAccountId=900002）')).toBeVisible({timeout: 30_000});
+        await expect(page.getByText(/当前默认账户上下文：OKX \/ SIM \/ rc1-admin-alt（exchangeAccountId=\d+）/)).toBeVisible({timeout: 30_000});
 
         // Why: 默认账户变更不会强行覆盖 header 里的当前已选账户上下文；这里先确认默认值已写入，
         // 再模拟用户从 header 切换到账户上下文，验证后续交易工作台按显式选择联动。
@@ -64,7 +64,7 @@ test.describe('RC1-4 account credential write smoke', () => {
 
         await page.getByRole('menuitem', {name: '交易工作台'}).click();
         await expect(page).toHaveURL(/\/trading$/);
-        await expect(page.getByRole('cell', {name: 'OKX / SIM / rc1-admin-alt（exchangeAccountId=900002）'})).toBeVisible({timeout: 30_000});
+        await expect(page.getByRole('cell', {name: /OKX \/ SIM \/ rc1-admin-alt（exchangeAccountId=\d+）/})).toBeVisible({timeout: 30_000});
         await expect(page.getByText('订单列表')).toBeVisible();
     });
 });

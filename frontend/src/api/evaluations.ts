@@ -8,13 +8,13 @@ export interface EvaluationListRequest {
 
 export const evaluationsApi = {
     async list(request: EvaluationListRequest): Promise<BacktestEvaluationListItem[]> {
-        const {data} = await apiClient.get<BacktestEvaluationListItem[]>('/backtest-runs', {
+        const {data} = await apiClient.get<BacktestEvaluationListItem[]>('/evaluations', {
             params: request,
         });
         return data;
     },
-    async detail(runId: string): Promise<BacktestEvaluationDetailItem> {
-        const {data} = await apiClient.get<BacktestEvaluationDetailItem>(`/backtest-runs/${runId}/evaluation`);
+    async detail(evaluationId: string): Promise<BacktestEvaluationDetailItem> {
+        const {data} = await apiClient.get<BacktestEvaluationDetailItem>(`/evaluations/${evaluationId}`);
         return data;
     },
     async evaluate(runId: string): Promise<BacktestEvaluationDetailItem> {

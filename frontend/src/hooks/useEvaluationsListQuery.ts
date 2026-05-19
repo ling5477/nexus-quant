@@ -16,11 +16,11 @@ export function useEvaluationsListQuery(request: UseEvaluationsListQueryRequest,
     });
 }
 
-export function useEvaluationDetailQuery(runId: string | null) {
+export function useEvaluationDetailQuery(evaluationId: string | null) {
     return useQuery({
-        queryKey: evaluationsQueryKeys.detail(runId ?? ''),
-        queryFn: () => evaluationsApi.detail(runId ?? ''),
-        enabled: Boolean(runId),
+        queryKey: evaluationsQueryKeys.detail(evaluationId ?? ''),
+        queryFn: () => evaluationsApi.detail(evaluationId ?? ''),
+        enabled: Boolean(evaluationId),
     });
 }
 

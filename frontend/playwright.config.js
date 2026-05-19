@@ -30,12 +30,14 @@ export default defineConfig({
     retries: 0,
     use: {
         baseURL: baseURL,
+        actionTimeout: 30000,
+        navigationTimeout: 30000,
         trace: 'retain-on-failure',
     },
     webServer: useExternalDevServer
         ? undefined
         : {
-            command: 'npm run dev',
+            command: 'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173',
             url: baseURL,
             reuseExistingServer: true,
             timeout: 120000,

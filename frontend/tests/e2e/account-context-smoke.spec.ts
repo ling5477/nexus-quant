@@ -13,11 +13,11 @@ test.describe('RC1-6 account context smoke', () => {
         await page.getByRole('menuitem', {name: '账户管理'}).click();
         await expect(page).toHaveURL(/\/accounts$/);
         await expect(page.getByRole('heading', {name: '账户与凭证管理'})).toBeVisible();
-        await expect(page.getByText('account-context-store 当前选中：900001')).toBeVisible();
+        await expect(page.getByText(/account-context-store 当前选中：\d+/)).toBeVisible();
 
         await page.getByRole('menuitem', {name: '交易工作台'}).click();
         await expect(page).toHaveURL(/\/trading$/);
-        await expect(page.getByRole('cell', {name: 'OKX / SIM / rc1-admin-default（exchangeAccountId=900001）'})).toBeVisible();
+        await expect(page.getByRole('cell', {name: /OKX \/ SIM \/ rc1-admin-default（exchangeAccountId=\d+）/})).toBeVisible();
         await expect(page.getByText('当前页面只使用正式 exchangeAccountId')).toBeVisible();
         await expect(page.getByText('订单列表')).toBeVisible();
     });

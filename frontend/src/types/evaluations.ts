@@ -1,18 +1,24 @@
 export interface BacktestEvaluationListItem {
+    evalReportId: string;
     backtestRunId: string;
-    backtestConfigId: string;
-    researchConfigId: string;
-    sourceStrategyId: string;
-    status: string;
-    requestedAt: string;
-    startedAt: string | null;
-    finishedAt: string | null;
-    evaluationStatus: string | null;
+    evaluationStatus: string;
     evaluatedAt: string | null;
+    initialCapital: number | null;
+    finalEquity: number | null;
+    netPnl: number | null;
     totalReturnRate: number | null;
+    totalReturn: number | null;
+    annualizedReturn: number | null;
+    maxDrawdown: number | null;
     maxDrawdownRate: number | null;
     winRate: number | null;
+    profitLossRatio: number | null;
     sharpeRatio: number | null;
+    orderCount: number | null;
+    tradeCount: number | null;
+    metricsJson: string | null;
+    failureCode: string | null;
+    failureMessage: string | null;
 }
 
 export interface EvaluationsListFilters {
@@ -42,6 +48,8 @@ export interface BacktestEvaluationDetailItem {
     unrealizedPnl: number | null;
     netPnl: number | null;
     totalReturnRate: number | null;
+    totalReturn: number | null;
+    annualizedReturn: number | null;
     totalFee: number | null;
     totalSlippage: number | null;
     orderCount: number | null;
@@ -52,8 +60,10 @@ export interface BacktestEvaluationDetailItem {
     winRate: number | null;
     maxDrawdown: number | null;
     maxDrawdownRate: number | null;
+    profitLossRatio: number | null;
     sharpeRatio: number | null;
     reportJson: string | null;
+    metricsJson: string | null;
     failureCode: string | null;
     failureMessage: string | null;
 }

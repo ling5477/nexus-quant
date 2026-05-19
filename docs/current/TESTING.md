@@ -222,3 +222,48 @@ GateI-1 边界确认：
 - 未进入 GateI-2/3/4。
 - 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
 - 未修改策略核心算法、交易核心状态机或回测核心算法。
+
+## GateI-2-WO 验证记录
+
+日期：2026-05-19
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`；GateI-2 migration V20、回测配置绑定、run 快照固化、evaluation 指标增强和既有 local integration 均通过 |
+| `npm ci` | 通过 | 恢复前端依赖；原因是本地 `node_modules/typescript` 目录不完整导致首次 build 找不到 `typescript/bin/tsc`；命令完成后仍有 4 个 npm audit 告警，本轮不处理 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告，本轮不处理 |
+| `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run '-Dspring-boot.run.profiles=local'` | 通过 | 为 E2E 临时启动后端；`/actuator/health` 返回 `UP`；Flyway 当前版本到 `20` |
+| `npm run test:e2e` | 通过 | 全量 Playwright 17 passed / 1 skipped；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有交易订单详情链路，不影响 GateI-2 backtest/evaluation 主链 |
+
+GateI-2 E2E 变更：
+
+- 新增 `frontend/tests/e2e/backtest-config-enhanced-smoke.spec.ts`。
+- 新增 `frontend/tests/e2e/evaluation-report-enhanced-smoke.spec.ts`。
+- 新增 `frontend/tests/e2e/gatei2-fixtures.ts`，通过正式 API 导入本地 fixture bars、创建 dataset、strategy version、research config、backtest config、run 和 evaluation，不依赖外网交易所。
+- 更新 `frontend/tests/e2e/support.ts`，按账户 alias 解析真实 `exchangeAccountId`，避免本地自增 ID 漂移导致登录前置失败。
+- 本地验证库补入 E2E legacy strategy account 种子 `accounts.account_id=3001`，用于满足既有 `strategy_definitions.account_id` 外键；该操作不是 migration，不进入产品数据结构。
+
+GateI-2 E2E 已覆盖：
+
+- `/backtests` 页面展示 strategy version / dataset 追溯信息。
+- 回测配置详情展示 strategy version snapshot、param snapshot、dataset snapshot、config snapshot。
+- 回测运行详情展示 run 级 strategy version snapshot、dataset snapshot、param snapshot、config snapshot。
+- `/evaluations` 页面展示 total return、max drawdown、win rate、profit/loss ratio、trade count、Sharpe、metrics JSON。
+- 无数据时页面保留明确 empty 状态。
+
+GateI-2 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用 BASELINE-FIX 已通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未配置 `E2E_TRADE_ORDER_ID`，既有交易订单详情 E2E 仍按明确原因 skip；不影响 GateI-2 主链。
+
+GateI-2 边界确认：
+
+- 未进入 GateI-3/4。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未新增 SIM/Paper Trading 运行闭环。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。

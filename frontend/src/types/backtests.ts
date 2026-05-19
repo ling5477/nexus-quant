@@ -8,6 +8,10 @@ export interface BacktestConfigListItem {
     initialCapital: number | null;
     executionSpec: string;
     evaluationSpec: string;
+    strategyVersionId?: string | null;
+    strategyVersionSnapshotJson?: string | null;
+    paramSnapshotJson?: string | null;
+    configSnapshotJson?: string | null;
     datasetId?: string | null;
     datasetSnapshotJson?: string | null;
     configSnapshot: string;
@@ -40,4 +44,28 @@ export interface BacktestConfigCreateRequest {
 
 export interface BacktestDatasetBindingRequest {
     datasetId: string;
+}
+
+export interface BacktestStrategyVersionBindingRequest {
+    strategyVersionId: string;
+}
+
+export interface BacktestRunCreateRequest {
+    backtestConfigId: string;
+}
+
+export interface BacktestRunDetailItem {
+    backtestRunId: string;
+    backtestConfigId: string;
+    researchConfigId: string;
+    sourceStrategyId: string;
+    strategyVersionId: string | null;
+    strategyVersionSnapshotJson: string | null;
+    paramSnapshotJson: string | null;
+    configSnapshotJson: string | null;
+    datasetSnapshotJson: string | null;
+    status: string;
+    requestedAt: string;
+    startedAt: string | null;
+    finishedAt: string | null;
 }

@@ -612,3 +612,141 @@
 - GateI-1 变更完成审查并提交。
 - GateI-2-WO 只能做回测配置、评估指标、结果追溯增强。
 - GateI-2-WO 不得夹带 AI、Paper Trading 运行闭环、美股/A 股、合约全量、高频或复杂因子平台。
+
+## GateI-2-WO 执行记录
+
+日期：2026-05-19
+
+### 本轮范围
+
+- 增强 backtest config，使其可绑定 strategy version，并展示 strategy version、dataset、param、config 快照。
+- 增强 backtest run 创建链路，在创建 run 时固化 strategy version snapshot、dataset snapshot、param snapshot、config snapshot。
+- 增强 evaluation report 指标，持久化并返回 total return、annualized return、max drawdown、win rate、profit/loss ratio、trade count、Sharpe、metrics JSON。
+- 增强 `/backtests` 和 `/evaluations` 页面追溯展示。
+- 新增 GateI-2 E2E smoke，并修复本地 E2E fixture 对固定账户 ID 的依赖。
+
+### 新增文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V20__gate_i2_backtest_traceability.sql`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/BacktestStrategyVersionBindingRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/EvaluationController.java`
+- `frontend/tests/e2e/gatei2-fixtures.ts`
+- `frontend/tests/e2e/backtest-config-enhanced-smoke.spec.ts`
+- `frontend/tests/e2e/evaluation-report-enhanced-smoke.spec.ts`
+
+### 修改文件
+
+- `backend/nq-api/**/research/**`
+- `backend/nq-core/**/research/**`
+- `backend/nq-backtest/**`
+- `backend/nq-eval/**`
+- `backend/nq-infra/**/research/**`
+- `frontend/src/api/backtests.ts`
+- `frontend/src/api/evaluations.ts`
+- `frontend/src/hooks/useBacktestsListQuery.ts`
+- `frontend/src/hooks/useEvaluationsListQuery.ts`
+- `frontend/src/pages/backtests/BacktestsPage.tsx`
+- `frontend/src/pages/evaluations/EvaluationsPage.tsx`
+- `frontend/src/types/backtests.ts`
+- `frontend/src/types/evaluations.ts`
+- `frontend/tests/e2e/support.ts`
+- `frontend/tests/e2e/strategy-version-smoke.spec.ts`
+- `frontend/tests/e2e/research-detail.spec.ts`
+- `frontend/tests/e2e/research-query.spec.ts`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/STATUS.md`
+
+### DB / Migration
+
+- `V20__gate_i2_backtest_traceability.sql` 只新增 GateI-2 所需字段和索引，未修改历史 migration。
+- `backtest_configs` 新增 `strategy_version_id`、`strategy_version_snapshot_json`、`param_snapshot_json`、`config_snapshot_json`，复用 GateH-3 `dataset_id` 与 `dataset_snapshot_json`。
+- `backtest_runs` 新增 `strategy_version_id`、`strategy_version_snapshot_json`、`param_snapshot_json`、`config_snapshot_json`，复用 GateH-3 `dataset_snapshot_json`。
+- `backtest_eval_reports` 新增 `total_return`、`annualized_return`、`profit_loss_ratio`、`metrics_json`。
+- 新增索引覆盖 `backtest_configs.strategy_version_id`、`backtest_runs.strategy_version_id`、`backtest_eval_reports.backtest_run_id`。
+- `V20` 未新增表；所有新增字段均有 PostgreSQL `COMMENT ON COLUMN` 注释，JSONB 字段注释包含用途与敏感信息禁入规则。
+
+### 后端实现
+
+- `PATCH /api/backtest-configs/{configId}/strategy-version` 绑定 strategy version，并固化版本快照与参数快照。
+- `POST /api/backtest-runs` 从 config 复制 strategy version、dataset、param、config 快照，保证历史 run 不受后续 config 变更影响。
+- `GET /api/backtest-configs`、`GET /api/backtest-configs/{configId}`、`GET /api/backtest-runs/{runId}` 返回完整追溯字段。
+- 新增 `GET /api/evaluations` 与 `GET /api/evaluations/{evaluationId}`，返回增强指标和 `metricsJson`。
+- API 层不写 SQL，core 不依赖 JDBC，JDBC 实现仍在 infra。
+- 未修改策略核心算法、回测核心算法或交易核心状态机。
+
+### 前端实现
+
+- `/backtests` 展示 strategy version、dataset、参数快照、配置快照，并支持绑定 strategy version 与创建 run 后查看 run 级快照。
+- `/evaluations` 展示 total return、annualized return、max drawdown、win rate、profit/loss ratio、trade count、Sharpe、metrics JSON。
+- 页面保留 loading、empty、error 状态。
+- 服务端数据仍通过 Axios + TanStack Query 获取；Zustand 不存 backtest/evaluation 服务端数据。
+
+### E2E 实现
+
+- 新增 `backtest-config-enhanced-smoke`，验证 `/backtests` 页面 strategy version / dataset 追溯、config snapshot、run snapshot。
+- 新增 `evaluation-report-enhanced-smoke`，验证 `/evaluations` 核心指标、详情和 `metrics JSON`。
+- E2E fixture 使用正式 API 创建本地数据，不依赖外网交易所。
+- `support.ts` 按 alias 解析真实 `exchangeAccountId`，避免本地自增 ID 漂移。
+- 本地验证库补入 `accounts.account_id=3001` 作为 legacy strategy account 种子，用于既有 `strategy_definitions.account_id` 外键；该种子不属于 migration。
+
+### 验证结果
+
+- `mvn -f backend/pom.xml test`：通过，Reactor `BUILD SUCCESS`。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告。
+- `npm run test:e2e`：通过，17 passed / 1 skipped。
+- E2E skipped 原因：`trading workspace / 配置订单 ID 时可打开订单详情` 未配置 `E2E_TRADE_ORDER_ID`，为既有交易订单详情链路，不影响 GateI-2 主链。
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用 BASELINE-FIX 已通过基线。
+
+### 未完成项与边界
+
+- 未处理 `npm audit` 4 个依赖漏洞提示。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未进入 GateI-3/4。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未新增 SIM/Paper Trading 运行闭环。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机、策略核心算法或回测核心算法。
+
+### GateI-3 结论
+
+- GateI-2-WO 已完成。
+- 允许进入 GateI-3-WO，但只能在本轮变更审查/提交后单独开工。
+- GateI-3 只能做 SIM/Paper Trading 运行闭环，不能夹带 AI。
+
+## GateH Freeze Snapshot 归档记录
+
+日期：2026-05-19
+
+### 本轮范围
+
+- 新建/复用 `docs/gates/gate-h/` 作为 GateH completed 的只读历史快照目录。
+- 将 GateH 完成相关文档从 `docs/current/` 复制归档到 `docs/gates/gate-h/`。
+- 更新 `docs/gates/gate-h/README.md`，明确 GateH completed、GateH 范围、GateH 不包含 AI、不包含 GateI 策略版本/发布链路/Paper Trading。
+
+### 归档文件
+
+- `docs/gates/gate-h/PLAN_GATEH.md`
+- `docs/gates/gate-h/GATEH_API_PLAN.md`
+- `docs/gates/gate-h/GATEH_DB_PLAN.md`
+- `docs/gates/gate-h/GATEH_FRONTEND_PLAN.md`
+- `docs/gates/gate-h/GATEH_TEST_PLAN.md`
+- `docs/gates/gate-h/GATEH_WORK_ORDER.md`
+- `docs/gates/gate-h/API.md`
+- `docs/gates/gate-h/DB_SCHEMA.md`
+- `docs/gates/gate-h/TESTING.md`
+- `docs/gates/gate-h/STATUS.md`
+- `docs/gates/gate-h/ROADMAP.md`
+- `docs/gates/gate-h/WORKLOG.md`
+- `docs/gates/gate-h/README.md`
+
+### 边界确认
+
+- 使用复制归档，未移动 `docs/current/` 中的 GateI 文档。
+- 未创建 `docs/gates/gate-i/`。
+- 未改业务代码。
+- 未新增 migration。
+- 未新增 API。
+- 未改前端页面。

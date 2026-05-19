@@ -18,12 +18,14 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateH completed。
 - GateI-PLAN completed。
 - GateI-1-WO completed。
+- GateI-2-WO completed.
 
 ## 当前执行状态
 
-- 当前已完成 `GateI-1-WO`：策略版本与发布链路正式化。
-- 下一步可进入 `GateI-2-WO`，但必须在本轮变更审查/提交后单独开工。
-- GateI-2/3/4 功能尚未开始。
+- 当前已完成 `GateI-2-WO`：回测配置、评估指标、结果追溯增强。
+- GateI-2 后端测试、前端 build、E2E 已通过。
+- GateI-3-WO 只允许在本轮变更审查/提交后单独开工；GateI-3 只能做 SIM/Paper Trading 运行闭环，不能夹带 AI。
+- GateI-3/4 功能尚未开始。
 - AI 尚未开始。
 
 ## 当前未完成状态
@@ -74,10 +76,15 @@ GateO：A 股适配
 - GateI-1 后端 `mvn -f backend/pom.xml test` 已通过。
 - GateI-1 前端 `npm run build` 已通过。
 - GateI-1 E2E `npm run test:e2e` 已通过，结果为 13 passed / 3 skipped。
+- GateI-2 后端 `mvn -f backend/pom.xml test` 已通过。
+- GateI-2 前端 `npm run build` 已通过。
+- GateI-2 后端 local profile 启动已通过，Flyway 当前版本为 `20`。
+- GateI-2 E2E `npm run test:e2e` 已通过，结果为 17 passed / 1 skipped；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有订单详情链路，不影响 GateI-2 主链。
 - Python `pytest`、`mypy`、`ruff` 已通过。
 
 ## GateI 当前边界
 
 - GateI-1 只实现策略版本与发布记录绑定，不进入回测配置增强、评估指标增强、SIM/Paper 运行闭环、风控回写、资金曲线、持仓曲线、复盘或异常停机。
 - GateI-2 只能做回测配置、评估指标、结果追溯增强。
+- GateI-2 已完成；GateI-3 尚未开始，后续必须单独开工且不得夹带 AI。
 - AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始。

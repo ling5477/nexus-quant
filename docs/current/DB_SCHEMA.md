@@ -131,7 +131,50 @@ GateI-1 变更 `backtest_publish_records`：
 
 ## GateI DB Planning Entry
 
-GateI DB 规划入口为 [GATEI_DB_PLAN.md](./GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2/3/4 尚未开始。
+## GateI-2 当前 Backtest Traceability 与 Evaluation 结构
+
+GateI-2 新增 Flyway migration：
+
+- `V20__gate_i2_backtest_traceability.sql`
+
+GateI-2 变更 `backtest_configs`：
+
+- 新增 `strategy_version_id`，可空，外键关联 `strategy_versions.strategy_version_id`。
+- 新增 `strategy_version_snapshot_json`，默认 `{}`，绑定 strategy version 时固化版本快照，不保存 token、cookie、密钥。
+- 新增 `param_snapshot_json`，默认 `{}`，绑定 strategy version 时固化参数快照。
+- 新增 `config_snapshot_json`，默认 `{}`，第一版从既有 `config_json` 回填，用于回测配置自身快照。
+- 复用 GateH-3 已有 `dataset_id` 和 `dataset_snapshot_json`。
+- 新增索引 `idx_backtest_configs_strategy_version_id`；继续复用 `idx_backtest_configs_dataset_id`。
+
+GateI-2 变更 `backtest_runs`：
+
+- 新增 `strategy_version_id`，可空，创建 run 时从 `backtest_configs` 固化。
+- 新增 `strategy_version_snapshot_json`，默认 `{}`，创建 run 时固化策略版本快照。
+- 新增 `param_snapshot_json`，默认 `{}`，创建 run 时固化参数快照。
+- 新增 `config_snapshot_json`，默认 `{}`，第一版从既有 `backtest_config_snapshot` 回填。
+- 复用 GateH-3 已有 `dataset_snapshot_json`，创建 run 时从配置固化 dataset snapshot。
+- 新增索引 `idx_backtest_runs_strategy_version_id`；继续复用 `idx_backtest_runs_backtest_config_id`。
+
+GateI-2 变更 `backtest_eval_reports`：
+
+- 新增 `total_return`，第一版与 `total_return_rate` 同口径。
+- 新增 `annualized_return`，按评估权益快照首尾时间差折算；时间差不可用时为空。
+- 新增 `profit_loss_ratio`，口径为闭合盈利交易总收益 / 闭合亏损交易绝对值；亏损为 0 时返回 0。
+- 新增 `metrics_json`，保存 total return、annualized return、max drawdown、win rate、profit/loss ratio、trade count、Sharpe 等展示指标。
+- 新增索引 `idx_backtest_eval_reports_backtest_run_id`，用于按 run 回查评估报告。
+
+注释要求：
+
+- `V20` 未新增表。
+- `V20` 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- JSONB 快照字段注释均写明用途和敏感信息禁入规则。
+- 评估指标字段注释写明核心口径、边界条件和空值语义。
+
+GateI-2 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。
+
+## GateI DB Planning Entry
+
+GateI DB 规划入口为 [GATEI_DB_PLAN.md](./GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2 已落地回测追溯与评估指标增强；GateI-3/4 尚未开始。
 
 GateI 后续规划重点：
 
@@ -151,4 +194,4 @@ GateI 后续规划重点：
 
 GateI 后续如果新增 migration，所有新增表必须包含 PostgreSQL `COMMENT ON TABLE`，所有新增字段必须包含 `COMMENT ON COLUMN`。JSONB 快照字段必须说明用途、结构边界和敏感信息禁入规则。
 
-GateI-1 不修改策略核心算法、不修改回测核心算法、不进入 Paper Trading、不接入 AI。
+GateI-1 / GateI-2 不修改策略核心算法、不修改回测核心算法、不进入 Paper Trading、不接入 AI。

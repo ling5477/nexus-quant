@@ -4,7 +4,18 @@ const username = process.env.E2E_USERNAME ?? 'admin';
 const password = process.env.E2E_PASSWORD ?? 'ChangeMe123!';
 const defaultUsername = 'admin';
 const defaultPassword = 'ChangeMe123!';
-const defaultExchangeAccountId = 900001;
+const defaultAccountAlias = 'rc1-admin-default';
+const altAccountAlias = 'rc1-admin-alt';
+
+export interface E2EExchangeAccountFixture {
+    exchangeAccountId: number;
+    legacyAccountId?: number | null;
+    exchangeCode: string;
+    tradeEnv: string;
+    accountAlias: string;
+    isDefault: boolean;
+    status: string;
+}
 
 async function resetDefaultAccountFixture(page: Page) {
     const loginResponse = await page.request.post('/api/auth/login', {
@@ -16,20 +27,28 @@ async function resetDefaultAccountFixture(page: Page) {
     const loginPayload = await loginResponse.json();
     const accessToken = loginPayload.accessToken;
     expect(accessToken, 'E2E fixture reset requires an accessToken from /api/auth/login').toBeTruthy();
+    const authHeaders = {
+        Authorization: `Bearer ${accessToken}`,
+    };
+
+    const accounts = await listAccounts(page, authHeaders);
+    const defaultAccount = await ensureAccount(page, authHeaders, accounts, defaultAccountAlias);
+    await ensureAccount(page, authHeaders, accounts, altAccountAlias);
 
     // Why: 账户写侧 smoke 会把默认账户切到 rc1-admin-alt；每条 E2E 登录前先固定回
-    // rc1-admin-default，确保回归不依赖数据库历史残留状态，也不降低页面断言强度。
-    const resetResponse = await page.request.post(`/api/exchange-accounts/${defaultExchangeAccountId}/set-default`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
+    // rc1-admin-default。这里按 alias 解析真实 exchangeAccountId，避免本地库自增 ID 漂移导致
+    // 所有页面 smoke 在登录前置阶段失败。
+    const resetResponse = await page.request.post(`/api/exchange-accounts/${defaultAccount.exchangeAccountId}/set-default`, {
+        headers: authHeaders,
         timeout: 30_000,
     });
-    expect(resetResponse.ok()).toBeTruthy();
+    expect(resetResponse.ok(), await resetResponse.text()).toBeTruthy();
+
+    return {...defaultAccount, isDefault: true};
 }
 
-export async function loginToConsole(page: Page) {
-    await resetDefaultAccountFixture(page);
+export async function loginToConsole(page: Page): Promise<E2EExchangeAccountFixture> {
+    const defaultAccount = await resetDefaultAccountFixture(page);
 
     await page.goto('/login');
     await expect(page.getByRole('heading', {name: '登录控制台'})).toBeVisible();
@@ -46,4 +65,54 @@ export async function loginToConsole(page: Page) {
     // 这里显式放宽等待窗口，避免把真实登录成功误判成路由失败。
     await expect(page).toHaveURL(/\/dashboard$/, {timeout: 15_000});
     await expect(page.getByRole('heading', {name: '控制台总览'})).toBeVisible({timeout: 15_000});
+
+    return defaultAccount;
+}
+
+async function listAccounts(page: Page, authHeaders: {Authorization: string}): Promise<E2EExchangeAccountFixture[]> {
+    const response = await page.request.get('/api/exchange-accounts', {
+        headers: authHeaders,
+        timeout: 30_000,
+    });
+    expect(response.ok(), await response.text()).toBeTruthy();
+    return await response.json() as E2EExchangeAccountFixture[];
+}
+
+async function ensureAccount(
+    page: Page,
+    authHeaders: {Authorization: string},
+    knownAccounts: E2EExchangeAccountFixture[],
+    accountAlias: string,
+): Promise<E2EExchangeAccountFixture> {
+    const existing = knownAccounts.find((account) => (
+        account.exchangeCode === 'OKX'
+        && account.tradeEnv === 'SIM'
+        && account.accountAlias === accountAlias
+    ));
+    if (existing) {
+        if (existing.status !== 'ACTIVE') {
+            const enableResponse = await page.request.post(`/api/exchange-accounts/${existing.exchangeAccountId}/enable`, {
+                headers: authHeaders,
+                timeout: 30_000,
+            });
+            expect(enableResponse.ok(), await enableResponse.text()).toBeTruthy();
+            return {...existing, status: 'ACTIVE'};
+        }
+        return existing;
+    }
+
+    const createResponse = await page.request.post('/api/exchange-accounts', {
+        headers: authHeaders,
+        data: {
+            exchangeCode: 'OKX',
+            tradeEnv: 'SIM',
+            accountAlias,
+            externalAccountRef: null,
+        },
+        timeout: 30_000,
+    });
+    expect(createResponse.ok(), await createResponse.text()).toBeTruthy();
+    const created = await createResponse.json() as E2EExchangeAccountFixture;
+    knownAccounts.push(created);
+    return created;
 }

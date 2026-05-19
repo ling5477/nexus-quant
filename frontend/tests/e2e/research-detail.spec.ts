@@ -23,7 +23,7 @@ test.describe('GateG-4B research detail', () => {
         test.skip(payload.length === 0, '当前环境没有预置研究配置数据，无法验证列表进入详情链路。');
 
         await page.getByRole('button', {name: '查看详情'}).first().click();
-        await expect(page.getByText('研究配置详情')).toBeVisible();
-        await expect(page.getByText('动作区')).toBeVisible();
+        await expect(page.getByText('研究配置详情', {exact: true})).toBeVisible();
+        await expect(page.getByLabel('研究配置详情').getByText('动作区', {exact: true})).toBeVisible();
     });
 });
