@@ -267,3 +267,79 @@ GateI-2 边界确认：
 - 未修改交易核心状态机。
 - 未修改策略核心算法。
 - 未修改回测核心算法。
+
+## GateI-3-WO 验证记录
+
+日期：2026-05-19
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`；GateI-3 Flyway V21 编译通过；新增 `PaperTradingRunServiceTest` 4 个用例覆盖创建、启动、停止、状态拒绝；既有 35 个 nq-app suite 测试全通过 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告，本轮不处理 |
+
+GateI-3 E2E 说明：
+
+- 新增 `frontend/tests/e2e/paper-trading-run-smoke.spec.ts`，覆盖：Paper Trading 页面打开、列表查询、创建 Paper run、启动 Paper run、停止 Paper run、查看 orders/trades/positions 空态、查看快照标签。
+- 新增 `frontend/tests/e2e/paper-trading-fixtures.ts`，通过正式 API 完整链路准备 fixture：fixture bars 导入 → strategy → strategy version → research config → backtest config → strategy version 绑定 → backtest run → start → evaluate → publish；最终返回可用的 `publishId`。
+- E2E 不依赖外网交易所；不调用真实 LIVE 下单接口。
+- E2E 需要后端 local profile 启动且 Flyway 到 V21；本轮提交前未在干净本地 5432 实例上执行该完整 E2E（具体执行需要先启动后端、确保 fixture 账户种子 3001 存在）。
+
+GateI-3 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用 BASELINE-FIX 已通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未在本轮启动后端 local profile 并执行 `npm run test:e2e`；E2E spec 已就绪，等待 GateI-3-FIX 或下次完整本地验证窗口执行。
+
+GateI-3 边界确认：
+
+- 未进入 GateI-4。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+- 未调用真实交易所下单接口。
+
+## GateI-3-FIX 验证记录
+
+日期：2026-05-20
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | BUILD SUCCESS，35 tests，0 failures |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告 |
+| 后端 local profile 启动 | 通过 | `/actuator/health` 返回 `UP`；Flyway V21 已应用 |
+| `npm run test:e2e` | 通过 | 18 passed / 1 skipped |
+
+GateI-3-FIX 修复内容：
+
+- `paper-trading-run-smoke.spec.ts`：`getByLabel('发布 ID')` → `getByPlaceholder('发布记录 ID（publishId）')`，修复 Ant Design Form.Item label 关联问题。
+- `paper-trading-run-smoke.spec.ts`：Modal OK 按钮从 `getByRole('button', {name: '确 定'})` → `getByRole('button', {name: 'OK', exact: true})`，修复无中文 locale 时按钮文本为 "OK" 且与 "OKX" 冲突。
+- `paper-trading-run-smoke.spec.ts`：移除 `waitForResponse` 对 GET 列表刷新的显式等待，改用 `await expect(row).toBeVisible({timeout: 15_000})` 等待 UI 更新。
+- `paper-trading-run-smoke.spec.ts`：Drawer 内断言从 `page.getByText('Paper Run ID')` → `page.getByLabel('Paper Trading 详情').getByText('Paper Run ID')`，避免与表头重复元素冲突。
+- `paper-trading-run-smoke.spec.ts`：按钮选择器使用 `.or()` 兼容 `getByRole('link')` 和 `getByRole('button')`，适配 Ant Design Table 内 `type="link"` 按钮的实际 role。
+
+GateI-3-FIX E2E 覆盖：
+
+- `/paper-trading` 页面可打开。
+- 可创建 Paper run（POST /api/paper-trading/runs 返回 CREATED + 快照绑定）。
+- 可启动 Paper run（POST .../start 返回 RUNNING）。
+- 可停止 Paper run（POST .../stop 返回 STOPPED）。
+- 详情抽屉可打开，展示 Paper Run ID、状态、快照。
+- 订单/成交/持仓标签页展示明确空态。
+- 快照标签页展示 Publish Snapshot 和 Strategy Version Snapshot。
+- 不依赖外网交易所。
+- 不调用真实 LIVE 下单。
+- 使用本地 account_id=3001 种子。
+
+GateI-3-FIX skipped 说明：
+
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID`，为既有交易订单详情链路，不影响 GateI-3 主链。
+
+GateI-3-FIX 结论：
+
+- GateI-3-WO + GateI-3-FIX 已完成。
+- 后端测试通过、前端 build 通过、E2E 18 passed / 1 skipped。
+- 允许进入 GateI-4-WO，但只能在本轮变更审查/提交后单独开工。
+- GateI-4 只能做风控回写、资金曲线、持仓曲线、交易复盘与异常停机，不能夹带 AI。

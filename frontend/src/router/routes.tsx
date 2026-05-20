@@ -9,6 +9,7 @@ import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
 import {LoginPage} from '@/pages/login/LoginPage';
 import {MarketdataPage} from '@/pages/marketdata/MarketdataPage';
 import {NotFoundPage} from '@/pages/not-found/NotFoundPage';
+import {PaperTradingPage} from '@/pages/paper-trading/PaperTradingPage';
 import {PublishesPage} from '@/pages/publishes/PublishesPage';
 import {ResearchPage} from '@/pages/research/ResearchPage';
 import {RunsPage} from '@/pages/runs/RunsPage';
@@ -123,6 +124,11 @@ export const appRouter = createBrowserRouter([
                         path: 'publishes',
                         element: <PublishesPage/>,
                         handle: createHandle('publishes'),
+                    },
+                    {
+                        path: 'paper-trading',
+                        element: <PaperTradingPage/>,
+                        handle: createHandle('paper-trading'),
                     },
                 ],
             },

@@ -122,6 +122,15 @@ export const appNavItems: AppNavItem[] = [
         description: '发布结果列表与链路审计入口。',
         section: '研究与回测',
     },
+    {
+        key: 'paper-trading',
+        path: '/paper-trading',
+        label: '模拟交易',
+        icon: <SwapOutlined/>,
+        title: '模拟交易',
+        description: '基于已发布策略版本创建 SIM/Paper Trading run，查看运行状态与最小事实。',
+        section: '策略运行',
+    },
 ];
 
 export function resolveMenuKey(pathname: string): string {

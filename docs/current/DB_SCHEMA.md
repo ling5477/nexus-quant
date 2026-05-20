@@ -195,3 +195,57 @@ GateI 后续规划重点：
 GateI 后续如果新增 migration，所有新增表必须包含 PostgreSQL `COMMENT ON TABLE`，所有新增字段必须包含 `COMMENT ON COLUMN`。JSONB 快照字段必须说明用途、结构边界和敏感信息禁入规则。
 
 GateI-1 / GateI-2 不修改策略核心算法、不修改回测核心算法、不进入 Paper Trading、不接入 AI。
+
+## GateI-3 Paper Trading 结构
+
+GateI-3 新增 Flyway migration：
+
+- `V21__gate_i3_paper_trading.sql`
+
+GateI-3 新增 `paper_trading_runs`：
+
+- 身份字段：`paper_run_id`，业务主键。
+- 发布引用：`publish_id`，外键关联 `backtest_publish_records.publish_record_id`。
+- 策略版本引用：`strategy_version_id`，外键关联 `strategy_versions.strategy_version_id`。
+- 状态字段：`status`，允许值 `CREATED`、`RUNNING`、`STOPPED`、`FAILED`。
+- 运行维度：`trade_env`（SIM/LIVE）、`exchange_code`、`market_type`、`symbol`、`interval_code`。
+- 时间字段：`started_at`、`stopped_at`、`created_at`、`updated_at`。
+- 快照字段：`publish_snapshot_json`、`strategy_version_snapshot_json`、`dataset_snapshot_json`、`param_snapshot_json`、`config_snapshot_json`。
+- 审计字段：`created_by`。
+- 索引：`idx_paper_runs_publish_id`、`idx_paper_runs_strategy_version_id`、`idx_paper_runs_status`。
+
+GateI-3 新增 `paper_trading_orders`：
+
+- 身份字段：`paper_order_id`，业务主键。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 订单字段：`symbol`、`side`（BUY/SELL）、`order_type`、`quantity`、`price`。
+- 状态字段：`status`，允许值 `CREATED`、`FILLED`、`CANCELED`、`REJECTED`。
+- 信号字段：`reason`、`raw_signal_json`。
+- 时间字段：`created_at`、`updated_at`。
+- 索引：`idx_paper_orders_run_id`、`idx_paper_orders_run_symbol_status`。
+
+GateI-3 新增 `paper_trading_trades`：
+
+- 身份字段：`paper_trade_id`，业务主键。
+- 归属字段：`paper_order_id`、`paper_run_id`，分别外键关联。
+- 成交字段：`symbol`、`side`、`quantity`、`price`、`fee`、`traded_at`。
+- 时间字段：`created_at`。
+- 索引：`idx_paper_trades_run_id`、`idx_paper_trades_order_id`、`idx_paper_trades_symbol_time`。
+
+GateI-3 新增 `paper_trading_positions`：
+
+- 身份字段：`paper_position_id`，业务主键。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 持仓字段：`symbol`、`quantity`、`avg_price`、`unrealized_pnl`、`realized_pnl`。
+- 唯一约束：`paper_run_id + symbol`。
+- 时间字段：`updated_at`、`created_at`。
+- 索引：`idx_paper_positions_run_id`。
+
+注释要求：
+
+- `V21` 所有新增表均包含 PostgreSQL `COMMENT ON TABLE`。
+- `V21` 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态字段注释写明允许值。
+- JSONB 快照字段注释写明用途和敏感信息禁入规则。
+
+GateI-3 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。

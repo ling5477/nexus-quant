@@ -102,3 +102,18 @@ export const tradingWorkbenchQueryKeys = {
         searchVersion,
     ] as const,
 };
+
+export const paperTradingQueryKeys = {
+    all: ['paper-trading-runs'] as const,
+    list: (request: { publishId?: string; status?: string }, searchVersion: number) => [
+        ...paperTradingQueryKeys.all,
+        'list',
+        request.publishId ?? '',
+        request.status ?? '',
+        searchVersion,
+    ] as const,
+    detail: (paperRunId: string) => [...paperTradingQueryKeys.all, 'detail', paperRunId] as const,
+    orders: (paperRunId: string) => [...paperTradingQueryKeys.all, 'orders', paperRunId] as const,
+    trades: (paperRunId: string) => [...paperTradingQueryKeys.all, 'trades', paperRunId] as const,
+    positions: (paperRunId: string) => [...paperTradingQueryKeys.all, 'positions', paperRunId] as const,
+};

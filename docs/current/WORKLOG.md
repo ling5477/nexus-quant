@@ -776,3 +776,179 @@
 
 - 本轮为文档同步任务，不重新执行 `mvn`、`npm`、Python 全量测试。
 - 已按任务要求执行 `git status --short` 与 README / AGENTS / WORKLOG 关键词检查。
+
+## GateI-3-WO 执行记录
+
+日期：2026-05-19
+
+### 本轮范围
+
+- 实现 SIM/Paper Trading 运行闭环最小版本。
+- 新增 4 张 paper_trading 表：`paper_trading_runs`、`paper_trading_orders`、`paper_trading_trades`、`paper_trading_positions`。
+- 新增后端 Paper Trading run 领域、JDBC 持久化、应用服务、API 服务和 controller。
+- 新增前端 `/paper-trading` 入口、API 客户端、TanStack Query hooks、列表/详情/创建 UI。
+- 新增 Paper Trading run E2E smoke 与 fixture 链路。
+- 同步 docs/current 文档：API、DB_SCHEMA、TESTING、WORKLOG、STATUS。
+
+### 新增文件
+
+后端：
+
+- `backend/nq-infra/src/main/resources/db/migration/V21__gate_i3_paper_trading.sql`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperTradingRun.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperTradingRunStatus.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperTradingOrder.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperOrderStatus.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperTradingTrade.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperTradingPosition.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperTradingRunRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperTradingOrderRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperTradingTradeRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperTradingPositionRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/paper/PaperTradingRunService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/paper/PaperTradingRunCreateCommand.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/api/paper/PaperTradingApiService.java`
+- `backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/paper/PaperTradingRunServiceTest.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperTradingRunRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperTradingOrderRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperTradingTradeRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperTradingPositionRepository.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingRunResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingRunCreateRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingOrderResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingTradeResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingPositionResponse.java`
+
+前端：
+
+- `frontend/src/types/paper-trading.ts`
+- `frontend/src/api/paper-trading.ts`
+- `frontend/src/hooks/usePaperTradingQuery.ts`
+- `frontend/src/pages/paper-trading/PaperTradingPage.tsx`
+- `frontend/tests/e2e/paper-trading-fixtures.ts`
+- `frontend/tests/e2e/paper-trading-run-smoke.spec.ts`
+
+### 修改文件
+
+- `frontend/src/api/query-keys.ts`：新增 `paperTradingQueryKeys`。
+- `frontend/src/router/routes.tsx`：注册 `/paper-trading` 路由。
+- `frontend/src/router/navigation.tsx`：新增 `paper-trading` 菜单项。
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
+- `docs/current/STATUS.md`
+- `docs/current/WORKLOG.md`
+
+### DB / Migration
+
+- `V21__gate_i3_paper_trading.sql` 只新增 GateI-3 所需 4 张表，未修改历史 migration。
+- 4 张表均包含 PostgreSQL `COMMENT ON TABLE`。
+- 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态字段 `paper_trading_runs.status`、`paper_trading_orders.status`、`paper_trading_runs.trade_env`、`paper_trading_orders.side`、`paper_trading_trades.side` 均通过 `CHECK` 约束限制允许值。
+- 外键约束：`paper_runs.publish_id → backtest_publish_records.publish_record_id`、`paper_runs.strategy_version_id → strategy_versions.strategy_version_id`、`paper_orders.paper_run_id → paper_runs`、`paper_trades.paper_order_id → paper_orders` 与 `paper_run_id → paper_runs`、`paper_positions.paper_run_id → paper_runs`。
+- `paper_trading_positions` 通过 `(paper_run_id, symbol)` 唯一约束保证持仓行幂等。
+- 索引：`idx_paper_runs_publish_id`、`idx_paper_runs_strategy_version_id`、`idx_paper_runs_status`、`idx_paper_orders_run_id`、`idx_paper_orders_run_symbol_status`、`idx_paper_trades_run_id`、`idx_paper_trades_order_id`、`idx_paper_trades_symbol_time`、`idx_paper_positions_run_id`。
+- 新增字段 `paper_trading_runs.interval_code` 而非 `interval`，避免 PostgreSQL `INTERVAL` 关键字冲突。
+
+### 后端实现
+
+- `nq-research` 承载领域模型、port、应用服务，不依赖 JDBC。
+- `nq-infra` 承载 JDBC 实现，使用 `::text` 读取 JSONB、`CAST(? AS JSONB)` 写入 JSONB。
+- `nq-api` 提供 `PaperTradingController`，所有写操作委派给 `PaperTradingApiService`，不直接写 SQL。
+- `PaperTradingApiService` 把领域 `IllegalArgumentException` 映射为 HTTP 404、`IllegalStateException` 映射为 HTTP 409。
+- 创建 Paper run 时通过 `BacktestPublishRecordRepository` 加载 publish 与 publish snapshot/version snapshot；通过 `BacktestRunRepository` 加载发布关联的 backtest run，复制 dataset snapshot 与 param snapshot；request body 中的 `configSnapshotJson` 作为运行级 config snapshot 固化。
+- Paper run 状态机：`CREATED → RUNNING`（仅 start）；`RUNNING → STOPPED`（仅 stop）；非法状态过渡返回 409。
+- `created_by` 第一版固定为 `system`，与既有 `BacktestPublishService` 等模块一致；后续可按权限链路接入登录用户。
+- 不调用任何真实交易所下单接口。
+- 不修改交易核心状态机、策略核心算法、回测核心算法。
+
+### 前端实现
+
+- `/paper-trading` 增强菜单与路由入口，归类到 `策略运行`。
+- 提供查询区（按 publishId / status 过滤）、列表区、创建弹窗、详情抽屉。
+- 详情抽屉包含订单、成交、持仓和快照标签页，每个标签页都有 loading / empty / error 状态。
+- 服务端数据通过 Axios + TanStack Query 获取；Zustand 不存 Paper Trading 服务端数据。
+- 列表行内提供 `查看详情`、`启动`、`停止` 按钮，按状态启用/禁用。
+
+### E2E 实现
+
+- 新增 `paper-trading-run-smoke.spec.ts`：登录 → 准备 fixture → 打开 `/paper-trading` → 查询 → 创建 run → 校验返回 `CREATED` 与快照绑定 → 启动 → 校验返回 `RUNNING` → 停止 → 校验返回 `STOPPED` → 打开详情 → 验证 orders/trades/positions 空态与快照标签。
+- 新增 `paper-trading-fixtures.ts`：通过正式 API 完整链路准备数据，沿用 GateI-2 fixture 路径并扩展到 publish。
+- E2E 不依赖外网交易所，不调用真实 LIVE 下单接口。
+
+### 验证命令与结果
+
+- `mvn -f backend/pom.xml test`：通过，Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告，本轮不处理。
+- `npm run test:e2e`：本轮未在干净本地 `5432` 实例上启动后端执行；E2E spec 与 fixture 已就绪，等待下一次完整本地验证窗口或 GateI-3-FIX 时执行。
+
+### 剩余风险
+
+- E2E 在本轮未实际跑通，依赖后续本地 5432 + Flyway V21 的本地 profile 启动，并需要 `accounts.account_id=3001` 种子。
+- `paper_trading_orders/trades/positions` 第一版只在 controller 提供查询接口，第一版 Paper run 不会自动产生订单/成交/持仓事实，由 GateI-4 的撮合与风控回写填充。
+- `created_by` 暂用 `system`；未与登录用户上下文打通，后续接入风控/审计时需要补充。
+- `idempotencyKey` 字段未在第一版接入；同 publishId 重复创建会在 publishId / status 维度产生多条 run，由 GateI-4 风控边界一并完善。
+- `npm audit` 4 个依赖漏洞、Vite chunk > 500 kB 警告、Ant Design React 19 / `Card.bordered` deprecation warning 仍在，本轮不处理。
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用 BASELINE-FIX 已通过基线。
+
+### GateI-4 结论
+
+- 后端 `mvn test` 通过且包含新增 PaperTradingRunServiceTest；前端 `npm run build` 通过。
+- E2E 已在本地 PostgreSQL 5432 + Flyway V21 + 后端 local profile 环境下完整执行并通过。
+- **允许进入 GateI-4-WO**，但只能在本轮变更审查/提交后单独开工。
+- GateI-4 只能做风控回写、资金曲线、持仓曲线、交易复盘与异常停机，不能夹带 AI。
+
+## GateI-3-FIX 执行记录
+
+日期：2026-05-20
+
+### 本轮范围
+
+- 启动本地后端 local profile，确认 Flyway V21 已应用。
+- 确认 account_id=3001 种子存在。
+- 执行 `npm run test:e2e`，修复 Paper Trading E2E 选择器问题。
+- 不扩展业务功能，不进入 GateI-4。
+
+### 修改文件
+
+- `frontend/tests/e2e/paper-trading-run-smoke.spec.ts`：修复 5 处 Playwright 选择器。
+
+### 是否修改业务代码
+
+否。只修改 E2E 测试选择器，未修改后端、前端业务代码、migration 或 API。
+
+### Flyway V21 验证结果
+
+- 后端启动日志：`Successfully validated 21 migrations`，`Current version of schema "public": 21`。
+- `paper_trading_runs`、`paper_trading_orders`、`paper_trading_trades`、`paper_trading_positions` 表均存在（通过 API 返回 200 验证）。
+
+### 后端 health 验证结果
+
+- `GET /actuator/health` 返回 `{"status":"UP"}`。
+
+### E2E 命令与结果
+
+- 命令：`npm run test:e2e`
+- 结果：**18 passed / 1 skipped**
+- 耗时：1.3m
+
+### skipped 用例说明
+
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID` 环境变量，为既有交易订单详情链路，不影响 GateI-3 Paper Trading 主链。
+
+### 是否使用本地 seed
+
+是。使用 `accounts.account_id=3001` 作为 legacy strategy account 种子（GateI-2 已补入，非 migration）。
+
+### 是否调用外网
+
+否。E2E fixture 全部通过本地后端 API 创建，不依赖外网交易所。
+
+### 是否调用真实交易所
+
+否。后端启动时 OKX adapter 因 `No route to host` 降级为 stub rejection，不影响 Paper Trading 链路。
+
+### 是否调用 LIVE 下单
+
+否。Paper Trading run 固定 `trade_env=SIM`，不调用任何真实交易所下单接口。

@@ -146,3 +146,26 @@ GateI 规划 API 分类：
 - Emergency Stop API。
 
 GateI 后续规划不改变当前事实：AI、AI 信号、AI 自动交易和 AI Paper Trading 仍未开始。
+
+## GateI-3 Paper Trading Run API
+
+当前已实现的 GateI-3 SIM/Paper Trading 运行闭环入口：
+
+- `GET /api/paper-trading/runs`：查询 Paper Trading run 列表，可按 `publishId`、`status` 过滤。
+- `POST /api/paper-trading/runs`：基于 `publishId` 创建 Paper Trading run，固化 publish/strategy version/dataset/param/config 快照。
+- `GET /api/paper-trading/runs/{paperRunId}`：查询 Paper Trading run 详情。
+- `POST /api/paper-trading/runs/{paperRunId}/start`：启动 Paper run（CREATED → RUNNING）。
+- `POST /api/paper-trading/runs/{paperRunId}/stop`：停止 Paper run（RUNNING → STOPPED）。
+- `GET /api/paper-trading/runs/{paperRunId}/orders`：查询 Paper run 订单事实列表。
+- `GET /api/paper-trading/runs/{paperRunId}/trades`：查询 Paper run 成交事实列表。
+- `GET /api/paper-trading/runs/{paperRunId}/positions`：查询 Paper run 持仓事实列表。
+
+GateI-3 固定范围：
+
+- 只做 SIM/Paper，不接 LIVE 自动交易。
+- 不接 AI、AI 信号、AI Paper Trading。
+- 不改交易核心状态机、策略核心算法、回测核心算法。
+- 不新增美股/A 股、合约全量、高频或复杂因子平台 API。
+- Paper run 状态流转：CREATED → RUNNING → STOPPED；CREATED/RUNNING → FAILED。
+- Paper run 创建时固化 publish snapshot、strategy version snapshot、dataset snapshot、param snapshot、config snapshot。
+- 第一版 orders/trades/positions 为空列表，由后续 GateI-4 风控回写和撮合填充。
