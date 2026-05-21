@@ -1,35 +1,33 @@
 # Current Stage
 
-`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **RC1 completed and frozen；GateH-PRE completed；正在执行 DOC-CLEAN + BASELINE-FIX；下一步进入 GateH-PLAN**。
+`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateI completed；Next: GateJ-PLAN（Paper Trading 稳定运行）；AI not started**。
 
 ## 当前状态
 
-- RC1 completed and frozen。
-- GateH-PRE completed。
-- 当前正在执行 `DOC-CLEAN + BASELINE-FIX`。
-- 下一步是 `GateH-PLAN`。
-- `GateH-PLAN` 完成前不开发 GateH 新业务功能。
+- GateH completed。
+- GateI completed。
+- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- AI not started。
 - 当前本地 PostgreSQL 默认端口固定为 `5432`。
 
 ## 当前不是
 
-- 当前不是完整虚拟币量化 V1。
 - 当前不是 AI 自动交易阶段。
 - 当前不允许 AI 直接下单。
-- AI 接入必须等虚拟币 V1 和 Paper Trading 稳定后再进入。
+- 当前不允许真实 LIVE 下单。
+- AI 接入必须等 Paper Trading 稳定后再进入（最早 GateK）。
+- GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。
 
 ## 项目路线
 
 ```text
-DOC-CLEAN / BASELINE-FIX
+DOC-CLEAN / BASELINE-FIX completed
   ↓
-GateH-PLAN
+GateH：交易工作台 + 历史行情 + dataset 绑定 completed
   ↓
-GateH：交易工作台 + 历史行情数据接入
+GateI：虚拟币量化 V1 完整闭环 completed
   ↓
-GateI：虚拟币量化 V1 完整闭环
-  ↓
-GateJ：Paper Trading 稳定运行
+GateJ：Paper Trading 稳定运行 ← NEXT
   ↓
 GateK：AI 信号接入
   ↓
@@ -52,5 +50,4 @@ GateO：A 股适配
 - `TESTING.md`：统一验证命令与本次验证记录。
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。
-- `PLAN_GATEH.md`：GateH 规划入口，只做规划，不开发功能。
-- `WORKLOG.md`：本次 DOC-CLEAN + BASELINE-FIX 执行日志。
+- `WORKLOG.md`：执行日志。

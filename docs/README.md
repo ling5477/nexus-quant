@@ -13,19 +13,28 @@
 - 当前验证：`docs/current/TESTING.md`
 - 当前运行手册：`docs/current/RUNBOOK.md`
 - 当前路线：`docs/current/ROADMAP.md`
-- 下一阶段计划：`docs/current/PLAN_GATEH.md`
+- 当前工作日志：`docs/current/WORKLOG.md`
 
 ## 历史与规则
 
 - 历史 Gate 卷宗：`docs/gates/`
+  - `docs/gates/gate-h/`：GateH completed freeze snapshot（交易工作台、历史行情、dataset 绑定）
+  - `docs/gates/gate-i/`：GateI completed freeze snapshot（虚拟币量化 V1 完整闭环）
 - 归档文档：`docs/archive/`
 - 文档规则：`docs/DOC_RULES.md`
 - 模板：`docs/templates/`
 
 ## 当前边界
 
-- RC1 completed and frozen。
-- GateH-PRE completed。
-- 当前执行 `DOC-CLEAN + BASELINE-FIX`。
-- 下一步进入 `GateH-PLAN`。
-- GateH 尚未完成，虚拟币量化 V1 尚未完成，AI 自动交易尚未进入开发。
+- GateH completed。
+- GateI completed。
+- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- AI not started。
+- GateJ 不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
+
+## 文档使用规则
+
+- `docs/current` 是当前事实源，唯一开发入口。
+- `docs/gates` 是历史 Gate 冻结卷宗，只读参考。
+- `docs/gates/gate-i` 不是当前事实源，当前事实仍以 `docs/current/` 为准。
+- `docs/archive` 只归档，不作为当前开发依据。

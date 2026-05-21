@@ -5,8 +5,9 @@
 ## 状态
 
 - GateH completed。
-- GateI 当前仍在 `docs/current/` 中推进。
+- GateI 也已 completed（详见 `docs/gates/gate-i/`）。
 - 本目录不代表当前开发入口，当前事实仍以 `docs/current/` 为准。
+- 当前阶段为 GateJ-PLAN（Paper Trading 稳定运行），AI 仍未开始。
 
 ## GateH 范围
 
@@ -53,4 +54,4 @@ GateH 覆盖以下已完成范围：
 - 只读参考，不在本目录继续推进 GateI。
 - 不从本目录恢复开发任务。
 - 不在本目录创建 GateI 文档。
-- GateI 仍以 `docs/current/` 为唯一当前入口。
+- 当前事实以 `docs/current/` 为唯一入口。
