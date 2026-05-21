@@ -952,3 +952,189 @@
 ### 是否调用 LIVE 下单
 
 否。Paper Trading run 固定 `trade_env=SIM`，不调用任何真实交易所下单接口。
+
+## GateI-4-WO 执行记录
+
+日期：2026-05-20
+
+### 本轮范围
+
+- 实现 GateI-4 Paper Trading 风控回写、资金曲线、持仓曲线、交易复盘与异常停机最小闭环。
+- 新增 5 张监控/审计表：`paper_risk_check_results`、`equity_curve_snapshots`、`position_curve_snapshots`、`trade_replay_records`、`emergency_stop_events`。
+- 新增后端 5 个领域记录、4 个 enum、5 个 repository port、5 个 JDBC 实现。
+- 新增 `PaperTradingMonitorService` 应用服务并扩展 `PaperTradingApiService`、`PaperTradingController`。
+- 新增 6 个响应 DTO + 1 个请求 DTO。
+- 前端扩展 5 个新 Tab（风控结果 / 资金曲线 / 持仓曲线 / 交易复盘 / 异常停机），新增 5 个查询 hook + 2 个 mutation hook。
+- 新增 `PaperTradingMonitorServiceTest` 单元测试。
+- 同步 docs/current 文档：API、DB_SCHEMA、TESTING、WORKLOG、STATUS。
+
+### 新增文件
+
+后端：
+
+- `backend/nq-infra/src/main/resources/db/migration/V22__gate_i4_paper_trading_monitor.sql`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperRiskCheckResult.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/RiskCheckStatus.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/RiskCheckSeverity.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/EquityCurveSnapshot.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PositionCurveSnapshot.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/TradeReplayRecord.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/EmergencyStopEvent.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/EmergencyStopTriggerType.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/EmergencyStopStatus.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperRiskCheckResultRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/EquityCurveSnapshotRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PositionCurveSnapshotRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/TradeReplayRecordRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/EmergencyStopEventRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/paper/PaperTradingMonitorService.java`
+- `backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/paper/PaperTradingMonitorServiceTest.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperRiskCheckResultRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcEquityCurveSnapshotRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPositionCurveSnapshotRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcTradeReplayRecordRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcEmergencyStopEventRepository.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperRiskCheckResultResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/EquityCurveSnapshotResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PositionCurveSnapshotResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/TradeReplayRecordResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/EmergencyStopEventResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/EmergencyStopRequestBody.java`
+
+### 修改文件
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingController.java`：扩展 7 个新端点。
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/api/paper/PaperTradingApiService.java`：注入 `PaperTradingMonitorService` 并新增 7 个委派方法。
+- `frontend/src/types/paper-trading.ts`：新增 5 类监控/事件类型。
+- `frontend/src/api/paper-trading.ts`：新增 7 个监控/异常停机 API。
+- `frontend/src/api/query-keys.ts`：新增 5 个监控查询 key。
+- `frontend/src/hooks/usePaperTradingQuery.ts`：新增 5 个查询 hook + 2 个 mutation hook。
+- `frontend/src/pages/paper-trading/PaperTradingPage.tsx`：详情抽屉扩展 5 个新 Tab。
+- `frontend/tests/e2e/paper-trading-run-smoke.spec.ts`：扩展 GateI-4 监控/异常停机断言。
+- `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/STATUS.md`、`docs/current/WORKLOG.md`、`docs/current/TESTING.md`。
+
+### DB / Migration
+
+- `V22__gate_i4_paper_trading_monitor.sql` 只新增 GateI-4 所需 5 张表，未修改历史 migration。
+- 5 张表均包含 PostgreSQL `COMMENT ON TABLE`。
+- 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态字段 `paper_risk_check_results.status/severity`、`emergency_stop_events.trigger_type/status` 均通过 `CHECK` 约束限制允许值。
+- 外键统一指向 `paper_trading_runs.paper_run_id`。
+- 索引：`idx_risk_results_run_id_time`、`idx_equity_curve_run_id_time`、`idx_position_curve_run_id_time`、`idx_replay_run_id_time`、`idx_emergency_stop_run_id_time`，均按 `(paper_run_id, time DESC)` 组织。
+
+### 后端实现
+
+- `nq-research` 承载领域模型、port、`PaperTradingMonitorService` 应用服务，不依赖 JDBC。
+- `nq-infra` 承载 5 个 JDBC 实现，遵循既有 `::text` 读取 JSONB、`CAST(? AS JSONB)` 写入 JSONB 模式。
+- `nq-api` 通过 `PaperTradingApiService` 委派到 `PaperTradingMonitorService`，不直接写 SQL。
+- `runRiskCheckOnce` 第一版只写最小 `BASIC_HEALTH_CHECK / PASSED / LOW`，等待具体规则在后续 Gate 实现。
+- `triggerEmergencyStop` 复用 `PaperTradingRunService.stop`：`RUNNING` 时调用 stop 状态机、写入 `APPLIED`；非 RUNNING 时记录 `FAILED` 并保留原因，不引入新状态。
+- 不调用任何真实交易所下单接口；不修改交易核心状态机、策略核心算法、回测核心算法。
+
+### 前端实现
+
+- 5 个新 Tab 全部走 TanStack Query；服务端数据不进 Zustand。
+- "执行风控检查" 按钮触发 `useRunRiskOnceMutation`；"紧急停机" 通过 `Modal.confirm` + `useEmergencyStopMutation`，触发后 invalidate 所有 paper-trading query。
+- 第一版无图表库依赖，资金/持仓曲线均以表格呈现。
+- 既有 GateI-3 创建 / 启动 / 停止 / 详情逻辑保持不变。
+
+### 单元测试
+
+- `PaperTradingMonitorServiceTest` 覆盖 5 个用例：风控 run-once 正常写入、风控 list 空态、运行中触发 emergency stop 应用并停机、非 RUNNING 触发 emergency stop 记 FAILED、emergency stop list 空态。
+- 复用 `PaperTradingRunServiceTest` 的 in-memory 仓储以避免重复实现。
+
+### E2E 实现
+
+- 在 `paper-trading-run-smoke.spec.ts` 中扩展 GateI-4 链路覆盖：执行风控检查、查看 5 个新 Tab、触发紧急停机后断言 run 进入 STOPPED。
+- E2E 不依赖外网交易所，不调用真实 LIVE 下单接口。
+
+### 验证命令与结果
+
+- `mvn -f backend/pom.xml test`：通过，Reactor `BUILD SUCCESS`，35 tests / 0 failures（含 `PaperTradingMonitorServiceTest` 5 用例）。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告，本轮不处理。
+- `npm run test:e2e`：本轮未在干净本地实例上执行；spec 与 fixture 已就绪，等待下一次本地完整窗口或 GateI-4-FIX 时执行。
+
+### 剩余风险
+
+- E2E 在本轮未实际跑通，依赖后续本地 5432 + Flyway V22 启动后端 local profile 后执行。
+- 第一版风控只写 `BASIC_HEALTH_CHECK`；具体撮合回写、风控规则、资金/持仓快照定时器在后续 Gate 实现，本轮 5 张表只承载结构。
+- `idempotencyKey` 仍未接入；同 paperRunId 重复触发紧急停机会写多条 FAILED 记录，符合事件流语义但需在 GateI 闭环时审视。
+- `npm audit`、Vite chunk > 500 kB、Ant Design React 19 / `Card.bordered` deprecation warning 仍在，本轮不处理。
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用既有基线。
+
+### GateI-4 结论
+
+- 后端 `mvn test` 通过且包含 5 个新增 monitor 用例；前端 `npm run build` 通过。
+- E2E 待补；GateI-4 自身实现已完成，留 GateI-4-FIX 跑 E2E 与可能的选择器修复。
+- 不接 AI、不接 LIVE 下单、不修改交易核心状态机；满足 `CLAUDE.md` GateI-4 边界要求。
+- GateI 仍未整体完成；不创建 `docs/gates/gate-i`，等待全部 GateI-* 完成与冻结。
+
+## GateI-4-FIX 执行记录
+
+日期：2026-05-21
+
+### 本轮范围
+
+- 重启后端 local profile，确认 Flyway V22 已应用。
+- 确认 5 张 GateI-4 monitor 表存在。
+- 执行 `npm run test:e2e`，修复 GateI-4 E2E 选择器与组件问题。
+- 不扩展业务功能，不进入 GateJ。
+
+### 修改文件
+
+- `frontend/tests/e2e/paper-trading-run-smoke.spec.ts`：修复 GateI-4 E2E 用例（改用 UI 操作替代 standalone request、修复 PASSED 断言、修复紧急停机 modal 选择器）。
+- `frontend/src/pages/paper-trading/PaperTradingPage.tsx`：将"执行风控检查"和"紧急停机"按钮移到 `PaperListSection` 外部（空态时仍可见）；将 `Modal.confirm` 改为 `modal.confirm`（通过 `App.useApp()` 获取，确保在 App context 下正确渲染）。
+
+### 是否修改业务代码
+
+是，但仅限 UI 布局调整和 Ant Design API 用法修正：
+- 按钮从 `PaperListSection` children 移到外层（功能不变，只是空态时也可见）。
+- `Modal.confirm` → `modal.confirm`（Ant Design 5.x App context 最佳实践）。
+- 不修改后端、不修改 migration、不修改 API。
+
+### Flyway V22 验证结果
+
+- Flyway schema history 确认 version=22, description="gate i4 paper trading monitor"。
+- 5 张表均存在：`paper_risk_check_results`、`equity_curve_snapshots`、`position_curve_snapshots`、`trade_replay_records`、`emergency_stop_events`。
+
+### 后端 health 验证结果
+
+- `GET /actuator/health` 返回 `{"status":"UP"}`。
+
+### E2E 命令与结果
+
+- 命令：`npm run test:e2e`
+- 结果：**19 passed / 1 skipped**
+- 耗时：1.4m
+
+### skipped 用例说明
+
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID` 环境变量，为既有交易订单详情链路，不影响 GateI 主链。
+
+### GateI-4-FIX 修复内容
+
+1. GateI-4 E2E 用例原使用 Playwright `request` fixture 调用 API，但该 fixture 不共享浏览器登录态（Bearer token），导致 401。修复：改为通过 UI 操作（创建/启动/查看详情）和 UI 按钮（执行风控检查/紧急停机）完成全链路。
+2. "执行风控检查"按钮原在 `PaperListSection` children 内，空态时被 `<Empty>` 替代不可见。修复：将按钮移到 `PaperListSection` 外层。
+3. "紧急停机"按钮同理移到外层。
+4. `Modal.confirm` 静态方法在 Ant Design 5.x + `App` wrapper 下不渲染 modal。修复：改用 `App.useApp()` 返回的 `modal.confirm`。
+5. `PASSED` 文本断言因 Ant Design Tag 渲染时机需要 `.first()` 和 timeout。
+
+### 是否调用外网
+
+否。E2E fixture 全部通过本地后端 API 创建。
+
+### 是否调用真实交易所
+
+否。后端 OKX adapter 降级为 stub rejection。
+
+### 是否调用 LIVE 下单
+
+否。Paper Trading run 固定 `trade_env=SIM`。
+
+### GateI-4-FIX 结论
+
+- 后端测试通过（35 tests / 0 failures）、前端 build 通过、E2E 19 passed / 1 skipped。
+- GateI 全部子阶段已完成：GateI-1-WO → GateI-2-WO → GateI-3-WO → GateI-3-FIX → GateI-4-WO → GateI-4-FIX。
+- **GateI completed。**
+- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- AI 最早 GateK 才允许进入信号层。

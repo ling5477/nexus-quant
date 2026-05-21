@@ -5,7 +5,7 @@
 
 ## 1. 当前阶段
 
-Current stage: GateI-3-WO preparation
+Current stage: GateI completed, next GateJ-PLAN
 
 Previous completed stages:
 
@@ -15,23 +15,27 @@ Previous completed stages:
 - GateI-PLAN
 - GateI-1-WO
 - GateI-2-WO
+- GateI-3-WO
+- GateI-3-FIX
+- GateI-4-WO
+- GateI-4-FIX
+- GateI
 
-Next: `GateI-3-WO`。
+Next: GateJ-PLAN（Paper Trading 稳定运行）。
 
-GateI 当前仍处于 active/current 阶段，尚未整体完成。GateI-3-WO 只允许做 SIM / Paper Trading 运行闭环。
+GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
 
-## 2. GateI-3 允许范围
+## 2. GateI 完成范围
 
-GateI-3-WO 只能覆盖以下内容：
+GateI 已整体完成，覆盖以下内容：
 
-- Paper Trading run 模型。
-- 发布版本创建 Paper run。
-- Paper run 启动、停止、查询。
-- Paper run 固化 publish / strategy version / dataset / param / config snapshot。
-- Paper orders / trades / positions 最小闭环。
-- 前端 Paper Trading 入口。
-- E2E smoke。
-- `docs/current` 更新。
+- 策略版本与发布绑定（GateI-1）。
+- 回测追溯与评估指标增强（GateI-2）。
+- SIM/Paper Trading 运行闭环（GateI-3）。
+- Paper Trading 风控回写、资金曲线、持仓曲线、交易复盘、异常停机（GateI-4）。
+- 后端 35 tests / 0 failures。
+- 前端 build 通过。
+- E2E 19 passed / 1 skipped。
 
 ## 3. 严格禁止范围
 

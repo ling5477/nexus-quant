@@ -19,14 +19,20 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateI-PLAN completed。
 - GateI-1-WO completed。
 - GateI-2-WO completed.
+- GateI-3-WO completed。
+- GateI-3-FIX completed。
+- GateI-4-WO completed。
+- GateI-4-FIX completed。
+- GateI completed。
 
 ## 当前执行状态
 
-- 当前已完成 `GateI-3-WO`：SIM/Paper Trading 运行闭环。
-- GateI-3 后端测试、前端 build、E2E 已通过。
-- GateI-3-FIX 已完成：E2E 选择器修复后全量 18 passed / 1 skipped。
-- GateI-4-WO 只允许在本轮变更审查/提交后单独开工；GateI-4 只能做风控回写、资金曲线、持仓曲线、交易复盘与异常停机，不能夹带 AI。
-- AI 尚未开始。
+- GateI 已整体完成并冻结。
+- 后端 `mvn test` 35 tests / 0 failures。
+- 前端 `npm run build` 通过。
+- E2E `npm run test:e2e` 19 passed / 1 skipped。
+- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- AI 尚未开始。AI 最早 GateK 才允许进入信号层。
 
 ## 当前未完成状态
 
@@ -84,13 +90,18 @@ GateO：A 股适配
 - GateI-3 前端 `npm run build` 已通过。
 - GateI-3 E2E `npm run test:e2e` 已通过，结果为 18 passed / 1 skipped；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有交易订单详情链路，不影响 GateI-3 主链。
 - GateI-3 Flyway 当前版本为 `21`。
+- GateI-4 后端 `mvn -f backend/pom.xml test` 已通过（BUILD SUCCESS，35 tests，0 failures，含 PaperTradingMonitorServiceTest 5 用例）。
+- GateI-4 前端 `npm run build` 已通过。
+- GateI-4 Flyway 当前版本为 `22`。
+- GateI-4-FIX E2E `npm run test:e2e` 已通过，结果为 19 passed / 1 skipped；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有交易订单详情链路。
 - Python `pytest`、`mypy`、`ruff` 已通过。
 
 ## GateI 当前边界
 
-- GateI-1 只实现策略版本与发布记录绑定，不进入回测配置增强、评估指标增强、SIM/Paper 运行闭环、风控回写、资金曲线、持仓曲线、复盘或异常停机。
-- GateI-2 只能做回测配置、评估指标、结果追溯增强。
-- GateI-2 已完成。
-- GateI-3 已完成 SIM/Paper Trading 运行闭环最小版本。
-- GateI-4 尚未开始，后续必须单独开工且不得夹带 AI。
+- GateI 已整体完成。
+- GateI-1 实现策略版本与发布记录绑定。
+- GateI-2 实现回测配置、评估指标、结果追溯增强。
+- GateI-3 实现 SIM/Paper Trading 运行闭环最小版本。
+- GateI-4 实现风控回写、资金曲线、持仓曲线、交易复盘、异常停机最小结构。
 - AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始。
+- Next: GateJ-PLAN（Paper Trading 稳定运行）。AI 最早 GateK 才允许进入信号层。

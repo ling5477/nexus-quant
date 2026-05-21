@@ -1,10 +1,16 @@
 import {apiClient} from '@/api/client';
 import type {
+    EmergencyStopEventItem,
+    EmergencyStopRequest,
+    EquityCurveSnapshotItem,
+    PaperRiskCheckResultItem,
     PaperTradingOrderItem,
     PaperTradingPositionItem,
     PaperTradingRunCreateRequest,
     PaperTradingRunItem,
     PaperTradingTradeItem,
+    PositionCurveSnapshotItem,
+    TradeReplayRecordItem,
 } from '@/types/paper-trading';
 
 export interface PaperTradingListRequest {
@@ -45,6 +51,34 @@ export const paperTradingApi = {
     },
     async positions(paperRunId: string): Promise<PaperTradingPositionItem[]> {
         const {data} = await apiClient.get<PaperTradingPositionItem[]>(`/paper-trading/runs/${paperRunId}/positions`);
+        return data;
+    },
+    async riskResults(paperRunId: string): Promise<PaperRiskCheckResultItem[]> {
+        const {data} = await apiClient.get<PaperRiskCheckResultItem[]>(`/paper-trading/runs/${paperRunId}/risk-results`);
+        return data;
+    },
+    async runRiskOnce(paperRunId: string): Promise<PaperRiskCheckResultItem> {
+        const {data} = await apiClient.post<PaperRiskCheckResultItem>(`/paper-trading/runs/${paperRunId}/risk-results/run-once`);
+        return data;
+    },
+    async equityCurve(paperRunId: string): Promise<EquityCurveSnapshotItem[]> {
+        const {data} = await apiClient.get<EquityCurveSnapshotItem[]>(`/paper-trading/runs/${paperRunId}/equity-curve`);
+        return data;
+    },
+    async positionCurve(paperRunId: string): Promise<PositionCurveSnapshotItem[]> {
+        const {data} = await apiClient.get<PositionCurveSnapshotItem[]>(`/paper-trading/runs/${paperRunId}/position-curve`);
+        return data;
+    },
+    async replay(paperRunId: string): Promise<TradeReplayRecordItem[]> {
+        const {data} = await apiClient.get<TradeReplayRecordItem[]>(`/paper-trading/runs/${paperRunId}/replay`);
+        return data;
+    },
+    async emergencyStop(paperRunId: string, request: EmergencyStopRequest): Promise<EmergencyStopEventItem> {
+        const {data} = await apiClient.post<EmergencyStopEventItem>(`/paper-trading/runs/${paperRunId}/emergency-stop`, request);
+        return data;
+    },
+    async emergencyStops(paperRunId: string): Promise<EmergencyStopEventItem[]> {
+        const {data} = await apiClient.get<EmergencyStopEventItem[]>(`/paper-trading/runs/${paperRunId}/emergency-stops`);
         return data;
     },
 };

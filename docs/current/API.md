@@ -169,3 +169,23 @@ GateI-3 固定范围：
 - Paper run 状态流转：CREATED → RUNNING → STOPPED；CREATED/RUNNING → FAILED。
 - Paper run 创建时固化 publish snapshot、strategy version snapshot、dataset snapshot、param snapshot、config snapshot。
 - 第一版 orders/trades/positions 为空列表，由后续 GateI-4 风控回写和撮合填充。
+
+## GateI-4 Paper Trading Monitor API
+
+当前已实现的 GateI-4 风控回写、资金曲线、持仓曲线、交易复盘与异常停机入口：
+
+- `GET /api/paper-trading/runs/{paperRunId}/risk-results`：查询 Paper run 风控检查结果列表。
+- `POST /api/paper-trading/runs/{paperRunId}/risk-results/run-once`：触发一次最小 BASIC_HEALTH_CHECK 风控检查并写入结果。
+- `GET /api/paper-trading/runs/{paperRunId}/equity-curve`：查询 Paper run 资金曲线快照列表（按时间倒序）。
+- `GET /api/paper-trading/runs/{paperRunId}/position-curve`：查询 Paper run 持仓曲线快照列表（按时间倒序）。
+- `GET /api/paper-trading/runs/{paperRunId}/replay`：查询 Paper run 交易复盘事件记录列表（按时间倒序）。
+- `POST /api/paper-trading/runs/{paperRunId}/emergency-stop`：触发异常停机；当 run 处于 RUNNING 时调用 stop 状态机并返回 APPLIED，否则返回 FAILED 并记录原因。
+- `GET /api/paper-trading/runs/{paperRunId}/emergency-stops`：查询 Paper run 异常停机事件列表。
+
+GateI-4 固定范围：
+
+- 只做 SIM/Paper Trading 监控与异常停机，不接 LIVE 自动交易。
+- 不接 AI、AI 信号、AI Paper Trading。
+- 不改交易核心状态机、策略核心算法、回测核心算法。
+- 风控检查第一版仅写入最小 BASIC_HEALTH_CHECK；具体规则与撮合回写在后续 Gate 实现。
+- 异常停机仅复用既有 PaperTradingRunService.stop，不引入额外状态。

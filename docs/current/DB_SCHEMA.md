@@ -249,3 +249,61 @@ GateI-3 新增 `paper_trading_positions`：
 - JSONB 快照字段注释写明用途和敏感信息禁入规则。
 
 GateI-3 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。
+
+## GateI-4 Paper Trading Monitor 结构
+
+GateI-4 新增 Flyway migration：
+
+- `V22__gate_i4_paper_trading_monitor.sql`
+
+GateI-4 新增 `paper_risk_check_results`：
+
+- 身份字段：`risk_result_id`，业务主键。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 检查字段：`check_type`、`status`（PASSED/REJECTED/WARNING）、`severity`（LOW/MEDIUM/HIGH/CRITICAL）、`message`。
+- 快照字段：`input_snapshot_json`、`result_snapshot_json`。
+- 时间字段：`created_at`。
+- 索引：`idx_risk_results_run_id_time`。
+
+GateI-4 新增 `equity_curve_snapshots`：
+
+- 身份字段：`snapshot_id`，业务主键。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 曲线字段：`total_equity`、`cash_balance`、`position_value`、`unrealized_pnl`、`realized_pnl`、`drawdown`、`drawdown_pct`。
+- 时间字段：`snapshot_time`、`created_at`。
+- 索引：`idx_equity_curve_run_id_time`。
+
+GateI-4 新增 `position_curve_snapshots`：
+
+- 身份字段：`snapshot_id`，业务主键。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 持仓字段：`symbol`、`quantity`、`avg_price`、`market_price`、`market_value`、`unrealized_pnl`、`weight_pct`。
+- 时间字段：`snapshot_time`、`created_at`。
+- 索引：`idx_position_curve_run_id_time`。
+
+GateI-4 新增 `trade_replay_records`：
+
+- 身份字段：`replay_id`，业务主键。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 事件字段：`event_type`、`event_time`、`description`。
+- 快照字段：`decision_snapshot_json`、`risk_snapshot_json`、`market_snapshot_json`。
+- 时间字段：`created_at`。
+- 索引：`idx_replay_run_id_time`。
+
+GateI-4 新增 `emergency_stop_events`：
+
+- 身份字段：`emergency_stop_id`，业务主键。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 触发字段：`trigger_type`（MANUAL/RISK_LIMIT/SYSTEM_ERROR）、`status`（TRIGGERED/APPLIED/FAILED/RESOLVED）、`reason`、`triggered_by`。
+- 时间字段：`triggered_at`、`resolved_at`、`created_at`。
+- 快照字段：`request_json`、`result_json`。
+- 索引：`idx_emergency_stop_run_id_time`。
+
+注释要求：
+
+- `V22` 所有新增表均包含 PostgreSQL `COMMENT ON TABLE`。
+- `V22` 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态字段注释写明允许值。
+- JSONB 快照字段注释写明用途和敏感信息禁入规则。
+
+GateI-4 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。

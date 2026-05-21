@@ -79,3 +79,82 @@ export const defaultPaperTradingListFilters: PaperTradingListFilters = {
     publishId: '',
     status: '',
 };
+
+export interface PaperRiskCheckResultItem {
+    riskResultId: string;
+    paperRunId: string;
+    checkType: string;
+    status: string;
+    severity: string;
+    message: string | null;
+    inputSnapshotJson: string | null;
+    resultSnapshotJson: string | null;
+    createdAt: string;
+}
+
+export interface EquityCurveSnapshotItem {
+    equitySnapshotId: string;
+    paperRunId: string;
+    snapshotTime: string;
+    totalEquity: string | number;
+    cashBalance: string | number;
+    positionValue: string | number;
+    unrealizedPnl: string | number;
+    realizedPnl: string | number;
+    drawdown: string | number;
+    source: string;
+    createdAt: string;
+}
+
+export interface PositionCurveSnapshotItem {
+    positionSnapshotId: string;
+    paperRunId: string;
+    symbol: string;
+    snapshotTime: string;
+    quantity: string | number;
+    avgPrice: string | number;
+    markPrice: string | number;
+    positionValue: string | number;
+    unrealizedPnl: string | number;
+    realizedPnl: string | number;
+    source: string;
+    createdAt: string;
+}
+
+export interface TradeReplayRecordItem {
+    replayRecordId: string;
+    paperRunId: string;
+    paperOrderId: string | null;
+    paperTradeId: string | null;
+    replayTime: string;
+    eventType: string;
+    symbol: string;
+    side: string | null;
+    price: string | number | null;
+    quantity: string | number | null;
+    reason: string | null;
+    decisionSnapshotJson: string | null;
+    riskSnapshotJson: string | null;
+    marketSnapshotJson: string | null;
+    createdAt: string;
+}
+
+export interface EmergencyStopEventItem {
+    emergencyStopId: string;
+    paperRunId: string;
+    triggerType: string;
+    status: string;
+    reason: string | null;
+    triggeredBy: string | null;
+    triggeredAt: string;
+    resolvedAt: string | null;
+    requestJson: string | null;
+    resultJson: string | null;
+    createdAt: string;
+}
+
+export interface EmergencyStopRequest {
+    triggerType: string;
+    reason: string;
+    triggeredBy?: string;
+}

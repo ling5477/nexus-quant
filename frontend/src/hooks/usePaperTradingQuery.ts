@@ -2,7 +2,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {paperTradingApi} from '@/api/paper-trading';
 import {paperTradingQueryKeys} from '@/api/query-keys';
-import type {PaperTradingRunCreateRequest} from '@/types/paper-trading';
+import type {EmergencyStopRequest, PaperTradingRunCreateRequest} from '@/types/paper-trading';
 
 interface UsePaperTradingListRequest {
     publishId?: string;
@@ -73,6 +73,67 @@ export function useStopPaperTradingRunMutation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (paperRunId: string) => paperTradingApi.stop(paperRunId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
+        },
+    });
+}
+
+export function usePaperTradingRiskResultsQuery(paperRunId: string | null) {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.riskResults(paperRunId ?? ''),
+        queryFn: () => paperTradingApi.riskResults(paperRunId ?? ''),
+        enabled: Boolean(paperRunId),
+    });
+}
+
+export function usePaperTradingEquityCurveQuery(paperRunId: string | null) {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.equityCurve(paperRunId ?? ''),
+        queryFn: () => paperTradingApi.equityCurve(paperRunId ?? ''),
+        enabled: Boolean(paperRunId),
+    });
+}
+
+export function usePaperTradingPositionCurveQuery(paperRunId: string | null) {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.positionCurve(paperRunId ?? ''),
+        queryFn: () => paperTradingApi.positionCurve(paperRunId ?? ''),
+        enabled: Boolean(paperRunId),
+    });
+}
+
+export function usePaperTradingReplayQuery(paperRunId: string | null) {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.replay(paperRunId ?? ''),
+        queryFn: () => paperTradingApi.replay(paperRunId ?? ''),
+        enabled: Boolean(paperRunId),
+    });
+}
+
+export function usePaperTradingEmergencyStopsQuery(paperRunId: string | null) {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.emergencyStops(paperRunId ?? ''),
+        queryFn: () => paperTradingApi.emergencyStops(paperRunId ?? ''),
+        enabled: Boolean(paperRunId),
+    });
+}
+
+export function useRunRiskOnceMutation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (paperRunId: string) => paperTradingApi.runRiskOnce(paperRunId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
+        },
+    });
+}
+
+export function useEmergencyStopMutation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({paperRunId, request}: {paperRunId: string; request: EmergencyStopRequest}) =>
+            paperTradingApi.emergencyStop(paperRunId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },

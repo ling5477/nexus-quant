@@ -343,3 +343,59 @@ GateI-3-FIX 结论：
 - 后端测试通过、前端 build 通过、E2E 18 passed / 1 skipped。
 - 允许进入 GateI-4-WO，但只能在本轮变更审查/提交后单独开工。
 - GateI-4 只能做风控回写、资金曲线、持仓曲线、交易复盘与异常停机，不能夹带 AI。
+
+## GateI-4-WO 验证记录
+
+日期：2026-05-20
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，23 个 backend module 均为 `SUCCESS`；35 tests / 0 failures，含 PaperTradingMonitorServiceTest 5 用例 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告，本轮不处理 |
+| `npm run test:e2e` | 未执行 | 本轮未启动本地后端 local profile；spec 已扩展，等待 GateI-4-FIX 窗口执行 |
+
+GateI-4 新增测试覆盖：
+
+- `PaperTradingMonitorServiceTest`：5 个用例覆盖 runRiskCheckOnce 正常写入、listRiskResults 空态、emergencyStop APPLIED（RUNNING → STOPPED）、emergencyStop FAILED（非 RUNNING）、listEmergencyStops 空态。
+- E2E spec 已扩展 GateI-4 链路（风控检查 / 5 个新 Tab / 紧急停机），待本地后端启动后执行。
+
+GateI-4 skipped 说明：
+
+- E2E 未执行：本轮未启动本地后端 local profile + Flyway V22，spec 已就绪。
+
+GateI-4 结论：
+
+- 后端测试通过、前端 build 通过。
+- E2E 待 GateI-4-FIX 窗口执行。
+- GateI 仍未整体完成；不创建 `docs/gates/gate-i`。
+
+## GateI-4-FIX 验证记录
+
+日期：2026-05-21
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`，35 tests / 0 failures |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告 |
+| 后端 local profile 启动 | 通过 | `/actuator/health` 返回 `UP`；Flyway 当前版本 `22` |
+| 5 张 GateI-4 表存在 | 通过 | `paper_risk_check_results`、`equity_curve_snapshots`、`position_curve_snapshots`、`trade_replay_records`、`emergency_stop_events` 全部存在 |
+| `npm run test:e2e` | 通过 | 19 passed / 1 skipped；新增 GateI-4 monitor smoke 用例通过 |
+
+GateI-4-FIX 修复内容：
+
+- 改 GateI-4 E2E 用例：从 `request` fixture 调用 API（不共享 token）改为通过 UI 操作完成全链路。
+- 改 PaperTradingPage：将"执行风控检查"和"紧急停机"按钮从 `PaperListSection` children 移到外层（空态时仍可见）。
+- 改 Modal 调用方式：`Modal.confirm` → `App.useApp().modal.confirm`，确保在 App context 下正确渲染。
+- 修复 PASSED 文本断言：使用 `.first()` 避免多元素冲突。
+
+GateI-4-FIX skipped 说明：
+
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID`，为既有交易订单详情链路，不影响 GateI 主链。
+
+GateI-4-FIX 结论：
+
+- GateI-4-WO + GateI-4-FIX 已完成。
+- GateI 全部子阶段已完成：GateI-1-WO → GateI-2-WO → GateI-3-WO → GateI-3-FIX → GateI-4-WO → GateI-4-FIX。
+- **GateI completed。**
+- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- GateJ 不是 AI 阶段；AI 最早 GateK 才允许进入信号层。

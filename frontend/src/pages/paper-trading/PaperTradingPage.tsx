@@ -24,11 +24,18 @@ import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {
     useCreatePaperTradingRunMutation,
+    useEmergencyStopMutation,
     usePaperTradingDetailQuery,
+    usePaperTradingEmergencyStopsQuery,
+    usePaperTradingEquityCurveQuery,
     usePaperTradingListQuery,
     usePaperTradingOrdersQuery,
+    usePaperTradingPositionCurveQuery,
     usePaperTradingPositionsQuery,
+    usePaperTradingReplayQuery,
+    usePaperTradingRiskResultsQuery,
     usePaperTradingTradesQuery,
+    useRunRiskOnceMutation,
     useStartPaperTradingRunMutation,
     useStopPaperTradingRunMutation,
 } from '@/hooks/usePaperTradingQuery';
@@ -61,7 +68,7 @@ const DEFAULT_CREATE_VALUES: PaperTradingRunCreateRequest = {
 };
 
 export function PaperTradingPage() {
-    const {message} = App.useApp();
+    const {message, modal} = App.useApp();
     const [queryForm] = Form.useForm<PaperTradingListFilters>();
     const [createForm] = Form.useForm<PaperTradingRunCreateRequest>();
     const [submittedFilters, setSubmittedFilters] = useState<PaperTradingListFilters>(defaultPaperTradingListFilters);
@@ -80,9 +87,16 @@ export function PaperTradingPage() {
     const ordersQuery = usePaperTradingOrdersQuery(selectedRow?.paperRunId ?? null);
     const tradesQuery = usePaperTradingTradesQuery(selectedRow?.paperRunId ?? null);
     const positionsQuery = usePaperTradingPositionsQuery(selectedRow?.paperRunId ?? null);
+    const riskResultsQuery = usePaperTradingRiskResultsQuery(selectedRow?.paperRunId ?? null);
+    const equityCurveQuery = usePaperTradingEquityCurveQuery(selectedRow?.paperRunId ?? null);
+    const positionCurveQuery = usePaperTradingPositionCurveQuery(selectedRow?.paperRunId ?? null);
+    const replayQuery = usePaperTradingReplayQuery(selectedRow?.paperRunId ?? null);
+    const emergencyStopsQuery = usePaperTradingEmergencyStopsQuery(selectedRow?.paperRunId ?? null);
     const createMutation = useCreatePaperTradingRunMutation();
     const startMutation = useStartPaperTradingRunMutation();
     const stopMutation = useStopPaperTradingRunMutation();
+    const riskOnceMutation = useRunRiskOnceMutation();
+    const emergencyStopMutation = useEmergencyStopMutation();
 
     const hasSearched = searchVersion > 0;
     const visibleItems = listQuery.data ?? [];
@@ -509,6 +523,190 @@ export function PaperTradingPage() {
                                             <SnapshotBlock title="Dataset Snapshot" content={selectedRow.datasetSnapshotJson}/>
                                             <SnapshotBlock title="Param Snapshot" content={selectedRow.paramSnapshotJson}/>
                                             <SnapshotBlock title="Config Snapshot" content={selectedRow.configSnapshotJson}/>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'risk-results',
+                                    label: '风控结果',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Button
+                                                size="small"
+                                                loading={riskOnceMutation.isPending}
+                                                onClick={() => {
+                                                    riskOnceMutation.mutate(selectedRow.paperRunId, {
+                                                        onSuccess: () => message.success('风控检查已执行。'),
+                                                        onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                    });
+                                                }}
+                                            >
+                                                执行风控检查
+                                            </Button>
+                                            <PaperListSection
+                                                isLoading={riskResultsQuery.isFetching}
+                                                error={riskResultsQuery.error as AppApiError | null}
+                                                isEmpty={(riskResultsQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无风控检查结果。"
+                                            >
+                                                <Table
+                                                    rowKey="riskResultId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={riskResultsQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '检查类型', dataIndex: 'checkType', key: 'checkType', width: 160},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'error' : 'warning'}>{v}</Tag>},
+                                                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100},
+                                                        {title: '消息', dataIndex: 'message', key: 'message'},
+                                                        {title: '时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
+                                                    ]}
+                                                />
+                                            </PaperListSection>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'equity-curve',
+                                    label: '资金曲线',
+                                    children: (
+                                        <PaperListSection
+                                            isLoading={equityCurveQuery.isFetching}
+                                            error={equityCurveQuery.error as AppApiError | null}
+                                            isEmpty={(equityCurveQuery.data ?? []).length === 0}
+                                            emptyText="当前 Paper run 暂无资金曲线数据。"
+                                        >
+                                            <Table
+                                                rowKey="equitySnapshotId"
+                                                size="small"
+                                                pagination={false}
+                                                dataSource={equityCurveQuery.data ?? []}
+                                                columns={[
+                                                    {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 180, render: (v: string) => formatDateTime(v)},
+                                                    {title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120},
+                                                    {title: '现金', dataIndex: 'cashBalance', key: 'cashBalance', width: 120},
+                                                    {title: '持仓市值', dataIndex: 'positionValue', key: 'positionValue', width: 120},
+                                                    {title: '回撤', dataIndex: 'drawdown', key: 'drawdown', width: 100},
+                                                    {title: '来源', dataIndex: 'source', key: 'source', width: 100},
+                                                ]}
+                                            />
+                                        </PaperListSection>
+                                    ),
+                                },
+                                {
+                                    key: 'position-curve',
+                                    label: '持仓曲线',
+                                    children: (
+                                        <PaperListSection
+                                            isLoading={positionCurveQuery.isFetching}
+                                            error={positionCurveQuery.error as AppApiError | null}
+                                            isEmpty={(positionCurveQuery.data ?? []).length === 0}
+                                            emptyText="当前 Paper run 暂无持仓曲线数据。"
+                                        >
+                                            <Table
+                                                rowKey="positionSnapshotId"
+                                                size="small"
+                                                pagination={false}
+                                                dataSource={positionCurveQuery.data ?? []}
+                                                columns={[
+                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
+                                                    {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 180, render: (v: string) => formatDateTime(v)},
+                                                    {title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100},
+                                                    {title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 100},
+                                                    {title: '标记价', dataIndex: 'markPrice', key: 'markPrice', width: 100},
+                                                    {title: '市值', dataIndex: 'positionValue', key: 'positionValue', width: 120},
+                                                    {title: '来源', dataIndex: 'source', key: 'source', width: 100},
+                                                ]}
+                                            />
+                                        </PaperListSection>
+                                    ),
+                                },
+                                {
+                                    key: 'replay',
+                                    label: '交易复盘',
+                                    children: (
+                                        <PaperListSection
+                                            isLoading={replayQuery.isFetching}
+                                            error={replayQuery.error as AppApiError | null}
+                                            isEmpty={(replayQuery.data ?? []).length === 0}
+                                            emptyText="当前 Paper run 暂无交易复盘记录。"
+                                        >
+                                            <Table
+                                                rowKey="replayRecordId"
+                                                size="small"
+                                                pagination={false}
+                                                dataSource={replayQuery.data ?? []}
+                                                columns={[
+                                                    {title: '时间', dataIndex: 'replayTime', key: 'replayTime', width: 180, render: (v: string) => formatDateTime(v)},
+                                                    {title: '事件类型', dataIndex: 'eventType', key: 'eventType', width: 140},
+                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
+                                                    {title: '方向', dataIndex: 'side', key: 'side', width: 80},
+                                                    {title: '价格', dataIndex: 'price', key: 'price', width: 100},
+                                                    {title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100},
+                                                    {title: '原因', dataIndex: 'reason', key: 'reason'},
+                                                ]}
+                                            />
+                                        </PaperListSection>
+                                    ),
+                                },
+                                {
+                                    key: 'emergency-stops',
+                                    label: '异常停机',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Button
+                                                danger
+                                                size="small"
+                                                disabled={selectedRow.status !== 'RUNNING'}
+                                                loading={emergencyStopMutation.isPending}
+                                                onClick={() => {
+                                                    modal.confirm({
+                                                        title: '确认紧急停机',
+                                                        content: '此操作将立即停止当前 Paper run。紧急停机只作用于 SIM/Paper Trading，不会触发真实 LIVE 下单或撤单。确认执行？',
+                                                        okText: '确认停机',
+                                                        okButtonProps: {danger: true},
+                                                        cancelText: '取消',
+                                                        onOk: () => {
+                                                            emergencyStopMutation.mutate(
+                                                                {
+                                                                    paperRunId: selectedRow.paperRunId,
+                                                                    request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
+                                                                },
+                                                                {
+                                                                    onSuccess: () => {
+                                                                        message.success('紧急停机已执行。');
+                                                                        setSearchVersion((v) => v + 1);
+                                                                    },
+                                                                    onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                                },
+                                                            );
+                                                        },
+                                                    });
+                                                }}
+                                            >
+                                                紧急停机
+                                            </Button>
+                                            <PaperListSection
+                                                isLoading={emergencyStopsQuery.isFetching}
+                                                error={emergencyStopsQuery.error as AppApiError | null}
+                                                isEmpty={(emergencyStopsQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无异常停机事件。"
+                                            >
+                                                <Table
+                                                    rowKey="emergencyStopId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={emergencyStopsQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '触发类型', dataIndex: 'triggerType', key: 'triggerType', width: 120},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'APPLIED' ? 'error' : v === 'RESOLVED' ? 'success' : 'warning'}>{v}</Tag>},
+                                                        {title: '原因', dataIndex: 'reason', key: 'reason'},
+                                                        {title: '触发人', dataIndex: 'triggeredBy', key: 'triggeredBy', width: 120},
+                                                        {title: '触发时间', dataIndex: 'triggeredAt', key: 'triggeredAt', width: 180, render: (v: string) => formatDateTime(v)},
+                                                        {title: '解除时间', dataIndex: 'resolvedAt', key: 'resolvedAt', width: 180, render: (v: string | null) => formatDateTime(v)},
+                                                    ]}
+                                                />
+                                            </PaperListSection>
                                         </Space>
                                     ),
                                 },

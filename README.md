@@ -12,9 +12,15 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateI-PLAN completed
 - GateI-1-WO completed
 - GateI-2-WO completed
-- Next: GateI-3-WO
+- GateI-3-WO completed
+- GateI-3-FIX completed
+- GateI-4-WO completed
+- GateI-4-FIX completed
+- GateI completed
+- Next: GateJ-PLAN（Paper Trading 稳定运行）
+- AI not started（AI 最早 GateK 才允许进入信号层）
 
-GateI 当前仍处于 active/current 阶段，尚未整体完成。GateI-3-WO 只能围绕 SIM / Paper Trading 运行闭环单独开工。
+GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始。
 
 ## 当前能力摘要
 
@@ -23,7 +29,8 @@ GateI 当前仍处于 active/current 阶段，尚未整体完成。GateI-3-WO �
 - marketdata dataset 与 backtest config 绑定已完成。
 - `strategy_versions` 与 publish workflow 已完成。
 - backtest config / evaluation / traceability 增强已完成。
-- 下一步是 SIM / Paper Trading 运行闭环。
+- SIM / Paper Trading 运行闭环已完成。
+- Paper Trading 风控回写、资金曲线、持仓曲线、交易复盘、异常停机最小结构已完成。
 
 ## 当前明确不做
 

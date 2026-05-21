@@ -116,4 +116,9 @@ export const paperTradingQueryKeys = {
     orders: (paperRunId: string) => [...paperTradingQueryKeys.all, 'orders', paperRunId] as const,
     trades: (paperRunId: string) => [...paperTradingQueryKeys.all, 'trades', paperRunId] as const,
     positions: (paperRunId: string) => [...paperTradingQueryKeys.all, 'positions', paperRunId] as const,
+    riskResults: (paperRunId: string) => [...paperTradingQueryKeys.all, 'risk-results', paperRunId] as const,
+    equityCurve: (paperRunId: string) => [...paperTradingQueryKeys.all, 'equity-curve', paperRunId] as const,
+    positionCurve: (paperRunId: string) => [...paperTradingQueryKeys.all, 'position-curve', paperRunId] as const,
+    replay: (paperRunId: string) => [...paperTradingQueryKeys.all, 'replay', paperRunId] as const,
+    emergencyStops: (paperRunId: string) => [...paperTradingQueryKeys.all, 'emergency-stops', paperRunId] as const,
 };

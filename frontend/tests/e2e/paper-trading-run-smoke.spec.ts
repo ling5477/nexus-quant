@@ -76,11 +76,107 @@ test.describe('GateI-3 paper trading run smoke', () => {
         await page.getByRole('tab', {name: '成交'}).click();
         await expect(page.getByText('当前 Paper run 暂无成交事实。')).toBeVisible();
 
-        await page.getByRole('tab', {name: '持仓'}).click();
+        await page.getByRole('tab', {name: '持仓', exact: true}).click();
         await expect(page.getByText('当前 Paper run 暂无持仓事实。')).toBeVisible();
 
         await page.getByRole('tab', {name: '快照'}).click();
         await expect(page.getByText('Publish Snapshot')).toBeVisible();
         await expect(page.getByText('Strategy Version Snapshot')).toBeVisible();
+    });
+});
+
+test.describe('GateI-4 paper trading monitor smoke', () => {
+    test('风控检查、5 个监控 Tab、紧急停机完整链路', async ({page}) => {
+        await loginToConsole(page);
+
+        const fixture = await prepareGateI3PaperTradingFixture(page);
+
+        // Create paper run via UI
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        await page.getByRole('button', {name: /创建\s*Paper\s*Run/i}).click();
+        const dialog = page.getByRole('dialog', {name: /创建\s*Paper\s*Trading/});
+        await expect(dialog).toBeVisible();
+        await dialog.getByPlaceholder('发布记录 ID（publishId）').fill(fixture.publishId);
+
+        const createResponse = page.waitForResponse((response) => (
+            response.url().includes('/api/paper-trading/runs')
+            && response.request().method() === 'POST'
+            && !response.url().endsWith('/start')
+            && !response.url().endsWith('/stop')
+        ));
+        await page.getByRole('button', {name: 'OK', exact: true}).click();
+        const created = await createResponse;
+        expect(created.ok(), `create paper run failed: ${created.status()}`).toBeTruthy();
+        const createdPayload = await created.json();
+        const paperRunId: string = createdPayload.paperRunId;
+
+        // Start via UI
+        const row = page.locator('tr').filter({hasText: paperRunId});
+        await expect(row).toBeVisible({timeout: 15_000});
+
+        const startResponse = page.waitForResponse((response) => (
+            response.url().endsWith(`/api/paper-trading/runs/${paperRunId}/start`)
+            && response.request().method() === 'POST'
+        ));
+        await row.getByRole('link', {name: '启动'}).or(row.getByRole('button', {name: '启动'})).click();
+        const started = await startResponse;
+        expect(started.ok()).toBeTruthy();
+        await expect(row.getByText('RUNNING')).toBeVisible({timeout: 15_000});
+
+        // Open detail drawer
+        await row.getByRole('link', {name: '查看详情'}).or(row.getByRole('button', {name: '查看详情'})).click();
+        const drawer = page.getByLabel('Paper Trading 详情');
+        await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
+
+        // Tab: 风控结果 — click "执行风控检查" button
+        await page.getByRole('tab', {name: '风控结果'}).click();
+        const riskResponse = page.waitForResponse((response) => (
+            response.url().includes(`/api/paper-trading/runs/${paperRunId}/risk-results/run-once`)
+            && response.request().method() === 'POST'
+        ));
+        await page.getByRole('button', {name: /执行风控检查/}).click();
+        const riskRes = await riskResponse;
+        expect(riskRes.ok(), `risk run-once failed: ${riskRes.status()} ${await riskRes.text()}`).toBeTruthy();
+        await expect(page.getByText('BASIC_HEALTH_CHECK')).toBeVisible({timeout: 10_000});
+        await expect(page.getByText('PASSED').first()).toBeVisible({timeout: 5_000});
+
+        // Tab: 资金曲线
+        await page.getByRole('tab', {name: '资金曲线'}).click();
+        await expect(page.getByText('当前 Paper run 暂无资金曲线数据。')).toBeVisible();
+
+        // Tab: 持仓曲线
+        await page.getByRole('tab', {name: '持仓曲线'}).click();
+        await expect(page.getByText('当前 Paper run 暂无持仓曲线数据。')).toBeVisible();
+
+        // Tab: 交易复盘
+        await page.getByRole('tab', {name: '交易复盘'}).click();
+        await expect(page.getByText('当前 Paper run 暂无交易复盘记录。')).toBeVisible();
+
+        // Tab: 异常停机 — trigger emergency stop via UI
+        await page.getByRole('tab', {name: '异常停机'}).click();
+
+        const esButton = page.getByRole('button', {name: /紧急停机/});
+        await expect(esButton).toBeVisible({timeout: 5_000});
+        await expect(esButton).toBeEnabled({timeout: 5_000});
+
+        const esResponse = page.waitForResponse((response) => (
+            response.url().includes(`/api/paper-trading/runs/${paperRunId}/emergency-stop`)
+            && response.request().method() === 'POST'
+        ));
+        await esButton.click();
+        await expect(page.getByText('此操作将立即停止当前 Paper run')).toBeVisible({timeout: 10_000});
+        await page.getByRole('button', {name: '确认停机'}).click();
+        const esRes = await esResponse;
+        expect(esRes.ok()).toBeTruthy();
+        const esPayload = await esRes.json();
+        expect(esPayload.status).toBe('APPLIED');
+        expect(esPayload.triggerType).toBe('MANUAL');
+
+        // Close drawer and verify run is STOPPED
+        await page.getByLabel('Close', {exact: true}).or(page.getByRole('button', {name: 'Close'})).click();
+        const stoppedRow = page.locator('tr').filter({hasText: paperRunId});
+        await expect(stoppedRow.getByText('STOPPED')).toBeVisible({timeout: 15_000});
     });
 });
