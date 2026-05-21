@@ -6,6 +6,11 @@ import com.guidinglight.nexusquant.paper.api.dto.EmergencyStopEventResponse;
 import com.guidinglight.nexusquant.paper.api.dto.EmergencyStopRequestBody;
 import com.guidinglight.nexusquant.paper.api.dto.EquityCurveSnapshotResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRiskCheckResultResponse;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunAlertAckRequestBody;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunAlertCreateRequestBody;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunAlertResponse;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunDailyReportGenerateRequestBody;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunDailyReportResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunHeartbeatResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperTradingOrderResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperTradingPositionResponse;
@@ -15,6 +20,8 @@ import com.guidinglight.nexusquant.paper.api.dto.PaperTradingTradeResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PositionCurveSnapshotResponse;
 import com.guidinglight.nexusquant.paper.api.dto.TradeReplayRecordResponse;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperTradingRunCreateCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,6 +38,7 @@ import java.util.Objects;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -274,5 +282,115 @@ public class PaperTradingController {
     public PaperRunHeartbeatResponse runHeartbeatOnce(@PathVariable @NotBlank String paperRunId) {
         TraceIdContext.getOrCreate();
         return PaperRunHeartbeatResponse.from(apiService.runHeartbeatOnce(paperRunId));
+    }
+
+    @GetMapping("/{paperRunId}/daily-reports")
+    @Operation(summary = "查询 Paper run 日报列表", description = "返回指定 Paper run 的日报列表（按 report_date 倒序）。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List<PaperRunDailyReportResponse> dailyReports(@PathVariable @NotBlank String paperRunId) {
+        TraceIdContext.getOrCreate();
+        return apiService.listDailyReports(paperRunId).stream()
+                .map(PaperRunDailyReportResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/{paperRunId}/daily-reports/generate")
+    @Operation(summary = "生成 Paper run 日报", description = "为指定 Paper run 生成一份日报，按 (paperRunId, reportDate) 幂等。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "日报已生成"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunDailyReportResponse generateDailyReport(
+            @PathVariable @NotBlank String paperRunId,
+            @Valid @RequestBody PaperRunDailyReportGenerateRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        var command = new PaperRunDailyReportGenerateCommand(paperRunId, request.reportDate());
+        return PaperRunDailyReportResponse.from(apiService.generateDailyReport(command));
+    }
+
+    @GetMapping("/{paperRunId}/daily-reports/{reportId}")
+    @Operation(summary = "查询 Paper run 日报详情", description = "按 reportId 查询日报详情。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "404", description = "日报不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunDailyReportResponse dailyReportDetail(
+            @PathVariable @NotBlank String paperRunId,
+            @PathVariable @NotBlank String reportId
+    ) {
+        TraceIdContext.getOrCreate();
+        return PaperRunDailyReportResponse.from(apiService.getDailyReportById(reportId));
+    }
+
+    @GetMapping("/{paperRunId}/alerts")
+    @Operation(summary = "查询 Paper run 告警列表", description = "返回指定 Paper run 的告警列表（按 created_at 倒序）。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List<PaperRunAlertResponse> alerts(
+            @PathVariable @NotBlank String paperRunId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String severity
+    ) {
+        TraceIdContext.getOrCreate();
+        return apiService.listAlerts(paperRunId, status, severity).stream()
+                .map(PaperRunAlertResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/{paperRunId}/alerts")
+    @Operation(summary = "创建 Paper run 告警", description = "为指定 Paper run 创建一条告警事件。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "告警已创建"),
+            @ApiResponse(responseCode = "400", description = "参数无效", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunAlertResponse createAlert(
+            @PathVariable @NotBlank String paperRunId,
+            @Valid @RequestBody PaperRunAlertCreateRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        var command = new PaperRunAlertCreateCommand(
+                paperRunId, request.alertType(), request.severity(),
+                request.title(), request.message(), request.source(),
+                request.eventSnapshotJson()
+        );
+        return PaperRunAlertResponse.from(apiService.createAlert(command));
+    }
+
+    @PatchMapping("/{paperRunId}/alerts/{alertId}/ack")
+    @Operation(summary = "确认告警", description = "将 OPEN 状态的告警标记为 ACKED。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "确认成功"),
+            @ApiResponse(responseCode = "404", description = "告警不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "告警已解决", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunAlertResponse ackAlert(
+            @PathVariable @NotBlank String paperRunId,
+            @PathVariable @NotBlank String alertId,
+            @Valid @RequestBody(required = false) PaperRunAlertAckRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        String ackBy = request != null ? request.acknowledgedBy() : null;
+        return PaperRunAlertResponse.from(apiService.ackAlert(alertId, ackBy));
+    }
+
+    @PatchMapping("/{paperRunId}/alerts/{alertId}/resolve")
+    @Operation(summary = "解决告警", description = "将告警标记为 RESOLVED。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "解决成功"),
+            @ApiResponse(responseCode = "404", description = "告警不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunAlertResponse resolveAlert(
+            @PathVariable @NotBlank String paperRunId,
+            @PathVariable @NotBlank String alertId
+    ) {
+        TraceIdContext.getOrCreate();
+        return PaperRunAlertResponse.from(apiService.resolveAlert(alertId, "system"));
     }
 }

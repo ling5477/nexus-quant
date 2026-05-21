@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.research.application.api.paper;
 
+import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleService;
 import com.guidinglight.nexusquant.research.application.paper.PaperTradingMonitorService;
@@ -8,6 +11,8 @@ import com.guidinglight.nexusquant.research.application.paper.PaperTradingRunSer
 import com.guidinglight.nexusquant.research.domain.paper.EmergencyStopEvent;
 import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlert;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunHeartbeat;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunSchedule;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunScheduleFire;
@@ -31,15 +36,18 @@ public class PaperTradingApiService {
     private final PaperTradingRunService runService;
     private final PaperTradingMonitorService monitorService;
     private final PaperRunScheduleService scheduleService;
+    private final PaperRunMonitorService paperRunMonitorService;
 
     public PaperTradingApiService(
             PaperTradingRunService runService,
             PaperTradingMonitorService monitorService,
-            PaperRunScheduleService scheduleService
+            PaperRunScheduleService scheduleService,
+            PaperRunMonitorService paperRunMonitorService
     ) {
         this.runService = Objects.requireNonNull(runService, "runService must not be null");
         this.monitorService = Objects.requireNonNull(monitorService, "monitorService must not be null");
         this.scheduleService = Objects.requireNonNull(scheduleService, "scheduleService must not be null");
+        this.paperRunMonitorService = Objects.requireNonNull(paperRunMonitorService, "paperRunMonitorService must not be null");
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
@@ -213,6 +221,67 @@ public class PaperTradingApiService {
     public List<PaperRunHeartbeat> listHeartbeats(String paperRunId) {
         try {
             return scheduleService.listHeartbeats(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunDailyReport generateDailyReport(PaperRunDailyReportGenerateCommand command) {
+        try {
+            return paperRunMonitorService.generateDailyReport(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunDailyReport getDailyReportById(String reportId) {
+        try {
+            return paperRunMonitorService.getDailyReportById(reportId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunDailyReport> listDailyReports(String paperRunId) {
+        try {
+            return paperRunMonitorService.listDailyReports(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunAlert createAlert(PaperRunAlertCreateCommand command) {
+        try {
+            return paperRunMonitorService.createAlert(command);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus = msg.startsWith("invalid alert severity")
+                    ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunAlert> listAlerts(String paperRunId, String status, String severity) {
+        try {
+            return paperRunMonitorService.listAlerts(paperRunId, status, severity);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunAlert ackAlert(String alertId, String acknowledgedBy) {
+        try {
+            return paperRunMonitorService.ackAlert(alertId, acknowledgedBy);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunAlert resolveAlert(String alertId, String resolvedBy) {
+        try {
+            return paperRunMonitorService.resolveAlert(alertId, resolvedBy);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         }
