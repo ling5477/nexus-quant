@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.paper.api.dto.EmergencyStopEventResponse;
 import com.guidinglight.nexusquant.paper.api.dto.EmergencyStopRequestBody;
 import com.guidinglight.nexusquant.paper.api.dto.EquityCurveSnapshotResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRiskCheckResultResponse;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunHeartbeatResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperTradingOrderResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperTradingPositionResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperTradingRunCreateRequestBody;
@@ -249,5 +250,29 @@ public class PaperTradingController {
         return apiService.listEmergencyStops(paperRunId).stream()
                 .map(EmergencyStopEventResponse::from)
                 .toList();
+    }
+
+    @GetMapping("/{paperRunId}/heartbeats")
+    @Operation(summary = "查询 Paper run 心跳记录", description = "返回指定 Paper run 的心跳记录列表（按 heartbeat_time 倒序）。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List<PaperRunHeartbeatResponse> heartbeats(@PathVariable @NotBlank String paperRunId) {
+        TraceIdContext.getOrCreate();
+        return apiService.listHeartbeats(paperRunId).stream()
+                .map(PaperRunHeartbeatResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/{paperRunId}/heartbeats/run-once")
+    @Operation(summary = "执行一次心跳", description = "对指定 Paper run 生成一次心跳并写入记录。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "心跳已记录"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunHeartbeatResponse runHeartbeatOnce(@PathVariable @NotBlank String paperRunId) {
+        TraceIdContext.getOrCreate();
+        return PaperRunHeartbeatResponse.from(apiService.runHeartbeatOnce(paperRunId));
     }
 }
