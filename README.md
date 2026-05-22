@@ -12,7 +12,9 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-1-WO completed
 - GateJ-2-WO completed
 - GateJ-3-WO completed
-- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）
+- DOC-CLEAN-2 completed
+- PRE-FREEZE-CODE-AUDIT second pass completed（无 P0；E2E 与 Python 基线已由 Codex 实际重跑通过，详见 `docs/current/PRE_FREEZE_AUDIT_REPORT.md`）
+- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）；必须在本轮审查报告提交后单独开工
 - AI not started
 - GateK not started
 
@@ -47,6 +49,9 @@ GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI、AI 信号�
 - `docs/current/ROADMAP.md`：总路线
 - `docs/current/PLAN_GATEJ.md`：GateJ 规划
 - `docs/current/GATEJ_WORK_ORDER.md`：GateJ 工作单（含 GateJ-FREEZE 范围）
+- `docs/current/PRE_FREEZE_AUDIT_REPORT.md`：GateJ-FREEZE 前置代码 / 文档 / 实现真实性审查报告
+- `docs/current/PRE_FREEZE_AUDIT_FIX_PLAN.md`：PRE-FREEZE-CODE-AUDIT 修复计划与 GateJ-FREEZE 入场条件
+- `docs/current/GATEJ_FREEZE_ACCEPTANCE_TEMPLATE.md`：GateJ-FREEZE 1h/24h/7d 验收记录模板
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
 - `docs/current/DOC_CLEAN_REPORT.md`：最近一次文档清理报告
 - GateH 冻结卷宗：`docs/gates/gate-h/`
@@ -84,4 +89,5 @@ python -m ruff check .
 - `npm audit` 仍有既有告警。
 - Vite chunk > 500 kB 警告仍存在。
 - Ant Design React 19 compatibility / deprecation warning（`Card.bordered`、`Modal.destroyOnClose`）仍存在。
-- E2E 仍有 1 个 skipped（`E2E_TRADE_ORDER_ID` 未配置的既有订单详情链路），与 GateJ 主链无关。
+- E2E 本轮二次审查实际结果为 24 passed / 1 skipped；唯一 skipped 为 `E2E_TRADE_ORDER_ID` 未配置的既有订单详情链路，与 GateJ 主链无关。
+- Python 本轮二次审查实际结果为 pytest 2 passed、mypy success、ruff all checks passed；默认 WindowsApps `python` alias 不可用，人工复跑需使用真实 Python 解释器或修正 PATH。

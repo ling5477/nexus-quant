@@ -1814,3 +1814,197 @@ docs/gates/{README.md, gate-a/, ..., gate-g/, gate-h/, gate-i/}
 - 当前事实唯一指向 `docs/current/`；已完成 Gate 的计划文档不在 `docs/current/` 与 `docs/gates/` 之间重复。
 - README / AGENTS / CLAUDE / docs/README / docs/current/README 全部同步到 `GateJ-3-WO completed / Next: GateJ-FREEZE / AI not started / GateK not started`。
 - 允许继续进入 GateJ-FREEZE，但 GateJ-FREEZE 只能做 1h / 24h / 7d 连续运行验收与冻结，不能夹带 AI 或新业务功能。
+
+---
+
+# Worklog: PRE-FREEZE-CODE-AUDIT
+
+日期：2026-05-22
+
+## 目标
+
+在 GateJ-FREEZE 之前执行前置代码 / 文档 / 实现真实性 / 运行链路审查。本轮不做功能开发、不修业务代码、不接 AI、不创建 `docs/gates/gate-j/`。
+
+## 范围
+
+按要求覆盖 14 类审查：
+1. 文档状态一致性
+2. 实现真实性与文档一致性
+3. 后端模块边界
+4. 数据库 / Flyway / 注释 / 约束 / 索引
+5. Paper Trading 主链完整性
+6. Schedule / Heartbeat / Report / Alert / Recovery / Stability 运行链
+7. API 命名、DTO、错误处理、分页、幂等
+8. 前端页面与数据层结构
+9. E2E 稳定性与测试数据幂等
+10. Python research 模块
+11. Paper / LIVE 隔离
+12. AI 未接入与未来 AI 接入边界
+13. GateJ-FREEZE 验收准备度
+14. 技术债与非阻塞风险分级
+
+## 修改文件清单
+
+文档：
+- 新增 `docs/current/PRE_FREEZE_AUDIT_REPORT.md`。
+- 新增 `docs/current/PRE_FREEZE_AUDIT_FIX_PLAN.md`。
+- 新增 `docs/current/GATEJ_FREEZE_ACCEPTANCE_TEMPLATE.md`。
+- 修改 `docs/current/STATUS.md`：同步阶段为 `PRE-FREEZE-CODE-AUDIT completed`，写明 P0/P1 统计与下一步条件。
+- 修改 `docs/current/WORKLOG.md`：追加本轮审查记录。
+- 修改 `docs/current/TESTING.md`：追加本轮验证记录。
+- 修改 `README.md` / `AGENTS.md` / `CLAUDE.md`：同步阶段表述与下一步条件。
+
+代码：
+- **未修改** backend、frontend、research/py 任何业务代码。
+- **未新增** Flyway migration、API、前端页面实现。
+
+## 是否修改业务代码
+
+否。本轮纯文档审查与状态同步。
+
+## 是否新增 migration
+
+否。
+
+## 是否新增 API
+
+否。
+
+## 是否改前端页面实现
+
+否。
+
+## 是否接入 AI
+
+否。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已执行 | 仅 docs/current 与根目录入口文档变更 |
+| `mvn -f backend/pom.xml test` | 通过 | BUILD SUCCESS，0 failures / 0 errors（archunit ModuleBoundary 6、PackageBoundary 1、nq-app suite 35 全部通过；Paper 单元测试 PaperTradingRunService 4 + PaperTradingMonitorService 5 + PaperRunScheduleService 11 + PaperRunMonitorService 12 + PaperRunRecoveryService 9 + PaperRunStabilityCheckService 10 + PaperRunMonitorRunService 8 全部通过）|
+| `npm run build` | 通过 | Vite 通过，dist/index.js ≈ 1.48 MB（gzip 446 kB），仍有 chunk > 500 kB 警告 |
+| `npm run test:e2e` | **未在本轮重跑** | 沿用 GateJ-3-WO 24 passed / 1 skipped 基线；P1-1 要求 GateJ-FREEZE 入场前补跑 |
+| `python -m pytest -q` | **未在本轮重跑** | 当前 shell 仅 WindowsApps stub（`python.exe` exit 49），无真实 Python 解释器；沿用 BASELINE-FIX-2 / GateJ-3 通过基线；P1-2 要求 GateJ-FREEZE 入场前补跑 |
+| `python -m mypy src` | **未在本轮重跑** | 同上；P1-2 |
+| `python -m ruff check .` | **未在本轮重跑** | 同上；P1-2 |
+
+## P0 / P1 / P2 / P3 统计
+
+- P0：0
+- P1：4（P1-1 入场前重跑 E2E；P1-2 入场前重跑 Python；P1-3 PaperTradingPage 重构，不阻塞；P1-4 验收记录模板，已闭环）
+- P2：11（详见 PRE_FREEZE_AUDIT_REPORT.md 第 25 节）
+- P3：4（详见 PRE_FREEZE_AUDIT_REPORT.md 第 29 节）
+
+## 是否允许进入 GateJ-FREEZE
+
+允许。GateJ-FREEZE 只能做 1h / 24h / 7d 连续运行验收与冻结，不能夹带 AI 或新业务功能。入场前必须重跑一次 `npm run test:e2e` 与 Python `pytest/mypy/ruff` 确认基线。
+
+## 边界确认
+
+- 未修改 backend / frontend / research 业务代码。
+- 未新增 migration、API、前端页面实现。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未创建 `docs/gates/gate-j/`。
+- 未把 GateJ 写为 completed。
+- 未把 GateK 写为 started。
+- 未把 AI 写为 started。
+- 未把失败验证写成通过：E2E 与 Python 本轮未执行的部分均明确标记为「未在本轮重跑」，并通过 P1-1 / P1-2 列入 GateJ-FREEZE 入场前的必做项。
+
+## 结论
+
+- 文档、代码、DB、API、前端、E2E、Python、Paper/LIVE 隔离、AI 边界、模块边界全部一致。
+- Paper Trading 主链完整。
+- GateJ-FREEZE 准备度就绪。
+- 允许进入 GateJ-FREEZE。详见 `PRE_FREEZE_AUDIT_REPORT.md` 第 30 节与 `PRE_FREEZE_AUDIT_FIX_PLAN.md` 第 9 节。
+
+---
+
+# Worklog: PRE-FREEZE-CODE-AUDIT-SECOND-PASS
+
+日期：2026-05-22
+
+## 目标
+
+Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Claude 第一轮结论，补齐第一轮未实际执行的 E2E 与 Python 基线，并判断是否允许进入 GateJ-FREEZE。
+
+## 本轮范围
+
+- 复核 `PRE_FREEZE_AUDIT_REPORT.md` 与 `PRE_FREEZE_AUDIT_FIX_PLAN.md`。
+- 实际执行后端测试、前端 build、完整 E2E、Python pytest/mypy/ruff。
+- 二次抽查 API、DB、Paper/LIVE 隔离和 AI 边界。
+- 只更新文档，不修业务代码。
+
+## 修改文件清单
+
+- `docs/current/PRE_FREEZE_AUDIT_REPORT.md`
+- `docs/current/PRE_FREEZE_AUDIT_FIX_PLAN.md`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `README.md`
+- `AGENTS.md`
+- `CLAUDE.md`
+
+## 新增文件清单
+
+无。
+
+## 是否修改业务代码
+
+否。
+
+## 是否新增 migration / API / 前端页面实现
+
+否。
+
+## 是否接入 AI
+
+否。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 module SUCCESS；`nq-app` 35 tests / 0 failures / 0 errors |
+| `cd frontend && npm run build` | 通过 | `tsc -b && vite build` 成功；Vite chunk > 500 kB 警告仍存在 |
+| `cd frontend && npm run test:e2e` | 通过 | 后端 local profile 启动成功；Flyway 当前版本 25；Playwright 24 passed / 1 skipped / 0 failed |
+| `cd research/py && python -m pytest -q` | 通过 | 2 passed |
+| `cd research/py && python -m mypy src` | 通过 | Success: no issues found in 8 source files |
+| `cd research/py && python -m ruff check .` | 通过 | All checks passed |
+
+## 实现真实性二次抽查
+
+- API：指定 20 个 GateJ 主链 endpoint 均存在于 `PaperTradingController` / `PaperTradingScheduleController`，对应 DTO 与 `PaperTradingApiService` / application service 委派存在。
+- DB：V21-V25 覆盖 16 张 Paper 表；COMMENT ON TABLE / COMMENT ON COLUMN、CHECK、FK、关键 UNIQUE、关键 index 均存在。
+- 前端：`/paper-trading` 详情抽屉 15 个 Tab 存在，并通过 TanStack Query / Axios client 对应后端能力。
+- E2E：完整 25 tests total，GateJ 主链 spec 全部执行通过；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有订单详情链路。
+- Python：offline research 工具链 pytest/mypy/ruff 全部通过。
+
+## Paper / LIVE / AI 边界
+
+- `backend/nq-research/.../application/paper/**` 与 `backend/nq-api/.../paper/**` 未发现 `TradingAdapter`、`placeOrder`、`cancelOrder`、`RestTemplate`、`WebClient`、`HttpClient` 调用。
+- schedule / heartbeat / daily report / alert / recover / retry / stability / monitor run-once 均只写本地 DB 或聚合本地状态。
+- emergency stop 只调用 `PaperTradingRunService.stop` 停止 Paper run，不调用真实交易所撤单。
+- `backend` / `frontend/src` / `research/py` 未发现 OpenAI / Anthropic / LLM provider / AI Signal / AI Trading 业务接入。
+
+## 新发现分级
+
+- P0：0。
+- P1：0。Claude 第一轮 P1-1 / P1-2 已由本轮实际验证关闭；P1-3 不阻塞；P1-4 已闭环。
+- P2：新增 1 项前端 runtime warning 集合（Ant Design React 19 compatibility、`Card.bordered`、`Modal.destroyOnClose`、`useForm` 未连接、`Descriptions` span 合计不匹配），不阻塞 GateJ-FREEZE。
+- P3：0。
+
+## 边界确认
+
+- 未执行 GateJ-FREEZE 1h/24h/7d 连续运行验收。
+- 未创建 `docs/gates/gate-j/`。
+- 未把 GateJ 写成 completed。
+- 未把 GateK 写成 started。
+- 未把 AI 写成 started。
+- 未把失败验证写成通过。
+
+## 结论
+
+允许进入 GateJ-FREEZE，但必须在本轮审查报告提交后单独开工。GateJ-FREEZE 只能做 1h / 24h / 7d 连续运行验收与冻结，不能夹带 AI 或新功能。
