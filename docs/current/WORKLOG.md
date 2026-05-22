@@ -1728,3 +1728,89 @@ GateJ-3-WO：Paper Trading 异常恢复、失败重试、运行稳定性检查�
 - 后端测试通过、前端 build 通过、E2E 24 passed / 1 skipped。
 - GateJ-3-WO 已完成，所有验收标准已满足。
 - **允许进入 GateJ-FREEZE**，但只能在本轮变更审查/提交后单独开工；GateJ-FREEZE 只能做 1h/24h/7d 连续运行验收与冻结，不能夹带 AI。
+
+---
+
+# Worklog: DOC-CLEAN-2
+
+日期：2026-05-22
+
+## 目标
+
+在 GateJ-3-WO completed、Next: GateJ-FREEZE 阶段执行一次文档梳理：让 `docs/current/` 只承载当前事实和 GateJ 阶段规划，不再保留已冻结 Gate 的计划副本；让 `docs/gates/` 只承载已完成 Gate 的冻结卷宗；让根目录 README / AGENTS / CLAUDE 与 `docs/README.md` / `docs/current/README.md` 入口清晰、重复最少。本轮不动业务代码、API、migration、前端页面实现。
+
+## 删除的冗余文档（12 个）
+
+`docs/current/` 删除以下 12 个 GateH / GateI 计划副本（已通过 `diff -q` 与 `docs/gates/gate-h/`、`docs/gates/gate-i/` 中的冻结副本逐一比对，全部 `[same]`）：
+
+- `docs/current/PLAN_GATEH.md`、`GATEH_API_PLAN.md`、`GATEH_DB_PLAN.md`、`GATEH_FRONTEND_PLAN.md`、`GATEH_TEST_PLAN.md`、`GATEH_WORK_ORDER.md`
+- `docs/current/PLAN_GATEI.md`、`GATEI_API_PLAN.md`、`GATEI_DB_PLAN.md`、`GATEI_FRONTEND_PLAN.md`、`GATEI_TEST_PLAN.md`、`GATEI_WORK_ORDER.md`
+
+## 归档的历史文档
+
+本轮无新增归档：
+
+- 上述 12 个 GateH / GateI 计划副本已在 `docs/gates/gate-h/` 与 `docs/gates/gate-i/` 中保存为 Gate 冻结卷宗，无需另行归档。
+- `docs/archive/{gate-inputs,legacy-root-docs,rc1}/` 既有结构清晰，本轮不调整。
+
+## 优化的入口文档
+
+- `docs/README.md`：移除 "Next: GateJ-PLAN" 等过期描述；同步至 `GateJ-3-WO completed / Next: GateJ-FREEZE`；新增 GateJ 规划与 DOC_CLEAN_REPORT 入口；新增"已完成 Gate 的计划文档只保留在 `docs/gates/gate-x/`，不在 `docs/current/` 重复"的规则说明。
+- `docs/current/README.md`：从 "GateI completed / Next: GateJ-PLAN" 同步至 `GateJ-3-WO completed / Next: GateJ-FREEZE`；新增 GateJ 规划文件清单与历史 Gate 冻结卷宗指引；明确 GateJ-FREEZE 不夹带 AI / 新业务功能。
+- `README.md`：移除已删除的 `docs/current/PLAN_GATEI.md`、`docs/current/GATEI_WORK_ORDER.md` 引用，改为指向当前 GateJ 规划文档；扩展"当前明确不做"清单（含外部通知 / 自动恢复策略引擎）；明确 E2E skipped 与 GateJ 主链无关。
+- `CLAUDE.md` / `AGENTS.md`：在 Current stage 之外新增"GateJ-FREEZE 允许范围 / 禁止范围"小节，明确 GateJ-FREEZE 只能做 1h / 24h / 7d 连续运行验收与冻结，不创建 `docs/gates/gate-j/` 除非 GateJ completed。
+
+## 新增文档
+
+- `docs/current/DOC_CLEAN_REPORT.md`：本轮清理报告（删除/归档/保留清单、最终结构、未删除但仍需观察的文件、当前结论）。
+
+## docs/current 最终结构
+
+```
+docs/current/
+├── README.md, STATUS.md, ROADMAP.md, WORKLOG.md, TESTING.md
+├── API.md, DB_SCHEMA.md, MODULES.md, ARCHITECTURE.md, RUNBOOK.md
+├── PLAN_GATEJ.md, GATEJ_{API,DB,FRONTEND,TEST}_PLAN.md, GATEJ_WORK_ORDER.md
+└── DOC_CLEAN_REPORT.md
+```
+
+不再保留 GateH / GateI 计划副本。
+
+## docs/gates 最终结构
+
+```
+docs/gates/{README.md, gate-a/, ..., gate-g/, gate-h/, gate-i/}
+```
+
+`gate-j/` 不存在，待 GateJ-FREEZE 通过后再创建。
+
+## 已修正的过期状态
+
+- `docs/README.md` 中 "Next: GateJ-PLAN"。
+- `docs/current/README.md` 中 "GateI completed / Next: GateJ-PLAN"。
+- `README.md` 中已删除的 `docs/current/PLAN_GATEI.md` / `GATEI_WORK_ORDER.md` 引用。
+
+## 边界确认
+
+- 未修改 backend / frontend / research 业务代码。
+- 未新增 migration、API 实现。
+- 未改前端页面实现。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未创建 `docs/gates/gate-j/`。
+- 未把 GateJ 写为 completed。
+- 未把 GateK 写为 started。
+- 未把 AI 写为 started。
+- 未删除 `docs/gates/gate-h/`、`docs/gates/gate-i/`、`docs/templates/`、`docs/DOC_RULES.md`。
+- 未删除仍有历史价值的 `docs/archive/` 内容。
+
+## 验证
+
+- `git status --short`：仅 docs 路径下的删除/修改/新增；无业务代码、migration、API 实现、前端页面实现变更。
+- 因本轮只动文档，未重跑 `mvn test`、`npm run build`、`npm run test:e2e`、Python `pytest/mypy/ruff`；沿用 GateJ-3-WO 的通过基线（mvn BUILD SUCCESS / Flyway V25 / npm build / E2E 24 passed 1 skipped）。
+
+## DOC-CLEAN-2 结论
+
+- 文档结构已收口到 GateJ-FREEZE 前稳定状态。
+- 当前事实唯一指向 `docs/current/`；已完成 Gate 的计划文档不在 `docs/current/` 与 `docs/gates/` 之间重复。
+- README / AGENTS / CLAUDE / docs/README / docs/current/README 全部同步到 `GateJ-3-WO completed / Next: GateJ-FREEZE / AI not started / GateK not started`。
+- 允许继续进入 GateJ-FREEZE，但 GateJ-FREEZE 只能做 1h / 24h / 7d 连续运行验收与冻结，不能夹带 AI 或新业务功能。

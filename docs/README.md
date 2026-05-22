@@ -6,20 +6,24 @@
 
 - 当前事实入口：`docs/current/README.md`
 - 当前状态：`docs/current/STATUS.md`
+- 当前路线：`docs/current/ROADMAP.md`
 - 当前架构：`docs/current/ARCHITECTURE.md`
 - 当前模块：`docs/current/MODULES.md`
 - 当前 API：`docs/current/API.md`
 - 当前数据库：`docs/current/DB_SCHEMA.md`
 - 当前验证：`docs/current/TESTING.md`
 - 当前运行手册：`docs/current/RUNBOOK.md`
-- 当前路线：`docs/current/ROADMAP.md`
 - 当前工作日志：`docs/current/WORKLOG.md`
+- 当前 GateJ 规划：`docs/current/PLAN_GATEJ.md`
+- 当前 GateJ 工作单：`docs/current/GATEJ_WORK_ORDER.md`
+- 文档清理报告：`docs/current/DOC_CLEAN_REPORT.md`
 
 ## 历史与规则
 
 - 历史 Gate 卷宗：`docs/gates/`
   - `docs/gates/gate-h/`：GateH completed freeze snapshot（交易工作台、历史行情、dataset 绑定）
   - `docs/gates/gate-i/`：GateI completed freeze snapshot（虚拟币量化 V1 完整闭环）
+  - `docs/gates/gate-a..g/`：早期 Gate 历史卷宗
 - 归档文档：`docs/archive/`
 - 文档规则：`docs/DOC_RULES.md`
 - 模板：`docs/templates/`
@@ -28,13 +32,19 @@
 
 - GateH completed。
 - GateI completed。
-- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- GateJ-PLAN completed。
+- GateJ-1-WO completed。
+- GateJ-2-WO completed。
+- GateJ-3-WO completed。
+- Next: GateJ-FREEZE（1h / 24h / 7d 连续运行验收与冻结）。
 - AI not started。
+- GateK not started。
 - GateJ 不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
 
 ## 文档使用规则
 
 - `docs/current` 是当前事实源，唯一开发入口。
 - `docs/gates` 是历史 Gate 冻结卷宗，只读参考。
-- `docs/gates/gate-i` 不是当前事实源，当前事实仍以 `docs/current/` 为准。
+- 已完成 Gate 的计划文档（PLAN / WORK_ORDER / API_PLAN / DB_PLAN / FRONTEND_PLAN / TEST_PLAN）只保留在 `docs/gates/gate-x/`，不在 `docs/current/` 重复。
 - `docs/archive` 只归档，不作为当前开发依据。
+- 未冻结 Gate（如当前的 GateJ）的计划文档保留在 `docs/current/`，Gate 完成并冻结后迁移到 `docs/gates/gate-x/` 并从 `docs/current/` 删除。

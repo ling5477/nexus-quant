@@ -27,6 +27,21 @@ Previous completed stages:
 
 Next allowed: GateJ-FREEZE after review。
 
+GateJ-FREEZE 允许范围：
+- 1h / 24h / 7d 连续运行验收。
+- 验收记录、文档冻结、FREEZE_SUMMARY 编写。
+- 同步 STATUS / WORKLOG / TESTING / ROADMAP / CLAUDE / AGENTS / README。
+- GateJ 整体通过验收后才允许创建 `docs/gates/gate-j/` 并冻结。
+
+GateJ-FREEZE 禁止范围：
+- 不接 AI、不做 AI 信号 / AI 自动交易 / AI Paper Trading。
+- 不做 GateK 任何实现。
+- 不新增业务功能、API、migration。
+- 不改前端页面功能。
+- 不做真实 LIVE 下单、不调用真实交易所下单接口。
+- 不把 GateJ 写成 completed，除非 GateJ-FREEZE 通过。
+- 不创建 `docs/gates/gate-j/`，除非 GateJ completed。
+
 GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
 
 ## 2. GateI 完成范围
