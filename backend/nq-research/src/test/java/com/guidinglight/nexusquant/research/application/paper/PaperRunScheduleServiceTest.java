@@ -284,6 +284,16 @@ class PaperRunScheduleServiceTest {
         @Override public List<PaperRunScheduleFire> listByScheduleId(String scheduleId) {
             return records.stream().filter(f -> f.scheduleId().equals(scheduleId)).toList();
         }
+        @Override public List<PaperRunScheduleFire> listByRunIdAndStatus(String paperRunId, String status, java.time.Instant start, java.time.Instant end) {
+            return records.stream()
+                    .filter(f -> f.paperRunId().equals(paperRunId))
+                    .filter(f -> f.status().name().equals(status))
+                    .filter(f -> !f.firedAt().isBefore(start) && f.firedAt().isBefore(end))
+                    .toList();
+        }
+        @Override public int countByRunIdAndStatusAndDateRange(String paperRunId, String status, java.time.Instant start, java.time.Instant end) {
+            return listByRunIdAndStatus(paperRunId, status, start, end).size();
+        }
     }
 
     static class InMemoryHeartbeatRepo implements PaperRunHeartbeatRepository {
@@ -291,6 +301,17 @@ class PaperRunScheduleServiceTest {
         @Override public void insert(PaperRunHeartbeat heartbeat) { records.add(heartbeat); }
         @Override public List<PaperRunHeartbeat> listByRunId(String paperRunId) {
             return records.stream().filter(h -> h.paperRunId().equals(paperRunId)).toList();
+        }
+        @Override public int countByRunIdAndDateRange(String paperRunId, java.time.Instant start, java.time.Instant end) {
+            return (int) records.stream()
+                    .filter(h -> h.paperRunId().equals(paperRunId))
+                    .filter(h -> !h.heartbeatTime().isBefore(start) && h.heartbeatTime().isBefore(end))
+                    .count();
+        }
+        @Override public java.util.Optional<PaperRunHeartbeat> findLatestByRunId(String paperRunId) {
+            return records.stream()
+                    .filter(h -> h.paperRunId().equals(paperRunId))
+                    .max(java.util.Comparator.comparing(PaperRunHeartbeat::heartbeatTime));
         }
     }
 }

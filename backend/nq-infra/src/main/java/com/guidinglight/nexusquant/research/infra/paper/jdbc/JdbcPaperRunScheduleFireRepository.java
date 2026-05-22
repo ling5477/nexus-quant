@@ -48,6 +48,26 @@ public class JdbcPaperRunScheduleFireRepository implements PaperRunScheduleFireR
                 """, ROW_MAPPER, scheduleId);
     }
 
+    @Override
+    public List<PaperRunScheduleFire> listByRunIdAndStatus(String paperRunId, String status, Instant start, Instant end) {
+        return jdbcTemplate.query("""
+                SELECT fire_id, schedule_id, paper_run_id, status, fired_at, finished_at,
+                       duration_ms, result_json::text AS result_json, error_message, created_at
+                FROM paper_run_schedule_fires
+                WHERE paper_run_id = ? AND status = ? AND fired_at >= ? AND fired_at < ?
+                ORDER BY fired_at DESC
+                """, ROW_MAPPER, paperRunId, status, Timestamp.from(start), Timestamp.from(end));
+    }
+
+    @Override
+    public int countByRunIdAndStatusAndDateRange(String paperRunId, String status, Instant start, Instant end) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM paper_run_schedule_fires
+                WHERE paper_run_id = ? AND status = ? AND fired_at >= ? AND fired_at < ?
+                """, Integer.class, paperRunId, status, Timestamp.from(start), Timestamp.from(end));
+        return count != null ? count : 0;
+    }
+
     private static PaperRunScheduleFire mapRow(ResultSet rs, int rowNum) throws SQLException {
         Timestamp finishedAt = rs.getTimestamp("finished_at");
         long durationMs = rs.getLong("duration_ms");

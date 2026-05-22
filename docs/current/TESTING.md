@@ -399,3 +399,173 @@ GateI-4-FIX 结论：
 - **GateI completed。**
 - Next: GateJ-PLAN（Paper Trading 稳定运行）。
 - GateJ 不是 AI 阶段；AI 最早 GateK 才允许进入信号层。
+
+## GateJ-PLAN 验证记录
+
+日期：2026-05-21
+
+本轮只修改文档，不重新执行全量后端、前端、Python 测试。
+
+沿用 GateI completed 验证基线：
+
+- 后端 `mvn -f backend/pom.xml test`：35 tests / 0 failures。
+- 前端 `npm run build`：通过。
+- E2E `npm run test:e2e`：19 passed / 1 skipped。
+- Python `pytest`、`mypy`、`ruff`：通过。
+
+本轮只改文档，未跑全量测试原因：无业务代码变更、无 migration 变更、无 API 变更、无前端页面变更。
+
+GateJ 测试规划入口为 [GATEJ_TEST_PLAN.md](./GATEJ_TEST_PLAN.md)。
+
+GateJ 规划 E2E 矩阵：
+
+- paper-schedule-smoke
+- paper-heartbeat-smoke
+- paper-daily-report-smoke
+- paper-alert-smoke
+- paper-recovery-smoke
+- paper-stability-check-smoke
+
+GateJ 规划连续运行验收：
+
+- 1 小时短验收
+- 24 小时中验收
+- 7 天稳定性验收
+
+## GateJ-1-WO 验证记录
+
+日期：2026-05-21
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | BUILD SUCCESS，35 tests / 0 failures；含 PaperRunScheduleServiceTest 11 用例 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告 |
+| 后端 local profile 启动 | 通过 | `/actuator/health` 返回 `UP`；Flyway 当前版本 `23` |
+| `npm run test:e2e` | 通过 | 20 passed / 1 skipped；新增 paper-trading-schedule-smoke 通过 |
+
+GateJ-1 E2E 覆盖：
+
+- `/paper-trading` 页面可打开。
+- 可创建 Paper run 并启动。
+- 详情抽屉可打开。
+- 调度计划 Tab 可展示空态。
+- 可创建调度计划（ENABLED 状态）。
+- 可执行一次调度（run-once），fire 记录为 SUCCEEDED。
+- 可查看触发记录。
+- 可禁用调度（DISABLED）。
+- 心跳 Tab 可展示空态。
+- 可执行心跳检查（run-once），heartbeat 状态为 OK。
+- 不依赖外网交易所。
+- 不调用真实 LIVE 下单。
+
+GateJ-1 skipped 说明：
+
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID`，为既有交易订单详情链路，不影响 GateJ-1 主链。
+
+GateJ-1 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用既有通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+
+GateJ-1 边界确认：
+
+- 未进入 GateJ-2/3/FREEZE。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未新增日报、告警、恢复、稳定性验收。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+
+## GateJ-2-WO 验证（2026-05-21）
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | BUILD SUCCESS，35 tests / 0 failures；含 PaperRunMonitorServiceTest 12 用例 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告 |
+| 后端 local profile 启动 | 通过 | `/actuator/health` 返回 `UP`；Flyway 当前版本 `24` |
+| `npm run test:e2e` | 通过 | 22 passed / 1 skipped；新增 paper-trading-daily-report-smoke / paper-trading-alert-smoke 通过 |
+
+GateJ-2 E2E 覆盖：
+
+- `/paper-trading` 页面可打开。
+- 可创建 Paper run 并启动。
+- 详情抽屉可打开。
+- 日报 Tab 可展示空态。
+- 可生成今日日报（status = GENERATED）。
+- 可重复生成同一日期日报（幂等）。
+- 告警 Tab 可展示空态。
+- 可创建测试告警（SYSTEM_NOTICE / LOW / OPEN）。
+- 可确认告警（OPEN → ACKED，acknowledgedBy 写入）。
+- 可解决告警（ACKED → RESOLVED，resolvedAt 写入）。
+- 不依赖外网交易所。
+- 不调用真实 LIVE 下单。
+
+GateJ-2 skipped 说明：
+
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID`，为既有交易订单详情链路，不影响 GateJ-2 主链。
+
+GateJ-2 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用既有通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未处理 Ant Design React 19 / `Card.bordered` / `Modal.destroyOnClose` deprecation warning。
+
+GateJ-2 边界确认：
+
+- 未进入 GateJ-3 / GateJ-FREEZE。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未新增恢复、稳定性验收、外部通知（邮件、Slack、钉钉）。
+- 未引入图表库。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+
+## GateJ-3-WO 验证（2026-05-22）
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | BUILD SUCCESS；新增 PaperRunRecoveryServiceTest 9 用例、PaperRunStabilityCheckServiceTest 10 用例、PaperRunMonitorRunServiceTest 8 用例 |
+| `npm run build` | 通过 | `tsc -b && vite build` 成功；仍有 Vite chunk > 500 kB 警告 |
+| 后端 local profile 启动 | 通过 | `/actuator/health` 返回 `UP`；Flyway 当前版本 `25` |
+| `npm run test:e2e` | 通过 | 24 passed / 1 skipped；新增 paper-trading-recovery-smoke / paper-trading-stability-check-smoke 通过 |
+
+GateJ-3 E2E 覆盖：
+
+- `/paper-trading` 页面可打开。
+- 可创建 Paper run 并启动。
+- 详情抽屉可打开。
+- 恢复事件 Tab 可展示空态。
+- 可执行恢复（MANUAL_RECOVER），写入 recovery event。
+- 可执行重试失败步骤（RETRY_FAILED_STEP），写入 recovery event。
+- 可执行监控守护一次（HEARTBEAT_LAG 自动告警最小落库）。
+- 告警 Tab 可看到 HEARTBEAT_LAG 自动告警。
+- 稳定性验收 Tab 可展示空态。
+- 可生成最近 24h 稳定性验收（无心跳 → FAILED，验证第一版口径）。
+- 同窗口重复生成幂等。
+- 不依赖外网交易所，不调用真实 LIVE 下单。
+
+GateJ-3 skipped 说明：
+
+- `trading workspace / 配置订单 ID 时可打开订单详情`：未配置 `E2E_TRADE_ORDER_ID`，为既有交易订单详情链路，不影响 GateJ-3 主链。
+
+GateJ-3 未执行项：
+
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用既有通过基线。
+- 未处理 `npm audit` 依赖漏洞。
+- 未处理 Vite chunk > 500 kB 警告。
+- 未处理 Ant Design React 19 / `Card.bordered` / `Modal.destroyOnClose` deprecation warning。
+- 未执行 GateJ-FREEZE 的 1h/24h/7d 连续运行验收（属 GateJ-FREEZE 范围）。
+
+GateJ-3 边界确认：
+
+- 未进入 GateJ-FREEZE 正式验收归档。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未做外部通知（邮件 / Slack / 钉钉 / 企业微信 / Telegram / Webhook / 短信）。
+- 未做自动恢复策略引擎。
+- 未调用真实 LIVE 下单接口。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+- 未引入图表库。

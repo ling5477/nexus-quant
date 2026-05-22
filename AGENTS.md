@@ -5,7 +5,7 @@
 
 ## 1. 当前阶段
 
-Current stage: GateI completed, next GateJ-PLAN
+Current stage: GateJ-3-WO completed, next GateJ-FREEZE
 
 Previous completed stages:
 
@@ -20,10 +20,27 @@ Previous completed stages:
 - GateI-4-WO
 - GateI-4-FIX
 - GateI
+- GateJ-PLAN
+- GateJ-1-WO
+- GateJ-2-WO
+- GateJ-3-WO
 
-Next: GateJ-PLAN（Paper Trading 稳定运行）。
+Next allowed: GateJ-FREEZE after review。
 
 GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
+
+GateJ 只允许 Paper Trading 稳定运行。GateJ 严禁：
+
+- 接 AI。
+- 做 AI 信号、AI 自动交易、AI Paper Trading。
+- 做真实 LIVE 下单。
+- 调用真实交易所下单接口。
+- 做美股/A 股。
+- 做合约全量。
+- 做高频。
+- 做复杂因子平台。
+- 修改历史 migration。
+- 新增无注释表或无注释字段。
 
 ## 2. GateI 完成范围
 
@@ -44,7 +61,6 @@ GateI 已整体完成，覆盖以下内容：
 - 不做 AI 信号。
 - 不做 AI 自动交易。
 - 不做 AI Paper Trading。
-- 不进入 GateI-4。
 - 不做真实 LIVE 下单。
 - 不调用真实交易所下单接口。
 - 不做美股/A 股。
@@ -64,8 +80,9 @@ GateI 已整体完成，覆盖以下内容：
 - `docs/current` 是当前事实源。
 - `docs/gates` 只放已完成 Gate 的冻结卷宗。
 - `docs/archive` 只归档，不作为当前开发依据。
-- GateI 仍未完成，不要创建 `docs/gates/gate-i`。
-- GateH 已完成，如尚未归档，应补 `docs/gates/gate-h` freeze snapshot。
+- GateI 已完成并冻结，归档在 `docs/gates/gate-i`。
+- GateH 已完成并冻结，归档在 `docs/gates/gate-h`。
+- GateJ 尚未完成，不要创建 `docs/gates/gate-j`。
 - 新 Gate 或新 WO 开始前必须先阅读 `docs/current` 对应计划文档。
 - 每轮完成后必须按实际改动更新 `docs/current/STATUS.md`、`docs/current/WORKLOG.md`、`docs/current/TESTING.md`。
 - 文档描述必须与代码和测试状态一致；未执行验证不能写成通过。
@@ -132,7 +149,7 @@ git status --short
 - 不提交本地密钥、`.env`、凭证。
 - 不把 skipped / failed 写成 passed。
 - 不把尚未完成阶段写成 completed。
-- 不创建 `docs/gates/gate-i`，直到 GateI 整体完成并冻结。
+- 不创建 `docs/gates/gate-j`，直到 GateJ 整体完成并冻结。
 
 ## 9. Codex 执行纪律
 

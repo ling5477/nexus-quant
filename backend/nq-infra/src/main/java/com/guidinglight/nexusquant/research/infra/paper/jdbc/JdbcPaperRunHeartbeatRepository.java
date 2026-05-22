@@ -9,7 +9,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -49,6 +51,30 @@ public class JdbcPaperRunHeartbeatRepository implements PaperRunHeartbeatReposit
                        lag_seconds, summary_json::text AS summary_json, created_at
                 FROM paper_run_heartbeats WHERE paper_run_id = ? ORDER BY heartbeat_time DESC
                 """, ROW_MAPPER, paperRunId);
+    }
+
+    @Override
+    public int countByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM paper_run_heartbeats
+                WHERE paper_run_id = ? AND heartbeat_time >= ? AND heartbeat_time < ?
+                """, Integer.class, paperRunId, Timestamp.from(start), Timestamp.from(end));
+        return count != null ? count : 0;
+    }
+
+    @Override
+    public Optional<PaperRunHeartbeat> findLatestByRunId(String paperRunId) {
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject("""
+                    SELECT heartbeat_id, paper_run_id, heartbeat_time, status,
+                           last_event_time, last_order_time, last_trade_time,
+                           lag_seconds, summary_json::text AS summary_json, created_at
+                    FROM paper_run_heartbeats WHERE paper_run_id = ?
+                    ORDER BY heartbeat_time DESC LIMIT 1
+                    """, ROW_MAPPER, paperRunId));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
     }
 
     private static PaperRunHeartbeat mapRow(ResultSet rs, int rowNum) throws SQLException {

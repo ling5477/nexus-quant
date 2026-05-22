@@ -23,8 +23,20 @@ import {useState} from 'react';
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {
+    useAckAlertMutation,
+    useCreateAlertMutation,
     useCreatePaperTradingRunMutation,
+    useCreateScheduleMutation,
     useEmergencyStopMutation,
+    useGenerateDailyReportMutation,
+    useGenerateStabilityCheckMutation,
+    usePaperAlertsQuery,
+    usePaperDailyReportsQuery,
+    usePaperFiresQuery,
+    usePaperHeartbeatsQuery,
+    usePaperRecoveryEventsQuery,
+    usePaperSchedulesQuery,
+    usePaperStabilityChecksQuery,
     usePaperTradingDetailQuery,
     usePaperTradingEmergencyStopsQuery,
     usePaperTradingEquityCurveQuery,
@@ -35,13 +47,21 @@ import {
     usePaperTradingReplayQuery,
     usePaperTradingRiskResultsQuery,
     usePaperTradingTradesQuery,
+    useRecoverMutation,
+    useResolveAlertMutation,
+    useRetryFailedStepMutation,
+    useRunHeartbeatOnceMutation,
+    useRunMonitorOnceMutation,
     useRunRiskOnceMutation,
+    useRunScheduleOnceMutation,
     useStartPaperTradingRunMutation,
     useStopPaperTradingRunMutation,
+    useUpdateScheduleStatusMutation,
 } from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
+    type PaperRunScheduleCreateRequest,
     type PaperTradingListFilters,
     type PaperTradingRunCreateRequest,
     type PaperTradingRunItem,
@@ -97,6 +117,28 @@ export function PaperTradingPage() {
     const stopMutation = useStopPaperTradingRunMutation();
     const riskOnceMutation = useRunRiskOnceMutation();
     const emergencyStopMutation = useEmergencyStopMutation();
+    const schedulesQuery = usePaperSchedulesQuery(selectedRow?.paperRunId ?? null);
+    const heartbeatsQuery = usePaperHeartbeatsQuery(selectedRow?.paperRunId ?? null);
+    const createScheduleMutation = useCreateScheduleMutation();
+    const updateScheduleStatusMutation = useUpdateScheduleStatusMutation();
+    const runScheduleOnceMutation = useRunScheduleOnceMutation();
+    const runHeartbeatOnceMutation = useRunHeartbeatOnceMutation();
+    const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
+    const firesQuery = usePaperFiresQuery(selectedScheduleId);
+    const [scheduleCreateOpen, setScheduleCreateOpen] = useState(false);
+    const [scheduleForm] = Form.useForm<PaperRunScheduleCreateRequest>();
+    const dailyReportsQuery = usePaperDailyReportsQuery(selectedRow?.paperRunId ?? null);
+    const alertsQuery = usePaperAlertsQuery(selectedRow?.paperRunId ?? null);
+    const generateDailyReportMutation = useGenerateDailyReportMutation();
+    const createAlertMutation = useCreateAlertMutation();
+    const ackAlertMutation = useAckAlertMutation();
+    const resolveAlertMutation = useResolveAlertMutation();
+    const recoveryEventsQuery = usePaperRecoveryEventsQuery(selectedRow?.paperRunId ?? null);
+    const stabilityChecksQuery = usePaperStabilityChecksQuery(selectedRow?.paperRunId ?? null);
+    const recoverMutation = useRecoverMutation();
+    const retryFailedStepMutation = useRetryFailedStepMutation();
+    const generateStabilityCheckMutation = useGenerateStabilityCheckMutation();
+    const runMonitorOnceMutation = useRunMonitorOnceMutation();
 
     const hasSearched = searchVersion > 0;
     const visibleItems = listQuery.data ?? [];
@@ -375,7 +417,7 @@ export function PaperTradingPage() {
 
             <Drawer
                 open={Boolean(selectedRow)}
-                width={840}
+                width={1280}
                 title="Paper Trading 详情"
                 onClose={() => setSelectedRow(null)}
                 destroyOnClose
@@ -704,6 +746,398 @@ export function PaperTradingPage() {
                                                         {title: '触发人', dataIndex: 'triggeredBy', key: 'triggeredBy', width: 120},
                                                         {title: '触发时间', dataIndex: 'triggeredAt', key: 'triggeredAt', width: 180, render: (v: string) => formatDateTime(v)},
                                                         {title: '解除时间', dataIndex: 'resolvedAt', key: 'resolvedAt', width: 180, render: (v: string | null) => formatDateTime(v)},
+                                                    ]}
+                                                />
+                                            </PaperListSection>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'schedules',
+                                    label: '调度计划',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Space>
+                                                <Button size="small" type="primary" ghost onClick={() => setScheduleCreateOpen(true)}>
+                                                    创建调度
+                                                </Button>
+                                            </Space>
+                                            <PaperListSection
+                                                isLoading={schedulesQuery.isFetching}
+                                                error={schedulesQuery.error as AppApiError | null}
+                                                isEmpty={(schedulesQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无调度计划。"
+                                            >
+                                                <Table
+                                                    rowKey="scheduleId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={schedulesQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '名称', dataIndex: 'scheduleName', key: 'scheduleName', width: 140},
+                                                        {title: 'Cron', dataIndex: 'cronExpr', key: 'cronExpr', width: 140},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'ENABLED' ? 'success' : v === 'PAUSED' ? 'warning' : 'default'}>{v}</Tag>},
+                                                        {title: '时区', dataIndex: 'timezone', key: 'timezone', width: 100},
+                                                        {title: '上次触发', dataIndex: 'lastFireTime', key: 'lastFireTime', width: 180, render: (v: string | null) => formatDateTime(v)},
+                                                        {
+                                                            title: '操作', key: 'action', width: 220,
+                                                            render: (_, record) => (
+                                                                <Space size={4}>
+                                                                    <Button type="link" size="small" onClick={() => setSelectedScheduleId(record.scheduleId)}>触发记录</Button>
+                                                                    <Button type="link" size="small" loading={runScheduleOnceMutation.isPending} disabled={record.status !== 'ENABLED'}
+                                                                        onClick={() => runScheduleOnceMutation.mutate(record.scheduleId, {
+                                                                            onSuccess: () => message.success('调度已触发。'),
+                                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                                        })}
+                                                                    >执行一次</Button>
+                                                                    {record.status === 'ENABLED' ? (
+                                                                        <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'DISABLED'}}, {onSuccess: () => message.success('已禁用。')})}>禁用</Button>
+                                                                    ) : (
+                                                                        <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'ENABLED'}}, {onSuccess: () => message.success('已启用。')})}>启用</Button>
+                                                                    )}
+                                                                </Space>
+                                                            ),
+                                                        },
+                                                    ]}
+                                                />
+                                            </PaperListSection>
+                                            {selectedScheduleId && (
+                                                <Card size="small" title={`触发记录 (${selectedScheduleId.substring(0, 12)}...)`} extra={<Button type="link" size="small" onClick={() => setSelectedScheduleId(null)}>关闭</Button>}>
+                                                    <PaperListSection
+                                                        isLoading={firesQuery.isFetching}
+                                                        error={firesQuery.error as AppApiError | null}
+                                                        isEmpty={(firesQuery.data ?? []).length === 0}
+                                                        emptyText="暂无触发记录。"
+                                                    >
+                                                        <Table
+                                                            rowKey="fireId"
+                                                            size="small"
+                                                            pagination={false}
+                                                            dataSource={firesQuery.data ?? []}
+                                                            columns={[
+                                                                {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'error' : 'default'}>{v}</Tag>},
+                                                                {title: '触发时间', dataIndex: 'firedAt', key: 'firedAt', width: 180, render: (v: string) => formatDateTime(v)},
+                                                                {title: '耗时(ms)', dataIndex: 'durationMs', key: 'durationMs', width: 100},
+                                                                {title: '错误', dataIndex: 'errorMessage', key: 'errorMessage'},
+                                                            ]}
+                                                        />
+                                                    </PaperListSection>
+                                                </Card>
+                                            )}
+                                            <Modal
+                                                open={scheduleCreateOpen}
+                                                title="创建调度计划"
+                                                onCancel={() => setScheduleCreateOpen(false)}
+                                                onOk={() => scheduleForm.submit()}
+                                                confirmLoading={createScheduleMutation.isPending}
+                                                destroyOnClose
+                                            >
+                                                <Form form={scheduleForm} layout="vertical" initialValues={{cronExpr: '0 */5 * * * *', timezone: 'UTC'}} onFinish={(values) => {
+                                                    createScheduleMutation.mutate({...values, paperRunId: selectedRow!.paperRunId}, {
+                                                        onSuccess: () => { message.success('调度已创建。'); setScheduleCreateOpen(false); scheduleForm.resetFields(); },
+                                                        onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                    });
+                                                }}>
+                                                    <Form.Item label="调度名称" name="scheduleName" rules={[{required: true, message: '请输入调度名称'}]}>
+                                                        <Input placeholder="如：每5分钟心跳"/>
+                                                    </Form.Item>
+                                                    <Form.Item label="Cron 表达式" name="cronExpr" rules={[{required: true, message: '请输入 cron 表达式'}]}>
+                                                        <Input placeholder="0 */5 * * * *"/>
+                                                    </Form.Item>
+                                                    <Form.Item label="时区" name="timezone">
+                                                        <Input placeholder="UTC"/>
+                                                    </Form.Item>
+                                                </Form>
+                                            </Modal>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'heartbeats',
+                                    label: '心跳',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Button
+                                                size="small"
+                                                loading={runHeartbeatOnceMutation.isPending}
+                                                onClick={() => {
+                                                    runHeartbeatOnceMutation.mutate(selectedRow.paperRunId, {
+                                                        onSuccess: () => message.success('心跳已记录。'),
+                                                        onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                    });
+                                                }}
+                                            >
+                                                执行心跳检查
+                                            </Button>
+                                            <PaperListSection
+                                                isLoading={heartbeatsQuery.isFetching}
+                                                error={heartbeatsQuery.error as AppApiError | null}
+                                                isEmpty={(heartbeatsQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无心跳记录。"
+                                            >
+                                                <Table
+                                                    rowKey="heartbeatId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={heartbeatsQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'OK' ? 'success' : v === 'LAGGING' ? 'warning' : v === 'STOPPED' ? 'error' : 'default'}>{v}</Tag>},
+                                                        {title: '心跳时间', dataIndex: 'heartbeatTime', key: 'heartbeatTime', width: 180, render: (v: string) => formatDateTime(v)},
+                                                        {title: '延迟(s)', dataIndex: 'lagSeconds', key: 'lagSeconds', width: 100},
+                                                        {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
+                                                    ]}
+                                                />
+                                            </PaperListSection>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'daily-reports',
+                                    label: '日报',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Button
+                                                size="small"
+                                                type="primary"
+                                                ghost
+                                                loading={generateDailyReportMutation.isPending}
+                                                onClick={() => {
+                                                    generateDailyReportMutation.mutate(
+                                                        {paperRunId: selectedRow.paperRunId, request: {}},
+                                                        {
+                                                            onSuccess: () => message.success('日报已生成。'),
+                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                        },
+                                                    );
+                                                }}
+                                            >
+                                                生成今日日报
+                                            </Button>
+                                            <PaperListSection
+                                                isLoading={dailyReportsQuery.isFetching}
+                                                error={dailyReportsQuery.error as AppApiError | null}
+                                                isEmpty={(dailyReportsQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无日报。"
+                                            >
+                                                <Table
+                                                    rowKey="reportId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={dailyReportsQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '日期', dataIndex: 'reportDate', key: 'reportDate', width: 120},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'GENERATED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'error'}>{v}</Tag>},
+                                                        {title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120},
+                                                        {title: '日盈亏', dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120},
+                                                        {title: '日收益率', dataIndex: 'dailyReturn', key: 'dailyReturn', width: 100},
+                                                        {title: '最大回撤', dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 100},
+                                                        {title: '订单数', dataIndex: 'orderCount', key: 'orderCount', width: 80},
+                                                        {title: '成交数', dataIndex: 'tradeCount', key: 'tradeCount', width: 80},
+                                                        {title: '告警数', dataIndex: 'alertCount', key: 'alertCount', width: 80},
+                                                        {title: '生成时间', dataIndex: 'generatedAt', key: 'generatedAt', width: 180, render: (v: string) => formatDateTime(v)},
+                                                    ]}
+                                                />
+                                            </PaperListSection>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'alerts',
+                                    label: '告警',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Button
+                                                size="small"
+                                                type="primary"
+                                                ghost
+                                                loading={createAlertMutation.isPending}
+                                                onClick={() => {
+                                                    createAlertMutation.mutate(
+                                                        {
+                                                            paperRunId: selectedRow.paperRunId,
+                                                            request: {alertType: 'SYSTEM_NOTICE', severity: 'LOW', title: '手动测试告警', message: '手动创建的测试告警', source: 'MANUAL'},
+                                                        },
+                                                        {
+                                                            onSuccess: () => message.success('告警已创建。'),
+                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                        },
+                                                    );
+                                                }}
+                                            >
+                                                创建测试告警
+                                            </Button>
+                                            <PaperListSection
+                                                isLoading={alertsQuery.isFetching}
+                                                error={alertsQuery.error as AppApiError | null}
+                                                isEmpty={(alertsQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无告警。"
+                                            >
+                                                <Table
+                                                    rowKey="alertId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={alertsQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '类型', dataIndex: 'alertType', key: 'alertType', width: 140},
+                                                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <Tag color={v === 'CRITICAL' ? 'error' : v === 'HIGH' ? 'volcano' : v === 'MEDIUM' ? 'warning' : 'default'}>{v}</Tag>},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'OPEN' ? 'error' : v === 'ACKED' ? 'warning' : 'success'}>{v}</Tag>},
+                                                        {title: '标题', dataIndex: 'title', key: 'title'},
+                                                        {title: '来源', dataIndex: 'source', key: 'source', width: 100},
+                                                        {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
+                                                        {
+                                                            title: '操作', key: 'action', width: 160,
+                                                            render: (_, record) => (
+                                                                <Space size={4}>
+                                                                    {record.status === 'OPEN' && (
+                                                                        <Button type="link" size="small" loading={ackAlertMutation.isPending}
+                                                                            onClick={() => ackAlertMutation.mutate({paperRunId: selectedRow.paperRunId, alertId: record.alertId}, {onSuccess: () => message.success('已确认。')})}
+                                                                        >确认</Button>
+                                                                    )}
+                                                                    {record.status !== 'RESOLVED' && (
+                                                                        <Button type="link" size="small" loading={resolveAlertMutation.isPending}
+                                                                            onClick={() => resolveAlertMutation.mutate({paperRunId: selectedRow.paperRunId, alertId: record.alertId}, {onSuccess: () => message.success('已解决。')})}
+                                                                        >解决</Button>
+                                                                    )}
+                                                                </Space>
+                                                            ),
+                                                        },
+                                                    ]}
+                                                />
+                                            </PaperListSection>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'recovery-events',
+                                    label: '恢复事件',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Space>
+                                                <Button
+                                                    size="small"
+                                                    type="primary"
+                                                    ghost
+                                                    loading={recoverMutation.isPending}
+                                                    onClick={() => {
+                                                        recoverMutation.mutate(
+                                                            {paperRunId: selectedRow.paperRunId, request: {reason: '手动恢复测试'}},
+                                                            {
+                                                                onSuccess: () => message.success('已记录恢复事件。'),
+                                                                onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                            },
+                                                        );
+                                                    }}
+                                                >
+                                                    执行恢复
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    loading={retryFailedStepMutation.isPending}
+                                                    onClick={() => {
+                                                        retryFailedStepMutation.mutate(
+                                                            {paperRunId: selectedRow.paperRunId, request: {failedStep: 'manual-test', reason: '手动重试测试'}},
+                                                            {
+                                                                onSuccess: () => message.success('已记录重试事件。'),
+                                                                onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                            },
+                                                        );
+                                                    }}
+                                                >
+                                                    重试失败步骤
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    loading={runMonitorOnceMutation.isPending}
+                                                    onClick={() => {
+                                                        runMonitorOnceMutation.mutate(
+                                                            {paperRunId: selectedRow.paperRunId},
+                                                            {
+                                                                onSuccess: (data) => message.success(`监控守护已执行，新建告警 ${data.createdAlertCount} 条。`),
+                                                                onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                            },
+                                                        );
+                                                    }}
+                                                >
+                                                    执行监控守护
+                                                </Button>
+                                            </Space>
+                                            <PaperListSection
+                                                isLoading={recoveryEventsQuery.isFetching}
+                                                error={recoveryEventsQuery.error as AppApiError | null}
+                                                isEmpty={(recoveryEventsQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无恢复事件。"
+                                            >
+                                                <Table
+                                                    rowKey="recoveryEventId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={recoveryEventsQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '类型', dataIndex: 'recoveryType', key: 'recoveryType', width: 200},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <Tag color={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'error' : v === 'SKIPPED' ? 'default' : 'processing'}>{v}</Tag>},
+                                                        {title: '原因', dataIndex: 'reason', key: 'reason'},
+                                                        {title: '开始时间', dataIndex: 'startedAt', key: 'startedAt', width: 180, render: (v: string) => formatDateTime(v)},
+                                                        {title: '完成时间', dataIndex: 'finishedAt', key: 'finishedAt', width: 180, render: (v: string | null) => v ? formatDateTime(v) : '-'},
+                                                    ]}
+                                                />
+                                            </PaperListSection>
+                                        </Space>
+                                    ),
+                                },
+                                {
+                                    key: 'stability-checks',
+                                    label: '稳定性验收',
+                                    children: (
+                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                            <Button
+                                                size="small"
+                                                type="primary"
+                                                ghost
+                                                loading={generateStabilityCheckMutation.isPending}
+                                                onClick={() => {
+                                                    const end = new Date();
+                                                    const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+                                                    generateStabilityCheckMutation.mutate(
+                                                        {
+                                                            paperRunId: selectedRow.paperRunId,
+                                                            request: {
+                                                                checkWindowStart: start.toISOString(),
+                                                                checkWindowEnd: end.toISOString(),
+                                                            },
+                                                        },
+                                                        {
+                                                            onSuccess: () => message.success('稳定性验收已生成。'),
+                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                        },
+                                                    );
+                                                }}
+                                            >
+                                                生成最近 24h 稳定性验收
+                                            </Button>
+                                            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                                第一版口径：有心跳 + 无 CRITICAL 未处理告警 + 无失败触发 = PASSED；非 GateJ-FREEZE 7 天最终验收。
+                                            </Typography.Text>
+                                            <PaperListSection
+                                                isLoading={stabilityChecksQuery.isFetching}
+                                                error={stabilityChecksQuery.error as AppApiError | null}
+                                                isEmpty={(stabilityChecksQuery.data ?? []).length === 0}
+                                                emptyText="当前 Paper run 暂无稳定性验收。"
+                                            >
+                                                <Table
+                                                    rowKey="stabilityCheckId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={stabilityChecksQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'error'}>{v}</Tag>},
+                                                        {title: '在线率', dataIndex: 'uptimeRatio', key: 'uptimeRatio', width: 100},
+                                                        {title: '心跳', dataIndex: 'heartbeatCount', key: 'heartbeatCount', width: 80},
+                                                        {title: '告警', dataIndex: 'alertCount', key: 'alertCount', width: 80},
+                                                        {title: '失败触发', dataIndex: 'failedFireCount', key: 'failedFireCount', width: 100},
+                                                        {title: '恢复', dataIndex: 'recoveryCount', key: 'recoveryCount', width: 80},
+                                                        {title: '日报', dataIndex: 'reportCount', key: 'reportCount', width: 80},
+                                                        {title: '窗口开始', dataIndex: 'checkWindowStart', key: 'checkWindowStart', width: 180, render: (v: string) => formatDateTime(v)},
+                                                        {title: '窗口结束', dataIndex: 'checkWindowEnd', key: 'checkWindowEnd', width: 180, render: (v: string) => formatDateTime(v)},
                                                     ]}
                                                 />
                                             </PaperListSection>

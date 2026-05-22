@@ -24,15 +24,21 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateI-4-WO completed。
 - GateI-4-FIX completed。
 - GateI completed。
+- GateJ-PLAN completed。
+- GateJ-1-WO completed。
+- GateJ-2-WO completed。
+- GateJ-3-WO completed。
 
 ## 当前执行状态
 
-- GateI 已整体完成并冻结。
-- 后端 `mvn test` 35 tests / 0 failures。
+- GateJ-3-WO 已完成。
+- 后端 `mvn -f backend/pom.xml test` BUILD SUCCESS（含 PaperRunRecoveryServiceTest 9 用例 + PaperRunStabilityCheckServiceTest 10 用例 + PaperRunMonitorRunServiceTest 8 用例）。
 - 前端 `npm run build` 通过。
-- E2E `npm run test:e2e` 19 passed / 1 skipped。
-- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- E2E `npm run test:e2e` 24 passed / 1 skipped（新增 paper-trading-recovery-smoke、paper-trading-stability-check-smoke 通过）。
+- Flyway 当前版本 V25（gate j3 paper run recovery stability）。
+- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）。
 - AI 尚未开始。AI 最早 GateK 才允许进入信号层。
+- GateJ 不是 AI 阶段。GateJ 只做 Paper Trading 稳定运行。
 
 ## 当前未完成状态
 
@@ -95,6 +101,18 @@ GateO：A 股适配
 - GateI-4 Flyway 当前版本为 `22`。
 - GateI-4-FIX E2E `npm run test:e2e` 已通过，结果为 19 passed / 1 skipped；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有交易订单详情链路。
 - Python `pytest`、`mypy`、`ruff` 已通过。
+- GateJ-1 后端 `mvn -f backend/pom.xml test` 已通过（35 tests / 0 failures）。
+- GateJ-1 前端 `npm run build` 已通过。
+- GateJ-1 E2E `npm run test:e2e` 已通过，结果为 20 passed / 1 skipped。
+- GateJ-1 Flyway 当前版本为 `23`。
+- GateJ-2 后端 `mvn -f backend/pom.xml test` 已通过（BUILD SUCCESS，35 tests / 0 failures，含 PaperRunMonitorServiceTest 12 用例）。
+- GateJ-2 前端 `npm run build` 已通过。
+- GateJ-2 E2E `npm run test:e2e` 已通过，结果为 22 passed / 1 skipped；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有交易订单详情链路，不影响 GateJ-2 主链。
+- GateJ-2 Flyway 当前版本为 `24`。
+- GateJ-3 后端 `mvn -f backend/pom.xml test` 已通过（BUILD SUCCESS，含 PaperRunRecoveryServiceTest 9 用例 + PaperRunStabilityCheckServiceTest 10 用例 + PaperRunMonitorRunServiceTest 8 用例）。
+- GateJ-3 前端 `npm run build` 已通过。
+- GateJ-3 E2E `npm run test:e2e` 已通过，结果为 24 passed / 1 skipped；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有交易订单详情链路，不影响 GateJ-3 主链。
+- GateJ-3 Flyway 当前版本为 `25`。
 
 ## GateI 当前边界
 
@@ -104,4 +122,7 @@ GateO：A 股适配
 - GateI-3 实现 SIM/Paper Trading 运行闭环最小版本。
 - GateI-4 实现风控回写、资金曲线、持仓曲线、交易复盘、异常停机最小结构。
 - AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始。
-- Next: GateJ-PLAN（Paper Trading 稳定运行）。AI 最早 GateK 才允许进入信号层。
+- GateJ-1-WO 已完成（Paper run 调度与连续运行）。
+- GateJ-2-WO 已完成（运行监控、日报、告警）。
+- GateJ-3-WO 已完成（异常恢复、失败重试、稳定性验收结构、HEARTBEAT_LAG/SCHEDULE_FIRE_FAILED 自动告警最小落库）。
+- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）。AI 最早 GateK 才允许进入信号层。

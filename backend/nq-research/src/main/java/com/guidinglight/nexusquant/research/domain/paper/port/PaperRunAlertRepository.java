@@ -18,4 +18,8 @@ public interface PaperRunAlertRepository {
     boolean updateStatus(String alertId, PaperRunAlertStatus status, String acknowledgedBy, Instant acknowledgedAt, Instant resolvedAt, Instant updatedAt);
 
     int countByRunIdAndDateRange(String paperRunId, Instant start, Instant end);
+
+    int countCriticalOpenByRunIdAndDateRange(String paperRunId, Instant start, Instant end);
+
+    int countByRunIdAndTypeAndDateRange(String paperRunId, String alertType, Instant start, Instant end);
 }

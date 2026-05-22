@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.research.domain.paper.port;
 
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunScheduleFire;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface PaperRunScheduleFireRepository {
@@ -9,4 +10,8 @@ public interface PaperRunScheduleFireRepository {
     void insert(PaperRunScheduleFire fire);
 
     List<PaperRunScheduleFire> listByScheduleId(String scheduleId);
+
+    List<PaperRunScheduleFire> listByRunIdAndStatus(String paperRunId, String status, Instant start, Instant end);
+
+    int countByRunIdAndStatusAndDateRange(String paperRunId, String status, Instant start, Instant end);
 }

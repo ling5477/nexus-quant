@@ -307,3 +307,145 @@ GateI-4 新增 `emergency_stop_events`：
 - JSONB 快照字段注释写明用途和敏感信息禁入规则。
 
 GateI-4 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。
+
+## GateJ DB Planning Entry
+
+GateJ DB 规划入口为 [GATEJ_DB_PLAN.md](./GATEJ_DB_PLAN.md)。本轮只做规划，不新增 migration。
+
+GateJ 规划新增 7 张表：
+
+- `paper_run_schedules`：Paper run 调度计划。
+- `paper_run_schedule_fires`：调度触发记录。
+- `paper_run_heartbeats`：Paper run 心跳记录。
+- `paper_run_daily_reports`：Paper run 日报。
+- `paper_run_alerts`：Paper run 告警事件。
+- `paper_run_recovery_events`：恢复和重试事件。
+- `paper_run_stability_checks`：连续运行验收结果。
+
+GateJ 后续如果新增 migration，所有新增表必须包含 PostgreSQL `COMMENT ON TABLE`，所有新增字段必须包含 `COMMENT ON COLUMN`。JSONB 快照字段必须说明用途、结构边界和敏感信息禁入规则。状态字段必须有 CHECK 约束。
+
+GateJ 不修改历史 migration，不接 AI。
+
+## GateJ-1 Paper Run Schedule 结构
+
+GateJ-1 新增 Flyway migration：
+
+- `V23__gate_j1_paper_run_schedules.sql`
+
+GateJ-1 新增 `paper_run_schedules`：
+
+- 身份字段：`schedule_id`，业务主键，格式 `sch-<uuid>`。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 调度字段：`schedule_name`、`cron_expr`、`timezone`（默认 UTC）。
+- 状态字段：`status`，允许值 `ENABLED`、`DISABLED`、`PAUSED`，CHECK 约束。
+- 时间字段：`next_fire_time`、`last_fire_time`、`created_at`、`updated_at`。
+- 审计字段：`created_by`、`request_json`。
+- 索引：`idx_paper_run_schedules_run_id`、`idx_paper_run_schedules_status`、`idx_paper_run_schedules_next_fire`（partial：status='ENABLED'）。
+
+GateJ-1 新增 `paper_run_schedule_fires`：
+
+- 身份字段：`fire_id`，业务主键，格式 `fir-<uuid>`。
+- 归属字段：`schedule_id` 外键关联 `paper_run_schedules`，`paper_run_id` 外键关联 `paper_trading_runs`。
+- 状态字段：`status`，允许值 `RUNNING`、`SUCCEEDED`、`FAILED`、`SKIPPED`，CHECK 约束。
+- 时间字段：`fired_at`、`finished_at`、`duration_ms`、`created_at`。
+- 排障字段：`result_json`、`error_message`。
+- 索引：`idx_schedule_fires_schedule_id`（按 fired_at DESC）、`idx_schedule_fires_run_id`、`idx_schedule_fires_fired_at`。
+
+GateJ-1 新增 `paper_run_heartbeats`：
+
+- 身份字段：`heartbeat_id`，业务主键，格式 `hbt-<uuid>`。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 状态字段：`status`，允许值 `OK`、`LAGGING`、`STOPPED`、`UNKNOWN`，CHECK 约束。
+- 时间字段：`heartbeat_time`、`last_event_time`、`last_order_time`、`last_trade_time`、`created_at`。
+- 指标字段：`lag_seconds`、`summary_json`。
+- 索引：`idx_heartbeats_run_id_time`（按 heartbeat_time DESC）。
+
+注释要求：
+
+- `V23` 所有新增表均包含 PostgreSQL `COMMENT ON TABLE`。
+- `V23` 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态字段注释写明允许值。
+- JSONB 快照字段注释写明用途和敏感信息禁入规则。
+
+GateJ-1 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。
+
+## GateJ-2 新增表（Paper Trading 监控、日报与告警）
+
+GateJ-2 新增 Flyway migration：
+
+- `V24__gate_j2_paper_run_daily_reports_alerts.sql`
+
+GateJ-2 新增 `paper_run_daily_reports`：
+
+- 身份字段：`report_id`，业务主键，格式 `rpt-<uuid>`。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 日期字段：`report_date`，UTC 日期。
+- 状态字段：`status`，允许值 `GENERATED`、`PARTIAL`、`FAILED`，CHECK 约束。
+- 资金指标：`total_equity`、`daily_pnl`、`daily_return`、`max_drawdown`（可空，缺数据时为 null）。
+- 计数指标：`order_count`、`trade_count`、`alert_count`、`risk_reject_count`，默认 0。
+- 数据字段：`report_json`（JSONB，明细数据），注释写明不保存密钥/token/cookie。
+- 时间字段：`generated_at`、`created_at`。
+- 唯一约束：`uq_daily_reports_run_date (paper_run_id, report_date)`，保证按日幂等。
+- 索引：`idx_daily_reports_run_id_date`（按 report_date DESC）、`idx_daily_reports_status`。
+
+GateJ-2 新增 `paper_run_alerts`：
+
+- 身份字段：`alert_id`，业务主键，格式 `alt-<uuid>`。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 分类字段：`alert_type`（HEARTBEAT_LAG / SCHEDULE_FIRE_FAILED / RISK_WARNING / EMERGENCY_STOP / SYSTEM_NOTICE 等业务类型）。
+- 严重程度：`severity`，允许值 `LOW`、`MEDIUM`、`HIGH`、`CRITICAL`，CHECK 约束。
+- 状态字段：`status`，允许值 `OPEN`、`ACKED`、`RESOLVED`，CHECK 约束。
+- 内容字段：`title`、`message`、`source`（SCHEDULE / HEARTBEAT / RISK / MONITOR / MANUAL）。
+- 快照字段：`event_snapshot_json`（JSONB），注释写明不保存密钥/token/cookie。
+- 审计字段：`acknowledged_by`、`acknowledged_at`、`resolved_at`。
+- 时间字段：`created_at`、`updated_at`。
+- 索引：`idx_alerts_run_id_created`（按 created_at DESC）、`idx_alerts_status`、`idx_alerts_severity`。
+
+注释要求：
+
+- `V24` 所有新增表均包含 PostgreSQL `COMMENT ON TABLE`。
+- `V24` 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态、严重程度字段注释写明允许值。
+- JSONB 快照字段注释写明用途和敏感信息禁入规则。
+
+GateJ-2 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。
+
+## GateJ-3 新增表（Paper Trading 恢复事件与稳定性验收）
+
+GateJ-3 新增 Flyway migration：
+
+- `V25__gate_j3_paper_run_recovery_stability.sql`
+
+GateJ-3 新增 `paper_run_recovery_events`：
+
+- 身份字段：`recovery_event_id`，业务主键，格式 `rec-<uuid>`。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 类型字段：`recovery_type`，CHECK 约束允许值 `MANUAL_RECOVER`、`RETRY_FAILED_STEP`、`HEARTBEAT_LAG_RECOVER`、`SCHEDULE_FIRE_RECOVER`。
+- 状态字段：`status`，CHECK 约束允许值 `STARTED`、`SUCCEEDED`、`FAILED`、`SKIPPED`。
+- 内容字段：`reason`（TEXT）、`request_json`（JSONB，请求快照）、`result_json`（JSONB，结果快照）。
+- 时间字段：`started_at`（开始时间）、`finished_at`（完成时间，可空）、`created_at`。
+- 索引：`idx_recovery_events_run_id_created`（按 created_at DESC）、`idx_recovery_events_status`、`idx_recovery_events_type`、`idx_recovery_events_created_at`。
+- JSONB 字段注释明确不保存密钥/token/cookie。
+
+GateJ-3 新增 `paper_run_stability_checks`：
+
+- 身份字段：`stability_check_id`，业务主键，格式 `stb-<uuid>`。
+- 归属字段：`paper_run_id`，外键关联 `paper_trading_runs.paper_run_id`。
+- 窗口字段：`check_window_start`、`check_window_end`，CHECK 约束 `check_window_end > check_window_start`。
+- 状态字段：`status`，CHECK 约束允许值 `PASSED`、`FAILED`、`PARTIAL`。
+- 指标字段：`uptime_ratio`（NUMERIC(5,4)，CHECK 0~1）、`heartbeat_count`、`alert_count`、`failed_fire_count`、`recovery_count`、`report_count`。
+- 摘要字段：`summary_json`（JSONB，明细计数 / 判定原因），注释写明不保存密钥/token/cookie。
+- 时间字段：`created_at`。
+- 唯一约束：`uq_stability_checks_run_window (paper_run_id, check_window_start, check_window_end)`，保证同窗口幂等。
+- 索引：`idx_stability_checks_run_id_created`（按 created_at DESC）、`idx_stability_checks_status`、`idx_stability_checks_window_start`、`idx_stability_checks_window_end`。
+
+注释要求：
+
+- `V25` 所有新增表均包含 PostgreSQL `COMMENT ON TABLE`。
+- `V25` 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态、类型字段注释写明允许值。
+- `uptime_ratio` 注释写明取值范围（0~1）和第一版口径。
+- `paper_run_stability_checks` 表注释明确"第一版最小口径，非 GateJ-FREEZE 最终验收"。
+- JSONB 字段注释写明用途和敏感信息禁入规则。
+
+GateJ-3 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。

@@ -258,6 +258,13 @@ class PaperRunMonitorServiceTest {
         @Override public List<PaperRunDailyReport> listByRunId(String paperRunId) {
             return records.stream().filter(r -> r.paperRunId().equals(paperRunId)).toList();
         }
+
+        @Override public int countByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
+            return (int) records.stream()
+                    .filter(r -> r.paperRunId().equals(paperRunId))
+                    .filter(r -> !r.createdAt().isBefore(start) && r.createdAt().isBefore(end))
+                    .count();
+        }
     }
 
     static class InMemoryAlertRepo implements PaperRunAlertRepository {
@@ -298,6 +305,23 @@ class PaperRunMonitorServiceTest {
         @Override public int countByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
             return (int) records.stream()
                     .filter(a -> a.paperRunId().equals(paperRunId))
+                    .filter(a -> !a.createdAt().isBefore(start) && a.createdAt().isBefore(end))
+                    .count();
+        }
+
+        @Override public int countCriticalOpenByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
+            return (int) records.stream()
+                    .filter(a -> a.paperRunId().equals(paperRunId))
+                    .filter(a -> a.severity() == PaperRunAlertSeverity.CRITICAL)
+                    .filter(a -> a.status() == PaperRunAlertStatus.OPEN)
+                    .filter(a -> !a.createdAt().isBefore(start) && a.createdAt().isBefore(end))
+                    .count();
+        }
+
+        @Override public int countByRunIdAndTypeAndDateRange(String paperRunId, String alertType, Instant start, Instant end) {
+            return (int) records.stream()
+                    .filter(a -> a.paperRunId().equals(paperRunId))
+                    .filter(a -> a.alertType().equals(alertType))
                     .filter(a -> !a.createdAt().isBefore(start) && a.createdAt().isBefore(end))
                     .count();
         }

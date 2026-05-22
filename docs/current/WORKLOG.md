@@ -1201,3 +1201,530 @@
 ### 是否接入 AI
 
 否。
+
+## GateJ-PLAN 执行记录
+
+日期：2026-05-21
+
+### 本轮范围
+
+- 只做 GateJ 规划文档。
+- 规划 Paper Trading 稳定运行。
+- 明确 GateJ-1 / GateJ-2 / GateJ-3 / GateJ-FREEZE 拆分。
+- 同步当前状态、路线、API、DB、测试与工作日志入口。
+
+### 本轮新增文件
+
+- `docs/current/PLAN_GATEJ.md`
+- `docs/current/GATEJ_API_PLAN.md`
+- `docs/current/GATEJ_DB_PLAN.md`
+- `docs/current/GATEJ_FRONTEND_PLAN.md`
+- `docs/current/GATEJ_TEST_PLAN.md`
+- `docs/current/GATEJ_WORK_ORDER.md`
+
+### 本轮修改文件
+
+- `docs/current/STATUS.md`
+- `docs/current/ROADMAP.md`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `README.md`
+- `AGENTS.md`
+- `CLAUDE.md`
+
+### 本轮执行内容
+
+- 新增 GateJ 总计划，明确背景、目标、不做范围、四个子阶段、完成标准。
+- 新增 GateJ API 规划，覆盖 Schedule、Heartbeat、Daily Report、Alert、Recovery、Stability Check 六类 API。
+- 新增 GateJ DB 规划，覆盖 7 张新表的字段、约束、索引、JSONB 用途和幂等策略。
+- 新增 GateJ 前端规划，覆盖 7 个新 Tab 和详情页增强。
+- 新增 GateJ 测试规划，覆盖单元测试、集成测试、E2E 矩阵和连续运行验收。
+- 新增 GateJ 工作单，拆分 GateJ-1-WO 到 GateJ-FREEZE。
+- 同步 STATUS.md、ROADMAP.md、API.md、DB_SCHEMA.md、TESTING.md。
+- 同步 README.md、AGENTS.md、CLAUDE.md。
+
+### 本轮未执行内容
+
+- 未开发 GateJ 功能代码。
+- 未新增 API 实现。
+- 未新增 DB migration。
+- 未新增前端页面实现。
+- 未接入 AI。
+- 未新增 AI 模块、AI 信号、AI Paper Trading 或 AI 自动交易。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+- 未处理 npm audit。
+- 未处理 Vite chunk 警告。
+
+### 验证记录
+
+- 本轮只修改文档，未重新执行全量 mvn、npm、Python 测试。
+- 沿用 GateI completed 验证基线：后端 35 tests / 0 failures、前端 build 通过、E2E 19 passed / 1 skipped、Python pytest/mypy/ruff 通过。
+- 已执行 git status --short。
+- 已检查 6 份 GateJ 规划文档存在。
+- 已检查 STATUS.md 写清 GateJ-PLAN、AI not started。
+- 已检查本轮变更未新增业务代码、migration、API 实现或前端页面实现。
+
+### 下一步进入 GateJ-1-WO 的条件
+
+- GateJ-PLAN 文档完成审查。
+- GateJ-1-WO 单独开工，只做 Paper run 调度与连续运行。
+- GateJ-1-WO 不得夹带 GateJ-2/3 实现。
+- GateJ-1-WO 不得接入 AI。
+
+## GateJ-1-WO 执行记录
+
+日期：2026-05-21
+
+### 本轮范围
+
+- 实现 GateJ-1 Paper run 调度与连续运行最小闭环。
+- 新增 3 张表：`paper_run_schedules`、`paper_run_schedule_fires`、`paper_run_heartbeats`。
+- 新增后端 4 个 enum/record（`PaperRunSchedule`、`PaperRunScheduleStatus`、`PaperRunScheduleFire`、`PaperRunScheduleFireStatus`、`PaperRunHeartbeat`、`PaperRunHeartbeatStatus`）、3 个 repository port、3 个 JDBC 实现。
+- 新增 `PaperRunScheduleService` 应用服务并扩展 `PaperTradingApiService`。
+- 新增 1 个新 controller `PaperTradingScheduleController` 与扩展 `PaperTradingController`（增加 heartbeat 端点）。
+- 新增 5 个 DTO：`PaperRunScheduleResponse`、`PaperRunScheduleCreateRequestBody`、`PaperRunScheduleStatusUpdateRequestBody`、`PaperRunScheduleFireResponse`、`PaperRunHeartbeatResponse`。
+- 前端扩展 2 个新 Tab（调度计划 / 心跳），新增 4 个查询 hook + 4 个 mutation hook。
+- 新增 `PaperRunScheduleServiceTest` 单元测试（11 用例）。
+- 新增 `paper-trading-schedule-smoke.spec.ts` E2E 用例。
+
+### 新增文件
+
+后端：
+
+- `backend/nq-infra/src/main/resources/db/migration/V23__gate_j1_paper_run_schedules.sql`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperRunSchedule.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperRunScheduleStatus.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperRunScheduleFire.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperRunScheduleFireStatus.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperRunHeartbeat.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/PaperRunHeartbeatStatus.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperRunScheduleRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperRunScheduleFireRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/paper/port/PaperRunHeartbeatRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/paper/PaperRunScheduleCreateCommand.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/paper/PaperRunScheduleService.java`
+- `backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/paper/PaperRunScheduleServiceTest.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperRunScheduleRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperRunScheduleFireRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/paper/jdbc/JdbcPaperRunHeartbeatRepository.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingScheduleController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperRunScheduleResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperRunScheduleCreateRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperRunScheduleStatusUpdateRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperRunScheduleFireResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperRunHeartbeatResponse.java`
+
+前端：
+
+- `frontend/tests/e2e/paper-trading-schedule-smoke.spec.ts`
+
+### 修改文件
+
+后端：
+
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/api/paper/PaperTradingApiService.java`：注入 `PaperRunScheduleService` 并新增 8 个委派方法。
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingController.java`：扩展 2 个 heartbeat 端点。
+
+前端：
+
+- `frontend/src/types/paper-trading.ts`：新增 5 类调度/心跳类型。
+- `frontend/src/api/paper-trading.ts`：新增 8 个调度/心跳 API。
+- `frontend/src/api/query-keys.ts`：新增 3 个查询 key。
+- `frontend/src/hooks/usePaperTradingQuery.ts`：新增 3 个查询 hook + 4 个 mutation hook。
+- `frontend/src/pages/paper-trading/PaperTradingPage.tsx`：详情抽屉扩展调度计划/心跳 2 个 Tab；Drawer 宽度从 840 调整到 1080 以避免 Tabs 溢出。
+
+文档：
+
+- `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/ROADMAP.md`。
+- `README.md`、`AGENTS.md`、`CLAUDE.md`。
+
+### DB / Migration
+
+- `V23__gate_j1_paper_run_schedules.sql` 只新增 GateJ-1 所需 3 张表，未修改历史 migration。
+- 3 张表均包含 PostgreSQL `COMMENT ON TABLE`。
+- 所有新增字段均包含 PostgreSQL `COMMENT ON COLUMN`。
+- 状态字段 `paper_run_schedules.status`、`paper_run_schedule_fires.status`、`paper_run_heartbeats.status` 均通过 `CHECK` 约束限制允许值。
+- 外键统一指向 `paper_trading_runs.paper_run_id`；`paper_run_schedule_fires.schedule_id` 关联 `paper_run_schedules.schedule_id`。
+- 索引：`idx_paper_run_schedules_run_id/status/next_fire`、`idx_schedule_fires_schedule_id/run_id/fired_at`、`idx_heartbeats_run_id_time`。
+
+### 后端实现
+
+- `nq-research` 承载领域模型、port、`PaperRunScheduleService` 应用服务，不依赖 JDBC。
+- `nq-infra` 承载 3 个 JDBC 实现，遵循既有 `::text` 读取 JSONB、`CAST(? AS JSONB)` 写入 JSONB 模式。
+- `nq-api` 通过 `PaperTradingApiService` 委派到 `PaperRunScheduleService`，不直接写 SQL。
+- `createSchedule`：校验 paperRunId 存在 + cron 表达式 5/6/7 字段校验，第一版默认 ENABLED 状态。
+- `runScheduleOnce`：仅 ENABLED 状态可触发；非 ENABLED 返回 409。第一版 fire 状态固定 SUCCEEDED，不调用真实交易所。
+- `runHeartbeatOnce`：根据 Paper run 状态映射 heartbeat status（RUNNING→OK / STOPPED|FAILED→STOPPED / 其他→UNKNOWN）。
+- 不调用任何真实交易所下单接口；不修改交易核心状态机、策略核心算法、回测核心算法。
+- 第一版不实现后台常驻调度器自动触发，仅提供 run-once 手动触发。
+
+### 前端实现
+
+- 2 个新 Tab 全部走 TanStack Query；服务端数据不进 Zustand。
+- "创建调度"按钮在调度计划 Tab 顶部触发 Modal 表单（名称、cron、时区）。
+- 调度行内提供"触发记录"、"执行一次"、"启用/禁用"操作；run-once 按钮在 ENABLED 状态下可用。
+- "执行心跳检查"按钮触发 `useRunHeartbeatOnceMutation`，触发后 invalidate paper-trading query。
+- 第一版无图表库依赖。
+- Drawer 宽度从 840 调整为 1080，避免 11 个 Tab 触发 Ant Design Tabs 溢出折叠。
+
+### 单元测试
+
+- `PaperRunScheduleServiceTest` 覆盖 11 个用例：
+  - `createScheduleShouldInsertWithEnabledStatus`
+  - `createScheduleShouldRejectMissingRun`
+  - `createScheduleShouldRejectInvalidCron`
+  - `updateScheduleStatusShouldTransition`
+  - `updateScheduleStatusShouldRejectInvalidStatus`
+  - `runScheduleOnceShouldWriteSucceededFire`
+  - `runScheduleOnceShouldRejectDisabledSchedule`
+  - `listFiresShouldReturnByScheduleId`
+  - `runHeartbeatOnceShouldWriteRecord`
+  - `runHeartbeatOnceShouldRecordStoppedWhenRunStopped`
+  - `listHeartbeatsShouldReturnByRunId`
+
+### E2E 实现
+
+- 新增 `paper-trading-schedule-smoke.spec.ts`，覆盖：登录 → 准备 fixture → 创建并启动 Paper run → 打开详情抽屉 → 调度计划 Tab → 创建调度 → 触发 run-once → 查看 fire 记录 → 禁用调度 → 心跳 Tab → 执行心跳检查 → 校验心跳记录。
+- E2E 选择器全部限定在 `drawer = page.getByLabel('Paper Trading 详情')` 范围，避免与侧边栏 menu 项冲突。
+- E2E 不依赖外网交易所，不调用真实 LIVE 下单接口。
+
+### 验证命令与结果
+
+- `mvn -f backend/pom.xml test`：通过，35 tests / 0 failures（含 PaperRunScheduleServiceTest 11 用例）。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告，本轮不处理。
+- 后端 local profile 启动：通过，`/actuator/health` 返回 `UP`，Flyway 当前版本 `23`。
+- `npm run test:e2e`：通过，**20 passed / 1 skipped**。
+- `npm run test:e2e` skipped 用例：`trading workspace / 配置订单 ID 时可打开订单详情`，未配置 `E2E_TRADE_ORDER_ID`，与 GateJ-1 主链无关。
+
+### 剩余风险
+
+- 第一版 fire 状态固定 `SUCCEEDED`；后台常驻调度器自动触发未实现。
+- 第一版 cron 表达式仅做字段数（5/6/7）合法性校验，未做完整 cron 语义校验。
+- `npm audit`、Vite chunk > 500 kB、Ant Design React 19 / `Card.bordered` deprecation warning 仍在，本轮不处理。
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用既有基线。
+
+### 边界确认
+
+- 未进入 GateJ-2（日报、告警）。
+- 未进入 GateJ-3（恢复、稳定性验收）。
+- 未进入 GateJ-FREEZE。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未做真实 LIVE 下单。
+- 未调用真实交易所下单接口。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+
+### GateJ-1 结论
+
+- 后端测试通过、前端 build 通过、E2E 20 passed / 1 skipped。
+- GateJ-1-WO 已完成，所有验收标准已满足。
+- **允许进入 GateJ-2-WO**，但只能在本轮变更审查/提交后单独开工。
+- GateJ-2-WO 只能做运行监控、日报、告警，不能夹带恢复、稳定性验收或 AI。
+
+---
+
+# Worklog: GateJ-2-WO
+
+日期：2026-05-21
+
+## 目标
+
+GateJ-2-WO：Paper Trading 运行监控 + 日报 + 告警。在 GateJ-1 完成的调度/心跳基础上，新增日报与告警事件能力，建立监控基础。仍不接 AI、不调用真实交易所下单、不动核心状态机/策略/回测算法。
+
+## 修改文件清单
+
+数据库 migration（新增 1 个）：
+
+- 新增 `backend/nq-infra/src/main/resources/db/migration/V24__gate_j2_paper_run_daily_reports_alerts.sql`。
+
+后端 nq-research（domain / port / service / command）：
+
+- 新增 `backend/nq-research/.../research/domain/paper/PaperRunDailyReport.java`。
+- 新增 `backend/nq-research/.../research/domain/paper/PaperRunDailyReportStatus.java`。
+- 新增 `backend/nq-research/.../research/domain/paper/PaperRunAlert.java`。
+- 新增 `backend/nq-research/.../research/domain/paper/PaperRunAlertSeverity.java`。
+- 新增 `backend/nq-research/.../research/domain/paper/PaperRunAlertStatus.java`。
+- 新增 `backend/nq-research/.../research/domain/paper/port/PaperRunDailyReportRepository.java`。
+- 新增 `backend/nq-research/.../research/domain/paper/port/PaperRunAlertRepository.java`。
+- 新增 `backend/nq-research/.../research/application/paper/PaperRunMonitorService.java`。
+- 新增 `backend/nq-research/.../research/application/paper/PaperRunDailyReportGenerateCommand.java`。
+- 新增 `backend/nq-research/.../research/application/paper/PaperRunAlertCreateCommand.java`。
+- 修改 `backend/nq-research/.../research/application/api/paper/PaperTradingApiService.java`。
+
+后端 nq-infra（JDBC 实现）：
+
+- 新增 `backend/nq-infra/.../research/infra/paper/jdbc/JdbcPaperRunDailyReportRepository.java`。
+- 新增 `backend/nq-infra/.../research/infra/paper/jdbc/JdbcPaperRunAlertRepository.java`。
+
+后端 nq-api（DTO + Controller）：
+
+- 新增 `backend/nq-api/.../paper/api/dto/PaperRunDailyReportResponse.java`。
+- 新增 `backend/nq-api/.../paper/api/dto/PaperRunDailyReportGenerateRequestBody.java`。
+- 新增 `backend/nq-api/.../paper/api/dto/PaperRunAlertResponse.java`。
+- 新增 `backend/nq-api/.../paper/api/dto/PaperRunAlertCreateRequestBody.java`。
+- 新增 `backend/nq-api/.../paper/api/dto/PaperRunAlertAckRequestBody.java`。
+- 修改 `backend/nq-api/.../paper/api/web/PaperTradingController.java`。
+
+后端测试：
+
+- 新增 `backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/paper/PaperRunMonitorServiceTest.java`（12 用例）。
+
+前端：
+
+- 修改 `frontend/src/api/paper-trading.ts`：新增 daily-reports / alerts API 客户端方法。
+- 修改 `frontend/src/api/query-keys.ts`：新增 paper-trading dailyReports / alerts query keys。
+- 修改 `frontend/src/types/paper-trading.ts`：新增 PaperRunDailyReportItem / PaperRunAlertItem / 请求与响应类型。
+- 修改 `frontend/src/hooks/usePaperTradingQuery.ts`：新增 query/mutation hooks。
+- 修改 `frontend/src/pages/paper-trading/PaperTradingPage.tsx`：新增"日报"、"告警"两个 Tab。
+
+前端 E2E：
+
+- 新增 `frontend/tests/e2e/paper-trading-daily-report-smoke.spec.ts`。
+- 新增 `frontend/tests/e2e/paper-trading-alert-smoke.spec.ts`。
+
+文档：
+
+- 修改 `docs/current/STATUS.md`、`docs/current/WORKLOG.md`、`docs/current/TESTING.md`、`docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/ROADMAP.md`。
+- 修改 `CLAUDE.md`、`AGENTS.md`、`README.md`。
+
+## DB schema 变化
+
+- 新增表 `paper_run_daily_reports`：
+  - 主键 `report_id`，外键 `paper_run_id` → `paper_trading_runs.paper_run_id`。
+  - 唯一约束 `uq_daily_reports_run_date (paper_run_id, report_date)`，保证按日幂等。
+  - 状态 `status` CHECK：`GENERATED / PARTIAL / FAILED`。
+  - JSONB 字段 `report_json` 用于保存日报详细数据，明确不保存密钥/token/cookie。
+- 新增表 `paper_run_alerts`：
+  - 主键 `alert_id`，外键 `paper_run_id` → `paper_trading_runs.paper_run_id`。
+  - 严重程度 `severity` CHECK：`LOW / MEDIUM / HIGH / CRITICAL`。
+  - 状态 `status` CHECK：`OPEN / ACKED / RESOLVED`。
+  - JSONB 字段 `event_snapshot_json` 用于保存事件快照，明确不保存密钥/token/cookie。
+- 所有新增表与字段均补齐 `COMMENT ON TABLE` / `COMMENT ON COLUMN`。
+- 未修改任何已有 migration。
+
+## 后端实现
+
+- `nq-research` 承载领域模型、port、`PaperRunMonitorService` 应用服务，不依赖 JDBC。
+- `nq-infra` 承载 2 个 JDBC 实现，遵循既有 `::text` 读取 JSONB、`CAST(? AS JSONB)` 写入 JSONB 模式。
+- `nq-api` 通过 `PaperTradingApiService` 委派到 `PaperRunMonitorService`，不直接写 SQL。
+- `generateDailyReport`：校验 paperRunId 存在 + reportDate 缺省时使用当前 UTC 日期，按 (paperRunId, reportDate) 通过 ON CONFLICT 实现幂等，alert_count 实时统计当日告警总数。
+- `createAlert`：校验 paperRunId 存在 + severity 校验，新建告警状态固定 OPEN。无效 severity 返回 400，其他业务校验返回 404。
+- `ackAlert`：OPEN → ACKED 转换；ACKED 状态再次 ack 幂等；RESOLVED 状态拒绝 ack 返回 409。
+- `resolveAlert`：任意非 RESOLVED → RESOLVED；RESOLVED 状态再次 resolve 幂等。
+- 不调用任何真实交易所下单接口；不修改交易核心状态机、策略核心算法、回测核心算法。
+
+## 前端实现
+
+- 2 个新 Tab（日报、告警）全部走 TanStack Query；服务端数据不进 Zustand。
+- 日报 Tab 顶部"生成今日日报"按钮触发 `useGenerateDailyReportMutation`；第一版传空 `{}`，由后端使用当前 UTC 日期。
+- 告警 Tab 顶部"创建测试告警"按钮触发 `useCreateAlertMutation`，默认创建 SYSTEM_NOTICE / LOW 告警，便于本地 smoke。
+- 告警行内提供"确认"、"解决"按钮；按当前 status 条件展示。
+- 第一版无图表库依赖。
+
+## 单元测试
+
+- `PaperRunMonitorServiceTest` 覆盖 12 个用例：
+  - `generateDailyReportShouldCreateReport`
+  - `generateDailyReportShouldUseCurrentDateWhenNull`
+  - `generateDailyReportShouldRejectMissingRun`
+  - `listDailyReportsShouldReturnByRunId`
+  - `createAlertShouldInsertOpenAlert`
+  - `createAlertShouldRejectInvalidSeverity`
+  - `ackAlertShouldTransitionToAcked`
+  - `ackAlertShouldBeIdempotent`
+  - `ackAlertShouldRejectResolved`
+  - `resolveAlertShouldTransitionToResolved`
+  - `resolveAlertShouldBeIdempotent`
+  - `listAlertsShouldFilterByStatus`
+
+## E2E 实现
+
+- 新增 `paper-trading-daily-report-smoke.spec.ts`：登录 → 准备 fixture → 创建并启动 Paper run → 打开详情抽屉 → 日报 Tab → 生成今日日报 → 校验列表 → 再次生成确认幂等。
+- 新增 `paper-trading-alert-smoke.spec.ts`：登录 → 准备 fixture → 创建并启动 Paper run → 打开详情抽屉 → 告警 Tab → 创建测试告警 → 校验列表 → 确认告警 (OPEN → ACKED) → 解决告警 (ACKED → RESOLVED)。
+- E2E 选择器全部限定在 `drawer = page.getByLabel('Paper Trading 详情')` 范围。
+- E2E 不依赖外网交易所，不调用真实 LIVE 下单接口。
+
+## 验证命令与结果
+
+- `mvn -f backend/pom.xml test`：通过，BUILD SUCCESS，35 tests / 0 failures（含 PaperRunMonitorServiceTest 12 用例）。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告，本轮不处理。
+- 后端 local profile 启动：通过，`/actuator/health` 返回 `UP`，Flyway 当前版本 `24`。
+- `npm run test:e2e`：通过，**22 passed / 1 skipped**。
+- `npm run test:e2e` skipped 用例：`trading workspace / 配置订单 ID 时可打开订单详情`，未配置 `E2E_TRADE_ORDER_ID`，与 GateJ-2 主链无关。
+
+## 修复记录
+
+- 初次 E2E 执行时发现 `PaperRunDailyReportGenerateRequestBody.reportDate` 标注了 `@NotNull`，与 `PaperRunMonitorService` 对 `reportDate = null` 时默认使用当日的实现冲突，前端调用空请求体被 400 拒绝。修复：移除该字段的 `@NotNull` 注解，允许空 body 走默认当日。
+- 初次 alert E2E 用 `tr.filter({hasText: alertId})` 定位行失败：表格不显示 alertId 列。修复：改用 `tr.filter({hasText: '手动测试告警'})` 通过标题文本定位。
+
+## 剩余风险
+
+- 第一版日报字段（total_equity / daily_pnl / max_drawdown 等）使用占位 `BigDecimal.ZERO`，未与 equity_curve_snapshots 实际数据联动；属于 GateJ-2 范围之外的增量优化。
+- 第一版告警来源（HEARTBEAT_LAG / SCHEDULE_FIRE_FAILED）尚未由后台监控自动产出，仅支持手动 POST 创建；自动监控产出预留到 GateJ-3。
+- 外部通知（邮件、Slack、钉钉）按工作单边界明确不做。
+- `npm audit`、Vite chunk > 500 kB、Ant Design React 19 / `Card.bordered` / `Modal.destroyOnClose` deprecation warning 仍在，本轮不处理。
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用既有基线。
+
+## 边界确认
+
+- 未进入 GateJ-3（恢复、稳定性验收）。
+- 未进入 GateJ-FREEZE。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未做真实 LIVE 下单。
+- 未调用真实交易所下单接口。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机。
+- 未修改策略核心算法。
+- 未修改回测核心算法。
+- 未引入图表库。
+- 未做外部通知集成。
+
+## GateJ-2 结论
+
+- 后端测试通过、前端 build 通过、E2E 22 passed / 1 skipped。
+- GateJ-2-WO 已完成，所有验收标准已满足。
+- **允许进入 GateJ-3-WO**，但只能在本轮变更审查/提交后单独开工。
+- GateJ-3-WO 只能做异常恢复、失败重试、稳定性验收结构，不能夹带连续运行验收或 AI。
+
+---
+
+# Worklog: GateJ-3-WO
+
+日期：2026-05-22
+
+## 目标
+
+GateJ-3-WO：Paper Trading 异常恢复、失败重试、运行稳定性检查与自动告警最小落库。在 GateJ-1/2 基础上补齐恢复事件、稳定性验收结构、HEARTBEAT_LAG / SCHEDULE_FIRE_FAILED 自动告警最小能力。仍不接 AI、不调用真实交易所下单、不动核心状态机/策略/回测算法。
+
+## 修改文件清单
+
+数据库 migration（新增 1 个）：
+
+- 新增 `backend/nq-infra/src/main/resources/db/migration/V25__gate_j3_paper_run_recovery_stability.sql`。
+
+后端 nq-research（domain / port / service / command）：
+
+- 新增 `PaperRunRecoveryEvent` / `PaperRunRecoveryType` / `PaperRunRecoveryStatus`。
+- 新增 `PaperRunStabilityCheck` / `PaperRunStabilityCheckStatus`。
+- 新增 `PaperRunRecoveryEventRepository`、`PaperRunStabilityCheckRepository` port。
+- 扩展 `PaperRunAlertRepository`（新增 `countCriticalOpenByRunIdAndDateRange` / `countByRunIdAndTypeAndDateRange`）。
+- 扩展 `PaperRunDailyReportRepository`（新增 `countByRunIdAndDateRange`）。
+- 扩展 `PaperRunHeartbeatRepository`（新增 `countByRunIdAndDateRange` / `findLatestByRunId`）。
+- 扩展 `PaperRunScheduleFireRepository`（新增 `listByRunIdAndStatus` / `countByRunIdAndStatusAndDateRange`）。
+- 新增 `PaperRunRecoveryService`、`PaperRunStabilityCheckService`、`PaperRunMonitorRunService`。
+- 新增 `PaperRunRecoverCommand` / `PaperRunRetryFailedStepCommand` / `PaperRunStabilityCheckGenerateCommand`。
+- 修改 `PaperTradingApiService`：注入新服务并暴露恢复 / 稳定性验收 / 监控守护方法，统一 404 / 400 / 409 错误码映射。
+
+后端 nq-infra（JDBC 实现）：
+
+- 新增 `JdbcPaperRunRecoveryEventRepository` / `JdbcPaperRunStabilityCheckRepository`。
+- 修改 `JdbcPaperRunAlertRepository` / `JdbcPaperRunDailyReportRepository` / `JdbcPaperRunHeartbeatRepository` / `JdbcPaperRunScheduleFireRepository`：补齐 port 新增方法。
+
+后端 nq-api（DTO + Controller）：
+
+- 新增 `PaperRunRecoveryEventResponse` / `PaperRunRecoverRequestBody` / `PaperRunRetryFailedStepRequestBody`。
+- 新增 `PaperRunStabilityCheckResponse` / `PaperRunStabilityCheckGenerateRequestBody`。
+- 新增 `PaperRunMonitorRunOnceResponse`。
+- 修改 `PaperTradingController`：新增 7 个 endpoints（recovery-events / recover / retry-failed-step / stability-checks GET/POST/detail / monitor/run-once）。
+
+后端测试：
+
+- 新增 `PaperRunRecoveryServiceTest`（9 用例）。
+- 新增 `PaperRunStabilityCheckServiceTest`（10 用例）。
+- 新增 `PaperRunMonitorRunServiceTest`（8 用例）。
+- 修改 `PaperRunMonitorServiceTest` / `PaperRunScheduleServiceTest`：补齐 port 新增方法的 in-memory 实现，保持原有 12 + 11 用例通过。
+
+前端：
+
+- 修改 `frontend/src/types/paper-trading.ts`：新增 PaperRunRecoveryEventItem / PaperRunStabilityCheckItem / PaperRunMonitorRunOnceResponse 等类型。
+- 修改 `frontend/src/api/paper-trading.ts`：新增 listRecoveryEvents / recover / retryFailedStep / listStabilityChecks / generateStabilityCheck / runMonitorOnce。
+- 修改 `frontend/src/api/query-keys.ts`：新增 recoveryEvents / stabilityChecks query keys。
+- 修改 `frontend/src/hooks/usePaperTradingQuery.ts`：新增 6 个 query/mutation hooks。
+- 修改 `frontend/src/pages/paper-trading/PaperTradingPage.tsx`：新增"恢复事件"、"稳定性验收"两个 Tab；Drawer 宽度从 1080 调整为 1280。
+
+前端 E2E：
+
+- 新增 `frontend/tests/e2e/paper-trading-recovery-smoke.spec.ts`。
+- 新增 `frontend/tests/e2e/paper-trading-stability-check-smoke.spec.ts`。
+
+文档：
+
+- 修改 `docs/current/STATUS.md`、`WORKLOG.md`、`TESTING.md`、`API.md`、`DB_SCHEMA.md`、`ROADMAP.md`。
+- 修改 `CLAUDE.md`、`AGENTS.md`、`README.md`。
+
+## DB schema 变化
+
+- 新增表 `paper_run_recovery_events`：
+  - 主键 `recovery_event_id`，外键 `paper_run_id` → `paper_trading_runs.paper_run_id`。
+  - CHECK：`recovery_type` ∈ MANUAL_RECOVER / RETRY_FAILED_STEP / HEARTBEAT_LAG_RECOVER / SCHEDULE_FIRE_RECOVER；`status` ∈ STARTED / SUCCEEDED / FAILED / SKIPPED。
+  - JSONB 字段 `request_json` / `result_json` 注释明确不保存密钥/token/cookie。
+- 新增表 `paper_run_stability_checks`：
+  - 主键 `stability_check_id`，外键 `paper_run_id` → `paper_trading_runs.paper_run_id`。
+  - CHECK：`status` ∈ PASSED / FAILED / PARTIAL；`check_window_end > check_window_start`；`uptime_ratio` ∈ [0, 1]。
+  - 唯一约束 `uq_stability_checks_run_window`。
+  - JSONB 字段 `summary_json` 注释明确不保存密钥/token/cookie。
+- 所有新增表与字段均补齐 `COMMENT ON TABLE` / `COMMENT ON COLUMN`。
+- 未修改任何已有 migration。
+
+## 后端实现要点
+
+- `recover` / `retryFailedStep`：根据 Paper run 状态映射 recovery status（STOPPED → SKIPPED；其它 → SUCCEEDED）。每次记录独立事件，不幂等。
+- `generateStabilityCheck`：校验窗口合法（end > start）+ paperRunId 存在；按 `(paper_run_id, check_window_start, check_window_end)` ON CONFLICT 幂等；按第一版口径计算 status / uptime_ratio。
+- `runOnce` 监控守护：检测 heartbeat lag（阈值固定 300s，仅对 RUNNING 状态生效）+ schedule fire failed（最近 5 分钟）；每种 alert_type 在 5 分钟去重窗口内不重复创建；第一版只落库，不外发。
+- 不调用任何真实交易所下单接口；不修改交易核心状态机、策略核心算法、回测核心算法。
+
+## 前端实现要点
+
+- 2 个新 Tab 全部走 TanStack Query；服务端数据不进 Zustand。
+- 稳定性验收 Tab 显式备注第一版口径并明确不等于 GateJ-FREEZE 最终验收。
+- 第一版无图表库依赖。
+
+## 验证命令与结果
+
+- `mvn -f backend/pom.xml test`：通过，BUILD SUCCESS（GateJ-3 新增 27 用例 + 既有用例全部通过）。
+- `npm run build`：通过；仍有 Vite chunk > 500 kB 警告，本轮不处理。
+- 后端 local profile 启动：通过，`/actuator/health` 返回 `UP`，Flyway 当前版本 `25`。
+- `npm run test:e2e`：通过，24 passed / 1 skipped；唯一 skipped 与 GateJ-3 无关。
+
+## 修复记录
+
+- 监控守护 dedupe 单元测试在固定 Clock 下失败：因 end 边界 exclusive 导致 `createdAt == now` 被排除。修复：监控守护查询时使用 `now.plusSeconds(1)` 作为上界。
+- 13 个 Tab 触发 Ant Design Tabs 溢出折叠："恢复事件 / 稳定性验收"被收进 ellipsis 菜单且 tabpanel 不切换。修复：Drawer 宽度 1080 → 1280。
+- 新增 port 方法导致既有测试 in-memory repo 编译失败：补全相关方法。
+
+## 剩余风险
+
+- 第一版 `uptime_ratio` 粗略口径（PASSED=1.0 / PARTIAL=0.9 / FAILED 有心跳=0.5 / 无心跳=0），未按时间精确加权。
+- 自动告警去重仅按 alert_type + 5 分钟时间窗口；未做 fire_id / event 维度去重。
+- HEARTBEAT_LAG 阈值固定 300 秒；未提供运行时配置入口。
+- 外部通知（邮件 / Slack / 钉钉 / 企业微信 / Telegram / Webhook / 短信）按边界明确不做。
+- 自动恢复策略引擎按边界明确不做（仅落库 alert，不自动触发 recover）。
+- `npm audit`、Vite chunk > 500 kB、Ant Design React 19 / `Card.bordered` / `Modal.destroyOnClose` deprecation warning 仍在。
+- Python `pytest`、`mypy`、`ruff` 本轮未重新执行；本轮未修改 `research/py`，沿用既有基线。
+
+## 边界确认
+
+- 未进入 GateJ-FREEZE 正式验收归档（1h/24h/7d 由 GateJ-FREEZE 独立执行）。
+- 未接入 AI、AI 信号、AI 自动交易或 AI Paper Trading。
+- 未做真实 LIVE 下单。
+- 未调用真实交易所下单接口。
+- 未新增美股/A 股、合约全量、高频或复杂因子平台。
+- 未修改交易核心状态机、策略核心算法、回测核心算法。
+- 未引入图表库。
+- 未做外部通知集成。
+- 未做自动恢复策略引擎。
+- 未把 GateJ 整体写为 completed（仅 GateJ-3-WO completed）。
+- 未把 AI 写为 started。
+
+## GateJ-3 结论
+
+- 后端测试通过、前端 build 通过、E2E 24 passed / 1 skipped。
+- GateJ-3-WO 已完成，所有验收标准已满足。
+- **允许进入 GateJ-FREEZE**，但只能在本轮变更审查/提交后单独开工；GateJ-FREEZE 只能做 1h/24h/7d 连续运行验收与冻结，不能夹带 AI。

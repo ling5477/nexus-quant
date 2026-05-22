@@ -9,18 +9,16 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - DOC-CLEAN completed
 - BASELINE-FIX completed
 - GateH completed
-- GateI-PLAN completed
-- GateI-1-WO completed
-- GateI-2-WO completed
-- GateI-3-WO completed
-- GateI-3-FIX completed
-- GateI-4-WO completed
-- GateI-4-FIX completed
 - GateI completed
-- Next: GateJ-PLAN（Paper Trading 稳定运行）
+- GateJ-PLAN completed
+- GateJ-1-WO completed
+- GateJ-2-WO completed
+- GateJ-3-WO completed
+- Current: GateJ-3-WO completed（异常恢复、失败重试、稳定性验收结构、自动告警最小落库）
+- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）
 - AI not started（AI 最早 GateK 才允许进入信号层）
 
-GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始。
+GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI、AI 信号、AI 自动交易、AI Paper Trading 仍未开始。当前不允许接入 AI。
 
 ## 当前能力摘要
 

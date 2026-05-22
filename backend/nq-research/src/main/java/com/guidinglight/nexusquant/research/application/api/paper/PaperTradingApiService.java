@@ -2,9 +2,15 @@ package com.guidinglight.nexusquant.research.application.api.paper;
 
 import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorRunService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorService;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoverCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoveryService;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunRetryFailedStepCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleService;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunStabilityCheckGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunStabilityCheckService;
 import com.guidinglight.nexusquant.research.application.paper.PaperTradingMonitorService;
 import com.guidinglight.nexusquant.research.application.paper.PaperTradingRunCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperTradingRunService;
@@ -14,8 +20,10 @@ import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlert;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunHeartbeat;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunRecoveryEvent;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunSchedule;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunScheduleFire;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunStabilityCheck;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingOrder;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingPosition;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
@@ -37,17 +45,26 @@ public class PaperTradingApiService {
     private final PaperTradingMonitorService monitorService;
     private final PaperRunScheduleService scheduleService;
     private final PaperRunMonitorService paperRunMonitorService;
+    private final PaperRunRecoveryService recoveryService;
+    private final PaperRunStabilityCheckService stabilityCheckService;
+    private final PaperRunMonitorRunService monitorRunService;
 
     public PaperTradingApiService(
             PaperTradingRunService runService,
             PaperTradingMonitorService monitorService,
             PaperRunScheduleService scheduleService,
-            PaperRunMonitorService paperRunMonitorService
+            PaperRunMonitorService paperRunMonitorService,
+            PaperRunRecoveryService recoveryService,
+            PaperRunStabilityCheckService stabilityCheckService,
+            PaperRunMonitorRunService monitorRunService
     ) {
         this.runService = Objects.requireNonNull(runService, "runService must not be null");
         this.monitorService = Objects.requireNonNull(monitorService, "monitorService must not be null");
         this.scheduleService = Objects.requireNonNull(scheduleService, "scheduleService must not be null");
         this.paperRunMonitorService = Objects.requireNonNull(paperRunMonitorService, "paperRunMonitorService must not be null");
+        this.recoveryService = Objects.requireNonNull(recoveryService, "recoveryService must not be null");
+        this.stabilityCheckService = Objects.requireNonNull(stabilityCheckService, "stabilityCheckService must not be null");
+        this.monitorRunService = Objects.requireNonNull(monitorRunService, "monitorRunService must not be null");
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
@@ -282,6 +299,70 @@ public class PaperTradingApiService {
     public PaperRunAlert resolveAlert(String alertId, String resolvedBy) {
         try {
             return paperRunMonitorService.resolveAlert(alertId, resolvedBy);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunRecoveryEvent recover(PaperRunRecoverCommand command) {
+        try {
+            return recoveryService.recover(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunRecoveryEvent retryFailedStep(PaperRunRetryFailedStepCommand command) {
+        try {
+            return recoveryService.retryFailedStep(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunRecoveryEvent> listRecoveryEvents(String paperRunId, String recoveryType, String status) {
+        try {
+            return recoveryService.listRecoveryEvents(paperRunId, recoveryType, status);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus = (msg.startsWith("invalid recovery") )
+                    ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunStabilityCheck generateStabilityCheck(PaperRunStabilityCheckGenerateCommand command) {
+        try {
+            return stabilityCheckService.generate(command);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus = (msg.startsWith("invalid stability") || msg.startsWith("checkWindow"))
+                    ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunStabilityCheck getStabilityCheckById(String stabilityCheckId) {
+        try {
+            return stabilityCheckService.getById(stabilityCheckId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunStabilityCheck> listStabilityChecks(String paperRunId, String status) {
+        try {
+            return stabilityCheckService.list(paperRunId, status);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus = msg.startsWith("invalid stability") ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunMonitorRunService.MonitorRunOnceResult runMonitorOnce(String paperRunId) {
+        try {
+            return monitorRunService.runOnce(paperRunId);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         }

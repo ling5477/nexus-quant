@@ -18,10 +18,19 @@ import com.guidinglight.nexusquant.paper.api.dto.PaperTradingRunCreateRequestBod
 import com.guidinglight.nexusquant.paper.api.dto.PaperTradingRunResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperTradingTradeResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PositionCurveSnapshotResponse;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunMonitorRunOnceResponse;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunRecoverRequestBody;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunRecoveryEventResponse;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunRetryFailedStepRequestBody;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunStabilityCheckGenerateRequestBody;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunStabilityCheckResponse;
 import com.guidinglight.nexusquant.paper.api.dto.TradeReplayRecordResponse;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoverCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunRetryFailedStepCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunStabilityCheckGenerateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperTradingRunCreateCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -392,5 +401,117 @@ public class PaperTradingController {
     ) {
         TraceIdContext.getOrCreate();
         return PaperRunAlertResponse.from(apiService.resolveAlert(alertId, "system"));
+    }
+
+    @GetMapping("/{paperRunId}/recovery-events")
+    @Operation(summary = "查询 Paper run 恢复事件列表", description = "返回指定 Paper run 的恢复/重试事件列表（按 created_at 倒序）。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "参数无效", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List<PaperRunRecoveryEventResponse> recoveryEvents(
+            @PathVariable @NotBlank String paperRunId,
+            @RequestParam(required = false) String recoveryType,
+            @RequestParam(required = false) String status
+    ) {
+        TraceIdContext.getOrCreate();
+        return apiService.listRecoveryEvents(paperRunId, recoveryType, status).stream()
+                .map(PaperRunRecoveryEventResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/{paperRunId}/recover")
+    @Operation(summary = "执行 Paper run 恢复", description = "对指定 Paper run 触发一次手动恢复，写入 recovery event 记录。不调用真实交易所下单。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "恢复已记录"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunRecoveryEventResponse recover(
+            @PathVariable @NotBlank String paperRunId,
+            @Valid @RequestBody(required = false) PaperRunRecoverRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        String reason = request != null ? request.reason() : null;
+        String requestJson = request != null ? request.requestJson() : null;
+        var command = new PaperRunRecoverCommand(paperRunId, reason, requestJson);
+        return PaperRunRecoveryEventResponse.from(apiService.recover(command));
+    }
+
+    @PostMapping("/{paperRunId}/retry-failed-step")
+    @Operation(summary = "重试失败步骤", description = "对指定 Paper run 触发一次失败步骤重试，写入 recovery event 记录。不调用真实交易所下单。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "重试已记录"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunRecoveryEventResponse retryFailedStep(
+            @PathVariable @NotBlank String paperRunId,
+            @Valid @RequestBody(required = false) PaperRunRetryFailedStepRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        String failedStep = request != null ? request.failedStep() : null;
+        String reason = request != null ? request.reason() : null;
+        String requestJson = request != null ? request.requestJson() : null;
+        var command = new PaperRunRetryFailedStepCommand(paperRunId, failedStep, reason, requestJson);
+        return PaperRunRecoveryEventResponse.from(apiService.retryFailedStep(command));
+    }
+
+    @GetMapping("/{paperRunId}/stability-checks")
+    @Operation(summary = "查询 Paper run 稳定性验收列表", description = "返回指定 Paper run 的稳定性验收列表（按 created_at 倒序）。第一版口径，非 GateJ-FREEZE 最终验收。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "参数无效", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List<PaperRunStabilityCheckResponse> stabilityChecks(
+            @PathVariable @NotBlank String paperRunId,
+            @RequestParam(required = false) String status
+    ) {
+        TraceIdContext.getOrCreate();
+        return apiService.listStabilityChecks(paperRunId, status).stream()
+                .map(PaperRunStabilityCheckResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/{paperRunId}/stability-checks/generate")
+    @Operation(summary = "生成 Paper run 稳定性验收", description = "为指定 Paper run 生成一份稳定性验收，按 (paperRunId, checkWindowStart, checkWindowEnd) 幂等。第一版口径，非 GateJ-FREEZE 最终验收。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "稳定性验收已生成"),
+            @ApiResponse(responseCode = "400", description = "参数无效", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunStabilityCheckResponse generateStabilityCheck(
+            @PathVariable @NotBlank String paperRunId,
+            @Valid @RequestBody PaperRunStabilityCheckGenerateRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        var command = new PaperRunStabilityCheckGenerateCommand(
+                paperRunId, request.checkWindowStart(), request.checkWindowEnd());
+        return PaperRunStabilityCheckResponse.from(apiService.generateStabilityCheck(command));
+    }
+
+    @GetMapping("/{paperRunId}/stability-checks/{stabilityCheckId}")
+    @Operation(summary = "查询 Paper run 稳定性验收详情", description = "按 stabilityCheckId 查询稳定性验收详情。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "404", description = "稳定性验收不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunStabilityCheckResponse stabilityCheckDetail(
+            @PathVariable @NotBlank String paperRunId,
+            @PathVariable @NotBlank String stabilityCheckId
+    ) {
+        TraceIdContext.getOrCreate();
+        return PaperRunStabilityCheckResponse.from(apiService.getStabilityCheckById(stabilityCheckId));
+    }
+
+    @PostMapping("/{paperRunId}/monitor/run-once")
+    @Operation(summary = "执行一次监控守护", description = "对指定 Paper run 执行一次监控守护：检查 heartbeat lag 并落库 HEARTBEAT_LAG 告警；检查 schedule fire failed 并落库 SCHEDULE_FIRE_FAILED 告警。第一版只落库，不外发通知。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "监控守护已执行"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunMonitorRunOnceResponse runMonitorOnce(@PathVariable @NotBlank String paperRunId) {
+        TraceIdContext.getOrCreate();
+        return PaperRunMonitorRunOnceResponse.from(apiService.runMonitorOnce(paperRunId));
     }
 }

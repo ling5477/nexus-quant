@@ -4,6 +4,22 @@ import type {
     EmergencyStopRequest,
     EquityCurveSnapshotItem,
     PaperRiskCheckResultItem,
+    PaperRunAlertAckRequest,
+    PaperRunAlertCreateRequest,
+    PaperRunAlertItem,
+    PaperRunDailyReportGenerateRequest,
+    PaperRunDailyReportItem,
+    PaperRunHeartbeatItem,
+    PaperRunMonitorRunOnceResponse,
+    PaperRunRecoverRequest,
+    PaperRunRecoveryEventItem,
+    PaperRunRetryFailedStepRequest,
+    PaperRunScheduleCreateRequest,
+    PaperRunScheduleFireItem,
+    PaperRunScheduleItem,
+    PaperRunScheduleStatusUpdateRequest,
+    PaperRunStabilityCheckGenerateRequest,
+    PaperRunStabilityCheckItem,
     PaperTradingOrderItem,
     PaperTradingPositionItem,
     PaperTradingRunCreateRequest,
@@ -79,6 +95,86 @@ export const paperTradingApi = {
     },
     async emergencyStops(paperRunId: string): Promise<EmergencyStopEventItem[]> {
         const {data} = await apiClient.get<EmergencyStopEventItem[]>(`/paper-trading/runs/${paperRunId}/emergency-stops`);
+        return data;
+    },
+    async listSchedules(params: {paperRunId?: string; status?: string}): Promise<PaperRunScheduleItem[]> {
+        const {data} = await apiClient.get<PaperRunScheduleItem[]>('/paper-trading/schedules', {params});
+        return data;
+    },
+    async createSchedule(request: PaperRunScheduleCreateRequest): Promise<PaperRunScheduleItem> {
+        const {data} = await apiClient.post<PaperRunScheduleItem>('/paper-trading/schedules', request);
+        return data;
+    },
+    async scheduleDetail(scheduleId: string): Promise<PaperRunScheduleItem> {
+        const {data} = await apiClient.get<PaperRunScheduleItem>(`/paper-trading/schedules/${scheduleId}`);
+        return data;
+    },
+    async updateScheduleStatus(scheduleId: string, request: PaperRunScheduleStatusUpdateRequest): Promise<PaperRunScheduleItem> {
+        const {data} = await apiClient.patch<PaperRunScheduleItem>(`/paper-trading/schedules/${scheduleId}/status`, request);
+        return data;
+    },
+    async runScheduleOnce(scheduleId: string): Promise<PaperRunScheduleFireItem> {
+        const {data} = await apiClient.post<PaperRunScheduleFireItem>(`/paper-trading/schedules/${scheduleId}/run-once`);
+        return data;
+    },
+    async listFires(scheduleId: string): Promise<PaperRunScheduleFireItem[]> {
+        const {data} = await apiClient.get<PaperRunScheduleFireItem[]>(`/paper-trading/schedules/${scheduleId}/fires`);
+        return data;
+    },
+    async listHeartbeats(paperRunId: string): Promise<PaperRunHeartbeatItem[]> {
+        const {data} = await apiClient.get<PaperRunHeartbeatItem[]>(`/paper-trading/runs/${paperRunId}/heartbeats`);
+        return data;
+    },
+    async runHeartbeatOnce(paperRunId: string): Promise<PaperRunHeartbeatItem> {
+        const {data} = await apiClient.post<PaperRunHeartbeatItem>(`/paper-trading/runs/${paperRunId}/heartbeats/run-once`);
+        return data;
+    },
+    async listDailyReports(paperRunId: string): Promise<PaperRunDailyReportItem[]> {
+        const {data} = await apiClient.get<PaperRunDailyReportItem[]>(`/paper-trading/runs/${paperRunId}/daily-reports`);
+        return data;
+    },
+    async generateDailyReport(paperRunId: string, request: PaperRunDailyReportGenerateRequest): Promise<PaperRunDailyReportItem> {
+        const {data} = await apiClient.post<PaperRunDailyReportItem>(`/paper-trading/runs/${paperRunId}/daily-reports/generate`, request);
+        return data;
+    },
+    async listAlerts(paperRunId: string, params?: {status?: string; severity?: string}): Promise<PaperRunAlertItem[]> {
+        const {data} = await apiClient.get<PaperRunAlertItem[]>(`/paper-trading/runs/${paperRunId}/alerts`, {params});
+        return data;
+    },
+    async createAlert(paperRunId: string, request: PaperRunAlertCreateRequest): Promise<PaperRunAlertItem> {
+        const {data} = await apiClient.post<PaperRunAlertItem>(`/paper-trading/runs/${paperRunId}/alerts`, request);
+        return data;
+    },
+    async ackAlert(paperRunId: string, alertId: string, request?: PaperRunAlertAckRequest): Promise<PaperRunAlertItem> {
+        const {data} = await apiClient.patch<PaperRunAlertItem>(`/paper-trading/runs/${paperRunId}/alerts/${alertId}/ack`, request ?? {});
+        return data;
+    },
+    async resolveAlert(paperRunId: string, alertId: string): Promise<PaperRunAlertItem> {
+        const {data} = await apiClient.patch<PaperRunAlertItem>(`/paper-trading/runs/${paperRunId}/alerts/${alertId}/resolve`, {});
+        return data;
+    },
+    async listRecoveryEvents(paperRunId: string, params?: {recoveryType?: string; status?: string}): Promise<PaperRunRecoveryEventItem[]> {
+        const {data} = await apiClient.get<PaperRunRecoveryEventItem[]>(`/paper-trading/runs/${paperRunId}/recovery-events`, {params});
+        return data;
+    },
+    async recover(paperRunId: string, request?: PaperRunRecoverRequest): Promise<PaperRunRecoveryEventItem> {
+        const {data} = await apiClient.post<PaperRunRecoveryEventItem>(`/paper-trading/runs/${paperRunId}/recover`, request ?? {});
+        return data;
+    },
+    async retryFailedStep(paperRunId: string, request?: PaperRunRetryFailedStepRequest): Promise<PaperRunRecoveryEventItem> {
+        const {data} = await apiClient.post<PaperRunRecoveryEventItem>(`/paper-trading/runs/${paperRunId}/retry-failed-step`, request ?? {});
+        return data;
+    },
+    async listStabilityChecks(paperRunId: string, params?: {status?: string}): Promise<PaperRunStabilityCheckItem[]> {
+        const {data} = await apiClient.get<PaperRunStabilityCheckItem[]>(`/paper-trading/runs/${paperRunId}/stability-checks`, {params});
+        return data;
+    },
+    async generateStabilityCheck(paperRunId: string, request: PaperRunStabilityCheckGenerateRequest): Promise<PaperRunStabilityCheckItem> {
+        const {data} = await apiClient.post<PaperRunStabilityCheckItem>(`/paper-trading/runs/${paperRunId}/stability-checks/generate`, request);
+        return data;
+    },
+    async runMonitorOnce(paperRunId: string): Promise<PaperRunMonitorRunOnceResponse> {
+        const {data} = await apiClient.post<PaperRunMonitorRunOnceResponse>(`/paper-trading/runs/${paperRunId}/monitor/run-once`, {});
         return data;
     },
 };

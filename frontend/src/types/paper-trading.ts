@@ -158,3 +158,160 @@ export interface EmergencyStopRequest {
     reason: string;
     triggeredBy?: string;
 }
+
+export interface PaperRunScheduleItem {
+    scheduleId: string;
+    paperRunId: string;
+    scheduleName: string;
+    cronExpr: string;
+    status: string;
+    timezone: string;
+    nextFireTime: string | null;
+    lastFireTime: string | null;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+    requestJson: string | null;
+}
+
+export interface PaperRunScheduleFireItem {
+    fireId: string;
+    scheduleId: string;
+    paperRunId: string;
+    status: string;
+    firedAt: string;
+    finishedAt: string | null;
+    durationMs: number | null;
+    resultJson: string | null;
+    errorMessage: string | null;
+    createdAt: string;
+}
+
+export interface PaperRunHeartbeatItem {
+    heartbeatId: string;
+    paperRunId: string;
+    heartbeatTime: string;
+    status: string;
+    lastEventTime: string | null;
+    lastOrderTime: string | null;
+    lastTradeTime: string | null;
+    lagSeconds: number | null;
+    summaryJson: string | null;
+    createdAt: string;
+}
+
+export interface PaperRunScheduleCreateRequest {
+    paperRunId: string;
+    scheduleName: string;
+    cronExpr: string;
+    timezone?: string;
+    requestJson?: string;
+}
+
+export interface PaperRunScheduleStatusUpdateRequest {
+    status: string;
+}
+
+export interface PaperRunDailyReportItem {
+    reportId: string;
+    paperRunId: string;
+    reportDate: string;
+    status: string;
+    totalEquity: string | number | null;
+    dailyPnl: string | number | null;
+    dailyReturn: string | number | null;
+    maxDrawdown: string | number | null;
+    orderCount: number;
+    tradeCount: number;
+    alertCount: number;
+    riskRejectCount: number;
+    reportJson: string | null;
+    generatedAt: string;
+    createdAt: string;
+}
+
+export interface PaperRunDailyReportGenerateRequest {
+    reportDate?: string;
+}
+
+export interface PaperRunAlertItem {
+    alertId: string;
+    paperRunId: string;
+    alertType: string;
+    severity: string;
+    status: string;
+    title: string;
+    message: string | null;
+    source: string | null;
+    eventSnapshotJson: string | null;
+    acknowledgedBy: string | null;
+    acknowledgedAt: string | null;
+    resolvedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface PaperRunAlertCreateRequest {
+    alertType: string;
+    severity: string;
+    title: string;
+    message?: string;
+    source?: string;
+    eventSnapshotJson?: string;
+}
+
+export interface PaperRunAlertAckRequest {
+    acknowledgedBy?: string;
+}
+
+export interface PaperRunRecoveryEventItem {
+    recoveryEventId: string;
+    paperRunId: string;
+    recoveryType: string;
+    status: string;
+    reason: string | null;
+    requestJson: string | null;
+    resultJson: string | null;
+    startedAt: string;
+    finishedAt: string | null;
+    createdAt: string;
+}
+
+export interface PaperRunRecoverRequest {
+    reason?: string;
+    requestJson?: string;
+}
+
+export interface PaperRunRetryFailedStepRequest {
+    failedStep?: string;
+    reason?: string;
+    requestJson?: string;
+}
+
+export interface PaperRunStabilityCheckItem {
+    stabilityCheckId: string;
+    paperRunId: string;
+    checkWindowStart: string;
+    checkWindowEnd: string;
+    status: string;
+    uptimeRatio: string | number;
+    heartbeatCount: number;
+    alertCount: number;
+    failedFireCount: number;
+    recoveryCount: number;
+    reportCount: number;
+    summaryJson: string | null;
+    createdAt: string;
+}
+
+export interface PaperRunStabilityCheckGenerateRequest {
+    checkWindowStart: string;
+    checkWindowEnd: string;
+}
+
+export interface PaperRunMonitorRunOnceResponse {
+    paperRunId: string;
+    checkedAt: string;
+    createdAlertCount: number;
+    createdAlerts: PaperRunAlertItem[];
+}

@@ -28,8 +28,13 @@ GateO：A 股适配
 - BASELINE-FIX completed。
 - GateH completed。
 - GateI completed。
-- Next: GateJ-PLAN（Paper Trading 稳定运行）。
+- GateJ-PLAN completed。
+- GateJ-1-WO completed。
+- GateJ-2-WO completed。
+- GateJ-3-WO completed。
+- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）。
 - AI not started。
+- GateJ 不是 AI 阶段。
 
 ## 路线原则
 

@@ -98,6 +98,25 @@ public class JdbcPaperRunAlertRepository implements PaperRunAlertRepository {
         return count != null ? count : 0;
     }
 
+    @Override
+    public int countCriticalOpenByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM paper_run_alerts
+                WHERE paper_run_id = ? AND severity = 'CRITICAL' AND status = 'OPEN'
+                    AND created_at >= ? AND created_at < ?
+                """, Integer.class, paperRunId, Timestamp.from(start), Timestamp.from(end));
+        return count != null ? count : 0;
+    }
+
+    @Override
+    public int countByRunIdAndTypeAndDateRange(String paperRunId, String alertType, Instant start, Instant end) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM paper_run_alerts
+                WHERE paper_run_id = ? AND alert_type = ? AND created_at >= ? AND created_at < ?
+                """, Integer.class, paperRunId, alertType, Timestamp.from(start), Timestamp.from(end));
+        return count != null ? count : 0;
+    }
+
     private static PaperRunAlert mapRow(ResultSet rs, int rowNum) throws SQLException {
         Timestamp acknowledgedAt = rs.getTimestamp("acknowledged_at");
         Timestamp resolvedAt = rs.getTimestamp("resolved_at");

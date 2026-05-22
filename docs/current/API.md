@@ -189,3 +189,103 @@ GateI-4 固定范围：
 - 不改交易核心状态机、策略核心算法、回测核心算法。
 - 风控检查第一版仅写入最小 BASIC_HEALTH_CHECK；具体规则与撮合回写在后续 Gate 实现。
 - 异常停机仅复用既有 PaperTradingRunService.stop，不引入额外状态。
+
+## GateJ Planning Entry
+
+GateJ API 规划入口为 [GATEJ_API_PLAN.md](./GATEJ_API_PLAN.md)。本轮只做规划，不实现接口。
+
+GateJ 规划 API 分类：
+
+- Paper Run Schedule API（调度计划 CRUD + run-once）。
+- Paper Run Heartbeat API（心跳记录 + run-once）。
+- Paper Run Daily Report API（日报生成 + 查询）。
+- Paper Run Alert API（告警查询 + 确认）。
+- Paper Run Recovery API（恢复 + 重试）。
+- GateJ Stability Acceptance API（稳定性验收生成 + 查询）。
+
+GateJ 后续规划不改变当前事实：AI、AI 信号、AI 自动交易和 AI Paper Trading 仍未开始。GateJ 不是 AI 阶段。
+
+## GateJ-1 Paper Run Schedule and Heartbeat API
+
+当前已实现的 GateJ-1 调度计划、触发记录与心跳入口：
+
+- `GET /api/paper-trading/schedules`：查询调度计划列表，可按 `paperRunId`、`status` 过滤。
+- `POST /api/paper-trading/schedules`：创建调度计划，默认 ENABLED 状态。
+- `GET /api/paper-trading/schedules/{scheduleId}`：查询调度计划详情。
+- `PATCH /api/paper-trading/schedules/{scheduleId}/status`：更新调度状态（ENABLED / DISABLED / PAUSED）。
+- `POST /api/paper-trading/schedules/{scheduleId}/run-once`：手动触发一次调度，写入 fire 记录。
+- `GET /api/paper-trading/schedules/{scheduleId}/fires`：查询调度触发记录列表。
+- `GET /api/paper-trading/runs/{paperRunId}/heartbeats`：查询 Paper run 心跳记录列表。
+- `POST /api/paper-trading/runs/{paperRunId}/heartbeats/run-once`：手动生成一次心跳记录。
+
+GateJ-1 固定范围：
+
+- 只做调度计划、触发记录和心跳。
+- 不做日报、告警、恢复、稳定性验收（GateJ-2/3）。
+- 不做后台常驻调度器自动触发（第一版只支持 run-once 手动触发）。
+- 不接 AI、AI 信号、AI Paper Trading。
+- 不改交易核心状态机、策略核心算法、回测核心算法。
+
+## GateJ-2 Paper Run Daily Report and Alert API
+
+当前已实现的 GateJ-2 日报与告警入口：
+
+- `GET /api/paper-trading/runs/{paperRunId}/daily-reports`：查询 Paper run 日报列表（按 report_date 倒序）。
+- `POST /api/paper-trading/runs/{paperRunId}/daily-reports/generate`：生成 Paper run 日报；请求体 `reportDate` 可空，空时使用当前 UTC 日期；按 (paper_run_id, report_date) 幂等。
+- `GET /api/paper-trading/runs/{paperRunId}/daily-reports/{reportId}`：查询日报详情。
+- `GET /api/paper-trading/runs/{paperRunId}/alerts`：查询 Paper run 告警列表（按 created_at 倒序），可按 `status`、`severity` 过滤。
+- `POST /api/paper-trading/runs/{paperRunId}/alerts`：创建一条告警事件；severity 必须为 LOW / MEDIUM / HIGH / CRITICAL；状态固定 OPEN。
+- `PATCH /api/paper-trading/runs/{paperRunId}/alerts/{alertId}/ack`：确认告警；OPEN → ACKED；幂等；RESOLVED 状态返回 409。
+- `PATCH /api/paper-trading/runs/{paperRunId}/alerts/{alertId}/resolve`：解决告警；任意非 RESOLVED → RESOLVED；幂等。
+
+GateJ-2 固定范围：
+
+- 只做日报与告警。
+- 不做恢复、稳定性验收（GateJ-3）。
+- 不做外部通知（邮件、Slack、钉钉）。
+- 不引入图表库。
+- 不接 AI、AI 信号、AI Paper Trading。
+- 不改交易核心状态机、策略核心算法、回测核心算法。
+
+## GateJ-3 Paper Run Recovery and Stability API
+
+当前已实现的 GateJ-3 恢复、重试、稳定性验收、监控守护入口：
+
+- `GET /api/paper-trading/runs/{paperRunId}/recovery-events`：查询 Paper run 恢复事件列表（按 created_at 倒序），可按 `recoveryType`、`status` 过滤。
+- `POST /api/paper-trading/runs/{paperRunId}/recover`：触发一次手动恢复（MANUAL_RECOVER）；请求体 `reason / requestJson` 可选；不调用真实交易所下单接口。
+- `POST /api/paper-trading/runs/{paperRunId}/retry-failed-step`：触发一次失败步骤重试（RETRY_FAILED_STEP）；请求体 `failedStep / reason / requestJson` 可选；不调用真实交易所下单接口。
+- `GET /api/paper-trading/runs/{paperRunId}/stability-checks`：查询稳定性验收列表（按 created_at 倒序），可按 `status` 过滤。
+- `POST /api/paper-trading/runs/{paperRunId}/stability-checks/generate`：生成 Paper run 稳定性验收；请求体 `checkWindowStart / checkWindowEnd` 必填；按 (paper_run_id, check_window_start, check_window_end) 幂等。
+- `GET /api/paper-trading/runs/{paperRunId}/stability-checks/{stabilityCheckId}`：查询稳定性验收详情。
+- `POST /api/paper-trading/runs/{paperRunId}/monitor/run-once`：执行一次监控守护；检查 heartbeat lag（默认阈值 300s）并落库 HEARTBEAT_LAG 告警；检查最近 5 分钟内 schedule fire failed 并落库 SCHEDULE_FIRE_FAILED 告警；同一类型在 5 分钟去重窗口内不重复创建；第一版只落库，不外发通知。
+
+GateJ-3 recovery event 状态流转：
+
+- `STARTED → SUCCEEDED / FAILED / SKIPPED`。
+- 第一版根据 Paper run 状态映射：RUNNING/CREATED → SUCCEEDED，STOPPED → SKIPPED。
+- 每次恢复/重试产生新记录，不幂等（每次产生新的 recovery_event_id）。
+
+GateJ-3 stability check 第一版口径：
+
+- `PASSED`：窗口内 heartbeat_count > 0，且无 CRITICAL 未处理告警，且 failed_fire_count = 0。
+- `PARTIAL`：窗口内有心跳但存在普通告警或恢复事件。
+- `FAILED`：窗口内无心跳，或存在 CRITICAL 未处理告警，或 failed_fire_count > 0。
+- 第一版 `uptime_ratio` 按粗略判定（PASSED=1.0、PARTIAL=0.9、FAILED 有心跳=0.5/无心跳=0）。
+- 第一版口径不等于 GateJ-FREEZE 的 1h/24h/7d 最终验收。
+
+GateJ-3 自动告警口径：
+
+- `HEARTBEAT_LAG`：监控守护检测到最近 heartbeat 不存在或 lag_seconds ≥ 300，且 Paper run 状态为 RUNNING；severity = HIGH；source = MONITOR。
+- `SCHEDULE_FIRE_FAILED`：监控守护检测到最近 5 分钟内存在 paper_run_schedule_fires.status = FAILED 记录；severity = MEDIUM；source = SCHEDULE。
+- 第一版去重：每种 alert_type 在 5 分钟内最多创建 1 条；不做更复杂的策略去重。
+- 第一版只落库 paper_run_alerts，不外发通知（邮件 / Slack / 钉钉 / 短信 / Webhook 均不接入）。
+
+GateJ-3 固定范围：
+
+- 只做恢复、重试、稳定性验收、HEARTBEAT_LAG / SCHEDULE_FIRE_FAILED 自动告警最小落库。
+- 不做 1h/24h/7d 正式验收归档（GateJ-FREEZE）。
+- 不做外部通知（邮件、Slack、钉钉、企业微信、Telegram、Webhook、短信）。
+- 不做自动恢复策略引擎。
+- 不接 AI、AI 信号、AI Paper Trading。
+- 不改交易核心状态机、策略核心算法、回测核心算法。
+- 不调用真实交易所下单接口。

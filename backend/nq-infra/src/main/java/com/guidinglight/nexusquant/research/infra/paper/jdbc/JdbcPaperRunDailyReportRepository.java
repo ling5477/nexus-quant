@@ -92,6 +92,15 @@ public class JdbcPaperRunDailyReportRepository implements PaperRunDailyReportRep
                 ROW_MAPPER, paperRunId);
     }
 
+    @Override
+    public int countByRunIdAndDateRange(String paperRunId, java.time.Instant start, java.time.Instant end) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM paper_run_daily_reports
+                WHERE paper_run_id = ? AND created_at >= ? AND created_at < ?
+                """, Integer.class, paperRunId, java.sql.Timestamp.from(start), java.sql.Timestamp.from(end));
+        return count != null ? count : 0;
+    }
+
     private static PaperRunDailyReport mapRow(ResultSet rs, int rowNum) throws SQLException {
         BigDecimal totalEquity = rs.getBigDecimal("total_equity");
         BigDecimal dailyPnl = rs.getBigDecimal("daily_pnl");
