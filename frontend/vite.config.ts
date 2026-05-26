@@ -23,7 +23,7 @@ export default defineConfig(({mode}) => {
         server: proxyTarget
             ? {
                 host: '127.0.0.1',
-                port: 4173,
+                port: 5179,
                 proxy: {
                     '/api': {
                         target: proxyTarget,
@@ -33,11 +33,11 @@ export default defineConfig(({mode}) => {
             }
             : {
                 host: '127.0.0.1',
-                port: 4173,
+                port: 5179,
             },
         preview: {
             host: '127.0.0.1',
-            port: 4173,
+            port: 5179,
         },
     };
 });

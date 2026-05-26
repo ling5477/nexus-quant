@@ -31,12 +31,15 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - DOC-CLEAN-2 completed。
 - PRE-FREEZE-CODE-AUDIT completed。
 - PRE-FREEZE-CODE-AUDIT second pass completed。
+- AUDIT-FIX completed。
 
 ## 当前执行状态
 
-- Current stage: PRE-FREEZE-CODE-AUDIT second pass completed。
+- Current stage: AUDIT-FIX completed。
 - GateJ-3-WO 已完成。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成：无 P0；Claude 第一轮 P1-1 / P1-2 验证缺口已由 Codex 实际重跑关闭；P1-3 不阻塞；P1-4 已闭环 GATEJ_FREEZE_ACCEPTANCE_TEMPLATE。详见 `PRE_FREEZE_AUDIT_REPORT.md` 与 `PRE_FREEZE_AUDIT_FIX_PLAN.md`。
+- FULL_SECURITY_AUDIT 报告中的 P1 已由 AUDIT-FIX 关闭：旧 OKX dome 验收脚本已移出 `scripts/` 可执行区并归档到 `docs/archive/scripts/`，原路径只保留阻断 stub；`/__gated/**` 仍仅为历史路径。
+- E2E/Vite 本地端口已从 `4173` 调整为 `5179`，避开 Windows TCP excluded range `4141-4240`；AUDIT-FIX 完整 E2E 已通过。
 - 后端 `mvn -f backend/pom.xml test` BUILD SUCCESS（23 个 module SUCCESS；`nq-app` 35 tests / 0 failures / 0 errors）。
 - 前端 `npm run build` 通过（仍有 Vite chunk > 500 kB P2 警告）。
 - E2E `npm run test:e2e` 本轮实际执行通过：24 passed / 1 skipped / 0 failed；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有订单详情链路，GateJ 主链未 skip。
@@ -138,6 +141,14 @@ GateO：A 股适配
 - Python `python -m ruff check .`：通过（All checks passed）。
 - API / DB / Paper-LIVE 隔离 / AI 边界二次抽查未发现 P0/P1。
 - 结论：允许进入 GateJ-FREEZE，但 GateJ-FREEZE 必须单独开工，只能做 1h / 24h / 7d 连续运行验收与冻结，不能夹带 AI 或新功能。
+
+## AUDIT-FIX 验证记录（2026-05-26）
+
+- P1 关闭：`scripts/gated_okx_dome_verify.ps1` 已变为安全阻断 stub，旧脚本归档到 `docs/archive/scripts/gated_okx_dome_verify.ps1`；当前可执行 API 不包含 `/__gated/**`。
+- E2E 端口修复：`frontend/playwright.config.ts`、`frontend/tests/e2e/run-e2e.mjs`、`frontend/vite.config.ts`、`frontend/.env.example` 已统一从 `4173` 调整为 `5179`。
+- 验证结果：`mvn -f backend/pom.xml test` 通过；`cd frontend && npm run build` 通过；启动后端 local profile 后 `cd frontend && npm run test:e2e` 通过，结果 24 passed / 1 skipped / 0 failed。
+- 本轮不新增 API、不新增 migration、不修改交易下单/风控/撮合/恢复/调度核心逻辑、不接 AI。
+- 验证结果详见 `AUDIT_FIX_REPORT.md`。
 
 ## GateI 当前边界
 

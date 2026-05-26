@@ -2,7 +2,7 @@ import http from 'node:http';
 import {spawn} from 'node:child_process';
 
 const host = '127.0.0.1';
-const port = 4173;
+const port = 5179;
 const baseURL = process.env.E2E_BASE_URL ?? `http://${host}:${port}`;
 const viteArgs = ['./node_modules/vite/bin/vite.js', '--host', host, '--port', String(port)];
 const playwrightArgs = ['./node_modules/playwright/cli.js', 'test', ...process.argv.slice(2)];

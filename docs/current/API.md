@@ -21,7 +21,7 @@
 ## 当前边界
 
 - 正式 HTTP API 统一使用 `/api/**`。
-- 旧 `/__gated/**` 只允许出现在历史文档说明中。
+- 旧 `/__gated/**` 只允许出现在历史文档说明和归档证据中，不属于当前可执行 API；AUDIT-FIX 后 `scripts/gated_okx_dome_verify.ps1` 仅保留阻断 stub，不再保留旧验收调用。
 - AI 自动交易 API 当前不存在，也不允许在本次任务新增。
 - GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
 - GateH-2 只新增 OKX / Binance SPOT 历史 OHLCV K 线接入、接入任务与运行记录 API；不新增 dataset/backtest 绑定接口，不新增 AI 接口。

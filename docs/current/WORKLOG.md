@@ -2008,3 +2008,67 @@ Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Cl
 ## 结论
 
 允许进入 GateJ-FREEZE，但必须在本轮审查报告提交后单独开工。GateJ-FREEZE 只能做 1h / 24h / 7d 连续运行验收与冻结，不能夹带 AI 或新功能。
+
+# Worklog: AUDIT-FIX
+
+## 本轮目标
+
+关闭 FULL_SECURITY_AUDIT 报告中阻塞 GateJ-FREEZE 的两项问题：旧 OKX dome 验收脚本 P1、Windows excluded port 导致的 E2E 端口失败。本轮不新增业务功能、不新增 API、不新增 migration、不接 AI、不修改交易下单/风控/撮合/恢复/调度核心逻辑。
+
+## 修改文件清单
+
+- `scripts/gated_okx_dome_verify.ps1`
+- `docs/archive/scripts/gated_okx_dome_verify.ps1`
+- `frontend/playwright.config.ts`
+- `frontend/playwright.config.js`
+- `frontend/tests/e2e/run-e2e.mjs`
+- `frontend/vite.config.ts`
+- `frontend/vite.config.js`
+- `frontend/.env.example`
+- `docs/current/API.md`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/AUDIT_FIX_REPORT.md`
+
+## P1 处理
+
+- 旧 `scripts/gated_okx_dome_verify.ps1` 已从可执行 `scripts/` 区域移出，归档到 `docs/archive/scripts/gated_okx_dome_verify.ps1` 作为历史证据。
+- 原 `scripts/gated_okx_dome_verify.ps1` 仅保留安全阻断 stub，明确旧 `/__gated/**` 是历史路径，GateJ 不允许执行该脚本，不得用于真实交易验收。
+- `docs/current/API.md` 已再次确认当前正式 HTTP API 统一使用 `/api/**`，`/__gated/**` 不属于当前可执行 API。
+
+## E2E 端口处理
+
+- `frontend/playwright.config.ts` 默认 `baseURL` 和 Vite webServer 端口从 `4173` 调整为 `5179`。
+- `frontend/tests/e2e/run-e2e.mjs` Vite 启动端口从 `4173` 调整为 `5179`。
+- `frontend/vite.config.ts` Vite dev / preview 默认端口从 `4173` 调整为 `5179`。
+- `frontend/.env.example` 中 `E2E_BASE_URL` 同步为 `http://127.0.0.1:5179`。
+- 原因：当前 Windows TCP excluded range 包含 `4141-4240`，`4173` 会触发 `EACCES`。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已执行 | 变更限定在 AUDIT-FIX 范围；上一轮 `FULL_SECURITY_AUDIT_REPORT.md` 仍为未跟踪新增报告 |
+| `git diff --stat` | 已执行 | 用于确认变更规模 |
+| `git diff -- scripts/gated_okx_dome_verify.ps1 docs/archive/scripts/gated_okx_dome_verify.ps1 frontend/playwright.config.ts frontend/tests/e2e/run-e2e.mjs docs/current/API.md docs/current/STATUS.md docs/current/TESTING.md docs/current/WORKLOG.md` | 已执行 | 用于确认 P1 与 E2E 端口修复 diff |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 module SUCCESS；`nq-app` 35 tests / 0 failures / 0 errors |
+| `cd frontend && npm run build` | 通过 | `tsc -b && vite build` 成功；仍有既有 chunk > 500 kB 警告 |
+| `cd frontend && npm run test:e2e` | 通过 | 首次在后端未启动时失败于 `127.0.0.1:18888 ECONNREFUSED`；启动后端 local profile 后复跑通过，Vite 监听 `127.0.0.1:5179`，结果 24 passed / 1 skipped / 0 failed |
+
+## 结论
+
+- FULL_SECURITY_AUDIT 登记的 P1 已关闭。
+- E2E `4173 EACCES` 端口问题已关闭，当前 E2E 使用 `5179` 并已通过完整回归。
+- 建议允许重新进入 GateJ-FREEZE 判断；GateJ-FREEZE 必须单独开工，只做 1h / 24h / 7d 连续运行验收与冻结。
+
+## 边界确认
+
+- 未新增后端业务功能。
+- 未新增前端业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未接入 AI。
+- 未修改交易下单、风控、撮合、恢复、调度核心逻辑。
+- 未执行真实 OKX / Binance 下单脚本。
+- 未读取或输出 `.env`、私钥、Token、交易所凭证明文。
