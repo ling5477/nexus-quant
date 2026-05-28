@@ -21,21 +21,17 @@ Copy-Item frontend/.env.example frontend/.env
 
 - `VITE_API_BASE_URL`：前端请求 base URL，默认 `/api`
 - `VITE_API_PROXY_TARGET`：Vite 本地代理目标，默认 `http://127.0.0.1:18888`
-- `E2E_USERNAME / E2E_PASSWORD`：Playwright 登录用账号，默认本地 profile 的 `admin / ChangeMe123!`
+- `E2E_USERNAME / E2E_PASSWORD`：Playwright 登录用账号，按本地环境显式配置，不在文档中提供默认密码。
 
 ## 2. 启动后端
 
-本地联调默认走 `backend/nq-app` 的 `local` profile，端口默认 `18888`：
+本地开发默认走 `backend/nq-app` 的 `local` profile，端口默认由后端配置控制：
 
 ```powershell
 mvn -f backend/pom.xml -pl nq-app spring-boot:run
 ```
 
-默认登录账号来自 `backend/nq-app/src/main/resources/application-local.yml`：
-
-- `admin / ChangeMe123!`
-- `operator / ChangeMe123!`
-- `viewer / ChangeMe123!`
+登录账号来自本地环境变量或 `backend/nq-app/src/main/resources/application-local.yml`，不要把真实密码写入仓库文档。
 
 ## 3. 启动前端
 
@@ -45,7 +41,7 @@ npm install
 npm run dev
 ```
 
-默认访问地址：`http://127.0.0.1:4173/login`
+默认访问地址：`http://127.0.0.1:5179/login`
 
 ## 4. 构建
 

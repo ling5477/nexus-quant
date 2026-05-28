@@ -188,7 +188,7 @@ export function EvaluationsPage() {
                     <PageHero
                         title="评估结果"
                         description="当前页面已对接真实列表与详情接口，并支持对单次回测运行执行最小评估动作。"
-                        badge="GateG-4B"
+                        badge="Evaluations"
                     />
                 </Card>
                 <Card

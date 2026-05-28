@@ -1,0 +1,44 @@
+spring:
+  config:
+    activate:
+      on-profile: freeze
+  datasource:
+    # Why: GateJ-FREEZE 服务器只允许通过 Docker Compose 内部网络访问 PostgreSQL；
+    # 连接信息必须由 `.env.freeze` 注入，避免把验收库凭据或公网地址写进仓库。
+    url: ${NQ_DB_URL:jdbc:postgresql://postgres:5432/nexus_quant}
+    username: ${NQ_DB_USER:nq_freeze}
+    password: ${NQ_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${NQ_APP_PORT:18888}
+
+nq:
+  account:
+    credentials:
+      master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY}
+      key-version: ${NQ_ACCOUNT_CREDENTIALS_KEY_VERSION:1}
+      verification-mode: ${NQ_ACCOUNT_CREDENTIALS_VERIFICATION_MODE:STRUCTURAL}
+  security:
+    issuer: ${NQ_SECURITY_ISSUER:nexus-quant-freeze}
+    secret: ${NQ_SECURITY_SECRET}
+    access-token-ttl: ${NQ_SECURITY_ACCESS_TOKEN_TTL:PT1H}
+    # Why: freeze 环境不能复用 local profile 的默认 seed 用户，否则服务器启动会把固定本地口令 hash
+    # 写回 users 表。验收用户必须由 scripts/seed-freeze-user.sh 通过环境变量生成 BCrypt hash 后写入。
+    users: []
+  gated:
+    verify:
+      enabled: ${NQ_GATED_VERIFY_ENABLED:false}
+  okx:
+    adapter:
+      stub-on-bootstrap-failure: ${NQ_OKX_ADAPTER_STUB_ON_BOOTSTRAP_FAILURE:true}
+    recovery:
+      enabled: ${NQ_OKX_RECOVERY_ENABLED:false}
+    ws:
+      enabled: ${NQ_OKX_WS_ENABLED:false}
+  binance:
+    ws:
+      enabled: ${NQ_BINANCE_WS_ENABLED:false}

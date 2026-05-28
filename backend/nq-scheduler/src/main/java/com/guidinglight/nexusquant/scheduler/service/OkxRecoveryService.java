@@ -98,7 +98,7 @@ public class OkxRecoveryService implements RecoveryService {
     @EventListener(ContextRefreshedEvent.class)
     public void onContextRefreshed() {
         if (!recoveryEnabled) {
-            // Why: GateG local 验收首先要保证 nq-app 能启动到登录阶段；
+            // Why: local 验收首先要保证 nq-app 能启动到登录阶段；
             // 本地未显式开启恢复链时，跳过启动恢复比在 ContextRefreshed 阶段直接拖死应用更可审计也更安全。
             OkxRuntimeConfig runtimeConfig = OkxRuntimeConfig.fromSystemEnv();
             org.slf4j.LoggerFactory.getLogger(OkxRecoveryService.class).warn(

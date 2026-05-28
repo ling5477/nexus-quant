@@ -104,7 +104,7 @@ public class ResearchConfigService {
     /**
      * 查询研究配置列表。
      * Why:
-     * GateG 联调前只提供最小列表面，因此只暴露 `sourceStrategyId` 这一真实存在的轻量过滤维度，
+     * 控制台联调早期只提供最小列表面，因此只暴露 `sourceStrategyId` 这一真实存在的轻量过滤维度，
      * 避免提前引入复杂 DSL、分页协议或额外聚合读模型。
      *
      * @param sourceStrategyId 上游策略定义 ID，可空

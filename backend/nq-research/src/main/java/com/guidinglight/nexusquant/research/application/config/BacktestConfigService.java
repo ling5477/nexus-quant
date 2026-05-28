@@ -122,7 +122,7 @@ public class BacktestConfigService {
     /**
      * 查询回测配置列表。
      * Why:
-     * GateG 联调前的回测配置页面既需要全量列表，也需要 researchConfig 维度的关联子列表，
+     * 控制台联调早期的回测配置页面既需要全量列表，也需要 researchConfig 维度的关联子列表，
      * 这里仅保留 parent 过滤，不提前扩展复杂搜索协议。
      *
      * @param researchConfigId 研究配置 ID，可空

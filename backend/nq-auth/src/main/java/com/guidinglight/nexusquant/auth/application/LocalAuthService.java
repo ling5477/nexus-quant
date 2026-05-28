@@ -23,7 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * <p>
  * Why:
  * Step 5 只要求后端具备真实认证基础，因此先采用本地账户 + BCrypt + JWT，
- * 为后续 GateG 登录页和当前用户接口提供真实后端基线。
+ * 为控制台登录页和当前用户接口提供真实后端基线。
  */
 public class LocalAuthService implements AuthService {
 

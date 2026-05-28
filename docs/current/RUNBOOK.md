@@ -59,4 +59,4 @@ python -m ruff check .
 - Playwright 浏览器未安装：在 `frontend` 下执行 `npx playwright install chromium`。
 - `nq-app` 无法连接 DB：检查 `NQ_DB_URL`、`NQ_DB_PORT`、`NQ_DB_NAME`、`NQ_DB_USER`、`NQ_DB_PASSWORD`。
 - `/api/auth/login` 失败：确认后端已启动、DB migration 已完成、local admin 用户配置与认证数据源一致。
-- `/api/auth/me` 失败：确认请求携带 `Authorization: Bearer <token>`，并先通过 `/api/auth/login` 获取 token。
+- `/api/auth/me` 失败：确认请求携带 `<redacted-authorization-header-example>`，并先通过 `/api/auth/login` 获取 token。

@@ -24,7 +24,7 @@ const initialSession = readStoredSession();
 /**
  * 鉴权 store 只保存 token 与当前用户最小信息。
  * Why:
- * GateG-1 需要登录态在刷新后恢复，但服务端主数据仍交给 TanStack Query；
+ * 控制台需要登录态在刷新后恢复，但服务端主数据仍交给 TanStack Query；
  * 因此这里只保存路由守卫和 header 必需的最小上下文，不把业务列表塞进全局状态。
  */
 export const useAuthStore = create<AuthState>((set) => ({

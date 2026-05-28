@@ -23,7 +23,7 @@ export default defineConfig({
     testDir: './tests/e2e',
     fullyParallel: false,
     // Why:
-    // GateG 冻结回归依赖单套 local 后端与 Vite dev server。
+    // E2E 回归依赖单套 local 后端与 Vite dev server。
     // 并发 worker 会把登录链、前端热服务和本地样本数据竞争放大成非确定性失败，
     // 串行 worker 更符合当前项目的“关键链路可重复验收”目标。
     workers: 1,

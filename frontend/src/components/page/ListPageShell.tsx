@@ -33,7 +33,7 @@ const placeholderColumns = [
 ];
 
 /**
- * ListPageShell 负责交付 GateG-1 的统一首屏壳子。
+ * ListPageShell 负责提供统一首屏壳子。
  * Why:
  * 当前批次只建立可运行的页面结构，不进入复杂业务字段；
  * 因此每个业务页共享同一套查询区骨架、表格占位和空状态，后续批次在此基础上替换真实列定义与查询表单即可。
@@ -45,7 +45,7 @@ export function ListPageShell({title, description, tableTitle}: ListPageShellPro
                 <PageHero
                     title={title}
                     description={description}
-                    tip="当前页面已接入正式路由、菜单与控制台布局。GateG-1 先交付查询区与列表区壳子，后续 GateG-3/4/5 再按实际接口补齐字段和操作。"
+                    tip="当前页面已接入正式路由、菜单与控制台布局，查询区与列表区结构已就位。"
                 />
             </Card>
             <Card

@@ -5,7 +5,7 @@
 
 ## 1. 当前阶段
 
-Current stage: PRE-FREEZE-CODE-AUDIT second pass completed, next GateJ-FREEZE
+Current stage: GateJ-FREEZE-FIX-SECOND-PASS completed, next redeploy GateJ-FREEZE-FIX release and run first-start acceptance
 
 Previous completed stages:
 
@@ -27,8 +27,11 @@ Previous completed stages:
 - DOC-CLEAN-2
 - PRE-FREEZE-CODE-AUDIT
 - PRE-FREEZE-CODE-AUDIT-SECOND-PASS
+- AUDIT-FIX
+- GateJ-FREEZE-FIX
+- GateJ-FREEZE-FIX-SECOND-PASS
 
-Next allowed: GateJ-FREEZE after review。PRE-FREEZE-CODE-AUDIT second pass 已完成（无 P0；E2E 与 Python 基线已由 Codex 实际重跑通过，详见 `docs/current/PRE_FREEZE_AUDIT_REPORT.md`）。GateJ-FREEZE 必须在本轮审查报告提交后单独开工。
+Next allowed: redeploy GateJ-FREEZE-FIX release and run first-start acceptance。GateJ-FREEZE-FIX-SECOND-PASS 已完成并允许重新部署，详见 `docs/current/GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md`。GateJ 仍未 completed，必须在服务器首次启动验收后再进入 1h / 24h / 7d 连续运行验收。
 
 GateJ-FREEZE 允许范围：
 - 1h / 24h / 7d 连续运行验收。

@@ -225,9 +225,9 @@ freeze-evidence/
 | `2.3245 MiB` | `frontend/node_modules/.vite/deps/@ant-design_icons.js` |
 | `1.7880 MiB` | `frontend/node_modules/typescript/lib/lib.dom.d.ts` |
 | `1.7643 MiB` | `frontend/node_modules/antd/dist/antd-with-locales.min.js` |
-| `1.7066 MiB` | `frontend/test-results/strategies-query-GateG-3-strategies-query-登录后查询策略列表并校验列表渲染-chromium/trace.zip` |
-| `1.6329 MiB` | `frontend/test-results/research-detail-GateG-4B-research-detail-登录后打开研究配置详情抽屉-chromium/trace.zip` |
-| `1.5468 MiB` | `frontend/test-results/research-query-GateG-3B-research-query-登录后查询研究配置列表并校验列表渲染-chromium/trace.zip` |
+| `1.7066 MiB` | `frontend/test-results/strategies-query-legacy console gate-3-strategies-query-登录后查询策略列表并校验列表渲染-chromium/trace.zip` |
+| `1.6329 MiB` | `frontend/test-results/research-detail-legacy console gate-4B-research-detail-登录后打开研究配置详情抽屉-chromium/trace.zip` |
+| `1.5468 MiB` | `frontend/test-results/research-query-legacy console gate-3B-research-query-登录后查询研究配置列表并校验列表渲染-chromium/trace.zip` |
 | `1.4676 MiB` | `frontend/node_modules/antd/dist/antd.min.js` |
 | `1.4207 MiB` | `frontend/node_modules/.vite/deps/react-dom_client.js.map` |
 | `1.3663 MiB` | `frontend/node_modules/@babel/parser/lib/index.js.map` |
@@ -236,7 +236,7 @@ freeze-evidence/
 | `1.3289 MiB` | `frontend/dist/assets/index-BZaufrIM.js` |
 | `1.2016 MiB` | `frontend/node_modules/vite/dist/node/chunks/node.js` |
 | `1.1656 MiB` | `frontend/test-results/trade-validation-query-Gat-72da0-tion-query-登录后查询订单并打开交易验证详情-chromium/trace.zip` |
-| `1.0915 MiB` | `frontend/test-results/strategies-detail-GateG-4A-strategies-detail-登录后打开策略详情抽屉-chromium/trace.zip` |
+| `1.0915 MiB` | `frontend/test-results/strategies-detail-legacy console gate-4A-strategies-detail-登录后打开策略详情抽屉-chromium/trace.zip` |
 
 判断：
 

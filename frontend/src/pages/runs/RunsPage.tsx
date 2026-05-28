@@ -191,7 +191,7 @@ export function RunsPage() {
                     <PageHero
                         title="运行记录"
                         description="当前页面已对接真实列表与详情接口。后端当前没有独立 run 写动作，本批按真实契约提供详情抽屉和不可操作动作区。"
-                        badge="GateG-4A"
+                        badge="Runs"
                     />
                 </Card>
                 <Card

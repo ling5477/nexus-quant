@@ -162,6 +162,12 @@ a {
   box-shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
 }
 
+.login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .loading-screen {
   min-height: 100vh;
   display: flex;

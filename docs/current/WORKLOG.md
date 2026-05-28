@@ -39,7 +39,7 @@
 - `docs/archive/legacy-root-docs/ROADMAP.md`
 - `docs/archive/legacy-root-docs/WORK.md`
 - `docs/archive/gate-inputs/GATEF_INPUTS.md`
-- `docs/archive/gate-inputs/GATEG_INPUTS.md`
+- `docs/archive/gate-inputs/LEGACY_CONSOLE_INPUTS.md`
 
 ## 配置修复清单
 
@@ -2072,3 +2072,119 @@ Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Cl
 - 未修改交易下单、风控、撮合、恢复、调度核心逻辑。
 - 未执行真实 OKX / Binance 下单脚本。
 - 未读取或输出 `.env`、私钥、Token、交易所凭证明文。
+
+---
+
+# Worklog: GateJ-FREEZE-FIX
+
+日期：2026-05-28
+
+## 本轮目标
+
+修复 GateJ-FREEZE ECS 部署后的两个阻塞问题：登录页仍展示本地联调敏感信息；服务器 `users.password_hash` 存在非 BCrypt 值导致 `/api/auth/login` 返回 401。本轮只允许修改登录页安全展示、auth 初始化/部署脚本、freeze 部署文档，不新增 API、不新增 migration、不接 AI/DH/真实交易。
+
+## 根因
+
+- 登录页仍保留旧本地联调说明，生产/freeze 构建中展示 legacy console gate、本地端口、默认账号密码、认证 API 和 Authorization header 示例。
+- 服务器日志 `BCrypt non-hash warning` 表明登录接口已到达认证逻辑，但数据库中的目标用户 `password_hash` 不是 BCrypt 格式；因此 Nginx 代理和接口连通性不是根因。
+
+## 修改文件清单
+
+- `frontend/src/pages/login/LoginPage.tsx`
+- `frontend/src/styles/index.css`
+- `frontend/src/router/RequireAuth.tsx`
+- `frontend/src/pages/dashboard/DashboardPage.tsx`
+- `frontend/src/components/page/ListPageShell.tsx`
+- `frontend/src/pages/{strategies,schedules,runs,research,backtests,evaluations,publishes}/*.tsx`
+- `frontend/src/utils/env.ts`
+- `frontend/src/store/auth-store.ts`
+- `backend/nq-app/src/main/resources/application-freeze.yml`
+- `deploy/.env.freeze.example`
+- `deploy/docker-compose.freeze.yml`
+- `scripts/seed-freeze-user.sh`
+- `scripts/build-freeze-release.ps1`
+- `docs/current/GATEJ_FREEZE_DEPLOYMENT.md`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+## 修复说明
+
+- 登录页只保留 `NexusQuant 控制台`、用户名、密码、登录按钮和错误提示；移除默认表单值，前端不再展示默认账号/密码。
+- 清理会进入 production bundle 的旧 legacy console gate 和认证协议展示文案，确保 `frontend/dist` 不含指定敏感串。
+- 新增 `freeze` profile，连接服务器 PostgreSQL、启用 Flyway、禁用 `local` 默认 seed users，避免启动时把固定本地用户 hash 写回服务器库。
+- 新增 `scripts/seed-freeze-user.sh`：从 `.env.freeze` 或进程环境读取 `NQ_FREEZE_ADMIN_USERNAME` / `NQ_FREEZE_ADMIN_PASSWORD`，使用 PostgreSQL 容器内 `pgcrypto` 生成 BCrypt hash，幂等 upsert 用户并授予 `ADMIN / OPERATOR / VIEWER`。
+- 更新 release 打包脚本，确保 `seed-freeze-user.sh` 进入 release 包，并在 `RELEASE_INFO.md` 写明 seed 步骤。
+- 更新 freeze 部署文档，固定顺序为：启动 compose -> seed freeze user -> curl 登录验证 -> 浏览器登录验证 -> 健康检查与连续验收。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module 全部 `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors |
+| `cd frontend && npm run build` | 通过 | `tsc -b && vite build` 成功；仍有既有 chunk > 500 kB 警告 |
+| `rg -n "<redacted-local-test-password>\|18888\|legacy console gate\|/api/auth/login\|<redacted-authorization-header-prefix>" frontend/dist` | 通过 | 无命中 |
+| `rg -n "/api/auth/me" frontend/dist` | 通过 | 无命中 |
+| `.\scripts\build-freeze-release.ps1` | 通过 | 生成 `release/nq-gatej-freeze-release.zip`；首次因沙箱无法写入本机 Maven repository tracking file 失败，提权重跑通过 |
+| `jar tf backend/nq-app/target/nq-app-0.1.0-SNAPSHOT.jar \| Select-String application-freeze.yml` | 通过 | jar 内包含 `BOOT-INF/classes/application-freeze.yml` |
+
+## 新 release 包
+
+- `release/nq-gatej-freeze-release.zip`
+- 大小：约 29.5 MiB。
+- release 包不提交 Git；`.gitignore` 已忽略 `release/`。
+
+## 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未接入 AI、DH 或真实交易。
+- 未启动真实交易、AI、DH。
+- 未提交真实密码、release zip、jar、dist、logs、dump 或 freeze-evidence。
+- GateJ 仍未写为 completed；需要重新部署新 release 后再做首次启动验收。
+
+---
+
+# Worklog: GateJ-FREEZE-FIX-SECOND-PASS
+
+日期：2026-05-28
+
+## 本轮目标
+
+复查 GateJ-FREEZE-FIX 后是否仍残留生产/freeze 不应出现的登录页敏感信息、默认账号密码、local profile、错误认证初始化或 release/Git 污染。本轮只允许修复审查发现的 P0/P1/P2 阻塞项，不新增业务功能、API、migration，不接 AI/DH/真实交易。
+
+## 本轮修复
+
+- 清理 `frontend/.env.example` 和 `frontend/README.md` 中的默认测试密码展示。
+- 清理 `frontend/vite.config.*`、`frontend/playwright.config.*` 中旧 legacy console gate 注释。
+- 清理后端注释和 E2E suite 名称中的旧 legacy console gate 标签，不改变业务逻辑或测试断言。
+- 新增 `docs/current/GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md`。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已执行 | 工作区仅包含 GateJ-FREEZE-FIX 与本轮 second pass 范围修改；release/dist 等产物未进入 Git |
+| 源码敏感词扫描 | 已执行 | 阻塞残留已修复；剩余命中均为允许项或历史文档记录 |
+| `rg ... frontend/dist` | 通过 | 无敏感/旧联调关键词命中 |
+| release zip 解压后 `rg ... release/second-pass-scan` | 通过 | 除允许的 `18888` 部署端口配置外，无敏感/旧联调关键词命中 |
+| `.gitignore` / `git ls-files` | 通过 | 未发现 release/dist/env/jar/zip/dump/log/evidence 追踪污染 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors |
+| `cd frontend && npm run build` | 通过 | Vite build 成功；仍有既有 chunk > 500 kB 警告 |
+| `.\scripts\build-freeze-release.ps1` | 通过 | 重新生成 `release/nq-gatej-freeze-release.zip` |
+
+## 结论
+
+- `GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md` 结论为 PASS。
+- 允许重新部署 GateJ-FREEZE-FIX release。
+- GateJ 仍未 completed；必须在服务器重新部署后执行首次启动验收，再进入 1h / 24h / 7d 连续运行验收。
+
+## 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未接入 AI、DH 或真实交易。
+- 未启动真实交易。
+- 未修改交易核心状态机、策略核心算法或回测核心算法。

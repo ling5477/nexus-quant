@@ -7,7 +7,7 @@
 - 云服务器：阿里云 ECS，最低 2 核 2G。
 - 操作系统：Linux，建议 Ubuntu 22.04 LTS 或同等版本。
 - 运行时：Docker Engine + Docker Compose v2；部署脚本同时兼容 legacy `docker-compose`。
-- 网络：只开放前端端口 `5179`（或按安全组改为 `80`）；PostgreSQL 不开放公网；`nq-app` 的 `18888` 只绑定宿主机 `127.0.0.1`。
+- 网络：只开放前端端口 `5179`（或按安全组改为 `80`），且安全组只允许本人 IP 访问；PostgreSQL 不开放公网；`nq-app` 的 `18888` 只绑定宿主机 `127.0.0.1`。
 - 磁盘：建议至少 40 GB，保留数据库、日志、freeze-evidence 与备份空间。
 
 ## 2. 目录结构
@@ -70,6 +70,7 @@ nq-gatej-freeze-release/
   docker-compose.freeze.yml
   nginx/default.conf
   scripts/deploy-freeze.sh
+  scripts/seed-freeze-user.sh
   scripts/health-check.sh
   scripts/backup-db.sh
   scripts/freeze-health-loop.sh
@@ -113,13 +114,13 @@ chmod 600 .env.freeze
 - `NQ_DB_PASSWORD`
 - `NQ_SECURITY_SECRET`
 - `NQ_ACCOUNT_CREDENTIALS_MASTER_KEY`
-- `NQ_LOCAL_ADMIN_PASSWORD_HASH`
-- `NQ_LOCAL_OPERATOR_PASSWORD_HASH`
-- `NQ_LOCAL_VIEWER_PASSWORD_HASH`
+- `NQ_FREEZE_ADMIN_USERNAME`
+- `NQ_FREEZE_ADMIN_PASSWORD`
 
 必须保持：
 
 - `NQ_DB_URL=jdbc:postgresql://postgres:5432/nexus_quant`
+- `NQ_PROFILE=freeze`
 - `NQ_AI_ENABLED=false`
 - `NQ_DH_ENABLED=false`
 - `NQ_REAL_TRADING_ENABLED=false`
@@ -127,7 +128,7 @@ chmod 600 .env.freeze
 - `NQ_OKX_RECOVERY_ENABLED=false`
 - `NQ_BINANCE_WS_ENABLED=false`
 
-如果 bcrypt hash 或其他值包含 `$`、空格等特殊字符，建议在 `.env.freeze` 中使用单引号或双引号包裹，避免 shell 工具误解析。
+`.env.freeze.example` 只放占位符。真实 `.env.freeze` 只保存在服务器，不提交 Git。`NQ_FREEZE_ADMIN_PASSWORD` 由 `scripts/seed-freeze-user.sh` 在服务器内通过 PostgreSQL `pgcrypto` 生成 BCrypt hash 后写入 `users.password_hash`；前端页面和 release 文档不得展示真实密码或默认密码。
 
 Docker 镜像需要提前加载到服务器本地：
 
@@ -139,21 +140,55 @@ docker image inspect nginx:alpine
 
 如果镜像不存在，先通过受控离线方式加载镜像；GateJ-FREEZE 部署脚本不会主动拉取镜像。
 
-## 7. 启动服务
+## 7. 启动与 seed freeze user
 
 ```bash
 cd /opt/nexus-quant
 ./scripts/deploy-freeze.sh
+./scripts/seed-freeze-user.sh
 ```
 
-脚本会：
+`deploy-freeze.sh` 会：
 
 - 检查 `.env.freeze` 是否存在。
 - 检查 `postgres:16`、`eclipse-temurin:21-jre`、`nginx:alpine` 是否已在本地。
 - 创建 `data/`、`logs/`、`freeze-evidence/`、`backups/` 目录。
 - 执行 `docker compose --env-file .env.freeze -f docker-compose.freeze.yml up -d`；如果服务器只有 `docker-compose`，脚本会自动降级。
 
-## 8. 健康检查
+`seed-freeze-user.sh` 会：
+
+- 从 `.env.freeze` 或当前进程环境读取 `NQ_FREEZE_ADMIN_USERNAME` / `NQ_FREEZE_ADMIN_PASSWORD`。
+- 使用 PostgreSQL 容器内置 `pgcrypto` 生成 BCrypt hash。
+- 幂等 upsert `users`，启用该用户，并授予 `ADMIN / OPERATOR / VIEWER`。
+- 校验写入结果满足 BCrypt 格式且能通过同一明文匹配。
+
+本轮根因是服务器 `users.password_hash` 存在非 BCrypt 值，触发 `BCrypt non-hash warning`，因此必须在服务启动并完成 Flyway 后执行 seed，再做登录验证。
+
+## 8. 登录验证
+
+### 8.1 curl 登录接口验证
+
+在服务器本机执行，使用 `.env.freeze` 中的验收用户名和密码替换占位符，不要把真实密码写入 Git、截图或公开日志：
+
+```bash
+curl -fsS 'http://127.0.0.1:18888/api/auth/login' \
+  -H 'Content-Type: application/json' \
+  --data '{"username":"<NQ_FREEZE_ADMIN_USERNAME>","password":"<NQ_FREEZE_ADMIN_PASSWORD>"}'
+```
+
+预期：返回登录 token JSON；若仍为 401，先检查 `scripts/seed-freeze-user.sh` 是否成功执行，再查看 `logs/nq-app/application.log` 中是否仍存在 `Encoded password does not look like BCrypt`。
+
+### 8.2 浏览器登录验证
+
+浏览器访问：
+
+```text
+http://<server-ip>:5179/
+```
+
+登录页只能展示 NexusQuant 控制台、用户名、密码、登录按钮、错误提示和 traceId。不得展示 legacy console gate、本地端口、默认账号密码、登录 API 路径或 Authorization header 示例。
+
+## 9. 健康检查
 
 一次性检查：
 
@@ -182,9 +217,17 @@ http://<server-ip>:5179/
 http://<server-ip>/
 ```
 
-## 9. 1h / 24h / 7d 验收流程
+## 10. 1h / 24h / 7d 验收流程
 
-### 9.1 验收前
+GateJ-FREEZE 首次启动验收顺序必须固定为：
+
+1. `docker compose up -d postgres/app/nginx`，通过 `./scripts/deploy-freeze.sh` 执行。
+2. `seed freeze user`，通过 `./scripts/seed-freeze-user.sh` 执行。
+3. `curl` 登录接口验证。
+4. 浏览器登录验证。
+5. 健康检查、备份和连续采样。
+
+### 10.1 验收前
 
 ```bash
 cd /opt/nexus-quant
@@ -192,7 +235,7 @@ cd /opt/nexus-quant
 ./scripts/health-check.sh | tee freeze-evidence/health/before-freeze-health.log
 ```
 
-### 9.2 启动连续采样
+### 10.2 启动连续采样
 
 ```bash
 cd /opt/nexus-quant
@@ -208,7 +251,7 @@ echo $! > freeze-evidence/health/freeze-health-loop.pid
 
 每次记录包含时间、actuator health、`docker ps`、`free -h`、`df -h`。
 
-### 9.3 1 小时验收
+### 10.3 1 小时验收
 
 ```bash
 cd /opt/nexus-quant
@@ -222,7 +265,7 @@ cd /opt/nexus-quant
 - 无 CRITICAL 告警。
 - 无 FAILED 调度触发。
 
-### 9.4 24 小时验收
+### 10.4 24 小时验收
 
 ```bash
 cd /opt/nexus-quant
@@ -236,7 +279,7 @@ cd /opt/nexus-quant
 - 失败触发 <= 2 次。
 - 任何失败必须记录原因，不能写成通过。
 
-### 9.5 7 天验收
+### 10.5 7 天验收
 
 ```bash
 cd /opt/nexus-quant
@@ -253,7 +296,7 @@ cd /opt/nexus-quant
 
 验收记录使用 `docs/current/GATEJ_FREEZE_ACCEPTANCE_TEMPLATE.md` 另存填写。GateJ 整体未通过前，不创建 `docs/gates/gate-j/`。
 
-## 10. 日志和证据包保留规则
+## 11. 日志和证据包保留规则
 
 必须保留在服务器或外部安全介质：
 
@@ -274,7 +317,7 @@ cd /opt/nexus-quant
 - `freeze-evidence`
 - `.env.freeze`
 
-## 11. 禁止事项
+## 12. 禁止事项
 
 - 不改 Java 业务代码。
 - 不改 React 业务代码。

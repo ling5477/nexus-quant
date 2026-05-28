@@ -36,7 +36,7 @@ services:
     env_file:
       - ./.env.freeze
     environment:
-      NQ_PROFILE: "${NQ_PROFILE:-local}"
+      NQ_PROFILE: "${NQ_PROFILE:-freeze}"
       NQ_APP_PORT: "${NQ_APP_PORT:-18888}"
       NQ_DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus_quant}"
       NQ_DB_USER: "${POSTGRES_USER:-nq_freeze}"

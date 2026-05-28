@@ -19,7 +19,7 @@ public interface ResearchConfigRepository {
     /**
      * 按 sourceStrategyId 过滤研究配置。
      * Why:
-     * GateG 联调前的研究配置列表页至少需要一个稳定的上游策略过滤维度，
+     * 控制台联调早期的研究配置列表页至少需要一个稳定的上游策略过滤维度，
      * 同时保留 `null` 表示“查询全部”的最小查询口径。
      *
      * @param sourceStrategyId 上游策略定义 ID，可空

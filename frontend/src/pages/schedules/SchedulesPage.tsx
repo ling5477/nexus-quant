@@ -167,7 +167,7 @@ export function SchedulesPage() {
                     <PageHero
                         title="调度计划"
                         description="当前页面已对接真实列表与详情接口，并支持在详情抽屉中执行最小启停动作。"
-                        badge="GateG-4A"
+                        badge="Schedules"
                     />
                 </Card>
                 <Card

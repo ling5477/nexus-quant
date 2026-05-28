@@ -14,7 +14,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-3-WO completed
 - DOC-CLEAN-2 completed
 - PRE-FREEZE-CODE-AUDIT second pass completed（无 P0；E2E 与 Python 基线已由 Codex 实际重跑通过，详见 `docs/current/PRE_FREEZE_AUDIT_REPORT.md`）
-- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）；必须在本轮审查报告提交后单独开工
+- GateJ-FREEZE-FIX second pass completed（详见 `docs/current/GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md`）
+- Next: 重新部署 GateJ-FREEZE-FIX release 后执行首次启动验收，再进入 1h/24h/7d 连续运行验收 + 冻结
 - AI not started
 - GateK not started
 

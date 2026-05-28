@@ -2,7 +2,7 @@ import {expect, test} from 'playwright/test';
 
 import {loginToConsole} from '@/../tests/e2e/support';
 
-test.describe('GateG-4A strategies detail', () => {
+test.describe('strategies detail', () => {
     test('登录后打开策略详情抽屉', async ({page}) => {
         await loginToConsole(page);
 

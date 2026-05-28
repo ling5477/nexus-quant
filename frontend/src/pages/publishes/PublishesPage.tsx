@@ -188,7 +188,7 @@ export function PublishesPage() {
                     <PageHero
                         title="发布结果"
                         description="当前页面已对接真实列表与详情接口，并支持对单次回测运行执行最小发布动作。"
-                        badge="GateG-4B"
+                        badge="Publishes"
                     />
                 </Card>
                 <Card

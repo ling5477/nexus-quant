@@ -257,7 +257,7 @@ export function BacktestsPage() {
                     <PageHero
                         title="回测配置"
                         description="当前页面已对接真实列表与详情接口，并提供最小新建动作闭环。"
-                        badge="GateG-4B"
+                        badge="Backtests"
                     />
                 </Card>
                 <Card

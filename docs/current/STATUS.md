@@ -6,7 +6,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
-- GateG completed。
+- legacy console gate completed。
 - RC1 completed and frozen。
 - GateH-PRE completed。
 - DOC-CLEAN completed。
@@ -32,20 +32,24 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - PRE-FREEZE-CODE-AUDIT completed。
 - PRE-FREEZE-CODE-AUDIT second pass completed。
 - AUDIT-FIX completed。
+- GateJ-FREEZE-FIX completed。
+- GateJ-FREEZE-FIX-SECOND-PASS completed。
 
 ## 当前执行状态
 
-- Current stage: AUDIT-FIX completed。
+- Current stage: GateJ-FREEZE-FIX-SECOND-PASS completed。
 - GateJ-3-WO 已完成。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成：无 P0；Claude 第一轮 P1-1 / P1-2 验证缺口已由 Codex 实际重跑关闭；P1-3 不阻塞；P1-4 已闭环 GATEJ_FREEZE_ACCEPTANCE_TEMPLATE。详见 `PRE_FREEZE_AUDIT_REPORT.md` 与 `PRE_FREEZE_AUDIT_FIX_PLAN.md`。
 - FULL_SECURITY_AUDIT 报告中的 P1 已由 AUDIT-FIX 关闭：旧 OKX dome 验收脚本已移出 `scripts/` 可执行区并归档到 `docs/archive/scripts/`，原路径只保留阻断 stub；`/__gated/**` 仍仅为历史路径。
+- GateJ-FREEZE-FIX 已修复 ECS freeze 登录页敏感信息暴露与登录 401 根因：生产构建登录页不再展示 legacy console gate、本地端口、默认账号密码、认证 API 与 Authorization header 示例；freeze profile 不再执行 local 默认用户 seed；新增 `scripts/seed-freeze-user.sh` 通过服务器环境变量生成 BCrypt hash 并写入验收用户。
+- GateJ-FREEZE-FIX-SECOND-PASS 已完成：`frontend/dist` 与新 release 解压内容未命中敏感登录页泄露串；freeze compose/template 使用 `NQ_PROFILE=freeze`；Git 未追踪 release/dist/env/jar/zip/dump/log/evidence；详见 `GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md`。
 - E2E/Vite 本地端口已从 `4173` 调整为 `5179`，避开 Windows TCP excluded range `4141-4240`；AUDIT-FIX 完整 E2E 已通过。
 - 后端 `mvn -f backend/pom.xml test` BUILD SUCCESS（23 个 module SUCCESS；`nq-app` 35 tests / 0 failures / 0 errors）。
 - 前端 `npm run build` 通过（仍有 Vite chunk > 500 kB P2 警告）。
 - E2E `npm run test:e2e` 本轮实际执行通过：24 passed / 1 skipped / 0 failed；唯一 skipped 为未配置 `E2E_TRADE_ORDER_ID` 的既有订单详情链路，GateJ 主链未 skip。
 - Python `pytest / mypy / ruff` 本轮实际执行通过：pytest 2 passed，mypy 8 source files no issues，ruff all checks passed。
 - Flyway 当前版本 V25（gate j3 paper run recovery stability）。
-- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）；只能在本轮审查报告提交后单独开工。
+- Next: 重新部署 GateJ-FREEZE release 后执行首次启动验收，再进入 1h/24h/7d 连续运行验收 + 冻结。
 - AI 尚未开始。AI 最早 GateK 才允许进入信号层。
 - GateJ 不是 AI 阶段。GateJ 只做 Paper Trading 稳定运行。
 

@@ -2,7 +2,7 @@ import {expect, test} from 'playwright/test';
 
 import {loginToConsole} from '@/../tests/e2e/support';
 
-test.describe('GateG-3B research query', () => {
+test.describe('research query', () => {
     test('登录后查询研究配置列表并校验列表渲染', async ({page}) => {
         await loginToConsole(page);
 

@@ -65,7 +65,7 @@ public interface BacktestConfigRepository {
     /**
      * 按 researchConfigId 过滤回测配置，`null` 表示查询全部。
      * Why:
-     * GateG 联调前需要同时支持“全量列表页”和“研究配置详情下的子列表”，
+     * 控制台联调早期需要同时支持“全量列表页”和“研究配置详情下的子列表”，
      * 因此这里把是否按 parent 过滤收口到同一个仓储契约里，避免 controller 侧拼装分支。
      *
      * @param researchConfigId 研究配置 ID，可空

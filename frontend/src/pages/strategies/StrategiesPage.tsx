@@ -251,7 +251,7 @@ export function StrategiesPage() {
                     <PageHero
                         title="策略定义"
                         description="当前页面已对接真实 `GET /api/strategies` 列表接口，并支持打开详情与执行最小启停动作。"
-                        badge="GateG-4A"
+                        badge="Strategies"
                     />
                 </Card>
                 <Card

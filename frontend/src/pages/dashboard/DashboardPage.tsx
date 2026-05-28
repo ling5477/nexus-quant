@@ -21,7 +21,7 @@ export function DashboardPage() {
                 <PageHero
                     title="控制台总览"
                     description="当前批次已经建立登录闭环、统一请求封装、鉴权守卫和页面路由。Dashboard 作为受保护入口，展示用户上下文与主要导航。"
-                    badge="GateG-1 Ready"
+                    badge="Console Ready"
                 />
             </Card>
             <Row gutter={[16, 16]}>
@@ -52,7 +52,7 @@ export function DashboardPage() {
                     >
                         <List
                             dataSource={[
-                                '统一认证：POST /api/auth/login + Bearer token + GET /api/auth/me',
+                                '统一认证：登录态由服务端校验并由前端集中恢复',
                                 '统一请求封装：所有 API 调用走 Axios instance',
                                 '统一错误口径：401 回登录、403/500 统一通知',
                                 '统一状态边界：服务端数据走 TanStack Query，鉴权态走 Zustand',
