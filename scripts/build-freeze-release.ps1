@@ -161,11 +161,12 @@ $releaseInfo = @"
 
 1. Copy the extracted package to `/opt/nexus-quant`.
 2. Copy `.env.freeze.example` to `.env.freeze` and fill placeholders outside Git.
-3. Run `chmod +x scripts/*.sh`.
-4. Run `./scripts/deploy-freeze.sh`.
-5. Run `./scripts/seed-freeze-user.sh`.
-6. Verify login with `curl` and a browser before starting freeze acceptance.
-7. Run `./scripts/health-check.sh`.
+3. Do not `source .env.freeze`; if the freeze password contains shell metacharacters, leave the password placeholder and enter it interactively in the seed script.
+4. Run `chmod +x scripts/*.sh`.
+5. Run `./scripts/deploy-freeze.sh`.
+6. Run `./scripts/seed-freeze-user.sh`.
+7. Verify login with `curl` and a browser before starting freeze acceptance.
+8. Run `./scripts/health-check.sh`.
 "@
 
 Set-Content -LiteralPath (Join-Path $releaseDir "RELEASE_INFO.md") -Value $releaseInfo -Encoding UTF8

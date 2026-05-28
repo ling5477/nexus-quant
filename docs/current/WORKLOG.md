@@ -2188,3 +2188,55 @@ Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Cl
 - 未接入 AI、DH 或真实交易。
 - 未启动真实交易。
 - 未修改交易核心状态机、策略核心算法或回测核心算法。
+
+---
+
+# Worklog: GateJ-FREEZE-FIX-3
+
+日期：2026-05-28
+
+## 本轮目标
+
+修复 ECS 实测发现的 `scripts/seed-freeze-user.sh` 问题：特殊字符密码导致手工 `source .env.freeze` 报 Bash 语法错误，以及 seed SQL 使用 `nq_freeze_seed_user_id` 临时表后出现 relation 不存在。本轮只修改 seed 脚本、freeze 部署模板/文档和验证记录，不新增业务功能、API、migration，不接 AI/DH/真实交易。
+
+## 根因
+
+- `.env.freeze` 是 Docker Compose/env 模板，不是 Bash 脚本；密码包含 `>`、`)` 等 shell 特殊字符时，手工 `source .env.freeze` 会让 Bash 按脚本语法解释密码，导致 syntax error 或泄露风险。
+- 旧 seed SQL 使用 `CREATE TEMP TABLE ... ON COMMIT DROP` 保存用户 id；PostgreSQL autocommit 下该临时表会在 statement 提交后被 drop，后续 `DELETE/INSERT user_roles` 再引用会报 `relation "nq_freeze_seed_user_id" does not exist`。
+
+## 修改文件清单
+
+- `scripts/seed-freeze-user.sh`
+- `deploy/.env.freeze.example`
+- `scripts/build-freeze-release.ps1`
+- `docs/current/GATEJ_FREEZE_DEPLOYMENT.md`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+## 修复说明
+
+- `seed-freeze-user.sh` 不再使用临时表，也不依赖跨 statement 的 CTE 结果。
+- seed SQL 改为单个 `psql` session/transaction：设置 session-local 参数、确保角色存在、upsert 指定 freeze 用户、设置 `enabled=true`、重绑 `ADMIN / OPERATOR / VIEWER`，并校验 BCrypt hash 可由同一明文匹配。
+- 密码读取改为 `.env.freeze` / 进程环境 / 交互式隐藏输入三选一；当 `.env.freeze` 保持 `CHANGE_ME` 占位符时，脚本会在 TTY 下提示输入密码，不 echo 明文。
+- `.env.freeze.example` 和部署文档明确禁止手工 `source .env.freeze`；如密码包含 shell 特殊字符，推荐保留占位符并通过 seed 脚本交互式输入。
+- `RELEASE_INFO.md` 生成内容同步说明禁止 `source .env.freeze` 和交互式 seed 密码流程。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `bash -n scripts/seed-freeze-user.sh` | 未通过当前本机执行 | 当前 Windows `bash` 是未安装发行版的 WSL stub；本机无 Git Bash，Docker daemon 未运行。需在 Linux ECS 或可用 Bash 环境复跑。 |
+| `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+| `cd frontend && npm run build` | 通过 | Vite build 成功；仍有既有 chunk > 500 kB 警告。 |
+| `.\scripts\build-freeze-release.ps1` | 通过 | 重新生成 `release/nq-gatej-freeze-release.zip`。 |
+
+## 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未接入 AI、DH 或真实交易。
+- 未启动真实交易。
+- 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
