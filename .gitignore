@@ -45,6 +45,7 @@ nohup.out
 .env.*
 !.env.example
 !frontend/.env.example
+!deploy/.env.freeze.example
 
 # Local secrets / certificates
 Private_key.txt
@@ -69,3 +70,4 @@ Private_key.txt
 artifacts/
 backups/
 freeze-evidence/
+release/

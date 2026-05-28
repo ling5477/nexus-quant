@@ -1,0 +1,80 @@
+# GateJ-FREEZE minimal deployment stack.
+#
+# Why:
+# - The server must only run the prebuilt release package; no Maven, npm, or
+#   frontend dependency download happens on the ECS host.
+# - PostgreSQL stays inside the Docker network and is not exposed to the public
+#   Internet.
+# - nq-app is bound to 127.0.0.1 on the host for local health checks, while
+#   nginx talks to it through the internal Docker service name.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: nq-freeze-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-nexus_quant}"
+      POSTGRES_USER: "${POSTGRES_USER:-nq_freeze}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      TZ: "${TZ:-Asia/Shanghai}"
+    volumes:
+      - ${NQ_BASE_DIR:-/opt/nexus-quant}/data/postgres:/var/lib/postgresql/data
+      - ${NQ_BASE_DIR:-/opt/nexus-quant}/logs/postgres:/var/log/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - nq-freeze
+
+  nq-app:
+    image: eclipse-temurin:21-jre
+    container_name: nq-freeze-app
+    restart: unless-stopped
+    env_file:
+      - ./.env.freeze
+    environment:
+      NQ_PROFILE: "${NQ_PROFILE:-local}"
+      NQ_APP_PORT: "${NQ_APP_PORT:-18888}"
+      NQ_DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus_quant}"
+      NQ_DB_USER: "${POSTGRES_USER:-nq_freeze}"
+      NQ_DB_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      LOGGING_FILE_NAME: /opt/nexus-quant/logs/nq-app/application.log
+      TZ: "${TZ:-Asia/Shanghai}"
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /opt/nexus-quant/logs/nq-app
+        exec java ${JAVA_OPTS:-"-Xms256m -Xmx768m"} -jar /opt/nexus-quant/app/nq-app.jar
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${NQ_APP_HOST_PORT:-18888}:18888"
+    volumes:
+      - ./app/nq-app.jar:/opt/nexus-quant/app/nq-app.jar:ro
+      - ${NQ_BASE_DIR:-/opt/nexus-quant}/logs/nq-app:/opt/nexus-quant/logs/nq-app
+    networks:
+      - nq-freeze
+
+  nginx:
+    image: nginx:alpine
+    container_name: nq-freeze-nginx
+    restart: unless-stopped
+    depends_on:
+      - nq-app
+    ports:
+      - "${FRONTEND_HTTP_PORT:-5179}:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${NQ_BASE_DIR:-/opt/nexus-quant}/logs/nginx:/var/log/nginx
+    networks:
+      - nq-freeze
+
+networks:
+  nq-freeze:
+    name: nq-freeze
