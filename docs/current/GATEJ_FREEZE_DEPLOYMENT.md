@@ -166,9 +166,12 @@ cd /opt/nexus-quant
 - 自行解析 `.env.freeze`，不会要求也不允许手工 `source .env.freeze`。
 - 从 `.env.freeze` 或当前进程环境读取 `NQ_FREEZE_ADMIN_USERNAME`。
 - 从 `.env.freeze`、当前进程环境或交互式隐藏输入读取 `NQ_FREEZE_ADMIN_PASSWORD`。
+- 交互式隐藏输入时，密码明文不会写入 stdout/stderr；脚本只输出提示名和换行，不输出密码值。
 - 使用 PostgreSQL 容器内置 `pgcrypto` 生成 BCrypt hash。
 - 在单个 `psql` session 内幂等 upsert `users`，启用该用户，并授予 `ADMIN / OPERATOR / VIEWER`；脚本不使用跨 session 的临时表或 CTE 结果。
 - 校验写入结果满足 BCrypt 格式且能通过同一明文匹配。
+
+GateJ-FREEZE-FIX-4 已修复交互式隐藏输入路径：`seed-freeze-user.sh` 内部通过命令替换接收密码，视觉换行必须写入 stderr，不能写入 stdout；否则正常单行密码前会混入换行并被误判为多行。
 
 本轮根因是服务器 `users.password_hash` 存在非 BCrypt 值，触发 `BCrypt non-hash warning`，因此必须在服务启动并完成 Flyway 后执行 seed，再做登录验证。
 

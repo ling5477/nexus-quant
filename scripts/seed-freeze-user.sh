@@ -75,7 +75,11 @@ read_secret_value() {
       # metacharacters. Interactive input avoids requiring `source .env.freeze`
       # or fragile one-line shell assignments during ECS acceptance.
       read -r -s -p "Enter ${key}: " value
-      echo
+      # Keep stdout reserved for the secret return value. This function is
+      # called through command substitution; writing the visual newline to
+      # stdout would become part of the captured password and fail single-line
+      # validation even when the operator typed a normal one-line password.
+      printf '\n' >&2
     fi
   fi
   if [[ -z "${value}" || "${value}" == CHANGE_ME* ]]; then

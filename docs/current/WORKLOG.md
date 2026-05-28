@@ -2240,3 +2240,55 @@ Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Cl
 - 未接入 AI、DH 或真实交易。
 - 未启动真实交易。
 - 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
+
+---
+
+# Worklog: GateJ-FREEZE-FIX-4
+
+日期：2026-05-28
+
+## 本轮目标
+
+修复 `scripts/seed-freeze-user.sh` 的交互式隐藏输入路径。服务器实测在 `.env.freeze` 删除/注释 `NQ_FREEZE_ADMIN_PASSWORD` 且进程环境 unset 后，交互输入正常密码仍被误判为多行，阻塞 GateJ-FREEZE 首次启动验收。
+
+## 根因
+
+`FREEZE_PASSWORD="$(read_secret_value "NQ_FREEZE_ADMIN_PASSWORD")"` 通过命令替换捕获函数 stdout。FIX-3 中 `read -r -s -p ...` 后使用 `echo` 输出视觉换行，该换行写到了 stdout，被命令替换捕获到密码值前部；随后单行校验检测到真实换行，报 `NQ_FREEZE_ADMIN_PASSWORD must be a single-line value`。这不是密码本身多行，而是交互提示换行污染了返回值。
+
+## 修改文件清单
+
+- `scripts/seed-freeze-user.sh`
+- `docs/current/GATEJ_FREEZE_DEPLOYMENT.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+## 修复说明
+
+- 将 `read_secret_value` 中交互输入后的视觉换行从 `echo` 改为 `printf '\n' >&2`。
+- 保持 stdout 只输出密码值本身，避免命令替换捕获提示换行。
+- 密码明文仍不写入 stdout/stderr；stderr 只输出提示名和换行。
+- 保持三种密码来源：进程环境、`.env.freeze`、交互式隐藏输入。
+- 保持单个 `psql` session + transaction，不新增 API、migration 或业务功能。
+
+## 验证记录
+
+- 本地 `bash -n scripts/seed-freeze-user.sh` 仍无法执行：当前 Windows `bash` 是未安装发行版的 WSL stub，且本机无 Git Bash、Docker daemon 未运行。
+- 本地 `git diff --check` 通过。
+- 本地 `mvn -f backend/pom.xml test` 通过：Reactor `BUILD SUCCESS`，`nq-app` 35 tests / 0 failures / 0 errors。
+- 本地 `cd frontend && npm run build` 通过：仍有既有 Vite chunk size 警告。
+- 本地 `.\scripts\build-freeze-release.ps1` 通过：重新生成 `release/nq-gatej-freeze-release.zip`。
+- ECS 必须复验：
+  - `bash -n scripts/seed-freeze-user.sh`
+  - `unset NQ_FREEZE_ADMIN_PASSWORD` 后交互式执行 seed 成功
+  - 进程环境方式执行 seed 成功
+  - `hash_prefix` 为 `$2a$` 或 `$2b$`
+  - `curl` 登录返回 200，且验证命令不打印 token
+
+## 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未接入 AI、DH 或真实交易。
+- 未启动真实交易。
+- 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
