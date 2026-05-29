@@ -2243,6 +2243,76 @@ Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Cl
 
 ---
 
+# Worklog: GateJ-FREEZE-FIX-5
+
+日期：2026-05-29
+
+## 本轮目标
+
+修复 FIX-4 release 在 ECS 上暴露出的 `.sh` CRLF 换行问题。服务器实测 `backup-db.sh` / `freeze-health-loop.sh` 运行时报 `invalid option name line 2: set: pipefail`，且执行 `sed -i 's/\r$//' scripts/*.sh` 后全部 `bash -n` 通过，说明 release artifact 不可复现。本轮只修换行策略与 release 打包兜底，不新增 API、migration 或业务功能，不接入 AI/DH/真实交易。
+
+## 根因
+
+- 仓库缺少 `.gitattributes` 对 shell/yaml/PowerShell 文件的跨平台换行约束，Windows 环境下脚本可能被写入或保留为 CRLF。
+- `scripts/build-freeze-release.ps1` 旧逻辑只把脚本复制到 staging 目录后直接压缩，没有在 zip 前对 staging 内 `scripts/*.sh` 做 LF 归一化。
+- Linux Bash 会把 CRLF 中的 `\r` 作为 `set -euo pipefail` 参数内容的一部分，导致 `pipefail\r` 被解析为非法 option name，进而阻断 ECS 冻结验收脚本启动。
+
+## 修改文件清单
+
+- `.gitattributes`
+- `scripts/build-freeze-release.ps1`
+- `scripts/seed-freeze-user.sh`（仅换行从 CRLF 归一为 LF）
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+## 修复说明
+
+- 新增 `.gitattributes`，强制 `*.sh text eol=lf`、`*.yml text eol=lf`、`*.yaml text eol=lf`、`*.ps1 text eol=crlf`。
+- 仓库 `scripts/*.sh` 已机械转换为 LF；本轮发现 `seed-freeze-user.sh` 含 CRLF，其余脚本已是 LF。
+- `scripts/build-freeze-release.ps1` 新增 `Convert-StagedShellScriptsToLf`，在 zip 前读取 staging `scripts/*.sh` 并把 CRLF / lone CR 统一转换为 LF。
+- 转换只作用于 release staging 副本；如果脚本不是合法 UTF-8，严格解码会让打包失败，避免静默发出损坏脚本。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| 仓库 `scripts/*.sh` CRLF 字节检查 | 通过 | 5 个 shell 脚本均为 `HasCRLF=False`。 |
+| `git diff --check` | 通过 | 无空白错误；仅有 `build-freeze-release.ps1` 将按 `.gitattributes` 维持 CRLF 的 Git 提示。 |
+| `mvn -f backend/pom.xml test` | 通过 | 首次 120s 超时；提高超时复跑后 Reactor `BUILD SUCCESS`，`nq-app` 35 tests / 0 failures / 0 errors。 |
+| `cd frontend && npm run build` | 通过 | Vite build 成功；仍有既有 chunk > 500 kB 警告。 |
+| `.\scripts\build-freeze-release.ps1` | 通过 | 生成 `release/nq-gatej-freeze-release.zip`。 |
+| release zip 解压后 CRLF 检查 | 通过 | zip 内 `scripts/*.sh` 全部 `HasCRLF=False`。 |
+
+新 release 包路径与大小：
+
+- `release/nq-gatej-freeze-release.zip`
+- `30,979,533` bytes
+
+## ECS 待验证
+
+当前本地环境没有 ECS 登录/上传上下文，因此未在本轮环境执行服务器命令，不能把 ECS 复验写成通过。上传新 release 并 `unzip -o` 后，必须不执行 `sed`，直接运行：
+
+```bash
+cd /opt/nexus-quant
+for f in scripts/*.sh; do echo "CHECK $f"; bash -n "$f" || exit 1; done
+bash scripts/backup-db.sh before-freeze
+nohup bash scripts/freeze-health-loop.sh > /opt/nexus-quant/freeze-evidence/health/freeze-health-loop.out 2>&1 &
+grep -n '"status":"UP"\|UP' /opt/nexus-quant/freeze-evidence/health/health-check-7d.log | tail
+```
+
+## 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未接入 AI、DH 或真实交易。
+- 未启动真实交易。
+- 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
+- ECS 复验未完成前，不允许进入 GateJ-FREEZE 首次启动验收。
+
+---
+
 # Worklog: GateJ-FREEZE-FIX-4
 
 日期：2026-05-28

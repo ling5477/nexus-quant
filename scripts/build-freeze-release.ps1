@@ -83,6 +83,35 @@ function Copy-RequiredDirectory {
     Copy-Item -Path (Join-Path $Source "*") -Destination $Destination -Recurse -Force
 }
 
+function Convert-StagedShellScriptsToLf {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDirectory
+    )
+
+    if (-not (Test-Path -LiteralPath $ScriptsDirectory -PathType Container)) {
+        throw "Staged scripts directory not found: $ScriptsDirectory"
+    }
+
+    $utf8NoBomStrict = [System.Text.UTF8Encoding]::new($false, $true)
+    foreach ($scriptFile in Get-ChildItem -LiteralPath $ScriptsDirectory -Filter "*.sh" -File) {
+        # Why:
+        # - Windows checkout or manual edits can leave staged shell scripts with CRLF.
+        # - Linux Bash treats the carriage return in `set -euo pipefail` as part of
+        #   the option name, which breaks GateJ-FREEZE on ECS before acceptance starts.
+        # - Normalize only the release staging copy so packaging is reproducible even
+        #   if a local working tree has mixed line endings. UTF-8 strict decoding makes
+        #   an unexpected binary/non-UTF-8 helper fail the build instead of shipping a
+        #   silently corrupted script.
+        $content = [System.IO.File]::ReadAllText($scriptFile.FullName, $utf8NoBomStrict)
+        $normalizedContent = $content -replace "`r`n", "`n" -replace "`r", "`n"
+        if ($normalizedContent -ne $content) {
+            [System.IO.File]::WriteAllText($scriptFile.FullName, $normalizedContent, $utf8NoBomStrict)
+            Write-Host "Normalized shell script line endings to LF: $($scriptFile.FullName)"
+        }
+    }
+}
+
 Set-Location $repoRoot
 
 if (-not $SkipBackendBuild) {
@@ -134,6 +163,8 @@ $scriptNames = @(
 foreach ($scriptName in $scriptNames) {
     Copy-RequiredFile -Source (Join-Path $repoRoot "scripts/$scriptName") -Destination (Join-Path $releaseDir "scripts/$scriptName")
 }
+
+Convert-StagedShellScriptsToLf -ScriptsDirectory (Join-Path $releaseDir "scripts")
 
 $gitCommit = (git rev-parse HEAD).Trim()
 $gitBranch = (git rev-parse --abbrev-ref HEAD).Trim()
