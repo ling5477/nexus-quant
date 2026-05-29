@@ -29,6 +29,22 @@ const columns: ColumnsType<InstrumentCatalogItem> = [
     {title: '同步时间', dataIndex: 'syncedAt', key: 'syncedAt', width: 180, render: (value: string) => formatDateTime(value)},
 ];
 
+/**
+ * 把后端受控 catalog sync 错误转换为页面提示。
+ * Why:
+ * GateJ-FREEZE 允许 Catalog 为空，但不允许 Binance 451 这类外部限制以 internal server error 呈现；
+ * 这里保留 trace/error 兜底，同时把已知受控 409 显示为操作员能理解的 freeze 提示。
+ */
+function formatInstrumentCatalogSyncError(error: AppApiError): string {
+    if (error.status === 409 && error.message.includes('禁用外部交易所同步')) {
+        return '当前环境禁用外部交易所同步，Catalog 可以为空，不影响 freeze 验收。';
+    }
+    if (error.status === 409 && error.message.includes('instrument catalog 同步暂不可用')) {
+        return '外部交易所同步暂不可用，请使用当前 Catalog 查询结果或稍后重试。';
+    }
+    return formatApiError(error);
+}
+
 export function InstrumentsPage() {
     const {message} = App.useApp();
     const [form] = Form.useForm<InstrumentFilterValues>();
@@ -46,7 +62,7 @@ export function InstrumentsPage() {
             message.success(`同步完成：读取 ${result.rowsRead} 条，新增 ${result.rowsInserted} 条，更新 ${result.rowsUpdated} 条。`);
             await instrumentsQuery.refetch();
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => message.warning(formatInstrumentCatalogSyncError(error as AppApiError)),
     });
 
     return (
@@ -55,7 +71,7 @@ export function InstrumentsPage() {
                 <PageHero
                     title="Instruments"
                     description="正式 instrument/symbol catalog。后续交易对 selector、precision 校验和多币种工作流都以这里为主数据入口。"
-                    badge="GateH-PRE / PRE-2"
+                    badge="GateJ-FREEZE"
                 />
             </Card>
             <Card

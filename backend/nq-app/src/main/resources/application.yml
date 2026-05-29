@@ -38,6 +38,10 @@ nq:
     verify:
       # Why: 第四批开始清理 GateC 兼容层，验收入口只认 canonical 开关，避免新旧别名并存继续漂移。
       enabled: ${NQ_GATED_VERIFY_ENABLED:false}
+  instrument:
+    catalog-sync:
+      # Why: local/dev 默认允许手工刷新 catalog；freeze profile 会关闭该开关，避免验收依赖 Binance/OKX 公网 metadata。
+      enabled: ${NQ_INSTRUMENT_CATALOG_SYNC_ENABLED:true}
   okx:
     # Why: 第十九批开始把 dome/real 两套凭证切换收口到统一运行时变量；敏感值仍只从环境变量读取，不写入仓库。
     env: ${NQ_OKX_ENV:dome}

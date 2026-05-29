@@ -99,6 +99,20 @@ class InstrumentCatalogControllerTest {
                 .andExpect(jsonPath("$.rowsUpdated").value(1));
     }
 
+    @Test
+    void shouldExposeControlledConflictWhenInstrumentCatalogSyncIsDisabled() throws Exception {
+        when(instrumentCatalogSyncService.sync("BINANCE", "trc-instrument-sync-disabled"))
+                .thenThrow(new IllegalStateException("当前环境禁用外部交易所同步"));
+
+        mockMvc.perform(post("/api/instruments/sync")
+                        .param("exchangeCode", "BINANCE")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-instrument-sync-disabled"))
+                .andExpect(status().isConflict())
+                .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-instrument-sync-disabled"))
+                .andExpect(jsonPath("$.code").value("STATE_CONFLICT"))
+                .andExpect(jsonPath("$.message").value("当前环境禁用外部交易所同步"));
+    }
+
     private static final class TestTraceIdFilter extends OncePerRequestFilter {
         @Override
         protected void doFilterInternal(

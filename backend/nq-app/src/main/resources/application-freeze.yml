@@ -32,6 +32,11 @@ nq:
   gated:
     verify:
       enabled: ${NQ_GATED_VERIFY_ENABLED:false}
+  instrument:
+    catalog-sync:
+      # Why: GateJ-FREEZE 验收只验证 Paper Trading 稳定运行；Instrument Catalog 可以为空，
+      # 但不能因为 Binance exchangeInfo 在 ECS 上返回 451 而导致控制台 500。
+      enabled: ${NQ_INSTRUMENT_CATALOG_SYNC_ENABLED:false}
   okx:
     adapter:
       stub-on-bootstrap-failure: ${NQ_OKX_ADAPTER_STUB_ON_BOOTSTRAP_FAILURE:true}

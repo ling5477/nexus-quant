@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
+import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,14 +37,16 @@ public class AdapterInstrumentCatalogSyncService implements InstrumentCatalogSyn
     private final OkxExchangeAdapter okxExchangeAdapter;
     private final BinanceExchangeAdapter binanceExchangeAdapter;
     private final Clock clock;
+    private final boolean catalogSyncEnabled;
 
     @Autowired
     public AdapterInstrumentCatalogSyncService(
             InstrumentCatalogService instrumentCatalogService,
             OkxExchangeAdapter okxExchangeAdapter,
-            BinanceExchangeAdapter binanceExchangeAdapter
+            BinanceExchangeAdapter binanceExchangeAdapter,
+            @Value("${nq.instrument.catalog-sync.enabled:true}") boolean catalogSyncEnabled
     ) {
-        this(instrumentCatalogService, okxExchangeAdapter, binanceExchangeAdapter, Clock.systemUTC());
+        this(instrumentCatalogService, okxExchangeAdapter, binanceExchangeAdapter, Clock.systemUTC(), catalogSyncEnabled);
     }
 
     AdapterInstrumentCatalogSyncService(
@@ -50,6 +54,16 @@ public class AdapterInstrumentCatalogSyncService implements InstrumentCatalogSyn
             OkxExchangeAdapter okxExchangeAdapter,
             BinanceExchangeAdapter binanceExchangeAdapter,
             Clock clock
+    ) {
+        this(instrumentCatalogService, okxExchangeAdapter, binanceExchangeAdapter, clock, true);
+    }
+
+    AdapterInstrumentCatalogSyncService(
+            InstrumentCatalogService instrumentCatalogService,
+            OkxExchangeAdapter okxExchangeAdapter,
+            BinanceExchangeAdapter binanceExchangeAdapter,
+            Clock clock,
+            boolean catalogSyncEnabled
     ) {
         this.instrumentCatalogService = Objects.requireNonNull(
                 instrumentCatalogService,
@@ -61,10 +75,27 @@ public class AdapterInstrumentCatalogSyncService implements InstrumentCatalogSyn
                 "binanceExchangeAdapter must not be null"
         );
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.catalogSyncEnabled = catalogSyncEnabled;
     }
 
+    /**
+     * 执行交易所 instrument catalog 同步。
+     * <p>
+     * Why:
+     * GateJ-FREEZE 是稳定运行验收，不允许因为 Binance 地域限制、公网阻断或 exchangeInfo 临时失败
+     * 把控制台操作升级成 500。`nq.instrument.catalog-sync.enabled=false` 时直接返回受控 409；
+     * 外部 Binance 失败也转换为受控业务冲突，由 API 层统一输出稳定错误结构。
+     *
+     * @param exchangeCode 目标交易所；为空时同步当前支持的全部交易所
+     * @param traceId      当前请求 trace id，仅用于 adapter/cache 诊断，不包含敏感信息
+     * @return 同步读取与 upsert 统计；禁用或外部失败时不写库
+     * @throws IllegalStateException 当前环境禁用同步，或外部交易所 catalog 同步暂不可用
+     */
     @Override
     public InstrumentCatalogSyncResult sync(String exchangeCode, String traceId) {
+        if (!catalogSyncEnabled) {
+            throw new IllegalStateException("当前环境禁用外部交易所同步");
+        }
         Instant startedAt = Instant.now(clock);
         List<String> exchangeCodes = resolveExchangeCodes(exchangeCode);
         List<InstrumentCatalogItem> catalogItems = new ArrayList<>();
@@ -124,7 +155,14 @@ public class AdapterInstrumentCatalogSyncService implements InstrumentCatalogSyn
     }
 
     private List<InstrumentCatalogItem> loadBinanceItems(String traceId) {
-        Map<String, BinanceSymbolFilters> snapshot = binanceExchangeAdapter.filtersCache().snapshot(traceId);
+        Map<String, BinanceSymbolFilters> snapshot;
+        try {
+            snapshot = binanceExchangeAdapter.filtersCache().snapshot(traceId);
+        } catch (BinanceApiException ex) {
+            // Why: exchangeInfo 属于外部公开接口，ECS/freeze 环境可能因地域或网络策略收到 451。
+            // 这里转换为受控业务错误，避免 ApiExceptionHandler 把它记录为 api_unhandled_exception。
+            throw new IllegalStateException("外部交易所 instrument catalog 同步暂不可用", ex);
+        }
         List<InstrumentCatalogItem> items = new ArrayList<>();
         for (BinanceSymbolFilters filters : snapshot.values()) {
             String[] assets = splitSymbol(filters.internalSymbol());

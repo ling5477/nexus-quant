@@ -87,7 +87,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                 <div>
                     <Typography.Text strong>{appEnv.appTitle}</Typography.Text>
                     <br/>
-                    <Typography.Text type="secondary">GateH-PRE Account Context</Typography.Text>
+                    <Typography.Text type="secondary">GateJ-FREEZE Console</Typography.Text>
                 </div>
             </div>
             <div className="app-shell__header-right">

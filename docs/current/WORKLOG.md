@@ -2313,6 +2313,92 @@ grep -n '"status":"UP"\|UP' /opt/nexus-quant/freeze-evidence/health/health-check
 
 ---
 
+# Worklog: GateJ-FREEZE-FIX-6
+
+日期：2026-05-29
+
+## 本轮目标
+
+修复 ECS freeze 控制台 Instrument Catalog 页面点击“同步 Catalog”后，Binance `/api/v3/exchangeInfo` 返回 451 被后端抛成 `internal server error` 的验收阻塞问题。同时清理生产/freeze 可见页面中 `GateH-PRE`、`LOCAL` 等旧阶段/本地环境文案残留。本轮只做 freeze 验收阻塞修复，不新增 API、migration 或业务功能，不接入 AI/DH/真实交易。
+
+## 根因
+
+- `InstrumentCatalogController.sync` 调用 `AdapterInstrumentCatalogSyncService.sync`，当 `exchangeCode` 为空时默认同步 `OKX` 和 `BINANCE`。
+- Binance 分支调用 `binanceExchangeAdapter.filtersCache().snapshot(traceId)`；cache 需要刷新时会访问 Binance `exchangeInfo`。
+- ECS 所在网络/地域下 Binance 返回 451，`BinanceApiException` 未被 service 层转换，最终进入 `ApiExceptionHandler.handleException`，记录 `api_unhandled_exception path=/api/instruments/sync` 并返回 500。
+- 前端 Header 与 Instrument Catalog 页面仍展示 `GateH-PRE Account Context`、`GateH-PRE / PRE-2`，且生产构建缺省环境标签可能回退为本地标识。
+
+## 修改文件清单
+
+- `backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterInstrumentCatalogSyncService.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/instrument/InstrumentCatalogSyncService.java`
+- `backend/nq-app/src/main/resources/application.yml`
+- `backend/nq-app/src/main/resources/application-freeze.yml`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/marketdata/api/web/InstrumentCatalogControllerTest.java`
+- `backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/AdapterInstrumentCatalogSyncServiceTest.java`
+- `frontend/src/components/layout/AppHeader.tsx`
+- `frontend/src/pages/instruments/InstrumentsPage.tsx`
+- `frontend/src/utils/env.ts`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+## 修复说明
+
+- 新增配置 `nq.instrument.catalog-sync.enabled`：默认 true，freeze profile 默认 false。
+- freeze 下调用 `/api/instruments/sync` 会在触达 OKX/Binance adapter 前返回 409，消息为“当前环境禁用外部交易所同步”。
+- 非 freeze 且 Binance `exchangeInfo` 抛 `BinanceApiException` 时，service 层转换为 `IllegalStateException("外部交易所 instrument catalog 同步暂不可用")`，由现有 `ApiExceptionHandler` 输出 409 `STATE_CONFLICT`，避免进入 `api_unhandled_exception`。
+- 前端 Instrument Catalog sync 409 会显示友好 warning，不再把受控错误展示为 internal server error。
+- Header 副标题改为 `GateJ-FREEZE Console`，Instrument Catalog badge 改为 `GateJ-FREEZE`，production/freeze 缺省 env label 改为 `GateJ-FREEZE`。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-scheduler -am test` | 通过 | 覆盖 controller 409 与 service 禁用/外部异常转换。 |
+| `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+| `cd frontend && npm run build` | 通过 | Vite build 成功；仍有既有 chunk > 500 kB 警告。 |
+| `.\scripts\build-freeze-release.ps1` | 通过 | 重新生成 `release/nq-gatej-freeze-release.zip`。 |
+| `frontend/dist` 禁止串扫描 | 通过 | 未命中 `GateG` / `GateH-PRE` / `ChangeMe123` / `admin / ChangeMe123` / `/api/auth/login` / `/api/auth/me` / `Authorization: Bearer`。 |
+| release zip 解压后禁止串扫描 | 通过 | 未命中上述禁止串。 |
+| release zip 解压后 CRLF 检查 | 通过 | zip 内 `scripts/*.sh` 全部 `HasCRLF=False`。 |
+
+新 release 包路径与大小：
+
+- `release/nq-gatej-freeze-release.zip`
+- `30,980,280` bytes
+
+## ECS 待验证
+
+当前本地环境没有 ECS 登录/上传上下文，因此未在本轮环境执行服务器命令，不能把 ECS 复验写成通过。上传新 release 并 `unzip -o` 后，必须不执行 `sed`，直接运行：
+
+```bash
+cd /opt/nexus-quant
+for f in scripts/*.sh; do echo "CHECK $f"; bash -n "$f" || exit 1; done
+docker compose --env-file .env.freeze -f docker-compose.freeze.yml restart nq-app nginx
+curl -fsS http://127.0.0.1:18888/actuator/health
+```
+
+浏览器复验：
+
+- 进入 Instrument Catalog。
+- 点击查询不报 500，列表为空允许。
+- 点击“同步 Catalog”不显示 internal server error；freeze 下应显示“当前环境禁用外部交易所同步”。
+- 后端日志不得出现 `api_unhandled_exception path=/api/instruments/sync`，不得以 ERROR 记录 `Binance request failed status=451`。
+
+## 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未接入 AI、DH 或真实交易。
+- 未启动真实交易。
+- 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
+- ECS 复验未完成前，不允许进入 GateJ-FREEZE 首次启动验收。
+
+---
+
 # Worklog: GateJ-FREEZE-FIX-4
 
 日期：2026-05-28
