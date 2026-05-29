@@ -60,7 +60,7 @@ interface TradingOrderListForm {
 }
 
 /**
- * TradingWorkbenchPage 是 GateH-1 的正式交易工作台。
+ * TradingWorkbenchPage 是当前控制台的正式交易工作台。
  *
  * Why:
  * 页面以 header 中的正式 exchangeAccountId 为唯一账户上下文来源，列表、详情和写动作都围绕该上下文工作；
@@ -291,7 +291,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                     <PageHero
                         title="交易工作台"
                         description="正式交易工作台。当前页围绕 exchangeAccountId 账户上下文查询订单、查看详情，并展示 SIM / LIVE 与风控前置状态。"
-                        badge="GateH-1"
+                        badge="Trading"
                     />
                 </Card>
 
@@ -431,7 +431,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                     showIcon
                     style={{marginBottom: 16}}
                     message="风控摘要"
-                    description={`当前账户 ${currentContextLabel}。提交后后端会执行账户启用、重复请求、最小名义金额、精度、限流、kill switch 等前置风控；当前 GateH-1 未提供独立 dry-run 风控 API，因此下单前只展示上下文摘要和服务端风控不可绕过状态。`}
+                    description={`当前账户 ${currentContextLabel}。提交后后端会执行账户启用、重复请求、最小名义金额、精度、限流、kill switch 等前置风控；当前控制台按既有后端契约展示上下文摘要和服务端风控不可绕过状态。`}
                 />
                 <Form
                     form={placeForm}

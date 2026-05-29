@@ -9,6 +9,7 @@ import {
     Form,
     Input,
     Row,
+    Select,
     Space,
     Table,
     Tag,
@@ -19,6 +20,7 @@ import {useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {RUN_STATUS_OPTIONS, RUN_TRIGGER_TYPE_OPTIONS} from '@/constants/filter-options';
 import {useRunDetailQuery, useRunListQuery} from '@/hooks/useRunListQuery';
 import type {AppApiError} from '@/types/api';
 import {
@@ -190,7 +192,7 @@ export function RunsPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="运行记录"
-                        description="当前页面已对接真实列表与详情接口。后端当前没有独立 run 写动作，本批按真实契约提供详情抽屉和不可操作动作区。"
+                        description="查看策略运行记录、触发方式、执行状态和风控摘要。当前页面按既有契约提供只读详情和刷新入口。"
                         badge="Runs"
                     />
                 </Card>
@@ -228,12 +230,12 @@ export function RunsPage() {
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="运行状态" name="status">
-                                    <Input placeholder="例如：SUCCEEDED"/>
+                                    <Select allowClear placeholder="全部状态" options={RUN_STATUS_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="触发方式" name="triggerType">
-                                    <Input placeholder="例如：MANUAL / SCHEDULE"/>
+                                    <Select allowClear placeholder="全部触发方式" options={RUN_TRIGGER_TYPE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                         </Row>

@@ -791,3 +791,41 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 ```
 
 结论：本地已修复 freeze release 中 Instrument Catalog sync 的 500 风险与前端旧文案残留；ECS 尚未在本轮环境执行，未完成 ECS 复验前不得进入 GateJ-FREEZE 首次启动验收。
+
+## GateJ-FREEZE-FIX-7 验证记录（2026-05-29）
+
+本轮修复 freeze 控制台旧 Gate 文案、开发接口说明和不专业筛选控件。修复范围限定在前端 UI 展示与筛选控件；未新增 API、migration 或后端业务流程，未接入 AI/DH/真实交易。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `cd frontend && npm run build` | 通过 | 首次因 `PaperTradingPage` 漏加 `Select` import 失败，补齐后通过；仍有既有 Vite chunk > 500 kB 警告。 |
+| `frontend/dist` 残留扫描 | 通过 | 大小写敏感扫描未命中 `GateH-1`、`GateH-2`、`GateI-3`、`GateH-PRE`、`GateG`、`LOCAL`、`Gate-3`、`GET /api`、`POST /api`、`publishId 过滤`、`本地筛选字段`、`真实请求参数`。 |
+| `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+| `.\scripts\build-freeze-release.ps1` | 通过 | 首次因沙箱无法写入本机 Maven repository tracking file 失败；提权重跑通过并重新生成 release zip。 |
+| release zip 解压后 frontend/dist 残留扫描 | 通过 | 解压目录 `frontend/dist` 未命中上述旧 Gate / LOCAL / 开发接口说明残留。 |
+| release zip 解压后 CRLF 检查 | 通过 | zip 内 5 个 `scripts/*.sh` 均为 `HasCRLF=False`。 |
+
+新 release 包：
+
+- 路径：`release/nq-gatej-freeze-release.zip`
+- 大小：`31,014,538` bytes
+
+ECS 待复验：
+
+```bash
+cd /opt/nexus-quant
+for f in scripts/*.sh; do echo "CHECK $f"; bash -n "$f" || exit 1; done
+docker compose --env-file .env.freeze -f docker-compose.freeze.yml up -d --force-recreate nq-app nginx
+curl -fsS http://127.0.0.1:18888/actuator/health
+curl -fsS http://127.0.0.1:5179/actuator/health
+```
+
+浏览器复验：
+
+- 页面不再出现旧 Gate / LOCAL / API 开发说明残留。
+- 重点页面枚举筛选项为 Select，时间字段为 DatePicker。
+- Instrument Catalog “同步 Catalog” 仍显示受控提示，不显示 internal server error。
+- 后端日志不得出现 `ERROR` / `Exception` / `api_unhandled_exception path=/api/instruments/sync`。
+
+结论：本地 release 已可上传 ECS 复验；ECS 浏览器与日志复验通过前不得进入 GateJ-FREEZE 首次启动验收。

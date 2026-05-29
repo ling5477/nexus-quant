@@ -2243,6 +2243,90 @@ Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Cl
 
 ---
 
+# Worklog: GateJ-FREEZE-FIX-7
+
+日期：2026-05-29
+
+## 本轮目标
+
+修复 ECS 浏览器复验发现的 freeze 控制台旧阶段文案、开发接口说明和不专业筛选控件残留。本轮只允许前端 UI 展示与筛选控件修复，不新增 API、migration 或后端业务流程，不接入 AI/DH/真实交易。
+
+## 根因
+
+- 多个页面延续 GateH/GateI 开发阶段的 badge、说明文案和占位符，production/freeze bundle 仍会展示旧阶段、接口路径和本地筛选字段说明。
+- 策略、调度、运行、Paper Trading、评估、发布等页面的枚举筛选仍使用自由文本 Input，容易输入非法状态值。
+- Marketdata 与 Backtests 的时间字段仍使用普通文本输入，要求用户手写 ISO 字符串，不符合 freeze 控制台验收质量。
+
+## 修改文件清单
+
+- `frontend/src/constants/filter-options.ts`
+- `frontend/src/pages/trading/TradingWorkbenchPage.tsx`
+- `frontend/src/pages/marketdata/MarketdataPage.tsx`
+- `frontend/src/pages/instruments/InstrumentsPage.tsx`
+- `frontend/src/pages/strategies/StrategiesPage.tsx`
+- `frontend/src/pages/schedules/SchedulesPage.tsx`
+- `frontend/src/pages/runs/RunsPage.tsx`
+- `frontend/src/pages/paper-trading/PaperTradingPage.tsx`
+- `frontend/src/pages/evaluations/EvaluationsPage.tsx`
+- `frontend/src/pages/publishes/PublishesPage.tsx`
+- `frontend/src/pages/backtests/BacktestsPage.tsx`
+- `frontend/src/pages/research/ResearchPage.tsx`
+- `frontend/src/router/routes.tsx`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+## 修复说明
+
+- 页面 badge 改为业务域名：Trading、Marketdata、Catalog、Strategies、Schedules、Runs、Paper Trading、Evaluations、Publishes。
+- 清理页面可见文案中的旧 Gate、`LOCAL`、`GET /api` / `POST /api`、`publishId 过滤`、`本地筛选字段`、`真实请求参数` 等开发说明。
+- 新增前端静态筛选选项，枚举筛选使用 Ant Design `Select`：exchange、market、symbol、interval、strategyType、tradeEnv、enabled/status、scheduleType、runStatus、triggerType、paper status、evaluationStatus、publishStatus。
+- Marketdata 查询 / 接入任务 / Dataset 的 start/end 改为 `DatePicker`，提交时转换为后端需要的 ISO 字符串。
+- Backtests 新建配置 start/end 同步改为 `DatePicker`，避免控制台继续暴露普通 ISO 时间输入框。
+
+## 验证命令与结果
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `cd frontend && npm run build` | 通过 | 首次因 `PaperTradingPage` 漏加 `Select` import 失败，补齐后通过；仍有既有 Vite chunk > 500 kB 警告。 |
+| `frontend/dist` 残留扫描 | 通过 | 大小写敏感扫描未命中旧 Gate / LOCAL / API 开发说明残留。 |
+| `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+| `.\scripts\build-freeze-release.ps1` | 通过 | 首次因沙箱无法写入 Maven repository tracking file 失败；提权重跑通过。 |
+| release zip 解压后 frontend/dist 残留扫描 | 通过 | 未命中旧 Gate / LOCAL / API 开发说明残留。 |
+| release zip 解压后 CRLF 检查 | 通过 | zip 内 5 个 `scripts/*.sh` 均为 `HasCRLF=False`。 |
+
+新 release 包：
+
+- 路径：`release/nq-gatej-freeze-release.zip`
+- 大小：`31,014,538` bytes
+
+## ECS 待复验
+
+当前本地环境没有 ECS 登录/上传上下文，因此未在本轮环境执行服务器命令，不能把 ECS 复验写成通过。上传新 release 并 `unzip -o` 后，必须执行：
+
+```bash
+cd /opt/nexus-quant
+for f in scripts/*.sh; do echo "CHECK $f"; bash -n "$f" || exit 1; done
+docker compose --env-file .env.freeze -f docker-compose.freeze.yml up -d --force-recreate nq-app nginx
+curl -fsS http://127.0.0.1:18888/actuator/health
+curl -fsS http://127.0.0.1:5179/actuator/health
+```
+
+浏览器复验必须确认页面不再出现旧 Gate / LOCAL / 接口说明残留；Instrument Catalog 同步仍是受控提示，不是 internal server error；后端日志无 `ERROR` / `Exception` / `api_unhandled_exception path=/api/instruments/sync`。
+
+## 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未修改后端业务流程。
+- 未接入 AI、DH 或真实交易。
+- 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
+- ECS 复验未完成前，不允许进入 GateJ-FREEZE 首次启动验收。
+
+---
+
 # Worklog: GateJ-FREEZE-FIX-5
 
 日期：2026-05-29

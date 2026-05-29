@@ -10,6 +10,7 @@ import {
     Form,
     Input,
     Row,
+    Select,
     Space,
     Table,
     Tag,
@@ -20,6 +21,7 @@ import {useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {EVALUATION_STATUS_OPTIONS} from '@/constants/filter-options';
 import {
     useEvaluateMutation,
     useEvaluationDetailQuery,
@@ -187,7 +189,7 @@ export function EvaluationsPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="评估结果"
-                        description="当前页面已对接真实列表与详情接口，并支持对单次回测运行执行最小评估动作。"
+                        description="查看回测评估报告、收益风险指标和评估状态，并可在详情中对既有回测运行执行评估。"
                         badge="Evaluations"
                     />
                 </Card>
@@ -215,22 +217,22 @@ export function EvaluationsPage() {
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="研究配置 ID" name="researchConfigId">
-                                    <Input placeholder="真实请求参数，可空"/>
+                                    <Input placeholder="按研究配置 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="回测配置 ID" name="backtestConfigId">
-                                    <Input placeholder="真实请求参数，可空"/>
+                                    <Input placeholder="按回测配置 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="回测运行 ID" name="sourceStrategyId">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Input placeholder="按回测运行 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="评估状态" name="evaluationStatus">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Select allowClear placeholder="全部状态" options={EVALUATION_STATUS_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                         </Row>

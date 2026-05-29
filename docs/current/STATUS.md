@@ -38,10 +38,11 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-FREEZE-FIX-4 completed。
 - GateJ-FREEZE-FIX-5 local release reproducibility fix completed（ECS 复验待执行）。
 - GateJ-FREEZE-FIX-6 local freeze sync guard and console text cleanup completed（ECS 复验待执行）。
+- GateJ-FREEZE-FIX-7 local freeze console UI text and filter control cleanup completed（ECS 复验待执行）。
 
 ## 当前执行状态
 
-- Current stage: GateJ-FREEZE-FIX-6 local fix completed; next upload new release to ECS and verify Instrument Catalog sync no longer returns internal server error before GateJ-FREEZE first-start acceptance。
+- Current stage: GateJ-FREEZE-FIX-7 local fix completed; next upload new release to ECS and verify freeze console no longer shows old Gate / LOCAL / API development text, Instrument Catalog sync remains controlled, then run GateJ-FREEZE first-start acceptance。
 - GateJ-3-WO 已完成。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成：无 P0；Claude 第一轮 P1-1 / P1-2 验证缺口已由 Codex 实际重跑关闭；P1-3 不阻塞；P1-4 已闭环 GATEJ_FREEZE_ACCEPTANCE_TEMPLATE。详见 `PRE_FREEZE_AUDIT_REPORT.md` 与 `PRE_FREEZE_AUDIT_FIX_PLAN.md`。
 - FULL_SECURITY_AUDIT 报告中的 P1 已由 AUDIT-FIX 关闭：旧 OKX dome 验收脚本已移出 `scripts/` 可执行区并归档到 `docs/archive/scripts/`，原路径只保留阻断 stub；`/__gated/**` 仍仅为历史路径。
@@ -51,6 +52,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-FREEZE-FIX-4 已完成：修复 `seed-freeze-user.sh` 交互式隐藏输入路径，避免 `read` 后视觉换行进入命令替换返回值并被单行校验误判；ECS 仍需用真实 Bash/TTY 复验后才能继续 GateJ-FREEZE 首次启动验收。
 - GateJ-FREEZE-FIX-5 本地修复已完成：新增 `.gitattributes` 强制 shell/yaml/PowerShell 换行策略，仓库 `scripts/*.sh` 已归一为 LF，`scripts/build-freeze-release.ps1` 在 zip 前对 staging `scripts/*.sh` 做 LF 兜底转换；新 release 本地解压检查确认 zip 内 `.sh` 不含 CRLF。ECS 仍需重新上传新 release 后直接执行 `bash -n`、`backup-db.sh`、`freeze-health-loop.sh` 与 `health-check-7d.log` 写入 `UP` 验证，未通过前不得进入 GateJ-FREEZE 首次启动验收。
 - GateJ-FREEZE-FIX-6 本地修复已完成：freeze profile 默认禁用 Instrument Catalog 外部同步，`/api/instruments/sync` 在禁用或 Binance exchangeInfo 失败时返回 409 受控错误，不再进入 `api_unhandled_exception`；前端 Instrument Catalog 与 Header 已清理 `GateH-PRE` / `LOCAL` 可见残留，dist/release 扫描未命中禁止串。ECS 仍需重新上传新 release 后验证浏览器同步 Catalog 不再显示 internal server error，日志不再出现 `api_unhandled_exception path=/api/instruments/sync`。
+- GateJ-FREEZE-FIX-7 本地修复已完成：清理 freeze 控制台页面中 `GateH-1`、`GateH-2`、`GateI-3`、`GateH-PRE`、`GateG`、`LOCAL`、`Gate-3` 与开发接口说明残留；将 Marketdata / Strategies / Schedules / Runs / Paper Trading / Evaluations / Publishes 等页面枚举筛选改为 Ant Design Select，并将 Marketdata 与 Backtests 时间输入改为 DatePicker 后转换 ISO 字符串提交。ECS 仍需重新上传新 release 后浏览器复验页面文案与筛选控件，并确认 Instrument Catalog sync 仍是受控提示。
 - E2E/Vite 本地端口已从 `4173` 调整为 `5179`，避开 Windows TCP excluded range `4141-4240`；AUDIT-FIX 完整 E2E 已通过。
 - 后端 `mvn -f backend/pom.xml test` BUILD SUCCESS（23 个 module SUCCESS；`nq-app` 35 tests / 0 failures / 0 errors）。
 - 前端 `npm run build` 通过（仍有 Vite chunk > 500 kB P2 警告）。

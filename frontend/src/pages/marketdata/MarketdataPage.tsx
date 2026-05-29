@@ -1,4 +1,4 @@
-import {Alert, Button, Card, Form, Input, Select, Space, Table, Tag, Typography, message} from 'antd';
+import {Alert, Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Typography, message} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
@@ -6,6 +6,7 @@ import {useState} from 'react';
 import {formatApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {PageHero} from '@/components/page/PageHero';
+import {EXCHANGE_OPTIONS, INTERVAL_OPTIONS, MARKET_TYPE_OPTIONS, SYMBOL_OPTIONS} from '@/constants/filter-options';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import type {
@@ -34,6 +35,66 @@ const columns: ColumnsType<MarketdataBar> = [
     {title: 'Quote Volume', dataIndex: 'quoteVolume', key: 'quoteVolume', width: 140, render: (value?: number | null) => value == null ? '-' : formatNumber(value, 8)},
     {title: 'Quality', dataIndex: 'qualityStatus', key: 'qualityStatus', width: 130, render: (value: string) => <Tag color={value === 'OK' ? 'green' : 'orange'}>{value}</Tag>},
 ];
+
+type MarketdataDateValue = string | null | undefined | {
+    toISOString?: () => string;
+    toDate?: () => Date;
+};
+
+type MarketdataBarsFormValues = Omit<MarketdataBarsQuery, 'startTime' | 'endTime'> & {
+    startTime?: MarketdataDateValue;
+    endTime?: MarketdataDateValue;
+};
+
+type CreateMarketdataIngestionJobFormValues = Omit<CreateMarketdataIngestionJobRequest, 'startTime' | 'endTime'> & {
+    startTime?: MarketdataDateValue;
+    endTime?: MarketdataDateValue;
+};
+
+type CreateMarketdataDatasetFormValues = Omit<CreateMarketdataDatasetRequest, 'startTime' | 'endTime'> & {
+    startTime?: MarketdataDateValue;
+    endTime?: MarketdataDateValue;
+};
+
+function toIsoString(value: MarketdataDateValue): string {
+    if (!value) {
+        return '';
+    }
+    if (typeof value === 'string') {
+        return value;
+    }
+    if (typeof value.toISOString === 'function') {
+        return value.toISOString();
+    }
+    if (typeof value.toDate === 'function') {
+        return value.toDate().toISOString();
+    }
+    return String(value);
+}
+
+function normalizeBarsQuery(values: MarketdataBarsFormValues): MarketdataBarsQuery {
+    return {
+        ...values,
+        startTime: toIsoString(values.startTime),
+        endTime: toIsoString(values.endTime),
+    };
+}
+
+function normalizeIngestionJob(values: CreateMarketdataIngestionJobFormValues): CreateMarketdataIngestionJobRequest {
+    return {
+        ...values,
+        startTime: toIsoString(values.startTime),
+        endTime: toIsoString(values.endTime),
+    };
+}
+
+function normalizeDataset(values: CreateMarketdataDatasetFormValues): CreateMarketdataDatasetRequest {
+    return {
+        ...values,
+        startTime: toIsoString(values.startTime),
+        endTime: toIsoString(values.endTime),
+    };
+}
 
 const jobColumns = (
     onRunOnce: (jobId: string) => void,
@@ -107,9 +168,9 @@ const datasetColumns = (
 ];
 
 export function MarketdataPage() {
-    const [form] = Form.useForm<MarketdataBarsQuery>();
-    const [jobForm] = Form.useForm<CreateMarketdataIngestionJobRequest>();
-    const [datasetForm] = Form.useForm<CreateMarketdataDatasetRequest>();
+    const [form] = Form.useForm<MarketdataBarsFormValues>();
+    const [jobForm] = Form.useForm<CreateMarketdataIngestionJobFormValues>();
+    const [datasetForm] = Form.useForm<CreateMarketdataDatasetFormValues>();
     const [messageApi, contextHolder] = message.useMessage();
     const queryClient = useQueryClient();
     const contextExchangeCode = useAccountContextStore((state) => state.exchangeCode);
@@ -183,8 +244,8 @@ export function MarketdataPage() {
             <Card className="page-card" bordered={false}>
                 <PageHero
                     title="Marketdata"
-                    description="SPOT 历史 OHLCV 查询与接入任务入口。GateH-2 固定 OKX / BINANCE、BTC-USDT / ETH-USDT / SOL-USDT 与 1m 到 1d 周期。"
-                    badge="GateH-2"
+                    description="SPOT 历史 OHLCV 查询、接入任务和 Dataset 管理入口，固定使用当前 freeze 可验收的交易所、交易对和周期范围。"
+                    badge="Marketdata"
                 />
             </Card>
             <Card
@@ -193,7 +254,7 @@ export function MarketdataPage() {
                 title="查询条件"
                 extra={<Button type="primary" onClick={() => form.submit()}>查询</Button>}
             >
-                <Form<MarketdataBarsQuery>
+                <Form<MarketdataBarsFormValues>
                     form={form}
                     layout="vertical"
                     initialValues={{
@@ -201,35 +262,29 @@ export function MarketdataPage() {
                         marketType: 'SPOT',
                         symbol: 'BTC-USDT',
                         interval: '1m',
-                        startTime: '2025-01-01T00:00:00Z',
-                        endTime: '2025-01-01T00:05:59Z',
                         page: 0,
                         size: 100,
                     }}
-                    onFinish={(values) => setSubmittedQuery(values)}
+                    onFinish={(values) => setSubmittedQuery(normalizeBarsQuery(values))}
                 >
                     <Space align="start" size={16} wrap>
                         <Form.Item label="交易所" name="exchangeCode">
-                            <Select style={{width: 140}} options={[{label: 'BINANCE', value: 'BINANCE'}, {label: 'OKX', value: 'OKX'}]} />
+                            <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="市场" name="marketType">
-                            <Select style={{width: 120}} options={[{label: 'SPOT', value: 'SPOT'}]} />
+                            <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="交易对" name="symbol">
-                            <Select style={{width: 160}} options={[
-                                {label: 'BTC-USDT', value: 'BTC-USDT'},
-                                {label: 'ETH-USDT', value: 'ETH-USDT'},
-                                {label: 'SOL-USDT', value: 'SOL-USDT'},
-                            ]} />
+                            <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="周期" name="interval">
-                            <Select style={{width: 120}} options={['1m', '5m', '15m', '1h', '4h', '1d'].map((value) => ({label: value, value}))} />
+                            <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="开始时间" name="startTime">
-                            <Input style={{width: 220}} />
+                        <Form.Item label="开始时间" name="startTime" rules={[{required: true, message: '请选择开始时间'}]}>
+                            <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
-                        <Form.Item label="结束时间" name="endTime">
-                            <Input style={{width: 220}} />
+                        <Form.Item label="结束时间" name="endTime" rules={[{required: true, message: '请选择结束时间'}]}>
+                            <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
                     </Space>
                 </Form>
@@ -255,7 +310,7 @@ export function MarketdataPage() {
                 title="接入任务"
                 extra={<Button type="primary" loading={createJobMutation.isPending} onClick={() => jobForm.submit()}>创建任务</Button>}
             >
-                <Form<CreateMarketdataIngestionJobRequest>
+                <Form<CreateMarketdataIngestionJobFormValues>
                     form={jobForm}
                     layout="vertical"
                     initialValues={{
@@ -263,33 +318,27 @@ export function MarketdataPage() {
                         marketType: 'SPOT',
                         symbol: 'BTC-USDT',
                         interval: '1m',
-                        startTime: '2025-01-01T00:00:00Z',
-                        endTime: '2025-01-01T00:05:59Z',
                     }}
-                    onFinish={(values) => createJobMutation.mutate(values)}
+                    onFinish={(values) => createJobMutation.mutate(normalizeIngestionJob(values))}
                 >
                     <Space align="start" size={16} wrap>
                         <Form.Item label="交易所" name="exchangeCode">
-                            <Select style={{width: 140}} options={[{label: 'BINANCE', value: 'BINANCE'}, {label: 'OKX', value: 'OKX'}]} />
+                            <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="市场" name="marketType">
-                            <Select style={{width: 120}} options={[{label: 'SPOT', value: 'SPOT'}]} />
+                            <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="交易对" name="symbol">
-                            <Select style={{width: 160}} options={[
-                                {label: 'BTC-USDT', value: 'BTC-USDT'},
-                                {label: 'ETH-USDT', value: 'ETH-USDT'},
-                                {label: 'SOL-USDT', value: 'SOL-USDT'},
-                            ]} />
+                            <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="周期" name="interval">
-                            <Select style={{width: 120}} options={['1m', '5m', '15m', '1h', '4h', '1d'].map((value) => ({label: value, value}))} />
+                            <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="开始时间" name="startTime">
-                            <Input style={{width: 220}} />
+                        <Form.Item label="开始时间" name="startTime" rules={[{required: true, message: '请选择开始时间'}]}>
+                            <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
-                        <Form.Item label="结束时间" name="endTime">
-                            <Input style={{width: 220}} />
+                        <Form.Item label="结束时间" name="endTime" rules={[{required: true, message: '请选择结束时间'}]}>
+                            <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
                     </Space>
                 </Form>
@@ -341,7 +390,7 @@ export function MarketdataPage() {
                     </Button>
                 )}
             >
-                <Form<CreateMarketdataDatasetRequest>
+                <Form<CreateMarketdataDatasetFormValues>
                     form={datasetForm}
                     layout="vertical"
                     initialValues={{
@@ -350,11 +399,9 @@ export function MarketdataPage() {
                         marketType: 'SPOT',
                         symbol: 'BTC-USDT',
                         interval: '1m',
-                        startTime: '2025-01-01T00:00:00Z',
-                        endTime: '2025-01-01T00:05:59Z',
                     }}
                     onFinish={(values) => createDatasetMutation.mutate({
-                        ...values,
+                        ...normalizeDataset(values),
                         datasetName: values.datasetName || `BINANCE-BTC-USDT-1m-${Date.now()}`,
                     })}
                 >
@@ -363,26 +410,22 @@ export function MarketdataPage() {
                             <Input style={{width: 260}} />
                         </Form.Item>
                         <Form.Item label="交易所" name="exchangeCode">
-                            <Select style={{width: 140}} options={[{label: 'BINANCE', value: 'BINANCE'}, {label: 'OKX', value: 'OKX'}]} />
+                            <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="市场" name="marketType">
-                            <Select style={{width: 120}} options={[{label: 'SPOT', value: 'SPOT'}]} />
+                            <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="交易对" name="symbol">
-                            <Select style={{width: 160}} options={[
-                                {label: 'BTC-USDT', value: 'BTC-USDT'},
-                                {label: 'ETH-USDT', value: 'ETH-USDT'},
-                                {label: 'SOL-USDT', value: 'SOL-USDT'},
-                            ]} />
+                            <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
                         </Form.Item>
                         <Form.Item label="周期" name="interval">
-                            <Select style={{width: 120}} options={['1m', '5m', '15m', '1h', '4h', '1d'].map((value) => ({label: value, value}))} />
+                            <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="开始时间" name="startTime">
-                            <Input style={{width: 220}} />
+                        <Form.Item label="开始时间" name="startTime" rules={[{required: true, message: '请选择开始时间'}]}>
+                            <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
-                        <Form.Item label="结束时间" name="endTime">
-                            <Input style={{width: 220}} />
+                        <Form.Item label="结束时间" name="endTime" rules={[{required: true, message: '请选择结束时间'}]}>
+                            <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
                     </Space>
                 </Form>

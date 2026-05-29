@@ -154,7 +154,7 @@ export function ResearchPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="研究配置"
-                        description="当前页面已对接真实列表与详情接口，并提供最小新建动作闭环。"
+                        description="查看研究配置、源策略关联和参数定义，并提供既有契约下的最小新建动作闭环。"
                         badge="Research"
                     />
                 </Card>
@@ -182,17 +182,17 @@ export function ResearchPage() {
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="源策略 ID" name="sourceStrategyId">
-                                    <Input placeholder="真实请求参数，可空"/>
+                                    <Input placeholder="按源策略 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="研究配置 ID" name="researchConfigId">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Input placeholder="按研究配置 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="名称" name="name">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Input placeholder="按配置名称筛选"/>
                                 </Form.Item>
                             </Col>
                         </Row>

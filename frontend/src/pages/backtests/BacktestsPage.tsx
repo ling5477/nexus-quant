@@ -4,6 +4,7 @@ import {
     Button,
     Card,
     Col,
+    DatePicker,
     Descriptions,
     Drawer,
     Empty,
@@ -42,11 +43,36 @@ import {
 import {containsIgnoreCase, formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
 
 type BacktestRow = BacktestConfigListItem;
+type DateFormValue = string | null | undefined | {
+    toISOString?: () => string;
+    toDate?: () => Date;
+};
+
+type BacktestConfigCreateFormValues = Omit<BacktestConfigCreateRequest, 'startTime' | 'endTime'> & {
+    startTime?: DateFormValue;
+    endTime?: DateFormValue;
+};
+
+function toIsoDateTime(value: DateFormValue): string {
+    if (!value) {
+        return '';
+    }
+    if (typeof value === 'string') {
+        return value;
+    }
+    if (typeof value.toISOString === 'function') {
+        return value.toISOString();
+    }
+    if (typeof value.toDate === 'function') {
+        return value.toDate().toISOString();
+    }
+    return String(value);
+}
 
 export function BacktestsPage() {
     const {message} = App.useApp();
     const [queryForm] = Form.useForm<BacktestsListFilters>();
-    const [createForm] = Form.useForm<BacktestConfigCreateRequest>();
+    const [createForm] = Form.useForm<BacktestConfigCreateFormValues>();
     const [bindDatasetForm] = Form.useForm<{datasetId: string}>();
     const [bindStrategyVersionForm] = Form.useForm<{strategyVersionId: string}>();
     const [submittedFilters, setSubmittedFilters] = useState<BacktestsListFilters>(defaultBacktestsListFilters);
@@ -176,15 +202,15 @@ export function BacktestsPage() {
         setSearchVersion(0);
     };
 
-    const handleCreate = (values: BacktestConfigCreateRequest) => {
+    const handleCreate = (values: BacktestConfigCreateFormValues) => {
         createBacktestMutation.mutate(
             {
                 ...values,
                 researchConfigId: normalizeOptionalText(values.researchConfigId),
                 name: normalizeOptionalText(values.name),
                 description: normalizeOptionalText(values.description),
-                startTime: normalizeOptionalText(values.startTime),
-                endTime: normalizeOptionalText(values.endTime),
+                startTime: toIsoDateTime(values.startTime),
+                endTime: toIsoDateTime(values.endTime),
                 executionSpec: normalizeOptionalText(values.executionSpec),
                 evaluationSpec: normalizeOptionalText(values.evaluationSpec),
             },
@@ -256,7 +282,7 @@ export function BacktestsPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="回测配置"
-                        description="当前页面已对接真实列表与详情接口，并提供最小新建动作闭环。"
+                        description="查看回测配置、Dataset 绑定和策略版本快照，并提供既有契约下的最小新建动作闭环。"
                         badge="Backtests"
                     />
                 </Card>
@@ -284,17 +310,17 @@ export function BacktestsPage() {
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="研究配置 ID" name="researchConfigId">
-                                    <Input placeholder="真实请求参数，可空"/>
+                                    <Input placeholder="按研究配置 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="回测配置 ID" name="backtestConfigId">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Input placeholder="按回测配置 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="名称" name="name">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Input placeholder="按配置名称筛选"/>
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -440,7 +466,7 @@ export function BacktestsPage() {
                         <Card title="动作区" size="small">
                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                                 <Alert type="info" showIcon
-                                       message="GateI-2 仅绑定 strategy version 和 marketdata dataset，不会启动回测或修改策略逻辑。"/>
+                                       message="当前仅绑定 strategy version 和 marketdata dataset，不会启动回测或修改策略逻辑。"/>
                                 <Form
                                     form={bindStrategyVersionForm}
                                     layout="inline"
@@ -573,12 +599,12 @@ export function BacktestsPage() {
                         <Input.TextArea rows={3}/>
                     </Form.Item>
                     <Form.Item label="开始时间" name="startTime"
-                               rules={[{required: true, message: '请输入 ISO-8601 开始时间'}]}>
-                        <Input placeholder="例如：2026-03-01T00:00:00Z"/>
+                               rules={[{required: true, message: '请选择开始时间'}]}>
+                        <DatePicker showTime style={{width: '100%'}}/>
                     </Form.Item>
                     <Form.Item label="结束时间" name="endTime"
-                               rules={[{required: true, message: '请输入 ISO-8601 结束时间'}]}>
-                        <Input placeholder="例如：2026-03-31T00:00:00Z"/>
+                               rules={[{required: true, message: '请选择结束时间'}]}>
+                        <DatePicker showTime style={{width: '100%'}}/>
                     </Form.Item>
                     <Form.Item label="初始资金" name="initialCapital"
                                rules={[{required: true, message: '请输入初始资金'}]}>

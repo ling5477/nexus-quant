@@ -21,6 +21,7 @@ import {useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {BOOLEAN_FILTER_OPTIONS, SCHEDULE_STATUS_OPTIONS, SCHEDULE_TYPE_OPTIONS} from '@/constants/filter-options';
 import {
     useScheduleDetailQuery,
     useScheduleListQuery,
@@ -166,7 +167,7 @@ export function SchedulesPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="调度计划"
-                        description="当前页面已对接真实列表与详情接口，并支持在详情抽屉中执行最小启停动作。"
+                        description="按策略查看调度计划、运行状态和启停动作。freeze 期间只展示现有调度事实，不扩展新的调度能力。"
                         badge="Schedules"
                     />
                 </Card>
@@ -203,22 +204,18 @@ export function SchedulesPage() {
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="调度类型" name="scheduleType">
-                                    <Input placeholder="例如：CRON"/>
+                                    <Select allowClear placeholder="全部类型" options={SCHEDULE_TYPE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="状态" name="status">
-                                    <Input placeholder="例如：ACTIVE"/>
+                                    <Select allowClear placeholder="全部状态" options={SCHEDULE_STATUS_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="启用状态" name="enabled">
                                     <Select
-                                        options={[
-                                            {label: '全部', value: 'all'},
-                                            {label: '已启用', value: 'true'},
-                                            {label: '未启用', value: 'false'},
-                                        ]}
+                                        options={BOOLEAN_FILTER_OPTIONS}
                                     />
                                 </Form.Item>
                             </Col>

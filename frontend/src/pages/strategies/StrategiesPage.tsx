@@ -22,6 +22,12 @@ import {useState} from 'react';
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {
+    BOOLEAN_FILTER_OPTIONS,
+    EXCHANGE_OPTIONS,
+    STRATEGY_TYPE_OPTIONS,
+    TRADE_ENV_OPTIONS,
+} from '@/constants/filter-options';
+import {
     useStrategyDetailQuery,
     useStrategyVersionsQuery,
     useCreateStrategyVersionMutation,
@@ -250,7 +256,7 @@ export function StrategiesPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="策略定义"
-                        description="当前页面已对接真实 `GET /api/strategies` 列表接口，并支持打开详情与执行最小启停动作。"
+                        description="策略定义查询、详情查看与启停操作入口。页面保留策略状态、账户环境和版本快照，便于 freeze 期间审查可运行策略。"
                         badge="Strategies"
                     />
                 </Card>
@@ -283,27 +289,23 @@ export function StrategiesPage() {
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="策略类型" name="strategyType">
-                                    <Input placeholder="例如：SPOT_GRID"/>
+                                    <Select allowClear showSearch placeholder="全部类型" options={STRATEGY_TYPE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="交易所" name="exchangeCode">
-                                    <Input placeholder="例如：OKX"/>
+                                    <Select allowClear placeholder="全部交易所" options={EXCHANGE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="交易环境" name="tradeEnv">
-                                    <Input placeholder="例如：SIM / LIVE"/>
+                                    <Select allowClear placeholder="全部环境" options={TRADE_ENV_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="启用状态" name="enabled">
                                     <Select
-                                        options={[
-                                            {label: '全部', value: 'all'},
-                                            {label: '已启用', value: 'true'},
-                                            {label: '未启用', value: 'false'},
-                                        ]}
+                                        options={BOOLEAN_FILTER_OPTIONS}
                                     />
                                 </Form.Item>
                             </Col>
@@ -462,7 +464,7 @@ export function StrategiesPage() {
                                             name="versionName"
                                             rules={[{required: true, message: '请输入版本名称'}]}
                                         >
-                                            <Input placeholder="例如：GateI-1 baseline"/>
+                                            <Input placeholder="例如：freeze baseline"/>
                                         </Form.Item>
                                     </Col>
                                     <Col xs={24} md={12}>

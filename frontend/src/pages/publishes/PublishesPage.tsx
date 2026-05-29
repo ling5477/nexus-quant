@@ -10,6 +10,7 @@ import {
     Form,
     Input,
     Row,
+    Select,
     Space,
     Table,
     Tag,
@@ -20,6 +21,7 @@ import {useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {PUBLISH_STATUS_OPTIONS} from '@/constants/filter-options';
 import {
     usePublishDetailQuery,
     usePublishMutation,
@@ -187,7 +189,7 @@ export function PublishesPage() {
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title="发布结果"
-                        description="当前页面已对接真实列表与详情接口，并支持对单次回测运行执行最小发布动作。"
+                        description="查看回测发布记录、策略版本绑定和失败信息，并可在详情中对既有回测运行执行发布。"
                         badge="Publishes"
                     />
                 </Card>
@@ -215,27 +217,27 @@ export function PublishesPage() {
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="研究配置 ID" name="researchConfigId">
-                                    <Input placeholder="真实请求参数，可空"/>
+                                    <Input placeholder="按研究配置 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="回测配置 ID" name="backtestConfigId">
-                                    <Input placeholder="真实请求参数，可空"/>
+                                    <Input placeholder="按回测配置 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="源策略 ID" name="sourceStrategyId">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Input placeholder="按源策略 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="策略版本 ID" name="strategyVersionId">
-                                    <Input placeholder="可传给 /api/publishes 过滤"/>
+                                    <Input placeholder="按策略版本 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="发布状态" name="publishStatus">
-                                    <Input placeholder="本地筛选字段"/>
+                                    <Select allowClear placeholder="全部状态" options={PUBLISH_STATUS_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                         </Row>

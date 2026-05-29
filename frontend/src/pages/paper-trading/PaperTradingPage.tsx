@@ -11,6 +11,7 @@ import {
     Input,
     Modal,
     Row,
+    Select,
     Space,
     Table,
     Tabs,
@@ -22,6 +23,14 @@ import {useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {
+    EXCHANGE_OPTIONS,
+    INTERVAL_OPTIONS,
+    MARKET_TYPE_OPTIONS,
+    PAPER_RUN_STATUS_OPTIONS,
+    SYMBOL_OPTIONS,
+    TRADE_ENV_OPTIONS,
+} from '@/constants/filter-options';
 import {
     useAckAlertMutation,
     useCreateAlertMutation,
@@ -297,7 +306,7 @@ export function PaperTradingPage() {
                     <PageHero
                         title="模拟交易"
                         description="基于已发布策略版本创建 SIM/Paper Trading run，固化 publish/strategy version/dataset/param/config 快照，支持启动、停止与最小事实查询。"
-                        badge="GateI-3"
+                        badge="Paper Trading"
                     />
                 </Card>
                 <Card
@@ -327,12 +336,12 @@ export function PaperTradingPage() {
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label="发布 ID" name="publishId">
-                                    <Input placeholder="按 publishId 过滤，可空"/>
+                                    <Input placeholder="按发布记录 ID 筛选"/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label="状态" name="status">
-                                    <Input placeholder="CREATED/RUNNING/STOPPED/FAILED"/>
+                                    <Select allowClear placeholder="全部状态" options={PAPER_RUN_STATUS_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -395,19 +404,19 @@ export function PaperTradingPage() {
                         <Input placeholder="发布记录 ID（publishId）"/>
                     </Form.Item>
                     <Form.Item label="交易环境" name="tradeEnv" rules={[{required: true}]}>
-                        <Input placeholder="SIM"/>
+                        <Select options={TRADE_ENV_OPTIONS}/>
                     </Form.Item>
                     <Form.Item label="交易所" name="exchangeCode" rules={[{required: true}]}>
-                        <Input placeholder="OKX 或 BINANCE"/>
+                        <Select options={EXCHANGE_OPTIONS}/>
                     </Form.Item>
                     <Form.Item label="市场类型" name="marketType" rules={[{required: true}]}>
-                        <Input placeholder="SPOT"/>
+                        <Select options={MARKET_TYPE_OPTIONS}/>
                     </Form.Item>
                     <Form.Item label="Symbol" name="symbol" rules={[{required: true}]}>
-                        <Input placeholder="BTC-USDT"/>
+                        <Select showSearch options={SYMBOL_OPTIONS}/>
                     </Form.Item>
                     <Form.Item label="周期" name="intervalCode" rules={[{required: true}]}>
-                        <Input placeholder="1m / 5m / 15m / 1h / 4h / 1d"/>
+                        <Select options={INTERVAL_OPTIONS}/>
                     </Form.Item>
                     <Form.Item label="运行配置快照 JSON（可空）" name="configSnapshotJson">
                         <Input.TextArea rows={3} placeholder='{"feeRate":"0.001","slippageBps":"10"}'/>

@@ -71,7 +71,7 @@ export function InstrumentsPage() {
                 <PageHero
                     title="Instruments"
                     description="正式 instrument/symbol catalog。后续交易对 selector、precision 校验和多币种工作流都以这里为主数据入口。"
-                    badge="GateJ-FREEZE"
+                    badge="Catalog"
                 />
             </Card>
             <Card
