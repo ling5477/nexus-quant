@@ -42,6 +42,10 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前执行状态
 
+- 2026-05-30 GateJ-FREEZE UI + UX smoke review 已完成并形成 `GATEJ_FREEZE_UI_UX_SMOKE_REPORT.md`：本次为 Chrome 浏览器只读巡检，不是运行稳定性验收；Functional stability: PASS，UI/UX professionalism: FAIL；当前 7d 连续运行验收继续，不因 UI/UX 问题中断。
+- GateJ-FREEZE 当前验收事实：30m observation PASS，1h acceptance PASS，24h acceptance PASS，7d acceptance running，GateJ completed: no。
+- FIX-5 / FIX-6 / FIX-7 已完成并通过 ECS 复验；安全组已确认 `5179` 只允许本人 IP 访问。
+- UI/UX smoke review 发现的 Dashboard 工程实现文案、freeze 写按钮可点击、Instrument Catalog 同步入口未前端禁用、Paper Trading / Schedules / Runs 缺摘要等问题应作为 post-freeze remediation 跟踪，不应写成后端或运行稳定性 FAIL。
 - Current stage: GateJ-FREEZE-FIX-7 local fix completed; next upload new release to ECS and verify freeze console no longer shows old Gate / LOCAL / API development text, Instrument Catalog sync remains controlled, then run GateJ-FREEZE first-start acceptance。
 - GateJ-3-WO 已完成。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成：无 P0；Claude 第一轮 P1-1 / P1-2 验证缺口已由 Codex 实际重跑关闭；P1-3 不阻塞；P1-4 已闭环 GATEJ_FREEZE_ACCEPTANCE_TEMPLATE。详见 `PRE_FREEZE_AUDIT_REPORT.md` 与 `PRE_FREEZE_AUDIT_FIX_PLAN.md`。

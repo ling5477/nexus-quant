@@ -2,6 +2,56 @@
 
 日期：2026-05-16
 
+## GateJ-FREEZE UI + UX Smoke Review 文档整理
+
+日期：2026-05-30
+
+### 本轮目标
+
+将本次 Chrome 目标模式下完成的 NexusQuant GateJ-FREEZE UI + UX 只读 smoke review 结果整理为当前事实源文档。本轮只做文档整理，不修改前端代码、后端代码、API、migration、脚本、配置，不重新 build、部署或重启服务，不影响当前 GateJ-FREEZE 7d 连续运行验收。
+
+### 新增文件
+
+- `docs/current/GATEJ_FREEZE_UI_UX_SMOKE_REPORT.md`
+
+### 修改文件
+
+- `docs/current/STATUS.md`
+- `docs/current/WORKLOG.md`
+
+### 记录结论
+
+- Functional stability: PASS。
+- UI/UX professionalism: FAIL。
+- 页面均可打开，未发现白屏、崩溃、`internal server error`、明显 Console error/warn；观察到的 Network 请求为 200。
+- 未发现旧 Gate 文案残留：`GateH-1`、`GateH-2`、`GateI-3`、`GateH-PRE`、`GateG`、`LOCAL`、`Gate-3`。
+- 主要 UI/UX 问题：Dashboard 暴露工程实现文案；freeze 期间多个写动作按钮仍可点击；Instrument Catalog 同步入口未前端禁用；Dashboard / Paper Trading / Schedules / Runs 缺关键摘要；空态说明偏弱；表格密度和中英文术语仍需统一。
+- 当前 GateJ-FREEZE 稳定性状态保持不变：30m observation PASS，1h acceptance PASS，24h acceptance PASS，7d acceptance running，GateJ completed: no。
+
+### Acceptance impact
+
+- 本次 UI/UX FAIL 不等同于后端或运行稳定性 FAIL。
+- 不打断当前 7d 连续运行验收。
+- 不建议当前立即修复 UI/UX 问题，因为修复需要重新 build / release / deploy，会破坏当前连续运行证据。
+- 若 7d 最终 PASS，可以判定 GateJ-FREEZE 稳定性验收通过，但不能声明 UI/UX 专业化已完成。
+- 建议在 7d 验收完成后单独开 `GateJ-POST-FREEZE-UI-AUDIT-FIX` 跟踪。
+
+### 本轮未执行
+
+- 未执行 `mvn -f backend/pom.xml test`：本轮仅整理文档，未修改 Java / API / migration。
+- 未执行 `npm run build` 或 `npm run test:e2e`：本轮仅整理文档，未修改前端代码。
+- 未执行 Python `pytest / mypy / ruff`：本轮未修改 `research/py`。
+- 未创建 `docs/gates/gate-j`；GateJ 7d 未完成前禁止创建冻结快照。
+
+### 边界确认
+
+- 未新增、编辑、删除、启动、停止、下单、发布、评估或触发外部同步。
+- 未修改服务器配置。
+- 未输出、保存或提交密码、JWT token、cookie、localStorage token。
+- 未新增 release、dist、jar、zip、log、dump、freeze-evidence 文件。
+
+---
+
 ## 修改文件清单
 
 - `.env.example`
