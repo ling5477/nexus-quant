@@ -23,6 +23,7 @@
 - 历史 Gate 卷宗：`docs/gates/`
   - `docs/gates/gate-h/`：GateH completed freeze snapshot（交易工作台、历史行情、dataset 绑定）
   - `docs/gates/gate-i/`：GateI completed freeze snapshot（虚拟币量化 V1 完整闭环）
+  - `docs/gates/gate-j/`：GateJ completed freeze snapshot（Paper Trading 稳定运行与 GateJ-FREEZE 验收）
   - `docs/gates/gate-a..g/`：早期 Gate 历史卷宗
 - 归档文档：`docs/archive/`
 - 文档规则：`docs/DOC_RULES.md`
@@ -32,14 +33,13 @@
 
 - GateH completed。
 - GateI completed。
-- GateJ-PLAN completed。
-- GateJ-1-WO completed。
-- GateJ-2-WO completed。
-- GateJ-3-WO completed。
-- Next: GateJ-FREEZE（1h / 24h / 7d 连续运行验收与冻结）。
+- GateJ completed。
+- GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
+- Next: GateK-PLAN。
 - AI not started。
-- GateK not started。
-- GateJ 不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
+- DH integration not started / not connected to NQ。
+- Multi-exchange expansion not started。
+- UI/UX professionalism remains post-freeze remediation。
 
 ## 文档使用规则
 
@@ -47,4 +47,4 @@
 - `docs/gates` 是历史 Gate 冻结卷宗，只读参考。
 - 已完成 Gate 的计划文档（PLAN / WORK_ORDER / API_PLAN / DB_PLAN / FRONTEND_PLAN / TEST_PLAN）只保留在 `docs/gates/gate-x/`，不在 `docs/current/` 重复。
 - `docs/archive` 只归档，不作为当前开发依据。
-- 未冻结 Gate（如当前的 GateJ）的计划文档保留在 `docs/current/`，Gate 完成并冻结后迁移到 `docs/gates/gate-x/` 并从 `docs/current/` 删除。
+- 未冻结 Gate 的计划文档保留在 `docs/current/`，Gate 完成并冻结后迁移或复制到 `docs/gates/gate-x/`；当前事实仍以 `docs/current/` 为准。

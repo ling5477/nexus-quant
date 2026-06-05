@@ -5,7 +5,7 @@
 
 ## 1. 当前阶段
 
-Current stage: GateJ-FREEZE-FIX-SECOND-PASS completed, next redeploy GateJ-FREEZE-FIX release and run first-start acceptance
+Current stage: GateJ completed
 
 Previous completed stages:
 
@@ -30,14 +30,18 @@ Previous completed stages:
 - AUDIT-FIX
 - GateJ-FREEZE-FIX
 - GateJ-FREEZE-FIX-SECOND-PASS
+- GateJ-FREEZE 30m / 1h / 24h / 7d acceptance
+- GateJ
 
-Next allowed: redeploy GateJ-FREEZE-FIX release and run first-start acceptance。GateJ-FREEZE-FIX-SECOND-PASS 已完成并允许重新部署，详见 `docs/current/GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md`。GateJ 仍未 completed，必须在服务器首次启动验收后再进入 1h / 24h / 7d 连续运行验收。
+Next allowed: GateK-PLAN。GateJ-FREEZE 30m / 1h / 24h / 7d acceptance 已通过，GateJ completed，详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`。GateK-PLAN 只允许规划 AI 信号接入，不代表 GateK 实现、AI 接入、DH 集成或真实交易已启动。
 
-GateJ-FREEZE 允许范围：
-- 1h / 24h / 7d 连续运行验收。
-- 验收记录、文档冻结、FREEZE_SUMMARY 编写。
-- 同步 STATUS / WORKLOG / TESTING / ROADMAP / CLAUDE / AGENTS / README。
-- GateJ 整体通过验收后才允许创建 `docs/gates/gate-j/` 并冻结。
+GateJ-FREEZE 最终状态：
+- 30m / 1h / 24h / 7d 连续运行验收 passed。
+- `docs/gates/gate-j/` 已允许作为 GateJ completed 冻结卷宗。
+- AI not started。
+- DH integration not started / not connected to NQ。
+- Multi-exchange expansion not started。
+- UI/UX professionalism remains post-freeze remediation。
 
 GateJ-FREEZE 禁止范围：
 - 不接 AI、不做 AI 信号 / AI 自动交易 / AI Paper Trading。
@@ -45,8 +49,9 @@ GateJ-FREEZE 禁止范围：
 - 不新增业务功能、API、migration。
 - 不改前端页面功能。
 - 不做真实 LIVE 下单、不调用真实交易所下单接口。
-- 不把 GateJ 写成 completed，除非 GateJ-FREEZE 通过。
-- 不创建 `docs/gates/gate-j/`，除非 GateJ completed。
+- 不把 GateK 写成 started，除非后续单独开工。
+- 不宣称 UI/UX 专业化已完成。
+- 不宣称公开用户生产就绪。
 
 GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
 
@@ -103,7 +108,7 @@ GateI 已整体完成，覆盖以下内容：
 - `docs/archive` 只归档，不作为当前开发依据。
 - GateI 已完成并冻结，归档在 `docs/gates/gate-i`。
 - GateH 已完成并冻结，归档在 `docs/gates/gate-h`。
-- GateJ 尚未完成，不要创建 `docs/gates/gate-j`。
+- GateJ 已完成并冻结，归档在 `docs/gates/gate-j`。
 - 新 Gate 或新 WO 开始前必须先阅读 `docs/current` 对应计划文档。
 - 每轮完成后必须按实际改动更新 `docs/current/STATUS.md`、`docs/current/WORKLOG.md`、`docs/current/TESTING.md`。
 - 文档描述必须与代码和测试状态一致；未执行验证不能写成通过。
