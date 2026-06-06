@@ -15,6 +15,8 @@
 
 ## 2. Batch 2：comment-only migration
 
+状态：已完成。已新增 `V26__schema_comment_business_normalization.sql`，本批只做长期业务注释归一化和 JSONB 敏感信息边界补充，未新增字段、索引、约束、数据变更或 Repository 行为。
+
 ### 允许范围
 
 - 新增一个 comment-only Flyway migration。
@@ -44,6 +46,14 @@
 ### 必须单独开工
 
 Batch 2 必须单独提交，不能与字段新增、Repository 过滤、retention job 合并。
+
+### 本批执行结果
+
+- 新增 `backend/nq-infra/src/main/resources/db/migration/V26__schema_comment_business_normalization.sql`。
+- migration 仅包含 `COMMENT ON TABLE` 与 `COMMENT ON COLUMN`。
+- 清理历史表/字段注释中的工程交付批次措辞，改为稳定业务语义。
+- 对 `payload_json`、`snapshot_json`、`config_json`、`request_json`、`result_json`、`summary_json`、`detail_json` 等字段补充敏感信息禁入说明。
+- 未修改历史 migration，未新增表字段，未实现逻辑删除或 retention purge。
 
 ## 3. Batch 3：配置/主数据表字段和约束补齐
 

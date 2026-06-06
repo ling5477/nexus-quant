@@ -13,6 +13,10 @@
 
 当前数据库已包含用户、账户、凭证、订单、成交、持仓、策略、调度、研究、回测、评估、发布、行情基础表。具体字段、索引、约束以 `backend/**/db/migration` 下的 Flyway migration 为准。
 
+## Schema Comment Governance
+
+`V26__schema_comment_business_normalization.sql` 已完成数据库注释业务语义归一化。本次只更新 PostgreSQL `COMMENT ON TABLE` 与 `COMMENT ON COLUMN`，不新增表、字段、索引、约束或数据变更；重点是把长期注释改为稳定业务含义，并为 JSONB、payload、snapshot、config、request、result、summary、detail 等字段补充敏感信息禁入边界。
+
 ## GateH-2 当前 Marketdata 结构
 
 GateH-2 新增 Flyway migration：

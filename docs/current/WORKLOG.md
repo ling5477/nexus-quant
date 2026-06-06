@@ -2,6 +2,50 @@
 
 日期：2026-05-16
 
+## DB Schema Comment Business Normalization
+
+日期：2026-06-06
+
+### 本轮目标
+
+新增一个 Flyway comment-only migration，清理数据库表/字段注释中的工程交付批次措辞，并把注释改写为稳定业务语义。本轮只做 PostgreSQL COMMENT 归一化和文档同步，不新增字段、索引、约束、数据变更、Repository 过滤、逻辑删除、retention purge、AI、DH 或真实交易路径。
+
+### 修改文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V26__schema_comment_business_normalization.sql`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 确认当前最大 Flyway migration 为 V25，本轮新增 V26。
+- 新增 `V26__schema_comment_business_normalization.sql`，文件只包含 `COMMENT ON TABLE` 与 `COMMENT ON COLUMN`。
+- 将策略、研究、回测、发布、账户、行情、dataset、Paper Trading、风控、曲线、复盘、停机、稳定性检查等表/字段注释改为长期业务语义。
+- 为 JSONB / payload / snapshot / config / request / result / summary / detail 类字段补充敏感信息禁入边界。
+- 更新 `DB_SCHEMA_GOVERNANCE_PLAN.md`，标记 Batch 2 comment-only migration 已完成。
+- 更新 `DB_SCHEMA.md`，记录 V26 只做注释治理，不代表 schema 字段治理完成。
+
+### 验证记录
+
+- 已执行 `git diff --check`。
+- 已执行阶段化关键词扫描，确认新增 V26 migration 未命中任务要求清理的工程交付批次关键词；`DB_SCHEMA.md`、`DB_SCHEMA_GOVERNANCE_PLAN.md`、`WORKLOG.md` 中命中均为当前项目状态、历史记录或批次计划描述。
+- 已人工检查 V26 migration：只包含 `COMMENT ON TABLE` / `COMMENT ON COLUMN` / 空行；不包含 `ALTER TABLE`、`CREATE INDEX`、`UPDATE`、`DELETE`、`INSERT`。
+- 已执行 `git status --short`，确认未修改旧 migration、Java、前端、Python、部署或脚本。
+- 未执行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest/mypy/ruff`：本轮只新增 comment-only migration 和 Markdown 文档，未修改业务代码、API、Repository、前端页面、Python 或部署脚本。
+
+### 边界确认
+
+- 未修改历史 migration。
+- 未新增表、字段、索引、约束或数据变更。
+- 未修改 Java、Repository、API、前端、Python 或部署脚本。
+- 未实现逻辑删除或 retention purge。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
 ## Codex Workflow 输出字段口径小修
 
 日期：2026-06-06
