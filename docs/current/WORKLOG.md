@@ -2,6 +2,146 @@
 
 日期：2026-05-16
 
+## Codex Workflow 输出字段口径小修
+
+日期：2026-06-06
+
+### 本轮目标
+
+修复 Codex Workflow 标准输出格式中 `Summary` / `Findings` 字段口径不一致问题，将必填输出字段统一为 `Findings`。本轮只做 Markdown / Skill 文档口径小修，不修改业务代码、生产环境配置、API、migration、Python、部署脚本、AI、DH 或真实交易路径。
+
+### 修改文件
+
+- `AGENTS.md`
+- `.agents/skills/nq-dh-workflow-router/SKILL.md`
+- `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 修复标准输出块中的字段冲突：`AGENTS.md`、`.agents/skills/nq-dh-workflow-router/SKILL.md`、`NQ_DH_CODEX_PLUGIN_WORKFLOW.md` 已统一使用 `Findings`。
+- 保持 `NQ_DH_WORKFLOW_ROUTER_SKILL.md` 与 `CODEX_PROJECT_INSTRUCTIONS.md` 已有 `Findings` 口径不变。
+- `NQ_DH_CODEX_TASK_TEMPLATES.md` 未发现标准输出格式块使用 `Summary`，无需修改。
+
+### 验证记录
+
+- 已执行 `git status --short`。
+- 已执行 `git diff --check`。
+- 已执行只读文本检查，确认标准输出格式均使用 `Findings`，且没有把 `Summary` 作为必填输出字段。
+- 已检查 GateJ completed / Next: GateK-PLAN / AI not started / DH integration not started / not connected to NQ 未被改错。
+- 未执行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest/mypy/ruff`：本轮仅修改 Markdown / Skill 文档，未修改业务代码、API、migration、前端页面、Python、部署脚本或部署配置。
+
+### 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未修改后端、前端、Python 或部署脚本。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未新增 RealClient、real provider 或真实交易路径。
+- 未提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
+## Codex Workflow 文档一致性小修
+
+日期：2026-06-06
+
+### 本轮目标
+
+修复 Codex Workflow Router Skill 状态表述不一致问题，并让 `CODEX_PROJECT_INSTRUCTIONS.md` 同步 `AGENTS.md` 中的 active skills 和 `nq-dh-workflow-router` 前置使用规则。本轮只做 Markdown 文档一致性小修，不修改业务代码、生产环境配置、API、migration、Python、部署脚本、AI、DH 或真实交易路径。
+
+### 修改文件
+
+- `AGENTS.md`
+- `docs/current/README.md`
+- `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md`
+- `docs/current/CODEX_PROJECT_INSTRUCTIONS.md`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 修复 P2：Router Skill 状态已与 `AGENTS.md` active skills 对齐；`NQ_DH_WORKFLOW_ROUTER_SKILL.md` 改为 `nq-dh-workflow-router` active skill 的源规格与维护规范。
+- 修复 P3：`CODEX_PROJECT_INSTRUCTIONS.md` 已补充 `nq-dh-workflow-router` 前置分类规则、范围限定规则、禁止默认调用所有插件、禁止扫描全仓库和固定输出字段。
+- 更新 `AGENTS.md` 与 `docs/current/README.md` 中的 Router Skill 入口说明，统一为当前 active skill 口径。
+- 外部 Codex App 如需手动创建 Skill，可从 `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md` 复制规格；当前仓库按 `AGENTS.md` 将其作为 active skill 使用。
+
+### 验证记录
+
+- 已执行 `git status --short`。
+- 已执行 `git diff --check`。
+- 已执行只读文本检查，确认 Router Skill 为当前 active skill 口径、Project Instructions 包含 `nq-dh-workflow-router` 前置规则、README 入口仍有效，且 GateJ completed / Next: GateK-PLAN / AI not started / DH integration not started / not connected to NQ 未被改错。
+- 未执行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest/mypy/ruff`：本轮仅修改 Markdown 文档，未修改业务代码、API、migration、前端页面、Python、部署脚本或部署配置。
+
+### 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未修改后端、前端、Python 或部署脚本。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未新增 RealClient、real provider 或真实交易路径。
+- 未提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
+## Codex Workflow 文档固化
+
+日期：2026-06-06
+
+### 本轮目标
+
+固化 NQ / DH 项目的 Codex 插件使用规则、工作流路由、AGENTS.md 规则、Skill 说明和任务模板，让后续开发任务能先分类、再选择最少必要插件。本轮只做文档和规则固化，不修改业务代码、生产环境配置、API、migration、Python、部署脚本、AI、DH 或真实交易路径。
+
+### 新增文件
+
+- `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md`
+- `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md`
+- `docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md`
+- `docs/current/CODEX_PROJECT_INSTRUCTIONS.md`
+
+### 修改文件
+
+- `AGENTS.md`
+- `docs/current/README.md`
+- `docs/current/STATUS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 在 `AGENTS.md` 中新增项目定位、NQ/DH 边界、插件路由入口、代码修改前检查、代码修改后验证和默认输出格式。
+- 新增 `NQ_DH_CODEX_PLUGIN_WORKFLOW.md`，固化任务类型枚举、插件路由表、插件优先级、标准执行流程、NQ 边界、DH 边界和默认输出格式。
+- 新增 `NQ_DH_WORKFLOW_ROUTER_SKILL.md`，作为 `NQ-DH Workflow Router` Skill 的源规格；当前仓库按 `AGENTS.md` 将 `nq-dh-workflow-router` 作为 active skill 使用。
+- 新增 `NQ_DH_CODEX_TASK_TEMPLATES.md`，覆盖代码审查、前端页面优化、回测图表、交易所字段对比、Gate 冻结报告、一键部署审查和 DH Integration-0 模板。
+- 新增 `CODEX_PROJECT_INSTRUCTIONS.md`，用于复制到 Codex Project Instructions。
+- 在 `docs/current/README.md` 中追加 Codex Workflow 入口。
+
+### 验证记录
+
+- 已读取 `AGENTS.md`、`README.md`、`docs/current/README.md`、`STATUS.md`、`WORKLOG.md`、`TESTING.md` 和用户粘贴请求。
+- 已检查目标同名文档此前不存在。
+- 已检查新增索引链接指向本轮创建的文档和根目录 `AGENTS.md`。
+- 未执行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest/mypy/ruff`：本轮仅修改 Markdown 文档，未修改业务代码或部署配置。
+
+### 边界确认
+
+- 未新增业务功能。
+- 未新增 API。
+- 未新增 migration。
+- 未修改后端、前端、Python 或部署脚本。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
 ## GateJ-FREEZE UI + UX Smoke Review 文档整理
 
 日期：2026-05-30

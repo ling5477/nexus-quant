@@ -3,6 +3,65 @@
 > 目的：让 Codex / 开发者在本仓库内严格遵循当前阶段、模块边界、文档事实源、验证纪律和禁止范围。
 > 当前事实源：`docs/current/`。
 
+## 0. 项目定位与 Codex 插件路由
+
+NexusQuant（NQ）是通用量化交易平台，本仓库当前处于 **GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ**。Decision Hub（DH）是多 Agent 决策平台；在 NQ 中只能作为未来只读边界和契约冻结对象描述，不代表 DH 已接入 NQ。
+
+Codex 执行任务时必须先判断任务类型，再选择最少必要插件或 skill。禁止默认调用所有插件，禁止用插件名义绕过 Gate、Freeze、安全、模块或交易边界。完整路由规则见 `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md`，Router Skill 源规格与维护规范见 `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md`，常用模板见 `docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md`，可复制 Project Instructions 见 `docs/current/CODEX_PROJECT_INSTRUCTIONS.md`。
+
+NQ 边界：
+
+- 不允许开启 LIVE trading。
+- 不允许新增真实下单、撤单路径，除非任务明确要求且当前 Gate 允许。
+- 不允许泄露 credentials、API key、exchange secret、tenant data、token、cookie。
+- PAPER 和 LIVE 必须隔离；任何跨环境逻辑必须说明隔离点、失败模式和回滚方式。
+- DH 不允许修改 NQ 交易状态，不允许启动 Paper Run，不允许访问凭证。
+- 涉及交易、风控、权限、部署、安全的修改必须输出风险说明。
+- 前端页面任务优先按 `Figma + Product Design + Build Web Apps + Browser/Chrome` 路由；若当前任务只是 Ant Design 代码落地，仍优先遵守本仓库 active skills。
+- 安全审计任务优先按 `GitHub + Codex Security + CodeRabbit` 路由。
+- 交易所数据任务优先按 `Binance + GitHub + Spreadsheets` 路由；只允许公共只读市场数据，不允许下单。
+- 文档任务优先按 `GitHub + Documents + Notion` 路由。
+
+DH 边界：
+
+- DH 不允许真实连接 NQ。
+- DH 不允许下单、撤单、启动 Paper Run、访问凭证、修改 NQ 交易状态。
+- Integration-0 只能准备只读边界和契约冻结。
+- 不允许新增 real provider、RealClient、第三方 relay、生产交易路径。
+- 必须重点检查 HMAC、timestamp、nonce、source allowlist、payload size、tenant binding、replay protection、provider trust policy、audit trail。
+- Agent/API 任务优先按 `GitHub + OpenAI Developers` 路由。
+- 安全任务优先按 `GitHub + Codex Security + CodeRabbit` 路由。
+
+代码修改前检查：
+
+- 先确认 repository、module、target files、excluded files、expected output。
+- 先读 `AGENTS.md`、`README.md`、`docs/current/README.md`、相关计划或事实文档，再读目标代码。
+- 不扫描 `node_modules`、`target`、`build`、`dist`、`.git`、`test-results`、`logs`、`secrets`、`credentials`。
+- 不同时修改前端、后端、Python、部署、文档，除非任务明确要求。
+- 不做大而全重构；每轮改动必须最小、可验证、可回滚。
+
+代码修改后验证：
+
+- 后端：`mvn -f backend/pom.xml test`，或说明仅运行指定模块测试的理由。
+- 前端：`Set-Location frontend; npm run build; npm run test:e2e`，页面任务还应做 Browser/Chrome 验证。
+- Python：`Set-Location research/py; python -m pytest -q; python -m mypy src; python -m ruff check .`。
+- 文档：检查路径、链接、阶段状态、禁止边界、重复入口和“未执行验证不能写成通过”。
+- 部署：检查 Docker/env example/health check/migration/rollback；禁止写入真实密钥。
+
+默认输出格式：
+
+```text
+Task classification:
+Plugins selected:
+Scope:
+Files inspected:
+Files changed:
+Findings:
+Validation:
+Risks:
+Next concrete action:
+```
+
 ## 1. 当前阶段
 
 Current stage: GateJ completed
@@ -340,21 +399,23 @@ git status --short
 
 #### 7.1 Active skills（唯一默认启用集合）
 
-当前 active skills 仅允许以下 8 个：
+当前 active skills 仅允许以下 9 个：
 
-1. `frontend-product-ui-design`
-2. `ui-visual-system-polish`
-3. `frontend-antd-page-builder`
-4. `frontend-quality-regression`
-5. `java-backend-maintenance`
-6. `java-backend-regression-tests`
-7. `db-schema-migration-review`
-8. `python-ops-tooling`
+1. `nq-dh-workflow-router`
+2. `frontend-product-ui-design`
+3. `ui-visual-system-polish`
+4. `frontend-antd-page-builder`
+5. `frontend-quality-regression`
+6. `java-backend-maintenance`
+7. `java-backend-regression-tests`
+8. `db-schema-migration-review`
+9. `python-ops-tooling`
 
 使用原则：
 
 - 只选择与本轮任务直接相关的 skill，不要一次性激活所有 skills。
 - 一个任务最多一个主 skill；其他 skill 只能作为补充，并说明为什么需要。
+- NQ / DH / Gate / FREEZE / 插件路由相关任务先使用 `nq-dh-workflow-router` 做任务分类、范围限定和边界检查，再选择具体执行 skill。
 - 如果 skill 路由与当前 Gate 边界、安全边界、技术栈边界冲突，优先遵守 Gate / Freeze / Work Order / 安全 / 技术栈规则。
 - 不得用 skill 名义绕过禁止项：不接 AI/DH、不接真实 provider、不接 NQ RealClient、不触碰 LIVE 交易、不新增未要求的 API / migration / 业务能力。
 

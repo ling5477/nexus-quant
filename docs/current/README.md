@@ -65,6 +65,14 @@ GateO：A 股适配
 - `ROADMAP.md`：总路线。
 - `WORKLOG.md`：执行日志。
 
+## Codex Workflow 入口
+
+- `../../AGENTS.md`：仓库级 Codex 开发指引、NQ/DH 边界与执行纪律。
+- `NQ_DH_CODEX_PLUGIN_WORKFLOW.md`：NQ/DH 插件路由、任务类型和标准工作流。
+- `NQ_DH_WORKFLOW_ROUTER_SKILL.md`：`nq-dh-workflow-router` active skill 的源规格与维护规范。
+- `NQ_DH_CODEX_TASK_TEMPLATES.md`：常用代码审查、前端优化、图表、交易所字段、Gate 报告、部署审查和 DH Integration-0 模板。
+- `CODEX_PROJECT_INSTRUCTIONS.md`：可复制到 Codex Project Instructions 的完整规则。
+
 ## 当前 GateJ 规划文件
 
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
