@@ -26,6 +26,16 @@
 - `instrument_catalog`：保留既有 `exchange_code + exchange_symbol`、`exchange_code + internal_symbol` 唯一约束；新增 `instrument_type` 现货枚举约束；新增 `status` 非空大写代码约束。当前 `status` 仍承载交易所原生 instrument 状态，不在本批强制改成 NQ canonical 状态。
 - 本批未处理 `positions`、`risk_events`、订单、成交、账本、审计、Paper facts、Backtest facts 或 marketdata timeseries。
 
+`V28__schema_research_backtest_config_governance.sql` 已完成 Batch 3-B 研究 / 回测配置表治理。本批只处理 `research_configs`、`backtest_configs`：
+
+- `research_configs`：保留既有 `created_at/updated_at`；新增 `status`，允许值为 `ACTIVE / ARCHIVED / DISABLED`；新增 `archived_at`、`archived_by`、`archive_reason`，用于记录配置归档元数据。
+- `backtest_configs`：保留既有 `created_at/updated_at`；新增 `status`，允许值为 `ACTIVE / ARCHIVED / DISABLED`；新增 `archived_at`、`archived_by`、`archive_reason`，用于记录配置归档元数据。
+- 两张表的归档一致性约束均要求：只有 `status=ARCHIVED` 时才允许存在归档元数据，且归档状态必须有 `archived_at`；`archived_by` 与 `archive_reason` 可为空。
+- 两张表的 `updated_at` 注释已明确为配置元数据最后更新时间，不表示回测运行、评估结果、发布记录或交易事实更新时间。
+- `archive_reason` 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie 或交易所凭证。
+- 本批未新增 Repository 默认过滤、归档业务 API、逻辑删除、物理删除或 retention purge；这些行为如需启用，必须进入后续 Batch 4。
+- 本批未处理回测事实表、评估结果表、发布记录、Paper facts、orders、trades、ledger、risk_events、positions、marketdata timeseries 或 credentials。
+
 ## GateH-2 当前 Marketdata 结构
 
 GateH-2 新增 Flyway migration：

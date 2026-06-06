@@ -57,7 +57,7 @@ Batch 2 必须单独提交，不能与字段新增、Repository 过滤、retenti
 
 ## 3. Batch 3：配置/主数据表字段和约束补齐
 
-状态：进行中。Batch 3-A 已新增 `V27__schema_master_table_governance.sql`，只治理 `roles`、legacy `accounts`、`instrument_catalog` 三类主数据 / 配置表；未处理 `positions`、`risk_events`、订单、成交、账本、审计、Paper facts、Backtest facts 或 marketdata timeseries。
+状态：进行中。Batch 3-A 已新增 `V27__schema_master_table_governance.sql`，只治理 `roles`、legacy `accounts`、`instrument_catalog` 三类主数据 / 配置表。Batch 3-B 已新增 `V28__schema_research_backtest_config_governance.sql`，只治理 `research_configs`、`backtest_configs` 两类研究 / 回测配置表。Batch 3-A/3-B 均未处理 `positions`、`risk_events`、订单、成交、账本、审计、Paper facts、Backtest facts 或 marketdata timeseries。
 
 ### Batch 3-A 本批执行结果
 
@@ -74,6 +74,21 @@ Batch 2 必须单独提交，不能与字段新增、Repository 过滤、retenti
 - 用户候选 `accounts` 对应当前 schema 中 `V1__init.sql` 创建的 legacy `accounts`；正式账户配置表 `exchange_accounts` 已有状态与审计时间字段，本批未改。
 - 用户候选 `instrument_catalog` 对应当前 schema 中 `V15__gateh_pre_instrument_catalog.sql` 创建的 `instrument_catalog`。
 
+### Batch 3-B 本批执行结果
+
+- `research_configs` 已有 `created_at/updated_at`，本批不重复新增；新增 `status`，允许值为 `ACTIVE / ARCHIVED / DISABLED`，默认 `ACTIVE`。
+- `research_configs` 新增 `archived_at/archived_by/archive_reason`，用于归档元数据；归档一致性 CHECK 要求只有 `status=ARCHIVED` 时才允许存在归档元数据，且归档状态必须有 `archived_at`。
+- `backtest_configs` 已有 `created_at/updated_at`，本批不重复新增；新增 `status`，允许值为 `ACTIVE / ARCHIVED / DISABLED`，默认 `ACTIVE`。
+- `backtest_configs` 新增 `archived_at/archived_by/archive_reason`，用于归档元数据；归档一致性 CHECK 要求只有 `status=ARCHIVED` 时才允许存在归档元数据，且归档状态必须有 `archived_at`。
+- 两张表的 `updated_at` 注释已收口为配置元数据最后更新时间，不表示回测运行、评估结果、发布记录或交易事实更新时间。
+- `archive_reason` 注释明确不得保存密钥、token、API secret、私钥、助记词、cookie 或交易所凭证。
+- 未修改 Java Repository / Domain / DTO 业务语义：新增字段都有 DB 默认值，现有 insert/select 路径不需要新增归档字段；Batch 4 如需默认过滤或归档接口，必须单独开工。
+
+### Batch 3-B 映射关系
+
+- 用户候选 `research_configs` 对应当前 schema 中 `V7__gate_f1_research_backtest_skeleton.sql` 创建的 `research_configs`。
+- 用户候选 `backtest_configs` 对应当前 schema 中 `V7__gate_f1_research_backtest_skeleton.sql` 创建的 `backtest_configs`；该表在 `V18` 增加 dataset 绑定字段，在 `V20` 增加 strategy version / 参数 / 配置快照字段，本批只治理配置生命周期字段。
+
 ### 允许范围
 
 - 新增 Flyway migration 补齐低风险字段或约束。
@@ -83,8 +98,8 @@ Batch 2 必须单独提交，不能与字段新增、Repository 过滤、retenti
   - `positions.created_at`（不属于 Batch 3-A，后续单独评估）
   - `exchange_account_credentials.revoked_by`
   - `exchange_account_credentials.revoke_reason`
-  - `research_configs.status`
-  - `backtest_configs.status`
+  - `research_configs.status`（Batch 3-B 已完成）
+  - `backtest_configs.status`（Batch 3-B 已完成）
 - 候选约束：
   - `accounts.status IN ('ACTIVE','DISABLED')`
   - `instrument_catalog.instrument_type IN ('SPOT')`
@@ -114,7 +129,7 @@ Batch 2 必须单独提交，不能与字段新增、Repository 过滤、retenti
 
 ### 必须单独开工
 
-Batch 3 不能与 Batch 4 Repository 默认过滤合并。先落 schema，再改代码。
+Batch 3 不能与 Batch 4 Repository 默认过滤合并。先落 schema，再改代码。Batch 3-B 已落地 `research_configs/backtest_configs` 的状态和归档元数据；Repository 默认过滤、归档接口、状态流转测试仍属于 Batch 4。
 
 ## 4. Batch 4：Repository 查询过滤、逻辑删除/归档接口、测试
 

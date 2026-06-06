@@ -2,6 +2,51 @@
 
 日期：2026-05-16
 
+## DB Schema Research Backtest Config Governance Batch 3-B
+
+日期：2026-06-06
+
+### 本轮目标
+
+新增一个 Flyway migration，只对 `research_configs`、`backtest_configs` 两类研究 / 回测配置表做归档状态、状态约束、归档元数据和更新时间注释治理。本轮不处理回测事实表、评估结果表、发布记录、Paper facts、订单、成交、账本、风控事件、持仓、行情时序或凭证相关表，不新增业务 API，不修改前端 / Python / 部署，不接入 AI、DH 或真实交易路径。
+
+### 修改文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V28__schema_research_backtest_config_governance.sql`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 确认当前最大 Flyway migration 为 V27，本轮新增 V28。
+- 确认用户候选表名与当前 schema 一致：`research_configs`、`backtest_configs` 均由 `V7__gate_f1_research_backtest_skeleton.sql` 创建。
+- 确认两张表已存在 `created_at/updated_at`，本轮不重复新增；仅更新 `updated_at` 注释，明确其只表示配置元数据最后更新时间。
+- 两张表新增 `status`，默认 `ACTIVE`，允许值为 `ACTIVE / ARCHIVED / DISABLED`。
+- 两张表新增 `archived_at/archived_by/archive_reason`，并新增归档一致性 CHECK：只有 `status=ARCHIVED` 时才允许存在归档元数据，且归档状态必须有 `archived_at`。
+- `archive_reason` 注释明确不得保存密钥、token、API secret、私钥、助记词、cookie 或账户访问材料。
+- 未修改 Java Repository / Domain / DTO：新增字段都有 DB 默认值，现有 insert/select 与绑定更新路径不需要为本批 schema 变更同步字段。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行 V28 migration 禁止范围扫描，未命中禁止表名、AI、DH、LIVE、真实交易、逻辑删除或 retention purge 相关结构变更。
+- 已执行 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+
+### 边界确认
+
+- 未修改历史 migration。
+- 未处理凭证、持仓、风控事件、订单、成交、账本、审计、事件、Paper facts、Backtest facts、评估结果、发布记录或 marketdata timeseries。
+- 未实现逻辑删除、物理删除或 retention purge。
+- 未新增业务 API。
+- 未修改前端、Python 或部署脚本。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未读取或提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
 ## DB Schema Master Table Governance Batch 3-A
 
 日期：2026-06-06
