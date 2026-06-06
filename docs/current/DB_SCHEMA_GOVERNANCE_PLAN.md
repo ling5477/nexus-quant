@@ -57,13 +57,30 @@ Batch 2 必须单独提交，不能与字段新增、Repository 过滤、retenti
 
 ## 3. Batch 3：配置/主数据表字段和约束补齐
 
+状态：进行中。Batch 3-A 已新增 `V27__schema_master_table_governance.sql`，只治理 `roles`、legacy `accounts`、`instrument_catalog` 三类主数据 / 配置表；未处理 `positions`、`risk_events`、订单、成交、账本、审计、Paper facts、Backtest facts 或 marketdata timeseries。
+
+### Batch 3-A 本批执行结果
+
+- 新增 `roles.updated_at`，补齐角色主数据更新时间；`roles.role_code` 唯一约束已存在，未重复新增。
+- 新增 `accounts.updated_at`，并为 legacy `accounts.status` 增加 `ACTIVE / DISABLED` CHECK；迁移会先把非 `ACTIVE / DISABLED` 历史状态归一到 `DISABLED`，避免约束回放失败。
+- `instrument_catalog` 已有 `created_at/updated_at` 和 `exchange_code + exchange_symbol`、`exchange_code + internal_symbol` 唯一约束；本批新增 `instrument_type IN ('SPOT')` 和 `status` 非空大写代码 CHECK。
+- `instrument_catalog.status` 暂不采用 `ACTIVE / DISABLED / DELISTED` canonical 枚举，因为当前同步链路保存交易所原生 instrument 状态，强行改枚举会破坏现有 adapter upsert 与测试数据；canonical 状态抽象列为后续待确认项。
+- 未新增 `roles.status`：当前 Repository 只通过 `role_code` 解析授权，尚无角色禁用 / 归档读取语义；避免新增未使用字段。
+- 未修改 Java Repository / Domain / DTO 业务语义：新增字段都有 DB 默认值，新增约束与现有写入路径兼容；本批只同步了既有 package/path 不一致导致的后端测试装配问题。
+
+### Batch 3-A 映射关系
+
+- 用户候选 `roles` 对应当前 schema 中 `V1__init.sql` 创建的 `roles`。
+- 用户候选 `accounts` 对应当前 schema 中 `V1__init.sql` 创建的 legacy `accounts`；正式账户配置表 `exchange_accounts` 已有状态与审计时间字段，本批未改。
+- 用户候选 `instrument_catalog` 对应当前 schema 中 `V15__gateh_pre_instrument_catalog.sql` 创建的 `instrument_catalog`。
+
 ### 允许范围
 
 - 新增 Flyway migration 补齐低风险字段或约束。
 - 候选字段：
   - `roles.updated_at`
   - `accounts.updated_at`
-  - `positions.created_at`
+  - `positions.created_at`（不属于 Batch 3-A，后续单独评估）
   - `exchange_account_credentials.revoked_by`
   - `exchange_account_credentials.revoke_reason`
   - `research_configs.status`
@@ -71,8 +88,8 @@ Batch 2 必须单独提交，不能与字段新增、Repository 过滤、retenti
 - 候选约束：
   - `accounts.status IN ('ACTIVE','DISABLED')`
   - `instrument_catalog.instrument_type IN ('SPOT')`
-  - `instrument_catalog.status IN ('ACTIVE','DISABLED','DELISTED')`
-  - `risk_events.decision` 与 `risk_events.severity` 的业务枚举
+  - `instrument_catalog.status` 原生状态治理（Batch 3-A 已先收口为非空大写代码；canonical 枚举待确认）
+  - `risk_events.decision` 与 `risk_events.severity` 的业务枚举（不属于 Batch 3-A，后续单独评估）
 - 字段新增必须给出默认值、回填策略、锁表影响和兼容性说明。
 
 ### 禁止事项

@@ -17,6 +17,15 @@
 
 `V26__schema_comment_business_normalization.sql` 已完成数据库注释业务语义归一化。本次只更新 PostgreSQL `COMMENT ON TABLE` 与 `COMMENT ON COLUMN`，不新增表、字段、索引、约束或数据变更；重点是把长期注释改为稳定业务含义，并为 JSONB、payload、snapshot、config、request、result、summary、detail 等字段补充敏感信息禁入边界。
 
+## Schema Master Table Governance
+
+`V27__schema_master_table_governance.sql` 已完成 Batch 3-A 主数据 / 配置表最小结构治理。本批只处理 `roles`、legacy `accounts`、`instrument_catalog`：
+
+- `roles`：新增 `updated_at`，用于记录角色主数据维护时间；`role_code` 唯一约束已在 `V1` 存在，本批不重复新增。
+- `accounts`：新增 `updated_at`；将历史异常状态归一到 `DISABLED` 后新增 `chk_accounts_status`，允许值为 `ACTIVE / DISABLED`；`account_code` 唯一约束已在 `V1` 存在。
+- `instrument_catalog`：保留既有 `exchange_code + exchange_symbol`、`exchange_code + internal_symbol` 唯一约束；新增 `instrument_type` 现货枚举约束；新增 `status` 非空大写代码约束。当前 `status` 仍承载交易所原生 instrument 状态，不在本批强制改成 NQ canonical 状态。
+- 本批未处理 `positions`、`risk_events`、订单、成交、账本、审计、Paper facts、Backtest facts 或 marketdata timeseries。
+
 ## GateH-2 当前 Marketdata 结构
 
 GateH-2 新增 Flyway migration：

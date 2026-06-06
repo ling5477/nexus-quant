@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.scheduler.service;
 
 import com.guidinglight.nexusquant.trading.application.RecoveryReport;
 import com.guidinglight.nexusquant.trading.application.RecoveryService;
-import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
+import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 
 import java.util.Locale;
 import java.util.Objects;

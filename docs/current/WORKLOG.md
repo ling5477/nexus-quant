@@ -2,6 +2,60 @@
 
 日期：2026-05-16
 
+## DB Schema Master Table Governance Batch 3-A
+
+日期：2026-06-06
+
+### 本轮目标
+
+新增一个 Flyway migration，对 `roles`、legacy `accounts`、`instrument_catalog` 这类主数据 / 配置表做最小字段与 CHECK 约束治理。本轮不处理事实表、事件表、账本表、审计表、风控事件表、Paper facts、Backtest facts、marketdata timeseries，不新增 API，不修改前端 / Python / 部署，不接入 AI、DH 或真实交易路径。
+
+### 修改文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V27__schema_master_table_governance.sql`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java`
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/AuthSecurityWebMvcTest.java`
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/TradingVerificationControllerLocalTest.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/maintenance/TradingMaintenanceService.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/port/OrderCommandStrategyExecutionGateway.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/port/ManualStrategyTriggerGateway.java`
+- `backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/SchedulerTradingMaintenanceService.java`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 确认当前最大 Flyway migration 为 V26，本轮新增 V27。
+- `roles` 新增 `updated_at`，用于角色主数据维护时间追踪；既有 `role_code` 唯一约束保持不变。
+- legacy `accounts` 新增 `updated_at`，并对 `status` 增加 `ACTIVE / DISABLED` CHECK；迁移先把历史异常状态归一为 `DISABLED`。
+- `instrument_catalog` 新增 `instrument_type IN ('SPOT')` CHECK；`status` 先治理为非空大写代码，保留当前交易所原生状态语义。
+- 未新增唯一索引：`roles.role_code`、`accounts.account_code`、`instrument_catalog(exchange_code, exchange_symbol)`、`instrument_catalog(exchange_code, internal_symbol)` 均已有唯一约束。
+- 新增字段都有数据库默认值，现有 Repository insert/upsert 不需要因为 V27 改字段列表。
+- 为完成后端验证，修复了既有 package/path 不一致问题：`TradingMaintenanceService` 对齐到 `trading.application.maintenance`，`ManualStrategyTriggerGateway` 与 `OrderCommandStrategyExecutionGateway` 对齐到各自 `application.port` 包，并同步相关 import。该修复不改变 API 契约或业务行为。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行 V27 migration 禁止范围扫描，未命中禁止表、事件、时序、AI、DH、真实交易、逻辑删除或 retention 相关结构变更。
+- 首次 `mvn -f backend/pom.xml test` 在 `nq-app` 暴露既有 package/path 不一致问题，已做最小 Java 同步修复。
+- 已执行 `mvn -f backend/pom.xml clean test`，通过；用于清理旧 package 残留 class。
+- 已再次执行用户要求的 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+
+### 边界确认
+
+- 未修改历史 migration。
+- 未处理 `positions`、`risk_events`、订单、成交、账本、审计、Paper facts、Backtest facts 或 marketdata timeseries。
+- 未实现逻辑删除、risk_events 逻辑删除或 retention purge。
+- 未新增业务 API。
+- 未修改前端、Python 或部署脚本。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未读取或提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
 ## DB Schema Comment Business Normalization
 
 日期：2026-06-06

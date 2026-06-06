@@ -12,7 +12,7 @@ import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
 import com.guidinglight.nexusquant.trading.application.RecoveryReport;
-import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
+import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

@@ -31,7 +31,7 @@ import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerSer
 import com.guidinglight.nexusquant.strategy.application.StrategyRunQueryService;
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanService;
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleService;
-import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
+import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 
 import java.math.BigDecimal;

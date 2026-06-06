@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.trading.application;
+package com.guidinglight.nexusquant.trading.application.maintenance;
 
 import com.guidinglight.nexusquant.trading.application.RecoveryReport;
 

@@ -29,7 +29,7 @@ import com.guidinglight.nexusquant.trading.application.CancelOrderResult;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
 import com.guidinglight.nexusquant.trading.application.RecoveryReport;
-import com.guidinglight.nexusquant.trading.application.TradingMaintenanceService;
+import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import org.junit.jupiter.api.Test;

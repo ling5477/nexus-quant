@@ -1,6 +1,9 @@
-package com.guidinglight.nexusquant.trading.application;
+package com.guidinglight.nexusquant.trading.application.port;
 
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
 
 import java.util.Objects;
 
