@@ -62,6 +62,7 @@ GateO：A 股适配
 - `DB_SCHEMA.md`：数据库事实入口。
 - `CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`：Credential revocation Batch 5-A 只读审计报告。
 - `CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`：Credential revocation Batch 5-B schema completed 与 Batch 5-C code/API/test completed 事实。
+- `CREDENTIAL_ROTATE_GOVERNANCE_REVIEW.md`：Credential rotate Batch 5-D-A 只读审计报告；rotate endpoint 仍未实现。
 - `TESTING.md`：统一验证命令与本次验证记录。
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。

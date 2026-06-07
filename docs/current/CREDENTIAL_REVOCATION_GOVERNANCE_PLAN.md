@@ -2,14 +2,14 @@
 
 任务：NQ-DB-SCHEMA-GOVERNANCE-BATCH-5A-CREDENTIAL-REVOCATION-REVIEW
 日期：2026-06-07
-状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed。
+状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed；Batch 5-D-A rotate review completed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. 目标
 
 本计划把 credential revocation 从泛化 DB schema governance 中拆为独立治理链路，避免把凭证撤销、账户禁用、轮换、过期、权限校验和审计日志混成一个状态字段。
 
-本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理和 Batch 5-C 最小 code/API/test 接入；未完成 rotate endpoint、enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
+本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理、Batch 5-C 最小 code/API/test 接入和 Batch 5-D-A rotate 只读审计；未完成 rotate endpoint、enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
 
 ## 2. 固定边界
 
@@ -18,7 +18,7 @@
 - 不开启 LIVE。
 - 不新增真实下单、真实撤单或真实交易所私有链路。
 - 不读取、输出、提交任何真实密钥、API key、secret、token、私钥、助记词、cookie。
-- 不把 GateK-PLAN 写成 GateK implementation started。
+- 不把 GateK-PLAN 写成 GateK 实现已启动。
 - credential 表不得 hard delete。
 - audit log 必须 append-only。
 
@@ -130,14 +130,33 @@
 - API response 不包含敏感字段。
 - audit log 写入不包含敏感字段。
 
-## 6. 后续安全审计重点
+## 6. Batch 5-D-A：rotate governance review
+
+状态：completed。本批只读审计 credential rotate 生命周期设计，新增 `docs/current/CREDENTIAL_ROTATE_GOVERNANCE_REVIEW.md`，未修改 Java、Repository、Service、Controller、DTO、migration、API、前端、Python 或部署脚本。
+
+只读结论：
+
+- 当前 upsert 已具备最小轮换版本链：新增版本、旧 active 版本写为 `credential_status='ROTATED'` 且 `is_active=false`，新版本写为 `credential_status='ACTIVE'`、`verification_status='PENDING'`。
+- active summary / active material 查询已同时要求 `is_active=true` 和 `credential_status='ACTIVE'`。
+- rotate 目前仍不是显式 command，没有 rotate endpoint，也没有 `ROTATED` / `CREATED` audit log。
+- V12 partial unique index 只保证同一 `exchange_account_id + credential_type` 一个 `is_active=true`，active material 查询不带 credential type 时仍需后续代码层冲突检测或单独 schema 约束决策。
+
+Batch 5-D-B 可开工条件：
+
+- 只做显式 rotate endpoint、Service 事务语义、Repository 最小方法和测试。
+- rotate 必须要求 reason，actor 必须从认证主体解析。
+- rotate 只能从 `ACTIVE` 派生，禁止从 `REVOKED / DISABLED / EXPIRED / ROTATED` 派生。
+- 同一事务必须完成新 credential 创建、旧 credential 标记 `ROTATED`、旧 credential `ROTATED` audit log、新 credential `CREATED` audit log。
+- 不做真实交易所权限探活，不新增 enable endpoint，不接 AI、DH、LIVE 或真实交易路径，不输出 secret。
+
+## 7. 后续安全审计重点
 
 - P0：真实密钥泄露、LIVE credential 被 Paper 路径误用、DH / Agent / AI 访问 credential。
 - P1：撤销语义缺失、不可恢复撤销和临时禁用混淆、API 返回敏感字段、Paper / LIVE 隔离不清。
 - P2：审计字段不足、轮换链上下文不足、权限范围记录不足、IP allowlist / withdraw disabled 证明缺失。
 - P3：注释、命名、测试 fixture 和文档措辞不清。
 
-## 7. 回滚与兼容原则
+## 8. 回滚与兼容原则
 
 - Batch 5-B 新增字段通过后续 migration 回滚或废弃，不修改历史 migration。
 - 不删除已有 credential 版本记录。
@@ -147,6 +166,6 @@
   - `verification_status=REVOKED` 或 `is_active=false`：按现有轮换旧版本语义回填为 `ROTATED`。
   - 其他历史异常组合保守落到 `DISABLED`，避免误判为可用凭证。
 
-## 8. 与 GateK-PLAN 的关系
+## 9. 与 GateK-PLAN 的关系
 
-Credential revocation governance 是安全和数据治理工作，不代表 GateK implementation started。即使 GateK-PLAN 后续规划 AI 信号接入，AI / Agent / DH 也不得访问 credential、master key、decrypted payload 或 revoke/audit API，除非未来单独安全设计、审批和验证。
+Credential revocation governance 是安全和数据治理工作，不代表 GateK 实现已启动。即使 GateK-PLAN 后续规划 AI 信号接入，AI / Agent / DH 也不得访问 credential、master key、decrypted payload 或 revoke/audit API，除非未来单独安全设计、审批和验证。

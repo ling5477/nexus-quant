@@ -2,6 +2,49 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Rotate Governance Review Batch 5-D-A
+
+日期：2026-06-07
+
+### 本轮目标
+
+只读审计 credential rotate 生命周期设计，判断后续 Batch 5-D-B 是否可以实现显式 rotate endpoint，并明确新旧 credential 版本、active material、audit log、幂等和失败回滚边界。本轮只允许修改 `docs/current` 文档，不新增 migration，不修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_ROTATE_GOVERNANCE_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_ANALYSIS + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读确认 credential 创建、upsert、active material、audit log 路径。
+- 只读检查 V12 / V29 schema、credential command service、verification service、Repository port、JDBC Repository、Controller、DTO 和 Batch 5-C tests。
+- 确认当前 upsert 已支持最小版本化轮换：新 credential 版本创建，旧同类型 active credential 标记 `ROTATED` 且退出 active。
+- 确认 `verification_status` 当前主要用于结构性校验 `PENDING / VERIFIED / FAILED`，Batch 5-C 已不再用它承载轮换旧版本生命周期语义。
+- 确认 rotate endpoint 仍未实现，upsert 轮换也尚未写入 `ROTATED` / `CREATED` audit log。
+- 输出 Batch 5-D-B 建议：显式 rotate command、同事务创建新版本和标记旧版本、写双 audit log、reason 必填、actor 从认证主体解析、禁止从非 ACTIVE 状态派生、禁止真实交易所探活和 enable 混做。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行工作树范围检查：本轮只修改 `docs/current` 文档。
+- 已执行禁止范围检查：未新增 migration，未修改 backend Java，未修改 API，未修改 frontend，未修改 Python，未修改部署脚本。
+- 已执行阶段和禁写状态检查：未把 GateK-PLAN 写成实现已启动，未把 AI、DH、LIVE 或 rotate 写成已启用或已实现；相关命中均为禁止项或未实现说明。
+
+### 边界确认
+
+- 未读取 `.env`、secrets、credentials、logs、dump、backup、`target`、node_modules、dist、build、`.git` 内容作为本轮依据。
+- 未输出真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未新增 migration，未修改历史 migration。
+- 未修改 Java / Repository / Service / Controller / DTO / API / 前端 / Python / 部署脚本。
+- 未新增 rotate endpoint 或 enable endpoint。
+- 未接 AI、DH、LIVE 或真实交易。
+
+---
+
 ## DB Schema Credential Revocation Governance Batch 5-B
 
 日期：2026-06-07
@@ -77,7 +120,7 @@
 - 已执行 `git diff --check`，通过。
 - 已执行工作树范围检查：本轮只修改 `docs/current` 文档。
 - 已执行禁止范围检查：未新增 migration，未修改 backend Java，未修改 frontend，未修改 Python，未修改 deploy/scripts。
-- 已执行阶段和禁写状态检查：未误写 GateK implementation started / AI started / DH integrated / LIVE enabled。
+- 已执行阶段和禁写状态检查：未把 GateK-PLAN 写成实现已启动，未把 AI、DH 或 LIVE 写成已启用。
 
 ### 边界确认
 

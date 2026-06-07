@@ -60,6 +60,18 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DB Schema Credential Rotate Governance Review Batch 5-D-A 验证记录（2026-06-07）
+
+本轮只读审计 credential rotate 生命周期设计，并同步 `docs/current` 文档；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 仅输出 Windows 换行提示，无 whitespace error。 |
+| 工作树范围检查 | 通过 | 本轮只修改 `docs/current` 文档。 |
+| 禁止范围检查 | 通过 | 未新增 migration，未修改 backend Java、API、frontend、Python 或部署脚本；未新增 rotate endpoint 或 enable endpoint；未接 AI、DH、LIVE 或真实交易。 |
+| 阶段与禁写状态检查 | 通过 | 未把 GateK-PLAN 写成实现已启动，未把 AI、DH、LIVE 或 rotate 写成已启用或已实现；相关命中均为禁止项或未实现说明。 |
+| 后端/前端/Python 全量测试 | 未执行 | 本轮只做 code analysis + documentation，未修改业务代码、API、migration、前端、Python 或部署脚本。 |
+
 ## DB Schema Credential Revocation Governance Batch 5-B 验证记录（2026-06-07）
 
 本轮新增 `V29__schema_credential_revocation_governance.sql` 并同步 credential revocation / DB schema governance 文档；验证结论以本节命令实际结果为准。
