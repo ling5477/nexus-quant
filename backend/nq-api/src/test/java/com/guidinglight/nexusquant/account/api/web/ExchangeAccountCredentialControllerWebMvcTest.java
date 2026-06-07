@@ -25,9 +25,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.time.Instant;
 import java.util.List;
@@ -47,15 +51,21 @@ class ExchangeAccountCredentialControllerWebMvcTest {
         verificationService = mock(ExchangeAccountCredentialVerificationService.class);
         when(gatewayAuthFacade.currentUser()).thenReturn(Optional.of(new TokenClaims("sub", "admin", List.of("ADMIN"), Instant.now(), Instant.now().plusSeconds(60), "issuer", "jti")));
         when(currentUserProfileService.findByUsername("admin")).thenReturn(Optional.of(new AuthUserProfile(1L, "admin", "hash", List.of("ADMIN"), true)));
+        MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter(
+                Jackson2ObjectMapperBuilder.json()
+                        .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                        .build()
+        );
         mockMvc = MockMvcBuilders.standaloneSetup(new ExchangeAccountCredentialController(gatewayAuthFacade, currentUserProfileService, commandService, verificationService, 1))
                 .addFilters(new TestTraceIdFilter())
+                .setMessageConverters(jsonConverter)
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
     }
 
     @Test
     void shouldExposeActiveCredentialUpsertAndVerify() throws Exception {
-        ExchangeAccountCredentialSummary summary = new ExchangeAccountCredentialSummary(1L, 900001L, "OKX_API_V5", "tes***ey", "VERIFIED", true, null, Instant.parse("2026-04-06T00:00:00Z"), null, Instant.parse("2026-04-06T00:00:00Z"));
+        ExchangeAccountCredentialSummary summary = new ExchangeAccountCredentialSummary(1L, 900001L, "OKX_API_V5", "tes***ey", "ACTIVE", "VERIFIED", true, null, null, null, Instant.parse("2026-04-06T00:00:00Z"), null, Instant.parse("2026-04-06T00:00:00Z"));
         when(commandService.findActiveSummaryOrNull(1L, 900001L)).thenReturn(null);
         when(commandService.upsert(any(), any(), any(), anyInt())).thenReturn(summary);
         when(verificationService.verifyActive(1L, 900001L)).thenReturn(summary);
@@ -71,11 +81,91 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                         .contentType("application/json")
                         .content("{\"credentialType\":\"OKX_API_V5\",\"apiKey\":\"test-api-key\",\"secretKey\":\"secret\",\"passphrase\":\"pass\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.maskedAccessKey").value("tes***ey"));
+                .andExpect(jsonPath("$.maskedAccessKey").value("tes***ey"))
+                .andExpect(jsonPath("$.credentialStatus").value("ACTIVE"))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.secretKey").doesNotExist())
+                .andExpect(jsonPath("$.token").doesNotExist());
 
         mockMvc.perform(post("/api/exchange-accounts/900001/credentials/verify").header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-verify"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.verificationStatus").value("VERIFIED"));
+    }
+
+    @Test
+    void shouldExposeCredentialLifecycleCommandsWithoutSensitiveFields() throws Exception {
+        ExchangeAccountCredentialSummary revoked = new ExchangeAccountCredentialSummary(
+                1L,
+                900001L,
+                "OKX_API_V5",
+                "tes***ey",
+                "REVOKED",
+                "VERIFIED",
+                false,
+                Instant.parse("2026-04-06T00:01:00Z"),
+                null,
+                null,
+                Instant.parse("2026-04-06T00:00:00Z"),
+                null,
+                Instant.parse("2026-04-06T00:01:00Z")
+        );
+        ExchangeAccountCredentialSummary disabled = new ExchangeAccountCredentialSummary(
+                1L,
+                900001L,
+                "OKX_API_V5",
+                "tes***ey",
+                "DISABLED",
+                "VERIFIED",
+                false,
+                null,
+                null,
+                null,
+                Instant.parse("2026-04-06T00:00:00Z"),
+                null,
+                Instant.parse("2026-04-06T00:02:00Z")
+        );
+        ExchangeAccountCredentialSummary expired = new ExchangeAccountCredentialSummary(
+                1L,
+                900001L,
+                "OKX_API_V5",
+                "tes***ey",
+                "EXPIRED",
+                "VERIFIED",
+                false,
+                null,
+                null,
+                null,
+                Instant.parse("2026-04-06T00:00:00Z"),
+                null,
+                Instant.parse("2026-04-06T00:03:00Z")
+        );
+        when(commandService.revoke(any(), any(), any(), any(), any())).thenReturn(revoked);
+        when(commandService.disable(any(), any(), any(), any(), any())).thenReturn(disabled);
+        when(commandService.expire(any(), any(), any(), any(), any())).thenReturn(expired);
+
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/revoke")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"operator offboarding\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialStatus").value("REVOKED"))
+                .andExpect(jsonPath("$.revokedAt").value("2026-04-06T00:01:00Z"))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.secretKey").doesNotExist())
+                .andExpect(jsonPath("$.token").doesNotExist());
+
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/disable")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"temporary stop\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialStatus").value("DISABLED"))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist());
+
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/expire")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"expired by policy\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialStatus").value("EXPIRED"))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist());
     }
 
     private static final class TestTraceIdFilter extends OncePerRequestFilter {

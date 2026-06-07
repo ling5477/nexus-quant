@@ -24,9 +24,12 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                    exchange_account_id,
                    credential_type,
                    masked_access_key,
+                   credential_status,
                    verification_status,
                    is_active,
+                   revoked_at,
                    rotated_from_credential_id,
+                   rotated_at,
                    last_verified_at,
                    last_verification_error,
                    updated_at
@@ -50,6 +53,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 SUMMARY_SELECT + """
                          WHERE exchange_account_id = ?
                            AND is_active = TRUE
+                           AND credential_status = 'ACTIVE'
                            AND EXISTS (
                                SELECT 1
                                FROM exchange_accounts ea
@@ -69,10 +73,41 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
     @Override
     public Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType) {
         List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
-                SUMMARY_SELECT + " WHERE exchange_account_id = ? AND credential_type = ? AND is_active = TRUE",
+                SUMMARY_SELECT + """
+                         WHERE exchange_account_id = ?
+                           AND credential_type = ?
+                           AND is_active = TRUE
+                           AND credential_status = 'ACTIVE'
+                        """,
                 SUMMARY_ROW_MAPPER,
                 exchangeAccountId,
                 credentialType
+        );
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
+    public Optional<ExchangeAccountCredentialSummary> findByCredentialIdForOwner(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId
+    ) {
+        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
+                SUMMARY_SELECT + """
+                         WHERE credential_id = ?
+                           AND exchange_account_id = ?
+                           AND EXISTS (
+                               SELECT 1
+                               FROM exchange_accounts ea
+                               WHERE ea.exchange_account_id = exchange_account_credentials.exchange_account_id
+                                 AND ea.owner_user_id = ?
+                           )
+                         LIMIT 1
+                        """,
+                SUMMARY_ROW_MAPPER,
+                credentialId,
+                exchangeAccountId,
+                ownerUserId
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
@@ -85,9 +120,12 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                exchange_account_id,
                                credential_type,
                                masked_access_key,
+                               credential_status,
                                verification_status,
                                is_active,
+                               revoked_at,
                                rotated_from_credential_id,
+                               rotated_at,
                                last_verified_at,
                                last_verification_error,
                                updated_at,
@@ -95,6 +133,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                         FROM exchange_account_credentials
                         WHERE exchange_account_id = ?
                           AND is_active = TRUE
+                          AND credential_status = 'ACTIVE'
                           AND EXISTS (
                               SELECT 1
                               FROM exchange_accounts ea
@@ -109,9 +148,12 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                         resultSet.getLong("exchange_account_id"),
                         resultSet.getString("credential_type"),
                         resultSet.getString("masked_access_key"),
+                        resultSet.getString("credential_status"),
                         resultSet.getString("verification_status"),
                         resultSet.getBoolean("is_active"),
+                        toInstant(resultSet.getTimestamp("revoked_at")),
                         (Long) resultSet.getObject("rotated_from_credential_id"),
+                        toInstant(resultSet.getTimestamp("rotated_at")),
                         toInstant(resultSet.getTimestamp("last_verified_at")),
                         resultSet.getString("last_verification_error"),
                         resultSet.getTimestamp("updated_at").toInstant(),
@@ -130,13 +172,15 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 """
                         UPDATE exchange_account_credentials
                         SET is_active = FALSE,
-                            verification_status = 'REVOKED',
+                            credential_status = 'ROTATED',
                             revoked_at = ?,
+                            rotated_at = ?,
                             updated_at = ?
                         WHERE exchange_account_id = ?
                           AND credential_type = ?
                           AND is_active = TRUE
-                        """,
+                """,
+                Timestamp.from(revokedAt),
                 Timestamp.from(revokedAt),
                 Timestamp.from(revokedAt),
                 exchangeAccountId,
@@ -164,6 +208,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                             key_version,
                             cipher_suite,
                             masked_access_key,
+                            credential_status,
                             verification_status,
                             is_active,
                             revoked_at,
@@ -179,6 +224,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                             ?,
                             ?,
                             ?,
+                            'ACTIVE',
                             'PENDING',
                             TRUE,
                             NULL,
@@ -192,9 +238,12 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                   exchange_account_id,
                                   credential_type,
                                   masked_access_key,
+                                  credential_status,
                                   verification_status,
                                   is_active,
+                                  revoked_at,
                                   rotated_from_credential_id,
+                                  rotated_at,
                                   last_verified_at,
                                   last_verification_error,
                                   updated_at
@@ -238,15 +287,92 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
         ) > 0;
     }
 
+    @Override
+    public boolean updateLifecycleStatus(
+            Long credentialId,
+            Long exchangeAccountId,
+            String credentialStatus,
+            boolean active,
+            Instant revokedAt,
+            String revokedBy,
+            String revokeReason,
+            Instant updatedAt
+    ) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE exchange_account_credentials
+                        SET credential_status = ?,
+                            is_active = ?,
+                            revoked_at = ?,
+                            revoked_by = ?,
+                            revoke_reason = ?,
+                            updated_at = ?
+                        WHERE credential_id = ?
+                          AND exchange_account_id = ?
+                        """,
+                credentialStatus,
+                active,
+                toTimestamp(revokedAt),
+                revokedBy,
+                revokeReason,
+                Timestamp.from(updatedAt),
+                credentialId,
+                exchangeAccountId
+        ) > 0;
+    }
+
+    @Override
+    public void appendCredentialAuditLog(
+            Long credentialId,
+            Long exchangeAccountId,
+            String eventType,
+            String actor,
+            String reason,
+            String metadataJson,
+            Instant createdAt
+    ) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO credential_audit_logs (
+                            credential_id,
+                            exchange_account_id,
+                            event_type,
+                            actor,
+                            reason,
+                            metadata,
+                            created_at
+                        ) VALUES (
+                            ?,
+                            ?,
+                            ?,
+                            ?,
+                            ?,
+                            CAST(? AS jsonb),
+                            ?
+                        )
+                        """,
+                credentialId,
+                exchangeAccountId,
+                eventType,
+                actor,
+                reason,
+                metadataJson,
+                Timestamp.from(createdAt)
+        );
+    }
+
     private static ExchangeAccountCredentialSummary mapSummary(ResultSet resultSet, int rowNum) throws SQLException {
         return new ExchangeAccountCredentialSummary(
                 resultSet.getLong("credential_id"),
                 resultSet.getLong("exchange_account_id"),
                 resultSet.getString("credential_type"),
                 resultSet.getString("masked_access_key"),
+                resultSet.getString("credential_status"),
                 resultSet.getString("verification_status"),
                 resultSet.getBoolean("is_active"),
+                toInstant(resultSet.getTimestamp("revoked_at")),
                 (Long) resultSet.getObject("rotated_from_credential_id"),
+                toInstant(resultSet.getTimestamp("rotated_at")),
                 toInstant(resultSet.getTimestamp("last_verified_at")),
                 resultSet.getString("last_verification_error"),
                 resultSet.getTimestamp("updated_at").toInstant()
@@ -255,5 +381,9 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
 
     private static Instant toInstant(Timestamp timestamp) {
         return timestamp == null ? null : timestamp.toInstant();
+    }
+
+    private static Timestamp toTimestamp(Instant instant) {
+        return instant == null ? null : Timestamp.from(instant);
     }
 }

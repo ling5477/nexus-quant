@@ -2,14 +2,14 @@
 
 任务：NQ-DB-SCHEMA-GOVERNANCE-BATCH-5A-CREDENTIAL-REVOCATION-REVIEW
 日期：2026-06-07
-状态：Batch 5-A review completed；Batch 5-B / 5-C not started。
+状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. 目标
 
 本计划把 credential revocation 从泛化 DB schema governance 中拆为独立治理链路，避免把凭证撤销、账户禁用、轮换、过期、权限校验和审计日志混成一个状态字段。
 
-本计划不代表撤销功能已经实现。当前仅完成只读审计和后续方案拆分。
+本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理和 Batch 5-C 最小 code/API/test 接入；未完成 rotate endpoint、enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
 
 ## 2. 固定边界
 
@@ -86,20 +86,29 @@
 
 ## 5. Batch 5-C：code / API / test 接入
 
-状态：not started。
+状态：completed。本批在不新增 migration 的前提下接入 V29 lifecycle 字段、最小 command API、append-only audit log 写入和回归测试。
 
 前置条件：
 
 - Batch 5-B schema 已完成并验证。
 - 当前 Gate 边界仍允许 credential governance 接入。
 
-允许范围：
+已落地范围：
 
 - Repository 接入新字段。
-- Service 新增 revoke / disable / expire / rotate 状态流转。
-- API 新增最小 revoke command。
+- Service 新增 revoke / disable / expire 状态流转；rotate 仍只由 upsert 旧 active 版本产生，不新增独立 rotate endpoint。
+- API 新增最小 revoke / disable / expire command。
 - 单元测试、Repository 测试、Controller 测试补齐。
 - 文档同步 API 与安全边界。
+
+已固定行为：
+
+- active summary / active material 查询同时要求 `is_active=true` 和 `credential_status='ACTIVE'`。
+- upsert 新版本时旧 active 版本写为 `credential_status='ROTATED'` 且 `is_active=false`，不再把 `verification_status` 改写为 `REVOKED`。
+- revoke 是不可恢复撤销，重复 revoke 幂等返回当前摘要，不重复写 audit。
+- disable / expire 会让 credential 退出 active material；本轮不实现 enable。
+- 对已经 `REVOKED` 或 `ROTATED` 的 credential 执行 disable / expire 返回状态冲突，避免破坏不可恢复撤销和历史轮换语义。
+- audit log append 只保存脱敏 metadata，不保存 secret、token、private key、passphrase、decrypted payload 或 request body 明文。
 
 禁止范围：
 
@@ -109,12 +118,12 @@
 - 禁止 API response 返回 secret、token、private key、passphrase 或 decrypted payload。
 - 禁止日志输出 request body 中的敏感字段。
 
-建议测试：
+已覆盖测试：
 
 - revoke 幂等。
 - revoke 后 active material 不可读取。
-- revoke 后 verify 返回 404 或明确不可用错误。
-- DISABLED 可恢复，REVOKED 不可恢复。
+- revoke 后 verify 无 active material。
+- DISABLED / EXPIRED 不可 active；REVOKED 不可通过本轮接口恢复。
 - ROTATED 只能由 upsert 产生。
 - EXPIRED 不可 active。
 - owner 越权访问失败。

@@ -8,15 +8,20 @@ import java.time.Instant;
  * Why:
  * RC1-4 需要展示 active / verification / rotated-from 状态，
  * 但绝不能把明文 secret / passphrase / private key 暴露给 API 或前端。
+ * Batch 5-C 只补充 credentialStatus、revokedAt、rotatedAt 等非敏感生命周期摘要，
+ * 避免 API 为了展示撤销状态而读取 encrypted_payload 或 decrypted payload。
  */
 public record ExchangeAccountCredentialSummary(
         Long credentialId,
         Long exchangeAccountId,
         String credentialType,
         String maskedAccessKey,
+        String credentialStatus,
         String verificationStatus,
         boolean isActive,
+        Instant revokedAt,
         Long rotatedFromCredentialId,
+        Instant rotatedAt,
         Instant lastVerifiedAt,
         String lastVerificationError,
         Instant updatedAt

@@ -948,3 +948,20 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 - 后端日志不得出现 `ERROR` / `Exception` / `api_unhandled_exception path=/api/instruments/sync`。
 
 结论：本地 release 已可上传 ECS 复验；ECS 浏览器与日志复验通过前不得进入 GateJ-FREEZE 首次启动验收。
+
+## Credential Revocation Governance Batch 5-C 验证记录（2026-06-07）
+
+本轮接入 credential lifecycle 最小后端能力：`credential_status` 读取、`revoke / disable / expire` command API、active material 生命周期过滤和 append-only audit log 写入。未新增 migration、前端、Python、部署、AI、DH、LIVE 或真实交易所私有链路。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 失败后已修复 | 首次失败点为 `ExchangeAccountCredentialControllerWebMvcTest` 中 `Instant` 在 standalone MockMvc 下输出 epoch seconds；补齐 Jackson Java time converter 后不再复现。 |
+| `mvn -f backend/pom.xml -pl nq-api -am test` | 通过 | 覆盖 Credential API WebMvc 测试和 API 依赖模块。 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api -am test` | 通过 | 覆盖 Service lifecycle 流转、JDBC SQL、API command endpoint、active material 过滤和敏感字段缺失断言。 |
+
+最终收口验证：
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |

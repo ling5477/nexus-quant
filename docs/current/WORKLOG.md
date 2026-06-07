@@ -2780,6 +2780,63 @@ Codex 接手执行 PRE-FREEZE-CODE-AUDIT 二次审查与实际验证，复核 Cl
 
 ---
 
+# Worklog: Credential Revocation Governance Batch 5-C
+
+日期：2026-06-07
+
+## 本轮目标
+
+在 Batch 5-B 已完成 V29 schema-only 治理的前提下，接入 credential lifecycle 最小后端能力：Repository 读取新字段、Service 提供 `revoke / disable / expire` 状态流转、API 暴露最小 command endpoint、audit log append-only 写入，并补齐 core / infra / api 回归测试。
+
+## 修改文件清单
+
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/ExchangeAccountCredentialSummary.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/ExchangeAccountCredentialMaterial.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/port/ExchangeAccountCredentialRepository.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandService.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepository.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/dto/ExchangeAccountCredentialSummaryResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/dto/ExchangeAccountCredentialLifecycleRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandServiceTest.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialVerificationServiceTest.java`
+- `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepositoryTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialControllerWebMvcTest.java`
+- `docs/current/README.md`
+- `docs/current/STATUS.md`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+## 修复说明
+
+- API 摘要响应新增 `credentialStatus / revokedAt / rotatedAt` 等非敏感 lifecycle 字段，不暴露 encrypted payload、secret、token、private key、passphrase 或 decrypted payload。
+- `findActiveSummary / findActiveByAccountAndType / findActiveMaterial` 默认同时要求 `is_active=true` 和 `credential_status='ACTIVE'`。
+- `revoke / disable / expire` 通过 owner 受控 credential 查询执行状态流转；重复 revoke 幂等，`REVOKED / ROTATED` 后的 disable / expire 返回状态冲突。
+- lifecycle reason 做长度限制和敏感词拒绝；audit metadata 只保存状态和来源。
+- upsert 轮换旧 active 版本只写 `credential_status='ROTATED'`，不再把 `verification_status` 改写为 `REVOKED`。
+- standalone MockMvc 测试补齐 Jackson Java time converter，保证 `Instant` 按生产 JSON 语义输出 ISO 字符串。
+
+## 验证记录
+
+- 首次执行 `mvn -f backend/pom.xml test` 失败：`ExchangeAccountCredentialControllerWebMvcTest` 期望 `revokedAt` 为 ISO-8601 字符串，但 standalone MockMvc 使用默认 Jackson 配置输出 epoch seconds。
+- 修复后执行 `mvn -f backend/pom.xml -pl nq-api -am test` 通过。
+- 轮换语义修正后执行 `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api -am test` 通过。
+- 本轮最终验证结果以 `docs/current/TESTING.md` 为准。
+
+## 边界确认
+
+- 未新增 migration。
+- 未修改前端、Python、部署或 release 产物。
+- 未接入 AI、DH、Agent credential 调用、LIVE 或真实交易所私有链路。
+- 未新增真实下单、撤单、真实交易所权限探活、rotate endpoint 或 enable endpoint。
+- 未读取、输出或提交真实 credential material、API key、secret、token、private key、passphrase、cookie 或 decrypted payload。
+
+---
+
 # Worklog: GateJ-FREEZE-FINAL-DOC
 
 日期：2026-06-05

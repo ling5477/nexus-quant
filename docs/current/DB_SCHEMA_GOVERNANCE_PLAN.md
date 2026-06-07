@@ -202,7 +202,7 @@ Batch 4 必须在 Batch 3 后执行，不能与 comment-only 或 retention purge
 后续拆分与执行状态：
 
 - Batch 5-B：已新增 `V29__schema_credential_revocation_governance.sql`，只做 credential revocation schema migration 和文档同步，不改代码。
-- Batch 5-C：在 Batch 5-B 后接入 Repository / Service / API / tests，不接 AI、DH、LIVE 或真实交易。
+- Batch 5-C：已在 Batch 5-B 后接入 Repository / Service / API / tests，不接 AI、DH、LIVE 或真实交易。
 
 详见：
 
@@ -222,15 +222,19 @@ Batch 4 必须在 Batch 3 后执行，不能与 comment-only 或 retention purge
 - 新增 `credential_audit_logs` append-only 审计日志表，记录 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED` 事件。
 - 所有新增字段和新增表均包含 `COMMENT`，敏感文本和 JSONB metadata 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie、passphrase、签名、明文 payload 或交易所凭证。
 
-本批未执行项：
+Batch 5-B 未执行项：
 
 - 未实现 revoke endpoint、rotate endpoint、active material 读取改造、Repository 默认过滤、Service 状态流转或 API response 字段接入。
 - 未接入 KMS / Secret Manager 真实外部服务。
 - 未接 AI、DH、LIVE 或真实交易。
 
-后续：
+Batch 5-C 执行结果：
 
-- Batch 5-C 必须单独开工，才能接入 Repository / Service / API / tests。
+- Repository / Service / API / tests 已接入 `credential_status` 生命周期字段。
+- active summary / active material 查询默认只读取 `credential_status='ACTIVE'` 且 `is_active=true` 的凭证。
+- 已新增 `revoke / disable / expire` 最小 command API；本轮未新增 rotate endpoint 或 enable endpoint。
+- `credential_audit_logs` 已用于追加 `REVOKED / DISABLED / EXPIRED` 生命周期审计事件，metadata 只保存脱敏状态和来源。
+- 未新增 migration、KMS / Secret Manager 真实外部服务、AI、DH、LIVE、真实交易所权限探活或真实交易路径。
 
 ## 5. Batch 5：大表 retention policy
 

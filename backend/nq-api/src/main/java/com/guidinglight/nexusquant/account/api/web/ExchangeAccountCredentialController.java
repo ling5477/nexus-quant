@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.account.api.web;
 
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountActiveCredentialResponse;
+import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialLifecycleRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialSummaryResponse;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialUpsertRequestBody;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
@@ -134,11 +135,106 @@ public class ExchangeAccountCredentialController {
         );
     }
 
+    @PostMapping("/{credentialId}/revoke")
+    @Operation(
+            summary = "不可恢复撤销凭证",
+            description = "把指定凭证标记为 REVOKED，写入 revoked_at / revoked_by / revoke_reason，并追加 credential_audit_logs。不会删除凭证或返回敏感材料。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "撤销完成或已处于 REVOKED"),
+            @ApiResponse(responseCode = "400", description = "请求非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ExchangeAccountCredentialSummaryResponse revoke(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @PathVariable @Positive(message = "credentialId must be positive") Long credentialId,
+            @Valid @RequestBody(required = false) ExchangeAccountCredentialLifecycleRequestBody requestBody
+    ) {
+        CurrentCredentialActor actor = resolveCurrentCredentialActor();
+        return ExchangeAccountCredentialSummaryResponse.from(exchangeAccountCredentialCommandService.revoke(
+                actor.userId(),
+                accountId,
+                credentialId,
+                actor.actor(),
+                lifecycleReason(requestBody)
+        ));
+    }
+
+    @PostMapping("/{credentialId}/disable")
+    @Operation(
+            summary = "临时禁用凭证",
+            description = "把指定凭证标记为 DISABLED 并追加 credential_audit_logs。本轮不提供 enable 接口。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "禁用完成或已处于 DISABLED"),
+            @ApiResponse(responseCode = "400", description = "请求非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ExchangeAccountCredentialSummaryResponse disable(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @PathVariable @Positive(message = "credentialId must be positive") Long credentialId,
+            @Valid @RequestBody(required = false) ExchangeAccountCredentialLifecycleRequestBody requestBody
+    ) {
+        CurrentCredentialActor actor = resolveCurrentCredentialActor();
+        return ExchangeAccountCredentialSummaryResponse.from(exchangeAccountCredentialCommandService.disable(
+                actor.userId(),
+                accountId,
+                credentialId,
+                actor.actor(),
+                lifecycleReason(requestBody)
+        ));
+    }
+
+    @PostMapping("/{credentialId}/expire")
+    @Operation(
+            summary = "标记凭证过期",
+            description = "把指定凭证标记为 EXPIRED 并追加 credential_audit_logs。不会删除凭证或调用真实交易所。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "过期标记完成或已处于 EXPIRED"),
+            @ApiResponse(responseCode = "400", description = "请求非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ExchangeAccountCredentialSummaryResponse expire(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @PathVariable @Positive(message = "credentialId must be positive") Long credentialId,
+            @Valid @RequestBody(required = false) ExchangeAccountCredentialLifecycleRequestBody requestBody
+    ) {
+        CurrentCredentialActor actor = resolveCurrentCredentialActor();
+        return ExchangeAccountCredentialSummaryResponse.from(exchangeAccountCredentialCommandService.expire(
+                actor.userId(),
+                accountId,
+                credentialId,
+                actor.actor(),
+                lifecycleReason(requestBody)
+        ));
+    }
+
     private Long resolveCurrentUserId() {
+        return resolveCurrentCredentialActor().userId();
+    }
+
+    private CurrentCredentialActor resolveCurrentCredentialActor() {
         var currentUser = gatewayAuthFacade.currentUser()
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
-        return currentUserProfileService.findByUsername(currentUser.username())
+        Long userId = currentUserProfileService.findByUsername(currentUser.username())
                 .map(profile -> profile.userId())
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        return new CurrentCredentialActor(userId, currentUser.username() == null || currentUser.username().isBlank()
+                ? "system"
+                : currentUser.username().trim());
+    }
+
+    private String lifecycleReason(ExchangeAccountCredentialLifecycleRequestBody requestBody) {
+        return requestBody == null ? null : requestBody.reason();
+    }
+
+    private record CurrentCredentialActor(Long userId, String actor) {
     }
 }

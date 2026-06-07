@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ExchangeAccountCredentialCommandService {
 
     private static final String DEFAULT_CIPHER_SUITE = "PGP_SYM_AES256";
+    private static final int LIFECYCLE_REASON_MAX_LENGTH = 1024;
 
     private final ExchangeAccountRepository exchangeAccountRepository;
     private final ExchangeAccountCredentialRepository exchangeAccountCredentialRepository;
@@ -100,11 +101,129 @@ public class ExchangeAccountCredentialCommandService {
         ).orElse(null);
     }
 
+    /**
+     * 不可恢复撤销指定 credential，并追加 REVOKED 审计事件。
+     *
+     * <p>Why: REVOKED 是安全闭环状态，不允许后续恢复为 active。重复 revoke
+     * 保持幂等返回当前摘要，避免用户重复点击导致重复审计噪音。</p>
+     *
+     * @param ownerUserId 当前认证用户 ID，必须拥有 exchangeAccountId
+     * @param exchangeAccountId 凭证所属交易账户 ID
+     * @param credentialId 要撤销的 credential 主键
+     * @param actor 当前认证主体；为空时落为 system 并在交付风险中说明
+     * @param reason 撤销原因，可空；最长 1024，且不得包含明显敏感材料
+     * @return 更新后的非敏感凭证摘要
+     */
+    @Transactional
+    public ExchangeAccountCredentialSummary revoke(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String actor,
+            String reason
+    ) {
+        return transitionLifecycle(ownerUserId, exchangeAccountId, credentialId, "REVOKED", actor, reason);
+    }
+
+    /**
+     * 临时禁用指定 credential，并追加 DISABLED 审计事件。
+     *
+     * <p>Why: DISABLED 表示可后续单独设计恢复的临时停用状态，本轮不实现 enable；
+     * 对已经 REVOKED 或 ROTATED 的历史记录返回明确状态冲突，避免破坏审计语义。</p>
+     */
+    @Transactional
+    public ExchangeAccountCredentialSummary disable(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String actor,
+            String reason
+    ) {
+        return transitionLifecycle(ownerUserId, exchangeAccountId, credentialId, "DISABLED", actor, reason);
+    }
+
+    /**
+     * 标记指定 credential 过期，并追加 EXPIRED 审计事件。
+     *
+     * <p>Why: EXPIRED 表示凭证因为时间或外部策略不可用，不等价于不可恢复撤销；
+     * active material 查询会排除该状态，但不会删除历史凭证版本。</p>
+     */
+    @Transactional
+    public ExchangeAccountCredentialSummary expire(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String actor,
+            String reason
+    ) {
+        return transitionLifecycle(ownerUserId, exchangeAccountId, credentialId, "EXPIRED", actor, reason);
+    }
+
     private void requireOwnedAccount(Long ownerUserId, Long exchangeAccountId) {
         exchangeAccountRepository.findByIdForOwner(
                 requirePositive(ownerUserId, "ownerUserId"),
                 requirePositive(exchangeAccountId, "exchangeAccountId")
         ).orElseThrow(() -> new ExchangeAccountNotFoundException(exchangeAccountId));
+    }
+
+    private ExchangeAccountCredentialSummary transitionLifecycle(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String targetStatus,
+            String actor,
+            String reason
+    ) {
+        Long normalizedOwnerUserId = requirePositive(ownerUserId, "ownerUserId");
+        Long normalizedExchangeAccountId = requirePositive(exchangeAccountId, "exchangeAccountId");
+        Long normalizedCredentialId = requirePositive(credentialId, "credentialId");
+        requireOwnedAccount(normalizedOwnerUserId, normalizedExchangeAccountId);
+        ExchangeAccountCredentialSummary current = exchangeAccountCredentialRepository.findByCredentialIdForOwner(
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialId
+        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
+        if (targetStatus.equals(current.credentialStatus())) {
+            return current;
+        }
+        if (!"REVOKED".equals(targetStatus)
+                && ("REVOKED".equals(current.credentialStatus()) || "ROTATED".equals(current.credentialStatus()))) {
+            throw new IllegalStateException("credential lifecycle status cannot transition from "
+                    + current.credentialStatus() + " to " + targetStatus);
+        }
+        Instant now = Instant.now(clock);
+        String normalizedActor = normalizeActor(actor);
+        String normalizedReason = normalizeLifecycleReason(reason);
+        Instant revokedAt = "REVOKED".equals(targetStatus) ? now : null;
+        String revokedBy = "REVOKED".equals(targetStatus) ? normalizedActor : null;
+        String revokeReason = "REVOKED".equals(targetStatus) ? normalizedReason : null;
+        boolean updated = exchangeAccountCredentialRepository.updateLifecycleStatus(
+                normalizedCredentialId,
+                normalizedExchangeAccountId,
+                targetStatus,
+                false,
+                revokedAt,
+                revokedBy,
+                revokeReason,
+                now
+        );
+        if (!updated) {
+            throw new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId);
+        }
+        exchangeAccountCredentialRepository.appendCredentialAuditLog(
+                normalizedCredentialId,
+                normalizedExchangeAccountId,
+                targetStatus,
+                normalizedActor,
+                normalizedReason,
+                lifecycleMetadata(targetStatus),
+                now
+        );
+        return exchangeAccountCredentialRepository.findByCredentialIdForOwner(
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialId
+        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
     }
 
     private String normalizeCredentialType(String credentialType) {
@@ -168,5 +287,52 @@ public class ExchangeAccountCredentialCommandService {
 
     private String normalizeNullableText(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String normalizeActor(String value) {
+        if (value == null || value.isBlank()) {
+            return "system";
+        }
+        String normalized = value.trim();
+        if (normalized.length() > 128) {
+            throw new IllegalArgumentException("actor length must be less than or equal to 128");
+        }
+        return normalized;
+    }
+
+    private String normalizeLifecycleReason(String value) {
+        String normalized = normalizeNullableText(value);
+        if (normalized == null) {
+            return null;
+        }
+        if (normalized.length() > LIFECYCLE_REASON_MAX_LENGTH) {
+            throw new IllegalArgumentException("reason length must be less than or equal to 1024");
+        }
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        if (lower.contains("token")
+                || lower.contains("api secret")
+                || lower.contains("api_secret")
+                || lower.contains("private key")
+                || lower.contains("password")
+                || lower.contains("secret")
+                || lower.contains("mnemonic")
+                || lower.contains("encrypted_payload")
+                || normalized.contains("私钥")
+                || normalized.contains("密钥")
+                || normalized.contains("助记词")) {
+            throw new IllegalArgumentException("reason must not contain sensitive credential material");
+        }
+        return normalized;
+    }
+
+    private String lifecycleMetadata(String targetStatus) {
+        ObjectNode metadata = objectMapper.createObjectNode();
+        metadata.put("credentialStatus", targetStatus);
+        metadata.put("source", "credential_lifecycle_command");
+        try {
+            return objectMapper.writeValueAsString(metadata);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("failed to serialize credential audit metadata", ex);
+        }
     }
 }

@@ -29,6 +29,24 @@
 - GateI-1 新增策略版本与发布版本绑定 API；不接 AI。
 - GateI-2 增强 backtest config、backtest run 和 evaluation report 追溯 API；不进入 GateI-3/4，不接 AI。
 
+## Account Credential API
+
+当前已实现的账户凭证写侧与生命周期入口：
+
+- `GET /api/exchange-accounts/{accountId}/credentials/active`：读取当前 active credential 摘要；响应只包含 `credentialId`、`exchangeAccountId`、`credentialType`、`maskedAccessKey`、`credentialStatus`、`verificationStatus`、`isActive`、`revokedAt`、`rotatedFromCredentialId`、`rotatedAt`、`lastVerifiedAt`、`lastVerificationError`、`updatedAt` 等非敏感字段。
+- `POST /api/exchange-accounts/{accountId}/credentials`：新增 credential 版本；旧 active 版本仅写为 `credential_status='ROTATED'` 且 `is_active=false`，不再把轮换旧版本混同为不可恢复 `REVOKED`。
+- `POST /api/exchange-accounts/{accountId}/credentials/verify`：对当前 active credential 做结构性校验；只处理 `credential_status='ACTIVE'` 的 active material。
+- `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/revoke`：不可恢复撤销 credential，写入 `credential_status='REVOKED'`、`revokedAt` 和 append-only `credential_audit_logs` 事件；重复 revoke 幂等返回当前摘要。
+- `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/disable`：临时禁用 credential，写入 `credential_status='DISABLED'` 和 append-only audit 事件；本轮不实现 enable。
+- `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/expire`：标记 credential 过期，写入 `credential_status='EXPIRED'` 和 append-only audit 事件。
+
+Credential API 固定边界：
+
+- API response 不返回 `encryptedPayload`、`decryptedPayloadJson`、`apiKey`、`secretKey`、`token`、`privateKeyPem`、`passphrase` 或任何明文 credential material。
+- lifecycle command request body 只接收 `reason`；应用层限制长度并拒绝明显包含 token、secret、private key、password、助记词、密钥等敏感材料的原因。
+- `DISABLED / REVOKED / EXPIRED / ROTATED` 均不会进入 active material 查询；`REVOKED / ROTATED` 不允许通过本轮接口改写为 `DISABLED / EXPIRED`。
+- 本轮未新增 rotate endpoint、enable endpoint、真实交易所权限探活、AI / DH / Agent credential 调用、LIVE 交易或真实下单路径。
+
 ## GateH-1 Trading Workspace API
 
 当前已实现的 GateH-1 交易工作台读写入口：

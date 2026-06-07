@@ -76,6 +76,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - Codex workflow documentation hardening completed：已新增 NQ/DH 插件路由、Workflow Router Skill 说明、任务模板和 Project Instructions 文档；本轮只做规则文档固化，未修改业务代码、部署配置、API、migration、AI、DH 或真实交易路径。
 - Codex workflow documentation consistency fix completed：已将 Router Skill 状态与 `AGENTS.md` active skills 对齐，`nq-dh-workflow-router` 作为当前项目 active skill 使用；`CODEX_PROJECT_INSTRUCTIONS.md` 已补充 Router 前置分类规则。本轮只修改 Markdown 文档，未修改业务代码、部署配置、API、migration、AI、DH 或真实交易路径。
 - Codex workflow output format consistency fix completed：标准输出字段已统一为 `Findings`，不再把 `Summary` 作为必填输出字段。本轮只修改 Markdown / Skill 文档，未修改业务代码、部署配置、API、migration、AI、DH 或真实交易路径。
+- Credential revocation governance Batch 5-C completed：后端已接入 `credential_status` 生命周期字段、active material 默认只读取 `ACTIVE`、新增 `revoke / disable / expire` 最小 API 与 append-only audit log 写入；本轮未新增 migration、前端、Python、部署、AI、DH、LIVE 或真实交易所私有链路。
 - AI 尚未开始。AI 最早 GateK 才允许进入信号层。
 - GateJ 不是 AI 阶段。GateJ 只做 Paper Trading 稳定运行。
 

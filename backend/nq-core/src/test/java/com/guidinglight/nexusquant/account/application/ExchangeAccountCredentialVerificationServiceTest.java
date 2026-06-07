@@ -97,17 +97,20 @@ class ExchangeAccountCredentialVerificationServiceTest {
     private static final class InMemoryExchangeAccountCredentialRepository implements ExchangeAccountCredentialRepository {
         private final Map<Long, ExchangeAccountCredentialMaterial> storage = new LinkedHashMap<>();
         void seed(Long exchangeAccountId) {
-            storage.put(1L, new ExchangeAccountCredentialMaterial(1L, exchangeAccountId, "OKX_API_V5", "tes***ey", "PENDING", true, null, null, null, Instant.parse("2026-04-05T00:00:00Z"), "{}"));
+            storage.put(1L, new ExchangeAccountCredentialMaterial(1L, exchangeAccountId, "OKX_API_V5", "tes***ey", "ACTIVE", "PENDING", true, null, null, null, null, null, Instant.parse("2026-04-05T00:00:00Z"), "{}"));
         }
-        @Override public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive()).findFirst().map(ExchangeAccountCredentialMaterial::toSummary); }
+        @Override public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst().map(ExchangeAccountCredentialMaterial::toSummary); }
         @Override public Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType) { return Optional.empty(); }
-        @Override public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive()).findFirst(); }
+        @Override public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst(); }
+        @Override public Optional<ExchangeAccountCredentialSummary> findByCredentialIdForOwner(Long ownerUserId, Long exchangeAccountId, Long credentialId) { return Optional.empty(); }
         @Override public void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt) { throw new UnsupportedOperationException(); }
         @Override public ExchangeAccountCredentialSummary insertNewVersion(Long exchangeAccountId, String credentialType, String encryptedPayloadJson, int keyVersion, String cipherSuite, String maskedAccessKey, Long rotatedFromCredentialId, Instant now) { throw new UnsupportedOperationException(); }
         @Override public boolean markVerificationResult(Long credentialId, String verificationStatus, Instant verifiedAt, String lastVerificationError, Instant updatedAt) {
             ExchangeAccountCredentialMaterial current = storage.get(credentialId);
-            storage.put(credentialId, new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), verificationStatus, current.isActive(), current.rotatedFromCredentialId(), verifiedAt, lastVerificationError, updatedAt, current.decryptedPayloadJson()));
+            storage.put(credentialId, new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), current.credentialStatus(), verificationStatus, current.isActive(), current.revokedAt(), current.rotatedFromCredentialId(), current.rotatedAt(), verifiedAt, lastVerificationError, updatedAt, current.decryptedPayloadJson()));
             return true;
         }
+        @Override public boolean updateLifecycleStatus(Long credentialId, Long exchangeAccountId, String credentialStatus, boolean active, Instant revokedAt, String revokedBy, String revokeReason, Instant updatedAt) { throw new UnsupportedOperationException(); }
+        @Override public void appendCredentialAuditLog(Long credentialId, Long exchangeAccountId, String eventType, String actor, String reason, String metadataJson, Instant createdAt) { throw new UnsupportedOperationException(); }
     }
 }

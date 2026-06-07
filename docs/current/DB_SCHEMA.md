@@ -38,7 +38,7 @@
 
 ## Credential Revocation Schema Governance
 
-`V29__schema_credential_revocation_governance.sql` 已完成 Batch 5-B credential revocation schema-only 治理。本批只处理 `exchange_account_credentials` 和新增 `credential_audit_logs`，不修改 Java、Repository、Service、Controller、DTO、前端、Python 或部署脚本。
+`V29__schema_credential_revocation_governance.sql` 已完成 Batch 5-B credential revocation schema-only 治理。本批只处理 `exchange_account_credentials` 和新增 `credential_audit_logs`。
 
 - `exchange_account_credentials`：新增 `credential_status`，允许值为 `ACTIVE / DISABLED / REVOKED / EXPIRED / ROTATED`，用于把凭证生命周期从 `verification_status` 校验状态中拆出。
 - `exchange_account_credentials`：新增 `revoked_by`、`revoke_reason`、`rotated_at`、`rotated_by`，用于记录撤销与轮换元数据；`revoke_reason` 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie、passphrase 或交易所凭证。
@@ -47,7 +47,9 @@
 - 历史 `verification_status='REVOKED'` 或 `is_active=false` 记录按现有轮换语义回填为 `credential_status='ROTATED'`，并用 `revoked_at/updated_at` 补齐 `rotated_at`；本回填不读取、不输出、不复制任何真实 credential material。
 - `credential_audit_logs`：新增 append-only 审计日志表，记录 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED` 事件，包含 credential/account 外键、actor、reason、metadata、created_at。
 - `credential_audit_logs.metadata` 注释明确只允许保存脱敏状态、结果码、request id、策略判断等审计上下文，不得保存密钥、token、API secret、私钥、助记词、cookie、passphrase、签名、明文 payload 或交易所凭证。
-- Batch 5-B 未实现 revoke endpoint、rotate endpoint、active material 读取改造、Repository 默认过滤、Service 状态流转或 API response 字段接入；这些只能在 Batch 5-C 单独执行。
+- Batch 5-C 已在应用代码中接入 V29 生命周期字段：active summary / active material 查询默认同时要求 `is_active=true` 和 `credential_status='ACTIVE'`；旧 active 版本轮换时写为 `credential_status='ROTATED'`，不再把 `verification_status` 继续写成 `REVOKED`。
+- Batch 5-C 已新增 `revoke / disable / expire` 最小 command API，并通过 `credential_audit_logs` 追加 `REVOKED / DISABLED / EXPIRED` 审计事件；audit metadata 只保存脱敏状态和来源。
+- Batch 5-C 未新增 migration，未新增 rotate endpoint、enable endpoint、真实交易所权限探活、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
 
 ## Research / Backtest Config Archive Semantics
 
