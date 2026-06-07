@@ -75,6 +75,48 @@ class ExchangeAccountCredentialVerificationServiceTest {
         assertThrows(ExchangeAccountCredentialNotFoundException.class, () -> service.verifyActive(1L, account.exchangeAccountId()));
     }
 
+    @Test
+    void shouldRejectVerifyWhenMultipleActiveCredentialTypesNeedExplicitSelection() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialVerificationService service = new ExchangeAccountCredentialVerificationService(
+                accountRepository,
+                credentialRepository,
+                credential -> ExchangeAccountCredentialVerificationResult.success(),
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        credentialRepository.seed(account.exchangeAccountId(), 1L, "OKX_API_V5");
+        credentialRepository.seed(account.exchangeAccountId(), 2L, "BINANCE_HMAC");
+
+        IllegalStateException conflict = assertThrows(
+                IllegalStateException.class,
+                () -> service.verifyActive(1L, account.exchangeAccountId())
+        );
+        assertEquals("multiple active credential types require credentialType", conflict.getMessage());
+    }
+
+    @Test
+    void shouldVerifyExplicitCredentialTypeWhenMultipleActiveTypesExist() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialVerificationService service = new ExchangeAccountCredentialVerificationService(
+                accountRepository,
+                credentialRepository,
+                credential -> ExchangeAccountCredentialVerificationResult.success(),
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        credentialRepository.seed(account.exchangeAccountId(), 1L, "OKX_API_V5");
+        credentialRepository.seed(account.exchangeAccountId(), 2L, "BINANCE_HMAC");
+
+        ExchangeAccountCredentialSummary summary = service.verifyActive(1L, account.exchangeAccountId(), "binance_hmac");
+
+        assertEquals(2L, summary.credentialId());
+        assertEquals("VERIFIED", summary.verificationStatus());
+        assertEquals("PENDING", credentialRepository.findById(1L).orElseThrow().verificationStatus());
+    }
+
     private static final class InMemoryExchangeAccountRepository implements ExchangeAccountRepository {
         private final Map<Long, ExchangeAccountSummary> storage = new LinkedHashMap<>();
         private ExchangeAccountSummary seed() {
@@ -97,11 +139,17 @@ class ExchangeAccountCredentialVerificationServiceTest {
     private static final class InMemoryExchangeAccountCredentialRepository implements ExchangeAccountCredentialRepository {
         private final Map<Long, ExchangeAccountCredentialMaterial> storage = new LinkedHashMap<>();
         void seed(Long exchangeAccountId) {
-            storage.put(1L, new ExchangeAccountCredentialMaterial(1L, exchangeAccountId, "OKX_API_V5", "tes***ey", "ACTIVE", "PENDING", true, null, null, null, null, null, Instant.parse("2026-04-05T00:00:00Z"), "{}"));
+            seed(exchangeAccountId, 1L, "OKX_API_V5");
         }
-        @Override public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst().map(ExchangeAccountCredentialMaterial::toSummary); }
+
+        void seed(Long exchangeAccountId, Long credentialId, String credentialType) {
+            storage.put(credentialId, new ExchangeAccountCredentialMaterial(credentialId, exchangeAccountId, credentialType, "tes***ey", "ACTIVE", "PENDING", true, null, null, null, null, null, Instant.parse("2026-04-05T00:00:00Z"), "{}"));
+        }
+
+        @Override public List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).map(ExchangeAccountCredentialMaterial::toSummary).toList(); }
+        @Override public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId, String credentialType) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.credentialType().equals(credentialType) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst().map(ExchangeAccountCredentialMaterial::toSummary); }
         @Override public Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType) { return Optional.empty(); }
-        @Override public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst(); }
+        @Override public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId, String credentialType) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.credentialType().equals(credentialType) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst(); }
         @Override public Optional<ExchangeAccountCredentialSummary> findByCredentialIdForOwner(Long ownerUserId, Long exchangeAccountId, Long credentialId) { return Optional.empty(); }
         @Override public Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(Long ownerUserId, Long exchangeAccountId, Long credentialId) { return Optional.empty(); }
         @Override public void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt) { throw new UnsupportedOperationException(); }
@@ -114,5 +162,6 @@ class ExchangeAccountCredentialVerificationServiceTest {
         @Override public boolean updateLifecycleStatus(Long credentialId, Long exchangeAccountId, String credentialStatus, boolean active, Instant revokedAt, String revokedBy, String revokeReason, Instant updatedAt) { throw new UnsupportedOperationException(); }
         @Override public boolean markRotated(Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt) { throw new UnsupportedOperationException(); }
         @Override public void appendCredentialAuditLog(Long credentialId, Long exchangeAccountId, String eventType, String actor, String reason, String metadataJson, Instant createdAt) { throw new UnsupportedOperationException(); }
+        private Optional<ExchangeAccountCredentialSummary> findById(Long credentialId) { return Optional.ofNullable(storage.get(credentialId)).map(ExchangeAccountCredentialMaterial::toSummary); }
     }
 }

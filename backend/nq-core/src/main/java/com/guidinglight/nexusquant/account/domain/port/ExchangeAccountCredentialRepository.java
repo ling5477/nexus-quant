@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMater
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,11 +16,65 @@ import java.util.Optional;
  */
 public interface ExchangeAccountCredentialRepository {
 
-    Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId);
+    /**
+     * 列出指定 owner + account 下所有当前 ACTIVE credential 摘要。
+     *
+     * <p>Why: V12 只保证同一 account + credentialType 一个 active，允许同一 account
+     * 同时存在多个 active credential type。无 credentialType 的读取必须先看到完整候选集，
+     * 才能在多候选时返回明确冲突，而不是按更新时间静默选错。</p>
+     */
+    List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId);
+
+    /**
+     * 读取唯一 active 摘要；多 credential type 候选时抛出状态冲突。
+     *
+     * <p>Why: 保留旧调用方的单 active 兼容行为，同时把多 ACTIVE type 从隐式
+     * `LIMIT 1` 改为显式业务冲突，避免后续权限探活或展示路径选错凭证。</p>
+     */
+    default Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId) {
+        List<ExchangeAccountCredentialSummary> activeSummaries = listActiveSummaries(ownerUserId, exchangeAccountId);
+        if (activeSummaries.size() > 1) {
+            throw new IllegalStateException("multiple active credential types require credentialType");
+        }
+        return activeSummaries.isEmpty() ? Optional.empty() : Optional.of(activeSummaries.getFirst());
+    }
+
+    /**
+     * 按 credentialType 显式读取 active 摘要。
+     *
+     * <p>Why: 当一个 account 合法持有多个 active credential type 时，调用方必须明确
+     * 选择业务需要的 type，不能依赖更新时间或插入顺序。</p>
+     */
+    Optional<ExchangeAccountCredentialSummary> findActiveSummary(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    );
 
     Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType);
 
-    Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId);
+    /**
+     * 读取唯一 active material；多 credential type 候选时抛出状态冲突。
+     *
+     * <p>Why: active material 包含服务端解密后的 payload，必须先通过摘要候选集确认
+     * 无歧义，再按唯一 credentialType 读取 material，避免为冲突检测解密多份凭证。</p>
+     */
+    default Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) {
+        return findActiveSummary(ownerUserId, exchangeAccountId)
+                .flatMap(summary -> findActiveMaterial(ownerUserId, exchangeAccountId, summary.credentialType()));
+    }
+
+    /**
+     * 按 credentialType 显式读取 active material。
+     *
+     * <p>Why: 结构性校验、未来权限探活或只读/交易权限拆分都必须明确选择 credential type；
+     * 本方法仍只允许 `is_active=true` 且 `credential_status='ACTIVE'` 的记录进入 material。</p>
+     */
+    Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    );
 
     /**
      * 按 credentialId 读取凭证摘要，并复用 exchange account owner 校验。

@@ -9,7 +9,9 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,8 +65,21 @@ public class ExchangeAccountCredentialVerificationService {
 
     @Transactional
     public ExchangeAccountCredentialSummary verifyActive(Long ownerUserId, Long exchangeAccountId) {
+        return verifyActive(ownerUserId, exchangeAccountId, null);
+    }
+
+    /**
+     * 校验 active credential，可通过 credentialType 消除多 ACTIVE type 歧义。
+     *
+     * <p>Why: 一个 account 允许多个 credential type 同时 ACTIVE。结构性校验会读取
+     * decrypted payload，因此必须先明确唯一候选；无 credentialType 时多候选返回 409，
+     * 不允许按 `updated_at` 静默选错。</p>
+     */
+    @Transactional
+    public ExchangeAccountCredentialSummary verifyActive(Long ownerUserId, Long exchangeAccountId, String credentialType) {
         requireOwnedAccount(ownerUserId, exchangeAccountId);
-        ExchangeAccountCredentialMaterial material = exchangeAccountCredentialRepository.findActiveMaterial(ownerUserId, exchangeAccountId)
+        String normalizedCredentialType = normalizeOptionalCredentialType(credentialType);
+        ExchangeAccountCredentialMaterial material = findActiveMaterial(ownerUserId, exchangeAccountId, normalizedCredentialType)
                 .orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(exchangeAccountId));
         Instant now = Instant.now(clock);
         ExchangeAccountCredentialVerificationResult verificationResult = exchangeAccountCredentialVerifier.verify(material);
@@ -76,12 +91,46 @@ public class ExchangeAccountCredentialVerificationService {
                 verificationResult.verified() ? null : verificationResult.errorMessage(),
                 now
         );
-        return exchangeAccountCredentialRepository.findActiveSummary(ownerUserId, exchangeAccountId)
+        return findActiveSummary(ownerUserId, exchangeAccountId, normalizedCredentialType)
                 .orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(exchangeAccountId));
     }
 
     private void requireOwnedAccount(Long ownerUserId, Long exchangeAccountId) {
         exchangeAccountRepository.findByIdForOwner(ownerUserId, exchangeAccountId)
                 .orElseThrow(() -> new ExchangeAccountNotFoundException(exchangeAccountId));
+    }
+
+    private Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    ) {
+        return credentialType == null
+                ? exchangeAccountCredentialRepository.findActiveMaterial(ownerUserId, exchangeAccountId)
+                : exchangeAccountCredentialRepository.findActiveMaterial(ownerUserId, exchangeAccountId, credentialType);
+    }
+
+    private Optional<ExchangeAccountCredentialSummary> findActiveSummary(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    ) {
+        return credentialType == null
+                ? exchangeAccountCredentialRepository.findActiveSummary(ownerUserId, exchangeAccountId)
+                : exchangeAccountCredentialRepository.findActiveSummary(ownerUserId, exchangeAccountId, credentialType);
+    }
+
+    private String normalizeOptionalCredentialType(String credentialType) {
+        return credentialType == null || credentialType.isBlank() ? null : normalizeCredentialType(credentialType);
+    }
+
+    private String normalizeCredentialType(String credentialType) {
+        String normalized = credentialType.trim().toUpperCase(Locale.ROOT);
+        if (!"OKX_API_V5".equals(normalized)
+                && !"BINANCE_HMAC".equals(normalized)
+                && !"BINANCE_ED25519".equals(normalized)) {
+            throw new IllegalArgumentException("unsupported credentialType: " + credentialType);
+        }
+        return normalized;
     }
 }

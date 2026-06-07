@@ -189,16 +189,64 @@ public class ExchangeAccountCredentialCommandService {
     }
 
     public ExchangeAccountCredentialSummary requireActiveSummary(Long ownerUserId, Long exchangeAccountId) {
+        return requireActiveSummary(ownerUserId, exchangeAccountId, null);
+    }
+
+    /**
+     * 读取 active credential 摘要，可通过 credentialType 消除多 active type 歧义。
+     *
+     * <p>Why: V12 schema 允许同一 account 下多个 credential type 同时 ACTIVE。无 type
+     * 调用只在候选唯一时兼容旧行为；多候选会由 Repository 抛出状态冲突，避免按更新时间选错。</p>
+     */
+    public ExchangeAccountCredentialSummary requireActiveSummary(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    ) {
+        Long normalizedOwnerUserId = requirePositive(ownerUserId, "ownerUserId");
+        Long normalizedExchangeAccountId = requirePositive(exchangeAccountId, "exchangeAccountId");
+        String normalizedCredentialType = normalizeOptionalCredentialType(credentialType);
+        if (normalizedCredentialType == null) {
+            return exchangeAccountCredentialRepository.findActiveSummary(
+                    normalizedOwnerUserId,
+                    normalizedExchangeAccountId
+            ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
+        }
         return exchangeAccountCredentialRepository.findActiveSummary(
-                requirePositive(ownerUserId, "ownerUserId"),
-                requirePositive(exchangeAccountId, "exchangeAccountId")
-        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(exchangeAccountId));
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialType
+        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
     }
 
     public ExchangeAccountCredentialSummary findActiveSummaryOrNull(Long ownerUserId, Long exchangeAccountId) {
+        return findActiveSummaryOrNull(ownerUserId, exchangeAccountId, null);
+    }
+
+    /**
+     * 读取 active credential 摘要；未配置时返回 null，多 active type 时保持冲突。
+     *
+     * <p>Why: `GET /credentials/active` 需要保留“无 active 返回 null”的响应形态，
+     * 但不能把多 ACTIVE type 静默压成最新一条。</p>
+     */
+    public ExchangeAccountCredentialSummary findActiveSummaryOrNull(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    ) {
+        Long normalizedOwnerUserId = requirePositive(ownerUserId, "ownerUserId");
+        Long normalizedExchangeAccountId = requirePositive(exchangeAccountId, "exchangeAccountId");
+        String normalizedCredentialType = normalizeOptionalCredentialType(credentialType);
+        if (normalizedCredentialType == null) {
+            return exchangeAccountCredentialRepository.findActiveSummary(
+                    normalizedOwnerUserId,
+                    normalizedExchangeAccountId
+            ).orElse(null);
+        }
         return exchangeAccountCredentialRepository.findActiveSummary(
-                requirePositive(ownerUserId, "ownerUserId"),
-                requirePositive(exchangeAccountId, "exchangeAccountId")
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialType
         ).orElse(null);
     }
 
@@ -335,6 +383,10 @@ public class ExchangeAccountCredentialCommandService {
             throw new IllegalArgumentException("unsupported credentialType: " + credentialType);
         }
         return normalized;
+    }
+
+    private String normalizeOptionalCredentialType(String credentialType) {
+        return credentialType == null || credentialType.isBlank() ? null : normalizeCredentialType(credentialType);
     }
 
     private void validatePayload(String credentialType, ExchangeAccountCredentialUpsertCommand command) {

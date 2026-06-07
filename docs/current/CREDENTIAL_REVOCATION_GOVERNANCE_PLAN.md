@@ -2,14 +2,14 @@
 
 任务：NQ-DB-SCHEMA-GOVERNANCE-BATCH-5A-CREDENTIAL-REVOCATION-REVIEW
 日期：2026-06-07
-状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed；Batch 5-D-A rotate review completed；Batch 5-D-B explicit rotate command implemented；Batch 5-E-A active material selection review completed。
+状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed；Batch 5-D-A rotate review completed；Batch 5-D-B explicit rotate command implemented；Batch 5-E-A active material selection review completed；Batch 5-E-B deterministic active material selection implemented。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. 目标
 
 本计划把 credential revocation 从泛化 DB schema governance 中拆为独立治理链路，避免把凭证撤销、账户禁用、轮换、过期、权限校验和审计日志混成一个状态字段。
 
-本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理、Batch 5-C 最小 code/API/test 接入、Batch 5-D-A rotate 只读审计、Batch 5-D-B 显式 rotate command 和 Batch 5-E-A active material selection 只读审计；未完成 enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
+本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理、Batch 5-C 最小 code/API/test 接入、Batch 5-D-A rotate 只读审计、Batch 5-D-B 显式 rotate command、Batch 5-E-A active material selection 只读审计和 Batch 5-E-B deterministic active material selection code/API/test 接入；未完成 enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
 
 ## 2. 固定边界
 
@@ -176,14 +176,42 @@ Batch 5-E-C schema 约束决策：
 - 如果业务确认同一 account 全局只能有一个 active credential，可单独评估新增 `(exchange_account_id) WHERE is_active = TRUE AND credential_status = 'ACTIVE'` partial unique constraint。
 - 如果业务允许 READ_ONLY 与 TRADE 或多个 credential type 并存，则不应加 account 全局唯一约束，应在代码/API 层显式选择 credential type 和权限范围。
 
-## 8. 后续安全审计重点
+## 8. Batch 5-E-B：deterministic active material selection
+
+状态：completed。本批在不新增 migration 的前提下接入 deterministic active selection：多 ACTIVE credential type 不再通过 `ORDER BY updated_at DESC LIMIT 1` 静默选择，调用方可显式传入 `credentialType`，无 type 多候选返回 `409 STATE_CONFLICT`。
+
+已落地范围：
+
+- Repository port 新增 `listActiveSummaries(ownerUserId, exchangeAccountId)`、`findActiveSummary(ownerUserId, exchangeAccountId, credentialType)` 和 `findActiveMaterial(ownerUserId, exchangeAccountId, credentialType)`。
+- 无 `credentialType` 的 `findActiveSummary` / `findActiveMaterial` 兼容单 active 候选；0 条返回空，多条抛出状态冲突，避免解密多份 material 或按更新时间选错。
+- JDBC active summary 查询继续要求 `is_active=true` 和 `credential_status='ACTIVE'`；无 type 路径列出候选，不再使用 `ORDER BY updated_at DESC LIMIT 1`。
+- `GET /api/exchange-accounts/{accountId}/credentials/active` 与 `POST /api/exchange-accounts/{accountId}/credentials/verify` 新增可选 `credentialType` 查询参数；多 ACTIVE type 且未指定时返回 409。
+- `rotate / revoke / disable / expire` 核心语义保持不变；rotate 后按同 credential type 只读取新 ACTIVE credential，inactive lifecycle 状态不会进入 active material。
+
+已覆盖测试：
+
+- 单一 ACTIVE type 兼容旧 active summary / material 查询。
+- 多 ACTIVE type 无 `credentialType` 时返回 conflict，不再静默 `LIMIT 1`。
+- 指定 `credentialType` 时只返回或校验对应 ACTIVE credential；不存在的 type 返回空 / not found。
+- `DISABLED / REVOKED / EXPIRED / ROTATED` 不可作为 active material。
+- API response 不包含 encrypted payload、decrypted payload、secret、token、private key、passphrase 或 permission scope。
+- 不新增 enable endpoint，不调用真实交易所。
+
+本批未做：
+
+- 未新增 migration，未修改历史 migration。
+- 未把 `permission_scope` 作为交易权限判断；`permission_scope=NULL` 仍表示权限尚未由代码确认。
+- 未修改前端、Python 或部署脚本。
+- 未接 AI、DH、LIVE 或真实交易路径。
+
+## 9. 后续安全审计重点
 
 - P0：真实密钥泄露、LIVE credential 被 Paper 路径误用、DH / Agent / AI 访问 credential。
 - P1：撤销语义缺失、不可恢复撤销和临时禁用混淆、API 返回敏感字段、Paper / LIVE 隔离不清。
 - P2：审计字段不足、轮换链上下文不足、权限范围记录不足、IP allowlist / withdraw disabled 证明缺失。
 - P3：注释、命名、测试 fixture 和文档措辞不清。
 
-## 9. 回滚与兼容原则
+## 10. 回滚与兼容原则
 
 - Batch 5-B 新增字段通过后续 migration 回滚或废弃，不修改历史 migration。
 - 不删除已有 credential 版本记录。
@@ -193,6 +221,6 @@ Batch 5-E-C schema 约束决策：
   - `verification_status=REVOKED` 或 `is_active=false`：按现有轮换旧版本语义回填为 `ROTATED`。
   - 其他历史异常组合保守落到 `DISABLED`，避免误判为可用凭证。
 
-## 10. 与 GateK-PLAN 的关系
+## 11. 与 GateK-PLAN 的关系
 
 Credential revocation governance 是安全和数据治理工作，不代表 GateK 实现已启动。即使 GateK-PLAN 后续规划 AI 信号接入，AI / Agent / DH 也不得访问 credential、master key、decrypted payload 或 revoke/audit API，除非未来单独安全设计、审批和验证。

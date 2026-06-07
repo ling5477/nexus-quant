@@ -38,6 +38,8 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
 
     private static final RowMapper<ExchangeAccountCredentialSummary> SUMMARY_ROW_MAPPER =
             JdbcExchangeAccountCredentialRepository::mapSummary;
+    private static final RowMapper<ExchangeAccountCredentialMaterial> MATERIAL_ROW_MAPPER =
+            JdbcExchangeAccountCredentialRepository::mapMaterial;
 
     private final JdbcTemplate jdbcTemplate;
     private final String masterKey;
@@ -48,8 +50,8 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
     }
 
     @Override
-    public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId) {
-        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
+    public List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId) {
+        return jdbcTemplate.query(
                 SUMMARY_SELECT + """
                          WHERE exchange_account_id = ?
                            AND is_active = TRUE
@@ -60,11 +62,36 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                WHERE ea.exchange_account_id = exchange_account_credentials.exchange_account_id
                                  AND ea.owner_user_id = ?
                            )
-                         ORDER BY updated_at DESC
-                         LIMIT 1
+                         ORDER BY credential_type ASC, credential_id ASC
                         """,
                 SUMMARY_ROW_MAPPER,
                 exchangeAccountId,
+                ownerUserId
+        );
+    }
+
+    @Override
+    public Optional<ExchangeAccountCredentialSummary> findActiveSummary(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    ) {
+        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
+                SUMMARY_SELECT + """
+                         WHERE exchange_account_id = ?
+                           AND credential_type = ?
+                           AND is_active = TRUE
+                           AND credential_status = 'ACTIVE'
+                           AND EXISTS (
+                               SELECT 1
+                               FROM exchange_accounts ea
+                               WHERE ea.exchange_account_id = exchange_account_credentials.exchange_account_id
+                                 AND ea.owner_user_id = ?
+                           )
+                        """,
+                SUMMARY_ROW_MAPPER,
+                exchangeAccountId,
+                credentialType,
                 ownerUserId
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
@@ -142,7 +169,11 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
     }
 
     @Override
-    public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) {
+    public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            String credentialType
+    ) {
         List<ExchangeAccountCredentialMaterial> rows = jdbcTemplate.query(
                 """
                         SELECT credential_id,
@@ -161,6 +192,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                pgp_sym_decrypt(encrypted_payload, ?) AS decrypted_payload_json
                         FROM exchange_account_credentials
                         WHERE exchange_account_id = ?
+                          AND credential_type = ?
                           AND is_active = TRUE
                           AND credential_status = 'ACTIVE'
                           AND EXISTS (
@@ -169,27 +201,11 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                               WHERE ea.exchange_account_id = exchange_account_credentials.exchange_account_id
                                 AND ea.owner_user_id = ?
                           )
-                        ORDER BY updated_at DESC
-                        LIMIT 1
                         """,
-                (resultSet, rowNum) -> new ExchangeAccountCredentialMaterial(
-                        resultSet.getLong("credential_id"),
-                        resultSet.getLong("exchange_account_id"),
-                        resultSet.getString("credential_type"),
-                        resultSet.getString("masked_access_key"),
-                        resultSet.getString("credential_status"),
-                        resultSet.getString("verification_status"),
-                        resultSet.getBoolean("is_active"),
-                        toInstant(resultSet.getTimestamp("revoked_at")),
-                        (Long) resultSet.getObject("rotated_from_credential_id"),
-                        toInstant(resultSet.getTimestamp("rotated_at")),
-                        toInstant(resultSet.getTimestamp("last_verified_at")),
-                        resultSet.getString("last_verification_error"),
-                        resultSet.getTimestamp("updated_at").toInstant(),
-                        resultSet.getString("decrypted_payload_json")
-                ),
+                MATERIAL_ROW_MAPPER,
                 masterKey,
                 exchangeAccountId,
+                credentialType,
                 ownerUserId
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
@@ -428,6 +444,25 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 toInstant(resultSet.getTimestamp("last_verified_at")),
                 resultSet.getString("last_verification_error"),
                 resultSet.getTimestamp("updated_at").toInstant()
+        );
+    }
+
+    private static ExchangeAccountCredentialMaterial mapMaterial(ResultSet resultSet, int rowNum) throws SQLException {
+        return new ExchangeAccountCredentialMaterial(
+                resultSet.getLong("credential_id"),
+                resultSet.getLong("exchange_account_id"),
+                resultSet.getString("credential_type"),
+                resultSet.getString("masked_access_key"),
+                resultSet.getString("credential_status"),
+                resultSet.getString("verification_status"),
+                resultSet.getBoolean("is_active"),
+                toInstant(resultSet.getTimestamp("revoked_at")),
+                (Long) resultSet.getObject("rotated_from_credential_id"),
+                toInstant(resultSet.getTimestamp("rotated_at")),
+                toInstant(resultSet.getTimestamp("last_verified_at")),
+                resultSet.getString("last_verification_error"),
+                resultSet.getTimestamp("updated_at").toInstant(),
+                resultSet.getString("decrypted_payload_json")
         );
     }
 

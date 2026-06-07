@@ -68,16 +68,30 @@ class ExchangeAccountCredentialControllerWebMvcTest {
     @Test
     void shouldExposeActiveCredentialUpsertAndVerify() throws Exception {
         ExchangeAccountCredentialSummary summary = new ExchangeAccountCredentialSummary(1L, 900001L, "OKX_API_V5", "tes***ey", "ACTIVE", "VERIFIED", true, null, null, null, Instant.parse("2026-04-06T00:00:00Z"), null, Instant.parse("2026-04-06T00:00:00Z"));
-        when(commandService.findActiveSummaryOrNull(1L, 900001L)).thenReturn(null);
+        when(commandService.findActiveSummaryOrNull(1L, 900001L, null)).thenReturn(null);
+        when(commandService.findActiveSummaryOrNull(1L, 900001L, "OKX_API_V5")).thenReturn(summary);
         when(commandService.upsert(any(), any(), any(), anyInt())).thenReturn(summary);
         when(commandService.rotate(any(), any(), any(), any(), any(), anyInt())).thenReturn(new ExchangeAccountCredentialSummary(2L, 900001L, "OKX_API_V5", "new***ey", "ACTIVE", "PENDING", true, null, 1L, null, null, null, Instant.parse("2026-04-06T00:02:00Z")));
-        when(verificationService.verifyActive(1L, 900001L)).thenReturn(summary);
+        when(verificationService.verifyActive(1L, 900001L, null)).thenReturn(summary);
+        when(verificationService.verifyActive(1L, 900001L, "OKX_API_V5")).thenReturn(summary);
 
         mockMvc.perform(get("/api/exchange-accounts/900001/credentials/active").header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-active"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-credential-active"))
                 .andExpect(jsonPath("$.exchangeAccountId").value(900001))
                 .andExpect(jsonPath("$.activeCredential").doesNotExist());
+
+        mockMvc.perform(get("/api/exchange-accounts/900001/credentials/active")
+                        .queryParam("credentialType", "OKX_API_V5")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-active-type"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activeCredential.credentialType").value("OKX_API_V5"))
+                .andExpect(jsonPath("$.activeCredential.maskedAccessKey").value("tes***ey"))
+                .andExpect(jsonPath("$.activeCredential.permissionScope").doesNotExist())
+                .andExpect(jsonPath("$.activeCredential.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.activeCredential.decryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.activeCredential.secretKey").doesNotExist())
+                .andExpect(jsonPath("$.activeCredential.token").doesNotExist());
 
         mockMvc.perform(post("/api/exchange-accounts/900001/credentials")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-upsert")
@@ -94,6 +108,18 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.verificationStatus").value("VERIFIED"));
 
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/verify")
+                        .queryParam("credentialType", "OKX_API_V5")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-verify-type"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verificationStatus").value("VERIFIED"))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.decryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.secretKey").doesNotExist())
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.privateKeyPem").doesNotExist())
+                .andExpect(jsonPath("$.passphrase").doesNotExist());
+
         mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/rotate")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-rotate")
                         .contentType("application/json")
@@ -109,6 +135,24 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                 .andExpect(jsonPath("$.token").doesNotExist())
                 .andExpect(jsonPath("$.privateKeyPem").doesNotExist())
                 .andExpect(jsonPath("$.passphrase").doesNotExist());
+    }
+
+    @Test
+    void shouldReturnConflictWhenActiveCredentialTypeIsAmbiguous() throws Exception {
+        when(commandService.findActiveSummaryOrNull(1L, 900001L, null))
+                .thenThrow(new IllegalStateException("multiple active credential types require credentialType"));
+        when(verificationService.verifyActive(1L, 900001L, null))
+                .thenThrow(new IllegalStateException("multiple active credential types require credentialType"));
+
+        mockMvc.perform(get("/api/exchange-accounts/900001/credentials/active"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("STATE_CONFLICT"))
+                .andExpect(jsonPath("$.message").value("multiple active credential types require credentialType"));
+
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/verify"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("STATE_CONFLICT"))
+                .andExpect(jsonPath("$.message").value("multiple active credential types require credentialType"));
     }
 
     @Test

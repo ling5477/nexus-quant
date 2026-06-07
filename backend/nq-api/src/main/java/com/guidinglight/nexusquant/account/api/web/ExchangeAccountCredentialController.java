@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -75,14 +76,23 @@ public class ExchangeAccountCredentialController {
     @GetMapping("/active")
     @Operation(
             summary = "读取当前 active 凭证摘要",
-            description = "无 active 凭证时返回 activeCredential = null。",
+            description = "无 active 凭证时返回 activeCredential = null；多 ACTIVE credential type 且未指定 credentialType 时返回状态冲突。",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(responseCode = "200", description = "查询成功")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "请求非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "多 active credential type 冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
     public ExchangeAccountActiveCredentialResponse active(
-            @PathVariable @Positive(message = "accountId must be positive") Long accountId
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @RequestParam(required = false) String credentialType
     ) {
-        var activeCredential = exchangeAccountCredentialCommandService.findActiveSummaryOrNull(resolveCurrentUserId(), accountId);
+        var activeCredential = exchangeAccountCredentialCommandService.findActiveSummaryOrNull(
+                resolveCurrentUserId(),
+                accountId,
+                credentialType
+        );
         return new ExchangeAccountActiveCredentialResponse(
                 accountId,
                 activeCredential == null ? null : ExchangeAccountCredentialSummaryResponse.from(activeCredential)
@@ -122,18 +132,21 @@ public class ExchangeAccountCredentialController {
     @PostMapping("/verify")
     @Operation(
             summary = "测试连接（结构性校验）",
-            description = "执行当前 active 凭证的结构性校验并回写 verification 状态。",
+            description = "执行当前 active 凭证的结构性校验并回写 verification 状态；多 ACTIVE credential type 时必须指定 credentialType。",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "校验动作已完成"),
-            @ApiResponse(responseCode = "404", description = "账户或 active 凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+            @ApiResponse(responseCode = "400", description = "请求非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或 active 凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "多 active credential type 冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public ExchangeAccountCredentialSummaryResponse verify(
-            @PathVariable @Positive(message = "accountId must be positive") Long accountId
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @RequestParam(required = false) String credentialType
     ) {
         return ExchangeAccountCredentialSummaryResponse.from(
-                exchangeAccountCredentialVerificationService.verifyActive(resolveCurrentUserId(), accountId)
+                exchangeAccountCredentialVerificationService.verifyActive(resolveCurrentUserId(), accountId, credentialType)
         );
     }
 

@@ -60,6 +60,19 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DB Schema Credential Active Material Deterministic Selection Batch 5-E-B 验证记录（2026-06-07）
+
+本轮接入 deterministic active summary / active material selection：无 `credentialType` 多 ACTIVE type 返回 conflict，显式 `credentialType` 只选择对应 ACTIVE credential；未新增 migration，未修改前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api -am test` | 通过 | 相关 reactor module 均为 `SUCCESS`，`BUILD SUCCESS`；覆盖 Repository / Service / Controller active selection 回归。 |
+| `mvn -f backend/pom.xml test` | 通过 | 23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`；测试过程仍有既有 SLF4J provider、Mockito dynamic agent warning，以及既有 controller local test 的预期 internal error 日志，不影响通过结论。 |
+| `git diff --check` | 通过 | 仅输出 Windows 换行提示，无 whitespace error。 |
+| 新增 migration 范围检查 | 通过 | `backend/nq-infra/src/main/resources/db/migration` 无 diff；未新增 migration，未修改历史 migration。 |
+| 禁止范围检查 | 通过 | 未修改 frontend、Python 或部署脚本；未新增 enable endpoint；未调用真实交易所；未接 AI、DH、LIVE 或真实交易；未把 GateK-PLAN 写成实现已启动。 |
+| active selection 回归覆盖 | 通过 | 覆盖单 active 兼容、多 active no-type conflict、指定 `credentialType` 查询/校验、指定不存在 type、inactive lifecycle 不可读、rotate 后同 type 只读新 credential、API response 脱敏、不依赖 `permission_scope`。 |
+
 ## DB Schema Credential Active Material Selection Review Batch 5-E-A 验证记录（2026-06-07）
 
 本轮只读审计 credential active summary / active material 选择语义，并同步 `docs/current` 文档；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。

@@ -2,6 +2,56 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Active Material Deterministic Selection Batch 5-E-B
+
+日期：2026-06-07
+
+### 本轮目标
+
+修复同一 exchange account 存在多个 ACTIVE credential type 时 active summary / active material 的非确定性选择问题。无 `credentialType` 路径不得再通过 `ORDER BY updated_at DESC LIMIT 1` 静默返回任意 ACTIVE credential；允许显式 `credentialType` 选择，或在多候选时返回业务冲突。
+
+### 修改文件
+
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/port/ExchangeAccountCredentialRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepository.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandService.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialVerificationService.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandServiceTest.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialVerificationServiceTest.java`
+- `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepositoryTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialControllerWebMvcTest.java`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_CHANGE + DOCUMENTATION`；主 skill 为 `java-backend-maintenance`；辅助 `db-schema-migration-review` 仅用于确认 V12 / V29 schema 和 Batch 5-E-A 审计结论。
+- Repository port 新增 active 候选列表和 `credentialType` aware summary/material 查询；无 type 默认方法在候选数大于 1 时抛出 `IllegalStateException`，由 API 统一映射为 `409 STATE_CONFLICT`。
+- JDBC 删除 active summary/material 无 type 路径里的 `ORDER BY updated_at DESC LIMIT 1` 静默选择；material 读取必须带 `credentialType`，无 type material 会先通过 summary 候选集判断冲突。
+- CommandService / VerificationService 支持可选 `credentialType`；`verifyActive` 多 active type 未指定时返回冲突，指定 type 时只校验对应 ACTIVE credential。
+- Controller 为 `GET /credentials/active` 和 `POST /credentials/verify` 增加可选 `credentialType` 查询参数；API response 仍只返回非敏感摘要。
+- 测试覆盖单 active 兼容、多 active no-type conflict、显式 type 查询/校验、指定不存在 type、inactive lifecycle 不可读、rotate 后同 type 只读新 credential、API response 脱敏、未新增 enable 方法和不依赖 `permission_scope`。
+
+### 验证记录
+
+- 已执行 `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api -am test`，通过；相关 reactor module 均为 `SUCCESS`，`BUILD SUCCESS`。
+- 已执行 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改前端、Python 或部署脚本。
+- 未新增 enable endpoint。
+- 未调用真实交易所，未新增真实下单、撤单或真实交易路径。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未把 secret 写入 audit metadata，API response 不包含 encrypted/decrypted payload、secret、token、private key 或 passphrase。
+- 未接 AI、DH、LIVE，未把 GateK-PLAN 写成 GateK implementation started。
+
 ## DB Schema Credential Active Material Selection Review Batch 5-E-A
 
 日期：2026-06-07

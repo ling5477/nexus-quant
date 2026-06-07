@@ -21,6 +21,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,6 +55,41 @@ class ExchangeAccountCredentialCommandServiceTest {
         assertEquals("PENDING", summary.verificationStatus());
         assertTrue(summary.isActive());
         assertNotNull(credentialRepository.findActiveMaterial(1L, account.exchangeAccountId()).orElseThrow());
+        assertEquals(summary.credentialId(), service.requireActiveSummary(1L, account.exchangeAccountId(), "okx_api_v5").credentialId());
+    }
+
+    @Test
+    void shouldRequireCredentialTypeWhenMultipleActiveTypesExistForSummary() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary okx = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("OKX_API_V5", "okx-api-key", "secret", "pass", null),
+                1
+        );
+        ExchangeAccountCredentialSummary binance = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("BINANCE_HMAC", "binance-key", "secret-1", null, null),
+                1
+        );
+
+        IllegalStateException conflict = assertThrows(
+                IllegalStateException.class,
+                () -> service.findActiveSummaryOrNull(1L, account.exchangeAccountId())
+        );
+        assertEquals("multiple active credential types require credentialType", conflict.getMessage());
+        assertEquals(okx.credentialId(), service.findActiveSummaryOrNull(1L, account.exchangeAccountId(), "OKX_API_V5").credentialId());
+        assertEquals(binance.credentialId(), service.requireActiveSummary(1L, account.exchangeAccountId(), "binance_hmac").credentialId());
+        assertNull(service.findActiveSummaryOrNull(1L, account.exchangeAccountId(), "BINANCE_ED25519"));
     }
 
     @Test
@@ -117,7 +153,7 @@ class ExchangeAccountCredentialCommandServiceTest {
         );
 
         ExchangeAccountCredentialSummary old = credentialRepository.findByCredentialId(first.credentialId()).orElseThrow();
-        ExchangeAccountCredentialMaterial activeMaterial = credentialRepository.findActiveMaterial(1L, account.exchangeAccountId()).orElseThrow();
+        ExchangeAccountCredentialMaterial activeMaterial = credentialRepository.findActiveMaterial(1L, account.exchangeAccountId(), "BINANCE_HMAC").orElseThrow();
         assertEquals("ROTATED", old.credentialStatus());
         assertFalse(old.isActive());
         assertEquals(fixedClock.instant(), old.rotatedAt());
@@ -252,6 +288,8 @@ class ExchangeAccountCredentialCommandServiceTest {
         assertEquals("DISABLED", disabled.credentialStatus());
         assertEquals("EXPIRED", expired.credentialStatus());
         assertTrue(credentialRepository.findActiveMaterial(1L, account.exchangeAccountId()).isEmpty());
+        assertTrue(credentialRepository.findActiveMaterial(1L, account.exchangeAccountId(), "BINANCE_HMAC").isEmpty());
+        assertTrue(credentialRepository.findActiveMaterial(1L, account.exchangeAccountId(), "BINANCE_ED25519").isEmpty());
         assertEquals(List.of("DISABLED", "EXPIRED"), credentialRepository.auditLogs.stream().map(AuditLog::eventType).toList());
     }
 
@@ -379,8 +417,21 @@ class ExchangeAccountCredentialCommandServiceTest {
         private long nextId = 1L;
 
         @Override
-        public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId) {
-            return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).map(ExchangeAccountCredentialMaterial::toSummary).findFirst();
+        public List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId) {
+            return storage.values().stream()
+                    .filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus()))
+                    .map(ExchangeAccountCredentialMaterial::toSummary)
+                    .toList();
+        }
+
+        @Override
+        public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId, String credentialType) {
+            return storage.values().stream()
+                    .filter(item -> item.exchangeAccountId().equals(exchangeAccountId))
+                    .filter(item -> item.credentialType().equals(credentialType))
+                    .filter(item -> item.isActive() && "ACTIVE".equals(item.credentialStatus()))
+                    .map(ExchangeAccountCredentialMaterial::toSummary)
+                    .findFirst();
         }
 
         @Override
@@ -389,8 +440,12 @@ class ExchangeAccountCredentialCommandServiceTest {
         }
 
         @Override
-        public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) {
-            return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst();
+        public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId, String credentialType) {
+            return storage.values().stream()
+                    .filter(item -> item.exchangeAccountId().equals(exchangeAccountId))
+                    .filter(item -> item.credentialType().equals(credentialType))
+                    .filter(item -> item.isActive() && "ACTIVE".equals(item.credentialStatus()))
+                    .findFirst();
         }
 
         @Override
