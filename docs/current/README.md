@@ -60,6 +60,8 @@ GateO：A 股适配
 - `MODULES.md`：模块 owner、职责和禁止反向依赖。
 - `API.md`：当前 API 分类入口。
 - `DB_SCHEMA.md`：数据库事实入口。
+- `CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`：Credential revocation Batch 5-A 只读审计报告。
+- `CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`：Credential revocation Batch 5-B / 5-C 后续治理计划。
 - `TESTING.md`：统一验证命令与本次验证记录。
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。

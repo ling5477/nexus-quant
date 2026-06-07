@@ -187,6 +187,28 @@ Batch 3 不能与 Batch 4 Repository 默认过滤合并。先落 schema，再改
 
 Batch 4 必须在 Batch 3 后执行，不能与 comment-only 或 retention purge 合并。
 
+## 4.5. Batch 5-A：credential revocation governance review
+
+状态：已完成只读审计。本批只新增/更新 `docs/current` 文档，未新增 migration，未修改 Java、Repository、API、前端、Python 或部署脚本。
+
+本批结论：
+
+- 当前正式 credential 表为 `exchange_account_credentials`，账户元数据表为 `exchange_accounts`。
+- `exchange_account_credentials` 已有 `encrypted_payload`、`key_version`、`cipher_suite`、`masked_access_key`、`verification_status`、`is_active`、`revoked_at`、`rotated_from_credential_id`、`last_verified_at`、`last_verification_error`。
+- 现有轮换语义是新增版本并把旧 active 版本标记为 `REVOKED`，但缺少独立不可恢复撤销命令、撤销操作者、撤销原因、轮换操作者、权限范围、last used、failed auth count、IP allowlist、withdraw disabled 证明和独立 audit log。
+- 当前 API response 只返回 masked 摘要，不应返回 secret、token、private key、passphrase 或 decrypted payload。
+- `exchange_account_credentials` 不得 hard delete；后续应使用状态和 append-only audit log 保留安全证据。
+
+后续拆分：
+
+- Batch 5-B：只做 credential revocation schema migration 和文档同步，不改代码。
+- Batch 5-C：在 Batch 5-B 后接入 Repository / Service / API / tests，不接 AI、DH、LIVE 或真实交易。
+
+详见：
+
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+
 ## 5. Batch 5：大表 retention policy
 
 ### 允许范围
@@ -236,6 +258,9 @@ Batch 5 必须单独开工。它涉及物理清理风险，不能与 schema 字�
 Batch 2 comment-only migration
   -> Batch 3 fields/check constraints
   -> Batch 4 Repository filtering and status APIs
+  -> Batch 5-A credential revocation governance review
+  -> Batch 5-B credential revocation schema
+  -> Batch 5-C credential revocation Repository/API/tests
 
 Batch 5 retention policy can be planned in parallel,
 but execution must be separate and must not run before dry-run evidence exists.

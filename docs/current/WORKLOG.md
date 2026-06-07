@@ -2,6 +2,46 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Revocation Governance Review Batch 5-A
+
+日期：2026-06-07
+
+### 本轮目标
+
+只读审计 NQ 当前 credential / exchange account / secret metadata 相关表和代码路径，判断后续是否需要引入凭证撤销、失效、轮换和审计字段。本轮只允许新增/更新 `docs/current` 文档，不新增 migration，不修改 Java、Repository、API、前端、Python 或部署脚本。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_ANALYSIS + DOCUMENTATION`，主 skill 为 `db-schema-migration-review`，辅助 `java-backend-maintenance` 仅用于只读确认 credential 相关后端路径。
+- 只读检查 `exchange_accounts` 与 `exchange_account_credentials` 的 migration、注释、状态约束和当前文档计划。
+- 只读确认 `ExchangeAccountCredential*` Domain / Repository / Service / Controller / DTO / Test 路径，确认 API response 当前只返回 masked 摘要，不返回解密 payload。
+- 输出 P0/P1/P2/P3 风险，明确当前无确认型 P0，但存在撤销语义、权限元数据、审计字段和独立 audit log 缺口。
+- 新增 Batch 5-B schema-only 与 Batch 5-C code/API/test 后续拆分计划。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过。
+- 已执行工作树范围检查：本轮只修改 `docs/current` 文档。
+- 已执行禁止范围检查：未新增 migration，未修改 backend Java，未修改 frontend，未修改 Python，未修改 deploy/scripts。
+- 已执行阶段和禁写状态检查：未误写 GateK implementation started / AI started / DH integrated / LIVE enabled。
+
+### 边界确认
+
+- 未读取 `.env`、secrets、credentials、logs、dump、backup、target、node_modules、dist、build、`.git` 内容。
+- 未输出真实密钥、API key、exchange secret、tenant data、token、cookie、私钥或助记词。
+- 未新增 credential revocation schema，未实现 revoke API。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+
+---
+
 ## DB Schema Research Backtest Archive Commands Batch 4-B
 
 日期：2026-06-07
