@@ -36,6 +36,19 @@
 - Batch 3-B 本身未新增 Repository 默认过滤、归档业务 API、逻辑删除、物理删除或 retention purge。
 - 本批未处理回测事实表、评估结果表、发布记录、Paper facts、orders、trades、ledger、risk_events、positions、marketdata timeseries 或 credentials。
 
+## Credential Revocation Schema Governance
+
+`V29__schema_credential_revocation_governance.sql` 已完成 Batch 5-B credential revocation schema-only 治理。本批只处理 `exchange_account_credentials` 和新增 `credential_audit_logs`，不修改 Java、Repository、Service、Controller、DTO、前端、Python 或部署脚本。
+
+- `exchange_account_credentials`：新增 `credential_status`，允许值为 `ACTIVE / DISABLED / REVOKED / EXPIRED / ROTATED`，用于把凭证生命周期从 `verification_status` 校验状态中拆出。
+- `exchange_account_credentials`：新增 `revoked_by`、`revoke_reason`、`rotated_at`、`rotated_by`，用于记录撤销与轮换元数据；`revoke_reason` 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie、passphrase 或交易所凭证。
+- `exchange_account_credentials`：新增 `last_used_at`、`failed_auth_count`，用于记录使用时间和认证失败计数；`failed_auth_count` 有非负 CHECK 约束。
+- `exchange_account_credentials`：新增 `permission_scope`、`withdraw_enabled`、`ip_allowlist_required`、`external_secret_ref`、`key_alias`，用于权限与外部密钥引用元数据；`permission_scope` 允许 `READ_ONLY / TRADE` 或 `NULL`，`withdraw_enabled` 默认 `FALSE`，`ip_allowlist_required` 默认 `TRUE`。
+- 历史 `verification_status='REVOKED'` 或 `is_active=false` 记录按现有轮换语义回填为 `credential_status='ROTATED'`，并用 `revoked_at/updated_at` 补齐 `rotated_at`；本回填不读取、不输出、不复制任何真实 credential material。
+- `credential_audit_logs`：新增 append-only 审计日志表，记录 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED` 事件，包含 credential/account 外键、actor、reason、metadata、created_at。
+- `credential_audit_logs.metadata` 注释明确只允许保存脱敏状态、结果码、request id、策略判断等审计上下文，不得保存密钥、token、API secret、私钥、助记词、cookie、passphrase、签名、明文 payload 或交易所凭证。
+- Batch 5-B 未实现 revoke endpoint、rotate endpoint、active material 读取改造、Repository 默认过滤、Service 状态流转或 API response 字段接入；这些只能在 Batch 5-C 单独执行。
+
 ## Research / Backtest Config Archive Semantics
 
 Batch 4-A 已接管 V28 新增的 `research_configs` / `backtest_configs` 生命周期字段；Batch 4-B 已增加受控归档命令。两批均未新增 migration，也未实现物理删除或 retention purge。

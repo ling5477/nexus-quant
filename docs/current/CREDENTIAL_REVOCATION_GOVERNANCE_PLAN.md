@@ -36,7 +36,7 @@
 
 ## 4. Batch 5-B：schema-only 最小变更
 
-状态：not started。
+状态：completed。已新增 `backend/nq-infra/src/main/resources/db/migration/V29__schema_credential_revocation_governance.sql`，本批只做 schema-only migration 和文档同步。
 
 允许范围：
 
@@ -51,20 +51,23 @@
 - 禁止实现 revoke endpoint。
 - 禁止接入 KMS / Secret Manager 真实外部服务。
 
-建议 schema：
+已落地 schema：
 
-- `exchange_account_credentials.credential_status`
-- `exchange_account_credentials.revoked_by`
-- `exchange_account_credentials.revoke_reason`
-- `exchange_account_credentials.rotated_at`
-- `exchange_account_credentials.rotated_by`
-- `exchange_account_credentials.last_used_at`
-- `exchange_account_credentials.failed_auth_count`
-- `exchange_account_credentials.last_auth_failed_at`
-- `exchange_account_credentials.permission_scope`
-- `exchange_account_credentials.withdraw_disabled`
-- `exchange_account_credentials.external_secret_ref` 或 `key_alias`，仅作为 future-ready metadata。
-- 新增 `credential_audit_logs` append-only 表。
+- `exchange_account_credentials.credential_status`：允许值 `ACTIVE / DISABLED / REVOKED / EXPIRED / ROTATED`，用于凭证生命周期，不再混用 `verification_status`。
+- `exchange_account_credentials.revoked_by`、`exchange_account_credentials.revoke_reason`：用于不可恢复撤销元数据；`revoke_reason` 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie、passphrase 或交易所凭证。
+- `exchange_account_credentials.rotated_at`、`exchange_account_credentials.rotated_by`：用于轮换元数据，区分 `ROTATED` 和不可恢复 `REVOKED`。
+- `exchange_account_credentials.last_used_at`、`exchange_account_credentials.failed_auth_count`：用于使用和失败计数元数据；`failed_auth_count` 有非负 CHECK 约束。
+- `exchange_account_credentials.permission_scope`：允许 `READ_ONLY / TRADE` 或 `NULL`；`NULL` 表示当前 schema-only 阶段尚未由代码确认权限。
+- `exchange_account_credentials.withdraw_enabled`：默认 `FALSE`，只记录治理元数据，不代表系统实现提现能力或开启 LIVE trading。
+- `exchange_account_credentials.ip_allowlist_required`：默认 `TRUE`，只记录治理要求，不保存 IP 凭证、token、cookie 或网络访问密钥。
+- `exchange_account_credentials.external_secret_ref`、`exchange_account_credentials.key_alias`：仅保存外部密钥引用或别名，不得保存 secret 明文。
+- 新增 `credential_audit_logs` append-only 表，事件类型允许 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED`。
+
+兼容回填：
+
+- 历史 `verification_status='REVOKED'` 或 `is_active=false` 记录按当前轮换旧版本语义回填为 `credential_status='ROTATED'`。
+- 历史 `ROTATED` 记录的 `rotated_at` 使用 `revoked_at` 或 `updated_at` 补齐，避免把旧轮换记录误写成不可恢复撤销。
+- 本批没有读取、输出或复制任何真实 credential material。
 
 验收标准：
 
@@ -74,6 +77,12 @@
 - 敏感文本字段注释明确禁止保存 secret、token、API key、exchange secret、private key、passphrase、cookie、助记词。
 - migration 可从空库回放。
 - 如只改 schema 和文档，必须明确未执行 Java/API 行为验证，不能写成 revoke 已实现。
+
+本批未执行项：
+
+- 未修改 Java、Repository、Service、Controller、DTO、前端、Python 或部署脚本。
+- 未实现 revoke endpoint、rotate endpoint、active material 读取改造、Repository 默认过滤或 Service 状态流转。
+- 未接 AI、DH、LIVE 或真实交易所私有链路。
 
 ## 5. Batch 5-C：code / API / test 接入
 
@@ -124,10 +133,10 @@
 - Batch 5-B 新增字段通过后续 migration 回滚或废弃，不修改历史 migration。
 - 不删除已有 credential 版本记录。
 - 不删除 audit log。
-- 如果新增 `credential_status`，初始回填必须兼容现有 `is_active` 和 `verification_status`：
-  - `is_active=true` 且未撤销：`ACTIVE`。
-  - `is_active=false` 且 `verification_status=REVOKED`：优先 `ROTATED` 或 `REVOKED`，需按是否存在新版本引用区分。
-  - 历史无法判定的记录必须保守落到不可用状态并记录迁移说明。
+- `credential_status` 已新增，初始回填兼容现有 `is_active` 和 `verification_status`：
+  - `is_active=true` 且 `verification_status<>REVOKED`：`ACTIVE`。
+  - `verification_status=REVOKED` 或 `is_active=false`：按现有轮换旧版本语义回填为 `ROTATED`。
+  - 其他历史异常组合保守落到 `DISABLED`，避免误判为可用凭证。
 
 ## 8. 与 GateK-PLAN 的关系
 

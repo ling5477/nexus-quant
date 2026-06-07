@@ -199,15 +199,38 @@ Batch 4 必须在 Batch 3 后执行，不能与 comment-only 或 retention purge
 - 当前 API response 只返回 masked 摘要，不应返回 secret、token、private key、passphrase 或 decrypted payload。
 - `exchange_account_credentials` 不得 hard delete；后续应使用状态和 append-only audit log 保留安全证据。
 
-后续拆分：
+后续拆分与执行状态：
 
-- Batch 5-B：只做 credential revocation schema migration 和文档同步，不改代码。
+- Batch 5-B：已新增 `V29__schema_credential_revocation_governance.sql`，只做 credential revocation schema migration 和文档同步，不改代码。
 - Batch 5-C：在 Batch 5-B 后接入 Repository / Service / API / tests，不接 AI、DH、LIVE 或真实交易。
 
 详见：
 
 - `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`
 - `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+
+## 4.6. Batch 5-B：credential revocation schema governance
+
+状态：已完成 schema-only migration。本批新增 `backend/nq-infra/src/main/resources/db/migration/V29__schema_credential_revocation_governance.sql`，只处理 `exchange_account_credentials` 和 `credential_audit_logs`，未修改 Java、Repository、Service、Controller、DTO、前端、Python 或部署脚本。
+
+本批执行结果：
+
+- `exchange_account_credentials` 新增 `credential_status`，允许值为 `ACTIVE / DISABLED / REVOKED / EXPIRED / ROTATED`，并保留 `verification_status` 作为校验状态。
+- `exchange_account_credentials` 新增撤销、轮换、使用、失败计数、权限元数据和外部密钥引用字段：`revoked_by`、`revoke_reason`、`rotated_at`、`rotated_by`、`last_used_at`、`failed_auth_count`、`permission_scope`、`withdraw_enabled`、`ip_allowlist_required`、`external_secret_ref`、`key_alias`。
+- 历史 `verification_status='REVOKED'` 或 `is_active=false` 记录按现有轮换旧版本语义回填为 `credential_status='ROTATED'`，避免把轮换旧版本误写成不可恢复撤销。
+- `permission_scope` 允许 `READ_ONLY / TRADE` 或 `NULL`；`withdraw_enabled` 默认 `FALSE`；`ip_allowlist_required` 默认 `TRUE`；`failed_auth_count` 有非负 CHECK 约束。
+- 新增 `credential_audit_logs` append-only 审计日志表，记录 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED` 事件。
+- 所有新增字段和新增表均包含 `COMMENT`，敏感文本和 JSONB metadata 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie、passphrase、签名、明文 payload 或交易所凭证。
+
+本批未执行项：
+
+- 未实现 revoke endpoint、rotate endpoint、active material 读取改造、Repository 默认过滤、Service 状态流转或 API response 字段接入。
+- 未接入 KMS / Secret Manager 真实外部服务。
+- 未接 AI、DH、LIVE 或真实交易。
+
+后续：
+
+- Batch 5-C 必须单独开工，才能接入 Repository / Service / API / tests。
 
 ## 5. Batch 5：大表 retention policy
 
@@ -259,7 +282,7 @@ Batch 2 comment-only migration
   -> Batch 3 fields/check constraints
   -> Batch 4 Repository filtering and status APIs
   -> Batch 5-A credential revocation governance review
-  -> Batch 5-B credential revocation schema
+  -> Batch 5-B credential revocation schema completed
   -> Batch 5-C credential revocation Repository/API/tests
 
 Batch 5 retention policy can be planned in parallel,

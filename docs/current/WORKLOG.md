@@ -2,6 +2,53 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Revocation Governance Batch 5-B
+
+日期：2026-06-07
+
+### 本轮目标
+
+按 `CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md` 执行 credential revocation schema-only migration。只新增 credential 生命周期、撤销、轮换、权限元数据、使用/失败计数字段，以及 append-only `credential_audit_logs` 表；不接入 Java 业务逻辑，不新增 API，不修改 Repository 查询。
+
+### 修改文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V29__schema_credential_revocation_governance.sql`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+- `docs/current/README.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_CHANGE + DOCUMENTATION`，主 skill 为 `db-schema-migration-review`，辅助 `java-backend-maintenance` 仅用于只读确认 credential Repository 当前字段兼容性。
+- 确认当前最大 Flyway migration 为 V28，本轮新增 V29。
+- 只读确认 `JdbcExchangeAccountCredentialRepository` 当前 insert/select/update 仍只接入既有 `verification_status/is_active/revoked_at` 字段，因此新增字段采用默认值或可空设计，避免 schema-only 迁移破坏现有写入路径。
+- `exchange_account_credentials` 新增 `credential_status`、`revoked_by`、`revoke_reason`、`rotated_at`、`rotated_by`、`last_used_at`、`failed_auth_count`、`permission_scope`、`withdraw_enabled`、`ip_allowlist_required`、`external_secret_ref`、`key_alias`。
+- 历史 `verification_status='REVOKED'` 或 `is_active=false` 记录按现有轮换旧版本语义回填为 `credential_status='ROTATED'`，并用 `revoked_at/updated_at` 补齐 `rotated_at`。
+- 新增 `credential_audit_logs` append-only 审计日志表，包含 credential/account 外键、event_type、actor、reason、metadata、created_at，以及按 credential/account/event 的查询索引。
+- 所有新增字段和表均补充 PostgreSQL `COMMENT`；敏感文本和 JSONB metadata 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie、passphrase、签名、明文 payload 或交易所凭证。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行新增 migration 范围检查：本轮只新增 `V29__schema_credential_revocation_governance.sql`，未修改历史 migration。
+- 已执行禁止范围检查：未修改 Java、Repository、Service、Controller、DTO、前端、Python 或部署脚本；未新增 API；未实现 revoke/rotate endpoint；未接 AI、DH、LIVE 或真实交易。
+- 已执行 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。该结果只证明当前后端测试和 Flyway 迁移装配通过，不代表 revoke/rotate 业务行为已实现。
+
+### 边界确认
+
+- 未读取 `.env`、secrets、credentials、logs、dump、backup、`target`、node_modules、dist、build、`.git` 内容作为本轮依据；一次初始 `rg` 范围过宽输出了 `backend/nq-infra/target/classes` 中的 generated migration 副本，已废弃该结果并重跑显式排除 `target` 的范围检查。
+- 未输出真实密钥、API key、exchange secret、tenant data、token、cookie、私钥或助记词。
+- 未修改历史 migration。
+- 未修改 Java / API / Repository / DTO / 前端 / Python / 部署脚本。
+- 未实现 credential revocation 业务功能；Batch 5-C 才允许接 Repository / Service / API / tests。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+
+---
+
 ## DB Schema Credential Revocation Governance Review Batch 5-A
 
 日期：2026-06-07
