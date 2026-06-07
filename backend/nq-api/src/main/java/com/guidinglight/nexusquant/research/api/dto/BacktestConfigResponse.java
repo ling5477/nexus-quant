@@ -46,7 +46,15 @@ public record BacktestConfigResponse(
         @Schema(description = "createdAt")
         Instant createdAt,
         @Schema(description = "updatedAt")
-        Instant updatedAt
+        Instant updatedAt,
+        @Schema(description = "status")
+        String status,
+        @Schema(description = "archivedAt")
+        Instant archivedAt,
+        @Schema(description = "archivedBy")
+        String archivedBy,
+        @Schema(description = "archiveReason")
+        String archiveReason
 ) {
     public static BacktestConfigResponse from(BacktestConfig backtestConfig) {
         return new BacktestConfigResponse(
@@ -67,7 +75,11 @@ public record BacktestConfigResponse(
                 backtestConfig.datasetSnapshotJson(),
                 backtestConfig.configSnapshot(),
                 backtestConfig.createdAt(),
-                backtestConfig.updatedAt()
+                backtestConfig.updatedAt(),
+                backtestConfig.status(),
+                backtestConfig.archivedAt(),
+                backtestConfig.archivedBy(),
+                backtestConfig.archiveReason()
         );
     }
 }

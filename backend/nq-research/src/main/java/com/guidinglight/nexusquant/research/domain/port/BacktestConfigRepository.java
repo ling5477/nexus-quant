@@ -7,6 +7,10 @@ import java.util.Optional;
 
 /**
  * BacktestConfigRepository 负责 backtest_configs 的持久化访问。
+ * <p>
+ * Why:
+ * V28 把回测配置生命周期收口到 status/archive 字段；默认列表隐藏 ARCHIVED，
+ * 但按 ID 查询和 includeArchived 内部路径必须保留，避免破坏历史 run/evaluation/publish 追溯。
  */
 public interface BacktestConfigRepository {
 
@@ -14,9 +18,52 @@ public interface BacktestConfigRepository {
 
     Optional<BacktestConfig> findByBacktestConfigId(String backtestConfigId);
 
+    /**
+     * 查询默认业务列表。
+     * Why:
+     * 默认列表用于新运行选择面，应排除 ARCHIVED；DISABLED 仍展示但不能用于创建新 run。
+     *
+     * @return 默认业务可见的回测配置列表
+     */
     List<BacktestConfig> listAll();
 
+    /**
+     * 查询包含归档配置的内部列表。
+     * Why:
+     * 历史追溯或内部审计可能需要读取 ARCHIVED；本轮不新增外部 API 参数，
+     * 因此 includeArchived 只保留在 Repository 契约内。
+     *
+     * @return 包含 ARCHIVED 的回测配置列表
+     */
+    default List<BacktestConfig> listAllIncludingArchived() {
+        return listAll();
+    }
+
+    /**
+     * 按研究配置查询默认业务可见的回测配置。
+     * Why:
+     * researchConfig 详情页下的配置子列表也属于默认业务列表，应同步隐藏 ARCHIVED。
+     *
+     * @param researchConfigId 研究配置 ID
+     * @return 默认业务可见的回测配置列表
+     */
     List<BacktestConfig> listByResearchConfigId(String researchConfigId);
+
+    /**
+     * 按研究配置查询包含归档记录的内部列表。
+     * Why:
+     * 历史追溯需要保留 parent 维度查询能力，但不应把 includeArchived 暴露成外部 API。
+     *
+     * @param researchConfigId 研究配置 ID
+     * @return 包含 ARCHIVED 的回测配置列表
+     */
+    default List<BacktestConfig> listByResearchConfigIdIncludingArchived(String researchConfigId) {
+        String normalizedResearchConfigId = researchConfigId == null ? null : researchConfigId.trim();
+        return listAllIncludingArchived().stream()
+                .filter(item -> normalizedResearchConfigId == null
+                        || normalizedResearchConfigId.equals(item.researchConfigId()))
+                .toList();
+    }
 
     /**
      * 绑定 GateH-3 marketdata dataset 到回测配置。
@@ -72,9 +119,25 @@ public interface BacktestConfigRepository {
      * @return 满足条件的回测配置列表
      */
     default List<BacktestConfig> list(String researchConfigId) {
+        return list(researchConfigId, false);
+    }
+
+    /**
+     * 按 researchConfigId 过滤回测配置，并允许内部调用显式包含归档记录。
+     * Why:
+     * 外部 API 本轮不增加 includeArchived 参数；Repository 保留内部扩展点，
+     * 确保审计或历史追溯能绕过默认列表隐藏规则。
+     *
+     * @param researchConfigId 研究配置 ID，可空
+     * @param includeArchived 是否包含 ARCHIVED
+     * @return 满足条件的回测配置列表
+     */
+    default List<BacktestConfig> list(String researchConfigId, boolean includeArchived) {
         return researchConfigId == null || researchConfigId.isBlank()
-                ? listAll()
-                : listByResearchConfigId(researchConfigId.trim());
+                ? includeArchived ? listAllIncludingArchived() : listAll()
+                : includeArchived
+                        ? listByResearchConfigIdIncludingArchived(researchConfigId.trim())
+                        : listByResearchConfigId(researchConfigId.trim());
     }
 }
 

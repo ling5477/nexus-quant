@@ -77,6 +77,7 @@ class BacktestConfigControllerTest {
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-config-list"))
                 .andExpect(jsonPath("$[0].backtestConfigId").value("bcf-1"))
                 .andExpect(jsonPath("$[0].researchConfigId").value("rcf-1"))
+                .andExpect(jsonPath("$[0].status").value("ACTIVE"))
                 .andExpect(jsonPath("$[0].initialCapital").value(100000));
 
         mockMvc.perform(get("/api/backtest-configs/bcf-1")
@@ -84,6 +85,7 @@ class BacktestConfigControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.backtestConfigId").value("bcf-1"))
                 .andExpect(jsonPath("$.executionSpec").value("{\"mode\":\"bar\"}"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.configSnapshot").exists());
     }
 

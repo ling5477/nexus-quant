@@ -1,8 +1,10 @@
 package com.guidinglight.nexusquant.research.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -151,6 +153,198 @@ class ResearchBacktestServiceTest {
         )));
     }
 
+    @Test
+    void shouldHideArchivedConfigsFromDefaultListsButKeepIdLookup() {
+        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
+        InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
+        ResearchConfigService researchConfigService = new ResearchConfigService(
+                researchConfigRepository,
+                new StubSourceStrategySnapshotRepository(),
+                objectMapper,
+                fixedClock
+        );
+        BacktestConfigService backtestConfigService = new BacktestConfigService(
+                backtestConfigRepository,
+                researchConfigService,
+                objectMapper,
+                fixedClock
+        );
+
+        ResearchConfig activeResearch = researchConfigService.create(new ResearchConfigCreateRequest(
+                "str-demo-1",
+                "Active Research",
+                null,
+                "{}",
+                "{}",
+                "{}"
+        ));
+        ResearchConfig disabledResearch = researchConfig(
+                "rcf-disabled",
+                ResearchConfig.STATUS_DISABLED,
+                null
+        );
+        ResearchConfig archivedResearch = researchConfig(
+                "rcf-archived",
+                ResearchConfig.STATUS_ARCHIVED,
+                fixedClock.instant()
+        );
+        researchConfigRepository.insert(disabledResearch);
+        researchConfigRepository.insert(archivedResearch);
+
+        List<String> visibleResearchIds = researchConfigService.listAll().stream()
+                .map(ResearchConfig::researchConfigId)
+                .toList();
+        assertTrue(visibleResearchIds.contains(activeResearch.researchConfigId()));
+        assertTrue(visibleResearchIds.contains(disabledResearch.researchConfigId()));
+        assertFalse(visibleResearchIds.contains(archivedResearch.researchConfigId()));
+        assertEquals(
+                archivedResearch.researchConfigId(),
+                researchConfigService.getByResearchConfigId(archivedResearch.researchConfigId()).researchConfigId()
+        );
+        assertEquals(3, researchConfigRepository.list(null, true).size());
+
+        BacktestConfig activeBacktest = backtestConfigService.create(new BacktestConfigCreateRequest(
+                activeResearch.researchConfigId(),
+                "Active Backtest",
+                null,
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-31T00:00:00Z"),
+                new BigDecimal("100000"),
+                "{}",
+                "{}"
+        ));
+        BacktestConfig disabledBacktest = backtestConfig(
+                "bcf-disabled",
+                activeResearch.researchConfigId(),
+                BacktestConfig.STATUS_DISABLED,
+                null
+        );
+        BacktestConfig archivedBacktest = backtestConfig(
+                "bcf-archived",
+                activeResearch.researchConfigId(),
+                BacktestConfig.STATUS_ARCHIVED,
+                fixedClock.instant()
+        );
+        backtestConfigRepository.insert(disabledBacktest);
+        backtestConfigRepository.insert(archivedBacktest);
+
+        List<String> visibleBacktestIds = backtestConfigService.list(null).stream()
+                .map(BacktestConfig::backtestConfigId)
+                .toList();
+        assertTrue(visibleBacktestIds.contains(activeBacktest.backtestConfigId()));
+        assertTrue(visibleBacktestIds.contains(disabledBacktest.backtestConfigId()));
+        assertFalse(visibleBacktestIds.contains(archivedBacktest.backtestConfigId()));
+        assertEquals(
+                archivedBacktest.backtestConfigId(),
+                backtestConfigService.getByBacktestConfigId(archivedBacktest.backtestConfigId()).backtestConfigId()
+        );
+        assertEquals(3, backtestConfigRepository.list(null, true).size());
+    }
+
+    @Test
+    void shouldRejectNonActiveConfigsWhenCreatingNewBacktestRun() {
+        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
+        InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
+        InMemoryBacktestRunRepository backtestRunRepository = new InMemoryBacktestRunRepository();
+        ResearchConfigService researchConfigService = new ResearchConfigService(
+                researchConfigRepository,
+                new StubSourceStrategySnapshotRepository(),
+                objectMapper,
+                fixedClock
+        );
+        BacktestConfigService backtestConfigService = new BacktestConfigService(
+                backtestConfigRepository,
+                researchConfigService,
+                objectMapper,
+                fixedClock
+        );
+        BacktestRunService backtestRunService = new BacktestRunService(
+                backtestRunRepository,
+                backtestConfigService,
+                researchConfigService,
+                fixedClock
+        );
+        ResearchConfig activeResearch = researchConfigService.create(new ResearchConfigCreateRequest(
+                "str-demo-1",
+                "Active Research",
+                null,
+                "{}",
+                "{}",
+                "{}"
+        ));
+        ResearchConfig disabledResearch = researchConfig(
+                "rcf-disabled-run-source",
+                ResearchConfig.STATUS_DISABLED,
+                null
+        );
+        researchConfigRepository.insert(disabledResearch);
+        BacktestConfig disabledBacktest = backtestConfig(
+                "bcf-disabled-run",
+                activeResearch.researchConfigId(),
+                BacktestConfig.STATUS_DISABLED,
+                null
+        );
+        BacktestConfig archivedBacktest = backtestConfig(
+                "bcf-archived-run",
+                activeResearch.researchConfigId(),
+                BacktestConfig.STATUS_ARCHIVED,
+                fixedClock.instant()
+        );
+        BacktestConfig activeBacktestWithDisabledResearch = backtestConfig(
+                "bcf-disabled-research-run",
+                disabledResearch.researchConfigId(),
+                BacktestConfig.STATUS_ACTIVE,
+                null
+        );
+        backtestConfigRepository.insert(disabledBacktest);
+        backtestConfigRepository.insert(archivedBacktest);
+        backtestConfigRepository.insert(activeBacktestWithDisabledResearch);
+
+        assertThrows(IllegalStateException.class, () -> backtestRunService.create(new BacktestRunStartRequest(
+                disabledBacktest.backtestConfigId()
+        )));
+        assertThrows(IllegalStateException.class, () -> backtestRunService.create(new BacktestRunStartRequest(
+                archivedBacktest.backtestConfigId()
+        )));
+        assertThrows(IllegalStateException.class, () -> backtestRunService.create(new BacktestRunStartRequest(
+                activeBacktestWithDisabledResearch.backtestConfigId()
+        )));
+    }
+
+    @Test
+    void shouldRejectNonActiveResearchConfigWhenCreatingBacktestConfig() {
+        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
+        ResearchConfigService researchConfigService = new ResearchConfigService(
+                researchConfigRepository,
+                new StubSourceStrategySnapshotRepository(),
+                objectMapper,
+                fixedClock
+        );
+        BacktestConfigService backtestConfigService = new BacktestConfigService(
+                new InMemoryBacktestConfigRepository(),
+                researchConfigService,
+                objectMapper,
+                fixedClock
+        );
+        ResearchConfig archivedResearch = researchConfig(
+                "rcf-archived-create-source",
+                ResearchConfig.STATUS_ARCHIVED,
+                fixedClock.instant()
+        );
+        researchConfigRepository.insert(archivedResearch);
+
+        assertThrows(IllegalStateException.class, () -> backtestConfigService.create(new BacktestConfigCreateRequest(
+                archivedResearch.researchConfigId(),
+                "Blocked Backtest",
+                null,
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-31T00:00:00Z"),
+                new BigDecimal("100000"),
+                "{}",
+                "{}"
+        )));
+    }
+
     private static final class InMemoryResearchConfigRepository implements ResearchConfigRepository {
 
         private final Map<String, ResearchConfig> storage = new LinkedHashMap<>();
@@ -167,6 +361,13 @@ class ResearchBacktestServiceTest {
 
         @Override
         public List<ResearchConfig> listAll() {
+            return storage.values().stream()
+                    .filter(item -> !item.isArchived())
+                    .toList();
+        }
+
+        @Override
+        public List<ResearchConfig> listAllIncludingArchived() {
             return new ArrayList<>(storage.values());
         }
     }
@@ -187,11 +388,26 @@ class ResearchBacktestServiceTest {
 
         @Override
         public List<BacktestConfig> listAll() {
+            return storage.values().stream()
+                    .filter(item -> !item.isArchived())
+                    .toList();
+        }
+
+        @Override
+        public List<BacktestConfig> listAllIncludingArchived() {
             return new ArrayList<>(storage.values());
         }
 
         @Override
         public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
+            return storage.values().stream()
+                    .filter(item -> item.researchConfigId().equals(researchConfigId))
+                    .filter(item -> !item.isArchived())
+                    .toList();
+        }
+
+        @Override
+        public List<BacktestConfig> listByResearchConfigIdIncludingArchived(String researchConfigId) {
             return storage.values().stream()
                     .filter(item -> item.researchConfigId().equals(researchConfigId))
                     .toList();
@@ -276,6 +492,57 @@ class ResearchBacktestServiceTest {
                     3
             ));
         }
+    }
+
+    private ResearchConfig researchConfig(String researchConfigId, String status, Instant archivedAt) {
+        return new ResearchConfig(
+                researchConfigId,
+                "str-demo-1",
+                "{\"strategyType\":\"BUY_AND_HOLD_FIXTURE\"}",
+                researchConfigId,
+                null,
+                "{}",
+                "{}",
+                "{}",
+                fixedClock.instant(),
+                fixedClock.instant(),
+                status,
+                archivedAt,
+                archivedAt == null ? null : "test-operator",
+                archivedAt == null ? null : "retired from default selection"
+        );
+    }
+
+    private BacktestConfig backtestConfig(
+            String backtestConfigId,
+            String researchConfigId,
+            String status,
+            Instant archivedAt
+    ) {
+        return new BacktestConfig(
+                backtestConfigId,
+                researchConfigId,
+                backtestConfigId,
+                null,
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-31T00:00:00Z"),
+                new BigDecimal("100000"),
+                "{}",
+                "{}",
+                null,
+                "{}",
+                "{}",
+                "{\"startTime\":\"2025-01-01T00:00:00Z\",\"endTime\":\"2025-01-31T00:00:00Z\",\"initialCapital\":\"100000\",\"executionSpec\":{}}",
+                null,
+                "{}",
+                "{\"startTime\":\"2025-01-01T00:00:00Z\",\"endTime\":\"2025-01-31T00:00:00Z\",\"initialCapital\":\"100000\",\"executionSpec\":{}}",
+                fixedClock.instant(),
+                fixedClock.instant(),
+                status,
+                archivedAt,
+                archivedAt == null ? null : "test-operator",
+                archivedAt == null ? null : "retired from default selection"
+        );
     }
 }
 

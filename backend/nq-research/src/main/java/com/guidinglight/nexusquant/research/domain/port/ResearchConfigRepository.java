@@ -7,6 +7,10 @@ import java.util.Optional;
 
 /**
  * ResearchConfigRepository 负责 research_configs 的持久化访问。
+ * <p>
+ * Why:
+ * V28 把研究配置生命周期收口到 status/archive 字段；仓储默认列表必须隐藏 ARCHIVED，
+ * 但按 ID 查询和内部 includeArchived 查询仍要保留历史追溯入口。
  */
 public interface ResearchConfigRepository {
 
@@ -14,7 +18,27 @@ public interface ResearchConfigRepository {
 
     Optional<ResearchConfig> findByResearchConfigId(String researchConfigId);
 
+    /**
+     * 查询默认业务列表。
+     * Why:
+     * 默认列表用于控制台和业务选择面，应排除 ARCHIVED；DISABLED 仍可见，
+     * 方便用户理解配置被停用而非被归档隐藏。
+     *
+     * @return 默认业务可见的研究配置列表
+     */
     List<ResearchConfig> listAll();
+
+    /**
+     * 查询包含归档配置的内部列表。
+     * Why:
+     * 历史追溯、审计或内部测试可能需要读取 ARCHIVED，但本轮不新增外部 API 参数，
+     * 因此该方法只作为仓储内部扩展点。
+     *
+     * @return 包含 ARCHIVED 的研究配置列表
+     */
+    default List<ResearchConfig> listAllIncludingArchived() {
+        return listAll();
+    }
 
     /**
      * 按 sourceStrategyId 过滤研究配置。
@@ -26,11 +50,26 @@ public interface ResearchConfigRepository {
      * @return 满足条件的研究配置列表
      */
     default List<ResearchConfig> list(String sourceStrategyId) {
+        return list(sourceStrategyId, false);
+    }
+
+    /**
+     * 按 sourceStrategyId 过滤研究配置，并允许内部调用显式包含归档记录。
+     * Why:
+     * 外部 API 本轮不增加 includeArchived 参数；Repository 仍保留内部扩展点，
+     * 防止历史追溯查询被默认列表过滤规则误伤。
+     *
+     * @param sourceStrategyId 上游策略定义 ID，可空
+     * @param includeArchived 是否包含 ARCHIVED
+     * @return 满足条件的研究配置列表
+     */
+    default List<ResearchConfig> list(String sourceStrategyId, boolean includeArchived) {
+        List<ResearchConfig> source = includeArchived ? listAllIncludingArchived() : listAll();
         if (sourceStrategyId == null || sourceStrategyId.isBlank()) {
-            return listAll();
+            return source;
         }
         String normalizedSourceStrategyId = sourceStrategyId.trim();
-        return listAll().stream()
+        return source.stream()
                 .filter(item -> normalizedSourceStrategyId.equals(item.sourceStrategyId()))
                 .toList();
     }

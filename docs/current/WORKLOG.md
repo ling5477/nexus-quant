@@ -2,6 +2,63 @@
 
 日期：2026-05-16
 
+## DB Schema Research Backtest Archive Semantics Batch 4-A
+
+日期：2026-06-07
+
+### 本轮目标
+
+接管 V28 新增的 `research_configs`、`backtest_configs` `status` 与归档元数据字段，实现最小 Repository 查询语义和后端测试：默认业务列表隐藏 `ARCHIVED`，`DISABLED` 仍可见但不能用于新运行，按 ID 查询仍可读取 archived 配置用于历史追溯。本轮不新增 migration，不新增外部 API 参数，不修改前端 / Python / 部署，不接入 AI、DH、LIVE 或真实交易路径。
+
+### 修改文件
+
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/ResearchConfig.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/BacktestConfig.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/port/ResearchConfigRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/port/BacktestConfigRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/config/BacktestConfigService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/BacktestRunService.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/jdbc/JdbcResearchConfigRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/backtest/jdbc/JdbcBacktestConfigRepository.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/ResearchConfigResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/BacktestConfigResponse.java`
+- `backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/ResearchBacktestServiceTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/ResearchConfigControllerTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/BacktestConfigControllerTest.java`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 确认 V28 已新增 `status/archived_at/archived_by/archive_reason` 与 CHECK 约束，未发现需要新增 migration 的 schema blocker。
+- Domain 接管 `ACTIVE / ARCHIVED / DISABLED` 状态字段与归档元数据一致性校验，并保留旧构造器默认 `ACTIVE`，避免破坏既有测试与调用点。
+- Repository 默认列表查询排除 `ARCHIVED`；按 ID 查询不按 status 过滤；新增 includeArchived 内部查询路径，不暴露外部 API 参数。
+- `BacktestConfigService.create` 拒绝从非 `ACTIVE` research config 派生新 backtest config。
+- `BacktestRunService.create` 拒绝从非 `ACTIVE` research config 或 backtest config 创建新 run。
+- API response DTO 同步 status/archive 字段；未新增 create/list 请求参数或新业务 endpoint。
+- 后端测试覆盖默认列表隐藏 `ARCHIVED`、`DISABLED` 默认可见、`ARCHIVED` 按 ID 可读、非 ACTIVE 配置不能创建新 run。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+- 已执行禁止范围和阶段措辞扫描：未新增/修改 migration；新增代码未处理 credentials、positions、risk_events、订单、成交、账本、审计、事件、Paper facts、Backtest facts、评估结果、发布记录或 marketdata timeseries；文档命中均为负面边界或历史说明。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未处理凭证、持仓、风控事件、订单、成交、账本、审计、事件、Paper facts、Backtest facts、评估结果、发布记录或 marketdata timeseries。
+- 未实现逻辑删除、物理删除或 retention purge。
+- 未新增外部业务 API 参数或 endpoint。
+- 未修改前端、Python 或部署脚本。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未读取或提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
 ## DB Schema Research Backtest Config Governance Batch 3-B
 
 日期：2026-06-06

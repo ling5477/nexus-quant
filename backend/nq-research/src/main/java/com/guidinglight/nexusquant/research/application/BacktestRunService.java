@@ -67,6 +67,8 @@ public class BacktestRunService {
      * Why:
      * GateF-2 明确要求“创建 run”和“执行 run”拆成两个动作，因此这里仍只负责创建 CREATED 状态的 run，
      * 后续显式 `start` 动作再推动 PREPARING / RUNNING / SUCCEEDED / FAILED。
+     * Batch 4-A 后，新 run 只能从 ACTIVE research/backtest config 创建；DISABLED 与 ARCHIVED
+     * 仍可按 ID 查询用于历史追溯，但不能继续产生新的回测事实。
      */
     public BacktestRun create(BacktestRunStartRequest request) {
         Objects.requireNonNull(request, "request must not be null");
@@ -74,6 +76,7 @@ public class BacktestRunService {
                 requireText(request.backtestConfigId(), "backtestConfigId")
         );
         ResearchConfig researchConfig = researchConfigService.getByResearchConfigId(backtestConfig.researchConfigId());
+        ensureActiveConfig(backtestConfig, researchConfig);
         Instant now = Instant.now(clock);
         BacktestRun backtestRun = new BacktestRun(
                 "brn-" + UUID.randomUUID(),
@@ -130,6 +133,19 @@ public class BacktestRunService {
 
     private String normalizeOptionalText(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private void ensureActiveConfig(BacktestConfig backtestConfig, ResearchConfig researchConfig) {
+        if (!backtestConfig.isActive()) {
+            throw new IllegalStateException(
+                    "backtest config is not active: " + backtestConfig.backtestConfigId()
+            );
+        }
+        if (!researchConfig.isActive()) {
+            throw new IllegalStateException(
+                    "research config is not active: " + researchConfig.researchConfigId()
+            );
+        }
     }
 
     private String requireText(String value, String fieldName) {

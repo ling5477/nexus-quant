@@ -69,6 +69,7 @@ class ResearchConfigControllerTest {
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-research-list"))
                 .andExpect(jsonPath("$[0].researchConfigId").value("rcf-1"))
                 .andExpect(jsonPath("$[0].sourceStrategyId").value("str-1"))
+                .andExpect(jsonPath("$[0].status").value("ACTIVE"))
                 .andExpect(jsonPath("$[0].datasetSpec").value("{\"provider\":\"fixture\",\"symbol\":\"BTCUSDT\",\"interval\":\"1m\"}"));
 
         mockMvc.perform(get("/api/research-configs/rcf-1")
@@ -76,6 +77,7 @@ class ResearchConfigControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.researchConfigId").value("rcf-1"))
                 .andExpect(jsonPath("$.strategySnapshot").value("{\"strategyType\":\"BUY_AND_HOLD_FIXTURE\"}"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.updatedAt").exists());
     }
 

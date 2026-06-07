@@ -29,7 +29,15 @@ public record ResearchConfigResponse(
         @Schema(description = "createdAt")
         Instant createdAt,
         @Schema(description = "updatedAt")
-        Instant updatedAt
+        Instant updatedAt,
+        @Schema(description = "status")
+        String status,
+        @Schema(description = "archivedAt")
+        Instant archivedAt,
+        @Schema(description = "archivedBy")
+        String archivedBy,
+        @Schema(description = "archiveReason")
+        String archiveReason
 ) {
     public static ResearchConfigResponse from(ResearchConfig researchConfig) {
         return new ResearchConfigResponse(
@@ -42,7 +50,11 @@ public record ResearchConfigResponse(
                 researchConfig.parameterDefaults(),
                 researchConfig.datasetSpec(),
                 researchConfig.createdAt(),
-                researchConfig.updatedAt()
+                researchConfig.updatedAt(),
+                researchConfig.status(),
+                researchConfig.archivedAt(),
+                researchConfig.archivedBy(),
+                researchConfig.archiveReason()
         );
     }
 }

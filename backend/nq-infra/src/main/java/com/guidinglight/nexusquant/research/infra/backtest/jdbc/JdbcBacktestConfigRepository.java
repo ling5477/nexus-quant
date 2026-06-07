@@ -20,6 +20,10 @@ import org.springframework.stereotype.Repository;
 
 /**
  * JdbcBacktestConfigRepository 是 backtest_configs 表的 JDBC 实现。
+ * <p>
+ * Why:
+ * V28 后默认业务列表需要隐藏 ARCHIVED；按 ID 查询不加 status 过滤，
+ * 保证 archived 配置仍能被历史 run、evaluation 和 publish 记录追溯。
  */
 @Repository
 public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
@@ -32,7 +36,7 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
                    param_snapshot_json::text AS param_snapshot_json,
                    config_snapshot_json::text AS config_snapshot_json,
                    dataset_id::text AS dataset_id, dataset_snapshot_json::text AS dataset_snapshot_json,
-                   created_at, updated_at
+                   created_at, updated_at, status, archived_at, archived_by, archive_reason
             FROM backtest_configs
             """;
 
@@ -79,6 +83,14 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
     @Override
     public List<BacktestConfig> listAll() {
         return jdbcTemplate.query(
+                BASE_SELECT + " WHERE status <> 'ARCHIVED' ORDER BY created_at DESC, backtest_config_id DESC",
+                rowMapper()
+        );
+    }
+
+    @Override
+    public List<BacktestConfig> listAllIncludingArchived() {
+        return jdbcTemplate.query(
                 BASE_SELECT + " ORDER BY created_at DESC, backtest_config_id DESC",
                 rowMapper()
         );
@@ -86,6 +98,18 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
 
     @Override
     public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
+        return jdbcTemplate.query(
+                BASE_SELECT
+                        + " WHERE research_config_id = ?"
+                        + " AND status <> 'ARCHIVED'"
+                        + " ORDER BY created_at DESC, backtest_config_id DESC",
+                rowMapper(),
+                researchConfigId
+        );
+    }
+
+    @Override
+    public List<BacktestConfig> listByResearchConfigIdIncludingArchived(String researchConfigId) {
         return jdbcTemplate.query(
                 BASE_SELECT + " WHERE research_config_id = ? ORDER BY created_at DESC, backtest_config_id DESC",
                 rowMapper(),
@@ -159,8 +183,17 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
                 resultSet.getString("dataset_snapshot_json"),
                 resultSet.getString("config_json"),
                 resultSet.getTimestamp("created_at").toInstant(),
-                resultSet.getTimestamp("updated_at").toInstant()
+                resultSet.getTimestamp("updated_at").toInstant(),
+                resultSet.getString("status"),
+                nullableInstant(resultSet, "archived_at"),
+                resultSet.getString("archived_by"),
+                resultSet.getString("archive_reason")
         );
+    }
+
+    private Instant nullableInstant(ResultSet resultSet, String columnName) throws SQLException {
+        Timestamp timestamp = resultSet.getTimestamp(columnName);
+        return timestamp == null ? null : timestamp.toInstant();
     }
 
     private JsonNode readJson(String rawJson) {

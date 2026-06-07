@@ -133,6 +133,18 @@ Batch 3 不能与 Batch 4 Repository 默认过滤合并。先落 schema，再改
 
 ## 4. Batch 4：Repository 查询过滤、逻辑删除/归档接口、测试
 
+状态：4-A 已完成。Batch 4-A 只接管 `research_configs`、`backtest_configs` 的 V28 status/archive 字段读语义和新运行状态闸门；未新增 migration，未新增外部 API 参数，未改前端 / Python / 部署，未处理 credentials、positions、risk_events、订单、成交、账本、审计、Paper facts、Backtest facts、评估结果、发布记录或 marketdata timeseries。
+
+### Batch 4-A 本批执行结果
+
+- `research_configs` 默认 Repository 列表查询排除 `status=ARCHIVED`；`DISABLED` 仍在默认列表中可见。
+- `backtest_configs` 默认 Repository 列表查询排除 `status=ARCHIVED`；`DISABLED` 仍在默认列表中可见。
+- 两张配置表按 ID 查询不增加 status 过滤，保留 archived 配置的历史追溯能力。
+- Repository 新增 includeArchived 内部查询路径；本轮不新增外部 HTTP API 查询参数。
+- Domain / DTO 同步 `status`、`archived_at`、`archived_by`、`archive_reason` 读模型字段。
+- 新建 backtest config 要求 research config 为 `ACTIVE`；新建 backtest run 要求 research config 与 backtest config 都为 `ACTIVE`。
+- 新增/修改后端测试覆盖默认列表隐藏 ARCHIVED、DISABLED 默认可见、ARCHIVED 按 ID 可读、非 ACTIVE 配置不能创建新 run。
+
 ### 允许范围
 
 - 仅在 Batch 3 已新增 `status` 或归档字段后，修改对应 Repository 默认查询。

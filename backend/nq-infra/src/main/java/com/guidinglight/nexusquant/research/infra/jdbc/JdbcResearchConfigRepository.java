@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.research.domain.port.ResearchConfigRepository
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,6 +19,10 @@ import org.springframework.stereotype.Repository;
 
 /**
  * JdbcResearchConfigRepository 是 research_configs 表的 JDBC 实现。
+ * <p>
+ * Why:
+ * V28 后默认业务列表需要隐藏 ARCHIVED；按 ID 查询不加 status 过滤，
+ * 保证 archived 配置仍可被历史回测、评估和发布记录追溯。
  */
 @Repository
 public class JdbcResearchConfigRepository implements ResearchConfigRepository {
@@ -25,7 +30,7 @@ public class JdbcResearchConfigRepository implements ResearchConfigRepository {
     private static final String BASE_SELECT = """
             SELECT research_config_id, source_strategy_id, name, description,
                    strategy_snapshot::text AS strategy_snapshot, config_json::text AS config_json,
-                   created_at, updated_at
+                   created_at, updated_at, status, archived_at, archived_by, archive_reason
             FROM research_configs
             """;
 
@@ -70,8 +75,32 @@ public class JdbcResearchConfigRepository implements ResearchConfigRepository {
     @Override
     public List<ResearchConfig> listAll() {
         return jdbcTemplate.query(
+                BASE_SELECT + " WHERE status <> 'ARCHIVED' ORDER BY created_at DESC, research_config_id DESC",
+                rowMapper()
+        );
+    }
+
+    @Override
+    public List<ResearchConfig> listAllIncludingArchived() {
+        return jdbcTemplate.query(
                 BASE_SELECT + " ORDER BY created_at DESC, research_config_id DESC",
                 rowMapper()
+        );
+    }
+
+    @Override
+    public List<ResearchConfig> list(String sourceStrategyId, boolean includeArchived) {
+        if (sourceStrategyId == null || sourceStrategyId.isBlank()) {
+            return includeArchived ? listAllIncludingArchived() : listAll();
+        }
+        String archiveClause = includeArchived ? "" : " AND status <> 'ARCHIVED'";
+        return jdbcTemplate.query(
+                BASE_SELECT
+                        + " WHERE source_strategy_id = ?"
+                        + archiveClause
+                        + " ORDER BY created_at DESC, research_config_id DESC",
+                rowMapper(),
+                sourceStrategyId.trim()
         );
     }
 
@@ -91,8 +120,17 @@ public class JdbcResearchConfigRepository implements ResearchConfigRepository {
                 jsonField(configJson, "parameterDefaults"),
                 jsonField(configJson, "datasetSpec"),
                 resultSet.getTimestamp("created_at").toInstant(),
-                resultSet.getTimestamp("updated_at").toInstant()
+                resultSet.getTimestamp("updated_at").toInstant(),
+                resultSet.getString("status"),
+                nullableInstant(resultSet, "archived_at"),
+                resultSet.getString("archived_by"),
+                resultSet.getString("archive_reason")
         );
+    }
+
+    private Instant nullableInstant(ResultSet resultSet, String columnName) throws SQLException {
+        Timestamp timestamp = resultSet.getTimestamp(columnName);
+        return timestamp == null ? null : timestamp.toInstant();
     }
 
     private String buildConfigJson(ResearchConfig researchConfig) {

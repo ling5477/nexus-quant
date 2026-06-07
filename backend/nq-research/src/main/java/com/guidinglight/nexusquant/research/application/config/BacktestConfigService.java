@@ -82,11 +82,13 @@ public class BacktestConfigService {
      * 创建回测配置。
      * Why:
      * GateF-1 明确要求 backtest_config 归属于 research_config，因此创建时必须先验证 research_config 存在，
-     * 避免产生孤儿配置并破坏后续回测运行血缘。
+     * 避免产生孤儿配置并破坏后续回测运行血缘。Batch 4-A 后，只有 ACTIVE research_config
+     * 可派生新的 backtest_config；DISABLED/ARCHIVED 仍可按 ID 读取用于历史追溯，但不能产生新运行输入。
      */
     public BacktestConfig create(BacktestConfigCreateRequest request) {
         validateCreateRequest(request);
         ResearchConfig researchConfig = researchConfigService.getByResearchConfigId(request.researchConfigId());
+        ensureActiveResearchConfig(researchConfig);
         Instant now = Instant.now(clock);
         BacktestConfig backtestConfig = new BacktestConfig(
                 "bcf-" + UUID.randomUUID(),
@@ -211,6 +213,14 @@ public class BacktestConfigService {
         }
         normalizeJson(request.executionSpec());
         normalizeJson(request.evaluationSpec());
+    }
+
+    private void ensureActiveResearchConfig(ResearchConfig researchConfig) {
+        if (!researchConfig.isActive()) {
+            throw new IllegalStateException(
+                    "research config is not active: " + researchConfig.researchConfigId()
+            );
+        }
     }
 
     private String buildConfigSnapshot(BacktestConfigCreateRequest request) {

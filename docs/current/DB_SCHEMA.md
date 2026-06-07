@@ -33,8 +33,20 @@
 - 两张表的归档一致性约束均要求：只有 `status=ARCHIVED` 时才允许存在归档元数据，且归档状态必须有 `archived_at`；`archived_by` 与 `archive_reason` 可为空。
 - 两张表的 `updated_at` 注释已明确为配置元数据最后更新时间，不表示回测运行、评估结果、发布记录或交易事实更新时间。
 - `archive_reason` 注释明确禁止保存密钥、token、API secret、私钥、助记词、cookie 或交易所凭证。
-- 本批未新增 Repository 默认过滤、归档业务 API、逻辑删除、物理删除或 retention purge；这些行为如需启用，必须进入后续 Batch 4。
+- Batch 3-B 本身未新增 Repository 默认过滤、归档业务 API、逻辑删除、物理删除或 retention purge。
 - 本批未处理回测事实表、评估结果表、发布记录、Paper facts、orders、trades、ledger、risk_events、positions、marketdata timeseries 或 credentials。
+
+## Research / Backtest Config Archive Semantics
+
+Batch 4-A 已接管 V28 新增的 `research_configs` / `backtest_configs` 生命周期字段，但未新增 migration、未新增归档业务 API，也未实现物理删除或 retention purge。
+
+- `research_configs` 默认 Repository 列表查询排除 `status='ARCHIVED'`；`status='DISABLED'` 仍出现在默认列表中。
+- `backtest_configs` 默认 Repository 列表查询排除 `status='ARCHIVED'`；`status='DISABLED'` 仍出现在默认列表中。
+- 两张配置表的按 ID 查询不按 `status` 过滤，允许读取 archived 配置，用于历史 backtest run、evaluation、publish record 追溯。
+- Repository 保留内部 includeArchived 查询路径，但本轮不向外部 HTTP API 增加 `includeArchived` 参数。
+- 新建 backtest config 要求关联的 research config 为 `ACTIVE`。
+- 新建 backtest run 要求关联的 research config 与 backtest config 都为 `ACTIVE`。
+- `updated_at` 仍只表示配置元数据最后更新时间；本轮没有实现归档写入接口，因此没有新增归档时更新时间写入路径。
 
 ## GateH-2 当前 Marketdata 结构
 
