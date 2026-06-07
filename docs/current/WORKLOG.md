@@ -2,6 +2,48 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Active Credential Uniqueness Review Batch 5-E-C
+
+日期：2026-06-07
+
+### 本轮目标
+
+只读评估 `exchange_account_credentials` 是否需要从“account + credential_type active 唯一”升级为“account 全局 active 唯一”，或继续保留多 credential type active 模型。本轮只写 `docs/current` 文档，不新增 migration，不修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/README.md`
+- `README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_ANALYSIS + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读确认 active summary / active material / credential type / account credential 路径。
+- 只读确认 V12 partial unique index 精确定义为 `uq_exchange_account_credentials_active_type ON exchange_account_credentials (exchange_account_id, credential_type) WHERE is_active = TRUE`。
+- 只读确认 V29 新增 `credential_status` 和 `permission_scope`，但没有新增 account 全局 active 唯一约束；`permission_scope` 当前不由代码写入、读取或过滤。
+- 只读确认 Batch 5-E-B 已通过代码层 deterministic selection：无 `credentialType` 多 ACTIVE type 返回 `409 STATE_CONFLICT`，显式 `credentialType` 只选择对应 ACTIVE credential。
+- 输出结论：当前不建议新增 account 全局 active unique constraint；保留多 credential type active 模型，避免阻碍未来 READ_ONLY / TRADE / 可能的 FUNDING 权限拆分。
+- 输出后续决策：当前不需要 Batch 5-E-D migration；Batch 5-F enable endpoint 继续推迟，先做 enable 只读审计。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行 migration diff 范围检查：本轮未新增 migration，未修改历史 migration。
+- 后端/前端/Python 全量测试未执行：本轮只做 code analysis + documentation，未修改业务代码、API、migration、前端、Python 或部署脚本。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改 Java / Repository / Service / Controller / DTO / API / 前端 / Python / 部署脚本。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未新增 enable endpoint。
+- 未调用真实交易所，未做真实交易所权限探活。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未把 GateK-PLAN 写成实现已启动。
+
 ## DB Schema Credential Active Material Deterministic Selection Batch 5-E-B
 
 日期：2026-06-07
