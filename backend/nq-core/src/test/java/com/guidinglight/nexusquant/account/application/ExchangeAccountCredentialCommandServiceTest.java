@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.account.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMaterial;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
@@ -86,6 +87,97 @@ class ExchangeAccountCredentialCommandServiceTest {
         assertFalse(revoked.isActive());
         assertEquals("ROTATED", revoked.credentialStatus());
         assertEquals("PENDING", revoked.verificationStatus());
+    }
+
+    @Test
+    void shouldRotateCredentialCommandAndAppendOldNewAuditLogs() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary first = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("BINANCE_HMAC", "first-key", "secret-1", null, null),
+                1
+        );
+
+        ExchangeAccountCredentialSummary rotated = service.rotate(
+                1L,
+                account.exchangeAccountId(),
+                first.credentialId(),
+                new ExchangeAccountCredentialRotateCommand("second-key", "secret-2", null, null, "scheduled key rotation"),
+                "admin",
+                2
+        );
+
+        ExchangeAccountCredentialSummary old = credentialRepository.findByCredentialId(first.credentialId()).orElseThrow();
+        ExchangeAccountCredentialMaterial activeMaterial = credentialRepository.findActiveMaterial(1L, account.exchangeAccountId()).orElseThrow();
+        assertEquals("ROTATED", old.credentialStatus());
+        assertFalse(old.isActive());
+        assertEquals(fixedClock.instant(), old.rotatedAt());
+        assertEquals("ACTIVE", rotated.credentialStatus());
+        assertEquals("PENDING", rotated.verificationStatus());
+        assertTrue(rotated.isActive());
+        assertEquals(first.credentialId(), rotated.rotatedFromCredentialId());
+        assertEquals(rotated.credentialId(), activeMaterial.credentialId());
+        assertEquals(List.of("ROTATED", "CREATED"), credentialRepository.auditLogs.stream().map(AuditLog::eventType).toList());
+        assertEquals(first.credentialId(), credentialRepository.auditLogs.get(0).credentialId());
+        assertEquals(rotated.credentialId(), credentialRepository.auditLogs.get(1).credentialId());
+        assertEquals("scheduled key rotation", credentialRepository.auditLogs.get(0).reason());
+        assertTrue(credentialRepository.auditLogs.stream().allMatch(log -> log.metadataJson().contains("\"reasonPresent\":true")));
+        assertTrue(credentialRepository.auditLogs.stream().noneMatch(log -> containsSensitiveAuditMetadata(log.metadataJson())));
+    }
+
+    @Test
+    void shouldRejectRotateFromInactiveLifecycleStatuses() {
+        assertRotateRejectedAfterLifecycle("REVOKED");
+        assertRotateRejectedAfterLifecycle("DISABLED");
+        assertRotateRejectedAfterLifecycle("EXPIRED");
+        assertRotateRejectedAfterLifecycle("ROTATED");
+    }
+
+    @Test
+    void shouldRejectRotateWhenReasonMissingOrSensitive() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary active = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("OKX_API_V5", "test-api-key", "secret", "pass", null),
+                1
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.rotate(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                new ExchangeAccountCredentialRotateCommand("new-api-key", "new-secret", "new-pass", null, " "),
+                "admin",
+                2
+        ));
+        assertThrows(IllegalArgumentException.class, () -> service.rotate(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                new ExchangeAccountCredentialRotateCommand("new-api-key", "new-secret", "new-pass", null, "contains token"),
+                "admin",
+                2
+        ));
+        assertEquals(active.credentialId(), credentialRepository.findActiveMaterial(1L, account.exchangeAccountId()).orElseThrow().credentialId());
+        assertTrue(credentialRepository.auditLogs.isEmpty());
     }
 
     @Test
@@ -190,6 +282,56 @@ class ExchangeAccountCredentialCommandServiceTest {
         ));
     }
 
+    private void assertRotateRejectedAfterLifecycle(String lifecycleStatus) {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary active = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("BINANCE_HMAC", "first-key", "secret-1", null, null),
+                1
+        );
+        switch (lifecycleStatus) {
+            case "REVOKED" -> service.revoke(1L, account.exchangeAccountId(), active.credentialId(), "admin", "operator offboarding");
+            case "DISABLED" -> service.disable(1L, account.exchangeAccountId(), active.credentialId(), "admin", "temporary stop");
+            case "EXPIRED" -> service.expire(1L, account.exchangeAccountId(), active.credentialId(), "admin", "expired by policy");
+            case "ROTATED" -> service.rotate(
+                    1L,
+                    account.exchangeAccountId(),
+                    active.credentialId(),
+                    new ExchangeAccountCredentialRotateCommand("second-key", "secret-2", null, null, "scheduled key rotation"),
+                    "admin",
+                    2
+            );
+            default -> throw new IllegalArgumentException("unsupported test lifecycleStatus: " + lifecycleStatus);
+        }
+
+        assertThrows(IllegalStateException.class, () -> service.rotate(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                new ExchangeAccountCredentialRotateCommand("third-key", "secret-3", null, null, "scheduled key rotation"),
+                "admin",
+                3
+        ));
+    }
+
+    private static boolean containsSensitiveAuditMetadata(String metadataJson) {
+        String lower = metadataJson.toLowerCase(java.util.Locale.ROOT);
+        return lower.contains("secret")
+                || lower.contains("token")
+                || lower.contains("private")
+                || lower.contains("passphrase")
+                || lower.contains("scheduled key rotation");
+    }
+
     @Test
     void shouldRejectInvalidPayloadForCredentialType() {
         InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
@@ -259,6 +401,14 @@ class ExchangeAccountCredentialCommandServiceTest {
         }
 
         @Override
+        public Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+            return Optional.ofNullable(storage.get(credentialId))
+                    .filter(item -> item.exchangeAccountId().equals(exchangeAccountId))
+                    .filter(item -> item.isActive() && "ACTIVE".equals(item.credentialStatus()))
+                    .map(ExchangeAccountCredentialMaterial::toSummary);
+        }
+
+        @Override
         public void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt) {
             storage.replaceAll((id, current) -> current.exchangeAccountId().equals(exchangeAccountId) && current.credentialType().equals(credentialType) && current.isActive()
                     ? new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), "ROTATED", current.verificationStatus(), false, current.revokedAt(), current.rotatedFromCredentialId(), revokedAt, current.lastVerifiedAt(), current.lastVerificationError(), revokedAt, current.decryptedPayloadJson())
@@ -289,6 +439,19 @@ class ExchangeAccountCredentialCommandServiceTest {
                 return false;
             }
             storage.put(credentialId, new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), credentialStatus, current.verificationStatus(), active, revokedAt, current.rotatedFromCredentialId(), current.rotatedAt(), current.lastVerifiedAt(), current.lastVerificationError(), updatedAt, current.decryptedPayloadJson()));
+            return true;
+        }
+
+        @Override
+        public boolean markRotated(Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt) {
+            ExchangeAccountCredentialMaterial current = storage.get(credentialId);
+            if (current == null
+                    || !current.exchangeAccountId().equals(exchangeAccountId)
+                    || !current.isActive()
+                    || !"ACTIVE".equals(current.credentialStatus())) {
+                return false;
+            }
+            storage.put(credentialId, new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), "ROTATED", current.verificationStatus(), false, current.revokedAt(), current.rotatedFromCredentialId(), rotatedAt, current.lastVerifiedAt(), current.lastVerificationError(), rotatedAt, current.decryptedPayloadJson()));
             return true;
         }
 

@@ -113,6 +113,35 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
     }
 
     @Override
+    public Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId
+    ) {
+        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
+                SUMMARY_SELECT + """
+                         WHERE credential_id = ?
+                           AND exchange_account_id = ?
+                           AND is_active = TRUE
+                           AND credential_status = 'ACTIVE'
+                           AND EXISTS (
+                               SELECT 1
+                               FROM exchange_accounts ea
+                               WHERE ea.exchange_account_id = exchange_account_credentials.exchange_account_id
+                                 AND ea.owner_user_id = ?
+                           )
+                         LIMIT 1
+                         FOR UPDATE
+                        """,
+                SUMMARY_ROW_MAPPER,
+                credentialId,
+                exchangeAccountId,
+                ownerUserId
+        );
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
     public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) {
         List<ExchangeAccountCredentialMaterial> rows = jdbcTemplate.query(
                 """
@@ -316,6 +345,29 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 revokedBy,
                 revokeReason,
                 Timestamp.from(updatedAt),
+                credentialId,
+                exchangeAccountId
+        ) > 0;
+    }
+
+    @Override
+    public boolean markRotated(Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE exchange_account_credentials
+                        SET credential_status = 'ROTATED',
+                            is_active = FALSE,
+                            rotated_at = ?,
+                            rotated_by = ?,
+                            updated_at = ?
+                        WHERE credential_id = ?
+                          AND exchange_account_id = ?
+                          AND credential_status = 'ACTIVE'
+                          AND is_active = TRUE
+                        """,
+                Timestamp.from(rotatedAt),
+                rotatedBy,
+                Timestamp.from(rotatedAt),
                 credentialId,
                 exchangeAccountId
         ) > 0;

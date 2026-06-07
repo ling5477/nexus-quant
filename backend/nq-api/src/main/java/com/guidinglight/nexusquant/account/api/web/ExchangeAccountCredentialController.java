@@ -2,11 +2,13 @@ package com.guidinglight.nexusquant.account.api.web;
 
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountActiveCredentialResponse;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialLifecycleRequestBody;
+import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialRotateRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialSummaryResponse;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialUpsertRequestBody;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
 import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
@@ -159,6 +161,40 @@ public class ExchangeAccountCredentialController {
                 credentialId,
                 actor.actor(),
                 lifecycleReason(requestBody)
+        ));
+    }
+
+    @PostMapping("/{credentialId}/rotate")
+    @Operation(
+            summary = "显式轮换指定凭证",
+            description = "锁定并校验指定 ACTIVE credential，按旧 credentialType 创建新 ACTIVE credential，把旧 credential 标记为 ROTATED，并写入 ROTATED / CREATED audit log。不会返回或记录敏感材料。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "轮换成功"),
+            @ApiResponse(responseCode = "400", description = "请求非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ExchangeAccountCredentialSummaryResponse rotate(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @PathVariable @Positive(message = "credentialId must be positive") Long credentialId,
+            @Valid @RequestBody ExchangeAccountCredentialRotateRequestBody requestBody
+    ) {
+        CurrentCredentialActor actor = resolveCurrentCredentialActor();
+        return ExchangeAccountCredentialSummaryResponse.from(exchangeAccountCredentialCommandService.rotate(
+                actor.userId(),
+                accountId,
+                credentialId,
+                new ExchangeAccountCredentialRotateCommand(
+                        requestBody.apiKey(),
+                        requestBody.secretKey(),
+                        requestBody.passphrase(),
+                        requestBody.privateKeyPem(),
+                        requestBody.reason()
+                ),
+                actor.actor(),
+                credentialKeyVersion
         ));
     }
 

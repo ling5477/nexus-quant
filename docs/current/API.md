@@ -35,6 +35,7 @@
 
 - `GET /api/exchange-accounts/{accountId}/credentials/active`：读取当前 active credential 摘要；响应只包含 `credentialId`、`exchangeAccountId`、`credentialType`、`maskedAccessKey`、`credentialStatus`、`verificationStatus`、`isActive`、`revokedAt`、`rotatedFromCredentialId`、`rotatedAt`、`lastVerifiedAt`、`lastVerificationError`、`updatedAt` 等非敏感字段。
 - `POST /api/exchange-accounts/{accountId}/credentials`：新增 credential 版本；旧 active 版本仅写为 `credential_status='ROTATED'` 且 `is_active=false`，不再把轮换旧版本混同为不可恢复 `REVOKED`。
+- `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/rotate`：显式轮换指定 ACTIVE credential；`credentialType` 从旧 credential 派生，请求体必须包含新 credential material 和 rotate reason；同事务内旧 credential 标记 `ROTATED`、新 credential 创建为 `ACTIVE`，并追加旧 `ROTATED` / 新 `CREATED` audit log。
 - `POST /api/exchange-accounts/{accountId}/credentials/verify`：对当前 active credential 做结构性校验；只处理 `credential_status='ACTIVE'` 的 active material。
 - `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/revoke`：不可恢复撤销 credential，写入 `credential_status='REVOKED'`、`revokedAt` 和 append-only `credential_audit_logs` 事件；重复 revoke 幂等返回当前摘要。
 - `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/disable`：临时禁用 credential，写入 `credential_status='DISABLED'` 和 append-only audit 事件；本轮不实现 enable。
@@ -43,9 +44,9 @@
 Credential API 固定边界：
 
 - API response 不返回 `encryptedPayload`、`decryptedPayloadJson`、`apiKey`、`secretKey`、`token`、`privateKeyPem`、`passphrase` 或任何明文 credential material。
-- lifecycle command request body 只接收 `reason`；应用层限制长度并拒绝明显包含 token、secret、private key、password、助记词、密钥等敏感材料的原因。
+- revoke / disable / expire lifecycle command request body 只接收 `reason`；rotate command request body 接收新 credential material 和必填 `reason`。应用层限制 reason 长度并拒绝明显包含 token、secret、private key、password、助记词、密钥等敏感材料的原因。
 - `DISABLED / REVOKED / EXPIRED / ROTATED` 均不会进入 active material 查询；`REVOKED / ROTATED` 不允许通过本轮接口改写为 `DISABLED / EXPIRED`。
-- 本轮未新增 rotate endpoint、enable endpoint、真实交易所权限探活、AI / DH / Agent credential 调用、LIVE 交易或真实下单路径。
+- 当前未新增 enable endpoint、真实交易所权限探活、AI / DH / Agent credential 调用、LIVE 交易或真实下单路径。
 
 ## GateH-1 Trading Workspace API
 

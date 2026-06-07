@@ -60,6 +60,18 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DB Schema Credential Rotate Command Batch 5-D-B 验证记录（2026-06-07）
+
+本轮实现显式 credential rotate command，并同步 `docs/current` 文档；未新增 migration，未修改前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | 初次执行因新增测试的 no-handler 断言不匹配 standalone MockMvc 行为失败；修正为反射检查无 `enable` 方法后复跑通过。最终 23 个 reactor module 均为 `SUCCESS`，`BUILD SUCCESS`。 |
+| `git diff --check` | 通过 | 仅输出 Windows 换行提示，无 whitespace error。 |
+| 新增 migration 范围检查 | 通过 | `backend/nq-infra/src/main/resources/db/migration` 无 diff；未新增 migration，未修改历史 migration。 |
+| 禁止范围扫描 | 通过 | 未修改 frontend、Python 或部署脚本；未新增 enable endpoint；未调用真实交易所；未接 AI、DH、LIVE 或真实交易。 |
+| rotate 回归覆盖 | 通过 | 覆盖 ACTIVE rotate 成功、旧 `ROTATED`、新 `ACTIVE`、old/new audit log、active material 只返回新 credential、非 ACTIVE 派生拒绝、reason 缺失/敏感词拒绝、重复 rotate 旧 credential 拒绝、API response 脱敏、audit metadata 不含敏感字段。 |
+
 ## DB Schema Credential Rotate Governance Review Batch 5-D-A 验证记录（2026-06-07）
 
 本轮只读审计 credential rotate 生命周期设计，并同步 `docs/current` 文档；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。

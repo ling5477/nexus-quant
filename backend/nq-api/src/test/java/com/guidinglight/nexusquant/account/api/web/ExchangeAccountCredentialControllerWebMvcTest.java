@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
@@ -34,6 +35,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,6 +70,7 @@ class ExchangeAccountCredentialControllerWebMvcTest {
         ExchangeAccountCredentialSummary summary = new ExchangeAccountCredentialSummary(1L, 900001L, "OKX_API_V5", "tes***ey", "ACTIVE", "VERIFIED", true, null, null, null, Instant.parse("2026-04-06T00:00:00Z"), null, Instant.parse("2026-04-06T00:00:00Z"));
         when(commandService.findActiveSummaryOrNull(1L, 900001L)).thenReturn(null);
         when(commandService.upsert(any(), any(), any(), anyInt())).thenReturn(summary);
+        when(commandService.rotate(any(), any(), any(), any(), any(), anyInt())).thenReturn(new ExchangeAccountCredentialSummary(2L, 900001L, "OKX_API_V5", "new***ey", "ACTIVE", "PENDING", true, null, 1L, null, null, null, Instant.parse("2026-04-06T00:02:00Z")));
         when(verificationService.verifyActive(1L, 900001L)).thenReturn(summary);
 
         mockMvc.perform(get("/api/exchange-accounts/900001/credentials/active").header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-active"))
@@ -90,6 +93,22 @@ class ExchangeAccountCredentialControllerWebMvcTest {
         mockMvc.perform(post("/api/exchange-accounts/900001/credentials/verify").header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-verify"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.verificationStatus").value("VERIFIED"));
+
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/rotate")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-credential-rotate")
+                        .contentType("application/json")
+                        .content("{\"apiKey\":\"new-api-key\",\"secretKey\":\"new-secret\",\"passphrase\":\"new-pass\",\"reason\":\"scheduled key rotation\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialId").value(2))
+                .andExpect(jsonPath("$.credentialStatus").value("ACTIVE"))
+                .andExpect(jsonPath("$.verificationStatus").value("PENDING"))
+                .andExpect(jsonPath("$.rotatedFromCredentialId").value(1))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.decryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.secretKey").doesNotExist())
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.privateKeyPem").doesNotExist())
+                .andExpect(jsonPath("$.passphrase").doesNotExist());
     }
 
     @Test
@@ -166,6 +185,8 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.credentialStatus").value("EXPIRED"))
                 .andExpect(jsonPath("$.encryptedPayload").doesNotExist());
+        assertTrue(Arrays.stream(ExchangeAccountCredentialController.class.getDeclaredMethods())
+                .noneMatch(method -> "enable".equals(method.getName())));
     }
 
     private static final class TestTraceIdFilter extends OncePerRequestFilter {

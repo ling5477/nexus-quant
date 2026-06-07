@@ -49,7 +49,8 @@
 - `credential_audit_logs.metadata` 注释明确只允许保存脱敏状态、结果码、request id、策略判断等审计上下文，不得保存密钥、token、API secret、私钥、助记词、cookie、passphrase、签名、明文 payload 或交易所凭证。
 - Batch 5-C 已在应用代码中接入 V29 生命周期字段：active summary / active material 查询默认同时要求 `is_active=true` 和 `credential_status='ACTIVE'`；旧 active 版本轮换时写为 `credential_status='ROTATED'`，不再把 `verification_status` 继续写成 `REVOKED`。
 - Batch 5-C 已新增 `revoke / disable / expire` 最小 command API，并通过 `credential_audit_logs` 追加 `REVOKED / DISABLED / EXPIRED` 审计事件；audit metadata 只保存脱敏状态和来源。
-- Batch 5-C 未新增 migration，未新增 rotate endpoint、enable endpoint、真实交易所权限探活、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
+- Batch 5-D-B 未新增 migration；显式 rotate command 复用 V12 active partial unique index、V29 `rotated_at / rotated_by` 和 `credential_audit_logs`，在单事务内锁定旧 ACTIVE credential、旧 credential 标记 `ROTATED`、新 credential 创建为 `ACTIVE`，并追加旧 `ROTATED` / 新 `CREATED` audit log。audit metadata 只保存 old/new credentialId、credentialType、状态、来源和 reasonPresent，不保存 secret、token、private key、passphrase、明文 payload 或交易所凭证。
+- 当前未新增 enable endpoint、真实交易所权限探活、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
 
 ## Research / Backtest Config Archive Semantics
 

@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.account.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
@@ -78,13 +79,113 @@ public class ExchangeAccountCredentialCommandService {
         return exchangeAccountCredentialRepository.insertNewVersion(
                 exchangeAccountId,
                 credentialType,
-                toPayloadJson(credentialType, command),
+                toPayloadJson(
+                        credentialType,
+                        command.apiKey(),
+                        command.secretKey(),
+                        command.passphrase(),
+                        command.privateKeyPem()
+                ),
                 keyVersion,
                 DEFAULT_CIPHER_SUITE,
                 maskAccessKey(command.apiKey()),
                 rotatedFromCredentialId,
                 now
         );
+    }
+
+    /**
+     * 显式轮换指定 ACTIVE credential，并追加旧/新两条 audit log。
+     *
+     * <p>Why: 旧 upsert 只按 account + credentialType 切换 active，无法证明调用方确实选择了
+     * 哪个旧 credential，也没有 append-only rotate 证据。本方法以 credentialId 为命令对象，
+     * 在单事务里锁定旧 ACTIVE 版本、写入新 ACTIVE 版本、把旧版本标记 ROTATED，并写入
+     * ROTATED / CREATED audit log。受既有 partial unique index 约束，物理 SQL 顺序先把旧版本
+     * 标记 inactive 再插入新 active；任一步失败都会由事务回滚，避免成功响应留下无 active。</p>
+     *
+     * @param ownerUserId 当前认证用户 ID，必须拥有 exchangeAccountId
+     * @param exchangeAccountId 凭证所属交易账户 ID
+     * @param credentialId 要被替换的旧 ACTIVE credential 主键
+     * @param command 新 credential material 和必填 rotate reason；credentialType 从旧记录派生
+     * @param actor 当前认证主体；为空时落为 system
+     * @param keyVersion 新 credential 加密主密钥版本
+     * @return 新 ACTIVE credential 的非敏感摘要
+     */
+    @Transactional
+    public ExchangeAccountCredentialSummary rotate(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId,
+            ExchangeAccountCredentialRotateCommand command,
+            String actor,
+            int keyVersion
+    ) {
+        Long normalizedOwnerUserId = requirePositive(ownerUserId, "ownerUserId");
+        Long normalizedExchangeAccountId = requirePositive(exchangeAccountId, "exchangeAccountId");
+        Long normalizedCredentialId = requirePositive(credentialId, "credentialId");
+        requireOwnedAccount(normalizedOwnerUserId, normalizedExchangeAccountId);
+        ExchangeAccountCredentialSummary current = exchangeAccountCredentialRepository.findByCredentialIdForOwner(
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialId
+        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
+        if (!current.isActive() || !"ACTIVE".equals(current.credentialStatus())) {
+            throw new IllegalStateException("credential rotate requires ACTIVE credential");
+        }
+        ExchangeAccountCredentialSummary locked = exchangeAccountCredentialRepository.findActiveByCredentialIdForOwnerForUpdate(
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialId
+        ).orElseThrow(() -> new IllegalStateException("credential rotate requires ACTIVE credential"));
+        String credentialType = normalizeCredentialType(locked.credentialType());
+        validatePayload(credentialType, command);
+        String normalizedActor = normalizeActor(actor);
+        String normalizedReason = normalizeRequiredLifecycleReason(command.reason());
+        Instant now = Instant.now(clock);
+
+        if (!exchangeAccountCredentialRepository.markRotated(
+                normalizedCredentialId,
+                normalizedExchangeAccountId,
+                normalizedActor,
+                now
+        )) {
+            throw new IllegalStateException("credential rotate requires ACTIVE credential");
+        }
+        ExchangeAccountCredentialSummary created = exchangeAccountCredentialRepository.insertNewVersion(
+                normalizedExchangeAccountId,
+                credentialType,
+                toPayloadJson(
+                        credentialType,
+                        command.apiKey(),
+                        command.secretKey(),
+                        command.passphrase(),
+                        command.privateKeyPem()
+                ),
+                keyVersion,
+                DEFAULT_CIPHER_SUITE,
+                maskAccessKey(command.apiKey()),
+                normalizedCredentialId,
+                now
+        );
+        exchangeAccountCredentialRepository.appendCredentialAuditLog(
+                normalizedCredentialId,
+                normalizedExchangeAccountId,
+                "ROTATED",
+                normalizedActor,
+                normalizedReason,
+                rotateMetadata("ROTATED", normalizedCredentialId, created.credentialId(), credentialType, true),
+                now
+        );
+        exchangeAccountCredentialRepository.appendCredentialAuditLog(
+                created.credentialId(),
+                normalizedExchangeAccountId,
+                "CREATED",
+                normalizedActor,
+                normalizedReason,
+                rotateMetadata("ACTIVE", normalizedCredentialId, created.credentialId(), credentialType, true),
+                now
+        );
+        return created;
     }
 
     public ExchangeAccountCredentialSummary requireActiveSummary(Long ownerUserId, Long exchangeAccountId) {
@@ -237,25 +338,57 @@ public class ExchangeAccountCredentialCommandService {
     }
 
     private void validatePayload(String credentialType, ExchangeAccountCredentialUpsertCommand command) {
-        normalizeText(command.apiKey(), "apiKey");
+        validatePayloadFields(
+                credentialType,
+                command.apiKey(),
+                command.secretKey(),
+                command.passphrase(),
+                command.privateKeyPem()
+        );
+    }
+
+    private void validatePayload(String credentialType, ExchangeAccountCredentialRotateCommand command) {
+        validatePayloadFields(
+                credentialType,
+                command.apiKey(),
+                command.secretKey(),
+                command.passphrase(),
+                command.privateKeyPem()
+        );
+    }
+
+    private void validatePayloadFields(
+            String credentialType,
+            String apiKey,
+            String secretKey,
+            String passphrase,
+            String privateKeyPem
+    ) {
+        normalizeText(apiKey, "apiKey");
         switch (credentialType) {
             case "OKX_API_V5" -> {
-                normalizeText(command.secretKey(), "secretKey");
-                normalizeText(command.passphrase(), "passphrase");
+                normalizeText(secretKey, "secretKey");
+                normalizeText(passphrase, "passphrase");
             }
-            case "BINANCE_HMAC" -> normalizeText(command.secretKey(), "secretKey");
-            case "BINANCE_ED25519" -> normalizeText(command.privateKeyPem(), "privateKeyPem");
+            case "BINANCE_HMAC" -> normalizeText(secretKey, "secretKey");
+            case "BINANCE_ED25519" -> normalizeText(privateKeyPem, "privateKeyPem");
             default -> throw new IllegalArgumentException("unsupported credentialType: " + credentialType);
         }
     }
 
-    private String toPayloadJson(String credentialType, ExchangeAccountCredentialUpsertCommand command) {
+    private String toPayloadJson(
+            String credentialType,
+            String apiKey,
+            String secretKey,
+            String passphrase,
+            String privateKeyPem
+    ) {
         ObjectNode payload = objectMapper.createObjectNode();
         payload.put("credentialType", credentialType);
-        payload.put("apiKey", normalizeText(command.apiKey(), "apiKey"));
-        payload.put("secretKey", normalizeNullableText(command.secretKey()));
-        payload.put("passphrase", normalizeNullableText(command.passphrase()));
-        payload.put("privateKeyPem", normalizeNullableText(command.privateKeyPem()));
+        payload.put("apiKey", normalizeText(apiKey, "apiKey"));
+        payload.put("secretKey", normalizeNullableText(secretKey));
+        payload.put("passphrase", normalizeNullableText(passphrase));
+        payload.put("privateKeyPem", normalizeNullableText(privateKeyPem));
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException ex) {
@@ -300,6 +433,14 @@ public class ExchangeAccountCredentialCommandService {
         return normalized;
     }
 
+    private String normalizeRequiredLifecycleReason(String value) {
+        String normalized = normalizeLifecycleReason(value);
+        if (normalized == null) {
+            throw new IllegalArgumentException("reason must not be blank");
+        }
+        return normalized;
+    }
+
     private String normalizeLifecycleReason(String value) {
         String normalized = normalizeNullableText(value);
         if (normalized == null) {
@@ -323,6 +464,27 @@ public class ExchangeAccountCredentialCommandService {
             throw new IllegalArgumentException("reason must not contain sensitive credential material");
         }
         return normalized;
+    }
+
+    private String rotateMetadata(
+            String credentialStatus,
+            Long oldCredentialId,
+            Long newCredentialId,
+            String credentialType,
+            boolean reasonPresent
+    ) {
+        ObjectNode metadata = objectMapper.createObjectNode();
+        metadata.put("credentialStatus", credentialStatus);
+        metadata.put("source", "credential_rotate_command");
+        metadata.put("oldCredentialId", oldCredentialId);
+        metadata.put("newCredentialId", newCredentialId);
+        metadata.put("credentialType", credentialType);
+        metadata.put("reasonPresent", reasonPresent);
+        try {
+            return objectMapper.writeValueAsString(metadata);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("failed to serialize credential rotate audit metadata", ex);
+        }
     }
 
     private String lifecycleMetadata(String targetStatus) {

@@ -33,6 +33,18 @@ public interface ExchangeAccountCredentialRepository {
             Long credentialId
     );
 
+    /**
+     * 按 account + credentialId 锁定当前 ACTIVE credential。
+     *
+     * <p>Why: 显式 rotate 要在一个事务里先锁住旧 active 版本，再完成旧版本 ROTATED、
+     * 新版本 ACTIVE 和 audit log 写入，避免并发 rotate 留下双 active 或半成品审计。</p>
+     */
+    Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId
+    );
+
     void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt);
 
     ExchangeAccountCredentialSummary insertNewVersion(
@@ -69,6 +81,19 @@ public interface ExchangeAccountCredentialRepository {
             String revokedBy,
             String revokeReason,
             Instant updatedAt
+    );
+
+    /**
+     * 把旧 ACTIVE credential 标记为 ROTATED，不删除历史记录。
+     *
+     * <p>Why: rotate 与 revoke 语义不同，ROTATED 只说明被新版本替换，
+     * 需要写 rotated_at / rotated_by，但不得写 revoke_reason 或 hard delete。</p>
+     */
+    boolean markRotated(
+            Long credentialId,
+            Long exchangeAccountId,
+            String rotatedBy,
+            Instant rotatedAt
     );
 
     /**

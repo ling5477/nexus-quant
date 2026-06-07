@@ -2,14 +2,14 @@
 
 任务：NQ-DB-SCHEMA-GOVERNANCE-BATCH-5A-CREDENTIAL-REVOCATION-REVIEW
 日期：2026-06-07
-状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed；Batch 5-D-A rotate review completed。
+状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed；Batch 5-D-A rotate review completed；Batch 5-D-B explicit rotate command implemented。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. 目标
 
 本计划把 credential revocation 从泛化 DB schema governance 中拆为独立治理链路，避免把凭证撤销、账户禁用、轮换、过期、权限校验和审计日志混成一个状态字段。
 
-本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理、Batch 5-C 最小 code/API/test 接入和 Batch 5-D-A rotate 只读审计；未完成 rotate endpoint、enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
+本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理、Batch 5-C 最小 code/API/test 接入、Batch 5-D-A rotate 只读审计和 Batch 5-D-B 显式 rotate command；未完成 enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
 
 ## 2. 固定边界
 
@@ -141,13 +141,16 @@
 - rotate 目前仍不是显式 command，没有 rotate endpoint，也没有 `ROTATED` / `CREATED` audit log。
 - V12 partial unique index 只保证同一 `exchange_account_id + credential_type` 一个 `is_active=true`，active material 查询不带 credential type 时仍需后续代码层冲突检测或单独 schema 约束决策。
 
-Batch 5-D-B 可开工条件：
+Batch 5-D-B 落地事实：
 
-- 只做显式 rotate endpoint、Service 事务语义、Repository 最小方法和测试。
-- rotate 必须要求 reason，actor 必须从认证主体解析。
-- rotate 只能从 `ACTIVE` 派生，禁止从 `REVOKED / DISABLED / EXPIRED / ROTATED` 派生。
-- 同一事务必须完成新 credential 创建、旧 credential 标记 `ROTATED`、旧 credential `ROTATED` audit log、新 credential `CREATED` audit log。
-- 不做真实交易所权限探活，不新增 enable endpoint，不接 AI、DH、LIVE 或真实交易路径，不输出 secret。
+- 已新增显式 `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/rotate` endpoint。
+- rotate 请求体不接收 `credentialType`；`credentialType` 从旧 ACTIVE credential 派生，避免通过 rotate 任意切换凭证类型。
+- rotate 必须要求 reason，actor 从认证主体解析；缺失认证主体时仍由 API 鉴权返回 unauthorized，Service 内部保留 `system` fallback 仅用于非 Web 调用保护。
+- rotate 只允许从 `credential_status='ACTIVE' AND is_active=true` 派生；`REVOKED / DISABLED / EXPIRED / ROTATED` 派生 rotate 返回状态冲突。
+- 单事务内完成旧 ACTIVE credential 锁定、旧 credential 标记 `ROTATED`、新 credential 创建为 `ACTIVE`、旧 credential `ROTATED` audit log、新 credential `CREATED` audit log。由于 V12 partial unique index 已保证同 account + credential type 仅一个 `is_active=true`，物理 SQL 顺序先标记旧 credential inactive 再插入新 active；任一步失败由事务回滚，避免成功响应留下无 active。
+- rotate 后 active material 查询只返回新 `ACTIVE` credential；旧 credential 不可恢复。
+- audit metadata 只保存 old/new credentialId、credentialType、credentialStatus、source 和 reasonPresent；不保存 secret、token、private key、passphrase、明文 payload 或交易所凭证。
+- 本批未新增 migration，未修改历史 migration，未新增 enable endpoint，未做真实交易所权限探活，未接 AI、DH、LIVE 或真实交易路径，未修改前端、Python 或部署脚本。
 
 ## 7. 后续安全审计重点
 

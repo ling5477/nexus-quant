@@ -29,17 +29,21 @@ class JdbcExchangeAccountCredentialRepositoryTest {
         assertEquals(Optional.of(summary), repository.findActiveSummary(1L, 900001L));
         assertEquals(Optional.of(summary), repository.findActiveByAccountAndType(900001L, "OKX_API_V5"));
         assertEquals(Optional.of(summary), repository.findByCredentialIdForOwner(1L, 900001L, 1L));
+        assertEquals(Optional.of(summary), repository.findActiveByCredentialIdForOwnerForUpdate(1L, 900001L, 1L));
         assertEquals(Optional.of(material), repository.findActiveMaterial(1L, 900001L));
         assertEquals(summary, repository.insertNewVersion(900001L, "OKX_API_V5", "{}", 1, "PGP_SYM_AES256", "tes***ey", null, Instant.parse("2026-04-06T00:01:00Z")));
         repository.deactivateActiveByAccountAndType(900001L, "OKX_API_V5", Instant.parse("2026-04-06T00:02:00Z"));
         assertTrue(repository.markVerificationResult(1L, "VERIFIED", Instant.parse("2026-04-06T00:03:00Z"), null, Instant.parse("2026-04-06T00:03:00Z")));
         assertTrue(repository.updateLifecycleStatus(1L, 900001L, "REVOKED", false, Instant.parse("2026-04-06T00:04:00Z"), "admin", "offboarded", Instant.parse("2026-04-06T00:04:00Z")));
+        assertTrue(repository.markRotated(1L, 900001L, "admin", Instant.parse("2026-04-06T00:05:00Z")));
         repository.appendCredentialAuditLog(1L, 900001L, "REVOKED", "admin", "offboarded", "{\"credentialStatus\":\"REVOKED\"}", Instant.parse("2026-04-06T00:04:00Z"));
 
         assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("pgp_sym_decrypt")));
         assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("credential_status = 'ACTIVE'")));
+        assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("FOR UPDATE")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = 'ROTATED'")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = ?")));
+        assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("rotated_by = ?")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("INSERT INTO credential_audit_logs")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("CAST(? AS jsonb)")));
         assertTrue(jdbcTemplate.queryForObjectSql.contains("pgp_sym_encrypt"));

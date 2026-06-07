@@ -2,6 +2,61 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Rotate Command Batch 5-D-B
+
+日期：2026-06-07
+
+### 本轮目标
+
+实现显式 credential rotate command。rotate 只允许从旧 ACTIVE credential 派生，在单事务内完成旧 credential 锁定、旧 credential 标记 `ROTATED`、新 credential 创建为 `ACTIVE`、旧 `ROTATED` audit log 与新 `CREATED` audit log 写入；不新增 migration，不实现 enable endpoint，不做真实交易所权限探活，不输出 secret。
+
+### 修改文件
+
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandService.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/command/ExchangeAccountCredentialRotateCommand.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/port/ExchangeAccountCredentialRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepository.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/dto/ExchangeAccountCredentialRotateRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandServiceTest.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialVerificationServiceTest.java`
+- `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepositoryTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialControllerWebMvcTest.java`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_CHANGE + DOCUMENTATION`；主 skill 为 `java-backend-maintenance`；辅助 `db-schema-migration-review` 仅用于确认 V29 schema 与 Batch 5-D-A rotate review，结论为无需新增 migration。
+- 新增 `ExchangeAccountCredentialRotateCommand` 和 `ExchangeAccountCredentialRotateRequestBody`；请求体只包含新 credential material 与必填 reason，`credentialType` 从旧 ACTIVE credential 派生。
+- Repository 新增 `findActiveByCredentialIdForOwnerForUpdate` 和 `markRotated`；JDBC 使用 `FOR UPDATE` 锁定旧 ACTIVE credential，并写入 `rotated_at / rotated_by`。
+- Service 新增 `rotate` 事务方法：校验账户归属、校验旧 credential ACTIVE、拒绝非 ACTIVE 状态、校验新 material、要求 reason、旧 credential 标记 `ROTATED`、新 credential 创建 `ACTIVE`，并追加旧 `ROTATED` / 新 `CREATED` audit log。
+- 受 V12 partial unique index 约束，物理 SQL 顺序先把旧 credential 标记 inactive 再插入新 active；任一步失败由事务回滚，避免成功响应留下无 active 或半成品 audit。
+- Controller 新增 `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/rotate`，响应仍只返回 `ExchangeAccountCredentialSummaryResponse` 非敏感摘要。
+- 测试新增/更新 rotate 成功、旧 ROTATED、新 ACTIVE、old/new audit log、active material 只返回新 credential、非 ACTIVE 派生拒绝、reason 缺失/敏感词拒绝、重复 rotate 旧 credential 拒绝、API response 脱敏、未新增 enable 方法、JDBC `FOR UPDATE` / `rotated_by` 路径。
+
+### 验证记录
+
+- 初次执行 `mvn -f backend/pom.xml test` 在 `nq-api` 失败，原因是测试用 standalone MockMvc 断言未映射 `/enable` 返回 404，但该测试配置会把 no-handler 场景落到通用 500；已改为反射检查 Controller 未声明 `enable` 方法。
+- 修复测试后已执行 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改前端、Python 或部署脚本。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未新增 enable endpoint。
+- 未调用真实交易所，未做真实交易所权限探活。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未把 GateK-PLAN 写成 GateK implementation started，也未把 credential lifecycle 写成全部完成。
+
+---
+
 ## DB Schema Credential Rotate Governance Review Batch 5-D-A
 
 日期：2026-06-07
