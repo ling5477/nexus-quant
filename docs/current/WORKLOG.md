@@ -2,6 +2,51 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Enable Governance Review Batch 5-F-A
+
+日期：2026-06-07
+
+### 本轮目标
+
+只读审计 credential enable / re-enable 生命周期设计，确认是否允许从 `DISABLED` 恢复为 `ACTIVE`，以及 enable 需要哪些前置校验、冲突检测、audit log 和测试。本轮只写 `docs/current` 文档，不新增 migration，不修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/README.md`
+- `README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_ANALYSIS + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读确认 credential lifecycle / active selection / revoke-disable-expire-rotate 路径。
+- 只读确认 V12 active partial unique index 约束同一 account + credentialType active 唯一。
+- 只读确认 V29 `credential_status` 允许 `ACTIVE / DISABLED / REVOKED / EXPIRED / ROTATED`，但 `credential_audit_logs.event_type` 不包含 `ENABLED`。
+- 只读确认 Batch 5-C `revoke / disable / expire` 都会让 credential 退出 active material，且 `REVOKED / ROTATED` 当前具备不可恢复语义。
+- 只读确认 Batch 5-D-B rotate 只从 ACTIVE 派生，旧 credential 标记 `ROTATED`，新 credential 创建 `ACTIVE`，并写 `ROTATED / CREATED` audit log。
+- 只读确认 Batch 5-E-B active material deterministic selection 已避免多 ACTIVE type 静默选择。
+- 输出 enable 建议：当前不实现；后续只允许 `DISABLED` 严格恢复，`REVOKED / ROTATED` 永久不可恢复，`EXPIRED` 默认走 rotate。
+- 输出 Batch 5-F-B 建议：先做 schema-only migration 增加 `ENABLED` audit event；不应复用 `VERIFIED / USED / CREATED`。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行工作树范围检查：本轮只修改文档和 README 索引。
+- 已执行 migration diff 范围检查：本轮未新增 migration，未修改历史 migration。
+- 后端/前端/Python 全量测试未执行：本轮只做 code analysis + documentation，未修改业务代码、API、migration、前端、Python 或部署脚本。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改 Java / Repository / Service / Controller / DTO / API / 前端 / Python / 部署脚本。
+- 未新增 enable endpoint，未把本轮审计写成 enable 已实现。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未调用真实交易所，未做真实交易所权限探活。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未把 GateK-PLAN 写成实现已启动。
+
 ## DB Schema Credential Active Credential Uniqueness Review Batch 5-E-C
 
 日期：2026-06-07
@@ -92,7 +137,7 @@
 - 未调用真实交易所，未新增真实下单、撤单或真实交易路径。
 - 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
 - 未把 secret 写入 audit metadata，API response 不包含 encrypted/decrypted payload、secret、token、private key 或 passphrase。
-- 未接 AI、DH、LIVE，未把 GateK-PLAN 写成 GateK implementation started。
+- 未接 AI、DH、LIVE，未把 GateK-PLAN 写成实现已启动。
 
 ## DB Schema Credential Active Material Selection Review Batch 5-E-A
 
@@ -134,7 +179,7 @@
 - 未新增 enable endpoint。
 - 未调用真实交易所，未做真实交易所权限探活。
 - 未接 AI、DH、LIVE 或真实交易。
-- 未把 GateK-PLAN 写成 GateK implementation started。
+- 未把 GateK-PLAN 写成实现已启动。
 
 ## DB Schema Credential Rotate Command Batch 5-D-B
 
@@ -187,7 +232,7 @@
 - 未新增 enable endpoint。
 - 未调用真实交易所，未做真实交易所权限探活。
 - 未接 AI、DH、LIVE 或真实交易。
-- 未把 GateK-PLAN 写成 GateK implementation started，也未把 credential lifecycle 写成全部完成。
+- 未把 GateK-PLAN 写成实现已启动，也未把 credential lifecycle 写成全部完成。
 
 ---
 

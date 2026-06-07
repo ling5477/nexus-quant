@@ -2,14 +2,14 @@
 
 任务：NQ-DB-SCHEMA-GOVERNANCE-BATCH-5A-CREDENTIAL-REVOCATION-REVIEW
 日期：2026-06-07
-状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed；Batch 5-D-A rotate review completed；Batch 5-D-B explicit rotate command implemented；Batch 5-E-A active material selection review completed；Batch 5-E-B deterministic active material selection implemented；Batch 5-E-C active credential uniqueness review completed。
+状态：Batch 5-A review completed；Batch 5-B schema completed；Batch 5-C code/API/test completed；Batch 5-D-A rotate review completed；Batch 5-D-B explicit rotate command implemented；Batch 5-E-A active material selection review completed；Batch 5-E-B deterministic active material selection implemented；Batch 5-E-C active credential uniqueness review completed；Batch 5-F-A enable governance review completed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. 目标
 
 本计划把 credential revocation 从泛化 DB schema governance 中拆为独立治理链路，避免把凭证撤销、账户禁用、轮换、过期、权限校验和审计日志混成一个状态字段。
 
-本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理、Batch 5-C 最小 code/API/test 接入、Batch 5-D-A rotate 只读审计、Batch 5-D-B 显式 rotate command、Batch 5-E-A active material selection 只读审计、Batch 5-E-B deterministic active material selection code/API/test 接入和 Batch 5-E-C active credential uniqueness 只读审计；未完成 enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
+本计划记录 credential revocation governance 的分批落地事实。当前已完成 Batch 5-A 只读审计、Batch 5-B schema-only 治理、Batch 5-C 最小 code/API/test 接入、Batch 5-D-A rotate 只读审计、Batch 5-D-B 显式 rotate command、Batch 5-E-A active material selection 只读审计、Batch 5-E-B deterministic active material selection code/API/test 接入、Batch 5-E-C active credential uniqueness 只读审计和 Batch 5-F-A enable governance 只读审计；未完成 enable endpoint、真实交易所权限探活、前端接入、AI/DH/Agent 调用或 LIVE 交易能力。
 
 ## 2. 固定边界
 
@@ -218,14 +218,29 @@ Batch 5-E-C schema 约束决策：
 - 当前不需要 Batch 5-E-D migration；只有产品明确要求“一个 account 全局最多一个 ACTIVE credential”时，才单独设计数据冲突扫描、清理策略和 partial unique constraint。
 - Batch 5-F enable endpoint 应继续推迟，先做 enable 只读审计，避免 DISABLED 恢复 ACTIVE 放大多 active 候选或 stale permission 风险。
 
-## 10. 后续安全审计重点
+## 10. Batch 5-F-A：enable governance review
+
+状态：completed。本批只读审计 credential enable / re-enable 生命周期设计，新增 `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`，未修改 Java、Repository、Service、Controller、DTO、API、migration、前端、Python 或部署脚本。
+
+只读结论：
+
+- 当前没有 enable endpoint，没有 enable Service 方法，也没有 `ENABLED` audit event。
+- `DISABLED` 是唯一可考虑恢复的状态，但必须先做 owner 校验、同 account + credentialType active 冲突检测、结构性校验、actor/reason 审计和 append-only audit log。
+- `REVOKED` 不可恢复；`ROTATED` 不可恢复；`EXPIRED` 默认不恢复，优先 rotate。
+- enable 不应复用 `VERIFIED / USED / CREATED` audit event；V29 `credential_audit_logs.event_type` 当前不包含 `ENABLED`，因此实现 enable 前需要 Batch 5-F-B schema-only migration 增加 `ENABLED`。
+- enable API 推荐形态为 `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/enable`；`credentialType` 从 credentialId 对应记录派生，不建议由请求体传入。
+- enable 不做真实交易所权限探活；真实权限探活应作为后续单独任务。
+- `permission_scope=NULL` 不得当作 `TRADE`；`withdraw_enabled=false` 不阻止恢复，但不代表提现能力或 LIVE 交易。
+- Batch 5-F-B 可开工，但范围应限定为 schema-only migration；Batch 5-F-C 才允许单独实现 enable code/API/test。
+
+## 11. 后续安全审计重点
 
 - P0：真实密钥泄露、LIVE credential 被 Paper 路径误用、DH / Agent / AI 访问 credential。
 - P1：撤销语义缺失、不可恢复撤销和临时禁用混淆、API 返回敏感字段、Paper / LIVE 隔离不清。
 - P2：审计字段不足、轮换链上下文不足、权限范围记录不足、IP allowlist / withdraw disabled 证明缺失。
 - P3：注释、命名、测试 fixture 和文档措辞不清。
 
-## 11. 回滚与兼容原则
+## 12. 回滚与兼容原则
 
 - Batch 5-B 新增字段通过后续 migration 回滚或废弃，不修改历史 migration。
 - 不删除已有 credential 版本记录。
@@ -235,6 +250,6 @@ Batch 5-E-C schema 约束决策：
   - `verification_status=REVOKED` 或 `is_active=false`：按现有轮换旧版本语义回填为 `ROTATED`。
   - 其他历史异常组合保守落到 `DISABLED`，避免误判为可用凭证。
 
-## 12. 与 GateK-PLAN 的关系
+## 13. 与 GateK-PLAN 的关系
 
 Credential revocation governance 是安全和数据治理工作，不代表 GateK 实现已启动。即使 GateK-PLAN 后续规划 AI 信号接入，AI / Agent / DH 也不得访问 credential、master key、decrypted payload 或 revoke/audit API，除非未来单独安全设计、审批和验证。
