@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.research.domain.port;
 
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,27 @@ public interface ResearchConfigRepository {
     void insert(ResearchConfig researchConfig);
 
     Optional<ResearchConfig> findByResearchConfigId(String researchConfigId);
+
+    /**
+     * 把研究配置标记为归档。
+     * Why:
+     * 归档是配置生命周期命令，不是删除；Repository 只更新 V28 生命周期字段，
+     * 不触碰回测运行、评估、发布或任何事实表。已归档记录由 Service 做幂等处理。
+     *
+     * @param researchConfigId 研究配置 ID
+     * @param archivedAt 归档时间，同时作为 updated_at
+     * @param archivedBy 归档操作者标识，可空
+     * @param archiveReason 归档原因，可空，不得含敏感信息
+     * @return 是否更新到一条非 ARCHIVED 记录
+     */
+    default boolean archive(
+            String researchConfigId,
+            Instant archivedAt,
+            String archivedBy,
+            String archiveReason
+    ) {
+        return false;
+    }
 
     /**
      * 查询默认业务列表。

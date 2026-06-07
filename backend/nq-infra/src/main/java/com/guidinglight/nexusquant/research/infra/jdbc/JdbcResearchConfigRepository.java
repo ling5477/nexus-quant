@@ -73,6 +73,32 @@ public class JdbcResearchConfigRepository implements ResearchConfigRepository {
     }
 
     @Override
+    public boolean archive(
+            String researchConfigId,
+            Instant archivedAt,
+            String archivedBy,
+            String archiveReason
+    ) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE research_configs
+                        SET status = 'ARCHIVED',
+                            archived_at = ?,
+                            archived_by = ?,
+                            archive_reason = ?,
+                            updated_at = ?
+                        WHERE research_config_id = ?
+                          AND status <> 'ARCHIVED'
+                        """,
+                Timestamp.from(archivedAt),
+                archivedBy,
+                archiveReason,
+                Timestamp.from(archivedAt),
+                researchConfigId
+        ) > 0;
+    }
+
+    @Override
     public List<ResearchConfig> listAll() {
         return jdbcTemplate.query(
                 BASE_SELECT + " WHERE status <> 'ARCHIVED' ORDER BY created_at DESC, research_config_id DESC",

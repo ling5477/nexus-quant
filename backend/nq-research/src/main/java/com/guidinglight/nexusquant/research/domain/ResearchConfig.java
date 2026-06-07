@@ -98,6 +98,36 @@ public record ResearchConfig(
         return STATUS_ARCHIVED.equals(status);
     }
 
+    /**
+     * 构造归档后的研究配置快照。
+     * Why:
+     * Archive command 必须保持配置本身可追溯，只改变生命周期元数据；
+     * 这个方法让 in-memory 测试仓储和未来读模型更新复用同一份字段拷贝语义。
+     *
+     * @param archivedAt 归档时间，必须非空
+     * @param archivedBy 归档操作者标识，可空但通常由 API 层解析当前用户
+     * @param archiveReason 归档原因，可空，不得包含敏感信息
+     * @return status 为 ARCHIVED 的研究配置快照
+     */
+    public ResearchConfig archive(Instant archivedAt, String archivedBy, String archiveReason) {
+        return new ResearchConfig(
+                researchConfigId,
+                sourceStrategyId,
+                strategySnapshot,
+                name,
+                description,
+                parameterSchema,
+                parameterDefaults,
+                datasetSpec,
+                createdAt,
+                archivedAt,
+                STATUS_ARCHIVED,
+                archivedAt,
+                archivedBy,
+                archiveReason
+        );
+    }
+
     private static String normalizeStatus(String value) {
         String normalized = value == null || value.isBlank()
                 ? STATUS_ACTIVE

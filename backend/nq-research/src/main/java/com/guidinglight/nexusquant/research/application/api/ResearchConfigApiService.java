@@ -77,6 +77,29 @@ public class ResearchConfigApiService {
         return researchConfigService.list(sourceStrategyId);
     }
 
+    /**
+     * 归档研究配置。
+     *
+     * @param researchConfigId 研究配置 ID
+     * @param archivedBy 归档操作者标识，由 API 层解析当前用户，缺失时为 system
+     * @param archiveReason 归档原因，可空
+     * @return 归档后的研究配置详情
+     */
+    public ResearchConfig archive(String researchConfigId, String archivedBy, String archiveReason) {
+        try {
+            return researchConfigService.archive(researchConfigId, archivedBy, archiveReason);
+        } catch (IllegalArgumentException ex) {
+            if (isNotFound(ex)) {
+                throw toNotFound(ex);
+            }
+            throw ex;
+        }
+    }
+
+    private boolean isNotFound(IllegalArgumentException ex) {
+        return ex.getMessage() != null && ex.getMessage().contains("not found");
+    }
+
     private ResponseStatusException toNotFound(IllegalArgumentException ex) {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
     }

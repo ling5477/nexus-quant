@@ -81,6 +81,32 @@ public class JdbcBacktestConfigRepository implements BacktestConfigRepository {
     }
 
     @Override
+    public boolean archive(
+            String backtestConfigId,
+            Instant archivedAt,
+            String archivedBy,
+            String archiveReason
+    ) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE backtest_configs
+                        SET status = 'ARCHIVED',
+                            archived_at = ?,
+                            archived_by = ?,
+                            archive_reason = ?,
+                            updated_at = ?
+                        WHERE backtest_config_id = ?
+                          AND status <> 'ARCHIVED'
+                        """,
+                Timestamp.from(archivedAt),
+                archivedBy,
+                archiveReason,
+                Timestamp.from(archivedAt),
+                backtestConfigId
+        ) > 0;
+    }
+
+    @Override
     public List<BacktestConfig> listAll() {
         return jdbcTemplate.query(
                 BASE_SELECT + " WHERE status <> 'ARCHIVED' ORDER BY created_at DESC, backtest_config_id DESC",

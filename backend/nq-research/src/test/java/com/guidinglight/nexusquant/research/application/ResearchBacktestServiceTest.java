@@ -345,6 +345,119 @@ class ResearchBacktestServiceTest {
         )));
     }
 
+    @Test
+    void shouldArchiveConfigsAndKeepHistoricalRunTraceability() {
+        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
+        InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
+        InMemoryBacktestRunRepository backtestRunRepository = new InMemoryBacktestRunRepository();
+        ResearchConfigService researchConfigService = new ResearchConfigService(
+                researchConfigRepository,
+                new StubSourceStrategySnapshotRepository(),
+                objectMapper,
+                fixedClock
+        );
+        BacktestConfigService backtestConfigService = new BacktestConfigService(
+                backtestConfigRepository,
+                researchConfigService,
+                objectMapper,
+                fixedClock
+        );
+        BacktestRunService backtestRunService = new BacktestRunService(
+                backtestRunRepository,
+                backtestConfigService,
+                researchConfigService,
+                fixedClock
+        );
+
+        ResearchConfig researchConfig = researchConfigService.create(new ResearchConfigCreateRequest(
+                "str-demo-1",
+                "Archive Research",
+                null,
+                "{}",
+                "{}",
+                "{}"
+        ));
+        BacktestConfig backtestConfig = backtestConfigService.create(new BacktestConfigCreateRequest(
+                researchConfig.researchConfigId(),
+                "Archive Backtest",
+                null,
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-31T00:00:00Z"),
+                new BigDecimal("100000"),
+                "{}",
+                "{}"
+        ));
+        BacktestRun historicalRun = backtestRunService.create(new BacktestRunStartRequest(
+                backtestConfig.backtestConfigId()
+        ));
+
+        BacktestConfig archivedBacktest = backtestConfigService.archive(
+                backtestConfig.backtestConfigId(),
+                "operator-1",
+                "retired after benchmark update"
+        );
+        BacktestConfig repeatedBacktestArchive = backtestConfigService.archive(
+                backtestConfig.backtestConfigId(),
+                "operator-2",
+                "second archive should be idempotent"
+        );
+        ResearchConfig archivedResearch = researchConfigService.archive(
+                researchConfig.researchConfigId(),
+                "operator-1",
+                "retired after benchmark update"
+        );
+
+        assertEquals(BacktestConfig.STATUS_ARCHIVED, archivedBacktest.status());
+        assertEquals(fixedClock.instant(), archivedBacktest.archivedAt());
+        assertEquals("operator-1", archivedBacktest.archivedBy());
+        assertEquals("retired after benchmark update", archivedBacktest.archiveReason());
+        assertEquals(archivedBacktest.archivedBy(), repeatedBacktestArchive.archivedBy());
+        assertEquals(archivedBacktest.archiveReason(), repeatedBacktestArchive.archiveReason());
+        assertEquals(ResearchConfig.STATUS_ARCHIVED, archivedResearch.status());
+        assertFalse(backtestConfigService.list(null).stream()
+                .anyMatch(item -> item.backtestConfigId().equals(backtestConfig.backtestConfigId())));
+        assertFalse(researchConfigService.listAll().stream()
+                .anyMatch(item -> item.researchConfigId().equals(researchConfig.researchConfigId())));
+        assertEquals(
+                backtestConfig.backtestConfigId(),
+                backtestConfigService.getByBacktestConfigId(backtestConfig.backtestConfigId()).backtestConfigId()
+        );
+        assertEquals(
+                researchConfig.researchConfigId(),
+                researchConfigService.getByResearchConfigId(researchConfig.researchConfigId()).researchConfigId()
+        );
+        assertEquals(historicalRun.backtestRunId(), backtestRunService.getByBacktestRunId(
+                historicalRun.backtestRunId()
+        ).backtestRunId());
+        assertThrows(IllegalStateException.class, () -> backtestRunService.create(new BacktestRunStartRequest(
+                backtestConfig.backtestConfigId()
+        )));
+    }
+
+    @Test
+    void shouldRejectSensitiveArchiveReason() {
+        ResearchConfigService researchConfigService = new ResearchConfigService(
+                new InMemoryResearchConfigRepository(),
+                new StubSourceStrategySnapshotRepository(),
+                objectMapper,
+                fixedClock
+        );
+        ResearchConfig researchConfig = researchConfigService.create(new ResearchConfigCreateRequest(
+                "str-demo-1",
+                "Sensitive Reason Research",
+                null,
+                "{}",
+                "{}",
+                "{}"
+        ));
+
+        assertThrows(IllegalArgumentException.class, () -> researchConfigService.archive(
+                researchConfig.researchConfigId(),
+                "operator-1",
+                "contains api secret"
+        ));
+    }
+
     private static final class InMemoryResearchConfigRepository implements ResearchConfigRepository {
 
         private final Map<String, ResearchConfig> storage = new LinkedHashMap<>();
@@ -357,6 +470,16 @@ class ResearchBacktestServiceTest {
         @Override
         public Optional<ResearchConfig> findByResearchConfigId(String researchConfigId) {
             return Optional.ofNullable(storage.get(researchConfigId));
+        }
+
+        @Override
+        public boolean archive(String researchConfigId, Instant archivedAt, String archivedBy, String archiveReason) {
+            ResearchConfig current = storage.get(researchConfigId);
+            if (current == null || current.isArchived()) {
+                return false;
+            }
+            storage.put(researchConfigId, current.archive(archivedAt, archivedBy, archiveReason));
+            return true;
         }
 
         @Override
@@ -384,6 +507,16 @@ class ResearchBacktestServiceTest {
         @Override
         public Optional<BacktestConfig> findByBacktestConfigId(String backtestConfigId) {
             return Optional.ofNullable(storage.get(backtestConfigId));
+        }
+
+        @Override
+        public boolean archive(String backtestConfigId, Instant archivedAt, String archivedBy, String archiveReason) {
+            BacktestConfig current = storage.get(backtestConfigId);
+            if (current == null || current.isArchived()) {
+                return false;
+            }
+            storage.put(backtestConfigId, current.archive(archivedAt, archivedBy, archiveReason));
+            return true;
         }
 
         @Override

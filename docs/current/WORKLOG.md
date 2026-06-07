@@ -2,6 +2,66 @@
 
 日期：2026-05-16
 
+## DB Schema Research Backtest Archive Commands Batch 4-B
+
+日期：2026-06-07
+
+### 本轮目标
+
+为 `research_configs`、`backtest_configs` 增加受控归档命令语义，使系统可以显式把配置标记为 `ARCHIVED`，并记录 `archived_at / archived_by / archive_reason / updated_at`。归档后默认列表隐藏，按 ID 详情仍可读取，历史 run / evaluation / publish 追溯不被破坏。本轮不新增 migration，不修改历史 migration，不新增前端 / Python / 部署，不接入 AI、DH、LIVE 或真实交易路径。
+
+### 修改文件
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/dto/ConfigArchiveRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/ResearchConfigController.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/BacktestConfigController.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/ResearchConfigService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/config/BacktestConfigService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/api/ResearchConfigApiService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/api/backtest/BacktestConfigApiService.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/ResearchConfig.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/BacktestConfig.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/port/ResearchConfigRepository.java`
+- `backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/port/BacktestConfigRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/jdbc/JdbcResearchConfigRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/research/infra/backtest/jdbc/JdbcBacktestConfigRepository.java`
+- `backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/ResearchBacktestServiceTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/ResearchConfigControllerTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/BacktestConfigControllerTest.java`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/DB_SCHEMA_GOVERNANCE_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 执行内容
+
+- 确认 V28 已提供 `status/archived_at/archived_by/archive_reason` 字段与归档一致性 CHECK，Batch 4-A 已实现默认列表过滤和新运行状态闸门；本轮未发现需要新增 migration 的 schema blocker。
+- Repository 新增 `archive(...)` 命令，只更新两张配置表自身的 V28 生命周期字段，不触碰回测事实、评估、发布、Paper facts 或行情时序表。
+- Service 新增归档命令：未归档配置写入 `ARCHIVED`、`archived_at`、`archived_by`、`archive_reason` 和 `updated_at`；已归档配置重复归档幂等返回当前详情。
+- API 新增 `POST /api/research-configs/{configId}/archive` 与 `POST /api/backtest-configs/{configId}/archive`；请求体只允许 `archiveReason`，`archived_by` 由服务端认证主体解析，缺失时使用 `system`。
+- 应用层限制 `archiveReason` 长度并拒绝明显包含密钥、token、API secret、私钥、助记词等敏感材料的原因文本。
+- 新增/修改后端测试覆盖归档后默认列表隐藏、ID 可读、历史 run 仍可读、重复归档幂等和 API endpoint 响应。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+- 已执行禁止范围和阶段措辞扫描：未新增/修改 migration；新增代码未处理 credentials、positions、risk_events、订单、成交、账本、审计、事件、Paper facts、Backtest facts、评估结果、发布记录或 marketdata timeseries；文档命中均为负面边界或历史说明；未误写 GateK / AI / DH / LIVE 启动状态。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未处理凭证、持仓、风控事件、订单、成交、账本、审计、事件、Paper facts、Backtest facts、评估结果、发布记录或 marketdata timeseries。
+- 未实现逻辑删除、物理删除或 retention purge。
+- 未新增 includeArchived HTTP 查询参数。
+- 未修改前端、Python 或部署脚本。
+- 未接入 AI、DH 或真实交易。
+- 未开启 LIVE trading。
+- 未读取或提交 credentials、API key、exchange secret、tenant data、token、cookie、生产 `.env`。
+
+---
+
 ## DB Schema Research Backtest Archive Semantics Batch 4-A
 
 日期：2026-06-07

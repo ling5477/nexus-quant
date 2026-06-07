@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.api.web;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,6 +24,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -38,6 +41,7 @@ class ResearchConfigControllerTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.clearContext();
         applicationService = mock(ResearchConfigApiService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new ResearchConfigController(applicationService))
                 .addFilters(new TestTraceIdFilter())
@@ -90,6 +94,38 @@ class ResearchConfigControllerTest {
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-research-empty"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void shouldArchiveResearchConfig() throws Exception {
+        ResearchConfig archived = new ResearchConfig(
+                "rcf-1",
+                "str-1",
+                "{\"strategyType\":\"BUY_AND_HOLD_FIXTURE\"}",
+                "Demo Research",
+                "用于联调归档命令",
+                "{}",
+                "{}",
+                "{}",
+                Instant.parse("2026-03-20T00:00:00Z"),
+                Instant.parse("2026-03-22T00:00:00Z"),
+                ResearchConfig.STATUS_ARCHIVED,
+                Instant.parse("2026-03-22T00:00:00Z"),
+                "system",
+                "retired from default list"
+        );
+        when(applicationService.archive("rcf-1", "system", "retired from default list"))
+                .thenReturn(archived);
+
+        mockMvc.perform(post("/api/research-configs/rcf-1/archive")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"archiveReason\":\"retired from default list\"}")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-research-archive"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.researchConfigId").value("rcf-1"))
+                .andExpect(jsonPath("$.status").value("ARCHIVED"))
+                .andExpect(jsonPath("$.archivedBy").value("system"))
+                .andExpect(jsonPath("$.archiveReason").value("retired from default list"));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.research.api.web;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.research.application.api.ResearchConfigApiService;
+import com.guidinglight.nexusquant.research.api.dto.ConfigArchiveRequestBody;
 import com.guidinglight.nexusquant.research.api.dto.ResearchConfigCreateRequestBody;
 import com.guidinglight.nexusquant.research.api.dto.ResearchConfigResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Objects;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -110,6 +113,44 @@ public class ResearchConfigController {
                 request.parameterDefaults(),
                 request.datasetSpec()
         ));
+    }
+
+    /**
+     * 归档研究配置。
+     * Why:
+     * archive 是配置生命周期命令，不是删除；Controller 只传递归档原因和服务端解析出的操作者，
+     * 不提供 includeArchived 查询参数，也不允许调用方伪造 archived_by。
+     */
+    @PostMapping("/{configId}/archive")
+    @Operation(summary = "归档研究配置", description = "将研究配置标记为 ARCHIVED；默认列表将隐藏该配置，详情仍可读取。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "归档成功或已归档"),
+            @ApiResponse(responseCode = "400", description = "请求参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "研究配置不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "归档状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResearchConfigResponse archive(
+            @PathVariable
+            @NotBlank(message = "configId must not be blank")
+            String configId,
+            @Valid @RequestBody(required = false) ConfigArchiveRequestBody request
+    ) {
+        TraceIdContext.getOrCreate();
+        String archiveReason = request == null ? null : request.archiveReason();
+        return ResearchConfigResponse.from(applicationService.archive(
+                configId,
+                currentActor(),
+                archiveReason
+        ));
+    }
+
+    private String currentActor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "system";
+        }
+        String name = authentication.getName();
+        return name == null || name.isBlank() ? "system" : name.trim();
     }
 }
 

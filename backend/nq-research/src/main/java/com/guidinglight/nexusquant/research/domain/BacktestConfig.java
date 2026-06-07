@@ -207,6 +207,44 @@ public record BacktestConfig(
         return STATUS_ARCHIVED.equals(status);
     }
 
+    /**
+     * 构造归档后的回测配置快照。
+     * Why:
+     * Archive command 只能更新配置生命周期元数据，不能改写 dataset、strategy version、
+     * 参数快照或其他回测输入血缘；这个方法把字段拷贝边界集中到 domain。
+     *
+     * @param archivedAt 归档时间，必须非空
+     * @param archivedBy 归档操作者标识，可空但通常由 API 层解析当前用户
+     * @param archiveReason 归档原因，可空，不得包含敏感信息
+     * @return status 为 ARCHIVED 的回测配置快照
+     */
+    public BacktestConfig archive(Instant archivedAt, String archivedBy, String archiveReason) {
+        return new BacktestConfig(
+                backtestConfigId,
+                researchConfigId,
+                name,
+                description,
+                startTime,
+                endTime,
+                initialCapital,
+                executionSpec,
+                evaluationSpec,
+                strategyVersionId,
+                strategyVersionSnapshotJson,
+                paramSnapshotJson,
+                configSnapshotJson,
+                datasetId,
+                datasetSnapshotJson,
+                configSnapshot,
+                createdAt,
+                archivedAt,
+                STATUS_ARCHIVED,
+                archivedAt,
+                archivedBy,
+                archiveReason
+        );
+    }
+
     private static String normalizeStatus(String value) {
         String normalized = value == null || value.isBlank()
                 ? STATUS_ACTIVE

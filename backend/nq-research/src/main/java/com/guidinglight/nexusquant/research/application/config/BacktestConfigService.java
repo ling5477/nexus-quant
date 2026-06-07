@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -140,6 +141,43 @@ public class BacktestConfigService {
 
     public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
         return list(requireText(researchConfigId, "researchConfigId"));
+    }
+
+    /**
+     * 归档回测配置。
+     * Why:
+     * archive 是显式配置生命周期命令，不是删除。归档后默认列表隐藏该配置，
+     * 但按 ID 查询和历史 run/evaluation/publish 追溯仍必须可读。重复归档保持幂等，
+     * 不覆盖首次归档时间、操作者或原因。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @param archivedBy 归档操作者标识，空值归一为 `system`
+     * @param archiveReason 归档原因，可空，不得包含密钥、token 等敏感信息
+     * @return 归档后的回测配置详情
+     */
+    public BacktestConfig archive(String backtestConfigId, String archivedBy, String archiveReason) {
+        String normalizedId = requireText(backtestConfigId, "backtestConfigId");
+        String normalizedActor = normalizeArchiveActor(archivedBy);
+        String normalizedReason = normalizeArchiveReason(archiveReason);
+        BacktestConfig current = getByBacktestConfigId(normalizedId);
+        if (current.isArchived()) {
+            return current;
+        }
+        Instant now = Instant.now(clock);
+        boolean updated = backtestConfigRepository.archive(
+                normalizedId,
+                now,
+                normalizedActor,
+                normalizedReason
+        );
+        if (!updated) {
+            BacktestConfig latest = getByBacktestConfigId(normalizedId);
+            if (latest.isArchived()) {
+                return latest;
+            }
+            throw new IllegalStateException("backtest config archive failed: " + normalizedId);
+        }
+        return getByBacktestConfigId(normalizedId);
     }
 
     /**
@@ -272,6 +310,38 @@ public class BacktestConfigService {
 
     private String normalizeOptionalText(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String normalizeArchiveActor(String value) {
+        String normalized = value == null || value.isBlank() ? "system" : value.trim();
+        if (normalized.length() > 128) {
+            throw new IllegalArgumentException("archivedBy length must be less than or equal to 128");
+        }
+        return normalized;
+    }
+
+    private String normalizeArchiveReason(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() > 1024) {
+            throw new IllegalArgumentException("archiveReason length must be less than or equal to 1024");
+        }
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        if (lower.contains("token")
+                || lower.contains("api secret")
+                || lower.contains("api_secret")
+                || lower.contains("private key")
+                || lower.contains("password")
+                || lower.contains("secret")
+                || lower.contains("mnemonic")
+                || normalized.contains("私钥")
+                || normalized.contains("密钥")
+                || normalized.contains("助记词")) {
+            throw new IllegalArgumentException("archiveReason must not contain sensitive credential material");
+        }
+        return normalized;
     }
 
     private String requireText(String value, String fieldName) {

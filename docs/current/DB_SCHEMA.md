@@ -38,7 +38,7 @@
 
 ## Research / Backtest Config Archive Semantics
 
-Batch 4-A 已接管 V28 新增的 `research_configs` / `backtest_configs` 生命周期字段，但未新增 migration、未新增归档业务 API，也未实现物理删除或 retention purge。
+Batch 4-A 已接管 V28 新增的 `research_configs` / `backtest_configs` 生命周期字段；Batch 4-B 已增加受控归档命令。两批均未新增 migration，也未实现物理删除或 retention purge。
 
 - `research_configs` 默认 Repository 列表查询排除 `status='ARCHIVED'`；`status='DISABLED'` 仍出现在默认列表中。
 - `backtest_configs` 默认 Repository 列表查询排除 `status='ARCHIVED'`；`status='DISABLED'` 仍出现在默认列表中。
@@ -46,7 +46,10 @@ Batch 4-A 已接管 V28 新增的 `research_configs` / `backtest_configs` 生命
 - Repository 保留内部 includeArchived 查询路径，但本轮不向外部 HTTP API 增加 `includeArchived` 参数。
 - 新建 backtest config 要求关联的 research config 为 `ACTIVE`。
 - 新建 backtest run 要求关联的 research config 与 backtest config 都为 `ACTIVE`。
-- `updated_at` 仍只表示配置元数据最后更新时间；本轮没有实现归档写入接口，因此没有新增归档时更新时间写入路径。
+- `POST /api/research-configs/{configId}/archive` 和 `POST /api/backtest-configs/{configId}/archive` 会把配置标记为 `ARCHIVED`，并写入 `archived_at`、`archived_by`、`archive_reason`、`updated_at`。
+- 归档命令幂等：已归档配置重复归档返回当前详情，不覆盖首次归档时间、操作者或原因。
+- `archive_reason` 可空，应用层会限制长度并拒绝明显包含密钥、token、API secret、私钥、助记词等敏感材料的原因文本。
+- `updated_at` 仍只表示配置元数据最后更新时间；归档命令会同步更新 `updated_at`。
 
 ## GateH-2 当前 Marketdata 结构
 

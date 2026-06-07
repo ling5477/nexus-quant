@@ -4,6 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -43,6 +45,7 @@ class BacktestConfigControllerTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.clearContext();
         applicationService = mock(BacktestConfigApiService.class);
         marketdataDatasetService = mock(MarketdataDatasetService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new BacktestConfigController(applicationService, marketdataDatasetService))
@@ -98,6 +101,46 @@ class BacktestConfigControllerTest {
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-config-empty"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void shouldArchiveBacktestConfig() throws Exception {
+        BacktestConfig archived = new BacktestConfig(
+                "bcf-1",
+                "rcf-1",
+                "Demo Backtest",
+                "用于联调归档命令",
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-01-31T00:00:00Z"),
+                new BigDecimal("100000"),
+                "{\"mode\":\"bar\"}",
+                "{\"benchmark\":\"BTC\"}",
+                null,
+                "{}",
+                "{}",
+                "{\"startTime\":\"2025-01-01T00:00:00Z\",\"endTime\":\"2025-01-31T00:00:00Z\",\"initialCapital\":\"100000\",\"executionSpec\":{\"mode\":\"bar\"}}",
+                null,
+                "{}",
+                "{\"startTime\":\"2025-01-01T00:00:00Z\",\"endTime\":\"2025-01-31T00:00:00Z\",\"initialCapital\":\"100000\",\"executionSpec\":{\"mode\":\"bar\"}}",
+                Instant.parse("2026-03-20T00:00:00Z"),
+                Instant.parse("2026-03-22T00:00:00Z"),
+                BacktestConfig.STATUS_ARCHIVED,
+                Instant.parse("2026-03-22T00:00:00Z"),
+                "system",
+                "retired from default list"
+        );
+        when(applicationService.archive("bcf-1", "system", "retired from default list"))
+                .thenReturn(archived);
+
+        mockMvc.perform(post("/api/backtest-configs/bcf-1/archive")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"archiveReason\":\"retired from default list\"}")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-backtest-config-archive"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.backtestConfigId").value("bcf-1"))
+                .andExpect(jsonPath("$.status").value("ARCHIVED"))
+                .andExpect(jsonPath("$.archivedBy").value("system"))
+                .andExpect(jsonPath("$.archiveReason").value("retired from default list"));
     }
 
     @Test

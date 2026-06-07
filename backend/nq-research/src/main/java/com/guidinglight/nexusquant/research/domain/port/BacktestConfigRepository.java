@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.research.domain.port;
 
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,27 @@ public interface BacktestConfigRepository {
     void insert(BacktestConfig backtestConfig);
 
     Optional<BacktestConfig> findByBacktestConfigId(String backtestConfigId);
+
+    /**
+     * 把回测配置标记为归档。
+     * Why:
+     * 归档只改变配置生命周期元数据，不删除或隐藏任何已经产生的 run/evaluation/publish 事实；
+     * 已归档记录由 Service 做幂等处理，避免覆盖首次归档信息。
+     *
+     * @param backtestConfigId 回测配置 ID
+     * @param archivedAt 归档时间，同时作为 updated_at
+     * @param archivedBy 归档操作者标识，可空
+     * @param archiveReason 归档原因，可空，不得含敏感信息
+     * @return 是否更新到一条非 ARCHIVED 记录
+     */
+    default boolean archive(
+            String backtestConfigId,
+            Instant archivedAt,
+            String archivedBy,
+            String archiveReason
+    ) {
+        return false;
+    }
 
     /**
      * 查询默认业务列表。

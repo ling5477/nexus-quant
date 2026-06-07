@@ -110,9 +110,13 @@ GateI-1 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A �
 
 当前已实现的 GateI-2 回测配置、运行追溯与评估报告入口：
 
+- `GET /api/research-configs`：返回默认业务可见的研究配置列表；Batch 4-A 后默认不包含 `status=ARCHIVED`，`status=DISABLED` 仍可见。
+- `GET /api/research-configs/{configId}`：返回单条研究配置详情；允许读取 `status=ARCHIVED` 的配置，用于历史追溯。
+- `POST /api/research-configs/{configId}/archive`：把研究配置标记为 `ARCHIVED`，写入 `archivedAt / archivedBy / archiveReason / updatedAt`；请求体 `archiveReason` 可空，不得包含密钥、token、API secret、私钥、助记词等敏感信息；重复归档幂等返回当前详情。
 - `GET /api/backtest-configs`：返回回测配置列表，包含 `strategyVersionId`、`strategyVersionSnapshotJson`、`paramSnapshotJson`、`configSnapshotJson`、`datasetId`、`datasetSnapshotJson`。
 - `POST /api/backtest-configs`：创建回测配置，并初始化参数快照、配置快照；不启动回测。
 - `GET /api/backtest-configs/{configId}`：返回单条回测配置详情，包含 strategy version、dataset、参数和配置快照。
+- `POST /api/backtest-configs/{configId}/archive`：把回测配置标记为 `ARCHIVED`，写入 `archivedAt / archivedBy / archiveReason / updatedAt`；请求体 `archiveReason` 可空，不得包含密钥、token、API secret、私钥、助记词等敏感信息；重复归档幂等返回当前详情。
 - `PATCH /api/backtest-configs/{configId}/strategy-version`：绑定已存在的 strategy version，后端从 `strategy_versions` 读取并固化版本快照和参数快照；请求体只允许传 `strategyVersionId`。
 - `PATCH /api/backtest-configs/{configId}/dataset`：复用 GateH-3 dataset 绑定入口，后端固化 dataset snapshot。
 - `POST /api/backtest-runs`：根据回测配置创建 run，创建时固化 `strategyVersionId`、`strategyVersionSnapshotJson`、`datasetSnapshotJson`、`paramSnapshotJson`、`configSnapshotJson`。
@@ -123,6 +127,8 @@ GateI-1 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A �
 GateI-2 固定范围：
 
 - 只增强现有 backtest / evaluation 链路。
+- 归档命令是配置生命周期命令，不是删除接口；不会删除或隐藏已经产生的 backtest runs、evaluations 或 publish records。
+- 不新增 `includeArchived` HTTP 查询参数；默认列表隐藏 `ARCHIVED`，详情按 ID 仍可读取。
 - 不修改回测核心算法，不修改策略核心算法，不修改交易核心状态机。
 - 不做 SIM/Paper Trading 运行闭环，不进入 GateI-3/4。
 - 不接 AI，不新增 AI 分析报告、AI 信号、AI 自动交易或 AI Paper Trading。

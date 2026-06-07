@@ -11,6 +11,7 @@ import com.guidinglight.nexusquant.research.domain.port.SourceStrategySnapshotRe
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -119,6 +120,43 @@ public class ResearchConfigService {
         return list(null);
     }
 
+    /**
+     * 归档研究配置。
+     * Why:
+     * archive 是显式生命周期命令，不是删除。归档后默认列表隐藏该配置，
+     * 但详情和历史回测 / 评估 / 发布追溯仍必须可读取。重复归档保持幂等，
+     * 不覆盖首次归档时间、操作者或原因。
+     *
+     * @param researchConfigId 研究配置 ID
+     * @param archivedBy 归档操作者标识，空值归一为 `system`
+     * @param archiveReason 归档原因，可空，不得包含密钥、token 等敏感信息
+     * @return 归档后的研究配置详情
+     */
+    public ResearchConfig archive(String researchConfigId, String archivedBy, String archiveReason) {
+        String normalizedId = requireText(researchConfigId, "researchConfigId");
+        String normalizedActor = normalizeArchiveActor(archivedBy);
+        String normalizedReason = normalizeArchiveReason(archiveReason);
+        ResearchConfig current = getByResearchConfigId(normalizedId);
+        if (current.isArchived()) {
+            return current;
+        }
+        Instant now = Instant.now(clock);
+        boolean updated = researchConfigRepository.archive(
+                normalizedId,
+                now,
+                normalizedActor,
+                normalizedReason
+        );
+        if (!updated) {
+            ResearchConfig latest = getByResearchConfigId(normalizedId);
+            if (latest.isArchived()) {
+                return latest;
+            }
+            throw new IllegalStateException("research config archive failed: " + normalizedId);
+        }
+        return getByResearchConfigId(normalizedId);
+    }
+
     private void validateCreateRequest(ResearchConfigCreateRequest request) {
         Objects.requireNonNull(request, "request must not be null");
         requireText(request.sourceStrategyId(), "sourceStrategyId");
@@ -153,6 +191,38 @@ public class ResearchConfigService {
 
     private String normalizeOptionalText(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String normalizeArchiveActor(String value) {
+        String normalized = value == null || value.isBlank() ? "system" : value.trim();
+        if (normalized.length() > 128) {
+            throw new IllegalArgumentException("archivedBy length must be less than or equal to 128");
+        }
+        return normalized;
+    }
+
+    private String normalizeArchiveReason(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() > 1024) {
+            throw new IllegalArgumentException("archiveReason length must be less than or equal to 1024");
+        }
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        if (lower.contains("token")
+                || lower.contains("api secret")
+                || lower.contains("api_secret")
+                || lower.contains("private key")
+                || lower.contains("password")
+                || lower.contains("secret")
+                || lower.contains("mnemonic")
+                || normalized.contains("私钥")
+                || normalized.contains("密钥")
+                || normalized.contains("助记词")) {
+            throw new IllegalArgumentException("archiveReason must not contain sensitive credential material");
+        }
+        return normalized;
     }
 
     private String requireText(String value, String fieldName) {
