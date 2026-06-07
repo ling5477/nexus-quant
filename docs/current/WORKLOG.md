@@ -2,6 +2,48 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Active Material Selection Review Batch 5-E-A
+
+日期：2026-06-07
+
+### 本轮目标
+
+只读审计 credential active summary / active material 查询是否需要显式 `credentialType` 或 `permission_scope` 过滤，避免未来一个 exchange account 同时存在多个 ACTIVE credential type 时出现非确定性选择。本轮只写 `docs/current` 文档，不新增 migration，不修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/README.md`
+- `README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_ANALYSIS + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读确认 active summary / active material / credential type / account credential 路径。
+- 只读检查 V12 / V29 schema、credential Repository port、JDBC Repository、command service、verification service、Controller、DTO 和相关 tests。
+- 确认当前 `findActiveSummary` 与 `findActiveMaterial` 已同时要求 `is_active=true` 和 `credential_status='ACTIVE'`，但不带 `credential_type` 或 `permission_scope`，并使用 `ORDER BY updated_at DESC LIMIT 1`。
+- 确认 V12 partial unique index 只约束同一 `exchange_account_id + credential_type` 的 active 唯一，不是 account 全局 active 唯一。
+- 确认 V29 `permission_scope` 当前只是 schema 元数据，代码未写入、读取或过滤；`NULL` 不能被解释为 READ_ONLY 或 TRADE。
+- 输出 Batch 5-E-B 建议：先做代码层冲突检测或显式 credential type 选择；`verifyActive` 和 `GET /credentials/active` 不应在多 active type 下静默返回最新一条；enable endpoint 继续推迟。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；仅有 Windows 换行提示，无 whitespace error。
+- 已执行工作树范围检查：本轮只修改文档文件。
+- 后端/前端/Python 全量测试未执行：本轮只做 code analysis + documentation，未修改业务代码、API、migration、前端、Python 或部署脚本。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改 Java / Repository / Service / Controller / DTO / API / 前端 / Python / 部署脚本。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未新增 enable endpoint。
+- 未调用真实交易所，未做真实交易所权限探活。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未把 GateK-PLAN 写成 GateK implementation started。
+
 ## DB Schema Credential Rotate Command Batch 5-D-B
 
 日期：2026-06-07
