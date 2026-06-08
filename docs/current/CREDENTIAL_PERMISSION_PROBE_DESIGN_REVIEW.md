@@ -2,7 +2,7 @@
 
 任务：NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW
 日期：2026-06-08
-状态：design review completed；permission probe not implemented；no real exchange call performed。
+状态：design review completed；V31 permission probe schema-only completed；permission probe not implemented；no real exchange call performed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
@@ -11,14 +11,16 @@
 
 本轮未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本；未调用 OKX、Binance、Bybit、Gate 或任何真实交易所；未读取或输出真实密钥；未接 AI、DH、LIVE；未实现 permission probe。
 
+后续 schema-only 批次 `NQ-CREDENTIAL-PERMISSION-PROBE-SCHEMA` 已新增 `V31__schema_credential_permission_probe.sql`，只做数据库准备和文档同步；仍未修改 Java/API/前端/Python/部署，仍未调用真实交易所，仍未实现 permission probe。
+
 ## 2. Current State
 
 - `verification_status='VERIFIED'` 当前只代表本地结构性校验成功：`StructuralExchangeAccountCredentialVerifier` 解析 decrypted payload 并复用 signer 构造签名，不访问真实交易所，不证明账号权限、IP allowlist 或交易权限可用。
-- `permission_scope` 当前允许 `READ_ONLY / TRADE / NULL`；`NULL` 表示权限尚未由代码确认，不得当作 `TRADE`。
-- 当前 schema 没有 `permission_probe_status`、`last_permission_probe_at`、`last_permission_probe_error` 或可区分真实权限探活历史的专用字段。
-- `last_verified_at` 只适合结构性校验时间；`last_used_at` 只适合服务端业务路径使用时间；真实权限探活需要独立 `last_permission_probe_at`。
-- `withdraw_enabled` 默认 `FALSE`，但当前没有强制 CHECK 保证 probe 后仍保持 false。
-- `ip_allowlist_required` 默认 `TRUE`，当前只表示治理要求，没有记录交易所侧是否验证通过。
+- V31 后 `permission_scope` 允许 `READ_ONLY / TRADE / FUNDING / NULL`；`NULL` 表示权限尚未由代码确认，不得当作 `TRADE`。
+- V31 已新增 `permission_probe_status`、`last_permission_probe_at`、`last_permission_probe_error` 和 `ip_allowlist_probe_status`，用于区分真实权限探活与本地结构性校验。
+- `last_verified_at` 只适合结构性校验时间；`last_used_at` 只适合服务端业务路径使用时间；V31 新增的 `last_permission_probe_at` 专用于真实权限探活完成时间。
+- `withdraw_enabled` 默认 `FALSE`，但 V31 未新增强制 false CHECK；原因是本轮未确认现有数据是否全部为 false，不能盲目加硬约束。`withdraw_enabled=true` 仍不得视为可接受生产状态。
+- `ip_allowlist_required` 默认 `TRUE`，只表示治理要求；V31 新增 `ip_allowlist_probe_status` 记录后续探活状态，默认 `NOT_CHECKED`。
 - `failed_auth_count` 当前不会被 enable / verify / lifecycle 命令清零；真实权限探活需要单独定义何时增加、何时不增加、何时仍不清零。
 - 现有 `paper_run_alerts` 绑定 `paper_run_id`，适合 Paper run 告警，不适合作为 credential 安全告警的通用表。
 
@@ -27,10 +29,10 @@
 | # | 审计项 | 结论 |
 | --- | --- | --- |
 | 1 | 当前 VERIFIED 是否仅代表本地结构性校验 | 是。不得把 `VERIFIED` 写成真实交易所权限可用。 |
-| 2 | 是否需要新增 `verification_status` 或 `permission_probe_status` | 需要新增 `permission_probe_status`；不建议扩展 `verification_status` 承载真实权限语义。 |
-| 3 | READ_ONLY / TRADE / FUNDING 权限如何建模 | 建议 `permission_scope` 表示最高确认权限，CHECK 增加 `FUNDING`；详细能力写入脱敏 probe result metadata。 |
-| 4 | `withdraw_enabled` 必须如何保持 false | 默认与探活后均必须保持 `FALSE`；建议新增 CHECK 强制 `withdraw_enabled = FALSE`，直到未来单独审批提现能力。 |
-| 5 | `ip_allowlist_required` 如何校验和记录 | 建议新增 `ip_allowlist_probe_status` 或在 probe result 中记录 `REQUIRED_VERIFIED / REQUIRED_NOT_VERIFIED / NOT_REQUIRED / UNKNOWN / UNSUPPORTED`，不得记录 IP secret 或网络凭证。 |
+| 2 | 是否需要新增 `verification_status` 或 `permission_probe_status` | V31 已新增 `permission_probe_status`；不扩展 `verification_status` 承载真实权限语义。 |
+| 3 | READ_ONLY / TRADE / FUNDING 权限如何建模 | V31 已扩展 `permission_scope` CHECK 支持 `FUNDING`；详细能力仍需未来写入脱敏 probe result metadata。 |
+| 4 | `withdraw_enabled` 必须如何保持 false | 仍必须默认 false；V31 未在未确认现有数据前加硬 CHECK，后续需单独数据确认批次评估。 |
+| 5 | `ip_allowlist_required` 如何校验和记录 | V31 已新增 `ip_allowlist_probe_status`，允许 `NOT_CHECKED / PASSED / FAILED / UNKNOWN / SKIPPED`；不得记录 IP secret 或网络凭证。 |
 | 6 | `failed_auth_count` 何时增加、何时不清零 | 仅真实交易所返回认证/签名/IP allowlist 拒绝时增加；本地结构失败、网络超时、5xx、限流、Paper gate 拦截、用户取消不增加；probe 成功不清零。 |
 | 7 | `last_used_at / last_verified_at / last_permission_probe_at` 是否需要区分 | 必须区分：业务使用、结构性校验、真实权限探活是三类事件。 |
 | 8 | `permission_scope=NULL` 是否继续表示未确认权限 | 是。NULL 继续表示未确认，不得解释为 READ_ONLY、TRADE 或 FUNDING。 |
@@ -39,8 +41,8 @@
 | 11 | 是否需要告警表或复用现有 alert | 不建议复用 `paper_run_alerts` 做通用 credential 安全告警；初版可先写 `credential_audit_logs`，后续单独设计 credential security alert。 |
 | 12 | API response 如何避免泄露 material | response 只返回 credentialId、accountId、credentialType、probe status、确认权限、脱敏错误摘要和时间；不得返回 encrypted/decrypted payload、apiKey、secret、token、private key、passphrase、签名或 raw response。 |
 | 13 | audit metadata 如何避免泄露 secret | metadata 只保存状态、scope、sanitized exchange code、reasonPresent、retry count、policy decision、request id；不得保存 request body、headers、签名、payload、raw exchange response 或 credential material。 |
-| 14 | 是否需要新增 migration | 需要。建议先做 schema-only migration，不在同批实现真实调用。 |
-| 15 | 是否需要先做 schema-only，再做 code | 必须先 schema-only，再 code/API/test；避免代码先把权限写入无约束字段。 |
+| 14 | 是否需要新增 migration | 已通过 V31 完成 schema-only migration；未实现真实调用。 |
+| 15 | 是否需要先做 schema-only，再做 code | 已先做 schema-only；后续 code/API/test 必须单独开批次并再次审计。 |
 | 16 | 是否需要 adapter 抽象，还是 credential service 内独立 probe port | 建议独立 `ExchangeCredentialPermissionProbePort`；credential service 负责编排与审计，adapter 只实现脱敏探活能力，不由 credential service 直接写 HTTP。 |
 | 17 | 是否会影响 GateK-PLAN 边界 | 不应影响。permission probe 是 credential governance 安全设计，不代表 GateK implementation started、AI started、DH integrated 或 LIVE enabled。 |
 
@@ -55,10 +57,10 @@
 
 ### P1
 
-- 当前 schema 不足以区分结构性校验与真实权限探活，需要新增 `permission_probe_status` 和 `last_permission_probe_at`。
-- 当前 `permission_scope` 缺少 `FUNDING`，且单字段无法表达复杂交易所权限细节；需要先定义最高权限与细粒度 metadata 的关系。
-- 当前 `withdraw_enabled` 只有默认 false，缺少“探活也不得置 true”的强约束。
-- 当前 `ip_allowlist_required` 只记录治理要求，缺少真实探活结果状态。
+- V31 已准备真实权限探活基础字段，但 Java/API 尚未实现，任何调用路径仍不存在。
+- `permission_scope` 已支持 `FUNDING`，但单字段无法表达复杂交易所权限细节；仍需要未来定义最高权限与细粒度 metadata 的关系。
+- 当前 `withdraw_enabled` 只有默认 false，V31 未加硬 CHECK；后续需要先确认现有数据，再单独评估强制 false 约束。
+- `ip_allowlist_probe_status` 已新增，但当前无代码写入，默认 `NOT_CHECKED` 不能被解读为通过。
 - 现有 `paper_run_alerts` 绑定 Paper run，不适合直接承载跨账户 credential 安全告警。
 
 ### P2
@@ -73,12 +75,12 @@
 - 文档索引需要持续标注 permission probe 仍未实现，避免把设计审计误读为功能已上线。
 - 命名建议统一使用 `permission_probe_status` 与 `last_permission_probe_at`，避免与 `verification_status` 混写。
 
-## 5. Recommended Schema Changes
+## 5. Schema Changes Completed By V31
 
-建议下一批进入 schema-only migration，不修改历史 migration，不做数据 backfill，不实现 Java：
+`V31__schema_credential_permission_probe.sql` 已完成 schema-only 数据库准备，不修改历史 migration，不实现 Java/API，不调用真实交易所：
 
 1. `exchange_account_credentials.permission_probe_status VARCHAR(32) NOT NULL DEFAULT 'NOT_PROBED'`
-   - CHECK：`NOT_PROBED / PENDING / SUCCEEDED / FAILED / PARTIAL / SKIPPED`。
+   - CHECK：`NOT_PROBED / IN_PROGRESS / SUCCEEDED / FAILED / SKIPPED`。
    - 语义：真实交易所权限探活状态；独立于 `verification_status`。
 
 2. `exchange_account_credentials.last_permission_probe_at TIMESTAMPTZ`
@@ -93,11 +95,12 @@
    - `FUNDING` 不得隐含提现能力；`withdraw_enabled` 仍必须 false。
 
 5. 新增 `exchange_account_credentials.ip_allowlist_probe_status VARCHAR(32)`
-   - 建议允许 `UNKNOWN / REQUIRED_VERIFIED / REQUIRED_NOT_VERIFIED / NOT_REQUIRED / UNSUPPORTED`。
+   - CHECK：`NOT_CHECKED / PASSED / FAILED / UNKNOWN / SKIPPED`。
    - 用于区分治理要求和真实探活结论。
 
-6. 新增或强化 `withdraw_enabled` CHECK
-   - 建议在当前阶段增加 `CHECK (withdraw_enabled = FALSE)`，确保任何 probe 或后续代码都不能开启提现。
+6. `withdraw_enabled` 约束决策
+   - V31 未新增 `CHECK (withdraw_enabled = FALSE)`，因为本轮未确认现有数据是否全部为 false，不能盲目增加硬约束。
+   - V31 已更新注释，明确本字段不代表提现能力、LIVE trading 或资金转移；`withdraw_enabled=true` 不得视为可接受生产状态。
 
 7. 扩展 `credential_audit_logs.event_type`
    - 建议增加 `PERMISSION_PROBE_STARTED / PERMISSION_PROBE_SUCCEEDED / PERMISSION_PROBE_FAILED / PERMISSION_PROBE_SKIPPED`。
@@ -170,7 +173,7 @@ schema-only 批次：
 
 - CHECK 约束覆盖 `permission_probe_status` 所有允许值与非法值。
 - `permission_scope` 新增 `FUNDING` 与非法值拒绝。
-- `withdraw_enabled = TRUE` 被 CHECK 拒绝。
+- `withdraw_enabled` 本轮不加硬 CHECK；后续如加约束，必须先做数据确认并测试 `withdraw_enabled = TRUE` 被拒绝。
 - `credential_audit_logs.event_type` 新 probe events 允许，非法值拒绝。
 - COMMENT 检查敏感信息禁入边界。
 
@@ -190,13 +193,13 @@ code/API 批次：
 
 ## 11. Decision
 
-是否允许进入 probe schema-only 批次：允许。
+是否允许进入 probe schema-only 批次：已完成。
 
-入场条件：
+后续入场条件：
 
-- 下一批只能新增 schema-only migration 和同步 `DB_SCHEMA.md` / governance docs。
-- 不得在 schema-only 批次实现 Java、API、前端、Python、部署或真实交易所调用。
-- schema-only 之后再单独开 code/API/test 批次，并再次审计真实交易所调用边界。
+- 下一批如进入 code/API/test，必须单独开任务并再次审计真实交易所调用边界。
+- 仍不得直接实现真实交易所调用；必须先完成 permission probe code design / API design / test matrix review。
+- 如果要新增 `withdraw_enabled = FALSE` 硬 CHECK，必须先做数据确认批次。
 
 明确禁止：
 
@@ -209,12 +212,20 @@ code/API 批次：
 
 ## 12. Validation
 
-本轮执行：
+设计审计本轮执行：
 
 - `git diff --check`
 
-本轮未执行：
+设计审计本轮未执行：
 
 - `mvn -f backend/pom.xml test`
 
 未执行 Maven 原因：本轮只做 `CODE_ANALYSIS + DOCUMENTATION`，只允许修改 `docs/current` 文档和 README 索引；未修改 Java、migration、API、前端、Python 或部署脚本，不把未执行测试写成通过。
+
+V31 schema-only 批次执行：
+
+- `git diff --check`：通过。
+- `mvn -f backend/pom.xml test`：通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+- Flyway 在 `nq-app` local integration test 中成功验证 31 个 migrations，并从 V30 迁移到 V31。
+
+V31 验证边界说明：本轮未实现 permission probe、未新增 API、未修改 Java、未使用 credential material；但全量 Maven 中既有 `MarketdataControllerLocalIntegrationTest` 在 local profile 启动时触发 OKX public instruments bootstrap fallback，并因 `No route to host` 失败。该日志不涉及 credential/private endpoint/下单/撤单/转账/提现，但不能把验证阶段写成完全零真实交易所触达尝试。

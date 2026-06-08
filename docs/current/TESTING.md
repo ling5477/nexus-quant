@@ -60,6 +60,21 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## Credential Permission Probe Schema 验证记录（2026-06-08）
+
+本轮新增 permission probe schema-only migration，并同步 `docs/current` 文档和 README 索引；未实现 permission probe，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本，未接 AI、DH、LIVE。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| `mvn -f backend/pom.xml test` | 通过 | 23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`；`Total time: 02:24 min`，`Finished at: 2026-06-08T13:26:33+08:00`。 |
+| Flyway migration 验证 | 通过 | Maven 中 `nq-app` local integration test 成功验证 31 个 migrations，并从 V30 迁移到 V31。 |
+| migration 范围检查 | 通过 | 本轮只新增 `V31__schema_credential_permission_probe.sql`；未修改历史 migration。 |
+| Java/API 范围检查 | 通过 | 本轮未修改 Java、Repository、Service、Controller、DTO、测试业务语义或新增 API。 |
+| 前端/Python/部署范围检查 | 通过 | 本轮未修改 frontend、research、scripts 或部署相关路径。 |
+| permission probe 实现边界 | 通过 | 未实现 permission probe，未新增 permission probe endpoint，未新增 Java enum 或 API DTO。 |
+| 真实交易所触达隔离 | 有残余风险 | 本轮 migration/docs 未实现或主动调用 permission probe；但全量 Maven 中既有 `MarketdataControllerLocalIntegrationTest` 在 local profile 启动时触发 OKX public instruments bootstrap fallback，并因 `No route to host` 失败。该日志不涉及 credential/private endpoint/下单/撤单/转账/提现，但不能把本次验证写成完全零真实交易所触达尝试。 |
+
 ## Credential Permission Probe Design Review 验证记录（2026-06-08）
 
 本轮只读设计审计真实交易所 credential permission probe，并新增设计审计文档与索引记录；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本；未调用真实交易所，未实现 permission probe。

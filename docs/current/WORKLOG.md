@@ -2,6 +2,52 @@
 
 日期：2026-05-16
 
+## Credential Permission Probe Schema
+
+日期：2026-06-08
+
+### 本轮目标
+
+新增 permission probe schema-only migration，为后续真实交易所权限探活做数据库准备。本轮只允许新增一个 Flyway migration 和同步文档；不实现 permission probe，不修改 Java/API/前端/Python/部署，不接 AI/DH/LIVE，不下单、撤单、转账或提现。
+
+### 修改文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V31__schema_credential_permission_probe.sql`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_CHANGE + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读确认 credential schema / docs 边界。
+- 新增 V31 migration：为 `exchange_account_credentials` 增加 `permission_probe_status`、`last_permission_probe_at`、`last_permission_probe_error`、`ip_allowlist_probe_status`。
+- 扩展 `permission_scope` CHECK，允许 `READ_ONLY / TRADE / FUNDING` 或 `NULL`；`NULL` 继续表示未确认权限，不等于 `TRADE`。
+- 扩展 `credential_audit_logs.event_type` CHECK，允许 `PERMISSION_PROBE_STARTED / PERMISSION_PROBE_SUCCEEDED / PERMISSION_PROBE_FAILED / PERMISSION_PROBE_SKIPPED`。
+- 更新新增字段、`withdraw_enabled`、`credential_audit_logs` 表、`event_type`、`metadata` COMMENT，继续声明敏感信息禁入边界。
+- `withdraw_enabled` 本轮不新增 `CHECK (withdraw_enabled = FALSE)`：V29 已有 `NOT NULL DEFAULT FALSE`，但本轮未确认现有数据是否全部为 false，避免盲目硬约束破坏已有数据；`withdraw_enabled=true` 不得视为可接受生产状态。
+- 同步 DB_SCHEMA、permission probe design review、credential governance plan、README 索引、WORKLOG 和 TESTING。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；无 whitespace error。
+- 已执行 `mvn -f backend/pom.xml test`，通过；23 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`；`Total time: 02:24 min`，`Finished at: 2026-06-08T13:26:33+08:00`。
+- Maven 过程中 `nq-app` local integration test 的 Flyway 日志显示：成功验证 31 个 migrations，并从 V30 迁移到 V31。
+- 范围检查：本轮只新增一个 migration；未修改历史 migration；未修改 Java/API、前端、Python 或部署脚本。
+- 边界风险：按任务要求执行全量 Maven 时，既有 `MarketdataControllerLocalIntegrationTest` 在 local profile 启动中触发 OKX public instruments bootstrap fallback，日志显示 `No route to host`。这不是本轮 permission probe、未使用 credential、未调用 private endpoint、未下单/撤单/转账/提现，但验证阶段不能写成完全没有真实交易所触达尝试。
+
+### 边界确认
+
+- 未修改历史 migration。
+- 未修改 Java、Repository、Service、Controller、DTO 或 API。
+- 未修改前端、Python 或部署脚本。
+- 未实现 permission probe，未新增 permission probe endpoint。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未接 AI、DH、LIVE 或真实交易。
+
 ## Credential Permission Probe Design Review
 
 日期：2026-06-08
