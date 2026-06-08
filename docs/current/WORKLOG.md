@@ -2,6 +2,47 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Governance Freeze Review Batch 5-G
+
+日期：2026-06-08
+
+### 本轮目标
+
+只读复核 credential lifecycle governance 当前实现，冻结 Batch 5-A ~ 5-F-C 的 schema、API、Service、Repository、audit log、测试和文档边界。本轮不新增功能，不修改 Java，不新增 migration，不接真实交易所，不接 AI / DH / LIVE，不实现 permission probe。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_ANALYSIS + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读检查 credential Service / Repository / Controller / DTO / tests。
+- 只读复核 V29 / V30 migration：V29 拆分 lifecycle 与 verification，新增 append-only audit log；V30 仅重建 audit event CHECK 增加 `ENABLED` 并更新注释。
+- 只读复核 Repository / JDBC：active summary / active material 查询均要求 `is_active=true AND credential_status='ACTIVE'`；无 `credentialType` 多 active type 返回冲突；enable 内部 material 读取只用于本地结构性校验。
+- 只读复核 CommandService / VerificationService：revoke / disable / expire / rotate / enable 都通过 `credential_status` 表达生命周期；verification_status 只承载结构性校验结果；enable 只允许 `DISABLED` 且拒绝 `REVOKED / ROTATED / EXPIRED`。
+- 只读复核 Controller / DTO / tests：API response 仅返回非敏感 summary；测试覆盖 lifecycle command、active material selection、response 脱敏、audit metadata 脱敏、permission_scope 不被解释为 TRADE。
+- 输出冻结复核报告：允许条件冻结 Batch 5 credential governance；无需 P0/P1/P2 修复批次；建议 P3 cleanup 修复过期描述；允许进入真实交易所权限探活设计审计。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；无 whitespace error。
+- 已执行范围检查：本轮未新增 migration，未修改 Java/API，未修改前端/Python/部署脚本。
+- 未执行 `mvn -f backend/pom.xml test`：本轮只做 `CODE_ANALYSIS + DOCUMENTATION`，未修改业务代码、migration、API、前端、Python 或部署脚本；测试覆盖结论来自只读检查测试文件与上一轮 `TESTING.md` 已记录的实际验证结果。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改 Java / Repository / Service / Controller / DTO / API。
+- 未修改前端、Python 或部署脚本。
+- 未接真实交易所，未实现 permission probe。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未把 GateK-PLAN 写成实现已启动。
+
 ## DB Schema Credential Enable Command Batch 5-F-C
 
 日期：2026-06-08

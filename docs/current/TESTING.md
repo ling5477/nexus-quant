@@ -60,6 +60,19 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DB Schema Credential Governance Freeze Review Batch 5-G 验证记录（2026-06-08）
+
+本轮只读复核 Batch 5-A ~ 5-F-C credential governance，并新增冻结复核文档；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| migration 范围检查 | 通过 | 本轮未新增 migration，未修改历史 migration；只读复核 V29 / V30。 |
+| Java/API 范围检查 | 通过 | 本轮未修改 Java、Repository、Service、Controller、DTO 或 API；发现一个 P3 过期 OpenAPI description，已记录到 freeze review，不在本轮修改 Java。 |
+| 前端/Python/部署范围检查 | 通过 | 本轮未修改 frontend、research、scripts 或部署相关路径。 |
+| credential governance 必查项 | 通过，含 P3 note | API response 脱敏、audit metadata 脱敏、lifecycle tests、active material selection、rotate/enable 状态语义、permission_scope 与 failed_auth_count 边界均通过；仅存在过期文案 P3。 |
+| 后端 Maven 测试 | 未执行 | 本轮只做 `CODE_ANALYSIS + DOCUMENTATION`，未修改业务代码、migration、API、前端、Python 或部署脚本；不把本轮未执行测试写成通过。上一轮 5-F-C 的 Maven 通过记录保留在下方对应章节。 |
+
 ## DB Schema Credential Enable Command Batch 5-F-C 验证记录（2026-06-08）
 
 本轮实现最小 credential enable command，并同步 `docs/current` 文档；未新增 migration，未修改历史 migration，未修改前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
