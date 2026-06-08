@@ -61,7 +61,7 @@ GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateJ-FREEZE 稳
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
 - `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：credential active uniqueness Batch 5-E-C 只读审计报告
-- `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：credential enable governance Batch 5-F-A 只读审计报告
+- `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：credential enable governance Batch 5-F-A 只读审计报告；Batch 5-F-B 已完成 schema-only `ENABLED` audit event 准备，enable endpoint 仍未实现
 - `docs/current/DOC_CLEAN_REPORT.md`：最近一次文档清理报告
 - GateH 冻结卷宗：`docs/gates/gate-h/`
 - GateI 冻结卷宗：`docs/gates/gate-i/`

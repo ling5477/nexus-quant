@@ -45,12 +45,13 @@
 - `exchange_account_credentials`：新增 `last_used_at`、`failed_auth_count`，用于记录使用时间和认证失败计数；`failed_auth_count` 有非负 CHECK 约束。
 - `exchange_account_credentials`：新增 `permission_scope`、`withdraw_enabled`、`ip_allowlist_required`、`external_secret_ref`、`key_alias`，用于权限与外部密钥引用元数据；`permission_scope` 允许 `READ_ONLY / TRADE` 或 `NULL`，`withdraw_enabled` 默认 `FALSE`，`ip_allowlist_required` 默认 `TRUE`。
 - 历史 `verification_status='REVOKED'` 或 `is_active=false` 记录按现有轮换语义回填为 `credential_status='ROTATED'`，并用 `revoked_at/updated_at` 补齐 `rotated_at`；本回填不读取、不输出、不复制任何真实 credential material。
-- `credential_audit_logs`：新增 append-only 审计日志表，记录 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED` 事件，包含 credential/account 外键、actor、reason、metadata、created_at。
+- `credential_audit_logs`：新增 append-only 审计日志表，记录 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / ENABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED` 事件，包含 credential/account 外键、actor、reason、metadata、created_at；`ENABLED` 表示 `DISABLED` credential 经校验后重新启用。
 - `credential_audit_logs.metadata` 注释明确只允许保存脱敏状态、结果码、request id、策略判断等审计上下文，不得保存密钥、token、API secret、私钥、助记词、cookie、passphrase、签名、明文 payload 或交易所凭证。
 - Batch 5-C 已在应用代码中接入 V29 生命周期字段：active summary / active material 查询默认同时要求 `is_active=true` 和 `credential_status='ACTIVE'`；旧 active 版本轮换时写为 `credential_status='ROTATED'`，不再把 `verification_status` 继续写成 `REVOKED`。
 - Batch 5-C 已新增 `revoke / disable / expire` 最小 command API，并通过 `credential_audit_logs` 追加 `REVOKED / DISABLED / EXPIRED` 审计事件；audit metadata 只保存脱敏状态和来源。
 - Batch 5-D-B 未新增 migration；显式 rotate command 复用 V12 active partial unique index、V29 `rotated_at / rotated_by` 和 `credential_audit_logs`，在单事务内锁定旧 ACTIVE credential、旧 credential 标记 `ROTATED`、新 credential 创建为 `ACTIVE`，并追加旧 `ROTATED` / 新 `CREATED` audit log。audit metadata 只保存 old/new credentialId、credentialType、状态、来源和 reasonPresent，不保存 secret、token、private key、passphrase、明文 payload 或交易所凭证。
 - Batch 5-E-B 未新增 migration、未修改历史 migration；应用层已把 active summary / active material 改为 deterministic selection：无 `credentialType` 时先列出同 account 所有 `credential_status='ACTIVE' AND is_active=true` 候选，0 条返回未配置，1 条返回该 credential，多条返回业务冲突；指定 `credentialType` 时只读取对应 ACTIVE credential。V12 `(exchange_account_id, credential_type) WHERE is_active = TRUE` partial unique index 保持不变，V29 `permission_scope` 仍只作为治理元数据，不用于交易权限判断。
+- `V30__schema_credential_enable_audit_event.sql` 已完成 Batch 5-F-B schema-only 治理：仅重建 `credential_audit_logs.event_type` CHECK，增加 `ENABLED`，并更新 `credential_audit_logs` 表、`event_type` 和 `metadata` 注释；未新增字段，未修改 `exchange_account_credentials`，未做数据 backfill。
 - 当前未新增 enable endpoint、真实交易所权限探活、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
 
 ## Research / Backtest Config Archive Semantics

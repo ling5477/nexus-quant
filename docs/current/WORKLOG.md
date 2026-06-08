@@ -2,6 +2,49 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Enable Audit Event Schema Batch 5-F-B
+
+日期：2026-06-08
+
+### 本轮目标
+
+新增 schema-only migration，为 `credential_audit_logs.event_type` CHECK 增加 `ENABLED`，并同步 `docs/current` 文档。`ENABLED` 只表示未来 enable command 可用独立 append-only audit event 记录 `DISABLED` credential 经校验后重新启用；本轮不实现 enable endpoint，不修改 Java/API。
+
+### 修改文件
+
+- `backend/nq-infra/src/main/resources/db/migration/V30__schema_credential_enable_audit_event.sql`
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_CHANGE + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读确认 V29 audit log 约束和 credential API 现状。
+- 只读确认当前最大 migration 为 `V29`，因此新增 `V30__schema_credential_enable_audit_event.sql`。
+- 只读确认 V29 `credential_audit_logs.event_type` 允许 `CREATED / VERIFIED / FAILED_VERIFICATION / DISABLED / REVOKED / ROTATED / EXPIRED / USED / ACCESS_DENIED`，不包含 `ENABLED`。
+- 只读确认 Java/API 未实现 credential enable endpoint；`ExchangeAccountCredentialController` 当前只有 create、verify、revoke、rotate、disable、expire 等 credential command。
+- 新增 migration 仅重建 `chk_credential_audit_logs_event_type` 并更新 `credential_audit_logs` 注释；不新增字段、不修改 `exchange_account_credentials`、不做数据 backfill。
+- 文档同步 Batch 5-F-B 为 schema completed，同时补齐 README 索引并明确 enable endpoint not implemented，GateK implementation / AI / DH / LIVE 均未启动。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；无 whitespace error。
+- 已执行范围检查：只新增一个 migration，未修改历史 migration，未修改 Java/API，未新增 enable endpoint，未修改前端/Python/部署。
+- 已执行 `mvn -f backend/pom.xml test`，通过；详见 `docs/current/TESTING.md`。
+
+### 边界确认
+
+- 未修改历史 migration。
+- 未修改 Java / Repository / Service / Controller / DTO / API / 前端 / Python / 部署脚本。
+- 未新增 enable endpoint，未新增 rotate / revoke / disable / expire 行为，未把本轮写成 enable implemented。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未调用真实交易所，未做真实交易所权限探活。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未把 GateK-PLAN 写成实现已启动。
+
 ## DB Schema Credential Enable Governance Review Batch 5-F-A
 
 日期：2026-06-07

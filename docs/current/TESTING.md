@@ -60,6 +60,19 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DB Schema Credential Enable Audit Event Schema Batch 5-F-B 验证记录（2026-06-08）
+
+本轮新增 schema-only migration，为 `credential_audit_logs.event_type` CHECK 增加 `ENABLED`，并同步 `docs/current` 文档；未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| migration diff 范围检查 | 通过 | 只新增 `V30__schema_credential_enable_audit_event.sql`；未修改历史 migration。 |
+| Java/API 范围检查 | 通过 | 未修改 Java；只读检索未发现 credential enable endpoint 或 `enableCredential` 方法。 |
+| 文档索引范围检查 | 通过 | 仅补齐 `README.md` 与 `docs/current/README.md` 中 Batch 5-F-B schema-only 当前事实索引；未写成 enable implemented。 |
+| 禁止范围检查 | 通过 | 未新增 enable endpoint；未新增 rotate / revoke / disable / expire 行为；未修改前端、Python、部署；未接 AI、DH、LIVE 或真实交易；未把 GateK-PLAN 写成实现已启动；未把本轮写成 enable implemented。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；后端模块测试通过。 |
+
 ## DB Schema Credential Enable Governance Review Batch 5-F-A 验证记录（2026-06-07）
 
 本轮只读审计 credential enable / re-enable 生命周期设计，并同步 `docs/current` 文档；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
