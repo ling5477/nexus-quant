@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
+import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMaterial;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
+import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialVerificationResult;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 
 import java.time.Clock;
@@ -30,20 +33,44 @@ public class ExchangeAccountCredentialCommandService {
 
     private final ExchangeAccountRepository exchangeAccountRepository;
     private final ExchangeAccountCredentialRepository exchangeAccountCredentialRepository;
+    private final ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier;
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
     public ExchangeAccountCredentialCommandService(
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
+            ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier,
             ObjectMapper objectMapper
     ) {
-        this(exchangeAccountRepository, exchangeAccountCredentialRepository, objectMapper, Clock.systemUTC());
+        this(
+                exchangeAccountRepository,
+                exchangeAccountCredentialRepository,
+                exchangeAccountCredentialVerifier,
+                objectMapper,
+                Clock.systemUTC()
+        );
     }
 
     ExchangeAccountCredentialCommandService(
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
+            ObjectMapper objectMapper,
+            Clock clock
+    ) {
+        this(
+                exchangeAccountRepository,
+                exchangeAccountCredentialRepository,
+                credentialMaterial -> ExchangeAccountCredentialVerificationResult.success(),
+                objectMapper,
+                clock
+        );
+    }
+
+    ExchangeAccountCredentialCommandService(
+            ExchangeAccountRepository exchangeAccountRepository,
+            ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
+            ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier,
             ObjectMapper objectMapper,
             Clock clock
     ) {
@@ -54,6 +81,10 @@ public class ExchangeAccountCredentialCommandService {
         this.exchangeAccountCredentialRepository = Objects.requireNonNull(
                 exchangeAccountCredentialRepository,
                 "exchangeAccountCredentialRepository must not be null"
+        );
+        this.exchangeAccountCredentialVerifier = Objects.requireNonNull(
+                exchangeAccountCredentialVerifier,
+                "exchangeAccountCredentialVerifier must not be null"
         );
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
@@ -308,6 +339,86 @@ public class ExchangeAccountCredentialCommandService {
         return transitionLifecycle(ownerUserId, exchangeAccountId, credentialId, "EXPIRED", actor, reason);
     }
 
+    /**
+     * 将 DISABLED credential 经本地结构性校验后恢复为 ACTIVE，并追加 ENABLED 审计事件。
+     *
+     * <p>Why: enable 是安全敏感生命周期命令，不能复用 verify 或 upsert 的语义。它只能恢复
+     * 临时禁用的 credential，必须拒绝 ACTIVE / REVOKED / ROTATED / EXPIRED，且必须在同一事务内
+     * 锁定目标 credential、确认同 account + credentialType 没有其他 ACTIVE、执行结构性校验、
+     * 写回 ACTIVE 状态和追加 append-only audit log。结构性校验只使用本地 signer/格式能力，
+     * 不调用真实交易所，不把 decrypted payload、secret、token、private key 或 passphrase
+     * 放入 response、异常消息或 audit metadata。</p>
+     *
+     * @param ownerUserId 当前认证用户 ID，必须拥有 exchangeAccountId
+     * @param exchangeAccountId 凭证所属交易账户 ID
+     * @param credentialId 要恢复的 DISABLED credential 主键
+     * @param actor 当前认证主体；为空时落为 system
+     * @param reason enable 原因，必填，最长 1024，且不得包含明显敏感材料
+     * @return enable 后的非敏感 credential 摘要
+     */
+    @Transactional
+    public ExchangeAccountCredentialSummary enable(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String actor,
+            String reason
+    ) {
+        Long normalizedOwnerUserId = requirePositive(ownerUserId, "ownerUserId");
+        Long normalizedExchangeAccountId = requirePositive(exchangeAccountId, "exchangeAccountId");
+        Long normalizedCredentialId = requirePositive(credentialId, "credentialId");
+        requireOwnedAccount(normalizedOwnerUserId, normalizedExchangeAccountId);
+        String normalizedActor = normalizeActor(actor);
+        String normalizedReason = normalizeRequiredLifecycleReason(reason);
+        ExchangeAccountCredentialMaterial locked = exchangeAccountCredentialRepository.findByCredentialIdForOwnerForUpdate(
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialId
+        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
+        if (!"DISABLED".equals(locked.credentialStatus()) || locked.isActive()) {
+            throw new IllegalStateException("credential enable requires DISABLED inactive credential");
+        }
+        if (locked.revokedAt() != null || locked.rotatedAt() != null) {
+            throw new IllegalStateException("credential enable refuses revoked or rotated history markers");
+        }
+        String credentialType = normalizeCredentialType(locked.credentialType());
+        if (exchangeAccountCredentialRepository.existsOtherActiveCredential(
+                normalizedExchangeAccountId,
+                credentialType,
+                normalizedCredentialId
+        )) {
+            throw new IllegalStateException("credential enable requires no other ACTIVE credential with same credentialType");
+        }
+        ExchangeAccountCredentialVerificationResult verificationResult = exchangeAccountCredentialVerifier.verify(locked);
+        if (!verificationResult.verified()) {
+            throw new IllegalStateException("credential enable structural verification failed");
+        }
+        Instant now = Instant.now(clock);
+        if (!exchangeAccountCredentialRepository.markEnabled(
+                normalizedCredentialId,
+                normalizedExchangeAccountId,
+                "VERIFIED",
+                now,
+                now
+        )) {
+            throw new IllegalStateException("credential enable requires DISABLED inactive credential");
+        }
+        exchangeAccountCredentialRepository.appendCredentialAuditLog(
+                normalizedCredentialId,
+                normalizedExchangeAccountId,
+                "ENABLED",
+                normalizedActor,
+                normalizedReason,
+                enableMetadata(credentialType, true),
+                now
+        );
+        return exchangeAccountCredentialRepository.findByCredentialIdForOwner(
+                normalizedOwnerUserId,
+                normalizedExchangeAccountId,
+                normalizedCredentialId
+        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
+    }
+
     private void requireOwnedAccount(Long ownerUserId, Long exchangeAccountId) {
         exchangeAccountRepository.findByIdForOwner(
                 requirePositive(ownerUserId, "ownerUserId"),
@@ -503,6 +614,8 @@ public class ExchangeAccountCredentialCommandService {
         }
         String lower = normalized.toLowerCase(Locale.ROOT);
         if (lower.contains("token")
+                || lower.contains("api key")
+                || lower.contains("api_key")
                 || lower.contains("api secret")
                 || lower.contains("api_secret")
                 || lower.contains("private key")
@@ -516,6 +629,21 @@ public class ExchangeAccountCredentialCommandService {
             throw new IllegalArgumentException("reason must not contain sensitive credential material");
         }
         return normalized;
+    }
+
+    private String enableMetadata(String credentialType, boolean reasonPresent) {
+        ObjectNode metadata = objectMapper.createObjectNode();
+        metadata.put("credentialStatus", "ACTIVE");
+        metadata.put("previousCredentialStatus", "DISABLED");
+        metadata.put("source", "credential_enable_command");
+        metadata.put("credentialType", credentialType);
+        metadata.put("reasonPresent", reasonPresent);
+        metadata.put("verificationStatus", "VERIFIED");
+        try {
+            return objectMapper.writeValueAsString(metadata);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("failed to serialize credential enable audit metadata", ex);
+        }
     }
 
     private String rotateMetadata(

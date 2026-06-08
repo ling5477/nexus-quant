@@ -59,11 +59,13 @@ public class AccountModuleConfiguration {
     public ExchangeAccountCredentialCommandService exchangeAccountCredentialCommandService(
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
+            ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier,
             ObjectMapper objectMapper
     ) {
         return new ExchangeAccountCredentialCommandService(
                 exchangeAccountRepository,
                 exchangeAccountCredentialRepository,
+                exchangeAccountCredentialVerifier,
                 objectMapper
         );
     }

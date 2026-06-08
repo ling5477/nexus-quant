@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.account.api.web;
 
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountActiveCredentialResponse;
+import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialEnableRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialLifecycleRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialRotateRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialSummaryResponse;
@@ -235,6 +236,33 @@ public class ExchangeAccountCredentialController {
                 credentialId,
                 actor.actor(),
                 lifecycleReason(requestBody)
+        ));
+    }
+
+    @PostMapping("/{credentialId}/enable")
+    @Operation(
+            summary = "重新启用临时禁用的凭证",
+            description = "只允许 DISABLED 且 inactive 的 credential 经本地结构性校验后恢复为 ACTIVE；credentialType 从 credentialId 派生，不调用真实交易所，不返回或记录敏感材料。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "重新启用成功"),
+            @ApiResponse(responseCode = "400", description = "请求非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "状态冲突或结构性校验失败", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ExchangeAccountCredentialSummaryResponse enable(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @PathVariable @Positive(message = "credentialId must be positive") Long credentialId,
+            @Valid @RequestBody ExchangeAccountCredentialEnableRequestBody requestBody
+    ) {
+        CurrentCredentialActor actor = resolveCurrentCredentialActor();
+        return ExchangeAccountCredentialSummaryResponse.from(exchangeAccountCredentialCommandService.enable(
+                actor.userId(),
+                accountId,
+                credentialId,
+                actor.actor(),
+                requestBody.reason()
         ));
     }
 

@@ -60,6 +60,26 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DB Schema Credential Enable Command Batch 5-F-C 验证记录（2026-06-08）
+
+本轮实现最小 credential enable command，并同步 `docs/current` 文档；未新增 migration，未修改历史 migration，未修改前端、Python 或部署脚本。验证结论以本节命令实际结果为准。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api,nq-app -am test` | 通过 | 实际 reactor 覆盖 23 个后端模块，`BUILD SUCCESS`；新增关键测试包括 `ExchangeAccountCredentialCommandServiceTest` 15 tests / 0 failures、`JdbcExchangeAccountCredentialRepositoryTest` 2 tests / 0 failures、`ExchangeAccountCredentialControllerWebMvcTest` 4 tests / 0 failures。 |
+| `mvn -f backend/pom.xml test` | 通过 | 23 个后端模块均为 `SUCCESS`，最终 `BUILD SUCCESS`，总耗时 `02:11 min`，完成时间 `2026-06-08T11:31:38+08:00`。 |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| migration 范围检查 | 通过 | 本轮未新增 migration，未修改历史 migration；Batch 5-F-C 复用 Batch 5-F-B 已准备的 `V30__schema_credential_enable_audit_event.sql`。 |
+| Java/API enable 回归覆盖 | 通过 | 覆盖 `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/enable`、reason 必填、同 account + credentialType 其他 ACTIVE 冲突、`ACTIVE / REVOKED / ROTATED / EXPIRED` 拒绝、结构性校验失败保持 `DISABLED`、response 脱敏。 |
+| 禁止范围检查 | 通过 | 未修改前端、Python、部署脚本；未新增真实交易所权限探活、reveal/decrypt/includeSecret endpoint、AI、DH、LIVE 或真实交易路径；未把 GateK-PLAN 写成实现已启动。 |
+
+验证过程中的已知非本轮问题 / 既有 warning：
+
+- Maven settings.xml 仍提示 `Unrecognised tag: 'profiles'`。
+- 部分测试仍有既有 SLF4J provider、Mockito dynamic agent warning。
+- `TradingVerificationControllerLocalTest.shouldReturnUnifiedInternalError` 会按测试预期触发统一 internal error 日志，测试结果仍为 0 failure。
+- local profile 下 OKX adapter bootstrap 仍可能因本地网络返回 fallback warning，不影响本轮 credential enable command 测试通过结论。
+
 ## DB Schema Credential Enable Audit Event Schema Batch 5-F-B 验证记录（2026-06-08）
 
 本轮新增 schema-only migration，为 `credential_audit_logs.event_type` CHECK 增加 `ENABLED`，并同步 `docs/current` 文档；未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。

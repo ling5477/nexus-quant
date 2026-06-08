@@ -169,6 +169,73 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
     }
 
     @Override
+    public Optional<ExchangeAccountCredentialMaterial> findByCredentialIdForOwnerForUpdate(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId
+    ) {
+        List<ExchangeAccountCredentialMaterial> rows = jdbcTemplate.query(
+                """
+                        SELECT credential_id,
+                               exchange_account_id,
+                               credential_type,
+                               masked_access_key,
+                               credential_status,
+                               verification_status,
+                               is_active,
+                               revoked_at,
+                               rotated_from_credential_id,
+                               rotated_at,
+                               last_verified_at,
+                               last_verification_error,
+                               updated_at,
+                               pgp_sym_decrypt(encrypted_payload, ?) AS decrypted_payload_json
+                        FROM exchange_account_credentials
+                        WHERE credential_id = ?
+                          AND exchange_account_id = ?
+                          AND EXISTS (
+                              SELECT 1
+                              FROM exchange_accounts ea
+                              WHERE ea.exchange_account_id = exchange_account_credentials.exchange_account_id
+                                AND ea.owner_user_id = ?
+                          )
+                        LIMIT 1
+                        FOR UPDATE
+                        """,
+                MATERIAL_ROW_MAPPER,
+                masterKey,
+                credentialId,
+                exchangeAccountId,
+                ownerUserId
+        );
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
+    public boolean existsOtherActiveCredential(
+            Long exchangeAccountId,
+            String credentialType,
+            Long excludedCredentialId
+    ) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(1)
+                        FROM exchange_account_credentials
+                        WHERE exchange_account_id = ?
+                          AND credential_type = ?
+                          AND credential_id <> ?
+                          AND is_active = TRUE
+                          AND credential_status = 'ACTIVE'
+                        """,
+                Integer.class,
+                exchangeAccountId,
+                credentialType,
+                excludedCredentialId
+        );
+        return count != null && count > 0;
+    }
+
+    @Override
     public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
             Long ownerUserId,
             Long exchangeAccountId,
@@ -329,6 +396,36 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 lastVerificationError,
                 Timestamp.from(updatedAt),
                 credentialId
+        ) > 0;
+    }
+
+    @Override
+    public boolean markEnabled(
+            Long credentialId,
+            Long exchangeAccountId,
+            String verificationStatus,
+            Instant verifiedAt,
+            Instant updatedAt
+    ) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE exchange_account_credentials
+                        SET credential_status = 'ACTIVE',
+                            is_active = TRUE,
+                            verification_status = ?,
+                            last_verified_at = ?,
+                            last_verification_error = NULL,
+                            updated_at = ?
+                        WHERE credential_id = ?
+                          AND exchange_account_id = ?
+                          AND credential_status = 'DISABLED'
+                          AND is_active = FALSE
+                        """,
+                verificationStatus,
+                Timestamp.from(verifiedAt),
+                Timestamp.from(updatedAt),
+                credentialId,
+                exchangeAccountId
         ) > 0;
     }
 

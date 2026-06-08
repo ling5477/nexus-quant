@@ -100,6 +100,31 @@ public interface ExchangeAccountCredentialRepository {
             Long credentialId
     );
 
+    /**
+     * 按 account + credentialId 锁定任意生命周期的 credential material。
+     *
+     * <p>Why: enable 只能从 DISABLED 恢复，结构性校验需要读取服务端解密后的 material，
+     * 但该 material 不能进入 API response、普通日志或 audit metadata。调用方必须在同一事务内
+     * 完成状态检查、结构性校验、ACTIVE 冲突检测、状态写回和 audit log，避免并发 enable 造成双 active。</p>
+     */
+    Optional<ExchangeAccountCredentialMaterial> findByCredentialIdForOwnerForUpdate(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId
+    );
+
+    /**
+     * 检查同一 account + credentialType 下是否存在其他 ACTIVE credential。
+     *
+     * <p>Why: enable 会把一个 inactive credential 恢复为 ACTIVE。必须在写回前主动检查
+     * 业务冲突，而不是依赖数据库 partial unique index 抛底层异常。</p>
+     */
+    boolean existsOtherActiveCredential(
+            Long exchangeAccountId,
+            String credentialType,
+            Long excludedCredentialId
+    );
+
     void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt);
 
     ExchangeAccountCredentialSummary insertNewVersion(
@@ -118,6 +143,20 @@ public interface ExchangeAccountCredentialRepository {
             String verificationStatus,
             Instant verifiedAt,
             String lastVerificationError,
+            Instant updatedAt
+    );
+
+    /**
+     * 把 DISABLED credential 恢复为 ACTIVE，并同步结构性校验结果。
+     *
+     * <p>Why: enable 成功必须原子写入 credential_status、is_active、verification_status、
+     * last_verified_at 和 updated_at；不得清空 revoke/rotate 历史字段，也不得触碰 encrypted payload。</p>
+     */
+    boolean markEnabled(
+            Long credentialId,
+            Long exchangeAccountId,
+            String verificationStatus,
+            Instant verifiedAt,
             Instant updatedAt
     );
 

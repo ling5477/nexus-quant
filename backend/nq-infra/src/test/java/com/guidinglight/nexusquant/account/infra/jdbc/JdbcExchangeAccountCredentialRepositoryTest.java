@@ -33,11 +33,14 @@ class JdbcExchangeAccountCredentialRepositoryTest {
         assertEquals(Optional.of(summary), repository.findActiveByAccountAndType(900001L, "OKX_API_V5"));
         assertEquals(Optional.of(summary), repository.findByCredentialIdForOwner(1L, 900001L, 1L));
         assertEquals(Optional.of(summary), repository.findActiveByCredentialIdForOwnerForUpdate(1L, 900001L, 1L));
+        assertEquals(Optional.of(material), repository.findByCredentialIdForOwnerForUpdate(1L, 900001L, 1L));
+        assertFalse(repository.existsOtherActiveCredential(900001L, "OKX_API_V5", 1L));
         assertEquals(Optional.of(material), repository.findActiveMaterial(1L, 900001L));
         assertEquals(Optional.of(material), repository.findActiveMaterial(1L, 900001L, "OKX_API_V5"));
         assertEquals(summary, repository.insertNewVersion(900001L, "OKX_API_V5", "{}", 1, "PGP_SYM_AES256", "tes***ey", null, Instant.parse("2026-04-06T00:01:00Z")));
         repository.deactivateActiveByAccountAndType(900001L, "OKX_API_V5", Instant.parse("2026-04-06T00:02:00Z"));
         assertTrue(repository.markVerificationResult(1L, "VERIFIED", Instant.parse("2026-04-06T00:03:00Z"), null, Instant.parse("2026-04-06T00:03:00Z")));
+        assertTrue(repository.markEnabled(1L, 900001L, "VERIFIED", Instant.parse("2026-04-06T00:03:30Z"), Instant.parse("2026-04-06T00:03:30Z")));
         assertTrue(repository.updateLifecycleStatus(1L, 900001L, "REVOKED", false, Instant.parse("2026-04-06T00:04:00Z"), "admin", "offboarded", Instant.parse("2026-04-06T00:04:00Z")));
         assertTrue(repository.markRotated(1L, 900001L, "admin", Instant.parse("2026-04-06T00:05:00Z")));
         repository.appendCredentialAuditLog(1L, 900001L, "REVOKED", "admin", "offboarded", "{\"credentialStatus\":\"REVOKED\"}", Instant.parse("2026-04-06T00:04:00Z"));
@@ -46,9 +49,11 @@ class JdbcExchangeAccountCredentialRepositoryTest {
         assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("credential_type = ?")));
         assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("credential_status = 'ACTIVE'")));
         assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("FOR UPDATE")));
+        assertTrue(jdbcTemplate.queryForObjectCountSql.contains("COUNT(1)"));
         assertFalse(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("ORDER BY updated_at DESC") && sql.contains("LIMIT 1")));
         assertFalse(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("permission_scope")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = 'ROTATED'")));
+        assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = 'ACTIVE'")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = ?")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("rotated_by = ?")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("INSERT INTO credential_audit_logs")));
@@ -79,6 +84,7 @@ class JdbcExchangeAccountCredentialRepositoryTest {
         private final List<String> querySqls = new ArrayList<>();
         private final List<String> updateSqls = new ArrayList<>();
         private String queryForObjectSql;
+        private String queryForObjectCountSql;
 
         @Override
         public int update(String sql, Object... args) {
@@ -105,6 +111,12 @@ class JdbcExchangeAccountCredentialRepositoryTest {
             @SuppressWarnings("unchecked")
             T casted = (T) queryForObjectSummary;
             return casted;
+        }
+
+        @Override
+        public <T> T queryForObject(String sql, Class<T> requiredType, Object... args) {
+            queryForObjectCountSql = sql;
+            return requiredType.cast(0);
         }
     }
 }

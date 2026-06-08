@@ -65,7 +65,7 @@ GateO：A 股适配
 - `CREDENTIAL_ROTATE_GOVERNANCE_REVIEW.md`：Credential rotate Batch 5-D-A 只读审计报告；作为 5-D-B 实现前的审计快照保留。
 - `CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：Credential active material Batch 5-E-A 只读审计报告；记录 active summary / active material 多 credential type 选择风险与 5-E-B 建议。
 - `CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：Credential active credential Batch 5-E-C 只读审计报告；记录 account 全局 active 唯一约束取舍、5-E-D migration 决策和 Batch 5-F enable 审计前置条件。
-- `CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：Credential enable Batch 5-F-A 只读审计报告；记录可恢复状态、不可恢复状态和 Batch 5-F-B schema-only `ENABLED` audit event 准备事实；enable endpoint 仍未实现。
+- `CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：Credential enable Batch 5-F-A 只读审计报告；记录可恢复状态、不可恢复状态和 Batch 5-F-B schema-only `ENABLED` audit event 准备事实；Batch 5-F-C 已实现最小 enable command。
 - `TESTING.md`：统一验证命令与本次验证记录。
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。

@@ -52,7 +52,8 @@
 - Batch 5-D-B 未新增 migration；显式 rotate command 复用 V12 active partial unique index、V29 `rotated_at / rotated_by` 和 `credential_audit_logs`，在单事务内锁定旧 ACTIVE credential、旧 credential 标记 `ROTATED`、新 credential 创建为 `ACTIVE`，并追加旧 `ROTATED` / 新 `CREATED` audit log。audit metadata 只保存 old/new credentialId、credentialType、状态、来源和 reasonPresent，不保存 secret、token、private key、passphrase、明文 payload 或交易所凭证。
 - Batch 5-E-B 未新增 migration、未修改历史 migration；应用层已把 active summary / active material 改为 deterministic selection：无 `credentialType` 时先列出同 account 所有 `credential_status='ACTIVE' AND is_active=true` 候选，0 条返回未配置，1 条返回该 credential，多条返回业务冲突；指定 `credentialType` 时只读取对应 ACTIVE credential。V12 `(exchange_account_id, credential_type) WHERE is_active = TRUE` partial unique index 保持不变，V29 `permission_scope` 仍只作为治理元数据，不用于交易权限判断。
 - `V30__schema_credential_enable_audit_event.sql` 已完成 Batch 5-F-B schema-only 治理：仅重建 `credential_audit_logs.event_type` CHECK，增加 `ENABLED`，并更新 `credential_audit_logs` 表、`event_type` 和 `metadata` 注释；未新增字段，未修改 `exchange_account_credentials`，未做数据 backfill。
-- 当前未新增 enable endpoint、真实交易所权限探活、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
+- Batch 5-F-C 未新增 migration、未修改历史 migration；应用层已新增 credential enable command：只允许 `DISABLED` 且 `is_active=false` 的 credential 经本地结构性校验后恢复为 `ACTIVE`，同事务内检查同 account + credentialType 无其他 ACTIVE，写入 `ENABLED` audit log。enable 不清零 `failed_auth_count`，不清空 `revoked_at / rotated_at` 历史字段，不把 `permission_scope=NULL` 解释为 `TRADE`。
+- 当前未新增真实交易所权限探活、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
 
 ## Research / Backtest Config Archive Semantics
 

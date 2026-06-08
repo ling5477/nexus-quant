@@ -2,6 +2,64 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Enable Command Batch 5-F-C
+
+日期：2026-06-08
+
+### 本轮目标
+
+实现最小 credential enable command：`POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/enable`。该命令只允许 `DISABLED` 且 `is_active=false` 的 credential 经本地结构性校验后恢复为 `ACTIVE`，并写入 append-only `credential_audit_logs.event_type='ENABLED'`。本轮不新增 migration，不修改历史 migration，不做真实交易所权限探活，不修改前端、Python 或部署脚本。
+
+### 修改文件
+
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/port/ExchangeAccountCredentialRepository.java`
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepository.java`
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandService.java`
+- `backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/dto/ExchangeAccountCredentialEnableRequestBody.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialCommandServiceTest.java`
+- `backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/ExchangeAccountCredentialVerificationServiceTest.java`
+- `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/jdbc/JdbcExchangeAccountCredentialRepositoryTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialControllerWebMvcTest.java`
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_CHANGE + DOCUMENTATION`；主 skill 为 `java-backend-maintenance`；辅助 `db-schema-migration-review` 仅用于确认 Batch 5-F-B `V30` 已准备 `ENABLED` audit event，不新增 migration。
+- Repository port 新增 enable 所需的内部方法：按 owner/account/credentialId 锁定 credential material、检查同 account + credentialType 是否已有其他 ACTIVE、以及只针对 `DISABLED AND is_active=false` 的 `markEnabled`。
+- JDBC Repository 使用 `SELECT ... FOR UPDATE` 读取目标 credential material；该 material 仅供 Service 本地结构性校验使用，不进入 API response、audit metadata 或日志。
+- Service 新增单事务 `enable`：先校验 owner/account，再锁定目标 credential，拒绝 `ACTIVE / REVOKED / ROTATED / EXPIRED`，拒绝带 `revoked_at / rotated_at` 历史标记的不可恢复记录，检查同 type 无其他 ACTIVE，执行本地结构性校验，成功后写回 `ACTIVE / VERIFIED / last_verified_at / updated_at` 并追加 `ENABLED` audit log。
+- API 新增 `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/enable`；请求体只接收必填 `reason`，`credentialType` 从 credentialId 对应记录派生，不接收 actor、credential material 或权限声明。
+- audit metadata 只保存脱敏状态、来源、credentialType、reasonPresent 和 verificationStatus；不保存 secret、token、API key、private key、passphrase、签名、明文 payload 或交易所凭证。
+- 测试覆盖 enable 成功、同 type 其他 ACTIVE 冲突、非可恢复状态拒绝、结构性校验失败保持 DISABLED、reason 缺失/敏感词拒绝、Repository SQL/更新语义和 Controller response 脱敏。
+- 文档同步 API、DB schema 当前事实、治理计划、README 索引、WORKLOG 和 TESTING。
+
+### 验证记录
+
+- 已执行 `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api,nq-app -am test`，通过；实际 reactor 覆盖 23 个后端模块，`BUILD SUCCESS`。
+- 已执行 `mvn -f backend/pom.xml test`，通过；23 个后端模块均为 `SUCCESS`，最终 `BUILD SUCCESS`，总耗时 `02:11 min`。
+- 已执行 `git diff --check`，通过；无 whitespace error。
+- 已执行范围检查：本轮未新增 migration，未修改历史 migration，未修改前端/Python/部署脚本，未新增真实交易所权限探活、reveal/decrypt/includeSecret endpoint、AI、DH、LIVE 或真实交易路径。
+
+### 边界确认
+
+- 未新增 migration；Batch 5-F-C 复用 Batch 5-F-B 已准备的 `V30__schema_credential_enable_audit_event.sql`。
+- 未修改历史 migration。
+- 未修改 `exchange_account_credentials` 字段；未新增字段，未做数据 backfill。
+- 未清零 `failed_auth_count`，未清空 `revoked_at / rotated_at` 历史字段，未把 `permission_scope=NULL` 解释为 `TRADE`。
+- 未修改前端、Python 或部署脚本。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未调用真实交易所，未做真实交易所权限探活。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未把 GateK-PLAN 写成实现已启动。
+
 ## DB Schema Credential Enable Audit Event Schema Batch 5-F-B
 
 日期：2026-06-08

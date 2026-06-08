@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCr
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMaterial;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
+import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialVerificationResult;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
@@ -294,6 +295,172 @@ class ExchangeAccountCredentialCommandServiceTest {
     }
 
     @Test
+    void shouldEnableDisabledCredentialAfterStructuralVerificationAndAppendAuditLog() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary active = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("OKX_API_V5", "test-api-key", "secret", "pass", null),
+                1
+        );
+        service.disable(1L, account.exchangeAccountId(), active.credentialId(), "admin", "temporary stop");
+
+        ExchangeAccountCredentialSummary enabled = service.enable(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                "admin",
+                "operator approved re-enable"
+        );
+
+        ExchangeAccountCredentialMaterial material = credentialRepository.findActiveMaterial(
+                1L,
+                account.exchangeAccountId(),
+                "OKX_API_V5"
+        ).orElseThrow();
+        assertEquals("ACTIVE", enabled.credentialStatus());
+        assertTrue(enabled.isActive());
+        assertEquals("VERIFIED", enabled.verificationStatus());
+        assertEquals(fixedClock.instant(), enabled.lastVerifiedAt());
+        assertEquals(active.credentialId(), material.credentialId());
+        assertEquals(List.of("DISABLED", "ENABLED"), credentialRepository.auditLogs.stream().map(AuditLog::eventType).toList());
+        AuditLog enabledAudit = credentialRepository.auditLogs.get(1);
+        assertEquals("admin", enabledAudit.actor());
+        assertEquals("operator approved re-enable", enabledAudit.reason());
+        assertTrue(enabledAudit.metadataJson().contains("\"previousCredentialStatus\":\"DISABLED\""));
+        assertTrue(enabledAudit.metadataJson().contains("\"verificationStatus\":\"VERIFIED\""));
+        assertFalse(containsSensitiveAuditMetadata(enabledAudit.metadataJson()));
+        assertFalse(enabledAudit.metadataJson().contains("permissionScope"));
+        assertFalse(enabledAudit.metadataJson().contains("TRADE"));
+    }
+
+    @Test
+    void shouldRejectEnableWhenSameTypeAlreadyHasActiveCredential() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary disabledSource = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("OKX_API_V5", "first-api-key", "secret", "pass", null),
+                1
+        );
+        service.disable(1L, account.exchangeAccountId(), disabledSource.credentialId(), "admin", "temporary stop");
+        service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("OKX_API_V5", "second-api-key", "secret-2", "pass-2", null),
+                1
+        );
+
+        IllegalStateException conflict = assertThrows(IllegalStateException.class, () -> service.enable(
+                1L,
+                account.exchangeAccountId(),
+                disabledSource.credentialId(),
+                "admin",
+                "operator approved re-enable"
+        ));
+
+        assertEquals("credential enable requires no other ACTIVE credential with same credentialType", conflict.getMessage());
+        assertEquals("DISABLED", credentialRepository.findByCredentialId(disabledSource.credentialId()).orElseThrow().credentialStatus());
+        assertEquals(List.of("DISABLED"), credentialRepository.auditLogs.stream().map(AuditLog::eventType).toList());
+    }
+
+    @Test
+    void shouldRejectEnableFromNonRecoverableOrActiveStatuses() {
+        assertEnableRejectedAfterLifecycle("ACTIVE");
+        assertEnableRejectedAfterLifecycle("REVOKED");
+        assertEnableRejectedAfterLifecycle("ROTATED");
+        assertEnableRejectedAfterLifecycle("EXPIRED");
+    }
+
+    @Test
+    void shouldKeepDisabledWhenEnableStructuralVerificationFails() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                material -> ExchangeAccountCredentialVerificationResult.failed("local structural failure"),
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary active = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("BINANCE_HMAC", "first-key", "secret-1", null, null),
+                1
+        );
+        service.disable(1L, account.exchangeAccountId(), active.credentialId(), "admin", "temporary stop");
+
+        IllegalStateException failed = assertThrows(IllegalStateException.class, () -> service.enable(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                "admin",
+                "operator approved re-enable"
+        ));
+
+        ExchangeAccountCredentialSummary disabled = credentialRepository.findByCredentialId(active.credentialId()).orElseThrow();
+        assertEquals("credential enable structural verification failed", failed.getMessage());
+        assertEquals("DISABLED", disabled.credentialStatus());
+        assertFalse(disabled.isActive());
+        assertEquals(List.of("DISABLED"), credentialRepository.auditLogs.stream().map(AuditLog::eventType).toList());
+    }
+
+    @Test
+    void shouldRejectEnableWhenReasonMissingOrSensitive() {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary active = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("OKX_API_V5", "test-api-key", "secret", "pass", null),
+                1
+        );
+        service.disable(1L, account.exchangeAccountId(), active.credentialId(), "admin", "temporary stop");
+
+        assertThrows(IllegalArgumentException.class, () -> service.enable(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                "admin",
+                " "
+        ));
+        assertThrows(IllegalArgumentException.class, () -> service.enable(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                "admin",
+                "contains api key"
+        ));
+        assertEquals("DISABLED", credentialRepository.findByCredentialId(active.credentialId()).orElseThrow().credentialStatus());
+        assertEquals(List.of("DISABLED"), credentialRepository.auditLogs.stream().map(AuditLog::eventType).toList());
+    }
+
+    @Test
     void shouldRejectSensitiveLifecycleReason() {
         InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
         InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
@@ -359,6 +526,47 @@ class ExchangeAccountCredentialCommandServiceTest {
                 "admin",
                 3
         ));
+    }
+
+    private void assertEnableRejectedAfterLifecycle(String lifecycleStatus) {
+        InMemoryExchangeAccountRepository accountRepository = new InMemoryExchangeAccountRepository();
+        InMemoryExchangeAccountCredentialRepository credentialRepository = new InMemoryExchangeAccountCredentialRepository();
+        ExchangeAccountCredentialCommandService service = new ExchangeAccountCredentialCommandService(
+                accountRepository,
+                credentialRepository,
+                objectMapper,
+                fixedClock
+        );
+        ExchangeAccountSummary account = accountRepository.seed();
+        ExchangeAccountCredentialSummary active = service.upsert(
+                1L,
+                account.exchangeAccountId(),
+                new ExchangeAccountCredentialUpsertCommand("BINANCE_HMAC", "first-key", "secret-1", null, null),
+                1
+        );
+        switch (lifecycleStatus) {
+            case "ACTIVE" -> { }
+            case "REVOKED" -> service.revoke(1L, account.exchangeAccountId(), active.credentialId(), "admin", "operator offboarding");
+            case "EXPIRED" -> service.expire(1L, account.exchangeAccountId(), active.credentialId(), "admin", "expired by policy");
+            case "ROTATED" -> service.rotate(
+                    1L,
+                    account.exchangeAccountId(),
+                    active.credentialId(),
+                    new ExchangeAccountCredentialRotateCommand("second-key", "secret-2", null, null, "scheduled key rotation"),
+                    "admin",
+                    2
+            );
+            default -> throw new IllegalArgumentException("unsupported test lifecycleStatus: " + lifecycleStatus);
+        }
+
+        assertThrows(IllegalStateException.class, () -> service.enable(
+                1L,
+                account.exchangeAccountId(),
+                active.credentialId(),
+                "admin",
+                "operator approved re-enable"
+        ));
+        assertFalse(credentialRepository.auditLogs.stream().anyMatch(log -> "ENABLED".equals(log.eventType())));
     }
 
     private static boolean containsSensitiveAuditMetadata(String metadataJson) {
@@ -464,6 +672,22 @@ class ExchangeAccountCredentialCommandServiceTest {
         }
 
         @Override
+        public Optional<ExchangeAccountCredentialMaterial> findByCredentialIdForOwnerForUpdate(Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+            return Optional.ofNullable(storage.get(credentialId))
+                    .filter(item -> item.exchangeAccountId().equals(exchangeAccountId));
+        }
+
+        @Override
+        public boolean existsOtherActiveCredential(Long exchangeAccountId, String credentialType, Long excludedCredentialId) {
+            return storage.values().stream()
+                    .anyMatch(item -> item.exchangeAccountId().equals(exchangeAccountId)
+                            && item.credentialType().equals(credentialType)
+                            && !item.credentialId().equals(excludedCredentialId)
+                            && item.isActive()
+                            && "ACTIVE".equals(item.credentialStatus()));
+        }
+
+        @Override
         public void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt) {
             storage.replaceAll((id, current) -> current.exchangeAccountId().equals(exchangeAccountId) && current.credentialType().equals(credentialType) && current.isActive()
                     ? new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), "ROTATED", current.verificationStatus(), false, current.revokedAt(), current.rotatedFromCredentialId(), revokedAt, current.lastVerifiedAt(), current.lastVerificationError(), revokedAt, current.decryptedPayloadJson())
@@ -484,6 +708,19 @@ class ExchangeAccountCredentialCommandServiceTest {
                 return false;
             }
             storage.put(credentialId, new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), current.credentialStatus(), verificationStatus, current.isActive(), current.revokedAt(), current.rotatedFromCredentialId(), current.rotatedAt(), verifiedAt, lastVerificationError, updatedAt, current.decryptedPayloadJson()));
+            return true;
+        }
+
+        @Override
+        public boolean markEnabled(Long credentialId, Long exchangeAccountId, String verificationStatus, Instant verifiedAt, Instant updatedAt) {
+            ExchangeAccountCredentialMaterial current = storage.get(credentialId);
+            if (current == null
+                    || !current.exchangeAccountId().equals(exchangeAccountId)
+                    || current.isActive()
+                    || !"DISABLED".equals(current.credentialStatus())) {
+                return false;
+            }
+            storage.put(credentialId, new ExchangeAccountCredentialMaterial(current.credentialId(), current.exchangeAccountId(), current.credentialType(), current.maskedAccessKey(), "ACTIVE", verificationStatus, true, current.revokedAt(), current.rotatedFromCredentialId(), current.rotatedAt(), verifiedAt, null, updatedAt, current.decryptedPayloadJson()));
             return true;
         }
 

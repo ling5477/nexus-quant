@@ -38,16 +38,17 @@
 - `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/rotate`：显式轮换指定 ACTIVE credential；`credentialType` 从旧 credential 派生，请求体必须包含新 credential material 和 rotate reason；同事务内旧 credential 标记 `ROTATED`、新 credential 创建为 `ACTIVE`，并追加旧 `ROTATED` / 新 `CREATED` audit log。
 - `POST /api/exchange-accounts/{accountId}/credentials/verify`：对当前 active credential 做结构性校验，支持可选查询参数 `credentialType` 显式选择；未指定 `credentialType` 且同一 account 存在多个 ACTIVE credential type 时返回 `409 STATE_CONFLICT`。该接口只处理 `credential_status='ACTIVE'` 且 `is_active=true` 的 active material。
 - `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/revoke`：不可恢复撤销 credential，写入 `credential_status='REVOKED'`、`revokedAt` 和 append-only `credential_audit_logs` 事件；重复 revoke 幂等返回当前摘要。
-- `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/disable`：临时禁用 credential，写入 `credential_status='DISABLED'` 和 append-only audit 事件；本轮不实现 enable。
+- `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/disable`：临时禁用 credential，写入 `credential_status='DISABLED'` 和 append-only audit 事件。
+- `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/enable`：重新启用临时禁用的 credential；只允许 `credential_status='DISABLED' AND is_active=false` 的 credential 经本地结构性校验后恢复为 `ACTIVE`，拒绝 `ACTIVE / REVOKED / ROTATED / EXPIRED`，同事务内检查同 account + credentialType 无其他 ACTIVE，写入 `ENABLED` audit log。请求体只包含必填 `reason`，`credentialType` 从 credentialId 派生；不调用真实交易所，不返回或记录敏感材料。
 - `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/expire`：标记 credential 过期，写入 `credential_status='EXPIRED'` 和 append-only audit 事件。
 
 Credential API 固定边界：
 
 - API response 不返回 `encryptedPayload`、`decryptedPayloadJson`、`apiKey`、`secretKey`、`token`、`privateKeyPem`、`passphrase` 或任何明文 credential material。
-- revoke / disable / expire lifecycle command request body 只接收 `reason`；rotate command request body 接收新 credential material 和必填 `reason`。应用层限制 reason 长度并拒绝明显包含 token、secret、private key、password、助记词、密钥等敏感材料的原因。
+- revoke / disable / expire lifecycle command request body 只接收 `reason`；enable command request body 只接收必填 `reason`；rotate command request body 接收新 credential material 和必填 `reason`。应用层限制 reason 长度并拒绝明显包含 token、API key、secret、private key、password、助记词、密钥等敏感材料的原因。
 - `DISABLED / REVOKED / EXPIRED / ROTATED` 均不会进入 active material 查询；`REVOKED / ROTATED` 不允许通过本轮接口改写为 `DISABLED / EXPIRED`。
-- Batch 5-E-B 后，active summary / active material 无 `credentialType` 路径只在候选唯一时返回；多 ACTIVE credential type 必须显式选择或返回 409。`permission_scope=NULL` 仍表示权限尚未由代码确认，本轮不把 `permission_scope` 作为交易权限判断。
-- 当前未新增 enable endpoint、真实交易所权限探活、AI / DH / Agent credential 调用、LIVE 交易或真实下单路径。
+- Batch 5-E-B 后，active summary / active material 无 `credentialType` 路径只在候选唯一时返回；多 ACTIVE credential type 必须显式选择或返回 409。`permission_scope=NULL` 仍表示权限尚未由代码确认，enable 不把 `permission_scope=NULL` 解释为 `TRADE`，本轮不把 `permission_scope` 作为交易权限判断。
+- 当前未新增真实交易所权限探活、AI / DH / Agent credential 调用、LIVE 交易或真实下单路径。
 
 ## GateH-1 Trading Workspace API
 

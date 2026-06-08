@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
@@ -35,7 +34,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -202,9 +200,25 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                 null,
                 Instant.parse("2026-04-06T00:03:00Z")
         );
+        ExchangeAccountCredentialSummary enabled = new ExchangeAccountCredentialSummary(
+                1L,
+                900001L,
+                "OKX_API_V5",
+                "tes***ey",
+                "ACTIVE",
+                "VERIFIED",
+                true,
+                null,
+                null,
+                null,
+                Instant.parse("2026-04-06T00:04:00Z"),
+                null,
+                Instant.parse("2026-04-06T00:04:00Z")
+        );
         when(commandService.revoke(any(), any(), any(), any(), any())).thenReturn(revoked);
         when(commandService.disable(any(), any(), any(), any(), any())).thenReturn(disabled);
         when(commandService.expire(any(), any(), any(), any(), any())).thenReturn(expired);
+        when(commandService.enable(any(), any(), any(), any(), any())).thenReturn(enabled);
 
         mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/revoke")
                         .contentType("application/json")
@@ -229,8 +243,28 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.credentialStatus").value("EXPIRED"))
                 .andExpect(jsonPath("$.encryptedPayload").doesNotExist());
-        assertTrue(Arrays.stream(ExchangeAccountCredentialController.class.getDeclaredMethods())
-                .noneMatch(method -> "enable".equals(method.getName())));
+
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/enable")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"operator approved re-enable\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialStatus").value("ACTIVE"))
+                .andExpect(jsonPath("$.verificationStatus").value("VERIFIED"))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.decryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.secretKey").doesNotExist())
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.privateKeyPem").doesNotExist())
+                .andExpect(jsonPath("$.passphrase").doesNotExist());
+    }
+
+    @Test
+    void shouldRejectEnableWhenReasonMissing() throws Exception {
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/enable")
+                        .contentType("application/json")
+                        .content("{\"reason\":\" \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
     private static final class TestTraceIdFilter extends OncePerRequestFilter {
