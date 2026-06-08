@@ -2,6 +2,48 @@
 
 日期：2026-05-16
 
+## DB Schema Credential Governance Doc Cleanup Batch 5-G-A
+
+日期：2026-06-08
+
+### 本轮目标
+
+只修复 Batch 5-G freeze review 发现的 P3 文案问题：修正 credential disable endpoint OpenAPI description 的过期描述；为 Batch 5-F-A enable governance review 增加历史快照说明；同步 freeze review、README 索引、WORKLOG 和 TESTING。本轮不新增 migration，不修改 credential 业务逻辑，不新增 API，不接真实交易所、AI、DH 或 LIVE。
+
+### 修改文件
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java`
+- `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`
+- `docs/current/CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_CHANGE + DOCUMENTATION`；主 skill 为 `java-backend-maintenance`，只用于 Controller OpenAPI description 文案修复。
+- 将 disable endpoint description 从“本轮不提供 enable 接口”修正为当前事实：disable 只标记 `DISABLED` 并写 audit；恢复必须通过独立 enable 命令完成本地结构性校验。
+- 在 `CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md` 增加历史快照说明：该文档记录 5-F-A 当时 enable endpoint 未实现的审计结论；当前事实以 5-F-C enable command 和 5-G freeze review 为准。
+- 更新 `CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`，把 P3 cleanup 标记为已由 Batch 5-G-A 关闭。
+- 同步 README 索引、WORKLOG 和 TESTING。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；无 whitespace error。
+- 已执行 `mvn -f backend/pom.xml -pl nq-api -am test`，通过；相关 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`。
+- 已执行范围检查：本轮未新增 migration，未修改 Repository / Service / DTO / 测试业务语义，未修改前端/Python/部署脚本。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改 credential 业务逻辑。
+- 未修改 Repository / Service / DTO / 测试业务语义。
+- 未新增 API。
+- 未调用真实交易所，未实现 permission probe。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+
 ## DB Schema Credential Governance Freeze Review Batch 5-G
 
 日期：2026-06-08

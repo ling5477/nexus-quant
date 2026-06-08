@@ -60,6 +60,19 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DB Schema Credential Governance Doc Cleanup Batch 5-G-A 验证记录（2026-06-08）
+
+本轮只修复 Batch 5-G freeze review 发现的 P3 文案问题：修正 credential disable endpoint OpenAPI description 的过期描述；为 Batch 5-F-A enable governance review 增加历史快照说明；同步 freeze review、README 索引、WORKLOG 和 TESTING。本轮未新增 migration，未修改 credential 业务逻辑，未修改 Repository / Service / DTO / 测试业务语义，未新增 API，未修改前端、Python 或部署脚本。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| `mvn -f backend/pom.xml -pl nq-api -am test` | 通过 | 20 个 reactor module 均为 `SUCCESS`，最终 `BUILD SUCCESS`；`Total time: 03:36 min`，`Finished at: 2026-06-08T12:02:21+08:00`。 |
+| migration 范围检查 | 通过 | 本轮未新增 migration，未修改历史 migration。 |
+| Java/API 范围检查 | 通过 | 仅修改 `ExchangeAccountCredentialController.java` 的 OpenAPI description 文案；未修改 credential 业务逻辑、Repository、Service、DTO、测试业务语义或新增 API。 |
+| 前端/Python/部署范围检查 | 通过 | 本轮未修改 frontend、research、scripts 或部署相关路径。 |
+| 全量后端测试 `mvn -f backend/pom.xml test` | 未执行 | 本轮编译验证范围未因改动扩大；已按任务要求执行 `nq-api -am` 测试并通过，不把未执行的全量后端测试写成通过。 |
+
 ## DB Schema Credential Governance Freeze Review Batch 5-G 验证记录（2026-06-08）
 
 本轮只读复核 Batch 5-A ~ 5-F-C credential governance，并新增冻结复核文档；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本。验证结论以本节命令实际结果为准。

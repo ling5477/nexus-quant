@@ -215,7 +215,7 @@ public class ExchangeAccountCredentialController {
     @PostMapping("/{credentialId}/disable")
     @Operation(
             summary = "临时禁用凭证",
-            description = "把指定凭证标记为 DISABLED 并追加 credential_audit_logs。本轮不提供 enable 接口。",
+            description = "把指定凭证标记为 DISABLED 并追加 credential_audit_logs；后续如需恢复，必须通过独立 enable 命令完成本地结构性校验。",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({

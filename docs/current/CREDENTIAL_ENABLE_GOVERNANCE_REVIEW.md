@@ -5,6 +5,8 @@
 状态：Batch 5-F-A review completed；enable endpoint not implemented；Batch 5-F-B schema migration required before enable implementation。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
+> 历史快照说明：本文是 Batch 5-F-A 只读审计快照，记录 2026-06-07 当时 enable endpoint 尚未实现、且需要先完成 Batch 5-F-B schema-only `ENABLED` audit event 准备的结论。当前事实以 Batch 5-F-C enable command 实现和 Batch 5-G freeze review 为准；最新入口见 `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md` 与 `docs/current/CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`。
+
 ## 1. Scope
 
 本轮只读审计 credential enable / re-enable 生命周期设计，判断是否允许从 `DISABLED` 恢复为 `ACTIVE`，以及后续 enable 需要哪些前置校验、冲突检测、audit log 和测试。

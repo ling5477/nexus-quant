@@ -2,7 +2,7 @@
 
 任务：NQ-DB-SCHEMA-GOVERNANCE-BATCH-5G-CREDENTIAL-GOVERNANCE-FREEZE-REVIEW
 日期：2026-06-08
-状态：Batch 5-G freeze review completed；Batch 5 credential governance conditionally freezable；follow-up doc/comment cleanup recommended。
+状态：Batch 5-G freeze review completed；Batch 5 credential governance conditionally freezable；Batch 5-G-A P3 doc cleanup completed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
@@ -36,7 +36,7 @@
 - tests：已覆盖 revoke / disable / expire / rotate / enable、active material selection、response 脱敏、audit metadata 脱敏和 permission_scope 不参与交易权限判断。
 - docs：`API.md` 与 `DB_SCHEMA.md` 已准确记录当前只做本地结构性校验，不代表真实交易所权限可用。
 
-条件：存在 P3 级文档/注释过期项，应在后续 cleanup 批次修复，但不阻塞冻结。
+条件：Batch 5-G-A 已完成 P3 文档/注释过期项 cleanup；后续仍需在真实交易所权限探活进入实现前先做只读设计审计。
 
 ## 3. Required Review Checklist
 
@@ -55,7 +55,7 @@
 | 11 | failed_auth_count 是否未被错误清零 | PASS | enable / verify / lifecycle SQL 未更新 `failed_auth_count`；DB_SCHEMA 明确 enable 不清零该字段。 |
 | 12 | V29/V30 与 DB_SCHEMA.md 是否一致 | PASS | DB_SCHEMA 记录 V29 字段、CHECK、metadata 禁入；记录 V30 只重建 event_type CHECK 增加 `ENABLED`，不改 credential 字段、不 backfill。 |
 | 13 | API.md 是否准确标注当前只是本地结构性校验，不代表真实交易所权限可用 | PASS | API.md 说明 verify / enable 只做结构性校验，且当前未新增真实交易所权限探活、LIVE 或真实交易路径。 |
-| 14 | 是否仍存在旧代码路径绕过 credential_status | PASS with P3 note | active material 读取未发现绕过；但 Controller 中 disable 的 OpenAPI description 仍写“本轮不提供 enable 接口”，属于过期说明，不是运行时绕过。 |
+| 14 | 是否仍存在旧代码路径绕过 credential_status | PASS | active material 读取未发现绕过；Batch 5-G-A 已修正 disable endpoint 过期 OpenAPI description。 |
 
 ## 4. Findings
 
@@ -79,14 +79,16 @@
 
 ### P3
 
-- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java` 中 disable endpoint 的 OpenAPI description 仍写着“本轮不提供 enable 接口”。该文字已与 Batch 5-F-C 后事实不一致，但不影响运行时行为；建议单独 cleanup 批次修复，避免 API 文档生成误导。
-- `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md` 是 Batch 5-F-A 历史审计快照，文件头和若干段落仍描述 enable 尚未实现。当前 `docs/current/README.md`、`API.md`、`DB_SCHEMA.md`、`CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md` 已记录 5-F-C 实现事实；建议后续只补充历史快照说明，不重写 5-F-A 原始结论。
+已由 Batch 5-G-A cleanup 关闭：
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java` 中 disable endpoint 的 OpenAPI description 已从“本轮不提供 enable 接口”修正为当前事实。
+- `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md` 已补充历史快照说明，明确该文档记录 5-F-A 当时状态，当前事实以 5-F-C enable command 和 5-G freeze review 为准。
 
 ## 5. Freeze Decision
 
-是否允许冻结 Batch 5 credential governance：允许，条件冻结。
+是否允许冻结 Batch 5 credential governance：允许，条件冻结；P3 cleanup 已完成。
 
-是否需要修复批次：不需要 P0/P1/P2 修复批次；建议开一个 P3 cleanup 批次，只修正文档/注释过期描述，不改业务逻辑。
+是否需要修复批次：不需要 P0/P1/P2 修复批次；Batch 5-G-A 已完成 P3 cleanup，不改业务逻辑。
 
 是否允许进入真实交易所权限探活设计审计：允许进入只读设计审计。下一批仍不得直接实现 permission probe；应先完成设计审计，明确外部权限探活不会泄露 material、不会触发真实交易、不会绕过 Paper/LIVE 隔离。
 
@@ -94,9 +96,8 @@
 
 建议后续任务：
 
-1. `NQ-DB-SCHEMA-GOVERNANCE-BATCH-5G-A-CREDENTIAL-GOVERNANCE-DOC-CLEANUP`：只修正过期 OpenAPI description 与 5-F-A 历史快照说明，不改 Service / Repository / migration。
-2. `NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW`：只读设计真实交易所权限探活，输出 READ_ONLY / TRADE / withdraw / IP allowlist / failed_auth_count 策略，不实现代码。
-3. `NQ-CREDENTIAL-PERMISSION-SCOPE-WRITE-POLICY-REVIEW`：评估 `permission_scope=NULL` 到显式权限状态的迁移策略、测试矩阵和是否需要新 migration。
+1. `NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW`：只读设计真实交易所权限探活，输出 READ_ONLY / TRADE / withdraw / IP allowlist / failed_auth_count 策略，不实现代码。
+2. `NQ-CREDENTIAL-PERMISSION-SCOPE-WRITE-POLICY-REVIEW`：评估 `permission_scope=NULL` 到显式权限状态的迁移策略、测试矩阵和是否需要新 migration。
 
 ## 7. Validation
 
