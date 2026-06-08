@@ -60,6 +60,20 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## Credential Permission Probe Design Review 验证记录（2026-06-08）
+
+本轮只读设计审计真实交易所 credential permission probe，并新增设计审计文档与索引记录；未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本；未调用真实交易所，未实现 permission probe。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| 允许路径范围检查 | 通过 | 本轮只修改 `docs/current` 文档和 README 索引。 |
+| migration 范围检查 | 通过 | 本轮未新增 migration，未修改历史 migration。 |
+| Java/API 范围检查 | 通过 | 本轮未修改 Java、Repository、Service、Controller、DTO、测试业务语义或新增 API。 |
+| 前端/Python/部署范围检查 | 通过 | 本轮未修改 frontend、research、scripts 或部署相关路径。 |
+| 真实交易所 / AI / DH / LIVE 边界检查 | 通过 | 未调用 OKX、Binance、Bybit、Gate 或任何真实交易所；未接 AI、DH、LIVE；未实现 permission probe。 |
+| Maven 测试 | 未执行 | 本轮只做 `CODE_ANALYSIS + DOCUMENTATION`，未修改业务代码、migration、API、前端、Python 或部署脚本；不把未执行测试写成通过。 |
+
 ## DB Schema Credential Governance Doc Cleanup Batch 5-G-A 验证记录（2026-06-08）
 
 本轮只修复 Batch 5-G freeze review 发现的 P3 文案问题：修正 credential disable endpoint OpenAPI description 的过期描述；为 Batch 5-F-A enable governance review 增加历史快照说明；同步 freeze review、README 索引、WORKLOG 和 TESTING。本轮未新增 migration，未修改 credential 业务逻辑，未修改 Repository / Service / DTO / 测试业务语义，未新增 API，未修改前端、Python 或部署脚本。

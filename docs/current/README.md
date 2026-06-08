@@ -67,6 +67,7 @@ GateO：A 股适配
 - `CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：Credential active credential Batch 5-E-C 只读审计报告；记录 account 全局 active 唯一约束取舍、5-E-D migration 决策和 Batch 5-F enable 审计前置条件。
 - `CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：Credential enable Batch 5-F-A 只读审计报告；记录可恢复状态、不可恢复状态和 Batch 5-F-B schema-only `ENABLED` audit event 准备事实；Batch 5-F-C 已实现最小 enable command。
 - `CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`：Credential governance Batch 5-G 冻结复核报告；Batch 5-G-A 已完成 P3 文案 cleanup，冻结 Batch 5-A ~ 5-F-C 的 schema、API、Service、Repository、audit log、测试和文档边界。
+- `CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`：Credential permission probe 只读设计审计报告；允许进入 schema-only 批次，但 permission probe 未实现，未调用真实交易所。
 - `TESTING.md`：统一验证命令与本次验证记录。
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。

@@ -2,6 +2,47 @@
 
 日期：2026-05-16
 
+## Credential Permission Probe Design Review
+
+日期：2026-06-08
+
+### 本轮目标
+
+只读设计审计真实交易所 credential permission probe，明确 READ_ONLY / TRADE / FUNDING 权限校验、withdraw 禁用、IP allowlist、失败重试、`failed_auth_count`、告警、前端风险提示和 Paper/LIVE 隔离。本轮不新增 migration，不修改 Java/API/前端/Python/部署，不调用真实交易所，不接 AI/DH/LIVE，不实现 permission probe。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`
+- `docs/current/CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 执行内容
+
+- 使用 `nq-dh-workflow-router` 分类为 `CODE_ANALYSIS + DOCUMENTATION`；主 skill 为 `db-schema-migration-review`；辅助 `java-backend-maintenance` 仅用于只读确认当前 credential verification / Service / Port 边界。
+- 只读确认当前 `verification_status='VERIFIED'` 仅代表本地结构性校验，不代表真实交易所权限可用。
+- 输出 permission probe 设计审计：建议新增 `permission_probe_status`、`last_permission_probe_at`、脱敏错误字段、`ip_allowlist_probe_status`，扩展 `permission_scope` 支持 `FUNDING`，并强化 `withdraw_enabled=false`。
+- 明确推荐先进入 schema-only 批次，再单独做 code/API/test；本轮不实现真实交易所调用。
+- 同步 README 索引、freeze review 后续任务状态、WORKLOG 和 TESTING。
+
+### 验证记录
+
+- 已执行 `git diff --check`，通过；无 whitespace error。
+- 已执行范围检查：本轮只修改 `docs/current` 文档和 README 索引；未新增 migration，未修改 Java/API、前端、Python 或部署脚本。
+- 未执行 Maven：本轮只做 `CODE_ANALYSIS + DOCUMENTATION`，未修改业务代码、migration、API、前端、Python 或部署脚本。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改 Java、Repository、Service、Controller、DTO 或 API。
+- 未修改前端、Python 或部署脚本。
+- 未调用 OKX、Binance、Bybit、Gate 或任何真实交易所。
+- 未读取、输出或提交真实密钥、API key、exchange secret、tenant data、token、cookie、私钥、助记词、passphrase、encrypted payload 或 decrypted payload。
+- 未接 AI、DH、LIVE 或真实交易。
+- 未实现 permission probe。
+
 ## DB Schema Credential Governance Doc Cleanup Batch 5-G-A
 
 日期：2026-06-08

@@ -96,7 +96,7 @@
 
 建议后续任务：
 
-1. `NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW`：只读设计真实交易所权限探活，输出 READ_ONLY / TRADE / withdraw / IP allowlist / failed_auth_count 策略，不实现代码。
+1. `NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW`：已完成只读设计审计；见 `docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`。结论为允许进入 schema-only 批次，但不得直接实现真实交易所调用。
 2. `NQ-CREDENTIAL-PERMISSION-SCOPE-WRITE-POLICY-REVIEW`：评估 `permission_scope=NULL` 到显式权限状态的迁移策略、测试矩阵和是否需要新 migration。
 
 ## 7. Validation
