@@ -56,6 +56,7 @@ GateO：A 股适配
 - Next: GateK-PLAN。
 - NQ / DH 三轮只读审计已完成；DH not integrated；GateK implementation not started；LIVE disabled。
 - Integration-0 allowed only as contract / mock / documentation work line, not runtime integration；它是独立文档与契约工作线，不等于 GateK 实现，也不是真实集成。
+- NQ-DH Integration-0 契约冻结已完成（contract / mock / docs）；下一步只允许 mock / contract test 设计或安全文档固化，禁止真实联调；真实通道必须等 Integration-1 并先修复 DH P1-4 残留（rate limit / memory cap / replay nonce 持久化）。
 - 不接入 AI。
 - 不做 AI 信号。
 - 不做 AI Paper Trading。

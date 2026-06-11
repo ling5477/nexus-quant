@@ -60,6 +60,19 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-DH-INTEGRATION-0-CONTRACT-FREEZE 验证记录（2026-06-11）
+
+本轮只做 Integration-0 契约冻结与安全策略 / contract test 计划文档，新增 3 份 `NQ_DH_INTEGRATION0_*.md` 并更新 README/ROADMAP/WORKLOG/TESTING；未修改任何 Java、frontend、Python、API、migration、测试或部署代码，故未运行全量测试（符合 AGENTS.md「只改文档可不跑全量测试，须写清未跑原因」规则）。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 通过 | 仅命中本轮新增/修改的事实源 Markdown 文件。 |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| `git diff --stat` | 通过 | 改动集中在 `docs/current/NQ_DH_INTEGRATION0_*.md` 与 README/ROADMAP/WORKLOG/TESTING。 |
+| 全量测试 | 未执行 | 本轮 docs + contract design only，未修改业务代码、API、migration、测试或部署脚本。 |
+| 集成边界检查 | 通过 | 未实现集成；未新增 RealClient / 真实 Provider / 真实 HTTP；未做真实联调；未开启 LIVE。 |
+| 阶段口径检查 | 通过 | 未把本轮写成 implemented；未把 Integration-0 写成真实集成；未把 DH 写成 integrated；未把 AI 写成 started；未把 LIVE 写成 enabled。 |
+
 ## DOC-SYNC-GATEK-PRE-AND-INT0-REGISTRATION 验证记录（2026-06-11）
 
 本轮只同步 NQ / DH 三轮审计结论与阶段事实到事实源文档，未修改任何 Java、前端、Python、部署、API、migration 或测试代码，故未运行全量测试（符合 AGENTS.md「只改文档可不跑全量测试，但须写清未跑原因」规则）。
