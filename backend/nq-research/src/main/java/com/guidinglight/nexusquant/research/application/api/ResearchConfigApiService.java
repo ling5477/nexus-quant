@@ -1,19 +1,18 @@
 package com.guidinglight.nexusquant.research.application.api;
 
-import com.guidinglight.nexusquant.research.domain.ResearchConfig;
-import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;
 import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;
+import com.guidinglight.nexusquant.research.domain.ResearchConfig;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Objects;
 
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
-
 /**
  * ResearchConfigApiService 负责把 HTTP 请求映射到研究配置领域服务。
- *
+ * <p>
  * Why:
  * PRE-CLEAN-2 后，HTTP API 层只保留 controller/dto/web adapter，
  * 研究配置的控制器专用入参编排回到 `nq-research` application owner，避免 `nq-api` 演化成业务 façade。
