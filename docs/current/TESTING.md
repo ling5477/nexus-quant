@@ -60,6 +60,18 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## DOC-SYNC-GATEK-PRE-AND-INT0-REGISTRATION 验证记录（2026-06-11）
+
+本轮只同步 NQ / DH 三轮审计结论与阶段事实到事实源文档，未修改任何 Java、前端、Python、部署、API、migration 或测试代码，故未运行全量测试（符合 AGENTS.md「只改文档可不跑全量测试，但须写清未跑原因」规则）。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 通过 | 仅命中本轮同步的事实源 Markdown 文件。 |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| `git diff --stat` | 通过 | 改动集中在 NQ `CLAUDE.md` / `AGENTS.md` / `docs/current/{STATUS,README,ROADMAP,WORKLOG,TESTING}.md`。 |
+| 全量测试 | 未执行 | 本轮 docs-only，未修改业务代码、API、migration、测试或部署脚本。 |
+| 阶段口径检查 | 通过 | 未把 GateK-PLAN 写成 GateK implementation；未把 Integration-0 写成真实集成；未把 AI 写成 started；未把 DH 写成 integrated；未把 LIVE 写成 enabled。 |
+
 ## Credential Permission Probe Schema 验证记录（2026-06-08）
 
 本轮新增 permission probe schema-only migration，并同步 `docs/current` 文档和 README 索引；未实现 permission probe，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本，未接 AI、DH、LIVE。

@@ -80,6 +80,38 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - AI 尚未开始。AI 最早 GateK 才允许进入信号层。
 - GateJ 不是 AI 阶段。GateJ 只做 Paper Trading 稳定运行。
 
+## NQ / DH 三轮审计同步（2026-06-11，DOC-SYNC-GATEK-PRE-AND-INT0-REGISTRATION）
+
+本轮只做事实源文档同步，不修改任何代码，不启动 Integration-0 实现，不启动 GateK 实现。
+
+三轮只读审计已完成：
+
+- 第一轮：NQ 全仓只读审计 completed。
+- 第二轮：DH 全仓只读审计 completed。
+- 第三轮：NQ-DH 联合边界审计 completed（见 DH 仓库 `docs/current/NQ_DH_INTEGRATION_SECURITY_AUDIT_REPORT.md`）。
+- 三轮审计汇总 completed。
+
+NQ 当前阶段口径（必须按此理解，不得误判）：
+
+- Current: GateJ completed。
+- Next: GateK-PLAN。
+- GateK implementation: not started。
+- AI: not started。
+- DH: not integrated（NQ 侧仍无 DH 入站端点、无 DH client、无 feedback outbox）。
+- LIVE: disabled。
+- Integration-0: allowed only as contract / mock / documentation work line, not runtime integration。
+
+Integration-0 允许范围（仅文档与契约线，不是真实集成）：
+
+- 只读边界规划、契约冻结、mock / stub / contract test、安全策略文档。
+- 不允许真实联调、NQ RealClient、真实 Provider、真实交易、读取凭证、读写 NQ DB、开启 LIVE。
+
+DH 侧事实（来自第二轮与第三轮审计）：
+
+- DH 当前无真实 NQ 调用、无真实 Provider、无交易能力。
+- DH P1-1 / P1-2 / P1-3 已关闭（认证+租户隔离、HMAC/timestamp/nonce 防重放+source allowlist+payload 上限、ProviderTrustPolicy）。
+- DH P1-4 部分关闭：限流（rate limit）、内存仓储上限（memory cap）、replay nonce 持久化仍缺失；该残留不阻塞 Integration-0，但阻塞 Integration-1。
+
 ## 当前未完成状态
 
 - 尚未完成虚拟币量化 V1。

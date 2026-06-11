@@ -26,7 +26,9 @@ DH 边界：
 
 - DH 不允许真实连接 NQ。
 - DH 不允许下单、撤单、启动 Paper Run、访问凭证、修改 NQ 交易状态。
-- Integration-0 只能准备只读边界和契约冻结。
+- NQ / DH 三轮只读审计（NQ 全仓 / DH 全仓 / NQ-DH 联合边界 + 汇总）已完成；当前 DH not integrated，NQ 侧无 DH 入站端点 / 无 DH client / 无 feedback outbox。
+- Integration-0 only as contract / mock / documentation work line, not runtime integration：只能准备只读边界、契约冻结、mock / stub / contract test 和安全策略文档；禁止真实联调、NQ RealClient、真实 Provider、真实交易、读取凭证、读写 NQ DB、开启 LIVE。
+- DH P1-1 / P1-2 / P1-3 已关闭；DH P1-4 残留（rate limit / memory cap / replay nonce 持久化）阻塞 Integration-1，不阻塞 Integration-0。
 - 不允许新增 real provider、RealClient、第三方 relay、生产交易路径。
 - 必须重点检查 HMAC、timestamp、nonce、source allowlist、payload size、tenant binding、replay protection、provider trust policy、audit trail。
 - Agent/API 任务优先按 `GitHub + OpenAI Developers` 路由。
@@ -239,7 +241,7 @@ git status --short
 ## 9. Codex 执行纪律
 
 - 默认使用简体中文说明计划、过程和结论。
-- 先读 `AGENTS.md`、`README.md`、`docs/current/*`，再读目标代码或文档。
+- 先读 `AGENTS.md`、`CLAUDE.md`、`README.md`、`docs/current/*`，再读目标代码或文档。
 - 默认最小变更，避免无关重构。
 - 不回退用户已有改动。
 - 能用工具验证的结论必须用工具验证。

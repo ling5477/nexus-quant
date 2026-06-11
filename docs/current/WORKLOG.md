@@ -2,6 +2,49 @@
 
 日期：2026-05-16
 
+## DOC-SYNC-GATEK-PRE-AND-INT0-REGISTRATION
+
+日期：2026-06-11
+
+### 本轮目标
+
+把 NQ / DH 三轮只读审计结论与当前阶段事实同步到事实源文档，避免后续开发误判阶段。本轮只做文档同步，不修改代码，不启动 Integration-0 实现，不启动 GateK 实现。
+
+### 三轮审计事实
+
+- 第一轮：NQ 全仓只读审计 completed。
+- 第二轮：DH 全仓只读审计 completed。
+- 第三轮：NQ-DH 联合边界审计 completed（DH 仓库 `docs/current/NQ_DH_INTEGRATION_SECURITY_AUDIT_REPORT.md`）。
+- 三轮审计汇总 completed。
+
+### 同步口径
+
+- NQ：Current GateJ completed；Next GateK-PLAN；GateK implementation not started；AI not started；DH not integrated；LIVE disabled。
+- Integration-0：allowed only as contract / mock / documentation work line, not runtime integration；禁止真实联调、NQ RealClient、真实 Provider、真实交易、读取凭证、读写 NQ DB、开启 LIVE。
+- DH：P1-1 / P1-2 / P1-3 已关闭；P1-4 残留（rate limit / memory cap / replay nonce 持久化）阻塞 Integration-1，不阻塞 Integration-0。
+- NQ 侧仍无 DH 入站端点、无 DH client、无 feedback outbox，DH not integrated 成立。
+
+### 修改文件
+
+- `CLAUDE.md`
+- `AGENTS.md`
+- `docs/current/STATUS.md`
+- `docs/current/README.md`
+- `docs/current/ROADMAP.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 验证记录
+
+- 本轮只改文档，未运行 `mvn test` / `npm run build` / `npm run test:e2e` / `pytest`；原因：未修改 Java、前端、Python 或部署代码（符合 AGENTS.md「只改文档可不跑全量测试」规则）。
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat` 核对改动范围。
+
+### 边界确认
+
+- 未修改任何代码、API、migration、测试或部署脚本。
+- 未新增 NQ RealClient、未新增真实 Provider、未做真实联调、未接 AI、未接 DH 运行时、未开启 LIVE、未读取或输出真实密钥。
+- 未把 GateK-PLAN 写成 GateK implementation；未把 Integration-0 写成真实集成；未把 AI 写成 started；未把 DH 写成 integrated；未把 LIVE 写成 enabled。
+
 ## Credential Permission Probe Schema
 
 日期：2026-06-08

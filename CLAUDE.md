@@ -35,6 +35,13 @@ Previous completed stages:
 
 Next allowed: GateK-PLAN。GateJ-FREEZE 30m / 1h / 24h / 7d acceptance 已通过，GateJ completed，详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`。GateK-PLAN 只允许规划 AI 信号接入，不代表 GateK 实现、AI 接入、DH 集成或真实交易已启动。
 
+NQ / DH 三轮只读审计（NQ 全仓 / DH 全仓 / NQ-DH 联合边界 + 汇总）已完成，结论同步在 `docs/current/STATUS.md`。当前阶段口径固定为：
+
+- Current: GateJ completed；Next: GateK-PLAN；GateK implementation not started。
+- AI: not started；DH: not integrated（NQ 侧无 DH 入站端点 / 无 DH client / 无 feedback outbox）；LIVE: disabled。
+- Integration-0: allowed only as contract / mock / documentation work line, not runtime integration。Integration-0 只允许只读边界、契约冻结、mock / stub / contract test、安全策略文档；禁止真实联调、NQ RealClient、真实 Provider、真实交易、读取凭证、读写 NQ DB、开启 LIVE。
+- 不得把 GateK-PLAN 写成 GateK implementation；不得把 Integration-0 写成真实集成；不得把 AI 写成 started；不得把 DH 写成 integrated；不得把 LIVE 写成 enabled。
+
 GateJ-FREEZE 最终状态：
 - 30m / 1h / 24h / 7d 连续运行验收 passed。
 - `docs/gates/gate-j/` 已允许作为 GateJ completed 冻结卷宗。
@@ -177,10 +184,10 @@ git status --short
 - 不把尚未完成阶段写成 completed。
 - 不创建 `docs/gates/gate-j`，直到 GateJ 整体完成并冻结。
 
-## 9. Codex 执行纪律
+## 9. Claude 执行纪律
 
 - 默认使用简体中文说明计划、过程和结论。
-- 先读 `AGENTS.md`、`README.md`、`docs/current/*`，再读目标代码或文档。
+- 先读 `AGENTS.md`、`CLAUDE.md`、`README.md`、`docs/current/*`，再读目标代码或文档。
 - 默认最小变更，避免无关重构。
 - 不回退用户已有改动。
 - 能用工具验证的结论必须用工具验证。

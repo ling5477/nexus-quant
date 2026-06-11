@@ -17,6 +17,7 @@
 - DH integration not started / not connected to NQ。
 - Multi-exchange expansion not started。
 - UI/UX professionalism remains post-freeze remediation。
+- NQ / DH 三轮只读审计已完成；DH not integrated；Integration-0 allowed only as contract / mock / documentation work line, not runtime integration（详见 `STATUS.md`）。
 - 当前本地 PostgreSQL 默认端口固定为 `5432`。
 
 ## 当前不是
