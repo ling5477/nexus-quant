@@ -2,6 +2,45 @@
 
 日期：2026-05-16
 
+## NQ-DH-INTEGRATION0-MOCK-CONTRACT-TEST-DESIGN
+
+日期：2026-06-11
+
+### 本轮目标
+
+将已冻结的 15 项 mock / contract test plan 拆成详细测试矩阵，定义 mock/stub 行为、NQ/DH 侧期望、forbidden side-effect 检查、验收标准与 Integration-0/1 blocker，并产出后续“写测试代码”任务输入材料。本轮只做设计，不写测试代码，不修改 Java/frontend/Python/API/migration，不做真实联调。
+
+### 修改文件
+
+- `docs/current/NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`（新增详细矩阵 §6-§12）
+- `docs/current/README.md`
+- `docs/current/ROADMAP.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 产出内容
+
+- NQ contract test matrix：INT0-T01..T15，每项含 testId/testName/targetSystem/testType/purpose/inputFixture/requiredHeaders/payload/expectedStatus/expectedResult/expectedAuditEvent/forbiddenSideEffect/blocksIntegration0/blocksIntegration1/implementationOwner/futureCodeLocationSuggestion（建议路径，未创建代码文件）。
+- DH contract test matrix（DH 仓库镜像，DH 视角）。
+- shared fixture list：18 个 fixtureId（全部脱敏占位，tenant=t-test-*，无真实密钥）。
+- forbidden side-effect checklist：16 项（无下单/撤单/Paper/凭证/DB/HTTP/LIVE/禁止字段落库/跨租户等）。
+- Integration-0 acceptance checklist 与 Integration-1 blocker checklist。
+- next implementation task draft：`NQ-DH-INTEGRATION0-CONTRACT-TEST-IMPL`（草案，本轮不执行）。
+- DH P1-4 residual（rate limit / memory cap / replay nonce 持久化）明确仍为 Integration-1 前置修复，不在本轮处理。
+
+### 验证记录
+
+- 本轮 docs-only，未运行 `mvn test` / `npm run build` / `pytest`；原因：未修改 Java、frontend、Python、API、migration、测试代码或部署脚本。
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat` 核对改动范围。
+
+### 边界确认
+
+- 未修改代码、未新增 API、未新增 migration、未新增 Controller/Service/Repository/DTO、未修改测试代码、未改部署脚本。
+- 未新增 NQ RealClient、未新增 DH RealClient、未新增真实 Provider、未做真实 HTTP / 真实交易所调用、未做真实联调、未接 AI、未开启 LIVE。
+- 未下单/撤单/启停 Paper Run/改策略状态/读写 NQ DB/读取凭证。
+- `futureCodeLocationSuggestion` 仅为建议路径，未创建任何代码文件。
+- 未把本轮写成 implemented；未把 Integration-0 写成真实集成；未把 DH 写成 integrated；未把 AI 写成 started；未把 LIVE 写成 enabled。
+
 ## NQ-DH-INTEGRATION-0-CONTRACT-FREEZE
 
 日期：2026-06-11

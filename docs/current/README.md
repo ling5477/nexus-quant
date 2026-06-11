@@ -19,6 +19,7 @@
 - UI/UX professionalism remains post-freeze remediation。
 - NQ / DH 三轮只读审计已完成；DH not integrated；Integration-0 allowed only as contract / mock / documentation work line, not runtime integration（详见 `STATUS.md`）。
 - NQ-DH Integration-0 契约冻结已完成（contract / mock / docs，未实现集成）；DH P1-4 残留阻塞 Integration-1，详见 `NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`。
+- NQ-DH Integration-0 mock / contract test 详细矩阵（15 项 × 16 字段 + 共享 fixture + forbidden side-effect checklist + 下一步代码任务草案）已设计，只写计划未写测试代码，详见 `NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`。
 - 当前本地 PostgreSQL 默认端口固定为 `5432`。
 
 ## 当前不是

@@ -60,6 +60,19 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-DH-INTEGRATION0-MOCK-CONTRACT-TEST-DESIGN 验证记录（2026-06-11）
+
+本轮将 Integration-0 已冻结的 15 项 contract test 拆成详细矩阵（每项 16 字段）+ 共享 fixture + forbidden side-effect checklist + 验收/blocker 清单 + 下一步代码任务草案，写入 `NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md` 并更新 README/ROADMAP/WORKLOG/TESTING。本轮**只做设计不写测试代码**，未修改 Java、frontend、Python、API、migration、测试代码或部署脚本，故未运行全量测试。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 通过 | 仅命中本轮修改的事实源 Markdown 文件。 |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| `git diff --stat` | 通过 | 改动集中在 `NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md` 与 README/ROADMAP/WORKLOG/TESTING。 |
+| 全量测试 | 未执行 | docs + contract test design only，未写测试代码、未改业务代码/API/migration/部署。 |
+| 代码文件创建检查 | 通过 | `futureCodeLocationSuggestion` 仅为建议路径，未创建任何 `.java` 或测试代码文件。 |
+| 集成/口径边界检查 | 通过 | 未实现集成、未接真实 HTTP/RealClient/Provider、未开启 LIVE；未把本轮写成 implemented，未把 Integration-0 写成真实集成。 |
+
 ## NQ-DH-INTEGRATION-0-CONTRACT-FREEZE 验证记录（2026-06-11）
 
 本轮只做 Integration-0 契约冻结与安全策略 / contract test 计划文档，新增 3 份 `NQ_DH_INTEGRATION0_*.md` 并更新 README/ROADMAP/WORKLOG/TESTING；未修改任何 Java、frontend、Python、API、migration、测试或部署代码，故未运行全量测试（符合 AGENTS.md「只改文档可不跑全量测试，须写清未跑原因」规则）。
