@@ -2,14 +2,14 @@
 
 任务：NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW
 日期：2026-06-12
-状态：review documented；code fix not started；no outbound exchange call performed in this documentation pass。
+状态：review documented；FIX implemented；no outbound exchange call performed in this fix pass。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
 
-本报告记录 OKX adapter 在 Spring Boot local integration test 启动期触发 public instruments 外联尝试的只读审计结论。本轮只把审计结论落到 `docs/current`，未修改 Java、配置、migration、测试、前端、Python 或部署脚本。
+本报告记录 OKX adapter 在 Spring Boot local integration test 启动期触发 public instruments 外联尝试的只读审计结论，以及后续 `NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FIX` 的修复结果。
 
-本轮未调用 OKX、Binance 或任何真实交易所；未读取或输出真实密钥、API key、secret、token、cookie、passphrase、private key、助记词或交易所凭证；未接 AI、DH 或 LIVE；未实现修复。
+FIX 轮次修改范围限定在 OKX adapter / instruments cache 相关 Java、后端测试和 `docs/current` 文档；未新增 migration，未修改前端、Python 或部署脚本。FIX 轮次未调用 OKX、Binance 或任何真实交易所；未读取或输出真实密钥、API key、secret、token、cookie、passphrase、private key、助记词或交易所凭证；未接 AI、DH 或 LIVE。
 
 ## 2. Review Conclusion
 
@@ -39,10 +39,11 @@ OKX public instruments 外联触发路径如下：
    - 构造 OKX public `OkxHttpClient`。
    - 构造 `OkxInstrumentsCache(publicHttpClient, clock, runtimeConfig.instrumentRefresh())`。
 5. `backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxInstrumentsCache.java`
-   - 构造函数设置 `lastRefreshAt = Instant.EPOCH` 后立即执行 `refreshNow("bootstrap-okx-instruments")`。
-   - `refreshNow` 调用 `publicHttpClient.get("/api/v5/public/instruments?instType=SPOT", traceId)`。
+   - FIX 前：构造函数设置 `lastRefreshAt = Instant.EPOCH` 后立即执行 `refreshNow("bootstrap-okx-instruments")`。
+   - FIX 后：构造函数只保存 `publicHttpClient`、`clock`、`refreshInterval` 和本地 cache 状态，不自动执行 HTTP。
+   - 首次真正读取 metadata 时，`snapshot` / `getRequired` 通过 `refreshIfDue` 调用 `refreshNow`，再访问 `publicHttpClient.get("/api/v5/public/instruments?instType=SPOT", traceId)`。
 
-因此，外联发生在测试方法业务动作之前，是 Spring context bootstrap 副作用，而不是两个测试显式请求 OKX。
+因此，FIX 前外联发生在测试方法业务动作之前，是 Spring context bootstrap 副作用，而不是两个测试显式请求 OKX。FIX 后该 bootstrap 副作用已移除；外联只允许在首次显式读取 instruments metadata 时发生。
 
 ## 4. Triggering Tests
 
@@ -100,14 +101,15 @@ Binance 未发现同类启动期外联：
 
 ### P1
 
-- OKX adapter bootstrap 存在 public instruments 外联尝试，违反 no-outbound test isolation 预期。触发点是 `OkxInstrumentsCache` 构造期 eager `refreshNow`。
-- `stub-on-bootstrap-failure` 只在外联失败后 fallback，不能作为 no-outbound 控制开关。把该配置理解为“禁止外联”会形成错误验收结论。
+- FIXED：OKX adapter bootstrap 原存在 public instruments 外联尝试，违反 no-outbound test isolation 预期；触发点是 `OkxInstrumentsCache` 构造期 eager `refreshNow`。FIX 已移除构造期 refresh。
+- FIXED：`stub-on-bootstrap-failure` 原只在外联失败后 fallback，不能作为 no-outbound 控制开关。FIX 后构造期不再外联，因此该 fallback 不再承担构造期外联兜底角色。
 
 ### P2
 
 - `OkxRuntimeConfig.fromSystemEnv()` 不读取 Spring YAML，导致 Spring profile 下的测试隔离配置无法统一约束 OKX baseUrl、bootstrap mode 或 no-outbound 行为。
 - 两个业务测试使用 Binance fixture，却因完整 Spring context 装配触发 OKX adapter bootstrap，测试依赖边界不够收敛，后续 CI 或离线环境可能出现非确定性网络行为。
 - OKX 与 Binance cache bootstrap 策略不一致；OKX 构造期 eager refresh，Binance 惰性刷新，增加测试隔离和启动行为理解成本。
+  - FIX 后 OKX 与 Binance 对齐为构造期只赋值，首次读取时惰性刷新。
 
 ### P3
 
@@ -126,33 +128,34 @@ Credential permission probe 不受影响。该问题发生在 OKX public instrum
 
 ## 9. Recommended Follow-Up FIX
 
-推荐后续单独开 FIX 任务，按以下优先级处理。
+FIX 已按首选方案落地；以下内容保留为修复记录和后续回归边界。
 
 ### 首选：惰性化 `OkxInstrumentsCache` bootstrap
 
-- 移除构造函数内的 eager `refreshNow("bootstrap-okx-instruments")`。
-- 保持 `getRequired` / `snapshot` 触发 `refreshIfDue` 的现有语义。
+- 已移除构造函数内的 eager `refreshNow("bootstrap-okx-instruments")`。
+- 已保持 `getRequired` / `snapshot` 触发 `refreshIfDue` 的现有语义。
 - 如需要启动期预热，应通过显式 Spring-controlled bootstrap runner 或 profile/config 开关执行，而不是 cache constructor 副作用。
 
-### 备选：增加 Spring 驱动 no-outbound / stub bootstrap mode
+### 备选：增加 Spring 驱动 no-outbound / stub bootstrap mode（本轮未采用）
 
 - 新增 Spring 配置项表达 `no-outbound` 或 `stub bootstrap`。
 - 让 `ExchangeAdapterConfiguration` 在构造真实 OKX adapter 前决定使用 stub / no-op public client / disabled bootstrap。
 - 该配置必须能被 `application-local.yml`、测试 profile 和 CI profile 稳定控制。
 
-### 必须补 no-outbound 回归测试
+### 已补 no-outbound 回归测试
 
-- 覆盖 `MarketdataControllerLocalIntegrationTest` 与 `ResearchBacktestHappyPathLocalTest` 的 context bootstrap 不访问 OKX public endpoint。
-- 测试应使用明确的 fake public client、blocked HTTP client 或请求计数器，不依赖真实网络不可达来证明通过。
-- 覆盖 `stub-on-bootstrap-failure=true` 不等价于 no-outbound 的负例或配置语义说明。
-- 保持 Binance 对照：构造期不触发 `exchangeInfo`。
+- `OkxInstrumentsCacheTest.shouldNotFetchDuringConstructionAndRefreshOnFirstSnapshot`：构造 cache 后 `getCount=0`，首次 `snapshot` 后 `getCount=1`。
+- `OkxExchangeAdapterBootstrapNoOutboundTest.shouldCreateDefaultDependenciesWithoutFetchingPublicInstruments`：创建默认依赖与 adapter 后本地 fake instruments server `hitCount=0`，首次显式 `snapshot` 后 `hitCount=1`。
+- `OkxBootstrapNoOutboundLocalContextTest.shouldBootstrapLocalContextWithoutOkxPublicInstrumentsOutbound`：local full Spring context 启动前安装 `ProxySelector` 探针，若访问 `https://www.okx.com/api/v5/public/instruments?instType=SPOT` 会失败；当前断言访问次数为 0，且日志不包含 `okx_adapter_bootstrap_fallback_enabled`。
+- `BinanceFiltersCacheTest` 增加构造后 `fetchCount=0` 对照，确认 Binance 行为未被修改。
 
 ## 10. Boundary Confirmation
 
 - 本轮未修改 Java。
-- 本轮未修改配置。
+- REVIEW 轮未修改 Java；FIX 轮修改 OKX adapter / instruments cache 相关 Java 和后端测试。
+- FIX 轮未修改 Spring YAML 或生产配置。
 - 本轮未新增 migration。
-- 本轮未修改测试。
+- FIX 轮新增/修改后端测试。
 - 本轮未修改前端。
 - 本轮未修改 Python。
 - 本轮未修改部署脚本。
@@ -170,6 +173,13 @@ Credential permission probe 不受影响。该问题发生在 OKX public instrum
 - `git status --short`
 
 未执行后端、前端、Python 全量测试；原因是本轮只修改 `docs/current` 与 README 索引，不修改任何业务代码、测试代码、配置、migration、前端、Python 或部署脚本。
+
+FIX 轮次验证记录见 `docs/current/TESTING.md` 的 `NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FIX` 章节。已执行：
+
+- `mvn -f backend/pom.xml -pl nq-adapter-okx,nq-app -am test`：通过，`BUILD SUCCESS`。
+- `git diff --check`：通过，无 whitespace error；仅有 Git LF/CRLF 工作区提示。
+- `mvn -f backend/pom.xml test`：通过，23 个 backend module 全部 `SUCCESS`，`BUILD SUCCESS`。
+- 禁止范围 diff 检查：通过，`backend/nq-infra/src/main/resources/db/migration`、`frontend`、`research`、`scripts` 无 diff。
 
 ## 12. Rollback
 

@@ -2,6 +2,58 @@
 
 日期：2026-05-16
 
+## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FIX
+
+日期：2026-06-12
+
+### 本轮目标
+
+修复 OKX public instruments 启动期外联问题，确保 full Maven test / local Spring Boot integration test 在应用上下文启动阶段不会访问 `https://www.okx.com/api/v5/public/instruments?instType=SPOT`。本轮不新增 migration，不修改前端、Python 或部署脚本，不接 AI / DH / LIVE，不调用真实交易所，不读取或输出真实密钥。
+
+### 修改文件
+
+- `backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxInstrumentsCache.java`
+- `backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxExchangeAdapter.java`
+- `backend/nq-adapter-okx/src/test/java/com/guidinglight/nexusquant/adapter/okx/service/OkxInstrumentsCacheTest.java`
+- `backend/nq-adapter-okx/src/test/java/com/guidinglight/nexusquant/adapter/okx/service/OkxExchangeAdapterBootstrapNoOutboundTest.java`
+- `backend/nq-adapter-binance/src/test/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceFiltersCacheTest.java`
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/OkxBootstrapNoOutboundLocalContextTest.java`
+- `docs/current/NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 修复说明
+
+- `OkxInstrumentsCache` 构造函数不再调用 `refreshNow("bootstrap-okx-instruments")`；构造期只保存依赖与本地 cache 状态。
+- `refreshIfDue` 改为 cache 为空或刷新窗口过期时才调用 `refreshNow`，保持 `snapshot` / `getRequired` 首次真实读取 instruments metadata 时刷新。
+- `OkxExchangeAdapter` 默认依赖创建抽出 package-private overload，便于测试用本地 fake baseUrl 证明默认依赖构造不访问 public instruments endpoint。
+- 保持生产运行时首次使用 instruments 时仍可刷新；未改变下单、撤单、订单状态机、credential 或 permission probe 路径。
+- Binance 逻辑未修改，只在 `BinanceFiltersCacheTest` 增加构造期不 fetch 的对照断言。
+
+### 回归测试
+
+- `OkxInstrumentsCacheTest.shouldNotFetchDuringConstructionAndRefreshOnFirstSnapshot`：fake public client 计数，构造后 `getCount=0`，首次 `snapshot` 后 `getCount=1`。
+- `OkxExchangeAdapterBootstrapNoOutboundTest.shouldCreateDefaultDependenciesWithoutFetchingPublicInstruments`：默认依赖与 adapter 构造后本地 fake server `hitCount=0`，首次 `snapshot` 后 `hitCount=1`。
+- `OkxBootstrapNoOutboundLocalContextTest.shouldBootstrapLocalContextWithoutOkxPublicInstrumentsOutbound`：local full Spring context 启动前安装 `ProxySelector` 探针，断言 `www.okx.com/api/v5/public/instruments?instType=SPOT` 访问次数为 0，且日志不包含 `okx_adapter_bootstrap_fallback_enabled`。
+- `BinanceFiltersCacheTest`：构造后 `fetchCount=0`，保持 Binance 惰性刷新行为。
+
+### 验证记录
+
+- `mvn -f backend/pom.xml -pl nq-adapter-okx,nq-app -am test`：通过，`BUILD SUCCESS`，`nq-adapter-okx` 27 tests / 0 failures，`nq-app` 52 tests / 0 failures。
+- `git diff --check`：通过，无 whitespace error；仅有 Git LF/CRLF 工作区提示。
+- `mvn -f backend/pom.xml test`：通过，23 个 backend module 全部 `SUCCESS`，`BUILD SUCCESS`，总耗时 02:43。
+- 禁止范围 diff 检查：通过，`backend/nq-infra/src/main/resources/db/migration`、`frontend`、`research`、`scripts` 无 diff。
+- 日志 / surefire 报告关键字扫描：未命中 `okx_adapter_bootstrap_fallback_enabled`、`www.okx.com/api/v5/public/instruments` 或 `api/v5/public/instruments?instType=SPOT`。
+
+### 边界确认
+
+- 未新增 migration。
+- 未修改前端、Python 或部署脚本。
+- 未接 AI、DH runtime 或 LIVE。
+- 未真实下单、撤单、转账或提现。
+- 未调用 OKX、Binance 或任何真实交易所；测试使用 fake client、本地 fake server 和 `ProxySelector` 探针。
+- 未读取或输出真实密钥；permission probe 仍未实现。
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW-DOC
 
 日期：2026-06-12

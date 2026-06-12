@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -16,6 +18,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +57,26 @@ class OkxInstrumentsCacheTest {
             assertEquals("0.00100000", snapshot.get("BTC-USDT").minSize().setScale(8).toPlainString());
             assertEquals("live", snapshot.get("BTC-USDT").state());
         }
+    }
+
+    /**
+     * 构造 cache 只允许建立本地状态；首次显式读取 instruments 时才允许访问 public endpoint。
+     */
+    @Test
+    void shouldNotFetchDuringConstructionAndRefreshOnFirstSnapshot() {
+        CountingOkxHttpClient publicClient = new CountingOkxHttpClient();
+        OkxInstrumentsCache cache = new OkxInstrumentsCache(
+                publicClient,
+                Clock.fixed(Instant.parse("2026-03-04T00:00:00Z"), ZoneOffset.UTC),
+                Duration.ofMinutes(5)
+        );
+
+        assertEquals(0, publicClient.getCount());
+
+        Map<String, com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument> snapshot = cache.snapshot("trc-first-read");
+
+        assertEquals(1, publicClient.getCount());
+        assertTrue(snapshot.containsKey("BTC-USDT"));
     }
 
     /**
@@ -147,6 +170,44 @@ class OkxInstrumentsCacheTest {
         @Override
         public void close() {
             server.stop(0);
+        }
+    }
+
+    private static final class CountingOkxHttpClient extends OkxHttpClient {
+
+        private final ObjectMapper objectMapper = new ObjectMapper();
+        private final AtomicInteger getCount = new AtomicInteger();
+
+        private CountingOkxHttpClient() {
+            super(
+                    HttpClient.newHttpClient(),
+                    new ObjectMapper(),
+                    "http://127.0.0.1",
+                    Duration.ofSeconds(1),
+                    new OkxRequestSigner(),
+                    () -> "2026-03-04T00:00:00Z",
+                    new OkxApiCredentials("", "", ""),
+                    false
+            );
+        }
+
+        @Override
+        public JsonNode get(String requestPathWithQuery, String traceId) {
+            getCount.incrementAndGet();
+            var root = objectMapper.createObjectNode();
+            root.put("code", "0");
+            var data = root.putArray("data");
+            var btcUsdt = data.addObject();
+            btcUsdt.put("instId", "BTC-USDT");
+            btcUsdt.put("tickSz", "0.1");
+            btcUsdt.put("lotSz", "0.0001");
+            btcUsdt.put("minSz", "0.001");
+            btcUsdt.put("state", "live");
+            return root;
+        }
+
+        private int getCount() {
+            return getCount.get();
         }
     }
 }

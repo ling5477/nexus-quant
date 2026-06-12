@@ -846,9 +846,13 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     private static Dependencies createDefaultDependencies() {
+        return createDefaultDependencies(OkxRuntimeConfig.fromSystemEnv());
+    }
+
+    static Dependencies createDefaultDependencies(OkxRuntimeConfig runtimeConfig) {
         ObjectMapper objectMapper = new ObjectMapper();
         Clock clock = Clock.systemUTC();
-        OkxRuntimeConfig runtimeConfig = OkxRuntimeConfig.fromSystemEnv();
+        Objects.requireNonNull(runtimeConfig, "runtimeConfig must not be null");
         OkxRequestSigner signer = new OkxRequestSigner();
         OkxTimestampProvider timestampProvider = () -> DateTimeFormatter.ISO_INSTANT.format(
                 Instant.now(clock).truncatedTo(ChronoUnit.MILLIS).atOffset(ZoneOffset.UTC)

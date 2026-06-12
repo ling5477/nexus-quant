@@ -19,8 +19,8 @@ import org.slf4j.LoggerFactory;
  * OkxInstrumentsCache 负责缓存 `public/instruments?instType=SPOT`。
  * <p>
  * Why:
- * GateC-1 要求下单前必须使用 instruments 做 trim，且刷新策略至少做到“启动拉取 + 周期刷新”。
- * 这里采用构造时预热 + 按刷新窗口惰性刷新，避免先引入额外调度线程也能满足最小可用要求。
+ * GateC-1 要求下单前必须使用 instruments 做 trim，但测试和 Spring context 启动必须保持 no-outbound。
+ * 因此 cache 构造期只建立本地状态，首次真正读取 symbol metadata 时再刷新，避免 Bean bootstrap 访问 OKX public endpoint。
  */
 public class OkxInstrumentsCache {
 
@@ -44,7 +44,6 @@ public class OkxInstrumentsCache {
         this.refreshInterval = Objects.requireNonNull(refreshInterval, "refreshInterval must not be null");
         this.instrumentsById = new ConcurrentHashMap<>();
         this.lastRefreshAt = Instant.EPOCH;
-        refreshNow("bootstrap-okx-instruments");
     }
 
     /**
@@ -128,7 +127,7 @@ public class OkxInstrumentsCache {
     }
 
     private void refreshIfDue(String traceId) {
-        if (lastRefreshAt.plus(refreshInterval).isAfter(Instant.now(clock))) {
+        if (!instrumentsById.isEmpty() && lastRefreshAt.plus(refreshInterval).isAfter(Instant.now(clock))) {
             return;
         }
         refreshNow(traceId);

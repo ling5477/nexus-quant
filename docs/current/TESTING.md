@@ -60,6 +60,23 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FIX 验证记录（2026-06-12）
+
+本轮修复 OKX instruments cache 构造期 eager refresh，补充 no-outbound 回归测试，并同步审计报告状态。未新增 migration，未修改前端、Python 或部署脚本，未调用真实交易所，未接 AI / DH / LIVE。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-adapter-okx,nq-app -am test` | 通过 | `BUILD SUCCESS`；`nq-adapter-okx` 27 tests / 0 failures；`nq-app` 52 tests / 0 failures；新增 no-outbound app context 测试通过。 |
+| `git diff --check` | 通过 | 退出码 0，无 whitespace error；仅有 Git 将 LF 转为 CRLF 的工作区提示。 |
+| `mvn -f backend/pom.xml test` | 通过 | 23 个 backend module 全部 `SUCCESS`，`BUILD SUCCESS`；`nq-app` 52 tests / 0 failures；总耗时 02:43。 |
+| migration diff 检查 | 通过 | `git diff --name-only -- backend/nq-infra/src/main/resources/db/migration` 无输出。 |
+| frontend diff 检查 | 通过 | `git diff --name-only -- frontend` 无输出。 |
+| research diff 检查 | 通过 | `git diff --name-only -- research` 无输出。 |
+| deploy scripts diff 检查 | 通过 | `git diff --name-only -- scripts` 无输出；未修改部署脚本。 |
+| no-outbound 证据 | 通过 | `OkxInstrumentsCacheTest` / `OkxExchangeAdapterBootstrapNoOutboundTest` 用 fake client/server 证明构造期 0 次 public GET、首次显式读取才刷新；`OkxBootstrapNoOutboundLocalContextTest` 用 `ProxySelector` 探针证明 local Spring context 启动期访问 `www.okx.com` public instruments 次数为 0，且日志不含 `okx_adapter_bootstrap_fallback_enabled`。 |
+| 日志 / surefire 报告关键字扫描 | 通过 | 未命中 `okx_adapter_bootstrap_fallback_enabled`、`www.okx.com/api/v5/public/instruments` 或 `api/v5/public/instruments?instType=SPOT`。 |
+| 真实交易所调用 | 未执行 | 本轮测试不依赖真实 OKX/Binance 网络，不读取或输出真实密钥。 |
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW-DOC 验证记录（2026-06-12）
 
 本轮只将 OKX bootstrap no-outbound 只读审计结论落到 `docs/current`，新增 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md` 并更新 README/WORKLOG/TESTING 索引。未修改 Java、配置、migration、测试、frontend、Python 或部署脚本，未调用 OKX、Binance 或任何真实交易所，未实现 fix。
