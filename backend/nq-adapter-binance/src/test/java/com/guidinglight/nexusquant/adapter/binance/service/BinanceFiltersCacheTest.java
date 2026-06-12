@@ -65,6 +65,8 @@ class BinanceFiltersCacheTest {
         };
 
         BinanceFiltersCache cache = new BinanceFiltersCache(client, clock, Duration.ofSeconds(30));
+        assertEquals(0, fetchCount.get());
+
         BinanceSymbolFilters byInternal = cache.getRequired("BTC-USDT", "trc-cache-internal");
         BinanceSymbolFilters byExchange = cache.getRequired("BTCUSDT", "trc-cache-exchange");
 

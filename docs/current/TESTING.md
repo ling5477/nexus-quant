@@ -60,6 +60,18 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-DESIGN-REVIEW 验证记录（2026-06-12）
+
+本轮只读审计 credential permission probe code/API/test 实现方案，新增设计审计报告并同步 README/WORKLOG/TESTING/plan 状态。未修改 Java、Repository、Service、Controller、DTO、API、migration、前端、Python 或部署脚本；未调用真实交易所；未实现 permission probe。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 通过，含既有非本轮改动 | 当前命中本轮允许文档：`README.md`、`docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`、`docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`、`docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、新增 `docs/current/CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md`；另有预检时已存在的 `backend/nq-adapter-binance/.../BinanceFiltersCacheTest.java`，本轮未触碰或回退。 |
+| `git diff --check` | 通过 | 退出码 0，无 whitespace error；仅有 Git 将 LF 转为 CRLF 的工作区提示。 |
+| `git diff --stat` | 通过，含既有非本轮改动 | 当前工作区总 stat 包含 7 个 tracked 文件、96 insertions / 6 deletions；其中 `BinanceFiltersCacheTest.java` 为预检时已存在的非本轮 Java 改动；新增报告文件未 staged，因此不出现在 `git diff --stat` 中，由 `git status --short` 确认。 |
+| Maven / frontend / Python | 未执行 | docs-only；未修改业务代码、测试代码、配置、migration、前端、Python 或部署脚本，不把未执行测试写成通过。 |
+| 真实交易所调用 | 未执行 | 本轮未调用 OKX、Binance、Bybit、Gate 或任何真实交易所；未读取或输出真实密钥。 |
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FIX 验证记录（2026-06-12）
 
 本轮修复 OKX instruments cache 构造期 eager refresh，补充 no-outbound 回归测试，并同步审计报告状态。未新增 migration，未修改前端、Python 或部署脚本，未调用真实交易所，未接 AI / DH / LIVE。

@@ -2,7 +2,7 @@
 
 任务：NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW
 日期：2026-06-08
-状态：design review completed；V31 permission probe schema-only completed；permission probe not implemented；no real exchange call performed。
+状态：design review completed；V31 permission probe schema-only completed；code/API/test design review completed；permission probe not implemented；no real exchange call performed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
@@ -194,6 +194,8 @@ code/API 批次：
 ## 11. Decision
 
 是否允许进入 probe schema-only 批次：已完成。
+
+是否允许进入 code/API/test implementation 批次：允许进入单独最小实现批次，但必须遵守 `CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md` 的入场条件：新增独立 probe port、Service 只做编排、真实 HTTP 限定在 adapter 层、LIVE 默认拒绝、Paper safety gate 先于 port 调用、API/audit 全脱敏、测试使用 fake/mock/socket guard 证明不访问真实交易所。
 
 后续入场条件：
 

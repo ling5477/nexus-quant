@@ -2,6 +2,64 @@
 
 日期：2026-05-16
 
+## NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-DESIGN-REVIEW
+
+日期：2026-06-12
+
+### 本轮目标
+
+只读审计并设计 credential permission probe 的 code/API/test 实现方案，回答 V31 schema 是否足够、是否需要 schema 补丁、Controller / Service / Port / Adapter / Repository / Audit / Tests 如何分层，以及是否允许进入下一步 code implementation 批次。本轮不实现 Java，不新增 API，不新增 migration，不改测试或配置，不调用真实交易所，不读取或输出真实密钥，不接 AI / DH / LIVE。
+
+### 新增文件
+
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md`
+
+### 修改文件
+
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 审计结论摘要
+
+- V31 schema 足够支撑下一步最小 code/API/test implementation；本轮不需要 schema 补丁。
+- 后续如需 `withdraw_enabled=false` hard CHECK、probe attempt history 或更细粒度权限结果表，必须单独 schema-only 批次，不能混入本轮。
+- 推荐新增独立 `ExchangeCredentialPermissionProbePort`；Service 只做 owner/account/credential 校验、ACTIVE 校验、Paper safety gate、LIVE 禁止、状态写回、`failed_auth_count` 和 audit log。
+- 真实 HTTP 调用必须隔离在 adapter 层，且只能调用安全 read-only endpoint；禁止 order / cancel / transfer / withdraw endpoint。
+- API response 和 audit metadata 只允许脱敏 summary，不返回 raw exchange response、headers、signature、encrypted/decrypted payload、API key、secret、private key、passphrase。
+- 测试矩阵必须包含 unit / adapter / web/API / no-real-exchange，使用 mock port、fake server、ProxySelector 或 socket guard 证明不访问 `www.okx.com` / `api.binance.com`。
+- OKX bootstrap no-outbound fix 已消除构造期外联；未来 permission probe 不得重新引入构造期外联，只能由显式 API/Service 调用触发。
+
+### P0/P1/P2/P3
+
+- P0：无。
+- P1：实现批次必须包含独立 probe port、no-real-exchange 测试护栏、LIVE 默认拒绝和 Paper safety gate；若缺失则阻塞验收。
+- P2：V31 未强制 `withdraw_enabled=false`，实现批次需代码层拒绝 true；幂等/并发策略需在 code 批次明确；GET latest 可选。
+- P3：文档索引需持续区分 design completed 与 runtime implemented。
+
+### 进入下一步结论
+
+允许进入单独 code implementation 批次，建议任务名：`NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-IMPLEMENTATION`。该批次仍不得新增 migration、不得接 AI/DH/LIVE、不得调用真实交易所、不得下单/撤单/转账/提现。
+
+### 验证记录
+
+- 本轮 docs-only，未运行 Maven / frontend / Python 测试；原因：未修改 Java、测试、配置、migration、前端、Python 或部署脚本。
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`。
+
+### 边界确认
+
+- 未修改 Java、Repository、Service、Controller、DTO 或 API。
+- 未新增 migration，未修改历史 migration。
+- 未修改前端、Python 或部署脚本。
+- 未调用 OKX、Binance、Bybit、Gate 或任何真实交易所。
+- 未实现 permission probe，未真实 HTTP 探活。
+- 未下单、撤单、转账或提现。
+- 未读取或输出真实密钥。
+- 未接 AI、DH runtime 或 LIVE。
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FIX
 
 日期：2026-06-12
