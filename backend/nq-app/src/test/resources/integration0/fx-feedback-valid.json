@@ -1,0 +1,11 @@
+{
+  "contractName": "NQFeedbackEvent",
+  "version": "0.1.0-int0-frozen",
+  "direction": "NQ_TO_DH",
+  "tenantId": "t-test-int0",
+  "requestId": "req-int0-0003",
+  "traceId": "trace-int0-0003",
+  "eventType": "PAPER_RUN_ALERT_RAISED",
+  "sanitizedSummary": "sanitized feedback summary, no secrets",
+  "sourceSystem": "nexus-quant"
+}

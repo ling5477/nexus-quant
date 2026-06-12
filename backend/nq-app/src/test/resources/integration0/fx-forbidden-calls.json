@@ -1,0 +1,12 @@
+{
+  "contractName": "DHSignalCandidate",
+  "tenantId": "t-test-int0",
+  "placeOrder": true,
+  "cancelOrder": true,
+  "startPaperRun": true,
+  "mutateStrategyStatus": true,
+  "mutateRiskState": true,
+  "triggerLive": true,
+  "orderCommand": "placeOrder",
+  "liveExecution": "enable"
+}

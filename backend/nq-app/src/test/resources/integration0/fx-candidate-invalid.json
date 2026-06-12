@@ -1,0 +1,13 @@
+{
+  "contractName": "DHSignalCandidate",
+  "version": "0.1.0-int0-frozen",
+  "direction": "DH_TO_NQ",
+  "tenantId": "t-test-int0",
+  "requestId": "req-int0-0002",
+  "symbol": "BTC-USDT",
+  "side": "BUY",
+  "confidence": 1.7,
+  "executionIntent": true,
+  "orderCommand": "placeOrder",
+  "exchangeCredential": "FAKE-PLACEHOLDER"
+}

@@ -1,0 +1,22 @@
+{
+  "contractName": "DHSignalCandidate",
+  "tenantId": "t-test-int0",
+  "apiKey": "FAKE-PLACEHOLDER",
+  "apiSecret": "FAKE-PLACEHOLDER",
+  "secret": "FAKE-PLACEHOLDER",
+  "token": "FAKE-PLACEHOLDER",
+  "cookie": "FAKE-PLACEHOLDER",
+  "passphrase": "FAKE-PLACEHOLDER",
+  "privateKey": "FAKE-PLACEHOLDER",
+  "mnemonic": "FAKE-PLACEHOLDER",
+  "walletPrivateKey": "FAKE-PLACEHOLDER",
+  "exchangeCredential": "FAKE-PLACEHOLDER",
+  "accountCredential": "FAKE-PLACEHOLDER",
+  "rawRequest": "FAKE-PLACEHOLDER",
+  "rawResponse": "FAKE-PLACEHOLDER",
+  "authorization": "FAKE-PLACEHOLDER",
+  "databaseConnectionString": "FAKE-PLACEHOLDER",
+  "password": "FAKE-PLACEHOLDER",
+  "twoFactorSecret": "FAKE-PLACEHOLDER",
+  "recoveryCode": "FAKE-PLACEHOLDER"
+}

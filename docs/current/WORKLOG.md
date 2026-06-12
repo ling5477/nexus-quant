@@ -2,6 +2,45 @@
 
 日期：2026-05-16
 
+## NQ-DH-INTEGRATION0-CONTRACT-TEST-IMPL
+
+日期：2026-06-12
+
+### 本轮目标
+
+把已冻结的 Integration-0 contract test matrix（INT0-T01..T15）落成可运行测试代码与 fixture。本轮只新增测试代码与 test resources，不实现真实集成，不修改生产代码，不新增 API/migration/Controller/Service/Repository/DTO，不新增 RealClient/真实 Provider，不做真实 HTTP/真实 NQ/真实交易所调用。
+
+### 新增文件（仅 src/test）
+
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/support/`：9 个 test-only helper（Int0Contract / Int0Signing / Int0NonceStore / Int0ContractValidator / Int0RequestFactory / Int0AuditEvent / Int0ValidationResult / Int0SideEffectTracker / Int0CredentialAccessTracker）。
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/`：3 个测试类（NqDhIntegration0ContractValidationTest / NqDhIntegration0SecurityContractTest / NqDhIntegration0NoSideEffectTest），共 16 用例覆盖 INT0-T01..T15。
+- `backend/nq-app/src/test/resources/integration0/`：10 个脱敏 fixture JSON（fx-candidate-valid/invalid、fx-feedback-valid/invalid、fx-forbidden-fields、fx-raw-prompt-context、fx-tenant-mismatch、fx-readonly-query、fx-forbidden-calls，超限 payload 由测试动态生成）。
+
+### 覆盖关系（INT0-T01..T15）
+
+- ContractValidation：T02 可开放能力、T03 header 缺失、T07 tenant mismatch、T08 payload>64KiB、T11 candidate schema、T12 feedback schema。
+- SecurityContract：T01 禁止能力、T04 HMAC、T05 timestamp 窗口、T06 nonce replay（test-only 内存 nonce）、T09 forbidden field、T10 raw prompt/context、T13 audit required、T15 no credential access。
+- NoSideEffect：T14 无交易副作用 + 无凭证访问。
+
+### 验证记录
+
+- `mvn -f backend/pom.xml test`：BUILD SUCCESS。nq-app 51 tests / 0 failures / 0 errors（含本轮新增 16 用例；原 35 + 16）。
+- 仅 Integration-0 定向运行：`NqDhIntegration0*Test` 16 passed / 0 failed。
+- ArchUnit（ModuleBoundaryArchTest / PackageBoundaryArchTest）仍全绿，新增 `..app.integration0..` 测试包未触碰受护栏的 `..domain.. / ..api.. / ..trading.application..` 边界。
+- `git diff --check` 通过；`git status --short` 仅命中 `backend/nq-app/src/test/**`。
+
+### 边界确认
+
+- 未修改任何 `src/main`；未新增 API / migration / Controller / Service / Repository / DTO 到 main。
+- 未新增 NQ RealClient / DH RealClient / 真实 Provider；未做真实 HTTP / 真实 NQ / 真实交易所调用。
+- 未下单 / 撤单 / 启停 Paper Run / 改策略状态 / 读写 NQ DB / 开启 LIVE；未读取或输出真实密钥（全部固定假值 `int0-test-secret` / `t-test-int0` / `dh-int0-test`）。
+- 未把 Integration-0 写成真实集成；未把 DH 写成 integrated；未把 AI 写成 started；未把 LIVE 写成 enabled。
+
+### Integration-1 前置（不在本轮）
+
+- nonce store 为 test-only 内存实现；Integration-1 前必须补持久化 / 集中缓存 nonce（replay nonce persistence）。
+- rate limit、memory cap 仍缺失（DH P1-4 residual），阻塞 Integration-1。
+
 ## NQ-DH-INTEGRATION0-MOCK-CONTRACT-TEST-DESIGN
 
 日期：2026-06-11

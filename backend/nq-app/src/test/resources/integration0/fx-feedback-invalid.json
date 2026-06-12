@@ -1,0 +1,12 @@
+{
+  "contractName": "NQFeedbackEvent",
+  "version": "0.1.0-int0-frozen",
+  "direction": "NQ_TO_DH",
+  "tenantId": "t-test-int0",
+  "requestId": "req-int0-0004",
+  "eventType": "UNKNOWN_EVENT",
+  "sourceSystem": "spoofed-source",
+  "credential": "FAKE-PLACEHOLDER",
+  "rawResponse": "FAKE-PLACEHOLDER",
+  "token": "FAKE-PLACEHOLDER"
+}

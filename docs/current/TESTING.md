@@ -60,6 +60,22 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-DH-INTEGRATION0-CONTRACT-TEST-IMPL 验证记录（2026-06-12）
+
+本轮把 Integration-0 contract test matrix（INT0-T01..T15）落成可运行测试代码与脱敏 fixture，仅新增 `backend/nq-app/src/test/**`，未修改任何 `src/main`、API、migration 或部署。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | 通过 | BUILD SUCCESS；`nq-app` 51 tests / 0 failures / 0 errors（原 35 + 本轮 16）。 |
+| `NqDhIntegration0*Test` 定向 | 通过 | 16 tests / 0 failures（ContractValidation 6 + Security 8 + NoSideEffect 2）。 |
+| ArchUnit 边界 | 通过 | ModuleBoundaryArchTest / PackageBoundaryArchTest 全绿；新增 `..app.integration0..` 测试包未触碰受护栏边界。 |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| `git status --short` | 通过 | 仅命中 `backend/nq-app/src/test/**`（测试代码与 fixtures）。 |
+| 生产代码边界 | 通过 | 未修改 `src/main`，未新增 API / migration / Controller / Service / Repository / DTO / RealClient / 真实 Provider。 |
+| 真实通道边界 | 通过 | 未做真实 HTTP / 真实 NQ / 真实交易所；未读取真实密钥（固定假值）；未开启 LIVE。 |
+
+说明：nonce store 为 test-only 内存实现；Integration-1 前必须补持久化 nonce、rate limit、memory cap（DH P1-4 residual），不在本轮范围。
+
 ## NQ-DH-INTEGRATION0-MOCK-CONTRACT-TEST-DESIGN 验证记录（2026-06-11）
 
 本轮将 Integration-0 已冻结的 15 项 contract test 拆成详细矩阵（每项 16 字段）+ 共享 fixture + forbidden side-effect checklist + 验收/blocker 清单 + 下一步代码任务草案，写入 `NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md` 并更新 README/ROADMAP/WORKLOG/TESTING。本轮**只做设计不写测试代码**，未修改 Java、frontend、Python、API、migration、测试代码或部署脚本，故未运行全量测试。

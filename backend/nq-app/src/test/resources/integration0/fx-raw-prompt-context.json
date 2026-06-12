@@ -1,0 +1,9 @@
+{
+  "contractName": "DHSignalCandidate",
+  "tenantId": "t-test-int0",
+  "fullPrompt": "FAKE-PLACEHOLDER",
+  "fullContext": "FAKE-PLACEHOLDER",
+  "rawPrompt": "FAKE-PLACEHOLDER",
+  "rawContext": "FAKE-PLACEHOLDER",
+  "signatureRawMaterial": "FAKE-PLACEHOLDER"
+}
