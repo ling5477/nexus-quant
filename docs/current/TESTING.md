@@ -60,6 +60,18 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-DH-INTEGRATION0-SAFETY-GATE-CLOSE 验证记录（2026-06-12）
+
+本轮只做 Integration-0 safety gate close / acceptance report（新增 `NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md` 并更新 STATUS/README/ROADMAP/WORKLOG/TESTING），未修改任何 Java、测试代码、frontend、Python、API、migration 或部署脚本，故本轮未运行全量测试，验收依据引用上一轮已通过结果。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 通过 | 仅命中本轮新增/修改的 `docs/current` Markdown。 |
+| `git diff --check` | 通过 | 无 whitespace error。 |
+| `git diff --stat` | 通过 | 改动集中在 `NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md` 与 STATUS/README/ROADMAP/WORKLOG/TESTING。 |
+| 全量测试 | 未执行 | docs-only；未改业务/测试代码；引用上一轮 `mvn -f backend/pom.xml test` BUILD SUCCESS（nq-app 51 tests / 0 failures，Integration-0 16 passed，ArchUnit 全绿）作为验收依据。 |
+| 验收口径检查 | 通过 | Integration-0 = PASS/CLOSED/ACCEPTED；Runtime integration / Integration-1 / AI NOT STARTED；DH NOT INTEGRATED；LIVE DISABLED；未误写真实集成。 |
+
 ## NQ-DH-INTEGRATION0-CONTRACT-TEST-IMPL 验证记录（2026-06-12）
 
 本轮把 Integration-0 contract test matrix（INT0-T01..T15）落成可运行测试代码与脱敏 fixture，仅新增 `backend/nq-app/src/test/**`，未修改任何 `src/main`、API、migration 或部署。

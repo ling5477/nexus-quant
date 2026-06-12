@@ -21,6 +21,7 @@
 - NQ-DH Integration-0 契约冻结已完成（contract / mock / docs，未实现集成）；DH P1-4 残留阻塞 Integration-1，详见 `NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`。
 - NQ-DH Integration-0 mock / contract test 详细矩阵（15 项 × 16 字段 + 共享 fixture + forbidden side-effect checklist + 下一步代码任务草案）已设计，只写计划未写测试代码，详见 `NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`。
 - NQ-DH Integration-0 contract test 代码已实现（仅 `backend/nq-app/src/test/**`，test-only，INT0-T01..T15 共 16 用例，全部 mock/stub/内存校验，无真实集成）；`mvn -f backend/pom.xml test` 通过，nq-app 51 tests。
+- NQ-DH Integration-0 safety gate：**CLOSED / ACCEPTED**（详见 `NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`）。Runtime integration / Integration-1 / AI 仍 NOT STARTED；DH NOT INTEGRATED；LIVE DISABLED；Integration-1 前置为 DH P1-4 residual（rate limit / memory cap / replay nonce persistence）。
 - 当前本地 PostgreSQL 默认端口固定为 `5432`。
 
 ## 当前不是
@@ -74,7 +75,8 @@ GateO：A 股适配
 - `CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`：Credential permission probe 只读设计审计与 schema-only 记录；V31 已完成 schema 准备，但 permission probe 未实现，未调用真实交易所。
 - `NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`：NQ-DH Integration-0 契约冻结主文档（禁止能力 / 可开放能力 / header / 数据契约 / 不可信输入 / 验收 / Integration-1 blockers）；contract-only，未实现集成。
 - `NQ_DH_INTEGRATION0_SECURITY_POLICY.md`：NQ-DH Integration-0 安全策略（header / 签名 / 防重放 / tenant / payload / 脱敏 / 审计）；契约设计，未实现代码。
-- `NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`：NQ-DH Integration-0 mock / contract test 设计（15 项），只写计划不写测试代码。
+- `NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`：NQ-DH Integration-0 mock / contract test 设计（15 项）+ 详细矩阵（实现已落地，见提交 `fc922d06`）。
+- `NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`：NQ-DH Integration-0 safety gate close / acceptance（PASS / CLOSED / ACCEPTED）；Runtime integration / Integration-1 / AI not started，DH not integrated，LIVE disabled。
 - `TESTING.md`：统一验证命令与本次验证记录。
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。

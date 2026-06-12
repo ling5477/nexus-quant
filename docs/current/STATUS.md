@@ -112,6 +112,15 @@ DH 侧事实（来自第二轮与第三轮审计）：
 - DH P1-1 / P1-2 / P1-3 已关闭（认证+租户隔离、HMAC/timestamp/nonce 防重放+source allowlist+payload 上限、ProviderTrustPolicy）。
 - DH P1-4 部分关闭：限流（rate limit）、内存仓储上限（memory cap）、replay nonce 持久化仍缺失；该残留不阻塞 Integration-0，但阻塞 Integration-1。
 
+## NQ-DH Integration-0 safety gate（2026-06-12，CLOSED / ACCEPTED）
+
+- Integration-0 safety gate close / acceptance：**PASS / CLOSED / ACCEPTED**，详见 `NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`。
+- 已完成链路：三轮审计 + 汇总 → 事实源同步 → 契约冻结 → contract test 矩阵设计 → contract test 代码实现（NQ 16 + DH 16）→ implementation review（PASS）→ 本次验收关闭。
+- 验收依据：NQ `mvn -f backend/pom.xml test` BUILD SUCCESS（nq-app 51 tests / 0 failures，Integration-0 16 passed，ArchUnit 全绿）；DH `mvn test` BUILD SUCCESS（dh-domain 86 tests / 0 failures，Integration-0 16 passed，ArchitectureTest 12 条全绿，PostgresContainerSmokeTest 既有环境性 skip）。两侧均覆盖 INT0-T01..T15，含 negative path、audit event shape、forbidden side-effect。
+- 边界保持：Runtime integration NOT STARTED；Integration-1 NOT STARTED；DH NOT INTEGRATED；AI NOT STARTED；LIVE DISABLED；无生产代码 / API / migration / RealClient / 真实 Provider / 真实 HTTP / 真实 NQ / 真实交易所 / 凭证读取 / NQ DB 读写 / 交易副作用。
+- Integration-1 前置 blocker：DH P1-4 residual（rate limit / memory cap / replay nonce persistence，修复后须重跑 contract tests，T06 须以持久化 nonce 重跑，并新增 429 限流与 bounded store 测试）；header `X-DH-NQ-*` 与 `X-NQ-DH-*` 对齐；真实通道安全前置（单独开工 + 设计审计 + staging/paper-only + LIVE disabled + 无凭证落日志 + no trading side-effect + 安全审查）。
+- 下一步只允许：Integration-0 acceptance/归档、Integration-1 planning-only audit、DH P1-4 residual fix planning、GateK-PLAN 文档规划。禁止直接 Integration-1 实现 / 真实只读通道 / 真实 HTTP / RealClient / Provider / LIVE / AI 自动交易。
+
 ## 当前未完成状态
 
 - 尚未完成虚拟币量化 V1。

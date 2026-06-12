@@ -58,6 +58,7 @@ GateO：A 股适配
 - Integration-0 allowed only as contract / mock / documentation work line, not runtime integration；它是独立文档与契约工作线，不等于 GateK 实现，也不是真实集成。
 - NQ-DH Integration-0 契约冻结已完成（contract / mock / docs）；下一步只允许 mock / contract test 设计或安全文档固化，禁止真实联调；真实通道必须等 Integration-1 并先修复 DH P1-4 残留（rate limit / memory cap / replay nonce 持久化）。
 - NQ-DH Integration-0 mock / contract test 详细矩阵（15 项）已设计完成（docs-only，未写测试代码）；下一步可进入 contract test 代码实现（草案 `NQ-DH-INTEGRATION0-CONTRACT-TEST-IMPL`，只加测试与 fixture，不接真实通道），仍禁止真实联调。
+- NQ-DH Integration-0 contract test 代码已实现并通过 implementation review；**Integration-0 safety gate CLOSED / ACCEPTED**（见 `NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`）。下一步只允许 Integration-1 planning-only audit / DH P1-4 residual fix planning / GateK-PLAN 文档规划；禁止直接 Integration-1 实现、真实只读通道、真实 HTTP、RealClient、Provider、LIVE、AI 自动交易。
 - 不接入 AI。
 - 不做 AI 信号。
 - 不做 AI Paper Trading。

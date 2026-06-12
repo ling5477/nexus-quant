@@ -2,6 +2,42 @@
 
 日期：2026-05-16
 
+## NQ-DH-INTEGRATION0-SAFETY-GATE-CLOSE
+
+日期：2026-06-12
+
+### 本轮目标
+
+输出 NQ-DH Integration-0 safety gate close / acceptance report，正式判定 Integration-0 验收通过并关闭。本轮只做验收文档，不写代码、不改测试代码、不新增 API/migration/RealClient/真实 Provider、不做真实联调。
+
+### 新增文件
+
+- `docs/current/NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`
+
+### 修改文件
+
+- `docs/current/STATUS.md`、`docs/current/README.md`、`docs/current/ROADMAP.md`、`docs/current/WORKLOG.md`、`docs/current/TESTING.md`
+
+### 验收结论
+
+- Integration-0：**PASS / CLOSED / ACCEPTED**。
+- Runtime integration NOT STARTED；Integration-1 NOT STARTED；DH NOT INTEGRATED；AI NOT STARTED；LIVE DISABLED。
+- 已完成链路：三轮审计 + 汇总 → 事实源同步 → 契约冻结 → contract test 矩阵设计 → contract test 代码实现（NQ 16 + DH 16）→ implementation review（PASS）→ 本次验收关闭。
+- 契约范围：10 个契约 contract-only / mock-only / test-protected。
+- 测试覆盖：INT0-T01..T15 两侧各 16 用例 passed，含 negative path、audit event shape、forbidden side-effect。
+- Integration-1 前置 blocker：DH P1-4 residual（rate limit / memory cap / replay nonce persistence）+ header `X-DH-NQ-*`/`X-NQ-DH-*` 对齐 + 真实通道安全前置。
+
+### 验证记录
+
+- 本轮 docs-only：未运行 `mvn test` / `npm run build` / `pytest`；未修改 Java、测试代码、frontend、Python、API、migration、部署脚本；验收依据引用上一轮已通过的 `mvn -f backend/pom.xml test` BUILD SUCCESS（nq-app 51 tests）与 implementation review（PASS）。
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat` 核对改动范围（仅 `docs/current`）。
+
+### 边界确认
+
+- 未修改代码、未修改测试代码、未新增 API、未新增 migration、未新增 NQ/DH RealClient、未新增真实 Provider。
+- 未做真实 HTTP、未做真实 NQ 调用、未做真实交易所调用、未接 AI、未开启 LIVE、未读取或输出真实密钥、未读写 NQ DB、无交易副作用。
+- 未把 Integration-0 写成真实集成；未把 Integration-1 写成已开始；未把 DH 写成 integrated；未把 AI 写成 started；未把 LIVE 写成 enabled。
+
 ## NQ-DH-INTEGRATION0-CONTRACT-TEST-IMPL
 
 日期：2026-06-12
