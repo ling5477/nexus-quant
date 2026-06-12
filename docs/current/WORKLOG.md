@@ -2,6 +2,46 @@
 
 日期：2026-05-16
 
+## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW-DOC
+
+日期：2026-06-12
+
+### 本轮目标
+
+将 `NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW` 只读审计结论落到 `docs/current`，形成可追踪审计报告。本轮只做文档落档，不修改代码、配置、migration、测试、前端、Python 或部署脚本，不调用真实交易所，不实现 fix。
+
+### 新增文件
+
+- `docs/current/NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md`
+
+### 修改文件
+
+- `README.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 审计结论摘要
+
+- OKX public instruments 外联触发路径：`MarketdataControllerLocalIntegrationTest` / `ResearchBacktestHappyPathLocalTest` 使用 `@SpringBootTest` + `local` profile 启动完整 Spring context，`ExchangeAdapterConfiguration` 构造 `OkxExchangeAdapter`，默认依赖构造 `OkxInstrumentsCache`，其构造函数 eager 执行 `refreshNow("bootstrap-okx-instruments")` 并访问 `/api/v5/public/instruments?instType=SPOT`。
+- 根因：`OkxInstrumentsCache` 构造期 eager refresh；`OkxRuntimeConfig.fromSystemEnv()` 不读 Spring YAML；`stub-on-bootstrap-failure` 只吞失败，不阻止外联尝试。
+- Binance 对照：`BinanceFiltersCache` 构造期不刷新，`exchangeInfo` 仅在 `getRequired` / `snapshot` 触发刷新窗口时拉取，未发现同类启动期外联。
+- 影响：无 P0；P1 为 no-outbound test isolation 违反；P2 为 Spring profile 配置不能统一约束 OKX runtime 与测试边界不收敛；P3 为文档/命名易误读。
+- GateJ completed 不受影响；credential permission probe 不受影响。
+- 推荐后续 FIX：首选惰性化 `OkxInstrumentsCache` bootstrap；或增加 Spring 驱动 no-outbound / stub bootstrap mode；补 no-outbound 回归测试。
+
+### 验证记录
+
+- 本轮 docs-only，未运行 `mvn test` / `npm run build` / `pytest`；原因：未修改 Java、配置、migration、测试、前端、Python 或部署脚本。
+- 按任务要求执行 `git diff --check`、`git diff --stat`、`git status --short` 进行文档改动范围和空白检查。
+
+### 边界确认
+
+- 未修改 Java、配置、migration、测试、前端、Python 或部署脚本。
+- 未调用 OKX、Binance 或任何真实交易所。
+- 未实现 fix，未接 AI / DH / LIVE。
+- 未读取或输出真实密钥、API key、secret、token、cookie、passphrase、private key、助记词或交易所凭证。
+
 ## NQ-DH-INTEGRATION0-SAFETY-GATE-CLOSE
 
 日期：2026-06-12
