@@ -2,8 +2,6 @@ import {expect, type Page} from 'playwright/test';
 
 const username = process.env.E2E_USERNAME ?? 'admin';
 const password = process.env.E2E_PASSWORD ?? 'ChangeMe123!';
-const defaultUsername = 'admin';
-const defaultPassword = 'ChangeMe123!';
 const defaultAccountAlias = 'rc1-admin-default';
 const altAccountAlias = 'rc1-admin-alt';
 
@@ -50,16 +48,17 @@ async function resetDefaultAccountFixture(page: Page) {
 export async function loginToConsole(page: Page): Promise<E2EExchangeAccountFixture> {
     const defaultAccount = await resetDefaultAccountFixture(page);
 
+    // Why: 登录页文案在 fix(freeze) 288c28f8 中改为 "NexusQuant 控制台" / "登录"，
+    // 这里同步选择器，否则所有 E2E 在登录前置阶段直接失败。
     await page.goto('/login');
-    await expect(page.getByRole('heading', {name: '登录控制台'})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'NexusQuant 控制台'})).toBeVisible();
 
-    if (username !== defaultUsername) {
-        await page.getByLabel('用户名').fill(username);
-    }
-    if (password !== defaultPassword) {
-        await page.getByLabel('密码').fill(password);
-    }
-    await page.getByRole('button', {name: '登录并进入控制台'}).click();
+    // Why: fix(freeze) 288c28f8 移除了登录表单的默认凭证预填（登录泄露清理），
+    // E2E 必须始终显式填写用户名密码，不能再依赖页面预填默认值。
+    await page.getByLabel('用户名').fill(username);
+    await page.getByLabel('密码').fill(password);
+    // Why: AntD 会在两个汉字的按钮文本中自动插入空格（"登 录"），按既有规范用 \s* 正则匹配。
+    await page.getByRole('button', {name: /^登\s*录$/}).click();
 
     // Why: 本地验收会先拉起后端再并发启动 Playwright worker，首页路由恢复偶发慢于默认 5 秒，
     // 这里显式放宽等待窗口，避免把真实登录成功误判成路由失败。
