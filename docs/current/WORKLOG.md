@@ -4082,6 +4082,7 @@ grep -n '"status":"UP"\|UP' /opt/nexus-quant/freeze-evidence/health/health-check
 - 未接入 AI、DH 或真实交易。
 - 未启动真实交易。
 - 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
+
 - ECS 复验未完成前，不允许进入 GateJ-FREEZE 首次启动验收。
 
 ---
@@ -4221,3 +4222,43 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 - 未接入 AI、DH 或真实交易。
 - 未启动真实交易。
 - 未提交真实密码、`.env.freeze`、release zip、jar、dist、logs、dump 或 freeze-evidence。
+
+---
+
+# Worklog: NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-IMPLEMENTATION
+
+日期：2026-06-13
+
+## 本轮目标
+
+实现 V31 permission probe 的最小后端 code/API/test 能力，并保持 no-real-exchange 测试隔离。当前阶段仍为 GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE disabled。
+
+## 修改范围
+
+- 新增独立 `ExchangeCredentialPermissionProbePort`，Service 只依赖 port，不直接写 HTTP。
+- 新增 `CredentialPermissionProbeService`，按 owner/account、credential row lock、ACTIVE/is_active、LIVE blocked、withdraw risk、Paper safety gate、IN_PROGRESS 并发检查顺序做本地 gate。
+- 新增 credential permission probe API：
+  - `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/permission-probe`
+  - `GET /api/exchange-accounts/{accountId}/credentials/{credentialId}/permission-probe/latest`
+- 扩展 JDBC repository 读取/写回 V31/V29 非敏感字段：`permission_probe_status`、`permission_scope`、`withdraw_enabled`、`ip_allowlist_probe_status`、`failed_auth_count`、`last_permission_probe_at`、`last_permission_probe_error`。
+- 新增默认 `NoRealExchangeCredentialPermissionProbePort`，仅返回 `SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`，不创建 HTTP client。
+- 新增 OKX/Binance adapter 边界类，只固化错误分类与 forbidden endpoint 规则，不接真实交易所。
+- 补齐 Service、Repository、Web/API、Adapter boundary、No-real-exchange guard 测试。
+
+## 安全与审计策略
+
+- API request body 只接受 `reason`、`dryRun`、`mode`、`paperSafetyConfirmed`；未知字段直接返回 `MALFORMED_REQUEST`。
+- `credentialType`、actor、credential material 均由服务端派生；API response 不返回 raw response、headers、signature、encrypted/decrypted payload、API key、secret、passphrase、private key。
+- audit event 覆盖 `PERMISSION_PROBE_STARTED`、`PERMISSION_PROBE_SUCCEEDED`、`PERMISSION_PROBE_FAILED`、`PERMISSION_PROBE_SKIPPED`。
+- audit metadata 只写 account/credential/status/scope/IP/error category/requestId/traceId 等脱敏字段；不写 raw request、raw response、headers、signature 或 credential material。
+- `AUTH_FAILED`、`INVALID_API_KEY`、`SIGNATURE_FAILED`、`IP_ALLOWLIST_FAILED` 增加 `failed_auth_count`；成功不自动清零。
+- `permission_scope = NULL` 不被当作 `TRADE`。
+
+## 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改前端、Python 或部署脚本。
+- 未开启 LIVE，LIVE credential probe 默认 `SKIPPED`。
+- 未调用 OKX / Binance / Bybit / Gate 或任意真实交易所。
+- 未新增真实下单、撤单、转账、提现路径。
+- 未接 AI，未接 DH runtime，未把 GateK-PLAN 写成 GateK implementation started。

@@ -25,8 +25,56 @@ public record ExchangeAccountCredentialMaterial(
         Instant lastVerifiedAt,
         String lastVerificationError,
         Instant updatedAt,
-        String decryptedPayloadJson
+        String decryptedPayloadJson,
+        String permissionProbeStatus,
+        String permissionScope,
+        boolean withdrawEnabled,
+        String ipAllowlistProbeStatus,
+        int failedAuthCount,
+        Instant lastPermissionProbeAt,
+        String lastPermissionProbeError
 ) {
+
+    public ExchangeAccountCredentialMaterial(
+            Long credentialId,
+            Long exchangeAccountId,
+            String credentialType,
+            String maskedAccessKey,
+            String credentialStatus,
+            String verificationStatus,
+            boolean isActive,
+            Instant revokedAt,
+            Long rotatedFromCredentialId,
+            Instant rotatedAt,
+            Instant lastVerifiedAt,
+            String lastVerificationError,
+            Instant updatedAt,
+            String decryptedPayloadJson
+    ) {
+        this(
+                credentialId,
+                exchangeAccountId,
+                credentialType,
+                maskedAccessKey,
+                credentialStatus,
+                verificationStatus,
+                isActive,
+                revokedAt,
+                rotatedFromCredentialId,
+                rotatedAt,
+                lastVerifiedAt,
+                lastVerificationError,
+                updatedAt,
+                decryptedPayloadJson,
+                "NOT_PROBED",
+                null,
+                false,
+                "NOT_CHECKED",
+                0,
+                null,
+                null
+        );
+    }
 
     public ExchangeAccountCredentialSummary toSummary() {
         return new ExchangeAccountCredentialSummary(
@@ -42,7 +90,14 @@ public record ExchangeAccountCredentialMaterial(
                 rotatedAt,
                 lastVerifiedAt,
                 lastVerificationError,
-                updatedAt
+                updatedAt,
+                permissionProbeStatus,
+                permissionScope,
+                withdrawEnabled,
+                ipAllowlistProbeStatus,
+                failedAuthCount,
+                lastPermissionProbeAt,
+                lastPermissionProbeError
         );
     }
 }

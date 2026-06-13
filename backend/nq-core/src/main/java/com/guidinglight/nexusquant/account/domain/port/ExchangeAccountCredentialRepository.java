@@ -147,6 +147,41 @@ public interface ExchangeAccountCredentialRepository {
     );
 
     /**
+     * 把 credential 标记为 permission probe IN_PROGRESS。
+     *
+     * <p>Why: 同一 credential 同时只能有一个探活编排。调用方应先用 FOR UPDATE 锁定目标行，
+     * 再用本方法 claim 状态，避免并发请求重复调用 adapter。</p>
+     */
+    default boolean markPermissionProbeInProgress(
+            Long credentialId,
+            Long exchangeAccountId,
+            Instant updatedAt
+    ) {
+        throw new UnsupportedOperationException("permission probe claim is not implemented");
+    }
+
+    /**
+     * 写回 permission probe 的 latest 脱敏摘要。
+     *
+     * <p>Why: V31 只提供 latest summary 字段，不新增 history 表；因此 Service 必须一次性写入
+     * status、scope、IP allowlist、脱敏错误和 failed_auth_count 增量。成功路径不得自动清零
+     * failed_auth_count。</p>
+     */
+    default boolean markPermissionProbeResult(
+            Long credentialId,
+            Long exchangeAccountId,
+            String permissionProbeStatus,
+            String permissionScope,
+            String ipAllowlistProbeStatus,
+            Instant lastPermissionProbeAt,
+            String lastPermissionProbeError,
+            boolean incrementFailedAuthCount,
+            Instant updatedAt
+    ) {
+        throw new UnsupportedOperationException("permission probe result writeback is not implemented");
+    }
+
+    /**
      * 把 DISABLED credential 恢复为 ACTIVE，并同步结构性校验结果。
      *
      * <p>Why: enable 成功必须原子写入 credential_status、is_active、verification_status、

@@ -2,20 +2,20 @@
 
 任务：NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-DESIGN-REVIEW
 日期：2026-06-12
-状态：code/API/test design review completed；permission probe runtime not implemented；no real exchange call performed。
+状态：code/API/test design review completed；minimal code/API/test implemented；no real exchange call performed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
 
-本轮是 L 级只读设计审计，覆盖 credential permission probe 后续 code/API/test 实现方案。审计范围包括 V31 schema、现有 credential Controller / DTO / Service / Repository / audit log、OKX / Binance adapter 边界、credential tests 和 OKX no-outbound tests。
+本轮原始审计是 L 级只读设计审计，覆盖 credential permission probe 后续 code/API/test 实现方案。后续实现批次已按本报告入场条件落地最小后端能力。
 
-本轮只修改 `docs/current` 文档和 README 索引；未修改 Java、Repository、Service、Controller、DTO、API、migration、前端、Python 或部署脚本；未调用 OKX、Binance、Bybit、Gate 或任何真实交易所；未实现 permission probe；未读取或输出真实密钥；未接 AI、DH runtime 或 LIVE。
+设计审计批次只修改 `docs/current` 文档和 README 索引；后续实现批次修改 Java 后端与后端测试、同步 `docs/current`，未新增 migration，未修改前端、Python 或部署脚本；未调用 OKX、Binance、Bybit、Gate 或任何真实交易所；未读取或输出真实密钥；未接 AI、DH runtime 或 LIVE。
 
 ## 2. Current State
 
 - Credential governance 已完成并冻结。
 - V31 schema-only migration 已完成：`permission_probe_status`、`last_permission_probe_at`、`last_permission_probe_error`、`ip_allowlist_probe_status`、`permission_scope=FUNDING`、permission probe audit events 已准备。
-- Permission probe runtime / code / API 尚未实现；当前没有 `permission-probe` endpoint，没有 `ExchangeCredentialPermissionProbePort`，Repository 也没有 V31 probe 字段写回方法。
+- Permission probe 最小 runtime / code / API 已实现：存在独立 `ExchangeCredentialPermissionProbePort`、`CredentialPermissionProbeService`、`POST /permission-probe`、`GET /permission-probe/latest` 和 Repository/JDBC V31 probe 字段写回方法。默认 port 为 no-real-exchange fake，未接真实交易所 adapter。
 - 当前 `POST /api/exchange-accounts/{accountId}/credentials/verify` 仍是本地结构性校验，只复用 signer/credential 格式能力，不访问真实交易所，不证明权限可用。
 - API response 当前通过 `ExchangeAccountCredentialSummaryResponse` 只返回非敏感 summary；create / rotate request 可接收 credential material，但 response 不返回 material。
 - Repository active material 查询已要求 `is_active=true AND credential_status='ACTIVE'`，多 ACTIVE credential type 无 `credentialType` 时返回 conflict。

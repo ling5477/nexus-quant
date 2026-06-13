@@ -1107,8 +1107,9 @@ PRE-FREEZE-CODE-AUDIT second pass 结论：
 | 命令 | 结果 | 说明 |
 | --- | --- | --- |
 | `bash -n scripts/seed-freeze-user.sh` | 未通过当前本机执行 | 当前 Windows `bash` 指向未安装 Linux 发行版的 WSL stub；本机未安装 Git Bash，Docker daemon 也未运行，无法获得可用 Bash。脚本已按 Bash 语法静态审查，需在 Linux ECS 或可用 Bash 环境复跑该命令。 |
-| `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
-| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+ | `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
+ | `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+
 | `cd frontend && npm run build` | 通过 | Vite build 成功；仍有既有 chunk > 500 kB 警告。 |
 | `.\scripts\build-freeze-release.ps1` | 通过 | 重新生成 `release/nq-gatej-freeze-release.zip`，release info 已包含禁止 `source .env.freeze` 与交互式 seed 密码说明。 |
 
@@ -1155,6 +1156,7 @@ test "$status" = "200"
 | --- | --- | --- |
 | `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
 | `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+
 | `cd frontend && npm run build` | 通过 | Vite build 成功；仍有既有 chunk > 500 kB 警告。 |
 | `.\scripts\build-freeze-release.ps1` | 通过 | 重新生成 `release/nq-gatej-freeze-release.zip`。 |
 
@@ -1275,3 +1277,26 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 | --- | --- | --- |
 | `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
 | `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 35 tests / 0 failures / 0 errors。 |
+
+## NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-IMPLEMENTATION 验证记录（2026-06-13）
+
+本轮实现 V31 permission probe 最小后端 code/API/test 能力，默认 no-real-exchange port 返回 `SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`，不访问 OKX/Binance 或其他真实交易所；未新增 migration、前端、Python、部署脚本、AI、DH、LIVE 或真实交易路径。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-core -am -Dtest=CredentialPermissionProbeServiceTest test` | 失败，非代码失败 | Reactor 前置模块没有匹配测试，Surefire 将 no matching tests 视为失败。 |
+| `mvn -f backend/pom.xml -pl nq-core -am -Dtest=CredentialPermissionProbeServiceTest '-Dsurefire.failIfNoSpecifiedTests=false' test` | 通过 | `CredentialPermissionProbeServiceTest` 9 tests / 0 failures / 0 errors；覆盖 LIVE/inactive/non-ACTIVE/Paper gate/withdraw risk、STARTED/SUCCEEDED/FAILED/SKIPPED audit、failed_auth_count 策略、scope null、IN_PROGRESS 并发和 latest no-port。 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api,nq-app,nq-adapter-okx,nq-adapter-binance -am test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 52 tests / 0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor `BUILD SUCCESS`；23 个 backend module `SUCCESS`；`nq-app` 52 tests / 0 failures / 0 errors。 |
+| `git diff --check` | 通过 | 无空白错误；仅有 Git 换行转换提示。 |
+| `git diff -- backend/nq-infra/src/main/resources/db/migration` | 通过 | 输出为空，未新增/修改 migration。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改前端。 |
+| `git diff -- research` | 通过 | 输出为空，未改 Python research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改部署/脚本。 |
+
+边界扫描：
+
+- 阶段措辞扫描通过：未新增 GateK implementation started / AI started / DH integrated / LIVE enabled 的正向语义；命中项均为 `not started`、`not integrated`、`disabled` 或禁止说明。
+- Permission probe 相关 surefire reports 未命中 `www.okx.com` / `api.binance.com`。
+- 全量 surefire reports 未命中 `No route to host`、`ConnectException`、`UnknownHostException`、`request failed`、真实 endpoint 请求或 `api.binance.com`。
+- 全量 `nq-app` surefire reports 仍包含既有 OKX adapter 配置摘要 `baseUrl=https://www.okx.com`，这是 local profile fingerprint，不是本轮 permission probe 访问证据。

@@ -56,7 +56,7 @@
 - `V31__schema_credential_permission_probe.sql` 已完成 permission probe schema-only 治理：新增 `permission_probe_status`、`last_permission_probe_at`、`last_permission_probe_error`、`ip_allowlist_probe_status`；扩展 `permission_scope` CHECK 支持 `FUNDING`；扩展 `credential_audit_logs.event_type` CHECK 支持 `PERMISSION_PROBE_STARTED / PERMISSION_PROBE_SUCCEEDED / PERMISSION_PROBE_FAILED / PERMISSION_PROBE_SKIPPED`；同步新增字段和 metadata 敏感信息禁入 COMMENT。
 - V31 为既有 credential 记录提供安全默认值：`permission_probe_status='NOT_PROBED'`、`ip_allowlist_probe_status='NOT_CHECKED'`，只表示尚未做真实权限探活，不改变业务可用性语义。
 - V31 未新增 `withdraw_enabled = FALSE` 硬 CHECK：现有字段已 `NOT NULL DEFAULT FALSE`，但本轮未查询生产/本地现有数据证明所有既有行均为 false，因此只更新注释并把强制 false CHECK 留给后续单独数据确认批次；`withdraw_enabled=true` 不得被视为可接受生产状态。
-- 当前未实现 permission probe，未新增真实交易所权限探活 API、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
+- Permission probe 最小 code/API/test 已实现并接入 V31 字段：Service claim 时写 `permission_probe_status='IN_PROGRESS'`；完成、失败或策略跳过时写回 `permission_probe_status`、`permission_scope`、`ip_allowlist_probe_status`、`last_permission_probe_at`、`last_permission_probe_error` 和必要时递增 `failed_auth_count`。成功不自动清零 `failed_auth_count`；`permission_scope=NULL` 不被当作 `TRADE`；`withdraw_enabled=true` 在代码层视为风险并跳过 probe。本轮未新增或修改 migration，未接真实交易所 adapter、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
 
 ## Research / Backtest Config Archive Semantics
 

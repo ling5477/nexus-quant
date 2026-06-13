@@ -32,7 +32,14 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                    rotated_at,
                    last_verified_at,
                    last_verification_error,
-                   updated_at
+                   updated_at,
+                   permission_probe_status,
+                   permission_scope,
+                   withdraw_enabled,
+                   ip_allowlist_probe_status,
+                   failed_auth_count,
+                   last_permission_probe_at,
+                   last_permission_probe_error
             FROM exchange_account_credentials
             """;
 
@@ -189,6 +196,13 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                last_verified_at,
                                last_verification_error,
                                updated_at,
+                               permission_probe_status,
+                               permission_scope,
+                               withdraw_enabled,
+                               ip_allowlist_probe_status,
+                               failed_auth_count,
+                               last_permission_probe_at,
+                               last_permission_probe_error,
                                pgp_sym_decrypt(encrypted_payload, ?) AS decrypted_payload_json
                         FROM exchange_account_credentials
                         WHERE credential_id = ?
@@ -256,6 +270,13 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                last_verified_at,
                                last_verification_error,
                                updated_at,
+                               permission_probe_status,
+                               permission_scope,
+                               withdraw_enabled,
+                               ip_allowlist_probe_status,
+                               failed_auth_count,
+                               last_permission_probe_at,
+                               last_permission_probe_error,
                                pgp_sym_decrypt(encrypted_payload, ?) AS decrypted_payload_json
                         FROM exchange_account_credentials
                         WHERE exchange_account_id = ?
@@ -358,7 +379,14 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                   rotated_at,
                                   last_verified_at,
                                   last_verification_error,
-                                  updated_at
+                                  updated_at,
+                                  permission_probe_status,
+                                  permission_scope,
+                                  withdraw_enabled,
+                                  ip_allowlist_probe_status,
+                                  failed_auth_count,
+                                  last_permission_probe_at,
+                                  last_permission_probe_error
                         """,
                 SUMMARY_ROW_MAPPER,
                 exchangeAccountId,
@@ -396,6 +424,61 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 lastVerificationError,
                 Timestamp.from(updatedAt),
                 credentialId
+        ) > 0;
+    }
+
+    @Override
+    public boolean markPermissionProbeInProgress(Long credentialId, Long exchangeAccountId, Instant updatedAt) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE exchange_account_credentials
+                        SET permission_probe_status = 'IN_PROGRESS',
+                            last_permission_probe_error = NULL,
+                            updated_at = ?
+                        WHERE credential_id = ?
+                          AND exchange_account_id = ?
+                          AND permission_probe_status <> 'IN_PROGRESS'
+                        """,
+                Timestamp.from(updatedAt),
+                credentialId,
+                exchangeAccountId
+        ) > 0;
+    }
+
+    @Override
+    public boolean markPermissionProbeResult(
+            Long credentialId,
+            Long exchangeAccountId,
+            String permissionProbeStatus,
+            String permissionScope,
+            String ipAllowlistProbeStatus,
+            Instant lastPermissionProbeAt,
+            String lastPermissionProbeError,
+            boolean incrementFailedAuthCount,
+            Instant updatedAt
+    ) {
+        return jdbcTemplate.update(
+                """
+                        UPDATE exchange_account_credentials
+                        SET permission_probe_status = ?,
+                            permission_scope = ?,
+                            ip_allowlist_probe_status = ?,
+                            last_permission_probe_at = ?,
+                            last_permission_probe_error = ?,
+                            failed_auth_count = failed_auth_count + CASE WHEN ? THEN 1 ELSE 0 END,
+                            updated_at = ?
+                        WHERE credential_id = ?
+                          AND exchange_account_id = ?
+                        """,
+                permissionProbeStatus,
+                permissionScope,
+                ipAllowlistProbeStatus,
+                Timestamp.from(lastPermissionProbeAt),
+                lastPermissionProbeError,
+                incrementFailedAuthCount,
+                Timestamp.from(updatedAt),
+                credentialId,
+                exchangeAccountId
         ) > 0;
     }
 
@@ -540,7 +623,14 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 toInstant(resultSet.getTimestamp("rotated_at")),
                 toInstant(resultSet.getTimestamp("last_verified_at")),
                 resultSet.getString("last_verification_error"),
-                resultSet.getTimestamp("updated_at").toInstant()
+                resultSet.getTimestamp("updated_at").toInstant(),
+                resultSet.getString("permission_probe_status"),
+                resultSet.getString("permission_scope"),
+                resultSet.getBoolean("withdraw_enabled"),
+                resultSet.getString("ip_allowlist_probe_status"),
+                resultSet.getInt("failed_auth_count"),
+                toInstant(resultSet.getTimestamp("last_permission_probe_at")),
+                resultSet.getString("last_permission_probe_error")
         );
     }
 
@@ -559,7 +649,14 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 toInstant(resultSet.getTimestamp("last_verified_at")),
                 resultSet.getString("last_verification_error"),
                 resultSet.getTimestamp("updated_at").toInstant(),
-                resultSet.getString("decrypted_payload_json")
+                resultSet.getString("decrypted_payload_json"),
+                resultSet.getString("permission_probe_status"),
+                resultSet.getString("permission_scope"),
+                resultSet.getBoolean("withdraw_enabled"),
+                resultSet.getString("ip_allowlist_probe_status"),
+                resultSet.getInt("failed_auth_count"),
+                toInstant(resultSet.getTimestamp("last_permission_probe_at")),
+                resultSet.getString("last_permission_probe_error")
         );
     }
 

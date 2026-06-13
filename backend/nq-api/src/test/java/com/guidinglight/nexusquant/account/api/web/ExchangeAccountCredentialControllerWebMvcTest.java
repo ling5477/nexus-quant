@@ -10,8 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
@@ -42,6 +44,7 @@ class ExchangeAccountCredentialControllerWebMvcTest {
     private MockMvc mockMvc;
     private ExchangeAccountCredentialCommandService commandService;
     private ExchangeAccountCredentialVerificationService verificationService;
+    private CredentialPermissionProbeService permissionProbeService;
 
     @BeforeEach
     void setUp() {
@@ -49,6 +52,7 @@ class ExchangeAccountCredentialControllerWebMvcTest {
         CurrentUserProfileService currentUserProfileService = mock(CurrentUserProfileService.class);
         commandService = mock(ExchangeAccountCredentialCommandService.class);
         verificationService = mock(ExchangeAccountCredentialVerificationService.class);
+        permissionProbeService = mock(CredentialPermissionProbeService.class);
         when(gatewayAuthFacade.currentUser()).thenReturn(Optional.of(new TokenClaims("sub", "admin", List.of("ADMIN"), Instant.now(), Instant.now().plusSeconds(60), "issuer", "jti")));
         when(currentUserProfileService.findByUsername("admin")).thenReturn(Optional.of(new AuthUserProfile(1L, "admin", "hash", List.of("ADMIN"), true)));
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter(
@@ -56,7 +60,7 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                         .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                         .build()
         );
-        mockMvc = MockMvcBuilders.standaloneSetup(new ExchangeAccountCredentialController(gatewayAuthFacade, currentUserProfileService, commandService, verificationService, 1))
+        mockMvc = MockMvcBuilders.standaloneSetup(new ExchangeAccountCredentialController(gatewayAuthFacade, currentUserProfileService, commandService, verificationService, permissionProbeService, 1))
                 .addFilters(new TestTraceIdFilter())
                 .setMessageConverters(jsonConverter)
                 .setControllerAdvice(new ApiExceptionHandler())
@@ -265,6 +269,94 @@ class ExchangeAccountCredentialControllerWebMvcTest {
                         .content("{\"reason\":\" \"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void shouldExposePermissionProbeWithoutSensitiveFields() throws Exception {
+        CredentialPermissionProbeSummary summary = new CredentialPermissionProbeSummary(
+                900001L,
+                1L,
+                "OKX_API_V5",
+                "OKX",
+                "SUCCEEDED",
+                "READ_ONLY",
+                false,
+                "PASSED",
+                2,
+                Instant.parse("2026-06-13T00:00:01Z"),
+                null,
+                "req-1",
+                "trace-probe"
+        );
+        when(permissionProbeService.probe(any(), any(), any(), any(), any(), any())).thenReturn(summary);
+        when(permissionProbeService.latest(any(), any(), any(), any(), any())).thenReturn(summary);
+
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/permission-probe")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trace-probe")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"operator probe\",\"dryRun\":true,\"mode\":\"PAPER\",\"paperSafetyConfirmed\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialId").value(1))
+                .andExpect(jsonPath("$.credentialType").value("OKX_API_V5"))
+                .andExpect(jsonPath("$.exchange").value("OKX"))
+                .andExpect(jsonPath("$.permissionProbeStatus").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.permissionScope").value("READ_ONLY"))
+                .andExpect(jsonPath("$.withdrawEnabled").value(false))
+                .andExpect(jsonPath("$.failedAuthCount").value(2))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.decryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.apiKey").doesNotExist())
+                .andExpect(jsonPath("$.secretKey").doesNotExist())
+                .andExpect(jsonPath("$.signature").doesNotExist())
+                .andExpect(jsonPath("$.headers").doesNotExist())
+                .andExpect(jsonPath("$.rawResponse").doesNotExist());
+
+        mockMvc.perform(get("/api/exchange-accounts/900001/credentials/1/permission-probe/latest")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trace-probe-latest"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.permissionProbeStatus").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.encryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.decryptedPayload").doesNotExist())
+                .andExpect(jsonPath("$.secretKey").doesNotExist());
+    }
+
+    @Test
+    void shouldRejectCredentialMaterialInPermissionProbeRequestBody() throws Exception {
+        mockMvc.perform(post("/api/exchange-accounts/900001/credentials/1/permission-probe")
+                        .contentType("application/json")
+                        .content("{\"dryRun\":true,\"mode\":\"PAPER\",\"paperSafetyConfirmed\":true,\"apiKey\":\"must-not-be-accepted\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenPermissionProbeHasNoAuthenticatedUser() throws Exception {
+        GatewayAuthFacade gatewayAuthFacade = mock(GatewayAuthFacade.class);
+        CurrentUserProfileService currentUserProfileService = mock(CurrentUserProfileService.class);
+        when(gatewayAuthFacade.currentUser()).thenReturn(Optional.empty());
+        MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter(
+                Jackson2ObjectMapperBuilder.json()
+                        .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                        .build()
+        );
+        MockMvc unauthenticatedMvc = MockMvcBuilders.standaloneSetup(new ExchangeAccountCredentialController(
+                        gatewayAuthFacade,
+                        currentUserProfileService,
+                        commandService,
+                        verificationService,
+                        permissionProbeService,
+                        1
+                ))
+                .addFilters(new TestTraceIdFilter())
+                .setMessageConverters(jsonConverter)
+                .setControllerAdvice(new ApiExceptionHandler())
+                .build();
+
+        unauthenticatedMvc.perform(post("/api/exchange-accounts/900001/credentials/1/permission-probe")
+                        .contentType("application/json")
+                        .content("{\"dryRun\":true,\"mode\":\"PAPER\",\"paperSafetyConfirmed\":true}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     private static final class TestTraceIdFilter extends OncePerRequestFilter {

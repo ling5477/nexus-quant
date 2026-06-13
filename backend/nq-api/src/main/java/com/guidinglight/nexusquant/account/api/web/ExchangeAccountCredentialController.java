@@ -1,17 +1,22 @@
 package com.guidinglight.nexusquant.account.api.web;
 
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountActiveCredentialResponse;
+import com.guidinglight.nexusquant.account.api.dto.CredentialPermissionProbeRequestBody;
+import com.guidinglight.nexusquant.account.api.dto.CredentialPermissionProbeResponse;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialEnableRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialLifecycleRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialRotateRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialSummaryResponse;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialUpsertRequestBody;
+import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
+import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
 import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -49,6 +54,7 @@ public class ExchangeAccountCredentialController {
     private final CurrentUserProfileService currentUserProfileService;
     private final ExchangeAccountCredentialCommandService exchangeAccountCredentialCommandService;
     private final ExchangeAccountCredentialVerificationService exchangeAccountCredentialVerificationService;
+    private final CredentialPermissionProbeService credentialPermissionProbeService;
     private final int credentialKeyVersion;
 
     public ExchangeAccountCredentialController(
@@ -56,6 +62,7 @@ public class ExchangeAccountCredentialController {
             CurrentUserProfileService currentUserProfileService,
             ExchangeAccountCredentialCommandService exchangeAccountCredentialCommandService,
             ExchangeAccountCredentialVerificationService exchangeAccountCredentialVerificationService,
+            CredentialPermissionProbeService credentialPermissionProbeService,
             @Value("${nq.account.credentials.key-version:1}") int credentialKeyVersion
     ) {
         this.gatewayAuthFacade = Objects.requireNonNull(gatewayAuthFacade, "gatewayAuthFacade must not be null");
@@ -70,6 +77,10 @@ public class ExchangeAccountCredentialController {
         this.exchangeAccountCredentialVerificationService = Objects.requireNonNull(
                 exchangeAccountCredentialVerificationService,
                 "exchangeAccountCredentialVerificationService must not be null"
+        );
+        this.credentialPermissionProbeService = Objects.requireNonNull(
+                credentialPermissionProbeService,
+                "credentialPermissionProbeService must not be null"
         );
         this.credentialKeyVersion = credentialKeyVersion;
     }
@@ -266,6 +277,60 @@ public class ExchangeAccountCredentialController {
         ));
     }
 
+    @PostMapping("/{credentialId}/permission-probe")
+    @Operation(
+            summary = "触发 credential permission probe",
+            description = "只接受非敏感控制字段；credentialType、actor 和 credential material 均由服务端派生。默认 no-real-exchange 测试隔离，不下单、撤单、转账或提现。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "探活完成或被策略 SKIPPED"),
+            @ApiResponse(responseCode = "400", description = "请求非法或含未知字段", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "未认证", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "并发 IN_PROGRESS 状态冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public CredentialPermissionProbeResponse permissionProbe(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @PathVariable @Positive(message = "credentialId must be positive") Long credentialId,
+            @Valid @RequestBody(required = false) CredentialPermissionProbeRequestBody requestBody
+    ) {
+        CurrentCredentialActor actor = resolveCurrentCredentialActor();
+        return CredentialPermissionProbeResponse.from(credentialPermissionProbeService.probe(
+                actor.userId(),
+                accountId,
+                credentialId,
+                actor.actor(),
+                toPermissionProbeCommand(requestBody),
+                TraceIdContext.get()
+        ));
+    }
+
+    @GetMapping("/{credentialId}/permission-probe/latest")
+    @Operation(
+            summary = "读取 credential permission probe latest summary",
+            description = "只读 latest summary，不触发 adapter，不读取 credential material。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "401", description = "未认证", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "账户或凭证不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public CredentialPermissionProbeResponse permissionProbeLatest(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId,
+            @PathVariable @Positive(message = "credentialId must be positive") Long credentialId
+    ) {
+        CurrentCredentialActor actor = resolveCurrentCredentialActor();
+        return CredentialPermissionProbeResponse.from(credentialPermissionProbeService.latest(
+                actor.userId(),
+                accountId,
+                credentialId,
+                null,
+                TraceIdContext.get()
+        ));
+    }
+
     @PostMapping("/{credentialId}/expire")
     @Operation(
             summary = "标记凭证过期",
@@ -310,6 +375,18 @@ public class ExchangeAccountCredentialController {
 
     private String lifecycleReason(ExchangeAccountCredentialLifecycleRequestBody requestBody) {
         return requestBody == null ? null : requestBody.reason();
+    }
+
+    private CredentialPermissionProbeCommand toPermissionProbeCommand(CredentialPermissionProbeRequestBody requestBody) {
+        if (requestBody == null) {
+            return null;
+        }
+        return new CredentialPermissionProbeCommand(
+                requestBody.reason(),
+                requestBody.dryRun(),
+                requestBody.mode(),
+                requestBody.paperSafetyConfirmed()
+        );
     }
 
     private record CurrentCredentialActor(Long userId, String actor) {

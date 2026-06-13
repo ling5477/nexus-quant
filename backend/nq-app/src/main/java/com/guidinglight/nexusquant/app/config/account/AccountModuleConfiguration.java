@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.app.config.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
@@ -8,8 +9,10 @@ import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryServi
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.verification.StructuralExchangeAccountCredentialVerifier;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -80,6 +83,26 @@ public class AccountModuleConfiguration {
                 exchangeAccountRepository,
                 exchangeAccountCredentialRepository,
                 exchangeAccountCredentialVerifier
+        );
+    }
+
+    @Bean
+    public ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort() {
+        return new NoRealExchangeCredentialPermissionProbePort();
+    }
+
+    @Bean
+    public CredentialPermissionProbeService credentialPermissionProbeService(
+            ExchangeAccountRepository exchangeAccountRepository,
+            ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
+            ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort,
+            ObjectMapper objectMapper
+    ) {
+        return new CredentialPermissionProbeService(
+                exchangeAccountRepository,
+                exchangeAccountCredentialRepository,
+                exchangeCredentialPermissionProbePort,
+                objectMapper
         );
     }
 }

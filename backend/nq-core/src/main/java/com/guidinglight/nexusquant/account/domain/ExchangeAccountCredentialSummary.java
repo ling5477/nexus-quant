@@ -24,6 +24,52 @@ public record ExchangeAccountCredentialSummary(
         Instant rotatedAt,
         Instant lastVerifiedAt,
         String lastVerificationError,
-        Instant updatedAt
+        Instant updatedAt,
+        String permissionProbeStatus,
+        String permissionScope,
+        boolean withdrawEnabled,
+        String ipAllowlistProbeStatus,
+        int failedAuthCount,
+        Instant lastPermissionProbeAt,
+        String lastPermissionProbeError
 ) {
+
+    public ExchangeAccountCredentialSummary(
+            Long credentialId,
+            Long exchangeAccountId,
+            String credentialType,
+            String maskedAccessKey,
+            String credentialStatus,
+            String verificationStatus,
+            boolean isActive,
+            Instant revokedAt,
+            Long rotatedFromCredentialId,
+            Instant rotatedAt,
+            Instant lastVerifiedAt,
+            String lastVerificationError,
+            Instant updatedAt
+    ) {
+        this(
+                credentialId,
+                exchangeAccountId,
+                credentialType,
+                maskedAccessKey,
+                credentialStatus,
+                verificationStatus,
+                isActive,
+                revokedAt,
+                rotatedFromCredentialId,
+                rotatedAt,
+                lastVerifiedAt,
+                lastVerificationError,
+                updatedAt,
+                "NOT_PROBED",
+                null,
+                false,
+                "NOT_CHECKED",
+                0,
+                null,
+                null
+        );
+    }
 }

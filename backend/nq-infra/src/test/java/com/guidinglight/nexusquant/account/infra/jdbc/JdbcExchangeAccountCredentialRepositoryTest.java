@@ -40,6 +40,8 @@ class JdbcExchangeAccountCredentialRepositoryTest {
         assertEquals(summary, repository.insertNewVersion(900001L, "OKX_API_V5", "{}", 1, "PGP_SYM_AES256", "tes***ey", null, Instant.parse("2026-04-06T00:01:00Z")));
         repository.deactivateActiveByAccountAndType(900001L, "OKX_API_V5", Instant.parse("2026-04-06T00:02:00Z"));
         assertTrue(repository.markVerificationResult(1L, "VERIFIED", Instant.parse("2026-04-06T00:03:00Z"), null, Instant.parse("2026-04-06T00:03:00Z")));
+        assertTrue(repository.markPermissionProbeInProgress(1L, 900001L, Instant.parse("2026-04-06T00:03:10Z")));
+        assertTrue(repository.markPermissionProbeResult(1L, 900001L, "FAILED", null, "FAILED", Instant.parse("2026-04-06T00:03:20Z"), "AUTH_FAILED", true, Instant.parse("2026-04-06T00:03:20Z")));
         assertTrue(repository.markEnabled(1L, 900001L, "VERIFIED", Instant.parse("2026-04-06T00:03:30Z"), Instant.parse("2026-04-06T00:03:30Z")));
         assertTrue(repository.updateLifecycleStatus(1L, 900001L, "REVOKED", false, Instant.parse("2026-04-06T00:04:00Z"), "admin", "offboarded", Instant.parse("2026-04-06T00:04:00Z")));
         assertTrue(repository.markRotated(1L, 900001L, "admin", Instant.parse("2026-04-06T00:05:00Z")));
@@ -51,7 +53,10 @@ class JdbcExchangeAccountCredentialRepositoryTest {
         assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("FOR UPDATE")));
         assertTrue(jdbcTemplate.queryForObjectCountSql.contains("COUNT(1)"));
         assertFalse(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("ORDER BY updated_at DESC") && sql.contains("LIMIT 1")));
-        assertFalse(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("permission_scope")));
+        assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("permission_probe_status")));
+        assertTrue(jdbcTemplate.querySqls.stream().anyMatch(sql -> sql.contains("permission_scope")));
+        assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("permission_probe_status = 'IN_PROGRESS'")));
+        assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("failed_auth_count = failed_auth_count + CASE WHEN")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = 'ROTATED'")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = 'ACTIVE'")));
         assertTrue(jdbcTemplate.updateSqls.stream().anyMatch(sql -> sql.contains("credential_status = ?")));

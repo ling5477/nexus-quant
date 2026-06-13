@@ -66,14 +66,14 @@ GateO：A 股适配
 - `API.md`：当前 API 分类入口。
 - `DB_SCHEMA.md`：数据库事实入口。
 - `CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`：Credential revocation Batch 5-A 只读审计报告。
-- `CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`：Credential revocation Batch 5-B schema completed、Batch 5-C code/API/test completed、Batch 5-D-B explicit rotate command implemented 与 Batch 5-E-B deterministic active material selection implemented 事实。
+- `CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`：Credential revocation Batch 5-B schema completed、Batch 5-C code/API/test completed、Batch 5-D-B explicit rotate command implemented、Batch 5-E-B deterministic active material selection implemented、Batch 5-F-C enable command implemented 与 permission probe 最小 code/API/test implemented 事实。
 - `CREDENTIAL_ROTATE_GOVERNANCE_REVIEW.md`：Credential rotate Batch 5-D-A 只读审计报告；作为 5-D-B 实现前的审计快照保留。
 - `CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：Credential active material Batch 5-E-A 只读审计报告；记录 active summary / active material 多 credential type 选择风险与 5-E-B 建议。
 - `CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：Credential active credential Batch 5-E-C 只读审计报告；记录 account 全局 active 唯一约束取舍、5-E-D migration 决策和 Batch 5-F enable 审计前置条件。
 - `CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：Credential enable Batch 5-F-A 只读审计报告；记录可恢复状态、不可恢复状态和 Batch 5-F-B schema-only `ENABLED` audit event 准备事实；Batch 5-F-C 已实现最小 enable command。
 - `CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`：Credential governance Batch 5-G 冻结复核报告；Batch 5-G-A 已完成 P3 文案 cleanup，冻结 Batch 5-A ~ 5-F-C 的 schema、API、Service、Repository、audit log、测试和文档边界。
-- `CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`：Credential permission probe 只读设计审计与 schema-only 记录；V31 已完成 schema 准备，但 permission probe 未实现，未调用真实交易所。
-- `CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md`：Credential permission probe code/API/test 只读设计审计；结论为 V31 足够支撑最小实现，允许进入单独 code implementation 批次，但 runtime 仍未实现，未调用真实交易所。
+- `CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`：Credential permission probe 设计审计与 schema-only 记录；V31 已完成 schema 准备，最小 code/API/test 已实现，默认 no-real-exchange，未调用真实交易所。
+- `CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md`：Credential permission probe code/API/test 设计审计与实现记录；已新增独立 port、Service、POST/GET API、JDBC 写回、adapter boundary tests 和 no-real-exchange guard，仍未接真实交易所 adapter。
 - `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md`：OKX adapter bootstrap no-outbound 只读审计报告；记录 local integration test 启动期 OKX public instruments 外联触发路径、根因、Binance 对照和后续 FIX 建议；本轮未修改代码、未调用真实交易所。
 - `NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`：NQ-DH Integration-0 契约冻结主文档（禁止能力 / 可开放能力 / header / 数据契约 / 不可信输入 / 验收 / Integration-1 blockers）；contract-only，未实现集成。
 - `NQ_DH_INTEGRATION0_SECURITY_POLICY.md`：NQ-DH Integration-0 安全策略（header / 签名 / 防重放 / tenant / payload / 脱敏 / 审计）；契约设计，未实现代码。

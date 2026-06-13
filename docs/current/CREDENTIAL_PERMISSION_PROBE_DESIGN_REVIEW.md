@@ -2,16 +2,18 @@
 
 任务：NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW
 日期：2026-06-08
-状态：design review completed；V31 permission probe schema-only completed；code/API/test design review completed；permission probe not implemented；no real exchange call performed。
+状态：design review completed；V31 permission probe schema-only completed；code/API/test design review completed；minimal code/API/test implemented；no real exchange call performed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
 
 本轮只读设计审计真实交易所 credential permission probe，覆盖 READ_ONLY / TRADE / FUNDING 权限建模、withdraw 禁用、IP allowlist、失败重试、`failed_auth_count`、告警、前端风险提示和 Paper/LIVE 隔离。
 
-本轮未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本；未调用 OKX、Binance、Bybit、Gate 或任何真实交易所；未读取或输出真实密钥；未接 AI、DH、LIVE；未实现 permission probe。
+本轮设计审计未新增 migration，未修改 Java、Repository、Service、Controller、DTO、API、前端、Python 或部署脚本；未调用 OKX、Binance、Bybit、Gate 或任何真实交易所；未读取或输出真实密钥；未接 AI、DH、LIVE。
 
 后续 schema-only 批次 `NQ-CREDENTIAL-PERMISSION-PROBE-SCHEMA` 已新增 `V31__schema_credential_permission_probe.sql`，只做数据库准备和文档同步；仍未修改 Java/API/前端/Python/部署，仍未调用真实交易所，仍未实现 permission probe。
+
+后续 code/API/test implementation 批次已完成最小后端编排：新增独立 port、Service、POST/GET API、JDBC 写回和 no-real-exchange tests。默认 port 仍为 no-real-exchange fake，未接真实交易所 adapter，未做真实 HTTP 探活。
 
 ## 2. Current State
 
@@ -195,7 +197,7 @@ code/API 批次：
 
 是否允许进入 probe schema-only 批次：已完成。
 
-是否允许进入 code/API/test implementation 批次：允许进入单独最小实现批次，但必须遵守 `CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md` 的入场条件：新增独立 probe port、Service 只做编排、真实 HTTP 限定在 adapter 层、LIVE 默认拒绝、Paper safety gate 先于 port 调用、API/audit 全脱敏、测试使用 fake/mock/socket guard 证明不访问真实交易所。
+是否允许进入 code/API/test implementation 批次：已完成最小实现；实现遵守 `CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md` 的入场条件：新增独立 probe port、Service 只做编排、真实 HTTP 未接入、LIVE 默认拒绝、Paper safety gate 先于 port 调用、API/audit 全脱敏、测试使用 fake/mock/ProxySelector guard 证明不访问真实交易所。
 
 后续入场条件：
 
