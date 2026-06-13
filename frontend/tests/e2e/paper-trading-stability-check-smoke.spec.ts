@@ -45,12 +45,11 @@ test.describe('GateJ-3 paper trading stability check smoke', () => {
 
         // Open detail drawer
         await row.getByRole('link', {name: '查看详情'}).or(row.getByRole('button', {name: '查看详情'})).click();
-        const drawer = page.getByLabel('Paper Trading 详情');
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
 
-        // --- Stability Check Tab ---
-        await drawer.getByRole('tab', {name: '稳定性验收'}).click();
-        await expect(drawer.getByText('当前 Paper run 暂无稳定性验收。')).toBeVisible({timeout: 5_000});
+        // --- 稳定性验收面板（内联控制台中部，始终可见，无需切换 Tab）---
+        await expect(drawer.getByText('当前 Paper run 暂无稳定性验收。')).toBeVisible({timeout: 10_000});
 
         // Generate first stability check (24h window)
         const generateResponse = page.waitForResponse((response) => (

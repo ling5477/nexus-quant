@@ -45,12 +45,11 @@ test.describe('GateJ-2 paper trading alert smoke', () => {
 
         // Open detail drawer
         await row.getByRole('link', {name: '查看详情'}).or(row.getByRole('button', {name: '查看详情'})).click();
-        const drawer = page.getByLabel('Paper Trading 详情');
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
 
-        // --- Alert Tab ---
-        await drawer.getByRole('tab', {name: '告警'}).click();
-        await expect(drawer.getByText('当前 Paper run 暂无告警。')).toBeVisible({timeout: 5_000});
+        // --- 告警面板（内联控制台右侧，始终可见，无需切换 Tab）---
+        await expect(drawer.getByText('当前 Paper run 暂无告警。')).toBeVisible({timeout: 10_000});
 
         // Create test alert
         const createAlertResponse = page.waitForResponse((response) => (

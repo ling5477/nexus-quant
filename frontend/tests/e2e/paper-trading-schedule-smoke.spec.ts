@@ -45,12 +45,11 @@ test.describe('GateJ-1 paper trading schedule and heartbeat smoke', () => {
 
         // Open detail drawer
         await row.getByRole('link', {name: '查看详情'}).or(row.getByRole('button', {name: '查看详情'})).click();
-        const drawer = page.getByLabel('Paper Trading 详情');
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
 
-        // --- Schedule Tab ---
-        await drawer.getByRole('tab', {name: '调度计划'}).click();
-        await expect(drawer.getByText('当前 Paper run 暂无调度计划。')).toBeVisible({timeout: 5_000});
+        // --- 调度计划面板（内联控制台右侧，始终可见，无需切换 Tab）---
+        await expect(drawer.getByText('当前 Paper run 暂无调度计划。')).toBeVisible({timeout: 10_000});
 
         // Create schedule
         await drawer.getByRole('button', {name: /创建调度/}).click();
@@ -105,9 +104,8 @@ test.describe('GateJ-1 paper trading schedule and heartbeat smoke', () => {
         const disabledPayload = await disableRes.json();
         expect(disabledPayload.status).toBe('DISABLED');
 
-        // --- Heartbeat Tab ---
-        await drawer.getByRole('tab', {name: '心跳'}).click();
-        await expect(drawer.getByText('当前 Paper run 暂无心跳记录。')).toBeVisible({timeout: 5_000});
+        // --- 心跳面板（内联控制台右侧，始终可见，无需切换 Tab）---
+        await expect(drawer.getByText('当前 Paper run 暂无心跳记录。')).toBeVisible({timeout: 10_000});
 
         // Run heartbeat once
         const heartbeatResponse = page.waitForResponse((response) => (

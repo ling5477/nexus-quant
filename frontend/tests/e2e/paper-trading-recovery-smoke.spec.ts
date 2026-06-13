@@ -45,12 +45,11 @@ test.describe('GateJ-3 paper trading recovery smoke', () => {
 
         // Open detail drawer
         await row.getByRole('link', {name: '查看详情'}).or(row.getByRole('button', {name: '查看详情'})).click();
-        const drawer = page.getByLabel('Paper Trading 详情');
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
 
-        // --- Recovery Events Tab ---
-        await drawer.getByRole('tab', {name: '恢复事件'}).click();
-        await expect(drawer.getByText('当前 Paper run 暂无恢复事件。')).toBeVisible({timeout: 5_000});
+        // --- 恢复事件面板（内联控制台右侧，始终可见，无需切换 Tab）---
+        await expect(drawer.getByText('当前 Paper run 暂无恢复事件。')).toBeVisible({timeout: 10_000});
 
         // Execute recover
         const recoverResponse = page.waitForResponse((response) => (
@@ -98,8 +97,7 @@ test.describe('GateJ-3 paper trading recovery smoke', () => {
         const alertTypes = (monitorPayload.createdAlerts ?? []).map((a: {alertType: string}) => a.alertType);
         expect(alertTypes).toContain('HEARTBEAT_LAG');
 
-        // Switch to alerts tab to verify auto alert exists
-        await drawer.getByRole('tab', {name: '告警'}).click();
+        // 告警面板始终可见；监控守护自动生成的 HEARTBEAT_LAG 告警应直接出现。
         await expect(drawer.getByText('HEARTBEAT_LAG').first()).toBeVisible({timeout: 10_000});
     });
 });

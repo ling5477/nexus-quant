@@ -1,18 +1,15 @@
 import {
-    Alert,
     App,
     Button,
     Card,
     Col,
     Descriptions,
-    Drawer,
     Form,
     Input,
     Modal,
     Row,
     Select,
     Space,
-    Table,
     Tabs,
     Typography,
 } from 'antd';
@@ -35,9 +32,17 @@ import {
     NqPageHeader,
     NqPercentText,
     NqPriceText,
+    NqRiskBanner,
     NqStatusTag,
     nqNumericColumn,
 } from '@/components/nq';
+import {
+    NqAlertPanel,
+    NqHeartbeatPanel,
+    NqRecoveryPanel,
+    NqScheduleFirePanel,
+    NqStabilityCheckPanel,
+} from '@/components/paper';
 import {
     EXCHANGE_OPTIONS,
     INTERVAL_OPTIONS,
@@ -47,18 +52,12 @@ import {
     TRADE_ENV_OPTIONS,
 } from '@/constants/filter-options';
 import {
-    useAckAlertMutation,
-    useCreateAlertMutation,
     useCreatePaperTradingRunMutation,
-    useCreateScheduleMutation,
     useEmergencyStopMutation,
     useGenerateDailyReportMutation,
-    useGenerateStabilityCheckMutation,
     usePaperAlertsQuery,
     usePaperDailyReportsQuery,
-    usePaperFiresQuery,
     usePaperHeartbeatsQuery,
-    usePaperRecoveryEventsQuery,
     usePaperSchedulesQuery,
     usePaperStabilityChecksQuery,
     usePaperTradingDetailQuery,
@@ -71,25 +70,18 @@ import {
     usePaperTradingReplayQuery,
     usePaperTradingRiskResultsQuery,
     usePaperTradingTradesQuery,
-    useRecoverMutation,
-    useResolveAlertMutation,
-    useRetryFailedStepMutation,
-    useRunHeartbeatOnceMutation,
-    useRunMonitorOnceMutation,
     useRunRiskOnceMutation,
-    useRunScheduleOnceMutation,
     useStartPaperTradingRunMutation,
     useStopPaperTradingRunMutation,
-    useUpdateScheduleStatusMutation,
 } from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
-    type PaperRunScheduleCreateRequest,
     type PaperTradingListFilters,
     type PaperTradingRunCreateRequest,
     type PaperTradingRunItem,
 } from '@/types/paper-trading';
+import {appEnv} from '@/utils/env';
 import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type PaperRunRow = PaperTradingRunItem;
@@ -103,6 +95,14 @@ const DEFAULT_CREATE_VALUES: PaperTradingRunCreateRequest = {
     intervalCode: '1m',
     configSnapshotJson: '',
 };
+
+/** 按时间倒序取最新一条，不依赖后端返回顺序。 */
+function latestBy<T>(items: T[], getTime: (item: T) => string | null | undefined): T | null {
+    return [...items]
+        .filter((item) => Boolean(getTime(item)))
+        .sort((left, right) => new Date(getTime(right) as string).getTime() - new Date(getTime(left) as string).getTime())[0]
+        ?? null;
+}
 
 export function PaperTradingPage() {
     const {message} = App.useApp();
@@ -120,132 +120,85 @@ export function PaperTradingPage() {
         },
         searchVersion,
     );
-    const detailQuery = usePaperTradingDetailQuery(selectedRow?.paperRunId ?? null);
-    const ordersQuery = usePaperTradingOrdersQuery(selectedRow?.paperRunId ?? null);
-    const tradesQuery = usePaperTradingTradesQuery(selectedRow?.paperRunId ?? null);
-    const positionsQuery = usePaperTradingPositionsQuery(selectedRow?.paperRunId ?? null);
-    const riskResultsQuery = usePaperTradingRiskResultsQuery(selectedRow?.paperRunId ?? null);
-    const equityCurveQuery = usePaperTradingEquityCurveQuery(selectedRow?.paperRunId ?? null);
-    const positionCurveQuery = usePaperTradingPositionCurveQuery(selectedRow?.paperRunId ?? null);
-    const replayQuery = usePaperTradingReplayQuery(selectedRow?.paperRunId ?? null);
-    const emergencyStopsQuery = usePaperTradingEmergencyStopsQuery(selectedRow?.paperRunId ?? null);
+
+    const focusRunId = selectedRow?.paperRunId ?? null;
+    const detailQuery = usePaperTradingDetailQuery(focusRunId);
+    const ordersQuery = usePaperTradingOrdersQuery(focusRunId);
+    const tradesQuery = usePaperTradingTradesQuery(focusRunId);
+    const positionsQuery = usePaperTradingPositionsQuery(focusRunId);
+    const riskResultsQuery = usePaperTradingRiskResultsQuery(focusRunId);
+    const equityCurveQuery = usePaperTradingEquityCurveQuery(focusRunId);
+    const positionCurveQuery = usePaperTradingPositionCurveQuery(focusRunId);
+    const replayQuery = usePaperTradingReplayQuery(focusRunId);
+    const emergencyStopsQuery = usePaperTradingEmergencyStopsQuery(focusRunId);
+    const dailyReportsQuery = usePaperDailyReportsQuery(focusRunId);
+
+    // 顶部状态条所需读查询；与右侧/中部面板共享 React Query 缓存键，不重复请求。
+    const heartbeatsQuery = usePaperHeartbeatsQuery(focusRunId);
+    const schedulesQuery = usePaperSchedulesQuery(focusRunId);
+    const alertsQuery = usePaperAlertsQuery(focusRunId);
+    const stabilityChecksQuery = usePaperStabilityChecksQuery(focusRunId);
+
     const createMutation = useCreatePaperTradingRunMutation();
     const startMutation = useStartPaperTradingRunMutation();
     const stopMutation = useStopPaperTradingRunMutation();
     const riskOnceMutation = useRunRiskOnceMutation();
     const emergencyStopMutation = useEmergencyStopMutation();
-    const schedulesQuery = usePaperSchedulesQuery(selectedRow?.paperRunId ?? null);
-    const heartbeatsQuery = usePaperHeartbeatsQuery(selectedRow?.paperRunId ?? null);
-    const createScheduleMutation = useCreateScheduleMutation();
-    const updateScheduleStatusMutation = useUpdateScheduleStatusMutation();
-    const runScheduleOnceMutation = useRunScheduleOnceMutation();
-    const runHeartbeatOnceMutation = useRunHeartbeatOnceMutation();
-    const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
-    const firesQuery = usePaperFiresQuery(selectedScheduleId);
-    const [scheduleCreateOpen, setScheduleCreateOpen] = useState(false);
-    const [scheduleForm] = Form.useForm<PaperRunScheduleCreateRequest>();
-    const dailyReportsQuery = usePaperDailyReportsQuery(selectedRow?.paperRunId ?? null);
-    const alertsQuery = usePaperAlertsQuery(selectedRow?.paperRunId ?? null);
     const generateDailyReportMutation = useGenerateDailyReportMutation();
-    const createAlertMutation = useCreateAlertMutation();
-    const ackAlertMutation = useAckAlertMutation();
-    const resolveAlertMutation = useResolveAlertMutation();
-    const recoveryEventsQuery = usePaperRecoveryEventsQuery(selectedRow?.paperRunId ?? null);
-    const stabilityChecksQuery = usePaperStabilityChecksQuery(selectedRow?.paperRunId ?? null);
-    const recoverMutation = useRecoverMutation();
-    const retryFailedStepMutation = useRetryFailedStepMutation();
-    const generateStabilityCheckMutation = useGenerateStabilityCheckMutation();
-    const runMonitorOnceMutation = useRunMonitorOnceMutation();
 
     const hasSearched = searchVersion > 0;
     const visibleItems = listQuery.data ?? [];
 
-    // 详情页顶部状态摘要：全部来自 Drawer 内已有查询，不新增请求；
-    // 取“最新”一律显式按时间排序，不依赖后端返回顺序。
-    const latestHeartbeat = [...(heartbeatsQuery.data ?? [])]
-        .sort((left, right) => new Date(right.heartbeatTime).getTime() - new Date(left.heartbeatTime).getTime())[0] ?? null;
-    const latestFireTime = (schedulesQuery.data ?? [])
-        .map((schedule) => schedule.lastFireTime)
-        .filter((value): value is string => Boolean(value))
-        .sort((left, right) => new Date(right).getTime() - new Date(left).getTime())[0] ?? null;
+    // 焦点 run 优先用 detailQuery 的最新数据（mutation 后会失效重取），回退到列表快照，
+    // 使顶部状态条 / 操作可用性在启停、紧急停机后反映最新运行态。
+    const focusRun = detailQuery.data ?? selectedRow;
+    const focusStatus = focusRun?.status ?? selectedRow?.status ?? '';
+
+    // 焦点 run 派生状态（顶部状态条 / 中部摘要）
+    const latestHeartbeat = latestBy(heartbeatsQuery.data ?? [], (item) => item.heartbeatTime);
+    const latestFireTime = latestBy(schedulesQuery.data ?? [], (item) => item.lastFireTime)?.lastFireTime ?? null;
     const openAlertCount = (alertsQuery.data ?? []).filter((alert) => alert.status === 'OPEN').length;
-    const latestStabilityCheck = [...(stabilityChecksQuery.data ?? [])]
-        .sort((left, right) => new Date(right.checkWindowEnd).getTime() - new Date(left.checkWindowEnd).getTime())[0] ?? null;
+    const latestStability = latestBy(stabilityChecksQuery.data ?? [], (item) => item.checkWindowEnd);
+    const latestRisk = latestBy(riskResultsQuery.data ?? [], (item) => item.createdAt);
+    const latestDailyReport = [...(dailyReportsQuery.data ?? [])]
+        .sort((left, right) => right.reportDate.localeCompare(left.reportDate))[0] ?? null;
 
     const columns: ColumnsType<PaperRunRow> = [
         {
-            title: 'Paper Run ID',
+            title: 'Paper Run',
             dataIndex: 'paperRunId',
             key: 'paperRunId',
-            width: 220,
-            render: (value: string) => <Typography.Text className="nq-mono" copyable>{value}</Typography.Text>,
-        },
-        {
-            title: '发布 ID',
-            dataIndex: 'publishId',
-            key: 'publishId',
-            width: 220,
-            render: (value: string) => <Typography.Text className="nq-mono" copyable>{value}</Typography.Text>,
-        },
-        {
-            title: '状态',
-            dataIndex: 'status',
-            key: 'status',
-            width: 120,
-            render: (value: string) => <NqStatusTag status={value}/>,
-        },
-        {
-            title: '交易环境',
-            dataIndex: 'tradeEnv',
-            key: 'tradeEnv',
-            width: 100,
-            render: (value: string) => <NqEnvironmentBadge env={value}/>,
-        },
-        {
-            title: '交易所',
-            dataIndex: 'exchangeCode',
-            key: 'exchangeCode',
-            width: 100,
-        },
-        {
-            title: 'Symbol',
-            dataIndex: 'symbol',
-            key: 'symbol',
-            width: 120,
-        },
-        {
-            title: '周期',
-            dataIndex: 'intervalCode',
-            key: 'intervalCode',
-            width: 80,
-        },
-        {
-            title: '启动时间',
-            dataIndex: 'startedAt',
-            key: 'startedAt',
-            width: 180,
-            render: (value: string | null) => formatDateTime(value),
-        },
-        {
-            title: '更新时间',
-            dataIndex: 'updatedAt',
-            key: 'updatedAt',
-            width: 180,
-            render: (value: string) => formatDateTime(value),
+            render: (value: string, record) => (
+                <Space direction="vertical" size={2} style={{width: '100%'}}>
+                    {/* 渲染完整 paperRunId 文本（E2E 以 hasText 全量 id 定位行），视觉溢出交由纯 CSS 省略，
+                        不使用 AntD JS ellipsis，避免 DOM 文本被截断破坏 hasText 定位 */}
+                    <span className="nq-mono nq-run-id" title={value}>{value}</span>
+                    <Space size={6}>
+                        <NqStatusTag status={record.status}/>
+                        <NqEnvironmentBadge env={record.tradeEnv}/>
+                    </Space>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                        {record.symbol} · {record.intervalCode} · {record.exchangeCode}
+                    </Typography.Text>
+                    <Typography.Text type="secondary" className="nq-num" style={{fontSize: 11}}>
+                        更新 {formatDateTime(record.updatedAt)}
+                    </Typography.Text>
+                </Space>
+            ),
         },
         {
             title: '操作',
             key: 'action',
-            fixed: 'right',
-            width: 240,
+            width: 96,
             render: (_, record) => (
-                <Space>
-                    <Button type="link" size="small" onClick={() => setSelectedRow(record)}>
+                <Space direction="vertical" size={2}>
+                    <Button type="link" size="small" style={{paddingInline: 0}} onClick={() => setSelectedRow(record)}>
                         查看详情
                     </Button>
                     <Button
                         type="link"
                         size="small"
+                        style={{paddingInline: 0}}
                         disabled={record.status !== 'CREATED'}
                         onClick={() => handleStart(record.paperRunId)}
                     >
@@ -255,6 +208,7 @@ export function PaperTradingPage() {
                         type="link"
                         size="small"
                         danger
+                        style={{paddingInline: 0}}
                         disabled={record.status !== 'RUNNING'}
                         onClick={() => handleStop(record.paperRunId)}
                     >
@@ -322,14 +276,22 @@ export function PaperTradingPage() {
 
     return (
         <>
-            <Space direction="vertical" size={16} style={{display: 'flex'}}>
+            <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
                     <NqPageHeader
                         title="模拟交易"
-                        description="基于已发布策略版本创建 SIM/Paper Trading run，固化 publish/strategy version/dataset/param/config 快照，支持启动、停止与最小事实查询。"
-                        badge="Paper Trading"
+                        description="Paper Trading 运行控制台：聚焦运行状态、心跳、调度、告警、恢复、稳定性验收与权益/回撤曲线。基于已发布策略版本创建 SIM/Paper run 并固化全链路快照。"
+                        badge="Paper Trading Console"
+                        tip={(
+                            <NqRiskBanner
+                                level="info"
+                                message="当前为 PAPER（SIM）模拟环境，LIVE 交易未开启。"
+                                description="本页所有下单、撤单、紧急停机均只作用于 SIM/Paper Trading，不会触发真实交易所下单或撤单；不存在一键实盘全平能力。"
+                            />
+                        )}
                     />
                 </Card>
+
                 <NqFilterBar
                     actions={(
                         <Space>
@@ -365,33 +327,483 @@ export function PaperTradingPage() {
                         </Row>
                     </Form>
                 </NqFilterBar>
-                <Card
-                    className="page-section"
-                    bordered={false}
-                    title="Paper Trading 运行列表"
-                    extra={hasSearched ?
-                        <Typography.Text type="secondary">共 {visibleItems.length} 条记录</Typography.Text> : null}
-                >
-                    {!hasSearched ? (
-                        <NqEmptyState description="点击查询后加载 Paper Trading run 列表。"/>
-                    ) : listQuery.error ? (
-                        <NqErrorState
-                            title="Paper Trading run 列表查询失败"
-                            error={listQuery.error as AppApiError}
-                            onRetry={() => setSearchVersion((v) => v + 1)}
-                        />
-                    ) : (
-                        <NqDataTable<PaperRunRow>
-                            rowKey="paperRunId"
-                            columns={columns}
-                            dataSource={visibleItems}
-                            loading={listQuery.isFetching}
-                            pagination={{pageSize: 10, showSizeChanger: false}}
-                            scroll={{x: 1500}}
-                            locale={{emptyText: '当前筛选条件下没有 Paper Trading run。'}}
-                        />
-                    )}
-                </Card>
+
+                <Row gutter={[12, 12]} align="top">
+                    {/* 左侧：Paper Run 列表（焦点选择入口） */}
+                    <Col xs={24} xl={7} xxl={6}>
+                        <Card
+                            className="page-section"
+                            bordered={false}
+                            title="Paper Run 列表"
+                            styles={{body: {padding: 0}}}
+                            extra={hasSearched ? (
+                                <Typography.Text type="secondary" style={{fontSize: 12}}>共 {visibleItems.length} 条记录</Typography.Text>
+                            ) : null}
+                        >
+                            {!hasSearched ? (
+                                <div style={{padding: 16}}>
+                                    <NqEmptyState description="点击查询后加载 Paper Trading run 列表。"/>
+                                </div>
+                            ) : listQuery.error ? (
+                                <div style={{padding: 16}}>
+                                    <NqErrorState
+                                        title="Paper Trading run 列表查询失败"
+                                        error={listQuery.error as AppApiError}
+                                        onRetry={() => setSearchVersion((v) => v + 1)}
+                                    />
+                                </div>
+                            ) : (
+                                <NqDataTable<PaperRunRow>
+                                    rowKey="paperRunId"
+                                    columns={columns}
+                                    dataSource={visibleItems}
+                                    loading={listQuery.isFetching}
+                                    showHeader={false}
+                                    pagination={{pageSize: 10, showSizeChanger: false, simple: true}}
+                                    rowClassName={(record) => (record.paperRunId === focusRunId ? 'nq-row-active' : '')}
+                                    // 列表内部滚动：让 Playwright/用户定位某行时滚动表体而非窗口，
+                                    // 避免目标行被粘性页头遮挡导致点击被拦截。
+                                    scroll={{y: 420}}
+                                    locale={{emptyText: '当前筛选条件下没有 Paper Trading run。'}}
+                                />
+                            )}
+                        </Card>
+                    </Col>
+
+                    {/* 焦点 run 控制台主体 */}
+                    <Col xs={24} xl={17} xxl={18}>
+                        {!selectedRow ? (
+                            <Card className="page-section" bordered={false}>
+                                <NqEmptyState description="从左侧选择一个 Paper Run，查看运行控制台（状态、曲线、告警、恢复、调度、事实表）。"/>
+                            </Card>
+                        ) : (
+                            <section aria-label="Paper Trading 详情">
+                                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                    {/* 顶部状态区 */}
+                                    <Card className="page-section" bordered={false} styles={{body: {paddingBottom: 12}}}>
+                                        <Space size={8} wrap style={{marginBottom: 12}}>
+                                            <Typography.Text strong>运行控制台</Typography.Text>
+                                            <NqStatusTag status={focusStatus}/>
+                                            <NqEnvironmentBadge env={selectedRow.tradeEnv}/>
+                                            <NqEnvironmentBadge env={appEnv.envLabel}/>
+                                            <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 12}}>
+                                                {selectedRow.paperRunId}
+                                            </Typography.Text>
+                                        </Space>
+                                        <div className="nq-status-strip">
+                                            <NqMetricCard label="运行状态" value={<NqStatusTag status={focusStatus}/>}/>
+                                            <NqMetricCard
+                                                label="心跳"
+                                                value={latestHeartbeat ? <NqStatusTag status={latestHeartbeat.status} tone={latestHeartbeat.status === 'STOPPED' ? 'danger' : undefined}/> : '-'}
+                                                footer={latestHeartbeat ? formatDateTime(latestHeartbeat.heartbeatTime) : '暂无心跳'}
+                                                loading={heartbeatsQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label="最近调度触发"
+                                                value={<span className="nq-num" style={{fontSize: 13}}>{latestFireTime ? formatDateTime(latestFireTime) : '-'}</span>}
+                                                footer={latestFireTime ? undefined : '暂无调度触发'}
+                                                loading={schedulesQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label="未处理告警"
+                                                value={String(openAlertCount)}
+                                                tone={openAlertCount > 0 ? 'warning' : 'muted'}
+                                                loading={alertsQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label="稳定性验收"
+                                                value={latestStability ? <NqStatusTag status={latestStability.status} tone={latestStability.status === 'PASSED' ? 'success' : latestStability.status === 'PARTIAL' ? 'warning' : 'danger'}/> : '-'}
+                                                footer={latestStability ? `窗口至 ${formatDateTime(latestStability.checkWindowEnd)}` : '暂无验收'}
+                                                loading={stabilityChecksQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label="风控状态"
+                                                value={latestRisk ? <NqStatusTag status={latestRisk.status} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
+                                                footer={latestRisk ? latestRisk.checkType : '暂无风控检查'}
+                                                loading={riskResultsQuery.isPending}
+                                            />
+                                            <NqMetricCard label="交易环境" value={<NqEnvironmentBadge env={selectedRow.tradeEnv}/>} footer="LIVE 未开启"/>
+                                        </div>
+                                        {detailQuery.error ? (
+                                            <div style={{marginTop: 12}}>
+                                                <NqErrorState title="Paper run 详情加载失败" error={detailQuery.error as AppApiError}/>
+                                            </div>
+                                        ) : null}
+                                    </Card>
+
+                                    <Row gutter={[12, 12]} align="top">
+                                        {/* 中间主区域 */}
+                                        <Col xs={24} xl={15}>
+                                            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                                <Card className="page-section" bordered={false} title="权益与回撤曲线">
+                                                    {equityCurveQuery.isFetching && (equityCurveQuery.data ?? []).length === 0 ? (
+                                                        <NqLoadingState/>
+                                                    ) : equityCurveQuery.error ? (
+                                                        <NqErrorState error={equityCurveQuery.error as AppApiError} onRetry={() => equityCurveQuery.refetch()}/>
+                                                    ) : (equityCurveQuery.data ?? []).length === 0 ? (
+                                                        <NqEmptyState description="暂无权益曲线数据，运行产生快照后自动绘制。"/>
+                                                    ) : (
+                                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                                            <NqEquityCurveChart data={equityCurveQuery.data ?? []}/>
+                                                            <NqDrawdownChart data={equityCurveQuery.data ?? []}/>
+                                                        </Space>
+                                                    )}
+                                                </Card>
+
+                                                <Card
+                                                    className="page-section"
+                                                    bordered={false}
+                                                    title="最新日报摘要"
+                                                    extra={(
+                                                        <Button
+                                                            size="small"
+                                                            type="primary"
+                                                            ghost
+                                                            loading={generateDailyReportMutation.isPending}
+                                                            onClick={() => generateDailyReportMutation.mutate(
+                                                                {paperRunId: selectedRow.paperRunId, request: {}},
+                                                                {
+                                                                    onSuccess: () => message.success('日报已生成。'),
+                                                                    onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                                },
+                                                            )}
+                                                        >
+                                                            生成今日日报
+                                                        </Button>
+                                                    )}
+                                                >
+                                                    {dailyReportsQuery.isFetching && (dailyReportsQuery.data ?? []).length === 0 ? (
+                                                        <NqLoadingState/>
+                                                    ) : dailyReportsQuery.error ? (
+                                                        <NqErrorState error={dailyReportsQuery.error as AppApiError} onRetry={() => dailyReportsQuery.refetch()}/>
+                                                    ) : !latestDailyReport ? (
+                                                        <NqEmptyState description="当前 Paper run 暂无日报。"/>
+                                                    ) : (
+                                                        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                                            <div className="nq-status-strip">
+                                                                <NqMetricCard label="总权益" value={<NqAmountText value={latestDailyReport.totalEquity}/>}/>
+                                                                <NqMetricCard
+                                                                    label="日盈亏"
+                                                                    value={<NqAmountText value={latestDailyReport.dailyPnl} signed colorBySign/>}
+                                                                    tone={Number(latestDailyReport.dailyPnl ?? 0) > 0 ? 'up' : Number(latestDailyReport.dailyPnl ?? 0) < 0 ? 'down' : 'default'}
+                                                                />
+                                                                <NqMetricCard label="日收益率" value={<NqPercentText value={latestDailyReport.dailyReturn} ratio colorBySign/>}/>
+                                                                <NqMetricCard label="最大回撤" value={<NqPercentText value={latestDailyReport.maxDrawdown} ratio signed={false}/>} tone="warning"/>
+                                                            </div>
+                                                            <NqDataTable
+                                                                rowKey="reportId"
+                                                                pagination={false}
+                                                                dataSource={dailyReportsQuery.data ?? []}
+                                                                scroll={{x: 1100, y: 240}}
+                                                                columns={[
+                                                                    {title: '日期', dataIndex: 'reportDate', key: 'reportDate', width: 110, className: 'nq-num'},
+                                                                    {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'GENERATED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
+                                                                    nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '日盈亏', dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
+                                                                    nqNumericColumn({title: '日收益率', dataIndex: 'dailyReturn', key: 'dailyReturn', width: 100, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),
+                                                                    nqNumericColumn({title: '最大回撤', dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                                                                    nqNumericColumn({title: '订单数', dataIndex: 'orderCount', key: 'orderCount', width: 80}),
+                                                                    nqNumericColumn({title: '成交数', dataIndex: 'tradeCount', key: 'tradeCount', width: 80}),
+                                                                    nqNumericColumn({title: '告警数', dataIndex: 'alertCount', key: 'alertCount', width: 80}),
+                                                                    {title: '生成时间', dataIndex: 'generatedAt', key: 'generatedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                ]}
+                                                            />
+                                                        </Space>
+                                                    )}
+                                                </Card>
+
+                                                <NqStabilityCheckPanel paperRunId={selectedRow.paperRunId}/>
+                                            </Space>
+                                        </Col>
+
+                                        {/* 右侧：告警 / 恢复 / 心跳 / 调度 / 操作 */}
+                                        <Col xs={24} xl={9}>
+                                            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                                <Card className="page-section" bordered={false} title="操作区">
+                                                    <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                                        <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                                            紧急停机仅作用于当前 SIM/Paper run，会写入审计事件，不触发真实 LIVE 下单或撤单。
+                                                        </Typography.Text>
+                                                        <NqDangerConfirmButton
+                                                            size="small"
+                                                            block
+                                                            disabled={focusStatus !== 'RUNNING'}
+                                                            loading={emergencyStopMutation.isPending}
+                                                            confirmTitle="确认紧急停机"
+                                                            confirmContent="此操作将立即停止当前 Paper run。紧急停机只作用于 SIM/Paper Trading，不会触发真实 LIVE 下单或撤单。确认执行？"
+                                                            okText="确认停机"
+                                                            onConfirm={() => emergencyStopMutation.mutate(
+                                                                {
+                                                                    paperRunId: selectedRow.paperRunId,
+                                                                    request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
+                                                                },
+                                                                {
+                                                                    onSuccess: () => {
+                                                                        message.success('紧急停机已执行。');
+                                                                        setSearchVersion((v) => v + 1);
+                                                                    },
+                                                                    onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                                },
+                                                            )}
+                                                        >
+                                                            紧急停机
+                                                        </NqDangerConfirmButton>
+                                                        {(emergencyStopsQuery.data ?? []).length > 0 ? (
+                                                            <NqDataTable
+                                                                rowKey="emergencyStopId"
+                                                                pagination={false}
+                                                                dataSource={emergencyStopsQuery.data ?? []}
+                                                                scroll={{y: 180}}
+                                                                columns={[
+                                                                    {title: '触发类型', dataIndex: 'triggerType', key: 'triggerType', width: 110},
+                                                                    {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
+                                                                    {title: '触发时间', dataIndex: 'triggeredAt', key: 'triggeredAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                ]}
+                                                            />
+                                                        ) : null}
+                                                    </Space>
+                                                </Card>
+
+                                                <NqAlertPanel paperRunId={selectedRow.paperRunId}/>
+                                                <NqRecoveryPanel paperRunId={selectedRow.paperRunId}/>
+                                                <NqHeartbeatPanel paperRunId={selectedRow.paperRunId}/>
+                                                <NqScheduleFirePanel paperRunId={selectedRow.paperRunId}/>
+                                            </Space>
+                                        </Col>
+                                    </Row>
+
+                                    {/* 底部事实表 */}
+                                    <Card className="page-section" bordered={false} title="运行事实">
+                                        <Descriptions bordered column={3} size="small" style={{marginBottom: 12}}>
+                                            <Descriptions.Item label="Paper Run ID">
+                                                <span className="nq-mono">{selectedRow.paperRunId}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="发布 ID">
+                                                <span className="nq-mono">{selectedRow.publishId}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="策略版本 ID">
+                                                <span className="nq-mono">{selectedRow.strategyVersionId || '-'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Symbol">{selectedRow.symbol}</Descriptions.Item>
+                                            <Descriptions.Item label="周期">{selectedRow.intervalCode}</Descriptions.Item>
+                                            <Descriptions.Item label="市场类型">{selectedRow.marketType}</Descriptions.Item>
+                                            <Descriptions.Item label="启动时间">{formatDateTime(selectedRow.startedAt)}</Descriptions.Item>
+                                            <Descriptions.Item label="停止时间">{formatDateTime(selectedRow.stoppedAt)}</Descriptions.Item>
+                                            <Descriptions.Item label="创建人">{selectedRow.createdBy}</Descriptions.Item>
+                                        </Descriptions>
+                                        <Tabs
+                                            items={[
+                                                {
+                                                    key: 'orders',
+                                                    label: '订单',
+                                                    children: (
+                                                        <PaperFactSection
+                                                            query={ordersQuery}
+                                                            emptyText="当前 Paper run 暂无订单事实。"
+                                                        >
+                                                            <NqDataTable
+                                                                rowKey="paperOrderId"
+                                                                pagination={false}
+                                                                dataSource={ordersQuery.data ?? []}
+                                                                scroll={{x: 900}}
+                                                                columns={[
+                                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
+                                                                    {title: '方向', dataIndex: 'side', key: 'side', width: 80},
+                                                                    {title: '类型', dataIndex: 'orderType', key: 'orderType', width: 80},
+                                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '价格', dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                                                    {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+                                                                    {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                ]}
+                                                            />
+                                                        </PaperFactSection>
+                                                    ),
+                                                },
+                                                {
+                                                    key: 'trades',
+                                                    label: '成交',
+                                                    children: (
+                                                        <PaperFactSection
+                                                            query={tradesQuery}
+                                                            emptyText="当前 Paper run 暂无成交事实。"
+                                                        >
+                                                            <NqDataTable
+                                                                rowKey="paperTradeId"
+                                                                pagination={false}
+                                                                dataSource={tradesQuery.data ?? []}
+                                                                scroll={{x: 900}}
+                                                                columns={[
+                                                                    {title: '成交 ID', dataIndex: 'paperTradeId', key: 'paperTradeId', className: 'nq-mono'},
+                                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
+                                                                    {title: '方向', dataIndex: 'side', key: 'side', width: 80},
+                                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '价格', dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '手续费', dataIndex: 'fee', key: 'fee', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    {title: '成交时间', dataIndex: 'tradedAt', key: 'tradedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                ]}
+                                                            />
+                                                        </PaperFactSection>
+                                                    ),
+                                                },
+                                                {
+                                                    key: 'positions',
+                                                    label: '持仓',
+                                                    children: (
+                                                        <PaperFactSection
+                                                            query={positionsQuery}
+                                                            emptyText="当前 Paper run 暂无持仓事实。"
+                                                        >
+                                                            <NqDataTable
+                                                                rowKey="paperPositionId"
+                                                                pagination={false}
+                                                                dataSource={positionsQuery.data ?? []}
+                                                                scroll={{x: 900}}
+                                                                columns={[
+                                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
+                                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 120, render: (v) => <NqPriceText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '已实现盈亏', dataIndex: 'realizedPnl', key: 'realizedPnl', width: 140, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
+                                                                    nqNumericColumn({title: '未实现盈亏', dataIndex: 'unrealizedPnl', key: 'unrealizedPnl', width: 140, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
+                                                                    {title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                ]}
+                                                            />
+                                                        </PaperFactSection>
+                                                    ),
+                                                },
+                                                {
+                                                    key: 'snapshots',
+                                                    label: '快照',
+                                                    children: (
+                                                        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                                            <SnapshotBlock title="Publish Snapshot" content={selectedRow.publishSnapshotJson}/>
+                                                            <SnapshotBlock title="Strategy Version Snapshot" content={selectedRow.strategyVersionSnapshotJson}/>
+                                                            <SnapshotBlock title="Dataset Snapshot" content={selectedRow.datasetSnapshotJson}/>
+                                                            <SnapshotBlock title="Param Snapshot" content={selectedRow.paramSnapshotJson}/>
+                                                            <SnapshotBlock title="Config Snapshot" content={selectedRow.configSnapshotJson}/>
+                                                        </Space>
+                                                    ),
+                                                },
+                                                {
+                                                    key: 'risk-results',
+                                                    label: '风控结果',
+                                                    children: (
+                                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                                                            <Button
+                                                                size="small"
+                                                                loading={riskOnceMutation.isPending}
+                                                                onClick={() => riskOnceMutation.mutate(selectedRow.paperRunId, {
+                                                                    onSuccess: () => message.success('风控检查已执行。'),
+                                                                    onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                                })}
+                                                            >
+                                                                执行风控检查
+                                                            </Button>
+                                                            <PaperFactSection
+                                                                query={riskResultsQuery}
+                                                                emptyText="当前 Paper run 暂无风控检查结果。"
+                                                            >
+                                                                <NqDataTable
+                                                                    rowKey="riskResultId"
+                                                                    pagination={false}
+                                                                    dataSource={riskResultsQuery.data ?? []}
+                                                                    scroll={{x: 900}}
+                                                                    columns={[
+                                                                        {title: '检查类型', dataIndex: 'checkType', key: 'checkType', width: 180},
+                                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
+                                                                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100},
+                                                                        {title: '消息', dataIndex: 'message', key: 'message'},
+                                                                        {title: '时间', dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                    ]}
+                                                                />
+                                                            </PaperFactSection>
+                                                        </Space>
+                                                    ),
+                                                },
+                                                {
+                                                    key: 'equity-curve',
+                                                    label: '资金曲线',
+                                                    children: (
+                                                        <PaperFactSection
+                                                            query={equityCurveQuery}
+                                                            emptyText="当前 Paper run 暂无资金曲线数据。"
+                                                        >
+                                                            <NqDataTable
+                                                                rowKey="equitySnapshotId"
+                                                                pagination={false}
+                                                                dataSource={equityCurveQuery.data ?? []}
+                                                                scroll={{x: 900}}
+                                                                columns={[
+                                                                    {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                    nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '现金', dataIndex: 'cashBalance', key: 'cashBalance', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '持仓市值', dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '回撤', dataIndex: 'drawdown', key: 'drawdown', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                                                                    {title: '来源', dataIndex: 'source', key: 'source', width: 100},
+                                                                ]}
+                                                            />
+                                                        </PaperFactSection>
+                                                    ),
+                                                },
+                                                {
+                                                    key: 'position-curve',
+                                                    label: '持仓曲线',
+                                                    children: (
+                                                        <PaperFactSection
+                                                            query={positionCurveQuery}
+                                                            emptyText="当前 Paper run 暂无持仓曲线数据。"
+                                                        >
+                                                            <NqDataTable
+                                                                rowKey="positionSnapshotId"
+                                                                pagination={false}
+                                                                dataSource={positionCurveQuery.data ?? []}
+                                                                scroll={{x: 900}}
+                                                                columns={[
+                                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
+                                                                    {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '标记价', dataIndex: 'markPrice', key: 'markPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '市值', dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    {title: '来源', dataIndex: 'source', key: 'source', width: 100},
+                                                                ]}
+                                                            />
+                                                        </PaperFactSection>
+                                                    ),
+                                                },
+                                                {
+                                                    key: 'replay',
+                                                    label: '交易复盘',
+                                                    children: (
+                                                        <PaperFactSection
+                                                            query={replayQuery}
+                                                            emptyText="当前 Paper run 暂无交易复盘记录。"
+                                                        >
+                                                            <NqDataTable
+                                                                rowKey="replayRecordId"
+                                                                pagination={false}
+                                                                dataSource={replayQuery.data ?? []}
+                                                                scroll={{x: 900}}
+                                                                columns={[
+                                                                    {title: '时间', dataIndex: 'replayTime', key: 'replayTime', width: 170, render: (v: string) => formatDateTime(v)},
+                                                                    {title: '事件类型', dataIndex: 'eventType', key: 'eventType', width: 140},
+                                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
+                                                                    {title: '方向', dataIndex: 'side', key: 'side', width: 80},
+                                                                    nqNumericColumn({title: '价格', dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                                                    {title: '原因', dataIndex: 'reason', key: 'reason'},
+                                                                ]}
+                                                            />
+                                                        </PaperFactSection>
+                                                    ),
+                                                },
+                                            ]}
+                                        />
+                                    </Card>
+                                </Space>
+                            </section>
+                        )}
+                    </Col>
+                </Row>
             </Space>
 
             <Modal
@@ -435,798 +847,29 @@ export function PaperTradingPage() {
                     </Form.Item>
                 </Form>
             </Modal>
-
-            <Drawer
-                open={Boolean(selectedRow)}
-                width={1280}
-                title="Paper Trading 详情"
-                onClose={() => setSelectedRow(null)}
-                destroyOnClose
-            >
-                {!selectedRow ? null : (
-                    <Space direction="vertical" size={16} style={{display: 'flex'}}>
-                        <div className="nq-status-strip">
-                            <NqMetricCard
-                                label="运行状态"
-                                value={<NqStatusTag status={selectedRow.status}/>}
-                            />
-                            <NqMetricCard
-                                label="心跳"
-                                value={latestHeartbeat ? <NqStatusTag status={latestHeartbeat.status}/> : '-'}
-                                footer={latestHeartbeat ? formatDateTime(latestHeartbeat.heartbeatTime) : '暂无心跳记录'}
-                            />
-                            <NqMetricCard
-                                label="最近调度触发"
-                                value={(
-                                    <span className="nq-num" style={{fontSize: 14}}>
-                                        {latestFireTime ? formatDateTime(latestFireTime) : '-'}
-                                    </span>
-                                )}
-                                footer={latestFireTime ? undefined : '暂无调度触发'}
-                            />
-                            <NqMetricCard
-                                label="未处理告警"
-                                value={String(openAlertCount)}
-                                tone={openAlertCount > 0 ? 'warning' : 'muted'}
-                            />
-                            <NqMetricCard
-                                label="稳定性验收"
-                                value={latestStabilityCheck ? <NqStatusTag status={latestStabilityCheck.status}/> : '-'}
-                                footer={latestStabilityCheck
-                                    ? `窗口至 ${formatDateTime(latestStabilityCheck.checkWindowEnd)}`
-                                    : '暂无稳定性验收'}
-                            />
-                        </div>
-                        <Descriptions bordered column={2} size="small">
-                            <Descriptions.Item label="Paper Run ID">
-                                <span className="nq-mono">{selectedRow.paperRunId}</span>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="发布 ID">
-                                <span className="nq-mono">{selectedRow.publishId}</span>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="策略版本 ID">
-                                <span className="nq-mono">{selectedRow.strategyVersionId || '-'}</span>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="状态">
-                                <NqStatusTag status={selectedRow.status}/>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="交易环境">
-                                <NqEnvironmentBadge env={selectedRow.tradeEnv}/>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="交易所">{selectedRow.exchangeCode}</Descriptions.Item>
-                            <Descriptions.Item label="市场类型">{selectedRow.marketType}</Descriptions.Item>
-                            <Descriptions.Item label="Symbol">{selectedRow.symbol}</Descriptions.Item>
-                            <Descriptions.Item label="周期">{selectedRow.intervalCode}</Descriptions.Item>
-                            <Descriptions.Item label="启动时间">{formatDateTime(selectedRow.startedAt)}</Descriptions.Item>
-                            <Descriptions.Item label="停止时间">{formatDateTime(selectedRow.stoppedAt)}</Descriptions.Item>
-                            <Descriptions.Item label="创建人">{selectedRow.createdBy}</Descriptions.Item>
-                        </Descriptions>
-
-                        {detailQuery.isLoading ? (
-                            <Alert type="info" showIcon message="正在加载 Paper run 详情..."/>
-                        ) : detailQuery.error ? (
-                            <Alert
-                                type="warning"
-                                showIcon
-                                message="Paper run 详情加载失败"
-                                description={formatApiError(detailQuery.error as AppApiError)}
-                            />
-                        ) : null}
-
-                        <Tabs
-                            items={[
-                                {
-                                    key: 'orders',
-                                    label: '订单',
-                                    children: (
-                                        <PaperListSection
-                                            isLoading={ordersQuery.isFetching}
-                                            error={ordersQuery.error as AppApiError | null}
-                                            isEmpty={(ordersQuery.data ?? []).length === 0}
-                                            emptyText="当前 Paper run 暂无订单事实。"
-                                        >
-                                            <Table
-                                                rowKey="paperOrderId"
-                                                size="small"
-                                                pagination={false}
-                                                dataSource={ordersQuery.data ?? []}
-                                                columns={[
-                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
-                                                    {title: '方向', dataIndex: 'side', key: 'side', width: 80},
-                                                    {title: '类型', dataIndex: 'orderType', key: 'orderType', width: 80},
-                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (value) => <NqAmountText value={value as string}/>}),
-                                                    nqNumericColumn({title: '价格', dataIndex: 'price', key: 'price', width: 100, render: (value) => <NqPriceText value={value as string}/>}),
-                                                    {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (value: string) => <NqStatusTag status={value}/>},
-                                                    {
-                                                        title: '创建时间',
-                                                        dataIndex: 'createdAt',
-                                                        key: 'createdAt',
-                                                        width: 180,
-                                                        render: (value: string) => formatDateTime(value),
-                                                    },
-                                                ]}
-                                            />
-                                        </PaperListSection>
-                                    ),
-                                },
-                                {
-                                    key: 'trades',
-                                    label: '成交',
-                                    children: (
-                                        <PaperListSection
-                                            isLoading={tradesQuery.isFetching}
-                                            error={tradesQuery.error as AppApiError | null}
-                                            isEmpty={(tradesQuery.data ?? []).length === 0}
-                                            emptyText="当前 Paper run 暂无成交事实。"
-                                        >
-                                            <Table
-                                                rowKey="paperTradeId"
-                                                size="small"
-                                                pagination={false}
-                                                dataSource={tradesQuery.data ?? []}
-                                                columns={[
-                                                    {title: '成交 ID', dataIndex: 'paperTradeId', key: 'paperTradeId', className: 'nq-mono'},
-                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
-                                                    {title: '方向', dataIndex: 'side', key: 'side', width: 80},
-                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (value) => <NqAmountText value={value as string}/>}),
-                                                    nqNumericColumn({title: '价格', dataIndex: 'price', key: 'price', width: 100, render: (value) => <NqPriceText value={value as string}/>}),
-                                                    nqNumericColumn({title: '手续费', dataIndex: 'fee', key: 'fee', width: 100, render: (value) => <NqAmountText value={value as string}/>}),
-                                                    {
-                                                        title: '成交时间',
-                                                        dataIndex: 'tradedAt',
-                                                        key: 'tradedAt',
-                                                        width: 180,
-                                                        render: (value: string) => formatDateTime(value),
-                                                    },
-                                                ]}
-                                            />
-                                        </PaperListSection>
-                                    ),
-                                },
-                                {
-                                    key: 'positions',
-                                    label: '持仓',
-                                    children: (
-                                        <PaperListSection
-                                            isLoading={positionsQuery.isFetching}
-                                            error={positionsQuery.error as AppApiError | null}
-                                            isEmpty={(positionsQuery.data ?? []).length === 0}
-                                            emptyText="当前 Paper run 暂无持仓事实。"
-                                        >
-                                            <Table
-                                                rowKey="paperPositionId"
-                                                size="small"
-                                                pagination={false}
-                                                dataSource={positionsQuery.data ?? []}
-                                                columns={[
-                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
-                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 120, render: (value) => <NqAmountText value={value as string}/>}),
-                                                    nqNumericColumn({title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 120, render: (value) => <NqPriceText value={value as string}/>}),
-                                                    nqNumericColumn({title: '已实现盈亏', dataIndex: 'realizedPnl', key: 'realizedPnl', width: 140, render: (value) => <NqAmountText value={value as string} signed colorBySign/>}),
-                                                    nqNumericColumn({title: '未实现盈亏', dataIndex: 'unrealizedPnl', key: 'unrealizedPnl', width: 140, render: (value) => <NqAmountText value={value as string} signed colorBySign/>}),
-                                                    {
-                                                        title: '更新时间',
-                                                        dataIndex: 'updatedAt',
-                                                        key: 'updatedAt',
-                                                        width: 180,
-                                                        render: (value: string) => formatDateTime(value),
-                                                    },
-                                                ]}
-                                            />
-                                        </PaperListSection>
-                                    ),
-                                },
-                                {
-                                    key: 'snapshots',
-                                    label: '快照',
-                                    children: (
-                                        <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                                            <SnapshotBlock title="Publish Snapshot" content={selectedRow.publishSnapshotJson}/>
-                                            <SnapshotBlock title="Strategy Version Snapshot" content={selectedRow.strategyVersionSnapshotJson}/>
-                                            <SnapshotBlock title="Dataset Snapshot" content={selectedRow.datasetSnapshotJson}/>
-                                            <SnapshotBlock title="Param Snapshot" content={selectedRow.paramSnapshotJson}/>
-                                            <SnapshotBlock title="Config Snapshot" content={selectedRow.configSnapshotJson}/>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'risk-results',
-                                    label: '风控结果',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Button
-                                                size="small"
-                                                loading={riskOnceMutation.isPending}
-                                                onClick={() => {
-                                                    riskOnceMutation.mutate(selectedRow.paperRunId, {
-                                                        onSuccess: () => message.success('风控检查已执行。'),
-                                                        onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                    });
-                                                }}
-                                            >
-                                                执行风控检查
-                                            </Button>
-                                            <PaperListSection
-                                                isLoading={riskResultsQuery.isFetching}
-                                                error={riskResultsQuery.error as AppApiError | null}
-                                                isEmpty={(riskResultsQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无风控检查结果。"
-                                            >
-                                                <Table
-                                                    rowKey="riskResultId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={riskResultsQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '检查类型', dataIndex: 'checkType', key: 'checkType', width: 160},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
-                                                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100},
-                                                        {title: '消息', dataIndex: 'message', key: 'message'},
-                                                        {title: '时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'equity-curve',
-                                    label: '资金曲线',
-                                    children: (
-                                        <PaperListSection
-                                            isLoading={equityCurveQuery.isFetching}
-                                            error={equityCurveQuery.error as AppApiError | null}
-                                            isEmpty={(equityCurveQuery.data ?? []).length === 0}
-                                            emptyText="当前 Paper run 暂无资金曲线数据。"
-                                        >
-                                            <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                                                <NqEquityCurveChart data={equityCurveQuery.data ?? []}/>
-                                                <NqDrawdownChart data={equityCurveQuery.data ?? []}/>
-                                                <Table
-                                                    rowKey="equitySnapshotId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={equityCurveQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 180, render: (v: string) => formatDateTime(v)},
-                                                        nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                                        nqNumericColumn({title: '现金', dataIndex: 'cashBalance', key: 'cashBalance', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                                        nqNumericColumn({title: '持仓市值', dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                                        nqNumericColumn({title: '回撤', dataIndex: 'drawdown', key: 'drawdown', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
-                                                        {title: '来源', dataIndex: 'source', key: 'source', width: 100},
-                                                    ]}
-                                                />
-                                            </Space>
-                                        </PaperListSection>
-                                    ),
-                                },
-                                {
-                                    key: 'position-curve',
-                                    label: '持仓曲线',
-                                    children: (
-                                        <PaperListSection
-                                            isLoading={positionCurveQuery.isFetching}
-                                            error={positionCurveQuery.error as AppApiError | null}
-                                            isEmpty={(positionCurveQuery.data ?? []).length === 0}
-                                            emptyText="当前 Paper run 暂无持仓曲线数据。"
-                                        >
-                                            <Table
-                                                rowKey="positionSnapshotId"
-                                                size="small"
-                                                pagination={false}
-                                                dataSource={positionCurveQuery.data ?? []}
-                                                columns={[
-                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
-                                                    {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
-                                                    nqNumericColumn({title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
-                                                    nqNumericColumn({title: '标记价', dataIndex: 'markPrice', key: 'markPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
-                                                    nqNumericColumn({title: '市值', dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                                    {title: '来源', dataIndex: 'source', key: 'source', width: 100},
-                                                ]}
-                                            />
-                                        </PaperListSection>
-                                    ),
-                                },
-                                {
-                                    key: 'replay',
-                                    label: '交易复盘',
-                                    children: (
-                                        <PaperListSection
-                                            isLoading={replayQuery.isFetching}
-                                            error={replayQuery.error as AppApiError | null}
-                                            isEmpty={(replayQuery.data ?? []).length === 0}
-                                            emptyText="当前 Paper run 暂无交易复盘记录。"
-                                        >
-                                            <Table
-                                                rowKey="replayRecordId"
-                                                size="small"
-                                                pagination={false}
-                                                dataSource={replayQuery.data ?? []}
-                                                columns={[
-                                                    {title: '时间', dataIndex: 'replayTime', key: 'replayTime', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    {title: '事件类型', dataIndex: 'eventType', key: 'eventType', width: 140},
-                                                    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
-                                                    {title: '方向', dataIndex: 'side', key: 'side', width: 80},
-                                                    {title: '价格', dataIndex: 'price', key: 'price', width: 100},
-                                                    {title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100},
-                                                    {title: '原因', dataIndex: 'reason', key: 'reason'},
-                                                ]}
-                                            />
-                                        </PaperListSection>
-                                    ),
-                                },
-                                {
-                                    key: 'emergency-stops',
-                                    label: '异常停机',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <NqDangerConfirmButton
-                                                size="small"
-                                                disabled={selectedRow.status !== 'RUNNING'}
-                                                loading={emergencyStopMutation.isPending}
-                                                confirmTitle="确认紧急停机"
-                                                confirmContent="此操作将立即停止当前 Paper run。紧急停机只作用于 SIM/Paper Trading，不会触发真实 LIVE 下单或撤单。确认执行？"
-                                                okText="确认停机"
-                                                onConfirm={() => {
-                                                    emergencyStopMutation.mutate(
-                                                        {
-                                                            paperRunId: selectedRow.paperRunId,
-                                                            request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
-                                                        },
-                                                        {
-                                                            onSuccess: () => {
-                                                                message.success('紧急停机已执行。');
-                                                                setSearchVersion((v) => v + 1);
-                                                            },
-                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                        },
-                                                    );
-                                                }}
-                                            >
-                                                紧急停机
-                                            </NqDangerConfirmButton>
-                                            <PaperListSection
-                                                isLoading={emergencyStopsQuery.isFetching}
-                                                error={emergencyStopsQuery.error as AppApiError | null}
-                                                isEmpty={(emergencyStopsQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无异常停机事件。"
-                                            >
-                                                <Table
-                                                    rowKey="emergencyStopId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={emergencyStopsQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '触发类型', dataIndex: 'triggerType', key: 'triggerType', width: 120},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
-                                                        {title: '原因', dataIndex: 'reason', key: 'reason'},
-                                                        {title: '触发人', dataIndex: 'triggeredBy', key: 'triggeredBy', width: 120},
-                                                        {title: '触发时间', dataIndex: 'triggeredAt', key: 'triggeredAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                        {title: '解除时间', dataIndex: 'resolvedAt', key: 'resolvedAt', width: 180, render: (v: string | null) => formatDateTime(v)},
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'schedules',
-                                    label: '调度计划',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Space>
-                                                <Button size="small" type="primary" ghost onClick={() => setScheduleCreateOpen(true)}>
-                                                    创建调度
-                                                </Button>
-                                            </Space>
-                                            <PaperListSection
-                                                isLoading={schedulesQuery.isFetching}
-                                                error={schedulesQuery.error as AppApiError | null}
-                                                isEmpty={(schedulesQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无调度计划。"
-                                            >
-                                                <Table
-                                                    rowKey="scheduleId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={schedulesQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '名称', dataIndex: 'scheduleName', key: 'scheduleName', width: 140},
-                                                        {title: 'Cron', dataIndex: 'cronExpr', key: 'cronExpr', width: 140},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
-                                                        {title: '时区', dataIndex: 'timezone', key: 'timezone', width: 100},
-                                                        {title: '上次触发', dataIndex: 'lastFireTime', key: 'lastFireTime', width: 180, render: (v: string | null) => formatDateTime(v)},
-                                                        {
-                                                            title: '操作', key: 'action', width: 220,
-                                                            render: (_, record) => (
-                                                                <Space size={4}>
-                                                                    <Button type="link" size="small" onClick={() => setSelectedScheduleId(record.scheduleId)}>触发记录</Button>
-                                                                    <Button type="link" size="small" loading={runScheduleOnceMutation.isPending} disabled={record.status !== 'ENABLED'}
-                                                                        onClick={() => runScheduleOnceMutation.mutate(record.scheduleId, {
-                                                                            onSuccess: () => message.success('调度已触发。'),
-                                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                                        })}
-                                                                    >执行一次</Button>
-                                                                    {record.status === 'ENABLED' ? (
-                                                                        <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'DISABLED'}}, {onSuccess: () => message.success('已禁用。')})}>禁用</Button>
-                                                                    ) : (
-                                                                        <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'ENABLED'}}, {onSuccess: () => message.success('已启用。')})}>启用</Button>
-                                                                    )}
-                                                                </Space>
-                                                            ),
-                                                        },
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                            {selectedScheduleId && (
-                                                <Card size="small" title={`触发记录 (${selectedScheduleId.substring(0, 12)}...)`} extra={<Button type="link" size="small" onClick={() => setSelectedScheduleId(null)}>关闭</Button>}>
-                                                    <PaperListSection
-                                                        isLoading={firesQuery.isFetching}
-                                                        error={firesQuery.error as AppApiError | null}
-                                                        isEmpty={(firesQuery.data ?? []).length === 0}
-                                                        emptyText="暂无触发记录。"
-                                                    >
-                                                        <Table
-                                                            rowKey="fireId"
-                                                            size="small"
-                                                            pagination={false}
-                                                            dataSource={firesQuery.data ?? []}
-                                                            columns={[
-                                                                {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
-                                                                {title: '触发时间', dataIndex: 'firedAt', key: 'firedAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                                nqNumericColumn({title: '耗时(ms)', dataIndex: 'durationMs', key: 'durationMs', width: 100}),
-                                                                {title: '错误', dataIndex: 'errorMessage', key: 'errorMessage'},
-                                                            ]}
-                                                        />
-                                                    </PaperListSection>
-                                                </Card>
-                                            )}
-                                            <Modal
-                                                open={scheduleCreateOpen}
-                                                title="创建调度计划"
-                                                onCancel={() => setScheduleCreateOpen(false)}
-                                                onOk={() => scheduleForm.submit()}
-                                                confirmLoading={createScheduleMutation.isPending}
-                                                destroyOnClose
-                                            >
-                                                <Form form={scheduleForm} layout="vertical" initialValues={{cronExpr: '0 */5 * * * *', timezone: 'UTC'}} onFinish={(values) => {
-                                                    createScheduleMutation.mutate({...values, paperRunId: selectedRow!.paperRunId}, {
-                                                        onSuccess: () => { message.success('调度已创建。'); setScheduleCreateOpen(false); scheduleForm.resetFields(); },
-                                                        onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                    });
-                                                }}>
-                                                    <Form.Item label="调度名称" name="scheduleName" rules={[{required: true, message: '请输入调度名称'}]}>
-                                                        <Input placeholder="如：每5分钟心跳"/>
-                                                    </Form.Item>
-                                                    <Form.Item label="Cron 表达式" name="cronExpr" rules={[{required: true, message: '请输入 cron 表达式'}]}>
-                                                        <Input placeholder="0 */5 * * * *"/>
-                                                    </Form.Item>
-                                                    <Form.Item label="时区" name="timezone">
-                                                        <Input placeholder="UTC"/>
-                                                    </Form.Item>
-                                                </Form>
-                                            </Modal>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'heartbeats',
-                                    label: '心跳',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Button
-                                                size="small"
-                                                loading={runHeartbeatOnceMutation.isPending}
-                                                onClick={() => {
-                                                    runHeartbeatOnceMutation.mutate(selectedRow.paperRunId, {
-                                                        onSuccess: () => message.success('心跳已记录。'),
-                                                        onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                    });
-                                                }}
-                                            >
-                                                执行心跳检查
-                                            </Button>
-                                            <PaperListSection
-                                                isLoading={heartbeatsQuery.isFetching}
-                                                error={heartbeatsQuery.error as AppApiError | null}
-                                                isEmpty={(heartbeatsQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无心跳记录。"
-                                            >
-                                                <Table
-                                                    rowKey="heartbeatId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={heartbeatsQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'STOPPED' ? 'danger' : undefined}/>},
-                                                        {title: '心跳时间', dataIndex: 'heartbeatTime', key: 'heartbeatTime', width: 180, render: (v: string) => formatDateTime(v)},
-                                                        nqNumericColumn({title: '延迟(s)', dataIndex: 'lagSeconds', key: 'lagSeconds', width: 100}),
-                                                        {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'daily-reports',
-                                    label: '日报',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Button
-                                                size="small"
-                                                type="primary"
-                                                ghost
-                                                loading={generateDailyReportMutation.isPending}
-                                                onClick={() => {
-                                                    generateDailyReportMutation.mutate(
-                                                        {paperRunId: selectedRow.paperRunId, request: {}},
-                                                        {
-                                                            onSuccess: () => message.success('日报已生成。'),
-                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                        },
-                                                    );
-                                                }}
-                                            >
-                                                生成今日日报
-                                            </Button>
-                                            <PaperListSection
-                                                isLoading={dailyReportsQuery.isFetching}
-                                                error={dailyReportsQuery.error as AppApiError | null}
-                                                isEmpty={(dailyReportsQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无日报。"
-                                            >
-                                                <Table
-                                                    rowKey="reportId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={dailyReportsQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '日期', dataIndex: 'reportDate', key: 'reportDate', width: 120, className: 'nq-num'},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'GENERATED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
-                                                        nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                                        nqNumericColumn({title: '日盈亏', dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
-                                                        nqNumericColumn({title: '日收益率', dataIndex: 'dailyReturn', key: 'dailyReturn', width: 100, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),
-                                                        nqNumericColumn({title: '最大回撤', dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
-                                                        nqNumericColumn({title: '订单数', dataIndex: 'orderCount', key: 'orderCount', width: 80}),
-                                                        nqNumericColumn({title: '成交数', dataIndex: 'tradeCount', key: 'tradeCount', width: 80}),
-                                                        nqNumericColumn({title: '告警数', dataIndex: 'alertCount', key: 'alertCount', width: 80}),
-                                                        {title: '生成时间', dataIndex: 'generatedAt', key: 'generatedAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'alerts',
-                                    label: '告警',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Button
-                                                size="small"
-                                                type="primary"
-                                                ghost
-                                                loading={createAlertMutation.isPending}
-                                                onClick={() => {
-                                                    createAlertMutation.mutate(
-                                                        {
-                                                            paperRunId: selectedRow.paperRunId,
-                                                            request: {alertType: 'SYSTEM_NOTICE', severity: 'LOW', title: '手动测试告警', message: '手动创建的测试告警', source: 'MANUAL'},
-                                                        },
-                                                        {
-                                                            onSuccess: () => message.success('告警已创建。'),
-                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                        },
-                                                    );
-                                                }}
-                                            >
-                                                创建测试告警
-                                            </Button>
-                                            <PaperListSection
-                                                isLoading={alertsQuery.isFetching}
-                                                error={alertsQuery.error as AppApiError | null}
-                                                isEmpty={(alertsQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无告警。"
-                                            >
-                                                <Table
-                                                    rowKey="alertId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={alertsQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '类型', dataIndex: 'alertType', key: 'alertType', width: 140},
-                                                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'CRITICAL' || v === 'HIGH' ? 'danger' : v === 'MEDIUM' ? 'warning' : 'neutral'}/>},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'OPEN' ? 'danger' : v === 'ACKED' ? 'warning' : 'success'}/>},
-                                                        {title: '标题', dataIndex: 'title', key: 'title'},
-                                                        {title: '来源', dataIndex: 'source', key: 'source', width: 100},
-                                                        {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                        {
-                                                            title: '操作', key: 'action', width: 160,
-                                                            render: (_, record) => (
-                                                                <Space size={4}>
-                                                                    {record.status === 'OPEN' && (
-                                                                        <Button type="link" size="small" loading={ackAlertMutation.isPending}
-                                                                            onClick={() => ackAlertMutation.mutate({paperRunId: selectedRow.paperRunId, alertId: record.alertId}, {onSuccess: () => message.success('已确认。')})}
-                                                                        >确认</Button>
-                                                                    )}
-                                                                    {record.status !== 'RESOLVED' && (
-                                                                        <Button type="link" size="small" loading={resolveAlertMutation.isPending}
-                                                                            onClick={() => resolveAlertMutation.mutate({paperRunId: selectedRow.paperRunId, alertId: record.alertId}, {onSuccess: () => message.success('已解决。')})}
-                                                                        >解决</Button>
-                                                                    )}
-                                                                </Space>
-                                                            ),
-                                                        },
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'recovery-events',
-                                    label: '恢复事件',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Space>
-                                                <Button
-                                                    size="small"
-                                                    type="primary"
-                                                    ghost
-                                                    loading={recoverMutation.isPending}
-                                                    onClick={() => {
-                                                        recoverMutation.mutate(
-                                                            {paperRunId: selectedRow.paperRunId, request: {reason: '手动恢复测试'}},
-                                                            {
-                                                                onSuccess: () => message.success('已记录恢复事件。'),
-                                                                onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                            },
-                                                        );
-                                                    }}
-                                                >
-                                                    执行恢复
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    loading={retryFailedStepMutation.isPending}
-                                                    onClick={() => {
-                                                        retryFailedStepMutation.mutate(
-                                                            {paperRunId: selectedRow.paperRunId, request: {failedStep: 'manual-test', reason: '手动重试测试'}},
-                                                            {
-                                                                onSuccess: () => message.success('已记录重试事件。'),
-                                                                onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                            },
-                                                        );
-                                                    }}
-                                                >
-                                                    重试失败步骤
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    loading={runMonitorOnceMutation.isPending}
-                                                    onClick={() => {
-                                                        runMonitorOnceMutation.mutate(
-                                                            {paperRunId: selectedRow.paperRunId},
-                                                            {
-                                                                onSuccess: (data) => message.success(`监控守护已执行，新建告警 ${data.createdAlertCount} 条。`),
-                                                                onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                            },
-                                                        );
-                                                    }}
-                                                >
-                                                    执行监控守护
-                                                </Button>
-                                            </Space>
-                                            <PaperListSection
-                                                isLoading={recoveryEventsQuery.isFetching}
-                                                error={recoveryEventsQuery.error as AppApiError | null}
-                                                isEmpty={(recoveryEventsQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无恢复事件。"
-                                            >
-                                                <Table
-                                                    rowKey="recoveryEventId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={recoveryEventsQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '类型', dataIndex: 'recoveryType', key: 'recoveryType', width: 200},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v} tone={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'danger' : v === 'SKIPPED' ? 'neutral' : 'info'}/>},
-                                                        {title: '原因', dataIndex: 'reason', key: 'reason'},
-                                                        {title: '开始时间', dataIndex: 'startedAt', key: 'startedAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                        {title: '完成时间', dataIndex: 'finishedAt', key: 'finishedAt', width: 180, render: (v: string | null) => v ? formatDateTime(v) : '-'},
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                        </Space>
-                                    ),
-                                },
-                                {
-                                    key: 'stability-checks',
-                                    label: '稳定性验收',
-                                    children: (
-                                        <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Button
-                                                size="small"
-                                                type="primary"
-                                                ghost
-                                                loading={generateStabilityCheckMutation.isPending}
-                                                onClick={() => {
-                                                    const end = new Date();
-                                                    const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
-                                                    generateStabilityCheckMutation.mutate(
-                                                        {
-                                                            paperRunId: selectedRow.paperRunId,
-                                                            request: {
-                                                                checkWindowStart: start.toISOString(),
-                                                                checkWindowEnd: end.toISOString(),
-                                                            },
-                                                        },
-                                                        {
-                                                            onSuccess: () => message.success('稳定性验收已生成。'),
-                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                        },
-                                                    );
-                                                }}
-                                            >
-                                                生成最近 24h 稳定性验收
-                                            </Button>
-                                            <Typography.Text type="secondary" style={{fontSize: 12}}>
-                                                第一版口径：有心跳 + 无 CRITICAL 未处理告警 + 无失败触发 = PASSED；非 GateJ-FREEZE 7 天最终验收。
-                                            </Typography.Text>
-                                            <PaperListSection
-                                                isLoading={stabilityChecksQuery.isFetching}
-                                                error={stabilityChecksQuery.error as AppApiError | null}
-                                                isEmpty={(stabilityChecksQuery.data ?? []).length === 0}
-                                                emptyText="当前 Paper run 暂无稳定性验收。"
-                                            >
-                                                <Table
-                                                    rowKey="stabilityCheckId"
-                                                    size="small"
-                                                    pagination={false}
-                                                    dataSource={stabilityChecksQuery.data ?? []}
-                                                    columns={[
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
-                                                        nqNumericColumn({title: '在线率', dataIndex: 'uptimeRatio', key: 'uptimeRatio', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
-                                                        nqNumericColumn({title: '心跳', dataIndex: 'heartbeatCount', key: 'heartbeatCount', width: 80}),
-                                                        nqNumericColumn({title: '告警', dataIndex: 'alertCount', key: 'alertCount', width: 80}),
-                                                        nqNumericColumn({title: '失败触发', dataIndex: 'failedFireCount', key: 'failedFireCount', width: 100}),
-                                                        nqNumericColumn({title: '恢复', dataIndex: 'recoveryCount', key: 'recoveryCount', width: 80}),
-                                                        nqNumericColumn({title: '日报', dataIndex: 'reportCount', key: 'reportCount', width: 80}),
-                                                        {title: '窗口开始', dataIndex: 'checkWindowStart', key: 'checkWindowStart', width: 180, render: (v: string) => formatDateTime(v)},
-                                                        {title: '窗口结束', dataIndex: 'checkWindowEnd', key: 'checkWindowEnd', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    ]}
-                                                />
-                                            </PaperListSection>
-                                        </Space>
-                                    ),
-                                },
-                            ]}
-                        />
-                    </Space>
-                )}
-            </Drawer>
         </>
     );
 }
 
-interface PaperListSectionProps {
-    isLoading: boolean;
-    error: AppApiError | null;
-    isEmpty: boolean;
+/**
+ * PaperFactSection — 事实表三态包装（加载 / 错误 / 空 / 内容）。
+ * 统一底部事实表的状态表达，空态文案由调用方按业务口径传入（E2E 依赖原文）。
+ */
+interface PaperFactSectionProps {
+    query: {isFetching: boolean; error: unknown; data?: unknown[]};
     emptyText: string;
     children: React.ReactNode;
 }
 
-function PaperListSection({isLoading, error, isEmpty, emptyText, children}: PaperListSectionProps) {
-    if (isLoading) {
+function PaperFactSection({query, emptyText, children}: PaperFactSectionProps) {
+    const data = query.data ?? [];
+    if (query.isFetching && data.length === 0) {
         return <NqLoadingState/>;
     }
-    if (error) {
-        return <NqErrorState error={error}/>;
+    if (query.error) {
+        return <NqErrorState error={query.error as AppApiError}/>;
     }
-    if (isEmpty) {
+    if (data.length === 0) {
         return <NqEmptyState description={emptyText}/>;
     }
     return <>{children}</>;

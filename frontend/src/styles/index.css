@@ -247,6 +247,25 @@ a {
   width: 100%;
 }
 
+/* Paper Run 列表 id：完整文本保留在 DOM，仅视觉省略 */
+.nq-run-id {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nq-color-text-secondary);
+}
+
+/* Paper Run 列表当前焦点行高亮 */
+.nq-row-active > td {
+  background: var(--nq-color-bg-selected) !important;
+}
+
+.nq-row-active > td:first-child {
+  box-shadow: inset 2px 0 0 var(--nq-color-primary);
+}
+
 /* ---------------------------------- */
 /* 登录页（深色、无渐变）               */
 /* ---------------------------------- */

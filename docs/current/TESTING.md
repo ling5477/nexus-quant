@@ -60,6 +60,18 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-FRONTEND-PAPER-TRADING-CONSOLE-DEEPEN 验证记录（2026-06-13）
+
+- `npm run build`（frontend，含 `tsc -b`）：通过。
+- `git diff --check`：通过（仅 LF/CRLF 行尾提示，无空白错误）。
+- `npm run test:e2e`（本地拉起 `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run` + 本地 PostgreSQL 5432）：**24 passed / 1 skipped / 0 failed**，与上一轮基线一致，未倒退。
+  - 7 个 paper-trading spec 全部通过，覆盖创建/启动/停止、订单/成交/持仓/快照、风控 run-once、资金/持仓曲线、交易复盘、紧急停机、告警 ACK/RESOLVE、日报生成、调度创建/执行一次/禁用、心跳、恢复/重试/监控守护、稳定性验收。
+  - 迭代中修复两处与本轮重构直接相关的失败：
+    1. 行内按钮被 `position:sticky` 页头拦截点击 → 给左侧 run 列表加内部滚动 `scroll={{y:420}}`，定位时滚动表体而非窗口。
+    2. 顶部状态条新增展示风控 checkType 导致 `BASIC_HEALTH_CHECK` 多匹配 → spec 改 `.first()`。
+- 视觉冒烟：Playwright 截图确认内联控制台（顶部状态条 / 左列表焦点高亮 / 中部曲线与日报 / 右侧操作区与告警面板）渲染正常。
+- 后端 / Python：未跑（本轮未改 backend/python 代码）。
+
 ## NQ-FRONTEND-DESIGN-SYSTEM-V1-AND-TRADING-UI-REFACTOR 验证记录（2026-06-13）
 
 - `npm install echarts`（frontend）：通过，新增 echarts ^6.1.0，lock 同步更新。

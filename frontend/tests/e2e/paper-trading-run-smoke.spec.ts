@@ -67,7 +67,7 @@ test.describe('GateI-3 paper trading run smoke', () => {
         await expect(stoppedRow.getByText('STOPPED')).toBeVisible({timeout: 15_000});
         await stoppedRow.getByRole('link', {name: '查看详情'}).or(stoppedRow.getByRole('button', {name: '查看详情'})).click();
 
-        const drawer = page.getByLabel('Paper Trading 详情');
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
 
         await page.getByRole('tab', {name: '订单'}).click();
@@ -127,7 +127,7 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
 
         // Open detail drawer
         await row.getByRole('link', {name: '查看详情'}).or(row.getByRole('button', {name: '查看详情'})).click();
-        const drawer = page.getByLabel('Paper Trading 详情');
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
 
         // Tab: 风控结果 — click "执行风控检查" button
@@ -139,7 +139,8 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         await page.getByRole('button', {name: /执行风控检查/}).click();
         const riskRes = await riskResponse;
         expect(riskRes.ok(), `risk run-once failed: ${riskRes.status()} ${await riskRes.text()}`).toBeTruthy();
-        await expect(page.getByText('BASIC_HEALTH_CHECK')).toBeVisible({timeout: 10_000});
+        // checkType 同时出现在底部「风控结果」表与顶部状态条「风控状态」卡片，用 .first() 规避 strict 多匹配。
+        await expect(page.getByText('BASIC_HEALTH_CHECK').first()).toBeVisible({timeout: 10_000});
         await expect(page.getByText('PASSED').first()).toBeVisible({timeout: 5_000});
 
         // Tab: 资金曲线
@@ -154,9 +155,7 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         await page.getByRole('tab', {name: '交易复盘'}).click();
         await expect(page.getByText('当前 Paper run 暂无交易复盘记录。')).toBeVisible();
 
-        // Tab: 异常停机 — trigger emergency stop via UI
-        await page.getByRole('tab', {name: '异常停机'}).click();
-
+        // 紧急停机现在位于右侧「操作区」（内联控制台），始终可见，无需切换 Tab。
         const esButton = page.getByRole('button', {name: /紧急停机/});
         await expect(esButton).toBeVisible({timeout: 5_000});
         await expect(esButton).toBeEnabled({timeout: 5_000});
@@ -174,9 +173,8 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         expect(esPayload.status).toBe('APPLIED');
         expect(esPayload.triggerType).toBe('MANUAL');
 
-        // Close drawer and verify run is STOPPED
-        await page.getByLabel('Close', {exact: true}).or(page.getByRole('button', {name: 'Close'})).click();
+        // 内联控制台无需关闭抽屉；紧急停机后焦点 run 应在左侧列表显示 STOPPED。
         const stoppedRow = page.locator('tr').filter({hasText: paperRunId});
-        await expect(stoppedRow.getByText('STOPPED')).toBeVisible({timeout: 15_000});
+        await expect(stoppedRow.getByText('STOPPED').first()).toBeVisible({timeout: 15_000});
     });
 });

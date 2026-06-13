@@ -2,6 +2,33 @@
 
 日期：2026-05-16
 
+## NQ-FRONTEND-PAPER-TRADING-CONSOLE-DEEPEN
+
+日期：2026-06-13
+
+### 本轮目标
+
+将 Paper Trading 页面从「列表 + Drawer」升级为内联运行控制台：顶部状态条 + 左侧 run 列表（焦点选择）+ 中部权益/回撤/日报/稳定性 + 右侧告警/恢复/心跳/调度/操作 + 底部事实表 Tabs。新增 5 个面板组件。只改 frontend Paper Trading 相关与 docs；不改后端、不新增 API、不接 AI/DH、不开启 LIVE。
+
+### 新增文件
+
+- `frontend/src/components/paper/`：`NqAlertPanel`、`NqRecoveryPanel`、`NqHeartbeatPanel`、`NqScheduleFirePanel`、`NqStabilityCheckPanel` + `index.ts`（自包含既有 paper-trading hooks，复用 React Query 缓存键，不重复请求）
+
+### 修改文件
+
+- `frontend/src/pages/paper-trading/PaperTradingPage.tsx`（Drawer → 内联 `<section aria-label="Paper Trading 详情">` 控制台；左列表内部滚动；紧急停机改 NqDangerConfirmButton 移入操作区；状态条/日报/曲线接入 Nq 组件）
+- `frontend/src/styles/index.css`（新增 `.nq-run-id` 纯 CSS 省略、`.nq-row-active` 焦点行高亮）
+- `frontend/tests/e2e/paper-trading-*.spec.ts`（7 个：`drawer` 改 `getByRole('region', {name:'Paper Trading 详情'})`；移除已转面板/操作区的 tab.click：告警/恢复/心跳/调度/稳定性/日报/异常停机；移除 Drawer Close；BASIC_HEALTH_CHECK 改 `.first()`）
+- `docs/current/WORKLOG.md`、`docs/current/TESTING.md`
+
+### 关键结论与坑
+
+- E2E 行内按钮被粘性页头拦截点击：根因是窗口滚动把目标行对齐到视口顶部、落入 `position:sticky` 页头下方；`scroll-margin-top` 不被 Playwright CDP 滚动尊重，最终用「列表内部滚动 `scroll={{y:420}}`」让定位滚动表体而非窗口，结构性解决。
+- run 列表必须渲染完整 paperRunId 文本（E2E 以 `hasText` 全量 id 定位行），改用纯 CSS 省略而非 AntD JS ellipsis，避免 DOM 文本被截断。
+- 顶部状态条新增「风控状态」展示 checkType，导致 BASIC_HEALTH_CHECK 在页面出现两处；spec 改 `.first()`（与既有 PASSED 断言一致），保留状态条信息不削弱断言。
+
+---
+
 ## NQ-FRONTEND-DESIGN-SYSTEM-V1-AND-TRADING-UI-REFACTOR
 
 日期：2026-06-13
