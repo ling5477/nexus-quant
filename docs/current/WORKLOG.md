@@ -2,6 +2,52 @@
 
 日期：2026-05-16
 
+## NQ-FRONTEND-LOGIN-PAGE-PROFESSIONALIZATION
+
+日期：2026-06-13
+
+### 本轮目标
+
+将登录页从“左侧项目名 + 右侧登录框”的基础布局升级为专业量化交易基础设施控制台入口。只改登录页展示、登录相关 E2E 和本轮验证文档；不改 Paper Trading、Dashboard、Backtest、Strategy、Risk 页面；不改 backend、API、鉴权逻辑、token 存储、migration、deploy、scripts；不接 AI / DH，不开启 LIVE，不调用真实交易所。
+
+### 修改文件
+
+- `frontend/src/pages/login/LoginPage.tsx`
+- `frontend/src/styles/index.css`
+- `frontend/tests/e2e/support.ts`
+- `frontend/tests/e2e/login-page-smoke.spec.ts`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+
+### 变更摘要
+
+- 登录页重构为独立 `AuthShell` / `ProductIdentityPanel` / `SystemPosturePanel` / `LoginCard` / `SecurityNotice` 展示结构，左侧展示 NexusQuant、Quant Trading Infrastructure Console、Strategy Research、Backtest、Paper Trading、Risk Control、Audit Trail 和 Gate / LIVE / PAPER 状态。
+- 登录卡片展示 `Sign in to Console`、DEV / PAPER / LOCAL 环境 Badge、用户名 / 密码输入、登录按钮、脱敏错误提示和安全提示。
+- 登录错误提示不再直接输出 traceId、path 或后端细节；只按认证失败、服务不可用和网络问题做用户可理解提示。
+- 继续复用现有 `authApi.login`、`useAuthStore.setSession`、redirect 逻辑和 token 存储；未修改登录接口协议、后端鉴权或 token 生命周期。
+- 样式复用 NQ Console Design System v1 的 CSS variables、`NqStatusTag` 和 `NqEnvironmentBadge`；新增低对比网格、克制 radial background、小圆角、弱阴影和响应式上下布局。
+- 更新登录 E2E helper 的可见文本选择器，新增登录页 smoke test，验证关键文案、状态标签、空凭证输入和安全提示。
+
+### 验证记录
+
+- `npm run build`（frontend）：通过；仍有既有 Vite chunk > 500 kB 警告。
+- `npm run test:e2e -- tests/e2e/login-page-smoke.spec.ts --project=chromium`：通过，1 passed。
+- `npm run test:e2e`：通过，25 passed / 1 skipped；唯一 skipped 仍为未配置订单 ID 的既有订单详情链路。
+- 本地后端为 E2E 临时启动：首次按 Runbook `-pl nq-app` 启动失败，原因是本地 Maven 仓缺少 reactor 模块产物；改用 `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local` 启动成功，`/actuator/health` 为 `UP`。
+- Browser 运行态验证：Product Design Browser 初始化连续超时，按降级规则使用 Playwright browser 工具验证 `http://127.0.0.1:5179/login`；桌面 1440x900 和移动 390x844 均无水平溢出，关键 Gate/LIVE/PAPER 文案、登录卡片和安全提示可见。
+- `git diff --check`：通过；无 whitespace error，仅有 LF/CRLF 工作区提示。
+- `git status --short`：通过；工作区仅包含本轮允许范围文件和新增登录页 smoke。
+- `git diff --stat`：已执行；Git 默认不统计 untracked 文件，新增 `frontend/tests/e2e/login-page-smoke.spec.ts` 由 `git status --short` 确认。
+
+### 边界确认
+
+- 未修改 backend、python、migration、deploy、scripts、`.github`。
+- 未修改 Paper Trading、Dashboard、Backtest、Strategy、Risk 页面。
+- 未新增 API，未修改登录接口协议，未修改后端鉴权逻辑，未修改 token 存储逻辑。
+- 未开启 LIVE，未接 AI，未接 DH，未调用真实交易所，未输出或硬编码真实密钥、token、secret、cookie 或凭证。
+
+---
+
 ## NQ-FRONTEND-PAPER-TRADING-CONSOLE-DEEPEN
 
 日期：2026-06-13

@@ -48,17 +48,16 @@ async function resetDefaultAccountFixture(page: Page) {
 export async function loginToConsole(page: Page): Promise<E2EExchangeAccountFixture> {
     const defaultAccount = await resetDefaultAccountFixture(page);
 
-    // Why: 登录页文案在 fix(freeze) 288c28f8 中改为 "NexusQuant 控制台" / "登录"，
-    // 这里同步选择器，否则所有 E2E 在登录前置阶段直接失败。
+    // Why: 登录页现在以英文专业控制台入口展示，但登录链路仍必须经过真实表单提交。
+    // 这里按用户可见 heading 定位，避免依赖脆弱 CSS class 或内部实现。
     await page.goto('/login');
-    await expect(page.getByRole('heading', {name: 'NexusQuant 控制台'})).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'NexusQuant'})).toBeVisible();
 
     // Why: fix(freeze) 288c28f8 移除了登录表单的默认凭证预填（登录泄露清理），
     // E2E 必须始终显式填写用户名密码，不能再依赖页面预填默认值。
-    await page.getByLabel('用户名').fill(username);
-    await page.getByLabel('密码').fill(password);
-    // Why: AntD 会在两个汉字的按钮文本中自动插入空格（"登 录"），按既有规范用 \s* 正则匹配。
-    await page.getByRole('button', {name: /^登\s*录$/}).click();
+    await page.getByLabel('Username').fill(username);
+    await page.getByLabel('Password').fill(password);
+    await page.getByRole('button', {name: 'Sign in'}).click();
 
     // Why: 本地验收会先拉起后端再并发启动 Playwright worker，首页路由恢复偶发慢于默认 5 秒，
     // 这里显式放宽等待窗口，避免把真实登录成功误判成路由失败。
@@ -68,7 +67,7 @@ export async function loginToConsole(page: Page): Promise<E2EExchangeAccountFixt
     return defaultAccount;
 }
 
-async function listAccounts(page: Page, authHeaders: {Authorization: string}): Promise<E2EExchangeAccountFixture[]> {
+async function listAccounts(page: Page, authHeaders: { Authorization: string }): Promise<E2EExchangeAccountFixture[]> {
     const response = await page.request.get('/api/exchange-accounts', {
         headers: authHeaders,
         timeout: 30_000,
@@ -79,7 +78,7 @@ async function listAccounts(page: Page, authHeaders: {Authorization: string}): P
 
 async function ensureAccount(
     page: Page,
-    authHeaders: {Authorization: string},
+    authHeaders: { Authorization: string },
     knownAccounts: E2EExchangeAccountFixture[],
     accountAlias: string,
 ): Promise<E2EExchangeAccountFixture> {

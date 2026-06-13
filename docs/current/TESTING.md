@@ -60,6 +60,26 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-FRONTEND-LOGIN-PAGE-PROFESSIONALIZATION 验证记录（2026-06-13）
+
+本轮只改登录页、登录相关 E2E 和当前验证文档；未修改 backend、API、鉴权逻辑、token 存储、migration、deploy、scripts、Paper Trading、Dashboard、Backtest、Strategy、Risk、AI、DH 或 LIVE 交易逻辑。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build` | 通过 | frontend 下执行，`tsc -b && vite build` 成功；仍有既有 Vite chunk > 500 kB 警告。 |
+| `npm run test:e2e -- tests/e2e/login-page-smoke.spec.ts --project=chromium` | 通过 | 新增登录页 smoke 单独通过，1 passed；验证登录页关键文案、Gate/LIVE/PAPER 状态、安全提示和空凭证输入。 |
+| `npm run test:e2e` | 通过 | frontend 下执行完整 E2E，25 passed / 1 skipped；唯一 skipped 仍为未配置订单 ID 的既有订单详情链路。 |
+| 后端本地启动 | 通过 | 首次按 Runbook `-pl nq-app` 启动失败，因本地 Maven 仓缺少 reactor 模块产物；改用 `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local` 启动，`/actuator/health` 返回 `UP`。 |
+| Browser 运行态验证 | 通过（降级） | Product Design Browser 初始化连续超时；按降级规则使用 Playwright browser 工具打开 `http://127.0.0.1:5179/login`，桌面 1440x900 与移动 390x844 均无水平溢出，登录卡片、安全提示和 Gate/LIVE/PAPER 文案可见。 |
+| `git diff --check` | 通过 | 退出码 0，无 whitespace error；仅有 LF/CRLF 工作区提示。 |
+| `git status --short` | 通过 | 工作区仅包含本轮允许范围文件：登录页、全局登录样式、登录 E2E helper、新增登录页 smoke、`WORKLOG.md`、`TESTING.md`。 |
+| `git diff --stat` | 已执行 | 当前 tracked diff 统计为 5 个文件；Git 默认不统计 untracked 文件，新增 `frontend/tests/e2e/login-page-smoke.spec.ts` 由 `git status --short` 确认。 |
+
+补充说明：
+
+- 完整 E2E 输出仍包含既有 Ant Design React 19 compatibility、`Card.bordered`、`Modal.destroyOnClose`、`useForm` 和 `Descriptions` span 警告；本轮登录页已将新增 Card 改为 `variant="borderless"`，未新增登录页 `bordered` 警告。
+- 本轮未执行 Maven / Python 全量验证；原因是未修改 backend / Python 代码。本轮为 E2E 临时启动过后端 local profile，并在验证后停止本轮启动的 `nq-app` 与 Vite 进程。
+
 ## NQ-FRONTEND-PAPER-TRADING-CONSOLE-DEEPEN 验证记录（2026-06-13）
 
 - `npm run build`（frontend，含 `tsc -b`）：通过。
