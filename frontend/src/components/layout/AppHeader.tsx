@@ -87,7 +87,8 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                 <div>
                     <Typography.Text strong>{appEnv.appTitle}</Typography.Text>
                     <br/>
-                    <Typography.Text type="secondary">GateJ-FREEZE Console</Typography.Text>
+                    {/* 副标题保持中性描述，不声明 Gate 阶段，避免阶段推进后文案过期 */}
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>量化策略运营控制台</Typography.Text>
                 </div>
             </div>
             <div className="app-shell__header-right">

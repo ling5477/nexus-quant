@@ -1,4 +1,6 @@
-import {Alert, Space, Tag, Typography} from 'antd';
+import {Alert} from 'antd';
+
+import {NqPageHeader} from '@/components/nq';
 
 interface PageHeroProps {
     title: string;
@@ -7,27 +9,21 @@ interface PageHeroProps {
     tip?: string;
 }
 
-export function PageHero({title, description, badge = 'RC1', tip}: PageHeroProps) {
+/**
+ * PageHero — 兼容旧页面的头部适配层。
+ *
+ * Why:
+ * Design System v1 引入 NqPageHeader 后，存量页面仍引用 PageHero；
+ * 这里收敛为薄适配（同一 heading 语义、同一排版），避免一次性改动所有页面。
+ * 新页面请直接使用 NqPageHeader。
+ */
+export function PageHero({title, description, badge, tip}: PageHeroProps) {
     return (
-        <div className="page-hero">
-            <Space align="start" size={12} wrap>
-                <div>
-                    <Typography.Title level={2} style={{margin: 0}}>
-                        {title}
-                    </Typography.Title>
-                    <Typography.Paragraph type="secondary" style={{margin: '8px 0 0'}}>
-                        {description}
-                    </Typography.Paragraph>
-                </div>
-                <Tag color="blue">{badge}</Tag>
-            </Space>
-            {tip ? (
-                <Alert
-                    type="info"
-                    showIcon
-                    message={tip}
-                />
-            ) : null}
-        </div>
+        <NqPageHeader
+            title={title}
+            description={description}
+            badge={badge}
+            tip={tip ? <Alert type="info" showIcon message={tip}/> : undefined}
+        />
     );
 }

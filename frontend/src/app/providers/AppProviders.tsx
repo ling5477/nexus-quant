@@ -5,6 +5,7 @@ import {QueryClient, QueryClientProvider, useQuery} from '@tanstack/react-query'
 
 import {authApi} from '@/api/auth';
 import {authQueryKeys} from '@/api/query-keys';
+import {nqAntdTheme} from '@/theme/antd-theme';
 import type {AppApiError} from '@/types/api';
 import {subscribeAppError} from '@/utils/error-events';
 import {useAuthStore} from '@/store/auth-store';
@@ -97,19 +98,7 @@ export function AppProviders({children}: PropsWithChildren) {
     }, []);
 
     return (
-        <ConfigProvider
-            theme={{
-                token: {
-                    colorPrimary: '#1f5fb8',
-                    colorInfo: '#1f5fb8',
-                    colorSuccess: '#1f8a5a',
-                    colorWarning: '#c17f12',
-                    colorError: '#c24747',
-                    borderRadius: 16,
-                    fontFamily: "'Segoe UI Variable', 'Microsoft YaHei UI', 'PingFang SC', sans-serif",
-                },
-            }}
-        >
+        <ConfigProvider theme={nqAntdTheme}>
             <AntApp>
                 <QueryClientProvider client={queryClient}>
                     <AppErrorBridge/>

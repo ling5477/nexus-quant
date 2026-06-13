@@ -6,7 +6,6 @@ import {
     Col,
     Descriptions,
     Drawer,
-    Empty,
     Form,
     Input,
     Modal,
@@ -15,14 +14,30 @@ import {
     Space,
     Table,
     Tabs,
-    Tag,
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
-import {PageHero} from '@/components/page/PageHero';
+import {
+    NqAmountText,
+    NqDangerConfirmButton,
+    NqDataTable,
+    NqDrawdownChart,
+    NqEmptyState,
+    NqEnvironmentBadge,
+    NqEquityCurveChart,
+    NqErrorState,
+    NqFilterBar,
+    NqLoadingState,
+    NqMetricCard,
+    NqPageHeader,
+    NqPercentText,
+    NqPriceText,
+    NqStatusTag,
+    nqNumericColumn,
+} from '@/components/nq';
 import {
     EXCHANGE_OPTIONS,
     INTERVAL_OPTIONS,
@@ -79,13 +94,6 @@ import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type PaperRunRow = PaperTradingRunItem;
 
-const STATUS_COLOR: Record<string, string> = {
-    CREATED: 'default',
-    RUNNING: 'processing',
-    STOPPED: 'warning',
-    FAILED: 'error',
-};
-
 const DEFAULT_CREATE_VALUES: PaperTradingRunCreateRequest = {
     publishId: '',
     tradeEnv: 'SIM',
@@ -97,7 +105,7 @@ const DEFAULT_CREATE_VALUES: PaperTradingRunCreateRequest = {
 };
 
 export function PaperTradingPage() {
-    const {message, modal} = App.useApp();
+    const {message} = App.useApp();
     const [queryForm] = Form.useForm<PaperTradingListFilters>();
     const [createForm] = Form.useForm<PaperTradingRunCreateRequest>();
     const [submittedFilters, setSubmittedFilters] = useState<PaperTradingListFilters>(defaultPaperTradingListFilters);
@@ -152,33 +160,46 @@ export function PaperTradingPage() {
     const hasSearched = searchVersion > 0;
     const visibleItems = listQuery.data ?? [];
 
+    // 详情页顶部状态摘要：全部来自 Drawer 内已有查询，不新增请求；
+    // 取“最新”一律显式按时间排序，不依赖后端返回顺序。
+    const latestHeartbeat = [...(heartbeatsQuery.data ?? [])]
+        .sort((left, right) => new Date(right.heartbeatTime).getTime() - new Date(left.heartbeatTime).getTime())[0] ?? null;
+    const latestFireTime = (schedulesQuery.data ?? [])
+        .map((schedule) => schedule.lastFireTime)
+        .filter((value): value is string => Boolean(value))
+        .sort((left, right) => new Date(right).getTime() - new Date(left).getTime())[0] ?? null;
+    const openAlertCount = (alertsQuery.data ?? []).filter((alert) => alert.status === 'OPEN').length;
+    const latestStabilityCheck = [...(stabilityChecksQuery.data ?? [])]
+        .sort((left, right) => new Date(right.checkWindowEnd).getTime() - new Date(left.checkWindowEnd).getTime())[0] ?? null;
+
     const columns: ColumnsType<PaperRunRow> = [
         {
             title: 'Paper Run ID',
             dataIndex: 'paperRunId',
             key: 'paperRunId',
             width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+            render: (value: string) => <Typography.Text className="nq-mono" copyable>{value}</Typography.Text>,
         },
         {
             title: '发布 ID',
             dataIndex: 'publishId',
             key: 'publishId',
             width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+            render: (value: string) => <Typography.Text className="nq-mono" copyable>{value}</Typography.Text>,
         },
         {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
             width: 120,
-            render: (value: string) => <Tag color={STATUS_COLOR[value] ?? 'default'}>{value}</Tag>,
+            render: (value: string) => <NqStatusTag status={value}/>,
         },
         {
             title: '交易环境',
             dataIndex: 'tradeEnv',
             key: 'tradeEnv',
             width: 100,
+            render: (value: string) => <NqEnvironmentBadge env={value}/>,
         },
         {
             title: '交易所',
@@ -303,17 +324,14 @@ export function PaperTradingPage() {
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title="模拟交易"
                         description="基于已发布策略版本创建 SIM/Paper Trading run，固化 publish/strategy version/dataset/param/config 快照，支持启动、停止与最小事实查询。"
                         badge="Paper Trading"
                     />
                 </Card>
-                <Card
-                    className="page-section"
-                    bordered={false}
-                    title="查询区"
-                    extra={(
+                <NqFilterBar
+                    actions={(
                         <Space>
                             <Button type="primary" onClick={() => queryForm.submit()}>
                                 查询
@@ -346,7 +364,7 @@ export function PaperTradingPage() {
                             </Col>
                         </Row>
                     </Form>
-                </Card>
+                </NqFilterBar>
                 <Card
                     className="page-section"
                     bordered={false}
@@ -355,21 +373,15 @@ export function PaperTradingPage() {
                         <Typography.Text type="secondary">共 {visibleItems.length} 条记录</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description="点击查询后加载 Paper Trading run 列表。"/>
+                        <NqEmptyState description="点击查询后加载 Paper Trading run 列表。"/>
                     ) : listQuery.error ? (
-                        <Alert
-                            type="error"
-                            showIcon
-                            message="Paper Trading run 列表查询失败"
-                            description={formatApiError(listQuery.error as AppApiError)}
-                            action={(
-                                <Button size="small" onClick={() => setSearchVersion((v) => v + 1)}>
-                                    重试
-                                </Button>
-                            )}
+                        <NqErrorState
+                            title="Paper Trading run 列表查询失败"
+                            error={listQuery.error as AppApiError}
+                            onRetry={() => setSearchVersion((v) => v + 1)}
                         />
                     ) : (
-                        <Table
+                        <NqDataTable<PaperRunRow>
                             rowKey="paperRunId"
                             columns={columns}
                             dataSource={visibleItems}
@@ -433,14 +445,54 @@ export function PaperTradingPage() {
             >
                 {!selectedRow ? null : (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                        <div className="nq-status-strip">
+                            <NqMetricCard
+                                label="运行状态"
+                                value={<NqStatusTag status={selectedRow.status}/>}
+                            />
+                            <NqMetricCard
+                                label="心跳"
+                                value={latestHeartbeat ? <NqStatusTag status={latestHeartbeat.status}/> : '-'}
+                                footer={latestHeartbeat ? formatDateTime(latestHeartbeat.heartbeatTime) : '暂无心跳记录'}
+                            />
+                            <NqMetricCard
+                                label="最近调度触发"
+                                value={(
+                                    <span className="nq-num" style={{fontSize: 14}}>
+                                        {latestFireTime ? formatDateTime(latestFireTime) : '-'}
+                                    </span>
+                                )}
+                                footer={latestFireTime ? undefined : '暂无调度触发'}
+                            />
+                            <NqMetricCard
+                                label="未处理告警"
+                                value={String(openAlertCount)}
+                                tone={openAlertCount > 0 ? 'warning' : 'muted'}
+                            />
+                            <NqMetricCard
+                                label="稳定性验收"
+                                value={latestStabilityCheck ? <NqStatusTag status={latestStabilityCheck.status}/> : '-'}
+                                footer={latestStabilityCheck
+                                    ? `窗口至 ${formatDateTime(latestStabilityCheck.checkWindowEnd)}`
+                                    : '暂无稳定性验收'}
+                            />
+                        </div>
                         <Descriptions bordered column={2} size="small">
-                            <Descriptions.Item label="Paper Run ID">{selectedRow.paperRunId}</Descriptions.Item>
-                            <Descriptions.Item label="发布 ID">{selectedRow.publishId}</Descriptions.Item>
-                            <Descriptions.Item label="策略版本 ID">{selectedRow.strategyVersionId || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="状态">
-                                <Tag color={STATUS_COLOR[selectedRow.status] ?? 'default'}>{selectedRow.status}</Tag>
+                            <Descriptions.Item label="Paper Run ID">
+                                <span className="nq-mono">{selectedRow.paperRunId}</span>
                             </Descriptions.Item>
-                            <Descriptions.Item label="交易环境">{selectedRow.tradeEnv}</Descriptions.Item>
+                            <Descriptions.Item label="发布 ID">
+                                <span className="nq-mono">{selectedRow.publishId}</span>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="策略版本 ID">
+                                <span className="nq-mono">{selectedRow.strategyVersionId || '-'}</span>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="状态">
+                                <NqStatusTag status={selectedRow.status}/>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="交易环境">
+                                <NqEnvironmentBadge env={selectedRow.tradeEnv}/>
+                            </Descriptions.Item>
                             <Descriptions.Item label="交易所">{selectedRow.exchangeCode}</Descriptions.Item>
                             <Descriptions.Item label="市场类型">{selectedRow.marketType}</Descriptions.Item>
                             <Descriptions.Item label="Symbol">{selectedRow.symbol}</Descriptions.Item>
@@ -479,12 +531,12 @@ export function PaperTradingPage() {
                                                 pagination={false}
                                                 dataSource={ordersQuery.data ?? []}
                                                 columns={[
-                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId'},
+                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
                                                     {title: '方向', dataIndex: 'side', key: 'side', width: 80},
                                                     {title: '类型', dataIndex: 'orderType', key: 'orderType', width: 80},
-                                                    {title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100},
-                                                    {title: '价格', dataIndex: 'price', key: 'price', width: 100},
-                                                    {title: '状态', dataIndex: 'status', key: 'status', width: 100},
+                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (value) => <NqAmountText value={value as string}/>}),
+                                                    nqNumericColumn({title: '价格', dataIndex: 'price', key: 'price', width: 100, render: (value) => <NqPriceText value={value as string}/>}),
+                                                    {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (value: string) => <NqStatusTag status={value}/>},
                                                     {
                                                         title: '创建时间',
                                                         dataIndex: 'createdAt',
@@ -513,12 +565,12 @@ export function PaperTradingPage() {
                                                 pagination={false}
                                                 dataSource={tradesQuery.data ?? []}
                                                 columns={[
-                                                    {title: '成交 ID', dataIndex: 'paperTradeId', key: 'paperTradeId'},
-                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId'},
+                                                    {title: '成交 ID', dataIndex: 'paperTradeId', key: 'paperTradeId', className: 'nq-mono'},
+                                                    {title: '订单 ID', dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
                                                     {title: '方向', dataIndex: 'side', key: 'side', width: 80},
-                                                    {title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100},
-                                                    {title: '价格', dataIndex: 'price', key: 'price', width: 100},
-                                                    {title: '手续费', dataIndex: 'fee', key: 'fee', width: 100},
+                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (value) => <NqAmountText value={value as string}/>}),
+                                                    nqNumericColumn({title: '价格', dataIndex: 'price', key: 'price', width: 100, render: (value) => <NqPriceText value={value as string}/>}),
+                                                    nqNumericColumn({title: '手续费', dataIndex: 'fee', key: 'fee', width: 100, render: (value) => <NqAmountText value={value as string}/>}),
                                                     {
                                                         title: '成交时间',
                                                         dataIndex: 'tradedAt',
@@ -548,10 +600,10 @@ export function PaperTradingPage() {
                                                 dataSource={positionsQuery.data ?? []}
                                                 columns={[
                                                     {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
-                                                    {title: '数量', dataIndex: 'quantity', key: 'quantity', width: 120},
-                                                    {title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 120},
-                                                    {title: '已实现盈亏', dataIndex: 'realizedPnl', key: 'realizedPnl', width: 140},
-                                                    {title: '未实现盈亏', dataIndex: 'unrealizedPnl', key: 'unrealizedPnl', width: 140},
+                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 120, render: (value) => <NqAmountText value={value as string}/>}),
+                                                    nqNumericColumn({title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 120, render: (value) => <NqPriceText value={value as string}/>}),
+                                                    nqNumericColumn({title: '已实现盈亏', dataIndex: 'realizedPnl', key: 'realizedPnl', width: 140, render: (value) => <NqAmountText value={value as string} signed colorBySign/>}),
+                                                    nqNumericColumn({title: '未实现盈亏', dataIndex: 'unrealizedPnl', key: 'unrealizedPnl', width: 140, render: (value) => <NqAmountText value={value as string} signed colorBySign/>}),
                                                     {
                                                         title: '更新时间',
                                                         dataIndex: 'updatedAt',
@@ -607,7 +659,7 @@ export function PaperTradingPage() {
                                                     dataSource={riskResultsQuery.data ?? []}
                                                     columns={[
                                                         {title: '检查类型', dataIndex: 'checkType', key: 'checkType', width: 160},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'error' : 'warning'}>{v}</Tag>},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
                                                         {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100},
                                                         {title: '消息', dataIndex: 'message', key: 'message'},
                                                         {title: '时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
@@ -627,20 +679,24 @@ export function PaperTradingPage() {
                                             isEmpty={(equityCurveQuery.data ?? []).length === 0}
                                             emptyText="当前 Paper run 暂无资金曲线数据。"
                                         >
-                                            <Table
-                                                rowKey="equitySnapshotId"
-                                                size="small"
-                                                pagination={false}
-                                                dataSource={equityCurveQuery.data ?? []}
-                                                columns={[
-                                                    {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    {title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120},
-                                                    {title: '现金', dataIndex: 'cashBalance', key: 'cashBalance', width: 120},
-                                                    {title: '持仓市值', dataIndex: 'positionValue', key: 'positionValue', width: 120},
-                                                    {title: '回撤', dataIndex: 'drawdown', key: 'drawdown', width: 100},
-                                                    {title: '来源', dataIndex: 'source', key: 'source', width: 100},
-                                                ]}
-                                            />
+                                            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                                <NqEquityCurveChart data={equityCurveQuery.data ?? []}/>
+                                                <NqDrawdownChart data={equityCurveQuery.data ?? []}/>
+                                                <Table
+                                                    rowKey="equitySnapshotId"
+                                                    size="small"
+                                                    pagination={false}
+                                                    dataSource={equityCurveQuery.data ?? []}
+                                                    columns={[
+                                                        {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 180, render: (v: string) => formatDateTime(v)},
+                                                        nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                        nqNumericColumn({title: '现金', dataIndex: 'cashBalance', key: 'cashBalance', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                        nqNumericColumn({title: '持仓市值', dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                        nqNumericColumn({title: '回撤', dataIndex: 'drawdown', key: 'drawdown', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                                                        {title: '来源', dataIndex: 'source', key: 'source', width: 100},
+                                                    ]}
+                                                />
+                                            </Space>
                                         </PaperListSection>
                                     ),
                                 },
@@ -662,10 +718,10 @@ export function PaperTradingPage() {
                                                 columns={[
                                                     {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 120},
                                                     {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 180, render: (v: string) => formatDateTime(v)},
-                                                    {title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100},
-                                                    {title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 100},
-                                                    {title: '标记价', dataIndex: 'markPrice', key: 'markPrice', width: 100},
-                                                    {title: '市值', dataIndex: 'positionValue', key: 'positionValue', width: 120},
+                                                    nqNumericColumn({title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                                    nqNumericColumn({title: '均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                                    nqNumericColumn({title: '标记价', dataIndex: 'markPrice', key: 'markPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                                    nqNumericColumn({title: '市值', dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
                                                     {title: '来源', dataIndex: 'source', key: 'source', width: 100},
                                                 ]}
                                             />
@@ -705,38 +761,31 @@ export function PaperTradingPage() {
                                     label: '异常停机',
                                     children: (
                                         <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                            <Button
-                                                danger
+                                            <NqDangerConfirmButton
                                                 size="small"
                                                 disabled={selectedRow.status !== 'RUNNING'}
                                                 loading={emergencyStopMutation.isPending}
-                                                onClick={() => {
-                                                    modal.confirm({
-                                                        title: '确认紧急停机',
-                                                        content: '此操作将立即停止当前 Paper run。紧急停机只作用于 SIM/Paper Trading，不会触发真实 LIVE 下单或撤单。确认执行？',
-                                                        okText: '确认停机',
-                                                        okButtonProps: {danger: true},
-                                                        cancelText: '取消',
-                                                        onOk: () => {
-                                                            emergencyStopMutation.mutate(
-                                                                {
-                                                                    paperRunId: selectedRow.paperRunId,
-                                                                    request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
-                                                                },
-                                                                {
-                                                                    onSuccess: () => {
-                                                                        message.success('紧急停机已执行。');
-                                                                        setSearchVersion((v) => v + 1);
-                                                                    },
-                                                                    onError: (err) => message.error(formatApiError(err as AppApiError)),
-                                                                },
-                                                            );
+                                                confirmTitle="确认紧急停机"
+                                                confirmContent="此操作将立即停止当前 Paper run。紧急停机只作用于 SIM/Paper Trading，不会触发真实 LIVE 下单或撤单。确认执行？"
+                                                okText="确认停机"
+                                                onConfirm={() => {
+                                                    emergencyStopMutation.mutate(
+                                                        {
+                                                            paperRunId: selectedRow.paperRunId,
+                                                            request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
                                                         },
-                                                    });
+                                                        {
+                                                            onSuccess: () => {
+                                                                message.success('紧急停机已执行。');
+                                                                setSearchVersion((v) => v + 1);
+                                                            },
+                                                            onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                        },
+                                                    );
                                                 }}
                                             >
                                                 紧急停机
-                                            </Button>
+                                            </NqDangerConfirmButton>
                                             <PaperListSection
                                                 isLoading={emergencyStopsQuery.isFetching}
                                                 error={emergencyStopsQuery.error as AppApiError | null}
@@ -750,7 +799,7 @@ export function PaperTradingPage() {
                                                     dataSource={emergencyStopsQuery.data ?? []}
                                                     columns={[
                                                         {title: '触发类型', dataIndex: 'triggerType', key: 'triggerType', width: 120},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'APPLIED' ? 'error' : v === 'RESOLVED' ? 'success' : 'warning'}>{v}</Tag>},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
                                                         {title: '原因', dataIndex: 'reason', key: 'reason'},
                                                         {title: '触发人', dataIndex: 'triggeredBy', key: 'triggeredBy', width: 120},
                                                         {title: '触发时间', dataIndex: 'triggeredAt', key: 'triggeredAt', width: 180, render: (v: string) => formatDateTime(v)},
@@ -785,7 +834,7 @@ export function PaperTradingPage() {
                                                     columns={[
                                                         {title: '名称', dataIndex: 'scheduleName', key: 'scheduleName', width: 140},
                                                         {title: 'Cron', dataIndex: 'cronExpr', key: 'cronExpr', width: 140},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'ENABLED' ? 'success' : v === 'PAUSED' ? 'warning' : 'default'}>{v}</Tag>},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
                                                         {title: '时区', dataIndex: 'timezone', key: 'timezone', width: 100},
                                                         {title: '上次触发', dataIndex: 'lastFireTime', key: 'lastFireTime', width: 180, render: (v: string | null) => formatDateTime(v)},
                                                         {
@@ -824,9 +873,9 @@ export function PaperTradingPage() {
                                                             pagination={false}
                                                             dataSource={firesQuery.data ?? []}
                                                             columns={[
-                                                                {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'error' : 'default'}>{v}</Tag>},
+                                                                {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
                                                                 {title: '触发时间', dataIndex: 'firedAt', key: 'firedAt', width: 180, render: (v: string) => formatDateTime(v)},
-                                                                {title: '耗时(ms)', dataIndex: 'durationMs', key: 'durationMs', width: 100},
+                                                                nqNumericColumn({title: '耗时(ms)', dataIndex: 'durationMs', key: 'durationMs', width: 100}),
                                                                 {title: '错误', dataIndex: 'errorMessage', key: 'errorMessage'},
                                                             ]}
                                                         />
@@ -890,9 +939,9 @@ export function PaperTradingPage() {
                                                     pagination={false}
                                                     dataSource={heartbeatsQuery.data ?? []}
                                                     columns={[
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'OK' ? 'success' : v === 'LAGGING' ? 'warning' : v === 'STOPPED' ? 'error' : 'default'}>{v}</Tag>},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'STOPPED' ? 'danger' : undefined}/>},
                                                         {title: '心跳时间', dataIndex: 'heartbeatTime', key: 'heartbeatTime', width: 180, render: (v: string) => formatDateTime(v)},
-                                                        {title: '延迟(s)', dataIndex: 'lagSeconds', key: 'lagSeconds', width: 100},
+                                                        nqNumericColumn({title: '延迟(s)', dataIndex: 'lagSeconds', key: 'lagSeconds', width: 100}),
                                                         {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
                                                     ]}
                                                 />
@@ -934,15 +983,15 @@ export function PaperTradingPage() {
                                                     pagination={false}
                                                     dataSource={dailyReportsQuery.data ?? []}
                                                     columns={[
-                                                        {title: '日期', dataIndex: 'reportDate', key: 'reportDate', width: 120},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'GENERATED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'error'}>{v}</Tag>},
-                                                        {title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120},
-                                                        {title: '日盈亏', dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120},
-                                                        {title: '日收益率', dataIndex: 'dailyReturn', key: 'dailyReturn', width: 100},
-                                                        {title: '最大回撤', dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 100},
-                                                        {title: '订单数', dataIndex: 'orderCount', key: 'orderCount', width: 80},
-                                                        {title: '成交数', dataIndex: 'tradeCount', key: 'tradeCount', width: 80},
-                                                        {title: '告警数', dataIndex: 'alertCount', key: 'alertCount', width: 80},
+                                                        {title: '日期', dataIndex: 'reportDate', key: 'reportDate', width: 120, className: 'nq-num'},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'GENERATED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
+                                                        nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                                        nqNumericColumn({title: '日盈亏', dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
+                                                        nqNumericColumn({title: '日收益率', dataIndex: 'dailyReturn', key: 'dailyReturn', width: 100, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),
+                                                        nqNumericColumn({title: '最大回撤', dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                                                        nqNumericColumn({title: '订单数', dataIndex: 'orderCount', key: 'orderCount', width: 80}),
+                                                        nqNumericColumn({title: '成交数', dataIndex: 'tradeCount', key: 'tradeCount', width: 80}),
+                                                        nqNumericColumn({title: '告警数', dataIndex: 'alertCount', key: 'alertCount', width: 80}),
                                                         {title: '生成时间', dataIndex: 'generatedAt', key: 'generatedAt', width: 180, render: (v: string) => formatDateTime(v)},
                                                     ]}
                                                 />
@@ -988,8 +1037,8 @@ export function PaperTradingPage() {
                                                     dataSource={alertsQuery.data ?? []}
                                                     columns={[
                                                         {title: '类型', dataIndex: 'alertType', key: 'alertType', width: 140},
-                                                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <Tag color={v === 'CRITICAL' ? 'error' : v === 'HIGH' ? 'volcano' : v === 'MEDIUM' ? 'warning' : 'default'}>{v}</Tag>},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'OPEN' ? 'error' : v === 'ACKED' ? 'warning' : 'success'}>{v}</Tag>},
+                                                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'CRITICAL' || v === 'HIGH' ? 'danger' : v === 'MEDIUM' ? 'warning' : 'neutral'}/>},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'OPEN' ? 'danger' : v === 'ACKED' ? 'warning' : 'success'}/>},
                                                         {title: '标题', dataIndex: 'title', key: 'title'},
                                                         {title: '来源', dataIndex: 'source', key: 'source', width: 100},
                                                         {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, render: (v: string) => formatDateTime(v)},
@@ -1083,7 +1132,7 @@ export function PaperTradingPage() {
                                                     dataSource={recoveryEventsQuery.data ?? []}
                                                     columns={[
                                                         {title: '类型', dataIndex: 'recoveryType', key: 'recoveryType', width: 200},
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <Tag color={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'error' : v === 'SKIPPED' ? 'default' : 'processing'}>{v}</Tag>},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v} tone={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'danger' : v === 'SKIPPED' ? 'neutral' : 'info'}/>},
                                                         {title: '原因', dataIndex: 'reason', key: 'reason'},
                                                         {title: '开始时间', dataIndex: 'startedAt', key: 'startedAt', width: 180, render: (v: string) => formatDateTime(v)},
                                                         {title: '完成时间', dataIndex: 'finishedAt', key: 'finishedAt', width: 180, render: (v: string | null) => v ? formatDateTime(v) : '-'},
@@ -1138,13 +1187,13 @@ export function PaperTradingPage() {
                                                     pagination={false}
                                                     dataSource={stabilityChecksQuery.data ?? []}
                                                     columns={[
-                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <Tag color={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'error'}>{v}</Tag>},
-                                                        {title: '在线率', dataIndex: 'uptimeRatio', key: 'uptimeRatio', width: 100},
-                                                        {title: '心跳', dataIndex: 'heartbeatCount', key: 'heartbeatCount', width: 80},
-                                                        {title: '告警', dataIndex: 'alertCount', key: 'alertCount', width: 80},
-                                                        {title: '失败触发', dataIndex: 'failedFireCount', key: 'failedFireCount', width: 100},
-                                                        {title: '恢复', dataIndex: 'recoveryCount', key: 'recoveryCount', width: 80},
-                                                        {title: '日报', dataIndex: 'reportCount', key: 'reportCount', width: 80},
+                                                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
+                                                        nqNumericColumn({title: '在线率', dataIndex: 'uptimeRatio', key: 'uptimeRatio', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                                                        nqNumericColumn({title: '心跳', dataIndex: 'heartbeatCount', key: 'heartbeatCount', width: 80}),
+                                                        nqNumericColumn({title: '告警', dataIndex: 'alertCount', key: 'alertCount', width: 80}),
+                                                        nqNumericColumn({title: '失败触发', dataIndex: 'failedFireCount', key: 'failedFireCount', width: 100}),
+                                                        nqNumericColumn({title: '恢复', dataIndex: 'recoveryCount', key: 'recoveryCount', width: 80}),
+                                                        nqNumericColumn({title: '日报', dataIndex: 'reportCount', key: 'reportCount', width: 80}),
                                                         {title: '窗口开始', dataIndex: 'checkWindowStart', key: 'checkWindowStart', width: 180, render: (v: string) => formatDateTime(v)},
                                                         {title: '窗口结束', dataIndex: 'checkWindowEnd', key: 'checkWindowEnd', width: 180, render: (v: string) => formatDateTime(v)},
                                                     ]}
@@ -1172,15 +1221,13 @@ interface PaperListSectionProps {
 
 function PaperListSection({isLoading, error, isEmpty, emptyText, children}: PaperListSectionProps) {
     if (isLoading) {
-        return <Alert type="info" showIcon message="加载中..."/>;
+        return <NqLoadingState/>;
     }
     if (error) {
-        return (
-            <Alert type="error" showIcon message="查询失败" description={formatApiError(error)}/>
-        );
+        return <NqErrorState error={error}/>;
     }
     if (isEmpty) {
-        return <Empty description={emptyText}/>;
+        return <NqEmptyState description={emptyText}/>;
     }
     return <>{children}</>;
 }
@@ -1189,6 +1236,7 @@ function SnapshotBlock({title, content}: {title: string; content: string | null 
     return (
         <Card size="small" title={title}>
             <Typography.Paragraph
+                className="nq-mono"
                 copyable={Boolean(content)}
                 style={{margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all'}}
             >
