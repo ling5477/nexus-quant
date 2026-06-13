@@ -2,7 +2,7 @@
 
 任务：NQ-CREDENTIAL-PERMISSION-PROBE-DESIGN-REVIEW
 日期：2026-06-08
-状态：design review completed；V31 permission probe schema-only completed；code/API/test design review completed；minimal code/API/test implemented；no real exchange call performed。
+状态：design review completed；V31 permission probe schema-only completed；code/API/test design review completed；minimal code/API/test implemented；freeze review accepted；no real exchange call performed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
@@ -197,7 +197,9 @@ code/API 批次：
 
 是否允许进入 probe schema-only 批次：已完成。
 
-是否允许进入 code/API/test implementation 批次：已完成最小实现；实现遵守 `CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md` 的入场条件：新增独立 probe port、Service 只做编排、真实 HTTP 未接入、LIVE 默认拒绝、Paper safety gate 先于 port 调用、API/audit 全脱敏、测试使用 fake/mock/ProxySelector guard 证明不访问真实交易所。
+是否允许进入 code/API/test implementation 批次：已完成最小实现；实现遵守 `CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md` 的入场条件：新增独立 probe port、Service 只做编排、真实 HTTP 未接入、LIVE 默认拒绝、Paper safety gate 阻断真实 port 调用、API/audit 全脱敏、测试使用 fake/mock/ProxySelector guard 证明不访问真实交易所。
+
+是否允许冻结 no-real-exchange guarded implementation baseline：已完成。`CREDENTIAL_PERMISSION_PROBE_FREEZE_REVIEW.md` 结论为 FROZEN / ACCEPTED；真实 OKX/Binance permission probe adapter 仍 NOT IMPLEMENTED，future real adapter 必须另起任务并完成 separate security review + fake-server/no-egress tests。
 
 后续入场条件：
 

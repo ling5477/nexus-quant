@@ -57,6 +57,7 @@
 - V31 为既有 credential 记录提供安全默认值：`permission_probe_status='NOT_PROBED'`、`ip_allowlist_probe_status='NOT_CHECKED'`，只表示尚未做真实权限探活，不改变业务可用性语义。
 - V31 未新增 `withdraw_enabled = FALSE` 硬 CHECK：现有字段已 `NOT NULL DEFAULT FALSE`，但本轮未查询生产/本地现有数据证明所有既有行均为 false，因此只更新注释并把强制 false CHECK 留给后续单独数据确认批次；`withdraw_enabled=true` 不得被视为可接受生产状态。
 - Permission probe 最小 code/API/test 已实现并接入 V31 字段：Service claim 时写 `permission_probe_status='IN_PROGRESS'`；完成、失败或策略跳过时写回 `permission_probe_status`、`permission_scope`、`ip_allowlist_probe_status`、`last_permission_probe_at`、`last_permission_probe_error` 和必要时递增 `failed_auth_count`。成功不自动清零 `failed_auth_count`；`permission_scope=NULL` 不被当作 `TRADE`；`withdraw_enabled=true` 在代码层视为风险并跳过 probe。本轮未新增或修改 migration，未接真实交易所 adapter、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
+- Permission probe guarded backend implementation 已冻结为 no-real-exchange baseline；冻结不改变 V31 schema，不新增 migration，不表示真实交易所权限可用。真实 adapter、真实 HTTP 探活、LIVE probe、AI/DH credential access 仍未实现。
 
 ## Research / Backtest Config Archive Semantics
 

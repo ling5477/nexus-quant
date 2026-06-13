@@ -2,6 +2,53 @@
 
 日期：2026-05-16
 
+## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-REVIEW
+
+日期：2026-06-14
+
+### 本轮目标
+
+冻结审查 credential permission probe 最小后端实现，只接受当前 no-real-exchange / guarded backend baseline。本轮只做文档同步和 freeze review 记录；不修改 Java、测试、migration、API 语义、前端、Python 或部署脚本；不接真实交易所 adapter、不调用 OKX / Binance / Bybit / Gate、不接 AI / DH、不开启 LIVE。
+
+### 修改文件
+
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_FREEZE_REVIEW.md`
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md`
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`
+- `docs/current/CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+- `docs/current/README.md`
+- `README.md`
+
+### 变更摘要
+
+- 新增 freeze review 主文档，记录 permission probe guarded backend implementation 为 FROZEN / ACCEPTED。
+- 明确真实 OKX/Binance/Bybit/Gate permission probe adapter 仍 NOT IMPLEMENTED。
+- 明确默认 runtime 行为仍为 `NoRealExchangeCredentialPermissionProbePort -> SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`。
+- 明确 LIVE credential probe 为 DISABLED / REJECTED，AI / DH / LIVE 均 NOT STARTED。
+- 记录 `b473eec1` commit subject 是 `docs(credential): review permission probe implementation design`，但实际包含 implementation/API/tests，后续不得仅凭 subject 误判为 docs-only。
+- 将 P3 遗留限制为 freeze 后 cleanup：NoReal port requestId / traceId 混同；文档 gate 顺序与实现顺序轻微差异。
+
+### 验证记录
+
+- `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api,nq-app,nq-adapter-okx,nq-adapter-binance -am test`：通过；23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`，`nq-app` 52 tests / 0 failures / 0 errors。
+- `mvn -f backend/pom.xml test`：通过；23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`，`nq-app` 52 tests / 0 failures / 0 errors。
+- `git status --short`、`git diff --check`、`git diff --stat`、`git diff -- backend/nq-infra/src/main/resources/db/migration`、`git diff -- frontend`、`git diff -- research`、`git diff -- scripts` 已执行，结果见 `TESTING.md`。
+
+### 边界确认
+
+- 未修改 Java、测试代码、migration、前端、Python、部署脚本。
+- 未新增 API，未新增 migration，未修改历史 migration。
+- 未实现真实 OKX/Binance permission probe adapter，未调用真实交易所，未真实 HTTP 探活。
+- 未下单、撤单、转账、提现。
+- 未读取、打印、复制或输出真实 API key、secret、token、私钥、助记词、passphrase、cookie 或 credential material。
+- 未把 GateK-PLAN 写成 GateK implementation，未把 DH not integrated 写成 DH integrated，未把 LIVE disabled 写成 LIVE enabled。
+
+---
+
 ## NQ-FRONTEND-LOGIN-PAGE-PROFESSIONALIZATION
 
 日期：2026-06-13

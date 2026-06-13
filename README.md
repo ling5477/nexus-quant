@@ -65,6 +65,7 @@ GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateJ-FREEZE 稳
 - `docs/current/CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`：credential governance Batch 5-G 冻结复核报告；Batch 5-G-A 已完成 P3 文案 cleanup，后续允许进入真实交易所权限探活设计审计
 - `docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`：credential permission probe 设计审计与 V31 schema-only 记录；最小 code/API/test 已实现，默认 no-real-exchange，不调用真实交易所
 - `docs/current/CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md`：credential permission probe code/API/test 设计审计与实现记录；已新增独立 port、Service、POST/GET API、JDBC 写回和 no-real-exchange tests，仍未接真实交易所 adapter
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_FREEZE_REVIEW.md`：credential permission probe guarded backend freeze review；no-real-exchange baseline 已接受冻结，真实 OKX/Binance adapter 仍未实现
 - `docs/current/NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md`：OKX bootstrap no-outbound 只读审计报告；记录 local integration test 启动期 OKX public instruments 外联触发路径、根因、Binance 对照和后续 FIX 建议
 - `docs/current/DOC_CLEAN_REPORT.md`：最近一次文档清理报告
 - GateH 冻结卷宗：`docs/gates/gate-h/`

@@ -51,7 +51,7 @@ Credential API 固定边界：
 - revoke / disable / expire lifecycle command request body 只接收 `reason`；enable command request body 只接收必填 `reason`；rotate command request body 接收新 credential material 和必填 `reason`。应用层限制 reason 长度并拒绝明显包含 token、API key、secret、private key、password、助记词、密钥等敏感材料的原因。
 - `DISABLED / REVOKED / EXPIRED / ROTATED` 均不会进入 active material 查询；`REVOKED / ROTATED` 不允许通过本轮接口改写为 `DISABLED / EXPIRED`。
 - Batch 5-E-B 后，active summary / active material 无 `credentialType` 路径只在候选唯一时返回；多 ACTIVE credential type 必须显式选择或返回 409。`permission_scope=NULL` 仍表示权限尚未由代码确认，enable 不把 `permission_scope=NULL` 解释为 `TRADE`，本轮不把 `permission_scope` 作为交易权限判断。
-- 当前只实现 no-real-exchange permission probe 后端编排；未接真实 OKX/Binance/Bybit/Gate adapter，未新增 AI / DH / Agent credential 调用、LIVE 交易或真实下单路径。
+- 当前 no-real-exchange permission probe 后端编排已冻结为 guarded baseline；默认 port 仍为 `NoRealExchangeCredentialPermissionProbePort -> SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`。未接真实 OKX/Binance/Bybit/Gate adapter，未新增 AI / DH / Agent credential 调用、LIVE 交易或真实下单路径；future real adapter 必须另起任务并重新安全审查。
 
 ## GateH-1 Trading Workspace API
 

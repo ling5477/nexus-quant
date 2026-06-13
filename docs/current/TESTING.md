@@ -60,6 +60,29 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-REVIEW 验证记录（2026-06-14）
+
+本轮只做 credential permission probe no-real-exchange / guarded backend freeze review 和文档同步；未修改 Java、测试代码、migration、API 语义、前端、Python 或部署脚本。冻结口径：permission probe guarded backend implementation FROZEN / ACCEPTED；real exchange permission probe adapter NOT IMPLEMENTED；默认 runtime 行为为 `NoRealExchangeCredentialPermissionProbePort -> SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`；LIVE credential probe DISABLED / REJECTED；AI / DH / LIVE NOT STARTED。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 通过 | 审查开始前为空；文档同步后仅包含本轮允许的 docs/current / README 文档变更。 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api,nq-app,nq-adapter-okx,nq-adapter-binance -am test` | 通过 | 23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`；`nq-app` 52 tests / 0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml test` | 通过 | 23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`；`nq-app` 52 tests / 0 failures / 0 errors。 |
+| `git diff --check` | 通过 | 无 whitespace error；如出现 LF/CRLF 提示，仅为 Git 行尾转换提示。 |
+| `git diff --stat` | 已执行 | 仅统计本轮允许的文档变更。 |
+| `git diff -- backend/nq-infra/src/main/resources/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| `git diff -- frontend` | 通过 | 输出为空，未修改前端。 |
+| `git diff -- research` | 通过 | 输出为空，未修改 Python research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未修改脚本或部署入口。 |
+
+边界扫描：
+
+- P0/P1=0；P2 无阻塞项；P3 仅保留 NoReal port requestId / traceId 混同和文档 gate 顺序轻微差异。
+- no-real-exchange 证据充分：默认 bean 为 `NoRealExchangeCredentialPermissionProbePort`；NoReal test 使用 `ProxySelector` guard；Service tests 覆盖 LIVE/inactive/non-ACTIVE/Paper gate/withdraw risk/latest no-port；WebMvc tests 覆盖 response 脱敏和 request body 拒绝 credential material；adapter boundary tests 只覆盖错误分类和 forbidden endpoint，不实现真实 HTTP adapter。
+- 未调用真实交易所；未实现真实 OKX/Binance permission probe adapter；未读取或输出真实 credential material。
+- 阶段措辞保持 GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE disabled。
+
 ## NQ-FRONTEND-LOGIN-PAGE-PROFESSIONALIZATION 验证记录（2026-06-13）
 
 本轮只改登录页、登录相关 E2E 和当前验证文档；未修改 backend、API、鉴权逻辑、token 存储、migration、deploy、scripts、Paper Trading、Dashboard、Backtest、Strategy、Risk、AI、DH 或 LIVE 交易逻辑。

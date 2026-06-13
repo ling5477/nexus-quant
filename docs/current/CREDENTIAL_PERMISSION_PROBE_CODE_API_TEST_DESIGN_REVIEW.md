@@ -2,7 +2,7 @@
 
 任务：NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-DESIGN-REVIEW
 日期：2026-06-12
-状态：code/API/test design review completed；minimal code/API/test implemented；no real exchange call performed。
+状态：code/API/test design review completed；minimal code/API/test implemented；freeze review accepted；no real exchange call performed。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 ## 1. Scope
@@ -438,6 +438,19 @@ NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-IMPLEMENTATION
 - 不调用真实交易所。
 
 ## 13. Validation
+
+## 13A. Freeze Review Update
+
+2026-06-14 freeze review 已接受当前 guarded backend implementation 作为 no-real-exchange baseline。冻结口径见 `CREDENTIAL_PERMISSION_PROBE_FREEZE_REVIEW.md`：
+
+- permission probe guarded backend implementation：FROZEN / ACCEPTED。
+- real exchange permission probe adapter：NOT IMPLEMENTED。
+- default runtime behavior：`NoRealExchangeCredentialPermissionProbePort` -> `SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`。
+- LIVE credential probe：DISABLED / REJECTED。
+- AI / DH / LIVE：NOT STARTED。
+- future real adapter：must be separate task + separate security review + fake-server/no-egress tests。
+
+P3 遗留项仅作为 freeze 后 cleanup：NoReal port requestId / traceId 混同；文档 gate 顺序与实现顺序轻微差异。
 
 本轮只读设计审计 + 文档同步应执行：
 
