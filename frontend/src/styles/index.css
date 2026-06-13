@@ -1,15 +1,12 @@
-:root {
-  color-scheme: light;
-  --app-bg: #f3f6fb;
-  --app-bg-accent: radial-gradient(circle at top left, rgba(30, 94, 176, 0.12), transparent 38%);
-  --app-sider-bg: linear-gradient(180deg, #11203a 0%, #162946 48%, #10213d 100%);
-  --app-panel: rgba(255, 255, 255, 0.92);
-  --app-border: rgba(15, 23, 42, 0.08);
-  --app-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
-  --app-text-strong: #1d2736;
-  --app-text-secondary: #61708a;
-  --app-accent: #1f5fb8;
-}
+/**
+ * NQ Design System v1 — 全局样式（深色控制台外壳 + 工具类 + Nq 组件样式）。
+ *
+ * 约束：
+ * 1) 颜色/间距/圆角/阴影一律引用 tokens.css 的 CSS variables，禁止散落硬编码；
+ * 2) 禁止大面积渐变、毛玻璃、营销风视觉；分割线统一 1px；
+ * 3) 数字字段使用 .nq-num（tabular-nums），ID/hash/traceId 使用 .nq-mono。
+ */
+@import './tokens.css';
 
 * {
   box-sizing: border-box;
@@ -23,149 +20,271 @@ body,
 }
 
 body {
-  font-family: 'Segoe UI Variable', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
-  background: var(--app-bg-accent), var(--app-bg);
-  color: var(--app-text-strong);
+  font-family: var(--nq-font-family);
+  font-size: var(--nq-font-size-md);
+  line-height: var(--nq-line-height);
+  background: var(--nq-color-bg-page);
+  color: var(--nq-color-text);
 }
 
 a {
   color: inherit;
 }
 
+/* 深色滚动条，避免系统浅色滚动条割裂整体视觉 */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--nq-color-border);
+  border-radius: var(--nq-radius-lg);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------------------------------- */
+/* 工具类：数字与等宽排版               */
+/* ---------------------------------- */
+
+/* 所有价格、数量、收益率、回撤、评分、成交量、仓位、延迟、滑点字段必须使用 */
+.nq-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ID / hash / traceId 等标识符使用等宽字体 */
+.nq-mono {
+  font-family: var(--nq-font-family-mono);
+  font-size: 0.92em;
+}
+
+/* 表格数字列右对齐（作用于 th + td，通过 antd column className 注入） */
+.nq-col-num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.nq-text-up {
+  color: var(--nq-color-up);
+}
+
+.nq-text-down {
+  color: var(--nq-color-down);
+}
+
+/* ---------------------------------- */
+/* 控制台外壳                           */
+/* ---------------------------------- */
+
 .app-shell {
   min-height: 100vh;
 }
 
 .app-shell__sider.ant-layout-sider {
-  background: var(--app-sider-bg);
-  border-inline-end: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  background: var(--nq-color-bg-sunken);
+  border-inline-end: 1px solid var(--nq-color-border-subtle);
 }
 
 .app-shell__logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 72px;
-  margin: 0 16px;
-  color: #f8fbff;
+  gap: var(--nq-space-md);
+  height: 56px;
+  margin: 0 var(--nq-space-lg);
+  color: var(--nq-color-text);
 }
 
 .app-shell__logo-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(59, 130, 246, 0.35));
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--nq-radius-md);
+  background: var(--nq-color-primary-bg);
+  border: 1px solid var(--nq-color-primary);
+  color: var(--nq-color-primary-hover);
+  font-size: var(--nq-font-size-sm);
   font-weight: 700;
 }
 
 .app-shell__brand {
   display: flex;
   flex-direction: column;
+  line-height: 1.3;
 }
 
 .app-shell__menu.ant-menu {
   background: transparent;
   border-inline-end: none;
-  padding: 0 10px 12px;
-}
-
-.app-shell__menu .ant-menu-item,
-.app-shell__menu .ant-menu-submenu-title {
-  margin-block: 6px;
-  width: auto;
-  border-radius: 12px;
+  padding: 0 var(--nq-space-sm) var(--nq-space-md);
 }
 
 .app-shell__content {
-  padding: 24px;
+  padding: var(--nq-space-lg);
 }
 
 .app-shell__header {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: var(--nq-z-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  min-height: 72px;
-  padding: 0 24px;
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid var(--app-border);
+  gap: var(--nq-space-lg);
+  min-height: 52px;
+  padding: 0 var(--nq-space-lg);
+  background: var(--nq-color-bg-panel);
+  border-bottom: 1px solid var(--nq-color-border-subtle);
 }
 
 .app-shell__header-left,
 .app-shell__header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--nq-space-md);
 }
 
 .app-shell__main {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--nq-space-md);
 }
 
 .app-shell__breadcrumb {
-  margin-top: 6px;
+  margin-top: 0;
 }
+
+/* ---------------------------------- */
+/* 页面容器：紧凑卡片、1px 边、低阴影    */
+/* ---------------------------------- */
 
 .page-card,
 .page-section {
-  background: var(--app-panel);
-  border: 1px solid var(--app-border);
-  box-shadow: var(--app-shadow);
+  background: var(--nq-color-bg-panel);
+  border: 1px solid var(--nq-color-border-subtle);
+  box-shadow: var(--nq-shadow-low);
 }
 
 .page-hero {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--nq-space-sm);
 }
+
+/* ---------------------------------- */
+/* Nq 组件样式                          */
+/* ---------------------------------- */
+
+.nq-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-sm);
+}
+
+.nq-page-header__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--nq-space-lg);
+  flex-wrap: wrap;
+}
+
+.nq-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-xs);
+  padding: var(--nq-space-md) var(--nq-space-lg);
+  background: var(--nq-color-bg-panel);
+  border: 1px solid var(--nq-color-border-subtle);
+  border-radius: var(--nq-radius-lg);
+  box-shadow: var(--nq-shadow-low);
+  min-width: 0;
+}
+
+.nq-metric-card__label {
+  font-size: var(--nq-font-size-sm);
+  color: var(--nq-color-text-secondary);
+  white-space: nowrap;
+}
+
+.nq-metric-card__value {
+  font-size: var(--nq-font-size-xl);
+  font-weight: 600;
+  color: var(--nq-color-text);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  line-height: 1.3;
+}
+
+.nq-metric-card__value--success { color: var(--nq-color-success); }
+.nq-metric-card__value--warning { color: var(--nq-color-warning); }
+.nq-metric-card__value--danger { color: var(--nq-color-danger); }
+.nq-metric-card__value--up { color: var(--nq-color-up); }
+.nq-metric-card__value--down { color: var(--nq-color-down); }
+.nq-metric-card__value--muted { color: var(--nq-color-text-tertiary); }
+
+.nq-metric-card__footer {
+  font-size: var(--nq-font-size-xs);
+  color: var(--nq-color-text-tertiary);
+}
+
+/* 状态摘要条：横向一排迷你指标，用于详情页顶部 */
+.nq-status-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--nq-space-sm);
+}
+
+.nq-chart {
+  width: 100%;
+}
+
+/* ---------------------------------- */
+/* 登录页（深色、无渐变）               */
+/* ---------------------------------- */
 
 .login-page {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(320px, 420px);
-  background:
-    radial-gradient(circle at top left, rgba(31, 95, 184, 0.18), transparent 32%),
-    linear-gradient(135deg, #eef4fb 0%, #f7f9fc 55%, #edf1f8 100%);
+  background: var(--nq-color-bg-page);
 }
 
 .login-page__hero {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 24px;
+  gap: var(--nq-space-xl);
   padding: 64px;
+  border-right: 1px solid var(--nq-color-border-subtle);
 }
 
 .login-page__panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px;
+  padding: var(--nq-space-xxl);
 }
 
 .login-page__card {
   width: min(100%, 420px);
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
+  background: var(--nq-color-bg-panel);
+  border: 1px solid var(--nq-color-border-subtle);
+  box-shadow: var(--nq-shadow-low);
 }
 
 .login-page__form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--nq-space-lg);
 }
 
 .loading-screen {
@@ -173,7 +292,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--nq-space-xl);
 }
 
 .loading-screen__panel {
@@ -188,13 +307,14 @@ a {
 
   .login-page__hero {
     padding: 40px 24px 0;
+    border-right: none;
   }
 
   .login-page__panel {
-    padding: 24px;
+    padding: var(--nq-space-xl);
   }
 
   .app-shell__content {
-    padding: 16px;
+    padding: var(--nq-space-md);
   }
 }
