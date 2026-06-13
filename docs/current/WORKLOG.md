@@ -2,7 +2,39 @@
 
 日期：2026-05-16
 
-## NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-DESIGN-REVIEW
+## NQ-FRONTEND-DESIGN-SYSTEM-V1-AND-TRADING-UI-REFACTOR
+
+日期：2026-06-13
+
+### 本轮目标
+
+建立前端 Design System v1（深色优先、高密度、小圆角、低阴影、数字等宽），封装 Nq 基础业务组件，并按优先级重构 Dashboard（安全总览）与 Paper Trading 控制台视觉。只改 frontend 与 docs/current；不改 backend、不新增 API、不新增 migration、不接 AI / DH / 真实交易所、不开启 LIVE。
+
+### 新增文件
+
+- `frontend/src/styles/tokens.css`（CSS variables 全量 token）
+- `frontend/src/theme/tokens.ts` / `antd-theme.ts` / `chart-theme.ts`（TS token 镜像 + AntD darkAlgorithm 主题 + 图表同源主题）
+- `frontend/src/components/nq/`（NqPageHeader / NqMetricCard / NqStatusTag / NqEnvironmentBadge / NqRiskBanner / NqFilterBar / NqDataTable+nqNumericColumn / NqPriceText / NqPercentText / NqAmountText / NqEmptyState / NqErrorState / NqLoadingState / NqDangerConfirmButton / NqEquityCurveChart / NqDrawdownChart / charts 基建）
+- `docs/current/FRONTEND_DESIGN_SYSTEM.md`
+
+### 修改文件
+
+- `frontend/package.json` / `package-lock.json`（仅新增 echarts ^6.1.0）
+- `frontend/src/app/providers/AppProviders.tsx`（接入 nqAntdTheme）
+- `frontend/src/styles/index.css`（深色外壳重写，去渐变/毛玻璃，新增 .nq-num / .nq-mono / .nq-col-num 工具类）
+- `frontend/src/components/page/PageHero.tsx`（收敛为 NqPageHeader 薄适配，全部存量页面统一换肤）
+- `frontend/src/components/layout/AppHeader.tsx`（移除过时的 "GateJ-FREEZE Console" 硬编码副标题）
+- `frontend/src/pages/dashboard/DashboardPage.tsx`（重构为安全总览：安全横幅 + Paper Run 汇总 + 焦点 run 绩效 + 最近事件）
+- `frontend/src/pages/paper-trading/PaperTradingPage.tsx`（状态摘要条、权益/回撤 ECharts、Nq 组件换装；保留全部 E2E 文案选择器）
+- `frontend/tests/e2e/support.ts`（修复存量登录 fixture 断裂：288c28f8 改了登录文案并移除凭证预填，fixture 未同步）
+
+### 关键结论
+
+- E2E 自 2026-05-28/29 起已整体断裂（288c28f8 登录文案 + dc1288e0 marketdata 日期必填均未同步测试），与本轮重构无关；本轮修复登录 fixture 后 22 passed / 1 skipped / 2 failed。
+- 剩余 2 个失败（marketdata dataset / ingestion smoke）为 dc1288e0 引入的存量 spec 与表单必填规则不匹配，留待独立测试同步批次处理，不混入本轮。
+- 后端 drawdown / dailyReturn / uptimeRatio 为比例值（DrawdownCalculator 证据），前端统一用 NqPercentText ratio 模式换算展示。
+
+
 
 日期：2026-06-12
 

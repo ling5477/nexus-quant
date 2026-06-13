@@ -60,6 +60,18 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-FRONTEND-DESIGN-SYSTEM-V1-AND-TRADING-UI-REFACTOR 验证记录（2026-06-13）
+
+- `npm install echarts`（frontend）：通过，新增 echarts ^6.1.0，lock 同步更新。
+- `npm run build`（frontend，含 `tsc -b` 类型检查）：通过（vite 8 构建成功；chunk >500kB 警告为 echarts 体积所致，构建前已存在同类警告基线）。
+- `npm run typecheck` / `npm run lint`：脚本不存在（package.json 未定义），类型检查由 `npm run build` 内的 `tsc -b` 覆盖。
+- `npm run test:e2e`（本地拉起 `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run` + 本地 PostgreSQL 5432）：**24 passed / 1 skipped / 0 failed**。
+  - 全部 7 个 paper-trading spec、dashboard smoke、strategies / research / backtests / evaluations / publishes / accounts / trading-workbench spec 通过，证明本轮 UI 重构未破坏既有交互契约。
+  - 前置修复：`tests/e2e/support.ts` 登录 fixture 自 288c28f8（2026-05-28）起断裂（登录文案改为 "NexusQuant 控制台"/"登录" 且移除表单凭证预填，fixture 未同步），修复前 24 个用例全部在登录步骤失败。
+  - 原存量 2 个失败：`marketdata-dataset-smoke` / `marketdata-ingestion-smoke`，根因为 dc1288e0（2026-05-29）给 Marketdata 表单加 开始/结束时间 必填规则但未同步 spec（spec 未填日期，提交被表单校验拦截）。已通过同步 DatePicker 必填输入修复；未降低页面校验，未跳过测试（只改两个 spec，未改 MarketdataPage 业务代码）。
+- 视觉冒烟：Playwright 截图验证登录页与 Dashboard 深色主题、安全横幅、指标条、空态渲染正常。
+- 后端 / Python：未跑（本轮未改 backend/python 代码）。
+
 ## NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-DESIGN-REVIEW 验证记录（2026-06-12）
 
 本轮只读审计 credential permission probe code/API/test 实现方案，新增设计审计报告并同步 README/WORKLOG/TESTING/plan 状态。未修改 Java、Repository、Service、Controller、DTO、API、migration、前端、Python 或部署脚本；未调用真实交易所；未实现 permission probe。
