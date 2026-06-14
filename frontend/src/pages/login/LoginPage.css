@@ -1,0 +1,177 @@
+/* LoginPage.css — v2 登录页作用域样式。
+   约束:命名空间到 .nq-login,只读 var(--nq-*),不影响 v1 页面。
+   构图:整体居中、左右平衡的双区(由 .nq-standalone 负责整体居中)。 */
+
+.nq-login__inner {
+    width: 100%;
+    max-width: 980px;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: center;
+}
+
+/* ---- 左区:产品叙事 ---- */
+.nq-login__narrative {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+.nq-login__brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    border: 1px solid var(--nq-primary);
+    background: var(--nq-bg-elevated);
+    color: var(--nq-primary);
+    font-family: var(--nq-font-mono);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.nq-login__brand {
+    margin: 4px 0 0;
+    font-size: 32px;
+    line-height: 1.15;
+    font-weight: 650;
+    color: var(--nq-text-primary);
+}
+
+.nq-login__tagline {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--nq-text-secondary);
+}
+
+.nq-login__lede {
+    margin: 0;
+    max-width: 420px;
+    font-size: 14px;
+    color: var(--nq-text-secondary);
+}
+
+.nq-login__capabilities {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.nq-login__capability {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--nq-text-secondary);
+}
+
+.nq-login__capability-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--nq-primary);
+    flex: 0 0 auto;
+}
+
+.nq-login__promise {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--nq-border-subtle);
+    max-width: 440px;
+    font-size: 13px;
+    color: var(--nq-text-tertiary);
+}
+
+.nq-login__promise .anticon {
+    margin-top: 2px;
+    color: var(--nq-success);
+    flex: 0 0 auto;
+}
+
+/* ---- 右区:认证卡片 ---- */
+.nq-login__auth {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+}
+
+.nq-login__card {
+    width: 100%;
+    max-width: 380px;
+    padding: 24px;
+    background: var(--nq-bg-panel);
+    border: 1px solid var(--nq-border-subtle);
+    border-radius: 6px;
+}
+
+.nq-login__card-title {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--nq-text-primary);
+}
+
+.nq-login__card-caption {
+    margin: 0 0 20px;
+    font-size: 13px;
+    color: var(--nq-text-tertiary);
+}
+
+.nq-login__error,
+.nq-login__security {
+    margin-bottom: 16px;
+    border-radius: 4px;
+}
+
+.nq-login__security {
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
+.nq-login__footer {
+    margin: 16px 0 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--nq-text-disabled);
+}
+
+/* ---- 移动端:上下堆叠,认证卡片在首屏中央(置顶) ---- */
+@media (max-width: 880px) {
+    .nq-login__inner {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+        gap: 28px;
+    }
+
+    .nq-login__auth {
+        order: 1;
+    }
+
+    .nq-login__narrative {
+        order: 2;
+        align-items: center;
+        text-align: center;
+    }
+
+    .nq-login__capabilities {
+        justify-items: center;
+    }
+
+    .nq-login__brand {
+        font-size: 28px;
+    }
+}

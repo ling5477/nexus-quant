@@ -1659,3 +1659,22 @@ Review decision：Batch 1 baseline 可冻结为当前 `dev` 的最小 CI 基线�
 - 未接真实 WebSocket/SSE/交易所 adapter；实时数据本阶段只留 TanStack Query polling / 手动刷新规范。
 - LIVE 明确为 disabled；未下单、撤单、转账、提现。
 - 未读取、打印、输出真实 API key、secret、token、私钥、助记词、passphrase。
+
+## NQ-FRONTEND-B0-LOGIN-AND-EXCEPTION-PAGES（B0.1）验证记录（2026-06-14）
+
+本轮 frontend-only：重做登录页 + 四个异常页 + 404，复用 `@/nq-design-system` v2。在独立 git worktree（`feat/nq-frontend-b0-login-exception`，基于 `feat/nq-frontend-ds-v2`）执行，与 Codex 的 `dev` HEAD 隔离。未改后端/契约/migration/鉴权逻辑。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build`（`tsc -b && vite build`） | **通过** | tsc 0 error；`✓ built in 880ms`。>500 kB 单 chunk warning 为既有单包结构，非本轮回归。 |
+| `login-page-smoke.spec.ts`（Playwright Chromium，外部 vite preview，无后端） | **1 passed** | 断言新登录页：NexusQuant + 定位 + 4 能力 + 空账号/密码 + 安全边界；并负向断言 `GateJ completed` / `Next: GateK-PLAN` / `DEV / PAPER / LOCAL controlled access` 不出现。 |
+| 真机自检：Playwright Chromium 截图（9 路由） | **通过** | 0 console / 0 page error。登录页桌面端整体居中双区（非靠右）、主视觉无 Gate/DEV/PAPER/LOCAL；移动端上下堆叠、卡片置顶首屏；`/exception/auth` 三 reason 各异、`/exception/forbidden` 缺少角色+申请指引(403)、`/exception/error` Request ID+时间+返回入口(500)、`/exception/welcome` 第一步动作、404 统一异常层。暗色对比度 / 主色 #5b8cff / 中文 14px / 圆角 4-6 均符合 token。 |
+| `npm run test:e2e`（全量） | **未跑** | 多数 spec 依赖后端（`:18888`，本环境未启动）；本轮仅单独运行无后端依赖的 login smoke 并通过，且未改既有业务页面/全局主题。 |
+| `git status --short`（worktree） | 已检查 | 仅 B0.1 源文件变更；`tsc -b` 回生的 `playwright.config.*` / `vite.config.*`（CRLF）已 `git checkout` 还原，未入提交。 |
+
+阶段与安全边界：
+
+- 仍属 B0（READY_NOW）：登录页 + 四个异常页 + 404；未做 B1+ 业务页面，未做 AI/Agent/DH 页面（B8 仍 BLOCKED）。
+- 未改鉴权逻辑（`authApi` / `auth-store` / `RequireAuth` 原样复用）；登录不展示默认凭证/明文，不新增凭证处理路径。
+- 异常页本轮只交付表现层 + 公开路由；真实触发接线属后续切片。
+- LIVE 明确为 disabled；未接真实 socket/交易所；未改后端 API。

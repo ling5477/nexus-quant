@@ -1,0 +1,22 @@
+/* StandaloneSurface.css — 登录页/异常页 v2 全屏外壳作用域样式。
+   约束:全部命名空间到 .nq-standalone,只读 var(--nq-*),不影响 GateJ 冻结的 v1 页面。 */
+
+.nq-standalone {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--nq-bg-app);
+    color: var(--nq-text-primary);
+    font-family: var(--nq-font-ui);
+    font-size: 14px; /* 中文内容 14px(规范:高密度下 13px CJK 偏小) */
+    line-height: 1.5;
+}
+
+/* 数字/ID(request id、时间戳)等宽 + tabular-nums */
+.nq-standalone .nq-num {
+    font-family: var(--nq-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+}
