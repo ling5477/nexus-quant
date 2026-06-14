@@ -875,7 +875,7 @@ GateI-4-FIX 结论：
 - GateI 全部子阶段已完成：GateI-1-WO → GateI-2-WO → GateI-3-WO → GateI-3-FIX → GateI-4-WO → GateI-4-FIX。
 - **GateI completed。**
 - Next: GateJ-PLAN（Paper Trading 稳定运行）。
-- GateJ 不是 AI 阶段；AI 最早 GateK 才允许进入信号层。
+- GateJ 不是 AI 阶段；GateK-PLAN 不启动 AI，AI 相关工作仍需后续另起 Gate / review。
 
 ## GateJ-PLAN 验证记录
 
@@ -1373,3 +1373,29 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 - DH 明确为 not integrated / not connected to NQ；Integration-0 只作为 contract / mock / docs / contract test line。
 - LIVE 明确为 disabled。
 - 未读取、打印、复制或输出 credential material、`.env`、`*.key`、`*.pem`、`*.log`。
+
+## GATEK-PLAN-FREEZE-REVIEW 验证记录（2026-06-14）
+
+本轮是 docs-only freeze review：只审查和修正 GateK-PLAN 与入口事实源文档，不修改 backend、frontend、research、scripts、deploy、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；验收以文档边界、Git diff、forbidden-area diff、阶段措辞和敏感信息扫描为准。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已检查 | 仅允许文档范围内变更。 |
+| `git diff --check` | 通过 | 无 whitespace error；如出现 LF/CRLF 提示，按既有 Windows 工作区提示处理。 |
+| `git diff --stat` | 已检查 | 仅文档变更。 |
+| `git diff -- backend` | 通过 | 输出为空，未改后端。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改前端。 |
+| `git diff -- research` | 通过 | 输出为空，未改 Python research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改脚本。 |
+| `git diff -- deploy` | 通过 | 输出为空，未改部署目录。 |
+| `git diff -- backend/**/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| `rg ".env|.key|.pem|private key|api secret|passphrase|mnemonic|password" README.md AGENTS.md CLAUDE.md docs/current` | 已检查 | 命中项仅允许为否定式、禁止说明、字段名、占位符或历史脱敏说明；不得包含真实 credential material。 |
+
+阶段与安全边界：
+
+- GateK-PLAN 明确为 planning / architecture / productization / deployment / observability / security boundary stage。
+- GateK implementation 明确为 not started。
+- AI 明确为 not started，GateK-PLAN 不启动 AI 信号、AI runtime 或 AI Paper Trading。
+- DH 明确为 not integrated / not connected to NQ；Integration-0 只作为 contract / mock / docs / contract test line。
+- LIVE 明确为 disabled。
+- 真实 OKX/Binance permission probe adapter 明确为 not implemented。

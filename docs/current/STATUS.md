@@ -78,7 +78,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - Codex workflow documentation consistency fix completed：已将 Router Skill 状态与 `AGENTS.md` active skills 对齐，`nq-dh-workflow-router` 作为当前项目 active skill 使用；`CODEX_PROJECT_INSTRUCTIONS.md` 已补充 Router 前置分类规则。本轮只修改 Markdown 文档，未修改业务代码、部署配置、API、migration、AI、DH 或真实交易路径。
 - Codex workflow output format consistency fix completed：标准输出字段已统一为 `Findings`，不再把 `Summary` 作为必填输出字段。本轮只修改 Markdown / Skill 文档，未修改业务代码、部署配置、API、migration、AI、DH 或真实交易路径。
 - Credential revocation governance Batch 5-C completed：后端已接入 `credential_status` 生命周期字段、active material 默认只读取 `ACTIVE`、新增 `revoke / disable / expire` 最小 API 与 append-only audit log 写入；本轮未新增 migration、前端、Python、部署、AI、DH、LIVE 或真实交易所私有链路。
-- AI 尚未开始。AI 最早 GateK 才允许进入信号层。
+- AI 尚未开始。GateK-PLAN 仅做边界规划，不启动 AI 信号、AI runtime 或 AI Paper Trading。
 - GateJ 不是 AI 阶段。GateJ 只做 Paper Trading 稳定运行。
 
 ## NQ / DH 三轮审计同步（2026-06-11，DOC-SYNC-GATEK-PRE-AND-INT0-REGISTRATION）
@@ -124,7 +124,7 @@ DH 侧事实（来自第二轮与第三轮审计）：
 
 ## 当前未完成状态
 
-- 尚未完成虚拟币量化 V1。
+- 虚拟币量化 V1 已在 GateI 完整闭环完成；当前未完成的是公开生产就绪、UI/UX 专业化收口、AI/LIVE/美股/A 股等后续阶段。
 - Paper Trading 稳定运行 GateJ 已完成；UI/UX professionalism 仍是 post-freeze remediation。
 - 尚未进入 AI 自动交易。
 - 尚未进入美股/A 股适配。
@@ -234,4 +234,4 @@ GateO：A 股适配
 - GateJ-3-WO 已完成（异常恢复、失败重试、稳定性验收结构、HEARTBEAT_LAG/SCHEDULE_FIRE_FAILED 自动告警最小落库）。
 - DOC-CLEAN-2 已完成（删除 docs/current/ 中 GateH/GateI 计划副本）。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成（无 P0；E2E 与 Python 基线均已实际重跑通过，详见 PRE_FREEZE_AUDIT_REPORT.md）。
-- Next: GateJ-FREEZE（1h/24h/7d 连续运行验收 + 冻结）；AI 最早 GateK 才允许进入信号层。
+- GateI 的历史下一步 GateJ 已完成；当前状态是 GateJ completed / Next: GateK-PLAN，AI 仍 not started。

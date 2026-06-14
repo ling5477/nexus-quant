@@ -2771,7 +2771,7 @@
 - GateI 全部子阶段已完成：GateI-1-WO → GateI-2-WO → GateI-3-WO → GateI-3-FIX → GateI-4-WO → GateI-4-FIX。
 - **GateI completed。**
 - Next: GateJ-PLAN（Paper Trading 稳定运行）。
-- AI 最早 GateK 才允许进入信号层。
+- GateK-PLAN 不启动 AI；AI 相关工作仍需后续另起 Gate / review，当前 AI not started。
 
 ## GateI Freeze + 文档同步
 
@@ -4379,6 +4379,47 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 - `git status --short`：已检查；仅允许文档范围内变更和新增 `docs/current/GATEK_PLAN.md`。
 - `git diff -- backend`、`git diff -- frontend`、`git diff -- research`、`git diff -- scripts`、`git diff -- deploy`、`git diff -- backend/**/db/migration`：输出均为空。
 - 阶段误写扫描：命中项均为禁止、否定或风险说明语境，未新增正向 `GateK implementation started`、`AI started`、`DH integrated`、`LIVE enabled` 事实声明。
+
+## 边界确认
+
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API、Controller、Service、Repository、Adapter 或 migration。
+- 未实现 GateK 功能、AI、DH runtime integration、NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未开启 LIVE，未下单、撤单、转账、提现。
+- 未读取、打印、复制、输出真实 API key、secret、token、私钥、助记词、passphrase。
+
+---
+
+# Worklog: GATEK-PLAN-FREEZE-REVIEW
+
+日期：2026-06-14
+
+## 本轮目标
+
+本轮只做 GateK planning freeze review，审查 `docs/current/GATEK_PLAN.md` 与当前事实源是否可作为后续 GateK 工作的冻结规划基线。当前事实固定为 GateJ completed；Next: GateK-PLAN；GateK implementation not started；AI not started；DH runtime not integrated；LIVE disabled；Multi-exchange expansion not started；真实 OKX/Binance permission probe adapter not implemented。
+
+## 修改范围
+
+- 修正 `AGENTS.md` / `CLAUDE.md` 中可能误读为 GateK 启动 AI 的旧口径，明确 GateK-PLAN 不启动 AI。
+- 修正 `CLAUDE.md` active skills 清单，补回 `nq-dh-workflow-router` 并要求 NQ / DH / Gate / FREEZE 任务先路由。
+- 修正 `docs/current/STATUS.md` 中虚拟币量化 V1 完成状态和 GateJ-FREEZE 旧 next 口径。
+- 修正 `docs/current/ROADMAP.md` 中 Integration-0 contract test “下一步可实现”与已验收关闭之间的重复阶段口径。
+- 追加本轮 `WORKLOG.md` / `TESTING.md` 记录。
+
+## Freeze review 结论
+
+- `docs/current/GATEK_PLAN.md` 已明确 GateK 定位、non-goals、GateK implementation not started、AI/DH runtime/LIVE/real adapter not started。
+- GateK-1 到 GateK-6 主线、P0/P1/P2 task matrix、GateK completion criteria、review-before-implementation 条件和下一步顺序完整。
+- CI / observability / deployment 均保持 planning-only；frontend productization 仍限制在当前后端就绪范围内；Integration-0 只保留 contract / mock / stub / contract test / security docs 线。
+- 本轮修补后未发现 P0/P1/P2 阻塞项，GateK-PLAN 可作为冻结规划基线。
+
+## 验证记录
+
+- `git status --short`：已执行。
+- `git diff --check`：已执行。
+- `git diff --stat`：已执行。
+- `git diff -- backend`、`git diff -- frontend`、`git diff -- research`、`git diff -- scripts`、`git diff -- deploy`、`git diff -- backend/**/db/migration`：已执行。
+- 敏感词扫描：已执行；命中项仅允许为否定式、禁止说明、字段名或历史说明，不得包含真实 credential material。
 
 ## 边界确认
 

@@ -114,7 +114,7 @@ GateJ-FREEZE 禁止范围：
 - 不宣称 UI/UX 专业化已完成。
 - 不宣称公开用户生产就绪。
 
-GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。AI 最早 GateK 才允许进入信号层。
+GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateK-PLAN 仍不启动 AI；任何 AI 信号、AI runtime 或 AI Paper Trading 都必须后续另起 Gate / review，当前不得写成 started。
 
 GateJ 只允许 Paper Trading 稳定运行。GateJ 严禁：
 
