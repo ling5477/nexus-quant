@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW
+任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN
 日期：2026-06-14
-状态：Batch 2A FROZEN / ACCEPTED；Batch 2B/2C/2D/2E NOT STARTED
+状态：Batch 2A FROZEN / ACCEPTED；Batch 2B PLAN ONLY / NOT IMPLEMENTED；Batch 2C/2D/2E NOT STARTED
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - Batch 1 backend job 已临时使用 GitHub Actions `postgres:16` service 和 CI-only seed watcher 支撑 `mvn -f backend/pom.xml test`，但这只是 runner dependency workaround，不是 Batch 2 PostgreSQL / Flyway hardening。
 - Batch 2A PostgreSQL / Flyway empty DB smoke：FROZEN / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success，并已完成 freeze review。
 - `postgres-flyway` job `81284424653` completed / success；step `Run empty database Flyway smoke` success；日志显示 empty PostgreSQL 16.14 DB 从 V1 迁移到 V31，并执行 `validate`。
-- Batch 2B Flyway info / schema artifact / docs update：NOT STARTED。
+- Batch 2B Flyway info / schema artifact / docs update：PLAN ONLY / NOT IMPLEMENTED；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
 - Batch 2C repository real PostgreSQL smoke：NOT STARTED。
 - Batch 2D nq-app context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
@@ -326,9 +326,14 @@ Freeze review evidence:
 
 ### Batch 2B: Flyway info / schema artifact / docs update
 
-- Save `flyway_schema_history` and schema metadata artifacts。
-- Record maximum version and checksum evidence。
-- Update `NQ_CI_BASELINE_PLAN.md`、`TESTING.md`、`WORKLOG.md` after first green review。
+- Status: PLAN ONLY / NOT IMPLEMENTED。
+- Planning document: `docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
+- Planned artifacts: `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`，optional schema-only `schema-dump.sql`。
+- Planned generation source: existing `postgres-flyway` empty DB after Flyway migrate + validate；use `information_schema` / `pg_catalog` / `pg_indexes` and `flyway_schema_history` metadata。
+- Planned retention: 7 days for PR / branch review, 14 days for `dev` push by default。
+- Planned redaction: artifact must not contain `.env`、API key、secret、passphrase、token、cookie、private key、credential material、raw request / response or data rows。
+- `DB_SCHEMA.md` drift review starts as manual checklist；scripted blocking checker is deferred unless a separate 2B-2 review accepts it。
+- Does not run repository real DB smoke, does not start `nq-app` context, does not modify CI-only seed watcher, does not use Testcontainers。
 
 ### Batch 2C: repository real Postgres smoke, if needed
 
@@ -409,4 +414,4 @@ Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smo
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2B-IMPL` after review acceptance。

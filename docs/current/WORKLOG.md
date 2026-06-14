@@ -2,6 +2,52 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2B-PLAN
+
+日期：2026-06-14
+
+### 本轮目标
+
+规划 Batch 2B 如何在既有 `postgres-flyway` empty DB migration smoke 基础上增加 schema artifact / docs review 能力。本轮只做方案，不修改 workflow，不改 Java / TypeScript / Python 代码，不改测试，不新增 API，不新增或修改 migration，不改 frontend、research、scripts 或 deploy。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 计划摘要
+
+- 新增 Batch 2B planning-only 文档，状态固定为 `PLAN ONLY / NOT IMPLEMENTED`。
+- 规划 artifact：`flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`，以及 optional schema-only `schema-dump.sql`。
+- 规划 generation source：Batch 2A `postgres-flyway` empty DB 在 Flyway migrate + validate 后，通过 `information_schema`、`pg_catalog`、`pg_indexes` 和 `flyway_schema_history` 导出 metadata。
+- 规划 retention：PR / branch review 默认 7 days，`dev` push 默认 14 days，必要时再评审提升到 30 days。
+- 规划 redaction：artifact 不得包含 `.env`、API key、secret、passphrase、token、cookie、private key、credential material、raw request / response 或 data rows。
+- 规划 `DB_SCHEMA.md` drift review checklist：2B 第一阶段只做人工 review，不直接脚本化 blocking。
+- 明确 2B 不跑 repository real DB smoke，不启动 `nq-app` context，不改 CI-only seed watcher，不启用 Testcontainers。
+
+### 边界确认
+
+- 未修改 `.github/workflows/ci.yml`，未新增 workflow。
+- 未修改 backend / frontend / research / scripts / deploy。
+- 未新增 API，未新增 migration，未修改历史 migration。
+- 未修改 Java / TypeScript / Python / test code。
+- 未启动 `nq-app` full context。
+- 未运行 repository real PostgreSQL smoke、frontend E2E 或 Testcontainers。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未读取、打印、复制或输出真实 credential material。
+- Batch 2B 是 PLAN ONLY / NOT IMPLEMENTED；Batch 2C/2D/2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2B-PLAN-REVIEW`，或评审接受后进入 `NQ-CI-POSTGRES-FLYWAY-2B-IMPL`。
+
+---
+
 ## NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW
 
 日期：2026-06-14

@@ -60,6 +60,21 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CI-POSTGRES-FLYWAY-2B-PLAN 验证记录（2026-06-14）
+
+本轮是 GateK CI Batch 2B planning-only：只新增 / 同步 `docs/current` 文档，规划 Flyway / schema artifact、retention、redaction 和 `DB_SCHEMA.md` drift review。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已执行 | 编辑前工作区干净；本地 `dev` 在 2A freeze commit 后比 `origin/dev` ahead 1。 |
+| `.github/workflows/ci.yml` 只读复核 | 已执行 | 当前仅有 Batch 2A `postgres-flyway` job；本轮未修改 workflow。 |
+| `DB_SCHEMA.md` / migration 只读复核 | 已执行 | 当前最大 migration 为 `V31__schema_credential_permission_probe.sql`；2B 只规划 artifact / drift review，不新增或修改 migration。 |
+| Batch 2B 状态检查 | 通过 | `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md` 明确 `PLAN ONLY / NOT IMPLEMENTED`。 |
+| Batch boundary | 通过 | Batch 2C/2D/2E 仍 NOT STARTED；Batch 3 no-outbound、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening 仍 PENDING。 |
+| Security boundary | 通过 | Artifact plan 明确不保存 `.env`、API key、secret、passphrase、token、cookie、private key、credential material、raw request / response 或 data rows；LIVE DISABLED，AI NOT STARTED，DH runtime NOT INTEGRATED。 |
+
+Review decision: PLAN READY FOR REVIEW。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2B-PLAN-REVIEW`，或评审接受后的 `NQ-CI-POSTGRES-FLYWAY-2B-IMPL`；不得混入 2C/2D/2E、Batch 3-5、LIVE、AI、DH runtime 或真实交易所路径。
+
 ## NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW 验证记录（2026-06-14）
 
 本轮是 GateK docs-only / CI freeze review：只冻结 Batch 2A PostgreSQL / Flyway empty DB migration smoke baseline，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
