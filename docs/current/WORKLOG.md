@@ -4440,7 +4440,7 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 ## 修改范围
 
 - 新增 `.github/workflows/ci.yml`。
-- 同步 `docs/current/NQ_CI_BASELINE_PLAN.md`：登记 Batch 1 implemented / pending first CI run；Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security guard、Batch 5 frontend E2E hardening 仍 pending。
+- 同步 `docs/current/NQ_CI_BASELINE_PLAN.md`：当时登记 Batch 1 implemented / first CI run pending；该 pending 状态已由 `NQ-CI-BASELINE-FIRST-RUN-REVIEW` 关闭，Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security guard、Batch 5 frontend E2E hardening 仍 pending。
 - 同步 `docs/current/README.md`：更新 CI baseline 入口状态。
 - 追加 `docs/current/TESTING.md` 本轮验证记录。
 - 追加本 `WORKLOG.md` 记录。
@@ -4534,6 +4534,47 @@ Next concrete action：push 或 PR 到 `dev`，观察首次 `NQ CI Baseline` Git
 ## 下一步
 
 Next concrete action：提交并 push first-run fix，观察下一次 `NQ CI Baseline` run；如通过，进入 `NQ-CI-BASELINE-FIRST-RUN-REVIEW`。
+
+---
+
+# Worklog: NQ-CI-BASELINE-FIRST-RUN-REVIEW
+
+日期：2026-06-14
+
+## 本轮目标
+
+评审 `NQ CI Baseline` Batch 1 首次 GitHub Actions green run 是否可冻结为当前 `dev` 最小 CI 基线。本轮只做 review 与 current docs 状态同步，不修改 workflow、业务代码、测试代码、API、migration、scripts 或 deploy。
+
+## GitHub Actions 结果
+
+- Run：`27496906788`。
+- `Diff check`：success。
+- `Backend Maven test`：success。
+- `Frontend build`：success。
+- `Research quality gate`：success。
+
+## Review 结论
+
+- `.github/workflows/ci.yml` 只包含 Batch 1 jobs：`diff-check`、`backend`、`frontend`、`research`。
+- Backend job 保留 `mvn -f backend/pom.xml test`，未使用 `skipTests` 或 `continue-on-error`。
+- CI-only seed watcher 只服务 fresh GitHub runner 的最小 legacy `accounts` seed，不进入生产代码、migration 或 runtime seed 逻辑。
+- Frontend job 只执行 `npm ci` 与 `npm run build`，未引入 B1/B2/B3 页面施工。
+- Research job 执行 `pytest`、`mypy --no-sqlite-cache`、`ruff --no-cache`，未访问外部数据源或下载大型数据集。
+- Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security guard、Batch 5 frontend E2E hardening 仍 pending。
+
+## 边界确认
+
+- 未修改 backend / frontend / research 代码。
+- 未修改测试代码。
+- 未新增 API 或 migration。
+- 未修改 scripts / deploy。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient / Provider / real permission probe adapter。
+- 未注入真实交易所 credential，未调用真实交易所。
+
+## 下一步
+
+Next concrete action：冻结 `NQ-CI-BASELINE-IMPL` Batch 1 为当前 `dev` 最小 CI baseline；后续只能另起 Batch 2 PostgreSQL/Flyway planning / implementation，不得混入 Batch 3-5、AI、DH runtime、LIVE 或真实交易所。
 
 ---
 

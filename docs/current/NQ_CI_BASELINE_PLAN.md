@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：PLANNING ONLY / REVIEW READY
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2-5 pending
 
 ## Current state
 
@@ -10,12 +10,12 @@
 - Current branch: `dev`。
 - Current stage: GateJ completed；Next: GateK-PLAN。
 - `GATEK_PLAN.md` 已 freeze / accepted；`GATEK_ARCHITECTURE_BASELINE_REVIEW` 与 `GATEK-ARCH-DOC-SYNC` 已完成。
-- GateK implementation: NOT STARTED。
+- GateK implementation: limited to CI Batch 1 baseline only；product/runtime GateK implementation NOT STARTED。
 - AI: NOT STARTED。
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / pending first CI run；`.github` 仍不得包含其他未审查 workflow。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
@@ -42,7 +42,7 @@
 - 不开启 LIVE，不接 AI，不接 DH runtime，不实现 NQ RealClient 或真实 Provider。
 - 不调用真实交易所，不实现真实 OKX / Binance permission probe adapter。
 - 不读取、打印、复制或输出真实 credential material。
-- 不把 CI plan 写成 CI implemented。
+- 不把 Batch 1 baseline 写成完整 CI hardening implemented；PostgreSQL/Flyway、no-outbound guard、security guard、frontend E2E hardening 仍是后续批次。
 
 ## Job matrix
 
@@ -306,7 +306,7 @@ Forbidden secrets:
 | P0 | CI job calls real exchange host | Violates no-outbound and may leak behavior | Add fake-server/network-deny/log guard before making backend CI authoritative |
 | P0 | LIVE enabled wording or config enters CI/default tests | Breaks GateK boundary | Static guard + backend LIVE blocked tests |
 | P0 | Secret material committed or printed | Credential incident | gitleaks/secret scan + artifact redaction |
-| P0 | CI baseline Batch 1 被误读为完整 CI hardening | Governance drift | 固定写 Batch 1 implemented / pending first CI run；PostgreSQL/Flyway、no-outbound、secret scan、frontend E2E hardening 仍 pending |
+| P0 | CI baseline Batch 1 被误读为完整 CI hardening | Governance drift | 固定写 Batch 1 implemented / first green confirmed；PostgreSQL/Flyway、no-outbound、secret scan、frontend E2E hardening 仍 pending |
 | P1 | PostgreSQL/Flyway not validated in CI | Migration drift reaches dev | Add PostgreSQL service + V1-V31 migration validation |
 | P1 | E2E depends on absent backend | Frontend gate becomes flaky or permanently red | Define backend startup or mock-server strategy before blocking |
 | P1 | `npm ci` / Playwright browser install cache is unstable | Frontend CI noise | Cache by lockfile and browser version; no skip as pass |
@@ -318,14 +318,15 @@ Forbidden secrets:
 
 ### Batch 1: NQ-CI-BASELINE-IMPL
 
-Status: IMPLEMENTED / PENDING FIRST CI RUN。
+Status: IMPLEMENTED / FIRST GREEN CONFIRMED。
 
 Implemented workflow:
 
 - `.github/workflows/ci.yml`
 - Triggers: `pull_request` to `dev`、`push` to `dev`、manual `workflow_dispatch`。
 - Jobs: `diff-check`、`backend`、`frontend`、`research`。
-- First-run fix: `backend` job uses an ephemeral PostgreSQL service only to satisfy existing local-profile Spring context tests executed by `mvn -f backend/pom.xml test`。
+- First green run: GitHub Actions run `27496906788` passed all four jobs: `Diff check`、`Backend Maven test`、`Frontend build`、`Research quality gate`。
+- First-run fix: `backend` job uses an ephemeral PostgreSQL service and CI-only legacy `accounts` seed watcher only to satisfy existing local-profile Spring context tests executed by `mvn -f backend/pom.xml test` on a fresh GitHub runner。
 - Not included: frontend E2E、PostgreSQL/Flyway、no-outbound guard implementation、gitleaks / secret scan、dependency audit。
 
 Must implement:
@@ -428,6 +429,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: push / PR this Batch 1 workflow and observe the first GitHub Actions run for `NQ CI Baseline` on `dev` or PR to `dev`。
+Next concrete action: freeze `NQ-CI-BASELINE-IMPL` Batch 1 as the current `dev` minimum CI baseline, then start a separate planning task for Batch 2 only if approved。
 
-After the first CI run is observed and any CI-environment-only defects are fixed, the next planning task may be `NQ-CI-POSTGRES-FLYWAY-PLAN` or a narrowly scoped `NQ-CI-BASELINE-FIRST-RUN-FIX` if Batch 1 fails in GitHub Actions. Do not mix PostgreSQL/Flyway hardening、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 1.
+After the first green run has been reviewed, the next planning task may be `NQ-CI-POSTGRES-FLYWAY-PLAN` / `NQ-CI-POSTGRES-FLYWAY-IMPL` only as a separate Batch 2 work item. Do not mix PostgreSQL/Flyway hardening、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 1.

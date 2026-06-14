@@ -1538,7 +1538,7 @@ Root cause：GitHub runner 没有本地 PostgreSQL，而 `application-local.yml`
 | `gh run view 27496510294` | 已检查 | `diff-check`、`frontend`、`research` 成功；`backend` 失败。 |
 | GitHub job logs | 已检查 | GitHub connector 读取 backend job logs；确认 `nq-app` local Spring context tests 因 runner 环境缺 PostgreSQL 失败。 |
 | Fix | 已实施 | `.github/workflows/ci.yml` backend job 增加 `postgres:16` service、health check、`NQ_DB_URL` / `NQ_DB_USER` / `NQ_DB_PASSWORD`，并增加 CI-only seed watcher 插入最小 legacy account。 |
-| Pending green run | Pending | 需要 push fix 后观察下一次 `NQ CI Baseline` run。 |
+| First green run | 已确认 | Fix 已 push；后续 run `27496906788` 已在 `NQ-CI-BASELINE-FIRST-RUN-REVIEW` 中确认四个 job success。 |
 
 边界：
 
@@ -1549,3 +1549,26 @@ Root cause：GitHub runner 没有本地 PostgreSQL，而 `application-local.yml`
 - 未加入 no-outbound guard implementation、gitleaks / secret scan、dependency audit 或 frontend E2E hardening。
 - 未使用 `skipTests` 或 `continue-on-error`。
 - 未注入真实 credential，未开启 LIVE，未调用真实交易所。
+
+## NQ-CI-BASELINE-FIRST-RUN-REVIEW 验证记录（2026-06-14）
+
+本轮只评审 `NQ CI Baseline` 首次 green run，不修改 workflow、backend、frontend、research、测试代码、API、migration、scripts 或 deploy。GitHub Actions run `27496906788` 已由 GitHub connector 复核，四个 Batch 1 job 均为 `completed / success`。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run `27496906788` | 通过 | `Diff check`、`Backend Maven test`、`Frontend build`、`Research quality gate` 全部 success。 |
+| Workflow scope review | 通过 | `.github/workflows/ci.yml` 只包含 Batch 1：diff check、backend Maven test、frontend build、research quality gate；未加入 PostgreSQL/Flyway hardening、no-outbound guard、secret scan、dependency audit 或 frontend E2E hardening。 |
+| Backend job review | 通过 | 保留 `mvn -f backend/pom.xml test`；未使用 `-DskipTests`；未使用 `continue-on-error`；CI-only seed watcher 只等待 Flyway 创建 `accounts` 表并插入最小 `PAPER / ACTIVE` legacy account，不进入生产代码、migration 或 runtime seed 逻辑。 |
+| Frontend job review | 通过 | 执行 `npm ci` 与 `npm run build`；未触碰 frontend B0 Draft PR、B1/B2/B3 页面施工或 AppProviders 全局替换。 |
+| Research job review | 通过 | 执行 `pytest`、`mypy --no-sqlite-cache`、`ruff --no-cache`；no-cache 参数用于规避 runner / 本机 cache 权限噪音，不降低检查强度。 |
+| Forbidden diff | 通过 | `git diff -- backend`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration` 均为空。 |
+| Forbidden keyword scan | 已检查 | workflow 未命中 `skipTests`、`continue-on-error`、`LIVE=true`、`LIVE_ENABLED`、真实交易所调用或真实 credential 字段；docs/current 命中均为禁止、历史或 pending 风险说明。 |
+
+Review decision：Batch 1 baseline 可冻结为当前 `dev` 的最小 CI 基线。
+
+仍 pending：
+
+- Batch 2 PostgreSQL/Flyway hardening。
+- Batch 3 no-outbound guard。
+- Batch 4 secret scan / security guard。
+- Batch 5 frontend E2E hardening。

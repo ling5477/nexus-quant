@@ -1,6 +1,6 @@
 # Current Stage
 
-`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；GateK implementation not started；AI not started**。
+`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；NQ CI baseline Batch 1 implemented / first green confirmed；GateK product/runtime implementation not started；AI not started**。
 
 ## 当前状态
 
@@ -13,12 +13,12 @@
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN。
-- GateK implementation not started。
+- NQ CI baseline Batch 1 implemented / first green confirmed；GateK product/runtime implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
 - Multi-exchange expansion not started。
-- GateK architecture baseline review accepted with P2 follow-up；本轮 P2 follow-up 由 `ARCHITECTURE.md` / `MODULES.md` current wording sync 承接，不代表 GateK implementation started。
+- GateK architecture baseline review accepted with P2 follow-up；本轮 P2 follow-up 由 `ARCHITECTURE.md` / `MODULES.md` current wording sync 承接，不代表 GateK product/runtime implementation started。
 - UI/UX professionalism remains post-freeze remediation。
 - NQ / DH 三轮只读审计已完成；DH not integrated；Integration-0 allowed only as contract / mock / documentation work line, not runtime integration（详见 `STATUS.md`）。
 - NQ-DH Integration-0 契约冻结已完成（contract / mock / docs，未实现集成）；DH P1-4 残留阻塞 Integration-1，详见 `NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`。
@@ -35,7 +35,7 @@
 - AI 接入必须等 Paper Trading 稳定后再进入（最早 GateK）。
 - GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。
 - GateJ-FREEZE 已完成连续运行验收与冻结，不夹带 AI、不夹带新业务功能。
-- 当前不是 GateK 实现阶段；Next 只是 GateK-PLAN。
+- 当前不是 GateK 产品 / runtime 实现阶段；NQ CI baseline Batch 1 只是最小测试基线，不代表 AI、DH runtime、LIVE 或真实交易所扩展启动。
 - 当前不代表 UI/UX 专业化已完成。
 - 当前不应描述为面向公开用户的生产就绪。
 
@@ -88,7 +88,7 @@ GateO：A 股适配
 - `ROADMAP.md`：总路线。
 - `GATEK_PLAN.md`：GateK planning-only 阶段规划；用于冻结 GateK 目标、非目标、主线拆分、验收标准、风险、backlog、安全审计前置和执行顺序。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、ACCEPTED WITH P2 FOLLOW-UP，未启动 GateK implementation。其 P2 文档漂移 follow-up 对应 `ARCHITECTURE.md` / `MODULES.md` current wording sync。
-- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 文档；Batch 1 已新增 `.github/workflows/ci.yml`，状态为 implemented / pending first CI run；PostgreSQL-Flyway、no-outbound guard、secret scan、frontend E2E hardening 仍是后续批次。
+- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 文档；Batch 1 已新增 `.github/workflows/ci.yml`，GitHub Actions run `27496906788` first green confirmed；PostgreSQL-Flyway、no-outbound guard、secret scan、frontend E2E hardening 仍是后续批次。
 - `WORKLOG.md`：执行日志。
 
 ## Codex Workflow 入口
@@ -103,7 +103,7 @@ GateO：A 股适配
 
 - `GATEK_PLAN.md`：GateK-PLAN 当前规划文件；不代表 GateK implementation started。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review 当前审查报告；不代表 GateK implementation started；`ARCHITECTURE.md` / `MODULES.md` 是其 P2 follow-up 后的 current architecture / modules fact source。
-- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 当前文件；Batch 1 最小 workflow 已实现并等待首次 CI run，下一步只允许首轮 CI 观察 / 修复或进入 PostgreSQL-Flyway 后续 planning。
+- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 当前文件；Batch 1 最小 workflow 已实现并完成首次 green run review，下一步只允许冻结 Batch 1 baseline 或另起 PostgreSQL-Flyway 后续 planning。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。
