@@ -65,7 +65,7 @@ nq-tokens.ts  (唯一来源)
 
 `up`/`down` **不复用** `success`/`danger`。它们是独立语义,因为:盈利的"红"和危险操作的"红"必须能分别改色;而 NQ 是数字货币系统,用户在 A 股(红涨绿跌)和 Binance/OKX(绿涨红跌)之间分裂。做成一个开关,一处切换:
 
-| token | CN 惯例(默认) | INTL 惯例 | 含义 |
+| token | `CN_STOCK` 惯例 | `INTL_CRYPTO` 惯例(默认) | 含义 |
 |---|---|---|---|
 | `--nq-up` | `#ff5c6c`(红) | `#33d6a6`(绿) | 上涨 / 盈利 |
 | `--nq-down` | `#33d6a6`(绿) | `#ff5c6c`(红) | 下跌 / 亏损 |
@@ -73,7 +73,7 @@ nq-tokens.ts  (唯一来源)
 
 对比度(行情数字一律 bold + `tabular-nums`,按大文本 3:1 评估,实测仍过 4.5):up 5.8 OK / down 9.3 OK on panel。
 
-**待你定:** 默认惯例是 `CN` 还是 `INTL`?我的建议是**提供个人偏好开关**(像交易所一样),默认随主要用户群定;不要在代码里写死。
+**已拍板:** 默认 `INTL_CRYPTO`(绿涨红跌,对齐 Binance/OKX 默认,NQ 是数字货币系统);**保留 `CN_STOCK` 作为用户级偏好开关**(像交易所一样可切换)。无论哪个惯例,`up/down` 始终独立于 `success/danger`。
 
 ### 1.5 环境 / 审计色(全局统一,长期可见)
 
@@ -192,8 +192,8 @@ export const nqTokens = {
   semantic: { primary: '#5b8cff', success: '#3ad29f', warning: '#fbbf3f', danger: '#ff6166', info: '#56c7f5' },
   // 行情方向:与 success/danger 解耦,由 convention 决定具体 hex
   market: {
-    CN:   { up: '#ff5c6c', down: '#33d6a6', flat: '#93a1ba' }, // 红涨绿跌
-    INTL: { up: '#33d6a6', down: '#ff5c6c', flat: '#93a1ba' }, // 绿涨红跌(Binance/OKX 默认)
+    CN_STOCK:    { up: '#ff5c6c', down: '#33d6a6', flat: '#93a1ba' }, // 红涨绿跌(A 股习惯)
+    INTL_CRYPTO: { up: '#33d6a6', down: '#ff5c6c', flat: '#93a1ba' }, // 绿涨红跌(Binance/OKX 默认)
   },
   env: { PAPER: '#3b82f6', DEMO: '#7c5cff', LIVE: '#ff4d4f', READONLY: '#667085', AUDITED: '#3ad29f' },
   radius: { sm: 4, md: 6 },
@@ -205,16 +205,17 @@ export const nqTokens = {
   space: [4, 8, 12, 16, 24, 32] as const,
 } as const;
 
-export type MarketConvention = 'CN' | 'INTL';
-export const marketColors = (c: MarketConvention = 'CN') => nqTokens.market[c];
+export type MarketConvention = 'CN_STOCK' | 'INTL_CRYPTO';
+export const DEFAULT_MARKET_CONVENTION: MarketConvention = 'INTL_CRYPTO';
+export const marketColors = (c: MarketConvention = DEFAULT_MARKET_CONVENTION) => nqTokens.market[c];
 ```
 
 ### 6.2 `nq-css-vars.ts`(生成 CSS 变量,避免手抄漂移)
 
 ```ts
-import { nqTokens, type MarketConvention } from './nq-tokens';
+import { nqTokens, DEFAULT_MARKET_CONVENTION, type MarketConvention } from './nq-tokens';
 
-export function nqCssVars(convention: MarketConvention = 'CN'): Record<string, string> {
+export function nqCssVars(convention: MarketConvention = DEFAULT_MARKET_CONVENTION): Record<string, string> {
   const m = nqTokens.market[convention];
   return {
     '--nq-bg-app': nqTokens.bg.app, '--nq-bg-canvas': nqTokens.bg.canvas,
@@ -234,7 +235,7 @@ export function nqCssVars(convention: MarketConvention = 'CN'): Record<string, s
 }
 
 // 应用到 :root(惯例切换时重设即可)
-export function applyNqCssVars(convention: MarketConvention = 'CN') {
+export function applyNqCssVars(convention: MarketConvention = DEFAULT_MARKET_CONVENTION) {
   const vars = nqCssVars(convention);
   for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
 }
@@ -291,10 +292,10 @@ export const nqAntdTheme: ThemeConfig = {
 ### 6.4 `nqEchartsTheme.ts`(ECharts:权益/PnL/回撤/监控)
 
 ```ts
-import { nqTokens as t, marketColors, type MarketConvention } from './nq-tokens';
+import { nqTokens as t, marketColors, DEFAULT_MARKET_CONVENTION, type MarketConvention } from './nq-tokens';
 import * as echarts from 'echarts';
 
-export function registerNqEchartsTheme(convention: MarketConvention = 'CN') {
+export function registerNqEchartsTheme(convention: MarketConvention = DEFAULT_MARKET_CONVENTION) {
   const m = marketColors(convention);
   echarts.registerTheme('nq', {
     backgroundColor: 'transparent',
@@ -327,9 +328,9 @@ export function registerNqEchartsTheme(convention: MarketConvention = 'CN') {
 ### 6.5 `nqLwcOptions.ts`(Lightweight Charts:K 线/行情主图)
 
 ```ts
-import { nqTokens as t, marketColors, type MarketConvention } from './nq-tokens';
+import { nqTokens as t, marketColors, DEFAULT_MARKET_CONVENTION, type MarketConvention } from './nq-tokens';
 
-export function nqLwcOptions(convention: MarketConvention = 'CN') {
+export function nqLwcOptions(convention: MarketConvention = DEFAULT_MARKET_CONVENTION) {
   return {
     layout: { background: { color: 'transparent' }, textColor: t.text.tertiary, fontFamily: t.font.mono },
     grid: { vertLines: { color: t.border.subtle }, horzLines: { color: t.border.subtle } },
@@ -339,7 +340,7 @@ export function nqLwcOptions(convention: MarketConvention = 'CN') {
   };
 }
 
-export function nqCandleColors(convention: MarketConvention = 'CN') {
+export function nqCandleColors(convention: MarketConvention = DEFAULT_MARKET_CONVENTION) {
   const m = marketColors(convention);
   return {
     upColor: m.up, borderUpColor: m.up, wickUpColor: m.up,

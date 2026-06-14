@@ -28,41 +28,52 @@ NOT-YET  后端未实现(skeleton/mock 级),只能做规范+占位,不接数据
 
 > 说明:NQ 后端就绪度按"GateJ 完成"基线推断,**请与 NQ 当前 Gate 文档逐项核对**;DH 侧依据 decision-hub 仓库现状(MockProvider + Run create 骨架 + golden runner),Agent Runtime 未建。
 
+施工状态(`施工状态` 列):
+
+```text
+READY_NOW   当前可施工(本阶段就能落代码)
+PLANNED     已排期,待前置完成(主要前置是 B0 与批次顺序)
+PARTIAL     部分可施工(接已有数据,未就绪部分留位)
+BLOCKED     后端/数据未就绪,禁止 mock 成熟页(只做规范+占位)
+```
+
+> 注意:`施工状态` 表示"是否可以开始施工",**不表示"已完成"**。当前阶段 GateJ completed → GateK-PLAN,除 B0 外都不是"已开始"。
+
 ---
 
 ## 3. 施工矩阵
 
-| 批次 | 页面 | 原型 | 后端就绪度 | v1 最小切口 | 本批施工 |
+| 批次 | 页面 | 原型 | 后端就绪度 | v1 最小切口 | 施工状态 |
 |---|---|---|---|---|---|
-| **B0** | Design Tokens v2 / App Shell / Status System | — | READY | token + 固定壳 + StatusTag/EnvBadge/RiskBanner/DataFreshness 四件 | ✅ |
-| **B0** | 登录页 + 异常页(403/无权限/错误/空初始化) | — | READY | 居中双区登录;移除 Gate/DEV/PAPER 主视觉降为 footer;异常页给原因+request id+入口 | ✅ |
-| **B1** | Dashboard / 首页 | Monitor | PARTIAL | 总控态:资产/环境/订单数/策略运行数/风险/告警/数据同步/系统健康 + 权益趋势 + "需立即处理"单列;缺的指标留 DataFreshness 占位 | ✅ |
-| **B2** | Paper Trading Console | Monitor | PARTIAL | 顶栏运行指标 + 权益/PnL 图 + 事件流 + 底部 Orders/Positions tabs;Live 动作样式区分 | ✅ |
-| **B3** | Backtest Detail | Detail | PARTIAL→READY | detail-first:策略版本/数据集快照/区间/资金/费率 + 权益/回撤/滚动收益图 + 成交明细 + 参数快照 | ✅ |
-| **B3** | Backtests 列表 | Collection | READY | 过滤 + 表格 + split detail | ✅ |
-| **B4** | Strategy Detail | Detail | PARTIAL | 页头标识 + tabs(基础/版本/参数/回测/Paper/日志/调度/风险/发布);版本历史一级,支持 diff | ✅ |
-| **B4** | Strategies 列表 | Collection | READY | 主键=策略+版本;列含版本/运行态/参数摘要/最近回测/评分/发布态 | ✅ |
-| **B4** | Schedules / 调度 | Collection | PARTIAL | 运维视角:cron/下次运行/上次结果/重试/heartbeat/启停/阻断原因 | ✅ |
-| **B4** | Runs / 运行记录 | Collection | PARTIAL | 列表+详情追踪(business trace viewer):输入/输出/日志流/异常/关联订单 | ✅ |
-| **B5** | Orders / 订单 | Collection | READY | table-first;固定列 状态标签+失败原因+最后更新+关联实体;区分 open/terminal 状态 | ✅ |
-| **B5** | Positions / 持仓 | Detail/Monitor | READY | 全局敞口摘要 + 分账户/策略/标的持仓表 + 风险热区;实现/未实现盈亏用涨跌色 | ✅ |
-| **B5** | Accounts / 账户 | Detail | READY | detail-first:类型/环境/状态/对账 + 余额/冻结/可用/保证金区 | ✅ |
-| **B6** | Risk Center / 风控 | Monitor | PARTIAL | 全局风险状态 + 阻断横幅 + 按账户/策略/持仓/订单分区 + 生效规则 + 命中/恢复时间轴 | ✅ |
-| **B6** | Alerts / 告警 | Collection | PARTIAL | 分级/聚合/确认/指派/处理记录;按严重度+新鲜度排序 | ✅ |
-| **B6** | Market Data / 市场数据 | Monitor | PARTIAL | 监控页:覆盖率/缺口/异常 candle/同步时间 + ingestion job + 完整性表 | ✅ |
-| **B6** | Reports / 日报复盘 | Detail/Workbench | PARTIAL | report center:列表 + notebook 阅读区(图表+事实+人工批注) | ✅ |
-| **B6** | Evaluations / 评估 | Detail | PARTIAL | 门禁页:评分矩阵(策略/风险/稳定性/数据质量/回测可信度)可下钻到规则+证据 | ✅ |
-| **B6** | Publishes / 发布 | Collection | PARTIAL | deployment center:版本/目标环境/审批/风控检查/门禁/回滚;详情显示"为何不能进 LIVE" | ✅ |
-| **B7** | Trading Workbench | Workbench | PARTIAL | watchlist + K 线主图 + 下单区(只读区/操作区视觉分层)+ Orders/Positions/Audit tabs | 部分 |
-| **B7** | Settings | Collection | READY | 按 section 拆;API key 只显前后缀/作用域/最后使用,绝不显明文;**唯一允许有限用 ProComponents** | ✅ |
-| **B7** | Trade Validation | Detail/侧栏 | PARTIAL | 交易前/策略/风险/账户/交易所参数校验;失败原因提交前前置 | ✅ |
-| **B8** | AI Overview | Monitor | **NOT-YET** | **仅规范 + 菜单占位**,不接数据 | ❌ |
-| **B8** | AI Research Assistant | Workbench | **NOT-YET** | 仅规范 + 占位 | ❌ |
-| **B8** | AI Strategy / Risk / Backtest Review | Detail | **NOT-YET** | 仅规范 + 占位 | ❌ |
-| **B8** | AI Decision Log | Collection | **NOT-YET** | 仅规范(table-first 列定义)+ 占位 | ❌ |
-| **B8** | Agent Runs / Agent Workflow | Collection/Workbench | **NOT-YET** | 仅规范(trace viewer / DAG 形态)+ 占位 | ❌ |
-| **B8** | Prompt Management / Model Provider / AI Cost & Usage | Collection/Monitor | **NOT-YET** | 仅规范 + 占位 | ❌ |
-| **B8** | DH Integration 页 | Monitor | **NOT-YET** | 仅"边界说明 + 连接状态"占位;页头长期声明 DH 只读、不可下单/绕风控/读凭证/操作 LIVE | ❌(占位) |
+| **B0** | Design Tokens v2 / App Shell / Status System | — | READY | token + 固定壳 + StatusTag/EnvBadge/RiskBanner/DataFreshness 四件 | READY_NOW |
+| **B0** | 登录页 + 异常页(403/无权限/错误/空初始化) | — | READY | 居中双区登录;移除 Gate/DEV/PAPER 主视觉降为 footer;异常页给原因+request id+入口 | READY_NOW |
+| **B1** | Dashboard / 首页 | Monitor | PARTIAL | 总控态:资产/环境/订单数/策略运行数/风险/告警/数据同步/系统健康 + 权益趋势 + "需立即处理"单列;缺的指标留 DataFreshness 占位 | PLANNED |
+| **B2** | Paper Trading Console | Monitor | PARTIAL | 顶栏运行指标 + 权益/PnL 图 + 事件流 + 底部 Orders/Positions tabs;Live 动作样式区分 | PLANNED |
+| **B3** | Backtest Detail | Detail | PARTIAL→READY | detail-first:策略版本/数据集快照/区间/资金/费率 + 权益/回撤/滚动收益图 + 成交明细 + 参数快照 | PLANNED |
+| **B3** | Backtests 列表 | Collection | READY | 过滤 + 表格 + split detail | PLANNED |
+| **B4** | Strategy Detail | Detail | PARTIAL | 页头标识 + tabs(基础/版本/参数/回测/Paper/日志/调度/风险/发布);版本历史一级,支持 diff | PLANNED |
+| **B4** | Strategies 列表 | Collection | READY | 主键=策略+版本;列含版本/运行态/参数摘要/最近回测/评分/发布态 | PLANNED |
+| **B4** | Schedules / 调度 | Collection | PARTIAL | 运维视角:cron/下次运行/上次结果/重试/heartbeat/启停/阻断原因 | PLANNED |
+| **B4** | Runs / 运行记录 | Collection | PARTIAL | 列表+详情追踪(business trace viewer):输入/输出/日志流/异常/关联订单 | PLANNED |
+| **B5** | Orders / 订单 | Collection | READY | table-first;固定列 状态标签+失败原因+最后更新+关联实体;区分 open/terminal 状态 | PLANNED |
+| **B5** | Positions / 持仓 | Detail/Monitor | READY | 全局敞口摘要 + 分账户/策略/标的持仓表 + 风险热区;实现/未实现盈亏用涨跌色 | PLANNED |
+| **B5** | Accounts / 账户 | Detail | READY | detail-first:类型/环境/状态/对账 + 余额/冻结/可用/保证金区 | PLANNED |
+| **B6** | Risk Center / 风控 | Monitor | PARTIAL | 全局风险状态 + 阻断横幅 + 按账户/策略/持仓/订单分区 + 生效规则 + 命中/恢复时间轴 | PLANNED |
+| **B6** | Alerts / 告警 | Collection | PARTIAL | 分级/聚合/确认/指派/处理记录;按严重度+新鲜度排序 | PLANNED |
+| **B6** | Market Data / 市场数据 | Monitor | PARTIAL | 监控页:覆盖率/缺口/异常 candle/同步时间 + ingestion job + 完整性表 | PLANNED |
+| **B6** | Reports / 日报复盘 | Detail/Workbench | PARTIAL | report center:列表 + notebook 阅读区(图表+事实+人工批注) | PLANNED |
+| **B6** | Evaluations / 评估 | Detail | PARTIAL | 门禁页:评分矩阵(策略/风险/稳定性/数据质量/回测可信度)可下钻到规则+证据 | PLANNED |
+| **B6** | Publishes / 发布 | Collection | PARTIAL | deployment center:版本/目标环境/审批/风控检查/门禁/回滚;详情显示"为何不能进 LIVE" | PLANNED |
+| **B7** | Trading Workbench | Workbench | PARTIAL | watchlist + K 线主图 + 下单区(只读区/操作区视觉分层)+ Orders/Positions/Audit tabs | PARTIAL |
+| **B7** | Settings | Collection | READY | 按 section 拆;API key 只显前后缀/作用域/最后使用,绝不显明文;**唯一允许有限用 ProComponents** | PLANNED |
+| **B7** | Trade Validation | Detail/侧栏 | PARTIAL | 交易前/策略/风险/账户/交易所参数校验;失败原因提交前前置 | PLANNED |
+| **B8** | AI Overview | Monitor | **NOT-YET** | **仅规范 + 菜单占位**,不接数据 | BLOCKED |
+| **B8** | AI Research Assistant | Workbench | **NOT-YET** | 仅规范 + 占位 | BLOCKED |
+| **B8** | AI Strategy / Risk / Backtest Review | Detail | **NOT-YET** | 仅规范 + 占位 | BLOCKED |
+| **B8** | AI Decision Log | Collection | **NOT-YET** | 仅规范(table-first 列定义)+ 占位 | BLOCKED |
+| **B8** | Agent Runs / Agent Workflow | Collection/Workbench | **NOT-YET** | 仅规范(trace viewer / DAG 形态)+ 占位 | BLOCKED |
+| **B8** | Prompt Management / Model Provider / AI Cost & Usage | Collection/Monitor | **NOT-YET** | 仅规范 + 占位 | BLOCKED |
+| **B8** | DH Integration 页 | Monitor | **NOT-YET** | 仅"边界说明 + 连接状态"占位;页头长期声明 DH 只读、不可下单/绕风控/读凭证/操作 LIVE | BLOCKED |
 
 ---
 
