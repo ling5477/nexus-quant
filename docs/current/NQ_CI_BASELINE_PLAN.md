@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A implemented / pending first CI run；Batch 2B-2E and Batch 3-5 implementation pending
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A first green confirmed / accepted；Batch 2B-2E and Batch 3-5 implementation pending
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，first CI run pending；`.github` 仍不得包含其他未审查 workflow。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed / accepted；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
@@ -146,7 +146,7 @@ Current facts:
 
 - `docker-compose.yml` provides PostgreSQL `postgres:17.7` by default, mapped to `${NQ_DB_PORT:-5432}:5432`。
 - Current maximum migration is V31。
-- Batch 2A added tracked `postgres-flyway` workflow job; first CI run pending。
+- Batch 2A added tracked `postgres-flyway` workflow job; first green run confirmed / accepted in GitHub Actions run `27501253175`。
 
 PostgreSQL service option:
 
@@ -347,7 +347,7 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: Batch 2A IMPLEMENTED / FIRST CI RUN PENDING；Batch 2B / 2C / 2D / 2E PENDING。
+Status: Batch 2A FIRST GREEN RUN CONFIRMED / ACCEPTED；Batch 2B / 2C / 2D / 2E PENDING。
 
 Planning document:
 
@@ -360,6 +360,7 @@ Batch 2A implemented:
 - Direct Flyway API empty-db migration validation from V1 to V31。
 - Prints `flyway_schema_history` in job logs。
 - No seed, no app context, no repository real DB smoke, no Testcontainers, no `baselineOnMigrate`, no Flyway `clean`。
+- First green evidence: run `27501253175` / commit `7836640ebae46d6fc62771611f5215661b3267dc` completed / success；job `PostgreSQL / Flyway smoke` completed / success；logs show `Successfully applied 31 migrations ... now at version v31`, `Successfully validated 31 migrations`, and `Flyway empty database smoke reached V31`。
 
 Still pending:
 
@@ -442,6 +443,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: push / PR to `dev` and run GitHub Actions `NQ CI Baseline`, then review the first `postgres-flyway` run。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
 
-If first run fails, only perform `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-FIX` within Batch 2A boundaries. Do not mix Batch 2B-2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2A.
+Do not mix Batch 2B-2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2A.

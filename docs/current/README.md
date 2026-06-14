@@ -1,6 +1,6 @@
 # Current Stage
 
-`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke implemented / first CI run pending；GateK product/runtime implementation not started；AI not started**。
+`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke first green confirmed / accepted；GateK product/runtime implementation not started；AI not started**。
 
 ## 当前状态
 
@@ -13,7 +13,7 @@
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN。
-- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke implemented / first CI run pending；Batch 2B-2E and Batch 3-5 pending；GateK product/runtime implementation not started。
+- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke first green confirmed / accepted；Batch 2B-2E and Batch 3-5 pending；GateK product/runtime implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
@@ -88,8 +88,8 @@ GateO：A 股适配
 - `ROADMAP.md`：总路线。
 - `GATEK_PLAN.md`：GateK planning-only 阶段规划；用于冻结 GateK 目标、非目标、主线拆分、验收标准、风险、backlog、安全审计前置和执行顺序。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、ACCEPTED WITH P2 FOLLOW-UP，未启动 GateK implementation。其 P2 文档漂移 follow-up 对应 `ARCHITECTURE.md` / `MODULES.md` current wording sync。
-- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 文档；Batch 1 已新增 `.github/workflows/ci.yml`，GitHub Actions run `27496906788` first green confirmed；Batch 2A PostgreSQL-Flyway smoke 已实现并等待 first CI run，no-outbound guard、secret scan、frontend E2E hardening 仍是后续批次。
-- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：NQ CI Batch 2 PostgreSQL / Flyway 文档；Batch 2A 已新增 GitHub Actions `postgres-flyway` job，使用 PostgreSQL service container 和 direct Flyway API 验证 empty DB V1-V31 migration smoke；Batch 2B schema artifacts、Batch 2C repository real DB smoke、Batch 2D app context smoke、Batch 2E seed watcher cleanup 仍未开始。
+- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 文档；Batch 1 已新增 `.github/workflows/ci.yml`，GitHub Actions run `27496906788` first green confirmed；Batch 2A PostgreSQL-Flyway smoke 已由 GitHub Actions run `27501253175` first green confirmed / accepted，no-outbound guard、secret scan、frontend E2E hardening 仍是后续批次。
+- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：NQ CI Batch 2 PostgreSQL / Flyway 文档；Batch 2A 已新增 GitHub Actions `postgres-flyway` job，使用 PostgreSQL service container 和 direct Flyway API 验证 empty DB V1-V31 migration smoke，并在 run `27501253175` 完成首次 green review；Batch 2B schema artifacts、Batch 2C repository real DB smoke、Batch 2D app context smoke、Batch 2E seed watcher cleanup 仍未开始。
 - `WORKLOG.md`：执行日志。
 
 ## Codex Workflow 入口
@@ -104,8 +104,8 @@ GateO：A 股适配
 
 - `GATEK_PLAN.md`：GateK-PLAN 当前规划文件；不代表 GateK implementation started。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review 当前审查报告；不代表 GateK implementation started；`ARCHITECTURE.md` / `MODULES.md` 是其 P2 follow-up 后的 current architecture / modules fact source。
-- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 当前文件；Batch 1 最小 workflow 已实现并完成首次 green run review，Batch 2A PostgreSQL-Flyway smoke 已实现并等待 first CI run。
-- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：Batch 2 PostgreSQL / Flyway 当前文件；下一步只允许 push / PR 后执行 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW`，如失败只能做 Batch 2A first-run fix。
+- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 当前文件；Batch 1 最小 workflow 已实现并完成首次 green run review，Batch 2A PostgreSQL-Flyway smoke 已完成 first green review。
+- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：Batch 2 PostgreSQL / Flyway 当前文件；下一步只允许 `NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。

@@ -60,11 +60,37 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW 验证记录（2026-06-14）
+
+本轮是 GateK CI Batch 2A first-run review：只复核 GitHub Actions `postgres-flyway` 首次运行结果，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | 通过 | `NQ CI Baseline` run `27501253175`，`push` to `dev`，commit `7836640ebae46d6fc62771611f5215661b3267dc`，completed / success。 |
+| `postgres-flyway` job | 通过 | Job `PostgreSQL / Flyway smoke` / id `81284424653` completed / success；`Initialize containers`、`Prepare Flyway runtime classpath`、`Run empty database Flyway smoke` 均 success。 |
+| Flyway empty DB smoke | 通过 | 日志显示 `Schema history table ... does not exist yet`、`Current version ... << Empty Schema >>`、V1-V31 逐版 migration、`Successfully applied 31 migrations ... now at version v31`。 |
+| Flyway validate | 通过 | 日志显示 migration 前后均有 validate，最终 `Successfully validated 31 migrations`。 |
+| `flyway_schema_history` | 通过 | 日志输出 `installed_rank|version|description|type|script|checksum|success`，覆盖 row 1/V1 到 row 31/V31，且 success 均为 `true`。 |
+| Batch 2A smoke marker | 通过 | 日志输出 `Flyway empty database smoke reached V31`。 |
+| No baseline / clean boundary | 通过 | Workflow 静态复核为 `baselineOnMigrate(false)`、`cleanDisabled(true)`；未发现 `cleanDisabled(false)`。 |
+| No seed boundary | 通过 | `postgres-flyway` job 未插入 legacy account seed、test fixture seed、真实账户 seed 或真实交易所 seed；Batch 1 backend seed watcher 未进入该 job。 |
+| No app / repository / E2E expansion | 通过 | `postgres-flyway` job 未启动 `nq-app` full context，未触发 `AuthSeedConfiguration`，未跑 repository real DB smoke，未跑 frontend E2E。 |
+| No Testcontainers / skip / continue-on-error | 通过 | Workflow 未启用 Testcontainers，未使用 `continue-on-error`，未用 skip 伪装通过，未使用 `skipTests`。 |
+| Security boundary | 通过 | Workflow 仅使用 CI-only PostgreSQL service env；未注入真实交易所 credential，未开启 LIVE，未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。 |
+| `git status --short` | 通过 | first-run review 编辑前工作区干净；编辑后仅包含允许的 `docs/current` 文档。 |
+| `git diff --check` | 通过 | 未发现 whitespace error。 |
+| `git diff --stat` | 已检查 | first-run review 只同步 current docs。 |
+| `git show --stat --oneline --name-only HEAD` | 已检查 | HEAD 为 `7836640e ci(gatek): add PostgreSQL Flyway migration smoke`，包含 `.github/workflows/ci.yml` 与允许的 current docs。 |
+| forbidden-area diff | 通过 | `git diff -- backend`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration` 均为空。 |
+| keyword scan | 已执行 | `rg "continue-on-error|skipTests|baselineOnMigrate|cleanDisabled\(false\)|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current` 已执行；workflow 仅命中 `baselineOnMigrate(false)`，docs 命中为历史记录、安全边界或禁止项说明。 |
+
+Review decision: PASS / ACCEPTED。Batch 2A 可冻结为 PostgreSQL / Flyway empty DB migration smoke baseline。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2A-IMPL 验证记录（2026-06-14）
 
 本轮是 GateK CI Batch 2A implementation：只修改 `.github/workflows/ci.yml` 新增 `postgres-flyway` job，并同步 current docs。Batch 2A 只覆盖 PostgreSQL service + Flyway empty DB V1-V31 migration smoke；未实现 Batch 2B schema artifact/docs、Batch 2C repository real PostgreSQL smoke、Batch 2D `nq-app` context smoke、Batch 2E seed watcher cleanup、Batch 3 no-outbound guard、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening。
 
-本轮未运行 GitHub Actions 本体；`postgres-flyway` first CI run pending。未运行 backend full Maven test、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮未修改 Java / TypeScript / Python / test / migration / backend production code。
+本轮 implementation 当时未运行 GitHub Actions 本体，`postgres-flyway` first CI run 当时 pending；该 pending 状态已由 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW` 关闭。未运行 backend full Maven test、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮未修改 Java / TypeScript / Python / test / migration / backend production code。
 
 | 命令 / 检查 | 结果 | 说明 |
 | --- | --- | --- |
@@ -87,7 +113,7 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 边界确认：
 
-- Batch 2A implemented；first CI run pending。
+- Batch 2A implemented；first CI run 当时 pending，已由 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW` 关闭。
 - 未修改 Java / TypeScript / Python / test code。
 - 未新增 API，未新增 migration，未修改历史 migration。
 - 未修改 backend 生产逻辑、frontend、research、scripts、deploy。

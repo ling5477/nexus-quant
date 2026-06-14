@@ -2,6 +2,71 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW
+
+日期：2026-06-14
+
+### 本轮目标
+
+只评审 GitHub Actions `postgres-flyway` 首次运行结果，判断 Batch 2A 是否可以冻结为 PostgreSQL / Flyway empty DB migration smoke baseline。本轮不修改 workflow，不修改 Java / TypeScript / Python / 测试代码，不新增 API，不新增或修改 migration，不进入 Batch 2B/2C/2D/2E 或 Batch 3-5。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### GitHub Actions run summary
+
+- Run: `27501253175`
+- Workflow: `NQ CI Baseline`
+- Branch / commit: `dev` / `7836640ebae46d6fc62771611f5215661b3267dc`
+- Status / conclusion: completed / success
+- Jobs: `Diff check`、`Backend Maven test`、`PostgreSQL / Flyway smoke`、`Frontend build`、`Research quality gate` all completed / success
+- Artifacts: none；Batch 2B schema artifacts 仍未开始。
+
+### postgres-flyway review
+
+- Job `PostgreSQL / Flyway smoke` / id `81284424653` completed / success。
+- `Initialize containers` 使用 `postgres:16` service；日志显示 PostgreSQL 16.14 ready。
+- `Prepare Flyway runtime classpath` completed / success。
+- `Run empty database Flyway smoke` completed / success。
+- 日志显示 empty DB 状态：`Schema history table ... does not exist yet`、`Current version ... << Empty Schema >>`。
+- 日志显示 `Successfully applied 31 migrations ... now at version v31`、`Successfully validated 31 migrations`、`Flyway empty database smoke reached V31`。
+- `flyway_schema_history` 已打印 V1-V31，row 31 为 `V31__schema_credential_permission_probe.sql`，success 为 `true`。
+
+### 边界确认
+
+- 未使用 `baselineOnMigrate` 绕过；workflow 固定 `baselineOnMigrate(false)`。
+- 未运行 Flyway `clean`；workflow 固定 `cleanDisabled(true)`，未发现 `cleanDisabled(false)`。
+- 未插入 legacy account seed、test fixture seed、真实账户 seed 或真实交易所 seed。
+- 未启动 `nq-app` full context，未触发 `AuthSeedConfiguration`。
+- 未跑 repository real PostgreSQL smoke，未跑 frontend E2E。
+- 未启用 Testcontainers。
+- 未使用 `continue-on-error`、`skipTests` 或 skip 伪装通过。
+- 未注入真实交易所 credential，未开启 LIVE，未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- Batch 2B/2C/2D/2E、Batch 3/4/5 仍 pending / not started。
+
+### 验证记录
+
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat`。
+- 已执行 `git show --stat --oneline --name-only HEAD`。
+- 已执行 forbidden-area diff：`git diff -- backend`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration`，输出均为空。
+- 已执行 workflow / docs keyword scan：`rg "continue-on-error|skipTests|baselineOnMigrate|cleanDisabled\(false\)|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current`；workflow 仅命中 `baselineOnMigrate(false)`，docs 命中为历史记录、安全边界或禁止项说明。
+- `gh run view --log` 因 GitHub 权限返回 `HTTP 403: Must have admin rights to Repository`；已使用 GitHub MCP 读取同一 job 的 decoded logs、jobs 和 steps。
+
+### Review decision
+
+PASS / ACCEPTED。Batch 2A 可冻结为 PostgreSQL / Flyway empty DB migration smoke baseline。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
+
+---
+
 ## NQ-CI-POSTGRES-FLYWAY-2A-IMPL
 
 日期：2026-06-14
@@ -36,7 +101,7 @@
 - 已执行 Maven classpath 准备命令并通过：`mvn -f backend/pom.xml -pl nq-app -am process-classes org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath "-DincludeScope=runtime" "-Dmdep.outputFile=target/flyway-classpath.txt"`；23 个 reactor module `SUCCESS`，未启动 PostgreSQL、未运行 tests、未启动 app context。
 - 首次未加 PowerShell 引号的本地干跑失败为 shell 参数解析问题；workflow 使用 bash，命令语义不受该本地 PowerShell 问题影响。
 - 本机未安装 `actionlint`，Ruby 不可用，系统 Python 与 Codex bundled Python 均无 PyYAML，bundled Node 未发现 `yaml` / `js-yaml`；本轮未执行完整 workflow lint，first CI run 仍是最终语法验证。
-- 本地未运行 GitHub Actions service container；`postgres-flyway` first CI run pending。
+- 本地未运行 GitHub Actions service container；`postgres-flyway` first CI run 当时 pending，已由 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW` 关闭。
 - 未运行 backend full Maven test、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮未修改 Java / TypeScript / Python / test / migration / backend production code。
 
 ### 边界确认
@@ -52,7 +117,7 @@
 
 ### 下一步
 
-Next concrete action：push / PR 到 `dev` 后观察 GitHub Actions `NQ CI Baseline` 的 `postgres-flyway` first run；随后执行 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW`。如 first run 失败，只允许做 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-FIX`，不得混入 Batch 2B-2E、Batch 3-5、AI、DH runtime、LIVE 或真实交易所。
+Next concrete action（implementation 当时）：push / PR 到 `dev` 后观察 GitHub Actions `NQ CI Baseline` 的 `postgres-flyway` first run；随后执行 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW`。该 action 已由本轮 review 关闭；当前 next concrete action 为 `NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
 
 ---
 
