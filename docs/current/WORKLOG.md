@@ -2,6 +2,45 @@
 
 日期：2026-05-16
 
+## GATEK-ARCHITECTURE-BASELINE-REVIEW
+
+日期：2026-06-14
+
+### 本轮目标
+
+只读审查 NQ 当前 architecture baseline、backend module boundary、frontend baseline、research Python 边界、docs/current 事实源、test baseline、CI / observability / deployment / security 后续入口。本轮只允许文档变更；不修改 Java、TypeScript、Python、测试代码、部署脚本或 migration；不启动 GateK implementation、AI、DH runtime、LIVE 或真实 permission probe adapter。
+
+### 修改文件
+
+- `docs/current/GATEK_ARCHITECTURE_BASELINE_REVIEW.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+- `README.md`
+
+### 变更摘要
+
+- 新增 GateK architecture baseline review 主文档，冻结当前审查结论：P0=0，P1=0，baseline accepted with P2 follow-up。
+- 记录 backend 多模块分层、ArchUnit 边界护栏、frontend Ant Design / TanStack Query / NQ Console Design System baseline、research Python 独立边界和 docs/current 主事实一致性。
+- 登记 P2 follow-up：`ARCHITECTURE.md` / `MODULES.md` 旧阶段措辞同步、minimal CI baseline plan、frontend GateK page matrix、no-egress/fake-server plan、observability/deployment planning。
+- README 和 docs/current README 仅新增报告索引；未修改代码、API、migration 或部署脚本。
+
+### 验证记录
+
+- `git status --short`、`git diff --check`、`git diff --stat` 已执行，结果见 `TESTING.md`。
+- `git diff -- backend`、`git diff -- frontend`、`git diff -- research`、`git diff -- scripts`、`git diff -- deploy`、`git diff -- backend/**/db/migration` 已执行，结果见 `TESTING.md`。
+- 阶段误写扫描已执行：命中均为否定式、禁止说明、风险说明或历史语境；未把 GateK implementation、AI、DH runtime、LIVE 或 real adapter 写成已启动/已实现。
+
+### 边界确认
+
+- 未修改 Java、TypeScript、Python、测试代码、部署脚本或 migration。
+- 未新增 API、Controller、Service、Repository、Adapter 或 migration。
+- 未启动 GateK implementation、AI、DH runtime、NQ RealClient、真实 Provider、真实交易所调用、LIVE 或真实 OKX/Binance permission probe adapter。
+- 未下单、撤单、转账、提现。
+- 未读取、打印、复制或输出真实 credential material。
+
+---
+
 ## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-P3-CLEANUP
 
 日期：2026-06-14

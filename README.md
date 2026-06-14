@@ -54,6 +54,7 @@ GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateJ-FREEZE 稳
 - `docs/current/STATUS.md`：当前项目状态
 - `docs/current/ROADMAP.md`：总路线
 - `docs/current/GATEK_PLAN.md`：GateK planning-only 阶段规划；明确 GateK implementation、AI、DH runtime、LIVE、multi-exchange expansion 均未启动
+- `docs/current/GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、P2 follow-up required，未启动 GateK implementation
 - `docs/current/PLAN_GATEJ.md`：GateJ 规划
 - `docs/current/GATEJ_WORK_ORDER.md`：GateJ 工作单（含 GateJ-FREEZE 范围）
 - `docs/current/PRE_FREEZE_AUDIT_REPORT.md`：GateJ-FREEZE 前置代码 / 文档 / 实现真实性审查报告

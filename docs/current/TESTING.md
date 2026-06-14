@@ -60,6 +60,36 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## GATEK-ARCHITECTURE-BASELINE-REVIEW 验证记录（2026-06-14）
+
+本轮为 GateK review-only / docs-only：只审查 architecture baseline、module boundary、test baseline、docs/facts 和 security baseline，并新增 / 同步文档。未修改 backend、frontend、research、scripts、deploy、测试代码、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；验收以只读审查、Git diff、forbidden-area diff、阶段措辞和敏感边界检查为准。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 通过 | 只包含允许的 README / docs/current 文档变更；新增 `docs/current/GATEK_ARCHITECTURE_BASELINE_REVIEW.md` 由 status 确认。 |
+| `git diff --check` | 通过 | 退出码 0；仅输出既有 Windows 工作区 LF/CRLF 提示，无 whitespace error。 |
+| `git diff --stat` | 已检查 | tracked diff 仅覆盖 README / docs/current 文档；Git 默认不统计 untracked 新报告文件。 |
+| `git diff -- backend` | 通过 | 输出为空，未改后端。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改前端。 |
+| `git diff -- research` | 通过 | 输出为空，未改 Python research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改脚本。 |
+| `git diff -- deploy` | 通过 | 输出为空，未改部署目录。 |
+| `git diff -- backend/**/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| `git ls-files backend/frontend/research/.github/deploy/scripts` | 已检查 | backend/frontend/research/deploy/scripts 结构符合当前基线；`.github/workflows` 当前无 tracked workflow。 |
+| Backend boundary scan | 已检查 | `nq-core` / `nq-api` main code 未命中 JDBC / infra 直接依赖；`nq-api` SQL literal 抽查为空；ArchUnit boundary tests 已存在。 |
+| Frontend stack scan | 已检查 | `package.json` 维持 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；未发现 shadcn / Tailwind 体系接入。 |
+| Research baseline scan | 已检查 | `research/py/pyproject.toml` 维持 pytest / mypy / ruff dev baseline；README 明确不作为 Java / Python runtime bridge。 |
+| Stage wording scan | 已检查 | `rg "GateK implementation|AI started|DH integrated|LIVE enabled|real adapter implemented" README.md AGENTS.md CLAUDE.md docs/current` 命中均为否定式、禁止说明、风险说明或历史语境。 |
+| Security / no-outbound scan | 已检查 | Permission probe freeze review、OKX bootstrap no-outbound review、Integration-0 docs 均保持 no-real / no-runtime / no-LIVE 边界；未读取或输出真实 credential material。 |
+
+边界确认：
+
+- 未修改 Java / TypeScript / Python / 测试代码 / 部署脚本 / migration。
+- 未新增 API / migration。
+- 未启动 GateK implementation / AI / DH runtime / LIVE / real adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未读取、打印、复制或输出真实 credential material。
+
 ## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-P3-CLEANUP 验证记录（2026-06-14）
 
 本轮为 P3 cleanup：只修复 NoReal fake result 的 `requestId` / `traceId` 字段质量，并收口 permission probe 文档层级。未新增功能、API、migration、前端、Python 或部署脚本；未接真实交易所、AI、DH 或 LIVE。
