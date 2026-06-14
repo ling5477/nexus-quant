@@ -5,21 +5,30 @@ import {BarChart} from 'echarts/charts';
 import {echarts} from '@/components/nq/charts/echarts-core';
 import {
     AppShell,
+    ChangeCell,
     DataFreshness,
     EnvironmentBadge,
+    MoneyCell,
+    NumberCell,
+    NQ_TABLE_DENSITY,
+    PercentCell,
     RiskBanner,
+    StatusCell,
     StatusTag,
     applyNqCssVars,
     marketColors,
     nqAntdTheme,
     nqCandleColors,
+    nqTableClassName,
     registerNqEchartsTheme,
     type FreshnessState,
     type MarketConvention,
     type NqEnv,
+    type NqTableDensity,
     type StatusTone,
 } from '@/nq-design-system';
 
+import '@/nq-design-system/table/nq-table.css';
 import './DesignSystemDemoPage.css';
 
 /**
@@ -73,6 +82,28 @@ const SAMPLE_LABELS = ['09:30', '10:30', '11:30', '13:30', '14:30', '15:00'];
 const SAMPLE_EQUITY = [100000, 100420, 100180, 100910, 101350, 101120];
 const SAMPLE_PNL = [420, -240, 730, 440, -230, -180];
 
+const TABLE_DENSITIES: readonly NqTableDensity[] = ['compact', 'standard', 'comfortable'];
+
+interface SampleRow {
+    symbol: string;
+    status: string;
+    last: number;
+    qty: number;
+    weight: number;
+    pnl: number;
+    changePct: number;
+    updatedAt: string;
+}
+
+// 涨跌列(浮动盈亏 / 日涨跌幅)用 ChangeCell(行情方向色,随惯例翻转);仓位占比用 PercentCell(中性,不着色);其余数字等宽右对齐。
+const SAMPLE_TABLE_ROWS: readonly SampleRow[] = [
+    {symbol: 'BTC-USDT', status: 'RUNNING', last: 64231.5, qty: 0.8421, weight: 42.5, pnl: 1284.5, changePct: 2.13, updatedAt: '15:00:02'},
+    {symbol: 'ETH-USDT', status: 'PENDING', last: 3120.42, qty: 12.5, weight: 28.0, pnl: -642.18, changePct: -1.27, updatedAt: '14:59:58'},
+    {symbol: 'SOL-USDT', status: 'DEGRADED', last: 148.07, qty: 320, weight: 15.3, pnl: 0, changePct: 0, updatedAt: '14:59:41'},
+    {symbol: 'BNB-USDT', status: 'BLOCKED', last: 588.9, qty: 5.2, weight: 9.1, pnl: 73.04, changePct: 0.42, updatedAt: '14:58:30'},
+    {symbol: 'XRP-USDT', status: 'PAUSED', last: 0.5213, qty: 18000, weight: 5.1, pnl: -120.9, changePct: -0.88, updatedAt: '14:57:12'},
+];
+
 /**
  * MiniChart — 自检用最小 ECharts 容器。
  * 每次 convention 变化都重建实例,以应用按惯例重新注册的 'nq' 主题;卸载时 dispose 释放资源。
@@ -108,6 +139,7 @@ export function DesignSystemDemoPage() {
     const [convention, setConvention] = useState<MarketConvention>('INTL_CRYPTO');
     const [riskOpen, setRiskOpen] = useState(true);
     const [refreshTick, setRefreshTick] = useState(0);
+    const [density, setDensity] = useState<NqTableDensity>('standard');
 
     // 页面级接线(scoped):注入 CSS 变量 + 注册 ECharts 主题。惯例切换"一处生效"。
     useLayoutEffect(() => {
@@ -314,6 +346,74 @@ export function DesignSystemDemoPage() {
                                     K 线下跌 (downColor)
                                 </div>
                             </div>
+                        </section>
+
+                        <section className="nq-ds-demo__section">
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: 12,
+                                    marginBottom: 12,
+                                    flexWrap: 'wrap',
+                                }}
+                            >
+                                <h3 className="nq-ds-demo__section-title" style={{margin: 0}}>
+                                    表格密度 + 列格式(数字右对齐 tabular-nums;涨跌列随惯例翻转,独立于 success/danger)
+                                </h3>
+                                <Segmented<NqTableDensity>
+                                    size="small"
+                                    value={density}
+                                    onChange={setDensity}
+                                    options={TABLE_DENSITIES.map((item) => ({
+                                        label: NQ_TABLE_DENSITY[item].label,
+                                        value: item,
+                                    }))}
+                                />
+                            </div>
+                            <table className={nqTableClassName(density)} aria-label="表格密度自检">
+                                <thead>
+                                    <tr>
+                                        <th>标的</th>
+                                        <th className="nq-ds-col-nowrap">状态</th>
+                                        <th className="nq-ds-col-num">最新价</th>
+                                        <th className="nq-ds-col-num">持仓</th>
+                                        <th className="nq-ds-col-num">仓位占比</th>
+                                        <th className="nq-ds-col-num">浮动盈亏</th>
+                                        <th className="nq-ds-col-num">日涨跌幅</th>
+                                        <th className="nq-ds-col-num">更新时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {SAMPLE_TABLE_ROWS.map((row) => (
+                                        <tr key={row.symbol}>
+                                            <td>
+                                                <span style={{fontFamily: 'var(--nq-font-mono)'}}>{row.symbol}</span>
+                                            </td>
+                                            <td className="nq-ds-col-nowrap">
+                                                <StatusCell status={row.status}/>
+                                            </td>
+                                            <td className="nq-ds-col-num">
+                                                <MoneyCell value={row.last} precision={2} currency="USDT"/>
+                                            </td>
+                                            <td className="nq-ds-col-num">
+                                                <NumberCell value={row.qty} precision={4}/>
+                                            </td>
+                                            <td className="nq-ds-col-num">
+                                                <PercentCell value={row.weight} signed={false}/>
+                                            </td>
+                                            <td className="nq-ds-col-num">
+                                                <ChangeCell value={row.pnl} precision={2}/>
+                                            </td>
+                                            <td className="nq-ds-col-num">
+                                                <ChangeCell value={row.changePct} percent arrow/>
+                                            </td>
+                                            <td className="nq-ds-col-num">{row.updatedAt}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </section>
 
                         <section className="nq-ds-demo__section">
