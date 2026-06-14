@@ -1640,3 +1640,22 @@ Review decision：Batch 1 baseline 可冻结为当前 `dev` 的最小 CI 基线�
 - Batch 3 no-outbound guard。
 - Batch 4 secret scan / security guard。
 - Batch 5 frontend E2E hardening。
+
+## NQ-FRONTEND-B0-DESIGN-TOKENS-V2 验证记录（2026-06-14）
+
+本轮是 frontend-only 改动：新增 v2 设计系统模块 `frontend/src/nq-design-system/`、自检演示页 `frontend/src/pages/dev/`，并在 `frontend/src/router/routes.tsx` 注册公开自检路由 `/dev/design-system`。接线作用域限定在该路由（v2 `ConfigProvider`/`applyNqCssVars`/`registerNqEchartsTheme`），未改全局 `AppProviders`、未动 v1 页面、未改后端/契约/migration。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build`（`tsc -b && vite build`） | **通过** | tsc 类型检查 0 error；`✓ built in ~1s`。>500 kB 单 chunk warning 为既有单包结构（echarts 在 v1 已打包），非本轮回归。 |
+| 真机自检：`vite preview` + Playwright Chromium 截图 `/dev/design-system` | **通过** | 0 console error / 0 page error。INTL_CRYPTO 默认 `--nq-up=#33d6a6`(绿)/`--nq-down=#ff5c6c`(红)，`.nq-up` 实算 `rgb(51,214,166)`；切换 CN_STOCK 后翻转为 `--nq-up=#ff5c6c`(红)，`.nq-up` 实算 `rgb(255,92,108)`，数字 + K 线 swatch + ECharts PnL 柱同步翻转。 |
+| 视觉断言（同上截图） | **通过** | LIVE（实心红+点）≠ PAPER（描边）；四件状态组件 + AppShell + 暗色分层 + CJK 14px + 数字 tabular-nums 正常；`body` 背景仍为 v1 `#0d1219`，作用域接线未泄漏到 v1。 |
+| `npm run test:e2e` | **未运行** | 现有 E2E 多数 spec 依赖后端（`127.0.0.1:18888`，本环境未启动）；本轮只新增公开自检路由与独立模块，未改既有页面/全局主题，既有 E2E 语义不受影响。Playwright Chromium 已就绪，后端就绪后由用户侧执行全量 E2E。 |
+| `git status --short` | 已检查 | 仅 `frontend/src/nq-design-system/`、`frontend/src/pages/dev/`（新增）、`frontend/src/router/routes.tsx`（修改）+ 本轮 `WORKLOG.md`/`TESTING.md`。`dist` / `tsbuildinfo` 已 gitignore，未入库；临时截图脚本已删除。 |
+
+阶段与安全边界：
+
+- 只做 B0（READY_NOW）基础系统，未做 B1+ 业务页面，未做 AI/Agent/DH 页面（B8 仍 BLOCKED）。
+- 未接真实 WebSocket/SSE/交易所 adapter；实时数据本阶段只留 TanStack Query polling / 手动刷新规范。
+- LIVE 明确为 disabled；未下单、撤单、转账、提现。
+- 未读取、打印、输出真实 API key、secret、token、私钥、助记词、passphrase。

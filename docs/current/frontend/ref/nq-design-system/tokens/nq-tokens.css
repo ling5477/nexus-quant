@@ -1,0 +1,59 @@
+/* nq-tokens.css — 静态 CSS 变量基线(B0)
+   默认 INTL_CRYPTO(绿涨红跌)。运行时切换惯例请用 applyNqCssVars('CN_STOCK')。
+   这是 SSR/首屏的静态兜底;JS 注入(nq-css-vars.ts)是单一来源,二者保持默认一致。 */
+:root {
+  --nq-bg-app: #070f1c;
+  --nq-bg-canvas: #0b1322;
+  --nq-bg-panel: #0f1b2d;
+  --nq-bg-elevated: #16263d;
+
+  --nq-text-primary: #eef3ff;
+  --nq-text-secondary: #bcc8de;
+  --nq-text-tertiary: #93a1ba;
+  --nq-text-disabled: #6b7990;
+
+  --nq-border-subtle: #22324a;
+  --nq-border-strong: #3a4d6e;
+
+  --nq-primary: #5b8cff;
+  --nq-success: #3ad29f;
+  --nq-warning: #fbbf3f;
+  --nq-danger: #ff6166;
+  --nq-info: #56c7f5;
+
+  /* 行情方向:默认 INTL_CRYPTO(绿涨红跌)。CN_STOCK 时由 JS 翻转。 */
+  --nq-up: #33d6a6;
+  --nq-down: #ff5c6c;
+  --nq-flat: #93a1ba;
+
+  --nq-env-paper: #3b82f6;
+  --nq-env-demo: #7c5cff;
+  --nq-env-live: #ff4d4f;
+  --nq-env-readonly: #667085;
+  --nq-env-audited: #3ad29f;
+
+  --nq-font-ui: 'Inter', 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --nq-font-mono: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
+}
+
+/* 全局基线 */
+body {
+  background: var(--nq-bg-app);
+  color: var(--nq-text-primary);
+  font-family: var(--nq-font-ui);
+  font-size: 13px;
+}
+
+/* 中文内容抬一档到 14px(高密度下 13px CJK 偏小) */
+:lang(zh) { font-size: 14px; }
+
+/* 数字/ID:等宽 + tabular-nums,小数点对齐、跳动不抖 */
+.nq-num, .nq-mono {
+  font-family: var(--nq-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 涨跌语义工具类 */
+.nq-up   { color: var(--nq-up); }
+.nq-down { color: var(--nq-down); }
+.nq-flat { color: var(--nq-flat); }

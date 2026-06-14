@@ -4779,3 +4779,52 @@ Next concrete action：冻结 `NQ-CI-BASELINE-IMPL` Batch 1 为当前 `dev` 最�
 - 未实现 GateK 功能、AI、DH runtime integration、NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
 - 未开启 LIVE，未下单、撤单、转账、提现。
 - 未读取、打印、复制、输出真实 API key、secret、token、私钥、助记词、passphrase。
+
+---
+
+# Worklog: NQ-FRONTEND-B0-DESIGN-TOKENS-V2-APP-SHELL-STATUS-SYSTEM
+
+日期：2026-06-14
+
+## 本轮目标
+
+把已审定的 NQ Console Design System v2 基线（`docs/current/frontend/NQ_DESIGN_TOKENS_V2.md` + `docs/current/frontend/ref/nq-design-system/`）落进真实前端工程（React + Vite + TS + AntD 5），只做 B0（施工状态 READY_NOW）：tokens 单一来源 + AntD/ECharts/Lightweight Charts 主题派生 + 四件状态组件 + AppShell + 应用入口接线 + 一个自检演示路由。本轮不做 B1+ 业务页面、不做 AI/Agent/DH 页面、不接真实 WebSocket/SSE/交易所 adapter、不碰 LIVE、不改后端 API。
+
+## 接线范围决策（用户确认）
+
+现有 Design System v1（`@/theme/*`、`--nq-color-*`、`@/components/nq/*`）已是 GateJ 冻结、驱动 ~20 个线上页面 + login E2E。v2 与 v1 CSS 变量命名空间不冲突（v2=`--nq-*` / v1=`--nq-color-*`），唯一全局冲突点是单一全局 AntD `ConfigProvider` 主题。经用户确认采用「作用域限定到演示路由」：v2 的 `ConfigProvider(nqAntdTheme)` / `applyNqCssVars` / `registerNqEchartsTheme` 仅在新建自检路由 `/dev/design-system` 内激活；**不改全局 `AppProviders`，不动 v1 页面**，可一键回滚。既有页面迁移到 v2 token 留作后续切片。
+
+## 修改范围
+
+- 新增 v2 设计系统模块 `frontend/src/nq-design-system/`（12 个文件 + README）：
+  - `tokens/nq-tokens.ts`（唯一来源）、`tokens/nq-css-vars.ts`（生成/注入 CSS 变量）、`tokens/nq-tokens.css`（:root 兜底，当前不全局 import）。
+  - `theme/nqAntdTheme.ts`、`theme/nqEchartsTheme.ts`、`theme/nqLwcOptions.ts`。
+  - `status/StatusTag.tsx`、`status/EnvironmentBadge.tsx`、`status/RiskBanner.tsx`、`status/DataFreshness.tsx`、`shell/AppShell.tsx`、`index.ts`。
+- 新增自检演示页 `frontend/src/pages/dev/DesignSystemDemoPage.tsx` + 作用域样式 `DesignSystemDemoPage.css`（规则均命名空间到 `.nq-ds-demo`）。
+- 修改 `frontend/src/router/routes.tsx`：注册公开、非业务、不在侧导航的自检路由 `/dev/design-system`（位于 `RequireAuth` 之外，不依赖登录/后端）。
+
+## 与审定参考实现的差异（为通过本仓库 strict tsconfig，最小适配）
+
+- `import React from 'react'` 改为按需 `import type { CSSProperties | ReactNode }` 或移除（仓库启用 `jsx: react-jsx` + `noUnusedLocals`）。
+- `nqEchartsTheme.ts` 从 `'echarts/core'` 引入（与 `src/components/nq/charts/echarts-core.ts` 一致，保持 tree-shaking，`registerTheme` 在 core 上可用），而非全量 `'echarts'`。
+- `nqLwcOptions()` 去掉未使用的 `convention` 形参（仓库启用 `noUnusedParameters`；涨跌色只作用于 `nqCandleColors`，chart chrome 与惯例无关）。
+- 行为/取值/配色与审定基线一致，未改动 token 值。
+
+## 验证记录
+
+- `npm run build`（`tsc -b && vite build`）：**通过**。tsc 类型检查 0 error；vite build `✓ built in ~1s`。>500 kB 单 chunk warning 为既有单包结构所致（echarts 在 v1 已打包），非本轮回归。
+- 真机自检（vite preview + Playwright Chromium 截图 `/dev/design-system`，无后端依赖）：**通过，0 console error / 0 page error**。
+  - INTL_CRYPTO 默认：`--nq-up`=`#33d6a6`(绿)、`--nq-down`=`#ff5c6c`(红)；`.nq-up` 实算 `rgb(51,214,166)`。
+  - 切换 CN_STOCK 后：`--nq-up`=`#ff5c6c`(红)、`--nq-down`=`#33d6a6`(绿)；`.nq-up` 实算 `rgb(255,92,108)`；数字、K 线 swatch、ECharts PnL 柱同步翻转（一处生效）。
+  - LIVE（实心红+点）与 PAPER（描边）样式明显不同；四件状态组件、AppShell、暗色分层、CJK 14px、数字 tabular-nums 渲染正常。
+  - `body` 背景仍为 v1 的 `#0d1219`（未被全局覆盖），证明作用域接线未泄漏到 v1 页面。
+- `npm run test:e2e`：**本轮未运行**。原因：现有 E2E 多数 spec 依赖后端（`127.0.0.1:18888`，本环境未启动）；本轮只新增公开自检路由与独立模块，未改任何既有页面或全局主题，既有 E2E 语义不受影响。Playwright Chromium 已就绪，后端就绪后由用户侧执行全量 E2E。
+
+## 边界确认
+
+- 未改后端、未改 API/契约、未新增 migration。
+- 未改任何既有业务页面、未改全局 `AppProviders` / v1 主题。
+- 未接真实 WebSocket/SSE/交易所 adapter，未碰 LIVE 交易能力。
+- 未做 AI / Agent / DH 页面（B8 仍 BLOCKED），未 mock 成熟业务页。
+- 未读取、打印、输出真实 API key、secret、token、私钥、助记词、passphrase。
+- 回滚方式：删除 `frontend/src/nq-design-system/`、`frontend/src/pages/dev/`，还原 `frontend/src/router/routes.tsx` 两处新增即可完全回退。
