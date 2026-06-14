@@ -33,7 +33,7 @@ Previous completed stages:
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance
 - GateJ
 
-Next allowed: GateK-PLAN。GateJ-FREEZE 30m / 1h / 24h / 7d acceptance 已通过，GateJ completed，详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`。GateK-PLAN 只允许规划 AI 信号接入，不代表 GateK 实现、AI 接入、DH 集成或真实交易已启动。
+Next allowed: GateK-PLAN。GateJ-FREEZE 30m / 1h / 24h / 7d acceptance 已通过，GateJ completed，详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`。GateK-PLAN 只允许规划 GateJ 后的事实源收口、架构基线、前端产品化、部署化、可观测性和安全边界，不代表 GateK 实现、AI 接入、DH 集成、LIVE 或真实交易已启动。
 
 NQ / DH 三轮只读审计（NQ 全仓 / DH 全仓 / NQ-DH 联合边界 + 汇总）已完成，结论同步在 `docs/current/STATUS.md`。当前阶段口径固定为：
 

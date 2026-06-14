@@ -18,11 +18,12 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed
 - GateJ completed（详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`）
 - Next: GateK-PLAN
+- GateK implementation not started
 - AI not started
 - DH integration not started / not connected to NQ
 - Multi-exchange expansion not started
 
-GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateJ-FREEZE 稳定性验收已通过；AI、AI 信号、AI 自动交易、AI Paper Trading、DH integration、多交易所扩展仍未开始。当前 Next 只是 GateK-PLAN，不代表 GateK 实现已启动。
+GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateJ-FREEZE 稳定性验收已通过；AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、多交易所扩展仍未开始。当前 Next 只是 GateK-PLAN，用于规划 GateJ 后的事实源收口、架构基线、前端产品化、可观测性、部署化和安全边界，不代表 GateK 实现已启动。
 
 ## 当前能力摘要
 
@@ -52,6 +53,7 @@ GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateJ-FREEZE 稳
 - `docs/current/README.md`：当前事实入口索引
 - `docs/current/STATUS.md`：当前项目状态
 - `docs/current/ROADMAP.md`：总路线
+- `docs/current/GATEK_PLAN.md`：GateK planning-only 阶段规划；明确 GateK implementation、AI、DH runtime、LIVE、multi-exchange expansion 均未启动
 - `docs/current/PLAN_GATEJ.md`：GateJ 规划
 - `docs/current/GATEJ_WORK_ORDER.md`：GateJ 工作单（含 GateJ-FREEZE 范围）
 - `docs/current/PRE_FREEZE_AUDIT_REPORT.md`：GateJ-FREEZE 前置代码 / 文档 / 实现真实性审查报告

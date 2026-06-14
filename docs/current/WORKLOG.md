@@ -4355,3 +4355,35 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 - 未调用 OKX / Binance / Bybit / Gate 或任意真实交易所。
 - 未新增真实下单、撤单、转账、提现路径。
 - 未接 AI，未接 DH runtime，未把 GateK-PLAN 写成 GateK implementation started。
+
+---
+
+# Worklog: NQ-GATEK-PLAN
+
+日期：2026-06-14
+
+## 本轮目标
+
+本轮只做 GateK planning-only 文档与当前事实源同步。当前事实固定为 GateJ completed；Next: GateK-PLAN；GateK implementation not started；AI not started；DH integration not integrated / not connected to NQ；LIVE disabled；Multi-exchange expansion not started。
+
+## 修改范围
+
+- 新增 `docs/current/GATEK_PLAN.md`，定义 GateK 定位、非目标、六条主线、任务矩阵、验收标准、风险清单、backlog、安全审计前置、review-before-implementation 条件和 GateK 完成标准。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/ROADMAP.md`、`docs/current/STATUS.md`、`AGENTS.md`、`CLAUDE.md` 的 GateK-PLAN 定位，避免继续把 GateK 缩窄写成 AI 信号接入规划。
+- 追加本轮 `WORKLOG.md` / `TESTING.md` 记录，说明本轮为 docs-only planning，未运行 backend/frontend/Python build/test。
+
+## 验证记录
+
+- `git diff --check`：通过；仅输出既有 LF/CRLF 工作区提示，无 whitespace error。
+- `git diff --stat`：已检查；仅文档变更。
+- `git status --short`：已检查；仅允许文档范围内变更和新增 `docs/current/GATEK_PLAN.md`。
+- `git diff -- backend`、`git diff -- frontend`、`git diff -- research`、`git diff -- scripts`、`git diff -- deploy`、`git diff -- backend/**/db/migration`：输出均为空。
+- 阶段误写扫描：命中项均为禁止、否定或风险说明语境，未新增正向 `GateK implementation started`、`AI started`、`DH integrated`、`LIVE enabled` 事实声明。
+
+## 边界确认
+
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API、Controller、Service、Repository、Adapter 或 migration。
+- 未实现 GateK 功能、AI、DH runtime integration、NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未开启 LIVE，未下单、撤单、转账、提现。
+- 未读取、打印、复制、输出真实 API key、secret、token、私钥、助记词、passphrase。

@@ -1348,3 +1348,28 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 - Permission probe 相关 surefire reports 未命中 `www.okx.com` / `api.binance.com`。
 - 全量 surefire reports 未命中 `No route to host`、`ConnectException`、`UnknownHostException`、`request failed`、真实 endpoint 请求或 `api.binance.com`。
 - 全量 `nq-app` surefire reports 仍包含既有 OKX adapter 配置摘要 `baseUrl=https://www.okx.com`，这是 local profile fingerprint，不是本轮 permission probe 访问证据。
+
+## NQ-GATEK-PLAN 验证记录（2026-06-14）
+
+本轮是 docs-only planning：只新增 / 同步 GateK-PLAN 文档和 current facts 入口，不修改 backend、frontend、research、scripts、deploy、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；验收以文档边界、Git diff 和阶段措辞检查为准。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 仅输出既有 LF/CRLF 工作区提示，无 whitespace error。 |
+| `git diff --stat` | 已检查 | 仅文档变更；新增文件通过 `git status --short` 确认。 |
+| `git status --short` | 已检查 | 仅允许文档范围内变更和新增 `docs/current/GATEK_PLAN.md`。 |
+| `git diff -- backend` | 通过 | 输出为空，未改后端。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改前端。 |
+| `git diff -- research` | 通过 | 输出为空，未改 Python research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改脚本。 |
+| `git diff -- deploy` | 通过 | 输出为空，未改部署目录。 |
+| `git diff -- backend/**/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+
+阶段与安全边界：
+
+- GateK 只写为 planning / architecture / productization / deployment / observability / security boundary stage。
+- GateK implementation 明确为 not started。
+- AI 明确为 not started。
+- DH 明确为 not integrated / not connected to NQ；Integration-0 只作为 contract / mock / docs / contract test line。
+- LIVE 明确为 disabled。
+- 未读取、打印、复制或输出 credential material、`.env`、`*.key`、`*.pem`、`*.log`。

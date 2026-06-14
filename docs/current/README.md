@@ -1,6 +1,6 @@
 # Current Stage
 
-`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；AI not started**。
+`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；GateK implementation not started；AI not started**。
 
 ## 当前状态
 
@@ -13,8 +13,10 @@
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN。
+- GateK implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
+- LIVE disabled。
 - Multi-exchange expansion not started。
 - UI/UX professionalism remains post-freeze remediation。
 - NQ / DH 三轮只读审计已完成；DH not integrated；Integration-0 allowed only as contract / mock / documentation work line, not runtime integration（详见 `STATUS.md`）。
@@ -47,7 +49,7 @@ GateI：虚拟币量化 V1 完整闭环 completed
   ↓
 GateJ：Paper Trading 稳定运行 completed
   ↓
-GateK：AI 信号接入规划（NEXT）
+GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口（NEXT）
   ↓
 GateL：AI Paper Trading
   ↓
@@ -83,6 +85,7 @@ GateO：A 股适配
 - `TESTING.md`：统一验证命令与本次验证记录。
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。
+- `GATEK_PLAN.md`：GateK planning-only 阶段规划；用于冻结 GateK 目标、非目标、主线拆分、验收标准、风险、backlog、安全审计前置和执行顺序。
 - `WORKLOG.md`：执行日志。
 
 ## Codex Workflow 入口
@@ -93,8 +96,9 @@ GateO：A 股适配
 - `NQ_DH_CODEX_TASK_TEMPLATES.md`：常用代码审查、前端优化、图表、交易所字段、Gate 报告、部署审查和 DH Integration-0 模板。
 - `CODEX_PROJECT_INSTRUCTIONS.md`：可复制到 Codex Project Instructions 的完整规则。
 
-## 当前 GateJ 规划文件
+## 当前 Gate / planning 文件
 
+- `GATEK_PLAN.md`：GateK-PLAN 当前规划文件；不代表 GateK implementation started。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。

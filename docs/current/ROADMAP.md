@@ -11,7 +11,7 @@ GateI：虚拟币量化 V1 完整闭环 completed
   ↓
 GateJ：Paper Trading 稳定运行 completed
   ↓
-GateK：AI 信号接入规划 ← NEXT
+GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口 ← NEXT
   ↓
 GateL：AI Paper Trading
   ↓
@@ -35,8 +35,10 @@ GateO：A 股适配
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN。
+- GateK implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
+- LIVE disabled。
 - Multi-exchange expansion not started。
 
 ## 路线原则
@@ -45,7 +47,7 @@ GateO：A 股适配
 - GateH 已完成交易工作台、历史行情接入和 dataset 绑定。
 - GateI 已完成虚拟币量化 V1 完整闭环（策略版本、发布、回测追溯、评估增强、Paper Trading 运行闭环、风控回写、资金曲线、持仓曲线、交易复盘、异常停机）。
 - GateJ 已完成 Paper Trading 稳定运行验收。
-- GateK-PLAN 才允许开始规划 AI 信号接入，不能直接实现 AI 功能。
+- GateK-PLAN 用于规划 GateJ 后的事实源收口、架构与测试基线、前端产品化、CI / 可观测性 / 部署基线、安全 hardening 和 Integration-0 只读登记；不能直接实现 AI、DH runtime、LIVE、真实交易所扩展或真实 adapter。
 - GateL 进入 AI Paper Trading。
 - GateM 才允许 AI 小资金 LIVE。
 - 美股/A 股复用虚拟币 V1 沉淀的通用底座。
@@ -54,7 +56,7 @@ GateO：A 股适配
 
 - Current stage: GateJ completed。
 - Next: GateK-PLAN。
-- NQ / DH 三轮只读审计已完成；DH not integrated；GateK implementation not started；LIVE disabled。
+- NQ / DH 三轮只读审计已完成；DH not integrated；GateK implementation not started；AI not started；LIVE disabled。
 - Integration-0 allowed only as contract / mock / documentation work line, not runtime integration；它是独立文档与契约工作线，不等于 GateK 实现，也不是真实集成。
 - NQ-DH Integration-0 契约冻结已完成（contract / mock / docs）；下一步只允许 mock / contract test 设计或安全文档固化，禁止真实联调；真实通道必须等 Integration-1 并先修复 DH P1-4 残留（rate limit / memory cap / replay nonce 持久化）。
 - NQ-DH Integration-0 mock / contract test 详细矩阵（15 项）已设计完成（docs-only，未写测试代码）；下一步可进入 contract test 代码实现（草案 `NQ-DH-INTEGRATION0-CONTRACT-TEST-IMPL`，只加测试与 fixture，不接真实通道），仍禁止真实联调。

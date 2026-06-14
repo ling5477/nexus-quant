@@ -94,7 +94,7 @@ Previous completed stages:
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance
 - GateJ
 
-Next allowed: GateK-PLAN。GateJ-FREEZE 30m / 1h / 24h / 7d acceptance 已通过，GateJ completed，详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`。GateK-PLAN 只允许规划 AI 信号接入，不代表 GateK 实现、AI 接入、DH 集成或真实交易已启动。
+Next allowed: GateK-PLAN。GateJ-FREEZE 30m / 1h / 24h / 7d acceptance 已通过，GateJ completed，详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`。GateK-PLAN 只允许规划 GateJ 后的事实源收口、架构基线、前端产品化、部署化、可观测性和安全边界，不代表 GateK 实现、AI 接入、DH 集成、LIVE 或真实交易已启动。
 
 GateJ-FREEZE 最终状态：
 - 30m / 1h / 24h / 7d 连续运行验收 passed。
