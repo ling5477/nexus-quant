@@ -1,0 +1,302 @@
+name: NQ CI Baseline
+
+on:
+  pull_request:
+    branches:
+      - dev
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diff-check:
+    name: Diff check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whitespace in changed files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "origin/${{ github.base_ref }}...HEAD"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            git diff --check "${{ github.event.before }}" "${{ github.sha }}"
+          else
+            git show --check --pretty=format: HEAD
+          fi
+
+  backend:
+    name: Backend Maven test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: "123456"
+          POSTGRES_DB: nexus_quant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nexus_quant"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      CI: "true"
+      NQ_DB_URL: jdbc:postgresql://localhost:5432/nexus_quant
+      NQ_DB_USER: postgres
+      NQ_DB_PASSWORD: "123456"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Run backend tests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          (
+            set -euo pipefail
+            for _ in {1..180}; do
+              container="$(docker ps --filter "ancestor=postgres:16" --format "{{.ID}}" | head -n 1)"
+              if [[ -n "${container}" ]] && docker exec "${container}" psql -U postgres -d nexus_quant -tAc "SELECT to_regclass('public.accounts')" 2>/dev/null | grep -q "accounts"; then
+                docker exec "${container}" psql -U postgres -d nexus_quant -v ON_ERROR_STOP=1 -c "INSERT INTO accounts (account_code, venue, status) VALUES ('ci-local-account', 'PAPER', 'ACTIVE') ON CONFLICT (account_code) DO NOTHING;"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "CI seed watcher timed out waiting for accounts table" >&2
+            exit 1
+          ) &
+          seed_pid="$!"
+
+          set +e
+          mvn -f backend/pom.xml test
+          mvn_status="$?"
+          wait "${seed_pid}"
+          seed_status="$?"
+          set -e
+
+          if [[ "${mvn_status}" -ne 0 ]]; then
+            exit "${mvn_status}"
+          fi
+          exit "${seed_status}"
+
+  postgres-flyway:
+    name: PostgreSQL / Flyway smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nq_ci_user
+          POSTGRES_PASSWORD: nq_ci_password
+          POSTGRES_DB: nq_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nq_ci_user -d nq_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      CI: "true"
+      NQ_FLYWAY_DB_URL: jdbc:postgresql://localhost:5432/nq_ci
+      NQ_FLYWAY_DB_USER: nq_ci_user
+      NQ_FLYWAY_DB_PASSWORD: nq_ci_password
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Prepare Flyway runtime classpath
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mvn -f backend/pom.xml -pl nq-app -am process-classes \
+            org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath \
+            -DincludeScope=runtime \
+            -Dmdep.outputFile=target/flyway-classpath.txt
+
+      - name: Run empty database Flyway smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          smoke_dir="${RUNNER_TEMP}/nq-flyway-smoke"
+          mkdir -p "${smoke_dir}"
+
+          cat > "${smoke_dir}/FlywaySmoke.java" <<'JAVA'
+          import java.sql.Connection;
+          import java.sql.DriverManager;
+          import java.sql.ResultSet;
+          import java.sql.Statement;
+
+          import org.flywaydb.core.Flyway;
+          import org.flywaydb.core.api.MigrationInfo;
+
+          public final class FlywaySmoke {
+              private static final String EXPECTED_VERSION = "31";
+
+              private FlywaySmoke() {
+              }
+
+              public static void main(String[] args) throws Exception {
+                  String url = requireEnv("NQ_FLYWAY_DB_URL");
+                  String user = requireEnv("NQ_FLYWAY_DB_USER");
+                  String password = requireEnv("NQ_FLYWAY_DB_PASSWORD");
+
+                  Flyway flyway = Flyway.configure()
+                          .dataSource(url, user, password)
+                          .locations("classpath:db/migration")
+                          .baselineOnMigrate(false)
+                          .cleanDisabled(true)
+                          .outOfOrder(false)
+                          .load();
+
+                  flyway.migrate();
+                  flyway.validate();
+
+                  MigrationInfo current = flyway.info().current();
+                  String currentVersion = current == null || current.getVersion() == null
+                          ? null
+                          : current.getVersion().getVersion();
+                  if (!EXPECTED_VERSION.equals(currentVersion)) {
+                      throw new IllegalStateException(
+                              "Expected Flyway current version " + EXPECTED_VERSION + " but got " + currentVersion);
+                  }
+
+                  try (Connection connection = DriverManager.getConnection(url, user, password);
+                          Statement statement = connection.createStatement();
+                          ResultSet resultSet = statement.executeQuery("""
+                                  SELECT installed_rank, version, description, type, script, checksum, success
+                                  FROM flyway_schema_history
+                                  ORDER BY installed_rank
+                                  """)) {
+                      System.out.println("installed_rank|version|description|type|script|checksum|success");
+                      while (resultSet.next()) {
+                          System.out.printf("%d|%s|%s|%s|%s|%s|%s%n",
+                                  resultSet.getInt("installed_rank"),
+                                  resultSet.getString("version"),
+                                  resultSet.getString("description"),
+                                  resultSet.getString("type"),
+                                  resultSet.getString("script"),
+                                  resultSet.getString("checksum"),
+                                  resultSet.getBoolean("success"));
+                      }
+                  }
+
+                  System.out.println("Flyway empty database smoke reached V" + EXPECTED_VERSION);
+              }
+
+              private static String requireEnv(String name) {
+                  String value = System.getenv(name);
+                  if (value == null || value.isBlank()) {
+                      throw new IllegalStateException("Missing required environment variable: " + name);
+                  }
+                  return value;
+              }
+          }
+          JAVA
+
+          app_cp="$(cat backend/nq-app/target/flyway-classpath.txt)"
+          classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
+
+          javac -cp "${classpath}" "${smoke_dir}/FlywaySmoke.java"
+          java -cp "${smoke_dir}:${classpath}" FlywaySmoke
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+
+    env:
+      CI: "true"
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+  research:
+    name: Research quality gate
+    runs-on: ubuntu-latest
+
+    env:
+      CI: "true"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+    defaults:
+      run:
+        working-directory: research/py
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: research/py/pyproject.toml
+
+      - name: Install research dev dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run pytest
+        run: python -m pytest -q
+
+      - name: Run mypy
+        run: python -m mypy src --no-sqlite-cache
+
+      - name: Run ruff
+        run: python -m ruff check . --no-cache
