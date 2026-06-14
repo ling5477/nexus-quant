@@ -2,6 +2,52 @@
 
 日期：2026-05-16
 
+## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-P3-CLEANUP
+
+日期：2026-06-14
+
+### 本轮目标
+
+完成 credential permission probe freeze 后 P3 cleanup：分离 NoReal fake result 的 `requestId` 与 `traceId`，并收口 permission probe 文档层级。本轮不新增功能，不新增 API，不新增 migration，不接真实交易所，不接 AI / DH，不开启 LIVE。
+
+### 修改文件
+
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/NoRealExchangeCredentialPermissionProbePort.java`
+- `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/NoRealExchangeCredentialPermissionProbePortTest.java`
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_FREEZE_REVIEW.md`
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_CODE_API_TEST_DESIGN_REVIEW.md`
+- `docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`
+- `docs/current/API.md`
+- `docs/current/DB_SCHEMA.md`
+- `docs/current/README.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/TESTING.md`
+- `README.md`
+
+### 变更摘要
+
+- NoReal port 生成本地脱敏 `noreal-probe-<uuid>` requestId，traceId 仍按请求链路透传。
+- NoReal test 断言 `requestId != traceId`、requestId 不含输入 payload、status 仍为 `SKIPPED`、error category 仍为 `REAL_EXCHANGE_PROBE_DISABLED`，并保留真实 host 禁访 guard。
+- 文档层级固定为：freeze review 是当前权威冻结结论；`API.md` 是 API 对外语义；`DB_SCHEMA.md` 是字段语义；设计审计和 code/API/test review 保留为历史证据。
+- 未删除文档；无需要合并删除的重复文档。索引只做降噪和权威入口排序。
+
+### 验证记录
+
+- `mvn -f backend/pom.xml -pl nq-infra,nq-core,nq-api,nq-app -am test`：通过；23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`，`nq-app` 52 tests / 0 failures / 0 errors。
+- `mvn -f backend/pom.xml test`：通过；23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`，`nq-app` 52 tests / 0 failures / 0 errors。
+- `git status --short`、`git diff --check`、`git diff --stat`、禁止范围 diff 和指定 `rg` 检查已执行，结果见 `TESTING.md`。
+
+### 边界确认
+
+- 未新增 migration，未修改历史 migration。
+- 未修改 Controller API 语义，未新增 API。
+- 未修改前端、Python 或部署脚本。
+- 未实现真实 OKX/Binance/Bybit/Gate permission probe adapter，未真实 HTTP 探活，未调用真实交易所。
+- 未下单、撤单、转账、提现。
+- 未读取、打印、复制或输出真实 API key、secret、token、私钥、助记词、passphrase 或 credential material。
+
+---
+
 ## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-REVIEW
 
 日期：2026-06-14

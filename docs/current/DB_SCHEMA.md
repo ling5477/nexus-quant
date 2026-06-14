@@ -58,6 +58,7 @@
 - V31 未新增 `withdraw_enabled = FALSE` 硬 CHECK：现有字段已 `NOT NULL DEFAULT FALSE`，但本轮未查询生产/本地现有数据证明所有既有行均为 false，因此只更新注释并把强制 false CHECK 留给后续单独数据确认批次；`withdraw_enabled=true` 不得被视为可接受生产状态。
 - Permission probe 最小 code/API/test 已实现并接入 V31 字段：Service claim 时写 `permission_probe_status='IN_PROGRESS'`；完成、失败或策略跳过时写回 `permission_probe_status`、`permission_scope`、`ip_allowlist_probe_status`、`last_permission_probe_at`、`last_permission_probe_error` 和必要时递增 `failed_auth_count`。成功不自动清零 `failed_auth_count`；`permission_scope=NULL` 不被当作 `TRADE`；`withdraw_enabled=true` 在代码层视为风险并跳过 probe。本轮未新增或修改 migration，未接真实交易所 adapter、前端、Python、部署、AI、DH、LIVE 或真实交易路径。
 - Permission probe guarded backend implementation 已冻结为 no-real-exchange baseline；冻结不改变 V31 schema，不新增 migration，不表示真实交易所权限可用。真实 adapter、真实 HTTP 探活、LIVE probe、AI/DH credential access 仍未实现。
+- P3 cleanup 仅修复 NoReal fake result 的 requestId / traceId 字段质量，不改变任何 V31 字段、CHECK、COMMENT 或 migration 语义。
 
 ## Research / Backtest Config Archive Semantics
 
@@ -235,7 +236,7 @@ GateI-2 不修改历史 migration，不新增无注释表，不新增无注释�
 
 ## GateI DB Planning Entry
 
-GateI DB 规划入口为 [GATEI_DB_PLAN.md](./GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2 已落地回测追溯与评估指标增强；GateI-3/4 尚未开始。
+GateI DB 规划入口为 [GATEI_DB_PLAN.md](/docs/gates/gate-i/GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2 已落地回测追溯与评估指标增强；GateI-3/4 尚未开始。
 
 GateI 后续规划重点：
 

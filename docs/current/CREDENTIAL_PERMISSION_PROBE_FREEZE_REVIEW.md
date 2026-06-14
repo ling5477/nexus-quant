@@ -2,7 +2,7 @@
 
 任务：NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-REVIEW
 日期：2026-06-14
-状态：permission probe guarded backend implementation FROZEN / ACCEPTED；real exchange permission probe adapter NOT IMPLEMENTED。
+状态：permission probe guarded backend implementation FROZEN / ACCEPTED；P3 cleanup completed；real exchange permission probe adapter NOT IMPLEMENTED。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE disabled。
 
 ## 1. Scope
@@ -72,7 +72,7 @@
 | 13 | 是否无新增 migration | 是。本轮 freeze review 未新增 migration；`git diff -- backend/nq-infra/src/main/resources/db/migration` 输出为空。 |
 | 14 | 是否未改 frontend / Python / deploy | 是。本轮检查 `git diff -- frontend`、`git diff -- research`、`git diff -- scripts` 输出为空。 |
 | 15 | 是否仍禁止真实 OKX/Binance permission probe adapter | 是。当前 OKX/Binance 仅有 boundary classifier / forbidden endpoint tests，没有真实 adapter bean 或 HTTP probe 实现。 |
-| 16 | P3 遗留是否只作为 freeze 后 cleanup | 是。NoReal port requestId/traceId 混同、文档 gate 顺序与实现顺序轻微差异均为 P3 cleanup，不阻塞冻结。 |
+| 16 | P3 遗留是否已完成或限定 | 是。NoReal port requestId/traceId 混同已在 P3 cleanup 中修复；文档 gate 顺序与实现顺序轻微差异已降级为历史设计口径差异，不阻塞冻结。 |
 
 ## 5. P0 / P1 / P2 / P3 Findings
 
@@ -96,8 +96,8 @@
 
 ### P3
 
-- NoReal port requestId / traceId 混同：`NoRealExchangeCredentialPermissionProbePort` 调用 `ExchangeCredentialPermissionProbeResult.skipped(...)` 时 requestId 使用 `request.traceId()`；仅影响 fake port response/audit correlation，不导致真实交易所调用或 credential 泄露。Freeze 后 cleanup 可单独修正。
-- 文档 gate 顺序与实现顺序轻微差异：设计文档建议 Paper gate 先于部分写回；当前实现先锁定 credential、检查 IN_PROGRESS/ACTIVE/LIVE/withdraw/Paper gate，再 claim IN_PROGRESS 并调用 port。安全结果等价且更保守；freeze 后可清理文档措辞。
+- P3-CLOSED：NoReal port requestId / traceId 混同已修复。NoReal fake result 现在生成本地脱敏 `noreal-probe-<uuid>` requestId，traceId 仍来自请求链路；该 requestId 不包含 credential material、endpoint、headers 或签名。
+- P3-DOCUMENTED：文档 gate 顺序与实现顺序轻微差异已降级为历史设计口径差异。当前权威状态以本 freeze review、`API.md` 和 `DB_SCHEMA.md` 为准；实现仍保证 LIVE / Paper safety / withdraw risk 在 port 调用前阻断真实交易所调用。
 
 ## 6. Accepted Baseline
 
@@ -160,10 +160,13 @@ Maven 输出中的 SLF4J no-provider warning、Mockito dynamic agent warning 和
 - 未把 DH not integrated 写成 DH integrated。
 - 未把 LIVE disabled 写成 LIVE enabled。
 
-## 10. Residual Cleanup Items
+## 10. P3 Cleanup Record
 
-- P3：修正 NoReal port 的 requestId / traceId 混同，使 fake result 的 requestId 独立于 traceId。
-- P3：清理设计文档中“Paper gate 顺序”与当前实现顺序的轻微差异，保留安全 gate 先于真实 port 调用的核心口径。
+2026-06-14 P3 cleanup 完成以下收口：
+
+- NoReal port requestId 与 traceId 已分离；NoReal 仍不创建 HTTP client，不解析真实 endpoint，不访问 OKX/Binance。
+- NoReal unit test 已断言 `requestId != traceId`、status 仍为 `SKIPPED`、error category 仍为 `REAL_EXCHANGE_PROBE_DISABLED`，并保留真实 host 禁访 guard。
+- 文档层级已固定：本文件是当前冻结结论；`API.md` 是 API 对外语义；`DB_SCHEMA.md` 是字段语义；设计审计与 code/API/test review 保留为历史证据。
 - Future real adapter：必须另起任务，先做安全设计审查、fake-server / no-egress tests、endpoint allowlist、short timeout、raw response/log/audit 脱敏、LIVE gate 和 rollback plan；不得在本冻结基线内补做。
 
 ## 11. Risks
@@ -171,7 +174,7 @@ Maven 输出中的 SLF4J no-provider warning、Mockito dynamic agent warning 和
 - 当前冻结只证明 no-real-exchange guarded backend baseline 可接受，不证明任何真实交易所 credential 权限可用。
 - `permission_scope=READ_ONLY / TRADE / FUNDING` 是脱敏 summary 字段；在真实 adapter 未实现前，不得被交易链路、AI、DH 或 LIVE 逻辑使用为授权依据。
 - `withdraw_enabled=false` 仍未被 DB hard CHECK 强制；当前依赖 Service gate，后续如要 harden 必须另起数据确认 + schema-only 批次。
-- NoReal fake port requestId / traceId 混同会降低审计关联精度，但不构成 P0/P1/P2 安全风险。
+- NoReal fake port requestId 已与 traceId 分离；剩余风险不来自 fake port 字段混同，而来自 future real adapter 尚未设计和验证。
 
 ## 12. Freeze Decision
 

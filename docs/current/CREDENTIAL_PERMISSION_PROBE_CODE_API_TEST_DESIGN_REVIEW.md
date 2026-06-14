@@ -114,7 +114,7 @@ V31 已支持最小实现所需字段：
 - 问题：permission probe 相关文档已有 design review 和 V31 schema-only 记录；新增 code/API/test design review 后，索引必须避免把其写成 runtime implemented。
 - 影响：阶段状态可能被误读。
 - 证据文件：`README.md`；`docs/current/README.md`；`docs/current/CREDENTIAL_PERMISSION_PROBE_DESIGN_REVIEW.md`。
-- 建议处理：索引统一写成 code/API/test design review completed；permission probe runtime not implemented。
+- 建议处理：该 P3 已由后续实现与 freeze review 关闭。当前索引统一表达为 guarded backend baseline frozen；真实交易所 adapter not implemented。
 - 是否阻塞下一步 code implementation：不阻塞。
 
 ## 5. Recommended API Design
@@ -450,7 +450,7 @@ NQ-CREDENTIAL-PERMISSION-PROBE-CODE-API-TEST-IMPLEMENTATION
 - AI / DH / LIVE：NOT STARTED。
 - future real adapter：must be separate task + separate security review + fake-server/no-egress tests。
 
-P3 遗留项仅作为 freeze 后 cleanup：NoReal port requestId / traceId 混同；文档 gate 顺序与实现顺序轻微差异。
+P3 cleanup 状态：NoReal port requestId / traceId 混同已修复；文档 gate 顺序与实现顺序轻微差异已降级为历史设计口径差异。当前权威冻结结论以 `CREDENTIAL_PERMISSION_PROBE_FREEZE_REVIEW.md` 为准。
 
 本轮只读设计审计 + 文档同步应执行：
 

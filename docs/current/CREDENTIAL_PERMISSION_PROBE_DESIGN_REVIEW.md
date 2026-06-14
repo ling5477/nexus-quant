@@ -59,7 +59,7 @@
 
 ### P1
 
-- V31 已准备真实权限探活基础字段，但 Java/API 尚未实现，任何调用路径仍不存在。
+- 历史风险已关闭到 no-real-exchange baseline：V31 已准备真实权限探活基础字段，后续 Java/API 已实现 guarded backend baseline 并完成 freeze review；真实交易所 adapter 仍未实现，任何真实 HTTP 探活路径仍不存在。
 - `permission_scope` 已支持 `FUNDING`，但单字段无法表达复杂交易所权限细节；仍需要未来定义最高权限与细粒度 metadata 的关系。
 - 当前 `withdraw_enabled` 只有默认 false，V31 未加硬 CHECK；后续需要先确认现有数据，再单独评估强制 false 约束。
 - `ip_allowlist_probe_status` 已新增，但当前无代码写入，默认 `NOT_CHECKED` 不能被解读为通过。
@@ -74,7 +74,7 @@
 
 ### P3
 
-- 文档索引需要持续标注 permission probe 仍未实现，避免把设计审计误读为功能已上线。
+- 文档索引需要持续区分 guarded backend baseline frozen 与 real exchange adapter not implemented，避免把后端 no-real-exchange 编排误读为真实权限探活已上线。
 - 命名建议统一使用 `permission_probe_status` 与 `last_permission_probe_at`，避免与 `verification_status` 混写。
 
 ## 5. Schema Changes Completed By V31

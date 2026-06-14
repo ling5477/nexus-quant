@@ -60,6 +60,31 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-P3-CLEANUP 验证记录（2026-06-14）
+
+本轮为 P3 cleanup：只修复 NoReal fake result 的 `requestId` / `traceId` 字段质量，并收口 permission probe 文档层级。未新增功能、API、migration、前端、Python 或部署脚本；未接真实交易所、AI、DH 或 LIVE。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-infra,nq-core,nq-api,nq-app -am test` | 通过 | 23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`；`nq-app` 52 tests / 0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml test` | 通过 | 23 个 backend reactor module `SUCCESS`，`BUILD SUCCESS`；`nq-app` 52 tests / 0 failures / 0 errors。 |
+| `git status --short` | 通过 | 只包含本轮允许范围文件；另有进入本轮前已存在的 `docs/current/API.md` 与 `docs/current/DB_SCHEMA.md` GateI 归档链接修正，本轮保留且未回退。 |
+| `git diff --check` | 通过 | 退出码 0；仅 Git LF/CRLF 工作区提示。 |
+| `git diff --stat` | 已执行 | diff 只覆盖允许的 NoReal port、NoReal unit test、README 和 docs/current 文档。 |
+| `git diff -- backend/nq-infra/src/main/resources/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| `git diff -- frontend` | 通过 | 输出为空，未修改前端。 |
+| `git diff -- research` | 通过 | 输出为空，未修改 Python research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未修改脚本或部署入口。 |
+| `rg "permission probe implemented|real exchange permission probe|OKX permission probe adapter|Binance permission probe adapter" docs/current README.md` | 已检查 | 命中均为 guarded baseline、NOT IMPLEMENTED、future review 或历史证据说明；未把真实交易所 adapter 写成 implemented。 |
+| `rg "GateK implementation|AI started|DH integrated|LIVE enabled" docs/current README.md` | 已检查 | 命中均为否定式、禁止说明或“not started / not integrated / disabled”口径。 |
+| `rg "apiKey|secret|passphrase|private key|mnemonic|signature|headers|raw response" docs/current backend/nq-infra/src/main/java backend/nq-infra/src/test/java` | 已检查 | 命中均为敏感信息禁入说明、脱敏边界、测试护栏或既有配置字段名；本轮未新增真实 credential material。 |
+
+边界预期：
+
+- NoReal port requestId 与 traceId 不再混同。
+- NoReal port 仍不创建 HTTP client、不访问 OKX/Binance、不下单、不撤单、不转账、不提现。
+- 文档当前状态统一：guarded backend implementation FROZEN / ACCEPTED；real exchange adapter NOT IMPLEMENTED；default behavior 为 NoReal `SKIPPED`；LIVE probe DISABLED / REJECTED。
+
 ## NQ-CREDENTIAL-PERMISSION-PROBE-FREEZE-REVIEW 验证记录（2026-06-14）
 
 本轮只做 credential permission probe no-real-exchange / guarded backend freeze review 和文档同步；未修改 Java、测试代码、migration、API 语义、前端、Python 或部署脚本。冻结口径：permission probe guarded backend implementation FROZEN / ACCEPTED；real exchange permission probe adapter NOT IMPLEMENTED；默认 runtime 行为为 `NoRealExchangeCredentialPermissionProbePort -> SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`；LIVE credential probe DISABLED / REJECTED；AI / DH / LIVE NOT STARTED。

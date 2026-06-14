@@ -11,6 +11,9 @@ import java.net.URI;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class NoRealExchangeCredentialPermissionProbePortTest {
 
@@ -30,11 +33,17 @@ class NoRealExchangeCredentialPermissionProbePortTest {
                     "PAPER",
                     true,
                     "trace-no-real-exchange",
-                    "{\"apiKey\":\"not-used\"}"
+                    "{\"material\":\"not-used\"}"
             ));
 
             assertEquals("SKIPPED", result.permissionProbeStatus());
             assertEquals("REAL_EXCHANGE_PROBE_DISABLED", result.sanitizedErrorCategory());
+            assertEquals("trace-no-real-exchange", result.traceId());
+            assertNotNull(result.requestId());
+            assertFalse(result.requestId().isBlank());
+            assertFalse(result.requestId().contains("not-used"));
+            assertFalse(result.requestId().contains("trace-no-real-exchange"));
+            assertNotEquals(result.traceId(), result.requestId());
         } finally {
             ProxySelector.setDefault(previous);
         }

@@ -48,6 +48,7 @@ Credential API 固定边界：
 
 - API response 不返回 `encryptedPayload`、`decryptedPayloadJson`、`apiKey`、`secretKey`、`token`、`privateKeyPem`、`passphrase` 或任何明文 credential material。
 - Permission probe response 只返回 `accountId`、`credentialId`、`credentialType`、`exchange`、`permissionProbeStatus`、`permissionScope`、`withdrawEnabled`、`ipAllowlistProbeStatus`、`failedAuthCount`、`lastPermissionProbeAt`、`sanitizedErrorCategory`、`requestId`、`traceId`；不返回 raw response、headers、signature、request body、encrypted/decrypted payload、API key、secret、private key 或 passphrase。
+- Permission probe `requestId` 与 `traceId` 是两类不同审计字段：`requestId` 标识本次 probe result，`traceId` 标识调用链路。默认 NoReal port 使用本地脱敏 requestId，不复用 traceId，也不包含 credential material。
 - revoke / disable / expire lifecycle command request body 只接收 `reason`；enable command request body 只接收必填 `reason`；rotate command request body 接收新 credential material 和必填 `reason`。应用层限制 reason 长度并拒绝明显包含 token、API key、secret、private key、password、助记词、密钥等敏感材料的原因。
 - `DISABLED / REVOKED / EXPIRED / ROTATED` 均不会进入 active material 查询；`REVOKED / ROTATED` 不允许通过本轮接口改写为 `DISABLED / EXPIRED`。
 - Batch 5-E-B 后，active summary / active material 无 `credentialType` 路径只在候选唯一时返回；多 ACTIVE credential type 必须显式选择或返回 409。`permission_scope=NULL` 仍表示权限尚未由代码确认，enable 不把 `permission_scope=NULL` 解释为 `TRADE`，本轮不把 `permission_scope` 作为交易权限判断。
@@ -160,7 +161,7 @@ GateI-2 固定范围：
 
 ## GateI Planning Entry
 
-GateI API 规划入口为 [GATEI_API_PLAN.md](./GATEI_API_PLAN.md)。本轮只做规划，不实现接口。
+GateI API 规划入口为 [GATEI_API_PLAN.md](/docs/gates/gate-i/GATEI_API_PLAN.md)。本轮只做规划，不实现接口。
 
 GateI 规划 API 分类：
 
