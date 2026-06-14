@@ -1704,3 +1704,20 @@ Review decision：Batch 1 baseline 可冻结为当前 `dev` 的最小 CI 基线�
 - 未改鉴权逻辑（`authApi` / `auth-store` / `RequireAuth` 原样复用）；登录不展示默认凭证/明文，不新增凭证处理路径。
 - 异常页本轮只交付表现层 + 公开路由；真实触发接线属后续切片。
 - LIVE 明确为 disabled；未接真实 socket/交易所；未改后端 API。
+
+## NQ-FRONTEND-TABLE-DENSITY-B0.2 验证记录（2026-06-14）
+
+本轮 frontend-only：在 `@/nq-design-system` 新增表格密度 token + 列格式组件(数字右对齐/tabular/金额/百分比/状态/涨跌列),并在 `/dev/design-system` 自检。基于最新 `origin/dev` 在独立 worktree 执行。未改后端/契约/migration/GateK 事实源,未迁移既有业务页。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build`（`tsc -b && vite build`） | **通过** | tsc 0 error；`✓ built in 844ms`。>500 kB 单 chunk warning 为既有单包结构,非本轮回归。 |
+| `npm run test:e2e -- tests/e2e/design-system-table-smoke.spec.ts tests/e2e/login-page-smoke.spec.ts --project=chromium`（dev server,无后端） | **2 passed** | 表格 smoke:密度 standard→compact class 切换、金额列 `64,231.50 USDT`、涨跌 up 色 `rgb(51,214,166)` 且 up≠down(独立于 success/danger);login smoke 保持通过。 |
+| 真机自检：Playwright Chromium 截图 `/dev/design-system` | **通过** | 0 console / 0 page error;表格密度切换、数字右对齐 tabular、金额/百分比/涨跌/状态列渲染正常,涨跌色随惯例翻转。 |
+| `npm run test:e2e`（全量） | **未跑** | 多数 spec 依赖后端(`:18888`,本环境未启动);本轮仅跑无后端依赖的 design-system / login smoke 并通过,未改既有业务页面/全局主题。 |
+
+阶段与安全边界：
+
+- B0.2 仅产出可复用基础能力(表格密度 + 列格式)+ 自检,未做 B1+ 业务页面,未迁移既有页面,未做 AI/Agent/DH 页面（B8 仍 BLOCKED）。
+- 涨跌列必须使用行情方向色(`var(--nq-up/--nq-down/--nq-flat)`),与 success/danger 解耦,随惯例开关一处翻转。
+- 未接真实 socket/交易所;未碰 LIVE;未改后端 API;未全局替换 AppProviders。

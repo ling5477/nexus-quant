@@ -4936,3 +4936,45 @@ Codex 正在 `dev` 上做 GateK-PLAN，与本任务共用同一个 git 工作树
 - 未改后端 API/契约、未新增 migration、未改鉴权逻辑（`authApi` / `auth-store` / `RequireAuth` 原样复用）。
 - 未做 AI/Agent/DH 页面（B8 仍 BLOCKED）、未接真实 socket/交易所、未碰 LIVE、未展示任何默认凭证/明文、未新增凭证处理路径。
 - 回滚方式：删除 `frontend/src/components/standalone/`、`frontend/src/pages/exceptions/`、`frontend/src/pages/login/LoginPage.css`，还原 `LoginPage.tsx` / `NotFoundPage.tsx` / `routes.tsx` / `login-page-smoke.spec.ts` 即可完全回退。
+
+---
+
+# Worklog: NQ-FRONTEND-TABLE-DENSITY-B0.2
+
+日期：2026-06-14
+
+## 本轮目标
+
+PR #1(B0 设计系统)、PR #2(B0.1 登录/异常页)均已合入 dev。本轮 B0.2 封装表格密度与列格式基础能力,为后续 Dashboard / Backtest / Strategy / Risk / MarketData 页面迁移做准备。只做基础组件 + 自检,不做业务大页面,不迁移既有页面。
+
+## 分支与隔离
+
+在独立 git worktree（`E:/Project/nexus-quant-fe-b01`,`node_modules` junction）基于最新 `origin/dev`(`ea38f79d`)新建分支 `feat/nq-frontend-table-density-b02`,与 Codex 的 dev HEAD 隔离。PR 边界:B0.2 独立 PR(base = `dev`),不混入 B1–B7。
+
+## 修改范围
+
+- 新增 `frontend/src/nq-design-system/format/nqFormat.ts`:纯函数 `formatNqNumber / formatNqMoney / formatNqPercent / nqDirectionOf`,空值统一 "-",`NQ_DIRECTION_VAR` 把涨跌方向映射到 `var(--nq-up/--nq-down/--nq-flat)`。
+- 新增 `frontend/src/nq-design-system/format/cells.tsx`:列组件 `NumberCell / MoneyCell / PercentCell / ChangeCell / StatusCell`。数字等宽 tabular;`ChangeCell` 用行情方向色(随惯例翻转,**不复用 success/danger**);`StatusCell` 把状态值映射为 `StatusTag` 语义色并保留原文。
+- 新增 `frontend/src/nq-design-system/table/tableDensity.ts`:`NQ_TABLE_DENSITY`(compact 28 / standard 32 / comfortable 36,对齐设计规范 §3)+ `nqTableClassName()` + `nqAntdTableCellPadding()`(供后续 AntD Table 迁移取值,本轮不改业务页)。
+- 新增 `frontend/src/nq-design-system/table/nq-table.css`:命名空间 `.nq-ds-table*` 的密度与列对齐样式(`.nq-ds-col-num` 右对齐 + tabular),只读 `var(--nq-*)`,**不与 v1 `.nq-table`/`.nq-col-num` 冲突**。
+- 更新 `frontend/src/nq-design-system/index.ts`:导出上述 format / table API。
+- 更新 `frontend/src/pages/dev/DesignSystemDemoPage.tsx`:新增"表格密度 + 列格式"自检区(密度 Segmented 切换 + 样本表,含金额/持仓/仓位占比/浮动盈亏/日涨跌幅/状态/更新时间列);涨跌列随既有行情惯例开关一处翻转。
+- 新增 `frontend/tests/e2e/design-system-table-smoke.spec.ts`:表格密度切换 + 列格式 + 涨跌方向色 smoke。
+
+## 说明
+
+- 列组件用内联样式读 `var(--nq-*)`(与既有 v2 组件一致),不依赖全局 class,零碰撞、零影响既有页面。
+- 未迁移任何业务页面(Dashboard/Backtest/Strategy/Risk/MarketData);本轮只产出可复用基础能力 + 自检。
+
+## 验证记录
+
+- `npm run build`（worktree，`tsc -b && vite build`）：**通过**,tsc 0 error,`✓ built in 844ms`。
+- `design-system-table-smoke.spec.ts` + `login-page-smoke.spec.ts`（Playwright Chromium,外部 dev server,无后端）：**2 passed**。表格 smoke 断言:密度 standard→compact class 切换、金额列 `64,231.50 USDT`、涨跌 up 色 `rgb(51,214,166)` 且 up≠down。
+- 真机自检(Playwright Chromium 截图 `/dev/design-system`,**0 console / 0 page error**):表格密度切换、数字右对齐 tabular、金额/百分比/涨跌/状态列渲染正常,涨跌色随惯例翻转。
+- 全量 `npm run test:e2e`：**未跑**。原因:多数 spec 依赖后端(`:18888`,本环境未启动);本轮仅跑无后端依赖的 design-system / login smoke 并通过,未改既有业务页面/全局主题。
+
+## 边界确认
+
+- 未改 backend / migration / research / deploy / scripts;未改 GateK 阶段事实源(STATUS/ROADMAP/GATEK_PLAN)。
+- 未接 AI / DH runtime / LIVE / real exchange;未新增业务大页面;未把 B1–B7 混入;未全局替换 AppProviders;未迁移既有业务页。
+- 回滚方式:删除 `frontend/src/nq-design-system/format/`、`frontend/src/nq-design-system/table/`、`frontend/tests/e2e/design-system-table-smoke.spec.ts`,还原 `nq-design-system/index.ts` 与 `DesignSystemDemoPage.tsx` 即可完全回退。
