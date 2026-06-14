@@ -4,6 +4,7 @@ import {ConsoleLayout} from '@/layouts/ConsoleLayout';
 import {AccountsPage} from '@/pages/accounts/AccountsPage';
 import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
 import {DashboardPage} from '@/pages/dashboard/DashboardPage';
+import {DesignSystemDemoPage} from '@/pages/dev/DesignSystemDemoPage';
 import {EvaluationsPage} from '@/pages/evaluations/EvaluationsPage';
 import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
 import {LoginPage} from '@/pages/login/LoginPage';
@@ -133,6 +134,17 @@ export const appRouter = createBrowserRouter([
                 ],
             },
         ],
+    },
+    {
+        // Why:
+        // B0(Design Tokens v2)自检路由,非业务页面、不在侧导航中,自带 v2 ConfigProvider 作用域,
+        // 不依赖登录/后端,便于本地与 build 后核对 v2 设计系统。后续做 v2 全局采用切片时可下线。
+        path: '/dev/design-system',
+        element: <DesignSystemDemoPage/>,
+        handle: {
+            title: 'Design System v2 自检',
+            breadcrumb: 'Design System v2',
+        } satisfies RouteHandle,
     },
     {
         path: '*',
