@@ -2,6 +2,52 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-PLAN
+
+日期：2026-06-14
+
+### 本轮目标
+
+输出 GateK CI Batch 2 PostgreSQL / Flyway planning-only 文档，规划后续 GitHub Actions 中如何验证 PostgreSQL service、Flyway empty DB migration smoke、schema baseline、CI-only seed 边界和安全边界。本轮不修改 workflow、不改代码、不新增 migration、不改测试。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 变更摘要
+
+- 新增 Batch 2 主计划文档，明确当前 Batch 1 backend job 已有 PostgreSQL service + CI-only seed watcher，但那是 runner dependency workaround，不是 Batch 2 hardening implemented。
+- 建议 Batch 2A 优先使用 GitHub Actions PostgreSQL service container 做 Flyway V1-V31 empty DB migration smoke；Testcontainers 后置到 repository real DB smoke 增强，不与 2A 混合。
+- 明确 CI seed 只能服务测试，不得进入生产 runtime seed 或 migration；Flyway empty DB smoke 必须先无 seed 运行。
+- 规划 Flyway info、schema tables/columns/constraints/comments、schema-only dump 等 artifact；`DB_SCHEMA.md` drift 先进入 2B review checklist，后续可脚本化阻塞。
+- 固定安全边界：不注入真实交易所 credential，不开启 LIVE，不访问 OKX/Binance/Bybit/Gate/Coinbase/Kraken，不连接真实 NQ/DH runtime，不把 Batch 3 no-outbound guard 写成已实现。
+
+### 验证记录
+
+- `git status --short`、`git diff --check`、`git diff --stat` 已在编辑前执行，工作树为空。
+- 用户指定的 `.github`、migration、test、application config、forbidden-area diff 和 PostgreSQL/Flyway/security `rg` 检查已执行；结果登记在 `TESTING.md`。
+- 本轮未运行 Maven / frontend / Python 测试；原因是 docs-only planning，未修改 code / test / workflow / migration。
+
+### 边界确认
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API、测试或 migration，未修改历史 migration。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未读取、打印、复制或输出真实 credential material。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-PLAN-REVIEW`，或在 review 接受后进入 `NQ-CI-POSTGRES-FLYWAY-2A-IMPL`。
+
+---
+
 ## GATEK-ARCHITECTURE-BASELINE-REVIEW
 
 日期：2026-06-14
@@ -4426,6 +4472,193 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 - 未实现 GateK 功能、AI、DH runtime integration、NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
 - 未开启 LIVE，未下单、撤单、转账、提现。
 - 未读取、打印、复制、输出真实 API key、secret、token、私钥、助记词、passphrase。
+
+---
+
+# Worklog: NQ-CI-BASELINE-IMPL
+
+日期：2026-06-14
+
+## 本轮目标
+
+本轮进入 GateK implementation Batch 1，仅创建最小 GitHub Actions CI baseline。当前事实固定为 GateJ completed；GateK implementation 仅限本轮 CI baseline Batch 1；AI not started；DH runtime not integrated；LIVE disabled；real exchange permission probe adapter not implemented。
+
+## 修改范围
+
+- 新增 `.github/workflows/ci.yml`。
+- 同步 `docs/current/NQ_CI_BASELINE_PLAN.md`：当时登记 Batch 1 implemented / first CI run pending；该 pending 状态已由 `NQ-CI-BASELINE-FIRST-RUN-REVIEW` 关闭，Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security guard、Batch 5 frontend E2E hardening 仍 pending。
+- 同步 `docs/current/README.md`：更新 CI baseline 入口状态。
+- 追加 `docs/current/TESTING.md` 本轮验证记录。
+- 追加本 `WORKLOG.md` 记录。
+
+## Workflow 摘要
+
+- Trigger：`pull_request` to `dev`、`push` to `dev`、`workflow_dispatch`。
+- `diff-check`：checkout + changed-file whitespace check，兼容 PR / push / manual run。
+- `backend`：Java 21 + Maven cache + `mvn -f backend/pom.xml test`，不使用 skip tests。
+- `frontend`：Node 22 + npm cache + `npm ci` + `npm run build`。
+- `research`：Python 3.11 + pip cache + `python -m pip install -e ".[dev]"` + pytest / mypy / ruff；mypy / ruff 使用 cache-independent flags，避免工具 cache 权限影响 CI 结论。
+
+## 未纳入本轮
+
+- 未实现 PostgreSQL/Flyway hardening。
+- 未实现 no-outbound guard。
+- 未实现 gitleaks / secret scan。
+- 未实现 dependency audit。
+- 未实现 frontend E2E hardening。
+- 未加入 frontend B1/B2/B3 页面施工。
+
+## 边界确认
+
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增或修改 migration。
+- 未修改 backend 生产逻辑。
+- 未修改 frontend B0 / Design System v2 分支内容。
+- 未修改 scripts / deploy。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未读取、打印、复制、输出真实 credential material。
+
+## 本地验证
+
+- `git diff --check`：通过，仅有 Windows LF/CRLF 工作区提示。
+- `mvn -f backend/pom.xml test`：通过，23 个 Maven module `SUCCESS`，`BUILD SUCCESS`。
+- `frontend` 下 `npm ci`：通过。
+- `frontend` 下 `npm run build`：通过，仅有 Vite chunk size warning。
+- `research/py` 下 `python -m pytest -q`：通过，2 passed。
+- `research/py` 下 `python -m mypy src`：本机 Python 3.14.2 + mypy 2.1.0 默认 sqlite cache 打不开，未写成通过；`python -m mypy src --no-sqlite-cache` 通过。
+- `research/py` 下 `python -m ruff check .`：本机 `.ruff_cache` 写入被拒绝，未写成通过；`python -m ruff check . --no-cache` 通过。
+- GitHub Actions first run：pending，需要 push 或 PR 后观察。
+
+## 下一步
+
+Next concrete action：push 或 PR 到 `dev`，观察首次 `NQ CI Baseline` GitHub Actions run；如失败，只做 `NQ-CI-BASELINE-FIRST-RUN-FIX`，不得混入 Batch 2-5。
+
+---
+
+# Worklog: NQ-CI-BASELINE-FIRST-RUN-FIX
+
+日期：2026-06-14
+
+## 本轮目标
+
+修复首次 GitHub Actions `NQ CI Baseline` run 的 Batch 1 backend job 失败。当前事实固定为 NQ-CI-BASELINE-IMPL / Batch 1 已提交；GateK implementation 仅限 CI Batch 1 first-run fix；AI not started；DH runtime not integrated；LIVE disabled；real exchange adapter not implemented。
+
+## 失败摘要
+
+- Run：`27496510294`。
+- Failed job：`Backend Maven test`。
+- Failed step：`Run backend tests`。
+- Failed command：`mvn -f backend/pom.xml test`。
+- Passing jobs：`diff-check`、`frontend`、`research`。
+
+## 根因
+
+`nq-app` 中多个 `local` profile full Spring context 测试需要 PostgreSQL。GitHub runner 没有本地 PostgreSQL，而 `application-local.yml` 默认 datasource 指向 `jdbc:postgresql://localhost:5432/nexus_quant`。本机验证通过依赖本机已有 PostgreSQL。
+
+第二次 run 中 PostgreSQL service 与 Flyway 已可用，但全新 DB 缺少 legacy `accounts` seed；`ResearchBacktestHappyPathLocalTest` 第 59 行查询 `accounts` 表期望至少一条 legacy account，实际为 0。
+
+## 修复
+
+- 在 `.github/workflows/ci.yml` 的 `backend` job 增加 ephemeral `postgres:16` service。
+- 为 backend job 设置 `NQ_DB_URL`、`NQ_DB_USER`、`NQ_DB_PASSWORD`，匹配 `application-local.yml` 默认连接。
+- 在 backend test step 内增加 CI-only seed watcher：等待 Flyway 创建 `accounts` 表后，通过 PostgreSQL service container 插入一条最小 `PAPER / ACTIVE` legacy account。
+- 保留 `mvn -f backend/pom.xml test`，未使用 `skipTests`，未使用 `continue-on-error`。
+
+## 边界确认
+
+- 这是 Batch 1 runner dependency fix，不是 PostgreSQL/Flyway hardening。
+- 未新增 Flyway 专项验证 job，未新增 migration order / schema drift / repeatability 检查。
+- Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E hardening 仍 pending。
+- 未修改 backend / frontend / research 代码，未修改测试代码，未新增 API 或 migration，未修改 scripts / deploy。
+- 未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / Provider / real permission probe adapter。
+- 未注入真实交易所 credential，未调用真实交易所。
+
+## 下一步
+
+Next concrete action：提交并 push first-run fix，观察下一次 `NQ CI Baseline` run；如通过，进入 `NQ-CI-BASELINE-FIRST-RUN-REVIEW`。
+
+---
+
+# Worklog: NQ-CI-BASELINE-FIRST-RUN-REVIEW
+
+日期：2026-06-14
+
+## 本轮目标
+
+评审 `NQ CI Baseline` Batch 1 首次 GitHub Actions green run 是否可冻结为当前 `dev` 最小 CI 基线。本轮只做 review 与 current docs 状态同步，不修改 workflow、业务代码、测试代码、API、migration、scripts 或 deploy。
+
+## GitHub Actions 结果
+
+- Run：`27496906788`。
+- `Diff check`：success。
+- `Backend Maven test`：success。
+- `Frontend build`：success。
+- `Research quality gate`：success。
+
+## Review 结论
+
+- `.github/workflows/ci.yml` 只包含 Batch 1 jobs：`diff-check`、`backend`、`frontend`、`research`。
+- Backend job 保留 `mvn -f backend/pom.xml test`，未使用 `skipTests` 或 `continue-on-error`。
+- CI-only seed watcher 只服务 fresh GitHub runner 的最小 legacy `accounts` seed，不进入生产代码、migration 或 runtime seed 逻辑。
+- Frontend job 只执行 `npm ci` 与 `npm run build`，未引入 B1/B2/B3 页面施工。
+- Research job 执行 `pytest`、`mypy --no-sqlite-cache`、`ruff --no-cache`，未访问外部数据源或下载大型数据集。
+- Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security guard、Batch 5 frontend E2E hardening 仍 pending。
+
+## 边界确认
+
+- 未修改 backend / frontend / research 代码。
+- 未修改测试代码。
+- 未新增 API 或 migration。
+- 未修改 scripts / deploy。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient / Provider / real permission probe adapter。
+- 未注入真实交易所 credential，未调用真实交易所。
+
+## 下一步
+
+Next concrete action：冻结 `NQ-CI-BASELINE-IMPL` Batch 1 为当前 `dev` 最小 CI baseline；后续只能另起 Batch 2 PostgreSQL/Flyway planning / implementation，不得混入 Batch 3-5、AI、DH runtime、LIVE 或真实交易所。
+
+---
+
+# Worklog: NQ-CI-BASELINE-PLAN
+
+日期：2026-06-14
+
+## 本轮目标
+
+本轮只规划 NQ CI baseline，输出后续 `NQ-CI-BASELINE-IMPL` 应如何分层实施、哪些测试必须跑、哪些失败阻塞 merge、哪些需要 PostgreSQL/Flyway、哪些必须 no-outbound / no-secret / LIVE disabled、哪些可后置。当前事实固定为 GateJ completed；Next: GateK-PLAN；GateK implementation not started；AI not started；DH runtime not integrated；LIVE disabled；real exchange permission probe adapter not implemented。
+
+## 修改范围
+
+- 新增 `docs/current/NQ_CI_BASELINE_PLAN.md`，覆盖 Current state、CI goals、Non-goals、Job matrix、Backend / Frontend / Research baseline、PostgreSQL / Flyway、No-outbound guard、Security guard、Branch / PR policy、Required / forbidden secrets、P0/P1/P2/P3 risks、Implementation batches、Validation commands 和 Next concrete action。
+- 同步 `docs/current/README.md`，加入 CI baseline plan 入口，并明确不代表 CI implemented。
+- 同步 `docs/current/ROADMAP.md`，登记 CI baseline plan 已落档为 planning-only。
+- 追加 `docs/current/TESTING.md` 本轮 docs-only 验证记录。
+
+## 验证记录
+
+- `git status --short`：已执行。
+- `git diff --check`：已执行。
+- `git diff --stat`：已执行。
+- `git ls-files .github`：已执行，当前 tracked `.github` 只有 `CODEOWNERS` 与 `pull_request_template.md`。
+- `git ls-files backend/frontend/research | head`：PowerShell 环境无 `head`，原命令按用户要求执行失败；已用 `Select-Object -First 20` 等价复跑。
+- `rg "name:|on:|jobs:" .github docs/current README.md`：已执行。
+- `rg "mvn|npm run build|test:e2e|pytest|mypy|ruff|flyway|postgres|Testcontainers|OKX|Binance|NoReal|LIVE" docs/current backend frontend research README.md`：已执行；后续分析用排除 `frontend/node_modules` / `target` / `build` / `dist` 的版本复跑，避免依赖目录噪音。
+- 禁止范围 diff 检查按用户清单执行。
+
+## 边界确认
+
+- 未创建 `.github/workflows/**`。
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API、Controller、Service、Repository、Adapter 或 migration。
+- 未实现 CI workflow、GateK 功能、AI、DH runtime integration、NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未开启 LIVE，未下单、撤单、转账、提现。
+- 未调用真实交易所。
+- 未读取、打印、复制、输出真实 API key、secret、token、私钥、助记词、passphrase 或 credential material。
 
 ---
 
