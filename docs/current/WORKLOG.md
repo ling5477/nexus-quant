@@ -4541,3 +4541,46 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 - 未做 AI / Agent / DH 页面（B8 仍 BLOCKED），未 mock 成熟业务页。
 - 未读取、打印、输出真实 API key、secret、token、私钥、助记词、passphrase。
 - 回滚方式：删除 `frontend/src/nq-design-system/`、`frontend/src/pages/dev/`，还原 `frontend/src/router/routes.tsx` 两处新增即可完全回退。
+
+---
+
+# Worklog: NQ-FRONTEND-B0-LOGIN-AND-EXCEPTION-PAGES（B0.1）
+
+日期：2026-06-14
+
+## 本轮目标
+
+承接 B0（设计系统已落地、Draft PR #1），在其分支之上做 B0.1：重做登录页 + 四个异常页，仍属 B0（READY_NOW）。复用 `@/nq-design-system` 的 v2 token 与主题，只读 `var(--nq-*)`。不接 AI/Agent/DH、不接真实 socket/交易所、不碰 LIVE、不改后端 API、不改鉴权逻辑。
+
+## 并发隔离
+
+Codex 正在 `dev` 上做 GateK-PLAN，与本任务共用同一个 git 工作树/HEAD（Codex 多次切换 HEAD）。经用户确认，本轮在独立 git worktree（`E:/Project/nexus-quant-fe-b01`，分支 `feat/nq-frontend-b0-login-exception`，基于 `feat/nq-frontend-ds-v2`）执行，`node_modules` 用 junction 复用主工作树，HEAD 完全隔离。PR 边界：B0.1 作为 stacked Draft PR（base = `feat/nq-frontend-ds-v2`），不与 B0 PR 合并，B1–B7 不压进同一 PR。
+
+## 修改范围
+
+- 新增共享外壳：`frontend/src/components/standalone/StandaloneSurface.{tsx,css}`（登录/异常共用的 v2 ConfigProvider + `applyNqCssVars` 作用域全屏壳）、`ExceptionView.{tsx,css}`（异常统一表现层）。
+- 重做登录页：`frontend/src/pages/login/LoginPage.tsx` + 新增 `LoginPage.css`。居中平衡双区；左区叙事（系统是什么/能做什么/风控审计边界/为什么可信）；右区认证卡片复用既有 `authApi.login`；移除主视觉里的 Gate/里程碑/DEV/PAPER/LOCAL，仅保留 footer 极小号 `受控环境 · 默认 PAPER · LIVE 已禁用`；移动端上下堆叠、认证卡片置顶首屏。
+- 新增四个异常页：`frontend/src/pages/exceptions/{AuthFailurePage,ForbiddenPage,SystemErrorPage,WelcomePage}.tsx`。鉴权失败区分会话过期/身份校验失败/环境不允许访问（`?reason=`）；无权限说明缺少角色 + 如何申请；系统错误含 Request ID + 发生时间 + 返回入口；空系统初始化给出第一步动作。
+- 重做 404：`frontend/src/pages/not-found/NotFoundPage.tsx` 改用统一 `ExceptionView`，替代 AntD 默认模板。
+- 路由：`frontend/src/router/routes.tsx` 注册 `/exception/{auth,forbidden,error,welcome}`（`RequireAuth` 之外的公开展示路由，不依赖后端）。
+- E2E：`frontend/tests/e2e/login-page-smoke.spec.ts` 更新为新登录页断言（保留空凭证 + 安全边界断言，新增 Gate/DEV/PAPER/LOCAL 不出现的负向断言）。
+
+## 范围决策与说明
+
+- 文案中文化：与控制台既有中文导航一致，并满足 CJK 14px / 文案规范。
+- 异常页本轮只交付“原因 + 下一步”的表现层与公开路由；真实触发接线（会话过期跳转、403 拦截、错误边界、空态检测）属后续切片，本轮不改鉴权/错误处理逻辑。
+- `docs/current/frontend/NQ_DESIGN_TOKENS_V2.md` 无“第 4 节 业务页面设计方案”章节（实际第 4 节为状态系统）；本轮以任务正文 + `docs/current/README.md` 产品定位 + v1 文案延续为权威依据。该文档交叉引用偏差已记录。
+- v1 登录样式 `.login-page*`（`frontend/src/styles/index.css`）在本轮后成为未使用死代码；为最小变更暂不删除，留作后续 cleanup 切片。
+
+## 验证记录
+
+- `npm run build`（worktree，`tsc -b && vite build`）：**通过**，tsc 0 error，`✓ built in 880ms`。
+- `login-page-smoke.spec.ts`（Playwright Chromium，外部 vite preview，无后端）：**1 passed**。
+- 真机自检（Playwright Chromium 截图，9 条路由，**0 console / 0 page error**）：登录页桌面端双区整体居中（非靠右）、主视觉无 Gate/DEV/PAPER/LOCAL、footer 仅极小号环境元信息；登录页移动端上下堆叠、认证卡片置顶首屏；`/exception/auth` 三种 reason 文案各异；`/exception/forbidden` 显示缺少角色 + 申请指引（403）；`/exception/error` 含 Request ID + 发生时间（mono/tabular）+ 返回入口（500）；`/exception/welcome` 给出第一步动作；404 改用统一异常层。暗色对比度、主色非 AntD 蓝（#5b8cff）、中文 14px、圆角 4/6 均符合 token。
+- `npm run test:e2e`（全量）：**未跑**。原因：多数 spec 依赖后端（`:18888`，本环境未启动）；本轮仅单独运行了无后端依赖的 login smoke 并通过。
+
+## 边界确认
+
+- 未改后端 API/契约、未新增 migration、未改鉴权逻辑（`authApi` / `auth-store` / `RequireAuth` 原样复用）。
+- 未做 AI/Agent/DH 页面（B8 仍 BLOCKED）、未接真实 socket/交易所、未碰 LIVE、未展示任何默认凭证/明文、未新增凭证处理路径。
+- 回滚方式：删除 `frontend/src/components/standalone/`、`frontend/src/pages/exceptions/`、`frontend/src/pages/login/LoginPage.css`，还原 `LoginPage.tsx` / `NotFoundPage.tsx` / `routes.tsx` / `login-page-smoke.spec.ts` 即可完全回退。
