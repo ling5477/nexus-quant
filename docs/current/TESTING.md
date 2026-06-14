@@ -60,6 +60,39 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CI-POSTGRES-FLYWAY-PLAN 验证记录（2026-06-14）
+
+本轮是 GateK CI Batch 2 planning-only / docs-only：只新增 `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md` 并同步 current docs 入口，不修改 `.github/workflows/ci.yml`，不修改 backend、frontend、research、scripts、deploy、测试代码、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；这些命令不适用于只写 Batch 2 方案的文档轮次。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 预检通过 | 编辑前工作树为空。 |
+| `git diff --check` | 预检通过 | 编辑前无 whitespace error。 |
+| `git diff --stat` | 预检已执行 | 编辑前无 tracked diff。 |
+| `git ls-files .github` | 已检查 | 当前 tracked `.github` 包含 `CODEOWNERS`、`pull_request_template.md`、`workflows/ci.yml`。 |
+| `git ls-files "backend/**/db/migration/**"` | 已检查 | 当前最大 migration 为 `V31__schema_credential_permission_probe.sql`。 |
+| `git ls-files "backend/**/src/test/**"` | 已检查 | 确认 backend test tree；`nq-app` 存在 local profile Spring context tests，`nq-infra` repository tests 多为 Recording / mock JDBC。 |
+| `git ls-files "backend/**/application*.yml" "backend/**/application*.yaml" "backend/**/application*.properties"` | 已检查 | 当前 application configs 位于 `backend/nq-app/src/main/resources/`；local profile PostgreSQL + Flyway enabled，test profile PostgreSQL placeholder + Flyway disabled。 |
+| `git diff -- backend` | 预检通过 | 输出为空，未改 backend。 |
+| `git diff -- frontend` | 预检通过 | 输出为空，未改 frontend。 |
+| `git diff -- research` | 预检通过 | 输出为空，未改 research。 |
+| `git diff -- scripts` | 预检通过 | 输出为空，未改 scripts。 |
+| `git diff -- deploy` | 预检通过 | 输出为空，未改 deploy。 |
+| `git diff -- .github` | 预检通过 | 输出为空，未改 workflow。 |
+| `git diff -- backend/**/db/migration` | 预检通过 | 输出为空，未新增或修改 migration。 |
+| Broad PostgreSQL/Flyway scan | 已执行 | 按用户指定 `rg` 执行；该 broad scan 会命中 `backend/target` 生成报告，后续证据提取已用排除 `target/build/dist` 的版本复跑。 |
+| Security keyword scan | 已执行 | 命中项均为禁止说明、字段名、fake fixture、历史记录或 no-real boundary；本轮未读取或输出真实 credential material。 |
+
+边界确认：
+
+- Batch 2 只写为 planning documented，implementation not started。
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 backend / frontend / research / scripts / deploy。
+- 未新增 API、migration 或测试。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+
 ## GATEK-ARCHITECTURE-BASELINE-REVIEW 验证记录（2026-06-14）
 
 本轮为 GateK review-only / docs-only：只审查 architecture baseline、module boundary、test baseline、docs/facts 和 security baseline，并新增 / 同步文档。未修改 backend、frontend、research、scripts、deploy、测试代码、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；验收以只读审查、Git diff、forbidden-area diff、阶段措辞和敏感边界检查为准。

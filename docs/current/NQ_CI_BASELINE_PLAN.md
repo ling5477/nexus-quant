@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2-5 pending
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2 planning documented；Batch 2-5 implementation pending
 
 ## Current state
 
@@ -346,7 +346,11 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: PENDING。
+Status: PLANNING DOCUMENTED；implementation PENDING。
+
+Planning document:
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
 
 Must implement:
 
@@ -429,6 +433,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: freeze `NQ-CI-BASELINE-IMPL` Batch 1 as the current `dev` minimum CI baseline, then start a separate planning task for Batch 2 only if approved。
+Next concrete action: review `NQ_CI_POSTGRES_FLYWAY_PLAN.md`, then enter Batch 2A implementation only if the plan review is accepted。
 
-After the first green run has been reviewed, the next planning task may be `NQ-CI-POSTGRES-FLYWAY-PLAN` / `NQ-CI-POSTGRES-FLYWAY-IMPL` only as a separate Batch 2 work item. Do not mix PostgreSQL/Flyway hardening、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 1.
+Batch 2A may only cover PostgreSQL service + Flyway empty DB migration smoke. Do not mix no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2A.

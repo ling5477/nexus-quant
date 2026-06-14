@@ -2,6 +2,52 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-PLAN
+
+日期：2026-06-14
+
+### 本轮目标
+
+输出 GateK CI Batch 2 PostgreSQL / Flyway planning-only 文档，规划后续 GitHub Actions 中如何验证 PostgreSQL service、Flyway empty DB migration smoke、schema baseline、CI-only seed 边界和安全边界。本轮不修改 workflow、不改代码、不新增 migration、不改测试。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 变更摘要
+
+- 新增 Batch 2 主计划文档，明确当前 Batch 1 backend job 已有 PostgreSQL service + CI-only seed watcher，但那是 runner dependency workaround，不是 Batch 2 hardening implemented。
+- 建议 Batch 2A 优先使用 GitHub Actions PostgreSQL service container 做 Flyway V1-V31 empty DB migration smoke；Testcontainers 后置到 repository real DB smoke 增强，不与 2A 混合。
+- 明确 CI seed 只能服务测试，不得进入生产 runtime seed 或 migration；Flyway empty DB smoke 必须先无 seed 运行。
+- 规划 Flyway info、schema tables/columns/constraints/comments、schema-only dump 等 artifact；`DB_SCHEMA.md` drift 先进入 2B review checklist，后续可脚本化阻塞。
+- 固定安全边界：不注入真实交易所 credential，不开启 LIVE，不访问 OKX/Binance/Bybit/Gate/Coinbase/Kraken，不连接真实 NQ/DH runtime，不把 Batch 3 no-outbound guard 写成已实现。
+
+### 验证记录
+
+- `git status --short`、`git diff --check`、`git diff --stat` 已在编辑前执行，工作树为空。
+- 用户指定的 `.github`、migration、test、application config、forbidden-area diff 和 PostgreSQL/Flyway/security `rg` 检查已执行；结果登记在 `TESTING.md`。
+- 本轮未运行 Maven / frontend / Python 测试；原因是 docs-only planning，未修改 code / test / workflow / migration。
+
+### 边界确认
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API、测试或 migration，未修改历史 migration。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未读取、打印、复制或输出真实 credential material。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-PLAN-REVIEW`，或在 review 接受后进入 `NQ-CI-POSTGRES-FLYWAY-2A-IMPL`。
+
+---
+
 ## GATEK-ARCHITECTURE-BASELINE-REVIEW
 
 日期：2026-06-14
