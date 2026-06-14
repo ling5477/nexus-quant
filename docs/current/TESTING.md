@@ -1482,3 +1482,46 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 - LIVE 明确为 disabled。
 - real exchange permission probe adapter 明确为 not implemented。
 - 本轮未读取或输出真实 credential material。
+
+## NQ-CI-BASELINE-IMPL 验证记录（2026-06-14）
+
+本轮是 GateK CI baseline Batch 1 implementation：只新增 `.github/workflows/ci.yml`，并同步 `docs/current` 文档。Batch 1 只覆盖 GitHub Actions 最小 baseline：diff check、backend Maven test、frontend `npm ci` + build、research pytest / mypy / ruff。未实现 PostgreSQL/Flyway hardening、no-outbound guard、gitleaks / secret scan、dependency audit、frontend E2E hardening；未修改 backend、frontend、research、scripts、deploy、测试代码、API 或 migration。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| Workflow file path | 已新增 | `.github/workflows/ci.yml`。 |
+| Workflow jobs | 已配置 | `diff-check`、`backend`、`frontend`、`research`；research job 对 mypy / ruff 使用 cache-independent flags，避免本地 cache 权限影响检查结论。 |
+| GitHub Actions first run | Pending | 本地无法实际触发 GitHub Actions；需 push 或 PR 到 `dev` 后观察首次 `NQ CI Baseline` run。 |
+| `git status --short` | 已检查 | 只允许 `.github/workflows/` untracked 与 `docs/current/NQ_CI_BASELINE_PLAN.md`、`docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 变更。 |
+| `git diff --check` | 通过 | 退出码 0；仅出现 Windows LF/CRLF 工作区提示，不视为 whitespace failure。 |
+| `git diff --stat` | 已检查 | tracked diff 只覆盖 4 个 docs/current 文档；`.github/workflows/ci.yml` 是新增 untracked 文件，需由 `git status --short` 确认。 |
+| `git ls-files .github` | 已检查 | tracked `.github` 仍只有 `.github/CODEOWNERS` 与 `.github/pull_request_template.md`；新增 workflow 尚未 staged。 |
+| `git diff -- backend` | 通过 | 输出为空，未改 backend。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改 frontend。 |
+| `git diff -- research` | 通过 | 输出为空，未改 research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改 scripts。 |
+| `git diff -- deploy` | 通过 | 输出为空，未改 deploy。 |
+| `git diff -- backend/**/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| Forbidden keyword scan | 已检查 | `rg "skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current/NQ_CI_BASELINE_PLAN.md docs/current/TESTING.md docs/current/WORKLOG.md`：workflow 无命中；docs 命中均为禁止项、pending 风险、历史记录或安全边界说明。 |
+| `mvn -f backend/pom.xml test` | 通过 | Reactor 23 modules `SUCCESS`，`BUILD SUCCESS`；未使用 `skipTests`。 |
+| `npm ci` | 通过 | 在 `frontend` 下执行，依赖安装成功。 |
+| `npm run build` | 通过 | 在 `frontend` 下执行，Vite build 成功；仅有 chunk size warning。 |
+| `python -m pytest -q` | 通过 | 在 `research/py` 下执行，2 passed。 |
+| `python -m mypy src` | 本机默认 cache 失败 | 本机 Python 3.14.2 + mypy 2.1.0 打开 sqlite cache 失败；未写成通过。 |
+| `python -m mypy src --no-sqlite-cache` | 通过 | 类型检查本身通过，`Success: no issues found in 8 source files`；workflow 使用该命令，CI 仍需首次 GitHub Actions run 验证 Linux/Python 3.11 环境。 |
+| `python -m ruff check .` | 本机 cache 写入失败 | 本机 `.ruff_cache` 临时文件写入被拒绝；未写成通过。 |
+| `python -m ruff check . --no-cache` | 通过 | Lint 本身通过，`All checks passed!`；workflow 使用该命令，CI 仍需首次 GitHub Actions run 验证 Linux/Python 3.11 环境。 |
+
+未覆盖项：
+
+- PostgreSQL/Flyway：仍为 Batch 2 pending。
+- no-outbound guard implementation：仍为 Batch 3 pending。
+- gitleaks / secret scan / dependency audit：仍为 Batch 4 pending。
+- frontend E2E hardening：仍为 Batch 5 pending。
+
+安全边界：
+
+- CI workflow 不注入交易所 credential。
+- CI workflow 不设置 LIVE enablement。
+- CI workflow 不包含真实交易所 diagnostic、order、cancel、transfer、withdraw 或 real adapter job。
+- 本轮未读取、打印、复制或输出真实 credential material。

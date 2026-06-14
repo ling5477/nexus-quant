@@ -88,7 +88,7 @@ GateO：A 股适配
 - `ROADMAP.md`：总路线。
 - `GATEK_PLAN.md`：GateK planning-only 阶段规划；用于冻结 GateK 目标、非目标、主线拆分、验收标准、风险、backlog、安全审计前置和执行顺序。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、ACCEPTED WITH P2 FOLLOW-UP，未启动 GateK implementation。其 P2 文档漂移 follow-up 对应 `ARCHITECTURE.md` / `MODULES.md` current wording sync。
-- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline planning-only 文档；规划 backend / frontend / E2E / research / PostgreSQL-Flyway / no-outbound / security guard / merge policy，不创建 workflow，不代表 CI implemented。
+- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 文档；Batch 1 已新增 `.github/workflows/ci.yml`，状态为 implemented / pending first CI run；PostgreSQL-Flyway、no-outbound guard、secret scan、frontend E2E hardening 仍是后续批次。
 - `WORKLOG.md`：执行日志。
 
 ## Codex Workflow 入口
@@ -103,7 +103,7 @@ GateO：A 股适配
 
 - `GATEK_PLAN.md`：GateK-PLAN 当前规划文件；不代表 GateK implementation started。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review 当前审查报告；不代表 GateK implementation started；`ARCHITECTURE.md` / `MODULES.md` 是其 P2 follow-up 后的 current architecture / modules fact source。
-- `NQ_CI_BASELINE_PLAN.md`：NQ-CI-BASELINE-PLAN 当前规划文件；下一步只允许 `NQ-CI-BASELINE-PLAN-REVIEW` 或经 review 后进入 `NQ-CI-BASELINE-IMPL`。
+- `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 当前文件；Batch 1 最小 workflow 已实现并等待首次 CI run，下一步只允许首轮 CI 观察 / 修复或进入 PostgreSQL-Flyway 后续 planning。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。

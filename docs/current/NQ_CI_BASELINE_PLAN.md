@@ -15,12 +15,12 @@
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows` 当前无 tracked workflow；`.github` 当前仅有 `CODEOWNERS` 与 `pull_request_template.md`。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / pending first CI run；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
 - Flyway migration 当前最大版本为 `V31__schema_credential_permission_probe.sql`。
-- 本轮只规划 CI，不创建 GitHub Actions workflow，不改代码，不新增 API，不新增 migration。
+- PLAN / REVIEW 轮只规划 CI；`NQ-CI-BASELINE-IMPL` Batch 1 只允许创建最小 GitHub Actions workflow，不改代码，不新增 API，不新增 migration。
 
 ## CI goals
 
@@ -33,7 +33,7 @@
 
 ## Non-goals
 
-- 不创建 `.github/workflows/**`。
+- 不创建 Batch 1 以外的 `.github/workflows/**`；本文件允许的唯一 Batch 1 workflow 是 `.github/workflows/ci.yml`。
 - 不修改 Java / TypeScript / Python / 测试代码。
 - 不新增 API、Controller、Service、Repository、Adapter 或 migration。
 - 不修改历史 migration。
@@ -306,7 +306,7 @@ Forbidden secrets:
 | P0 | CI job calls real exchange host | Violates no-outbound and may leak behavior | Add fake-server/network-deny/log guard before making backend CI authoritative |
 | P0 | LIVE enabled wording or config enters CI/default tests | Breaks GateK boundary | Static guard + backend LIVE blocked tests |
 | P0 | Secret material committed or printed | Credential incident | gitleaks/secret scan + artifact redaction |
-| P0 | CI plan misread as implemented workflow | Governance drift | Keep this doc PLANNING ONLY; no `.github/workflows` in this task |
+| P0 | CI baseline Batch 1 被误读为完整 CI hardening | Governance drift | 固定写 Batch 1 implemented / pending first CI run；PostgreSQL/Flyway、no-outbound、secret scan、frontend E2E hardening 仍 pending |
 | P1 | PostgreSQL/Flyway not validated in CI | Migration drift reaches dev | Add PostgreSQL service + V1-V31 migration validation |
 | P1 | E2E depends on absent backend | Frontend gate becomes flaky or permanently red | Define backend startup or mock-server strategy before blocking |
 | P1 | `npm ci` / Playwright browser install cache is unstable | Frontend CI noise | Cache by lockfile and browser version; no skip as pass |
@@ -317,6 +317,15 @@ Forbidden secrets:
 ## Implementation batches
 
 ### Batch 1: NQ-CI-BASELINE-IMPL
+
+Status: IMPLEMENTED / PENDING FIRST CI RUN。
+
+Implemented workflow:
+
+- `.github/workflows/ci.yml`
+- Triggers: `pull_request` to `dev`、`push` to `dev`、manual `workflow_dispatch`。
+- Jobs: `diff-check`、`backend`、`frontend`、`research`。
+- Not included: frontend E2E、PostgreSQL/Flyway、no-outbound guard implementation、gitleaks / secret scan、dependency audit。
 
 Must implement:
 
@@ -335,6 +344,8 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
+Status: PENDING。
+
 Must implement:
 
 - PostgreSQL service container or separately reviewed Testcontainers plan。
@@ -343,6 +354,8 @@ Must implement:
 - Repository-layer real PostgreSQL tests only where PostgreSQL-specific behavior matters。
 
 ### Batch 3: NQ-CI-NO-OUTBOUND-GUARD
+
+Status: PENDING。
 
 Must implement:
 
@@ -353,6 +366,8 @@ Must implement:
 
 ### Batch 4: NQ-CI-SECURITY-GUARD
 
+Status: PENDING。
+
 Must implement:
 
 - Secret scan / gitleaks。
@@ -362,6 +377,8 @@ Must implement:
 - Dependency audit as non-blocking first, then promote after triage。
 
 ### Batch 5: Frontend E2E hardening
+
+Status: PENDING。
 
 Must implement:
 
@@ -410,6 +427,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-BASELINE-PLAN-REVIEW`。
+Next concrete action: push / PR this Batch 1 workflow and observe the first GitHub Actions run for `NQ CI Baseline` on `dev` or PR to `dev`。
 
-After review acceptance, the next implementation task may be `NQ-CI-BASELINE-IMPL`, limited to creating the first CI baseline workflow and the minimal guards listed in Batch 1. It must not include PostgreSQL/Flyway hardening, no-outbound implementation, security scan hardening, frontend B1/B2/B3 work, AI, DH runtime, LIVE, real providers, or real exchange permission probe adapter unless those are separately reviewed and authorized.
+After the first CI run is observed and any CI-environment-only defects are fixed, the next planning task may be `NQ-CI-POSTGRES-FLYWAY-PLAN` or a narrowly scoped `NQ-CI-BASELINE-FIRST-RUN-FIX` if Batch 1 fails in GitHub Actions. Do not mix PostgreSQL/Flyway hardening、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 1.

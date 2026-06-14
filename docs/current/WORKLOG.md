@@ -4429,6 +4429,70 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 
 ---
 
+# Worklog: NQ-CI-BASELINE-IMPL
+
+日期：2026-06-14
+
+## 本轮目标
+
+本轮进入 GateK implementation Batch 1，仅创建最小 GitHub Actions CI baseline。当前事实固定为 GateJ completed；GateK implementation 仅限本轮 CI baseline Batch 1；AI not started；DH runtime not integrated；LIVE disabled；real exchange permission probe adapter not implemented。
+
+## 修改范围
+
+- 新增 `.github/workflows/ci.yml`。
+- 同步 `docs/current/NQ_CI_BASELINE_PLAN.md`：登记 Batch 1 implemented / pending first CI run；Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security guard、Batch 5 frontend E2E hardening 仍 pending。
+- 同步 `docs/current/README.md`：更新 CI baseline 入口状态。
+- 追加 `docs/current/TESTING.md` 本轮验证记录。
+- 追加本 `WORKLOG.md` 记录。
+
+## Workflow 摘要
+
+- Trigger：`pull_request` to `dev`、`push` to `dev`、`workflow_dispatch`。
+- `diff-check`：checkout + changed-file whitespace check，兼容 PR / push / manual run。
+- `backend`：Java 21 + Maven cache + `mvn -f backend/pom.xml test`，不使用 skip tests。
+- `frontend`：Node 22 + npm cache + `npm ci` + `npm run build`。
+- `research`：Python 3.11 + pip cache + `python -m pip install -e ".[dev]"` + pytest / mypy / ruff；mypy / ruff 使用 cache-independent flags，避免工具 cache 权限影响 CI 结论。
+
+## 未纳入本轮
+
+- 未实现 PostgreSQL/Flyway hardening。
+- 未实现 no-outbound guard。
+- 未实现 gitleaks / secret scan。
+- 未实现 dependency audit。
+- 未实现 frontend E2E hardening。
+- 未加入 frontend B1/B2/B3 页面施工。
+
+## 边界确认
+
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增或修改 migration。
+- 未修改 backend 生产逻辑。
+- 未修改 frontend B0 / Design System v2 分支内容。
+- 未修改 scripts / deploy。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未读取、打印、复制、输出真实 credential material。
+
+## 本地验证
+
+- `git diff --check`：通过，仅有 Windows LF/CRLF 工作区提示。
+- `mvn -f backend/pom.xml test`：通过，23 个 Maven module `SUCCESS`，`BUILD SUCCESS`。
+- `frontend` 下 `npm ci`：通过。
+- `frontend` 下 `npm run build`：通过，仅有 Vite chunk size warning。
+- `research/py` 下 `python -m pytest -q`：通过，2 passed。
+- `research/py` 下 `python -m mypy src`：本机 Python 3.14.2 + mypy 2.1.0 默认 sqlite cache 打不开，未写成通过；`python -m mypy src --no-sqlite-cache` 通过。
+- `research/py` 下 `python -m ruff check .`：本机 `.ruff_cache` 写入被拒绝，未写成通过；`python -m ruff check . --no-cache` 通过。
+- GitHub Actions first run：pending，需要 push 或 PR 后观察。
+
+## 下一步
+
+Next concrete action：push 或 PR 到 `dev`，观察首次 `NQ CI Baseline` GitHub Actions run；如失败，只做 `NQ-CI-BASELINE-FIRST-RUN-FIX`，不得混入 Batch 2-5。
+
+---
+
 # Worklog: NQ-CI-BASELINE-PLAN
 
 日期：2026-06-14
