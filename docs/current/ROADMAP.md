@@ -48,6 +48,7 @@ GateO：A 股适配
 - GateI 已完成虚拟币量化 V1 完整闭环（策略版本、发布、回测追溯、评估增强、Paper Trading 运行闭环、风控回写、资金曲线、持仓曲线、交易复盘、异常停机）。
 - GateJ 已完成 Paper Trading 稳定运行验收。
 - GateK-PLAN 用于规划 GateJ 后的事实源收口、架构与测试基线、前端产品化、CI / 可观测性 / 部署基线、安全 hardening 和 Integration-0 只读登记；不能直接实现 AI、DH runtime、LIVE、真实交易所扩展或真实 adapter。
+- `NQ_CI_BASELINE_PLAN.md` 已作为 CI baseline planning-only 文档落档；它只规划后续 `NQ-CI-BASELINE-IMPL` 的分层与门禁，不代表 GitHub Actions workflow 已创建或 CI 已实现。
 - GateL 进入 AI Paper Trading。
 - GateM 才允许 AI 小资金 LIVE。
 - 美股/A 股复用虚拟币 V1 沉淀的通用底座。

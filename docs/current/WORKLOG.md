@@ -4429,6 +4429,44 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 
 ---
 
+# Worklog: NQ-CI-BASELINE-PLAN
+
+日期：2026-06-14
+
+## 本轮目标
+
+本轮只规划 NQ CI baseline，输出后续 `NQ-CI-BASELINE-IMPL` 应如何分层实施、哪些测试必须跑、哪些失败阻塞 merge、哪些需要 PostgreSQL/Flyway、哪些必须 no-outbound / no-secret / LIVE disabled、哪些可后置。当前事实固定为 GateJ completed；Next: GateK-PLAN；GateK implementation not started；AI not started；DH runtime not integrated；LIVE disabled；real exchange permission probe adapter not implemented。
+
+## 修改范围
+
+- 新增 `docs/current/NQ_CI_BASELINE_PLAN.md`，覆盖 Current state、CI goals、Non-goals、Job matrix、Backend / Frontend / Research baseline、PostgreSQL / Flyway、No-outbound guard、Security guard、Branch / PR policy、Required / forbidden secrets、P0/P1/P2/P3 risks、Implementation batches、Validation commands 和 Next concrete action。
+- 同步 `docs/current/README.md`，加入 CI baseline plan 入口，并明确不代表 CI implemented。
+- 同步 `docs/current/ROADMAP.md`，登记 CI baseline plan 已落档为 planning-only。
+- 追加 `docs/current/TESTING.md` 本轮 docs-only 验证记录。
+
+## 验证记录
+
+- `git status --short`：已执行。
+- `git diff --check`：已执行。
+- `git diff --stat`：已执行。
+- `git ls-files .github`：已执行，当前 tracked `.github` 只有 `CODEOWNERS` 与 `pull_request_template.md`。
+- `git ls-files backend/frontend/research | head`：PowerShell 环境无 `head`，原命令按用户要求执行失败；已用 `Select-Object -First 20` 等价复跑。
+- `rg "name:|on:|jobs:" .github docs/current README.md`：已执行。
+- `rg "mvn|npm run build|test:e2e|pytest|mypy|ruff|flyway|postgres|Testcontainers|OKX|Binance|NoReal|LIVE" docs/current backend frontend research README.md`：已执行；后续分析用排除 `frontend/node_modules` / `target` / `build` / `dist` 的版本复跑，避免依赖目录噪音。
+- 禁止范围 diff 检查按用户清单执行。
+
+## 边界确认
+
+- 未创建 `.github/workflows/**`。
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API、Controller、Service、Repository、Adapter 或 migration。
+- 未实现 CI workflow、GateK 功能、AI、DH runtime integration、NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未开启 LIVE，未下单、撤单、转账、提现。
+- 未调用真实交易所。
+- 未读取、打印、复制、输出真实 API key、secret、token、私钥、助记词、passphrase 或 credential material。
+
+---
+
 # Worklog: GATEK-ARCH-DOC-SYNC
 
 日期：2026-06-14

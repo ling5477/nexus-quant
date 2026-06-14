@@ -1455,3 +1455,30 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 - DH runtime 明确为 not integrated / not connected to NQ。
 - LIVE 明确为 disabled。
 - 真实 OKX/Binance permission probe adapter 明确为 not implemented。
+
+## NQ-CI-BASELINE-PLAN 验证记录（2026-06-14）
+
+本轮是 CI planning-only / docs-only：只新增 `docs/current/NQ_CI_BASELINE_PLAN.md` 并同步 current docs 入口，不创建 `.github/workflows/**`，不修改 backend、frontend、research、scripts、deploy、测试代码、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；这些命令只被规划为后续 `NQ-CI-BASELINE-IMPL` 的 CI baseline。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已检查 | 编辑前为空；编辑后仅允许 docs/current 文档变更。 |
+| `git diff --check` | 通过 | 编辑前通过；编辑后复跑，若出现 LF/CRLF 提示按既有 Windows 工作区提示处理，不能写成 whitespace failure。 |
+| `git diff --stat` | 已检查 | 用于确认 diff 只覆盖 docs/current 文档。 |
+| `git ls-files .github` | 已检查 | 当前 tracked `.github` 只有 `.github/CODEOWNERS` 与 `.github/pull_request_template.md`；无 tracked workflow。 |
+| `git ls-files backend/frontend/research \| head` | 原命令失败 | PowerShell 环境无 `head`；已用 `Select-Object -First 20` 等价复跑。 |
+| `git ls-files backend/frontend/research \| Select-Object -First 20` | 已检查 | 确认 backend、frontend、research tracked 结构入口。 |
+| `rg "name:|on:|jobs:" .github docs/current README.md` | 已检查 | 未发现 `.github/workflows` job 定义；命中主要来自文档模板和计划文本。 |
+| CI baseline keyword scan | 已检查 | 用排除 `frontend/node_modules`、`target`、`build`、`dist` 的 `rg` 复跑，确认 Maven/npm/E2E/Python/Flyway/PostgreSQL/no-outbound/LIVE/NoReal 当前事实。 |
+| 禁止范围 diff 检查 | 已检查 | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均要求输出为空。 |
+
+阶段与安全边界：
+
+- NQ CI baseline 只写为 plan，不写成 implemented。
+- `.github/workflows/**` 未创建。
+- GateK implementation 明确为 not started。
+- AI 明确为 not started。
+- DH runtime 明确为 not integrated / not connected to NQ。
+- LIVE 明确为 disabled。
+- real exchange permission probe adapter 明确为 not implemented。
+- 本轮未读取或输出真实 credential material。
