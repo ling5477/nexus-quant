@@ -1525,3 +1525,27 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 - CI workflow 不设置 LIVE enablement。
 - CI workflow 不包含真实交易所 diagnostic、order、cancel、transfer、withdraw 或 real adapter job。
 - 本轮未读取、打印、复制或输出真实 credential material。
+
+## NQ-CI-BASELINE-FIRST-RUN-FIX 验证记录（2026-06-14）
+
+首次 GitHub Actions run `27496510294` 已触发，`diff-check`、`frontend`、`research` 通过，`backend` job 在 `Run backend tests` step 失败。失败命令为 `mvn -f backend/pom.xml test`，失败 module 为 `nq-app`；失败类包括 `MarketdataControllerLocalIntegrationTest`、`OkxBootstrapNoOutboundLocalContextTest`、`ResearchBacktestHappyPathLocalTest`，均为 `local` profile full Spring context 测试。
+
+Root cause：GitHub runner 没有本地 PostgreSQL，而 `application-local.yml` 默认 datasource 指向 `jdbc:postgresql://localhost:5432/nexus_quant`；本机验证通过依赖本机已有 PostgreSQL。修复只在 backend job 增加 ephemeral PostgreSQL service 与对应 `NQ_DB_*` env，用于支撑既有 `mvn -f backend/pom.xml test`。这不是 PostgreSQL/Flyway hardening：未新增 Flyway 专项验证 job，未新增 migration order / schema drift / repeatability 检查，Batch 2 仍 pending。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| Failed CI run summary | 已检查 | Run `27496510294`；failed job `Backend Maven test`；failed step `Run backend tests`；command `mvn -f backend/pom.xml test`。 |
+| `gh run view 27496510294` | 已检查 | `diff-check`、`frontend`、`research` 成功；`backend` 失败。 |
+| GitHub job logs | 已检查 | GitHub connector 读取 backend job logs；确认 `nq-app` local Spring context tests 因 runner 环境缺 PostgreSQL 失败。 |
+| Fix | 已实施 | `.github/workflows/ci.yml` backend job 增加 `postgres:16` service、health check、`NQ_DB_URL` / `NQ_DB_USER` / `NQ_DB_PASSWORD`。 |
+| Pending green run | Pending | 需要 push fix 后观察下一次 `NQ CI Baseline` run。 |
+
+边界：
+
+- 未修改 backend / frontend / research 代码。
+- 未修改测试代码。
+- 未新增 API 或 migration。
+- 未修改 scripts / deploy。
+- 未加入 no-outbound guard implementation、gitleaks / secret scan、dependency audit 或 frontend E2E hardening。
+- 未使用 `skipTests` 或 `continue-on-error`。
+- 未注入真实 credential，未开启 LIVE，未调用真实交易所。

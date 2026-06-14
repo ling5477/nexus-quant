@@ -40,8 +40,26 @@ jobs:
     name: Backend Maven test
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: "123456"
+          POSTGRES_DB: nexus_quant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nexus_quant"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
       CI: "true"
+      NQ_DB_URL: jdbc:postgresql://localhost:5432/nexus_quant
+      NQ_DB_USER: postgres
+      NQ_DB_PASSWORD: "123456"
 
     steps:
       - name: Checkout

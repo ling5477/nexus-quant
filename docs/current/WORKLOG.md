@@ -4493,6 +4493,47 @@ Next concrete action：push 或 PR 到 `dev`，观察首次 `NQ CI Baseline` Git
 
 ---
 
+# Worklog: NQ-CI-BASELINE-FIRST-RUN-FIX
+
+日期：2026-06-14
+
+## 本轮目标
+
+修复首次 GitHub Actions `NQ CI Baseline` run 的 Batch 1 backend job 失败。当前事实固定为 NQ-CI-BASELINE-IMPL / Batch 1 已提交；GateK implementation 仅限 CI Batch 1 first-run fix；AI not started；DH runtime not integrated；LIVE disabled；real exchange adapter not implemented。
+
+## 失败摘要
+
+- Run：`27496510294`。
+- Failed job：`Backend Maven test`。
+- Failed step：`Run backend tests`。
+- Failed command：`mvn -f backend/pom.xml test`。
+- Passing jobs：`diff-check`、`frontend`、`research`。
+
+## 根因
+
+`nq-app` 中多个 `local` profile full Spring context 测试需要 PostgreSQL。GitHub runner 没有本地 PostgreSQL，而 `application-local.yml` 默认 datasource 指向 `jdbc:postgresql://localhost:5432/nexus_quant`。本机验证通过依赖本机已有 PostgreSQL。
+
+## 修复
+
+- 在 `.github/workflows/ci.yml` 的 `backend` job 增加 ephemeral `postgres:16` service。
+- 为 backend job 设置 `NQ_DB_URL`、`NQ_DB_USER`、`NQ_DB_PASSWORD`，匹配 `application-local.yml` 默认连接。
+- 保留 `mvn -f backend/pom.xml test`，未使用 `skipTests`，未使用 `continue-on-error`。
+
+## 边界确认
+
+- 这是 Batch 1 runner dependency fix，不是 PostgreSQL/Flyway hardening。
+- 未新增 Flyway 专项验证 job，未新增 migration order / schema drift / repeatability 检查。
+- Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E hardening 仍 pending。
+- 未修改 backend / frontend / research 代码，未修改测试代码，未新增 API 或 migration，未修改 scripts / deploy。
+- 未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / Provider / real permission probe adapter。
+- 未注入真实交易所 credential，未调用真实交易所。
+
+## 下一步
+
+Next concrete action：提交并 push first-run fix，观察下一次 `NQ CI Baseline` run；如通过，进入 `NQ-CI-BASELINE-FIRST-RUN-REVIEW`。
+
+---
+
 # Worklog: NQ-CI-BASELINE-PLAN
 
 日期：2026-06-14

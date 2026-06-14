@@ -325,6 +325,7 @@ Implemented workflow:
 - `.github/workflows/ci.yml`
 - Triggers: `pull_request` to `dev`、`push` to `dev`、manual `workflow_dispatch`。
 - Jobs: `diff-check`、`backend`、`frontend`、`research`。
+- First-run fix: `backend` job uses an ephemeral PostgreSQL service only to satisfy existing local-profile Spring context tests executed by `mvn -f backend/pom.xml test`。
 - Not included: frontend E2E、PostgreSQL/Flyway、no-outbound guard implementation、gitleaks / secret scan、dependency audit。
 
 Must implement:
