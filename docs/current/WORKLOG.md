@@ -4513,10 +4513,13 @@ Next concrete action：push 或 PR 到 `dev`，观察首次 `NQ CI Baseline` Git
 
 `nq-app` 中多个 `local` profile full Spring context 测试需要 PostgreSQL。GitHub runner 没有本地 PostgreSQL，而 `application-local.yml` 默认 datasource 指向 `jdbc:postgresql://localhost:5432/nexus_quant`。本机验证通过依赖本机已有 PostgreSQL。
 
+第二次 run 中 PostgreSQL service 与 Flyway 已可用，但全新 DB 缺少 legacy `accounts` seed；`ResearchBacktestHappyPathLocalTest` 第 59 行查询 `accounts` 表期望至少一条 legacy account，实际为 0。
+
 ## 修复
 
 - 在 `.github/workflows/ci.yml` 的 `backend` job 增加 ephemeral `postgres:16` service。
 - 为 backend job 设置 `NQ_DB_URL`、`NQ_DB_USER`、`NQ_DB_PASSWORD`，匹配 `application-local.yml` 默认连接。
+- 在 backend test step 内增加 CI-only seed watcher：等待 Flyway 创建 `accounts` 表后，通过 PostgreSQL service container 插入一条最小 `PAPER / ACTIVE` legacy account。
 - 保留 `mvn -f backend/pom.xml test`，未使用 `skipTests`，未使用 `continue-on-error`。
 
 ## 边界确认
