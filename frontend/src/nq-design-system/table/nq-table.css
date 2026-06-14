@@ -1,0 +1,83 @@
+/* nq-table.css — NQ Console 表格密度与列对齐基础样式(B0.2)。
+   约束:全部命名空间到 .nq-ds-table*,只读 var(--nq-*),不与 v1 的 .nq-table / .nq-col-num 冲突,
+   不影响既有业务页面(它们不使用 .nq-ds-table* class)。
+   用法:<table class="nq-ds-table nq-ds-table--standard">,数字/金额/百分比/涨跌列的 th+td 加 class="nq-ds-col-num"。 */
+
+.nq-ds-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--nq-text-primary);
+    font-family: var(--nq-font-ui);
+    border: 1px solid var(--nq-border-subtle);
+}
+
+.nq-ds-table thead th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--nq-text-secondary);
+    background: var(--nq-bg-elevated);
+    border-bottom: 1px solid var(--nq-border-subtle);
+    white-space: nowrap;
+}
+
+.nq-ds-table tbody td {
+    color: var(--nq-text-secondary);
+    border-bottom: 1px solid var(--nq-border-subtle);
+}
+
+.nq-ds-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.nq-ds-table tbody tr:hover td {
+    background: var(--nq-bg-elevated);
+}
+
+/* 数字 / 金额 / 百分比 / 涨跌列:右对齐 + 等宽 tabular-nums,数字不换行 */
+.nq-ds-table .nq-ds-col-num {
+    text-align: right;
+    font-family: var(--nq-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+    white-space: nowrap;
+}
+
+.nq-ds-table .nq-ds-col-center {
+    text-align: center;
+}
+
+/* 状态 / 动作列不换行 */
+.nq-ds-table .nq-ds-col-nowrap {
+    white-space: nowrap;
+}
+
+/* ---- 密度档位(行高 / 内边距) ---- */
+.nq-ds-table--compact th,
+.nq-ds-table--compact td {
+    height: 28px;
+    padding: 4px 12px;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.nq-ds-table--standard th,
+.nq-ds-table--standard td {
+    height: 32px;
+    padding: 6px 12px;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.nq-ds-table--comfortable th,
+.nq-ds-table--comfortable td {
+    height: 36px;
+    padding: 8px 12px;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+/* 中文内容抬一档到 14px(高密度下 13px CJK 偏小);数字列仍保持 13px 等宽对齐 */
+:lang(zh) .nq-ds-table td:not(.nq-ds-col-num),
+:lang(zh) .nq-ds-table th:not(.nq-ds-col-num) {
+    font-size: 14px;
+}
