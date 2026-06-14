@@ -6,6 +6,10 @@ import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
 import {DashboardPage} from '@/pages/dashboard/DashboardPage';
 import {DesignSystemDemoPage} from '@/pages/dev/DesignSystemDemoPage';
 import {EvaluationsPage} from '@/pages/evaluations/EvaluationsPage';
+import {AuthFailurePage} from '@/pages/exceptions/AuthFailurePage';
+import {ForbiddenPage} from '@/pages/exceptions/ForbiddenPage';
+import {SystemErrorPage} from '@/pages/exceptions/SystemErrorPage';
+import {WelcomePage} from '@/pages/exceptions/WelcomePage';
 import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
 import {LoginPage} from '@/pages/login/LoginPage';
 import {MarketdataPage} from '@/pages/marketdata/MarketdataPage';
@@ -144,6 +148,42 @@ export const appRouter = createBrowserRouter([
         handle: {
             title: 'Design System v2 自检',
             breadcrumb: 'Design System v2',
+        } satisfies RouteHandle,
+    },
+    {
+        // Why:
+        // B0.1 异常页(v2),AppShell/RequireAuth 之外的公开展示路由,自带 v2 作用域、不依赖后端。
+        // 这里只承载异常的"原因 + 下一步"表现层;真实触发(会话过期跳转、403、错误边界、空态检测)
+        // 接入这些页面属于后续切片,不在本批改动鉴权/错误处理逻辑。
+        path: '/exception/auth',
+        element: <AuthFailurePage/>,
+        handle: {
+            title: '鉴权失败',
+            breadcrumb: '鉴权失败',
+        } satisfies RouteHandle,
+    },
+    {
+        path: '/exception/forbidden',
+        element: <ForbiddenPage/>,
+        handle: {
+            title: '无访问权限',
+            breadcrumb: '无访问权限',
+        } satisfies RouteHandle,
+    },
+    {
+        path: '/exception/error',
+        element: <SystemErrorPage/>,
+        handle: {
+            title: '系统错误',
+            breadcrumb: '系统错误',
+        } satisfies RouteHandle,
+    },
+    {
+        path: '/exception/welcome',
+        element: <WelcomePage/>,
+        handle: {
+            title: '系统待初始化',
+            breadcrumb: '系统待初始化',
         } satisfies RouteHandle,
     },
     {
