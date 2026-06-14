@@ -1,6 +1,15 @@
 # Current Modules
 
-本文记录当前模块 owner 和职责边界。后续 `GateH-PLAN` 与功能开发不得回退 RC1 / GateH-PRE 已冻结的依赖方向。
+本文记录当前模块 owner 和职责边界。当前阶段为 GateJ completed；Next: GateK-PLAN；GateK planning baseline 已 accepted；GateK implementation not started。
+
+GateH / GateI / GateJ 属于 previous completed phase / archived history。后续 GateK planning 和 future implementation 不得回退 RC1 / GateH-PRE 已冻结的依赖方向，也不得把历史 GateH 语境当作 current state。
+
+当前禁止误写的事实：
+
+- AI not started。
+- DH runtime not integrated / not connected to NQ。
+- LIVE disabled。
+- real exchange permission probe adapter not implemented。
 
 ## 模块职责
 
@@ -18,11 +27,11 @@
 | `nq-backtest` | backtest 执行、dataset 消费、回测结果产出 | 不拥有平台级 marketdata owner |
 | `nq-eval` | evaluation、backtest run API 编排 owner | 不负责交易执行 |
 | `nq-observability` | 观测指标、健康、日志与运行可见性支撑 | 不承载业务决策 |
-| `nq-adapter-api` | 交易所 adapter contract | 不实现具体交易所调用 |
-| `nq-adapter-okx` | OKX 交易所适配实现 | 不定义平台交易主语义 |
-| `nq-adapter-binance` | Binance 交易所适配实现 | 不定义平台交易主语义 |
-| `frontend` | React 控制台、账户上下文、交易工作台、研究/回测/评估/行情页面入口 | 不散写 API 请求，不把历史 alias 当正式入口 |
-| `research/py` | Python 离线研究工具链、CLI、pytest/mypy/ruff 验证 | 不进入 auth、recovery、ledger、live trading 主链 |
+| `nq-adapter-api` | 交易所 adapter contract | 不实现具体交易所调用，不代表 real adapter permission probe 已实现 |
+| `nq-adapter-okx` | OKX 交易所适配实现；当前 permission probe 仍为 no-real baseline | 不定义平台交易主语义，不实现真实 permission probe adapter |
+| `nq-adapter-binance` | Binance 交易所适配实现；当前 permission probe 仍为 no-real baseline | 不定义平台交易主语义，不实现真实 permission probe adapter |
+| `frontend` | React / Vite / Ant Design / TanStack Query 控制台、账户上下文、交易工作台、研究/回测/评估/行情页面入口；NQ Console Design System v1 是当前基线 | 不散写 API 请求，不把历史 alias 当正式入口，不做 AI / Agent / DH runtime 完整页面 mock |
+| `research/py` | Python 独立离线研究工具链、CLI、pytest/mypy/ruff 验证；应进入 GateK CI baseline 规划 | 不进入 auth、recovery、ledger、live trading 主链，不作为 GateK implementation 入口 |
 
 ## 禁止依赖规则
 
@@ -35,7 +44,11 @@
 
 ## 当前阶段禁止新增
 
-- 当前阶段不新增 AI 模块。
+- 当前阶段不启动 GateK implementation；GateK-PLAN 只代表 planning baseline。
+- 当前阶段不新增 AI 模块，不实现 AI 信号、AI runtime 或 AI Paper Trading。
+- 当前阶段不实现 DH runtime integration，不接 NQ RealClient，不接真实 Provider。
+- 当前阶段不启用 LIVE，不新增真实下单、撤单、转账、提现路径。
+- 当前阶段不实现真实 OKX / Binance permission probe adapter；permission probe 仍保持 no-real baseline。
 - 当前阶段不新增美股模块。
 - 当前阶段不新增 A 股模块。
-- 当前阶段不新增 GateH 业务实现。
+- GateH 业务实现属于 previous completed phase / archived history，不作为当前新增项或当前未完成项描述。

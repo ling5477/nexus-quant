@@ -18,6 +18,7 @@
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
 - Multi-exchange expansion not started。
+- GateK architecture baseline review accepted with P2 follow-up；本轮 P2 follow-up 由 `ARCHITECTURE.md` / `MODULES.md` current wording sync 承接，不代表 GateK implementation started。
 - UI/UX professionalism remains post-freeze remediation。
 - NQ / DH 三轮只读审计已完成；DH not integrated；Integration-0 allowed only as contract / mock / documentation work line, not runtime integration（详见 `STATUS.md`）。
 - NQ-DH Integration-0 契约冻结已完成（contract / mock / docs，未实现集成）；DH P1-4 残留阻塞 Integration-1，详见 `NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`。
@@ -63,8 +64,8 @@ GateO：A 股适配
 ## 当前事实文件
 
 - `STATUS.md`：当前项目状态与未完成项。
-- `ARCHITECTURE.md`：当前架构事实与依赖边界。
-- `MODULES.md`：模块 owner、职责和禁止反向依赖。
+- `ARCHITECTURE.md`：当前架构事实与依赖边界；已同步 GateJ completed / GateK planning baseline accepted / GateK implementation not started / AI not started / DH runtime not integrated / LIVE disabled / real adapter not implemented 口径。
+- `MODULES.md`：模块 owner、职责和禁止反向依赖；已同步 backend 分层、frontend Design System v1、research/py 独立工具链和 permission probe no-real baseline。
 - `API.md`：当前 API 分类入口。
 - `DB_SCHEMA.md`：数据库事实入口。
 - `CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`：Credential revocation Batch 5-A 只读审计报告。
@@ -86,7 +87,7 @@ GateO：A 股适配
 - `RUNBOOK.md`：本地启动与常见问题。
 - `ROADMAP.md`：总路线。
 - `GATEK_PLAN.md`：GateK planning-only 阶段规划；用于冻结 GateK 目标、非目标、主线拆分、验收标准、风险、backlog、安全审计前置和执行顺序。
-- `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、P2 follow-up required，未启动 GateK implementation。
+- `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、ACCEPTED WITH P2 FOLLOW-UP，未启动 GateK implementation。其 P2 文档漂移 follow-up 对应 `ARCHITECTURE.md` / `MODULES.md` current wording sync。
 - `WORKLOG.md`：执行日志。
 
 ## Codex Workflow 入口
@@ -100,7 +101,7 @@ GateO：A 股适配
 ## 当前 Gate / planning 文件
 
 - `GATEK_PLAN.md`：GateK-PLAN 当前规划文件；不代表 GateK implementation started。
-- `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review 当前审查报告；不代表 GateK implementation started。
+- `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review 当前审查报告；不代表 GateK implementation started；`ARCHITECTURE.md` / `MODULES.md` 是其 P2 follow-up 后的 current architecture / modules fact source。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。

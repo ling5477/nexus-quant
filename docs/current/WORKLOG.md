@@ -4429,6 +4429,31 @@ curl -fsS http://127.0.0.1:18888/actuator/health
 
 ---
 
+# Worklog: GATEK-ARCH-DOC-SYNC
+
+日期：2026-06-14
+
+## 本轮目标
+
+本轮只做 GateK docs-only architecture wording sync，关闭 `GATEK_ARCHITECTURE_BASELINE_REVIEW.md` 登记的 P2 文档漂移：`docs/current/ARCHITECTURE.md` / `docs/current/MODULES.md` 旧 Gate / GateH / V1 措辞不再作为 current state。当前事实固定为 GateJ completed；Next: GateK-PLAN；GateK planning baseline accepted；GateK implementation not started；AI not started；DH runtime not integrated；LIVE disabled；real exchange permission probe adapter not implemented。
+
+## 修改范围
+
+- 同步 `docs/current/ARCHITECTURE.md`：补充当前事实、GateK planning baseline、backend 分层、PAPER / LIVE 硬隔离、permission probe no-real baseline、frontend Design System v1、research/py 与 GateK CI baseline 规划语境。
+- 同步 `docs/current/MODULES.md`：将 GateH / GateI / GateJ 标注为 previous completed phase / archived history，修正 adapter、frontend、research/py 当前职责和禁止范围。
+- 更新 `docs/current/README.md`：明确 `GATEK_ARCHITECTURE_BASELINE_REVIEW.md` 是审查报告，`ARCHITECTURE.md` / `MODULES.md` 是 P2 follow-up 后的 current fact source。
+- 追加本轮 `WORKLOG.md` / `TESTING.md` 记录。
+
+## 边界确认
+
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API、Controller、Service、Repository、Adapter 或 migration。
+- 未实现 GateK 功能、AI、DH runtime integration、NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未开启 LIVE，未下单、撤单、转账、提现。
+- 未读取、打印、复制、输出真实 API key、secret、token、私钥、助记词、passphrase。
+
+---
+
 # Worklog: GATEK-PLAN-FREEZE-REVIEW
 
 日期：2026-06-14

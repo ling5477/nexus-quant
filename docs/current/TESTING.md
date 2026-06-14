@@ -1429,3 +1429,29 @@ curl -fsS http://127.0.0.1:5179/actuator/health
 - DH 明确为 not integrated / not connected to NQ；Integration-0 只作为 contract / mock / docs / contract test line。
 - LIVE 明确为 disabled。
 - 真实 OKX/Binance permission probe adapter 明确为 not implemented。
+
+## GATEK-ARCH-DOC-SYNC 验证记录（2026-06-14）
+
+本轮是 docs-only architecture wording sync：只同步 `docs/current/ARCHITECTURE.md`、`docs/current/MODULES.md`、`docs/current/README.md`、`docs/current/WORKLOG.md`、`docs/current/TESTING.md`，不修改 backend、frontend、research、scripts、deploy、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；验收以文档边界、Git diff、forbidden-area diff 和阶段措辞扫描为准。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已检查 | 本轮修改 5 个允许文档；工作区另有非本轮的 `docs/current/frontend/**` staged / modified 文件。 |
+| `git diff --check` | 通过 | 仅出现既有 Windows LF/CRLF 提示，无 whitespace error。 |
+| `git diff --stat` | 已检查 | 包含本轮 5 个允许文档；另显示非本轮的 `docs/current/frontend/NQ_DESIGN_TOKENS_V2.md` 与 `docs/current/frontend/NQ_FRONTEND_BUILD_MATRIX.md`。 |
+| `git diff -- backend` | 通过 | 输出为空，未改 backend。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改 top-level frontend。 |
+| `git diff -- research` | 通过 | 输出为空，未改 research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改 scripts。 |
+| `git diff -- deploy` | 通过 | 输出为空，未改 deploy。 |
+| `git diff -- backend/**/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| `rg "GateK implementation|AI started|DH integrated|LIVE enabled|real adapter implemented" README.md AGENTS.md CLAUDE.md docs/current` | 已检查 | 命中项均为 not started / disabled / not integrated / not implemented / 禁止说明 / 历史语境，未发现正向误写。 |
+| `rg "GateH|Gate I|GateJ|GateK|V1" docs/current/ARCHITECTURE.md docs/current/MODULES.md` | 已检查 | GateH / V1 均为 previous completed phase / archived history 或 GateI/GateJ completed 语境。 |
+
+阶段与安全边界：
+
+- GateK-PLAN 明确为 planning baseline，不是 GateK implementation started。
+- AI 明确为 not started。
+- DH runtime 明确为 not integrated / not connected to NQ。
+- LIVE 明确为 disabled。
+- 真实 OKX/Binance permission probe adapter 明确为 not implemented。
