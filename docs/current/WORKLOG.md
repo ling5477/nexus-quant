@@ -2,6 +2,60 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2A-IMPL
+
+日期：2026-06-14
+
+### 本轮目标
+
+实现 GateK CI Batch 2A：在 `.github/workflows/ci.yml` 中新增最小 `postgres-flyway` job，使用 GitHub Actions PostgreSQL service container 验证 empty DB 从 V1 到 V31 的 Flyway migration smoke。本轮不做 Batch 2B/2C/2D/2E，不做 no-outbound/security/frontend E2E hardening。
+
+### 修改文件
+
+- `.github/workflows/ci.yml`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 变更摘要
+
+- 新增 `postgres-flyway` job，使用 `postgres:16` service 和测试专用 `nq_ci` / `nq_ci_user` / `nq_ci_password`。
+- 使用 Java 21 + Maven cache；通过 `mvn -f backend/pom.xml -pl nq-app -am process-classes ... dependency:build-classpath` 准备 Flyway runtime classpath，不运行 tests，不启动 app context。
+- 在 workflow step 中生成临时 Java smoke runner，直接调用 Flyway API：`migrate` + `validate`，固定 `locations("classpath:db/migration")`、`baselineOnMigrate(false)`、`cleanDisabled(true)`、`outOfOrder(false)`。
+- smoke runner 校验 current version 为 V31，并输出 `flyway_schema_history` 到 job logs。
+- 明确 no-seed：不插入 legacy account seed、test fixture seed、真实账户 seed或真实交易所 seed；不依赖 Batch 1 CI-only seed watcher；不触发 `AuthSeedConfiguration`。
+- 文档同步 Batch 2A implemented / pending first CI run；Batch 2B schema artifact/docs、Batch 2C repository real PostgreSQL smoke、Batch 2D `nq-app` context smoke、Batch 2E seed watcher cleanup 仍 pending。
+
+### 验证记录
+
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat`。
+- 已执行 forbidden-area diff：`git diff -- backend`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration`。
+- 已执行 workflow / docs keyword scan：`rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current`。
+- 已执行 Maven classpath 准备命令并通过：`mvn -f backend/pom.xml -pl nq-app -am process-classes org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath "-DincludeScope=runtime" "-Dmdep.outputFile=target/flyway-classpath.txt"`；23 个 reactor module `SUCCESS`，未启动 PostgreSQL、未运行 tests、未启动 app context。
+- 首次未加 PowerShell 引号的本地干跑失败为 shell 参数解析问题；workflow 使用 bash，命令语义不受该本地 PowerShell 问题影响。
+- 本机未安装 `actionlint`，Ruby 不可用，系统 Python 与 Codex bundled Python 均无 PyYAML，bundled Node 未发现 `yaml` / `js-yaml`；本轮未执行完整 workflow lint，first CI run 仍是最终语法验证。
+- 本地未运行 GitHub Actions service container；`postgres-flyway` first CI run pending。
+- 未运行 backend full Maven test、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮未修改 Java / TypeScript / Python / test / migration / backend production code。
+
+### 边界确认
+
+- 未修改 Java、TypeScript、Python、测试代码、backend 生产逻辑、frontend、research、scripts、deploy。
+- 未新增 API、migration，未修改历史 migration。
+- 未启动 `nq-app` full context，未运行 repository real PostgreSQL smoke，未运行 frontend E2E。
+- 未启用 Testcontainers，未使用 `baselineOnMigrate`，未运行 Flyway `clean`。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未注入真实 credential。
+
+### 下一步
+
+Next concrete action：push / PR 到 `dev` 后观察 GitHub Actions `NQ CI Baseline` 的 `postgres-flyway` first run；随后执行 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW`。如 first run 失败，只允许做 `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-FIX`，不得混入 Batch 2B-2E、Batch 3-5、AI、DH runtime、LIVE 或真实交易所。
+
+---
+
 ## NQ-CI-POSTGRES-FLYWAY-PLAN
 
 日期：2026-06-14

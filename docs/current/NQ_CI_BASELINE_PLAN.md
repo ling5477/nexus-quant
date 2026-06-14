@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2 planning documented；Batch 2-5 implementation pending
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A implemented / pending first CI run；Batch 2B-2E and Batch 3-5 implementation pending
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；`.github` 仍不得包含其他未审查 workflow。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，first CI run pending；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
@@ -53,7 +53,7 @@
 | Frontend build | `nq-ci-frontend-build` | `frontend` | `npm ci`; `npm run build` | npm cache + Playwright optional cache | Yes | No |
 | Frontend E2E | `nq-ci-frontend-e2e` | `frontend` | `npm ci`; Playwright browser install/cache; `npm run test:e2e` | npm + Playwright browser cache | Yes after backend test env is stable | No |
 | Research | `nq-ci-research` | `research/py` | `python -m pip install -e ".[dev]"`; `python -m pytest -q`; `python -m mypy src`; `python -m ruff check .` | pip cache | Yes for research changes; baseline should be required before release | No |
-| PostgreSQL / Flyway | `nq-ci-postgres-flyway` | repo root / backend | PostgreSQL service or Testcontainers + Flyway validate/migrate + selected context tests | Maven + Docker layer where available | Yes once implemented | No |
+| PostgreSQL / Flyway | `nq-ci-postgres-flyway` | repo root / backend | PostgreSQL service + direct Flyway API migrate/validate against empty DB V1-V31 | Maven + PostgreSQL service | Yes after first green review | No |
 | No-outbound | `nq-ci-no-outbound-guard` | repo root / backend | fake-server / network-deny / ArchUnit / log assertions | Maven | Yes for backend/test changes after implemented | No |
 | Security | `nq-ci-security-guard` | repo root | gitleaks / secret pattern scan / LIVE disabled assertions | tool cache optional | Yes for secret scan; dependency audit can start non-blocking | No |
 
@@ -146,7 +146,7 @@ Current facts:
 
 - `docker-compose.yml` provides PostgreSQL `postgres:17.7` by default, mapped to `${NQ_DB_PORT:-5432}:5432`。
 - Current maximum migration is V31。
-- Existing docs record local Spring/Flyway validation history, but CI has no tracked workflow yet。
+- Batch 2A added tracked `postgres-flyway` workflow job; first CI run pending。
 
 PostgreSQL service option:
 
@@ -164,8 +164,9 @@ Flyway validation:
 
 - CI must validate migrations V1 to V31 in order on an empty PostgreSQL database。
 - CI must fail on checksum mismatch, out-of-order migration, missing migration, failed repeat run, or schema history drift。
-- First batch can start `nq-app` local context against PostgreSQL so Flyway applies migrations as part of Spring context startup, then run a health/context smoke。
-- A later hardening batch should add an explicit Flyway validate/info step if the toolchain exposes a stable command without adding new runtime behavior。
+- Batch 2A uses `postgres:16` service and a temporary Java smoke runner that calls Flyway `migrate` + `validate` directly against `classpath:db/migration`。
+- Batch 2A does not start `nq-app` Spring context, does not insert legacy account seed, does not run repository real DB tests, and does not use Testcontainers。
+- A later hardening batch should add schema metadata artifact and drift review without adding runtime behavior。
 
 Repository layer:
 
@@ -346,18 +347,26 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: PLANNING DOCUMENTED；implementation PENDING。
+Status: Batch 2A IMPLEMENTED / FIRST CI RUN PENDING；Batch 2B / 2C / 2D / 2E PENDING。
 
 Planning document:
 
 - `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
 
-Must implement:
+Batch 2A implemented:
 
-- PostgreSQL service container or separately reviewed Testcontainers plan。
-- Flyway V1-V31 empty-db migration validation。
-- `nq-app` local/CI Spring context smoke if needed。
-- Repository-layer real PostgreSQL tests only where PostgreSQL-specific behavior matters。
+- `.github/workflows/ci.yml` job `postgres-flyway`。
+- PostgreSQL service container `postgres:16` with CI-only `nq_ci` / `nq_ci_user` / `nq_ci_password`。
+- Direct Flyway API empty-db migration validation from V1 to V31。
+- Prints `flyway_schema_history` in job logs。
+- No seed, no app context, no repository real DB smoke, no Testcontainers, no `baselineOnMigrate`, no Flyway `clean`。
+
+Still pending:
+
+- Batch 2B schema metadata artifacts and docs after first green review。
+- Batch 2C repository-layer real PostgreSQL smoke only where PostgreSQL-specific behavior matters。
+- Batch 2D `nq-app` context smoke if needed。
+- Batch 2E CI-only seed watcher cleanup。
 
 ### Batch 3: NQ-CI-NO-OUTBOUND-GUARD
 
@@ -433,6 +442,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: review `NQ_CI_POSTGRES_FLYWAY_PLAN.md`, then enter Batch 2A implementation only if the plan review is accepted。
+Next concrete action: push / PR to `dev` and run GitHub Actions `NQ CI Baseline`, then review the first `postgres-flyway` run。
 
-Batch 2A may only cover PostgreSQL service + Flyway empty DB migration smoke. Do not mix no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2A.
+If first run fails, only perform `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-FIX` within Batch 2A boundaries. Do not mix Batch 2B-2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2A.

@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-PLAN
+任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL
 日期：2026-06-14
-状态：PLANNING-ONLY；Batch 2 plan documented；implementation NOT STARTED
+状态：Batch 2A implemented；pending first GitHub Actions CI run；Batch 2B/2C/2D/2E NOT STARTED
 
 ## Current state
 
@@ -13,7 +13,11 @@
 - NQ CI Batch 1 已实现并通过 GitHub Actions run `27496906788` first green review。
 - Batch 1 当前 jobs：`diff-check`、`backend`、`frontend`、`research`。
 - Batch 1 backend job 已临时使用 GitHub Actions `postgres:16` service 和 CI-only seed watcher 支撑 `mvn -f backend/pom.xml test`，但这只是 runner dependency workaround，不是 Batch 2 PostgreSQL / Flyway hardening。
-- Batch 2 PostgreSQL / Flyway：PENDING；本文件只规划，不修改 `.github/workflows/ci.yml`。
+- Batch 2A PostgreSQL / Flyway empty DB smoke：IMPLEMENTED；`.github/workflows/ci.yml` 新增 `postgres-flyway` job；first CI run pending。
+- Batch 2B Flyway info / schema artifact / docs update：NOT STARTED。
+- Batch 2C repository real PostgreSQL smoke：NOT STARTED。
+- Batch 2D nq-app context smoke：NOT STARTED。
+- Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
 - Batch 4 security guard / secret scan：PENDING。
 - Batch 5 frontend E2E hardening：PENDING。
@@ -24,20 +28,22 @@
 
 ## Scope
 
-Allowed in this planning task:
+Allowed in Batch 2A implementation:
 
-- 只读检查 `.github/workflows/ci.yml`、backend Maven poms、Flyway migrations、application profiles、`docker-compose.yml`、backend test tree 和 current docs。
-- 新增本文件，并同步 `NQ_CI_BASELINE_PLAN.md`、`README.md`、`TESTING.md`、`WORKLOG.md` 的 Batch 2 planning 状态。
+- 修改 `.github/workflows/ci.yml` 新增最小 `postgres-flyway` job。
+- 同步 `NQ_CI_BASELINE_PLAN.md`、`README.md`、`TESTING.md`、`WORKLOG.md` 的 Batch 2A implementation / pending first CI run 状态。
 
-Forbidden in this planning task:
+Forbidden in Batch 2A implementation:
 
-- 不修改 `.github/workflows/ci.yml`，不新增 workflow。
 - 不修改 Java / TypeScript / Python / test code。
 - 不新增 API，不新增 migration，不修改历史 migration。
 - 不修改 backend 生产逻辑、frontend、research、scripts、deploy。
+- 不启动 `nq-app` full context，不运行 repository real PostgreSQL smoke，不运行 frontend E2E。
+- 不插入 legacy account seed、test fixture seed、真实账户 seed 或真实交易所 seed。
+- 不启用 Testcontainers，不使用 `baselineOnMigrate`，不运行 Flyway `clean`。
 - 不开启 LIVE，不接 AI，不接 DH runtime，不实现 NQ RealClient / real provider / real exchange permission probe adapter。
 - 不调用 OKX / Binance / Bybit / Gate / Coinbase / Kraken，不读取或输出真实 credential material。
-- 不把 Batch 2 写成 implemented。
+- 不把 Batch 2B/2C/2D/2E、Batch 3/4/5 写成 implemented。
 
 ## Current Batch 1 CI state
 
@@ -47,13 +53,14 @@ Forbidden in this planning task:
 | --- | --- | --- |
 | `diff-check` | 对 PR / push / manual run 执行 changed-file whitespace check。 | 保留为基础 hygiene gate。 |
 | `backend` | Java 21 + Maven cache + `mvn -f backend/pom.xml test`；当前已配置 `postgres:16` service、`NQ_DB_URL`、`NQ_DB_USER`、`NQ_DB_PASSWORD`，并用 CI-only seed watcher 插入最小 `accounts` legacy row。 | 说明 full Maven test 已依赖 PostgreSQL service；Batch 2 应拆出独立 `postgres-flyway` job，避免 seed workaround 掩盖 schema 问题。 |
+| `postgres-flyway` | Java 21 + Maven cache + `postgres:16` service；使用 `nq_ci` / `nq_ci_user` / `nq_ci_password` 测试库；通过临时 Java smoke runner 调用 Flyway API 执行 `migrate` + `validate`，校验 current version 为 V31 并打印 `flyway_schema_history`。 | Batch 2A implementation；first CI run pending。该 job 不启动 app context、不插入 seed、不跑 repository real DB smoke、不启用 Testcontainers。 |
 | `frontend` | Node 22 + npm cache + `npm ci` + `npm run build`。 | 不属于 Batch 2；frontend E2E hardening 仍为 Batch 5。 |
 | `research` | Python 3.11 + pip cache + `pytest` / `mypy --no-sqlite-cache` / `ruff --no-cache`。 | 不属于 Batch 2。 |
 
 当前 backend job 已使用 PostgreSQL，但目的仍是让 Batch 1 full Maven test 在 fresh GitHub runner 上可运行，不提供以下 Batch 2 能力：
 
-- 无独立 Flyway `info` / schema artifact。
-- 无显式 empty DB migration smoke job。
+- Batch 2A 已新增显式 empty DB migration smoke job。
+- 仍无 Batch 2B 独立 Flyway `info` / schema artifact。
 - 无 migration checksum drift artifact。
 - 无 schema dump artifact。
 - 无 docs/current `DB_SCHEMA.md` 与 migration 的自动 drift 检查。
@@ -106,11 +113,13 @@ Batch 2 必须验证：
 
 最小实现建议：
 
-- 使用一个 fresh PostgreSQL database，例如 `nexus_quant_flyway_ci`。
-- 设置 `NQ_PROFILE=local` 或后续专用 CI profile，并显式注入测试 datasource。
-- 启动最小 Spring Boot context 或执行稳定的 Flyway migrate path，让 `classpath:db/migration` 应用到 empty DB。
-- 迁移完成后查询 `flyway_schema_history` 并保存 artifact。
-- 再执行一次 validate/info；若 toolchain 暂无独立 Maven Flyway plugin，可先以 Spring/Flyway startup + `flyway_schema_history` query 作为 2A，2B 再补显式 info artifact。
+- 使用 fresh PostgreSQL database：`nq_ci`。
+- 使用 CI-only PostgreSQL 用户和密码：`nq_ci_user` / `nq_ci_password`。
+- Batch 2A 不使用 `NQ_PROFILE=local`，不启动 `nq-app`，避免触发 `ApplicationRunner` side effects。
+- 使用 Maven `process-classes` 准备 `nq-app` / `nq-infra` runtime classpath，并在 workflow step 中生成临时 Java smoke runner 调用 Flyway API。
+- Flyway 配置固定为 `locations("classpath:db/migration")`、`baselineOnMigrate(false)`、`cleanDisabled(true)`、`outOfOrder(false)`。
+- 迁移完成后执行 `validate`，校验 current version 为 `31`，并输出 `flyway_schema_history`。
+- Batch 2B 再补 schema metadata artifact / schema-only dump / docs after first green review。
 
 ## Seed / legacy account boundary
 
@@ -130,7 +139,8 @@ Assessment:
 
 Batch 2 seed policy:
 
-- Flyway empty DB migration smoke 必须先无 seed 运行，证明 V1-V31 可建库。
+- Flyway empty DB migration smoke 必须无 seed 运行，证明 V1-V31 可建库。
+- Batch 2A 的 no-seed 定义：无 legacy account seed、无 test fixture seed、无真实账户 seed、无真实交易所 seed；不启动 app context，因此也不触发 `AuthSeedConfiguration` local/test user seed。
 - 需要 app context / repository smoke 时，再执行 test fixture seed。
 - Seed 不得包含真实账户、真实交易所账户、真实 credential、API key、secret、passphrase、token、cookie 或 LIVE 标记。
 - Seed 必须使用 `PAPER` / `ACTIVE` / fake account code，只服务测试。
@@ -176,9 +186,9 @@ Drift policy:
 - `docs/current/DB_SCHEMA.md` 与 migration output 的差异先作为 2B review checklist；后续可脚本化为 blocking guard。
 - V1-V31 必须全部校验；未来新增 V32+ 自动纳入当前最大版本。
 
-## Proposed CI job design
+## Implemented CI job design
 
-Suggested job name:
+Job name:
 
 - `postgres-flyway`（UI display name: `PostgreSQL / Flyway smoke`）。
 
@@ -186,38 +196,33 @@ Working directory:
 
 - repo root；Maven command 使用 `-f backend/pom.xml`。
 
-Services draft:
+Services:
 
 ```yaml
 services:
   postgres:
     image: postgres:16
     env:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "123456"
-      POSTGRES_DB: nexus_quant_flyway_ci
+      POSTGRES_USER: nq_ci_user
+      POSTGRES_PASSWORD: nq_ci_password
+      POSTGRES_DB: nq_ci
     ports:
       - 5432:5432
     options: >-
-      --health-cmd "pg_isready -U postgres -d nexus_quant_flyway_ci"
+      --health-cmd "pg_isready -U nq_ci_user -d nq_ci"
       --health-interval 10s
       --health-timeout 5s
       --health-retries 10
 ```
 
-Environment draft:
+Environment:
 
 ```yaml
 env:
   CI: "true"
-  NQ_PROFILE: local
-  NQ_DB_URL: jdbc:postgresql://localhost:5432/nexus_quant_flyway_ci
-  NQ_DB_USER: postgres
-  NQ_DB_PASSWORD: "123456"
-  NQ_OKX_WS_ENABLED: "false"
-  NQ_BINANCE_WS_ENABLED: "false"
-  NQ_OKX_RECOVERY_ENABLED: "false"
-  NQ_GATED_VERIFY_ENABLED: "false"
+  NQ_FLYWAY_DB_URL: jdbc:postgresql://localhost:5432/nq_ci
+  NQ_FLYWAY_DB_USER: nq_ci_user
+  NQ_FLYWAY_DB_PASSWORD: nq_ci_password
 ```
 
 Java and cache:
@@ -225,25 +230,27 @@ Java and cache:
 - Java 21 via `actions/setup-java@v4`。
 - Maven cache enabled, keyed by backend poms。
 
-Command options:
+Implemented command:
 
-1. Batch 2A minimum:
-
-```bash
-mvn -f backend/pom.xml -pl nq-app -am test -Dtest=OkxBootstrapNoOutboundLocalContextTest
-```
-
-This starts local Spring context and applies Flyway, but it still runs a context test and may require fixture discipline.
-
-2. Preferred cleaner 2A if implemented with no code changes:
+- Prepare classpath without running tests or app context:
 
 ```bash
-mvn -f backend/pom.xml -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local
+mvn -f backend/pom.xml -pl nq-app -am process-classes \
+  org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath \
+  -DincludeScope=runtime \
+  -Dmdep.outputFile=target/flyway-classpath.txt
 ```
 
-Then wait for successful startup / Flyway completion and terminate after artifact collection. This needs careful process handling and timeout.
+- Generate and run a temporary Java smoke runner in `$RUNNER_TEMP`:
 
-3. Future 2B hardening:
+```bash
+javac -cp "${classpath}" "${smoke_dir}/FlywaySmoke.java"
+java -cp "${smoke_dir}:${classpath}" FlywaySmoke
+```
+
+This path calls Flyway `migrate` + `validate` directly and checks current version `31`; it does not start Spring Boot, does not run `@SpringBootTest`, and does not insert seed data.
+
+Future 2B hardening:
 
 ```bash
 psql "$CI_DATABASE_URL" -c "SELECT installed_rank, version, description, type, script, checksum, success FROM flyway_schema_history ORDER BY installed_rank;"
@@ -257,7 +264,8 @@ Timeout:
 
 Artifacts:
 
-- Upload `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-comments.txt`。
+- Batch 2A prints `flyway_schema_history` to job logs only。
+- Upload `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-comments.txt` in Batch 2B。
 - Optional schema dump must be schema-only and must not contain data.
 - Retention: 7 days for PR, 14-30 days for `dev` push if useful.
 
@@ -283,10 +291,12 @@ CI Batch 2 must enforce these boundaries by configuration and review:
 
 ### Batch 2A: PostgreSQL service + Flyway empty DB migration smoke
 
-- Add separate `postgres-flyway` job。
-- Use GitHub Actions PostgreSQL service container。
-- Run empty DB V1-V31 migration smoke。
-- No seed before migration smoke。
+- Status: IMPLEMENTED / pending first CI run。
+- Added separate `postgres-flyway` job。
+- Uses GitHub Actions PostgreSQL service container。
+- Runs empty DB V1-V31 migration smoke through direct Flyway API。
+- No legacy account seed, no test fixture seed, no real account seed, no real exchange seed。
+- No `nq-app` full context and no `ApplicationRunner` side effects。
 - No Testcontainers。
 - No repository test expansion。
 
@@ -331,15 +341,11 @@ CI Batch 2 must enforce these boundaries by configuration and review:
 
 ## Validation
 
-Planning-only validation executed for this document:
+Batch 2A implementation validation executed locally:
 
 - `git status --short`
 - `git diff --check`
 - `git diff --stat`
-- `git ls-files .github`
-- `git ls-files "backend/**/db/migration/**"`
-- `git ls-files "backend/**/src/test/**"`
-- `git ls-files "backend/**/application*.yml" "backend/**/application*.yaml" "backend/**/application*.properties"`
 - `git diff -- backend`
 - `git diff -- frontend`
 - `git diff -- research`
@@ -347,32 +353,34 @@ Planning-only validation executed for this document:
 - `git diff -- deploy`
 - `git diff -- .github`
 - `git diff -- backend/**/db/migration`
-- `rg "flyway|Flyway|postgres|PostgreSQL|Testcontainers|jdbc:postgresql|baselineOnMigrate|spring.datasource|accounts|seed|migration" backend docs/current docker-compose.yml .github README.md`
-- `rg "LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github docs/current backend`
+- `rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current`
+- Workflow boundary review: `postgres-flyway` uses `postgres:16` with `nq_ci` / `nq_ci_user` / `nq_ci_password` only; no real exchange credentials, no LIVE flag, no Testcontainers, no app context, no seed watcher.
 
 Notes:
 
-- 用户指定的 broad `rg` 命令会命中 `backend/target` 生成报告；后续证据提取已使用 `--glob '!**/target/**'` 排除生成产物，避免把 surefire output 当作 source fact。
-- 本轮未运行 Maven / frontend / Python tests；原因是只改 `docs/current` 文档，未修改 code / test / workflow / migration。
+- 本地未运行 GitHub Actions service container；first CI run 仍 pending。
+- 本轮未运行 backend full Maven test、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮只修改 CI workflow 与 docs/current，不修改 Java / TypeScript / Python / test / migration。
 
 ## Boundary confirmation
 
-- Batch 2 仍是 PLANNING-ONLY；implementation NOT STARTED。
-- 未修改 `.github/workflows/ci.yml`。
+- Batch 2A implemented；first GitHub Actions CI run pending。
+- 已修改 `.github/workflows/ci.yml`，仅新增 `postgres-flyway` job。
 - 未修改 backend / frontend / research / scripts / deploy。
 - 未新增 API，未新增 migration，未修改历史 migration。
 - 未修改 Java / TypeScript / Python / test code。
+- 未启动 `nq-app` full context，未插入 legacy account seed / test fixture seed / real account seed / real exchange seed。
+- 未启用 Testcontainers，未使用 `baselineOnMigrate`，未运行 Flyway `clean`。
 - 未开启 LIVE，未接 AI，未接 DH runtime。
 - 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
 - 未调用真实交易所，未下单、撤单、转账、提现。
 - 未读取、打印、复制或输出真实 credential material。
 
-## Review decision
+## Implementation decision
 
-CONDITIONALLY ACCEPTED FOR PLANNING。
+IMPLEMENTED FOR BATCH 2A；PENDING FIRST CI RUN。
 
-Batch 2 可进入 `NQ-CI-POSTGRES-FLYWAY-PLAN-REVIEW`；若 review 接受，下一步只能进入 Batch 2A implementation：PostgreSQL service + Flyway empty DB migration smoke。不得混入 Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter。
+Batch 2A 已完成最小 workflow 实现：PostgreSQL service + Flyway empty DB V1-V31 migration smoke。不得把本轮写成 Batch 2B/2C/2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-PLAN-REVIEW`，或在 review 接受后进入 `NQ-CI-POSTGRES-FLYWAY-2A-IMPL`。
+Next concrete action: push / PR to `dev` and run GitHub Actions `NQ CI Baseline`; then perform `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW`。If first run fails, only perform `NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-FIX` within Batch 2A boundaries。

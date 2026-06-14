@@ -60,6 +60,41 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CI-POSTGRES-FLYWAY-2A-IMPL 验证记录（2026-06-14）
+
+本轮是 GateK CI Batch 2A implementation：只修改 `.github/workflows/ci.yml` 新增 `postgres-flyway` job，并同步 current docs。Batch 2A 只覆盖 PostgreSQL service + Flyway empty DB V1-V31 migration smoke；未实现 Batch 2B schema artifact/docs、Batch 2C repository real PostgreSQL smoke、Batch 2D `nq-app` context smoke、Batch 2E seed watcher cleanup、Batch 3 no-outbound guard、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening。
+
+本轮未运行 GitHub Actions 本体；`postgres-flyway` first CI run pending。未运行 backend full Maven test、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮未修改 Java / TypeScript / Python / test / migration / backend production code。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已执行 | 确认工作区变更仅限 `.github/workflows/ci.yml` 与允许的 `docs/current` 文件。 |
+| `git diff --check` | 通过 | 未发现 whitespace error。 |
+| `git diff --stat` | 已检查 | 变更集中在 CI workflow 与 current docs。 |
+| `git diff -- backend` | 通过 | 输出为空，未改 backend Java / resources / tests。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改 frontend。 |
+| `git diff -- research` | 通过 | 输出为空，未改 research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改 scripts。 |
+| `git diff -- deploy` | 通过 | 输出为空，未改 deploy。 |
+| `git diff -- backend/**/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| Workflow boundary review | 通过 | 新增 `postgres-flyway` job 使用 `postgres:16`、`nq_ci` / `nq_ci_user` / `nq_ci_password`、Java 21、Maven cache；通过临时 Java smoke runner 调用 Flyway `migrate` + `validate`，校验 current version 为 V31 并打印 `flyway_schema_history`。 |
+| `mvn -f backend/pom.xml -pl nq-app -am process-classes org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath "-DincludeScope=runtime" "-Dmdep.outputFile=target/flyway-classpath.txt"` | 通过 | 23 个 reactor module `SUCCESS`，生成 `backend/nq-app/target/flyway-classpath.txt`；该命令只准备 classpath / resources，不启动 PostgreSQL、不运行 tests、不启动 app context。首次未加 PowerShell 引号的本地干跑失败为 shell 参数解析问题，workflow bash 命令不受影响。 |
+| Seed boundary review | 通过 | `postgres-flyway` 不插入 legacy account seed、test fixture seed、real account seed 或 real exchange seed；不依赖 Batch 1 CI-only seed watcher。 |
+| App context / repository boundary review | 通过 | `postgres-flyway` 不启动 `nq-app` full context，不运行 `@SpringBootTest`，不触发 `AuthSeedConfiguration`，不跑 repository real PostgreSQL smoke。 |
+| Testcontainers / Flyway safety review | 通过 | 未启用 Testcontainers；未使用 `baselineOnMigrate`；未运行 Flyway `clean`；未设置 `continue-on-error`。 |
+| Security keyword scan | 已执行 | `rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current` 已执行；命中项用于边界复核，workflow 未注入真实交易所 credential，未开启 LIVE，未加入 Batch 3/4/5。 |
+| Workflow lint | 未执行 | 本机未安装 `actionlint`，Ruby 不可用，系统 Python 与 Codex bundled Python 均无 PyYAML，bundled Node 未发现 `yaml` / `js-yaml`；本轮未伪造 workflow lint 通过，语法仍以 GitHub Actions first run 为准。 |
+
+边界确认：
+
+- Batch 2A implemented；first CI run pending。
+- 未修改 Java / TypeScript / Python / test code。
+- 未新增 API，未新增 migration，未修改历史 migration。
+- 未修改 backend 生产逻辑、frontend、research、scripts、deploy。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX/Binance permission probe adapter。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+
 ## NQ-CI-POSTGRES-FLYWAY-PLAN 验证记录（2026-06-14）
 
 本轮是 GateK CI Batch 2 planning-only / docs-only：只新增 `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md` 并同步 current docs 入口，不修改 `.github/workflows/ci.yml`，不修改 backend、frontend、research、scripts、deploy、测试代码、API、migration 或真实交易所 adapter。因此本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；这些命令不适用于只写 Batch 2 方案的文档轮次。
