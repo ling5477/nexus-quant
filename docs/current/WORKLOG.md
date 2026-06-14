@@ -2,6 +2,57 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW
+
+日期：2026-06-14
+
+### 本轮目标
+
+冻结 Batch 2A PostgreSQL / Flyway empty DB migration smoke baseline，确认它成为当前 `dev` CI 的 PostgreSQL/Flyway 最小验证基线。本轮只允许文档同步，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### 同步与冲突处理
+
+- 已先执行 `git status --short` 和 `git branch --show-current`，确认在 `dev` 分支且存在 5 个 first-run review 文档变更。
+- 已使用 `git stash push -u -m "wip: postgres flyway 2a first-run review docs"` 保存本地文档变更。
+- 已执行 `git fetch origin`、`git switch dev`、`git pull --ff-only origin dev`，快进到前端 PR #1 合并后的 `origin/dev`。
+- 用户提示 PR #2 也已合并后，已再次执行 `git fetch origin` 与 `git pull --ff-only origin dev`；本地 `dev` 确认为 `ea38f79d feat(frontend): 登录页 + 异常页 (B0.1) (#2)`。
+- 已执行 `git stash pop`，`docs/current/TESTING.md` 与 `docs/current/WORKLOG.md` 自动合并成功，无冲突标记。
+- 已保留前端 B0 / B0.1 文档事实源和 PostgreSQL/Flyway 2A first-run review 事实源。
+
+### First-run commit
+
+- Commit: `docs(gatek): confirm PostgreSQL Flyway CI first green run`
+- Files:
+  - `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+  - `docs/current/NQ_CI_BASELINE_PLAN.md`
+  - `docs/current/README.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+
+### Freeze review summary
+
+- Batch 2A implementation 已完成。
+- GitHub Actions run `27501253175` completed / success。
+- `postgres-flyway` job completed / success。
+- Empty DB migration smoke 从 V1 跑到 V31。
+- Flyway validate 31 migrations 成功。
+- 未使用 `baselineOnMigrate` 绕过；未运行 Flyway `clean`。
+- 未插入 legacy account seed、test fixture seed、real account seed 或 real exchange seed。
+- 未启动 `nq-app` full context，未触发 `AuthSeedConfiguration`。
+- 未跑 repository real DB smoke、frontend E2E 或 Testcontainers。
+- 未注入真实交易所 credential，未开启 LIVE，未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- Batch 2B/2C/2D/2E 仍 NOT STARTED；Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E hardening 仍 PENDING。
+
+### Review decision
+
+PASS / FROZEN / ACCEPTED。Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
+
+---
+
 ## NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW
 
 日期：2026-06-14

@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW
+任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW
 日期：2026-06-14
-状态：Batch 2A FIRST GREEN RUN CONFIRMED / ACCEPTED；Batch 2B/2C/2D/2E NOT STARTED
+状态：Batch 2A FROZEN / ACCEPTED；Batch 2B/2C/2D/2E NOT STARTED
 
 ## Current state
 
@@ -13,7 +13,7 @@
 - NQ CI Batch 1 已实现并通过 GitHub Actions run `27496906788` first green review。
 - Batch 1 当前 jobs：`diff-check`、`backend`、`frontend`、`research`。
 - Batch 1 backend job 已临时使用 GitHub Actions `postgres:16` service 和 CI-only seed watcher 支撑 `mvn -f backend/pom.xml test`，但这只是 runner dependency workaround，不是 Batch 2 PostgreSQL / Flyway hardening。
-- Batch 2A PostgreSQL / Flyway empty DB smoke：FIRST GREEN RUN CONFIRMED / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success。
+- Batch 2A PostgreSQL / Flyway empty DB smoke：FROZEN / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success，并已完成 freeze review。
 - `postgres-flyway` job `81284424653` completed / success；step `Run empty database Flyway smoke` success；日志显示 empty PostgreSQL 16.14 DB 从 V1 迁移到 V31，并执行 `validate`。
 - Batch 2B Flyway info / schema artifact / docs update：NOT STARTED。
 - Batch 2C repository real PostgreSQL smoke：NOT STARTED。
@@ -54,7 +54,7 @@ Forbidden in Batch 2A implementation:
 | --- | --- | --- |
 | `diff-check` | 对 PR / push / manual run 执行 changed-file whitespace check。 | 保留为基础 hygiene gate。 |
 | `backend` | Java 21 + Maven cache + `mvn -f backend/pom.xml test`；当前已配置 `postgres:16` service、`NQ_DB_URL`、`NQ_DB_USER`、`NQ_DB_PASSWORD`，并用 CI-only seed watcher 插入最小 `accounts` legacy row。 | 说明 full Maven test 已依赖 PostgreSQL service；Batch 2 应拆出独立 `postgres-flyway` job，避免 seed workaround 掩盖 schema 问题。 |
-| `postgres-flyway` | Java 21 + Maven cache + `postgres:16` service；使用 `nq_ci` / `nq_ci_user` / `nq_ci_password` 测试库；通过临时 Java smoke runner 调用 Flyway API 执行 `migrate` + `validate`，校验 current version 为 V31 并打印 `flyway_schema_history`。 | Batch 2A FIRST GREEN RUN CONFIRMED / ACCEPTED。该 job 不启动 app context、不插入 seed、不跑 repository real DB smoke、不启用 Testcontainers。 |
+| `postgres-flyway` | Java 21 + Maven cache + `postgres:16` service；使用 `nq_ci` / `nq_ci_user` / `nq_ci_password` 测试库；通过临时 Java smoke runner 调用 Flyway API 执行 `migrate` + `validate`，校验 current version 为 V31 并打印 `flyway_schema_history`。 | Batch 2A FROZEN / ACCEPTED。该 job 不启动 app context、不插入 seed、不跑 repository real DB smoke、不启用 Testcontainers。 |
 | `frontend` | Node 22 + npm cache + `npm ci` + `npm run build`。 | 不属于 Batch 2；frontend E2E hardening 仍为 Batch 5。 |
 | `research` | Python 3.11 + pip cache + `pytest` / `mypy --no-sqlite-cache` / `ruff --no-cache`。 | 不属于 Batch 2。 |
 
@@ -292,7 +292,7 @@ CI Batch 2 must enforce these boundaries by configuration and review:
 
 ### Batch 2A: PostgreSQL service + Flyway empty DB migration smoke
 
-- Status: FIRST GREEN RUN CONFIRMED / ACCEPTED。
+- Status: FROZEN / ACCEPTED。
 - Added separate `postgres-flyway` job。
 - Uses GitHub Actions PostgreSQL service container。
 - Runs empty DB V1-V31 migration smoke through direct Flyway API。
@@ -313,6 +313,16 @@ First green evidence:
 - Log evidence: `flyway_schema_history` printed `installed_rank|version|description|type|script|checksum|success` with rows `1|1|...|true` through `31|31|schema credential permission probe|SQL|V31__schema_credential_permission_probe.sql|...|true`。
 - Log evidence: smoke runner printed `Flyway empty database smoke reached V31`。
 - Run artifacts: none；schema artifacts remain Batch 2B NOT STARTED。
+
+Freeze review evidence:
+
+- Batch 2A implementation completed and first green run evidence reviewed。
+- GitHub Actions run `27501253175` completed / success；`postgres-flyway` job completed / success。
+- Empty DB migration smoke applied V1-V31 and validated 31 migrations。
+- No `baselineOnMigrate` bypass；no Flyway `clean`。
+- No legacy account seed、test fixture seed、real account seed or real exchange seed。
+- No `nq-app` full context、no `AuthSeedConfiguration`、no repository real DB smoke、no frontend E2E、no Testcontainers。
+- No real exchange credentials、no LIVE、no OKX / Binance / Bybit / Gate / Coinbase / Kraken access。
 
 ### Batch 2B: Flyway info / schema artifact / docs update
 
@@ -379,7 +389,7 @@ Notes:
 
 ## Boundary confirmation
 
-- Batch 2A FIRST GREEN RUN CONFIRMED / ACCEPTED。
+- Batch 2A FROZEN / ACCEPTED。
 - 已修改 `.github/workflows/ci.yml`，仅新增 `postgres-flyway` job。
 - 未修改 backend / frontend / research / scripts / deploy。
 - 未新增 API，未新增 migration，未修改历史 migration。
@@ -393,10 +403,10 @@ Notes:
 
 ## Review decision
 
-PASS / ACCEPTED。
+PASS / FROZEN / ACCEPTED。
 
-Batch 2A 已完成首次 GitHub Actions green run review，可冻结为 PostgreSQL / Flyway empty DB migration smoke baseline。不得把本轮写成 Batch 2B/2C/2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
+Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。不得把本轮写成 Batch 2B/2C/2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。

@@ -60,6 +60,23 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW 验证记录（2026-06-14）
+
+本轮是 GateK docs-only / CI freeze review：只冻结 Batch 2A PostgreSQL / Flyway empty DB migration smoke baseline，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git fetch origin` / `git pull --ff-only origin dev` | 通过 | 本地 `dev` 已同步到 `origin/dev`，包含前端 PR #1 与 PR #2 合并后的文档事实源。 |
+| First-run review commit | 通过 | 已提交 `docs(gatek): confirm PostgreSQL Flyway CI first green run`，只包含允许的 5 个 `docs/current` 文件。 |
+| GitHub Actions run `27501253175` | 通过 | `NQ CI Baseline` completed / success；`postgres-flyway` job completed / success。 |
+| Flyway V1-V31 review | 通过 | 日志证据显示 empty DB 从 V1 迁移到 V31，并 `Successfully validated 31 migrations`。 |
+| No baseline / clean boundary | 通过 | Workflow 使用 `baselineOnMigrate(false)`、`cleanDisabled(true)`；未发现 `cleanDisabled(false)`。 |
+| Seed / context boundary | 通过 | 未插入 legacy account seed / test fixture seed / real account seed / real exchange seed；未启动 `nq-app` full context，未触发 `AuthSeedConfiguration`。 |
+| Expansion boundary | 通过 | 未跑 repository real DB smoke、frontend E2E 或 Testcontainers；Batch 2B/2C/2D/2E 仍 NOT STARTED，Batch 3-5 仍 PENDING。 |
+| Security boundary | 通过 | 未注入真实交易所 credential，未开启 LIVE，未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken；AI NOT STARTED，DH runtime NOT INTEGRATED。 |
+
+Review decision: PASS / FROZEN / ACCEPTED。Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2B-PLAN`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW 验证记录（2026-06-14）
 
 本轮是 GateK CI Batch 2A first-run review：只复核 GitHub Actions `postgres-flyway` 首次运行结果，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
