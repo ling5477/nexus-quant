@@ -2280,3 +2280,20 @@ API/数据缺口(必须报告,未伪装):
 - 只做 B1 回测详情;未做其它业务大页面,未迁移 Dashboard/Strategy/Risk/Paper。
 - 未用 mock 假数据伪装后端就绪;缺字段/缺端点显式 empty/unavailable。
 - 未接 AI/DH/LIVE/real exchange/WebSocket/SSE;未改后端 API;未全局替换 AppProviders。
+
+## NQ-BACKTEST-EQUITY-DRAWDOWN-SERIES-API-PLAN 验证记录（2026-06-15）
+
+本轮 **docs-only / planning-only**:为 B1 权益/回撤曲线规划后端时间序列契约,只读后端审计 + 写 plan 文档,**未改代码、未新增 migration、未实现 API**。因此未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`(无代码变更)。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 只读后端审计 | 已执行 | `rg` + 读取 `BacktestRunController` / `BacktestFactQueryService` / `SimPnlSnapshot(Response)` / `JdbcSimPnlSnapshotRepository` / `DrawdownCalculator` / `V8` migration。 |
+| 端点存在性 | 已确认 | `GET /api/backtest-runs/{runId}/pnl-snapshots` 已实现,返回 `sim_pnl_snapshots` 权益/PnL 序列。 |
+| 表存在性 | 已确认 | `sim_pnl_snapshots`(V8 gate_f3),索引 `(backtest_run_id, snapshot_time)`。 |
+| 结论 | 已记录 | 无需新增后端 API/表/migration;B1 曲线 unavailable 属前端未接线;前端消费(B1.1)为 planning 未实现。 |
+| `git status --short` | 已检查 | 仅 5 个 docs/current 文档变更。 |
+
+阶段与安全边界:
+
+- planning only,未把前端 B1.1 写成 implemented;已存在的后端端点据实记录。
+- 未改 Java/TS/Python;未新增/改 migration;未改前端页面;未接 AI/DH/LIVE/real exchange/socket。

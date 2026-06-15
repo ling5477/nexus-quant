@@ -5800,3 +5800,42 @@ B0/B0.1/B0.2/B0.3 均已合入 dev。本轮 B1 新增回测详情可视化页,�
 - 未接 AI / DH runtime / LIVE / real exchange;未接 WebSocket/SSE;**未用假数据伪装后端已就绪**(曲线缺口显式 unavailable + 报告)。
 - 未新增 Backtest 以外业务大页面;未把 Dashboard/Strategy/Risk/Paper 迁移混入;未全局替换 AppProviders。
 - 回滚方式:删除 `frontend/src/components/backtest/`、`frontend/src/pages/backtests/BacktestDetailPage.tsx`、`frontend/tests/e2e/design-system-backtest-chart-smoke.spec.ts`,还原 `routes.tsx` / `BacktestsPage.tsx` / `DesignSystemDemoPage.tsx` 即可完全回退。
+
+---
+
+# Worklog: NQ-BACKTEST-EQUITY-DRAWDOWN-SERIES-API-PLAN
+
+日期：2026-06-15
+
+## 本轮目标
+
+为 B1 回测详情的权益/回撤曲线规划后端时间序列契约。**planning only,只读 + docs,不改任何 Java/TS/Python 代码、不新增 migration、不实现 API。**
+
+## 关键发现(只读后端审计)
+
+- 回测权益/PnL 时间序列**已存在并已暴露**:
+  - 表 `sim_pnl_snapshots`(`V8__gate_f3_simulated_execution_facts.sql`),按 `backtest_run_id` + `snapshot_time` 存储,索引 `(backtest_run_id, snapshot_time)`;字段含 `equity / cash_balance / position_market_value / realized_pnl / unrealized_pnl / total_fee / total_slippage / net_pnl`。
+  - 端点 `GET /api/backtest-runs/{runId}/pnl-snapshots`(`BacktestRunController` → `BacktestFactQueryService.listPnlSnapshots` → `JdbcSimPnlSnapshotRepository`)返回该序列。
+  - 评估侧 `DrawdownCalculator` / `EvaluationMetricCalculator` 已基于该 equity 序列计算 maxDrawdown 等。
+- 结论:**B1 曲线 unavailable 是前端未接线既有端点,不是后端缺口。** 无需新增后端 API/表/migration;回撤序列由 equity 客户端派生(与后端同口径)。
+- `API.md` 此前漏记 sim-orders/trades/positions/pnl-snapshots 端点,本轮补记为事实。
+
+## 修改范围(docs only)
+
+- 新增 `docs/current/BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md`(逐条回答 10 个问题 + 契约/schema/前端对接/测试/风险)。
+- 更新 `docs/current/API.md`:补记既有 run-fact 端点 + 指向 plan 文档,标注前端消费为 planning 未实现。
+- 更新 `docs/current/README.md`:当前事实文件列表新增 plan 文档指针(planning 口径)。
+- 更新 `docs/current/WORKLOG.md` / `TESTING.md`:本轮 planning 记录。
+
+## 验证记录
+
+- 本轮 **docs-only / planning-only**,未改代码,未运行 `mvn test` / `npm run build` / `npm run test:e2e`(无代码变更,无需构建)。
+- 只读核查命令:`rg`(equity/drawdown/reportJson/metricsJson/SimPnlSnapshot)、读取 `BacktestRunController`、`BacktestFactQueryService`、`SimPnlSnapshot(Response)`、`JdbcSimPnlSnapshotRepository`、`DrawdownCalculator`、`V8` migration。
+- `git status --short`:仅 5 个 docs/current 文档变更。
+
+## 边界确认
+
+- 未改 Java / TypeScript / Python 代码;未新增 API 实现;未新增/修改 migration;未改前端页面。
+- 未接 AI / DH runtime / LIVE / real exchange;未用 mock 替代真实契约。
+- 未把 API plan 写成 implemented(前端 B1.1 明确标注为 planning / 未实现;已存在的后端端点据实记录为 implemented)。
+- 回滚方式:删除新增 plan 文档,还原 `API.md` / `README.md` / `WORKLOG.md` / `TESTING.md` 本轮追加段落即可。
