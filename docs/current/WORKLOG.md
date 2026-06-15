@@ -4978,3 +4978,46 @@ PR #1(B0 设计系统)、PR #2(B0.1 登录/异常页)均已合入 dev。本轮 B
 - 未改 backend / migration / research / deploy / scripts;未改 GateK 阶段事实源(STATUS/ROADMAP/GATEK_PLAN)。
 - 未接 AI / DH runtime / LIVE / real exchange;未新增业务大页面;未把 B1–B7 混入;未全局替换 AppProviders;未迁移既有业务页。
 - 回滚方式:删除 `frontend/src/nq-design-system/format/`、`frontend/src/nq-design-system/table/`、`frontend/tests/e2e/design-system-table-smoke.spec.ts`,还原 `nq-design-system/index.ts` 与 `DesignSystemDemoPage.tsx` 即可完全回退。
+
+---
+
+# Worklog: NQ-FRONTEND-USE-LIVE-QUERY-B0.3
+
+日期：2026-06-14
+
+## 本轮目标
+
+B0/B0.1/B0.2 均已合入 dev。本轮 B0.3 封装实时数据获取抽象 `useLiveQuery`(polling / 手动刷新 / freshness 归一化),为后续 Monitor / Paper Trading / MarketData / Risk 页面迁移做准备。当前阶段只 polling + 手动刷新,**不接 WebSocket / SSE**,不迁移业务大页面。
+
+## 分支与隔离
+
+独立 git worktree(`E:/Project/nexus-quant-fe-b01`,`node_modules` junction)基于最新 `origin/dev`(`7a479406`)新建 `feat/nq-frontend-use-live-query-b03`,与 Codex 的 dev HEAD 隔离。PR 边界:B0.3 独立 PR(base = `dev`),不混入 B1–B7。
+
+## 修改范围
+
+- 新增 `frontend/src/hooks/useLiveQuery.ts`:基于 TanStack Query 的实时数据抽象。
+  - 支持 `pollingIntervalMs`(轮询)、`refresh()`(手动刷新)、`enabled`(启停)、`pauseOnHidden`(失焦暂停)。
+  - 状态归一化为 `LiveStatus = loading / fresh / stale / error / disabled`;`liveStatusToFreshness()` 映射到 DataFreshness 的 `FreshnessState`。
+  - 输出 `lastUpdatedAt`(epoch ms)、`latencyMs`(包裹 queryFn 计时)、`errorReason`(按 HTTP 状态脱敏)。
+  - `staleAfterMs` 默认 `pollingIntervalMs*2`(无轮询 30s);1s 轻量 tick 让 fresh→stale 随时间推移与相对时间显示实时更新;失焦默认暂停轮询。
+- 更新 `frontend/src/pages/dev/DesignSystemDemoPage.tsx`:新增"实时数据(useLiveQuery)"自检区(本地模拟源:轮询间隔切换 / 暂停·恢复 / 立即刷新 / 模拟错误;DataFreshness 由归一化状态驱动;最新价用 MoneyCell)。
+- 新增 `frontend/tests/e2e/design-system-live-query-smoke.spec.ts`:fresh / disabled / error / 手动刷新归一化 smoke。
+
+## 说明
+
+- 模拟源是本地 fake(随机延迟,可模拟错误),**不打后端、不连 socket**;真实数据接入在页面迁移阶段由各页提供 queryFn。
+- 列组件 / hook 读 `var(--nq-*)` 与 FreshnessState,与既有 v2 组件一致;未改全局 `AppProviders`(QueryClient 复用既有 Provider)。
+- 未迁移任何业务页面(Monitor/Paper/MarketData/Risk);本轮只产出可复用抽象 + 自检。
+
+## 验证记录
+
+- `npm run build`（worktree，`tsc -b && vite build`）：**通过**,tsc 0 error,`✓ built in ~1s`。
+- `npm run test:e2e -- design-system-live-query-smoke.spec.ts design-system-table-smoke.spec.ts login-page-smoke.spec.ts --project=chromium`(无后端 dev server)：**3 passed**。live-query smoke 断言 fresh→disabled→fresh→error→fresh 归一化(DataFreshness 同步 Fresh/Disabled/Error)。
+- 真机调试(Playwright Chromium,**0 console error**):status 持续 `fresh`,轮询每 3s 更新,`Fresh (Xs ago · Yms)` latency 实测 387ms→219ms,惯例与状态显示正常。
+- 全量 `npm run test:e2e`：**未跑**。原因:多数 spec 依赖后端(`:18888`,本环境未启动);本轮仅跑无后端依赖的 design-system / live-query / login smoke 并通过,未改既有业务页面/全局主题。
+
+## 边界确认
+
+- 未改 backend / migration / research / deploy / scripts;未改 GateK 阶段事实源。
+- 未接 WebSocket / SSE;未接 AI / DH runtime / LIVE / real exchange;未新增业务大页面;未把 B1–B7 混入;未全局替换 AppProviders;未迁移既有业务页。
+- 回滚方式:删除 `frontend/src/hooks/useLiveQuery.ts`、`frontend/tests/e2e/design-system-live-query-smoke.spec.ts`,还原 `DesignSystemDemoPage.tsx` 即可完全回退。
