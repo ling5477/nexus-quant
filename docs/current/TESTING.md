@@ -2093,3 +2093,26 @@ Review decision：Batch 1 baseline 可冻结为当前 `dev` 的最小 CI 基线�
 - B0.3 仅产出实时数据抽象(`useLiveQuery`)+ 自检,未做 B1+ 业务页面,未迁移既有页面,未做 AI/Agent/DH 页面（B8 仍 BLOCKED）。
 - 当前只 polling + 手动刷新,**不接 WebSocket/SSE**;失败经 `errorReason` 显式暴露,不静默。
 - 未碰 LIVE;未接真实 socket/交易所;未改后端 API;未全局替换 AppProviders(QueryClient 复用既有 Provider)。
+
+## NQ-FRONTEND-BACKTEST-DETAIL-VISUALIZATION-B1 验证记录（2026-06-14）
+
+本轮新增回测详情可视化页(`/backtests/:backtestConfigId`)+ `BacktestCurveChart` 组件。**只复用真实 API**(backtest-configs / evaluations / marketdata datasets);权益/回撤时间序列后端无端点 → 防御式解析 report/metrics JSON,缺则显式 unavailable,**不编造**。基于最新 `origin/dev` 在独立 worktree 执行。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build`（`tsc -b && vite build`） | **通过** | tsc 0 error。>500 kB 单 chunk warning 为既有单包结构,非本轮回归。 |
+| `npm run test:e2e -- design-system-backtest-chart-smoke.spec.ts design-system-live-query-smoke.spec.ts design-system-table-smoke.spec.ts login-page-smoke.spec.ts --project=chromium`（dev server,无后端） | **4 passed** | backtest chart smoke:样本权益/回撤渲染 canvas + 无序列显式 unavailable;其余 B0.x smoke 保持通过。 |
+| 真机自检：Playwright Chromium `/dev/design-system` 回测曲线区 | **通过** | 0 console error;权益(primary 面积)/回撤(danger 面积,负值)/unavailable 占位渲染正常。 |
+| BacktestDetailPage 浏览器 e2e | **未跑(诚实标注)** | 该页在 `RequireAuth` 下,依赖后端(`:18888`)+ 登录态,本环境均不可用;其组件(曲线/B0.2 列/useLiveQuery)已由 design-system smoke 覆盖,页面经 tsc 与 hook 顺序复核。需后端就绪环境补 backtest detail e2e。 |
+| `npm run test:e2e`（全量） | **未跑** | 多数 spec 依赖后端,本环境未启动。 |
+
+API/数据缺口(必须报告,未伪装):
+
+- 权益/回撤**时间序列**:后端无 backtest 端点(仅聚合指标 + 不透明 report/metrics JSON)。本轮防御式解析 `equityCurve/equity/equitySeries`、`drawdownCurve/drawdown/drawdownSeries`,有则渲染、无则 unavailable。建议后端补 `GET /backtest-runs/{id}/equity-curve` 等端点或固化 reportJson 序列结构。
+- `*Rate` 字段单位口径按比例值 ×100 展示并在 UI 注明,需后端确认口径。
+
+阶段与安全边界:
+
+- 只做 B1 回测详情;未做其它业务大页面,未迁移 Dashboard/Strategy/Risk/Paper。
+- 未用 mock 假数据伪装后端就绪;缺字段/缺端点显式 empty/unavailable。
+- 未接 AI/DH/LIVE/real exchange/WebSocket/SSE;未改后端 API;未全局替换 AppProviders。
