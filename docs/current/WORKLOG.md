@@ -2,6 +2,55 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX
+
+日期：2026-06-15
+
+### 目标
+
+只处理 GateK CI Batch 2C P2 log hygiene：降低 GitHub Actions logs 中 CI-only PostgreSQL URL / user / password 的可见性。Batch 2C repository-only real PostgreSQL smoke 保持 FROZEN / ACCEPTED；Batch 2D / 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### 修改范围
+
+- `.github/workflows/ci.yml`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 实现摘要
+
+- 在 `postgres-flyway` job 的第一个 step 增加 `Mask CI-only PostgreSQL connection values`。
+- 通过 GitHub Actions `::add-mask::` 注册 `NQ_FLYWAY_DB_URL`、`NQ_FLYWAY_DB_USER`、`NQ_FLYWAY_DB_PASSWORD`。
+- 不 echo 原始值，不引入 GitHub secret store，不改变 disposable CI service DB values。
+- 不修改 Flyway smoke、schema artifact generation、artifact redaction checks、artifact upload 或 repository smoke Maven command。
+
+### CI masking review
+
+- `::add-mask::` 对 masking step 之后的 job logs 生效。
+- GitHub service container 初始化发生在 job steps 之前；如 service command output 仍显示 `nq_ci` / `nq_ci_user` / `nq_ci_password`，记录为 GitHub Actions service-level CI fake value exposure。
+- 这些值是 disposable CI fake service DB values，不是真实 credential material，不是 production DB credentials；本轮不升级为 P1/P0。
+
+### 边界确认
+
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code。
+- 未修改 frontend、research、scripts、deploy。
+- 未启动 `nq-app` context，未使用 `@SpringBootTest`，未触发 `AuthSeedConfiguration`。
+- 未使用 `continue-on-error`，未允许 skip / soft-fail。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- 未读取、打印、复制或输出真实 credential material。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2D-PLAN` 或 `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。不得直接进入 Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW
 
 日期：2026-06-15
@@ -27,7 +76,7 @@
 - GitHub Actions 自动 step env / service command output 显示 CI-only PostgreSQL URL / user / password。
 - 这些值是 disposable CI-only fake service DB values，不是真实 credential material，不是 production DB credential。
 - 结论：Accepted P2，不阻塞 Batch 2C freeze。
-- 后续如需低风险收口，只允许另开 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`，不得混入 Batch 2D/2E、生产代码、真实 credential flow、真实交易所、LIVE、AI 或 DH runtime。
+- `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` 已增加 masking step；等待 first CI run review。不得混入 Batch 2D/2E、生产代码、真实 credential flow、真实交易所、LIVE、AI 或 DH runtime。
 
 ### Boundary confirmation
 
@@ -66,7 +115,7 @@ PASS / FROZEN / ACCEPTED。Batch 2C 冻结为当前 `dev` repository-only real P
 
 ### 下一步
 
-Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`, or Batch 3 pre-planning。不得直接进入真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2D-PLAN` 或 `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。不得直接进入真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
 
 ## NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW
 

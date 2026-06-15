@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL / NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-PLAN / NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW
+任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL / NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-PLAN / NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX
 日期：2026-06-14
-状态：Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2D/2E NOT STARTED
+状态：Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX IMPLEMENTED / PENDING FIRST CI RUN；Batch 2D/2E NOT STARTED
 
 ## Current state
 
@@ -16,7 +16,7 @@
 - Batch 2A PostgreSQL / Flyway empty DB smoke：FROZEN / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success，并已完成 freeze review。
 - `postgres-flyway` job `81284424653` completed / success；step `Run empty database Flyway smoke` success；日志显示 empty PostgreSQL 16.14 DB 从 V1 迁移到 V31，并执行 `validate`。
 - Batch 2B Flyway info / schema artifact / docs update：FROZEN / ACCEPTED；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
-- Batch 2C repository real PostgreSQL smoke：FROZEN / ACCEPTED；GitHub Actions run `27535619157` / job `81384164182` completed / success；freeze review 已接受其作为当前 `dev` repository-only real DB 最小验证基线；详见 `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
+- Batch 2C repository real PostgreSQL smoke：FROZEN / ACCEPTED；GitHub Actions run `27535619157` / job `81384164182` completed / success；freeze review 已接受其作为当前 `dev` repository-only real DB 最小验证基线；2C-HYGIENE-FIX 已增加 CI-only DB values masking step，first CI run review pending；详见 `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
 - Batch 2D nq-app context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
@@ -54,7 +54,7 @@ Forbidden in Batch 2A implementation:
 | --- | --- | --- |
 | `diff-check` | 对 PR / push / manual run 执行 changed-file whitespace check。 | 保留为基础 hygiene gate。 |
 | `backend` | Java 21 + Maven cache + `mvn -f backend/pom.xml test`；当前已配置 `postgres:16` service、`NQ_DB_URL`、`NQ_DB_USER`、`NQ_DB_PASSWORD`，并用 CI-only seed watcher 插入最小 `accounts` legacy row。 | 说明 full Maven test 已依赖 PostgreSQL service；Batch 2 应拆出独立 `postgres-flyway` job，避免 seed workaround 掩盖 schema 问题。 |
-| `postgres-flyway` | Java 21 + Maven cache + `postgres:16` service；使用 `nq_ci` / `nq_ci_user` / `nq_ci_password` 测试库；通过临时 Java smoke runner 调用 Flyway API 执行 `migrate` + `validate`，校验 current version 为 V31 并打印 `flyway_schema_history`；随后生成 / 检查 / 上传 schema artifacts，并运行 Batch 2C `nq-infra` repository PostgreSQL smoke。 | Batch 2A / 2B / 2C FROZEN / ACCEPTED。该 job 不启动 app context、不插入 seed、不启用 Testcontainers。 |
+| `postgres-flyway` | Java 21 + Maven cache + `postgres:16` service；使用 `nq_ci` / `nq_ci_user` / `nq_ci_password` 测试库；job steps 最早注册 `NQ_FLYWAY_DB_URL` / `NQ_FLYWAY_DB_USER` / `NQ_FLYWAY_DB_PASSWORD` masking；通过临时 Java smoke runner 调用 Flyway API 执行 `migrate` + `validate`，校验 current version 为 V31 并打印 `flyway_schema_history`；随后生成 / 检查 / 上传 schema artifacts，并运行 Batch 2C `nq-infra` repository PostgreSQL smoke。 | Batch 2A / 2B / 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX pending first CI run review。该 job 不启动 app context、不插入 seed、不启用 Testcontainers。 |
 | `frontend` | Node 22 + npm cache + `npm ci` + `npm run build`。 | 不属于 Batch 2；frontend E2E hardening 仍为 Batch 5。 |
 | `research` | Python 3.11 + pip cache + `pytest` / `mypy --no-sqlite-cache` / `ruff --no-cache`。 | 不属于 Batch 2。 |
 
@@ -225,6 +225,12 @@ env:
   NQ_FLYWAY_DB_USER: nq_ci_user
   NQ_FLYWAY_DB_PASSWORD: nq_ci_password
 ```
+
+Log hygiene:
+
+- The first `postgres-flyway` step registers `NQ_FLYWAY_DB_URL`, `NQ_FLYWAY_DB_USER`, and `NQ_FLYWAY_DB_PASSWORD` through GitHub Actions `::add-mask::`.
+- The values remain disposable CI-only fake service DB values and are not moved into a real secret store in this batch.
+- Service container initialization can occur before masking is active; any remaining service-level display of `nq_ci` / `nq_ci_user` / `nq_ci_password` is tracked as accepted P2 hygiene unless real credential material appears.
 
 Java and cache:
 
@@ -424,4 +430,4 @@ Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smo
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`, or Batch 3 pre-planning。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, or `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。

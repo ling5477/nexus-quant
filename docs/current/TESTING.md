@@ -2,6 +2,36 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2C P2 log hygiene fix：只处理 `postgres-flyway` job 中 CI-only PostgreSQL URL / user / password 在 GitHub Actions logs 的可见性。已在 job steps 最早位置增加 `::add-mask::`，不改变 Flyway smoke、schema artifact generation / redaction checks、repository smoke、required failure policy 或 Batch 2C FROZEN / ACCEPTED 语义。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| Workflow hygiene fix | 已实现 | `.github/workflows/ci.yml` 新增 first step `Mask CI-only PostgreSQL connection values`，对 `NQ_FLYWAY_DB_URL` / `NQ_FLYWAY_DB_USER` / `NQ_FLYWAY_DB_PASSWORD` 执行 GitHub Actions masking。 |
+| Service-level exposure | Accepted P2 residual | GitHub service container 初始化早于 job steps；若 service command output 仍显示 `nq_ci` / `nq_ci_user` / `nq_ci_password`，仍记录为 CI-only fake value exposure，不升级为 P1/P0。 |
+| Batch 2C semantics | 未改变 | Flyway migrate / validate、schema artifacts、artifact redaction check、artifact upload 和 `JdbcRepositoryPostgresSmokeTest` Maven command 均保持原语义。 |
+| Local CI reproduction | 不要求 | 本轮不要求本地复现 GitHub service log；提交后必须等待 first GitHub Actions run 做 `2C-HYGIENE-FIRST-RUN-REVIEW`。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "printenv|^\s*env\s*$|continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current
+```
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮只修改 GitHub Actions log hygiene step 与 `docs/current` 文档，不修改 Java / TypeScript / Python / 测试代码 / migration / backend production code / frontend / research / scripts / deploy，不启动 `nq-app` context。
+
+Pending CI verification：提交后等待 first GitHub Actions run，复核 `postgres-flyway` job 是否 success，`JdbcRepositoryPostgresSmokeTest` 是否仍为 `tests=1 / skipped=0 / failures=0 / errors=0`，以及 step logs 是否对三个 `NQ_FLYWAY_DB_*` 值 masking。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2C freeze review：只冻结 repository-only real PostgreSQL smoke baseline，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。预检时工作区已有非本轮 `backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/application/DbAuthService.java` import 排序 diff，本轮未触碰该文件。
@@ -16,7 +46,7 @@
 | CI PostgreSQL service | 通过 | `postgres:16` service container reached `healthy`；repository smoke 使用 disposable CI DB `nq_ci` / `nq_ci_user` / `nq_ci_password`。 |
 | Schema-only / redaction | 通过 | 下载 artifact 复核：`schema-dump.sql` 中 `INSERT INTO`、`COPY ... FROM stdin`、`-- Data for Name:` 均为 0；artifact high-risk `.env` / credential / raw request / raw response assignment pattern 为 0。 |
 | Boundary review | 通过 | 2C smoke stays in `nq-infra` repository scope；不启动 `nq-app` context、不使用 `@SpringBootTest`、不触发 `AuthSeedConfiguration`、不复用 Batch 1 seed watcher、不纳入 credential repository。 |
-| P2 log hygiene | Accepted P2 | GitHub Actions 自动 step env / service command output 显示 CI-only PostgreSQL URL / user / password；这些是 disposable CI fake service DB values，不是真实 credential material，不阻塞 freeze。建议如需低风险收口，另开 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`。 |
+| P2 log hygiene | Accepted P2 / cleanup implemented | GitHub Actions 自动 step env / service command output 显示 CI-only PostgreSQL URL / user / password；这些是 disposable CI fake service DB values，不是真实 credential material，不阻塞 freeze。`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` 已增加 masking step，等待 first CI run review。 |
 | Forbidden-area diff | 有既有脏改，不属本轮 | `.github`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration` diff 为空；`backend` diff 仅为预先存在的 `DbAuthService.java` import 排序变更，本轮未修改。 |
 
 本轮执行 / 复核命令：
@@ -47,7 +77,7 @@ rg -e 'Batch 2C' -e 'FIRST GREEN' -e 'FROZEN' -e 'ACCEPTED' -e 'Batch 2D' -e 'Ba
 
 Review decision: PASS / FROZEN / ACCEPTED。Batch 2C 冻结为当前 `dev` repository-only real PostgreSQL smoke baseline。Batch 2D / 2E remain NOT STARTED；Batch 3-5 remain PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`, or Batch 3 pre-planning。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, or `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。
 
 ## NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW 验证记录（2026-06-15）
 

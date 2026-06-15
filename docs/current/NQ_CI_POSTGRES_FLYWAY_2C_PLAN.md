@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway 2C Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2C-PLAN / NQ-CI-POSTGRES-FLYWAY-2C-IMPL / NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW
+任务：NQ-CI-POSTGRES-FLYWAY-2C-PLAN / NQ-CI-POSTGRES-FLYWAY-2C-IMPL / NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX
 日期：2026-06-15
-状态：FROZEN / ACCEPTED
+状态：FROZEN / ACCEPTED；2C-HYGIENE-FIX IMPLEMENTED / PENDING FIRST CI RUN
 
 ## Current state
 
@@ -14,6 +14,7 @@
 - NQ CI Batch 2A PostgreSQL / Flyway empty DB migration smoke：FROZEN / ACCEPTED。
 - NQ CI Batch 2B schema artifact baseline：FROZEN / ACCEPTED。
 - Batch 2C repository real PostgreSQL smoke：FROZEN / ACCEPTED。
+- Batch 2C log hygiene fix：IMPLEMENTED / PENDING FIRST CI RUN；仅增加 GitHub Actions masking step，不改变 2C smoke 语义。
 - Batch 2D `nq-app` context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
@@ -23,6 +24,29 @@
 - DH runtime：NOT INTEGRATED / not connected to NQ。
 - LIVE：DISABLED。
 - real exchange adapter / real provider / RealClient：NOT IMPLEMENTED。
+
+## 2C hygiene fix
+
+`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` only reduces visibility of CI-only PostgreSQL connection values in GitHub Actions logs. It does not change the disposable CI database, Flyway smoke, schema artifact generation, repository smoke command, required-check behavior, or Batch 2C freeze semantics.
+
+Implemented change:
+
+- `.github/workflows/ci.yml` adds the first `postgres-flyway` job step `Mask CI-only PostgreSQL connection values`.
+- The step registers `NQ_FLYWAY_DB_URL`, `NQ_FLYWAY_DB_USER`, and `NQ_FLYWAY_DB_PASSWORD` with GitHub Actions `::add-mask::`.
+- No `echo` prints the raw values; the workflow command references environment variables only.
+- The existing Flyway runner, `psql` / `pg_dump` artifact generation, artifact redaction checks, and `JdbcRepositoryPostgresSmokeTest` Maven invocation still read the same environment values.
+
+Residual P2:
+
+- GitHub service container initialization happens before job steps. If GitHub renders service-level Docker command / env output before the masking step is active, the disposable CI-only `nq_ci` / `nq_ci_user` / `nq_ci_password` values may still appear there.
+- These are accepted CI-only fake service DB values, not real credential material and not production database credentials.
+- This residual service-level exposure remains P2 hygiene, not P1/P0, unless a future run shows real credential material or production-like values.
+
+Pending verification:
+
+- First GitHub Actions run after this fix must be reviewed as `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`.
+- The review must confirm that Flyway smoke, schema artifacts, artifact redaction checks, and repository smoke still pass without skip / soft-fail / `continue-on-error`.
+- The review must inspect whether step logs mask the three `NQ_FLYWAY_DB_*` values and record any remaining service-level CI fake value exposure.
 
 ## Scope
 
@@ -459,12 +483,13 @@ P2 log hygiene decision:
 - GitHub Actions automatic step env and service container command output show CI-only PostgreSQL URL / user / password (`nq_ci` / `nq_ci_user` / `nq_ci_password`).
 - These values are disposable CI-only fake service DB values, not real credential material and not production DB credentials.
 - This is accepted as P2 hygiene and does not block Batch 2C freeze.
-- If low-risk cleanup is desired, open a separate `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`; do not mix it with Batch 2D, Batch 2E, production code, credential flow, real exchange adapter, LIVE, AI or DH runtime work.
+- `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` has added job-step masking for `NQ_FLYWAY_DB_URL`, `NQ_FLYWAY_DB_USER`, and `NQ_FLYWAY_DB_PASSWORD`; first GitHub Actions verification is pending.
+- Do not mix this hygiene fix with Batch 2D, Batch 2E, production code, credential flow, real exchange adapter, LIVE, AI or DH runtime work.
 
 Batch 2D and Batch 2E remain NOT STARTED. Batch 3-5 remain PENDING. AI remains NOT STARTED. DH runtime remains NOT INTEGRATED. LIVE remains DISABLED. Real exchange adapter / real provider / RealClient remain NOT IMPLEMENTED.
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`, or Batch 3 pre-planning.
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, or `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`.
 
 Do not proceed directly to 2D app context implementation, 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this 2C freeze task.

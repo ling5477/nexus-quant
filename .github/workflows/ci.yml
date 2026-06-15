@@ -131,6 +131,15 @@ jobs:
       NQ_FLYWAY_DB_PASSWORD: nq_ci_password
 
     steps:
+      - name: Mask CI-only PostgreSQL connection values
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "::add-mask::${NQ_FLYWAY_DB_URL}"
+          echo "::add-mask::${NQ_FLYWAY_DB_USER}"
+          echo "::add-mask::${NQ_FLYWAY_DB_PASSWORD}"
+
       - name: Checkout
         uses: actions/checkout@v4
 
