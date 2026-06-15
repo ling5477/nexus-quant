@@ -33,56 +33,11 @@ import '@/nq-design-system/table/nq-table.css';
  * - 配置/快照:GET /backtest-configs/{id}(策略版本 / 参数 / 数据集 / 配置快照 JSON)。
  * - 关键指标 + 交易/风险摘要:GET /evaluations?backtestConfigId + GET /evaluations/{id}。
  * - 数据集快照:GET /marketdata/datasets(按 config.datasetId 匹配 typed 字段)。
- * 权益/回撤时间序列:后端无专用端点,仅从 evaluation report/metrics JSON 防御式解析;无则显示 unavailable。
+ * 权益/回撤时间序列(B1.1):GET /api/backtest-runs/{runId}/pnl-snapshots(表 sim_pnl_snapshots,真实序列)。
+ *   runId 取自所选 evaluation.backtestRunId(保证曲线与指标同一 run);equity 直接映射,
+ *   drawdown 客户端派生(equity − 运行峰值,≤0,口径同后端 DrawdownCalculator);无 run / 无快照显式 unavailable,不编造。
  * 实时性:回测为静态结果,使用 useLiveQuery 仅做 manual refresh + freshness,不轮询(pollingIntervalMs=0)。
  */
-
-/** 从 evaluation JSON 中防御式解析时间序列;只渲染真实数组,解析不到返回 null(不编造)。 */
-function extractSeries(jsonStr: string | null | undefined, keys: readonly string[]): BacktestCurvePoint[] | null {
-    if (!jsonStr) {
-        return null;
-    }
-
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(jsonStr);
-    } catch {
-        return null;
-    }
-
-    if (!parsed || typeof parsed !== 'object') {
-        return null;
-    }
-
-    const root = parsed as Record<string, unknown>;
-    for (const key of keys) {
-        const arr = root[key];
-        if (Array.isArray(arr) && arr.length > 0) {
-            const points = arr
-                .map((item, index) => normalizePoint(item, index))
-                .filter((point): point is BacktestCurvePoint => point !== null);
-            if (points.length > 0) {
-                return points;
-            }
-        }
-    }
-    return null;
-}
-
-function normalizePoint(item: unknown, index: number): BacktestCurvePoint | null {
-    if (typeof item === 'number') {
-        return {t: String(index), v: item};
-    }
-    if (item && typeof item === 'object') {
-        const obj = item as Record<string, unknown>;
-        const value = obj.v ?? obj.value ?? obj.equity ?? obj.drawdown ?? obj.y;
-        const time = obj.t ?? obj.time ?? obj.timestamp ?? obj.date ?? obj.x ?? index;
-        if (typeof value === 'number') {
-            return {t: String(time), v: value};
-        }
-    }
-    return null;
-}
 
 /** 选取要展示的评估:优先 SUCCEEDED,再按 evaluatedAt 倒序取最新。 */
 function pickEvaluation(list: BacktestEvaluationListItem[] | undefined): BacktestEvaluationListItem | null {
@@ -145,24 +100,60 @@ export function BacktestDetailPage() {
     });
     const dataset = (datasetsQuery.data ?? []).find((item) => item.datasetId === config?.datasetId) ?? null;
 
-    const equityPoints = useMemo(
-        () =>
-            extractSeries(evaluation?.reportJson, ['equityCurve', 'equity', 'equitySeries'])
-            ?? extractSeries(evaluation?.metricsJson, ['equityCurve', 'equity', 'equitySeries']),
-        [evaluation],
-    );
-    const drawdownPoints = useMemo(
-        () =>
-            extractSeries(evaluation?.reportJson, ['drawdownCurve', 'drawdown', 'drawdownSeries'])
-            ?? extractSeries(evaluation?.metricsJson, ['drawdownCurve', 'drawdown', 'drawdownSeries']),
-        [evaluation],
-    );
+    // 权益/回撤序列:取自所选 evaluation 的 backtestRunId,保证与指标同一 run;静态结果只手动刷新、不轮询。
+    const runId = selectedEvaluation?.backtestRunId ?? null;
+    const pnlLive = useLiveQuery({
+        queryKey: backtestsQueryKeys.pnlSnapshots(runId ?? ''),
+        queryFn: () => backtestsApi.pnlSnapshots(runId ?? ''),
+        enabled: Boolean(runId),
+        pollingIntervalMs: 0,
+    });
+    const snapshots = pnlLive.data;
+
+    // equity 曲线:snapshotTime + equity 直接映射(过滤 null)。
+    const equityPoints = useMemo<BacktestCurvePoint[] | null>(() => {
+        if (!snapshots || snapshots.length === 0) {
+            return null;
+        }
+        const points = snapshots
+            .filter((item) => item.equity != null)
+            .map((item) => ({t: item.snapshotTime, v: Number(item.equity)}));
+        return points.length > 0 ? points : null;
+    }, [snapshots]);
+
+    // drawdown 曲线:客户端派生 equity − 运行峰值(≤0,向下);口径同后端 DrawdownCalculator 的 peak − equity 取负。
+    const drawdownPoints = useMemo<BacktestCurvePoint[] | null>(() => {
+        if (!snapshots || snapshots.length === 0) {
+            return null;
+        }
+        let peak = Number.NEGATIVE_INFINITY;
+        const points: BacktestCurvePoint[] = [];
+        for (const item of snapshots) {
+            if (item.equity == null) {
+                continue;
+            }
+            const equityValue = Number(item.equity);
+            if (equityValue > peak) {
+                peak = equityValue;
+            }
+            points.push({t: item.snapshotTime, v: equityValue - peak});
+        }
+        return points.length > 0 ? points : null;
+    }, [snapshots]);
+
+    // 无 runId / 错误 / 空快照的明确原因(不编造曲线)。
+    const curveUnavailable = !runId
+        ? '所选评估缺少 backtestRunId,无法定位回测运行的权益序列。'
+        : pnlLive.status === 'error'
+            ? pnlLive.errorReason ?? '权益快照加载失败。'
+            : '该回测运行暂无权益快照(sim_pnl_snapshots 为空)。';
 
     const refreshAll = () => {
         void configQuery.refetch();
         void evaluationsQuery.refetch();
         evalLive.refresh();
         void datasetsQuery.refetch();
+        pnlLive.refresh();
     };
 
     if (!configId) {
@@ -298,27 +289,45 @@ export function BacktestDetailPage() {
                         </Typography.Text>
                     </Card>
 
-                    {/* 权益 / 回撤曲线(后端无时间序列端点时显式 unavailable) */}
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} xl={12}>
-                            <Card className="page-section" variant="borderless" title="权益曲线">
-                                <BacktestCurveChart
-                                    points={equityPoints}
-                                    kind="equity"
-                                    unavailableText="后端暂未提供回测权益时间序列(仅有聚合指标)。"
-                                />
-                            </Card>
-                        </Col>
-                        <Col xs={24} xl={12}>
-                            <Card className="page-section" variant="borderless" title="回撤曲线">
-                                <BacktestCurveChart
-                                    points={drawdownPoints}
-                                    kind="drawdown"
-                                    unavailableText="后端暂未提供回测回撤时间序列(仅有聚合指标)。"
-                                />
-                            </Card>
-                        </Col>
-                    </Row>
+                    {/* 权益 / 回撤曲线:真实来源 GET /api/backtest-runs/{runId}/pnl-snapshots;回撤客户端派生 */}
+                    <Card
+                        className="page-section"
+                        variant="borderless"
+                        title="权益 / 回撤曲线"
+                        extra={runId ? (
+                            <DataFreshness
+                                source="权益序列"
+                                state={pnlLive.freshnessState}
+                                detail={
+                                    pnlLive.status === 'error'
+                                        ? pnlLive.errorReason ?? '加载失败'
+                                        : snapshots
+                                            ? `${snapshots.length} 点 · ${pnlLive.latencyMs ?? '-'}ms`
+                                            : '加载中'
+                                }
+                                inline
+                            />
+                        ) : null}
+                    >
+                        <Row gutter={[16, 16]}>
+                            <Col xs={24} xl={12}>
+                                <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>
+                                    权益曲线(equity)
+                                </div>
+                                <BacktestCurveChart points={equityPoints} kind="equity" unavailableText={curveUnavailable}/>
+                            </Col>
+                            <Col xs={24} xl={12}>
+                                <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>
+                                    回撤曲线(equity − 运行峰值,≤0)
+                                </div>
+                                <BacktestCurveChart points={drawdownPoints} kind="drawdown" unavailableText={curveUnavailable}/>
+                            </Col>
+                        </Row>
+                        <Typography.Text type="secondary" style={{display: 'block', marginTop: 8, fontSize: 12}}>
+                            来源:GET /api/backtest-runs/{'{runId}'}/pnl-snapshots(sim_pnl_snapshots,按 snapshotTime 升序);
+                            回撤为客户端派生 equity − 运行峰值(≤0),口径同后端 DrawdownCalculator。
+                        </Typography.Text>
+                    </Card>
 
                     {/* 交易 / 风险摘要(聚合,复用 B0.2 列组件) */}
                     <Card className="page-section" variant="borderless" title="交易 / 风险摘要">

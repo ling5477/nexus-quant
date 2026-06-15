@@ -54,6 +54,25 @@ export interface BacktestRunCreateRequest {
     backtestConfigId: string;
 }
 
+/**
+ * SimPnlSnapshotItem — 回测运行的权益/PnL 快照(对应后端 GET /api/backtest-runs/{runId}/pnl-snapshots)。
+ * 数值为账户币种 BigDecimal,JSON 反序列化为 number;snapshotTime 为权益曲线 x 轴(eventTime)。
+ */
+export interface SimPnlSnapshotItem {
+    simPnlSnapshotId: string;
+    backtestRunId: string;
+    snapshotTime: string;
+    cashBalance: number | null;
+    positionMarketValue: number | null;
+    realizedPnl: number | null;
+    unrealizedPnl: number | null;
+    totalFee: number | null;
+    totalSlippage: number | null;
+    equity: number | null;
+    netPnl: number | null;
+    createdAt: string;
+}
+
 export interface BacktestRunDetailItem {
     backtestRunId: string;
     backtestConfigId: string;
