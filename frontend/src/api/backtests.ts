@@ -6,6 +6,7 @@ import type {
     BacktestRunCreateRequest,
     BacktestRunDetailItem,
     BacktestStrategyVersionBindingRequest,
+    SimPnlSnapshotItem,
 } from '@/types/backtests';
 
 export const backtestsApi = {
@@ -43,6 +44,11 @@ export const backtestsApi = {
     },
     async getRun(runId: string): Promise<BacktestRunDetailItem> {
         const {data} = await apiClient.get<BacktestRunDetailItem>(`/backtest-runs/${runId}`);
+        return data;
+    },
+    async pnlSnapshots(runId: string): Promise<SimPnlSnapshotItem[]> {
+        // 回测权益/PnL 时间序列;复用既有 run-level 端点,无新增后端 API。按 snapshotTime 升序返回。
+        const {data} = await apiClient.get<SimPnlSnapshotItem[]>(`/backtest-runs/${runId}/pnl-snapshots`);
         return data;
     },
 };

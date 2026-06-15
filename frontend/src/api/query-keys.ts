@@ -51,6 +51,7 @@ export const backtestsQueryKeys = {
     all: ['backtest-configs'] as const,
     list: (researchConfigId: string, searchVersion: number) => [...backtestsQueryKeys.all, 'list', researchConfigId, searchVersion] as const,
     detail: (configId: string) => [...backtestsQueryKeys.all, 'detail', configId] as const,
+    pnlSnapshots: (runId: string) => [...backtestsQueryKeys.all, 'pnl-snapshots', runId] as const,
 };
 
 export const evaluationsQueryKeys = {

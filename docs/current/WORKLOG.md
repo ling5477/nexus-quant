@@ -5839,3 +5839,40 @@ B0/B0.1/B0.2/B0.3 均已合入 dev。本轮 B1 新增回测详情可视化页,�
 - 未接 AI / DH runtime / LIVE / real exchange;未用 mock 替代真实契约。
 - 未把 API plan 写成 implemented(前端 B1.1 明确标注为 planning / 未实现;已存在的后端端点据实记录为 implemented)。
 - 回滚方式:删除新增 plan 文档,还原 `API.md` / `README.md` / `WORKLOG.md` / `TESTING.md` 本轮追加段落即可。
+
+---
+
+# Worklog: NQ-FRONTEND-BACKTEST-EQUITY-CURVE-WIRING-B1.1
+
+日期：2026-06-15
+
+## 本轮目标
+
+把 B1 回测详情页的权益/回撤曲线接到既有真实端点 `GET /api/backtest-runs/{runId}/pnl-snapshots`。**前端 only:不新增后端 API、不新增 migration、不用假数据。**
+
+## 修改范围
+
+- `frontend/src/types/backtests.ts`:新增 `SimPnlSnapshotItem`(对应后端 `SimPnlSnapshotResponse`:snapshotTime/equity/cashBalance/positionMarketValue/realized+unrealizedPnl/netPnl/totalFee/totalSlippage)。
+- `frontend/src/api/backtests.ts`:新增 `pnlSnapshots(runId)` → `GET /backtest-runs/{runId}/pnl-snapshots`。
+- `frontend/src/api/query-keys.ts`:`backtestsQueryKeys.pnlSnapshots(runId)`。
+- `frontend/src/pages/backtests/BacktestDetailPage.tsx`:
+  - `runId = selectedEvaluation.backtestRunId`(与展示指标同一 run);`useLiveQuery` 拉 pnl-snapshots(`pollingIntervalMs=0`,仅手动刷新)。
+  - equity 曲线 = `snapshotTime + equity` 直接映射(过滤 null)。
+  - drawdown 曲线 = 客户端派生 `equity − 运行峰值`(≤0,向下),口径同后端 `DrawdownCalculator` 的 `peak − equity` 取负(代码注释 + 页面文案 + 本文均说明)。
+  - 移除原 report/metrics JSON 防御式解析(`extractSeries`/`normalizePoint`),改用真实序列。
+  - 无 `runId` / 加载错误 / 空快照 → 明确 unavailable 文案(不编造);新增曲线区 `DataFreshness`(点数 + latency)+ 来源说明。
+  - 指标卡 / 数据集快照 / 参数快照 / 交易风险摘要保持不变(不回退)。
+- `frontend/tests/e2e/design-system-backtest-chart-smoke.spec.ts`:更新注释,绑定 B1.1 契约(有序列渲染 / 无序列 unavailable,组件即页面喂入真实序列的同一组件)。
+
+## 验证记录
+
+- `npm run build`(worktree,`tsc -b && vite build`):**通过**,tsc 0 error。
+- `npm run test:e2e -- design-system-backtest-chart-smoke + live-query + table + login --project=chromium`(无后端 dev server):**4 passed**。backtest chart smoke 覆盖有序列渲染 canvas + 无序列 unavailable。
+- `BacktestDetailPage` 页面级 e2e:**未跑(诚实标注)** —— 该页在 `RequireAuth` 下依赖后端(`:18888`)+ 登录态,本环境不可用;曲线组件 + 映射逻辑由 design-system smoke + tsc 覆盖,页面级有序列/无序列 e2e 需带后端环境执行。
+- 全量 `npm run test:e2e`:未跑(多数 spec 依赖后端)。
+
+## 边界确认
+
+- 未改 backend / migration / research / deploy / scripts;未改 GateK 事实源;未新增后端 API。
+- 未接 AI/DH/LIVE/real exchange/WebSocket/SSE;未用假数据(空/缺 run 显式 unavailable);未把 Dashboard/Strategy/Risk/Paper 迁移混入;未全局替换 AppProviders。
+- 回滚方式:还原 `types/backtests.ts` / `api/backtests.ts` / `query-keys.ts` / `BacktestDetailPage.tsx` / 该 smoke 即可(曲线退回 B1 的 unavailable 行为)。
