@@ -141,6 +141,14 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Install PostgreSQL client
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
       - name: Prepare Flyway runtime classpath
         shell: bash
         run: |
@@ -237,6 +245,129 @@ jobs:
 
           javac -cp "${classpath}" "${smoke_dir}/FlywaySmoke.java"
           java -cp "${smoke_dir}:${classpath}" FlywaySmoke
+
+      - name: Generate PostgreSQL schema artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          artifact_dir="artifacts/postgres-flyway"
+          mkdir -p "${artifact_dir}"
+
+          nq_ci_psql_url="host=localhost port=5432 dbname=nq_ci user=nq_ci_user sslmode=disable"
+          export PGPASSWORD="${NQ_FLYWAY_DB_PASSWORD}"
+
+          psql "${nq_ci_psql_url}" -v ON_ERROR_STOP=1 -X -F $'\t' -P footer=off -Atc "
+          SELECT installed_rank, version, description, type, script, checksum, installed_on, execution_time, success
+          FROM flyway_schema_history
+          ORDER BY installed_rank;
+          " > "${artifact_dir}/flyway-info.txt"
+
+          psql "${nq_ci_psql_url}" -v ON_ERROR_STOP=1 -X -F $'\t' -P footer=off -c "
+          SELECT table_schema, table_name, table_type
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+          ORDER BY table_schema, table_name;
+          " > "${artifact_dir}/schema-tables.txt"
+
+          psql "${nq_ci_psql_url}" -v ON_ERROR_STOP=1 -X -F $'\t' -P footer=off -c "
+          SELECT table_schema, table_name, ordinal_position, column_name, data_type, is_nullable, column_default
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+          ORDER BY table_schema, table_name, ordinal_position;
+          " > "${artifact_dir}/schema-columns.txt"
+
+          psql "${nq_ci_psql_url}" -v ON_ERROR_STOP=1 -X -F $'\t' -P footer=off -c "
+          SELECT con.conname AS constraint_name,
+                 CASE con.contype
+                   WHEN 'p' THEN 'PRIMARY KEY'
+                   WHEN 'u' THEN 'UNIQUE'
+                   WHEN 'f' THEN 'FOREIGN KEY'
+                   WHEN 'c' THEN 'CHECK'
+                   ELSE con.contype::text
+                 END AS constraint_type,
+                 nsp.nspname AS schema_name,
+                 rel.relname AS table_name,
+                 pg_get_constraintdef(con.oid) AS definition
+          FROM pg_constraint con
+          JOIN pg_class rel ON rel.oid = con.conrelid
+          JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+          WHERE nsp.nspname = 'public'
+          ORDER BY nsp.nspname, rel.relname, con.conname;
+          " > "${artifact_dir}/schema-constraints.txt"
+
+          psql "${nq_ci_psql_url}" -v ON_ERROR_STOP=1 -X -F $'\t' -P footer=off -c "
+          SELECT schemaname, tablename, indexname, indexdef
+          FROM pg_indexes
+          WHERE schemaname = 'public'
+          ORDER BY tablename, indexname;
+          " > "${artifact_dir}/schema-indexes.txt"
+
+          psql "${nq_ci_psql_url}" -v ON_ERROR_STOP=1 -X -F $'\t' -P footer=off -c "
+          SELECT 'table' AS object_type,
+                 n.nspname AS schema_name,
+                 c.relname AS table_name,
+                 NULL::text AS column_name,
+                 obj_description(c.oid, 'pg_class') AS comment
+          FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'public'
+            AND c.relkind IN ('r', 'p')
+          UNION ALL
+          SELECT 'column' AS object_type,
+                 n.nspname AS schema_name,
+                 c.relname AS table_name,
+                 a.attname AS column_name,
+                 col_description(c.oid, a.attnum) AS comment
+          FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          JOIN pg_attribute a ON a.attrelid = c.oid
+          WHERE n.nspname = 'public'
+            AND c.relkind IN ('r', 'p')
+            AND a.attnum > 0
+            AND NOT a.attisdropped
+          ORDER BY schema_name, table_name, object_type, column_name NULLS FIRST;
+          " > "${artifact_dir}/schema-comments.txt"
+
+          pg_dump --schema-only --no-owner --no-privileges "${nq_ci_psql_url}" > "${artifact_dir}/schema-dump.sql"
+
+      - name: Check PostgreSQL schema artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          artifact_dir="artifacts/postgres-flyway"
+          required_artifacts=(
+            "flyway-info.txt"
+            "schema-tables.txt"
+            "schema-columns.txt"
+            "schema-constraints.txt"
+            "schema-indexes.txt"
+            "schema-comments.txt"
+            "schema-dump.sql"
+          )
+
+          for artifact in "${required_artifacts[@]}"; do
+            test -s "${artifact_dir}/${artifact}"
+          done
+
+          if grep -RInE '(^INSERT INTO |^COPY .+ FROM stdin;|^-- Data for Name:|^\\\.)' "${artifact_dir}/schema-dump.sql"; then
+            echo "schema-dump.sql appears to contain data rows" >&2
+            exit 1
+          fi
+
+          if grep -RInE '(\.env|BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|apiKey[[:space:]]*[:=]|secret[[:space:]]*[:=]|passphrase[[:space:]]*[:=]|token[[:space:]]*[:=]|cookie[[:space:]]*[:=]|private[[:space:]_-]*key[[:space:]]*[:=]|mnemonic[[:space:]]*[:=]|credential[[:space:]_-]*material[[:space:]]*[:=]|raw[[:space:]_-]*request[[:space:]]*[:=]|raw[[:space:]_-]*response[[:space:]]*[:=])' "${artifact_dir}"; then
+            echo "Schema artifact redaction check found high-risk credential material pattern" >&2
+            exit 1
+          fi
+
+      - name: Upload PostgreSQL schema artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nq-postgres-flyway-schema-artifacts
+          path: artifacts/postgres-flyway/
+          if-no-files-found: error
+          retention-days: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' && 14 || 7 }}
 
   frontend:
     name: Frontend build

@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B PLAN ONLY / NOT IMPLEMENTED；Batch 2C-2E and Batch 3-5 implementation pending
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B IMPLEMENTED / PENDING FIRST CI RUN；Batch 2C-2E and Batch 3-5 implementation pending
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 仅完成 planning，尚未修改 workflow 或生成 artifact；`.github` 仍不得包含其他未审查 workflow。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 已在既有 `postgres-flyway` job 中实现 schema metadata artifact generation / upload，当前 pending first CI run；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
@@ -347,7 +347,7 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: Batch 2A FROZEN / ACCEPTED；Batch 2B PLAN ONLY / NOT IMPLEMENTED；Batch 2C / 2D / 2E PENDING。
+Status: Batch 2A FROZEN / ACCEPTED；Batch 2B IMPLEMENTED / PENDING FIRST CI RUN；Batch 2C / 2D / 2E PENDING。
 
 Planning document:
 
@@ -364,7 +364,7 @@ Batch 2A implemented:
 
 Still pending:
 
-- Batch 2B schema metadata artifacts implementation and first green review。
+- Batch 2B schema metadata artifacts first green review。
 - Batch 2C repository-layer real PostgreSQL smoke only where PostgreSQL-specific behavior matters。
 - Batch 2D `nq-app` context smoke if needed。
 - Batch 2E CI-only seed watcher cleanup。
@@ -443,6 +443,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2B-IMPL` after review acceptance。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW` after GitHub Actions run completes, or `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-FIX` if the first run fails。
 
 Do not mix Batch 2B-2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2A.

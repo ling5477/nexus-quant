@@ -2,6 +2,70 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2B-IMPL
+
+日期：2026-06-15
+
+### 本轮目标
+
+在既有 `postgres-flyway` empty DB migration smoke 基础上实现 Batch 2B schema artifact generation / upload。本轮只改 `.github/workflows/ci.yml` 和允许的 `docs/current` 文档，不改 Java / TypeScript / Python 代码，不改测试，不新增 API，不新增或修改 migration，不改 backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+### 修改文件
+
+- `.github/workflows/ci.yml`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 实现摘要
+
+- 在 `postgres-flyway` job 中安装 PostgreSQL client，用于 `psql` / `pg_dump`。
+- 在 Flyway `migrate` + `validate` 之后生成 `artifacts/postgres-flyway/`：
+  - `flyway-info.txt`
+  - `schema-tables.txt`
+  - `schema-columns.txt`
+  - `schema-constraints.txt`
+  - `schema-indexes.txt`
+  - `schema-comments.txt`
+  - `schema-dump.sql`
+- Artifact 查询只读取 `flyway_schema_history`、`information_schema`、`pg_catalog` / `pg_indexes` metadata 和 table / column comments，不查询业务表 row values。
+- `schema-dump.sql` 使用 `pg_dump --schema-only --no-owner --no-privileges`，并通过阻塞式检查拒绝 `INSERT`、`COPY ... FROM stdin` 和 data dump marker。
+- 增加 artifact redaction check，阻塞 high-risk credential material pattern；不执行 `env` / `printenv`，不输出 full environment。
+- 使用 `actions/upload-artifact@v4` 上传 `nq-postgres-flyway-schema-artifacts`；PR / branch retention 7 days，`dev` push retention 14 days。
+- `postgres-flyway` job 继续 blocking；未使用 `continue-on-error`，未 soft-fail artifact 生成或检查。
+
+### 边界确认
+
+- 未启动 `nq-app` full context。
+- 未运行 repository real PostgreSQL smoke。
+- 未插入 legacy account seed、test fixture seed、real account seed 或 real exchange seed。
+- 未启用 Testcontainers。
+- 未实现 Batch 3 no-outbound guard。
+- 未实现 Batch 4 gitleaks / secret scan。
+- 未实现 Batch 5 frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider、真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken adapter。
+- 未调用真实交易所，未读取、打印、复制或输出真实 credential material。
+
+### 验证记录
+
+- `git status --short`：已执行。
+- `git diff --check`：已执行。
+- `git diff --stat`：已执行。
+- `git diff -- backend`、`git diff -- frontend`、`git diff -- research`、`git diff -- scripts`、`git diff -- deploy`、`git diff -- backend/**/db/migration`：已执行；禁止范围 diff 为空。
+- `rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current`：已执行；workflow 不新增 skip / soft-fail / LIVE / real exchange 行为，docs 命中仅为禁止说明、历史记录或边界说明。
+- 已检查 artifact generation 不使用 `env` / `printenv`，`psql` 不使用 JDBC URL，`pg_dump` 包含 `--schema-only --no-owner --no-privileges`。
+- 本地未运行 GitHub Actions PostgreSQL service container，未实际上传 artifact；first CI run 仍 pending。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW`。如 first run 失败，只能进入 `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-FIX`，不得混入 Batch 2C/2D/2E、Batch 3-5、LIVE、AI、DH runtime、RealClient、real provider 或真实交易所路径。
+
+---
+
 ## NQ-CI-POSTGRES-FLYWAY-2B-PLAN
 
 日期：2026-06-14

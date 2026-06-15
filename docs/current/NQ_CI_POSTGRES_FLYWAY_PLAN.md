@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN
+任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL
 日期：2026-06-14
-状态：Batch 2A FROZEN / ACCEPTED；Batch 2B PLAN ONLY / NOT IMPLEMENTED；Batch 2C/2D/2E NOT STARTED
+状态：Batch 2A FROZEN / ACCEPTED；Batch 2B IMPLEMENTED / PENDING FIRST CI RUN；Batch 2C/2D/2E NOT STARTED
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - Batch 1 backend job 已临时使用 GitHub Actions `postgres:16` service 和 CI-only seed watcher 支撑 `mvn -f backend/pom.xml test`，但这只是 runner dependency workaround，不是 Batch 2 PostgreSQL / Flyway hardening。
 - Batch 2A PostgreSQL / Flyway empty DB smoke：FROZEN / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success，并已完成 freeze review。
 - `postgres-flyway` job `81284424653` completed / success；step `Run empty database Flyway smoke` success；日志显示 empty PostgreSQL 16.14 DB 从 V1 迁移到 V31，并执行 `validate`。
-- Batch 2B Flyway info / schema artifact / docs update：PLAN ONLY / NOT IMPLEMENTED；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
+- Batch 2B Flyway info / schema artifact / docs update：IMPLEMENTED / PENDING FIRST CI RUN；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
 - Batch 2C repository real PostgreSQL smoke：NOT STARTED。
 - Batch 2D nq-app context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
@@ -44,7 +44,7 @@ Forbidden in Batch 2A implementation:
 - 不启用 Testcontainers，不使用 `baselineOnMigrate`，不运行 Flyway `clean`。
 - 不开启 LIVE，不接 AI，不接 DH runtime，不实现 NQ RealClient / real provider / real exchange permission probe adapter。
 - 不调用 OKX / Binance / Bybit / Gate / Coinbase / Kraken，不读取或输出真实 credential material。
-- 不把 Batch 2B/2C/2D/2E、Batch 3/4/5 写成 implemented。
+- 不把 Batch 2B 写成 first green / accepted；不把 Batch 2C/2D/2E、Batch 3/4/5 写成 implemented。
 
 ## Current Batch 1 CI state
 
@@ -61,9 +61,9 @@ Forbidden in Batch 2A implementation:
 当前 backend job 已使用 PostgreSQL，但目的仍是让 Batch 1 full Maven test 在 fresh GitHub runner 上可运行，不提供以下 Batch 2 能力：
 
 - Batch 2A 已新增显式 empty DB migration smoke job。
-- 仍无 Batch 2B 独立 Flyway `info` / schema artifact。
-- 无 migration checksum drift artifact。
-- 无 schema dump artifact。
+- Batch 2B 已在 `postgres-flyway` job 中实现 Flyway `info` / schema metadata artifact generation，并等待 first CI run review。
+- Batch 2B 已生成 migration checksum metadata artifact；是否稳定可读需 first CI run review。
+- Batch 2B 已实现 schema-only dump artifact；是否稳定可读需 first CI run review。
 - 无 docs/current `DB_SCHEMA.md` 与 migration 的自动 drift 检查。
 - 无 repeatable migration 策略检查。
 - 无 CI seed 边界文档化与去除条件。
@@ -120,7 +120,7 @@ Batch 2 必须验证：
 - 使用 Maven `process-classes` 准备 `nq-app` / `nq-infra` runtime classpath，并在 workflow step 中生成临时 Java smoke runner 调用 Flyway API。
 - Flyway 配置固定为 `locations("classpath:db/migration")`、`baselineOnMigrate(false)`、`cleanDisabled(true)`、`outOfOrder(false)`。
 - 迁移完成后执行 `validate`，校验 current version 为 `31`，并输出 `flyway_schema_history`。
-- Batch 2B 再补 schema metadata artifact / schema-only dump / docs after first green review。
+- Batch 2B 已补 schema metadata artifact / schema-only dump / docs，当前等待 first CI run review。
 
 ## Seed / legacy account boundary
 
@@ -251,11 +251,11 @@ java -cp "${smoke_dir}:${classpath}" FlywaySmoke
 
 This path calls Flyway `migrate` + `validate` directly and checks current version `31`; it does not start Spring Boot, does not run `@SpringBootTest`, and does not insert seed data.
 
-Future 2B hardening:
+Batch 2B artifact generation:
 
 ```bash
-psql "$CI_DATABASE_URL" -c "SELECT installed_rank, version, description, type, script, checksum, success FROM flyway_schema_history ORDER BY installed_rank;"
-pg_dump --schema-only --no-owner --no-privileges "$CI_DATABASE_URL" > schema-dump.sql
+psql "$NQ_CI_PSQL_URL" -c "SELECT installed_rank, version, description, type, script, checksum, success FROM flyway_schema_history ORDER BY installed_rank;"
+pg_dump --schema-only --no-owner --no-privileges "$NQ_CI_PSQL_URL" > artifacts/postgres-flyway/schema-dump.sql
 ```
 
 Timeout:
@@ -265,10 +265,10 @@ Timeout:
 
 Artifacts:
 
-- Batch 2A prints `flyway_schema_history` to job logs only。
-- Upload `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-comments.txt` in Batch 2B。
-- Optional schema dump must be schema-only and must not contain data.
-- Retention: 7 days for PR, 14-30 days for `dev` push if useful.
+- Batch 2A prints `flyway_schema_history` to job logs。
+- Batch 2B uploads `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`、`schema-dump.sql`。
+- `schema-dump.sql` must be schema-only and must not contain data.
+- Retention: 7 days for PR / branch, 14 days for `dev` push.
 
 Merge blocking:
 
@@ -312,7 +312,7 @@ First green evidence:
 - Log evidence: Flyway applied V1 through V31, logged `Successfully applied 31 migrations ... now at version v31`, then `Successfully validated 31 migrations`。
 - Log evidence: `flyway_schema_history` printed `installed_rank|version|description|type|script|checksum|success` with rows `1|1|...|true` through `31|31|schema credential permission probe|SQL|V31__schema_credential_permission_probe.sql|...|true`。
 - Log evidence: smoke runner printed `Flyway empty database smoke reached V31`。
-- Run artifacts: none；schema artifacts remain Batch 2B NOT STARTED。
+- Run artifacts at 2A first green: none；Batch 2B schema artifacts are now implemented and pending first CI run review。
 
 Freeze review evidence:
 
@@ -326,12 +326,12 @@ Freeze review evidence:
 
 ### Batch 2B: Flyway info / schema artifact / docs update
 
-- Status: PLAN ONLY / NOT IMPLEMENTED。
+- Status: IMPLEMENTED / PENDING FIRST CI RUN。
 - Planning document: `docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
 - Planned artifacts: `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`，optional schema-only `schema-dump.sql`。
-- Planned generation source: existing `postgres-flyway` empty DB after Flyway migrate + validate；use `information_schema` / `pg_catalog` / `pg_indexes` and `flyway_schema_history` metadata。
-- Planned retention: 7 days for PR / branch review, 14 days for `dev` push by default。
-- Planned redaction: artifact must not contain `.env`、API key、secret、passphrase、token、cookie、private key、credential material、raw request / response or data rows。
+- Generation source: existing `postgres-flyway` empty DB after Flyway migrate + validate；use `information_schema` / `pg_catalog` / `pg_indexes` and `flyway_schema_history` metadata。
+- Retention: 7 days for PR / branch review, 14 days for `dev` push by default。
+- Redaction: artifact must not contain `.env`、API key、secret、passphrase、token、cookie、private key、credential material、raw request / response or data rows。
 - `DB_SCHEMA.md` drift review starts as manual checklist；scripted blocking checker is deferred unless a separate 2B-2 review accepts it。
 - Does not run repository real DB smoke, does not start `nq-app` context, does not modify CI-only seed watcher, does not use Testcontainers。
 
@@ -414,4 +414,4 @@ Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smo
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2B-IMPL` after review acceptance。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW` after GitHub Actions run completes, or `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-FIX` if the first run fails。

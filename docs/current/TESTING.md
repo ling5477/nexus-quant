@@ -60,6 +60,40 @@ Invoke-RestMethod http://localhost:18888/actuator/health
 
 ## 本次实际验证记录
 
+## NQ-CI-POSTGRES-FLYWAY-2B-IMPL 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2B implementation：只在既有 `.github/workflows/ci.yml` 的 `postgres-flyway` job 中增加 schema artifact generation / upload，并同步允许的 `docs/current` 文档。未修改 Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+本轮本地未运行 GitHub Actions PostgreSQL service container，也未触发 `actions/upload-artifact`；`postgres-flyway` artifact first CI run 仍 pending，必须由后续 `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW` 复核。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | 已执行 | 工作区变更仅限 `.github/workflows/ci.yml` 与允许的 `docs/current` 文件。 |
+| `git diff --check` | 已执行 | 用于检查 whitespace error。 |
+| `git diff --stat` | 已检查 | 用于确认变更范围。 |
+| `git diff -- backend` | 通过 | 输出为空，未改 backend。 |
+| `git diff -- frontend` | 通过 | 输出为空，未改 frontend。 |
+| `git diff -- research` | 通过 | 输出为空，未改 research。 |
+| `git diff -- scripts` | 通过 | 输出为空，未改 scripts。 |
+| `git diff -- deploy` | 通过 | 输出为空，未改 deploy。 |
+| `git diff -- backend/**/db/migration` | 通过 | 输出为空，未新增或修改 migration。 |
+| forbidden keyword scan | 已执行 | `rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current`；workflow 不允许新增真实交易所 / LIVE / skip / soft-fail 行为，docs 命中只能是禁止说明、历史记录或边界说明。 |
+| artifact command boundary | 已检查 | Workflow 使用 libpq connection string 调用 `psql`，未把 JDBC URL 传给 `psql`；未使用 `env` / `printenv` 输出 full environment。 |
+| schema-only dump boundary | 已检查 | `pg_dump` 命令包含 `--schema-only --no-owner --no-privileges`。 |
+| data row boundary | 已检查 | Artifact 查询来源限定为 `flyway_schema_history`、`information_schema`、`pg_constraint` / `pg_class` / `pg_namespace`、`pg_indexes`、`obj_description` / `col_description`；未查询业务表 row values。 |
+| redaction boundary | 已检查 | 新增 artifact check 会阻塞 high-risk credential material pattern，并检查 `schema-dump.sql` 不含 `INSERT` / `COPY ... FROM stdin` / data dump marker。 |
+
+安全边界：
+
+- 未启动 `nq-app` context，未触发 `AuthSeedConfiguration`。
+- 未跑 repository real PostgreSQL smoke，未插入 seed，未启用 Testcontainers。
+- 未实现 no-outbound guard、gitleaks / secret scan 或 frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、真实 Provider 或真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken adapter。
+- 未读取、打印、复制或输出真实 credential material。
+
+Review decision: IMPLEMENTED / PENDING FIRST CI RUN。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW`；如果 first run 失败，则只能做 `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-FIX`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2B-PLAN 验证记录（2026-06-14）
 
 本轮是 GateK CI Batch 2B planning-only：只新增 / 同步 `docs/current` 文档，规划 Flyway / schema artifact、retention、redaction 和 `DB_SCHEMA.md` drift review。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
