@@ -2,6 +2,48 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2C hygiene first-run review：只评审包含 `2C-HYGIENE-FIX` 的 GitHub Actions run，确认 masking 不破坏 CI，并判断 CI-only PostgreSQL URL / user / password 的后续 step log 可见性是否降低。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | 通过 | Run `27550583713`，workflow `NQ CI Baseline`，branch `dev`，commit `bcc751e7a7f4f6a60ccb877603cfbf809d55b632`，status `completed`，conclusion `success`。 |
+| `postgres-flyway` job | 通过 | Job `PostgreSQL / Flyway smoke` / `81435457348` completed / success。 |
+| Masking step | 通过 | Step `Mask CI-only PostgreSQL connection values` completed / success；注册 `NQ_FLYWAY_DB_URL` / `NQ_FLYWAY_DB_USER` / `NQ_FLYWAY_DB_PASSWORD` masking。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；V1-V31 migration smoke 未回归。 |
+| Schema artifacts | 通过 | Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` success；artifact `nq-postgres-flyway-schema-artifacts` / id `7639914125` uploaded，size `74668` bytes，digest `sha256:f12207d6a9f305ce42726110a65cb8c7d99f166008167c552f786425de5e46a0`，expires `2026-06-29T13:45:04Z`。 |
+| Repository PostgreSQL smoke | 通过 | Step `Run repository PostgreSQL smoke` success；job log 显示 `JdbcRepositoryPostgresSmokeTest` 在 CI PostgreSQL service 上真实运行，Surefire summary 为 `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`，Maven `BUILD SUCCESS`。 |
+| Log hygiene | Accepted P2 residual | Masking step 之后的后续 step env 对三个 `NQ_FLYWAY_DB_*` 值显示为 `***` 或不直接打印；GitHub service container 初始化和 masking step 自身 automatic `env:` display 仍可能在 masking 生效前显示 disposable CI-only fake DB values。 |
+| Security boundary | 通过 | 未发现真实 credential material；未新增 `printenv` / bare `env` / full environment dump；未新增 `continue-on-error`、`skipTests` 或 soft-fail。 |
+| Batch boundary | 通过 | Batch 2C repository-only smoke 语义未改变；未启动 `nq-app` context，未触发 `AuthSeedConfiguration`，未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient / real provider / real exchange adapter。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+gh run list --repo ling5477/nexus-quant --workflow "NQ CI Baseline" --branch dev --limit 5
+gh run view 27550583713 --repo ling5477/nexus-quant --json status,conclusion,headSha,headBranch,displayTitle,event,createdAt,updatedAt,jobs
+rg "printenv|^\s*env\s*$|continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current
+```
+
+GitHub Actions job details / steps / decoded logs / artifact metadata 通过 GitHub MCP 复核。`gh run view --log` 因 GitHub REST logs endpoint 返回 `HTTP 403: Must have admin rights to Repository`；已降级使用 GitHub MCP decoded logs，可信度高，因为 `gh` run metadata、MCP jobs / steps / logs 和 artifact metadata 一致。
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮为 CI first-run review + docs/current 状态记录，不修改 workflow、Java / TypeScript / Python / test / migration / frontend / research / scripts / deploy，不启动 `nq-app` context。
+
+Review decision: PASS / FIRST GREEN RUN CONFIRMED。Batch 2C 保持 FROZEN / ACCEPTED；Batch 2D / 2E remain NOT STARTED；Batch 3-5 remain PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, or Batch 3 pre-planning。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2C P2 log hygiene fix：只处理 `postgres-flyway` job 中 CI-only PostgreSQL URL / user / password 在 GitHub Actions logs 的可见性。已在 job steps 最早位置增加 `::add-mask::`，不改变 Flyway smoke、schema artifact generation / redaction checks、repository smoke、required failure policy 或 Batch 2C FROZEN / ACCEPTED 语义。
@@ -11,7 +53,7 @@
 | Workflow hygiene fix | 已实现 | `.github/workflows/ci.yml` 新增 first step `Mask CI-only PostgreSQL connection values`，对 `NQ_FLYWAY_DB_URL` / `NQ_FLYWAY_DB_USER` / `NQ_FLYWAY_DB_PASSWORD` 执行 GitHub Actions masking。 |
 | Service-level exposure | Accepted P2 residual | GitHub service container 初始化早于 job steps；若 service command output 仍显示 `nq_ci` / `nq_ci_user` / `nq_ci_password`，仍记录为 CI-only fake value exposure，不升级为 P1/P0。 |
 | Batch 2C semantics | 未改变 | Flyway migrate / validate、schema artifacts、artifact redaction check、artifact upload 和 `JdbcRepositoryPostgresSmokeTest` Maven command 均保持原语义。 |
-| Local CI reproduction | 不要求 | 本轮不要求本地复现 GitHub service log；提交后必须等待 first GitHub Actions run 做 `2C-HYGIENE-FIRST-RUN-REVIEW`。 |
+| Local CI reproduction | 不要求 | 本轮不要求本地复现 GitHub service log；first GitHub Actions run verification 已由 run `27550583713` 的 `2C-HYGIENE-FIRST-RUN-REVIEW` 关闭。 |
 
 本轮执行 / 复核命令：
 
@@ -30,7 +72,7 @@ rg "printenv|^\s*env\s*$|continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiK
 
 本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮只修改 GitHub Actions log hygiene step 与 `docs/current` 文档，不修改 Java / TypeScript / Python / 测试代码 / migration / backend production code / frontend / research / scripts / deploy，不启动 `nq-app` context。
 
-Pending CI verification：提交后等待 first GitHub Actions run，复核 `postgres-flyway` job 是否 success，`JdbcRepositoryPostgresSmokeTest` 是否仍为 `tests=1 / skipped=0 / failures=0 / errors=0`，以及 step logs 是否对三个 `NQ_FLYWAY_DB_*` 值 masking。
+Closed CI verification：GitHub Actions run `27550583713` 已复核 `postgres-flyway` job success，`JdbcRepositoryPostgresSmokeTest` 仍为 `tests=1 / skipped=0 / failures=0 / errors=0`，并确认 masking step 之后三个 `NQ_FLYWAY_DB_*` 值在后续 step logs 中显示为 `***` 或不直接打印。
 
 ## NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW 验证记录（2026-06-15）
 

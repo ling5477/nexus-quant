@@ -2,6 +2,68 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW
+
+日期：2026-06-15
+
+### 目标
+
+评审包含 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` 的 GitHub Actions run，确认 `postgres-flyway` job 仍 green，Flyway / schema artifact / repository smoke 未回归，并判断 CI-only PostgreSQL URL / user / password 在后续 step logs 中是否被 mask 或不再直接显示。本轮只做 CI log hygiene review 与允许的 `docs/current` 状态同步，不进入 Batch 2D / 2E，不进入 Batch 3-5。
+
+### Evidence reviewed
+
+- GitHub Actions run `27550583713`，workflow `NQ CI Baseline`，branch `dev`，commit `bcc751e7a7f4f6a60ccb877603cfbf809d55b632`，status `completed`，conclusion `success`。
+- Job `PostgreSQL / Flyway smoke` / `81435457348` completed / success。
+- Steps `Initialize containers`、`Mask CI-only PostgreSQL connection values`、`Run empty database Flyway smoke`、`Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts`、`Run repository PostgreSQL smoke` all completed / success。
+- Repository smoke log 显示 `JdbcRepositoryPostgresSmokeTest` Surefire summary 为 `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`，Maven `BUILD SUCCESS`。
+- Artifact `nq-postgres-flyway-schema-artifacts` / id `7639914125` metadata：size `74668` bytes，digest `sha256:f12207d6a9f305ce42726110a65cb8c7d99f166008167c552f786425de5e46a0`，expires `2026-06-29T13:45:04Z`。
+- `gh run view --log` 因 GitHub REST logs endpoint 返回 `HTTP 403: Must have admin rights to Repository`；本轮改用 GitHub MCP decoded logs。可信度：高，因 `gh` run metadata、GitHub MCP job / step / log 和 artifact metadata 一致。
+
+### Masking review
+
+- Step `Mask CI-only PostgreSQL connection values` executed successfully。
+- Masking step 之后的后续 step env 中，`NQ_FLYWAY_DB_URL`、`NQ_FLYWAY_DB_USER`、`NQ_FLYWAY_DB_PASSWORD` 显示为 `***` 或不再直接打印。
+- GitHub service container 初始化发生在 job steps 之前，因此 Docker / service env output 仍可能显示 disposable CI-only fake DB values。
+- Masking step 自身的 automatic `env:` display 也可能在 masking 生效前显示 disposable CI-only fake DB values。
+- 结论：后续 step log 可见性已降低；剩余 service-level / masking-step-env display 仅为 accepted P2 hygiene residual，不是真实 credential material。
+
+### 边界确认
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code。
+- 未修改 frontend、research、scripts、deploy。
+- 未启动 `nq-app` context。
+- 未使用 `@SpringBootTest`。
+- 未触发 `AuthSeedConfiguration`。
+- 未新增 `printenv` / bare `env` / full environment dump。
+- 未新增 `continue-on-error`。
+- 未新增 `skipTests` 或 soft-fail。
+- 未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- Batch 2C 保持 FROZEN / ACCEPTED；Batch 2D / 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PASS / FIRST GREEN RUN CONFIRMED。`2C-HYGIENE-FIX` 不破坏 CI；Flyway empty DB V1-V31 smoke、schema artifact generation / check / upload、repository PostgreSQL smoke 均未回归。后续 step log 对 CI-only DB connection values 的可见性已降低；service container 初始化和 masking step automatic `env:` display 的 CI fake value 可见性记录为 accepted P2 residual，不升级为 P1/P0。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2D-PLAN`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。不得直接进入 Batch 2D/2E implementation、Batch 3-5 implementation、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX
 
 日期：2026-06-15
