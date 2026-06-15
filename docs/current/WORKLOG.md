@@ -5695,3 +5695,45 @@ B0/B0.1/B0.2 均已合入 dev。本轮 B0.3 封装实时数据获取抽象 `useL
 - 未改 backend / migration / research / deploy / scripts;未改 GateK 阶段事实源。
 - 未接 WebSocket / SSE;未接 AI / DH runtime / LIVE / real exchange;未新增业务大页面;未把 B1–B7 混入;未全局替换 AppProviders;未迁移既有业务页。
 - 回滚方式:删除 `frontend/src/hooks/useLiveQuery.ts`、`frontend/tests/e2e/design-system-live-query-smoke.spec.ts`,还原 `DesignSystemDemoPage.tsx` 即可完全回退。
+
+---
+
+# Worklog: NQ-FRONTEND-BACKTEST-DETAIL-VISUALIZATION-B1
+
+日期：2026-06-14
+
+## 本轮目标
+
+B0/B0.1/B0.2/B0.3 均已合入 dev。本轮 B1 新增回测详情可视化页,展示权益/回撤曲线、关键指标摘要、数据集快照、参数快照、交易/风险摘要。**只复用现有真实 API,缺口显式 unavailable,不用假数据伪装。** 不接 AI/DH/LIVE/socket,不迁移其它业务页。
+
+## API / 数据依赖核查(关键)
+
+- **关键指标 + 交易/风险摘要:可用** —— `GET /evaluations?backtestConfigId` + `GET /evaluations/{id}` 提供 totalReturn/totalReturnRate、maxDrawdown/maxDrawdownRate、sharpeRatio、winRate、orderCount/tradeCount、winning/losing/flat、netPnl、finalEquity、profitLossRatio、totalFee、totalSlippage、realized/unrealizedPnl 等真实字段。
+- **数据集快照:可用** —— `GET /marketdata/datasets` 按 `config.datasetId` 匹配 typed 字段(symbol/interval/start-end/barCount/gapCount/qualityStatus/status)。
+- **参数/策略/配置快照:可用** —— `GET /backtest-configs/{id}` 的 strategyVersionId + paramSnapshotJson + strategyVersionSnapshotJson + configSnapshotJson + 区间 + initialCapital + createdAt。
+- **权益/回撤时间序列:缺口** —— 后端**无回测时间序列端点**(不同于 paper-trading 的 equity-curve);仅有聚合指标 + 不透明 `reportJson`/`metricsJson`。本轮对 report/metrics JSON 做**防御式解析**(候选键 `equityCurve/equity/equitySeries`、`drawdownCurve/drawdown/drawdownSeries`),解析到真实数组才渲染,否则显式 unavailable;**未编造曲线**。建议后端补 `GET /backtest-runs/{id}/equity-curve`(及 drawdown)端点,或在 reportJson 固化序列结构。
+- 单位口径假设:`*Rate`(收益率/回撤率/胜率)按后端比例值 ×100 展示并在 UI 注明;若后端已是百分比口径需后端对齐(已在页面文案标注)。
+
+## 修改范围
+
+- 新增 `frontend/src/components/backtest/BacktestCurveChart.tsx`:v2 ECharts 'nq' 主题的权益/回撤曲线,无序列时显式 unavailable(不编造)。
+- 新增 `frontend/src/pages/backtests/BacktestDetailPage.tsx`:回测详情页。`useLiveQuery`(`pollingIntervalMs=0`,仅手动刷新 + freshness,不轮询静态回测)驱动评估明细;config/evaluations/datasets 用 useQuery;指标卡 + 曲线 + 交易/风险摘要表(复用 B0.2 NumberCell/MoneyCell/PercentCell/ChangeCell/StatusCell)+ 数据集快照(typed)+ 参数/策略/配置快照(JSON 美化);各字段缺失显式 `—`/empty/unavailable。进入页面 `applyNqCssVars()` 注入 `--nq-*`(additive,与 v1 `--nq-color-*` 不冲突)。
+- 改 `frontend/src/router/routes.tsx`:新增 `backtests/:backtestConfigId` 详情路由(ConsoleLayout 子路由,沿用 backtests 菜单高亮)。
+- 改 `frontend/src/pages/backtests/BacktestsPage.tsx`:列表操作列新增"可视化"入口(navigate 到详情路由),保留既有"查看详情"抽屉,最小改动。
+- 改 `frontend/src/pages/dev/DesignSystemDemoPage.tsx`:新增"回测曲线(BacktestCurveChart)"组件自检区(样本权益/回撤 + 无序列 unavailable),供 backend-free smoke。
+- 新增 `frontend/tests/e2e/design-system-backtest-chart-smoke.spec.ts`。
+
+## 验证记录
+
+- `npm run build`（worktree，`tsc -b && vite build`）：**通过**,tsc 0 error,`✓ built in ~0.9s`。
+- `npm run test:e2e -- design-system-backtest-chart-smoke.spec.ts design-system-live-query-smoke.spec.ts design-system-table-smoke.spec.ts login-page-smoke.spec.ts --project=chromium`(无后端 dev server)：**4 passed**。backtest chart smoke 断言样本曲线渲染 canvas + 无序列显式 unavailable。
+- 真机自检(Playwright Chromium 截图 `/dev/design-system` 回测曲线区,**0 console error**):权益(primary 面积)/回撤(danger 面积,负值)/unavailable 占位渲染正常。
+- **BacktestDetailPage 本身未做浏览器 e2e**:它是 `RequireAuth` 下的业务页,依赖后端(`:18888`)+ 登录态,本环境均不可用;其组成部分(曲线组件 / B0.2 列 / useLiveQuery)已由 design-system smoke 覆盖,页面通过 `tsc` 类型检查与 hook 顺序复核。后端就绪环境需补 backtest detail e2e。
+- 全量 `npm run test:e2e`:**未跑**。原因:多数 spec 依赖后端,本环境未启动。
+
+## 边界确认
+
+- 未改 backend / migration / research / deploy / scripts;未改 GateK 阶段事实源。
+- 未接 AI / DH runtime / LIVE / real exchange;未接 WebSocket/SSE;**未用假数据伪装后端已就绪**(曲线缺口显式 unavailable + 报告)。
+- 未新增 Backtest 以外业务大页面;未把 Dashboard/Strategy/Risk/Paper 迁移混入;未全局替换 AppProviders。
+- 回滚方式:删除 `frontend/src/components/backtest/`、`frontend/src/pages/backtests/BacktestDetailPage.tsx`、`frontend/tests/e2e/design-system-backtest-chart-smoke.spec.ts`,还原 `routes.tsx` / `BacktestsPage.tsx` / `DesignSystemDemoPage.tsx` 即可完全回退。

@@ -20,6 +20,7 @@ import {
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
+import {useNavigate} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
@@ -71,6 +72,7 @@ function toIsoDateTime(value: DateFormValue): string {
 
 export function BacktestsPage() {
     const {message} = App.useApp();
+    const navigate = useNavigate();
     const [queryForm] = Form.useForm<BacktestsListFilters>();
     const [createForm] = Form.useForm<BacktestConfigCreateFormValues>();
     const [bindDatasetForm] = Form.useForm<{datasetId: string}>();
@@ -173,11 +175,16 @@ export function BacktestsPage() {
             title: '操作',
             key: 'action',
             fixed: 'right',
-            width: 120,
+            width: 180,
             render: (_, record) => (
-                <Button type="link" onClick={() => setSelectedConfigId(record.backtestConfigId)}>
-                    查看详情
-                </Button>
+                <Space size={0}>
+                    <Button type="link" onClick={() => setSelectedConfigId(record.backtestConfigId)}>
+                        查看详情
+                    </Button>
+                    <Button type="link" onClick={() => navigate(`/backtests/${record.backtestConfigId}`)}>
+                        可视化
+                    </Button>
+                </Space>
             ),
         },
     ];
@@ -370,7 +377,7 @@ export function BacktestsPage() {
                             dataSource={visibleItems}
                             loading={backtestsQuery.isFetching}
                             pagination={{pageSize: 10, showSizeChanger: false}}
-                            scroll={{x: 1980}}
+                            scroll={{x: 2040}}
                             locale={{
                                 emptyText: '当前筛选条件下没有匹配的回测配置。',
                             }}
