@@ -1,8 +1,9 @@
-import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Button, ConfigProvider, Segmented} from 'antd';
 import {BarChart} from 'echarts/charts';
 
 import {echarts} from '@/components/nq/charts/echarts-core';
+import {useLiveQuery} from '@/hooks/useLiveQuery';
 import {
     AppShell,
     ChangeCell,
@@ -133,6 +134,80 @@ function MiniChart({option, convention}: {option: Record<string, unknown>; conve
     }, [option, convention]);
 
     return <div ref={containerRef} className="nq-ds-demo__chart"/>;
+}
+
+/**
+ * LiveQueryDemo — useLiveQuery 自检(B0.3)。
+ * 用本地模拟源演示 polling / 手动刷新 / enabled,以及 fresh·stale·error·disabled·loading 归一化,
+ * 并把归一化状态喂给 DataFreshness。不接真实后端 / WebSocket / SSE。
+ */
+function LiveQueryDemo() {
+    const [enabled, setEnabled] = useState(true);
+    const [intervalMs, setIntervalMs] = useState(3000);
+    const [simulateError, setSimulateError] = useState(false);
+
+    // 本地模拟源:带随机延迟;simulateError 时抛出已脱敏错误。不打后端、不连 socket。
+    const queryFn = useCallback(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 150 + Math.random() * 250));
+        if (simulateError) {
+            throw new Error('SIMULATED_SOURCE_ERROR');
+        }
+        return {price: Math.round((60000 + Math.random() * 2000) * 100) / 100};
+    }, [simulateError]);
+
+    const live = useLiveQuery({
+        queryKey: ['dev', 'live-demo', simulateError],
+        queryFn,
+        pollingIntervalMs: intervalMs,
+        staleAfterMs: intervalMs * 2,
+        enabled,
+    });
+
+    const detail =
+        live.status === 'error'
+            ? live.errorReason ?? 'error'
+            : live.status === 'disabled'
+                ? '已暂停轮询'
+                : live.lastUpdatedAt
+                    ? `${Math.max(0, Math.round((Date.now() - live.lastUpdatedAt) / 1000))}s ago · ${live.latencyMs ?? '-'}ms`
+                    : '加载中';
+
+    return (
+        <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+            <div className="nq-ds-demo__row">
+                <Segmented<number>
+                    size="small"
+                    value={intervalMs}
+                    onChange={setIntervalMs}
+                    options={[
+                        {label: '轮询 3s', value: 3000},
+                        {label: '轮询 5s', value: 5000},
+                    ]}
+                />
+                <Button size="small" onClick={() => setEnabled((value) => !value)}>
+                    {enabled ? '暂停轮询' : '恢复轮询'}
+                </Button>
+                <Button size="small" onClick={() => live.refresh()}>
+                    立即刷新
+                </Button>
+                <Button size="small" danger={!simulateError} onClick={() => setSimulateError((value) => !value)}>
+                    {simulateError ? '恢复正常' : '模拟错误'}
+                </Button>
+                <span style={{fontSize: 12, color: 'var(--nq-text-tertiary)'}}>
+                    status:{' '}
+                    <span aria-label="live status" style={{color: 'var(--nq-text-secondary)'}}>{live.status}</span>
+                    {live.isFetching ? ' · fetching…' : ''}
+                </span>
+            </div>
+            <div className="nq-ds-demo__section" style={{padding: 8, maxWidth: 440}}>
+                <DataFreshness source="模拟行情源" state={live.freshnessState} detail={detail}/>
+            </div>
+            <div className="nq-ds-demo__row">
+                <span style={{fontSize: 12, color: 'var(--nq-text-tertiary)'}}>最新价</span>
+                <MoneyCell value={live.data?.price} precision={2} currency="USDT"/>
+            </div>
+        </div>
+    );
 }
 
 export function DesignSystemDemoPage() {
@@ -414,6 +489,13 @@ export function DesignSystemDemoPage() {
                                     ))}
                                 </tbody>
                             </table>
+                        </section>
+
+                        <section className="nq-ds-demo__section">
+                            <h3 className="nq-ds-demo__section-title">
+                                实时数据(useLiveQuery)— polling / 手动刷新 / fresh·stale·error·disabled(不接 socket)
+                            </h3>
+                            <LiveQueryDemo/>
                         </section>
 
                         <section className="nq-ds-demo__section">

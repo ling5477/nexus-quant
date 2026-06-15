@@ -2123,3 +2123,20 @@ Review decision：Batch 1 baseline 可冻结为当前 `dev` 的最小 CI 基线�
 - B0.2 仅产出可复用基础能力(表格密度 + 列格式)+ 自检,未做 B1+ 业务页面,未迁移既有页面,未做 AI/Agent/DH 页面（B8 仍 BLOCKED）。
 - 涨跌列必须使用行情方向色(`var(--nq-up/--nq-down/--nq-flat)`),与 success/danger 解耦,随惯例开关一处翻转。
 - 未接真实 socket/交易所;未碰 LIVE;未改后端 API;未全局替换 AppProviders。
+
+## NQ-FRONTEND-USE-LIVE-QUERY-B0.3 验证记录（2026-06-14）
+
+本轮 frontend-only：新增 `useLiveQuery`(TanStack Query 之上的 polling/手动刷新/freshness 归一化)+ `/dev/design-system` 自检。基于最新 `origin/dev` 在独立 worktree 执行。当前阶段只 polling+手动刷新,**不接 WebSocket/SSE**;未改后端/契约/migration/GateK 事实源,未迁移既有业务页。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build`（`tsc -b && vite build`） | **通过** | tsc 0 error;`✓ built in ~1s`。>500 kB 单 chunk warning 为既有单包结构,非本轮回归。 |
+| `npm run test:e2e -- design-system-live-query-smoke.spec.ts design-system-table-smoke.spec.ts login-page-smoke.spec.ts --project=chromium`（dev server,无后端） | **3 passed** | live-query smoke:fresh→disabled(暂停)→fresh(恢复+立即刷新)→error(模拟错误)→fresh,DataFreshness 同步 Fresh/Disabled/Error;table/login smoke 保持通过。 |
+| 真机调试：Playwright Chromium `/dev/design-system` | **通过** | 0 console error;status 持续 fresh,轮询每 3s 更新,`Fresh (Xs ago · Yms)` latency 实测 387ms→219ms。 |
+| `npm run test:e2e`（全量） | **未跑** | 多数 spec 依赖后端(`:18888`,本环境未启动);本轮仅跑无后端依赖的 design-system / live-query / login smoke 并通过,未改既有业务页面/全局主题。 |
+
+阶段与安全边界：
+
+- B0.3 仅产出实时数据抽象(`useLiveQuery`)+ 自检,未做 B1+ 业务页面,未迁移既有页面,未做 AI/Agent/DH 页面（B8 仍 BLOCKED）。
+- 当前只 polling + 手动刷新,**不接 WebSocket/SSE**;失败经 `errorReason` 显式暴露,不静默。
+- 未碰 LIVE;未接真实 socket/交易所;未改后端 API;未全局替换 AppProviders(QueryClient 复用既有 Provider)。
