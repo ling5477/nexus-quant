@@ -2,7 +2,7 @@
 
 任务：NQ-CI-POSTGRES-FLYWAY-2C-PLAN
 日期：2026-06-15
-状态：PLAN ONLY / READY FOR REVIEW / NOT IMPLEMENTED
+状态：PLAN FROZEN / ACCEPTED / IMPLEMENTATION NOT STARTED
 
 ## Current state
 
@@ -13,7 +13,7 @@
 - NQ CI Batch 1：FROZEN / ACCEPTED。
 - NQ CI Batch 2A PostgreSQL / Flyway empty DB migration smoke：FROZEN / ACCEPTED。
 - NQ CI Batch 2B schema artifact baseline：FROZEN / ACCEPTED。
-- Batch 2C repository real PostgreSQL smoke：PLAN ONLY / NOT IMPLEMENTED。
+- Batch 2C repository real PostgreSQL smoke：PLAN FROZEN / ACCEPTED / IMPLEMENTATION NOT STARTED。
 - Batch 2D `nq-app` context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
@@ -394,14 +394,16 @@ Notes:
 
 No Maven / npm / Python test is required for this planning-only task because it only updates `docs/current` documents and does not modify workflow, Java / TypeScript / Python code, tests, migration, frontend, research, scripts or deploy.
 
-## Review decision
+## Freeze review decision
 
-Review decision: PLAN READY FOR REVIEW.
+Review decision: PASS / FROZEN / ACCEPTED.
 
-Batch 2C remains NOT IMPLEMENTED. Batch 2D and Batch 2E remain NOT STARTED. Batch 3-5 remain PENDING. AI remains NOT STARTED. DH runtime remains NOT INTEGRATED. LIVE remains DISABLED. Real exchange adapter / real provider / RealClient remain NOT IMPLEMENTED.
+This document is accepted as the GateK CI Batch 2C implementation baseline. It authorizes only a later reviewed Batch 2C implementation consistent with this plan: repository-only real PostgreSQL smoke, no `nq-app` full context, no legacy seed, no real credential material, no Testcontainers in 2C-1, no real exchange access, no LIVE, no AI, no DH runtime, no RealClient and no real provider.
+
+Batch 2C implementation remains NOT STARTED. Batch 2D and Batch 2E remain NOT STARTED. Batch 3-5 remain PENDING. AI remains NOT STARTED. DH runtime remains NOT INTEGRATED. LIVE remains DISABLED. Real exchange adapter / real provider / RealClient remain NOT IMPLEMENTED.
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`.
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-IMPL`, `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`, or separate 2D / 2E / Batch 3 pre-planning.
 
-Do not proceed directly to 2C implementation, 2D app context smoke, 2E seed watcher cleanup, Batch 3 no-outbound guard, Batch 4 secret scan, Batch 5 frontend E2E hardening, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this planning-only task.
+Do not proceed directly to 2D app context smoke, 2E seed watcher cleanup, Batch 3 no-outbound guard, Batch 4 secret scan, Batch 5 frontend E2E hardening, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this review-only task.

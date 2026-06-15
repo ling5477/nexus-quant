@@ -2,6 +2,53 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2C review-only：评审 `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md` 是否可作为 repository real PostgreSQL smoke implementation baseline。本轮只同步允许的 `docs/current` 文档；未修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| 预检 | 通过 | `Get-Location` 为 `F:\project\nexus-quant`；`git branch --show-current` 为 `dev`；编辑前 `git status --short` 为空。 |
+| Plan review | 通过 | `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md` 覆盖 repository test inventory、2C-1 / 2C-2 / 2C-3 切片、seed / fixture、transaction / cleanup、rollback、安全和 batch 边界。 |
+| Repository inventory review | 通过 | Source-only `rg` 复核显示 `nq-infra` repository 测试主要为 `RecordingJdbcTemplate` / `RecordingNamedParameterJdbcTemplate` / `Mockito.mock(JdbcTemplate)`；2C plan 对 mock / Recording 与 real PostgreSQL smoke 的区分准确。 |
+| Spring context boundary review | 通过 | `nq-app` 中 `MarketdataControllerLocalIntegrationTest`、`ResearchBacktestHappyPathLocalTest`、`OkxBootstrapNoOutboundLocalContextTest` 使用 `@SpringBootTest` + `@ActiveProfiles("local")`；2C plan 正确划入 2D，不纳入 2C。 |
+| Auth seed / runner risk | 通过 | `AuthSeedConfiguration` 是 `local` / `test` profile 的 `ApplicationRunner`；2C plan 明确不启动 `nq-app` context、不触发 `AuthSeedConfiguration` 或 runner。 |
+| 2C-1 candidates | 通过 | audit log、risk event、event store、marketdata bars 均为 `nq-infra` repository / JDBC 路径，可覆盖 JSONB、insert、`ON CONFLICT`、timestamp / quoted `"interval"` 行为；不需要 app context 或 exchange adapter。 |
+| Credential repository deferral | 通过 | `JdbcExchangeAccountCredentialRepository` / test 涉及 `pgp_sym_encrypt`、`pgp_sym_decrypt`、`CAST(? AS jsonb)` 和 credential material shape；2C plan 正确推迟到 2C-2+ 并要求 fake material / 脱敏 / cleanup 单独评审。 |
+| Seed / fixture boundary | 通过 | 默认不使用 legacy account seed、不复用 Batch 1 seed watcher、不触发 `AuthSeedConfiguration`；如需 fixture，只允许 CI-only fake fixture 并 rollback / cleanup。 |
+| Transaction / cleanup boundary | 通过 | 计划优先 transaction rollback，必要时按 unique test id explicit cleanup；不运行 Flyway `clean`，不污染 2A/2B schema artifacts。 |
+| Security boundary | 通过 | 计划禁止 OKX / Binance / Bybit / Gate / Coinbase / Kraken 外联，禁止 LIVE、AI、DH runtime、RealClient、real provider、真实 credential、`.env` 读取和 data dump artifact。 |
+| Batch boundary | 通过 | 2C 仅 repository real PostgreSQL smoke；2D/2E 仍 NOT STARTED，Batch 3-5 仍 PENDING。 |
+| Forbidden-area diff | 通过 | `git diff -- .github`、`backend`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration` 均为空。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git ls-files .github
+git diff --check
+git diff --stat
+git diff -- .github
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "Repository|Jdbc|RecordingJdbcTemplate|SpringBootTest|ActiveProfiles|Testcontainers|PostgreSQL|Flyway|seed|AuthSeedConfiguration|repository real PostgreSQL|Batch 2C|Batch 2D|Batch 2E" backend docs/current
+rg "LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|OKX|Binance|Bybit|Gate|Coinbase|Kraken" backend .github docs/current
+```
+
+Source-only follow-up scans used `--glob '!**/target/**'` to avoid build output noise and to verify repository / Spring context / credential repository evidence. Some exploratory PowerShell regex commands failed due quote escaping; equivalent `rg -e` source-only commands were rerun and used for the review conclusion.
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮只做 docs review / freeze wording sync，未修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+Review decision: PASS / FROZEN / ACCEPTED。Batch 2C plan 可作为 implementation baseline；Batch 2C implementation remains NOT STARTED；Batch 2D / 2E remain NOT STARTED；Batch 3-5 remain PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-IMPL`, `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`, or separate 2D / 2E / Batch 3 pre-planning。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-PLAN 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2C planning-only：只规划 repository real PostgreSQL smoke，不修改 workflow，不改 Java / TypeScript / Python 代码，不改测试代码，不新增 API，不新增 migration，不修改历史 migration，不改 backend 生产逻辑、frontend、research、scripts 或 deploy。

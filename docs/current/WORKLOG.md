@@ -2,6 +2,67 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW
+
+日期：2026-06-15
+
+### 目标
+
+评审 `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md` 是否可作为 GateK CI Batch 2C repository real PostgreSQL smoke implementation baseline。本轮 review-only，只允许同步 `docs/current` 文档，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+### Evidence reviewed
+
+- `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md` 覆盖 repository test inventory、Batch 2C-1 / 2C-2 / 2C-3 切片、seed / fixture、transaction / cleanup、security boundary、batch boundary 和 rollback。
+- `.github/workflows/ci.yml` 仍只有 Batch 1 backend PostgreSQL service + CI-only legacy `accounts` seed watcher，以及 Batch 2A/2B `postgres-flyway` job；本轮未修改 workflow。
+- `nq-infra` repository tests 主要使用 `RecordingJdbcTemplate` / `RecordingNamedParameterJdbcTemplate` / `Mockito.mock(JdbcTemplate)`，与 plan 中“Recording / mock 不等于 real PostgreSQL smoke”的判断一致。
+- `nq-app` local context tests 使用 `@SpringBootTest` + `@ActiveProfiles("local")`，且 `ResearchBacktestHappyPathLocalTest` 依赖 legacy `accounts` row；这些属于 2D，不属于 2C。
+- `AuthSeedConfiguration` 是 `local` / `test` profile 的 `ApplicationRunner`，验证了 2C plan 中避免 `nq-app` context / runner / seed 的必要性。
+- `JdbcExchangeAccountCredentialRepository` 涉及 `pgp_sym_encrypt` / `pgp_sym_decrypt` / credential material shape，验证了 credential repository 推迟到 2C-2+ 并要求 fake material、脱敏和 cleanup 单独评审的必要性。
+- audit log、risk event、event store、marketdata bars 均为合理 2C-1 候选：它们能覆盖 JSONB、insert、`ON CONFLICT`、timestamp 和 quoted `"interval"` 等 PostgreSQL-specific 行为，同时不需要 app context 或 exchange adapter。
+
+### Review result
+
+- P0/P1：0。
+- Batch 2C plan 接受为 FROZEN / ACCEPTED implementation baseline。
+- Batch 2C implementation remains NOT STARTED。
+- Batch 2D / 2E remain NOT STARTED。
+- Batch 3-5 remain PENDING。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+### Boundary confirmation
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未实现 repository real PostgreSQL smoke。
+- 未启动 `nq-app` context，未触发 `AuthSeedConfiguration`。
+- 未插入 legacy account seed、test fixture seed、real account seed 或 real exchange seed。
+- 未引入 Testcontainers。
+- 未实现 Batch 2D / 2E。
+- 未实现 Batch 3 no-outbound guard。
+- 未实现 Batch 4 security guard / secret scan。
+- 未实现 Batch 5 frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- 未调用 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未读取、打印、复制或输出真实 credential material。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-IMPL`, `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`, or separate 2D / 2E / Batch 3 pre-planning。不得直接进入真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-PLAN
 
 日期：2026-06-15
