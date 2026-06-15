@@ -2,6 +2,69 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2D-PLAN
+
+日期：2026-06-15
+
+### 目标
+
+规划 GateK CI Batch 2D 最小 `nq-app` context smoke。只做 planning，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy，不实现 2D，不启动 2E，不进入 Batch 3-5。
+
+### Evidence reviewed
+
+- `.github/workflows/ci.yml`：当前 `backend` job 仍有 Batch 1 CI-only seed watcher；`postgres-flyway` job 已冻结 2A / 2B / 2C / 2C-HYGIENE，未启动 app context。
+- `backend/pom.xml`、`backend/nq-app/pom.xml`、`backend/nq-infra/pom.xml`：确认 `nq-app` 是 Spring Boot composition root，包含 adapter / scheduler / auth / security / infra 等模块。
+- `backend/nq-app/src/main/resources/application*.yml`：确认默认 profile 落到 `local`，`local` 启用 Flyway 与 seed users，`test` Flyway disabled 且仍有 seed users，`freeze` 禁用 catalog sync / OKX recovery / WS 但需 freeze secrets。
+- `backend/nq-app/src/test/**`：确认 full app context tests 当前为 `ResearchBacktestHappyPathLocalTest`、`MarketdataControllerLocalIntegrationTest`、`OkxBootstrapNoOutboundLocalContextTest`，均使用 `@ActiveProfiles("local")`。
+- `AuthSeedConfiguration`：`@Profile({"local", "test"})` + `ApplicationRunner`，会把 `nq.security.users` seed 到 DB。
+- `AuthBootstrapAdminConfiguration`：仅在 `nq.auth.bootstrap-admin.enabled=true` 时运行，2D 必须保持 false。
+- `ExchangeAdapterConfiguration`、catalog sync、OKX recovery、WS / scheduled services：2D 必须禁用相关 side effects，不调用 adapter / run-once / controller workflow。
+- `AccountModuleConfiguration`：默认 permission probe port 是 `NoRealExchangeCredentialPermissionProbePort`，2D 必须保持 no-real。
+
+### Plan decision
+
+- Batch 2D 当前状态：PLAN ONLY / NOT IMPLEMENTED。
+- Future 2D-1 只允许最小 context-load smoke，优先 `webEnvironment = NONE` 或等价非 web context。
+- Future 2D 必须使用 CI-only fake profile / explicit properties，不使用 `local` profile，不复用 current `test` profile as-is。
+- Future 2D 不插入 legacy seed、auth seed users、exchange accounts、credential rows 或真实 credential material。
+- Future 2D 必须显式禁用 bootstrap admin、catalog sync、OKX recovery、OKX WS、Binance WS，并保持 no-real permission probe port。
+- Future 2D 不实现 no-outbound guard / secret scan / frontend E2E hardening；这些仍属于 Batch 3 / 4 / 5。
+- Future 2D 初始不得直接 required；需 first green + freeze review 后再评估。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 边界确认
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code。
+- 未修改 frontend、research、scripts、deploy。
+- 未启动 `nq-app` context。
+- 未触发 `AuthSeedConfiguration`。
+- 未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- 未读取、打印、复制或输出真实 credential material。
+- Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### Review decision
+
+PASS / PLAN ONLY / NOT IMPLEMENTED。Batch 2D 已完成规划，不代表 workflow / code / test / migration 已实现。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-PLAN-REVIEW` 或 2D plan fix。不得直接进入 2D implementation、2E implementation、Batch 3-5 implementation、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW
 
 日期：2026-06-15

@@ -2,6 +2,33 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2D-PLAN 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2D planning-only：只规划未来最小 `nq-app` context smoke，不修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| Batch 2D 状态 | PLAN ONLY / NOT IMPLEMENTED | 新增 `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`，只写方案，不新增 workflow / test / code。 |
+| App context inventory | 已复核 | source-only scan 识别 3 个 full `@SpringBootTest` + `local` profile 测试，以及 `local` / `test` MVC slice 测试；现有 local/test 不适合作为 2D CI profile。 |
+| AuthSeed boundary | 已复核 | `AuthSeedConfiguration` 为 `@Profile({"local", "test"})` + `ApplicationRunner`；2D plan 明确 first slice 必须避开 local/test，不隐式创建 auth users / legacy accounts / credentials。 |
+| Runner / scheduler / provider boundary | 已复核 | 识别 `AuthBootstrapAdminConfiguration`、`ExchangeAdapterConfiguration`、catalog sync、OKX recovery、WS flags、scheduled services 和 no-real permission probe port；2D plan 要求显式禁用相关 side effects。 |
+| Security boundary | 已复核 | 2D plan 禁止 OKX / Binance / Bybit / Gate / Coinbase / Kraken 外联、LIVE、AI、DH runtime、RealClient、real provider、真实 permission probe adapter 和真实 credential material。 |
+| Batch boundary | 通过 | Batch 2A/2B/2C/2C-HYGIENE 保持 FROZEN / ACCEPTED；Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+git status --short
+rg "@SpringBootTest|ActiveProfiles|AuthSeedConfiguration|ApplicationRunner|CommandLineRunner|Scheduler|Scheduled|RealClient|provider|exchange|LIVE|OKX|Binance|Bybit|Gate|Coinbase|Kraken" backend docs/current
+rg "apiKey|secret|passphrase|token|private key|mnemonic|credential material" backend .github docs/current
+```
+
+并执行 source-only follow-up scans / reads，覆盖 `.github/workflows/ci.yml`、backend poms、`backend/nq-app/src/main/resources/application*.yml`、`backend/nq-app/src/test/**`、context / seed / runner / scheduler / adapter / permission probe 相关代码与既有 Batch 2C / baseline 文档。
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮为 docs-only / planning-only，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy，也不启动 `nq-app` context。
+
+Review decision: PASS / PLAN ONLY / NOT IMPLEMENTED。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2D-PLAN-REVIEW` 或 2D plan fix。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2C hygiene freeze review：只冻结 `2C-HYGIENE-FIX` 为当前 Batch 2C CI log hygiene baseline，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。
