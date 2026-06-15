@@ -2,6 +2,52 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2C-PLAN 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2C planning-only：只规划 repository real PostgreSQL smoke，不修改 workflow，不改 Java / TypeScript / Python 代码，不改测试代码，不新增 API，不新增 migration，不修改历史 migration，不改 backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| 预检 | 通过 | `Get-Location` 为 `F:\project\nexus-quant`；`git branch --show-current` 为 `dev`；编辑前 `git status --short` 为空。 |
+| Current docs review | 通过 | 已复核 `AGENTS.md`、`README.md`、`docs/current/README.md`、`NQ_CI_POSTGRES_FLYWAY_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`。 |
+| Workflow read-only review | 通过 | 只读复核 `.github/workflows/ci.yml`；当前有 `backend` PostgreSQL service + CI-only seed watcher，以及 `postgres-flyway` 2A/2B job；本轮未修改 workflow。 |
+| Maven / config review | 通过 | 已复核 `backend/pom.xml`、`backend/nq-app/pom.xml`、`backend/nq-infra/pom.xml`、`application.yml`、`application-local.yml`、`application-test.yml`。 |
+| Repository test inventory | 通过 | `nq-infra` repository 测试主要使用 `RecordingJdbcTemplate` / `Mockito.mock(JdbcTemplate)`；未发现现成 Testcontainers / real PostgreSQL repository test baseline。 |
+| Spring context boundary | 通过 | `nq-app` 中 `MarketdataControllerLocalIntegrationTest`、`ResearchBacktestHappyPathLocalTest`、`OkxBootstrapNoOutboundLocalContextTest` 使用 `@SpringBootTest` + `local` profile，划入 2D，不纳入 2C。 |
+| Seed boundary | 通过 | 2C plan 默认不使用 legacy account seed、不复用 Batch 1 seed watcher、不触发 `AuthSeedConfiguration`；如 future fixture 必需，只允许 CI-only fake fixture 并 rollback / cleanup。 |
+| Security boundary | 通过 | 2C plan 禁止 OKX / Binance / Bybit / Gate / Coinbase / Kraken 外联，禁止 LIVE、AI、DH runtime、RealClient、real provider、真实 credential。 |
+| Forbidden-area diff | 通过 | `git diff -- .github`、`backend`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration` 均为空。 |
+| Docs-only diff | 通过 | `git status --short` 仅显示允许的 `docs/current` 修改和新增文件；`git diff --stat` 覆盖 tracked docs diff。 |
+| Whitespace check | 通过 | `git diff --check` 通过；另用 `rg "[ \t]+$"` 检查本轮新增 / 修改 docs，无 trailing whitespace 命中。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git diff --check
+git diff --stat
+git diff -- .github
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "Repository|Jdbc|RecordingJdbcTemplate|SpringBootTest|ActiveProfiles|Testcontainers|PostgreSQL|Flyway|seed|AuthSeedConfiguration" backend docs/current
+rg "LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|OKX|Binance|Bybit|Gate|Coinbase|Kraken" backend .github docs/current
+rg "[ \t]+$" docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md docs/current/NQ_CI_BASELINE_PLAN.md docs/current/README.md docs/current/TESTING.md docs/current/WORKLOG.md
+```
+
+Source-only follow-up scans also used `--glob '!**/target/**'` to avoid build output noise. PowerShell direct path globs such as `backend/**/src/test` were not used for final evidence because Windows treats them as invalid path arguments; equivalent `rg --glob` filters were used.
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮只新增 / 同步 `docs/current` planning 文档，未修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+Review decision: PLAN READY FOR REVIEW。Batch 2C remains NOT IMPLEMENTED；Batch 2D / 2E remain NOT STARTED；Batch 3-5 remain PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2B freeze review：冻结 PostgreSQL / Flyway schema artifact baseline，确认它成为当前 `dev` CI 的 schema artifact 最小验证基线。本轮只同步允许的 `docs/current` 文档；未修改 `.github/workflows/ci.yml`，未修改 Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。

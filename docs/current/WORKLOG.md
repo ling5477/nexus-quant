@@ -2,6 +2,70 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-PLAN
+
+日期：2026-06-15
+
+### 目标
+
+规划 Batch 2C 如何在 GitHub Actions PostgreSQL service 上增加最小 repository real PostgreSQL smoke。本轮只做 planning-only，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+### Evidence reviewed
+
+- `.github/workflows/ci.yml` 当前 `backend` job 使用 PostgreSQL service 和 CI-only legacy `accounts` seed watcher；这是 Batch 1 runner dependency workaround，不作为 2C repository smoke seed 策略。
+- `.github/workflows/ci.yml` 当前 `postgres-flyway` job 已覆盖 2A empty DB Flyway V1-V31 migration smoke 和 2B schema artifact generation / upload；不启动 app context、不插入 seed、不跑 repository real DB smoke。
+- `backend/pom.xml` 是 Java 21 Maven multi-module parent；`nq-app` 依赖 Flyway / PostgreSQL runtime；`nq-infra` 依赖 `spring-jdbc` / Flyway / JUnit / Mockito。
+- `application-local.yml` 启用 PostgreSQL datasource + Flyway；`application-test.yml` 使用 PostgreSQL placeholder 但 Flyway disabled；`AuthSeedConfiguration` 仅在 `local` / `test` profile 通过 `ApplicationRunner` seed users。
+- `nq-infra` repository 单测主要使用 `RecordingJdbcTemplate` / `RecordingNamedParameterJdbcTemplate` / `Mockito.mock(JdbcTemplate)`，证明 SQL shape 和参数，不证明真实 PostgreSQL 执行。
+- `nq-app` 的 `MarketdataControllerLocalIntegrationTest`、`ResearchBacktestHappyPathLocalTest`、`OkxBootstrapNoOutboundLocalContextTest` 使用 `@SpringBootTest` + `@ActiveProfiles("local")`，应划给 Batch 2D，不纳入 2C。
+
+### Planning result
+
+- 新增 `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`，状态固定为 `PLAN ONLY / READY FOR REVIEW / NOT IMPLEMENTED`。
+- Batch 2C-1 建议新增独立 repository-only PostgreSQL smoke，优先低风险 `nq-infra` 纯 JDBC repository：audit log、risk event、event store、marketdata bars。
+- Batch 2C-2 才评估 strategy / paper / ledger / account / credential repository 扩展；credential repository 需 fake material、redaction 和 cleanup 单独评审。
+- Batch 2C-3 才评估是否转 required check。
+- Seed 策略固定为默认 no legacy account seed，不复用 Batch 1 seed watcher，不触发 `AuthSeedConfiguration`；必要 fixture 只能是 CI-only fake rows 并 rollback / cleanup。
+- Transaction / cleanup 策略固定为优先事务 rollback，必要时按唯一 test id 显式 cleanup；不污染 2A/2B schema artifacts，不运行 Flyway `clean`。
+- Rollback 策略固定为只回滚 2C job 或 smoke invocation，不影响 2A/2B。
+
+### Boundary confirmation
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未启动 `nq-app` context，未触发 `AuthSeedConfiguration`。
+- 未插入 legacy account seed、test fixture seed、real account seed 或 real exchange seed。
+- 未实现 repository real PostgreSQL smoke。
+- 未实现 Batch 2D / 2E。
+- 未实现 Batch 3 no-outbound guard。
+- 未实现 Batch 4 security guard / secret scan。
+- 未实现 Batch 5 frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- 未调用 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未读取、打印、复制或输出真实 credential material。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PLAN READY FOR REVIEW。Batch 2C remains NOT IMPLEMENTED；Batch 2D / 2E remain NOT STARTED；Batch 3-5 remain PENDING。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`。不得直接进入 2C implementation、2D app context smoke、2E seed watcher cleanup、Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW
 
 日期：2026-06-15

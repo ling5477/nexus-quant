@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL / NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW
+任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL / NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-PLAN
 日期：2026-06-14
-状态：Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C/2D/2E NOT STARTED
+状态：Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C PLAN READY FOR REVIEW / NOT IMPLEMENTED；Batch 2D/2E NOT STARTED
 
 ## Current state
 
@@ -16,7 +16,7 @@
 - Batch 2A PostgreSQL / Flyway empty DB smoke：FROZEN / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success，并已完成 freeze review。
 - `postgres-flyway` job `81284424653` completed / success；step `Run empty database Flyway smoke` success；日志显示 empty PostgreSQL 16.14 DB 从 V1 迁移到 V31，并执行 `validate`。
 - Batch 2B Flyway info / schema artifact / docs update：FROZEN / ACCEPTED；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
-- Batch 2C repository real PostgreSQL smoke：NOT STARTED。
+- Batch 2C repository real PostgreSQL smoke：PLAN READY FOR REVIEW / NOT IMPLEMENTED；详见 `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
 - Batch 2D nq-app context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
@@ -338,9 +338,16 @@ Freeze review evidence:
 
 ### Batch 2C: repository real Postgres smoke, if needed
 
-- Add minimal repository smoke only for PostgreSQL-specific behavior。
-- Prefer test fixtures with explicit setup/cleanup。
-- Do not convert every RecordingJdbcTemplate test into real DB integration test。
+- Status: PLAN READY FOR REVIEW / NOT IMPLEMENTED。
+- Planning document: `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
+- Add minimal repository-only smoke only for PostgreSQL-specific behavior。
+- Prefer `nq-infra` pure JDBC repository smoke and avoid `nq-app` full context。
+- Keep `@SpringBootTest` / `@ActiveProfiles("local")` tests in Batch 2D, not 2C。
+- Avoid `AuthSeedConfiguration` and Batch 1 CI-only seed watcher。
+- Default to no legacy account seed；if a fixture is unavoidable, use CI-only fake fixture rows inside rollback-safe transactions。
+- Do not convert every `RecordingJdbcTemplate` test into real DB integration test。
+- Candidate 2C-1 repositories: audit log, risk event, event store, and marketdata bars, because they can prove insert / JSON / `ON CONFLICT` / timestamp behavior without app context or exchange adapters。
+- Defer credential repository real DB smoke to 2C-2+ unless fake material, log redaction and cleanup boundaries are separately reviewed。
 
 ### Batch 2D: nq-app context smoke, if needed
 
@@ -409,10 +416,10 @@ Notes:
 
 ## Review decision
 
-PASS / FROZEN / ACCEPTED for Batch 2A；PASS / FROZEN / ACCEPTED for Batch 2B。
+PASS / FROZEN / ACCEPTED for Batch 2A；PASS / FROZEN / ACCEPTED for Batch 2B；PLAN READY FOR REVIEW / NOT IMPLEMENTED for Batch 2C。
 
-Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。不得把本轮写成 Batch 2C/2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
+Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。Batch 2C 当前仅完成 planning 文档，不代表 workflow、test code 或 repository real DB smoke 已实现。不得把本轮写成 Batch 2C implementation、Batch 2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`，`NQ-CI-POSTGRES-FLYWAY-2B-FIX` only if a later regression is found，or Batch 3 pre-planning。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`。

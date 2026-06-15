@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C-2E and Batch 3-5 implementation pending
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C PLAN READY FOR REVIEW / NOT IMPLEMENTED；Batch 2D-2E and Batch 3-5 implementation pending
 
 ## Current state
 
@@ -347,7 +347,7 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C / 2D / 2E PENDING。
+Status: Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C PLAN READY FOR REVIEW / NOT IMPLEMENTED；Batch 2D / 2E PENDING。
 
 Planning document:
 
@@ -370,9 +370,9 @@ Batch 2B freeze evidence:
 - Artifact download contained exactly `flyway-info.txt`, `schema-tables.txt`, `schema-columns.txt`, `schema-constraints.txt`, `schema-indexes.txt`, `schema-comments.txt`, and `schema-dump.sql`; schema dump data-row and high-risk credential pattern checks passed.
 - Freeze review accepted Batch 2B as the current `dev` PostgreSQL / Flyway schema artifact minimal baseline.
 
-Still pending:
+Still pending / not implemented:
 
-- Batch 2C repository-layer real PostgreSQL smoke only where PostgreSQL-specific behavior matters。
+- Batch 2C repository-layer real PostgreSQL smoke implementation only where PostgreSQL-specific behavior matters；plan is ready for review in `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
 - Batch 2D `nq-app` context smoke if needed。
 - Batch 2E CI-only seed watcher cleanup。
 
@@ -450,6 +450,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`，`NQ-CI-POSTGRES-FLYWAY-2B-FIX` only if a later regression is found，or Batch 3 pre-planning。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`。
 
-Do not mix Batch 2C/2D/2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2B freeze review.
+Do not mix Batch 2C implementation、Batch 2D/2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2C plan review.
