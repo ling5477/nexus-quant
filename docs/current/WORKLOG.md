@@ -2,6 +2,69 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW
+
+日期：2026-06-15
+
+### 目标
+
+冻结 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`，确认它成为当前 Batch 2C CI log hygiene baseline。本轮只做 freeze review 与允许的 `docs/current` 状态同步，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy，不进入 Batch 2D / 2E，不进入 Batch 3-5。
+
+### Evidence reviewed
+
+- GitHub Actions run `27550583713`，workflow `NQ CI Baseline`，branch `dev`，commit `bcc751e7a7f4f6a60ccb877603cfbf809d55b632`，status `completed`，conclusion `success`。
+- Job `PostgreSQL / Flyway smoke` / `81435457348` completed / success。
+- Steps `Initialize containers`、`Mask CI-only PostgreSQL connection values`、`Run empty database Flyway smoke`、`Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts`、`Run repository PostgreSQL smoke` all completed / success。
+- GitHub MCP decoded log 显示后续 step env 中 `NQ_FLYWAY_DB_URL`、`NQ_FLYWAY_DB_USER`、`NQ_FLYWAY_DB_PASSWORD` 均为 `***` 或未直接打印。
+- Repository smoke log 显示 `JdbcRepositoryPostgresSmokeTest` Surefire summary 为 `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`，Maven `BUILD SUCCESS`。
+- `gh run view --log --job 81435457348` 因 GitHub REST logs endpoint 返回 `HTTP 403: Must have admin rights to Repository`；本轮使用 GitHub MCP decoded logs 复核 masking / repository smoke evidence。可信度：高，因 `gh` run / job metadata、GitHub MCP job / step / log 一致。
+
+### Freeze decision
+
+- `2C-HYGIENE-FIX` 已实现并通过 first green run review。
+- 后续 step log 可见性已降低。
+- Service container initialization 和 masking step automatic `env:` display 的 CI fake value visibility 为 accepted P2 residual。
+- 未发现真实 credential material。
+- P0/P1 为 0。
+- 结论：PASS / FROZEN / ACCEPTED。
+
+### 边界确认
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code。
+- 未修改 frontend、research、scripts、deploy。
+- 未启动 `nq-app` context。
+- 未使用 `@SpringBootTest`。
+- 未触发 `AuthSeedConfiguration`。
+- 未新增 `printenv` / bare `env` / full environment dump。
+- 未新增 `continue-on-error`。
+- 未新增 `skipTests` 或 soft-fail。
+- 未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- Batch 2C 保持 FROZEN / ACCEPTED；Batch 2D / 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PASS / FROZEN / ACCEPTED。`2C-HYGIENE-FIX` 冻结为当前 Batch 2C CI log hygiene baseline。P0/P1 为 0；P2 residual accepted，不是真实 credential leakage。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-PLAN`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。不得直接进入 Batch 2D/2E implementation、Batch 3-5 implementation、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW
 
 日期：2026-06-15
@@ -62,7 +125,7 @@ PASS / FIRST GREEN RUN CONFIRMED。`2C-HYGIENE-FIX` 不破坏 CI；Flyway empty 
 
 ### 下一步
 
-Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2D-PLAN`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。不得直接进入 Batch 2D/2E implementation、Batch 3-5 implementation、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+Freeze follow-up：已由 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW` 关闭为 PASS / FROZEN / ACCEPTED。当前下一步为 `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。不得直接进入 Batch 2D/2E implementation、Batch 3-5 implementation、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
 
 ## NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX
 
@@ -111,7 +174,7 @@ Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FREEZE-REVIEW`、`NQ-CI
 
 ### 下一步
 
-Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2D-PLAN` 或 `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。不得直接进入 Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+Hygiene follow-up：first-run review 和 freeze review 已关闭。当前下一步为 `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。不得直接进入 Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
 
 ## NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW
 
@@ -138,7 +201,7 @@ Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`、`NQ
 - GitHub Actions 自动 step env / service command output 显示 CI-only PostgreSQL URL / user / password。
 - 这些值是 disposable CI-only fake service DB values，不是真实 credential material，不是 production DB credential。
 - 结论：Accepted P2，不阻塞 Batch 2C freeze。
-- `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` 已增加 masking step；等待 first CI run review。不得混入 Batch 2D/2E、生产代码、真实 credential flow、真实交易所、LIVE、AI 或 DH runtime。
+- `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` 已增加 masking step，并已由 first-run review + freeze review 固化为 FROZEN / ACCEPTED。不得混入 Batch 2D/2E、生产代码、真实 credential flow、真实交易所、LIVE、AI 或 DH runtime。
 
 ### Boundary confirmation
 
@@ -177,7 +240,7 @@ PASS / FROZEN / ACCEPTED。Batch 2C 冻结为当前 `dev` repository-only real P
 
 ### 下一步
 
-Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2D-PLAN` 或 `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。不得直接进入真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+Hygiene follow-up：first-run review 和 freeze review 已关闭。当前下一步为 `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。不得直接进入真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
 
 ## NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW
 
@@ -223,11 +286,11 @@ Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIRST-RUN-REVIEW`、`NQ
 
 ### Review decision
 
-PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2C 当前状态为 IMPLEMENTED / FIRST GREEN RUN CONFIRMED；尚未 freeze / accepted。P2 log hygiene finding remains for freeze review.
+PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2C 当时状态为 IMPLEMENTED / FIRST GREEN RUN CONFIRMED；后续已由 `NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW` 冻结为 FROZEN / ACCEPTED，P2 log hygiene finding 已由 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX` / first-run review / freeze review 收口为 accepted P2 residual.
 
 ### 下一步
 
-Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, or `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。不得直接进入 Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+Follow-up：Batch 2C freeze review and hygiene freeze review are now closed. Current next action is `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, or Batch 3 pre-planning。不得直接进入 Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
 
 ## NQ-CI-POSTGRES-FLYWAY-2C-IMPL
 
