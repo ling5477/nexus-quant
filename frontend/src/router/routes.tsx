@@ -2,6 +2,7 @@ import {Navigate, createBrowserRouter} from 'react-router-dom';
 
 import {ConsoleLayout} from '@/layouts/ConsoleLayout';
 import {AccountsPage} from '@/pages/accounts/AccountsPage';
+import {BacktestDetailPage} from '@/pages/backtests/BacktestDetailPage';
 import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
 import {DashboardPage} from '@/pages/dashboard/DashboardPage';
 import {DesignSystemDemoPage} from '@/pages/dev/DesignSystemDemoPage';
@@ -118,6 +119,12 @@ export const appRouter = createBrowserRouter([
                     {
                         path: 'backtests',
                         element: <BacktestsPage/>,
+                        handle: createHandle('backtests'),
+                    },
+                    {
+                        // B1:回测详情可视化(权益/回撤/指标/快照),复用 backtests 菜单高亮。
+                        path: 'backtests/:backtestConfigId',
+                        element: <BacktestDetailPage/>,
                         handle: createHandle('backtests'),
                     },
                     {

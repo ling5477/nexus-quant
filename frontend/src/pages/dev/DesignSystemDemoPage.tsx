@@ -3,6 +3,7 @@ import {Button, ConfigProvider, Segmented} from 'antd';
 import {BarChart} from 'echarts/charts';
 
 import {echarts} from '@/components/nq/charts/echarts-core';
+import {BacktestCurveChart} from '@/components/backtest/BacktestCurveChart';
 import {useLiveQuery} from '@/hooks/useLiveQuery';
 import {
     AppShell,
@@ -84,6 +85,10 @@ const SAMPLE_EQUITY = [100000, 100420, 100180, 100910, 101350, 101120];
 const SAMPLE_PNL = [420, -240, 730, 440, -230, -180];
 
 const TABLE_DENSITIES: readonly NqTableDensity[] = ['compact', 'standard', 'comfortable'];
+
+// 回测曲线样本(组件自检用;真实回测曲线由后端时间序列驱动,无数据时组件显示 unavailable)。
+const SAMPLE_EQUITY_CURVE = SAMPLE_LABELS.map((t, i) => ({t, v: SAMPLE_EQUITY[i]}));
+const SAMPLE_DRAWDOWN_CURVE = SAMPLE_LABELS.map((t, i) => ({t, v: [0, -0.4, -1.2, -0.3, 0, -0.6][i]}));
 
 interface SampleRow {
     symbol: string;
@@ -496,6 +501,43 @@ export function DesignSystemDemoPage() {
                                 实时数据(useLiveQuery)— polling / 手动刷新 / fresh·stale·error·disabled(不接 socket)
                             </h3>
                             <LiveQueryDemo/>
+                        </section>
+
+                        <section className="nq-ds-demo__section">
+                            <h3 className="nq-ds-demo__section-title">
+                                回测曲线(BacktestCurveChart)· 无序列时显式 unavailable(不编造曲线)
+                            </h3>
+                            <div
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                                    gap: 16,
+                                }}
+                            >
+                                <div>
+                                    <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>
+                                        权益曲线(样本)
+                                    </div>
+                                    <BacktestCurveChart points={SAMPLE_EQUITY_CURVE} kind="equity" height={200}/>
+                                </div>
+                                <div>
+                                    <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>
+                                        回撤曲线(样本)
+                                    </div>
+                                    <BacktestCurveChart points={SAMPLE_DRAWDOWN_CURVE} kind="drawdown" height={200}/>
+                                </div>
+                                <div>
+                                    <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>
+                                        无数据(unavailable)
+                                    </div>
+                                    <BacktestCurveChart
+                                        points={null}
+                                        kind="equity"
+                                        height={200}
+                                        unavailableText="后端暂未提供回测权益时间序列(仅有聚合指标)。"
+                                    />
+                                </div>
+                            </div>
                         </section>
 
                         <section className="nq-ds-demo__section">
