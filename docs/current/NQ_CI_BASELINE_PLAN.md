@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B IMPLEMENTED / FIRST GREEN RUN CONFIRMED；Batch 2C-2E and Batch 3-5 implementation pending
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C-2E and Batch 3-5 implementation pending
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 已在既有 `postgres-flyway` job 中实现 schema metadata artifact generation / upload，并由 GitHub Actions run `27521750442` first green confirmed；`.github` 仍不得包含其他未审查 workflow。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 已在既有 `postgres-flyway` job 中实现 schema metadata artifact generation / upload，并由 GitHub Actions run `27521750442` first green + freeze review 固化为 FROZEN / ACCEPTED；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
@@ -347,7 +347,7 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: Batch 2A FROZEN / ACCEPTED；Batch 2B IMPLEMENTED / FIRST GREEN RUN CONFIRMED；Batch 2C / 2D / 2E PENDING。
+Status: Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C / 2D / 2E PENDING。
 
 Planning document:
 
@@ -362,16 +362,16 @@ Batch 2A implemented:
 - No seed, no app context, no repository real DB smoke, no Testcontainers, no `baselineOnMigrate`, no Flyway `clean`。
 - First green evidence: run `27501253175` / commit `7836640ebae46d6fc62771611f5215661b3267dc` completed / success；job `PostgreSQL / Flyway smoke` completed / success；logs show `Successfully applied 31 migrations ... now at version v31`, `Successfully validated 31 migrations`, and `Flyway empty database smoke reached V31`。
 
-Batch 2B first green evidence:
+Batch 2B freeze evidence:
 
 - Run `27521750442` / commit `c62ebddd5a522bbdf72bc018064b9eb36d8fe9e1` completed / success.
 - Job `PostgreSQL / Flyway smoke` completed / success.
 - Artifact `nq-postgres-flyway-schema-artifacts` uploaded with id `7628309014`, size `74662` bytes, retention through `2026-06-29T03:14:04Z`.
 - Artifact download contained exactly `flyway-info.txt`, `schema-tables.txt`, `schema-columns.txt`, `schema-constraints.txt`, `schema-indexes.txt`, `schema-comments.txt`, and `schema-dump.sql`; schema dump data-row and high-risk credential pattern checks passed.
+- Freeze review accepted Batch 2B as the current `dev` PostgreSQL / Flyway schema artifact minimal baseline.
 
 Still pending:
 
-- Batch 2B freeze review。
 - Batch 2C repository-layer real PostgreSQL smoke only where PostgreSQL-specific behavior matters。
 - Batch 2D `nq-app` context smoke if needed。
 - Batch 2E CI-only seed watcher cleanup。
@@ -450,6 +450,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`，`NQ-CI-POSTGRES-FLYWAY-2B-FIX` only if a later regression is found，or Batch 3 pre-planning。
 
-Do not mix Batch 2C/2D/2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2B first-run review.
+Do not mix Batch 2C/2D/2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2B freeze review.

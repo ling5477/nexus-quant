@@ -2,6 +2,58 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW
+
+日期：2026-06-15
+
+### 目标
+
+冻结 Batch 2B PostgreSQL / Flyway schema artifact baseline，确认它成为当前 `dev` CI 的 schema artifact 最小验证基线。本轮只允许文档同步，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+### Evidence reviewed
+
+- GitHub Actions run `27521750442` latest attempt jobs all completed / success。
+- Job `PostgreSQL / Flyway smoke` / `81340926116` completed / success。
+- Steps `Run empty database Flyway smoke`、`Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` all completed / success。
+- Job log confirmed disposable PostgreSQL `postgres:16` service and direct Flyway empty DB smoke reached V31。
+- Artifact `nq-postgres-flyway-schema-artifacts` / id `7628309014` metadata: size `74662` bytes, digest `sha256:a06957e02f55761047aff197d5954b2fbb2e2269f590b598b79549a5e72155e5`, `expired=false`, `expires_at=2026-06-29T03:14:04Z`。
+- In-memory artifact ZIP review confirmed exactly 7 required files: `flyway-info.txt`, `schema-tables.txt`, `schema-columns.txt`, `schema-constraints.txt`, `schema-indexes.txt`, `schema-comments.txt`, `schema-dump.sql`。
+- Artifact review found no missing / extra / empty file；`flyway-info.txt` covers V1-V31；`schema-dump.sql` data-row marker count is `0`；high-risk credential / raw request / raw response pattern count is `0`。
+
+### Boundary confirmation
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 backend、frontend、research、scripts、deploy。
+- 未新增 API，未新增 migration，未修改历史 migration。
+- 未修改 Java / TypeScript / Python / test code。
+- 未启动 `nq-app` context。
+- 未运行 repository real PostgreSQL smoke。
+- 未插入 seed，未修改 CI-only seed watcher。
+- 未启用 Testcontainers。
+- 未实现 Batch 3 no-outbound guard。
+- 未实现 Batch 4 security guard / secret scan。
+- 未实现 Batch 5 frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 NQ RealClient、real provider 或 real exchange adapter。
+- 未调用真实交易所，未读取、打印、复制或输出真实 credential material。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PASS / FROZEN / ACCEPTED。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-PLAN`，`NQ-CI-POSTGRES-FLYWAY-2B-FIX` only if a later regression is found，or Batch 3 pre-planning。不得直接进入真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW
 
 日期：2026-06-15

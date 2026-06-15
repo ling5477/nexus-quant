@@ -2,6 +2,48 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2B freeze review：冻结 PostgreSQL / Flyway schema artifact baseline，确认它成为当前 `dev` CI 的 schema artifact 最小验证基线。本轮只同步允许的 `docs/current` 文档；未修改 `.github/workflows/ci.yml`，未修改 Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| 预检 | 通过 | `Get-Location` 为 `F:\project\nexus-quant`；`git branch --show-current` 为 `dev`；编辑前 `git status --short` 为空。 |
+| GitHub Actions run | 通过 | GitHub 插件复核 run `27521750442` latest attempt jobs 全部 completed / success；artifact metadata 绑定 branch `dev` 与 commit `c62ebddd5a522bbdf72bc018064b9eb36d8fe9e1`。 |
+| `postgres-flyway` job | 通过 | Job `PostgreSQL / Flyway smoke` / `81340926116` completed / success。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；job log 显示 `Flyway empty database smoke reached V31`。 |
+| Schema artifact generation | 通过 | Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` 均 success。 |
+| Artifact metadata | 通过 | Artifact `nq-postgres-flyway-schema-artifacts` / id `7628309014`，size `74662` bytes，digest `sha256:a06957e02f55761047aff197d5954b2fbb2e2269f590b598b79549a5e72155e5`，`expired=false`，`expires_at=2026-06-29T03:14:04Z`，符合 `dev` push 14-day retention。 |
+| Artifact file list | 通过 | In-memory ZIP review confirmed exactly 7 required files: `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`、`schema-dump.sql`；无 missing / extra / empty file。 |
+| Flyway V1-V31 artifact | 通过 | `flyway-info.txt` 有 31 条非空 migration rows，首版本 `1`，末版本 `31`。 |
+| `schema-dump.sql` schema-only check | 通过 | In-memory review 对 `INSERT INTO`、`COPY ... FROM stdin`、`-- Data for Name:`、dump data terminator pattern 的命中数为 0。 |
+| Artifact redaction | 通过 | In-memory review 对 `.env`、API key、secret、passphrase、token、cookie、private key、mnemonic、credential material、raw request / raw response high-risk pattern 的命中数为 0。 |
+| Workflow boundary | 通过 | `rg` 复核 `.github/workflows/ci.yml`：artifact 使用 metadata 查询与 `pg_dump --schema-only --no-owner --no-privileges`；未发现 `printenv` / bare `env` / `continue-on-error`。 |
+| Forbidden-area diff | 通过 | `git diff -- .github`、`backend`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration` 均为空。 |
+| Stage wording scan | 通过 | `rg` 复核 Batch 2B / 2C / 2D / 2E / Batch 3-5 文档口径；2B 冻结后，2C/2D/2E 仍 NOT STARTED，Batch 3-5 仍 PENDING。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- .github
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "Batch 2B|FIRST GREEN|FROZEN|ACCEPTED|Batch 2C|Batch 2D|Batch 2E|no-outbound|security scan|frontend E2E" docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md docs/current/NQ_CI_BASELINE_PLAN.md docs/current/TESTING.md docs/current/WORKLOG.md
+rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current
+```
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是 freeze review 只冻结已成功的 GitHub Actions run / artifact 证据并同步文档，未修改 workflow、Java / TypeScript / Python / test / migration / frontend / research / scripts / deploy。
+
+Review decision: PASS / FROZEN / ACCEPTED。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`、后续发现回归时的 `NQ-CI-POSTGRES-FLYWAY-2B-FIX`，或 Batch 3 前置 planning；不得直接进入真实交易所、LIVE、AI 或 DH runtime。
+
 ## NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2B first-run review：只评审 GitHub Actions run `27521750442` 的 schema / Flyway artifact 生成、上传、retention 和 redaction 结果，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`，未修改 Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
