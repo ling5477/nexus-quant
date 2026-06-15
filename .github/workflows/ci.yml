@@ -369,6 +369,19 @@ jobs:
           if-no-files-found: error
           retention-days: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' && 14 || 7 }}
 
+      - name: Run repository PostgreSQL smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mvn -f backend/pom.xml -pl nq-infra -am test \
+            -Dtest=JdbcRepositoryPostgresSmokeTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dnq.postgres.smoke.required=true \
+            -Dnq.postgres.smoke.url="${NQ_FLYWAY_DB_URL}" \
+            -Dnq.postgres.smoke.user="${NQ_FLYWAY_DB_USER}" \
+            -Dnq.postgres.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
+
   frontend:
     name: Frontend build
     runs-on: ubuntu-latest

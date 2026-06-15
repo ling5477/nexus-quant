@@ -2,6 +2,74 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-IMPL
+
+日期：2026-06-15
+
+### 目标
+
+实现 GateK CI Batch 2C repository-only real PostgreSQL smoke 的最小基线。只验证少量 `nq-infra` 纯 JDBC repository 在 Flyway 迁移完成后的真实 PostgreSQL schema 上可执行 insert/read/upsert；不启动 `nq-app` full context，不触发 `AuthSeedConfiguration`，不复用 Batch 1 CI-only seed watcher，不接真实交易所。
+
+### 修改文件
+
+- `.github/workflows/ci.yml`
+- `backend/nq-infra/pom.xml`
+- `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/JdbcRepositoryPostgresSmokeTest.java`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 实现摘要
+
+- 在 `nq-infra` 新增 `JdbcRepositoryPostgresSmokeTest`，通过 system properties 接收 CI PostgreSQL service DB 连接信息。
+- 测试默认无 `nq.postgres.smoke.*` properties 时 disabled，避免普通本地 `mvn test` 要求 Docker / PostgreSQL；CI step 设置 `nq.postgres.smoke.required=true`，缺失连接信息或 repository 失败必须阻塞 job。
+- Smoke 选择低风险 repository：
+  - `JdbcAuditLogRepository`：验证 `audit_logs` insert 与 JSONB detail readback。
+  - `JdbcRiskEventRepository`：验证 `risk_events` insert 与 decision / severity / reason readback。
+  - `JdbcMarketdataBarRepository`：验证 `marketdata_bars` `ON CONFLICT` insert/update、TIMESTAMPTZ、quoted `"interval"`、JSONB payload readback。
+- 所有 fixture 使用 `ci-repo-smoke-*` fake value，并在 `TransactionTemplate` 中 `setRollbackOnly()`；不生成 data dump artifact，不上传业务数据。
+- `postgres-flyway` job 保持同一 PostgreSQL service 生命周期：先 Flyway migrate / validate，再生成并上传 2B schema-only artifacts，最后执行 repository smoke，避免 smoke rows 污染 schema artifacts。
+- `backend/nq-infra/pom.xml` 仅新增 test-scope `org.postgresql:postgresql` JDBC driver，不新增生产依赖。
+
+### 验证记录
+
+- 首次 PowerShell 本地 Maven 命令因未引用带点号的 `-D` property 失败，Maven 报 `Unknown lifecycle phase ".failIfNoSpecifiedTests=false"`；这是命令转义问题，非代码编译失败。
+- 复跑命令通过：
+
+```powershell
+mvn -f backend/pom.xml -pl nq-infra -am test -Dtest=JdbcRepositoryPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'
+```
+
+- 结果：BUILD SUCCESS；`JdbcRepositoryPostgresSmokeTest` Tests run: 1, Failures: 0, Errors: 0, Skipped: 1。Skipped 原因是本地未提供 `nq.postgres.smoke.*` properties；CI step 会设置 `nq.postgres.smoke.required=true`，不能 skip / soft-fail。
+- 本地未完整复刻 GitHub Actions PostgreSQL service-container 真 DB 执行；first CI run review 仍 pending。
+
+### 边界确认
+
+- 未启动 `nq-app` full context。
+- 未使用 `@SpringBootTest`。
+- 未触发 `AuthSeedConfiguration`。
+- 未使用 `local` / `test` profile 触发 app runner。
+- 未复用 Batch 1 CI-only seed watcher。
+- 未新增 legacy account seed。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code。
+- 未修改 frontend、research、scripts、deploy。
+- 未实现 Batch 2D / 2E。
+- 未实现 Batch 3 no-outbound guard。
+- 未实现 Batch 4 security guard / secret scan。
+- 未实现 Batch 5 frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- 未读取、打印、复制或输出真实 credential material。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-FIX`。不得直接进入 2D app context smoke、2E seed watcher cleanup、Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW
 
 日期：2026-06-15

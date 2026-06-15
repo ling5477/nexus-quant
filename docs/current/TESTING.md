@@ -2,6 +2,71 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2C-IMPL 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2C implementation：在既有 `postgres-flyway` job 中追加 repository-only real PostgreSQL smoke，并新增 `nq-infra` test-only smoke。当前状态只能写为 IMPLEMENTED / PENDING FIRST CI RUN；不得写成 FROZEN / ACCEPTED。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| 预检 | 通过 | `Get-Location` 为 `F:\project\nexus-quant`；`git branch --show-current` 为 `dev`；编辑前 `git status --short` 为空。 |
+| Repository smoke implementation | 已实现 | 新增 `JdbcRepositoryPostgresSmokeTest`，覆盖 `JdbcAuditLogRepository`、`JdbcRiskEventRepository`、`JdbcMarketdataBarRepository`；只使用 `DriverManagerDataSource` / `JdbcTemplate` / `TransactionTemplate`，不启动 `nq-app` context。 |
+| Fixture / cleanup | 已实现 | 使用 `ci-repo-smoke-*` fake fixture；所有 insert/upsert/read 在事务中执行并 `setRollbackOnly()`；不上传数据 artifact。 |
+| CI wiring | 已实现 | `postgres-flyway` job 在 Flyway migrate / validate 与 2B schema artifact upload 后执行 Maven Surefire include；同一 job / service 生命周期内复用已迁移 disposable DB，不假设跨 job 共享 DB。 |
+| POM dependency | 已调整 | `backend/nq-infra/pom.xml` 新增 test-scope `org.postgresql:postgresql`，仅用于 repository smoke 的 JDBC driver；未新增生产依赖。 |
+| PowerShell command retry | 已记录 | 首次本地 Maven 命令未给带点号的 `-D` property 加引号，PowerShell 将参数拆为 `.failIfNoSpecifiedTests=false`，命令失败；已用引号复跑通过。 |
+| Minimal Maven validation | 通过 | `mvn -f backend/pom.xml -pl nq-infra -am test -Dtest=JdbcRepositoryPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'`：BUILD SUCCESS；`JdbcRepositoryPostgresSmokeTest` 1 skipped（未提供 DB properties，本地默认不要求 PostgreSQL）。 |
+| Local real PostgreSQL smoke | 未执行 | 本轮未向本机 PostgreSQL 注入 `nq.postgres.smoke.*` properties；GitHub Actions service-container 真 DB 执行等待 first CI run。 |
+
+本轮已执行 / 待执行命令：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+mvn -f backend/pom.xml -pl nq-infra -am test -Dtest=JdbcRepositoryPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'
+```
+
+收尾验证已执行：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- backend/nq-infra/src/main/resources/db/migration
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+rg "@SpringBootTest|AuthSeedConfiguration|ActiveProfiles\(\"local\"\)|ActiveProfiles\(\"test\"\)|Testcontainers|OKX|Binance|Bybit|Gate|Coinbase|Kraken|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key" backend .github docs/current
+```
+
+收尾验证结果：
+
+- `git status --short`：显示本轮允许文件变更；新增 smoke test 文件为 untracked。
+- `git diff --check`：通过，退出码 0；仅有 Windows LF/CRLF 工作区提示。
+- `git diff --stat`：已检查 tracked diff；新增 untracked test 文件由 `git status --short` / `git ls-files --others --exclude-standard` 确认。
+- `git diff -- backend/nq-infra/src/main/resources/db/migration`：输出为空，未修改 migration。
+- `git diff -- frontend`、`git diff -- research`、`git diff -- scripts`、`git diff -- deploy`：输出均为空。
+- 用户要求的 broad `rg` 已执行；命中包含历史文档、既有 credential / exchange 代码、以及本轮 Maven 生成的 `target` 报告噪音，不作为本轮新增边界穿越证据。
+- Source-only / changed-files follow-up `rg --glob '!**/target/**' ...` 已执行；本轮新增测试与 CI step 未命中 `@SpringBootTest`、`AuthSeedConfiguration`、`ActiveProfiles("local")`、`ActiveProfiles("test")`、`Testcontainers`、`LIVE=true`、`LIVE_ENABLED` 或真实 credential material 输出。命中项仅为文档禁止说明、既有 artifact redaction grep，以及既有 credential repository mock 测试中的 fake JSON。
+
+Boundary confirmation:
+
+- 未启动 `nq-app` full context。
+- 未使用 `@SpringBootTest`。
+- 未触发 `AuthSeedConfiguration`。
+- 未复用 Batch 1 CI-only seed watcher。
+- 未新增 legacy account seed。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code。
+- 未修改 frontend / research / scripts / deploy。
+- 未实现 Batch 2D / 2E。
+- 未实现 Batch 3 no-outbound guard、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real exchange adapter。
+- 未读取、打印、复制或输出真实 credential material。
+
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-FIX`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2C review-only：评审 `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md` 是否可作为 repository real PostgreSQL smoke implementation baseline。本轮只同步允许的 `docs/current` 文档；未修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。

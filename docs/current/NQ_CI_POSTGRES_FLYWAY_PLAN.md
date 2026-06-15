@@ -2,7 +2,7 @@
 
 任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL / NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2C-PLAN / NQ-CI-POSTGRES-FLYWAY-2C-PLAN-REVIEW
 日期：2026-06-14
-状态：Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C PLAN FROZEN / ACCEPTED / IMPLEMENTATION NOT STARTED；Batch 2D/2E NOT STARTED
+状态：Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C IMPLEMENTED / PENDING FIRST CI RUN；Batch 2D/2E NOT STARTED
 
 ## Current state
 
@@ -16,7 +16,7 @@
 - Batch 2A PostgreSQL / Flyway empty DB smoke：FROZEN / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success，并已完成 freeze review。
 - `postgres-flyway` job `81284424653` completed / success；step `Run empty database Flyway smoke` success；日志显示 empty PostgreSQL 16.14 DB 从 V1 迁移到 V31，并执行 `validate`。
 - Batch 2B Flyway info / schema artifact / docs update：FROZEN / ACCEPTED；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
-- Batch 2C repository real PostgreSQL smoke plan：FROZEN / ACCEPTED；implementation NOT STARTED；详见 `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
+- Batch 2C repository real PostgreSQL smoke：IMPLEMENTED / PENDING FIRST CI RUN；详见 `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
 - Batch 2D nq-app context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
@@ -153,7 +153,7 @@ Batch 2 不应一次性变成 full integration test 改造。建议分层：
 
 - Batch 2A：只跑 Flyway empty DB migration smoke；不 seed；不启动全量 E2E。
 - Batch 2B：保存 Flyway info / schema artifact，并同步 docs。
-- Batch 2C：若需要，新增或启用最小 repository real PostgreSQL smoke；优先覆盖 PostgreSQL-specific 行为，例如 JSONB cast、CHECK constraint、unique index、TIMESTAMPTZ、row lock / transaction semantics。
+- Batch 2C：已新增最小 repository real PostgreSQL smoke；优先覆盖 PostgreSQL-specific 行为，例如 JSONB cast、unique index / `ON CONFLICT`、TIMESTAMPTZ 和 rollback-safe fixture behavior。
 - Batch 2D：若需要，启动 `nq-app` context smoke；必须使用 CI-only datasource、fake users、LIVE disabled、real provider disabled / no-real port。
 - Batch 2E：条件成熟后移除或收口 CI-only seed watcher。
 
@@ -336,17 +336,17 @@ Freeze review evidence:
 - Freeze evidence: run `27521750442` latest attempt jobs all completed / success；`postgres-flyway` job `81340926116` success；artifact `7628309014` uploaded with digest `sha256:a06957e02f55761047aff197d5954b2fbb2e2269f590b598b79549a5e72155e5` and 14-day `dev` retention；downloaded ZIP contained exactly the 7 required non-empty files with no missing / extra file；in-memory review found Flyway V1-V31, no `schema-dump.sql` data-row marker, and no high-risk credential / raw request / raw response pattern。
 - Does not run repository real DB smoke, does not start `nq-app` context, does not modify CI-only seed watcher, does not use Testcontainers。
 
-### Batch 2C: repository real Postgres smoke, if needed
+### Batch 2C: repository real Postgres smoke
 
-- Status: PLAN FROZEN / ACCEPTED / IMPLEMENTATION NOT STARTED。
+- Status: IMPLEMENTED / PENDING FIRST CI RUN。
 - Planning document: `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
-- Add minimal repository-only smoke only for PostgreSQL-specific behavior。
+- Added minimal repository-only smoke only for PostgreSQL-specific behavior。
 - Prefer `nq-infra` pure JDBC repository smoke and avoid `nq-app` full context。
 - Keep `@SpringBootTest` / `@ActiveProfiles("local")` tests in Batch 2D, not 2C。
 - Avoid `AuthSeedConfiguration` and Batch 1 CI-only seed watcher。
 - Default to no legacy account seed；if a fixture is unavoidable, use CI-only fake fixture rows inside rollback-safe transactions。
 - Do not convert every `RecordingJdbcTemplate` test into real DB integration test。
-- Candidate 2C-1 repositories: audit log, risk event, event store, and marketdata bars, because they can prove insert / JSON / `ON CONFLICT` / timestamp behavior without app context or exchange adapters。
+- Implemented 2C-1 repositories: audit log, risk event, and marketdata bars, because they prove insert / JSON / `ON CONFLICT` / timestamp behavior without app context or exchange adapters。
 - Defer credential repository real DB smoke to 2C-2+ unless fake material, log redaction and cleanup boundaries are separately reviewed。
 
 ### Batch 2D: nq-app context smoke, if needed
@@ -416,10 +416,10 @@ Notes:
 
 ## Review decision
 
-PASS / FROZEN / ACCEPTED for Batch 2A；PASS / FROZEN / ACCEPTED for Batch 2B；PASS / FROZEN / ACCEPTED for Batch 2C plan。
+PASS / FROZEN / ACCEPTED for Batch 2A；PASS / FROZEN / ACCEPTED for Batch 2B；PASS / FROZEN / ACCEPTED for Batch 2C plan；Batch 2C implementation PENDING FIRST CI RUN。
 
-Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。Batch 2C plan 已接受为后续 implementation baseline，但 Batch 2C workflow / test code / repository real DB smoke 仍未实现。不得把本轮写成 Batch 2C implementation、Batch 2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
+Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。Batch 2C repository-only real PostgreSQL smoke 已实现，等待 first CI run review，不得写成 FROZEN / ACCEPTED。不得把本轮写成 Batch 2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-IMPL`, `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`, or separate 2D / 2E / Batch 3 pre-planning。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-FIX`。

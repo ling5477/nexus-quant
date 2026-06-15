@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C PLAN FROZEN / ACCEPTED / IMPLEMENTATION NOT STARTED；Batch 2D-2E and Batch 3-5 implementation pending
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C IMPLEMENTED / PENDING FIRST CI RUN；Batch 2D-2E and Batch 3-5 implementation pending
 
 ## Current state
 
@@ -347,7 +347,7 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C PLAN FROZEN / ACCEPTED / IMPLEMENTATION NOT STARTED；Batch 2D / 2E PENDING。
+Status: Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C IMPLEMENTED / PENDING FIRST CI RUN；Batch 2D / 2E PENDING。
 
 Planning document:
 
@@ -372,7 +372,7 @@ Batch 2B freeze evidence:
 
 Still pending / not implemented:
 
-- Batch 2C repository-layer real PostgreSQL smoke implementation only where PostgreSQL-specific behavior matters；plan is frozen / accepted in `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
+- Batch 2C first CI run review for repository-layer real PostgreSQL smoke；implementation is present but not frozen / accepted yet。
 - Batch 2D `nq-app` context smoke if needed。
 - Batch 2E CI-only seed watcher cleanup。
 
@@ -450,6 +450,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-IMPL`, `NQ-CI-POSTGRES-FLYWAY-2C-PLAN-FIX`, or separate 2D / 2E / Batch 3 pre-planning。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-FIX`。
 
-Do not mix Batch 2D/2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2C implementation. Batch 2C implementation must stay within the frozen repository-only PostgreSQL smoke baseline.
+Do not mix Batch 2D/2E、no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2C first-run review or first-run fix. Batch 2C must stay within the frozen repository-only PostgreSQL smoke baseline.
