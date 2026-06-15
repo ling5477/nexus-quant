@@ -2,6 +2,53 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2B first-run review：只评审 GitHub Actions run `27521750442` 的 schema / Flyway artifact 生成、上传、retention 和 redaction 结果，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`，未修改 Java / TypeScript / Python 代码、测试代码、migration、backend 生产逻辑、frontend、research、scripts 或 deploy。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | 通过 | Run `27521750442`，workflow `NQ CI Baseline`，branch `dev`，commit `c62ebddd5a522bbdf72bc018064b9eb36d8fe9e1`，status `completed`，conclusion `success`。 |
+| `postgres-flyway` job | 通过 | Job `PostgreSQL / Flyway smoke` / `81340926116` completed / success。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；job log 显示 `Flyway empty database smoke reached V31`。 |
+| Artifact generation | 通过 | Step `Generate PostgreSQL schema artifacts` success。 |
+| Artifact check | 通过 | Step `Check PostgreSQL schema artifacts` success；blocking check 未发现 data rows 或 high-risk credential pattern。 |
+| Artifact upload | 通过 | Step `Upload PostgreSQL schema artifacts` success；log 显示 7 files uploaded。 |
+| Artifact metadata | 通过 | Artifact `nq-postgres-flyway-schema-artifacts` / id `7628309014`，size `74662` bytes，digest `sha256:a06957e02f55761047aff197d5954b2fbb2e2269f590b598b79549a5e72155e5`，`expires_at=2026-06-29T03:14:04Z`，符合 `dev` push 14-day retention。 |
+| Artifact download check | 通过 | 下载 ZIP 后确认仅包含 `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`、`schema-dump.sql`，无 missing / extra / empty file。 |
+| `schema-dump.sql` data rows | 通过 | 本地检查 `INSERT` / `COPY ... FROM stdin` / data dump marker 命中数为 0。 |
+| Artifact redaction | 通过 | 本地检查 `.env`、API key、secret、passphrase、token、cookie、private key、mnemonic、credential material、raw request / response pattern 命中数为 0。 |
+| Boundary scan | 通过 | `postgres-flyway` 未启动 `nq-app` context，未跑 repository real DB smoke，未插入 seed，未启用 Testcontainers，未实现 no-outbound guard / secret scan / frontend E2E hardening。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github/workflows/ci.yml docs/current
+```
+
+Boundary confirmation:
+
+- Batch 2B first green run confirmed；尚未 freeze / accepted。
+- Batch 2C repository real PostgreSQL smoke：NOT STARTED。
+- Batch 2D `nq-app` context smoke：NOT STARTED。
+- Batch 2E CI-only seed watcher cleanup：NOT STARTED。
+- Batch 3 no-outbound guard：PENDING。
+- Batch 4 security guard / secret scan：PENDING。
+- Batch 5 frontend E2E hardening：PENDING。
+- AI：NOT STARTED；DH runtime：NOT INTEGRATED；LIVE：DISABLED；real exchange adapter：NOT IMPLEMENTED。
+
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`。
+
 ## 统一验证命令
 
 ### 后端验证

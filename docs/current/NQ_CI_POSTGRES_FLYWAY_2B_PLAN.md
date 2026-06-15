@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway 2B Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-PLAN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-IMPL
+任务：NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-PLAN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-IMPL / NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW
 日期：2026-06-14
-状态：PLAN ACCEPTED；IMPLEMENTED / PENDING FIRST CI RUN
+状态：PLAN ACCEPTED；IMPLEMENTED / FIRST GREEN RUN CONFIRMED
 
 ## Current state
 
@@ -14,7 +14,7 @@
 - NQ CI Batch 2A PostgreSQL / Flyway empty DB migration smoke 已 FROZEN / ACCEPTED。
 - GitHub Actions run `27501253175` completed / success；`postgres-flyway` job completed / success。
 - Flyway empty DB migration smoke 已从 V1 跑到 V31，并 validate 31 migrations。
-- Batch 2B schema artifact / docs review：IMPLEMENTED / PENDING FIRST CI RUN。
+- Batch 2B schema artifact / docs review：IMPLEMENTED / FIRST GREEN RUN CONFIRMED。
 - Batch 2C repository real PostgreSQL smoke：NOT STARTED。
 - Batch 2D `nq-app` context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
@@ -80,7 +80,7 @@ Batch 2B 的目标是规划并后续实现 schema artifact / docs review 能力�
 - 不开启 LIVE，不接 AI，不接 DH runtime，不实现 NQ RealClient 或真实 Provider。
 - 不调用真实交易所，不实现真实 OKX / Binance permission probe adapter。
 - 不读取、打印、复制或输出真实 credential material。
-- 不把 Batch 2B 写成 first green / accepted，直到 GitHub Actions first-run review 完成。
+- 不把 Batch 2B 写成 frozen / accepted，直到 Batch 2B freeze review 完成。
 
 ## Proposed artifacts
 
@@ -284,7 +284,7 @@ Future 2B-2 may script selected checks after manual checklist stabilizes. 2B-1 �
 | P2 | PostgreSQL version mismatch remains (`postgres:16` CI vs local compose default `postgres:17.7`). | Record compatibility risk; do not change version in 2B planning. |
 | P2 | Comments artifact can contain sensitive words as field names or forbidden examples. | Manual review must distinguish field names / prohibitions from material leakage. |
 | P3 | Artifact names or retention policy drift. | Use stable names and 7-14 day default retention. |
-| P3 | 2B wording is misread as first-green / accepted. | Keep status `IMPLEMENTED / PENDING FIRST CI RUN` until GitHub Actions artifact run is reviewed. |
+| P3 | 2B wording is misread as frozen / accepted. | Keep status `IMPLEMENTED / FIRST GREEN RUN CONFIRMED` until Batch 2B freeze review is complete. |
 
 ## Implementation batches
 
@@ -299,7 +299,7 @@ Status: ACCEPTED。
 
 ### Batch 2B-2: artifact implementation, if approved
 
-Status: IMPLEMENTED / PENDING FIRST CI RUN。
+Status: IMPLEMENTED。
 
 - Update existing `postgres-flyway` job or reviewed workflow path to generate artifacts.
 - Use `psql` / `pg_catalog` / `information_schema` commands after Flyway migrate + validate.
@@ -309,12 +309,21 @@ Status: IMPLEMENTED / PENDING FIRST CI RUN。
 
 ### Batch 2B-3: first green review
 
-Status: NOT STARTED。
+Status: COMPLETED / FIRST GREEN RUN CONFIRMED。
+
+Evidence:
+
+- GitHub Actions run `27521750442` (`NQ CI Baseline`, dev push, commit `c62ebddd5a522bbdf72bc018064b9eb36d8fe9e1`) completed with conclusion `success`.
+- `PostgreSQL / Flyway smoke` job completed with conclusion `success`.
+- `Run empty database Flyway smoke`, `Generate PostgreSQL schema artifacts`, `Check PostgreSQL schema artifacts`, and `Upload PostgreSQL schema artifacts` steps all completed with conclusion `success`.
+- Artifact `nq-postgres-flyway-schema-artifacts` uploaded with artifact id `7628309014`, digest `sha256:a06957e02f55761047aff197d5954b2fbb2e2269f590b598b79549a5e72155e5`, size `74662` bytes, `expires_at=2026-06-29T03:14:04Z`, matching 14-day retention for `dev` push.
+- Downloaded artifact contained exactly the required 7 files: `flyway-info.txt`, `schema-tables.txt`, `schema-columns.txt`, `schema-constraints.txt`, `schema-indexes.txt`, `schema-comments.txt`, `schema-dump.sql`.
+- Downloaded artifact local checks found no data-row markers in `schema-dump.sql` and no high-risk credential / raw request / raw response pattern in artifact files.
 
 - Review GitHub Actions run and artifact contents.
 - Confirm V1-V31 metadata, comments, constraints and indexes are present.
 - Confirm no secrets / credentials / data rows.
-- Decide whether 2B can be accepted.
+- Decide whether 2B can enter freeze review.
 
 ### Batch 2B-4: docs drift cleanup, if needed
 
@@ -343,10 +352,14 @@ rg "continue-on-error|skipTests|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|
 rg "printenv|^[[:space:]]*env$|pg_dump --schema-only --no-owner --no-privileges|information_schema|pg_catalog|pg_indexes|flyway_schema_history" .github/workflows/ci.yml docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md
 ```
 
-No Maven / npm / Python test is required for 2B implementation because this task modifies only GitHub Actions workflow and docs; it does not modify Java / TypeScript / Python code, tests, migration, frontend, research, scripts or deploy. Local GitHub Actions service-container execution is not required; first CI run review remains pending.
+No Maven / npm / Python test is required for 2B first-run review because this task reviews GitHub Actions run evidence and updates docs only; it does not modify Java / TypeScript / Python code, tests, migration, frontend, research, scripts or deploy. GitHub Actions run `27521750442` is the first green run evidence for Batch 2B.
+
+## Review decision
+
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN.
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW` after GitHub Actions run completes, or `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-FIX` if the first run fails。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`。
 
 Do not mix Batch 2C/2D/2E、Batch 3 no-outbound guard、Batch 4 security scan、Batch 5 frontend E2E hardening、AI、DH runtime、LIVE、real provider、NQ RealClient or real exchange permission probe adapter into Batch 2B implementation or first-run review.

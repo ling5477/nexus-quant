@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL
+任务：NQ-CI-POSTGRES-FLYWAY-PLAN / NQ-CI-POSTGRES-FLYWAY-2A-IMPL / NQ-CI-POSTGRES-FLYWAY-2A-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2A-FREEZE-REVIEW / NQ-CI-POSTGRES-FLYWAY-2B-PLAN / NQ-CI-POSTGRES-FLYWAY-2B-IMPL / NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW
 日期：2026-06-14
-状态：Batch 2A FROZEN / ACCEPTED；Batch 2B IMPLEMENTED / PENDING FIRST CI RUN；Batch 2C/2D/2E NOT STARTED
+状态：Batch 2A FROZEN / ACCEPTED；Batch 2B IMPLEMENTED / FIRST GREEN RUN CONFIRMED；Batch 2C/2D/2E NOT STARTED
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - Batch 1 backend job 已临时使用 GitHub Actions `postgres:16` service 和 CI-only seed watcher 支撑 `mvn -f backend/pom.xml test`，但这只是 runner dependency workaround，不是 Batch 2 PostgreSQL / Flyway hardening。
 - Batch 2A PostgreSQL / Flyway empty DB smoke：FROZEN / ACCEPTED；GitHub Actions run `27501253175` 在 commit `7836640ebae46d6fc62771611f5215661b3267dc` 上 completed / success，并已完成 freeze review。
 - `postgres-flyway` job `81284424653` completed / success；step `Run empty database Flyway smoke` success；日志显示 empty PostgreSQL 16.14 DB 从 V1 迁移到 V31，并执行 `validate`。
-- Batch 2B Flyway info / schema artifact / docs update：IMPLEMENTED / PENDING FIRST CI RUN；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
+- Batch 2B Flyway info / schema artifact / docs update：IMPLEMENTED / FIRST GREEN RUN CONFIRMED；详见 `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
 - Batch 2C repository real PostgreSQL smoke：NOT STARTED。
 - Batch 2D nq-app context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
@@ -61,9 +61,9 @@ Forbidden in Batch 2A implementation:
 当前 backend job 已使用 PostgreSQL，但目的仍是让 Batch 1 full Maven test 在 fresh GitHub runner 上可运行，不提供以下 Batch 2 能力：
 
 - Batch 2A 已新增显式 empty DB migration smoke job。
-- Batch 2B 已在 `postgres-flyway` job 中实现 Flyway `info` / schema metadata artifact generation，并等待 first CI run review。
-- Batch 2B 已生成 migration checksum metadata artifact；是否稳定可读需 first CI run review。
-- Batch 2B 已实现 schema-only dump artifact；是否稳定可读需 first CI run review。
+- Batch 2B 已在 `postgres-flyway` job 中实现 Flyway `info` / schema metadata artifact generation，并由 GitHub Actions run `27521750442` confirmed first green。
+- Batch 2B 已生成 migration checksum metadata artifact；first green run artifact 可下载且文件齐全。
+- Batch 2B 已实现 schema-only dump artifact；first green review 确认无 data-row marker。
 - 无 docs/current `DB_SCHEMA.md` 与 migration 的自动 drift 检查。
 - 无 repeatable migration 策略检查。
 - 无 CI seed 边界文档化与去除条件。
@@ -120,7 +120,7 @@ Batch 2 必须验证：
 - 使用 Maven `process-classes` 准备 `nq-app` / `nq-infra` runtime classpath，并在 workflow step 中生成临时 Java smoke runner 调用 Flyway API。
 - Flyway 配置固定为 `locations("classpath:db/migration")`、`baselineOnMigrate(false)`、`cleanDisabled(true)`、`outOfOrder(false)`。
 - 迁移完成后执行 `validate`，校验 current version 为 `31`，并输出 `flyway_schema_history`。
-- Batch 2B 已补 schema metadata artifact / schema-only dump / docs，当前等待 first CI run review。
+- Batch 2B 已补 schema metadata artifact / schema-only dump / docs，GitHub Actions run `27521750442` first green confirmed。
 
 ## Seed / legacy account boundary
 
@@ -312,7 +312,7 @@ First green evidence:
 - Log evidence: Flyway applied V1 through V31, logged `Successfully applied 31 migrations ... now at version v31`, then `Successfully validated 31 migrations`。
 - Log evidence: `flyway_schema_history` printed `installed_rank|version|description|type|script|checksum|success` with rows `1|1|...|true` through `31|31|schema credential permission probe|SQL|V31__schema_credential_permission_probe.sql|...|true`。
 - Log evidence: smoke runner printed `Flyway empty database smoke reached V31`。
-- Run artifacts at 2A first green: none；Batch 2B schema artifacts are now implemented and pending first CI run review。
+- Run artifacts at 2A first green: none；Batch 2B schema artifacts are now implemented and first green confirmed by GitHub Actions run `27521750442`。
 
 Freeze review evidence:
 
@@ -326,7 +326,7 @@ Freeze review evidence:
 
 ### Batch 2B: Flyway info / schema artifact / docs update
 
-- Status: IMPLEMENTED / PENDING FIRST CI RUN。
+- Status: IMPLEMENTED / FIRST GREEN RUN CONFIRMED。
 - Planning document: `docs/current/NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`。
 - Planned artifacts: `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`，optional schema-only `schema-dump.sql`。
 - Generation source: existing `postgres-flyway` empty DB after Flyway migrate + validate；use `information_schema` / `pg_catalog` / `pg_indexes` and `flyway_schema_history` metadata。
@@ -408,10 +408,10 @@ Notes:
 
 ## Review decision
 
-PASS / FROZEN / ACCEPTED。
+PASS / FROZEN / ACCEPTED for Batch 2A；PASS / ACCEPTED FOR FIRST GREEN RUN for Batch 2B。
 
-Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。不得把本轮写成 Batch 2B/2C/2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
+Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。Batch 2B 已完成 first green run review，但尚未 freeze / accepted。不得把本轮写成 Batch 2C/2D/2E、Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW` after GitHub Actions run completes, or `NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-FIX` if the first run fails。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`。

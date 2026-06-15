@@ -2,6 +2,47 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2B-FIRST-RUN-REVIEW
+
+日期：2026-06-15
+
+### 目标
+
+评审包含 Batch 2B schema artifact generation / upload 变更的 GitHub Actions 首次运行结果，判断是否可将 Batch 2B 标记为 first green run confirmed。本轮只做 CI run / job / artifact / redaction / retention 证据复核，并同步允许的 `docs/current` 文档；不修改 `.github/workflows/ci.yml`，不改业务代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### Run evidence
+
+- GitHub Actions run `27521750442`，workflow `NQ CI Baseline`，branch `dev`，commit `c62ebddd5a522bbdf72bc018064b9eb36d8fe9e1`，status `completed`，conclusion `success`。
+- Job `PostgreSQL / Flyway smoke` / `81340926116` completed / success。
+- Step `Run empty database Flyway smoke` success；job log 显示 `Flyway empty database smoke reached V31`。
+- Step `Generate PostgreSQL schema artifacts` success。
+- Step `Check PostgreSQL schema artifacts` success。
+- Step `Upload PostgreSQL schema artifacts` success；log 显示 7 files uploaded。
+
+### Artifact evidence
+
+- Artifact `nq-postgres-flyway-schema-artifacts` / id `7628309014` uploaded successfully。
+- Artifact metadata：size `74662` bytes；digest `sha256:a06957e02f55761047aff197d5954b2fbb2e2269f590b598b79549a5e72155e5`；created `2026-06-15T03:14:05Z`；expires `2026-06-29T03:14:04Z`，符合 `dev` push 14-day retention。
+- Downloaded ZIP contained exactly 7 required files：`flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`、`schema-dump.sql`。
+- 本地 artifact 检查：无 missing / extra / empty file；`schema-dump.sql` data-row pattern 命中数为 0；high-risk credential / raw request / raw response pattern 命中数为 0。
+
+### Boundary confirmation
+
+- 未启动 `nq-app` context。
+- 未跑 repository real PostgreSQL smoke。
+- 未插入 seed，未修改 CI-only seed watcher。
+- 未启用 Testcontainers。
+- 未实现 no-outbound guard / secret scan / frontend E2E hardening。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- Batch 2C / 2D / 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### Review decision
+
+PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2B 当前状态为 IMPLEMENTED / FIRST GREEN RUN CONFIRMED；尚未 freeze / accepted。
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2B-FREEZE-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2C-PLAN`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2B-IMPL
 
 日期：2026-06-15
