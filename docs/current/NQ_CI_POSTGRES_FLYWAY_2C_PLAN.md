@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway 2C Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2C-PLAN / NQ-CI-POSTGRES-FLYWAY-2C-IMPL
+任务：NQ-CI-POSTGRES-FLYWAY-2C-PLAN / NQ-CI-POSTGRES-FLYWAY-2C-IMPL / NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW
 日期：2026-06-15
-状态：IMPLEMENTED / PENDING FIRST CI RUN
+状态：IMPLEMENTED / FIRST GREEN RUN CONFIRMED
 
 ## Current state
 
@@ -13,7 +13,7 @@
 - NQ CI Batch 1：FROZEN / ACCEPTED。
 - NQ CI Batch 2A PostgreSQL / Flyway empty DB migration smoke：FROZEN / ACCEPTED。
 - NQ CI Batch 2B schema artifact baseline：FROZEN / ACCEPTED。
-- Batch 2C repository real PostgreSQL smoke：IMPLEMENTED / PENDING FIRST CI RUN。
+- Batch 2C repository real PostgreSQL smoke：IMPLEMENTED / FIRST GREEN RUN CONFIRMED。
 - Batch 2D `nq-app` context smoke：NOT STARTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
@@ -58,7 +58,7 @@ Current `.github/workflows/ci.yml` has these relevant jobs:
 | Job | Current behavior | 2C interpretation |
 | --- | --- | --- |
 | `backend` | Runs `mvn -f backend/pom.xml test` with PostgreSQL service `postgres:16`; uses a CI-only watcher to insert one `accounts` row after Flyway creates the table. | This is Batch 1 compatibility for existing local-profile context tests. It is not repository real DB hardening and must not be reused as 2C seed policy. |
-| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31 and uploads schema metadata artifacts. | 2A/2B baseline. It does not start app context, does not seed, and does not run repository smoke. |
+| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, then runs the Batch 2C repository PostgreSQL smoke. | 2A/2B/2C baseline. It does not start app context, does not seed, and runs only the explicit `nq-infra` repository smoke. |
 
 Batch 2C should be isolated from both:
 
@@ -290,7 +290,7 @@ Never do:
 | --- | --- |
 | 2A | Empty DB Flyway V1-V31 migration smoke. Already FROZEN / ACCEPTED. |
 | 2B | Schema artifact baseline. Already FROZEN / ACCEPTED. |
-| 2C | Repository-only real PostgreSQL smoke. IMPLEMENTED / PENDING FIRST CI RUN. |
+| 2C | Repository-only real PostgreSQL smoke. IMPLEMENTED / FIRST GREEN RUN CONFIRMED. |
 | 2D | `nq-app` context smoke. NOT STARTED. Owns `@SpringBootTest`, local/test profile and `AuthSeedConfiguration` evaluation. |
 | 2E | CI-only seed watcher cleanup. NOT STARTED. |
 | 3 | no-outbound guard. PENDING and not implemented by 2C. |
@@ -308,6 +308,7 @@ Never do:
 | P1 | Batch 1 CI-only seed watcher can hide empty DB and fixture requirements if reused. | Do not reuse watcher; 2C fixtures must be explicit and rollback-safe. |
 | P1 | Credential repository real DB smoke can touch encrypted payload shape and fake material; careless logs could create secret-like output. | Defer credential repository to 2C-2 with fake-only material and redaction review. |
 | P2 | `postgres:16` CI differs from local compose `postgres:17.7`. | Keep 2A/2B baseline for now; record compatibility risk, do not change version in 2C planning. |
+| P2 | GitHub Actions job log renders CI-only PostgreSQL URL / user / password in automatic step env and service container command output. | This is not real credential material and uses disposable CI-only values, but freeze review should decide whether to reduce log exposure before accepting 2C as frozen. |
 | P2 | Broad repository expansion may make CI slow or flaky. | Slice 2C-1 / 2C-2 / 2C-3 and require first green review before required-check promotion. |
 | P3 | Existing broad `rg backend docs/current` scans can include `backend/**/target/**` noise in a dirty build tree. | Use source-only follow-up scans for evidence; keep final review evidence tied to source and current docs. |
 
@@ -315,7 +316,7 @@ Never do:
 
 ### 2C-1: minimal repository smoke
 
-Status: IMPLEMENTED / PENDING FIRST CI RUN.
+Status: IMPLEMENTED / FIRST GREEN RUN CONFIRMED.
 
 Implemented path:
 
@@ -343,6 +344,20 @@ mvn -f backend/pom.xml -pl nq-infra -am test \
 ```
 
 The smoke test skips by default when explicit `nq.postgres.smoke.*` properties are absent, so normal developer `mvn test` does not require local Docker or PostgreSQL. The CI step sets `nq.postgres.smoke.required=true`; missing DB properties or repository failures must fail the job.
+
+First green evidence:
+
+- GitHub Actions run `27535619157` (`NQ CI Baseline`) on branch `dev`, commit `9adb71b8dc56a0bf881952da918ebaab5fdbeb7f`, completed / success.
+- Job `PostgreSQL / Flyway smoke` / `81384164182` completed / success.
+- Steps `Run empty database Flyway smoke`, `Generate PostgreSQL schema artifacts`, `Check PostgreSQL schema artifacts`, `Upload PostgreSQL schema artifacts`, and `Run repository PostgreSQL smoke` all completed / success.
+- CI PostgreSQL service used `postgres:16`; service health reached healthy before Flyway / repository smoke.
+- Downloaded schema artifact `nq-postgres-flyway-schema-artifacts` / id `7633555246`, size `74655` bytes, digest `sha256:f303e6d26410ae759778ea26f2b42503d42c952c9b0905739d51dcd717f89c3b`, not expired, retention through `2026-06-29T09:05:23Z`.
+- Artifact ZIP contained exactly `flyway-info.txt`, `schema-tables.txt`, `schema-columns.txt`, `schema-constraints.txt`, `schema-indexes.txt`, `schema-comments.txt`, and `schema-dump.sql`.
+- `flyway-info.txt` contained 31 migration rows, first version `1`, last version `31`, all success.
+- `schema-dump.sql` schema-only review found zero `INSERT INTO`, zero `COPY ... FROM stdin`, and zero `-- Data for Name:` markers.
+- Artifact high-risk credential pattern review found zero `.env`, `apiKey=`, `secret=`, `passphrase=`, `token=`, `private key=`, raw request, or raw response assignment markers.
+- Repository smoke log showed `JdbcRepositoryPostgresSmokeTest` real CI run with `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0` and Maven `BUILD SUCCESS`.
+- Log hygiene note: GitHub Actions automatic step env / docker service output includes CI-only PostgreSQL connection fields. No real credential material was observed, but this remains a freeze-review hygiene item.
 
 Implementation files:
 
@@ -402,18 +417,18 @@ Notes:
 - On PowerShell, path globs like `backend/**/src/test` can be invalid as direct path arguments. Use `rg --glob` filters with `backend` as the root path for source-only follow-up scans.
 - Broad required scans can include `backend/**/target/**` if build outputs are present. Source-only follow-up scans must exclude `**/target/**` before drawing conclusions.
 
-Run the targeted Maven smoke command locally without DB properties to compile the new test and confirm it stays disabled for normal developer runs. Full GitHub Actions service-container validation remains pending first CI run.
+Run the targeted Maven smoke command locally without DB properties to compile the new test and confirm it stays disabled for normal developer runs. GitHub Actions service-container validation is now first green confirmed by run `27535619157`.
 
 ## Freeze review decision
 
-Review decision: PLAN PASS / FROZEN / ACCEPTED; IMPLEMENTATION PENDING FIRST CI RUN.
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN. PLAN remains FROZEN / ACCEPTED; implementation is FIRST GREEN RUN CONFIRMED, not FROZEN / ACCEPTED.
 
 This document was accepted as the GateK CI Batch 2C implementation baseline. Batch 2C implementation has now been added consistently with this plan: repository-only real PostgreSQL smoke, no `nq-app` full context, no legacy seed, no real credential material, no Testcontainers in 2C-1, no real exchange access, no LIVE, no AI, no DH runtime, no RealClient and no real provider.
 
-Batch 2C implementation is IMPLEMENTED / PENDING FIRST CI RUN. Batch 2D and Batch 2E remain NOT STARTED. Batch 3-5 remain PENDING. AI remains NOT STARTED. DH runtime remains NOT INTEGRATED. LIVE remains DISABLED. Real exchange adapter / real provider / RealClient remain NOT IMPLEMENTED.
+Batch 2C implementation is IMPLEMENTED / FIRST GREEN RUN CONFIRMED. Batch 2D and Batch 2E remain NOT STARTED. Batch 3-5 remain PENDING. AI remains NOT STARTED. DH runtime remains NOT INTEGRATED. LIVE remains DISABLED. Real exchange adapter / real provider / RealClient remain NOT IMPLEMENTED.
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-FIX`.
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, or `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`.
 
 Do not proceed directly to 2D app context smoke, 2E seed watcher cleanup, Batch 3 no-outbound guard, Batch 4 secret scan, Batch 5 frontend E2E hardening, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this 2C implementation task.

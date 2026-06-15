@@ -2,6 +2,56 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW
+
+日期：2026-06-15
+
+### 目标
+
+评审包含 Batch 2C repository-only real PostgreSQL smoke 的 GitHub Actions 首次运行结果，确认 CI service PostgreSQL 上真实执行并通过。本轮只做 CI run / job / log / artifact / boundary review，并同步允许的 `docs/current` 文档；不修改 workflow、生产代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### Evidence reviewed
+
+- GitHub Actions run `27535619157`，workflow `NQ CI Baseline`，branch `dev`，commit `9adb71b8dc56a0bf881952da918ebaab5fdbeb7f`，status `completed`，conclusion `success`。
+- Job `PostgreSQL / Flyway smoke` / `81384164182` completed / success。
+- Step `Run empty database Flyway smoke` success；artifact `flyway-info.txt` 复核 V1-V31 共 31 条 migration row，首版本 `1`，末版本 `31`，全部 success。
+- Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` success；artifact `nq-postgres-flyway-schema-artifacts` / id `7633555246` 下载复核通过。
+- Step `Run repository PostgreSQL smoke` success；job log 显示 `JdbcRepositoryPostgresSmokeTest` Surefire summary 为 `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`，Maven `BUILD SUCCESS`。
+- Artifact ZIP 恰含 `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`、`schema-dump.sql`；`schema-dump.sql` 无 data row marker；artifact high-risk credential pattern count 为 0。
+- P2 log hygiene finding：GitHub Actions 自动 step env / service command output 会显示 CI-only PostgreSQL URL / user / password；未发现真实 credential material，但 freeze review 前需决定是否收口该日志暴露。
+
+### Boundary confirmation
+
+- 未启动 `nq-app` full context。
+- 未使用 `@SpringBootTest`。
+- 未触发 `AuthSeedConfiguration`。
+- 未复用 Batch 1 CI-only seed watcher；backend job 既有 watcher 仍只属于 Batch 1 compatibility，不属于 2C repository smoke。
+- 未插入 legacy seed。
+- 未纳入 credential repository。
+- 未修改 migration、frontend、research、scripts 或 deploy。
+- 未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- 未读取、打印、复制或输出真实 credential material。
+- Batch 2D / 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2C 当前状态为 IMPLEMENTED / FIRST GREEN RUN CONFIRMED；尚未 freeze / accepted。P2 log hygiene finding remains for freeze review.
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, or `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。不得直接进入 Batch 3-5、AI、DH runtime、LIVE、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-IMPL
 
 日期：2026-06-15

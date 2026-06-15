@@ -2,6 +2,48 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2C first-run review：只评审包含 repository-only real PostgreSQL smoke 的 GitHub Actions run，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | 通过 | Run `27535619157`，workflow `NQ CI Baseline`，branch `dev`，commit `9adb71b8dc56a0bf881952da918ebaab5fdbeb7f`，status `completed`，conclusion `success`。 |
+| `postgres-flyway` job | 通过 | Job `PostgreSQL / Flyway smoke` / `81384164182` completed / success。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；artifact `flyway-info.txt` 复核 V1-V31 共 31 条 migration row，首版本 `1`，末版本 `31`，全部 success。 |
+| Schema artifacts | 通过 | Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` success；artifact `7633555246` 未过期，ZIP 恰含 7 个 schema-only 文件。 |
+| Repository PostgreSQL smoke | 通过 | Step `Run repository PostgreSQL smoke` success；job log 显示 `JdbcRepositoryPostgresSmokeTest` 在 CI PostgreSQL service 上真实运行，Surefire summary 为 `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`，Maven `BUILD SUCCESS`。 |
+| CI PostgreSQL service | 通过 | `postgres:16` service container health reached healthy；repository smoke 使用同一 disposable CI DB 生命周期，在 artifact 生成后运行。 |
+| Schema-only / redaction | 通过 | `schema-dump.sql` 中 `INSERT INTO`、`COPY ... FROM stdin`、`-- Data for Name:` 均为 0；artifact high-risk `.env` / credential / raw request / raw response assignment pattern 均为 0。 |
+| Log hygiene | 有 P2 记录 | GitHub Actions 自动 step env / service command output 会显示 CI-only PostgreSQL URL / user / password；未发现真实 credential material，但 freeze review 前需决定是否收口该日志暴露。 |
+| Boundary review | 通过 | 2C source / workflow 复核确认 repository smoke 不启动 `nq-app` context、不使用 `@SpringBootTest`、不触发 `AuthSeedConfiguration`、不复用 Batch 1 seed watcher、不纳入 credential repository。 |
+| Forbidden-area diff | 通过 | `git diff -- backend/nq-infra/src/main/resources/db/migration`、`frontend`、`research`、`scripts`、`deploy` 均为空；本轮只修改允许的 `docs/current` 文档。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- backend/nq-infra/src/main/resources/db/migration
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+rg -e '@SpringBootTest' -e 'AuthSeedConfiguration' -e 'ActiveProfiles\("local"\)' -e 'ActiveProfiles\("test"\)' -e 'Testcontainers' -e 'OKX' -e 'Binance' -e 'Bybit' -e 'Gate' -e 'Coinbase' -e 'Kraken' -e 'LIVE=true' -e 'LIVE_ENABLED' -e 'apiKey' -e 'secret' -e 'passphrase' -e 'token' -e 'private key' backend .github docs/current
+```
+
+GitHub Actions run details / jobs / logs 通过 GitHub MCP、GitHub REST runs API 和 artifact ZIP 复核。`gh` CLI 不存在；GitHub REST job-log endpoint 返回 `403 Must have admin rights to Repository`，因此 job logs 使用 GitHub MCP decoded logs，run list / artifact metadata 使用 GitHub REST / MCP，artifact ZIP 使用 MCP 下载引用复核。可信度：高，因 run/job/step 状态、job log Surefire 摘要和 artifact 内容三者一致。
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮为 CI first-run review + docs/current 状态记录，不修改 workflow、Java / TypeScript / Python / test / migration / frontend / research / scripts / deploy。
+
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2C 当前状态为 IMPLEMENTED / FIRST GREEN RUN CONFIRMED；尚未 freeze / accepted。P2 log hygiene finding remains for freeze review. Batch 2D / 2E remain NOT STARTED；Batch 3-5 remain PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW`, `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, or `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-IMPL 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2C implementation：在既有 `postgres-flyway` job 中追加 repository-only real PostgreSQL smoke，并新增 `nq-infra` test-only smoke。当前状态只能写为 IMPLEMENTED / PENDING FIRST CI RUN；不得写成 FROZEN / ACCEPTED。
