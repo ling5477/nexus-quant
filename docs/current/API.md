@@ -148,6 +148,13 @@ GateI-1 不新增 AI API，不新增 AI 自动交易接口，不新增美股/A �
 - `GET /api/backtest-runs/{runId}`：返回 run 详情和完整追溯快照；后续配置重新绑定不会改写历史 run。
 - `GET /api/evaluations`：查询已生成评估报告列表，返回 total return、annualized return、max drawdown、win rate、profit/loss ratio、trade count、Sharpe、metrics JSON 等核心指标。
 - `GET /api/evaluations/{evaluationId}`：按 `evalReportId` 查询评估报告详情。
+- `GET /api/backtest-runs/{runId}/evaluation`：返回该 run 的评估报告。
+- `GET /api/backtest-runs/{runId}/sim-orders`：返回 run 模拟订单事实列表（GateF-3 sim facts）。
+- `GET /api/backtest-runs/{runId}/sim-trades`：返回 run 模拟成交事实列表。
+- `GET /api/backtest-runs/{runId}/sim-positions`：返回 run 模拟持仓事实列表。
+- `GET /api/backtest-runs/{runId}/pnl-snapshots`：返回 run 权益/PnL 快照序列（来源表 `sim_pnl_snapshots`，按 `snapshot_time` 升序：`equity / cashBalance / positionMarketValue / realizedPnl / unrealizedPnl / totalFee / totalSlippage / netPnl`）。**回测权益/回撤曲线的时间序列来源即此既有端点。**
+
+> 上述 run-fact 端点(sim-orders / sim-trades / sim-positions / pnl-snapshots)早已在 `BacktestRunController` 实现,此前 `API.md` 漏记,本轮补记为事实。回测权益/回撤曲线后端契约与前端对接计划见 [BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md](./BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md):`pnl-snapshots` 端点与 `sim_pnl_snapshots` 表已存在,**无需新增后端 API / 表 / migration**;前端消费(B1.1,equity 曲线 + 派生 drawdown)为 **planning,尚未实现**。
 
 GateI-2 固定范围：
 

@@ -67,6 +67,7 @@ GateO：A 股适配
 - `ARCHITECTURE.md`：当前架构事实与依赖边界；已同步 GateJ completed / GateK planning baseline accepted / GateK implementation not started / AI not started / DH runtime not integrated / LIVE disabled / real adapter not implemented 口径。
 - `MODULES.md`：模块 owner、职责和禁止反向依赖；已同步 backend 分层、frontend Design System v1、research/py 独立工具链和 permission probe no-real baseline。
 - `API.md`：当前 API 分类入口。
+- `BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md`：回测权益/回撤曲线后端契约 planning;结论为 `GET /api/backtest-runs/{runId}/pnl-snapshots`(表 `sim_pnl_snapshots`)已存在,无需新增后端 API/表/migration,B1 曲线 unavailable 属前端未接线,后续前端切片(B1.1)消费既有端点 + 派生 drawdown。planning only,未实现。
 - `DB_SCHEMA.md`：数据库事实入口。
 - `CREDENTIAL_REVOCATION_GOVERNANCE_REVIEW.md`：Credential revocation Batch 5-A 只读审计报告。
 - `CREDENTIAL_REVOCATION_GOVERNANCE_PLAN.md`：Credential revocation Batch 5-B schema completed、Batch 5-C code/API/test completed、Batch 5-D-B explicit rotate command implemented、Batch 5-E-B deterministic active material selection implemented、Batch 5-F-C enable command implemented 与 permission probe 最小 code/API/test implemented 事实。
