@@ -2,6 +2,53 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW 验证记录（2026-06-15）
+
+本轮是 GateK CI Batch 2C freeze review：只冻结 repository-only real PostgreSQL smoke baseline，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。预检时工作区已有非本轮 `backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/application/DbAuthService.java` import 排序 diff，本轮未触碰该文件。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | 通过 | Run `27535619157`，workflow `NQ CI Baseline`，branch `dev`，commit `9adb71b8dc56a0bf881952da918ebaab5fdbeb7f`，status `completed`，conclusion `success`。 |
+| `postgres-flyway` job | 通过 | Job `PostgreSQL / Flyway smoke` / `81384164182` completed / success；`gh run view` 与 GitHub MCP job list 一致。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；artifact `flyway-info.txt` 复核 31 rows，首行为 `V1__init.sql`，末行为 `V31__schema_credential_permission_probe.sql`，全部 success。 |
+| Schema artifacts | 通过 | Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` success；artifact `7633555246` 未过期，包含且仅包含 7 个 schema-only 文件。 |
+| Repository PostgreSQL smoke | 通过 | GitHub MCP decoded log 显示 `JdbcRepositoryPostgresSmokeTest` 在 CI PostgreSQL service 上真实运行；Surefire summary 为 `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`，Maven `BUILD SUCCESS`。 |
+| CI PostgreSQL service | 通过 | `postgres:16` service container reached `healthy`；repository smoke 使用 disposable CI DB `nq_ci` / `nq_ci_user` / `nq_ci_password`。 |
+| Schema-only / redaction | 通过 | 下载 artifact 复核：`schema-dump.sql` 中 `INSERT INTO`、`COPY ... FROM stdin`、`-- Data for Name:` 均为 0；artifact high-risk `.env` / credential / raw request / raw response assignment pattern 为 0。 |
+| Boundary review | 通过 | 2C smoke stays in `nq-infra` repository scope；不启动 `nq-app` context、不使用 `@SpringBootTest`、不触发 `AuthSeedConfiguration`、不复用 Batch 1 seed watcher、不纳入 credential repository。 |
+| P2 log hygiene | Accepted P2 | GitHub Actions 自动 step env / service command output 显示 CI-only PostgreSQL URL / user / password；这些是 disposable CI fake service DB values，不是真实 credential material，不阻塞 freeze。建议如需低风险收口，另开 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`。 |
+| Forbidden-area diff | 有既有脏改，不属本轮 | `.github`、`frontend`、`research`、`scripts`、`deploy`、`backend/**/db/migration` diff 为空；`backend` diff 仅为预先存在的 `DbAuthService.java` import 排序变更，本轮未修改。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+git status --short
+git branch --show-current
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- .github
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+gh run view 27535619157 --repo ling5477/nexus-quant --json status,conclusion,headSha,headBranch,displayTitle,event,createdAt,updatedAt,jobs
+gh run view 27535619157 --repo ling5477/nexus-quant --job 81384164182
+gh run download 27535619157 --repo ling5477/nexus-quant -n nq-postgres-flyway-schema-artifacts -D <temp-dir>
+rg -e '@SpringBootTest' -e 'AuthSeedConfiguration' -e 'ActiveProfiles\("local"\)' -e 'ActiveProfiles\("test"\)' -e 'Testcontainers' -e 'OKX' -e 'Binance' -e 'Bybit' -e 'Gate' -e 'Coinbase' -e 'Kraken' -e 'LIVE=true' -e 'LIVE_ENABLED' -e 'apiKey' -e 'secret' -e 'passphrase' -e 'token' -e 'private key' backend .github docs/current
+rg -e 'Batch 2C' -e 'FIRST GREEN' -e 'FROZEN' -e 'ACCEPTED' -e 'Batch 2D' -e 'Batch 2E' -e 'no-outbound' -e 'security scan' -e 'frontend E2E' -e 'AuthSeedConfiguration' -e 'SpringBootTest' docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md docs/current/NQ_CI_BASELINE_PLAN.md docs/current/TESTING.md docs/current/WORKLOG.md
+```
+
+`gh run view --log --job 81384164182` 因 GitHub REST logs endpoint 返回 `HTTP 403: Must have admin rights to Repository`；已用 GitHub MCP decoded logs 复核同一 job 的 full log。可信度：高，因 GitHub MCP job/log、`gh` run metadata、artifact metadata 和 artifact ZIP 内容一致。
+
+本轮未运行 `mvn -f backend/pom.xml test`、`npm run build`、`npm run test:e2e`、Python `pytest / mypy / ruff`；原因是本轮为 CI freeze review + docs/current 状态记录，不修改 workflow、Java / TypeScript / Python / test / migration / frontend / research / scripts / deploy。
+
+Review decision: PASS / FROZEN / ACCEPTED。Batch 2C 冻结为当前 `dev` repository-only real PostgreSQL smoke baseline。Batch 2D / 2E remain NOT STARTED；Batch 3-5 remain PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`, or Batch 3 pre-planning。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2C first-run review：只评审包含 repository-only real PostgreSQL smoke 的 GitHub Actions run，并同步允许的 `docs/current` 文档。未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。

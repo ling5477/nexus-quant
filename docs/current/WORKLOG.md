@@ -2,6 +2,72 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2C-FREEZE-REVIEW
+
+日期：2026-06-15
+
+### 目标
+
+冻结 GateK CI Batch 2C repository-only real PostgreSQL smoke baseline，确认它成为当前 `dev` CI 的 repository real DB 最小验证基线。本轮只允许文档同步，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。预检时工作区已有非本轮 `backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/application/DbAuthService.java` import 排序 diff，本轮未触碰该文件。
+
+### Evidence reviewed
+
+- GitHub Actions run `27535619157`，workflow `NQ CI Baseline`，branch `dev`，commit `9adb71b8dc56a0bf881952da918ebaab5fdbeb7f`，status `completed`，conclusion `success`。
+- Job `PostgreSQL / Flyway smoke` / `81384164182` completed / success。
+- Steps `Run empty database Flyway smoke`、`Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts`、`Run repository PostgreSQL smoke` all completed / success。
+- GitHub MCP decoded log 显示 `postgres:16` service reached `healthy`，checkout commit 为 `9adb71b8dc56a0bf881952da918ebaab5fdbeb7f`。
+- Repository smoke log 显示 `JdbcRepositoryPostgresSmokeTest` Surefire summary 为 `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`，Maven `BUILD SUCCESS`。
+- Artifact `nq-postgres-flyway-schema-artifacts` / id `7633555246` metadata：size `74655` bytes，digest `sha256:f303e6d26410ae759778ea26f2b42503d42c952c9b0905739d51dcd717f89c3b`，expires `2026-06-29T09:05:23Z`。
+- 下载 artifact 复核：ZIP 恰含 `flyway-info.txt`、`schema-tables.txt`、`schema-columns.txt`、`schema-constraints.txt`、`schema-indexes.txt`、`schema-comments.txt`、`schema-dump.sql`。
+- `flyway-info.txt` 共 31 rows，首行为 `V1__init.sql`，末行为 `V31__schema_credential_permission_probe.sql`，全部 success。
+- `schema-dump.sql` 中 `INSERT INTO`、`COPY ... FROM stdin`、`-- Data for Name:` 均为 0；artifact high-risk credential / raw request / raw response assignment pattern 为 0。
+
+### P2 log hygiene
+
+- GitHub Actions 自动 step env / service command output 显示 CI-only PostgreSQL URL / user / password。
+- 这些值是 disposable CI-only fake service DB values，不是真实 credential material，不是 production DB credential。
+- 结论：Accepted P2，不阻塞 Batch 2C freeze。
+- 后续如需低风险收口，只允许另开 `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`，不得混入 Batch 2D/2E、生产代码、真实 credential flow、真实交易所、LIVE、AI 或 DH runtime。
+
+### Boundary confirmation
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 Java / TypeScript / Python 代码。
+- 未修改测试代码。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code；预先存在的 `DbAuthService.java` import diff 不属于本轮。
+- 未修改 frontend、research、scripts、deploy。
+- 未启动 `nq-app` full context。
+- 未使用 `@SpringBootTest`。
+- 未触发 `AuthSeedConfiguration`。
+- 未复用 Batch 1 CI-only seed watcher；backend job 既有 watcher 仍只属于 Batch 1 compatibility，不属于 2C repository smoke。
+- 未插入 legacy seed。
+- 未纳入 credential repository。
+- 仅使用 `ci-repo-smoke-*` fake fixture，并通过 transaction rollback 隔离数据。
+- 未打印真实 credential material。
+- 未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未开启 LIVE，未接 AI，未接 DH runtime。
+- 未实现 RealClient、real provider 或 real exchange adapter。
+- Batch 2D / 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PASS / FROZEN / ACCEPTED。Batch 2C 冻结为当前 `dev` repository-only real PostgreSQL smoke baseline。P0/P1 为 0；P2 log hygiene accepted，不阻塞 freeze。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, `NQ-CI-POSTGRES-FLYWAY-2C-HYGIENE-FIX`, or Batch 3 pre-planning。不得直接进入真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2C-FIRST-RUN-REVIEW
 
 日期：2026-06-15

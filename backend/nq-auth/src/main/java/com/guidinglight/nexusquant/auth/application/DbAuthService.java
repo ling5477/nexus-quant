@@ -1,20 +1,18 @@
 package com.guidinglight.nexusquant.auth.application;
 
-import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
-import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.application.command.LoginRequest;
 import com.guidinglight.nexusquant.auth.application.result.LoginResponse;
-import com.guidinglight.nexusquant.auth.application.AuthService;
+import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
+import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.security.token.TokenClaims;
 import com.guidinglight.nexusquant.security.token.TokenService;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
-
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * DbAuthService 使用 DB-backed users/roles 完成正式认证。
