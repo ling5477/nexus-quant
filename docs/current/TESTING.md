@@ -2297,3 +2297,20 @@ API/数据缺口(必须报告,未伪装):
 
 - planning only,未把前端 B1.1 写成 implemented;已存在的后端端点据实记录。
 - 未改 Java/TS/Python;未新增/改 migration;未改前端页面;未接 AI/DH/LIVE/real exchange/socket。
+
+## NQ-FRONTEND-BACKTEST-EQUITY-CURVE-WIRING-B1.1 验证记录（2026-06-15）
+
+本轮前端 only:把回测详情权益/回撤曲线接到既有 `GET /api/backtest-runs/{runId}/pnl-snapshots`(equity 直接映射、drawdown 客户端派生 equity−运行峰值)。未新增后端 API/migration,未用假数据。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build`（`tsc -b && vite build`） | **通过** | tsc 0 error。 |
+| `npm run test:e2e -- design-system-backtest-chart-smoke + live-query + table + login --project=chromium`（dev server,无后端） | **4 passed** | backtest chart smoke:有序列渲染 canvas + 无序列(无 run/空快照)显式 unavailable;其余 B0.x smoke 通过。 |
+| BacktestDetailPage 页面级 e2e(有/无真实 pnl snapshots) | **未跑(诚实标注)** | 该页 `RequireAuth` 下依赖后端(`:18888`)+ 登录态,本环境不可用;曲线组件 + 映射由 design-system smoke + tsc 覆盖;页面级需带后端环境补 fixture(run + sim_pnl_snapshots / 空快照)。 |
+| `npm run test:e2e`（全量） | **未跑** | 多数 spec 依赖后端。 |
+
+阶段与安全边界:
+
+- 曲线来源为真实端点 `pnl-snapshots`(sim_pnl_snapshots);无 run / 空快照显式 unavailable,**不编造**。
+- drawdown 客户端派生 `equity − 运行峰值`(≤0),口径同后端 `DrawdownCalculator`。
+- 未新增后端 API;未接 AI/DH/LIVE/real exchange/WebSocket/SSE;未全局替换 AppProviders;指标/快照/摘要区不回退。
