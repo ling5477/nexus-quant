@@ -2,6 +2,23 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2E-PLAN（2026-06-16）
+
+本轮是 GateK CI Batch 2E planning-only：只读审计 CI-only seed watcher / AuthSeed / bootstrap admin / repository smoke / app context smoke / application yml / migration 边界，并新增 2E plan 文档。不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 仍为 PLAN ONLY / NOT IMPLEMENTED；Batch 3-5 仍 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；`git status --short` 为空。 |
+| Workflow 只读审计 | 已执行 | `.github/workflows/ci.yml` 中 `backend` job 仍有 CI-only seed watcher；`postgres-flyway` job 不使用该 watcher。 |
+| Seed watcher inventory | 已完成 | watcher 等待 `accounts` 表出现后插入 `ci-local-account` 到 legacy `accounts`。 |
+| V12 migration 边界 | 已确认 | V12 会从 legacy `accounts` 回填 `exchange_accounts`；未发现 watcher 路径写入 `exchange_account_credentials`。 |
+| AuthSeed / bootstrap admin 边界 | 已确认 | `AuthSeedConfiguration` 仅 `local` / `test`；`AuthBootstrapAdminConfiguration` 仅 `nq.auth.bootstrap-admin.enabled=true`。Batch 2D `ci-app-smoke` 避开 AuthSeed 并显式关闭 bootstrap admin。 |
+| Batch 2A-2D dependency review | 已确认 | 2A empty DB smoke、2B artifacts、2C repository smoke、2D `nq-app` context smoke 均不依赖 backend job seed watcher。 |
+| P0/P1 | 0 | 未发现阻断性安全 / 交易 / 凭证 / 生产风险。 |
+| 本地构建 / 测试 | 未运行 | 本轮 docs-only / planning-only，且禁止改 workflow / code / test / migration；未运行 backend Maven、frontend build / E2E、Python pytest / mypy / ruff。 |
+
+Review decision: PASS / PLAN READY FOR REVIEW。`docs/current/NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md` 可作为 2E implementation baseline，但本轮未实现 2E。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW（2026-06-16）
 
 本轮是 GateK CI Batch 2D freeze review：冻结 `nq-app` context smoke baseline。只同步允许的 `docs/current` 状态记录，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2D 可标记为 FROZEN / ACCEPTED；Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。

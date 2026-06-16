@@ -2,6 +2,62 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2E-PLAN
+
+日期：2026-06-16
+
+### 目标
+
+规划 GateK CI Batch 2E 如何清理或替代当前 CI baseline 中的 CI-only seed watcher / compatibility seed 行为，避免它长期掩盖 schema、fixture 或 app-context 问题。本轮只做 planning-only 文档，不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+### 只读审计结论
+
+- `.github/workflows/ci.yml` 的 `backend` job 仍有 CI-only seed watcher；它等待 `public.accounts` 出现后插入 `ci-local-account` 到 legacy `accounts`。
+- `postgres-flyway` job 的 2A empty DB Flyway smoke、2B schema artifacts、2C repository smoke、2D `nq-app` context smoke 均不使用该 watcher。
+- watcher 直接写 legacy `accounts`，但如果在 Flyway 到达 V12 前插入，`V12__rc1_account_and_credentials.sql` 可能把该 legacy row 回填成 `exchange_accounts` row。
+- 未发现 watcher 路径写入 `exchange_account_credentials` 或真实 credential material。
+- `AuthSeedConfiguration` 仅 `local` / `test` profile 生效；2D `ci-app-smoke` 避开该 profile。
+- `AuthBootstrapAdminConfiguration` 仅在 `nq.auth.bootstrap-admin.enabled=true` 时生效；2D 显式关闭。
+
+### 计划结论
+
+- Preferred cleanup：2E implementation 首选删除 background watcher，并把需要 legacy account 的测试改为显式拥有 fixture。
+- Fallback：若删除后 backend Maven test 在 fresh runner 失败，只允许显式 CI-only fixture SQL 或测试内 fixture；fixture 必须在迁移完成后运行，不能在 Flyway 迁移过程中竞态插入。
+- Trigger narrowing：如短期不能删除，必须收窄触发条件到 backend Maven job 的明确兼容测试阶段，不能继续作为跨迁移过程的后台 watcher。
+- 不允许把 seed 写入 production migration 或 runtime startup。
+- 不允许创建 seed users、exchange account credentials、real accounts、LIVE rows 或 credential material。
+
+### 修改文件
+
+- 新增 `docs/current/NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`
+- 更新 `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- 更新 `docs/current/README.md`
+- 更新 `docs/current/TESTING.md`
+- 更新 `docs/current/WORKLOG.md`
+
+### 验证记录
+
+- 已执行 `Get-Location`、`git status --short`、`git branch --show-current`。
+- 已只读检查 `.github/workflows/ci.yml`、AuthSeed / bootstrap admin 配置、2C repository smoke、2D app context smoke、`application*.yml`、V1 / V12 migration、Batch 2 主计划。
+- 未运行 `mvn -f backend/pom.xml test`、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮为 docs-only / planning-only 且未改代码、测试、workflow 或 migration。
+
+### 边界确认
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 backend / frontend / research / scripts / deploy / migration。
+- 未新增测试。
+- 未创建 seed users、legacy accounts、exchange accounts、credential rows 或 credential material。
+- 未接真实交易所、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+- Batch 2E 仍 PLAN ONLY / NOT IMPLEMENTED；Batch 3-5 仍 PENDING。
+
+### Review decision
+
+PASS / PLAN READY FOR REVIEW。P0/P1 = 0。`NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md` 可作为 2E implementation baseline。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2E-PLAN-REVIEW`、2E plan fix、2E implementation，或 Batch 3 pre-planning。不得把 2E implementation 与 Batch 3 no-outbound、Batch 4 security guard、Batch 5 frontend E2E、AI、DH runtime、LIVE、RealClient、real provider 或 credential material work 混做。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW
 
 日期：2026-06-16
