@@ -6166,3 +6166,52 @@ Batch 2D：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN（不得�
 ## 下一步
 
 re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`；若仍红则继续 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
+
+---
+
+# NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW (+ FIRST-RUN-FIX #2)
+
+日期：2026-06-16
+
+## 本轮目标
+
+评审 first-run fix（commit `7156b32c`）后的 GitHub Actions run，确认 nq-app context smoke 是否在 CI PostgreSQL service DB 上真实通过。结果为 FAIL：暴露第二个根因，按任务 CI 失败时允许的 carve-out 转入 FIRST-RUN-FIX，应用最小 test-only 修复。
+
+## 评审结论（run 27592872701）
+
+- run `27592872701`（commit `7156b32c`，push，dev）：completed / **failure**，1m54s。
+- jobs：Diff check ✓ / Frontend build ✓ / Backend Maven test ✓ / Research quality gate ✓ / **PostgreSQL / Flyway smoke ✗**。
+- `PostgreSQL / Flyway smoke` job `81577141123`：仅 `Run nq-app PostgreSQL context smoke` 失败；Flyway V1-V31、schema artifact generate/check/upload、repository PostgreSQL smoke（`JdbcRepositoryPostgresSmokeTest` tests=1/skipped=0/failures=0/errors=0）均仍 success。
+- venue 修复已生效：不再有 `venue must not be blank`，context 已越过 `AdapterBackedTradingVenueGateway`。
+
+## 第二个根因
+
+- `NqAppContextPostgresSmokeTest` errors=1：Spring 创建 `securityFilterChain`（`SecurityConfiguration`）失败 —— `No qualifying bean of type 'HttpSecurity' available`。
+- 原因：smoke 用 `webEnvironment = NONE` + `spring.main.web-application-type=none`，应用为非 web 上下文；`HttpSecurity` 仅由 `HttpSecurityConfiguration`（`@ConditionalOnWebApplication(type = SERVLET)`）提供，非 web 下缺失，生产 servlet-web `SecurityConfiguration` 无法装配。NexusQuant 是 servlet web 应用，composition root 必须以 servlet web 上下文启动。属原 2D smoke 设计缺陷，venue 修复后才暴露。
+
+## 第二次修复（test-only）
+
+- `backend/nq-app/src/test/java/.../smoke/NqAppContextPostgresSmokeTest.java`：
+  - `webEnvironment = SpringBootTest.WebEnvironment.NONE` → `WebEnvironment.MOCK`；删除 `spring.main.web-application-type=none`。`MOCK` 加载完整 servlet web 上下文（DispatcherServlet wiring + Spring Security filter chain），不起 server、不开端口、不调 controller，`HttpSecurity` 可用，`securityFilterChain` 正常装配。
+  - 与既有 `local` profile full-context 测试（`MarketdataControllerLocalIntegrationTest` / `OkxBootstrapNoOutboundLocalContextTest`，默认 `MOCK`）一致，属本 app 已证可行模式，降低风险。
+  - adapter venue stub / mocks / datasource / 断言均不变；未改生产代码 / migration / workflow。
+
+## 验证记录
+
+- `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest -Dsurefire.failIfNoSpecifiedTests=false`：**BUILD SUCCESS**；tests=1 / failures=0 / errors=0 / **skipped=1**（本地无 CI DB props，类被 `@EnabledIfSystemProperty` 跳过）。真实 servlet-web context 启动需下一次 GitHub Actions run 确认（skipped=0 / errors=0）。
+- `git status --short` / `git diff --check`（无 whitespace 错误）/ `git diff --stat`：仅 1 个 test 文件 + docs 改动；migration / frontend / research / scripts / deploy diff 均为空。
+
+## 状态
+
+Batch 2D：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN（仍不得写 FIRST GREEN / FROZEN / ACCEPTED）。Batch 2E NOT STARTED；Batch 3-5 PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED。
+
+## 边界确认
+
+- 未改 backend production code / frontend / research / scripts / deploy / workflow；未新增 API / migration；未改历史 migration。
+- 未用 `local` profile；未 as-is 复用 `test` profile；未触发 `AuthSeedConfiguration`；未创建 seed users / legacy accounts / exchange accounts / credential rows。
+- 未访问真实交易所；未实现 RealClient / real provider / real adapter；未开启 LIVE / AI / DH runtime；未读取或输出真实 credential material。
+- 未实现 Batch 2E / Batch 3-5。
+
+## 下一步
+
+push 第二次修复 → re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`；若仍红则继续 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。建议 commit message：`test(ci): nq-app context smoke 改用 MOCK web 环境修复 security 装配（Batch 2D first-run fix #2）`。

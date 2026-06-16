@@ -2486,3 +2486,24 @@ CI 待确认（real PostgreSQL context 启动）：
 阶段与安全边界：
 
 - 未改后端生产代码 / migration / research / deploy / scripts / workflow；未新增 API；未用 `local` profile；未触发 `AuthSeedConfiguration`；未创建 seed users / accounts / exchange accounts / credential rows；未接 AI/DH/LIVE/real exchange；未读取或输出真实 credential material。
+
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW (+ FIRST-RUN-FIX #2) 验证记录（2026-06-16）
+
+评审 first-run fix（commit `7156b32c`）后的 CI run，结果 FAIL，暴露第二个根因并应用第二次 test-only 修复。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run `27592872701`（commit `7156b32c`，push，dev） | **completed / failure**（1m54s） | venue 错误已消失；context 越过 gateway。 |
+| `PostgreSQL / Flyway smoke` job `81577141123` | **failure**，仅 `Run nq-app PostgreSQL context smoke` | Flyway V1-V31 / schema artifacts / repository smoke（`JdbcRepositoryPostgresSmokeTest` 1/0/0/0）均仍 success。 |
+| `NqAppContextPostgresSmokeTest`（CI） | tests=1 / **skipped=0** / failures=0 / **errors=1** | active profile `ci-app-smoke`；真实执行（非 skip）。 |
+| 第二根因 | `securityFilterChain` 装配失败 | `webEnvironment=NONE` → 非 web → `HttpSecurity`（`@ConditionalOnWebApplication(type=SERVLET)`）缺失。 |
+| `mvn ... -Dtest=NqAppContextPostgresSmokeTest -Dsurefire.failIfNoSpecifiedTests=false`（本地，第二次修复后） | **BUILD SUCCESS** | tests=1 / failures=0 / errors=0 / **skipped=1**（本地无 CI DB props，跳过；仅证明编译 + 选择）。 |
+| `git status/diff --check/--stat`、migration/frontend/research/scripts/deploy diff | **通过 / 空** | 仅 test + docs 改动；未触达禁止范围。 |
+
+第二次修复（test-only）：`webEnvironment = NONE` → `WebEnvironment.MOCK` 并删除 `spring.main.web-application-type=none`，加载完整 servlet web 上下文（含 Spring Security filter chain），不起 server / 不开端口 / 不调 controller；对齐既有 `local` full-context 测试（默认 `MOCK`）。
+
+CI 待确认：真实 servlet-web context 启动需下一次 GitHub Actions `postgres-flyway` job 的 `Run nq-app PostgreSQL context smoke`（`nq.app.context.smoke.required=true`）确认 **skipped=0 / errors=0**。在该 run 变绿前，Batch 2D 不得写成 FIRST GREEN / FROZEN / ACCEPTED。
+
+CI log hygiene（复核）：本次失败 step 输出仅 Spring/Surefire stack trace 与 `@TestPropertySource` 属性回显（含 fake `ci-app-smoke` master-key / security secret 占位值，非真实 credential）；service-container 一次性 `POSTGRES_PASSWORD` 仍由 GitHub "Initialize containers" 在 step 前回显（平台行为，P3 残留，已记录）。无真实 credential material、无完整 JDBC password / 连接串经 step 主动输出。
+
+阶段与安全边界：未改后端生产代码 / migration / research / deploy / scripts / workflow；未新增 API；未用 `local` profile；未触发 `AuthSeedConfiguration`；未创建 seed users / accounts / exchange accounts / credential rows；未接 AI/DH/LIVE/real exchange；未读取或输出真实 credential material。

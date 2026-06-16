@@ -31,8 +31,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * Batch 2D CI-only nq-app context smoke against a Flyway-migrated PostgreSQL service database.
  *
  * <p>Why: this smoke proves the Spring composition root can start after the Batch 2A/2B/2C
- * PostgreSQL/Flyway baseline without using local/test profiles, seed runners, web controllers,
- * scheduler business execution, real exchange adapters, .env files, or credential material.
+ * PostgreSQL/Flyway baseline without using local/test profiles, seed runners, scheduler business
+ * execution, real exchange adapters, .env files, credential material, or a started web server. It
+ * uses {@code WebEnvironment.MOCK} so the full servlet web application context (including the Spring
+ * Security filter chain) is wired exactly as in production, but no HTTP port is opened and no
+ * controller is invoked.
  *
  * <p>First CI run (run 27590822405) failed while creating the production
  * {@code AdapterBackedTradingVenueGateway}: its constructor builds a venue-&gt;adapter routing map by
@@ -49,12 +52,19 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * datasource (bound to the Flyway-migrated CI PostgreSQL), repositories, domain services, security,
  * scheduler wiring, and the gateway itself remain the real production beans, so the smoke still
  * exercises the real composition root and does not mask app-context wiring risk.
+ *
+ * <p>Second CI run (run 27592872701) got past the gateway but failed creating {@code securityFilterChain}:
+ * with {@code webEnvironment = NONE} the application is non-web, so {@code HttpSecurity} (provided only
+ * by {@code @ConditionalOnWebApplication(type = SERVLET)}) is absent and the production
+ * {@code SecurityConfiguration} cannot wire. NexusQuant is a servlet web app, so the composition root
+ * must load as a servlet web context. The fix switches to {@code WebEnvironment.MOCK}, matching the
+ * existing {@code local}-profile full-context tests, which loads the servlet web + security wiring
+ * without starting a server.
  */
 @EnabledIfSystemProperty(named = "nq.app.context.smoke.required", matches = "true")
 @ActiveProfiles("ci-app-smoke")
-@SpringBootTest(classes = NexusQuantApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = NexusQuantApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @TestPropertySource(properties = {
-        "spring.main.web-application-type=none",
         // Enable narrow bean override so StubbedExchangeAdapterConfig can replace the two named
         // ExchangeAdapterConfiguration adapter beans by name. Local full-context tests load the same
         // composition root WITHOUT this flag, so it cannot hide a real duplicate-definition problem;

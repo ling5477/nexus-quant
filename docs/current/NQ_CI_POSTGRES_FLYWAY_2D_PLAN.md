@@ -135,6 +135,35 @@ mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest 
 
 Result: BUILD SUCCESS; `NqAppContextPostgresSmokeTest` tests=1 / failures=0 / errors=0 / skipped=1. The class is `@EnabledIfSystemProperty(nq.app.context.smoke.required=true)`, so without CI DB properties it compiles and is selected but skipped. This proves compilation and Surefire selection only; the real PostgreSQL context startup must be confirmed by the next GitHub Actions run (where the CI step sets `nq.app.context.smoke.required=true` and skipped must be 0).
 
+## Second CI run review and fix (NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW → FIRST-RUN-FIX, 2026-06-16)
+
+Status after second fix: IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. Still not FIRST GREEN / FROZEN / ACCEPTED.
+
+### Second run reviewed
+
+GitHub Actions `NQ CI Baseline` run `27592872701`, branch `dev`, commit `7156b32c` (`test(ci): fix nq-app context smoke adapter venue`), event `push`, completed `2026-06-16T03:53Z`, 1m54s. Overall: completed / failure.
+
+- `Diff check`, `Frontend build`, `Backend Maven test`, `Research quality gate`: success.
+- `PostgreSQL / Flyway smoke` job `81577141123`: failure, only at step `Run nq-app PostgreSQL context smoke`.
+- `Run empty database Flyway smoke` (V1-V31), `Generate / Check / Upload PostgreSQL schema artifacts`, `Run repository PostgreSQL smoke` (`JdbcRepositoryPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0): all still success.
+- The venue fix worked: there is no more `venue must not be blank`. The context progressed past `AdapterBackedTradingVenueGateway`.
+
+### Second failure root cause
+
+`NqAppContextPostgresSmokeTest` errors=1. Spring failed creating `securityFilterChain` in `SecurityConfiguration`: `No qualifying bean of type 'org.springframework.security.config.annotation.web.builders.HttpSecurity' available`. Cause: the smoke used `webEnvironment = NONE` plus `spring.main.web-application-type=none`, so the application context was non-web. `HttpSecurity` is provided only by `HttpSecurityConfiguration`, which is `@ConditionalOnWebApplication(type = SERVLET)`; in a non-web context it is absent, so the production servlet-web `SecurityConfiguration.securityFilterChain(HttpSecurity, ...)` cannot wire. NexusQuant is a servlet web application, so its composition root cannot start as a non-web app. This was a design defect in the original 2D smoke, exposed only after the venue fix let refresh reach the security wiring.
+
+### Second fix (test-only)
+
+Changed only `NqAppContextPostgresSmokeTest`:
+
+- `webEnvironment = SpringBootTest.WebEnvironment.NONE` → `WebEnvironment.MOCK`, and removed `spring.main.web-application-type=none`. `MOCK` loads the full servlet web application context (DispatcherServlet wiring, Spring Security filter chain) without starting an HTTP server or opening a port, so `HttpSecurity` is available and `securityFilterChain` wires as in production.
+- This matches the existing `local`-profile full-context tests (`MarketdataControllerLocalIntegrationTest`, `OkxBootstrapNoOutboundLocalContextTest`), which use `@SpringBootTest(classes = NexusQuantApplication.class)` with the default `MOCK` web environment and start the full servlet web context successfully — a proven-working pattern for this app, which de-risks the fix.
+- No production code, no migration, no workflow change. The adapter venue stubbing, mocks, datasource wiring, and assertions are unchanged. No server is started; no controller is invoked; `verifyNoInteractions` on WS clients and `never().placeOrder/cancelOrder/getOrder` on adapters still hold.
+
+### Local validation (second fix)
+
+`mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest -Dsurefire.failIfNoSpecifiedTests=false` → BUILD SUCCESS; tests=1 / failures=0 / errors=0 / skipped=1 (no CI DB properties locally). The real servlet-web context startup against CI PostgreSQL must again be confirmed by the next GitHub Actions run (skipped=0 / errors=0).
+
 ## App context test inventory
 
 Source-only inspection found the following `nq-app` tests relevant to Spring context and profile planning:
@@ -407,7 +436,7 @@ Notes:
 
 Review decision: FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN.
 
-Batch 2D implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no adapter order-method calls, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. First run `27590822405` failed in `Run nq-app PostgreSQL context smoke` (`venue must not be blank`); the first-run fix replaces the bare `@MockitoBean` adapters with pre-stubbed CI-only fake-venue mocks so the production gateway can build its routing map at refresh time. The fix is test-only and validated locally (BUILD SUCCESS, skipped=1 without CI DB properties). Batch 2D must not be marked FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED until a new GitHub Actions run shows the 2D step green with skipped=0.
+Batch 2D implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no adapter order-method calls, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. First run `27590822405` failed in `Run nq-app PostgreSQL context smoke` (`venue must not be blank`); the first-run fix replaces the bare `@MockitoBean` adapters with pre-stubbed CI-only fake-venue mocks so the production gateway can build its routing map at refresh time. Second run `27592872701` got past the gateway but failed at `securityFilterChain` (`HttpSecurity` absent under `webEnvironment = NONE`); the second fix switches the smoke to `WebEnvironment.MOCK` (full servlet web context, no server), matching the proven `local`-profile full-context tests. Both fixes are test-only and validated locally (BUILD SUCCESS, skipped=1 without CI DB properties). Batch 2D must not be marked FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED until a new GitHub Actions run shows the 2D step green with skipped=0.
 
 ## Next concrete action
 
