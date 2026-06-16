@@ -2,6 +2,52 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW after FIRST-RUN-FIX #2（2026-06-16）
+
+本轮是 GateK CI Batch 2D first-run review：只评审 FIRST-RUN-FIX #2 推送后的 GitHub Actions run，不修改 workflow、Java / TypeScript / Python 生产代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2D 不得写成 FIRST GREEN RUN CONFIRMED、FROZEN 或 ACCEPTED。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | **失败** | Run `27596768301`，workflow `NQ CI Baseline`，branch `dev`，commit `5b6ec1aafa43d483e8ea0a6385efa09f9d0ec392`，status `completed`，conclusion `failure`。 |
+| `postgres-flyway` job | **失败** | Job `PostgreSQL / Flyway smoke` / `81588559094` completed / failure；唯一失败 step 是 `Run nq-app PostgreSQL context smoke`。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；V1-V31 migration smoke 未回归。 |
+| Schema artifacts | 通过 | Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` success；artifact `nq-postgres-flyway-schema-artifacts` / id `7658307273` uploaded。 |
+| Repository PostgreSQL smoke | 通过 | Step `Run repository PostgreSQL smoke` success；Batch 2C repository smoke 未回归。 |
+| `nq-app` context smoke step | **失败** | Step `Run nq-app PostgreSQL context smoke` failed。 |
+| `NqAppContextPostgresSmokeTest` | 真实执行 / 未 skip / 失败 | CI log 显示 active profile `ci-app-smoke`；Surefire summary tests=1 / skipped=0 / failures=0 / errors=1。 |
+| Failure root cause | 已定位 | Servlet web context 已启动，测试体失败于 `NotAMockException`：`verify(...)` 的 `OkxExchangeAdapter` 不是 Mockito mock，说明 previous named bean override strategy 在 CI context 中不可靠。 |
+| Profile boundary | 通过 / 未首绿 | 未使用 `local` profile；未 as-is 复用 current `test` profile；使用 `nq.app.context.smoke.required=true` 和 CI PostgreSQL service DB properties。 |
+| Seed / AuthSeed boundary | 未发现触发 | `AuthSeedConfiguration` 仍由 profile 边界排除；未发现 admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据。 |
+| Security boundary | 不通过 / P2-P3 residual | 未发现真实生产 credential material；但 CI logs 仍包含 disposable CI PostgreSQL service connection material 的平台级显示，且 Spring Boot 打印 generated development security password；不满足本轮严格 log hygiene 验收项。 |
+| Batch boundary | 通过 | Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- backend/**/db/migration
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- .github
+git diff -- backend
+gh run list --repo ling5477/nexus-quant --branch dev --workflow "NQ CI Baseline" --limit 10 --json databaseId,headSha,headBranch,event,status,conclusion,createdAt,updatedAt,displayTitle,name,workflowName,url
+gh run view 27596768301 --repo ling5477/nexus-quant --json databaseId,headSha,headBranch,event,status,conclusion,createdAt,updatedAt,displayTitle,url,jobs
+rg "@ActiveProfiles\(\"local\"\)|AuthSeedConfiguration|ApplicationRunner|CommandLineRunner|Scheduled|Scheduler|Testcontainers|OKX|Binance|Bybit|Gate|Coinbase|Kraken|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key|printenv|^\s*env\s*$|continue-on-error|skipTests" backend .github docs/current
+```
+
+GitHub Actions job details / steps / decoded logs / artifact metadata 通过 GitHub MCP 复核。`gh run view --log --job 81588559094` 因 GitHub REST logs endpoint 返回 `HTTP 403: Must have admin rights to Repository`；已降级使用 GitHub MCP decoded logs，可信度高，因为 `gh` run metadata、MCP jobs / steps / logs 和 artifact metadata 一致。
+
+本轮未运行本地 `mvn -f backend/pom.xml test`、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮为 CI first-run review + docs/current 状态记录，且 CI 已在 Batch 2D step 失败。下一步只能进入 targeted first-run fix 后重新验证。
+
+Review decision: FAIL / FIRST-RUN-FIX REQUIRED。Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX` only。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW 验证记录（2026-06-16）
 
 本轮是 GateK CI Batch 2D first-run review：只评审包含 Batch 2D 变更的 GitHub Actions run，不修改 workflow、Java / TypeScript / Python 生产代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2D 不得写成 FIRST GREEN RUN CONFIRMED、FROZEN 或 ACCEPTED。

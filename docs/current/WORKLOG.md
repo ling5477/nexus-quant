@@ -2,6 +2,50 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW after FIRST-RUN-FIX #2
+
+日期：2026-06-16
+
+### 目标
+
+只评审 FIRST-RUN-FIX #2 推送后的 GitHub Actions run，确认 `nq-app` context smoke 是否在 CI PostgreSQL service DB 上真实执行并通过。本轮不进入 Batch 2E，不进入 Batch 3-5，不修改业务代码、workflow、测试代码、migration、frontend、research、scripts 或 deploy，只同步允许的 `docs/current` 状态记录。
+
+### 评审证据
+
+- GitHub Actions run `27596768301`，workflow `NQ CI Baseline`，branch `dev`，commit `5b6ec1aafa43d483e8ea0a6385efa09f9d0ec392`：completed / failure。
+- jobs：Diff check / Frontend build / Backend Maven test / Research quality gate 均 success；`PostgreSQL / Flyway smoke` failed。
+- `PostgreSQL / Flyway smoke` job `81588559094`：仅 step `Run nq-app PostgreSQL context smoke` 失败。
+- Step `Run empty database Flyway smoke`：success；V1-V31 migration smoke 未回归。
+- Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts`：success；artifact `nq-postgres-flyway-schema-artifacts` / id `7658307273` uploaded。
+- Step `Run repository PostgreSQL smoke`：success；Batch 2C repository smoke 未回归。
+- `NqAppContextPostgresSmokeTest`：真实执行且未 skip；active profile `ci-app-smoke`；Surefire summary tests=1 / skipped=0 / failures=0 / errors=1。
+- Root cause：servlet web context 已启动，测试体失败于 `NotAMockException`；`verify(...)` 的 `OkxExchangeAdapter` 不是 Mockito mock，说明 FIRST-RUN-FIX #2 里的 REST adapter bean override / verification strategy 在 CI context 中不可靠。
+
+### 边界确认
+
+- 未使用 `local` profile；未 as-is 复用 current `test` profile。
+- 未发现 `AuthSeedConfiguration` 执行、admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据。
+- 未发现成功 order / cancel / transfer / withdraw 路径。
+- 未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider / real exchange adapter。
+- Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+- CI logs 未发现真实生产 credential material；但仍有 disposable CI PostgreSQL service connection material 的平台级显示和 Spring Boot generated development security password，严格 log hygiene 验收项未满足。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+FAIL / FIRST-RUN-FIX REQUIRED。Batch 2D 不能标记为 FIRST GREEN RUN CONFIRMED，不能标记为 FROZEN / ACCEPTED。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX` only。修复范围只允许 `.github/workflows/ci.yml`、`backend/nq-app` test 和 `docs/current` 状态记录；不得混入 Batch 2E、Batch 3-5、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW
 
 日期：2026-06-16
