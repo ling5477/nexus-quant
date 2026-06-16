@@ -2,6 +2,86 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2E-FREEZE-REVIEW
+
+日期：2026-06-16
+
+### 目标
+
+冻结 Batch 2E seed watcher cleanup baseline：确认删除 backend job background seed watcher + 显式 post-Flyway CI-only legacy `accounts` fixture 的方案可作为当前 `dev` CI 基线。本轮只同步允许的 `docs/current` 状态记录；不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### GitHub Actions evidence
+
+- Run: `27614046762`。
+- Workflow: `NQ CI Baseline`。
+- Branch: `dev`。
+- Commit: `50c4c65e956b207bcfa47b4ed2027b452d3809fc`。
+- Title: `ci(gatek): add explicit backend CI account fixture`。
+- Result: completed / success。
+
+### Job freeze review
+
+- `Diff check` / job `81645397268`: success。
+- `Frontend build` / job `81645397229`: success。
+- `Research quality gate` / job `81645397244`: success。
+- `Backend Maven test` / job `81645397239`: success。
+  - `Prepare backend CI legacy account fixture`: success。
+  - `Run backend tests`: success。
+  - `ResearchBacktestHappyPathLocalTest`: tests=1 / failures=0 / errors=0 / skipped=0。
+  - Backend Maven reactor: 23/23 modules SUCCESS；`nq-app` SUCCESS；`BUILD SUCCESS`。
+- `PostgreSQL / Flyway smoke` / job `81645397302`: success。
+  - Empty DB Flyway smoke, schema artifacts, repository PostgreSQL smoke, and `nq-app` context smoke all success。
+  - `NqAppContextPostgresSmokeTest`: tests=1 / skipped=0 / failures=0 / errors=0。
+
+### Explicit fixture freeze review
+
+- Fixture runs after Flyway migrate / validate reaches V31 in the backend job disposable PostgreSQL DB。
+- Fixture inserts only one CI-only legacy `accounts` row:
+  - `account_code='ci-backend-test-account'`
+  - `venue='PAPER'`
+  - `status='ACTIVE'`
+- Fixture fail-closes if it creates any `exchange_accounts` row linked to that account。
+- Fixture fail-closes if any `exchange_account_credentials` row exists。
+- No credential rows, no seed users, no real exchange accounts, no credential material。
+
+### Seed watcher removal freeze review
+
+- Background seed watcher remains removed。
+- No `public.accounts` polling。
+- No `ci-local-account`。
+- No `seed_pid` / `wait` / watcher exit-status merge。
+- `Run backend tests` remains plain `mvn -f backend/pom.xml test` after the explicit fixture step。
+
+### Boundary confirmation
+
+- Batch 2E 当前为 FROZEN / ACCEPTED。
+- Batch 3 no-outbound guard：PENDING。
+- Batch 4 security guard / secret scan：PENDING。
+- Batch 5 frontend E2E hardening：PENDING。
+- AI：NOT STARTED。
+- DH runtime：NOT INTEGRATED。
+- LIVE：DISABLED。
+- RealClient / real provider / real exchange adapter：NOT IMPLEMENTED。
+- 未读取、打印、复制或输出真实 credential material；未调用 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+
+### 验证记录
+
+- `git status --short`：freeze review 前为空；review 后仅允许的 `docs/current` 文档变更。
+- `git diff --check`：通过。
+- `git diff --stat`：已检查。
+- `git show --stat --oneline --name-only HEAD`：已检查。
+- `git diff -- .github` / `backend` / `frontend` / `research` / `scripts` / `deploy` / `backend/**/db/migration`：均无输出。
+- `rg "ci-local-account|background seed|INSERT INTO accounts|seed_pid|to_regclass|exchange_account_credentials|skipTests|continue-on-error|baselineOnMigrate|flyway clean|apiKey|secret|passphrase|token|private key|credential material|LIVE|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github docs/current`：已执行；workflow 命中为允许的 explicit fixture、防护查询、Flyway safety config 和 schema artifact redaction check；docs 命中为历史记录、禁止项或边界说明。
+- GitHub MCP run jobs / backend job logs / `postgres-flyway` job logs：已复核。
+
+### Review decision
+
+PASS / FROZEN / ACCEPTED。P0=0，P1=0。Batch 2E seed watcher cleanup baseline 冻结为当前 `dev` CI baseline。
+
+### 下一步
+
+Next concrete action 只能是 Batch 3 pre-planning、Batch 4 / Batch 5 later planning，或暂停 CI 线。不得直接进入 Batch 3-5 implementation、AI、DH runtime、LIVE、RealClient、real provider、real exchange adapter 或 credential material work。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW-AFTER-FIX
 
 日期：2026-06-16
@@ -54,7 +134,7 @@
 
 ### Boundary confirmation
 
-- Batch 2E 当前为 FIRST GREEN RUN CONFIRMED，不是 FROZEN / ACCEPTED。
+- Batch 2E 在 first-green review 当时为 FIRST GREEN RUN CONFIRMED，不是 FROZEN / ACCEPTED；该状态已由后续 freeze review 关闭为 FROZEN / ACCEPTED。
 - Batch 3 no-outbound guard：PENDING。
 - Batch 4 security guard / secret scan：PENDING。
 - Batch 5 frontend E2E hardening：PENDING。
@@ -77,11 +157,11 @@
 
 ### Review decision
 
-PASS / ACCEPTED FOR FIRST GREEN RUN。P0=0，P1=0。Batch 2E 可标记为 FIRST GREEN RUN CONFIRMED，但不得标记为 FROZEN / ACCEPTED。
+PASS / ACCEPTED FOR FIRST GREEN RUN。P0=0，P1=0。Batch 2E 在该 checkpoint 可标记为 FIRST GREEN RUN CONFIRMED，但不得标记为 FROZEN / ACCEPTED；后续 freeze review 已关闭该 pending freeze 状态。
 
 ### 下一步
 
-Next concrete action 只能是 `NQ-CI-POSTGRES-FLYWAY-2E-FREEZE-REVIEW`、Batch 3 pre-planning，或暂停 CI 线。
+Next concrete action 当时只能是 `NQ-CI-POSTGRES-FLYWAY-2E-FREEZE-REVIEW`、Batch 3 pre-planning，或暂停 CI 线；当前已完成 2E freeze review。
 
 ## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX
 
