@@ -2,6 +2,23 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL（2026-06-17）
+
+本轮是 GateK CI Batch 3B no-outbound guard 最小实现：新增 merge-blocking `No-outbound guard` job，并在 `nq-app` test scope 增加 deterministic exchange denylist guard。状态为 `IMPLEMENTED / PENDING FIRST CI RUN`；Batch 4 security guard / secret scan 和 Batch 5 frontend E2E hardening 仍 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| CI guard job | 已实现 | `.github/workflows/ci.yml` 新增 `no-outbound-guard` job；不注入 repository secrets；不访问真实交易所；显式检查 forbidden exchange credential / LIVE / real provider env names 为空。 |
+| Denylist coverage | 已实现 | workflow 与 `ExchangeNoOutboundGuard` 显式覆盖 OKX / Binance / Binance testnet / Binance WS / Bybit / Bitget / Gate / Coinbase / Kraken / Crypto.com / Hyperliquid host set。 |
+| Runtime guard | 已实现 | `ExchangeNoOutboundGuard` 通过 test-scope `ProxySelector` 在 DNS / HTTP / WS connect 前 fail closed；`NoOutboundExchangeGuardTest` 用受控 denylisted-host probe 证明 fail closed。 |
+| App context smoke guard | 已实现 | `NqAppContextPostgresSmokeTest` 在 context 初始化前安装同一 guard；继续禁用 scheduling / recovery / catalog sync / WS；断言 OKX / Binance WS mock 无 interaction。 |
+| Permission probe boundary | 已实现 | app context smoke 断言默认 `ExchangeCredentialPermissionProbePort` 为 `NoRealExchangeCredentialPermissionProbePort`；既有 service tests 继续覆盖 LIVE credential probe rejected。 |
+| Target guard test | 通过 | `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NoOutboundExchangeGuardTest '-Dsurefire.failIfNoSpecifiedTests=false' '-Dnq.no-outbound.guard.required=true'`：3 tests / 0 failures / 0 errors / 0 skipped，`BUILD SUCCESS`。 |
+| App smoke selection | 通过（本地 skipped） | `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'`：1 test selected / skipped=1（本地无 CI DB required properties），`BUILD SUCCESS`；真实 startup proof 等待 GitHub Actions first run。 |
+| Full backend Maven | 通过 | `mvn -f backend/pom.xml test`：23 个 reactor module 全部 `SUCCESS`，最终 `BUILD SUCCESS`；`nq-app` 56 tests / 0 failures / 0 errors / 2 skipped。 |
+
+Pending first CI run: GitHub Actions first run 尚未执行；不得写成 FIRST GREEN / FROZEN / ACCEPTED。下一步只能是 Batch 3 first-run review、Batch 3 first-run fix，或暂停 CI 线。
+
 ## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-PLAN（2026-06-16）
 
 本轮是 GateK CI Batch 3 no-outbound guard planning-only：只规划后续如何证明 CI / Maven test / app context smoke 默认不会访问真实交易所、不会读取真实凭证、不会触发 LIVE / real provider / RealClient 路径。不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 3 当前为 PLAN ONLY / NOT IMPLEMENTED；Batch 4 security guard / secret scan 和 Batch 5 frontend E2E hardening 仍 PENDING。

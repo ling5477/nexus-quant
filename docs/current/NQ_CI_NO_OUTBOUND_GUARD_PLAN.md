@@ -2,7 +2,7 @@
 
 任务：NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-PLAN
 日期：2026-06-16
-状态：PLAN ONLY / NOT IMPLEMENTED；Batch 3A inventory / plan review ready；Batch 3B-3E NOT STARTED；Batch 4 security guard / secret scan PENDING；Batch 5 frontend E2E hardening PENDING
+状态：Batch 3B IMPLEMENTED / PENDING FIRST CI RUN；Batch 3D first-run review PENDING；Batch 3E freeze review PENDING；Batch 4 security guard / secret scan PENDING；Batch 5 frontend E2E hardening PENDING
 
 ## Current CI baseline
 
@@ -18,7 +18,7 @@
 - Batch 2D `nq-app` context smoke：FROZEN / ACCEPTED。
 - Batch 2E seed watcher cleanup：FROZEN / ACCEPTED。
 - GateK CI Batch 2 PostgreSQL / Flyway hardening：完成。
-- Batch 3 no-outbound guard：PLAN ONLY / NOT IMPLEMENTED。
+- Batch 3 no-outbound guard：IMPLEMENTED / PENDING FIRST CI RUN。
 - Batch 4 security guard / secret scan：PENDING。
 - Batch 5 frontend E2E hardening：PENDING。
 - AI：NOT STARTED。
@@ -57,7 +57,7 @@ Forbidden in this planning batch:
 
 | Area | Current evidence | Risk class for Batch 3 | Required proof |
 | --- | --- | --- | --- |
-| GitHub Actions baseline | `.github/workflows/ci.yml` currently has `diff-check`、`backend`、`postgres-flyway`、`frontend`、`research` jobs. No `no-outbound` job exists. | P0 if any existing job can reach exchange hosts without detection. | Batch 3B must add a dedicated guard and make it fail closed before treating CI as no-outbound proof. |
+| GitHub Actions baseline | `.github/workflows/ci.yml` currently has `diff-check`、`no-outbound-guard`、`backend`、`postgres-flyway`、`frontend`、`research` jobs. `no-outbound-guard` is implemented and pending first CI run. | P0 if any existing job can reach exchange hosts without detection. | Batch 3D must review first-run evidence before freeze. |
 | Backend Maven test | `backend` job runs `mvn -f backend/pom.xml test` after CI-only PostgreSQL fixture. It does not install a network deny guard. | P1: default Maven tests can only be trusted by current test design, not by process-level enforcement. | Batch 3C must prove full backend Maven test cannot resolve/connect to denylisted exchange hosts. |
 | `postgres-flyway` job | Runs empty DB Flyway smoke, schema artifacts, repository PostgreSQL smoke, and `NqAppContextPostgresSmokeTest`. | P1: Batch 2D only proves context startup and mocked WS no interaction; it explicitly defers REST adapter interception to Batch 3. | Add JVM/domain deny and log scan around app context smoke. |
 | OKX adapter | `OkxExchangeAdapter` default construction reads `OkxRuntimeConfig.fromSystemEnv()` and default `baseUrl=https://www.okx.com`; constructors create HTTP clients and caches but current tests prove construction should not fetch public instruments. | P1: explicit adapter method calls, instrument cache reads, reconcile/recovery, or catalog sync can still outbound. | Guard must catch any request to `okx.com` / `www.okx.com` / `my.okx.com`, including public instruments and private trade endpoints. |
@@ -114,6 +114,57 @@ Implementation may include additional known exchange/testnet/WS hosts, but must 
 | Test-level assertions | Keep local fake server tests for adapter behavior and add no-outbound assertions for app context / Maven default profile as separate tests. Manual live diagnostics must be skipped unless an explicit property is set, and CI must assert the property is absent. | Required in Batch 3C. |
 | GitHub Actions job-level guard | Add a dedicated `no-outbound` job or guarded backend step with no exchange credentials, explicit denylist env, and fail-closed log scan. It should become required only after first green + freeze review. | Required in Batch 3B, promoted after Batch 3D/3E. |
 
+## Batch 3B implementation baseline
+
+本轮 `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL` 已完成最小 no-outbound guard baseline，状态为 `IMPLEMENTED / PENDING FIRST CI RUN`。该状态只表示 workflow 与 test-scope guard 已落地，尚未取得 GitHub Actions first green evidence；不得写成 `FROZEN / ACCEPTED`。
+
+已实现内容：
+
+- `.github/workflows/ci.yml` 新增 merge-blocking `No-outbound guard` job。
+- `No-outbound guard` job 不注入 repository secrets，不需要真实 credential，不访问真实交易所。
+- job 显式检查 forbidden exchange credential / LIVE / real provider env names 为空。
+- job 显式检查 denylist 覆盖 OKX / Binance / Binance testnet / Binance WS / Bybit / Bitget / Gate / Coinbase / Kraken / Crypto.com / Hyperliquid host set。
+- job 运行 `NoOutboundExchangeGuardTest`，通过 `ExchangeNoOutboundGuard` 在 `ProxySelector` selection 阶段对受控 denylisted-host probe fail closed。
+- `NqAppContextPostgresSmokeTest` 在 Spring context 初始化前安装同一 `ExchangeNoOutboundGuard`，并继续断言 OKX / Binance WS client 为 mock 且无 interaction。
+- `NqAppContextPostgresSmokeTest` 新增默认 `ExchangeCredentialPermissionProbePort` 类型断言，固定为 `NoRealExchangeCredentialPermissionProbePort`。
+- 既有 `CredentialPermissionProbeServiceTest` 继续覆盖 `LIVE_CREDENTIAL_BLOCKED`，证明 LIVE credential probe 在调用 port 前被 Service gate 拒绝。
+
+Denylist baseline：
+
+- `okx.com`
+- `www.okx.com`
+- `my.okx.com`
+- `binance.com`
+- `api.binance.com`
+- `fapi.binance.com`
+- `dapi.binance.com`
+- `testnet.binance.vision`
+- `ws-api.binance.com`
+- `ws-api.testnet.binance.vision`
+- `stream.binance.com`
+- `stream.binancefuture.com`
+- `bybit.com`
+- `api.bybit.com`
+- `bitget.com`
+- `gate.io`
+- `api.gateio.ws`
+- `coinbase.com`
+- `api.coinbase.com`
+- `kraken.com`
+- `api.kraken.com`
+- `crypto.com`
+- `hyperliquid.xyz`
+- `api.hyperliquid.xyz`
+
+Batch 3B local validation：
+
+```powershell
+mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NoOutboundExchangeGuardTest '-Dsurefire.failIfNoSpecifiedTests=false' '-Dnq.no-outbound.guard.required=true'
+mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'
+```
+
+结果：`NoOutboundExchangeGuardTest` 3 tests / 0 failures / 0 errors / 0 skipped，`BUILD SUCCESS`；`NqAppContextPostgresSmokeTest` 本地无 CI DB required properties，按设计 skipped=1，`BUILD SUCCESS`。真实 app context no-outbound proof 需等待 GitHub Actions `postgres-flyway` job first run。
+
 ## Batch 3 implementation strategy
 
 ### Batch 3A: no-outbound inventory / plan review
@@ -128,7 +179,7 @@ Implementation may include additional known exchange/testnet/WS hosts, but must 
 
 ### Batch 3B: workflow / CI guard minimal implementation
 
-- Status target after implementation: IMPLEMENTED / PENDING FIRST CI RUN.
+- Status: IMPLEMENTED / PENDING FIRST CI RUN.
 - Scope:
   - Add the minimal CI no-outbound guard wiring.
   - Add env allowlist / live diagnostic flag absence checks.
@@ -220,20 +271,20 @@ git diff -- backend/**/db/migration
 rg "OKX|Binance|Bybit|Bitget|Gate|Coinbase|Kraken|Crypto|Hyperliquid|WebSocket|RestTemplate|WebClient|HttpClient|OkHttp|apiKey|secret|passphrase|token|private key|LIVE|RealClient|permission-probe|NoReal|scheduler|recovery|monitor" backend .github docs/current
 ```
 
-Implementation validation for future Batch 3B/3C:
+Implementation validation for Batch 3B/3C:
 
 ```powershell
 mvn -f backend/pom.xml test
 mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest -Dnq.app.context.smoke.required=true
 ```
 
-Future CI validation must additionally prove the denylist guard runs and fails closed. The exact command belongs to Batch 3B implementation.
+CI validation must additionally prove the denylist guard runs and fails closed. First-run evidence belongs to Batch 3D review.
 
 ## Boundary confirmation
 
-- 本文件是 PLAN ONLY / NOT IMPLEMENTED。
-- 未修改 workflow。
-- 未修改 code / tests / migration / frontend / research / scripts / deploy。
+- Batch 3B 是 IMPLEMENTED / PENDING FIRST CI RUN。
+- 已修改 workflow 与 backend/nq-app test-scope guard / smoke test。
+- 未修改 backend production code / migration / frontend / research / scripts / deploy。
 - 未新增 API。
 - 未读取或输出真实 credential material。
 - 未调用真实交易所。
@@ -243,10 +294,10 @@ Future CI validation must additionally prove the denylist guard runs and fails c
 
 ## Review decision
 
-PLAN READY FOR REVIEW。P0/P1 planning blockers: 0。
+IMPLEMENTED / PENDING FIRST CI RUN。P0/P1 blockers: 0。
 
-The plan is acceptable as Batch 3 implementation baseline if review accepts the JVM deny guard + CI job guard + backend test isolation proof split. It is not an implementation result.
+本轮已完成最小 CI no-outbound guard baseline；尚未取得 GitHub Actions first run evidence，不能冻结。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-FIX`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL`, or pause the CI line.
+Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-FIX`, or pause the CI line.

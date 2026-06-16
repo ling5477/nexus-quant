@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard PLAN ONLY / NOT IMPLEMENTED；Batch 4-5 PENDING
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard IMPLEMENTED / PENDING FIRST CI RUN；Batch 4-5 PENDING
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 已在既有 `postgres-flyway` job 中实现 schema metadata artifact generation / upload，并由 GitHub Actions run `27521750442` first green + freeze review 固化为 FROZEN / ACCEPTED；Batch 2C repository-only real PostgreSQL smoke 已由 GitHub Actions run `27535619157` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2D `nq-app` context smoke 已由 GitHub Actions run `27601707199` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2E seed watcher cleanup 已由 GitHub Actions run `27614046762` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 3 no-outbound guard 当前仅完成 planning，仍为 PLAN ONLY / NOT IMPLEMENTED；`.github` 仍不得包含其他未审查 workflow。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 已在既有 `postgres-flyway` job 中实现 schema metadata artifact generation / upload，并由 GitHub Actions run `27521750442` first green + freeze review 固化为 FROZEN / ACCEPTED；Batch 2C repository-only real PostgreSQL smoke 已由 GitHub Actions run `27535619157` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2D `nq-app` context smoke 已由 GitHub Actions run `27601707199` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2E seed watcher cleanup 已由 GitHub Actions run `27614046762` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 3 no-outbound guard 已新增 `no-outbound-guard` job 和 test-scope denylist guard，当前为 IMPLEMENTED / PENDING FIRST CI RUN；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
@@ -386,15 +386,16 @@ Completed / frozen:
 
 ### Batch 3: NQ-CI-NO-OUTBOUND-GUARD
 
-Status: PLAN ONLY / NOT IMPLEMENTED。Planning document: `docs/current/NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`。
+Status: IMPLEMENTED / PENDING FIRST CI RUN。Planning / implementation document: `docs/current/NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`。
 
-Must implement:
+Implemented baseline:
 
 - Known exchange host deny list: OKX, Binance, Bybit, Bitget, Gate, Coinbase, Kraken, Crypto.com, Hyperliquid and required host variants。
-- Fake-server assertions for adapter HTTP behavior。
-- Permission probe default NoReal guard。
-- Logs/reports scan for outbound failures and real endpoint requests。
-- JVM / test-profile / CI env allowlist guard proving default CI and Maven tests do not access real exchange hosts or real credential material。
+- `No-outbound guard` GitHub Actions job with forbidden exchange credential env checks and explicit denylist coverage check。
+- Test-scope `ExchangeNoOutboundGuard` / `NoOutboundExchangeGuardTest` fail closed before DNS/HTTP/WS connect。
+- `NqAppContextPostgresSmokeTest` installs the guard at context initialization and asserts WS clients are mocked/no-interaction。
+- Permission probe default NoReal guard is asserted in the app context smoke; LIVE credential probe rejection remains covered by backend service tests。
+- First GitHub Actions evidence is still pending; do not freeze until Batch 3D review confirms the first run.
 
 ### Batch 4: NQ-CI-SECURITY-GUARD
 
@@ -459,6 +460,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-FIX`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL`, or pause the CI line。
+Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-FIX`, or pause the CI line。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.

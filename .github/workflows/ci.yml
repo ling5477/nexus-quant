@@ -36,6 +36,132 @@ jobs:
             git show --check --pretty=format: HEAD
           fi
 
+  no-outbound-guard:
+    name: No-outbound guard
+    runs-on: ubuntu-latest
+
+    env:
+      CI: "true"
+      NQ_NO_OUTBOUND_DENYLIST: >-
+        okx.com
+        www.okx.com
+        my.okx.com
+        binance.com
+        api.binance.com
+        fapi.binance.com
+        dapi.binance.com
+        testnet.binance.vision
+        ws-api.binance.com
+        ws-api.testnet.binance.vision
+        stream.binance.com
+        stream.binancefuture.com
+        bybit.com
+        api.bybit.com
+        bitget.com
+        gate.io
+        api.gateio.ws
+        coinbase.com
+        api.coinbase.com
+        kraken.com
+        api.kraken.com
+        crypto.com
+        hyperliquid.xyz
+        api.hyperliquid.xyz
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Verify no exchange credential env is injected
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          forbidden_env_names=(
+            NQ_OKX_API_KEY
+            NQ_OKX_API_SECRET
+            NQ_OKX_API_PASSPHRASE
+            NQ_OKX_DOME_API_KEY
+            NQ_OKX_DOME_API_SECRET
+            NQ_OKX_DOME_API_PASSPHRASE
+            NQ_BINANCE_DOME_API_KEY
+            NQ_BINANCE_DOME_API_SECRET
+            NQ_BINANCE_DOME_PRIVATE_KEY
+            NQ_BINANCE_DOME_PRIVATE_KEY_PATH
+            NQ_BINANCE_REAL_API_KEY
+            NQ_BINANCE_REAL_API_SECRET
+            NQ_BINANCE_REAL_PRIVATE_KEY
+            NQ_BINANCE_REAL_PRIVATE_KEY_PATH
+            NQ_BINANCE_WS_DIAGNOSTIC_ENABLED
+            NQ_BINANCE_WS_LIVE_DIAGNOSTIC
+            NQ_LIVE_ENABLED
+            NQ_REAL_PROVIDER_ENABLED
+            NQ_REAL_CLIENT_ENABLED
+          )
+
+          for name in "${forbidden_env_names[@]}"; do
+            if [[ -n "${!name-}" ]]; then
+              echo "Forbidden exchange credential/live env is set: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Verify exchange denylist coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_hosts=(
+            okx.com
+            www.okx.com
+            my.okx.com
+            binance.com
+            api.binance.com
+            fapi.binance.com
+            dapi.binance.com
+            testnet.binance.vision
+            ws-api.binance.com
+            ws-api.testnet.binance.vision
+            stream.binance.com
+            stream.binancefuture.com
+            bybit.com
+            api.bybit.com
+            bitget.com
+            gate.io
+            api.gateio.ws
+            coinbase.com
+            api.coinbase.com
+            kraken.com
+            api.kraken.com
+            crypto.com
+            hyperliquid.xyz
+            api.hyperliquid.xyz
+          )
+
+          for host in "${required_hosts[@]}"; do
+            if [[ " ${NQ_NO_OUTBOUND_DENYLIST} " != *" ${host} "* ]]; then
+              echo "No-outbound denylist missing required host: ${host}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Run no-outbound guard tests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mvn -f backend/pom.xml -pl nq-app -am test \
+            -Dtest=NoOutboundExchangeGuardTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dnq.no-outbound.guard.required=true
+
   backend:
     name: Backend Maven test
     runs-on: ubuntu-latest

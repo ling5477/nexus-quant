@@ -19,7 +19,7 @@
 - Batch 2C repository real PostgreSQL smoke：FROZEN / ACCEPTED；GitHub Actions run `27535619157` / job `81384164182` completed / success；freeze review 已接受其作为当前 `dev` repository-only real DB 最小验证基线；2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；详见 `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
 - Batch 2D nq-app context smoke：FROZEN / ACCEPTED；GitHub Actions run `27601707199` confirmed `NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0；freeze review accepted it as the current `dev` `nq-app` context smoke baseline；详见 `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`。
 - Batch 2E CI-only seed watcher cleanup：FROZEN / ACCEPTED；已删除 backend job background seed watcher，本地 `mvn -f backend/pom.xml test` BUILD SUCCESS，GitHub Actions run `27610448572` 在 `Backend Maven test` / `Run backend tests` step 失败，根因为 `ResearchBacktestHappyPathLocalTest` 依赖 legacy `accounts` row；first-run fix 已改为迁移完成后同步插入一条 CI-only legacy `accounts` fixture，并显式校验不创建 `exchange_accounts` / credential rows；GitHub Actions run `27614046762` confirmed `Backend Maven test` and `PostgreSQL / Flyway smoke` completed / success；freeze review P0/P1=0，接受其为当前 `dev` seed watcher cleanup CI baseline；详见 `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`。
-- Batch 3 no-outbound guard：PLAN ONLY / NOT IMPLEMENTED。
+- Batch 3 no-outbound guard：IMPLEMENTED / PENDING FIRST CI RUN。
 - Batch 4 security guard / secret scan：PENDING。
 - Batch 5 frontend E2E hardening：PENDING。
 - AI: NOT STARTED。
@@ -289,7 +289,7 @@ CI Batch 2 must enforce these boundaries by configuration and review:
 - 不注入真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API key、secret、passphrase、private key、token、cookie。
 - 不设置 LIVE enabled，不启动真实 LIVE 下单、撤单、转账、提现。
 - 不连接真实 NQ / DH runtime，不实现 NQ RealClient，不接 DH runtime。
-- 不访问真实交易所 host；正式 no-outbound guard 仍是 Batch 3，不能在本轮写成已实现。
+- 不访问真实交易所 host；正式 no-outbound guard 已由 Batch 3B 最小实现接入 workflow 与 `nq-app` test-scope guard，当前等待 first CI run review，不能写成 FROZEN / ACCEPTED。
 - PostgreSQL CI password 只能是测试默认值，例如 `"123456"`，不得使用 production DB credential。
 - CI logs / artifacts 不得输出 credential material、raw request、raw response、headers、signature、decrypted payload。
 - Permission probe 默认仍为 `NoRealExchangeCredentialPermissionProbePort -> SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`；真实 adapter NOT IMPLEMENTED。
@@ -390,7 +390,7 @@ Freeze review evidence:
 - `NqAppContextPostgresSmokeTest`: active profile `ci-app-smoke`; tests=1 / skipped=0 / failures=0 / errors=0; `nq-app SUCCESS`; Maven `BUILD SUCCESS`。
 - P0/P1 findings: 0。
 - CI log hygiene residual: disposable CI-only PostgreSQL service values and a generated development security password remain P3 residuals, not P0/P1 blockers and not real credential material leakage。
-- Freeze boundary: Batch 2D accepts only context startup; it does not implement or prove Batch 3 no-outbound guard. Batch 2E seed watcher cleanup is now FROZEN / ACCEPTED after `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`, follow-up run `27614046762`, and the 2E freeze review. Batch 3 no-outbound guard is PLAN ONLY / NOT IMPLEMENTED; Batch 4 / Batch 5 remain PENDING。
+- Freeze boundary: Batch 2D accepts only context startup; Batch 3B now adds the dedicated no-outbound guard and app-context `ProxySelector` interception, but first CI run evidence is still pending. Batch 2E seed watcher cleanup is now FROZEN / ACCEPTED after `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`, follow-up run `27614046762`, and the 2E freeze review. Batch 3 no-outbound guard is IMPLEMENTED / PENDING FIRST CI RUN; Batch 4 / Batch 5 remain PENDING。
 
 ### Batch 2E: CI-only seed watcher cleanup
 
@@ -464,8 +464,8 @@ Notes:
 
 PASS / FROZEN / ACCEPTED for Batch 2A；PASS / FROZEN / ACCEPTED for Batch 2B；PASS / FROZEN / ACCEPTED for Batch 2C；PASS / FROZEN / ACCEPTED for Batch 2D；PASS / FROZEN / ACCEPTED for Batch 2E。
 
-Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。Batch 2C repository-only real PostgreSQL smoke 已由 GitHub Actions run `27535619157` first green confirmed，并经 freeze review 接受为当前 `dev` repository real DB 最小验证基线。2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为当前 Batch 2C CI log hygiene baseline。Batch 2D `nq-app` context smoke 已由 GitHub Actions run `27601707199` first green confirmed，并经 freeze review 接受为当前 `dev` app context smoke baseline。Batch 2E 已冻结为当前 `dev` seed watcher cleanup CI baseline：backend job background seed watcher 已删除；GitHub Actions first run `27610448572` 证明 backend Maven test 失败根因为 legacy `accounts` fixture ownership；first-run fix 已改为迁移完成后同步插入一条 CI-only legacy `accounts` fixture，并校验不创建 `exchange_accounts` 或 credential rows；GitHub Actions run `27614046762` confirmed `Backend Maven test` and `PostgreSQL / Flyway smoke` completed / success；freeze review P0/P1=0。禁止 `local` profile、current `test` profile as-is、隐式 seed、真实交易所、LIVE、AI、DH runtime、RealClient、real provider 和真实 credential material。不得把本轮写成 Batch 3 no-outbound、Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
+Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smoke baseline。Batch 2B 已冻结为当前 `dev` 的 PostgreSQL / Flyway schema artifact minimal baseline。Batch 2C repository-only real PostgreSQL smoke 已由 GitHub Actions run `27535619157` first green confirmed，并经 freeze review 接受为当前 `dev` repository real DB 最小验证基线。2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为当前 Batch 2C CI log hygiene baseline。Batch 2D `nq-app` context smoke 已由 GitHub Actions run `27601707199` first green confirmed，并经 freeze review 接受为当前 `dev` app context smoke baseline。Batch 2E 已冻结为当前 `dev` seed watcher cleanup CI baseline：backend job background seed watcher 已删除；GitHub Actions first run `27610448572` 证明 backend Maven test 失败根因为 legacy `accounts` fixture ownership；first-run fix 已改为迁移完成后同步插入一条 CI-only legacy `accounts` fixture，并校验不创建 `exchange_accounts` 或 credential rows；GitHub Actions run `27614046762` confirmed `Backend Maven test` and `PostgreSQL / Flyway smoke` completed / success；freeze review P0/P1=0。Batch 3 no-outbound guard 当前为 IMPLEMENTED / PENDING FIRST CI RUN，尚未冻结。禁止 `local` profile、current `test` profile as-is、隐式 seed、真实交易所、LIVE、AI、DH runtime、RealClient、real provider 和真实 credential material。不得把本轮写成 Batch 4 security scan、Batch 5 frontend E2E、AI、DH runtime、LIVE、real provider 或真实 permission probe adapter 已实现。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-FIX`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL`, Batch 4 / Batch 5 later planning, or pause the CI line。Batch 3 no-outbound guard 当前为 PLAN ONLY / NOT IMPLEMENTED；Batch 4 / Batch 5 仍 PENDING。
+Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-FIX`, Batch 4 / Batch 5 later planning, or pause the CI line。Batch 3 no-outbound guard 当前为 IMPLEMENTED / PENDING FIRST CI RUN；Batch 4 / Batch 5 仍 PENDING。

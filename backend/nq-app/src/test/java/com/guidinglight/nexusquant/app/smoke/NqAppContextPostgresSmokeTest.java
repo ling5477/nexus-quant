@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.app.smoke;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mockingDetails;
@@ -7,14 +8,21 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
+import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -53,16 +61,19 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * real OKX/Binance REST adapter beans (whose constructors perform no outbound and read no real
  * credential; the CI runner has none, and {@code OkxBootstrapNoOutboundLocalContextTest} proves
  * bootstrap stays offline) plus mocked WS clients. The smoke asserts the context loads and that no
- * WebSocket client is touched at startup. Adapter-level "no order placement" interception is not a
- * context-load concern and is deferred to the Batch 3 no-outbound guard; here it holds by construction
+ * WebSocket client is touched at startup. Batch 3B adds a JVM {@link ProxySelector} guard through
+ * {@link ExchangeNoOutboundGuard}, so any future startup path that reaches OKX/Binance REST/WS or
+ * another denylisted exchange host fails before DNS/HTTP/WS connect. It still holds by construction
  * because scheduling, OKX recovery, catalog sync, and both WS bridges are disabled, so no business
  * code runs during context load. The datasource (bound to the Flyway-migrated CI PostgreSQL),
- * repositories, domain services, security, scheduler wiring, gateway, and adapters are all the real
- * production beans, so the smoke exercises the real composition root and does not mask wiring risk.
+ * repositories, domain services, security, scheduler wiring, gateway, adapters, and default no-real
+ * permission probe port are wired as production beans, so the smoke exercises the real composition
+ * root and does not mask wiring risk.
  */
 @EnabledIfSystemProperty(named = "nq.app.context.smoke.required", matches = "true")
 @ActiveProfiles("ci-app-smoke")
 @SpringBootTest(classes = NexusQuantApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@ContextConfiguration(initializers = NqAppContextPostgresSmokeTest.NoOutboundInitializer.class)
 @TestPropertySource(properties = {
         "spring.flyway.enabled=false",
         "spring.sql.init.mode=never",
@@ -90,6 +101,9 @@ class NqAppContextPostgresSmokeTest {
     @Autowired
     private ApplicationContext applicationContext;
 
+    @Autowired
+    private ExchangeCredentialPermissionProbePort permissionProbePort;
+
     // WS clients are mocked so the composition root constructs no real WebSocket client and opens no
     // socket at startup. The gateway does not consume these beans, so the override is reliable and a
     // blank-return mock cannot break context refresh (unlike the REST adapters, which the gateway reads
@@ -99,6 +113,11 @@ class NqAppContextPostgresSmokeTest {
 
     @MockitoBean
     private BinanceWsClient binanceWsClient;
+
+    @AfterAll
+    static void restoreNoOutboundGuard() {
+        ExchangeNoOutboundGuard.restoreDefault();
+    }
 
     @DynamicPropertySource
     static void registerCiDatasource(DynamicPropertyRegistry registry) {
@@ -118,8 +137,9 @@ class NqAppContextPostgresSmokeTest {
     @Test
     void shouldLoadNqAppContextWithoutSeedOrExchangeSideEffects() {
         // The full servlet web composition root must start against the Flyway-migrated CI PostgreSQL
-        // database under the CI-only profile, and no mocked WebSocket client may connect while the
-        // context boots. REST adapter no-outbound interception belongs to the later Batch 3 guard.
+        // database under the CI-only profile. The Batch 3B guard makes unexpected exchange URI
+        // selection a hard failure; mocked WS clients and the default NoReal permission probe prove
+        // startup does not open private WS or real credential probe paths.
         assertNotNull(applicationContext);
         assertTrue(
                 java.util.Arrays.asList(applicationContext.getEnvironment().getActiveProfiles())
@@ -128,6 +148,21 @@ class NqAppContextPostgresSmokeTest {
         assertTrue(mockingDetails(okxWsClient).isMock());
         assertTrue(mockingDetails(binanceWsClient).isMock());
         verifyNoInteractions(okxWsClient, binanceWsClient);
+        assertTrue(permissionProbePort instanceof NoRealExchangeCredentialPermissionProbePort);
+        assertEquals(0, ExchangeNoOutboundGuard.deniedSelections());
+    }
+
+    static final class NoOutboundInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+        @Override
+        public void initialize(ConfigurableApplicationContext applicationContext) {
+            ExchangeNoOutboundGuard.install();
+            applicationContext.addApplicationListener(event -> {
+                if (event instanceof ContextClosedEvent) {
+                    ExchangeNoOutboundGuard.restoreDefault();
+                }
+            });
+        }
     }
 
     private record SmokeConfig(String url, String user, String password) {

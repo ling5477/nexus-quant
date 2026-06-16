@@ -2,6 +2,53 @@
 
 日期：2026-05-16
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL
+
+日期：2026-06-17
+
+### 目标
+
+实现 GateK CI Batch 3B 最小 no-outbound guard baseline，证明默认 CI / backend Maven test / `nq-app` app context smoke 不应访问真实交易所、不读取真实 credential material、不触发 LIVE / real provider / RealClient 路径。本轮不进入 Batch 4 secret scan，不进入 Batch 5 frontend E2E，不接真实交易所。
+
+### 修改范围
+
+- `.github/workflows/ci.yml`：新增 merge-blocking `No-outbound guard` job。
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/ExchangeNoOutboundGuard.java`：新增 test-scope `ProxySelector` denylist guard。
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NoOutboundExchangeGuardTest.java`：新增受控 denylisted-host probe、localhost fake-server 允许、CI forbidden env absence 测试。
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java`：接入 guard initializer，断言 WS mock 无 interaction，断言 default permission probe port 为 NoReal。
+- 同步 `docs/current/NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_PLAN.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。
+
+### 实现摘要
+
+- `No-outbound guard` job 不需要 repository secrets，不注入真实 exchange credential，不访问真实外网交易所。
+- Denylist 显式覆盖 `okx.com`、`www.okx.com`、`my.okx.com`、`binance.com`、`api.binance.com`、`fapi.binance.com`、`dapi.binance.com`、`testnet.binance.vision`、`ws-api.binance.com`、`ws-api.testnet.binance.vision`、`stream.binance.com`、`stream.binancefuture.com`、`bybit.com`、`api.bybit.com`、`bitget.com`、`gate.io`、`api.gateio.ws`、`coinbase.com`、`api.coinbase.com`、`kraken.com`、`api.kraken.com`、`crypto.com`、`hyperliquid.xyz`、`api.hyperliquid.xyz`。
+- Runtime guard 使用 `ProxySelector` 在 JDK `HttpClient` / WebSocket 发起真实连接前 fail closed；localhost / 127.0.0.1 fake server 流量保持允许。
+- `NqAppContextPostgresSmokeTest` 继续显式关闭 `spring.task.scheduling.enabled`、catalog sync、OKX recovery、OKX/Binance WS，并新增 guard interception；真实 CI app context startup 仍等待 first run。
+
+### 本地验证
+
+- `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NoOutboundExchangeGuardTest '-Dsurefire.failIfNoSpecifiedTests=false' '-Dnq.no-outbound.guard.required=true'`：`BUILD SUCCESS`，`NoOutboundExchangeGuardTest` 3 tests / 0 failures / 0 errors / 0 skipped。
+- `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'`：`BUILD SUCCESS`，本地无 CI DB required properties，`NqAppContextPostgresSmokeTest` skipped=1，符合设计；CI required path 待 first run。
+- `mvn -f backend/pom.xml test`：`BUILD SUCCESS`，23 个 reactor module 全部 `SUCCESS`；`nq-app` 56 tests / 0 failures / 0 errors / 2 skipped。
+
+### 边界确认
+
+- Batch 3B 当前为 IMPLEMENTED / PENDING FIRST CI RUN；未冻结。
+- Batch 4 security guard / secret scan：PENDING。
+- Batch 5 frontend E2E hardening：PENDING。
+- AI：NOT STARTED。
+- DH runtime：NOT INTEGRATED。
+- LIVE：DISABLED。
+- RealClient / real provider / real exchange adapter：NOT IMPLEMENTED。
+- 真实 OKX / Binance permission probe adapter：NOT IMPLEMENTED。
+- 未读取、打印、复制或输出真实 credential material。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未修改 backend production code、frontend、research、scripts、deploy 或 migration。
+
+### 下一步
+
+Next concrete action：`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW`、`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-FIX`，或暂停 CI 线。不得混入 Batch 4 secret scan、Batch 5 frontend E2E hardening、AI、DH runtime、LIVE、RealClient、real provider、真实交易所或 credential material work。
+
 ## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-PLAN
 
 日期：2026-06-16
