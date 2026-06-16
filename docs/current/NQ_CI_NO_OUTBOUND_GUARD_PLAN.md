@@ -2,7 +2,7 @@
 
 任务：NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-PLAN
 日期：2026-06-16
-状态：Batch 3 FIRST GREEN RUN CONFIRMED（GitHub Actions run `27634370657` / commit `88d976a1` / branch `dev`，6 jobs green）；Batch 3D first-run review PASS / ACCEPTED FOR FIRST GREEN RUN；Batch 3E freeze review PENDING；Batch 4 security guard / secret scan PENDING；Batch 5 frontend E2E hardening PENDING。不得直接写 FROZEN / ACCEPTED。
+状态：Batch 3 FROZEN / ACCEPTED（GitHub Actions run `27634370657` / commit `88d976a1` / branch `dev`，6 jobs green）；Batch 3D first-run review PASS / ACCEPTED FOR FIRST GREEN RUN；Batch 3E freeze review PASS / FROZEN / ACCEPTED；Batch 4 security guard / secret scan PENDING；Batch 5 frontend E2E hardening PENDING。
 
 ## Current CI baseline
 
@@ -18,7 +18,7 @@
 - Batch 2D `nq-app` context smoke：FROZEN / ACCEPTED。
 - Batch 2E seed watcher cleanup：FROZEN / ACCEPTED。
 - GateK CI Batch 2 PostgreSQL / Flyway hardening：完成。
-- Batch 3 no-outbound guard：FIRST GREEN RUN CONFIRMED（run `27634370657`）；Batch 3E freeze review PENDING。
+- Batch 3 no-outbound guard：FROZEN / ACCEPTED（run `27634370657`）；Batch 3E freeze review PASS。
 - Batch 4 security guard / secret scan：PENDING。
 - Batch 5 frontend E2E hardening：PENDING。
 - AI：NOT STARTED。
@@ -195,6 +195,28 @@ No-outbound / credential 证据：
 
 P3 hygiene（非阻断）：GitHub-provided actions（`actions/checkout@v4`、`setup-java@v4`、`setup-node@v4`、`setup-python@v5`、`upload-artifact@v4`）触发 Node.js 20 deprecation 警告，仅 advisory，不影响 green，留待后续 maintenance / Batch 4 评估，不在本轮修改。
 
+## Batch 3E freeze review evidence（FROZEN / ACCEPTED）
+
+任务：`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW`，日期 2026-06-17。结论 `PASS / FROZEN / ACCEPTED`；P0/P1/P2 blockers = 0。该 freeze 只冻结 no-outbound guard baseline，不进入 Batch 4 / Batch 5，不改 workflow / 代码 / 测试 / migration。
+
+freeze review 复核（基于 immutable run `27634370657`，commit `88d976a1`，重新拉取 job logs 校验）：
+
+- Run conclusion `completed / success`；6 jobs 全 `success`：`Diff check`、`No-outbound guard`、`Backend Maven test`、`PostgreSQL / Flyway smoke`、`Frontend build`、`Research quality gate`。
+- `No-outbound guard` job：`Verify no exchange credential env is injected`、`Verify exchange denylist coverage`、`Run no-outbound guard tests` 三步均 success；denylist coverage step 实际枚举全部 24 个 host variants；`NoOutboundExchangeGuardTest` 3 tests / 0 failures / 0 errors / 0 skipped，`BUILD SUCCESS`。
+- `PostgreSQL / Flyway` job：`NqAppContextPostgresSmokeTest` 1/0/0/0（6.288s，真实 CI PostgreSQL + 真实 Spring context；guard 安装、`deniedSelections()==0`、WS mock 无 interaction、`permissionProbePort` 为 `NoRealExchangeCredentialPermissionProbePort`）；`JdbcRepositoryPostgresSmokeTest` 1/0/0/0；schema artifacts 上传成功（7 files，Artifact ID `7674040595`，74673 bytes），redaction check step green。
+- `Backend Maven test` job：`mvn -f backend/pom.xml test` `BUILD SUCCESS`，`nq-app` 56/0/0/1。
+- 所有 job 日志无 `UnknownHostException` / `ConnectException` / `No route to host` / 真实交易所 connect；无真实 API key / secret / passphrase / token / private key / credential material；`gho_` token mask 为 `***`。
+- 工作区 clean，frozen baseline = commit `88d976a1`（workflow + test-scope guard）+ commit `c795a0ab`（first-run docs）+ 本轮 freeze docs。
+
+frozen 边界：本 freeze 接受当前 `dev` no-outbound guard baseline，固定以下事实——默认 CI / backend Maven test / app context smoke 不访问真实交易所、不读取或输出真实 credential material、不开启 LIVE / AI / DH runtime、不实现 RealClient / real provider / real permission probe adapter。Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
+
+freeze 必录 P3（非阻断，留作 Batch 3 parity/hygiene follow-up）：
+
+1. denylist 重复在 `ci.yml` env、`ci.yml` `required_hosts`、Java `ExchangeNoOutboundGuard` 三处；当前同步，但 Java Set 尚无自动 parity check，存在未来漂移风险。
+2. `no-outbound-guard` 是否作为 required branch protection check，取决于 GitHub 仓库设置，本 freeze 未在仓库层强制 required。
+3. `ProxySelector` 覆盖当前 JDK `HttpClient` / WebSocket client 路径，但不覆盖未来 raw `Socket` / `SocketChannel` transport。
+4. GitHub-provided actions 的 Node.js 20 deprecation warning 为 advisory，不阻塞本 freeze。
+
 ## Batch 3 implementation strategy
 
 ### Batch 3A: no-outbound inventory / plan review
@@ -243,7 +265,7 @@ P3 hygiene（非阻断）：GitHub-provided actions（`actions/checkout@v4`、`s
 
 ### Batch 3E: freeze review
 
-- Status target: FROZEN / ACCEPTED.
+- Status: FROZEN / ACCEPTED（run `27634370657` completed / success；P0/P1/P2=0；详见上文 Batch 3E freeze review evidence）。
 - Scope:
   - Freeze the accepted no-outbound guard baseline.
   - Update `docs/current` current facts and next actions.
@@ -312,7 +334,7 @@ CI validation must additionally prove the denylist guard runs and fails closed. 
 
 ## Boundary confirmation
 
-- Batch 3 是 FIRST GREEN RUN CONFIRMED（run `27634370657`）；freeze 仍是 Batch 3E，未冻结。
+- Batch 3 是 FROZEN / ACCEPTED（run `27634370657`）；Batch 3E freeze review 已通过。
 - 已修改 workflow 与 backend/nq-app test-scope guard / smoke test。
 - 未修改 backend production code / migration / frontend / research / scripts / deploy。
 - 未新增 API。
@@ -324,10 +346,10 @@ CI validation must additionally prove the denylist guard runs and fails closed. 
 
 ## Review decision
 
-PASS / ACCEPTED FOR FIRST GREEN RUN。P0/P1 blockers: 0。
+PASS / FROZEN / ACCEPTED。P0/P1/P2 blockers: 0。
 
-Batch 3 no-outbound guard 首次 GitHub Actions run `27634370657` completed / success，6 jobs 全 green，CI 证据证明默认 CI / backend Maven test / app context smoke 未访问真实交易所、未读取或输出真实 credential material、未开启 LIVE / AI / DH runtime、未实现 RealClient / real provider / real permission probe adapter。状态 FIRST GREEN RUN CONFIRMED；尚未冻结，freeze 仍是 Batch 3E。
+Batch 3 no-outbound guard 经 Batch 3D first-run review（`PASS / ACCEPTED FOR FIRST GREEN RUN`）与 Batch 3E freeze review 复核：GitHub Actions run `27634370657` completed / success，6 jobs 全 green，CI 证据证明默认 CI / backend Maven test / app context smoke 未访问真实交易所、未读取或输出真实 credential material、未开启 LIVE / AI / DH runtime、未实现 RealClient / real provider / real permission probe adapter。状态推进为 FROZEN / ACCEPTED，作为当前 `dev` no-outbound guard baseline。frozen baseline = commit `88d976a1`（workflow + test-scope guard）+ first-run / freeze docs。已记录 4 项非阻断 P3 follow-up（denylist 三处同源 parity check、required branch protection、raw Socket transport、Node.js 20 actions）。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW`、Batch 3 parity/hygiene follow-up（denylist 三处同源、Node.js 20 actions 升级评估），或暂停 CI 线。不得直接写 FROZEN / ACCEPTED；不得混入 Batch 4 / Batch 5。
+Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4-PLAN`（Batch 4 security guard / secret scan planning）、Batch 3 parity/hygiene follow-up（denylist single-source-of-truth、Node.js 20 actions 升级评估），或暂停 CI 线。Batch 4 / Batch 5 仍 PENDING，不得写成 started。

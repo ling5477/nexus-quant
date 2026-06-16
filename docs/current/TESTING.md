@@ -2,6 +2,31 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 3E no-outbound guard freeze review。基于 immutable GitHub Actions run `27634370657`（commit `88d976a1`，重新拉取 job logs 复核），确认 Batch 3 no-outbound guard baseline 可冻结。结论 `PASS / FROZEN / ACCEPTED`，P0/P1/P2 blockers = 0。Batch 4 / Batch 5 仍 PENDING；本轮只改 docs，不改 workflow / 代码 / 测试 / migration。
+
+| 复核项 | 结果 | 证据 |
+| --- | --- | --- |
+| Run 27634370657 | green | conclusion `completed / success`；6 jobs 全 `success`。 |
+| Diff check job | green | success。 |
+| No-outbound guard job | green | success；三步（env-absence、denylist coverage、guard test）均 success。 |
+| NoOutboundExchangeGuardTest | 3/0/0/0 | `Tests run: 3, Failures: 0, Errors: 0, Skipped: 0`，`BUILD SUCCESS`；`CI=true` 下 env-absence 用例实际执行。 |
+| Denylist coverage | 24/24 | guard job denylist coverage step 实际枚举全部 24 个 host variants（OKX / Binance / Binance testnet / Binance WS / Bybit / Bitget / Gate / Coinbase / Kraken / Crypto.com / Hyperliquid）。 |
+| Backend Maven test job | green | `mvn -f backend/pom.xml test` `BUILD SUCCESS`，`nq-app` 56/0/0/1。 |
+| PostgreSQL / Flyway job | green | `NqAppContextPostgresSmokeTest` 1/0/0/0（真实 CI PostgreSQL，guard 安装、`deniedSelections()==0`、WS mock 无 interaction、`permissionProbePort` 为 `NoRealExchangeCredentialPermissionProbePort`）；`JdbcRepositoryPostgresSmokeTest` 1/0/0/0。 |
+| Schema artifacts | 通过 | 上传 7 files（Artifact ID `7674040595`，74673 bytes），redaction check step green。 |
+| Frontend build job | green | success。 |
+| Research quality gate job | green | success。 |
+| No real exchange connect | 确认 | 所有 job 日志无 `UnknownHostException` / `ConnectException` / `No route to host` / 真实交易所 connect；唯一 host 字符串为 benign `apiKey=missing` fingerprint 与 `okx_recovery_startup_skipped`。 |
+| Credential / LIVE boundary | 确认 | 无真实 API key / secret / passphrase / token / private key / credential material；`gho_` token mask 为 `***`；LIVE / AI / DH runtime / RealClient / real provider / real probe adapter 均未开启或未实现。 |
+
+frozen baseline = commit `88d976a1`（workflow + test-scope guard）+ first-run / freeze docs。状态推进 `FIRST GREEN RUN CONFIRMED` -> `FROZEN / ACCEPTED`。
+
+必录 P3（非阻断，留作 Batch 3 parity/hygiene follow-up）：denylist 三处同源（ci.yml env / ci.yml `required_hosts` / Java `ExchangeNoOutboundGuard`）无自动 parity check；`no-outbound-guard` required branch protection 取决于仓库设置；`ProxySelector` 不覆盖未来 raw `Socket` / `SocketChannel` transport；GitHub-provided actions Node.js 20 deprecation 为 advisory。
+
+下一步：`NQ-CI-SECURITY-GUARD-BATCH-4-PLAN`、Batch 3 parity/hygiene follow-up，或暂停 CI 线。
+
 ## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW（2026-06-17）
 
 本轮是 GateK CI Batch 3 no-outbound guard first-run review（对应 Batch 3D）。GitHub Actions run `27634370657`（event `push`，branch `dev`，commit `88d976a1`）`completed / success`，6 jobs 全 green。结论 `PASS / ACCEPTED FOR FIRST GREEN RUN`，状态推进为 `FIRST GREEN RUN CONFIRMED`；freeze 仍是 Batch 3E，不得写成 `FROZEN / ACCEPTED`。Batch 4 / Batch 5 仍 PENDING。

@@ -2,6 +2,52 @@
 
 日期：2026-05-16
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+冻结 Batch 3 no-outbound guard baseline，确认默认 CI / backend tests / app context smoke 不访问真实交易所、不读取或输出真实 credential material、不触发 LIVE / RealClient / real provider / real permission probe adapter 路径。只改 docs，不改 workflow / 代码 / 测试 / migration，不进入 Batch 4 / Batch 5。
+
+### 复核证据（immutable run `27634370657`，commit `88d976a1`，重新拉取 job logs）
+
+- Run conclusion `completed / success`；6 jobs 全 `success`：`Diff check`、`No-outbound guard`、`Backend Maven test`、`PostgreSQL / Flyway smoke`、`Frontend build`、`Research quality gate`。
+- No-outbound guard job：env-absence、denylist coverage、guard test 三步 success；`NoOutboundExchangeGuardTest` 3/0/0/0；denylist coverage step 实际枚举全部 24 个 host variants。
+- postgres-flyway job：`NqAppContextPostgresSmokeTest` 1/0/0/0（真实 CI PostgreSQL，guard 安装、`deniedSelections()==0`、WS mock 无 interaction、NoReal probe）；`JdbcRepositoryPostgresSmokeTest` 1/0/0/0；schema artifacts 上传成功（7 files，Artifact ID `7674040595`），redaction check green。
+- backend job：`mvn -f backend/pom.xml test` `BUILD SUCCESS`，`nq-app` 56/0/0/1。
+- 所有 job 日志无 `UnknownHostException` / `ConnectException` / `No route to host` / 真实交易所 connect；无真实 credential material；`gho_` token mask 为 `***`。
+
+### 复核命令
+
+- `git status --short`（clean）、`git diff --check`（clean）、`git diff --stat`（仅 docs）。
+- `git show --stat --oneline --name-only HEAD`、`git diff -- .github / backend / frontend / research / scripts / deploy / backend/**/db/migration`（forbidden 区域均无 uncommitted 改动）。
+- `gh run view 27634370657`（run + per-job conclusions）、`gh run view --job=<id> --log`（no-outbound-guard / backend / postgres-flyway，fresh re-fetch）。
+- 关键词 / credential-value sweep over `backend .github docs/current`：无真实 credential material（仅命中 Binance 适配器既有 fake 测试私钥与 PEM header 常量，与本 freeze 无关）。
+
+### 文档更新
+
+- 同步 `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_PLAN.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`：Batch 3 状态 `FIRST GREEN RUN CONFIRMED` -> `FROZEN / ACCEPTED`（run `27634370657`），并在 plan 文档新增 Batch 3E freeze review evidence 段落与 4 项必录 P3。
+- 未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、backend production code、migration、frontend、research、scripts、deploy。
+
+### 边界确认
+
+- Batch 3：FROZEN / ACCEPTED（run `27634370657`），作为当前 `dev` no-outbound guard baseline。Review decision：`PASS / FROZEN / ACCEPTED`，P0/P1/P2=0。
+- Batch 4 security guard / secret scan：PENDING。Batch 5 frontend E2E hardening：PENDING。
+- AI：NOT STARTED。DH runtime：NOT INTEGRATED。LIVE：DISABLED。RealClient / real provider / real exchange permission probe adapter：NOT IMPLEMENTED。
+- 未读取、打印、复制或输出真实 credential material；未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+
+### 必录 P3（非阻断）
+
+1. denylist 三处同源（ci.yml env、ci.yml `required_hosts`、Java `ExchangeNoOutboundGuard`），当前同步但 Java Set 无自动 parity check。
+2. `no-outbound-guard` 是否为 required branch protection check 取决于 GitHub 仓库设置。
+3. `ProxySelector` 覆盖当前 JDK `HttpClient` / WebSocket client，但不覆盖未来 raw `Socket` / `SocketChannel` transport。
+4. GitHub-provided actions Node.js 20 deprecation warning 为 advisory，不阻塞 freeze。
+
+### 下一步
+
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4-PLAN`、Batch 3 parity/hygiene follow-up，或暂停 CI 线。不得把 Batch 4 / Batch 5 写成 started。
+
 ## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW
 
 日期：2026-06-17
