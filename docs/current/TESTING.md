@@ -2461,3 +2461,28 @@ API/数据缺口(必须报告,未伪装):
 阶段与安全边界:
 
 - 未改后端/migration/research/deploy/scripts;未新增后端 API;未接 AI/DH/LIVE/real exchange/socket;未伪造数据。
+
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX 验证记录（2026-06-16）
+
+修复 Batch 2D `nq-app` context smoke 首次 CI 失败（`AdapterBackedTradingVenueGateway: venue must not be blank`）。仅改 1 个 nq-app test 文件，未改生产代码 / migration / workflow。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest -Dsurefire.failIfNoSpecifiedTests=false` | **BUILD SUCCESS** | `NqAppContextPostgresSmokeTest` tests=1 / failures=0 / errors=0 / **skipped=1**。本地无 `nq.app.context.smoke.required`，类被 `@EnabledIfSystemProperty` 跳过；仅证明编译 + Surefire 选择。 |
+| `git status --short` / `git diff --check` / `git diff --stat` | **通过** | 仅 `NqAppContextPostgresSmokeTest.java` 改动（+75 / -3）；无 whitespace 错误。 |
+| `git diff -- backend/**/db/migration` / `frontend` / `research` / `scripts` / `deploy` | **空** | 未触达禁止范围。 |
+
+修复要点：
+
+- 失败根因：生产 `AdapterBackedTradingVenueGateway`（eager singleton）在 context refresh 期对每个 `TradingAdapter` bean 调用 `venue()` 建路由表；裸 `@MockitoBean` adapter 返回 blank venue → `venue must not be blank`。
+- 修复（test-only）：嵌套 `@TestConfiguration` 以预 stub 的 mock 覆盖 `okxTradingAdapter` / `binanceTradingAdapter`，`venue()` 固定为 `CI-SMOKE-FAKE-OKX` / `CI-SMOKE-FAKE-BINANCE`；`spring.main.allow-bean-definition-overriding=true` 仅覆盖这两个具名 bean。
+- 断言：`verify(..., never()).placeOrder/cancelOrder/getOrder(...)` + 对 WS client 的 `verifyNoInteractions`（gateway 合法调用 `venue()`，不能对 adapter 用 blanket `verifyNoInteractions`）。
+
+CI 待确认（real PostgreSQL context 启动）：
+
+- 本地无法验证 CI required path；需下一次 GitHub Actions `postgres-flyway` job 的 `Run nq-app PostgreSQL context smoke`（`nq.app.context.smoke.required=true`）确认 **skipped=0 / errors=0**。
+- 在该 run 变绿并经 freeze review 前，Batch 2D 不得写成 FIRST GREEN / FROZEN / ACCEPTED。
+
+阶段与安全边界：
+
+- 未改后端生产代码 / migration / research / deploy / scripts / workflow；未新增 API；未用 `local` profile；未触发 `AuthSeedConfiguration`；未创建 seed users / accounts / exchange accounts / credential rows；未接 AI/DH/LIVE/real exchange；未读取或输出真实 credential material。

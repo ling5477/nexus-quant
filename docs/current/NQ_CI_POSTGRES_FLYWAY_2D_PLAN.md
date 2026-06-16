@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway 2D Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN / NQ-CI-POSTGRES-FLYWAY-2D-IMPL / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW
+任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN / NQ-CI-POSTGRES-FLYWAY-2D-IMPL / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX
 日期：2026-06-15 / 2026-06-16
-状态：IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX
+状态：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - Batch 2B schema artifact baseline：FROZEN / ACCEPTED。
 - Batch 2C repository-only real PostgreSQL smoke baseline：FROZEN / ACCEPTED。
 - 2C-HYGIENE-FIX：FROZEN / ACCEPTED。
-- Batch 2D `nq-app` context smoke：IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX。
+- Batch 2D `nq-app` context smoke：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
 - Batch 4 security guard / secret scan：PENDING。
@@ -57,7 +57,7 @@ Current `.github/workflows/ci.yml` has these relevant jobs:
 | Job | Current behavior | 2D interpretation |
 | --- | --- | --- |
 | `backend` | Runs `mvn -f backend/pom.xml test` with PostgreSQL service `postgres:16`; uses a CI-only watcher to insert one `accounts` row after Flyway creates the table. | Batch 1 compatibility path only. It currently satisfies existing local-profile full context tests but must not become the 2D seed or profile policy. |
-| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, runs the Batch 2C repository-only PostgreSQL smoke, then runs Batch 2D `nq-app` context smoke. | 2A / 2B / 2C FROZEN / ACCEPTED baseline plus 2D IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX. The first run failed in the 2D step before a successful context startup could be confirmed. |
+| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, runs the Batch 2C repository-only PostgreSQL smoke, then runs Batch 2D `nq-app` context smoke. | 2A / 2B / 2C FROZEN / ACCEPTED baseline plus 2D IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. The first run failed in the 2D step; the first-run fix (pre-stubbed CI-only adapter venues) is applied locally and the next CI run is pending confirmation. |
 | `frontend` | Runs `npm ci` + `npm run build`. | Outside Batch 2D; frontend E2E hardening remains Batch 5. |
 | `research` | Runs Python pytest / mypy / ruff. | Outside Batch 2D. |
 
@@ -93,6 +93,47 @@ Boundary observations from the failed run:
 - CI logs still expose disposable CI PostgreSQL service connection material in service initialization / automatic step environment display before masking can fully protect it. This is not real production credential material, but it fails the stricter Batch 2D first-run acceptance item that requires no JDBC password / full connection string / env dump in logs.
 
 Next action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX` only. Fix scope must stay limited to `.github/workflows/ci.yml`, `backend/nq-app` test, and `docs/current` status records. Do not mix Batch 2E, Batch 3-5, LIVE, AI, DH runtime, RealClient, real provider, or real exchange adapter.
+
+## First-run fix (NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX, 2026-06-16)
+
+Status after fix: IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. Not FIRST GREEN, not FROZEN, not ACCEPTED. A new GitHub Actions run is required to confirm the fix on CI.
+
+### Failure root cause
+
+The production `AdapterBackedTradingVenueGateway` (in `nq-scheduler`) is an eager singleton whose constructor builds a venue→adapter routing map by calling `adapter.venue()` on every `TradingAdapter` bean during context refresh. The first 2D smoke replaced the OKX / Binance adapters with bare `@MockitoBean` mocks; a bare Mockito mock returns a blank `venue()`, so the gateway threw `IllegalArgumentException: venue must not be blank` while the context was still being created. Stubbing a `@MockitoBean` in a JUnit lifecycle hook cannot fix this, because the eager singleton gateway is built before any `@BeforeEach` runs.
+
+### Fix summary (test-only)
+
+Changed only `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java`. No production code, no migration, no workflow logic change.
+
+- The two REST exchange adapters are now supplied as pre-stubbed Mockito mocks from a nested `@TestConfiguration` (`StubbedExchangeAdapterConfig`) that overrides the named `ExchangeAdapterConfiguration` beans `okxTradingAdapter` / `binanceTradingAdapter`. Each mock's `venue()` is stubbed to a distinct, non-blank, CI-only fake value (`CI-SMOKE-FAKE-OKX` / `CI-SMOKE-FAKE-BINANCE`) so the production gateway can build its routing map at refresh time without constructing a real adapter, reading a credential, or contacting an exchange.
+- Added `spring.main.allow-bean-definition-overriding=true` to the smoke `@TestPropertySource` so the two named adapter beans can be overridden. Local full-context tests load the same composition root without this flag, so it cannot hide a real duplicate-definition problem; it only enables the two intentional CI-only adapter substitutions.
+- OKX / Binance WS clients remain `@MockitoBean` (the gateway never reads them, so `verifyNoInteractions` on them still proves no WebSocket connect at startup).
+- The assertion changed from `verifyNoInteractions` on the exchange adapters to `verify(..., never()).placeOrder/cancelOrder/getOrder(...)`. Reason: the gateway legitimately calls `venue()` at composition time, so a blanket `verifyNoInteractions` on the adapters could never pass; the smoke instead proves no order is placed / cancelled / queried during startup, which is the real exchange-side-effect guarantee.
+
+### Why this does not mask app-context risk
+
+Only the outermost exchange I/O edges (two REST adapters, two WS clients) are substituted — exactly the isolation Batch 2D requires (no real exchange, no credential). The datasource (bound to the Flyway-migrated CI PostgreSQL), repositories, domain services, security wiring, scheduler wiring, and the `AdapterBackedTradingVenueGateway` itself remain real production beans, so the smoke still exercises the real Spring composition root against PostgreSQL.
+
+### Seed / AuthSeed boundary (re-confirmed)
+
+- `AuthSeedConfiguration` is `@Profile({"local","test"})`; the smoke runs under `ci-app-smoke`, so the seed runner is not activated and no seed users are created.
+- `AuthBootstrapAdminConfiguration` is `@ConditionalOnProperty(nq.auth.bootstrap-admin.enabled=true)`; the smoke sets it `false`, so no admin is bootstrapped.
+- No legacy `accounts`, exchange account, or credential row is created; no credential material is read, decrypted, printed, copied, or output.
+
+### CI log hygiene status
+
+- The `postgres-flyway` job already runs a first `Mask CI-only PostgreSQL connection values` step that registers `::add-mask::` for `NQ_FLYWAY_DB_URL` / `NQ_FLYWAY_DB_USER` / `NQ_FLYWAY_DB_PASSWORD`, so every subsequent step's log is masked.
+- No workflow step uses `set -x`, `env`, `printenv`, a full environment dump, or echoes the JDBC password / full connection string; DB properties reach Maven only through `-D...="${VAR}"` (masked, not echoed). The step-level requirement "no JDBC password / connection string / env dump in subsequent steps" is satisfied, so `.github/workflows/ci.yml` needs no change for this fix.
+- Residual: GitHub Actions prints the PostgreSQL service container's `env` (including the disposable `POSTGRES_PASSWORD`) in its own "Initialize containers" output, which runs before any step and therefore before `::add-mask::` can apply. This value is a throwaway, non-production CI database password with no value outside the ephemeral job. Fully removing it would require either GitHub Secrets (excluded by Batch 2D's "no GitHub secret requirement") or changing the shared PostgreSQL service auth model used by the FROZEN 2A / 2B / 2C steps (out of 2D first-run-fix scope). It is recorded here as an accepted P3 platform residual and deferred to a future CI secrets policy.
+
+### Local validation
+
+```
+mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+Result: BUILD SUCCESS; `NqAppContextPostgresSmokeTest` tests=1 / failures=0 / errors=0 / skipped=1. The class is `@EnabledIfSystemProperty(nq.app.context.smoke.required=true)`, so without CI DB properties it compiles and is selected but skipped. This proves compilation and Surefire selection only; the real PostgreSQL context startup must be confirmed by the next GitHub Actions run (where the CI step sets `nq.app.context.smoke.required=true` and skipped must be 0).
 
 ## App context test inventory
 
@@ -243,7 +284,7 @@ Batch 2D must preserve:
 
 ### 2D-1: minimal context smoke implementation
 
-Status: IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX.
+Status: IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. See "First-run fix (NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX, 2026-06-16)" above for the root cause and the pre-stubbed venue fix.
 
 Implemented smoke shape:
 
@@ -253,8 +294,8 @@ Implemented smoke shape:
 - The test is enabled only when `nq.app.context.smoke.required=true`, and the CI step sets that property explicitly. Missing datasource properties fail the smoke in CI.
 - The context receives only explicit `nq.app.context.smoke.*` datasource system properties from the disposable CI PostgreSQL service DB.
 - The context sets `spring.flyway.enabled=false` because Flyway migration is already completed earlier in the same job.
-- The test replaces OKX / Binance adapter and WS client beans with `MockitoBean` test doubles so real adapter / WS constructors do not read `.env` or construct real exchange client paths.
-- The assertion is context-load only plus `verifyNoInteractions` on the exchange adapter / WS mocks; it does not call controllers, services, scheduler jobs, adapter methods, order / cancel / transfer / withdraw / permission probe HTTP, or exchange hosts.
+- The test replaces OKX / Binance WS client beans with `@MockitoBean` test doubles, and replaces the OKX / Binance REST adapter beans (`okxTradingAdapter` / `binanceTradingAdapter`) with pre-stubbed Mockito mocks from a nested `@TestConfiguration`, so real adapter / WS constructors do not read `.env` or construct real exchange client paths. The first run used bare `@MockitoBean` adapters whose blank `venue()` broke the production `AdapterBackedTradingVenueGateway`; the first-run fix pre-stubs each adapter `venue()` to a distinct CI-only fake value so the gateway can build its routing map at refresh time. See the first-run-fix section above.
+- The assertion is context-load only plus `verify(..., never()).placeOrder/cancelOrder/getOrder(...)` on the exchange adapters (the gateway legitimately reads `venue()` at composition time, so a blanket `verifyNoInteractions` on the adapters is not used) and `verifyNoInteractions` on the WS mocks; it does not call controllers, services, scheduler jobs, adapter order methods, order / cancel / transfer / withdraw / permission probe HTTP, or exchange hosts.
 - The CI step runs:
 
 ```bash
@@ -303,7 +344,7 @@ Only after that review should 2D be considered for required-check promotion on b
 | 2A | Empty DB Flyway V1-V31 migration smoke. FROZEN / ACCEPTED. |
 | 2B | Schema artifact baseline. FROZEN / ACCEPTED. |
 | 2C | Repository-only real PostgreSQL smoke. FROZEN / ACCEPTED. |
-| 2D | `nq-app` context smoke. IMPLEMENTED / PENDING FIRST CI RUN. |
+| 2D | `nq-app` context smoke. IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. |
 | 2E | CI-only seed watcher cleanup. NOT STARTED. |
 | 3 | no-outbound guard. PENDING and not implemented by 2D. |
 | 4 | security guard / secret scan. PENDING and not implemented by 2D. |
@@ -364,12 +405,12 @@ Notes:
 
 ## Review decision
 
-Review decision: FAIL / FIRST-RUN-FIX REQUIRED.
+Review decision: FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN.
 
-Batch 2D implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no adapter method calls, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. First-run review did not confirm green status: run `27590822405` failed in `Run nq-app PostgreSQL context smoke`. Batch 2D must not be marked FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED.
+Batch 2D implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no adapter order-method calls, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. First run `27590822405` failed in `Run nq-app PostgreSQL context smoke` (`venue must not be blank`); the first-run fix replaces the bare `@MockitoBean` adapters with pre-stubbed CI-only fake-venue mocks so the production gateway can build its routing map at refresh time. The fix is test-only and validated locally (BUILD SUCCESS, skipped=1 without CI DB properties). Batch 2D must not be marked FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED until a new GitHub Actions run shows the 2D step green with skipped=0.
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`.
+Next concrete action: re-run `NQ CI Baseline` on `dev` and then `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`. If the next run is still red, continue with another `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX` slice.
 
-Do not proceed directly to 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this failed first-run review.
+Do not proceed directly to 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this first-run fix.

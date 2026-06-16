@@ -6112,3 +6112,57 @@ B0/B0.1/B0.2/B0.3 均已合入 dev。本轮 B1 新增回测详情可视化页,�
 - 未改 backend / migration / research / deploy / scripts;未改 GateK 事实源;未新增后端 API。
 - 未接 AI/DH/LIVE/real exchange/WebSocket/SSE;**未用假数据伪装真实后端**(用真实 fixture + 真实端点;空场景用真实可达 unavailable);未迁移 Dashboard/Strategy/Risk/Paper;未全局替换 AppProviders;既有 backend-free smoke 不回退。
 - 回滚方式:删除 `backtest-detail-smoke.spec.ts`,还原 `support.ts` 登录选择器即可(注:还原 support.ts 会回到对 B0.1 登录页失效的旧选择器,不建议)。
+
+---
+
+# NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX
+
+日期：2026-06-16
+
+## 本轮目标
+
+最小修复 Batch 2D `nq-app` context smoke 首次 CI 失败（GitHub Actions run `27590822405`，step `Run nq-app PostgreSQL context smoke`，`NqAppContextPostgresSmokeTest` errors=1）。失败根因：Spring context 创建 `AdapterBackedTradingVenueGateway` 时 `IllegalArgumentException: venue must not be blank`。保持无 seed、无真实交易所、无真实 credential、无 LIVE、无 AI、无 DH runtime，并收口 CI log hygiene。
+
+## 失败根因（只读分析）
+
+- `AdapterBackedTradingVenueGateway`（`nq-scheduler`，eager singleton）构造期对每个 `TradingAdapter` bean 调用 `adapter.venue()` 组装 venue→adapter 路由表。
+- 首版 smoke 用裸 `@MockitoBean` 替换 OKX/Binance adapter；Mockito mock 的 `venue()` 默认返回 blank，gateway 在 context refresh 期间即抛 `venue must not be blank`。
+- `@MockitoBean` 无法在 context refresh 前 stub（eager singleton 早于任何 `@BeforeEach`）。
+
+## 修改范围（仅 nq-app test）
+
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java`：
+  - 新增嵌套 `@TestConfiguration StubbedExchangeAdapterConfig`，以预先 stub 的 Mockito mock 覆盖 `okxTradingAdapter` / `binanceTradingAdapter`，`venue()` 固定为互异 CI-only fake 值 `CI-SMOKE-FAKE-OKX` / `CI-SMOKE-FAKE-BINANCE`，使生产 gateway 能在 refresh 期建表。
+  - `@TestPropertySource` 增加 `spring.main.allow-bean-definition-overriding=true`（仅用于这两个具名 adapter bean 覆盖；本地 full-context 测试不带此 flag 也能起，故不掩盖重复定义风险）。
+  - OKX/Binance WS client 仍 `@MockitoBean`；断言由对 adapter 的 `verifyNoInteractions` 改为 `verify(..., never()).placeOrder/cancelOrder/getOrder(...)`（gateway 合法调用 `venue()`，blanket `verifyNoInteractions` 永不可过），WS client 保留 `verifyNoInteractions`。
+- 未改 backend production code、frontend、research、scripts、deploy；未新增/修改 migration、API；未改 `.github/workflows/ci.yml`（见下）。
+
+## CI log hygiene
+
+- `postgres-flyway` job 首步 `Mask CI-only PostgreSQL connection values` 已对 `NQ_FLYWAY_DB_URL/USER/PASSWORD` 注册 `::add-mask::`，后续 step 日志被遮蔽。
+- 无 step 使用 `set -x`、`env`、`printenv`、full env dump，也不 echo JDBC password / 完整连接串；DB 属性仅经 `-D...="${VAR}"` 传给 Maven。step 级 hygiene 已满足，故本轮 `ci.yml` 无需改动。
+- 残留：GitHub Actions 在 "Initialize containers" 自身输出 PostgreSQL service 容器 env（含一次性 `POSTGRES_PASSWORD`），早于任何 step、无法被 `::add-mask::` 覆盖。该值为一次性非生产 CI DB 口令；彻底消除需 GitHub Secrets（2D 明确排除）或改动 FROZEN 2A/2B/2C 共享 service auth（超出 2D first-run-fix 范围），记为 P3 平台残留并延后。
+
+## 验证记录
+
+- `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest -Dsurefire.failIfNoSpecifiedTests=false`：**BUILD SUCCESS**；`NqAppContextPostgresSmokeTest` tests=1 / failures=0 / errors=0 / **skipped=1**（本地无 `nq.app.context.smoke.required`，类被 `@EnabledIfSystemProperty` 跳过）。本地仅证明编译与 Surefire 选择；真实 PostgreSQL context 启动需下一次 GitHub Actions run 确认（CI required=true 后 skipped 必须为 0）。
+- `git status --short` / `git diff --check` / `git diff --stat`：仅 1 个 test 文件改动；无 whitespace 错误；migration / frontend / research / scripts / deploy diff 均为空。
+
+## 状态
+
+Batch 2D：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN（不得写 FIRST GREEN / FROZEN / ACCEPTED）。Batch 2E NOT STARTED；Batch 3-5 PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED。
+
+## 边界确认
+
+- 未改 backend production code / frontend / research / scripts / deploy；未新增 API / migration；未改历史 migration。
+- 未用 `local` profile；未触发 `AuthSeedConfiguration`（`@Profile({"local","test"})`，smoke 走 `ci-app-smoke`）；`AuthBootstrapAdminConfiguration` 经 `nq.auth.bootstrap-admin.enabled=false` 关闭；未创建 seed users / legacy accounts / exchange accounts / credential rows。
+- 未访问 OKX/Binance/Bybit/Gate/Coinbase/Kraken；未实现 RealClient / real provider；未读取或输出真实 credential material；未开启 LIVE / AI / DH runtime。
+- 未实现 Batch 2E / Batch 3 no-outbound guard / Batch 4 secret scan / Batch 5 frontend E2E hardening。
+
+## 回滚方式
+
+`git checkout -- backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java` 还原测试，并 revert 本轮 `docs/current/*` 状态文案即可；不涉及生产代码 / migration / workflow，回滚无副作用。
+
+## 下一步
+
+re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`；若仍红则继续 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
