@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway Batch 2E Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2E-PLAN / NQ-CI-POSTGRES-FLYWAY-2E-IMPL
+任务：NQ-CI-POSTGRES-FLYWAY-2E-PLAN / NQ-CI-POSTGRES-FLYWAY-2E-IMPL / NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW
 日期：2026-06-16
-状态：IMPLEMENTED / PENDING FIRST CI RUN
+状态：FAIL / FIRST-RUN-FIX REQUIRED
 
 ## Task classification
 
@@ -16,7 +16,7 @@
 - Repository: NexusQuant / NQ。
 - Branch: `dev`。
 - Current stage: GateJ completed；Next: GateK-PLAN。
-- Batch state: 2A / 2B / 2C / 2C-HYGIENE-FIX / 2D 均为 FROZEN / ACCEPTED；Batch 2E 已实现 watcher cleanup，当前为 IMPLEMENTED / PENDING FIRST CI RUN；Batch 3-5 仍 PENDING。
+- Batch state: 2A / 2B / 2C / 2C-HYGIENE-FIX / 2D 均为 FROZEN / ACCEPTED；Batch 2E 已实现 watcher cleanup，但 first GitHub Actions run 失败，当前为 FAIL / FIRST-RUN-FIX REQUIRED；Batch 3-5 仍 PENDING。
 - Target files inspected:
   - `.github/workflows/ci.yml`
   - `backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/auth/AuthSeedConfiguration.java`
@@ -36,7 +36,7 @@
 
 ## Files inspected
 
-- `.github/workflows/ci.yml`：确认 `backend` job 仍包含 CI-only seed watcher；`postgres-flyway` job 不使用该 watcher。
+- `.github/workflows/ci.yml`：当前 `backend` job 的 CI-only seed watcher 已删除；`Run backend tests` step 直接执行 `mvn -f backend/pom.xml test`；`postgres-flyway` job 不使用该 watcher。
 - `AuthSeedConfiguration.java`：确认仅 `local` / `test` profile 下注册 seed users runner。
 - `AuthBootstrapAdminConfiguration.java`：确认只在 `nq.auth.bootstrap-admin.enabled=true` 时注册 bootstrap admin runner。
 - `NqAppContextPostgresSmokeTest.java`：确认 Batch 2D 使用 `ci-app-smoke` profile、`nq.auth.bootstrap-admin.enabled=false`、`spring.flyway.enabled=false`、WS disabled、scheduler disabled；不使用 `local` 或 current `test` profile。
@@ -69,6 +69,18 @@
 - Removed watcher polling for Docker `postgres:16`, `public.accounts` detection, `ci-local-account` insertion, `seed_pid`, `wait`, and seed exit-status merge logic.
 - No fallback SQL was added because local backend Maven test passed after watcher deletion.
 - No `postgres-flyway` job step was changed; Batch 2A / 2B / 2C / 2D paths remain intact.
+
+## First-run review
+
+- GitHub Actions run: `27610448572`, workflow `NQ CI Baseline`, branch `dev`, commit `d149952bbd39883847302996b0930437890b8121`, event `push`, title `ci(gatek): remove backend CI seed watcher`.
+- Run result: completed / failure.
+- `Diff check`: success.
+- `Frontend build`: success.
+- `Research quality gate`: success.
+- `PostgreSQL / Flyway smoke`: success. Steps `Run empty database Flyway smoke`, `Generate PostgreSQL schema artifacts`, `Check PostgreSQL schema artifacts`, `Upload PostgreSQL schema artifacts`, `Run repository PostgreSQL smoke`, and `Run nq-app PostgreSQL context smoke` all completed / success.
+- `Backend Maven test`: failure. Step `Run backend tests` completed / failure with exit code 1.
+- Failure detail gap: `gh run view --log-failed` and job log download returned HTTP 403 (`Must have admin rights to Repository`), so this review could not read the Maven stack trace or failing test name. The next fix task must first retrieve the backend job log and record the exact failing test, SQL / stack trace, and root cause before changing workflow or adding any fixture.
+- First-run decision: FAIL / FIRST-RUN-FIX REQUIRED. Batch 2E must not be marked FIRST GREEN, FROZEN, or ACCEPTED in this state.
 
 ## Files changed in planning turn
 
@@ -208,7 +220,7 @@ Use explicit fixture SQL only if all are true:
 
 - Implementation decision: delete the background watcher and do not add fallback SQL.
 - Fallback decision: not needed in this implementation slice because `mvn -f backend/pom.xml test` passed locally after watcher deletion.
-- First CI status: pending. Local Maven passed, but GitHub runner behavior must still be reviewed through `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW`.
+- First CI status: failed. GitHub Actions run `27610448572` failed in the `Backend Maven test` job / `Run backend tests` step after watcher deletion.
 - If first CI run fails due to a missing legacy account fixture, the next task must capture the exact failing test, SQL / stack trace, and root cause before adding any explicit migration-after fixture SQL.
 - The fallback remains constrained to backend Maven test only; it must not affect `postgres-flyway`, 2A / 2B / 2C / 2D, migrations, production seed code, auth users, credential rows, LIVE, AI, DH runtime, RealClient, or real providers.
 
@@ -233,8 +245,8 @@ Use explicit fixture SQL only if all are true:
 
 ## Impact assessment
 
-- Backend Maven test: local `mvn -f backend/pom.xml test` passed after watcher deletion. GitHub runner first run is still required before freeze.
-- `postgres-flyway` job: should not be affected; 2A/2B/2C/2D already avoid the watcher.
+- Backend Maven test: local `mvn -f backend/pom.xml test` passed after watcher deletion, but GitHub Actions run `27610448572` failed in `Backend Maven test` / `Run backend tests`.
+- `postgres-flyway` job: first-run review confirmed success in run `27610448572`; 2A/2B/2C/2D paths remained green.
 - Batch 2A: dependency reduced to zero because empty DB Flyway smoke is no-seed and does not start `nq-app`.
 - Batch 2B: dependency reduced to zero because artifacts are generated from the seedless Flyway-migrated DB.
 - Batch 2C: dependency reduced to zero because repository smoke uses explicit fake data inside a rollback-only transaction and does not touch legacy `accounts`.
@@ -253,11 +265,11 @@ Use explicit fixture SQL only if all are true:
 
 ## Batch boundary
 
-- Batch 2E is IMPLEMENTED / PENDING FIRST CI RUN in this document.
+- Batch 2E is FAIL / FIRST-RUN-FIX REQUIRED in this document.
 - Batch 3 no-outbound guard remains PENDING.
 - Batch 4 security guard / secret scan remains PENDING.
 - Batch 5 frontend E2E hardening remains PENDING.
-- Batch 2E must not be marked FROZEN / ACCEPTED until first-run review confirms the backend and `postgres-flyway` jobs remain green with P0/P1=0.
+- Batch 2E must not be marked FIRST GREEN, FROZEN, or ACCEPTED until first-run fix and follow-up review confirm the backend and `postgres-flyway` jobs remain green with P0/P1=0.
 
 ## P0/P1/P2/P3 findings
 
@@ -267,13 +279,13 @@ Use explicit fixture SQL only if all are true:
 
 ### P1
 
-- 无。
+- GitHub Actions run `27610448572` failed in the `Backend Maven test` job / `Run backend tests` step after watcher deletion. The exact failing test and stack trace were not available to this reviewer because GitHub log download returned HTTP 403; first-run fix must capture them before making any change.
 
 ### P2
 
 - Current backend seed watcher is a long-lived ad hoc CI compatibility layer that can hide missing explicit fixtures in local-profile Spring tests.
 - Watcher can race with Flyway: direct `accounts` insert after V1 may be indirectly backfilled into `exchange_accounts` by V12, making account state depend on timing rather than explicit test ownership.
-- Backend Maven test may fail when watcher is removed; 2E implementation needs first-run review / minimal fix loop.
+- Backend Maven test did fail in first GitHub runner execution; 2E now requires a first-run fix loop constrained to the backend test failure.
 
 ### P3
 
@@ -289,13 +301,16 @@ Executed in the implementation turn:
 - `git branch --show-current`
 - `mvn -f backend/pom.xml test`：BUILD SUCCESS；reactor 23/23 modules SUCCESS；total time 02:22；local run used local PostgreSQL 17.7 for local-profile Spring tests and skipped CI-only `NqAppContextPostgresSmokeTest` as expected without `nq.app.context.smoke.required=true`。
 
-Pending:
+GitHub Actions first run:
 
-- GitHub Actions first run after watcher deletion.
+- `gh run view 27610448572 --json ...`：completed / failure.
+- `gh run view --job 81633181802`：`Backend Maven test` failed in `Run backend tests`; annotation only reports exit code 1.
+- `gh run view --job 81633181744`：`PostgreSQL / Flyway smoke` success, including 2A / 2B / 2C / 2D steps.
+- `gh run view --log-failed` / `gh run view --job 81633181802 --log-failed`：failed with HTTP 403, so backend Maven failure logs were not readable in this review.
 
 Reason:
 
-- Local Maven validates the backend test baseline, but it is not a perfect GitHub runner reproduction because CI uses GitHub Actions `postgres:16` service while the local run used PostgreSQL 17.7 on `localhost:5432`.
+- Local Maven validates the backend test baseline, but it was not a perfect GitHub runner reproduction because CI uses GitHub Actions `postgres:16` service while the local run used PostgreSQL 17.7 on `localhost:5432`.
 
 ## Boundary confirmation
 
@@ -304,20 +319,19 @@ Reason:
 - No tests added or changed.
 - No seed users, legacy accounts, exchange accounts, credential rows, or credential material created.
 - No real exchange, LIVE, AI, DH runtime, RealClient, real provider, or permission probe adapter started.
-- Batch 2E is IMPLEMENTED / PENDING FIRST CI RUN.
+- Batch 2E is FAIL / FIRST-RUN-FIX REQUIRED.
 - Batch 3-5 remain PENDING.
 
 ## Review decision
 
-PASS / IMPLEMENTED / PENDING FIRST CI RUN.
+FAIL / FIRST-RUN-FIX REQUIRED.
 
-P0/P1 = 0. The background seed watcher has been removed and no fallback SQL was added because local backend Maven test passed.
+P0 = 0. P1 = 1: first GitHub Actions run failed in `Backend Maven test` / `Run backend tests`, and the next fix must capture the concrete Maven failure details before changing workflow or adding fixture SQL.
 
 ## Next concrete action
 
 Next concrete action must be one of:
 
-- `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW`
 - `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`
 
 Do not combine 2E first-run review / fix with Batch 3 no-outbound, Batch 4 security guard, Batch 5 frontend E2E, AI, DH runtime, LIVE, RealClient, real provider, real exchange adapter, or credential material work.

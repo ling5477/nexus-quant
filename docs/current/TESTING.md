@@ -2,6 +2,24 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW（2026-06-16）
+
+本轮是 GateK CI Batch 2E first-run review：只评审删除 backend CI seed watcher 后的 GitHub Actions run，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 FAIL / FIRST-RUN-FIX REQUIRED；Batch 3-5 仍 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；初始 `git status --short` 为空。 |
+| GitHub Actions run | 失败 | Run `27610448572`，workflow `NQ CI Baseline`，branch `dev`，commit `d149952bbd39883847302996b0930437890b8121`，completed / failure。 |
+| Diff check | 通过 | Job `81633181839` completed / success。 |
+| Backend Maven test | 失败 | Job `81633181802` completed / failure；step `Run backend tests` failed with exit code 1。`gh run view --log-failed` 返回 HTTP 403，当前 reviewer 无法读取 Maven stack trace 或失败测试名。 |
+| Frontend build | 通过 | Job `81633181721` completed / success。 |
+| Research quality gate | 通过 | Job `81633181760` completed / success。 |
+| PostgreSQL / Flyway smoke | 通过 | Job `81633181744` completed / success；empty DB Flyway smoke、schema artifacts、repository PostgreSQL smoke、`nq-app` context smoke 均 success。 |
+| Seed watcher removal evidence | 部分通过 | `.github/workflows/ci.yml` 中 watcher 已删除；run metadata 显示 backend step 只剩 `Run backend tests`。由于日志 403，本轮无法从 backend log 直接搜索 `ci-local-account` / `public.accounts` / `seed_pid`。 |
+| Credential / exchange boundary | 通过 | 未发现新增 seed users、legacy accounts、exchange accounts、credential rows 或 credential material；未接 LIVE / AI / DH runtime / RealClient / real provider；未调用真实交易所。 |
+
+Review decision: FAIL / FIRST-RUN-FIX REQUIRED。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`；修复前必须先取得 backend Maven log，记录具体失败测试、SQL / stack trace 和根因。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-IMPL（2026-06-16）
 
 本轮是 GateK CI Batch 2E implementation：只清理 `.github/workflows/ci.yml` backend job 中的 CI-only background seed watcher，并同步 `docs/current` 状态记录。不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 IMPLEMENTED / PENDING FIRST CI RUN；Batch 3-5 仍 PENDING。

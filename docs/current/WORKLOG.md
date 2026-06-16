@@ -2,6 +2,54 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW
+
+日期：2026-06-16
+
+### 目标
+
+评审删除 backend CI seed watcher 后的 GitHub Actions first run，只确认 run / jobs / logs / seed watcher cleanup 边界，不进入 Batch 3-5，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### GitHub Actions 结果
+
+- Run: `27610448572`。
+- Workflow: `NQ CI Baseline`。
+- Branch: `dev`。
+- Commit: `d149952bbd39883847302996b0930437890b8121`。
+- Title: `ci(gatek): remove backend CI seed watcher`。
+- Result: completed / failure。
+
+### Job review
+
+- `Diff check` / job `81633181839`: success。
+- `Frontend build` / job `81633181721`: success。
+- `Research quality gate` / job `81633181760`: success。
+- `PostgreSQL / Flyway smoke` / job `81633181744`: success；empty DB Flyway smoke、schema artifacts、repository PostgreSQL smoke、`nq-app` context smoke 均 success。
+- `Backend Maven test` / job `81633181802`: failure；step `Run backend tests` failed with exit code 1。
+
+### 日志限制
+
+- `gh run view --log-failed` 和 `gh run view --job 81633181802 --log-failed` 均返回 HTTP 403：`Must have admin rights to Repository`。
+- 本轮无法读取 backend Maven stack trace、失败测试名或 SQL 失败细节；不得据此猜测根因。
+- `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX` 必须先取得 backend job log，记录具体失败测试、SQL / stack trace 和根因，再决定是否需要最小 fallback。
+
+### 边界确认
+
+- `.github/workflows/ci.yml` 未在本 review 中修改。
+- 未修改 backend / frontend / research / scripts / deploy / migration。
+- 未新增测试、API、migration 或 fixture。
+- 未创建 seed users、legacy accounts、exchange accounts、credential rows 或 credential material。
+- 未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所。
+- Batch 3 no-outbound guard、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening 仍 PENDING。
+
+### Review decision
+
+FAIL / FIRST-RUN-FIX REQUIRED。不得标记 Batch 2E FIRST GREEN、FROZEN 或 ACCEPTED。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`。修复前必须先记录 backend Maven 失败测试名、SQL / stack trace 和根因；禁止用 migration / `skipTests` / `continue-on-error` / Flyway `clean` / `baselineOnMigrate` 回滚。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-IMPL
 
 日期：2026-06-16
