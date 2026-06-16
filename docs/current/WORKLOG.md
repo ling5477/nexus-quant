@@ -2,6 +2,51 @@
 
 日期：2026-05-16
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+评审 Batch 3 no-outbound guard 首次 GitHub Actions run，确认 no-outbound-guard job、backend Maven test、postgres-flyway、frontend build、research quality gate 全部 green，且 CI 未访问真实交易所、未读取或输出真实 credential material。只评审，不进入 Batch 4 / Batch 5，不改业务代码。
+
+### 评审证据
+
+- GitHub Actions run `27634370657`（event `push`，branch `dev`，commit `88d976a1`）`completed / success`，6 jobs 全 green：`Diff check`、`No-outbound guard`(21s)、`Backend Maven test`(1m22s)、`PostgreSQL / Flyway smoke`(1m24s)、`Frontend build`、`Research quality gate`。
+- No-outbound guard job：env-absence、denylist coverage、guard test 三步 success；`NoOutboundExchangeGuardTest` 3/0/0/0（`CI=true` 使 env-absence 用例实际执行）。
+- postgres-flyway job：`NqAppContextPostgresSmokeTest` 1/0/0/0（真实 Spring context + 真实 PostgreSQL，guard 安装，`deniedSelections()==0`，NoReal probe 断言成立）；`JdbcRepositoryPostgresSmokeTest` 1/0/0/0。
+- backend job：`mvn -f backend/pom.xml test` `BUILD SUCCESS`，`nq-app` 56/0/0/1（CI 比本地少 1 skip 是预期，因 `CI=true` 使 env-absence 用例执行）。
+- 所有 job 日志无 `UnknownHostException` / `ConnectException` / `No route to host` / 真实交易所 connect；唯一交易所 host 字符串为 benign `apiKey=missing` fingerprint 与 `okx_recovery_startup_skipped`；无 credential-value 泄露，`gho_` token 被 mask。
+
+### 复核命令
+
+- `git status --short`（clean，已提交）、`git diff --check`（clean）、`git diff --stat`（空）。
+- `git show --stat --oneline --name-only 88d976a1`：仅 `.github/workflows/ci.yml` + 3 个 `backend/nq-app/src/test/.../smoke` 文件 + 7 个 `docs/current` 文档；无 frontend / research / scripts / deploy / migration。
+- `gh run view --job=<id> --log`（no-outbound-guard / backend / postgres-flyway）。
+- 关键词 / credential-value sweep over `backend .github docs/current`：无真实 credential material。
+
+### 文档更新
+
+- 同步 `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_PLAN.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`：Batch 3 状态 `IMPLEMENTED / PENDING FIRST CI RUN` -> `FIRST GREEN RUN CONFIRMED`（run `27634370657`），并记录 Batch 3D first-run review evidence。
+- 未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、backend production code、migration、frontend、research、scripts、deploy。
+
+### 边界确认
+
+- Batch 3：FIRST GREEN RUN CONFIRMED；未冻结，freeze 仍是 Batch 3E。Review decision：`PASS / ACCEPTED FOR FIRST GREEN RUN`。
+- Batch 4 security guard / secret scan：PENDING。Batch 5 frontend E2E hardening：PENDING。
+- AI：NOT STARTED。DH runtime：NOT INTEGRATED。LIVE：DISABLED。RealClient / real provider / real exchange permission probe adapter：NOT IMPLEMENTED。
+- 未读取、打印、复制或输出真实 credential material；未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+
+### P3 follow-up（非阻断）
+
+- denylist 在 ci.yml env、ci.yml bash array、`ExchangeNoOutboundGuard` 三处同源，存在未来漂移风险。
+- GitHub-provided actions 触发 Node.js 20 deprecation 警告（advisory）。
+- 二者留作 Batch 3 parity/hygiene follow-up，不在本轮修改。
+
+### 下一步
+
+Next concrete action：`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW`、Batch 3 parity/hygiene follow-up，或暂停 CI 线。不得直接写 FROZEN / ACCEPTED；不得混入 Batch 4 / Batch 5。
+
 ## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL
 
 日期：2026-06-17

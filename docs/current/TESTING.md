@@ -2,6 +2,29 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 3 no-outbound guard first-run review（对应 Batch 3D）。GitHub Actions run `27634370657`（event `push`，branch `dev`，commit `88d976a1`）`completed / success`，6 jobs 全 green。结论 `PASS / ACCEPTED FOR FIRST GREEN RUN`，状态推进为 `FIRST GREEN RUN CONFIRMED`；freeze 仍是 Batch 3E，不得写成 `FROZEN / ACCEPTED`。Batch 4 / Batch 5 仍 PENDING。
+
+| 检查项 | 结果 | CI 证据 |
+| --- | --- | --- |
+| GitHub Actions run | green | run `27634370657` completed / success；`gh run watch` exit 0。 |
+| Diff check job | green | success（6s）。 |
+| No-outbound guard job | green | success（21s）；`Verify no exchange credential env`、`Verify exchange denylist coverage`、`Run no-outbound guard tests` 三步均 success。 |
+| Backend Maven test job | green | success（1m22s）；`mvn -f backend/pom.xml test` `BUILD SUCCESS`，`nq-app` 56 tests / 0 failures / 0 errors / 1 skipped（CI `CI=true` 使 env-absence 用例执行，故较本地少 1 skip）。 |
+| PostgreSQL / Flyway job | green | success（1m24s）；artifact `nq-postgres-flyway-schema-artifacts` 上传通过 redaction check。 |
+| Frontend build job | green | success（22s）。 |
+| Research quality gate job | green | success（16s）。 |
+| `NoOutboundExchangeGuardTest` | 3/0/0/0 | guard job 内 `Tests run: 3, Failures: 0, Errors: 0, Skipped: 0`，`BUILD SUCCESS`；env-absence 用例在 CI 实际执行。 |
+| `NqAppContextPostgresSmokeTest` | 1/0/0/0 | `postgres-flyway` job 内 tests=1 / skipped=0 / failures=0 / errors=0（6.288s）；guard 已安装，`deniedSelections()==0`、WS mock 无 interaction、`permissionProbePort instanceof NoRealExchangeCredentialPermissionProbePort` 全部成立。 |
+| Denylist coverage | 完整 | 覆盖 OKX / Binance / Binance testnet / Binance WS / Bybit / Bitget / Gate / Coinbase / Kraken / Crypto.com / Hyperliquid。 |
+| No real exchange connect | 确认 | 所有 job 日志无 `UnknownHostException` / `ConnectException` / `No route to host` / 真实交易所 connect；唯一交易所 host 字符串为 benign `apiKey=missing` fingerprint 与 `okx_recovery_startup_skipped`。 |
+| Credential / LIVE boundary | 确认 | 无真实 API key / secret / passphrase / token / private key / credential material；`gho_` token 在 checkout step mask 为 `***`；LIVE / AI / DH runtime / RealClient / real provider / real probe adapter 均未开启或未实现。 |
+
+P3 hygiene（非阻断）：GitHub-provided actions（`checkout@v4`、`setup-java@v4`、`setup-node@v4`、`setup-python@v5`、`upload-artifact@v4`）触发 Node.js 20 deprecation 警告，仅 advisory；denylist 在 ci.yml env / ci.yml bash array / `ExchangeNoOutboundGuard` 三处同源，存在未来漂移风险。两者留作 Batch 3 parity/hygiene follow-up，不在本轮修改。
+
+下一步：`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW`、Batch 3 parity/hygiene follow-up，或暂停 CI 线。
+
 ## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL（2026-06-17）
 
 本轮是 GateK CI Batch 3B no-outbound guard 最小实现：新增 merge-blocking `No-outbound guard` job，并在 `nq-app` test scope 增加 deterministic exchange denylist guard。状态为 `IMPLEMENTED / PENDING FIRST CI RUN`；Batch 4 security guard / secret scan 和 Batch 5 frontend E2E hardening 仍 PENDING。

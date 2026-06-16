@@ -2,7 +2,7 @@
 
 任务：NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-PLAN
 日期：2026-06-16
-状态：Batch 3B IMPLEMENTED / PENDING FIRST CI RUN；Batch 3D first-run review PENDING；Batch 3E freeze review PENDING；Batch 4 security guard / secret scan PENDING；Batch 5 frontend E2E hardening PENDING
+状态：Batch 3 FIRST GREEN RUN CONFIRMED（GitHub Actions run `27634370657` / commit `88d976a1` / branch `dev`，6 jobs green）；Batch 3D first-run review PASS / ACCEPTED FOR FIRST GREEN RUN；Batch 3E freeze review PENDING；Batch 4 security guard / secret scan PENDING；Batch 5 frontend E2E hardening PENDING。不得直接写 FROZEN / ACCEPTED。
 
 ## Current CI baseline
 
@@ -18,7 +18,7 @@
 - Batch 2D `nq-app` context smoke：FROZEN / ACCEPTED。
 - Batch 2E seed watcher cleanup：FROZEN / ACCEPTED。
 - GateK CI Batch 2 PostgreSQL / Flyway hardening：完成。
-- Batch 3 no-outbound guard：IMPLEMENTED / PENDING FIRST CI RUN。
+- Batch 3 no-outbound guard：FIRST GREEN RUN CONFIRMED（run `27634370657`）；Batch 3E freeze review PENDING。
 - Batch 4 security guard / secret scan：PENDING。
 - Batch 5 frontend E2E hardening：PENDING。
 - AI：NOT STARTED。
@@ -165,6 +165,36 @@ mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest 
 
 结果：`NoOutboundExchangeGuardTest` 3 tests / 0 failures / 0 errors / 0 skipped，`BUILD SUCCESS`；`NqAppContextPostgresSmokeTest` 本地无 CI DB required properties，按设计 skipped=1，`BUILD SUCCESS`。真实 app context no-outbound proof 需等待 GitHub Actions `postgres-flyway` job first run。
 
+## Batch 3 first-run review evidence（FIRST GREEN RUN CONFIRMED）
+
+任务：`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW`，日期 2026-06-17。该 review 对应 Batch 3D first-run review，结论 `PASS / ACCEPTED FOR FIRST GREEN RUN`；不得直接写 `FROZEN / ACCEPTED`（freeze 仍是 Batch 3E）。
+
+GitHub Actions run：
+
+- Run id `27634370657`，event `push`，branch `dev`，commit `88d976a1`（`ci(gatek): add no-outbound guard baselin`），conclusion `completed / success`。
+- Jobs（全部 green）：`Diff check`、`No-outbound guard`(21s)、`Backend Maven test`(1m22s)、`PostgreSQL / Flyway smoke`(1m24s)、`Frontend build`、`Research quality gate`。
+
+No-outbound guard job 证据：
+
+- `Verify no exchange credential env is injected`、`Verify exchange denylist coverage`、`Run no-outbound guard tests` 三步均 success。
+- `NoOutboundExchangeGuardTest`：3 tests / 0 failures / 0 errors / 0 skipped，`BUILD SUCCESS`。job `CI=true`，env-absence 用例（`assumeTrue(isCiGuardRequired())`）在 CI 实际执行，未被 assume 跳过。
+
+App context smoke 证据（`postgres-flyway` job）：
+
+- `NqAppContextPostgresSmokeTest`：tests=1 / skipped=0 / failures=0 / errors=0（6.288s）——在真实 Spring context 启动 + 真实 PostgreSQL 下实际运行，guard 已安装，断言 `deniedSelections()==0`、WS mock 无 interaction、`permissionProbePort instanceof NoRealExchangeCredentialPermissionProbePort` 全部成立。
+- `JdbcRepositoryPostgresSmokeTest`：tests=1 / skipped=0 / failures=0 / errors=0。
+
+Backend Maven test job 证据：
+
+- `mvn -f backend/pom.xml test` `BUILD SUCCESS`，`nq-app` 56 tests / 0 failures / 0 errors / 1 skipped。CI `skipped=1`（vs 本地 `skipped=2`）是预期差异：backend job `CI=true` 使 `NoOutboundExchangeGuardTest` env-absence 用例实际执行，仅 `NqAppContextPostgresSmokeTest`（由 `postgres-flyway` job 单独运行）在本 job 跳过。
+
+No-outbound / credential 证据：
+
+- 所有 job 日志无 `UnknownHostException` / `ConnectException` / `No route to host` / 真实交易所 connect；唯一交易所 host 字符串是 benign fingerprint `OKX adapter connection fingerprint: env=dome, baseUrl=https://www.okx.com, apiKey=missing` 与 `okx_recovery_startup_skipped reason=recovery_disabled`，证明 adapter 离线构造、无 credential、未连接。
+- 日志无真实 API key / secret / passphrase / token / private key / credential material；`gho_` GitHub token 在 checkout step 被 mask 为 `***`。
+
+P3 hygiene（非阻断）：GitHub-provided actions（`actions/checkout@v4`、`setup-java@v4`、`setup-node@v4`、`setup-python@v5`、`upload-artifact@v4`）触发 Node.js 20 deprecation 警告，仅 advisory，不影响 green，留待后续 maintenance / Batch 4 评估，不在本轮修改。
+
 ## Batch 3 implementation strategy
 
 ### Batch 3A: no-outbound inventory / plan review
@@ -202,7 +232,7 @@ mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest 
 
 ### Batch 3D: first-run review
 
-- Status target: PASS / ACCEPTED FOR FIRST GREEN RUN or FAIL / FIRST-RUN-FIX REQUIRED.
+- Status: PASS / ACCEPTED FOR FIRST GREEN RUN（run `27634370657` completed / success；P0/P1=0；详见上文 Batch 3 first-run review evidence）。
 - Scope:
   - Review first GitHub Actions run, jobs, steps, logs, and artifacts.
   - Verify the guard ran in CI and was not skipped / soft-failed.
@@ -282,7 +312,7 @@ CI validation must additionally prove the denylist guard runs and fails closed. 
 
 ## Boundary confirmation
 
-- Batch 3B 是 IMPLEMENTED / PENDING FIRST CI RUN。
+- Batch 3 是 FIRST GREEN RUN CONFIRMED（run `27634370657`）；freeze 仍是 Batch 3E，未冻结。
 - 已修改 workflow 与 backend/nq-app test-scope guard / smoke test。
 - 未修改 backend production code / migration / frontend / research / scripts / deploy。
 - 未新增 API。
@@ -294,10 +324,10 @@ CI validation must additionally prove the denylist guard runs and fails closed. 
 
 ## Review decision
 
-IMPLEMENTED / PENDING FIRST CI RUN。P0/P1 blockers: 0。
+PASS / ACCEPTED FOR FIRST GREEN RUN。P0/P1 blockers: 0。
 
-本轮已完成最小 CI no-outbound guard baseline；尚未取得 GitHub Actions first run evidence，不能冻结。
+Batch 3 no-outbound guard 首次 GitHub Actions run `27634370657` completed / success，6 jobs 全 green，CI 证据证明默认 CI / backend Maven test / app context smoke 未访问真实交易所、未读取或输出真实 credential material、未开启 LIVE / AI / DH runtime、未实现 RealClient / real provider / real permission probe adapter。状态 FIRST GREEN RUN CONFIRMED；尚未冻结，freeze 仍是 Batch 3E。
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-FIRST-RUN-FIX`, or pause the CI line.
+Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW`、Batch 3 parity/hygiene follow-up（denylist 三处同源、Node.js 20 actions 升级评估），或暂停 CI 线。不得直接写 FROZEN / ACCEPTED；不得混入 Batch 4 / Batch 5。
