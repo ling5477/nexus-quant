@@ -2,6 +2,22 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2E-IMPL（2026-06-16）
+
+本轮是 GateK CI Batch 2E implementation：只清理 `.github/workflows/ci.yml` backend job 中的 CI-only background seed watcher，并同步 `docs/current` 状态记录。不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 IMPLEMENTED / PENDING FIRST CI RUN；Batch 3-5 仍 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；`git status --short` 为空。 |
+| Workflow cleanup | 已执行 | 删除 `backend` job / `Run backend tests` step 中的 background seed watcher；该 step 现在直接执行 `mvn -f backend/pom.xml test`。 |
+| Seed watcher removal | 已确认 | 删除 Docker polling、`public.accounts` 等待、`ci-local-account` insert、`seed_pid`、`wait` 和 watcher exit-status merge 逻辑。 |
+| Fallback SQL | 未添加 | 删除 watcher 后本地 backend Maven test 通过，不需要迁移完成后的显式 CI-only fixture SQL。 |
+| `mvn -f backend/pom.xml test` | **通过** | BUILD SUCCESS；23/23 reactor modules SUCCESS；Total time `02:22 min`。本地 run 使用 localhost PostgreSQL 17.7 跑 local-profile Spring tests；`NqAppContextPostgresSmokeTest` 因未设置 `nq.app.context.smoke.required=true` 按预期 skipped=1。 |
+| Batch 2A-2D regression scope | 未运行 CI | 本轮未触发 GitHub Actions；`postgres-flyway` job 未改，仍需 first CI run review 确认 backend job 和 `postgres-flyway` job 都保持 green。 |
+| Credential / exchange boundary | 通过 | 未创建 seed users、legacy accounts、exchange accounts、credential rows 或 credential material；未接 LIVE / AI / DH runtime / RealClient / real provider；未调用真实交易所。 |
+
+Review decision: PASS / IMPLEMENTED / PENDING FIRST CI RUN。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW` 或 2E first-run fix。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-PLAN（2026-06-16）
 
 本轮是 GateK CI Batch 2E planning-only：只读审计 CI-only seed watcher / AuthSeed / bootstrap admin / repository smoke / app context smoke / application yml / migration 边界，并新增 2E plan 文档。不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 仍为 PLAN ONLY / NOT IMPLEMENTED；Batch 3-5 仍 PENDING。

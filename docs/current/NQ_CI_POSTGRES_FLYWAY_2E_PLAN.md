@@ -1,22 +1,22 @@
 # NQ CI PostgreSQL / Flyway Batch 2E Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2E-PLAN
+任务：NQ-CI-POSTGRES-FLYWAY-2E-PLAN / NQ-CI-POSTGRES-FLYWAY-2E-IMPL
 日期：2026-06-16
-状态：PLAN READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED
+状态：IMPLEMENTED / PENDING FIRST CI RUN
 
 ## Task classification
 
 - Primary type: `CI_CD`
-- Auxiliary types: `DOCUMENTATION`, `SECURITY_BOUNDARY_REVIEW`, `TEST_BASELINE_REVIEW`
+- Auxiliary types: `DOCUMENTATION`, `SECURITY_BOUNDARY_GUARD`, `TEST_BASELINE_FIX`
 - 主 skill：`nq-dh-workflow-router`，用于确认 NQ / GateK / CI / credential / LIVE / DH 边界。
-- 本轮只做只读审计和文档规划；不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
+- 本轮实现 Batch 2E 最小 cleanup：只修改 backend CI job 的 `Run backend tests` step 和 `docs/current` 状态记录；不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
 
 ## Scope
 
 - Repository: NexusQuant / NQ。
 - Branch: `dev`。
 - Current stage: GateJ completed；Next: GateK-PLAN。
-- Batch state: 2A / 2B / 2C / 2C-HYGIENE-FIX / 2D 均为 FROZEN / ACCEPTED；Batch 2E 为本 planning-only 文档；Batch 3-5 仍 PENDING。
+- Batch state: 2A / 2B / 2C / 2C-HYGIENE-FIX / 2D 均为 FROZEN / ACCEPTED；Batch 2E 已实现 watcher cleanup，当前为 IMPLEMENTED / PENDING FIRST CI RUN；Batch 3-5 仍 PENDING。
 - Target files inspected:
   - `.github/workflows/ci.yml`
   - `backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/auth/AuthSeedConfiguration.java`
@@ -30,7 +30,6 @@
   - `backend/nq-infra/src/main/resources/db/migration/V12__rc1_account_and_credentials.sql`
   - `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
 - Explicit exclusions:
-  - 不修改 `.github/workflows/ci.yml`。
   - 不修改后端 / 前端 / research / scripts / deploy / migration / 测试代码。
   - 不新增 seed users、legacy accounts、exchange accounts 或 credential rows。
   - 不进入 Batch 3 no-outbound guard、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening。
@@ -47,6 +46,31 @@
 - `V12__rc1_account_and_credentials.sql`：确认会从 legacy `accounts` 回填 `exchange_accounts`，但未插入 `exchange_account_credentials`。
 
 ## Files changed
+
+- Updated:
+  - `.github/workflows/ci.yml`
+  - `docs/current/NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`
+  - `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+  - `docs/current/README.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+- Not changed:
+  - `backend/**`
+  - `frontend/**`
+  - `research/**`
+  - `scripts/**`
+  - `deploy/**`
+  - `backend/**/db/migration/**`
+
+## Implementation summary
+
+- Removed the `backend` job background seed watcher from `.github/workflows/ci.yml`.
+- `Run backend tests` now directly executes `mvn -f backend/pom.xml test`.
+- Removed watcher polling for Docker `postgres:16`, `public.accounts` detection, `ci-local-account` insertion, `seed_pid`, `wait`, and seed exit-status merge logic.
+- No fallback SQL was added because local backend Maven test passed after watcher deletion.
+- No `postgres-flyway` job step was changed; Batch 2A / 2B / 2C / 2D paths remain intact.
+
+## Files changed in planning turn
 
 - Added: `docs/current/NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`
 - Updated:
@@ -68,18 +92,18 @@
 | Job | Current state | 2E relevance |
 | --- | --- | --- |
 | `diff-check` | `git diff --check` hygiene gate。 | Not affected. |
-| `backend` | Runs `mvn -f backend/pom.xml test` with PostgreSQL service `postgres:16` and a CI-only background seed watcher. | Primary 2E target. Watcher waits for `public.accounts`, then inserts `ci-local-account` into legacy `accounts`. |
+| `backend` | Runs `mvn -f backend/pom.xml test` with PostgreSQL service `postgres:16`; the CI-only background seed watcher has been removed. | Primary 2E target. The backend job no longer inserts `ci-local-account` into legacy `accounts`. |
 | `postgres-flyway` | Runs empty DB Flyway smoke, schema artifacts, repository PostgreSQL smoke, and `nq-app` context smoke. | 2A-2D accepted baseline. Does not use the backend job seed watcher. |
 | `frontend` | `npm ci` + `npm run build`。 | Not affected by 2E. |
 | `research` | Python install + pytest + mypy + ruff。 | Not affected by 2E. |
 
 ## Seed watcher inventory
 
-Current watcher location:
+Removed watcher location:
 
 - `.github/workflows/ci.yml`, `backend` job, step `Run backend tests`。
 
-Current watcher behavior:
+Removed watcher behavior:
 
 1. Starts in background before `mvn -f backend/pom.xml test`。
 2. Polls Docker for the `postgres:16` service container.
@@ -88,13 +112,13 @@ Current watcher behavior:
    - `INSERT INTO accounts (account_code, venue, status) VALUES ('ci-local-account', 'PAPER', 'ACTIVE') ON CONFLICT (account_code) DO NOTHING;`
 5. Waits for Maven and watcher exit status; job fails if Maven fails or watcher times out.
 
-Current direct write:
+Removed direct write:
 
-- Directly writes one legacy `accounts` row only.
+- The backend job no longer directly writes the legacy `accounts` row.
 
-Current indirect effect:
+Removed indirect effect:
 
-- If the row exists before `V12__rc1_account_and_credentials.sql` reaches its `INSERT INTO exchange_accounts ... FROM accounts a` backfill, the migration can create an `exchange_accounts` row with:
+- The removed watcher can no longer race with `V12__rc1_account_and_credentials.sql` and can no longer indirectly create an `exchange_accounts` row with:
   - `exchange_code = UPPER('PAPER')`
   - `trade_env = 'SIM'`
   - `account_alias = 'ci-local-account'`
@@ -102,7 +126,7 @@ Current indirect effect:
   - `status = 'ACTIVE'`
 - No inspected migration inserts `exchange_account_credentials` rows from the watcher row.
 
-Current purpose:
+Historical purpose:
 
 - Batch 1 compatibility workaround for full backend Maven tests on fresh GitHub runners.
 - It exists because local-profile Spring context tests include code paths that expect at least one legacy account row.
@@ -180,6 +204,14 @@ Use explicit fixture SQL only if all are true:
 - Do not modify migrations or production seed code as rollback.
 - Do not add `baselineOnMigrate`, Flyway `clean`, `skipTests`, `continue-on-error`, or profile changes as rollback.
 
+## Batch 2E implementation
+
+- Implementation decision: delete the background watcher and do not add fallback SQL.
+- Fallback decision: not needed in this implementation slice because `mvn -f backend/pom.xml test` passed locally after watcher deletion.
+- First CI status: pending. Local Maven passed, but GitHub runner behavior must still be reviewed through `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW`.
+- If first CI run fails due to a missing legacy account fixture, the next task must capture the exact failing test, SQL / stack trace, and root cause before adding any explicit migration-after fixture SQL.
+- The fallback remains constrained to backend Maven test only; it must not affect `postgres-flyway`, 2A / 2B / 2C / 2D, migrations, production seed code, auth users, credential rows, LIVE, AI, DH runtime, RealClient, or real providers.
+
 ## AuthSeed / bootstrap admin boundary
 
 - `AuthSeedConfiguration` is `@Profile({"local", "test"})` and seeds users from `nq.security.users` through `AuthSeedService.seedUsers(...)`.
@@ -193,22 +225,22 @@ Use explicit fixture SQL only if all are true:
 
 | Area | Current evidence | 2E boundary |
 | --- | --- | --- |
-| legacy `accounts` | Watcher directly inserts `ci-local-account` into `accounts`. | Primary cleanup target. Delete or replace with explicit test fixture. |
-| `exchange_accounts` | V12 can backfill rows from legacy `accounts`. | Avoid migration-race seed. If a fixture remains, run it after migration or make the indirect row intentional and documented. |
+| legacy `accounts` | Removed watcher no longer inserts `ci-local-account` into `accounts`. | Cleanup implemented. If CI fails, use only explicit backend-test fixture review path. |
+| `exchange_accounts` | V12 can backfill rows from legacy `accounts`, but the removed watcher no longer creates a race seed. | Avoid migration-race seed. If a future fixture is required, run it after migration or make the indirect row intentional and documented. |
 | `exchange_account_credentials` | V12 creates table and constraints; no inspected watcher path inserts credential rows. | 2E must not create credential rows or material. |
 | auth users | Local/test profile can seed users through `AuthSeedConfiguration`. | Do not trigger or broaden auth seed. |
 | bootstrap admin | Conditional runner exists behind `nq.auth.bootstrap-admin.enabled=true`. | Keep disabled. |
 
 ## Impact assessment
 
-- Backend Maven test: likely affected because current `backend` job watcher was added to keep full Maven test green on a fresh runner. 2E implementation must expect at least one first-run review or fix loop.
+- Backend Maven test: local `mvn -f backend/pom.xml test` passed after watcher deletion. GitHub runner first run is still required before freeze.
 - `postgres-flyway` job: should not be affected; 2A/2B/2C/2D already avoid the watcher.
 - Batch 2A: dependency reduced to zero because empty DB Flyway smoke is no-seed and does not start `nq-app`.
 - Batch 2B: dependency reduced to zero because artifacts are generated from the seedless Flyway-migrated DB.
 - Batch 2C: dependency reduced to zero because repository smoke uses explicit fake data inside a rollback-only transaction and does not touch legacy `accounts`.
 - Batch 2D: dependency reduced to zero because `ci-app-smoke` context uses no local/test auth seed and intentionally creates no legacy/exchange/credential rows.
 - Batch 3 no-outbound: not strictly required before 2E because 2E touches only seed/fixture cleanup planning; however 2E implementation must not claim no-outbound coverage. If implementation changes app context behavior, stop and route to Batch 3 pre-planning first.
-- Security: reducing or deleting the watcher decreases the risk of hidden fixture state and migration-race behavior.
+- Security: deleting the watcher decreases the risk of hidden fixture state and migration-race behavior.
 
 ## Security boundary
 
@@ -221,11 +253,11 @@ Use explicit fixture SQL only if all are true:
 
 ## Batch boundary
 
-- Batch 2E is PLAN ONLY / NOT IMPLEMENTED in this document.
+- Batch 2E is IMPLEMENTED / PENDING FIRST CI RUN in this document.
 - Batch 3 no-outbound guard remains PENDING.
 - Batch 4 security guard / secret scan remains PENDING.
 - Batch 5 frontend E2E hardening remains PENDING.
-- Entering 2E implementation is allowed only after this plan is reviewed or explicitly accepted; implementation must be a separate task and must not include Batch 3-5 scope.
+- Batch 2E must not be marked FROZEN / ACCEPTED until first-run review confirms the backend and `postgres-flyway` jobs remain green with P0/P1=0.
 
 ## P0/P1/P2/P3 findings
 
@@ -250,47 +282,42 @@ Use explicit fixture SQL only if all are true:
 
 ## Validation
 
-Executed in this planning turn:
+Executed in the implementation turn:
 
 - `Get-Location`
 - `git status --short`
 - `git branch --show-current`
-- Read / searched `.github/workflows/ci.yml`, backend seed/bootstrap configs, app context smoke, repository smoke, application yml files, and V1 / V12 migrations.
+- `mvn -f backend/pom.xml test`：BUILD SUCCESS；reactor 23/23 modules SUCCESS；total time 02:22；local run used local PostgreSQL 17.7 for local-profile Spring tests and skipped CI-only `NqAppContextPostgresSmokeTest` as expected without `nq.app.context.smoke.required=true`。
 
-Not executed:
+Pending:
 
-- `mvn -f backend/pom.xml test`
-- `npm run build`
-- `npm run test:e2e`
-- Python `pytest` / `mypy` / `ruff`
+- GitHub Actions first run after watcher deletion.
 
 Reason:
 
-- This task is docs-only / planning-only and explicitly forbids workflow, code, test, migration, frontend, research, scripts, and deploy changes.
+- Local Maven validates the backend test baseline, but it is not a perfect GitHub runner reproduction because CI uses GitHub Actions `postgres:16` service while the local run used PostgreSQL 17.7 on `localhost:5432`.
 
 ## Boundary confirmation
 
-- `.github/workflows/ci.yml` inspected only; not modified.
+- `.github/workflows/ci.yml` modified only to remove the backend job background seed watcher.
 - No backend / frontend / research / scripts / deploy / migration files modified.
 - No tests added or changed.
 - No seed users, legacy accounts, exchange accounts, credential rows, or credential material created.
 - No real exchange, LIVE, AI, DH runtime, RealClient, real provider, or permission probe adapter started.
-- Batch 2E remains PLAN ONLY / NOT IMPLEMENTED.
+- Batch 2E is IMPLEMENTED / PENDING FIRST CI RUN.
 - Batch 3-5 remain PENDING.
 
 ## Review decision
 
-PASS / PLAN READY FOR REVIEW.
+PASS / IMPLEMENTED / PENDING FIRST CI RUN.
 
-P0/P1 = 0. This plan is suitable as the Batch 2E implementation baseline after `NQ-CI-POSTGRES-FLYWAY-2E-PLAN-REVIEW` or explicit user acceptance.
+P0/P1 = 0. The background seed watcher has been removed and no fallback SQL was added because local backend Maven test passed.
 
 ## Next concrete action
 
 Next concrete action must be one of:
 
-- `NQ-CI-POSTGRES-FLYWAY-2E-PLAN-REVIEW`
-- `NQ-CI-POSTGRES-FLYWAY-2E-PLAN-FIX`
-- `NQ-CI-POSTGRES-FLYWAY-2E-IMPL`
-- Batch 3 pre-planning
+- `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW`
+- `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`
 
-Do not combine 2E implementation with Batch 3 no-outbound, Batch 4 security guard, Batch 5 frontend E2E, AI, DH runtime, LIVE, RealClient, real provider, real exchange adapter, or credential material work.
+Do not combine 2E first-run review / fix with Batch 3 no-outbound, Batch 4 security guard, Batch 5 frontend E2E, AI, DH runtime, LIVE, RealClient, real provider, real exchange adapter, or credential material work.

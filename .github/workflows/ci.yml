@@ -77,32 +77,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          (
-            set -euo pipefail
-            for _ in {1..180}; do
-              container="$(docker ps --filter "ancestor=postgres:16" --format "{{.ID}}" | head -n 1)"
-              if [[ -n "${container}" ]] && docker exec "${container}" psql -U postgres -d nexus_quant -tAc "SELECT to_regclass('public.accounts')" 2>/dev/null | grep -q "accounts"; then
-                docker exec "${container}" psql -U postgres -d nexus_quant -v ON_ERROR_STOP=1 -c "INSERT INTO accounts (account_code, venue, status) VALUES ('ci-local-account', 'PAPER', 'ACTIVE') ON CONFLICT (account_code) DO NOTHING;"
-                exit 0
-              fi
-              sleep 1
-            done
-            echo "CI seed watcher timed out waiting for accounts table" >&2
-            exit 1
-          ) &
-          seed_pid="$!"
-
-          set +e
           mvn -f backend/pom.xml test
-          mvn_status="$?"
-          wait "${seed_pid}"
-          seed_status="$?"
-          set -e
-
-          if [[ "${mvn_status}" -ne 0 ]]; then
-            exit "${mvn_status}"
-          fi
-          exit "${seed_status}"
 
   postgres-flyway:
     name: PostgreSQL / Flyway smoke

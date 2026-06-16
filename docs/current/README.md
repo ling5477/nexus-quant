@@ -1,6 +1,6 @@
 # Current Stage
 
-`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；NQ CI Batch 2C FROZEN / ACCEPTED；NQ CI Batch 2C hygiene fix FROZEN / ACCEPTED；NQ CI Batch 2D FROZEN / ACCEPTED；GateK product/runtime implementation not started；AI not started**。
+`docs/current/` 是 NexusQuant 当前事实入口。当前状态是 **GateJ completed；Next: GateK-PLAN；NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；NQ CI Batch 2C FROZEN / ACCEPTED；NQ CI Batch 2C hygiene fix FROZEN / ACCEPTED；NQ CI Batch 2D FROZEN / ACCEPTED；NQ CI Batch 2E IMPLEMENTED / PENDING FIRST CI RUN；GateK product/runtime implementation not started；AI not started**。
 
 ## 当前状态
 
@@ -13,7 +13,7 @@
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN。
-- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2C hygiene fix FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E PLAN ONLY / NOT IMPLEMENTED；Batch 3-5 PENDING；GateK product/runtime implementation not started。
+- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2C hygiene fix FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E IMPLEMENTED / PENDING FIRST CI RUN；Batch 3-5 PENDING；GateK product/runtime implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
@@ -90,11 +90,11 @@ GateO：A 股适配
 - `GATEK_PLAN.md`：GateK planning-only 阶段规划；用于冻结 GateK 目标、非目标、主线拆分、验收标准、风险、backlog、安全审计前置和执行顺序。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、ACCEPTED WITH P2 FOLLOW-UP，未启动 GateK implementation。其 P2 文档漂移 follow-up 对应 `ARCHITECTURE.md` / `MODULES.md` current wording sync。
 - `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 文档；Batch 1 已新增 `.github/workflows/ci.yml`，GitHub Actions run `27496906788` first green confirmed；Batch 2A PostgreSQL-Flyway smoke 已由 GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B schema artifact baseline 已由 GitHub Actions run `27521750442` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2C repository-only real PostgreSQL smoke 已由 GitHub Actions run `27535619157` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2C hygiene fix 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2D first run `27590822405` failed（`venue must not be blank`，已修），second run `27592872701` failed at `securityFilterChain`（`webEnvironment = NONE` 下无 `HttpSecurity`，已修），third run `27596768301` failed in the test body with `NotAMockException` after servlet web context startup，FIRST-RUN-FIX #3 后 GitHub Actions run `27601707199` completed / success，并经 freeze review 固化为 FROZEN / ACCEPTED；no-outbound guard、secret scan、frontend E2E hardening 仍是后续批次。
-- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：NQ CI Batch 2 PostgreSQL / Flyway 文档；Batch 2A 已新增 GitHub Actions `postgres-flyway` job，使用 PostgreSQL service container 和 direct Flyway API 验证 empty DB V1-V31 migration smoke，并在 run `27501253175` 完成首次 green review 与 freeze review；Batch 2B 已在该 job 中实现 schema artifact generation / upload，并在 run `27521750442` 完成 first green run review 与 freeze review；Batch 2C repository real DB smoke 已实现，并在 run `27535619157` 完成 first green run review 与 freeze review；Batch 2C hygiene fix 已在 run `27550583713` 完成 first green run review 与 freeze review；Batch 2D app context smoke 当前为 FROZEN / ACCEPTED，run `27601707199` confirmed `NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0；Batch 2E seed watcher cleanup 当前为 PLAN ONLY / NOT IMPLEMENTED。
+- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：NQ CI Batch 2 PostgreSQL / Flyway 文档；Batch 2A 已新增 GitHub Actions `postgres-flyway` job，使用 PostgreSQL service container 和 direct Flyway API 验证 empty DB V1-V31 migration smoke，并在 run `27501253175` 完成首次 green review 与 freeze review；Batch 2B 已在该 job 中实现 schema artifact generation / upload，并在 run `27521750442` 完成 first green run review 与 freeze review；Batch 2C repository real DB smoke 已实现，并在 run `27535619157` 完成 first green run review 与 freeze review；Batch 2C hygiene fix 已在 run `27550583713` 完成 first green run review 与 freeze review；Batch 2D app context smoke 当前为 FROZEN / ACCEPTED，run `27601707199` confirmed `NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0；Batch 2E seed watcher cleanup 当前为 IMPLEMENTED / PENDING FIRST CI RUN。
 - `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`：NQ CI Batch 2B schema artifact / docs review 计划、implementation、first-run review 与 freeze review 记录；实现并冻结 `flyway-info`、schema tables / columns / constraints / indexes / comments artifacts、schema-only dump、retention、redaction 和 `DB_SCHEMA.md` drift review checklist；当前为 FROZEN / ACCEPTED。
 - `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`：NQ CI Batch 2C repository real PostgreSQL smoke 文件；盘点 repository / JDBC / Spring context 测试边界，冻结 2C-1 / 2C-2 / 2C-3 切片、seed / fixture、transaction / cleanup、安全和 rollback 策略；当前为 FROZEN / ACCEPTED。
 - `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`：NQ CI Batch 2D `nq-app` context smoke planning + implementation + first-run review + freeze review 文件；盘点 `@SpringBootTest` / profile / `AuthSeedConfiguration` / runner / scheduler / adapter / no-real probe 边界，并实现 CI-only fake profile / explicit properties、no seed、rollback 和 required-check 评估；FIRST-RUN-FIX #3 后 run `27601707199` confirmed `NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0；当前为 FROZEN / ACCEPTED。
-- `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`：Batch 2E CI-only seed watcher cleanup planning-only 文件；盘点 `backend` job watcher、legacy `accounts` direct seed、V12 `exchange_accounts` backfill 风险、AuthSeed / bootstrap admin 边界和删除 / 显式 fixture / 触发条件收窄方案；当前为 PLAN READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED。
+- `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`：Batch 2E CI-only seed watcher cleanup 文件；`backend` job background seed watcher 已删除，`Run backend tests` 直接执行 `mvn -f backend/pom.xml test`；本地 backend Maven test 已通过，等待 GitHub Actions first run review；当前为 IMPLEMENTED / PENDING FIRST CI RUN。
 - `WORKLOG.md`：执行日志。
 
 ## Codex Workflow 入口
@@ -110,11 +110,11 @@ GateO：A 股适配
 - `GATEK_PLAN.md`：GateK-PLAN 当前规划文件；不代表 GateK implementation started。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review 当前审查报告；不代表 GateK implementation started；`ARCHITECTURE.md` / `MODULES.md` 是其 P2 follow-up 后的 current architecture / modules fact source。
 - `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 当前文件；Batch 1 最小 workflow 已实现并完成首次 green run review，Batch 2A PostgreSQL-Flyway smoke、Batch 2B schema artifact baseline 与 Batch 2C repository real PostgreSQL smoke 均已冻结为 FROZEN / ACCEPTED。
-- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：Batch 2 PostgreSQL / Flyway 当前文件；2A / 2B / 2C 均为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已 FROZEN / ACCEPTED；2D 为 FROZEN / ACCEPTED；2E 为 PLAN ONLY / NOT IMPLEMENTED；下一步只允许 `NQ-CI-POSTGRES-FLYWAY-2E-PLAN-REVIEW`、2E plan fix、2E implementation、Batch 3 pre-planning，或按用户选择暂停 CI 线。
+- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：Batch 2 PostgreSQL / Flyway 当前文件；2A / 2B / 2C 均为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已 FROZEN / ACCEPTED；2D 为 FROZEN / ACCEPTED；2E 为 IMPLEMENTED / PENDING FIRST CI RUN；下一步只允许 `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW` 或 2E first-run fix。
 - `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`：Batch 2B schema artifact / docs review 文件；记录 plan accepted、artifact implementation、first green run evidence、freeze review evidence 和冻结边界。
 - `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`：Batch 2C repository real PostgreSQL smoke 文件；已 FROZEN / ACCEPTED 为当前 `dev` repository-only real DB 最小验证基线，不启动 `nq-app` context、不使用真实 seed、不接真实交易所。
 - `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`：Batch 2D `nq-app` context smoke planning + implementation + first-run review + freeze review 文件；FROZEN / ACCEPTED，不新增 migration、不启动真实 provider、不触发真实交易所；不证明 Batch 3 no-outbound guard。
-- `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`：Batch 2E CI-only seed watcher cleanup planning-only 文件；不修改 workflow 或代码，不新增 fixture，仅作为后续 2E review / implementation baseline。
+- `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`：Batch 2E CI-only seed watcher cleanup 文件；已修改 workflow 删除 background seed watcher，不新增 fixture，等待 first CI run review。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。

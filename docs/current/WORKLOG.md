@@ -2,6 +2,61 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2E-IMPL
+
+日期：2026-06-16
+
+### 目标
+
+实现 GateK CI Batch 2E：清理 `.github/workflows/ci.yml` backend job 中的 CI-only background seed watcher，避免它继续作为 ad hoc compatibility layer 掩盖测试 fixture ownership 问题，并消除 legacy `accounts` -> V12 backfill -> `exchange_accounts` 的迁移时序风险。本轮不进入 Batch 3-5，不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### 实现摘要
+
+- `.github/workflows/ci.yml`：`backend` job 的 `Run backend tests` step 已删除 background seed watcher。
+- 删除内容包括：
+  - Docker `postgres:16` container polling。
+  - `SELECT to_regclass('public.accounts')` 等待逻辑。
+  - `INSERT INTO accounts ... ('ci-local-account', 'PAPER', 'ACTIVE')`。
+  - `seed_pid`、`wait`、watcher exit-status merge。
+- `Run backend tests` 现在只执行：
+
+```bash
+mvn -f backend/pom.xml test
+```
+
+### Fallback 决策
+
+- 未添加 fallback SQL。
+- 原因：删除 watcher 后，本地 `mvn -f backend/pom.xml test` 通过。
+- 若 GitHub first run 失败，下一步必须先记录具体失败测试名、SQL / stack trace 和根因；只有确认是测试 fixture ownership 问题，才允许在 2E first-run fix 中考虑迁移完成后的显式 CI-only fixture SQL。
+- 禁止恢复 background watcher；禁止新增 migration；禁止 `skipTests` / `continue-on-error` / Flyway `clean` / `baselineOnMigrate`。
+
+### 验证记录
+
+- `Get-Location`：`F:\project\nexus-quant`。
+- `git branch --show-current`：`dev`。
+- `git status --short`：编辑前为空。
+- `mvn -f backend/pom.xml test`：BUILD SUCCESS；23/23 reactor modules SUCCESS；Total time `02:22 min`。
+- 本地 Maven 说明：local-profile Spring tests 使用本机 PostgreSQL 17.7；CI runner 仍使用 GitHub Actions `postgres:16` service，因此还需要 `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW` 复核 first CI run。
+
+### 边界确认
+
+- 未修改 backend production code / frontend / research / scripts / deploy。
+- 未新增测试。
+- 未新增或修改 migration。
+- 未创建 seed users、legacy accounts、exchange accounts、credential rows 或 credential material。
+- 未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所。
+- Batch 2E 当前为 IMPLEMENTED / PENDING FIRST CI RUN；不得写成 FROZEN / ACCEPTED。
+- Batch 3 no-outbound guard、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening 仍 PENDING。
+
+### Review decision
+
+PASS / IMPLEMENTED / PENDING FIRST CI RUN。P0/P1 = 0。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW` 或 2E first-run fix。不得混入 Batch 3-5、LIVE、AI、DH runtime、RealClient、real provider、真实交易所或 credential material work。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-PLAN
 
 日期：2026-06-16
