@@ -2,6 +2,37 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-PLAN（2026-06-16）
+
+本轮是 GateK CI Batch 3 no-outbound guard planning-only：只规划后续如何证明 CI / Maven test / app context smoke 默认不会访问真实交易所、不会读取真实凭证、不会触发 LIVE / real provider / RealClient 路径。不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 3 当前为 PLAN ONLY / NOT IMPLEMENTED；Batch 4 security guard / secret scan 和 Batch 5 frontend E2E hardening 仍 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| Workflow 只读检查 | 已执行 | `.github/workflows/ci.yml` 当前有 `diff-check`、`backend`、`postgres-flyway`、`frontend`、`research`；无 dedicated no-outbound job，本轮未修改 workflow。 |
+| Backend / adapter inventory | 已执行 | 复核 `backend/pom.xml`、adapter-okx、adapter-binance、adapter-api、HTTP / WS client、scheduler / recovery / catalog sync、permission probe service / port / tests。 |
+| Profile inventory | 已执行 | 复核 `application.yml` / `application-test.yml` / `application-local.yml`；确认默认 local profile 与真实 exchange endpoint 默认值不能作为 CI no-outbound proof。 |
+| Permission probe boundary | 已确认 | `AccountModuleConfiguration` 默认绑定 `NoRealExchangeCredentialPermissionProbePort`；Service 保留 LIVE / withdraw / paper safety gate；真实 OKX/Binance probe adapter 仍 NOT IMPLEMENTED。 |
+| Plan file | 已新增 | `docs/current/NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`，状态固定为 PLAN ONLY / NOT IMPLEMENTED。 |
+| 本地 build/test | 未运行 | 本轮只改 docs/current 文档，且明确禁止实现 guard、修改 workflow、代码、测试或 migration；未运行 backend Maven、frontend build / E2E、Python pytest / mypy / ruff。 |
+
+计划验证命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- .github
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "OKX|Binance|Bybit|Bitget|Gate|Coinbase|Kraken|Crypto|Hyperliquid|WebSocket|RestTemplate|WebClient|HttpClient|OkHttp|apiKey|secret|passphrase|token|private key|LIVE|RealClient|permission-probe|NoReal|scheduler|recovery|monitor" backend .github docs/current
+```
+
+Review decision: PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。下一步只能是 Batch 3A plan review、Batch 3A plan fix、Batch 3B implementation，或暂停 CI 线。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-FREEZE-REVIEW（2026-06-16）
 
 本轮是 GateK CI Batch 2E freeze review：只冻结 Batch 2E seed watcher cleanup baseline，并同步允许的 `docs/current` 状态记录。不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 FROZEN / ACCEPTED；Batch 3-5 仍 PENDING。

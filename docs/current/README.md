@@ -13,7 +13,7 @@
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN。
-- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2C hygiene fix FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3-5 PENDING；GateK product/runtime implementation not started。
+- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2C hygiene fix FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard PLAN ONLY / NOT IMPLEMENTED；Batch 4 / Batch 5 PENDING；GateK product/runtime implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
@@ -95,6 +95,7 @@ GateO：A 股适配
 - `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`：NQ CI Batch 2C repository real PostgreSQL smoke 文件；盘点 repository / JDBC / Spring context 测试边界，冻结 2C-1 / 2C-2 / 2C-3 切片、seed / fixture、transaction / cleanup、安全和 rollback 策略；当前为 FROZEN / ACCEPTED。
 - `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`：NQ CI Batch 2D `nq-app` context smoke planning + implementation + first-run review + freeze review 文件；盘点 `@SpringBootTest` / profile / `AuthSeedConfiguration` / runner / scheduler / adapter / no-real probe 边界，并实现 CI-only fake profile / explicit properties、no seed、rollback 和 required-check 评估；FIRST-RUN-FIX #3 后 run `27601707199` confirmed `NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0；当前为 FROZEN / ACCEPTED。
 - `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`：Batch 2E CI-only seed watcher cleanup 文件；`backend` job background seed watcher 已删除；first-run fix 在 `Run backend tests` 前新增同步 post-Flyway CI-only legacy `accounts` fixture，显式校验不创建 `exchange_accounts` 或 credential rows；run `27614046762` confirmed backend Maven test and `postgres-flyway` job success；当前为 FROZEN / ACCEPTED。
+- `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`：GateK CI Batch 3 no-outbound guard planning-only 文件；盘点 OKX / Binance adapter、public API、WebSocket、scheduler / recovery / monitor、permission probe、application profiles、CI env / secrets 风险，冻结 denylisted exchange domains、credential / LIVE 边界、JVM deny / profile disable / NoReal port / env allowlist / log scan / test assertion / GitHub Actions job guard 方案；当前为 PLAN ONLY / NOT IMPLEMENTED，Batch 4 / Batch 5 仍 PENDING。
 - `WORKLOG.md`：执行日志。
 
 ## Codex Workflow 入口
@@ -110,11 +111,12 @@ GateO：A 股适配
 - `GATEK_PLAN.md`：GateK-PLAN 当前规划文件；不代表 GateK implementation started。
 - `GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review 当前审查报告；不代表 GateK implementation started；`ARCHITECTURE.md` / `MODULES.md` 是其 P2 follow-up 后的 current architecture / modules fact source。
 - `NQ_CI_BASELINE_PLAN.md`：NQ CI baseline 当前文件；Batch 1 最小 workflow 已实现并完成首次 green run review，Batch 2A PostgreSQL-Flyway smoke、Batch 2B schema artifact baseline 与 Batch 2C repository real PostgreSQL smoke 均已冻结为 FROZEN / ACCEPTED。
-- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：Batch 2 PostgreSQL / Flyway 当前文件；2A / 2B / 2C 均为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已 FROZEN / ACCEPTED；2D 为 FROZEN / ACCEPTED；2E 为 FROZEN / ACCEPTED；下一步只允许 Batch 3 pre-planning、Batch 4 / Batch 5 later planning 或暂停 CI 线。
+- `NQ_CI_POSTGRES_FLYWAY_PLAN.md`：Batch 2 PostgreSQL / Flyway 当前文件；2A / 2B / 2C 均为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已 FROZEN / ACCEPTED；2D 为 FROZEN / ACCEPTED；2E 为 FROZEN / ACCEPTED；下一步只允许 Batch 3A plan review / fix、Batch 3B implementation、Batch 4 / Batch 5 later planning 或暂停 CI 线。
 - `NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`：Batch 2B schema artifact / docs review 文件；记录 plan accepted、artifact implementation、first green run evidence、freeze review evidence 和冻结边界。
 - `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`：Batch 2C repository real PostgreSQL smoke 文件；已 FROZEN / ACCEPTED 为当前 `dev` repository-only real DB 最小验证基线，不启动 `nq-app` context、不使用真实 seed、不接真实交易所。
 - `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`：Batch 2D `nq-app` context smoke planning + implementation + first-run review + freeze review 文件；FROZEN / ACCEPTED，不新增 migration、不启动真实 provider、不触发真实交易所；不证明 Batch 3 no-outbound guard。
 - `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`：Batch 2E CI-only seed watcher cleanup 文件；已修改 workflow 删除 background seed watcher；first-run fix 已新增同步 post-Flyway CI-only legacy `accounts` fixture，并校验不创建 `exchange_accounts` 或 credential rows；run `27614046762` first green confirmed，freeze review 已接受为 FROZEN / ACCEPTED。
+- `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`：Batch 3 no-outbound guard planning-only 文件；当前为 PLAN ONLY / NOT IMPLEMENTED，后续只能进入 Batch 3A plan review / fix、Batch 3B implementation，或暂停 CI 线。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。

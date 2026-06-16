@@ -2,6 +2,68 @@
 
 日期：2026-05-16
 
+## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3-PLAN
+
+日期：2026-06-16
+
+### 目标
+
+规划 GateK CI Batch 3 no-outbound guard：明确后续如何证明 CI / Maven test / `nq-app` context smoke 默认不会访问真实交易所、不会读取真实凭证、不会触发 LIVE / real provider / RealClient 路径。本轮 planning-only，只允许 `docs/current` 文档变更；不修改 workflow、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+### Evidence reviewed
+
+- `.github/workflows/ci.yml`：当前 jobs 为 `diff-check`、`backend`、`postgres-flyway`、`frontend`、`research`；当前无 dedicated no-outbound job。
+- `backend/pom.xml`：Java 21 / Spring Boot 3.5.x / Maven multi-module，包含 `nq-adapter-okx`、`nq-adapter-binance`、`nq-scheduler`、`nq-app` 等模块。
+- `application.yml` / `application-local.yml` / `application-test.yml`：默认 profile 为 `local`；OKX 默认 `https://www.okx.com`；test profile 仍是 PostgreSQL placeholder 且 Flyway disabled。
+- Adapter inventory：OKX / Binance REST 和 WS client 均存在；adapter 默认构造读取 runtime env 并创建 HTTP client，但现有 no-outbound tests 只覆盖部分启动期路径。
+- Scheduler / recovery / catalog sync inventory：OKX / Binance reconcile、OKX recovery、instrument catalog sync 可在启用或显式调用时触发 adapter 方法。
+- Permission probe inventory：`AccountModuleConfiguration` 默认绑定 `NoRealExchangeCredentialPermissionProbePort`；Service 仍先执行 LIVE / withdraw / paper safety gate；真实 OKX/Binance probe adapter NOT IMPLEMENTED。
+- Batch 2D context smoke inventory：`NqAppContextPostgresSmokeTest` 证明 context startup，禁用 scheduler / recovery / catalog sync / WS，并明确 REST adapter no-outbound interception belongs to Batch 3。
+
+### Planning result
+
+- 新增 `docs/current/NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`。
+- Batch 3 拆分为：
+  - Batch 3A：no-outbound inventory / plan review。
+  - Batch 3B：workflow / CI guard 最小实现。
+  - Batch 3C：backend test isolation proof。
+  - Batch 3D：first-run review。
+  - Batch 3E：freeze review。
+- 计划要求后续至少覆盖 JVM layer deny、test profile disable、NoReal port binding、env allowlist、exchange domain denylist、log scan、test-level assertions、GitHub Actions job-level guard。
+- 交易所域名 denylist 至少包含 `okx.com`、`www.okx.com`、`my.okx.com`、`binance.com`、`api.binance.com`、`fapi.binance.com`、`dapi.binance.com`、`bybit.com`、`bitget.com`、`gate.io`、`coinbase.com`、`kraken.com`、`crypto.com`、`hyperliquid.xyz`。
+
+### Boundary confirmation
+
+- Batch 3 当前为 PLAN ONLY / NOT IMPLEMENTED。
+- Batch 4 security guard / secret scan：PENDING。
+- Batch 5 frontend E2E hardening：PENDING。
+- AI：NOT STARTED。
+- DH runtime：NOT INTEGRATED。
+- LIVE：DISABLED。
+- RealClient / real provider / real exchange adapter：NOT IMPLEMENTED。
+- 真实 OKX / Binance permission probe adapter：NOT IMPLEMENTED。
+- 未读取、打印、复制或输出真实 credential material。
+- 未调用真实交易所，未下单、撤单、转账、提现。
+- 未修改 `.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy 或 migration。
+
+### 修改文件
+
+- `docs/current/NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/ROADMAP.md`
+
+### Review decision
+
+PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。
+
+### 下一步
+
+Next concrete action：`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-REVIEW`、`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-FIX`、`NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL`，或暂停 CI 线。不得混入 Batch 4 secret scan、Batch 5 frontend E2E hardening、AI、DH runtime、LIVE、RealClient、real provider、真实交易所或 credential material work。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-FREEZE-REVIEW
 
 日期：2026-06-16

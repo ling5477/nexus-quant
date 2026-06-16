@@ -19,7 +19,7 @@
 - Batch 2C repository real PostgreSQL smoke：FROZEN / ACCEPTED；GitHub Actions run `27535619157` / job `81384164182` completed / success；freeze review 已接受其作为当前 `dev` repository-only real DB 最小验证基线；2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；详见 `NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`。
 - Batch 2D nq-app context smoke：FROZEN / ACCEPTED；GitHub Actions run `27601707199` confirmed `NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0；freeze review accepted it as the current `dev` `nq-app` context smoke baseline；详见 `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`。
 - Batch 2E CI-only seed watcher cleanup：FROZEN / ACCEPTED；已删除 backend job background seed watcher，本地 `mvn -f backend/pom.xml test` BUILD SUCCESS，GitHub Actions run `27610448572` 在 `Backend Maven test` / `Run backend tests` step 失败，根因为 `ResearchBacktestHappyPathLocalTest` 依赖 legacy `accounts` row；first-run fix 已改为迁移完成后同步插入一条 CI-only legacy `accounts` fixture，并显式校验不创建 `exchange_accounts` / credential rows；GitHub Actions run `27614046762` confirmed `Backend Maven test` and `PostgreSQL / Flyway smoke` completed / success；freeze review P0/P1=0，接受其为当前 `dev` seed watcher cleanup CI baseline；详见 `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`。
-- Batch 3 no-outbound guard：PENDING。
+- Batch 3 no-outbound guard：PLAN ONLY / NOT IMPLEMENTED。
 - Batch 4 security guard / secret scan：PENDING。
 - Batch 5 frontend E2E hardening：PENDING。
 - AI: NOT STARTED。
@@ -390,7 +390,7 @@ Freeze review evidence:
 - `NqAppContextPostgresSmokeTest`: active profile `ci-app-smoke`; tests=1 / skipped=0 / failures=0 / errors=0; `nq-app SUCCESS`; Maven `BUILD SUCCESS`。
 - P0/P1 findings: 0。
 - CI log hygiene residual: disposable CI-only PostgreSQL service values and a generated development security password remain P3 residuals, not P0/P1 blockers and not real credential material leakage。
-- Freeze boundary: Batch 2D accepts only context startup; it does not implement or prove Batch 3 no-outbound guard. Batch 2E seed watcher cleanup is now FROZEN / ACCEPTED after `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`, follow-up run `27614046762`, and the 2E freeze review. Batch 3-5 remain PENDING。
+- Freeze boundary: Batch 2D accepts only context startup; it does not implement or prove Batch 3 no-outbound guard. Batch 2E seed watcher cleanup is now FROZEN / ACCEPTED after `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`, follow-up run `27614046762`, and the 2E freeze review. Batch 3 no-outbound guard is PLAN ONLY / NOT IMPLEMENTED; Batch 4 / Batch 5 remain PENDING。
 
 ### Batch 2E: CI-only seed watcher cleanup
 
@@ -468,4 +468,4 @@ Batch 2A 已冻结为当前 `dev` 的 PostgreSQL / Flyway empty DB migration smo
 
 ## Next concrete action
 
-Next concrete action: Batch 3 pre-planning, Batch 4 / Batch 5 later planning, or pause the CI line。Batch 3-5 仍 PENDING。
+Next concrete action: `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-REVIEW`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3A-PLAN-FIX`, `NQ-CI-NO-OUTBOUND-GUARD-BATCH-3B-IMPL`, Batch 4 / Batch 5 later planning, or pause the CI line。Batch 3 no-outbound guard 当前为 PLAN ONLY / NOT IMPLEMENTED；Batch 4 / Batch 5 仍 PENDING。
