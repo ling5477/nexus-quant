@@ -2,6 +2,46 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2D-IMPL 验证记录（2026-06-16）
+
+本轮是 GateK CI Batch 2D implementation：实现最小 `nq-app` Spring context smoke，状态只能写为 IMPLEMENTED / PENDING FIRST CI RUN。不得写成 FROZEN / ACCEPTED，不进入 Batch 2E，不进入 Batch 3-5。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| 预检 | 通过 | `Get-Location` 为 `F:\project\nexus-quant`；`git branch --show-current` 为 `dev`；编辑前 `git status --short` 无输出。 |
+| App context smoke | 已实现 | 新增 `NqAppContextPostgresSmokeTest`，使用 `@SpringBootTest(webEnvironment = NONE)`。 |
+| Profile / properties | 已实现 | 使用 `@ActiveProfiles("ci-app-smoke")` 和 explicit CI datasource properties；不使用 `local`，不 as-is 复用 current `test` profile。 |
+| Flyway strategy | 已实现 | CI step 复用同一 `postgres-flyway` job 中已迁移 schema；context smoke 设置 `spring.flyway.enabled=false`，不重复迁移。 |
+| Seed / AuthSeed boundary | 已实现 | 避开 `local` / `test`，不触发 `AuthSeedConfiguration`；不创建 admin/operator/viewer seed users、legacy accounts、exchange accounts 或 credential rows。 |
+| Adapter / .env boundary | 已实现 | OKX / Binance adapter 与 WS client 使用 `MockitoBean` test doubles 替换，避免真实构造器读取 `.env` 或构造真实 exchange client path。 |
+| CI wiring | 已实现 | 在 `postgres-flyway` job 的 Flyway / artifact / 2C repository smoke 后追加 `Run nq-app PostgreSQL context smoke` step；不使用 `continue-on-error`、`skipTests`、Testcontainers、bare `env`、`printenv` 或 full environment dump。 |
+| Local Maven validation | 通过 / compile + selection only | `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'` BUILD SUCCESS；`NqAppContextPostgresSmokeTest` tests=1 / skipped=1，因为本地未设置 `nq.app.context.smoke.required=true` 和 CI DB properties。 |
+| Pending first CI run | 是 | 必须等待 GitHub Actions first run review 才能确认 `NqAppContextPostgresSmokeTest` 在 CI PostgreSQL service DB 上真实启动成功。 |
+
+本轮要求执行 / 复核命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- backend/nq-infra/src/main/resources/db/migration
+git diff -- backend/nq-app/src/main/resources/db/migration
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+rg "@ActiveProfiles\("local"\)|AuthSeedConfiguration|ApplicationRunner|CommandLineRunner|Scheduled|Scheduler|Testcontainers|OKX|Binance|Bybit|Gate|Coinbase|Kraken|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key" backend .github docs/current
+mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'
+```
+
+Local CI PostgreSQL app context smoke limitation:
+
+- 本地未提供 GitHub Actions PostgreSQL service DB 和 `nq.app.context.smoke.*` properties，因此本地 selected Maven command 只能验证 test 编译 / Surefire selection，不能证明 CI PostgreSQL context startup。
+- 真实 context startup 必须由 GitHub Actions `postgres-flyway` job 的 `Run nq-app PostgreSQL context smoke` step 首次运行确认。
+- CI step 显式设置 `nq.app.context.smoke.required=true`，因此 GitHub Actions 中该测试不得 skip / soft-fail；缺少 datasource properties 或 context 启动失败会导致 Maven step 失败。
+
+Review decision: PASS / IMPLEMENTED / PENDING FIRST CI RUN。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-PLAN 验证记录（2026-06-15）
 
 本轮是 GateK CI Batch 2D planning-only：只规划未来最小 `nq-app` context smoke，不修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、backend production code、frontend、research、scripts 或 deploy。

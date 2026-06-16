@@ -391,6 +391,19 @@ jobs:
             -Dnq.postgres.smoke.user="${NQ_FLYWAY_DB_USER}" \
             -Dnq.postgres.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
 
+      - name: Run nq-app PostgreSQL context smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mvn -f backend/pom.xml -pl nq-app -am test \
+            -Dtest=NqAppContextPostgresSmokeTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dnq.app.context.smoke.required=true \
+            -Dnq.app.context.smoke.url="${NQ_FLYWAY_DB_URL}" \
+            -Dnq.app.context.smoke.user="${NQ_FLYWAY_DB_USER}" \
+            -Dnq.app.context.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
+
   frontend:
     name: Frontend build
     runs-on: ubuntu-latest

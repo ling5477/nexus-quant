@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway 2D Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN
-日期：2026-06-15
-状态：PLAN ONLY / NOT IMPLEMENTED
+任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN / NQ-CI-POSTGRES-FLYWAY-2D-IMPL
+日期：2026-06-15 / 2026-06-16
+状态：IMPLEMENTED / PENDING FIRST CI RUN
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - Batch 2B schema artifact baseline：FROZEN / ACCEPTED。
 - Batch 2C repository-only real PostgreSQL smoke baseline：FROZEN / ACCEPTED。
 - 2C-HYGIENE-FIX：FROZEN / ACCEPTED。
-- Batch 2D `nq-app` context smoke：PLAN ONLY / NOT IMPLEMENTED。
+- Batch 2D `nq-app` context smoke：IMPLEMENTED / PENDING FIRST CI RUN。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
 - Batch 4 security guard / secret scan：PENDING。
@@ -27,15 +27,16 @@
 
 ## Scope
 
-This document plans the smallest possible `nq-app` Spring context smoke for a future Batch 2D implementation. It does not implement the smoke test, does not modify `.github/workflows/ci.yml`, does not modify Java / TypeScript / Python code, does not add tests, and does not add or modify migrations.
+This document records the accepted plan and the minimal implementation for the `nq-app` Spring context smoke. Batch 2D now adds one test-only Spring context smoke and one CI step in the existing `postgres-flyway` job. It does not modify backend production code, frontend, research, scripts, deploy, API, migration, historical migration, seed policy, no-outbound guard, security scan, frontend E2E hardening, AI, DH runtime, LIVE, RealClient, real provider, or real exchange adapter.
 
-Allowed future Batch 2D implementation shape, subject to a separate implementation task:
+Implemented Batch 2D shape:
 
-- Add one explicitly selected `nq-app` context smoke test or smoke runner.
-- Use the existing GitHub Actions PostgreSQL service or an isolated disposable database created from that service.
-- Use Flyway-migrated schema before context startup.
-- Use CI-only fake profile / explicit test properties.
-- Keep LIVE disabled, real provider side effects disabled, scheduler side effects disabled, and external network access absent by construction.
+- Added one explicitly selected `nq-app` context smoke test: `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java`.
+- Reused the existing GitHub Actions PostgreSQL service inside the same `postgres-flyway` job; no cross-job DB sharing is assumed.
+- Reused the schema already migrated by the direct Flyway step before context startup.
+- Used CI-only fake profile name `ci-app-smoke` plus explicit test properties; `local` and current `test` profiles are not used.
+- Kept LIVE disabled, bootstrap admin disabled, catalog sync disabled, OKX recovery disabled, OKX WS disabled, Binance WS disabled, scheduler side effects disabled by property, and real adapter / WS constructors replaced by test mocks.
+- Set `spring.flyway.enabled=false` in the context smoke because the same job already ran Flyway migrate / validate before this step; this prevents a second context-owned migration and keeps 2D focused on Spring wiring against the migrated schema.
 
 Forbidden for Batch 2D:
 
@@ -56,11 +57,11 @@ Current `.github/workflows/ci.yml` has these relevant jobs:
 | Job | Current behavior | 2D interpretation |
 | --- | --- | --- |
 | `backend` | Runs `mvn -f backend/pom.xml test` with PostgreSQL service `postgres:16`; uses a CI-only watcher to insert one `accounts` row after Flyway creates the table. | Batch 1 compatibility path only. It currently satisfies existing local-profile full context tests but must not become the 2D seed or profile policy. |
-| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, then runs the Batch 2C repository-only PostgreSQL smoke. | 2A / 2B / 2C baseline. It does not start `nq-app` context, does not seed, and does not exercise `AuthSeedConfiguration`. |
+| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, runs the Batch 2C repository-only PostgreSQL smoke, then runs Batch 2D `nq-app` context smoke. | 2A / 2B / 2C FROZEN / ACCEPTED baseline plus 2D IMPLEMENTED / PENDING FIRST CI RUN. The 2D step does not seed, does not use `local` / `test`, does not exercise `AuthSeedConfiguration`, and does not invoke adapter methods. |
 | `frontend` | Runs `npm ci` + `npm run build`. | Outside Batch 2D; frontend E2E hardening remains Batch 5. |
 | `research` | Runs Python pytest / mypy / ruff. | Outside Batch 2D. |
 
-Batch 2D should either be a separate non-required observation job first, or a clearly isolated step after the existing `postgres-flyway` artifacts and repository smoke. It must be removable without changing 2A / 2B / 2C semantics.
+Batch 2D is implemented as a clearly isolated step after the existing `postgres-flyway` artifacts and repository smoke. It remains removable without changing 2A / 2B / 2C semantics and is not promoted to a required check before first-run review.
 
 ## App context test inventory
 
@@ -209,30 +210,37 @@ Batch 2D must preserve:
 
 ## Implementation slicing
 
-### 2D-1: minimal context smoke plan
+### 2D-1: minimal context smoke implementation
 
-Status: PLAN ONLY / NOT IMPLEMENTED.
+Status: IMPLEMENTED / PENDING FIRST CI RUN.
 
-Recommended future smoke shape:
+Implemented smoke shape:
 
-- Add one test class such as `NqAppContextSmokeTest` under `backend/nq-app/src/test/**`.
-- Use `@SpringBootTest(classes = NexusQuantApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)` or an equivalent non-web context startup.
-- Use a CI-only property set, not `local` / `test`.
-- Run only that smoke in CI through an explicit Maven include, for example conceptual shape:
+- Added `NqAppContextPostgresSmokeTest` under `backend/nq-app/src/test/**`.
+- Uses `@SpringBootTest(classes = NexusQuantApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)`.
+- Uses `@ActiveProfiles("ci-app-smoke")`; it does not use `local` and does not reuse the current `test` profile as-is.
+- The test is enabled only when `nq.app.context.smoke.required=true`, and the CI step sets that property explicitly. Missing datasource properties fail the smoke in CI.
+- The context receives only explicit `nq.app.context.smoke.*` datasource system properties from the disposable CI PostgreSQL service DB.
+- The context sets `spring.flyway.enabled=false` because Flyway migration is already completed earlier in the same job.
+- The test replaces OKX / Binance adapter and WS client beans with `MockitoBean` test doubles so real adapter / WS constructors do not read `.env` or construct real exchange client paths.
+- The assertion is context-load only plus `verifyNoInteractions` on the exchange adapter / WS mocks; it does not call controllers, services, scheduler jobs, adapter methods, order / cancel / transfer / withdraw / permission probe HTTP, or exchange hosts.
+- The CI step runs:
 
 ```bash
 mvn -f backend/pom.xml -pl nq-app -am test \
-  -Dtest=NqAppContextSmokeTest \
+  -Dtest=NqAppContextPostgresSmokeTest \
   -Dsurefire.failIfNoSpecifiedTests=false \
   -Dnq.app.context.smoke.required=true \
-  -Dspring.profiles.active=ci-app-smoke
+  -Dnq.app.context.smoke.url="${NQ_FLYWAY_DB_URL}" \
+  -Dnq.app.context.smoke.user="${NQ_FLYWAY_DB_USER}" \
+  -Dnq.app.context.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
 ```
 
-The exact command and property list must be reviewed in the implementation task. This plan does not add the test or command.
+No `continue-on-error`, `skipTests`, Testcontainers, GitHub real secrets, `.env` read, bare `env`, `printenv`, full environment dump, seed watcher, seed SQL, migration change, or production code change is introduced by this step.
 
 ### 2D-2: app context profile hardening plan
 
-Status: PLAN ONLY / NOT IMPLEMENTED.
+Status: PENDING / NOT STARTED.
 
 After 2D-1 is stable, evaluate whether explicit properties should be promoted to a tracked `application-ci-app-smoke.yml` file. If added, that profile must:
 
@@ -245,7 +253,7 @@ After 2D-1 is stable, evaluate whether explicit properties should be promoted to
 
 ### 2D-3: required check evaluation
 
-Status: PLAN ONLY / NOT IMPLEMENTED.
+Status: PENDING FIRST CI RUN.
 
 Do not make 2D required immediately. First require:
 
@@ -264,7 +272,7 @@ Only after that review should 2D be considered for required-check promotion on b
 | 2A | Empty DB Flyway V1-V31 migration smoke. FROZEN / ACCEPTED. |
 | 2B | Schema artifact baseline. FROZEN / ACCEPTED. |
 | 2C | Repository-only real PostgreSQL smoke. FROZEN / ACCEPTED. |
-| 2D | `nq-app` context smoke planning. PLAN ONLY / NOT IMPLEMENTED. |
+| 2D | `nq-app` context smoke. IMPLEMENTED / PENDING FIRST CI RUN. |
 | 2E | CI-only seed watcher cleanup. NOT STARTED. |
 | 3 | no-outbound guard. PENDING and not implemented by 2D. |
 | 4 | security guard / secret scan. PENDING and not implemented by 2D. |
@@ -299,7 +307,7 @@ If future Batch 2D implementation is flaky or too broad:
 
 ## Validation commands
 
-Planning validation for this task:
+Implementation validation for this task:
 
 ```powershell
 git status --short
@@ -314,21 +322,23 @@ git diff -- deploy
 git diff -- backend/**/db/migration
 rg "@SpringBootTest|ActiveProfiles|AuthSeedConfiguration|ApplicationRunner|CommandLineRunner|Scheduler|Scheduled|RealClient|provider|exchange|LIVE|OKX|Binance|Bybit|Gate|Coinbase|Kraken" backend docs/current
 rg "apiKey|secret|passphrase|token|private key|mnemonic|credential material" backend .github docs/current
+mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'
 ```
 
 Notes:
 
-- This planning task intentionally does not run `mvn -f backend/pom.xml test`, frontend build / E2E, or Python pytest / mypy / ruff because it modifies docs only and does not implement workflow / code / tests.
-- Broad `rg` commands intentionally match docs/current forbidden-boundary wording, migration comments, and fake test values. Findings above are based on source-only follow-up review of context startup and security-sensitive paths.
+- The local Maven command runs the selected test class without CI DB properties; the class is disabled unless `nq.app.context.smoke.required=true`, so local execution validates compilation and Surefire selection but cannot prove the CI PostgreSQL context startup. The real app context smoke must be reviewed after the first GitHub Actions run.
+- Frontend build / E2E and Python pytest / mypy / ruff are not required for Batch 2D because this task does not modify frontend or research.
+- Broad `rg` commands intentionally match docs/current forbidden-boundary wording, migration comments, and fake test values. Findings must be reviewed against changed files and source context.
 
 ## Review decision
 
-Review decision: PASS / PLAN ONLY / NOT IMPLEMENTED.
+Review decision: PASS / IMPLEMENTED / PENDING FIRST CI RUN.
 
-Batch 2D is now planned but not implemented. The accepted plan is to add only a minimal `nq-app` context startup smoke in a later implementation task, using CI-only fake profile / explicit properties, disposable PostgreSQL DB, no seed, no local profile, no AuthSeed runner, no scheduler side effects, no external network, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material.
+Batch 2D now implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no adapter method calls, no external network by construction, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. It is not FROZEN / ACCEPTED until first-run review confirms the GitHub Actions result.
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-PLAN-REVIEW` or 2D plan fix.
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`.
 
-Do not proceed directly to 2D app context implementation, 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this planning task.
+Do not proceed directly to 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this implementation task.

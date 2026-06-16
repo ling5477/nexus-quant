@@ -2,6 +2,83 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2D-IMPL
+
+日期：2026-06-16
+
+### 目标
+
+实现 GateK CI Batch 2D 最小 `nq-app` context smoke。只在 CI PostgreSQL service DB 和已迁移 Flyway schema 上验证 Spring context 可启动；不进入 Batch 2E，不进入 Batch 3-5，不开启 AI / DH runtime / LIVE / RealClient / real provider / real exchange adapter。
+
+### 修改文件
+
+- `.github/workflows/ci.yml`
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 实现摘要
+
+- 新增 `NqAppContextPostgresSmokeTest`，使用 `@SpringBootTest(webEnvironment = NONE)`。
+- 使用 `@ActiveProfiles("ci-app-smoke")` 和 explicit `nq.app.context.smoke.*` datasource properties；不使用 `local`，不 as-is 复用 current `test` profile。
+- 通过 `@EnabledIfSystemProperty(named = "nq.app.context.smoke.required", matches = "true")` 让普通本地 full Maven test 不要求 CI PostgreSQL service；CI step 显式设置 required，缺少 datasource properties 必须失败。
+- Context smoke 设置 `spring.flyway.enabled=false`，因为同一 `postgres-flyway` job 已先完成 direct Flyway migrate / validate。
+- 显式禁用 bootstrap admin、catalog sync、OKX recovery、OKX WS、Binance WS、scheduler side effects。
+- 使用 `MockitoBean` 替换 OKX / Binance adapter 和 WS client，避免真实构造器读取 `.env` 或构造真实 exchange client path，并用 `verifyNoInteractions` 固化不调用 adapter / WS 方法。
+- 在 `.github/workflows/ci.yml` 的 `postgres-flyway` job 中，于 Flyway / schema artifacts / 2C repository smoke 后追加 `Run nq-app PostgreSQL context smoke` step；不新增 job，不假设跨 job 共享 DB。
+
+### 边界确认
+
+- 未修改 backend production code。
+- 未修改 frontend、research、scripts、deploy。
+- 未新增 API。
+- 未新增 migration，未修改历史 migration。
+- 未使用 `local` profile。
+- 未 as-is 复用 current `test` profile。
+- 未触发 `AuthSeedConfiguration`。
+- 未创建 admin / operator / viewer seed users。
+- 未创建 legacy accounts。
+- 未创建 exchange accounts。
+- 未创建 credential rows。
+- 未读取 `.env`。
+- 未依赖 GitHub real secrets。
+- 未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未调用 adapter methods。
+- 未执行 order / cancel / transfer / withdraw / permission probe HTTP。
+- 未使用 Testcontainers。
+- 未新增 `continue-on-error`、`skipTests`、bare `env`、`printenv` 或 full environment dump。
+- Batch 2E 仍 NOT STARTED。
+- Batch 3 no-outbound guard 仍 PENDING。
+- Batch 4 security guard / secret scan 仍 PENDING。
+- Batch 5 frontend E2E hardening 仍 PENDING。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+### 验证状态
+
+- 本地 selected Maven command 已执行：
+
+```powershell
+mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'
+```
+
+- 结果：BUILD SUCCESS；`NqAppContextPostgresSmokeTest` tests=1 / skipped=1。
+- Skipped 原因：本地未设置 `nq.app.context.smoke.required=true` 和 CI PostgreSQL datasource properties；这是本地编译 / Surefire selection 验证，不是 CI PostgreSQL context startup 证明。
+- CI step 显式设置 `nq.app.context.smoke.required=true`；GitHub Actions 中缺少 datasource properties、context 启动失败或 adapter / WS mock 被调用都会阻塞该 Maven step。
+- 本地无法证明 CI PostgreSQL app context smoke，因为缺少 GitHub Actions PostgreSQL service DB 和 `nq.app.context.smoke.*` CI properties。
+- 真实 context startup 等待 GitHub Actions first run review。
+
+### Review decision
+
+PASS / IMPLEMENTED / PENDING FIRST CI RUN。不得写成 FROZEN / ACCEPTED。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-PLAN
 
 日期：2026-06-15
