@@ -2,6 +2,71 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX
+
+日期：2026-06-16
+
+### 目标
+
+只修复删除 backend CI seed watcher 后 `Backend Maven test` 在 GitHub Actions 上失败的问题。先取得完整失败日志，再做最小 workflow fallback；不进入 Batch 3-5，不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### Failure log access
+
+- GitHub Actions run: `27610448572`。
+- Failed job: `Backend Maven test` / job `81633181802`。
+- Log source: GitHub MCP decoded workflow job logs。
+- `gh` log endpoint earlier returned HTTP 403, but MCP logs exposed the Maven failure, Surefire summary, failing class, method, line, and stack trace.
+
+### Failure root cause
+
+- Maven module: `nq-app`。
+- Failing class: `com.guidinglight.nexusquant.app.web.ResearchBacktestHappyPathLocalTest`。
+- Failing method: `shouldRunMinimalDbBackedResearchBacktestEvalHappyPath`。
+- Failing line: `ResearchBacktestHappyPathLocalTest.java:59`。
+- SQL / stack trace: `SELECT account_id FROM accounts ORDER BY account_id LIMIT 1` returned 0 rows; `JdbcTemplate.queryForObject` threw `EmptyResultDataAccessException: Incorrect result size: expected 1, actual 0`。
+- Surefire summary: `Tests run: 53, Failures: 0, Errors: 1, Skipped: 1`。
+- Root cause: GitHub fresh PostgreSQL service DB no longer has any legacy `accounts` row after the background watcher deletion. This is a legacy `accounts` fixture ownership gap in the local-profile happy-path test; it is not a `postgres-flyway` regression, not an `exchange_accounts` backfill failure, and not a credential row issue.
+
+### Fix summary
+
+- `.github/workflows/ci.yml`：新增 backend job step `Prepare backend CI legacy account fixture`。
+- The new step is synchronous and explicit:
+  - Runs Flyway `migrate()` + `validate()` against the backend job disposable PostgreSQL DB.
+  - Requires current Flyway version V31.
+  - Inserts one CI-only legacy row: `accounts.account_code='ci-backend-test-account'`, `venue='PAPER'`, `status='ACTIVE'`.
+  - Fails closed if that fixture creates any `exchange_accounts` row.
+  - Fails closed if any `exchange_account_credentials` row exists.
+- `Run backend tests` remains `mvn -f backend/pom.xml test`。
+
+### Boundary confirmation
+
+- 未恢复 background seed watcher。
+- 未恢复 `public.accounts` polling、`ci-local-account`、`seed_pid`、`wait` 或 watcher exit-status merge。
+- 未新增 migration，未修改历史 migration。
+- 未修改 backend production code，未新增或修改测试。
+- 未创建 seed users。
+- 未创建 credential rows，未写入 credential material。
+- 未创建真实 exchange account；first-run fixture 插入发生在 Flyway V31 之后，不会被 V12 backfill 成 `exchange_accounts`。
+- 未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所。
+- Batch 2E 当前为 FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN；Batch 3 no-outbound guard、Batch 4 security guard / secret scan、Batch 5 frontend E2E hardening 仍 PENDING。
+
+### 验证记录
+
+- `git status --short`：仅 6 个允许文件 modified。
+- `git diff --check`：退出码 0；仅提示 docs/current Markdown 文件 LF/CRLF 转换 warning。
+- `git diff --stat`：6 files changed。
+- `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `backend/**/db/migration`：均无输出。
+- `rg "ci-local-account|background seed|INSERT INTO accounts|seed_pid|to_regclass|exchange_account_credentials|skipTests|continue-on-error|baselineOnMigrate|flyway clean|apiKey|secret|passphrase|token|private key|credential material|LIVE|OKX|Binance|Bybit|Gate|Coinbase|Kraken" .github docs/current`：已执行；新增 workflow 命中仅为允许的 post-Flyway fixture、防护查询和 Flyway safety config，docs 命中包含本轮边界说明和历史记录。
+- `mvn -f backend/pom.xml test`：BUILD SUCCESS；23/23 reactor modules SUCCESS；`nq-app` SUCCESS；Total time `01:28 min`。
+
+### Review decision
+
+FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN。不得标记 Batch 2E FIRST GREEN、FROZEN 或 ACCEPTED。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW` after next GitHub Actions run，或如果下一次 CI 仍失败则继续 scoped `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW
 
 日期：2026-06-16

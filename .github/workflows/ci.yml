@@ -72,6 +72,131 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Prepare backend CI legacy account fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          fixture_dir="${RUNNER_TEMP}/nq-backend-ci-fixture"
+          mkdir -p "${fixture_dir}"
+
+          mvn -f backend/pom.xml -pl nq-app -am process-classes \
+            org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath \
+            -DincludeScope=runtime \
+            -Dmdep.outputFile=target/backend-ci-fixture-classpath.txt
+
+          cat > "${fixture_dir}/BackendCiLegacyAccountFixture.java" <<'JAVA'
+          import java.sql.Connection;
+          import java.sql.DriverManager;
+          import java.sql.PreparedStatement;
+          import java.sql.ResultSet;
+
+          import org.flywaydb.core.Flyway;
+          import org.flywaydb.core.api.MigrationInfo;
+
+          public final class BackendCiLegacyAccountFixture {
+              private static final String EXPECTED_VERSION = "31";
+              private static final String FIXTURE_ACCOUNT_CODE = "ci-backend-test-account";
+
+              private BackendCiLegacyAccountFixture() {
+              }
+
+              public static void main(String[] args) throws Exception {
+                  String url = requireEnv("NQ_DB_URL");
+                  String user = requireEnv("NQ_DB_USER");
+                  String password = requireEnv("NQ_DB_PASSWORD");
+
+                  Flyway flyway = Flyway.configure()
+                          .dataSource(url, user, password)
+                          .locations("classpath:db/migration")
+                          .baselineOnMigrate(false)
+                          .cleanDisabled(true)
+                          .outOfOrder(false)
+                          .load();
+
+                  flyway.migrate();
+                  flyway.validate();
+                  MigrationInfo current = flyway.info().current();
+                  String currentVersion = current == null || current.getVersion() == null
+                          ? null
+                          : current.getVersion().getVersion();
+                  if (!EXPECTED_VERSION.equals(currentVersion)) {
+                      throw new IllegalStateException(
+                              "Expected Flyway current version " + EXPECTED_VERSION + " but got " + currentVersion);
+                  }
+
+                  try (Connection connection = DriverManager.getConnection(url, user, password)) {
+                      insertLegacyAccount(connection);
+                      long legacyAccountRows = count(connection,
+                              "SELECT COUNT(*) FROM accounts WHERE account_code = ? AND venue = 'PAPER' AND status = 'ACTIVE'",
+                              FIXTURE_ACCOUNT_CODE);
+                      long exchangeAccountRows = count(connection,
+                              """
+                                      SELECT COUNT(*)
+                                      FROM exchange_accounts
+                                      WHERE account_alias = ?
+                                         OR legacy_account_id IN (
+                                             SELECT account_id FROM accounts WHERE account_code = ?
+                                         )
+                                      """,
+                              FIXTURE_ACCOUNT_CODE,
+                              FIXTURE_ACCOUNT_CODE);
+                      long credentialRows = count(connection, "SELECT COUNT(*) FROM exchange_account_credentials");
+
+                      if (legacyAccountRows != 1) {
+                          throw new IllegalStateException("Expected exactly one backend CI legacy account fixture row");
+                      }
+                      if (exchangeAccountRows != 0) {
+                          throw new IllegalStateException("Backend CI fixture must not create exchange_accounts rows");
+                      }
+                      if (credentialRows != 0) {
+                          throw new IllegalStateException("Backend CI fixture must not create credential rows");
+                      }
+                  }
+
+                  System.out.println("Prepared backend CI legacy account fixture after Flyway V" + EXPECTED_VERSION);
+              }
+
+              private static void insertLegacyAccount(Connection connection) throws Exception {
+                  try (PreparedStatement statement = connection.prepareStatement(
+                          """
+                                  INSERT INTO accounts (account_code, venue, status)
+                                  VALUES (?, 'PAPER', 'ACTIVE')
+                                  ON CONFLICT (account_code) DO NOTHING
+                                  """)) {
+                      statement.setString(1, FIXTURE_ACCOUNT_CODE);
+                      statement.executeUpdate();
+                  }
+              }
+
+              private static long count(Connection connection, String sql, String... args) throws Exception {
+                  try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                      for (int i = 0; i < args.length; i++) {
+                          statement.setString(i + 1, args[i]);
+                      }
+                      try (ResultSet resultSet = statement.executeQuery()) {
+                          resultSet.next();
+                          return resultSet.getLong(1);
+                      }
+                  }
+              }
+
+              private static String requireEnv(String name) {
+                  String value = System.getenv(name);
+                  if (value == null || value.isBlank()) {
+                      throw new IllegalStateException("Missing required environment variable: " + name);
+                  }
+                  return value;
+              }
+          }
+          JAVA
+
+          app_cp="$(cat backend/nq-app/target/backend-ci-fixture-classpath.txt)"
+          classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
+
+          javac -cp "${classpath}" "${fixture_dir}/BackendCiLegacyAccountFixture.java"
+          java -cp "${fixture_dir}:${classpath}" BackendCiLegacyAccountFixture
+
       - name: Run backend tests
         shell: bash
         run: |

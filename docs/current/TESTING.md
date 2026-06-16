@@ -2,6 +2,26 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX（2026-06-16）
+
+本轮是 GateK CI Batch 2E first-run fix：先取得 GitHub Actions run `27610448572` 的 Backend Maven test 失败日志，再只在 `.github/workflows/ci.yml` backend job 增加同步 post-Flyway CI-only legacy `accounts` fixture。不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN；Batch 3-5 仍 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；初始 `git status --short` 为空。 |
+| Failure log access | 通过 | GitHub MCP 读取 run `27610448572` / job `81633181802` decoded logs；`gh` logs endpoint 此前为 403，但本轮已取得 Maven / Surefire failure lines。 |
+| 失败测试定位 | 已确认 | Maven module `nq-app`；class `ResearchBacktestHappyPathLocalTest`；method `shouldRunMinimalDbBackedResearchBacktestEvalHappyPath`；line `59`。 |
+| SQL / stack trace | 已确认 | `SELECT account_id FROM accounts ORDER BY account_id LIMIT 1` 返回 0 行；`JdbcTemplate.queryForObject` 抛 `EmptyResultDataAccessException: Incorrect result size: expected 1, actual 0`。 |
+| Surefire summary | 已确认 | `Tests run: 53, Failures: 0, Errors: 1, Skipped: 1`；Reactor 中仅 `nq-app` failure。 |
+| Root cause | 已确认 | 删除 background watcher 后，GitHub fresh PostgreSQL service DB 缺少 legacy `accounts` fixture；这是 `ResearchBacktestHappyPathLocalTest` fixture ownership 问题，不是 `postgres-flyway` job 回退，不是 `exchange_accounts` backfill 或 credential rows 问题。 |
+| Workflow fix | 已执行 | 新增 `Prepare backend CI legacy account fixture` step：先 Flyway migrate/validate 到 V31，再插入 `ci-backend-test-account` 到 legacy `accounts`，并校验没有创建 `exchange_accounts` 或 `exchange_account_credentials` rows。 |
+| Seed watcher boundary | 通过 | 未恢复 background watcher；未恢复 `public.accounts` polling、`ci-local-account`、`seed_pid`、`wait` 或 watcher exit-status merge。 |
+| Credential / exchange boundary | 通过 | Fixture 不写 `exchange_account_credentials`，不写 `apiKey` / secret / passphrase / token / private key / credential material；不创建真实 exchange account；不启用 LIVE / AI / DH runtime / RealClient / real provider；不调用真实交易所。 |
+| Local validation | 通过 | `mvn -f backend/pom.xml test` BUILD SUCCESS；23/23 reactor modules SUCCESS；`nq-app` SUCCESS；Total time `01:28 min`。本地 run 使用 localhost PostgreSQL 17.7；`NqAppContextPostgresSmokeTest` 未设置 `nq.app.context.smoke.required=true`，按预期 skipped=1。 |
+| Pending first CI run | 待确认 | 需要下一次 GitHub Actions run 确认 `Backend Maven test` 与 `PostgreSQL / Flyway smoke` 均 success 后，才能进入 2E first-run review；当前不得写 FIRST GREEN / FROZEN / ACCEPTED。 |
+
+Review decision: FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW`，或如果下一次 CI 仍失败则继续 scoped `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW（2026-06-16）
 
 本轮是 GateK CI Batch 2E first-run review：只评审删除 backend CI seed watcher 后的 GitHub Actions run，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 FAIL / FIRST-RUN-FIX REQUIRED；Batch 3-5 仍 PENDING。
