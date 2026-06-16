@@ -1,6 +1,8 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
@@ -44,7 +46,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  *       body failed with {@code NotAMock}: a {@code @TestConfiguration} bean override of the named
  *       {@code okxTradingAdapter}/{@code binanceTradingAdapter} beans is registration-order fragile and
  *       lost to the component-scanned real beans, so {@code @Autowired} resolved the real adapters and
- *       {@code verify(realAdapter, ...)} is illegal.</li>
+ *       Mockito verification against those real adapter instances is illegal.</li>
  * </ul>
  *
  * <p>Final design: this smoke keeps exactly the composition that run 27596768301 proved loads — the
@@ -116,8 +118,15 @@ class NqAppContextPostgresSmokeTest {
     @Test
     void shouldLoadNqAppContextWithoutSeedOrExchangeSideEffects() {
         // The full servlet web composition root must start against the Flyway-migrated CI PostgreSQL
-        // database, and no WebSocket client may connect while the context boots.
+        // database under the CI-only profile, and no mocked WebSocket client may connect while the
+        // context boots. REST adapter no-outbound interception belongs to the later Batch 3 guard.
         assertNotNull(applicationContext);
+        assertTrue(
+                java.util.Arrays.asList(applicationContext.getEnvironment().getActiveProfiles())
+                        .contains("ci-app-smoke")
+        );
+        assertTrue(mockingDetails(okxWsClient).isMock());
+        assertTrue(mockingDetails(binanceWsClient).isMock());
         verifyNoInteractions(okxWsClient, binanceWsClient);
     }
 

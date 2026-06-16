@@ -2,6 +2,31 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX after NotAMockException（2026-06-16）
+
+本轮是 GateK CI Batch 2D first-run fix：只修复 `NqAppContextPostgresSmokeTest` 在 CI 中对真实 REST adapter 执行 Mockito verify 导致的 `NotAMockException`。不进入 Batch 2E，不进入 Batch 3-5，不修改 backend production code、workflow、migration、frontend、research、scripts 或 deploy。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | 通过 | 当前目录 `F:\project\nexus-quant`；分支 `dev`；编辑前工作区干净。 |
+| `idea-mcp build_project`（目标测试文件） | 通过 | `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java` 构建检查 `isSuccess=true`，无 problems。 |
+| `mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'` | **BUILD SUCCESS** | `NqAppContextPostgresSmokeTest` tests=1 / failures=0 / errors=0 / skipped=1。本地无 CI DB properties 且未设置 `nq.app.context.smoke.required=true`，所以只证明编译 + Surefire selection；CI required path 仍需 GitHub Actions 验证 skipped=0。 |
+| 未加引号 Maven 命令 | 失败 / 已 RCA | `-Dsurefire.failIfNoSpecifiedTests=false` 在 PowerShell 中被解析为非法 lifecycle phase `.failIfNoSpecifiedTests=false`；已用单引号包住该参数重跑并通过。 |
+| `git diff --check` | 通过 | 无 whitespace error；仅出现 Windows 工作区 LF -> CRLF 提示。 |
+| `git diff --stat` | 已检查 | 仅目标 nq-app test 与允许的 `docs/current` 文件变更。 |
+| `git diff -- backend/**/db/migration` / `frontend` / `research` / `scripts` / `deploy` | 通过 | 输出为空；未触达 migration、frontend、research、scripts、deploy。 |
+
+修复要点：
+
+- 删除 REST adapter Mockito verification 路径；不再对可能是真实 bean 的 `OkxExchangeAdapter` / `BinanceExchangeAdapter` 做 `verify(...)`。
+- 保持 `@ActiveProfiles("ci-app-smoke")` 与 `webEnvironment = MOCK`。
+- 增加 active profile 断言，确保 smoke 仍运行在 CI-only profile。
+- 对 WS `@MockitoBean` 先用 `mockingDetails(...).isMock()` 确认为 mock，再保留 `verifyNoInteractions(okxWsClient, binanceWsClient)`。
+- 未调用 `placeOrder` / `cancelOrder` / `getOrder` / private REST / WS 方法。
+- Batch 3 no-outbound guard 仍 PENDING；本轮不证明完整 no-outbound。
+
+Review decision: PASS / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN。Next concrete action: re-run `NQ CI Baseline` on `dev`，然后执行 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW after FIRST-RUN-FIX #2（2026-06-16）
 
 本轮是 GateK CI Batch 2D first-run review：只评审 FIRST-RUN-FIX #2 推送后的 GitHub Actions run，不修改 workflow、Java / TypeScript / Python 生产代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2D 不得写成 FIRST GREEN RUN CONFIRMED、FROZEN 或 ACCEPTED。

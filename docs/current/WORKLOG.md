@@ -2,6 +2,63 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX after NotAMockException
+
+日期：2026-06-16
+
+### 目标
+
+最小修复 Batch 2D `nq-app` context smoke 在 GitHub Actions run `27596768301` 中的 `NotAMockException`。本轮只调整 `NqAppContextPostgresSmokeTest` 的验证策略与允许的 `docs/current` 状态记录，不修改 backend production code、workflow、migration、frontend、research、scripts 或 deploy。
+
+### 失败根因
+
+Run `27596768301` 已证明 servlet web context 能在 `ci-app-smoke` 下启动到测试体，但测试体对 `OkxExchangeAdapter` 做 Mockito `verify(...)`。CI 实际注入的是 component-scanned real adapter，不是 mock，因此 Mockito 抛出 `NotAMockException`。这说明 REST adapter bean override / verification strategy 不适合作为 Batch 2D context smoke 验证策略。
+
+### 修改范围
+
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/NqAppContextPostgresSmokeTest.java`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### 实现摘要
+
+- 删除 REST adapter Mockito verify 路径；Batch 2D 不再对可能是真实 bean 的 OKX / Binance REST adapter 做 `verify(...)`。
+- 保持测试目标为 context loads + `ci-app-smoke` active profile + no seed + no LIVE + no WS interaction。
+- 保持 `@ActiveProfiles("ci-app-smoke")` 和 `SpringBootTest.WebEnvironment.MOCK`。
+- 新增 active profile 断言，防止回落到 `local` 或 current `test` profile。
+- WS client 仍为 `@MockitoBean`，并在 `verifyNoInteractions` 前用 `mockingDetails(...).isMock()` 确认是 Mockito mock。
+- 未调用 `placeOrder` / `cancelOrder` / `getOrder` / private REST / WS 方法。
+- 文档状态收口为 `IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN`；不写 FIRST GREEN / FROZEN / ACCEPTED。
+
+### 验证记录
+
+- `idea-mcp build_project` 目标测试文件：通过，`isSuccess=true`，无 problems。
+- 首次 Maven 命令未引用 `-Dsurefire.failIfNoSpecifiedTests=false`，PowerShell 将其解析成非法 lifecycle phase `.failIfNoSpecifiedTests=false`，该失败为命令转义问题。
+- 重跑：
+
+```powershell
+mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest '-Dsurefire.failIfNoSpecifiedTests=false'
+```
+
+结果：BUILD SUCCESS；`NqAppContextPostgresSmokeTest` tests=1 / failures=0 / errors=0 / skipped=1。本地无 CI DB properties 且未设置 `nq.app.context.smoke.required=true`，只能证明编译与 Surefire selection；CI required path 仍需 GitHub Actions 验证 tests=1 / skipped=0 / failures=0 / errors=0。
+
+### 边界确认
+
+- 未改 backend production code / workflow / migration / frontend / research / scripts / deploy。
+- 未新增 API；未修改历史 migration。
+- 未使用 `local` profile；未 as-is 复用 current `test` profile。
+- 未触发 `AuthSeedConfiguration`；未创建 admin/operator/viewer seed users、legacy accounts、exchange accounts 或 credential rows。
+- 未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未读取或输出真实 credential material。
+- 未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider。
+- 未实现 Batch 2E；未实现 Batch 3 no-outbound guard；未实现 Batch 4 secret scan；未实现 Batch 5 frontend E2E hardening。
+
+### Review decision
+
+PASS / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN。下一步只能 re-run `NQ CI Baseline` on `dev` 后执行 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`；如仍失败，继续 scoped 2D first-run fix。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW after FIRST-RUN-FIX #2
 
 日期：2026-06-16
