@@ -2,6 +2,53 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW（2026-06-16）
+
+本轮是 GateK CI Batch 2D freeze review：冻结 `nq-app` context smoke baseline。只同步允许的 `docs/current` 状态记录，不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2D 可标记为 FROZEN / ACCEPTED；Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | **通过** | Run `27601707199`，workflow `NQ CI Baseline`，branch `dev`，commit `cbc03013bd393e2534befa10b25cc5b4c62b54a4`，status `completed`，conclusion `success`。 |
+| `postgres-flyway` job | **通过** | Job `PostgreSQL / Flyway smoke` / `81604024163` completed / success；all steps success。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；Batch 2A migration smoke 未回归。 |
+| Schema artifacts | 通过 | Generate / check / upload steps success；artifact `nq-postgres-flyway-schema-artifacts` id `7660159897`，digest `sha256:45b0e86ab0f499d70d04e02b7845850af11a98b3fd091f1e9c1f4b4718dc6f05`。 |
+| Repository PostgreSQL smoke | 通过 | Step `Run repository PostgreSQL smoke` success；Batch 2C repository smoke 未回归。 |
+| `nq-app` context smoke step | **通过** | Step `Run nq-app PostgreSQL context smoke` success。 |
+| `NqAppContextPostgresSmokeTest` | **通过** | CI log shows active profile `ci-app-smoke`；Surefire summary tests=1 / skipped=0 / failures=0 / errors=0；`nq-app SUCCESS`；Maven `BUILD SUCCESS`。 |
+| Seed / AuthSeed boundary | 通过 | 未发现 `AuthSeedConfiguration` 执行证据；未发现 admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据。 |
+| Security boundary | 通过 / P3 residual | 未发现真实 credential material；disposable CI-only PostgreSQL service values 与 generated development security password 作为 P3 log hygiene residual 延后。 |
+| Batch boundary | 通过 | Batch 2D 只冻结 context startup baseline；不证明 Batch 3 no-outbound guard。Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。 |
+
+GitHub Actions job details / steps / decoded logs / artifact metadata 通过 `gh` 与 GitHub MCP 复核。`gh run view --log --job 81604024163` 因 GitHub REST logs endpoint 返回 `HTTP 403: Must have admin rights to Repository`；已降级使用 GitHub MCP decoded logs，可信度高，因为 `gh` run metadata、MCP jobs / steps / logs 和 artifact metadata 一致。
+
+本轮未运行本地 `mvn -f backend/pom.xml test`、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮为 CI freeze review + docs/current 状态记录，且目标 CI required path 已在 GitHub Actions run `27601707199` 通过。
+
+Review decision: PASS / FROZEN / ACCEPTED。Batch 2D 冻结为当前 `dev` `nq-app` context smoke baseline。Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`、Batch 3 pre-planning，或按用户选择暂停 CI 线。
+
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW after FIRST-RUN-FIX #3（2026-06-16）
+
+本轮是 GateK CI Batch 2D first-run review：只评审 FIRST-RUN-FIX #3 推送后的 GitHub Actions run，并同步允许的 `docs/current` 状态记录。不修改 workflow、Java / TypeScript / Python 生产代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2D 只能写为 IMPLEMENTED / FIRST GREEN RUN CONFIRMED，尚未 FROZEN / final ACCEPTED。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | **通过** | Run `27601707199`，workflow `NQ CI Baseline`，branch `dev`，commit `cbc03013bd393e2534befa10b25cc5b4c62b54a4`，status `completed`，conclusion `success`。 |
+| `postgres-flyway` job | **通过** | Job `PostgreSQL / Flyway smoke` / `81604024163` completed / success；all steps success。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；Batch 2A migration smoke 未回归。 |
+| Schema artifacts | 通过 | Generate / check / upload steps success；artifact `nq-postgres-flyway-schema-artifacts` id `7660159897`，digest `sha256:45b0e86ab0f499d70d04e02b7845850af11a98b3fd091f1e9c1f4b4718dc6f05`。 |
+| Repository PostgreSQL smoke | 通过 | Step `Run repository PostgreSQL smoke` success；Batch 2C repository smoke 未回归。 |
+| `nq-app` context smoke step | **通过** | Step `Run nq-app PostgreSQL context smoke` success。 |
+| `NqAppContextPostgresSmokeTest` | **真实执行 / 未 skip / 通过** | CI log 显示 active profile `ci-app-smoke`；Surefire summary tests=1 / skipped=0 / failures=0 / errors=0；`nq-app SUCCESS`；Maven `BUILD SUCCESS`。 |
+| Profile boundary | 通过 | 未使用 `local` profile；未 as-is 复用 current `test` profile；CI required path 使用 GitHub Actions PostgreSQL service DB properties。 |
+| Seed / AuthSeed boundary | 通过 / 未发现触发 | `AuthSeedConfiguration` 仍由 profile 边界排除；未发现 admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据。 |
+| Security boundary | 通过 / P3 residual | 未发现真实生产 credential material；GitHub platform logging 仍显示 disposable CI-only PostgreSQL service values before / during masking，Spring Boot 仍打印 generated development security password，记录为 P3 log hygiene residual。 |
+| Batch boundary | 通过 | Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。 |
+
+GitHub Actions job details / steps / decoded logs / artifact metadata 通过 GitHub MCP 复核。`gh run view --log --job 81604024163` 因 GitHub REST logs endpoint 返回 `HTTP 403: Must have admin rights to Repository`；已降级使用 GitHub MCP decoded logs，可信度高，因为 `gh` run metadata、MCP jobs / steps / logs 和 artifact metadata 一致。
+
+本轮未运行本地 `mvn -f backend/pom.xml test`、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮为 CI first-run review + docs/current 状态记录，且目标 CI required path 已在 GitHub Actions run `27601707199` 通过。
+
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2D 当前为 FIRST GREEN RUN CONFIRMED，但尚未 FROZEN / final ACCEPTED。Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX after NotAMockException（2026-06-16）
 
 本轮是 GateK CI Batch 2D first-run fix：只修复 `NqAppContextPostgresSmokeTest` 在 CI 中对真实 REST adapter 执行 Mockito verify 导致的 `NotAMockException`。不进入 Batch 2E，不进入 Batch 3-5，不修改 backend production code、workflow、migration、frontend、research、scripts 或 deploy。

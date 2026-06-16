@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway 2D Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN / NQ-CI-POSTGRES-FLYWAY-2D-IMPL / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX
+任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN / NQ-CI-POSTGRES-FLYWAY-2D-IMPL / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX / NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW
 日期：2026-06-15 / 2026-06-16
-状态：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN
+状态：FROZEN / ACCEPTED
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - Batch 2B schema artifact baseline：FROZEN / ACCEPTED。
 - Batch 2C repository-only real PostgreSQL smoke baseline：FROZEN / ACCEPTED。
 - 2C-HYGIENE-FIX：FROZEN / ACCEPTED。
-- Batch 2D `nq-app` context smoke：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN。
+- Batch 2D `nq-app` context smoke：FROZEN / ACCEPTED。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
 - Batch 4 security guard / secret scan：PENDING。
@@ -57,11 +57,11 @@ Current `.github/workflows/ci.yml` has these relevant jobs:
 | Job | Current behavior | 2D interpretation |
 | --- | --- | --- |
 | `backend` | Runs `mvn -f backend/pom.xml test` with PostgreSQL service `postgres:16`; uses a CI-only watcher to insert one `accounts` row after Flyway creates the table. | Batch 1 compatibility path only. It currently satisfies existing local-profile full context tests but must not become the 2D seed or profile policy. |
-| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, runs the Batch 2C repository-only PostgreSQL smoke, then runs Batch 2D `nq-app` context smoke. | 2A / 2B / 2C FROZEN / ACCEPTED baseline plus 2D IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. Run `27596768301` proved servlet web context startup reaches the test body, but failed with `NotAMockException`; the current fix removes REST adapter Mockito verification and awaits the next CI first-run review. |
+| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, runs the Batch 2C repository-only PostgreSQL smoke, then runs Batch 2D `nq-app` context smoke. | 2A / 2B / 2C FROZEN / ACCEPTED baseline plus 2D FROZEN / ACCEPTED. Run `27601707199` confirmed the Batch 2D smoke under `ci-app-smoke` with tests=1 / skipped=0 / failures=0 / errors=0, and the freeze review accepted it as the current Batch 2D baseline. |
 | `frontend` | Runs `npm ci` + `npm run build`. | Outside Batch 2D; frontend E2E hardening remains Batch 5. |
 | `research` | Runs Python pytest / mypy / ruff. | Outside Batch 2D. |
 
-Batch 2D is implemented as a clearly isolated step after the existing `postgres-flyway` artifacts and repository smoke. The latest first-run fix has been applied, but CI has not yet confirmed green status; the only next action is `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` or another 2D first-run fix if CI remains red.
+Batch 2D is implemented as a clearly isolated step after the existing `postgres-flyway` artifacts and repository smoke. FIRST-RUN-FIX #3 received a first green CI run, and the freeze review accepts Batch 2D as the current `dev` `nq-app` context smoke baseline. The next action is `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, Batch 3 pre-planning, or pausing the CI line by user choice.
 
 ## First CI run review
 
@@ -226,6 +226,90 @@ mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest 
 
 Result: BUILD SUCCESS; `NqAppContextPostgresSmokeTest` tests=1 / failures=0 / errors=0 / skipped=1. The local environment has no CI DB properties and does not set `nq.app.context.smoke.required=true`, so this validates compilation and Surefire selection only. The CI required path must still be confirmed by GitHub Actions with `nq.app.context.smoke.required=true`, where skipped must be `0`.
 
+## First green run review after FIRST-RUN-FIX #3 (2026-06-16)
+
+Status after review: IMPLEMENTED / FIRST GREEN RUN CONFIRMED. Not FROZEN, not ACCEPTED. Freeze requires a separate `NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW`.
+
+### Run reviewed
+
+GitHub Actions `NQ CI Baseline` run `27601707199`, branch `dev`, commit `cbc03013bd393e2534befa10b25cc5b4c62b54a4` (`test(ci): fix nq-app smoke adapter verification`), event `push`, created `2026-06-16T07:33:02Z`, completed `2026-06-16T07:34:39Z`.
+
+- Overall run: completed / success.
+- `Diff check`: success.
+- `Frontend build`: success.
+- `Backend Maven test`: success.
+- `Research quality gate`: success.
+- `PostgreSQL / Flyway smoke` job `81604024163`: completed / success.
+- `Run empty database Flyway smoke`: success; Batch 2A V1-V31 path did not regress.
+- `Generate PostgreSQL schema artifacts`, `Check PostgreSQL schema artifacts`, `Upload PostgreSQL schema artifacts`: success.
+- Artifact `nq-postgres-flyway-schema-artifacts` id `7660159897`, size `74666`, digest `sha256:45b0e86ab0f499d70d04e02b7845850af11a98b3fd091f1e9c1f4b4718dc6f05`, expires `2026-06-30T07:34:07Z`.
+- `Run repository PostgreSQL smoke`: success; Batch 2C repository smoke did not regress.
+- `Run nq-app PostgreSQL context smoke`: success.
+
+### nq-app context smoke evidence
+
+- CI log shows `Running com.guidinglight.nexusquant.app.smoke.NqAppContextPostgresSmokeTest`.
+- CI log shows active profile: `"ci-app-smoke"`.
+- CI log shows the servlet web context started: `Started NqAppContextPostgresSmokeTest`.
+- Surefire summary: `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`.
+- Reactor summary: `nq-app SUCCESS`; Maven `BUILD SUCCESS`.
+- `OkxRecoveryService` logged `okx_recovery_startup_skipped reason=recovery_disabled configured_okx_env=dome mapped_trade_env=SIM`.
+
+### Boundary observations
+
+- `local` profile was not used; current `test` profile was not reused as-is.
+- `AuthSeedConfiguration` remains excluded by profile; no log evidence of admin / operator / viewer seed creation was found.
+- No legacy accounts, exchange accounts, or credential rows were intentionally created by the 2D step.
+- No order, cancel, transfer, withdraw, private REST, WS connect, AI runtime, DH runtime, LIVE, RealClient, real provider, or real exchange adapter implementation was introduced.
+- CI log includes an OKX adapter fingerprint with `apiKey=missing`; this is not credential material and does not show a successful exchange call.
+- CI log includes `OkxRecoveryService` startup skip with recovery disabled.
+- Batch 2D still does not prove complete no-outbound. Batch 3 remains responsible for no-outbound guard coverage.
+
+### CI log hygiene
+
+- The job-level `Mask CI-only PostgreSQL connection values` step succeeded and later steps show `NQ_FLYWAY_DB_*` values as `***`.
+- GitHub platform / automatic step logging still displays disposable CI-only PostgreSQL service values before or during the masking step, including the service container environment and the mask step's own automatic `env:` block. This is not real credential material, but remains a P3 CI log hygiene residual for future CI secrets policy.
+- Spring Boot printed a generated development security password. It is not production credential material, but remains a P3 app-smoke log hygiene residual.
+- No full environment dump via a user-authored `env` / `printenv` step was observed.
+
+### Review decision
+
+PASS / ACCEPTED FOR FIRST GREEN RUN. Batch 2D is now FIRST GREEN RUN CONFIRMED, but not FROZEN / ACCEPTED.
+
+## Freeze review (2026-06-16)
+
+Status after freeze review: FROZEN / ACCEPTED.
+
+### Freeze evidence
+
+- GitHub Actions `NQ CI Baseline` run `27601707199`, branch `dev`, commit `cbc03013bd393e2534befa10b25cc5b4c62b54a4`, event `push`, created `2026-06-16T07:33:02Z`, completed `2026-06-16T07:34:39Z`: completed / success.
+- Jobs `Diff check`, `Frontend build`, `Backend Maven test`, `Research quality gate`, and `PostgreSQL / Flyway smoke`: success.
+- `PostgreSQL / Flyway smoke` job `81604024163`: success; all steps completed successfully.
+- `Run empty database Flyway smoke`: success.
+- Schema artifact generate / check / upload: success; artifact `nq-postgres-flyway-schema-artifacts` id `7660159897`, digest `sha256:45b0e86ab0f499d70d04e02b7845850af11a98b3fd091f1e9c1f4b4718dc6f05`.
+- Batch 2C repository PostgreSQL smoke: success.
+- Batch 2D `Run nq-app PostgreSQL context smoke`: success.
+- `NqAppContextPostgresSmokeTest`: active profile `"ci-app-smoke"`; tests=1 / skipped=0 / failures=0 / errors=0; `nq-app SUCCESS`; Maven `BUILD SUCCESS`.
+
+### Freeze boundary
+
+- P0/P1 findings: 0.
+- `local` profile was not used; current `test` profile was not reused as-is.
+- No `AuthSeedConfiguration` execution evidence was found.
+- No admin / operator / viewer seed users, legacy accounts, exchange accounts, or credential rows were intentionally created by the 2D step.
+- No OKX / Binance / Bybit / Gate / Coinbase / Kraken access, LIVE enablement, AI runtime, DH runtime, RealClient, real provider, or real exchange adapter implementation is accepted by this freeze.
+- Batch 2D remains context-startup only. It does not prove Batch 3 no-outbound guard.
+- Batch 2E remains NOT STARTED. Batch 3-5 remain PENDING.
+
+### CI log hygiene residual
+
+- GitHub platform / automatic logging still displays disposable CI-only PostgreSQL service values before or during masking, and Spring Boot prints a generated development security password. These are accepted as P3 residuals for the Batch 2D freeze because they are not real credential material and do not affect the `nq-app` context smoke baseline.
+- No user-authored `env` / `printenv` full dump was observed.
+
+### Freeze decision
+
+PASS / FROZEN / ACCEPTED. Batch 2D is frozen as the current `dev` `nq-app` context smoke baseline.
+
 ## App context test inventory
 
 Source-only inspection found the following `nq-app` tests relevant to Spring context and profile planning:
@@ -375,7 +459,7 @@ Batch 2D must preserve:
 
 ### 2D-1: minimal context smoke implementation
 
-Status: IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. See the three CI run reviews above for the failure chain and the latest test-only fix record.
+Status: FROZEN / ACCEPTED. See the three failed CI run reviews, the FIRST-RUN-FIX #3 first green review, and the freeze review above for the accepted Batch 2D baseline.
 
 Implemented smoke shape:
 
@@ -416,12 +500,12 @@ After 2D-1 is stable, evaluate whether explicit properties should be promoted to
 
 ### 2D-3: required check evaluation
 
-Status: PENDING FIRST CI RUN.
+Status: FREEZE ACCEPTED / REQUIRED-CHECK PROMOTION NOT CHANGED.
 
 Do not make 2D required immediately. First require:
 
-1. One first green run.
-2. Freeze review with P0/P1=0.
+1. One first green run. Completed by GitHub Actions run `27601707199`.
+2. Freeze review with P0/P1=0. Completed by `NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW`.
 3. Evidence that startup does not rely on Batch 1 seed watcher.
 4. Evidence that no exchange host was contacted by construction and logs show no outbound failure.
 5. Stable runtime under the selected timeout.
@@ -435,7 +519,7 @@ Only after that review should 2D be considered for required-check promotion on b
 | 2A | Empty DB Flyway V1-V31 migration smoke. FROZEN / ACCEPTED. |
 | 2B | Schema artifact baseline. FROZEN / ACCEPTED. |
 | 2C | Repository-only real PostgreSQL smoke. FROZEN / ACCEPTED. |
-| 2D | `nq-app` context smoke. IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN. |
+| 2D | `nq-app` context smoke. FROZEN / ACCEPTED. |
 | 2E | CI-only seed watcher cleanup. NOT STARTED. |
 | 3 | no-outbound guard. PENDING and not implemented by 2D. |
 | 4 | security guard / secret scan. PENDING and not implemented by 2D. |
@@ -452,7 +536,7 @@ Only after that review should 2D be considered for required-check promotion on b
 | P1 | Existing Batch 1 CI-only seed watcher can hide app context fixture requirements if reused. | Do not reuse in 2D; keep 2E cleanup separate. |
 | P1 | `ExchangeAdapterConfiguration` instantiates adapter beans even when context only loads. | Keep smoke context-load only and avoid adapter methods; disable catalog sync / recovery / WS. |
 | P1 | Full `@SpringBootTest` local integration tests are broader than a context smoke and may need legacy account data. | Do not reuse as-is for 2D. |
-| P2 | The first 2D smoke may add CI time or flake due to context startup complexity. | Start non-required; freeze only after first green review. |
+| P2 | The 2D smoke adds CI time and could still flake due to context startup complexity. | Accepted for current Batch 2D baseline; required-check promotion is not changed by this docs-only freeze review. |
 | P2 | Current source has `@Scheduled` methods but no `@EnableScheduling` found. | Do not rely on absence; future smoke should explicitly disable scheduler side effects where possible. |
 | P3 | Existing docs scans include many historical / forbidden-term hits. | Treat broad `rg` hits as review input; separate real risk from boundary wording. |
 
@@ -490,18 +574,18 @@ mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NqAppContextPostgresSmokeTest 
 
 Notes:
 
-- The local Maven command runs the selected test class without CI DB properties; the class is disabled unless `nq.app.context.smoke.required=true`, so local execution validates compilation and Surefire selection but cannot prove the CI PostgreSQL context startup. The real app context smoke must be reviewed after the first GitHub Actions run.
+- The local Maven command runs the selected test class without CI DB properties; the class is disabled unless `nq.app.context.smoke.required=true`, so local execution validates compilation and Surefire selection but cannot prove the CI PostgreSQL context startup. The real app context smoke was reviewed through GitHub Actions run `27601707199`.
 - Frontend build / E2E and Python pytest / mypy / ruff are not required for Batch 2D because this task does not modify frontend or research.
 - Broad `rg` commands intentionally match docs/current forbidden-boundary wording, migration comments, and fake test values. Findings must be reviewed against changed files and source context.
 
 ## Review decision
 
-Review decision: PASS / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN.
+Review decision: PASS / FROZEN / ACCEPTED.
 
-Batch 2D implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. First run `27590822405` failed in `Run nq-app PostgreSQL context smoke` (`venue must not be blank`). Second run `27592872701` got past the gateway but failed at `securityFilterChain` (`HttpSecurity` absent under `webEnvironment = NONE`). Third run `27596768301` confirmed `WebEnvironment.MOCK` starts the servlet web context under `ci-app-smoke`, but failed in the test body with `NotAMockException` because adapter verification targeted a real `OkxExchangeAdapter`. The current fix removes REST adapter Mockito verification and keeps WS no-interaction verification only on confirmed Mockito mocks. Batch 2D must not be marked FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED until a later GitHub Actions run shows the 2D step green with skipped=0.
+Batch 2D implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. First run `27590822405` failed in `Run nq-app PostgreSQL context smoke` (`venue must not be blank`). Second run `27592872701` got past the gateway but failed at `securityFilterChain` (`HttpSecurity` absent under `webEnvironment = NONE`). Third run `27596768301` confirmed `WebEnvironment.MOCK` starts the servlet web context under `ci-app-smoke`, but failed in the test body with `NotAMockException` because adapter verification targeted a real `OkxExchangeAdapter`. FIRST-RUN-FIX #3 removed REST adapter Mockito verification and keeps WS no-interaction verification only on confirmed Mockito mocks. GitHub Actions run `27601707199` confirmed the 2D step green with tests=1 / skipped=0 / failures=0 / errors=0. Freeze review found P0/P1=0 and accepts Batch 2D as FROZEN / ACCEPTED.
 
 ## Next concrete action
 
-Next concrete action: re-run `NQ CI Baseline` on `dev` and then execute `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`. If CI remains red, continue only with a scoped 2D first-run fix.
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2E-PLAN`, Batch 3 pre-planning, or pausing the CI line by user choice.
 
-Do not proceed directly to 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this first-run fix.
+Do not proceed directly to 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this first green review.

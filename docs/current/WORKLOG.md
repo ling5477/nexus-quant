@@ -2,6 +2,98 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW
+
+日期：2026-06-16
+
+### 目标
+
+冻结 Batch 2D `nq-app` context smoke baseline，确认它可以作为 GateK CI Batch 2D 当前基线。本轮只同步允许的 `docs/current` 状态记录，不修改 workflow、业务代码、测试代码、migration、frontend、research、scripts 或 deploy。
+
+### 评审证据
+
+- GitHub Actions run `27601707199`，workflow `NQ CI Baseline`，branch `dev`，commit `cbc03013bd393e2534befa10b25cc5b4c62b54a4`：completed / success。
+- jobs：Diff check / Frontend build / Backend Maven test / Research quality gate / `PostgreSQL / Flyway smoke` 均 success。
+- `PostgreSQL / Flyway smoke` job `81604024163`：all steps success。
+- Step `Run empty database Flyway smoke`：success。
+- Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts`：success；artifact `nq-postgres-flyway-schema-artifacts` / id `7660159897` / digest `sha256:45b0e86ab0f499d70d04e02b7845850af11a98b3fd091f1e9c1f4b4718dc6f05`。
+- Step `Run repository PostgreSQL smoke`：success。
+- Step `Run nq-app PostgreSQL context smoke`：success。
+- `NqAppContextPostgresSmokeTest`：active profile `ci-app-smoke`；Surefire summary tests=1 / skipped=0 / failures=0 / errors=0；`nq-app SUCCESS`；Maven `BUILD SUCCESS`。
+
+### 边界确认
+
+- P0/P1 findings：0。
+- 未使用 `local` profile；未 as-is 复用 current `test` profile。
+- 未发现 `AuthSeedConfiguration` 执行、admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据。
+- 未发现成功访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+- 未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider / real exchange adapter。
+- Batch 2D freeze 只接受 context startup baseline；不证明 Batch 3 no-outbound guard。
+- Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+- CI logs 未发现真实 credential material；disposable CI PostgreSQL service values 与 Spring Boot generated development security password 作为 P3 log hygiene residual 延后。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PASS / FROZEN / ACCEPTED。Batch 2D 冻结为当前 `dev` `nq-app` context smoke baseline。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2E-PLAN`、Batch 3 pre-planning，或按用户选择暂停 CI 线。
+
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW after FIRST-RUN-FIX #3
+
+日期：2026-06-16
+
+### 目标
+
+只评审 FIRST-RUN-FIX #3 推送后的 GitHub Actions run，确认 `nq-app` context smoke 是否在 CI PostgreSQL service DB 上真实执行并通过。本轮不进入 Batch 2E，不进入 Batch 3-5，不修改业务代码、workflow、测试代码、migration、frontend、research、scripts 或 deploy，只同步允许的 `docs/current` 状态记录。
+
+### 评审证据
+
+- GitHub Actions run `27601707199`，workflow `NQ CI Baseline`，branch `dev`，commit `cbc03013bd393e2534befa10b25cc5b4c62b54a4`：completed / success。
+- jobs：Diff check / Frontend build / Backend Maven test / Research quality gate / `PostgreSQL / Flyway smoke` 均 success。
+- `PostgreSQL / Flyway smoke` job `81604024163`：all steps success。
+- Step `Run empty database Flyway smoke`：success；Batch 2A migration smoke 未回归。
+- Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts`：success；artifact `nq-postgres-flyway-schema-artifacts` / id `7660159897` / digest `sha256:45b0e86ab0f499d70d04e02b7845850af11a98b3fd091f1e9c1f4b4718dc6f05`。
+- Step `Run repository PostgreSQL smoke`：success；Batch 2C repository smoke 未回归。
+- Step `Run nq-app PostgreSQL context smoke`：success。
+- `NqAppContextPostgresSmokeTest`：真实执行且未 skip；active profile `ci-app-smoke`；Surefire summary tests=1 / skipped=0 / failures=0 / errors=0；`nq-app SUCCESS`；Maven `BUILD SUCCESS`。
+- `OkxRecoveryService` logged startup skip: recovery disabled / mapped trade env SIM。
+
+### 边界确认
+
+- 未使用 `local` profile；未 as-is 复用 current `test` profile。
+- 未发现 `AuthSeedConfiguration` 执行、admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据。
+- 未发现成功 order / cancel / transfer / withdraw / private REST / WS connect 路径。
+- 未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider / real exchange adapter。
+- Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING。
+- Batch 2D 只证明 context startup；完整 no-outbound guard 仍由 Batch 3 独立覆盖。
+- CI logs 未发现真实生产 credential material；但仍有 disposable CI PostgreSQL service values 的平台级显示和 Spring Boot generated development security password，记录为 P3 CI / app-smoke log hygiene residual。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2D 当前为 FIRST GREEN RUN CONFIRMED，但尚未 FROZEN / final ACCEPTED。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-FREEZE-REVIEW`、`NQ-CI-POSTGRES-FLYWAY-2E-PLAN` 或 Batch 3 pre-planning。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX after NotAMockException
 
 日期：2026-06-16
