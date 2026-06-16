@@ -2,6 +2,57 @@
 
 日期：2026-05-16
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW
+
+日期：2026-06-16
+
+### 目标
+
+只评审包含 Batch 2D 变更的 GitHub Actions first run，确认 `nq-app` context smoke 是否在 CI PostgreSQL service DB 上真实执行并通过。本轮不进入 Batch 2E，不进入 Batch 3-5，不修改业务代码，不修复 workflow / test，只同步允许的 `docs/current` 状态记录。
+
+### 评审证据
+
+- GitHub Actions run `27590822405`，workflow `NQ CI Baseline`，branch `dev`，commit `521e100b58ec2ee2b06463bf7558ff65a9630cf4`：completed / failure。
+- `postgres-flyway` job `PostgreSQL / Flyway smoke` / `81570960942`：completed / failure。
+- Step `Run empty database Flyway smoke`：success；31 migrations applied / validated，current version V31。
+- Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts`：success；artifact `nq-postgres-flyway-schema-artifacts` / id `7656304957` uploaded。
+- Step `Run repository PostgreSQL smoke`：success；`JdbcRepositoryPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0；Maven `BUILD SUCCESS`。
+- Step `Run nq-app PostgreSQL context smoke`：failure。
+- `NqAppContextPostgresSmokeTest`：真实执行且未 skip；Surefire summary tests=1 / skipped=0 / failures=0 / errors=1。
+- Root cause：Spring context failed while creating `AdapterBackedTradingVenueGateway` through the trading strategy dependency chain；nested cause `IllegalArgumentException: venue must not be blank`。
+
+### 边界确认
+
+- 未使用 `local` profile；CI log 显示 active profile `ci-app-smoke`。
+- 未 as-is 复用 current `test` profile。
+- CI step 设置 `nq.app.context.smoke.required=true`，因此不是本地 optional skip。
+- 未确认 app context 成功启动。
+- 未发现 `AuthSeedConfiguration` 执行、admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据；但由于 context startup 失败，不能声明完整 smoke 通过。
+- 未发现 OKX / Binance / Bybit / Gate / Coinbase / Kraken 成功访问；Batch 3 no-outbound guard 仍未实现。
+- CI logs 仍出现 disposable CI PostgreSQL service connection material / full connection string in service initialization or automatic step environment display；不是真实生产 credential material，但不满足本轮 stricter no JDBC password / full connection string / env dump 验收项。
+- Batch 2E 仍 NOT STARTED。
+- Batch 3 no-outbound guard 仍 PENDING。
+- Batch 4 security guard / secret scan 仍 PENDING。
+- Batch 5 frontend E2E hardening 仍 PENDING。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。
+
+### 修改文件
+
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`
+- `docs/current/NQ_CI_POSTGRES_FLYWAY_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+### Review decision
+
+FAIL / FIRST-RUN-FIX REQUIRED。Batch 2D 不能标记为 FIRST GREEN RUN CONFIRMED，不能标记为 FROZEN / ACCEPTED。
+
+### 下一步
+
+Next concrete action：`NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX` only。修复范围只允许 `.github/workflows/ci.yml`、`backend/nq-app` test 和 `docs/current` 状态记录；不得混入 Batch 2E、Batch 3-5、LIVE、AI、DH runtime、RealClient、real provider 或 real exchange adapter。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-IMPL
 
 日期：2026-06-16

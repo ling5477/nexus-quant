@@ -2,6 +2,58 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW 验证记录（2026-06-16）
+
+本轮是 GateK CI Batch 2D first-run review：只评审包含 Batch 2D 变更的 GitHub Actions run，不修改 workflow、Java / TypeScript / Python 生产代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2D 不得写成 FIRST GREEN RUN CONFIRMED、FROZEN 或 ACCEPTED。
+
+| 项目 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | 失败 | Run `27590822405`，workflow `NQ CI Baseline`，branch `dev`，commit `521e100b58ec2ee2b06463bf7558ff65a9630cf4`，status `completed`，conclusion `failure`。 |
+| `postgres-flyway` job | 失败 | Job `PostgreSQL / Flyway smoke` / `81570960942` completed / failure。 |
+| Flyway empty DB smoke | 通过 | Step `Run empty database Flyway smoke` success；日志显示 31 migrations applied / validated，current version V31。 |
+| Schema artifacts | 通过 | Steps `Generate PostgreSQL schema artifacts`、`Check PostgreSQL schema artifacts`、`Upload PostgreSQL schema artifacts` success；artifact `nq-postgres-flyway-schema-artifacts` / id `7656304957` uploaded。 |
+| Repository PostgreSQL smoke | 通过 | Step `Run repository PostgreSQL smoke` success；`JdbcRepositoryPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0，Maven `BUILD SUCCESS`。 |
+| `nq-app` context smoke step | 失败 | Step `Run nq-app PostgreSQL context smoke` failed。 |
+| `NqAppContextPostgresSmokeTest` | 真实执行 / 未 skip / 失败 | CI log 显示 active profile `ci-app-smoke`；Surefire summary tests=1 / skipped=0 / failures=0 / errors=1。 |
+| Failure root cause | 已定位 | Spring context failed while creating `AdapterBackedTradingVenueGateway` through the trading strategy dependency chain；nested cause `IllegalArgumentException: venue must not be blank`。 |
+| Profile boundary | 通过 / 未首绿 | 未使用 `local` profile；未 as-is 复用 current `test` profile；使用 `nq.app.context.smoke.required=true` 和 CI PostgreSQL service DB properties。 |
+| Seed / AuthSeed boundary | 未发现触发 | 未发现 `AuthSeedConfiguration` 执行、admin / operator / viewer seed users、legacy accounts、exchange accounts 或 credential rows 创建证据；但由于 context startup 失败，不能声明完整 app smoke 通过。 |
+| Security boundary | 不通过 | CI logs 仍出现 disposable CI PostgreSQL service connection material / full connection string in service initialization or automatic step environment display；不是真实生产 credential material，但不满足本轮“no JDBC password / full connection string / env dump”验收项。 |
+| Batch boundary | 通过 | Batch 2E 仍 NOT STARTED；Batch 3-5 仍 PENDING；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；real exchange adapter / provider / RealClient NOT IMPLEMENTED。 |
+
+本轮执行 / 复核命令：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- backend/**/db/migration
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff --name-status HEAD^ HEAD -- backend/**/db/migration
+git diff --name-status HEAD^ HEAD -- frontend
+git diff --name-status HEAD^ HEAD -- research
+git diff --name-status HEAD^ HEAD -- scripts
+git diff --name-status HEAD^ HEAD -- deploy
+git diff --check HEAD^ HEAD
+git diff --stat HEAD^ HEAD
+gh run list --branch dev --limit 10 --json databaseId,displayTitle,headSha,status,conclusion,workflowName,createdAt,updatedAt,event,url
+gh run view 27590822405 --json databaseId,status,conclusion,headSha,workflowName,displayTitle,event,url,jobs
+gh run view 27590822405 --job 81570960942 --log
+rg "@ActiveProfiles\("local"\)|AuthSeedConfiguration|ApplicationRunner|CommandLineRunner|Scheduled|Scheduler|Testcontainers|OKX|Binance|Bybit|Gate|Coinbase|Kraken|LIVE=true|LIVE_ENABLED|apiKey|secret|passphrase|token|private key" backend .github docs/current --glob "!backend/**/target/**"
+```
+
+GitHub Actions artifacts were reviewed through the GitHub connector; run `27590822405` uploaded only `nq-postgres-flyway-schema-artifacts` and did not upload a dedicated Surefire report artifact. Surefire was reviewed from the Maven console summary in the failed step.
+
+本轮未运行本地 `mvn -f backend/pom.xml test`、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮为 CI first-run review + docs/current 状态记录，且 CI 已在 Batch 2D step 失败。下一步只能进入 targeted first-run fix 后重新验证。
+
+Review decision: FAIL / FIRST-RUN-FIX REQUIRED。Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX` only。
+
 ## NQ-CI-POSTGRES-FLYWAY-2D-IMPL 验证记录（2026-06-16）
 
 本轮是 GateK CI Batch 2D implementation：实现最小 `nq-app` Spring context smoke，状态只能写为 IMPLEMENTED / PENDING FIRST CI RUN。不得写成 FROZEN / ACCEPTED，不进入 Batch 2E，不进入 Batch 3-5。
@@ -40,7 +92,7 @@ Local CI PostgreSQL app context smoke limitation:
 - 真实 context startup 必须由 GitHub Actions `postgres-flyway` job 的 `Run nq-app PostgreSQL context smoke` step 首次运行确认。
 - CI step 显式设置 `nq.app.context.smoke.required=true`，因此 GitHub Actions 中该测试不得 skip / soft-fail；缺少 datasource properties 或 context 启动失败会导致 Maven step 失败。
 
-Review decision: PASS / IMPLEMENTED / PENDING FIRST CI RUN。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` 或 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
+Review decision at implementation time: PASS / IMPLEMENTED / PENDING FIRST CI RUN。该 implementation-time decision 已由上方 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` 覆盖；当前状态为 FAIL / FIRST-RUN-FIX REQUIRED，下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
 
 ## NQ-CI-POSTGRES-FLYWAY-2D-PLAN 验证记录（2026-06-15）
 

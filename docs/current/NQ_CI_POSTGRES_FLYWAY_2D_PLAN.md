@@ -1,8 +1,8 @@
 # NQ CI PostgreSQL / Flyway 2D Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN / NQ-CI-POSTGRES-FLYWAY-2D-IMPL
+任务：NQ-CI-POSTGRES-FLYWAY-2D-PLAN / NQ-CI-POSTGRES-FLYWAY-2D-IMPL / NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW
 日期：2026-06-15 / 2026-06-16
-状态：IMPLEMENTED / PENDING FIRST CI RUN
+状态：IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - Batch 2B schema artifact baseline：FROZEN / ACCEPTED。
 - Batch 2C repository-only real PostgreSQL smoke baseline：FROZEN / ACCEPTED。
 - 2C-HYGIENE-FIX：FROZEN / ACCEPTED。
-- Batch 2D `nq-app` context smoke：IMPLEMENTED / PENDING FIRST CI RUN。
+- Batch 2D `nq-app` context smoke：IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX。
 - Batch 2E CI-only seed watcher cleanup：NOT STARTED。
 - Batch 3 no-outbound guard：PENDING。
 - Batch 4 security guard / secret scan：PENDING。
@@ -57,11 +57,42 @@ Current `.github/workflows/ci.yml` has these relevant jobs:
 | Job | Current behavior | 2D interpretation |
 | --- | --- | --- |
 | `backend` | Runs `mvn -f backend/pom.xml test` with PostgreSQL service `postgres:16`; uses a CI-only watcher to insert one `accounts` row after Flyway creates the table. | Batch 1 compatibility path only. It currently satisfies existing local-profile full context tests but must not become the 2D seed or profile policy. |
-| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, runs the Batch 2C repository-only PostgreSQL smoke, then runs Batch 2D `nq-app` context smoke. | 2A / 2B / 2C FROZEN / ACCEPTED baseline plus 2D IMPLEMENTED / PENDING FIRST CI RUN. The 2D step does not seed, does not use `local` / `test`, does not exercise `AuthSeedConfiguration`, and does not invoke adapter methods. |
+| `postgres-flyway` | Runs direct Flyway API empty DB migrate + validate to V31, uploads schema metadata artifacts, runs the Batch 2C repository-only PostgreSQL smoke, then runs Batch 2D `nq-app` context smoke. | 2A / 2B / 2C FROZEN / ACCEPTED baseline plus 2D IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX. The first run failed in the 2D step before a successful context startup could be confirmed. |
 | `frontend` | Runs `npm ci` + `npm run build`. | Outside Batch 2D; frontend E2E hardening remains Batch 5. |
 | `research` | Runs Python pytest / mypy / ruff. | Outside Batch 2D. |
 
-Batch 2D is implemented as a clearly isolated step after the existing `postgres-flyway` artifacts and repository smoke. It remains removable without changing 2A / 2B / 2C semantics and is not promoted to a required check before first-run review.
+Batch 2D is implemented as a clearly isolated step after the existing `postgres-flyway` artifacts and repository smoke. First-run review did not confirm green status; the only next implementation path is `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`.
+
+## First CI run review
+
+Run reviewed: GitHub Actions `NQ CI Baseline` run `27590822405`, branch `dev`, commit `521e100b58ec2ee2b06463bf7558ff65a9630cf4`, event `push`, created `2026-06-16T02:52:29Z`, completed `2026-06-16T02:54:35Z`.
+
+Decision: FAIL / FIRST-RUN-FIX REQUIRED. Batch 2D must not be written as FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED.
+
+Evidence:
+
+- Overall run: `completed / failure`.
+- `postgres-flyway` job (`PostgreSQL / Flyway smoke`, job `81570960942`): `completed / failure`.
+- `Run empty database Flyway smoke`: success; logs show 31 migrations applied and validated, current version V31.
+- `Generate PostgreSQL schema artifacts`, `Check PostgreSQL schema artifacts`, `Upload PostgreSQL schema artifacts`: success; artifact `nq-postgres-flyway-schema-artifacts` id `7656304957` uploaded.
+- `Run repository PostgreSQL smoke`: success; `JdbcRepositoryPostgresSmokeTest` showed tests=1 / skipped=0 / failures=0 / errors=0 and Maven `BUILD SUCCESS`.
+- `Run nq-app PostgreSQL context smoke`: failure.
+- `NqAppContextPostgresSmokeTest`: actually selected and executed under profile `ci-app-smoke`; not skipped.
+- Surefire summary for `NqAppContextPostgresSmokeTest`: tests=1 / skipped=0 / failures=0 / errors=1.
+- Failure root cause from CI log: Spring context failed while creating `AdapterBackedTradingVenueGateway`; nested cause `IllegalArgumentException: venue must not be blank`.
+- The CI step used `nq.app.context.smoke.required=true` and the GitHub Actions PostgreSQL service DB properties, so this was a real CI-required execution, not a local optional skip.
+
+Boundary observations from the failed run:
+
+- `local` profile was not used; CI log showed active profile `ci-app-smoke`.
+- Current `test` profile was not reused as-is.
+- No successful app context startup was confirmed.
+- No evidence of `AuthSeedConfiguration` execution or admin / operator / viewer seed creation was found before the context failure.
+- No evidence of legacy account, exchange account, or credential row creation was confirmed for the 2D step.
+- No successful OKX / Binance / Bybit / Gate / Coinbase / Kraken access was found; however Batch 3 no-outbound guard is still not implemented.
+- CI logs still expose disposable CI PostgreSQL service connection material in service initialization / automatic step environment display before masking can fully protect it. This is not real production credential material, but it fails the stricter Batch 2D first-run acceptance item that requires no JDBC password / full connection string / env dump in logs.
+
+Next action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX` only. Fix scope must stay limited to `.github/workflows/ci.yml`, `backend/nq-app` test, and `docs/current` status records. Do not mix Batch 2E, Batch 3-5, LIVE, AI, DH runtime, RealClient, real provider, or real exchange adapter.
 
 ## App context test inventory
 
@@ -212,7 +243,7 @@ Batch 2D must preserve:
 
 ### 2D-1: minimal context smoke implementation
 
-Status: IMPLEMENTED / PENDING FIRST CI RUN.
+Status: IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX.
 
 Implemented smoke shape:
 
@@ -333,12 +364,12 @@ Notes:
 
 ## Review decision
 
-Review decision: PASS / IMPLEMENTED / PENDING FIRST CI RUN.
+Review decision: FAIL / FIRST-RUN-FIX REQUIRED.
 
-Batch 2D now implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no adapter method calls, no external network by construction, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. It is not FROZEN / ACCEPTED until first-run review confirms the GitHub Actions result.
+Batch 2D implements only the minimal `nq-app` context startup smoke, using CI-only fake profile / explicit properties, the same disposable PostgreSQL service DB after Flyway migration, no seed, no local profile, no current test profile reuse, no AuthSeed runner, no scheduler business execution, no adapter method calls, no LIVE, no AI, no DH runtime, no RealClient, no real provider, and no real exchange credential material. First-run review did not confirm green status: run `27590822405` failed in `Run nq-app PostgreSQL context smoke`. Batch 2D must not be marked FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED.
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`.
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`.
 
-Do not proceed directly to 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this implementation task.
+Do not proceed directly to 2E seed watcher cleanup implementation, Batch 3 no-outbound guard implementation, Batch 4 secret scan implementation, Batch 5 frontend E2E hardening implementation, AI, DH runtime, LIVE, RealClient, real provider or real exchange adapter from this failed first-run review.

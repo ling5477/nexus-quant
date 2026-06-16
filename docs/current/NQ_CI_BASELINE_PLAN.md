@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D IMPLEMENTED / PENDING FIRST CI RUN；Batch 2E NOT STARTED；Batch 3-5 PENDING
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX；Batch 2E NOT STARTED；Batch 3-5 PENDING
 
 ## Current state
 
@@ -15,7 +15,7 @@
 - DH runtime: NOT INTEGRATED / not connected to NQ。
 - LIVE: DISABLED。
 - real exchange permission probe adapter: NOT IMPLEMENTED。
-- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 已在既有 `postgres-flyway` job 中实现 schema metadata artifact generation / upload，并由 GitHub Actions run `27521750442` first green + freeze review 固化为 FROZEN / ACCEPTED；Batch 2C repository-only real PostgreSQL smoke 已由 GitHub Actions run `27535619157` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2D 已实现最小 `nq-app` context smoke，当前为 IMPLEMENTED / PENDING FIRST CI RUN；`.github` 仍不得包含其他未审查 workflow。
+- `.github/workflows/ci.yml` 已由 `NQ-CI-BASELINE-IMPL` Batch 1 新增，状态为 implemented / first green confirmed；GitHub Actions run `27496906788` 的 `diff-check`、`backend`、`frontend`、`research` 均为 success；Batch 2A 已新增 `postgres-flyway` job，GitHub Actions run `27501253175` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2B 已在既有 `postgres-flyway` job 中实现 schema metadata artifact generation / upload，并由 GitHub Actions run `27521750442` first green + freeze review 固化为 FROZEN / ACCEPTED；Batch 2C repository-only real PostgreSQL smoke 已由 GitHub Actions run `27535619157` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；2C-HYGIENE-FIX 已由 GitHub Actions run `27550583713` first green confirmed，并经 freeze review 固化为 FROZEN / ACCEPTED；Batch 2D 已实现最小 `nq-app` context smoke，但 GitHub Actions run `27590822405` first run failed at `Run nq-app PostgreSQL context smoke`，当前为 IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX；`.github` 仍不得包含其他未审查 workflow。
 - Backend 是 Java 21 / Spring Boot 3.5.x / Maven multi-module；统一命令为 `mvn -f backend/pom.xml test`。
 - Frontend 是 React / Vite / Ant Design / TanStack Query / Axios / Zustand / Playwright；`package.json` 当前脚本包含 `build`、`preview`、`test:e2e`。
 - Research Python 使用 `research/py/pyproject.toml`，dev baseline 为 `pytest`、`mypy`、`ruff`。
@@ -347,7 +347,7 @@ Must not implement in Batch 1:
 
 ### Batch 2: NQ-CI-POSTGRES-FLYWAY
 
-Status: Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2D IMPLEMENTED / PENDING FIRST CI RUN；Batch 2E NOT STARTED。
+Status: Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2D IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX；Batch 2E NOT STARTED。
 
 Planning document:
 
@@ -381,7 +381,7 @@ Batch 2C freeze evidence:
 
 Still pending / not implemented:
 
-- Batch 2D first CI run review；implementation document `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md` is IMPLEMENTED / PENDING FIRST CI RUN and must not be treated as FROZEN / ACCEPTED yet。
+- Batch 2D first-run fix；implementation document `docs/current/NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md` is IMPLEMENTED / FIRST CI RUN FAILED / PENDING FIRST-RUN-FIX and must not be treated as FIRST GREEN RUN CONFIRMED, FROZEN, or ACCEPTED yet。
 - Batch 2E CI-only seed watcher cleanup。
 
 ### Batch 3: NQ-CI-NO-OUTBOUND-GUARD
@@ -458,6 +458,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW` or `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
+Next concrete action: `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。
 
 Do not mix no-outbound implementation、security scan hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 2D/2E planning or 2C hygiene cleanup. Batch 2C must stay within the frozen repository-only PostgreSQL smoke baseline.
