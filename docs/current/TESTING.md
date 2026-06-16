@@ -2,6 +2,29 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW-AFTER-FIX（2026-06-16）
+
+本轮是 GateK CI Batch 2E first-run review after fix：只评审 first-run fix 后的 GitHub Actions run `27614046762`，并同步允许的 `docs/current` 状态记录。不修改 workflow、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 FIRST GREEN RUN CONFIRMED；Batch 3-5 仍 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | 通过 | Run `27614046762`，workflow `NQ CI Baseline`，branch `dev`，commit `50c4c65e956b207bcfa47b4ed2027b452d3809fc`，completed / success。 |
+| Diff check | 通过 | Job `81645397268` completed / success；changed-file whitespace gate passed。 |
+| Backend Maven test | 通过 | Job `81645397239` completed / success；steps `Prepare backend CI legacy account fixture` and `Run backend tests` both success。 |
+| Explicit fixture | 通过 | Backend job fixture runs Flyway migrate / validate to V31 before backend tests, inserts only `ci-backend-test-account` into legacy `accounts` with `PAPER / ACTIVE`, and fail-closes on matching `exchange_accounts` rows or any `exchange_account_credentials` row。 |
+| Seed watcher removal | 通过 | Backend job has no background seed watcher, no `public.accounts` polling, no `ci-local-account`, no `seed_pid`, and no watcher wait / exit-status merge。 |
+| Research happy path | 通过 | `ResearchBacktestHappyPathLocalTest` ran with tests=1 / failures=0 / errors=0 / skipped=0。 |
+| Backend reactor | 通过 | Backend Maven reactor 23/23 modules SUCCESS；`nq-app` SUCCESS；Maven `BUILD SUCCESS`。 |
+| Frontend build | 通过 | Job `81645397229` completed / success；`npm ci` + `npm run build` passed；only known Vite chunk-size warning and existing `npm audit` advisory summary appeared。 |
+| Research quality gate | 通过 | Job `81645397244` completed / success；pytest `2 passed`，mypy `Success: no issues found in 8 source files`，ruff `All checks passed!`。 |
+| PostgreSQL / Flyway smoke | 通过 | Job `81645397302` completed / success；empty DB Flyway smoke、schema artifacts、repository PostgreSQL smoke、`nq-app` context smoke all success。 |
+| Batch 2A/2B/2C/2D baseline | 通过 | `postgres-flyway` job kept accepted 2A / 2B / 2C / 2D steps green；`NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0。 |
+| Security boundary | 通过 | No API key、secret、passphrase、token、private key、credential material、encrypted_payload、decrypted_payload。No LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。No OKX / Binance / Bybit / Gate / Coinbase / Kraken calls introduced by 2E。 |
+| Local diff boundary | 通过 | `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `backend/**/db/migration` all empty after review edits；only allowed `docs/current` files changed。 |
+| Log access note | 已披露 | GitHub MCP provided run jobs and decoded backend / postgres-flyway job logs. A later `gh run view --log` retry hit GitHub unauthenticated rate limiting, so detailed log review used GitHub MCP output plus workflow static inspection。 |
+
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN。Batch 2E 当前为 FIRST GREEN RUN CONFIRMED，不能写成 FROZEN / ACCEPTED。下一步只能是 `NQ-CI-POSTGRES-FLYWAY-2E-FREEZE-REVIEW`、Batch 3 pre-planning 或暂停 CI 线。
+
 ## NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX（2026-06-16）
 
 本轮是 GateK CI Batch 2E first-run fix：先取得 GitHub Actions run `27610448572` 的 Backend Maven test 失败日志，再只在 `.github/workflows/ci.yml` backend job 增加同步 post-Flyway CI-only legacy `accounts` fixture。不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 2E 当前为 FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN；Batch 3-5 仍 PENDING。

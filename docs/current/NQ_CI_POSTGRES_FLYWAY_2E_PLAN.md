@@ -1,22 +1,22 @@
 # NQ CI PostgreSQL / Flyway Batch 2E Plan
 
-任务：NQ-CI-POSTGRES-FLYWAY-2E-PLAN / NQ-CI-POSTGRES-FLYWAY-2E-IMPL / NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX
+任务：NQ-CI-POSTGRES-FLYWAY-2E-PLAN / NQ-CI-POSTGRES-FLYWAY-2E-IMPL / NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW / NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX / NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-REVIEW-AFTER-FIX
 日期：2026-06-16
-状态：FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN
+状态：FIRST GREEN RUN CONFIRMED
 
 ## Task classification
 
 - Primary type: `CI_CD`
 - Auxiliary types: `DOCUMENTATION`, `SECURITY_BOUNDARY_GUARD`, `TEST_BASELINE_FIX`
 - 主 skill：`nq-dh-workflow-router`，用于确认 NQ / GateK / CI / credential / LIVE / DH 边界。
-- 本轮实现 Batch 2E 最小 cleanup 与 first-run fix：只修改 backend CI job 的同步 fixture step 和 `docs/current` 状态记录；不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
+- 本轮实现 Batch 2E 最小 cleanup、first-run fix 与 first green review：只修改 backend CI job 的同步 fixture step 和 `docs/current` 状态记录；不修改 Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。
 
 ## Scope
 
 - Repository: NexusQuant / NQ。
 - Branch: `dev`。
 - Current stage: GateJ completed；Next: GateK-PLAN。
-- Batch state: 2A / 2B / 2C / 2C-HYGIENE-FIX / 2D 均为 FROZEN / ACCEPTED；Batch 2E watcher cleanup first GitHub Actions run failed，first-run fix 已应用，当前为 FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN；Batch 3-5 仍 PENDING。
+- Batch state: 2A / 2B / 2C / 2C-HYGIENE-FIX / 2D 均为 FROZEN / ACCEPTED；Batch 2E watcher cleanup first GitHub Actions run failed 后已完成 scoped first-run fix；GitHub Actions run `27614046762` 已确认 first green，当前为 FIRST GREEN RUN CONFIRMED；Batch 3-5 仍 PENDING。
 - Target files inspected:
   - `.github/workflows/ci.yml`
   - `backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/auth/AuthSeedConfiguration.java`
@@ -91,7 +91,30 @@
   5. Verifies no `exchange_accounts` row is created for that fixture.
   6. Verifies `exchange_account_credentials` remains empty.
 - Fallback decision: use explicit synchronous CI-only fixture SQL after Flyway migration completion and before backend Maven test. Do not restore the background watcher.
-- Pending: next GitHub Actions run must confirm backend Maven test and `postgres-flyway` job are both green before Batch 2E can be reviewed as first green. Current Batch 2E status is FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN, not FIRST GREEN, FROZEN, or ACCEPTED.
+- First green follow-up: GitHub Actions run `27614046762` confirmed backend Maven test and `postgres-flyway` job both green after the first-run fix. Current Batch 2E status is FIRST GREEN RUN CONFIRMED, not FROZEN or ACCEPTED.
+
+## First green run review after first-run fix
+
+- GitHub Actions run: `27614046762`, workflow `NQ CI Baseline`, branch `dev`, commit `50c4c65e956b207bcfa47b4ed2027b452d3809fc`, event `push`, title `ci(gatek): add explicit backend CI account fixture`.
+- Run result: completed / success.
+- `Diff check`: job `81645397268` completed / success.
+- `Frontend build`: job `81645397229` completed / success；`npm ci` and `npm run build` completed, with only the known Vite chunk-size warning and existing `npm audit` advisory summary.
+- `Research quality gate`: job `81645397244` completed / success；pytest `2 passed`, mypy `Success: no issues found in 8 source files`, ruff `All checks passed!`.
+- `Backend Maven test`: job `81645397239` completed / success.
+  - Step `Prepare backend CI legacy account fixture`: completed / success.
+  - Step `Run backend tests`: completed / success.
+  - Log evidence: fixture step generated and ran `BackendCiLegacyAccountFixture`, using Flyway `migrate()` + `validate()` with `baselineOnMigrate(false)`, `cleanDisabled(true)`, and `outOfOrder(false)` before backend tests.
+  - Log evidence: fixture code uses `FIXTURE_ACCOUNT_CODE = "ci-backend-test-account"` and inserts exactly one legacy `accounts` row with `PAPER / ACTIVE`.
+  - Log evidence: fixture code fail-closes on `exchange_accounts` rows linked to the fixture and on any `exchange_account_credentials` row.
+  - Log evidence: no background watcher, no `public.accounts` polling loop, no `ci-local-account`, no `seed_pid`, and no watcher `wait` / exit-status merge appears in the backend job steps.
+  - Log evidence: `ResearchBacktestHappyPathLocalTest` ran with tests=1 / failures=0 / errors=0 / skipped=0.
+  - Log evidence: backend Maven reactor 23/23 modules SUCCESS; `nq-app` SUCCESS; final Maven `BUILD SUCCESS`.
+- `PostgreSQL / Flyway smoke`: job `81645397302` completed / success.
+  - Steps `Run empty database Flyway smoke`, `Generate PostgreSQL schema artifacts`, `Check PostgreSQL schema artifacts`, `Upload PostgreSQL schema artifacts`, `Run repository PostgreSQL smoke`, and `Run nq-app PostgreSQL context smoke` all completed / success.
+  - Log evidence: `NqAppContextPostgresSmokeTest` ran under `ci-app-smoke` with tests=1 / skipped=0 / failures=0 / errors=0; `nq-app` SUCCESS; Maven `BUILD SUCCESS`.
+  - 2A / 2B / 2C / 2D accepted baselines remain green.
+- Log access note: GitHub MCP provided run jobs and decoded job logs. A later `gh run view --log` retry hit GitHub unauthenticated rate limiting, so detailed log review used GitHub MCP output plus workflow static inspection.
+- First green decision: PASS / ACCEPTED FOR FIRST GREEN RUN. Batch 2E is FIRST GREEN RUN CONFIRMED, not FROZEN / ACCEPTED.
 
 ## First-run review
 
@@ -268,8 +291,8 @@ Use explicit fixture SQL only if all are true:
 
 ## Impact assessment
 
-- Backend Maven test: local `mvn -f backend/pom.xml test` passed after watcher deletion, but GitHub Actions run `27610448572` failed in `Backend Maven test` / `Run backend tests`; first-run fix now prepares one synchronized legacy `accounts` fixture after Flyway V31 and before backend Maven test.
-- `postgres-flyway` job: first-run review confirmed success in run `27610448572`; 2A/2B/2C/2D paths remained green.
+- Backend Maven test: local `mvn -f backend/pom.xml test` passed after watcher deletion; GitHub Actions run `27610448572` then exposed the missing legacy `accounts` fixture; first-run fix now prepares one synchronized legacy `accounts` fixture after Flyway V31 and before backend Maven test. Follow-up run `27614046762` confirmed backend Maven test success on the GitHub runner.
+- `postgres-flyway` job: first-run review confirmed success in run `27610448572`; follow-up run `27614046762` confirmed the job remains success after the backend fixture fix. 2A/2B/2C/2D paths remained green.
 - Batch 2A: dependency reduced to zero because empty DB Flyway smoke is no-seed and does not start `nq-app`.
 - Batch 2B: dependency reduced to zero because artifacts are generated from the seedless Flyway-migrated DB.
 - Batch 2C: dependency reduced to zero because repository smoke uses explicit fake data inside a rollback-only transaction and does not touch legacy `accounts`.
@@ -288,11 +311,11 @@ Use explicit fixture SQL only if all are true:
 
 ## Batch boundary
 
-- Batch 2E is FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN in this document.
+- Batch 2E is FIRST GREEN RUN CONFIRMED in this document.
 - Batch 3 no-outbound guard remains PENDING.
 - Batch 4 security guard / secret scan remains PENDING.
 - Batch 5 frontend E2E hardening remains PENDING.
-- Batch 2E must not be marked FIRST GREEN, FROZEN, or ACCEPTED until follow-up review confirms the backend and `postgres-flyway` jobs remain green with P0/P1=0.
+- Batch 2E must not be marked FROZEN or ACCEPTED until a separate freeze review confirms P0/P1=0 and no boundary drift.
 
 ## P0/P1/P2/P3 findings
 
@@ -302,13 +325,13 @@ Use explicit fixture SQL only if all are true:
 
 ### P1
 
-- GitHub Actions run `27610448572` failed in the `Backend Maven test` job / `Run backend tests` step after watcher deletion. The exact failing test and stack trace were not available to this reviewer because GitHub log download returned HTTP 403; first-run fix must capture them before making any change.
+- 无。Historical P1 from run `27610448572` was closed by the scoped first-run fix and GitHub Actions run `27614046762` first green review.
 
 ### P2
 
 - Current backend seed watcher is a long-lived ad hoc CI compatibility layer that can hide missing explicit fixtures in local-profile Spring tests.
 - Watcher can race with Flyway: direct `accounts` insert after V1 may be indirectly backfilled into `exchange_accounts` by V12, making account state depend on timing rather than explicit test ownership.
-- Backend Maven test did fail in first GitHub runner execution; 2E now requires a first-run fix loop constrained to the backend test failure.
+- Backend Maven test did fail in first GitHub runner execution; the scoped first-run fix closed that loop, but the fixture remains CI-only and should be frozen only after a separate 2E freeze review.
 
 ### P3
 
@@ -331,6 +354,13 @@ GitHub Actions first run:
 - `gh run view --job 81633181744`：`PostgreSQL / Flyway smoke` success, including 2A / 2B / 2C / 2D steps.
 - `gh run view --log-failed` / `gh run view --job 81633181802 --log-failed`：failed with HTTP 403, so backend Maven failure logs were not readable in this review.
 
+GitHub Actions first green run after fix:
+
+- GitHub Actions MCP run jobs for run `27614046762`：completed / success; jobs `Diff check`、`Backend Maven test`、`Frontend build`、`Research quality gate`、`PostgreSQL / Flyway smoke` all completed / success.
+- GitHub Actions MCP backend job logs for job `81645397239`：`Prepare backend CI legacy account fixture` and `Run backend tests` success; `ResearchBacktestHappyPathLocalTest` tests=1 / failures=0 / errors=0 / skipped=0; backend reactor 23/23 modules SUCCESS; `nq-app` SUCCESS; Maven `BUILD SUCCESS`.
+- GitHub Actions MCP `postgres-flyway` job logs for job `81645397302`：empty DB Flyway smoke, schema artifacts, repository PostgreSQL smoke, and `nq-app` context smoke success; `NqAppContextPostgresSmokeTest` tests=1 / skipped=0 / failures=0 / errors=0; Maven `BUILD SUCCESS`.
+- `gh run view 27614046762 --json ...`：completed / success; later `gh run view --log` attempts hit GitHub unauthenticated rate limiting, so detailed log review used GitHub MCP decoded logs.
+
 Reason:
 
 - Local Maven validates the backend test baseline, but it was not a perfect GitHub runner reproduction because CI uses GitHub Actions `postgres:16` service while the local run used PostgreSQL 17.7 on `localhost:5432`.
@@ -338,23 +368,25 @@ Reason:
 ## Boundary confirmation
 
 - `.github/workflows/ci.yml` modified only to keep the backend job background seed watcher removed and add the synchronous backend CI legacy account fixture.
-- No backend / frontend / research / scripts / deploy / migration files modified.
-- No tests added or changed.
+- No backend production code / frontend / research / scripts / deploy / migration files modified in the first-run fix; this review only updates allowed `docs/current` records.
+- No tests added or changed by the 2E first-run fix.
 - No seed users, exchange accounts, credential rows, or credential material created; the only new fixture is one backend-job-only legacy `accounts` row inserted after Flyway V31 in disposable CI DB.
 - No real exchange, LIVE, AI, DH runtime, RealClient, real provider, or permission probe adapter started.
-- Batch 2E is FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN.
+- Batch 2E is FIRST GREEN RUN CONFIRMED, not FROZEN / ACCEPTED.
 - Batch 3-5 remain PENDING.
 
 ## Review decision
 
-FAIL / FIRST-RUN-FIX REQUIRED.
+PASS / ACCEPTED FOR FIRST GREEN RUN.
 
-P0 = 0. P1 = 1: first GitHub Actions run failed in `Backend Maven test` / `Run backend tests`, and the next fix must capture the concrete Maven failure details before changing workflow or adding fixture SQL.
+P0 = 0. P1 = 0. The historical first-run failure in `Backend Maven test` / `Run backend tests` was closed by the scoped post-Flyway CI-only fixture and confirmed green by GitHub Actions run `27614046762`.
 
 ## Next concrete action
 
 Next concrete action must be one of:
 
-- `NQ-CI-POSTGRES-FLYWAY-2E-FIRST-RUN-FIX`
+- `NQ-CI-POSTGRES-FLYWAY-2E-FREEZE-REVIEW`
+- Batch 3 pre-planning
+- Pause the CI line
 
-Do not combine 2E first-run review / fix with Batch 3 no-outbound, Batch 4 security guard, Batch 5 frontend E2E, AI, DH runtime, LIVE, RealClient, real provider, real exchange adapter, or credential material work.
+Do not combine 2E first green review with Batch 3 no-outbound implementation, Batch 4 security guard, Batch 5 frontend E2E, AI, DH runtime, LIVE, RealClient, real provider, real exchange adapter, or credential material work.
