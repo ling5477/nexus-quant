@@ -2341,3 +2341,31 @@ API/数据缺口(必须报告,未伪装):
 - 曲线来源为真实端点 `pnl-snapshots`(sim_pnl_snapshots);无 run / 空快照显式 unavailable,**不编造**。
 - drawdown 客户端派生 `equity − 运行峰值`(≤0),口径同后端 `DrawdownCalculator`。
 - 未新增后端 API;未接 AI/DH/LIVE/real exchange/WebSocket/SSE;未全局替换 AppProviders;指标/快照/摘要区不回退。
+
+## NQ-FRONTEND-BACKTEST-DETAIL-E2E-B1.2 验证记录（2026-06-15）
+
+本轮新增 BacktestDetailPage 页面级 E2E(`backtest-detail-smoke.spec.ts`)+ 修复 `support.ts` 登录助手(B0.1 改版后旧英文选择器失效)。走真实后端 + 真实 fixture,未伪造。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build`（`tsc -b && vite build`） | **通过** | tsc 0 error;本轮仅改 tests/e2e,src 未动。 |
+| `playwright test --list`（全 27 文件 / 31 用例,无 server） | **全部编译/收集通过** | 含新增 2 用例;确认 `support.ts` 修复 + 新 spec import/类型正确,且未破坏其它 spec 编译。 |
+| 无后端 smoke(`login-page-smoke` + `design-system-backtest-chart` + `live-query` + `table`) | **4 passed** | 确认本轮改动未回退既有 backend-free smoke。 |
+| `backtest-detail-smoke.spec.ts`（页面级,有/无 run 两例) | **本环境未运行(阻塞)** | 后端 `127.0.0.1:18888` 不可达(`curl` 000)。阻塞原因 = **后端未启动**,非测试失败、非 fixture 不足。需带后端环境执行。 |
+| `npm run test:e2e`（全量） | **未跑** | 同因后端不可用。 |
+
+阻塞 / fixture 条件(供带后端环境):
+
+- 启动后端 `:18888` + PostgreSQL;`E2E_USERNAME/E2E_PASSWORD`(默认 admin/ChangeMe123!)。
+- 用例 1(有快照)由 `prepareGateI2EvaluationFixture` 全自动 seed(config→run→start 执行写 sim_pnl_snapshots→evaluate)。
+- 用例 2(无 run)由 `prepareGateI2BacktestTraceFixture` seed(仅 config,绑定 dataset/strategy version)。
+- 跑:`npm run test:e2e -- tests/e2e/backtest-detail-smoke.spec.ts --project=chromium`。
+
+数据 fixture 说明(诚实):
+
+- "已评估但 sim_pnl_snapshots 为空的 run"无法经现有 API 复现(执行后的 run 必写逐 bar 权益快照),故"空序列→unavailable"用真实可达的**无 run/无评估**路径(`所选评估缺少 backtestRunId`)验证。组件级空/无序列 unavailable 由 `design-system-backtest-chart-smoke` 覆盖。
+- `support.ts` 旧英文登录选择器(`Username/Password/Sign in`)在 B0.1 改版后已失效,本轮修复为 `账号/密码/登录`,使全部 backend 集成 e2e 在后端可用时能正常登录前置。
+
+阶段与安全边界:
+
+- 未改后端/migration/research/deploy/scripts;未新增后端 API;未接 AI/DH/LIVE/real exchange/socket;未伪造数据。

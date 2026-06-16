@@ -5939,3 +5939,48 @@ B0/B0.1/B0.2/B0.3 均已合入 dev。本轮 B1 新增回测详情可视化页,�
 - 未改 backend / migration / research / deploy / scripts;未改 GateK 事实源;未新增后端 API。
 - 未接 AI/DH/LIVE/real exchange/WebSocket/SSE;未用假数据(空/缺 run 显式 unavailable);未把 Dashboard/Strategy/Risk/Paper 迁移混入;未全局替换 AppProviders。
 - 回滚方式:还原 `types/backtests.ts` / `api/backtests.ts` / `query-keys.ts` / `BacktestDetailPage.tsx` / 该 smoke 即可(曲线退回 B1 的 unavailable 行为)。
+
+---
+
+# Worklog: NQ-FRONTEND-BACKTEST-DETAIL-E2E-B1.2
+
+日期：2026-06-15
+
+## 本轮目标
+
+为 BacktestDetailPage 补**页面级 E2E**:有真实 pnl snapshots 的 run → 曲线渲染 + 指标/快照/摘要不回退;无可用序列 → 显式 unavailable。走真实后端 + 真实登录 + 真实 fixture,不伪造。
+
+## Fixture / 数据现状(只读)
+
+- 既有 E2E 是**真实后端集成**(`support.ts loginToConsole` 真实 `POST /api/auth/login` + 真实账户准备 + 真实表单提交),无 route-stub。
+- 既有 `gatei2-fixtures.ts` 已提供 `prepareGateI2EvaluationFixture`:创建 config → `POST /api/backtest-runs` → `POST .../start`(执行,写入 `sim_pnl_snapshots`)→ `POST .../evaluate`,返回 `backtestConfigId / backtestRunId / evalReportId`。**足以产出"有快照 + 有评估"的真实 run**。
+- **测试发现的 bug**:`support.ts` 登录助手仍用旧英文选择器 `Username / Password / Sign in`,B0.1 登录页改版后已不存在 → 所有页面级 e2e 在登录前置会失败。本轮按 `frontend/tests/e2e/**` 允许范围修复为 `账号 / 密码 / 登录`(与 `login-page-smoke` 一致)。
+- **缺口(已报告,未伪造)**:"已评估但 sim_pnl_snapshots 为空的 run"无法经现有 API 复现(执行后的 run 必写逐 bar 权益快照;未执行的 run 无 evaluation → 页面解析不出 runId)。因此"空序列 → unavailable"用真实可达的**无 run/无评估**路径验证(`所选评估缺少 backtestRunId`),并在文档标注该子场景不可 API 复现。
+
+## 修改范围(仅 tests/e2e)
+
+- `frontend/tests/e2e/support.ts`:修复登录选择器为 B0.1 中文(`账号 / 密码 / 登录`)。
+- `frontend/tests/e2e/backtest-detail-smoke.spec.ts`(新增):
+  - 用例 1(有快照):`prepareGateI2EvaluationFixture` → `/backtests/{configId}` → 等 `GET /api/backtest-runs/{runId}/pnl-snapshots` ok + 断言非空 → 权益/回撤曲线 canvas 渲染、无 unavailable、指标摘要非空、交易风险摘要表存在、数据集/参数快照区存在(不回退)。
+  - 用例 2(无 run):`prepareGateI2BacktestTraceFixture`(不建 run)→ `/backtests/{configId}` → 断言曲线 `所选评估缺少 backtestRunId` unavailable + 指标空态明确 + 数据集快照区仍在。
+- 未改任何 src(本轮无需 pages/backtests / api / types 小修)。
+
+## 验证记录
+
+- `npm run build`(`tsc -b && vite build`):**通过**,tsc 0 error。
+- `playwright test --list`(全 27 文件 / 31 用例,含本轮 2 个新用例,无需 server):**全部编译/收集通过**(确认 `support.ts` 修复与新 spec 的 import/类型正确)。
+- 无后端 smoke(`login-page-smoke` + `design-system-*`,共 4 用例):**4 passed**(确认本轮改动未回退既有 backend-free smoke)。
+- **本 spec(backtest-detail-smoke)+ 所有依赖 `loginToConsole` 的 backend 集成 spec:本环境未运行** —— 后端 `127.0.0.1:18888` 不可达(`curl` 返回 000)。**阻塞原因 = 后端未启动**(非测试失败、非 fixture 不足)。
+- 全量 `npm run test:e2e`:同因后端不可用未跑。
+
+## 需要的后端 fixture / 运行条件(供带后端环境执行)
+
+- 启动本地后端(`:18888`)+ PostgreSQL;`E2E_USERNAME / E2E_PASSWORD`(默认 admin / ChangeMe123!);可用 OKX/SIM 默认账户(support.ts 自动准备)。
+- 用例 1 全自动 seed(`prepareGateI2EvaluationFixture`,含 fixture bars 导入 + run + start + evaluate)。
+- 跑:`npm run test:e2e -- tests/e2e/backtest-detail-smoke.spec.ts --project=chromium`(带后端)。
+
+## 边界确认
+
+- 未改 backend / migration / research / deploy / scripts;未改 GateK 事实源;未新增后端 API。
+- 未接 AI/DH/LIVE/real exchange/WebSocket/SSE;**未用假数据伪装真实后端**(用真实 fixture + 真实端点;空场景用真实可达 unavailable);未迁移 Dashboard/Strategy/Risk/Paper;未全局替换 AppProviders;既有 backend-free smoke 不回退。
+- 回滚方式:删除 `backtest-detail-smoke.spec.ts`,还原 `support.ts` 登录选择器即可(注:还原 support.ts 会回到对 B0.1 登录页失效的旧选择器,不建议)。
