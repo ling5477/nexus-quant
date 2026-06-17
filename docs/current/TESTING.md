@@ -2,6 +2,43 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 4C-A plan review（review-only）：按 23 项 checklist 复核 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` 是否可作为 Batch 4C-B / 4C-C implementation baseline。结论 **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**，P0/P1=0。只评审 + 改允许的 docs，不改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts、deploy。Batch 4C 仍 PLAN ONLY / NOT IMPLEMENTED；Batch 4B 仍 FROZEN / ACCEPTED；Batch 4F OPTIONAL / NOT STARTED；Batch 5 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `git branch --show-current` = `dev`；编辑前 `git status --short` 为空；`git diff --check` clean。 |
+| Forbidden 区域 0 diff | 已确认 | `git diff -- .github/workflows/ci.yml / backend / frontend / research / scripts / deploy / backend/**/db/migration` 均空。 |
+| Artifact inventory 准确 | 通过 | `ci.yml` 唯一 `actions/upload-artifact@v4`（第 600 行）= `nq-postgres-flyway-schema-artifacts`（7 files），upload 前有 fail-closed redaction step；surefire / frontend / research outputs 未上传；gitleaks JSON report 写 `RUNNER_TEMP` 未上传。 |
+| Pre-upload gate 先例 | 已确认 | `Check PostgreSQL schema artifacts`（data-row + credential pattern，fail closed）被识别为通用 gate 先例。 |
+| P2 风险识别 | 通过 | 无通用 pre-upload gate、schema-check pattern 窄于 4B backstop、3 处同源漂移、raw report 误上传风险均识别；明文禁止上传 raw gitleaks JSON report；artifact scan 只扫 CI 生成可控输出、禁止扫描本地禁止目录。 |
+| Log risk inventory | 通过 | 覆盖 env dump / `set -x` / raw request-response / connection string / signature / credential material / encrypted_payload-decrypted_payload；CI log proof 只 review-time `gh run view --log`，不读本地 logs；finding 只输出 file/path/rule。 |
+| Credential pattern 复用 | 通过 | 复用 Batch 4B backstop + schema-check 既有项，规划同源 parity，避免第 4 套漂移；PEM 规则取更宽者（P3 提示）。 |
+| 权限 / 边界 | 通过 | 保留 `contents: read`；禁止 repository secret / write / id-token / continue-on-error；4C 不重复 4B、不做 4F / Batch 5；Batch 5 Playwright report 须先过 4C gate；仍禁止 LIVE / AI / DH / RealClient / real provider；允许进入 4C-B。 |
+| 安全边界 | 通过 | 未读取 / 输出真实 credential material；未把禁止目录作为数据源扫描；未上传 artifact；未调用真实交易所；未开启 LIVE / AI / DH。 |
+| 本地 build/test | 未运行 | review-only / docs-only，禁止改 workflow / 代码 / 测试 / migration；未运行 backend Maven、frontend build / E2E、Python pytest / mypy / ruff。 |
+
+复核命令（只读，已执行）：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "artifact|upload-artifact|redact|redaction|secret|passphrase|token|private key|BEGIN PRIVATE KEY|encrypted_payload|decrypted_payload|connection string|signature|raw request|raw response|continue-on-error|id-token|GITLEAKS_LICENSE|gitleaks-action" .github docs/current backend frontend research
+```
+
+rg 仅用于 tracked safe paths；未扩展到 `.env` / secrets / logs / dumps / backups / target / node_modules / dist / build / `.git`。
+
+Review decision: PASS / ACCEPTED AS IMPLEMENTATION BASELINE。P0/P1=0；记录 2 项非阻断 P3 实现提示（二进制 / zip 产物扫描策略、PEM 规则取更宽者）。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate minimal implementation）、Batch 4C plan fix，或暂停 CI 线。Batch 4C 不得写成 implemented；Batch 4F / Batch 5 不得写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN（2026-06-17）
 
 本轮是 GateK CI Batch 4C planning-only：规划 artifact / log redaction proof（CI 生成 artifacts / test reports / schema artifacts / logs / 未来 frontend-research outputs 上传或输出前不含真实 credential material）。不修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts、deploy。Batch 4C 当前 PLAN ONLY / NOT IMPLEMENTED；Batch 4B 仍 FROZEN / ACCEPTED；Batch 4F OPTIONAL / NOT STARTED；Batch 5 PENDING。

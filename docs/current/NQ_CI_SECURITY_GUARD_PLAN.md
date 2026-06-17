@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
 日期：2026-06-17
-状态：Batch 4A plan review PASS / ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（first run `27662197509` FAILED（gate-c generic-api-key FP）→ first-run-fix `31540de8` APPLIED → second run `27674393780` 7/7 jobs green → Batch 4E freeze review，2026-06-17，详见「Batch 4E: freeze review」段落）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。frozen baseline = commit `31540de8`（`.github/workflows/ci.yml` secret-scan job：pinned gitleaks 8.18.4 CLI + custom regex backstop + finding 可见性 sanitized 输出 + 4 Binance/PEM + 1 frozen Gate-C 单文件精确 allowlist，`useDefault = true`，`--no-git --redact` fail closed，`contents: read`）+ first-run / second-run / freeze docs。本轮 freeze review 只评审 + 改 docs，未改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）。Batch 4B FROZEN 只冻结 minimal secret scan baseline，不代表 Batch 4 整体完成；不得把 Batch 4 写成 fully implemented；不得把 Batch 4C / dependency audit 写成 implemented；不得把 Batch 5 写成 started。
+状态：Batch 4A plan review PASS / ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（first run `27662197509` FAILED（gate-c generic-api-key FP）→ first-run-fix `31540de8` APPLIED → second run `27674393780` 7/7 jobs green → Batch 4E freeze review，2026-06-17，详见「Batch 4E: freeze review」段落）；Batch 4C artifact/log redaction guard PLAN ONLY / NOT IMPLEMENTED（4C-A plan review PASS / ACCEPTED，2026-06-17）；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。frozen baseline = commit `31540de8`（`.github/workflows/ci.yml` secret-scan job：pinned gitleaks 8.18.4 CLI + custom regex backstop + finding 可见性 sanitized 输出 + 4 Binance/PEM + 1 frozen Gate-C 单文件精确 allowlist，`useDefault = true`，`--no-git --redact` fail closed，`contents: read`）+ first-run / second-run / freeze docs。本轮 freeze review 只评审 + 改 docs，未改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）。Batch 4B FROZEN 只冻结 minimal secret scan baseline，不代表 Batch 4 整体完成；不得把 Batch 4 写成 fully implemented；不得把 Batch 4C / dependency audit 写成 implemented；不得把 Batch 5 写成 started。
 
 ## Task classification
 
@@ -196,7 +196,7 @@ Log redaction proof（Batch 4C）：
 
 ### Batch 4C: artifact / log redaction proof
 
-- Status: PLAN ONLY / NOT IMPLEMENTED（`NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN` 已完成，详细规划独立成文 `docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）。
+- Status: PLAN ONLY / NOT IMPLEMENTED；**Batch 4C-A plan review PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW`，2026-06-17，P0/P1=0，23 项 checklist 全部满足，记录 2 项非阻断 P3 实现提示；详见 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`「Batch 4C-A」）。详细规划独立成文 `docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`。下一步只能是 Batch 4C-B pre-upload redaction gate minimal implementation、Batch 4C plan fix，或暂停 CI 线。
 - Scope: 把 "upload 前 redaction" 固化为可复用 pre-upload gate；提供 secret scan / backend / postgres-flyway / frontend / research job 的 log redaction proof；收敛 credential pattern；明文禁止上传 raw gitleaks report。
 - Success: 任何 upload artifact 前有 redaction 检查；日志无真实 credential / raw request / raw response / signature / encrypted_payload / decrypted_payload 真实值；已知 P3 residual 明确标注为 disposable / masked。
 - 子批次：4C-A plan review、4C-B pre-upload redaction gate impl、4C-C log redaction proof、4C-D first-run review、4C-E freeze review（详见 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）。

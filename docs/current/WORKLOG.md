@@ -2,6 +2,44 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+评审 `docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` 是否可作为 Batch 4C-B / 4C-C artifact / log redaction proof 的 implementation baseline：按 23 项 checklist 复核 artifact 风险盘点、log 风险盘点、可复用 pre-upload redaction gate 设计、CI log proof、Batch 4B pattern 复用、Batch 4F / Batch 5 边界是否完整且不越界。只评审 + 改允许的 docs，不改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。
+
+### 只读复核证据
+
+- `git status --short` clean；`git diff --check` clean；`git diff -- .github/workflows/ci.yml / backend / frontend / research / scripts / deploy / backend/**/db/migration` 均空（forbidden 区域 0 diff）。
+- `.github/workflows/ci.yml`（HEAD `1aa8515f` 只读）：唯一 `actions/upload-artifact@v4`（第 600 行）= `nq-postgres-flyway-schema-artifacts`（7 files），upload 前有 `Check PostgreSQL schema artifacts` redaction step（schema-dump data-row 检查 + credential pattern 检查，fail closed）；gitleaks JSON report 写 `RUNNER_TEMP` 未上传（`--redact`）；surefire / frontend build / research outputs 未上传；`::add-mask::` 屏蔽 disposable CI-only DB 值；无 `printenv` / `env` dump / `set -x` / `continue-on-error` / `id-token` / write perms；`permissions` 仅 `contents: read`（顶层 + secret-scan job）。
+- `.github` 内无 `continue-on-error` / `id-token` / `GITLEAKS_LICENSE` / `gitleaks-action`。
+- pattern 比对确认 plan 的 P2「schema-check pattern 窄于 Batch 4B backstop」准确：schema-check 多 `.env` / `cookie` / `raw request` / `raw response` / `credential material`，backstop 多 `sk-ant-` / `sk-proj-` / `github_pat_` / `gh[pousr]_` / `ASIA` / `xoxb-` / `xoxp-` / `encrypted_payload` / `decrypted_payload`；收敛需取并集且不弱化。
+- rg（tracked safe paths）命中均为 docs CI 事实源 / DH 契约字段名 / JWT auth 代码引用，无真实 credential material（与 Batch 4B frozen 0-findings 一致）。
+
+### 评审结论
+
+- 结论 `PASS / ACCEPTED AS IMPLEMENTATION BASELINE`：plan 可作为 Batch 4C-B / 4C-C 实现基线。P0/P1 = 0；23 项评审 checklist 全部满足。
+- 记录 2 项非阻断 P3 实现提示（留给 4C-B）：① pre-upload gate 泛化后若指向含二进制 / zip 的产物目录（如未来 Playwright trace.zip / 截图 / 视频），需明确二进制 / 压缩包扫描策略；② pattern 收敛时 PEM 规则取 schema-check 与 backstop 二者更宽者，不得弱化。
+
+### 文档更新
+
+- `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`：header 状态 + 「Batch 4C-A」段落 + Review decision + Next concrete action 推进为 4C-A PASS / ACCEPTED，新增 review evidence 与 2 项 P3 实现提示。
+- `NQ_CI_SECURITY_GUARD_PLAN.md`：header Batch 4C 子句 + 「Batch 4C」section 状态记录 4C-A plan review ACCEPTED。
+- `README.md`：当前状态行 + 文档索引行记录 4C-A reviewed / accepted。
+- `TESTING.md`、`WORKLOG.md`：新增本轮 4C-A 复核记录。
+- 未修改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。
+
+### 边界确认
+
+- Batch 4C：PLAN ONLY / NOT IMPLEMENTED（4C-A plan review PASS / ACCEPTED）。Batch 4B：FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）。Batch 4F：OPTIONAL / NOT STARTED。Batch 5：PENDING。Batch 3 仍 FROZEN / ACCEPTED。
+- 未读取 / 输出真实 credential material；未扫描禁止目录；未上传 artifact；未使用 repository secret / write / id-token / continue-on-error；未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate minimal implementation）、Batch 4C plan fix，或暂停 CI 线。不得把 Batch 4C 写成 implemented，不得把 Batch 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN
 
 日期：2026-06-17

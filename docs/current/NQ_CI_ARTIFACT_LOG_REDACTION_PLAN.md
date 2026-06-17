@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN
 日期：2026-06-17
-状态：Batch 4C PLAN ONLY / NOT IMPLEMENTED。本文件只规划 artifact / log redaction proof，不修改 `.github/workflows/ci.yml`，不改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING。
+状态：Batch 4C PLAN ONLY / NOT IMPLEMENTED；Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW`，2026-06-17，P0/P1=0，23 项评审 checklist 全部满足，详见「Batch 4C-A」段落）。本文件只规划 artifact / log redaction proof，不修改 `.github/workflows/ci.yml`，不改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING。
 
 本文件是 `NQ_CI_SECURITY_GUARD_PLAN.md` 内「Batch 4C: artifact / log redaction proof」的详细实现规划，独立成文与 `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` / `NQ_CI_POSTGRES_FLYWAY_*_PLAN.md` 同例。
 
@@ -132,9 +132,18 @@ Forbidden in this planning batch：不改 workflow / 代码 / 测试 / migration
 ## Batch 4C implementation strategy
 
 ### Batch 4C-A: artifact / log redaction plan review
-- Status target: PLAN REVIEW / ACCEPTED 或 PLAN FIX REQUIRED。
+- Status: **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW`，2026-06-17，P0/P1=0）。
 - Scope: 仅文档与只读 source review。
 - Success: 本 plan P0/P1=0；artifact / log 风险盘点、pre-upload gate 设计、pattern 收敛、边界被接受；无 workflow / 代码 / 测试 / migration 改动。
+- Review evidence（23 项评审 checklist 全部满足，对 `.github/workflows/ci.yml` HEAD `1aa8515f` 只读复核）：
+  - artifact inventory 准确：唯一上传 artifact = `nq-postgres-flyway-schema-artifacts`（`ci.yml` 唯一 `actions/upload-artifact@v4`，第 600 行）；surefire / frontend build / research outputs 当前未上传；gitleaks JSON report 写 `RUNNER_TEMP` 未上传。
+  - schema artifact 既有 `Check PostgreSQL schema artifacts`（data-row + credential pattern，fail closed）被识别为通用 pre-upload gate 先例。
+  - P2 识别完整：无通用 pre-upload gate、schema-check pattern 窄于 Batch 4B backstop、3 处同源漂移、raw report 误上传风险；并明文禁止上传 raw gitleaks JSON report、artifact scan 只扫 CI 生成可控输出、禁止扫描本地禁止目录。
+  - log risk inventory 覆盖 env dump / `set -x` / raw request-response / connection string / signature / credential material / encrypted_payload-decrypted_payload；CI logs proof 只做 review-time `gh run view --log`，不读本地 logs；finding 只输出 file/path/rule，不输出 secret value。
+  - credential pattern 复用 Batch 4B backstop + schema-check 既有项，规划同源 parity，避免第 4 套漂移；保留 `contents: read`，禁止 repository secret / write / id-token / continue-on-error。
+  - 边界：4C 不重复 4B source-tree secret scan、不做 4F dependency audit、不做 Batch 5 frontend E2E hardening；Batch 5 若上传 Playwright report 必须先过 4C gate；仍禁止 LIVE / AI / DH runtime / RealClient / real provider；允许进入 4C-B minimal pre-upload redaction gate implementation。
+  - 评审期复核：`git status` clean、forbidden 区域 0 diff；`.github` 内唯一 `upload-artifact` 即 schema artifacts，无 `continue-on-error` / `id-token` / `GITLEAKS_LICENSE` / `gitleaks-action`；rg 命中均为 docs / 契约字段名 / JWT auth 代码引用，无真实 credential material（与 Batch 4B frozen 0-findings 一致）。
+- 非阻断 P3 实现提示（留给 4C-B，不影响 baseline 接受）：① pre-upload gate 泛化后若指向含二进制 / zip 的产物目录（如未来 Playwright trace.zip / 截图 / 视频），`grep` 文本扫描需明确二进制 / 压缩包处理策略，避免漏扫或噪声；② pattern 收敛时 PEM 规则取 schema-check（`BEGIN [A-Z ]*PRIVATE KEY`）与 backstop（带 `-----` 前缀分组）二者更宽者，不得弱化。
 
 ### Batch 4C-B: pre-upload redaction gate minimal implementation
 - Status target: IMPLEMENTED / PENDING FIRST CI RUN。
@@ -209,10 +218,12 @@ rg 仅用于 tracked safe paths；未扩展到 `.env` / secrets / logs / dumps /
 
 ## Review decision
 
-PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。
+Batch 4C plan：PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。
+
+Batch 4C-A plan review：**PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW`，2026-06-17，P0/P1=0）。23 项评审 checklist 全部满足，artifact / log 风险盘点、可复用 pre-upload redaction gate 设计、credential pattern 收敛（复用 Batch 4B backstop + schema-check 既有项、避免第 4 套漂移）、artifact / log 输出边界与 Batch 4B / 4F / Batch 5 边界经 `.github/workflows/ci.yml` 只读复核确认；记录 2 项非阻断 P3 实现提示（二进制 / zip 产物扫描策略、PEM 规则取更宽者）。本轮只评审 + 改允许的 docs，未修改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy，Batch 4C 仍 PLAN ONLY / NOT IMPLEMENTED。
 
 本 plan 可作为 Batch 4C-B / 4C-C artifact / log redaction proof 的 implementation baseline，但本轮未实现任何 gate。Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），不重复；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
 
 ## Next concrete action
 
-Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4C-A`（plan review）、Batch 4C plan fix，或 `NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate minimal implementation），或暂停 CI 线。Batch 4C 当前 PLAN ONLY / NOT IMPLEMENTED；Batch 4F / Batch 5 不得写成 started。
+Next concrete action：Batch 4C-A plan review 已 **PASS / ACCEPTED**，下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate minimal implementation）、Batch 4C plan fix，或暂停 CI 线。Batch 4C 当前 PLAN ONLY / NOT IMPLEMENTED；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING，不得写成 started。
