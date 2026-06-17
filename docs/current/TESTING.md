@@ -2,6 +2,47 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4A-PLAN-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 4A security guard / secret scan plan review：只评审 `NQ_CI_SECURITY_GUARD_PLAN.md` 是否可作为 Batch 4B / 4C implementation baseline，并按 25 项 checklist 复核 secret scan 范围、credential pattern、artifact / log redaction、GitHub Actions permissions、dependency audit 与 Batch 5 边界。结论 `PASS / ACCEPTED AS IMPLEMENTATION BASELINE`，P0/P1 = 0。本轮只改 docs，不改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 4 仍 PLAN ONLY / NOT IMPLEMENTED；Batch 5 仍 PENDING。
+
+| 评审项 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `git branch --show-current` = `dev`；编辑前 `git status --short` 为空。 |
+| Secret scan scope（1-3） | 通过 | plan 限定 tracked safe paths；显式排除 `.git` / `target` / `node_modules` / `dist` / `build` / `coverage` / `logs` / `dumps` / `backups`；不读本地真实 `.env` / secret。 |
+| Scanner 选择（4-6） | 通过 | pinned gitleaks（评审收紧为 pinned 版本 / CLI binary）+ custom regex backstop 复用现有 redaction 正则；禁止 trufflehog verify / 外部验证请求。 |
+| 误报治理（7-9） | 通过 | path + rule + fingerprint 精确 allowlist；禁止放宽核心规则；finding 只 file/path/rule，不输出 secret value。 |
+| Credential pattern（10-12） | 通过 | 覆盖 API key / secret / passphrase / token / private key / PEM / JWT / GitHub token / AWS / OpenAI / Anthropic / exchange credential / Slack / mnemonic / cookie / keystore；`encrypted_payload` / `decrypted_payload` 区分字段名引用 vs 真实值；占位例外限定 `REPLACE_WITH_LOCAL` / `CHANGE_ME` / 空赋值 / fake 测试值 / CI-only DB placeholder。 |
+| Artifact / log（13-15） | 通过 | upload 前 redaction 通用规则；logs 禁 env dump / raw req-resp / signature / connection string / secret；backend 报告 + frontend / research 产物若上传须 redaction。 |
+| Permissions（16-19） | 通过 | `contents: read` 最小化；禁止 write / id-token（除非单独 review）；禁止 repository secret 注入 test job；禁止 `continue-on-error` 掩盖 security failure。 |
+| Dependency audit（20-21） | 通过 | Batch 4 baseline 不含 blocking dependency audit；归可选 Batch 4F，非阻断起步，不混入 secret scan baseline。 |
+| Batch 边界（22-25） | 通过 | 不重复 Batch 3 no-outbound；不做 frontend E2E hardening；Batch 5 仍 PENDING；允许进入 Batch 4B implementation。 |
+| Tracked secret sweep | 通过 | 高风险字面量（含 `sk-ant-` / `github_pat_`）仅命中 Binance fake 测试私钥与 `PRIVATE_KEY_BEGIN` 协议常量；`git ls-files` secret-like 文件仅三个 allowlisted `.env.example` 模板；无真实 credential。 |
+| 评审新增 P3 | 已记录 | 2 项 gitleaks 实现提示（扫描目标限定 tracked tree、优先 CLI binary 规避 `GITLEAKS_LICENSE` repo-secret），非阻断；已写入 plan findings 与实现段落。 |
+| 安全边界 | 通过 | 未读取 / 打印 / 复制真实 credential material；未把禁止目录作为数据源扫描；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real probe adapter；未调用真实交易所。 |
+| 本地 build/test | 未运行 | 本轮 review-only / docs-only，禁止改 workflow / 代码 / 测试 / migration；未运行 backend Maven、frontend build / E2E、Python pytest / mypy / ruff。 |
+
+评审验证命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- .github
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+git ls-files
+rg "apiKey|secret|passphrase|token|private key|BEGIN PRIVATE KEY|encrypted_payload|decrypted_payload|AKIA|sk-|sk-ant-|xox|ghp_|gho_|github_pat_|JWT|OPENAI_API_KEY|ANTHROPIC_API_KEY|BINANCE|OKX|LIVE|RealClient" .github backend frontend research docs/current
+```
+
+rg 仅用于 tracked safe paths；未扩展到 `.env` / secrets / logs / dumps / backups / `target` / `node_modules` / `dist` / `build` / `.git`。命中 fake test key / template placeholder / PEM constant 均按 allowlist 误报治理策略处理，不删测试样例。
+
+Review decision: PASS / ACCEPTED AS IMPLEMENTATION BASELINE。P0/P1 = 0；P3 = 5（含评审新增 2 项），非阻断。下一步只能是 Batch 4B implementation（建议先落实 2 项 P3 实现提示）、Batch 4A plan fix，或暂停 CI 线。Batch 4 / Batch 5 不得写成 implemented / started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4-PLAN（2026-06-17）
 
 本轮是 GateK CI Batch 4 security guard / secret scan planning-only：只规划后续如何在 CI 中扫描 tracked source / config / workflow / docs 的密钥泄露、敏感文件误提交、artifact / log 泄露、GitHub Actions 过大权限和 dependency audit 边界。不修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts 或 deploy。Batch 4 当前为 PLAN ONLY / NOT IMPLEMENTED；Batch 5 frontend E2E hardening 仍 PENDING。

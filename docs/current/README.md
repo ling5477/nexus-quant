@@ -13,7 +13,7 @@
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN。
-- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2C hygiene fix FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4 security guard / secret scan PLAN ONLY / NOT IMPLEMENTED；Batch 5 PENDING；GateK product/runtime implementation not started。
+- NQ CI baseline Batch 1 implemented / first green confirmed；NQ CI Batch 2A PostgreSQL/Flyway smoke FROZEN / ACCEPTED；NQ CI Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；Batch 2C hygiene fix FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4 security guard / secret scan PLAN ONLY / NOT IMPLEMENTED（4A plan review accepted）；Batch 5 PENDING；GateK product/runtime implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
@@ -118,7 +118,7 @@ GateO：A 股适配
 - `NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`：Batch 2D `nq-app` context smoke planning + implementation + first-run review + freeze review 文件；FROZEN / ACCEPTED，不新增 migration、不启动真实 provider、不触发真实交易所；Batch 3B 已在该 app-context smoke 上追加 no-outbound guard interception，first CI run evidence 仍 pending。
 - `NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`：Batch 2E CI-only seed watcher cleanup 文件；已修改 workflow 删除 background seed watcher；first-run fix 已新增同步 post-Flyway CI-only legacy `accounts` fixture，并校验不创建 `exchange_accounts` 或 credential rows；run `27614046762` first green confirmed，freeze review 已接受为 FROZEN / ACCEPTED。
 - `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`：Batch 3 no-outbound guard plan / implementation / freeze 文件；当前为 FROZEN / ACCEPTED（run `27634370657`），是当前 `dev` no-outbound guard baseline，后续只能进入 Batch 4 planning、Batch 3 parity/hygiene follow-up，或暂停 CI 线。
-- `NQ_CI_SECURITY_GUARD_PLAN.md`：Batch 4 security guard / secret scan 当前 planning 文件；PLAN ONLY / NOT IMPLEMENTED，下一步只允许 Batch 4A plan review、Batch 4 plan fix、Batch 4B secret scan minimal implementation，或暂停 CI 线；Batch 5 仍 PENDING。
+- `NQ_CI_SECURITY_GUARD_PLAN.md`：Batch 4 security guard / secret scan 当前 planning 文件；PLAN ONLY / NOT IMPLEMENTED，Batch 4A plan review 已 PASS / ACCEPTED AS IMPLEMENTATION BASELINE（P0/P1=0，含 2 项评审新增 gitleaks 实现 P3），下一步只允许 Batch 4B secret scan minimal implementation、Batch 4A plan fix，或暂停 CI 线；Batch 5 仍 PENDING。
 - `PLAN_GATEJ.md`：GateJ 阶段规划。
 - `GATEJ_API_PLAN.md`：GateJ API 规划。
 - `GATEJ_DB_PLAN.md`：GateJ DB 规划。

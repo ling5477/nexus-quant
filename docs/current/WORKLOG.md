@@ -2,6 +2,42 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4A-PLAN-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+评审 `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md` 是否可作为 Batch 4B / 4C implementation baseline，按 25 项 checklist 复核 secret scan 范围、credential pattern、artifact / log redaction、GitHub Actions permissions、dependency audit 与 Batch 5 边界是否完整且不越界。只改 docs，不改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。
+
+### 评审结论
+
+- 25 项评审 checklist 全部满足；P0/P1 = 0。
+- 结论 `PASS / ACCEPTED AS IMPLEMENTATION BASELINE`：plan 可作为 Batch 4B 实现基线。
+- 评审期复核：tracked safe paths 高风险字面量扫描（含 `sk-ant-` / `github_pat_`）仅命中 Binance fake 测试私钥与 `PRIVATE_KEY_BEGIN` 协议常量，无真实泄露；`git ls-files` secret-like 文件仅三个 allowlisted `.env.example` 模板；forbidden 区域 diff 全空。
+
+### 评审新增 P3（非阻断，已写入 plan）
+
+1. gitleaks 扫描目标限定为当前 tracked working tree；full git-history 扫描为可选 / 单独决策项，避免历史误报与 merge gate 非确定性。
+2. 优先使用 pinned gitleaks CLI binary / 无 license 路径，规避 `gitleaks-action` 在 GitHub org 账号下要求 `GITLEAKS_LICENSE` repository secret 与"不注入 repository secret"边界冲突。
+
+### 文档更新
+
+- `NQ_CI_SECURITY_GUARD_PLAN.md`：状态推进为 `PLAN ONLY / NOT IMPLEMENTED；Batch 4A plan review PASS / ACCEPTED AS IMPLEMENTATION BASELINE`；Secret scan plan 收紧 gitleaks 扫描目标与 CLI/license 说明；新增 Batch 4A review evidence 段落与 2 项 P3 finding 行；Review decision / Next concrete action 推进为 Batch 4B implementation。
+- 同步 `README.md`、`ROADMAP.md`、`TESTING.md`：记录 Batch 4A reviewed / accepted，状态仍 PLAN ONLY / NOT IMPLEMENTED。
+- 未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、backend production code、migration、frontend、research、scripts、deploy。
+
+### 边界确认
+
+- Batch 4 security guard / secret scan：PLAN ONLY / NOT IMPLEMENTED（4A reviewed / accepted）。Batch 5 frontend E2E hardening：PENDING。
+- Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），本轮不重复实现。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real exchange permission probe adapter NOT IMPLEMENTED。
+- 未读取 / 打印 / 复制 / 输出真实 credential material；未把禁止目录作为数据源扫描；未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+
+### 下一步
+
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4B`（secret scan minimal implementation，建议先落实评审 2 项 P3）、Batch 4A plan fix，或暂停 CI 线。不得把 Batch 4 写成 implemented 或把 Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
 
 日期：2026-06-17

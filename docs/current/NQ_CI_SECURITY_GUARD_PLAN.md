@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
 日期：2026-06-17
-状态：Batch 4 PLAN ONLY / NOT IMPLEMENTED。本文件只规划 security guard / secret scan baseline，不修改 `.github/workflows/ci.yml`，不改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复实现；Batch 5 frontend E2E hardening 仍 PENDING。
+状态：Batch 4 PLAN ONLY / NOT IMPLEMENTED；Batch 4A plan review PASS / ACCEPTED AS IMPLEMENTATION BASELINE（2026-06-17，P0/P1=0，详见本文件「Batch 4A: security guard plan review」段落）。本文件只规划 security guard / secret scan baseline，不修改 `.github/workflows/ci.yml`，不改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复实现；Batch 5 frontend E2E hardening 仍 PENDING。
 
 ## Task classification
 
@@ -88,7 +88,9 @@ Forbidden in this planning batch:
 - 必须排除（不作为数据源）：`.git`、`target`、`node_modules`、`dist`、`build`、`coverage`、`test-results`、`playwright-report`、`logs`、`*.log`、`dumps` / `*.dump`、`backups` / `*.backup` / `*.bak`、`artifacts/`、`freeze-evidence/`、`release/`。这些已在 `.gitignore` 覆盖；secret scan 额外显式排除以防 untracked 本地文件被扫。
 - 明确不读取本地真实 `.env` / `.env.<profile>` / 任何真实 secret 文件；`.gitignore` 已 ignore `.env` 与 `.env.*`（仅放行三个 `*.example` 模板）。
 - 工具选择：
-  - 主扫描：`gitleaks`（pinned action / pinned 版本）。gitleaks 在本地文件系统 / git history 上做正则 + 熵检测，不向外部服务发起验证请求，符合 no-outbound 边界。
+  - 主扫描：`gitleaks`（pinned 版本 / commit SHA）。gitleaks 在本地文件系统做正则 + 熵检测，不向外部服务发起验证请求，符合 no-outbound 边界。
+    - 扫描目标限定为**当前 checkout 的 tracked working tree**（如 `gitleaks detect --no-git --source .` 在 clean checkout 上，叠加上文排除目录）；full git-history 扫描属可选 / 单独决策项，不在 Batch 4B baseline 默认开启，避免历史误报与 merge gate 非确定性。
+    - 优先使用 pinned **gitleaks CLI binary**（或不需要 license 的执行路径），避免 `gitleaks-action` 在 GitHub org 账号下要求 `GITLEAKS_LICENSE` repository secret —— 该要求会与"不向 test / security job 注入 repository secret"边界冲突（见 GitHub Actions permissions plan）。若必须用官方 action，须先确认账号类型不需要 license，并单独 review。
   - 备份扫描：一个轻量 **custom regex fail-closed step**，复用并扩展 `postgres-flyway` job 现有 redaction 正则（`ci.yml` 当前的高风险 credential pattern），作为 deterministic backstop，避免单一工具漂移。
   - 不默认采用 `trufflehog` 的 verified-secret 模式：其 verify 会对外部 provider 发起请求，与 no-outbound 边界冲突；若引入只允许 `--no-verification` / unverified 模式，且需单独 review。
 - 误报处理：
@@ -161,9 +163,19 @@ Log redaction proof（Batch 4C）：
 
 ### Batch 4A: security guard plan review
 
-- Status target: PLAN REVIEW / ACCEPTED 或 PLAN FIX REQUIRED。
+- Status: PASS / ACCEPTED AS IMPLEMENTATION BASELINE（`NQ-CI-SECURITY-GUARD-BATCH-4A-PLAN-REVIEW`，2026-06-17，P0/P1=0）。
 - Scope: 仅文档与只读 source review。
 - Success: 本 plan P0/P1=0；secret scan 范围、credential pattern、artifact / log、permissions、dependency audit 边界被接受；无 workflow / 代码 / 测试 / migration 改动。
+- Review evidence（25 项评审 checklist 全部满足）：
+  - secret scan 限定 tracked safe paths、显式排除 `.git` / `target` / `node_modules` / `dist` / `build` / `coverage` / `logs` / `dumps` / `backups`、不读本地真实 `.env`：通过。
+  - pinned gitleaks + custom regex backstop（复用现有 redaction 正则）、禁止 trufflehog verify / 外部验证请求：通过。
+  - 误报治理 path + rule + fingerprint 精确 allowlist、禁止放宽核心规则、finding 只 file/path/rule 不输出值：通过。
+  - credential pattern 覆盖 API key / secret / passphrase / token / private key / PEM / JWT / GitHub token / AWS / OpenAI / Anthropic / exchange credential / Slack / mnemonic / cookie / keystore；`encrypted_payload` / `decrypted_payload` 区分字段名引用 vs 真实值；占位例外限定 `REPLACE_WITH_LOCAL` / `CHANGE_ME` / 空赋值 / fake 测试值 / CI-only DB placeholder：通过。
+  - artifact upload 前 redaction 通用规则、logs 禁止 env dump / raw req-resp / signature / connection string / secret、backend 报告 + frontend / research 产物若上传须 redaction：通过。
+  - workflow permissions 最小化 `contents: read`、禁止 write / id-token（除非单独 review）、禁止 repository secret 注入 test job、禁止 `continue-on-error` 掩盖 security failure：通过。
+  - Batch 4 baseline 不含 blocking dependency audit、dependency audit 归可选 Batch 4F、不重复 Batch 3 no-outbound、不做 frontend E2E hardening、Batch 5 仍 PENDING：通过。
+  - 评审期复核：tracked safe paths 高风险字面量（含 `sk-ant-` / `github_pat_`）仅命中 Binance fake 测试私钥与 `PRIVATE_KEY_BEGIN` 协议常量，无真实泄露；tracked secret-like 文件仅三个 allowlisted `.env.example` 模板。
+  - 评审新增 2 项 P3 实现提示（见 findings 表）：gitleaks 扫描目标限定 tracked tree、优先 gitleaks CLI binary 以规避 `GITLEAKS_LICENSE` repository-secret 耦合。均非阻断，不影响 baseline 接受。
 
 ### Batch 4B: secret scan minimal implementation
 
@@ -224,6 +236,8 @@ Log redaction proof（Batch 4C）：
 | P3 | 已知 CI log hygiene residual（disposable CI PostgreSQL 值、Spring Boot dev password）。 | 继续标注为 disposable / masked，非真实 credential；Batch 4C 复核。 |
 | P3 | `.github/CODEOWNERS` 仍用占位 `@YOUR_GITHUB_USERNAME`；`pull_request_template.md` 近空。 | 记录为安全治理 follow-up，不在 secret scan baseline 内强行处理。 |
 | P3 | GitHub-provided actions Node.js 20 deprecation；secret scan action 需 pin。 | 与 Batch 3 P3 一并纳入 maintenance；本 baseline 不升级。 |
+| P3 | gitleaks 扫描目标若不显式限定，可能落到 full git-history，带来历史误报与 merge gate 非确定性。 | Batch 4B 默认只扫当前 tracked working tree；full-history 扫描为可选 / 单独决策项。 |
+| P3 | `gitleaks-action` 在 GitHub org 账号下要求 `GITLEAKS_LICENSE` repository secret，可能与"不注入 repository secret"边界冲突。 | Batch 4B 优先用 pinned gitleaks CLI binary / 无 license 路径；若用官方 action 须确认账号类型不需 license 并单独 review。 |
 
 ## Validation
 
@@ -268,10 +282,10 @@ rg 仅用于 tracked safe paths；未把扫描扩展到 `.env` / secrets / logs 
 
 ## Review decision
 
-PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。
+PLAN REVIEWED / PASS / ACCEPTED AS IMPLEMENTATION BASELINE（Batch 4A plan review，2026-06-17）。P0/P1 blockers = 0；P3 = 5 项（含评审新增 2 项 gitleaks 实现提示），均非阻断。25 项评审 checklist 全部满足。
 
-本 plan 可作为 Batch 4 secret scan / security guard 的 implementation baseline，但本轮未实现任何 guard。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
+本 plan 可作为 Batch 4B / 4C secret scan / security guard 的 implementation baseline，但本轮仍未实现任何 guard。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
 
 ## Next concrete action
 
-Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4A`（plan review）、Batch 4 plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4B`（secret scan minimal implementation），或暂停 CI 线。Batch 4 当前 PLAN ONLY / NOT IMPLEMENTED；Batch 5 仍 PENDING；不得把 Batch 4 写成 implemented 或把 Batch 5 写成 started。
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4B`（secret scan minimal implementation，建议先落实评审 2 项 P3 实现提示）、Batch 4A plan fix（如复审提出修正），或暂停 CI 线。Batch 4 当前 PLAN ONLY / NOT IMPLEMENTED（4A reviewed / accepted）；Batch 5 仍 PENDING；不得把 Batch 4 写成 implemented 或把 Batch 5 写成 started。
