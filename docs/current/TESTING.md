@@ -2,6 +2,41 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-B-PRE-UPLOAD-REDACTION-GATE-IMPL（2026-06-17）
+
+本轮是 GateK CI Batch 4C-B implementation：在 `.github/workflows/ci.yml` `postgres-flyway` job 把 `Check PostgreSQL schema artifacts` 改造为 upload 前 fail-closed **`Pre-upload redaction gate`**（binary 拒绝 + data-row 静默检查 + 收敛 credential pattern，finding 只 `rule | file`）。仅改 `ci.yml`，未改业务代码 / 测试 / migration / frontend / research / scripts / deploy。状态 **IMPLEMENTED / PENDING FIRST CI RUN**；Batch 4C 整体仍 NOT FROZEN；4C-C / 4F / Batch 5 NOT STARTED / PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `git branch --show-current` = `dev`；编辑前 `git status --short` 为空。 |
+| Forbidden 区域 0 diff | 已确认 | `git diff -- backend / frontend / research / scripts / deploy / backend/**/db/migration` 均空；`git diff --check` 无 whitespace 错误；仅 `.github/workflows/ci.yml` 改动（83 insert / 7 delete），无新增 tracked 文件。 |
+| YAML 结构校验 | 通过 | node 解析：7 jobs（diff-check / no-outbound-guard / backend / postgres-flyway / frontend / research / secret-scan），唯一 `upload-artifact`，无 tab 字符。 |
+| bash 语法 | 通过 | `bash -n`（提取 gate 逻辑）syntax OK。 |
+| gate dry-run — clean | 通过 | 合成 schema-like 文本 artifacts（含 `password_hash` 列名、散文 "API key for ..."、无凭证 URL `https://...` / `jdbc:postgresql://...`）→ GATE-PASS / exit 0，无误报。 |
+| gate dry-run — fake secret | 通过 | 合成 fake artifact（AWS 文档 `AKIAIOSFODNN7EXAMPLE` / URL 内嵌 `user:pass@` / `encrypted_payload=` 赋值）→ fail closed / exit 1，输出仅 `rule | file`；断言三类 secret 值（AKIA example / url password / payload 值）均未出现在输出。 |
+| gate dry-run — binary | 通过 | 合成 `trace.zip`（含 NUL/二进制字节）→ `file` 判为 binary，gate 拒绝 / exit 1，仅打印文件名。 |
+| secret-scan 自命中回归 | 通过 | 复刻 secret-scan custom backstop 对修改后 `ci.yml` 扫描 → 0 非 allowlisted 命中（dash-omitted PEM、未达长度的 AKIA/ASIA/gh/xox/sk 字面量、无 quoted-value 的 assignment 均不触发）。 |
+| gate-before-upload 顺序 | 已确认 | `Pre-upload redaction gate` step（line 569）在 `Upload PostgreSQL schema artifacts`（line 675）+ `actions/upload-artifact@v4`（line 676）之前。 |
+| 边界 | 通过 | `permissions: contents: read`；无 repository secret / write / id-token / continue-on-error / `gitleaks-action` / `GITLEAKS_LICENSE`；未上传 raw gitleaks JSON report；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter；未调用真实交易所。 |
+| 未验证项 | 已披露 | gitleaks default-ruleset 对修改后 ci.yml 完整 FP 面、真实 PostgreSQL schema 对新增 pattern 的命中面（共享子集已由既有 schema-check 在 Batch 4B 绿灯佐证）待 GitHub Actions 首跑（4C-D）；本地 Windows 未跑 gitleaks（与 Batch 4B 一致）。未运行 backend Maven / frontend build / E2E / Python（本轮只改 CI workflow）。 |
+
+复核命令（已执行）：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "upload-artifact|redact|redaction|secret|passphrase|token|private key|BEGIN PRIVATE KEY|encrypted_payload|decrypted_payload|connection string|signature|raw request|raw response|continue-on-error|id-token|GITLEAKS_LICENSE|gitleaks-action" .github docs/current
+```
+
+Review decision: IMPLEMENTED / PENDING FIRST CI RUN。pre-upload redaction gate 已实现并在 upload 前 fail closed；finding 不输出 secret value / matched line；未上传 raw gitleaks report / 未脱敏 artifact；未使用 repository secret / write / id-token / continue-on-error。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-D`（首跑评审）、首跑失败则 4C-B first-run-fix、或 `NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof），或暂停 CI 线。不得写成 FROZEN / ACCEPTED；不得把 Batch 4C-C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW（2026-06-17）
 
 本轮是 GateK CI Batch 4C-A plan review（review-only）：按 23 项 checklist 复核 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` 是否可作为 Batch 4C-B / 4C-C implementation baseline。结论 **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**，P0/P1=0。只评审 + 改允许的 docs，不改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts、deploy。Batch 4C 仍 PLAN ONLY / NOT IMPLEMENTED；Batch 4B 仍 FROZEN / ACCEPTED；Batch 4F OPTIONAL / NOT STARTED；Batch 5 PENDING。

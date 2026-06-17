@@ -2,6 +2,45 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-B-PRE-UPLOAD-REDACTION-GATE-IMPL
+
+日期：2026-06-17
+
+### 目标
+
+实现最小通用 pre-upload artifact redaction gate：把现有 PostgreSQL/Flyway schema artifact 上传前检查抽象为可复用、fail-closed 的 gate，并应用到当前唯一 artifact 上传路径（`nq-postgres-flyway-schema-artifacts`）。不进入 4C-C log proof / 4F / Batch 5，不改业务代码。
+
+### 实现
+
+- 仅改 `.github/workflows/ci.yml` 的 `postgres-flyway` job：把 `Check PostgreSQL schema artifacts` step 改造为 **`Pre-upload redaction gate (PostgreSQL schema artifacts)`** step，位置仍在 `Generate ... artifacts` 与 `Upload ... artifacts` 之间（upload 前）。inline 实现，未新增 tracked 脚本（`.github/scripts` / `scripts/ci` 均未新增，优先 inline）。
+- gate 组成：① 7 个 required artifact 存在 + 非空校验；② binary/zip handling——`file -b --mime-encoding` 逐文件判定，命中 `binary` 即 fail closed 拒绝（zip/video/screenshot 留待 Batch 5）；③ schema-dump data-row 检查由 `grep -RInE`（回显匹配行）改为 `grep -qE`（静默）；④ 收敛 credential pattern 扫描（schema-check 全集 ∪ Batch 4B backstop 高风险项），per-rule `grep -rIlE -l`，finding 只输出 `rule | file`，fail closed。
+- pattern 覆盖：`\.env` / `BEGIN [A-Z ]*PRIVATE KEY`（dash-omitted 防 secret-scan 自命中）/ `AKIA` / `ASIA` / `sk-`(含 ant-/proj-) / `gh[pousr]_` / `github_pat_` / `xoxb-` / `xoxp-` / credentials-in-URL / value-bearing `apiKey`-`api_key` / `apiSecret`-`secret` / `passphrase` / `token` / `password` / `cookie` / `privateKey`-`private key` / `mnemonic` / `signature` / `credential material` / `raw request` / `raw response` / `encrypted_payload` / `decrypted_payload`。不弱于既有 schema-check。
+- 边界：`permissions: contents: read`；无 repository secret / write / id-token / continue-on-error / `gitleaks-action` / `GITLEAKS_LICENSE`；未上传 raw gitleaks JSON report（gitleaks report 仍只留 `RUNNER_TEMP`）；只应用到当前唯一 artifact；未新增 Playwright/frontend/research artifact 上传。
+- parity follow-up：gate inline pattern 是「former schema-check 源」的演进，pattern 源总数仍 3（gate + secret-scan gitleaks config + backstop），未引入第 4 套独立漂移源；待第 2 个 upload 路径出现再提升为 `.github/scripts` 共享 helper。
+
+### 本地验证（已执行）
+
+- `bash -n`（提取 gate 逻辑）语法通过；YAML 结构校验通过（7 jobs / 唯一 upload-artifact / 无 tab，node 解析）。
+- gate dry-run（temp 目录，合成 fixtures）：clean schema-like artifacts PASS（`password_hash` 列名、散文 "API key"、无凭证 URL 均不误报）；fake-secret artifact（AWS 文档 EXAMPLE key / URL 内嵌凭证 / `encrypted_payload=` 赋值）fail closed 且仅输出 `rule | file`，断言 AKIA example / url password / payload 值均未打印；binary artifact 被拒。
+- secret-scan custom backstop 复刻对修改后 `ci.yml` 0 自命中（dash-omitted PEM / 长度不足的 AKIA-ASIA-gh-xox-sk 字面量 / 无 quoted-value 的 assignment 均不触发）。
+- 未验证项（PENDING FIRST CI RUN，归 4C-D）：gitleaks default-ruleset 对修改后 ci.yml 的完整 FP 面、真实 PostgreSQL schema 输出对新增 pattern 的命中面（共享子集已由既有 schema-check 在 Batch 4B 绿灯证明）；`file`/`find` 在 ubuntu-latest 默认可用。
+
+### 文档更新
+
+- `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`：header + 「Batch 4C-B」段 + Review decision + Next action 推进为 4C-B IMPLEMENTED / PENDING FIRST CI RUN。
+- `NQ_CI_SECURITY_GUARD_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`、`README.md`：Batch 4C 状态同步 4C-B implemented。
+- `TESTING.md`、`WORKLOG.md`：新增本轮 4C-B 实现 + 本地验证记录。
+- 未改业务代码 / 测试 / migration / frontend / research / scripts / deploy。
+
+### 边界确认
+
+- Batch 4C-B：IMPLEMENTED / PENDING FIRST CI RUN（不得写 FROZEN / ACCEPTED）。Batch 4C 整体仍 NOT FROZEN。Batch 4C-C log redaction proof / Batch 4F / Batch 5：NOT STARTED / PENDING。Batch 4B 仍 FROZEN / ACCEPTED；Batch 3 仍 FROZEN / ACCEPTED。
+- 未读取 / 输出真实 credential material；未扫描禁止目录；未上传未脱敏 artifact / raw gitleaks report；未使用 repository secret / write / id-token / continue-on-error；未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-D`（首跑评审），或首跑失败则 4C-B first-run-fix，或 `NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof），或暂停 CI 线。不得把 Batch 4C 写成 FROZEN / ACCEPTED；不得把 Batch 4C-C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW
 
 日期：2026-06-17

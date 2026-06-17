@@ -566,12 +566,20 @@ jobs:
 
           pg_dump --schema-only --no-owner --no-privileges "${nq_ci_psql_url}" > "${artifact_dir}/schema-dump.sql"
 
-      - name: Check PostgreSQL schema artifacts
+      - name: Pre-upload redaction gate (PostgreSQL schema artifacts)
         shell: bash
         run: |
           set -euo pipefail
 
-          artifact_dir="artifacts/postgres-flyway"
+          # Reusable pre-upload redaction gate (Batch 4C-B). Contract: run this BEFORE any
+          # actions/upload-artifact step. It scans ONLY the CI-generated artifact directory
+          # (never .env / secrets / local forbidden dirs), fails closed on any high-risk
+          # credential pattern, and reports rule + file ONLY (never the matched value, matched
+          # line, or raw content). Currently applied to the single
+          # nq-postgres-flyway-schema-artifacts upload; future text artifacts must call the
+          # same gate before uploading. Binary / zip artifacts are rejected here (Batch 5).
+          gate_target="artifacts/postgres-flyway"
+
           required_artifacts=(
             "flyway-info.txt"
             "schema-tables.txt"
@@ -583,18 +591,86 @@ jobs:
           )
 
           for artifact in "${required_artifacts[@]}"; do
-            test -s "${artifact_dir}/${artifact}"
+            test -s "${gate_target}/${artifact}"
           done
 
-          if grep -RInE '(^INSERT INTO |^COPY .+ FROM stdin;|^-- Data for Name:|^\\\.)' "${artifact_dir}/schema-dump.sql"; then
-            echo "schema-dump.sql appears to contain data rows" >&2
+          # Binary / zip handling: text artifacts only. Reject any binary file (zip / video /
+          # screenshot etc.) so we never run unreliable text grep over binary content. Future
+          # Playwright / binary report uploads are Batch 5 and must define their own handling
+          # before reusing this gate.
+          while IFS= read -r -d '' f; do
+            if [ "$(file -b --mime-encoding "${f}")" = "binary" ]; then
+              echo "Pre-upload redaction gate: non-text (binary) artifact rejected: ${f#"${gate_target}/"}" >&2
+              echo "Binary/zip artifacts are deferred to Batch 5 and must not be uploaded by this path." >&2
+              exit 1
+            fi
+          done < <(find "${gate_target}" -type f -print0)
+
+          # schema-dump specific supplement (carried over, hardened to -q so the matched line is
+          # never printed): the schema-only dump must not contain data rows.
+          if grep -qE '(^INSERT INTO |^COPY .+ FROM stdin;|^-- Data for Name:|^\\\.)' "${gate_target}/schema-dump.sql"; then
+            echo "Pre-upload redaction gate: schema-dump.sql appears to contain data rows" >&2
             exit 1
           fi
 
-          if grep -RInE '(\.env|BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|apiKey[[:space:]]*[:=]|secret[[:space:]]*[:=]|passphrase[[:space:]]*[:=]|token[[:space:]]*[:=]|cookie[[:space:]]*[:=]|private[[:space:]_-]*key[[:space:]]*[:=]|mnemonic[[:space:]]*[:=]|credential[[:space:]_-]*material[[:space:]]*[:=]|raw[[:space:]_-]*request[[:space:]]*[:=]|raw[[:space:]_-]*response[[:space:]]*[:=])' "${artifact_dir}"; then
-            echo "Schema artifact redaction check found high-risk credential material pattern" >&2
+          # Credential redaction scan: union of the prior schema-check patterns and the Batch 4B
+          # backstop high-risk items (must not be weaker than the prior schema-check). Checked
+          # per rule so we report rule + file WITHOUT printing the matched value or line.
+          # NOTE: PEM is intentionally written dash-omitted ("BEGIN ... PRIVATE KEY") so this
+          # gate definition is not self-flagged by the secret-scan job; real-artifact detection
+          # strength is unchanged. Parity follow-up: this inline pattern set is the evolution of
+          # the former schema-check source, so the total stays at 3 pattern sources (this gate +
+          # secret-scan gitleaks config + secret-scan backstop); no 4th independent source is
+          # introduced. When a second upload path appears, promote this body to a shared
+          # .github/scripts helper to keep a single source of truth.
+          patterns="${RUNNER_TEMP}/nq-preupload-gate-patterns.txt"
+          violations="${RUNNER_TEMP}/nq-preupload-gate-violations.txt"
+          : > "${violations}"
+
+          # NAME<space>ERE per line. Quoted heredoc: regex meta-characters are not expanded.
+          cat > "${patterns}" <<'PATTERNS'
+          dotenv_reference \.env
+          pem_private_key BEGIN [A-Z ]*PRIVATE KEY
+          aws_akia_key AKIA[0-9A-Z]{16}
+          aws_asia_key ASIA[0-9A-Z]{16}
+          openai_anthropic_key sk-[A-Za-z0-9_-]{20,}
+          github_token (gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})
+          slack_token xox[bp]-[A-Za-z0-9-]{10,}
+          credentials_in_url [a-zA-Z][a-zA-Z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@
+          api_key_assignment (apiKey|api[_-]?key)[[:space:]]*[:=]
+          api_secret_assignment (apiSecret|api[_-]?secret|secret)[[:space:]]*[:=]
+          passphrase_assignment passphrase[[:space:]]*[:=]
+          token_assignment token[[:space:]]*[:=]
+          password_assignment password[[:space:]]*[:=]
+          cookie_assignment cookie[[:space:]]*[:=]
+          private_key_assignment (privateKey|private[[:space:]_-]*key)[[:space:]]*[:=]
+          mnemonic_assignment mnemonic[[:space:]]*[:=]
+          signature_assignment signature[[:space:]]*[:=]
+          credential_material_assignment credential[[:space:]_-]*material[[:space:]]*[:=]
+          raw_request_assignment raw[[:space:]_-]*request[[:space:]]*[:=]
+          raw_response_assignment raw[[:space:]_-]*response[[:space:]]*[:=]
+          encrypted_payload_assignment encrypted_payload[[:space:]]*[:=]
+          decrypted_payload_assignment decrypted_payload[[:space:]]*[:=]
+          PATTERNS
+
+          while IFS=' ' read -r rule re; do
+            [ -z "${rule}" ] && continue
+            # -l: list matching files only (never the matched line). -I: skip binary (already rejected).
+            files="$(grep -rIlE -e "${re}" "${gate_target}" 2>/dev/null || true)"
+            [ -z "${files}" ] && continue
+            while IFS= read -r mf; do
+              [ -z "${mf}" ] && continue
+              echo "${rule} | ${mf#"${gate_target}/"}" >> "${violations}"
+            done <<< "${files}"
+          done < "${patterns}"
+
+          if [ -s "${violations}" ]; then
+            echo "Pre-upload redaction gate found high-risk credential pattern(s) (rule | file only; values never printed):" >&2
+            cat "${violations}" >&2
+            echo "Remove the credential material from the generated artifact. Failing CI (fail closed)." >&2
             exit 1
           fi
+          echo "Pre-upload redaction gate: no high-risk credential pattern in ${gate_target} (text-only, fail closed)."
 
       - name: Upload PostgreSQL schema artifacts
         uses: actions/upload-artifact@v4

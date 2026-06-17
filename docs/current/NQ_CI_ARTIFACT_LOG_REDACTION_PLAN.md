@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN
 日期：2026-06-17
-状态：Batch 4C PLAN ONLY / NOT IMPLEMENTED；Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW`，2026-06-17，P0/P1=0，23 项评审 checklist 全部满足，详见「Batch 4C-A」段落）。本文件只规划 artifact / log redaction proof，不修改 `.github/workflows/ci.yml`，不改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING。
+状态：Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（2026-06-17，P0/P1=0，23 项评审 checklist 全部满足）；Batch 4C-B pre-upload redaction gate **IMPLEMENTED / PENDING FIRST CI RUN**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-PRE-UPLOAD-REDACTION-GATE-IMPL`，2026-06-17，仅改 `.github/workflows/ci.yml` `postgres-flyway` job，把 schema-check 改造为 upload 前 fail-closed pre-upload redaction gate；详见「Batch 4C-B」段落）。Batch 4C 整体仍 **NOT FROZEN**（freeze 是 Batch 4C-E）；Batch 4C-C log redaction proof 未开始；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。本文件未改业务代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING。
 
 本文件是 `NQ_CI_SECURITY_GUARD_PLAN.md` 内「Batch 4C: artifact / log redaction proof」的详细实现规划，独立成文与 `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` / `NQ_CI_POSTGRES_FLYWAY_*_PLAN.md` 同例。
 
@@ -146,9 +146,18 @@ Forbidden in this planning batch：不改 workflow / 代码 / 测试 / migration
 - 非阻断 P3 实现提示（留给 4C-B，不影响 baseline 接受）：① pre-upload gate 泛化后若指向含二进制 / zip 的产物目录（如未来 Playwright trace.zip / 截图 / 视频），`grep` 文本扫描需明确二进制 / 压缩包处理策略，避免漏扫或噪声；② pattern 收敛时 PEM 规则取 schema-check（`BEGIN [A-Z ]*PRIVATE KEY`）与 backstop（带 `-----` 前缀分组）二者更宽者，不得弱化。
 
 ### Batch 4C-B: pre-upload redaction gate minimal implementation
-- Status target: IMPLEMENTED / PENDING FIRST CI RUN。
-- Scope: 把 schema-check 泛化为可复用 pre-upload redaction gate；收敛 credential pattern；明文禁止上传 raw gitleaks report；保持 fail closed / `contents: read` / 无 repository secret。
-- Success: 任何 upload 前过 gate；gate 对受控 fake-secret artifact fail closed；finding 只输出 file / path / rule；无 Batch 4F dependency audit、无 Batch 5 frontend E2E hardening。
+- Status: **IMPLEMENTED / PENDING FIRST CI RUN**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-PRE-UPLOAD-REDACTION-GATE-IMPL`，2026-06-17）。仅改 `.github/workflows/ci.yml` 的 `postgres-flyway` job，把既有 `Check PostgreSQL schema artifacts` step 改造为 **`Pre-upload redaction gate (PostgreSQL schema artifacts)`** step，位置仍在 `Generate ... artifacts` 与 `Upload ... artifacts` 之间（upload 前 fail closed）。inline 实现，未新增 tracked 脚本（优先 inline）。
+- 实现要点：
+  - gate 只扫 `artifacts/postgres-flyway/`（CI 生成可控目录），不扫 `.env` / secrets / 本地禁止目录。
+  - binary / zip handling：先用 `file -b --mime-encoding` 逐文件判定，命中 `binary` 即 fail closed 拒绝（zip / video / screenshot 等二进制留待 Batch 5），避免对二进制做不可靠文本 grep；当前 schema artifacts 全为 text，正常通过。
+  - schema-dump data-row 检查保留，并由 `-RInE`（会回显匹配行）改为 `grep -qE`（静默），避免输出 matched line。
+  - credential pattern 收敛为「既有 schema-check 全集 ∪ Batch 4B backstop 高风险项」：`\.env` / `BEGIN [A-Z ]*PRIVATE KEY`（dash-omitted，避免被 secret-scan 自命中）/ `AKIA` / `ASIA` / `sk-`（含 sk-ant- / sk-proj-）/ `gh[pousr]_` / `github_pat_` / `xoxb-` / `xoxp-` / credentials-in-URL（`scheme://user:pass@`）/ value-bearing `apiKey`-`api_key` / `apiSecret`-`secret` / `passphrase` / `token` / `password` / `cookie` / `privateKey`-`private key` / `mnemonic` / `signature` / `credential material` / `raw request` / `raw response` / `encrypted_payload` / `decrypted_payload`。不弱于既有 schema-check（camelCase `apiKey` / `privateKey` 仍显式覆盖）。
+  - finding 输出只 `rule | file`（per-rule `grep -rIlE -l`），绝不输出 secret value / matched line / raw content；fail closed（`exit 1`）。
+  - 保持 `permissions: contents: read`；无 repository secret / write / id-token / continue-on-error / `gitleaks-action` / `GITLEAKS_LICENSE`；未上传 raw gitleaks JSON report（gitleaks report 仍只留 `RUNNER_TEMP`）；当前唯一 artifact 上传路径 `nq-postgres-flyway-schema-artifacts` 已接入 gate。
+- parity follow-up（满足实现要求 9）：gate inline pattern 集是「former schema-check 源」的演进，pattern 源总数仍为 3（本 gate + secret-scan gitleaks config + secret-scan backstop），未引入第 4 套独立漂移源；待出现第 2 个 upload 路径时，再把 gate body 提升为 `.github/scripts` 共享 helper 收敛为单一来源。
+- 本地验证（已执行，证据见 `TESTING.md` 同名段）：bash 语法检查通过；YAML 结构校验通过（7 jobs / 唯一 upload-artifact / 无 tab）；gate dry-run——clean schema-like artifacts PASS（`password_hash` 列名、散文 "API key"、无凭证 URL 均不误报），fake-secret artifact fail closed 且只输出 `rule | file`（AKIA example / url password / payload 值均未打印），binary artifact 被拒；secret-scan custom backstop 对修改后 ci.yml 0 自命中。
+- 未验证项（PENDING FIRST CI RUN，归 Batch 4C-D）：gitleaks default-ruleset 对修改后 ci.yml 的完整 FP 面、真实 PostgreSQL schema 输出对新增 pattern 的实际命中面（共享子集已由既有 schema-check 在 Batch 4B 绿灯证明），均待 GitHub Actions 首跑确认；`file` / `find` 在 ubuntu-latest 默认可用。
+- 边界：未做 Batch 4C-C log redaction proof；未做 Batch 4F dependency audit；未做 Batch 5 frontend E2E hardening；未新增 Playwright / frontend / research artifact 上传。
 
 ### Batch 4C-C: log redaction proof
 - Status target: IMPLEMENTED / evidence 收集。
@@ -222,8 +231,10 @@ Batch 4C plan：PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。
 
 Batch 4C-A plan review：**PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-A-PLAN-REVIEW`，2026-06-17，P0/P1=0）。23 项评审 checklist 全部满足，artifact / log 风险盘点、可复用 pre-upload redaction gate 设计、credential pattern 收敛（复用 Batch 4B backstop + schema-check 既有项、避免第 4 套漂移）、artifact / log 输出边界与 Batch 4B / 4F / Batch 5 边界经 `.github/workflows/ci.yml` 只读复核确认；记录 2 项非阻断 P3 实现提示（二进制 / zip 产物扫描策略、PEM 规则取更宽者）。本轮只评审 + 改允许的 docs，未修改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy，Batch 4C 仍 PLAN ONLY / NOT IMPLEMENTED。
 
-本 plan 可作为 Batch 4C-B / 4C-C artifact / log redaction proof 的 implementation baseline，但本轮未实现任何 gate。Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），不重复；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
+Batch 4C-B pre-upload redaction gate implementation：**IMPLEMENTED / PENDING FIRST CI RUN**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-PRE-UPLOAD-REDACTION-GATE-IMPL`，2026-06-17）。仅改 `.github/workflows/ci.yml` `postgres-flyway` job，把 `Check PostgreSQL schema artifacts` 改造为 upload 前 `Pre-upload redaction gate (PostgreSQL schema artifacts)`：binary 拒绝 + data-row 静默检查 + 收敛后 credential pattern（schema-check 全集 ∪ 4B backstop 高风险项），fail closed，finding 只输出 `rule | file`，`contents: read`、无 repository secret / write / id-token / continue-on-error、未上传 raw gitleaks report。inline 实现、未新增 tracked 脚本、pattern 源仍 3 处。本地 dry-run / 语法 / YAML / backstop 自命中检查全过；gitleaks default-ruleset 与真实 schema 命中面待首跑（4C-D）。Batch 4C 整体仍 NOT FROZEN。
+
+本 plan 可作为 Batch 4C-B / 4C-C artifact / log redaction proof 的 implementation baseline。Batch 4C-B 已实现 pre-upload gate；4C-C log redaction proof 尚未实现。Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），不重复；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
 
 ## Next concrete action
 
-Next concrete action：Batch 4C-A plan review 已 **PASS / ACCEPTED**，下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate minimal implementation）、Batch 4C plan fix，或暂停 CI 线。Batch 4C 当前 PLAN ONLY / NOT IMPLEMENTED；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING，不得写成 started。
+Next concrete action：Batch 4C-B pre-upload redaction gate 已 **IMPLEMENTED / PENDING FIRST CI RUN**，下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-D`（首跑评审：确认含 pre-upload gate 的 GitHub Actions run、`postgres-flyway` job gate step fail-closed 行为、6 个既有 job 未回归、无真实 credential 泄露）；首跑失败则 4C-B first-run-fix；或继续 `NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof）；或暂停 CI 线。Batch 4C 整体仍 NOT FROZEN（freeze 是 4C-E）；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING，不得写成 started；不得把 Batch 4C 写成 FROZEN / ACCEPTED。
