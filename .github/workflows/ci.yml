@@ -793,6 +793,10 @@ jobs:
             '''.*adapter/binance/service/BinanceRequestSignerTest\.java$''',
             '''.*adapter/binance/service/BinanceHttpClientTest\.java$''',
             '''.*adapter/binance/service/BinanceEd25519RequestSigner\.java$''',
+            # Frozen Gate-C diagnostic record: generic-api-key false positive on a non-secret
+            # WebSocket client request UUID (client.request.id, ~line 325); the real credential
+            # there is already masked (apiKey=<masked>). docs/gates is an immutable frozen archive.
+            '''.*docs/gates/gate-c/WORK\.md$''',
           ]
           TOML
 
@@ -812,7 +816,17 @@ jobs:
           set -e
 
           if [ "${rc}" -ne 0 ]; then
-            echo "gitleaks detected potential secrets in the tracked working tree (values redacted). Failing CI." >&2
+            echo "gitleaks reported potential secret(s). Sanitized finding metadata only" \
+                 "(RuleID / File / Lines / Fingerprint; never Secret / Match / matched line / commit / author):" >&2
+            if command -v jq >/dev/null 2>&1 && [ -s "${report}" ]; then
+              jq -r --arg s "${staging}/" \
+                '.[] | "  RuleID=\(.RuleID) File=\(.File | ltrimstr($s)) Lines=\(.StartLine)-\(.EndLine) Fingerprint=\(.Fingerprint | ltrimstr($s))"' \
+                "${report}" >&2 || true
+            else
+              grep -oE '"(RuleID|File|StartLine|EndLine|Fingerprint)":[^,}]*' "${report}" >&2 || true
+            fi
+            echo "Resolve each finding by a precise path+rule allowlist for a confirmed fake/test/placeholder," \
+                 "or by removing a real secret. Do not broaden allowlists or disable default rules. Failing CI." >&2
             exit 1
           fi
           echo "gitleaks: no leaks found in tracked working tree."

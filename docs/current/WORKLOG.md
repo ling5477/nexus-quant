@@ -2,6 +2,48 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX
+
+日期：2026-06-17
+
+### 目标
+
+最小修复 secret-scan job 首跑失败（first run `27662197509`）。优先让 gitleaks finding 可见但不泄露 secret value，再据定位做最小、精确、可审计处置。不 broad allowlist、不删测试样例、不放宽核心规则。
+
+### 失败根因（本地复现定位）
+
+- 本地 MINGW64 用 pinned gitleaks `8.18.4` Windows CLI 复刻 CI 扫描（同排除清单 + staging + `--redact`），只从 redacted JSON 报告取 RuleID / File / Line。
+- CI 唯一 finding = `docs/gates/gate-c/WORK.md`，RuleID `generic-api-key`，约 line 325，是非敏感 WebSocket client request UUID（`client.request.id`）；该 frozen 卷宗真实凭证已 `apiKey=<masked>`（line 327）。判定 **false positive，非真实 credential，P0=0**。
+- 本地另见 4 个 `private-key`（Binance fake 测试私钥 / PEM 协议常量）是 Windows 反斜杠路径致 forward-slash `paths` allowlist 本地不匹配的假象；CI（Linux 正斜杠）已抑制——故 CI 仅 `leaks found: 1`。
+
+### 修复（最小、精确）
+
+- 可见性：`.github/workflows/ci.yml` secret-scan gitleaks step 失败分支改为从 redacted JSON 报告输出 sanitized metadata——仅 RuleID / File（去 staging 前缀）/ StartLine-EndLine / Fingerprint，绝不输出 Secret / Match / 匹配行 / commit / author；保持 `--redact`、fail closed、tracked safe paths only、no full-history scan、不上传报告。优先 `jq`（ubuntu-latest 预装），无 `jq` 时 grep 退化提取同样 sanitized 字段。
+- 精确 allowlist：gitleaks inline 配置 `paths` 增加单文件 `.*docs/gates/gate-c/WORK\.md$`（带注释说明 frozen Gate-C 诊断卷宗的 generic-api-key UUID FP）；未关 default ruleset、未 broad allowlist、未删样例、未改 frozen 卷宗本身、未放宽核心规则。
+
+### 修改文件
+
+- `.github/workflows/ci.yml`：仅 secret-scan job（finding 可见性 + 单文件 gate-c allowlist）。
+- `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`：Batch 4B 状态 -> FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN；新增「Batch 4B first-run fix」证据段；更新 status / Review decision / Next concrete action / Boundary confirmation。
+- `docs/current/NQ_CI_BASELINE_PLAN.md`、`README.md`、`TESTING.md`、`WORKLOG.md`：同步状态与下一步。
+
+### 验证
+
+- 本地 gitleaks（separator-tolerant 等价 config）复跑 `detect --no-git --redact`：`no leaks found` / rc=0 / 0 findings（4 Binance + gate-c 全部精确 allowlist 抑制）。
+- forward-slash 提交版 config 单独 load：parses without panic。其 Linux 有效性由 first run `27662197509`（forward-slash Binance 已抑制、仅剩 gate-c）佐证。
+- IntelliJ `get_file_problems`（errorsOnly）对 `ci.yml`：0 errors。custom backstop file-driven 复刻仍 0 命中。
+
+### 边界确认
+
+- 本轮只改 secret-scan job + 5 个允许 docs；未改既有 6 个 job、未改代码 / 测试 / migration / frontend / research / scripts / deploy、未改 frozen 卷宗 `docs/gates/gate-c/WORK.md`、未新增 tracked 文件。
+- secret-scan job 仍 `contents: read`、无 repository secret / `gitleaks-action` / `GITLEAKS_LICENSE` / `id-token` / write / `continue-on-error`、fail closed、no full-history scan、不上传未脱敏报告。
+- 未读取 / 打印 / 输出真实 credential material；未扫描禁止目录；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。
+- Batch 4B：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN（不得写 FIRST GREEN / FROZEN）。Batch 4C / 4F：NOT STARTED。Batch 5：PENDING。Batch 3 仍 FROZEN / ACCEPTED。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4B-SECOND-RUN-REVIEW`（确认 GitHub Actions 第二次运行 secret-scan job green、6/7 既有 job 未回归、无真实 credential 泄露）；若仍失败则 second-run fix；或暂停 CI 线。不得混入 Batch 4C / 4F / Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW
 
 日期：2026-06-17

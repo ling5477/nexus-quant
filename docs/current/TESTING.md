@@ -2,6 +2,37 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX（2026-06-17）
+
+本轮是 GateK CI Batch 4B first-run fix：最小修复 secret-scan job 首跑失败。先让 gitleaks finding 可见（不泄露 secret value），再做最小精确处置。结论 **FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN**。只改 `.github/workflows/ci.yml` 的 secret-scan job + 允许的 5 个 docs；未进入 Batch 4C / 4F / Batch 5，未改业务代码。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `git branch --show-current` = `dev`；编辑前工作区仅 4B impl 提交后状态。 |
+| 失败定位（本地复现） | 已确认 | 本地 MINGW64 下载 pinned gitleaks `8.18.4` Windows CLI，复刻 CI 扫描（同排除清单 + staging + `--redact`），从 redacted JSON 报告只取 RuleID / File / Line（不读 Secret / Match）。 |
+| 唯一 CI finding | 已确认 | `docs/gates/gate-c/WORK.md`，RuleID `generic-api-key`，约 line 325，是非敏感 WebSocket client request UUID（`client.request.id`）；该 frozen 卷宗真实凭证已 `apiKey=<masked>`（line 327）。**false positive，非真实 credential（P0=0）**。 |
+| 本地多出的 4 finding | 已解释 | 本地额外 4 个 `private-key`（Binance fake 测试私钥 / PEM 协议常量）是 Windows 反斜杠路径致 forward-slash `paths` allowlist 本地不匹配的假象；CI（Linux 正斜杠）下已被现有 allowlist 抑制——故 CI 仅 `leaks found: 1`。 |
+| 可见性修复 | 已实现 | gitleaks step 失败分支从 redacted JSON 报告输出 sanitized metadata：仅 RuleID / File（去 staging 前缀）/ StartLine-EndLine / Fingerprint；**不输出 Secret / Match / 匹配行 / commit / author**；保持 `--redact`、fail closed（`exit 1`）、tracked safe paths only、no full-history scan、不上传报告。 |
+| 精确 allowlist | 已实现 | gitleaks inline 配置 `paths` 增加单文件 `.*docs/gates/gate-c/WORK\.md$`（带注释说明 FP）；未关 default ruleset、未 broad allowlist、未删测试样例、未改 frozen 卷宗本身、未放宽核心规则。 |
+| 本地复跑验证 | **通过** | 用 separator-tolerant（`.`）等价 config 复跑 `gitleaks detect --no-git --redact`：`no leaks found` / rc=0 / 0 findings（4 Binance + gate-c 全部精确 allowlist 抑制）。 |
+| 提交版 config 校验 | 通过 | forward-slash 提交版 config 单独 load：parses without panic（`no leaks found` on empty dir，rc=0）。其 Linux 有效性由 first run `27662197509`（forward-slash Binance 已抑制、仅剩 gate-c）佐证。 |
+| custom backstop | 通过 | 本地 file-driven 复刻仍 0 命中（gate-c UUID 不在 backstop 凭证关键字范围）。 |
+| YAML 语法 | 通过 | IntelliJ `get_file_problems`（errorsOnly）对 `ci.yml` 返回 0 errors；heredoc 终止符缩进正确。 |
+| 边界 | 通过 | secret-scan job 仍 `contents: read`、无 repository secret / `gitleaks-action` / `GITLEAKS_LICENSE` / `id-token` / write / `continue-on-error`；未读取 / 输出真实 credential material；未扫描禁止目录；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。 |
+
+本地验证命令（要点）：
+
+```powershell
+git status --short; git diff --check; git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- backend; git diff -- frontend; git diff -- research; git diff -- scripts; git diff -- deploy; git diff -- backend/**/db/migration
+# 本地 pinned gitleaks 8.18.4 (Windows CLI) 复刻扫描 -> 定位 + 验证 0 findings（--redact，仅取 RuleID/File/Line）
+```
+
+未验证项：GitHub Actions 第二次运行 secret-scan job green（本地无法直接证明 Linux forward-slash 抑制；由 first-run 证据 + 本地等价 config 0 findings 间接佐证，需 second CI run 确认）。
+
+Review decision: FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4B-SECOND-RUN-REVIEW`、second-run fix（若仍失败），或暂停 CI 线。不得把 Batch 4B 写成 FIRST GREEN / FROZEN；不得混入 Batch 4C / 4F / Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW（2026-06-17）
 
 本轮是 GateK CI Batch 4B first-run review：只评审 secret-scan job 首次 GitHub Actions run，不进入 Batch 4C / 4F / Batch 5，不改业务代码、不改 workflow。结论 **FAIL / FIRST-RUN-FIX REQUIRED**：first run `27662197509` 6/7 jobs green，仅 `Secret scan` job 失败于 gitleaks `leaks found: 1`（default-ruleset false positive）。

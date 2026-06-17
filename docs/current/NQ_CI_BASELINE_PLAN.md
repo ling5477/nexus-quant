@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan IMPLEMENTED / FIRST CI RUN FAILED / FIRST-RUN-FIX REQUIRED（run `27662197509`，仅 secret-scan job 失败于 gitleaks 1 finding）；Batch 4C / Batch 4F / Batch 5 PENDING
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN（first run `27662197509` 失败于 frozen Gate-C generic-api-key FP，已加 finding 可见性 + 单文件精确 allowlist）；Batch 4C / Batch 4F / Batch 5 PENDING
 
 ## Current state
 
@@ -399,7 +399,7 @@ Implemented baseline:
 
 ### Batch 4: NQ-CI-SECURITY-GUARD
 
-Status: Batch 4A plan review ACCEPTED；Batch 4B secret scan minimal implementation IMPLEMENTED / FIRST CI RUN FAILED / FIRST-RUN-FIX REQUIRED（first run `27662197509`：6/7 jobs green，仅 `Secret scan` job 失败于 gitleaks `leaks found: 1` default-ruleset FP）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED。Planning / implementation 文档：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`。
+Status: Batch 4A plan review ACCEPTED；Batch 4B secret scan minimal implementation IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN（first run `27662197509` 失败于 frozen `docs/gates/gate-c/WORK.md` 的 generic-api-key FP（非敏感 WS UUID，真实凭证已 masked）；first-run-fix 已加 gitleaks finding 可见性 sanitized 输出 + 单文件精确 allowlist，本地 gitleaks 复跑 0 findings）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED。Planning / implementation 文档：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`。
 
 Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` job）：
 
@@ -466,6 +466,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX`（first run `27662197509` 失败于 gitleaks 1 finding；先让 finding 可见再做最小精确处置），随后重跑 CI 与 second-pass first-run review，再 Batch 4C / 可选 Batch 4F，或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 IMPLEMENTED / FIRST CI RUN FAILED / FIRST-RUN-FIX REQUIRED；Batch 4C / Batch 4F / Batch 5 仍 PENDING，不得写成 started。
+Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4B-SECOND-RUN-REVIEW`（first-run-fix 已应用：gitleaks finding 可见性 + 单文件精确 allowlist；待 GitHub Actions 第二次运行确认 secret-scan job green 且 6/7 既有 job 未回归），失败则 second-run fix，或暂停 CI 线，再 Batch 4C / 可选 Batch 4F。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN；Batch 4C / Batch 4F / Batch 5 仍 PENDING，不得写成 started。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.
