@@ -2,6 +2,40 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-B-FIRST-RUN-FIX（2026-06-17）
+
+本轮是 GateK CI Batch 4C-B first-run fix：最小 doc-only fix，消除本文件「gate dry-run — fake secret」单元格内一处 AWS access key id 形态字面量对 gitleaks `aws-access-token` 的误报（first run `27698183911` 唯一 finding，非真实凭证、非 gate 缺陷）。结论 **FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN**。未改 `.github/workflows/ci.yml`、gitleaks 规则 / 配置、gate；未新增 allowlist；未关闭 security guard。Batch 4C 整体仍 NOT FROZEN；4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `git branch --show-current` = `dev`。 |
+| 修复目标 | 已修复 | 本文件「gate dry-run — fake secret」单元格内完整 AWS-key 字面量改写为 shaped placeholder 文字描述（`AKIA` 前缀 + 16 位占位，不写完整字面量）。 |
+| 完整字面量清除 | 通过 | `git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = 0 命中；docs/current 内无其它 `ASIA` / `sk-ant-` / `sk-proj-` / `github_pat_` / `gh[pousr]_{30,}` 完整凭证形态字面量。 |
+| ci.yml 未改 | 已确认 | `git diff -- .github/workflows/ci.yml` 为空；未改 gitleaks 规则 / 配置 / allowlist / default ruleset。 |
+| security guard 未弱化 | 通过 | 未放宽 gitleaks 规则、未 broad allowlist、未 allowlist 整个 `TESTING.md`、未关闭 default ruleset、未用 continue-on-error。 |
+| 安全边界 | 通过 | 未读取/输出真实 credential material；未扫描禁止目录；未上传 artifact；未用 repository secret / write / id-token；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。 |
+| 本地 gitleaks | 未运行 | 本地 Windows 无 gitleaks 二进制（与 Batch 4B 一致）；gitleaks 层最终结果待 GitHub Actions second-pass run 确认。 |
+| 本地 build/test | 未运行 | docs-only fix；未运行 backend Maven / frontend / Python。 |
+
+复核命令（已执行 / 待执行）：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+git grep -nE "AKIA[0-9A-Z]{16}" docs/current
+rg "aws-access-token|AKIA|ASIA|sk-ant-|sk-proj-|github_pat_|ghp_|gho_|BEGIN PRIVATE KEY|encrypted_payload|decrypted_payload|continue-on-error|id-token|GITLEAKS_LICENSE|gitleaks-action" docs/current .github
+```
+
+Review decision: FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN。doc-only 修复完成，完整 AWS-key 字面量已清除，未改 `ci.yml` / gate / gitleaks 规则 / allowlist。下一步只能是 second-pass first-run review（确认重跑 secret-scan job green、postgres-flyway pre-upload gate 仍 green、其余 job 未回归），或失败则 second-pass fix，或暂停 CI 线。不得把 Batch 4C-B 写成 FIRST GREEN / FROZEN；不得混入 Batch 4C-C / 4F / Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-D-FIRST-RUN-REVIEW（2026-06-17）
 
 本轮是 GateK CI Batch 4C-D first-run review：评审第一次包含 pre-upload artifact redaction gate 的 GitHub Actions run（`27698183911`，commit `c734102d`）。结论 **FAIL / FIRST-RUN-FIX REQUIRED**：pre-upload gate 本身 first-run GREEN，但整体 run 失败于 secret-scan job 的一处无关文档 gitleaks 误报。只评审 + 改允许的 docs，未改 `ci.yml` / 代码 / 测试 / migration。Batch 4C 整体仍 NOT FROZEN；4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING。
@@ -55,7 +89,7 @@ Review decision: FAIL / FIRST-RUN-FIX REQUIRED。pre-upload redaction gate 本�
 | YAML 结构校验 | 通过 | node 解析：7 jobs（diff-check / no-outbound-guard / backend / postgres-flyway / frontend / research / secret-scan），唯一 `upload-artifact`，无 tab 字符。 |
 | bash 语法 | 通过 | `bash -n`（提取 gate 逻辑）syntax OK。 |
 | gate dry-run — clean | 通过 | 合成 schema-like 文本 artifacts（含 `password_hash` 列名、散文 "API key for ..."、无凭证 URL `https://...` / `jdbc:postgresql://...`）→ GATE-PASS / exit 0，无误报。 |
-| gate dry-run — fake secret | 通过 | 合成 fake artifact（AWS 文档 `AKIAIOSFODNN7EXAMPLE` / URL 内嵌 `user:pass@` / `encrypted_payload=` 赋值）→ fail closed / exit 1，输出仅 `rule | file`；断言三类 secret 值（AKIA example / url password / payload 值）均未出现在输出。 |
+| gate dry-run — fake secret | 通过 | 合成 fake artifact（AWS access key id shaped placeholder：`AKIA` 前缀 + 16 位大写字母/数字占位，不写完整字面量以免触发 gitleaks `aws-access-token` / URL 内嵌 `user:pass@` / `encrypted_payload=` 赋值）→ fail closed / exit 1，输出仅 `rule | file`；断言三类 secret 值（AWS key 占位 / url password / payload 值）均未出现在输出。 |
 | gate dry-run — binary | 通过 | 合成 `trace.zip`（含 NUL/二进制字节）→ `file` 判为 binary，gate 拒绝 / exit 1，仅打印文件名。 |
 | secret-scan 自命中回归 | 通过 | 复刻 secret-scan custom backstop 对修改后 `ci.yml` 扫描 → 0 非 allowlisted 命中（dash-omitted PEM、未达长度的 AKIA/ASIA/gh/xox/sk 字面量、无 quoted-value 的 assignment 均不触发）。 |
 | gate-before-upload 顺序 | 已确认 | `Pre-upload redaction gate` step（line 569）在 `Upload PostgreSQL schema artifacts`（line 675）+ `actions/upload-artifact@v4`（line 676）之前。 |

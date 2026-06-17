@@ -2,6 +2,46 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-B-FIRST-RUN-FIX
+
+日期：2026-06-17
+
+### 目标
+
+最小 doc-only fix：消除 `docs/current/TESTING.md` 内一处 AWS access key id 形态字面量对 gitleaks `aws-access-token` 规则的误报（first run `27698183911` 唯一 finding）。不改 gitleaks 规则、不 broad allowlist、不改 `ci.yml`、不关闭 security guard。
+
+### 失败根因
+
+- secret-scan job gitleaks step 命中 `RuleID=aws-access-token File=docs/current/TESTING.md`：4C-B 测试记录的「gate dry-run — fake secret」单元格写有一处完整 AWS access key id 形态字面量（`AKIA` 前缀 + 16 位大写字母/数字）。
+- 该串是 AWS 公共文档示例、**非真实凭证**（P0=0）；gate 本身 first-run green，run-level red 仅因此文档 FP。
+
+### 修复（最小、doc-only）
+
+- `docs/current/TESTING.md`：把该单元格内的完整 AWS-key 字面量改写为 **shaped placeholder 文字描述**（`AKIA` 前缀 + 16 位占位，不写完整字面量；标注「不写完整字面量以免触发 gitleaks `aws-access-token`」），同段 `AKIA example` 文案改为 `AWS key 占位`。
+- **未改** `.github/workflows/ci.yml`、未改 gate、未改 gitleaks 规则 / 配置、**未新增任何 allowlist**、未关闭 default ruleset、未 broad allowlist、未 allowlist 整个 `TESTING.md`。
+
+### 本地验证
+
+- `git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = **0 命中**（修复后 docs/current 已无完整 AWS-key 字面量）。
+- docs/current 内亦无其它 `ASIA` / `sk-ant-` / `sk-proj-` / `github_pat_` / `gh[pousr]_{30,}` 完整凭证形态字面量。
+- 本地无 gitleaks 二进制（Windows 开发环境，与 Batch 4B 一致）；gitleaks 层最终结果待 GitHub Actions second-pass run 确认。
+
+### 文档更新
+
+- `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`：header + 「Batch 4C-B」status + 新增「Batch 4C-B first-run fix」段 + Review decision + Next action + Boundary confirmation 推进为 FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN。
+- `NQ_CI_SECURITY_GUARD_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`、`README.md`：Batch 4C 状态同步。
+- `TESTING.md`：修复目标单元格 + 新增本轮 fix 记录；`WORKLOG.md`：本轮 fix 记录（均未再写入可被 gitleaks 命中的示例串）。
+- 未改 `ci.yml` / 代码 / 测试 / migration / frontend / research / scripts / deploy。
+
+### 边界确认
+
+- Batch 4C-B：FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN（不得写 FIRST GREEN / FROZEN）。Batch 4C 整体仍 NOT FROZEN。Batch 4C-C / 4F / Batch 5：NOT STARTED / PENDING。Batch 4B / Batch 3 仍 FROZEN / ACCEPTED。
+- 未放宽 gitleaks 规则；未新增 allowlist；未关闭 security guard；未用 repository secret / write / id-token / continue-on-error；未读取/输出真实 credential material；未扫描禁止目录；未上传 artifact；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。
+
+### 下一步
+
+second-pass first-run review（确认重跑后 secret-scan job green、postgres-flyway pre-upload gate 仍 green、其余 job 未回归），或失败则 second-pass fix，或暂停 CI 线。不得把 Batch 4C-B 写成 FIRST GREEN / FROZEN；不得混入 Batch 4C-C / 4F / Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-D-FIRST-RUN-REVIEW
 
 日期：2026-06-17
