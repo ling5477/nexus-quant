@@ -2,6 +2,44 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-FREEZE-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+冻结 Batch 4B minimal secret scan baseline。确认 immutable run `27674393780`（commit `31540de8`）可作为冻结证据，secret-scan job 稳定 green，扫描范围 / 安全边界 / allowlist 策略 / fail-closed 行为符合 GateK CI security guard baseline。只评审 + 改 docs。
+
+### 评审结论：PASS / FROZEN / ACCEPTED（P0/P1/P2 = 0）
+
+- ci.yml 自 green-run commit `31540de8` 起未变（`git diff 31540de8 HEAD -- .github/workflows/ci.yml` 为空；其后仅 docs 提交 `7369ed4f`）。frozen baseline = commit `31540de8` 的 secret-scan job。
+- run `27674393780` completed / success，7/7 jobs green。
+- secret-scan job（`81846054679`）re-fetch：`Installed gitleaks version: 8.18.4`；`--no-git --redact` `no leaks found`（868ms）；`tracked=1303 safe_scanned=1300 excluded=3`；custom backstop `no non-allowlisted matches`；`Contents: read, Metadata: read`（无 write / id-token）；无 `continue-on-error` / repository secret / `gitleaks-action` / `GITLEAKS_LICENSE`。
+- HEAD config 完整性：`useDefault = true`；gate-c allowlist 单文件（1 条）；4 Binance fake-key / PEM 协议常量 path allowlist + backstop `allow_pem` 同 4 文件；`--no-git --redact --exit-code 1`（tracked-tree-only、no full-history、fail closed）。
+- 日志未输出 secret value / matched line / Secret / Match / commit / author；无真实 credential material。
+
+### frozen 边界
+
+- frozen baseline = commit `31540de8`（secret-scan job：pinned gitleaks 8.18.4 CLI + custom regex backstop + sanitized finding 可见性 + 4 Binance/PEM + 1 gate-c 精确 allowlist + 3 placeholder marker，`useDefault = true`，`--no-git --redact` fail closed，`contents: read`，无 repository secret / write / id-token / continue-on-error / gitleaks-action / GITLEAKS_LICENSE）+ first-run / second-run / freeze docs。
+- Batch 4C artifact/log redaction proof、Batch 4F dependency audit、Batch 5 frontend E2E hardening 仍 NOT STARTED / PENDING。Batch 3 仍 FROZEN / ACCEPTED。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real exchange permission probe adapter NOT IMPLEMENTED。
+- Batch 4B FROZEN 只冻结 minimal secret scan baseline，不代表 Batch 4 整体完成。
+
+### 必录 P3（非阻断）
+
+1. forward-slash `paths` allowlist 在 Windows 反斜杠路径本地不匹配——只影响本地复现，不影响 Linux CI。
+2. gitleaks release binary 无 SHA256 checksum pinning（仅版本 + `gitleaks version` 校验）——供应链 hardening follow-up。
+3. gitleaks 配置 inline 写入 `RUNNER_TEMP`，无 tracked single-source。
+
+### 修改文件（仅 docs）
+
+- `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`：Batch 4B 状态 -> FROZEN / ACCEPTED；填充「Batch 4E: freeze review」证据段 + 3 项 P3；更新 status / Review decision / Next concrete action / Boundary confirmation。
+- `docs/current/NQ_CI_BASELINE_PLAN.md`、`README.md`、`TESTING.md`、`WORKLOG.md`：同步 FROZEN / ACCEPTED 与下一步。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction proof planning）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。不得把 Batch 4C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-SECOND-RUN-REVIEW
 
 日期：2026-06-17

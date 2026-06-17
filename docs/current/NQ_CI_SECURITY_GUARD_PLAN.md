@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
 日期：2026-06-17
-状态：Batch 4A plan review PASS / ACCEPTED；Batch 4B secret scan minimal implementation IMPLEMENTED；first run `27662197509` FAILED（gate-c generic-api-key FP）→ first-run-fix APPLIED → **second run `27674393780` SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX**（2026-06-17，7/7 jobs green，详见「Batch 4D: first-run review」段落）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。`.github/workflows/ci.yml` secret-scan job 已含 pinned gitleaks 8.18.4 CLI + custom regex backstop + finding 可见性 sanitized 输出 + frozen Gate-C 单文件精确 allowlist；本轮 second-run review 只评审 + 改 docs，未改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）。不得把 Batch 4B 直接写成 FROZEN / ACCEPTED（freeze 仍是后续 Batch 4E）；不得把 Batch 4 写成 fully implemented；不得把 Batch 4C / dependency audit 写成 implemented；不得把 Batch 5 写成 started。
+状态：Batch 4A plan review PASS / ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（first run `27662197509` FAILED（gate-c generic-api-key FP）→ first-run-fix `31540de8` APPLIED → second run `27674393780` 7/7 jobs green → Batch 4E freeze review，2026-06-17，详见「Batch 4E: freeze review」段落）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。frozen baseline = commit `31540de8`（`.github/workflows/ci.yml` secret-scan job：pinned gitleaks 8.18.4 CLI + custom regex backstop + finding 可见性 sanitized 输出 + 4 Binance/PEM + 1 frozen Gate-C 单文件精确 allowlist，`useDefault = true`，`--no-git --redact` fail closed，`contents: read`）+ first-run / second-run / freeze docs。本轮 freeze review 只评审 + 改 docs，未改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）。Batch 4B FROZEN 只冻结 minimal secret scan baseline，不代表 Batch 4 整体完成；不得把 Batch 4 写成 fully implemented；不得把 Batch 4C / dependency audit 写成 implemented；不得把 Batch 5 写成 started。
 
 ## Task classification
 
@@ -179,7 +179,7 @@ Log redaction proof（Batch 4C）：
 
 ### Batch 4B: secret scan minimal implementation
 
-- Status: IMPLEMENTED；first run `27662197509` FAILED（gate-c generic-api-key FP）→ first-run-fix APPLIED → **SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX**（second run `27674393780` completed / success，7/7 jobs green，详见「Batch 4D: first-run review」）。workflow 已落地最小 secret scan baseline 并修复首跑 FP，第二次 CI run 全绿；不得直接写 FROZEN / ACCEPTED（freeze 仍是 Batch 4E）。
+- Status: **FROZEN / ACCEPTED**（first run `27662197509` FAILED（gate-c generic-api-key FP）→ first-run-fix `31540de8` APPLIED → second run `27674393780` 7/7 jobs green → Batch 4E freeze review PASS，2026-06-17）。frozen baseline = commit `31540de8` 的 secret-scan job + first-run / second-run / freeze docs。详见「Batch 4E: freeze review」。
 - 已实现内容（`.github/workflows/ci.yml` 新增 `secret-scan` job）：
   - job 级 `permissions: contents: read`；不注入任何 repository secret；不依赖 `GITLEAKS_LICENSE`；无 `continue-on-error`；secret scan 失败 fail closed 阻塞 CI。
   - 步骤 1：安装 pinned gitleaks CLI binary（`GITLEAKS_VERSION=8.18.4`），从 GitHub release 以 `curl`（无 token / 无 auth header）下载，安装后 `gitleaks version` 必须等于 `8.18.4`，否则 fail。不使用 `gitleaks-action`。
@@ -280,9 +280,26 @@ Review decision：PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX。Batch 4B 推�
 
 ### Batch 4E: freeze review
 
-- Status target: FROZEN / ACCEPTED。
-- Scope: 冻结 secret scan / redaction / permission baseline；同步 `docs/current` current facts 与 next action。
-- Success: Batch 4 成为当前 `dev` security guard baseline；Batch 5 仍 PENDING；required-check 提升决策记录在案。
+- Status: **PASS / FROZEN / ACCEPTED**（`NQ-CI-SECURITY-GUARD-BATCH-4B-FREEZE-REVIEW`，2026-06-17，P0/P1/P2 blockers = 0）。
+- Scope: 冻结 Batch 4B minimal secret scan baseline；同步 `docs/current` current facts 与 next action。本 freeze 只冻结 secret scan baseline，不进入 Batch 4C / 4F / Batch 5，不改 workflow / 代码 / 测试 / migration。
+
+freeze review 复核（基于 immutable run `27674393780`，commit `31540de8`，重新拉取 job logs + HEAD config 校验）：
+
+- ci.yml 自 green-run commit `31540de8` 起未变（`git diff 31540de8 HEAD -- .github/workflows/ci.yml` 为空；其后仅 docs 提交 `7369ed4f`）。frozen baseline = 该 ci.yml secret-scan job。
+- Run `27674393780` conclusion `completed / success`；7 jobs 全 `success`：Diff check、No-outbound guard、Backend Maven test、PostgreSQL / Flyway smoke、Frontend build、Research quality gate、Secret scan。
+- secret-scan job（`81846054679`）re-fetch 证据：`Installed gitleaks version: 8.18.4`；`gitleaks detect --no-git --redact` -> `scan completed in 868ms` -> `no leaks found`；`tracked=1303 safe_scanned=1300 excluded=3`（排除恰为三个 `.env.example` 模板）；custom backstop `no non-allowlisted matches`；`GITHUB_TOKEN Permissions: Contents: read, Metadata: read`（无 write / id-token）；无 `continue-on-error` / repository secret / `gitleaks-action` / `GITLEAKS_LICENSE`。
+- HEAD config 完整性：`useDefault = true`（default ruleset 未关）；gate-c allowlist 为单文件 `.*docs/gates/gate-c/WORK\.md$`（1 条）；4 Binance fake-key / PEM 协议常量 path allowlist（gitleaks）+ backstop `allow_pem` 同 4 文件，均精确；`--no-git --redact --exit-code 1`（tracked-tree-only、no full-history、fail closed）。
+- 安全：日志未输出 secret value / matched line / Secret / Match / commit / author（0 finding，sanitized 失败分支未触发；日志中相关字样仅为 runner 回显的 step 脚本本体，非执行输出、非真实凭证）。无真实 API key / secret / passphrase / token / private key / credential material；`token: ***` mask。
+
+frozen 边界：本 freeze 接受当前 `dev` minimal secret scan baseline，固定以下事实——secret-scan job 用 pinned gitleaks 8.18.4 CLI（非 action / 无 license）+ custom regex backstop，只扫 tracked safe paths（排除 `.env*` / secrets / credentials / `*.pem` / `*.key` / `*.p12` / `*.jks` / `*.keystore` / target / node_modules / dist / build / coverage / logs / dumps / backups / `.git`），no full-history scan，`--redact` fail closed，sanitized finding 可见性（仅 RuleID / File / Lines / Fingerprint），精确 allowlist（4 Binance + 1 gate-c + 3 placeholder marker），`contents: read`，无 repository secret / write / id-token / continue-on-error；不开启 LIVE / AI / DH runtime，不实现 RealClient / real provider / real permission probe adapter。Batch 4C artifact/log redaction proof、Batch 4F dependency audit、Batch 5 frontend E2E hardening 仍 NOT STARTED / PENDING，不得写成 started。
+
+freeze 必录 P3（非阻断，留作后续 hardening follow-up）：
+
+1. forward-slash `paths` allowlist 在 Windows 反斜杠路径本地不匹配——只影响本地复现，不影响 Linux CI（CI 正斜杠正常抑制）；如需本地可复现可改 separator-tolerant 写法，但当前不改 frozen config。
+2. gitleaks release binary 当前仅 pinned 版本 + `gitleaks version` 校验，无 SHA256 checksum pinning；留作供应链 hardening follow-up。
+3. gitleaks 配置 inline 写入 `RUNNER_TEMP`，无 tracked single-source；如未来需要审计可评估固化为受控 config 文件（非本 freeze 范围）。
+
+Review decision：PASS / FROZEN / ACCEPTED。P0/P1/P2 blockers = 0。Batch 4B minimal secret scan 成为当前 `dev` security guard secret-scan baseline。
 
 ### Batch 4F（可选）: dependency audit later plan
 
@@ -354,8 +371,8 @@ rg 仅用于 tracked safe paths；未把扫描扩展到 `.env` / secrets / logs 
 
 ## Boundary confirmation
 
-- 本轮（Batch 4B second-run review）只评审 second run `27674393780` 并改允许的 5 个 docs；**未修改 `.github/workflows/ci.yml`**（fix 已在 commit `31540de8` 落地）。
-- 本轮工作树 clean（second-run review 仅 docs 改动尚未提交）；secret-scan job 自身边界（`contents: read`、无 repository secret / `gitleaks-action` / `GITLEAKS_LICENSE` / `id-token` / write / `continue-on-error`、`--no-git` / `--redact`、tracked-tree-only、单文件 gate-c allowlist）经 second run 日志复核仍合规。
+- 本轮（Batch 4B freeze review）只评审 immutable run `27674393780` + HEAD config 并改允许的 5 个 docs；**未修改 `.github/workflows/ci.yml`**（frozen baseline = commit `31540de8`）。
+- ci.yml 自 green-run commit `31540de8` 起未变（仅 docs 提交 `7369ed4f` 在其后）；secret-scan job 边界（`contents: read`、无 repository secret / `gitleaks-action` / `GITLEAKS_LICENSE` / `id-token` / write / `continue-on-error`、`--no-git` / `--redact`、`useDefault = true`、tracked-tree-only、4 Binance + 1 gate-c 精确 allowlist）经 run 日志 + HEAD config 复核合规。
 - （历史）first-run fix（commit `31540de8`）只改 `.github/workflows/ci.yml` 的 `secret-scan` job（finding 可见性 sanitized 输出 + 单文件 gate-c FP allowlist）与允许的 5 个 docs；未改既有 6 个 job、未改 gitleaks 扫描范围 / `--no-git` / `--redact` / `permissions` 等边界。
 - 未修改 Java / TypeScript / Python 代码与测试代码；未新增测试。
 - 未新增 API；未新增 migration；未修改历史 migration。
@@ -365,7 +382,7 @@ rg 仅用于 tracked safe paths；未把扫描扩展到 `.env` / secrets / logs 
 - 未读取、打印、复制或输出真实 credential material；finding 可见性只输出 RuleID / File / Lines / Fingerprint，`--redact` 仍生效，未输出 secret value / 匹配行 / commit / author；未把禁止目录作为数据源扫描；未做 full-history scan；未上传报告 artifact。
 - 未关闭 gitleaks default ruleset；未 broad allowlist；未删测试样例；gate-c allowlist 仅针对单一 frozen 文件并带注释说明 FP 原因。
 - 未调用真实交易所；未下单 / 撤单 / 转账 / 提现；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
-- Batch 4B secret scan IMPLEMENTED / SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX（run `27674393780`，未 FROZEN）；Batch 4C / 4F NOT STARTED；Batch 5 仍 PENDING。
+- Batch 4B secret scan **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C / 4F NOT STARTED；Batch 5 仍 PENDING。
 
 ## Review decision
 
@@ -373,10 +390,11 @@ Batch 4A plan review：PASS / ACCEPTED AS IMPLEMENTATION BASELINE（2026-06-17�
 Batch 4B secret scan minimal implementation：IMPLEMENTED；first CI run（`27662197509`）**FAILED**。
 Batch 4B first-run review：FAIL / FIRST-RUN-FIX REQUIRED（first run `27662197509`，gate-c generic-api-key FP）。
 Batch 4B first-run fix：FIRST-RUN-FIX APPLIED（commit `31540de8`，gitleaks finding 可见性 sanitized 输出 + 单文件 gate-c allowlist）。
-Batch 4B second-run review：**PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX**（2026-06-17）。second run `27674393780` completed / success，7/7 jobs green；secret-scan job：gitleaks `8.18.4` 安装 + `--no-git --redact` `no leaks found`（868ms）+ custom backstop `no non-allowlisted matches`，`tracked=1303 / safe=1300 / excluded=3`，`Contents: read` only，未输出 secret value / matched line。Batch 4B 推进为 SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX。Batch 4C / 4F 仍 NOT STARTED；Batch 5 仍 PENDING；Batch 3 仍 FROZEN / ACCEPTED。不得把 Batch 4B 直接写成 FROZEN / ACCEPTED（freeze 是 Batch 4E），不得把 Batch 4 写成 fully implemented。
+Batch 4B second-run review：PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX（second run `27674393780` 7/7 jobs green）。
+Batch 4B freeze review（Batch 4E）：**PASS / FROZEN / ACCEPTED**（2026-06-17，P0/P1/P2 blockers = 0）。基于 immutable run `27674393780`（commit `31540de8`）+ HEAD config 复核：secret-scan job gitleaks `8.18.4` + `--no-git --redact` `no leaks found` + backstop `no non-allowlisted matches`，`tracked=1303 / safe=1300 / excluded=3`，`useDefault = true`，4 Binance + 1 gate-c 精确 allowlist，`contents: read`，无 repository secret / write / id-token / continue-on-error / `gitleaks-action` / `GITLEAKS_LICENSE`，未输出 secret value。Batch 4B minimal secret scan 成为当前 `dev` security guard secret-scan baseline。frozen baseline = commit `31540de8` + first-run / second-run / freeze docs。Batch 4C / 4F 仍 NOT STARTED；Batch 5 仍 PENDING；Batch 3 仍 FROZEN / ACCEPTED。已记录 3 项非阻断 P3（Windows backslash 本地复现限制、gitleaks binary 无 SHA256 pin、inline config 无 tracked single-source）。Batch 4B FROZEN 不代表 Batch 4 整体完成。
 
 ## Next concrete action
 
-Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4E`（Batch 4B secret scan baseline freeze review），或 `NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction proof planning），或暂停 CI 线。
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction proof planning）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。
 
-Batch 4B 当前 IMPLEMENTED / SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX（run `27674393780`，未 FROZEN）；Batch 4C / 4F NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4B 直接写成 FROZEN / ACCEPTED，不得把 Batch 4 写成 fully implemented，不得把 Batch 4C / dependency audit / Batch 5 写成 started。
+Batch 4B 当前 **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C / 4F NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4 写成 fully implemented，不得把 Batch 4C / dependency audit / Batch 5 写成 started。

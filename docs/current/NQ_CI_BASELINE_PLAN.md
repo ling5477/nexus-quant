@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan IMPLEMENTED / SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX（first run `27662197509` 失败于 frozen Gate-C generic-api-key FP；first-run-fix 加 finding 可见性 + 单文件精确 allowlist；second run `27674393780` 7/7 jobs green，未 FROZEN）；Batch 4C / Batch 4F / Batch 5 PENDING
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan FROZEN / ACCEPTED（first run `27662197509` 失败于 frozen Gate-C generic-api-key FP；first-run-fix `31540de8` 加 finding 可见性 + 单文件精确 allowlist；second run `27674393780` 7/7 jobs green；Batch 4E freeze review P0/P1/P2=0，frozen baseline commit `31540de8`）；Batch 4C / Batch 4F / Batch 5 PENDING
 
 ## Current state
 
@@ -399,7 +399,7 @@ Implemented baseline:
 
 ### Batch 4: NQ-CI-SECURITY-GUARD
 
-Status: Batch 4A plan review ACCEPTED；Batch 4B secret scan minimal implementation IMPLEMENTED / SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX（first run `27662197509` 失败于 frozen `docs/gates/gate-c/WORK.md` 的 generic-api-key FP（非敏感 WS UUID，真实凭证已 masked）；first-run-fix 加 gitleaks finding 可见性 sanitized 输出 + 单文件精确 allowlist；second run `27674393780` completed / success，7/7 jobs green，secret-scan job gitleaks `no leaks found` + backstop `no non-allowlisted matches`，未 FROZEN）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED。Planning / implementation 文档：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`。
+Status: Batch 4A plan review ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（first run `27662197509` 失败于 frozen `docs/gates/gate-c/WORK.md` 的 generic-api-key FP（非敏感 WS UUID，真实凭证已 masked）；first-run-fix `31540de8` 加 gitleaks finding 可见性 sanitized 输出 + 单文件精确 allowlist；second run `27674393780` completed / success，7/7 jobs green，secret-scan job gitleaks `no leaks found` + backstop `no non-allowlisted matches`；Batch 4E freeze review P0/P1/P2=0，frozen baseline commit `31540de8`）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED。Planning / implementation 文档：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`。
 
 Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` job）：
 
@@ -466,6 +466,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4E`（Batch 4B secret scan baseline freeze review）或 `NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction proof planning），或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 IMPLEMENTED / SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX（run `27674393780`，未 FROZEN）；Batch 4C / Batch 4F / Batch 5 仍 PENDING，不得写成 started。
+Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction proof planning）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C / Batch 4F / Batch 5 仍 PENDING，不得写成 started。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.
