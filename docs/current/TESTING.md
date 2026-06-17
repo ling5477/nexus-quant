@@ -2,6 +2,46 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-SECRET-SCAN-IMPL（2026-06-17）
+
+本轮是 GateK CI Batch 4B 最小 secret scan implementation：在 `.github/workflows/ci.yml` 新增 `secret-scan` job（pinned gitleaks CLI binary + custom regex backstop），只扫当前 tracked working tree，不读本地真实 `.env` / secrets / logs / dumps / backups / target / node_modules / dist / build / `.git`，不注入 repository secret，不用 `gitleaks-action`，不依赖 `GITLEAKS_LICENSE`。状态 IMPLEMENTED / PENDING FIRST CI RUN；Batch 4C / 4F 与 Batch 5 仍未开始。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `git branch --show-current` = `dev`；编辑前 `git status --short` 为空。 |
+| Workflow 新增 job | 已实现 | `secret-scan` job：`permissions: contents: read`、无 repository secret、无 `continue-on-error`、fail closed。 |
+| gitleaks 安装方式 | 已实现 | pinned `8.18.4` CLI binary，`curl`（无 token）下载 GitHub release，安装后 `gitleaks version` 必须等于 `8.18.4`；不使用 `gitleaks-action`、不需 `GITLEAKS_LICENSE`。 |
+| 扫描范围 | 已实现 | `git ls-files` -> 排除 `.env*` / secrets / credentials / `*.pem` / `*.key` / `*.p12` / `*.jks` / `*.keystore` / target / node_modules / dist / build / coverage / logs / dumps / backups / `.git`；`gitleaks detect --no-git --redact`，禁止 full-history scan。 |
+| 排除核对 | 通过 | 本地 `git ls-files` 共 1303 tracked，排除后 1300 safe；被排除的恰为三个 `.env.example` 模板（`.env.example` / `frontend/.env.example` / `deploy/.env.freeze.example`）。 |
+| gitleaks allowlist | 已实现 | inline 配置 `useDefault = true` + 精确 allowlist：4 个 Binance fake-key / PEM 协议常量文件 by path + `REPLACE_WITH_LOCAL` / `CHANGE_ME` / `FAKE-PLACEHOLDER` 占位 marker by value；核心规则未放宽。 |
+| custom regex backstop | 已实现 | 覆盖 `sk-ant-` / `sk-proj-` / `sk-` / `github_pat_` / `gh[pousr]_` / AKIA / ASIA / PEM private key（RSA / EC / OPENSSH / DSA / PGP）/ `xoxb-` / `xoxp-` / value-bearing mnemonic / value-bearing 凭证赋值；只输出 `file | pattern`，绝不输出命中值；value-bearing pattern 过滤 placeholder；`pem_private` 对 4 个 Binance 文件 path 精确 allowlist。 |
+| backstop 本地复刻验证 | **通过** | 用与 workflow 完全一致的 file-driven 逻辑（patterns 经 quoted heredoc）跑当前 tracked safe tree：**0 非 allowlisted 命中**；新增 `secret-scan` job 与 `NQ_CI_SECURITY_GUARD_PLAN.md` 均未自命中（plan 内 PEM 字面量已软化为 `BEGIN PRIVATE KEY`）。 |
+| 误报治理核对 | 通过 | 命中的 4 个 Binance fake PEM / 协议常量文件全部 path 精确 allowlist；`fx-forbidden-fields.json`（字段名 + `FAKE-PLACEHOLDER`）经 value-bearing mnemonic 细化后不再误报，无需 allowlist。 |
+| gitleaks CLI 本地执行 | **未运行（已披露）** | 本地 Windows 开发环境 `python` 为 Microsoft Store stub（exit 49）、无预装 gitleaks；未在本地跑 gitleaks。gitleaks layer 的完整 FP 面留待 GitHub Actions first run（Batch 4D）确认。 |
+| YAML 语法 | 通过 | IntelliJ inspection（`get_file_problems` errorsOnly）对 `.github/workflows/ci.yml` 返回 0 errors；heredoc 终止符 `TOML` / `PATTERNS` 与 run 内容同为 10 空格缩进，YAML block-scalar dedent 后落在第 0 列。 |
+| 边界 | 通过 | 未改 Java / TS / Python 代码、测试、migration、backend production、frontend、research、scripts、deploy；未新增 tracked 文件（gitleaks 配置 / backstop pattern 均 inline 到 `RUNNER_TEMP`）；未注入 repository secret；未用 write / id-token；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter；未调用真实交易所。 |
+
+本地验证命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+git ls-files
+# custom regex backstop dry run（file-driven，复刻 workflow 逻辑）-> 0 非 allowlisted 命中
+```
+
+未验证项：gitleaks CLI 实际扫描结果（本地无法安装，留待 first CI run）；`secret-scan` job 在 GitHub runner 的安装 / 下载 / staging / scan 端到端执行；已知 first-run 风险候选——docs 内 commit SHA / artifact `sha256:` digest、CI-only `123456` PostgreSQL 占位、`ci.yml` 自身的 pattern 字符串若被 gitleaks default 规则误报（custom backstop 已确认不自命中）。
+
+Review decision: IMPLEMENTED / PENDING FIRST CI RUN。下一步：首次 run 成功则 `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW`，失败则 `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX`。不得写成 FROZEN / ACCEPTED / fully implemented；Batch 4C / 4F / Batch 5 不得写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4A-PLAN-REVIEW（2026-06-17）
 
 本轮是 GateK CI Batch 4A security guard / secret scan plan review：只评审 `NQ_CI_SECURITY_GUARD_PLAN.md` 是否可作为 Batch 4B / 4C implementation baseline，并按 25 项 checklist 复核 secret scan 范围、credential pattern、artifact / log redaction、GitHub Actions permissions、dependency audit 与 Batch 5 边界。结论 `PASS / ACCEPTED AS IMPLEMENTATION BASELINE`，P0/P1 = 0。本轮只改 docs，不改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 4 仍 PLAN ONLY / NOT IMPLEMENTED；Batch 5 仍 PENDING。

@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4-5 PENDING
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan IMPLEMENTED / PENDING FIRST CI RUN；Batch 4C / Batch 4F / Batch 5 PENDING
 
 ## Current state
 
@@ -399,15 +399,21 @@ Implemented baseline:
 
 ### Batch 4: NQ-CI-SECURITY-GUARD
 
-Status: PENDING。
+Status: Batch 4A plan review ACCEPTED；Batch 4B secret scan minimal implementation IMPLEMENTED / PENDING FIRST CI RUN；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED。Planning / implementation 文档：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`。
 
-Must implement:
+Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` job）：
 
-- Secret scan / gitleaks。
-- Forbidden file checks for `.env`, `*.key`, `*.pem`, tokens, passwords, passphrases。
-- LIVE disabled guard。
-- Credential log redaction guard。
-- Dependency audit as non-blocking first, then promote after triage。
+- pinned gitleaks `8.18.4` CLI binary（非 `gitleaks-action`，无 `GITLEAKS_LICENSE`，下载不传 token），安装后校验 `gitleaks version`。
+- 扫描范围限定当前 tracked working tree（`git ls-files` + 排除 `.env*` / secrets / credentials / `*.pem` / `*.key` / `*.p12` / `*.jks` / `*.keystore` / `target` / `node_modules` / `dist` / `build` / `coverage` / logs / dumps / backups / `.git`），`gitleaks detect --no-git --redact`，禁止 full-history scan。
+- inline gitleaks 配置（`useDefault = true` + 精确 allowlist：4 个 Binance fake-key / PEM 协议常量文件 by path + `REPLACE_WITH_LOCAL` / `CHANGE_ME` / `FAKE-PLACEHOLDER` 占位 marker），核心规则未放宽。
+- custom regex backstop（`sk-ant-` / `sk-proj-` / `github_pat_` / `gh[pousr]_` / `AKIA` / `ASIA` / PEM private key / `xoxb-` / `xoxp-` / value-bearing mnemonic / value-bearing 凭证赋值），只输出 `file | pattern`，绝不输出命中值。
+- job `permissions: contents: read`；不注入 repository secret；无 `continue-on-error`；secret scan 失败 fail closed。
+- 本地 custom backstop 复刻验证 0 非 allowlisted 命中；gitleaks first green run evidence 待 Batch 4D。
+
+后续（NOT STARTED）：
+
+- Batch 4C：artifact upload 前 redaction 通用规则 + log redaction proof + LIVE/boundary static guard。
+- Batch 4F（可选）：`npm audit` / Maven dependency check / `pip-audit`，非阻断起步，triage 后选择性提升；不混入 secret scan baseline。
 
 ### Batch 5: Frontend E2E hardening
 
@@ -460,6 +466,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4-PLAN`、Batch 3 parity/hygiene follow-up，或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4 / Batch 5 仍 PENDING，不得写成 started。
+Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW`（首次 secret-scan run 成功时）或 `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX`（失败时），随后 Batch 4C / 可选 Batch 4F，或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 IMPLEMENTED / PENDING FIRST CI RUN；Batch 4C / Batch 4F / Batch 5 仍 PENDING，不得写成 started。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.

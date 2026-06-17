@@ -2,6 +2,49 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-SECRET-SCAN-IMPL
+
+日期：2026-06-17
+
+### 目标
+
+在 GitHub Actions 中新增最小 secret scan job：pinned gitleaks CLI binary 扫描当前 tracked working tree + custom regex backstop。不读本地真实 `.env` / secrets / logs / dumps / backups / target / node_modules / dist / build / `.git`；不注入 repository secret；不用 `gitleaks-action`；不依赖 `GITLEAKS_LICENSE`；不用 trufflehog verify 或任何外部验证。落实 4A 两个 P3 实现提示（扫描目标限定 tracked tree、用 CLI binary 规避 license）。
+
+### 修改文件
+
+- `.github/workflows/ci.yml`：新增 `secret-scan` job（4 步：安装 pinned gitleaks 8.18.4 CLI / 构建 tracked safe-file 列表 / `gitleaks detect --no-git --redact` 扫 staged safe tree / custom regex backstop）。`permissions: contents: read`、无 repository secret、无 `continue-on-error`、fail closed。
+- `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`：Batch 4B 状态 -> IMPLEMENTED / PENDING FIRST CI RUN；记录实现摘要、与 4A 计划差异、本地验证、未验证项；软化 P2 表内 PEM 字面量为 `BEGIN PRIVATE KEY`；更新 Review decision / Next concrete action / Boundary confirmation；Batch 4C / 4F 标注 NOT STARTED。
+- `docs/current/NQ_CI_BASELINE_PLAN.md`：Batch 4 section 同步 4B implemented baseline 与 4C/4F NOT STARTED；header 与 Next concrete action 同步。
+- `docs/current/README.md`：状态行与两处 doc 索引同步 4B implemented / pending first CI run。
+- `docs/current/TESTING.md`：记录本地验证与未验证项。
+- `docs/current/WORKLOG.md`：本条。
+
+未新增 tracked 文件（gitleaks 配置与 backstop pattern 均 inline 写入 `RUNNER_TEMP`，因此无需新增 `.github/gitleaks.toml`）。`ROADMAP.md` 不在本轮允许修改清单内，未改动。
+
+### 实现要点
+
+- gitleaks：pinned `8.18.4` CLI binary，`curl`（无 token）从 GitHub release 下载，安装后 `gitleaks version` 必须等于 `8.18.4`；`gitleaks detect --no-git --source <staged> --redact`（只扫 tracked working tree，禁止 full-history scan，redact 保证不输出 secret value）。inline 配置 `useDefault = true` + 精确 allowlist（4 个 Binance fake-key / PEM 协议常量文件 by path + 占位 marker by value），核心规则未放宽。
+- backstop：覆盖 `sk-ant-` / `sk-proj-` / `sk-` / `github_pat_` / `gh[pousr]_` / AKIA / ASIA / PEM private key / `xoxb-` / `xoxp-` / value-bearing mnemonic / value-bearing 凭证赋值；只输出 `file | pattern`；value-bearing pattern 过滤 placeholder；`pem_private` 对 4 个 Binance 文件 path 精确 allowlist。
+- 排除清单：`.env` / `.env.*` / secrets / credentials / `*.pem` / `*.key` / `*.p12` / `*.jks` / `*.keystore` / target / node_modules / dist / build / coverage / logs / dumps / backups / `.git`。`.env.example` 三模板按 `.env.*` 被排除，不再需要模板占位 allowlist。
+
+### 验证
+
+- custom backstop 本地复刻验证（file-driven，patterns 经 quoted heredoc，逻辑与 workflow 完全一致）：当前 tracked safe tree **0 非 allowlisted 命中**；新增 `secret-scan` job 与 plan 文档均未自命中。
+- `git ls-files`：1303 tracked -> 排除后 1300 safe；被排除恰为三个 `.env.example` 模板。
+- IntelliJ `get_file_problems`（errorsOnly）对 `ci.yml`：0 errors；heredoc 终止符缩进核对正确（10 空格 -> dedent 第 0 列）。
+- gitleaks CLI 未在本地运行：本地 Windows 开发环境 `python` 为 Microsoft Store stub、无预装 gitleaks；gitleaks layer 完整 FP 面留待 GitHub Actions first run（Batch 4D）。
+
+### 边界确认
+
+- Batch 4B：IMPLEMENTED / PENDING FIRST CI RUN（不得写 FROZEN / ACCEPTED / fully implemented）。Batch 4C artifact/log redaction guard、Batch 4F dependency audit：NOT STARTED。Batch 5 frontend E2E hardening：PENDING。
+- Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），未改既有 job。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real exchange permission probe adapter NOT IMPLEMENTED。
+- 未改代码 / 测试 / migration / backend production / frontend / research / scripts / deploy；未注入 repository secret；未用 write / id-token / `continue-on-error` / `GITLEAKS_LICENSE`；未读取或输出真实 credential material；未扫描禁止目录；未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+
+### 下一步
+
+首次 GitHub Actions run 成功则 `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW`，失败则 `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX`。不得把 Batch 4 写成 fully implemented，不得把 Batch 4C / dependency audit 写成 implemented，不得把 Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4A-PLAN-REVIEW
 
 日期：2026-06-17

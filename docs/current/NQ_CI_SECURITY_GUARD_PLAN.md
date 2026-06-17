@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
 日期：2026-06-17
-状态：Batch 4 PLAN ONLY / NOT IMPLEMENTED；Batch 4A plan review PASS / ACCEPTED AS IMPLEMENTATION BASELINE（2026-06-17，P0/P1=0，详见本文件「Batch 4A: security guard plan review」段落）。本文件只规划 security guard / secret scan baseline，不修改 `.github/workflows/ci.yml`，不改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复实现；Batch 5 frontend E2E hardening 仍 PENDING。
+状态：Batch 4A plan review PASS / ACCEPTED；Batch 4B secret scan minimal implementation IMPLEMENTED / PENDING FIRST CI RUN（2026-06-17，详见「Batch 4B」段落）；Batch 4C artifact/log redaction guard NOT STARTED；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。本轮已修改 `.github/workflows/ci.yml` 新增最小 `secret-scan` job（pinned gitleaks CLI + custom regex backstop），未改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复实现。不得把 Batch 4 写成 fully implemented，不得把 Batch 4C / dependency audit 写成 implemented，不得把 Batch 5 写成 started。
 
 ## Task classification
 
@@ -71,7 +71,7 @@ Forbidden in this planning batch:
 | --- | --- | --- | --- |
 | 无专用 secret scan job | 当前 6 jobs 无 gitleaks / secret pattern scan；唯一相关检查是 `postgres-flyway` 内针对 schema artifact 的 redaction check。 | P1（Batch 4 实现目标）：tracked source / config / workflow / docs 无统一 secret 扫描。 | Batch 4B 必须新增 tracked-file secret scan，fail closed。 |
 | `.env.example` 模板误报 | `.env.example`、`frontend/.env.example`、`deploy/.env.freeze.example` 为 tracked 占位模板，含 `REPLACE_WITH_LOCAL_*` / `CHANGE_ME_*` 与本地默认值（如 `NQ_DB_PASSWORD=123456`、空 `NQ_*_API_KEY=`）。 | P2：naive scanner 会把占位模板 / 本地 DB 默认值误判为 secret。 | Batch 4B 必须为这三个模板配置 allowlist / placeholder 例外，且仍禁止真实值进入模板。 |
-| Binance adapter fake 测试私钥 | `BinanceRuntimeConfigTest` / `BinanceRequestSignerTest` / `BinanceHttpClientTest` 含 `-----BEGIN PRIVATE KEY-----\nZm9v...` 等 fake PEM；`BinanceEd25519RequestSigner` 含 `PRIVATE_KEY_BEGIN` 常量。 | P2：PEM-header 规则会命中既有合法测试 fixture 与协议常量。 | Batch 4B 必须 allowlist 这些 test fixtures / 常量行，避免阻塞绿灯而不放宽真实 secret 检测。 |
+| Binance adapter fake 测试私钥 | `BinanceRuntimeConfigTest` / `BinanceRequestSignerTest` / `BinanceHttpClientTest` 含 PEM 私钥 header（`BEGIN PRIVATE KEY`，连字符省略）+ fake body（base64 `Zm9v`）等 fake PEM；`BinanceEd25519RequestSigner` 含 `PRIVATE_KEY_BEGIN` 协议常量。 | P2：PEM-header 规则会命中既有合法测试 fixture 与协议常量。 | Batch 4B 已对这 4 个文件做 path 精确 allowlist（gitleaks + backstop），避免阻塞绿灯而不放宽真实 secret 检测。 |
 | Artifact 泄露 | `postgres-flyway` 上传 `nq-postgres-flyway-schema-artifacts`（schema-only，已过 redaction check）。无其他上传 artifact。 | P2：未来若上传 Surefire reports / build logs / frontend / research 产物，可能夹带 secret。 | Batch 4C 必须把 "upload 前 redaction" 固化为通用规则，不只针对 schema dump。 |
 | Job 日志泄露 | Batch 2C/2D/3 已记录 disposable CI PostgreSQL 值的平台级显示与 Spring Boot generated dev password 作为 P3 log hygiene residual；`gho_` GitHub token 被平台 mask 为 `***`。 | P2/P3：CI 日志 hygiene residual 已知且非真实 credential。 | Batch 4C 提供 log redaction proof，确认无真实 credential / raw request / raw response / signature。 |
 | GitHub Actions 权限过大 | 顶层 `permissions: contents: read`；各 job 未单独提权；无 `pull-requests: write`、`id-token: write` 等。 | P3：当前最小化已就位，主要是回归防护。 | Batch 4B 固定 security job `contents: read`，禁止隐式 write，禁止注入 secrets。 |
@@ -179,9 +179,20 @@ Log redaction proof（Batch 4C）：
 
 ### Batch 4B: secret scan minimal implementation
 
-- Status target: IMPLEMENTED / PENDING FIRST CI RUN。
-- Scope: 在 `.github/workflows/ci.yml` 新增 merge-blocking secret scan job（pinned gitleaks + custom regex backstop）+ allowlist 配置 + LIVE/boundary static guard。
-- Success: scanner 对受控 fake secret fail closed；三个 `.env.example` 模板、Binance fake 测试私钥、disposable CI DB 占位被 allowlist 而不放宽真实检测；job 不注入 repository secret、不访问真实交易所、`contents: read`；无 Batch 5 frontend E2E hardening、无 dependency audit blocking。
+- Status: IMPLEMENTED / PENDING FIRST CI RUN（`NQ-CI-SECURITY-GUARD-BATCH-4B-SECRET-SCAN-IMPL`，2026-06-17）。本状态只表示 workflow 已落地最小 secret scan baseline，尚未取得 GitHub Actions first green evidence；不得写成 FROZEN / ACCEPTED。
+- 已实现内容（`.github/workflows/ci.yml` 新增 `secret-scan` job）：
+  - job 级 `permissions: contents: read`；不注入任何 repository secret；不依赖 `GITLEAKS_LICENSE`；无 `continue-on-error`；secret scan 失败 fail closed 阻塞 CI。
+  - 步骤 1：安装 pinned gitleaks CLI binary（`GITLEAKS_VERSION=8.18.4`），从 GitHub release 以 `curl`（无 token / 无 auth header）下载，安装后 `gitleaks version` 必须等于 `8.18.4`，否则 fail。不使用 `gitleaks-action`。
+  - 步骤 2：基于 `git ls-files -z` 构建 tracked safe-file 列表，排除 `.env` / `.env.*` / `secrets` / `credentials` / `*.pem` / `*.key` / `*.p12` / `*.jks` / `*.keystore` 与 `target` / `node_modules` / `dist` / `build` / `coverage` / `logs` / `dumps` / `backups` / `.git`。
+  - 步骤 3：把 safe 文件 stage 到 `RUNNER_TEMP` 后用 `gitleaks detect --no-git --source <staging> --redact` 扫描（只扫当前 tracked working tree，禁止 full-history scan；`--redact` 保证日志/报告不输出 secret value）。gitleaks 配置 inline 写入 `RUNNER_TEMP`（非 tracked，不被扫描），`[extend] useDefault = true` + 精确 allowlist（4 个 Binance fake-key / PEM 协议常量文件 by path + `REPLACE_WITH_LOCAL` / `CHANGE_ME` / `FAKE-PLACEHOLDER` 占位 marker by value），核心规则未放宽。
+  - 步骤 4：custom regex backstop（pattern 通过 quoted heredoc inline，无新增 tracked 文件），覆盖 `sk-ant-` / `sk-proj-` / `sk-` / `github_pat_` / `gh[pousr]_` / `AKIA` / `ASIA` / PEM private key（含 RSA / EC / OPENSSH / DSA / PGP）/ `xoxb-` / `xoxp-` / value-bearing mnemonic / value-bearing 凭证赋值（`apiKey` / `secret` / `passphrase` / `privateKey` / `token` / `encrypted_payload` / `decrypted_payload`）。backstop 只输出 `file | pattern`，绝不输出命中值；value-bearing pattern 过滤 placeholder marker；`pem_private` 对 4 个 Binance 文件精确 path allowlist。
+- 已落实 4A 两个 P3 实现提示：扫描目标限定当前 tracked working tree（`--no-git`，非 full-history）；用 pinned gitleaks CLI binary 而非 `gitleaks-action`，不依赖 `GITLEAKS_LICENSE` repository secret。
+- 与 4A 计划的差异（已记录，非越界）：
+  - `.env.example` 三个模板按本轮 4B 排除清单（含 `.env.*`）被排除出扫描范围，因此无需对模板占位行单独 allowlist；模板仍由 `.gitignore` 占位纪律 + 独立 sweep 保证 placeholder-only。后续 Batch 4C/freeze 可评估是否把模板重新纳入 scope + allowlist。
+  - LIVE/boundary static guard 不在本轮最小 secret-scan-only 4B 内（4B 任务范围限定 secret scan）；LIVE / RealClient rejection 回归仍由 Batch 3 backend tests（`LIVE_CREDENTIAL_BLOCKED` / NoReal probe）覆盖。LIVE/boundary static guard 留作后续 Batch 4 step / 4C。
+  - 本文件 P2 风险表内既有 PEM 字面量已软化为 `BEGIN PRIVATE KEY`（连字符省略），避免 security 文档自命中 scanner。
+- 本地验证：custom regex backstop（file-driven，复刻 workflow 逻辑）对当前 tracked safe tree 0 非 allowlisted 命中（含新增 `secret-scan` job 与本文件，均未自命中）。gitleaks CLI 未在本地执行（本地 Windows 开发环境 `python` 为 Microsoft Store stub、无预装 gitleaks）；gitleaks layer 的完整 FP 面留待 GitHub Actions first run 验证（Batch 4D）。
+- Success 判据（待 first CI run 确认）：scanner 对受控 fake secret fail closed；Binance fake 测试私钥 / PEM 协议常量被精确 allowlist 而不放宽真实检测；job 不注入 repository secret、不访问真实交易所、`contents: read`；无 Batch 5 frontend E2E hardening、无 dependency audit blocking。
 
 ### Batch 4C: artifact / log redaction proof
 
@@ -271,21 +282,26 @@ rg 仅用于 tracked safe paths；未把扫描扩展到 `.env` / secrets / logs 
 
 ## Boundary confirmation
 
-- 未修改 `.github/workflows/ci.yml`。
+- 本轮（Batch 4B）已修改 `.github/workflows/ci.yml`：仅新增最小 `secret-scan` job（pinned gitleaks CLI + custom regex backstop），未改 `diff-check` / `no-outbound-guard` / `backend` / `postgres-flyway` / `frontend` / `research` 既有 job。
 - 未修改 Java / TypeScript / Python 代码与测试代码；未新增测试。
 - 未新增 API；未新增 migration；未修改历史 migration。
 - 未修改 backend production code / frontend / research / scripts / deploy。
-- 未读取、打印、复制或输出真实 credential material；未把禁止目录作为数据源扫描。
+- 未新增 tracked 文件（gitleaks 配置与 backstop pattern 均 inline 写入 `RUNNER_TEMP`，不落仓库）。
+- 未注入 repository secret；未使用 write / id-token permission；未使用 `continue-on-error`；不依赖 `GITLEAKS_LICENSE`。
+- 未读取、打印、复制或输出真实 credential material；未把禁止目录作为数据源扫描；未做 full-history scan。
 - 未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
 - 未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
-- Batch 4 保持 PLAN ONLY / NOT IMPLEMENTED；Batch 5 仍 PENDING。
+- Batch 4B secret scan IMPLEMENTED / PENDING FIRST CI RUN；Batch 4C / 4F NOT STARTED；Batch 5 仍 PENDING。
 
 ## Review decision
 
-PLAN REVIEWED / PASS / ACCEPTED AS IMPLEMENTATION BASELINE（Batch 4A plan review，2026-06-17）。P0/P1 blockers = 0；P3 = 5 项（含评审新增 2 项 gitleaks 实现提示），均非阻断。25 项评审 checklist 全部满足。
-
-本 plan 可作为 Batch 4B / 4C secret scan / security guard 的 implementation baseline，但本轮仍未实现任何 guard。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
+Batch 4A plan review：PASS / ACCEPTED AS IMPLEMENTATION BASELINE（2026-06-17，P0/P1=0）。
+Batch 4B secret scan minimal implementation：IMPLEMENTED / PENDING FIRST CI RUN（2026-06-17）。已落地 `secret-scan` job（pinned gitleaks 8.18.4 CLI + custom regex backstop），custom backstop 本地复刻验证 0 非 allowlisted 命中；gitleaks layer 留待 first CI run 验证。Batch 4C artifact/log redaction guard、Batch 4F dependency audit 仍 NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING；Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复。不得把 Batch 4 写成 fully implemented / security hardening completed。
 
 ## Next concrete action
 
-Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4B`（secret scan minimal implementation，建议先落实评审 2 项 P3 实现提示）、Batch 4A plan fix（如复审提出修正），或暂停 CI 线。Batch 4 当前 PLAN ONLY / NOT IMPLEMENTED（4A reviewed / accepted）；Batch 5 仍 PENDING；不得把 Batch 4 写成 implemented 或把 Batch 5 写成 started。
+Next concrete action（取决于 GitHub Actions 首次运行）：
+- 若首次运行成功：`NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW`。
+- 若失败：`NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX`（先取 secret-scan job 失败日志，定位 gitleaks FP / 安装失败 / 脚本问题，再做最小修复）。
+
+Batch 4B 当前 IMPLEMENTED / PENDING FIRST CI RUN；Batch 4C / 4F NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4 写成 fully implemented，不得把 dependency audit / Batch 5 写成 started。

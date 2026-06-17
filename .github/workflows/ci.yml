@@ -692,3 +692,185 @@ jobs:
 
       - name: Run ruff
         run: python -m ruff check . --no-cache
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+
+    env:
+      CI: "true"
+      GITLEAKS_VERSION: "8.18.4"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pinned gitleaks CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Pinned version only (no 'latest'); no token / auth header is passed to the download.
+          version="${GITLEAKS_VERSION}"
+          work="$(mktemp -d)"
+          asset="gitleaks_${version}_linux_x64.tar.gz"
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${version}/${asset}"
+
+          curl --fail --silent --show-error --location --output "${work}/${asset}" "${url}"
+          tar -C "${work}" -xzf "${work}/${asset}" gitleaks
+          sudo install -m 0755 "${work}/gitleaks" /usr/local/bin/gitleaks
+
+          installed="$(gitleaks version)"
+          echo "Installed gitleaks version: ${installed}"
+          if [ "${installed}" != "${version}" ]; then
+            echo "Expected pinned gitleaks ${version} but found ${installed}" >&2
+            exit 1
+          fi
+
+      - name: Build tracked safe-file list
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Only the current tracked working tree. No git history, no untracked / ignored files.
+          git ls-files -z > "${RUNNER_TEMP}/nq-secret-scan-tracked.0"
+          : > "${RUNNER_TEMP}/nq-secret-scan-safe-files.0"
+
+          while IFS= read -r -d '' f; do
+            case "${f}" in
+              .env|.env.*|*/.env|*/.env.*) continue;;
+              secrets|secrets/*|*/secrets/*|credentials|credentials/*|*/credentials/*) continue;;
+              *.pem|*.key|*.p12|*.jks|*.keystore) continue;;
+              .git/*|*/target/*|*/node_modules/*|*/dist/*|*/build/*|*/coverage/*) continue;;
+              *.log|logs/*|*/logs/*|log/*|*/log/*) continue;;
+              *.dump|dumps/*|*/dumps/*|dump/*|*/dump/*) continue;;
+              *.bak|*.backup|backups/*|*/backups/*|backup/*|*/backup/*) continue;;
+              *) printf '%s\0' "${f}" >> "${RUNNER_TEMP}/nq-secret-scan-safe-files.0";;
+            esac
+          done < "${RUNNER_TEMP}/nq-secret-scan-tracked.0"
+
+          tracked_count="$(tr -cd '\0' < "${RUNNER_TEMP}/nq-secret-scan-tracked.0" | wc -c)"
+          safe_count="$(tr -cd '\0' < "${RUNNER_TEMP}/nq-secret-scan-safe-files.0" | wc -c)"
+          echo "tracked=${tracked_count} safe_scanned=${safe_count} excluded=$((tracked_count - safe_count))"
+
+      - name: Run pinned gitleaks secret scan (tracked working tree, no history)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          safe_list="${RUNNER_TEMP}/nq-secret-scan-safe-files.0"
+          staging="${RUNNER_TEMP}/nq-secret-scan-staging"
+          config="${RUNNER_TEMP}/nq-secret-scan-gitleaks.toml"
+          report="${RUNNER_TEMP}/nq-secret-scan-gitleaks-report.json"
+
+          # Stage only the tracked safe files (preserving relative paths) so gitleaks scans
+          # exactly the working-tree subset, never git history or excluded files.
+          rm -rf "${staging}"
+          mkdir -p "${staging}"
+          tar --null -T "${safe_list}" -cf - | tar -C "${staging}" -xf -
+
+          # gitleaks config is written at runtime to RUNNER_TEMP (not a tracked file, not scanned).
+          # Precise allowlist only: known fake test keys / PEM protocol constant by path, plus a
+          # few exact placeholder markers by value. Core detection rules are NOT relaxed.
+          cat > "${config}" <<'TOML'
+          [extend]
+          useDefault = true
+
+          [allowlist]
+          description = "NQ Batch 4B precise allowlist (fake test keys, PEM protocol constant, placeholder markers)"
+          regexTarget = "match"
+          regexes = [
+            '''REPLACE_WITH_LOCAL''',
+            '''CHANGE_ME''',
+            '''FAKE-PLACEHOLDER''',
+          ]
+          paths = [
+            '''.*adapter/binance/service/BinanceRuntimeConfigTest\.java$''',
+            '''.*adapter/binance/service/BinanceRequestSignerTest\.java$''',
+            '''.*adapter/binance/service/BinanceHttpClientTest\.java$''',
+            '''.*adapter/binance/service/BinanceEd25519RequestSigner\.java$''',
+          ]
+          TOML
+
+          # --no-git: scan files in the staged directory only, never git history.
+          # --redact: never print secret values in logs or the report.
+          set +e
+          gitleaks detect \
+            --source "${staging}" \
+            --no-git \
+            --config "${config}" \
+            --redact \
+            --report-format json \
+            --report-path "${report}" \
+            --exit-code 1 \
+            --no-banner
+          rc=$?
+          set -e
+
+          if [ "${rc}" -ne 0 ]; then
+            echo "gitleaks detected potential secrets in the tracked working tree (values redacted). Failing CI." >&2
+            exit 1
+          fi
+          echo "gitleaks: no leaks found in tracked working tree."
+
+      - name: Run custom regex secret backstop
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          safe_list="${RUNNER_TEMP}/nq-secret-scan-safe-files.0"
+          patterns="${RUNNER_TEMP}/nq-secret-scan-patterns.txt"
+          violations="${RUNNER_TEMP}/nq-secret-scan-backstop-violations.txt"
+          : > "${violations}"
+
+          # NAME<space>ERE per line. Quoted heredoc: regex meta-characters are not expanded.
+          cat > "${patterns}" <<'PATTERNS'
+          anthropic_key sk-ant-[A-Za-z0-9_-]{20,}
+          openai_proj_key sk-proj-[A-Za-z0-9_-]{20,}
+          openai_key sk-[A-Za-z0-9]{32,}
+          github_fine_pat github_pat_[A-Za-z0-9_]{20,}
+          github_classic_pat gh[pousr]_[A-Za-z0-9]{30,}
+          aws_akia AKIA[0-9A-Z]{16}
+          aws_asia ASIA[0-9A-Z]{16}
+          pem_private -----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----
+          slack_bot xoxb-[A-Za-z0-9-]{10,}
+          slack_user xoxp-[A-Za-z0-9-]{10,}
+          mnemonic_value (mnemonic|seed[_-]?phrase)["']?[[:space:]]*[:=][[:space:]]*["']([a-z]+[[:space:]]+){5,}[a-z]+
+          suspicious_assignment (api[_-]?key|api[_-]?secret|client[_-]?secret|passphrase|private[_-]?key|access[_-]?token|auth[_-]?token|encrypted_payload|decrypted_payload)["']?[[:space:]]*[:=][[:space:]]*["'][A-Za-z0-9/+_=-]{20,}["']
+          PATTERNS
+
+          # Placeholder / non-real markers dropped from value-bearing patterns only.
+          placeholder='REPLACE_WITH_LOCAL|CHANGE_ME|DUMMY|dummy|FAKE|fake|test-only|example|EXAMPLE|placeholder|PLACEHOLDER|YOUR_|\$\{|getenv|process\.env|import\.meta\.env|Zm9v|<[A-Za-z]'
+
+          # Precise allowlist: pem_private rule on the 4 known Binance fake-key / protocol-constant files.
+          allow_pem='(adapter/binance/service/BinanceRuntimeConfigTest\.java|adapter/binance/service/BinanceRequestSignerTest\.java|adapter/binance/service/BinanceHttpClientTest\.java|adapter/binance/service/BinanceEd25519RequestSigner\.java)$'
+
+          while IFS=' ' read -r name re; do
+            [ -z "${name}" ] && continue
+            files="$(xargs -0 grep -lE -e "${re}" < "${safe_list}" 2>/dev/null || true)"
+            [ -z "${files}" ] && continue
+            while IFS= read -r f; do
+              [ -z "${f}" ] && continue
+              if [ "${name}" = "suspicious_assignment" ] || [ "${name}" = "mnemonic_value" ]; then
+                c="$(grep -InE -e "${re}" "${f}" 2>/dev/null | grep -ivE -e "${placeholder}" | wc -l)"
+                [ "${c}" -eq 0 ] && continue
+              fi
+              if [ "${name}" = "pem_private" ] && printf '%s' "${f}" | grep -qE -e "${allow_pem}"; then
+                continue
+              fi
+              # Report file + pattern name only. Never print the matched value.
+              echo "${name} | ${f}" >> "${violations}"
+            done <<< "${files}"
+          done < "${patterns}"
+
+          count="$(wc -l < "${violations}" | tr -d ' ')"
+          if [ "${count}" -gt 0 ]; then
+            echo "Custom regex backstop found ${count} non-allowlisted match(es) (file + pattern only):" >&2
+            cat "${violations}" >&2
+            exit 1
+          fi
+          echo "Custom regex backstop: no non-allowlisted matches over tracked safe tree."
