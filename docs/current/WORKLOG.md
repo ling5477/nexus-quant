@@ -2,6 +2,43 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+评审 secret-scan job 首次 GitHub Actions run，确认 secret-scan job 是否在真实 runner 通过、gitleaks 安装 / staging / detect / backstop 是否成功、有无真实 credential 泄露 / 禁止目录扫描 / 越界实现。只评审 + 改 docs，不改 workflow / 代码 / 测试 / migration。
+
+### 评审结论：FAIL / FIRST-RUN-FIX REQUIRED
+
+- first run `27662197509`（commit `6db97535`，push / dev）completed / **failure**。
+- 7 个 job 中 6 个 green：Diff check、No-outbound guard、Backend Maven test、PostgreSQL / Flyway smoke、Frontend build、Research quality gate。
+- 唯一失败：`Secret scan` job / step `Run pinned gitleaks secret scan`。gitleaks 安装 + `8.18.4` 版本校验通过；`gitleaks detect --no-git --redact` 实际执行（911ms）后 `leaks found: 1`，脚本按设计 fail closed。
+- 失败类别：**gitleaks default-ruleset false positive（1 finding）**，custom backstop 窄正则 / 现有 allowlist 未覆盖；非 install / 版本 / tracked-list staging / YAML / heredoc / 脚本错误。custom backstop step 因前一步失败被 skip。
+- 诊断缺口：gitleaks step 未带 `-v` / `--verbose`，仅打印 `leaks found: N` 摘要，未输出 RuleID / File / Line；JSON 报告写 `RUNNER_TEMP` 未上传（Batch 4C 未开始）→ 当前无法从 CI 日志定位 FP 具体 rule / file。
+- 安全确认：`--redact` 生效，日志未输出 secret value；secret-scan job `contents: read`、无 repository secret、无 `gitleaks-action` / `GITLEAKS_LICENSE` / `id-token` / write / `continue-on-error`、无 full-history scan（已复核 commit `6db97535` 的 `ci.yml`）。
+
+### 修改文件（仅 docs，未改 workflow）
+
+- `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`：Batch 4B 状态 -> IMPLEMENTED / FIRST CI RUN FAILED / FIRST-RUN-FIX REQUIRED；新增「Batch 4B first-run review」证据段 + FIX 任务建议；更新 status / Review decision / Next concrete action / Boundary confirmation。
+- `docs/current/NQ_CI_BASELINE_PLAN.md`：header / Batch 4 section / Next concrete action 同步 first-run 失败。
+- `docs/current/README.md`：状态行 + 两处 doc 索引同步。
+- `docs/current/TESTING.md`：first-run review 证据表 + 未验证项。
+- `docs/current/WORKLOG.md`：本条。
+
+### 边界确认
+
+- 本轮未改 `.github/workflows/ci.yml`（fix 属下一任务）；未改代码 / 测试 / migration / frontend / research / scripts / deploy。
+- Batch 4B：IMPLEMENTED / FIRST CI RUN FAILED / FIRST-RUN-FIX REQUIRED（不得写 FIRST GREEN / FROZEN / ACCEPTED）。Batch 4C / 4F：NOT STARTED。Batch 5：PENDING。
+- Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）；6 个既有 job 未回归。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real exchange permission probe adapter NOT IMPLEMENTED。
+- 未读取 / 输出真实 credential material；未扫描禁止目录；未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX`：第一步让 finding 可见（gitleaks 加 `-v` 配合 `--redact`，或临时打印 / 上传 redacted 报告，定位 RuleID / File / Line），再最小精确处置（path + rule + fingerprint allowlist 或收敛 ruleset，禁止放宽核心规则 / 删测试样例 / broad allowlist），重跑 CI 后 second-pass first-run review。不得混入 Batch 4C / 4F / Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-SECRET-SCAN-IMPL
 
 日期：2026-06-17

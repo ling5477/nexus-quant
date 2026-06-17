@@ -2,6 +2,44 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 4B first-run review：只评审 secret-scan job 首次 GitHub Actions run，不进入 Batch 4C / 4F / Batch 5，不改业务代码、不改 workflow。结论 **FAIL / FIRST-RUN-FIX REQUIRED**：first run `27662197509` 6/7 jobs green，仅 `Secret scan` job 失败于 gitleaks `leaks found: 1`（default-ruleset false positive）。
+
+| 评审项 | 结果 | 证据 |
+| --- | --- | --- |
+| GitHub Actions run | **失败** | run `27662197509`，commit `6db97535`，event push / branch dev，completed / **failure**。 |
+| Diff check | 通过 | success。 |
+| No-outbound guard | 通过 | success（Batch 3 baseline 未回归）。 |
+| Backend Maven test | 通过 | success。 |
+| PostgreSQL / Flyway smoke | 通过 | success。 |
+| Frontend build | 通过 | success。 |
+| Research quality gate | 通过 | success。 |
+| **Secret scan** | **失败** | 唯一失败 job；失败 step = `Run pinned gitleaks secret scan (tracked working tree, no history)`。 |
+| gitleaks 安装 / 版本 | 通过 | install step success；`GITLEAKS_VERSION 8.18.4` 版本校验通过；非 install / 版本错误。 |
+| gitleaks detect 执行 | 已执行 | 日志 `scan completed in 911ms` 后 `WRN leaks found: 1`；脚本按设计 `rc != 0 -> exit 1` fail closed。 |
+| 失败类别 | gitleaks FP | gitleaks default 规则比 custom backstop 窄正则更宽，命中 1 处未覆盖内容；非 binary install / tracked-list staging / YAML / heredoc / 脚本错误。custom backstop step 因 gitleaks step 先失败被 skip。 |
+| 诊断缺口 | 已确认 | gitleaks step 未带 `-v` / `--verbose`，只打印 `leaks found: N` 摘要，未输出 RuleID / File / Line；JSON 报告写 `RUNNER_TEMP` 未上传（Batch 4C 未开始）；当前无法从 CI 日志定位 FP 具体 rule / file。 |
+| secret value 泄露 | 无 | `--redact` 生效，日志仅 `leaks found: 1`，未输出任何 secret value。 |
+| job 边界 | 合规 | `permissions: contents: read`；无 repository secret；无 `gitleaks-action` / `GITLEAKS_LICENSE` / `id-token` / write / `continue-on-error`；无 full-history scan（已对 commit `6db97535` 的 `ci.yml` 复核）。 |
+| 安全边界 | 通过 | 未读取 / 输出真实 credential material；未扫描禁止目录；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。 |
+| 本地诊断（best-effort） | 部分 | 本地 Windows 无 gitleaks（`python` 为 Store stub），无法精确复现 default-ruleset 的 entropy 判定；`fx-forbidden-fields.json` / `fx-feedback-invalid.json` 均用 `FAKE-PLACEHOLDER`（已 allowlist），非 culprit；具体 FP 待 FIX 用 `-v` 暴露。 |
+
+复核命令：
+
+```powershell
+git status --short
+git diff --check
+git show --stat --oneline HEAD
+git diff -- backend; git diff -- frontend; git diff -- research; git diff -- scripts; git diff -- deploy; git diff -- backend/**/db/migration
+gh run view 27662197509 --json jobs
+gh run view 27662197509 --log --job <secret-scan-job-id>   # secret-scan / backend / postgres-flyway / no-outbound-guard
+```
+
+未验证项：FP 的具体 RuleID / File（需 FIX 加 `-v` 暴露后确认）；secret-scan job 在加 `-v` / 精确 allowlist 后的 green run。
+
+Review decision: FAIL / FIRST-RUN-FIX REQUIRED。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX`（先让 finding 可见，再 path + rule + fingerprint 精确 allowlist 或收敛 ruleset，禁止放宽核心规则 / 删测试样例 / broad allowlist），修复后重跑 CI 与 second-pass review。不得把 Batch 4B 写成 FIRST GREEN / FROZEN；不得混入 Batch 4C / 4F / Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-SECRET-SCAN-IMPL（2026-06-17）
 
 本轮是 GateK CI Batch 4B 最小 secret scan implementation：在 `.github/workflows/ci.yml` 新增 `secret-scan` job（pinned gitleaks CLI binary + custom regex backstop），只扫当前 tracked working tree，不读本地真实 `.env` / secrets / logs / dumps / backups / target / node_modules / dist / build / `.git`，不注入 repository secret，不用 `gitleaks-action`，不依赖 `GITLEAKS_LICENSE`。状态 IMPLEMENTED / PENDING FIRST CI RUN；Batch 4C / 4F 与 Batch 5 仍未开始。
