@@ -2,6 +2,37 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-SECOND-RUN-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+评审 first-run fix（commit `31540de8`）后的 GitHub Actions 第二次运行，确认 secret-scan job green、可见性修复未泄露 secret value、allowlist 未扩大、未扫描禁止目录、其它既有 job 未回归。只评审 + 改 docs。
+
+### 评审结论：PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX
+
+- second run `27674393780`（commit `31540de8`，push / dev）completed / **success**，7/7 jobs green：Diff check、No-outbound guard、Backend Maven test、PostgreSQL / Flyway smoke、Frontend build、Research quality gate、Secret scan。
+- secret-scan job（`81846054679`）7 steps 全 success：`Installed gitleaks version: 8.18.4`；`gitleaks detect --no-git --redact` -> `scan completed in 868ms` -> `no leaks found`；`tracked=1303 safe_scanned=1300 excluded=3`（排除恰为三个 `.env.example` 模板）；custom backstop step #6 实际执行 -> `no non-allowlisted matches`。
+- 边界复核：`Contents: read, Metadata: read`（无 write / id-token）；`token: ***` mask；`fetch-depth: 1`（no full-history scan）；无 `continue-on-error` / repository secret / `gitleaks-action` / `GITLEAKS_LICENSE`；gate-c allowlist 仍单文件、Binance allowlist 不变、未关 default ruleset。
+- 日志未输出 secret value / matched line / Secret / Match / commit / author（0 finding，未进入 sanitized 失败分支；日志中相关字样仅为 runner 回显的 step 脚本本体）。
+
+### 修改文件（仅 docs，未改 workflow）
+
+- `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`：Batch 4B 状态 -> SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX；新增「Batch 4B second-run review」证据段；更新 status / Review decision / Next concrete action / Boundary confirmation。
+- `docs/current/NQ_CI_BASELINE_PLAN.md`、`README.md`、`TESTING.md`、`WORKLOG.md`：同步状态与下一步。
+
+### 边界确认
+
+- 本轮未改 `.github/workflows/ci.yml`（fix 已在 commit `31540de8` 落地）；未改代码 / 测试 / migration / frontend / research / scripts / deploy。
+- Batch 4B：IMPLEMENTED / SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX（**未 FROZEN**，freeze 是 Batch 4E）。Batch 4C / 4F：NOT STARTED。Batch 5：PENDING。Batch 3 仍 FROZEN / ACCEPTED。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real exchange permission probe adapter NOT IMPLEMENTED。
+- 未读取 / 输出真实 credential material；未扫描禁止目录；未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4E`（Batch 4B secret scan baseline freeze review）或 `NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction proof planning），或暂停 CI 线。不得把 Batch 4B 直接写成 FROZEN / ACCEPTED；不得把 Batch 4C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX
 
 日期：2026-06-17

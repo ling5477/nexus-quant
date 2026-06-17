@@ -2,6 +2,43 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4B-SECOND-RUN-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 4B second-run review：评审 first-run fix（commit `31540de8`）后的 GitHub Actions 第二次运行。结论 **PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX**：second run `27674393780` completed / success，7/7 jobs green。只评审 + 改 docs，未改 workflow / 业务代码。Batch 4B 推进为 SECOND RUN GREEN / FIRST GREEN CONFIRMED AFTER FIX（**未 FROZEN**，freeze 是 Batch 4E）。
+
+| 评审项 | 结果 | 证据 |
+| --- | --- | --- |
+| GitHub Actions second run | **通过** | run `27674393780`，commit `31540de8`，push / dev，completed / **success**。 |
+| Diff check | 通过 | success。 |
+| No-outbound guard | 通过 | success（Batch 3 baseline 未回归）。 |
+| Backend Maven test | 通过 | success。 |
+| PostgreSQL / Flyway smoke | 通过 | success。 |
+| Frontend build | 通过 | success。 |
+| Research quality gate | 通过 | success。 |
+| **Secret scan** | **通过** | job `81846054679`，7 steps 全 success（install / build list / gitleaks detect / custom backstop）。 |
+| gitleaks 版本 | 通过 | `Installed gitleaks version: 8.18.4`（pinned CLI，非 `gitleaks-action`，无 `GITLEAKS_LICENSE`）。 |
+| gitleaks detect | 通过 | `--no-git --redact` -> `scan completed in 868ms` -> `gitleaks: no leaks found in tracked working tree.`。 |
+| 扫描范围 | 通过 | `tracked=1303 safe_scanned=1300 excluded=3`（排除恰为三个 `.env.example` 模板）；tracked safe paths only、no full-history scan。 |
+| custom regex backstop | 通过 | step #6 实际执行（gitleaks step 通过后）-> `Custom regex backstop: no non-allowlisted matches over tracked safe tree.`。 |
+| allowlist 精确性 | 通过 | gate-c allowlist 为单文件 `.*docs/gates/gate-c/WORK\.md$`（HEAD ci.yml 仅 1 条 gate 路径）；4 Binance fake key / PEM 协议常量 path allowlist 不变；未 broad allowlist、未关 default ruleset。 |
+| 日志无 secret 泄露 | 通过 | 0 finding，未进入 sanitized 失败分支；日志未输出 secret value / matched line / Secret / Match / commit / author。日志中 `Sanitized finding metadata` / `RuleID=` / `BEGIN PRIVATE KEY` 仅为 runner 回显的 step 脚本本体，非执行输出、非真实凭证。 |
+| 权限 / 边界 | 通过 | `GITHUB_TOKEN Permissions: Contents: read, Metadata: read`（无 write / id-token）；`token: ***` mask；`fetch-depth: 1`（shallow）；无 `continue-on-error`；无 repository secret 注入。 |
+| 既有 job 未回归 | 通过 | 本轮只改 secret-scan job（first-run fix）；6 个既有 job 全 green。 |
+| 安全边界 | 通过 | 未读取 / 输出真实 credential material；未扫描禁止目录；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。 |
+
+复核命令：
+
+```powershell
+git status --short; git diff --check; git show --stat --oneline --name-only HEAD
+git diff -- backend; git diff -- frontend; git diff -- research; git diff -- scripts; git diff -- deploy; git diff -- backend/**/db/migration
+gh run view 27674393780 --json jobs
+gh run view 27674393780 --log --job 81846054679   # secret-scan (+ 复核 backend / postgres-flyway / no-outbound-guard 均 success)
+```
+
+未验证项：无（second run 真实在 GitHub runner 执行并全绿）。Batch 4E freeze review 时可再复核 immutable run 证据。
+
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4E`（freeze review）、`NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction planning），或暂停 CI 线。不得把 Batch 4B 直接写成 FROZEN / ACCEPTED；不得把 Batch 4C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-FIRST-RUN-FIX（2026-06-17）
 
 本轮是 GateK CI Batch 4B first-run fix：最小修复 secret-scan job 首跑失败。先让 gitleaks finding 可见（不泄露 secret value），再做最小精确处置。结论 **FIRST-RUN-FIX APPLIED / PENDING SECOND CI RUN**。只改 `.github/workflows/ci.yml` 的 secret-scan job + 允许的 5 个 docs；未进入 Batch 4C / 4F / Batch 5，未改业务代码。
