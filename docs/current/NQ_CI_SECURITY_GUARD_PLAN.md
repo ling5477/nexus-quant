@@ -1,0 +1,277 @@
+# NQ CI Security Guard Plan
+
+任务：NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
+日期：2026-06-17
+状态：Batch 4 PLAN ONLY / NOT IMPLEMENTED。本文件只规划 security guard / secret scan baseline，不修改 `.github/workflows/ci.yml`，不改代码 / 测试 / migration / frontend / research / scripts / deploy。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复实现；Batch 5 frontend E2E hardening 仍 PENDING。
+
+## Task classification
+
+- Primary type: `CI_CD` planning。
+- Auxiliary: `SECURITY_AUDIT`（secret scan / artifact / permission baseline）、`DOCUMENTATION`。
+- Primary skill: `nq-dh-workflow-router`（任务分类、范围限定、Gate / 安全边界检查）。无辅助 skill 命中实现需求；MCP / 网络访问未使用。
+- 本轮严格 planning-only：所有结论来自只读检查与已冻结的 Batch 1/2/3 事实源，不落地任何 guard。
+
+## Scope
+
+Allowed in this planning batch:
+
+- 只读检查 `.github/workflows/ci.yml`、`.github/CODEOWNERS`、`.github/pull_request_template.md`。
+- 只读检查 `docs/current/NQ_CI_BASELINE_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_PLAN.md`、`NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。
+- 只读检查 backend / frontend / research 配置文件与 tracked `.env.example` 模板（不读取真实 secrets）。
+- 新增本文件 `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`。
+- 同步 `docs/current/README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md` 的 Batch 4 planning 状态。
+
+Forbidden in this planning batch:
+
+- 不修改 `.github/workflows/ci.yml`。
+- 不修改 Java / TypeScript / Python 代码与测试代码，不新增测试。
+- 不新增 API，不新增 migration，不修改历史 migration。
+- 不修改 backend production code、frontend、research、scripts、deploy。
+- 不读取、打印、复制或输出真实 credential material。
+- 不把 `.env` / secrets / dumps / logs / backups / `.git` / `target` / `node_modules` / `dist` / `build` 作为数据源扫描。
+- 不开启 LIVE，不接 AI，不接 DH runtime。
+- 不实现 RealClient、真实 provider、真实 OKX / Binance permission probe adapter。
+- 不调用真实交易所，不下单 / 撤单 / 转账 / 提现。
+- 不把 Batch 4 写成 implemented；不把 Batch 5 写成 started。
+
+## Files inspected
+
+只读检查（无修改）：
+
+- `.github/workflows/ci.yml`（6 jobs：`diff-check`、`backend`、`postgres-flyway`、`frontend`、`research`，以及 Batch 3 新增的 no-outbound guard job）。
+- `.github/CODEOWNERS`、`.github/pull_request_template.md`。
+- `.gitignore`、`.env.example`、`deploy/.env.freeze.example`（确认 ignore 边界与模板为占位符）。
+- `docs/current/NQ_CI_BASELINE_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_PLAN.md`、`NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。
+- `git ls-files` 输出（确认 tracked 文件中无真实 `.env` / `*.key` / `*.pem` / keystore / dump）。
+
+## Files changed
+
+- 新增：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`（本文件）。
+- 同步：`docs/current/README.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`（仅记录 Batch 4 planning 状态）。
+- 未修改任何 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。
+
+## Current CI baseline
+
+- Project: NexusQuant / NQ；branch `dev`；stage GateJ completed；Next: GateK-PLAN。
+- `.github/workflows/ci.yml` 当前 6 jobs 全 FROZEN / ACCEPTED：
+  - `diff-check`：changed-file whitespace gate（`git diff --check`）。
+  - `backend`：PostgreSQL service + post-Flyway CI-only legacy account fixture + `mvn -f backend/pom.xml test`。
+  - `postgres-flyway`：empty DB Flyway smoke、schema artifact 生成 / redaction check / upload、repository PostgreSQL smoke、`nq-app` context smoke。
+  - `frontend`：`npm ci` + `npm run build`。
+  - `research`：`pytest` + `mypy` + `ruff`。
+  - `no-outbound-guard`（Batch 3，run `27634370657`）：exchange credential env-absence 检查、denylist coverage 检查、`NoOutboundExchangeGuardTest`。
+- Workflow 顶层 `permissions: contents: read`（最小化已就位）。
+- 当前 CI 不注入任何 repository secrets；仅使用 disposable CI-only PostgreSQL 占位值（`nq_ci` / `nq_ci_user` / `nq_ci_password` / `postgres` / `123456`）。
+- `postgres-flyway` job 已存在一个 artifact redaction check（schema-only dump + 高风险 credential pattern fail-closed），是 Batch 4 secret/artifact scan 的最近一份事实先例。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real permission probe adapter NOT IMPLEMENTED；默认 credential permission probe port = `NoRealExchangeCredentialPermissionProbePort -> SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`。
+
+## Current security risk inventory
+
+| Area | Current evidence | Risk class for Batch 4 | Required proof |
+| --- | --- | --- | --- |
+| 无专用 secret scan job | 当前 6 jobs 无 gitleaks / secret pattern scan；唯一相关检查是 `postgres-flyway` 内针对 schema artifact 的 redaction check。 | P1（Batch 4 实现目标）：tracked source / config / workflow / docs 无统一 secret 扫描。 | Batch 4B 必须新增 tracked-file secret scan，fail closed。 |
+| `.env.example` 模板误报 | `.env.example`、`frontend/.env.example`、`deploy/.env.freeze.example` 为 tracked 占位模板，含 `REPLACE_WITH_LOCAL_*` / `CHANGE_ME_*` 与本地默认值（如 `NQ_DB_PASSWORD=123456`、空 `NQ_*_API_KEY=`）。 | P2：naive scanner 会把占位模板 / 本地 DB 默认值误判为 secret。 | Batch 4B 必须为这三个模板配置 allowlist / placeholder 例外，且仍禁止真实值进入模板。 |
+| Binance adapter fake 测试私钥 | `BinanceRuntimeConfigTest` / `BinanceRequestSignerTest` / `BinanceHttpClientTest` 含 `-----BEGIN PRIVATE KEY-----\nZm9v...` 等 fake PEM；`BinanceEd25519RequestSigner` 含 `PRIVATE_KEY_BEGIN` 常量。 | P2：PEM-header 规则会命中既有合法测试 fixture 与协议常量。 | Batch 4B 必须 allowlist 这些 test fixtures / 常量行，避免阻塞绿灯而不放宽真实 secret 检测。 |
+| Artifact 泄露 | `postgres-flyway` 上传 `nq-postgres-flyway-schema-artifacts`（schema-only，已过 redaction check）。无其他上传 artifact。 | P2：未来若上传 Surefire reports / build logs / frontend / research 产物，可能夹带 secret。 | Batch 4C 必须把 "upload 前 redaction" 固化为通用规则，不只针对 schema dump。 |
+| Job 日志泄露 | Batch 2C/2D/3 已记录 disposable CI PostgreSQL 值的平台级显示与 Spring Boot generated dev password 作为 P3 log hygiene residual；`gho_` GitHub token 被平台 mask 为 `***`。 | P2/P3：CI 日志 hygiene residual 已知且非真实 credential。 | Batch 4C 提供 log redaction proof，确认无真实 credential / raw request / raw response / signature。 |
+| GitHub Actions 权限过大 | 顶层 `permissions: contents: read`；各 job 未单独提权；无 `pull-requests: write`、`id-token: write` 等。 | P3：当前最小化已就位，主要是回归防护。 | Batch 4B 固定 security job `contents: read`，禁止隐式 write，禁止注入 secrets。 |
+| `continue-on-error` 掩盖 | 当前 workflow 无 `continue-on-error`；no-outbound guard 与 redaction check 均 fail closed。 | P2：若安全步骤被设为 `continue-on-error` 将掩盖失败。 | Batch 4 禁止安全步骤使用 `continue-on-error`；任何 soft-fail 必须显式 review。 |
+| Dependency audit 噪声 | `frontend` job 日志已出现既有 `npm audit` advisory summary（非阻断）。 | P2：dependency audit 噪声大，若直接 blocking 会阻塞 dev。 | Dependency audit 列为可选 Batch 4F，非阻断起步，不混入 secret scan baseline。 |
+| CODEOWNERS / PR 模板占位 | `.github/CODEOWNERS` 仍用占位 `@YOUR_GITHUB_USERNAME`；`.github/pull_request_template.md` 仅 1 行近空。 | P3：审查治理未生效；不属于 secret scan，但属安全治理 backlog。 | 记录为 P3 follow-up，不在 Batch 4 secret scan baseline 内强行处理。 |
+| 真实 credential 是否已泄露 | `git ls-files` 中无真实 `.env` / `*.key` / `*.pem` / keystore / dump；高风险字面量扫描（`AKIA` / `sk-` / `ghp_` / `gho_` / `xox` / PEM）仅命中 Binance fake 测试私钥与 PEM 常量。 | P0/P1=0：当前未发现真实 credential material。 | Batch 4 baseline 把"现状无真实泄露"作为基线，并防回归。 |
+
+## Secret scan plan
+
+扫描范围（fail-closed）：
+
+- 只扫描 **tracked source / config / workflow / docs**：基于 `git ls-files` 或在 clean checkout 上运行 secret scanner（scanner 默认 honor `.gitignore`）。
+- 必须排除（不作为数据源）：`.git`、`target`、`node_modules`、`dist`、`build`、`coverage`、`test-results`、`playwright-report`、`logs`、`*.log`、`dumps` / `*.dump`、`backups` / `*.backup` / `*.bak`、`artifacts/`、`freeze-evidence/`、`release/`。这些已在 `.gitignore` 覆盖；secret scan 额外显式排除以防 untracked 本地文件被扫。
+- 明确不读取本地真实 `.env` / `.env.<profile>` / 任何真实 secret 文件；`.gitignore` 已 ignore `.env` 与 `.env.*`（仅放行三个 `*.example` 模板）。
+- 工具选择：
+  - 主扫描：`gitleaks`（pinned action / pinned 版本）。gitleaks 在本地文件系统 / git history 上做正则 + 熵检测，不向外部服务发起验证请求，符合 no-outbound 边界。
+  - 备份扫描：一个轻量 **custom regex fail-closed step**，复用并扩展 `postgres-flyway` job 现有 redaction 正则（`ci.yml` 当前的高风险 credential pattern），作为 deterministic backstop，避免单一工具漂移。
+  - 不默认采用 `trufflehog` 的 verified-secret 模式：其 verify 会对外部 provider 发起请求，与 no-outbound 边界冲突；若引入只允许 `--no-verification` / unverified 模式，且需单独 review。
+- 误报处理：
+  - 用 gitleaks allowlist（`.gitleaks.toml` / `.gitleaksignore`）white-list 三个 `.env.example` 模板的占位行、Binance fake 测试私钥与 `PRIVATE_KEY_BEGIN` 常量行、disposable CI-only PostgreSQL 占位值。
+  - allowlist 必须按 **path + 规则 + 指纹** 精确范围，禁止全局放宽 PEM / API key 规则。
+  - 误报修正只允许加 allowlist 条目或收紧占位符命名，禁止删除真实检测规则、禁止把真实 secret 写进 allowlist。
+  - 所有 finding 只报告 file / path / rule / line，绝不打印命中值。
+
+## Credential pattern plan
+
+Batch 4 secret scan 至少覆盖以下凭证模式（命中即 fail closed，输出脱敏）：
+
+- API key（通用 `api[_-]?key` 赋值）。
+- API secret（`api[_-]?secret` / `secret` 赋值）。
+- passphrase（`passphrase` 赋值）。
+- token（`token` / bearer token 赋值；GitHub `ghp_` / `gho_` / `ghs_` / `ghr_`）。
+- private key（`private[_-]?key` 赋值）。
+- PEM block（`-----BEGIN [A-Z ]*PRIVATE KEY-----`）。
+- JWT（`eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+` 三段式）。
+- GitHub token（`ghp_` / `gho_` / `ghs_` / `ghr_` / `github_pat_`）。
+- AWS access key（`AKIA[0-9A-Z]{16}`，及 secret access key 形态）。
+- OpenAI / Anthropic style API key（`sk-[A-Za-z0-9]{20,}`、`sk-ant-[A-Za-z0-9-]+`、`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` 赋值非占位值）。
+- exchange API credential material（`NQ_OKX_*_API_KEY` / `*_API_SECRET` / `*_API_PASSPHRASE`、`NQ_BINANCE_*_API_KEY` / `*_API_SECRET` / `*_PRIVATE_KEY` / `*_PRIVATE_KEY_PATH` 出现非占位真实值）。
+- Slack / 通用 webhook token（`xox[baprs]-`）。
+- mnemonic / 助记词、cookie、完整 keystore 内容。
+- encrypted_payload / decrypted_payload 泄露风险：当前 DH Integration-0 契约文档把 `encrypted_payload` / `decrypted_payload` 作为字段名引用（contract-only，未实现）。Batch 4 规则必须区分"字段名引用"（allowlist 文档与契约）与"真实 payload 值落地"（fail closed）。
+
+占位例外（不得视为命中）：`REPLACE_WITH_LOCAL_*`、`CHANGE_ME_*`、空赋值（`KEY=`）、明显 fake 测试值（`Zm9v` 等）、disposable CI-only DB 占位。占位例外只能放在 allowlist，禁止放宽核心规则。
+
+## Artifact / log security plan
+
+Artifact security（延续并通用化）：
+
+- schema artifact redaction check 延续：`postgres-flyway` 现有 schema-only dump data-row 检测 + 高风险 credential pattern 检测保持 fail-closed，不回退。
+- CI artifacts 不包含 credential material：把"upload 前 redaction scan"固化为通用规则，任何未来 `upload-artifact` 步骤都必须先过 secret/redaction 检查，再上传。
+- logs 不输出 secret：job 日志禁止 `printenv` / `env` dump、禁止打印真实 connection string / API key / secret / passphrase / token / private key / signature / raw request / raw response / encrypted_payload / decrypted_payload。
+- backend test reports 不包含 secret：若未来上传 Surefire / 测试报告，必须先 redaction 扫描；当前未上传，保持不上传或上传前脱敏二选一，明确记录。
+- frontend / research outputs 不包含 secret：`npm run build`、Playwright report、pytest / mypy / ruff 输出若上传，必须先 redaction 扫描；当前 frontend / research 不上传产物。
+
+Log redaction proof（Batch 4C）：
+
+- 复核 secret scan / backend / postgres-flyway / frontend / research job 日志，确认无真实 credential material。
+- 复核已知 P3 residual（disposable CI PostgreSQL 值平台级显示、Spring Boot generated dev password、`gho_` token mask 为 `***`），确认其为 disposable / masked，不是真实 production credential。
+- 输出 proof 表：每类 secret 模式在日志中"未出现真实值"。
+
+## GitHub Actions permissions plan
+
+- workflow permissions 最小化：顶层保持 `permissions: contents: read`；security / secret scan job 显式声明 `permissions: contents: read`，不隐式继承更高权限。
+- pull_request / push 权限边界：默认不授予 `pull-requests: write`、`issues: write`、`id-token: write`、`packages: write`、`contents: write`。若后续要把 finding 作为 PR 注解发布，必须按 job 单独授予最小 `pull-requests: write`，并单独 review，不得全局放宽。
+- 不使用 repository secrets：secret scan / security job 不注入任何 repository secret、不依赖真实 credential、不访问真实交易所。
+- 不将 secrets 注入 test jobs：保持 Batch 1/2/3 现状（仅 disposable CI-only PostgreSQL 占位值），禁止把真实 exchange / cloud / JWT secret 注入任何 test job。
+- 不允许 `continue-on-error` 掩盖安全失败：secret scan、redaction check、LIVE/boundary guard 必须 fail closed；任何 soft-fail 都属阻断项，需显式 review。
+- action 固定：secret scan action 必须 pin 到固定版本 / commit SHA，避免供应链漂移（与现有 GitHub-provided actions Node.js 20 deprecation 一并纳入 maintenance 评估，但不在本 baseline 强行升级）。
+
+### LIVE / boundary disabled guard（static，pattern-based）
+
+- 复用 `deploy/.env.freeze.example` 已有的边界开关作为基线事实：`NQ_AI_ENABLED=false`、`NQ_AI_SIGNAL_ENABLED=false`、`NQ_AI_PAPER_TRADING_ENABLED=false`、`NQ_DH_ENABLED=false`、`NQ_REAL_TRADING_ENABLED=false`、`NQ_LIVE_TRADING_ENABLED=false`、`NQ_TRADING_ENV=SIM`。
+- guard 必须基于"启用型赋值"模式（如 `NQ_LIVE_TRADING_ENABLED=true`、`NQ_REAL_TRADING_ENABLED=true`、`NQ_AI_ENABLED=true`、`NQ_DH_ENABLED=true`、`NQ_TRADING_ENV=LIVE`）fail closed，**不得**对裸关键字（`LIVE` / `AI` / `DH`）报警，避免对"LIVE disabled / AI not started"等正常文案与现有 `STATUS.md` / `ROADMAP.md` 措辞产生海量误报。
+- backend tests 继续覆盖 `LIVE_CREDENTIAL_BLOCKED` 与 NoReal permission probe 行为（已在 Batch 3 固化），Batch 4 不重复实现，只在文档层声明这是回归基线。
+
+## Dependency audit boundary
+
+- Batch 4 baseline **不包含** blocking dependency audit。Batch 4 baseline = secret scan（4B）+ artifact / log redaction proof（4C）+ permissions / boundary guard。
+- dependency audit（`npm audit`、Maven dependency vulnerability check / OWASP dependency-check、`pip-audit`）列为 **可选 Batch 4F later plan**，非阻断起步，triage 后再选择性把 high / critical 提升为 blocking。
+- 不得让 dependency audit 阻塞 Batch 4 baseline：若 4F 未启动，Batch 4 仍可凭 4B/4C/4D/4E 冻结。
+- dependency audit 不混入 secret scan baseline：两者分属不同 job / 不同 sub-batch，证据与 freeze 各自独立。
+- `frontend` job 现有 `npm audit` advisory summary 属既有非阻断信息，不在 Batch 4 baseline 内改判为 blocking。
+
+## Batch 4 implementation strategy
+
+### Batch 4A: security guard plan review
+
+- Status target: PLAN REVIEW / ACCEPTED 或 PLAN FIX REQUIRED。
+- Scope: 仅文档与只读 source review。
+- Success: 本 plan P0/P1=0；secret scan 范围、credential pattern、artifact / log、permissions、dependency audit 边界被接受；无 workflow / 代码 / 测试 / migration 改动。
+
+### Batch 4B: secret scan minimal implementation
+
+- Status target: IMPLEMENTED / PENDING FIRST CI RUN。
+- Scope: 在 `.github/workflows/ci.yml` 新增 merge-blocking secret scan job（pinned gitleaks + custom regex backstop）+ allowlist 配置 + LIVE/boundary static guard。
+- Success: scanner 对受控 fake secret fail closed；三个 `.env.example` 模板、Binance fake 测试私钥、disposable CI DB 占位被 allowlist 而不放宽真实检测；job 不注入 repository secret、不访问真实交易所、`contents: read`；无 Batch 5 frontend E2E hardening、无 dependency audit blocking。
+
+### Batch 4C: artifact / log redaction proof
+
+- Status target: IMPLEMENTED / PENDING FIRST CI RUN 或 evidence 收集。
+- Scope: 把 "upload 前 redaction" 固化为通用规则；提供 secret scan / backend / postgres-flyway / frontend / research job 的 log redaction proof。
+- Success: 任何 upload artifact 前有 redaction 检查；日志无真实 credential / raw request / raw response / signature / encrypted_payload / decrypted_payload；已知 P3 residual 明确标注为 disposable / masked。
+
+### Batch 4D: first-run review
+
+- Status target: PASS / ACCEPTED FOR FIRST GREEN RUN 或 FAIL / FIRST-RUN-FIX REQUIRED。
+- Scope: 评审第一次包含 secret scan 的 GitHub Actions run、jobs、steps、logs、artifacts。
+- Success: P0/P1=0；CI 证据证明 secret scan 实际运行（未被 skip / soft-fail）、无真实 credential 泄露、无 secret 注入 test job、无 LIVE / AI / DH enable；失败只产出 targeted first-run fix。
+
+### Batch 4E: freeze review
+
+- Status target: FROZEN / ACCEPTED。
+- Scope: 冻结 secret scan / redaction / permission baseline；同步 `docs/current` current facts 与 next action。
+- Success: Batch 4 成为当前 `dev` security guard baseline；Batch 5 仍 PENDING；required-check 提升决策记录在案。
+
+### Batch 4F（可选）: dependency audit later plan
+
+- Status target: LATER PLAN / NOT STARTED。
+- Scope: 规划 `npm audit` / Maven dependency check / `pip-audit`，非阻断起步，triage 后选择性提升。
+- Success: dependency audit 不阻塞 Batch 4 baseline；与 secret scan 分离；high / critical 提升策略明确。
+
+## Batch 5 boundary
+
+- Batch 4 不做 frontend E2E hardening；Playwright browser cache、backend startup for E2E、mock-server / preview-server 策略、flaky skip policy 属 Batch 5。
+- Batch 5 仍 PENDING，不得写成 started。
+
+## Security boundary
+
+- 不需要也不允许真实 credentials。
+- CI 不读取 `.env` / 真实 secret 文件；任何读 `.env` 的代码路径必须保持手动 gated 且不进入默认测试执行。
+- 默认 CI / 默认 Maven test 不访问真实交易所（Batch 3 已冻结，不重复实现）。
+- 不开启 LIVE，不接 AI，不接 DH runtime，不实现 RealClient / real provider / real permission probe adapter。
+- 不下单 / 撤单 / 转账 / 提现 / private REST / private WS / credential probe / permission probe 到真实交易所。
+- CI 日志 / 报告 / 注解 / 截图 / 上传 artifact 不得包含真实 API key / secret / passphrase / token / cookie / private key / mnemonic / raw request / raw response / headers / signatures / encrypted_payload / decrypted_payload / credential material。
+- secret scan 只报告 file / path / rule，绝不打印命中值。
+
+## P0/P1/P2/P3 findings
+
+| Priority | Finding | Decision |
+| --- | --- | --- |
+| P0 | None for this planning-only baseline；tracked safe paths 未发现真实 credential material。 | P0 planning blockers = 0。 |
+| P1 | None for this planning-only baseline。当前无专用 secret scan job 属实现目标，不是 planning blocker。 | P1 planning blockers = 0。 |
+| P2 | 当前无专用 CI secret scan / gitleaks job。 | 作为 Batch 4B 实现目标；不得写成 implemented。 |
+| P2 | 三个 `.env.example` 模板与本地默认值（`123456`、空 API key）会被 naive scanner 误判。 | Batch 4B 必须 path/rule/指纹精确 allowlist，禁止放宽核心规则。 |
+| P2 | Binance fake 测试私钥与 `PRIVATE_KEY_BEGIN` 常量会命中 PEM 规则。 | Batch 4B allowlist 这些 test fixtures / 常量行。 |
+| P2 | 未来 upload artifact / 测试报告可能夹带 secret。 | Batch 4C 把 upload 前 redaction 固化为通用规则。 |
+| P2 | dependency audit 噪声大，直接 blocking 会阻塞 dev。 | 列为可选 Batch 4F，非阻断起步，不混入 secret scan baseline。 |
+| P3 | 已知 CI log hygiene residual（disposable CI PostgreSQL 值、Spring Boot dev password）。 | 继续标注为 disposable / masked，非真实 credential；Batch 4C 复核。 |
+| P3 | `.github/CODEOWNERS` 仍用占位 `@YOUR_GITHUB_USERNAME`；`pull_request_template.md` 近空。 | 记录为安全治理 follow-up，不在 secret scan baseline 内强行处理。 |
+| P3 | GitHub-provided actions Node.js 20 deprecation；secret scan action 需 pin。 | 与 Batch 3 P3 一并纳入 maintenance；本 baseline 不升级。 |
+
+## Validation
+
+本轮 planning / doc 验证（只读，已执行）：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- .github
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "apiKey|secret|passphrase|token|private key|BEGIN PRIVATE KEY|encrypted_payload|decrypted_payload|AKIA|sk-|xox|ghp_|gho_|JWT|OPENAI_API_KEY|ANTHROPIC_API_KEY|BINANCE|OKX|LIVE|RealClient" .github backend frontend research docs/current
+```
+
+执行结果摘要：
+
+- `git status --short`：编辑前 clean；`git diff --check`：无 whitespace error；`git diff --stat`：仅本轮允许的 `docs/current` 文件。
+- `git diff -- .github / backend / frontend / research / scripts / deploy / backend/**/db/migration`：均为空（forbidden 区域无改动）。
+- 高风险字面量扫描（`AKIA` / `sk-` / `ghp_` / `gho_` / `xox` / PEM block，scoped 到 tracked safe paths，排除 `node_modules` / `target` / `dist` / `build` / `.git`）：仅命中 Binance 适配器既有 fake 测试私钥与 `PRIVATE_KEY_BEGIN` 协议常量，无真实 credential。
+- `encrypted_payload` / `decrypted_payload` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `RealClient` 命中均为 DH 契约字段名引用、boundary "NOT IMPLEMENTED" 声明或 credential-governance 代码，非真实泄露。
+- `git ls-files` 中无真实 `.env` / `*.key` / `*.pem` / keystore / dump；仅三个 `*.example` 占位模板被 `.gitignore` 显式放行。
+
+rg 仅用于 tracked safe paths；未把扫描扩展到 `.env` / secrets / logs / dumps / backups / `target` / `node_modules` / `dist` / `build` / `.git`。本轮 docs-only / planning-only，未运行 backend Maven、frontend build / E2E、Python pytest / mypy / ruff（且明确禁止改 workflow / 代码 / 测试 / migration）。
+
+实现阶段验证（Batch 4B/4C，本轮不执行）：secret scanner 必须对受控 fake secret fail closed；CI first-run 证据归 Batch 4D review。
+
+## Boundary confirmation
+
+- 未修改 `.github/workflows/ci.yml`。
+- 未修改 Java / TypeScript / Python 代码与测试代码；未新增测试。
+- 未新增 API；未新增 migration；未修改历史 migration。
+- 未修改 backend production code / frontend / research / scripts / deploy。
+- 未读取、打印、复制或输出真实 credential material；未把禁止目录作为数据源扫描。
+- 未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+- 未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
+- Batch 4 保持 PLAN ONLY / NOT IMPLEMENTED；Batch 5 仍 PENDING。
+
+## Review decision
+
+PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。
+
+本 plan 可作为 Batch 4 secret scan / security guard 的 implementation baseline，但本轮未实现任何 guard。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），不重复；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
+
+## Next concrete action
+
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4A`（plan review）、Batch 4 plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4B`（secret scan minimal implementation），或暂停 CI 线。Batch 4 当前 PLAN ONLY / NOT IMPLEMENTED；Batch 5 仍 PENDING；不得把 Batch 4 写成 implemented 或把 Batch 5 写成 started。

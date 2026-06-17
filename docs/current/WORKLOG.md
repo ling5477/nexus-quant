@@ -2,6 +2,39 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
+
+日期：2026-06-17
+
+### 目标
+
+规划 GateK CI Batch 4 security guard / secret scan baseline：明确后续如何在 CI 中检查密钥泄露、敏感文件误提交、artifact / log 泄露、GitHub Actions 过大权限和 dependency audit 边界，同时不误扫 `.git` / `target` / `node_modules` / `dist` / `build` / `logs` / `dumps` 等高噪声目录。只改 docs，不改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。不进入 Batch 4 实现，不进入 Batch 5。
+
+### 只读检查证据
+
+- `.github/workflows/ci.yml`：6 jobs（`diff-check`、`backend`、`postgres-flyway`、`frontend`、`research`、`no-outbound-guard`）；顶层 `permissions: contents: read`；无 repository secret 注入；`postgres-flyway` 已含 schema artifact data-row + 高风险 credential pattern fail-closed 检查（Batch 4 先例）；无专用 secret scan job。
+- `.github/CODEOWNERS` 仍用占位 `@YOUR_GITHUB_USERNAME`；`.github/pull_request_template.md` 近空（记为 P3 治理 follow-up）。
+- `.gitignore` 已 ignore `target` / `node_modules` / `dist` / `coverage` / `test-results` / `*.log` / `.env` / `*.pem` / `*.key` / `*.dump` / `*.backup` / `artifacts` / `backups` 等。
+- `.env.example`、`frontend/.env.example`、`deploy/.env.freeze.example` 为占位模板（`REPLACE_WITH_LOCAL_*` / `CHANGE_ME_*` / 空 API key），需 Batch 4B allowlist。
+- `git ls-files` 无真实 `.env` / `*.key` / `*.pem` / keystore / dump；高风险字面量扫描仅命中 Binance fake 测试私钥与 `PRIVATE_KEY_BEGIN` 协议常量；`encrypted_payload` / `decrypted_payload` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `RealClient` 命中均为 DH 契约字段名 / boundary 声明 / credential-governance 代码，无真实泄露。
+
+### 文档更新
+
+- 新增 `NQ_CI_SECURITY_GUARD_PLAN.md`：secret scan 范围 / 工具（pinned gitleaks + custom regex backstop，不用 trufflehog verify）/ 误报处理、credential pattern（API key / secret / passphrase / token / private key / PEM / JWT / GitHub token / AWS / OpenAI-Anthropic / exchange credential / encrypted_payload / decrypted_payload）、artifact / log redaction、GitHub Actions 最小权限、LIVE/boundary pattern-based static guard、dependency audit 边界（可选 Batch 4F，非阻断，不混入 secret scan baseline），并拆分 Batch 4A plan review / 4B secret scan minimal impl / 4C artifact-log redaction proof / 4D first-run review / 4E freeze review。
+- 同步 `README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`：登记 Batch 4 plan 文件并记录 PLAN ONLY / NOT IMPLEMENTED 状态。
+- 未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、backend production code、migration、frontend、research、scripts、deploy。
+
+### 边界确认
+
+- Batch 4 security guard / secret scan：PLAN ONLY / NOT IMPLEMENTED。Batch 5 frontend E2E hardening：PENDING。
+- Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`），本轮不重复实现。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real exchange permission probe adapter NOT IMPLEMENTED。
+- 未读取 / 打印 / 复制 / 输出真实 credential material；未把禁止目录作为数据源扫描；未调用真实交易所；未下单 / 撤单 / 转账 / 提现。
+
+### 下一步
+
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4A`（plan review）、Batch 4 plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4B`（secret scan minimal implementation），或暂停 CI 线。不得把 Batch 4 写成 implemented 或把 Batch 5 写成 started。
+
 ## NQ-CI-NO-OUTBOUND-GUARD-BATCH-3E-FREEZE-REVIEW
 
 日期：2026-06-17
