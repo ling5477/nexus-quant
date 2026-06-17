@@ -2,6 +2,40 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN（2026-06-17）
+
+本轮是 GateK CI Batch 4C planning-only：规划 artifact / log redaction proof（CI 生成 artifacts / test reports / schema artifacts / logs / 未来 frontend-research outputs 上传或输出前不含真实 credential material）。不修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、测试代码、migration、frontend、research、scripts、deploy。Batch 4C 当前 PLAN ONLY / NOT IMPLEMENTED；Batch 4B 仍 FROZEN / ACCEPTED；Batch 4F OPTIONAL / NOT STARTED；Batch 5 PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| 写操作前预检 | 通过 | `git branch --show-current` = `dev`；编辑前 `git status --short` 为空。 |
+| Artifact 盘点 | 已执行 | `.github/workflows/ci.yml` 仅 1 处 `upload-artifact`（`nq-postgres-flyway-schema-artifacts`，7 files），upload 前已有专用 `Check PostgreSQL schema artifacts` redaction step（data-row + credential pattern，fail closed）。 |
+| 未上传产物 | 已确认 | gitleaks JSON report 写 `RUNNER_TEMP` 未上传（`--redact`）；surefire reports / frontend build / research outputs 当前均未上传。 |
+| Log 风险盘点 | 已执行 | 无 `printenv` / `env` dump / `set -x` / `continue-on-error` / `id-token` / write perms；`postgres-flyway` 用 `::add-mask::` 屏蔽 disposable CI-only DB 值；`permissions` 仅 `contents: read`。 |
+| Plan file | 已新增 | `docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`，状态固定 PLAN ONLY / NOT IMPLEMENTED，拆分 4C-A/4C-B/4C-C/4C-D/4C-E。 |
+| 安全边界 | 通过 | 未读取 / 输出真实 credential material；未把禁止目录作为数据源扫描；未上传 artifact；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter；未调用真实交易所。 |
+| 本地 build/test | 未运行 | 本轮 docs-only / planning-only，禁止改 workflow / 代码 / 测试 / migration；未运行 backend Maven、frontend build / E2E、Python pytest / mypy / ruff。 |
+
+计划验证命令：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+rg "artifact|upload-artifact|redact|redaction|secret|passphrase|token|private key|BEGIN PRIVATE KEY|encrypted_payload|decrypted_payload|connection string|signature|raw request|raw response|continue-on-error|id-token|GITLEAKS_LICENSE|gitleaks-action" .github docs/current backend frontend research
+```
+
+rg 仅用于 tracked safe paths；未扩展到 `.env` / secrets / logs / dumps / backups / target / node_modules / dist / build / `.git`。
+
+Review decision: PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。下一步只能是 Batch 4C-A plan review、Batch 4C plan fix、Batch 4C-B pre-upload redaction gate minimal implementation，或暂停 CI 线。Batch 4C / 4F / Batch 5 不得写成 implemented / started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-FREEZE-REVIEW（2026-06-17）
 
 本轮是 GateK CI Batch 4B freeze review：冻结 minimal secret scan baseline。基于 immutable run `27674393780`（commit `31540de8`，重新拉取 job logs + HEAD config 校验）。结论 **PASS / FROZEN / ACCEPTED**，P0/P1/P2 blockers = 0。只评审 + 改 docs，不改 workflow / 代码 / 测试 / migration；不进入 Batch 4C / 4F / Batch 5。

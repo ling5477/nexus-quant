@@ -412,7 +412,7 @@ Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` 
 
 后续（NOT STARTED）：
 
-- Batch 4C：artifact upload 前 redaction 通用规则 + log redaction proof + LIVE/boundary static guard。
+- Batch 4C：artifact upload 前 redaction 通用规则 + log redaction proof + LIVE/boundary static guard。**PLAN ONLY / NOT IMPLEMENTED**（详见 `docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`，拆分 4C-A plan review / 4C-B pre-upload gate impl / 4C-C log redaction proof / 4C-D first-run review / 4C-E freeze review）。
 - Batch 4F（可选）：`npm audit` / Maven dependency check / `pip-audit`，非阻断起步，triage 后选择性提升；不混入 secret scan baseline。
 
 ### Batch 5: Frontend E2E hardening
@@ -466,6 +466,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4C`（artifact / log redaction proof planning）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C / Batch 4F / Batch 5 仍 PENDING，不得写成 started。
+Next concrete action: `NQ-CI-SECURITY-GUARD-BATCH-4C-A`（artifact / log redaction plan review）、`NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate impl）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C PLAN ONLY / NOT IMPLEMENTED（`NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）；Batch 4F / Batch 5 仍 PENDING，不得写成 started。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.

@@ -2,6 +2,39 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN
+
+日期：2026-06-17
+
+### 目标
+
+规划 Batch 4C 如何验证 CI artifacts、test reports、schema artifacts、logs、未来 frontend/research artifacts 在上传或输出前不含真实 credential material / raw secret / connection string / signature / raw request-response / private key / token / encrypted_payload-decrypted_payload 真实值。只改 docs，不实现 redaction proof。
+
+### 只读检查证据
+
+- `.github/workflows/ci.yml`：唯一 upload artifact = `nq-postgres-flyway-schema-artifacts`（7 files），upload 前已有专用 `Check PostgreSQL schema artifacts` redaction step（schema-dump data-row 检查 + credential pattern 检查，fail closed）；`actions/upload-artifact@v4`，`if-no-files-found: error`，retention 14/7。
+- gitleaks JSON report 写 `RUNNER_TEMP`（`report-path`）未上传，`--redact`；失败分支仅输出 sanitized RuleID / File / Lines / Fingerprint。
+- surefire reports / frontend build / research outputs 当前均未上传。
+- `::add-mask::` 屏蔽 `NQ_FLYWAY_DB_URL/USER/PASSWORD`（disposable CI-only）；无 `printenv` / `env` dump / `set -x` / `continue-on-error` / `id-token` / write perms；`permissions` 仅 `contents: read`。
+
+### 文档更新
+
+- 新增 `docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`：artifact 风险盘点、log 风险盘点、可复用 pre-upload redaction gate 设计、credential pattern 收敛（复用 Batch 4B backstop pattern + schema-check 既有项，记录 3 处同源 parity follow-up）、禁止上传 raw gitleaks report、artifact / log 边界、log redaction proof（静态 `printenv`/`env`/`set -x` 断言 + review-time `gh run view --log` 扫描 + masking）、4C-A~4C-E 子批次。
+- 同步 `NQ_CI_SECURITY_GUARD_PLAN.md`（Batch 4C section 指向新文档）、`NQ_CI_BASELINE_PLAN.md`、`README.md`（状态 + 两处索引 + 注册新文档）、`TESTING.md`、`WORKLOG.md`。
+- 未修改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。
+
+### 边界确认
+
+- Batch 4C：PLAN ONLY / NOT IMPLEMENTED。Batch 4B：FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）。Batch 4F：OPTIONAL / NOT STARTED。Batch 5：PENDING。
+- 4C 与 4B 分工：4B 扫 tracked source 树提交的真实 secret；4C 扫 CI 生成的 artifacts / outputs 上传前 redaction + log redaction proof，共享 pattern。
+- 4C 与 4F 分工：4F 是 dependency audit（CVE），与 redaction 无关。
+- 4C 与 Batch 5 分工：Batch 5 若新增 Playwright report 上传须先过 4C pre-upload gate；4C 只定义 gate。
+- 未读取 / 输出真实 credential material；未扫描禁止目录；未上传 artifact；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-A`（plan review）、Batch 4C plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate minimal implementation），或暂停 CI 线。不得把 Batch 4C 写成 implemented，不得把 Batch 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4B-FREEZE-REVIEW
 
 日期：2026-06-17
