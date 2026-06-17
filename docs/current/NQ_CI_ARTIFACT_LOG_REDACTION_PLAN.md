@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4C-PLAN
 日期：2026-06-17
-状态：Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（2026-06-17，P0/P1=0）；Batch 4C-B pre-upload redaction gate **IMPLEMENTED**，首次 CI run（`27698183911`，commit `c734102d`）的 **pre-upload gate step 本身 first-run GREEN**（postgres-flyway job 全绿、gate 在 upload 前执行、artifact 正常上传），但**整体 run FAILED**：唯一失败为 secret-scan job 的 gitleaks step，命中 4C-B 文档更新引入的 gitleaks default-ruleset 误报（`docs/current/TESTING.md` 内一处 AWS 官方文档示例 access key id，`AKIA` 前缀 + 16 字符，非真实凭证、非 gate 缺陷）。**Batch 4C-B FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-FIRST-RUN-FIX`，2026-06-17，doc-only：把 `TESTING.md` 内该 AWS 示例串中和为 shaped placeholder，未改 `ci.yml` / gitleaks 规则 / allowlist），详见「Batch 4C-B」/「Batch 4C-D」段落。Batch 4C 整体仍 **NOT FROZEN**；Batch 4C-C log redaction proof 未开始；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。本文件未改业务代码 / 测试 / migration / frontend / research / scripts / deploy / `.github/workflows/ci.yml`。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING。
+状态：Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**（2026-06-17，P0/P1=0）；Batch 4C-B pre-upload redaction gate **IMPLEMENTED**，首次 CI run（`27698183911`，commit `c734102d`）的 **pre-upload gate step 本身 first-run GREEN**（postgres-flyway job 全绿、gate 在 upload 前执行、artifact 正常上传），但**整体 run FAILED**：唯一失败为 secret-scan job 的 gitleaks step，命中 4C-B 文档更新引入的 gitleaks default-ruleset 误报（`docs/current/TESTING.md` 内一处 AWS 官方文档示例 access key id，`AKIA` 前缀 + 16 字符，非真实凭证、非 gate 缺陷）。first-run fix（doc-only：把 `TESTING.md` 内该 AWS 示例串中和为 shaped placeholder，未改 `ci.yml` / gitleaks 规则 / allowlist）后 **second-pass run `27701669084`（commit `66cb3d40`）= completed / success，7/7 jobs green**：secret-scan `no leaks found`（不再命中 `aws-access-token`），postgres-flyway pre-upload gate 仍 green 且 artifact 正常上传。**Batch 4C-B FIRST GREEN RUN CONFIRMED AFTER DOC FIX**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-SECOND-PASS-FIRST-RUN-REVIEW`，2026-06-17，PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX），详见「Batch 4C-B」/「Batch 4C-D」段落。Batch 4C 整体仍 **NOT FROZEN**（freeze 是 Batch 4C-E）；Batch 4C-C log redaction proof 未开始；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。本文件未改业务代码 / 测试 / migration / frontend / research / scripts / deploy / `.github/workflows/ci.yml`。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING。
 
 本文件是 `NQ_CI_SECURITY_GUARD_PLAN.md` 内「Batch 4C: artifact / log redaction proof」的详细实现规划，独立成文与 `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` / `NQ_CI_POSTGRES_FLYWAY_*_PLAN.md` 同例。
 
@@ -146,7 +146,7 @@ Forbidden in this planning batch：不改 workflow / 代码 / 测试 / migration
 - 非阻断 P3 实现提示（留给 4C-B，不影响 baseline 接受）：① pre-upload gate 泛化后若指向含二进制 / zip 的产物目录（如未来 Playwright trace.zip / 截图 / 视频），`grep` 文本扫描需明确二进制 / 压缩包处理策略，避免漏扫或噪声；② pattern 收敛时 PEM 规则取 schema-check（`BEGIN [A-Z ]*PRIVATE KEY`）与 backstop（带 `-----` 前缀分组）二者更宽者，不得弱化。
 
 ### Batch 4C-B: pre-upload redaction gate minimal implementation
-- Status: **IMPLEMENTED；gate FIRST-RUN GREEN（run `27698183911` 的 gate step + postgres-flyway job 全绿），整体 run FAILED 于无关文档 gitleaks FP → FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN**（FP 见「Batch 4C-D」；fix 见下文「Batch 4C-B first-run fix」；commit `c734102d`，2026-06-17）。仅改 `.github/workflows/ci.yml` 的 `postgres-flyway` job，把既有 `Check PostgreSQL schema artifacts` step 改造为 **`Pre-upload redaction gate (PostgreSQL schema artifacts)`** step，位置仍在 `Generate ... artifacts` 与 `Upload ... artifacts` 之间（upload 前 fail closed）。inline 实现，未新增 tracked 脚本（优先 inline）。
+- Status: **IMPLEMENTED；FIRST GREEN RUN CONFIRMED AFTER DOC FIX**（first run `27698183911` gate green 但整体 run 失败于无关文档 gitleaks FP → doc-only fix `66cb3d40` → second-pass run `27701669084` = 7/7 jobs green；FP 见「Batch 4C-D」，fix 见「Batch 4C-B first-run fix」，second-pass 见「Batch 4C-B second-pass first-run review」；2026-06-17）。仅改 `.github/workflows/ci.yml` 的 `postgres-flyway` job，把既有 `Check PostgreSQL schema artifacts` step 改造为 **`Pre-upload redaction gate (PostgreSQL schema artifacts)`** step，位置仍在 `Generate ... artifacts` 与 `Upload ... artifacts` 之间（upload 前 fail closed）。inline 实现，未新增 tracked 脚本（优先 inline）。
 - 实现要点：
   - gate 只扫 `artifacts/postgres-flyway/`（CI 生成可控目录），不扫 `.env` / secrets / 本地禁止目录。
   - binary / zip handling：先用 `file -b --mime-encoding` 逐文件判定，命中 `binary` 即 fail closed 拒绝（zip / video / screenshot 等二进制留待 Batch 5），避免对二进制做不可靠文本 grep；当前 schema artifacts 全为 text，正常通过。
@@ -192,7 +192,28 @@ Forbidden in this planning batch：不改 workflow / 代码 / 测试 / migration
 - 定位：`docs/current/TESTING.md` 内 4C-B 测试记录的「gate dry-run — fake secret」单元格曾写有一处完整 AWS access key id 形态字面量（`AKIA` 前缀 + 16 位大写字母/数字），被 gitleaks `aws-access-token` 默认规则命中（first run `27698183911` 的唯一 finding）。该串是 AWS 公共文档示例、非真实凭证（P0=0）。
 - 修复（最小、doc-only）：把该单元格改写为 **shaped placeholder 文字描述**（`AKIA` 前缀 + 16 位占位，不写完整字面量；并标注「不写完整字面量以免触发 gitleaks `aws-access-token`」），同段内 `AKIA example` 文案一并改为 `AWS key 占位`。未改 `.github/workflows/ci.yml`、未改 gate、未改 gitleaks 规则 / 配置、未新增任何 allowlist、未关闭 default ruleset、未 broad allowlist、未 allowlist 整个 `TESTING.md`。
 - 本地验证：`git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = **0 命中**（修复后 docs/current 已无完整 AWS-key 字面量）；docs/current 内亦无其它 `ASIA` / `sk-ant-` / `sk-proj-` / `github_pat_` / `gh[pousr]_{30,}` 完整凭证形态字面量。本地无 gitleaks 二进制（Windows 开发环境，与 Batch 4B 一致），gitleaks 层最终结果待 GitHub Actions second-pass run 确认。
-- 状态：FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN。下一步只能是 second-pass first-run review（确认 secret-scan job green、postgres-flyway pre-upload gate 仍 green、其余 job 未回归），或失败则 second-pass fix，或暂停 CI 线。不得把 Batch 4C-B 写成 FIRST GREEN / FROZEN；不得混入 Batch 4C-C / 4F / Batch 5。
+- 状态：FIRST-RUN-FIX APPLIED（commit `66cb3d40`）→ second-pass run 已确认（见下）。
+
+#### Batch 4C-B second-pass first-run review（FIRST GREEN RUN CONFIRMED AFTER DOC FIX）
+
+任务 `NQ-CI-SECURITY-GUARD-BATCH-4C-B-SECOND-PASS-FIRST-RUN-REVIEW`，2026-06-17。second-pass run `27701669084`（commit `66cb3d40`，event push / branch dev）= **completed / success**。结论 **PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX**；不得直接写 FROZEN（freeze 仍是 Batch 4C-E）。
+
+per-job 结论（7/7 green）：
+
+| Job | 结论 |
+| --- | --- |
+| Diff check | success |
+| No-outbound guard | success |
+| Backend Maven test | success |
+| **PostgreSQL / Flyway smoke** | **success** |
+| Frontend build | success |
+| Research quality gate | success |
+| **Secret scan** | **success** |
+
+- secret-scan（job 证据）：`Contents: read`；`Installed gitleaks version: 8.18.4`（pinned，非 action / 无 `GITLEAKS_LICENSE`）；`tracked=1304 safe_scanned=1301 excluded=3`（排除恰为三个 `.env.example` 模板）；`gitleaks detect ... --redact` → `scan completed in 934ms` → `no leaks found` → `gitleaks: no leaks found in tracked working tree.`；custom backstop `no non-allowlisted matches`。**不再命中 `docs/current/TESTING.md` aws-access-token**（无 `RuleID=` finding 行，sanitized 失败分支未触发，未输出 secret value）。
+- pre-upload redaction gate（postgres-flyway，仍 green）：step-level `✓ Generate PostgreSQL schema artifacts` → `✓ Pre-upload redaction gate (PostgreSQL schema artifacts)` → `✓ Upload PostgreSQL schema artifacts`（顺序正确）；gate 执行输出 `Pre-upload redaction gate: no high-risk credential pattern in artifacts/postgres-flyway (text-only, fail closed).`（只扫 `artifacts/postgres-flyway/`、required artifacts 存在/非空、无 data-row / credential finding、binary 未误杀、fail-closed 生效、未输出 secret value / matched line）；artifact `nq-postgres-flyway-schema-artifacts`（74664 bytes）成功上传，仍唯一 upload-artifact，未上传 raw gitleaks report，`if-no-files-found: error` / retention 有界不变，未新增 surefire / frontend / research artifact。
+- 既有 baseline 未回归：Diff check / No-outbound guard / Backend Maven test / Frontend build / Research quality gate 全 green；secret-scan 边界（`contents: read`、无 repository secret / write / id-token / continue-on-error / `gitleaks-action` / `GITLEAKS_LICENSE`、`--no-git --redact`）不变。
+- 状态：**FIRST GREEN RUN CONFIRMED AFTER DOC FIX**。下一步只能是 Batch 4C-B freeze review（4C-E）、Batch 4C-C planning，或暂停 CI 线。不得直接写 FROZEN / ACCEPTED；不得把 Batch 4C-C / 4F / Batch 5 写成 started。
 
 ### Batch 4C-E: freeze review
 - Status target: FROZEN / ACCEPTED。
@@ -248,7 +269,7 @@ rg 仅用于 tracked safe paths；未扩展到 `.env` / secrets / logs / dumps /
 - 未修改 backend production code / frontend / research / scripts / deploy。
 - 未读取、打印、复制或输出真实 credential material；未把禁止目录作为数据源扫描；未上传 artifact。
 - 未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
-- Batch 4C-A plan review ACCEPTED；4C-B pre-upload redaction gate IMPLEMENTED；4C-D first-run review FAIL（无关文档 gitleaks FP）；4C-B FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN。Batch 4C 整体仍 NOT FROZEN；4C-C log redaction proof NOT STARTED；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；Batch 4B 仍 FROZEN / ACCEPTED。
+- Batch 4C-A plan review ACCEPTED；4C-B pre-upload redaction gate IMPLEMENTED；4C-D first-run review FAIL（无关文档 gitleaks FP）；4C-B FIRST-RUN-FIX APPLIED（`66cb3d40`）；4C-B second-pass run `27701669084` 7/7 green → **FIRST GREEN RUN CONFIRMED AFTER DOC FIX**。Batch 4C 整体仍 NOT FROZEN；4C-C log redaction proof NOT STARTED；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；Batch 4B 仍 FROZEN / ACCEPTED。
 
 ## Review decision
 
@@ -260,10 +281,12 @@ Batch 4C-B pre-upload redaction gate implementation：**IMPLEMENTED**（commit `
 
 Batch 4C-D first-run review：**FAIL / FIRST-RUN-FIX REQUIRED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-D-FIRST-RUN-REVIEW`，first run `27698183911`，2026-06-17，completed / failure）。pre-upload gate 本身 first-run GREEN（gate step 在 upload 前执行并 success、postgres-flyway job 全绿、artifact 正常上传、无 finding、无值输出）；整体 run 失败仅因 secret-scan job 的 gitleaks default-ruleset 误报——4C-B 文档更新把 AWS 官方示例 access key id 写进 `docs/current/TESTING.md`（非真实凭证、非 gate 缺陷）。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-B-FIRST-RUN-FIX`（doc-only：中和该示例串，不改 ci.yml / gate）。Batch 4C 整体仍 NOT FROZEN；不得写成 FIRST GREEN RUN CONFIRMED / FROZEN / ACCEPTED。
 
-Batch 4C-B first-run fix：**FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-FIRST-RUN-FIX`，2026-06-17）。doc-only：把 `docs/current/TESTING.md` 内 AWS 示例 access key id 字面量中和为 shaped placeholder 文字描述（`git grep AKIA[0-9A-Z]{16} docs/current` = 0）。未改 `.github/workflows/ci.yml`、未改 gate、未改 gitleaks 规则 / 配置、未新增 allowlist、未关闭 default ruleset。gate 本身仍 first-run green；gitleaks 层最终结果待 second-pass GitHub Actions run 确认。不得写成 FIRST GREEN / FROZEN。
+Batch 4C-B first-run fix：**FIRST-RUN-FIX APPLIED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-FIRST-RUN-FIX`，commit `66cb3d40`，2026-06-17）。doc-only：把 `docs/current/TESTING.md` 内 AWS 示例 access key id 字面量中和为 shaped placeholder 文字描述（`git grep AKIA[0-9A-Z]{16} docs/current` = 0）。未改 `.github/workflows/ci.yml`、未改 gate、未改 gitleaks 规则 / 配置、未新增 allowlist、未关闭 default ruleset。
+
+Batch 4C-B second-pass first-run review：**PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX**（`NQ-CI-SECURITY-GUARD-BATCH-4C-B-SECOND-PASS-FIRST-RUN-REVIEW`，second-pass run `27701669084`，commit `66cb3d40`，2026-06-17，completed / success）。7/7 jobs green：secret-scan `no leaks found`（gitleaks 8.18.4 / `--redact` / `contents: read`，不再命中 `TESTING.md` aws-access-token、无 finding 行、无值输出，backstop 0 命中），postgres-flyway pre-upload gate 仍 green（gate 在 upload 前执行、`no high-risk credential pattern`、artifact 74664 bytes 正常上传、仍唯一 upload-artifact、未上传 raw gitleaks report），其余 5 job 未回归。Batch 4C-B 推进为 **FIRST GREEN RUN CONFIRMED AFTER DOC FIX**；不得直接写 FROZEN / ACCEPTED。
 
 本 plan 可作为 Batch 4C-B / 4C-C artifact / log redaction proof 的 implementation baseline。Batch 4C-B 已实现 pre-upload gate（gate first-run green）；4C-C log redaction proof 尚未实现。Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），不重复；Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening 仍 PENDING，不得写成 started。
 
 ## Next concrete action
 
-Next concrete action：Batch 4C-B **FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN**（doc-only 已中和 `TESTING.md` AWS 示例串）。下一步只能是 second-pass first-run review（确认重跑后 secret-scan job green、postgres-flyway pre-upload gate 仍 green、其余 job 未回归），或失败则 second-pass fix，或暂停 CI 线。不得混入 Batch 4C-C / 4F / Batch 5。Batch 4C 整体仍 NOT FROZEN；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4C-B 写成 FIRST GREEN / FROZEN；不得把 4C-C / 4F / Batch 5 写成 started。
+Next concrete action：Batch 4C-B **FIRST GREEN RUN CONFIRMED AFTER DOC FIX**（second-pass run `27701669084` 7/7 jobs green）。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-E`（Batch 4C-B / pre-upload gate freeze review，基于 immutable run `27701669084` 冻结 artifact / log redaction baseline）、`NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof planning），或暂停 CI 线。Batch 4C 整体仍 NOT FROZEN；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4C-B 直接写成 FROZEN / ACCEPTED；不得把 4C-C / 4F / Batch 5 写成 started。

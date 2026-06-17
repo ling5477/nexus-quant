@@ -2,6 +2,40 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-B-SECOND-PASS-FIRST-RUN-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 4C-B second-pass first-run review：评审 doc-only fix（commit `66cb3d40`）后的 second-pass GitHub Actions run（`27701669084`）。结论 **PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX** → Batch 4C-B **FIRST GREEN RUN CONFIRMED AFTER DOC FIX**。只评审 + 改允许的 docs，未改 `ci.yml` / 代码 / 测试 / migration。Batch 4C 整体仍 NOT FROZEN；4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING。
+
+| 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| GitHub Actions run | **success** | second-pass run `27701669084`（commit `66cb3d40`）completed / success，7/7 jobs green。 |
+| Secret scan | **success** | gitleaks 8.18.4 / `--redact` / `contents: read`；`tracked=1304 safe=1301 excluded=3`；`no leaks found`；backstop `no non-allowlisted matches`。**不再命中 `TESTING.md` aws-access-token**（无 `RuleID=` finding，无值输出）。 |
+| AKIA 字面量清除 | 已确认 | `git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = 0（committed tree）。 |
+| PostgreSQL / Flyway smoke | success | gate 所在 job 全绿（1m14s）。 |
+| pre-upload redaction gate step | **success** | `✓ Pre-upload redaction gate`，输出 `no high-risk credential pattern in artifacts/postgres-flyway (text-only, fail closed)`；无 data-row / credential finding；binary 未误杀；未输出 secret value / matched line。 |
+| gate-before-upload 顺序 | 已确认 | `✓ Generate ... artifacts` → `✓ Pre-upload redaction gate` → `✓ Upload ... artifacts`。 |
+| artifact 上传 | 已确认 | `nq-postgres-flyway-schema-artifacts`（74664 bytes）成功上传；仍唯一 upload-artifact；未上传 raw gitleaks report；未新增 surefire / frontend / research artifact。 |
+| no-outbound / 其余 4 job | success | Diff check / No-outbound guard / Backend Maven test / Frontend build / Research quality gate 全绿（未回归）。 |
+| 安全边界 | 通过 | `contents: read`；无 repository secret / write / id-token / continue-on-error / `gitleaks-action` / `GITLEAKS_LICENSE`；`--no-git --redact`；未扫描禁止目录；未调用真实交易所；未开启 LIVE / AI / DH；未实现 RealClient / real provider / real probe adapter。 |
+| 本地 build/test | 未运行 | review-only / docs-only；评审基于 immutable GitHub Actions run 日志。 |
+
+复核命令（已执行）：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- .github/workflows/ci.yml
+git diff -- backend / frontend / research / scripts / deploy / backend/**/db/migration
+git grep -nE "AKIA[0-9A-Z]{16}" docs/current
+gh run view 27701669084
+gh run view 27701669084 --job <secret-scan> --log   # sanitized；no RuleID finding
+gh run view 27701669084 --job <postgres-flyway> --log
+```
+
+Review decision: PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX。secret-scan 不再误报、postgres-flyway pre-upload gate 仍 green、artifact 仍在 gate 后正常上传、其余 job 未回归。Batch 4C-B 推进为 FIRST GREEN RUN CONFIRMED AFTER DOC FIX；不得直接写 FROZEN / ACCEPTED。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-E`（pre-upload gate freeze review）、`NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof planning），或暂停 CI 线。不得把 Batch 4C-C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-B-FIRST-RUN-FIX（2026-06-17）
 
 本轮是 GateK CI Batch 4C-B first-run fix：最小 doc-only fix，消除本文件「gate dry-run — fake secret」单元格内一处 AWS access key id 形态字面量对 gitleaks `aws-access-token` 的误报（first run `27698183911` 唯一 finding，非真实凭证、非 gate 缺陷）。结论 **FIRST-RUN-FIX APPLIED / PENDING SECOND-PASS CI RUN**。未改 `.github/workflows/ci.yml`、gitleaks 规则 / 配置、gate；未新增 allowlist；未关闭 security guard。Batch 4C 整体仍 NOT FROZEN；4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING。
