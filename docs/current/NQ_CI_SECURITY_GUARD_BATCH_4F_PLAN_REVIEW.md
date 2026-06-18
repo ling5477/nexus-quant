@@ -12,7 +12,7 @@
 - Batch 4F plan = **ACCEPTED AS IMPLEMENTATION BASELINE**。
 - Batch 4F implementation = **NOT STARTED**。
 - Batch 4F execution sequence = **SYNCED / ACCEPTED**。
-- Batch 4F-A = **READY FOR IMPLEMENTATION**。
+- Batch 4F-A = **IMPLEMENTED / READY FOR REVIEW**（后续 preflight 见 `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`）。
 - Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**。
 - Batch 4C = **FROZEN / ACCEPTED**。
 - Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
@@ -124,7 +124,7 @@
 
 | Batch | Name | Status | Prerequisite | Allowed scope | Success |
 | --- | --- | --- | --- | --- | --- |
-| 4F-A | dependency audit input / toolchain preflight | **READY FOR IMPLEMENTATION** | Batch 4F plan review PASS / ACCEPTED；Batch 4C FROZEN / ACCEPTED | docs-only preflight；确认 dependency sources、lockfile/无 lockfile 状态、可用审计工具、tool pin/checksum policy、输出卫生规则和 4F-B 输入条件；不改 workflow、不运行 scanner、不上传 artifact | Java/Maven、npm、Python/research、GitHub Actions inputs 与 tool candidates 明确；raw output / SBOM / lockfile hygiene 规则复用 Batch 4C；4F-B 输入条件明确 |
+| 4F-A | dependency audit input / toolchain preflight | **IMPLEMENTED / READY FOR REVIEW** | Batch 4F plan review PASS / ACCEPTED；Batch 4C FROZEN / ACCEPTED | docs-only preflight；确认 dependency sources、lockfile/无 lockfile 状态、可用审计工具、tool pin/checksum policy、输出卫生规则和 4F-B 输入条件；不改 workflow、不运行 scanner、不上传 artifact | Java/Maven、npm、Python/research、GitHub Actions inputs 与 tool candidates 已记录于 `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`；raw output / SBOM / lockfile hygiene 规则复用 Batch 4C；4F-B 输入条件明确 |
 | 4F-B | sanitized advisory audit summary | **NOT STARTED** | 4F-A completed / accepted | 最小 report-only audit summary；默认不上传 raw JSON / SBOM | Maven / npm / Python 只输出 sanitized summary；不 blocking vulnerability findings |
 | 4F-C | SBOM report-only | **NOT STARTED** | 4F-A completed / accepted；4F-B baseline decision recorded | Maven / npm SBOM；Python SBOM 取决于 lock/constraints 决策 | SBOM artifact 先过 Batch 4C pre-upload redaction gate；retention bounded |
 | 4F-D | PR dependency delta review | **NOT STARTED** | 4F-A completed / accepted；PR permission review prepared | GitHub Dependency Review 或等价 PR delta check | 默认 report-only；PR comment/annotation 权限单独评审 |
@@ -141,7 +141,7 @@ Batch 4F 任一后续产物上传仍必须经过 Batch 4C redaction gate。Batch
 
 **Batch 4F execution sequence：SYNCED / ACCEPTED**
 
-**Batch 4F-A：READY FOR IMPLEMENTATION**
+**Batch 4F-A：IMPLEMENTED / READY FOR REVIEW**
 
 **Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F：NOT STARTED**
 

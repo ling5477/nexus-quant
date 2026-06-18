@@ -2,9 +2,52 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-A-DEPENDENCY-AUDIT-PREFLIGHT（2026-06-18）
+
+本轮是 GateK CI Batch 4F-A dependency audit input / toolchain preflight。结论：**PASS / READY FOR REVIEW**。Batch 4F-A = **IMPLEMENTED / READY FOR REVIEW**；Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
+实际执行的只读验证：
+
+```powershell
+git status --short
+git branch --show-current
+git log --oneline -8
+git ls-files "*pom.xml" "package.json" "package-lock.json" "pyproject.toml" "requirements*.txt" ".github/workflows/*.yml"
+git ls-files "*package.json" "*package-lock.json" "*pyproject.toml" "*requirements*.txt" "*constraints*.txt" "*poetry.lock" "*Pipfile.lock"
+Get-Command java,mvn,node,npm,python,pip -ErrorAction SilentlyContinue | Select-Object Name,Source,Version
+java -version
+mvn -version
+node --version
+npm --version
+python --version
+python -m pip --version
+git grep -nE "uses:|gitleaks|checksum|sha256|curl|Invoke-WebRequest|npm ci|mvn |python -m" -- .github/workflows docs/current
+```
+
+结果摘要：
+
+- `git status --short`：执行前 clean。
+- `git branch --show-current`：`dev`。
+- `git log --oneline -8`：HEAD 为 `4fea308d docs(ci): sync Batch 4F dependency audit sequence`。
+- Maven input：`backend/pom.xml` + 22 个 tracked child `pom.xml`，root reactor modules 已清点。
+- npm input：`frontend/package.json` + `frontend/package-lock.json`；lockfileVersion = 3；lockfile package entries = 214。
+- Python input：`research/py/pyproject.toml`；无 tracked `requirements*.txt` / `constraints*.txt` / Python lockfile。
+- GitHub Actions input：`.github/workflows/ci.yml`；actions 当前使用 major tag；gitleaks CLI version pin = `8.18.4`，未发现 release asset SHA256 checksum verification。
+- Java / Maven / Node / npm：本机版本可读取。
+- Python / pip：`python` 解析到 WindowsApps stub；`python --version` 与 `python -m pip --version` 失败，未写成可用。
+
+未执行：
+
+- 未运行 Maven vulnerability audit、`npm audit`、`pip-audit`、OSV、Snyk、Trivy、Grype、OWASP dependency-check 或其他外部扫描器。
+- 未生成 SBOM。
+- 未安装 scanner 或依赖。
+- 未上传 artifact、raw report、JSON、dependency tree、lockfile 或 SBOM。
+- 未修改 `.github/workflows/ci.yml`、POM、package、lockfile、pyproject、requirements、backend、frontend、research、scripts、deploy、migration 或测试。
+- 未执行 `mvn test` / `npm run build` / `npm run test:e2e` / Python pytest/mypy/ruff；原因：本轮只做 dependency audit preflight 文档基线，且明确禁止实现扫描、workflow、代码和测试改动。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-EXECUTION-SEQUENCE-SYNC（2026-06-18）
 
-本轮是 GateK CI Batch 4F **pre-implementation documentation sync**：只修正 Batch 4F-A 至 4F-F 的任务编号、顺序、范围与状态，不修改 workflow，不新增 CI job，不运行 dependency audit，不改代码、测试、依赖文件或锁文件。结论 **PASS**；Batch 4F execution sequence = **SYNCED / ACCEPTED**；Batch 4F-A = **READY FOR IMPLEMENTATION**；Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Batch 5 = **PENDING**。
+本轮是 GateK CI Batch 4F **pre-implementation documentation sync**：只修正 Batch 4F-A 至 4F-F 的任务编号、顺序、范围与状态，不修改 workflow，不新增 CI job，不运行 dependency audit，不改代码、测试、依赖文件或锁文件。该轮结论 **PASS**，当时将 Batch 4F-A 标为首个可实施批次；当前已由 `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md` 推进为 **IMPLEMENTED / READY FOR REVIEW**；Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Batch 5 = **PENDING**。
 
 4F-A 原始定义核对：
 

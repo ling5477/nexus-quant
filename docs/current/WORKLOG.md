@@ -2,6 +2,64 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-A-DEPENDENCY-AUDIT-PREFLIGHT
+
+日期：2026-06-18
+
+### 目标
+
+建立 Batch 4F-A dependency audit input / toolchain preflight 基线，作为后续 4F-B sanitized advisory audit summary 的前置输入。本轮只做依赖输入、工具链、GitHub Actions supply-chain 现状和输出卫生规则预检；不运行 vulnerability audit，不生成 SBOM，不改 workflow，不新增 CI job，不安装 scanner，不上传 artifact，不改依赖文件、代码、测试、migration、frontend、research、scripts 或 deploy。
+
+### 结论
+
+**PASS / READY FOR REVIEW**。
+
+- Batch 4F-A = **IMPLEMENTED / READY FOR REVIEW**。
+- Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**。
+- Batch 4C = **FROZEN / ACCEPTED**。
+- Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
+- Batch 5 = **PENDING**。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### 输入盘点摘要
+
+- Java / Maven：`backend/pom.xml` root reactor parent + 22 个 tracked child `pom.xml`；所有 child parent artifact 为 `nexus-quant-backend` `0.1.0-SNAPSHOT`；root modules 已记录在 `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`。
+- frontend / npm：`frontend/package.json` + `frontend/package-lock.json`；lockfileVersion = 3；package entries = 214；未复制完整 lockfile。
+- Python / research：`research/py/pyproject.toml`；runtime dependencies = `[]`；有 dev optional dependencies；无 tracked requirements / constraints / Python lockfile。
+- GitHub Actions：`.github/workflows/ci.yml` 使用 `actions/checkout@v4`、`actions/setup-java@v4`、`actions/upload-artifact@v4`、`actions/setup-node@v4`、`actions/setup-python@v5`；gitleaks CLI version pin = `8.18.4`；未发现 downloaded asset SHA256 checksum verification。
+
+### 工具链事实
+
+- Java：`java -version` = `21.0.8` LTS。
+- Maven：`mvn -version` = Apache Maven `3.9.12`，Java `21.0.8`。
+- Node：`node --version` = `v24.13.0`。
+- npm：`npm --version` = `11.10.0`。
+- Python / pip：`python` 指向 WindowsApps stub；`python --version` 与 `python -m pip --version` 均失败；本轮未写成 Python 本地可用。
+
+### 4F-B 交接标准
+
+- 4F-B 唯一后续方向：sanitized advisory audit summary。
+- 允许输入：tracked Maven POM、frontend package/lockfile、research pyproject、workflow action/CLI inventory。
+- 允许输出：ecosystem、input file、tool name/version、command status、severity count、必要 advisory ID、affected direct package name、remediation category、sanitized tool/config failure reason。
+- 禁止输出或保存：raw audit JSON、完整 dependency tree、完整 POM/effective POM、完整 lockfile、raw/generate SBOM、环境变量、token mask 原始上下文、带凭证的 Maven/npm/pip config、local absolute path 扩散。
+- 4F-B vulnerability findings 必须 report-only / advisory；不得直接 blocking。只能因工具/parser/config failure、unsafe raw output、credential-like raw output、malformed dependency files 或 policy violation 阻断。
+- 4F-B 前不得修改 POM、package、lockfile、pyproject、requirements，不得执行 `npm audit fix`，不得升级依赖。
+
+### 文档更新
+
+- 新增 `docs/current/NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`。
+- 更新 `docs/current/NQ_CI_DEPENDENCY_AUDIT_PLAN.md`。
+- 更新 `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`。
+- 更新 `docs/current/NQ_CI_BASELINE_PLAN.md`。
+- 更新 `docs/current/README.md`。
+- 更新 `docs/current/STATUS.md`。
+- 更新 `docs/current/TESTING.md`。
+- 更新本 `WORKLOG.md`。
+
+### 下一步
+
+只能进入 `NQ-CI-SECURITY-GUARD-BATCH-4F-A-PREFLIGHT-REVIEW`、4F-A docs fix，或暂停 CI 线。4F-A review 接受前不得启动 4F-B 至 4F-F，不得修改 workflow，不得运行 dependency audit / SBOM / external scanner。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-EXECUTION-SEQUENCE-SYNC
 
 日期：2026-06-18
@@ -19,7 +77,7 @@
 **PASS**。
 
 - Batch 4F execution sequence = **SYNCED / ACCEPTED**。
-- Batch 4F-A dependency audit input / toolchain preflight = **READY FOR IMPLEMENTATION**。
+- Batch 4F-A dependency audit input / toolchain preflight = 当时的首个可实施批次；当前已由 `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md` 推进为 **IMPLEMENTED / READY FOR REVIEW**。
 - Batch 4F-B sanitized advisory audit summary = **NOT STARTED**。
 - Batch 4F-C SBOM report-only = **NOT STARTED**。
 - Batch 4F-D PR dependency delta review = **NOT STARTED**。
@@ -33,7 +91,7 @@
 
 | Batch | Name | Status | Gate |
 | --- | --- | --- | --- |
-| 4F-A | dependency audit input / toolchain preflight | READY FOR IMPLEMENTATION | 只做 docs-only preflight；不改 workflow、不运行 scanner、不上传 artifact；确认 dependency sources、lockfile / no-lockfile、tool candidates、pin/checksum policy、output hygiene 和 4F-B 输入条件。 |
+| 4F-A | dependency audit input / toolchain preflight | 当前已推进为 IMPLEMENTED / READY FOR REVIEW | 只做 docs-only preflight；不改 workflow、不运行 scanner、不上传 artifact；确认 dependency sources、lockfile / no-lockfile、tool candidates、pin/checksum policy、output hygiene 和 4F-B 输入条件。 |
 | 4F-B | sanitized advisory audit summary | NOT STARTED | 4F-A completed / accepted 后才能启动。 |
 | 4F-C | SBOM report-only | NOT STARTED | 4F-A completed / accepted 后才能启动；artifact 必须先过 Batch 4C redaction gate。 |
 | 4F-D | PR dependency delta review | NOT STARTED | 4F-A completed / accepted 后才能启动；PR annotation/comment 权限单独评审。 |
@@ -60,7 +118,7 @@
 
 ### 下一步
 
-只能进入 `NQ-CI-SECURITY-GUARD-BATCH-4F-A-DEPENDENCY-AUDIT-PREFLIGHT`、sequence fix、optional static workflow assertion planning、Batch 5 planning，或暂停 CI 线。不得直接启动 4F-B，不得修改 workflow，不得运行 dependency audit / SBOM / external scanner。
+该轮后续入口 `NQ-CI-SECURITY-GUARD-BATCH-4F-A-DEPENDENCY-AUDIT-PREFLIGHT` 已由本轮完成并进入 READY FOR REVIEW。当前只能进入 `NQ-CI-SECURITY-GUARD-BATCH-4F-A-PREFLIGHT-REVIEW`、4F-A docs fix、optional static workflow assertion planning、Batch 5 planning，或暂停 CI 线。不得直接启动 4F-B，不得修改 workflow，不得运行 dependency audit / SBOM / external scanner。
 
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-PLAN-REVIEW
 
