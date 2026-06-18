@@ -114,6 +114,7 @@ GateO：A 股适配
 - `NQ_DOCS_EVIDENCE_INDEX.md`：历史证据索引（GateJ freeze / CI Batch 1~5A / 4C / 4F-A / backlog-residual / DB / credential / NQ-DH；只链接不复制；G1 新增）。
 - `NQ_DOCS_MIGRATION_MAP.md`：逐文件 / 等效逐文件迁移映射（覆盖 278 基线 md/txt；recommended action 仅 5 取值、无 DELETE NOW；G1 新增）。
 - `NQ_DOCS_G1_IMPLEMENTATION.md`：G1 实施记录（git 计数、P2 收敛证据、G1~G6 边界；**G1 = IMPLEMENTED / READY FOR REVIEW**，G2~G6 = NOT STARTED）。
+- `NQ_DOCS_G1_REVIEW.md`：G1 只读评审；结论 **PASS / ACCEPTED**，**G1 authority/evidence index = ACCEPTED / READY FOR FREEZE REVIEW**，**Plan = ACCEPTED AS IMPLEMENTATION BASELINE**，G2~G6 = NOT STARTED（P0/P1/P2=0，P3=3 信息性）。
 
 ## Codex Workflow 入口
 

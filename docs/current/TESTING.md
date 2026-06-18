@@ -2,6 +2,27 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED**。只读评审，docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。P0=0 / P1=0 / P2=0 / P3=3（信息性）。
+
+git 实测复核：
+
+```text
+工作树 md/txt = 283（基线 278 + 增量 5）；current 根 80 / frontend 3 / gates 152 / archive 21 / templates 4 / .agents 13 / scattered 10
+基线自洽 75+3+10+152+21+13+4 = 278 ✓；工作树 278+5 = 283 ✓
+current↔gate-j blob 比对 → 18 IDENTICAL（superseded 17 + RUNBOOK retain）/ 9 DIVERGED（独立复跑确认）
+MIGRATION_MAP §1E superseded 去重 → 17 唯一 .md（无重复/遗漏）
+authority index → 14 领域，每领域唯一 current authority，无并列
+evidence index → 9 类入口齐全；backlog（5B-ENV/5B-SMOKE/4F-B~4F-F/static）均 NOT STARTED/BLOCKED，无 completed 误标；只链接不复制
+migration map → 10 字段齐全；gates/archive/.agents/templates 全 RETAIN_IN_PLACE/NONE/NOT_APPLICABLE；DELETE NOW 仅否定语境（无肯定用法）
+rg "277|290|16 IDENTICAL|16 份" 5 份治理文档 → 仅 run-id 子串 + 已废弃订正说明
+git diff --name-only e3b12e33..c3a2cf83 -- (禁止范围) → 空（governance commit 未触碰 code/workflow/gates/archive/templates/.agents）
+git diff --check → 无空白错误
+```
+
+**NQ Docs Governance Plan = ACCEPTED AS IMPLEMENTATION BASELINE**；**G1 authority/evidence index = ACCEPTED / READY FOR FREEZE REVIEW**；**G2~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX（2026-06-18）
 
 结论：**G1 = IMPLEMENTED / READY FOR REVIEW**。docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。新增 4 份 G1 索引文档，收敛 P2-1/P2-2/P2-3，**未移动/删除/重命名/归档任何文档**。

@@ -2,6 +2,32 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX-REVIEW
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读评审 G1 的 authority index / evidence index / migration map / G1 implementation 与 P2 收敛结果，确认可作为 G2~G5 之前唯一有效的文档治理索引基线。仅新增 `NQ_DOCS_G1_REVIEW.md` 并更新 README/STATUS/TESTING/WORKLOG；**不移动/删除/重命名/归档任何文档**，不改冻结正文或链接，不改 workflow/代码/测试/migration/依赖。
+
+### 结论
+
+**PASS / ACCEPTED**。**G1 authority/evidence index = ACCEPTED / READY FOR FREEZE REVIEW**；**NQ Docs Governance Plan = ACCEPTED AS IMPLEMENTATION BASELINE**；**G2~G6 = NOT STARTED**。P0=0 / P1=0 / P2=0 / P3=3（信息性 by-design）。
+
+### 核验要点
+
+- 计数：工作树 283 = 基线 278 + 增量 5；各分区计数全部一致；283 份唯一无冲突治理、零 orphan。
+- GateJ 模型：blob-identical 18 / superseded 17（唯一无重复）/ RUNBOOK 第 18 份 RETAIN_IN_PLACE 不去重 / 9 DIVERGED 分层事实未误标。
+- Authority index：14 领域唯一权威，无并列（一文件锚定多领域不违规）。
+- Evidence index：9 类入口齐全，只链接不复制，backlog 未误标 completed。
+- Migration map：10 字段齐全，gates/archive/.agents/templates 全 RETAIN_IN_PLACE/NONE/NOT_APPLICABLE，无 DELETE NOW，FUTURE_*≠可删除，G3/G4/G5 前置条件明确。
+- 边界：governance commit `e3b12e33..c3a2cf83` 对禁止范围 diff 为空；G2（漂移/链接/P3 规则矛盾）、G3（17 superseded 收敛）、G4（CI evidence 归位）、G5（目录收口）均未提前处理。
+- 旧口径 277/290/16 在 5 份治理文档无当前事实残留（仅 run-id 子串 + 已废弃订正）。
+
+### Next concrete action
+
+进入 G1 freeze review；冻结后方可单独开工 G2（docs-only 漂移与可修链接修复 + P3 规则矛盾澄清）。不得在未建 redirect 前移动文档，不得删除冻结证据。
+
 ## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX
 
 日期：2026-06-18
