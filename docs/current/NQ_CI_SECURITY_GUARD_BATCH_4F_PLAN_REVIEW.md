@@ -11,6 +11,9 @@
 - NQ-CI-SECURITY-GUARD-BATCH-4F-PLAN-REVIEW = **PASS / ACCEPTED**。
 - Batch 4F plan = **ACCEPTED AS IMPLEMENTATION BASELINE**。
 - Batch 4F implementation = **NOT STARTED**。
+- Batch 4F execution sequence = **SYNCED / ACCEPTED**。
+- Batch 4F-A = **READY FOR IMPLEMENTATION**。
+- Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**。
 - Batch 4C = **FROZEN / ACCEPTED**。
 - Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
 - Batch 5 = **PENDING**。
@@ -107,7 +110,7 @@
 ## 修复建议
 
 - 最小修复：无阻断项，无需修复 plan。
-- 验证方式：进入 4F-B/4F-C/4F-D/4F-E/4F-F 前分别单独 plan/review/first-run/freeze。
+- 验证方式：先进入 4F-A dependency audit input / toolchain preflight；4F-A 完成前不得启动 4F-B 至 4F-F，后续每批分别单独 plan/review/first-run/freeze。
 - 回滚方式：删除本 review 文档并还原 `README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 中的 4F review 状态即可；未触碰 workflow / code / dependency files。
 
 ## 未验证项
@@ -115,19 +118,32 @@
 - 原因：本轮是 plan review，禁止实现 dependency audit 或调用外部 dependency audit 上传服务。
 - 后续验证命令：由 4F-B 起分别定义，不在本轮执行。
 
-## Next implementation batches
+## Execution sequence
 
-1. `4F-B advisory audit summary`：新增最小 report-only summary，Maven / npm / Python 只输出 sanitized summary；不上传 raw JSON / SBOM；不 blocking vulnerability findings。
-2. `4F-C SBOM report-only`：Maven / npm SBOM 起步；Python SBOM 等 lock/constraints 决策；所有 artifact 先过 Batch 4C redaction gate。
-3. `4F-D dependency review PR delta`：默认 report-only，仅对新增 critical/high 且可修复项逐步 fail-closed；PR comment 权限单独评审。
-4. `4F-E supply-chain pinning`：action SHA pinning 与 downloaded CLI checksum verification；不同时升级 action major versions。
-5. `4F-F Dependabot / Renovate governance`：分组、节流、禁 auto-merge、major upgrade 手动 review。
+原 plan 中已存在 `4F-A plan review`，但该项已由本 review 完成，不再作为后续 execution batch。后续 Batch 4F implementation 必须按下表执行，禁止在 4F-A 完成前启动 4F-B 或修改 workflow。
+
+| Batch | Name | Status | Prerequisite | Allowed scope | Success |
+| --- | --- | --- | --- | --- | --- |
+| 4F-A | dependency audit input / toolchain preflight | **READY FOR IMPLEMENTATION** | Batch 4F plan review PASS / ACCEPTED；Batch 4C FROZEN / ACCEPTED | docs-only preflight；确认 dependency sources、lockfile/无 lockfile 状态、可用审计工具、tool pin/checksum policy、输出卫生规则和 4F-B 输入条件；不改 workflow、不运行 scanner、不上传 artifact | Java/Maven、npm、Python/research、GitHub Actions inputs 与 tool candidates 明确；raw output / SBOM / lockfile hygiene 规则复用 Batch 4C；4F-B 输入条件明确 |
+| 4F-B | sanitized advisory audit summary | **NOT STARTED** | 4F-A completed / accepted | 最小 report-only audit summary；默认不上传 raw JSON / SBOM | Maven / npm / Python 只输出 sanitized summary；不 blocking vulnerability findings |
+| 4F-C | SBOM report-only | **NOT STARTED** | 4F-A completed / accepted；4F-B baseline decision recorded | Maven / npm SBOM；Python SBOM 取决于 lock/constraints 决策 | SBOM artifact 先过 Batch 4C pre-upload redaction gate；retention bounded |
+| 4F-D | PR dependency delta review | **NOT STARTED** | 4F-A completed / accepted；PR permission review prepared | GitHub Dependency Review 或等价 PR delta check | 默认 report-only；PR comment/annotation 权限单独评审 |
+| 4F-E | GitHub Actions / CLI supply-chain pinning | **NOT STARTED** | 4F-A completed / accepted；current action / CLI inventory recorded | action SHA pinning 与 downloaded CLI checksum verification | 不同时升级 action major versions；不扩大 write/id-token 权限 |
+| 4F-F | Dependabot / Renovate governance | **NOT STARTED** | 4F-A completed / accepted；baseline advisory policy recorded | dependency update automation governance | 分组、节流、禁 auto-merge、major upgrade 手动 review |
+
+Batch 4F 任一后续产物上传仍必须经过 Batch 4C redaction gate。Batch 5 仍 **PENDING**，不进入 Playwright 或 frontend E2E hardening。
 
 ## Review decision
 
 **NQ-CI-SECURITY-GUARD-BATCH-4F-PLAN-REVIEW：PASS / ACCEPTED**
 
 **Batch 4F plan：ACCEPTED AS IMPLEMENTATION BASELINE**
+
+**Batch 4F execution sequence：SYNCED / ACCEPTED**
+
+**Batch 4F-A：READY FOR IMPLEMENTATION**
+
+**Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F：NOT STARTED**
 
 **Batch 4F implementation：NOT STARTED**
 

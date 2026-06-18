@@ -2,6 +2,50 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-EXECUTION-SEQUENCE-SYNC（2026-06-18）
+
+本轮是 GateK CI Batch 4F **pre-implementation documentation sync**：只修正 Batch 4F-A 至 4F-F 的任务编号、顺序、范围与状态，不修改 workflow，不新增 CI job，不运行 dependency audit，不改代码、测试、依赖文件或锁文件。结论 **PASS**；Batch 4F execution sequence = **SYNCED / ACCEPTED**；Batch 4F-A = **READY FOR IMPLEMENTATION**；Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Batch 5 = **PENDING**。
+
+4F-A 原始定义核对：
+
+- `NQ_CI_DEPENDENCY_AUDIT_PLAN.md` 原本存在 `4F-A plan review`，但该项属于已完成的 plan review，不是后续 execution batch。
+- 本轮将 execution sequence 单独同步为：4F-A dependency audit input / toolchain preflight → 4F-B sanitized advisory audit summary → 4F-C SBOM report-only → 4F-D PR dependency delta review → 4F-E GitHub Actions / CLI supply-chain pinning → 4F-F Dependabot / Renovate governance。
+
+复核命令（已执行 / 本节记录本轮最终复核要求）：
+
+```powershell
+git status --short
+git branch --show-current
+git diff --check
+git diff --stat
+rg -n "4F-A|4F-B|4F-C|4F-D|4F-E|4F-F|dependency audit|SBOM|Dependabot|Renovate|Batch 5" `
+  docs/current/NQ_CI_DEPENDENCY_AUDIT_PLAN.md `
+  docs/current/NQ_CI_SECURITY_GUARD_PLAN.md `
+  docs/current/NQ_CI_BASELINE_PLAN.md `
+  docs/current/NQ_CI_SECURITY_GUARD_BATCH_4F_PLAN_REVIEW.md `
+  docs/current/README.md `
+  docs/current/STATUS.md `
+  docs/current/TESTING.md `
+  docs/current/WORKLOG.md
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+git diff -- "backend/**/db/migration"
+```
+
+未执行：
+
+- 未运行 `npm audit`、`pip-audit`、Maven vulnerability audit、SBOM generation 或外部扫描。
+- 未运行 backend Maven / frontend build / E2E / Python pytest / mypy / ruff，因为本轮只改文档状态和执行顺序，不改代码、workflow、测试或依赖文件。
+- 未上传 artifact、SBOM、raw JSON、dependency tree、lockfile 或审计报告。
+
+边界确认：
+
+- 未修改 `.github/workflows/ci.yml`；未新增 GitHub Actions job。
+- 未修改 backend / frontend / research / scripts / deploy / migration / 测试。
+- 未修改 `pom.xml`、`package.json`、`package-lock.json`、`pyproject.toml` 或 requirements 文件。
+- Batch 4F 任一后续产物上传仍必须经过 Batch 4C redaction gate。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-PLAN-REVIEW（2026-06-18）
 
 本轮是 GateK CI Batch 4F **dependency audit / supply-chain audit plan review**：只读评审 `NQ_CI_DEPENDENCY_AUDIT_PLAN.md` 是否可作为 implementation baseline。结论 **PASS / ACCEPTED**；Batch 4F plan = **ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4F implementation = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**。LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
