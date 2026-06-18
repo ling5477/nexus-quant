@@ -2,6 +2,24 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN（2026-06-18）
+
+结论：**PASS / READY FOR REVIEW**（documentation governance plan ready，未收口）。本轮为只读文档盘点 + 规划，**未运行**后端/前端/Python/CI 测试（无代码变更，无需构建验证）。
+
+只读检查与"验证"：
+
+```text
+git ls-files "*.md" "*.txt"                         → 277 份（排除 node_modules/target/build/dist/test-results）
+docs/current 根 .md                                 → 74 ；docs/current/ 共 89 ；docs/gates 152 ；docs/archive 22
+docs/current 根 vs docs/gates/gate-j 同名 blob 比对  → 16 IDENTICAL（GateJ 重复）/ 9 DIVERGED（current 活文档 vs 快照）
+broken markdown [](*.md) 链接扫描（全 docs）         → checked=24 broken=6（2 current malformed 前导 /；4 在冻结 gate-h/gate-j 快照）
+docs/README.md 导航 backtick 路径存在性              → 全部存在（含 GateJ 计划文档，确认重复/漂移）
+git diff --check                                     → 无空白错误
+git diff -- .github/workflows/ci.yml backend frontend research scripts deploy "backend/**/db/migration" → 空（禁止范围零改动）
+```
+
+本轮无移动/删除/重命名文档，无历史 freeze/review 事实修改。详见 `NQ_DOCS_GOVERNANCE_PLAN.md`。
+
 ## NQ-CI-BATCH-5A-FREEZE-REVIEW（2026-06-18）
 
 结论：**PASS / ACCEPTED / FROZEN**。**Batch 5A = FROZEN / ACCEPTED**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。

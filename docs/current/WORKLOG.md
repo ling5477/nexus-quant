@@ -2,6 +2,37 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读盘点全仓文档并产出文档治理收口计划。仅新增 `NQ_DOCS_GOVERNANCE_PLAN.md` 并更新 README/STATUS/TESTING/WORKLOG；**不移动/删除/重命名任何文档**，不改历史 freeze/review 事实，不改 workflow/代码/测试/migration/依赖。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-INVENTORY-PLAN：PASS / READY FOR REVIEW**（documentation governance plan ready，未收口）。
+
+- 全量盘点：277 份 md/txt（current 根 74 / current 共 89 / gates 152 / archive 22）；分类矩阵 + authority matrix + 目标结构 + 迁移映射 + 不可删除清单 + G1~G6 批次。
+- NQ GateK CI mainline = **COMPLETED / ACCEPTED**；Batch 5A = **FROZEN / ACCEPTED**；Batch 5B-ENV = **P1 SECURITY ENHANCEMENT / NOT STARTED**；Batch 5B-SMOKE = **BLOCKED BY 5B-ENV**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
+### 关键发现
+
+- 重复：16 份 GateJ 过程/计划文档在 `docs/current/` 与 `docs/gates/gate-j/` blob 完全一致（DUPLICATE_OR_SUPERSEDED candidate；gate-j 持权威副本）；DIVERGED 的 9 份（API/ARCHITECTURE/DB_SCHEMA/MODULES/README/ROADMAP/STATUS/TESTING/WORKLOG）= current 活文档 vs gate-j 快照，属正常分层。
+- 状态漂移：`docs/README.md` 导航停留 GateJ、把 GateJ 计划列为 current 入口、未含 GateK/CI batch 口径。
+- CI 收口：22 份 `NQ_CI_*` 散落 `docs/current` 根，无唯一 CI evidence index（建议新增 `docs/baselines/CI_BASELINE_INDEX.md`，后续批次）。
+- 链接风险：6 处 broken markdown 链接 —— `docs/current/{API,DB_SCHEMA}.md` 2 处 malformed 前导 `/`（目标存在，可后续 docs-only 修复）；`gate-h/gate-j` 的 API/DB_SCHEMA 4 处跨 gate 相对链接，位于冻结快照，不改事实、用 redirect index 处理。
+- 命名漂移：`PLAN_GATEJ.md` vs `GATEJ_*_PLAN.md` 前缀混用（历史，不在本轮重命名）。
+
+### 实施纪律（写入计划）
+
+先建索引/迁移映射 → 历史链接先 redirect 兼容 → 再移动/归档 → 目录收口；删除单独显式可审计批次、默认不删除、不通过删历史证据精简；文档治理不与业务代码/CI workflow/LIVE/AI/DH/real provider 混做。
+
+### Next concrete action
+
+评审本计划后从 G1（仅新增 CI evidence index + 导航补口径）开始；不得在未建 redirect 前移动文档，不得删除冻结证据。
+
 ## NQ-CI-BATCH-5A-FREEZE-REVIEW
 
 日期：2026-06-18
