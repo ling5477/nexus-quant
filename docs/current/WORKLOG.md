@@ -2,6 +2,59 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-IMPL
+
+日期：2026-06-18
+
+### 目标
+
+基于最近一次 green GitHub Actions run 的 per-job logs，产出 Batch 4C-C log redaction proof：确认 7 个 CI jobs 日志不输出真实 credential material / raw secret / connection string / signature / raw req-resp / private key / token / encrypted_payload-decrypted_payload 真实值。静态断言为可选，本轮选择**不改 ci.yml**，只做 review-time proof 文档。
+
+### 结论
+
+**LOG PROOF COMPLETED / PENDING FREEZE REVIEW**，P0/P1 = 0。**Batch 4C-C 不写 FROZEN；Batch 4C 整体仍 NOT FROZEN**；4C-B 仍 FROZEN / ACCEPTED；4B 仍 FROZEN / ACCEPTED；4F / Batch 5 仍 NOT STARTED / PENDING。
+
+### Proof run 选取与等价性
+
+- 当前 HEAD `d3e828c0`（上一轮 plan review 已 commit/push）；HEAD 自身 run `27733445791` 评审时 in_progress。
+- 取 latest green run `27732660516`（commit `a6d4bf74`，event push / branch dev，completed / success，7/7 jobs green）。
+- 校验 ci.yml blob `4a40ef78` 在 HEAD / `a6d4bf74` / `66cb3d40`（4C-B frozen）/ `c734102d`（gate impl）四处一致——proof run 与当前 HEAD ci.yml 字节一致，proof 对当前 baseline 有效。
+
+### 取证与扫描方式
+
+- `gh run view 27732660516 --log` 拉到系统临时文件，按 14 类 pattern 扫描（count / sanitized category），扫完即 `rm` 删除；**未读本地 logs、未持久化日志到仓库、未上传 logs artifact、未打印命中真实值**。
+- 另针对 Secret scan job 单独 `gh run view --job <id> --log` 复核唯一 `RuleID=` 命中：确认为 jq 模板 step-script 回显（line 222，cyan `##[group]Run`），非真实 finding；扫完即删。
+
+### proof 结果（14 类 pattern 真实值命中 = 0）
+
+- 完整 AKIA/ASIA、sk-/sk-ant-/sk-proj-、github_pat_/ghp_/gho_、xoxb-/xoxp-、完整 PEM、value-bearing 凭证赋值、creds-in-URL、signature、raw req/resp、encrypted_payload/decrypted_payload：真实值命中 = 0（凭证形态字串仅 gate/secret-scan step-script 正则定义回显，FP）。
+- printenv / set -x / env dump：0（7 jobs 均 `set -euo pipefail`，无 `+ cmd` 回显）。
+- 非阻断 P3 residual：`123456`×5（backend disposable DB password，未 mask）、`nq_ci_password`×2（postgres-flyway，service-container `docker create` + mask-step 自身 env block，平台级 service init 在 mask 生效前）、Spring「generated security password」×6（ephemeral dev password，值未打印）；`***` mask ≥53 处（GITHUB_TOKEN 等平台 mask 生效）。
+- 正面证据：pre-upload gate `no high-risk credential pattern ... (text-only, fail closed)` + artifact 74666 bytes 上传；secret-scan gitleaks 8.18.4 `--redact` `no leaks found` + backstop `no non-allowlisted matches`，sanitized 失败分支未执行。
+
+### 静态断言决策
+
+- 本轮**不改 `.github/workflows/ci.yml`**：落地 workflow 静态断言 step 会引入需自身 first-run review 的未验证变更，与「proof 轮、未验证不写通过」冲突；列为可选 future hardening（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`）。
+- 等价保证由 review-time 静态复核给出：HEAD ci.yml `rg` 无 `printenv` / `set -x` / `env` dump / `continue-on-error` / `id-token` / `GITLEAKS_LICENSE` / `gitleaks-action`；`permissions` 仅顶层 + secret-scan `contents: read`。
+
+### 文档更新（仅允许的 docs/current CI 文档）
+
+- `NQ_CI_LOG_REDACTION_PROOF_PLAN.md`：status header + 新增「Log redaction proof evidence」段（proof run / per-job / 14 类 pattern / secret-value review / FP 分类 / static assertion）+ Review decision + Next action → LOG PROOF COMPLETED / PENDING FREEZE REVIEW。
+- `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` / `NQ_CI_SECURITY_GUARD_PLAN.md` / `NQ_CI_BASELINE_PLAN.md` / `README.md`：4C-C 状态同步为 LOG PROOF COMPLETED / PENDING FREEZE REVIEW，Batch 4C 整体仍 NOT FROZEN，Next action 推进为 4C-C freeze review。
+- `TESTING.md`、`WORKLOG.md`：新增本轮 proof 记录。
+
+### 安全确认
+
+- 未改 `.github/workflows/ci.yml` / Java / TS / Python 代码 / 测试 / migration / frontend / research / scripts / deploy；未新增 log 扫描 job / step。
+- 未读取本地 logs；未读取 / 打印 / 复制 / 输出真实 credential material；未扫描禁止目录；未上传 artifact / logs / raw gitleaks report；未使用 repository secret / write / id-token / continue-on-error。
+- 未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real probe adapter。
+- `git status --short` clean（取证前）；`git diff --check` clean；forbidden 区域 0 diff。
+- 网络：使用 `gh`（GitHub API）拉取 run 元数据与 run 日志用于 review-time proof；未访问交易所 / 真实 provider。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW`（基于 immutable green run `27732660516` 冻结 4C-C log proof 子基线）、（可选）`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。不得把 Batch 4C-C 写成 FROZEN、不得把 Batch 4C 整体写成 FROZEN、不得把 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW
 
 日期：2026-06-18

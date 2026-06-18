@@ -2,6 +2,57 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-IMPL（2026-06-18）
+
+本轮是 GateK CI Batch 4C-C **log redaction proof implementation**：基于最近一次 green GitHub Actions run 的 per-job logs 产出 review-time log redaction proof。结论 **LOG PROOF COMPLETED / PENDING FREEZE REVIEW**，P0/P1 = 0。**未改 `.github/workflows/ci.yml`**（静态断言列为可选 future hardening）/ 代码 / 测试 / migration / frontend / research / scripts / deploy；本轮仅在允许的 `docs/current` CI 文档记录 proof。**Batch 4C-C 不写 FROZEN；Batch 4C 整体仍 NOT FROZEN**；4C-B 仍 FROZEN / ACCEPTED；4B 仍 FROZEN / ACCEPTED；4F / Batch 5 仍 NOT STARTED / PENDING。
+
+Proof run：`27732660516`（commit `a6d4bf74`，event push / branch dev，completed / success，7/7 jobs green）。ci.yml blob `4a40ef78` 在 HEAD（`d3e828c0`）/ `a6d4bf74` / `66cb3d40` / `c734102d` 四处一致——proof run 的 ci.yml 与当前 HEAD 字节一致。HEAD 自身 run（`27733445791`）评审时 in_progress，按计划取 latest green run（blob 一致故等价）。取证：`gh run view 27732660516 --log` 拉临时文件扫描后即删除，未读本地 logs、未持久化日志到仓库、未上传 logs artifact；扫描只取 count / sanitized category，从不打印命中真实值。
+
+per-job + pattern 复核（14 类，真实值命中 = 0）：
+
+| 复核项 | 结果 | 证据（sanitized）|
+| --- | --- | --- |
+| 7 jobs 全 green 且全复核 | 通过 | Diff check / No-outbound guard / Backend Maven test / PostgreSQL / Flyway smoke / Frontend build / Research quality gate / Secret scan 全 success |
+| 完整 AKIA / ASIA + 16 | 0 真实值 | 仅 gate/secret-scan step-script 正则定义回显（FP）|
+| sk- / sk-ant- / sk-proj- 长串 | 0 真实值 | 仅 step-script 正则定义回显（FP）|
+| github_pat_ / ghp_ / gho_ 长串 | 0 真实值 | `GITHUB_TOKEN` 平台 mask 为 `***`（≥53 处 `***`）|
+| xoxb- / xoxp- 长串 | 0 | 无命中 |
+| 完整 PEM（含 `-----`）| 0 真实值 | 仅 step-script dash-omitted 正则定义回显（FP）|
+| value-bearing 凭证赋值真实值 | 0 真实值 | 仅 step-script 赋值正则定义 + disposable 短值 |
+| credentials-in-URL | 0 | 无命中 |
+| signature 真实值 | 0 | 无命中 |
+| raw request / raw response 真实报文 | 0 | 无命中 |
+| encrypted_payload / decrypted_payload 真实值 | 0 | 无命中（DH 仅契约字段名，未进 CI runtime）|
+| Spring Boot generated password | 0 真实凭证 | 6 次「generated security password」=ephemeral dev password，值未打印（P3）|
+| disposable CI PostgreSQL 值 | 0 真实凭证 | `123456`×5（backend）/ `nq_ci_password`×2（postgres-flyway，service-init 在 mask 前显示）；明文已在公开 ci.yml（P3）|
+| platform token mask | 生效 | `***` mask active |
+| printenv / set -x / env dump | 0 | 无 `+ cmd` set-x 回显、无 printenv 调用、无 env dump |
+| pre-upload gate green | 通过 | `no high-risk credential pattern ... (text-only, fail closed)`，artifact 74666 bytes 上传 |
+| secret-scan green | 通过 | gitleaks 8.18.4 `--redact` `no leaks found`，backstop `no non-allowlisted matches`，sanitized 失败分支未执行；唯一 `RuleID=` 命中为 jq 模板 step-script 回显（line 222 cyan `##[group]Run`）|
+| finding / proof 不输出 secret value | 通过 | 全程 count / sanitized category；Spring password、disposable 值均 redact |
+
+复核命令（已执行）：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git diff -- backend
+git diff -- frontend
+git diff -- research
+git diff -- scripts
+git diff -- deploy
+git diff -- backend/**/db/migration
+git grep -nE "AKIA[0-9A-Z]{16}" docs/current
+gh run view 27732660516 --json status,conclusion,jobs
+gh run view 27732660516 --log   # 临时文件扫描后删除；未读本地 logs、未持久化、未上传
+rg "printenv|set -x|env dump|add-mask|redact|redaction|secret|passphrase|token|private key|BEGIN PRIVATE KEY|encrypted_payload|decrypted_payload|connection string|signature|raw request|raw response|continue-on-error|id-token|GITLEAKS_LICENSE|gitleaks-action|AKIA|ASIA|LIVE|RealClient" .github docs/current backend frontend research
+```
+
+`git status --short` clean（取证前）；`git diff --check` clean；forbidden 区域（backend / frontend / research / scripts / deploy / migration / ci.yml）0 diff；`git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = 0。本轮未运行 backend Maven、frontend build / E2E、Python pytest / mypy / ruff（proof 取自远端 CI run 日志，不本地重跑）。
+
+Review decision：LOG PROOF COMPLETED / PENDING FREEZE REVIEW。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW`（基于 immutable green run `27732660516`）、（可选）静态断言轮、Batch 4F later plan、Batch 5 planning，或暂停 CI 线。Batch 4C-C 不得写 FROZEN；Batch 4C 整体不得写 FROZEN；4F / Batch 5 不得写 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW（2026-06-18）
 
 本轮是 GateK CI Batch 4C-C **plan review**：评审 `docs/current/NQ_CI_LOG_REDACTION_PROOF_PLAN.md` 是否可作为 Batch 4C-C review / proof baseline。结论 **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**，P0/P1 = 0，28 项评审全部满足。**只读评审**（HEAD `a6d4bf74`，工作区 clean），未改 `.github/workflows/ci.yml` / 代码 / 测试 / migration / frontend / research / scripts / deploy，未新增 log 扫描 job / step；本轮仅在允许的 `docs/current` CI 文档内追加 plan-review 记录。**Batch 4C-C 仍 PLAN ONLY / NOT IMPLEMENTED；Batch 4C 整体仍 NOT FROZEN**；Batch 4C-B 仍 FROZEN / ACCEPTED；4B 仍 FROZEN / ACCEPTED；4F / Batch 5 仍 NOT STARTED / PENDING。
