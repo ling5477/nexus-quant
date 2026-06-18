@@ -118,6 +118,7 @@ GateO：A 股适配
 - `NQ_DOCS_G1_FREEZE_REVIEW.md`：G1 冻结复核；结论 **PASS / ACCEPTED / FROZEN**，**Plan = FROZEN FOR G1 BASELINE**，**G1 authority/evidence index = FROZEN / ACCEPTED**，**G2 = READY FOR IMPLEMENTATION**，G3~G6 = NOT STARTED；固定计数边界（基线 278 / snapshot 283 冻结，review/freeze evidence 不回写）、5 冻结对象 blob 与冻结失效条件。本文与 `NQ_DOCS_G1_REVIEW.md` 属 review/freeze evidence（HISTORICAL_EVIDENCE / RETAIN_IN_PLACE），不计入 283 snapshot。
 - `NQ_DOCS_G2_CURRENT_CONTROL_REPAIR.md`：G2 当前控制层漂移修复（导航/状态/规则冲突/可修链接）；结论 **G2 = IMPLEMENTED / READY FOR REVIEW**，G3~G6 = NOT STARTED；未移动/删除/重命名/归档任何文档，未改 G1 五份冻结对象与冻结快照，未回写 278/283。属 G2 implementation evidence（HISTORICAL_EVIDENCE / RETAIN_IN_PLACE）。
 - `NQ_DOCS_G2_REVIEW.md`：G2 只读评审；结论 **PASS / ACCEPTED**，**G2 current-control drift repair = ACCEPTED / READY FOR FREEZE REVIEW**，G3~G6 = NOT STARTED（P0/P1/P2=0，P3=2 信息性）；确认 G1 五份冻结对象零 drift、278/283 未改写、冻结快照未改、无 G2-as-frozen 误写。属 review evidence（HISTORICAL_EVIDENCE / RETAIN_IN_PLACE）。
+- `NQ_DOCS_G2_FREEZE_REVIEW.md`：G2 冻结复核（semantic baseline freeze，非 blob lock）；结论 **PASS / ACCEPTED / FROZEN**，**G2 current-control drift repair = FROZEN / ACCEPTED**，**G3 = READY FOR IMPLEMENTATION**，G4~G6 = NOT STARTED；明确失效条件（恢复缺陷/越冻结边界）与允许维护（带日期追加、新增导航、未来规划）；current-control 文档不被锁成 immutable blob。属 freeze evidence（HISTORICAL_EVIDENCE / RETAIN_IN_PLACE）。
 
 ## Codex Workflow 入口
 

@@ -2,6 +2,33 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G2-FREEZE-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+只读冻结复核 G2 current-control 修复，确认其可冻结为“语义与链接卫生基线”（semantic baseline freeze），并明确后续正常状态更新不会自动使 G2 freeze 失效。仅新增 `NQ_DOCS_G2_FREEZE_REVIEW.md` 并更新 README/STATUS/TESTING/WORKLOG；**不移动/删除/重命名/归档任何文档**，不改 G1 五份冻结对象、冻结快照、workflow、代码、测试、migration、依赖；不将 current-control 文档整体锁成 immutable blob。
+
+### 结论
+
+**PASS / ACCEPTED / FROZEN**。**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 = READY FOR IMPLEMENTATION**；**G4~G6 = NOT STARTED**。P0=0 / P1=0 / P2=0 / P3=3。
+
+### 核验要点
+
+- G2 = semantic baseline freeze，不是 blob lock：STATUS/WORKLOG/TESTING/ROADMAP/README 仍可正常追加；仅恢复缺陷或越冻结边界才失效（失效 8 项 / 允许维护 6 项已写入 freeze 文档）。
+- GateJ 导航历史/冻结证据语义、GateK CI mainline COMPLETED、5A FROZEN（显式非 authenticated/backend coverage）、5B/4F/static 未误标 completed、G1 FROZEN、G2 未提前误写 FROZEN。
+- Rule 16 五级优先级完整；链接 `../gates/gate-i/` 可解析、malformed=0；冻结快照 4 处 `./GATEI_*` 未改；evidence 导航齐全、不回写 278/283。
+- 冻结保护：G1 五份对象与 gates/archive/.agents/templates/code/workflow 跨 G2 零 drift（diff 7eb7ae53..HEAD 空）。
+
+### Findings
+
+- P0/P1/P2 无；P3-1 evidence-index 物理 Governance Evidence section 留待受控基线修订；P3-2 docs/README.md evidence 导航枚举至 G2 implementation，G2 review/G2 freeze review 经 class rule + docs/current/README.md 可导航，物理枚举后续受控补充（anti-recursion by-design）；P3-3 STATUS 早期 as-of-time “mainline IN PROGRESS” 属历史日志非 drift。
+
+### Next concrete action
+
+G2 冻结完成；**G3 = READY FOR IMPLEMENTATION**（GateJ 17 份 superseded redirect-first 收敛，须单独受控开工、redirect-first、gate-j 权威副本永久保留）。G4~G6 未开始。
+
 ## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR-REVIEW
 
 日期：2026-06-18
