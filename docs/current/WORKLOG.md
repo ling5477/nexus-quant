@@ -2,6 +2,25 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G3-FREEZE-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+冻结 G3 GateJ redirect-first compatibility-path 语义/结构基线。冻结对象为 17 个 current compatibility path、同名 canonical target、G3 implementation/review evidence、RUNBOOK / DIVERGED 排除规则与失效条件。仅新增 `NQ_DOCS_G3_FREEZE_REVIEW.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不修改 17 个 stub、`docs/gates/**`、`docs/archive/**`、`.agents/**`、`templates/**`、RUNBOOK、G1 五份冻结对象、workflow、代码、测试、migration、依赖。
+
+### 核验要点
+
+- 17 / 17 stub 存在，保留原 H1、non-authoritative compatibility path、同名 canonical relative link、superseded status 与 G3 governance 说明。
+- canonical target 均为 `docs/gates/gate-j/<same filename>`，canonical blob across `HEAD^` / `HEAD` / worktree zero drift。
+- `<name>.md#` fragment 入链 0；普通旧路径仍由 current stub 兼容。
+- RUNBOOK 保持 `INDEX_AS_CURRENT_CONTROL / RETAIN_IN_PLACE`；9 份 DIVERGED 未被 stub 化；G1 五份冻结对象 diff=0；G2 Rule 16 与 current API/DB_SCHEMA link hygiene 未削弱。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G3-FREEZE-REVIEW：PASS / ACCEPTED / FROZEN**。P0/P1/P2/P3=0。G3 freeze 是 compatibility-path semantic / structural baseline freeze，不是 `STATUS.md` / `TESTING.md` / `WORKLOG.md` 的 blob lock。**G4 = READY FOR IMPLEMENTATION**；**G5~G6 = NOT STARTED**。
+
 ## NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION-REVIEW
 
 日期：2026-06-19
