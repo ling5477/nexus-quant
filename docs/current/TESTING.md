@@ -2,6 +2,53 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-A-PREFLIGHT-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED**。Batch 4F-A preflight = **ACCEPTED / READY FOR FREEZE REVIEW**；允许进入 4F-A freeze review。Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Batch 5 = **PENDING**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+实际执行的只读验证：
+
+```powershell
+git status --short
+git branch --show-current
+git log --oneline -8
+git show --name-status --format=fuller 7e7079a3
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+git diff -- "backend/**/db/migration"
+git diff -- "backend/**/pom.xml" frontend/package.json frontend/package-lock.json research/py/pyproject.toml
+git ls-files "*pom.xml" "package.json" "package-lock.json" "pyproject.toml" "requirements*.txt" "constraints*.txt" ".github/workflows/*.yml"
+Get-Command java,mvn,node,npm,python,pip -ErrorAction SilentlyContinue
+java -version
+mvn -version
+node --version
+npm --version
+python --version
+python -m pip --version
+rg -n "uses:|GITLEAKS_VERSION|curl --fail|sha256|checksum|upload-artifact|retention-days" .github/workflows/ci.yml
+```
+
+结果摘要：
+
+- branch = `dev`；review 前工作区 clean。
+- 4F-A implementation commit `7e7079a3` 仅修改 9 个 `docs/current` 文件；未修改 workflow、依赖文件、代码、测试或 migration。
+- `backend/pom.xml` 为 packaging=`pom` 的 root reactor parent；22 个 root modules 与 22 个 tracked child POM 一一对应；22 个 child parent group/artifact/version/relativePath 全部一致。
+- Java `21.0.8`、Maven `3.9.12` 仅为 local command availability；未运行 vulnerability audit，不能写成 audit verified。
+- frontend package/lockfile 存在；lockfileVersion=`3`，package entries=`214`；未复制完整 lockfile、dependency tree 或 npm config。
+- Python tracked input 仅 `research/py/pyproject.toml`；无 requirements、constraints 或 Python lockfile；WindowsApps stub 导致两条 Python version 命令 exit `9009`。
+- 4F-B 若覆盖 Python，必须使用真实解释器路径或 GitHub Actions `actions/setup-python@v5` 确定环境。
+- official actions 使用 major tags；gitleaks version pin=`8.18.4` 且无 asset SHA256 verification；均归入 4F-E。
+- Review-time clarification：4F-B sanitized summary 必须包含 bounded `scope`；不得展开 dependency tree。
+- 未安装或运行 scanner；未运行 dependency audit；未生成/上传 SBOM；未上传 artifact。
+
+未执行：
+
+- 未运行 Maven vulnerability plugin、`npm audit`、`pip-audit`、OSV、Snyk、Trivy、Grype 或 OWASP dependency-check。
+- 未运行 backend/frontend/research build 或 test；原因：本轮为 docs-only preflight review，且禁止进入 4F-B 实现。
+- 未修改 `.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy、migration、tests 或 dependency input files。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-A-DEPENDENCY-AUDIT-PREFLIGHT（2026-06-18）
 
 本轮是 GateK CI Batch 4F-A dependency audit input / toolchain preflight。结论：**PASS / READY FOR REVIEW**。Batch 4F-A = **IMPLEMENTED / READY FOR REVIEW**；Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。

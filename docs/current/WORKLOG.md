@@ -2,6 +2,54 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-A-PREFLIGHT-REVIEW
+
+日期：2026-06-18
+
+### 目标
+
+评审 Batch 4F-A dependency audit input / toolchain preflight 是否可作为后续 4F-B 输入与工具链基线。本轮只读核对 Maven、npm、Python、GitHub Actions / CLI supply-chain 和 output hygiene；不运行 scanner、dependency audit 或 SBOM，不修改 workflow、依赖文件、代码、测试、migration、scripts 或 deploy。
+
+### 结论
+
+**PASS / ACCEPTED**。
+
+- Batch 4F-A preflight = **ACCEPTED / READY FOR FREEZE REVIEW**。
+- 允许进入 4F-A freeze review。
+- Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**。
+- Batch 4C = **FROZEN / ACCEPTED**。
+- Batch 5 = **PENDING**。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### Findings
+
+- P0：无。
+- P1：无。
+- P2：Python 本地 `python` 为 WindowsApps stub，`python --version` 与 `python -m pip --version` 均 exit `9009`；正确降级为 4F-B execution environment 条件，不得写成 local audit ready。
+- P2：preflight 的 4F-B sanitized summary 字段未单列 `scope`；本 review 将 `scope` 固定为 mandatory bounded field，禁止借此输出完整 dependency tree。
+- P3：official actions major tags 与 gitleaks `8.18.4` 无 asset SHA256 verification 均保留为 4F-E 输入，本轮不修 workflow。
+
+### 核验摘要
+
+- `backend/pom.xml` = root reactor parent，packaging=`pom`，22 modules；22 个 tracked child POM parent group/artifact/version/relativePath 全部一致。
+- `frontend/package.json` / `frontend/package-lock.json` 存在；lockfileVersion=`3`，package entries=`214`；未复制完整 lockfile或 dependency tree。
+- `research/py/pyproject.toml` 存在；无 tracked requirements、constraints 或 Python lockfile。
+- Java `21.0.8` 与 Maven `3.9.12` 仅为 tool availability，不是 vulnerability audit evidence。
+- 4F-A implementation commit `7e7079a3` 仅修改 `docs/current`。
+- workflow、backend、frontend、research、scripts、deploy、migration、dependency files 在 review 前均 0 diff。
+
+### 文档更新
+
+- 新增 `docs/current/NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_REVIEW.md`。
+- 更新 `docs/current/README.md`。
+- 更新 `docs/current/STATUS.md`。
+- 更新 `docs/current/TESTING.md`。
+- 更新本 `WORKLOG.md`。
+
+### 下一步
+
+只允许进入 4F-A freeze review、review docs fix，或暂停 CI 线。4F-A freeze 前不得启动 4F-B 至 4F-F；不得修改 workflow；不得运行 dependency audit、scanner 或 SBOM。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-A-DEPENDENCY-AUDIT-PREFLIGHT
 
 日期：2026-06-18
