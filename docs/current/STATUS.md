@@ -51,6 +51,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - Current stage: GateJ completed。
 - Next: GateK-PLAN。
 - GateK implementation: not started。GateK-PLAN 只做 GateJ 后的 planning / architecture / productization / deployment / observability / security boundary 收口，不代表实现已启动。
+- GateK CI Batch 4C-C log redaction proof freeze review completed：**PASS / ACCEPTED / FROZEN**（immutable green run `27732660516`，commit `a6d4bf74`，event push / dev，7/7 jobs green，ci.yml blob `4a40ef78` 与当前 HEAD 等价；14 类 high-risk pattern 真实值命中 = 0；P0/P1/P2 blockers = 0）。Batch 4C overall 仍 **NOT FROZEN**；Static workflow assertion 仍 **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F **OPTIONAL / NOT STARTED**；Batch 5 **PENDING**。本轮未改 workflow / code / test / migration / frontend / research / scripts / deploy，未上传 logs artifact，未开启 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。
 - GateJ-3-WO 已完成。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成：无 P0；Claude 第一轮 P1-1 / P1-2 验证缺口已由 Codex 实际重跑关闭；P1-3 不阻塞；P1-4 已闭环 GATEJ_FREEZE_ACCEPTANCE_TEMPLATE。详见 `PRE_FREEZE_AUDIT_REPORT.md` 与 `PRE_FREEZE_AUDIT_FIX_PLAN.md`。
 - FULL_SECURITY_AUDIT 报告中的 P1 已由 AUDIT-FIX 关闭：旧 OKX dome 验收脚本已移出 `scripts/` 可执行区并归档到 `docs/archive/scripts/`，原路径只保留阻断 stub；`/__gated/**` 仍仅为历史路径。

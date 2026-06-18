@@ -2,6 +2,54 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW（2026-06-18）
+
+本轮是 GateK CI Batch 4C-C **log redaction proof freeze review**：只判断已完成的 log proof 是否可以冻结为子基线。结论 **PASS / ACCEPTED / FROZEN**，P0/P1/P2 blockers = 0。Batch 4C-C = **FROZEN / ACCEPTED**；Batch 4C overall = **NOT FROZEN**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F = **OPTIONAL / NOT STARTED**；Batch 5 = **PENDING**。
+
+冻结依据：
+
+- immutable proof run `27732660516`：commit `a6d4bf74`，event `push / dev`，status `completed / success`，7/7 jobs green。
+- `ci.yml` blob `4a40ef78` 在当前 HEAD（`d39cb3b1`）、`d3e828c0`、`a6d4bf74`、`66cb3d40`、`c734102d` 均一致，proof run 对当前 `dev` workflow 等价有效。
+- 7 jobs 均纳入 proof：Diff check / No-outbound guard / Backend Maven test / PostgreSQL / Flyway smoke / Frontend build / Research quality gate / Secret scan。
+- 14 类 high-risk pattern 真实值命中 = 0；false positive 分类完整且非阻断。
+- proof 不打印真实 secret value，不打印可能含值的完整 matching line。
+
+复核命令（已执行）：
+
+```powershell
+git status --short
+git branch --show-current
+git log --oneline -5
+git diff --check
+git diff --stat
+git rev-parse HEAD:.github/workflows/ci.yml d39cb3b1:.github/workflows/ci.yml d3e828c0:.github/workflows/ci.yml a6d4bf74:.github/workflows/ci.yml 66cb3d40:.github/workflows/ci.yml c734102d:.github/workflows/ci.yml
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+gh run view 27732660516 --json databaseId,headSha,headBranch,event,status,conclusion,workflowName,jobs,createdAt,updatedAt,url
+git grep -l -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|sk-ant-|sk-proj-|github_pat_|ghp_|gho_|BEGIN [A-Z ]*PRIVATE KEY" -- docs/current .github
+```
+
+结果摘要：
+
+- 预检：`git status --short` clean（编辑前）；branch `dev`。
+- `git diff --check` / `git diff --stat` clean（编辑前）。
+- workflow blob：全部为 `4a40ef78...`。
+- `.github/workflows/ci.yml` / backend / frontend / research / scripts / deploy：0 diff（编辑前）。
+- GitHub run metadata：`27732660516` completed / success，7 jobs success。
+- credential grep：候选文件为 workflow/docs 中的规则定义、前缀描述、allowlist / false-positive 说明和历史 proof 文本；未发现真实 value-bearing credential material。
+
+未执行：
+
+- 未运行 backend Maven / frontend build / E2E / Python pytest / mypy / ruff。本轮是 docs-only freeze review，不改业务代码、测试、migration、frontend、research。
+- 未下载或持久化完整 CI logs；未上传 logs artifact。
+
+边界确认：
+
+- 未修改 `.github/workflows/ci.yml`；未新增 static assertion step；未新增 GitHub Actions job。
+- 未改 backend / frontend / research / scripts / deploy；未新增 migration。
+- 未读取本地 logs，未上传 logs artifact，未打印 secret value / 完整命中行。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-IMPL（2026-06-18）
 
 本轮是 GateK CI Batch 4C-C **log redaction proof implementation**：基于最近一次 green GitHub Actions run 的 per-job logs 产出 review-time log redaction proof。结论 **LOG PROOF COMPLETED / PENDING FREEZE REVIEW**，P0/P1 = 0。**未改 `.github/workflows/ci.yml`**（静态断言列为可选 future hardening）/ 代码 / 测试 / migration / frontend / research / scripts / deploy；本轮仅在允许的 `docs/current` CI 文档记录 proof。**Batch 4C-C 不写 FROZEN；Batch 4C 整体仍 NOT FROZEN**；4C-B 仍 FROZEN / ACCEPTED；4B 仍 FROZEN / ACCEPTED；4F / Batch 5 仍 NOT STARTED / PENDING。
