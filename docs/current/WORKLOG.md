@@ -2,6 +2,54 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-DEPENDENCY-AUDIT-PLAN
+
+日期：2026-06-18
+
+### 目标
+
+规划 GateK CI Batch 4F dependency audit / supply-chain audit。只输出 planning 文档，明确 Java/Maven、frontend/npm、Python/research、GitHub Actions supply-chain、action SHA pinning、SBOM、Dependency Review、Dependabot/Renovate、CI blocking/advisory 分层、raw dependency report / SBOM / artifact hygiene、与 Batch 4C / Batch 5 的关系。不修改 workflow，不新增 CI job，不改代码 / 测试 / migration / frontend / research / scripts / deploy，不运行外部真实 dependency audit 上传服务，不上传 artifact。
+
+### 结论
+
+**PLAN READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED**。
+
+- Batch 4F dependency audit = **PLAN ONLY / NOT IMPLEMENTED**。
+- Batch 4C = **FROZEN / ACCEPTED**。
+- Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
+- Batch 5 = **PENDING**。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+P0/P1 planning blockers = 0。P2/P3 均为后续实现治理项：Maven/npm/Python audit 尚未实现，GitHub Actions major tag / gitleaks checksum pinning 仍为 supply-chain hardening gap，SBOM / Dependency Review / Dependabot-Renovate 需后续单独批次。
+
+### 只读证据
+
+- 当前目录 `F:\project\nexus-quant`，分支 `dev`，编辑前 `git status --short` clean。
+- `.github/workflows/ci.yml` 当前使用 `actions/checkout@v4`、`actions/setup-java@v4`、`actions/upload-artifact@v4`、`actions/setup-node@v4`、`actions/setup-python@v5`；gitleaks CLI 固定 `8.18.4`，但未做 SHA256 checksum pin。
+- Java/Maven 边界为 `backend/pom.xml` + 22 个 child `pom.xml`；当前 `maven-dependency-plugin:3.8.1:build-classpath` 只用于 classpath 准备，不是 vulnerability audit。
+- frontend 边界为 `frontend/package.json` + `frontend/package-lock.json` lockfile v3；既有 `npm audit` advisory summary 仍为非阻断记录。
+- Python/research 边界为 `research/py/pyproject.toml`；runtime `dependencies = []`，dev extra 为 `pytest>=8.0`、`mypy>=1.8`、`ruff>=0.8`，未发现 requirements 文件。
+
+### 文档更新
+
+- 新增 `docs/current/NQ_CI_DEPENDENCY_AUDIT_PLAN.md`。
+- 更新 `docs/current/README.md`、`STATUS.md`、`NQ_CI_SECURITY_GUARD_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`。
+- 同步本 `WORKLOG.md` 与 `TESTING.md`。
+- 未修改 `.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy、migration、POM、lockfile、pyproject、测试。
+
+### 后续实现拆批
+
+1. `4F-A`：plan review。
+2. `4F-B`：advisory audit summary（report-only 起步）。
+3. `4F-C`：SBOM report-only，复用 Batch 4C pre-upload redaction。
+4. `4F-D`：Dependency Review PR delta。
+5. `4F-E`：action SHA / tool checksum supply-chain pinning。
+6. `4F-F`：Dependabot / Renovate governance。
+
+### 下一步
+
+只能进入 `NQ-CI-SECURITY-GUARD-BATCH-4F-A-PLAN-REVIEW`、Batch 4F plan fix、optional static workflow assertion planning、Batch 5 planning，或暂停 CI 线。不得把 Batch 4F 写成 implemented，不得新增 dependency audit job，不得修改 workflow，不得进入 Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-FREEZE-REVIEW
 
 日期：2026-06-18

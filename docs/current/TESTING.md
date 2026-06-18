@@ -2,6 +2,64 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-DEPENDENCY-AUDIT-PLAN（2026-06-18）
+
+本轮是 GateK CI Batch 4F **dependency audit / supply-chain audit planning-only**：只规划 Java/Maven、frontend/npm、Python/research、GitHub Actions supply-chain、action SHA pinning、SBOM、Dependency Review、Dependabot/Renovate、CI blocking/advisory 分层、raw dependency report / SBOM / artifact hygiene、与 Batch 4C / Batch 5 的边界。结论 **PLAN READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED**，P0/P1 planning blockers = 0。Batch 4F dependency audit = **PLAN ONLY / NOT IMPLEMENTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**。
+
+只读依据：
+
+- `.github/workflows/ci.yml` 使用 GitHub official actions major tag（`checkout@v4`、`setup-java@v4`、`upload-artifact@v4`、`setup-node@v4`、`setup-python@v5`）；gitleaks CLI 固定 `8.18.4` 但未做 SHA256 checksum pin。
+- Java/Maven 依赖入口为 `backend/pom.xml` + 22 个 child `pom.xml`；现有 `maven-dependency-plugin:3.8.1:build-classpath` 只用于 classpath 准备，不是漏洞审计。
+- frontend 依赖入口为 `frontend/package.json` + `frontend/package-lock.json` lockfile v3；既有 `npm audit` advisory summary 仍按非阻断风险记录。
+- research Python 依赖入口为 `research/py/pyproject.toml`；runtime `dependencies = []`，dev extra 为 `pytest>=8.0`、`mypy>=1.8`、`ruff>=0.8`；无 requirements 文件。
+
+复核命令（已执行）：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git log --oneline -8
+dir .github\workflows
+dir backend
+dir frontend
+dir research
+git ls-files "*pom.xml" "package.json" "package-lock.json" "pyproject.toml" "requirements*.txt" ".github/workflows/*.yml"
+rg --files -g 'pom.xml' -g 'package.json' -g 'package-lock.json' -g 'pyproject.toml' -g 'requirements*.txt' -g '.github/workflows/*.yml' -g '!node_modules' -g '!target' -g '!build' -g '!dist' -g '!test-results'
+git grep -nE "dependency-review|dependabot|renovate|cyclonedx|sbom|audit-ci|npm audit|pip-audit|osv|trivy|grype|snyk|owasp|versions-maven-plugin|maven-dependency-plugin" -- .github docs backend frontend research
+rg -n "uses:|GITLEAKS_VERSION|curl --fail|upload-artifact|setup-node|setup-python|setup-java|checkout" .github\workflows\ci.yml
+rg -n "<dependency>|<artifactId>|<groupId>|<version>|<scope>" backend -g pom.xml
+rg -n '"(dependencies|devDependencies|lockfileVersion|packages|node_modules/)' frontend\package-lock.json frontend\package.json
+rg -n "requires-python|dependencies|dev =|pytest|mypy|ruff|setuptools" research\py\pyproject.toml
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+git diff -- backend/**/db/migration
+git status --short
+```
+
+结果摘要：
+
+- 预检：`Get-Location` = `F:\project\nexus-quant`；branch `dev`；编辑前 `git status --short` clean。
+- Dependency audit 现状 grep：已有 docs 只把 `npm audit` / Maven dependency check / `pip-audit` 记录为 Batch 4F optional / later plan；未发现已实现的 dependency audit CI job、SBOM job、Dependency Review、Dependabot 或 Renovate config。
+- 依赖入口盘点：找到 Maven POM、`frontend/package.json`、`frontend/package-lock.json`、`research/py/pyproject.toml`；无 tracked `requirements*.txt`。
+- 收尾 diff 验证：`git diff --check` 通过；`.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy、migration 均无 diff；`git status --short` 仅显示允许的 `docs/current` 文档变更。
+
+未执行：
+
+- 未运行 backend Maven / frontend build / E2E / Python pytest / mypy / ruff。本轮是 docs-only planning，不改 workflow、代码、测试、migration、frontend、research、scripts、deploy、POM、lockfile 或 pyproject。
+- 未运行 `npm audit`、Maven vulnerability audit、`pip-audit`、SBOM generation、Dependency Review、Dependabot / Renovate。
+- 未调用外部真实 dependency audit 上传服务；未上传 artifact。
+
+边界确认：
+
+- 未修改 `.github/workflows/ci.yml`；未新增 GitHub Actions job。
+- 未改 backend / frontend / research / scripts / deploy；未新增 migration；未改测试。
+- 未改 `frontend/package-lock.json`、`backend/**/pom.xml`、`research/py/pyproject.toml`。
+- 未上传 raw dependency report / dependency tree / lockfile / SBOM。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-FREEZE-REVIEW（2026-06-18）
 
 本轮是 GateK CI Batch 4C overall **security artifact/log redaction baseline freeze review**：只判断已冻结的 4C-B pre-upload artifact redaction gate 与 4C-C log redaction proof 是否可以共同收口为 Batch 4C overall baseline。结论 **PASS / ACCEPTED / FROZEN**，P0/P1 blockers = 0。Batch 4C overall = **FROZEN / ACCEPTED**；Batch 4C-B = **FROZEN / ACCEPTED**；Batch 4C-C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F = **OPTIONAL / NOT STARTED**；Batch 5 = **PENDING**。

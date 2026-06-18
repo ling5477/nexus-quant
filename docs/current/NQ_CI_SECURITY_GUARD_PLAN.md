@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4-PLAN
 日期：2026-06-17
-状态：Batch 4A plan review PASS / ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline **FROZEN / ACCEPTED**（overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`；4C-A plan review PASS / ACCEPTED；4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**，immutable run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`；4C-C log redaction proof **FROZEN / ACCEPTED**，`NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW`，2026-06-18，P0/P1/P2 blockers = 0，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0，未打印 secret value / 完整匹配行）。Static workflow assertion **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）。Batch 4B FROZEN 只冻结 minimal secret scan baseline；Batch 4C overall 已冻结 artifact/log redaction baseline；不得把 static workflow assertion / dependency audit 写成 implemented；不得把 Batch 5 写成 started。
+状态：Batch 4A plan review PASS / ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline **FROZEN / ACCEPTED**（overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`；4C-A plan review PASS / ACCEPTED；4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**，immutable run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`；4C-C log redaction proof **FROZEN / ACCEPTED**，`NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW`，2026-06-18，P0/P1/P2 blockers = 0，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0，未打印 secret value / 完整匹配行）。Batch 4F dependency audit plan **READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED**（`NQ_CI_DEPENDENCY_AUDIT_PLAN.md`）；Static workflow assertion **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 frontend E2E hardening PENDING。Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）。Batch 4B FROZEN 只冻结 minimal secret scan baseline；Batch 4C overall 已冻结 artifact/log redaction baseline；不得把 static workflow assertion / dependency audit 写成 implemented；不得把 Batch 5 写成 started。
 
 ## Task classification
 
@@ -303,11 +303,12 @@ freeze 必录 P3（非阻断，留作后续 hardening follow-up）：
 
 Review decision：PASS / FROZEN / ACCEPTED。P0/P1/P2 blockers = 0。Batch 4B minimal secret scan 成为当前 `dev` security guard secret-scan baseline。
 
-### Batch 4F（可选）: dependency audit later plan
+### Batch 4F（可选）: dependency audit plan
 
-- Status target: LATER PLAN / NOT STARTED。
-- Scope: 规划 `npm audit` / Maven dependency check / `pip-audit`，非阻断起步，triage 后选择性提升。
-- Success: dependency audit 不阻塞 Batch 4 baseline；与 secret scan 分离；high / critical 提升策略明确。
+- Status: **PLAN READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED**（详见 `NQ_CI_DEPENDENCY_AUDIT_PLAN.md`）。
+- Scope: 规划 Java/Maven dependency audit、frontend/npm audit、Python/research audit、GitHub Actions supply-chain、action SHA pinning、SBOM、Dependency Review、Dependabot / Renovate、CI blocking/advisory 分层、raw dependency report / SBOM / artifact hygiene。
+- Success: dependency audit 仍不阻塞已冻结 Batch 4C baseline；与 secret scan / artifact redaction / Batch 5 frontend E2E hardening分离；后续 implementation 拆为 4F-A plan review、4F-B advisory audit summary、4F-C SBOM report-only、4F-D dependency review PR delta、4F-E supply-chain pinning、4F-F Dependabot/Renovate governance。
+- Not implemented: 本轮未修改 `.github/workflows/ci.yml`，未新增 CI job，未运行外部 dependency audit 上传服务，未上传 artifact，未改 package lock / POM / pyproject。
 
 ## Batch 5 boundary
 
@@ -397,6 +398,6 @@ Batch 4B freeze review（Batch 4E）：**PASS / FROZEN / ACCEPTED**（2026-06-17
 
 ## Next concrete action
 
-Next concrete action：（可选）`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`（最小 workflow 静态断言 + 自身 first-run review）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。
+Next concrete action：（可选）`NQ-CI-SECURITY-GUARD-BATCH-4F-A-PLAN-REVIEW`、`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`（最小 workflow 静态断言 + 自身 first-run review）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。
 
-Batch 4B 当前 **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C-A plan review **ACCEPTED**、Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`）；Batch 4C-C log redaction proof **FROZEN / ACCEPTED**（freeze review，green run `27732660516`，14 类 pattern 真实值命中 = 0；`NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md` 已落档）；Batch 4C overall security artifact/log redaction baseline **FROZEN / ACCEPTED**（`NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 static workflow assertion / dependency audit / Batch 5 写成 started 或 implemented。
+Batch 4B 当前 **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C-A plan review **ACCEPTED**、Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`）；Batch 4C-C log redaction proof **FROZEN / ACCEPTED**（freeze review，green run `27732660516`，14 类 pattern 真实值命中 = 0；`NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md` 已落档）；Batch 4C overall security artifact/log redaction baseline **FROZEN / ACCEPTED**（`NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F dependency audit **PLAN READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED**；Batch 5 仍 PENDING；不得把 static workflow assertion / dependency audit / Batch 5 写成 started 或 implemented。
