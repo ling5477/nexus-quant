@@ -2,6 +2,28 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION-REVIEW（2026-06-19）
+
+结论：**PASS / ACCEPTED**。docs-only review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 实测验证：
+
+```text
+branch = dev
+HEAD = 102c824d docs(governance): consolidate GateJ current copies with redirects
+17 stub/canonical/pre-conversion blob loop → STUB_CANONICAL_REVIEW_PASS 17/17
+fragment 入链 → FRAGMENT_HITS=0
+G3 implementation report → G3_REPORT_COMPLETENESS_PASS
+git diff --check → clean
+docs/gates docs/archive .agents templates diff → 空
+G1 五份冻结对象 diff → 空
+.github/workflows/ci.yml backend frontend research scripts deploy "backend/**/db/migration" diff → 空
+RUNBOOK diff → 空
+API/ARCHITECTURE/DB_SCHEMA/MODULES/README/ROADMAP diff → 空
+```
+
+**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = ACCEPTED / READY FOR FREEZE REVIEW**；**G4~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION（2026-06-19）
 
 结论：**PASS / READY FOR REVIEW**。docs-only redirect-first consolidation，**未运行**后端/前端/Python/CI 测试（无代码、无 workflow、无 migration、无依赖变更）。

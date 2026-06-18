@@ -2,6 +2,25 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+只读审查 G3 GateJ redirect-first consolidation implementation commit `102c824d`。审查范围限定为 17 个 current redirect stub、canonical gate-j target、入链/fragment、G3 实施记录、G1/G2 冻结边界与禁止路径 diff。仅新增 `NQ_DOCS_G3_REVIEW.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不修改 17 个 stub，不改 `docs/gates/**`、`docs/archive/**`、`.agents/**`、`templates/**`、RUNBOOK、G1 五份冻结对象、workflow、代码、测试、migration、依赖。
+
+### 核验要点
+
+- 17 / 17 stub 存在且均为 12 行 redirect-first compatibility 文档；canonical link 均为 `../gates/gate-j/<相同文件名>`。
+- 17 / 17 pre-conversion blob（`HEAD^:docs/current/<file>`）与 canonical gate-j blob 一致；canonical worktree zero drift。
+- `<name>.md#` fragment 入链 0；普通旧路径链接仍由保留的 current stub 兼容。
+- `RUNBOOK.md` 未修改；9 份 DIVERGED 未被 redirect/stub 化；G1 五份冻结对象 diff=0；`docs/gates/**` / `docs/archive/**` / `.agents/**` / `templates/**` diff=0；workflow/code/migration diff=0。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION-REVIEW：PASS / ACCEPTED**。P0/P1/P2/P3=0。**G3 GateJ redirect-first consolidation = ACCEPTED / READY FOR FREEZE REVIEW**；**G4~G6 = NOT STARTED**。
+
 ## NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION
 
 日期：2026-06-19
