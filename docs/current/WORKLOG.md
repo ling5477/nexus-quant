@@ -2,6 +2,61 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-E-PRE-UPLOAD-REDACTION-GATE-FREEZE-REVIEW
+
+日期：2026-06-17
+
+### 目标
+
+基于 **immutable run `27701669084`**（commit `66cb3d40`）冻结 **Batch 4C-B pre-upload artifact redaction gate** 子基线：确认 gate 已在真实 GitHub runner 上 green、在 upload 前执行、artifact 边界 / 安全边界 / credential 边界全部满足。只评审 + 改允许的 `docs/current`，不改 `ci.yml` / 代码 / 测试 / migration / gitleaks 规则。**Batch 4C 整体仍 NOT FROZEN**（4C-C 未开始）；4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING。
+
+### frozen baseline 锚定
+
+- frozen baseline = `.github/workflows/ci.yml` `postgres-flyway` job 的 `Pre-upload redaction gate (PostgreSQL schema artifacts)` step（ci.yml blob `4a40ef78`，commit `c734102d` 引入）。
+- 已校验 `git rev-parse` 三处 ci.yml blob 一致：HEAD（`d1664406`）== `66cb3d40`（green run commit）== `c734102d`（gate impl commit）== `4a40ef78`。doc-fix `66cb3d40` 与记录 commit `d1664406` 均未触碰 ci.yml，故 green-confirmed 的 gate 与当前 `dev` HEAD 字节一致。
+
+### run 结论（immutable run `27701669084`）
+
+`27701669084`（commit `66cb3d40`，event push / branch dev）= **completed / success**，7/7 jobs green：
+
+| Job | 结论 |
+| --- | --- |
+| Diff check | success |
+| No-outbound guard | success |
+| Backend Maven test | success |
+| **PostgreSQL / Flyway smoke** | **success** |
+| Frontend build | success |
+| Research quality gate | success |
+| **Secret scan** | **success** |
+
+### 冻结证据（25 项评审全部通过）
+
+- secret-scan（job `81939453367`）：`Installed gitleaks version: 8.18.4`（pinned，非 action / 无 `GITLEAKS_LICENSE` / 无 `gitleaks-action`）；`tracked=1304 safe_scanned=1301 excluded=3`；`INF no leaks found` + `gitleaks: no leaks found in tracked working tree.`；custom backstop `no non-allowlisted matches`。`git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = 0。
+- pre-upload gate（job `81939453552`）：step 顺序 `9 Generate ... artifacts` → **`10 Pre-upload redaction gate (PostgreSQL schema artifacts)`** → `11 Upload ... artifacts`（gate 在 upload 前）；gate 输出 `Pre-upload redaction gate: no high-risk credential pattern in artifacts/postgres-flyway (text-only, fail closed).`（required artifacts 存在 / 非空、binary text-only guard 未误杀、data-row 检查通过、22 条 credential pattern 0 命中、finding 不输出 secret value / matched line / raw content、fail closed）。
+- artifact：`Artifact nq-postgres-flyway-schema-artifacts has been successfully uploaded! Final size is 74664 bytes`；run artifacts API `total_count=1`，唯一 = `nq-postgres-flyway-schema-artifacts`；未上传 raw gitleaks JSON report（report 仅留 `RUNNER_TEMP`）；未新增 surefire / frontend / research artifact。
+- 边界：`ci.yml` 仅两处 `permissions: contents: read`（顶层 line 12 / secret-scan line 777），无 `continue-on-error` / `id-token` / write perms / `secrets.` 引用；唯一 `upload-artifact`（line 676）path = `artifacts/postgres-flyway/`；gate 只扫 `artifacts/postgres-flyway/`，secret-scan safe-file 排除 `.env*` / secrets / credentials / `*.pem` / `*.key` / target / node_modules / dist / build / logs / dumps / backups / `.git`（`excluded=3`）。
+- no-outbound guard（job `81939454109`）green：无 credential env、denylist 覆盖、guard test 通过；未调用真实交易所；LIVE / AI / DH 未开启；RealClient / real provider / real probe adapter 未实现（forbidden 区域 0 diff）。
+
+### 安全确认
+
+- 未改 `.github/workflows/ci.yml` / Java / TS / Python 代码 / 测试 / migration / frontend / research / scripts / deploy / gitleaks 规则；未新增 allowlist；未关闭 security guard。
+- 未读取 / 打印 / 复制 / 输出真实 credential material；未扫描禁止目录；未上传未脱敏 artifact / raw gitleaks report；未使用 repository secret / write / id-token / continue-on-error。
+- `git status --short` clean；`git diff --check` clean；forbidden 区域（ci.yml / backend / frontend / research / scripts / deploy / migration）0 diff。
+
+### 文档更新
+
+- `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`：header + 「Batch 4C-B」status + 「Batch 4C-E: freeze review」段（target → 实际 freeze 记录 + 证据）+ Boundary confirmation + Review decision + Next action 推进为 **4C-B FROZEN / ACCEPTED**。
+- `NQ_CI_SECURITY_GUARD_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`、`README.md`：Batch 4C 状态同步为 4C-B pre-upload artifact redaction gate FROZEN / ACCEPTED、Batch 4C 整体仍 NOT FROZEN。
+- `TESTING.md`、`WORKLOG.md`：新增本轮 4C-E freeze review 记录。
+
+### Review decision
+
+PASS / FROZEN / ACCEPTED。P0/P1/P2 blockers = 0。Batch 4C-B pre-upload artifact redaction gate 成为当前 `dev` pre-upload artifact redaction baseline。**Batch 4C 整体仍 NOT FROZEN**（只冻结 4C-B 子基线，4C-C log redaction proof 未开始）。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof planning）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。不得把 Batch 4C 整体写成 FROZEN / ACCEPTED；不得把 4C-C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-B-SECOND-PASS-FIRST-RUN-REVIEW
 
 日期：2026-06-17

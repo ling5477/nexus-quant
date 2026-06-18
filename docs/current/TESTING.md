@@ -2,6 +2,59 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-E-PRE-UPLOAD-REDACTION-GATE-FREEZE-REVIEW（2026-06-17）
+
+本轮是 GateK CI Batch 4C-E freeze review：基于 **immutable run `27701669084`**（commit `66cb3d40`）冻结 **Batch 4C-B pre-upload artifact redaction gate** 子基线。结论 **PASS / FROZEN / ACCEPTED**，P0/P1/P2 blockers = 0。只评审 + 改允许的 `docs/current`，未改 `.github/workflows/ci.yml` / 代码 / 测试 / migration / gitleaks 规则；未新增 allowlist、未关闭 security guard。**Batch 4C 整体仍 NOT FROZEN**（4C-C log redaction proof 未开始）；4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING。
+
+frozen baseline = `.github/workflows/ci.yml` `postgres-flyway` job 的 `Pre-upload redaction gate (PostgreSQL schema artifacts)` step（ci.yml blob `4a40ef78`，commit `c734102d` 引入）。已校验 `git rev-parse HEAD:.github/workflows/ci.yml` == `66cb3d40:` == `c734102d:` == `4a40ef78`，即 green-confirmed 的 gate 与当前 `dev` HEAD 字节一致。
+
+| 评审项（25 项） | 结果 | 证据 |
+| --- | --- | --- |
+| 1. run `27701669084` completed / success | 通过 | `gh run view`：`status=completed`、`conclusion=success`、`headSha=66cb3d40`、branch dev、event push。 |
+| 2. 7/7 jobs green | 通过 | Diff check / No-outbound guard / Backend Maven test / PostgreSQL / Flyway smoke / Frontend build / Research quality gate / Secret scan 全 success。 |
+| 3. Secret scan green | 通过 | job `81939453367` success；6 个 step 全 success。 |
+| 4. gitleaks no leaks found | 通过 | `INF no leaks found` + `gitleaks: no leaks found in tracked working tree.`；backstop `no non-allowlisted matches`。 |
+| 5. docs/current 无完整 AKIA 字面量 | 通过 | `git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = 0（exit 1）。 |
+| 6. postgres-flyway job green | 通过 | job `81939453552` success。 |
+| 7. pre-upload redaction gate step green | 通过 | step 10 `Pre-upload redaction gate (PostgreSQL schema artifacts)` success。 |
+| 8. gate 在 upload 前执行 | 通过 | step 顺序 9 Generate → **10 Pre-upload redaction gate** → 11 Upload。 |
+| 9. 唯一 artifact 路径 | 通过 | run artifacts API `total_count=1`，唯一 = `nq-postgres-flyway-schema-artifacts`。 |
+| 10. required artifacts 存在 / 非空 | 通过 | gate 内 `test -s` 7 文件（`flyway-info` / `schema-tables` / `schema-columns` / `schema-constraints` / `schema-indexes` / `schema-comments` / `schema-dump.sql`）均过。 |
+| 11. binary text-only guard 未误杀 | 通过 | gate 输出 `... (text-only, fail closed)`；schema artifacts 全 text，binary 分支未触发。 |
+| 12. data-row 检查通过 | 通过 | `grep -qE '(^INSERT INTO ...)'` 静默，无 data-row finding。 |
+| 13. credential pattern 检查通过 | 通过 | 22 条 per-rule `grep -rIlE -l` 0 命中，gate 输出 `no high-risk credential pattern`。 |
+| 14. gate finding 不输出 secret value / matched line | 通过 | gate 仅输出 `rule | file`（本次无 finding）；data-row 用 `-q`、credential 用 `-l`，从不回显匹配行 / 值。 |
+| 15. artifact upload 成功 | 通过 | `Artifact nq-postgres-flyway-schema-artifacts has been successfully uploaded! Final size is 74664 bytes`。 |
+| 16. 未上传 raw gitleaks JSON report | 通过 | report 仅写 `${RUNNER_TEMP}/...gitleaks-report.json`，`ci.yml` 唯一 `upload-artifact`（line 676）path = `artifacts/postgres-flyway/`，未引用 report。 |
+| 17. 未新增 surefire / frontend / research artifact | 通过 | `ci.yml` 仅 1 处 `upload-artifact`；run artifacts `total_count=1`。 |
+| 18. 未用 repository secrets / write / id-token / continue-on-error | 通过 | `ci.yml` 仅两处 `permissions: contents: read`（line 12 顶层 / line 777 secret-scan）；无 `continue-on-error` / `id-token` / write perms / `secrets.` 引用。 |
+| 19. 未扫描禁止目录 | 通过 | gate 只扫 `artifacts/postgres-flyway/`；secret-scan safe-file 列表排除 `.env*` / secrets / credentials / `*.pem` / `*.key` / target / node_modules / dist / build / logs / dumps / backups / `.git`（`excluded=3`）。 |
+| 20. 未读取 / 输出真实 credential material | 通过 | gate / secret-scan 均 `--redact` / `rule|file` only；rg 命中均为 regex 模式 / 文档字段名 / JWT 代码引用。 |
+| 21. 未调用真实交易所 | 通过 | no-outbound guard job green（无 credential env、denylist 覆盖、guard test 通过）；Batch 3 仍 frozen。 |
+| 22. 未开启 LIVE / AI / DH runtime | 通过 | docs 内 LIVE 相关均断言 disabled；无运行态启用。 |
+| 23. 未实现 RealClient / real provider / real probe adapter | 通过 | 无代码改动（forbidden 区域 0 diff）。 |
+| 24. 4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING | 通过 | 文档保持 NOT STARTED / PENDING，未写 started。 |
+| 25. Batch 4C 整体仍 NOT FROZEN | 通过 | 仅冻结 4C-B pre-upload gate 子基线；4C-C log redaction proof 未开始。 |
+
+复核命令（已执行）：
+
+```powershell
+git status --short
+git diff --check
+git diff --stat
+git show --stat --oneline --name-only HEAD
+git diff -- .github/workflows/ci.yml
+git diff -- backend / frontend / research / scripts / deploy / backend/**/db/migration
+git grep -nE "AKIA[0-9A-Z]{16}" docs/current
+git rev-parse HEAD:.github/workflows/ci.yml ; 66cb3d40: ; c734102d:   # 三处 blob == 4a40ef78
+gh run view 27701669084 --json status,conclusion,jobs
+gh run view --job 81939453367 --log   # secret-scan：no leaks found，无 RuleID finding
+gh run view --job 81939453552 --log   # postgres-flyway：gate 在 upload 前、74664 bytes 上传
+gh api repos/<owner>/<repo>/actions/runs/27701669084/artifacts   # total_count=1
+```
+
+Review decision: **PASS / FROZEN / ACCEPTED**。P0/P1/P2 blockers = 0。Batch 4C-B pre-upload artifact redaction gate 成为当前 `dev` 的 pre-upload artifact redaction baseline（frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`，immutable run `27701669084` 确认）。Batch 4C 整体仍 NOT FROZEN（4C-C 未开始）。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof planning）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。不得把 Batch 4C 整体写成 FROZEN；不得把 4C-C / 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-B-SECOND-PASS-FIRST-RUN-REVIEW（2026-06-17）
 
 本轮是 GateK CI Batch 4C-B second-pass first-run review：评审 doc-only fix（commit `66cb3d40`）后的 second-pass GitHub Actions run（`27701669084`）。结论 **PASS / ACCEPTED FOR FIRST GREEN RUN AFTER FIX** → Batch 4C-B **FIRST GREEN RUN CONFIRMED AFTER DOC FIX**。只评审 + 改允许的 docs，未改 `ci.yml` / 代码 / 测试 / migration。Batch 4C 整体仍 NOT FROZEN；4C-C / 4F / Batch 5 仍 NOT STARTED / PENDING。
