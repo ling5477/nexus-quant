@@ -2,6 +2,37 @@
 
 日期：2026-05-16
 
+## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读审计当前 Playwright config、27 个 spec、登录/fixture runner、backend profile/auth seed/no-outbound test scope、现有 CI 与 Batch 1-4 文档，输出 Batch 5 implementation plan。只新增/更新 `docs/current` 文档；不修改 workflow，不新增 CI job，不修改 frontend/backend/test/migration/dependency/deploy，不运行 E2E，不上传 artifact/raw logs。
+
+### 结论
+
+**NQ-CI-BATCH-5-FRONTEND-E2E-PLAN：PASS / READY FOR REVIEW**。
+
+- Batch 5 = **PLAN ONLY / NOT IMPLEMENTED**；NQ GateK CI mainline = **IN PROGRESS**。
+- 5A 建议仅运行 `login-page` + 3 个 design-system no-backend spec；backend-required smoke 延后到 isolated PostgreSQL/Flyway/auth fixture/runtime no-outbound 基线通过后。
+- `backtest-detail-smoke.spec.ts` 页面级 E2E = **PENDING BACKEND ENV / NOT VERIFIED IN CI**；conditional skip case 不计 passed。
+- 初始 artifact policy = console sanitized summary only；trace/screenshot/video/HTML/test-results/raw logs 全部不上传。未来 upload 必须另过 Batch 4C gate、结构化 sanitize、path normalization 和 bounded retention。
+- Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-A = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### Findings
+
+- P0：无。
+- P1：现有 no-outbound guard 是 JUnit/test-scope，不会自动覆盖单独启动的 E2E backend；backend-required E2E 变 required 前必须证明 runtime enforcement。
+- P1：`loginToConsole()` 会持有 token 并写 exchange-account 状态，必须使用 job-local fresh DB，禁止上传 trace/storage/raw logs。
+- P2：当前 runner 启动 Vite dev server 而非 preview；full suite 存在 conditional skip、硬编码 backend URL、重型无 teardown fixture，不能首轮整体纳入。
+- P3：reporter/output/screenshot/video policy 当前依赖默认值，后续 CI 必须显式固定。
+
+### Next concrete action
+
+`NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW`、plan fix，或暂停 CI 线；不得直接实现 Batch 5，不得启动 Batch 4F-B 至 4F-F。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-A-FREEZE-REVIEW
 
 日期：2026-06-18

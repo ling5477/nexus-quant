@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline FROZEN / ACCEPTED（4C-B pre-upload artifact redaction gate FROZEN / ACCEPTED，immutable green run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`；4C-C log redaction proof FROZEN / ACCEPTED，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0；overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F execution sequence SYNCED / ACCEPTED，4F-A IMPLEMENTED / READY FOR REVIEW，4F-B/4F-C/4F-D/4F-E/4F-F NOT STARTED；Static workflow assertion OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED；Batch 5 PENDING
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline FROZEN / ACCEPTED（4C-B pre-upload artifact redaction gate FROZEN / ACCEPTED，immutable green run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`；4C-C log redaction proof FROZEN / ACCEPTED，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0；overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F execution sequence SYNCED / ACCEPTED，4F-A FROZEN / ACCEPTED，4F-B/4F-C/4F-D/4F-E/4F-F OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED；Batch 5 PLAN ONLY / NOT IMPLEMENTED，plan PASS / READY FOR REVIEW
 
 ## Current state
 
@@ -399,7 +399,7 @@ Implemented baseline:
 
 ### Batch 4: NQ-CI-SECURITY-GUARD
 
-Status: Batch 4A plan review ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline **FROZEN / ACCEPTED**：4C-A plan review ACCEPTED；4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable green run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`）；4C-C log redaction proof **FROZEN / ACCEPTED**（freeze review，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0，P0/P1/P2 blockers = 0）；overall freeze review **PASS / ACCEPTED / FROZEN**（`NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）。Batch 4F dependency audit plan review **PASS / ACCEPTED**，execution sequence **SYNCED / ACCEPTED**，4F-A **IMPLEMENTED / READY FOR REVIEW**（`NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`），4F-B/4F-C/4F-D/4F-E/4F-F **NOT STARTED**；Static workflow assertion OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。Planning / implementation 文档：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`、`docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`、`docs/current/NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md`、`docs/current/NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`、`docs/current/NQ_CI_DEPENDENCY_AUDIT_PLAN.md`、`docs/current/NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`、`docs/current/NQ_CI_SECURITY_GUARD_BATCH_4F_PLAN_REVIEW.md`。
+Status: Batch 4A plan review ACCEPTED；Batch 4B secret scan minimal implementation **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline **FROZEN / ACCEPTED**：4C-A plan review ACCEPTED；4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable green run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`）；4C-C log redaction proof **FROZEN / ACCEPTED**（freeze review，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0，P0/P1/P2 blockers = 0）；overall freeze review **PASS / ACCEPTED / FROZEN**（`NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）。Batch 4F dependency audit plan review **PASS / ACCEPTED**，execution sequence **SYNCED / ACCEPTED**，4F-A **FROZEN / ACCEPTED**（`NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_FREEZE_REVIEW.md`），4F-B/4F-C/4F-D/4F-E/4F-F **OPTIONAL BACKLOG / NOT STARTED**；Static workflow assertion OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。Planning / implementation 文档：`docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`、`docs/current/NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`、`docs/current/NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md`、`docs/current/NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`、`docs/current/NQ_CI_DEPENDENCY_AUDIT_PLAN.md`、`docs/current/NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`、`docs/current/NQ_CI_SECURITY_GUARD_BATCH_4F_PLAN_REVIEW.md`。
 
 Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` job）：
 
@@ -417,14 +417,14 @@ Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` 
 
 ### Batch 5: Frontend E2E hardening
 
-Status: PENDING。
+Status: **PLAN ONLY / NOT IMPLEMENTED；PASS / READY FOR REVIEW**。Planning document: `docs/current/NQ_CI_FRONTEND_E2E_PLAN.md`。
 
-Must implement:
+Frozen planning decisions:
 
-- Stable Playwright browser install/cache。
-- Explicit backend startup strategy or separately reviewed mock server / preview server strategy。
-- No flaky skip policy。
-- B0 frontend branch integration after merge to `dev` only。
+- First implementation slice is a bounded 4-spec no-backend allowlist against loopback preview; current historical local results are not Batch 5 CI evidence。
+- Backend-required E2E must use its own job-local PostgreSQL 16/fresh DB, Flyway migrate+validate, synchronous CI-only auth/legacy fixture, reviewed backend profile and runtime no-outbound enforcement; it must not reuse another job's database or restore seed watcher polling。
+- Initial output is sanitized console summary only; trace/video/screenshot/HTML/test-results/raw logs are not uploaded。Any future artifact requires separate Batch 4C-compatible sanitization/proof and bounded retention。
+- Required allowlist forbids environment-dependent skip and automatic retry masking；frontend feature/page development is excluded。
 
 ## Validation commands
 
@@ -466,6 +466,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: （可选）`NQ-CI-SECURITY-GUARD-BATCH-4F-A-PREFLIGHT-REVIEW`、`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`（最小 workflow 静态断言 + 自身 first-run review）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。Batch 3 当前为 FROZEN / ACCEPTED（run `27634370657`）；Batch 4B 当前 FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C-B pre-upload artifact redaction gate 当前 FROZEN / ACCEPTED（immutable run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`）；Batch 4C-C log redaction proof 当前 **FROZEN / ACCEPTED**（freeze review，green run `27732660516`，14 类 pattern 真实值命中 = 0；`NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md`）；Batch 4C overall security artifact/log redaction baseline **FROZEN / ACCEPTED**（`NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F execution sequence SYNCED / ACCEPTED，4F-A IMPLEMENTED / READY FOR REVIEW，4F-B/4F-C/4F-D/4F-E/4F-F NOT STARTED；Batch 5 PENDING，不得写成 started。
+Next concrete action: `NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW`、Batch 5 plan fix、（可选）`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`，或暂停 CI 线；不得直接实现 Batch 5 或启动 Batch 4F-B 至 4F-F。Batch 3、Batch 4B、Batch 4C 与 Batch 4F-A 保持 FROZEN / ACCEPTED；Batch 5 保持 PLAN ONLY / NOT IMPLEMENTED。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.

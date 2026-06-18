@@ -6,6 +6,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- GateK CI Batch 5 frontend E2E hardening plan completed：**PASS / READY FOR REVIEW**。Batch 5 = **PLAN ONLY / NOT IMPLEMENTED**；首个建议基线是 4 个 no-backend Playwright spec 的 bounded allowlist，backend-required E2E 必须先完成 job-local PostgreSQL/Flyway、同步 auth/legacy fixture、真实 backend/preview readiness、runtime no-outbound enforcement 与 fresh-DB repeat proof。当前 27 个 spec 未在本轮执行，`backtest-detail-smoke.spec.ts` 页面级 case = **PENDING BACKEND ENV / NOT VERIFIED IN CI**；不得写成 passed。本轮未上传 trace/screenshot/video/HTML report/test-results/raw logs。Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-A = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
 - legacy console gate completed。
 - RC1 completed and frozen。
 - GateH-PRE completed。

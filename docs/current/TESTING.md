@@ -2,6 +2,14 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN（2026-06-18）
+
+结论：**PASS / READY FOR REVIEW**。Batch 5 = **PLAN ONLY / NOT IMPLEMENTED**；Batch 4F-A = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+实际执行：只读检查 Playwright config、27 个 spec、helpers/fixtures、package/Vite runner、backend local/test profile、auth seed、Batch 2/3 guard、`.github/workflows/ci.yml` 与 Batch 1-4 current docs；执行文档路径/状态/范围 diff 与 `git diff --check`。本轮**未运行** `npm run test:e2e`、backend、PostgreSQL、Flyway 或浏览器安装，原因是 planning-only 且禁止进入 Batch 5 implementation；未生成或上传 trace、screenshot、video、HTML report、test-results 或 raw logs。
+
+验证结论：当前 4 个 no-backend spec 可进入未来 5A bounded allowlist，但本轮状态仍为 NOT EXECUTED IN CI；所有调用 `loginToConsole()` 的页面级 spec 依赖真实 backend/PostgreSQL/Flyway/auth/legacy account/SIM exchange account。`backtest-detail-smoke.spec.ts` 两个页面级 case 明确为 **PENDING BACKEND ENV / NOT VERIFIED IN CI**。历史本地通过记录未被重写为 Batch 5 CI passed。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-A-FREEZE-REVIEW（2026-06-18）
 
 结论：**PASS / ACCEPTED / FROZEN**。Batch 4F-A preflight = **FROZEN / ACCEPTED**；Python local audit = **NOT READY**；Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
