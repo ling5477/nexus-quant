@@ -160,9 +160,9 @@ Forbidden in this planning batch：不改 workflow / 代码 / 测试 / migration
 - 边界：未做 Batch 4C-C log redaction proof；未做 Batch 4F dependency audit；未做 Batch 5 frontend E2E hardening；未新增 Playwright / frontend / research artifact 上传。
 
 ### Batch 4C-C: log redaction proof
-- Status target: IMPLEMENTED / evidence 收集。
-- Scope: 静态断言无 `printenv` / `env` dump / `set -x`；保留 `::add-mask::`；review-time log scan proof 表。
-- Success: CI 日志无真实 credential / raw request / raw response / signature / encrypted_payload / decrypted_payload 真实值；已知 P3 residual 明确标注 disposable / masked。
+- Status: **PLAN ONLY / NOT IMPLEMENTED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN` 已完成本轮 planning，详细规划独立成文 `docs/current/NQ_CI_LOG_REDACTION_PROOF_PLAN.md`；尚未实现 workflow / job / step，未产出 run 证据，**Batch 4C 整体仍 NOT FROZEN**）。
+- Scope: review-time `gh run view --log` log proof（覆盖 7 jobs：Diff check / No-outbound guard / Backend Maven test / PostgreSQL / Flyway smoke / Frontend build / Research quality gate / Secret scan）+ 静态断言无 `printenv` / `env` dump / `set -x`；保留 `::add-mask::`；finding 只输出 job / category / rule / safe excerpt；FP 只逐条精确裁定、禁止 broad allowlist；不读取本地 logs、不上传 logs artifact、不自扫 streaming 日志。与 Batch 4C-B（artifact）扫描目标不同，不重复 artifact gate。
+- Success target（4C-C 实现轮）: CI 日志无真实 credential / raw request / raw response / signature / encrypted_payload / decrypted_payload 真实值；已知 P3 residual（disposable CI DB 值含 `backend` job 未 mask 的 `123456`、Spring Boot generated dev password、平台 `***` mask）明确标注 disposable / masked。本轮只 planning，不得写成 implemented。
 
 ### Batch 4C-D: first-run review
 - Status: **FAIL / FIRST-RUN-FIX REQUIRED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-D-FIRST-RUN-REVIEW`，first run `27698183911`，commit `c734102d`，event push / branch dev，2026-06-17，completed / failure）。
@@ -299,4 +299,4 @@ Batch 4C-E freeze review：**PASS / FROZEN / ACCEPTED**（`NQ-CI-SECURITY-GUARD-
 
 ## Next concrete action
 
-Next concrete action：Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（4C-E freeze review，基于 immutable run `27701669084`，P0/P1/P2=0）。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-C`（log redaction proof planning）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。**Batch 4C 整体仍 NOT FROZEN**（只冻结了 4C-B pre-upload gate 子基线，4C-C 未开始）；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4C 整体写成 FROZEN / ACCEPTED；不得把 4C-C / 4F / Batch 5 写成 started。
+Next concrete action：Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（4C-E freeze review，基于 immutable run `27701669084`，P0/P1/P2=0）。Batch 4C-C log redaction proof **planning 已完成**（`NQ_CI_LOG_REDACTION_PROOF_PLAN.md`，PLAN ONLY / NOT IMPLEMENTED）。下一步只能是 `NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`（对 4C-C plan 做 plan review）、Batch 4C-C plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4C-C` 实现轮、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。**Batch 4C 整体仍 NOT FROZEN**（只冻结了 4C-B pre-upload gate 子基线，4C-C 仅完成 planning、未实现）；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4C-C 写成 implemented；不得把 Batch 4C 整体写成 FROZEN / ACCEPTED；不得把 4F / Batch 5 写成 started。

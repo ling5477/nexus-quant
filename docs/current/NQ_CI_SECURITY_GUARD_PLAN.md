@@ -200,6 +200,7 @@ Log redaction proof（Batch 4C）：
 - Scope: 把 "upload 前 redaction" 固化为可复用 pre-upload gate；提供 secret scan / backend / postgres-flyway / frontend / research job 的 log redaction proof；收敛 credential pattern；明文禁止上传 raw gitleaks report。
 - Success: 任何 upload artifact 前有 redaction 检查；日志无真实 credential / raw request / raw response / signature / encrypted_payload / decrypted_payload 真实值；已知 P3 residual 明确标注为 disposable / masked。
 - 子批次：4C-A plan review、4C-B pre-upload redaction gate impl、4C-C log redaction proof、4C-D first-run review、4C-E freeze review（详见 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）。
+- 4C-C log redaction proof：**PLAN ONLY / NOT IMPLEMENTED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN`，2026-06-18，planning 已完成，独立成文 `docs/current/NQ_CI_LOG_REDACTION_PROOF_PLAN.md`）。规划 review-time `gh run view --log` log proof（覆盖 7 jobs）+ 静态断言无 `printenv` / `env` dump / `set -x` + 保留 `::add-mask::`；finding 只输出 job / category / rule / safe excerpt；FP 逐条精确裁定、禁止 broad allowlist；不读取本地 logs、不上传 logs artifact、不自扫 streaming 日志；与 4C-B（artifact）扫描目标不同、不重复 artifact gate。**Batch 4C 整体仍 NOT FROZEN**；本轮只 planning，不实现 workflow / job / step，不产出 run 证据。
 
 ### Batch 4D: first-run review
 
@@ -396,6 +397,6 @@ Batch 4B freeze review（Batch 4E）：**PASS / FROZEN / ACCEPTED**（2026-06-17
 
 ## Next concrete action
 
-Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4C-A`（artifact / log redaction plan review，针对 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）、`NQ-CI-SECURITY-GUARD-BATCH-4C-B`（pre-upload redaction gate minimal implementation）、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`（对 4C-C log redaction proof plan 做 plan review，针对 `NQ_CI_LOG_REDACTION_PROOF_PLAN.md`）、Batch 4C-C plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4C-C` 实现轮、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 frontend E2E hardening planning，或暂停 CI 线。
 
-Batch 4B 当前 **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C **PLAN ONLY / NOT IMPLEMENTED**（`NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` 已落档）；Batch 4F OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4 写成 fully implemented，不得把 Batch 4C / dependency audit / Batch 5 写成 started。
+Batch 4B 当前 **FROZEN / ACCEPTED**（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C-A plan review **ACCEPTED**、Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`）；Batch 4C-C log redaction proof **PLAN ONLY / NOT IMPLEMENTED**（`NQ_CI_LOG_REDACTION_PROOF_PLAN.md` 已落档）；**Batch 4C 整体仍 NOT FROZEN**（4C-C 仅完成 planning、未实现）；Batch 4F OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4 写成 fully implemented，不得把 Batch 4C-C 写成 implemented，不得把 Batch 4C 整体写成 FROZEN，不得把 dependency audit / Batch 5 写成 started。

@@ -2,6 +2,47 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN
+
+日期：2026-06-18
+
+### 目标
+
+规划 GateK CI Batch 4C-C：证明 GitHub Actions logs 不输出真实 credential material / raw secret / connection string / signature / raw request-response / private key / token / encrypted_payload-decrypted_payload 真实值。**只 planning**，不实现 workflow，不新增 log 扫描 job/step。**Batch 4C-C 保持 PLAN ONLY / NOT IMPLEMENTED；Batch 4C 整体仍 NOT FROZEN**；4F / Batch 5 仍 NOT STARTED / PENDING。
+
+### 前置：分支对齐
+
+- 预检发现本地 `dev`（HEAD `1aa8515f`）落后 `origin/dev` 6 commits，缺 4C-A 接受（`34706d4f`）+ 4C-B 实现（`c734102d`）→ first-run（`acd6ea12`）→ AWS-example FP fix（`66cb3d40`）→ second green（`d1664406`）→ 4C-B freeze（`ad8f9a2c`），即任务「当前事实」所述 4C-A ACCEPTED / 4C-B FROZEN（run `27701669084`）的来源。这 6 commits 恰好改动本任务要编辑的同 7 个文件。
+- 经用户确认，以 `git fetch` + `git merge --ff-only origin/dev` 干净 fast-forward 到 `ad8f9a2c`（本地 0 ahead / 6 behind、工作区 clean、merge-base == 原 HEAD，无冲突、无本地改动丢失），在对齐后的正确基线上规划，避免在 pre-4C-B 旧副本上改这 7 个文件造成冲突。
+
+### 主要动作
+
+- 新增 `docs/current/NQ_CI_LOG_REDACTION_PROOF_PLAN.md`：Task classification / Scope / Current CI log security baseline / Log risk inventory（12 项）/ Existing log protections / Log proof plan（review-time `gh run view --log`，不读本地 logs、不上传 logs artifact、不自扫 streaming 日志、静态 `printenv`/`env`/`set -x` 断言）/ Jobs to inspect（7 jobs）/ Pattern checklist / Finding output policy（job / category / rule / safe excerpt）/ False positive policy（逐条精确裁定、禁止 broad allowlist）/ Batch 4B / 4C-B / 4F / Batch 5 边界 / Automation boundary（自动化只作 future hardening）/ P0-P3 findings / Validation / Boundary confirmation / Review decision / Next action。所有 credential 模式刻意写成省略 / 前缀 / 占位形态，避免本文件自触发 secret-scan。
+- 同步 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`（4C-C 子段落 + Next action）、`NQ_CI_SECURITY_GUARD_PLAN.md`（Batch 4C 子批次 + Next action）、`NQ_CI_BASELINE_PLAN.md`（Batch 4C 状态 + Next action）、`README.md`（两处 CI 文件索引 + 新文档条目）、`TESTING.md`（本轮 plan 验证记录）。
+
+### 关键事实（只读复核，HEAD `ad8f9a2c`）
+
+- ci.yml 7 jobs 均 `set -euo pipefail`，无 `set -x` / `printenv` / `env` dump。
+- `::add-mask::` 屏蔽 `postgres-flyway` 的 3 个 disposable DB 值（line 365-367）；`backend` job 的 `NQ_DB_PASSWORD` / `POSTGRES_PASSWORD`（`123456`）未 mask（disposable CI-only，记为 P3 mask 对称性 follow-up）。
+- 无 `continue-on-error` / `id-token` / write / `GITLEAKS_LICENSE` / `gitleaks-action`；`permissions` 仅顶层 + secret-scan 两处 `contents: read`。
+- secret-scan `--redact` + sanitized 失败分支；pre-upload gate finding 只 `rule | file`；唯一 artifact 已过 frozen 4C-B gate；未上传 surefire / frontend / research outputs / gitleaks report。
+- `git grep -nE 'AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}' docs/current` = 0（4C-B first-run-fix 仍生效）。
+
+### 安全确认
+
+- 未改 `.github/workflows/ci.yml` / Java / TS / Python 代码 / 测试 / migration / frontend / research / scripts / deploy；未新增 log 扫描 job / step。
+- 未读取 / 打印 / 复制 / 输出真实 credential material；未扫描禁止目录；未上传 artifact / logs / raw gitleaks report；未使用 repository secret / write / id-token / continue-on-error。
+- 未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real probe adapter。
+- `git status --short` clean（编辑前）；`git diff --check` clean；forbidden 区域 0 diff。
+
+### Review decision
+
+PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。Batch 4C-C 保持 **PLAN ONLY / NOT IMPLEMENTED**；**Batch 4C 整体仍 NOT FROZEN**。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`（对 4C-C plan 做 plan review）、Batch 4C-C plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4C-C` 实现轮、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。不得把 Batch 4C-C 写成 implemented、不得把 Batch 4C 整体写成 FROZEN、不得把 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-E-PRE-UPLOAD-REDACTION-GATE-FREEZE-REVIEW
 
 日期：2026-06-17
