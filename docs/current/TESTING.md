@@ -2,6 +2,27 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED**。只读评审 G2 commit `3c1f5ec0`，docs-only，**未运行**后端/前端/Python/CI 测试。P0=0 / P1=0 / P2=0 / P3=2（信息性）。
+
+git 实测复核：
+
+```text
+G1 五份冻结对象 diff 7eb7ae53..HEAD → 空（零 drift）
+docs/gates docs/archive .agents templates diff 7eb7ae53..HEAD → 空
+.github/workflows/ci.yml backend frontend research scripts deploy "backend/**/db/migration" → 空
+current-control malformed leading-slash 链接 → 0；../gates/gate-i/GATEI_{API,DB}_PLAN.md 目标存在、相对路径可解析
+冻结快照 ./GATEI_* 历史链接 → gate-h/gate-j 各 1，未改写
+G2 状态口径 → 无 “G2 = FROZEN” 误写；仅 “G2 = IMPLEMENTED / READY FOR REVIEW”
+DOC_RULES Rule 16 → 五级优先级完整
+NQ_DOCS_EVIDENCE_INDEX.md（冻结对象）→ 零 drift
+278 / 283 → 未改写（仅治理/evidence 上下文引用）
+git diff --check → 无空白错误
+```
+
+**G2 current-control drift repair = ACCEPTED / READY FOR FREEZE REVIEW**；**G1 authority/evidence index = FROZEN / ACCEPTED**；**G3~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR（2026-06-18）
 
 结论：**G2 = IMPLEMENTED / READY FOR REVIEW**。docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。

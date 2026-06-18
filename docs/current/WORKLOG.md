@@ -2,6 +2,35 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR-REVIEW
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读评审 G2 current-control drift repair（commit `3c1f5ec0`），确认导航/状态/规则/链接修复准确，且未越过 G1 冻结边界或提前进入 G3~G6。仅新增 `NQ_DOCS_G2_REVIEW.md` 并更新 README/STATUS/TESTING/WORKLOG；**不移动/删除/重命名/归档任何文档**，不改 G1 五份冻结对象、冻结快照、workflow、代码、测试、migration、依赖。
+
+### 结论
+
+**PASS / ACCEPTED**。**G2 current-control drift repair = ACCEPTED / READY FOR FREEZE REVIEW**。P0=0 / P1=0 / P2=0 / P3=2。
+
+### 核验要点
+
+- GateJ 导航改历史/冻结证据入口（权威 gate-j，17 份 NON_AUTHORITATIVE/FUTURE_SUPERSEDE_CANDIDATE/G3，未删导航）；新增 README/STATUS/ROADMAP/AUTHORITY_INDEX/EVIDENCE_INDEX 入口。
+- 当前状态口径正确：GateK CI mainline COMPLETED、5A FROZEN 且显式非 authenticated/backend coverage、5B-ENV P1/5B-SMOKE BLOCKED/4F backlog/static、G1 FROZEN；G2 无 “FROZEN” 误写（仅 IMPLEMENTED/READY FOR REVIEW）。
+- DOC_RULES Rule 16 五级优先级完整无冲突；“不重复 vs 迁移或复制” 收敛正确，无“现在删除 GateJ”暗示。
+- 链接：API.md/DB_SCHEMA.md 改 `../gates/gate-i/`，目标存在可解析，malformed=0；冻结快照 4 处 `./GATEI_*` 未改写，仅 docs/README.md 加兼容入口（未伪称已修快照正文）。
+- governance evidence 导航齐全（plan review / G1 review / G1 freeze review / G2 implementation），标 HISTORICAL_EVIDENCE/RETAIN_IN_PLACE、不计入 278/283；未改冻结的 evidence index。
+- 冻结保护：G1 五份对象零 drift；docs/gates/archive/.agents/templates/code/workflow diff=0；278/283 未改写；G3~G6 未启动。
+
+### Findings
+
+- P0/P1/P2 无；P3-1 evidence-index 物理治理小节留待后续受控修订；P3-2 STATUS 早期里程碑条目 as-of-time “mainline IN PROGRESS” 属追加式历史日志、被顶部条目取代，非 drift、不改写。
+
+### Next concrete action
+
+进入 G2 freeze review；后续 G3（GateJ 17 份 superseded redirect-first 收敛）须单独受控开工，redirect-first，且 gate-j 权威副本永久保留。
+
 ## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR
 
 日期：2026-06-18
