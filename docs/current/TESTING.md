@@ -2,6 +2,51 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-A-FREEZE-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED / FROZEN**。Batch 4F-A preflight = **FROZEN / ACCEPTED**；Python local audit = **NOT READY**；Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+实际执行的只读验证：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git log --oneline -10
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+git diff -- "backend/**/db/migration"
+git ls-files
+java -version
+mvn -version
+node --version
+npm --version
+python --version
+python -m pip --version
+rg -n "uses:|gitleaks|8\.18\.4|sha256|checksum|retention-days|setup-python" .github/workflows/ci.yml
+```
+
+结果摘要：
+
+- branch=`dev`；编辑前工作区 clean；workflow、backend、frontend、research、scripts、deploy、migration diff 均为 0。
+- Maven XML 结构化核验：root modules=22，tracked child POM=22，missing=0，extra=0，invalid parent=0。
+- npm JSON 结构化核验：lockfileVersion=3，package entries=214；默认 `ConvertFrom-Json` 因 root package 空字符串 key 失败，改用 `-AsHashTable` 后重验通过；未输出完整 lockfile。
+- Java=`21.0.8` LTS，Maven=`3.9.12`；只证明本地工具可用，不代表 vulnerability audit 已执行或通过。
+- Python path 为 WindowsApps stub；`python --version` 与 `python -m pip --version` 均 exit `9009`，因此 Python local audit 保持 NOT READY。
+- Python tracked input 仅 `research/py/pyproject.toml`；无 tracked requirements、constraints 或 Python lockfile。
+- official actions 使用 major tags；gitleaks=`8.18.4` 且无 release asset SHA256 verification；均保留为 4F-E 输入。
+- 4F-B 十个 mandatory sanitized fields、bounded `scope`、report-only policy、blocking boundary、Batch 4C redaction gate 与 bounded retention 均已核对。
+- credential hygiene 覆盖 `docs/current` 与 `.github` 86 个 tracked files；高置信完整 credential pattern 命中 0，未输出匹配正文。
+
+未执行：
+
+- 未运行 Maven vulnerability audit、`npm audit`、`pip-audit`、OSV、Snyk、Trivy、Grype、OWASP dependency-check 或外部 scanner。
+- 未生成、保存或上传 SBOM、raw JSON、dependency tree、完整 lockfile 或 dependency report。
+- 未运行 backend Maven test、frontend build/E2E 或 Python pytest/mypy/ruff；原因：本轮为 docs-only freeze review，明确禁止扫描、构建、测试和 4F-B 实现。
+- 未修改 `.github/workflows/ci.yml`、依赖文件、代码、测试、migration、frontend、research、scripts 或 deploy。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-A-PREFLIGHT-REVIEW（2026-06-18）
 
 结论：**PASS / ACCEPTED**。Batch 4F-A preflight = **ACCEPTED / READY FOR FREEZE REVIEW**；允许进入 4F-A freeze review。Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Batch 5 = **PENDING**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。

@@ -2,6 +2,62 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-A-FREEZE-REVIEW
+
+日期：2026-06-18
+
+### 目标
+
+确认 4F-A dependency audit input / toolchain preflight 是否可冻结为 Batch 4F-B 的唯一输入与工具链基线。本轮只读核对 preflight/review、Maven/npm/Python/workflow inputs、4F-B sanitized contract、Batch 4C artifact gate 与 4F-E gaps；不运行 audit、scanner、SBOM、构建或测试，不修改 workflow、依赖文件、代码、测试或 migration。
+
+### 结论
+
+**PASS / ACCEPTED / FROZEN**。
+
+- Batch 4F-A preflight = **FROZEN / ACCEPTED**。
+- Python local audit = **NOT READY**；WindowsApps stub 与两条 exit `9009` 保留为 4F-B P2 prerequisite。
+- Batch 4F-B / 4F-C / 4F-D / 4F-E / 4F-F = **NOT STARTED**。
+- Batch 4C = **FROZEN / ACCEPTED**。
+- Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
+- Batch 5 = **PENDING**。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### Findings
+
+- P0：无。
+- P1：无。
+- P2：Python local audit NOT READY；4F-B 若覆盖 Python，必须使用真实解释器路径或 `actions/setup-python@v5` 确定环境。
+- P2：Python 无 tracked requirements/constraints/lockfile；结果保持 report-only/advisory，除非另行冻结 deterministic policy。
+- P3：action major tags 与 gitleaks `8.18.4` asset SHA256 gap 保留为 4F-E 输入，本轮不修 workflow。
+
+### 核验摘要
+
+- Maven root modules=22，tracked child POM=22，missing=0，extra=0，invalid parent=0。
+- frontend package/lockfile 存在；lockfileVersion=3，package entries=214；未复制完整 lockfile。
+- Python tracked input 仅 `research/py/pyproject.toml`；WindowsApps stub 两条命令 exit `9009`。
+- 4F-B 十个 sanitized fields 均已冻结，`scope` 为 mandatory bounded field；vulnerability findings 仅 report-only/advisory。
+- 仅 tool/parser/config/raw-output hygiene/credential-like output/malformed dependency input/policy violation 可阻断。
+- future artifact 必须复用 Batch 4C redaction gate 并采用 bounded retention。
+- `docs/current` / `.github` 高置信完整 credential pattern 命中 0。
+
+### 文档更新
+
+- 新增 `docs/current/NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_FREEZE_REVIEW.md`。
+- 更新 `docs/current/README.md`。
+- 更新 `docs/current/STATUS.md`。
+- 更新 `docs/current/TESTING.md`。
+- 更新本 `WORKLOG.md`。
+
+### 验证边界
+
+- 未运行 dependency audit、scanner、SBOM、构建或测试。
+- 未修改 `.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy、migration、test、POM、package、lockfile、pyproject 或 requirements。
+- 未安装工具、未联网、未上传 artifact，未进入 4F-B 至 4F-F 或 Batch 5。
+
+### 下一步
+
+4F-A 已冻结。后续只有在独立 scoped task 下才可进入 4F-B sanitized advisory audit summary；不得把 4F-C 至 4F-F、Batch 5、LIVE、AI、DH runtime、RealClient 或 real provider 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-A-PREFLIGHT-REVIEW
 
 日期：2026-06-18
