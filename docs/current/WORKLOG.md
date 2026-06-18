@@ -2,6 +2,72 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-FREEZE-REVIEW
+
+日期：2026-06-18
+
+### 目标
+
+冻结 Batch 4C overall security artifact/log redaction baseline。只审查 4C-B pre-upload artifact redaction gate 与 4C-C log redaction proof 两个已冻结子基线是否可共同收口为 overall freeze。不修改 workflow，不新增 static assertion，不改代码 / 测试 / migration / frontend / research / scripts / deploy，不上传 logs artifact，不进入 Batch 4F 或 Batch 5。
+
+### 结论
+
+**PASS / ACCEPTED / FROZEN**。
+
+- Batch 4C overall = **FROZEN / ACCEPTED**。
+- Batch 4C-B = **FROZEN / ACCEPTED**。
+- Batch 4C-C = **FROZEN / ACCEPTED**。
+- Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
+- Batch 4F = **OPTIONAL / NOT STARTED**。
+- Batch 5 = **PENDING**。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+P0/P1 blockers = 0。P2/P3 均非阻断：static workflow assertion 仍为 optional future hardening；Batch 4F dependency audit optional / not started；Batch 5 pending；4C-C 既有 disposable / ephemeral / platform mask residual 不阻断。
+
+### 复核证据
+
+- 当前目录 `F:\project\nexus-quant`，分支 `dev`，预检 `git status --short` clean（编辑前）。
+- `git log --oneline -8` 包含 `ad8f9a2c docs(ci): freeze Batch 4C-B pre-upload artifact redaction gate baseline` 与 `ba91baca docs(ci): freeze Batch 4C-C log redaction proof`。
+- Batch 4C-B：immutable green run `27701669084`，frozen pre-upload redaction gate baseline 已在 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` 记录并接受。
+- Batch 4C-C：immutable green run `27732660516`，7/7 jobs green，14 类 high-risk pattern 真实值命中 = 0，P0/P1/P2 blockers = 0，freeze review 文档 `NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md` 已落档。
+- `.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy、migration 当前 0 diff（编辑前）。
+- credential grep 候选为 workflow/docs 规则定义、前缀描述、allowlist / false-positive 说明和历史 proof 文本，未发现真实 value-bearing credential material；本轮未打印完整命中行或 secret value。
+
+### 验证命令
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git log --oneline -8
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+git diff -- backend/**/db/migration
+git grep -l -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|sk-ant-|sk-proj-|github_pat_|ghp_|gho_|BEGIN [A-Z ]*PRIVATE KEY" -- docs/current .github
+git grep -c -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|sk-ant-|sk-proj-|github_pat_|ghp_|gho_|BEGIN [A-Z ]*PRIVATE KEY" -- docs/current .github
+```
+
+结果：预检 clean（编辑前），branch `dev`；`git diff --check` / `git diff --stat` clean（编辑前）；workflow/backend/frontend/research/scripts/deploy/migration 0 diff（编辑前）；credential grep 命中仅为 workflow/docs 规则和 proof 文本，未发现真实 credential material。
+
+### 文档更新
+
+- 新增 `docs/current/NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`。
+- 更新 `docs/current/README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- 未修改 `.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy、migration。
+
+### 安全确认
+
+- 未修改 `.github/workflows/ci.yml`；未新增 GitHub Actions job；未新增 static assertion step。
+- 未改 backend / frontend / research / scripts / deploy；未新增 migration；未改测试。
+- 未读取本地 logs；未下载或持久化完整 CI logs；未上传 logs artifact；未打印 secret value / 完整命中行。
+- 未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real exchange adapter。
+
+### 下一步
+
+可选：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`、`NQ-CI-SECURITY-GUARD-BATCH-4F`、Batch 5 planning，或暂停 CI 线。不得把 static workflow assertion 写成已实现；不得把 Batch 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW
 
 日期：2026-06-18
@@ -12,7 +78,7 @@
 
 ### 结论
 
-**PASS / ACCEPTED / FROZEN**。Batch 4C-C = **FROZEN / ACCEPTED**；Batch 4C overall = **NOT FROZEN**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F = **OPTIONAL / NOT STARTED**；Batch 5 = **PENDING**。
+**PASS / ACCEPTED / FROZEN**。Batch 4C-C = **FROZEN / ACCEPTED**；历史状态（4C-C 子冻结当时）：Batch 4C overall = **NOT FROZEN**；后续已由 `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md` 收口为 **FROZEN / ACCEPTED**。Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F = **OPTIONAL / NOT STARTED**；Batch 5 = **PENDING**。
 
 P0/P1/P2 blockers = 0。P3 均非阻断：disposable CI 值、Spring ephemeral dev password、review-time proof 取证方式、GitHub platform mask。
 
@@ -56,7 +122,7 @@ git grep -l -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|sk-ant-|
 
 ### 下一步
 
-可选：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`、`NQ-CI-SECURITY-GUARD-BATCH-4F`、Batch 5 planning，或暂停 CI 线。不得把 Batch 4C overall 写成 FROZEN，不得把 Batch 4F / Batch 5 写成 started。
+可选：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`、`NQ-CI-SECURITY-GUARD-BATCH-4F`、Batch 5 planning，或暂停 CI 线。该 4C-C 子冻结轮次当时不得把 Batch 4C overall 写成 FROZEN；后续 overall freeze 已单独完成。不得把 Batch 4F / Batch 5 写成 started。
 
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-IMPL
 

@@ -2,9 +2,58 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-FREEZE-REVIEW（2026-06-18）
+
+本轮是 GateK CI Batch 4C overall **security artifact/log redaction baseline freeze review**：只判断已冻结的 4C-B pre-upload artifact redaction gate 与 4C-C log redaction proof 是否可以共同收口为 Batch 4C overall baseline。结论 **PASS / ACCEPTED / FROZEN**，P0/P1 blockers = 0。Batch 4C overall = **FROZEN / ACCEPTED**；Batch 4C-B = **FROZEN / ACCEPTED**；Batch 4C-C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F = **OPTIONAL / NOT STARTED**；Batch 5 = **PENDING**。
+
+冻结依据：
+
+- Batch 4C-B pre-upload artifact redaction gate 已 FROZEN / ACCEPTED（immutable green run `27701669084`，workflow blob `4a40ef78`，commit `c734102d` introduced the gate，P0/P1=0）。
+- Batch 4C-C log redaction proof 已 FROZEN / ACCEPTED（immutable green run `27732660516`，7/7 jobs green，14 类 high-risk pattern 真实值命中 = 0，P0/P1/P2 blockers = 0）。
+- 当前 `dev` 包含 4C-B freeze 记录与 4C-C freeze review 文档。
+- `.github/workflows/ci.yml`、backend、frontend、research、scripts、deploy、migration 当前无 diff。
+- credential grep 命中仅为 workflow regex、规则定义、前缀说明、allowlist、false-positive 描述或历史 proof 文本；未发现真实 value-bearing credential material。
+
+复核命令（已执行）：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git log --oneline -8
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+git diff -- backend/**/db/migration
+git grep -l -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|sk-ant-|sk-proj-|github_pat_|ghp_|gho_|BEGIN [A-Z ]*PRIVATE KEY" -- docs/current .github
+git grep -c -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|sk-ant-|sk-proj-|github_pat_|ghp_|gho_|BEGIN [A-Z ]*PRIVATE KEY" -- docs/current .github
+```
+
+结果摘要：
+
+- 预检：`Get-Location` = `F:\project\nexus-quant`；`git status --short` clean（编辑前）；branch `dev`。
+- `git log --oneline -8` 包含 `ad8f9a2c docs(ci): freeze Batch 4C-B pre-upload artifact redaction gate baseline` 与 `ba91baca docs(ci): freeze Batch 4C-C log redaction proof`。
+- `git diff --check` / `git diff --stat` clean（编辑前）。
+- `.github/workflows/ci.yml` / backend / frontend / research / scripts / deploy / migration：0 diff（编辑前）。
+- credential grep：候选文件为 workflow/docs 中的规则定义、前缀描述、allowlist / false-positive 说明和历史 proof 文本；未发现真实 value-bearing credential material；本轮只输出文件、计数和 `file:line:rule` 分类，未打印完整命中行或 secret value。
+
+未执行：
+
+- 未运行 backend Maven / frontend build / E2E / Python pytest / mypy / ruff。本轮是 docs-only freeze review，不改业务代码、测试、migration、frontend、research。
+- 未调用 GitHub Actions run log 下载命令；本轮复用已冻结 4C-C proof 文档中的 immutable green run `27732660516` 证据。
+- 未读取本地 logs；未上传 logs artifact。
+
+边界确认：
+
+- 未修改 `.github/workflows/ci.yml`；未新增 static assertion step；未新增 GitHub Actions job。
+- 未改 backend / frontend / research / scripts / deploy；未新增 migration。
+- 未读取本地 logs，未上传 logs artifact，未打印 secret value / 完整命中行。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW（2026-06-18）
 
-本轮是 GateK CI Batch 4C-C **log redaction proof freeze review**：只判断已完成的 log proof 是否可以冻结为子基线。结论 **PASS / ACCEPTED / FROZEN**，P0/P1/P2 blockers = 0。Batch 4C-C = **FROZEN / ACCEPTED**；Batch 4C overall = **NOT FROZEN**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F = **OPTIONAL / NOT STARTED**；Batch 5 = **PENDING**。
+本轮是 GateK CI Batch 4C-C **log redaction proof freeze review**：只判断已完成的 log proof 是否可以冻结为子基线。结论 **PASS / ACCEPTED / FROZEN**，P0/P1/P2 blockers = 0。Batch 4C-C = **FROZEN / ACCEPTED**；历史状态（4C-C 子冻结当时）：Batch 4C overall = **NOT FROZEN**；后续已由 `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md` 收口为 **FROZEN / ACCEPTED**。Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F = **OPTIONAL / NOT STARTED**；Batch 5 = **PENDING**。
 
 冻结依据：
 

@@ -90,7 +90,7 @@ Batch 4C-C log redaction proof 可以冻结为当前 `dev` 的 log redaction pro
 ## Boundary Confirmation
 
 - Batch 4C-C = **FROZEN / ACCEPTED**。
-- Batch 4C overall = **NOT FROZEN**。
+- Batch 4C overall = **NOT FROZEN**（本 4C-C 子冻结当时状态；后续已由 `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md` 收口为 **FROZEN / ACCEPTED**）。
 - Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
 - Batch 4F = **OPTIONAL / NOT STARTED**。
 - Batch 5 = **PENDING**。
@@ -141,4 +141,4 @@ git grep -l -E "AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|sk-ant-|
 - Batch 5 frontend E2E hardening planning。
 - 暂停 CI 线。
 
-不得把 Batch 4C overall 写成 FROZEN；不得把 Batch 4F / Batch 5 写成 started；不得混入 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。
+本 4C-C 子冻结轮次当时不得把 Batch 4C overall 写成 FROZEN；后续 overall freeze 已由 `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md` 单独完成。不得把 Batch 4F / Batch 5 写成 started；不得混入 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。

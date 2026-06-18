@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN
 日期：2026-06-18
-状态：Batch 4C-C log redaction proof **FROZEN / ACCEPTED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW`，2026-06-18，P0/P1/P2 blockers = 0；基于 immutable green run `27732660516`（commit `a6d4bf74`，event push / branch dev，completed / success，7/7 jobs green，ci.yml blob `4a40ef78` 与当前 HEAD 等价）的 review-time per-job log proof）。前序 proof implementation **LOG PROOF COMPLETED / PENDING FREEZE REVIEW** 已由本 freeze review 关闭；plan review **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**（28 项全部满足）。**Batch 4C-C = FROZEN / ACCEPTED；Batch 4C 整体仍 NOT FROZEN**（需要单独 overall freeze review）。本轮 freeze review 只改 `docs/current` 文档，**未修改 `.github/workflows/ci.yml`**（静态断言保持 optional future hardening，未落地），不改 Java / TypeScript / Python 代码与测试，不新增 API / migration，不新增 log 扫描 job，不读取本地 logs，不上传 artifact / logs。Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable run `27701669084`，frozen baseline = `ci.yml` `Pre-upload redaction gate (PostgreSQL schema artifacts)` step，blob `4a40ef78` / commit `c734102d`，详见 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real permission probe adapter NOT IMPLEMENTED。
+状态：Batch 4C-C log redaction proof **FROZEN / ACCEPTED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-FREEZE-REVIEW`，2026-06-18，P0/P1/P2 blockers = 0；基于 immutable green run `27732660516`（commit `a6d4bf74`，event push / branch dev，completed / success，7/7 jobs green，ci.yml blob `4a40ef78` 与当前 HEAD 等价）的 review-time per-job log proof）。前序 proof implementation **LOG PROOF COMPLETED / PENDING FREEZE REVIEW** 已由本 freeze review 关闭；plan review **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**（28 项全部满足）。**Batch 4C-C = FROZEN / ACCEPTED；Batch 4C overall security artifact/log redaction baseline = FROZEN / ACCEPTED**（overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）。本轮 freeze review 只改 `docs/current` 文档，**未修改 `.github/workflows/ci.yml`**（静态断言保持 optional future hardening，未落地），不改 Java / TypeScript / Python 代码与测试，不新增 API / migration，不新增 log 扫描 job，不读取本地 logs，不上传 artifact / logs。Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable run `27701669084`，frozen baseline = `ci.yml` `Pre-upload redaction gate (PostgreSQL schema artifacts)` step，blob `4a40ef78` / commit `c734102d`，详见 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real permission probe adapter NOT IMPLEMENTED。
 
 本文件是 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` 内「Batch 4C-C: log redaction proof」子段落的详细规划，独立成文，与 `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` / `NQ_CI_POSTGRES_FLYWAY_*_PLAN.md` 同例。Batch 4C-B（artifact）与 Batch 4C-C（log）扫描目标不同，不重复彼此。
 
@@ -241,7 +241,7 @@ rg 仅用于 tracked safe paths；未把扫描扩展到 `.env` / secrets / logs 
 - 未读取、打印、复制或输出真实 credential material；未把禁止目录作为数据源扫描；未上传 artifact / logs / raw gitleaks report。
 - 未使用 repository secrets / write / id-token / continue-on-error；保持 `contents: read`。
 - 未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
-- **Batch 4C-C 保持 PLAN ONLY / NOT IMPLEMENTED**；**Batch 4C 整体仍 NOT FROZEN**；Batch 4C-B pre-upload artifact redaction gate 仍 FROZEN / ACCEPTED；Batch 4B 仍 FROZEN / ACCEPTED；Batch 3 仍 FROZEN / ACCEPTED；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING。
+- 历史状态（4C-C planning 阶段）：**Batch 4C-C 保持 PLAN ONLY / NOT IMPLEMENTED**；**Batch 4C 整体仍 NOT FROZEN**；Batch 4C-B pre-upload artifact redaction gate 仍 FROZEN / ACCEPTED；Batch 4B 仍 FROZEN / ACCEPTED；Batch 3 仍 FROZEN / ACCEPTED；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING。当前状态见本文件顶部与 freeze review：Batch 4C-C / Batch 4C overall 均已 FROZEN / ACCEPTED。
 
 ## Plan review
 
@@ -350,7 +350,7 @@ LOG REDACTION PROOF **LOG PROOF COMPLETED / PENDING FREEZE REVIEW**（`NQ-CI-SEC
 
 前序 PLAN REVIEW **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`，2026-06-18，P0/P1 = 0，28 项全部满足）。
 
-本轮已产出 review-time log proof（run `27732660516`，7 jobs，14 类 pattern 真实值命中 = 0）。Batch 4C-C 推进为 **LOG PROOF COMPLETED / PENDING FREEZE REVIEW**，**但不写 FROZEN**；**Batch 4C 整体仍 NOT FROZEN**（freeze 留 freeze review 轮）。Batch 4C-B pre-upload artifact redaction gate 仍 FROZEN / ACCEPTED（不重复、不改），Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED，Batch 5 frontend E2E hardening 仍 PENDING，均不得写成 started / implemented。
+历史状态（4C-C proof implementation 阶段）：本轮已产出 review-time log proof（run `27732660516`，7 jobs，14 类 pattern 真实值命中 = 0）。Batch 4C-C 推进为 **LOG PROOF COMPLETED / PENDING FREEZE REVIEW**，**但不写 FROZEN**；**Batch 4C 整体仍 NOT FROZEN**（freeze 留 freeze review 轮）。Batch 4C-B pre-upload artifact redaction gate 仍 FROZEN / ACCEPTED（不重复、不改），Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED，Batch 5 frontend E2E hardening 仍 PENDING，均不得写成 started / implemented。当前状态见本文件顶部与 freeze review：Batch 4C-C / Batch 4C overall 均已 FROZEN / ACCEPTED。
 
 ## Freeze review
 
@@ -365,10 +365,10 @@ LOG REDACTION PROOF **LOG PROOF COMPLETED / PENDING FREEZE REVIEW**（`NQ-CI-SEC
 - false positive 均为非阻断：regex / jq 模板 step-script 回显、disposable CI 值、Spring ephemeral dev password、GitHub platform mask。
 - static workflow assertion 仍为 **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**，不是本 freeze blocker。
 
-当前状态：**Batch 4C-C = FROZEN / ACCEPTED**；**Batch 4C overall = NOT FROZEN**；Batch 4F = OPTIONAL / NOT STARTED；Batch 5 = PENDING；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
+当前状态：**Batch 4C-C = FROZEN / ACCEPTED**；**Batch 4C overall = FROZEN / ACCEPTED**（overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F = OPTIONAL / NOT STARTED；Batch 5 = PENDING；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
 
 ## Next concrete action
 
 Next concrete action：（可选）`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`（最小 workflow 静态断言 step + 自身 first-run review），或 `NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。
 
-**Batch 4C-C 当前 FROZEN / ACCEPTED**（plan + plan review + log proof + freeze review 完成）；**Batch 4C 整体仍 NOT FROZEN**（未执行 overall freeze review）；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4C 整体写成 FROZEN，不得把 Batch 4F / Batch 5 写成 started。
+**Batch 4C-C 当前 FROZEN / ACCEPTED**（plan + plan review + log proof + freeze review 完成）；**Batch 4C overall 当前 FROZEN / ACCEPTED**（overall freeze review 完成）；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 static workflow assertion 写成 implemented，不得把 Batch 4F / Batch 5 写成 started。
