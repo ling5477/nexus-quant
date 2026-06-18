@@ -2,6 +2,28 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION（2026-06-19）
+
+结论：**PASS / READY FOR REVIEW**。docs-only redirect-first consolidation，**未运行**后端/前端/Python/CI 测试（无代码、无 workflow、无 migration、无依赖变更）。
+
+git 实测验证：
+
+```text
+branch = dev
+HEAD baseline blob check：17/17 docs/current/<file> == docs/gates/gate-j/<file>，且 gate-j worktree canonical 未漂移
+current stub check：17/17 符合 redirect-first 模板，含 ../gates/gate-j/<file> 相对链接
+Authority/Migration：Authority Index GateJ 行与 Migration Map §1E 仍标 NON_AUTHORITATIVE / FUTURE_SUPERSEDE_CANDIDATE / G3
+fragment 入链：git grep "<name>.md#" → 0
+full current path 入链：存在普通路径/导航文本引用，均无 fragment，旧路径由 stub 兼容
+git diff --check → 通过（仅 LF→CRLF 工作树提示，exit code 0）
+G1 五份冻结对象 diff → 空
+docs/gates docs/archive .agents templates diff → 空
+.github/workflows/ci.yml backend frontend research scripts deploy "backend/**/db/migration" diff → 空
+git diff --name-status → 仅 M，无 D/R；git status --short 含新增 G3 报告
+```
+
+**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = IMPLEMENTED / READY FOR REVIEW**；**G4~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G2-FREEZE-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED / FROZEN**。只读冻结复核（semantic baseline，非 blob lock），docs-only，**未运行**后端/前端/Python/CI 测试。P0=0 / P1=0 / P2=0 / P3=3（信息性）。

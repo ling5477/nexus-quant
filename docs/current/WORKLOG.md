@@ -2,6 +2,31 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION
+
+日期：2026-06-19
+
+### 目标与范围
+
+将 `docs/current/` 中 17 份已标记为 `NON_AUTHORITATIVE / FUTURE_SUPERSEDE_CANDIDATE / G3` 的 GateJ byte-identical 副本，就地收敛为 redirect-first 兼容 stub。旧 current 路径保留；权威全文永久保留在 `docs/gates/gate-j/`。本轮不删除、不移动、不重命名文件，不改 `docs/gates/**`、`docs/archive/**`、`.agents/**`、`templates/**`、G1 五份冻结对象、RUNBOOK、workflow、代码、测试、migration 或依赖。
+
+### 处理项
+
+- 17 / 17 GateJ current 副本已替换为 12 行 redirect-first stub，保留原 H1，使用相对链接 `../gates/gate-j/<file>` 指向 canonical。
+- 新增 `docs/current/NQ_DOCS_G3_GATEJ_REDIRECT_CONSOLIDATION.md`，记录逐文件 blob 基线、入链/fragment 检查、状态、canonical path、兼容策略、边界证明与回滚方式。
+- `STATUS.md`、`TESTING.md`、`WORKLOG.md` 仅按允许范围记录 G3 状态与 docs-only 验证；9 份 DIVERGED 未做 redirect/stub 处理。
+
+### 验证
+
+- HEAD 基线：17 / 17 `docs/current/<file>` 与 `docs/gates/gate-j/<file>` blob 相同；转换后 gate-j worktree canonical 未漂移。
+- 入链：`<name>.md#` fragment 入链 0；普通 current 路径/文件名引用仍由旧路径 stub 兼容。
+- `git diff --check` 通过；G1 五份冻结对象 diff=0；`docs/gates/**` / `docs/archive/**` / `.agents/**` / `templates/**` diff=0；workflow/code/deploy/migration diff=0；`git diff --name-status` 无 D/R。
+- 未运行后端/前端/Python/CI 测试：本轮为 docs-only redirect-first consolidation，无代码、workflow、migration、依赖或运行时变更。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G3-GATEJ-REDIRECT-FIRST-CONSOLIDATION：PASS / READY FOR REVIEW**。P0/P1/P2=0；P3=1（LF→CRLF 工作树提示，exit code 0，非内容错误）。**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = IMPLEMENTED / READY FOR REVIEW**；**G4~G6 = NOT STARTED**。
+
 ## NQ-DOCS-GOVERNANCE-G2-FREEZE-REVIEW
 
 日期：2026-06-19
