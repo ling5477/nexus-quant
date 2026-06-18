@@ -2,6 +2,41 @@
 
 日期：2026-05-16
 
+## NQ-CI-BATCH-5A-FIRST-RUN-REVIEW
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读审查由 Batch 5A 实施提交（commit `861c3e78`）触发的首次 GitHub Actions immutable run，确认 `frontend-no-backend-e2e` 真实执行、仅跑四个 allowlist spec、未扩大范围、未启动禁止组件、无 artifact 上传、成功完成。仅新增 `NQ_CI_FRONTEND_E2E_5A_FIRST_RUN_REVIEW.md` 并更新 README/STATUS/TESTING/WORKLOG；不修改 workflow / `playwright.ci.config.ts` / 前端 / spec / helper / 后端 / 依赖 / 测试 / migration；不上传 artifact。
+
+### 结论
+
+**NQ-CI-BATCH-5A-FIRST-RUN-REVIEW：PASS / READY FOR FREEZE REVIEW**。
+
+- **Batch 5A = FIRST RUN PASSED / READY FOR FREEZE REVIEW**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；NQ GateK CI mainline = **IN PROGRESS**。
+- Batch 4C = **FROZEN / ACCEPTED**（未弱化）；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### Immutable 证据
+
+- run `27750279096`（workflow `NQ CI Baseline`、event push、branch dev、commit `861c3e78ddd1733292c5376a1f059532fd6dc846`）= completed / success；与 origin/dev HEAD 一致（0/0），非旧 run / 非他 commit。
+- job `Frontend no-backend E2E (Batch 5A)`（id `82098741200`）= success，09:32:30→09:33:26（约 56s，< 15min）。
+- 步骤：Set up job（Contents: read / Metadata: read，无 service 容器）→ Checkout → Set up Node（22.22.3）→ npm ci（added 183）→ `npx playwright install --with-deps chromium`（仅 Chromium 1208，Firefox/Webkit 0）→ vite build（built in 1.53s）→ 显式四 spec（`Running 4 tests using 1 worker` / `4 passed (7.3s)`）→ Cleanup `rm -rf test-results-ci playwright-report test-results`。
+- allowlist：其余 23 个 spec 0 次出现，无 skip-as-pass；testMatch + 显式命令双控。
+- 边界：`/api`/postgres/jdbc/flyway/docker/loginToConsole/seed/storageState/okx/binance = 0；无 `upload-artifact`；`Authorization`×1 = checkout extraheader（mask）；`token`×3 = GITHUB_TOKEN 头 + `token: ***`；`api`×1 = Node URL API 弃用警告。
+- bootstrap（checkout/Node/npm/Chromium 下载）属 CI 引导网络访问，业务层出站 = 0。
+
+### Findings
+
+- P0：无。
+- P1（继承 plan，仅阻断 5B）：no-outbound runtime enforcement 仍是 5B 前置；5A 不启 backend，不受影响；不得据 5A 绿跑宣称 authenticated E2E 已覆盖。
+- P2：无影响结论项。
+- P3：runner 级 Node20→24 action wrapper 弃用警告（checkout/setup-node），不影响应用 Node 22 与结论；preview `127.0.0.1` 绑定未在 line reporter 日志字面回显，证据为 committed config + loopback 导航成功。
+
+### Next concrete action
+
+可进入 `NQ-CI-BATCH-5A-FREEZE-REVIEW`（需第二次 immutable green run）；不得进入 5B-ENV/5B-SMOKE/5C/5D/5E，不得启动 4F-B 至 4F-F。
+
 ## NQ-CI-BATCH-5A-NO-BACKEND-E2E-IMPL
 
 日期：2026-06-18

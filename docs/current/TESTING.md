@@ -2,6 +2,26 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-BATCH-5A-FIRST-RUN-REVIEW（2026-06-18）
+
+结论：**PASS / READY FOR FREEZE REVIEW**。**Batch 5A = FIRST RUN PASSED / READY FOR FREEZE REVIEW**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+验证对象为 GitHub Actions immutable 首跑（**非本地结果**）：
+
+```text
+run        : 27750279096 (workflow "NQ CI Baseline", event push, branch dev) → completed / success
+commit     : 861c3e78ddd1733292c5376a1f059532fd6dc846 (= origin/dev HEAD, 0/0)
+job        : Frontend no-backend E2E (Batch 5A) id 82098741200 → success, 约 56s (< 15min timeout)
+permissions: Contents: read / Metadata: read
+node       : 22.22.3 ; npm ci added 183 ; playwright install --with-deps chromium → Chromium 1208 only (Firefox/Webkit 0)
+build      : tsc -b && vite build → built in 1.53s
+e2e cmd    : npx playwright test --config=playwright.ci.config.ts <四个 spec 显式列出>
+e2e result : Running 4 tests using 1 worker → 4 passed (7.3s) ; 其余 23 spec 0 次出现 / 无 skip-as-pass
+boundary   : /api postgres jdbc flyway docker loginToConsole seed storageState okx binance = 0 ; 无 service 容器 ; 无 upload-artifact ; cleanup rm -rf 成功
+```
+
+bootstrap（checkout / Node 下载 / npm registry / Chromium CDN）属 CI 引导网络访问，业务层出站 = 0。`Authorization`×1 为 checkout 的 git extraheader（GitHub mask），`token`×3 为 GITHUB_TOKEN 头与 `token: ***`（已 mask），`api`×1 为 Node URL API 弃用警告，均非业务调用或凭证泄露。审查仅用 `gh`（run/job 元数据 + immutable 日志只读）与 `git`，未用本地 4 passed 替代首跑证据。详见 `NQ_CI_FRONTEND_E2E_5A_FIRST_RUN_REVIEW.md`。
+
 ## NQ-CI-BATCH-5A-NO-BACKEND-E2E-IMPL（2026-06-18）
 
 结论：**PASS / READY FOR FIRST-RUN**。**Batch 5A = IMPLEMENTED / READY FOR FIRST-RUN**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
