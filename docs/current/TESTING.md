@@ -2,6 +2,27 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-BATCH-5A-FREEZE-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED / FROZEN**。**Batch 5A = FROZEN / ACCEPTED**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+两次 immutable GitHub Actions green run（**非本地结果**）+ 零 drift：
+
+```text
+Run 1 (首跑)  : run 27750279096 / commit 861c3e78 (impl) / job 82098741200 → success / 4 passed (7.3s)
+Run 2 (freeze): run 27750976632 / commit 3d26c84d (first-run-review docs-only) / push→dev / completed success / job 82101090359 → 4 passed (6.8s)
+drift check   : ci.yml blob 6941d60ade2bfce456e203f708b633e595285178  (861c3e78 == 3d26c84d, IDENTICAL)
+                playwright.ci.config.ts blob d039fe82fbf7db6f55c3e6fc089bac59a2fe9014  (861c3e78 == 3d26c84d, IDENTICAL)
+                git diff --name-only 861c3e78 3d26c84d = 仅 5 个 docs/current 文件 (docs-only)
+Run 2 核验    : permissions Contents: read / Metadata: read ; Node 22.22.3 ; npm ci added 183 ;
+                playwright install --with-deps chromium → Chromium 1208 only (Firefox/Webkit 0) ; vite build 成功 ;
+                显式四 spec → Running 4 tests using 1 worker → 4 passed ; 其余 23 spec 0 次 / 无 skip-as-pass ;
+                /api postgres jdbc flyway docker loginToConsole seed storageState okx binance upload-artifact = 0 ;
+                无 service 容器 ; cleanup rm -rf test-results-ci playwright-report test-results 运行
+```
+
+bootstrap（checkout / Node 下载 / npm registry / Chromium CDN）属 CI 引导网络访问，业务层出站 = 0；GitHub mask 的 `***`、checkout extraheader、Node URL API 文案均非业务 token/`/api`/出站。审查仅用 `gh`（run/job 元数据 + immutable 日志只读）与 `git`（blob 比对），未用本地结果替代 immutable green run。冻结基线 = 两 blob + 四 spec allowlist；任何改动使冻结失效需重审。详见 `NQ_CI_FRONTEND_E2E_5A_FREEZE_REVIEW.md`。
+
 ## NQ-CI-BATCH-5A-FIRST-RUN-REVIEW（2026-06-18）
 
 结论：**PASS / READY FOR FREEZE REVIEW**。**Batch 5A = FIRST RUN PASSED / READY FOR FREEZE REVIEW**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。

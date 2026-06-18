@@ -2,6 +2,60 @@
 
 日期：2026-05-16
 
+## NQ-CI-BATCH-5A-FREEZE-REVIEW
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读审查 Batch 5A 第二个 immutable GitHub Actions green run（由 first-run-review docs-only commit `3d26c84d` 触发），在两次一致绿跑 + 工作流/配置零 drift 下冻结 no-backend frontend E2E gate。仅新增 `NQ_CI_FRONTEND_E2E_5A_FREEZE_REVIEW.md` 并更新 README/STATUS/TESTING/WORKLOG；不修改 workflow / `playwright.ci.config.ts` / 前端 / spec / helper / 后端 / 依赖 / 测试 / migration；不上传 artifact。
+
+### 结论
+
+**NQ-CI-BATCH-5A-FREEZE-REVIEW：PASS / ACCEPTED / FROZEN**。
+
+- **Batch 5A = FROZEN / ACCEPTED**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**。
+- Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### 两次 immutable green run
+
+| | Run 1（首跑） | Run 2（freeze） |
+| --- | --- | --- |
+| run ID | `27750279096` | `27750976632` |
+| commit | `861c3e78`（impl） | `3d26c84d`（first-run-review docs-only） |
+| event/branch | push / dev | push / dev |
+| run 结论 | success | success |
+| 5A job | `82098741200` | `82101090359` |
+| summary | `4 passed (7.3s)` | `4 passed (6.8s)`（Running 4 tests / 4 files / 1 worker） |
+
+### 零 drift 证据
+
+- `.github/workflows/ci.yml` blob `6941d60ade2bfce456e203f708b633e595285178`：`861c3e78` == `3d26c84d`（IDENTICAL）。
+- `frontend/playwright.ci.config.ts` blob `d039fe82fbf7db6f55c3e6fc089bac59a2fe9014`：`861c3e78` == `3d26c84d`（IDENTICAL）。
+- `git diff --name-only 861c3e78 3d26c84d` = 仅 5 个 `docs/current` 文件（docs-only），无 workflow/frontend/backend/依赖/测试/migration 改动。
+
+### Run 2 边界核验
+
+- permissions Contents: read / Metadata: read；Node 22.22.3；npm ci added 183；Chromium 1208 only（Firefox/Webkit 0）；vite build 成功。
+- 命令显式四 spec；`4 passed`；其余 23 spec 0 次出现、无 skip-as-pass。
+- `/api`/jdbc/postgres/flyway/docker/loginToConsole/seed/storageState/okx/binance/upload-artifact = 0；无 service 容器；cleanup `rm -rf test-results-ci playwright-report test-results` 运行。
+- bootstrap（checkout/Node/npm/Chromium CDN）属引导网络访问，业务出站 = 0。
+
+### Findings
+
+- P0：无。
+- P1（继承，仅阻断 5B）：no-outbound runtime enforcement 仍是 5B 前置；5A 不启 backend，不阻断冻结；不得据 5A 冻结宣称 authenticated/backend E2E 已覆盖。
+- P2：无影响结论项。
+- P3：runner 级 Node20→24 action wrapper 弃用警告（checkout/setup-node），不影响应用 Node 22 与结论；preview `127.0.0.1` 绑定未在 line reporter 日志字面回显，证据为 committed config + loopback 导航成功。
+
+### 冻结基线
+
+workflow blob `6941d60a…` + config blob `d039fe82…` + 四 spec allowlist（`login-page-smoke` / `design-system-table-smoke` / `design-system-live-query-smoke` / `design-system-backtest-chart-smoke`，真实路径 `frontend/tests/e2e/`）。任何改动使冻结失效，需重走 first-run + freeze review。
+
+### Next concrete action
+
+5B-ENV 仍为 P1 prerequisite，未启动；不得进入 5B-ENV/5B-SMOKE/5C/5D/5E，不得启动 4F-B 至 4F-F。
+
 ## NQ-CI-BATCH-5A-FIRST-RUN-REVIEW
 
 日期：2026-06-18
