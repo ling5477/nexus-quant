@@ -2,6 +2,19 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED**。**Batch 5 plan = ACCEPTED AS IMPLEMENTATION BASELINE**；**Batch 5A = READY FOR IMPLEMENTATION**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4F-A = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+实际执行（只读源码核实，未运行运行时）：审查 `frontend/playwright.config.ts`、4 个候选 5A spec、`frontend/src/router/routes.tsx`、`DesignSystemDemoPage.tsx`、`useLiveQuery.ts`、`BacktestCurveChart.tsx`、`AppProviders.tsx`、`main.tsx`、`frontend/vite.config.ts`、`frontend/package.json` scripts、`marketdata-ingestion-smoke.spec.ts` 与 `NQ_CI_FRONTEND_E2E_PLAN.md`。本轮**未运行** `npm run test:e2e`、`npm run build`、backend、PostgreSQL、Flyway 或浏览器安装，原因是 plan-review-only 且禁止进入 Batch 5 implementation；未生成或上传 trace、screenshot、video、HTML report、test-results 或 raw logs。
+
+核实结论：
+
+- 4 个 no-backend spec 确证为纯 loopback / no-backend：`/dev/design-system` 与 `/login` 是顶层公开路由（无 `RequireAuth`）；隔离 context 无 storageState 无 token，`AuthBootstrap.currentUserQuery` disabled，不发 `/api`；`LiveQueryDemo.queryFn` 为本地 `setTimeout` promise，`useLiveQuery` 不自发请求，`BacktestCurveChart` 无 fetch/axios/useQuery。最终 allowlist 无存疑 spec 需移出。
+- `vite.config.ts` `/api` proxy 仅在 `server`，`preview` 无 proxy；5B 不可假设 preview 代理 `/api`。
+- `marketdata-ingestion-smoke` run-once 容忍外网失败，与 fail-closed no-outbound 冲突，必须持续排除。
+- 所有调用 `loginToConsole()` 的页面级 spec 仍依赖真实 backend/PostgreSQL/Flyway/auth/legacy account/SIM exchange account；`backtest-detail-smoke.spec.ts` 两个页面级 case 仍为 **PENDING BACKEND ENV / NOT VERIFIED IN CI**；历史本地通过未被重写为 Batch 5 CI passed。
+
 ## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN（2026-06-18）
 
 结论：**PASS / READY FOR REVIEW**。Batch 5 = **PLAN ONLY / NOT IMPLEMENTED**；Batch 4F-A = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。

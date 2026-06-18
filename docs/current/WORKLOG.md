@@ -2,6 +2,44 @@
 
 日期：2026-05-16
 
+## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读评审 `NQ_CI_FRONTEND_E2E_PLAN.md`，确认 Batch 5 是否可作为实施基线接受，并明确 5A / 5B-ENV / 5B-SMOKE 严格分界。仅新增/更新 `docs/current`；不修改 workflow，不新增 CI job，不运行 Playwright/backend/PostgreSQL/Flyway/浏览器安装，不修改 spec/helper/前端/后端/seed/migration/测试/POM/package/lockfile/pyproject，不生成或上传任何 artifact。
+
+### 结论
+
+**NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW：PASS / ACCEPTED**。
+
+- **Batch 5 plan = ACCEPTED AS IMPLEMENTATION BASELINE**。
+- **Batch 5A = READY FOR IMPLEMENTATION**：最终 allowlist 经源码核实保留 4 个 no-backend spec（`login-page-smoke`、`design-system-table-smoke`、`design-system-live-query-smoke`、`design-system-backtest-chart-smoke`），无存疑 spec 需移出。
+- **Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**。
+- runtime no-outbound P1 仅阻断 5B，不阻断纯 no-backend 5A。
+- Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-A = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### 关键源码核实
+
+- `/dev/design-system` 与 `/login` 在 `routes.tsx` 为顶层公开路由，位于 `RequireAuth` 之外，无鉴权守卫。
+- `AppProviders` 的 `AuthBootstrap` `currentUserQuery` `enabled: Boolean(accessToken)`；无 storageState 的隔离 context 中无 token → 不发 `/api` 请求。
+- `design-system-live-query-smoke` 的 `LiveQueryDemo.queryFn` 是纯本地 `setTimeout` promise；`useLiveQuery` 仅包装 TanStack Query，不自发请求；`BacktestCurveChart` grep 无 fetch/axios/useQuery —— 4 个候选均确证 no-backend / no-outbound。
+- `vite.config.ts` 的 `/api` proxy 仅在 `server`，`preview` 无 proxy（5B 不可假设 preview 代理 `/api`）。
+- `marketdata-ingestion-smoke` run-once 容忍外网失败，确证与 fail-closed no-outbound 冲突，必须持续排除。
+
+### Findings
+
+- P0：无。
+- P1（继承 plan，正确保留，仅阻断 5B）：no-outbound guard 为 JUnit/test-scope，不自动覆盖单独启动的 E2E backend；`loginToConsole()` 写账户状态并持 token，须 job-local fresh DB 且禁止上传 trace/storageState/raw logs；`marketdata-ingestion-smoke` 与 fail-closed no-outbound 冲突须排除。
+- P2（继承 plan）：runner 启 Vite dev server 而非 preview，preview 无 `/api` proxy；full suite 有环境型 skip 与硬编码 URL；helper 错误文本可能含 raw response body；重型 fixture 无 teardown 契约。
+- P3（继承 plan）：reporter/output/screenshot/video 依赖默认值，CI 须显式固定；`run-e2e.mjs` 未文档化进程树清理。
+- 评审未新增超出 plan 的阻断项。
+
+### Next concrete action
+
+进入 Batch 5A implementation（单独评审 workflow 改动），或保持 5B 阻断；不得直接实现 5B-ENV/5B-SMOKE，不得启动 Batch 4F-B 至 4F-F。
+
 ## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN
 
 日期：2026-06-18
