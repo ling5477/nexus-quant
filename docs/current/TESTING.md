@@ -2,6 +2,25 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-BATCH-5A-NO-BACKEND-E2E-IMPL（2026-06-18）
+
+结论：**PASS / READY FOR FIRST-RUN**。**Batch 5A = IMPLEMENTED / READY FOR FIRST-RUN**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4C = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+新增 CI job `frontend-no-backend-e2e` + `frontend/playwright.ci.config.ts`，只跑四个 no-backend spec（真实路径 `frontend/tests/e2e/`）：`login-page-smoke`、`design-system-table-smoke`、`design-system-live-query-smoke`、`design-system-backtest-chart-smoke`。
+
+本地真实执行结果：
+
+```text
+playwright test --config=playwright.ci.config.ts --list   → Total: 4 tests in 4 files（仅四 allowlist spec，未扩大）
+npm ci                                                     → 成功（本机原缺 echarts，clean install 补齐；未改 package.json/lockfile）
+npm run build                                              → 成功（tsc -b && vite build）
+playwright test --config=playwright.ci.config.ts <四个 spec 显式列出>  → 4 passed (10.2s)
+```
+
+执行边界：本地 E2E 基于 production build + loopback `vite preview`（127.0.0.1:5179），**未**启动 backend / PostgreSQL / Flyway / 认证 / seed；**未**调用 `loginToConsole()`；**未**运行其余 23 个 spec；运行后 `test-results` / `test-results-ci` 为空临时目录已删除，未生成/上传 HTML report / trace / video / screenshot / 任何 artifact。GitHub Actions first-run（含 `npx playwright install --with-deps chromium` 真实安装与 ubuntu runner 执行）仍待 CI 首跑确认，本轮不写成 CI passed。
+
+禁止范围校验：`git diff -- backend frontend/src frontend/tests frontend/package.json frontend/package-lock.json research scripts deploy pom.xml pyproject.toml` 为空；`git diff --check` 无空白错误；改动仅 `.github/workflows/ci.yml`（+56 行）与新增 `frontend/playwright.ci.config.ts` 及 `docs/current/**`。
+
 ## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW（2026-06-18）
 
 结论：**PASS / ACCEPTED**。**Batch 5 plan = ACCEPTED AS IMPLEMENTATION BASELINE**；**Batch 5A = READY FOR IMPLEMENTATION**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**；Batch 4F-A = **FROZEN / ACCEPTED**；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；NQ GateK CI mainline = **IN PROGRESS**；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。

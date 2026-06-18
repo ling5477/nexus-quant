@@ -417,7 +417,14 @@ Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` 
 
 ### Batch 5: Frontend E2E hardening
 
-Status: **PLAN ONLY / NOT IMPLEMENTED；PASS / READY FOR REVIEW**。Planning document: `docs/current/NQ_CI_FRONTEND_E2E_PLAN.md`。
+Status: **plan PASS / ACCEPTED；Batch 5A IMPLEMENTED / READY FOR FIRST-RUN；5B-ENV P1 PREREQUISITE / NOT STARTED；5B-SMOKE BLOCKED BY 5B-ENV**。Planning document: `docs/current/NQ_CI_FRONTEND_E2E_PLAN.md`；plan review: `docs/current/NQ_CI_FRONTEND_E2E_PLAN_REVIEW.md`；5A implementation: `docs/current/NQ_CI_FRONTEND_E2E_5A_IMPLEMENTATION.md`。
+
+Batch 5A implemented slice（IMPLEMENTED / READY FOR FIRST-RUN，尚未经 GitHub Actions first-run review）:
+
+- 新增独立 job `frontend-no-backend-e2e`（`permissions: contents: read`、`timeout-minutes: 15`、Node 22、`npm ci`、`npx playwright install --with-deps chromium`、`npm run build`、loopback `vite preview` 127.0.0.1:5179、`if: always()` 清理临时 output 不上传）与 `frontend/playwright.ci.config.ts`（Chromium only / workers=1 / retries=0 / trace=screenshot=video=off / line reporter / 不用 storageState / `reuseExistingServer:false` / `forbidOnly:true`）。
+- 唯一 allowlist 四个 no-backend spec（仓库真实路径 `frontend/tests/e2e/`，非 `frontend/e2e/`）：`login-page-smoke`、`design-system-table-smoke`、`design-system-live-query-smoke`、`design-system-backtest-chart-smoke`；命令显式列出四 spec，config `testMatch` 二次限定，`--list` = Total: 4 tests in 4 files，未扩大到其余 23 个 spec。
+- 本地真实验证：build 成功、四 spec 4 passed (10.2s)、无 artifact 生成/上传；未启动 backend/PostgreSQL/Flyway/认证/seed/外网/真实 provider，未调用 `loginToConsole()`。
+- Batch 4C redaction 未弱化；本轮未新增任何 upload 路径。
 
 Frozen planning decisions:
 
@@ -466,6 +473,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: `NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW`、Batch 5 plan fix、（可选）`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION`，或暂停 CI 线；不得直接实现 Batch 5 或启动 Batch 4F-B 至 4F-F。Batch 3、Batch 4B、Batch 4C 与 Batch 4F-A 保持 FROZEN / ACCEPTED；Batch 5 保持 PLAN ONLY / NOT IMPLEMENTED。
+Next concrete action: 等待 GitHub Actions `frontend-no-backend-e2e` first-run（Batch 5A）并做 first-run review；连续两次 immutable green 后再议 required gate。不得直接进入 Batch 5B-ENV / 5B-SMOKE / 5C / 5D / 5E，不得启动 Batch 4F-B 至 4F-F。Batch 3、Batch 4B、Batch 4C 与 Batch 4F-A 保持 FROZEN / ACCEPTED；Batch 5A = IMPLEMENTED / READY FOR FIRST-RUN；Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.

@@ -734,6 +734,62 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+  frontend-no-backend-e2e:
+    name: Frontend no-backend E2E (Batch 5A)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    env:
+      CI: "true"
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        # Why: 只装 Chromium(含系统依赖);浏览器安装失败 = toolchain/环境失败,直接 fail job,绝不 skip-as-pass。
+        run: npx playwright install --with-deps chromium
+
+      - name: Build frontend (production)
+        run: npm run build
+
+      - name: Run Batch 5A no-backend E2E (explicit 4-spec allowlist)
+        # Fail-closed:显式列出四个 allowlist spec;不用宽泛 glob、不用无参数 `playwright test`。
+        # CI config 自身也已用 testMatch 限定为同一组 spec(双重过滤)。
+        # 不启动 backend / PostgreSQL / Flyway / Docker / seed / 认证 / exchange account / 外网业务调用。
+        # 不传入 API base URL / token / cookie / Authorization / exchange credential / DB 连接信息。
+        run: |
+          npx playwright test \
+            --config=playwright.ci.config.ts \
+            tests/e2e/login-page-smoke.spec.ts \
+            tests/e2e/design-system-table-smoke.spec.ts \
+            tests/e2e/design-system-live-query-smoke.spec.ts \
+            tests/e2e/design-system-backtest-chart-smoke.spec.ts
+
+      - name: Cleanup Playwright temp output (no upload)
+        if: always()
+        # 删除任何 Playwright 可能生成的临时 output;本轮不上传任何 artifact/report/trace/video/screenshot。
+        # 该步骤只清理,不会把测试失败洗成通过(失败 job 状态已在上一步确定)。
+        run: |
+          rm -rf test-results-ci playwright-report test-results
+
   research:
     name: Research quality gate
     runs-on: ubuntu-latest

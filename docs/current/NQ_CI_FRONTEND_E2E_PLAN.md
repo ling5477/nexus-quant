@@ -223,6 +223,8 @@ Documentation governance starts after each implementation batch's real GitHub ru
 
 **NQ-CI-BATCH-5-FRONTEND-E2E-PLAN：PASS / READY FOR REVIEW**
 
+> 更新（2026-06-18）：plan review **PASS / ACCEPTED**（`NQ_CI_FRONTEND_E2E_PLAN_REVIEW.md`）；**Batch 5A 已实施 = IMPLEMENTED / READY FOR FIRST-RUN**（新增 `frontend-no-backend-e2e` job + `frontend/playwright.ci.config.ts`，四个 no-backend spec，本地 4 passed，尚未经 GitHub Actions first-run review，见 `NQ_CI_FRONTEND_E2E_5A_IMPLEMENTATION.md`）。5B-ENV = P1 PREREQUISITE / NOT STARTED；5B-SMOKE = BLOCKED BY 5B-ENV。注意 5A allowlist 仓库真实路径为 `frontend/tests/e2e/`（非 `frontend/e2e/`）。
+
 **Batch 5：PLAN ONLY / NOT IMPLEMENTED**
 
 **Batch 4F-A：FROZEN / ACCEPTED**

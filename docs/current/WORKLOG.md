@@ -2,6 +2,50 @@
 
 日期：2026-05-16
 
+## NQ-CI-BATCH-5A-NO-BACKEND-E2E-IMPL
+
+日期：2026-06-18
+
+### 目标与范围
+
+把四个已批准的纯 loopback / no-backend Playwright spec 接入 GitHub Actions CI。允许修改：`.github/workflows/ci.yml`、新增 `frontend/playwright.ci.config.ts`、`docs/current/**`。不启动 backend/PostgreSQL/Flyway/认证/seed/账户写入/外网/真实 provider；不上传任何 artifact。
+
+### 结论
+
+**NQ-CI-BATCH-5A-NO-BACKEND-E2E-IMPL：PASS / READY FOR FIRST-RUN**。
+
+- **Batch 5A = IMPLEMENTED / READY FOR FIRST-RUN**；**Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**。
+- Batch 4C = **FROZEN / ACCEPTED**（redaction 未弱化）；Batch 4F-B 至 4F-F = **OPTIONAL BACKLOG / NOT STARTED**；NQ GateK CI mainline = **IN PROGRESS**。
+- LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter = 未开启、未接入、未实现。
+
+### 实现要点
+
+- 新增 job `frontend-no-backend-e2e`：`permissions: contents: read`、`timeout-minutes: 15`、Node 22（复用前端口径，不升 major）、`npm ci`、`npx playwright install --with-deps chromium`、`npm run build`、loopback `vite preview` 127.0.0.1:5179、`if: always()` 清理临时 output（不上传）。
+- 新增 `frontend/playwright.ci.config.ts`：Chromium only / workers=1 / retries=0 / trace=screenshot=video=off / line reporter / baseURL `http://127.0.0.1:5179` / preview 只绑 127.0.0.1 / `reuseExistingServer:false` / server timeout 120s / 不用 storageState / `forbidOnly:true` / `testDir+testMatch` 仅四 spec / `outputDir` 临时。
+- fail-closed：CI 命令显式列出四 spec，config `testMatch` 二次限定；`--list` 输出 Total: 4 tests in 4 files。
+- 路径口径：任务书写 `frontend/e2e/`，仓库真实路径为 `frontend/tests/e2e/`（`testDir=./tests/e2e`），以真实路径为准，未移动/重命名 spec。
+- 未改 `frontend/playwright.config.ts`（独立 CI config 已满足全部要求）。
+
+### 本地验证（真实执行）
+
+- `playwright test --config=playwright.ci.config.ts --list` → Total: 4 tests in 4 files。
+- `npm ci`（本机缺 echarts，clean install 补齐，未改 package.json/lockfile）→ 成功。
+- `npm run build` → 成功。
+- 显式四 spec + CI config 实跑（已 build，preview loopback，无 backend）→ **4 passed (10.2s)**。
+- 运行后 `test-results` / `test-results-ci` 为空临时目录已删除；无 HTML report/trace/video/screenshot；未上传任何 artifact。
+- `git diff -- backend frontend/src frontend/tests frontend/package.json frontend/package-lock.json research scripts deploy pom.xml pyproject.toml` 为空；`git diff --check` 无空白错误。
+
+### Findings
+
+- P0：无。
+- P1（继承 plan，仅阻断 5B）：no-outbound guard 为 JUnit/test-scope，不自动覆盖单独启动的 E2E backend；与纯 no-backend 5A 解耦。
+- P2：GitHub Actions 上 `npx playwright install --with-deps chromium` 真实安装/缓存行为待首跑验证；浏览器安装失败按 toolchain 失败 fail job，不 skip-as-pass。`dist` 体积告警属既有现状，不在本轮范围。
+- P3：未对 browser 版本/缓存做 first-class pin（依赖 `npx playwright install` 匹配本地 playwright 包）；后续如需更强可复现性单独评审。
+
+### Next concrete action
+
+等待 GitHub Actions `frontend-no-backend-e2e` first-run，按 first-run review 确认绿；连续两次 immutable green 后再议 required gate。不得直接进入 5B-ENV/5B-SMOKE/5C/5D/5E，不得启动 Batch 4F-B 至 4F-F。
+
 ## NQ-CI-BATCH-5-FRONTEND-E2E-PLAN-REVIEW
 
 日期：2026-06-18
