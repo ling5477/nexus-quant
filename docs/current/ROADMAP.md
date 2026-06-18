@@ -34,11 +34,14 @@ GateO：A 股适配
 - GateJ-3-WO completed。
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
-- Next: GateK-PLAN。
+- Next: GateK-PLAN（planning / 收口工作线；GateK 产品/runtime 实现仍 not started）。
+- **NQ GateK CI mainline = COMPLETED / ACCEPTED**（CI 状态权威以 `STATUS.md` + `NQ_CI_BASELINE_PLAN.md` 为准）：Batch 5A no-backend frontend E2E = FROZEN / ACCEPTED（仅 4 个 no-backend smoke spec，非 authenticated/backend E2E coverage）；Batch 5B-ENV runtime no-outbound = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
+- 文档治理：G1 authority/evidence index = FROZEN / ACCEPTED；G2 current-control drift repair = IMPLEMENTED / READY FOR REVIEW；G3~G6 = NOT STARTED（治理入口见 `NQ_DOCS_AUTHORITY_INDEX.md` / `NQ_DOCS_EVIDENCE_INDEX.md`）。
 - GateK implementation not started。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
+- RealClient / real provider / real exchange adapter not implemented。
 - Multi-exchange expansion not started。
 
 ## 路线原则
@@ -48,7 +51,7 @@ GateO：A 股适配
 - GateI 已完成虚拟币量化 V1 完整闭环（策略版本、发布、回测追溯、评估增强、Paper Trading 运行闭环、风控回写、资金曲线、持仓曲线、交易复盘、异常停机）。
 - GateJ 已完成 Paper Trading 稳定运行验收。
 - GateK-PLAN 用于规划 GateJ 后的事实源收口、架构与测试基线、前端产品化、CI / 可观测性 / 部署基线、安全 hardening 和 Integration-0 只读登记；不能直接实现 AI、DH runtime、LIVE、真实交易所扩展或真实 adapter。
-- `NQ_CI_BASELINE_PLAN.md` 已作为 CI baseline 文档落档；Batch 1 已 implemented / first green confirmed，Batch 2 PostgreSQL / Flyway hardening 已完成并冻结，Batch 3 no-outbound guard 当前为 FROZEN / ACCEPTED（run `27634370657`），Batch 4 security guard / secret scan 已落档为 PLAN ONLY / NOT IMPLEMENTED（`NQ_CI_SECURITY_GUARD_PLAN.md`，Batch 4A plan review accepted），Batch 5 frontend E2E hardening 仍 PENDING。
+- `NQ_CI_BASELINE_PLAN.md` 已作为 CI baseline 文档落档（CI 状态权威以 `STATUS.md` 为准）；**NQ GateK CI mainline = COMPLETED / ACCEPTED**：Batch 1 first green，Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound guard、Batch 4B secret scan、Batch 4C artifact/log redaction、Batch 4F-A dependency-audit preflight、Batch 5A no-backend frontend E2E 均 FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED，Batch 5B-SMOKE = BLOCKED BY 5B-ENV，Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED，Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
 - `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` 已作为 Batch 3 plan / implementation / freeze baseline 落档；Batch 3B 已实现最小 workflow / test-scope no-outbound guard，并由 GitHub Actions run `27634370657` first green confirmed（6 jobs green），经 Batch 3E freeze review 固化为 FROZEN / ACCEPTED，是当前 `dev` no-outbound guard baseline。
 - GateL 进入 AI Paper Trading。
 - GateM 才允许 AI 小资金 LIVE。

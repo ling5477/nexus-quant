@@ -168,7 +168,7 @@ GateI-2 固定范围：
 
 ## GateI Planning Entry
 
-GateI API 规划入口为 [GATEI_API_PLAN.md](/docs/gates/gate-i/GATEI_API_PLAN.md)。本轮只做规划，不实现接口。
+GateI API 规划入口为 [GATEI_API_PLAN.md](../gates/gate-i/GATEI_API_PLAN.md)。本轮只做规划，不实现接口。
 
 GateI 规划 API 分类：
 

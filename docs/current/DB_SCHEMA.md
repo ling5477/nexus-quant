@@ -236,7 +236,7 @@ GateI-2 不修改历史 migration，不新增无注释表，不新增无注释�
 
 ## GateI DB Planning Entry
 
-GateI DB 规划入口为 [GATEI_DB_PLAN.md](/docs/gates/gate-i/GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2 已落地回测追溯与评估指标增强；GateI-3/4 尚未开始。
+GateI DB 规划入口为 [GATEI_DB_PLAN.md](../gates/gate-i/GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2 已落地回测追溯与评估指标增强；GateI-3/4 尚未开始。
 
 GateI 后续规划重点：
 

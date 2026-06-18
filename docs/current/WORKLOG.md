@@ -2,6 +2,30 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR
+
+日期：2026-06-18
+
+### 目标与范围
+
+修复当前控制层文档的导航/状态/规则/可修链接漂移，使新开发者从少数权威入口准确进入当前状态、CI 基线、治理索引与 backlog。仅新增 `NQ_DOCS_G2_CURRENT_CONTROL_REPAIR.md` 并更新 `docs/README.md`/`docs/DOC_RULES.md`/`docs/current/{README,STATUS,ROADMAP,TESTING,WORKLOG,API,DB_SCHEMA}.md`；**不移动/删除/重命名/归档任何文档**，不改 G1 五份冻结对象，不改冻结快照正文/链接，不回写 278/283，不改 workflow/代码/测试/migration/依赖。
+
+### 结论
+
+**G2 = IMPLEMENTED / READY FOR REVIEW**。**G1 authority/evidence index = FROZEN / ACCEPTED**；**G3~G6 = NOT STARTED**。
+
+### 处理项
+
+- `docs/README.md`：GateJ 计划/工作单从 current 入口改为历史/冻结证据入口（权威指向 gate-j，未删导航）；§当前边界补全 GateK CI mainline COMPLETED / 5A FROZEN（非 authenticated/backend coverage）/ 5B-ENV P1 / 5B-SMOKE BLOCKED / 4F backlog / static / G1 FROZEN / G2；新增 Documentation Governance Evidence 导航与冻结快照历史链接兼容入口。
+- `docs/DOC_RULES.md`：新增规则 16，5 级优先级收敛“不重复 vs 迁移或复制”（冻结证据优先 → 单一权威 → 先 index/redirect → 复制仅过渡且标 authority → 不为减文件删/改历史）。
+- `docs/current/ROADMAP.md`：§当前阶段与 §路线原则同步 CI mainline COMPLETED 与逐 Batch 状态，修复“Batch 4 PLAN ONLY / Batch 5 PENDING”过期口径；CI 状态权威指向 `STATUS.md`。
+- 链接：`docs/current/API.md:171`、`docs/current/DB_SCHEMA.md:239` 的 malformed 前导 `/` 改为相对 `../gates/gate-i/`；冻结快照 4 处历史链接不改写，仅在 `docs/README.md` 增兼容入口。
+- 旧口径未被写成 completed：5B-ENV/5B-SMOKE/4F-B~4F-F/static 保持 NOT STARTED / BLOCKED / OPTIONAL；5A 明确非 authenticated/backend E2E。
+
+### Next concrete action
+
+评审 G2；后续 G3（GateJ 17 份 superseded redirect-first 收敛）、G4（CI evidence 归位）、G5（目录收口）、G6（默认不删除）须各自单独受控开工。evidence index 物理更新留待后续受控流程。
+
 ## NQ-DOCS-GOVERNANCE-G1-FREEZE-REVIEW
 
 日期：2026-06-18
