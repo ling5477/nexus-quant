@@ -2,6 +2,30 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G1-FREEZE-REVIEW
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读冻结复核 G1 的 5 份冻结对象（authority index / evidence index / migration map / G1 implementation / governance plan），确认可冻结为 G2~G5 之前唯一有效的文档治理索引基线，并固定计数边界、防递归规则与冻结失效条件。仅新增 `NQ_DOCS_G1_FREEZE_REVIEW.md` 并更新 README/STATUS/TESTING/WORKLOG；**不移动/删除/重命名/归档任何文档**，不改 5 份冻结对象、不改冻结正文或链接、不改 workflow/代码/测试/migration/依赖。
+
+### 结论
+
+**PASS / ACCEPTED / FROZEN**。**NQ Docs Governance Plan = FROZEN FOR G1 BASELINE**；**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 = READY FOR IMPLEMENTATION**；**G3~G6 = NOT STARTED**。P0=0 / P1=0 / P2=0 / P3=2。
+
+### 核验要点
+
+- 冻结锚点 HEAD `a0157973`；5 冻结对象自 G1 implementation commit `c3a2cf83` 零 drift（blob 见 `NQ_DOCS_G1_FREEZE_REVIEW.md` §1）。
+- 计数边界（核心）：原始基线 **278**（冻结）；G1 implementation snapshot **283** = 278 + 5 增量（冻结）；review/freeze evidence（`NQ_DOCS_G1_REVIEW.md`、本 freeze review 及后续同类）= HISTORICAL_EVIDENCE / RETAIN_IN_PLACE，**不回写 278/283**（防递归 standing rule）。区分 `GOVERNANCE_PLAN_REVIEW`（PLAN 评审，在 283 内）与 `G1_REVIEW`（G1 实现评审，不在 283 内）。
+- authority 14 领域唯一权威无并列；GateJ 18/17/RUNBOOK retain/9 DIVERGED；evidence 9 类入口齐全 backlog 未误标；migration map 10 字段、retain block、无 DELETE NOW、零 orphan。
+- 边界：governance commit 未触碰 docs/gates、docs/archive、code、workflow；G2（漂移/链接/P3 规则矛盾）、G3（17 superseded 收敛）、G4（CI evidence 归位）、G5（目录收口）、G6（默认不删除）均未提前处理。
+- 冻结失效条件 6 项已写入 `NQ_DOCS_G1_FREEZE_REVIEW.md` §7。
+
+### Next concrete action
+
+G1 冻结完成；下一步可单独开工 **G2**（docs-only：`docs/README.md` 状态/导航漂移与“不重复 vs 迁移或复制”P3 规则矛盾澄清、`docs/current` `API.md`/`DB_SCHEMA.md` malformed 前导 `/` 链接修复、evidence-index 物理新增文档治理 evidence 小节）。不得在未建 redirect 前移动文档（G3），不得删除冻结证据（G6 默认不删）。
+
 ## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX-REVIEW
 
 日期：2026-06-18

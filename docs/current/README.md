@@ -115,6 +115,7 @@ GateO：A 股适配
 - `NQ_DOCS_MIGRATION_MAP.md`：逐文件 / 等效逐文件迁移映射（覆盖 278 基线 md/txt；recommended action 仅 5 取值、无 DELETE NOW；G1 新增）。
 - `NQ_DOCS_G1_IMPLEMENTATION.md`：G1 实施记录（git 计数、P2 收敛证据、G1~G6 边界；**G1 = IMPLEMENTED / READY FOR REVIEW**，G2~G6 = NOT STARTED）。
 - `NQ_DOCS_G1_REVIEW.md`：G1 只读评审；结论 **PASS / ACCEPTED**，**G1 authority/evidence index = ACCEPTED / READY FOR FREEZE REVIEW**，**Plan = ACCEPTED AS IMPLEMENTATION BASELINE**，G2~G6 = NOT STARTED（P0/P1/P2=0，P3=3 信息性）。
+- `NQ_DOCS_G1_FREEZE_REVIEW.md`：G1 冻结复核；结论 **PASS / ACCEPTED / FROZEN**，**Plan = FROZEN FOR G1 BASELINE**，**G1 authority/evidence index = FROZEN / ACCEPTED**，**G2 = READY FOR IMPLEMENTATION**，G3~G6 = NOT STARTED；固定计数边界（基线 278 / snapshot 283 冻结，review/freeze evidence 不回写）、5 冻结对象 blob 与冻结失效条件。本文与 `NQ_DOCS_G1_REVIEW.md` 属 review/freeze evidence（HISTORICAL_EVIDENCE / RETAIN_IN_PLACE），不计入 283 snapshot。
 
 ## Codex Workflow 入口
 

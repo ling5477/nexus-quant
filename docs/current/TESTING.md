@@ -2,6 +2,27 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G1-FREEZE-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED / FROZEN**。只读冻结复核，docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。P0=0 / P1=0 / P2=0 / P3=2（信息性）。
+
+git 实测复核：
+
+```text
+HEAD = a01579739ef176b0443103d69c55d8bf6845c0b6 (dev)
+5 冻结对象自 c3a2cf83 零 drift：git diff --name-only c3a2cf83..HEAD -- <5 objects> → 空
+冻结 blob：PLAN 0ee21735 / AUTHORITY 71e31b5d / EVIDENCE 8b18e36d / MIGRATION 6eb2706d / G1_IMPL 4dece64e
+计数边界：原始基线 278（冻结）；G1 implementation snapshot 283 = 278 + 5 增量（冻结）；live 工作树 284（=283 + G1_REVIEW，review evidence 不回写 283）
+authority index 表 → 14 领域唯一权威无并列
+current↔gate-j blob → 18 IDENTICAL（superseded 17 + RUNBOOK retain）/ 9 DIVERGED
+migration map → 10 字段齐全；§4 gates/archive/.agents/templates 全 RETAIN_IN_PLACE/NONE/NOT_APPLICABLE；DELETE NOW 肯定用法 = 0
+evidence index → 9 类入口齐全；backlog（5B-ENV/5B-SMOKE/4F-B~4F-F/static）均 NOT STARTED/BLOCKED
+governance commit e3b12e33..c3a2cf83 -- docs/gates docs/archive ci.yml backend frontend research scripts deploy templates .agents → 空
+git diff --check → 无空白错误；禁止范围 diff → 空
+```
+
+**NQ Docs Governance Plan = FROZEN FOR G1 BASELINE**；**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 = READY FOR IMPLEMENTATION**；**G3~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX-REVIEW（2026-06-18）
 
 结论：**PASS / ACCEPTED**。只读评审，docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。P0=0 / P1=0 / P2=0 / P3=3（信息性）。
