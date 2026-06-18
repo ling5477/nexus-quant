@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN
 日期：2026-06-18
-状态：**PLAN ONLY / NOT IMPLEMENTED**。本文件只规划 Batch 4C-C「GitHub Actions logs 不输出真实 credential material」的证明方式，不修改 `.github/workflows/ci.yml`，不改 Java / TypeScript / Python 代码与测试，不新增 API / migration，不新增 log 扫描 job，不上传 artifact。Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable run `27701669084`，frozen baseline = `ci.yml` `Pre-upload redaction gate (PostgreSQL schema artifacts)` step，blob `4a40ef78` / commit `c734102d`，详见 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）。**Batch 4C 整体仍 NOT FROZEN**（4C-C log redaction proof 仅完成本轮 planning，尚未实现也未冻结）。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real permission probe adapter NOT IMPLEMENTED。
+状态：Batch 4C-C log redaction proof plan review **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`，2026-06-18，P0/P1=0，28 项评审全部满足，详见「Plan review」段）；Batch 4C-C 仍 **PLAN ONLY / NOT IMPLEMENTED**。本文件只规划 Batch 4C-C「GitHub Actions logs 不输出真实 credential material」的证明方式，不修改 `.github/workflows/ci.yml`，不改 Java / TypeScript / Python 代码与测试，不新增 API / migration，不新增 log 扫描 job，不上传 artifact。Batch 4C-A plan review **PASS / ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**（immutable run `27701669084`，frozen baseline = `ci.yml` `Pre-upload redaction gate (PostgreSQL schema artifacts)` step，blob `4a40ef78` / commit `c734102d`，详见 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`）。**Batch 4C 整体仍 NOT FROZEN**（4C-C log redaction proof 仅完成本轮 planning，尚未实现也未冻结）。Batch 4B minimal secret scan baseline 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`，run `27674393780`）；Batch 3 no-outbound guard 仍 FROZEN / ACCEPTED（run `27634370657`）；Batch 4F dependency audit OPTIONAL / NOT STARTED；Batch 5 frontend E2E hardening PENDING。AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real permission probe adapter NOT IMPLEMENTED。
 
 本文件是 `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md` 内「Batch 4C-C: log redaction proof」子段落的详细规划，独立成文，与 `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` / `NQ_CI_POSTGRES_FLYWAY_*_PLAN.md` 同例。Batch 4C-B（artifact）与 Batch 4C-C（log）扫描目标不同，不重复彼此。
 
@@ -243,14 +243,51 @@ rg 仅用于 tracked safe paths；未把扫描扩展到 `.env` / secrets / logs 
 - 未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe adapter。
 - **Batch 4C-C 保持 PLAN ONLY / NOT IMPLEMENTED**；**Batch 4C 整体仍 NOT FROZEN**；Batch 4C-B pre-upload artifact redaction gate 仍 FROZEN / ACCEPTED；Batch 4B 仍 FROZEN / ACCEPTED；Batch 3 仍 FROZEN / ACCEPTED；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING。
 
+## Plan review
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`，2026-06-18。对本 plan + `.github/workflows/ci.yml`（HEAD `a6d4bf74`，只读）做 28 项评审，全部满足，P0/P1 = 0。结论 **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**。
+
+| # | 评审项 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| 1 | current CI log security baseline 准确 | 通过 | 逐条对 `ci.yml` 复核（下列 3-9 项） |
+| 2 | 7 jobs 全部纳入 log proof checklist | 通过 | 「Jobs to inspect」列 Diff check / No-outbound guard / Backend Maven test / PostgreSQL / Flyway smoke / Frontend build / Research quality gate / Secret scan |
+| 3 | ci.yml 无 `set -x` / `printenv` / `env` dump | 通过 | `rg "printenv\|set -x\|env dump" ci.yml` = 0；7 jobs 均 `set -euo pipefail` |
+| 4 | permissions 仅 `contents: read` | 通过 | ci.yml line 12-13（顶层）+ 777-778（secret-scan）|
+| 5 | 无 repo secrets / write / id-token / continue-on-error | 通过 | `rg "id-token\|continue-on-error\|GITLEAKS_LICENSE\|gitleaks-action" ci.yml` = 0；无 `secrets.` 引用 |
+| 6 | postgres-flyway `::add-mask::` disposable DB 值 | 通过 | ci.yml line 365-367（URL / user / password）|
+| 7 | secret-scan `--redact` | 通过 | ci.yml line 886 |
+| 8 | secret-scan sanitized 仅 RuleID / File / Lines / Fingerprint | 通过 | ci.yml line 896-902（`never Secret / Match / matched line / commit / author`）|
+| 9 | pre-upload gate finding 仅 `rule \| file` | 通过 | ci.yml line 577 / 618 / 659（`grep -rIlE -l`）/ 668 |
+| 10 | log risk inventory 覆盖完整清单 | 通过 | 12 行覆盖 env dump/`set -x`、raw req/resp、connection string、signature、key/secret/passphrase/token、private key/PEM、cookie/password/mnemonic、encrypted_payload/decrypted_payload、Spring Boot generated password、disposable DB 值、gitleaks/gate finding、platform token mask |
+| 11 | log proof 限定 review-time `gh run view --log` / per-job logs | 通过 | 「Log proof plan」item 1 |
+| 12 | 明确不读取本地 logs | 通过 | item 2 + Security boundary |
+| 13 | 明确不上传 logs artifact | 通过 | item 3 + Security boundary |
+| 14 | 明确不自扫 streaming logs | 通过 | item 4 |
+| 15 | pattern checklist 覆盖完整 | 通过 | AKIA/ASIA、sk-/sk-ant-/sk-proj-、github_pat_/ghp_/gho_、xoxb-/xoxp-、BEGIN…PRIVATE KEY、value-bearing apiKey/secret/passphrase/token/privateKey/password/cookie、credentials-in-URL、signature、raw request/response、encrypted_payload/decrypted_payload |
+| 16 | finding 输出仅 job / category / rule / safe excerpt | 通过 | 「Finding output policy」 |
+| 17 | 禁止输出 secret value | 通过 | 「Finding output policy」 |
+| 18 | 禁止输出可能含值的完整 matching line | 通过 | 「Finding output policy」 |
+| 19 | FP 策略区分字段名 / regex pattern / step 脚本回显 / 占位 marker / disposable 值 与真实值 | 通过 | 「False positive policy」 |
+| 20 | 真实值形态一律阻断 | 通过 | 「False positive policy」必须阻断段 |
+| 21 | 禁止 broad allowlist | 通过 | 「False positive policy」末段 |
+| 22 | 明确 4C-C 不重复 4C-B artifact gate | 通过 | 「Batch 4B / 4C-B / 4F / Batch 5 boundary」 |
+| 23 | 明确 4C-C 不做 4F dependency audit | 通过 | 同上 |
+| 24 | 明确 4C-C 不做 Batch 5 frontend E2E hardening | 通过 | 同上 |
+| 25 | 自动 log scanning 仅 future hardening | 通过 | 「Automation boundary」 |
+| 26 | 允许进入 4C-C proof / review implementation 轮 | 通过 | 「Next concrete action」列实现轮为合法下一步 |
+| 27 | P2 记录缺正式 log proof 产物 + 静态断言未落地 | 通过 | P2 两行 |
+| 28 | P3 记录 backend `123456` 未 mask、Spring Boot dev password、review-time 依赖 `gh run view --log` | 通过 | P3 三行 |
+
+复核期 ci.yml 关键锚点（只读，HEAD `a6d4bf74`）：唯一 `upload-artifact`（line 676，`nq-postgres-flyway-schema-artifacts`，`if-no-files-found: error`、retention 14/7）；`backend` job `POSTGRES_PASSWORD` / `NQ_DB_PASSWORD` = `123456`（line 174 / 188，未 mask，disposable CI-only）vs `postgres-flyway` `NQ_FLYWAY_DB_PASSWORD` 已 `::add-mask::`（line 367），plan P3 mask 对称性 follow-up 属实；`git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = 0（含本 plan，4C-B first-run-fix 仍生效，本 plan 未自触发 secret-scan）。
+
 ## Review decision
 
-PLAN READY FOR REVIEW。P0/P1 planning blockers = 0。
+PLAN REVIEW **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`，2026-06-18，P0/P1 = 0，28 项全部满足）。
 
-本 plan 可作为 Batch 4C-C log redaction proof 的 review / proof baseline，但本轮未实现任何 workflow / job / step、未产出任何 run 证据。Batch 4C-B pre-upload artifact redaction gate 仍 FROZEN / ACCEPTED（不重复、不改），Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED，Batch 5 frontend E2E hardening 仍 PENDING，均不得写成 started / implemented。
+本 plan 可作为 Batch 4C-C log redaction proof 的 review / proof baseline，但本轮（plan + plan review）未实现任何 workflow / job / step、未产出任何 run 证据。Batch 4C-C 仍 **PLAN ONLY / NOT IMPLEMENTED**，**Batch 4C 整体仍 NOT FROZEN**。Batch 4C-B pre-upload artifact redaction gate 仍 FROZEN / ACCEPTED（不重复、不改），Batch 4B secret scan 仍 FROZEN / ACCEPTED（frozen baseline commit `31540de8`），Batch 4F dependency audit 仍 OPTIONAL / NOT STARTED，Batch 5 frontend E2E hardening 仍 PENDING，均不得写成 started / implemented。
 
 ## Next concrete action
 
-Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`（对本 plan 做 plan review），或 Batch 4C-C plan fix，或 `NQ-CI-SECURITY-GUARD-BATCH-4C-C` 实现轮（若决定落地 review-time log proof 产物 + 可选静态断言 step），或 `NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。
+Next concrete action：`NQ-CI-SECURITY-GUARD-BATCH-4C-C` 实现轮（落地 review-time log proof 产物 + 可选静态 `printenv`/`env`/`set -x` 断言 step），或 Batch 4C-C plan fix（若后续发现 plan 缺口），或 `NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。
 
-**Batch 4C-C 当前 PLAN ONLY / NOT IMPLEMENTED**；**Batch 4C 整体仍 NOT FROZEN**（只冻结了 4C-B pre-upload gate 子基线）；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4C-C 写成 implemented，不得把 Batch 4C 整体写成 FROZEN，不得把 Batch 4F / Batch 5 写成 started。
+**Batch 4C-C 当前 PLAN ONLY / NOT IMPLEMENTED**（plan + plan review 完成，实现未开始）；**Batch 4C 整体仍 NOT FROZEN**（只冻结了 4C-B pre-upload gate 子基线）；Batch 4F 仍 OPTIONAL / NOT STARTED；Batch 5 仍 PENDING；不得把 Batch 4C-C 写成 implemented，不得把 Batch 4C 整体写成 FROZEN，不得把 Batch 4F / Batch 5 写成 started。

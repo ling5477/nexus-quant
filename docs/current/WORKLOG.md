@@ -2,6 +2,43 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW
+
+日期：2026-06-18
+
+### 目标
+
+评审 `docs/current/NQ_CI_LOG_REDACTION_PROOF_PLAN.md` 是否可作为 Batch 4C-C log redaction proof review / proof baseline：确认 log 风险清单、现有保护、review-time proof 方法、jobs checklist、pattern checklist、finding 输出策略、FP 策略、与 4C-B / 4F / Batch 5 边界完整且不越界。**只读评审**，仅在允许的 `docs/current` CI 文档追加 plan-review 记录。
+
+### 结论
+
+**PASS / ACCEPTED AS PROOF / REVIEW BASELINE**，P0/P1 = 0，28 项评审全部满足。**Batch 4C-C 仍 PLAN ONLY / NOT IMPLEMENTED；Batch 4C 整体仍 NOT FROZEN**；4C-B 仍 FROZEN / ACCEPTED；4B 仍 FROZEN / ACCEPTED；4F / Batch 5 仍 NOT STARTED / PENDING。
+
+### 评审复核（只读，HEAD `a6d4bf74`，工作区 clean）
+
+- ci.yml 无 `set -x` / `printenv` / `env` dump；`permissions` 仅顶层 + secret-scan 两处 `contents: read`（line 12-13 / 777-778）；无 `id-token` / `continue-on-error` / `GITLEAKS_LICENSE` / `gitleaks-action`。
+- `::add-mask::` 屏蔽 `postgres-flyway` 的 3 个 disposable DB 值（line 365-367）；`backend` job `123456` 未 mask（line 174 / 188，P3 mask 对称性 follow-up 属实）。
+- secret-scan `--redact`（line 886）+ sanitized 失败分支仅 RuleID/File/Lines/Fingerprint（line 896-902）；pre-upload gate finding 仅 `rule | file`（line 577/618/659/668）；唯一 `upload-artifact`（line 676）。
+- plan 的 log risk inventory（12 行）、Pattern checklist、Finding output policy、False positive policy、review-time `gh run view --log`（不读本地 logs / 不上传 logs artifact / 不自扫 streaming 日志）、4C-B/4F/Batch 5 边界、Automation boundary（自动化只作 future hardening）、P2/P3 findings 均完整覆盖任务 28 项评审。
+- `git grep -nE 'AKIA[0-9A-Z]{16}' docs/current` = 0（含本 plan，未自触发 secret-scan）。
+
+### 文档更新（仅允许的 docs/current CI 文档）
+
+- `NQ_CI_LOG_REDACTION_PROOF_PLAN.md`：status header + 新增「Plan review」段（28 项 checklist）+ Review decision + Next action 推进为 plan review ACCEPTED。
+- `NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`：4C-C 子段落记录 plan review ACCEPTED。
+- `TESTING.md`、`WORKLOG.md`：新增本轮 plan review 记录。
+
+### 安全确认
+
+- 未改 `.github/workflows/ci.yml` / Java / TS / Python 代码 / 测试 / migration / frontend / research / scripts / deploy；未新增 log 扫描 job / step。
+- 未读取本地 logs；未读取 / 打印 / 复制 / 输出真实 credential material；未扫描禁止目录；未上传 artifact / logs / raw gitleaks report；未使用 repository secret / write / id-token / continue-on-error。
+- 未调用真实交易所；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real probe adapter。
+- `git status --short` clean（评审前）；`git diff --check` clean；forbidden 区域 0 diff。
+
+### 下一步
+
+`NQ-CI-SECURITY-GUARD-BATCH-4C-C` 实现轮（review-time log proof 产物 + 可选静态 `printenv`/`env`/`set -x` 断言 step）、Batch 4C-C plan fix、`NQ-CI-SECURITY-GUARD-BATCH-4F`（dependency audit later plan）、Batch 5 planning，或暂停 CI 线。不得把 Batch 4C-C 写成 implemented、不得把 Batch 4C 整体写成 FROZEN、不得把 4F / Batch 5 写成 started。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN
 
 日期：2026-06-18

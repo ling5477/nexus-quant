@@ -160,7 +160,7 @@ Forbidden in this planning batch：不改 workflow / 代码 / 测试 / migration
 - 边界：未做 Batch 4C-C log redaction proof；未做 Batch 4F dependency audit；未做 Batch 5 frontend E2E hardening；未新增 Playwright / frontend / research artifact 上传。
 
 ### Batch 4C-C: log redaction proof
-- Status: **PLAN ONLY / NOT IMPLEMENTED**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN` 已完成本轮 planning，详细规划独立成文 `docs/current/NQ_CI_LOG_REDACTION_PROOF_PLAN.md`；尚未实现 workflow / job / step，未产出 run 证据，**Batch 4C 整体仍 NOT FROZEN**）。
+- Status: **PLAN ONLY / NOT IMPLEMENTED**；plan review **PASS / ACCEPTED AS PROOF / REVIEW BASELINE**（`NQ-CI-SECURITY-GUARD-BATCH-4C-C-PLAN-REVIEW`，2026-06-18，P0/P1=0，28 项评审全部满足）。planning 由 `NQ-CI-SECURITY-GUARD-BATCH-4C-C-LOG-REDACTION-PROOF-PLAN` 完成，详细规划独立成文 `docs/current/NQ_CI_LOG_REDACTION_PROOF_PLAN.md`（含「Plan review」段）；尚未实现 workflow / job / step，未产出 run 证据，**Batch 4C 整体仍 NOT FROZEN**。
 - Scope: review-time `gh run view --log` log proof（覆盖 7 jobs：Diff check / No-outbound guard / Backend Maven test / PostgreSQL / Flyway smoke / Frontend build / Research quality gate / Secret scan）+ 静态断言无 `printenv` / `env` dump / `set -x`；保留 `::add-mask::`；finding 只输出 job / category / rule / safe excerpt；FP 只逐条精确裁定、禁止 broad allowlist；不读取本地 logs、不上传 logs artifact、不自扫 streaming 日志。与 Batch 4C-B（artifact）扫描目标不同，不重复 artifact gate。
 - Success target（4C-C 实现轮）: CI 日志无真实 credential / raw request / raw response / signature / encrypted_payload / decrypted_payload 真实值；已知 P3 residual（disposable CI DB 值含 `backend` job 未 mask 的 `123456`、Spring Boot generated dev password、平台 `***` mask）明确标注 disposable / masked。本轮只 planning，不得写成 implemented。
 
