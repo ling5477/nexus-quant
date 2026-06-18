@@ -2,6 +2,25 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+只读审查 G4 CI evidence routing implementation commit `783bfa68`。审查范围限定为 Migration Map §1D 的 22 个候选、20 个 routed canonical evidence、20 个 old-path stub、2 个 current authority、CI evidence 目录、baseline index、G4 implementation 文档、G1～G3 基线及入链/fragment。本轮仅新增 `NQ_DOCS_G4_REVIEW.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不修改 implementation 文件、canonical evidence、current authority、G1/G2/G3 冻结对象、workflow、代码、测试、migration、依赖。
+
+### 核验要点
+
+- 22 个候选均可追溯到 `NQ_DOCS_MIGRATION_MAP.md` §1D；未发现额外处理对象。
+- 20 / 20 routed canonical evidence 与 `783bfa68^` 中原 source blob 一致；20 / 20 old-path stub 合规。
+- 2 / 2 current authority 完整保留，`CI_BASELINE_INDEX.md` 仅为导航索引，不构成替代权威。
+- fragment 入链 0；G1 五份冻结对象、G2/G3 基线、gates/archive/.agents/templates、workflow/code/migration 均 zero drift。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING-REVIEW：PASS / ACCEPTED**。P0/P1/P2/P3=0。**G4 CI evidence routing = ACCEPTED / READY FOR FREEZE REVIEW**；**G5~G6 = NOT STARTED**。
+
 ## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING
 
 日期：2026-06-19

@@ -2,6 +2,29 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING-REVIEW（2026-06-19）
+
+结论：**PASS / ACCEPTED**。docs-only review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 实测验证：
+
+```text
+HEAD = 783bfa68 docs(governance): route CI evidence to canonical records
+Migration Map §1D candidate trace → PASS
+20 routed pre-routing source blob == target blob → ROUTED_OK=20/20
+2 current authority protection → AUTHORITY_RETAINED 2/2
+docs/evidence/ci NQ_CI file count → 20
+CI_BASELINE_INDEX semantic check → PASS
+CI evidence README semantic check → PASS
+fragment 入链 → FRAGMENT_HITS=0
+G1 五份冻结对象 diff → 空
+docs/gates docs/archive .agents templates diff → 空
+workflow/code/deploy/migration diff → 空
+GateJ 17 stub / RUNBOOK / strict DIVERGED current docs diff → 空
+```
+
+**G4 CI evidence routing = ACCEPTED / READY FOR FREEZE REVIEW**；**G5~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING（2026-06-19）
 
 结论：**IMPLEMENTED / READY FOR REVIEW**。docs-only routing，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
