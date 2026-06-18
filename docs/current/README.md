@@ -110,6 +110,10 @@ GateO：A 股适配
 - `WORKLOG.md`：执行日志。
 - `NQ_DOCS_GOVERNANCE_PLAN.md`：文档治理盘点与 G1~G6 收口计划（只读盘点 + 规划，未收口、未移动/删除/重命名任何文档）。
 - `NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md`：上述治理计划的只读评审；结论 **PASS / ACCEPTED WITH P2 CONDITIONS**，**Plan = ACCEPTED AS IMPLEMENTATION BASELINE**，**G1 = READY FOR IMPLEMENTATION**（条件：G1 内以 git-verified 计数与 17 份去重列表收敛 P2），**G2~G6 = NOT STARTED**；git 实测纠正计划计数（总数 278 / frontend 3 / archive 21 / blob-identical 18 含 superseded 17）。
+- `NQ_DOCS_AUTHORITY_INDEX.md`：文档权威入口索引（14 领域唯一当前权威 + 辅证 + 历史证据；G1 新增）。
+- `NQ_DOCS_EVIDENCE_INDEX.md`：历史证据索引（GateJ freeze / CI Batch 1~5A / 4C / 4F-A / backlog-residual / DB / credential / NQ-DH；只链接不复制；G1 新增）。
+- `NQ_DOCS_MIGRATION_MAP.md`：逐文件 / 等效逐文件迁移映射（覆盖 278 基线 md/txt；recommended action 仅 5 取值、无 DELETE NOW；G1 新增）。
+- `NQ_DOCS_G1_IMPLEMENTATION.md`：G1 实施记录（git 计数、P2 收敛证据、G1~G6 边界；**G1 = IMPLEMENTED / READY FOR REVIEW**，G2~G6 = NOT STARTED）。
 
 ## Codex Workflow 入口
 

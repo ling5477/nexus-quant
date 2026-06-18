@@ -48,3 +48,19 @@
 - 已完成 Gate 的计划文档（PLAN / WORK_ORDER / API_PLAN / DB_PLAN / FRONTEND_PLAN / TEST_PLAN）只保留在 `docs/gates/gate-x/`，不在 `docs/current/` 重复。
 - `docs/archive` 只归档，不作为当前开发依据。
 - 未冻结 Gate 的计划文档保留在 `docs/current/`，Gate 完成并冻结后迁移或复制到 `docs/gates/gate-x/`；当前事实仍以 `docs/current/` 为准。
+
+## 文档治理（Documentation Governance）
+
+> 以下为 G1 新增的治理入口（仅索引指针）。本节**不**修订上文导航或既有规则表述；当前控制文档的状态/导航漂移与“不重复 vs 迁移或复制”规则一致性留待 **G2** 处理。
+
+- 权威入口索引：`docs/current/NQ_DOCS_AUTHORITY_INDEX.md`（每领域唯一当前权威 + 辅证 + 历史证据）。
+- 历史证据索引：`docs/current/NQ_DOCS_EVIDENCE_INDEX.md`（GateJ freeze / CI Batch / 4C / 4F-A / backlog / DB / credential / NQ-DH 证据入口）。
+- 逐文件迁移映射：`docs/current/NQ_DOCS_MIGRATION_MAP.md`（覆盖 278 基线 md/txt 的 recommended action / target / batch）。
+- 治理计划与评审：`docs/current/NQ_DOCS_GOVERNANCE_PLAN.md`、`NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md`、`NQ_DOCS_G1_IMPLEMENTATION.md`。
+
+治理原则（retain-first）：
+
+- **先建索引/映射，再移动**；历史链接先 redirect 兼容，再目录收口。
+- `docs/gates/**`、`docs/archive/**`、`.agents/**`、`docs/templates/**` 一律 **RETAIN_IN_PLACE**，不在 G1~G6 移动。
+- 删除单独显式可审计批次，**默认不删除**；不通过删除/压缩历史证据实现“精简”。
+- G1 仅新增索引，未移动/删除/重命名/归档任何文档；G2~G6 未开始。

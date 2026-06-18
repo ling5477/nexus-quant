@@ -4,9 +4,15 @@
 
 日期：2026-06-18
 
-状态：**PASS / READY FOR REVIEW**
+状态：**ACCEPTED AS IMPLEMENTATION BASELINE / P2 CONDITIONS CLOSED IN G1**（原始盘点轮结论为 PASS / READY FOR REVIEW）
 
 > 本轮为**只读盘点 + 规划**。**没有移动、删除、重命名任何文档**，未修改任何历史 freeze/review 文档的事实结论，未改 workflow / 代码 / 测试 / migration / 依赖。本文仅产出 documentation governance plan，不代表收口已完成。
+
+> **G1 计数订正（P2 CLOSED，2026-06-18）—— 以下为当前 canonical 口径；本文初稿的旧计数（区域计数、总计、GateJ 重复份数）已全部废弃并更正，原值见 git 历史 diff。**
+> - Git 实测盘点基线 = **278** 份 md/txt（`docs/current` 根 **75** / `docs/current/frontend` **3** / `docs/gates` **152** / `docs/archive` **21** / `docs/templates` **4** / `.agents` **13** / scattered **10**）。§2 表行已订正为逐行求和 = 278（旧表逐行求和自相矛盾的问题已消除）。
+> - current ↔ gate-j **blob-identical = 18**；其中 **superseded 收敛候选 = 17**（§2.1 D / §4.1 / §5.1 / §7 的 “17 份” 即此集合）；**`RUNBOOK.md` 为第 18 份 blob-identical，但 RETAIN_IN_PLACE，不纳入去重**。9 份 DIVERGED 为分层事实，非重复。
+> - 现 HEAD = 279（278 + `NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md`），G1 完成后工作树 = 283（+4 份 G1 索引文档）。
+> - 权威/证据/逐文件迁移映射见 `NQ_DOCS_AUTHORITY_INDEX.md`、`NQ_DOCS_EVIDENCE_INDEX.md`、`NQ_DOCS_MIGRATION_MAP.md`、`NQ_DOCS_G1_IMPLEMENTATION.md`。
 
 ---
 
@@ -27,7 +33,7 @@
 **NQ-DOCS-GOVERNANCE-INVENTORY-PLAN：PASS / READY FOR REVIEW**
 
 - 文档治理盘点完成；目标结构、迁移映射、不可删除清单、实施批次均已规划，**未执行任何迁移**。
-- 现有 `docs/DOC_RULES.md` 的三层意图（`current` = 当前事实 / `gates` = 冻结卷宗 / `archive` = 只读归档）正确，但**已出现可量化漂移**：GateJ 计划/过程文档在 `docs/current/` 与 `docs/gates/gate-j/` 重复（16 份 blob 完全一致）、`docs/README.md` 导航停留在 GateJ 口径且未含 GateK/CI、CI 22 份文档散落 `docs/current/` 根目录且无唯一 evidence index。
+- 现有 `docs/DOC_RULES.md` 的三层意图（`current` = 当前事实 / `gates` = 冻结卷宗 / `archive` = 只读归档）正确，但**已出现可量化漂移**：GateJ 计划/过程文档在 `docs/current/` 与 `docs/gates/gate-j/` 重复（17 份 blob 完全一致）、`docs/README.md` 导航停留在 GateJ 口径且未含 GateK/CI、CI 22 份文档散落 `docs/current/` 根目录且无唯一 evidence index。
 - 治理原则：**先建权威索引与迁移映射，再迁移/归档；历史链接先兼容/redirect，再目录收口；删除单独显式可审计批次，默认不删除；不通过删除证据实现"精简"。**
 
 ---
@@ -43,17 +49,17 @@
 | `.agents/**`（含 9 个 SKILL.md + 路由/MERGE_MAP/README） | 13 | CURRENT_CONTROL (tag: 工具链) | active skills 定义与路由，非业务事实 |
 | `docs/README.md` / `docs/DOC_RULES.md` | 2 | CURRENT_CONTROL | 文档导航 + 规则（`docs/README.md` 有状态漂移，见 §4） |
 | `docs/templates/**`（ADR/CHECKLIST/GATE_PLAN/WORK_ORDER） | 4 | CURRENT_CONTROL (tag: 模板) | 复用模板 |
-| `docs/current/*.md`（根） | 74 | 混合（见 §2.1） | 当前控制 + 漂移热点 |
-| `docs/current/frontend/**` | 15 | CURRENT_CONTROL / CANONICAL_BASELINE (tag: FRONTEND) | 设计系统/构建矩阵/设计令牌 |
+| `docs/current/*.md`（根） | 75 | 混合（见 §2.1） | 当前控制 + 漂移热点（盘点基线，不含盘点后新增的 review/G1 索引） |
+| `docs/current/frontend/**` | 3 | CURRENT_CONTROL / CANONICAL_BASELINE (tag: FRONTEND) | 设计令牌/构建矩阵/design-system ref README |
 | `docs/gates/**`（gate-a..j + README） | 152 | HISTORICAL_EVIDENCE | 冻结卷宗，只读 |
-| `docs/archive/**`（gate-inputs / legacy-root-docs / rc1） | 22 | ARCHIVE_CANDIDATE（已在 archive） | 早期归档，不作当前依据 |
+| `docs/archive/**`（gate-inputs / legacy-root-docs / rc1） | 21 | ARCHIVE_CANDIDATE（已在 archive） | 早期归档，不作当前依据 |
 | `frontend/README.md` / `frontend/src/nq-design-system/README.md` | 2 | CURRENT_CONTROL (tag: FRONTEND) | 代码内 README |
 | `research/py/README.md` / `research/py/datasets/README.md` | 2 | CURRENT_CONTROL (tag: RESEARCH) | 研究链 README |
-| **合计（md/txt）** | **277** | | |
+| **合计（md/txt）** | **278** | | 3+1+13+2+4+75+3+152+21+2+2 = 278 |
 
-> 完整逐文件路径见 `git ls-files`；本文对**治理热点 `docs/current/` 根 74 份**逐项分类（§2.1），其余区域按目录类整体分类（`docs/gates/**` 全部 HISTORICAL_EVIDENCE；`docs/archive/**` 全部 ARCHIVE_CANDIDATE-already-archived）。
+> 完整逐文件路径见 `git ls-files` 与 `NQ_DOCS_MIGRATION_MAP.md`（逐文件 / 等效逐文件清单覆盖全部 278）；本文对**治理热点 `docs/current/` 根 75 份**逐项分类（§2.1），其余区域按目录类整体分类（`docs/gates/**` 全部 HISTORICAL_EVIDENCE；`docs/archive/**` 全部 ARCHIVE_CANDIDATE-already-archived）。
 
-### 2.1 `docs/current/` 根 74 份分类矩阵
+### 2.1 `docs/current/` 根 75 份分类矩阵
 
 **A. CURRENT_CONTROL（当前唯一权威，保留在 current）**
 
@@ -95,7 +101,7 @@
 - 实施/计划过程（HISTORICAL_EVIDENCE）：`NQ_CI_FRONTEND_E2E_5A_IMPLEMENTATION.md`、`NQ_CI_FRONTEND_E2E_PLAN.md`、`NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`、`NQ_CI_LOG_REDACTION_PROOF_PLAN.md`、`NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`、`NQ_CI_DEPENDENCY_AUDIT_PLAN.md`、`NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`、`NQ_CI_POSTGRES_FLYWAY_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_2B_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_2C_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_2D_PLAN.md`、`NQ_CI_POSTGRES_FLYWAY_2E_PLAN.md`。
 - backlog 入口：4F-B~4F-F 在 `NQ_CI_DEPENDENCY_AUDIT_PLAN.md` / `NQ_CI_SECURITY_GUARD_BATCH_4F_PLAN_REVIEW.md`；5B-ENV / 5B-SMOKE 在 `NQ_CI_FRONTEND_E2E_PLAN.md` / `NQ_CI_FRONTEND_E2E_5A_FREEZE_REVIEW.md`。
 
-**D. DUPLICATE_OR_SUPERSEDED_CANDIDATE（GateJ 过程/计划文档，与 `docs/gates/gate-j/` blob 完全一致，16 份）**
+**D. DUPLICATE_OR_SUPERSEDED_CANDIDATE（GateJ 过程/计划文档，与 `docs/gates/gate-j/` blob 完全一致，17 份）**
 
 ```
 AUDIT_FIX_REPORT.md                       DOC_CLEAN_REPORT.md
@@ -109,7 +115,7 @@ PRE_FREEZE_AUDIT_FIX_PLAN.md              PRE_FREEZE_AUDIT_REPORT.md
 REPO_SIZE_AUDIT_REPORT.md（注：与 gate-j 同名 blob 一致）
 ```
 
-> 这 16 份违反 `docs/README.md` §"已完成 Gate 的计划文档只保留在 `docs/gates/gate-x/`，不在 `docs/current/` 重复"。GateJ 已 COMPLETED 并冻结于 `gate-j/`，current 副本是 superseded duplicate。**它们不是删除目标，而是归档收口目标**（gate-j 已持有同 blob 权威副本；current 侧应在建立 redirect index 后移除重复，单独可审计批次执行）。
+> 这 17 份违反 `docs/README.md` §"已完成 Gate 的计划文档只保留在 `docs/gates/gate-x/`，不在 `docs/current/` 重复"。GateJ 已 COMPLETED 并冻结于 `gate-j/`，current 副本是 superseded duplicate。**它们不是删除目标，而是归档收口目标**（gate-j 已持有同 blob 权威副本；current 侧应在建立 redirect index 后移除重复，单独可审计批次执行）。
 
 **E. 其余当前过程文档（HISTORICAL_EVIDENCE / CURRENT_CONTROL，保留）**
 
@@ -132,7 +138,7 @@ REPO_SIZE_AUDIT_REPORT.md（注：与 gate-j 同名 blob 一致）
 | 工作日志 | `docs/current/WORKLOG.md` | gate-*/WORKLOG.md（快照，正常） |
 | CI 基线与状态 | `docs/current/NQ_CI_BASELINE_PLAN.md` + `STATUS.md` CI 段 | 22 份 NQ_CI_* 分散，无唯一 evidence index（见 §6.1） |
 | 安全边界 | `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md` + `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md` | redaction/no-outbound 散落多份（正常证据，需 index） |
-| GateJ | `docs/gates/gate-j/`（冻结卷宗） | `docs/current/` 16 份 GateJ 重复（§2.1 D） |
+| GateJ | `docs/gates/gate-j/`（冻结卷宗） | `docs/current/` 17 份 GateJ 重复（§2.1 D） |
 | GateK | `docs/current/GATEK_PLAN.md` + `GATEK_ARCHITECTURE_BASELINE_REVIEW.md` | 无重大漂移 |
 | 数据库治理 | `docs/current/DB_SCHEMA.md` + `DB_SCHEMA_GOVERNANCE_PLAN.md`/`_REVIEW.md` | gate-*/DB_SCHEMA.md（快照） |
 | 凭证治理 | `docs/current/CREDENTIAL_GOVERNANCE_FREEZE_REVIEW.md`（+9 份过程） | 无重复，但缺凭证治理 index |
@@ -144,7 +150,7 @@ REPO_SIZE_AUDIT_REPORT.md（注：与 gate-j 同名 blob 一致）
 ## 4. 重复 / 状态漂移 / 命名漂移 / 链接风险
 
 ### 4.1 重复（DUPLICATE_OR_SUPERSEDED）
-- **16 份 GateJ 过程/计划文档**在 `docs/current/` 与 `docs/gates/gate-j/` blob 完全一致（§2.1 D）。`DIVERGED` 的 9 份（`API/ARCHITECTURE/DB_SCHEMA/MODULES/README/ROADMAP/STATUS/TESTING/WORKLOG`）是 current 活文档 vs gate-j 快照，**属正常分层，非重复**。
+- **17 份 GateJ 过程/计划文档**在 `docs/current/` 与 `docs/gates/gate-j/` blob 完全一致（§2.1 D）。`DIVERGED` 的 9 份（`API/ARCHITECTURE/DB_SCHEMA/MODULES/README/ROADMAP/STATUS/TESTING/WORKLOG`）是 current 活文档 vs gate-j 快照，**属正常分层，非重复**。
 
 ### 4.2 状态漂移
 - `docs/README.md`：导航把 `docs/current/PLAN_GATEJ.md`、`docs/current/GATEJ_WORK_ORDER.md` 列为"当前 GateJ 规划/工作单"；"当前边界"段仅到 `Next: GateK-PLAN`，**未含 GateK CI mainline COMPLETED、Batch 1~5A、5B-ENV/5B-SMOKE、4F backlog**。与 `docs/current/STATUS.md`（权威，已更新）不一致。
@@ -198,7 +204,7 @@ docs/
 
 | 源（current） | 目标 | 触发条件 |
 | --- | --- | --- |
-| 16 份 GateJ 重复（§2.1 D） | 移除 current 副本，权威保留 `docs/gates/gate-j/`（同 blob 已存在） | 先在 `docs/README.md` 加 GateJ→gate-j redirect，再单独 docs-only 批次移除 |
+| 17 份 GateJ 重复（§2.1 D） | 移除 current 副本，权威保留 `docs/gates/gate-j/`（同 blob 已存在） | 先在 `docs/README.md` 加 GateJ→gate-j redirect，再单独 docs-only 批次移除 |
 | 22 份 `NQ_CI_*` | `docs/evidence/ci/`（历史 plan/review/freeze）+ `docs/baselines/CI_BASELINE_INDEX.md`（索引指针） | 先建 index，再移动，旧路径在 index 列 redirect |
 | current 活文档（STATUS/ROADMAP/...） | 留在 `current/`（不动） | — |
 | credential/db/NQ-DH 治理基线 | `current/governance/`（可选，纯组织） | 仅在 index 完成后 |
@@ -228,14 +234,14 @@ docs/
 
 以下默认**永不删除**，迁移时只移动并在 index 留 redirect：
 
-1. **所有 `docs/gates/**` 冻结卷宗**（gate-a..j，152 份），含 gate-j 内 GateJ 16 份权威副本、各 FREEZE_SUMMARY、ADR。
+1. **所有 `docs/gates/**` 冻结卷宗**（gate-a..j，152 份），含 gate-j 内 GateJ 17 份权威副本、各 FREEZE_SUMMARY、ADR。
 2. **CI Batch 1~5A 的 freeze/review/proof 证据**：`NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`、`NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md`、`NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_FREEZE_REVIEW.md`、`NQ_CI_FRONTEND_E2E_5A_FREEZE_REVIEW.md`、`NQ_CI_FRONTEND_E2E_5A_FIRST_RUN_REVIEW.md`、`NQ_CI_FRONTEND_E2E_5A_IMPLEMENTATION.md`、`NQ_CI_FRONTEND_E2E_PLAN_REVIEW.md`、`NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_REVIEW.md`、`NQ_CI_SECURITY_GUARD_BATCH_4F_PLAN_REVIEW.md` 及对应 plan 文档。
 3. **安全策略与 redaction 基线**：`NQ_CI_SECURITY_GUARD_PLAN.md`、`NQ_CI_ARTIFACT_LOG_REDACTION_PLAN.md`、`NQ_CI_LOG_REDACTION_PROOF_PLAN.md`、`NQ_CI_NO_OUTBOUND_GUARD_PLAN.md`、`FULL_SECURITY_AUDIT_REPORT.md`、`NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md`。
 4. **数据库与 credential governance 基线**：`DB_SCHEMA_GOVERNANCE_PLAN.md`/`_REVIEW.md`、全部 `CREDENTIAL_*`（10 份，含 freeze review）。
 5. **NQ-DH 合同与安全边界**：`NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`、`_SECURITY_POLICY.md`、`_ACCEPTANCE_REPORT.md`、`_CONTRACT_TEST_PLAN.md`。
 6. **有未关闭 P2/P3 residual 的记录**：`GATEK_ARCHITECTURE_BASELINE_REVIEW.md`（P2 follow-up）、各 5A first-run/freeze review（P3 runner Node20→24 警告、preview 绑定可观测性）、`NQ_CI_FRONTEND_E2E_PLAN.md`（P1 5B no-outbound runtime enforcement、P2 dev-server/preview proxy 等）。
 
-> §2.1 D 的 16 份 current GateJ 重复**可在收口批次从 current 移除**（gate-j 已持同 blob 权威副本），但**不得删除 gate-j 内副本**；移除前须建 redirect。
+> §2.1 D 的 17 份 current GateJ 重复**可在收口批次从 current 移除**（gate-j 已持同 blob 权威副本），但**不得删除 gate-j 内副本**；移除前须建 redirect。
 
 ---
 
@@ -245,7 +251,7 @@ docs/
 | --- | --- | --- | --- |
 | **G1 索引先行（仅新增）** | 本计划 + 现有文档 | 新增 `docs/baselines/CI_BASELINE_INDEX.md`；更新 `docs/README.md`/`docs/DOC_RULES.md` 含 GateK/CI 口径与 evidence 分层声明 | 删除新增 index + revert 两个导航文件（纯新增，零风险） |
 | **G2 漂移修复（docs-only，不移动）** | §4.2/§4.4 | 修复 `docs/README.md` 状态漂移；修复 `docs/current/{API,DB_SCHEMA}.md` 2 处 malformed 链接；冻结快照 4 处链接仅在 index 标注，不改快照 | revert 受影响文件 |
-| **G3 GateJ 重复收敛** | §2.1 D 16 份 | 在 redirect 就绪后，从 `docs/current/` 移除 16 份重复（权威保留 gate-j）；更新 current 内引用 | `git mv`/恢复（保留 gate-j 副本，单文件可逆） |
+| **G3 GateJ 重复收敛** | §2.1 D 17 份 | 在 redirect 就绪后，从 `docs/current/` 移除 17 份重复（权威保留 gate-j）；更新 current 内引用 | `git mv`/恢复（保留 gate-j 副本，单文件可逆） |
 | **G4 CI evidence 归位** | 22 份 NQ_CI_* | 按目标树移动历史 plan/review/freeze 到 `docs/evidence/ci/`，baseline 索引留 redirect；保留 current 内 baseline 指针 | 逐文件 `git mv` 回退 |
 | **G5 目录收口** | G1~G4 完成 | 物理建立 `baselines/`/`evidence/` 分层，统一 README 导航 | 目录回退 + 链接还原 |
 | **G6 删除（单独、显式、可审计；默认空）** | 仅在确认某文档已被 index 完整替代且 0 入链 | 经显式审计后删除（默认不执行；本轮不规划任何删除项） | git 历史可恢复 |

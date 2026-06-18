@@ -2,6 +2,34 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX
+
+日期：2026-06-18
+
+### 目标与范围
+
+G1：建立权威入口索引、历史证据索引、逐文件迁移映射，并在**不移动任何文件**的前提下收敛 P2-1/P2-2/P2-3。新增 `NQ_DOCS_AUTHORITY_INDEX.md`/`NQ_DOCS_EVIDENCE_INDEX.md`/`NQ_DOCS_MIGRATION_MAP.md`/`NQ_DOCS_G1_IMPLEMENTATION.md`；更新 `NQ_DOCS_GOVERNANCE_PLAN.md`/`README.md`/`STATUS.md`/`TESTING.md`/`WORKLOG.md`/`docs/README.md`/`docs/DOC_RULES.md`。**不移动/删除/重命名/归档任何文档**，不改写冻结快照文本或链接，不改 workflow/代码/测试/migration/依赖。
+
+### 结论
+
+**G1 = IMPLEMENTED / READY FOR REVIEW**；**NQ Docs Governance Plan = P2 CONDITIONS CLOSED / READY FOR G1 REVIEW**；**G2~G6 = NOT STARTED**。
+
+### P2 收敛
+
+- P2-1（计数）：git 实测替换旧口径 —— 总数 **278**、current 根 **75**、frontend **3**、archive **21**、gates **152**；§2 表行求和 = 278；废弃 277/290/15/22/74。
+- P2-2（GateJ 去重）：blob-identical **18**、superseded 收敛候选 **17**（完整清单见 `NQ_DOCS_MIGRATION_MAP.md` §1E）、`RUNBOOK.md` 第 18 份 **RETAIN_IN_PLACE**（不去重）、9 份 DIVERGED 为分层事实（非删除/替代/重复候选）。
+- P2-3（非 current 根逐文件映射）：migration map 覆盖 278 全量；`docs/gates`/`docs/archive`/`.agents`/`templates` 统一 RETAIN_IN_PLACE / NONE / NOT_APPLICABLE。
+
+### 边界
+
+- 本轮零文件移动/删除/重命名/归档；`docs/gates`、`docs/archive`、`.agents`、`templates` 均 retain-in-place。
+- `docs/README.md`/`docs/DOC_RULES.md` 仅新增治理入口与 retain-first 原则；**未处理** `docs/README.md` 既有 P3 规则矛盾（“不重复 vs 迁移或复制”）与状态/导航漂移（留待 G2）。
+- recommended action 取值域仅 5 种，无 DELETE NOW；ARCHIVE_CANDIDATE 标注 already-archived，非可立即删除。
+
+### Next concrete action
+
+评审 G1 后进入 G2（docs-only 漂移与可修链接修复 + P3 规则矛盾澄清）；G3 才做 GateJ 17 份 superseded redirect-first 收敛；G4 才做 CI evidence 归位；G5 目录收口；G6 默认不删除。
+
 ## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN-REVIEW
 
 日期：2026-06-18

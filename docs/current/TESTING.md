@@ -2,6 +2,24 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G1-AUTHORITY-EVIDENCE-INDEX（2026-06-18）
+
+结论：**G1 = IMPLEMENTED / READY FOR REVIEW**。docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。新增 4 份 G1 索引文档，收敛 P2-1/P2-2/P2-3，**未移动/删除/重命名/归档任何文档**。
+
+git 实测验证：
+
+```text
+git ls-files "*.md" "*.txt"（排除 node_modules/target/build/dist/test-results） → 基线 278；现 HEAD 279（+review）；G1 后工作树 283（+4 G1 doc）
+docs/current 根 75（基线）/ frontend 3 / gates 152 / archive 21 / templates 4 / .agents 13 / scattered 10  →  和 = 278 ✓
+current↔gate-j blob 比对 → 18 IDENTICAL（superseded 17 + RUNBOOK retain-in-place）/ 9 DIVERGED（分层事实）
+migration map 覆盖性 → 75+3+10+152+21+13+4 = 278 基线全覆盖，0 orphan
+rg "277|290" 新增 4 份 G1 doc → 0 命中（NQ_DOCS_GOVERNANCE_PLAN.md 仅余 run id `27750279096` 内的子串，非计数口径）
+git diff --check → 无空白错误
+git diff -- .github/workflows/ci.yml backend frontend research scripts deploy "backend/**/db/migration" → 空（禁止范围零改动）
+```
+
+**NQ Docs Governance Plan = P2 CONDITIONS CLOSED / READY FOR G1 REVIEW**；**G1 = IMPLEMENTED / READY FOR REVIEW**；**G2~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN-REVIEW（2026-06-18）
 
 结论：**PASS / ACCEPTED WITH P2 CONDITIONS**。只读评审 `NQ_DOCS_GOVERNANCE_PLAN.md`，docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。P0=0 / P1=0 / P2=3 / P3=2。详见 `NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md`。
