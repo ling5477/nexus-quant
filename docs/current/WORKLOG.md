@@ -2,6 +2,31 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN-REVIEW
+
+日期：2026-06-18
+
+### 目标与范围
+
+只读评审 `docs/current/NQ_DOCS_GOVERNANCE_PLAN.md`（277/278 份盘点 + G1~G6 收口计划）；确认能否作为 G1 实施基线且不丢失冻结证据/历史链接/P2-P3 residual/当前权威口径。仅新增 `NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md` 并更新 README/STATUS/TESTING/WORKLOG；**不移动/删除/重命名任何文档**，不改历史 freeze/review 事实，不改 workflow/代码/测试/migration/依赖。
+
+### 结论
+
+**PASS / ACCEPTED WITH P2 CONDITIONS**。P0=0 / P1=0 / P2=3 / P3=2。**NQ Docs Governance Plan = ACCEPTED AS IMPLEMENTATION BASELINE**；**G1 authority/evidence index = READY FOR IMPLEMENTATION**（条件：G1 内收敛计数）；**G2~G6 = NOT STARTED**。
+
+### 核验要点（git 实测，纠正计划计数）
+
+- 结构性属性全部正确：冻结证据保护清单（§7）、历史链接 redirect 策略、9 份 DIVERGED 判为分层事实、blob-identical 仅列未来收敛候选并保留 gate-j 权威副本、删除单独显式默认空——均核验通过，无 P0/P1。
+- P2-1 计数不准：total 278（计划 277）、`docs/current/frontend` 实 3（计划 15）、`docs/archive` 实 21（计划 22）、§2 逐行求和 290≠277（表格内部不自洽）。
+- P2-2 GateJ 去重集合：blob-identical = 18，其中 superseded duplicate = **17**（计划全文称 16），`RUNBOOK.md` 第 18 份保留为 CURRENT_CONTROL。G3 须用 git-verified 17 份列表。
+- P2-3 非 current 根区域（gates/archive/.agents/templates）仅目录级分类、无逐文件迁移映射；但 G3/G4/G5 实际移动对象全在 current 根且已逐文件枚举，故不阻塞，要求 G1 显式写 “retain-in-place”。
+- P3-1 命名漂移本轮不重命名（保守正确）；P3-2 `docs/README.md` 第 48 vs 50 行规则自相矛盾，G2 一并澄清。
+- 6 处 broken link 全部命中并与计划处理一致（2 current malformed 前导 `/` → G2 docs-only；4 frozen `./GATEI_*` → redirect index，不改快照）。
+
+### Next concrete action
+
+进入 G1（仅新增 `docs/baselines/CI_BASELINE_INDEX.md` + authority/evidence index + migration map，更新 `docs/README.md`/`docs/DOC_RULES.md` 口径），并在 G1 内用 git-verified 计数与 17 份去重列表收敛 P2-1/P2-2/P2-3；不得在未建 redirect 前移动文档，不得删除冻结证据。
+
 ## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN
 
 日期：2026-06-18

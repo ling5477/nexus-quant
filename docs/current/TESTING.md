@@ -2,6 +2,30 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN-REVIEW（2026-06-18）
+
+结论：**PASS / ACCEPTED WITH P2 CONDITIONS**。只读评审 `NQ_DOCS_GOVERNANCE_PLAN.md`，docs-only，**未运行**后端/前端/Python/CI 测试（无代码变更）。P0=0 / P1=0 / P2=3 / P3=2。详见 `NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md`。
+
+git 实测复核（**纠正**计划 §2 的计数，结论以 git-verified 为准）：
+
+```text
+git ls-files "*.md" "*.txt" (排除 node_modules/target/build/dist/test-results)
+                                                    → 278 份（计划称 277，低 1）
+docs/current 根 .md            → 75（计划称 74）   docs/current/frontend → 3（计划称 15，重大偏差）
+docs/gates → 152（一致）        docs/archive → 21（计划称 22）  templates → 4  .agents → 13  repo-root → 3
+覆盖性                          → 0 orphan：每个 md/txt 都落在某盘点前缀下（分类覆盖完整）
+docs/current 根 vs docs/gates/gate-j 同名 blob 比对 → 18 IDENTICAL / 9 DIVERGED
+                                  其中 17 = GateJ superseded duplicate（计划全文称 16，少计）；
+                                  第 18 份 RUNBOOK.md blob 一致但属 CURRENT_CONTROL 保留（非去重）；
+                                  9 DIVERGED = API/ARCHITECTURE/DB_SCHEMA/MODULES/README/ROADMAP/STATUS/TESTING/WORKLOG（分层事实，与计划一致）
+broken markdown 链接复核        → 6 处全部命中：API.md:171 / DB_SCHEMA.md:239 前导 /（目标存在，G2 docs-only）；
+                                  gate-h|gate-j 的 API.md:133 / DB_SCHEMA.md:177 共 4 处 ./GATEI_*（目标不存在，冻结快照，redirect 处理）
+git diff --check                → 无空白错误
+git diff -- .github/workflows/ci.yml backend frontend research scripts deploy "backend/**/db/migration" → 空（禁止范围零改动）
+```
+
+**NQ Docs Governance Plan = ACCEPTED AS IMPLEMENTATION BASELINE**（带 P2 收口条件）；**G1 authority/evidence index = READY FOR IMPLEMENTATION**（G1 内须用 git-verified 计数与 17 份去重列表）；**G2~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。本轮无移动/删除/重命名文档，无历史 freeze/review 事实修改。
+
 ## NQ-DOCS-GOVERNANCE-INVENTORY-PLAN（2026-06-18）
 
 结论：**PASS / READY FOR REVIEW**（documentation governance plan ready，未收口）。本轮为只读文档盘点 + 规划，**未运行**后端/前端/Python/CI 测试（无代码变更，无需构建验证）。

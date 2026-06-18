@@ -108,6 +108,8 @@ GateO：A 股适配
 - `NQ_CI_LOG_REDACTION_PROOF_FREEZE_REVIEW.md`：GateK CI Batch 4C-C freeze review 主文档；结论 PASS / ACCEPTED / FROZEN，P0/P1/P2 blockers = 0；其历史结论在 4C-C 子基线冻结时明确 Batch 4C overall 仍 NOT FROZEN，后续已由 `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md` 收口为 Batch 4C overall FROZEN / ACCEPTED。
 - `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`：GateK CI Batch 4C overall freeze review 主文档；结论 PASS / ACCEPTED / FROZEN，Batch 4C-B / 4C-C 均 FROZEN / ACCEPTED，P0/P1=0，static workflow assertion OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED；该 4C freeze review 不实现 Batch 4F，当前 Batch 4F planning 另见 `NQ_CI_DEPENDENCY_AUDIT_PLAN.md`；Batch 5 PENDING。
 - `WORKLOG.md`：执行日志。
+- `NQ_DOCS_GOVERNANCE_PLAN.md`：文档治理盘点与 G1~G6 收口计划（只读盘点 + 规划，未收口、未移动/删除/重命名任何文档）。
+- `NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md`：上述治理计划的只读评审；结论 **PASS / ACCEPTED WITH P2 CONDITIONS**，**Plan = ACCEPTED AS IMPLEMENTATION BASELINE**，**G1 = READY FOR IMPLEMENTATION**（条件：G1 内以 git-verified 计数与 17 份去重列表收敛 P2），**G2~G6 = NOT STARTED**；git 实测纠正计划计数（总数 278 / frontend 3 / archive 21 / blob-identical 18 含 superseded 17）。
 
 ## Codex Workflow 入口
 
