@@ -2,6 +2,61 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-GUARD-BATCH-4F-PLAN-REVIEW（2026-06-18）
+
+本轮是 GateK CI Batch 4F **dependency audit / supply-chain audit plan review**：只读评审 `NQ_CI_DEPENDENCY_AUDIT_PLAN.md` 是否可作为 implementation baseline。结论 **PASS / ACCEPTED**；Batch 4F plan = **ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4F implementation = **NOT STARTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**。LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter 均未开启、未接入、未实现。
+
+复核结论：
+
+- 计划覆盖 Java / Maven、frontend / npm、Python / research、GitHub Actions supply-chain、action SHA pinning、CLI checksum pinning、SBOM、Dependency Review、Dependabot / Renovate、CI blocking/advisory 边界。
+- 计划明确 dependency tree / lockfile / SBOM / vuln report 默认不是 credential，但属于 sensitive engineering artifact；raw dependency report / raw SBOM / raw lockfile 不得直接上传，必须复用 Batch 4C pre-upload redaction baseline。
+- 计划未要求 `npm audit fix`、未要求直接升级依赖、未要求修改 POM / package lock / pyproject / requirements。
+- 计划没有把既有 npm advisories 直接设为 blocking；Python research 无 lockfile 的边界被列为 advisory/report-only 起步。
+- GitHub Actions major tag / gitleaks checksum pinning gap 被列为后续 hardening，不是本轮实现。
+
+复核命令（已执行）：
+
+```powershell
+Get-Location
+git status --short
+git branch --show-current
+git log --oneline -8
+git diff --check
+git diff --stat
+git diff -- .github/workflows/ci.yml
+git diff -- backend frontend research scripts deploy
+git diff -- "backend/**/db/migration"
+rg -n "Java|Maven|frontend|npm|Python|research|GitHub Actions|action|SHA|checksum|SBOM|Dependency Review|Dependabot|Renovate|Blocking|Advisory|report-only|lockfile|package-lock|raw|Batch 4C|Batch 5|npm audit fix|upgrade|pyproject|gitleaks|major tag|major-tag|checksum" docs/current/NQ_CI_DEPENDENCY_AUDIT_PLAN.md
+rg --files -g 'pom.xml' -g 'package.json' -g 'package-lock.json' -g 'pyproject.toml' -g 'requirements*.txt' -g '.github/workflows/*.yml' -g '!node_modules' -g '!target' -g '!build' -g '!dist' -g '!test-results'
+```
+
+敏感信息检查：
+
+- 宽松前缀扫描仅输出 file/line/rule，命中为 workflow/docs 中的规则定义、前缀说明、allowlist、false-positive 和 proof 文本；未输出 secret value。
+- 高置信 credential 正则结果：`NO_HIGH_CONFIDENCE_CREDENTIAL_PATTERN_HITS`。
+
+结果摘要：
+
+- 预检：`Get-Location` = `F:\project\nexus-quant`；branch `dev`；编辑前 `git status --short` clean。
+- `git diff --check`：通过。
+- `git diff -- .github/workflows/ci.yml`：空。
+- `git diff -- backend frontend research scripts deploy`：空。
+- `git diff -- "backend/**/db/migration"`：空。
+- 依赖入口盘点：Maven POM、`frontend/package.json`、`frontend/package-lock.json`、`research/py/pyproject.toml`；无 tracked `requirements*.txt`。
+
+未执行：
+
+- 未运行 backend Maven / frontend build / E2E / Python pytest / mypy / ruff，因为本轮只读 plan review，未改代码、workflow、测试、migration、frontend、research、scripts、deploy。
+- 未运行 `npm audit`、Maven vulnerability audit、`pip-audit`、SBOM generation、Dependency Review、Dependabot / Renovate。
+- 未调用外部 dependency audit 上传服务；未上传 artifact。
+
+边界确认：
+
+- 未修改 `.github/workflows/ci.yml`；未新增 GitHub Actions job。
+- 未修改 backend / frontend / research / scripts / deploy；未新增 migration；未改测试。
+- 未修改 `pom.xml`、`package.json`、`package-lock.json`、`pyproject.toml` 或 requirements 文件。
+- 未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real exchange adapter。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4F-DEPENDENCY-AUDIT-PLAN（2026-06-18）
 
 本轮是 GateK CI Batch 4F **dependency audit / supply-chain audit planning-only**：只规划 Java/Maven、frontend/npm、Python/research、GitHub Actions supply-chain、action SHA pinning、SBOM、Dependency Review、Dependabot/Renovate、CI blocking/advisory 分层、raw dependency report / SBOM / artifact hygiene、与 Batch 4C / Batch 5 的边界。结论 **PLAN READY FOR REVIEW / PLAN ONLY / NOT IMPLEMENTED**，P0/P1 planning blockers = 0。Batch 4F dependency audit = **PLAN ONLY / NOT IMPLEMENTED**；Batch 4C = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**。
