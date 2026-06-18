@@ -2,6 +2,29 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING（2026-06-19）
+
+结论：**IMPLEMENTED / READY FOR REVIEW**。docs-only routing，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 实测验证：
+
+```text
+Migration Map G4 extraction → 22 candidates
+REDIRECT_STUB_CREATED → 20
+BLOCKED_PER_FILE / CURRENT_AUTHORITY → 2
+fragment 入链 → 0 / 22
+source blob == target blob → 20 / 20
+old-path stub relative link → 20 / 20
+canonical CI evidence dir → docs/evidence/ci/
+CI baseline index → docs/baselines/CI_BASELINE_INDEX.md
+G1 五份冻结对象 diff → 空
+docs/gates docs/archive .agents templates diff → 空
+.github/workflows/ci.yml backend frontend research scripts deploy "backend/**/db/migration" diff → 空
+GateJ 17 stub / RUNBOOK / strict DIVERGED diff → 空
+```
+
+**G4 CI evidence routing = IMPLEMENTED / READY FOR REVIEW**；**G5~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G3-FREEZE-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED / FROZEN**。docs-only freeze review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。

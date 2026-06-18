@@ -4,6 +4,7 @@
 
 ## 当前状态
 
+- NQ documentation governance **G4 CI evidence routing** completed（2026-06-19）：**IMPLEMENTED / READY FOR REVIEW**。根据 G1 冻结的 Migration Map §1D 精确提取 22 个 G4 CI 候选；20 个 historical CI evidence 已 redirect-first 归位到 `docs/evidence/ci/`，旧 `docs/current/` 路径保留 compatibility stub；2 个 current authority pointer（`NQ_CI_BASELINE_PLAN.md`、`NQ_CI_SECURITY_GUARD_PLAN.md`）按拒绝条件 `BLOCKED_PER_FILE / CURRENT_AUTHORITY` 保留原位，并由 `docs/baselines/CI_BASELINE_INDEX.md` 导航。G5~G6 仍未开始。
 - GateH completed。
 - GateI completed。
 - GateJ-PLAN completed。

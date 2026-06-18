@@ -2,6 +2,25 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING
+
+日期：2026-06-19
+
+### 目标与范围
+
+根据 G1 冻结的 `NQ_DOCS_MIGRATION_MAP.md` §1D 执行 G4 CI evidence redirect-first routing。仅处理明确 `migration_batch = G4` / `FUTURE_MOVE_CANDIDATE` / target 属 `docs/evidence/ci/**` 或 `docs/baselines/**` 的 CI 条目；不修改 G1 五份冻结对象、G2/G3 冻结对象、GateJ 17 stub、RUNBOOK、9 份 DIVERGED、`docs/gates/**`、`docs/archive/**`、`.agents/**`、`templates/**`、workflow、代码、测试、migration、依赖。
+
+### 处理项
+
+- Migration Map 提取 22 个 G4 CI 候选。
+- 20 个 historical CI evidence 通过预检并归位到 `docs/evidence/ci/`；旧 `docs/current/` path 保留 compatibility stub。
+- 2 个 current authority pointer（`NQ_CI_BASELINE_PLAN.md`、`NQ_CI_SECURITY_GUARD_PLAN.md`）按拒绝条件保留原位，状态为 `BLOCKED_PER_FILE / CURRENT_AUTHORITY`。
+- 新增 `docs/evidence/ci/README.md`、`docs/baselines/CI_BASELINE_INDEX.md`、`docs/current/NQ_DOCS_G4_CI_EVIDENCE_ROUTING.md`。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING：PASS / READY FOR REVIEW**。G4 已实施、待 review；G5~G6 未开始。P0/P1/P2=0；P3=1（LF→CRLF 工作树提示，`git diff --check` clean，非内容错误）。
+
 ## NQ-DOCS-GOVERNANCE-G3-FREEZE-REVIEW
 
 日期：2026-06-19
