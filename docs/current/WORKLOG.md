@@ -2,6 +2,25 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+只读审查 G5 directory closure preflight 的 no executable candidates 结论是否严格来源于冻结的 `docs/current/NQ_DOCS_MIGRATION_MAP.md`。审查范围限定为 Migration Map、G5 preflight 文档、STATUS/TESTING/WORKLOG current-control 记录、G1～G4 冻结对象和禁止路径 diff。本轮仅新增 `NQ_DOCS_G5_PREFLIGHT_REVIEW.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不移动、删除、重命名、复制、归档、stub 化任何文档，不创建 target 目录或 canonical 文件，不修改 Migration Map、G1～G4 冻结对象、workflow、代码、测试、migration、依赖。
+
+### 核验要点
+
+- Migration Map 精确查询 `recommended_action = FUTURE_MOVE_CANDIDATE` 且 `migration_batch = G5`，结果为 0。
+- 唯一 `FUTURE_MOVE_CANDIDATE` 段落为 §1D，batch = G4；该段已由 G4 freeze 接受，受 G4 冻结边界保护。
+- §1B / §1C 的 `G5 可选` 均是 target / 策略说明；对应 action 分别为 `INDEX_AS_CURRENT_CONTROL` / `RETAIN_IN_PLACE`，batch 均为 `NONE`，不构成 executable candidate。
+- G5 candidate matrix 为空是正确结果；ordinary / fragment 入链对象、target conflict 对象、redirect-first 设计对象均为 0。
+- 最新 preflight commit 仅触达 4 个允许文件；G1～G4 冻结对象、docs/gates/archive/.agents/templates、workflow、backend、frontend、research、scripts、deploy、migration diff 均为空。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT-REVIEW：PASS / ACCEPTED**。P0/P1/P2/P3=0。**G5 directory closure preflight = ACCEPTED / READY FOR FREEZE REVIEW**；**G5 executable candidates = 0**；**G6 deletion batch = NOT STARTED / DEFAULT EMPTY**。允许进入 G5 freeze review；不得据此启动 G5 implementation 或 G6 deletion batch。
 ## NQ-DOCS-GOVERNANCE-G4-FREEZE-REVIEW
 
 日期：2026-06-19
