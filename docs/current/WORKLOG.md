@@ -2,6 +2,27 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN
+
+日期：2026-06-19
+
+### 目标与范围
+
+输出 Batch 5B-ENV 规划：如何治理本地 / CI 环境变量、密钥边界、profile、no-outbound、安全启动参数、fake/mock/paper/real provider 隔离，以及 5B-SMOKE 前置条件。planning-only：不创建 / 不改 workflow，不改代码，不新增 API / migration，不启 LIVE / AI / DH runtime / RealClient / real provider，不真实外联。主 skill：`nq-dh-workflow-router`。
+
+### 核验结果
+
+- 只读盘点：`.github/workflows/ci.yml` 8 个 job（diff-check / no-outbound-guard / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan）；CI 未注入任何真实交易所 secret；backend 默认 profile=local，存在 local/test/prod/freeze/gated-verify，**无** ci/paper/live profile；frontend E2E 仅 `CI=true` + loopback 127.0.0.1:5179；research 仅 `CI=true`；`.env.example` 用 `REPLACE_WITH_LOCAL_*` 占位、无真实凭证；`NoRealExchangeCredentialPermissionProbePort` 默认返回 `SKIPPED` / `REAL_EXCHANGE_PROBE_DISABLED`。
+- 设计：环境变量四层（CI required / local dev / test / forbidden）+ `local`/`test`/`ci`/`paper`/`live` profile 与 provider 隔离 + no-outbound 约束 + secret/log/artifact redaction 对齐 + fail-closed 规则（`LIVE=true`+`NO_OUTBOUND=true` fail closed、CI 检出 real credential fail closed）+ 5B-SMOKE 前置 + 5B-ENV-A..E 串行批次。
+- findings：P0=0；P1=2（profile 收口缺失、运行态 env 冲突 fail-closed 缺失）；P2=3（real base-url 默认值误导、no-outbound 仅 test-scope+env-name 校验、占位标记不统一）；P3=2（5A 状态措辞漂移、控制变量多为新增需后续落地）。
+- 新增文件：`docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md`。
+- 修改文件：`docs/current/NQ_CI_BASELINE_PLAN.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`（仅登记 plan 状态）。
+- 验证：见 TESTING.md 同名条目；docs-only，未跑后端/前端/Python/CI 测试；`git diff` 限定 docs/current，workflow/代码/migration diff 期望为空。
+
+### 结论
+
+**NQ-CI-SECURITY-BATCH-5B-ENV-PLAN：PASS / READY FOR REVIEW**。Batch 5B-ENV = PLAN ONLY；Batch 5B-SMOKE = BLOCKED BY 5B-ENV。No workflow / code / migration changed；no real credential read；no outbound；no LIVE / AI / DH runtime / RealClient / real provider。NQ GateK CI/security boundary = planning continues。
+
 ## NQ-DOCS-CURRENT-LEANUP-R3-FINAL-FREEZE
 
 日期：2026-06-19

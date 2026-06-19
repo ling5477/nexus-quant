@@ -35,7 +35,7 @@ GateO：A 股适配
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
 - Next: GateK-PLAN（planning / 收口工作线；GateK 产品/runtime 实现仍 not started）。
-- **NQ GateK CI mainline = COMPLETED / ACCEPTED**（CI 状态权威以 `STATUS.md` + `NQ_CI_BASELINE_PLAN.md` 为准）：Batch 5A no-backend frontend E2E = FROZEN / ACCEPTED（仅 4 个 no-backend smoke spec，非 authenticated/backend E2E coverage）；Batch 5B-ENV runtime no-outbound = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
+- **NQ GateK CI mainline = COMPLETED / ACCEPTED**（CI 状态权威以 `STATUS.md` + `NQ_CI_BASELINE_PLAN.md` 为准）：Batch 5A no-backend frontend E2E = FROZEN / ACCEPTED（仅 4 个 no-backend smoke spec，非 authenticated/backend E2E coverage）；Batch 5B-ENV runtime no-outbound = P1 SECURITY ENHANCEMENT / **PLAN ONLY / READY FOR REVIEW**（规划文档 `NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md`，实现未启动）；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
 - 文档治理：G1 authority/evidence index = FROZEN / ACCEPTED；G2 current-control drift repair = IMPLEMENTED / READY FOR REVIEW；G3~G6 = NOT STARTED（治理入口见 `NQ_DOCS_AUTHORITY_INDEX.md` / `NQ_DOCS_EVIDENCE_INDEX.md`）。
 - GateK implementation not started。
 - AI not started。
