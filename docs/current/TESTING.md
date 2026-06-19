@@ -2,6 +2,29 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G4-FREEZE-REVIEW（2026-06-19）
+
+结论：**PASS / ACCEPTED / FROZEN**。docs-only freeze review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 实测验证：
+
+~~~text
+Migration Map §1D candidate trace → 22
+20 routed pre-routing source blob == target blob → CANONICAL_BLOB_OK=20
+20 old-path stub template check → STUB_TEMPLATE_OK=20
+20 old-path source fragment grep → FRAGMENT_HITS=0
+2 current authority protection → AUTHORITY_RETAINED=2
+docs/evidence/ci NQ_CI file count → 20
+NQ_CI docs outside docs/current or docs/evidence/ci → 0
+CI_BASELINE_INDEX semantic check → PASS
+CI evidence README semantic check → PASS
+G1 frozen object hash-object check → G1_FROZEN_OBJECTS_OK=5
+G3 17 stub / RUNBOOK / DIVERGED header check → GATEJ_STUB_OK=17
+protected path diff → PROTECTED_DIFF_EMPTY=true
+~~~
+
+**G4 CI evidence routing = FROZEN / ACCEPTED**；**G5 = READY FOR IMPLEMENTATION**；**G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED**。docs-only review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
@@ -136,6 +159,7 @@ git diff --check → 无空白错误
 ```
 
 G2 = **semantic baseline freeze**（断言+导航+Rule 16+link hygiene），current-control 文档仍可正常追加更新；失效条件 8 项 / 允许维护 6 项见 `NQ_DOCS_G2_FREEZE_REVIEW.md`。**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 = READY FOR IMPLEMENTATION**；**G4~G6 = NOT STARTED**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 
 ## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR-REVIEW（2026-06-18）
 

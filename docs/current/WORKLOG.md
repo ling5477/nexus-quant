@@ -2,6 +2,25 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G4-FREEZE-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+冻结 G4 CI evidence routing semantic / structural baseline。审查范围限定为 Migration Map §1D 的 22 个候选、20 个 canonical historical evidence、20 个 old-path compatibility stub、2 个 current authority、CI evidence README、CI baseline index、G1～G3 基线和禁止路径 diff。本轮仅新增 NQ_DOCS_G4_FREEZE_REVIEW.md 并更新 STATUS.md / TESTING.md / WORKLOG.md；不修改 20 个 source stub、20 个 canonical evidence、2 个 current authority、CI index、G1/G2/G3 冻结对象、workflow、代码、测试、migration、依赖。
+
+### 核验要点
+
+- Migration Map §1D 候选 = 22；20 routed + 2 retained authority = 22；docs/evidence/ci/ 恰有 20 个 routed canonical evidence；G4 集合外实际 routing 文件 = 0。
+- 20 / 20 canonical evidence 与 783bfa68^:docs/current/<filename> 原 source blob 一致；20 / 20 source stub 模板合规，fragment 入链 0。
+- 2 / 2 current authority 完整正文与原路径保留；docs/evidence/ci/README.md 与 docs/baselines/CI_BASELINE_INDEX.md 仅为导航职责。
+- G1 五份冻结对象 blob zero drift；G2 semantic baseline 未削弱；G3 17 stub / RUNBOOK / DIVERGED 排除规则未被破坏；docs/gates/archive/.agents/templates、workflow、code、migration zero drift。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G4-FREEZE-REVIEW：PASS / ACCEPTED / FROZEN**。P0/P1/P2/P3=0。G4 freeze 是 CI evidence routing semantic / structural baseline freeze，不是 STATUS.md / TESTING.md / WORKLOG.md 的 blob lock。**G4 CI evidence routing = FROZEN / ACCEPTED**；**G5 = READY FOR IMPLEMENTATION**；**G6 = NOT STARTED**。
+
 ## NQ-DOCS-GOVERNANCE-G4-CI-EVIDENCE-ROUTING-REVIEW
 
 日期：2026-06-19
@@ -129,6 +148,7 @@
 ### Next concrete action
 
 G2 冻结完成；**G3 = READY FOR IMPLEMENTATION**（GateJ 17 份 superseded redirect-first 收敛，须单独受控开工、redirect-first、gate-j 权威副本永久保留）。G4~G6 未开始。
+
 
 ## NQ-DOCS-GOVERNANCE-G2-CURRENT-CONTROL-DRIFT-REPAIR-REVIEW
 
