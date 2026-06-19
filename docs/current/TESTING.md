@@ -2,6 +2,35 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-CURRENT-LEANUP-R3-FINAL-FREEZE（2026-06-19）
+
+结论：**PASS / ACCEPTED / FROZEN**。docs-only final freeze of R1 (`ca77460f`) + R2 (`d4095ded`)，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 与链接实测复核：
+
+~~~text
+git branch --show-current → dev；工作区 clean
+HEAD → d4095ded docs(governance): review docs/current cleanup (R2)
+cleanup-result current markdown 基线 → 96 → 46
+current root tracked .md（live，含 R1 报告 + R2 review）→ 47（R3 提交后 → 48）
+docs/evidence/governance/*.md → 18（17 + README）
+docs/evidence/compatibility/gatej-current-stubs/*.md → 15（14 + README）
+docs/evidence/compatibility/ci-current-stubs/*.md → 21（20 + README）
+gate-j canonical files → 28（未改）；docs/evidence/ci NQ_CI_*.md → 20（未改）
+R1 commit → 51 R（17 governance R100 + 34 stub R077..R089），0 真实 delete，0 forbidden-scope
+R2 commit → 1 A（R2 review doc）+ 3 M（STATUS/TESTING/WORKLOG），0 forbidden-scope
+moved GateJ stub canonical 链接 ../../../gates/gate-j/X.md → 0 broken
+moved CI stub canonical 链接 ../../ci/X.md → 0 broken
+fragment 入链（移出对象 <file>.md#）→ 0
+live 链接指向 moved 文件旧 current 路径 → 0
+BLOCKED 3（GATEJ_API_PLAN/DB_PLAN/TEST_PLAN）→ 仍在 current，入链同目录解析正常
+CI authority 2 + RUNBOOK + 5 导航 README → 存在
+git diff --check → PASS（仅 LF/CRLF warning）
+docs/gates·evidence-ci·archive·baselines·.agents·templates·ci.yml·backend·frontend·research·scripts·deploy·migration diff → empty
+~~~
+
+**NQ Docs Current Cleanup = FROZEN / ACCEPTED / CLOSED**；Round = 3 / 3；Round 4 = NOT ALLOWED；current markdown count = 46（cleanup-result 基线，live 48）；moved = 51；known compatibility residual = 3；P3 informational = 2；未删除历史证据；未创建 deletion list；未改代码/workflow/migration。NQ GateK CI mainline = COMPLETED / ACCEPTED；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-CURRENT-LEANUP-R2-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED**。docs-only review of R1 commit `ca77460f`，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。

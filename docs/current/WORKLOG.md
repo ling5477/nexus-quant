@@ -2,6 +2,27 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-CURRENT-LEANUP-R3-FINAL-FREEZE
+
+日期：2026-06-19
+
+### 目标与范围
+
+冻结 `docs/current` 物理瘦身结果（R1 `ca77460f` + R2 `d4095ded`），确认 current 已从“安全保留态”收敛为“真正 current 控制态”。Round 3 / 3，最终冻结轮，不实施变更、不开 Round 4。本轮仅新增 `NQ_DOCS_CURRENT_CLEANUP_R3_FINAL_FREEZE.md` 并追加 STATUS / TESTING / WORKLOG。
+
+### 核验结果
+
+- cleanup-result 基线：current root markdown 96 → 46；moved 51（governance 17 + GateJ 14 + CI 20）；known compatibility residual 3；historical evidence deleted 0；code/workflow/migration changed 0。
+- 计数口径：46 为 physical-reduction 基线；R2/R3 review/freeze audit-trail 文档保留 current，live `git ls-files docs/current/*.md` = 48（R3 提交后），如实可复核。
+- 移出位置冻结：governance 17 → `docs/evidence/governance/`（18，R100 byte-identical）；GateJ stub 14 → `gatej-current-stubs/`（15，链接 0 broken）；CI stub 20 → `ci-current-stubs/`（21，链接 0 broken）。
+- canonical GateJ（28）/ CI evidence（20）/ CI authority（2）/ RUNBOOK / G1～G6 冻结对象 / 禁止范围（docs/gates·evidence-ci·baselines·archive·.agents·templates·workflow·代码·migration）全部 0 改动。
+- 3 个 BLOCKED 文件冻结为 accepted known compatibility residual（GATEJ_API_PLAN / DB_PLAN / TEST_PLAN，DIVERGED_INBOUND_LINK），canonical 在 docs/gates/gate-j/；未来处理须单独开小型 link-rewrite proposal，不开 Round 4。
+- 两个 P3（governance inline-code 路径示例 / 历史 prose 提及）informational，非 broken link，不修复、不延长 Round 4。
+
+### 结论
+
+**NQ-DOCS-CURRENT-LEANUP-R3-FINAL-FREEZE：PASS / ACCEPTED / FROZEN**。P0/P1/P2=0，P3=2（informational）。**NQ Docs Current Cleanup = FROZEN / ACCEPTED / CLOSED**；Round = 3 / 3；Round 4 = NOT ALLOWED。
+
 ## NQ-DOCS-CURRENT-LEANUP-R2-REVIEW
 
 日期：2026-06-19
