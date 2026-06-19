@@ -2,6 +2,27 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G6-DEFAULT-EMPTY-DELETION-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+审查并冻结“删除批次为空”的结论。确认本轮文档治理不删除任何文档，删除批次默认为空（`DELETE_CANDIDATES = 0`）。本轮仅新增 `NQ_DOCS_G6_DEFAULT_EMPTY_DELETION_REVIEW.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不删除、移动、重命名、归档、stub 化或复制任何文档，不创建 deletion list，不修改 G1～G5 冻结对象、docs/gates/archive/evidence/baselines、.agents/templates、workflow、backend、frontend、research、scripts、deploy、migration、测试或依赖。
+
+### 核验要点
+
+- 删除候选 = 0：本治理周期未发起 deletion proposal；冻结 Migration Map 明确无 `DELETE NOW`。
+- `ARCHIVE_CANDIDATE`（already-archived / RETAIN_IN_PLACE）、`FUTURE_MOVE_CANDIDATE`（move ≠ delete）、superseded（redirect 后仅移除重复副本，权威永久保留）均不构成当前可删除。
+- 不得由 “G5 executable candidates = 0” 推导出可删除空目录或历史文件。
+- 保留对象全部核验存在：`docs/gates/**`（gate-j 28）、`docs/archive/**`（22）、`docs/evidence/ci/**`（21）、`docs/baselines/CI_BASELINE_INDEX.md`、两份 CI current authority、`RUNBOOK.md`、G3 17 stub、G4 20 source stub、9 份 DIVERGED current 活文档、G1～G5 plan/review/freeze/implementation 证据、P2/P3 residual / backlog 记录。
+- G6 不等于 archive cleanup / repo size cleanup / docs pruning / 删除 superseded current path；当前治理周期默认不删除。
+- 未来删除必须另起 deletion proposal，逐文件审查、逐文件回滚、逐文件证明不破坏证据链和链接兼容。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G6-DEFAULT-EMPTY-DELETION-REVIEW：PASS / ACCEPTED**。P0/P1/P2/P3=0。`DELETE_CANDIDATES = 0`；G6 deletion batch = DEFAULT EMPTY / ACCEPTED；G6 是 default-empty deletion review，不是实际删除批次。NQ Docs Governance Consolidation = READY FOR FINAL FREEZE REVIEW。
+
 ## NQ-DOCS-GOVERNANCE-G5-FREEZE-REVIEW
 
 日期：2026-06-19

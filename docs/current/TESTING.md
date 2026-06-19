@@ -2,6 +2,43 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G6-DEFAULT-EMPTY-DELETION-REVIEW（2026-06-19）
+
+结论：**PASS / ACCEPTED**。docs-only deletion-batch default-empty review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 与保留对象实测验证：
+
+~~~text
+git status --short → 初始空；改动仅 4 个允许文件
+git branch --show-current → dev
+git log --oneline -20 → HEAD = fcb40f22 docs(governance): freeze G5 directory closure no-op
+DELETE_CANDIDATES → 0
+deletion list created → no
+deletion proposal in cycle → 0
+Migration Map DELETE NOW → 0（全表仅 5 种允许取值）
+ARCHIVE_CANDIDATE = deletable now → no（already-archived / RETAIN_IN_PLACE）
+FUTURE_MOVE_CANDIDATE / superseded = delete → no（move ≠ delete；redirect 后只移除重复副本，权威永久保留）
+G5 executable candidates = 0 → 不可推导删除
+retained docs/gates/** → EXISTS（gate-j 28 files）
+retained docs/archive/** → EXISTS（22 files）
+retained docs/evidence/ci/** → EXISTS（21 files）
+retained docs/baselines/CI_BASELINE_INDEX.md → EXISTS
+retained CI current authority ×2 → EXISTS（NQ_CI_BASELINE_PLAN / NQ_CI_SECURITY_GUARD_PLAN）
+retained RUNBOOK.md → EXISTS
+retained G3 GateJ stub → 17
+retained G4 CI source stub → 20
+retained DIVERGED current → 9
+git diff --check → PASS（仅 LF/CRLF warning）
+git diff --name-status → 仅 STATUS / TESTING / WORKLOG + 新增 G6 review file
+G1 五份冻结对象 diff → empty
+docs/gates docs/archive docs/evidence docs/baselines .agents templates diff → empty
+.github/workflows/ci.yml diff → empty
+backend frontend research scripts deploy diff → empty
+backend/**/db/migration diff → empty
+~~~
+
+**G1～G5 = FROZEN / ACCEPTED**；**G5 executable candidates = 0**；**G5 implementation = SKIPPED / NOT APPLICABLE**；**G6 deletion batch = DEFAULT EMPTY / ACCEPTED**；**DELETE_CANDIDATES = 0**；**NQ Docs Governance Consolidation = READY FOR FINAL FREEZE REVIEW**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G5-FREEZE-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED / FROZEN**。docs-only freeze review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
