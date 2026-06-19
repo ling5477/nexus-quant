@@ -2,6 +2,27 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-CURRENT-LEANUP-R2-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+只读审查 R1 current 目录瘦身（commit `ca77460f`）是否安全、完整、可冻结。Round 2 / 3，不追加迁移批次、不删除文档、不启动新治理长链路。本轮仅新增 `NQ_DOCS_CURRENT_CLEANUP_R2_REVIEW.md` 并追加 STATUS / TESTING / WORKLOG。
+
+### 核验结果
+
+- current root tracked .md = 46（提交后核验，与 R1 一致）；governance 18 / gatej-stubs 15 / ci-stubs 21。
+- R1 commit：51 renames（17 governance R100 byte-identical 纯 rename + 34 stub R077..R089），0 真实 delete，0 forbidden-scope 路径。
+- moved stub canonical 链接逐文件解析 0 broken；fragment 入链 0；无 live 链接指向 moved 文件旧 current 路径。
+- canonical GateJ（28）/ CI evidence（20）/ CI authority（2）/ RUNBOOK 未改；G1～G6 冻结对象、docs/gates/evidence-ci/baselines/archive/.agents/templates/workflow/代码/migration 0 改动。
+- 3 个 BLOCKED 文件（GATEJ_API_PLAN / DB_PLAN / TEST_PLAN，DIVERGED_INBOUND_LINK）保留在 current，接受为 known compatibility residual，canonical 仍在 docs/gates/gate-j/；不强行移动、不改写 API.md/DB_SCHEMA.md/TESTING.md 入链。
+- current/README.md 已是真正 current 入口页（18 处导航引用齐全）。
+
+### 结论
+
+**NQ-DOCS-CURRENT-LEANUP-R2-REVIEW：PASS / ACCEPTED**。P0/P1/P2=0，P3=2（governance inline-code 路径示例 / 历史 prose 提及，非断链，不阻断冻结）。**NQ Docs Current Cleanup = ACCEPTED / READY FOR FINAL FREEZE**；Round = 2 / 3；R3 = FINAL FREEZE。
+
 ## NQ-DOCS-CURRENT-LEANUP-R1-IMPLEMENTATION
 
 日期：2026-06-19
