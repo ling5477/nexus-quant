@@ -257,3 +257,9 @@ GateO：A 股适配
 - DOC-CLEAN-2 已完成（删除 docs/current/ 中 GateH/GateI 计划副本）。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成（无 P0；E2E 与 Python 基线均已实际重跑通过，详见 PRE_FREEZE_AUDIT_REPORT.md）。
 - GateI 的历史下一步 GateJ 已完成；当前状态是 GateJ completed / Next: GateK-PLAN，AI 仍 not started。
+
+---
+
+## NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT（2026-06-19）
+
+- NQ documentation governance **G5 directory closure preflight** completed（2026-06-19）：**IMPLEMENTED / READY FOR REVIEW**。只从 G1 冻结的 `docs/current/NQ_DOCS_MIGRATION_MAP.md` 精确抽取 `recommended_action = FUTURE_MOVE_CANDIDATE` 且 `migration_batch = G5` 的候选，结果为 **0 total / 0 ELIGIBLE_FOR_G5_IMPLEMENTATION / 0 BLOCKED_PER_FILE / 0 RETAIN_IN_PLACE**。Migration Map 中 `FUTURE_MOVE_CANDIDATE` 仅出现在 §1D 且 batch = G4；`G5 可选` 仅为 §1B/§1C 的说明性文字且 batch = NONE，不得扩展为候选。新增 `NQ_DOCS_G5_DIRECTORY_CLOSURE_PREFLIGHT.md`；未移动、删除、重命名、复制、归档、stub 化任何文档；未创建 target 目录或 canonical 文件；未修改 G1～G4 冻结对象、docs/gates/archive/.agents/templates、workflow、code、migration。**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = FROZEN / ACCEPTED**；**G4 CI evidence routing = FROZEN / ACCEPTED**；**G5 directory closure preflight = IMPLEMENTED / READY FOR REVIEW**；**G6 deletion batch = NOT STARTED / DEFAULT EMPTY**。NQ GateK CI mainline = **COMPLETED / ACCEPTED**；Batch 5A = **FROZEN / ACCEPTED**；Batch 5B-ENV = **P1 SECURITY ENHANCEMENT / NOT STARTED**；Batch 5B-SMOKE = **BLOCKED BY 5B-ENV**；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。

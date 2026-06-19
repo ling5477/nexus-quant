@@ -8678,3 +8678,28 @@ Batch 2D：IMPLEMENTED / FIRST-RUN-FIX APPLIED / PENDING FIRST CI RUN（仍不�
 ## 下一步
 
 push 第二次修复 → re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-REVIEW`；若仍红则继续 `NQ-CI-POSTGRES-FLYWAY-2D-FIRST-RUN-FIX`。建议 commit message：`test(ci): nq-app context smoke 改用 MOCK web 环境修复 security 装配（Batch 2D first-run fix #2）`。
+
+---
+
+## NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT
+
+日期：2026-06-19
+
+### 目标与范围
+
+只读核验 G5 directory closure 候选、链接兼容性、target conflict 和迁移前置条件。本轮候选只能来自 G1 冻结的 `docs/current/NQ_DOCS_MIGRATION_MAP.md`，且必须同时满足 `recommended_action = FUTURE_MOVE_CANDIDATE` 与 `migration_batch = G5`。仅新增 `NQ_DOCS_G5_DIRECTORY_CLOSURE_PREFLIGHT.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不移动、删除、重命名、复制、归档、stub 化任何既有文档，不创建 target 目录或 canonical 文件，不改 G1～G4 冻结对象、workflow、代码、测试、migration、依赖。
+
+### 核验要点
+
+- 结构化抽取 Migration Map：`FUTURE_MOVE_CANDIDATE` 只出现在 §1D，且 `migration batch = G4`；不存在 `migration_batch = G5` 的 future-move 条目。
+- `G5 可选` 仅出现在 §1B / §1C 的 target 或策略说明中；对应 action 分别为 `INDEX_AS_CURRENT_CONTROL` / `RETAIN_IN_PLACE`，batch 均为 `NONE`，不得扩展为候选。
+- G5 candidate matrix 为空：0 total / 0 eligible / 0 blocked / 0 retain；ordinary inbound links、fragment inbound links、target conflicts 均因无候选 source/target 为 0。
+- 本轮未触碰 G1 五份冻结对象、G2/G3/G4 已冻结对象、G3 17 stub、G4 CI canonical evidence/stub/current authority、docs/gates、docs/archive、.agents、templates、workflow、backend、frontend、research、scripts、deploy、migration。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT：PASS / READY FOR REVIEW**。**G5 directory closure preflight = IMPLEMENTED / READY FOR REVIEW**；G5 implementation 当前无可执行 move 候选，不应执行目录收口动作。**G6 deletion batch = NOT STARTED / DEFAULT EMPTY**。
+
+### 回滚方式
+
+`git restore -- docs/current/STATUS.md docs/current/TESTING.md docs/current/WORKLOG.md` 并删除 `docs/current/NQ_DOCS_G5_DIRECTORY_CLOSURE_PREFLIGHT.md` 即可回滚本轮 preflight 文档记录；不涉及代码、workflow、migration 或运行时副作用。

@@ -4267,3 +4267,37 @@ CI 待确认：真实 servlet-web context 启动需下一次 GitHub Actions `pos
 CI log hygiene（复核）：本次失败 step 输出仅 Spring/Surefire stack trace 与 `@TestPropertySource` 属性回显（含 fake `ci-app-smoke` master-key / security secret 占位值，非真实 credential）；service-container 一次性 `POSTGRES_PASSWORD` 仍由 GitHub "Initialize containers" 在 step 前回显（平台行为，P3 残留，已记录）。无真实 credential material、无完整 JDBC password / 连接串经 step 主动输出。
 
 阶段与安全边界：未改后端生产代码 / migration / research / deploy / scripts / workflow；未新增 API；未用 `local` profile；未触发 `AuthSeedConfiguration`；未创建 seed users / accounts / exchange accounts / credential rows；未接 AI/DH/LIVE/real exchange；未读取或输出真实 credential material。
+
+---
+
+## NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT（2026-06-19）
+
+结论：**PASS / READY FOR REVIEW**。docs-only preflight，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 实测验证：
+
+```text
+Migration Map exact query:
+recommended_action = FUTURE_MOVE_CANDIDATE
+migration_batch    = G5
+
+G5_FUTURE_MOVE_COUNT = 0
+FUTURE_MOVE_SECTIONS = 1
+FUTURE_MOVE_SECTIONS_BATCH = G4 only
+G5_TEXT_LINES = 4
+
+G5 candidate matrix:
+total = 0
+ELIGIBLE_FOR_G5_IMPLEMENTATION = 0
+BLOCKED_PER_FILE = 0
+RETAIN_IN_PLACE = 0
+ordinary inbound links = 0
+fragment inbound links = 0
+target conflicts = 0
+```
+
+边界验证：本轮未移动、删除、重命名、复制、归档、stub 化任何文档；未创建 target 目录或 canonical 文件；未修改 G1 五份冻结对象、G2/G3/G4 冻结对象、docs/gates、docs/archive、.agents、templates、workflow、backend、frontend、research、scripts、deploy、migration 或依赖。G6 仍为 **NOT STARTED / DEFAULT EMPTY**。
+
+阶段状态：**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = FROZEN / ACCEPTED**；**G4 CI evidence routing = FROZEN / ACCEPTED**；**G5 directory closure preflight = IMPLEMENTED / READY FOR REVIEW**；**G6 deletion batch = NOT STARTED / DEFAULT EMPTY**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
+补充验证（2026-06-19）：`git diff --check` exit 0；G1 五份冻结对象 diff 为空；`docs/gates docs/archive .agents templates` diff 为空；`.github/workflows/ci.yml` diff 为空；`backend frontend research scripts deploy` diff 为空；`backend/**/db/migration` diff 为空。新增 preflight 文件单独检查 trailing whitespace = 0，single LF at EOF。
