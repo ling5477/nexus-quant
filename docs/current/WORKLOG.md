@@ -2,6 +2,29 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-CURRENT-LEANUP-R1-IMPLEMENTATION
+
+日期：2026-06-19
+
+### 目标与范围
+
+把 `docs/current` 从“安全保留态”收敛为“真正 current 控制态”：把过程证据、治理 review/freeze、旧路径 compatibility stub 移出 current，更新仓库内部链接到 canonical，并新增导航 README 与实施报告。Round 1 / 3（R2 review、R3 final freeze 为剩余两轮，不扩展为新 G1～G6 长链路）。
+
+### 执行结果
+
+- `docs/current` 根目录 Markdown 96 → 46（移出 51 + 新增 1 报告）。
+- governance evidence 17 → `docs/evidence/governance/`（`git mv`，正文未改写）。
+- GateJ 旧路径 compatibility stub 14 → `docs/evidence/compatibility/gatej-current-stubs/`（`git mv` + 自链接深度补偿 `../../../gates/gate-j/`）。
+- CI 旧路径 compatibility stub 20 → `docs/evidence/compatibility/ci-current-stubs/`（`git mv` + 自链接深度补偿 `../../ci/`）。
+- 新增 3 个导航 README + 实施报告 `NQ_DOCS_CURRENT_CLEANUP_R1_IMPLEMENTATION.md`。
+- 重写 `docs/current/README.md` 为真正 current 入口页；更新 `docs/README.md` 历史证据位置与治理证据归档指针。
+- BLOCKED = 3：`GATEJ_API_PLAN.md` / `GATEJ_DB_PLAN.md` / `GATEJ_TEST_PLAN.md`（入链位于受保护 DIVERGED 活文档 API.md / DB_SCHEMA.md / TESTING.md），保留在 current；canonical 仍在 `docs/gates/gate-j/`。
+- 三组移出对象 fragment 入链全仓 = 0；未删除历史正文；canonical GateJ / canonical CI evidence / G1 五份冻结对象正文 / workflow / 代码 / migration 未改。
+
+### 结论
+
+**NQ-DOCS-CURRENT-LEANUP-R1-IMPLEMENTATION：PASS / READY FOR REVIEW**（含 3 BLOCKED_PER_FILE）。**NQ Docs Current Cleanup = IMPLEMENTED / READY FOR REVIEW**；Round = 1 / 3。R2 = REVIEW，R3 = FINAL FREEZE。
+
 ## NQ-DOCS-GOVERNANCE-FINAL-FREEZE-REVIEW
 
 日期：2026-06-19

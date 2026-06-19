@@ -2,6 +2,33 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-CURRENT-LEANUP-R1-IMPLEMENTATION（2026-06-19）
+
+结论：**PASS / READY FOR REVIEW**（含 3 个 BLOCKED_PER_FILE）。docs-only current 目录物理瘦身，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 与链接实测验证：
+
+~~~text
+git branch --show-current → dev
+docs/current 根 .md before → 96；after → 46（移出 51 + 新增 1 报告）
+governance evidence moved → 17 → docs/evidence/governance/
+GateJ stub moved → 14 → docs/evidence/compatibility/gatej-current-stubs/
+CI stub moved → 20 → docs/evidence/compatibility/ci-current-stubs/
+BLOCKED → 3（GATEJ_API_PLAN / GATEJ_DB_PLAN / GATEJ_TEST_PLAN，DIVERGED_INBOUND_LINK）
+fragment 入链（三组移出对象 <file>.md#）→ 0 / 0 / 0
+git status 摘要 → 17 R（governance 纯 rename）+ 34 RM（stub rename+自链接深度补偿）+ 2 M（docs/README、current/README）+ 3 ??（新 README）+ 新增报告/状态记录
+stub 自链接验证 → GateJ ../../../gates/gate-j/X.md（可解析）；CI ../../ci/X.md（可解析）
+canonical 目标存在 → docs/gates/gate-j/* OK；docs/evidence/ci/* OK
+docs/gates/** diff → empty（canonical GateJ 未改）
+docs/evidence/ci/** diff → empty（canonical CI evidence 未改）
+G1 五份冻结对象正文 diff → empty
+.github/workflows/ci.yml diff → empty
+backend frontend research scripts deploy + backend/**/db/migration diff → empty
+git diff --check → PASS（仅 LF/CRLF warning）
+~~~
+
+**NQ Docs Current Cleanup = IMPLEMENTED / READY FOR REVIEW**；Round = 1 / 3（R2 = REVIEW，R3 = FINAL FREEZE）；docs/current PHYSICALLY REDUCED；未删除历史正文；未改代码/workflow/migration；G1～G6 baseline 仍为历史参考。NQ GateK CI mainline = COMPLETED / ACCEPTED；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-FINAL-FREEZE-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED / FROZEN**。docs-only governance final freeze review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。

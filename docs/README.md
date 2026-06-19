@@ -19,9 +19,9 @@
 
 > GateJ 已是 **completed historical gate**，其权威冻结卷宗在 `docs/gates/gate-j/`。以下 GateJ 文档为**历史/冻结证据入口**（`docs/current/` 内同名副本与 gate-j blob 一致，属 NON_AUTHORITATIVE / FUTURE_SUPERSEDE_CANDIDATE，G3 redirect 后收敛，权威以 gate-j 为准；详见 `docs/current/NQ_DOCS_MIGRATION_MAP.md` §1E）：
 
-- GateJ 规划（历史/冻结证据，权威：`docs/gates/gate-j/PLAN_GATEJ.md`）：`docs/current/PLAN_GATEJ.md`
-- GateJ 工作单（历史/冻结证据，权威：`docs/gates/gate-j/GATEJ_WORK_ORDER.md`）：`docs/current/GATEJ_WORK_ORDER.md`
-- 文档清理报告（历史证据）：`docs/current/DOC_CLEAN_REPORT.md`
+- GateJ 规划（权威：`docs/gates/gate-j/PLAN_GATEJ.md`；旧 current 兼容 stub 已归档至 `docs/evidence/compatibility/gatej-current-stubs/PLAN_GATEJ.md`）
+- GateJ 工作单（权威：`docs/gates/gate-j/GATEJ_WORK_ORDER.md`；兼容 stub 已归档至 `docs/evidence/compatibility/gatej-current-stubs/GATEJ_WORK_ORDER.md`）
+- 文档清理报告（权威：`docs/gates/gate-j/DOC_CLEAN_REPORT.md`；兼容 stub 已归档至 `docs/evidence/compatibility/gatej-current-stubs/DOC_CLEAN_REPORT.md`）
 
 ## 历史与规则
 
@@ -30,6 +30,12 @@
   - `docs/gates/gate-i/`：GateI completed freeze snapshot（虚拟币量化 V1 完整闭环）
   - `docs/gates/gate-j/`：GateJ completed freeze snapshot（Paper Trading 稳定运行与 GateJ-FREEZE 验收）
   - `docs/gates/gate-a..g/`：早期 Gate 历史卷宗
+- 证据归档：`docs/evidence/`
+  - `docs/evidence/ci/`：CI historical evidence（canonical；导航 `docs/evidence/ci/README.md`）
+  - `docs/evidence/governance/`：文档治理 G1～G6 plan/review/freeze/implementation/final freeze 过程证据（导航 `docs/evidence/governance/README.md`）
+  - `docs/evidence/compatibility/gatej-current-stubs/`：GateJ 旧 current 路径兼容 stub 归档副本（canonical 仍在 `docs/gates/gate-j/`）
+  - `docs/evidence/compatibility/ci-current-stubs/`：CI 旧 current 路径兼容 stub 归档副本（canonical 仍在 `docs/evidence/ci/`）
+- baseline 索引：`docs/baselines/CI_BASELINE_INDEX.md`
 - 归档文档：`docs/archive/`
 - 文档规则：`docs/DOC_RULES.md`
 - 模板：`docs/templates/`
@@ -43,7 +49,7 @@
 - **Batch 5A no-backend frontend E2E = FROZEN / ACCEPTED**（仅 4 个 no-backend smoke spec，**不是** authenticated/backend E2E coverage）。
 - **Batch 5B-ENV runtime no-outbound = P1 SECURITY ENHANCEMENT / NOT STARTED**；**Batch 5B-SMOKE authenticated E2E = BLOCKED BY 5B-ENV**。
 - **Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED**；**Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**。
-- 文档治理：**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = IMPLEMENTED / READY FOR REVIEW**；G3~G6 = NOT STARTED。
+- 文档治理：**G1～G6 = FROZEN / ACCEPTED**；**NQ Docs Governance Consolidation = FROZEN / ACCEPTED**（过程证据见 `docs/evidence/governance/`）。当前进行 **current 目录物理瘦身（NQ-DOCS-CURRENT-CLEANUP，Round 1/3 IMPLEMENTED / READY FOR REVIEW）**，详见 `docs/current/NQ_DOCS_CURRENT_CLEANUP_R1_IMPLEMENTATION.md`。
 - AI not started；DH integration not started / not connected to NQ；LIVE disabled；RealClient / real provider / real exchange adapter not implemented。
 - Multi-exchange expansion not started；UI/UX professionalism remains post-freeze remediation。
 
@@ -55,23 +61,23 @@
 - `docs/archive` 只归档，不作为当前开发依据。
 - 未冻结 Gate 的计划文档保留在 `docs/current/`，Gate 完成并冻结后在 `docs/gates/gate-x/` 留权威冻结快照；当前事实仍以 `docs/current/` 为准。
 
-> **“不重复” 与 “迁移或复制” 的关系**（G2 收敛，权威见 `docs/DOC_RULES.md` 规则 16）：Gate 冻结时在 `gate-x/` 留权威快照（复制/迁移），current 侧不长期并存 superseded 重复（不重复）；两者不矛盾。实际移除 current 重复副本属 **G3**，须 redirect-first，且 gate-x 权威副本永久保留。当前 `docs/current/` 内 17 份 GateJ superseded 副本尚未移除（G3 未开始），按上述规则其权威以 `docs/gates/gate-j/` 为准。
+> **“不重复” 与 “迁移或复制” 的关系**（G2 收敛，权威见 `docs/DOC_RULES.md` 规则 16）：Gate 冻结时在 `gate-x/` 留权威快照（复制/迁移），current 侧不长期并存 superseded 重复（不重复）；两者不矛盾。GateJ superseded 副本已由 G3 收敛为 redirect-first 兼容 stub，gate-j 权威副本永久保留。当前 cleanup（Round 1/3）进一步把这些兼容 stub 从 `docs/current/` 物理移出归档到 `docs/evidence/compatibility/gatej-current-stubs/`（3 份因受保护 DIVERGED 入链标记 BLOCKED_PER_FILE 暂留 current），canonical 仍以 `docs/gates/gate-j/` 为准；未删除任何历史正文。
 
 ## 文档治理（Documentation Governance）
 
-> G1 已冻结（authority/evidence index + migration map）；G2 已修复当前控制层导航/状态/规则/链接漂移（本轮）。G3~G6 未开始。
+> G1～G6 全链路已冻结（**NQ Docs Governance Consolidation = FROZEN / ACCEPTED**）。当前在最终冻结之后做 current 目录物理瘦身（NQ-DOCS-CURRENT-CLEANUP，Round 1/3）。
 
-G1 冻结索引（FROZEN / ACCEPTED）：
+G1 冻结索引（FROZEN / ACCEPTED；仍在 current 作为当前权威基线）：
 
+- 治理计划：`docs/current/NQ_DOCS_GOVERNANCE_PLAN.md`。
 - 权威入口索引：`docs/current/NQ_DOCS_AUTHORITY_INDEX.md`（每领域唯一当前权威 + 辅证 + 历史证据）。
 - 历史证据索引：`docs/current/NQ_DOCS_EVIDENCE_INDEX.md`（GateJ freeze / CI Batch / 4C / 4F-A / backlog / DB / credential / NQ-DH 证据入口）。
 - 逐文件迁移映射：`docs/current/NQ_DOCS_MIGRATION_MAP.md`（覆盖 278 基线 md/txt 的 recommended action / target / batch）。
+- G1 实施记录：`docs/current/NQ_DOCS_G1_IMPLEMENTATION.md`。
 
-Documentation Governance Evidence（review / freeze / G2 implementation；均 HISTORICAL_EVIDENCE / RETAIN_IN_PLACE，**不计入 G1 的 278 / 283 计数**）：
+Documentation Governance Evidence（G1～G6 plan / review / freeze / implementation / final freeze 过程证据；均 HISTORICAL_EVIDENCE / RETAIN_IN_PLACE，**不计入 G1 的 278 / 283 计数**）：
 
-- 治理计划与计划评审：`docs/current/NQ_DOCS_GOVERNANCE_PLAN.md`、`docs/current/NQ_DOCS_GOVERNANCE_PLAN_REVIEW.md`。
-- G1 实施与评审：`docs/current/NQ_DOCS_G1_IMPLEMENTATION.md`、`docs/current/NQ_DOCS_G1_REVIEW.md`、`docs/current/NQ_DOCS_G1_FREEZE_REVIEW.md`。
-- G2 实施：`docs/current/NQ_DOCS_G2_CURRENT_CONTROL_REPAIR.md`。
+- 已从 `docs/current/` 物理移出并归档到 **`docs/evidence/governance/`**（导航 `docs/evidence/governance/README.md`），正文按 `git mv` 原样保留，未改写。
 
 治理原则（retain-first）：
 
