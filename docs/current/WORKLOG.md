@@ -2,6 +2,27 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-G5-FREEZE-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+冻结 G5 directory closure preflight / review 的 no-op baseline：确认冻结的 `docs/current/NQ_DOCS_MIGRATION_MAP.md` 中不存在任何可执行 G5 directory closure 候选。本轮仅新增 `NQ_DOCS_G5_FREEZE_REVIEW.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不启动 G5 implementation，不启动 G6 deletion batch，不移动、删除、重命名、复制、归档、stub 化任何文档，不创建目录、canonical 文件、migration、redirect stub 或 deletion list，不修改 G1～G4 冻结对象、workflow、代码、测试、migration、依赖。
+
+### 核验要点
+
+- Migration Map 精确查询 `recommended_action = FUTURE_MOVE_CANDIDATE` 且 `migration_batch = G5`，结果为 0。
+- 所有实际 `FUTURE_MOVE_CANDIDATE` 条目均不属于 G5；唯一段落为 §1D，batch = G4，已由 G4 freeze 接受。
+- §1B / §1C 的 `G5 可选` 是说明性文字；对应 migration batch 均为 `NONE`，不得构成候选。
+- `NQ_DOCS_G5_DIRECTORY_CLOSURE_PREFLIGHT.md` 与 `NQ_DOCS_G5_PREFLIGHT_REVIEW.md` 一致表达 G5 executable candidates = 0、`ELIGIBLE_FOR_G5_IMPLEMENTATION = 0`、`BLOCKED_PER_FILE = 0`、`RETAIN_IN_PLACE = 0` for G5 candidates，空逐文件矩阵是正确结果。
+- G5 implementation = `SKIPPED / NOT APPLICABLE`；无 implementation commit、无 moved files、无 redirected files、无 created target directories、无 deletion candidates。
+- G6 只进入 `READY FOR DEFAULT-EMPTY REVIEW`，不得据此删除任何文档或创建 deletion list。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-G5-FREEZE-REVIEW：PASS / ACCEPTED / FROZEN**。P0/P1/P2/P3=0。G5 freeze 是 directory-closure no-op baseline freeze，不是迁移实施；若后续 Migration Map 受控修订并新增 G5 候选，必须重新进行 preflight / review / freeze，不得复用本次 zero-candidate freeze。
+
 ## NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT-REVIEW
 
 日期：2026-06-19

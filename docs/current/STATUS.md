@@ -6,6 +6,12 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ documentation governance **G5 freeze review** completed（2026-06-19）：**PASS / ACCEPTED / FROZEN**。详见 `NQ_DOCS_G5_FREEZE_REVIEW.md`。
+  冻结 G5 directory closure preflight / review 的 no-op baseline：Migration Map 中可执行 G5 候选（`recommended_action = FUTURE_MOVE_CANDIDATE` 且 `migration_batch = G5`）为 **0**；唯一 `FUTURE_MOVE_CANDIDATE` 为 §1D 且 batch = G4；§1B / §1C 的 `G5 可选` 只是说明性文字，batch 均为 `NONE`，不得扩展为候选。
+  空逐文件矩阵、`ELIGIBLE_FOR_G5_IMPLEMENTATION = 0`、`BLOCKED_PER_FILE = 0`、`RETAIN_IN_PLACE = 0` for G5 candidates 均冻结为正确结果。G5 implementation = **SKIPPED / NOT APPLICABLE**；无 implementation commit、无 moved files、无 redirected files、无 created target directories、无 deletion candidates。
+  本轮只新增 `NQ_DOCS_G5_FREEZE_REVIEW.md` 并更新 STATUS / TESTING / WORKLOG；未修改 Migration Map、G1～G4 冻结对象、docs/gates/archive/.agents/templates、workflow、backend、frontend、research、scripts、deploy、migration、测试或依赖。
+  **G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = FROZEN / ACCEPTED**；**G4 CI evidence routing = FROZEN / ACCEPTED**；**G5 directory closure preflight = FROZEN / ACCEPTED**；**G5 executable candidates = 0**；**G5 implementation = SKIPPED / NOT APPLICABLE**；**G6 deletion batch = READY FOR DEFAULT-EMPTY REVIEW**。
+  NQ GateK CI mainline = **COMPLETED / ACCEPTED**；Batch 5A = **FROZEN / ACCEPTED**；Batch 5B-ENV = **P1 SECURITY ENHANCEMENT / NOT STARTED**；Batch 5B-SMOKE = **BLOCKED BY 5B-ENV**；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
 - NQ documentation governance **G5 directory closure preflight review** completed（2026-06-19）：**PASS / ACCEPTED**。详见 `NQ_DOCS_G5_PREFLIGHT_REVIEW.md`。
   审查 G5 preflight commit `8917d99d`：Migration Map 中可执行 G5 候选（`recommended_action = FUTURE_MOVE_CANDIDATE` 且 `migration_batch = G5`）为 **0**；唯一 `FUTURE_MOVE_CANDIDATE` 为 §1D 且 batch = G4；§1B / §1C 的 `G5 可选` 只是说明性文字，batch 均为 `NONE`，不得扩展为候选。
   空逐文件矩阵、ordinary/fragment 入链对象 0、target conflict 对象 0、redirect-first 设计对象 0 均为正确结果。最新 preflight commit 只触达 4 个允许文件；G1～G4 冻结对象、docs/gates/archive/.agents/templates、workflow、code、migration zero drift。

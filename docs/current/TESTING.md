@@ -2,6 +2,41 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-G5-FREEZE-REVIEW（2026-06-19）
+
+结论：**PASS / ACCEPTED / FROZEN**。docs-only freeze review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 实测验证：
+
+~~~text
+git status --short
+git branch --show-current → dev
+git log --oneline -20
+Migration Map exact G5 future-move query → 0
+FUTURE_MOVE_CANDIDATE sections → 1
+FUTURE_MOVE_CANDIDATE batch → G4 only
+§1B / §1C G5 optional text → explanatory only, migration batch NONE
+§1D → G4, not G5
+G5 candidate matrix → empty by design and frozen
+ELIGIBLE_FOR_G5_IMPLEMENTATION → 0
+BLOCKED_PER_FILE → 0
+RETAIN_IN_PLACE for G5 candidates → 0
+G5 implementation → SKIPPED / NOT APPLICABLE
+G5 moved files / redirected files / created target directories / deletion candidates → 0
+misleading wording check → no "G5 implementation ready" or "G5 migration ready"
+git diff --check → PASS for tracked modifications; LF/CRLF warnings only
+changed current docs trailing whitespace check → 0
+git status --short → only allowed current docs, including new G5 freeze review file
+git diff --name-status → tracked diff only: STATUS / TESTING / WORKLOG
+G1 frozen objects diff → empty
+docs/gates docs/archive .agents templates diff → empty
+.github/workflows/ci.yml diff → empty
+backend frontend research scripts deploy diff → empty
+backend/**/db/migration diff → empty
+~~~
+
+**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = FROZEN / ACCEPTED**；**G4 CI evidence routing = FROZEN / ACCEPTED**；**G5 directory closure preflight = FROZEN / ACCEPTED**；**G5 executable candidates = 0**；**G5 implementation = SKIPPED / NOT APPLICABLE**；**G6 deletion batch = READY FOR DEFAULT-EMPTY REVIEW**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G5-DIRECTORY-CLOSURE-PREFLIGHT-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED**。docs-only review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
