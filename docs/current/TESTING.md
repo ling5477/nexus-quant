@@ -2,6 +2,38 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-DOCS-GOVERNANCE-FINAL-FREEZE-REVIEW（2026-06-19）
+
+结论：**PASS / ACCEPTED / FROZEN**。docs-only governance final freeze review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+git 与 G1～G6 链路实测验证：
+
+~~~text
+git status --short → 初始空（G6 已提交 e7159b67）；改动仅 4 个允许文件
+git branch --show-current → dev
+git log --oneline -30 → HEAD = e7159b67 docs(governance): review G6 default-empty deletion batch
+G1 五份冻结对象 diff → empty（zero drift）
+G2 Rule 16 五级优先级 → docs/DOC_RULES.md 完整未削弱
+G2 API.md / DB_SCHEMA.md GateI 链接 → ../gates/gate-i/（相对）；leading-slash malformed = 0
+G3 canonical GateJ files → docs/gates/gate-j/ 28 files
+G3 GateJ compatibility stub → 17，指向 ../gates/gate-j/
+G3 RUNBOOK.md → current-control（# Current Runbook，62 行），未 stub 化
+G3 9 份 DIVERGED current 活文档 → 未误处理
+G4 canonical CI evidence → docs/evidence/ci/ 20 个 NQ_CI_*.md
+G4 CI source stub → 20，指向 ../evidence/ci/（示例 12 行 stub）
+G4 CI current authority ×2 → EXISTS（NQ_CI_BASELINE_PLAN / NQ_CI_SECURITY_GUARD_PLAN）
+G4 CI_BASELINE_INDEX.md / docs/evidence/ci/README.md → 仅导航，不取代 current authority
+G5 executable candidates → 0；implementation → SKIPPED / NOT APPLICABLE
+G6 DELETE_CANDIDATES → 0；deletion list → 未创建
+保留对象 → docs/gates(28)/archive(22)/evidence/ci(21)/baselines/CI authority×2/RUNBOOK/17 stub/20 stub/9 DIVERGED 全部 EXISTS
+git diff --check → PASS（仅 LF/CRLF warning）
+docs/gates docs/archive docs/evidence docs/baselines .agents templates diff → empty
+.github/workflows/ci.yml diff → empty
+backend frontend research scripts deploy + backend/**/db/migration diff → empty
+~~~
+
+**NQ Docs Governance Consolidation = FROZEN / ACCEPTED**；**G1～G5 = FROZEN / ACCEPTED**；**G5 executable candidates = 0**；**G5 implementation = SKIPPED / NOT APPLICABLE**；**G6 deletion batch = DEFAULT EMPTY / ACCEPTED**；**DELETE_CANDIDATES = 0**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
+
 ## NQ-DOCS-GOVERNANCE-G6-DEFAULT-EMPTY-DELETION-REVIEW（2026-06-19）
 
 结论：**PASS / ACCEPTED**。docs-only deletion-batch default-empty review，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。

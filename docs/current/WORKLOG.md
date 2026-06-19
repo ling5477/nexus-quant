@@ -2,6 +2,28 @@
 
 日期：2026-05-16
 
+## NQ-DOCS-GOVERNANCE-FINAL-FREEZE-REVIEW
+
+日期：2026-06-19
+
+### 目标与范围
+
+确认 NQ post-CI 文档治理收口链路 G1～G6 全部闭合，并冻结为最终文档治理基线。本轮仅新增 `NQ_DOCS_GOVERNANCE_FINAL_FREEZE_REVIEW.md` 并更新 `STATUS.md` / `TESTING.md` / `WORKLOG.md`；不移动、删除、重命名、归档、stub 化或复制任何文档，不创建 deletion list，不修改 G1～G6 冻结对象、docs/gates/archive/evidence/baselines、.agents/templates、workflow、backend、frontend、research、scripts、deploy、migration、测试或依赖。
+
+### 核验要点
+
+- G1 五份冻结对象 zero drift；唯一 current authority 模型、历史证据导航模型、迁移唯一来源、278/283 快照口径未回写或重算。
+- G2 current-control 语义基线保持：GateJ=completed historical gate；GateK CI mainline=COMPLETED/ACCEPTED；5A≠authenticated/backend/交易链路/真实 provider 覆盖；5B-ENV/5B-SMOKE/4F-B～4F-F/static 未误标 completed；Rule 16 五级优先级完整；API.md / DB_SCHEMA.md GateI 链接相对（`../gates/gate-i/`），无 leading-slash malformed link。
+- G3：17 个 GateJ stub 存在并指向 `../gates/gate-j/<same filename>`；17 canonical 在 `docs/gates/gate-j/`；fragment 入链 0；RUNBOOK.md 仍 current-control；9 份 DIVERGED 未误处理；docs/gates/** 未改写。
+- G4：20 个 CI canonical evidence 在 `docs/evidence/ci/`；20 个 source stub 指向 `../evidence/ci/`；2 份 CI current authority 完整；CI_BASELINE_INDEX / evidence README 仅导航。
+- G5 executable candidates=0；implementation=SKIPPED/NOT APPLICABLE；§1B/§1C 的 “G5 可选” 非候选；§1D 属 G4。
+- G6 DELETE_CANDIDATES=0；deletion list 未创建；G6 是 default-empty deletion review，非实际删除批次；未来删除须另起 deletion proposal。
+- 保留对象 docs/gates/archive/evidence/ci/baselines、G1～G6 证据、GateJ canonical、17+20 stub、2 份 CI authority、RUNBOOK、9 份 DIVERGED、所有 P2/P3 residual/backlog/blocked/optional 记录全部保留。
+
+### 结论
+
+**NQ-DOCS-GOVERNANCE-FINAL-FREEZE-REVIEW：PASS / ACCEPTED / FROZEN**。P0/P1/P2/P3=0。**NQ Docs Governance Consolidation = FROZEN / ACCEPTED**。最终冻结不是 current-control 文档 blob lock；STATUS/TESTING/WORKLOG/ROADMAP/README 后续仍可追加真实状态，但不得破坏已冻结权威、证据链、兼容路径、目录语义和默认不删除原则（失效条件见 final freeze review §6）。
+
 ## NQ-DOCS-GOVERNANCE-G6-DEFAULT-EMPTY-DELETION-REVIEW
 
 日期：2026-06-19
