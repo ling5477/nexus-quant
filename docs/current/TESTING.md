@@ -2,6 +2,29 @@
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
 
+## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN（2026-06-19）
+
+结论：**PASS / READY FOR REVIEW（plan-only）**。本轮为 CI/security planning + 环境边界只读盘点 + 文档登记，**未运行**后端 / 前端 / Python / CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
+
+未跑测试原因：本轮只新增 `docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md` 并追加 `NQ_CI_BASELINE_PLAN.md` / `README.md` / `ROADMAP.md` / `TESTING.md` / `WORKLOG.md`；不触碰 `mvn` / `npm` / `pytest` 链路，按文档规则可不跑全量测试。
+
+只读盘点与 git 实测复核：
+
+~~~text
+git branch --show-current → dev
+只读检查 → .github/workflows/ci.yml（8 jobs）、backend application*.yml（local/test/prod/freeze/gated-verify）、frontend playwright.ci.config.ts、research/py、.env.example、docs/current/*
+CI 真实 secret 注入 → 0（仅 CI 控制值 + disposable DB（已 ::add-mask::）+ 公开 host denylist）
+permission probe 默认 → NoRealExchangeCredentialPermissionProbePort → SKIPPED / REAL_EXCHANGE_PROBE_DISABLED（已确认）
+未读取真实 .env / secrets / credentials / logs / dumps / backups → 确认
+git diff --check → 期望 PASS（仅 LF/CRLF warning）
+git diff -- .github/workflows → 期望 empty
+git diff -- backend frontend research scripts deploy → 期望 empty
+git diff -- backend/**/db/migration → 期望 empty
+变更范围 → 仅 docs/current（新增 1 + 修改 5）
+~~~
+
+P0/P1/P2/P3：P0=0；P1=2（无统一 ci/paper profile、无运行态 env 冲突 fail-closed）；P2=3（real base-url 默认值误导、no-outbound 仅 test-scope、占位标记不统一）；P3=2（5A 状态措辞漂移、控制变量多为新增）。Batch 5B-ENV = PLAN ONLY；Batch 5B-SMOKE = BLOCKED BY 5B-ENV。
+
 ## NQ-DOCS-CURRENT-LEANUP-R3-FINAL-FREEZE（2026-06-19）
 
 结论：**PASS / ACCEPTED / FROZEN**。docs-only final freeze of R1 (`ca77460f`) + R2 (`d4095ded`)，**未运行**后端/前端/Python/CI 测试（无代码、workflow、migration、依赖或运行时逻辑变更）。
