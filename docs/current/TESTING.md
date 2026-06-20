@@ -1,3 +1,11 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-REVIEW（2026-06-20）
+
+结论：**BLOCKED / NO TARGET GITHUB ACTIONS RUN**。目标 implementation commit `0ef4dbbeb769bf31a9efa768911ccc79b600383d` 没有 GitHub Actions run；`gh run list --commit 0ef4dbbeb769bf31a9efa768911ccc79b600383d` 返回空数组。
+
+当前可见非目标 run：branch `docs/ci-5b-env-plan-review` 最近 run `27838086804` 是 old plan-review SHA `266cffd9...`，不能作为 5B-ENV implementation first-run evidence。
+
+状态：Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN；first-run review = BLOCKED / NO TARGET RUN；Batch 5B-SMOKE = STILL BLOCKED。
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-IMPL（2026-06-20）
 
 结论：**IMPLEMENTED / PENDING FIRST CI RUN**。Batch 5B-ENV 已完成本地最小实现；Batch 5B-SMOKE = **STILL BLOCKED**。

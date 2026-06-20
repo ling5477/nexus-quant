@@ -333,3 +333,9 @@ NQ GateK CI/security Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN
 - 更新 `.env.example`：endpoint / credential / private key / passphrase 示例统一为 `PLACEHOLDER_ONLY` / `DO_NOT_COMMIT_REAL_VALUE` / `REPLACE_WITH_LOCAL_PLACEHOLDER`。
 
 边界：未读取真实 `.env`；未调用真实交易所；未新增 HTTP client；未新增 RealClient / real provider / real exchange adapter；未修改 migration / frontend / research / scripts / deploy；未启动 5B-SMOKE；LIVE / AI / DH runtime 均未开启。
+
+## 14. First-run review addendum（2026-06-20）
+
+状态：**first-run review = BLOCKED / NO TARGET RUN**。
+
+目标 implementation commit `0ef4dbbeb769bf31a9efa768911ccc79b600383d` 没有 GitHub Actions run；不得写成 first green、accepted 或 frozen。Batch 5B-ENV 保持 `IMPLEMENTED / PENDING FIRST CI RUN`；Batch 5B-SMOKE 保持 `STILL BLOCKED`。

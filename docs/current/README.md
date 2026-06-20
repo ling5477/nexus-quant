@@ -30,6 +30,7 @@ AI not started；DH not integrated；LIVE disabled；real provider / RealClient 
 - [NQ_CI_SECURITY_GUARD_PLAN.md](NQ_CI_SECURITY_GUARD_PLAN.md)
 - [NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md](NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md)：Batch 5B-ENV env/secret/no-outbound guard（plan ACCEPTED；implementation IMPLEMENTED / PENDING FIRST CI RUN；5B-SMOKE STILL BLOCKED）。
 - [NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md](NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md)：Batch 5B-ENV plan review（PASS / ACCEPTED）。
+- [NQ_CI_SECURITY_BATCH_5B_ENV_FIRST_RUN_REVIEW.md](NQ_CI_SECURITY_BATCH_5B_ENV_FIRST_RUN_REVIEW.md)：Batch 5B-ENV first-run review（BLOCKED / NO TARGET RUN）。
 - CI baseline 导航索引：`docs/baselines/CI_BASELINE_INDEX.md`
 
 ## GateK / 规划与其他当前控制文档

@@ -1,3 +1,12 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-REVIEW（2026-06-20）
+
+只读评审 5B-ENV implementation first run。GitHub Actions 未找到目标 implementation commit `0ef4dbbeb769bf31a9efa768911ccc79b600383d` 的 run：`gh run list --commit ...` 返回 `[]`。当前分支最近 run `27838086804` 为旧 plan-review commit `266cffd9...`，不能证明 implementation。
+
+- Review decision：BLOCKED / NO TARGET GITHUB ACTIONS RUN。
+- 未读取真实 `.env`、secret、credential、logs、dump、backup。
+- 未修改 workflow / Java / TypeScript / Python / migration / frontend / research / scripts / deploy。
+- Batch 5B-ENV 保持 IMPLEMENTED / PENDING FIRST CI RUN；Batch 5B-SMOKE STILL BLOCKED；不允许进入 freeze。
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-IMPL（2026-06-20）
 
 实现 Batch 5B-ENV 最小运行态和 CI 环境安全边界。范围限定为 `.github/workflows/ci.yml`、`backend/nq-app` 配置/guard/测试、根 `.env.example`、`docs/current`；不启动 5B-SMOKE，不接真实交易所，不启 LIVE / AI / DH runtime，不实现 RealClient / real provider / real exchange adapter。
