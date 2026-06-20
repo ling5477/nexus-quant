@@ -4,7 +4,7 @@
 日期：2026-06-19
 分支：dev
 任务类型：CI_SECURITY_PLANNING + ENVIRONMENT_BOUNDARY_REVIEW + SECRET_GUARD_REVIEW + NO_OUTBOUND_BOUNDARY_REVIEW + DOCUMENTATION
-状态：**Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION**；**Batch 5B-ENV implementation = NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**。
+状态：**Batch 5B-ENV plan = ACCEPTED**；**Batch 5B-ENV implementation = IMPLEMENTED / PENDING FIRST CI RUN**；**Batch 5B-SMOKE = STILL BLOCKED**。
 
 > 本文是 planning-only 文档。本轮不创建 / 不修改任何 workflow，不改代码，不新增 API，不新增 migration，不启动 LIVE / AI / DH runtime / real provider，不做真实外联。所有 "implementation" 措辞均指**后续另起批次**才执行，不代表已实现。
 
@@ -74,7 +74,7 @@
 
 ### 1.9 文档是否把 5B-SMOKE 写成可直接启动
 
-- **否（当前状态正确）**。NQ_CI_BASELINE_PLAN.md、ROADMAP.md、STATUS.md 均保持 5B-SMOKE blocked 口径；本 review 后 current docs 写明 Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION、Batch 5B-ENV implementation = NOT STARTED、Batch 5B-SMOKE = BLOCKED BY 5B-ENV。
+- **否（当前状态正确）**。NQ_CI_BASELINE_PLAN.md、ROADMAP.md、STATUS.md 均保持 5B-SMOKE blocked 口径；本 review 后 current docs 写明 Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION、Batch 5B-ENV implementation = IMPLEMENTED / PENDING FIRST CI RUN、Batch 5B-SMOKE = STILL BLOCKED。
 - P3 级文档漂移已由 plan review 的允许 status update 收口：NQ_CI_BASELINE_PLAN.md Batch 5 段已改为 Batch 5A FROZEN / ACCEPTED，5B-ENV 仍仅为 plan accepted，implementation 未启动。
 
 ---
@@ -293,9 +293,9 @@ P0：本轮无。
 
 ## 12. 回滚边界
 
-- 本轮为纯文档新增 / 追加。回滚方式：`git revert` 或 `git checkout -- docs/current/<file>` 还原本轮文档变更即可，无运行态副作用。
-- 不涉及 workflow / 代码 / migration / 依赖，回滚不影响 CI 行为、不影响 backend / frontend / research 构建与测试。
-- 回滚后 CI 状态回到：Batch 5A = FROZEN / ACCEPTED；5B-ENV = NOT STARTED；5B-SMOKE = BLOCKED BY 5B-ENV（与回滚前一致，因为本轮未改变实现态）。
+- 本轮已包含 workflow、backend 配置/guard/测试、.env.example 与 docs/current 变更。回滚方式：git revert 本轮提交，或逐文件还原 .github/workflows/ci.yml、backend/nq-app/src/main/resources/application*.yml、backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/*、backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/*、.env.example、相关 docs/current 文件。
+- 不涉及 migration / API / frontend / research / scripts / deploy；回滚会移除 5B-ENV guard 与 CI env hardening，使状态回到 implementation NOT STARTED。
+- 回滚后 CI 状态回到：Batch 5A = FROZEN / ACCEPTED；5B-ENV implementation = NOT STARTED；5B-SMOKE = BLOCKED BY 5B-ENV。
 
 ---
 
@@ -303,10 +303,10 @@ P0：本轮无。
 
 ```text
 Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION
-Batch 5B-ENV implementation = NOT STARTED
-Batch 5B-SMOKE = BLOCKED BY 5B-ENV
-No workflow changed
-No code changed
+Batch 5B-ENV implementation = IMPLEMENTED / PENDING FIRST CI RUN
+Batch 5B-SMOKE = STILL BLOCKED
+Workflow changed: no-outbound-guard/backend env hardening only
+Backend guard/config/test changed only
 No migration changed
 No real credential read
 No outbound call
@@ -315,5 +315,21 @@ No AI
 No DH runtime
 No RealClient
 No real provider
-NQ GateK CI/security boundary = planning continues
+NQ GateK CI/security Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN
 ```
+
+## 13. Implementation addendum（2026-06-20）
+
+任务：NQ-CI-SECURITY-BATCH-5B-ENV-IMPL
+状态：**Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN**；**Batch 5B-SMOKE = STILL BLOCKED**。
+
+本轮已落地 5B-ENV 的最小运行态和 CI 环境安全边界：
+
+- 新增 `backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/EnvSafetyGuardConfiguration.java`：Spring 启动期 fail-closed guard，不读取真实 `.env`，错误信息只输出配置名和冲突类型。
+- 新增 `backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/EnvSafetyValidator.java`：纯 Java 冲突矩阵，覆盖 LIVE/no-outbound、CI/LIVE、CI/real provider、test/real exchange、no-outbound/real endpoint、CI/test credential material、AI/DH runtime。
+- 新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/EnvSafetyValidatorTest.java`：8 个回归测试覆盖 5B-ENV fail-closed 行为和统一 placeholder。
+- 新增 `application-ci.yml` / `application-paper.yml`，并更新 `application.yml` / `application-test.yml`：CI/test/paper 默认 no-outbound，LIVE/AI/DH/real provider/real exchange 默认 false，交易所 endpoint 默认 placeholder。
+- 更新 `.github/workflows/ci.yml`：仅增强既有 `no-outbound-guard` 与 `backend` job 的安全 env 和 5B-ENV validator 测试；不新增 secret，不改变 Batch 1-5A 语义，不启动 5B-SMOKE。
+- 更新 `.env.example`：endpoint / credential / private key / passphrase 示例统一为 `PLACEHOLDER_ONLY` / `DO_NOT_COMMIT_REAL_VALUE` / `REPLACE_WITH_LOCAL_PLACEHOLDER`。
+
+边界：未读取真实 `.env`；未调用真实交易所；未新增 HTTP client；未新增 RealClient / real provider / real exchange adapter；未修改 migration / frontend / research / scripts / deploy；未启动 5B-SMOKE；LIVE / AI / DH runtime 均未开启。

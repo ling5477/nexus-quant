@@ -1,0 +1,36 @@
+spring:
+  config:
+    activate:
+      on-profile: ci
+
+nq:
+  env-safety:
+    # Why: ci profile 是 5B-ENV 的 merge-blocking 默认安全边界；真实外联和真实 provider 必须显式失败。
+    ci: ${CI:true}
+    live-enabled: ${NQ_LIVE_ENABLED:false}
+    ai-enabled: ${NQ_AI_ENABLED:false}
+    dh-runtime-enabled: ${NQ_DH_RUNTIME_ENABLED:false}
+    real-provider-enabled: ${NQ_REAL_PROVIDER_ENABLED:false}
+    real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
+    real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
+    no-outbound: ${NQ_NO_OUTBOUND:true}
+  okx:
+    env: ${NQ_OKX_ENV:dome}
+    base-url: ${NQ_OKX_BASE_URL:PLACEHOLDER_ONLY}
+    ws-url: ${NQ_OKX_WS_URL:PLACEHOLDER_ONLY}
+    ws:
+      enabled: ${NQ_OKX_WS_ENABLED:false}
+    recovery:
+      enabled: ${NQ_OKX_RECOVERY_ENABLED:false}
+  binance:
+    dome:
+      base-url: ${NQ_BINANCE_DOME_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_DOME_WS_URL:PLACEHOLDER_ONLY}
+    real:
+      base-url: ${NQ_BINANCE_REAL_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_REAL_WS_URL:PLACEHOLDER_ONLY}
+    ws:
+      enabled: ${NQ_BINANCE_WS_ENABLED:false}
+  instrument:
+    catalog-sync:
+      enabled: ${NQ_INSTRUMENT_CATALOG_SYNC_ENABLED:false}

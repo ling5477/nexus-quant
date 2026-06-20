@@ -1,3 +1,17 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-IMPL（2026-06-20）
+
+实现 Batch 5B-ENV 最小运行态和 CI 环境安全边界。范围限定为 `.github/workflows/ci.yml`、`backend/nq-app` 配置/guard/测试、根 `.env.example`、`docs/current`；不启动 5B-SMOKE，不接真实交易所，不启 LIVE / AI / DH runtime，不实现 RealClient / real provider / real exchange adapter。
+
+- 后端：新增 `EnvSafetyGuardConfiguration` + `EnvSafetyValidator`，在 Spring 启动期 fail closed；guard 不读取真实 `.env`，不打印 secret value。
+- 测试：新增 `EnvSafetyValidatorTest`，覆盖 LIVE+NO_OUTBOUND、CI+LIVE、CI+real provider、test+real exchange、no-outbound+real endpoint、CI/test credential material、placeholder、AI/DH runtime；复用并扩展 `NoOutboundExchangeGuardTest` 的 CI job 覆盖。
+- 配置：新增 `application-ci.yml` / `application-paper.yml`；更新 `application.yml` / `application-test.yml`，CI/test/paper 默认 no-outbound，LIVE/AI/DH/real provider/real exchange 默认 false，endpoint 默认 placeholder。
+- `.env.example`：交易所 endpoint / credential / private key / passphrase 示例统一为 `PLACEHOLDER_ONLY` / `DO_NOT_COMMIT_REAL_VALUE` / `REPLACE_WITH_LOCAL_PLACEHOLDER`。
+- Workflow：仅增强 `no-outbound-guard` / `backend` job；新增 5B-ENV guard env 与 validator test；未新增 secret；未改变 Batch 1-5A 语义；未启动 5B-SMOKE。
+- 本地目标验证：`mvn -f backend/pom.xml -pl nq-app -am test "-Dtest=EnvSafetyValidatorTest,NoOutboundExchangeGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" "-Dnq.no-outbound.guard.required=true"` 通过，11 tests / 0 failures / 0 errors / 0 skipped。
+- 状态：Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN；Batch 5B-SMOKE = STILL BLOCKED。
+完整收尾验证：git diff --check exit 0（仅 LF/CRLF 工作树提示）；mvn -f backend/pom.xml test 通过，Reactor 23/23 SUCCESS，BUILD SUCCESS；migration diff 为空；frontend / research / scripts / deploy diff 为空。
+
+
 # Worklog: DOC-CLEAN + BASELINE-FIX
 
 日期：2026-05-16

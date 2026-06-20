@@ -42,6 +42,19 @@ jobs:
 
     env:
       CI: "true"
+      NQ_NO_OUTBOUND: "true"
+      NQ_LIVE_ENABLED: "false"
+      NQ_AI_ENABLED: "false"
+      NQ_DH_RUNTIME_ENABLED: "false"
+      NQ_REAL_PROVIDER_ENABLED: "false"
+      NQ_REAL_CLIENT_ENABLED: "false"
+      NQ_REAL_EXCHANGE_ENABLED: "false"
+      NQ_OKX_BASE_URL: PLACEHOLDER_ONLY
+      NQ_OKX_WS_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_DOME_BASE_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_REAL_BASE_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_DOME_WS_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_REAL_WS_URL: PLACEHOLDER_ONLY
       NQ_NO_OUTBOUND_DENYLIST: >-
         okx.com
         www.okx.com
@@ -91,6 +104,9 @@ jobs:
             NQ_OKX_DOME_API_KEY
             NQ_OKX_DOME_API_SECRET
             NQ_OKX_DOME_API_PASSPHRASE
+            NQ_OKX_REAL_API_KEY
+            NQ_OKX_REAL_API_SECRET
+            NQ_OKX_REAL_API_PASSPHRASE
             NQ_BINANCE_DOME_API_KEY
             NQ_BINANCE_DOME_API_SECRET
             NQ_BINANCE_DOME_PRIVATE_KEY
@@ -101,14 +117,27 @@ jobs:
             NQ_BINANCE_REAL_PRIVATE_KEY_PATH
             NQ_BINANCE_WS_DIAGNOSTIC_ENABLED
             NQ_BINANCE_WS_LIVE_DIAGNOSTIC
-            NQ_LIVE_ENABLED
-            NQ_REAL_PROVIDER_ENABLED
-            NQ_REAL_CLIENT_ENABLED
           )
 
           for name in "${forbidden_env_names[@]}"; do
             if [[ -n "${!name-}" ]]; then
-              echo "Forbidden exchange credential/live env is set: ${name}" >&2
+              echo "Forbidden exchange credential env is set: ${name}" >&2
+              exit 1
+            fi
+          done
+
+          forbidden_true_names=(
+            NQ_LIVE_ENABLED
+            NQ_AI_ENABLED
+            NQ_DH_RUNTIME_ENABLED
+            NQ_REAL_PROVIDER_ENABLED
+            NQ_REAL_CLIENT_ENABLED
+            NQ_REAL_EXCHANGE_ENABLED
+          )
+
+          for name in "${forbidden_true_names[@]}"; do
+            if [[ "${!name-}" == "true" ]]; then
+              echo "Forbidden CI/test runtime flag is true: ${name}" >&2
               exit 1
             fi
           done
@@ -158,7 +187,7 @@ jobs:
           set -euo pipefail
 
           mvn -f backend/pom.xml -pl nq-app -am test \
-            -Dtest=NoOutboundExchangeGuardTest \
+            -Dtest=NoOutboundExchangeGuardTest,EnvSafetyValidatorTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.no-outbound.guard.required=true
 
@@ -183,6 +212,19 @@ jobs:
 
     env:
       CI: "true"
+      NQ_NO_OUTBOUND: "true"
+      NQ_LIVE_ENABLED: "false"
+      NQ_AI_ENABLED: "false"
+      NQ_DH_RUNTIME_ENABLED: "false"
+      NQ_REAL_PROVIDER_ENABLED: "false"
+      NQ_REAL_CLIENT_ENABLED: "false"
+      NQ_REAL_EXCHANGE_ENABLED: "false"
+      NQ_OKX_BASE_URL: PLACEHOLDER_ONLY
+      NQ_OKX_WS_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_DOME_BASE_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_REAL_BASE_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_DOME_WS_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_REAL_WS_URL: PLACEHOLDER_ONLY
       NQ_DB_URL: jdbc:postgresql://localhost:5432/nexus_quant
       NQ_DB_USER: postgres
       NQ_DB_PASSWORD: "123456"

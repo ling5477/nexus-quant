@@ -134,3 +134,12 @@ git checkout -- docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md docs/cur
 ```
 
 若已提交，则使用 `git revert <review-commit>`。回滚不影响 workflow、backend、frontend、research、scripts、deploy 或 migration。
+
+## Implementation follow-up（2026-06-20）
+
+后续实现批次 `NQ-CI-SECURITY-BATCH-5B-ENV-IMPL` 已按本 review 允许范围落地最小 guard。
+
+- Batch 5B-ENV = **IMPLEMENTED / PENDING FIRST CI RUN**。
+- Batch 5B-SMOKE = **STILL BLOCKED**。
+- 本 review 的历史结论仍为 plan review PASS / ACCEPTED；新增实现不代表 5B-SMOKE started，不代表 real provider / RealClient / real exchange adapter implemented。
+- 本轮 workflow 只增强既有 `no-outbound-guard` / `backend` job 的安全 env 与 validator test；未新增 secret，未启动 5B-SMOKE。

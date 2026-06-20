@@ -24,6 +24,17 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
 
 nq:
+  env-safety:
+    # Why: 5B-ENV 把 CI/test/paper 的安全默认值集中到启动期 guard；local 默认不启 no-outbound，
+    # 但 CI/test/profile 会在 guard 内自动提升为 no-outbound，避免误入真实外联。
+    ci: ${CI:false}
+    live-enabled: ${NQ_LIVE_ENABLED:false}
+    ai-enabled: ${NQ_AI_ENABLED:false}
+    dh-runtime-enabled: ${NQ_DH_RUNTIME_ENABLED:false}
+    real-provider-enabled: ${NQ_REAL_PROVIDER_ENABLED:false}
+    real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
+    real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
+    no-outbound: ${NQ_NO_OUTBOUND:false}
   account:
     credentials:
       master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY:change-me-account-credentials-master-key-123456}
@@ -45,11 +56,12 @@ nq:
   okx:
     # Why: 第十九批开始把 dome/real 两套凭证切换收口到统一运行时变量；敏感值仍只从环境变量读取，不写入仓库。
     env: ${NQ_OKX_ENV:dome}
-    base-url: ${NQ_OKX_BASE_URL:https://www.okx.com}
+    # Why: 5B-ENV 禁止把真实交易所 endpoint 写成 CI/test 默认值；真实 URL 只能由显式本地/受控环境注入。
+    base-url: ${NQ_OKX_BASE_URL:PLACEHOLDER_ONLY}
     api-key: ${NQ_OKX_API_KEY:}
     api-secret: ${NQ_OKX_API_SECRET:}
     api-passphrase: ${NQ_OKX_API_PASSPHRASE:}
-    ws-url: ${NQ_OKX_WS_URL:}
+    ws-url: ${NQ_OKX_WS_URL:PLACEHOLDER_ONLY}
     ws:
       # Why: WS 是 GateC-1.1 的可选加速层，默认关闭，避免非预期连私有 WS。
       enabled: ${NQ_OKX_WS_ENABLED:false}
@@ -63,6 +75,12 @@ nq:
       # Why: formal 环境默认保留恢复链；local 是否启动由 profile 覆写，避免把交易所恢复任务误下沉到纯前端验收流程。
       enabled: ${NQ_OKX_RECOVERY_ENABLED:true}
   binance:
+    dome:
+      base-url: ${NQ_BINANCE_DOME_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_DOME_WS_URL:PLACEHOLDER_ONLY}
+    real:
+      base-url: ${NQ_BINANCE_REAL_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_REAL_WS_URL:PLACEHOLDER_ONLY}
     ws:
       # Why: Binance 私有 WS 在 GateC-2.1 只是可选加速层，默认关闭，避免在未验收环境误连用户数据流。
       enabled: ${NQ_BINANCE_WS_ENABLED:false}

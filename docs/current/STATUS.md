@@ -6,6 +6,10 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- GateK CI Security Batch 5B-ENV implementation completed（2026-06-20）：**IMPLEMENTED / PENDING FIRST CI RUN**。
+  已新增 EnvSafetyGuardConfiguration / EnvSafetyValidator 启动期 fail-closed guard，新增 EnvSafetyValidatorTest 回归，新增 application-ci.yml / application-paper.yml 并更新 test/default profile safety defaults，.env.example 统一 placeholder，.github/workflows/ci.yml 仅增强 no-outbound-guard / backend job 的安全 env 与 validator test。
+  本轮未读取真实 .env / secrets / credentials；未调用真实交易所；未新增 HTTP client；未新增 migration / API；未修改 frontend / research / scripts / deploy；未启动 5B-SMOKE；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter / real permission probe 均未开启或实现。
+  本地目标验证已通过：EnvSafetyValidatorTest 8 tests + NoOutboundExchangeGuardTest 3 tests，合计 11/0/0/0。Batch 5B-SMOKE = **STILL BLOCKED**，需等待 5B-ENV first CI run / freeze 后另起。
 - NQ docs **current 目录物理瘦身 Round 3 final freeze** completed（2026-06-19）：**PASS / ACCEPTED / FROZEN**。详见 `NQ_DOCS_CURRENT_CLEANUP_R3_FINAL_FREEZE.md`。
   冻结 `docs/current` 物理瘦身结果（R1 commit `ca77460f` + R2 review commit `d4095ded`，二者一致）：**NQ Docs Current Cleanup = FROZEN / ACCEPTED / CLOSED**；Round = 3 / 3；**Round 4 = NOT ALLOWED**。cleanup-result 基线：current root markdown 96 → **46**；moved out of current = **51**（governance 17 + GateJ stub 14 + CI stub 20）；known compatibility residual = **3**；P3 informational = **2**；historical evidence deleted = 0；code/workflow/migration changed = 0。
   计数口径：`current markdown count = 46` 为 physical-reduction cleanup-result 基线；R2/R3 的 review/freeze audit-trail 文档按设计保留在 current，使 live `git ls-files docs/current/*.md` = **48**（R3 提交后），如实可复核，二者不矛盾。
