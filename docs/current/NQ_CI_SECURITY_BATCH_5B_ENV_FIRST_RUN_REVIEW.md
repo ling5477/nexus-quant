@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-REVIEW
 日期：2026-06-20
-状态：**SUPERSEDED**。本文件第 1–10 节是 first-run review 当时（commit `0ef4dbbe` 尚无 target run）的历史结论，第 11 节记录 first run RED + fix-forward，均保留作记录。**当前权威状态见第 12 节：fix rerun GREEN（run `27876451289`），Batch 5B-ENV = FIX RERUN GREEN / READY FOR FREEZE（尚未 freeze）。**
+状态：**SUPERSEDED / FROZEN**。本文件第 1–10 节是 first-run review 当时（commit `0ef4dbbe` 尚无 target run）的历史结论，第 11 节记录 first run RED + fix-forward，第 12 节记录 fix rerun GREEN，均保留作记录。**当前权威状态：Batch 5B-ENV = FROZEN / ACCEPTED（freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`，evidence run `27876451289` / headSha `8ba140d9`）；Batch 5B-SMOKE = STILL BLOCKED。**
 
 ## 1. Review decision
 

@@ -4,7 +4,7 @@
 日期：2026-06-19
 分支：dev
 任务类型：CI_SECURITY_PLANNING + ENVIRONMENT_BOUNDARY_REVIEW + SECRET_GUARD_REVIEW + NO_OUTBOUND_BOUNDARY_REVIEW + DOCUMENTATION
-状态：**Batch 5B-ENV plan = ACCEPTED**；**Batch 5B-ENV implementation = FIX RERUN GREEN / READY FOR FREEZE**（见 §16；first run RED → fix-forward → rerun GREEN run `27876451289`；尚未 freeze）；**Batch 5B-SMOKE = STILL BLOCKED**。
+状态：**Batch 5B-ENV plan = ACCEPTED**；**Batch 5B-ENV implementation = FROZEN / ACCEPTED**（见 §17；freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`，evidence run `27876451289` / headSha `8ba140d9` / 8 jobs success）；**Batch 5B-SMOKE = STILL BLOCKED**。
 
 > 本文是 planning-only 文档。本轮不创建 / 不修改任何 workflow，不改代码，不新增 API，不新增 migration，不启动 LIVE / AI / DH runtime / real provider，不做真实外联。所有 "implementation" 措辞均指**后续另起批次**才执行，不代表已实现。
 
@@ -364,3 +364,10 @@ NQ GateK CI/security Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN
 fix commit `8ba140d9` push 到 `dev` 后触发目标 rerun `27876451289`：workflow `NQ CI Baseline`，event push，headSha `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`（== `dev` HEAD == `origin/dev`），conclusion **success**，8 个 job（diff-check / no-outbound-guard / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan）全部 success。`no-outbound-guard` 与 `backend` 已恢复；`EnvSafetyValidatorTest` 8/0/0/0、`NoOutboundExchangeGuardTest` 3/0/0/0 实跑通过（非 skip）。
 
 本轮 review-only：仅更新 `docs/current/*`，未改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy。详见 `docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_FIRST_RUN_REVIEW.md` §12。进入 freeze 须另起 freeze 工作单。
+
+## 17. Freeze addendum（2026-06-21）
+
+任务：NQ-CI-SECURITY-BATCH-5B-ENV-FREEZE
+状态：**Batch 5B-ENV = FROZEN / ACCEPTED**；**Batch 5B-SMOKE = STILL BLOCKED**。
+
+Batch 5B-ENV 已冻结。freeze evidence = green run `27876451289`（NQ CI Baseline / push / completed / success，headSha `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`，8 jobs all success，`EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0）。冻结边界：env guard frozen、no-outbound compatibility frozen、secret placeholder boundary frozen、CI trigger boundary frozen；5B-SMOKE 仍 blocked。不可变 freeze 卷宗见 `docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`。本轮 docs-only，未改 workflow / 代码 / 测试 / 配置 / migration / frontend / research / scripts / deploy。

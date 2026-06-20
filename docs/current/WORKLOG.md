@@ -1,3 +1,15 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FREEZE（2026-06-21）
+
+将 Batch 5B-ENV 固化为 FROZEN / ACCEPTED，形成不可变 freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`。docs-only，未启动 5B-SMOKE，未新增代码，未改 workflow。
+
+- freeze evidence：green run `27876451289`（NQ CI Baseline / push / completed / success，headSha `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`，8 jobs all success，`EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0）。
+- dev HEAD `06d8fc62` 含目标 headSha `8ba140d9`，其后仅纯文档提交；`ci.yml` 自 green run 起未变更。
+- RED 根因与修复：root cause = workflow 注入 forbidden env names（`NQ_LIVE_ENABLED`/`NQ_REAL_PROVIDER_ENABLED`/`NQ_REAL_CLIENT_ENABLED`）；fix = 删除这三项 CI job env 注入（fix commit `8ba140d9`）；no-outbound guard 未放宽；`NoOutboundExchangeGuardTest` 未修改。
+- 冻结边界：env guard frozen、no-outbound compatibility frozen、secret placeholder boundary frozen、CI trigger boundary frozen（`pull_request:[dev]`+`push:[dev]`+`workflow_dispatch`，8 job 未删，未新增 secret）；5B-SMOKE 仍 blocked。
+- 新增/修改文件：新增 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`；更新 FIRST_RUN_REVIEW / PLAN / BASELINE_PLAN / README / STATUS / ROADMAP / TESTING / WORKLOG。其余 diff（workflow/code/migration/frontend/research/scripts/deploy/.env.example）为空。
+- 状态：Batch 5B-ENV = FROZEN / ACCEPTED；Batch 5B-SMOKE = STILL BLOCKED（不得写成 READY / STARTED）。
+- No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FIX-CI-RERUN-REVIEW（2026-06-21）
 
 只评审 fix commit 后 `dev` 最新 GitHub Actions run，判断是否可进入 5B-ENV freeze 准备。review-only，仅改 `docs/current/*`。

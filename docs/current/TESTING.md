@@ -1,3 +1,30 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FREEZE（2026-06-21）
+
+结论：**PASS / FROZEN / ACCEPTED**。docs-only freeze，未跑本地测试（无代码 / workflow / 配置 / migration 变更）；冻结依据是不可变 green run 证据。
+
+freeze evidence（GitHub Actions immutable run，re-verified）：
+
+| 项 | 值 |
+| --- | --- |
+| run ID | `27876451289` |
+| workflow / event | NQ CI Baseline / push |
+| headSha | `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`（dev HEAD `06d8fc62` 之 ancestor；其后仅纯文档提交） |
+| status / conclusion | completed / **success** |
+| 8 jobs | diff-check / no-outbound-guard / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan = all success |
+
+测试证据（green run 日志，no-outbound-guard 与 backend job 均含）：
+
+```text
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0 -- in ...EnvSafetyValidatorTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in ...NoOutboundExchangeGuardTest
+```
+
+本地只读验证（freeze docs 轮）：`git status --short` 仅 `docs/current/*`（含新增 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`）；`git diff --check` exit 0；`git diff -- "backend/**/db/migration"` 空；`git diff -- frontend research scripts deploy` 空；`git diff -- .github/workflows/ci.yml` 空；`git diff -- backend` 空；`git diff -- .env.example` 空。pushed `ci.yml` 静态确认：`no-outbound-guard`/`backend` job 0 处注入这三个变量，且自 green run `8ba140d9` 起 `ci.yml` 未变更；trigger `pull_request:[dev]`+`push:[dev]`+`workflow_dispatch` 保留；8 job 未删；未新增 secret。
+
+状态：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE = **STILL BLOCKED**。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FIX-CI-RERUN-REVIEW（2026-06-21）
 
 结论：**PASS / ACCEPTED**。fix commit `8ba140d9` 的目标 rerun 全绿。
