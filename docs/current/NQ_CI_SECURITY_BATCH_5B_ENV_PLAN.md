@@ -4,7 +4,7 @@
 日期：2026-06-19
 分支：dev
 任务类型：CI_SECURITY_PLANNING + ENVIRONMENT_BOUNDARY_REVIEW + SECRET_GUARD_REVIEW + NO_OUTBOUND_BOUNDARY_REVIEW + DOCUMENTATION
-状态：**Batch 5B-ENV = PLAN ONLY / READY FOR REVIEW**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**。
+状态：**Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION**；**Batch 5B-ENV implementation = NOT STARTED**；**Batch 5B-SMOKE = BLOCKED BY 5B-ENV**。
 
 > 本文是 planning-only 文档。本轮不创建 / 不修改任何 workflow，不改代码，不新增 API，不新增 migration，不启动 LIVE / AI / DH runtime / real provider，不做真实外联。所有 "implementation" 措辞均指**后续另起批次**才执行，不代表已实现。
 
@@ -74,8 +74,8 @@
 
 ### 1.9 文档是否把 5B-SMOKE 写成可直接启动
 
-- **否（当前状态正确）**。`NQ_CI_BASELINE_PLAN.md`、`ROADMAP.md`、`STATUS.md` 均写明 `5B-ENV = NOT STARTED`、`5B-SMOKE = BLOCKED BY 5B-ENV`。
-- P3 级文档漂移（仅登记，不在本轮修复）：`README.md` / `ROADMAP.md` 称 "Batch 5A FROZEN / ACCEPTED" 与 "CI mainline COMPLETED / ACCEPTED"，而 `NQ_CI_BASELINE_PLAN.md` Batch 5 段仍写 "Batch 5A IMPLEMENTED / READY FOR FIRST-RUN"。本任务以任务事实 `Batch 5A = FROZEN / ACCEPTED` 为准登记，不改写 baseline plan 的 5A 措辞。
+- **否（当前状态正确）**。NQ_CI_BASELINE_PLAN.md、ROADMAP.md、STATUS.md 均保持 5B-SMOKE blocked 口径；本 review 后 current docs 写明 Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION、Batch 5B-ENV implementation = NOT STARTED、Batch 5B-SMOKE = BLOCKED BY 5B-ENV。
+- P3 级文档漂移已由 plan review 的允许 status update 收口：NQ_CI_BASELINE_PLAN.md Batch 5 段已改为 Batch 5A FROZEN / ACCEPTED，5B-ENV 仍仅为 plan accepted，implementation 未启动。
 
 ---
 
@@ -302,7 +302,8 @@ P0：本轮无。
 ## 边界声明
 
 ```text
-Batch 5B-ENV = PLAN ONLY / READY FOR REVIEW
+Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION
+Batch 5B-ENV implementation = NOT STARTED
 Batch 5B-SMOKE = BLOCKED BY 5B-ENV
 No workflow changed
 No code changed

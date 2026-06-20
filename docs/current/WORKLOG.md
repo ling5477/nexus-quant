@@ -2,6 +2,29 @@
 
 日期：2026-05-16
 
+## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN-REVIEW
+
+日期：2026-06-20
+
+### 目标与范围
+
+review-only 审查 docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md 是否可作为 Batch 5B-ENV implementation baseline。只评审 commit 266cffd9 的 6 个 docs/current 文件；不实现 env guard，不修改 workflow，不改代码，不新增 API / migration，不读取真实 .env / secret / credential / logs / dump / backup，不做真实 HTTP 探活，不启动 5B-SMOKE，不启 LIVE / AI / DH runtime / RealClient / real provider。
+
+### 核验结果
+
+- 前置：已切到 docs/ci-5b-env-plan-review，HEAD = 266cffd9 docs(ci): plan Batch 5B environment security boundary，worktree clean；未使用主工作区 1280 个预存改动作为结论来源。
+- PR diff：git diff origin/dev...HEAD --name-status 仅 6 个 docs/current 文件；workflow/code/migration diff 均为空。
+- P1 成立且可接受：无统一 ci / paper profile；无运行态 env 冲突 fail-closed。计划已把二者列为 5B-ENV implementation 前置，不宣称已实现。
+- P2 成立且可接受：application.yml / 根目录 .env.example 含 real base-url / real WS 默认值误导风险；no-outbound 仍偏 test-scope + env-name 校验；占位符标记不统一。计划已给出 5B-ENV-A/B/C/D 收口路径。
+- P3 accepted residual：Batch 5A 局部旧措辞已在允许的 status update 中收口；5B-ENV 新增控制变量仍为后续实现范围。
+- 未发现越界描述：未把 5B-ENV 写成 implemented；未启动 5B-SMOKE；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider。
+- 新增文件：docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md。
+- 修改文件：docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md、docs/current/NQ_CI_BASELINE_PLAN.md、docs/current/README.md、docs/current/ROADMAP.md、docs/current/TESTING.md、docs/current/WORKLOG.md。
+
+### 结论
+
+**NQ-CI-SECURITY-BATCH-5B-ENV-PLAN-REVIEW：PASS / ACCEPTED**。Batch 5B-ENV plan = **ACCEPTED / READY FOR IMPLEMENTATION**；Batch 5B-ENV implementation = **NOT STARTED**；Batch 5B-SMOKE = **BLOCKED BY 5B-ENV**。No workflow changed；No code changed；No migration changed；No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider。
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN
 
 日期：2026-06-19

@@ -1,3 +1,21 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN-REVIEW（2026-06-20）
+
+结论：**PASS / ACCEPTED**。Batch 5B-ENV plan = **ACCEPTED / READY FOR IMPLEMENTATION**；Batch 5B-ENV implementation = **NOT STARTED**；Batch 5B-SMOKE = **BLOCKED BY 5B-ENV**。
+
+本轮为 review-only / docs-only，未运行后端 Maven、前端 build/e2e、Python pytest/mypy/ruff，也未执行真实 HTTP 探活；原因是任务明确禁止实现 env guard、修改 workflow/code/migration、启动 5B-SMOKE 或做真实外联。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| git status --short | **通过** | 切换到 docs/ci-5b-env-plan-review 后 clean baseline。 |
+| git diff --check | **通过** | exit 0。 |
+| git diff --stat | **通过** | clean baseline 时为空；本 review 后仅 docs/current review/status 文档变更。 |
+| git diff origin/dev...HEAD --name-status | **通过** | PR diff 仅 6 个 docs/current 文件：baseline plan、5B-ENV plan、README、ROADMAP、TESTING、WORKLOG。 |
+| git diff -- .github/workflows | **通过** | 空；No workflow changed。 |
+| git diff -- backend frontend research scripts deploy | **通过** | 空；No code changed。 |
+| git diff -- "backend/**/db/migration" | **通过** | 空；No migration changed。 |
+
+边界声明：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider。
+
 # Testing
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。
