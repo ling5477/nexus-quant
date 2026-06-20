@@ -1,3 +1,44 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-IMPL（2026-06-20）
+
+结论：**IMPLEMENTED / PENDING FIRST CI RUN**。Batch 5B-ENV 已完成本地最小实现；Batch 5B-SMOKE = **STILL BLOCKED**。
+
+已执行目标回归：
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app -am test "-Dtest=EnvSafetyValidatorTest,NoOutboundExchangeGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" "-Dnq.no-outbound.guard.required=true"` | **通过** | `EnvSafetyValidatorTest` 8 tests + `NoOutboundExchangeGuardTest` 3 tests，合计 11/0/0/0，`BUILD SUCCESS`。 |
+
+完整收尾验证（同日补充）：
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| git status --short | **通过** | 仅本轮允许范围变更和新增 5B-ENV guard/profile/test 文件。 |
+| git diff --check | **通过** | exit 0；仅 LF/CRLF 工作树提示，无 whitespace error。 |
+| git diff --stat | **通过** | tracked diff 10 files；新增 Java/config/test 文件为 untracked，见 status。 |
+| mvn -f backend/pom.xml test | **通过** | Reactor 23/23 SUCCESS，BUILD SUCCESS；测试汇总无 failures/errors，既有 2 skipped 保持。 |
+| git diff -- backend db migration pathspec | **通过** | 空；未触碰 migration。 |
+| git diff -- frontend research scripts deploy | **通过** | 空；未触碰 frontend / research / scripts / deploy。 |
+
+边界声明：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN-REVIEW（2026-06-20）
+
+结论：**PASS / ACCEPTED**。Batch 5B-ENV plan = **ACCEPTED / READY FOR IMPLEMENTATION**；Batch 5B-ENV implementation = **NOT STARTED**；Batch 5B-SMOKE = **BLOCKED BY 5B-ENV**。
+
+本轮为 review-only / docs-only，未运行后端 Maven、前端 build/e2e、Python pytest/mypy/ruff，也未执行真实 HTTP 探活；原因是任务明确禁止实现 env guard、修改 workflow/code/migration、启动 5B-SMOKE 或做真实外联。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| git status --short | **通过** | 切换到 docs/ci-5b-env-plan-review 后 clean baseline。 |
+| git diff --check | **通过** | exit 0。 |
+| git diff --stat | **通过** | clean baseline 时为空；本 review 后仅 docs/current review/status 文档变更。 |
+| git diff origin/dev...HEAD --name-status | **通过** | PR diff 仅 6 个 docs/current 文件：baseline plan、5B-ENV plan、README、ROADMAP、TESTING、WORKLOG。 |
+| git diff -- .github/workflows | **通过** | 空；No workflow changed。 |
+| git diff -- backend frontend research scripts deploy | **通过** | 空；No code changed。 |
+| git diff -- "backend/**/db/migration" | **通过** | 空；No migration changed。 |
+
+边界声明：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider。
+
 # Testing
 
 本文记录统一验证命令和当前基线验证结果。未执行的验证不能写成通过。

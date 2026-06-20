@@ -2,7 +2,7 @@
 
 任务：NQ-CI-BASELINE-PLAN
 日期：2026-06-14
-状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline FROZEN / ACCEPTED（4C-B pre-upload artifact redaction gate FROZEN / ACCEPTED，immutable green run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`；4C-C log redaction proof FROZEN / ACCEPTED，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0；overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F execution sequence SYNCED / ACCEPTED，4F-A FROZEN / ACCEPTED，4F-B/4F-C/4F-D/4F-E/4F-F OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED；Batch 5 PLAN ONLY / NOT IMPLEMENTED，plan PASS / READY FOR REVIEW；Batch 5B-ENV PLAN ONLY / READY FOR REVIEW（`docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md`：env 分层 / profile·provider 隔离 / no-outbound / secret·redaction / fail-closed / 5B-SMOKE 前置 / 5B-ENV-A..E 批次），Batch 5B-SMOKE BLOCKED BY 5B-ENV
+状态：ACCEPTED；Batch 1 implemented / first green confirmed；Batch 2A FROZEN / ACCEPTED；Batch 2B FROZEN / ACCEPTED；Batch 2C FROZEN / ACCEPTED；2C-HYGIENE-FIX FROZEN / ACCEPTED；Batch 2D FROZEN / ACCEPTED；Batch 2E FROZEN / ACCEPTED；Batch 3 no-outbound guard FROZEN / ACCEPTED（run `27634370657`）；Batch 4A plan review ACCEPTED；Batch 4B secret scan FROZEN / ACCEPTED（run `27674393780`，frozen baseline commit `31540de8`）；Batch 4C overall security artifact/log redaction baseline FROZEN / ACCEPTED（4C-B pre-upload artifact redaction gate FROZEN / ACCEPTED，immutable green run `27701669084`，frozen baseline = `ci.yml` pre-upload redaction gate step blob `4a40ef78` / commit `c734102d`；4C-C log redaction proof FROZEN / ACCEPTED，immutable green run `27732660516`，14 类 pattern 真实值命中 = 0；overall freeze review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`）；Batch 4F execution sequence SYNCED / ACCEPTED，4F-A FROZEN / ACCEPTED，4F-B/4F-C/4F-D/4F-E/4F-F OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED；Batch 5 PLAN ONLY / NOT IMPLEMENTED，plan PASS / READY FOR REVIEW；Batch 5A FROZEN / ACCEPTED；Batch 5B-ENV plan ACCEPTED / READY FOR IMPLEMENTATION（`docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md`：env 分层 / profile·provider 隔离 / no-outbound / secret·redaction / fail-closed / 5B-SMOKE 前置 / 5B-ENV-A..E 批次），Batch 5B-ENV implementation IMPLEMENTED / PENDING FIRST CI RUN，Batch 5B-SMOKE STILL BLOCKED
 
 ## Current state
 
@@ -417,15 +417,15 @@ Batch 4B implemented baseline（`.github/workflows/ci.yml` 新增 `secret-scan` 
 
 ### Batch 5: Frontend E2E hardening
 
-Status: **plan PASS / ACCEPTED；Batch 5A IMPLEMENTED / READY FOR FIRST-RUN；5B-ENV PLAN ONLY / READY FOR REVIEW（P1 SECURITY ENHANCEMENT）；5B-SMOKE BLOCKED BY 5B-ENV**。Planning document: `docs/current/NQ_CI_FRONTEND_E2E_PLAN.md`；plan review: `docs/current/NQ_CI_FRONTEND_E2E_PLAN_REVIEW.md`；5A implementation: `docs/current/NQ_CI_FRONTEND_E2E_5A_IMPLEMENTATION.md`；5B-ENV planning: `docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md`。
+Status: **plan PASS / ACCEPTED；Batch 5A FROZEN / ACCEPTED；5B-ENV plan ACCEPTED；5B-ENV implementation IMPLEMENTED / PENDING FIRST CI RUN；5B-SMOKE STILL BLOCKED**。Planning document: NQ_CI_FRONTEND_E2E_PLAN.md；plan review: NQ_CI_FRONTEND_E2E_PLAN_REVIEW.md；5A implementation: NQ_CI_FRONTEND_E2E_5A_IMPLEMENTATION.md；5B-ENV planning: NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md；5B-ENV plan review: NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md。
 
-Batch 5B-ENV planning slice（PLAN ONLY / READY FOR REVIEW，未实现）:
+Batch 5B-ENV planning / implementation slice（plan ACCEPTED，implementation IMPLEMENTED / PENDING FIRST CI RUN）:
 
-- 任务 `NQ-CI-SECURITY-BATCH-5B-ENV-PLAN`（2026-06-19）新增 `docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md`，规划环境变量分层（CI required / local dev / test / forbidden）、`local`/`test`/`ci`/`paper`/`live` profile 与 provider 隔离、no-outbound 约束、secret/log/artifact redaction 对齐、fail-closed 规则、5B-SMOKE 前置条件，并把后续拆为 5B-ENV-A..E 五个串行子批次。
+- 任务 `NQ-CI-SECURITY-BATCH-5B-ENV-PLAN`（2026-06-19）新增 `docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md`，规划环境变量分层（CI required / local dev / test / forbidden）、`local`/`test`/`ci`/`paper`/`live` profile 与 provider 隔离、no-outbound 约束、secret/log/artifact redaction 对齐、fail-closed 规则、5B-SMOKE 前置条件，并把后续拆为 5B-ENV-A..E 五个串行子批次。 Plan review NQ-CI-SECURITY-BATCH-5B-ENV-PLAN-REVIEW 已接受其作为 implementation baseline。
 - 仅文档登记：本轮未改 workflow / 代码 / migration，未读真实凭证，未外联，未启 LIVE / AI / DH runtime / RealClient / real provider。
-- 5B-ENV 仍为 PLAN ONLY；任一子批次须各自 plan → implement → first green → freeze，前批未 freeze 不得开下一批；5B-SMOKE 在 5B-ENV 全部子批次落地前保持 BLOCKED。
+- 5B-ENV plan 已 ACCEPTED，implementation 已 IMPLEMENTED / PENDING FIRST CI RUN。5B-SMOKE 在 5B-ENV first CI run / freeze 前保持 STILL BLOCKED；后续仍须单独 readiness review，不得顺手启动。
 
-Batch 5A implemented slice（IMPLEMENTED / READY FOR FIRST-RUN，尚未经 GitHub Actions first-run review）:
+Batch 5A slice（FROZEN / ACCEPTED）:
 
 - 新增独立 job `frontend-no-backend-e2e`（`permissions: contents: read`、`timeout-minutes: 15`、Node 22、`npm ci`、`npx playwright install --with-deps chromium`、`npm run build`、loopback `vite preview` 127.0.0.1:5179、`if: always()` 清理临时 output 不上传）与 `frontend/playwright.ci.config.ts`（Chromium only / workers=1 / retries=0 / trace=screenshot=video=off / line reporter / 不用 storageState / `reuseExistingServer:false` / `forbidOnly:true`）。
 - 唯一 allowlist 四个 no-backend spec（仓库真实路径 `frontend/tests/e2e/`，非 `frontend/e2e/`）：`login-page-smoke`、`design-system-table-smoke`、`design-system-live-query-smoke`、`design-system-backtest-chart-smoke`；命令显式列出四 spec，config `testMatch` 二次限定，`--list` = Total: 4 tests in 4 files，未扩大到其余 23 个 spec。
@@ -479,6 +479,6 @@ python -m ruff check .
 
 ## Next concrete action
 
-Next concrete action: 等待 GitHub Actions `frontend-no-backend-e2e` first-run（Batch 5A）并做 first-run review；连续两次 immutable green 后再议 required gate。不得直接进入 Batch 5B-ENV / 5B-SMOKE / 5C / 5D / 5E，不得启动 Batch 4F-B 至 4F-F。Batch 3、Batch 4B、Batch 4C 与 Batch 4F-A 保持 FROZEN / ACCEPTED；Batch 5A = IMPLEMENTED / READY FOR FIRST-RUN；Batch 5B-ENV = P1 PREREQUISITE / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV。
+Next concrete action: 进入后续 NQ-CI-SECURITY-BATCH-5B-ENV-IMPLEMENTATION 小批次；不得在该实现批次前启动 5B-SMOKE / 5C / 5D / 5E，不得启动 Batch 4F-B 至 4F-F。Batch 3、Batch 4B、Batch 4C、Batch 4F-A 与 Batch 5A 保持 FROZEN / ACCEPTED；Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION；Batch 5B-ENV implementation = IMPLEMENTED / PENDING FIRST CI RUN；Batch 5B-SMOKE = STILL BLOCKED。
 
 Do not mix Batch 4 security scan hardening、Batch 5 frontend E2E hardening、frontend B1/B2/B3 work、AI、DH runtime、LIVE、real providers 或 real exchange permission probe adapter into Batch 3 no-outbound work.

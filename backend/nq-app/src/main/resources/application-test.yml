@@ -18,6 +18,25 @@ server:
   port: ${NQ_TEST_APP_PORT:18080}
 
 nq:
+  env-safety:
+    # Why: test profile 必须默认 no-outbound，且禁止 LIVE/AI/DH/real provider/real exchange。
+    live-enabled: ${NQ_LIVE_ENABLED:false}
+    ai-enabled: ${NQ_AI_ENABLED:false}
+    dh-runtime-enabled: ${NQ_DH_RUNTIME_ENABLED:false}
+    real-provider-enabled: ${NQ_REAL_PROVIDER_ENABLED:false}
+    real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
+    real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
+    no-outbound: ${NQ_NO_OUTBOUND:true}
+  okx:
+    base-url: ${NQ_OKX_BASE_URL:PLACEHOLDER_ONLY}
+    ws-url: ${NQ_OKX_WS_URL:PLACEHOLDER_ONLY}
+  binance:
+    dome:
+      base-url: ${NQ_BINANCE_DOME_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_DOME_WS_URL:PLACEHOLDER_ONLY}
+    real:
+      base-url: ${NQ_BINANCE_REAL_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_REAL_WS_URL:PLACEHOLDER_ONLY}
   account:
     credentials:
       master-key: ${NQ_TEST_ACCOUNT_CREDENTIALS_MASTER_KEY:test-account-credentials-master-key-123456}

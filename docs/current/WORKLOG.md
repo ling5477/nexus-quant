@@ -1,6 +1,43 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-IMPL（2026-06-20）
+
+实现 Batch 5B-ENV 最小运行态和 CI 环境安全边界。范围限定为 `.github/workflows/ci.yml`、`backend/nq-app` 配置/guard/测试、根 `.env.example`、`docs/current`；不启动 5B-SMOKE，不接真实交易所，不启 LIVE / AI / DH runtime，不实现 RealClient / real provider / real exchange adapter。
+
+- 后端：新增 `EnvSafetyGuardConfiguration` + `EnvSafetyValidator`，在 Spring 启动期 fail closed；guard 不读取真实 `.env`，不打印 secret value。
+- 测试：新增 `EnvSafetyValidatorTest`，覆盖 LIVE+NO_OUTBOUND、CI+LIVE、CI+real provider、test+real exchange、no-outbound+real endpoint、CI/test credential material、placeholder、AI/DH runtime；复用并扩展 `NoOutboundExchangeGuardTest` 的 CI job 覆盖。
+- 配置：新增 `application-ci.yml` / `application-paper.yml`；更新 `application.yml` / `application-test.yml`，CI/test/paper 默认 no-outbound，LIVE/AI/DH/real provider/real exchange 默认 false，endpoint 默认 placeholder。
+- `.env.example`：交易所 endpoint / credential / private key / passphrase 示例统一为 `PLACEHOLDER_ONLY` / `DO_NOT_COMMIT_REAL_VALUE` / `REPLACE_WITH_LOCAL_PLACEHOLDER`。
+- Workflow：仅增强 `no-outbound-guard` / `backend` job；新增 5B-ENV guard env 与 validator test；未新增 secret；未改变 Batch 1-5A 语义；未启动 5B-SMOKE。
+- 本地目标验证：`mvn -f backend/pom.xml -pl nq-app -am test "-Dtest=EnvSafetyValidatorTest,NoOutboundExchangeGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" "-Dnq.no-outbound.guard.required=true"` 通过，11 tests / 0 failures / 0 errors / 0 skipped。
+- 状态：Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN；Batch 5B-SMOKE = STILL BLOCKED。
+完整收尾验证：git diff --check exit 0（仅 LF/CRLF 工作树提示）；mvn -f backend/pom.xml test 通过，Reactor 23/23 SUCCESS，BUILD SUCCESS；migration diff 为空；frontend / research / scripts / deploy diff 为空。
+
+
 # Worklog: DOC-CLEAN + BASELINE-FIX
 
 日期：2026-05-16
+
+## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN-REVIEW
+
+日期：2026-06-20
+
+### 目标与范围
+
+review-only 审查 docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md 是否可作为 Batch 5B-ENV implementation baseline。只评审 commit 266cffd9 的 6 个 docs/current 文件；不实现 env guard，不修改 workflow，不改代码，不新增 API / migration，不读取真实 .env / secret / credential / logs / dump / backup，不做真实 HTTP 探活，不启动 5B-SMOKE，不启 LIVE / AI / DH runtime / RealClient / real provider。
+
+### 核验结果
+
+- 前置：已切到 docs/ci-5b-env-plan-review，HEAD = 266cffd9 docs(ci): plan Batch 5B environment security boundary，worktree clean；未使用主工作区 1280 个预存改动作为结论来源。
+- PR diff：git diff origin/dev...HEAD --name-status 仅 6 个 docs/current 文件；workflow/code/migration diff 均为空。
+- P1 成立且可接受：无统一 ci / paper profile；无运行态 env 冲突 fail-closed。计划已把二者列为 5B-ENV implementation 前置，不宣称已实现。
+- P2 成立且可接受：application.yml / 根目录 .env.example 含 real base-url / real WS 默认值误导风险；no-outbound 仍偏 test-scope + env-name 校验；占位符标记不统一。计划已给出 5B-ENV-A/B/C/D 收口路径。
+- P3 accepted residual：Batch 5A 局部旧措辞已在允许的 status update 中收口；5B-ENV 新增控制变量仍为后续实现范围。
+- 未发现越界描述：未把 5B-ENV 写成 implemented；未启动 5B-SMOKE；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider。
+- 新增文件：docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md。
+- 修改文件：docs/current/NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md、docs/current/NQ_CI_BASELINE_PLAN.md、docs/current/README.md、docs/current/ROADMAP.md、docs/current/TESTING.md、docs/current/WORKLOG.md。
+
+### 结论
+
+**NQ-CI-SECURITY-BATCH-5B-ENV-PLAN-REVIEW：PASS / ACCEPTED**。Batch 5B-ENV plan = **ACCEPTED / READY FOR IMPLEMENTATION**；Batch 5B-ENV implementation = **NOT STARTED**；Batch 5B-SMOKE = **BLOCKED BY 5B-ENV**。No workflow changed；No code changed；No migration changed；No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider。
 
 ## NQ-CI-SECURITY-BATCH-5B-ENV-PLAN
 
