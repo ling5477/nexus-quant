@@ -1,3 +1,29 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-FIX（2026-06-20）
+
+结论：**FIXED LOCALLY / PENDING CI RERUN**。5B-ENV 合入 `dev`（HEAD `2bb1248a`）后 first run RED（run `27875157176`），失败 job `Backend Maven test` + `No-outbound guard`，失败测试 `NoOutboundExchangeGuardTest.shouldRejectExchangeCredentialEnvWhenCiGuardIsRequired`（断言 `CI no-outbound guard forbids exchange credential/live env: NQ_LIVE_ENABLED`）。
+
+root cause = workflow injected env names forbidden by existing no-outbound guard：`.github/workflows/ci.yml` 在 `no-outbound-guard` 与 `backend` job 的 `env:` 注入了 `NQ_LIVE_ENABLED/NQ_REAL_PROVIDER_ENABLED/NQ_REAL_CLIENT_ENABLED="false"`，被既有 guard 测试列为 CI 模式下禁止存在（值 `"false"` 同样违规）。
+
+fix = remove forbidden env-name injections from workflow jobs, not relax test：删除两个 job 的这三项 env 注入；未改测试 / `EnvSafetyValidator` / `EnvSafetyGuardConfiguration` / `application*.yml` / `.env.example`。
+
+本地验证（env 中未注入 `CI` / `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED`，已回显确认）：
+
+```text
+mvn -f backend/pom.xml -pl nq-app -am test \
+  -Dtest=NoOutboundExchangeGuardTest,EnvSafetyValidatorTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  -Dnq.no-outbound.guard.required=true
+=> EnvSafetyValidatorTest 8/0/0/0；NoOutboundExchangeGuardTest 3/0/0/0；合计 11 tests / 0 failures / 0 errors / 0 skipped；Reactor 23/23 SUCCESS；BUILD SUCCESS
+```
+
+补充验证：`git diff --check` exit 0；`git diff -- "backend/**/db/migration"` 为空；`git diff -- frontend research scripts deploy` 为空；`grep` 确认这三个变量不再以 job-env 形式出现（仅保留在说明注释与 `forbidden_true_names` 校验步骤中，后者是断言非 `"true"`，非注入）。
+
+说明（边界诚实）：本地 shell 未设置这些 env，故本地 test 在 fix 前后均会通过；本 fix 的真实作用面是 CI（CI 曾注入这些 env）。因此**未据本地结果宣称 CI green**；CI 真实全绿以下一次 GitHub Actions `dev` run 为准，绿前不得把 5B-ENV 写成 green / frozen。
+
+workflow trigger 仍为：`pull_request:[dev]` + `push:[dev]` + `workflow_dispatch`；job 全集（diff-check / no-outbound-guard / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan）未被删除；未新增 GitHub secret；未启动 5B-SMOKE。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-REVIEW（2026-06-20）
 
 结论：**BLOCKED / NO TARGET GITHUB ACTIONS RUN**。目标 implementation commit `0ef4dbbeb769bf31a9efa768911ccc79b600383d` 没有 GitHub Actions run；`gh run list --commit 0ef4dbbeb769bf31a9efa768911ccc79b600383d` 返回空数组。

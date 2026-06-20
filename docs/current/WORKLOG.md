@@ -1,3 +1,14 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-FIX（2026-06-20）
+
+修复 5B-ENV 合入 `dev` 后导致 CI RED 的最小冲突。范围限定为 `.github/workflows/ci.yml` 与 `docs/current/*`；不改测试、不改 `EnvSafetyValidator` / `EnvSafetyGuardConfiguration` / `application*.yml` / `.env.example`、不动 migration / frontend / research / scripts / deploy，不启动 5B-SMOKE。
+
+- first run RED（run `27875157176`，HEAD `2bb1248a`）：`Backend Maven test` + `No-outbound guard` 失败于 `NoOutboundExchangeGuardTest.shouldRejectExchangeCredentialEnvWhenCiGuardIsRequired`。
+- root cause = workflow injected env names forbidden by existing no-outbound guard：`ci.yml` 在 `no-outbound-guard` 与 `backend` job 的 `env:` 注入 `NQ_LIVE_ENABLED/NQ_REAL_PROVIDER_ENABLED/NQ_REAL_CLIENT_ENABLED="false"`，被既有 guard 列为禁止存在（值 `"false"` 也违规）。
+- fix = remove forbidden env-name injections from workflow jobs, not relax test：删除两个 job 的这三项 env 注入，并加注释说明缺省即 false（absence => false），不削弱 5B-ENV fail-closed；保留 `NQ_AI_ENABLED/NQ_DH_RUNTIME_ENABLED/NQ_REAL_EXCHANGE_ENABLED`（不在禁止名单）。
+- 本地验证：`mvn -f backend/pom.xml -pl nq-app -am test -Dtest=NoOutboundExchangeGuardTest,EnvSafetyValidatorTest -Dsurefire.failIfNoSpecifiedTests=false -Dnq.no-outbound.guard.required=true` = 11 tests / 0 failures / 0 errors / 0 skipped；BUILD SUCCESS（shell 未设置 `CI`/`NQ_LIVE_ENABLED` 等，已回显确认）。
+- 状态：Batch 5B-ENV = IMPLEMENTED / FIRST RUN RED / FIXED LOCALLY / PENDING CI RERUN；Batch 5B-SMOKE = STILL BLOCKED。CI 真实全绿以下一次 GitHub Actions `dev` run 为准，绿前不得写成 green / frozen。
+- workflow trigger 仍在（`pull_request:[dev]` + `push:[dev]` + `workflow_dispatch`）；未删 job；未新增 secret。
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-REVIEW（2026-06-20）
 
 只读评审 5B-ENV implementation first run。GitHub Actions 未找到目标 implementation commit `0ef4dbbeb769bf31a9efa768911ccc79b600383d` 的 run：`gh run list --commit ...` 返回 `[]`。当前分支最近 run `27838086804` 为旧 plan-review commit `266cffd9...`，不能证明 implementation。

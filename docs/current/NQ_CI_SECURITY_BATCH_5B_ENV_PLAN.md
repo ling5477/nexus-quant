@@ -4,7 +4,7 @@
 日期：2026-06-19
 分支：dev
 任务类型：CI_SECURITY_PLANNING + ENVIRONMENT_BOUNDARY_REVIEW + SECRET_GUARD_REVIEW + NO_OUTBOUND_BOUNDARY_REVIEW + DOCUMENTATION
-状态：**Batch 5B-ENV plan = ACCEPTED**；**Batch 5B-ENV implementation = IMPLEMENTED / PENDING FIRST CI RUN**；**Batch 5B-SMOKE = STILL BLOCKED**。
+状态：**Batch 5B-ENV plan = ACCEPTED**；**Batch 5B-ENV implementation = IMPLEMENTED / FIRST RUN RED / FIXED LOCALLY / PENDING CI RERUN**（见 §15）；**Batch 5B-SMOKE = STILL BLOCKED**。
 
 > 本文是 planning-only 文档。本轮不创建 / 不修改任何 workflow，不改代码，不新增 API，不新增 migration，不启动 LIVE / AI / DH runtime / real provider，不做真实外联。所有 "implementation" 措辞均指**后续另起批次**才执行，不代表已实现。
 
@@ -339,3 +339,19 @@ NQ GateK CI/security Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN
 状态：**first-run review = BLOCKED / NO TARGET RUN**。
 
 目标 implementation commit `0ef4dbbeb769bf31a9efa768911ccc79b600383d` 没有 GitHub Actions run；不得写成 first green、accepted 或 frozen。Batch 5B-ENV 保持 `IMPLEMENTED / PENDING FIRST CI RUN`；Batch 5B-SMOKE 保持 `STILL BLOCKED`。
+
+> 注：本节为当时（5B-ENV commit 尚无 target run）的历史结论，已被 §15 取代——first run 实际已在 `dev` 发生且 RED。
+
+## 15. First-run RED fix-forward addendum（2026-06-20）
+
+任务：NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-FIX
+状态：**Batch 5B-ENV = IMPLEMENTED / FIRST RUN RED / FIXED LOCALLY / PENDING CI RERUN**；**Batch 5B-SMOKE = STILL BLOCKED**。
+
+5B-ENV 合入 `dev`（HEAD `2bb1248a`）后 first run RED：
+
+- 失败 run `27875157176`；失败 job：`Backend Maven test`、`No-outbound guard`。
+- 失败测试：`NoOutboundExchangeGuardTest.shouldRejectExchangeCredentialEnvWhenCiGuardIsRequired`。
+- root cause = workflow injected env names forbidden by existing no-outbound guard：`.github/workflows/ci.yml` 在 `no-outbound-guard` 与 `backend` job 的 `env:` 注入了 `NQ_LIVE_ENABLED="false"` / `NQ_REAL_PROVIDER_ENABLED="false"` / `NQ_REAL_CLIENT_ENABLED="false"`，这三个变量名被既有 guard 测试列为 CI 模式下禁止存在（值为 `"false"` 同样违规）。
+- fix = remove forbidden env-name injections from workflow jobs, not relax test：从两个 job 的 `env:` 删除这三项注入；不修改、不放行 `NoOutboundExchangeGuardTest`。依据 `EnvSafetyGuardConfiguration` 缺省即 false（absence => false），不注入不削弱 5B-ENV 启动期 fail-closed 语义。保留 `NQ_AI_ENABLED` / `NQ_DH_RUNTIME_ENABLED` / `NQ_REAL_EXCHANGE_ENABLED`（不在禁止名单）。
+
+本轮仅改 `.github/workflows/ci.yml` 与 `docs/current/*`，未改测试 / `EnvSafetyValidator` / `EnvSafetyGuardConfiguration` / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy。CI 真实全绿前不得把 5B-ENV 写成 green 或 frozen。

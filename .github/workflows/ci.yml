@@ -43,11 +43,13 @@ jobs:
     env:
       CI: "true"
       NQ_NO_OUTBOUND: "true"
-      NQ_LIVE_ENABLED: "false"
+      # NQ_LIVE_ENABLED / NQ_REAL_PROVIDER_ENABLED / NQ_REAL_CLIENT_ENABLED 不在此注入。
+      # Why: 这三个变量名同时被既有 NoOutboundExchangeGuardTest 列为 CI-guard 模式下禁止存在的
+      # exchange credential/live env，哪怕值是 "false" 也算违规；而 EnvSafetyGuardConfiguration
+      # 对缺省即按 false 处理（absence => false），因此不注入既能保留 5B-ENV fail-closed 语义，
+      # 又不破坏 no-outbound guard。请勿在此重新加入这三个变量。
       NQ_AI_ENABLED: "false"
       NQ_DH_RUNTIME_ENABLED: "false"
-      NQ_REAL_PROVIDER_ENABLED: "false"
-      NQ_REAL_CLIENT_ENABLED: "false"
       NQ_REAL_EXCHANGE_ENABLED: "false"
       NQ_OKX_BASE_URL: PLACEHOLDER_ONLY
       NQ_OKX_WS_URL: PLACEHOLDER_ONLY
@@ -213,11 +215,12 @@ jobs:
     env:
       CI: "true"
       NQ_NO_OUTBOUND: "true"
-      NQ_LIVE_ENABLED: "false"
+      # NQ_LIVE_ENABLED / NQ_REAL_PROVIDER_ENABLED / NQ_REAL_CLIENT_ENABLED 不在此注入。
+      # Why: 同 no-outbound-guard job —— 这三个变量名被既有 NoOutboundExchangeGuardTest 列为
+      # CI-guard 模式下禁止存在的 exchange credential/live env（值为 "false" 也违规），而
+      # EnvSafetyGuardConfiguration 缺省即按 false 处理，故不注入即可保留 fail-closed 语义。
       NQ_AI_ENABLED: "false"
       NQ_DH_RUNTIME_ENABLED: "false"
-      NQ_REAL_PROVIDER_ENABLED: "false"
-      NQ_REAL_CLIENT_ENABLED: "false"
       NQ_REAL_EXCHANGE_ENABLED: "false"
       NQ_OKX_BASE_URL: PLACEHOLDER_ONLY
       NQ_OKX_WS_URL: PLACEHOLDER_ONLY
