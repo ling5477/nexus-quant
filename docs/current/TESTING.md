@@ -1,3 +1,37 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FIX-CI-RERUN-REVIEW（2026-06-21）
+
+结论：**PASS / ACCEPTED**。fix commit `8ba140d9` 的目标 rerun 全绿。
+
+目标 run（fix commit 之后 `dev` 最新 run，非旧 plan-review / 非 RED 前 green / 非非目标 SHA）：
+
+| 项 | 值 |
+| --- | --- |
+| run ID | `27876451289` |
+| workflow | NQ CI Baseline |
+| event | push |
+| headSha | `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`（== `dev` HEAD == `origin/dev`） |
+| status / conclusion | completed / **success** |
+
+8 job 全 success：diff-check、no-outbound-guard（恢复）、backend（恢复）、postgres-flyway、frontend、frontend-no-backend-e2e、research、secret-scan。
+
+测试证据（no-outbound-guard job log，`-Dnq.no-outbound.guard.required=true`）：
+
+```text
+[INFO] Running ...EnvSafetyValidatorTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0 -- in ...EnvSafetyValidatorTest
+[INFO] Running ...NoOutboundExchangeGuardTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in ...NoOutboundExchangeGuardTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+```
+
+`NoOutboundExchangeGuardTest` 3 run / 0 skip → `shouldRejectExchangeCredentialEnvWhenCiGuardIsRequired` 实跑通过，不再因 `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED` 非空失败；`backend` job 全量绿。
+
+本地只读验证（review 文档轮）：`git status --short` 仅 `docs/current/*`；`git diff --check` exit 0；`git diff -- "backend/**/db/migration"` 空；`git diff -- frontend research scripts deploy` 空；`git diff -- .github/workflows/ci.yml` 空（与 HEAD 一致，未改 workflow）。pushed `ci.yml` 静态确认：`no-outbound-guard`/`backend` job 0 处注入这三个变量；trigger `pull_request:[dev]`+`push:[dev]`+`workflow_dispatch` 保留；8 job 未删；未新增 secret。
+
+状态：Batch 5B-ENV = FIX RERUN GREEN / READY FOR FREEZE（尚未 freeze）；Batch 5B-SMOKE = STILL BLOCKED。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-FIX（2026-06-20）
 
 结论：**FIXED LOCALLY / PENDING CI RERUN**。5B-ENV 合入 `dev`（HEAD `2bb1248a`）后 first run RED（run `27875157176`），失败 job `Backend Maven test` + `No-outbound guard`，失败测试 `NoOutboundExchangeGuardTest.shouldRejectExchangeCredentialEnvWhenCiGuardIsRequired`（断言 `CI no-outbound guard forbids exchange credential/live env: NQ_LIVE_ENABLED`）。

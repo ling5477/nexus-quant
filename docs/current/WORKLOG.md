@@ -1,3 +1,14 @@
+## NQ-CI-SECURITY-BATCH-5B-ENV-FIX-CI-RERUN-REVIEW（2026-06-21）
+
+只评审 fix commit 后 `dev` 最新 GitHub Actions run，判断是否可进入 5B-ENV freeze 准备。review-only，仅改 `docs/current/*`。
+
+- 目标 run `27876451289`（workflow NQ CI Baseline，event push，headSha `8ba140d9` == `dev` HEAD == `origin/dev`，conclusion **success**）；非旧 plan-review run、非 RED 前 green、非非目标 SHA。
+- 8 job 全 success：diff-check / no-outbound-guard（恢复）/ backend（恢复）/ postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan。
+- 测试：`EnvSafetyValidatorTest` 8/0/0/0、`NoOutboundExchangeGuardTest` 3/0/0/0 实跑通过；不再因 `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED` 非空失败。
+- 边界：未改 workflow / 代码 / 测试 / migration / frontend / research / scripts / deploy；`git diff` 除 `docs/current` 外为空；pushed `ci.yml` 0 处注入这三个变量，trigger 与 8 job 完整，未新增 secret。
+- 状态：Batch 5B-ENV = FIX RERUN GREEN / READY FOR FREEZE（尚未 freeze，进入 freeze 须另起工作单）；Batch 5B-SMOKE = STILL BLOCKED。
+- No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-FIX（2026-06-20）
 
 修复 5B-ENV 合入 `dev` 后导致 CI RED 的最小冲突。范围限定为 `.github/workflows/ci.yml` 与 `docs/current/*`；不改测试、不改 `EnvSafetyValidator` / `EnvSafetyGuardConfiguration` / `application*.yml` / `.env.example`、不动 migration / frontend / research / scripts / deploy，不启动 5B-SMOKE。

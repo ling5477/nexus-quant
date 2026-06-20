@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-REVIEW
 日期：2026-06-20
-状态：**SUPERSEDED**。本文件第 1–10 节是 first-run review 当时（commit `0ef4dbbe` 尚无 target run）的历史结论，保留作记录。**当前权威状态见第 11 节：first run 实际已发生且 RED，已本地 fix-forward，PENDING CI RERUN。**
+状态：**SUPERSEDED**。本文件第 1–10 节是 first-run review 当时（commit `0ef4dbbe` 尚无 target run）的历史结论，第 11 节记录 first run RED + fix-forward，均保留作记录。**当前权威状态见第 12 节：fix rerun GREEN（run `27876451289`），Batch 5B-ENV = FIX RERUN GREEN / READY FOR FREEZE（尚未 freeze）。**
 
 ## 1. Review decision
 
@@ -149,3 +149,56 @@ No real permission probe
 ```
 
 下一步：push 本 fix commit，等待 GitHub Actions 重新对 `dev` 跑全绿后，才可把 5B-ENV first run 记为 GREEN，并据此另起 first-run review / freeze。CI 真实全绿前不得把 5B-ENV 写成 green 或 frozen。
+
+## 12. Fix rerun GREEN（2026-06-21 authoritative update）
+
+任务：NQ-CI-SECURITY-BATCH-5B-ENV-FIX-CI-RERUN-REVIEW
+
+fix commit `8ba140d9 ci(security): fix 5B env guard workflow env conflict` 已 push 到 `dev`，触发的目标 rerun 全绿：
+
+| 项 | 值 |
+| --- | --- |
+| run ID | `27876451289` |
+| workflow | NQ CI Baseline |
+| event | push |
+| headSha | `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`（== `dev` HEAD == `origin/dev`） |
+| status / conclusion | completed / **success** |
+
+8 个 job 结果（全部 success）：
+
+| Job | 结果 |
+| --- | --- |
+| diff-check | success |
+| no-outbound-guard | success（恢复） |
+| backend | success（恢复） |
+| postgres-flyway | success |
+| frontend | success |
+| frontend-no-backend-e2e (Batch 5A) | success |
+| research | success |
+| secret-scan | success |
+
+测试证据（no-outbound-guard job，`-Dnq.no-outbound.guard.required=true`）：
+
+- `EnvSafetyValidatorTest`：Tests run 8 / Failures 0 / Errors 0 / Skipped 0。
+- `NoOutboundExchangeGuardTest`：Tests run 3 / Failures 0 / Errors 0 / Skipped 0 —— `shouldRejectExchangeCredentialEnvWhenCiGuardIsRequired` 实跑通过（非 skip），不再因 `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED` 非空而失败。
+
+确认：pushed `ci.yml` 中 `no-outbound-guard` 与 `backend` job 已不再注入这三个变量（仅保留为说明注释与 `forbidden_true_names` 断言名单）；workflow trigger `pull_request:[dev]` + `push:[dev]` + `workflow_dispatch` 保留；8 个 job 未删；未新增 GitHub secret。
+
+当前权威边界：
+
+```text
+Batch 5B-ENV = FIX RERUN GREEN / READY FOR FREEZE
+Batch 5B-SMOKE = STILL BLOCKED
+target run = 27876451289 / success / headSha 8ba140d9
+No real credential read
+No outbound call
+No LIVE
+No AI
+No DH runtime
+No RealClient
+No real provider
+No real exchange adapter
+No real permission probe
+```
+
+注：本轮只确认 rerun GREEN 并标 READY FOR FREEZE；**未 freeze**。进入 freeze 须另起 freeze 工作单（按既有 freeze review 流程固化 immutable green run + 冻结卷宗）。
