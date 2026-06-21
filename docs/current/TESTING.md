@@ -1,3 +1,26 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-PREFLIGHT-PLAN（2026-06-21）
+
+结论：**PASS / READY FOR REVIEW**。docs-only preflight / plan，未跑后端 Maven、前端 build/e2e、Python pytest/mypy/ruff；原因是本轮明确禁止实现 smoke、修改 workflow/code/config/migration 或启动真实外联。
+
+状态：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE = **PLANNED / NOT STARTED**。
+
+本地只读验证：
+
+| Command | Result |
+| --- | --- |
+| `git status --short` | 仅 `docs/current` 计划文档变更与新增 `NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md`。 |
+| `git diff --check` | 先发现 docs EOF 空行，已最小修复并重跑；最终 exit 0（如出现 LF/CRLF warning，不作为阻塞项）。 |
+| `git diff --stat` | 仅 `docs/current` 状态 / 计划文档统计变更。 |
+| `git diff -- "backend/**/db/migration"` | 空。 |
+| `git diff -- frontend research scripts deploy` | 空。 |
+| `git diff -- .github/workflows/ci.yml` | 空。 |
+| `git diff -- backend` | 空。 |
+| `git diff -- .env.example` | 空。 |
+
+边界声明：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FREEZE（2026-06-21）
 
 结论：**PASS / FROZEN / ACCEPTED**。docs-only freeze，未跑本地测试（无代码 / workflow / 配置 / migration 变更）；冻结依据是不可变 green run 证据。

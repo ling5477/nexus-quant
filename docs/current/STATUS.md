@@ -6,6 +6,10 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- GateK CI Security Batch 5B-SMOKE preflight plan（2026-06-21）：**PASS / READY FOR REVIEW**。详见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md`。
+  结论：5B-ENV-A..E 对 planning 的前置门槛已满足：ci/test/paper profile 边界 frozen；`EnvSafetyValidator` fail-closed guard frozen；no-outbound guard 与 EnvSafety guard 兼容 frozen；secret placeholder / `.env.example` 边界 frozen；CI trigger 与 8 job baseline frozen。
+  状态：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE = **PLANNED / NOT STARTED**。本轮未启动 implementation，未改 workflow / Java / TypeScript / Python / migration / frontend / research / scripts / deploy / `.env.example`。
+  后续 smoke 必须保持 no-real / no-outbound，只允许 mock / fake / NoReal 路径；不得读取真实 `.env` 或 secret；不得访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken / Crypto / Hyperliquid；不得开启 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter / real permission probe。
 - GateK CI Security Batch 5B-ENV FROZEN（2026-06-21）：**FROZEN / ACCEPTED**。详见 freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`。
   freeze evidence = green run `27876451289`（NQ CI Baseline / push / completed / success，headSha `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`，8 jobs（diff-check / no-outbound-guard / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan）all success，`EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0 实跑非 skip）。
   历史：first run RED（run `27875157176`，根因 = workflow 注入被 `NoOutboundExchangeGuardTest` 禁止的 env 名 `NQ_LIVE_ENABLED`/`NQ_REAL_PROVIDER_ENABLED`/`NQ_REAL_CLIENT_ENABLED`）→ fix-forward（fix commit `8ba140d9`，删除该 3 项 CI job env 注入，no-outbound guard 未放宽、`NoOutboundExchangeGuardTest` 未改）→ rerun GREEN。

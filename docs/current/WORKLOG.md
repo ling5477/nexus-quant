@@ -1,3 +1,13 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-PREFLIGHT-PLAN（2026-06-21）
+
+完成 Batch 5B-SMOKE 前置预检与实施计划。docs-only，仅新增/更新 `docs/current`，未启动 smoke implementation，未修改 workflow / 代码 / 配置 / migration / `.env.example`。
+
+- 5B-ENV-A..E 判定：全部满足。ci/test/paper profile 边界、EnvSafety fail-closed guard、no-outbound compatibility、secret placeholder boundary、CI trigger + 8 job baseline 均已由 5B-ENV freeze 固化。
+- 5B-SMOKE 状态：**PLANNED / NOT STARTED**；preflight plan = **PASS / READY FOR REVIEW**。
+- smoke 最小范围：只验证 CI 安全边界与最小应用启动 / mock 路径；no-real permission probe remains SKIPPED；no-outbound guard remains enforced；EnvSafetyValidator still fail-closed；placeholder-only credential path 不误判；forbidden env names 不注入 CI jobs。
+- 候选 CI job：后续 implementation 优先新增独立 `ci-security-smoke`（备选 `env-smoke`）；不复用真实 exchange adapter；不引入 secret；不引入 external network。
+- 禁止范围：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
 ## NQ-CI-SECURITY-BATCH-5B-ENV-FREEZE（2026-06-21）
 
 将 Batch 5B-ENV 固化为 FROZEN / ACCEPTED，形成不可变 freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`。docs-only，未启动 5B-SMOKE，未新增代码，未改 workflow。
