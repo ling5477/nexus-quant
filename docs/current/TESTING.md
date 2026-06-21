@@ -1,3 +1,13 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-FREEZE（2026-06-21）
+
+结论：**Batch 5B-SMOKE = FROZEN / ACCEPTED**；**Batch 5B = CLOSED / ACCEPTED**；Freeze = FROZEN / ACCEPTED。docs-only freeze，未跑本地构建、未触发新的 GitHub Actions、未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试、未补修 implementation。
+
+冻结依据：implementation commit `9b467fbc` + first run evidence run `27903497008`（NQ CI Baseline / push / headSha `9b467fbc21e3ce685572dc3ec84104fd945fa0fb` / completed / success），9 jobs 全 success，ci-security-smoke 内 12 tests / 0 fail（NoReal 1 + EnvSafety 8 + NoOutbound 3），NoReal permission probe remains SKIPPED。`.github/workflows/ci.yml` 自 `9b467fbc` 后未变。
+
+边界：No real credential read；No outbound call；No LIVE；No Paper / DH / AI runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe；freeze 无 DB / runtime / credential / provider / exchange 副作用。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-FIRST-RUN-EVIDENCE（2026-06-21）
 
 结论：**First run evidence = PASS / READY FOR REVIEW**；Freeze = NOT STARTED。CI run 取证，未跑本地构建、未补修实现、未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试。

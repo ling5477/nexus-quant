@@ -1,3 +1,17 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-FREEZE（2026-06-21）
+
+生成 Batch 5B-SMOKE freeze docs/status 入口并完成 freeze 自检。本轮 docs-only，未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未补修 implementation、未新增测试、未触发新的 GitHub Actions、未提交 freeze docs（留待 FREEZE_COMMIT_GATE）。
+
+- 状态：Batch 5B-SMOKE = **FROZEN / ACCEPTED**；Batch 5B = **CLOSED / ACCEPTED**；Freeze = **FROZEN / ACCEPTED**。
+- 冻结对象：implementation commit `9b467fbc` + first run evidence commit `9a98041a`（evidence run `27903497008`）。
+- run：NQ CI Baseline / push / dev / headSha `9b467fbc21e3ce685572dc3ec84104fd945fa0fb` / completed / success / 9 jobs all success（含 ci-security-smoke / no-outbound-guard / secret-scan）。
+- ci-security-smoke：12 tests / 0 fail（NoReal 1 + EnvSafety 8 + NoOutbound 3）；NoReal permission probe remains SKIPPED；`.github/workflows/ci.yml` 自 `9b467fbc` 后未变。
+- 新增 freeze 卷宗：`docs/current/NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`。
+- 边界：No real credential read / No outbound call / No LIVE / No Paper / No DH / No AI runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe；freeze 无 DB/runtime/credential/provider/exchange 副作用。
+- 下一步：进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE_COMMIT_GATE**，仅提交 freeze docs，确认 working tree clean，结束 5B-SMOKE。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-FIRST-RUN-EVIDENCE（2026-06-21）
 
 采集 Batch 5B-SMOKE implementation（commit `9b467fbc`）的 CI first run evidence。本轮只取证 + 登记 docs/current，未 freeze、未补修实现、未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试。
