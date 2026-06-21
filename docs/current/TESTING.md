@@ -1,3 +1,22 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION（2026-06-21）
+
+结论：**IMPLEMENTED / READY FOR REVIEW**。Batch 5B-SMOKE = IMPLEMENTED / READY FOR REVIEW；Implementation = DONE / READY FOR REVIEW；First run evidence = NOT STARTED；Freeze = NOT STARTED。
+
+实现范围：`.github/workflows/ci.yml` 新增独立最小 `ci-security-smoke` job（CI env-name assertion step + 复用既有安全 smoke 测试），未新增业务测试、未引入真实 adapter / provider / exchange client、未修改 migration / frontend / research / scripts / deploy / `.env.example`。
+
+本地最小验证命令与结果（跨 nq-app + nq-infra 两个 module，未触发 GitHub Actions）：
+
+    mvn -f backend/pom.xml -pl nq-app,nq-infra -am test -Dtest=EnvSafetyValidatorTest,NoOutboundExchangeGuardTest,NoRealExchangeCredentialPermissionProbePortTest -Dsurefire.failIfNoSpecifiedTests=false -Dnq.no-outbound.guard.required=true
+
+- `EnvSafetyValidatorTest`（nq-app）：8/0/0/0（fail-closed 矩阵 + placeholder credential safe/unsafe）。
+- `NoOutboundExchangeGuardTest`（nq-app）：3/0/0/0（denylist host fail-closed + localhost 放行 + CI env-name 断言）。
+- `NoRealExchangeCredentialPermissionProbePortTest`（nq-infra）：1/0/0/0（NoReal probe 返回 SKIPPED / REAL_EXCHANGE_PROBE_DISABLED，不解析 / 不连接真实交易所 host）。
+- 合计 **12 tests / 0 failures**。
+
+边界声明：NoReal permission probe remains SKIPPED；No real credential read；No outbound call；No LIVE；No Paper / DH / AI runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe；未运行或触发 GitHub Actions（first run evidence 仍 NOT STARTED）。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION-PLAN（2026-06-21）
 
 结论：**IMPLEMENTATION PLAN READY / READY FOR REVIEW**。docs-only implementation plan，本轮未执行 implementation，未新增 CI job，未新增测试，未修改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`，未运行或触发 GitHub Actions。

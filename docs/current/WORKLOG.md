@@ -1,3 +1,17 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION（2026-06-21）
+
+按已 accepted 的 implementation plan 执行 Batch 5B-SMOKE 最小实现，把 5B-SMOKE 从 plan reviewed/accepted 推进到 **IMPLEMENTED / READY FOR REVIEW**。
+
+- 状态：Batch 5B-SMOKE = **IMPLEMENTED / READY FOR REVIEW**；Implementation = **DONE / READY FOR REVIEW**；First run evidence = **NOT STARTED**；Freeze = **NOT STARTED**。
+- 改动文件：`.github/workflows/ci.yml`（新增 `ci-security-smoke` job）、`docs/current` 状态/记录入口（NQ_CI_BASELINE_PLAN.md / README.md / STATUS.md / ROADMAP.md / TESTING.md / WORKLOG.md）。未改 backend 代码与测试（复用既有 guard / validator / port 测试）、未改 migration / frontend / research / scripts / deploy / `.env.example`。
+- `ci-security-smoke` job：独立最小，`runs-on: ubuntu-latest`、`timeout-minutes: 15`、`permissions: contents: read`；env 只含 `CI=true` / `NQ_NO_OUTBOUND=true` / `NQ_AI_ENABLED=false` / `NQ_DH_RUNTIME_ENABLED=false` / `NQ_REAL_EXCHANGE_ENABLED=false`（不注入 `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED` 与任何交易所 credential env）。
+- job 步骤：CI env-name assertion（forbidden exchange credential env + forbidden true-flag 存在性检查，仅按名称）；复用 EnvSafetyValidatorTest / NoOutboundExchangeGuardTest（nq-app）+ NoRealExchangeCredentialPermissionProbePortTest（nq-infra）最小 smoke。
+- 本地最小验证：12 tests / 0 failures（EnvSafety 8 + NoOutbound 3 + NoReal 1），NoReal probe 保持 SKIPPED；未运行 / 未触发 GitHub Actions。
+- 禁止边界：No real credential read / No outbound call / No LIVE / No Paper / No DH / No AI runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+- 下一步：进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_REVIEW**，只读复核 implementation；不提交、不触发 Actions、不进入 freeze。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION-PLAN（2026-06-21）
 
 为 Batch 5B-SMOKE 编制 implementation plan，把 5B-SMOKE 从 preflight reviewed/accepted 后的 planned 状态推进到 **IMPLEMENTATION PLAN READY / READY FOR REVIEW**。docs-only，仅新增/更新 docs/current，未执行 implementation，未新增 CI job，未新增测试，未修改 workflow / backend / migration / frontend / research / scripts / deploy / .env.example。

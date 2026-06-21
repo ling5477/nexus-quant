@@ -6,6 +6,12 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- GateK CI Security Batch 5B-SMOKE implementation（2026-06-21）：**IMPLEMENTED / READY FOR REVIEW**。
+  结论：Batch 5B-SMOKE = **IMPLEMENTED / READY FOR REVIEW**；Implementation = **DONE / READY FOR REVIEW**；First run evidence = **NOT STARTED**；Freeze = **NOT STARTED**。
+  实现：`.github/workflows/ci.yml` 新增独立最小 `ci-security-smoke` job —— 含 CI env-name assertion step（仅按 env 名称做存在性检查，未写入真实凭证 / 真实交易所 env / 真实 endpoint），并复用 `EnvSafetyValidatorTest` / `NoOutboundExchangeGuardTest`（nq-app）+ `NoRealExchangeCredentialPermissionProbePortTest`（nq-infra）的最小安全 smoke。未新增业务测试、未引入真实 adapter / provider / exchange client。
+  本地最小验证（未触发 GitHub Actions）：`EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0（nq-app）+ `NoRealExchangeCredentialPermissionProbePortTest` 1/0/0/0（nq-infra），合计 **12 tests / 0 failures**；NoReal permission probe 保持 **SKIPPED / REAL_EXCHANGE_PROBE_DISABLED**。
+  边界：No real credential read；No outbound call；No LIVE；No Paper trading runtime；No DH runtime；No AI runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe；未改 migration / frontend / research / scripts / deploy / `.env.example`。
+  下一步：进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_REVIEW**，只读复核 implementation；不提交、不触发 Actions、不进入 freeze。
 - GateK CI Security Batch 5B-SMOKE implementation plan（2026-06-21）：**IMPLEMENTATION PLAN READY / READY FOR REVIEW**。详见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md`。
   结论：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE-PREFLIGHT = **REVIEWED / ACCEPTED**；Batch 5B-SMOKE implementation = **NOT STARTED**。本轮只编制 implementation plan，不新增 CI job，不新增测试，不改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`，不运行或触发 GitHub Actions。
   下一轮 implementation job 名称定稿为 **ci-security-smoke**；P2 已转化为 implementation execution checklist（EnvSafety / no-outbound coverage 复用，最小 NoReal / placeholder / CI env-name smoke 补齐），P3 job name drift 已关闭。

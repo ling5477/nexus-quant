@@ -193,6 +193,104 @@ jobs:
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.no-outbound.guard.required=true
 
+  ci-security-smoke:
+    name: CI security smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    # Batch 5B-SMOKE 最小 CI 安全 smoke。把 5B-ENV fail-closed、no-outbound guard、NoReal probe
+    # SKIPPED、placeholder credential 与 CI env-name 断言聚合到一个独立 job，复用既有
+    # EnvSafetyValidatorTest / NoOutboundExchangeGuardTest / NoRealExchangeCredentialPermissionProbePortTest，
+    # 不引入真实 adapter / provider / exchange client，不做真实外联，不启动 LIVE / Paper / DH / AI runtime。
+    env:
+      CI: "true"
+      NQ_NO_OUTBOUND: "true"
+      # NQ_LIVE_ENABLED / NQ_REAL_PROVIDER_ENABLED / NQ_REAL_CLIENT_ENABLED 不在此注入。
+      # Why: 同 no-outbound-guard / backend job —— 这三个变量名被既有 NoOutboundExchangeGuardTest
+      # 列为 CI-guard 模式下禁止存在的 exchange credential/live env（值为 "false" 也违规），而
+      # EnvSafetyGuardConfiguration 缺省即按 false 处理，故不注入即可保留 fail-closed 语义。
+      NQ_AI_ENABLED: "false"
+      NQ_DH_RUNTIME_ENABLED: "false"
+      NQ_REAL_EXCHANGE_ENABLED: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Verify no exchange credential / forbidden runtime env is injected
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # CI env-name assertion：仅基于 job env 名称做存在性检查，绝不写入真实凭证或真实 endpoint。
+          forbidden_env_names=(
+            NQ_OKX_API_KEY
+            NQ_OKX_API_SECRET
+            NQ_OKX_API_PASSPHRASE
+            NQ_OKX_DOME_API_KEY
+            NQ_OKX_DOME_API_SECRET
+            NQ_OKX_DOME_API_PASSPHRASE
+            NQ_OKX_REAL_API_KEY
+            NQ_OKX_REAL_API_SECRET
+            NQ_OKX_REAL_API_PASSPHRASE
+            NQ_BINANCE_DOME_API_KEY
+            NQ_BINANCE_DOME_API_SECRET
+            NQ_BINANCE_DOME_PRIVATE_KEY
+            NQ_BINANCE_DOME_PRIVATE_KEY_PATH
+            NQ_BINANCE_REAL_API_KEY
+            NQ_BINANCE_REAL_API_SECRET
+            NQ_BINANCE_REAL_PRIVATE_KEY
+            NQ_BINANCE_REAL_PRIVATE_KEY_PATH
+            NQ_BINANCE_WS_DIAGNOSTIC_ENABLED
+            NQ_BINANCE_WS_LIVE_DIAGNOSTIC
+          )
+
+          for name in "${forbidden_env_names[@]}"; do
+            if [[ -n "${!name-}" ]]; then
+              echo "Forbidden exchange credential env is set: ${name}" >&2
+              exit 1
+            fi
+          done
+
+          forbidden_true_names=(
+            NQ_LIVE_ENABLED
+            NQ_AI_ENABLED
+            NQ_DH_RUNTIME_ENABLED
+            NQ_REAL_PROVIDER_ENABLED
+            NQ_REAL_CLIENT_ENABLED
+            NQ_REAL_EXCHANGE_ENABLED
+          )
+
+          for name in "${forbidden_true_names[@]}"; do
+            if [[ "${!name-}" == "true" ]]; then
+              echo "Forbidden CI/test runtime flag is true: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Run CI security smoke tests (EnvSafety / no-outbound / NoReal / placeholder / env-name)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # 复用既有 guard / validator / port 测试，跨 nq-app + nq-infra 两个 module；
+          # failIfNoSpecifiedTests=false 允许同一 -Dtest 列表里的测试落在不同 module 而不报缺失。
+          # 不启动真实交易所 / provider / RealClient / LIVE / Paper / DH / AI；NoReal probe 保持 SKIPPED。
+          mvn -f backend/pom.xml -pl nq-app,nq-infra -am test \
+            -Dtest=EnvSafetyValidatorTest,NoOutboundExchangeGuardTest,NoRealExchangeCredentialPermissionProbePortTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dnq.no-outbound.guard.required=true
+
   backend:
     name: Backend Maven test
     runs-on: ubuntu-latest
