@@ -1,3 +1,22 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-FIRST-RUN-EVIDENCE（2026-06-21）
+
+结论：**First run evidence = PASS / READY FOR REVIEW**；Freeze = NOT STARTED。CI run 取证，未跑本地构建、未补修实现、未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试。
+
+run：`NQ CI Baseline` / push / dev / completed / success，run ID `27903497008`，headSha `9b467fbc21e3ce685572dc3ec84104fd945fa0fb`，URL `https://github.com/ling5477/nexus-quant/actions/runs/27903497008`（createdAt 2026-06-21T11:54:52Z / updatedAt 2026-06-21T11:56:34Z）。
+
+9 jobs 全部 success：diff-check / no-outbound-guard / ci-security-smoke / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan。
+
+ci-security-smoke job 内 smoke 测试（CI 实跑，非本地）：
+
+- `NoRealExchangeCredentialPermissionProbePortTest`（nq-infra）：Tests run 1，Failures 0，Errors 0，Skipped 0。
+- `EnvSafetyValidatorTest`（nq-app）：Tests run 8，Failures 0，Errors 0，Skipped 0。
+- `NoOutboundExchangeGuardTest`（nq-app）：Tests run 3，Failures 0，Errors 0，Skipped 0。
+- 合计 12 tests / 0 failures；BUILD SUCCESS。
+
+边界：NoReal permission probe remains SKIPPED；No real credential read；No outbound call；No LIVE；No Paper / DH / AI runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION（2026-06-21）
 
 结论：**IMPLEMENTED / READY FOR REVIEW**。Batch 5B-SMOKE = IMPLEMENTED / READY FOR REVIEW；Implementation = DONE / READY FOR REVIEW；First run evidence = NOT STARTED；Freeze = NOT STARTED。

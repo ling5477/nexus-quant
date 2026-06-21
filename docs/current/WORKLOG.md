@@ -1,3 +1,18 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-FIRST-RUN-EVIDENCE（2026-06-21）
+
+采集 Batch 5B-SMOKE implementation（commit `9b467fbc`）的 CI first run evidence。本轮只取证 + 登记 docs/current，未 freeze、未补修实现、未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试。
+
+- 触发方式：`git push origin dev`（`f72a1ded..9b467fbc`），触发 `NQ CI Baseline` push run。
+- run：run ID `27903497008`，event push，branch dev，headSha `9b467fbc21e3ce685572dc3ec84104fd945fa0fb`，status completed，conclusion success，URL `https://github.com/ling5477/nexus-quant/actions/runs/27903497008`（createdAt 2026-06-21T11:54:52Z / updatedAt 2026-06-21T11:56:34Z）。
+- 9 jobs 全部 success：diff-check / no-outbound-guard / ci-security-smoke / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan。
+- ci-security-smoke：env-name assertion step 通过；smoke 测试 BUILD SUCCESS（NoReal 1 + EnvSafety 8 + NoOutbound 3 = 12 tests / 0 fail）；NoReal permission probe remains SKIPPED / REAL_EXCHANGE_PROBE_DISABLED。
+- 新增 evidence 文档：`docs/current/NQ_CI_SECURITY_BATCH_5B_SMOKE_FIRST_RUN_EVIDENCE.md`。
+- 状态：First run evidence = **PASS / READY FOR REVIEW**；Freeze = **NOT STARTED**。
+- 边界：No real credential read / No outbound call / No LIVE / No Paper / No DH / No AI runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+- 下一步：进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_FIRST_RUN_REVIEW**，只读复核 evidence；不提交、不 freeze（evidence commit 由后续单独 evidence commit gate 处理）。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION（2026-06-21）
 
 按已 accepted 的 implementation plan 执行 Batch 5B-SMOKE 最小实现，把 5B-SMOKE 从 plan reviewed/accepted 推进到 **IMPLEMENTED / READY FOR REVIEW**。

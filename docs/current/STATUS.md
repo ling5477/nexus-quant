@@ -6,6 +6,12 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- GateK CI Security Batch 5B-SMOKE first run evidence（2026-06-21）：**PASS / READY FOR REVIEW**。详见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FIRST_RUN_EVIDENCE.md`。
+  run = `NQ CI Baseline` / push / dev / **completed / success**，run ID `27903497008`，headSha `9b467fbc21e3ce685572dc3ec84104fd945fa0fb`（= implementation commit `9b467fbc`），createdAt `2026-06-21T11:54:52Z` / updatedAt `2026-06-21T11:56:34Z`，URL `https://github.com/ling5477/nexus-quant/actions/runs/27903497008`。
+  9 jobs 全部 success：diff-check / no-outbound-guard / **ci-security-smoke** / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan。
+  ci-security-smoke：env-name assertion step 通过；smoke 测试 BUILD SUCCESS —— `NoRealExchangeCredentialPermissionProbePortTest` 1/0/0/0 + `EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0（合计 12 tests / 0 fail）；NoReal permission probe remains **SKIPPED / REAL_EXCHANGE_PROBE_DISABLED**。
+  边界：No real credential read；No outbound call；No LIVE；No Paper / DH / AI runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+  状态：First run evidence = **PASS / READY FOR REVIEW**；Freeze = **NOT STARTED**。下一步进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_FIRST_RUN_REVIEW**，只读复核 evidence；不提交、不 freeze。
 - GateK CI Security Batch 5B-SMOKE implementation（2026-06-21）：**IMPLEMENTED / READY FOR REVIEW**。
   结论：Batch 5B-SMOKE = **IMPLEMENTED / READY FOR REVIEW**；Implementation = **DONE / READY FOR REVIEW**；First run evidence = **NOT STARTED**；Freeze = **NOT STARTED**。
   实现：`.github/workflows/ci.yml` 新增独立最小 `ci-security-smoke` job —— 含 CI env-name assertion step（仅按 env 名称做存在性检查，未写入真实凭证 / 真实交易所 env / 真实 endpoint），并复用 `EnvSafetyValidatorTest` / `NoOutboundExchangeGuardTest`（nq-app）+ `NoRealExchangeCredentialPermissionProbePortTest`（nq-infra）的最小安全 smoke。未新增业务测试、未引入真实 adapter / provider / exchange client。
