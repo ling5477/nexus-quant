@@ -6,6 +6,12 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- GateK CI Security final freeze（2026-06-21）：**GateK CI/security = FROZEN / ACCEPTED**。详见 `NQ_CI_SECURITY_FINAL_FREEZE.md`。
+  冻结对象：GateK CI/security baseline（NQ CI Baseline 9-job 管线 + 对应 backend guard/validator/port 测试 + docs/current CI/security 事实源）。
+  Batch 1 implemented/green；Batch 2A–2E / 3 / 4B / 4C / 4F-A / 5A / 5B-ENV / 5B-SMOKE 均 **FROZEN / ACCEPTED**；**Batch 5B = CLOSED / ACCEPTED**；4F-B..4F-F / static assertion = OPTIONAL BACKLOG / NOT IMPLEMENTED（NOT BLOCKING）。
+  Evidence（只读复核 success）：5B-SMOKE run `27903497008`（headSha `9b467fbc`，9 jobs all success）、5B-ENV run `27876451289`（headSha `8ba140d9`）、docs-only freeze run `27904207910`（headSha `3158e8ad`）。`.github/workflows/ci.yml` 自 `9b467fbc` 未变。
+  Regression：后续 workflow / guard / env profile 改动须重新采集 first-run evidence 并单独 freeze。Rollback：revert final freeze docs commit 即回 READY FOR FINAL FREEZE，无 runtime/DB/credential/provider/exchange 副作用。
+  边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
 - GateK CI Security final baseline review（2026-06-21）：**PASS / READY FOR FINAL FREEZE**。详见 `NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md`。
   Batch 矩阵：Batch 1 implemented / first green；Batch 2A–2E / 3 / 4B / 4C / 4F-A / 5A / 5B-ENV / 5B-SMOKE 均 **FROZEN / ACCEPTED**；**Batch 5B = CLOSED / ACCEPTED**；4F-B..4F-F = OPTIONAL BACKLOG / NOT STARTED（不阻断）。
   5B-SMOKE freeze evidence run `27903497008`（NQ CI Baseline / push / headSha `9b467fbc` / success / 9 jobs all success）仍可查；`.github/workflows/ci.yml` 自 `9b467fbc` 未变；HEAD `3158e8ad`，local dev = origin/dev（已同步），working tree clean。

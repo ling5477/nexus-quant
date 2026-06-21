@@ -1,3 +1,15 @@
+## NQ-CI-SECURITY-FINAL-FREEZE-GATE（2026-06-21）
+
+结论：**GateK CI/security = FROZEN / ACCEPTED**。docs-only freeze，未跑本地构建、未触发新的 GitHub Actions（仅只读复核既有 green run），未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试。
+
+evidence（只读复核 success）：5B-SMOKE run `27903497008`（headSha `9b467fbc` / 9 jobs all success，ci-security-smoke 内 12 tests / 0 fail）、5B-ENV run `27876451289`（headSha `8ba140d9`）、docs-only freeze run `27904207910`（headSha `3158e8ad`）。
+
+Batch matrix：Batch 1 green；Batch 2A–2E / 3 / 4B / 4C / 4F-A / 5A / 5B-ENV / 5B-SMOKE = FROZEN / ACCEPTED；Batch 5B = CLOSED / ACCEPTED；4F-B..4F-F / static assertion = OPTIONAL BACKLOG / NOT IMPLEMENTED（NOT BLOCKING）。
+
+边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe（NoReal probe remains SKIPPED）。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-FREEZE（2026-06-21）
 
 结论：**Batch 5B-SMOKE = FROZEN / ACCEPTED**；**Batch 5B = CLOSED / ACCEPTED**；Freeze = FROZEN / ACCEPTED。docs-only freeze，未跑本地构建、未触发新的 GitHub Actions、未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试、未补修 implementation。

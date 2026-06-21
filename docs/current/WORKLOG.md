@@ -1,3 +1,17 @@
+## NQ-CI-SECURITY-FINAL-FREEZE-GATE（2026-06-21）
+
+提交 final baseline review docs 并把 GateK CI/security 总基线冻结为 **FROZEN / ACCEPTED**。docs-only：未改 workflow/code/migration/runtime，未启动新功能，未读取真实凭证，未外联。
+
+- Phase 1：提交 final review docs，commit `7ad24f33`（docs(ci): review final CI security baseline，5 文件）。
+- Phase 2：新增 `docs/current/NQ_CI_SECURITY_FINAL_FREEZE.md`，更新 BASELINE / README / STATUS / ROADMAP / TESTING / WORKLOG。
+- evidence（只读复核 success）：5B-SMOKE run `27903497008` / headSha `9b467fbc` / 9 jobs all success；5B-ENV run `27876451289` / headSha `8ba140d9`；docs-only freeze run `27904207910` / headSha `3158e8ad`。
+- Batch 矩阵：Batch 1 green；Batch 2A–2E / 3 / 4B / 4C / 4F-A / 5A / 5B-ENV / 5B-SMOKE = FROZEN / ACCEPTED；Batch 5B = CLOSED / ACCEPTED；4F-B..4F-F = OPTIONAL BACKLOG / NOT STARTED（NOT BLOCKING）。
+- 结论：**GateK CI/security = FROZEN / ACCEPTED**。
+- Regression：后续 workflow/guard/env profile 改动须重新采集 first-run evidence 并单独 freeze。Rollback：revert final freeze docs commit。
+- 边界：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
+---
+
 ## NQ-CI-SECURITY-FINAL-BASELINE-REVIEW（2026-06-21）
 
 GateK CI/security final freeze 前总复核（只读 + docs review）。未改 workflow/code/migration/runtime，未启动新功能，未 final freeze，未触发新 Actions（仅只读读取既有 run）。

@@ -34,7 +34,8 @@ AI not started；DH not integrated；LIVE disabled；real provider / RealClient 
 - [NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md](NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md)：Batch 5B-ENV freeze 卷宗（**FROZEN / ACCEPTED**，evidence run `27876451289` / headSha `8ba140d9`；freeze-time smoke remained blocked；current Batch 5B-SMOKE **FROZEN / ACCEPTED**，见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`）。
 - [NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md](NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md)：Batch 5B-SMOKE preflight plan（**REVIEWED / ACCEPTED**；该 plan 编写时 smoke 为 PLANNED / NOT STARTED，current Batch 5B-SMOKE **FROZEN / ACCEPTED**；no-real / no-outbound / no-secret-read）。
 - [NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md](NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md)：Batch 5B-SMOKE implementation plan（**REVIEWED / ACCEPTED**）；Batch 5B-SMOKE = **FROZEN / ACCEPTED**（ci.yml `ci-security-smoke` job，复用 EnvSafety / no-outbound / NoReal 最小 smoke；first run evidence PASS（run `27903497008`，9 jobs success）；freeze **FROZEN / ACCEPTED**，卷宗 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`）；Batch 5B = **CLOSED / ACCEPTED**。
-- [NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md](NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md)：GateK CI/security final baseline review（**PASS / READY FOR FINAL FREEZE**；Batch 5B = CLOSED / ACCEPTED；GateK final freeze 未执行）。
+- [NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md](NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md)：GateK CI/security final baseline review（**PASS / READY FOR FINAL FREEZE**；Batch 5B = CLOSED / ACCEPTED；final freeze 见 `NQ_CI_SECURITY_FINAL_FREEZE.md`）。
+- [NQ_CI_SECURITY_FINAL_FREEZE.md](NQ_CI_SECURITY_FINAL_FREEZE.md)：GateK CI/security final freeze 卷宗（**GateK CI/security = FROZEN / ACCEPTED**；Batch 1–5 全部 FROZEN/ACCEPTED 或 CLOSED；evidence run 27903497008 / 27876451289 / 27904207910 success）。
 - CI baseline 导航索引：`docs/baselines/CI_BASELINE_INDEX.md`
 
 ## GateK / 规划与其他当前控制文档
