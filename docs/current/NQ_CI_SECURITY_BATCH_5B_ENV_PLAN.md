@@ -4,7 +4,7 @@
 日期：2026-06-19
 分支：dev
 任务类型：CI_SECURITY_PLANNING + ENVIRONMENT_BOUNDARY_REVIEW + SECRET_GUARD_REVIEW + NO_OUTBOUND_BOUNDARY_REVIEW + DOCUMENTATION
-状态：**Batch 5B-ENV plan = ACCEPTED**；**Batch 5B-ENV implementation = FROZEN / ACCEPTED**（见 §17；freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`，evidence run `27876451289` / headSha `8ba140d9` / 8 jobs success）；**Batch 5B-SMOKE = STILL BLOCKED**。
+状态：**Batch 5B-ENV plan = ACCEPTED**；**Batch 5B-ENV = FROZEN / ACCEPTED**（见 §17；freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`，evidence run `27876451289` / headSha `8ba140d9` / 8 jobs success）；**Batch 5B-SMOKE = PLANNED / NOT STARTED**（preflight plan `NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md` = **PASS / READY FOR REVIEW**；smoke implementation remains **NOT STARTED**；preflight review accepted 前仍禁止实现）。
 
 > 本文是 planning-only 文档。本轮不创建 / 不修改任何 workflow，不改代码，不新增 API，不新增 migration，不启动 LIVE / AI / DH runtime / real provider，不做真实外联。所有 "implementation" 措辞均指**后续另起批次**才执行，不代表已实现。
 
@@ -74,7 +74,7 @@
 
 ### 1.9 文档是否把 5B-SMOKE 写成可直接启动
 
-- **否（当前状态正确）**。NQ_CI_BASELINE_PLAN.md、ROADMAP.md、STATUS.md 均保持 5B-SMOKE blocked 口径；本 review 后 current docs 写明 Batch 5B-ENV plan = ACCEPTED / READY FOR IMPLEMENTATION、Batch 5B-ENV implementation = IMPLEMENTED / PENDING FIRST CI RUN、Batch 5B-SMOKE = STILL BLOCKED。
+- **否（当前状态正确）**。NQ_CI_BASELINE_PLAN.md、ROADMAP.md、STATUS.md 已由后续 preflight plan 收口为 Batch 5B-ENV = FROZEN / ACCEPTED、Batch 5B-SMOKE = PLANNED / NOT STARTED；smoke implementation remains NOT STARTED，且 preflight review accepted 前仍禁止实现。
 - P3 级文档漂移已由 plan review 的允许 status update 收口：NQ_CI_BASELINE_PLAN.md Batch 5 段已改为 Batch 5A FROZEN / ACCEPTED，5B-ENV 仍仅为 plan accepted，implementation 未启动。
 
 ---

@@ -2,7 +2,7 @@
 
 任务：NQ-CI-SECURITY-BATCH-5B-ENV-FIRST-RUN-REVIEW
 日期：2026-06-20
-状态：**SUPERSEDED / FROZEN**。本文件第 1–10 节是 first-run review 当时（commit `0ef4dbbe` 尚无 target run）的历史结论，第 11 节记录 first run RED + fix-forward，第 12 节记录 fix rerun GREEN，均保留作记录。**当前权威状态：Batch 5B-ENV = FROZEN / ACCEPTED（freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`，evidence run `27876451289` / headSha `8ba140d9`）；Batch 5B-SMOKE = STILL BLOCKED。**
+状态：**SUPERSEDED / FROZEN**。本文件第 1–10 节是 first-run review 当时（commit `0ef4dbbe` 尚无 target run）的历史结论，第 11 节记录 first run RED + fix-forward，第 12 节记录 fix rerun GREEN，均保留作记录。**当前权威状态：Batch 5B-ENV = FROZEN / ACCEPTED（freeze 卷宗 `NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md`，evidence run `27876451289` / headSha `8ba140d9`）；Batch 5B-SMOKE = PLANNED / NOT STARTED（preflight plan `NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md` = PASS / READY FOR REVIEW；smoke implementation remains NOT STARTED；preflight review accepted 前仍禁止实现）。**
 
 ## 1. Review decision
 
@@ -76,7 +76,7 @@ Static read-only checks show the implementation intent is correctly bounded, but
 ```text
 Batch 5B-ENV = IMPLEMENTED / PENDING FIRST CI RUN
 Batch 5B-ENV first-run review = BLOCKED / NO TARGET RUN
-Batch 5B-SMOKE = STILL BLOCKED
+Historical checkpoint: Batch 5B-SMOKE was blocked pending 5B-ENV freeze / smoke preflight review
 No real credential read
 No outbound call
 No LIVE
@@ -134,7 +134,7 @@ Fix（fix-forward，最小且不削弱安全语义）：从上述两个 job 的 
 
 ```text
 Batch 5B-ENV = IMPLEMENTED / FIRST RUN RED / FIXED LOCALLY / PENDING CI RERUN
-Batch 5B-SMOKE = STILL BLOCKED
+Historical checkpoint: Batch 5B-SMOKE was blocked pending 5B-ENV fix rerun / smoke preflight review
 root cause = workflow injected env names forbidden by existing no-outbound guard
 fix = remove forbidden env-name injections from workflow jobs, not relax test
 No real credential read
@@ -188,7 +188,7 @@ fix commit `8ba140d9 ci(security): fix 5B env guard workflow env conflict` 已 p
 
 ```text
 Batch 5B-ENV = FIX RERUN GREEN / READY FOR FREEZE
-Batch 5B-SMOKE = STILL BLOCKED
+Historical checkpoint: Batch 5B-SMOKE was blocked pending 5B-ENV freeze / smoke preflight review
 target run = 27876451289 / success / headSha 8ba140d9
 No real credential read
 No outbound call
