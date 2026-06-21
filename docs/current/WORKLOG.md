@@ -1,3 +1,16 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION-PLAN（2026-06-21）
+
+为 Batch 5B-SMOKE 编制 implementation plan，把 5B-SMOKE 从 preflight reviewed/accepted 后的 planned 状态推进到 **IMPLEMENTATION PLAN READY / READY FOR REVIEW**。docs-only，仅新增/更新 docs/current，未执行 implementation，未新增 CI job，未新增测试，未修改 workflow / backend / migration / frontend / research / scripts / deploy / .env.example。
+
+- 状态：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE-PREFLIGHT = **REVIEWED / ACCEPTED**；Batch 5B-SMOKE implementation = **NOT STARTED**。
+- 下一轮 CI job 名称定稿为 **ci-security-smoke**；P2 已转化为 implementation execution checklist；P3 job name drift 已关闭。
+- 最小 smoke 范围：CI safety boundary、minimal app startup、mock path validation、EnvSafety fail-closed、no-outbound guard enforced、placeholder-only credential path、forbidden env names 不注入 CI job env、NoReal permission probe remains SKIPPED。
+- 下一轮 implementation allowlist：.github/workflows/ci.yml、backend 相关最小测试文件、docs/current 状态/记录文件。
+- 禁止范围：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe / no migration / no frontend-research-scripts-deploy / default no .env.example change。
+- 下一步：进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN_REVIEW**，只读复核 implementation plan；不得直接执行 implementation。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-PREFLIGHT-PLAN（2026-06-21）
 
 完成 Batch 5B-SMOKE 前置预检与实施计划。docs-only，仅新增/更新 `docs/current`，未启动 smoke implementation，未修改 workflow / 代码 / 配置 / migration / `.env.example`。
@@ -8962,3 +8975,39 @@ push 第二次修复 → re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLY
 ### 回滚方式
 
 `git restore -- docs/current/STATUS.md docs/current/TESTING.md docs/current/WORKLOG.md` 并删除 `docs/current/NQ_DOCS_G5_DIRECTORY_CLOSURE_PREFLIGHT.md` 即可回滚本轮 preflight 文档记录；不涉及代码、workflow、migration 或运行时副作用。
+
+---
+
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION-PLAN
+
+日期：2026-06-21
+
+### 本轮目标
+
+为 Batch 5B-SMOKE 编制 implementation plan，把 5B-SMOKE 从 preflight reviewed/accepted 后的 planned 状态推进到 **IMPLEMENTATION PLAN READY / READY FOR REVIEW**。本轮只产出计划文档与 current 状态入口，不执行 implementation。
+
+### 范围
+
+- 新增：`docs/current/NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md`。
+- 更新：`NQ_CI_BASELINE_PLAN.md`、`README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。
+- 只读核对：5B-ENV plan / first-run / freeze、5B-SMOKE preflight、`.github/workflows/ci.yml`、backend EnvSafety / no-outbound / NoReal 相关测试与 guard。
+
+### 计划决策
+
+- 下一轮 CI job 名称定稿为 **ci-security-smoke**；不采用 env-smoke，避免误读成泛化 env 验证。
+- 最小 smoke 范围：CI safety boundary、minimal app startup、mock path validation、EnvSafety fail-closed、no-outbound guard enforced、placeholder-only credential path、forbidden env names 不注入 CI job env、NoReal permission probe remains SKIPPED。
+- 下一轮 implementation 只允许改 `.github/workflows/ci.yml`、backend 相关最小测试文件、docs/current 状态/记录文件。
+- 禁止读取真实凭证、访问真实 provider/exchange endpoint、outbound call、LIVE、Paper trading runtime、DH runtime、AI runtime、RealClient、real provider、real exchange adapter、real permission probe、migration、frontend/research/scripts/deploy、默认禁止改 `.env.example`。
+- P2 已转化为 implementation execution checklist；P3 job name drift 已关闭。
+
+### 状态
+
+**NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION-PLAN = IMPLEMENTATION PLAN READY / READY FOR REVIEW**。Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE-PREFLIGHT = **REVIEWED / ACCEPTED**；Batch 5B-SMOKE implementation = **NOT STARTED**。
+
+### 回滚方式
+
+删除 `docs/current/NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md`，并还原 `NQ_CI_BASELINE_PLAN.md`、`README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md` 的本轮状态入口即可；无代码、workflow、DB、runtime、credential、provider 或 exchange 副作用。
+
+### 下一步
+
+进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN_REVIEW**，只读复核 implementation plan；不得直接执行 implementation。

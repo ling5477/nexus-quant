@@ -6,7 +6,11 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
-- GateK CI Security Batch 5B-SMOKE preflight plan（2026-06-21）：**PASS / READY FOR REVIEW**。详见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md`。
+- GateK CI Security Batch 5B-SMOKE implementation plan（2026-06-21）：**IMPLEMENTATION PLAN READY / READY FOR REVIEW**。详见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md`。
+  结论：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE-PREFLIGHT = **REVIEWED / ACCEPTED**；Batch 5B-SMOKE implementation = **NOT STARTED**。本轮只编制 implementation plan，不新增 CI job，不新增测试，不改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`，不运行或触发 GitHub Actions。
+  下一轮 implementation job 名称定稿为 **ci-security-smoke**；P2 已转化为 implementation execution checklist（EnvSafety / no-outbound coverage 复用，最小 NoReal / placeholder / CI env-name smoke 补齐），P3 job name drift 已关闭。
+  下一步：进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN_REVIEW**，只读复核 implementation plan；不得直接执行 implementation。
+- GateK CI Security Batch 5B-SMOKE preflight plan（2026-06-21）：**REVIEWED / ACCEPTED**。详见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md`。
   结论：5B-ENV-A..E 对 planning 的前置门槛已满足：ci/test/paper profile 边界 frozen；`EnvSafetyValidator` fail-closed guard frozen；no-outbound guard 与 EnvSafety guard 兼容 frozen；secret placeholder / `.env.example` 边界 frozen；CI trigger 与 8 job baseline frozen。
   状态：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE = **PLANNED / NOT STARTED**。本轮未启动 implementation，未改 workflow / Java / TypeScript / Python / migration / frontend / research / scripts / deploy / `.env.example`。
   后续 smoke 必须保持 no-real / no-outbound，只允许 mock / fake / NoReal 路径；不得读取真实 `.env` 或 secret；不得访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken / Crypto / Hyperliquid；不得开启 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter / real permission probe。
@@ -14,7 +18,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
   freeze evidence = green run `27876451289`（NQ CI Baseline / push / completed / success，headSha `8ba140d96d84b7e2ae5f379043779bfeb925e2fc`，8 jobs（diff-check / no-outbound-guard / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan）all success，`EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0 实跑非 skip）。
   历史：first run RED（run `27875157176`，根因 = workflow 注入被 `NoOutboundExchangeGuardTest` 禁止的 env 名 `NQ_LIVE_ENABLED`/`NQ_REAL_PROVIDER_ENABLED`/`NQ_REAL_CLIENT_ENABLED`）→ fix-forward（fix commit `8ba140d9`，删除该 3 项 CI job env 注入，no-outbound guard 未放宽、`NoOutboundExchangeGuardTest` 未改）→ rerun GREEN。
   冻结边界：env guard frozen、no-outbound compatibility frozen、secret placeholder boundary frozen、CI trigger boundary frozen（`pull_request:[dev]` + `push:[dev]` + `workflow_dispatch`，8 job 未删，未新增 secret）。本 freeze 为 docs-only：未读取真实 .env / secrets / credentials；未调用真实交易所；未新增 HTTP client / migration / API；未改 workflow / 代码 / 测试 / 配置 / frontend / research / scripts / deploy；未启动 5B-SMOKE；LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter / real permission probe 均未开启或实现。
-  Batch 5B-SMOKE = **STILL BLOCKED**（须按 5B-ENV-A..E 门槛另起工作单，不得写成 READY / STARTED）。
+  5B-ENV freeze-time 记录中 Batch 5B-SMOKE 仍为 **STILL BLOCKED**；当前已由后续 preflight + implementation plan 推进为 **IMPLEMENTATION PLAN READY / READY FOR REVIEW**，但 implementation 仍 **NOT STARTED**。
 - NQ docs **current 目录物理瘦身 Round 3 final freeze** completed（2026-06-19）：**PASS / ACCEPTED / FROZEN**。详见 `NQ_DOCS_CURRENT_CLEANUP_R3_FINAL_FREEZE.md`。
   冻结 `docs/current` 物理瘦身结果（R1 commit `ca77460f` + R2 review commit `d4095ded`，二者一致）：**NQ Docs Current Cleanup = FROZEN / ACCEPTED / CLOSED**；Round = 3 / 3；**Round 4 = NOT ALLOWED**。cleanup-result 基线：current root markdown 96 → **46**；moved out of current = **51**（governance 17 + GateJ stub 14 + CI stub 20）；known compatibility residual = **3**；P3 informational = **2**；historical evidence deleted = 0；code/workflow/migration changed = 0。
   计数口径：`current markdown count = 46` 为 physical-reduction cleanup-result 基线；R2/R3 的 review/freeze audit-trail 文档按设计保留在 current，使 live `git ls-files docs/current/*.md` = **48**（R3 提交后），如实可复核，二者不矛盾。

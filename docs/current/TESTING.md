@@ -1,3 +1,15 @@
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION-PLAN（2026-06-21）
+
+结论：**IMPLEMENTATION PLAN READY / READY FOR REVIEW**。docs-only implementation plan，本轮未执行 implementation，未新增 CI job，未新增测试，未修改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`，未运行或触发 GitHub Actions。
+
+状态：Batch 5B-ENV = **FROZEN / ACCEPTED**；Batch 5B-SMOKE-PREFLIGHT = **REVIEWED / ACCEPTED**；Batch 5B-SMOKE implementation = **NOT STARTED**；next job name = **ci-security-smoke**；P2 已转化为 implementation execution checklist；P3 job name drift 已关闭。
+
+本轮验证范围：文档路径、阶段状态、禁止边界、入口一致性和 scoped diff。未运行 Maven / npm / pytest / GitHub Actions，原因是本轮只改 docs-current planning/status 文档，不改代码、workflow、测试、migration 或运行时配置。
+
+边界声明：NoReal permission probe remains SKIPPED；No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-PREFLIGHT-PLAN（2026-06-21）
 
 结论：**PASS / READY FOR REVIEW**。docs-only preflight / plan，未跑后端 Maven、前端 build/e2e、Python pytest/mypy/ruff；原因是本轮明确禁止实现 smoke、修改 workflow/code/config/migration 或启动真实外联。
@@ -4701,3 +4713,20 @@ target conflicts = 0
 阶段状态：**G1 authority/evidence index = FROZEN / ACCEPTED**；**G2 current-control drift repair = FROZEN / ACCEPTED**；**G3 GateJ redirect-first consolidation = FROZEN / ACCEPTED**；**G4 CI evidence routing = FROZEN / ACCEPTED**；**G5 directory closure preflight = IMPLEMENTED / READY FOR REVIEW**；**G6 deletion batch = NOT STARTED / DEFAULT EMPTY**。NQ GateK CI mainline = COMPLETED / ACCEPTED；Batch 5A = FROZEN / ACCEPTED；Batch 5B-ENV = P1 SECURITY ENHANCEMENT / NOT STARTED；Batch 5B-SMOKE = BLOCKED BY 5B-ENV；LIVE / AI / DH runtime / RealClient / real provider = 未开启、未接入、未实现。
 
 补充验证（2026-06-19）：`git diff --check` exit 0；G1 五份冻结对象 diff 为空；`docs/gates docs/archive .agents templates` diff 为空；`.github/workflows/ci.yml` diff 为空；`backend frontend research scripts deploy` diff 为空；`backend/**/db/migration` diff 为空。新增 preflight 文件单独检查 trailing whitespace = 0，single LF at EOF。
+
+---
+
+## NQ-CI-SECURITY-BATCH-5B-SMOKE-IMPLEMENTATION-PLAN（2026-06-21）
+
+结论：**IMPLEMENTATION PLAN READY / READY FOR REVIEW**。docs-only implementation plan，本轮未执行 implementation，未新增 CI job，未新增测试，未修改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`，未运行或触发 GitHub Actions。
+
+计划验收要点：
+
+- Batch 5B-ENV = **FROZEN / ACCEPTED**。
+- Batch 5B-SMOKE-PREFLIGHT = **REVIEWED / ACCEPTED**。
+- Batch 5B-SMOKE implementation = **NOT STARTED**。
+- 下一轮 job name 定稿为 **ci-security-smoke**。
+- P2 已转化为 implementation execution checklist；P3 job name drift 已关闭。
+- NoReal permission probe remains SKIPPED；No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+本轮验证范围：文档路径、阶段状态、禁止边界、入口一致性和 scoped diff。未运行 Maven / npm / pytest / GitHub Actions，原因是本轮只改 docs-current planning/status 文档，不改代码、workflow、测试、migration 或运行时配置。

@@ -32,7 +32,8 @@ AI not started；DH not integrated；LIVE disabled；real provider / RealClient 
 - [NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md](NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md)：Batch 5B-ENV plan review（PASS / ACCEPTED）。
 - [NQ_CI_SECURITY_BATCH_5B_ENV_FIRST_RUN_REVIEW.md](NQ_CI_SECURITY_BATCH_5B_ENV_FIRST_RUN_REVIEW.md)：Batch 5B-ENV first-run review（first run RED → fix-forward → fix rerun GREEN → FROZEN，见 §12）。
 - [NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md](NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md)：Batch 5B-ENV freeze 卷宗（**FROZEN / ACCEPTED**，evidence run `27876451289` / headSha `8ba140d9`；freeze-time smoke remained blocked；current Batch 5B-SMOKE **PLANNED / NOT STARTED** via preflight plan）。
-- [NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md](NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md)：Batch 5B-SMOKE preflight plan（**PASS / READY FOR REVIEW**；Batch 5B-SMOKE **PLANNED / NOT STARTED**；no-real / no-outbound / no-secret-read）。
+- [NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md](NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md)：Batch 5B-SMOKE preflight plan（**REVIEWED / ACCEPTED**；Batch 5B-SMOKE **PLANNED / NOT STARTED**；no-real / no-outbound / no-secret-read）。
+- [NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md](NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md)：Batch 5B-SMOKE implementation plan（**IMPLEMENTATION PLAN READY / READY FOR REVIEW**；implementation **NOT STARTED**；next job name **ci-security-smoke**；P2 checklistized / P3 closed）。
 - CI baseline 导航索引：`docs/baselines/CI_BASELINE_INDEX.md`
 
 ## GateK / 规划与其他当前控制文档
