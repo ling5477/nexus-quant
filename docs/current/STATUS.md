@@ -6,6 +6,10 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- GateK CI Security final baseline review（2026-06-21）：**PASS / READY FOR FINAL FREEZE**。详见 `NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md`。
+  Batch 矩阵：Batch 1 implemented / first green；Batch 2A–2E / 3 / 4B / 4C / 4F-A / 5A / 5B-ENV / 5B-SMOKE 均 **FROZEN / ACCEPTED**；**Batch 5B = CLOSED / ACCEPTED**；4F-B..4F-F = OPTIONAL BACKLOG / NOT STARTED（不阻断）。
+  5B-SMOKE freeze evidence run `27903497008`（NQ CI Baseline / push / headSha `9b467fbc` / success / 9 jobs all success）仍可查；`.github/workflows/ci.yml` 自 `9b467fbc` 未变；HEAD `3158e8ad`，local dev = origin/dev（已同步），working tree clean。
+  GateK CI/security = **READY FOR FINAL FREEZE**（本轮不 final freeze、不改 workflow/code/migration、不启动新功能）。No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
 - GateK CI Security Batch 5B-SMOKE freeze（2026-06-21）：**FROZEN / ACCEPTED**；**Batch 5B = CLOSED / ACCEPTED**。详见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`。
   冻结对象：implementation commit `9b467fbc`（ci-security-smoke job）+ first run evidence commit `9a98041a`（run `27903497008`，NQ CI Baseline / push / headSha `9b467fbc` / completed / success / 9 jobs all success）。`.github/workflows/ci.yml` 自 `9b467fbc` 后未变。
   ci-security-smoke success / no-outbound-guard success / secret-scan success；smoke 12 tests / 0 fail（NoReal 1 + EnvSafety 8 + NoOutbound 3）；NoReal permission probe remains **SKIPPED**。

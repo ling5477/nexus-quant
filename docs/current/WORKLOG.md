@@ -1,3 +1,17 @@
+## NQ-CI-SECURITY-FINAL-BASELINE-REVIEW（2026-06-21）
+
+GateK CI/security final freeze 前总复核（只读 + docs review）。未改 workflow/code/migration/runtime，未启动新功能，未 final freeze，未触发新 Actions（仅只读读取既有 run）。
+
+- HEAD `3158e8ad`；local dev = origin/dev = `3158e8ad`（已同步）；working tree clean。
+- 5B-SMOKE freeze evidence：run `27903497008` / headSha `9b467fbc` / NQ CI Baseline / push / success / 9 jobs all success（含 ci-security-smoke / no-outbound-guard / backend / secret-scan / frontend-no-backend-e2e）。
+- `.github/workflows/ci.yml` 自 `9b467fbc` 起未变。
+- Batch 矩阵：Batch 1 first green；Batch 2A–2E / 3 / 4B / 4C / 4F-A / 5A / 5B-ENV / 5B-SMOKE = FROZEN / ACCEPTED；Batch 5B = CLOSED / ACCEPTED；4F-B..4F-F = OPTIONAL BACKLOG / NOT STARTED（不阻断）。
+- 新增 review 卷宗 `docs/current/NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md`；修复 README preflight-plan 索引 P3（时间限定澄清）。
+- 结论：**NQ-CI-SECURITY-FINAL-BASELINE-REVIEW = PASS / READY FOR FINAL FREEZE**；GateK CI/security = READY FOR FINAL FREEZE。
+- 下一步：GateK CI/security final freeze gate（单独工作单），本轮不 final freeze。
+
+---
+
 ## NQ-CI-SECURITY-BATCH-5B-SMOKE-FREEZE（2026-06-21）
 
 生成 Batch 5B-SMOKE freeze docs/status 入口并完成 freeze 自检。本轮 docs-only，未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未补修 implementation、未新增测试、未触发新的 GitHub Actions、未提交 freeze docs（留待 FREEZE_COMMIT_GATE）。
