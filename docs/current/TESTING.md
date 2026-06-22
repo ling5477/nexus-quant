@@ -1,3 +1,16 @@
+## NQ-GATEL-1B-C-IMPL-FREEZE（2026-06-22）
+
+结论：**PASS / FROZEN / ACCEPTED；P1-C producer suppression CLOSED / ACCEPTED**。冻结 implementation commit `316497ad`；P1-A/P1-B 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除 NOT DONE，P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+- 提交校验：`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace；`git show --stat --oneline HEAD` 确认提交范围为 GateL-1B-C 允许文件。
+- 静态核对：`git grep` 确认 OKX/Binance ack/snapshot producer 均使用 `suppressedOrderRawPayload()` 且 helper 返回 `null`；adapter-api rawPayload 字段仍保留且无 diff；P1-A `disabled://` sentinel 未回退；P1-B `OkxApiCredentials.unconfigured()` / `BinanceApiCredentials.unconfigured()` 未回退。
+- 禁止路径：adapter-api、workflow、migration、frontend、research、scripts、deploy diff 均为空；未删除 rawPayload 字段，未新增 API/DTO/migration/workflow。
+- 测试复跑（freeze 证据）：`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test`（offline，未外联）→ **BUILD SUCCESS**；reactor nq-common / nq-contracts / nq-adapter-api / nq-adapter-okx / nq-adapter-binance 全部 SUCCESS。
+- nq-adapter-okx：**34 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-binance：**51 tests / 0 fail / 0 error / 1 skipped**（skip = `BinanceWsClientLiveDiagnosticTest` 系统属性门禁）。
+- 未执行 frontend / Python（本轮 docs-only freeze，未改代码）；未访问网络、交易所、DB、容器、GitHub Actions；未读取 `.env` 或 credential material。
+
+---
+
 ## NQ-GATEL-1B-C-IMPL（2026-06-22）
 
 结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-C-IMPL-REVIEW`**。只实现 P1-C producer suppression；P1-A/P1-B 仍 CLOSED / ACCEPTED，P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。

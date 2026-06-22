@@ -1,3 +1,19 @@
+## NQ-GATEL-1B-C-IMPL-FREEZE（2026-06-22）
+
+完成 GateL-1B-C freeze-close，新增 `GATEL_1B_C_IMPL_FREEZE_REVIEW.md`，正式关闭 P1-C producer suppression。结论：**PASS / FROZEN / ACCEPTED；P1-C producer suppression CLOSED / ACCEPTED**。
+
+- 预检：`git status --short`（仅本轮允许的 docs/current freeze-close 文档变更；`GATEL_1B_C_IMPL_FREEZE_REVIEW.md` 未跟踪待提交）、`git branch --show-current`（dev）、`git log --oneline -5`（HEAD=`316497ad`）、`git show --stat --oneline HEAD`。
+- 冻结对象：implementation commit `316497ad`（`feat(adapter-okx,adapter-binance): suppress order rawPayload producers`）；提交含 OKX/Binance adapter + tests + docs/current，均在 GateL-1B-C 允许范围。
+- 校验：`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace；`git grep` @HEAD 确认 OKX/Binance ack/snapshot producer 使用 `suppressedOrderRawPayload()`，helper 返回 `null`；adapter-api rawPayload 字段保留且无 diff；P1-A sentinel 和 P1-B unconfigured credential 未回退；禁止路径 diff = NONE。
+- 测试复跑：`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS，nq-adapter-okx **34 / 0 / 0 / 0**、nq-adapter-binance **51 / 0 / 0 / 1 skipped**（live diagnostic 门禁跳过）。
+- **P1-C producer suppression = CLOSED / ACCEPTED**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；**P1-A / P1-B 仍 CLOSED / ACCEPTED**；**P1-D 仍 OPEN / RETAINED**；GateL-1B overall hardening freeze NOT DONE（待 D）；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；不代表允许真实 OKX/Binance 接入或 future-real-ready。
+- P2 follow-up：Binance `AdapterTradeReport` 仍使用 `item.toString()`，不属于本轮 `AdapterOrderAck` / `AdapterOrderSnapshot` producer suppression；后续如需收口 trade report raw payload，须另起独立边界任务。
+- 边界：本轮 docs-only freeze；未改 Java/TS/Python；未删除 rawPayload 字段；未改 adapter-api；未新增 API/DTO/migration/workflow；未访问外网/交易所/DB；未读取真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient/real provider/real permission probe；未修 P1-D。
+- 回滚：还原本轮 docs 并 `git revert 316497ad`；回滚会重新打开 P1-C producer suppression 风险，须立即恢复 NOT READY 状态。
+- 下一步 `NQ-GATEL-1B-D-IMPL`，不得直接进入 real adapter；GateL-1B overall freeze 待 D 独立完成后再执行。
+
+---
+
 ## NQ-GATEL-1B-C-IMPL（2026-06-22）
 
 完成 GateL-1B-C：OKX/Binance `AdapterOrderAck` / `AdapterOrderSnapshot` rawPayload producer suppression（**只实现 P1-C producer suppression，不删除字段，不夹带 P1-D**）。结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-C-IMPL-REVIEW`**。

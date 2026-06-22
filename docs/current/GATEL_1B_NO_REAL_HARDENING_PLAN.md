@@ -362,3 +362,14 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 - 边界：未接真实 OKX/Binance；未访问外网/交易所/DB；未读取 `.env` 或真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；不代表允许真实交易所接入或 future-real-ready。
 - 回滚：还原 `OkxExchangeAdapter` / `BinanceExchangeAdapter` 的 rawPayload suppression 与两个测试文件变更，并还原本轮 docs。回滚会重新打开 P1-C producer suppression 风险，须立即恢复 NOT READY 状态。
 - 下一步 `NQ-GATEL-1B-C-IMPL-REVIEW`；不得直接进入 P1-D 或 real adapter。
+
+## 20. GateL-1B-C freeze-close（2026-06-22）
+
+> 本节为 freeze-close 追加，不改写上文 frozen plan 正文；rawPayload 字段删除仍是后续独立兼容性任务。
+
+- 任务：`NQ-GATEL-1B-C-IMPL-FREEZE` = **PASS / FROZEN / ACCEPTED**，详见 `GATEL_1B_C_IMPL_FREEZE_REVIEW.md`。
+- 冻结对象：implementation commit `316497ad`（`feat(adapter-okx,adapter-binance): suppress order rawPayload producers`），`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace，`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（OKX 34 / Binance 51 / 0 fail / 1 skipped），`git grep` @HEAD 确认 OKX/Binance ack/snapshot producer 均使用 `suppressedOrderRawPayload()` 且 helper 返回 `null`。
+- **P1-C producer suppression = CLOSED / ACCEPTED**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；**P1-A / P1-B 仍 CLOSED / ACCEPTED**；**P1-D 仍 OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；不代表允许真实 OKX/Binance 接入或 future-real-ready。
+- GateL-1B 整体 No-Real hardening freeze **NOT DONE**，仍待 P1-D 独立完成后另行执行。
+- Regression boundary：后续改动 `OkxExchangeAdapter` / `BinanceExchangeAdapter` 中 `AdapterOrderAck` / `AdapterOrderSnapshot` producer 的 rawPayload 参数、`suppressedOrderRawPayload()` 返回值或 adapter-api record 兼容性，须重新 review + freeze。
+- 下一步 `NQ-GATEL-1B-D-IMPL`。
