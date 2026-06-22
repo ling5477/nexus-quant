@@ -1,9 +1,9 @@
 # GateL-1B No-Real Hardening Plan
 
-任务：NQ-GATEL-1B-NO-REAL-HARDENING-PLAN  
-日期：2026-06-22  
-分支：dev  
-结论：**PASS / PLAN READY FOR REVIEW**  
+任务：NQ-GATEL-1B-NO-REAL-HARDENING-PLAN
+日期：2026-06-22
+分支：dev
+结论：**PASS / PLAN READY FOR REVIEW**
 状态：**PLANNING ONLY / NOT IMPLEMENTED**；P1 **OPEN / RETAINED**；adapter readiness **NOT READY / NOT FROZEN / NOT AUTHORIZED**；GateL implementation **NOT STARTED**。
 
 > 本文只规划四项 P1 的最小 No-Real hardening 切片，不修代码，不授权 implementation。
@@ -290,4 +290,3 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 **NQ-GATEL-1B-NO-REAL-HARDENING-PLAN：PASS / PLAN READY FOR REVIEW。**
 
 接受 A → B → C → D 的分批 planning baseline，下一步仅允许 plan review。P1/P2 继续 OPEN；adapter readiness 继续 NOT READY / NOT FROZEN / NOT AUTHORIZED。
-
