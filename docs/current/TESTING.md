@@ -1,3 +1,18 @@
+## NQ-GATEL-1A-EXCHANGE-ADAPTER-CONTRACT-REVIEW-FREEZE（2026-06-22）
+
+结论：**PASS / REVIEW FACT BASELINE FROZEN / ACCEPTED**。冻结的是 GateL-1 review 事实、P1/P2 与处理顺序；adapter readiness = **NOT READY / NOT FROZEN**，P1/P2 全部 OPEN / RETAINED。
+
+- 已执行：`Get-Location`、`git status --short`、`git branch --show-current`；分支 `dev`，预检 working tree clean。
+- 已执行：只读复核 GateL-1 review、GateL plan、current 状态文档。
+- 已执行：白名单文件定向 `rg -n`，确认 Binance 默认外部 endpoint、OKX/Binance process credential parsing、`rawPayload`、Noop marketdata success 四项 P1。
+- 已执行：Markdown links、stage wording、P1/P2 retained、follow-up order、docs-only scope、secret value pattern、`git diff --check`。
+- 未执行 Maven/frontend/Python：本轮 docs-only，无 runtime 代码变更。
+- 未访问网络、真实交易所、DB、容器、GitHub Actions；未读取 credential material。
+
+下一步：`NQ-GATEL-1B-NO-REAL-HARDENING-PLAN`；不得直接实现。GateL implementation NOT STARTED；LIVE DISABLED；AI NOT STARTED；DH runtime NOT INTEGRATED。
+
+---
+
 ## NQ-GATEL-1-EXCHANGE-ADAPTER-CONTRACT-REVIEW（2026-06-22）
 
 结论：**CONDITIONAL PASS / DOCS-CONTRACT ONLY**。本轮仅文档审查，未改代码、API、migration、workflow 或运行配置。

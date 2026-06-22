@@ -1,3 +1,18 @@
+## NQ-GATEL-1A-EXCHANGE-ADAPTER-CONTRACT-REVIEW-FREEZE（2026-06-22）
+
+完成 GateL-1A freeze review，新增 `GATEL_1_EXCHANGE_ADAPTER_CONTRACT_FREEZE_REVIEW.md`。结论：**PASS / REVIEW FACT BASELINE FROZEN / ACCEPTED**；只冻结审查事实、P1/P2 和处理顺序，不冻结 adapter readiness。
+
+- Frozen facts：OKX/Binance 为 legacy network-capable code；OKX 默认 sentinel；Binance 默认外部 endpoint；process credential parsing、`rawPayload`、Noop success ambiguity 均存在。
+- P1=4、P2=4，全部 OPEN / RETAINED；未修复、未关闭。
+- Adapter readiness：NOT READY / NOT FROZEN / NOT AUTHORIZED。
+- 后续顺序调整并冻结为：1B No-Real hardening plan → 1C capability matrix → 1D error model → 1E readiness checklist refinement。
+- 下一步：`NQ-GATEL-1B-NO-REAL-HARDENING-PLAN`，只做 plan，不直接改代码。
+- 修改范围：仅新增 freeze review，并同步 `GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- 验证：docs-only 定向源码复核、链接/状态/顺序/diff/敏感值模式检查；未跑构建测试，未访问网络/交易所/DB，未读取 credential material。
+- Rollback：删除 freeze review 并还原 6 份同步文档；无 runtime/DB/workflow/credential/provider/exchange 副作用。
+
+---
+
 ## NQ-GATEL-1-EXCHANGE-ADAPTER-CONTRACT-REVIEW（2026-06-22）
 
 完成 GateL-1 adapter contract 的只读架构/安全边界审查并新增 `GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md`。结论为 **CONDITIONAL PASS / DOCS-CONTRACT ONLY**；通过的是审查交付，不是 future-real readiness。
@@ -8,7 +23,7 @@
 - Capability/error/security/paper-future-real matrices 与 fail-closed/retry 规则已集中成文。
 - 同步修正 `GATEL_PLAN.md` 的 Binance sentinel 事实错误；更新 `README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。
 - 验证：docs-only 静态审查与文档一致性/diff 检查；未跑构建或测试，未访问网络/交易所/DB，未读取凭证。
-- 下一步：GateL-1A review freeze；后续 1B capability / 1C error / 1D No-Real hardening plan / 1E checklist refinement。GateL implementation NOT STARTED，真实交易所未授权。
+- GateL-1A 已冻结 review fact baseline；后续顺序更新为 1B No-Real hardening plan / 1C capability / 1D error / 1E readiness checklist。GateL implementation NOT STARTED，真实交易所未授权。
 - Rollback：删除 review 文档并还原本轮 6 份 current docs 条目；无 runtime/DB/workflow/credential/provider/exchange 副作用。
 
 ---

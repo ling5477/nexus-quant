@@ -4,7 +4,7 @@
 日期：2026-06-22
 分支：dev
 任务类型：ARCHITECTURE_PLANNING + EXCHANGE_ADAPTER_BOUNDARY_REVIEW + MARKETDATA_BOUNDARY_REVIEW + SECURITY_BOUNDARY_REVIEW + ROADMAP_PLANNING
-状态：**NQ-GATEL-PLAN = PLANNING ONLY / READY FOR REVIEW**。GateL implementation **NOT STARTED**。
+状态：**NQ-GATEL-PLAN = PASS / ACCEPTED（PLANNING BASELINE）**。GateL implementation **NOT STARTED**。
 
 > 本文件是 GateL 的 planning baseline，只规划真实交易所接入前的 No-Real 交易适配器与市场数据边界。
 > 本轮 docs-only：不实现代码、不新增 API、不新增 migration、不改 workflow、不接真实交易所、不读取真实凭证、不外联、不启用 LIVE、不接 AI / DH runtime。
@@ -169,13 +169,13 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 
 ## 10. Recommended next task
 
-- **GateL-1A：Exchange adapter contract review freeze**（docs/contract-only）。GateL-1 review 已以 `CONDITIONAL PASS` 落档；先冻结 review 事实与 P1/P2，不得写 future-real-ready。
-- 前置状态：路线语义冲突已关闭；GateL-1 新发现的 P1 security gaps 仍 OPEN。后续按 GateL-1B capability matrix、1C error model、1D No-Real hardening plan、1E readiness checklist refinement 小步推进。
+- **GateL-1A：Exchange adapter contract review freeze = PASS / FROZEN / ACCEPTED**（docs-only）。只冻结 review 事实、P1/P2 与处理顺序；adapter readiness = NOT READY / NOT FROZEN，P1/P2 均保持 OPEN。
+- 后续顺序冻结为：GateL-1B No-Real hardening plan → GateL-1C capability matrix contract → GateL-1D error model contract → GateL-1E future-real readiness checklist refinement。先 hardening plan，再冻结依赖安全默认边界的 capability/error 合同。
 - 真实交易所接入仍须在 readiness checklist 全部满足 + 专项安全审计 + 用户显式授权后**另起 Gate**，不在 GateL 范围内。
 
 ## 11. 验收标准（GateL planning 验收）
 
-- 本计划被只读 review 通过，P0=0、P1 已登记并等待用户裁决、无安全边界被削弱。
+- 本计划 baseline 已 PASS / ACCEPTED；路线语义 P1 已关闭；GateL-1 adapter contract P1/P2 已由 GateL-1A freeze review 保留为 OPEN，且无安全边界被削弱。
 - README / ROADMAP / STATUS / TESTING / WORKLOG 的 GateL planning 状态一致，且未把 plan 写成 implementation started。
 - working tree 仅 docs/current 变更；backend / frontend / research / scripts / deploy / migration / workflow diff 为空。
 
