@@ -298,7 +298,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                         AdapterResultCategory.ACCEPTED,
                         null,
                         Instant.now(clock),
-                        snapshot.rawPayload(),
+                        suppressedOrderRawPayload(),
                         request.traceId(),
                         tradeEnv
                 );
@@ -327,7 +327,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                             AdapterResultCategory.ACCEPTED,
                             null,
                             Instant.now(clock),
-                            snapshot.rawPayload(),
+                            suppressedOrderRawPayload(),
                             request.traceId(),
                             tradeEnv
                     );
@@ -404,7 +404,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 AdapterResultCategory.ACCEPTED,
                 null,
                 Instant.now(clock),
-                payload.toString(),
+                suppressedOrderRawPayload(),
                 traceId,
                 tradeEnv
         );
@@ -430,7 +430,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 blankToNullDecimal(payload, "executedQty"),
                 calculateAveragePrice(payload),
                 Instant.now(clock),
-                payload.toString(),
+                suppressedOrderRawPayload(),
                 traceId,
                 tradeEnv
         );
@@ -627,7 +627,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
                 null,
                 null,
                 Instant.now(clock),
-                exception.getMessage(),
+                suppressedOrderRawPayload(),
                 traceId,
                 tradeEnv
         );
@@ -635,5 +635,15 @@ public class BinanceExchangeAdapter implements TradingAdapter {
 
     private static String resolveTradeEnv(String envName) {
         return "real".equalsIgnoreCase(envName) ? "LIVE" : "SIM";
+    }
+
+    /**
+     * GateL-1B-C 保留 adapter-api 的 rawPayload 字段以避免兼容性破坏，但 Binance order ack/snapshot
+     * producer 不再把 provider full body、headers、签名或异常诊断文本继续传给 core/API/audit。
+     *
+     * @return null 表示本 producer 明确抑制原始 provider payload；字段删除另起兼容性任务处理。
+     */
+    private static String suppressedOrderRawPayload() {
+        return null;
     }
 }

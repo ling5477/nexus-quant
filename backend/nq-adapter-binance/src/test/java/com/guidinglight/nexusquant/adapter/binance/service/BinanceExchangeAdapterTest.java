@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.adapter.binance.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +53,7 @@ class BinanceExchangeAdapterTest {
     @Test
     void shouldPlaceOrderWithTrimmedSignedParams() throws Exception {
         AtomicReference<RecordedExchange> exchangeRef = new AtomicReference<>();
-        try (TestServer server = new TestServer(exchangeRef, 200, "{\"symbol\":\"BTCUSDT\",\"orderId\":\"889900\",\"clientOrderId\":\"cid-binance-1\",\"status\":\"NEW\"}")) {
+        try (TestServer server = new TestServer(exchangeRef, 200, "{\"symbol\":\"BTCUSDT\",\"orderId\":\"889900\",\"clientOrderId\":\"cid-binance-1\",\"status\":\"NEW\",\"apiKey\":\"PROVIDER_API_KEY_MARKER\",\"signature\":\"PROVIDER_SIGNATURE_MARKER\",\"responseBody\":\"PROVIDER_FULL_BODY_MARKER\"}")) {
             BinanceExchangeAdapter adapter = createAdapter(server.baseUrl());
 
             AdapterOrderRequest request = new AdapterOrderRequest(
@@ -80,6 +81,7 @@ class BinanceExchangeAdapterTest {
             assertEquals("BINANCE", ack.exchangeCode());
             assertEquals("889900", ack.externalOrderId());
             assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.ACCEPTED, ack.resultCategory());
+            assertNull(ack.rawPayload());
             RecordedExchange exchange = exchangeRef.get();
             assertEquals("POST", exchange.method());
             assertEquals("/api/v3/order", exchange.path());
@@ -118,7 +120,7 @@ class BinanceExchangeAdapterTest {
         }
 
         AtomicReference<RecordedExchange> getExchange = new AtomicReference<>();
-        try (TestServer server = new TestServer(getExchange, 200, "{\"symbol\":\"BTCUSDT\",\"orderId\":\"889900\",\"clientOrderId\":\"cid-binance-2\",\"status\":\"NEW\"}")) {
+        try (TestServer server = new TestServer(getExchange, 200, "{\"symbol\":\"BTCUSDT\",\"orderId\":\"889900\",\"clientOrderId\":\"cid-binance-2\",\"status\":\"NEW\",\"secret\":\"PROVIDER_SECRET_MARKER\",\"authHeader\":\"PROVIDER_AUTH_HEADER_MARKER\"}")) {
             BinanceExchangeAdapter adapter = createAdapter(server.baseUrl());
             AdapterOrderSnapshot snapshot = adapter.getOrder(new AdapterOrderQuery(
                     2001L,
@@ -131,11 +133,12 @@ class BinanceExchangeAdapterTest {
             assertEquals("ACCEPTED", snapshot.externalStatus());
             assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.SUCCESS, snapshot.resultCategory());
             assertEquals("BTC-USDT", snapshot.symbol());
+            assertNull(snapshot.rawPayload());
             assertTrue(getExchange.get().uri().contains("orderId=889900"));
         }
 
         AtomicReference<RecordedExchange> listExchange = new AtomicReference<>();
-        try (TestServer server = new TestServer(listExchange, 200, "[{\"symbol\":\"BTCUSDT\",\"orderId\":\"889900\",\"clientOrderId\":\"cid-binance-2\",\"status\":\"NEW\"}]")) {
+        try (TestServer server = new TestServer(listExchange, 200, "[{\"symbol\":\"BTCUSDT\",\"orderId\":\"889900\",\"clientOrderId\":\"cid-binance-2\",\"status\":\"NEW\",\"setCookie\":\"PROVIDER_SET_COOKIE_MARKER\",\"responseBody\":\"PROVIDER_FULL_BODY_MARKER\"}]")) {
             BinanceExchangeAdapter adapter = createAdapter(server.baseUrl());
             List<AdapterOrderSnapshot> snapshots = adapter.listOpenOrders(new AdapterOpenOrdersQuery(
                     2001L,
@@ -145,6 +148,7 @@ class BinanceExchangeAdapterTest {
             ));
             assertEquals(1, snapshots.size());
             assertEquals("BTC-USDT", snapshots.getFirst().symbol());
+            assertNull(snapshots.getFirst().rawPayload());
             assertEquals("/api/v3/openOrders?timestamp=1700000000123&recvWindow=5000&signature="
                     + TEST_SIGNER.sign("timestamp=1700000000123&recvWindow=5000", TEST_CREDENTIALS), listExchange.get().uri());
         }

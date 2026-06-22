@@ -137,7 +137,7 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 
 ### P1
 
-- **GateL-1 adapter contract security gaps（OPEN）**：Binance 默认 endpoint 非 sentinel；OKX/Binance adapter 默认构造链直接读取进程 credential；统一 order ack/snapshot 暴露 `rawPayload`；Noop marketdata 以普通 success 返回且无 STUB/NO_REAL 标记。详见 `GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md`。这些问题阻止现有合同被标记为 future-real-ready，但不授权本轮改代码。
+- **GateL-1 adapter contract security gaps（PARTIALLY HARDENED / NOT FROZEN）**：P1-A Binance 默认 endpoint sentinel 已 **CLOSED / ACCEPTED / FROZEN**；P1-B OKX/Binance runtime credential source hardening 已 **CLOSED / ACCEPTED / FROZEN**；P1-C order ack/snapshot rawPayload producer suppression 已 **IMPLEMENTED / PENDING REVIEW**，但 `rawPayload` 字段删除 **NOT DONE**（另起兼容性任务）；P1-D Noop marketdata 普通 success 语义仍 **OPEN / RETAINED**。现有合同仍不得标记 future-real-ready，不代表允许真实 OKX/Binance 接入。
 - **Roadmap GateL 语义冲突 = RESOLVED / CLOSED（2026-06-22，`NQ-GATEL-CANONICAL-ROUTE-SYNC`）**：原冲突为现有路线图把 GateL 标注为「AI Paper Trading」，而本计划把 GateL-PLAN 范围定为「No-Real 交易适配器与市场数据边界就绪」。用户已裁决 canonical：**GateL = No-Real Exchange / MarketData Readiness**；旧口径「GateL = AI Paper Trading」作废；**AI Paper Trading 后移到 GateM**（后续独立 AI/DH 阶段，当前 NOT STARTED），AI 小资金 LIVE → GateN，美股 → GateO，A 股 → GateP。README / docs-current README / ROADMAP / STATUS / GATEL_PLAN / TESTING / WORKLOG 已同步该 canonical。本项不再阻断 GateL-1。
 
 ### P2
@@ -170,7 +170,7 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 ## 10. Recommended next task
 
 - **GateL-1A：Exchange adapter contract review freeze = PASS / FROZEN / ACCEPTED**（docs-only）。只冻结 review 事实、P1/P2 与处理顺序；adapter readiness = NOT READY / NOT FROZEN，P1/P2 均保持 OPEN。
-- 后续顺序冻结为：GateL-1B No-Real hardening plan → GateL-1C capability matrix contract → GateL-1D error model contract → GateL-1E future-real readiness checklist refinement。GateL-1B plan + plan review 已 **PASS / FROZEN / ACCEPTED**；GateL-1B-A（Binance endpoint sentinel/no-outbound）= **CLOSED / ACCEPTED / FROZEN**（commit `04ddb774`，详见 `GATEL_1B_A_IMPL_FREEZE_REVIEW.md`）；GateL-1B-B（OKX/Binance runtime credential source）= **CLOSED / ACCEPTED / FROZEN**（commit `ad7f58b0`，详见 `GATEL_1B_B_IMPL_FREEZE_REVIEW.md`；runtime config 默认不再读取进程环境 credential，private op fail-closed，未实现真实 credential bridge）；P1-A CLOSED，P1-B CLOSED，P1-C/P1-D 仍 OPEN，GateL-1B 整体 hardening freeze 待 C/D；下一步 `NQ-GATEL-1B-C-IMPL`，不得直接进入 real adapter。
+- 后续顺序冻结为：GateL-1B No-Real hardening plan → GateL-1C capability matrix contract → GateL-1D error model contract → GateL-1E future-real readiness checklist refinement。GateL-1B plan + plan review 已 **PASS / FROZEN / ACCEPTED**；GateL-1B-A（Binance endpoint sentinel/no-outbound）= **CLOSED / ACCEPTED / FROZEN**（commit `04ddb774`，详见 `GATEL_1B_A_IMPL_FREEZE_REVIEW.md`）；GateL-1B-B（OKX/Binance runtime credential source）= **CLOSED / ACCEPTED / FROZEN**（commit `ad7f58b0`，详见 `GATEL_1B_B_IMPL_FREEZE_REVIEW.md`；runtime config 默认不再读取进程环境 credential，private op fail-closed，未实现真实 credential bridge）；GateL-1B-C producer suppression = **IMPLEMENTED / PENDING REVIEW**（rawPayload 字段删除未做，另起兼容性任务）；P1-D 仍 OPEN，GateL-1B 整体 hardening freeze 待 C review + D；下一步 `NQ-GATEL-1B-C-IMPL-REVIEW`，不得直接进入 real adapter。
 - 真实交易所接入仍须在 readiness checklist 全部满足 + 专项安全审计 + 用户显式授权后**另起 Gate**，不在 GateL 范围内。
 
 ## 11. 验收标准（GateL planning 验收）

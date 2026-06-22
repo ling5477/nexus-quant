@@ -1,3 +1,19 @@
+## NQ-GATEL-1B-C-IMPL（2026-06-22）
+
+完成 GateL-1B-C：OKX/Binance `AdapterOrderAck` / `AdapterOrderSnapshot` rawPayload producer suppression（**只实现 P1-C producer suppression，不删除字段，不夹带 P1-D**）。结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-C-IMPL-REVIEW`**。
+
+- 代码：`OkxExchangeAdapter` 的 place ack、query-confirm ack、order snapshot、error snapshot 统一使用 `suppressedOrderRawPayload()`，不再传 `payload.toString()` / `item.toString()` / `snapshot.rawPayload()` / exception message。
+- 代码：`BinanceExchangeAdapter` 的 place ack、query-confirm ack、order snapshot、error snapshot 统一使用 `suppressedOrderRawPayload()`，不再传 provider body 或 snapshot raw payload。
+- 注释：两个 helper 均说明 GateL-1B-C 保留 `rawPayload` 字段只是兼容性措施，provider full body、headers、signature、异常诊断文本不得进入 core/API/audit；字段删除另起兼容性任务。
+- 测试：新增 `OkxExchangeAdapterRawPayloadSuppressionTest`（本地 mock server + provider marker，覆盖 OKX ack/snapshot/error snapshot）；更新 `BinanceExchangeAdapterTest`（provider marker + ack/snapshot rawPayload null 断言）。
+- 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（OKX **34 / 0 / 0 / 0**；Binance **51 / 0 / 0 / 1 skipped**）。首次运行因 OKX error code 既有分类 `THROTTLED` 与新增测试误期望不一致失败，修正断言后复跑通过。
+- 边界：未删除 `rawPayload` record component；未改 `nq-adapter-api`；未新增 API/DTO/migration/workflow；未改 NoopMarketDataAdapter / P1-D；未访问外网/交易所/DB；未读取真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient/real provider/real permission probe/real credential governance bridge。
+- 状态：P1-A 仍 CLOSED / ACCEPTED；P1-B 仍 CLOSED / ACCEPTED；P1-C producer suppression = IMPLEMENTED / PENDING REVIEW；P1-C 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK；P1-D 仍 OPEN / RETAINED；GateL-1B hardening freeze NOT DONE；adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+- 回滚：还原 `OkxExchangeAdapter` / `BinanceExchangeAdapter` suppression helper 调用，删除 `OkxExchangeAdapterRawPayloadSuppressionTest`，还原 `BinanceExchangeAdapterTest` 与本轮 docs；回滚会重新打开 P1-C producer suppression 风险。
+- 下一步 `NQ-GATEL-1B-C-IMPL-REVIEW`，不得直接进入 P1-D 或 real adapter。
+
+---
+
 ## NQ-GATEL-1B-B-IMPL-FREEZE（2026-06-22）
 
 完成 GateL-1B-B freeze-close，新增 `GATEL_1B_B_IMPL_FREEZE_REVIEW.md`，正式关闭 P1-B。结论：**PASS / FROZEN / ACCEPTED；P1-B CLOSED / ACCEPTED**。

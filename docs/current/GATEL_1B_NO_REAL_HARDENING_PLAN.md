@@ -343,3 +343,22 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 - GateL-1B 整体 No-Real hardening freeze **NOT DONE**，待 C/D 全部独立完成后另行执行。
 - Regression boundary：后续改动两个 runtime config credential 解析 / `*.unconfigured()` 语义 / HttpClient credential fail-closed 守卫 / `OkxWsClient` login 守卫 / 引入真实 credential bridge，须重新 review + freeze。
 - 下一步 `NQ-GATEL-1B-C-IMPL`。
+
+## 19. GateL-1B-C implementation update（2026-06-22）
+
+> 本节为实现进度追加，不改写上文 frozen plan 正文；rawPayload 字段删除仍是后续独立兼容性任务。
+
+- 任务：`NQ-GATEL-1B-C-IMPL` = **PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-C-IMPL-REVIEW`**。
+- 仅实现 **P1-C producer suppression**：OKX/Binance 的 `AdapterOrderAck` / `AdapterOrderSnapshot` producer 不再传播 provider raw response；未删除 `rawPayload` record component，未修改 `nq-adapter-api`，未新增 API/DTO/migration/workflow，未修 P1-D。
+- 实现：
+  - `OkxExchangeAdapter`：place ack、query-confirm ack、order snapshot、error snapshot 的 `rawPayload` 统一经 `suppressedOrderRawPayload()` 固定为 `null`，不再传 `payload.toString()` / `item.toString()` / `snapshot.rawPayload()` / exception message。
+  - `BinanceExchangeAdapter`：place ack、query-confirm ack、order snapshot、error snapshot 的 `rawPayload` 统一经 `suppressedOrderRawPayload()` 固定为 `null`，不再传 provider body 或 snapshot raw payload。
+  - helper 注释明确 GateL-1B-C 保留字段只是兼容性措施，禁止 provider full body、headers、签名、异常诊断文本跨层进入 core/API/audit。
+- 测试：
+  - 新增 `OkxExchangeAdapterRawPayloadSuppressionTest`：本地 mock server 注入 `PROVIDER_API_KEY_MARKER` / `PROVIDER_SIGNATURE_MARKER` / `PROVIDER_FULL_BODY_MARKER` / `PROVIDER_AUTH_HEADER_MARKER` / `PROVIDER_SET_COOKIE_MARKER`，断言 OKX place ack、get snapshot、list snapshot、error snapshot 的 `rawPayload` 均为 `null`。
+  - 更新 `BinanceExchangeAdapterTest`：在 place/get/list provider fixture 中注入 secret-like marker，断言 Binance ack/snapshot `rawPayload` 均为 `null`。
+  - `mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（OKX 34 / Binance 51 / 0 fail / 0 error / 1 skipped）。
+- 状态保持：**P1-A CLOSED / ACCEPTED**；**P1-B CLOSED / ACCEPTED**；**P1-C producer suppression IMPLEMENTED / PENDING REVIEW**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；**P1-D 仍 OPEN / RETAINED**。GateL-1B 整体 hardening freeze **NOT DONE**（仍待 C review + D），adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。
+- 边界：未接真实 OKX/Binance；未访问外网/交易所/DB；未读取 `.env` 或真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；不代表允许真实交易所接入或 future-real-ready。
+- 回滚：还原 `OkxExchangeAdapter` / `BinanceExchangeAdapter` 的 rawPayload suppression 与两个测试文件变更，并还原本轮 docs。回滚会重新打开 P1-C producer suppression 风险，须立即恢复 NOT READY 状态。
+- 下一步 `NQ-GATEL-1B-C-IMPL-REVIEW`；不得直接进入 P1-D 或 real adapter。
