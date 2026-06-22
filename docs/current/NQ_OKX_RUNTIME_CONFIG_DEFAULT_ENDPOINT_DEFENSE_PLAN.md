@@ -2,7 +2,7 @@
 
 任务：NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE
 日期：2026-06-22
-状态：**Path A ACCEPTED / IMPLEMENTED / PENDING CI RUN**
+状态：**Path A ACCEPTED / IMPLEMENTED / CI GREEN / FROZEN / ACCEPTED**（P2 = CLOSED / ACCEPTED；post-freeze addendum 见 `NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md`，CI evidence run `27926903155` / headSha `c749cef7` / 9 jobs success）
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 
 本卷宗记录 GateK post-freeze P2 纵深防御项的计划、定稿与实现结果。该项来自 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md §10` 的 backlog 指针，属 non-blocking defense-in-depth，不推翻既有 freeze。
@@ -104,7 +104,8 @@ git diff -- .github/workflows/ci.yml backend/**/db/migration frontend research s
 ```text
 GateK CI/security = FROZEN / ACCEPTED
 NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = FROZEN / ACCEPTED
-NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = IMPLEMENTED / PENDING CI RUN
+NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = FROZEN / ACCEPTED
+P2 OkxRuntimeConfig default real endpoint defense = CLOSED / ACCEPTED
 No real credential read
 No outbound call
 No LIVE

@@ -1,3 +1,26 @@
+## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-POST-FREEZE-ADDENDUM（2026-06-22）
+
+结论：**NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = FROZEN / ACCEPTED**；**P2 OkxRuntimeConfig default real endpoint defense = CLOSED / ACCEPTED**。docs-only addendum，未改代码 / workflow / 配置 / 测试。
+
+CI evidence（target run，只读复核）：
+
+| 字段 | 值 |
+| --- | --- |
+| run ID | `27926903155` |
+| workflow | `NQ CI Baseline` |
+| event / branch | push / dev |
+| headSha | `c749cef7b9731284208acccadf321cf89c5e4fbe`（= fix commit `c749cef7`） |
+| status / conclusion | completed / **success** |
+| jobs | 9/9 success：diff-check / no-outbound-guard / ci-security-smoke / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan |
+
+Test evidence（CI backend job + 本地复核）：`OkxRuntimeConfigTest` success（4/0/0/0）、`OkxExchangeAdapterBootstrapNoOutboundTest` success（1/0/0/0）、`NoRealExchangeCredentialPermissionProbePortTest` success（1/0/0/0）、`EnvSafetyValidatorTest` success（8/0/0/0）、`NoOutboundExchangeGuardTest` success（3/0/0/0）、`OkxBootstrapNoOutboundLocalContextTest` success（1/0/0/0）、full backend `mvn test` BUILD SUCCESS —— sentinel 默认值未导致构造期失败、启动期 0 outbound。
+
+Findings：P0=0；P1=0；**P2=CLOSED / ACCEPTED**；P3=1（`application-ci.yml`/`application-paper.yml` 命名差异，非阻断）。详见 addendum 卷宗 `NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md`。
+
+边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+---
+
 ## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-IMPL（2026-06-22）
 
 结论：**NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = IMPLEMENTED / PENDING CI RUN**。Path A 实施：`OkxRuntimeConfig` 默认 endpoint 改为 `disabled://` sentinel。未改 `EnvSafetyValidator` / workflow / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy。

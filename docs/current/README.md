@@ -43,7 +43,9 @@ AI not started；DH not integrated；LIVE disabled；real provider / RealClient 
 - [GATEK_PLAN.md](GATEK_PLAN.md)：GateK planning-only；不代表 GateK implementation started。
 - [GATEK_ARCHITECTURE_BASELINE_REVIEW.md](GATEK_ARCHITECTURE_BASELINE_REVIEW.md)：GateK architecture baseline review（P0/P1=0，ACCEPTED WITH P2 FOLLOW-UP）。
 - [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md)：OKX bootstrap / test isolation / no-outbound 边界复审（§13 post-CI-security freeze 复审 = PASS / READY FOR FREEZE；P0/P1=0，P2=1 非阻断纵深防御 follow-up，P3=1 命名差异）。
-- [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md)：OKX bootstrap / test isolation / no-outbound 边界冻结卷宗（**FROZEN / ACCEPTED**，冻结 review commit `0b9c0b20`；P2 转 backlog `NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-PLAN`，未修复；regression boundary 见卷宗 §11）。
+- [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md)：OKX bootstrap / test isolation / no-outbound 边界冻结卷宗（**FROZEN / ACCEPTED**，冻结 review commit `0b9c0b20`；原 P2 已经 post-freeze addendum 关闭，见下；regression boundary 见卷宗 §11）。
+- [NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md](NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md)：OKX runtime config 默认 endpoint 纵深防御计划与实现（Path A，sentinel `disabled://`；**FROZEN / ACCEPTED**）。
+- [NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md](NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md)：上述纵深防御的 post-freeze addendum（**FROZEN / ACCEPTED**；fix commit `c749cef7`，CI run `27926903155` / 9 jobs success；**P2 OkxRuntimeConfig default real endpoint defense = CLOSED / ACCEPTED**）。
 - [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md)：前端设计系统当前事实。
 - [BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md](BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md)：回测权益/回撤曲线后端契约 planning（planning only，未实现）。
 - DB / Credential 治理：`DB_SCHEMA_GOVERNANCE_PLAN.md`、`DB_SCHEMA_GOVERNANCE_REVIEW.md`、`CREDENTIAL_*`。

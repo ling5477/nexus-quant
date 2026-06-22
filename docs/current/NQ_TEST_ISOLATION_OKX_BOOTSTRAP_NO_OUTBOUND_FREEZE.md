@@ -86,8 +86,8 @@ OKX bootstrap / test isolation / no-outbound boundary。
 ## 10. Backlog pointer
 
 - **NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-PLAN**（处理 P2：让 `OkxRuntimeConfig` 在 env 缺省时默认改为非真实 sentinel，或把解析后的 baseUrl/wsUrl 纳入启动期 `EnvSafetyValidator` endpoint 校验）。
-  - **状态更新（2026-06-22）**：Path A 已实现，P2 从 “open backlog” 转为 **IMPLEMENTED / PENDING CI RUN**。`OkxRuntimeConfig` 默认 endpoint 已改为 `disabled://okx-not-configured`（base）/ `disabled://okx-ws-not-configured`（dome+real WS），真实 endpoint 仅显式 env opt-in。未改 `EnvSafetyValidator` / workflow / `application*.yml` / `.env.example`。详见 `NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md`。
-  - 该实现属本卷宗 §11 regression boundary（OKX runtime config 改动），**不静默并入本 freeze**：须经 `NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-CI-RUN-REVIEW` 采证后，以 post-freeze addendum 形式触发本专项复审 + freeze addendum，再把 P2 标记 CLOSED。本 freeze 卷宗结论（FROZEN / ACCEPTED）不受影响。
+  - **状态更新（2026-06-22）**：Path A 已实现并经 CI 验证，P2 = **CLOSED / ACCEPTED**。`OkxRuntimeConfig` 默认 endpoint 已改为 `disabled://okx-not-configured`（base）/ `disabled://okx-ws-not-configured`（dome+real WS），真实 endpoint 仅显式 env opt-in。未改 `EnvSafetyValidator` / workflow / `application*.yml` / `.env.example`。
+  - 该实现属本卷宗 §11 regression boundary（OKX runtime config 改动），已按要求以 post-freeze addendum 固化，**未静默并入本 freeze**：fix commit `c749cef7`，CI evidence run `27926903155`（headSha `c749cef7` / 9 jobs success），addendum 卷宗 `NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md` = **FROZEN / ACCEPTED**。**NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = FROZEN / ACCEPTED**。本 freeze 卷宗结论（FROZEN / ACCEPTED）不受影响，sentinel 默认强化了 no-outbound 边界。
 
 ## 11. Regression boundary
 

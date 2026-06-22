@@ -1,3 +1,19 @@
+## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-POST-FREEZE-ADDENDUM（2026-06-22）
+
+把 fix commit `c749cef7`（OKX runtime default endpoint sentinel）以 post-freeze addendum 固化为 parent freeze 的 addendum，并关闭原 P2 backlog。docs-only：未改代码 / workflow / 配置 / 测试 / runtime；未真实外联。
+
+- Addendum 结论：**NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = FROZEN / ACCEPTED**；**P2 = CLOSED / ACCEPTED**。
+- Parent freeze：`NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = FROZEN / ACCEPTED`（freeze commit `8a2fbe4a`）。
+- Fix commit：`c749cef7`（`OkxRuntimeConfig` 默认 → `disabled://okx-not-configured` / `disabled://okx-ws-not-configured`）。
+- CI evidence：run `27926903155` / `NQ CI Baseline` / push / dev / headSha `c749cef7` / completed / success / 9 jobs all success。
+- Security conclusion：code-level real OKX default host removed；explicit env override 行为不变；no-real default 边界强化；no-outbound 边界未削弱；no real credential read / no outbound call。
+- Explicitly unchanged：`EnvSafetyValidator` / `EnvSafetyGuardConfiguration` / `NoOutboundExchangeGuardTest` / `NoRealExchangeCredentialPermissionProbePort` / workflow / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy。
+- 新增 docs：`NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md`。更新：PLAN 卷宗（FROZEN/CLOSED）、parent freeze 卷宗 §10（P2 CLOSED）、`NQ_CI_BASELINE_PLAN.md`、`README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- Regression boundary：后续改动 `OkxRuntimeConfig` 默认值 / adapter construction / EnvSafetyValidator / no-outbound guard / permission probe / CI env guard / profile defaults 须重新 review + CI evidence + addendum/freeze。Rollback：revert addendum docs commit 回 READY；revert `c749cef7` 恢复旧默认（显式 env 下行为不变）；docs addendum 无 runtime/DB/credential/provider/exchange 副作用。
+- 边界：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
+---
+
 ## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-IMPL（2026-06-22）
 
 按 PLAN-REVIEW（Path A，sentinel `disabled://`）实施 GateK post-freeze P2 纵深防御项。从源头消除 `OkxRuntimeConfig` 代码级真实默认 endpoint；不改 frozen guard / workflow / config；不真实外联。
