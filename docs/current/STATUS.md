@@ -6,6 +6,9 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ GateL-1B No-Real hardening plan review（2026-06-22）：**NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW = PASS / ACCEPTED AS PLAN REVIEW BASELINE；REVIEW ONLY / PLAN ONLY / NOT IMPLEMENTED**。详见 `GATEL_1B_NO_REAL_HARDENING_PLAN_REVIEW.md`。确认 A/B/C/D 独立切片、A → B → C → D 顺序、测试、验收和回滚可作为 freeze 输入；A 限定 sentinel-only/fail-closed，B 限定 process credential removal，C producer suppression 与字段删除分开，D 复用现有 contract、不新增 DTO/API。P0=0；无新增 plan-level P1 blocker；P2=2，已转为 freeze 强制约束。
+  四项原 P1 全部 OPEN / RETAINED；adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED；GateL implementation NOT STARTED。下一步仅允许 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-FREEZE`，不得直接 1B-A implementation。LIVE DISABLED；AI NOT STARTED；DH runtime NOT INTEGRATED；真实 exchange/credential/provider/permission probe 继续禁止。
+  验证：docs-only 定向源码/测试结构复核、链接/状态/范围/敏感值/diff 检查；未跑 Maven/frontend/Python，未访问网络、交易所、DB，未读取 credential material。回滚为删除 review 并还原 6 份 current docs。
 - NQ GateL-1B No-Real hardening plan（2026-06-22）：**NQ-GATEL-1B-NO-REAL-HARDENING-PLAN = PASS / PLAN READY FOR REVIEW；PLANNING ONLY / NOT IMPLEMENTED**。详见 `GATEL_1B_NO_REAL_HARDENING_PLAN.md`。针对四项冻结 P1 规划 A Binance endpoint sentinel/guard、B OKX/Binance process credential source、C raw payload producer suppression + 后续字段删除、D Noop `subscribed=false + NO_REAL_DISABLED` 四个最小切片。实施顺序 A → B → C → D；默认独立实现与 review，不合成大批次。不需要 migration，不新增 HTTP API。P1/P2 全部 OPEN / RETAINED；adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
   下一步仅允许 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW`；不得直接 implementation。LIVE DISABLED；AI NOT STARTED；DH runtime NOT INTEGRATED；real exchange/credential/provider/permission probe 继续禁止。
   验证：docs-only 定向源码/测试结构复核、链接/状态/范围/敏感值/diff 检查；未跑 Maven/frontend/Python，未访问网络、交易所、DB，未读取 credential material。回滚为删除 plan 并还原 6 份 current docs。

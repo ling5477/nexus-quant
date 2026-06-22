@@ -1,3 +1,20 @@
+## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW（2026-06-22）
+
+完成 GateL-1B No-Real hardening plan 的 docs-only 架构与安全边界审查，新增 `GATEL_1B_NO_REAL_HARDENING_PLAN_REVIEW.md`。结论：**PASS / ACCEPTED AS PLAN REVIEW BASELINE；REVIEW ONLY / PLAN ONLY / NOT IMPLEMENTED**。
+
+- 确认 A/B/C/D 拆分合理，A/B 默认必须拆开；实施顺序保持 A → B → C → D，每个切片单独测试、验收、review 和回滚。
+- A 冻结为 sentinel-only/fail-closed，不得在该切片新增 future-real enable switch；B 冻结为移除 process credential source，真实 credential governance bridge 后移。
+- C 先阻断 `rawPayload` producer，字段删除另起兼容性任务；D 复用现有 DTO/contract 表达 `subscribed=false + NO_REAL_DISABLED`，不新增 DTO/API。
+- 四项 P1 全部 OPEN / RETAINED；adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED；GateL implementation NOT STARTED。
+- P0=0；无新增 plan-level P1 blocker；P2=2，已转为 plan freeze 强制约束。
+- 修改范围仅 `docs/current`：新增 review，并同步 `GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- 验证：docs-only 定向源码/测试结构、链接、状态、边界、diff scope、whitespace 与敏感值模式检查；未跑 Maven/frontend/Python。
+- 未访问网络、真实交易所、DB、容器或 GitHub Actions；未读取真实 credential；未启用 LIVE、AI 或 DH runtime。
+- Rollback：删除 review 并还原 6 份同步文档；无 runtime/DB/workflow/credential/provider/exchange 副作用。
+- 下一步仅 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-FREEZE`；freeze 通过前不得进入 1B-A implementation。
+
+---
+
 ## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN（2026-06-22）
 
 新增 `GATEL_1B_NO_REAL_HARDENING_PLAN.md`，为四项冻结 P1 规划最小 No-Real hardening 切片。结论：**PASS / PLAN READY FOR REVIEW；PLANNING ONLY / NOT IMPLEMENTED**。

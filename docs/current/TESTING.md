@@ -1,3 +1,18 @@
+## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW（2026-06-22）
+
+结论：**PASS / ACCEPTED AS PLAN REVIEW BASELINE；REVIEW ONLY / PLAN ONLY / NOT IMPLEMENTED**。四项 P1 仍 OPEN / RETAINED。
+
+- 已执行：预检 `Get-Location` / `git status --short` / `git branch --show-current` / `git log --oneline -5`；分支 `dev`，审查前 working tree clean。
+- 已执行：只读复核 GateL-1B plan、GateL-1 review/freeze、GateL plan 与 current 状态文档。
+- 已执行：定向核对 Binance endpoint default、OKX/Binance process credential source、order `rawPayload` 与 Noop marketdata success 四项 P1 仍存在。
+- 已确认：A/B/C/D 均有测试、验收、回滚；A/B 拆开；C producer suppression 与字段删除拆开；D 复用现有 contract，不新增 DTO/API；无需 migration。
+- 未执行：Maven/frontend/Python；原因是本轮 docs-only，implementation NOT STARTED。
+- 未访问网络、交易所、DB、容器或 GitHub Actions；未读取 credential material。
+
+下一步仅 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-FREEZE`。Freeze 通过前不得进入 1B-A；adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED；LIVE/AI/DH runtime 未启用或未接入。
+
+---
+
 ## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN（2026-06-22）
 
 结论：**PASS / PLAN READY FOR REVIEW；PLANNING ONLY / NOT IMPLEMENTED**。本轮仅规划 A-D，不修代码，不关闭 P1。
