@@ -1,3 +1,20 @@
+## NQ-GATEL-1B-A-IMPL（2026-06-22）
+
+结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-A-IMPL-REVIEW`**。只实现 P1-A（Binance 默认 endpoint sentinel / no-outbound）；P1-B/C/D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+- 命令：`mvn -f backend/pom.xml -o -pl nq-adapter-binance -am test`（offline，未外联）。
+- 结果：**BUILD SUCCESS**；reactor nq-common / nq-contracts / nq-adapter-api / nq-adapter-binance 全部 SUCCESS。
+- nq-adapter-binance：**50 tests / 0 failures / 0 errors / 1 skipped**。skipped = `BinanceWsClientLiveDiagnosticTest`（`-Dnq.binance.ws.live.diagnostic=true` 系统属性门禁，默认不执行，不访问真实 Binance）。
+- 关键用例：
+  - `BinanceRuntimeConfigTest`（7）：默认 dome/real → REST/WS sentinel 且不含 binance host；blank WS override 不回退真实 endpoint；显式 legacy WS URL 按原样保留（不改写为真实 ws-api host）；显式 env override 仍生效。
+  - `BinanceNoRealEndpointHardeningTest`（2，新增）：默认 REST/WS 为 `disabled://` sentinel；`disabled://` baseUrl 下 unsigned REST 请求在到达网络前抛 `IllegalArgumentException`（loud fail-closed，无 outbound）。
+  - `BinanceWsProtocolTest`（5）：`resolveUserDataWsApiUrl` blank → sentinel；显式 ws-api URL verbatim；legacy stream URL 不改写为真实 ws-api host。
+  - `BinanceWsClientTest`（7）：显式 ws-api URL opt-in 下连接 URI 与订阅流程不变。
+- 静态检查：`git diff --check` 无 whitespace 错误；`git grep` 确认 `nq-adapter-binance/src/main` 无 testnet/mainnet 默认 host；残留真实 host 仅为测试显式 fixture / 纯字符串 builder 输入。
+- 未执行：frontend / Python（本轮仅触及 Binance adapter）；未跑全量 backend（只跑相关模块 + 依赖）。未访问网络、交易所、DB、容器、GitHub Actions；未读取 `.env` 或 credential material。
+
+---
+
 ## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-FREEZE（2026-06-22）
 
 结论：**PASS / FROZEN / ACCEPTED；PLAN BASELINE FROZEN / IMPLEMENTATION NOT STARTED**。冻结 plan + review，不关闭四项 P1，不接受 adapter readiness。

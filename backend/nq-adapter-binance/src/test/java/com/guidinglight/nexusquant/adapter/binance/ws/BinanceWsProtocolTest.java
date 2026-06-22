@@ -22,18 +22,39 @@ class BinanceWsProtocolTest {
     }
 
     @Test
-    void shouldResolveWsApiUrlFromLegacyStreamUrl() {
+    void shouldFailClosedToSentinelWhenWsUrlBlank() {
+        // Why: No-real hardening (GateL-1B-A) —— blank/missing WS URL 必须 fail-closed 到 no-real sentinel，
+        // 禁止回退到 testnet/mainnet ws-api host。
         assertEquals(
-                "wss://ws-api.testnet.binance.vision/ws-api/v3",
-                BinanceWsProtocol.resolveUserDataWsApiUrl("wss://stream.testnet.binance.vision/ws", "dome")
+                "disabled://binance-ws-not-configured",
+                BinanceWsProtocol.resolveUserDataWsApiUrl(null)
         );
         assertEquals(
-                "wss://ws-api.binance.com:443/ws-api/v3",
-                BinanceWsProtocol.resolveUserDataWsApiUrl("wss://stream.binance.com:9443/ws", "real")
+                "disabled://binance-ws-not-configured",
+                BinanceWsProtocol.resolveUserDataWsApiUrl("   ")
         );
+    }
+
+    @Test
+    void shouldHonorExplicitWsApiUrlVerbatim() {
+        // 显式 ws-api URL 按原样使用（仅去除尾部 '/'）；真实 endpoint 始终由显式 env opt-in。
         assertEquals(
                 "wss://ws-api.binance.com:443/ws-api/v3",
-                BinanceWsProtocol.resolveUserDataWsApiUrl("wss://ws-api.binance.com:443/ws-api/v3", "real")
+                BinanceWsProtocol.resolveUserDataWsApiUrl("wss://ws-api.binance.com:443/ws-api/v3/")
+        );
+    }
+
+    @Test
+    void shouldNotRewriteLegacyStreamUrlToRealWsApiHost() {
+        // Why: 旧实现会把 legacy stream host 静默改写成真实 ws-api host，会在 guard 关闭时构造真实网络 URI。
+        // hardening 后该改写被移除：显式 legacy URL 按原样保留，不再自动指向 testnet/mainnet ws-api。
+        assertEquals(
+                "wss://stream.testnet.binance.vision/ws",
+                BinanceWsProtocol.resolveUserDataWsApiUrl("wss://stream.testnet.binance.vision/ws")
+        );
+        assertEquals(
+                "wss://stream.binance.com:9443/ws",
+                BinanceWsProtocol.resolveUserDataWsApiUrl("wss://stream.binance.com:9443/ws")
         );
     }
 

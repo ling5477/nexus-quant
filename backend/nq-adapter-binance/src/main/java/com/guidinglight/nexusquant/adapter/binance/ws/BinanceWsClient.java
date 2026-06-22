@@ -311,7 +311,7 @@ public class BinanceWsClient {
         if (!running.get()) {
             return;
         }
-        String wsApiUrl = BinanceWsProtocol.resolveUserDataWsApiUrl(runtimeConfig.wsUrl(), runtimeConfig.envName());
+        String wsApiUrl = BinanceWsProtocol.resolveUserDataWsApiUrl(runtimeConfig.wsUrl());
         this.currentListenKey = "";
         this.currentSubscriptionId = null;
         this.pendingSubscriptionRequestId = null;
@@ -550,7 +550,7 @@ public class BinanceWsClient {
                                 "binance_ws_connected trace_id={} reason={} ws_url={} subscription_id={}",
                                 traceId,
                                 reason,
-                                BinanceWsProtocol.resolveUserDataWsApiUrl(runtimeConfig.wsUrl(), runtimeConfig.envName()),
+                                BinanceWsProtocol.resolveUserDataWsApiUrl(runtimeConfig.wsUrl()),
                                 currentSubscriptionId
                         );
                         notifyConnected(reason, traceId);
@@ -930,7 +930,7 @@ public class BinanceWsClient {
                         "binance_ws_transport_connected trace_id={} reason={} ws_url={}",
                         connectTraceId,
                         connectReason,
-                        BinanceWsProtocol.resolveUserDataWsApiUrl(runtimeConfig.wsUrl(), runtimeConfig.envName())
+                        BinanceWsProtocol.resolveUserDataWsApiUrl(runtimeConfig.wsUrl())
                 );
                 // Why:
                 // 独立 Java 探针验证了“onOpen 后立即发送 subscribe.signature”可以稳定拿到 200。

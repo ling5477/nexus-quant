@@ -1,3 +1,19 @@
+## NQ-GATEL-1B-A-IMPL（2026-06-22）
+
+完成 GateL-1B-A：Binance adapter 默认 REST/WS endpoint no-real / no-outbound hardening（**只实现 P1-A，不夹带 B/C/D**）。结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-A-IMPL-REVIEW`**。
+
+- 代码：`BinanceRuntimeConfig` 默认 endpoint 改为 no-real sentinel —— `DEFAULT_BASE_URL=disabled://binance-not-configured`、`DEFAULT_WS_URL=disabled://binance-ws-not-configured`（dome/real 共用）；删除 `DEFAULT_DOME_BASE_URL`/`DEFAULT_REAL_BASE_URL`/`DEFAULT_DOME_WS_URL`/`DEFAULT_REAL_WS_URL` 四个真实 host 默认常量；`normalizeWsUrl` 不再在 blank/legacy URL 情况下回退 testnet/mainnet，显式配置仅去尾部 `/`。
+- 代码：`BinanceWsProtocol.resolveUserDataWsApiUrl`（WS 连接路径实际解析点，原 plan 未列出但属同一 P1-A 边界）blank → no-real sentinel，移除 legacy stream → 真实 ws-api host 的静默改写，删除四个真实 host 常量并去掉 `envName` 入参；同步 `BinanceWsClient` 3 处调用。
+- 显式 env override 行为不变（真实 endpoint 仅显式 opt-in）；`disabled://` 在请求期 loud fail-closed（REST `HttpRequest.Builder.uri()` / WS `WebSocket.Builder.buildAsync()` 对非 http(s)/ws(s) scheme 抛 `IllegalArgumentException`），不触达网络。
+- 测试：`BinanceRuntimeConfigTest` 7（默认 sentinel、blank 不回退、legacy 不改写）；新增 `BinanceNoRealEndpointHardeningTest` 2（默认 sentinel + disabled sentinel 下 REST fail-closed 不外联）；`BinanceWsProtocolTest` 5（blank → sentinel、显式 ws-api verbatim、legacy 不改写）；`BinanceWsClientTest` 7（显式 ws-api opt-in）。
+- 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-binance -am test` **BUILD SUCCESS**，nq-adapter-binance **50 tests / 0 fail / 0 error / 1 skipped**（live diagnostic 系统属性门禁跳过）；`git diff --check` 无 whitespace；`git grep` 确认 main src 无 testnet/mainnet 默认 host，残留真实 host 仅为测试显式 fixture。
+- 边界：未接真实交易所；未读取 `.env`/真实 credential；未访问外网/交易所/DB/容器/Actions；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real permission probe；未改 OKX credential source（P1-B）/ rawPayload（P1-C）/ Noop status（P1-D）。
+- P1-A = IMPLEMENTED / PENDING REVIEW（未经 `NQ-GATEL-1B-A-IMPL-REVIEW` 不正式关闭）；P1-B / P1-C / P1-D 仍 **OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；不代表允许真实 Binance 接入。
+- Rollback：还原 `BinanceRuntimeConfig` / `BinanceWsProtocol` / `BinanceWsClient` 及四个测试文件、删除 `BinanceNoRealEndpointHardeningTest`，并还原本轮 docs；回滚到旧真实默认会重新打开 P1-A，须立即恢复 NOT READY 状态。
+- 下一步 `NQ-GATEL-1B-A-IMPL-REVIEW`（只读复核 sentinel / no-outbound / P1-A），随后才进入 `NQ-GATEL-1B-B-IMPL`。
+
+---
+
 ## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-FREEZE（2026-06-22）
 
 完成 GateL-1B No-Real hardening plan 的 docs-only freeze review，新增 `GATEL_1B_NO_REAL_HARDENING_PLAN_FREEZE_REVIEW.md`。结论：**PASS / FROZEN / ACCEPTED；PLAN BASELINE FROZEN / IMPLEMENTATION NOT STARTED**。

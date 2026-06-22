@@ -365,7 +365,8 @@ class BinanceWsClientTest {
         return BinanceRuntimeConfig.fromEnvironment(Map.ofEntries(
                 Map.entry("NQ_BINANCE_ENV", "dome"),
                 Map.entry("NQ_BINANCE_DOME_BASE_URL", "https://testnet.binance.vision"),
-                Map.entry("NQ_BINANCE_DOME_WS_URL", "wss://stream.testnet.binance.vision/ws"),
+                // No-real hardening 后不再自动改写 legacy stream URL；显式提供官方 ws-api URL 作为 opt-in。
+                Map.entry("NQ_BINANCE_DOME_WS_URL", "wss://ws-api.testnet.binance.vision/ws-api/v3"),
                 Map.entry("NQ_BINANCE_DOME_API_KEY", "test-api-key"),
                 Map.entry("NQ_BINANCE_DOME_API_SECRET", "test-secret"),
                 Map.entry("NQ_BINANCE_WS_DIAGNOSTIC_ENABLED", "true"),

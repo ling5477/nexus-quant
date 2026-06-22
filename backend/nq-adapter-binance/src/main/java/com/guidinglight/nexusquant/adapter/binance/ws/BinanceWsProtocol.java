@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.adapter.binance.ws;
 
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
+import com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfig;
 
 /**
  * BinanceWsProtocol 负责 Binance 私有 WS 的最小协议辅助。
@@ -10,11 +11,6 @@ import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
  * 避免在 client 内散落硬编码。
  */
 final class BinanceWsProtocol {
-
-    private static final String LEGACY_DOME_STREAM_URL = "wss://stream.testnet.binance.vision/ws";
-    private static final String LEGACY_REAL_STREAM_URL = "wss://stream.binance.com:9443/ws";
-    private static final String WS_API_DOME_URL = "wss://ws-api.testnet.binance.vision/ws-api/v3";
-    private static final String WS_API_REAL_URL = "wss://ws-api.binance.com:443/ws-api/v3";
 
     private BinanceWsProtocol() {
     }
@@ -47,26 +43,19 @@ final class BinanceWsProtocol {
      * 解析当前配置应使用的用户数据流 WebSocket API 地址。
      * <p>
      * Why:
-     * Binance 已把用户数据流迁移到 `ws-api` 订阅模型；仓库里仍可能残留旧的 `/ws/<listenKey>` 配置。
-     * 这里统一做兼容转换，避免本地 `.env` 仍指向旧 stream 域名时继续命中 410 Gone。
+     * No-real hardening (GateL-1B-A)：这是 WS 连接路径实际使用的 endpoint 解析点。
+     * blank/missing WS URL 必须 fail-closed 到 no-real sentinel（`BinanceRuntimeConfig.DEFAULT_WS_URL`），
+     * 禁止把 testnet/mainnet ws-api host 当成默认或回退；真实 ws-api endpoint 只能由显式 env opt-in。
+     * 旧实现会把 legacy `stream.../ws` host 静默改写成真实 ws-api host，会在 guard 关闭时构造真实网络
+     * URI，违反 No-Real 边界，因此移除该改写：显式配置按原样使用（仅去除尾部 `/`）。
      */
-    static String resolveUserDataWsApiUrl(String configuredWsUrl, String envName) {
+    static String resolveUserDataWsApiUrl(String configuredWsUrl) {
         if (configuredWsUrl == null || configuredWsUrl.isBlank()) {
-            return "real".equalsIgnoreCase(envName) ? WS_API_REAL_URL : WS_API_DOME_URL;
+            return BinanceRuntimeConfig.DEFAULT_WS_URL;
         }
-        String normalized = configuredWsUrl.endsWith("/")
+        return configuredWsUrl.endsWith("/")
                 ? configuredWsUrl.substring(0, configuredWsUrl.length() - 1)
                 : configuredWsUrl;
-        if (normalized.contains("/ws-api/")) {
-            return normalized;
-        }
-        if (normalized.startsWith(LEGACY_DOME_STREAM_URL)) {
-            return WS_API_DOME_URL;
-        }
-        if (normalized.startsWith(LEGACY_REAL_STREAM_URL) || normalized.startsWith("wss://stream.binance.com/ws")) {
-            return WS_API_REAL_URL;
-        }
-        return normalized;
     }
 
     /**

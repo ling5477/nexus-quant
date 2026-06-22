@@ -32,8 +32,10 @@ class BinanceRuntimeConfigTest {
         ));
 
         assertEquals("dome", config.envName());
+        // baseUrl 由显式 env 提供，验证 explicit env 仍可覆盖 disabled:// 默认。
         assertEquals("https://testnet.binance.vision", config.baseUrl());
-        assertEquals("wss://ws-api.testnet.binance.vision/ws-api/v3", config.wsUrl());
+        // 该用例未提供 NQ_BINANCE_DOME_WS_URL，wsUrl 回退到默认值；No-real hardening 后默认已是 no-real sentinel。
+        assertEquals("disabled://binance-ws-not-configured", config.wsUrl());
         assertEquals("abcd1234wxyz", config.credentials().apiKey());
         assertEquals(Duration.ofSeconds(-1), config.signedTimestampOffset());
         assertEquals(Duration.ofMinutes(1), config.exchangeInfoRefreshInterval());
@@ -44,15 +46,51 @@ class BinanceRuntimeConfigTest {
     }
 
     @Test
-    void shouldNormalizeLegacyDomeStreamUrlToOfficialWsApiUrl() {
+    void shouldDefaultToNonRealSentinelEndpointsWhenEnvAbsent() {
+        // Why: No-real hardening (GateL-1B-A) —— 代码级默认 endpoint 必须是 no-real sentinel，
+        // dome/real 均不得把 testnet/mainnet host 作为默认值。
+        BinanceRuntimeConfig domeDefault = BinanceRuntimeConfig.fromEnvironment(Map.of());
+        assertEquals("dome", domeDefault.envName());
+        assertEquals("disabled://binance-not-configured", domeDefault.baseUrl());
+        assertEquals("disabled://binance-ws-not-configured", domeDefault.wsUrl());
+
+        BinanceRuntimeConfig realDefault = BinanceRuntimeConfig.fromEnvironment(Map.of("NQ_BINANCE_ENV", "real"));
+        assertEquals("real", realDefault.envName());
+        assertEquals("disabled://binance-not-configured", realDefault.baseUrl());
+        assertEquals("disabled://binance-ws-not-configured", realDefault.wsUrl());
+
+        // 默认值不得包含任何真实 Binance host。
+        for (BinanceRuntimeConfig config : new BinanceRuntimeConfig[] {domeDefault, realDefault}) {
+            for (String endpoint : new String[] {config.baseUrl(), config.wsUrl()}) {
+                assertFalse(endpoint.contains("binance.com"), () -> "default endpoint must not contain binance.com: " + endpoint);
+                assertFalse(endpoint.contains("binance.vision"), () -> "default endpoint must not contain binance.vision: " + endpoint);
+            }
+        }
+    }
+
+    @Test
+    void shouldNotFallBackToRealEndpointWhenWsUrlBlank() {
+        // Why: blank override 不得回退到 testnet/mainnet，必须 fail-closed 到 no-real sentinel。
+        BinanceRuntimeConfig config = BinanceRuntimeConfig.fromEnvironment(Map.of(
+                "NQ_BINANCE_ENV", "real",
+                "NQ_BINANCE_REAL_WS_URL", "   "
+        ));
+
+        assertEquals("disabled://binance-ws-not-configured", config.wsUrl());
+    }
+
+    @Test
+    void shouldKeepExplicitLegacyWsUrlWithoutRewritingToRealWsApiHost() {
+        // Why: legacy stream URL 不再被代码静默改写成真实 ws-api host；显式配置按原样保留（仅去除尾部 '/'），
+        // 真实 endpoint 始终由显式 env 决定，不得由解析逻辑自动指向 testnet/mainnet ws-api。
         BinanceRuntimeConfig config = BinanceRuntimeConfig.fromEnvironment(Map.of(
                 "NQ_BINANCE_ENV", "dome",
-                "NQ_BINANCE_DOME_WS_URL", "wss://stream.testnet.binance.vision/ws",
+                "NQ_BINANCE_DOME_WS_URL", "wss://stream.testnet.binance.vision/ws/",
                 "NQ_BINANCE_DOME_API_KEY", "abcd1234wxyz",
                 "NQ_BINANCE_DOME_API_SECRET", "secret"
         ));
 
-        assertEquals("wss://ws-api.testnet.binance.vision/ws-api/v3", config.wsUrl());
+        assertEquals("wss://stream.testnet.binance.vision/ws", config.wsUrl());
     }
 
     @Test

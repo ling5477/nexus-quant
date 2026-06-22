@@ -17,8 +17,8 @@ import java.util.Map;
  * 避免后续 TradingAdapter / cache / ws client 各自散落读取环境变量。
  *
  * @param envName                     当前环境名，仅允许 dome/real
- * @param baseUrl                     当前环境 Binance REST base URL
- * @param wsUrl                       当前环境 Binance 私有 WS base URL；默认使用 ws-api 用户流订阅地址
+ * @param baseUrl                     当前环境 Binance REST base URL；默认 no-real sentinel `disabled://binance-not-configured`，真实 endpoint 仅显式 env opt-in
+ * @param wsUrl                       当前环境 Binance 私有 WS base URL；默认 no-real sentinel `disabled://binance-ws-not-configured`，真实 endpoint 仅显式 env opt-in
  * @param timeout                     单次请求超时
  * @param signedTimestampOffset       在 serverTime 校准前额外叠加的人工偏移，便于 local/debug 定向排障
  * @param exchangeInfoRefreshInterval exchangeInfo cache 刷新间隔
@@ -45,10 +45,14 @@ public record BinanceRuntimeConfig(
 ) {
 
     private static final String DEFAULT_ENV = "dome";
-    private static final String DEFAULT_DOME_BASE_URL = "https://testnet.binance.vision";
-    private static final String DEFAULT_REAL_BASE_URL = "https://api.binance.com";
-    private static final String DEFAULT_DOME_WS_URL = "wss://ws-api.testnet.binance.vision/ws-api/v3";
-    private static final String DEFAULT_REAL_WS_URL = "wss://ws-api.binance.com:443/ws-api/v3";
+    // Why: No-real hardening (GateL-1B-A) —— 默认 endpoint 必须是 no-real sentinel，禁止把 testnet/mainnet
+    // host 写成代码级默认值。真实 Binance endpoint 只能通过显式 env（NQ_BINANCE_<DOME|REAL>_BASE_URL /
+    // _WS_URL）opt-in；未配置一律 fail-closed。disabled:// 在请求期 loud fail-closed：REST 经
+    // HttpRequest.Builder.uri()、WS 经 WebSocket.Builder.buildAsync() 对非 http(s)/ws(s) scheme 抛
+    // IllegalArgumentException，且 host 不含真实交易所域名，即使被误用也不会命中 testnet/mainnet，
+    // 也不会被 no-outbound denylist 误判。dome/real 共用同一 sentinel：环境选择不得隐含真实 endpoint。
+    public static final String DEFAULT_BASE_URL = "disabled://binance-not-configured";
+    public static final String DEFAULT_WS_URL = "disabled://binance-ws-not-configured";
     private static final long DEFAULT_TIMEOUT_MS = 3_000L;
     private static final long DEFAULT_SIGNED_TIMESTAMP_OFFSET_MS = 0L;
     private static final long DEFAULT_EXCHANGE_INFO_REFRESH_MS = 300_000L;
@@ -74,12 +78,10 @@ public record BinanceRuntimeConfig(
         String envName = normalizeEnv(read(env, "NQ_BINANCE_ENV", DEFAULT_ENV));
         boolean dome = "dome".equals(envName);
         String prefix = dome ? "NQ_BINANCE_DOME_" : "NQ_BINANCE_REAL_";
-        String defaultBaseUrl = dome ? DEFAULT_DOME_BASE_URL : DEFAULT_REAL_BASE_URL;
-        String defaultWsUrl = dome ? DEFAULT_DOME_WS_URL : DEFAULT_REAL_WS_URL;
         return new BinanceRuntimeConfig(
                 envName,
-                read(env, prefix + "BASE_URL", defaultBaseUrl),
-                normalizeWsUrl(read(env, prefix + "WS_URL", defaultWsUrl), envName),
+                read(env, prefix + "BASE_URL", DEFAULT_BASE_URL),
+                normalizeWsUrl(read(env, prefix + "WS_URL", DEFAULT_WS_URL)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_TIMEOUT_MS", DEFAULT_TIMEOUT_MS)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_SIGNED_TIMESTAMP_OFFSET_MS", DEFAULT_SIGNED_TIMESTAMP_OFFSET_MS)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_EXCHANGE_INFO_REFRESH_MS", DEFAULT_EXCHANGE_INFO_REFRESH_MS)),
@@ -145,27 +147,18 @@ public record BinanceRuntimeConfig(
 
     /**
      * Why:
-     * GateC-2.1 当前只允许 Binance 用户数据流走官方 `ws-api` 入口。
-     * 本地 `.env` 可能仍残留早期 `stream.../ws` 地址；如果这里不在配置解析阶段统一归一化，
-     * 指纹日志、诊断输出和实际连接目标就会分裂，继续污染 BW4/BW5 的排障结论。
+     * No-real hardening (GateL-1B-A)：WS 默认 / 空值必须 fail-closed 到 no-real sentinel，
+     * 禁止在 blank/legacy URL 情况下回退到 testnet/mainnet。显式配置按原样使用（仅去除尾部 `/`），
+     * 真实 ws-api endpoint 只能由显式 env opt-in，不再由代码把 legacy `stream.../ws` host
+     * 静默改写成真实 ws-api host（旧改写会构造真实网络 endpoint，违反 No-Real 边界）。
      */
-    private static String normalizeWsUrl(String configuredWsUrl, String envName) {
+    private static String normalizeWsUrl(String configuredWsUrl) {
         if (configuredWsUrl == null || configuredWsUrl.isBlank()) {
-            return "real".equalsIgnoreCase(envName) ? DEFAULT_REAL_WS_URL : DEFAULT_DOME_WS_URL;
+            return DEFAULT_WS_URL;
         }
         String normalized = configuredWsUrl.trim();
         if (normalized.endsWith("/")) {
             normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        if (normalized.contains("/ws-api/")) {
-            return normalized;
-        }
-        if (normalized.startsWith("wss://stream.testnet.binance.vision/ws")) {
-            return DEFAULT_DOME_WS_URL;
-        }
-        if (normalized.startsWith("wss://stream.binance.com:9443/ws")
-                || normalized.startsWith("wss://stream.binance.com/ws")) {
-            return DEFAULT_REAL_WS_URL;
         }
         return normalized;
     }

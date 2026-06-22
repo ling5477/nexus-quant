@@ -290,3 +290,17 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 **NQ-GATEL-1B-NO-REAL-HARDENING-PLAN：PASS / PLAN READY FOR REVIEW。**
 
 接受 A → B → C → D 的分批 planning baseline，下一步仅允许 plan review。P1/P2 继续 OPEN；adapter readiness 继续 NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+## 15. GateL-1B-A implementation update（2026-06-22）
+
+> 本节为实现进度追加，不改写上文 frozen plan 正文；上文 planning baseline 仍为冻结基线。
+
+- 任务：`NQ-GATEL-1B-A-IMPL` = **PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-A-IMPL-REVIEW`**。
+- 仅实现 **P1-A**（Binance endpoint default sentinel / no-outbound hardening）；未夹带 B/C/D，未接真实交易所，未启用 LIVE，未读取 credential，未外联。
+- 实现：
+  - `BinanceRuntimeConfig`：`DEFAULT_BASE_URL=disabled://binance-not-configured`、`DEFAULT_WS_URL=disabled://binance-ws-not-configured`（dome/real 共用）；删除 `DEFAULT_DOME_BASE_URL`/`DEFAULT_REAL_BASE_URL`/`DEFAULT_DOME_WS_URL`/`DEFAULT_REAL_WS_URL` 四个真实 host 默认常量；`normalizeWsUrl` 移除 blank/legacy → testnet/mainnet 回退，仅去尾部 `/`。
+  - `BinanceWsProtocol.resolveUserDataWsApiUrl`（WS 连接路径实际解析点，原计划 §5 仅列出 `normalizeWsUrl`，但该方法属同一 P1-A endpoint 边界且会在 guard 关闭时构造真实网络 URI，故一并 harden）：blank → no-real sentinel，移除 legacy stream → 真实 ws-api host 的静默改写，删除四个真实 host 常量并去掉 `envName` 入参；`BinanceWsClient` 3 处调用同步。
+- 验收对照（plan §5 GateL-1B-A）：空环境/dome/real 默认均为 sentinel 且不含 binance host ✓；blank/legacy WS 不回退真实 host ✓；`disabled://` 请求期 loud fail-closed（REST `HttpRequest.Builder.uri()` / WS `WebSocket.Builder.buildAsync()` 对非 http(s)/ws(s) scheme 抛 `IllegalArgumentException`）、构造期与默认配置不外联 ✓；测试不访问网络、日志不输出 endpoint query/credential/headers ✓。
+- 测试：`BinanceRuntimeConfigTest`、`BinanceWsProtocolTest`、`BinanceWsClientTest` 更新 + 新增 `BinanceNoRealEndpointHardeningTest`；`mvn -f backend/pom.xml -o -pl nq-adapter-binance -am test` BUILD SUCCESS（50 / 0 / 0 / 1 skipped）。
+- 状态保持：**P1-A IMPLEMENTED / PENDING REVIEW（未经 `NQ-GATEL-1B-A-IMPL-REVIEW` 不正式关闭）**；**P1-B / P1-C / P1-D 仍 OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；本节不代表允许真实 Binance 接入或 future-real-ready。
+- 回滚：还原 `BinanceRuntimeConfig` / `BinanceWsProtocol` / `BinanceWsClient` 与四个测试文件（删除 `BinanceNoRealEndpointHardeningTest`），并还原本轮 current docs。回滚到旧真实默认会重新打开 P1-A，须立即恢复 NOT READY 状态，不得静默回滚。
