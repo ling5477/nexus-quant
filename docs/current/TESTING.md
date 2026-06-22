@@ -1,3 +1,18 @@
+## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN（2026-06-22）
+
+结论：**PASS / PLAN READY FOR REVIEW；PLANNING ONLY / NOT IMPLEMENTED**。本轮仅规划 A-D，不修代码，不关闭 P1。
+
+- 已执行：预检 `Get-Location` / `git status --short` / `git branch --show-current`；分支 `dev`，预检 working tree clean。
+- 已执行：只读核对 GateL-1 review/freeze/plan/current docs，以及 adapter-api/OKX/Binance 白名单源码与相关测试结构。
+- 已确认：现有 `MarketDataSubscriptionAck + AdapterError` 能表达 `subscribed=false / NO_REAL_DISABLED / retryable=false`，无需新增 HTTP API；四项均无需 migration。
+- 已规划：A endpoint、B credential source、C raw payload、D Noop status 的测试、验收、回滚和分批 review gate。
+- 未执行：Maven/frontend/Python；原因是本轮 docs-only、implementation NOT STARTED。
+- 未访问网络、交易所、DB、容器、GitHub Actions；未读取 credential material。
+
+下一步仅 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW`。P1/P2 OPEN；adapter readiness NOT READY；LIVE/AI/DH runtime 未启用或未接入。
+
+---
+
 ## NQ-GATEL-1A-EXCHANGE-ADAPTER-CONTRACT-REVIEW-FREEZE（2026-06-22）
 
 结论：**PASS / REVIEW FACT BASELINE FROZEN / ACCEPTED**。冻结的是 GateL-1 review 事实、P1/P2 与处理顺序；adapter readiness = **NOT READY / NOT FROZEN**，P1/P2 全部 OPEN / RETAINED。

@@ -170,7 +170,7 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 ## 10. Recommended next task
 
 - **GateL-1A：Exchange adapter contract review freeze = PASS / FROZEN / ACCEPTED**（docs-only）。只冻结 review 事实、P1/P2 与处理顺序；adapter readiness = NOT READY / NOT FROZEN，P1/P2 均保持 OPEN。
-- 后续顺序冻结为：GateL-1B No-Real hardening plan → GateL-1C capability matrix contract → GateL-1D error model contract → GateL-1E future-real readiness checklist refinement。先 hardening plan，再冻结依赖安全默认边界的 capability/error 合同。
+- 后续顺序冻结为：GateL-1B No-Real hardening plan → GateL-1C capability matrix contract → GateL-1D error model contract → GateL-1E future-real readiness checklist refinement。GateL-1B plan 已落档为 PASS / PLAN READY FOR REVIEW；下一步仅允许 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW`，不得直接 implementation。
 - 真实交易所接入仍须在 readiness checklist 全部满足 + 专项安全审计 + 用户显式授权后**另起 Gate**，不在 GateL 范围内。
 
 ## 11. 验收标准（GateL planning 验收）

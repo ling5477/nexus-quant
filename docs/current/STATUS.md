@@ -6,6 +6,9 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ GateL-1B No-Real hardening plan（2026-06-22）：**NQ-GATEL-1B-NO-REAL-HARDENING-PLAN = PASS / PLAN READY FOR REVIEW；PLANNING ONLY / NOT IMPLEMENTED**。详见 `GATEL_1B_NO_REAL_HARDENING_PLAN.md`。针对四项冻结 P1 规划 A Binance endpoint sentinel/guard、B OKX/Binance process credential source、C raw payload producer suppression + 后续字段删除、D Noop `subscribed=false + NO_REAL_DISABLED` 四个最小切片。实施顺序 A → B → C → D；默认独立实现与 review，不合成大批次。不需要 migration，不新增 HTTP API。P1/P2 全部 OPEN / RETAINED；adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+  下一步仅允许 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW`；不得直接 implementation。LIVE DISABLED；AI NOT STARTED；DH runtime NOT INTEGRATED；real exchange/credential/provider/permission probe 继续禁止。
+  验证：docs-only 定向源码/测试结构复核、链接/状态/范围/敏感值/diff 检查；未跑 Maven/frontend/Python，未访问网络、交易所、DB，未读取 credential material。回滚为删除 plan 并还原 6 份 current docs。
 - NQ GateL-1A exchange adapter contract review freeze（2026-06-22）：**NQ-GATEL-1A-EXCHANGE-ADAPTER-CONTRACT-REVIEW-FREEZE = PASS / FROZEN / ACCEPTED**。详见 `GATEL_1_EXCHANGE_ADAPTER_CONTRACT_FREEZE_REVIEW.md`。冻结对象仅为 GateL-1 review 的事实、P1/P2 与后续处理顺序；adapter readiness = **NOT READY / NOT FROZEN / NOT AUTHORIZED**。四项 P1 与四项 P2 全部 OPEN / RETAINED，未修复、未关闭。后续顺序冻结为 GateL-1B No-Real hardening plan → 1C capability matrix contract → 1D error model contract → 1E future-real readiness checklist refinement。下一步仅允许 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN`，不直接改代码。
   验证：docs-only 定向源码复核、链接/术语/状态/diff 范围检查；未跑 Maven/frontend/Python，未访问网络、交易所、DB，未读取 credential material。GateL implementation NOT STARTED；LIVE DISABLED；AI NOT STARTED；DH runtime NOT INTEGRATED。
   回滚：删除 freeze review 并还原 6 份 current docs 条目与顺序调整；无 runtime/DB/workflow/credential/provider/exchange 副作用。

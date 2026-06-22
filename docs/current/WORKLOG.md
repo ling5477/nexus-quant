@@ -1,3 +1,19 @@
+## NQ-GATEL-1B-NO-REAL-HARDENING-PLAN（2026-06-22）
+
+新增 `GATEL_1B_NO_REAL_HARDENING_PLAN.md`，为四项冻结 P1 规划最小 No-Real hardening 切片。结论：**PASS / PLAN READY FOR REVIEW；PLANNING ONLY / NOT IMPLEMENTED**。
+
+- A：Binance REST/WS default sentinel + explicit outbound safety decision；不允许 blank/legacy fallback 到外部 host。
+- B：OKX/Binance default runtime 不再解析/持有进程 credential；future governance bridge 另起 Gate。
+- C：先抑制所有 raw payload producer，再独立评估删除 record component；sanitized metadata 必须 allowlist。
+- D：复用现有 DTO 返回 `subscribed=false + NO_REAL_DISABLED + FATAL_FAILURE + retryable=false`，不新增 HTTP API。
+- 顺序：A → B → C → D；默认独立 implementation/review；A/B 可合并但不推荐，C/D 必须拆开。
+- 不需要 migration；不新增 HTTP API；P1/P2 全部 OPEN / RETAINED；adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+- 下一步仅 `NQ-GATEL-1B-NO-REAL-HARDENING-PLAN-REVIEW`；不得直接 implementation。
+- 验证：docs-only 定向源码/测试结构与文档一致性检查；未跑构建测试，未访问网络/交易所/DB，未读取 credential material。
+- Rollback：删除 plan 并还原 `GATEL_PLAN.md`、README、ROADMAP、STATUS、TESTING、WORKLOG；无 runtime/DB/workflow/credential/provider/exchange 副作用。
+
+---
+
 ## NQ-GATEL-1A-EXCHANGE-ADAPTER-CONTRACT-REVIEW-FREEZE（2026-06-22）
 
 完成 GateL-1A freeze review，新增 `GATEL_1_EXCHANGE_ADAPTER_CONTRACT_FREEZE_REVIEW.md`。结论：**PASS / REVIEW FACT BASELINE FROZEN / ACCEPTED**；只冻结审查事实、P1/P2 和处理顺序，不冻结 adapter readiness。
