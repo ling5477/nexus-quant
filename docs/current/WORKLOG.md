@@ -1,3 +1,20 @@
+## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW-COMMIT-GATE（2026-06-22）
+
+提交 OKX bootstrap / test isolation / no-outbound 专项复审结论 docs。docs-only：未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy / 测试 / runtime；未 freeze、未修复 P2、未读取真实凭证、未外联。
+
+- 复审对象：OKX bootstrap / test isolation / no-outbound boundary。复审 HEAD `e3b12e33`，分支 `dev`，复审前 working tree clean，final freeze commit `8d126f9f`。
+- 结论：**NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = PASS / READY FOR FREEZE**。
+- OKX bootstrap：启动兜底 stub 工厂（stub baseUrl=`http://127.0.0.1`，authenticated 抛 `OKX_ADAPTER_BOOTSTRAP_STUB`）；构造惰性；启动期不访问真实 OKX。test/ci/paper/local 不自动启用真实连接。
+- credential：env 读取入口为设计内；CI / no-outbound guard 禁止真实 credential env；不打印 secret/passphrase。permission probe 默认 NoReal（SKIPPED / REAL_EXCHANGE_PROBE_DISABLED）。
+- no-outbound guard 覆盖 OKX/Binance/Bybit/Bitget/Gate/Coinbase/Kraken/Crypto/Hyperliquid，fail-closed，CI job 保留。profile absence => false，test profile no-outbound=true，`EnvSafetyValidator` fail-closed。`.env.example` placeholder-only。
+- 本地只读复核：`NoRealExchangeCredentialPermissionProbePortTest` 1/0/0/0 + `EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0，`BUILD SUCCESS`。
+- Findings：P0=0；P1=0；P2=1（`OkxRuntimeConfig` 代码级真实 host 默认值未纳入启动期 EnvSafety endpoint 校验，非阻断，后续单独任务）；P3=1（`application-ci.yml` / `application-paper.yml` 命名差异，非阻断）。
+- 修改文件：`NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md`（新增 §13）、`NQ_CI_BASELINE_PLAN.md`、`README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- 是否允许进入 freeze：允许。回滚：回退本轮 docs-only 提交即可，无 runtime/DB/credential/provider/exchange 副作用。
+- 边界：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
+---
+
 ## NQ-CI-SECURITY-FINAL-FREEZE-GATE（2026-06-21）
 
 提交 final baseline review docs 并把 GateK CI/security 总基线冻结为 **FROZEN / ACCEPTED**。docs-only：未改 workflow/code/migration/runtime，未启动新功能，未读取真实凭证，未外联。

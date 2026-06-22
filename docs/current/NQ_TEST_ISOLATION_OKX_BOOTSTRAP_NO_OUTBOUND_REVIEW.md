@@ -1,9 +1,10 @@
 # NQ Test Isolation OKX Bootstrap No-Outbound Review
 
 任务：NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW
-日期：2026-06-12
-状态：review documented；FIX implemented；no outbound exchange call performed in this fix pass。
+日期：2026-06-12（初轮 REVIEW + FIX）；2026-06-22（post-CI-security freeze 专项复审，见 §13）
+状态：review documented；FIX implemented；no outbound exchange call performed in this fix pass。post-freeze 复审结论 **PASS / READY FOR FREEZE**（§13）。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
+GateK CI/security = FROZEN / ACCEPTED；Batch 5B-ENV = FROZEN / ACCEPTED；Batch 5B-SMOKE = FROZEN / ACCEPTED。
 
 ## 1. Scope
 
@@ -184,3 +185,115 @@ FIX 轮次验证记录见 `docs/current/TESTING.md` 的 `NQ-TEST-ISOLATION-OKX-B
 ## 12. Rollback
 
 如需回滚本轮文档落档，删除本文件，并回退 `README.md`、`docs/current/README.md`、`docs/current/WORKLOG.md`、`docs/current/TESTING.md` 中对应索引和记录即可。本轮没有代码、配置、数据库或部署副作用。
+
+---
+
+## 13. Post-CI-Security Freeze Re-Review（2026-06-22）
+
+任务：NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW（post-CI-security freeze 专项复审）
+日期：2026-06-22
+本节为 GateK CI/security final freeze（`8d126f9f`，FROZEN / ACCEPTED）之后，对 OKX bootstrap / test isolation / no-outbound 边界的独立只读复审记录。本节为 docs-only 落档；未修改 workflow / backend / Java / TypeScript / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy / 测试。
+
+### 13.1 Review object
+
+OKX bootstrap / test isolation / no-outbound boundary。
+
+### 13.2 Review result
+
+**PASS / READY FOR FREEZE**。
+
+### 13.3 Baseline
+
+- 当前 HEAD：`e3b12e33788bd23e3d96507dd8efcc511db33043`。
+- 当前分支：`dev`。
+- working tree baseline：复审前 clean。
+- final freeze commit：`8d126f9f`（HEAD 领先部分为后续 docs-only 提交，代码 / workflow / migration 无漂移）。
+
+### 13.4 审查范围
+
+- `.github/workflows/ci.yml`
+- `.env.example`
+- `application.yml` / `-local` / `-test` / `-gated-verify` / `-freeze` / `-prod`
+- OKX bootstrap / adapter / runtime / probe boundary
+- `ExchangeNoOutboundGuard` / `NoOutboundExchangeGuardTest`
+- `EnvSafetyValidator` / `EnvSafetyGuardConfiguration`
+- `NoRealExchangeCredentialPermissionProbePort`
+- `ExchangeAdapterConfiguration`
+- `LocalTestFallbackConfiguration`
+- `AccountModuleConfiguration`
+- `OkxRecoveryService` 启动钩子（`@EventListener(ContextRefreshedEvent.class)`）
+- `docs/current/**`
+
+### 13.5 明确不涉及
+
+- 真实 OKX 外联。
+- 真实凭证读取。
+- 下单 / 撤单 / 转账 / 提现。
+- LIVE 开启。
+
+### 13.6 OKX bootstrap 结论
+
+- 存在启动兜底 stub 工厂 `OkxBootstrapFallbackFactory`（仅 `nq.okx.adapter.stub-on-bootstrap-failure=true` 时接管）。
+- adapter 构造惰性：`OkxInstrumentsCache` 构造期不发起 HTTP，instruments 仅在首次 `snapshot` / `getRequired` 时拉取（`OkxExchangeAdapterBootstrapNoOutboundTest`、`OkxBootstrapNoOutboundLocalContextTest` 固化）。
+- 启动期不访问真实 OKX（local full Spring context 启动期对 `www.okx.com/api/v5/public/instruments` 访问次数断言为 0，且无 `okx_adapter_bootstrap_fallback_enabled` 日志）。
+- fallback stub baseUrl = `http://127.0.0.1`；public stub 返回内置 payload。
+- authenticated stub 直接抛 `OKX_ADAPTER_BOOTSTRAP_STUB`，不外联。
+
+### 13.7 test / ci / paper / local 自动启用结论
+
+- 不会自动启用真实连接：`okx.ws.enabled` / `binance.ws.enabled` 默认 false；`okx.recovery.enabled` 在 local / freeze 为 false；`instrument.catalog-sync.enabled` 在 freeze 为 false；test profile `no-outbound=true`。
+- `OkxRecoveryService.onContextRefreshed` 在 `recovery.enabled=false` 时仅打印脱敏日志（mask apiKey，不输出 secret/passphrase）后返回，不外联；启用时只 reconcile 既有 OKX 订单（clean DB 下无候选）。
+- no-outbound / no-real 边界成立。
+
+### 13.8 credential boundary
+
+- 存在设计内 env 读取入口（`OkxRuntimeConfig.fromSystemEnv()` 在 adapter 构造时读取 `NQ_OKX_API_KEY/SECRET/PASSPHRASE`）。
+- CI / no-outbound guard 禁止真实交易所 credential env（workflow env-name 断言 + `NoOutboundExchangeGuardTest`，本轮本地运行 0 skip 通过，确认无 forbidden env）。
+- 不打印 secret / passphrase：`fingerprint()` 仅输出 `env / baseUrl / maskApiKey`。
+
+### 13.9 permission probe
+
+- 默认 `NoRealExchangeCredentialPermissionProbePort`（`AccountModuleConfiguration` 装配，`NqAppContextPostgresSmokeTest` 断言所绑定即 NoReal）。
+- 返回 `SKIPPED / REAL_EXCHANGE_PROBE_DISABLED`。
+- 不创建 HTTP client。
+- 不访问交易所。
+
+### 13.10 no-outbound guard
+
+- denylist 覆盖 OKX / Binance / Bybit / Bitget / Gate / Coinbase / Kraken / Crypto / Hyperliquid（含子域 `endsWith` 匹配）。
+- `select()` / `connectFailed()` 对命中 host fail-closed 抛 `AssertionError`。
+- CI `no-outbound-guard` job 保留；`ci-security-smoke` job 复用同组 guard / validator / NoReal 测试。
+
+### 13.11 profile boundary
+
+- `LIVE / AI / DH / real-provider / real-client / real-exchange` 全部 `absence => false`。
+- test profile `no-outbound=true`。
+- `EnvSafetyValidator` 启动期对冲突组合一次性 fail-closed（`effectiveNoOutbound = configured || ci || testProfile`）。
+
+### 13.12 .env.example
+
+- placeholder-only（仅 `PLACEHOLDER_ONLY` / `DO_NOT_COMMIT_REAL_VALUE` / `REPLACE_WITH_LOCAL_PLACEHOLDER`）；无真实 endpoint / key / secret / passphrase。
+
+### 13.13 测试结果（本轮本地只读复核执行）
+
+- `NoRealExchangeCredentialPermissionProbePortTest` 1/0/0/0。
+- `EnvSafetyValidatorTest` 8/0/0/0。
+- `NoOutboundExchangeGuardTest` 3/0/0/0（0 skipped，CI-required env-absence 断言已执行并通过）。
+- `BUILD SUCCESS`。命令：`mvn -f backend/pom.xml -pl nq-app,nq-infra -am test -Dtest=NoRealExchangeCredentialPermissionProbePortTest,EnvSafetyValidatorTest,NoOutboundExchangeGuardTest -Dsurefire.failIfNoSpecifiedTests=false -Dnq.no-outbound.guard.required=true`（CI / no-outbound 环境，无真实外联、无真实凭证读取）。
+
+### 13.14 Findings
+
+- P0 = 0。
+- P1 = 0。
+- P2 = 1（非阻断，纵深防御建议）：`OkxRuntimeConfig` 代码级真实 host 默认值（`DEFAULT_BASE_URL=https://www.okx.com`、真实 WS 默认）仅在 `NQ_OKX_BASE_URL` / `NQ_OKX_WS_URL` 完全缺省时取用，且未纳入启动期 `EnvSafetyValidator` endpoint 校验（该 guard 只检查已注入的 env/property 值）。当前由惰性构造 + test/CI ProxySelector denylist + CI 注入 `PLACEHOLDER_ONLY` + ws/recovery/catalog-sync 关闭/手动 + 无 real provider/RealClient 多重缓解，**当前任何受控 profile 下不产生真实外联**。后续单独任务处理，不在本轮修复，不阻断 freeze。
+- P3 = 任务清单提及的 `application-ci.yml` / `application-paper.yml` 不存在为独立文件；CI 通过 `CI=true` + test / no-outbound 语义生效，`EnvSafetyValidator.testProfileActive()` 已识别 `ci` / `paper` / `*-smoke` profile 名，语义无缺口（仅命名预期差异）。非阻断。
+
+### 13.15 是否允许进入 freeze
+
+允许。
+
+### 13.16 风险与回滚边界
+
+- 本轮 docs-only。
+- 回滚 review docs（删除 §13 与各 docs/current 对应记录）即可。
+- 无 runtime / DB / credential / provider / exchange 副作用。

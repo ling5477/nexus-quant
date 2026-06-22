@@ -6,6 +6,13 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ OKX bootstrap / test isolation / no-outbound 专项复审（2026-06-22）：**NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = PASS / READY FOR FREEZE**。详见 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md` §13。
+  post-CI-security freeze（`8d126f9f`）之后对 OKX bootstrap / adapter / runtime / probe / `EnvSafetyValidator` / `ExchangeNoOutboundGuard` / `OkxRecoveryService` 启动钩子 / `application*.yml` / `.env.example` / `ci.yml` 的独立只读复审。复审 HEAD `e3b12e33`，分支 `dev`，复审前 working tree clean。
+  OKX bootstrap：存在启动兜底 stub 工厂（stub baseUrl=`http://127.0.0.1`，authenticated 直接抛 `OKX_ADAPTER_BOOTSTRAP_STUB`）；adapter 构造惰性；启动期不访问真实 OKX。test/ci/paper/local 不自动启用真实连接；no-outbound / no-real 边界成立。permission probe 默认 NoReal（SKIPPED / REAL_EXCHANGE_PROBE_DISABLED，不创建 HTTP client、不访问交易所）。no-outbound guard 覆盖 OKX/Binance/Bybit/Bitget/Gate/Coinbase/Kraken/Crypto/Hyperliquid，denylist fail-closed，CI `no-outbound-guard` job 保留。profile `LIVE/AI/DH/real-provider/real-client/real-exchange` absence => false，test profile `no-outbound=true`，`EnvSafetyValidator` fail-closed。`.env.example` placeholder-only。
+  本地只读复核测试：`NoRealExchangeCredentialPermissionProbePortTest` 1/0/0/0 + `EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0，`BUILD SUCCESS`。
+  Findings：P0=0；P1=0；P2=1（`OkxRuntimeConfig` 代码级真实 host 默认值未纳入启动期 EnvSafety endpoint 校验，非阻断，后续单独任务，本轮不修复）；P3=1（`application-ci.yml` / `application-paper.yml` 命名预期差异，非阻断）。
+  是否允许进入 freeze：**允许**（本轮 docs-only commit gate，不 freeze、不修复 P2）。本轮为 docs-only：未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy / 测试。
+  边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
 - GateK CI Security final freeze（2026-06-21）：**GateK CI/security = FROZEN / ACCEPTED**。详见 `NQ_CI_SECURITY_FINAL_FREEZE.md`。
   冻结对象：GateK CI/security baseline（NQ CI Baseline 9-job 管线 + 对应 backend guard/validator/port 测试 + docs/current CI/security 事实源）。
   Batch 1 implemented/green；Batch 2A–2E / 3 / 4B / 4C / 4F-A / 5A / 5B-ENV / 5B-SMOKE 均 **FROZEN / ACCEPTED**；**Batch 5B = CLOSED / ACCEPTED**；4F-B..4F-F / static assertion = OPTIONAL BACKLOG / NOT IMPLEMENTED（NOT BLOCKING）。

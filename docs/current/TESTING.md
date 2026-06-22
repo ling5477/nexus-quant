@@ -1,3 +1,20 @@
+## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW-COMMIT-GATE（2026-06-22）
+
+结论：**NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = PASS / READY FOR FREEZE**。docs-only commit gate，未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy、未新增/未修改测试、未 freeze、未修复 P2。复审 HEAD `e3b12e33`，分支 `dev`，复审前 working tree clean。
+
+本地只读复核测试（CI / no-outbound 环境，无真实外联、无真实凭证读取）：
+
+| 命令 / 测试 | 结果 | 证据 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app,nq-infra -am test -Dtest=NoRealExchangeCredentialPermissionProbePortTest,EnvSafetyValidatorTest,NoOutboundExchangeGuardTest -Dsurefire.failIfNoSpecifiedTests=false -Dnq.no-outbound.guard.required=true` | **通过** | `NoRealExchangeCredentialPermissionProbePortTest` 1/0/0/0 + `EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0（0 skipped，CI-required env-absence 断言已执行通过），`BUILD SUCCESS`。 |
+| `git status --short` / `git diff --check` / 禁止范围 diff | **通过** | 复审轮 working tree clean；commit gate 轮仅 `docs/current/*` diff；`.github/workflows/ci.yml` / `backend` / `backend/**/db/migration` / `frontend research scripts deploy` / `.env.example` 均无 diff。 |
+
+Findings：P0=0；P1=0；P2=1（`OkxRuntimeConfig` 代码级真实 host 默认值未纳入启动期 `EnvSafetyValidator` endpoint 校验，非阻断纵深防御项，后续单独任务，本轮不修复）；P3=1（`application-ci.yml` / `application-paper.yml` 命名预期差异，CI 以 `CI=true` + test/no-outbound 语义生效，非阻断）。详见 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md` §13。
+
+边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe（NoReal probe remains SKIPPED）。
+
+---
+
 ## NQ-CI-SECURITY-FINAL-FREEZE-GATE（2026-06-21）
 
 结论：**GateK CI/security = FROZEN / ACCEPTED**。docs-only freeze，未跑本地构建、未触发新的 GitHub Actions（仅只读复核既有 green run），未改 workflow / backend / migration / frontend / research / scripts / deploy / `.env.example`、未新增测试。
