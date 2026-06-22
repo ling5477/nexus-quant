@@ -1,3 +1,19 @@
+## NQ-GATEL-1-EXCHANGE-ADAPTER-CONTRACT-REVIEW（2026-06-22）
+
+结论：**CONDITIONAL PASS / DOCS-CONTRACT ONLY**。本轮仅文档审查，未改代码、API、migration、workflow 或运行配置。
+
+- 已执行：`Get-Location`、`git status --short`、`git branch --show-current`；分支 `dev`，审查前 working tree clean。
+- 已执行：允许模块内 `rg --files`、符号/调用点检索、关键 adapter/core/risk/ledger/API 文件逐行只读核对。
+- 已执行：current docs 路径/链接、GateL/GateM/LIVE/AI/DH/RealClient 状态文案、diff 范围、whitespace 检查。
+- 未执行：Maven、frontend build/E2E、Python tests。原因：本轮 docs-only，无 runtime 代码变更。
+- 未执行：网络、真实交易所、数据库、容器、GitHub Actions；未读取 credential material。
+- 过程偏差：一次探索性 `rg` 误用 `backend` 根目录，返回白名单外少量文件名/命中行；未打开这些文件、未读取敏感路径/值，结论证据仅采用允许模块。后续检索已恢复白名单范围。
+- 验证结论：P0=0；P1=4；review 交付可条件通过，现有 adapter contract 不具备 future-real readiness。
+
+边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；GateL implementation NOT STARTED。
+
+---
+
 ## NQ-GATEK-POST-FREEZE-HANDOFF-PLAN（2026-06-22）
 
 结论：**NQ-GATEK-POST-FREEZE-HANDOFF-PLAN = PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**。docs-only handoff，未跑新构建、未触发新 GitHub Actions（仅引用既有 green evidence），未改代码 / workflow / 配置 / 测试。

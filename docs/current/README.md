@@ -4,7 +4,7 @@
 历史过程证据、治理 review/freeze、旧路径 compatibility stub 已移出 current，归档到 `docs/evidence/`（见下方“历史证据位置”）。
 
 当前阶段：**GateJ completed；Next: GateK-PLAN；NQ GateK CI mainline COMPLETED / ACCEPTED**。
-AI not started；DH not integrated；LIVE disabled；real provider / RealClient / real exchange adapter 未实现。
+AI not started；DH not integrated；LIVE disabled；real provider / RealClient / real permission probe 未实现。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。
 
 ## 当前控制入口
 
@@ -42,6 +42,7 @@ AI not started；DH not integrated；LIVE disabled；real provider / RealClient 
 
 - [GATEK_PLAN.md](GATEK_PLAN.md)：GateK planning-only；不代表 GateK implementation started。
 - [GATEL_PLAN.md](GATEL_PLAN.md)：GateL planning-only（**PLANNING ONLY / READY FOR REVIEW**；GateL implementation NOT STARTED）。GateL = 真实交易所接入前的 No-Real 交易适配器 / 市场数据 / permission probe / paper-live execution 边界就绪规划（GateL-1..5 + real exchange readiness checklist）。canonical（2026-06-22 经 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决）：**GateL = No-Real exchange/marketdata readiness**；旧口径「GateL = AI Paper Trading」作废，AI Paper Trading 后移到 GateM（NOT STARTED）。不接真实交易所、不读真实凭证、不外联、不启用 LIVE、不接 AI / DH runtime。
+- [GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md](GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md)：GateL-1 adapter contract review（**CONDITIONAL PASS / DOCS-CONTRACT ONLY**）。确认现有 OKX/Binance 为 legacy network-capable code，不是纯 NoReal stub；登记 Binance 默认 endpoint、进程 credential、`rawPayload`、stub success 语义四项 P1。GateL implementation 仍 NOT STARTED，未授权真实交易所。
 - [NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md](NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md)：GateK post-freeze handoff（CI/security + OKX no-outbound + endpoint defense closure；**PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**；evidence matrix + frozen boundaries + regression rules + 下一阶段入口候选 + optional backlog）。
 - [GATEK_ARCHITECTURE_BASELINE_REVIEW.md](GATEK_ARCHITECTURE_BASELINE_REVIEW.md)：GateK architecture baseline review（P0/P1=0，ACCEPTED WITH P2 FOLLOW-UP）。
 - [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md)：OKX bootstrap / test isolation / no-outbound 边界复审（§13 post-CI-security freeze 复审 = PASS / READY FOR FREEZE；P0/P1=0，P2=1 非阻断纵深防御 follow-up，P3=1 命名差异）。

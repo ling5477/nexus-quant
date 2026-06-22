@@ -16,7 +16,7 @@
 
 | # | 问题 | 答案 |
 | --- | --- | --- |
-| 1 | 当前 NQ 是否可以直接接真实 OKX / Binance？ | **不能。** real exchange provider / RealClient / real permission probe adapter 均 NOT IMPLEMENTED；no-outbound guard fail-closed；OKX/Binance runtime 默认 endpoint 为 `disabled://` sentinel。 |
+| 1 | 当前 NQ 是否可以直接接真实 OKX / Binance？ | **不能。** real permission probe adapter / RealClient 均 NOT IMPLEMENTED；no-outbound guard 必须 fail-closed。GateL-1 复核确认 OKX 默认 endpoint 为 `disabled://` sentinel，但 Binance 仍默认指向 testnet/mainnet 外部 URL，属于 P1 No-Real 缺口，不得接入。 |
 | 2 | 当前是否允许启用 LIVE？ | **不能。** LIVE DISABLED；PAPER / LIVE 硬隔离；任何 LIVE 能力即使只读也须另起安全审计。 |
 | 3 | 当前是否允许实现 RealClient？ | **不能。** RealClient NOT IMPLEMENTED，且本轮及 GateL planning 范围内禁止实现。 |
 | 4 | 当前是否允许读取真实 API key？ | **不能。** 默认 credential permission probe = NoReal / SKIPPED；`.env.example` placeholder-only；secret scan + redaction gate 已冻结。 |
@@ -47,15 +47,15 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 - real OKX / Binance permission probe adapter：NOT IMPLEMENTED。
 - 默认 credential permission probe：NoReal / SKIPPED / REAL_EXCHANGE_PROBE_DISABLED。
 - no-outbound guard：FROZEN / ACCEPTED（fail-closed，覆盖 OKX/Binance/Bybit/Bitget/Gate/Coinbase/Kraken/Crypto/Hyperliquid）。
-- OKX/Binance runtime 默认 endpoint：`disabled://` sentinel（真实 endpoint 仅显式 env opt-in）。
+- Runtime 默认 endpoint：OKX 已是 `disabled://` sentinel；Binance 仍硬编码 testnet/mainnet REST/WS URL，GateL-1 登记为 P1，不能描述为 No-Real 默认安全。
 
 ### 2.1 现有 no-real 资产盘点（GateL 不是从零搭建，而是 review / freeze 既有边界）
 
-下列组件**已存在**，当前均为 no-real / stub / fixture / disabled 边界。GateL planning 的对象是这些既有契约，不得把它们误写成“待新建”。
+下列组件**已存在**。GateL planning 的对象是这些既有契约；其中包含 no-real / stub / fixture / disabled 边界，也包含不得在当前阶段启用的 legacy network-capable 代码，不能把后者误写成已满足 No-Real 或“待新建”。
 
 - `nq-adapter-api`（契约）：`TradingAdapter`、`MarketDataAdapter`、`AccountAdapter`、`HistoricalKlineAdapter`，及 `NoopMarketDataAdapter` / `NoopAccountAdapter`；model：`AdapterOrderRequest` / `AdapterOrderAck` / `AdapterOrderSnapshot` / `AdapterOrderQuery` / `AdapterOpenOrdersQuery` / `AdapterCancelRequest` / `AdapterCancelAck` / `AdapterTradeReport` / `AdapterError` / `AdapterResultCategory`（9 类：SUCCESS / ACCEPTED / NOT_FOUND / DEFERRED / RETRYABLE_FAILURE / FATAL_FAILURE / THROTTLED / AUTH_FAILURE / REMOTE_UNAVAILABLE） / `AccountSnapshot` / `AccountBalanceSnapshot` / `PositionSnapshot` / `HistoricalKlineBar` / `HistoricalKlineRequest` / `MarketDataSubscriptionRequest` / `MarketDataSubscriptionAck`。
 - `nq-adapter-okx`：`OkxExchangeAdapter`、`OkxHttpClient`、`OkxRequestSigner`、`OkxRuntimeConfig`（默认 `disabled://` sentinel）、`OkxPermissionProbeBoundary`（forbidden endpoint：`/trade/order`、`/trade/cancel`、`/asset/withdraw`、`/asset/transfer`、`/account/transfer`；脱敏 classify）、`OkxHistoricalKlineAdapter`、`OkxInstrumentsCache`、`OkxBootstrapFallbackFactory`（stub baseUrl `http://127.0.0.1`，authenticated 抛 `OKX_ADAPTER_BOOTSTRAP_STUB`）、`OkxErrorClassifier` / `OkxErrorCode`、`OkxWsClient` 及 WS 协议栈（当前不连真实 WS）。
-- `nq-adapter-binance`：`BinanceExchangeAdapter`、`BinanceHttpClient`、`BinanceHmacRequestSigner` / `BinanceEd25519RequestSigner`、`BinanceRuntimeConfig`、`BinancePermissionProbeBoundary`、`BinanceHistoricalKlineAdapter`、`BinanceFiltersCache`、`BinanceExchangeInfoClient`、`BinanceWsClient` / `BinanceListenKeyClient` 及 WS 协议栈。
+- `nq-adapter-binance`：`BinanceExchangeAdapter`、`BinanceHttpClient`、`BinanceHmacRequestSigner` / `BinanceEd25519RequestSigner`、`BinanceRuntimeConfig`、`BinancePermissionProbeBoundary`、`BinanceHistoricalKlineAdapter`、`BinanceFiltersCache`、`BinanceExchangeInfoClient`、`BinanceWsClient` / `BinanceListenKeyClient` 及 WS 协议栈。GateL-1 复核确认 runtime 默认仍为 testnet/mainnet 外部 URL，不能归类为 No-Real 默认安全。
 - `nq-core` marketdata：`HistoricalKlineProvider`、`HistoricalMarketDataPort`、`MarketdataBarRepository`、`MarketdataDatasetRepository`、`InstrumentCatalogRepository` / `InstrumentCatalogService` / `InstrumentCatalogSyncService`、`FixtureMarketdataRegistry` / `FixtureMarketdataDataset`、`BarInterval`、`HistoricalBar`、`HistoricalDatasetSpec`、`HistoricalMarketDataQuery`、`MarketdataBarIngestService`、`MarketdataIngestionService`。
 - `nq-core` trading：`OrderCommandService`、`OrderCommandWriteService`、`OrderLifecycleService`、`OrderAggregate`、`OrderRecord`、`OrderRepository`、`OrderStateMachine` / `InMemoryOrderStateMachine`、`PlaceOrderRequest` / `CancelOrderRequest`、`ExecutionCommandMapper`、`StrategyExecutionGateway` / `OrderCommandStrategyExecutionGateway`、`TradingOrderStatusSnapshot`。
 - `nq-risk`：`RiskGate` / `NoopRiskGate`、`PreTradeRiskService`、`RiskRuleRegistry`、`RiskRule` 及规则（`AccountTradingEnabledRule`、`DuplicateRequestRule`、`KillSwitchRiskRule` / `KillSwitchService`、`MaxOrderAmountRule`、`MinNotionalRule`、`OrderPrecisionRule`、`RateLimitRule`、`SymbolEnabledRule`）、`RiskContext`、`RiskDecisionResult`。
@@ -137,6 +137,7 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 
 ### P1
 
+- **GateL-1 adapter contract security gaps（OPEN）**：Binance 默认 endpoint 非 sentinel；OKX/Binance adapter 默认构造链直接读取进程 credential；统一 order ack/snapshot 暴露 `rawPayload`；Noop marketdata 以普通 success 返回且无 STUB/NO_REAL 标记。详见 `GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md`。这些问题阻止现有合同被标记为 future-real-ready，但不授权本轮改代码。
 - **Roadmap GateL 语义冲突 = RESOLVED / CLOSED（2026-06-22，`NQ-GATEL-CANONICAL-ROUTE-SYNC`）**：原冲突为现有路线图把 GateL 标注为「AI Paper Trading」，而本计划把 GateL-PLAN 范围定为「No-Real 交易适配器与市场数据边界就绪」。用户已裁决 canonical：**GateL = No-Real Exchange / MarketData Readiness**；旧口径「GateL = AI Paper Trading」作废；**AI Paper Trading 后移到 GateM**（后续独立 AI/DH 阶段，当前 NOT STARTED），AI 小资金 LIVE → GateN，美股 → GateO，A 股 → GateP。README / docs-current README / ROADMAP / STATUS / GATEL_PLAN / TESTING / WORKLOG 已同步该 canonical。本项不再阻断 GateL-1。
 
 ### P2
@@ -168,8 +169,8 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 
 ## 10. Recommended next task
 
-- **GateL-1：Exchange adapter contract review**（docs/contract-only，最小批次）。先把 `nq-adapter-api` 的 capability/error matrix 与 venue 能力声明集中成文，再逐步推进 GateL-2..5。
-- 前置已满足：§6 P1 GateL 语义冲突已由 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决关闭（canonical = No-Real exchange/marketdata readiness；AI Paper Trading → GateM）；可直接进入 GateL-1。
+- **GateL-1A：Exchange adapter contract review freeze**（docs/contract-only）。GateL-1 review 已以 `CONDITIONAL PASS` 落档；先冻结 review 事实与 P1/P2，不得写 future-real-ready。
+- 前置状态：路线语义冲突已关闭；GateL-1 新发现的 P1 security gaps 仍 OPEN。后续按 GateL-1B capability matrix、1C error model、1D No-Real hardening plan、1E readiness checklist refinement 小步推进。
 - 真实交易所接入仍须在 readiness checklist 全部满足 + 专项安全审计 + 用户显式授权后**另起 Gate**，不在 GateL 范围内。
 
 ## 11. 验收标准（GateL planning 验收）

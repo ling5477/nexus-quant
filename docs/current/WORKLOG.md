@@ -1,3 +1,18 @@
+## NQ-GATEL-1-EXCHANGE-ADAPTER-CONTRACT-REVIEW（2026-06-22）
+
+完成 GateL-1 adapter contract 的只读架构/安全边界审查并新增 `GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md`。结论为 **CONDITIONAL PASS / DOCS-CONTRACT ONLY**；通过的是审查交付，不是 future-real readiness。
+
+- Current state：Trading/MarketData/Account/Historical ports 已拆分；OKX/Binance 含真实 REST/WS 协议代码，不能归类为纯 NoReal stub；OKX 默认 endpoint 已 sentinel，Binance 默认仍为 testnet/mainnet URL。
+- Positive boundary：core 在 adapter IO 前经过 RiskGate/OrderStateMachine；adapter 不拥有 ledger/audit/order state 主权。
+- Findings：P0=0；P1=4（Binance default endpoint、adapter 进程 credential、`rawPayload`、Noop marketdata success marker）；P2=4（capability/error/retry/public-private/wiring contract）。
+- Capability/error/security/paper-future-real matrices 与 fail-closed/retry 规则已集中成文。
+- 同步修正 `GATEL_PLAN.md` 的 Binance sentinel 事实错误；更新 `README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。
+- 验证：docs-only 静态审查与文档一致性/diff 检查；未跑构建或测试，未访问网络/交易所/DB，未读取凭证。
+- 下一步：GateL-1A review freeze；后续 1B capability / 1C error / 1D No-Real hardening plan / 1E checklist refinement。GateL implementation NOT STARTED，真实交易所未授权。
+- Rollback：删除 review 文档并还原本轮 6 份 current docs 条目；无 runtime/DB/workflow/credential/provider/exchange 副作用。
+
+---
+
 ## NQ-GATEK-POST-FREEZE-HANDOFF-PLAN（2026-06-22）
 
 形成 GateK post-freeze handoff 文档，确认 CI/security + OKX no-outbound + endpoint defense 已全部收口并交接进入下一阶段规划。docs-only：未改代码 / workflow / 配置 / 测试 / runtime；未实现下一阶段功能；未接真实交易所 / LIVE / AI / DH。
