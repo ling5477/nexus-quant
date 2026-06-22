@@ -1,3 +1,19 @@
+## NQ-GATEL-1B-A-IMPL-FREEZE（2026-06-22）
+
+完成 GateL-1B-A freeze-close，新增 `GATEL_1B_A_IMPL_FREEZE_REVIEW.md`，正式关闭 P1-A。结论：**PASS / FROZEN / ACCEPTED；P1-A CLOSED / ACCEPTED**。
+
+- 预检：`git status --short`（clean）、`git branch --show-current`（dev）、`git log --oneline -5`、`git show --stat --oneline HEAD`。
+- 冻结对象：implementation commit `04ddb774`（`feat(adapter-binance): default endpoints to no-real sentinel`）；提交含 7 adapter（6 改 + 1 新增测试）+ 7 docs，全部在 GateL-1B-A 允许范围。
+- 校验：`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace；`git grep -nE "testnet\.binance|binance\.com|stream\.binance" HEAD -- backend/nq-adapter-binance/src/main` = NONE；禁止路径（OKX/adapter-api/frontend/research/scripts/deploy/workflow/migration）= NONE；`git show HEAD:...` 确认 sentinel 常量与 hardened 解析点在提交内。
+- 测试复跑：`mvn -f backend/pom.xml -o -pl nq-adapter-binance -am test` BUILD SUCCESS，nq-adapter-binance **50 / 0 fail / 0 error / 1 skipped**（live diagnostic 系统属性门禁跳过）。
+- **P1-A = CLOSED / ACCEPTED**；**P1-B / P1-C / P1-D 仍 OPEN / RETAINED**；GateL-1B 整体 No-Real hardening freeze NOT DONE（待 B/C/D）；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；不代表允许真实 Binance 接入或 future-real-ready。
+- Regression boundary：后续改动 `BinanceRuntimeConfig` 默认 endpoint / `normalizeWsUrl` / `BinanceWsProtocol.resolveUserDataWsApiUrl` / `BinanceWsClient` WS endpoint 解析，须重新 review + freeze。
+- 边界：未改代码；未新增 API/DTO/migration/workflow；未访问外网/交易所/DB；未读取 credential；未启用 LIVE；未接 AI/DH runtime；未修 P1-B/C/D。
+- 回滚：`git revert 04ddb774`（P1-A 重新 OPEN）并还原本轮 docs + freeze 卷宗；无 runtime/DB/credential/provider/exchange 副作用。
+- 下一步 `NQ-GATEL-1B-B-IMPL`，本轮不进入。
+
+---
+
 ## NQ-GATEL-1B-A-IMPL（2026-06-22）
 
 完成 GateL-1B-A：Binance adapter 默认 REST/WS endpoint no-real / no-outbound hardening（**只实现 P1-A，不夹带 B/C/D**）。结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-A-IMPL-REVIEW`**。

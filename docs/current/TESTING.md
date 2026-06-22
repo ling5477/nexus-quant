@@ -1,3 +1,15 @@
+## NQ-GATEL-1B-A-IMPL-FREEZE（2026-06-22）
+
+结论：**PASS / FROZEN / ACCEPTED；P1-A CLOSED / ACCEPTED**。冻结 implementation commit `04ddb774`；P1-B/C/D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+- 提交校验：`git show --check HEAD` 无 whitespace；`git diff --check HEAD^ HEAD` 无 whitespace；`git grep -nE "testnet\.binance|binance\.com|stream\.binance" HEAD -- backend/nq-adapter-binance/src/main` = NONE。
+- 测试复跑（freeze 证据）：`mvn -f backend/pom.xml -o -pl nq-adapter-binance -am test`（offline，未外联）→ **BUILD SUCCESS**；reactor nq-common / nq-contracts / nq-adapter-api / nq-adapter-binance 全部 SUCCESS。
+- nq-adapter-binance：**50 tests / 0 failures / 0 errors / 1 skipped**（skip = `BinanceWsClientLiveDiagnosticTest`，`-Dnq.binance.ws.live.diagnostic` 系统属性门禁，默认不执行，不连真实 Binance）。
+- 覆盖确认（与 1B-A-IMPL 一致）：默认 `disabled://` sentinel（`BinanceRuntimeConfigTest` / `BinanceNoRealEndpointHardeningTest`）、blank override 不回退（`BinanceRuntimeConfigTest` / `BinanceWsProtocolTest`）、legacy endpoint 不回退（`BinanceRuntimeConfigTest` / `BinanceWsProtocolTest`）、no-outbound fail-closed（`BinanceNoRealEndpointHardeningTest`）。
+- 未执行 frontend / Python（本轮 docs-only freeze，未改代码）；未访问网络、交易所、DB、容器、GitHub Actions；未读取 `.env` 或 credential material。
+
+---
+
 ## NQ-GATEL-1B-A-IMPL（2026-06-22）
 
 结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-A-IMPL-REVIEW`**。只实现 P1-A（Binance 默认 endpoint sentinel / no-outbound）；P1-B/C/D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。

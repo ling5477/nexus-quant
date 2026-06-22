@@ -304,3 +304,14 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 - 测试：`BinanceRuntimeConfigTest`、`BinanceWsProtocolTest`、`BinanceWsClientTest` 更新 + 新增 `BinanceNoRealEndpointHardeningTest`；`mvn -f backend/pom.xml -o -pl nq-adapter-binance -am test` BUILD SUCCESS（50 / 0 / 0 / 1 skipped）。
 - 状态保持：**P1-A IMPLEMENTED / PENDING REVIEW（未经 `NQ-GATEL-1B-A-IMPL-REVIEW` 不正式关闭）**；**P1-B / P1-C / P1-D 仍 OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；本节不代表允许真实 Binance 接入或 future-real-ready。
 - 回滚：还原 `BinanceRuntimeConfig` / `BinanceWsProtocol` / `BinanceWsClient` 与四个测试文件（删除 `BinanceNoRealEndpointHardeningTest`），并还原本轮 current docs。回滚到旧真实默认会重新打开 P1-A，须立即恢复 NOT READY 状态，不得静默回滚。
+
+## 16. GateL-1B-A freeze-close（2026-06-22）
+
+> 本节为 freeze-close 追加，不改写上文 frozen plan 正文。
+
+- 任务：`NQ-GATEL-1B-A-IMPL-FREEZE` = **PASS / FROZEN / ACCEPTED**，详见 `GATEL_1B_A_IMPL_FREEZE_REVIEW.md`。
+- 冻结对象：implementation commit `04ddb774`（`feat(adapter-binance): default endpoints to no-real sentinel`），`git show --check` / `git diff --check HEAD^ HEAD` 无 whitespace，`mvn -f backend/pom.xml -o -pl nq-adapter-binance -am test` BUILD SUCCESS（50 / 0 / 0 / 1 skipped），main src `git grep` 无 testnet/mainnet 默认 host。
+- **P1-A = CLOSED / ACCEPTED**（Binance endpoint default sentinel / no-outbound hardening frozen）；**P1-B / P1-C / P1-D 仍 OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；不代表允许真实 Binance 接入或 future-real-ready。
+- GateL-1B 整体 No-Real hardening freeze **NOT DONE**，待 B/C/D 全部独立完成后另行执行。
+- Regression boundary：后续改动 `BinanceRuntimeConfig` 默认 endpoint / `normalizeWsUrl` / `BinanceWsProtocol.resolveUserDataWsApiUrl` / `BinanceWsClient` WS endpoint 解析，须重新 review + freeze。
+- 下一步 `NQ-GATEL-1B-B-IMPL`。
