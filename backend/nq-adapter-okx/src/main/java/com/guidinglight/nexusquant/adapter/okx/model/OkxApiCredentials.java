@@ -18,6 +18,20 @@ public record OkxApiCredentials(
 ) {
 
     /**
+     * 返回未配置占位凭证。
+     * <p>
+     * Why:
+     * No-real hardening (GateL-1B-B)：runtime config 默认不再从进程环境读取 credential material，
+     * 统一返回该占位凭证（{@link #isConfigured()} = false）。真实 credential 必须由后续 NQ credential
+     * governance bridge 注入（另起 Gate），不得从 env / system property / .env 派生。
+     *
+     * @return 全空、未配置的凭证占位
+     */
+    public static OkxApiCredentials unconfigured() {
+        return new OkxApiCredentials("", "", "");
+    }
+
+    /**
      * 判断凭证是否完整。
      *
      * @return true 表示可用于签名请求

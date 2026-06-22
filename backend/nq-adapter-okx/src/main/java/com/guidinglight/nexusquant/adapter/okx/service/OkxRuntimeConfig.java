@@ -91,11 +91,12 @@ public record OkxRuntimeConfig(
                 "NQ_OKX_WS_HEARTBEAT_INTERVAL_MS",
                 DEFAULT_WS_HEARTBEAT_INTERVAL_MS
         );
-        OkxApiCredentials credentials = new OkxApiCredentials(
-                read(env, "NQ_OKX_API_KEY", read(env, prefix + "API_KEY", "")),
-                read(env, "NQ_OKX_API_SECRET", read(env, prefix + "API_SECRET", "")),
-                read(env, "NQ_OKX_API_PASSPHRASE", read(env, prefix + "API_PASSPHRASE", ""))
-        );
+        // Why: No-real hardening (GateL-1B-B) —— runtime config 不再从进程环境（env / system property / .env）
+        // 读取 credential material（apiKey/secret/passphrase）。默认一律 unconfigured placeholder；真实 credential
+        // 必须由后续 NQ credential governance bridge 按 owner/account/tenant/credential type/active version/permission
+        // scope 注入（另起 Gate），adapter 不得猜测 account/tenant 或从全局进程环境派生。未配置时 OkxHttpClient 对
+        // authenticated 请求在网络前 fail-closed（OKX_CREDENTIALS_MISSING）。
+        OkxApiCredentials credentials = OkxApiCredentials.unconfigured();
         return new OkxRuntimeConfig(
                 envName,
                 baseUrl,

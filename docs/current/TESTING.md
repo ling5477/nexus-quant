@@ -1,3 +1,20 @@
+## NQ-GATEL-1B-B-IMPL（2026-06-22）
+
+结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-B-IMPL-REVIEW`**。只实现 P1-B（OKX/Binance runtime credential source hardening）；P1-A 仍 CLOSED，P1-C/P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+- 命令：`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test`（offline，未外联）。
+- 结果：**BUILD SUCCESS**；reactor nq-common / nq-contracts / nq-adapter-api / nq-adapter-okx / nq-adapter-binance 全部 SUCCESS。
+- nq-adapter-okx：**32 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-binance：**51 tests / 0 fail / 0 error / 1 skipped**（skip = `BinanceWsClientLiveDiagnosticTest` 系统属性门禁）。
+- 关键用例：
+  - `OkxNoRealCredentialHardeningTest`（2，新增）/ `BinanceNoRealCredentialHardeningTest`（2，新增）：默认 runtime config credential unconfigured；authenticated/signed 请求在 unconfigured 时网络前抛 OKX_CREDENTIALS_MISSING / BINANCE_CREDENTIALS_MISSING，失败信息不含 secret/passphrase/apiKey。
+  - `OkxRuntimeConfigTest`（4）：env credential（含 dome / unified 变量）被忽略 → unconfigured，endpoint 等 transport metadata 仍按显式 env 生效，fingerprint 不回显 marker。
+  - `BinanceRuntimeConfigTest`（6）：env credential（含 ed25519 key type / private key marker）被忽略 → unconfigured（默认 HMAC keyType），transport metadata 仍生效，fingerprint apiKey=missing。
+  - `BinanceWsClientTest`（7）：WS 订阅签名经 canonical constructor 显式注入测试凭证，行为不变。
+- 静态检查：`git diff --check` 无 whitespace；`git grep` 确认 runtime config 无 credential env 读取、P1-A `disabled://` sentinel 未回退；diff secret 扫描仅命中被删除的 dummy PEM（无新增真实 credential）。
+- 未执行 frontend / Python（本轮仅触及 OKX/Binance adapter）。未访问网络、交易所、DB、容器、GitHub Actions；未读取 `.env` 或 credential material。
+
+---
+
 ## NQ-GATEL-1B-A-IMPL-FREEZE（2026-06-22）
 
 结论：**PASS / FROZEN / ACCEPTED；P1-A CLOSED / ACCEPTED**。冻结 implementation commit `04ddb774`；P1-B/C/D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。

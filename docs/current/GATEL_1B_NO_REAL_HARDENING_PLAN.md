@@ -315,3 +315,20 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 - GateL-1B 整体 No-Real hardening freeze **NOT DONE**，待 B/C/D 全部独立完成后另行执行。
 - Regression boundary：后续改动 `BinanceRuntimeConfig` 默认 endpoint / `normalizeWsUrl` / `BinanceWsProtocol.resolveUserDataWsApiUrl` / `BinanceWsClient` WS endpoint 解析，须重新 review + freeze。
 - 下一步 `NQ-GATEL-1B-B-IMPL`。
+
+## 17. GateL-1B-B implementation update（2026-06-22）
+
+> 本节为实现进度追加，不改写上文 frozen plan 正文。
+
+- 任务：`NQ-GATEL-1B-B-IMPL` = **PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-B-IMPL-REVIEW`**。
+- 仅实现 **P1-B**（runtime credential source hardening）；未夹带 C/D，未实现真实 credential governance bridge，未接真实交易所，未启用 LIVE，未读取真实 credential，未外联。
+- 实现：
+  - `OkxRuntimeConfig.fromEnvironment` / `BinanceRuntimeConfig.fromEnvironment`：删除对 apiKey/secret/passphrase/private key/key type 的进程环境（env / system property / .env）解析；credential 默认改为 `OkxApiCredentials.unconfigured()` / `BinanceApiCredentials.unconfigured()`（isConfigured=false）。非敏感 endpoint/timeout/reconnect 等 transport metadata 仍按显式 env 解析。
+  - `OkxApiCredentials` / `BinanceApiCredentials`：新增 `unconfigured()` 占位工厂；`BinanceRuntimeConfig` 移除未使用的 `BinanceKeyType` import。
+  - 既有 fail-closed 守卫复用，不改 adapter/WS/HttpClient 逻辑：`OkxHttpClient`/`BinanceHttpClient` 对 authenticated/signed 请求在 unconfigured 时网络前抛 OKX_CREDENTIALS_MISSING / BINANCE_CREDENTIALS_MISSING；`OkxWsClient` 以 `isConfigured()` 守卫 login，不以空凭证登录。
+- Future-real credential 只冻结原则（owner/account/tenant/credential type/active version/permission scope 由 NQ credential governance bridge 注入），另起 Gate，不在本轮实现。
+- 验收对照（plan §5 GateL-1B-B）：默认 No-Real 启动不读取/持有/打印/传播真实 credential ✓；伪 env credential marker 被忽略、不回显 ✓；private operation 未配置时网络前 fail-closed、不 fallback env ✓；失败信息/fingerprint 不含 credential material ✓；P1-A endpoint sentinel 未回退 ✓。
+- 测试：新增 `OkxNoRealCredentialHardeningTest` / `BinanceNoRealCredentialHardeningTest`；更新 `OkxRuntimeConfigTest` / `BinanceRuntimeConfigTest` / `BinanceWsClientTest`；`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（OKX 32 / Binance 51 / 0 fail / 1 skipped）。
+- 状态保持：**P1-A CLOSED / ACCEPTED**；**P1-B IMPLEMENTED / PENDING REVIEW**；**P1-C / P1-D 仍 OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；本节不代表允许真实 OKX/Binance 接入或 future-real-ready。
+- 回滚：还原两个 runtime config、两个 credential 模型与相关测试（删除两个新增 credential hardening 测试）；回滚会重新打开 P1-B，须立即恢复 NOT READY 状态。
+- 下一步 `NQ-GATEL-1B-B-IMPL-REVIEW`。

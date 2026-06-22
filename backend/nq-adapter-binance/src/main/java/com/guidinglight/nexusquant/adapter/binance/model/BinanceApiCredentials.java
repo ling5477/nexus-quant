@@ -30,6 +30,20 @@ public record BinanceApiCredentials(
     }
 
     /**
+     * 返回未配置占位凭证。
+     * <p>
+     * Why:
+     * No-real hardening (GateL-1B-B)：runtime config 默认不再从进程环境读取 credential material，
+     * 统一返回该占位凭证（{@link #isConfigured()} = false）。真实 credential 必须由后续 NQ credential
+     * governance bridge 注入（另起 Gate），不得从 env / system property / .env 派生。
+     *
+     * @return 全空、未配置的凭证占位
+     */
+    public static BinanceApiCredentials unconfigured() {
+        return new BinanceApiCredentials("", "");
+    }
+
+    /**
      * Why:
      * 无 key 阶段依然需要构造 client 与单测；这里提供统一判定，
      * 避免调用方把空字符串当成“已配置”继续走签名路径。

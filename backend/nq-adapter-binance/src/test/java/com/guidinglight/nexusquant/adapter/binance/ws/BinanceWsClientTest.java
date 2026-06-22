@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceRequestSigner;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfig;
 
@@ -22,7 +23,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -362,20 +362,23 @@ class BinanceWsClientTest {
     }
 
     private BinanceRuntimeConfig runtimeConfig() {
-        return BinanceRuntimeConfig.fromEnvironment(Map.ofEntries(
-                Map.entry("NQ_BINANCE_ENV", "dome"),
-                Map.entry("NQ_BINANCE_DOME_BASE_URL", "https://testnet.binance.vision"),
-                // No-real hardening 后不再自动改写 legacy stream URL；显式提供官方 ws-api URL 作为 opt-in。
-                Map.entry("NQ_BINANCE_DOME_WS_URL", "wss://ws-api.testnet.binance.vision/ws-api/v3"),
-                Map.entry("NQ_BINANCE_DOME_API_KEY", "test-api-key"),
-                Map.entry("NQ_BINANCE_DOME_API_SECRET", "test-secret"),
-                Map.entry("NQ_BINANCE_WS_DIAGNOSTIC_ENABLED", "true"),
-                Map.entry("NQ_BINANCE_TIMEOUT_MS", "100"),
-                Map.entry("NQ_BINANCE_LISTENKEY_REFRESH_MS", "1000"),
-                Map.entry("NQ_BINANCE_WS_RECONNECT_BASE_DELAY_MS", "20"),
-                Map.entry("NQ_BINANCE_WS_RECONNECT_MAX_DELAY_MS", "20"),
-                Map.entry("NQ_BINANCE_WS_HEARTBEAT_INTERVAL_MS", "1000")
-        ));
+        // Why: No-real hardening (GateL-1B-B) 后 runtime config 不再从 env 读取 credential；
+        // WS 订阅签名测试需要显式凭证，故通过 canonical constructor 显式注入测试凭证（模拟未来 governance bridge），
+        // endpoint 仍显式提供官方 ws-api URL 作为 opt-in。
+        return new BinanceRuntimeConfig(
+                "dome",
+                "https://testnet.binance.vision",
+                "wss://ws-api.testnet.binance.vision/ws-api/v3",
+                Duration.ofMillis(100),
+                Duration.ZERO,
+                Duration.ofMinutes(5),
+                Duration.ofMillis(20),
+                Duration.ofMillis(20),
+                Duration.ofMillis(1000),
+                Duration.ofMillis(1000),
+                true,
+                new BinanceApiCredentials("test-api-key", "test-secret")
+        );
     }
 
     private void waitFor(Check check) throws Exception {

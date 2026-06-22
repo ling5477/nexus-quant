@@ -1,3 +1,20 @@
+## NQ-GATEL-1B-B-IMPL（2026-06-22）
+
+完成 GateL-1B-B：OKX/Binance runtime credential source hardening（**只实现 P1-B，不夹带 C/D**）。结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-B-IMPL-REVIEW`**。
+
+- 代码：`OkxRuntimeConfig.fromEnvironment` / `BinanceRuntimeConfig.fromEnvironment` 删除对 apiKey/secret/passphrase/private key/key type 的进程环境解析；默认改为 `OkxApiCredentials.unconfigured()` / `BinanceApiCredentials.unconfigured()`。
+- 代码：`OkxApiCredentials` / `BinanceApiCredentials` 新增 `unconfigured()` 工厂（全空、isConfigured=false 占位）；`BinanceRuntimeConfig` 移除不再使用的 `BinanceKeyType` import。
+- 行为：非敏感 transport metadata（endpoint/timeout/reconnect/heartbeat/diagnostic）仍按显式 env 解析；credential 一律被忽略；`fromSystemEnv` 经 ProcessEnvironmentResolver 仍解析进程 env，但 credential key 不再注入凭证对象。authenticated/signed 请求在 unconfigured 时由 HttpClient 在网络前 fail-closed（OKX_CREDENTIALS_MISSING / BINANCE_CREDENTIALS_MISSING），失败信息不含 credential material。adapter/WS/HttpClient 既有 fail-closed 守卫无需改动（`OkxWsClient` 以 `isConfigured()` 守卫 login，不以空凭证登录）。
+- 不实现真实 credential governance bridge（owner/account/tenant/credential type/active version/permission scope 仅冻结原则，另起 Gate）。
+- 测试：新增 `OkxNoRealCredentialHardeningTest` / `BinanceNoRealCredentialHardeningTest`（默认 unconfigured + signed/authenticated fail-closed before network + 错误无 secret）；更新 `OkxRuntimeConfigTest`（env credential 被忽略、endpoint 仍生效）、`BinanceRuntimeConfigTest`（env credential 被忽略含 ed25519 marker、transport 仍生效）、`BinanceWsClientTest`（WS 签名测试改为 canonical constructor 显式注入测试凭证）。
+- 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（OKX 32 / Binance 51 / 0 fail / 1 skipped）；`git diff --check` 干净；`git grep` 确认 runtime config 无 credential env 读取、P1-A sentinel 未回退；diff secret 扫描仅命中被删除的 dummy PEM。
+- 边界：未接真实交易所；未读取 `.env`/真实 credential；未访问外网/交易所/DB/容器/Actions；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient/real provider/real permission probe；未改 nq-adapter-api / rawPayload（P1-C）/ NoopMarketDataAdapter（P1-D）/ frontend/research/scripts/deploy/workflow/migration。
+- 状态：P1-A 仍 CLOSED / ACCEPTED；P1-B = IMPLEMENTED / PENDING REVIEW；P1-C / P1-D 仍 OPEN / RETAINED；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED。
+- 回滚：还原两个 runtime config、两个 credential 模型与相关测试（删除两个新增 credential hardening 测试）；回滚会重新打开 P1-B（凭证回退进程环境），须立即恢复 NOT READY 状态。
+- 下一步 `NQ-GATEL-1B-B-IMPL-REVIEW`，本轮不进入 1B-C。
+
+---
+
 ## NQ-GATEL-1B-A-IMPL-FREEZE（2026-06-22）
 
 完成 GateL-1B-A freeze-close，新增 `GATEL_1B_A_IMPL_FREEZE_REVIEW.md`，正式关闭 P1-A。结论：**PASS / FROZEN / ACCEPTED；P1-A CLOSED / ACCEPTED**。

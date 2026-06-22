@@ -14,24 +14,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class OkxRuntimeConfigTest {
 
     @Test
-    void shouldSelectDomeCredentialsAndMaskApiKey() {
+    void shouldIgnoreEnvCredentialsAndKeepExplicitEndpoints() {
+        // Why: No-real hardening (GateL-1B-B) —— runtime config 不再读取进程环境 credential；
+        // 非敏感 endpoint 等 transport metadata 仍可由显式 env 覆盖。
         OkxRuntimeConfig config = OkxRuntimeConfig.fromEnvironment(Map.of(
                 "NQ_OKX_ENV", "dome",
                 "NQ_OKX_DOME_BASE_URL", "https://www.okx.com",
-                "NQ_OKX_DOME_API_KEY", "abcd1234wxyz",
-                "NQ_OKX_DOME_API_SECRET", "secret",
-                "NQ_OKX_DOME_API_PASSPHRASE", "pass",
+                "NQ_OKX_DOME_API_KEY", "env-marker-key-ignored",
+                "NQ_OKX_DOME_API_SECRET", "env-marker-secret-ignored",
+                "NQ_OKX_DOME_API_PASSPHRASE", "env-marker-pass-ignored",
                 "NQ_OKX_TIMEOUT_MS", "3000"
         ));
 
         assertEquals("dome", config.envName());
-        // baseUrl 由显式 env 提供，验证 explicit env still overrides the disabled:// default。
+        // 非敏感 endpoint 显式 env 仍生效。
         assertEquals("https://www.okx.com", config.baseUrl());
-        // 该用例未提供 NQ_OKX_WS_URL，wsPrivateUrl 回退到 dome 默认值；默认已改为 no-real sentinel。
+        // 该用例未提供 NQ_OKX_WS_URL，wsPrivateUrl 回退到 no-real sentinel。
         assertEquals("disabled://okx-ws-not-configured", config.wsPrivateUrl());
-        assertEquals("abcd1234wxyz", config.credentials().apiKey());
         assertTrue(config.simulatedTrading());
-        assertTrue(config.fingerprint().contains("apiKey=abcd...wxyz"));
+        // credential 被忽略：unconfigured，不持有 env 值，fingerprint 不回显任何 env credential marker。
+        assertFalse(config.credentials().isConfigured());
+        assertEquals("", config.credentials().apiKey());
+        assertEquals("", config.credentials().secretKey());
+        assertEquals("", config.credentials().passphrase());
+        assertTrue(config.fingerprint().contains("apiKey=missing"));
+        assertFalse(config.fingerprint().contains("env-marker"));
     }
 
     @Test
@@ -71,21 +78,25 @@ class OkxRuntimeConfigTest {
     }
 
     @Test
-    void shouldPreferUnifiedRuntimeVariablesForRealEnvironment() {
+    void shouldPreferUnifiedRuntimeEndpointVariablesAndIgnoreCredentials() {
+        // Why: 统一 transport 变量（baseUrl/wsUrl）仍优先生效；credential 一律被忽略并保持 unconfigured。
         OkxRuntimeConfig config = OkxRuntimeConfig.fromEnvironment(Map.of(
                 "NQ_OKX_ENV", "real",
-                "NQ_OKX_API_KEY", "real-unified-key",
-                "NQ_OKX_API_SECRET", "real-unified-secret",
-                "NQ_OKX_API_PASSPHRASE", "real-unified-pass",
+                "NQ_OKX_API_KEY", "real-unified-key-ignored",
+                "NQ_OKX_API_SECRET", "real-unified-secret-ignored",
+                "NQ_OKX_API_PASSPHRASE", "real-unified-pass-ignored",
                 "NQ_OKX_BASE_URL", "https://real.example.com",
                 "NQ_OKX_WS_URL", "wss://real.example.com/ws/private",
-                "NQ_OKX_REAL_API_KEY", "legacy-real-key"
+                "NQ_OKX_REAL_API_KEY", "legacy-real-key-ignored"
         ));
 
         assertEquals("real", config.envName());
         assertEquals("https://real.example.com", config.baseUrl());
         assertEquals("wss://real.example.com/ws/private", config.wsPrivateUrl());
-        assertEquals("real-unified-key", config.credentials().apiKey());
         assertFalse(config.simulatedTrading());
+        // credential 被忽略：unconfigured。
+        assertFalse(config.credentials().isConfigured());
+        assertEquals("", config.credentials().apiKey());
+        assertFalse(config.fingerprint().contains("real-unified"));
     }
 }

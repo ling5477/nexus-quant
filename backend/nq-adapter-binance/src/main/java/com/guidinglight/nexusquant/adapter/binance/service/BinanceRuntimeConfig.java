@@ -1,7 +1,6 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
-import com.guidinglight.nexusquant.adapter.binance.model.BinanceKeyType;
 import com.guidinglight.nexusquant.common.runtime.ProcessEnvironmentResolver;
 
 import java.time.Duration;
@@ -90,13 +89,12 @@ public record BinanceRuntimeConfig(
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_WS_HEARTBEAT_INTERVAL_MS", DEFAULT_WS_HEARTBEAT_INTERVAL_MS)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_LISTENKEY_REFRESH_MS", DEFAULT_LISTENKEY_REFRESH_MS)),
                 Boolean.parseBoolean(read(env, "NQ_BINANCE_WS_DIAGNOSTIC_ENABLED", "false")),
-                new BinanceApiCredentials(
-                        read(env, prefix + "API_KEY", ""),
-                        read(env, prefix + "API_SECRET", ""),
-                        BinanceKeyType.fromEnv(read(env, "NQ_BINANCE_KEY_TYPE", "hmac")),
-                        read(env, prefix + "PRIVATE_KEY", ""),
-                        read(env, prefix + "PRIVATE_KEY_PATH", "")
-                )
+                // Why: No-real hardening (GateL-1B-B) —— runtime config 不再从进程环境（env / system property / .env）
+                // 读取 credential material（apiKey/secret/private key/key type）。默认一律 unconfigured placeholder；
+                // 真实 credential 必须由后续 NQ credential governance bridge 按 owner/account/tenant/credential type/
+                // active version/permission scope 注入（另起 Gate），adapter 不得从全局进程环境派生。未配置时
+                // BinanceHttpClient 对 signed 请求在网络前 fail-closed（BINANCE_CREDENTIALS_MISSING）。
+                BinanceApiCredentials.unconfigured()
         );
     }
 
