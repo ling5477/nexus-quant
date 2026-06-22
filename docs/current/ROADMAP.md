@@ -13,13 +13,15 @@ GateJ：Paper Trading 稳定运行 completed
   ↓
 GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口 ← NEXT
   ↓
-GateL：AI Paper Trading
+GateL：No-Real Exchange / MarketData Readiness（planning / contract / readiness）
   ↓
-GateM：AI 小资金 LIVE
+GateM：AI Paper Trading（后续独立 AI/DH 阶段，当前 NOT STARTED）
   ↓
-GateN：美股适配
+GateN：AI 小资金 LIVE
   ↓
-GateO：A 股适配
+GateO：美股适配
+  ↓
+GateP：A 股适配
 ```
 
 ## 当前阶段
@@ -41,6 +43,8 @@ GateO：A 股适配
 - GateK post-freeze 专项收口 = **FROZEN / ACCEPTED**：NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND（freeze commit `8a2fbe4a`）+ NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE（impl `c749cef7` / addendum `7d9330c3` / CI run `27926903155` 9 jobs success；P2 OkxRuntimeConfig default real endpoint defense = CLOSED / ACCEPTED；OKX runtime 默认 endpoint = `disabled://` sentinel）。
 - GateK post-freeze handoff = **PASS / READY FOR NEXT PHASE**（handoff 卷宗 `NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md`）；**NEXT PHASE = READY TO PLAN**（无 P0/P1 阻断项）。下一阶段入口候选（不在本轮启动，由本路线图决定）：GateL PLAN / Integration-1 PLAN / Market data next batch PLAN / Trading adapter no-real contract PLAN。
 - GateK implementation not started。
+- **NQ-GATEL-PLAN = PLANNING ONLY / READY FOR REVIEW**（2026-06-22）：GateL planning baseline 落档 `GATEL_PLAN.md`，范围 = 真实交易所接入前的 No-Real 交易适配器 / 市场数据 / permission probe / paper-live execution 边界就绪（GateL-1 adapter contract → GateL-2 marketdata no-real pipeline → GateL-3 permission probe contract → GateL-4 paper-first execution boundary → GateL-5 real exchange readiness checklist）。docs-only，不实现、不接真实交易所、不读真实凭证、不外联、不启用 LIVE、不接 AI / DH runtime。**GateL implementation NOT STARTED**。
+- **路线图 GateL 语义已裁决（canonical，2026-06-22）**：经 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决，**GateL canonical = No-Real Exchange / MarketData Readiness**（planning / contract / readiness）。旧口径「GateL = AI Paper Trading」作废；**AI Paper Trading 后移到 GateM**（后续独立 AI/DH 阶段，当前 NOT STARTED），AI 小资金 LIVE → GateN，美股 → GateO，A 股 → GateP。AI Paper Trading 不属于 GateL 入场任务（见 `GATEL_PLAN.md` §6 / §10）。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
@@ -56,8 +60,9 @@ GateO：A 股适配
 - GateK-PLAN 用于规划 GateJ 后的事实源收口、架构与测试基线、前端产品化、CI / 可观测性 / 部署基线、安全 hardening 和 Integration-0 只读登记；不能直接实现 AI、DH runtime、LIVE、真实交易所扩展或真实 adapter。
 - NQ_CI_BASELINE_PLAN.md 已作为 CI baseline 文档落档（CI 状态权威以 STATUS.md 为准）；**NQ GateK CI mainline = COMPLETED / ACCEPTED**：Batch 1 first green，Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound guard、Batch 4B secret scan、Batch 4C artifact/log redaction、Batch 4F-A dependency-audit preflight、Batch 5A no-backend frontend E2E 均 FROZEN / ACCEPTED；Batch 5B-ENV = FROZEN / ACCEPTED（freeze evidence run `27876451289`，卷宗 NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md），Batch 5B-SMOKE = FROZEN / ACCEPTED（implementation plan reviewed / accepted；implementation DONE；ci-security-smoke job 已落地；first run evidence PASS（run 27903497008，9 jobs success）；freeze FROZEN / ACCEPTED，卷宗 NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md；Batch 5B CLOSED / ACCEPTED），Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED，Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
 - `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` 已作为 Batch 3 plan / implementation / freeze baseline 落档；Batch 3B 已实现最小 workflow / test-scope no-outbound guard，并由 GitHub Actions run `27634370657` first green confirmed（6 jobs green），经 Batch 3E freeze review 固化为 FROZEN / ACCEPTED，是当前 `dev` no-outbound guard baseline。
-- GateL 进入 AI Paper Trading。
-- GateM 才允许 AI 小资金 LIVE。
+- GateL 进入 No-Real Exchange / MarketData Readiness（planning / contract / readiness，不实盘、不接真实交易所）。
+- AI Paper Trading 是后续独立阶段（GateM），当前 NOT STARTED。
+- GateN 才允许 AI 小资金 LIVE。
 - 美股/A 股复用虚拟币 V1 沉淀的通用底座。
 
 ## 当前边界

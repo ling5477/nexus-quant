@@ -9159,3 +9159,75 @@ push 第二次修复 → re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLY
 ### 下一步
 
 进入 **NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN_REVIEW**，只读复核 implementation plan；不得直接执行 implementation。
+
+---
+
+## NQ-GATEL-PLAN
+
+日期：2026-06-22
+
+### 本轮目标
+
+产出 GateL planning baseline `docs/current/GATEL_PLAN.md`，明确真实交易所接入前的 No-Real 交易适配器 / 市场数据 / permission probe / paper-live execution 边界规划与拆分批次、验收、安全边界。本轮 docs-only，不实现。
+
+### 范围
+
+- 新增：`docs/current/GATEL_PLAN.md`。
+- 更新：`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`（GateL planning 状态入口）。
+- 只读盘点：`nq-adapter-api` 契约与 model、`nq-adapter-okx` / `nq-adapter-binance`（adapter / runtime config / permission probe boundary / historical kline / WS）、`nq-core` marketdata（HistoricalKlineProvider / HistoricalMarketDataPort / InstrumentCatalog / FixtureMarketdata）、`nq-core` trading（OrderCommandService / OrderLifecycleService / OrderStateMachine）、`nq-risk`（RiskGate + rules + KillSwitch）、`nq-ledger`、GateK 安全基线（EnvSafetyValidator / NoOutboundExchangeGuard / NoRealExchangeCredentialPermissionProbePort）、README / ROADMAP / STATUS / MODULES / ARCHITECTURE。
+
+### 计划决策
+
+- GateL = No-Real exchange/marketdata readiness planning；拆分 GateL-1（adapter contract review，最小批次）/ GateL-2（marketdata no-real pipeline）/ GateL-3（permission probe contract）/ GateL-4（paper-first execution boundary）/ GateL-5（real exchange readiness checklist）。
+- 硬性问题答案固定为「不能」：直接接真实 OKX/Binance、启用 LIVE、实现 RealClient、读真实 API key、DH runtime 接入交易执行链路。
+- 既有 adapter / marketdata / risk / ledger 组件为 review 对象（no-real / stub / fixture / disabled），不得误写成待新建。
+- 登记 P1 冲突：路线图原「GateL：AI Paper Trading」与本计划「No-Real exchange/marketdata readiness」语义不一致，待用户裁决；本轮不改写总路线序列。
+
+### 状态
+
+**NQ-GATEL-PLAN = PLANNING ONLY / READY FOR REVIEW**；GateL implementation **NOT STARTED**。P0=0；P1=1（路线图 GateL 语义冲突，待裁决 —— 已由后续 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决关闭，canonical = No-Real exchange/marketdata readiness，AI Paper Trading → GateM）；P2=2（非阻断）。
+
+### 回滚方式
+
+删除 `docs/current/GATEL_PLAN.md`，并还原 `README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 的本轮状态入口即可；无代码 / workflow / DB / runtime / credential / provider / exchange 副作用。
+
+### 下一步
+
+进入 **NQ-GATEL-PLAN-REVIEW** 只读复核本计划；并先由用户裁决路线图 GateL 语义冲突，再进入 **GateL-1（exchange adapter contract review，docs/contract-only）**。不得直接执行真实交易所接入。
+
+---
+
+## NQ-GATEL-CANONICAL-ROUTE-SYNC
+
+日期：2026-06-22
+
+### 本轮目标
+
+修正 `GATEL_PLAN.md` 报告中发现的 P1 路线图语义冲突，使 README / docs-current README / ROADMAP / STATUS / GATEL_PLAN / TESTING / WORKLOG 对 GateL 的 canonical 定义一致。docs-only route sync，不实现、不改代码 / API / migration / workflow / 测试。
+
+### 裁决（canonical）
+
+- **GateL = No-Real Exchange / MarketData Readiness**（planning / contract / readiness）。
+- 旧口径「GateL = AI Paper Trading」作废。
+- **AI Paper Trading 后移到 GateM**（后续独立 AI/DH 阶段，当前 NOT STARTED）；AI 小资金 LIVE → GateN；美股适配 → GateO；A 股适配 → GateP。
+- GateL 拆分：GateL-1 exchange adapter contract review / GateL-2 market data no-real pipeline / GateL-3 permission probe contract / GateL-4 paper-first execution boundary / GateL-5 real exchange readiness checklist。
+- AI Paper Trading 不属于 GateL 入场任务；真实交易所接入须 readiness checklist 全满足 + 专项安全审计 + 用户显式授权后另起 Gate。
+- AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real exchange adapter / real permission probe NOT IMPLEMENTED。
+
+### 范围
+
+- 只读 grep：GateL / AI Paper / AI Trading / DH runtime / LIVE / real exchange（root README、docs-current README / ROADMAP / STATUS / GATEL_PLAN）。
+- 更新：`docs/current/GATEL_PLAN.md`（§6 P1 RESOLVED / §10 前置已满足）、`docs/current/README.md`（路线图一行 + GATEL_PLAN 索引条目）、`docs/current/ROADMAP.md`（总路线图 + 路线原则 + 当前阶段裁决记录）、`docs/current/STATUS.md`（路线图 + 顶部裁决条目 + 前序 GateL-PLAN 条目 P1 关闭）、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- root `README.md` 无 GateL canonical 定义（仅 not-started 列表），未修改。
+
+### 状态
+
+**NQ-GATEL-CANONICAL-ROUTE-SYNC = PASS / DOCS-ONLY**。原 P1 路线图 GateL 语义冲突 = **RESOLVED / CLOSED**；GateL implementation 仍 **NOT STARTED**。
+
+### 回滚方式
+
+还原本轮 6 份 docs 的 GateL 路线/定义入口即可；无代码 / workflow / DB / runtime / credential / provider / exchange 副作用。
+
+### 下一步
+
+进入 **GateL-1（exchange adapter contract review，docs/contract-only）**；真实交易所接入仍须另起 Gate。

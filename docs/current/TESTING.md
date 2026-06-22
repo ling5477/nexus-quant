@@ -4891,3 +4891,36 @@ target conflicts = 0
 - NoReal permission probe remains SKIPPED；No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
 
 本轮验证范围：文档路径、阶段状态、禁止边界、入口一致性和 scoped diff。未运行 Maven / npm / pytest / GitHub Actions，原因是本轮只改 docs-current planning/status 文档，不改代码、workflow、测试、migration 或运行时配置。
+
+---
+
+## NQ-GATEL-PLAN（2026-06-22）
+
+结论：**PLANNING ONLY / READY FOR REVIEW**；GateL implementation **NOT STARTED**。docs-only planning，本轮未实现任何 GateL 能力，未改代码 / API / migration / workflow / frontend / research / scripts / deploy / `.env.example`，未运行或触发 GitHub Actions。
+
+本轮验证范围（只读）：
+
+- adapter / marketdata / permission probe / paper execution / risk / ledger 现有 no-real 资产盘点（确认均为 no-real / stub / fixture / disabled 边界，非待新建）。
+- GateL planning 文档路径、阶段状态、禁止边界、10 项硬性问题答案、入口一致性。
+- scoped diff 仅落在 `docs/current/`。
+
+未运行 Maven / npm / pytest / mypy / ruff / GitHub Actions，原因：本轮只改 docs/current planning/status 文档，不改代码、workflow、测试、migration 或运行时配置；GateL implementation NOT STARTED。
+
+边界确认：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。NoReal permission probe remains SKIPPED。
+
+---
+
+## NQ-GATEL-CANONICAL-ROUTE-SYNC（2026-06-22）
+
+结论：**PASS / DOCS-ONLY**。docs-only route sync，修正 GateL canonical 定义冲突；未改代码 / API / migration / workflow / 测试 / frontend / research / scripts / deploy，未运行或触发 GitHub Actions。
+
+本轮验证范围（只读 + 一致性核对）：
+
+- grep GateL / AI Paper Trading / AI 小资金 / DH runtime / LIVE / real exchange，定位冲突点（root README、docs-current README / ROADMAP / STATUS / GATEL_PLAN）。
+- canonical 一致性核对：6 份 docs 的 GateL 定义统一为 **No-Real Exchange / MarketData Readiness**；旧口径「GateL = AI Paper Trading」已全部改写；AI Paper Trading → GateM（NOT STARTED）；AI 小资金 LIVE → GateN；美股 → GateO；A 股 → GateP。
+- 残留冲突核对：docs/current 内 `GateL：AI Paper Trading` / `GateL 进入 AI Paper Trading` 旧定义已清零（root README 无 GateL 定义，未改）。
+- scoped diff 仅落在 `docs/current/`（root README 未改）。
+
+未运行 Maven / npm / pytest / mypy / ruff / GitHub Actions，原因：本轮只改 docs/current 路线/定义文档，不改代码、workflow、测试、migration 或运行时配置。
+
+边界确认：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。NoReal permission probe remains SKIPPED。

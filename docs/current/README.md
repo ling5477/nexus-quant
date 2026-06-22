@@ -41,6 +41,7 @@ AI not started；DH not integrated；LIVE disabled；real provider / RealClient 
 ## GateK / 规划与其他当前控制文档
 
 - [GATEK_PLAN.md](GATEK_PLAN.md)：GateK planning-only；不代表 GateK implementation started。
+- [GATEL_PLAN.md](GATEL_PLAN.md)：GateL planning-only（**PLANNING ONLY / READY FOR REVIEW**；GateL implementation NOT STARTED）。GateL = 真实交易所接入前的 No-Real 交易适配器 / 市场数据 / permission probe / paper-live execution 边界就绪规划（GateL-1..5 + real exchange readiness checklist）。canonical（2026-06-22 经 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决）：**GateL = No-Real exchange/marketdata readiness**；旧口径「GateL = AI Paper Trading」作废，AI Paper Trading 后移到 GateM（NOT STARTED）。不接真实交易所、不读真实凭证、不外联、不启用 LIVE、不接 AI / DH runtime。
 - [NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md](NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md)：GateK post-freeze handoff（CI/security + OKX no-outbound + endpoint defense closure；**PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**；evidence matrix + frozen boundaries + regression rules + 下一阶段入口候选 + optional backlog）。
 - [GATEK_ARCHITECTURE_BASELINE_REVIEW.md](GATEK_ARCHITECTURE_BASELINE_REVIEW.md)：GateK architecture baseline review（P0/P1=0，ACCEPTED WITH P2 FOLLOW-UP）。
 - [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md)：OKX bootstrap / test isolation / no-outbound 边界复审（§13 post-CI-security freeze 复审 = PASS / READY FOR FREEZE；P0/P1=0，P2=1 非阻断纵深防御 follow-up，P3=1 命名差异）。
@@ -89,5 +90,5 @@ GateJ：Paper Trading 稳定运行 completed
   ↓
 GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口（NEXT）
   ↓
-GateL：AI Paper Trading → GateM：AI 小资金 LIVE → GateN：美股适配 → GateO：A 股适配
+GateL：No-Real Exchange / MarketData Readiness → GateM：AI Paper Trading（NOT STARTED） → GateN：AI 小资金 LIVE → GateO：美股适配 → GateP：A 股适配
 ```

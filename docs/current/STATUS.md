@@ -6,6 +6,13 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ GateL canonical route sync（2026-06-22）：**NQ-GATEL-CANONICAL-ROUTE-SYNC = PASS / DOCS-ONLY**。修正 `GATEL_PLAN.md` 报告的 P1 路线图语义冲突。**Canonical 裁决：GateL = No-Real Exchange / MarketData Readiness**（planning / contract / readiness）；旧口径「GateL = AI Paper Trading」作废；**AI Paper Trading 后移到 GateM**（后续独立 AI/DH 阶段，当前 NOT STARTED），AI 小资金 LIVE → GateN，美股适配 → GateO，A 股适配 → GateP。GateL 拆分固定为 GateL-1 exchange adapter contract review / GateL-2 market data no-real pipeline / GateL-3 permission probe contract / GateL-4 paper-first execution boundary / GateL-5 real exchange readiness checklist。AI Paper Trading 不属于 GateL 入场任务。已同步 README（root 无 GateL 定义，未改）/ docs-current README / ROADMAP / STATUS / GATEL_PLAN / TESTING / WORKLOG。真实交易所接入仍须 readiness checklist 全满足 + 专项安全审计 + 用户显式授权后另起 Gate。本轮 docs-only：未改 backend / frontend / research / scripts / deploy / workflow / migration / 代码 / 测试；AI NOT STARTED；DH runtime NOT INTEGRATED；LIVE DISABLED；RealClient / real provider / real permission probe NOT IMPLEMENTED；不把 GateL plan 写成 implementation started。Rollback：还原本轮 6 份 docs 的 GateL 路线/定义入口即可，无 runtime/DB/credential/provider/exchange 副作用。
+  边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+- NQ GateL planning（2026-06-22）：**NQ-GATEL-PLAN = PLANNING ONLY / READY FOR REVIEW**；**GateL implementation NOT STARTED**。详见 `GATEL_PLAN.md`。
+  本轮把 GateL planning baseline 落档：GateL = 真实交易所接入前的 No-Real 交易适配器 / 市场数据 / permission probe / paper-live execution 边界就绪规划。拆分 GateL-1（exchange adapter contract review，最小可执行批次）/ GateL-2（market data no-real pipeline）/ GateL-3（permission probe contract）/ GateL-4（paper-first execution boundary）/ GateL-5（real exchange readiness checklist）。只读盘点既有 no-real 资产：`nq-adapter-api` 契约（TradingAdapter/MarketDataAdapter/AccountAdapter/HistoricalKlineAdapter + AdapterError/AdapterResultCategory 9 类）、OKX/Binance adapter（含 PermissionProbeBoundary forbidden endpoint + `disabled://` sentinel）、core marketdata（HistoricalKlineProvider/HistoricalMarketDataPort/InstrumentCatalog/FixtureMarketdata）、core trading（OrderCommandService/OrderLifecycleService/OrderStateMachine）、risk（RiskGate + 9 rules + KillSwitch）、ledger（LedgerService/TradeLedgerPostingService）、GateK 安全基线（EnvSafetyValidator/NoOutboundExchangeGuard/NoRealExchangeCredentialPermissionProbePort）。
+  硬性问题答案固定：不能直接接真实 OKX/Binance；不能启用 LIVE；不能实现 RealClient；不能读真实 API key；不能让 DH runtime 接入交易执行链路。GateL 不得削弱 GateK 已冻结的 no-outbound/EnvSafety/secret-scan/redaction/NoReal probe/sentinel endpoint；GateL 与 Integration-1（NQ-DH 真实只读通道）独立。
+  P0=0；**P1=0（原路线图 GateL 语义冲突已由 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决关闭：canonical = No-Real exchange/marketdata readiness；AI Paper Trading 后移到 GateM）**；P2=2（adapter capability/error matrix 未集中成文；`application-ci.yml`/`application-paper.yml` 命名差异，均非阻断）。本轮 docs-only：未改代码 / API / migration / workflow / frontend / research / scripts / deploy；未实现 GateL 任何能力；未触发 Actions；未读取真实凭证；未外联。Rollback：删除 `GATEL_PLAN.md` 并还原 README/ROADMAP/STATUS/TESTING/WORKLOG 本轮状态入口即可，无 runtime/DB/credential/provider/exchange 副作用。
+  边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
 - NQ GateK post-freeze handoff（2026-06-22）：**NQ-GATEK-POST-FREEZE-HANDOFF-PLAN = PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**。详见 `NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md`。
   确认 GateK CI/security + OKX bootstrap no-outbound + OkxRuntimeConfig endpoint defense 已全部收口（FROZEN / ACCEPTED；P2 CLOSED），形成进入下一阶段规划前的交接。Evidence matrix：GateK final freeze `8d126f9f`；OKX no-outbound freeze `8a2fbe4a`；endpoint defense impl `c749cef7`；endpoint defense addendum `7d9330c3`；CI run `27926903155`（9 jobs success）/ 5B-SMOKE run `27903497008`（9 jobs success）/ 5B-ENV run `27876451289`（8 jobs success）。
   Frozen boundaries：CI workflow baseline / no-outbound guard / EnvSafetyValidator / NoReal permission probe / OKX runtime default endpoint sentinel / test·ci·paper·local no-real / `.env.example` placeholder-only / secret scan·redaction·frontend no-backend E2E 均 frozen。Regression rules：改动 ci.yml / EnvSafetyValidator / no-outbound guard / NoReal probe / OkxRuntimeConfig / OKX adapter construction·bootstrap·recovery·catalog sync / `application*.yml` defaults / `.env.example` / CI env guard / 任何 real exchange adapter·provider·RealClient 路径，须重新 review + CI evidence + freeze/addendum。
@@ -276,13 +283,15 @@ GateJ：Paper Trading 稳定运行 completed
   ↓
 GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口（NEXT）
   ↓
-GateL：AI Paper Trading
+GateL：No-Real Exchange / MarketData Readiness（planning / contract / readiness）
   ↓
-GateM：AI 小资金 LIVE
+GateM：AI Paper Trading（后续独立 AI/DH 阶段，当前 NOT STARTED）
   ↓
-GateN：美股适配
+GateN：AI 小资金 LIVE
   ↓
-GateO：A 股适配
+GateO：美股适配
+  ↓
+GateP：A 股适配
 ```
 
 ## 本地环境约定
