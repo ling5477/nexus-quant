@@ -1,3 +1,24 @@
+## NQ-GATEK-POST-FREEZE-HANDOFF-PLAN（2026-06-22）
+
+结论：**NQ-GATEK-POST-FREEZE-HANDOFF-PLAN = PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**。docs-only handoff，未跑新构建、未触发新 GitHub Actions（仅引用既有 green evidence），未改代码 / workflow / 配置 / 测试。
+
+引用既有 CI evidence（只读，不新增）：
+
+| 收口项 | commit / run | 结论 |
+| --- | --- | --- |
+| GateK CI/security final freeze | `8d126f9f` | FROZEN / ACCEPTED |
+| OKX bootstrap no-outbound freeze | `8a2fbe4a` | FROZEN / ACCEPTED |
+| endpoint defense impl + CI | `c749cef7` / run `27926903155`（9 jobs success） | IMPLEMENTED / CI GREEN |
+| endpoint defense addendum | `7d9330c3` | FROZEN / ACCEPTED；P2 CLOSED |
+| Batch 5B-SMOKE evidence | run `27903497008`（9 jobs success） | FROZEN / ACCEPTED |
+| Batch 5B-ENV evidence | run `27876451289`（8 jobs success） | FROZEN / ACCEPTED |
+
+测试边界口径（frozen，未变）：no-outbound guard + EnvSafetyValidator + NoReal probe + OKX runtime sentinel default + test/ci/paper/local no-real + secret scan/redaction + frontend no-backend E2E。Findings：P0=0；P1=0；P2=CLOSED；P3=1（`application-ci.yml`/`application-paper.yml` 命名差异，非阻断）。无阻断项进入下一阶段规划。详见 `NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md`。
+
+边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+---
+
 ## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-POST-FREEZE-ADDENDUM（2026-06-22）
 
 结论：**NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = FROZEN / ACCEPTED**；**P2 OkxRuntimeConfig default real endpoint defense = CLOSED / ACCEPTED**。docs-only addendum，未改代码 / workflow / 配置 / 测试。

@@ -1,3 +1,18 @@
+## NQ-GATEK-POST-FREEZE-HANDOFF-PLAN（2026-06-22）
+
+形成 GateK post-freeze handoff 文档，确认 CI/security + OKX no-outbound + endpoint defense 已全部收口并交接进入下一阶段规划。docs-only：未改代码 / workflow / 配置 / 测试 / runtime；未实现下一阶段功能；未接真实交易所 / LIVE / AI / DH。
+
+- 结论：**NQ-GATEK-POST-FREEZE-HANDOFF-PLAN = PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**（无 P0/P1 阻断项）。
+- Final accepted state：GateK CI/security = FROZEN / ACCEPTED；Batch 5B-ENV / 5B-SMOKE = FROZEN / ACCEPTED；NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = FROZEN / ACCEPTED；NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = FROZEN / ACCEPTED；P2 = CLOSED / ACCEPTED。
+- Evidence matrix：GateK final freeze `8d126f9f`；OKX no-outbound freeze `8a2fbe4a`；endpoint defense impl `c749cef7`；endpoint defense addendum `7d9330c3`；CI run `27926903155`（9 jobs success）/ 5B-SMOKE run `27903497008`（9 jobs success）/ 5B-ENV run `27876451289`（8 jobs success）。
+- Frozen boundaries / regression rules：见 `NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md` §4 / §5（改动 ci.yml / EnvSafetyValidator / no-outbound guard / NoReal probe / OkxRuntimeConfig / OKX adapter construction / profile defaults / `.env.example` / CI env guard / 任何 real exchange path 须重新 review + CI evidence + freeze/addendum）。
+- 下一阶段入口候选（不在本轮启动）：GateL PLAN / Integration-1 PLAN / Market data next batch PLAN / Trading adapter no-real contract PLAN。Optional backlog（NOT BLOCKING）：Batch 4F-B..4F-F / static workflow assertion；`application-ci.yml`/`application-paper.yml` 命名差异（P3）。
+- 新增 docs：`NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md`。更新：`NQ_CI_BASELINE_PLAN.md`、`README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。
+- P0=0；P1=0；P2=CLOSED；P3=1（命名差异）。Rollback：revert handoff docs commit 即可，无 runtime/DB/credential/provider/exchange 副作用。
+- 边界：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
+---
+
 ## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-POST-FREEZE-ADDENDUM（2026-06-22）
 
 把 fix commit `c749cef7`（OKX runtime default endpoint sentinel）以 post-freeze addendum 固化为 parent freeze 的 addendum，并关闭原 P2 backlog。docs-only：未改代码 / workflow / 配置 / 测试 / runtime；未真实外联。

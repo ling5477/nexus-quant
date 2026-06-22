@@ -41,6 +41,7 @@ AI not started；DH not integrated；LIVE disabled；real provider / RealClient 
 ## GateK / 规划与其他当前控制文档
 
 - [GATEK_PLAN.md](GATEK_PLAN.md)：GateK planning-only；不代表 GateK implementation started。
+- [NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md](NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md)：GateK post-freeze handoff（CI/security + OKX no-outbound + endpoint defense closure；**PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**；evidence matrix + frozen boundaries + regression rules + 下一阶段入口候选 + optional backlog）。
 - [GATEK_ARCHITECTURE_BASELINE_REVIEW.md](GATEK_ARCHITECTURE_BASELINE_REVIEW.md)：GateK architecture baseline review（P0/P1=0，ACCEPTED WITH P2 FOLLOW-UP）。
 - [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md)：OKX bootstrap / test isolation / no-outbound 边界复审（§13 post-CI-security freeze 复审 = PASS / READY FOR FREEZE；P0/P1=0，P2=1 非阻断纵深防御 follow-up，P3=1 命名差异）。
 - [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md)：OKX bootstrap / test isolation / no-outbound 边界冻结卷宗（**FROZEN / ACCEPTED**，冻结 review commit `0b9c0b20`；原 P2 已经 post-freeze addendum 关闭，见下；regression boundary 见卷宗 §11）。
