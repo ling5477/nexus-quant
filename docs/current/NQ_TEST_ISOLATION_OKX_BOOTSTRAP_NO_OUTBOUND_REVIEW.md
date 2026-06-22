@@ -2,7 +2,7 @@
 
 任务：NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW
 日期：2026-06-12（初轮 REVIEW + FIX）；2026-06-22（post-CI-security freeze 专项复审，见 §13）
-状态：review documented；FIX implemented；no outbound exchange call performed in this fix pass。post-freeze 复审结论 **PASS / READY FOR FREEZE**（§13）。
+状态：review documented；FIX implemented；no outbound exchange call performed in this fix pass。post-freeze 复审结论 **PASS / READY FOR FREEZE**（§13）；已冻结为 **FROZEN / ACCEPTED**，freeze 卷宗 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md`（2026-06-22）。
 当前阶段：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ；LIVE trading disabled。
 GateK CI/security = FROZEN / ACCEPTED；Batch 5B-ENV = FROZEN / ACCEPTED；Batch 5B-SMOKE = FROZEN / ACCEPTED。
 
@@ -290,7 +290,7 @@ OKX bootstrap / test isolation / no-outbound boundary。
 
 ### 13.15 是否允许进入 freeze
 
-允许。
+允许。已于 2026-06-22 冻结为 **FROZEN / ACCEPTED**，见 freeze 卷宗 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md`（freeze 对 review commit `0b9c0b20` 落档；P2 转入 backlog `NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-PLAN`，本轮不修复）。
 
 ### 13.16 风险与回滚边界
 

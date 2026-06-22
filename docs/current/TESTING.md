@@ -1,3 +1,22 @@
+## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FREEZE（2026-06-22）
+
+结论：**NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = FROZEN / ACCEPTED**。docs-only freeze，未跑新构建（沿用复审轮本地证据）、未触发新的 GitHub Actions、未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy、未新增/未修改测试、未修复 P2。冻结 review commit `0b9c0b20`（review HEAD `e3b12e33`）。
+
+Test evidence（复审轮本地只读复核，CI / no-outbound 环境，无真实外联、无真实凭证读取）：
+
+| 测试 | 结果 |
+| --- | --- |
+| `NoRealExchangeCredentialPermissionProbePortTest` | 1/0/0/0 |
+| `EnvSafetyValidatorTest` | 8/0/0/0 |
+| `NoOutboundExchangeGuardTest` | 3/0/0/0（0 skipped，CI-required env-absence 断言执行通过） |
+| 构建 | `BUILD SUCCESS` |
+
+Findings：P0=0；P1=0；P2=1（非阻断，`OkxRuntimeConfig` 代码级真实 host 默认值未纳入启动期 `EnvSafetyValidator` endpoint 校验，转 backlog **NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-PLAN**，本轮不修复）；P3=1（非阻断，`application-ci.yml` / `application-paper.yml` 命名差异）。Regression boundary：后续改动 OKX runtime config / exchange adapter construction / no-outbound guard / EnvSafetyValidator / profile defaults / permission probe / CI env guard 须重新 review + freeze。详见 freeze 卷宗 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md`。
+
+边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe（NoReal probe remains SKIPPED）。
+
+---
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW-COMMIT-GATE（2026-06-22）
 
 结论：**NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = PASS / READY FOR FREEZE**。docs-only commit gate，未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy、未新增/未修改测试、未 freeze、未修复 P2。复审 HEAD `e3b12e33`，分支 `dev`，复审前 working tree clean。

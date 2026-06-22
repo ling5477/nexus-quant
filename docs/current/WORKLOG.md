@@ -1,3 +1,18 @@
+## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FREEZE（2026-06-22）
+
+把已通过的 OKX bootstrap / test isolation / no-outbound 复审固化为 **FROZEN / ACCEPTED**。docs-only：未修复 P2、未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy / 测试 / runtime、未真实外联、未读取真实凭证。
+
+- 冻结对象：OKX bootstrap / test isolation / no-outbound boundary。结论 **FROZEN / ACCEPTED**。
+- Review commit `0b9c0b20`，review result PASS / READY FOR FREEZE，review HEAD `e3b12e33`。
+- Frozen conclusions：OKX bootstrap 仅 stub/fallback 边界（stub baseUrl=`http://127.0.0.1`，authenticated 抛 `OKX_ADAPTER_BOOTSTRAP_STUB`）；启动期不访问真实 OKX；test/ci/paper/local 不自动启用真实交易所；permission probe 默认 NoReal / SKIPPED；no-outbound guard 覆盖 OKX 及交易所 host、fail-closed、CI job 保留；`.env.example` placeholder-only；LIVE/AI/DH/RealClient/real provider/real exchange adapter 仍 disabled / not implemented。
+- Test evidence：`NoRealExchangeCredentialPermissionProbePortTest` 1/0/0/0 + `EnvSafetyValidatorTest` 8/0/0/0 + `NoOutboundExchangeGuardTest` 3/0/0/0，`BUILD SUCCESS`。
+- Findings：P0=0；P1=0；P2=1（非阻断，转 backlog **NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-PLAN**，本轮不修复）；P3=1（非阻断，命名差异）。
+- 新增 freeze 卷宗：`NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md`。修改文件：freeze 卷宗 + `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md` + `NQ_CI_BASELINE_PLAN.md` + `README.md` + `STATUS.md` + `TESTING.md` + `WORKLOG.md`。
+- Regression boundary：后续改动 OKX runtime config / exchange adapter construction / no-outbound guard / EnvSafetyValidator / profile defaults / permission probe / CI env guard 须重新 review + freeze。Rollback：revert freeze docs commit 即回 PASS / READY FOR FREEZE，无 runtime/DB/credential/provider/exchange 副作用。
+- 边界：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
+---
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-REVIEW-COMMIT-GATE（2026-06-22）
 
 提交 OKX bootstrap / test isolation / no-outbound 专项复审结论 docs。docs-only：未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy / 测试 / runtime；未 freeze、未修复 P2、未读取真实凭证、未外联。
