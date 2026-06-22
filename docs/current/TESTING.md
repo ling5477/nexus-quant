@@ -1,3 +1,15 @@
+## NQ-GATEL-1B-B-IMPL-FREEZE（2026-06-22）
+
+结论：**PASS / FROZEN / ACCEPTED；P1-B CLOSED / ACCEPTED**。冻结 implementation commit `ad7f58b0`；P1-A 仍 CLOSED，P1-C/P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+- 提交校验：`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace；`git grep` @HEAD 确认 runtime config 无 credential env 读取、P1-A `disabled://` sentinel 未回退。
+- 测试复跑（freeze 证据）：`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test`（offline，未外联）→ **BUILD SUCCESS**；reactor nq-common / nq-contracts / nq-adapter-api / nq-adapter-okx / nq-adapter-binance 全部 SUCCESS。
+- nq-adapter-okx：**32 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-binance：**51 tests / 0 fail / 0 error / 1 skipped**（skip = `BinanceWsClientLiveDiagnosticTest` 系统属性门禁）。
+- 覆盖确认（与 1B-B-IMPL 一致）：默认 unconfigured（`Okx/BinanceNoRealCredentialHardeningTest` + `Okx/BinanceRuntimeConfigTest`）、伪 env credential 被忽略（含 ed25519/private key marker）、private op 网络前 fail-closed（OKX_CREDENTIALS_MISSING / BINANCE_CREDENTIALS_MISSING）、错误不含 secret-like value、P1-A sentinel 回归（`BinanceNoRealEndpointHardeningTest`）。
+- 未执行 frontend / Python（本轮 docs-only freeze，未改代码）；未访问网络、交易所、DB、容器、GitHub Actions；未读取 `.env` 或 credential material。
+
+---
+
 ## NQ-GATEL-1B-B-IMPL（2026-06-22）
 
 结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-B-IMPL-REVIEW`**。只实现 P1-B（OKX/Binance runtime credential source hardening）；P1-A 仍 CLOSED，P1-C/P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。

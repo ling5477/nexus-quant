@@ -332,3 +332,14 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 - 状态保持：**P1-A CLOSED / ACCEPTED**；**P1-B IMPLEMENTED / PENDING REVIEW**；**P1-C / P1-D 仍 OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；本节不代表允许真实 OKX/Binance 接入或 future-real-ready。
 - 回滚：还原两个 runtime config、两个 credential 模型与相关测试（删除两个新增 credential hardening 测试）；回滚会重新打开 P1-B，须立即恢复 NOT READY 状态。
 - 下一步 `NQ-GATEL-1B-B-IMPL-REVIEW`。
+
+## 18. GateL-1B-B freeze-close（2026-06-22）
+
+> 本节为 freeze-close 追加，不改写上文 frozen plan 正文。
+
+- 任务：`NQ-GATEL-1B-B-IMPL-FREEZE` = **PASS / FROZEN / ACCEPTED**，详见 `GATEL_1B_B_IMPL_FREEZE_REVIEW.md`。
+- 冻结对象：implementation commit `ad7f58b0`（`feat(adapter-okx,adapter-binance): drop process-env credential source`），`git show --check` / `git diff --check HEAD^ HEAD` 无 whitespace，`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（OKX 32 / Binance 51 / 0 fail / 1 skipped），`git grep` @HEAD 确认 runtime config 无 credential env 读取、P1-A sentinel 未回退、`OkxWsClient` login 守卫未触碰。
+- **P1-B = CLOSED / ACCEPTED**（OKX/Binance runtime credential source hardening frozen）；**P1-A 仍 CLOSED / ACCEPTED**；**P1-C / P1-D 仍 OPEN / RETAINED**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；未实现真实 credential governance bridge；不代表允许真实 OKX/Binance 接入或 future-real-ready。
+- GateL-1B 整体 No-Real hardening freeze **NOT DONE**，待 C/D 全部独立完成后另行执行。
+- Regression boundary：后续改动两个 runtime config credential 解析 / `*.unconfigured()` 语义 / HttpClient credential fail-closed 守卫 / `OkxWsClient` login 守卫 / 引入真实 credential bridge，须重新 review + freeze。
+- 下一步 `NQ-GATEL-1B-C-IMPL`。

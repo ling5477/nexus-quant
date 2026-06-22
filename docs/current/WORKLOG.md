@@ -1,3 +1,19 @@
+## NQ-GATEL-1B-B-IMPL-FREEZE（2026-06-22）
+
+完成 GateL-1B-B freeze-close，新增 `GATEL_1B_B_IMPL_FREEZE_REVIEW.md`，正式关闭 P1-B。结论：**PASS / FROZEN / ACCEPTED；P1-B CLOSED / ACCEPTED**。
+
+- 预检：`git status --short`（clean）、`git branch --show-current`（dev）、`git log --oneline -5`、`git show --stat --oneline HEAD`。
+- 冻结对象：implementation commit `ad7f58b0`（`feat(adapter-okx,adapter-binance): drop process-env credential source`）；提交含 9 adapter（4 main + 3 test 改 + 2 test 新增）+ 7 docs，全部在 GateL-1B-B 允许范围。
+- 校验：`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace；`git grep` @HEAD 确认 `OkxRuntimeConfig`/`BinanceRuntimeConfig` 无 credential env 读取；P1-A sentinel 仍在（Binance 4 / OKX 3 引用）；`OkxWsClient` login `isConfigured()` 守卫（251/336）未触碰；禁止路径（adapter-api/Noop/MarketData/frontend/research/scripts/deploy/workflow/migration）= NONE；`git show HEAD:...` 确认默认 `*.unconfigured()` 在提交内。
+- 测试复跑：`mvn -f backend/pom.xml -o -pl nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS，nq-adapter-okx **32 / 0 / 0 / 0**、nq-adapter-binance **51 / 0 / 0 / 1 skipped**（live diagnostic 门禁跳过）。
+- **P1-B = CLOSED / ACCEPTED**；**P1-A 仍 CLOSED / ACCEPTED**；**P1-C / P1-D 仍 OPEN / RETAINED**；GateL-1B 整体 No-Real hardening freeze NOT DONE（待 C/D）；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；未实现真实 credential governance bridge；不代表允许真实 OKX/Binance 接入或 future-real-ready。
+- Regression boundary：后续改动两个 runtime config 的 credential 解析 / `*.unconfigured()` 语义 / HttpClient credential fail-closed 守卫 / `OkxWsClient` login 守卫 / 引入真实 credential bridge，须重新 review + freeze。
+- 边界：未改代码；未新增 API/DTO/migration/workflow；未访问外网/交易所/DB；未读取真实 credential；未启用 LIVE；未接 AI/DH runtime；未修 P1-C/P1-D。
+- 回滚：`git revert ad7f58b0`（P1-B 重新 OPEN）并还原本轮 docs + freeze 卷宗；无 runtime/DB/credential/provider/exchange 副作用。
+- 下一步 `NQ-GATEL-1B-C-IMPL`，本轮不进入。
+
+---
+
 ## NQ-GATEL-1B-B-IMPL（2026-06-22）
 
 完成 GateL-1B-B：OKX/Binance runtime credential source hardening（**只实现 P1-B，不夹带 C/D**）。结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-B-IMPL-REVIEW`**。
