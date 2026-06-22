@@ -6,6 +6,13 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ OKX runtime config 默认 endpoint 纵深防御实现（2026-06-22）：**NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = IMPLEMENTED / PENDING CI RUN**。详见 `NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md`。
+  按已接受的 PLAN-REVIEW（Path A，sentinel 定稿 `disabled://`）实施：`OkxRuntimeConfig` 代码级真实默认 endpoint 改为非真实 sentinel —— `DEFAULT_BASE_URL=disabled://okx-not-configured`、`DEFAULT_DOME_WS_PRIVATE_URL=DEFAULT_REAL_WS_PRIVATE_URL=disabled://okx-ws-not-configured`。真实 endpoint 仅显式 env（`NQ_OKX_BASE_URL`/`NQ_OKX_WS_URL` 及 dome/real 前缀）opt-in；显式 env 行为不变；请求期非法 scheme loud fail-closed，不命中真实 OKX，也不被 no-outbound denylist 误判。
+  未改 `EnvSafetyValidator` / `EnvSafetyGuardConfiguration` / `NoOutboundExchangeGuardTest` / `NoRealExchangeCredentialPermissionProbePort` / workflow / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy。
+  本地验证：`OkxRuntimeConfigTest` 4/0/0/0 + `OkxExchangeAdapterBootstrapNoOutboundTest` 1/0/0/0；no-outbound 套件 `NoReal` 1/0/0/0 + `EnvSafety` 8/0/0/0 + `NoOutbound` 3/0/0/0；全量 `mvn -f backend/pom.xml test` **BUILD SUCCESS**（0 fail / 0 error）。静态 grep：真实 host 仅存在于显式 env override 测试与历史/说明文档，默认常量已是 sentinel。
+  P0=0；P1=0；P2 = IMPLEMENTED / PENDING CI RUN（原纵深防御项）；P3=1（`application-ci.yml`/`application-paper.yml` 命名差异，非阻断）。
+  后续：`NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-CI-RUN-REVIEW` 采证 → 以 post-freeze addendum 触发 `NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND` 复审 + freeze addendum 后将 P2 标记 CLOSED（依 freeze 卷宗 §11 regression boundary，不静默并入既有 freeze）。Rollback：revert 本实现 commit 即回 frozen 默认（www.okx.com），显式 env 下行为不变，无 runtime/DB/credential/provider/exchange 副作用。
+  边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
 - NQ OKX bootstrap / test isolation / no-outbound 专项冻结（2026-06-22）：**NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = FROZEN / ACCEPTED**。详见 freeze 卷宗 `NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md`。
   冻结对象：OKX bootstrap / test isolation / no-outbound boundary。Review commit `0b9c0b20`，review result PASS / READY FOR FREEZE，review HEAD `e3b12e33`。
   Frozen conclusions：OKX bootstrap 仅为 stub/fallback 边界（非真实交易就绪，stub baseUrl=`http://127.0.0.1`，authenticated 抛 `OKX_ADAPTER_BOOTSTRAP_STUB`）；启动期不访问真实 OKX；test/ci/paper/local 不自动启用真实交易所；permission probe 默认 NoReal / SKIPPED / REAL_EXCHANGE_PROBE_DISABLED；no-outbound guard 覆盖 OKX 及交易所 host 且 fail-closed（CI `no-outbound-guard` job 保留）；`.env.example` placeholder-only；LIVE/AI/DH/RealClient/real provider/real exchange adapter 仍 disabled / not implemented。

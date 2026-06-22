@@ -40,9 +40,13 @@ public record OkxRuntimeConfig(
 ) {
 
     private static final String DEFAULT_ENV = "dome";
-    private static final String DEFAULT_BASE_URL = "https://www.okx.com";
-    private static final String DEFAULT_DOME_WS_PRIVATE_URL = "wss://wspap.okx.com:8443/ws/v5/private";
-    private static final String DEFAULT_REAL_WS_PRIVATE_URL = "wss://ws.okx.com:8443/ws/v5/private";
+    // Why: 默认 endpoint 必须是 no-real sentinel，禁止把真实交易所 host 写成代码级默认值。
+    // 真实 OKX endpoint 只能通过显式 env（NQ_OKX_BASE_URL / NQ_OKX_WS_URL 及 dome/real 前缀）opt-in。
+    // disabled:// 在请求期 loud fail-closed（非法 scheme 抛 IllegalArgumentException），且 host 不含
+    // 真实交易所域名，因此即使被误用也不会命中真实 OKX，也不会被 no-outbound denylist 误判。
+    private static final String DEFAULT_BASE_URL = "disabled://okx-not-configured";
+    private static final String DEFAULT_DOME_WS_PRIVATE_URL = "disabled://okx-ws-not-configured";
+    private static final String DEFAULT_REAL_WS_PRIVATE_URL = "disabled://okx-ws-not-configured";
     private static final long DEFAULT_TIMEOUT_MS = 5_000L;
     private static final long DEFAULT_INSTRUMENT_REFRESH_MS = 300_000L;
     private static final long DEFAULT_WS_RECONNECT_BASE_DELAY_MS = 1_000L;

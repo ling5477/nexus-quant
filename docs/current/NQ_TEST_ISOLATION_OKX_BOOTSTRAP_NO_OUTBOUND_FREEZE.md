@@ -85,7 +85,9 @@ OKX bootstrap / test isolation / no-outbound boundary。
 
 ## 10. Backlog pointer
 
-- **NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-PLAN**（处理 P2：让 `OkxRuntimeConfig` 在 env 缺省时默认改为非真实 sentinel，或把解析后的 baseUrl/wsUrl 纳入启动期 `EnvSafetyValidator` endpoint 校验）。该 backlog 不在本轮实现，不阻断本 freeze。
+- **NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-PLAN**（处理 P2：让 `OkxRuntimeConfig` 在 env 缺省时默认改为非真实 sentinel，或把解析后的 baseUrl/wsUrl 纳入启动期 `EnvSafetyValidator` endpoint 校验）。
+  - **状态更新（2026-06-22）**：Path A 已实现，P2 从 “open backlog” 转为 **IMPLEMENTED / PENDING CI RUN**。`OkxRuntimeConfig` 默认 endpoint 已改为 `disabled://okx-not-configured`（base）/ `disabled://okx-ws-not-configured`（dome+real WS），真实 endpoint 仅显式 env opt-in。未改 `EnvSafetyValidator` / workflow / `application*.yml` / `.env.example`。详见 `NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md`。
+  - 该实现属本卷宗 §11 regression boundary（OKX runtime config 改动），**不静默并入本 freeze**：须经 `NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-CI-RUN-REVIEW` 采证后，以 post-freeze addendum 形式触发本专项复审 + freeze addendum，再把 P2 标记 CLOSED。本 freeze 卷宗结论（FROZEN / ACCEPTED）不受影响。
 
 ## 11. Regression boundary
 

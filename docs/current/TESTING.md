@@ -1,3 +1,24 @@
+## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-IMPL（2026-06-22）
+
+结论：**NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE = IMPLEMENTED / PENDING CI RUN**。Path A 实施：`OkxRuntimeConfig` 默认 endpoint 改为 `disabled://` sentinel。未改 `EnvSafetyValidator` / workflow / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy。
+
+本地验证（2026-06-22）：
+
+| 命令 / 测试 | 结果 |
+| --- | --- |
+| `mvn -pl nq-adapter-okx -am test -Dtest=OkxRuntimeConfigTest,OkxExchangeAdapterBootstrapNoOutboundTest -Dsurefire.failIfNoSpecifiedTests=false` | `OkxRuntimeConfigTest` 4/0/0/0 + `OkxExchangeAdapterBootstrapNoOutboundTest` 1/0/0/0，BUILD SUCCESS |
+| `mvn -pl nq-app,nq-infra -am test -Dtest=NoRealExchangeCredentialPermissionProbePortTest,EnvSafetyValidatorTest,NoOutboundExchangeGuardTest -Dsurefire.failIfNoSpecifiedTests=false -Dnq.no-outbound.guard.required=true` | NoReal 1/0/0/0 + EnvSafety 8/0/0/0 + NoOutbound 3/0/0/0（11/0/0/0），BUILD SUCCESS |
+| `mvn -f backend/pom.xml test`（全量） | **BUILD SUCCESS**，0 fail / 0 error；含 `OkxBootstrapNoOutboundLocalContextTest` 1/0/0/0、`MarketdataControllerLocalIntegrationTest` 1/0/0/0、`ResearchBacktestHappyPathLocalTest` 1/0/0/0 绿（既有条件性 skip：live-diagnostic / postgres-smoke-required / CI-guard-required env-absence assumeTrue，未变） |
+| 静态 grep `git grep -F -e "https://www.okx.com" -e "wss://wspap.okx.com" -e "wss://ws.okx.com" -- backend/nq-adapter-okx docs/current` | 仅命中 `OkxRuntimeConfigTest`（显式 env override 用例）+ `docs/current` 历史/说明文档；无真实默认常量 |
+| 静态 grep `git grep -F -e "disabled://okx-not-configured" -e "disabled://okx-ws-not-configured" -- backend/nq-adapter-okx docs/current` | 命中 `OkxRuntimeConfig.java:47-49`（默认常量）+ `OkxRuntimeConfigTest`（sentinel 断言）|
+| 禁止范围 diff | ci.yml / migration / frontend / research / scripts / deploy / `.env.example` / `application*.yml` / `EnvSafetyValidator` / `NoOutboundExchangeGuardTest` 全空 |
+
+Findings：P0=0；P1=0；P2=IMPLEMENTED / PENDING CI RUN；P3=1（`application-ci.yml`/`application-paper.yml` 命名差异，非阻断）。CI 真实运行待 `NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-CI-RUN-REVIEW` 采证；之后以 post-freeze addendum 触发 `NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND` 复审 + freeze addendum。详见 `NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md`。
+
+边界：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。
+
+---
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FREEZE（2026-06-22）
 
 结论：**NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND = FROZEN / ACCEPTED**。docs-only freeze，未跑新构建（沿用复审轮本地证据）、未触发新的 GitHub Actions、未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy、未新增/未修改测试、未修复 P2。冻结 review commit `0b9c0b20`（review HEAD `e3b12e33`）。

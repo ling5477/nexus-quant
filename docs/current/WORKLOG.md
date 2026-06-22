@@ -1,3 +1,17 @@
+## NQ-OKX-RUNTIME-CONFIG-DEFAULT-ENDPOINT-DEFENSE-IMPL（2026-06-22）
+
+按 PLAN-REVIEW（Path A，sentinel `disabled://`）实施 GateK post-freeze P2 纵深防御项。从源头消除 `OkxRuntimeConfig` 代码级真实默认 endpoint；不改 frozen guard / workflow / config；不真实外联。
+
+- 代码：`OkxRuntimeConfig.java` 默认常量改为 `DEFAULT_BASE_URL=disabled://okx-not-configured`、`DEFAULT_DOME_WS_PRIVATE_URL=DEFAULT_REAL_WS_PRIVATE_URL=disabled://okx-ws-not-configured`（+ Why 注释）。显式 env 仍覆盖默认；请求期非法 scheme loud fail-closed；host 不含真实交易所域名。
+- 测试：`OkxRuntimeConfigTest` 更新 dome ws 默认断言为 sentinel，新增 `shouldDefaultToNonRealSentinelEndpointsWhenEnvAbsent`（empty env → base/dome-ws/real-ws 均 sentinel，且不含 okx.com/ws.okx.com/wspap.okx.com），保留显式 env override 用例。`OkxExchangeAdapterBootstrapNoOutboundTest` 未改（sentinel 默认已被 OkxRuntimeConfigTest 充分覆盖；bootstrap 测试已证明构造期 0 HTTP，与 baseUrl 取值无关）。
+- 未改：`EnvSafetyValidator` / `EnvSafetyGuardConfiguration` / `NoOutboundExchangeGuardTest` / `NoRealExchangeCredentialPermissionProbePort` / workflow / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy。
+- 验证：`OkxRuntimeConfigTest` 4/0/0/0 + `OkxExchangeAdapterBootstrapNoOutboundTest` 1/0/0/0；no-outbound 套件 11/0/0/0（NoReal 1 + EnvSafety 8 + NoOutbound 3）；全量 `mvn -f backend/pom.xml test` BUILD SUCCESS（0 fail/0 error，含 `OkxBootstrapNoOutboundLocalContextTest` / `MarketdataControllerLocalIntegrationTest` 绿）。静态 grep：真实 host 仅在显式 env override 测试 + 历史/说明文档，无真实默认常量；sentinel 在 main+test 就位。
+- 新增 docs：`NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md`。更新：freeze 卷宗 §10（P2 转 IMPLEMENTED / PENDING CI RUN）、`NQ_CI_BASELINE_PLAN.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- 状态：**IMPLEMENTED / PENDING CI RUN**。P0=0；P1=0；P2=IMPLEMENTED / PENDING CI RUN；P3=1（命名差异）。后续 CI-RUN-REVIEW + post-freeze addendum 后将 P2 标记 CLOSED（不静默并入既有 freeze）。Rollback：revert 本 commit 即回 frozen 默认，显式 env 下行为不变，无 runtime/DB/credential/provider/exchange 副作用。
+- 边界：No real credential read / No outbound call / No LIVE / No AI / No DH runtime / No RealClient / No real provider / No real exchange adapter / No real permission probe。
+
+---
+
 ## NQ-TEST-ISOLATION-OKX-BOOTSTRAP-NO-OUTBOUND-FREEZE（2026-06-22）
 
 把已通过的 OKX bootstrap / test isolation / no-outbound 复审固化为 **FROZEN / ACCEPTED**。docs-only：未修复 P2、未改 workflow / backend / Java / TS / Python / `application*.yml` / `.env.example` / migration / frontend / research / scripts / deploy / 测试 / runtime、未真实外联、未读取真实凭证。

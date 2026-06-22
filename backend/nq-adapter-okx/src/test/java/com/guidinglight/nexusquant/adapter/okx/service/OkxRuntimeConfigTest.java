@@ -25,11 +25,38 @@ class OkxRuntimeConfigTest {
         ));
 
         assertEquals("dome", config.envName());
+        // baseUrl 由显式 env 提供，验证 explicit env still overrides the disabled:// default。
         assertEquals("https://www.okx.com", config.baseUrl());
-        assertEquals("wss://wspap.okx.com:8443/ws/v5/private", config.wsPrivateUrl());
+        // 该用例未提供 NQ_OKX_WS_URL，wsPrivateUrl 回退到 dome 默认值；默认已改为 no-real sentinel。
+        assertEquals("disabled://okx-ws-not-configured", config.wsPrivateUrl());
         assertEquals("abcd1234wxyz", config.credentials().apiKey());
         assertTrue(config.simulatedTrading());
         assertTrue(config.fingerprint().contains("apiKey=abcd...wxyz"));
+    }
+
+    @Test
+    void shouldDefaultToNonRealSentinelEndpointsWhenEnvAbsent() {
+        // Why: 代码级默认 endpoint 必须是 no-real sentinel，禁止真实交易所 host 作为默认值。
+        OkxRuntimeConfig domeDefault = OkxRuntimeConfig.fromEnvironment(Map.of());
+        assertEquals("dome", domeDefault.envName());
+        assertEquals("disabled://okx-not-configured", domeDefault.baseUrl());
+        assertEquals("disabled://okx-ws-not-configured", domeDefault.wsPrivateUrl());
+        assertTrue(domeDefault.simulatedTrading());
+
+        OkxRuntimeConfig realDefault = OkxRuntimeConfig.fromEnvironment(Map.of("NQ_OKX_ENV", "real"));
+        assertEquals("real", realDefault.envName());
+        assertEquals("disabled://okx-not-configured", realDefault.baseUrl());
+        assertEquals("disabled://okx-ws-not-configured", realDefault.wsPrivateUrl());
+        assertFalse(realDefault.simulatedTrading());
+
+        // 默认值不得包含任何真实 OKX host。
+        for (OkxRuntimeConfig config : new OkxRuntimeConfig[] {domeDefault, realDefault}) {
+            for (String endpoint : new String[] {config.baseUrl(), config.wsPrivateUrl()}) {
+                assertFalse(endpoint.contains("okx.com"), () -> "default endpoint must not contain okx.com: " + endpoint);
+                assertFalse(endpoint.contains("ws.okx.com"), () -> "default endpoint must not contain ws.okx.com: " + endpoint);
+                assertFalse(endpoint.contains("wspap.okx.com"), () -> "default endpoint must not contain wspap.okx.com: " + endpoint);
+            }
+        }
     }
 
     @Test
