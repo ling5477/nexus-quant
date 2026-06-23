@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterCapability;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterError;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
@@ -12,6 +13,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
+import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxFillRecord;
@@ -65,6 +67,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
     private final OkxInstrumentsCache instrumentsCache;
     private final Clock clock;
     private final String tradeEnv;
+    private final AdapterReadinessService readinessService;
 
     /**
      * 默认构造器供应用装配使用。
@@ -74,13 +77,32 @@ public class OkxExchangeAdapter implements TradingAdapter {
      * 因此这里需要提供一个可直接从环境变量启动的最小可运行配置。
      */
     public OkxExchangeAdapter() {
-        this(createDefaultDependencies());
+        this(createDefaultDependencies(), null);
+    }
+
+    /**
+     * 应用装配构造器：在 OKX 交易动作入口接入 readiness guard。
+     *
+     * @param readinessService readiness 评估服务；不可为空
+     */
+    public OkxExchangeAdapter(AdapterReadinessService readinessService) {
+        this(createDefaultDependencies(), Objects.requireNonNull(readinessService, "readinessService must not be null"));
     }
 
     /**
      * 可测试构造器，允许在单测中注入固定时钟与本地 mock server。
      */
     public OkxExchangeAdapter(Dependencies dependencies) {
+        this(dependencies, null);
+    }
+
+    /**
+     * 可测试 / 装配构造器，允许显式控制 readiness guard。
+     *
+     * @param dependencies      adapter runtime 依赖；不可为空
+     * @param readinessService readiness 评估服务；可为空，空表示保持历史直连行为供 adapter 模块单测使用
+     */
+    public OkxExchangeAdapter(Dependencies dependencies, AdapterReadinessService readinessService) {
         Objects.requireNonNull(dependencies.objectMapper(), "objectMapper must not be null");
         this.authenticatedHttpClient = Objects.requireNonNull(
                 dependencies.authenticatedHttpClient(),
@@ -89,6 +111,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
         this.instrumentsCache = Objects.requireNonNull(dependencies.instrumentsCache(), "instrumentsCache must not be null");
         this.clock = Objects.requireNonNull(dependencies.clock(), "clock must not be null");
         this.tradeEnv = dependencies.tradeEnv() == null || dependencies.tradeEnv().isBlank() ? "SIM" : dependencies.tradeEnv();
+        this.readinessService = readinessService;
     }
 
     @Override
@@ -105,6 +128,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     @Override
     public AdapterOrderAck placeOrder(AdapterOrderRequest request) {
+        requireReady(AdapterCapability.PLACE_ORDER);
         validatePlaceRequest(request);
         OkxInstrument instrument = instrumentsCache.getRequired(request.symbol(), request.traceId());
         AdapterError validationError = validateInstrumentTradable(instrument, request.traceId());
@@ -144,6 +168,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     @Override
     public AdapterCancelAck cancelOrder(AdapterCancelRequest request) {
+        requireReady(AdapterCapability.CANCEL_ORDER);
         validateCancelRequest(request);
         // Why:
         // GateD 当前只剩 ForceCancelTimeoutOnce 的真实消费点没有锁死，因此在 cancel 主路径入口
@@ -202,6 +227,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     @Override
     public AdapterOrderSnapshot getOrder(AdapterOrderQuery query) {
+        requireReady(AdapterCapability.QUERY_ORDER);
         validateOrderQuery(query);
         String endpoint = ORDER_DETAIL_ENDPOINT + "?instId=" + query.symbol() + buildOrderIdentityQuery(query);
         try {
@@ -218,6 +244,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     @Override
     public List<AdapterOrderSnapshot> listOpenOrders(AdapterOpenOrdersQuery query) {
+        requireReady(AdapterCapability.QUERY_ORDER);
         StringBuilder endpoint = new StringBuilder(OPEN_ORDERS_ENDPOINT).append("?instType=SPOT");
         if (query.symbol() != null && !query.symbol().isBlank()) {
             endpoint.append("&instId=").append(query.symbol());
@@ -293,6 +320,19 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     public OkxInstrumentsCache instrumentsCache() {
         return instrumentsCache;
+    }
+
+    /**
+     * GateM-3 runtime guard：nq-app 装配传入 readiness service 后，OKX trading 动作必须先 fail-closed。
+     * <p>
+     * Why:
+     * 该 guard 放在 validate / HTTP / cache 访问之前，确保当前 no-real / LIVE disabled / not-ready baseline 下
+     * place / cancel / query / list-open-orders 不会触达真实 OKX delegate 逻辑。
+     */
+    private void requireReady(AdapterCapability capability) {
+        if (readinessService != null) {
+            readinessService.requireReady(venue(), capability);
+        }
     }
 
     /**

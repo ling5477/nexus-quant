@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.adapter.okx.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
 
 import java.net.http.HttpClient;
@@ -22,6 +23,19 @@ public final class OkxBootstrapFallbackFactory {
     }
 
     public static OkxExchangeAdapter create(RuntimeException bootstrapFailure) {
+        return create(bootstrapFailure, null);
+    }
+
+    /**
+     * 创建带 readiness guard 的 OKX fallback adapter。
+     *
+     * @param bootstrapFailure 启动失败原因；只用于 fallback error message，不读取 credential
+     * @param readinessService readiness 评估服务；可为空，空表示保持历史 fallback 行为
+     * @return OKX fallback adapter；若传入 readinessService，交易动作会先 fail-closed
+     */
+    public static OkxExchangeAdapter create(
+            RuntimeException bootstrapFailure,
+            AdapterReadinessService readinessService) {
         ObjectMapper objectMapper = new ObjectMapper();
         Clock clock = Clock.systemUTC();
         OkxHttpClient publicStubClient = new OkxHttpClient(
@@ -60,12 +74,14 @@ public final class OkxBootstrapFallbackFactory {
             }
         };
         OkxInstrumentsCache instrumentsCache = new OkxInstrumentsCache(publicStubClient, clock, Duration.ofDays(1));
-        return new OkxExchangeAdapter(new OkxExchangeAdapter.Dependencies(
-                objectMapper,
-                authenticatedStubClient,
-                instrumentsCache,
-                clock
-        ));
+        return new OkxExchangeAdapter(
+                new OkxExchangeAdapter.Dependencies(
+                        objectMapper,
+                        authenticatedStubClient,
+                        instrumentsCache,
+                        clock
+                ),
+                readinessService);
     }
 
     private static JsonNode buildStubInstrumentsPayload(ObjectMapper objectMapper) {

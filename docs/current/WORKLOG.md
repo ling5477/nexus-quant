@@ -1,3 +1,28 @@
+## NQ-GATEM-3-READINESS-GUARD-TRADING-ASSEMBLY（2026-06-23）
+
+把 OKX / Binance trading adapter 的 app 装配纳入 readiness guard。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮写 Java 代码 + 测试 + 少量状态同步，未新增合同 / review / freeze 文档。
+
+变更摘要：
+
+- `ExchangeAdapterConfiguration`：保留 `okxTradingAdapter` / `binanceTradingAdapter` 的具体 Bean 类型，注入 `AdapterReadinessService` 后构造 guarded OKX/Binance adapter；新增非 local/test/gated-verify profile 的 fail-closed readiness service fallback，避免非 fallback profile 缺 Bean。
+- `OkxExchangeAdapter` / `BinanceExchangeAdapter`：新增可选 readiness service 构造路径；app 装配传入 readiness service 后，`placeOrder` / `cancelOrder` / `getOrder` / `listOpenOrders` 在 validate、cache、HTTP 前先 fail-closed。
+- `OkxBootstrapFallbackFactory`：fallback adapter 可接收 readiness service，避免 bootstrap fallback 绕过交易 readiness guard。
+- `ExchangeAdapterConfigurationReadinessTest`：覆盖 OKX/Binance trading 4 个方法 fail-closed、异常消息脱敏关键词检查、TradingAdapter 集合无 duplicate venue。
+
+验证：
+
+- `mvn -f backend/pom.xml -o -pl nq-app -am -Dtest=ExchangeAdapterConfigurationReadinessTest "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS。
+- `mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test`：BUILD SUCCESS（adapter-api 33；OKX 34；Binance 51，1 skipped）。
+- `mvn -f backend/pom.xml -o -pl nq-app -am test`：BUILD SUCCESS（完整 reactor SUCCESS；nq-app 70 tests / 0 failures / 0 errors / 2 skipped）。
+
+边界：
+
+- 关闭 GateM-2 P2-1（trading 真实 Bean 未接 guard）。
+- adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT INTEGRATED**。
+- 未新增 API/DTO/migration/workflow；未启用 LIVE；未访问 OKX/Binance 或任何真实交易所；未读取 `.env` / credential；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未删除 `AdapterOrderAck` / `AdapterOrderSnapshot` rawPayload 字段；未把 OKX/Binance 写成 future-real-ready。
+
+下一步：`NQ-GATEM-3-READINESS-GUARD-TRADING-ASSEMBLY-REVIEW` 或提交本轮实现。
+
 ## NQ-GATEM-2-READINESS-GUARD-CORE-ASSEMBLY（2026-06-23）
 
 把 GateM-1 readiness guard decorator 接入实际装配层，使调用方默认拿到经 readiness 守卫的 adapter。结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮写代码 + 测试 + 少量状态同步，未新增合同/freeze 文档。

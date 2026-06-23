@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterCapability;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterError;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
@@ -12,6 +13,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
+import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
@@ -48,6 +50,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
     private final BinanceOrderTrimmer orderTrimmer;
     private final Clock clock;
     private final String tradeEnv;
+    private final AdapterReadinessService readinessService;
 
     /**
      * 默认构造器供应用装配使用。
@@ -57,13 +60,32 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      * 因此需要在 adapter 模块内部完成运行时配置、public metadata client 与 authenticated client 的最小装配。
      */
     public BinanceExchangeAdapter() {
-        this(createDefaultDependencies());
+        this(createDefaultDependencies(), null);
+    }
+
+    /**
+     * 应用装配构造器：在 Binance 交易动作入口接入 readiness guard。
+     *
+     * @param readinessService readiness 评估服务；不可为空
+     */
+    public BinanceExchangeAdapter(AdapterReadinessService readinessService) {
+        this(createDefaultDependencies(), Objects.requireNonNull(readinessService, "readinessService must not be null"));
     }
 
     /**
      * 可测试构造器，允许单测注入固定时钟、本地 mock server 与 stub cache。
      */
     public BinanceExchangeAdapter(Dependencies dependencies) {
+        this(dependencies, null);
+    }
+
+    /**
+     * 可测试 / 装配构造器，允许显式控制 readiness guard。
+     *
+     * @param dependencies      adapter runtime 依赖；不可为空
+     * @param readinessService readiness 评估服务；可为空，空表示保持历史直连行为供 adapter 模块单测使用
+     */
+    public BinanceExchangeAdapter(Dependencies dependencies, AdapterReadinessService readinessService) {
         this.authenticatedHttpClient = Objects.requireNonNull(
                 dependencies.authenticatedHttpClient(),
                 "authenticatedHttpClient must not be null"
@@ -72,6 +94,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         this.orderTrimmer = Objects.requireNonNull(dependencies.orderTrimmer(), "orderTrimmer must not be null");
         this.clock = Objects.requireNonNull(dependencies.clock(), "clock must not be null");
         this.tradeEnv = dependencies.tradeEnv() == null || dependencies.tradeEnv().isBlank() ? "SIM" : dependencies.tradeEnv();
+        this.readinessService = readinessService;
     }
 
     @Override
@@ -88,6 +111,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      */
     @Override
     public AdapterOrderAck placeOrder(AdapterOrderRequest request) {
+        requireReady(AdapterCapability.PLACE_ORDER);
         validatePlaceRequest(request);
         BinanceTrimResult trimResult = orderTrimmer.trimAndValidate(request, filtersCache);
         if (!trimResult.accepted()) {
@@ -133,6 +157,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      */
     @Override
     public AdapterCancelAck cancelOrder(AdapterCancelRequest request) {
+        requireReady(AdapterCapability.CANCEL_ORDER);
         validateCancelRequest(request);
         BinanceSymbolFilters filters = filtersCache.getRequired(request.symbol(), request.traceId());
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
@@ -168,6 +193,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      */
     @Override
     public AdapterOrderSnapshot getOrder(AdapterOrderQuery query) {
+        requireReady(AdapterCapability.QUERY_ORDER);
         validateOrderQuery(query);
         BinanceSymbolFilters filters = filtersCache.getRequired(query.symbol(), query.traceId());
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
@@ -190,6 +216,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      */
     @Override
     public List<AdapterOrderSnapshot> listOpenOrders(AdapterOpenOrdersQuery query) {
+        requireReady(AdapterCapability.QUERY_ORDER);
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         String internalSymbol = null;
         if (query.symbol() != null && !query.symbol().isBlank()) {
@@ -274,6 +301,19 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      */
     public BinanceFiltersCache filtersCache() {
         return filtersCache;
+    }
+
+    /**
+     * GateM-3 runtime guard：nq-app 装配传入 readiness service 后，Binance trading 动作必须先 fail-closed。
+     * <p>
+     * Why:
+     * 该 guard 放在 validate / HTTP / cache 访问之前，确保当前 no-real / LIVE disabled / not-ready baseline 下
+     * place / cancel / query / list-open-orders 不会触达真实 Binance delegate 逻辑。
+     */
+    private void requireReady(AdapterCapability capability) {
+        if (readinessService != null) {
+            readinessService.requireReady(venue(), capability);
+        }
     }
 
     private AdapterOrderAck queryConfirmAfterTimeout(AdapterOrderRequest request, String exchangeSymbol) {

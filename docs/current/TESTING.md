@@ -1,3 +1,25 @@
+## NQ-GATEM-3-READINESS-GUARD-TRADING-ASSEMBLY（2026-06-23）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 Java 代码 + 测试，把 OKX / Binance trading adapter 的 app 装配纳入 readiness guard；未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy，未访问外网或真实交易所。
+
+执行命令与结果：
+
+- `mvn -f backend/pom.xml -o -pl nq-app -am -Dtest=ExchangeAdapterConfigurationReadinessTest "-Dsurefire.failIfNoSpecifiedTests=false" test`：**BUILD SUCCESS**；`ExchangeAdapterConfigurationReadinessTest` tests=3 / failures=0 / errors=0 / skipped=0。
+- `mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test`：**BUILD SUCCESS**；`nq-adapter-api` 33 / 0 / 0 / 0；`nq-adapter-okx` 34 / 0 / 0 / 0；`nq-adapter-binance` 51 / 0 / 0 / 1 skipped（既有 `BinanceWsClientLiveDiagnosticTest`）。
+- `mvn -f backend/pom.xml -o -pl nq-app -am test`：**BUILD SUCCESS**；完整 reactor SUCCESS；`nq-app` tests=70 / failures=0 / errors=0 / skipped=2。
+
+覆盖点：
+
+- OKX / Binance 装配后的 `placeOrder` / `cancelOrder` / `getOrder` / `listOpenOrders` 未就绪时 fail-closed。
+- 异常消息不包含 `secret` / `apiKey` / `api_key` / `token` / `signature` / `passphrase`。
+- `Collection<TradingAdapter>` 只包含 OKX / BINANCE 两个 venue，无 duplicate venue。
+- `nq-scheduler` 完整测试通过，确认保留具体 `OkxExchangeAdapter` / `BinanceExchangeAdapter` Bean 未破坏按类型注入。
+
+风险与未覆盖：
+
+- `DefaultAdapterReadinessService` 仍永不产出 READY；本轮不实现 real provider / real permission probe / real credential governance bridge。
+- 测试输出出现既有 OKX connection fingerprint `apiKey=missing`，未输出真实 credential 值。
+
 ## NQ-GATEM-2-READINESS-GUARD-CORE-ASSEMBLY（2026-06-23）
 
 结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮新增 Java 代码 + 测试，把 readiness guard 接入装配层（nq-app marketdata Bean），未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy。
