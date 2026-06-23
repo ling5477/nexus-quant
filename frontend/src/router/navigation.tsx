@@ -1,4 +1,5 @@
 import {
+    ApiOutlined,
     AreaChartOutlined,
     DashboardOutlined,
     DatabaseOutlined,
@@ -57,6 +58,15 @@ export const appNavItems: AppNavItem[] = [
         icon: <FileSearchOutlined/>,
         title: 'Marketdata',
         description: '查询正式 marketdata bars 数据范围。',
+        section: '市场与主数据',
+    },
+    {
+        key: 'adapter-readiness',
+        path: '/adapter-readiness',
+        label: '适配器就绪',
+        icon: <ApiOutlined/>,
+        title: 'Adapter Readiness',
+        description: '只读查看各交易所适配器与能力的运行时 readiness（No-Real / LIVE 禁用 / 不可真实交易）。',
         section: '市场与主数据',
     },
     {

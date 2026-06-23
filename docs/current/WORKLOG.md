@@ -1,3 +1,24 @@
+## NQ-GATEM-5B-FRONTEND-ADAPTER-READINESS-PANEL（2026-06-23）
+
+在 NQ Console 前端新增只读 adapter readiness 面板，消费 GateM-5A `GET /api/adapters/readiness`。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮写前端代码 + e2e 测试 + 少量文档同步，未改后端、未新增后端 API / mock / 合同 / review / freeze 文档。
+
+变更摘要：
+
+- 新增 `frontend/src/types/adapter-readiness.ts`：`AdapterReadinessItem` / `AdapterReadinessResponse` 只读视图类型。
+- 新增 `frontend/src/api/adapter-readiness.ts`：`adapterReadinessApi.getReadiness()` → `GET /adapters/readiness`（baseURL `/api`）。
+- 修改 `frontend/src/api/query-keys.ts`：新增 `adapterReadinessQueryKeys`。
+- 新增 `frontend/src/hooks/useAdapterReadinessQuery.ts`：TanStack Query hook，`retry:false`（readiness 是安全边界，失败即 fail-closed 呈现，不重试、不回退 ready）。
+- 新增 `frontend/src/pages/adapters/AdapterReadinessPage.tsx`：Ant Design Table 展示 venue×capability 的 status/allowed/liveAuthorized/reasons/message；常驻警告 banner；loading/empty/error 全处理；错误态显示 `readiness API unavailable` 且 fail-closed。
+- 修改 `frontend/src/router/routes.tsx` + `frontend/src/router/navigation.tsx`：新增受保护路由 `/adapter-readiness` + 菜单「适配器就绪」（市场与主数据分组，ApiOutlined）。
+- 新增 `frontend/tests/e2e/adapter-readiness-panel-smoke.spec.ts`：自带 stub 的 Playwright smoke（seed 登录态 + 拦截 `/api/auth/me`、catch-all `/api/*`、`/api/adapters/readiness`），不依赖真实后端。
+- 页面定位：放在 NQ Console 主导航「市场与主数据」分组下的独立只读诊断页，便于运维查看 readiness，不与下单/撤单等交易动作耦合。未改 `docs/current/frontend/NQ_FRONTEND_BUILD_MATRIX.md`（该文为按 B0/B1 批次的施工蓝图，非路由登记表，加 GateM 行会破坏其批次结构）。
+- 测试：`AdapterReadinessPage` e2e 2 用例（fail-closed 展示 + error fallback）。
+- 验证：`cd frontend && npm run build` BUILD SUCCESS（tsc -b + vite build）；`npm run test:e2e -- adapter-readiness-panel-smoke.spec.ts` 2 passed（chromium）；`git diff --check` 通过。
+- 调试记录（已修复）：初稿 e2e 出现 (1) catch-all glob `**/api/**` 误伤 Vite `/src/api/*` 源码模块致白屏 → 改为 origin 锚定正则；(2) `hasText('NOOP')` 大小写不敏感命中 reason 文案「Noop 无真实能力」误匹配 PAPER/SIM 行 → 改用 venue 精确单元格定位；(3) 错误文案「不代表任何 venue 可用或可交易」触发自身 no-`可交易` 断言 → 改写为「已就绪或允许下单」。
+- 边界：未改后端；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未访问真实交易所；未读取真实凭证；未新增后端 API/migration/workflow；未 mock 成 ready；未把 OKX/Binance 标记为 future-real-ready。
+- 回滚：删除本轮新增前端文件（types/api/hook/page/e2e）并还原 `query-keys.ts` / `routes.tsx` / `navigation.tsx` 与本轮 current docs，无 runtime/DB/credential/provider/exchange 副作用。
+- 下一步：commit 本轮实现。
+
 ## NQ-GATEM-5A-ADAPTER-READINESS-STATUS-API（2026-06-23）
 
 新增只读 `GET /api/adapters/readiness`，给后续前端展示 OKX / Binance / Noop 当前不可实盘及原因。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮写 Java 代码 + 测试 + 少量文档同步，未新增合同 / review / freeze 文档。

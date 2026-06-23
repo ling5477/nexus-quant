@@ -1,3 +1,29 @@
+## NQ-GATEM-5B-FRONTEND-ADAPTER-READINESS-PANEL（2026-06-23）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 NQ Console 只读 adapter readiness 面板（消费 GateM-5A `GET /api/adapters/readiness`）+ Playwright e2e smoke；仅改 frontend + docs，未改 backend/research/scripts/deploy，未新增后端 API。
+
+执行命令与结果：
+
+- `git diff --check`：通过。
+- `cd frontend && npm run build`（`tsc -b && vite build`）：**BUILD SUCCESS**（client 产物生成；既有 chunk>500kB 警告为历史现象，与本轮无关）。
+- `npm run test:e2e -- --list adapter-readiness-panel-smoke.spec.ts`：列出并编译通过，发现 2 用例。
+- `npm run test:e2e -- adapter-readiness-panel-smoke.spec.ts`：**2 passed**（chromium）。该 spec 自带 stub（seed 登录态 + 拦截 `/api/auth/me`、catch-all `/api/*`、`/api/adapters/readiness`），不依赖真实后端 / 真实交易所 / 真实凭证。
+
+覆盖点：
+
+- 页面渲染 venue NOOP/PAPER/SIM/OKX/BINANCE 与 9 项 capability。
+- OKX/Binance 行明显展示 `未就绪 NOT_READY` + `不可用` + `LIVE 未授权`。
+- Noop 家族行展示 `模拟·无真实 NO_REAL`。
+- PLACE_ORDER / CANCEL_ORDER 行展示不可用 + LIVE 未授权（不显示为可用）。
+- permission probe 行展示 `真实 provider 未实现`。
+- 全页无 `就绪 READY`、无精确 `可用`、无 `可交易`；不含 secret/apikey/api_key/token/signature/passphrase。
+- 错误态（readiness API 500）显示 `readiness API unavailable` + `未就绪（fail-closed）`，绝不回退成 ready / 可用 / 可交易。
+
+未覆盖 / 说明：
+
+- 完整 e2e 套件（其余 spec）依赖真实 Spring Boot 后端 + 本地 Postgres（`tests/e2e/support.ts` 走真实登录/账户），本轮未拉起后端，故只运行本轮自带 stub 的 readiness smoke；完整套件回归 pending backend env。
+- 无前端单元测试框架（devDeps 无 vitest/jest），故以 Playwright stub smoke 作为组件级 readiness 消费验证。
+
 ## NQ-GATEM-5A-ADAPTER-READINESS-STATUS-API（2026-06-23）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增只读 `GET /api/adapters/readiness`（nq-api controller + service + DTO）+ 测试；未新增 migration/workflow，未改 frontend/research/scripts/deploy，未访问外网或真实交易所，未读取 credential。

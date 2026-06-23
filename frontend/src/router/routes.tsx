@@ -2,6 +2,7 @@ import {Navigate, createBrowserRouter} from 'react-router-dom';
 
 import {ConsoleLayout} from '@/layouts/ConsoleLayout';
 import {AccountsPage} from '@/pages/accounts/AccountsPage';
+import {AdapterReadinessPage} from '@/pages/adapters/AdapterReadinessPage';
 import {BacktestDetailPage} from '@/pages/backtests/BacktestDetailPage';
 import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
 import {DashboardPage} from '@/pages/dashboard/DashboardPage';
@@ -95,6 +96,11 @@ export const appRouter = createBrowserRouter([
                         path: 'marketdata',
                         element: <MarketdataPage/>,
                         handle: createHandle('marketdata'),
+                    },
+                    {
+                        path: 'adapter-readiness',
+                        element: <AdapterReadinessPage/>,
+                        handle: createHandle('adapter-readiness'),
                     },
                     {
                         path: 'strategies',
