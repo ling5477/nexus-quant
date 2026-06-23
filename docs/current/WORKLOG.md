@@ -1,3 +1,26 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5B-IMPLEMENTATION（2026-06-23）
+
+实现真实后端 + 前端 adapter readiness E2E smoke 的 GitHub Actions job。结论：**IMPLEMENTED / PENDING FIRST CI RUN**；未 freeze，未 first green confirmed。
+
+变更摘要：
+
+- `.github/workflows/ci.yml` 新增独立 `frontend-e2e-backend-smoke` job。
+- job 使用 `ubuntu-latest` + job-local `postgres:16`（`nexus / nexus / nexus_quant`）。
+- 后端用 local profile 启动：`mvn -f backend/pom.xml -pl nq-app -am -DskipTests spring-boot:run -Dspring-boot.run.profiles=local`，端口 18888，等待 `/actuator/health` status `UP`。
+- job env 设置 `CI=true`、`NQ_NO_OUTBOUND=true`、placeholder exchange endpoints，并关闭 catalog sync / OKX recovery / OKX WS / Binance WS；不注入 `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED`，不使用 repository secrets。
+- 前端使用现有 Vite dev runner：`VITE_API_PROXY_TARGET=http://127.0.0.1:18888 npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`；只跑该 spec，不跑全量 E2E。
+- always cleanup backend process group，并在 cleanup 后确认 18888 health endpoint 不再响应。
+- 后端 raw log 写入 `${RUNNER_TEMP}`，上传前生成 text-only sanitized `backend.log` + `health.json`，经 pre-upload redaction gate 后才上传；binary Playwright trace/report/screenshot 不上传。
+- 同步 `NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md`、`NQ_CI_BASELINE_PLAN.md`、README、ROADMAP、TESTING。
+
+边界：
+
+- 未修改 Java / TypeScript 业务代码、frontend tests、Python、migration、scripts/deploy。
+- 未读取 `.env`、真实 credential、key/pem/token/secret dump 或日志备份。
+- 未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；未把 OKX/Binance 写成 future-real-ready。
+
+下一步：`NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW`，核对 GitHub Actions first run、artifact/log redaction、health、Playwright 与 fail-closed payload/UI evidence。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN（2026-06-23）
 
 新增 `docs/current/NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md`，规划真实 local/test 后端 + 前端 adapter readiness E2E readiness smoke 的 GitHub Actions 固化路径。结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。

@@ -2,7 +2,7 @@
 
 任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN
 日期：2026-06-23
-状态：PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE
+状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED / PENDING FIRST CI RUN
 
 ## Task classification
 
@@ -330,7 +330,7 @@ Required implementation evidence:
 
 - Batch 5A: this plan. Status: `PASS / PLAN ONLY / NOT IMPLEMENTED`.
 - Batch 5A-review: review this plan and decide whether it is accepted as implementation baseline.
-- Batch 5B: implementation. Modify only `.github/workflows/ci.yml` and any strictly necessary CI config already accepted by 5A-review; add `frontend-e2e-backend-smoke` job.
+- Batch 5B: implementation. Status: `IMPLEMENTED / PENDING FIRST CI RUN`. Modify only `.github/workflows/ci.yml` and minimal current docs; add `frontend-e2e-backend-smoke` job.
 - Batch 5C: first CI run review / fix. Verify target commit has GitHub Actions run, job conclusion, logs, health, payload, Playwright result, artifact handling, no-outbound and credential boundaries.
 - Batch 5D: freeze review. Freeze only after first green evidence and no P0/P1 unresolved findings.
 - Batch 5E: full E2E expansion plan. Optional / later; not part of this plan or implementation.
@@ -525,3 +525,42 @@ Batch 5B default scope:
 NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN-REVIEW：PASS.
 
 The plan is accepted as the Batch 5B implementation baseline. Batch 5B may proceed as a workflow-only implementation slice, with P2 no-outbound runtime parity and artifact binary-handling limits carried forward explicitly.
+
+## Batch 5B implementation addendum
+
+任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5B-IMPLEMENTATION
+日期：2026-06-23
+结论：IMPLEMENTED / PENDING FIRST CI RUN；NOT FROZEN
+
+### Implementation summary
+
+Batch 5B added an independent GitHub Actions job `frontend-e2e-backend-smoke` to `.github/workflows/ci.yml`.
+
+The job is intentionally narrow:
+
+- Starts a job-local `postgres:16` service with CI-only `nexus / nexus / nexus_quant` database settings.
+- Starts `nq-app` with local profile on port `18888` using `mvn -f backend/pom.xml -pl nq-app -am -DskipTests spring-boot:run -Dspring-boot.run.profiles=local`.
+- Sets `CI=true`, `NQ_NO_OUTBOUND=true`, placeholder exchange endpoints, and disables catalog sync / OKX recovery / OKX WS / Binance WS.
+- Does not inject `NQ_LIVE_ENABLED`, `NQ_REAL_PROVIDER_ENABLED`, `NQ_REAL_CLIENT_ENABLED`, repository secrets, or real exchange credential env names.
+- Waits for `http://127.0.0.1:18888/actuator/health` to report `UP`.
+- Uses the existing Vite dev server runner through `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium` with `VITE_API_PROXY_TARGET=http://127.0.0.1:18888`.
+- Runs only the adapter readiness backend smoke spec, not the full E2E suite.
+- Always attempts to stop the backend process group and confirms the health endpoint no longer responds.
+- Uploads only generated text artifacts (`backend.log`, `health.json`) after a pre-upload redaction gate; binary Playwright trace/report/screenshot upload remains deferred.
+
+### Security boundary
+
+- No repository secrets are used.
+- No real exchange credentials are injected.
+- No real OKX/Binance endpoint is configured.
+- LIVE / AI / DH runtime / RealClient / real provider / real permission probe remain disabled or not implemented.
+- Readiness remains expected to fail closed: no `READY`, no `allowed=true`, no `liveAuthorized=true`, OKX/Binance `NOT_READY`, NOOP/PAPER/SIM `NO_REAL`, permission probe `REAL_PROVIDER_NOT_IMPLEMENTED`.
+- `spring-boot:run` + Playwright runtime no-outbound parity remains a P2 evidence item until Batch 5C verifies the first GitHub Actions run logs/artifacts.
+
+### Validation status
+
+This document records implementation wiring only. The GitHub Actions first run has not yet been reviewed, so Batch 5B must not be described as frozen or first-green confirmed.
+
+Expected next evidence task:
+
+`NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW`

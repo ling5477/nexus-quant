@@ -1,3 +1,20 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5B-IMPLEMENTATION（2026-06-23）
+
+结论：**IMPLEMENTED / PENDING FIRST CI RUN**。本轮实现 `.github/workflows/ci.yml` 独立 `frontend-e2e-backend-smoke` job，并同步当前 docs；未修改 backend/frontend 业务代码、frontend tests、migration、scripts/deploy。
+
+本轮本地验证范围：
+
+- `git diff --check`
+- `git diff --stat`
+- YAML job block 结构检查（针对 `.github/workflows/ci.yml` 新增 `frontend-e2e-backend-smoke`）；本机 Ruby / PyYAML / Node `yaml` parser 均不可用，未完成第三方 YAML parser 解析。
+- `npm run test:e2e -- --list adapter-readiness-panel-backend-smoke.spec.ts`：列出 1 test / 1 file，仅做 spec discovery，不跑真实后端。
+- scoped forbidden-area diff：backend / frontend / research / scripts / deploy / migration 不应有 diff
+- workflow grep：确认新增 `frontend-e2e-backend-smoke`，未引入 `secrets.`，未注入 `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED`
+
+未本地完整模拟 GitHub Actions：本轮目标是 workflow implementation；完整 job 需要 GitHub Actions service container、Actions runner 网络/toolchain、job artifact/upload 行为与 first-run evidence。不得把本轮写成 first green 或 frozen。
+
+预期 Batch 5C 验证：目标 commit 的 GitHub Actions run 中 `frontend-e2e-backend-smoke` 通过，后端 `/actuator/health` = UP，Playwright backend smoke 通过，readiness 45 条 fail-closed，logs/artifacts 无 secret-like pattern，backend 进程被清理。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN（2026-06-23）
 
 结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。本轮只规划如何把真实 local/test 后端 + 前端 adapter readiness E2E readiness smoke 固化进 GitHub Actions；未修改 `.github/workflows/ci.yml`、Java/TypeScript/Python 代码、测试代码、migration、frontend 页面、backend 生产逻辑、deploy 或 scripts。

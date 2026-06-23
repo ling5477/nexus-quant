@@ -933,6 +933,313 @@ jobs:
         run: |
           rm -rf test-results-ci playwright-report test-results
 
+  frontend-e2e-backend-smoke:
+    name: Frontend backend E2E smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: nexus_quant
+          POSTGRES_USER: nexus
+          POSTGRES_PASSWORD: nexus
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexus -d nexus_quant"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      CI: "true"
+      NQ_NO_OUTBOUND: "true"
+      # NQ_LIVE_ENABLED / NQ_REAL_PROVIDER_ENABLED / NQ_REAL_CLIENT_ENABLED 不在此注入。
+      # Why: 既有 CI no-outbound guard 把这些 env 名称本身列为禁止存在；缺省 false 才是
+      # Batch 5B-ENV 接受的 fail-closed 语义。
+      NQ_AI_ENABLED: "false"
+      NQ_DH_RUNTIME_ENABLED: "false"
+      NQ_REAL_EXCHANGE_ENABLED: "false"
+      NQ_APP_PORT: "18888"
+      NQ_DB_URL: jdbc:postgresql://localhost:5432/nexus_quant
+      NQ_DB_USER: nexus
+      NQ_DB_PASSWORD: nexus
+      NQ_OKX_BASE_URL: PLACEHOLDER_ONLY
+      NQ_OKX_WS_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_DOME_BASE_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_REAL_BASE_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_DOME_WS_URL: PLACEHOLDER_ONLY
+      NQ_BINANCE_REAL_WS_URL: PLACEHOLDER_ONLY
+      NQ_INSTRUMENT_CATALOG_SYNC_ENABLED: "false"
+      NQ_OKX_RECOVERY_ENABLED: "false"
+      NQ_OKX_WS_ENABLED: "false"
+      NQ_BINANCE_WS_ENABLED: "false"
+      NQ_NO_OUTBOUND_DENYLIST: >-
+        okx.com
+        www.okx.com
+        my.okx.com
+        binance.com
+        api.binance.com
+        fapi.binance.com
+        dapi.binance.com
+        testnet.binance.vision
+        ws-api.binance.com
+        ws-api.testnet.binance.vision
+        stream.binance.com
+        stream.binancefuture.com
+        bybit.com
+        api.bybit.com
+        bitget.com
+        gate.io
+        api.gateio.ws
+        coinbase.com
+        api.coinbase.com
+        kraken.com
+        api.kraken.com
+        crypto.com
+        hyperliquid.xyz
+        api.hyperliquid.xyz
+
+    steps:
+      - name: Mask CI-only PostgreSQL connection values
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "::add-mask::${NQ_DB_URL}"
+          echo "::add-mask::${NQ_DB_USER}"
+          echo "::add-mask::${NQ_DB_PASSWORD}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        # Why: 只安装 backend smoke 需要的 Chromium；浏览器安装失败必须 fail，不做 skip-as-pass。
+        run: npx playwright install --with-deps chromium
+
+      - name: Build frontend (production)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Start nq-app local backend
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          raw_log="${RUNNER_TEMP}/nq-frontend-e2e-backend.raw.log"
+          pid_file="${RUNNER_TEMP}/nq-frontend-e2e-backend.pid"
+          : > "${raw_log}"
+
+          # Batch 5B smoke uses local profile with CI no-outbound env hardening.
+          # It does not inject real exchange credentials or LIVE / real-provider flags.
+          setsid mvn -f backend/pom.xml -pl nq-app -am -DskipTests spring-boot:run \
+            -Dspring-boot.run.profiles=local \
+            > "${raw_log}" 2>&1 &
+          echo "$!" > "${pid_file}"
+          echo "Started nq-app backend pid=$(cat "${pid_file}")"
+
+      - name: Wait for backend health UP
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          health_url="http://127.0.0.1:18888/actuator/health"
+          health_file="${RUNNER_TEMP}/nq-frontend-e2e-backend-health.json"
+          raw_log="${RUNNER_TEMP}/nq-frontend-e2e-backend.raw.log"
+          : > "${health_file}"
+
+          redact_tail() {
+            sed -E 's/((apiKey|api[_-]?key|apiSecret|api[_-]?secret|secret|token|signature|passphrase|password|cookie)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1<redacted>/Ig' "$1" \
+              | tail -n 120
+          }
+
+          for _ in {1..120}; do
+            if curl -fsS "${health_url}" -o "${health_file}"; then
+              if grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "${health_file}"; then
+                echo "Backend health is UP."
+                exit 0
+              fi
+            fi
+            sleep 1
+          done
+
+          printf '{"status":"UNAVAILABLE"}\n' > "${health_file}"
+          echo "Backend health did not reach UP before timeout." >&2
+          echo "Sanitized backend log tail follows (rule-based redaction, bounded tail):" >&2
+          if [ -s "${raw_log}" ]; then
+            redact_tail "${raw_log}" >&2
+          else
+            echo "Backend log is empty." >&2
+          fi
+          exit 1
+
+      - name: Run adapter readiness backend E2E
+        working-directory: frontend
+        env:
+          VITE_API_PROXY_TARGET: http://127.0.0.1:18888
+        run: npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium
+
+      - name: Cleanup backend process
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pid_file="${RUNNER_TEMP}/nq-frontend-e2e-backend.pid"
+          cleanup_failed=0
+
+          if [ -s "${pid_file}" ]; then
+            pid="$(cat "${pid_file}")"
+            if ps -p "${pid}" >/dev/null 2>&1; then
+              kill -- "-${pid}" >/dev/null 2>&1 || kill "${pid}" >/dev/null 2>&1 || cleanup_failed=1
+              sleep 3
+            fi
+            if ps -p "${pid}" >/dev/null 2>&1; then
+              kill -9 -- "-${pid}" >/dev/null 2>&1 || kill -9 "${pid}" >/dev/null 2>&1 || cleanup_failed=1
+              sleep 2
+            fi
+          fi
+
+          if curl -fsS "http://127.0.0.1:18888/actuator/health" >/dev/null 2>&1; then
+            echo "Backend port 18888 still responds after cleanup." >&2
+            cleanup_failed=1
+          else
+            echo "Backend cleanup confirmed: health endpoint no longer responds."
+          fi
+
+          if [ "${cleanup_failed}" -ne 0 ] && [ "${{ job.status }}" = "success" ]; then
+            exit 1
+          fi
+          exit 0
+
+      - name: Prepare sanitized backend smoke artifacts
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          artifact_dir="artifacts/frontend-e2e-backend-smoke"
+          raw_log="${RUNNER_TEMP}/nq-frontend-e2e-backend.raw.log"
+          health_file="${RUNNER_TEMP}/nq-frontend-e2e-backend-health.json"
+          mkdir -p "${artifact_dir}"
+
+          if [ -s "${raw_log}" ]; then
+            sed -E 's/((apiKey|api[_-]?key|apiSecret|api[_-]?secret|secret|token|signature|passphrase|password|cookie)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1<redacted>/Ig' "${raw_log}" > "${artifact_dir}/backend.log"
+          else
+            printf 'backend log unavailable\n' > "${artifact_dir}/backend.log"
+          fi
+
+          if [ -s "${health_file}" ]; then
+            cp "${health_file}" "${artifact_dir}/health.json"
+          else
+            printf '{"status":"UNAVAILABLE"}\n' > "${artifact_dir}/health.json"
+          fi
+
+      - name: Pre-upload redaction gate (frontend backend smoke artifacts)
+        id: frontend_backend_artifact_gate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gate_target="artifacts/frontend-e2e-backend-smoke"
+          test -s "${gate_target}/backend.log"
+          test -s "${gate_target}/health.json"
+
+          while IFS= read -r -d '' f; do
+            if [ "$(file -b --mime-encoding "${f}")" = "binary" ]; then
+              echo "Pre-upload redaction gate: non-text artifact rejected: ${f#"${gate_target}/"}" >&2
+              exit 1
+            fi
+          done < <(find "${gate_target}" -type f -print0)
+
+          patterns="${RUNNER_TEMP}/nq-frontend-backend-smoke-patterns.txt"
+          violations="${RUNNER_TEMP}/nq-frontend-backend-smoke-violations.txt"
+          : > "${violations}"
+
+          # NAME<space>ERE per line. Report rule + file only; never print matched value or line.
+          cat > "${patterns}" <<'PATTERNS'
+          dotenv_reference \.env
+          pem_private_key BEGIN [A-Z ]*PRIVATE KEY
+          aws_akia_key AKIA[0-9A-Z]{16}
+          aws_asia_key ASIA[0-9A-Z]{16}
+          openai_anthropic_key sk-[A-Za-z0-9_-]{20,}
+          github_token (gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})
+          slack_token xox[bp]-[A-Za-z0-9-]{10,}
+          credentials_in_url [a-zA-Z][a-zA-Z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@
+          api_key_assignment (apiKey|api[_-]?key)[[:space:]]*[:=]
+          api_secret_assignment (apiSecret|api[_-]?secret|secret)[[:space:]]*[:=]
+          passphrase_assignment passphrase[[:space:]]*[:=]
+          token_assignment token[[:space:]]*[:=]
+          password_assignment password[[:space:]]*[:=]
+          cookie_assignment cookie[[:space:]]*[:=]
+          private_key_assignment (privateKey|private[[:space:]_-]*key)[[:space:]]*[:=]
+          mnemonic_assignment mnemonic[[:space:]]*[:=]
+          signature_assignment signature[[:space:]]*[:=]
+          credential_material_assignment credential[[:space:]_-]*material[[:space:]]*[:=]
+          raw_request_assignment raw[[:space:]_-]*request[[:space:]]*[:=]
+          raw_response_assignment raw[[:space:]_-]*response[[:space:]]*[:=]
+          encrypted_payload_assignment encrypted_payload[[:space:]]*[:=]
+          decrypted_payload_assignment decrypted_payload[[:space:]]*[:=]
+          exchange_host okx\.com|binance\.com|bybit\.com|bitget\.com|gate\.io|coinbase\.com|kraken\.com|crypto\.com|hyperliquid\.xyz
+          PATTERNS
+
+          while IFS=' ' read -r rule re; do
+            [ -z "${rule}" ] && continue
+            files="$(grep -rIlE -e "${re}" "${gate_target}" 2>/dev/null || true)"
+            [ -z "${files}" ] && continue
+            while IFS= read -r mf; do
+              [ -z "${mf}" ] && continue
+              echo "${rule} | ${mf#"${gate_target}/"}" >> "${violations}"
+            done <<< "${files}"
+          done < "${patterns}"
+
+          if [ -s "${violations}" ]; then
+            echo "Pre-upload redaction gate found high-risk pattern(s) (rule | file only; values never printed):" >&2
+            cat "${violations}" >&2
+            exit 1
+          fi
+          echo "Pre-upload redaction gate: no high-risk pattern in ${gate_target}."
+
+      - name: Upload frontend backend smoke artifacts
+        if: always() && steps.frontend_backend_artifact_gate.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nq-frontend-e2e-backend-smoke-artifacts
+          path: artifacts/frontend-e2e-backend-smoke/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Cleanup Playwright temp output (no upload)
+        if: always()
+        working-directory: frontend
+        run: |
+          rm -rf test-results-ci playwright-report test-results
+
   research:
     name: Research quality gate
     runs-on: ubuntu-latest
