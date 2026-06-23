@@ -163,6 +163,19 @@ class DefaultAdapterReadinessServiceTest {
         assertFalse(decision.allowed());
         assertEquals(AdapterReadinessStatus.UNKNOWN_REQUIRES_REVIEW, decision.status());
         assertTrue(decision.reasons().contains(AdapterReadinessReason.UNKNOWN_REQUIRES_REVIEW));
+        // GateM-1 修正 GateM-0 P2-2：null capability 不再误报为 PLACE_ORDER，统一自描述为 UNSPECIFIED。
+        assertEquals(AdapterCapability.UNSPECIFIED, decision.capability());
+    }
+
+    @Test
+    void unspecifiedCapabilityFailsClosed() {
+        // 显式传入 UNSPECIFIED 也必须 fail-closed，不绑定任何真实能力。
+        AdapterReadinessDecision decision = service.evaluate("OKX", AdapterCapability.UNSPECIFIED);
+
+        assertFalse(decision.allowed());
+        assertEquals(AdapterReadinessStatus.UNKNOWN_REQUIRES_REVIEW, decision.status());
+        assertEquals(AdapterCapability.UNSPECIFIED, decision.capability());
+        assertTrue(decision.reasons().contains(AdapterReadinessReason.UNKNOWN_REQUIRES_REVIEW));
     }
 
     @Test

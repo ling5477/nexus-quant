@@ -23,7 +23,17 @@ public enum AdapterCapability {
     HISTORICAL_OHLCV(false, false, true),
     SUBSCRIBE_BARS(false, false, true),
     SUBSCRIBE_TRADES(false, false, true),
-    SUBSCRIBE_ORDERBOOK(false, false, true);
+    SUBSCRIBE_ORDERBOOK(false, false, true),
+
+    /**
+     * 未指定 / 缺失能力的 fail-closed 占位（GateM-1 修正 GateM-0 P2-2）。
+     * <p>
+     * Why:
+     * {@code AdapterReadinessDecision.capability} 不可为空，但调用方可能传入 null 或未声明具体能力。
+     * 以前用 PLACE_ORDER 占位会让决策的 capability 字段误报为交易能力。改用 UNSPECIFIED 让“未指定”
+     * 自我描述，且 readiness 评估对其一律 fail-closed 为 UNKNOWN_REQUIRES_REVIEW，不绑定任何真实能力。
+     */
+    UNSPECIFIED(false, false, false);
 
     private final boolean requiresCredentials;
     private final boolean liveMutating;

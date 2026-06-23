@@ -52,18 +52,18 @@ public final class DefaultAdapterReadinessService implements AdapterReadinessSer
     @Override
     public AdapterReadinessDecision evaluate(String venue, AdapterCapability capability) {
         Instant checkedAt = Instant.now(clock);
-        // capability 缺失：无法判断范围，fail-closed。
-        if (capability == null) {
+        // capability 缺失或显式未指定：无法判断范围，fail-closed（GateM-1 修正 GateM-0 P2-2，
+        // 不再用 PLACE_ORDER 占位误报为交易能力，统一用 UNSPECIFIED 自描述）。
+        if (capability == null || capability == AdapterCapability.UNSPECIFIED) {
             return new AdapterReadinessDecision(
                     normalizeForReport(venue),
-                    // 用一个占位能力无意义；capability 为 null 时直接走 unknown 决策但保留可读 venue。
-                    AdapterCapability.PLACE_ORDER,
+                    AdapterCapability.UNSPECIFIED,
                     AdapterReadinessStatus.UNKNOWN_REQUIRES_REVIEW,
                     false,
                     false,
                     List.of(AdapterReadinessReason.UNKNOWN_REQUIRES_REVIEW),
                     checkedAt,
-                    "capability is null; fail-closed pending review");
+                    "capability unspecified; fail-closed pending review");
         }
 
         String normalized = normalizeVenue(venue);
