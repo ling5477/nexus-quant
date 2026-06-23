@@ -373,3 +373,19 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 - GateL-1B 整体 No-Real hardening freeze **NOT DONE**，仍待 P1-D 独立完成后另行执行。
 - Regression boundary：后续改动 `OkxExchangeAdapter` / `BinanceExchangeAdapter` 中 `AdapterOrderAck` / `AdapterOrderSnapshot` producer 的 rawPayload 参数、`suppressedOrderRawPayload()` 返回值或 adapter-api record 兼容性，须重新 review + freeze。
 - 下一步 `NQ-GATEL-1B-D-IMPL`。
+
+## 21. GateL-1B-D implementation update（2026-06-22）
+
+> 本节为实现进度追加，不改写上文 frozen plan 正文；D 仍需独立 review 与 freeze-close 后才能关闭。
+
+- 任务：`NQ-GATEL-1B-D-IMPL` = **PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-D-IMPL-REVIEW`**。
+- 仅实现 **P1-D NoopMarketDataAdapter no-real status hardening**；未删除 `AdapterOrderAck` / `AdapterOrderSnapshot` 的 `rawPayload` 字段，未改 OKX/Binance rawPayload producer、credential source、endpoint sentinel，未新增 DTO/API/migration/workflow，未实现真实 marketdata provider。
+- 实现：
+  - `NoopMarketDataAdapter` 的 bars / trades / order-book 三个订阅路径统一返回 `subscribed=false`。
+  - 统一返回 `AdapterError.code=NO_REAL_DISABLED`、`category=FATAL_FAILURE`、`retryable=false`，明确这是 no-real disabled / stub 状态，不是普通真实订阅 success。
+  - `nq-adapter-api` 增加 JUnit test 依赖，仅用于本模块直接回归测试；未新增运行时依赖或新 contract。
+- 测试：新增 `NoopMarketDataAdapterTest` 覆盖 bars / trades / order-book，断言 `subscribed=false`、`NO_REAL_DISABLED`、`FATAL_FAILURE`、`retryable=false`、trace/channel 保留；`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（adapter-api 3 / OKX 34 / Binance 51 / 0 fail / 1 skipped）。
+- 状态保持：**P1-A CLOSED / ACCEPTED**；**P1-B CLOSED / ACCEPTED**；**P1-C producer suppression CLOSED / ACCEPTED**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；**P1-D IMPLEMENTED / PENDING REVIEW**。GateL-1B 整体 hardening freeze **NOT DONE**（仍待 D review + freeze-close），adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。
+- 边界：未接真实市场数据或真实交易所；未访问外网/交易所/DB；未读取 `.env` 或真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；不代表允许真实 marketdata、真实 adapter 或 future-real-ready。
+- 回滚：还原 `NoopMarketDataAdapter`、`nq-adapter-api/pom.xml` 与 `NoopMarketDataAdapterTest`，并还原本轮 docs。回滚会重新打开 P1-D 普通 success 误判风险，须立即恢复 NOT READY 状态。
+- 下一步 `NQ-GATEL-1B-D-IMPL-REVIEW`；不得直接写 GateL-1B overall frozen 或进入 real adapter。

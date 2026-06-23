@@ -1,3 +1,15 @@
+## NQ-GATEL-1B-D-IMPL（2026-06-22）
+
+结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-D-IMPL-REVIEW`**。只实现 P1-D Noop marketdata status hardening；P1-A/P1-B/P1-C producer suppression 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除 NOT DONE，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+- 静态核对：`NoopMarketDataAdapter` bars / trades / order-book 订阅均返回 `subscribed=false`、`NO_REAL_DISABLED`、`FATAL_FAILURE`、`retryable=false`；不再返回普通 success。
+- 回归测试：新增 `NoopMarketDataAdapterTest`，覆盖 bars / trades / order-book 三路径 no-real disabled 语义，断言 channel / traceId / error code / category / retryable。
+- 测试复跑：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test`（offline，未外联）→ **BUILD SUCCESS**；reactor nq-common / nq-contracts / nq-adapter-api / nq-adapter-okx / nq-adapter-binance 全部 SUCCESS。
+- nq-adapter-api：**3 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-okx：**34 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-binance：**51 tests / 0 fail / 0 error / 1 skipped**（skip = `BinanceWsClientLiveDiagnosticTest` 系统属性门禁）。
+- 未执行 frontend / Python（本轮未改 frontend / research）；未访问网络、交易所、DB、容器、GitHub Actions；未读取 `.env` 或 credential material。
+
+---
+
 ## NQ-GATEL-1B-C-IMPL-FREEZE（2026-06-22）
 
 结论：**PASS / FROZEN / ACCEPTED；P1-C producer suppression CLOSED / ACCEPTED**。冻结 implementation commit `316497ad`；P1-A/P1-B 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除 NOT DONE，P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
