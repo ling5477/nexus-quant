@@ -400,3 +400,15 @@ Future implementation 的最低命令由 implementation plan review 最终确认
 - GateL-1B overall hardening **NOT FROZEN**，不得由本 per-slice freeze 自动推导；须另起整体 freeze review 核对 A-D 组合证据与 carve-out。
 - Regression boundary：后续改动 `NoopMarketDataAdapter` bars / trades / order-book 返回语义、`NO_REAL_DISABLED` code、`FATAL_FAILURE` category、`retryable=false` 或 `subscribed=false`，须重新 review + freeze。
 - 下一步 `NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW`。
+
+## 23. GateL-1B overall hardening freeze-close（2026-06-23）
+
+> 本节为 overall freeze-close 追加，不改写上文 frozen plan 正文；adapter readiness 仍不得升级。
+
+- 任务：`NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW` = **PASS / FROZEN / ACCEPTED**，详见 `GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md`。
+- 冻结对象：GateL-1B A/B/C/D 组合 No-Real hardening 证据，包括 implementation commits `04ddb774` / `ad7f58b0` / `316497ad` / `7e442eb7` 与 A/B/C/D freeze review 文档。
+- **GateL-1B overall No-Real hardening baseline = FROZEN / ACCEPTED**；**P1-A / P1-B / P1-C producer suppression / P1-D = CLOSED / ACCEPTED**。
+- **P1-C rawPayload 字段删除仍 NOT DONE / SEPARATE COMPATIBILITY TASK**；本 overall freeze 只接受 producer suppression，不删除 adapter-api 字段。
+- **adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED**；不代表 future-real-ready，不授权真实交易所、真实 marketdata、LIVE、真实 credential、AI、DH runtime、RealClient、real provider、真实 permission probe 或真实 credential governance bridge。
+- Overall review validation：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（nq-contracts 1 / adapter-api 3 / OKX 34 / Binance 51；0 failures / 0 errors / 1 skipped）。
+- 下一步 `NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT`；不得直接进入 real adapter。

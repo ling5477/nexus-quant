@@ -1,3 +1,16 @@
+## NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW（2026-06-23）
+
+结论：**PASS / FROZEN / ACCEPTED**。GateL-1B A/B/C/D 组合 No-Real hardening baseline 已冻结；P1-A / P1-B / P1-C producer suppression / P1-D 均 CLOSED / ACCEPTED，P1-C rawPayload field deletion 仍 NOT DONE / SEPARATE COMPATIBILITY TASK，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+
+- 预检：`Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；`git status --short`、`git diff --check`、`git diff --stat` 在 review 前均无输出。
+- 提交/卷宗复核：`git diff-tree --no-commit-id --name-only -r 04ddb774/ad7f58b0/316497ad/7e442eb7`；只读核对 A/B/C/D freeze review 文档与 current docs。
+- 静态核对：bounded `rg` 确认 Binance 默认 `disabled://` sentinel 未回退；OKX/Binance runtime credential 默认 `*.unconfigured()`；OKX/Binance ack/snapshot producer 使用 `suppressedOrderRawPayload()`；`NoopMarketDataAdapter` bars/trades/order-book 返回 `subscribed=false + NO_REAL_DISABLED + FATAL_FAILURE + retryable=false`。
+- 测试复跑：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test`（offline）→ **BUILD SUCCESS**；nq-contracts **1 / 0 / 0 / 0**，nq-adapter-api **3 / 0 / 0 / 0**，nq-adapter-okx **34 / 0 / 0 / 0**，nq-adapter-binance **51 / 0 / 0 / 1 skipped**（skip = `BinanceWsClientLiveDiagnosticTest` 系统属性门禁）。
+- 未执行 frontend / Python / GitHub Actions；原因：本轮 docs-only overall freeze review，未改 frontend/research/workflow。
+- 未访问外网、交易所、DB、容器；未读取 `.env` 或 credential material；未启用 LIVE / AI / DH runtime。
+
+---
+
 ## NQ-GATEL-1B-D-IMPL-FREEZE（2026-06-23）
 
 结论：**PASS / FROZEN / ACCEPTED；P1-D CLOSED / ACCEPTED**。冻结 implementation commit `7e442eb7`；P1-A/P1-B/P1-C producer suppression 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，GateL-1B overall hardening NOT FROZEN。

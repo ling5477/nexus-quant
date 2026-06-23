@@ -1,3 +1,16 @@
+## NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW（2026-06-23）
+
+完成 GateL-1B overall No-Real hardening freeze review，新增 `GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md`，整体冻结 A/B/C/D 组合 hardening 证据。结论：**PASS / FROZEN / ACCEPTED**。
+
+- 冻结对象：commits `04ddb774`（P1-A Binance endpoint sentinel）、`ad7f58b0`（P1-B OKX/Binance credential source）、`316497ad`（P1-C ack/snapshot rawPayload producer suppression）、`7e442eb7`（P1-D Noop marketdata no-real status）及对应 A/B/C/D freeze review 文档。
+- 验证：`git diff-tree` 复核四个提交范围；bounded `rg` 复核 disabled sentinel、credential unconfigured、rawPayload suppression、Noop no-real disabled 语义；`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS，nq-contracts **1 / 0 / 0 / 0**、nq-adapter-api **3 / 0 / 0 / 0**、nq-adapter-okx **34 / 0 / 0 / 0**、nq-adapter-binance **51 / 0 / 0 / 1 skipped**。
+- **GateL-1B overall No-Real hardening baseline = FROZEN / ACCEPTED**；**P1-A / P1-B / P1-C producer suppression / P1-D = CLOSED / ACCEPTED**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。
+- 边界：docs-only；未改 Java/TS/Python 代码；未删除 rawPayload 字段；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未访问外网/交易所/DB；未读取真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient/real provider/real permission probe/real credential governance bridge；未把 adapter 写成 future-real-ready。
+- 回滚：删除 `GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md` 并还原本轮 current docs 状态入口；无 runtime/DB/provider/exchange/credential 副作用。
+- 下一步 `NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT`，不得直接进入 real adapter。
+
+---
+
 ## NQ-GATEL-1B-D-IMPL-FREEZE（2026-06-23）
 
 完成 GateL-1B-D freeze-close，新增 `GATEL_1B_D_IMPL_FREEZE_REVIEW.md`，正式关闭 P1-D。结论：**PASS / FROZEN / ACCEPTED；P1-D CLOSED / ACCEPTED**。
