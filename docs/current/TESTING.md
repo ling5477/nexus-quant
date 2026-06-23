@@ -1,3 +1,32 @@
+## NQ-GATEM-2-READINESS-GUARD-CORE-ASSEMBLY（2026-06-23）
+
+结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮新增 Java 代码 + 测试，把 readiness guard 接入装配层（nq-app marketdata Bean），未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy。
+
+- 预检：`git branch --show-current` = `dev`。
+- 新增代码：`backend/nq-adapter-api/service/ReadinessGuardedAdapterFactory`；修改 `backend/nq-app/config/LocalTestFallbackConfiguration`（新增 readiness service Bean + 包装 3 个 marketdata Bean）。
+- 新增测试：`ReadinessGuardedAdapterFactoryTest`（3）、`LocalTestFallbackConfigurationReadinessTest`（3，直接实例化配置类、不启动 Spring context / 不连 DB / 不外联）。
+- 测试命令与结果：
+  - `mvn -f backend/pom.xml -o -pl nq-adapter-api -am test` → BUILD SUCCESS（adapter-api 33 tests / 0 fail / 0 error / 0 skipped；含 DefaultAdapterReadinessServiceTest 16 + ReadinessGuardWiringTest 11 + ReadinessGuardedAdapterFactoryTest 3 + NoopMarketDataAdapterTest 3）。
+  - `mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` → BUILD SUCCESS（adapter-api 33 / OKX 34 / Binance 51；0 fail / 0 error / 1 skipped live diagnostic gate）。
+  - `mvn -f backend/pom.xml -o -pl nq-app -am test` → BUILD SUCCESS（nq-app 67 tests / 0 fail / 0 error / 2 skipped 为既有 gated：NqAppContextPostgresSmokeTest、NoOutboundExchangeGuardTest 各 skip 1）；Spring context 集成测试 `MarketdataControllerLocalIntegrationTest` / `OkxBootstrapNoOutboundLocalContextTest` 经修改后配置仍通过；`ModuleBoundaryArchTest` / `PackageBoundaryArchTest` 通过。
+  - `git diff --check` 通过。
+- 断言要点：装配后 marketdata adapter 为 `ReadinessGuardedMarketDataAdapter` 实例；PAPER→`NO_REAL_DISABLED`、OKX/Binance→`ENDPOINT_DISABLED_SENTINEL`，均 `subscribed=false`；交易工厂产出 OKX/Binance/unknown place order fail-closed（IllegalStateException）；delegate 未就绪不被触达；ack/异常 message 不含 secret/apiKey/token/signature/passphrase。
+- 未访问外网 / 交易所；未读取 `.env` 或真实 credential；未启用 LIVE / AI / DH runtime；nq-app 集成测试连接的是本地测试 Postgres（既有测试基础设施），OkxRecoveryService 日志确认 `recovery_disabled` / 无 outbound。
+
+## NQ-GATEM-1-READINESS-GUARD-WIRING（2026-06-23）
+
+结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮新增 Java 代码 + 测试，把 readiness guard 接入行情订阅与交易动作入口，未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy。
+
+- 预检：`git branch --show-current` = `dev`；预检 `git status --short` 仅 GateM-0 后续单文件改动。
+- 新增代码：`backend/nq-adapter-api/service/ReadinessGuardedMarketDataAdapter`、`ReadinessGuardedTradingAdapter`；修改 `model/AdapterCapability`（+UNSPECIFIED）、`service/DefaultAdapterReadinessService`（null/UNSPECIFIED fail-closed）。
+- 新增/更新测试：`ReadinessGuardWiringTest`（11 用例）；`DefaultAdapterReadinessServiceTest` 扩至 16 用例。
+- 测试命令与结果：
+  - `mvn -f backend/pom.xml -o -pl nq-adapter-api -am test` → BUILD SUCCESS（adapter-api 30 tests / 0 fail / 0 error / 0 skipped；含 DefaultAdapterReadinessServiceTest 16 + ReadinessGuardWiringTest 11 + NoopMarketDataAdapterTest 3）。
+  - `mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` → BUILD SUCCESS（adapter-api 30 / OKX 34 / Binance 51；0 fail / 0 error / 1 skipped live diagnostic gate）。
+  - `git diff --check` 通过。
+- 断言要点：OKX/Binance place order fail-closed（IllegalStateException）；Noop marketdata `subscribed=false`/`NO_REAL_DISABLED`（非 success）；unknown venue fail-closed；LIVE disabled mutating fail-closed；delegate 在未就绪时绝不被触达（RecordingMarketDataAdapter.called=false / FailingTradingAdapter 触达即 AssertionError）；guard 异常 + ack message 不含 secret/apiKey/token/signature/passphrase；null/UNSPECIFIED capability fail-closed。
+- 未访问外网 / 交易所 / DB；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime；未使用真实 credential（固定 Clock + 纯内存断言）。
+
 ## NQ-GATEM-0-ADAPTER-READINESS-RUNTIME-ENFORCEMENT（2026-06-23）
 
 结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮新增 Java 代码 + 测试，转入 GateM runtime enforcement，未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy。

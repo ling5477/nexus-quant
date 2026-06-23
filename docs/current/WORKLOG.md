@@ -1,3 +1,40 @@
+## NQ-GATEM-2-READINESS-GUARD-CORE-ASSEMBLY（2026-06-23）
+
+把 GateM-1 readiness guard decorator 接入实际装配层，使调用方默认拿到经 readiness 守卫的 adapter。结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮写代码 + 测试 + 少量状态同步，未新增合同/freeze 文档。
+
+- 装配点：`backend/nq-app/config/LocalTestFallbackConfiguration`（@Profile local/test/gated-verify，既有 fallback 装配点，唯一定义 `MarketDataAdapter` Bean 的配置）。
+- 新增装配原语：`backend/nq-adapter-api/service/ReadinessGuardedAdapterFactory`（纯静态 `guarded(MarketDataAdapter|TradingAdapter, AdapterReadinessService)`，readiness guard 外层、delegate 内层；无 IO/credential/网络）。
+- 接入改动：`LocalTestFallbackConfiguration` 新增 `@Bean AdapterReadinessService adapterReadinessService()`（`DefaultAdapterReadinessService`），`paper/okx/binanceMarketDataAdapter` 三个 Bean 改为接收 `AdapterReadinessService` 参数并经 `ReadinessGuardedAdapterFactory.guarded(new NoopMarketDataAdapter(venue), service)` 包装。Bean 类型仍为 `MarketDataAdapter`、Bean 名不变，按名/限定注入不受影响。
+- 行为：装配后 PAPER→`NO_REAL_DISABLED`、OKX/Binance→`ENDPOINT_DISABLED_SENTINEL`，均 `subscribed=false` 且 delegate 未触达；交易工厂证明 OKX/Binance/unknown place order fail-closed。
+- P2 处理：
+  - GateM-1 P2-1（decorator 未注入主链路）：本轮已在装配层接入 marketdata Bean；trading 真实 Bean（`ExchangeAdapterConfiguration` 返回具体 `OkxExchangeAdapter`/`BinanceExchangeAdapter`）重包装会改 Bean 类型、影响按类型注入方，属并发改造，保留为下一步，本轮以工厂 + 测试证明 trading 装配原语 fail-closed。
+  - GateM-1 P2-2（双重 NO_REAL_DISABLED）：确立 readiness guard 为外层权威（OKX/Binance 产出 ENDPOINT_DISABLED_SENTINEL），Noop stub 为内层兜底且因 guard 短路而不被触达，无重复事件。
+  - GateM-1 P2-3（delegate 正向路径不可达）：DefaultAdapterReadinessService 永不 READY，故 guard 的 delegate 透传分支仍不可测；保持 fail-closed 优先，已在报告说明。
+  - GateM-1 P2-4（getOrder/listOpenOrders 共用 QUERY_ORDER）：本轮装配未要求拆分，维持现状。
+- 测试：`ReadinessGuardedAdapterFactoryTest`（3，工厂产出 guard 包装且 fail-closed）；`LocalTestFallbackConfigurationReadinessTest`（3，直接实例化配置类断言装配后 md adapter 为 guard 包装且 fail-closed，不启动 Spring/DB/外联）；GateM-0/1 测试全保留。
+- 验证：`mvn -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（adapter-api 33 / OKX 34 / Binance 51；1 skipped）；`mvn -o -pl nq-app -am test` BUILD SUCCESS（nq-app 67；2 skipped，Spring context 集成测试通过、ArchUnit 边界通过）；`git diff --check` 通过。
+- 边界：未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未访问外网或真实交易所；未读取 `.env` 或真实 credential；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未删除 rawPayload 字段；未把 OKX/Binance 标记为 future-real-ready。
+- 回滚：删除 `ReadinessGuardedAdapterFactory` / `ReadinessGuardedAdapterFactoryTest` / `LocalTestFallbackConfigurationReadinessTest`，还原 `LocalTestFallbackConfiguration` 三个 md Bean 与 readiness service Bean，并还原本轮 current docs。
+- 下一步：`NQ-GATEM-2-READINESS-GUARD-CORE-ASSEMBLY-REVIEW`。
+
+## NQ-GATEM-1-READINESS-GUARD-WIRING（2026-06-23）
+
+把 GateM-0 `AdapterReadinessService` 从 service-level guard 接入低风险 runtime 入口（行情订阅 + 交易动作）。结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮写代码 + 测试 + 少量状态同步，未新增合同/freeze 文档。
+
+- 接入策略：采用 decorator 包装（推荐策略 2），不改 nq-core 主链路、不新增 HTTP API、不接真实交易所。
+- 新增 Java（`backend/nq-adapter-api/service`，纯 decorator，无 IO / credential / 网络）：
+  - `ReadinessGuardedMarketDataAdapter`（implements `MarketDataAdapter`）：bars/trades/order-book 订阅前先 `readinessService.evaluate(venue, SUBSCRIBE_*)`，未就绪返回 `subscribed=false` disabled ack（复用 `AdapterError`，code=主原因枚举名，message 仅含 venue/status/reasons），**绝不调用 delegate**。
+  - `ReadinessGuardedTradingAdapter`（implements `TradingAdapter`）：place/cancel/get/listOpen 前先 `readinessService.requireReady(venue, capability)`，未就绪抛 `IllegalStateException` 且绝不触达 delegate。
+- 修复 GateM-0 P2-2：`AdapterCapability` 新增 `UNSPECIFIED(false,false,false)`；`DefaultAdapterReadinessService` 对 null / UNSPECIFIED capability 统一返回 `UNSPECIFIED` + `UNKNOWN_REQUIRES_REVIEW` fail-closed，decision.capability 不再误报 `PLACE_ORDER`。
+- P2-3：保留词汇未被新代码当作已启用能力；guard 只产出 fail-closed 结果，default service 仍永不产出 READY。
+- 新增/更新测试：
+  - `ReadinessGuardWiringTest`（11 用例）：marketdata NOOP/OKX/BINANCE/unknown fail-closed、跨通道永不 subscribed=true、delegate 未就绪不被触达（RecordingMarketDataAdapter）、trading place/cancel/query fail-closed（FailingTradingAdapter 触达即 AssertionError）、LIVE disabled mutating fail-closed、异常 message 不含 secret/apiKey/token/signature/passphrase。
+  - `DefaultAdapterReadinessServiceTest`：扩展 `nullCapabilityFailsClosed`（断言 capability=UNSPECIFIED）+ 新增 `unspecifiedCapabilityFailsClosed`，共 16 用例。
+- 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（adapter-api 30 / OKX 34 / Binance 51；0 fail / 0 error / 1 skipped）；`git diff --check` 通过。
+- 边界：未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未访问外网或真实交易所；未读取 `.env` 或真实 credential；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未删除 rawPayload 字段；未把 OKX/Binance 标记为 future-real-ready；guard 未接入 nq-core 主链路。
+- 回滚：删除 `ReadinessGuardedMarketDataAdapter` / `ReadinessGuardedTradingAdapter` / `ReadinessGuardWiringTest`，还原 `AdapterCapability`（移除 UNSPECIFIED）/ `DefaultAdapterReadinessService`（恢复 PLACE_ORDER 占位）/ `DefaultAdapterReadinessServiceTest`，并还原本轮 current docs 同步。
+- 下一步：`NQ-GATEM-1-READINESS-GUARD-WIRING-REVIEW`。
+
 ## NQ-GATEM-0-ADAPTER-READINESS-RUNTIME-ENFORCEMENT（2026-06-23）
 
 从 GateL docs-only 转入 GateM runtime enforcement：新增 adapter readiness 运行时模型与 fail-closed 服务。结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮写代码 + 测试 + 少量状态同步，未新增 GateL/GateM 合同或 freeze 文档。
