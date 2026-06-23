@@ -1,3 +1,24 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN（2026-06-23）
+
+结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。本轮只规划如何把真实 local/test 后端 + 前端 adapter readiness E2E readiness smoke 固化进 GitHub Actions；未修改 `.github/workflows/ci.yml`、Java/TypeScript/Python 代码、测试代码、migration、frontend 页面、backend 生产逻辑、deploy 或 scripts。
+
+只读盘点结论：
+
+- 当前 `ci.yml` jobs：diff-check / no-outbound-guard / ci-security-smoke / backend / postgres-flyway / frontend / frontend-no-backend-e2e / research / secret-scan。
+- `backend` 与 `postgres-flyway` 已各自有 job-local PostgreSQL service；`postgres-flyway` 已有 `NqAppContextPostgresSmokeTest`；`frontend` 已有 build；`frontend-no-backend-e2e` 只跑四个 no-backend smoke，不启动后端。
+- `adapter-readiness-panel-backend-smoke.spec.ts` 依赖真实后端：真实 `loginToConsole`、真实 `/api/auth/login`、真实 `GET /api/adapters/readiness`，断言 200 + payload/UI fail-closed。
+- `support.ts` 默认使用 `admin / ChangeMe123!`（来自 local/test profile 默认用户），登录后通过 API 准备/重置 OKX/SIM 测试账户 fixture；token 不应打印。
+- `vite.config.ts` 只有 dev `server.proxy` 转发 `/api` 到 18888，`preview` 无 proxy；后续 CI 实现应优先用现有 `run-e2e.mjs` dev server runner，而不是假设 preview 可代理后端。
+
+规划验证策略：
+
+- Batch 5A 本轮仅 docs-only plan，不执行 Maven / npm / Playwright / Python。
+- Batch 5B implementation 才允许新增独立 `frontend-e2e-backend-smoke` job，并只跑 `adapter-readiness-panel-backend-smoke.spec.ts`。
+- Batch 5C first-run review 必须核对目标 commit 的 Actions run、后端 health=UP、Playwright pass、readiness 45 条 fail-closed、logs/artifacts 无 secret、backend 被关闭。
+- Batch 5D freeze review 需要 first green run、artifact/log redaction 证据、no-outbound/credential boundary 证据和 P0/P1=0。
+
+边界：No real credential read；No outbound exchange call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real permission probe；No workflow/code/test/migration implementation。
+
 ## NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN（2026-06-23）
 
 结论：**PASS**。在真实本地 local 后端（端口 18888 + 本地 PostgreSQL 5432）+ Vite（5179 代理 `/api`→18888）下运行 adapter readiness panel E2E，证明前端真实消费 GateM-5A `GET /api/adapters/readiness` 且 fail-closed。仅新增 1 个前端 e2e spec + docs，未改 backend。

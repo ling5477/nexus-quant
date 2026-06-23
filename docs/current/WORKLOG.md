@@ -1,3 +1,25 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN（2026-06-23）
+
+新增 `docs/current/NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md`，规划真实 local/test 后端 + 前端 adapter readiness E2E readiness smoke 的 GitHub Actions 固化路径。结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。
+
+执行边界：
+
+- 先推送当前 `dev` 提交 `e3338742 test(frontend): verify adapter readiness panel with backend` 到 `origin/dev`。
+- 只读检查 `.github/workflows/ci.yml`、adapter readiness 真实后端 E2E spec、E2E runner/support、Playwright/Vite config、`backend/nq-app` local/test profile、current CI/testing/worklog/roadmap/status docs。
+- 未修改 workflow、Java/TypeScript/Python 代码、测试代码、migration、frontend 页面、backend 生产逻辑、deploy 或 scripts。
+- 未访问外网或真实交易所；未读取 `.env`、真实 credential、key/pem/token/secret dump 或日志备份；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe。
+
+计划要点：
+
+- 后续实现建议新增独立 `frontend-e2e-backend-smoke` job，使用 job-local PostgreSQL service，不复用其他 job DB。
+- 后端用 local profile 启动在 18888，显式 `CI=true` / `NQ_NO_OUTBOUND=true` / placeholder endpoints / disabled recovery+WS+catalog sync，等待 `/actuator/health=UP`。
+- 前端用现有 `run-e2e.mjs` dev server runner 和 Vite dev `/api` proxy；不直接使用 `vite preview`，因为当前 preview 无 proxy。
+- Playwright 首批只跑 `adapter-readiness-panel-backend-smoke.spec.ts`，不跑全量 E2E，不用 retry 掩盖失败。
+- artifact/log 必须先走 Batch 4C 风格 redaction gate；首批优先上传 sanitized backend log 和必要失败证据，不上传 raw token/storage state。
+- `spring-boot:run` + Playwright 这一长运行组合的 no-outbound parity 需要 Batch 5B/5C 真实证据；若不能安装同等进程级 guard，必须登记为 P2 follow-up。
+
+下一步：`NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN-REVIEW`，只评审 plan；接受前不得修改 `.github/workflows/ci.yml`。
+
 ## NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN（2026-06-23）
 
 在真实本地 local 后端 + 前端环境下运行 adapter readiness panel E2E，确认前端真实消费 GateM-5A `GET /api/adapters/readiness` 且仍 fail-closed。结论：**PASS**。本轮以验证为主，仅新增 1 个前端 e2e spec + 少量文档同步，未改后端、未新增后端 API / mock / 合同 / review / freeze 文档。

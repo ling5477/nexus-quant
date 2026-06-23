@@ -29,6 +29,7 @@ GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / err
 ## CI current authority
 
 - [NQ_CI_BASELINE_PLAN.md](NQ_CI_BASELINE_PLAN.md)
+- [NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md](NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md)：真实 local/test 后端 + 前端 adapter readiness E2E readiness smoke 的 CI planning-only 基线（**PASS / PLAN ONLY / NOT IMPLEMENTED**）。规划独立 `frontend-e2e-backend-smoke` job、job-local PostgreSQL、local backend health、Vite dev proxy、Playwright 单 spec、no-outbound / no-secret / no-LIVE / no-AI / no-DH 边界、artifact redaction 和 Batch 5A-review → 5B → 5C → 5D 拆分；本轮未改 workflow / code / tests / migration。
 - [NQ_CI_SECURITY_GUARD_PLAN.md](NQ_CI_SECURITY_GUARD_PLAN.md)
 - [NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md](NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md)：Batch 5B-ENV env/secret/no-outbound guard（plan ACCEPTED；implementation **FROZEN / ACCEPTED**，freeze evidence run `27876451289`；current Batch 5B-SMOKE **FROZEN / ACCEPTED**，见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`）。
 - [NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md](NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md)：Batch 5B-ENV plan review（PASS / ACCEPTED）。
