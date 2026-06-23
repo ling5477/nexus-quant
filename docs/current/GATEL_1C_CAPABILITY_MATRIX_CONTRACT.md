@@ -3,8 +3,8 @@
 任务：NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT
 日期：2026-06-23
 分支：dev
-结论：**PASS / CONTRACT FROZEN**
-状态：**GateL-1C capability matrix contract frozen**；GateL-1B overall No-Real hardening baseline **FROZEN / ACCEPTED**；adapter readiness **NOT READY / NOT FROZEN / NOT AUTHORIZED**。
+结论：**PASS / FROZEN / ACCEPTED**
+状态：**GateL-1C capability matrix contract FROZEN / ACCEPTED**；GateL-1B overall No-Real hardening baseline **FROZEN / ACCEPTED**；adapter readiness **NOT READY / NOT FROZEN / NOT AUTHORIZED**。
 
 > 本文件只定义 capability matrix 合同，不实现 adapter、不修改交易逻辑、不新增 API / DTO / migration / workflow。
 > capability matrix 只能表达当前能力状态，不能启用能力。任何 real exchange capability 在 GateL 内均不得作为已授权真实交易能力解释。
@@ -227,5 +227,13 @@ GateL-1C review has accepted this capability matrix contract as PASS / REVIEW AC
 **NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW：PASS / REVIEW ACCEPTED（2026-06-23）。**
 
 Review accepted the GateL-1C capability matrix contract as a frozen contract-only baseline. Adapter readiness remains **NOT READY / NOT FROZEN / NOT AUTHORIZED**. Real exchange access, LIVE, real credential, AI, DH runtime, and adapter future-real-ready marking remain **NO**.
+
+Recommended next task: **NQ-GATEL-1D-ERROR-MODEL-CONTRACT**。
+
+## 18. Freeze Acceptance Update
+
+**NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-FREEZE：PASS / FROZEN / ACCEPTED（2026-06-23）。**
+
+Freeze accepted this capability matrix contract and its review as the GateL-1C frozen contract-only baseline. The matrix remains descriptive only and cannot enable real exchange capability, LIVE, real credential, AI, DH runtime, RealClient, real provider, real permission probe, real credential governance bridge, or adapter future-real-ready marking.
 
 Recommended next task: **NQ-GATEL-1D-ERROR-MODEL-CONTRACT**。

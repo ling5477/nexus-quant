@@ -1,3 +1,15 @@
+## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-FREEZE（2026-06-23）
+
+结论：**PASS / FROZEN / ACCEPTED**。本轮只新增 capability matrix contract freeze review 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
+
+- 预检：`Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；预检 `git status --short` 无输出。
+- 只读取证：`docs/current/GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md`、`docs/current/GATEL_1C_CAPABILITY_MATRIX_CONTRACT_REVIEW.md`、GateL current docs、`backend/nq-adapter-api/**`、`backend/nq-adapter-okx/**`、`backend/nq-adapter-binance/**`。
+- Adapter evidence：`NoopMarketDataAdapter` 返回 `NO_REAL_DISABLED` / `subscribed=false`；OKX/Binance runtime config 默认 endpoint 为 `disabled://` sentinel；OKX/Binance credential 默认 `*.unconfigured()`；permission probe boundary 仅为 forbidden endpoint / error classifier；OKX/Binance order ack/snapshot producer 使用 `suppressedOrderRawPayload()`，adapter-api rawPayload 字段仍存在。
+- 文档验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；scope check 通过。
+- 禁止措辞检查：bounded `rg` 确认 1C/freeze 文档中 `future-real-ready` 仅出现在否定、禁止或“不允许标记”语境；`real exchange` / `LIVE` / `allowed` 未形成授权语义；no-real / disabled / stub 未被写成真实 success。
+- 未执行 Maven / frontend / Python 测试，原因：本轮为 docs-only freeze，不改 Java/TypeScript/Python、API、DTO、migration、workflow 或运行时配置；源码读取仅用于文档事实取证。
+- 未访问外网、交易所、DB、容器、GitHub Actions；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime。
+
 ## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW（2026-06-23）
 
 结论：**PASS / REVIEW ACCEPTED**。本轮只新增 capability matrix contract review 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。

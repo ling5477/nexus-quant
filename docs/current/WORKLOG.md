@@ -1,3 +1,18 @@
+## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-FREEZE（2026-06-23）
+
+完成 GateL-1C capability matrix contract freeze review，新增 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT_FREEZE_REVIEW.md`，并同步 current 入口文档。结论：**PASS / FROZEN / ACCEPTED**。
+
+- 冻结对象：`GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md` + `GATEL_1C_CAPABILITY_MATRIX_CONTRACT_REVIEW.md`。
+- 冻结 capability status enum：`CLOSED_NO_REAL`、`DISABLED_SENTINEL`、`NO_REAL_DISABLED`、`STUB_ONLY`、`NOT_IMPLEMENTED`、`FUTURE_REAL_REQUIRES_GATE`、`FORBIDDEN_IN_GATEL`、`UNKNOWN_REQUIRES_REVIEW`。
+- 冻结 adapter / venue matrix：Noop、OKX、Binance、future-real placeholder、permission probe placeholder、marketdata no-real / future-real placeholder 全覆盖；OKX/Binance existing adapters 仍不是 future-real-ready，也不等于真实交易所授权。
+- 冻结 trading / marketdata / credential / endpoint / permission 解释：所有真实交易能力仍为 `FUTURE_REAL_REQUIRES_GATE` 或 `FORBIDDEN_IN_GATEL`；Noop marketdata 仍为 `NO_REAL_DISABLED`；OKX/Binance endpoint default 仍为 `DISABLED_SENTINEL`；OKX/Binance credential source 仍为 unconfigured / no-real default；real credential governance bridge 仍 NOT IMPLEMENTED。
+- 保留 carve-out：rawPayload producer suppression CLOSED / ACCEPTED，但 rawPayload field deletion NOT DONE / SEPARATE COMPATIBILITY TASK。
+- Adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；真实交易所、LIVE、真实 credential、AI、DH runtime 仍禁止；RiskGate / OrderStateMachine / Ledger / Audit 仍不可绕过。
+- 验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；bounded `rg` 检查未把 adapter 写成 future-real-ready，未把 real exchange / LIVE 写成 allowed，no-real / disabled / stub 未被写成真实 success。
+- 边界：docs-only freeze；未修改 Java/TypeScript/Python；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未读取 `.env` 或真实 credential；未访问外网或真实交易所；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未删除 rawPayload 字段。
+- 回滚：删除 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT_FREEZE_REVIEW.md`，并还原本轮对 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md`、`GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 的同步。
+- 下一步：`NQ-GATEL-1D-ERROR-MODEL-CONTRACT`，不得直接进入 implementation / real adapter。
+
 ## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW（2026-06-23）
 
 完成 GateL-1C capability matrix contract review，新增 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT_REVIEW.md`，并同步 current 入口文档。结论：**PASS / REVIEW ACCEPTED**。
