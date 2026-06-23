@@ -1,3 +1,15 @@
+## NQ-GATEL-1D-ERROR-MODEL-CONTRACT（2026-06-23）
+
+结论：**PASS / FROZEN / ACCEPTED（contract-only）**。本轮只新增 adapter error model contract 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
+
+- 预检：`Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；预检 `git status --short` 无输出。
+- 只读取证：`backend/nq-adapter-api/**`（`AdapterError` / `AdapterResultCategory` / `AdapterOrderAck` / `MarketDataSubscriptionAck` / `NoopMarketDataAdapter` / `HistoricalKlineAdapterException`）、`backend/nq-adapter-okx/**`（`OkxErrorClassifier` / `OkxErrorCode` / `OkxPermissionProbeBoundary` / `OkxRuntimeConfig`）、`backend/nq-adapter-binance/**`（`BinanceErrorClassifier` / `BinancePermissionProbeBoundary`）、`docs/current/GATEL_1C_*`、`GATEL_1B_*`、`GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- Error model evidence：`NoopMarketDataAdapter` 订阅返回 `NO_REAL_DISABLED` / `FATAL_FAILURE` / `subscribed=false` / `retryable=false`；OKX/Binance classifier 将 timeout/throttle/auth/remote 映射到既有 `AdapterResultCategory`；permission probe boundary 对 order/cancel/withdraw/transfer/blank endpoint fail-closed，classify 仅返回脱敏字符串；runtime config 默认 `disabled://` sentinel + `*.unconfigured()` credential。
+- 文档验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；scope check 通过。
+- 禁止措辞检查：bounded `rg` 确认 1D 文档中 retryable=false 错误未被写成“可继续交易”“可重试后下单”，`real exchange` / `LIVE` / `future-real-ready` 仅出现在否定、禁止或“须另起 Gate / 不允许”语境。
+- 未执行 Maven / frontend / Python 测试，原因：本轮为 docs-only contract，不改 Java/TypeScript/Python、API、DTO、migration、workflow 或运行时配置；源码读取仅用于文档事实取证。
+- 未访问外网、交易所、DB、容器、GitHub Actions；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime。
+
 ## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-FREEZE（2026-06-23）
 
 结论：**PASS / FROZEN / ACCEPTED**。本轮只新增 capability matrix contract freeze review 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。

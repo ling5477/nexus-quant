@@ -1,3 +1,18 @@
+## NQ-GATEL-1D-ERROR-MODEL-CONTRACT（2026-06-23）
+
+完成 GateL-1D adapter error model contract，新增 `GATEL_1D_ERROR_MODEL_CONTRACT.md`，并同步 current 入口文档。结论：**PASS / FROZEN / ACCEPTED（contract-only）**。
+
+- 定义对象：统一 OKX / Binance / Noop / permission probe / future-real placeholder 的错误分类、retry 语义、fail-closed 规则与安全解释边界，防止后续 agent 把 no-real disabled / credential missing / permission denied / rate limit / venue unavailable 误判为可重试或可继续真实交易。
+- 冻结 error status enum：`NO_REAL_DISABLED`、`NETWORK_DISABLED`、`CREDENTIALS_MISSING`、`AUTH_FAILED`、`PERMISSION_DENIED`、`IP_NOT_ALLOWED`、`RATE_LIMITED`、`VENUE_UNAVAILABLE`、`INVALID_SYMBOL`、`UNSUPPORTED_OPERATION`、`RISK_REJECTED`、`ORDER_STATE_REJECTED`、`LEDGER_REJECTED`、`RAW_PAYLOAD_SUPPRESSED`、`UNKNOWN_REQUIRES_REVIEW`，并映射到既有 `AdapterResultCategory`（SUCCESS/ACCEPTED/NOT_FOUND/DEFERRED/RETRYABLE_FAILURE/FATAL_FAILURE/THROTTLED/AUTH_FAILURE/REMOTE_UNAVAILABLE）。本合同不新增 enum / DTO，只增加解释约束。
+- 冻结 retry 语义：retryable=false 终态集合 + INVALID_SYMBOL；conditional 仅 RATE_LIMITED（backoff/circuit breaker，禁止无限重试）与 VENUE_UNAVAILABLE（circuit breaker/kill switch/no-outbound guard，不得绕过）；UNKNOWN_REQUIRES_REVIEW 默认 fail-closed。
+- 覆盖 adapter / venue（Noop / OKX / Binance / future-real / permission probe / marketdata placeholder）、trading 路径、marketdata 路径、credential / permission 维度，以及 risk / order / ledger ownership 与 forbidden interpretation。
+- 锚定既有代码事实：`NoopMarketDataAdapter` = `NO_REAL_DISABLED` / `FATAL_FAILURE` / `subscribed=false`；`OkxErrorClassifier` / `BinanceErrorClassifier` 既有映射；`Okx`·`BinancePermissionProbeBoundary` forbidden endpoint fail-closed + 脱敏 classify；runtime config 默认 `disabled://` sentinel + `*.unconfigured()` credential。
+- Adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；真实交易所错误处理须另起 Gate；真实交易所、LIVE、真实 credential、AI、DH runtime 仍禁止；RiskGate / OrderStateMachine / Ledger / Audit 仍不可绕过。
+- 验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；bounded `rg` 检查未把 retryable=false 错误写成可继续交易、未把 real exchange / LIVE 写成 allowed。
+- 边界：docs-only contract；未修改 Java/TypeScript/Python；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未读取 `.env` 或真实 credential；未访问外网或真实交易所；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未删除 rawPayload 字段。
+- 回滚：删除 `GATEL_1D_ERROR_MODEL_CONTRACT.md`，并还原本轮对 `GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 的同步。
+- 下一步：`NQ-GATEL-1D-ERROR-MODEL-CONTRACT-REVIEW`，不得直接进入 implementation / real adapter。
+
 ## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-FREEZE（2026-06-23）
 
 完成 GateL-1C capability matrix contract freeze review，新增 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT_FREEZE_REVIEW.md`，并同步 current 入口文档。结论：**PASS / FROZEN / ACCEPTED**。
