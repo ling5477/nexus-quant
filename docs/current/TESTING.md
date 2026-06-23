@@ -1,3 +1,26 @@
+## NQ-GATEM-4-READINESS-GUARD-RUNTIME-SMOKE（2026-06-23）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮 test-only（无 main 代码改动），新增消费侧 runtime smoke，证明 scheduler 侧 `AdapterBackedTradingVenueGateway` 消费 Spring 装配的 OKX/Binance guarded trading adapter 时仍 fail-closed；未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy，未访问外网或真实交易所。
+
+执行命令与结果：
+
+- `mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance,nq-app -am test`：**BUILD SUCCESS**；`TradingVenueGatewayReadinessRuntimeSmokeTest` tests=3 / failures=0 / errors=0 / skipped=0；`nq-app` tests=73 / failures=0 / errors=0 / skipped=2（既有 CI-only `NqAppContextPostgresSmokeTest` + 1 live diagnostic）；GateM-0/1/2/3 测试（含 `ExchangeAdapterConfigurationReadinessTest`、`ReadinessGuardWiringTest`、`ReadinessGuardedAdapterFactoryTest`、`DefaultAdapterReadinessServiceTest`、OKX/Binance adapter 回归）全绿。
+- `git diff --check`：通过。
+
+覆盖点：
+
+- 消费侧 `AdapterBackedTradingVenueGateway`（nq-scheduler @Component）对 OKX / Binance 的 `placeOrder` / `cancelOrder` / `getOrderStatus` 均 fail-closed，统一降级为 `REMOTE_UNAVAILABLE`（非 ACCEPTED/SUCCESS）。
+- 失败原文携带 readiness guard 文案 `adapter capability not ready`，证明短路发生在 validate / HTTP / cache / order mutation 之前。
+- 失败 / 异常 message 不含 `secret` / `apiKey` / `api_key` / `token` / `signature` / `passphrase`。
+- `Collection<TradingAdapter>` 恰为 OKX + BINANCE 两个 venue，gateway 构造不抛 duplicate venue。
+- `listOpenOrders` 无上层 gateway 方法，故在 gateway 消费的同一 Spring 装配 guarded Bean 上直接断言 fail-closed。
+
+风险与未覆盖：
+
+- 仍使用轻量 `AnnotationConfigApplicationContext`（无 web/DB/scheduler 业务执行）；全量 `@SpringBootTest` context 启动由既有 CI-only `NqAppContextPostgresSmokeTest` 覆盖。
+- `DefaultAdapterReadinessService` 永不产出 READY；本轮不实现 real provider / real permission probe / real credential governance bridge。
+- 测试输出可能出现既有 OKX connection fingerprint `apiKey=missing`，未输出真实 credential 值。
+
 ## NQ-GATEM-3-READINESS-GUARD-TRADING-ASSEMBLY（2026-06-23）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 Java 代码 + 测试，把 OKX / Binance trading adapter 的 app 装配纳入 readiness guard；未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy，未访问外网或真实交易所。

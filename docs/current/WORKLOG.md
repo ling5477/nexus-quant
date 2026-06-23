@@ -1,3 +1,19 @@
+## NQ-GATEM-4-READINESS-GUARD-RUNTIME-SMOKE（2026-06-23）
+
+补一个更贴近真实调用路径的消费侧 runtime smoke，证明 scheduler 侧 `AdapterBackedTradingVenueGateway` 消费 Spring 装配的 OKX/Binance guarded trading adapter 时仍 fail-closed。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮 test-only（无 main 代码改动）+ 少量状态同步，未新增合同 / review / freeze 文档。
+
+变更摘要：
+
+- 新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingVenueGatewayReadinessRuntimeSmokeTest`：用 `ExchangeAdapterConfiguration` 轻量 Spring context 装配 OKX/Binance guarded trading Bean，注入真实 scheduler 消费者 `AdapterBackedTradingVenueGateway`，从 gateway 触发 place/cancel/getOrderStatus，断言全部降级为 `REMOTE_UNAVAILABLE`。
+- 选路：消费侧 gateway 路径（方案 B）。被否方案：直接调 adapter Bean（GateM-3 `ExchangeAdapterConfigurationReadinessTest` 已覆盖）；`@SpringBootTest` 全量 context（成本高、与既有 `NqAppContextPostgresSmokeTest` 重叠且需 DB）。
+- 覆盖：OKX + Binance；place/cancel/getOrder 走 gateway；listOpenOrders 无上层 gateway 方法，在同一 Spring 装配 guarded Bean 上直接断言 fail-closed。
+- 断言：`REMOTE_UNAVAILABLE`（非 ACCEPTED/SUCCESS）、失败原文含 `adapter capability not ready`（证明短路早于 validate/HTTP/cache/mutation）、message 脱敏（无 secret/apiKey/api_key/token/signature/passphrase）、无 duplicate venue（集合恰为 OKX+BINANCE 且 gateway 构造不抛）。
+- 测试：`TradingVenueGatewayReadinessRuntimeSmokeTest`（3）；GateM-0/1/2/3 测试全保留。
+- 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance,nq-app -am test` BUILD SUCCESS（nq-app 73 / 0 / 0 / 2 skipped 为既有 CI-only smoke + live diagnostic）；`git diff --check` 通过。
+- 边界：test-only，无 main 改动；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未访问外网或真实交易所；未读取 `.env` / credential；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未删除 rawPayload 字段；未把 OKX/Binance 标记为 future-real-ready。
+- 回滚：删除本轮新增测试文件并还原本轮 current docs，无 runtime/DB/credential/provider/exchange 副作用。
+- 下一步：commit 本轮实现，或 `NQ-GATEM` 后续 review。
+
 ## NQ-GATEM-3-READINESS-GUARD-TRADING-ASSEMBLY（2026-06-23）
 
 把 OKX / Binance trading adapter 的 app 装配纳入 readiness guard。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮写 Java 代码 + 测试 + 少量状态同步，未新增合同 / review / freeze 文档。
