@@ -1,3 +1,44 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW（2026-06-23）
+
+结论：**FAIL / FIRST-RUN-FIX REQUIRED**。只评审 GitHub Actions first run evidence；未修改 workflow、Java / TypeScript / Python 代码、frontend tests、migration、scripts/deploy。
+
+Run evidence：
+
+- Workflow: `NQ CI Baseline`
+- Run: `28033918182` / `https://github.com/ling5477/nexus-quant/actions/runs/28033918182`
+- Commit / branch / trigger: `2e9c956ebc5b0a01b57f44e98642553e37bf7226` (`2e9c956e`) / `dev` / `push`
+- Overall: completed / failure
+- Target job: `Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82981901389`) existed and failed
+
+Target job step evidence：
+
+- PostgreSQL service / `Initialize containers`: success.
+- `Start nq-app local backend`: success.
+- `Wait for backend health UP`: success.
+- `Run adapter readiness backend E2E`: success.
+- Playwright command confirmed from workflow: `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`（单 spec，未扩大到全量 E2E）。
+- `Cleanup backend process`: success; `Stop containers`: success.
+- `Prepare sanitized backend smoke artifacts`: success.
+- First failing step: `Pre-upload redaction gate (frontend backend smoke artifacts)`; `Upload frontend backend smoke artifacts` skipped.
+
+Artifact / log evidence：
+
+- Artifact metadata only shows existing `nq-postgres-flyway-schema-artifacts`; no `nq-frontend-e2e-backend-smoke-artifacts` upload.
+- This is fail-closed and prevents unsafe artifact publication, but it also means backend log / health artifact content could not be accepted as first-run evidence.
+- `gh run view --log-failed` and job log download returned GitHub API HTTP 403 (`Must have admin rights to Repository`), so exact redaction rule/file output and backend log content were not inspectable in this review.
+
+Security boundary：
+
+- Workflow review confirms the target job uses `contents: read`, no `secrets.` reference, placeholder OKX/Binance endpoints, `CI=true`, `NQ_NO_OUTBOUND=true`, `NQ_AI_ENABLED=false`, `NQ_DH_RUNTIME_ENABLED=false`, `NQ_REAL_EXCHANGE_ENABLED=false`, and disables catalog sync / OKX recovery / OKX WS / Binance WS.
+- The target job does not inject `NQ_LIVE_ENABLED`, `NQ_REAL_PROVIDER_ENABLED`, or `NQ_REAL_CLIENT_ENABLED`.
+- Because log/artifact content was unavailable, backend log checks for exchange host / secret-like content and `spring-boot:run + Playwright runtime no-outbound parity` remain P2 evidence gaps.
+
+Decision：
+
+- Primary failure: artifact redaction fail.
+- Existing jobs were not regressed: diff-check, no-outbound guard, CI security smoke, backend Maven test, PostgreSQL/Flyway smoke, frontend build, frontend no-backend E2E, research quality gate, and secret scan all completed success.
+- Batch 5B must not be described as first green or frozen. Batch 5D freeze is blocked until a separate 5C-fix produces a green rerun with reviewable artifact/log evidence.
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5B-IMPLEMENTATION（2026-06-23）
 
 结论：**IMPLEMENTED / PENDING FIRST CI RUN**。本轮实现 `.github/workflows/ci.yml` 独立 `frontend-e2e-backend-smoke` job，并同步当前 docs；未修改 backend/frontend 业务代码、frontend tests、migration、scripts/deploy。

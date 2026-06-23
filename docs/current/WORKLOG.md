@@ -1,3 +1,38 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW（2026-06-23）
+
+评审 GitHub Actions first run：`NQ CI Baseline` run `28033918182`（URL `https://github.com/ling5477/nexus-quant/actions/runs/28033918182`），commit `2e9c956e`，branch `dev`，trigger `push`。结论：**FAIL / FIRST-RUN-FIX REQUIRED**；未 first green，未 frozen。
+
+执行边界：
+
+- 本轮只做 CI first-run review + docs evidence sync。
+- 未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、frontend tests、migration、backend production logic、frontend page code、research、scripts 或 deploy。
+- 未读取 `.env`、真实 credential、key/pem/token/secret dump 或日志备份；未使用 repository secrets；未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；未把 OKX/Binance 写成 future-real-ready。
+
+证据摘要：
+
+- Overall run：completed / failure。
+- Target job：`Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82981901389`) 存在，completed / failure。
+- 目标 job 已通过：PostgreSQL service 初始化、`Start nq-app local backend`、`Wait for backend health UP`、`Run adapter readiness backend E2E`、`Cleanup backend process`、`Prepare sanitized backend smoke artifacts`。
+- Playwright 命令仍为单 spec：`npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`，未扩大到全量 E2E。
+- first failing step：`Pre-upload redaction gate (frontend backend smoke artifacts)`。
+- `Upload frontend backend smoke artifacts` skipped；artifact metadata 仅显示既有 `nq-postgres-flyway-schema-artifacts`，未上传 `nq-frontend-e2e-backend-smoke-artifacts`。
+- `gh run view --log-failed` / job log download 返回 GitHub API HTTP 403（需要 admin rights），因此无法读取 exact redaction rule/file 输出、backend log、health JSON 内容。
+
+安全 / no-outbound 结论：
+
+- workflow metadata 与 job 段落只读复核显示：目标 job `permissions: contents: read`，未使用 `secrets.`；设置 `CI=true` / `NQ_NO_OUTBOUND=true` / placeholder OKX/Binance endpoints / `NQ_AI_ENABLED=false` / `NQ_DH_RUNTIME_ENABLED=false` / `NQ_REAL_EXCHANGE_ENABLED=false`；不注入 `NQ_LIVE_ENABLED`、`NQ_REAL_PROVIDER_ENABLED`、`NQ_REAL_CLIENT_ENABLED`。
+- 因 smoke artifact 未上传且 job logs 403，backend log 中是否存在 exchange host / secret-like 内容不能本轮确认；`spring-boot:run + Playwright runtime no-outbound parity` 继续保留 P2 evidence gap。
+
+失败分类：
+
+- Primary failure：artifact redaction fail。
+- First failing step：`Pre-upload redaction gate (frontend backend smoke artifacts)`。
+- 既有 job 未回归：Diff check、No-outbound guard、CI security smoke、Backend Maven test、PostgreSQL / Flyway smoke、Frontend build、Frontend no-backend E2E、Research quality gate、Secret scan 均 success。
+
+下一步：
+
+`NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX`：单独检查 redaction gate finding，最小修复后重跑 first-run review。不得直接进入 Batch 5D freeze；不得把本 run 写成 accepted / first green / frozen。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5B-IMPLEMENTATION（2026-06-23）
 
 实现真实后端 + 前端 adapter readiness E2E smoke 的 GitHub Actions job。结论：**IMPLEMENTED / PENDING FIRST CI RUN**；未 freeze，未 first green confirmed。

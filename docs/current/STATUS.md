@@ -6,6 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW（2026-06-23）：**FAIL / FIRST-RUN-FIX REQUIRED**。GitHub Actions `NQ CI Baseline` run `28033918182`（commit `2e9c956e`，branch `dev`，trigger `push`）中目标 job `frontend-e2e-backend-smoke` 存在但 failed。PostgreSQL service、local backend startup、`/actuator/health=UP`、Playwright 单 spec `adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`、backend cleanup 均 success；first failing step 为 `Pre-upload redaction gate (frontend backend smoke artifacts)`，smoke artifact upload skipped，overall run failure。既有 jobs 均 success。因为 smoke artifacts 未上传且 GitHub job log download 返回 HTTP 403，本轮无法审查 backend log / health JSON 内容或关闭 `spring-boot:run + Playwright runtime no-outbound parity` P2。Batch 5B 不得写成 first green 或 frozen；Batch 5D freeze blocked，下一步只能 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX` 后重跑 first-run review。
+
 - NQ GateM-5C adapter readiness 真实后端 E2E（2026-06-23）：**NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN = PASS**。在真实本地 local 后端（Spring Boot 端口 18888 + 本地 PostgreSQL 5432）+ Vite（5179，`/api` 代理到 18888）下运行 adapter readiness panel E2E，确认前端不是只在 stub 下通过，而是真实消费 GateM-5A `GET /api/adapters/readiness`。
   环境：`mvn -o -pl nq-app -am spring-boot:run -Dspring-boot.run.profiles=local` 启动后端（health UP，DB UP，OKX recovery `recovery_disabled`，0 次真实交易所外联，0 ERROR）；前端经 run-e2e.mjs 拉起 Vite。验证后已停止后端。
   直接 HTTP 验证（authed curl，token 不落盘）：unauth `GET /api/adapters/readiness` → 401；admin 登录后 authed → 200，payload 45 条（5 venue × 9 capability），无 `allowed=true`、无 `READY`、无 `liveAuthorized=true`；OKX/BINANCE 18 条全 `NOT_READY`、Noop/Paper/Sim 27 条全 `NO_REAL`、PLACE/CANCEL `liveAuthorized=false`、exchange PERMISSION_PROBE 带 `REAL_PROVIDER_NOT_IMPLEMENTED`、无 secret 泄漏。

@@ -2,7 +2,7 @@
 
 任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN
 日期：2026-06-23
-状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED / PENDING FIRST CI RUN
+状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED；5C first-run review = FAIL / FIRST-RUN-FIX REQUIRED；NOT FROZEN
 
 ## Task classification
 
@@ -564,3 +564,76 @@ This document records implementation wiring only. The GitHub Actions first run h
 Expected next evidence task:
 
 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW`
+
+## Batch 5C first-run review addendum
+
+任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW
+日期：2026-06-23
+结论：FAIL / FIRST-RUN-FIX REQUIRED；NOT FROZEN；NOT FIRST GREEN
+
+### Run evidence
+
+- Workflow: NQ CI Baseline.
+- Run id / URL: `28033918182` / `https://github.com/ling5477/nexus-quant/actions/runs/28033918182`.
+- Commit: `2e9c956ebc5b0a01b57f44e98642553e37bf7226` (`2e9c956e`).
+- Branch / trigger: `dev` / `push`.
+- Overall status: completed / failure.
+- Target job: `Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82981901389`) existed and completed failure.
+
+### Job review
+
+- PostgreSQL service: `Initialize containers` success.
+- Backend startup: `Start nq-app local backend` success.
+- Health check: `Wait for backend health UP` success.
+- Frontend E2E: `Run adapter readiness backend E2E` success.
+- Playwright command: workflow command remains `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`, so the target job did not expand to full E2E.
+- Shutdown: `Cleanup backend process` success; `Stop containers` success.
+- Artifact preparation: `Prepare sanitized backend smoke artifacts` success.
+- Artifact upload: skipped because pre-upload artifact redaction gate failed.
+- First failing step: `Pre-upload redaction gate (frontend backend smoke artifacts)`.
+
+### Security / no-outbound evidence
+
+- The job uses `contents: read` only and the workflow review found no `secrets.` reference in the target job.
+- The job env uses `CI=true`, `NQ_NO_OUTBOUND=true`, placeholder OKX/Binance endpoints, `NQ_AI_ENABLED=false`, `NQ_DH_RUNTIME_ENABLED=false`, and `NQ_REAL_EXCHANGE_ENABLED=false`.
+- The target job does not inject `NQ_LIVE_ENABLED`, `NQ_REAL_PROVIDER_ENABLED`, or `NQ_REAL_CLIENT_ENABLED`.
+- `NQ_INSTRUMENT_CATALOG_SYNC_ENABLED=false`, `NQ_OKX_RECOVERY_ENABLED=false`, `NQ_OKX_WS_ENABLED=false`, and `NQ_BINANCE_WS_ENABLED=false` remain set for this job.
+- Backend log content and generated smoke artifacts were not available to this review because GitHub job-log download returned HTTP 403 and the smoke artifact upload was correctly skipped after the redaction gate failure.
+- Because logs/artifacts were not inspectable, `spring-boot:run + Playwright runtime no-outbound parity` remains P2 evidence gap and is not closed by this run.
+
+### Artifact / redaction review
+
+- Run artifact metadata shows only the existing `nq-postgres-flyway-schema-artifacts` artifact was uploaded.
+- `nq-frontend-e2e-backend-smoke-artifacts` was not uploaded because `Pre-upload redaction gate (frontend backend smoke artifacts)` failed before upload.
+- This is fail-closed and prevents potentially sensitive backend log / health output from being published, but it means Batch 5C cannot accept the run as first green.
+- The failure likely comes from a high-risk pattern in generated text artifacts such as `backend.log` or `health.json`; exact rule/file output could not be read due GitHub Actions log permission 403 in this review.
+
+### Failure classification
+
+- Primary failure: artifact redaction fail.
+- First failing step: `Pre-upload redaction gate (frontend backend smoke artifacts)`.
+- Non-primary areas that passed: PostgreSQL service, backend startup, backend health, Playwright backend smoke, backend cleanup, existing jobs.
+- Existing jobs: Diff check, no-outbound guard, CI security smoke, backend Maven test, PostgreSQL/Flyway smoke, frontend build, frontend no-backend E2E, research quality gate, and secret scan all completed success.
+- Minimal next fix recommendation: open a separate `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX` task to inspect the redaction gate finding, then either suppress/avoid the benign generated log line at source, tighten sanitization so the post-sanitized artifact no longer contains value-bearing assignment text, or narrow the artifact gate rule only if the finding is demonstrably a false positive and still does not print matched values.
+- Batch 5D freeze is blocked until a rerun of the target job is green and artifact/log evidence is reviewable.
+
+### Review findings
+
+#### P0
+
+- None identified from accessible metadata.
+
+#### P1
+
+- The first run failed at the artifact redaction gate. This blocks first-green acceptance and Batch 5D freeze.
+
+#### P2
+
+- Backend log / health artifact content could not be inspected because the smoke artifact was not uploaded after fail-closed redaction and job log download returned GitHub API HTTP 403.
+- `spring-boot:run + Playwright runtime no-outbound parity` remains unclosed because log/artifact evidence is unavailable even though the target smoke path itself passed.
+
+### Final review recommendation
+
+NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW：FAIL.
+
+Do not mark Batch 5B as first green or frozen. Proceed only to `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX`, then rerun first-run review. Freeze remains Batch 5D and is blocked by this failed first run.
