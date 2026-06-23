@@ -2,7 +2,7 @@
 
 任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN
 日期：2026-06-23
-状态：PASS / PLAN ONLY / NOT IMPLEMENTED
+状态：PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE
 
 ## Task classification
 
@@ -409,3 +409,119 @@ The plan is acceptable as a planning baseline if Batch 5A-review confirms:
 - It treats artifacts and logs as security-sensitive outputs.
 
 Implementation is not started.
+
+## Plan review addendum
+
+任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN-REVIEW
+日期：2026-06-23
+结论：PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；REVIEW ONLY / NOT IMPLEMENTED
+
+### Review verdict
+
+The plan is sufficient to guide Batch 5B workflow implementation.
+
+It correctly keeps the first CI slice narrow: a standalone `frontend-e2e-backend-smoke` job, job-local PostgreSQL, local backend health gate, Vite dev proxy, one Playwright backend smoke spec, deterministic shutdown, and security-sensitive artifact handling.
+
+This review accepts the plan with no P0/P1 blockers. The P2 items below must be carried into Batch 5B/5C evidence and must not be silently described as already solved.
+
+### Current state review
+
+- `ci.yml` job inventory is accurate: `diff-check`, `no-outbound-guard`, `ci-security-smoke`, `backend`, `postgres-flyway`, `frontend`, `frontend-no-backend-e2e`, `research`, `secret-scan`.
+- PostgreSQL service coverage is accurately described: `backend` and `postgres-flyway` each use job-local PostgreSQL service containers.
+- Backend app context smoke is accurately described through `postgres-flyway` / `NqAppContextPostgresSmokeTest`.
+- Frontend build and no-backend E2E are accurately described.
+- There is no current real-backend frontend adapter readiness CI job.
+- `adapter-readiness-panel-backend-smoke.spec.ts` really depends on a running local backend and a Vite dev `/api` proxy; it does not stub readiness.
+- `support.ts` default login and fixture flow are suitable for a narrow CI smoke if treated as deterministic setup and not as skip/pass.
+- `vite preview` has no `/api` proxy in current `vite.config.ts`; using the existing dev server runner is the correct first implementation choice.
+
+### Proposed job review
+
+- Job name: accepted. `frontend-e2e-backend-smoke` is explicit and independent.
+- PostgreSQL: accepted. Use a separate job-local PostgreSQL service; do not attempt to reuse Batch 2 job state.
+- Backend startup: accepted with one clarification. The command should be CI-online by default, not Maven offline, unless a later implementation proves all plugins/dependencies are cached in Actions. The existing `-pl nq-app -am -DskipTests spring-boot:run -Dspring-boot.run.profiles=local` shape is correct.
+- Health check: accepted. `/actuator/health=UP` is the correct gate before Playwright.
+- Frontend startup: accepted. `VITE_API_PROXY_TARGET=http://127.0.0.1:18888` matches `vite.config.ts` dev proxy and `run-e2e.mjs`.
+- Playwright command: accepted. First slice should run only `adapter-readiness-panel-backend-smoke.spec.ts`; full E2E expansion is explicitly out of scope.
+- Shutdown: accepted. Backend PID cleanup must be `if: always()` and should verify port/process cleanup.
+- Artifacts: accepted. First implementation should avoid binary Playwright uploads unless a Batch 4C-compatible policy is implemented in the same workflow slice.
+
+### Security boundary review
+
+- Plan correctly forbids repository secrets, real credential env, real OKX/Binance endpoints, LIVE, AI, DH runtime, RealClient, real provider, and real permission probe.
+- Plan correctly requires readiness to remain fail-closed: no `READY`, no `allowed=true`, no `liveAuthorized=true`, OKX/Binance `NOT_READY`, NOOP/PAPER/SIM `NO_REAL`, permission probe `REAL_PROVIDER_NOT_IMPLEMENTED`.
+- Plan correctly requires E2E to assert no ready / usable / tradable state and no secret-like text.
+- Plan correctly disables known startup risk paths for this job through env: `NQ_INSTRUMENT_CATALOG_SYNC_ENABLED=false`, `NQ_OKX_RECOVERY_ENABLED=false`, `NQ_OKX_WS_ENABLED=false`, `NQ_BINANCE_WS_ENABLED=false`, and placeholder endpoints.
+- Plan correctly avoids injecting `NQ_LIVE_ENABLED`, `NQ_REAL_PROVIDER_ENABLED`, and `NQ_REAL_CLIENT_ENABLED`, preserving the accepted 5B-ENV env-name boundary.
+
+### No-outbound / credential boundary review
+
+Accepted with P2 follow-up.
+
+Batch 3 no-outbound evidence proves the test-scope guard and app-context smoke path, but it does not automatically prove a long-running `spring-boot:run` process plus Playwright browser runtime shape. The plan correctly names this as a gap instead of overstating coverage.
+
+Batch 5B may proceed without first implementing new no-outbound runtime parity if it:
+
+- keeps all exchange endpoints placeholder/sentinel,
+- disables startup exchange paths,
+- avoids real credential env and repository secrets,
+- records backend startup logs,
+- verifies no real exchange host appears in logs/artifacts,
+- carries runtime parity as P2 until 5B/5C evidence closes it.
+
+### Artifact / log redaction review
+
+Accepted.
+
+The plan correctly reuses Batch 4C principles: scan generated artifact directories only, fail closed, report rule + file only, never matched values, and avoid scanning `.env`, secrets, dumps, backups, or local forbidden directories.
+
+For Batch 5B, artifact redaction is not optional if backend logs or Playwright output are uploaded. If binary traces/screenshots are not covered by a concrete policy, first implementation should not upload them.
+
+### Failure handling review
+
+Accepted.
+
+The plan covers backend health timeout, PostgreSQL service failure, Flyway/Spring context startup failure, auth/login failure, fixture setup failure, readiness API failure, Playwright failure, backend cleanup failure, and no retry-as-pass. Batch 5B should preserve `retries=0` and classify deterministic failures rather than masking them.
+
+### Batch split review
+
+Accepted:
+
+- Batch 5A: plan.
+- Batch 5A-review: this review.
+- Batch 5B: workflow implementation.
+- Batch 5C: first CI run review / fix.
+- Batch 5D: freeze review.
+- Batch 5E: optional full E2E expansion plan, later only.
+
+### Batch 5B entry decision
+
+Allowed to enter Batch 5B implementation after this review.
+
+Batch 5B default scope:
+
+- Allowed: `.github/workflows/ci.yml` and minimal docs status updates.
+- Not allowed by default: Java / TypeScript / Python production code, backend production logic, frontend page code, migration, deploy, scripts, real provider, RealClient, real permission probe, LIVE, AI, DH runtime, real exchange endpoint, repository secrets.
+- `run-e2e.mjs`, `vite.config.ts`, and the E2E spec should not be changed in Batch 5B unless the implementation uncovers a CI-only test wiring issue that cannot be solved in workflow env/command configuration. If such a carve-out is needed, it must be minimal, explicitly justified, and still avoid product/runtime behavior changes.
+
+### Review findings
+
+#### P0
+
+- None.
+
+#### P1
+
+- None.
+
+#### P2
+
+- Runtime no-outbound parity for `spring-boot:run` + Playwright is not yet proven by existing Batch 3 evidence. Carry as P2 until Batch 5B/5C proves or explicitly scopes it.
+- Binary Playwright trace/screenshot upload remains deferred unless a concrete Batch 4C-compatible handling policy is added.
+- CI implementation should not use Maven `-o` by default; GitHub Actions may not have all Spring Boot plugin/dependency artifacts cached. This is an implementation command hygiene point, not a plan blocker.
+
+### Final review recommendation
+
+NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN-REVIEW：PASS.
+
+The plan is accepted as the Batch 5B implementation baseline. Batch 5B may proceed as a workflow-only implementation slice, with P2 no-outbound runtime parity and artifact binary-handling limits carried forward explicitly.

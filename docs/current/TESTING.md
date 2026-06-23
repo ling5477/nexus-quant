@@ -19,6 +19,24 @@
 
 边界：No real credential read；No outbound exchange call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real permission probe；No workflow/code/test/migration implementation。
 
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN-REVIEW（2026-06-23）
+
+结论：**PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE**。本轮只评审 `NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md`，未修改 `.github/workflows/ci.yml`、Java/TypeScript/Python 代码、测试代码、migration、frontend 页面、backend 生产逻辑、deploy 或 scripts。
+
+评审确认：
+
+- 当前 CI job 盘点准确，尚无真实后端 + adapter readiness frontend E2E job。
+- `adapter-readiness-panel-backend-smoke.spec.ts` 确实依赖真实 local backend 和 Vite dev `/api` proxy。
+- `support.ts` 默认 admin + OKX/SIM fixture 行为适合作为窄口 CI smoke，但 auth/fixture 失败必须 fail job，不能 skip/pass。
+- `vite preview` 当前无 `/api` proxy；Batch 5B 首批应使用 `run-e2e.mjs` dev server runner。
+- 独立 `frontend-e2e-backend-smoke` job、job-local PostgreSQL、18888 health gate、单 spec Playwright 命令、always kill backend、artifact redaction 策略均可作为 implementation baseline。
+
+Findings：P0=0；P1=0；P2=3（`spring-boot:run` + Playwright 运行态 no-outbound parity 尚需 5B/5C 证据；binary Playwright trace/screenshot 上传需具体 redaction policy；CI implementation 不应默认 Maven `-o`，除非 Actions cache 证据充分）。
+
+Batch 5B 准入：允许进入 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5B-IMPLEMENTATION`。默认只允许改 `.github/workflows/ci.yml` + docs；`run-e2e.mjs` / `vite.config.ts` / E2E spec 只有在 CI-only 测试接线问题无法通过 workflow env/command 解决时才允许最小 carve-out，且不得改变产品/runtime 行为。
+
+边界：No real credential read；No outbound exchange call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real permission probe；No workflow/code/test/migration implementation in this review.
+
 ## NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN（2026-06-23）
 
 结论：**PASS**。在真实本地 local 后端（端口 18888 + 本地 PostgreSQL 5432）+ Vite（5179 代理 `/api`→18888）下运行 adapter readiness panel E2E，证明前端真实消费 GateM-5A `GET /api/adapters/readiness` 且 fail-closed。仅新增 1 个前端 e2e spec + docs，未改 backend。

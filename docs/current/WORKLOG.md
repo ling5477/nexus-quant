@@ -20,6 +20,25 @@
 
 下一步：`NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN-REVIEW`，只评审 plan；接受前不得修改 `.github/workflows/ci.yml`。
 
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN-REVIEW（2026-06-23）
+
+评审 `docs/current/NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md` 是否可作为 Batch 5B workflow implementation baseline。结论：**PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE**；本轮 review-only，未实现 CI。
+
+执行边界：
+
+- 只读检查 `.github/workflows/ci.yml`、adapter readiness backend smoke、E2E runner/support、Playwright/Vite config、`application.yml` / `application-local.yml` / `application-test.yml`、current CI/testing/worklog/roadmap/status docs。
+- 仅登记 review 结论到允许的 docs；未修改 workflow、Java/TypeScript/Python 代码、测试代码、migration、frontend 页面、backend 生产逻辑、deploy 或 scripts。
+- 未访问外网或真实交易所；未读取 `.env`、真实 credential、key/pem/token/secret dump 或日志备份；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe。
+
+评审结论：
+
+- 计划的 current-state 盘点准确：当前 CI 已有 PostgreSQL service、backend app context smoke、frontend build、no-backend E2E、security/no-outbound/secret-scan；尚无真实后端 + adapter readiness frontend E2E job。
+- 计划的 job design 可接受：独立 `frontend-e2e-backend-smoke`、job-local PostgreSQL、local profile 后端 18888、health gate、Vite dev proxy、只跑 `adapter-readiness-panel-backend-smoke.spec.ts`、always kill backend、redaction-gated artifacts。
+- 计划的安全边界可接受：无 repository secrets、无真实 credential、无真实 endpoint、无 LIVE / AI / DH runtime / RealClient / real provider / real permission probe；readiness 必须 45 条 fail-closed。
+- P2 carry-forward：`spring-boot:run` + Playwright runtime no-outbound parity 需 5B/5C 证据；binary Playwright artifact 上传需具体 redaction policy；CI implementation 不应默认 Maven `-o`，除非 Actions cache 证据充分。
+
+Batch 5B 准入：允许进入 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5B-IMPLEMENTATION`。默认只改 `.github/workflows/ci.yml` + docs；`run-e2e.mjs` / `vite.config.ts` / E2E spec 仅在 CI-only 测试接线问题无法通过 workflow env/command 解决时允许最小 carve-out，且不得改变产品/runtime 行为。
+
 ## NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN（2026-06-23）
 
 在真实本地 local 后端 + 前端环境下运行 adapter readiness panel E2E，确认前端真实消费 GateM-5A `GET /api/adapters/readiness` 且仍 fail-closed。结论：**PASS**。本轮以验证为主，仅新增 1 个前端 e2e spec + 少量文档同步，未改后端、未新增后端 API / mock / 合同 / review / freeze 文档。
