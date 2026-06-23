@@ -1,14 +1,27 @@
+## NQ-GATEL-1B-D-IMPL-FREEZE（2026-06-23）
+
+完成 GateL-1B-D freeze-close，新增 `GATEL_1B_D_IMPL_FREEZE_REVIEW.md`，正式关闭 P1-D。结论：**PASS / FROZEN / ACCEPTED；P1-D CLOSED / ACCEPTED**。
+
+- 冻结对象：commit `7e442eb7`（`feat(adapter-api): mark noop marketdata as no-real disabled`），只覆盖 `NoopMarketDataAdapter` no-real status hardening 与 `NoopMarketDataAdapterTest`。
+- 验证：`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace；`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS，nq-adapter-api **3 / 0 / 0 / 0**、nq-adapter-okx **34 / 0 / 0 / 0**、nq-adapter-binance **51 / 0 / 0 / 1 skipped**（live diagnostic 门禁跳过）。
+- **P1-D = CLOSED / ACCEPTED**；**P1-A / P1-B / P1-C producer suppression 仍 CLOSED / ACCEPTED**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；GateL-1B overall hardening **NOT FROZEN**（须另起整体 freeze review）；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；不代表允许真实 marketdata / real adapter / LIVE / future-real-ready。
+- 边界：本轮 docs-only freeze-close；未修改 Java/TS/Python；未删除 `rawPayload` 字段；未改 OKX/Binance rawPayload producer、credential source、endpoint sentinel；未新增 API/DTO/migration/workflow；未访问外网/交易所/DB；未读取真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient/real provider/real permission probe。
+- 回滚：`git revert 7e442eb7` 并还原本轮 docs + freeze 卷宗；回滚会重新打开 P1-D 普通 success 误判风险，须恢复 NOT READY 状态。
+- 下一步 `NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW`，不得直接进入 real adapter。
+
+---
+
 ## NQ-GATEL-1B-D-IMPL（2026-06-22）
 
-完成 GateL-1B-D：NoopMarketDataAdapter no-real status hardening（**只实现 P1-D，不夹带 rawPayload 字段删除、OKX/Binance producer、credential source 或 endpoint sentinel**）。结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-D-IMPL-REVIEW`**。
+完成 GateL-1B-D：NoopMarketDataAdapter no-real status hardening（**只实现 P1-D，不夹带 rawPayload 字段删除、OKX/Binance producer、credential source 或 endpoint sentinel**）。结论：**PASS / IMPLEMENTED；后续已 freeze-close**。
 
 - 代码：`NoopMarketDataAdapter` bars / trades / order-book 订阅统一返回 `subscribed=false`，并携带 `AdapterError.code=NO_REAL_DISABLED`、`category=FATAL_FAILURE`、`retryable=false`；调用方可区分 no-real disabled / stub 与真实市场数据订阅成功。
 - 测试：新增 `NoopMarketDataAdapterTest` 覆盖三类订阅路径；`nq-adapter-api/pom.xml` 增加 JUnit test dependency，仅用于 adapter-api 直接测试。
 - 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS，nq-adapter-api **3 / 0 / 0 / 0**、nq-adapter-okx **34 / 0 / 0 / 0**、nq-adapter-binance **51 / 0 / 0 / 1 skipped**（live diagnostic 门禁跳过）。
-- **P1-D = IMPLEMENTED / PENDING REVIEW**；**P1-A / P1-B / P1-C producer suppression 仍 CLOSED / ACCEPTED**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；GateL-1B overall hardening freeze NOT DONE（待 D review + freeze-close）；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；不代表允许真实 marketdata / real adapter / LIVE。
+- **P1-D = CLOSED / ACCEPTED**；**P1-A / P1-B / P1-C producer suppression 仍 CLOSED / ACCEPTED**；**P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK**；GateL-1B overall hardening **NOT FROZEN**；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；不代表允许真实 marketdata / real adapter / LIVE。
 - 边界：未删除 `rawPayload` 字段；未改 OKX/Binance rawPayload producer、credential source、endpoint sentinel；未新增 API/DTO/migration/workflow；未访问外网/交易所/DB；未读取真实 credential；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient/real provider/real permission probe。
 - 回滚：还原 `NoopMarketDataAdapter`、`nq-adapter-api/pom.xml`、`NoopMarketDataAdapterTest` 与本轮 docs；回滚会重新打开 P1-D 普通 success 误判风险，须恢复 NOT READY 状态。
-- 下一步 `NQ-GATEL-1B-D-IMPL-REVIEW`，不得直接写 GateL-1B overall frozen 或进入 real adapter。
+- 后续已进入 `NQ-GATEL-1B-D-IMPL-FREEZE` 并关闭 P1-D；不得直接写 GateL-1B overall frozen 或进入 real adapter。
 
 ---
 

@@ -1,6 +1,18 @@
+## NQ-GATEL-1B-D-IMPL-FREEZE（2026-06-23）
+
+结论：**PASS / FROZEN / ACCEPTED；P1-D CLOSED / ACCEPTED**。冻结 implementation commit `7e442eb7`；P1-A/P1-B/P1-C producer suppression 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除 NOT DONE / SEPARATE COMPATIBILITY TASK，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，GateL-1B overall hardening NOT FROZEN。
+
+- 提交校验：`git show --check HEAD` / `git diff --check HEAD^ HEAD` 无 whitespace；`git show --stat --oneline HEAD` 确认提交范围为 GateL-1B-D 允许文件。
+- 静态核对：`NoopMarketDataAdapter` bars / trades / order-book 订阅均返回 `subscribed=false`、`NO_REAL_DISABLED`、`FATAL_FAILURE`、`retryable=false`；`nq-adapter-api/pom.xml` 新增依赖仅 `test` scope；未新增 API/DTO/migration/workflow；OKX/Binance main code 无本提交 diff。
+- 测试复跑（freeze 证据）：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test`（offline，未外联）→ **BUILD SUCCESS**；reactor nq-common / nq-contracts / nq-adapter-api / nq-adapter-okx / nq-adapter-binance 全部 SUCCESS。
+- nq-contracts：**1 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-api：**3 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-okx：**34 tests / 0 fail / 0 error / 0 skipped**；nq-adapter-binance：**51 tests / 0 fail / 0 error / 1 skipped**（skip = `BinanceWsClientLiveDiagnosticTest` 系统属性门禁）。
+- 未执行 frontend / Python（本轮 docs-only freeze-close，未改 frontend / research）；未访问网络、交易所、DB、容器、GitHub Actions；未读取 `.env` 或 credential material。
+
+---
+
 ## NQ-GATEL-1B-D-IMPL（2026-06-22）
 
-结论：**PASS / IMPLEMENTED；PENDING `NQ-GATEL-1B-D-IMPL-REVIEW`**。只实现 P1-D Noop marketdata status hardening；P1-A/P1-B/P1-C producer suppression 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除 NOT DONE，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
+结论：**PASS / IMPLEMENTED；后续已 freeze-close**。只实现 P1-D Noop marketdata status hardening；P1-A/P1-B/P1-C producer suppression 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除 NOT DONE，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。
 
 - 静态核对：`NoopMarketDataAdapter` bars / trades / order-book 订阅均返回 `subscribed=false`、`NO_REAL_DISABLED`、`FATAL_FAILURE`、`retryable=false`；不再返回普通 success。
 - 回归测试：新增 `NoopMarketDataAdapterTest`，覆盖 bars / trades / order-book 三路径 no-real disabled 语义，断言 channel / traceId / error code / category / retryable。
