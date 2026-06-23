@@ -1,3 +1,34 @@
+## NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN（2026-06-23）
+
+在真实本地 local 后端 + 前端环境下运行 adapter readiness panel E2E，确认前端真实消费 GateM-5A `GET /api/adapters/readiness` 且仍 fail-closed。结论：**PASS**。本轮以验证为主，仅新增 1 个前端 e2e spec + 少量文档同步，未改后端、未新增后端 API / mock / 合同 / review / freeze 文档。
+
+变更摘要：
+
+- 新增 `frontend/tests/e2e/adapter-readiness-panel-backend-smoke.spec.ts`：真实后端模式 smoke，不 stub readiness，走真实 `loginToConsole`（真实 `/api/auth/login`）+ Vite `/api` 代理到本地后端，断言页面捕获真实 `GET /api/adapters/readiness` 响应（200、payload fail-closed、无 secret）并 UI fail-closed 展示。
+- 未改任何 backend / 前端 main 代码 / 配置；未改 `docs/current/frontend/**`。
+
+环境与执行：
+
+- 探测：Postgres 5432 OPEN；DB `nexus_quant` 存在；Java 21 + Maven 3.9。
+- 启动后端：`mvn -f backend/pom.xml -o -pl nq-app -am -DskipTests spring-boot:run -Dspring-boot.run.profiles=local`（后台）。health `UP`（db UP），Tomcat 18888，profile local，`OkxRecoveryService okx_recovery_startup_skipped reason=recovery_disabled`，日志 0 次真实交易所 host 外联、0 ERROR。
+- 直接 HTTP 验证（token 不落盘、不打印）：`GET /api/adapters/readiness` 未认证 → 401；`POST /api/auth/login`（admin / local 默认口令）→ 200；authed readiness → 200，45 条 payload，断言全 fail-closed（见下）。
+- 浏览器 E2E：`cd frontend && npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts` → 1 passed；并跑 GateM-5B stub spec → 共 3 passed；`npm run build` → BUILD SUCCESS；`git diff --check` 通过。
+- 验证后停止后端（taskkill 端口 18888 监听进程；端口已 CLOSED）。
+
+真实后端 readiness payload 断言（来自 authed HTTP 与浏览器捕获响应一致）：
+
+- venues = BINANCE/NOOP/OKX/PAPER/SIM；capabilities = 9 项；item count = 45。
+- any allowed=true / status==READY / liveAuthorized=true 均为 false。
+- OKX/BINANCE 18 条全 `NOT_READY` 且 allowed=false；NOOP/PAPER/SIM 27 条全 `NO_REAL`。
+- PLACE/CANCEL 10 条 liveAuthorized=false；exchange PERMISSION_PROBE 含 `REAL_PROVIDER_NOT_IMPLEMENTED`。
+- payload / 页面正文不含 secret/apikey/api_key/token/signature/passphrase；无「可交易」、无精确「可用」、无「就绪 READY」。
+
+边界：未改 backend；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未访问真实交易所（日志 0 外联）；未读取真实 credential / .env（仅用 application-local.yml 默认 admin 账号做本地登录）；未新增后端 API/migration/workflow；未把 OKX/Binance 标记为 future-real-ready。
+
+回滚：删除本轮新增的 `adapter-readiness-panel-backend-smoke.spec.ts` 与本轮 current docs 即可，无 runtime/DB/credential/provider/exchange 副作用（后端已停止，未写入业务数据；登录链路仅创建/复用既有本地 SIM 测试账户 fixture，属既有 e2e 机制）。
+
+下一步：commit 本轮 e2e spec。
+
 ## NQ-GATEM-5B-FRONTEND-ADAPTER-READINESS-PANEL（2026-06-23）
 
 在 NQ Console 前端新增只读 adapter readiness 面板，消费 GateM-5A `GET /api/adapters/readiness`。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮写前端代码 + e2e 测试 + 少量文档同步，未改后端、未新增后端 API / mock / 合同 / review / freeze 文档。

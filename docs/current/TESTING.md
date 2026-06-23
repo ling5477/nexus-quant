@@ -1,3 +1,34 @@
+## NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN（2026-06-23）
+
+结论：**PASS**。在真实本地 local 后端（端口 18888 + 本地 PostgreSQL 5432）+ Vite（5179 代理 `/api`→18888）下运行 adapter readiness panel E2E，证明前端真实消费 GateM-5A `GET /api/adapters/readiness` 且 fail-closed。仅新增 1 个前端 e2e spec + docs，未改 backend。
+
+环境：
+
+- Postgres 5432 OPEN；DB `nexus_quant` 存在；Java 21 / Maven 3.9。
+- 后端：`mvn -f backend/pom.xml -o -pl nq-app -am -DskipTests spring-boot:run -Dspring-boot.run.profiles=local`（后台）。`/actuator/health` = `{"status":"UP", db UP}`，profile local，OKX recovery `recovery_disabled`，日志 0 次真实交易所外联、0 ERROR；验证后已 taskkill 停止（端口 CLOSED）。
+
+执行命令与结果：
+
+- `curl GET /api/adapters/readiness`（未认证）→ **HTTP 401**（受保护）。
+- `curl POST /api/auth/login`（admin / application-local.yml 默认口令；token 不打印不落盘）→ **200**。
+- `curl GET /api/adapters/readiness`（Bearer）→ **200**，body 10389 bytes / 45 items。Python 断言：venues=BINANCE/NOOP/OKX/PAPER/SIM；item count=45；any allowed=true=False；any READY=False；any liveAuthorized=true=False；OKX/BINANCE(18) 全 allowed=false 且 NOT_READY；NOOP/PAPER/SIM(27) 全 NO_REAL；PLACE/CANCEL(10) liveAuthorized=false；exchange PERMISSION_PROBE 含 REAL_PROVIDER_NOT_IMPLEMENTED；secret-leak=False。
+- `cd frontend && npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts` → **1 passed**（真实后端：真实登录 + Vite 代理消费真实 API，断言响应 200 + payload fail-closed + UI fail-closed）。
+- `npm run test:e2e -- adapter-readiness-panel-smoke.spec.ts adapter-readiness-panel-backend-smoke.spec.ts` → **3 passed**（stub 2 + 真实后端 1）。
+- `npm run build` → **BUILD SUCCESS**（tsc -b + vite build）。
+- `git diff --check` 通过。
+
+覆盖点（真实后端）：
+
+- 页面可经菜单「适配器就绪」访问 `/adapter-readiness`。
+- `page.waitForResponse('**/api/adapters/readiness')` 捕获到真实后端 GET 响应，status=200。
+- 响应 payload 无 allowed=true / READY / liveAuthorized=true；无 secret。
+- UI：OKX/Binance `未就绪 NOT_READY`+`不可用`+`LIVE 未授权`；Noop `模拟·无真实 NO_REAL`；permission probe `真实 provider 未实现`；无 `就绪 READY`、无精确 `可用`、无 `可交易`；正文无 secret。
+
+说明：
+
+- 本轮只跑 adapter readiness 两个 spec（stub + 真实后端）。完整 e2e 套件其余 spec 依赖更完整本地数据 fixture，未在本轮全量回归，不在本任务范围。
+- 后端 readiness 为静态 fail-closed 决策，不外联交易所、不读真实 credential；本地登录用 application-local.yml 内置 admin（非真实凭证）。
+
 ## NQ-GATEM-5B-FRONTEND-ADAPTER-READINESS-PANEL（2026-06-23）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 NQ Console 只读 adapter readiness 面板（消费 GateM-5A `GET /api/adapters/readiness`）+ Playwright e2e smoke；仅改 frontend + docs，未改 backend/research/scripts/deploy，未新增后端 API。
