@@ -1,3 +1,58 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW（2026-06-23）
+
+结论：**PASS / FROZEN / ACCEPTED**。本轮只做 freeze review 与 current docs 同步；未修改 workflow、Java / TypeScript / Python 代码、frontend tests、migration、scripts/deploy。
+
+Freeze scope：
+
+- Frozen: GitHub Actions `frontend-e2e-backend-smoke` job only.
+- Covered spec: `adapter-readiness-panel-backend-smoke.spec.ts --project=chromium` only.
+- Not frozen: full E2E, frontend feature expansion, backend production logic, real provider, real permission probe, LIVE, AI, DH runtime, OKX/Binance future-real-ready.
+
+Run evidence：
+
+- Workflow: `NQ CI Baseline`
+- Run: `28035713236` / `https://github.com/ling5477/nexus-quant/actions/runs/28035713236`
+- Commit / branch / trigger: `ba3f4c69da276fb68c22008724ed98a85658fd10` / `dev` / `push`
+- Overall: completed / success
+- Target job: `Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82988350255`) completed / success; duration about 2m01s.
+- Existing jobs: Diff check, No-outbound guard, CI security smoke, Backend Maven test, PostgreSQL / Flyway smoke, Frontend build, Frontend no-backend E2E, Research quality gate, Secret scan all completed success.
+
+Acceptance review：
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| PostgreSQL service | 通过 | Service became healthy and was later removed during `Stop containers`. |
+| Backend startup | 通过 | `Start nq-app local backend` success; backend log shows Tomcat 18888 and `NexusQuantApplication` started. |
+| Health | 通过 | `health.json` status `UP`; DB / readiness / liveness / ping / ssl `UP`. |
+| Frontend E2E | 通过 | Job log confirms `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`. |
+| Readiness API | 通过 | Spec waits for real `GET /api/adapters/readiness` and asserts HTTP 200. |
+| Fail-closed payload/UI | 通过 | No `allowed=true`, no `READY`, no `liveAuthorized=true`; OKX/BINANCE `NOT_READY`, NOOP `NO_REAL`, PERMISSION_PROBE real provider not implemented. |
+| Redaction gate | 通过 | Pre-upload redaction gate success before upload; reports rule/file only on failure path. |
+| Artifact upload | 通过 | `nq-frontend-e2e-backend-smoke-artifacts` uploaded; digest `sha256:ad75929dda5199bf868d9b742070a5e2ab737a2edc059c722265a25740beb99f`. |
+| Artifact content | 通过 | Downloaded files are exactly `backend.log` and `health.json`. |
+| Binary Playwright artifacts | 通过 | No trace / screenshot / report / video uploaded. |
+| Secret / host scan | 通过 | `backend.log` / `health.json` had 0 matches for secret-like terms, raw request/response, credential material, real exchange hosts, and outbound error markers. |
+| Cleanup | 通过 | Backend cleanup, Playwright temp cleanup, and container stop all success. |
+
+Security / no-outbound review：
+
+- Target job uses `contents: read`; no `secrets.` usage observed in workflow/job evidence.
+- Runtime env: `NQ_NO_OUTBOUND=true`, `NQ_AI_ENABLED=false`, `NQ_DH_RUNTIME_ENABLED=false`, `NQ_REAL_EXCHANGE_ENABLED=false`.
+- OKX/Binance endpoint env values are `PLACEHOLDER_ONLY`; OKX recovery, OKX WS, Binance WS, and instrument catalog sync are disabled.
+- `NQ_LIVE_ENABLED`, `NQ_REAL_PROVIDER_ENABLED`, and `NQ_REAL_CLIENT_ENABLED` are not injected.
+- Same run's No-outbound guard and CI security smoke jobs completed success.
+- Runtime artifact content has no real exchange host or outbound error marker; `spring-boot:run + Playwright` no-outbound parity accepted as CLOSED for this narrow job.
+
+Findings：
+
+- P0: none.
+- P1: none.
+- P2: artifact retention is 7 days; long-term artifact archival is not part of this freeze and can be handled by a later evidence-retention task.
+
+Decision：
+
+`frontend-e2e-backend-smoke` is frozen as a narrow dev CI baseline: **FROZEN / ACCEPTED**. Proceed to Batch 5E or CI summary. Do not mark full E2E, real provider, real permission probe, LIVE, AI, DH runtime, or OKX/Binance future-real-ready as accepted.
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW（2026-06-23）
 
 结论：**PASS / RE-RUN GREEN；NOT FROZEN**。本轮只评审 5C-fix push 后 GitHub Actions re-run；未修改 workflow、Java / TypeScript / Python 代码、frontend tests、migration、scripts/deploy。
@@ -47,7 +102,7 @@ Decision：
 - `frontend-e2e-backend-smoke` re-run is green.
 - Artifact redaction gate passed and upload succeeded.
 - Artifact content is reviewable and contains no secret-like / real-exchange / outbound-error hit.
-- Batch 5D freeze review is now allowed, but this review is not freeze.
+- Batch 5D freeze review was allowed by this green re-run; the later Batch 5D section above is the actual freeze record.
 
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX（2026-06-23）
 

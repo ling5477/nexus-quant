@@ -2,7 +2,63 @@
 
 任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN
 日期：2026-06-23
-状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED；5C first-run review = FAIL / FIRST-RUN-FIX REQUIRED；5C-fix implementation = IMPLEMENTED；5C re-run review = PASS / RE-RUN GREEN；NOT FROZEN；Batch 5D freeze review allowed but not started
+状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED；5C first-run review = FAIL / FIRST-RUN-FIX REQUIRED；5C-fix implementation = IMPLEMENTED；5C re-run review = PASS / RE-RUN GREEN；5D freeze review = PASS / FROZEN / ACCEPTED（仅冻结 `frontend-e2e-backend-smoke` 窄口 job，不冻结 full E2E）
+
+## Batch 5D freeze review addendum
+
+任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW
+
+结论：PASS / FROZEN / ACCEPTED。
+
+冻结对象仅为 GitHub Actions `NQ CI Baseline` 中的 `frontend-e2e-backend-smoke` job，覆盖单一 Playwright spec `adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`。本冻结不包含 full E2E、不包含 frontend feature expansion、不包含 backend production logic、不包含 real provider / RealClient / real permission probe / LIVE / AI / DH runtime。
+
+Evidence reviewed：
+
+- Run: `28035713236` / `https://github.com/ling5477/nexus-quant/actions/runs/28035713236`，completed / success。
+- Commit / branch / trigger: `ba3f4c69da276fb68c22008724ed98a85658fd10` / `dev` / `push`。
+- Job: `Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82988350255`) completed / success，约 2m01s。
+- Existing jobs: Diff check、No-outbound guard、CI security smoke、Backend Maven test、PostgreSQL / Flyway smoke、Frontend build、Frontend no-backend E2E、Research quality gate、Secret scan 均 success，未观察到既有 CI baseline 回归。
+- Backend / health: PostgreSQL service healthy；`Start nq-app local backend` success；`/actuator/health` 为 `UP`，`db` / `readinessState` / `livenessState` 均 `UP`。
+- E2E: job log 与 workflow 均确认只运行 `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`；spec 源码断言真实 `GET /api/adapters/readiness` 返回 200。
+- Artifacts: `nq-frontend-e2e-backend-smoke-artifacts` uploaded / not expired / size 10990 bytes / digest `sha256:ad75929dda5199bf868d9b742070a5e2ab737a2edc059c722265a25740beb99f`；下载后仅含 `backend.log` 与 `health.json`。
+
+Acceptance review：
+
+- CI job: pass。目标 job 与所有既有 jobs 均 success；checkout head SHA 与 run metadata 对齐。
+- Backend startup: pass。Spring Boot local backend 在 18888 启动，backend artifact 显示 Tomcat started 与 `NexusQuantApplication` started。
+- Health check: pass。`health.json` status `UP`，DB/readiness/liveness/ping/ssl 均 `UP`。
+- Frontend E2E: pass。Vite dev runner 通过 `/api` 代理访问真实 backend；目标 spec 捕获真实 readiness API 200 响应。
+- Readiness assertions: pass。Spec 断言 no `allowed=true`、no `READY`、no `liveAuthorized=true`；UI 断言 OKX/BINANCE 为 `NOT_READY` + 不可用 + LIVE 未授权，NOOP 为 `NO_REAL`，PERMISSION_PROBE 为真实 provider 未实现；不出现 ready / 可用 / 可交易 / secret-like 文案。该 job 的接受范围不声称 OKX/Binance future-real-ready。
+- Redaction gate: pass。`Pre-upload redaction gate (frontend backend smoke artifacts)` 在 upload 前 success；gate 仅输出 rule/file，不输出 matched value。
+- Artifacts: pass。仅上传 text-only `backend.log` / `health.json`；未上传 Playwright trace / screenshot / report / video；下载内容扫描未命中 secret、apiKey/api_key、token、signature、passphrase、Authorization、cookie、private key、raw credential、raw request、raw response、真实交易所 host 或 outbound error。
+- Cleanup: pass。`Cleanup backend process`、`Cleanup Playwright temp output (no upload)`、`Stop containers` 均 success，PostgreSQL container 与 network 已移除。
+
+Security boundary review：
+
+- Job 使用 `contents: read`，未使用 repository secrets，未注入真实 credential。
+- Runtime env 明确 `NQ_NO_OUTBOUND=true`、`NQ_AI_ENABLED=false`、`NQ_DH_RUNTIME_ENABLED=false`、`NQ_REAL_EXCHANGE_ENABLED=false`。
+- OKX/Binance endpoints 均为 `PLACEHOLDER_ONLY`；WS / recovery / catalog sync 均关闭；未注入 `NQ_LIVE_ENABLED`、`NQ_REAL_PROVIDER_ENABLED`、`NQ_REAL_CLIENT_ENABLED`。
+- No LIVE、No AI、No DH runtime、No RealClient、No real provider、No real permission probe、No real exchange access。
+
+No-outbound review：
+
+- 目标 job 显式设置 `NQ_NO_OUTBOUND=true` 与交易所 denylist，并复用 CI no-outbound / security smoke baseline；同一 run 中 No-outbound guard 与 CI security smoke 均 success。
+- `spring-boot:run + Playwright` 运行态 artifact 未出现真实交易所 host 或 outbound error；结合 placeholder endpoints、disabled WS/recovery/catalog sync、target spec 只读 readiness API，runtime no-outbound parity 可接受为 CLOSED。
+
+Artifact / visibility residual：
+
+- GitHub job full log 本轮可通过 GitHub MCP / `gh run view --job --log` 读取；不再保留 5C review 的 403 阻断。
+- P2 residual：artifact retention 仍为 7 days，后续若需要长期审计，应另起证据归档任务；不阻断本次 freeze。
+
+Findings：
+
+- P0: 无。
+- P1: 无。
+- P2: Artifact retention 7 days 的长期可见性限制；不影响当前 freeze。
+
+Decision：
+
+`frontend-e2e-backend-smoke` 作为 dev CI 的窄口 baseline **FROZEN / ACCEPTED**。允许后续进入 Batch 5E 或 CI 总结；不得把 full E2E、real provider、real permission probe、LIVE、AI、DH runtime 或 OKX/Binance future-real-ready 写成 frozen。
 
 ## Task classification
 
@@ -671,7 +727,7 @@ Batch 5C-fix is implemented and awaits a GitHub Actions re-run. This does not es
 
 任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW
 日期：2026-06-23
-结论：PASS / RE-RUN GREEN；NOT FROZEN；Batch 5D freeze review allowed
+结论：PASS / RE-RUN GREEN；NOT FROZEN；当时允许进入 Batch 5D freeze review，后续已由本文件的 5D addendum 冻结收口
 
 ### Run evidence
 
@@ -729,4 +785,4 @@ The GitHub job log download still returns HTTP 403, so the Playwright stdout is 
 
 NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW：PASS / RE-RUN GREEN.
 
-This allows proceeding to `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW`. Do not mark this re-run review itself as frozen.
+This allowed proceeding to `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW`; the later 5D addendum is the freeze record. Do not mark the 5C re-run review itself as frozen.

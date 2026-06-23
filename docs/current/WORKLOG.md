@@ -1,3 +1,49 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW（2026-06-23）
+
+冻结评审 GateK CI Batch 5 frontend backend E2E smoke baseline。结论：**PASS / FROZEN / ACCEPTED**。
+
+执行边界：
+
+- 本轮只做 freeze review + GitHub Actions evidence review + artifact/redaction/security boundary review + docs sync。
+- 只冻结 `frontend-e2e-backend-smoke` 窄口 job；不冻结 full E2E。
+- 未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、frontend tests、migration、backend production logic、frontend page code、research、scripts 或 deploy。
+- 未读取 `.env`、真实 credential、key/pem/token/secret dump 或日志备份；未使用 repository secrets；未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；未把 OKX/Binance 写成 future-real-ready。
+
+证据摘要：
+
+- Run：`28035713236` / `https://github.com/ling5477/nexus-quant/actions/runs/28035713236`，completed / success。
+- Commit / branch / trigger：`ba3f4c69da276fb68c22008724ed98a85658fd10` / `dev` / `push`。
+- Target job：`Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82988350255`) completed / success，约 2m01s。
+- Existing jobs：Diff check、No-outbound guard、CI security smoke、Backend Maven test、PostgreSQL / Flyway smoke、Frontend build、Frontend no-backend E2E、Research quality gate、Secret scan 全部 success。
+- Target job steps：PostgreSQL service、backend startup、`/actuator/health=UP`、`Run adapter readiness backend E2E`、backend cleanup、artifact metadata list、pre-upload redaction gate、artifact upload、Playwright temp cleanup、container stop 全部 success。
+
+Artifact / redaction：
+
+- Artifact `nq-frontend-e2e-backend-smoke-artifacts` uploaded / not expired / size 10990 bytes / digest `sha256:ad75929dda5199bf868d9b742070a5e2ab737a2edc059c722265a25740beb99f`。
+- 下载后仅包含 `backend.log` 与 `health.json`。
+- `health.json`：status `UP`；DB / readiness / liveness / ping / ssl `UP`。
+- `backend.log`：Tomcat 18888 started，`NexusQuantApplication` started。
+- 内容扫描：secret、apiKey/api_key、token、signature、passphrase、Authorization、cookie、private key、raw credential/raw request/raw response、真实交易所 host、outbound error marker 均 0 命中。
+- 未上传 Playwright trace、screenshot、report、video 或其他 binary artifact。
+
+Readiness / security：
+
+- Playwright 命令为 `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`，未扩大到全量 E2E。
+- Spec 断言真实 `GET /api/adapters/readiness` 响应 200；payload 无 `allowed=true`、无 `READY`、无 `liveAuthorized=true`。
+- UI 断言 OKX/BINANCE `NOT_READY` + 不可用 + LIVE 未授权，NOOP `NO_REAL`，PERMISSION_PROBE 真实 provider 未实现；全页无 ready / 可用 / 可交易 / secret-like 文案。
+- Job env：`NQ_NO_OUTBOUND=true`、`NQ_AI_ENABLED=false`、`NQ_DH_RUNTIME_ENABLED=false`、`NQ_REAL_EXCHANGE_ENABLED=false`；OKX/Binance endpoints 为 `PLACEHOLDER_ONLY`；WS / recovery / catalog sync disabled；未注入 `NQ_LIVE_ENABLED` / `NQ_REAL_PROVIDER_ENABLED` / `NQ_REAL_CLIENT_ENABLED`。
+- 同 run 中 No-outbound guard 与 CI security smoke 均 success；`spring-boot:run + Playwright` runtime no-outbound parity 对本窄口 job 接受为 CLOSED。
+
+Findings：
+
+- P0：无。
+- P1：无。
+- P2：artifact retention 7 days 的长期可见性限制；不阻断本次 freeze。
+
+下一步：
+
+允许进入 Batch 5E 或 CI 总结。后续不得把 full E2E、real provider、real permission probe、LIVE、AI、DH runtime 或 OKX/Binance future-real-ready 写成 frozen。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW（2026-06-23）
 
 评审 5C-fix push 后 GitHub Actions re-run：`NQ CI Baseline` run `28035713236`（URL `https://github.com/ling5477/nexus-quant/actions/runs/28035713236`），commit `ba3f4c69`，branch `dev`，trigger `push`。结论：**PASS / RE-RUN GREEN；NOT FROZEN**。
@@ -31,7 +77,7 @@ Readiness 结论：
 
 下一步：
 
-允许进入 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW`。不得把本 re-run review 写成 frozen；freeze 必须另起 Batch 5D review。
+该 re-run 当时允许进入 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW`。不得把本 re-run review 写成 frozen；后续已由 Batch 5D 条目完成冻结收口。
 
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX（2026-06-23）
 
