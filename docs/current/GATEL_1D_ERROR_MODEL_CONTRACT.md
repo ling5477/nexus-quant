@@ -262,3 +262,11 @@ retry 语义是本合同的核心安全约束，用于防止把 disabled / missi
 - 是否允许 AI / DH runtime：**NO**。
 - 是否允许将 adapter 标记为 future-real-ready：**NO**。
 - 推荐下一步：**NQ-GATEL-1D-ERROR-MODEL-CONTRACT-REVIEW**。
+
+## 18. Review Acceptance Update
+
+**NQ-GATEL-1D-ERROR-MODEL-CONTRACT-REVIEW：PASS / REVIEW ACCEPTED（2026-06-23）。** 详见 `GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md`。
+
+Review 接受本 error model contract 为 GateL-1D frozen contract-only baseline：error status enum 15 项完整无歧义；合同层 status 到既有 `AdapterResultCategory`（9 类）映射与源码事实一致；retryable=false 列表未被写成可继续交易；RATE_LIMITED / VENUE_UNAVAILABLE 为受控 conditional retry；UNKNOWN_REQUIRES_REVIEW fail-closed；Noop / OKX / Binance / future-real placeholder / permission probe placeholder / marketdata placeholder 与 trading / marketdata / credential / permission path 全覆盖。P0=0 / P1=0；P2 为既知 follow-up（合同层细粒度 status 在既有 `AdapterResultCategory` 折叠为 `AUTH_FAILURE`、rawPayload field deletion 独立任务、真实 backoff/circuit breaker policy 属 future-real），不阻断冻结。
+
+adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。是否允许真实交易所接入 / LIVE / 真实 credential / AI / DH runtime / adapter future-real-ready：**NO**。下一步 **NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE**。

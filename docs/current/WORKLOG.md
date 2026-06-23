@@ -1,3 +1,18 @@
+## NQ-GATEL-1D-ERROR-MODEL-CONTRACT-REVIEW（2026-06-23）
+
+完成 GateL-1D adapter error model contract review，新增 `GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md`，并在 `GATEL_1D_ERROR_MODEL_CONTRACT.md` §18 追加 Review Acceptance Update，同步 current 入口文档。结论：**PASS / REVIEW ACCEPTED（contract-only）**。
+
+- 复核对象：`GATEL_1D_ERROR_MODEL_CONTRACT.md` 的 error status enum（15 项）、合同层 status ↔ 既有 `AdapterResultCategory`（9 类）映射、retry 语义、adapter/venue 矩阵、trading/marketdata/credential/permission 路径矩阵、risk/order/ledger ownership 与 forbidden interpretation。
+- enum 复核：15 项（`NO_REAL_DISABLED` … `UNKNOWN_REQUIRES_REVIEW`）完整、语义可区分、无歧义。
+- retry 复核：retryable=false 终态集合（含 INVALID_SYMBOL）未被写成可继续交易；RATE_LIMITED / VENUE_UNAVAILABLE 为受控 conditional retry（backoff / circuit breaker / kill switch / no-outbound guard）；UNKNOWN_REQUIRES_REVIEW 默认 fail-closed。
+- 源码事实校验：`git grep` 确认 OKX `50035`（classifier→AUTH_FAILURE、permission probe→IP_ALLOWLIST_FAILED）、Binance `-2013`/`-2011`→DEFERRED、`NoopMarketDataAdapter`→`NO_REAL_DISABLED`/`FATAL_FAILURE`/`subscribed=false`、`OkxHttpClient`/`BinanceHttpClient` 网络前 `*_CREDENTIALS_MISSING` fail-closed 且 runtime config 不读 env credential，均与合同一致。
+- Findings：P0=0，P1=0；P2=3（合同层细粒度 status 在既有 `AdapterResultCategory` 折叠为 AUTH_FAILURE；rawPayload field deletion 独立任务；真实 backoff/circuit breaker policy 属 future-real），均为 follow-up，不阻断冻结。另记 §16 下一步措辞 follow-up（建议 freeze 时指向 `NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE`）。
+- Adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；真实交易所、LIVE、真实 credential、AI、DH runtime 仍禁止。
+- 验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；bounded `rg` 检查未把 retryable=false 错误写成可继续交易、未把 real exchange / LIVE / future-real-ready 写成 allowed。
+- 边界：docs-only review；未修改 Java/TypeScript/Python；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未读取 `.env` 或真实 credential；未访问外网或真实交易所；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未删除 rawPayload 字段。
+- 回滚：删除 `GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md`，还原 `GATEL_1D_ERROR_MODEL_CONTRACT.md` §18 与本轮对 `GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 的同步。
+- 下一步：`NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE`，不得直接进入 implementation / real adapter。
+
 ## NQ-GATEL-1D-ERROR-MODEL-CONTRACT（2026-06-23）
 
 完成 GateL-1D adapter error model contract，新增 `GATEL_1D_ERROR_MODEL_CONTRACT.md`，并同步 current 入口文档。结论：**PASS / FROZEN / ACCEPTED（contract-only）**。
