@@ -1,3 +1,15 @@
+## NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT-REVIEW（2026-06-23）
+
+结论：**PASS / REVIEW ACCEPTED（checklist-only）**。本轮只新增 readiness checklist review、追加 checklist §23 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
+
+- 预检：`git branch --show-current` = `dev`；预检 `git status --short` 无输出。
+- 只读取证：`docs/current/GATEL_1E_READINESS_CHECKLIST_REFINEMENT.md`、`GATEL_1D_*`、`GATEL_1C_*`、`GATEL_1B_*`、`GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`backend/nq-adapter-api/**`、`backend/nq-adapter-okx/**`、`backend/nq-adapter-binance/**`。
+- 源码事实校验：`git grep -n` 确认安全基线组件存在（`EnvSafetyValidator` / `EnvSafetyGuardConfiguration`、`NoOutboundExchangeGuardTest`、`NoRealExchangeCredentialPermissionProbePort`、`KillSwitchService` / `KillSwitchRiskRule`、`RiskGate` / `PreTradeRiskService`、`OrderStateMachine` / `InMemoryOrderStateMachine`、`AuditLogRepository` / `JdbcAuditLogRepository`、`JdbcLedgerPostingRepository`）、`NoRealExchangeCredentialPermissionProbePort` 返回 `REAL_EXCHANGE_PROBE_DISABLED` + 脱敏 SKIPPED、OKX `/trade/order`·`/asset/withdraw`·`/asset/transfer` 与 Binance `/api/v3/order`·`transfer`·`withdraw` forbidden endpoint 边界存在。
+- 文档验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；scope check 通过。
+- 禁止措辞检查：bounded `rg` 确认 review/checklist 中 `future-real-ready` / `real exchange` / `LIVE` 仅在否定、禁止、fail-closed 或 “NO / 须另起 Gate” 语境，checklist 未被写成授权，无 `implementation started` / `allowed credential` / `allowed LIVE` 误写。
+- 未执行 Maven / frontend / Python 测试，原因：本轮为 docs-only review，不改 Java/TypeScript/Python、API、DTO、migration、workflow 或运行时配置；源码读取仅用于复核 readiness 事实。
+- 未访问外网、交易所、DB、容器、GitHub Actions；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime。
+
 ## NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT（2026-06-23）
 
 结论：**PASS / CHECKLIST CREATED / PENDING REVIEW（checklist-only）**。本轮只新增 future-real readiness checklist 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
