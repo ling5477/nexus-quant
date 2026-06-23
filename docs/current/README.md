@@ -6,6 +6,8 @@
 当前阶段：**GateJ completed；Next: GateK-PLAN；NQ GateK CI mainline COMPLETED / ACCEPTED**。
 AI not started；DH not integrated；LIVE disabled；real provider / RealClient / real permission probe 未实现。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。
 
+GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / error model / capability matrix / readiness checklist）。当前进入 **GateM-0 adapter readiness runtime enforcement = IMPLEMENTATION STARTED / PENDING REVIEW**：`nq-adapter-api` 新增运行时 `AdapterReadinessService` / `DefaultAdapterReadinessService` 与 readiness 模型，运行时强制 OKX / Binance / Noop fail-closed（NOT_READY / NO_REAL / UNKNOWN_REQUIRES_REVIEW），不允许真实交易所、LIVE、真实 credential、AI、DH runtime 或 future-real-ready。详见 STATUS.md / WORKLOG.md / TESTING.md。
+
 ## 当前控制入口
 
 - 当前状态：[STATUS.md](STATUS.md)

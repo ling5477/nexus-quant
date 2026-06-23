@@ -1,0 +1,40 @@
+package com.guidinglight.nexusquant.adapter.api.model;
+
+/**
+ * AdapterReadinessReason 描述某个能力当前不可用（或受限）的可审计原因。
+ * <p>
+ * Why:
+ * 仅返回 status 不足以让调用方解释“为什么 fail-closed”。GateM-0 要求把 GateL-1B/1C/1D 已冻结的
+ * no-real / disabled sentinel / credential missing / live disabled / capability forbidden 等边界，
+ * 以结构化原因暴露给交易入口、marketdata 入口与上层服务。原因只用于解释边界，不构成真实交易授权。
+ */
+public enum AdapterReadinessReason {
+
+    /** Noop / no-real stub 明确禁用，未创建真实订阅或真实执行（对应 GateL-1D NO_REAL_DISABLED）。 */
+    NO_REAL_DISABLED,
+
+    /** 默认 endpoint 为 disabled:// sentinel，请求期 loud fail-closed（对应 GateL-1D NETWORK_DISABLED）。 */
+    ENDPOINT_DISABLED_SENTINEL,
+
+    /** runtime credential 未配置；authenticated 请求网络前 fail-closed（对应 GateL-1D CREDENTIALS_MISSING）。 */
+    CREDENTIALS_MISSING,
+
+    /** real provider / real permission probe 尚未实现，须另起 Gate。 */
+    REAL_PROVIDER_NOT_IMPLEMENTED,
+
+    /** LIVE 处于 DISABLED；真实交易能力 fail-closed（对应 GateL baseline LIVE DISABLED）。 */
+    LIVE_DISABLED,
+
+    /** 该能力在 GateL / GateM-0 内被明确禁止（对应 GateL-1C FORBIDDEN_IN_GATEL）。 */
+    CAPABILITY_FORBIDDEN_IN_GATEL,
+
+    /**
+     * provider raw payload 已被 producer suppression 抑制，是安全边界而非错误恢复入口
+     * （对应 GateL-1D RAW_PAYLOAD_SUPPRESSED）。当前 readiness 评估不会主动产出该原因，
+     * 保留为词汇完整性，供后续 future-real 实现 Gate 引用。
+     */
+    RAW_PAYLOAD_SUPPRESSED,
+
+    /** 证据不足 / 未知 venue 或 capability，默认 fail-closed。 */
+    UNKNOWN_REQUIRES_REVIEW
+}

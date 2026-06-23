@@ -1,3 +1,22 @@
+## NQ-GATEM-0-ADAPTER-READINESS-RUNTIME-ENFORCEMENT（2026-06-23）
+
+从 GateL docs-only 转入 GateM runtime enforcement：新增 adapter readiness 运行时模型与 fail-closed 服务。结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮写代码 + 测试 + 少量状态同步，未新增 GateL/GateM 合同或 freeze 文档。
+
+- 新增 Java（`backend/nq-adapter-api`，纯值对象 + 静态策略，无 IO / credential / 网络）：
+  - `model/AdapterReadinessStatus`（READY / NOT_READY / NO_REAL / DISABLED_SENTINEL / CREDENTIAL_UNCONFIGURED / LIVE_NOT_AUTHORIZED / CAPABILITY_NOT_IMPLEMENTED / UNKNOWN_REQUIRES_REVIEW）。
+  - `model/AdapterReadinessReason`（NO_REAL_DISABLED / ENDPOINT_DISABLED_SENTINEL / CREDENTIALS_MISSING / REAL_PROVIDER_NOT_IMPLEMENTED / LIVE_DISABLED / CAPABILITY_FORBIDDEN_IN_GATEL / RAW_PAYLOAD_SUPPRESSED / UNKNOWN_REQUIRES_REVIEW）。
+  - `model/AdapterCapability`（SPOT_TRADING / PLACE_ORDER / CANCEL_ORDER / QUERY_ORDER / ACCOUNT_BALANCE / PUBLIC_MARKETDATA / PRIVATE_MARKETDATA / PERMISSION_PROBE / HISTORICAL_OHLCV / SUBSCRIBE_BARS / SUBSCRIBE_TRADES / SUBSCRIBE_ORDERBOOK；带 requiresCredentials / isLiveMutating / isMarketData 分类）。
+  - `model/AdapterReadinessDecision`（record：venue / capability / status / allowed / liveAuthorized / reasons / checkedAt / message；构造期强制 fail-closed 不变量）。
+  - `service/AdapterReadinessService`（接口 + `isAllowed` + `requireReady` service-level guard）。
+  - `service/DefaultAdapterReadinessService`（静态 fail-closed 策略，可注入 Clock）。
+- 运行时行为：Noop→`NO_REAL`/allowed=false/`NO_REAL_DISABLED`；OKX·Binance→`NOT_READY`/allowed=false/reasons 含 `ENDPOINT_DISABLED_SENTINEL`(+`CREDENTIALS_MISSING`/`LIVE_DISABLED`/`REAL_PROVIDER_NOT_IMPLEMENTED`)/liveAuthorized=false；unknown venue·null venue·null capability→`UNKNOWN_REQUIRES_REVIEW` fail-closed。无 READY、无 future-real-ready。
+- 接入方式：先暴露 service-level guard（`requireReady` 未就绪即抛 `IllegalStateException`，异常信息不含 credential/secret），未强行改交易主链路、未新增 HTTP API。
+- 新增测试：`DefaultAdapterReadinessServiceTest`（15 用例）覆盖 Noop marketdata NO_REAL_DISABLED、OKX/Binance trading 不为 future-real-ready、LIVE disabled fail-closed、permission probe REAL_PROVIDER_NOT_IMPLEMENTED、unknown venue/capability fail-closed、全矩阵 fail-closed、record 不变量。
+- 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` BUILD SUCCESS（adapter-api 18 / OKX 34 / Binance 51；0 fail / 0 error / 1 skipped）；`git diff --check` 通过。
+- 边界：未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未访问外网或真实交易所；未读取 `.env` 或真实 credential；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未删除 rawPayload 字段；未把 OKX/Binance 标记为 future-real-ready。
+- 回滚：删除本轮 6 个新增 main Java 文件 + 1 个测试文件，并还原本轮对 `STATUS.md`、`TESTING.md`、`WORKLOG.md`、`ROADMAP.md`、`README.md` 的同步。
+- 下一步：`NQ-GATEM-0-ADAPTER-READINESS-RUNTIME-ENFORCEMENT-REVIEW`。
+
 ## NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT-REVIEW（2026-06-23）
 
 完成 GateL-1E future-real readiness checklist refinement review，新增 `GATEL_1E_READINESS_CHECKLIST_REFINEMENT_REVIEW.md`，并在 `GATEL_1E_READINESS_CHECKLIST_REFINEMENT.md` §23 追加 Review Acceptance Update，同步 current 入口文档。结论：**PASS / REVIEW ACCEPTED（checklist-only）**。

@@ -1,3 +1,17 @@
+## NQ-GATEM-0-ADAPTER-READINESS-RUNTIME-ENFORCEMENT（2026-06-23）
+
+结论：**PASS / IMPLEMENTATION STARTED / PENDING REVIEW**。本轮新增 Java 代码 + 测试，转入 GateM runtime enforcement，未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy。
+
+- 预检：`git branch --show-current` = `dev`；预检 `git status --short` 无输出。
+- 新增代码：`backend/nq-adapter-api` 下 `AdapterReadinessStatus` / `AdapterReadinessReason` / `AdapterCapability` / `AdapterReadinessDecision` / `AdapterReadinessService` / `DefaultAdapterReadinessService`（纯值对象 + 静态 fail-closed 策略，无 IO / credential / 网络）。
+- 新增测试：`DefaultAdapterReadinessServiceTest`（15 用例）。
+- 测试命令与结果：
+  - `mvn -f backend/pom.xml -o -pl nq-adapter-api -am test` → BUILD SUCCESS（nq-common / nq-contracts / nq-adapter-api；adapter-api 18 tests / 0 fail / 0 error / 0 skipped，含既有 NoopMarketDataAdapterTest 3）。
+  - `mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance -am test` → BUILD SUCCESS（adapter-api 18 / OKX 34 / Binance 51；0 fail / 0 error / 1 skipped live diagnostic gate）。
+  - `git diff --check` 通过。
+- 断言要点：allowed=false、status != READY、reasons 非空、OKX/Binance 非 future-real-ready、Noop marketdata = NO_REAL_DISABLED、unknown = UNKNOWN_REQUIRES_REVIEW、LIVE disabled 时 live mutating fail-closed、record 不变量拒绝“未就绪却 allowed”。
+- 未访问外网 / 交易所 / DB；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime；未使用真实 credential（测试用固定 Clock，纯内存断言）。
+
 ## NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT-REVIEW（2026-06-23）
 
 结论：**PASS / REVIEW ACCEPTED（checklist-only）**。本轮只新增 readiness checklist review、追加 checklist §23 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
