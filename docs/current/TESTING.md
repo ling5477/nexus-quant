@@ -1,3 +1,15 @@
+## NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE（2026-06-23）
+
+结论：**PASS / FROZEN / ACCEPTED**。本轮只新增 adapter error model contract freeze review、追加合同 §19 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
+
+- 预检：`git branch --show-current` = `dev`；预检 `git status --short` 无输出。
+- 只读取证：`docs/current/GATEL_1D_ERROR_MODEL_CONTRACT.md`、`GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md`、`GATEL_1C_*`、`GATEL_1B_*`、`GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`backend/nq-adapter-api/**`、`backend/nq-adapter-okx/**`、`backend/nq-adapter-binance/**`。
+- 冻结不变量校验：`git grep -n` 确认 `NoopMarketDataAdapter` `NO_REAL_DISABLED`+`FATAL_FAILURE`+`subscribed=false`、OKX `disabled://okx-not-configured`/`disabled://okx-ws-not-configured`、Binance `disabled://binance-not-configured`/`disabled://binance-ws-not-configured`、OKX/Binance `*.unconfigured()` credential 默认仍成立。
+- 文档验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；scope check 通过。
+- 禁止措辞检查：bounded `rg` 确认 freeze/合同/review 中 retryable=false 错误未被写成“可继续交易”“可重试后下单”，`real exchange` / `LIVE` / `future-real-ready` 仅出现在否定、禁止、fail-closed 或 “NO / 须另起 Gate” 语境，`CREDENTIALS_MISSING` 无 fallback 语义。
+- 未执行 Maven / frontend / Python 测试，原因：本轮为 docs-only freeze，不改 Java/TypeScript/Python、API、DTO、migration、workflow 或运行时配置；源码读取仅用于复核冻结不变量。
+- 未访问外网、交易所、DB、容器、GitHub Actions；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime。
+
 ## NQ-GATEL-1D-ERROR-MODEL-CONTRACT-REVIEW（2026-06-23）
 
 结论：**PASS / REVIEW ACCEPTED（contract-only）**。本轮只新增 adapter error model contract review、追加合同 §18 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。

@@ -270,3 +270,11 @@ retry 语义是本合同的核心安全约束，用于防止把 disabled / missi
 Review 接受本 error model contract 为 GateL-1D frozen contract-only baseline：error status enum 15 项完整无歧义；合同层 status 到既有 `AdapterResultCategory`（9 类）映射与源码事实一致；retryable=false 列表未被写成可继续交易；RATE_LIMITED / VENUE_UNAVAILABLE 为受控 conditional retry；UNKNOWN_REQUIRES_REVIEW fail-closed；Noop / OKX / Binance / future-real placeholder / permission probe placeholder / marketdata placeholder 与 trading / marketdata / credential / permission path 全覆盖。P0=0 / P1=0；P2 为既知 follow-up（合同层细粒度 status 在既有 `AdapterResultCategory` 折叠为 `AUTH_FAILURE`、rawPayload field deletion 独立任务、真实 backoff/circuit breaker policy 属 future-real），不阻断冻结。
 
 adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。是否允许真实交易所接入 / LIVE / 真实 credential / AI / DH runtime / adapter future-real-ready：**NO**。下一步 **NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE**。
+
+## 19. Freeze Acceptance Update
+
+**NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE：PASS / FROZEN / ACCEPTED（2026-06-23）。** 详见 `GATEL_1D_ERROR_MODEL_CONTRACT_FREEZE_REVIEW.md`。
+
+Freeze 接受本 error model contract 与其 review 为 GateL-1D frozen contract-only baseline：error status enum（15 项）、合同层 status ↔ 既有 `AdapterResultCategory`（9 类）映射、retry 语义（retryable=false 终态集合；conditional 仅受控 RATE_LIMITED / VENUE_UNAVAILABLE；UNKNOWN fail-closed）、adapter/venue 与 trading/marketdata/credential/permission 路径矩阵、fail-closed 与禁止解释全部冻结，作为 GateL-1E readiness checklist refinement 与 future-real 实现 Gate 的错误分类、retry、fail-closed、安全解释基线。`git grep` 复核 Noop `NO_REAL_DISABLED` / OKX·Binance `disabled://` sentinel / `*.unconfigured()` credential 冻结不变量仍成立。P0=0 / P1=0；P2 为既知 follow-up（细粒度 status 在既有 `AdapterResultCategory` 折叠为 `AUTH_FAILURE`、rawPayload field deletion 独立任务、真实 backoff/circuit breaker/kill switch policy 属 future-real），不阻断 freeze。
+
+该 freeze 不启用任何能力。adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。是否允许真实交易所接入 / LIVE / 真实 credential / AI / DH runtime / adapter future-real-ready：**NO**。下一步 **NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT**。

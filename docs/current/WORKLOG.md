@@ -1,3 +1,19 @@
+## NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE（2026-06-23）
+
+完成 GateL-1D adapter error model contract freeze review，新增 `GATEL_1D_ERROR_MODEL_CONTRACT_FREEZE_REVIEW.md`，并在 `GATEL_1D_ERROR_MODEL_CONTRACT.md` §19 追加 Freeze Acceptance Update，同步 current 入口文档。结论：**PASS / FROZEN / ACCEPTED**。
+
+- 冻结对象：`GATEL_1D_ERROR_MODEL_CONTRACT.md` + `GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md`，作为 GateL-1E readiness checklist refinement 与 future-real 实现 Gate 的错误分类、retry、fail-closed、安全解释基线。
+- 冻结 error status enum：15 项（`NO_REAL_DISABLED` … `UNKNOWN_REQUIRES_REVIEW`）固化。
+- 冻结映射：合同层 status ↔ 既有 `AdapterResultCategory`（SUCCESS/ACCEPTED/NOT_FOUND/DEFERRED/RETRYABLE_FAILURE/FATAL_FAILURE/THROTTLED/AUTH_FAILURE/REMOTE_UNAVAILABLE）；未新增 enum / DTO。
+- 冻结 retry 语义：retryable=false 终态集合（含 INVALID_SYMBOL）仍禁止继续交易；RATE_LIMITED / VENUE_UNAVAILABLE 仍为受控 conditional retry（backoff / circuit breaker / kill switch / no-outbound guard）；UNKNOWN_REQUIRES_REVIEW 仍默认 fail-closed。
+- 冻结边界：`NO_REAL_DISABLED` 非成功；`CREDENTIALS_MISSING` 禁止 fallback；AUTH/PERMISSION/IP 禁止自动提升权限；RISK/ORDER/LEDGER 由 NQ core 拥有；`RAW_PAYLOAD_SUPPRESSED` 是安全边界。Noop / OKX / Binance / future-real placeholder / permission probe placeholder / marketdata placeholder 全覆盖；trading / marketdata / credential / permission path 全覆盖。
+- 既知 P2 保留为 follow-up（细粒度 status 在既有 `AdapterResultCategory` 折叠为 AUTH_FAILURE；rawPayload field deletion 独立任务；真实 backoff/circuit breaker/kill switch policy 属 future-real），不阻断 freeze。
+- Adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；真实交易所、LIVE、真实 credential、AI、DH runtime 仍禁止。
+- 验证：`git grep` 复核 Noop `NO_REAL_DISABLED` / OKX·Binance `disabled://` sentinel / `*.unconfigured()` credential 冻结不变量仍成立；`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；bounded `rg` 检查未把 retryable=false 错误写成可继续交易、未把 real exchange / LIVE / future-real-ready 写成 allowed、`CREDENTIALS_MISSING` 无 fallback 语义。
+- 边界：docs-only freeze；未修改 Java/TypeScript/Python；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未读取 `.env` 或真实 credential；未访问外网或真实交易所；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未删除 rawPayload 字段。
+- 回滚：删除 `GATEL_1D_ERROR_MODEL_CONTRACT_FREEZE_REVIEW.md`，还原 `GATEL_1D_ERROR_MODEL_CONTRACT.md` §19 与本轮对 `GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 的同步。
+- 下一步：`NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT`，不得直接进入 implementation / real adapter。
+
 ## NQ-GATEL-1D-ERROR-MODEL-CONTRACT-REVIEW（2026-06-23）
 
 完成 GateL-1D adapter error model contract review，新增 `GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md`，并在 `GATEL_1D_ERROR_MODEL_CONTRACT.md` §18 追加 Review Acceptance Update，同步 current 入口文档。结论：**PASS / REVIEW ACCEPTED（contract-only）**。
