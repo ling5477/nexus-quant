@@ -1,3 +1,54 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW（2026-06-23）
+
+结论：**PASS / RE-RUN GREEN；NOT FROZEN**。本轮只评审 5C-fix push 后 GitHub Actions re-run；未修改 workflow、Java / TypeScript / Python 代码、frontend tests、migration、scripts/deploy。
+
+Run evidence：
+
+- Workflow: `NQ CI Baseline`
+- Run: `28035713236` / `https://github.com/ling5477/nexus-quant/actions/runs/28035713236`
+- Commit / branch / trigger: `ba3f4c69da276fb68c22008724ed98a85658fd10` (`ba3f4c69`) / `dev` / `push`
+- Overall: completed / success
+- Target job: `Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82988350255`) completed / success
+- Existing jobs: Diff check, No-outbound guard, CI security smoke, Backend Maven test, PostgreSQL / Flyway smoke, Frontend build, Frontend no-backend E2E, Research quality gate, Secret scan all completed success
+
+Target job evidence：
+
+- PostgreSQL service / `Initialize containers`: success.
+- `Start nq-app local backend`: success.
+- `Wait for backend health UP`: success.
+- `Run adapter readiness backend E2E`: success.
+- Playwright command confirmed from workflow: `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`（单 spec，未扩大到全量 E2E）。
+- `Cleanup backend process`: success; `Stop containers`: success.
+- `Prepare sanitized backend smoke artifacts`: success.
+- `List frontend backend smoke artifact metadata`: success.
+- `Pre-upload redaction gate (frontend backend smoke artifacts)`: success.
+- `Upload frontend backend smoke artifacts`: success.
+- `Cleanup Playwright temp output (no upload)`: success.
+
+Artifact / content inspection：
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Artifact metadata | 通过 | `nq-frontend-e2e-backend-smoke-artifacts` uploaded, not expired, size 10990 bytes. |
+| Files | 通过 | Downloaded artifact contains exactly `backend.log` and `health.json`. |
+| Health | 通过 | `health.json` status `UP`; DB / readiness / liveness components `UP`. |
+| Text-only / no binary | 通过 | No Playwright trace/report/screenshot/video present. |
+| Secret-like scan | 通过 | `secret`、`apiKey/api_key`、`token`、`signature`、`passphrase`、`Authorization`、`cookie`、private key、raw credential/raw request/raw response all 0 matches. |
+| Real exchange / outbound scan | 通过 | real exchange host、`ERROR`、`Exception`、`ConnectException`、`UnknownHostException`、`No route to host`、`request failed` all 0 matches. |
+| Sanitized markers | 通过 | `backend.log` contains 2 `[redacted-sensitive-assignment]` placeholders; these are expected sanitized markers and not sensitive values. |
+
+Readiness evidence：
+
+- The target Playwright step passed, and the checked spec source asserts real `GET /api/adapters/readiness` status 200, fail-closed payload/UI, no `READY`, no `allowed=true`, no `liveAuthorized=true`, OKX/Binance `NOT_READY`, Noop `NO_REAL`, permission probe `REAL_PROVIDER_NOT_IMPLEMENTED`, and no secret-like UI/payload text.
+- Full GitHub job log download still returns HTTP 403 (`Must have admin rights to Repository`), so Playwright stdout and redaction gate stdout cannot be quoted directly. This remains P2 visibility residual, not a re-run blocker.
+
+Decision：
+
+- `frontend-e2e-backend-smoke` re-run is green.
+- Artifact redaction gate passed and upload succeeded.
+- Artifact content is reviewable and contains no secret-like / real-exchange / outbound-error hit.
+- Batch 5D freeze review is now allowed, but this review is not freeze.
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX（2026-06-23）
 
 结论：**IMPLEMENTED / PENDING RE-RUN**。本轮只做 `.github/workflows/ci.yml` 最小 CI fix 和 current docs 同步；未修改 backend Java、frontend TypeScript/React、frontend tests、Python、migration、scripts/deploy。

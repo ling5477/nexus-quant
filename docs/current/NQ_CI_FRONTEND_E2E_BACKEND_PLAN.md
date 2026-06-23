@@ -2,7 +2,7 @@
 
 任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN
 日期：2026-06-23
-状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED；5C first-run review = FAIL / FIRST-RUN-FIX REQUIRED；5C-fix implementation = IMPLEMENTED / PENDING RE-RUN；NOT FROZEN
+状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED；5C first-run review = FAIL / FIRST-RUN-FIX REQUIRED；5C-fix implementation = IMPLEMENTED；5C re-run review = PASS / RE-RUN GREEN；NOT FROZEN；Batch 5D freeze review allowed but not started
 
 ## Task classification
 
@@ -666,3 +666,67 @@ Do not mark Batch 5B as first green or frozen. Proceed only to `NQ-CI-FRONTEND-E
 ### Batch state
 
 Batch 5C-fix is implemented and awaits a GitHub Actions re-run. This does not establish first green evidence and does not unblock Batch 5D freeze by itself. Next step is re-run review of `frontend-e2e-backend-smoke`; only a green target run with reviewable artifact/log evidence may proceed toward Batch 5D freeze review.
+
+## Batch 5C re-run review addendum
+
+任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW
+日期：2026-06-23
+结论：PASS / RE-RUN GREEN；NOT FROZEN；Batch 5D freeze review allowed
+
+### Run evidence
+
+- Workflow: `NQ CI Baseline`.
+- Run id / URL: `28035713236` / `https://github.com/ling5477/nexus-quant/actions/runs/28035713236`.
+- Commit: `ba3f4c69da276fb68c22008724ed98a85658fd10` (`ba3f4c69`).
+- Branch / trigger: `dev` / `push`.
+- Overall status: completed / success.
+- Existing jobs: Diff check, No-outbound guard, CI security smoke, Backend Maven test, PostgreSQL / Flyway smoke, Frontend build, Frontend no-backend E2E, Research quality gate, Secret scan all completed success.
+
+### Job review
+
+- Target job: `Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82988350255`) completed success.
+- PostgreSQL service: `Initialize containers` success.
+- Backend startup: `Start nq-app local backend` success.
+- Health check: `Wait for backend health UP` success; uploaded `health.json` reports `status=UP`, DB `UP`, readiness/liveness `UP`.
+- Frontend E2E: `Run adapter readiness backend E2E` success.
+- Playwright command: workflow remains `npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`, so the target job did not expand to full E2E.
+- Shutdown: `Cleanup backend process` success and `Stop containers` success.
+
+### Readiness assertions
+
+The GitHub job log download still returns HTTP 403, so the Playwright stdout is not directly readable. The passing target step is accepted together with the checked spec source, which asserts real `GET /api/adapters/readiness` status 200, fail-closed payload/UI, no `READY`, no `allowed=true`, no `liveAuthorized=true`, OKX/Binance `NOT_READY`, Noop `NO_REAL`, permission probe `REAL_PROVIDER_NOT_IMPLEMENTED`, and no secret-like UI/payload text.
+
+### Redaction / artifact review
+
+- Artifact metadata: `nq-frontend-e2e-backend-smoke-artifacts`, uploaded, not expired, size 10990 bytes.
+- Downloaded content: exactly `backend.log` and `health.json`; no Playwright trace/report/screenshot/video.
+- Content inspection: `backend.log` and `health.json` are text artifacts. Scan counts for `secret`, `apiKey/api_key`, `token`, `signature`, `passphrase`, `Authorization`, `cookie`, private key, raw credential/raw request/raw response, real exchange hosts, `ERROR`, `Exception`, and outbound error markers are all 0. `backend.log` contains 2 `[redacted-sensitive-assignment]` placeholders, which are expected sanitized markers, not sensitive values.
+- Gate: `Pre-upload redaction gate (frontend backend smoke artifacts)` success.
+- Upload: `Upload frontend backend smoke artifacts` success and is still gated by redaction success in workflow structure.
+- Full job log: unavailable due GitHub API HTTP 403; therefore the metadata-list step's stdout and redaction gate success line cannot be independently read, but step conclusions and artifact content verify the upload path.
+
+### Security / no-outbound review
+
+- The target job uses `contents: read`, no `secrets.` reference, no real credential injection, and exchange URLs remain `PLACEHOLDER_ONLY`.
+- `NQ_LIVE_ENABLED`, `NQ_REAL_PROVIDER_ENABLED`, and `NQ_REAL_CLIENT_ENABLED` are not injected; `NQ_AI_ENABLED=false`, `NQ_DH_RUNTIME_ENABLED=false`, `NQ_REAL_EXCHANGE_ENABLED=false`.
+- Uploaded backend log has no real exchange host, credential material, outbound error, `ERROR`, or `Exception` hit. This closes the prior P2 runtime artifact/log evidence gap for the frontend backend smoke artifact path.
+
+### Findings
+
+#### P0
+
+- None.
+
+#### P1
+
+- None.
+
+#### P2
+
+- Full GitHub job log download still returns HTTP 403, so review cannot quote the metadata-list step stdout or redaction gate stdout. Step metadata and artifact inspection are sufficient for re-run green, but freeze review should note the same API-log visibility limitation if permissions remain unchanged.
+
+### Final review recommendation
+
+NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW：PASS / RE-RUN GREEN.
+
+This allows proceeding to `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW`. Do not mark this re-run review itself as frozen.

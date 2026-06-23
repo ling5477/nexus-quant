@@ -1,3 +1,38 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW（2026-06-23）
+
+评审 5C-fix push 后 GitHub Actions re-run：`NQ CI Baseline` run `28035713236`（URL `https://github.com/ling5477/nexus-quant/actions/runs/28035713236`），commit `ba3f4c69`，branch `dev`，trigger `push`。结论：**PASS / RE-RUN GREEN；NOT FROZEN**。
+
+执行边界：
+
+- 本轮只做 CI re-run review + docs evidence sync。
+- 未修改 `.github/workflows/ci.yml`、Java / TypeScript / Python 代码、frontend tests、migration、backend production logic、frontend page code、research、scripts 或 deploy。
+- 未读取 `.env`、真实 credential、key/pem/token/secret dump 或日志备份；未使用 repository secrets；未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；未把 OKX/Binance 写成 future-real-ready。
+
+证据摘要：
+
+- Overall run：completed / success。
+- Target job：`Frontend backend E2E smoke` (`frontend-e2e-backend-smoke`, job id `82988350255`) completed / success。
+- 目标 job 已通过：PostgreSQL service 初始化、`Start nq-app local backend`、`Wait for backend health UP`、`Run adapter readiness backend E2E`、`Cleanup backend process`、`Prepare sanitized backend smoke artifacts`、`List frontend backend smoke artifact metadata`、`Pre-upload redaction gate (frontend backend smoke artifacts)`、`Upload frontend backend smoke artifacts`、`Cleanup Playwright temp output (no upload)`、`Stop containers`。
+- Playwright 命令仍为单 spec：`npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`，未扩大到全量 E2E。
+- 既有 jobs 未回归：Diff check、No-outbound guard、CI security smoke、Backend Maven test、PostgreSQL / Flyway smoke、Frontend build、Frontend no-backend E2E、Research quality gate、Secret scan 均 success。
+
+Artifact / redaction 结论：
+
+- Run artifact metadata 显示 `nq-frontend-e2e-backend-smoke-artifacts` uploaded / not expired / size 10990 bytes。
+- 下载后仅包含 `backend.log` 与 `health.json`；未包含 Playwright trace、screenshot、report、video 或其他 binary artifact。
+- `health.json` 为 `UP`，DB / readiness / liveness components `UP`。
+- `backend.log` / `health.json` 内容扫描：secret、apiKey/api_key、token、signature、passphrase、Authorization、cookie、private key、raw credential/raw request/raw response、真实交易所 host、ERROR、Exception、ConnectException、UnknownHostException、No route to host、request failed 均 0 命中。
+- `backend.log` 含 2 个 `[redacted-sensitive-assignment]` sanitized marker，符合 5C-fix 预期，不是敏感值。
+- GitHub full job log download 仍返回 HTTP 403，因此无法逐行引用 metadata list / redaction gate stdout；但 step conclusion + artifact upload + artifact 内容扫描足够支持 re-run green。
+
+Readiness 结论：
+
+- Target Playwright step success；只读核对 spec 源码可知它断言真实 `GET /api/adapters/readiness` status 200、payload/UI fail-closed、无 `READY`、无 `allowed=true`、无 `liveAuthorized=true`、OKX/Binance `NOT_READY`、Noop `NO_REAL`、permission probe `REAL_PROVIDER_NOT_IMPLEMENTED`、无 secret-like UI/payload text。
+
+下一步：
+
+允许进入 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW`。不得把本 re-run review 写成 frozen；freeze 必须另起 Batch 5D review。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX（2026-06-23）
 
 执行 GateK CI Batch 5C fix：只定位并最小修复 GitHub Actions run `28033918182` 中 `frontend-e2e-backend-smoke` job 的 pre-upload artifact redaction gate failure。结论：**IMPLEMENTED / PENDING RE-RUN**；未 first green，未 frozen。
