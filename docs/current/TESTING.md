@@ -1,3 +1,14 @@
+## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT（2026-06-23）
+
+结论：**PASS / CONTRACT FROZEN**。本轮只新增 capability matrix contract 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
+
+- 预检：`Get-Location` = `F:\project\nexus-quant`；`git branch --show-current` = `dev`；预检 `git status --short` 无输出。
+- 只读取证：`backend/nq-adapter-api/**`、`backend/nq-adapter-okx/**`、`backend/nq-adapter-binance/**`；`docs/current/GATEL_1B_NO_REAL_HARDENING_PLAN.md`、`GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md`、`GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+- 文档验证：`git diff --check` 通过；`git diff --stat`（tracked diff）与 `git status --short` 仅显示 `docs/current/**` 变更；scope check 通过。
+- 禁止措辞检查：bounded `rg` 确认 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md` 中 `future-real-ready` 仅出现在否定、禁止或“不允许标记”语境；`real exchange` / `LIVE` / `allowed` 未形成授权语义。
+- 未执行 Maven / frontend / Python 测试，原因：本轮为 docs-only capability contract，不改 Java/TypeScript/Python、API、DTO、migration、workflow 或运行时配置；源码读取仅用于文档事实取证。
+- 未访问外网、交易所、DB、容器、GitHub Actions；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime。
+
 ## NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW（2026-06-23）
 
 结论：**PASS / FROZEN / ACCEPTED**。GateL-1B A/B/C/D 组合 No-Real hardening baseline 已冻结；P1-A / P1-B / P1-C producer suppression / P1-D 均 CLOSED / ACCEPTED，P1-C rawPayload field deletion 仍 NOT DONE / SEPARATE COMPATIBILITY TASK，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。

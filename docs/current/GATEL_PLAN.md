@@ -16,7 +16,7 @@
 
 | # | 问题 | 答案 |
 | --- | --- | --- |
-| 1 | 当前 NQ 是否可以直接接真实 OKX / Binance？ | **不能。** real permission probe adapter / RealClient 均 NOT IMPLEMENTED；no-outbound guard 必须 fail-closed。GateL-1 复核确认 OKX 默认 endpoint 为 `disabled://` sentinel，但 Binance 仍默认指向 testnet/mainnet 外部 URL，属于 P1 No-Real 缺口，不得接入。 |
+| 1 | 当前 NQ 是否可以直接接真实 OKX / Binance？ | **不能。** real permission probe adapter / RealClient 均 NOT IMPLEMENTED；no-outbound guard 必须 fail-closed。GateL-1B overall freeze 后 OKX / Binance 默认 endpoint 均为 `disabled://` sentinel，且 runtime credential 默认 unconfigured；这只代表 No-Real hardening baseline 已冻结，不代表允许真实 OKX / Binance 接入。 |
 | 2 | 当前是否允许启用 LIVE？ | **不能。** LIVE DISABLED；PAPER / LIVE 硬隔离；任何 LIVE 能力即使只读也须另起安全审计。 |
 | 3 | 当前是否允许实现 RealClient？ | **不能。** RealClient NOT IMPLEMENTED，且本轮及 GateL planning 范围内禁止实现。 |
 | 4 | 当前是否允许读取真实 API key？ | **不能。** 默认 credential permission probe = NoReal / SKIPPED；`.env.example` placeholder-only；secret scan + redaction gate 已冻结。 |
@@ -47,7 +47,7 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 - real OKX / Binance permission probe adapter：NOT IMPLEMENTED。
 - 默认 credential permission probe：NoReal / SKIPPED / REAL_EXCHANGE_PROBE_DISABLED。
 - no-outbound guard：FROZEN / ACCEPTED（fail-closed，覆盖 OKX/Binance/Bybit/Bitget/Gate/Coinbase/Kraken/Crypto/Hyperliquid）。
-- Runtime 默认 endpoint：OKX 已是 `disabled://` sentinel；Binance 仍硬编码 testnet/mainnet REST/WS URL，GateL-1 登记为 P1，不能描述为 No-Real 默认安全。
+- Runtime 默认 endpoint：OKX / Binance 均已在 GateL-1B hardening 中收口为 `disabled://` sentinel；runtime credential 默认 `*.unconfigured()`。该事实只代表 No-Real hardening baseline 已冻结，不能描述为真实交易所 ready 或 future-real-ready。
 
 ### 2.1 现有 no-real 资产盘点（GateL 不是从零搭建，而是 review / freeze 既有边界）
 
@@ -55,7 +55,7 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 
 - `nq-adapter-api`（契约）：`TradingAdapter`、`MarketDataAdapter`、`AccountAdapter`、`HistoricalKlineAdapter`，及 `NoopMarketDataAdapter` / `NoopAccountAdapter`；model：`AdapterOrderRequest` / `AdapterOrderAck` / `AdapterOrderSnapshot` / `AdapterOrderQuery` / `AdapterOpenOrdersQuery` / `AdapterCancelRequest` / `AdapterCancelAck` / `AdapterTradeReport` / `AdapterError` / `AdapterResultCategory`（9 类：SUCCESS / ACCEPTED / NOT_FOUND / DEFERRED / RETRYABLE_FAILURE / FATAL_FAILURE / THROTTLED / AUTH_FAILURE / REMOTE_UNAVAILABLE） / `AccountSnapshot` / `AccountBalanceSnapshot` / `PositionSnapshot` / `HistoricalKlineBar` / `HistoricalKlineRequest` / `MarketDataSubscriptionRequest` / `MarketDataSubscriptionAck`。
 - `nq-adapter-okx`：`OkxExchangeAdapter`、`OkxHttpClient`、`OkxRequestSigner`、`OkxRuntimeConfig`（默认 `disabled://` sentinel）、`OkxPermissionProbeBoundary`（forbidden endpoint：`/trade/order`、`/trade/cancel`、`/asset/withdraw`、`/asset/transfer`、`/account/transfer`；脱敏 classify）、`OkxHistoricalKlineAdapter`、`OkxInstrumentsCache`、`OkxBootstrapFallbackFactory`（stub baseUrl `http://127.0.0.1`，authenticated 抛 `OKX_ADAPTER_BOOTSTRAP_STUB`）、`OkxErrorClassifier` / `OkxErrorCode`、`OkxWsClient` 及 WS 协议栈（当前不连真实 WS）。
-- `nq-adapter-binance`：`BinanceExchangeAdapter`、`BinanceHttpClient`、`BinanceHmacRequestSigner` / `BinanceEd25519RequestSigner`、`BinanceRuntimeConfig`、`BinancePermissionProbeBoundary`、`BinanceHistoricalKlineAdapter`、`BinanceFiltersCache`、`BinanceExchangeInfoClient`、`BinanceWsClient` / `BinanceListenKeyClient` 及 WS 协议栈。GateL-1 复核确认 runtime 默认仍为 testnet/mainnet 外部 URL，不能归类为 No-Real 默认安全。
+- `nq-adapter-binance`：`BinanceExchangeAdapter`、`BinanceHttpClient`、`BinanceHmacRequestSigner` / `BinanceEd25519RequestSigner`、`BinanceRuntimeConfig`、`BinancePermissionProbeBoundary`、`BinanceHistoricalKlineAdapter`、`BinanceFiltersCache`、`BinanceExchangeInfoClient`、`BinanceWsClient` / `BinanceListenKeyClient` 及 WS 协议栈。GateL-1B-A 已将 runtime 默认 REST/WS endpoint 冻结为 `disabled://` sentinel；这不授权真实 Binance 接入。
 - `nq-core` marketdata：`HistoricalKlineProvider`、`HistoricalMarketDataPort`、`MarketdataBarRepository`、`MarketdataDatasetRepository`、`InstrumentCatalogRepository` / `InstrumentCatalogService` / `InstrumentCatalogSyncService`、`FixtureMarketdataRegistry` / `FixtureMarketdataDataset`、`BarInterval`、`HistoricalBar`、`HistoricalDatasetSpec`、`HistoricalMarketDataQuery`、`MarketdataBarIngestService`、`MarketdataIngestionService`。
 - `nq-core` trading：`OrderCommandService`、`OrderCommandWriteService`、`OrderLifecycleService`、`OrderAggregate`、`OrderRecord`、`OrderRepository`、`OrderStateMachine` / `InMemoryOrderStateMachine`、`PlaceOrderRequest` / `CancelOrderRequest`、`ExecutionCommandMapper`、`StrategyExecutionGateway` / `OrderCommandStrategyExecutionGateway`、`TradingOrderStatusSnapshot`。
 - `nq-risk`：`RiskGate` / `NoopRiskGate`、`PreTradeRiskService`、`RiskRuleRegistry`、`RiskRule` 及规则（`AccountTradingEnabledRule`、`DuplicateRequestRule`、`KillSwitchRiskRule` / `KillSwitchService`、`MaxOrderAmountRule`、`MinNotionalRule`、`OrderPrecisionRule`、`RateLimitRule`、`SymbolEnabledRule`）、`RiskContext`、`RiskDecisionResult`。
@@ -170,7 +170,7 @@ GateJ completed；GateK planning baseline FROZEN / ACCEPTED；GateK CI mainline 
 ## 10. Recommended next task
 
 - **GateL-1A：Exchange adapter contract review freeze = PASS / FROZEN / ACCEPTED**（docs-only）。只冻结 review 事实、P1/P2 与处理顺序；adapter readiness = NOT READY / NOT FROZEN，P1/P2 均保持 OPEN。
-- 后续顺序冻结为：GateL-1B No-Real hardening plan → GateL-1C capability matrix contract → GateL-1D error model contract → GateL-1E future-real readiness checklist refinement。GateL-1B plan + plan review 已 **PASS / FROZEN / ACCEPTED**；GateL-1B-A（commit `04ddb774`）、GateL-1B-B（commit `ad7f58b0`）、GateL-1B-C producer suppression（commit `316497ad`）、GateL-1B-D（commit `7e442eb7`）均 **CLOSED / ACCEPTED / FROZEN**；GateL-1B overall No-Real hardening baseline 已 **PASS / FROZEN / ACCEPTED**（详见 `GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md`）。`rawPayload` 字段删除未做，另起兼容性任务；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。下一步 `NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT`，不得直接进入 real adapter。
+- 后续顺序冻结为：GateL-1B No-Real hardening plan → GateL-1C capability matrix contract → GateL-1D error model contract → GateL-1E future-real readiness checklist refinement。GateL-1B plan + plan review 已 **PASS / FROZEN / ACCEPTED**；GateL-1B-A（commit `04ddb774`）、GateL-1B-B（commit `ad7f58b0`）、GateL-1B-C producer suppression（commit `316497ad`）、GateL-1B-D（commit `7e442eb7`）均 **CLOSED / ACCEPTED / FROZEN**；GateL-1B overall No-Real hardening baseline 已 **PASS / FROZEN / ACCEPTED**（详见 `GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md`）。GateL-1C capability matrix contract 已 **PASS / CONTRACT FROZEN**（详见 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md`），冻结能力状态枚举与 Noop / OKX / Binance / future-real / permission probe / marketdata placeholder 矩阵；`rawPayload` 字段删除未做，另起兼容性任务；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**。下一步 `NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW`，不得直接进入 real adapter。
 - 真实交易所接入仍须在 readiness checklist 全部满足 + 专项安全审计 + 用户显式授权后**另起 Gate**，不在 GateL 范围内。
 
 ## 11. 验收标准（GateL planning 验收）

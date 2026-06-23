@@ -1,3 +1,17 @@
+## NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT（2026-06-23）
+
+完成 GateL-1C capability matrix contract，新增 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md`，并同步 current 入口文档。结论：**PASS / CONTRACT FROZEN**。
+
+- 新增 capability status enum：`CLOSED_NO_REAL`、`DISABLED_SENTINEL`、`NO_REAL_DISABLED`、`STUB_ONLY`、`NOT_IMPLEMENTED`、`FUTURE_REAL_REQUIRES_GATE`、`FORBIDDEN_IN_GATEL`、`UNKNOWN_REQUIRES_REVIEW`。
+- 覆盖 adapter / venue：Noop adapter、OKX adapter、Binance adapter、future-real adapter placeholder、permission probe placeholder、marketdata no-real / future-real placeholder。
+- 覆盖能力维度：spot / margin / futures、place / cancel / query order、account balance、permission probe、REST public/private、WS public/private、historical OHLCV、ticker、orderbook、trades、bars/trades/order-book subscription、credential source、endpoint default、raw payload boundary、testnet/sandbox、rate limit、retry、kill switch / no-outbound guard、audit / ledger ownership、risk gate dependency。
+- 明确禁止解释：OKX/Binance existing adapters 不是 future-real-ready，不等于真实交易所授权；GateL-1B P1-A/B/C/D 关闭只代表 No-Real hardening baseline 完成；Noop marketdata 是 `NO_REAL_DISABLED`，不是 success；所有 real exchange capability 在当前合同内只能是 `FUTURE_REAL_REQUIRES_GATE` 或 `FORBIDDEN_IN_GATEL`。
+- 同步 `GATEL_PLAN.md` 中旧的 Binance endpoint 事实：GateL-1B-A/overall freeze 后 Binance 默认 REST/WS endpoint 已是 `disabled://` sentinel；该事实不授权真实 Binance 接入。
+- 验证：`git diff --check` 通过；`git diff --stat`（tracked diff）、`git status --short` 和 scope check 确认仅 `docs/current/**` 变更；bounded `rg` 检查未把 adapter 写成 future-real-ready，未把 real exchange / LIVE 写成 allowed。
+- 边界：docs-only；未修改 Java/TypeScript/Python；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未读取 `.env` 或真实 credential；未访问外网或真实交易所；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未删除 rawPayload 字段。
+- 回滚：删除 `GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md`，并还原本轮对 `GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 的同步。
+- 下一步：`NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW`，只读复核；不得直接进入 real adapter。
+
 ## NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW（2026-06-23）
 
 完成 GateL-1B overall No-Real hardening freeze review，新增 `GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md`，整体冻结 A/B/C/D 组合 hardening 证据。结论：**PASS / FROZEN / ACCEPTED**。
