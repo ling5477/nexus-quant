@@ -207,9 +207,9 @@ Any future real exchange capability requires a separate Gate and must satisfy at
 
 ## 15. Next Task Recommendation
 
-**NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW**。
+**NQ-GATEL-1D-ERROR-MODEL-CONTRACT**。
 
-The review must remain read-only. It must not implement real adapter, real provider, RealClient, LIVE, AI, DH runtime, rawPayload field deletion, real credential governance bridge, or real permission probe.
+GateL-1C review has accepted this capability matrix contract as PASS / REVIEW ACCEPTED. The next contract must remain docs-only unless separately authorized. It must not implement real adapter, real provider, RealClient, LIVE, AI, DH runtime, rawPayload field deletion, real credential governance bridge, or real permission probe.
 
 ## 16. Final Recommendation
 
@@ -220,4 +220,12 @@ The review must remain read-only. It must not implement real adapter, real provi
 是否允许真实 credential：**NO**。
 是否允许 AI / DH runtime：**NO**。
 是否允许将 adapter 标记为 future-real-ready：**NO**。
-推荐下一步：**NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW**。
+推荐下一步：**NQ-GATEL-1D-ERROR-MODEL-CONTRACT**。
+
+## 17. Review Acceptance Update
+
+**NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT-REVIEW：PASS / REVIEW ACCEPTED（2026-06-23）。**
+
+Review accepted the GateL-1C capability matrix contract as a frozen contract-only baseline. Adapter readiness remains **NOT READY / NOT FROZEN / NOT AUTHORIZED**. Real exchange access, LIVE, real credential, AI, DH runtime, and adapter future-real-ready marking remain **NO**.
+
+Recommended next task: **NQ-GATEL-1D-ERROR-MODEL-CONTRACT**。
