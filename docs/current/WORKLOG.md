@@ -1,3 +1,33 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX（2026-06-23）
+
+执行 GateK CI Batch 5C fix：只定位并最小修复 GitHub Actions run `28033918182` 中 `frontend-e2e-backend-smoke` job 的 pre-upload artifact redaction gate failure。结论：**IMPLEMENTED / PENDING RE-RUN**；未 first green，未 frozen。
+
+执行边界：
+
+- 本轮只修改 `.github/workflows/ci.yml` 与允许的 `docs/current` 状态文档。
+- 未修改 backend Java、frontend TypeScript / React 页面、frontend tests、Python、migration、research、scripts 或 deploy。
+- 未读取 `.env`、真实 credential、key/pem/token/secret dump 或日志备份；未使用 repository secrets；未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；未把 OKX/Binance 写成 future-real-ready。
+
+失败定位：
+
+- Run：`28033918182`。
+- Job：`frontend-e2e-backend-smoke`。
+- First failing step：`Pre-upload redaction gate (frontend backend smoke artifacts)`。
+- Root cause：workflow 生成的 `backend.log` 可能把敏感 assignment 字段名保留为 `<field>=<redacted>`；redaction gate 设计上仍会拦截 `secret` / `token` / `password` / `signature` assignment 形态，因此这是脱敏输出形态与 gate 规则冲突导致的 fail-closed。由于 job log HTTP 403 且 artifact 未上传，exact CI rule/file 仍不可见。
+
+修复摘要：
+
+- 将 frontend backend smoke artifact 目录从 repo workspace `artifacts/frontend-e2e-backend-smoke` 改为 `${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts`。
+- 新增 metadata-only artifact list step，只输出 filename、bytes、MIME type、MIME encoding，不输出内容。
+- `backend.log` 生成时移除完整敏感 assignment token shape，写入 `[redacted-sensitive-assignment]`，避免已脱敏 artifact 仍包含 `secret=` / `token=` 等 key 形态。
+- Redaction gate 保持 fail-closed：缺目录、缺必需文件、空文件、binary 文件或任一 high-risk rule hit 都失败。
+- Redaction finding 输出改为 `REDACTION_HIT rule=<rule> file=<path>`，不输出 matched value / matched line。
+- Upload step 继续依赖 gate success；Playwright trace/screenshot/report/video 仍不上传。
+
+下一步：
+
+提交并触发 `NQ CI Baseline` re-run 后，执行 `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-RE-RUN-REVIEW`。Batch 5D freeze 继续 blocked，直到目标 job green 且 artifact/log evidence 可审查。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW（2026-06-23）
 
 评审 GitHub Actions first run：`NQ CI Baseline` run `28033918182`（URL `https://github.com/ling5477/nexus-quant/actions/runs/28033918182`），commit `2e9c956e`，branch `dev`，trigger `push`。结论：**FAIL / FIRST-RUN-FIX REQUIRED**；未 first green，未 frozen。

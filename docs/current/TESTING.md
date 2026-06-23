@@ -1,3 +1,27 @@
+## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX（2026-06-23）
+
+结论：**IMPLEMENTED / PENDING RE-RUN**。本轮只做 `.github/workflows/ci.yml` 最小 CI fix 和 current docs 同步；未修改 backend Java、frontend TypeScript/React、frontend tests、Python、migration、scripts/deploy。
+
+定位结果：
+
+- Redaction gate 扫描目录原为 `artifacts/frontend-e2e-backend-smoke`；本轮改为 `${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts`。
+- 目录应只包含 generated text artifacts：`backend.log`、`health.json`。
+- Gate rules 覆盖 `.env`、private key、cloud/token patterns、credential URL、api key/secret、passphrase、token、password、cookie、private key、mnemonic、signature、credential material、raw request/response、encrypted/decrypted payload、真实交易所 host。
+- Failure source 判定：最可能是 sanitized backend log 仍保留敏感 assignment key 形态（例如 `secret=<redacted>` / `token=<redacted>` / `password=<redacted>` / `signature=<redacted>`），从而被 assignment 规则继续命中。Exact rule/file 因 run `28033918182` job log HTTP 403 且 artifact 未上传不可见。
+- Gate output policy 修正为 `REDACTION_HIT rule=<rule> file=<path>`；不得输出 matched value 或 matched line。
+
+本地验证：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git diff --check` | 通过 | 仅输出 LF/CRLF working-copy 提示，无 whitespace error。 |
+| `git diff --stat` | 通过 | 7 files changed：`.github/workflows/ci.yml` + 6 个允许的 `docs/current` 文件。 |
+| forbidden-area diff | 通过 | `git diff --name-only -- backend frontend research scripts deploy` 为空；migration path diff 为空。 |
+| workflow structure check | 通过 | `frontend-e2e-backend-smoke`、redaction gate、upload step 均存在；upload 在 gate 后并依赖 `steps.frontend_backend_artifact_gate.outcome == 'success'`；job block 无 `continue-on-error` / `secrets.` / `NQ_LIVE_ENABLED=true`；exchange URL assignments 全为 `PLACEHOLDER_ONLY`；upload path 不含 Playwright report / trace / screenshot / video。 |
+| local redaction shell simulation | 通过 | WSL bash 不可用，改用 Git for Windows bash。clean artifact pass；raw `apiKey` / `token` / `signature` artifact fail；failure 输出仅 `REDACTION_HIT rule=<rule> file=backend.log`，不含 matched value；sanitized artifact pass。 |
+
+未完整模拟 GitHub Actions：本地不具备完整 Actions service container、runner temp path、artifact upload action 和 GitHub job log 权限环境；本轮只验证 workflow 结构与 redaction shell 逻辑。是否 first green 必须由 re-run 后单独 review 判定。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW（2026-06-23）
 
 结论：**FAIL / FIRST-RUN-FIX REQUIRED**。只评审 GitHub Actions first run evidence；未修改 workflow、Java / TypeScript / Python 代码、frontend tests、migration、scripts/deploy。

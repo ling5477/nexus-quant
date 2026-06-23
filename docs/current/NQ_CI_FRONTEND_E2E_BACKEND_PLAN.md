@@ -2,7 +2,7 @@
 
 任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5A-PLAN
 日期：2026-06-23
-状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED；5C first-run review = FAIL / FIRST-RUN-FIX REQUIRED；NOT FROZEN
+状态：5A plan = PASS / PLAN ONLY / NOT IMPLEMENTED；5A plan review = PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE；5B implementation = IMPLEMENTED；5C first-run review = FAIL / FIRST-RUN-FIX REQUIRED；5C-fix implementation = IMPLEMENTED / PENDING RE-RUN；NOT FROZEN
 
 ## Task classification
 
@@ -637,3 +637,32 @@ Expected next evidence task:
 NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIRST-RUN-REVIEW：FAIL.
 
 Do not mark Batch 5B as first green or frozen. Proceed only to `NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX`, then rerun first-run review. Freeze remains Batch 5D and is blocked by this failed first run.
+
+## Batch 5C-fix implementation addendum
+
+任务：NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5C-FIX
+日期：2026-06-23
+结论：IMPLEMENTED / PENDING RE-RUN；NOT FROZEN；NOT FIRST GREEN
+
+### Failure source
+
+- Run: `28033918182`.
+- Job: `frontend-e2e-backend-smoke`.
+- First failing step: `Pre-upload redaction gate (frontend backend smoke artifacts)`.
+- Root cause: current workflow generated `backend.log` with sensitive assignment field names preserved as `<field>=<redacted>`. The pre-upload gate intentionally matches assignment-shaped strings such as `secret=`, `token=`, `password=`, and `signature=`, so a sanitized-but-still-assignment-shaped log can fail closed. Because job logs returned HTTP 403 and artifact upload was skipped, the exact CI rule/file output remains uninspectable; the fix removes that failure class without weakening the gate.
+- Affected artifacts: generated text-only `backend.log` and `health.json`.
+
+### Redaction gate fix
+
+- Scan directory: changed frontend backend smoke artifacts from repo workspace `artifacts/frontend-e2e-backend-smoke` to generated temp dir `${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts`.
+- File list: added a metadata-only debug step that prints file name, byte size, MIME type, and MIME encoding; it never prints artifact content.
+- Sanitization: backend raw log is transformed into uploaded `backend.log` by replacing the full sensitive assignment token shape with `[redacted-sensitive-assignment]`, so uploaded text no longer preserves `secret=` / `token=` / `password=` / `signature=` keys.
+- File filter: gate still rejects binary files before grep; Playwright trace/report/screenshot/video remain not uploaded.
+- Rules: high-risk credential, token, key, raw payload, and real exchange host patterns remain enforced.
+- Output policy: findings are `REDACTION_HIT rule=<rule> file=<path>` only; matched values and lines are never printed.
+- Fail-closed behavior: missing artifact dir, missing/empty required files, binary files, or any rule hit fail the job.
+- Upload dependency: `Upload frontend backend smoke artifacts` still runs only when the redaction gate succeeds.
+
+### Batch state
+
+Batch 5C-fix is implemented and awaits a GitHub Actions re-run. This does not establish first green evidence and does not unblock Batch 5D freeze by itself. Next step is re-run review of `frontend-e2e-backend-smoke`; only a green target run with reviewable artifact/log evidence may proceed toward Batch 5D freeze review.

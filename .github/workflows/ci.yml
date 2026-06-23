@@ -1142,13 +1142,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          artifact_dir="artifacts/frontend-e2e-backend-smoke"
+          artifact_dir="${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts"
           raw_log="${RUNNER_TEMP}/nq-frontend-e2e-backend.raw.log"
           health_file="${RUNNER_TEMP}/nq-frontend-e2e-backend-health.json"
+          rm -rf "${artifact_dir}"
           mkdir -p "${artifact_dir}"
 
+          sanitize_backend_log() {
+            # Why: the upload gate intentionally flags sensitive assignment keys even when
+            # values are masked. Uploaded artifacts therefore remove the full assignment token
+            # shape instead of preserving strings such as secret=<redacted> or token=<redacted>.
+            sed -E 's/([A-Za-z0-9_.-]*(apiKey|api[_-]?key|apiSecret|api[_-]?secret|secret|token|signature|passphrase|password|cookie)[A-Za-z0-9_.-]*[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/[redacted-sensitive-assignment]/Ig' "$1"
+          }
+
           if [ -s "${raw_log}" ]; then
-            sed -E 's/((apiKey|api[_-]?key|apiSecret|api[_-]?secret|secret|token|signature|passphrase|password|cookie)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1<redacted>/Ig' "${raw_log}" > "${artifact_dir}/backend.log"
+            sanitize_backend_log "${raw_log}" > "${artifact_dir}/backend.log"
           else
             printf 'backend log unavailable\n' > "${artifact_dir}/backend.log"
           fi
@@ -1159,6 +1167,28 @@ jobs:
             printf '{"status":"UNAVAILABLE"}\n' > "${artifact_dir}/health.json"
           fi
 
+      - name: List frontend backend smoke artifact metadata
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          artifact_dir="${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts"
+
+          if [ ! -d "${artifact_dir}" ]; then
+            echo "Artifact directory is missing: ${artifact_dir}" >&2
+            exit 1
+          fi
+
+          echo "Generated artifact metadata (name | bytes | mime-type | mime-encoding; content not printed):"
+          while IFS= read -r -d '' f; do
+            rel="${f#"${artifact_dir}/"}"
+            bytes="$(wc -c < "${f}" | tr -d ' ')"
+            mime_type="$(file -b --mime-type "${f}")"
+            mime_encoding="$(file -b --mime-encoding "${f}")"
+            printf '%s | %s | %s | %s\n' "${rel}" "${bytes}" "${mime_type}" "${mime_encoding}"
+          done < <(find "${artifact_dir}" -type f -print0 | sort -z)
+
       - name: Pre-upload redaction gate (frontend backend smoke artifacts)
         id: frontend_backend_artifact_gate
         if: always()
@@ -1166,9 +1196,24 @@ jobs:
         run: |
           set -euo pipefail
 
-          gate_target="artifacts/frontend-e2e-backend-smoke"
-          test -s "${gate_target}/backend.log"
-          test -s "${gate_target}/health.json"
+          gate_target="${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts"
+
+          if [ ! -d "${gate_target}" ]; then
+            echo "Pre-upload redaction gate: generated artifact directory is missing: ${gate_target}" >&2
+            exit 1
+          fi
+
+          required_artifacts=(
+            backend.log
+            health.json
+          )
+
+          for artifact in "${required_artifacts[@]}"; do
+            if [ ! -s "${gate_target}/${artifact}" ]; then
+              echo "Pre-upload redaction gate: required artifact missing or empty: ${artifact}" >&2
+              exit 1
+            fi
+          done
 
           while IFS= read -r -d '' f; do
             if [ "$(file -b --mime-encoding "${f}")" = "binary" ]; then
@@ -1214,23 +1259,23 @@ jobs:
             [ -z "${files}" ] && continue
             while IFS= read -r mf; do
               [ -z "${mf}" ] && continue
-              echo "${rule} | ${mf#"${gate_target}/"}" >> "${violations}"
+              echo "REDACTION_HIT rule=${rule} file=${mf#"${gate_target}/"}" >> "${violations}"
             done <<< "${files}"
           done < "${patterns}"
 
           if [ -s "${violations}" ]; then
-            echo "Pre-upload redaction gate found high-risk pattern(s) (rule | file only; values never printed):" >&2
+            echo "Pre-upload redaction gate found high-risk pattern(s) (rule/file only; values never printed):" >&2
             cat "${violations}" >&2
             exit 1
           fi
-          echo "Pre-upload redaction gate: no high-risk pattern in ${gate_target}."
+          echo "Pre-upload redaction gate: no high-risk pattern in generated artifact directory."
 
       - name: Upload frontend backend smoke artifacts
         if: always() && steps.frontend_backend_artifact_gate.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: nq-frontend-e2e-backend-smoke-artifacts
-          path: artifacts/frontend-e2e-backend-smoke/
+          path: ${{ runner.temp }}/nq-frontend-e2e-backend-smoke-artifacts/
           if-no-files-found: error
           retention-days: 7
 
