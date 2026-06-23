@@ -16,6 +16,7 @@
 - Publish API：发布候选、发布状态。
 - Instrument API：交易标的、交易所、市场类型、symbol catalog。
 - Marketdata API：行情基础 ingest/query 能力。
+- Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Actuator / Health：Spring Boot actuator、健康检查。
 
 ## 当前边界
@@ -28,6 +29,17 @@
 - GateH-3 新增 marketdata dataset、quality refresh、backtest config dataset binding 与 backtest run dataset snapshot API；不新增 AI 接口。
 - GateI-1 新增策略版本与发布版本绑定 API；不接 AI。
 - GateI-2 增强 backtest config、backtest run 和 evaluation report 追溯 API；不进入 GateI-3/4，不接 AI。
+- GateM-5A 新增只读 adapter readiness status API；只读静态 readiness 决策，no-real / fail-closed，不接 AI、不接真实交易所、不读 credential、不启用 LIVE。
+
+## Adapter Readiness API
+
+GateM-5A 新增的只读 adapter readiness 状态查询入口：
+
+- `GET /api/adapters/readiness`：只读返回当前各 venue × capability 的 readiness 快照，供前端展示 OKX / Binance / Noop 当前不可实盘及原因。需要认证（bearerAuth），归属 `/api/**` 受保护路由。
+  - 响应：`{ generatedAt, items[] }`；每个 item 含 `venue / capability / status / allowed / liveAuthorized / reasons[] / message`。
+  - 覆盖 venue：`NOOP / PAPER / SIM / OKX / BINANCE`；覆盖 capability：`PUBLIC_MARKETDATA / SUBSCRIBE_BARS / SUBSCRIBE_TRADES / SUBSCRIBE_ORDERBOOK / PLACE_ORDER / CANCEL_ORDER / QUERY_ORDER / ACCOUNT_BALANCE / PERMISSION_PROBE`（5 × 9 = 45 条）。
+  - 当前 baseline（no-real / LIVE disabled）行为：NOOP/PAPER/SIM → `status=NO_REAL`；OKX/BINANCE → `status=NOT_READY`；所有条目 `allowed=false`、`liveAuthorized=false`，无 `READY`；PLACE_ORDER/CANCEL_ORDER 带 `LIVE_DISABLED` 原因，PERMISSION_PROBE 带 `REAL_PROVIDER_NOT_IMPLEMENTED` 原因。
+  - 边界：只读静态 readiness 决策；不触达 adapter delegate、不发起 HTTP/socket、不读取 env/credential、不触发下单/撤单/行情订阅；响应不含 secret/apiKey/token/signature/passphrase 或 raw payload。
 
 ## Account Credential API
 

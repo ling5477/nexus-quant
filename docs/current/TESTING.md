@@ -1,3 +1,30 @@
+## NQ-GATEM-5A-ADAPTER-READINESS-STATUS-API（2026-06-23）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增只读 `GET /api/adapters/readiness`（nq-api controller + service + DTO）+ 测试；未新增 migration/workflow，未改 frontend/research/scripts/deploy，未访问外网或真实交易所，未读取 credential。
+
+执行命令与结果：
+
+- `git diff --check`：通过。
+- `mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance,nq-api,nq-app -am test`：**BUILD SUCCESS**；`AdapterReadinessStatusServiceTest` 6/0/0/0；`AdapterReadinessControllerTest` 1/0/0/0；`nq-api` 34/0/0/0；`nq-app` 73/0/0/2 skipped（既有 CI-only `NqAppContextPostgresSmokeTest` + 1 live diagnostic）；`nq-adapter-api`/`nq-adapter-okx`/`nq-adapter-binance` 全绿（含 GateM-0/1/2 readiness 测试、OKX/Binance adapter 回归）；GateM-3/4 测试（`ExchangeAdapterConfigurationReadinessTest`、`TradingVenueGatewayReadinessRuntimeSmokeTest`）保留通过。
+
+覆盖点：
+
+- `GET /api/adapters/readiness` 返回 5 venue × 9 capability = 45 条 readiness item，含 OKX / BINANCE / NOOP / PAPER / SIM。
+- OKX / BINANCE 全部 `allowed=false`、`liveAuthorized=false`、`status != READY`、reasons 非空。
+- 无任何条目 `status=READY` 或 `allowed=true`。
+- NOOP / PAPER / SIM 全部 `status=NO_REAL`、`allowed=false`、reasons 含 `NO_REAL_DISABLED`（非 success）。
+- PLACE_ORDER / CANCEL_ORDER `liveAuthorized=false`；OKX/Binance mutating 能力带 `LIVE_DISABLED` 原因。
+- OKX/Binance PERMISSION_PROBE 带 `REAL_PROVIDER_NOT_IMPLEMENTED` 原因。
+- service 仅通过 `AdapterReadinessService.evaluate` 读取静态决策（RecordingReadinessService 断言 45 次 evaluate、无 delegate 触达）；controller 经 standalone MockMvc 不启动真实 Spring 安全/DB/外联。
+- 响应体与各字段不含 `secret` / `apikey` / `api_key` / `token` / `signature` / `passphrase`。
+- 既有 nq-app 全量 @SpringBootTest（local profile）context 仍加载通过，证明新 `@RestController` + `@Service` Bean 不破坏 Spring context。
+
+风险与未覆盖：
+
+- 初稿因 `@Service` 多构造器未标 `@Autowired`，3 个 nq-app full-context local 测试 context 加载失败（`No default constructor found`）；已最小修复（公共构造器加 `@Autowired`）并复跑全绿。
+- `DefaultAdapterReadinessService` 永不产出 READY；本轮不实现 real provider / real permission probe / real credential governance bridge。
+- 测试输出可能出现既有 OKX connection fingerprint `apiKey=missing`，未输出真实 credential 值。
+
 ## NQ-GATEM-4-READINESS-GUARD-RUNTIME-SMOKE（2026-06-23）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮 test-only（无 main 代码改动），新增消费侧 runtime smoke，证明 scheduler 侧 `AdapterBackedTradingVenueGateway` 消费 Spring 装配的 OKX/Binance guarded trading adapter 时仍 fail-closed；未新增 API/DTO/migration/workflow，未改 frontend/research/scripts/deploy，未访问外网或真实交易所。

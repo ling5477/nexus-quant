@@ -1,3 +1,20 @@
+## NQ-GATEM-5A-ADAPTER-READINESS-STATUS-API（2026-06-23）
+
+新增只读 `GET /api/adapters/readiness`，给后续前端展示 OKX / Binance / Noop 当前不可实盘及原因。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮写 Java 代码 + 测试 + 少量文档同步，未新增合同 / review / freeze 文档。
+
+变更摘要：
+
+- 新增 `backend/nq-api/.../adapters/api/web/AdapterReadinessController`：`@RestController @RequestMapping("/api/adapters")`，`GET /readiness`，认证 + bearerAuth，归属既有 `/api/**` 受保护路由（未改安全配置）。
+- 新增 `backend/nq-api/.../adapters/api/AdapterReadinessStatusService`：`@Service`，对固定 5 venue（NOOP/PAPER/SIM/OKX/BINANCE）× 9 capability（PUBLIC_MARKETDATA/SUBSCRIBE_BARS/SUBSCRIBE_TRADES/SUBSCRIBE_ORDERBOOK/PLACE_ORDER/CANCEL_ORDER/QUERY_ORDER/ACCOUNT_BALANCE/PERMISSION_PROBE）逐项 `AdapterReadinessService.evaluate`，只读静态决策。公共构造器标 `@Autowired`（多构造器需显式指定，否则组件扫描报 No default constructor）。
+- 新增 DTO `backend/nq-api/.../adapters/api/dto/AdapterReadinessResponse` / `AdapterReadinessItemResponse`：枚举转字符串名、reasons 脱敏列表，不承载 raw payload。
+- 修改 `backend/nq-api/pom.xml`：显式新增 `nq-adapter-api` 依赖（此前仅经 nq-scheduler 传递可见），避免依赖传递性脆弱。
+- API 行为：NOOP/PAPER/SIM → `NO_REAL`，OKX/BINANCE → `NOT_READY`，全部 `allowed=false`/`liveAuthorized=false`，无 `READY`；PLACE/CANCEL 带 `LIVE_DISABLED`，PERMISSION_PROBE 带 `REAL_PROVIDER_NOT_IMPLEMENTED`。
+- 测试：`AdapterReadinessStatusServiceTest`（6，含 RecordingReadinessService 断言只 evaluate、不触达 delegate）、`AdapterReadinessControllerTest`（1，standalone MockMvc，断言 OKX/Binance fail-closed、无 READY、PLACE/CANCEL liveAuthorized=false、permission probe real-provider-not-implemented、响应脱敏）。
+- 验证：`mvn -f backend/pom.xml -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance,nq-api,nq-app -am test` BUILD SUCCESS（nq-api 34；nq-app 73/0/0/2 skipped；GateM-0/1/2/3/4 + OKX/Binance 回归全绿）；`git diff --check` 通过。本轮初稿因 `@Service` 多构造器缺 `@Autowired` 致 3 个 nq-app full-context local 测试 context 加载失败，已定位并最小修复（加 `@Autowired`），复跑全绿。
+- 边界：只读静态 readiness；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未访问外网或真实交易所；未读取 `.env` / credential；未新增 migration/workflow；未改 frontend/research/scripts/deploy；未删除 rawPayload 字段；未把 OKX/Binance 标记为 future-real-ready。
+- 回滚：删除本轮 4 个 main 文件 + 2 个测试文件，还原 `nq-api/pom.xml` 的 `nq-adapter-api` 依赖与本轮 current docs，无 runtime/DB/credential/provider/exchange 副作用。
+- 下一步：commit 本轮实现。
+
 ## NQ-GATEM-4-READINESS-GUARD-RUNTIME-SMOKE（2026-06-23）
 
 补一个更贴近真实调用路径的消费侧 runtime smoke，证明 scheduler 侧 `AdapterBackedTradingVenueGateway` 消费 Spring 装配的 OKX/Binance guarded trading adapter 时仍 fail-closed。结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮 test-only（无 main 代码改动）+ 少量状态同步，未新增合同 / review / freeze 文档。

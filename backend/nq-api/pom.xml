@@ -61,6 +61,16 @@
             <artifactId>nq-gateway</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--
+            GateM-5A: 只读 adapter readiness status API 需要 AdapterReadinessService 与 readiness 模型。
+            此前仅经 nq-scheduler 传递性可见；显式声明直接依赖，避免依赖传递性脆弱。仅编译期/运行期读取静态
+            readiness 决策，不引入真实交易所、credential 或 LIVE 能力。
+        -->
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-adapter-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
