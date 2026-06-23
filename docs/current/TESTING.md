@@ -1,3 +1,15 @@
+## NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT（2026-06-23）
+
+结论：**PASS / CHECKLIST CREATED / PENDING REVIEW（checklist-only）**。本轮只新增 future-real readiness checklist 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。
+
+- 预检：`git branch --show-current` = `dev`；预检 `git status --short` 无输出。
+- 只读取证：`docs/current/GATEL_1B_*`、`GATEL_1C_*`、`GATEL_1D_*`、`GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`backend/nq-adapter-api/**`、`backend/nq-adapter-okx/**`、`backend/nq-adapter-binance/**`。
+- 安全基线核对：`git grep -l` 确认 `EnvSafetyValidator` / `EnvSafetyGuardConfiguration`、`NoOutboundExchangeGuardTest`、`NoRealExchangeCredentialPermissionProbePort`、`KillSwitchService` / `KillSwitchRiskRule`、`RiskGate` / `NoopRiskGate` / `PreTradeRiskService`、`OrderStateMachine` / `InMemoryOrderStateMachine`、`AuditLogRepository` / `JdbcAuditLogRepository`、`JdbcLedgerPostingRepository` 组件存在，作为 checklist 事实锚点。
+- 文档验证：`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；scope check 通过。
+- 禁止措辞检查：bounded `rg` 确认 checklist 中 `future-real-ready` / `real exchange` / `LIVE` 仅出现在否定、禁止、fail-closed 或 “NO / 须另起 Gate” 语境，未把 checklist 写成真实交易授权，未把任一项“满足”写成可进入实盘。
+- 未执行 Maven / frontend / Python 测试，原因：本轮为 docs-only checklist refinement，不改 Java/TypeScript/Python、API、DTO、migration、workflow 或运行时配置；源码读取仅用于核对 readiness 事实。
+- 未访问外网、交易所、DB、容器、GitHub Actions；未读取 `.env`、API key、secret、token、pem、key、jks、p12、日志 dump 或 backup；未启用 LIVE / AI / DH runtime。
+
 ## NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE（2026-06-23）
 
 结论：**PASS / FROZEN / ACCEPTED**。本轮只新增 adapter error model contract freeze review、追加合同 §19 与 current 入口同步，未修改代码、API、DTO、migration、workflow、frontend、research、scripts、deploy。

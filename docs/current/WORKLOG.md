@@ -1,3 +1,17 @@
+## NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT（2026-06-23）
+
+完成 GateL-1E future-real readiness checklist refinement，新增 `GATEL_1E_READINESS_CHECKLIST_REFINEMENT.md`，并同步 current 入口文档。结论：**PASS / CHECKLIST CREATED / PENDING REVIEW（checklist-only）**。
+
+- 细化对象：未来若进入真实交易所接入 Gate 必须满足的准入门槛，分 12 类 checklist：future-real Gate entry 总览、security、credential、network/no-outbound、adapter implementation、permission probe、marketdata、trading execution、risk/order/ledger/audit、testing/CI、rollout/rollback/incident、explicit user authorization。
+- 非授权声明：checklist 只定义准入门槛，不授权真实交易所、不启用 LIVE、不实现 real adapter / real provider / RealClient / 真实 permission probe / real credential governance bridge；checklist 项“满足”不构成授权；不允许从 No-Real GateL 直接进入实盘。
+- 锚定既有安全基线（仅核对名称未改）：`EnvSafetyValidator` / `NoOutboundExchangeGuardTest` / `NoRealExchangeCredentialPermissionProbePort` / `KillSwitchService` / `KillSwitchRiskRule` / `RiskGate` / `PreTradeRiskService` / `OrderStateMachine` / `InMemoryOrderStateMachine` / `AuditLogRepository` / `JdbcAuditLogRepository` / `JdbcLedgerPostingRepository`；引用 GateL-1C capability matrix 与 GateL-1D error model 基线，未放宽任一冻结边界。
+- 代码实现前置：RealClient / real provider 仍 NOT IMPLEMENTED；future-real adapter / real credential bridge / permission probe real adapter 各自另起 Gate；rawPayload field deletion 作为 separate compatibility task；禁止从 No-Real GateL 直接进入实盘。
+- 输出状态：GateL-1E readiness checklist CREATED / PENDING REVIEW；adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；real exchange access / LIVE / real credential / AI / DH runtime / future-real-ready 全部 NO。
+- 验证：`git grep -l` 核对安全基线组件名存在；`git diff --check` 通过；`git diff --stat` 与 `git status --short` 确认仅 `docs/current/**` 变更；bounded `rg` 检查 checklist 未把 future-real-ready / real exchange / LIVE 写成 allowed、未把 checklist 写成授权。
+- 边界：docs-only checklist；未修改 Java/TypeScript/Python；未新增 API/DTO/migration/workflow；未改 frontend/research/scripts/deploy；未读取 `.env` 或真实 credential；未访问外网或真实交易所；未启用 LIVE；未接 AI/DH runtime；未实现 RealClient / real provider / real permission probe / real credential governance bridge；未删除 rawPayload 字段。
+- 回滚：删除 `GATEL_1E_READINESS_CHECKLIST_REFINEMENT.md`，并还原本轮对 `GATEL_PLAN.md`、`README.md`、`ROADMAP.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 的同步。
+- 下一步：`NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT-REVIEW`，不得直接进入 implementation / real adapter。
+
 ## NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE（2026-06-23）
 
 完成 GateL-1D adapter error model contract freeze review，新增 `GATEL_1D_ERROR_MODEL_CONTRACT_FREEZE_REVIEW.md`，并在 `GATEL_1D_ERROR_MODEL_CONTRACT.md` §19 追加 Freeze Acceptance Update，同步 current 入口文档。结论：**PASS / FROZEN / ACCEPTED**。
