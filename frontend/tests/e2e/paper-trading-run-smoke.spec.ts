@@ -146,7 +146,9 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         await expect(page.getByText('BASIC_HEALTH_CHECK').first()).toBeVisible({timeout: 10_000});
         await expect(page.getByText('PASSED').first()).toBeVisible({timeout: 5_000});
         await expect(drawer.getByText('风控闭环')).toBeVisible();
-        await expect(drawer.getByText(/BASIC_HEALTH_CHECK · LOW/)).toBeVisible({timeout: 10_000});
+        // 风控闭环指标卡 footer 精确文案；用 exact 规避与 summary 时间线风控描述
+        // “BASIC_HEALTH_CHECK · LOW：...” 的 strict mode 多匹配。
+        await expect(drawer.getByText('BASIC_HEALTH_CHECK · LOW', {exact: true})).toBeVisible({timeout: 10_000});
 
         // Tab: 资金曲线
         await page.getByRole('tab', {name: '资金曲线'}).click();
