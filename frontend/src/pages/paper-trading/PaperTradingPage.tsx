@@ -157,12 +157,127 @@ interface PaperTimelineInput {
     latestLoopPnl: number | null;
 }
 
+interface PaperRunReview {
+    finalStatus: string;
+    runtimeDuration: string;
+    orderCount: number;
+    fillCount: number;
+    positionCount: number;
+    netPnl: number | null;
+    riskResult: string;
+    riskTone: 'success' | 'info' | 'neutral' | 'warning' | 'danger';
+    conclusion: string;
+    conclusionLevel: 'info' | 'warning' | 'danger';
+}
+
 function formatTimelineAmount(value: string | number | null | undefined): string {
     if (value === null || value === undefined || value === '') {
         return '-';
     }
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric.toFixed(2) : String(value);
+}
+
+function formatRuntimeDuration(start: string | null | undefined, end: string | null | undefined): string {
+    if (!start) {
+        return '-';
+    }
+    const startTime = new Date(start).getTime();
+    const endTime = end ? new Date(end).getTime() : Date.now();
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime) {
+        return '-';
+    }
+
+    const totalSeconds = Math.floor((endTime - startTime) / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours} 小时 ${minutes} 分钟`;
+    }
+    if (minutes > 0) {
+        return `${minutes} 分钟 ${seconds} 秒`;
+    }
+    return `${seconds} 秒`;
+}
+
+function classifyRiskResult(latestRisk: PaperRiskCheckResultItem | null): Pick<PaperRunReview, 'riskResult' | 'riskTone'> {
+    if (!latestRisk) {
+        return {riskResult: '无数据', riskTone: 'neutral'};
+    }
+    const status = latestRisk.status.toUpperCase();
+    const severity = latestRisk.severity.toUpperCase();
+    const riskBlocked = ['REJECTED', 'FAILED', 'BLOCKED'].includes(status) || ['HIGH', 'CRITICAL', 'BLOCK'].includes(severity);
+    if (riskBlocked) {
+        return {riskResult: '拦截', riskTone: 'danger'};
+    }
+    if (status === 'PASSED' && ['LOW', 'INFO', 'NONE'].includes(severity)) {
+        return {riskResult: '通过', riskTone: 'success'};
+    }
+    if (status === 'PASSED') {
+        return {riskResult: '通过', riskTone: 'success'};
+    }
+    return {riskResult: '警告', riskTone: 'warning'};
+}
+
+function buildPaperRunReview({
+    run,
+    orderCount,
+    fillCount,
+    positionCount,
+    netPnl,
+    latestRisk,
+}: {
+    run: PaperTradingRunItem;
+    orderCount: number;
+    fillCount: number;
+    positionCount: number;
+    netPnl: number | null;
+    latestRisk: PaperRiskCheckResultItem | null;
+}): PaperRunReview {
+    const finalStatus = run.status || 'UNKNOWN';
+    const normalizedStatus = finalStatus.toUpperCase();
+    const durationEnd = run.stoppedAt ?? (normalizedStatus === 'RUNNING' ? undefined : run.updatedAt);
+    const risk = classifyRiskResult(latestRisk);
+    const hasExecution = orderCount > 0 || fillCount > 0;
+    const riskBlocked = risk.riskResult === '拦截';
+
+    let conclusion = '数据不足，待观察';
+    let conclusionLevel: PaperRunReview['conclusionLevel'] = 'info';
+
+    if (riskBlocked) {
+        conclusion = '风控拦截';
+        conclusionLevel = 'danger';
+    } else if (normalizedStatus === 'FAILED' || normalizedStatus === 'CANCELLED') {
+        conclusion = '异常停止';
+        conclusionLevel = 'danger';
+    } else if (normalizedStatus === 'RUNNING') {
+        conclusion = '仍在运行';
+        conclusionLevel = 'info';
+    } else if (normalizedStatus === 'CREATED' && orderCount === 0) {
+        conclusion = '尚未启动';
+        conclusionLevel = 'info';
+    } else if (normalizedStatus === 'STOPPED' && orderCount === 0) {
+        conclusion = '无交易';
+        conclusionLevel = 'warning';
+    } else if (normalizedStatus === 'STOPPED' && hasExecution && risk.riskResult === '通过') {
+        conclusion = '正常完成';
+        conclusionLevel = 'info';
+    }
+
+    return {
+        finalStatus,
+        runtimeDuration: formatRuntimeDuration(run.startedAt, durationEnd),
+        orderCount,
+        fillCount,
+        positionCount,
+        netPnl,
+        riskResult: risk.riskResult,
+        riskTone: risk.riskTone,
+        conclusion,
+        conclusionLevel,
+    };
 }
 
 function buildPaperTimelineEvents({
@@ -344,6 +459,16 @@ export function PaperTradingPage() {
             latestLoopPnl,
         })
         : [];
+    const paperRunReview = focusRun
+        ? buildPaperRunReview({
+            run: focusRun,
+            orderCount: paperOrders.length,
+            fillCount: paperTrades.length,
+            positionCount: paperPositions.length,
+            netPnl: latestLoopPnl,
+            latestRisk,
+        })
+        : null;
 
     const columns: ColumnsType<PaperRunRow> = [
         {
@@ -651,6 +776,7 @@ export function PaperTradingPage() {
                                                 message="只读聚合当前 Paper run 的执行事实。"
                                                 description="该摘要复用订单、成交、持仓、资金曲线和风控查询结果，不新增交易动作，不触发真实交易所或 LIVE。"
                                             />
+                                            {paperRunReview ? <PaperRunReviewCard review={paperRunReview}/> : null}
                                             <div className="nq-status-strip">
                                                 <NqMetricCard
                                                     label="订单事实"
@@ -1165,6 +1291,40 @@ function PaperRunTimeline({events}: {events: PaperTimelineEvent[]}) {
                 ),
             }))}
         />
+    );
+}
+
+function PaperRunReviewCard({review}: {review: PaperRunReview}) {
+    return (
+        <Card
+            size="small"
+            title="运行结果复盘"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · LIVE 未开启</Typography.Text>}
+        >
+            <Space direction="vertical" size={10} style={{display: 'flex'}}>
+                <NqRiskBanner
+                    level={review.conclusionLevel}
+                    message={review.conclusion}
+                    description="该复盘只基于当前 Paper run 的查询结果，用于判断模拟运行质量，不代表真实交易能力。"
+                />
+                <div className="nq-status-strip">
+                    <NqMetricCard label="最终状态" value={<NqStatusTag status={review.finalStatus}/>}/>
+                    <NqMetricCard label="运行时长" value={<span className="nq-num">{review.runtimeDuration}</span>} footer="startedAt 到 stoppedAt / updatedAt / now"/>
+                    <NqMetricCard label="订单数" value={String(review.orderCount)}/>
+                    <NqMetricCard label="成交数" value={String(review.fillCount)}/>
+                    <NqMetricCard label="持仓数" value={String(review.positionCount)}/>
+                    <NqMetricCard
+                        label="净 PnL"
+                        value={<NqAmountText value={review.netPnl} signed colorBySign/>}
+                        tone={pnlTone(review.netPnl)}
+                    />
+                    <NqMetricCard
+                        label="风控结果"
+                        value={<NqStatusTag status={review.riskResult} tone={review.riskTone}/>}
+                    />
+                </div>
+            </Space>
+        </Card>
     );
 }
 

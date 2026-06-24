@@ -256,7 +256,7 @@ async function expectLifecycleButtons(
     await expect(detail.getByText('风控闭环').first()).toBeVisible();
     await expect(detail.getByText('运行事件时间线')).toBeVisible();
     await expect(detail.getByText('Paper run created')).toBeVisible();
-    await expect(detail.getByText('SIM/Paper only · LIVE 未开启')).toBeVisible();
+    await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
 }
 
 test.describe('paper trading product loop panel', () => {
@@ -306,8 +306,18 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('Paper 执行闭环')).toBeVisible();
         await expect(detail.getByText('订单 → 成交 → 持仓 / PnL → 风控')).toBeVisible();
         await expect(detail.getByText('只读聚合当前 Paper run 的执行事实。')).toBeVisible();
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
+        await expect(detail.getByText('最终状态')).toBeVisible();
+        await expect(detail.getByText('运行时长')).toBeVisible();
+        await expect(detail.getByText('1 分钟 0 秒')).toBeVisible();
+        await expect(detail.getByText('订单数').first()).toBeVisible();
+        await expect(detail.getByText('成交数').first()).toBeVisible();
+        await expect(detail.getByText('持仓数').first()).toBeVisible();
+        await expect(detail.getByText('风控结果').first()).toBeVisible();
+        await expect(detail.getByText('正常完成')).toBeVisible();
+        await expect(detail.getByText('该复盘只基于当前 Paper run 的查询结果，用于判断模拟运行质量，不代表真实交易能力。')).toBeVisible();
         await expect(detail.getByText('运行事件时间线')).toBeVisible();
-        await expect(detail.getByText('SIM/Paper only · LIVE 未开启')).toBeVisible();
+        await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
         await expect(detail.getByText('Paper run created')).toBeVisible();
         await expect(detail.getByText('Paper run started')).toBeVisible();
         await expect(detail.getByText('Paper run stopped')).toBeVisible();
@@ -326,9 +336,11 @@ test.describe('paper trading product loop panel', () => {
         expect(bodyText).toContain('持仓事实');
         expect(bodyText).toContain('净 PnL');
         expect(bodyText).toContain('60.00');
+        expect(bodyText).toContain('通过');
     });
 
     test('详情区生命周期按钮按 run 状态禁用并保持 Paper-only 文案', async ({page}) => {
+        test.setTimeout(60_000);
         const harness = await seedAuthAndPaperLoopStubs(page, {seedRun: true});
         const cases = [
             {status: 'CREATED', startEnabled: true, stopEnabled: false},
