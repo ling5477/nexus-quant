@@ -24,9 +24,29 @@ const paperRun = {
     updatedAt: '2026-06-24T01:03:00Z',
 };
 
-async function seedAuthAndPaperLoopStubs(page: Page): Promise<void> {
-    let currentRun = {...paperRun};
-    let runs: typeof paperRun[] = [];
+type PaperLoopStubOptions = {
+    seedRun?: boolean;
+    status?: string;
+};
+
+async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptions = {}): Promise<{setRunStatus: (status: string) => void}> {
+    let currentRun = {
+        ...paperRun,
+        status: options.status ?? paperRun.status,
+        startedAt: options.status === 'RUNNING' ? '2026-06-24T01:04:00Z' : paperRun.startedAt,
+        stoppedAt: options.status === 'STOPPED' ? '2026-06-24T01:05:00Z' : paperRun.stoppedAt,
+    };
+    let runs: typeof paperRun[] = options.seedRun ? [currentRun] : [];
+    const setRunStatus = (status: string) => {
+        currentRun = {
+            ...currentRun,
+            status,
+            startedAt: status === 'RUNNING' ? '2026-06-24T01:04:00Z' : currentRun.startedAt,
+            stoppedAt: status === 'STOPPED' ? '2026-06-24T01:05:00Z' : null,
+            updatedAt: `2026-06-24T01:${status === 'RUNNING' ? '04' : '05'}:00Z`,
+        };
+        runs = [currentRun];
+    };
 
     await page.addInitScript(() => {
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify({
@@ -173,6 +193,47 @@ async function seedAuthAndPaperLoopStubs(page: Page): Promise<void> {
             createdAt: '2026-06-24T01:03:00Z',
         }],
     }));
+    return {setRunStatus};
+}
+
+async function openPaperRunDetail(page: Page): Promise<ReturnType<Page['getByRole']>> {
+    await page.goto('/paper-trading');
+    await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+    await page.getByRole('button', {name: /查\s*询/}).click();
+    const row = page.locator(`tr[data-row-key="${PAPER_RUN_ID}"]`);
+    await expect(row).toBeVisible();
+    await row.getByRole('link', {name: '查看详情'}).or(row.getByRole('button', {name: '查看详情'})).click();
+    const detail = page.getByRole('region', {name: 'Paper Trading 详情'});
+    await expect(detail.getByText(PAPER_RUN_ID).first()).toBeVisible();
+    return detail;
+}
+
+async function expectLifecycleButtons(
+    detail: ReturnType<Page['getByRole']>,
+    status: string,
+    startEnabled: boolean,
+    stopEnabled: boolean,
+): Promise<void> {
+    await expect(detail.getByText(status).first()).toBeVisible();
+    const startButton = detail.getByRole('button', {name: '启动 Paper Run'});
+    const stopButton = detail.getByRole('button', {name: '停止 Paper Run'});
+    if (startEnabled) {
+        await expect(startButton).toBeEnabled();
+    } else {
+        await expect(startButton).toBeDisabled();
+    }
+    if (stopEnabled) {
+        await expect(stopButton).toBeEnabled();
+    } else {
+        await expect(stopButton).toBeDisabled();
+    }
+    await expect(detail.getByText('生命周期操作仅作用于当前 SIM/Paper run；LIVE 未开启，不会触发真实交易所。')).toBeVisible();
+    await expect(detail.getByText('Paper 执行闭环')).toBeVisible();
+    await expect(detail.getByText('订单事实').first()).toBeVisible();
+    await expect(detail.getByText('成交事实').first()).toBeVisible();
+    await expect(detail.getByText('持仓事实').first()).toBeVisible();
+    await expect(detail.getByText('净 PnL').first()).toBeVisible();
+    await expect(detail.getByText('风控闭环').first()).toBeVisible();
 }
 
 test.describe('paper trading product loop panel', () => {
@@ -232,5 +293,25 @@ test.describe('paper trading product loop panel', () => {
         expect(bodyText).toContain('持仓事实');
         expect(bodyText).toContain('净 PnL');
         expect(bodyText).toContain('60.00');
+    });
+
+    test('详情区生命周期按钮按 run 状态禁用并保持 Paper-only 文案', async ({page}) => {
+        const harness = await seedAuthAndPaperLoopStubs(page, {seedRun: true});
+        const cases = [
+            {status: 'CREATED', startEnabled: true, stopEnabled: false},
+            {status: 'RUNNING', startEnabled: false, stopEnabled: true},
+            {status: 'STOPPED', startEnabled: false, stopEnabled: false},
+            {status: 'FAILED', startEnabled: false, stopEnabled: false},
+            {status: 'CANCELLED', startEnabled: false, stopEnabled: false},
+            {status: 'UNKNOWN', startEnabled: false, stopEnabled: false},
+        ];
+
+        for (const item of cases) {
+            await test.step(`${item.status} lifecycle controls`, async () => {
+                harness.setRunStatus(item.status);
+                const detail = await openPaperRunDetail(page);
+                await expectLifecycleButtons(detail, item.status, item.startEnabled, item.stopEnabled);
+            });
+        }
     });
 });
