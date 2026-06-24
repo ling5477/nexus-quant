@@ -528,6 +528,19 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText(paperRun.strategyVersionId).first()).toBeVisible();
         await expect(detail.getByText('该链路仅展示研究、发布与 Paper 模拟运行关系，不代表 LIVE 或真实交易表现。')).toBeVisible();
 
+        // Paper 账户资产与收益率（完整数据 fixture）：资产指标 + 周期收益 + Paper-only。
+        await expect(detail.getByText('Paper 账户资产与收益率')).toBeVisible();
+        await expect(detail.getByText('该收益统计仅基于 Paper 模拟账户与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+        await expect(detail.getByText('当前总资产')).toBeVisible();
+        await expect(detail.getByText('总 PnL')).toBeVisible();
+        await expect(detail.getByText('累计收益率')).toBeVisible();
+        await expect(detail.getByText('最大回撤').first()).toBeVisible();
+        await expect(detail.getByText('资金峰值')).toBeVisible();
+        await expect(detail.getByText('初始资金')).toBeVisible();
+        await expect(detail.getByText('周期收益（日 / 周 / 月 / 年 / 累计）')).toBeVisible();
+        await expect(detail.getByText('+0.06%').first()).toBeVisible(); // 累计收益率 = 60 / 100000
+        await expect(detail.getByText('数据不足').first()).toBeVisible(); // 单一快照下周/月/年周期收益不足
+
         await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
         await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
         await expect(detail.getByText('Paper run created')).toBeVisible();
@@ -791,6 +804,60 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('策略发布')).toBeVisible();
         await expect(detail.getByText('回测 / 评估')).toBeVisible();
         await expect(detail.getByText('运行结果复盘')).toBeVisible();
+    });
+
+    test('多 equity snapshot 时聚合账户资产、回撤与周期收益', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {
+            seedRun: true,
+            status: 'STOPPED',
+            // 初始 100000（来自来源 backtest initialCapital）→ 峰值 110000 → 回落 95000 → 回升 105000。
+            equityCurve: [
+                {equitySnapshotId: 'eq-acc-1', paperRunId: PAPER_RUN_ID, snapshotTime: '2026-06-01T00:00:00Z', totalEquity: '100000', cashBalance: '100000', positionValue: '0', unrealizedPnl: '0', realizedPnl: '0', drawdown: '0', source: 'E2E_STUB', createdAt: '2026-06-01T00:00:00Z'},
+                {equitySnapshotId: 'eq-acc-2', paperRunId: PAPER_RUN_ID, snapshotTime: '2026-06-08T00:00:00Z', totalEquity: '110000', cashBalance: '110000', positionValue: '0', unrealizedPnl: '0', realizedPnl: '10000', drawdown: '0', source: 'E2E_STUB', createdAt: '2026-06-08T00:00:00Z'},
+                {equitySnapshotId: 'eq-acc-3', paperRunId: PAPER_RUN_ID, snapshotTime: '2026-06-15T00:00:00Z', totalEquity: '95000', cashBalance: '95000', positionValue: '0', unrealizedPnl: '0', realizedPnl: '-5000', drawdown: '0.1364', source: 'E2E_STUB', createdAt: '2026-06-15T00:00:00Z'},
+                {equitySnapshotId: 'eq-acc-4', paperRunId: PAPER_RUN_ID, snapshotTime: '2026-06-22T00:00:00Z', totalEquity: '105000', cashBalance: '105000', positionValue: '0', unrealizedPnl: '0', realizedPnl: '5000', drawdown: '0.0455', source: 'E2E_STUB', createdAt: '2026-06-22T00:00:00Z'},
+            ],
+            dailyReports: [{
+                reportId: 'paper-daily-acc-1', paperRunId: PAPER_RUN_ID, reportDate: '2026-06-22', status: 'GENERATED',
+                totalEquity: '105000', dailyPnl: '1000', dailyReturn: '0.0096', maxDrawdown: '0.1364',
+                orderCount: 4, tradeCount: 4, alertCount: 0, riskRejectCount: 0, reportJson: '{}',
+                generatedAt: '2026-06-22T01:00:00Z', createdAt: '2026-06-22T01:00:00Z',
+            }],
+        });
+
+        const detail = await openPaperRunDetail(page);
+
+        await expect(detail.getByText('Paper 账户资产与收益率')).toBeVisible();
+        await expect(detail.getByText('当前总资产')).toBeVisible();
+        await expect(detail.getByText('+5.00%').first()).toBeVisible();   // 累计收益率 = (105000-100000)/100000
+        await expect(detail.getByText('-13.64%')).toBeVisible();          // 最大回撤 = (95000-110000)/110000
+        await expect(detail.getByText('-4.55%')).toBeVisible();           // 当前回撤 = (105000-110000)/110000
+        await expect(detail.getByText('+10.53%')).toBeVisible();          // 周收益率 = (105000-95000)/95000
+        await expect(detail.getByText('资金峰值')).toBeVisible();
+        await expect(detail.getByText('110,000.00').first()).toBeVisible(); // 资金峰值
+        await expect(detail.getByText('最近 equity snapshot')).toBeVisible();
+        await expect(detail.getByText('数据不足').first()).toBeVisible(); // 月 / 年周期窗口外无 baseline
+        await expect(detail.getByText('该收益统计仅基于 Paper 模拟账户与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+    });
+
+    test('无 equity / 无日报时账户收益概览展示空态且不伪造收益率', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {
+            seedRun: true,
+            status: 'STOPPED',
+            equityCurve: [],
+            dailyReports: [],
+        });
+
+        const detail = await openPaperRunDetail(page);
+
+        await expect(detail.getByText('Paper 账户资产与收益率')).toBeVisible();
+        await expect(detail.getByText('暂无 Paper 账户资产数据，运行产生 equity 快照或日报后自动汇总。')).toBeVisible();
+        await expect(detail.getByText('数据不足，无法计算收益率')).toBeVisible();
+        await expect(detail.getByText('该收益统计仅基于 Paper 模拟账户与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+
+        // 不崩溃：其它产品化卡片仍在。
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
+        await expect(detail.getByText('Strategy → Publish → Paper 链路')).toBeVisible();
     });
 
     test('详情首屏只走 detail + summary，明细按需进入 Tab 后才懒加载', async ({page}) => {

@@ -87,6 +87,7 @@ import {
     defaultPaperTradingListFilters,
     type EquityCurveSnapshotItem,
     type PaperRiskCheckResultItem,
+    type PaperRunDailyReportItem,
     type PaperRunSummaryResponse,
     type PaperTradingListFilters,
     type PaperTradingOrderItem,
@@ -243,6 +244,42 @@ interface PaperLineageResult {
         title: string;
         description: string;
     };
+}
+
+/**
+ * Paper 账户资产与收益率概览模型（Loop-12）。
+ * 纯前端派生：仅消费已有 equity 快照 / 日报 / 来源 backtest 初始资金 / run 状态，
+ * 不新增 API，不读取真实交易所账户余额，不代表 LIVE 或真实交易表现。
+ * initialEquity / periodStartEquity <= 0 时不计算收益率，统一显示「数据不足」。
+ */
+interface PaperPeriodReturn {
+    key: string;
+    label: string;
+    pnl: number | null;
+    returnRatio: number | null;
+    /** false 表示该周期缺少 baseline / 初始权益，统一显示「数据不足」，不外推。 */
+    available: boolean;
+}
+
+interface PaperAccountPerformance {
+    /** 是否拿到当前权益（无则展示账户级空态，不伪造任何指标）。 */
+    hasData: boolean;
+    /** 是否可计算累计收益率（initialEquity > 0 且当前权益可得）。 */
+    canComputeReturn: boolean;
+    initialEquity: number | null;
+    currentEquity: number | null;
+    availableBalance: number | null;
+    positionMarketValue: number | null;
+    realizedPnl: number | null;
+    unrealizedPnl: number | null;
+    totalPnl: number | null;
+    totalReturn: number | null;
+    peakEquity: number | null;
+    maxDrawdown: number | null;
+    currentDrawdown: number | null;
+    periods: PaperPeriodReturn[];
+    recentSnapshots: EquityCurveSnapshotItem[];
+    dataQualityNotes: string[];
 }
 
 function formatTimelineAmount(value: string | number | null | undefined): string {
@@ -980,6 +1017,169 @@ function buildPaperLineage({
     return {nodes, diagnosis};
 }
 
+// 周期收益窗口（自然日近似）；日优先取后端日报，其余按 equity 快照窗口派生 baseline。
+const PAPER_PERIOD_WINDOWS: Array<{key: string; label: string; ms: number}> = [
+    {key: 'daily', label: '日', ms: 24 * 60 * 60 * 1000},
+    {key: 'weekly', label: '周', ms: 7 * 24 * 60 * 60 * 1000},
+    {key: 'monthly', label: '月', ms: 30 * 24 * 60 * 60 * 1000},
+    {key: 'yearly', label: '年', ms: 365 * 24 * 60 * 60 * 1000},
+];
+
+/** start <= 0 或缺值时不计算收益率（返回 null），交由展示层显示「数据不足」。 */
+function safeReturnRatio(end: number | null, start: number | null): number | null {
+    if (end === null || start === null || start <= 0) {
+        return null;
+    }
+    return (end - start) / start;
+}
+
+/**
+ * 组合已有 equity 快照 / 日报 / 来源 backtest 初始资金，派生 Paper 模拟账户资产、收益率与回撤。
+ * 全部为前端只读派生，不新增请求、不触发交易，不代表 LIVE 或真实交易表现。
+ */
+function buildPaperAccountPerformance({
+    snapshots,
+    dailyReport,
+    backtestInitialCapital,
+    runStatus,
+    fillCount,
+}: {
+    snapshots: EquityCurveSnapshotItem[];
+    dailyReport: PaperRunDailyReportItem | null;
+    backtestInitialCapital: number | null;
+    runStatus: string;
+    fillCount: number;
+}): PaperAccountPerformance {
+    // 仅保留有合法时间与数值权益的快照，按时间升序，作为账户资产与回撤的唯一派生源。
+    const numericSnapshots = snapshots
+        .map((item) => ({
+            raw: item,
+            time: new Date(item.snapshotTime).getTime(),
+            equity: toNullableNumber(item.totalEquity),
+        }))
+        .filter((item) => Number.isFinite(item.time) && item.equity !== null)
+        .sort((left, right) => left.time - right.time);
+
+    const latest = numericSnapshots[numericSnapshots.length - 1] ?? null;
+    const currentEquity = latest?.equity ?? toNullableNumber(dailyReport?.totalEquity);
+    const latestRaw = latest?.raw ?? null;
+    const realizedPnl = toNullableNumber(latestRaw?.realizedPnl);
+    const unrealizedPnl = toNullableNumber(latestRaw?.unrealizedPnl);
+    const availableBalance = toNullableNumber(latestRaw?.cashBalance);
+    const positionMarketValue = toNullableNumber(latestRaw?.positionValue);
+
+    // 初始资金优先取来源 backtest 初始资金；否则用「当前权益 - 累计已实现/未实现 PnL」回推；再退化到最早快照权益。
+    let initialEquity: number | null = null;
+    if (backtestInitialCapital !== null && backtestInitialCapital > 0) {
+        initialEquity = backtestInitialCapital;
+    } else if (currentEquity !== null && realizedPnl !== null && unrealizedPnl !== null) {
+        const inferred = currentEquity - realizedPnl - unrealizedPnl;
+        initialEquity = inferred > 0 ? inferred : null;
+    }
+    if (initialEquity === null) {
+        const earliestEquity = numericSnapshots[0]?.equity ?? null;
+        initialEquity = earliestEquity !== null && earliestEquity > 0 ? earliestEquity : null;
+    }
+
+    // 回撤与峰值：遍历升序权益维护 running peak，maxDrawdown 取最小回撤；currentDrawdown 用全局峰值。
+    let peakEquity: number | null = null;
+    let maxDrawdown: number | null = null;
+    if (numericSnapshots.length > 0) {
+        let runningPeak = Number.NEGATIVE_INFINITY;
+        let minDrawdown = 0;
+        for (const point of numericSnapshots) {
+            const equity = point.equity as number;
+            if (equity > runningPeak) {
+                runningPeak = equity;
+            }
+            if (runningPeak > 0) {
+                const drawdown = (equity - runningPeak) / runningPeak;
+                if (drawdown < minDrawdown) {
+                    minDrawdown = drawdown;
+                }
+            }
+        }
+        peakEquity = Number.isFinite(runningPeak) ? runningPeak : null;
+        maxDrawdown = minDrawdown;
+    } else {
+        // 无快照但日报有最大回撤时退化展示（口径以日报为准）。
+        maxDrawdown = toNullableNumber(dailyReport?.maxDrawdown);
+    }
+
+    const currentDrawdown = currentEquity !== null && peakEquity !== null && peakEquity > 0
+        ? (currentEquity - peakEquity) / peakEquity
+        : null;
+
+    const totalReturn = safeReturnRatio(currentEquity, initialEquity);
+    const totalPnl = currentEquity !== null && initialEquity !== null
+        ? currentEquity - initialEquity
+        : sumNullableAmounts(realizedPnl, unrealizedPnl);
+
+    const periods: PaperPeriodReturn[] = PAPER_PERIOD_WINDOWS.map((period) => {
+        // 日收益优先消费后端日报（已含 dailyPnl / dailyReturn），口径与最新日报摘要一致。
+        if (period.key === 'daily' && dailyReport) {
+            const pnl = toNullableNumber(dailyReport.dailyPnl);
+            const ratio = toNullableNumber(dailyReport.dailyReturn);
+            return {key: period.key, label: period.label, pnl, returnRatio: ratio, available: pnl !== null || ratio !== null};
+        }
+        if (latest === null || currentEquity === null) {
+            return {key: period.key, label: period.label, pnl: null, returnRatio: null, available: false};
+        }
+        // baseline = 截止时间点之前（含）最近的一条快照；不存在则该周期数据不足，不外推。
+        const cutoff = latest.time - period.ms;
+        const baseline = [...numericSnapshots].reverse().find((point) => point.time <= cutoff) ?? null;
+        if (baseline === null || baseline.equity === null || baseline.equity <= 0) {
+            return {key: period.key, label: period.label, pnl: null, returnRatio: null, available: false};
+        }
+        return {
+            key: period.key,
+            label: period.label,
+            pnl: currentEquity - baseline.equity,
+            returnRatio: (currentEquity - baseline.equity) / baseline.equity,
+            available: true,
+        };
+    });
+    periods.push({
+        key: 'total',
+        label: '累计',
+        pnl: totalPnl,
+        returnRatio: totalReturn,
+        available: totalReturn !== null,
+    });
+
+    const recentSnapshots = [...numericSnapshots].reverse().slice(0, 5).map((point) => point.raw);
+
+    const dataQualityNotes: string[] = [];
+    if (numericSnapshots.length === 0) {
+        dataQualityNotes.push('无 equity snapshot：资金曲线与回撤暂不可计算。');
+    }
+    if (fillCount === 0) {
+        dataQualityNotes.push('无成交：PnL 主要来自持仓浮动或暂无。');
+    }
+    if ((runStatus ?? '').toUpperCase() === 'CREATED') {
+        dataQualityNotes.push('run 尚未启动：尚无运行期资产快照。');
+    }
+
+    return {
+        hasData: currentEquity !== null,
+        canComputeReturn: totalReturn !== null,
+        initialEquity,
+        currentEquity,
+        availableBalance,
+        positionMarketValue,
+        realizedPnl,
+        unrealizedPnl,
+        totalPnl,
+        totalReturn,
+        peakEquity,
+        maxDrawdown,
+        currentDrawdown,
+        periods,
+        recentSnapshots,
+        dataQualityNotes,
+    };
+}
+
 /** 把后端 summary 时间线条目映射为前端时间线展示模型（title 作为粗体事件名）。 */
 function summaryTimelineColor(type: string, status: string): PaperTimelineEvent['color'] {
     switch (type) {
@@ -1207,6 +1407,18 @@ export function PaperTradingPage() {
             paperReview: paperRunReview,
         })
         : null;
+    // Loop-12：Paper 账户资产与收益率，复用首屏已加载的 equity 快照 / 日报 / 来源 backtest 初始资金，不触发新请求。
+    const paperAccountPerformance = focusRun
+        ? buildPaperAccountPerformance({
+            snapshots: equitySnapshots,
+            dailyReport: latestDailyReport,
+            backtestInitialCapital: toNullableNumber(backtestDetail?.initialCapital),
+            runStatus: focusRun.status,
+            fillCount,
+        })
+        : null;
+    const accountPerformanceLoading = (equityCurveQuery.isFetching && equitySnapshots.length === 0)
+        || (dailyReportsQuery.isFetching && (dailyReportsQuery.data ?? []).length === 0);
     const backtestComparisonLoading = publishQuery.isFetching
         || backtestDetailQuery.isFetching
         || evaluationsQuery.isFetching;
@@ -1519,6 +1731,13 @@ export function PaperTradingPage() {
                                             </div>
                                         ) : null}
                                     </Card>
+
+                                    {paperAccountPerformance ? (
+                                        <PaperAccountPerformanceCard
+                                            performance={paperAccountPerformance}
+                                            loading={accountPerformanceLoading}
+                                        />
+                                    ) : null}
 
                                     <Card
                                         className="page-section"
@@ -2239,6 +2458,142 @@ function PaperLineageCard({lineage, loading}: {lineage: PaperLineageResult; load
                             };
                         })}
                     />
+                )}
+            </Space>
+        </Card>
+    );
+}
+
+function PaperAccountPerformanceCard({performance, loading}: {performance: PaperAccountPerformance; loading: boolean}) {
+    return (
+        <Card
+            className="page-section"
+            bordered={false}
+            title="Paper 账户资产与收益率"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · LIVE 未开启</Typography.Text>}
+        >
+            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                <NqRiskBanner
+                    level="info"
+                    message="只读汇总当前 Paper 模拟账户的资产与收益率。"
+                    description="该收益统计仅基于 Paper 模拟账户与本地执行事实，不代表 LIVE 或真实交易表现。"
+                />
+                {loading ? (
+                    <NqLoadingState/>
+                ) : !performance.hasData ? (
+                    <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                        <NqEmptyState description="暂无 Paper 账户资产数据，运行产生 equity 快照或日报后自动汇总。"/>
+                        <Typography.Text type="warning" style={{fontSize: 12}}>数据不足，无法计算收益率</Typography.Text>
+                    </Space>
+                ) : (
+                    <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                        <div className="nq-status-strip">
+                            <NqMetricCard label="当前总资产" value={<NqAmountText value={performance.currentEquity}/>}/>
+                            <NqMetricCard
+                                label="总 PnL"
+                                value={<NqAmountText value={performance.totalPnl} signed colorBySign/>}
+                                tone={pnlTone(performance.totalPnl)}
+                            />
+                            <NqMetricCard
+                                label="累计收益率"
+                                value={performance.totalReturn !== null
+                                    ? <NqPercentText value={performance.totalReturn} ratio colorBySign/>
+                                    : <Typography.Text type="secondary">数据不足</Typography.Text>}
+                            />
+                            <NqMetricCard
+                                label="最大回撤"
+                                value={performance.maxDrawdown !== null
+                                    ? <NqPercentText value={performance.maxDrawdown} ratio signed={false}/>
+                                    : '-'}
+                                tone="warning"
+                            />
+                            <NqMetricCard
+                                label="当前回撤"
+                                value={performance.currentDrawdown !== null
+                                    ? <NqPercentText value={performance.currentDrawdown} ratio signed={false}/>
+                                    : '-'}
+                                tone="warning"
+                            />
+                            <NqMetricCard label="资金峰值" value={<NqAmountText value={performance.peakEquity}/>}/>
+                            <NqMetricCard label="初始资金" value={<NqAmountText value={performance.initialEquity}/>}/>
+                            <NqMetricCard label="可用余额" value={<NqAmountText value={performance.availableBalance}/>}/>
+                            <NqMetricCard label="持仓市值" value={<NqAmountText value={performance.positionMarketValue}/>}/>
+                            <NqMetricCard
+                                label="已实现 PnL"
+                                value={<NqAmountText value={performance.realizedPnl} signed colorBySign/>}
+                                tone={pnlTone(performance.realizedPnl)}
+                            />
+                            <NqMetricCard
+                                label="未实现 PnL"
+                                value={<NqAmountText value={performance.unrealizedPnl} signed colorBySign/>}
+                                tone={pnlTone(performance.unrealizedPnl)}
+                            />
+                        </div>
+
+                        {!performance.canComputeReturn ? (
+                            <Typography.Text type="warning" style={{fontSize: 12}}>
+                                数据不足，无法计算收益率（缺少有效初始资金或当前权益）。
+                            </Typography.Text>
+                        ) : null}
+
+                        {performance.dataQualityNotes.length > 0 ? (
+                            <Space direction="vertical" size={2} style={{display: 'flex'}}>
+                                {performance.dataQualityNotes.map((note) => (
+                                    <Typography.Text key={note} type="secondary" style={{fontSize: 12}}>{note}</Typography.Text>
+                                ))}
+                            </Space>
+                        ) : null}
+
+                        <Card size="small" title="周期收益（日 / 周 / 月 / 年 / 累计）">
+                            <NqDataTable<PaperPeriodReturn>
+                                rowKey="key"
+                                pagination={false}
+                                dataSource={performance.periods}
+                                columns={[
+                                    {title: '周期', dataIndex: 'label', key: 'label', width: 90},
+                                    {
+                                        title: '收益',
+                                        dataIndex: 'pnl',
+                                        key: 'pnl',
+                                        width: 160,
+                                        render: (_value, row) => (row.available
+                                            ? <NqAmountText value={row.pnl} signed colorBySign/>
+                                            : <Typography.Text type="secondary">数据不足</Typography.Text>),
+                                    },
+                                    {
+                                        title: '收益率',
+                                        dataIndex: 'returnRatio',
+                                        key: 'returnRatio',
+                                        width: 120,
+                                        render: (_value, row) => (row.available
+                                            ? <NqPercentText value={row.returnRatio} ratio colorBySign/>
+                                            : <Typography.Text type="secondary">数据不足</Typography.Text>),
+                                    },
+                                ]}
+                            />
+                        </Card>
+
+                        <Card size="small" title="最近 equity snapshot">
+                            {performance.recentSnapshots.length === 0 ? (
+                                <NqEmptyState description="暂无 equity snapshot，运行产生权益快照后自动汇总。"/>
+                            ) : (
+                                <NqDataTable<EquityCurveSnapshotItem>
+                                    rowKey="equitySnapshotId"
+                                    pagination={false}
+                                    dataSource={performance.recentSnapshots}
+                                    scroll={{x: 720}}
+                                    columns={[
+                                        {title: '时间', dataIndex: 'snapshotTime', key: 'snapshotTime', width: 170, render: (v: string) => formatDateTime(v)},
+                                        nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 130, render: (v) => <NqAmountText value={v as string}/>}),
+                                        nqNumericColumn({title: '现金', dataIndex: 'cashBalance', key: 'cashBalance', width: 130, render: (v) => <NqAmountText value={v as string}/>}),
+                                        nqNumericColumn({title: '持仓市值', dataIndex: 'positionValue', key: 'positionValue', width: 130, render: (v) => <NqAmountText value={v as string}/>}),
+                                        nqNumericColumn({title: '回撤', dataIndex: 'drawdown', key: 'drawdown', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                                        {title: '来源', dataIndex: 'source', key: 'source', width: 100},
+                                    ]}
+                                />
+                            )}
+                        </Card>
+                    </Space>
                 )}
             </Space>
         </Card>
