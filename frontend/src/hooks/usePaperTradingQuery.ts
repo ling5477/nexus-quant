@@ -33,27 +33,27 @@ export function usePaperRunSummaryQuery(paperRunId: string | null) {
     });
 }
 
-export function usePaperTradingOrdersQuery(paperRunId: string | null) {
+export function usePaperTradingOrdersQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.orders(paperRunId ?? ''),
         queryFn: () => paperTradingApi.orders(paperRunId ?? ''),
-        enabled: Boolean(paperRunId),
+        enabled: Boolean(paperRunId) && enabled,
     });
 }
 
-export function usePaperTradingTradesQuery(paperRunId: string | null) {
+export function usePaperTradingTradesQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.trades(paperRunId ?? ''),
         queryFn: () => paperTradingApi.trades(paperRunId ?? ''),
-        enabled: Boolean(paperRunId),
+        enabled: Boolean(paperRunId) && enabled,
     });
 }
 
-export function usePaperTradingPositionsQuery(paperRunId: string | null) {
+export function usePaperTradingPositionsQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.positions(paperRunId ?? ''),
         queryFn: () => paperTradingApi.positions(paperRunId ?? ''),
-        enabled: Boolean(paperRunId),
+        enabled: Boolean(paperRunId) && enabled,
     });
 }
 
@@ -87,11 +87,11 @@ export function useStopPaperTradingRunMutation() {
     });
 }
 
-export function usePaperTradingRiskResultsQuery(paperRunId: string | null) {
+export function usePaperTradingRiskResultsQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.riskResults(paperRunId ?? ''),
         queryFn: () => paperTradingApi.riskResults(paperRunId ?? ''),
-        enabled: Boolean(paperRunId),
+        enabled: Boolean(paperRunId) && enabled,
     });
 }
 
@@ -103,19 +103,19 @@ export function usePaperTradingEquityCurveQuery(paperRunId: string | null) {
     });
 }
 
-export function usePaperTradingPositionCurveQuery(paperRunId: string | null) {
+export function usePaperTradingPositionCurveQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.positionCurve(paperRunId ?? ''),
         queryFn: () => paperTradingApi.positionCurve(paperRunId ?? ''),
-        enabled: Boolean(paperRunId),
+        enabled: Boolean(paperRunId) && enabled,
     });
 }
 
-export function usePaperTradingReplayQuery(paperRunId: string | null) {
+export function usePaperTradingReplayQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.replay(paperRunId ?? ''),
         queryFn: () => paperTradingApi.replay(paperRunId ?? ''),
-        enabled: Boolean(paperRunId),
+        enabled: Boolean(paperRunId) && enabled,
     });
 }
 

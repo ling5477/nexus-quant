@@ -16,7 +16,7 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useState, type ReactNode} from 'react';
+import {useEffect, useState, type ReactNode} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {
@@ -655,6 +655,9 @@ export function PaperTradingPage() {
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedRow, setSelectedRow] = useState<PaperRunRow | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
+    // Loop-9：底部「运行事实」明细 Tab 的当前激活页；明细查询按激活 Tab 懒加载，首屏只走 detail + summary。
+    // 默认 'snapshots'（仅读 run 快照，无网络），使 orders/trades/positions/risk/曲线/复盘 在首屏均不请求。
+    const [factTab, setFactTab] = useState('snapshots');
 
     const listQuery = usePaperTradingListQuery(
         {
@@ -668,13 +671,15 @@ export function PaperTradingPage() {
     const detailQuery = usePaperTradingDetailQuery(focusRunId);
     // Loop-8：后端聚合事实源；详情区优先消费 summary 渲染复盘 / 诊断 / 时间线 / 关键指标。
     const summaryQuery = usePaperRunSummaryQuery(focusRunId);
-    const ordersQuery = usePaperTradingOrdersQuery(focusRunId);
-    const tradesQuery = usePaperTradingTradesQuery(focusRunId);
-    const positionsQuery = usePaperTradingPositionsQuery(focusRunId);
-    const riskResultsQuery = usePaperTradingRiskResultsQuery(focusRunId);
+    // 底部明细 Tab 懒加载：仅在对应 Tab 激活时启用查询，避免首屏一次性拉全量明细。
+    const ordersQuery = usePaperTradingOrdersQuery(focusRunId, factTab === 'orders');
+    const tradesQuery = usePaperTradingTradesQuery(focusRunId, factTab === 'trades');
+    const positionsQuery = usePaperTradingPositionsQuery(focusRunId, factTab === 'positions');
+    const riskResultsQuery = usePaperTradingRiskResultsQuery(focusRunId, factTab === 'risk-results');
+    // 权益曲线仍随中部「权益与回撤曲线」图卡首屏加载（图表能力不回退）；底部资金曲线 Tab 复用同一缓存。
     const equityCurveQuery = usePaperTradingEquityCurveQuery(focusRunId);
-    const positionCurveQuery = usePaperTradingPositionCurveQuery(focusRunId);
-    const replayQuery = usePaperTradingReplayQuery(focusRunId);
+    const positionCurveQuery = usePaperTradingPositionCurveQuery(focusRunId, factTab === 'position-curve');
+    const replayQuery = usePaperTradingReplayQuery(focusRunId, factTab === 'replay');
     const emergencyStopsQuery = usePaperTradingEmergencyStopsQuery(focusRunId);
     const dailyReportsQuery = usePaperDailyReportsQuery(focusRunId);
 
@@ -685,6 +690,12 @@ export function PaperTradingPage() {
     const stabilityChecksQuery = usePaperStabilityChecksQuery(focusRunId);
     // 异常原因聚合所需；与右侧「恢复事件」面板共享 React Query 缓存键（默认参数），不重复请求。
     const recoveryEventsQuery = usePaperRecoveryEventsQuery(focusRunId);
+
+    // 切换到另一个 run 时把明细 Tab 复位到无网络的「快照」页，确保新 run 首屏只走 detail + summary；
+    // 同一 run 的启停刷新不复位（focusRunId 不变），避免打断用户当前查看的明细 Tab。
+    useEffect(() => {
+        setFactTab('snapshots');
+    }, [focusRunId]);
 
     const createMutation = useCreatePaperTradingRunMutation();
     const startMutation = useStartPaperTradingRunMutation();
@@ -732,6 +743,15 @@ export function PaperTradingPage() {
     const fillCount = summary?.counts.fillCount ?? paperTrades.length;
     const positionCount = summary?.counts.positionCount ?? paperPositions.length;
     const netPnl = summary ? toNullableNumber(summary.resultReview.netPnl) : latestLoopPnl;
+    const openAlertCountView = summary?.counts.openAlertCount ?? openAlertCount;
+
+    // 首屏关键指标优先取 summary.latest（订单/成交/持仓/权益/风控明细已懒加载，不再依赖其首屏请求）；
+    // summary 缺失时回退到已加载明细派生（懒加载下多为空，属于可控回退）。
+    const effLatestOrder = summary?.latest.order ?? latestOrder;
+    const effLatestTrade = summary?.latest.trade ?? latestTrade;
+    const effLatestPosition = summary?.latest.position ?? latestPosition;
+    const effLatestEquitySnapshot = summary?.latest.equitySnapshot ?? latestEquitySnapshot;
+    const effLatestRisk = summary?.latest.riskResult ?? latestRisk;
 
     const paperTimelineEvents = summary
         ? mapSummaryTimeline(summary)
@@ -1020,9 +1040,9 @@ export function PaperTradingPage() {
                                             />
                                             <NqMetricCard
                                                 label="未处理告警"
-                                                value={String(openAlertCount)}
-                                                tone={openAlertCount > 0 ? 'warning' : 'muted'}
-                                                loading={alertsQuery.isPending}
+                                                value={String(openAlertCountView)}
+                                                tone={openAlertCountView > 0 ? 'warning' : 'muted'}
+                                                loading={summary ? false : alertsQuery.isPending}
                                             />
                                             <NqMetricCard
                                                 label="稳定性验收"
@@ -1032,9 +1052,9 @@ export function PaperTradingPage() {
                                             />
                                             <NqMetricCard
                                                 label="风控状态"
-                                                value={latestRisk ? <NqStatusTag status={latestRisk.status} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
-                                                footer={latestRisk ? latestRisk.checkType : '暂无风控检查'}
-                                                loading={riskResultsQuery.isPending}
+                                                value={effLatestRisk ? <NqStatusTag status={effLatestRisk.status} tone={effLatestRisk.status === 'PASSED' ? 'success' : effLatestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
+                                                footer={effLatestRisk ? effLatestRisk.checkType : '暂无风控检查'}
+                                                loading={summary ? false : (factTab === 'risk-results' && riskResultsQuery.isPending)}
                                             />
                                             <NqMetricCard label="交易环境" value={<NqEnvironmentBadge env={selectedRow.tradeEnv}/>} footer="LIVE 未开启"/>
                                         </div>
@@ -1091,33 +1111,33 @@ export function PaperTradingPage() {
                                                 <NqMetricCard
                                                     label="订单事实"
                                                     value={String(orderCount)}
-                                                    footer={latestOrder ? `${latestOrder.status} · ${formatDateTime(latestOrder.updatedAt)}` : '暂无订单'}
-                                                    loading={ordersQuery.isPending}
+                                                    footer={effLatestOrder ? `${effLatestOrder.status} · ${formatDateTime(effLatestOrder.updatedAt)}` : '暂无订单'}
+                                                    loading={summaryQuery.isPending}
                                                 />
                                                 <NqMetricCard
                                                     label="成交事实"
                                                     value={String(fillCount)}
-                                                    footer={latestTrade ? formatDateTime(latestTrade.tradedAt) : '暂无成交'}
-                                                    loading={tradesQuery.isPending}
+                                                    footer={effLatestTrade ? formatDateTime(effLatestTrade.tradedAt) : '暂无成交'}
+                                                    loading={summaryQuery.isPending}
                                                 />
                                                 <NqMetricCard
                                                     label="持仓事实"
                                                     value={String(positionCount)}
-                                                    footer={latestPosition ? formatDateTime(latestPosition.updatedAt) : '暂无持仓'}
-                                                    loading={positionsQuery.isPending}
+                                                    footer={effLatestPosition ? formatDateTime(effLatestPosition.updatedAt) : '暂无持仓'}
+                                                    loading={summaryQuery.isPending}
                                                 />
                                                 <NqMetricCard
                                                     label="净 PnL"
                                                     value={<NqAmountText value={netPnl} signed colorBySign/>}
-                                                    footer={latestEquitySnapshot ? `权益快照 ${formatDateTime(latestEquitySnapshot.snapshotTime)}` : latestPosition ? '持仓实时汇总' : '暂无 PnL'}
+                                                    footer={effLatestEquitySnapshot ? `权益快照 ${formatDateTime(effLatestEquitySnapshot.snapshotTime)}` : effLatestPosition ? '持仓实时汇总' : '暂无 PnL'}
                                                     tone={pnlTone(netPnl)}
-                                                    loading={equityCurveQuery.isPending || positionsQuery.isPending || dailyReportsQuery.isPending}
+                                                    loading={summaryQuery.isPending}
                                                 />
                                                 <NqMetricCard
                                                     label="风控闭环"
-                                                    value={latestRisk ? <NqStatusTag status={latestRisk.status} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
-                                                    footer={latestRisk ? `${latestRisk.checkType} · ${latestRisk.severity}` : '暂无风控检查'}
-                                                    loading={riskResultsQuery.isPending}
+                                                    value={effLatestRisk ? <NqStatusTag status={effLatestRisk.status} tone={effLatestRisk.status === 'PASSED' ? 'success' : effLatestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
+                                                    footer={effLatestRisk ? `${effLatestRisk.checkType} · ${effLatestRisk.severity}` : '暂无风控检查'}
+                                                    loading={summaryQuery.isPending}
                                                 />
                                             </div>
                                             <Card
@@ -1292,6 +1312,8 @@ export function PaperTradingPage() {
                                             <Descriptions.Item label="创建人">{selectedRow.createdBy}</Descriptions.Item>
                                         </Descriptions>
                                         <Tabs
+                                            activeKey={factTab}
+                                            onChange={setFactTab}
                                             items={[
                                                 {
                                                     key: 'orders',

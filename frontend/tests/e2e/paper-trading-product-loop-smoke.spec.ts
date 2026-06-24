@@ -578,20 +578,63 @@ test.describe('paper trading product loop panel', () => {
     });
 
     test('summary 结构异常时页面不崩，回退到明细派生并保留 Paper-only 文案', async ({page}) => {
-        // summary 返回空对象（无 counts）→ 前端守卫判为不可用 → 回退到明细查询派生展示。
+        // summary 返回空对象（无 counts）→ 前端守卫判为不可用 → 回退到已加载明细派生展示。
+        // Loop-9 懒加载下回退是“可控回退”：明细 Tab 未展开则不主动拉全量，复盘按已有事实给出结论。
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', summary: {}});
 
         const detail = await openPaperRunDetail(page);
 
-        // 回退后详情区仍完整渲染（来自明细查询派生），页面不崩。
+        // 回退后详情区仍完整渲染（来自明细派生），页面不崩。
         await expect(detail.getByText('运行结果复盘')).toBeVisible();
         await expect(detail.getByText('异常原因聚合')).toBeVisible();
         await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
-        await expect(detail.getByText('正常完成')).toBeVisible();
-        await expect(detail.getByText('暂无明显异常', {exact: true})).toBeVisible();
+        // 懒加载下 STOPPED 且订单明细未展开（无订单事实）→ 复盘结论“无交易”、诊断 NO_ORDER。
+        await expect(detail.getByText('无交易')).toBeVisible();
+        await expect(detail.getByText('NO_ORDER')).toBeVisible();
 
         // Paper-only / LIVE 未开启文案仍存在。
         await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
         await expect(detail.getByText('该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。')).toBeVisible();
+    });
+
+    test('详情首屏只走 detail + summary，明细按需进入 Tab 后才懒加载', async ({page}) => {
+        const calls = {orders: 0, trades: 0, positions: 0, risk: 0};
+        // 在导航前注册请求计数，统计底部明细 Tab 对应的明细查询是否被请求。
+        page.on('request', (req) => {
+            const u = req.url();
+            if (u.endsWith(`/runs/${PAPER_RUN_ID}/orders`)) calls.orders++;
+            else if (u.endsWith(`/runs/${PAPER_RUN_ID}/trades`)) calls.trades++;
+            else if (u.endsWith(`/runs/${PAPER_RUN_ID}/positions`)) calls.positions++;
+            else if (u.endsWith(`/runs/${PAPER_RUN_ID}/risk-results`)) calls.risk++;
+        });
+
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
+        const detail = await openPaperRunDetail(page);
+
+        // 首屏由 summary 驱动渲染复盘 / 诊断 / 时间线，无需明细查询。
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
+        await expect(detail.getByText('异常原因聚合')).toBeVisible();
+        await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
+        await page.waitForLoadState('networkidle');
+
+        // 关键断言：首屏不主动请求订单 / 成交 / 持仓 / 风控明细。
+        expect(calls.orders).toBe(0);
+        expect(calls.trades).toBe(0);
+        expect(calls.positions).toBe(0);
+        expect(calls.risk).toBe(0);
+
+        // 进入「订单」Tab → 仅触发订单明细懒加载，其它明细仍不请求。
+        await detail.getByRole('tab', {name: '订单'}).click();
+        await expect.poll(() => calls.orders).toBeGreaterThan(0);
+        await expect(detail.getByText('paper-order-1')).toBeVisible();
+        expect(calls.trades).toBe(0);
+        expect(calls.positions).toBe(0);
+        expect(calls.risk).toBe(0);
+
+        // 进入「风控结果」Tab → 触发风控明细懒加载。
+        await detail.getByRole('tab', {name: '风控结果'}).click();
+        await expect.poll(() => calls.risk).toBeGreaterThan(0);
+        // 订单只在切到订单 Tab 时请求过一次，未被重复全量拉取。
+        expect(calls.positions).toBe(0);
     });
 });
