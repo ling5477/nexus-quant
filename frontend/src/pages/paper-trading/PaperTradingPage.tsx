@@ -274,8 +274,9 @@ export function PaperTradingPage() {
 
     const handleStart = (paperRunId: string) => {
         startMutation.mutate(paperRunId, {
-            onSuccess: () => {
+            onSuccess: (run) => {
                 message.success('Paper run 已启动。');
+                setSelectedRow(run);
                 setSearchVersion((v) => v + 1);
             },
             onError: (error) => message.error(formatApiError(error as AppApiError)),
@@ -284,8 +285,9 @@ export function PaperTradingPage() {
 
     const handleStop = (paperRunId: string) => {
         stopMutation.mutate(paperRunId, {
-            onSuccess: () => {
+            onSuccess: (run) => {
                 message.success('Paper run 已停止。');
+                setSelectedRow(run);
                 setSearchVersion((v) => v + 1);
             },
             onError: (error) => message.error(formatApiError(error as AppApiError)),
@@ -303,8 +305,9 @@ export function PaperTradingPage() {
             configSnapshotJson: normalizeOptionalText(values.configSnapshotJson) || undefined,
         };
         createMutation.mutate(payload, {
-            onSuccess: () => {
+            onSuccess: (run) => {
                 message.success('Paper run 已创建。');
+                setSelectedRow(run);
                 setCreateOpen(false);
                 createForm.resetFields();
                 setSearchVersion((v) => v + 1);
@@ -463,6 +466,29 @@ export function PaperTradingPage() {
                                             />
                                             <NqMetricCard label="交易环境" value={<NqEnvironmentBadge env={selectedRow.tradeEnv}/>} footer="LIVE 未开启"/>
                                         </div>
+                                        <Space size={8} wrap style={{marginTop: 12}}>
+                                            <Button
+                                                type="primary"
+                                                size="small"
+                                                disabled={focusStatus !== 'CREATED'}
+                                                loading={startMutation.isPending}
+                                                onClick={() => handleStart(selectedRow.paperRunId)}
+                                            >
+                                                启动 Paper Run
+                                            </Button>
+                                            <Button
+                                                danger
+                                                size="small"
+                                                disabled={focusStatus !== 'RUNNING'}
+                                                loading={stopMutation.isPending}
+                                                onClick={() => handleStop(selectedRow.paperRunId)}
+                                            >
+                                                停止 Paper Run
+                                            </Button>
+                                            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                                生命周期操作仅作用于当前 SIM/Paper run；LIVE 未开启，不会触发真实交易所。
+                                            </Typography.Text>
+                                        </Space>
                                         {detailQuery.error ? (
                                             <div style={{marginTop: 12}}>
                                                 <NqErrorState title="Paper run 详情加载失败" error={detailQuery.error as AppApiError}/>
