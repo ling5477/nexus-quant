@@ -37,38 +37,34 @@ test.describe('GateI-3 paper trading run smoke', () => {
         expect(createdPayload.status).toBe('CREATED');
         expect(createdPayload.strategyVersionId).toBe(fixture.strategyVersionId);
 
-        const row = page.locator(`tr[data-row-key="${paperRunId}"]`);
-        await expect(row).toBeVisible({timeout: 15_000});
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
+        await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
+        await expect(drawer.getByText(paperRunId).first()).toBeVisible();
+        await expect(drawer.getByText('CREATED').first()).toBeVisible();
 
         const startResponse = page.waitForResponse((response) => (
             response.url().endsWith(`/api/paper-trading/runs/${paperRunId}/start`)
             && response.request().method() === 'POST'
         ));
-        await row.getByRole('link', {name: '启动'}).or(row.getByRole('button', {name: '启动'})).click();
+        await expect(drawer.getByRole('button', {name: '启动 Paper Run'})).toBeEnabled();
+        await drawer.getByRole('button', {name: '启动 Paper Run'}).click();
         const started = await startResponse;
         expect(started.ok()).toBeTruthy();
         const startedPayload = await started.json();
         expect(startedPayload.status).toBe('RUNNING');
-
-        const runningRow = page.locator(`tr[data-row-key="${paperRunId}"]`);
-        await expect(runningRow.getByText('RUNNING')).toBeVisible({timeout: 15_000});
+        await expect(drawer.getByText('RUNNING').first()).toBeVisible({timeout: 15_000});
 
         const stopResponse = page.waitForResponse((response) => (
             response.url().endsWith(`/api/paper-trading/runs/${paperRunId}/stop`)
             && response.request().method() === 'POST'
         ));
-        await runningRow.getByRole('link', {name: '停止'}).or(runningRow.getByRole('button', {name: '停止'})).click();
+        await expect(drawer.getByRole('button', {name: '停止 Paper Run'})).toBeEnabled();
+        await drawer.getByRole('button', {name: '停止 Paper Run'}).click();
         const stopped = await stopResponse;
         expect(stopped.ok()).toBeTruthy();
         const stoppedPayload = await stopped.json();
         expect(stoppedPayload.status).toBe('STOPPED');
-
-        const stoppedRow = page.locator(`tr[data-row-key="${paperRunId}"]`);
-        await expect(stoppedRow.getByText('STOPPED')).toBeVisible({timeout: 15_000});
-        await stoppedRow.getByRole('link', {name: '查看详情'}).or(stoppedRow.getByRole('button', {name: '查看详情'})).click();
-
-        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
-        await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
+        await expect(drawer.getByText('STOPPED').first()).toBeVisible({timeout: 15_000});
         await expect(drawer.getByText('Paper 执行闭环')).toBeVisible();
         await expect(drawer.getByText('订单 → 成交 → 持仓 / PnL → 风控')).toBeVisible();
         await expect(drawer.getByText('订单事实').first()).toBeVisible();
