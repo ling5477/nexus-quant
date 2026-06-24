@@ -179,6 +179,26 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
             createdAt: '2026-06-24T01:02:30Z',
         }],
     }));
+    await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/daily-reports`, (route: Route) => route.fulfill({
+        status: 200,
+        json: [{
+            reportId: 'paper-daily-loop-1',
+            paperRunId: PAPER_RUN_ID,
+            reportDate: '2026-06-24',
+            status: 'GENERATED',
+            totalEquity: '100060',
+            dailyPnl: '60',
+            dailyReturn: '0.0006',
+            maxDrawdown: '0',
+            orderCount: 1,
+            tradeCount: 1,
+            alertCount: 0,
+            riskRejectCount: 0,
+            reportJson: '{}',
+            generatedAt: '2026-06-24T01:03:30Z',
+            createdAt: '2026-06-24T01:03:30Z',
+        }],
+    }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/risk-results`, (route: Route) => route.fulfill({
         status: 200,
         json: [{
@@ -234,6 +254,9 @@ async function expectLifecycleButtons(
     await expect(detail.getByText('持仓事实').first()).toBeVisible();
     await expect(detail.getByText('净 PnL').first()).toBeVisible();
     await expect(detail.getByText('风控闭环').first()).toBeVisible();
+    await expect(detail.getByText('运行事件时间线')).toBeVisible();
+    await expect(detail.getByText('Paper run created')).toBeVisible();
+    await expect(detail.getByText('SIM/Paper only · LIVE 未开启')).toBeVisible();
 }
 
 test.describe('paper trading product loop panel', () => {
@@ -283,8 +306,18 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('Paper 执行闭环')).toBeVisible();
         await expect(detail.getByText('订单 → 成交 → 持仓 / PnL → 风控')).toBeVisible();
         await expect(detail.getByText('只读聚合当前 Paper run 的执行事实。')).toBeVisible();
+        await expect(detail.getByText('运行事件时间线')).toBeVisible();
+        await expect(detail.getByText('SIM/Paper only · LIVE 未开启')).toBeVisible();
+        await expect(detail.getByText('Paper run created')).toBeVisible();
+        await expect(detail.getByText('Paper run started')).toBeVisible();
+        await expect(detail.getByText('Paper run stopped')).toBeVisible();
+        await expect(detail.getByText('最新订单状态事件')).toBeVisible();
+        await expect(detail.getByText('最新成交事件')).toBeVisible();
+        await expect(detail.getByText('最新持仓更新时间')).toBeVisible();
+        await expect(detail.getByText('最新净 PnL / equity snapshot')).toBeVisible();
+        await expect(detail.getByText('最新风控检查结果')).toBeVisible();
         await expect(detail.getByText('FILLED').first()).toBeVisible();
-        await expect(detail.getByText('BASIC_HEALTH_CHECK · LOW')).toBeVisible();
+        await expect(detail.getByText('BASIC_HEALTH_CHECK · LOW', {exact: true})).toBeVisible();
         await expect(detail.getByText('PASSED').first()).toBeVisible();
 
         const bodyText = await detail.innerText();

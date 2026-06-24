@@ -11,10 +11,11 @@ import {
     Select,
     Space,
     Tabs,
+    Timeline,
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useState} from 'react';
+import {useState, type ReactNode} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {
@@ -77,9 +78,14 @@ import {
 import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
+    type EquityCurveSnapshotItem,
+    type PaperRiskCheckResultItem,
     type PaperTradingListFilters,
+    type PaperTradingOrderItem,
+    type PaperTradingPositionItem,
     type PaperTradingRunCreateRequest,
     type PaperTradingRunItem,
+    type PaperTradingTradeItem,
 } from '@/types/paper-trading';
 import {appEnv} from '@/utils/env';
 import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
@@ -128,6 +134,132 @@ function pnlTone(value: number | null): 'up' | 'down' | 'muted' {
         return 'muted';
     }
     return value > 0 ? 'up' : 'down';
+}
+
+const TERMINAL_PAPER_RUN_STATUSES = new Set(['STOPPED', 'FAILED', 'CANCELLED']);
+
+interface PaperTimelineEvent {
+    key: string;
+    type: string;
+    status: string;
+    time: string;
+    description: ReactNode;
+    color: 'blue' | 'green' | 'red' | 'gray';
+}
+
+interface PaperTimelineInput {
+    run: PaperTradingRunItem;
+    latestOrder: PaperTradingOrderItem | null;
+    latestTrade: PaperTradingTradeItem | null;
+    latestPosition: PaperTradingPositionItem | null;
+    latestEquitySnapshot: EquityCurveSnapshotItem | null;
+    latestRisk: PaperRiskCheckResultItem | null;
+    latestLoopPnl: number | null;
+}
+
+function formatTimelineAmount(value: string | number | null | undefined): string {
+    if (value === null || value === undefined || value === '') {
+        return '-';
+    }
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric.toFixed(2) : String(value);
+}
+
+function buildPaperTimelineEvents({
+    run,
+    latestOrder,
+    latestTrade,
+    latestPosition,
+    latestEquitySnapshot,
+    latestRisk,
+    latestLoopPnl,
+}: PaperTimelineInput): PaperTimelineEvent[] {
+    const events: PaperTimelineEvent[] = [];
+    const terminalStatus = run.status?.toUpperCase() ?? 'UNKNOWN';
+    const terminalTime = run.stoppedAt ?? (TERMINAL_PAPER_RUN_STATUSES.has(terminalStatus) ? run.updatedAt : null);
+
+    if (run.createdAt) {
+        events.push({
+            key: 'run-created',
+            type: 'Paper run created',
+            status: 'CREATED',
+            time: run.createdAt,
+            description: `创建于 ${run.tradeEnv}/Paper 环境，发布 ID ${run.publishId}。`,
+            color: 'blue',
+        });
+    }
+    if (run.startedAt) {
+        events.push({
+            key: 'run-started',
+            type: 'Paper run started',
+            status: 'RUNNING',
+            time: run.startedAt,
+            description: '运行已进入 SIM/Paper 生命周期，不触发 LIVE 或真实交易所。',
+            color: 'green',
+        });
+    }
+    if (terminalTime) {
+        events.push({
+            key: 'run-terminal',
+            type: `Paper run ${terminalStatus.toLowerCase()}`,
+            status: terminalStatus,
+            time: terminalTime,
+            description: '当前 run 已进入终态；历史订单、成交、持仓和风控事实仍可追溯。',
+            color: terminalStatus === 'STOPPED' ? 'gray' : 'red',
+        });
+    }
+    if (latestOrder) {
+        events.push({
+            key: 'latest-order',
+            type: '最新订单状态事件',
+            status: latestOrder.status,
+            time: latestOrder.updatedAt,
+            description: `${latestOrder.side} ${latestOrder.orderType} ${latestOrder.symbol}，数量 ${formatTimelineAmount(latestOrder.quantity)}，价格 ${formatTimelineAmount(latestOrder.price)}。`,
+            color: latestOrder.status === 'FILLED' ? 'green' : latestOrder.status === 'REJECTED' ? 'red' : 'blue',
+        });
+    }
+    if (latestTrade) {
+        events.push({
+            key: 'latest-trade',
+            type: '最新成交事件',
+            status: 'FILLED',
+            time: latestTrade.tradedAt,
+            description: `${latestTrade.side} ${latestTrade.symbol}，成交数量 ${formatTimelineAmount(latestTrade.quantity)}，成交价 ${formatTimelineAmount(latestTrade.price)}。`,
+            color: 'green',
+        });
+    }
+    if (latestPosition) {
+        events.push({
+            key: 'latest-position',
+            type: '最新持仓更新时间',
+            status: 'POSITION_UPDATED',
+            time: latestPosition.updatedAt,
+            description: `${latestPosition.symbol} 持仓 ${formatTimelineAmount(latestPosition.quantity)}，未实现盈亏 ${formatTimelineAmount(latestPosition.unrealizedPnl)}。`,
+            color: 'blue',
+        });
+    }
+    if (latestEquitySnapshot) {
+        events.push({
+            key: 'latest-equity',
+            type: '最新净 PnL / equity snapshot',
+            status: latestLoopPnl === null ? 'SNAPSHOT' : latestLoopPnl >= 0 ? 'PNL_UP' : 'PNL_DOWN',
+            time: latestEquitySnapshot.snapshotTime,
+            description: `总权益 ${formatTimelineAmount(latestEquitySnapshot.totalEquity)}，净 PnL ${formatTimelineAmount(latestLoopPnl)}，来源 ${latestEquitySnapshot.source}。`,
+            color: latestLoopPnl === null || latestLoopPnl >= 0 ? 'green' : 'red',
+        });
+    }
+    if (latestRisk) {
+        events.push({
+            key: 'latest-risk',
+            type: '最新风控检查结果',
+            status: latestRisk.status,
+            time: latestRisk.createdAt,
+            description: `${latestRisk.checkType} · ${latestRisk.severity}${latestRisk.message ? `：${latestRisk.message}` : ''}`,
+            color: latestRisk.status === 'PASSED' ? 'green' : latestRisk.status === 'REJECTED' ? 'red' : 'blue',
+        });
+    }
+
+    return events.filter((event) => Boolean(event.time));
 }
 
 export function PaperTradingPage() {
@@ -201,6 +333,17 @@ export function PaperTradingPage() {
         : latestPosition
             ? sumNullableAmounts(latestPosition.realizedPnl, latestPosition.unrealizedPnl)
             : sumNullableAmounts(latestDailyReport?.dailyPnl);
+    const paperTimelineEvents = focusRun
+        ? buildPaperTimelineEvents({
+            run: focusRun,
+            latestOrder,
+            latestTrade,
+            latestPosition,
+            latestEquitySnapshot,
+            latestRisk,
+            latestLoopPnl,
+        })
+        : [];
 
     const columns: ColumnsType<PaperRunRow> = [
         {
@@ -541,6 +684,14 @@ export function PaperTradingPage() {
                                                     loading={riskResultsQuery.isPending}
                                                 />
                                             </div>
+                                            <Card
+                                                size="small"
+                                                title="运行事件时间线"
+                                                extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · LIVE 未开启</Typography.Text>}
+                                                styles={{body: {paddingBottom: 0}}}
+                                            >
+                                                <PaperRunTimeline events={paperTimelineEvents}/>
+                                            </Card>
                                         </Space>
                                     </Card>
 
@@ -971,7 +1122,7 @@ export function PaperTradingPage() {
 interface PaperFactSectionProps {
     query: {isFetching: boolean; error: unknown; data?: unknown[]};
     emptyText: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
 function PaperFactSection({query, emptyText, children}: PaperFactSectionProps) {
@@ -986,6 +1137,35 @@ function PaperFactSection({query, emptyText, children}: PaperFactSectionProps) {
         return <NqEmptyState description={emptyText}/>;
     }
     return <>{children}</>;
+}
+
+function PaperRunTimeline({events}: {events: PaperTimelineEvent[]}) {
+    if (events.length === 0) {
+        return <NqEmptyState description="暂无执行事件，创建或启动 Paper run 后将在此展示。"/>;
+    }
+
+    return (
+        <Timeline
+            items={events.map((event) => ({
+                key: event.key,
+                color: event.color,
+                children: (
+                    <Space direction="vertical" size={2} style={{display: 'flex'}}>
+                        <Space size={8} wrap>
+                            <Typography.Text strong>{event.type}</Typography.Text>
+                            <NqStatusTag status={event.status}/>
+                            <Typography.Text type="secondary" className="nq-num" style={{fontSize: 12}}>
+                                {formatDateTime(event.time)}
+                            </Typography.Text>
+                        </Space>
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>
+                            {event.description}
+                        </Typography.Text>
+                    </Space>
+                ),
+            }))}
+        />
+    );
 }
 
 function SnapshotBlock({title, content}: {title: string; content: string | null | undefined}) {
