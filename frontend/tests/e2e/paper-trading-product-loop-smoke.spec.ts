@@ -24,9 +24,97 @@ const paperRun = {
     updatedAt: '2026-06-24T01:03:00Z',
 };
 
+// 健康 STOPPED run 默认数据集：有订单、成交、持仓、PnL、风控通过；异常用例可逐项覆盖。
+const defaultOrders = [{
+    paperOrderId: 'paper-order-1',
+    paperRunId: PAPER_RUN_ID,
+    symbol: 'BTC-USDT',
+    side: 'BUY',
+    orderType: 'MARKET',
+    quantity: '1',
+    price: '65000',
+    status: 'FILLED',
+    reason: null,
+    rawSignalJson: '{}',
+    createdAt: '2026-06-24T01:01:00Z',
+    updatedAt: '2026-06-24T01:01:30Z',
+}];
+const defaultTrades = [{
+    paperTradeId: 'paper-trade-1',
+    paperOrderId: 'paper-order-1',
+    paperRunId: PAPER_RUN_ID,
+    symbol: 'BTC-USDT',
+    side: 'BUY',
+    quantity: '1',
+    price: '65000',
+    fee: '65',
+    tradedAt: '2026-06-24T01:01:31Z',
+    createdAt: '2026-06-24T01:01:31Z',
+}];
+const defaultPositions = [{
+    paperPositionId: 'paper-position-1',
+    paperRunId: PAPER_RUN_ID,
+    symbol: 'BTC-USDT',
+    quantity: '1',
+    avgPrice: '65000',
+    unrealizedPnl: '125',
+    realizedPnl: '-65',
+    updatedAt: '2026-06-24T01:02:00Z',
+    createdAt: '2026-06-24T01:01:31Z',
+}];
+const defaultEquityCurve = [{
+    equitySnapshotId: 'equity-loop-1',
+    paperRunId: PAPER_RUN_ID,
+    snapshotTime: '2026-06-24T01:02:30Z',
+    totalEquity: '100060',
+    cashBalance: '35000',
+    positionValue: '65060',
+    unrealizedPnl: '125',
+    realizedPnl: '-65',
+    drawdown: '0',
+    source: 'E2E_STUB',
+    createdAt: '2026-06-24T01:02:30Z',
+}];
+const defaultDailyReports = [{
+    reportId: 'paper-daily-loop-1',
+    paperRunId: PAPER_RUN_ID,
+    reportDate: '2026-06-24',
+    status: 'GENERATED',
+    totalEquity: '100060',
+    dailyPnl: '60',
+    dailyReturn: '0.0006',
+    maxDrawdown: '0',
+    orderCount: 1,
+    tradeCount: 1,
+    alertCount: 0,
+    riskRejectCount: 0,
+    reportJson: '{}',
+    generatedAt: '2026-06-24T01:03:30Z',
+    createdAt: '2026-06-24T01:03:30Z',
+}];
+const defaultRiskResults = [{
+    riskResultId: 'risk-loop-1',
+    paperRunId: PAPER_RUN_ID,
+    checkType: 'BASIC_HEALTH_CHECK',
+    status: 'PASSED',
+    severity: 'LOW',
+    message: 'paper loop ok',
+    inputSnapshotJson: '{}',
+    resultSnapshotJson: '{}',
+    createdAt: '2026-06-24T01:03:00Z',
+}];
+
 type PaperLoopStubOptions = {
     seedRun?: boolean;
     status?: string;
+    orders?: unknown[];
+    trades?: unknown[];
+    positions?: unknown[];
+    equityCurve?: unknown[];
+    dailyReports?: unknown[];
+    riskResults?: unknown[];
+    alerts?: unknown[];
+    recoveryEvents?: unknown[];
 };
 
 async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptions = {}): Promise<{setRunStatus: (status: string) => void}> {
@@ -119,99 +207,36 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
     });
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/orders`, (route: Route) => route.fulfill({
         status: 200,
-        json: [{
-            paperOrderId: 'paper-order-1',
-            paperRunId: PAPER_RUN_ID,
-            symbol: 'BTC-USDT',
-            side: 'BUY',
-            orderType: 'MARKET',
-            quantity: '1',
-            price: '65000',
-            status: 'FILLED',
-            reason: null,
-            rawSignalJson: '{}',
-            createdAt: '2026-06-24T01:01:00Z',
-            updatedAt: '2026-06-24T01:01:30Z',
-        }],
+        json: options.orders ?? defaultOrders,
     }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/trades`, (route: Route) => route.fulfill({
         status: 200,
-        json: [{
-            paperTradeId: 'paper-trade-1',
-            paperOrderId: 'paper-order-1',
-            paperRunId: PAPER_RUN_ID,
-            symbol: 'BTC-USDT',
-            side: 'BUY',
-            quantity: '1',
-            price: '65000',
-            fee: '65',
-            tradedAt: '2026-06-24T01:01:31Z',
-            createdAt: '2026-06-24T01:01:31Z',
-        }],
+        json: options.trades ?? defaultTrades,
     }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/positions`, (route: Route) => route.fulfill({
         status: 200,
-        json: [{
-            paperPositionId: 'paper-position-1',
-            paperRunId: PAPER_RUN_ID,
-            symbol: 'BTC-USDT',
-            quantity: '1',
-            avgPrice: '65000',
-            unrealizedPnl: '125',
-            realizedPnl: '-65',
-            updatedAt: '2026-06-24T01:02:00Z',
-            createdAt: '2026-06-24T01:01:31Z',
-        }],
+        json: options.positions ?? defaultPositions,
     }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/equity-curve`, (route: Route) => route.fulfill({
         status: 200,
-        json: [{
-            equitySnapshotId: 'equity-loop-1',
-            paperRunId: PAPER_RUN_ID,
-            snapshotTime: '2026-06-24T01:02:30Z',
-            totalEquity: '100060',
-            cashBalance: '35000',
-            positionValue: '65060',
-            unrealizedPnl: '125',
-            realizedPnl: '-65',
-            drawdown: '0',
-            source: 'E2E_STUB',
-            createdAt: '2026-06-24T01:02:30Z',
-        }],
+        json: options.equityCurve ?? defaultEquityCurve,
     }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/daily-reports`, (route: Route) => route.fulfill({
         status: 200,
-        json: [{
-            reportId: 'paper-daily-loop-1',
-            paperRunId: PAPER_RUN_ID,
-            reportDate: '2026-06-24',
-            status: 'GENERATED',
-            totalEquity: '100060',
-            dailyPnl: '60',
-            dailyReturn: '0.0006',
-            maxDrawdown: '0',
-            orderCount: 1,
-            tradeCount: 1,
-            alertCount: 0,
-            riskRejectCount: 0,
-            reportJson: '{}',
-            generatedAt: '2026-06-24T01:03:30Z',
-            createdAt: '2026-06-24T01:03:30Z',
-        }],
+        json: options.dailyReports ?? defaultDailyReports,
     }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/risk-results`, (route: Route) => route.fulfill({
         status: 200,
-        json: [{
-            riskResultId: 'risk-loop-1',
-            paperRunId: PAPER_RUN_ID,
-            checkType: 'BASIC_HEALTH_CHECK',
-            status: 'PASSED',
-            severity: 'LOW',
-            message: 'paper loop ok',
-            inputSnapshotJson: '{}',
-            resultSnapshotJson: '{}',
-            createdAt: '2026-06-24T01:03:00Z',
-        }],
+        json: options.riskResults ?? defaultRiskResults,
+    }));
+    // 告警 / 恢复事件默认空数组（健康用例）；异常用例可注入数据驱动异常原因聚合。
+    await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/alerts**`, (route: Route) => route.fulfill({
+        status: 200,
+        json: options.alerts ?? [],
+    }));
+    await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/recovery-events**`, (route: Route) => route.fulfill({
+        status: 200,
+        json: options.recoveryEvents ?? [],
     }));
     return {setRunStatus};
 }
@@ -254,9 +279,12 @@ async function expectLifecycleButtons(
     await expect(detail.getByText('持仓事实').first()).toBeVisible();
     await expect(detail.getByText('净 PnL').first()).toBeVisible();
     await expect(detail.getByText('风控闭环').first()).toBeVisible();
-    await expect(detail.getByText('运行事件时间线')).toBeVisible();
+    await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
     await expect(detail.getByText('Paper run created')).toBeVisible();
     await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
+    // 异常原因聚合区域应在每个生命周期状态下可见。
+    await expect(detail.getByText('异常原因聚合')).toBeVisible();
+    await expect(detail.getByText('该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。')).toBeVisible();
 }
 
 test.describe('paper trading product loop panel', () => {
@@ -316,7 +344,7 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('风控结果').first()).toBeVisible();
         await expect(detail.getByText('正常完成')).toBeVisible();
         await expect(detail.getByText('该复盘只基于当前 Paper run 的查询结果，用于判断模拟运行质量，不代表真实交易能力。')).toBeVisible();
-        await expect(detail.getByText('运行事件时间线')).toBeVisible();
+        await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
         await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
         await expect(detail.getByText('Paper run created')).toBeVisible();
         await expect(detail.getByText('Paper run started')).toBeVisible();
@@ -329,6 +357,14 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('FILLED').first()).toBeVisible();
         await expect(detail.getByText('BASIC_HEALTH_CHECK · LOW', {exact: true})).toBeVisible();
         await expect(detail.getByText('PASSED').first()).toBeVisible();
+
+        // 异常原因聚合：健康 STOPPED run 应得到 HEALTHY 结论（含类型、严重程度、建议检查对象、Paper-only 文案）。
+        await expect(detail.getByText('异常原因聚合')).toBeVisible();
+        await expect(detail.getByText('该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。')).toBeVisible();
+        await expect(detail.getByText('暂无明显异常', {exact: true})).toBeVisible();
+        await expect(detail.getByText('HEALTHY')).toBeVisible();
+        await expect(detail.getByText('INFO').first()).toBeVisible();
+        await expect(detail.getByText('建议检查：运行事件时间线、订单、成交、持仓、净 PnL')).toBeVisible();
 
         const bodyText = await detail.innerText();
         expect(bodyText).toContain('订单事实');
@@ -358,5 +394,99 @@ test.describe('paper trading product loop panel', () => {
                 await expectLifecycleButtons(detail, item.status, item.startEnabled, item.stopEnabled);
             });
         }
+    });
+
+    test('STOPPED run 异常场景聚合原因（风控拦截 / 告警 / 恢复）', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {
+            seedRun: true,
+            status: 'STOPPED',
+            // 有订单但无成交、无 PnL；风控拦截 + 未处理告警 + 恢复事件，驱动多条异常原因。
+            orders: [{
+                paperOrderId: 'paper-order-blocked',
+                paperRunId: PAPER_RUN_ID,
+                symbol: 'BTC-USDT',
+                side: 'BUY',
+                orderType: 'MARKET',
+                quantity: '1',
+                price: '65000',
+                status: 'REJECTED',
+                reason: 'risk rejected',
+                rawSignalJson: '{}',
+                createdAt: '2026-06-24T01:01:00Z',
+                updatedAt: '2026-06-24T01:01:30Z',
+            }],
+            trades: [],
+            positions: [],
+            equityCurve: [],
+            dailyReports: [],
+            riskResults: [{
+                riskResultId: 'risk-blocked-1',
+                paperRunId: PAPER_RUN_ID,
+                checkType: 'MAX_DRAWDOWN_CHECK',
+                status: 'REJECTED',
+                severity: 'HIGH',
+                message: 'max drawdown exceeded',
+                inputSnapshotJson: '{}',
+                resultSnapshotJson: '{}',
+                createdAt: '2026-06-24T01:03:00Z',
+            }],
+            alerts: [{
+                alertId: 'alert-blocked-1',
+                paperRunId: PAPER_RUN_ID,
+                alertType: 'RISK',
+                severity: 'WARNING',
+                status: 'OPEN',
+                title: 'Drawdown breach',
+                message: 'risk gate rejected order',
+                source: 'RISK_ENGINE',
+                eventSnapshotJson: '{}',
+                acknowledgedBy: null,
+                acknowledgedAt: null,
+                resolvedAt: null,
+                createdAt: '2026-06-24T01:03:10Z',
+                updatedAt: '2026-06-24T01:03:10Z',
+            }],
+            recoveryEvents: [{
+                recoveryEventId: 'recovery-blocked-1',
+                paperRunId: PAPER_RUN_ID,
+                recoveryType: 'AUTO_RECOVER',
+                status: 'FAILED',
+                reason: 'auto recover failed',
+                requestJson: '{}',
+                resultJson: '{}',
+                startedAt: '2026-06-24T01:04:00Z',
+                finishedAt: '2026-06-24T01:04:05Z',
+                createdAt: '2026-06-24T01:04:00Z',
+            }],
+        });
+
+        const detail = await openPaperRunDetail(page);
+
+        // 异常原因聚合区域：类型、严重程度、建议检查对象、Paper-only / 不触发 LIVE 文案。
+        await expect(detail.getByText('异常原因聚合')).toBeVisible();
+        await expect(detail.getByText('该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。')).toBeVisible();
+
+        // BLOCKING：风控拦截（'风控拦截' 同时出现在运行结果复盘结论中，用 .first 规避 strict 多匹配）。
+        await expect(detail.getByText('RISK_BLOCKED')).toBeVisible();
+        await expect(detail.getByText('风控拦截').first()).toBeVisible();
+        await expect(detail.getByText('BLOCKING')).toBeVisible();
+        await expect(detail.getByText('建议检查：风控状态卡片、风控结果 Tab')).toBeVisible();
+
+        // WARNING：存在未处理告警（'WARNING' 同时是告警面板严重程度，用 .first 规避 strict 多匹配）。
+        await expect(detail.getByText('ALERT_PRESENT')).toBeVisible();
+        await expect(detail.getByText('存在未处理告警')).toBeVisible();
+        await expect(detail.getByText('WARNING').first()).toBeVisible();
+        await expect(detail.getByText('建议检查：告警面板')).toBeVisible();
+
+        // INFO：存在恢复事件。
+        await expect(detail.getByText('RECOVERY_PRESENT')).toBeVisible();
+        await expect(detail.getByText('存在恢复事件', {exact: true})).toBeVisible();
+
+        // 健康用例下才会出现的 HEALTHY 结论在异常场景不应出现。
+        await expect(detail.getByText('暂无明显异常', {exact: true})).toHaveCount(0);
+
+        // 既有运行结果复盘卡片与运行事件时间线保持可见。
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
+        await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
     });
 });

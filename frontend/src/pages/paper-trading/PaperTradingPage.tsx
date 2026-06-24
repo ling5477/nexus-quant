@@ -11,6 +11,7 @@ import {
     Select,
     Space,
     Tabs,
+    Tag,
     Timeline,
     Typography,
 } from 'antd';
@@ -37,6 +38,7 @@ import {
     NqStatusTag,
     nqNumericColumn,
 } from '@/components/nq';
+import type {NqStatusTone} from '@/components/nq';
 import {
     NqAlertPanel,
     NqHeartbeatPanel,
@@ -59,6 +61,7 @@ import {
     usePaperAlertsQuery,
     usePaperDailyReportsQuery,
     usePaperHeartbeatsQuery,
+    usePaperRecoveryEventsQuery,
     usePaperSchedulesQuery,
     usePaperStabilityChecksQuery,
     usePaperTradingDetailQuery,
@@ -280,6 +283,190 @@ function buildPaperRunReview({
     };
 }
 
+/**
+ * Paper run 异常原因聚合：把现有查询结果（run / orders / trades / positions / risk / alerts / recovery / pnl）
+ * 归纳成可读的诊断原因，帮助用户理解“为什么没交易 / 为什么被风控拦截 / 为什么异常停止 / 为什么数据不足”。
+ * 纯前端派生，不新增 API，不代表真实交易能力。
+ */
+type PaperDiagnosisType =
+    | 'NO_ORDER'
+    | 'NO_FILL'
+    | 'RISK_BLOCKED'
+    | 'RUN_FAILED'
+    | 'RUN_CANCELLED'
+    | 'DATA_INSUFFICIENT'
+    | 'ALERT_PRESENT'
+    | 'RECOVERY_PRESENT'
+    | 'PNL_NEGATIVE'
+    | 'HEALTHY';
+
+type PaperDiagnosisSeverity = 'INFO' | 'WARNING' | 'BLOCKING';
+
+interface PaperRunDiagnosis {
+    key: string;
+    type: PaperDiagnosisType;
+    title: string;
+    severity: PaperDiagnosisSeverity;
+    description: string;
+    /** 建议用户优先核对的对象（页面区块 / 事实表 / 面板）。 */
+    checkTarget: string;
+}
+
+interface PaperDiagnosisInput {
+    run: PaperTradingRunItem;
+    orderCount: number;
+    fillCount: number;
+    netPnl: number | null;
+    /** 风控是否处于拦截/高风险态（与运行结果复盘同一判定口径）。 */
+    riskBlocked: boolean;
+    /** 是否存在任何风控检查结果。 */
+    hasRiskData: boolean;
+    openAlertCount: number;
+    recoveryCount: number;
+}
+
+// 诊断排序：阻断 > 警告 > 提示，让最严重的原因排在最前。
+const DIAGNOSIS_SEVERITY_RANK: Record<PaperDiagnosisSeverity, number> = {
+    BLOCKING: 0,
+    WARNING: 1,
+    INFO: 2,
+};
+
+function buildPaperRunDiagnoses({
+    run,
+    orderCount,
+    fillCount,
+    netPnl,
+    riskBlocked,
+    hasRiskData,
+    openAlertCount,
+    recoveryCount,
+}: PaperDiagnosisInput): PaperRunDiagnosis[] {
+    const normalizedStatus = (run.status ?? 'UNKNOWN').toUpperCase();
+    const isTerminal = TERMINAL_PAPER_RUN_STATUSES.has(normalizedStatus);
+    const diagnoses: PaperRunDiagnosis[] = [];
+
+    // 风控拦截优先解释，并抑制 NO_ORDER / NO_FILL，避免重复噪声。
+    if (riskBlocked) {
+        diagnoses.push({
+            key: 'risk-blocked',
+            type: 'RISK_BLOCKED',
+            title: '风控拦截',
+            severity: 'BLOCKING',
+            description: '风控拦截：订单可能未进入交易执行链路，请优先查看风控检查结果。',
+            checkTarget: '风控状态卡片、风控结果 Tab',
+        });
+    }
+
+    if (normalizedStatus === 'FAILED') {
+        diagnoses.push({
+            key: 'run-failed',
+            type: 'RUN_FAILED',
+            title: '运行异常结束',
+            severity: 'BLOCKING',
+            description: '运行异常结束：请检查告警、恢复事件和运行状态。',
+            checkTarget: '告警面板、恢复事件、心跳与运行状态',
+        });
+    }
+
+    if (normalizedStatus === 'CANCELLED') {
+        diagnoses.push({
+            key: 'run-cancelled',
+            type: 'RUN_CANCELLED',
+            title: '运行被取消',
+            severity: 'WARNING',
+            description: '本次 Paper run 已被取消，未形成完整执行闭环。',
+            checkTarget: '运行状态、操作记录',
+        });
+    }
+
+    const blockedOrFailed = riskBlocked || normalizedStatus === 'FAILED';
+    if (!blockedOrFailed && orderCount === 0) {
+        diagnoses.push({
+            key: 'no-order',
+            type: 'NO_ORDER',
+            title: '未发现订单',
+            // 终态仍无订单更值得警示；运行中或未启动则只作提示。
+            severity: isTerminal ? 'WARNING' : 'INFO',
+            description: isTerminal
+                ? '未发现订单：本次 Paper run 结束时仍无任何订单事实。'
+                : '未发现订单：本次 Paper run 可能尚未触发策略信号，或仍处于未启动状态。',
+            checkTarget: '运行状态、调度触发、策略信号、订单事实表',
+        });
+    } else if (!blockedOrFailed && orderCount > 0 && fillCount === 0) {
+        diagnoses.push({
+            key: 'no-fill',
+            type: 'NO_FILL',
+            title: '有订单但暂无成交',
+            severity: 'WARNING',
+            description: '存在订单但暂无成交：请检查订单状态、价格条件与撮合结果。',
+            checkTarget: '订单状态、成交事实表、价格条件',
+        });
+    }
+
+    // 数据不足：无成交、无净 PnL、无风控数据，不足以形成复盘结论。
+    if (fillCount === 0 && netPnl === null && !hasRiskData) {
+        diagnoses.push({
+            key: 'data-insufficient',
+            type: 'DATA_INSUFFICIENT',
+            title: '数据不足',
+            severity: 'INFO',
+            description: '数据不足：当前执行事实不足以形成完整复盘结论。',
+            checkTarget: '订单、成交、净 PnL、风控结果',
+        });
+    }
+
+    if (netPnl !== null && netPnl < 0) {
+        diagnoses.push({
+            key: 'pnl-negative',
+            type: 'PNL_NEGATIVE',
+            title: '净 PnL 为负',
+            severity: 'WARNING',
+            description: '净 PnL 为负：请复盘成交明细与持仓盈亏。',
+            checkTarget: '成交事实、持仓事实、资金曲线',
+        });
+    }
+
+    if (openAlertCount > 0) {
+        diagnoses.push({
+            key: 'alert-present',
+            type: 'ALERT_PRESENT',
+            title: '存在未处理告警',
+            severity: 'WARNING',
+            description: `存在 ${openAlertCount} 条未处理告警：请查看告警面板并确认处理。`,
+            checkTarget: '告警面板',
+        });
+    }
+
+    if (recoveryCount > 0) {
+        diagnoses.push({
+            key: 'recovery-present',
+            type: 'RECOVERY_PRESENT',
+            title: '存在恢复事件',
+            severity: 'INFO',
+            description: '存在恢复事件：本次 run 曾触发恢复或重试，请关注是否稳定。',
+            checkTarget: '恢复事件面板',
+        });
+    }
+
+    // 兜底：没有任何阻断 / 警告级别原因时给出健康结论。
+    const hasNotable = diagnoses.some((item) => item.severity !== 'INFO');
+    if (!hasNotable) {
+        diagnoses.push({
+            key: 'healthy',
+            type: 'HEALTHY',
+            title: '暂无明显异常',
+            severity: 'INFO',
+            description: '暂无明显异常：可继续查看时间线、订单、成交、持仓和 PnL。',
+            checkTarget: '运行事件时间线、订单、成交、持仓、净 PnL',
+        });
+    }
+
+    return [...diagnoses].sort(
+        (left, right) => DIAGNOSIS_SEVERITY_RANK[left.severity] - DIAGNOSIS_SEVERITY_RANK[right.severity],
+    );
+}
+
 function buildPaperTimelineEvents({
     run,
     latestOrder,
@@ -411,6 +598,8 @@ export function PaperTradingPage() {
     const schedulesQuery = usePaperSchedulesQuery(focusRunId);
     const alertsQuery = usePaperAlertsQuery(focusRunId);
     const stabilityChecksQuery = usePaperStabilityChecksQuery(focusRunId);
+    // 异常原因聚合所需；与右侧「恢复事件」面板共享 React Query 缓存键（默认参数），不重复请求。
+    const recoveryEventsQuery = usePaperRecoveryEventsQuery(focusRunId);
 
     const createMutation = useCreatePaperTradingRunMutation();
     const startMutation = useStartPaperTradingRunMutation();
@@ -469,6 +658,19 @@ export function PaperTradingPage() {
             latestRisk,
         })
         : null;
+    // 复用运行结果复盘的风控判定口径（'拦截' 即 riskBlocked），让诊断与复盘结论一致。
+    const paperRunDiagnoses = focusRun
+        ? buildPaperRunDiagnoses({
+            run: focusRun,
+            orderCount: paperOrders.length,
+            fillCount: paperTrades.length,
+            netPnl: latestLoopPnl,
+            riskBlocked: classifyRiskResult(latestRisk).riskResult === '拦截',
+            hasRiskData: Boolean(latestRisk),
+            openAlertCount,
+            recoveryCount: (recoveryEventsQuery.data ?? []).length,
+        })
+        : [];
 
     const columns: ColumnsType<PaperRunRow> = [
         {
@@ -777,6 +979,7 @@ export function PaperTradingPage() {
                                                 description="该摘要复用订单、成交、持仓、资金曲线和风控查询结果，不新增交易动作，不触发真实交易所或 LIVE。"
                                             />
                                             {paperRunReview ? <PaperRunReviewCard review={paperRunReview}/> : null}
+                                            {paperRunDiagnoses.length > 0 ? <PaperRunDiagnosisCard diagnoses={paperRunDiagnoses}/> : null}
                                             <div className="nq-status-strip">
                                                 <NqMetricCard
                                                     label="订单事实"
@@ -1323,6 +1526,55 @@ function PaperRunReviewCard({review}: {review: PaperRunReview}) {
                         value={<NqStatusTag status={review.riskResult} tone={review.riskTone}/>}
                     />
                 </div>
+            </Space>
+        </Card>
+    );
+}
+
+// 严重程度到展示色调 / 横幅级别的映射；HEALTHY 单独走 success。
+const DIAGNOSIS_SEVERITY_META: Record<PaperDiagnosisSeverity, {tone: NqStatusTone; level: 'info' | 'warning' | 'danger'}> = {
+    INFO: {tone: 'info', level: 'info'},
+    WARNING: {tone: 'warning', level: 'warning'},
+    BLOCKING: {tone: 'danger', level: 'danger'},
+};
+
+function diagnosisBannerLevel(item: PaperRunDiagnosis): 'success' | 'info' | 'warning' | 'danger' {
+    if (item.type === 'HEALTHY') {
+        return 'success';
+    }
+    return DIAGNOSIS_SEVERITY_META[item.severity].level;
+}
+
+function PaperRunDiagnosisCard({diagnoses}: {diagnoses: PaperRunDiagnosis[]}) {
+    return (
+        <Card
+            size="small"
+            title="异常原因聚合"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · LIVE 未开启</Typography.Text>}
+        >
+            <Space direction="vertical" size={10} style={{display: 'flex'}}>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                    该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。
+                </Typography.Text>
+                {diagnoses.map((item) => (
+                    <NqRiskBanner
+                        key={item.key}
+                        level={diagnosisBannerLevel(item)}
+                        message={(
+                            <Space size={8} wrap>
+                                <Tag>{item.type}</Tag>
+                                <Typography.Text strong>{item.title}</Typography.Text>
+                                <NqStatusTag status={item.severity} tone={DIAGNOSIS_SEVERITY_META[item.severity].tone}/>
+                            </Space>
+                        )}
+                        description={(
+                            <Space direction="vertical" size={2} style={{display: 'flex'}}>
+                                <Typography.Text type="secondary" style={{fontSize: 12}}>{item.description}</Typography.Text>
+                                <Typography.Text type="secondary" style={{fontSize: 12}}>建议检查：{item.checkTarget}</Typography.Text>
+                            </Space>
+                        )}
+                    />
+                ))}
             </Space>
         </Card>
     );
