@@ -204,6 +204,7 @@ GateI 后续规划不改变当前事实：AI、AI 信号、AI 自动交易和 AI
 - `GET /api/paper-trading/runs`：查询 Paper Trading run 列表，可按 `publishId`、`status` 过滤。
 - `POST /api/paper-trading/runs`：基于 `publishId` 创建 Paper Trading run，固化 publish/strategy version/dataset/param/config 快照。
 - `GET /api/paper-trading/runs/{paperRunId}`：查询 Paper Trading run 详情。
+- `GET /api/paper-trading/runs/{paperRunId}/summary`：只读聚合该 Paper run 的运行结果复盘、异常原因诊断、运行事件时间线与关键计数（counts/latest/resultReview/diagnoses/timeline/safety），供前端详情区优先消费；不触发任何状态机或外部调用，environment 固定 SIM/PAPER、LIVE 未开启。
 - `POST /api/paper-trading/runs/{paperRunId}/start`：启动 Paper run（CREATED → RUNNING）。
 - `POST /api/paper-trading/runs/{paperRunId}/stop`：停止 Paper run（RUNNING → STOPPED）。
 - `GET /api/paper-trading/runs/{paperRunId}/orders`：查询 Paper run 订单事实列表。

@@ -7,6 +7,8 @@ import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorSer
 import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoverCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoveryService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunRetryFailedStepCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunSummary;
+import com.guidinglight.nexusquant.research.application.paper.PaperRunSummaryService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunStabilityCheckGenerateCommand;
@@ -48,6 +50,7 @@ public class PaperTradingApiService {
     private final PaperRunRecoveryService recoveryService;
     private final PaperRunStabilityCheckService stabilityCheckService;
     private final PaperRunMonitorRunService monitorRunService;
+    private final PaperRunSummaryService summaryService;
 
     public PaperTradingApiService(
             PaperTradingRunService runService,
@@ -56,7 +59,8 @@ public class PaperTradingApiService {
             PaperRunMonitorService paperRunMonitorService,
             PaperRunRecoveryService recoveryService,
             PaperRunStabilityCheckService stabilityCheckService,
-            PaperRunMonitorRunService monitorRunService
+            PaperRunMonitorRunService monitorRunService,
+            PaperRunSummaryService summaryService
     ) {
         this.runService = Objects.requireNonNull(runService, "runService must not be null");
         this.monitorService = Objects.requireNonNull(monitorService, "monitorService must not be null");
@@ -65,6 +69,7 @@ public class PaperTradingApiService {
         this.recoveryService = Objects.requireNonNull(recoveryService, "recoveryService must not be null");
         this.stabilityCheckService = Objects.requireNonNull(stabilityCheckService, "stabilityCheckService must not be null");
         this.monitorRunService = Objects.requireNonNull(monitorRunService, "monitorRunService must not be null");
+        this.summaryService = Objects.requireNonNull(summaryService, "summaryService must not be null");
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
@@ -105,6 +110,14 @@ public class PaperTradingApiService {
 
     public List<PaperTradingRun> list(String publishId, String status) {
         return runService.list(publishId, status);
+    }
+
+    public PaperRunSummary summary(String paperRunId) {
+        try {
+            return summaryService.summarize(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
     }
 
     public List<PaperTradingOrder> listOrders(String paperRunId) {

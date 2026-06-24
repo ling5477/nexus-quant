@@ -32,7 +32,7 @@ test.describe('GateJ-3 paper trading recovery smoke', () => {
         expect(paperRunId).toBeTruthy();
 
         // Start paper run
-        const row = page.locator('tr').filter({hasText: paperRunId});
+        const row = page.locator(`tr[data-row-key="${paperRunId}"]`);
         await expect(row).toBeVisible({timeout: 15_000});
         const startResponse = page.waitForResponse((response) => (
             response.url().endsWith(`/api/paper-trading/runs/${paperRunId}/start`)

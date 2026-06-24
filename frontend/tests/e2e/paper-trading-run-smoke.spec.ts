@@ -37,38 +37,41 @@ test.describe('GateI-3 paper trading run smoke', () => {
         expect(createdPayload.status).toBe('CREATED');
         expect(createdPayload.strategyVersionId).toBe(fixture.strategyVersionId);
 
-        const row = page.locator('tr').filter({hasText: paperRunId});
-        await expect(row).toBeVisible({timeout: 15_000});
+        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
+        await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
+        await expect(drawer.getByText(paperRunId).first()).toBeVisible();
+        await expect(drawer.getByText('CREATED').first()).toBeVisible();
 
         const startResponse = page.waitForResponse((response) => (
             response.url().endsWith(`/api/paper-trading/runs/${paperRunId}/start`)
             && response.request().method() === 'POST'
         ));
-        await row.getByRole('link', {name: '启动'}).or(row.getByRole('button', {name: '启动'})).click();
+        await expect(drawer.getByRole('button', {name: '启动 Paper Run'})).toBeEnabled();
+        await drawer.getByRole('button', {name: '启动 Paper Run'}).click();
         const started = await startResponse;
         expect(started.ok()).toBeTruthy();
         const startedPayload = await started.json();
         expect(startedPayload.status).toBe('RUNNING');
-
-        const runningRow = page.locator('tr').filter({hasText: paperRunId});
-        await expect(runningRow.getByText('RUNNING')).toBeVisible({timeout: 15_000});
+        await expect(drawer.getByText('RUNNING').first()).toBeVisible({timeout: 15_000});
 
         const stopResponse = page.waitForResponse((response) => (
             response.url().endsWith(`/api/paper-trading/runs/${paperRunId}/stop`)
             && response.request().method() === 'POST'
         ));
-        await runningRow.getByRole('link', {name: '停止'}).or(runningRow.getByRole('button', {name: '停止'})).click();
+        await expect(drawer.getByRole('button', {name: '停止 Paper Run'})).toBeEnabled();
+        await drawer.getByRole('button', {name: '停止 Paper Run'}).click();
         const stopped = await stopResponse;
         expect(stopped.ok()).toBeTruthy();
         const stoppedPayload = await stopped.json();
         expect(stoppedPayload.status).toBe('STOPPED');
-
-        const stoppedRow = page.locator('tr').filter({hasText: paperRunId});
-        await expect(stoppedRow.getByText('STOPPED')).toBeVisible({timeout: 15_000});
-        await stoppedRow.getByRole('link', {name: '查看详情'}).or(stoppedRow.getByRole('button', {name: '查看详情'})).click();
-
-        const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
-        await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
+        await expect(drawer.getByText('STOPPED').first()).toBeVisible({timeout: 15_000});
+        await expect(drawer.getByText('Paper 执行闭环')).toBeVisible();
+        await expect(drawer.getByText('订单 → 成交 → 持仓 / PnL → 风控')).toBeVisible();
+        await expect(drawer.getByText('订单事实').first()).toBeVisible();
+        await expect(drawer.getByText('成交事实').first()).toBeVisible();
+        await expect(drawer.getByText('持仓事实').first()).toBeVisible();
+        await expect(drawer.getByText('净 PnL').first()).toBeVisible();
+        await expect(drawer.getByText('风控闭环').first()).toBeVisible();
 
         await page.getByRole('tab', {name: '订单'}).click();
         await expect(page.getByText('当前 Paper run 暂无订单事实。')).toBeVisible();
@@ -113,7 +116,7 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         const paperRunId: string = createdPayload.paperRunId;
 
         // Start via UI
-        const row = page.locator('tr').filter({hasText: paperRunId});
+        const row = page.locator(`tr[data-row-key="${paperRunId}"]`);
         await expect(row).toBeVisible({timeout: 15_000});
 
         const startResponse = page.waitForResponse((response) => (
@@ -142,6 +145,10 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         // checkType 同时出现在底部「风控结果」表与顶部状态条「风控状态」卡片，用 .first() 规避 strict 多匹配。
         await expect(page.getByText('BASIC_HEALTH_CHECK').first()).toBeVisible({timeout: 10_000});
         await expect(page.getByText('PASSED').first()).toBeVisible({timeout: 5_000});
+        await expect(drawer.getByText('风控闭环')).toBeVisible();
+        // 风控闭环指标卡 footer 精确文案；用 exact 规避与 summary 时间线风控描述
+        // “BASIC_HEALTH_CHECK · LOW：...” 的 strict mode 多匹配。
+        await expect(drawer.getByText('BASIC_HEALTH_CHECK · LOW', {exact: true})).toBeVisible({timeout: 10_000});
 
         // Tab: 资金曲线
         await page.getByRole('tab', {name: '资金曲线'}).click();
@@ -174,7 +181,7 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         expect(esPayload.triggerType).toBe('MANUAL');
 
         // 内联控制台无需关闭抽屉；紧急停机后焦点 run 应在左侧列表显示 STOPPED。
-        const stoppedRow = page.locator('tr').filter({hasText: paperRunId});
+        const stoppedRow = page.locator(`tr[data-row-key="${paperRunId}"]`);
         await expect(stoppedRow.getByText('STOPPED').first()).toBeVisible({timeout: 15_000});
     });
 });

@@ -24,6 +24,7 @@ import com.guidinglight.nexusquant.paper.api.dto.PaperRunRecoveryEventResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunRetryFailedStepRequestBody;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunStabilityCheckGenerateRequestBody;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunStabilityCheckResponse;
+import com.guidinglight.nexusquant.paper.api.dto.PaperRunSummaryResponse;
 import com.guidinglight.nexusquant.paper.api.dto.TradeReplayRecordResponse;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
@@ -135,6 +136,18 @@ public class PaperTradingController {
     public PaperTradingRunResponse stop(@PathVariable @NotBlank String paperRunId) {
         TraceIdContext.getOrCreate();
         return PaperTradingRunResponse.from(apiService.stop(paperRunId));
+    }
+
+    @GetMapping("/{paperRunId}/summary")
+    @Operation(summary = "查询 Paper run 只读聚合摘要",
+            description = "聚合指定 Paper run 的运行结果复盘、异常原因诊断、运行事件时间线与关键计数，供前端详情区优先消费。只读，不触发任何状态机或外部调用。")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "404", description = "Paper run 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PaperRunSummaryResponse summary(@PathVariable @NotBlank String paperRunId) {
+        TraceIdContext.getOrCreate();
+        return PaperRunSummaryResponse.from(apiService.summary(paperRunId));
     }
 
     @GetMapping("/{paperRunId}/orders")

@@ -60,6 +60,20 @@
    - Risks
    - Next concrete action
 
+## 文档预算规则
+
+- Code-first default：普通任务必须优先产出代码、测试或可验证行为；docs 不得成为默认产物。
+- Review-only no-diff：review-only / audit-only 默认不修改文件，只输出结论；只有阶段 freeze、合同冻结、高风险计划或用户明确要求时才允许写 docs。
+- Docs budget：
+  - 普通代码任务默认不改 docs；确需记录时最多追加 `docs/current/WORKLOG.md` 一行。
+  - 测试基线任务可改 `docs/current/TESTING.md` + `docs/current/WORKLOG.md`。
+  - 阶段完成或 Gate freeze 才可同步 `docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+  - `README.md` 只在入口、架构、启动方式或阶段总状态变化时修改。
+  - 专项 PLAN 只用于 CI、migration、security、LIVE、credential、API contract 等高风险 epic。
+- Freeze compression：plan / review / first-run / rerun / freeze 不得每一步都同步 5-6 份 docs；中间步骤只记录在专项 plan 或 `WORKLOG.md`，最终 freeze 再同步 `STATUS.md` / `TESTING.md`。
+- No document inertia：不得为了“保持文档一致”而新增 docs-only 任务；必须由代码、测试、CI、migration、安全边界或用户明确要求触发。
+- Prompt rule：后续给 Codex/Claude 的任务提示词必须明确 docs 预算，例如“docs 默认不改；如需记录，只允许 WORKLOG 一行”。
+
 ## 禁止事项
 
 - 不默认调用所有插件。
@@ -130,7 +144,7 @@ Docs：
 git status --short
 ```
 
-并检查链接、路径、阶段状态、禁止边界、重复入口和未执行验证表述。
+并检查链接、路径、阶段状态、禁止边界、重复入口和未执行验证表述。是否写入 `WORKLOG.md` / `TESTING.md` 必须遵守文档预算规则，轻量流程修正和 review-only 默认不新增记录。
 
 Deployment：
 

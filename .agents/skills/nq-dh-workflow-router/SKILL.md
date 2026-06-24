@@ -74,7 +74,20 @@ Exclude by default:
 
 Do not scan the full repository unless the task explicitly requires a repository-wide review.
 
-## Step 4: Enforce NQ Boundaries
+## Step 4: Apply Documentation Budget
+
+Default to code-first / test-first work. Documentation is not a default deliverable.
+
+- Review-only and audit-only tasks are no-diff by default; write docs only for stage freeze, contract freeze, high-risk plans, or explicit user instruction.
+- Ordinary code tasks do not update docs by default; if a durable note is necessary, add at most one `docs/current/WORKLOG.md` line.
+- Test-baseline tasks may update `docs/current/TESTING.md` and `docs/current/WORKLOG.md`.
+- Stage completion or Gate freeze may update `docs/current/STATUS.md`, `docs/current/ROADMAP.md`, `docs/current/TESTING.md`, and `docs/current/WORKLOG.md`.
+- `README.md` changes require entry-point, architecture, startup, or overall stage-status impact.
+- Dedicated PLAN docs are reserved for CI, migration, security, LIVE, credential, API contract, or similarly high-risk epics.
+- Do not create docs-only follow-up tasks merely to keep documents synchronized.
+- Prompts for future NQ/DH tasks should state the docs budget explicitly, for example: "docs default unchanged; if recording is needed, only one WORKLOG line is allowed."
+
+## Step 5: Enforce NQ Boundaries
 
 For NexusQuant tasks:
 
@@ -87,7 +100,7 @@ For NexusQuant tasks:
 
 Current baseline: GateJ completed; Next is GateK-PLAN; AI not started; DH integration not started and not connected to NQ.
 
-## Step 5: Enforce DH Boundaries
+## Step 6: Enforce DH Boundaries
 
 For Decision Hub tasks:
 
@@ -97,7 +110,7 @@ For Decision Hub tasks:
 - Do not add real providers, RealClient, third-party relays, or production trading paths.
 - For security-sensitive DH work, explicitly check HMAC, timestamp, nonce, source allowlist, payload size, tenant binding, replay protection, provider trust policy, and audit trail.
 
-## Step 6: Execute
+## Step 7: Execute
 
 Use the smallest workflow that satisfies the request.
 
@@ -107,7 +120,7 @@ Use the smallest workflow that satisfies the request.
 - Do not modify unrelated frontend, backend, Python, deployment, and documentation areas in the same turn unless the user explicitly requested a cross-stack change.
 - Do not update current docs to claim validation passed unless the command actually ran and passed.
 
-## Step 7: Validate
+## Step 8: Validate
 
 Run validation based on the changed area, or explain why a narrower validation is sufficient.
 
@@ -119,7 +132,7 @@ Run validation based on the changed area, or explain why a narrower validation i
 
 If validation fails, report the root cause, apply the smallest fix when feasible, and rerun the relevant validation.
 
-## Step 8: Report
+## Step 9: Report
 
 Use this output shape for NQ/DH work:
 

@@ -119,6 +119,7 @@ export const paperTradingQueryKeys = {
         searchVersion,
     ] as const,
     detail: (paperRunId: string) => [...paperTradingQueryKeys.all, 'detail', paperRunId] as const,
+    summary: (paperRunId: string) => [...paperTradingQueryKeys.all, 'summary', paperRunId] as const,
     orders: (paperRunId: string) => [...paperTradingQueryKeys.all, 'orders', paperRunId] as const,
     trades: (paperRunId: string) => [...paperTradingQueryKeys.all, 'trades', paperRunId] as const,
     positions: (paperRunId: string) => [...paperTradingQueryKeys.all, 'positions', paperRunId] as const,
