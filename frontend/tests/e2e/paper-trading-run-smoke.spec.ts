@@ -69,6 +69,13 @@ test.describe('GateI-3 paper trading run smoke', () => {
 
         const drawer = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(drawer.getByText('Paper Run ID')).toBeVisible({timeout: 10_000});
+        await expect(drawer.getByText('Paper 执行闭环')).toBeVisible();
+        await expect(drawer.getByText('订单 → 成交 → 持仓 / PnL → 风控')).toBeVisible();
+        await expect(drawer.getByText('订单事实')).toBeVisible();
+        await expect(drawer.getByText('成交事实')).toBeVisible();
+        await expect(drawer.getByText('持仓事实')).toBeVisible();
+        await expect(drawer.getByText('净 PnL')).toBeVisible();
+        await expect(drawer.getByText('风控闭环')).toBeVisible();
 
         await page.getByRole('tab', {name: '订单'}).click();
         await expect(page.getByText('当前 Paper run 暂无订单事实。')).toBeVisible();
@@ -142,6 +149,8 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         // checkType 同时出现在底部「风控结果」表与顶部状态条「风控状态」卡片，用 .first() 规避 strict 多匹配。
         await expect(page.getByText('BASIC_HEALTH_CHECK').first()).toBeVisible({timeout: 10_000});
         await expect(page.getByText('PASSED').first()).toBeVisible({timeout: 5_000});
+        await expect(drawer.getByText('风控闭环')).toBeVisible();
+        await expect(drawer.getByText(/BASIC_HEALTH_CHECK · LOW/)).toBeVisible({timeout: 10_000});
 
         // Tab: 资金曲线
         await page.getByRole('tab', {name: '资金曲线'}).click();

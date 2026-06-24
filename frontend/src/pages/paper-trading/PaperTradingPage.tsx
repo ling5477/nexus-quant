@@ -104,6 +104,32 @@ function latestBy<T>(items: T[], getTime: (item: T) => string | null | undefined
         ?? null;
 }
 
+function sumNullableAmounts(...values: Array<string | number | null | undefined>): number | null {
+    let total = 0;
+    let hasValue = false;
+
+    for (const value of values) {
+        if (value === null || value === undefined || value === '') {
+            continue;
+        }
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+            continue;
+        }
+        total += numeric;
+        hasValue = true;
+    }
+
+    return hasValue ? total : null;
+}
+
+function pnlTone(value: number | null): 'up' | 'down' | 'muted' {
+    if (value === null || value === 0) {
+        return 'muted';
+    }
+    return value > 0 ? 'up' : 'down';
+}
+
 export function PaperTradingPage() {
     const {message} = App.useApp();
     const [queryForm] = Form.useForm<PaperTradingListFilters>();
@@ -162,6 +188,19 @@ export function PaperTradingPage() {
     const latestRisk = latestBy(riskResultsQuery.data ?? [], (item) => item.createdAt);
     const latestDailyReport = [...(dailyReportsQuery.data ?? [])]
         .sort((left, right) => right.reportDate.localeCompare(left.reportDate))[0] ?? null;
+    const paperOrders = ordersQuery.data ?? [];
+    const paperTrades = tradesQuery.data ?? [];
+    const paperPositions = positionsQuery.data ?? [];
+    const equitySnapshots = equityCurveQuery.data ?? [];
+    const latestOrder = latestBy(paperOrders, (item) => item.updatedAt);
+    const latestTrade = latestBy(paperTrades, (item) => item.tradedAt);
+    const latestPosition = latestBy(paperPositions, (item) => item.updatedAt);
+    const latestEquitySnapshot = latestBy(equitySnapshots, (item) => item.snapshotTime);
+    const latestLoopPnl = latestEquitySnapshot
+        ? sumNullableAmounts(latestEquitySnapshot.realizedPnl, latestEquitySnapshot.unrealizedPnl)
+        : latestPosition
+            ? sumNullableAmounts(latestPosition.realizedPnl, latestPosition.unrealizedPnl)
+            : sumNullableAmounts(latestDailyReport?.dailyPnl);
 
     const columns: ColumnsType<PaperRunRow> = [
         {
@@ -429,6 +468,54 @@ export function PaperTradingPage() {
                                                 <NqErrorState title="Paper run 详情加载失败" error={detailQuery.error as AppApiError}/>
                                             </div>
                                         ) : null}
+                                    </Card>
+
+                                    <Card
+                                        className="page-section"
+                                        bordered={false}
+                                        title="Paper 执行闭环"
+                                        extra={<Typography.Text type="secondary" style={{fontSize: 12}}>订单 → 成交 → 持仓 / PnL → 风控</Typography.Text>}
+                                    >
+                                        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                            <NqRiskBanner
+                                                level="info"
+                                                message="只读聚合当前 Paper run 的执行事实。"
+                                                description="该摘要复用订单、成交、持仓、资金曲线和风控查询结果，不新增交易动作，不触发真实交易所或 LIVE。"
+                                            />
+                                            <div className="nq-status-strip">
+                                                <NqMetricCard
+                                                    label="订单事实"
+                                                    value={String(paperOrders.length)}
+                                                    footer={latestOrder ? `${latestOrder.status} · ${formatDateTime(latestOrder.updatedAt)}` : '暂无订单'}
+                                                    loading={ordersQuery.isPending}
+                                                />
+                                                <NqMetricCard
+                                                    label="成交事实"
+                                                    value={String(paperTrades.length)}
+                                                    footer={latestTrade ? formatDateTime(latestTrade.tradedAt) : '暂无成交'}
+                                                    loading={tradesQuery.isPending}
+                                                />
+                                                <NqMetricCard
+                                                    label="持仓事实"
+                                                    value={String(paperPositions.length)}
+                                                    footer={latestPosition ? formatDateTime(latestPosition.updatedAt) : '暂无持仓'}
+                                                    loading={positionsQuery.isPending}
+                                                />
+                                                <NqMetricCard
+                                                    label="净 PnL"
+                                                    value={<NqAmountText value={latestLoopPnl} signed colorBySign/>}
+                                                    footer={latestEquitySnapshot ? `权益快照 ${formatDateTime(latestEquitySnapshot.snapshotTime)}` : latestPosition ? '持仓实时汇总' : '暂无 PnL'}
+                                                    tone={pnlTone(latestLoopPnl)}
+                                                    loading={equityCurveQuery.isPending || positionsQuery.isPending || dailyReportsQuery.isPending}
+                                                />
+                                                <NqMetricCard
+                                                    label="风控闭环"
+                                                    value={latestRisk ? <NqStatusTag status={latestRisk.status} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
+                                                    footer={latestRisk ? `${latestRisk.checkType} · ${latestRisk.severity}` : '暂无风控检查'}
+                                                    loading={riskResultsQuery.isPending}
+                                                />
+                                            </div>
+                                        </Space>
                                     </Card>
 
                                     <Row gutter={[12, 12]} align="top">
