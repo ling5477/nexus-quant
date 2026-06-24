@@ -79,6 +79,9 @@ import {
     useStartPaperTradingRunMutation,
     useStopPaperTradingRunMutation,
 } from '@/hooks/usePaperTradingQuery';
+import {useBacktestDetailQuery} from '@/hooks/useBacktestsListQuery';
+import {useEvaluationsListQuery} from '@/hooks/useEvaluationsListQuery';
+import {usePublishDetailQuery} from '@/hooks/usePublishesListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
@@ -92,6 +95,9 @@ import {
     type PaperTradingRunItem,
     type PaperTradingTradeItem,
 } from '@/types/paper-trading';
+import type {BacktestConfigListItem} from '@/types/backtests';
+import type {BacktestEvaluationListItem} from '@/types/evaluations';
+import type {BacktestPublishDetailItem} from '@/types/publishes';
 import {appEnv} from '@/utils/env';
 import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
@@ -173,6 +179,30 @@ interface PaperRunReview {
     riskTone: 'success' | 'info' | 'neutral' | 'warning' | 'danger';
     conclusion: string;
     conclusionLevel: 'info' | 'warning' | 'danger';
+}
+
+interface PaperBacktestComparisonMetric {
+    label: string;
+    backtest: ReactNode;
+    paper: ReactNode;
+}
+
+interface PaperBacktestComparisonResult {
+    sourceAvailable: boolean;
+    sourceChain: {
+        strategyVersionId: string | null;
+        publishId: string | null;
+        backtestRunId: string | null;
+        backtestConfigId: string | null;
+        paperRunId: string;
+    };
+    metrics: PaperBacktestComparisonMetric[];
+    diagnosis: {
+        level: 'info' | 'warning' | 'danger';
+        type: string;
+        title: string;
+        description: string;
+    };
 }
 
 function formatTimelineAmount(value: string | number | null | undefined): string {
@@ -574,6 +604,154 @@ function toNullableNumber(value: string | number | null | undefined): number | n
     return Number.isFinite(numeric) ? numeric : null;
 }
 
+function formatMetricNumber(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+        return '-';
+    }
+    return Number(value).toLocaleString('zh-CN', {maximumFractionDigits: 4});
+}
+
+function readableBacktestRiskResult(evaluation: BacktestEvaluationListItem | null): string {
+    if (!evaluation) {
+        return '无数据';
+    }
+    if (evaluation.failureCode || evaluation.evaluationStatus === 'FAILED') {
+        const failureText = `${evaluation.failureCode ?? ''} ${evaluation.failureMessage ?? ''}`.toUpperCase();
+        return failureText.includes('RISK') ? '风控拦截' : '评估失败';
+    }
+    if (evaluation.evaluationStatus === 'COMPLETED' || evaluation.evaluationStatus === 'SUCCESS') {
+        return '未体现风控拦截';
+    }
+    return '数据不足';
+}
+
+function buildBacktestPaperComparison({
+    run,
+    publish,
+    backtest,
+    evaluation,
+    paperReview,
+}: {
+    run: PaperTradingRunItem;
+    publish: BacktestPublishDetailItem | null;
+    backtest: BacktestConfigListItem | null;
+    evaluation: BacktestEvaluationListItem | null;
+    paperReview: PaperRunReview | null;
+}): PaperBacktestComparisonResult {
+    const sourceChain = {
+        strategyVersionId: run.strategyVersionId ?? publish?.strategyVersionId ?? backtest?.strategyVersionId ?? null,
+        publishId: run.publishId || publish?.publishRecordId || null,
+        backtestRunId: publish?.backtestRunId ?? null,
+        backtestConfigId: publish?.backtestConfigId ?? backtest?.backtestConfigId ?? null,
+        paperRunId: run.paperRunId,
+    };
+
+    if (!publish?.backtestRunId && !publish?.backtestConfigId) {
+        return {
+            sourceAvailable: false,
+            sourceChain,
+            metrics: [],
+            diagnosis: {
+                level: 'info',
+                type: 'NO_BACKTEST_SOURCE',
+                title: '无法对照：缺少来源 backtest',
+                description: '当前 Paper run 暂无来源 backtest / publish 追溯信息，详情区仍可继续查看 Paper 执行事实。',
+            },
+        };
+    }
+
+    const backtestOrderCount = evaluation?.orderCount ?? null;
+    const backtestTradeCount = evaluation?.tradeCount ?? null;
+    const backtestNetPnl = toNullableNumber(evaluation?.netPnl);
+    const backtestRiskResult = readableBacktestRiskResult(evaluation);
+    const paperRiskResult = paperReview?.riskResult ?? '无数据';
+    const paperOrderCount = paperReview?.orderCount ?? null;
+    const paperFillCount = paperReview?.fillCount ?? null;
+    const paperNetPnl = paperReview?.netPnl ?? null;
+    const hasBacktestMetrics = evaluation !== null;
+    const hasPaperMetrics = paperReview !== null;
+
+    let diagnosis: PaperBacktestComparisonResult['diagnosis'] = {
+        level: 'info',
+        type: 'NO_OBVIOUS_DEVIATION',
+        title: '暂无明显偏差',
+        description: '当前 Backtest 与 Paper 的核心指标未发现明显偏差；仍需结合行情窗口、撮合假设和风控配置复核。',
+    };
+
+    if (!hasBacktestMetrics || !hasPaperMetrics) {
+        diagnosis = {
+            level: 'warning',
+            type: 'DATA_INSUFFICIENT',
+            title: '数据不足，无法对比',
+            description: '缺少 backtest 或 paper 指标，暂不能形成可靠偏差结论。',
+        };
+    } else if ((paperOrderCount ?? 0) === 0 && (paperFillCount ?? 0) === 0 && ((backtestOrderCount ?? 0) > 0 || (backtestTradeCount ?? 0) > 0)) {
+        diagnosis = {
+            level: 'warning',
+            type: 'PAPER_NO_TRADE',
+            title: 'Paper 未交易：回测有交易但 Paper 无订单/无成交',
+            description: '请优先核对策略信号触发、调度窗口、账户上下文和 Paper 风控条件。',
+        };
+    } else if (paperRiskResult === '拦截' && backtestRiskResult !== '风控拦截') {
+        diagnosis = {
+            level: 'danger',
+            type: 'PAPER_RISK_BLOCKED',
+            title: 'Paper 风控拦截：回测未体现该拦截',
+            description: 'Paper 被风控拦截，实盘前必须复核风控阈值、账户状态和策略发布参数。',
+        };
+    } else if (backtestNetPnl !== null && paperNetPnl !== null && backtestNetPnl > 0 && paperNetPnl <= backtestNetPnl * 0.5) {
+        diagnosis = {
+            level: 'warning',
+            type: 'PNL_DEVIATION',
+            title: '收益偏差：Paper PnL 明显低于 backtest',
+            description: 'Paper 净 PnL 低于回测净 PnL 的 50%，请复核滑点、手续费、撮合、样本窗口和运行时风控。',
+        };
+    }
+
+    return {
+        sourceAvailable: true,
+        sourceChain,
+        metrics: [
+            {
+                label: '状态',
+                backtest: evaluation ? <NqStatusTag status={evaluation.evaluationStatus}/> : <NqStatusTag status="NO_EVALUATION" tone="neutral"/>,
+                paper: <NqStatusTag status={paperReview?.finalStatus ?? run.status}/>,
+            },
+            {
+                label: '订单数',
+                backtest: <span className="nq-num">{formatMetricNumber(backtestOrderCount)}</span>,
+                paper: <span className="nq-num">{formatMetricNumber(paperOrderCount)}</span>,
+            },
+            {
+                label: '成交数',
+                backtest: <span className="nq-num">{formatMetricNumber(backtestTradeCount)}</span>,
+                paper: <span className="nq-num">{formatMetricNumber(paperFillCount)}</span>,
+            },
+            {
+                label: '净 PnL',
+                backtest: <NqAmountText value={backtestNetPnl} signed colorBySign/>,
+                paper: <NqAmountText value={paperNetPnl} signed colorBySign/>,
+            },
+            {
+                label: '风控结果',
+                backtest: <NqStatusTag status={backtestRiskResult} tone={backtestRiskResult === '风控拦截' ? 'danger' : backtestRiskResult === '无数据' ? 'neutral' : 'info'}/>,
+                paper: <NqStatusTag status={paperRiskResult} tone={riskResultTone(paperRiskResult)}/>,
+            },
+            {
+                label: '运行时间 / 样本区间',
+                backtest: <span className="nq-num">{backtest ? `${formatDateTime(backtest.startTime)} ~ ${formatDateTime(backtest.endTime)}` : '-'}</span>,
+                paper: <span className="nq-num">{paperReview?.runtimeDuration ?? '-'}</span>,
+            },
+            {
+                label: '策略版本 / 发布版本',
+                backtest: <span className="nq-mono">{backtest?.strategyVersionId ?? publish?.strategyVersionId ?? '-'}</span>,
+                paper: <span className="nq-mono">{run.strategyVersionId ?? run.publishId}</span>,
+            },
+        ],
+        diagnosis,
+    };
+}
+
 function riskResultTone(riskResult: string): NqStatusTone {
     switch (riskResult) {
         case '拦截':
@@ -669,6 +847,16 @@ export function PaperTradingPage() {
 
     const focusRunId = selectedRow?.paperRunId ?? null;
     const detailQuery = usePaperTradingDetailQuery(focusRunId);
+    const focusPublishId = detailQuery.data?.publishId ?? selectedRow?.publishId ?? null;
+    const publishQuery = usePublishDetailQuery(focusPublishId);
+    const publishDetail = Array.isArray(publishQuery.data) ? null : (publishQuery.data ?? null);
+    const comparisonBacktestConfigId = publishDetail?.backtestConfigId ?? null;
+    const backtestDetailQuery = useBacktestDetailQuery(comparisonBacktestConfigId);
+    const backtestDetail = Array.isArray(backtestDetailQuery.data) ? null : (backtestDetailQuery.data ?? null);
+    const evaluationsQuery = useEvaluationsListQuery(
+        {backtestConfigId: comparisonBacktestConfigId ?? undefined},
+        comparisonBacktestConfigId ? 1 : 0,
+    );
     // Loop-8：后端聚合事实源；详情区优先消费 summary 渲染复盘 / 诊断 / 时间线 / 关键指标。
     const summaryQuery = usePaperRunSummaryQuery(focusRunId);
     // 底部明细 Tab 懒加载：仅在对应 Tab 激活时启用查询，避免首屏一次性拉全量明细。
@@ -778,6 +966,25 @@ export function PaperTradingPage() {
                 latestRisk,
             })
             : null;
+    const comparisonEvaluations = (evaluationsQuery.data ?? []).filter((item) => (
+        publishDetail?.backtestRunId ? item.backtestRunId === publishDetail.backtestRunId : true
+    ));
+    const latestComparisonEvaluation = latestBy(
+        comparisonEvaluations,
+        (item) => item.evaluatedAt,
+    ) ?? comparisonEvaluations[0] ?? null;
+    const backtestPaperComparison = focusRun
+        ? buildBacktestPaperComparison({
+            run: focusRun,
+            publish: publishDetail,
+            backtest: backtestDetail,
+            evaluation: latestComparisonEvaluation,
+            paperReview: paperRunReview,
+        })
+        : null;
+    const backtestComparisonLoading = publishQuery.isFetching
+        || backtestDetailQuery.isFetching
+        || evaluationsQuery.isFetching;
     // 复用运行结果复盘的风控判定口径（'拦截' 即 riskBlocked），让诊断与复盘结论一致。
     const paperRunDiagnoses = summary
         ? mapSummaryDiagnoses(summary)
@@ -1106,6 +1313,12 @@ export function PaperTradingPage() {
                                                 </Typography.Text>
                                             ) : null}
                                             {paperRunReview ? <PaperRunReviewCard review={paperRunReview}/> : null}
+                                            {backtestPaperComparison ? (
+                                                <BacktestPaperComparisonCard
+                                                    comparison={backtestPaperComparison}
+                                                    loading={backtestComparisonLoading}
+                                                />
+                                            ) : null}
                                             {paperRunDiagnoses.length > 0 ? <PaperRunDiagnosisCard diagnoses={paperRunDiagnoses}/> : null}
                                             <div className="nq-status-strip">
                                                 <NqMetricCard
@@ -1655,6 +1868,79 @@ function PaperRunReviewCard({review}: {review: PaperRunReview}) {
                         value={<NqStatusTag status={review.riskResult} tone={review.riskTone}/>}
                     />
                 </div>
+            </Space>
+        </Card>
+    );
+}
+
+function BacktestPaperComparisonCard({
+    comparison,
+    loading,
+}: {
+    comparison: PaperBacktestComparisonResult;
+    loading: boolean;
+}) {
+    return (
+        <Card
+            size="small"
+            title="Backtest → Paper 结果对照"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper comparison · LIVE 未开启</Typography.Text>}
+        >
+            <Space direction="vertical" size={10} style={{display: 'flex'}}>
+                <NqRiskBanner
+                    level={comparison.diagnosis.level}
+                    message={(
+                        <Space size={8} wrap>
+                            <Tag>{comparison.diagnosis.type}</Tag>
+                            <Typography.Text strong>{comparison.diagnosis.title}</Typography.Text>
+                        </Space>
+                    )}
+                    description={(
+                        <Space direction="vertical" size={2} style={{display: 'flex'}}>
+                            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                {comparison.diagnosis.description}
+                            </Typography.Text>
+                            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                Backtest 与 Paper 均为模拟结果，不代表 LIVE 或真实交易表现。
+                            </Typography.Text>
+                        </Space>
+                    )}
+                />
+
+                <Descriptions bordered size="small" column={{xs: 1, sm: 2, xl: 4}}>
+                    <Descriptions.Item label="Strategy Version">
+                        <span className="nq-mono">{comparison.sourceChain.strategyVersionId ?? '-'}</span>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Publish ID">
+                        <span className="nq-mono">{comparison.sourceChain.publishId ?? '-'}</span>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Backtest ID / Trace ID">
+                        <span className="nq-mono">
+                            {comparison.sourceChain.backtestRunId ?? comparison.sourceChain.backtestConfigId ?? '-'}
+                        </span>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Paper Run ID">
+                        <span className="nq-mono">{comparison.sourceChain.paperRunId}</span>
+                    </Descriptions.Item>
+                </Descriptions>
+
+                {loading ? (
+                    <NqLoadingState/>
+                ) : !comparison.sourceAvailable ? (
+                    <NqEmptyState description="暂无来源 backtest / 无法对照；当前 Paper run 详情仍可独立查看。"/>
+                ) : (
+                    <NqDataTable
+                        rowKey="label"
+                        pagination={false}
+                        dataSource={comparison.metrics}
+                        scroll={{x: 760}}
+                        columns={[
+                            {title: '对比项', dataIndex: 'label', key: 'label', width: 180},
+                            {title: 'Backtest', dataIndex: 'backtest', key: 'backtest', width: 280, render: (value: ReactNode) => value},
+                            {title: 'Paper', dataIndex: 'paper', key: 'paper', width: 280, render: (value: ReactNode) => value},
+                        ]}
+                    />
+                )}
             </Space>
         </Card>
     );

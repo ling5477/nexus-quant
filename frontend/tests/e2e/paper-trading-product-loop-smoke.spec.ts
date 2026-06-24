@@ -104,6 +104,68 @@ const defaultRiskResults = [{
     createdAt: '2026-06-24T01:03:00Z',
 }];
 
+const defaultPublishDetail = {
+    publishRecordId: paperRun.publishId,
+    backtestRunId: 'backtest-run-loop-1',
+    backtestConfigId: 'backtest-config-loop-1',
+    researchConfigId: 'research-loop-1',
+    sourceStrategyId: 'strategy-loop-1',
+    targetStrategyDefinitionId: 'strategy-definition-loop-1',
+    strategyVersionId: paperRun.strategyVersionId,
+    publishStatus: 'PUBLISHED',
+    publishName: 'Loop comparison publish',
+    publishedAt: '2026-06-24T00:58:00Z',
+    evaluationSummaryJson: '{}',
+    failureCode: null,
+    failureMessage: null,
+    publishSnapshotJson: '{}',
+    versionSnapshotJson: '{}',
+};
+
+const defaultBacktestDetail = {
+    backtestConfigId: defaultPublishDetail.backtestConfigId,
+    researchConfigId: defaultPublishDetail.researchConfigId,
+    name: 'Loop comparison backtest',
+    description: 'paper comparison fixture',
+    startTime: '2026-06-23T00:00:00Z',
+    endTime: '2026-06-23T01:00:00Z',
+    initialCapital: 100000,
+    executionSpec: '{}',
+    evaluationSpec: '{}',
+    strategyVersionId: paperRun.strategyVersionId,
+    strategyVersionSnapshotJson: '{}',
+    paramSnapshotJson: '{}',
+    configSnapshotJson: '{}',
+    datasetId: 'dataset-loop-1',
+    datasetSnapshotJson: '{}',
+    configSnapshot: '{}',
+    createdAt: '2026-06-24T00:50:00Z',
+    updatedAt: '2026-06-24T00:55:00Z',
+};
+
+const defaultEvaluations = [{
+    evalReportId: 'eval-loop-1',
+    backtestRunId: defaultPublishDetail.backtestRunId,
+    evaluationStatus: 'COMPLETED',
+    evaluatedAt: '2026-06-24T00:57:00Z',
+    initialCapital: 100000,
+    finalEquity: 100120,
+    netPnl: 120,
+    totalReturnRate: 0.0012,
+    totalReturn: 120,
+    annualizedReturn: 0.02,
+    maxDrawdown: 0,
+    maxDrawdownRate: 0,
+    winRate: 1,
+    profitLossRatio: 1.2,
+    sharpeRatio: 1.1,
+    orderCount: 2,
+    tradeCount: 2,
+    metricsJson: '{}',
+    failureCode: null,
+    failureMessage: null,
+}];
+
 // 健康 STOPPED run 的后端聚合 summary：前端详情区优先消费它渲染复盘 / 诊断 / 时间线 / 关键指标。
 const defaultSummary = {
     run: {
@@ -174,6 +236,9 @@ type PaperLoopStubOptions = {
     riskResults?: unknown[];
     alerts?: unknown[];
     recoveryEvents?: unknown[];
+    publishDetail?: unknown;
+    backtestDetail?: unknown;
+    evaluations?: unknown[];
     // summary 覆盖：传入对象即用作 /summary 响应；传入 null 时返回 null（前端回退到明细派生）。
     summary?: unknown;
 };
@@ -295,6 +360,20 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
         status: 200,
         json: options.riskResults ?? defaultRiskResults,
     }));
+    await page.route(`**/api/publishes/${paperRun.publishId}`, (route: Route) => {
+        if ('publishDetail' in options && options.publishDetail === null) {
+            return route.fulfill({status: 404, json: {code: 'NOT_FOUND', message: 'publish source missing'}});
+        }
+        return route.fulfill({status: 200, json: 'publishDetail' in options ? options.publishDetail : defaultPublishDetail});
+    });
+    await page.route(`**/api/backtest-configs/${defaultPublishDetail.backtestConfigId}`, (route: Route) => route.fulfill({
+        status: 200,
+        json: options.backtestDetail ?? defaultBacktestDetail,
+    }));
+    await page.route(/^https?:\/\/[^/]+\/api\/evaluations(?:\?.*)?$/, (route: Route) => route.fulfill({
+        status: 200,
+        json: options.evaluations ?? defaultEvaluations,
+    }));
     // 告警 / 恢复事件默认空数组（健康用例）；异常用例可注入数据驱动异常原因聚合。
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/alerts**`, (route: Route) => route.fulfill({
         status: 200,
@@ -403,13 +482,31 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('运行结果复盘')).toBeVisible();
         await expect(detail.getByText('最终状态')).toBeVisible();
         await expect(detail.getByText('运行时长')).toBeVisible();
-        await expect(detail.getByText('1 分钟 0 秒')).toBeVisible();
+        await expect(detail.getByText('1 分钟 0 秒').first()).toBeVisible();
         await expect(detail.getByText('订单数').first()).toBeVisible();
         await expect(detail.getByText('成交数').first()).toBeVisible();
         await expect(detail.getByText('持仓数').first()).toBeVisible();
         await expect(detail.getByText('风控结果').first()).toBeVisible();
         await expect(detail.getByText('正常完成')).toBeVisible();
         await expect(detail.getByText('该复盘只基于当前 Paper run 的查询结果，用于判断模拟运行质量，不代表真实交易能力。')).toBeVisible();
+        await expect(detail.getByText('Backtest → Paper 结果对照')).toBeVisible();
+        await expect(detail.getByText('PNL_DEVIATION')).toBeVisible();
+        await expect(detail.getByText('收益偏差：Paper PnL 明显低于 backtest')).toBeVisible();
+        await expect(detail.getByText('Backtest 与 Paper 均为模拟结果，不代表 LIVE 或真实交易表现。')).toBeVisible();
+        await expect(detail.getByText('Strategy Version', {exact: true})).toBeVisible();
+        await expect(detail.getByText('Publish ID', {exact: true})).toBeVisible();
+        await expect(detail.getByText('Backtest ID / Trace ID', {exact: true})).toBeVisible();
+        await expect(detail.getByText(defaultPublishDetail.backtestRunId)).toBeVisible();
+        await expect(detail.getByRole('columnheader', {name: '对比项'})).toBeVisible();
+        await expect(detail.getByRole('columnheader', {name: 'Backtest'})).toBeVisible();
+        await expect(detail.getByRole('columnheader', {name: 'Paper'})).toBeVisible();
+        await expect(detail.getByText('状态').first()).toBeVisible();
+        await expect(detail.getByText('订单数').first()).toBeVisible();
+        await expect(detail.getByText('成交数').first()).toBeVisible();
+        await expect(detail.getByText('净 PnL').first()).toBeVisible();
+        await expect(detail.getByText('风控结果').first()).toBeVisible();
+        await expect(detail.getByText('运行时间 / 样本区间')).toBeVisible();
+        await expect(detail.getByText('策略版本 / 发布版本')).toBeVisible();
         await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
         await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
         await expect(detail.getByText('Paper run created')).toBeVisible();
@@ -441,6 +538,7 @@ test.describe('paper trading product loop panel', () => {
         expect(bodyText).toContain('持仓事实');
         expect(bodyText).toContain('净 PnL');
         expect(bodyText).toContain('60.00');
+        expect(bodyText).toContain('120.00');
         expect(bodyText).toContain('通过');
     });
 
@@ -554,7 +652,7 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。')).toBeVisible();
 
         // BLOCKING：风控拦截（'风控拦截' 同时出现在运行结果复盘结论中，用 .first 规避 strict 多匹配）。
-        await expect(detail.getByText('RISK_BLOCKED')).toBeVisible();
+        await expect(detail.getByText('RISK_BLOCKED', {exact: true})).toBeVisible();
         await expect(detail.getByText('风控拦截').first()).toBeVisible();
         await expect(detail.getByText('BLOCKING')).toBeVisible();
         await expect(detail.getByText('建议检查：风控状态卡片、风控结果 Tab')).toBeVisible();
@@ -595,6 +693,29 @@ test.describe('paper trading product loop panel', () => {
         // Paper-only / LIVE 未开启文案仍存在。
         await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
         await expect(detail.getByText('该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。')).toBeVisible();
+    });
+
+    test('无来源 backtest 时对照卡片展示空态且不阻塞详情', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {
+            seedRun: true,
+            status: 'STOPPED',
+            publishDetail: {
+                ...defaultPublishDetail,
+                backtestRunId: null,
+                backtestConfigId: null,
+            },
+        });
+
+        const detail = await openPaperRunDetail(page);
+
+        await expect(detail.getByText('Backtest → Paper 结果对照')).toBeVisible();
+        await expect(detail.getByText('NO_BACKTEST_SOURCE')).toBeVisible();
+        await expect(detail.getByText('无法对照：缺少来源 backtest')).toBeVisible();
+        await expect(detail.getByText('暂无来源 backtest / 无法对照；当前 Paper run 详情仍可独立查看。')).toBeVisible();
+        await expect(detail.getByText('Backtest 与 Paper 均为模拟结果，不代表 LIVE 或真实交易表现。')).toBeVisible();
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
+        await expect(detail.getByText('异常原因聚合')).toBeVisible();
+        await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
     });
 
     test('详情首屏只走 detail + summary，明细按需进入 Tab 后才懒加载', async ({page}) => {
