@@ -315,3 +315,69 @@ export interface PaperRunMonitorRunOnceResponse {
     createdAlertCount: number;
     createdAlerts: PaperRunAlertItem[];
 }
+
+/**
+ * Paper run 只读聚合响应（GateJ 后产品化 Loop-8）。
+ * 详情区优先消费 summary 渲染复盘 / 诊断 / 时间线 / 关键指标；明细查询保留为表格数据源与 fallback。
+ */
+export interface PaperRunSummaryCounts {
+    orderCount: number;
+    tradeCount: number;
+    fillCount: number;
+    positionCount: number;
+    openAlertCount: number;
+    recoveryEventCount: number;
+}
+
+export interface PaperRunSummaryLatest {
+    order: PaperTradingOrderItem | null;
+    trade: PaperTradingTradeItem | null;
+    position: PaperTradingPositionItem | null;
+    equitySnapshot: EquityCurveSnapshotItem | null;
+    dailyReport: PaperRunDailyReportItem | null;
+    riskResult: PaperRiskCheckResultItem | null;
+    alert: PaperRunAlertItem | null;
+    recoveryEvent: PaperRunRecoveryEventItem | null;
+}
+
+export interface PaperRunSummaryResultReview {
+    finalStatus: string;
+    runtimeDurationText: string;
+    netPnl: string | number | null;
+    riskResult: string;
+    conclusion: string;
+    conclusionLevel: 'info' | 'warning' | 'danger';
+}
+
+export interface PaperRunSummaryDiagnosis {
+    type: string;
+    severity: 'INFO' | 'WARNING' | 'BLOCKING';
+    title: string;
+    description: string;
+    checkTarget: string;
+}
+
+export interface PaperRunSummaryTimelineEntry {
+    type: string;
+    status: string;
+    occurredAt: string;
+    title: string;
+    description: string;
+}
+
+export interface PaperRunSummarySafety {
+    environment: string;
+    liveEnabled: boolean;
+    realExchangeTouched: boolean;
+    message: string;
+}
+
+export interface PaperRunSummaryResponse {
+    run: PaperTradingRunItem;
+    counts: PaperRunSummaryCounts;
+    latest: PaperRunSummaryLatest;
+    resultReview: PaperRunSummaryResultReview;
+    diagnoses: PaperRunSummaryDiagnosis[];
+    timeline: PaperRunSummaryTimelineEntry[];
+    safety: PaperRunSummarySafety;
+}

@@ -62,6 +62,7 @@ import {
     usePaperDailyReportsQuery,
     usePaperHeartbeatsQuery,
     usePaperRecoveryEventsQuery,
+    usePaperRunSummaryQuery,
     usePaperSchedulesQuery,
     usePaperStabilityChecksQuery,
     usePaperTradingDetailQuery,
@@ -83,6 +84,7 @@ import {
     defaultPaperTradingListFilters,
     type EquityCurveSnapshotItem,
     type PaperRiskCheckResultItem,
+    type PaperRunSummaryResponse,
     type PaperTradingListFilters,
     type PaperTradingOrderItem,
     type PaperTradingPositionItem,
@@ -564,6 +566,87 @@ function buildPaperTimelineEvents({
     return events.filter((event) => Boolean(event.time));
 }
 
+function toNullableNumber(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+}
+
+function riskResultTone(riskResult: string): NqStatusTone {
+    switch (riskResult) {
+        case '拦截':
+            return 'danger';
+        case '通过':
+            return 'success';
+        case '警告':
+            return 'warning';
+        default:
+            return 'neutral';
+    }
+}
+
+/** 把后端 summary 时间线条目映射为前端时间线展示模型（title 作为粗体事件名）。 */
+function summaryTimelineColor(type: string, status: string): PaperTimelineEvent['color'] {
+    switch (type) {
+        case 'RUN_CREATED':
+            return 'blue';
+        case 'RUN_STARTED':
+            return 'green';
+        case 'RUN_TERMINAL':
+            return status === 'STOPPED' ? 'gray' : 'red';
+        case 'LATEST_ORDER':
+            return status === 'FILLED' ? 'green' : status === 'REJECTED' ? 'red' : 'blue';
+        case 'LATEST_TRADE':
+            return 'green';
+        case 'LATEST_EQUITY':
+            return status === 'PNL_DOWN' ? 'red' : 'green';
+        case 'LATEST_RISK':
+            return status === 'PASSED' ? 'green' : status === 'REJECTED' ? 'red' : 'blue';
+        default:
+            return 'blue';
+    }
+}
+
+function mapSummaryReview(summary: PaperRunSummaryResponse): PaperRunReview {
+    const review = summary.resultReview;
+    return {
+        finalStatus: review.finalStatus,
+        runtimeDuration: review.runtimeDurationText,
+        orderCount: summary.counts.orderCount,
+        fillCount: summary.counts.fillCount,
+        positionCount: summary.counts.positionCount,
+        netPnl: toNullableNumber(review.netPnl),
+        riskResult: review.riskResult,
+        riskTone: riskResultTone(review.riskResult),
+        conclusion: review.conclusion,
+        conclusionLevel: review.conclusionLevel,
+    };
+}
+
+function mapSummaryDiagnoses(summary: PaperRunSummaryResponse): PaperRunDiagnosis[] {
+    return summary.diagnoses.map((item) => ({
+        key: item.type,
+        type: item.type as PaperDiagnosisType,
+        title: item.title,
+        severity: item.severity as PaperDiagnosisSeverity,
+        description: item.description,
+        checkTarget: item.checkTarget,
+    }));
+}
+
+function mapSummaryTimeline(summary: PaperRunSummaryResponse): PaperTimelineEvent[] {
+    return summary.timeline.map((item) => ({
+        key: `${item.type}-${item.occurredAt}`,
+        type: item.title,
+        status: item.status,
+        time: item.occurredAt,
+        description: item.description,
+        color: summaryTimelineColor(item.type, item.status),
+    }));
+}
+
 export function PaperTradingPage() {
     const {message} = App.useApp();
     const [queryForm] = Form.useForm<PaperTradingListFilters>();
@@ -583,6 +666,8 @@ export function PaperTradingPage() {
 
     const focusRunId = selectedRow?.paperRunId ?? null;
     const detailQuery = usePaperTradingDetailQuery(focusRunId);
+    // Loop-8：后端聚合事实源；详情区优先消费 summary 渲染复盘 / 诊断 / 时间线 / 关键指标。
+    const summaryQuery = usePaperRunSummaryQuery(focusRunId);
     const ordersQuery = usePaperTradingOrdersQuery(focusRunId);
     const tradesQuery = usePaperTradingTradesQuery(focusRunId);
     const positionsQuery = usePaperTradingPositionsQuery(focusRunId);
@@ -637,40 +722,57 @@ export function PaperTradingPage() {
         : latestPosition
             ? sumNullableAmounts(latestPosition.realizedPnl, latestPosition.unrealizedPnl)
             : sumNullableAmounts(latestDailyReport?.dailyPnl);
-    const paperTimelineEvents = focusRun
-        ? buildPaperTimelineEvents({
-            run: focusRun,
-            latestOrder,
-            latestTrade,
-            latestPosition,
-            latestEquitySnapshot,
-            latestRisk,
-            latestLoopPnl,
-        })
-        : [];
-    const paperRunReview = focusRun
-        ? buildPaperRunReview({
-            run: focusRun,
-            orderCount: paperOrders.length,
-            fillCount: paperTrades.length,
-            positionCount: paperPositions.length,
-            netPnl: latestLoopPnl,
-            latestRisk,
-        })
+    // summary 优先；加载失败、未就绪或响应结构异常时回退到明细查询的前端派生，保证详情区与明细表格不崩。
+    const summaryData = summaryQuery.data;
+    const summary: PaperRunSummaryResponse | null = summaryData && !Array.isArray(summaryData) && summaryData.counts
+        ? summaryData
         : null;
+
+    const orderCount = summary?.counts.orderCount ?? paperOrders.length;
+    const fillCount = summary?.counts.fillCount ?? paperTrades.length;
+    const positionCount = summary?.counts.positionCount ?? paperPositions.length;
+    const netPnl = summary ? toNullableNumber(summary.resultReview.netPnl) : latestLoopPnl;
+
+    const paperTimelineEvents = summary
+        ? mapSummaryTimeline(summary)
+        : focusRun
+            ? buildPaperTimelineEvents({
+                run: focusRun,
+                latestOrder,
+                latestTrade,
+                latestPosition,
+                latestEquitySnapshot,
+                latestRisk,
+                latestLoopPnl,
+            })
+            : [];
+    const paperRunReview = summary
+        ? mapSummaryReview(summary)
+        : focusRun
+            ? buildPaperRunReview({
+                run: focusRun,
+                orderCount: paperOrders.length,
+                fillCount: paperTrades.length,
+                positionCount: paperPositions.length,
+                netPnl: latestLoopPnl,
+                latestRisk,
+            })
+            : null;
     // 复用运行结果复盘的风控判定口径（'拦截' 即 riskBlocked），让诊断与复盘结论一致。
-    const paperRunDiagnoses = focusRun
-        ? buildPaperRunDiagnoses({
-            run: focusRun,
-            orderCount: paperOrders.length,
-            fillCount: paperTrades.length,
-            netPnl: latestLoopPnl,
-            riskBlocked: classifyRiskResult(latestRisk).riskResult === '拦截',
-            hasRiskData: Boolean(latestRisk),
-            openAlertCount,
-            recoveryCount: (recoveryEventsQuery.data ?? []).length,
-        })
-        : [];
+    const paperRunDiagnoses = summary
+        ? mapSummaryDiagnoses(summary)
+        : focusRun
+            ? buildPaperRunDiagnoses({
+                run: focusRun,
+                orderCount: paperOrders.length,
+                fillCount: paperTrades.length,
+                netPnl: latestLoopPnl,
+                riskBlocked: classifyRiskResult(latestRisk).riskResult === '拦截',
+                hasRiskData: Boolean(latestRisk),
+                openAlertCount,
+                recoveryCount: (recoveryEventsQuery.data ?? []).length,
+            })
+            : [];
 
     const columns: ColumnsType<PaperRunRow> = [
         {
@@ -976,34 +1078,39 @@ export function PaperTradingPage() {
                                             <NqRiskBanner
                                                 level="info"
                                                 message="只读聚合当前 Paper run 的执行事实。"
-                                                description="该摘要复用订单、成交、持仓、资金曲线和风控查询结果，不新增交易动作，不触发真实交易所或 LIVE。"
+                                                description="该摘要优先消费后端 summary 聚合事实源（复盘、诊断、时间线、关键指标），不新增交易动作，不触发真实交易所或 LIVE。"
                                             />
+                                            {summaryQuery.isError ? (
+                                                <Typography.Text type="warning" style={{fontSize: 12}}>
+                                                    运行摘要聚合接口加载失败，已回退到明细查询派生展示；下方明细表格不受影响。
+                                                </Typography.Text>
+                                            ) : null}
                                             {paperRunReview ? <PaperRunReviewCard review={paperRunReview}/> : null}
                                             {paperRunDiagnoses.length > 0 ? <PaperRunDiagnosisCard diagnoses={paperRunDiagnoses}/> : null}
                                             <div className="nq-status-strip">
                                                 <NqMetricCard
                                                     label="订单事实"
-                                                    value={String(paperOrders.length)}
+                                                    value={String(orderCount)}
                                                     footer={latestOrder ? `${latestOrder.status} · ${formatDateTime(latestOrder.updatedAt)}` : '暂无订单'}
                                                     loading={ordersQuery.isPending}
                                                 />
                                                 <NqMetricCard
                                                     label="成交事实"
-                                                    value={String(paperTrades.length)}
+                                                    value={String(fillCount)}
                                                     footer={latestTrade ? formatDateTime(latestTrade.tradedAt) : '暂无成交'}
                                                     loading={tradesQuery.isPending}
                                                 />
                                                 <NqMetricCard
                                                     label="持仓事实"
-                                                    value={String(paperPositions.length)}
+                                                    value={String(positionCount)}
                                                     footer={latestPosition ? formatDateTime(latestPosition.updatedAt) : '暂无持仓'}
                                                     loading={positionsQuery.isPending}
                                                 />
                                                 <NqMetricCard
                                                     label="净 PnL"
-                                                    value={<NqAmountText value={latestLoopPnl} signed colorBySign/>}
+                                                    value={<NqAmountText value={netPnl} signed colorBySign/>}
                                                     footer={latestEquitySnapshot ? `权益快照 ${formatDateTime(latestEquitySnapshot.snapshotTime)}` : latestPosition ? '持仓实时汇总' : '暂无 PnL'}
-                                                    tone={pnlTone(latestLoopPnl)}
+                                                    tone={pnlTone(netPnl)}
                                                     loading={equityCurveQuery.isPending || positionsQuery.isPending || dailyReportsQuery.isPending}
                                                 />
                                                 <NqMetricCard

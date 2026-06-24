@@ -104,6 +104,65 @@ const defaultRiskResults = [{
     createdAt: '2026-06-24T01:03:00Z',
 }];
 
+// 健康 STOPPED run 的后端聚合 summary：前端详情区优先消费它渲染复盘 / 诊断 / 时间线 / 关键指标。
+const defaultSummary = {
+    run: {
+        ...paperRun,
+        status: 'STOPPED',
+        startedAt: '2026-06-24T01:04:00Z',
+        stoppedAt: '2026-06-24T01:05:00Z',
+    },
+    counts: {
+        orderCount: 1,
+        tradeCount: 1,
+        fillCount: 1,
+        positionCount: 1,
+        openAlertCount: 0,
+        recoveryEventCount: 0,
+    },
+    latest: {
+        order: defaultOrders[0],
+        trade: defaultTrades[0],
+        position: defaultPositions[0],
+        equitySnapshot: defaultEquityCurve[0],
+        dailyReport: defaultDailyReports[0],
+        riskResult: defaultRiskResults[0],
+        alert: null,
+        recoveryEvent: null,
+    },
+    resultReview: {
+        finalStatus: 'STOPPED',
+        runtimeDurationText: '1 分钟 0 秒',
+        netPnl: 60,
+        riskResult: '通过',
+        conclusion: '正常完成',
+        conclusionLevel: 'info',
+    },
+    diagnoses: [{
+        type: 'HEALTHY',
+        severity: 'INFO',
+        title: '暂无明显异常',
+        description: '暂无明显异常：可继续查看时间线、订单、成交、持仓和 PnL。',
+        checkTarget: '运行事件时间线、订单、成交、持仓、净 PnL',
+    }],
+    timeline: [
+        {type: 'RUN_CREATED', status: 'CREATED', occurredAt: '2026-06-24T00:59:00Z', title: 'Paper run created', description: '创建于 SIM/Paper 环境，发布 ID publish-loop-created。'},
+        {type: 'RUN_STARTED', status: 'RUNNING', occurredAt: '2026-06-24T01:04:00Z', title: 'Paper run started', description: '运行已进入 SIM/Paper 生命周期，不触发 LIVE 或真实交易所。'},
+        {type: 'RUN_TERMINAL', status: 'STOPPED', occurredAt: '2026-06-24T01:05:00Z', title: 'Paper run stopped', description: '当前 run 已进入终态；历史订单、成交、持仓和风控事实仍可追溯。'},
+        {type: 'LATEST_ORDER', status: 'FILLED', occurredAt: '2026-06-24T01:01:30Z', title: '最新订单状态事件', description: 'BUY MARKET BTC-USDT，数量 1，价格 65000。'},
+        {type: 'LATEST_TRADE', status: 'FILLED', occurredAt: '2026-06-24T01:01:31Z', title: '最新成交事件', description: 'BUY BTC-USDT，成交数量 1，成交价 65000。'},
+        {type: 'LATEST_POSITION', status: 'POSITION_UPDATED', occurredAt: '2026-06-24T01:02:00Z', title: '最新持仓更新时间', description: 'BTC-USDT 持仓 1，未实现盈亏 125。'},
+        {type: 'LATEST_EQUITY', status: 'PNL_UP', occurredAt: '2026-06-24T01:02:30Z', title: '最新净 PnL / equity snapshot', description: '总权益 100060，净 PnL 60，来源 E2E_STUB。'},
+        {type: 'LATEST_RISK', status: 'PASSED', occurredAt: '2026-06-24T01:03:00Z', title: '最新风控检查结果', description: 'BASIC_HEALTH_CHECK · LOW：paper loop ok'},
+    ],
+    safety: {
+        environment: 'SIM/PAPER',
+        liveEnabled: false,
+        realExchangeTouched: false,
+        message: 'SIM/Paper only · LIVE 未开启，不代表真实交易能力',
+    },
+};
+
 type PaperLoopStubOptions = {
     seedRun?: boolean;
     status?: string;
@@ -115,6 +174,8 @@ type PaperLoopStubOptions = {
     riskResults?: unknown[];
     alerts?: unknown[];
     recoveryEvents?: unknown[];
+    // summary 覆盖：传入对象即用作 /summary 响应；传入 null 时返回 null（前端回退到明细派生）。
+    summary?: unknown;
 };
 
 async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptions = {}): Promise<{setRunStatus: (status: string) => void}> {
@@ -183,6 +244,11 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}`, (route: Route) => route.fulfill({
         status: 200,
         json: currentRun,
+    }));
+    // 后端聚合 summary 路由；'summary' in options 时用覆盖值（含 null / 异常结构以测试 fallback），否则用 defaultSummary。
+    await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/summary`, (route: Route) => route.fulfill({
+        status: 200,
+        json: ('summary' in options ? options.summary : defaultSummary) ?? null,
     }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/start`, (route: Route) => {
         currentRun = {
@@ -366,6 +432,9 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('INFO').first()).toBeVisible();
         await expect(detail.getByText('建议检查：运行事件时间线、订单、成交、持仓、净 PnL')).toBeVisible();
 
+        // summary 成功加载 → 不出现 fallback 提示，证明复盘 / 诊断 / 时间线由 summary 驱动。
+        await expect(detail.getByText('运行摘要聚合接口加载失败，已回退到明细查询派生展示；下方明细表格不受影响。')).toHaveCount(0);
+
         const bodyText = await detail.innerText();
         expect(bodyText).toContain('订单事实');
         expect(bodyText).toContain('成交事实');
@@ -458,6 +527,24 @@ test.describe('paper trading product loop panel', () => {
                 finishedAt: '2026-06-24T01:04:05Z',
                 createdAt: '2026-06-24T01:04:00Z',
             }],
+            // 后端聚合 summary 驱动异常诊断：风控拦截（BLOCKING）+ 告警（WARNING）+ 恢复（INFO）。
+            summary: {
+                run: {...paperRun, status: 'STOPPED', startedAt: null, stoppedAt: '2026-06-24T01:05:00Z'},
+                counts: {orderCount: 1, tradeCount: 0, fillCount: 0, positionCount: 0, openAlertCount: 1, recoveryEventCount: 1},
+                latest: {order: null, trade: null, position: null, equitySnapshot: null, dailyReport: null, riskResult: null, alert: null, recoveryEvent: null},
+                resultReview: {finalStatus: 'STOPPED', runtimeDurationText: '-', netPnl: null, riskResult: '拦截', conclusion: '风控拦截', conclusionLevel: 'danger'},
+                diagnoses: [
+                    {type: 'RISK_BLOCKED', severity: 'BLOCKING', title: '风控拦截', description: '风控拦截：订单可能未进入交易执行链路，请优先查看风控检查结果。', checkTarget: '风控状态卡片、风控结果 Tab'},
+                    {type: 'ALERT_PRESENT', severity: 'WARNING', title: '存在未处理告警', description: '存在 1 条未处理告警：请查看告警面板并确认处理。', checkTarget: '告警面板'},
+                    {type: 'RECOVERY_PRESENT', severity: 'INFO', title: '存在恢复事件', description: '存在恢复事件：本次 run 曾触发恢复或重试，请关注是否稳定。', checkTarget: '恢复事件面板'},
+                ],
+                timeline: [
+                    {type: 'RUN_CREATED', status: 'CREATED', occurredAt: '2026-06-24T00:59:00Z', title: 'Paper run created', description: '创建于 SIM/Paper 环境，发布 ID publish-loop-created。'},
+                    {type: 'RUN_TERMINAL', status: 'STOPPED', occurredAt: '2026-06-24T01:05:00Z', title: 'Paper run stopped', description: '当前 run 已进入终态；历史订单、成交、持仓和风控事实仍可追溯。'},
+                    {type: 'LATEST_RISK', status: 'REJECTED', occurredAt: '2026-06-24T01:03:00Z', title: '最新风控检查结果', description: 'MAX_DRAWDOWN_CHECK · HIGH：max drawdown exceeded'},
+                ],
+                safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: 'SIM/Paper only · LIVE 未开启，不代表真实交易能力'},
+            },
         });
 
         const detail = await openPaperRunDetail(page);
@@ -488,5 +575,23 @@ test.describe('paper trading product loop panel', () => {
         // 既有运行结果复盘卡片与运行事件时间线保持可见。
         await expect(detail.getByText('运行结果复盘')).toBeVisible();
         await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
+    });
+
+    test('summary 结构异常时页面不崩，回退到明细派生并保留 Paper-only 文案', async ({page}) => {
+        // summary 返回空对象（无 counts）→ 前端守卫判为不可用 → 回退到明细查询派生展示。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', summary: {}});
+
+        const detail = await openPaperRunDetail(page);
+
+        // 回退后详情区仍完整渲染（来自明细查询派生），页面不崩。
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
+        await expect(detail.getByText('异常原因聚合')).toBeVisible();
+        await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
+        await expect(detail.getByText('正常完成')).toBeVisible();
+        await expect(detail.getByText('暂无明显异常', {exact: true})).toBeVisible();
+
+        // Paper-only / LIVE 未开启文案仍存在。
+        await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
+        await expect(detail.getByText('该诊断仅基于当前 Paper run 的查询结果，不代表真实交易能力，不触发 LIVE 或真实交易所。')).toBeVisible();
     });
 });

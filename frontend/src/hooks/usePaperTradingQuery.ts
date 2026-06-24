@@ -25,6 +25,14 @@ export function usePaperTradingDetailQuery(paperRunId: string | null) {
     });
 }
 
+export function usePaperRunSummaryQuery(paperRunId: string | null) {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.summary(paperRunId ?? ''),
+        queryFn: () => paperTradingApi.summary(paperRunId ?? ''),
+        enabled: Boolean(paperRunId),
+    });
+}
+
 export function usePaperTradingOrdersQuery(paperRunId: string | null) {
     return useQuery({
         queryKey: paperTradingQueryKeys.orders(paperRunId ?? ''),
