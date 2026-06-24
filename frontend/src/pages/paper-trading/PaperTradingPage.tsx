@@ -205,6 +205,46 @@ interface PaperBacktestComparisonResult {
     };
 }
 
+/**
+ * Strategy → Publish → Backtest/Evaluation → Paper Run 链路视图模型（Loop-11）。
+ * 纯前端组合已有只读查询（run / publish detail / backtest config / evaluations / paper review），
+ * 把单个 Paper run 放回完整策略链路中，帮助用户理解来源是否完整、缺哪一环。
+ * 只展示研究、发布与 Paper 模拟运行关系，不新增 API，不代表 LIVE 或真实交易表现。
+ */
+type PaperLineageNodeState = 'COMPLETE' | 'PARTIAL' | 'MISSING';
+
+type PaperLineageCompleteness =
+    | 'CHAIN_COMPLETE'
+    | 'CHAIN_MISSING_BACKTEST'
+    | 'CHAIN_MISSING_PUBLISH'
+    | 'CHAIN_MISSING_STRATEGY_VERSION'
+    | 'CHAIN_DATA_INSUFFICIENT';
+
+interface PaperLineageNode {
+    key: string;
+    label: string;
+    /** 该节点的主标识（strategyVersionId / publishId / backtestId / paperRunId 等）。 */
+    id: string | null;
+    /** 节点自身业务状态（发布状态 / 评估状态 / run 状态 / 风控结果等），无则为 null。 */
+    nodeStatus: string | null;
+    nodeStatusTone?: NqStatusTone;
+    /** 链路可追踪性：已识别 / 来源不完整 / 缺失。 */
+    state: PaperLineageNodeState;
+    time: string | null;
+    timeLabel: string;
+    summary: ReactNode;
+}
+
+interface PaperLineageResult {
+    nodes: PaperLineageNode[];
+    diagnosis: {
+        level: 'success' | 'info' | 'warning';
+        type: PaperLineageCompleteness;
+        title: string;
+        description: string;
+    };
+}
+
 function formatTimelineAmount(value: string | number | null | undefined): string {
     if (value === null || value === undefined || value === '') {
         return '-';
@@ -765,6 +805,181 @@ function riskResultTone(riskResult: string): NqStatusTone {
     }
 }
 
+/**
+ * 组合已有只读查询，构建 Strategy Version → Publish → Backtest/Evaluation → Paper Run → 复盘/诊断 链路。
+ * 全部字段来自现有 run / publish detail / backtest config / evaluation / paper review，不新增任何 API 或副作用。
+ * 链路完整性诊断按「链路头到尾」顺序报告第一处断点，便于用户从源头排查。
+ */
+function buildPaperLineage({
+    run,
+    publish,
+    backtest,
+    evaluation,
+    paperReview,
+}: {
+    run: PaperTradingRunItem;
+    publish: BacktestPublishDetailItem | null;
+    backtest: BacktestConfigListItem | null;
+    evaluation: BacktestEvaluationListItem | null;
+    paperReview: PaperRunReview | null;
+}): PaperLineageResult {
+    const strategyVersionId = run.strategyVersionId ?? publish?.strategyVersionId ?? backtest?.strategyVersionId ?? null;
+    const publishId = run.publishId || publish?.publishRecordId || null;
+    const publishResolved = Boolean(publish);
+    const backtestId = publish?.backtestRunId ?? publish?.backtestConfigId ?? backtest?.backtestConfigId ?? null;
+    const backtestResolved = Boolean(backtestId);
+    const hasEvalMetrics = evaluation !== null
+        && (evaluation.netPnl !== null || evaluation.orderCount !== null || evaluation.tradeCount !== null);
+    const hasPaperMetrics = paperReview !== null;
+
+    const strategyNode: PaperLineageNode = {
+        key: 'strategy-version',
+        label: '策略版本',
+        id: strategyVersionId,
+        nodeStatus: strategyVersionId ? '已绑定' : null,
+        nodeStatusTone: strategyVersionId ? 'info' : undefined,
+        state: strategyVersionId ? 'COMPLETE' : 'MISSING',
+        time: null,
+        timeLabel: '',
+        summary: (
+            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                {strategyVersionId
+                    ? '策略版本可追踪，作为本次发布与 Paper run 的版本基线。'
+                    : '缺少 strategy version：策略版本信息不可追踪。'}
+            </Typography.Text>
+        ),
+    };
+
+    const publishNode: PaperLineageNode = {
+        key: 'publish',
+        label: '策略发布',
+        id: publishId,
+        nodeStatus: publish?.publishStatus ?? null,
+        state: publishResolved ? 'COMPLETE' : publishId ? 'PARTIAL' : 'MISSING',
+        time: publish?.publishedAt ?? null,
+        timeLabel: '发布于',
+        summary: (
+            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                {publishResolved
+                    ? `发布记录：${publish?.publishName ?? '未命名发布'}。`
+                    : publishId
+                        ? 'Paper run 引用了发布 ID，但发布详情暂不可解析，来源不完整。'
+                        : '缺少 publish：Paper run 来源不完整。'}
+            </Typography.Text>
+        ),
+    };
+
+    const backtestNode: PaperLineageNode = {
+        key: 'backtest',
+        label: '回测 / 评估',
+        id: backtestId,
+        nodeStatus: evaluation?.evaluationStatus ?? null,
+        state: backtestResolved ? (hasEvalMetrics ? 'COMPLETE' : 'PARTIAL') : 'MISSING',
+        time: evaluation?.evaluatedAt ?? null,
+        timeLabel: '评估于',
+        summary: backtestResolved ? (
+            <Space size={12} wrap>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>评估 ID {evaluation?.evalReportId ?? '-'}</Typography.Text>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                    净 PnL <NqAmountText value={toNullableNumber(evaluation?.netPnl)} signed colorBySign/>
+                </Typography.Text>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                    订单 {formatMetricNumber(evaluation?.orderCount ?? null)} · 成交 {formatMetricNumber(evaluation?.tradeCount ?? null)}
+                </Typography.Text>
+            </Space>
+        ) : (
+            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                缺少 backtest：Paper run 可查看，但无法做完整回测对照。
+            </Typography.Text>
+        ),
+    };
+
+    const paperNode: PaperLineageNode = {
+        key: 'paper-run',
+        label: 'Paper 运行',
+        id: run.paperRunId,
+        nodeStatus: paperReview?.finalStatus ?? run.status,
+        state: 'COMPLETE',
+        time: run.startedAt ?? run.createdAt,
+        timeLabel: run.startedAt ? '启动于' : '创建于',
+        summary: (
+            <Space size={12} wrap>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                    {run.symbol} · {run.intervalCode} · {run.exchangeCode}
+                </Typography.Text>
+                {run.stoppedAt ? (
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>停止于 {formatDateTime(run.stoppedAt)}</Typography.Text>
+                ) : null}
+            </Space>
+        ),
+    };
+
+    const summaryNode: PaperLineageNode = {
+        key: 'summary',
+        label: '复盘 / 诊断',
+        id: null,
+        nodeStatus: paperReview?.riskResult ?? null,
+        nodeStatusTone: paperReview ? riskResultTone(paperReview.riskResult) : undefined,
+        state: hasPaperMetrics ? 'COMPLETE' : 'PARTIAL',
+        time: null,
+        timeLabel: '',
+        summary: (
+            <Space size={12} wrap>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                    {paperReview ? `复盘结论：${paperReview.conclusion}` : '复盘数据不足，待运行产生事实后形成结论。'}
+                </Typography.Text>
+                {paperReview ? (
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                        净 PnL <NqAmountText value={paperReview.netPnl} signed colorBySign/>
+                    </Typography.Text>
+                ) : null}
+            </Space>
+        ),
+    };
+
+    const nodes = [strategyNode, publishNode, backtestNode, paperNode, summaryNode];
+
+    let diagnosis: PaperLineageResult['diagnosis'];
+    if (!strategyVersionId) {
+        diagnosis = {
+            level: 'warning',
+            type: 'CHAIN_MISSING_STRATEGY_VERSION',
+            title: '链路不完整：缺少策略版本',
+            description: '缺少 strategy version：策略版本信息不可追踪，无法将本次 Paper run 绑定到确定的版本基线。',
+        };
+    } else if (!publishResolved) {
+        diagnosis = {
+            level: 'warning',
+            type: 'CHAIN_MISSING_PUBLISH',
+            title: '链路不完整：缺少 publish 来源',
+            description: '缺少 publish：Paper run 来源不完整，发布详情暂不可解析，无法追溯回测与评估。',
+        };
+    } else if (!backtestResolved) {
+        diagnosis = {
+            level: 'info',
+            type: 'CHAIN_MISSING_BACKTEST',
+            title: '链路不完整：缺少 backtest',
+            description: '缺少 backtest：Paper run 可查看，但无法做完整回测对照。',
+        };
+    } else if (!hasEvalMetrics || !hasPaperMetrics) {
+        diagnosis = {
+            level: 'info',
+            type: 'CHAIN_DATA_INSUFFICIENT',
+            title: '链路存在但数据不足',
+            description: '数据不足：链路节点可识别，但回测或 Paper 摘要指标不足，暂不能形成完整对照结论。',
+        };
+    } else {
+        diagnosis = {
+            level: 'success',
+            type: 'CHAIN_COMPLETE',
+            title: '链路完整：Strategy Version → Publish → Backtest → Paper Run 均可识别',
+            description: '链路完整：策略版本、发布、回测 / 评估、Paper run 均可识别，可结合下方对照卡片复核研究到模拟运行的偏差。',
+        };
+    }
+
+    return {nodes, diagnosis};
+}
+
 /** 把后端 summary 时间线条目映射为前端时间线展示模型（title 作为粗体事件名）。 */
 function summaryTimelineColor(type: string, status: string): PaperTimelineEvent['color'] {
     switch (type) {
@@ -975,6 +1190,16 @@ export function PaperTradingPage() {
     ) ?? comparisonEvaluations[0] ?? null;
     const backtestPaperComparison = focusRun
         ? buildBacktestPaperComparison({
+            run: focusRun,
+            publish: publishDetail,
+            backtest: backtestDetail,
+            evaluation: latestComparisonEvaluation,
+            paperReview: paperRunReview,
+        })
+        : null;
+    // Loop-11：Strategy → Publish → Paper 链路视图，复用与对照卡片相同的已加载查询，不触发新请求。
+    const paperLineage = focusRun
+        ? buildPaperLineage({
             run: focusRun,
             publish: publishDetail,
             backtest: backtestDetail,
@@ -1313,6 +1538,12 @@ export function PaperTradingPage() {
                                                 </Typography.Text>
                                             ) : null}
                                             {paperRunReview ? <PaperRunReviewCard review={paperRunReview}/> : null}
+                                            {paperLineage ? (
+                                                <PaperLineageCard
+                                                    lineage={paperLineage}
+                                                    loading={backtestComparisonLoading}
+                                                />
+                                            ) : null}
                                             {backtestPaperComparison ? (
                                                 <BacktestPaperComparisonCard
                                                     comparison={backtestPaperComparison}
@@ -1939,6 +2170,74 @@ function BacktestPaperComparisonCard({
                             {title: 'Backtest', dataIndex: 'backtest', key: 'backtest', width: 280, render: (value: ReactNode) => value},
                             {title: 'Paper', dataIndex: 'paper', key: 'paper', width: 280, render: (value: ReactNode) => value},
                         ]}
+                    />
+                )}
+            </Space>
+        </Card>
+    );
+}
+
+// 链路节点可追踪性 → 展示标签 / 色调 / 时间线颜色映射。
+const LINEAGE_STATE_META: Record<PaperLineageNodeState, {label: string; tone: NqStatusTone; color: PaperTimelineEvent['color']}> = {
+    COMPLETE: {label: '已识别', tone: 'success', color: 'green'},
+    PARTIAL: {label: '来源不完整', tone: 'warning', color: 'blue'},
+    MISSING: {label: '缺失', tone: 'neutral', color: 'gray'},
+};
+
+function PaperLineageCard({lineage, loading}: {lineage: PaperLineageResult; loading: boolean}) {
+    return (
+        <Card
+            size="small"
+            title="Strategy → Publish → Paper 链路"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper lineage · LIVE 未开启</Typography.Text>}
+        >
+            <Space direction="vertical" size={10} style={{display: 'flex'}}>
+                <NqRiskBanner
+                    level={lineage.diagnosis.level}
+                    message={(
+                        <Space size={8} wrap>
+                            <Tag>{lineage.diagnosis.type}</Tag>
+                            <Typography.Text strong>{lineage.diagnosis.title}</Typography.Text>
+                        </Space>
+                    )}
+                    description={(
+                        <Space direction="vertical" size={2} style={{display: 'flex'}}>
+                            <Typography.Text type="secondary" style={{fontSize: 12}}>{lineage.diagnosis.description}</Typography.Text>
+                            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                该链路仅展示研究、发布与 Paper 模拟运行关系，不代表 LIVE 或真实交易表现。
+                            </Typography.Text>
+                        </Space>
+                    )}
+                />
+                {loading ? (
+                    <NqLoadingState/>
+                ) : (
+                    <Timeline
+                        items={lineage.nodes.map((node) => {
+                            const meta = LINEAGE_STATE_META[node.state];
+                            return {
+                                key: node.key,
+                                color: meta.color,
+                                children: (
+                                    <Space direction="vertical" size={2} style={{display: 'flex'}}>
+                                        <Space size={8} wrap>
+                                            <Typography.Text strong>{node.label}</Typography.Text>
+                                            <NqStatusTag status={meta.label} tone={meta.tone}/>
+                                            {node.nodeStatus ? <NqStatusTag status={node.nodeStatus} tone={node.nodeStatusTone}/> : null}
+                                        </Space>
+                                        <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 12}}>
+                                            {node.id ?? '-'}
+                                        </Typography.Text>
+                                        {node.summary}
+                                        {node.time ? (
+                                            <Typography.Text type="secondary" className="nq-num" style={{fontSize: 12}}>
+                                                {node.timeLabel} {formatDateTime(node.time)}
+                                            </Typography.Text>
+                                        ) : null}
+                                    </Space>
+                                ),
+                            };
+                        })}
                     />
                 )}
             </Space>

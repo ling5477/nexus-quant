@@ -239,6 +239,8 @@ type PaperLoopStubOptions = {
     publishDetail?: unknown;
     backtestDetail?: unknown;
     evaluations?: unknown[];
+    // 覆盖 run 自身的 strategyVersionId（传 null 模拟缺少策略版本链路头）。
+    runStrategyVersionId?: string | null;
     // summary 覆盖：传入对象即用作 /summary 响应；传入 null 时返回 null（前端回退到明细派生）。
     summary?: unknown;
 };
@@ -247,6 +249,7 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
     let currentRun = {
         ...paperRun,
         status: options.status ?? paperRun.status,
+        strategyVersionId: 'runStrategyVersionId' in options ? options.runStrategyVersionId ?? null : paperRun.strategyVersionId,
         startedAt: options.status === 'RUNNING' ? '2026-06-24T01:04:00Z' : paperRun.startedAt,
         stoppedAt: options.status === 'STOPPED' ? '2026-06-24T01:05:00Z' : paperRun.stoppedAt,
     };
@@ -487,7 +490,8 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('成交数').first()).toBeVisible();
         await expect(detail.getByText('持仓数').first()).toBeVisible();
         await expect(detail.getByText('风控结果').first()).toBeVisible();
-        await expect(detail.getByText('正常完成')).toBeVisible();
+        // 复盘结论同时出现在复盘横幅与链路摘要节点（复盘结论：…），用 exact 锁定复盘横幅。
+        await expect(detail.getByText('正常完成', {exact: true})).toBeVisible();
         await expect(detail.getByText('该复盘只基于当前 Paper run 的查询结果，用于判断模拟运行质量，不代表真实交易能力。')).toBeVisible();
         await expect(detail.getByText('Backtest → Paper 结果对照')).toBeVisible();
         await expect(detail.getByText('PNL_DEVIATION')).toBeVisible();
@@ -496,7 +500,8 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('Strategy Version', {exact: true})).toBeVisible();
         await expect(detail.getByText('Publish ID', {exact: true})).toBeVisible();
         await expect(detail.getByText('Backtest ID / Trace ID', {exact: true})).toBeVisible();
-        await expect(detail.getByText(defaultPublishDetail.backtestRunId)).toBeVisible();
+        // backtestRunId 同时出现在对照卡片与链路卡片，用 .first 规避 strict 多匹配。
+        await expect(detail.getByText(defaultPublishDetail.backtestRunId).first()).toBeVisible();
         await expect(detail.getByRole('columnheader', {name: '对比项'})).toBeVisible();
         await expect(detail.getByRole('columnheader', {name: 'Backtest'})).toBeVisible();
         await expect(detail.getByRole('columnheader', {name: 'Paper'})).toBeVisible();
@@ -507,6 +512,22 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('风控结果').first()).toBeVisible();
         await expect(detail.getByText('运行时间 / 样本区间')).toBeVisible();
         await expect(detail.getByText('策略版本 / 发布版本')).toBeVisible();
+
+        // Strategy → Publish → Paper 链路（完整链路 fixture）：链路卡片 + 5 节点 + 完整诊断 + Paper-only 文案。
+        await expect(detail.getByText('Strategy → Publish → Paper 链路')).toBeVisible();
+        await expect(detail.getByText('SIM/Paper lineage · LIVE 未开启')).toBeVisible();
+        await expect(detail.getByText('CHAIN_COMPLETE')).toBeVisible();
+        await expect(detail.getByText('链路完整：Strategy Version → Publish → Backtest → Paper Run 均可识别')).toBeVisible();
+        await expect(detail.getByText('策略版本').first()).toBeVisible();
+        await expect(detail.getByText('策略发布', {exact: true})).toBeVisible();
+        // 节点标签与完整诊断描述均含 '回测 / 评估'，用 exact 锁定链路节点标签。
+        await expect(detail.getByText('回测 / 评估', {exact: true})).toBeVisible();
+        await expect(detail.getByText('Paper 运行', {exact: true})).toBeVisible();
+        await expect(detail.getByText('复盘 / 诊断', {exact: true})).toBeVisible();
+        await expect(detail.getByText('已识别').first()).toBeVisible();
+        await expect(detail.getByText(paperRun.strategyVersionId).first()).toBeVisible();
+        await expect(detail.getByText('该链路仅展示研究、发布与 Paper 模拟运行关系，不代表 LIVE 或真实交易表现。')).toBeVisible();
+
         await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
         await expect(detail.getByText('SIM/Paper only · LIVE 未开启').first()).toBeVisible();
         await expect(detail.getByText('Paper run created')).toBeVisible();
@@ -687,7 +708,8 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('异常原因聚合')).toBeVisible();
         await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
         // 懒加载下 STOPPED 且订单明细未展开（无订单事实）→ 复盘结论“无交易”、诊断 NO_ORDER。
-        await expect(detail.getByText('无交易')).toBeVisible();
+        // '无交易' 同时出现在复盘横幅与链路摘要节点（复盘结论：无交易），用 exact 锁定复盘横幅。
+        await expect(detail.getByText('无交易', {exact: true})).toBeVisible();
         await expect(detail.getByText('NO_ORDER')).toBeVisible();
 
         // Paper-only / LIVE 未开启文案仍存在。
@@ -713,9 +735,62 @@ test.describe('paper trading product loop panel', () => {
         await expect(detail.getByText('无法对照：缺少来源 backtest')).toBeVisible();
         await expect(detail.getByText('暂无来源 backtest / 无法对照；当前 Paper run 详情仍可独立查看。')).toBeVisible();
         await expect(detail.getByText('Backtest 与 Paper 均为模拟结果，不代表 LIVE 或真实交易表现。')).toBeVisible();
+
+        // Strategy → Publish → Paper 链路：缺少 backtest 时不崩溃，链路诊断说明无法做完整回测对照。
+        await expect(detail.getByText('Strategy → Publish → Paper 链路')).toBeVisible();
+        await expect(detail.getByText('CHAIN_MISSING_BACKTEST')).toBeVisible();
+        await expect(detail.getByText('链路不完整：缺少 backtest')).toBeVisible();
+        await expect(detail.getByText('缺少 backtest：Paper run 可查看，但无法做完整回测对照。').first()).toBeVisible();
+        await expect(detail.getByText('缺失').first()).toBeVisible();
+        await expect(detail.getByText('该链路仅展示研究、发布与 Paper 模拟运行关系，不代表 LIVE 或真实交易表现。')).toBeVisible();
+
         await expect(detail.getByText('运行结果复盘')).toBeVisible();
         await expect(detail.getByText('异常原因聚合')).toBeVisible();
         await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
+    });
+
+    test('缺少 publish 来源时链路展示来源不完整且不崩溃', async ({page}) => {
+        // publish detail 返回 404 → 前端 publishDetail = null → 链路 publish 节点来源不完整、回测节点缺失。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', publishDetail: null});
+
+        const detail = await openPaperRunDetail(page);
+
+        await expect(detail.getByText('Strategy → Publish → Paper 链路')).toBeVisible();
+        await expect(detail.getByText('CHAIN_MISSING_PUBLISH')).toBeVisible();
+        await expect(detail.getByText('链路不完整：缺少 publish 来源')).toBeVisible();
+        await expect(detail.getByText('来源不完整').first()).toBeVisible();
+        await expect(detail.getByText('Paper run 引用了发布 ID，但发布详情暂不可解析，来源不完整。')).toBeVisible();
+        await expect(detail.getByText('该链路仅展示研究、发布与 Paper 模拟运行关系，不代表 LIVE 或真实交易表现。')).toBeVisible();
+
+        // 详情区其它产品化卡片仍在，不崩溃。
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
+        await expect(detail.getByText('异常原因聚合')).toBeVisible();
+        await expect(detail.getByText('运行事件时间线', {exact: true})).toBeVisible();
+    });
+
+    test('缺少 strategy version 时链路标记策略版本不可追踪且不崩溃', async ({page}) => {
+        // run / publish / backtest 的 strategyVersionId 全部为空 → 链路头缺失，但发布与回测仍可识别。
+        await seedAuthAndPaperLoopStubs(page, {
+            seedRun: true,
+            status: 'STOPPED',
+            runStrategyVersionId: null,
+            publishDetail: {...defaultPublishDetail, strategyVersionId: null},
+            backtestDetail: {...defaultBacktestDetail, strategyVersionId: null},
+        });
+
+        const detail = await openPaperRunDetail(page);
+
+        await expect(detail.getByText('Strategy → Publish → Paper 链路')).toBeVisible();
+        await expect(detail.getByText('CHAIN_MISSING_STRATEGY_VERSION')).toBeVisible();
+        await expect(detail.getByText('链路不完整：缺少策略版本')).toBeVisible();
+        await expect(detail.getByText('缺少 strategy version：策略版本信息不可追踪。')).toBeVisible();
+        await expect(detail.getByText('缺失').first()).toBeVisible();
+        await expect(detail.getByText('该链路仅展示研究、发布与 Paper 模拟运行关系，不代表 LIVE 或真实交易表现。')).toBeVisible();
+
+        // 其它链路节点（发布 / 回测 / Paper run）仍可识别，详情区不崩溃。
+        await expect(detail.getByText('策略发布')).toBeVisible();
+        await expect(detail.getByText('回测 / 评估')).toBeVisible();
+        await expect(detail.getByText('运行结果复盘')).toBeVisible();
     });
 
     test('详情首屏只走 detail + summary，明细按需进入 Tab 后才懒加载', async ({page}) => {
