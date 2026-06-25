@@ -1,6 +1,9 @@
 package com.guidinglight.nexusquant.research.application.paper;
 
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
+import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
 import com.guidinglight.nexusquant.research.domain.paper.port.EquityCurveSnapshotRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRiskCheckResultRepository;
@@ -29,11 +32,13 @@ import org.springframework.stereotype.Service;
  * 1) 只读；不触发 start / stop / run-once / monitor / schedule / recovery / backtest / publish 等写动作。
  * 2) 仅依赖领域只读仓储端口（run / equity / dailyReport / risk / alert / trade / publish），
  *    不依赖 adapter / exchange / credential / permission probe / 外部 HTTP client（构造仅注入仓储）。
- * 3) 直接使用仓储 listByRunId，避免经 monitor/run service 的 getById 二次校验产生额外查询。
+ * 3) 直接使用仓储批量只读端口（listByRunIds / countOpenByRunIds / countByRunIds），
+ *    避免经 monitor/run service 的 getById 二次校验产生额外查询。
  *
- * 复杂度说明：组合聚合按「最近 {@link #MAX_PORTFOLIO_RUNS} 个 run」上限，对每个 run 做固定数量
- * 只读查询（equity / dailyReport / risk / alert / trade），publish 来源用一次 listAll() 建索引复用，
- * 不在循环内逐条查询 publish。Paper/SIM 控制台 run 规模小且受上限保护，无无界扫描风险。
+ * 复杂度说明：组合聚合按「最近 {@link #MAX_PORTFOLIO_RUNS} 个 run」上限。run 清单一次 list()，
+ * publish 来源一次 listAll() 建索引，equity / dailyReport / risk 一次 listByRunIds() 批量取，
+ * alert / trade 一次 countOpenByRunIds() / countByRunIds() 批量聚合计数；run 循环内仅做内存 Map 查找，
+ * 不再逐 run 查询仓储。读放大由「O(run 数)」收敛为「固定数量批量查询」，规模增长下不再放大。
  */
 @Service
 public class PaperPortfolioService {
@@ -80,12 +85,22 @@ public class PaperPortfolioService {
             runs = runs.subList(0, MAX_PORTFOLIO_RUNS);
         }
 
+        // 提取 bounded run 的 runIds，作为各类事实批量读取的统一键集合（空集合时各仓储返回空 Map）。
+        List<String> runIds = runs.stream().map(PaperTradingRun::paperRunId).toList();
+
         // 一次 listAll() 建立 publishId -> record 索引，循环内只做内存查找，避免逐 run 查询 publish。
         Map<String, BacktestPublishRecord> publishById = publishRecordRepository.listAll().stream()
                 .collect(Collectors.toMap(
                         BacktestPublishRecord::publishRecordId,
                         Function.identity(),
                         (left, right) -> left));
+
+        // 各类 run 事实改为单次批量读取，返回 runId -> 事实；run 循环内只做 Map 查找，缺省取空列表 / 0 计数。
+        Map<String, List<EquityCurveSnapshot>> equityByRun = equityCurveRepository.listByRunIds(runIds);
+        Map<String, List<PaperRunDailyReport>> reportsByRun = dailyReportRepository.listByRunIds(runIds);
+        Map<String, List<PaperRiskCheckResult>> riskByRun = riskCheckResultRepository.listByRunIds(runIds);
+        Map<String, Long> openAlertCountByRun = alertRepository.countOpenByRunIds(runIds);
+        Map<String, Long> tradeCountByRun = tradeRepository.countByRunIds(runIds);
 
         List<PaperPortfolioAssembler.RunInput> inputs = new ArrayList<>(runs.size());
         for (PaperTradingRun run : runs) {
@@ -98,11 +113,11 @@ public class PaperPortfolioService {
 
             inputs.add(new PaperPortfolioAssembler.RunInput(
                     run,
-                    equityCurveRepository.listByRunId(runId),
-                    dailyReportRepository.listByRunId(runId),
-                    riskCheckResultRepository.listByRunId(runId),
-                    alertRepository.listByRunId(runId, null, null),
-                    tradeRepository.listByRunId(runId).size(),
+                    equityByRun.getOrDefault(runId, List.of()),
+                    reportsByRun.getOrDefault(runId, List.of()),
+                    riskByRun.getOrDefault(runId, List.of()),
+                    Math.toIntExact(openAlertCountByRun.getOrDefault(runId, 0L)),
+                    Math.toIntExact(tradeCountByRun.getOrDefault(runId, 0L)),
                     hasPublishSource,
                     hasBacktestSource));
         }

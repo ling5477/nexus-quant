@@ -10,12 +10,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -30,9 +39,16 @@ public class JdbcPaperRunDailyReportRepository implements PaperRunDailyReportRep
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
+    @Autowired
     public JdbcPaperRunDailyReportRepository(JdbcTemplate jdbcTemplate) {
+        this(jdbcTemplate, new NamedParameterJdbcTemplate(jdbcTemplate));
+    }
+
+    JdbcPaperRunDailyReportRepository(JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
     @Override
@@ -90,6 +106,22 @@ public class JdbcPaperRunDailyReportRepository implements PaperRunDailyReportRep
         return jdbcTemplate.query(
                 BASE_SELECT + " WHERE paper_run_id = ? ORDER BY report_date DESC",
                 ROW_MAPPER, paperRunId);
+    }
+
+    @Override
+    public Map<String, List<PaperRunDailyReport>> listByRunIds(Collection<String> runIds) {
+        if (runIds == null || runIds.isEmpty()) {
+            return Map.of();
+        }
+        // 去重后以命名参数绑定 IN 列表（参数化，杜绝 SQL 拼接注入）；按 report_date DESC 与单 run 口径一致。
+        MapSqlParameterSource params = new MapSqlParameterSource(
+                "runIds", new ArrayList<>(new LinkedHashSet<>(runIds)));
+        List<PaperRunDailyReport> rows = namedParameterJdbcTemplate.query(
+                BASE_SELECT + " WHERE paper_run_id IN (:runIds) ORDER BY report_date DESC",
+                params, ROW_MAPPER);
+        // groupingBy 保留全局有序结果在各分组内的相对顺序，单 run 列表口径仍为 report_date DESC。
+        return rows.stream().collect(Collectors.groupingBy(
+                PaperRunDailyReport::paperRunId, LinkedHashMap::new, Collectors.toList()));
     }
 
     @Override

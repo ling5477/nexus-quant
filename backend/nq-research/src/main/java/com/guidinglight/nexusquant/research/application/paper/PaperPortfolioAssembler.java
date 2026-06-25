@@ -2,11 +2,8 @@ package com.guidinglight.nexusquant.research.application.paper;
 
 import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
-import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlert;
-import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertStatus;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
-import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -41,15 +38,15 @@ public final class PaperPortfolioAssembler {
 
     /**
      * 单个 Paper run 的聚合输入；全部为已查询出的只读事实，由 {@code PaperPortfolioService} 装配。
-     * tradeCount 直接传计数（无交易判定只需计数，避免无谓传递成交明细）；
-     * hasPublishSource / hasBacktestSource 由 service 依据 publish 记录预先判定。
+     * openAlertCount / tradeCount 直接传计数（看板只需计数，避免无谓传递告警与成交明细，
+     * 也便于仓储以 GROUP BY 批量聚合）；hasPublishSource / hasBacktestSource 由 service 依据 publish 记录预先判定。
      */
     public record RunInput(
             PaperTradingRun run,
             List<EquityCurveSnapshot> equityCurve,
             List<PaperRunDailyReport> dailyReports,
             List<PaperRiskCheckResult> riskResults,
-            List<PaperRunAlert> alerts,
+            int openAlertCount,
             int tradeCount,
             boolean hasPublishSource,
             boolean hasBacktestSource
@@ -137,9 +134,7 @@ public final class PaperPortfolioAssembler {
                 initialEquity);
 
         boolean riskBlocked = PaperRunSummaryAssembler.isRiskBlocked(latestRisk(input.riskResults()));
-        int openAlertCount = (int) nonNull(input.alerts()).stream()
-                .filter(a -> a.status() == PaperRunAlertStatus.OPEN)
-                .count();
+        int openAlertCount = Math.max(0, input.openAlertCount());
 
         var ref = new PaperPortfolioSummary.RunRef(
                 run.paperRunId(),

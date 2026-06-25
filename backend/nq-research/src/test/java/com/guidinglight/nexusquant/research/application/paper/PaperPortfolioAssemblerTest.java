@@ -8,9 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
-import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlert;
-import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertSeverity;
-import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertStatus;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReportStatus;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
@@ -140,7 +137,7 @@ class PaperPortfolioAssemblerTest {
                 equity("eq-p1", "run-profit", "2026-06-01T00:00:00Z", "100000", "0", "0"),
                 equity("eq-p2", "run-profit", "2026-06-01T01:00:00Z", "120000", "20000", "0"));
         var risk = List.of(risk("rk-p1", "run-profit", RiskCheckStatus.PASSED, RiskCheckSeverity.LOW, "2026-06-01T01:30:00Z"));
-        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, List.of(), 5, true, true);
+        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, 0, 5, true, true);
     }
 
     private PaperPortfolioAssembler.RunInput lossRun() {
@@ -152,18 +149,15 @@ class PaperPortfolioAssemblerTest {
                 equity("eq-l2", "run-loss", "2026-06-02T00:30:00Z", "120000", "20000", "0"),
                 equity("eq-l3", "run-loss", "2026-06-02T01:00:00Z", "90000", "-10000", "0"));
         var risk = List.of(risk("rk-l1", "run-loss", RiskCheckStatus.REJECTED, RiskCheckSeverity.HIGH, "2026-06-02T01:30:00Z"));
-        var alerts = List.of(
-                alert("al-l1", "run-loss", PaperRunAlertStatus.OPEN),
-                alert("al-l2", "run-loss", PaperRunAlertStatus.OPEN),
-                alert("al-l3", "run-loss", PaperRunAlertStatus.RESOLVED));
-        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, alerts, 3, true, true);
+        // 2 个 OPEN + 1 个 RESOLVED → openAlertCount=2（计数口径由 service 经批量聚合得出）。
+        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, 2, 3, true, true);
     }
 
     private PaperPortfolioAssembler.RunInput dataInsufficientRun() {
         // 无 equity / 无成交 / 无 backtest 来源：数据不足、无交易、缺 equity、缺 backtest。
         var run = run("run-empty", "sv-1", "pub-1", PaperTradingRunStatus.CREATED,
                 Instant.parse("2026-05-30T00:00:00Z"));
-        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(), List.of(), List.of(), 0, true, false);
+        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(), List.of(), 0, 0, true, false);
     }
 
     private PaperPortfolioAssembler.RunInput reportOnlyRun() {
@@ -173,7 +167,7 @@ class PaperPortfolioAssemblerTest {
                 "rep-1", "run-report", LocalDate.parse("2026-06-04"), PaperRunDailyReportStatus.GENERATED,
                 new BigDecimal("98000"), new BigDecimal("-2000"), new BigDecimal("-0.02"), new BigDecimal("0.18"),
                 4, 4, 0, 0, "{}", Instant.parse("2026-06-04T01:00:00Z"), Instant.parse("2026-06-04T01:00:00Z"));
-        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(report), List.of(), List.of(), 4, true, true);
+        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(report), List.of(), 0, 4, true, true);
     }
 
     private PaperTradingRun run(String id, String sv, String pub, PaperTradingRunStatus status, Instant updatedAt) {
@@ -193,11 +187,5 @@ class PaperPortfolioAssemblerTest {
 
     private PaperRiskCheckResult risk(String id, String runId, RiskCheckStatus status, RiskCheckSeverity severity, String time) {
         return new PaperRiskCheckResult(id, runId, "CHECK", status, severity, "msg", "{}", "{}", Instant.parse(time));
-    }
-
-    private PaperRunAlert alert(String id, String runId, PaperRunAlertStatus status) {
-        return new PaperRunAlert(
-                id, runId, "RISK", PaperRunAlertSeverity.HIGH, status, "alert", "msg", "SRC", "{}",
-                null, null, null, Instant.parse("2026-06-02T01:40:00Z"), Instant.parse("2026-06-02T01:40:00Z"));
     }
 }
