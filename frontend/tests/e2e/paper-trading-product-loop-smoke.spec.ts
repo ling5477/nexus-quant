@@ -1210,8 +1210,8 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.getByText(PORTFOLIO_RUN_C).first()).toBeVisible();
         await expect(risk.getByText('尚未启动', {exact: true})).toBeVisible();
         // Loop-18：执行进度列区分无订单 / 有订单无成交（runC 无订单）。
-        await expect(risk.getByRole('columnheader', {name: '执行进度'})).toBeVisible();
-        await expect(risk.getByText('无订单', {exact: true})).toBeVisible();
+        await expect(risk.getByRole('columnheader', {name: '执行进度'}).first()).toBeVisible();
+        await expect(risk.getByText('无订单', {exact: true}).first()).toBeVisible();
 
         // 5) 风险数据质量：缺 equity / 缺 PnL（runC currentEquity/totalPnl 均为 null）。
         await expect(risk.getByText('风险数据质量')).toBeVisible();
@@ -1275,9 +1275,9 @@ test.describe('paper trading product loop panel', () => {
 
         // 无交易清单「执行进度」列同时出现无订单与有订单无成交标签。
         await expect(risk.getByText('无交易 / 数据不足清单')).toBeVisible();
-        await expect(risk.getByRole('columnheader', {name: '执行进度'})).toBeVisible();
-        await expect(risk.getByText('无订单', {exact: true})).toBeVisible();
-        await expect(risk.getByText('有订单无成交', {exact: true})).toBeVisible();
+        await expect(risk.getByRole('columnheader', {name: '执行进度'}).first()).toBeVisible();
+        await expect(risk.getByText('无订单', {exact: true}).first()).toBeVisible();
+        await expect(risk.getByText('有订单无成交', {exact: true}).first()).toBeVisible();
         await expect(risk.getByText('该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。')).toBeVisible();
     });
 
@@ -1321,7 +1321,7 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'}).locator('.nq-metric-card__value')).toHaveText('1');
         await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'})).toContainText('无订单 / 有订单无成交需查看单 run');
         // 执行进度列回退「无成交」泛标签（run 缺 noOrder/orderNoFill 标记）。
-        await expect(risk.getByText('无成交', {exact: true})).toBeVisible();
+        await expect(risk.getByText('无成交', {exact: true}).first()).toBeVisible();
 
         // 策略排行表：无订单 / 有单无成交列回退「-」，有成交由 runCount - noTradeCount 派生，不崩。
         const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
@@ -1391,7 +1391,7 @@ test.describe('paper trading product loop panel', () => {
         await expect(ranking.locator('.nq-metric-card', {hasText: '异常终态最多'})).toContainText('sv-rank-weak');
 
         // 2) Strategy Version 排行表：三组策略 + 风险调整分 / 无交易 / 异常终态列。
-        await expect(ranking.getByText('Strategy Version 排行（按风险调整分）')).toBeVisible();
+        await expect(ranking.getByText('Strategy Version 排行（按风险调整分·降序）')).toBeVisible();
         await expect(ranking.getByRole('columnheader', {name: '风险调整分'}).first()).toBeVisible();
         await expect(ranking.getByRole('columnheader', {name: '无交易'}).first()).toBeVisible();
         // Loop-18：策略/发布排行表新增无订单 / 有单无成交 / 有成交列（后端 group 精确计数）。
@@ -1406,7 +1406,7 @@ test.describe('paper trading product loop panel', () => {
         await expect(ranking.locator('tr[data-row-key="sv-rank-weak"]')).toContainText('数据不足');
 
         // 3) Publish 排行表：两组发布，同样含无交易 / 异常终态列。
-        await expect(ranking.getByText('Publish 排行（按风险调整分）')).toBeVisible();
+        await expect(ranking.getByText('Publish 排行（按风险调整分·降序）')).toBeVisible();
         await expect(ranking.getByText('pub-rank-1').first()).toBeVisible();
         await expect(ranking.getByText('pub-rank-2').first()).toBeVisible();
     });
@@ -1437,6 +1437,197 @@ test.describe('paper trading product loop panel', () => {
         await expect(ranking).toBeVisible();
         await expect(ranking.getByText('暂无可分组的 Paper 策略 / 发布数据，创建并运行 Paper run 后自动汇总排行。')).toBeVisible();
         await expect(ranking.getByText('数据不足，不做排行')).toBeVisible();
+        await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+    });
+
+    // ---------- Loop-19：排行排序/过滤 + 风险 Run 筛选交互控件 ----------
+
+    test('Loop-19：策略排行支持排序维度与方向切换且风险调整分仍可见', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: rankingPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        await expect(ranking).toBeVisible();
+
+        // 控件存在：排序维度 / 方向（降序·升序）。
+        const sortControls = ranking.getByRole('group', {name: '策略排行排序控制'});
+        await expect(sortControls).toBeVisible();
+        await expect(sortControls.getByText('排序维度')).toBeVisible();
+        await expect(sortControls.locator('.ant-segmented-item-label', {hasText: '降序'})).toBeVisible();
+        await expect(sortControls.locator('.ant-segmented-item-label', {hasText: '升序'})).toBeVisible();
+
+        const strategyTable = page.getByRole('region', {name: '策略版本排行表'});
+        // 默认风险调整分降序：sv-rank-good 居首（score 最高）；风险调整分列仍可见。
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).toContainText('sv-rank-good');
+        await expect(ranking.getByRole('columnheader', {name: '风险调整分'}).first()).toBeVisible();
+
+        // 切换排序维度 → 累计收益率：sv-rank-highrisk（0.5）居首。
+        await sortControls.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '累计收益率', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).toContainText('sv-rank-highrisk');
+
+        // 切换排序维度 → 最大回撤：高回撤 sv-rank-highrisk（-0.4）居首。
+        await sortControls.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '最大回撤', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).toContainText('sv-rank-highrisk');
+
+        // 切换排序维度 → 无订单：sv-rank-weak（noOrderCount 1）居首。
+        await sortControls.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '无订单', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).toContainText('sv-rank-weak');
+
+        // 方向切到升序：无订单升序下 weak（1）排末尾，首行不再是 sv-rank-weak。
+        await sortControls.locator('.ant-segmented-item-label', {hasText: '升序'}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).not.toContainText('sv-rank-weak');
+
+        // Paper-only 文案仍存在。
+        await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+    });
+
+    test('Loop-19：策略排行数据过滤仅无订单 / 仅有收益率正确筛选', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: rankingPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        const sortControls = ranking.getByRole('group', {name: '策略排行排序控制'});
+        const strategyTable = page.getByRole('region', {name: '策略版本排行表'});
+
+        // 仅无订单（第二个 Select）→ 只剩 sv-rank-weak（noOrderCount 1），其余被过滤。
+        await sortControls.locator('.ant-select-selector').last().click();
+        await page.getByRole('option', {name: '仅无订单', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-weak"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-good"]')).toHaveCount(0);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-highrisk"]')).toHaveCount(0);
+
+        // 仅有收益率 → weak（收益率 null）被过滤，good / highrisk 保留。
+        await sortControls.locator('.ant-select-selector').last().click();
+        await page.getByRole('option', {name: '仅有收益率', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-weak"]')).toHaveCount(0);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-good"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-highrisk"]')).toHaveCount(1);
+    });
+
+    test('Loop-19：风险 Run 清单按无订单 / 有订单无成交 / 数据不足筛选并展示空态', async ({page}) => {
+        const runFill = {
+            paperRunId: 'risk-fill', status: 'STOPPED', symbol: 'BTC-USDT',
+            strategyVersionId: 'sv-rf', publishId: 'pub-rf',
+            currentEquity: 110000, initialEquity: 100000, totalPnl: 10000, totalReturn: 0.1,
+            maxDrawdown: -0.03, riskBlocked: false, openAlertCount: 0, orderCount: 4, tradeCount: 4,
+            noOrder: false, orderNoFill: false, hasFill: true, lastActivityAt: '2026-06-22T02:00:00Z',
+        };
+        const runNoOrder = {
+            paperRunId: 'risk-noorder', status: 'CREATED', symbol: 'ETH-USDT',
+            strategyVersionId: 'sv-rf', publishId: 'pub-rf',
+            currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
+            maxDrawdown: null, riskBlocked: false, openAlertCount: 0, orderCount: 0, tradeCount: 0,
+            noOrder: true, orderNoFill: false, hasFill: false, lastActivityAt: '2026-06-21T02:00:00Z',
+        };
+        const runOrderNoFill = {
+            paperRunId: 'risk-ordernofill', status: 'STOPPED', symbol: 'SOL-USDT',
+            strategyVersionId: 'sv-rf', publishId: 'pub-rf',
+            currentEquity: 100000, initialEquity: 100000, totalPnl: 0, totalReturn: 0,
+            maxDrawdown: -0.01, riskBlocked: false, openAlertCount: 0, orderCount: 3, tradeCount: 0,
+            noOrder: false, orderNoFill: true, hasFill: false, lastActivityAt: '2026-06-20T02:00:00Z',
+        };
+        const rfGroup = {
+            key: 'sv-rf', runCount: 3, currentEquity: 210000, totalPnl: 10000, totalReturn: 0.05, worstDrawdown: -0.03,
+            riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z',
+            noTradeCount: 2, dataInsufficientCount: 1, comparableRunCount: 2,
+            runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 1,
+            orderCount: 7, tradeCount: 4, noOrderCount: 1, orderNoFillCount: 1, filledRunCount: 1,
+        };
+        const riskFilterSummary = {
+            overview: {
+                totalRuns: 3, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 1,
+                totalInitialEquity: 200000, totalCurrentEquity: 210000, totalPnl: 10000, totalReturn: 0.05,
+                returnEligibleRunCount: 2, worstRunDrawdown: -0.03, openAlertCount: 0,
+                riskBlockedRunCount: 0, noTradeRunCount: 2, dataInsufficientRunCount: 1,
+                noOrderRunCount: 1, orderNoFillRunCount: 1, filledRunCount: 1,
+            },
+            strategyGroups: [rfGroup],
+            publishGroups: [{...rfGroup, key: 'pub-rf'}],
+            highlights: {
+                topWinner: runFill, worstDrawdown: runFill, highestRisk: null, mostRecent: runFill,
+                noTradeRuns: [runNoOrder, runOrderNoFill], riskBlockedRuns: [],
+            },
+            dataQuality: {
+                missingEquityRuns: [runNoOrder],
+                dataInsufficientRuns: [runNoOrder],
+                missingBacktestSourceRuns: [], missingPublishSourceRuns: [],
+            },
+            safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
+            portfolioCurve: emptyPortfolioCurve,
+        };
+
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: riskFilterSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        await expect(risk.getByText('风险 Run 清单', {exact: true})).toBeVisible();
+        const riskControls = risk.getByRole('group', {name: '风险 Run 筛选'});
+        await expect(riskControls).toBeVisible();
+
+        const riskTable = page.getByRole('region', {name: '风险 Run 清单表'});
+        // 默认全部：三个 run 都在清单内。
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-fill"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-noorder"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-ordernofill"]')).toHaveCount(1);
+
+        // 无订单 → 仅 risk-noorder。
+        await riskControls.locator('.ant-select-selector').click();
+        await page.getByRole('option', {name: '无订单', exact: true}).click();
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-noorder"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-fill"]')).toHaveCount(0);
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-ordernofill"]')).toHaveCount(0);
+
+        // 有订单无成交 → 仅 risk-ordernofill。
+        await riskControls.locator('.ant-select-selector').click();
+        await page.getByRole('option', {name: '有订单无成交', exact: true}).click();
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-ordernofill"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-noorder"]')).toHaveCount(0);
+
+        // 数据不足 → 仅 risk-noorder（dataInsufficientRuns）。
+        await riskControls.locator('.ant-select-selector').click();
+        await page.getByRole('option', {name: '数据不足', exact: true}).click();
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-noorder"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="risk-fill"]')).toHaveCount(0);
+
+        // 异常终态 → 无匹配 → 清晰空态。
+        await riskControls.locator('.ant-select-selector').click();
+        await page.getByRole('option', {name: '异常终态', exact: true}).click();
+        await expect(risk.getByText('当前筛选「异常终态」下暂无匹配的风险 Run。')).toBeVisible();
+
+        // Paper-only 文案保留。
+        await expect(risk.getByText('风险 Run 清单合并 highlights 与数据质量清单去重，按筛选条件展示；仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+    });
+
+    test('Loop-19：旧后端缺 order/fill 字段时排行与风险筛选控件不崩', async ({page}) => {
+        // group / run 均缺 Loop-18 order/fill 拆分字段 → 控件仍渲染、排序/筛选不崩、Paper-only 文案在。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: rankingLegacySummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        const sortControls = ranking.getByRole('group', {name: '策略排行排序控制'});
+        await expect(sortControls).toBeVisible();
+        const strategyTable = page.getByRole('region', {name: '策略版本排行表'});
+
+        // 按无订单排序：旧后端 noOrderCount 为 null → 全部排末尾，不崩；表仍渲染首行。
+        await sortControls.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '无订单', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).toBeVisible();
+
+        // 过滤仅无订单：旧后端无法判定 → 命中 0 → 清晰空态文案（策略 / 发布两表）。
+        await sortControls.locator('.ant-select-selector').last().click();
+        await page.getByRole('option', {name: '仅无订单', exact: true}).click();
+        await expect(ranking.getByText('当前筛选条件下暂无匹配的数据。').first()).toBeVisible();
+
+        // 风险筛选控件存在；Paper-only 文案在。
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        await expect(risk.getByRole('group', {name: '风险 Run 筛选'})).toBeVisible();
         await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
     });
 });

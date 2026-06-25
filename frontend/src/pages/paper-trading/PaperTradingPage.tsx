@@ -9,6 +9,7 @@ import {
     Input,
     Modal,
     Row,
+    Segmented,
     Select,
     Space,
     Tabs,
@@ -3187,8 +3188,70 @@ function PaperRiskDrawdownDashboard({query}: {query: ReturnType<typeof usePaperP
     );
 }
 
+// ---- Loop-19：风险 Run 清单筛选（合并 highlights/dataQuality 去重后按条件筛选），纯前端只读派生 ----
+
+type RiskRunFilter =
+    'all' | 'riskBlocked' | 'noOrder' | 'orderNoFill' | 'hasFill'
+    | 'dataInsufficient' | 'terminal' | 'highDrawdown';
+
+const RISK_RUN_FILTER_OPTIONS: ReadonlyArray<{label: string; value: RiskRunFilter}> = [
+    {label: '全部', value: 'all'},
+    {label: '风控拦截', value: 'riskBlocked'},
+    {label: '无订单', value: 'noOrder'},
+    {label: '有订单无成交', value: 'orderNoFill'},
+    {label: '有成交', value: 'hasFill'},
+    {label: '数据不足', value: 'dataInsufficient'},
+    {label: '异常终态', value: 'terminal'},
+    {label: '高回撤', value: 'highDrawdown'},
+];
+
+/** 高回撤阈值：单 run 最大回撤 ≤ -10%（与回撤分桶 danger 区间一致）。 */
+const RISK_RUN_HIGH_DRAWDOWN_THRESHOLD = -0.1;
+
+/**
+ * 风险 Run 清单筛选：noOrder/orderNoFill/hasFill 按后端 run 级标记（旧后端缺失 → 不命中，不伪造）；
+ * dataInsufficient 以 dataQuality.dataInsufficientRuns 为准；terminal 取 FAILED/CANCELLED；highDrawdown 取深回撤。
+ */
+function filterRiskRuns(
+    pool: PaperPortfolioRunRef[],
+    filter: RiskRunFilter,
+    dataInsufficientIds: Set<string>,
+): PaperPortfolioRunRef[] {
+    switch (filter) {
+        case 'riskBlocked': return pool.filter((r) => r.riskBlocked);
+        case 'noOrder': return pool.filter((r) => r.noOrder === true);
+        case 'orderNoFill': return pool.filter((r) => r.orderNoFill === true);
+        case 'hasFill': return pool.filter((r) => r.hasFill === true);
+        case 'dataInsufficient': return pool.filter((r) => dataInsufficientIds.has(r.paperRunId));
+        case 'terminal': return pool.filter((r) => r.status === 'FAILED' || r.status === 'CANCELLED');
+        case 'highDrawdown': return pool.filter((r) => {
+            const dd = toNullableNumber(r.maxDrawdown);
+            return dd !== null && dd <= RISK_RUN_HIGH_DRAWDOWN_THRESHOLD;
+        });
+        case 'all':
+        default: return pool;
+    }
+}
+
+/** Run 执行进度标记（通用，含有成交）：旧后端缺 order/fill 标记时回退「无成交」泛标签，不伪造。 */
+function runExecTag(run: PaperPortfolioRunRef): {label: string; tone: NqStatusTone} {
+    if (run.hasFill) {
+        return {label: '有成交', tone: 'success'};
+    }
+    if (run.orderNoFill) {
+        return {label: '有订单无成交', tone: 'warning'};
+    }
+    if (run.noOrder) {
+        return {label: '无订单', tone: 'info'};
+    }
+    return {label: '无成交', tone: 'neutral'};
+}
+
 function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryResponse}) {
     const {overview, highlights, dataQuality} = portfolio;
+
+    // Loop-19：风险 Run 清单筛选状态（默认全部）。
+    const [riskFilter, setRiskFilter] = useState<RiskRunFilter>('all');
 
     const pool = collectRiskRunPool(portfolio);
     const dataInsufficientIds = new Set(dataQuality.dataInsufficientRuns.map((r) => r.paperRunId));
@@ -3221,6 +3284,10 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
     const noTradeSplitFooter = hasOrderSplit
         ? `无订单 ${overview.noOrderRunCount} · 有订单无成交 ${overview.orderNoFillRunCount}`
         : '无订单 / 有订单无成交需查看单 run';
+
+    // Loop-19：统一风险 Run 清单（合并去重的 pool）按筛选条件展示。
+    const riskRunFiltered = filterRiskRuns(pool, riskFilter, dataInsufficientIds);
+    const riskFilterLabel = RISK_RUN_FILTER_OPTIONS.find((o) => o.value === riskFilter)?.label ?? '全部';
 
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
@@ -3268,6 +3335,58 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                     footer="风控拦截 + 异常终态合计"
                 />
             </div>
+
+            {/* 1.5) 统一风险 Run 清单（Loop-19）：合并 highlights/dataQuality 去重，按条件筛选快速定位 */}
+            <Card size="small" title="风险 Run 清单">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <div
+                        role="group"
+                        aria-label="风险 Run 筛选"
+                        style={{display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center'}}
+                    >
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>风险筛选</Typography.Text>
+                        <Select<RiskRunFilter>
+                            size="small"
+                            value={riskFilter}
+                            onChange={setRiskFilter}
+                            options={RISK_RUN_FILTER_OPTIONS as Array<{label: string; value: RiskRunFilter}>}
+                            style={{width: 150}}
+                            virtual={false}
+                        />
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>
+                            「{riskFilterLabel}」命中 {riskRunFiltered.length} 个 run
+                        </Typography.Text>
+                    </div>
+                    {riskRunFiltered.length > 0 ? (
+                        <div role="region" aria-label="风险 Run 清单表">
+                            <NqDataTable<PaperPortfolioRunRef>
+                                rowKey="paperRunId"
+                                pagination={false}
+                                dataSource={riskRunFiltered}
+                                columns={[
+                                    ...riskRunColumns(),
+                                    {
+                                        title: '执行进度',
+                                        key: 'exec',
+                                        width: 120,
+                                        render: (_: unknown, run: PaperPortfolioRunRef) => {
+                                            const t = runExecTag(run);
+                                            return <NqStatusTag status={t.label} tone={t.tone}/>;
+                                        },
+                                    },
+                                ]}
+                                scroll={{x: 1220, y: 260}}
+                                locale={{emptyText: '暂无匹配的风险 Run。'}}
+                            />
+                        </div>
+                    ) : (
+                        <NqEmptyState description={`当前筛选「${riskFilterLabel}」下暂无匹配的风险 Run。`}/>
+                    )}
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                        风险 Run 清单合并 highlights 与数据质量清单去重，按筛选条件展示；仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。
+                    </Typography.Text>
+                </Space>
+            </Card>
 
             {/* 2) 组合资金曲线与回撤（Loop-15：真实组合时间序列口径，不可用时回退单 run 口径） */}
             <PortfolioEquityCurveCard curve={portfolio.portfolioCurve}/>
@@ -3601,6 +3720,101 @@ function rankingColumns(keyTitle: string): ColumnsType<PaperStrategyRankingRow> 
     ];
 }
 
+// ---- Loop-19：排行控件（排序维度 / 方向 / 数据过滤），纯前端只读派生，不改后端契约 ----
+
+type RankingSortDim =
+    'score' | 'totalReturn' | 'totalPnl' | 'worstDrawdown' | 'riskBlocked'
+    | 'noOrder' | 'orderNoFill' | 'dataInsufficient' | 'lastRun';
+type RankingSortDir = 'desc' | 'asc';
+type RankingFilter = 'all' | 'hasReturn' | 'dataInsufficient' | 'riskBlocked' | 'noOrder' | 'orderNoFill';
+
+const RANKING_SORT_OPTIONS: ReadonlyArray<{label: string; value: RankingSortDim}> = [
+    {label: '风险调整分', value: 'score'},
+    {label: '累计收益率', value: 'totalReturn'},
+    {label: '总 PnL', value: 'totalPnl'},
+    {label: '最大回撤', value: 'worstDrawdown'},
+    {label: '风控拦截', value: 'riskBlocked'},
+    {label: '无订单', value: 'noOrder'},
+    {label: '有单无成交', value: 'orderNoFill'},
+    {label: '数据不足', value: 'dataInsufficient'},
+    {label: '最近运行', value: 'lastRun'},
+];
+
+const RANKING_FILTER_OPTIONS: ReadonlyArray<{label: string; value: RankingFilter}> = [
+    {label: '全部', value: 'all'},
+    {label: '仅有收益率', value: 'hasReturn'},
+    {label: '仅数据不足', value: 'dataInsufficient'},
+    {label: '仅有风控拦截', value: 'riskBlocked'},
+    {label: '仅无订单', value: 'noOrder'},
+    {label: '仅有单无成交', value: 'orderNoFill'},
+];
+
+/**
+ * 排序值提取：统一约定「值越大越靠前（降序）」。最大回撤取绝对值（回撤越深值越大），
+ * 收益率 / PnL / 风险调整分按原值；无订单 / 有单无成交在旧后端为 null（排末尾，不伪造顺序）；
+ * 最近运行取时间戳毫秒。返回 null 表示该维度不可比，恒排末尾。
+ */
+function rankingSortValue(row: PaperStrategyRankingRow, dim: RankingSortDim): number | null {
+    switch (dim) {
+        case 'score': return row.score;
+        case 'totalReturn': return toNullableNumber(row.totalReturn);
+        case 'totalPnl': return toNullableNumber(row.totalPnl);
+        case 'worstDrawdown': {
+            const dd = toNullableNumber(row.worstDrawdown);
+            return dd === null ? null : Math.abs(dd);
+        }
+        case 'riskBlocked': return row.riskBlockedCount;
+        case 'noOrder': return row.noOrderCount;
+        case 'orderNoFill': return row.orderNoFillCount;
+        case 'dataInsufficient': return row.dataInsufficientCount;
+        case 'lastRun': {
+            if (!row.lastRunTime) {
+                return null;
+            }
+            const ms = Date.parse(row.lastRunTime);
+            return Number.isNaN(ms) ? null : ms;
+        }
+        default: return null;
+    }
+}
+
+/** 按维度 + 方向排序；null 值的行恒排末尾（与方向无关，不伪造排名），同值按风险调整分降序兜底。 */
+function sortRankingRows(rows: PaperStrategyRankingRow[], dim: RankingSortDim, dir: RankingSortDir): PaperStrategyRankingRow[] {
+    const factor = dir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+        const av = rankingSortValue(a, dim);
+        const bv = rankingSortValue(b, dim);
+        if (av === null && bv === null) {
+            return 0;
+        }
+        if (av === null) {
+            return 1;
+        }
+        if (bv === null) {
+            return -1;
+        }
+        if (av !== bv) {
+            return (av - bv) * factor;
+        }
+        const as = a.score ?? Number.NEGATIVE_INFINITY;
+        const bs = b.score ?? Number.NEGATIVE_INFINITY;
+        return bs - as;
+    });
+}
+
+/** 数据过滤：null/缺失字段按「不满足」处理（旧后端无订单/有单无成交计数为 null → 不计入，不伪造）。 */
+function filterRankingRows(rows: PaperStrategyRankingRow[], filter: RankingFilter): PaperStrategyRankingRow[] {
+    switch (filter) {
+        case 'hasReturn': return rows.filter((r) => toNullableNumber(r.totalReturn) !== null);
+        case 'dataInsufficient': return rows.filter((r) => r.dataInsufficientCount > 0);
+        case 'riskBlocked': return rows.filter((r) => r.riskBlockedCount > 0);
+        case 'noOrder': return rows.filter((r) => (r.noOrderCount ?? 0) > 0);
+        case 'orderNoFill': return rows.filter((r) => (r.orderNoFillCount ?? 0) > 0);
+        case 'all':
+        default: return rows;
+    }
+}
+
 /**
  * PaperStrategyRankingDashboard —— Paper 策略表现排行（GateJ 后产品化 Loop-16）。
  * 复用 Loop-13 组合 summary 单请求结果（strategyGroups / publishGroups + highlights / dataQuality），
@@ -3656,10 +3870,23 @@ function PaperStrategyRankingDashboard({query}: {query: ReturnType<typeof usePap
 function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummaryResponse}) {
     const {strategyGroups, publishGroups, highlights, dataQuality} = portfolio;
 
+    // Loop-19：排行控件状态（默认风险调整分降序、不过滤），同一套控件同时作用于 Strategy / Publish 两张表。
+    const [sortDim, setSortDim] = useState<RankingSortDim>('score');
+    const [sortDir, setSortDir] = useState<RankingSortDir>('desc');
+    const [rankFilter, setRankFilter] = useState<RankingFilter>('all');
+
     const strategyRows = buildRankingRows(
         strategyGroups, highlights.noTradeRuns, dataQuality.dataInsufficientRuns, (run) => run.strategyVersionId);
     const publishRows = buildRankingRows(
         publishGroups, highlights.noTradeRuns, dataQuality.dataInsufficientRuns, (run) => run.publishId);
+
+    // 控件作用于「展示」：先过滤再排序；榜单概览仍基于完整 strategyRows（保持总览稳定，不随过滤/排序变化）。
+    const strategyRowsView = sortRankingRows(filterRankingRows(strategyRows, rankFilter), sortDim, sortDir);
+    const publishRowsView = sortRankingRows(filterRankingRows(publishRows, rankFilter), sortDim, sortDir);
+    const sortDimLabel = RANKING_SORT_OPTIONS.find((o) => o.value === sortDim)?.label ?? '风险调整分';
+    const sortDirLabel = sortDir === 'desc' ? '降序' : '升序';
+    const filtered = rankFilter !== 'all';
+    const filterEmptyText = '当前筛选条件下暂无匹配的数据。';
 
     // 榜单概览基于策略维度（口径与表格一致）；无交易 / 数据不足 / 异常终态均用后端 group 精确计数。
     const topReturn = topRankingRow(strategyRows, (row) => toNullableNumber(row.totalReturn), true);
@@ -3724,28 +3951,68 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                 {lowSample ? ' 当前可比 run 数较少，排行仅供参考。' : ''}
             </Typography.Text>
 
-            {/* 2) Strategy Version 排行表 */}
-            <Card size="small" title="Strategy Version 排行（按风险调整分）">
-                <NqDataTable<PaperStrategyRankingRow>
-                    rowKey="key"
-                    pagination={false}
-                    dataSource={strategyRows}
-                    columns={rankingColumns('策略版本')}
-                    scroll={{x: 1610, y: 280}}
-                    locale={{emptyText: '暂无可分组的策略版本数据。'}}
+            {/* 1.5) 排行控件：排序维度 / 方向 / 数据过滤（同一套控件同时作用于 Strategy / Publish 两张表） */}
+            <div
+                role="group"
+                aria-label="策略排行排序控制"
+                style={{display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center'}}
+            >
+                <Typography.Text type="secondary" style={{fontSize: 12}}>排序维度</Typography.Text>
+                <Select<RankingSortDim>
+                    size="small"
+                    value={sortDim}
+                    onChange={setSortDim}
+                    options={RANKING_SORT_OPTIONS as Array<{label: string; value: RankingSortDim}>}
+                    style={{width: 132}}
+                    virtual={false}
                 />
+                <Segmented
+                    size="small"
+                    value={sortDir}
+                    onChange={(v) => setSortDir(v as RankingSortDir)}
+                    options={[{label: '降序', value: 'desc'}, {label: '升序', value: 'asc'}]}
+                />
+                <Typography.Text type="secondary" style={{fontSize: 12}}>数据过滤</Typography.Text>
+                <Select<RankingFilter>
+                    size="small"
+                    value={rankFilter}
+                    onChange={setRankFilter}
+                    options={RANKING_FILTER_OPTIONS as Array<{label: string; value: RankingFilter}>}
+                    style={{width: 150}}
+                    virtual={false}
+                />
+                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                    当前：{sortDimLabel} · {sortDirLabel}
+                    {filtered ? `（已过滤，命中 Strategy ${strategyRowsView.length} · Publish ${publishRowsView.length}）` : ''}
+                </Typography.Text>
+            </div>
+
+            {/* 2) Strategy Version 排行表（受排行控件控制） */}
+            <Card size="small" title={`Strategy Version 排行（按${sortDimLabel}·${sortDirLabel}）`}>
+                <div role="region" aria-label="策略版本排行表">
+                    <NqDataTable<PaperStrategyRankingRow>
+                        rowKey="key"
+                        pagination={false}
+                        dataSource={strategyRowsView}
+                        columns={rankingColumns('策略版本')}
+                        scroll={{x: 1610, y: 280}}
+                        locale={{emptyText: filtered ? filterEmptyText : '暂无可分组的策略版本数据。'}}
+                    />
+                </div>
             </Card>
 
-            {/* 3) Publish 排行表 */}
-            <Card size="small" title="Publish 排行（按风险调整分）">
-                <NqDataTable<PaperStrategyRankingRow>
-                    rowKey="key"
-                    pagination={false}
-                    dataSource={publishRows}
-                    columns={rankingColumns('发布')}
-                    scroll={{x: 1610, y: 280}}
-                    locale={{emptyText: '暂无可分组的发布数据。'}}
-                />
+            {/* 3) Publish 排行表（受同一套排行控件控制） */}
+            <Card size="small" title={`Publish 排行（按${sortDimLabel}·${sortDirLabel}）`}>
+                <div role="region" aria-label="发布排行表">
+                    <NqDataTable<PaperStrategyRankingRow>
+                        rowKey="key"
+                        pagination={false}
+                        dataSource={publishRowsView}
+                        columns={rankingColumns('发布')}
+                        scroll={{x: 1610, y: 280}}
+                        locale={{emptyText: filtered ? filterEmptyText : '暂无可分组的发布数据。'}}
+                    />
+                </div>
             </Card>
 
             {/* 4) 数据质量提示 */}
