@@ -323,6 +323,60 @@ const emptyPortfolioSummary = {
     portfolioCurve: emptyPortfolioCurve,
 };
 
+// Loop-16 策略表现排行 fixture：3 个 strategyVersion（盈利低风险 / 高收益高回撤 / 数据不足且风控拦截）+ 2 个 publish。
+// dataInsufficient / noTrade run 引用挂在 sv-rank-weak（publishId 为不在排行内的 pub-rank-weak），驱动每组派生计数。
+const rankGoodRun = {
+    paperRunId: 'rank-good-1', status: 'STOPPED', symbol: 'BTC-USDT',
+    strategyVersionId: 'sv-rank-good', publishId: 'pub-rank-1',
+    currentEquity: 130000, initialEquity: 100000, totalPnl: 30000, totalReturn: 0.3,
+    maxDrawdown: -0.05, riskBlocked: false, openAlertCount: 0, tradeCount: 6,
+    lastActivityAt: '2026-06-24T02:00:00Z',
+};
+const rankHighRiskRun = {
+    paperRunId: 'rank-highrisk-1', status: 'STOPPED', symbol: 'ETH-USDT',
+    strategyVersionId: 'sv-rank-highrisk', publishId: 'pub-rank-2',
+    currentEquity: 150000, initialEquity: 100000, totalPnl: 50000, totalReturn: 0.5,
+    maxDrawdown: -0.4, riskBlocked: true, openAlertCount: 2, tradeCount: 4,
+    lastActivityAt: '2026-06-23T02:00:00Z',
+};
+const rankWeakRun1 = {
+    paperRunId: 'rank-weak-1', status: 'CREATED', symbol: 'SOL-USDT',
+    strategyVersionId: 'sv-rank-weak', publishId: 'pub-rank-weak',
+    currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
+    maxDrawdown: null, riskBlocked: true, openAlertCount: 1, tradeCount: 0,
+    lastActivityAt: '2026-06-20T02:00:00Z',
+};
+const rankWeakRun2 = {...rankWeakRun1, paperRunId: 'rank-weak-2'};
+const rankingPortfolioSummary = {
+    overview: {
+        totalRuns: 5, runningCount: 0, stoppedCount: 3, failedCount: 0, cancelledCount: 0, createdCount: 2,
+        totalInitialEquity: 200000, totalCurrentEquity: 280000, totalPnl: 80000, totalReturn: 0.4,
+        returnEligibleRunCount: 3, worstRunDrawdown: -0.4, openAlertCount: 3,
+        riskBlockedRunCount: 3, noTradeRunCount: 2, dataInsufficientRunCount: 2,
+    },
+    strategyGroups: [
+        {key: 'sv-rank-good', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z'},
+        {key: 'sv-rank-highrisk', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z'},
+        {key: 'sv-rank-weak', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 2, openAlertCount: 1, lastRunTime: '2026-06-20T02:00:00Z'},
+    ],
+    publishGroups: [
+        {key: 'pub-rank-1', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z'},
+        {key: 'pub-rank-2', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z'},
+    ],
+    highlights: {
+        topWinner: rankHighRiskRun, worstDrawdown: rankHighRiskRun, highestRisk: rankWeakRun1, mostRecent: rankGoodRun,
+        noTradeRuns: [rankWeakRun1, rankWeakRun2], riskBlockedRuns: [rankWeakRun1, rankHighRiskRun],
+    },
+    dataQuality: {
+        missingEquityRuns: [rankWeakRun1, rankWeakRun2],
+        dataInsufficientRuns: [rankWeakRun1, rankWeakRun2],
+        missingBacktestSourceRuns: [],
+        missingPublishSourceRuns: [rankWeakRun1, rankWeakRun2],
+    },
+    safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
+    portfolioCurve: emptyPortfolioCurve,
+};
+
 type PaperLoopStubOptions = {
     seedRun?: boolean;
     status?: string;
@@ -1173,5 +1227,54 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.getByText('回撤分析')).toBeVisible();
         await expect(risk.locator('.nq-metric-card', {hasText: '最大单 run 回撤'}).locator('.nq-metric-card__value')).toContainText('-25.00%');
         await expect(risk.getByText('该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。')).toBeVisible();
+    });
+
+    test('Paper 策略表现排行展示榜单概览、策略/发布排行表与风险调整分', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: rankingPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        await expect(ranking).toBeVisible();
+
+        // Paper-only / 排名口径说明。
+        await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+        await expect(ranking.getByText('风险调整分为 Paper 内部排序分，仅用于模拟结果横向比较，不代表真实投资评级。', {exact: false})).toBeVisible();
+
+        // 1) 榜单概览（footer 为对应 strategyVersionId）。
+        await expect(ranking.locator('.nq-metric-card', {hasText: '收益最高'})).toContainText('sv-rank-highrisk');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '收益最高'}).locator('.nq-metric-card__value')).toContainText('+50.00%');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '风险调整后最高'})).toContainText('sv-rank-good');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '风险调整后最高'}).locator('.nq-metric-card__value')).toContainText('+0.2500');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '回撤最大'})).toContainText('sv-rank-highrisk');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '风控拦截最多'})).toContainText('sv-rank-weak');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '数据不足最多'})).toContainText('sv-rank-weak');
+
+        // 2) Strategy Version 排行表：三组策略 + 风险调整分列 + 无交易列。
+        await expect(ranking.getByText('Strategy Version 排行（按风险调整分）')).toBeVisible();
+        await expect(ranking.getByRole('columnheader', {name: '风险调整分'}).first()).toBeVisible();
+        await expect(ranking.getByRole('columnheader', {name: '无交易'})).toBeVisible();
+        await expect(ranking.getByText('sv-rank-good').first()).toBeVisible();
+        await expect(ranking.getByText('sv-rank-highrisk').first()).toBeVisible();
+        await expect(ranking.getByText('sv-rank-weak').first()).toBeVisible();
+        // 风险调整分缺失（totalReturn/回撤缺失）→ 该行展示「数据不足」。
+        await expect(ranking.locator('tr[data-row-key="sv-rank-weak"]')).toContainText('数据不足');
+
+        // 3) Publish 排行表：两组发布。
+        await expect(ranking.getByText('Publish 排行（按风险调整分）')).toBeVisible();
+        await expect(ranking.getByText('pub-rank-1').first()).toBeVisible();
+        await expect(ranking.getByText('pub-rank-2').first()).toBeVisible();
+    });
+
+    test('Paper 策略表现排行无分组时展示空态且不做排行', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {portfolioSummary: emptyPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        await expect(ranking).toBeVisible();
+        await expect(ranking.getByText('暂无可分组的 Paper 策略 / 发布数据，创建并运行 Paper run 后自动汇总排行。')).toBeVisible();
+        await expect(ranking.getByText('数据不足，不做排行')).toBeVisible();
+        await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
     });
 });

@@ -39,6 +39,7 @@ import {
     NqPriceText,
     NqRiskBanner,
     NqStatusTag,
+    formatNqNumber,
     nqNumericColumn,
 } from '@/components/nq';
 import type {NqStatusTone} from '@/components/nq';
@@ -1585,6 +1586,8 @@ export function PaperTradingPage() {
                 <PaperPortfolioDashboard query={portfolioQuery}/>
 
                 <PaperRiskDrawdownDashboard query={portfolioQuery}/>
+
+                <PaperStrategyRankingDashboard query={portfolioQuery}/>
 
                 <NqFilterBar
                     actions={(
@@ -3384,6 +3387,302 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                     </Descriptions>
                 </Space>
             </Card>
+        </Space>
+    );
+}
+
+/** 策略 / 发布维度排行行：组合 summary 的 group 字段 + 前端派生的无交易 / 数据不足计数与风险调整分。 */
+interface PaperStrategyRankingRow {
+    key: string;
+    runCount: number;
+    currentEquity: string | number | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    worstDrawdown: string | number | null;
+    riskBlockedCount: number;
+    openAlertCount: number;
+    lastRunTime: string | null;
+    noTradeCount: number;
+    dataInsufficientCount: number;
+    score: number | null;
+}
+
+/**
+ * 风险调整排序分（Paper 内部排序分，非真实投资评级）：
+ * score = totalReturn - |maxDrawdown| - riskBlockedCount*0.05 - openAlertCount*0.01 - dataInsufficientCount*0.02。
+ * totalReturn 或 maxDrawdown 缺失时返回 null（展示「数据不足」，不伪造排序）。
+ */
+function riskAdjustedScore(group: PaperPortfolioGroup, dataInsufficientCount: number): number | null {
+    const totalReturn = toNullableNumber(group.totalReturn);
+    const maxDrawdown = toNullableNumber(group.worstDrawdown);
+    if (totalReturn === null || maxDrawdown === null) {
+        return null;
+    }
+    return totalReturn
+        - Math.abs(maxDrawdown)
+        - group.riskBlockedCount * 0.05
+        - group.openAlertCount * 0.01
+        - dataInsufficientCount * 0.02;
+}
+
+/** 按 strategyVersionId / publishId 维度对 run 引用计数（用于派生每组无交易 / 数据不足 run 数）。 */
+function countRunsByKey(runs: PaperPortfolioRunRef[], keyOf: (run: PaperPortfolioRunRef) => string | null): Map<string, number> {
+    const map = new Map<string, number>();
+    runs.forEach((run) => {
+        const key = keyOf(run);
+        if (key) {
+            map.set(key, (map.get(key) ?? 0) + 1);
+        }
+    });
+    return map;
+}
+
+/**
+ * 组装某一维度（strategy / publish）的排行行：复用组 group 字段，派生每组无交易 / 数据不足计数与风险调整分，
+ * 按风险调整分降序（null 分末尾），同分按总 PnL 降序，得到稳定的「风险调整后排行」。
+ */
+function buildRankingRows(
+    groups: PaperPortfolioGroup[],
+    noTradeRuns: PaperPortfolioRunRef[],
+    dataInsufficientRuns: PaperPortfolioRunRef[],
+    keyOf: (run: PaperPortfolioRunRef) => string | null,
+): PaperStrategyRankingRow[] {
+    const noTradeByKey = countRunsByKey(noTradeRuns, keyOf);
+    const dataInsufficientByKey = countRunsByKey(dataInsufficientRuns, keyOf);
+    const rows = groups.map((group) => {
+        const dataInsufficientCount = dataInsufficientByKey.get(group.key) ?? 0;
+        return {
+            key: group.key,
+            runCount: group.runCount,
+            currentEquity: group.currentEquity,
+            totalPnl: group.totalPnl,
+            totalReturn: group.totalReturn,
+            worstDrawdown: group.worstDrawdown,
+            riskBlockedCount: group.riskBlockedCount,
+            openAlertCount: group.openAlertCount,
+            lastRunTime: group.lastRunTime,
+            noTradeCount: noTradeByKey.get(group.key) ?? 0,
+            dataInsufficientCount,
+            score: riskAdjustedScore(group, dataInsufficientCount),
+        };
+    });
+    return rows.sort((left, right) => {
+        const leftScore = left.score === null ? Number.NEGATIVE_INFINITY : left.score;
+        const rightScore = right.score === null ? Number.NEGATIVE_INFINITY : right.score;
+        if (rightScore !== leftScore) {
+            return rightScore - leftScore;
+        }
+        const leftPnl = toNullableNumber(left.totalPnl) ?? Number.NEGATIVE_INFINITY;
+        const rightPnl = toNullableNumber(right.totalPnl) ?? Number.NEGATIVE_INFINITY;
+        return rightPnl - leftPnl;
+    });
+}
+
+/** 取某指标的极值行（preferMax=true 取最大，false 取最小）；指标为 null 的行跳过，避免伪造排名。 */
+function topRankingRow(
+    rows: PaperStrategyRankingRow[],
+    valueOf: (row: PaperStrategyRankingRow) => number | null,
+    preferMax = true,
+): PaperStrategyRankingRow | null {
+    let best: PaperStrategyRankingRow | null = null;
+    let bestValue: number | null = null;
+    for (const row of rows) {
+        const value = valueOf(row);
+        if (value === null) {
+            continue;
+        }
+        if (bestValue === null || (preferMax ? value > bestValue : value < bestValue)) {
+            best = row;
+            bestValue = value;
+        }
+    }
+    return best;
+}
+
+/** 风险调整分展示：null → 「数据不足」，否则带符号 4 位小数（明确为排序分，不是收益率）。 */
+function renderScore(score: number | null): ReactNode {
+    return score === null
+        ? <Typography.Text type="secondary">数据不足</Typography.Text>
+        : <span className="nq-num">{formatNqNumber(score, {precision: 4, signed: true})}</span>;
+}
+
+/** 排行表列：includeActivity=true（策略表）额外展示无交易 / 数据不足列。 */
+function rankingColumns(keyTitle: string, includeActivity: boolean): ColumnsType<PaperStrategyRankingRow> {
+    const columns: ColumnsType<PaperStrategyRankingRow> = [
+        {title: keyTitle, dataIndex: 'key', key: 'key', width: 190, render: (v: string) => <span className="nq-mono">{v}</span>},
+        nqNumericColumn({title: 'Run 数', dataIndex: 'runCount', key: 'runCount', width: 76}),
+        nqNumericColumn({title: '当前权益', dataIndex: 'currentEquity', key: 'currentEquity', width: 120, render: (v) => <NqAmountText value={v as string | number | null}/>}),
+        nqNumericColumn({title: '总 PnL', dataIndex: 'totalPnl', key: 'totalPnl', width: 120, render: (v) => <NqAmountText value={v as string | number | null} signed colorBySign/>}),
+        nqNumericColumn({
+            title: '累计收益率',
+            dataIndex: 'totalReturn',
+            key: 'totalReturn',
+            width: 104,
+            render: (v) => (v === null || v === undefined
+                ? <Typography.Text type="secondary">数据不足</Typography.Text>
+                : <NqPercentText value={v as string | number} ratio colorBySign/>),
+        }),
+        nqNumericColumn({
+            title: '最大回撤',
+            dataIndex: 'worstDrawdown',
+            key: 'worstDrawdown',
+            width: 104,
+            render: (v) => (v === null || v === undefined ? '-' : <NqPercentText value={v as string | number} ratio signed={false}/>),
+        }),
+        nqNumericColumn({title: '风控拦截', dataIndex: 'riskBlockedCount', key: 'riskBlockedCount', width: 84}),
+        nqNumericColumn({title: '告警', dataIndex: 'openAlertCount', key: 'openAlertCount', width: 72}),
+    ];
+    if (includeActivity) {
+        columns.push(
+            nqNumericColumn({title: '无交易', dataIndex: 'noTradeCount', key: 'noTradeCount', width: 76}),
+            nqNumericColumn({title: '数据不足', dataIndex: 'dataInsufficientCount', key: 'dataInsufficientCount', width: 84}),
+        );
+    }
+    columns.push(
+        nqNumericColumn({title: '风险调整分', dataIndex: 'score', key: 'score', width: 110, render: (v) => renderScore(v as number | null)}),
+        {title: '最近运行', dataIndex: 'lastRunTime', key: 'lastRunTime', width: 170, render: (v: string | null) => formatDateTime(v)},
+    );
+    return columns;
+}
+
+/**
+ * PaperStrategyRankingDashboard —— Paper 策略表现排行（GateJ 后产品化 Loop-16）。
+ * 复用 Loop-13 组合 summary 单请求结果（strategyGroups / publishGroups + highlights / dataQuality），
+ * 从 strategyVersionId / publishId 维度只读派生表现排行与风险调整排序分（Paper 内部排序分，非真实投资评级）。
+ * 仅代表 SIM/Paper 模拟，不读真实交易所账户余额，不代表 LIVE 或真实交易；数据不足不伪造排名。
+ */
+function PaperStrategyRankingDashboard({query}: {query: ReturnType<typeof usePaperPortfolioSummaryQuery>}) {
+    const raw = query.data;
+    const portfolio: PaperPortfolioSummaryResponse | null =
+        raw && !Array.isArray(raw) && (raw as PaperPortfolioSummaryResponse).overview
+            ? (raw as PaperPortfolioSummaryResponse)
+            : null;
+
+    const hasGroups = Boolean(portfolio)
+        && (portfolio!.strategyGroups.length > 0 || portfolio!.publishGroups.length > 0);
+
+    return (
+      <section aria-label="Paper 策略表现排行">
+        <Card
+            className="page-section"
+            bordered={false}
+            title="Paper 策略表现排行"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · LIVE 未开启</Typography.Text>}
+        >
+            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                <NqRiskBanner
+                    level="info"
+                    message="按 strategyVersionId / publishId 维度横向比较多个 Paper run 的模拟表现。"
+                    description="该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。"
+                />
+                {query.error ? (
+                    <NqErrorState
+                        title="Paper 策略表现排行加载失败"
+                        error={query.error as AppApiError}
+                        onRetry={() => query.refetch()}
+                    />
+                ) : query.isFetching && !portfolio ? (
+                    <NqLoadingState/>
+                ) : !portfolio || portfolio.overview.totalRuns === 0 || !hasGroups ? (
+                    <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                        <NqEmptyState description="暂无可分组的 Paper 策略 / 发布数据，创建并运行 Paper run 后自动汇总排行。"/>
+                        <Typography.Text type="warning" style={{fontSize: 12}}>数据不足，不做排行</Typography.Text>
+                    </Space>
+                ) : (
+                    <PaperStrategyRankingBody portfolio={portfolio}/>
+                )}
+            </Space>
+        </Card>
+      </section>
+    );
+}
+
+function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummaryResponse}) {
+    const {strategyGroups, publishGroups, highlights, dataQuality} = portfolio;
+
+    const strategyRows = buildRankingRows(
+        strategyGroups, highlights.noTradeRuns, dataQuality.dataInsufficientRuns, (run) => run.strategyVersionId);
+    const publishRows = buildRankingRows(
+        publishGroups, highlights.noTradeRuns, dataQuality.dataInsufficientRuns, (run) => run.publishId);
+
+    // 榜单概览基于策略维度（口径与表格一致）。
+    const topReturn = topRankingRow(strategyRows, (row) => toNullableNumber(row.totalReturn), true);
+    const topScore = topRankingRow(strategyRows, (row) => row.score, true);
+    const worstDrawdown = topRankingRow(strategyRows, (row) => toNullableNumber(row.worstDrawdown), false);
+    const mostRiskBlocked = topRankingRow(strategyRows, (row) => row.riskBlockedCount, true);
+    const mostDataInsufficient = topRankingRow(strategyRows, (row) => row.dataInsufficientCount, true);
+
+    const totalGroupRuns = strategyRows.reduce((sum, row) => sum + row.runCount, 0);
+    const lowSample = totalGroupRuns < 3;
+
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            {/* 1) 榜单概览（footer 为对应 strategyVersionId） */}
+            <div className="nq-status-strip">
+                <NqMetricCard
+                    label="收益最高"
+                    value={topReturn ? <NqPercentText value={topReturn.totalReturn as string | number} ratio colorBySign/> : '-'}
+                    footer={topReturn ? topReturn.key : '暂无可比数据'}
+                    tone={topReturn ? pnlTone(toNullableNumber(topReturn.totalReturn)) : 'muted'}
+                />
+                <NqMetricCard
+                    label="风险调整后最高"
+                    value={topScore ? <span className="nq-num">{formatNqNumber(topScore.score as number, {precision: 4, signed: true})}</span> : '-'}
+                    footer={topScore ? topScore.key : '暂无可比数据'}
+                />
+                <NqMetricCard
+                    label="回撤最大"
+                    value={worstDrawdown ? <NqPercentText value={worstDrawdown.worstDrawdown as string | number} ratio signed={false}/> : '-'}
+                    footer={worstDrawdown ? worstDrawdown.key : '暂无可比数据'}
+                    tone="warning"
+                />
+                <NqMetricCard
+                    label="风控拦截最多"
+                    value={mostRiskBlocked ? String(mostRiskBlocked.riskBlockedCount) : '0'}
+                    footer={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? mostRiskBlocked.key : '暂无风控拦截'}
+                    tone={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? 'danger' : 'muted'}
+                />
+                <NqMetricCard
+                    label="数据不足最多"
+                    value={mostDataInsufficient ? String(mostDataInsufficient.dataInsufficientCount) : '0'}
+                    footer={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? mostDataInsufficient.key : '暂无数据不足'}
+                    tone={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? 'warning' : 'muted'}
+                />
+            </div>
+            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                风险调整分为 Paper 内部排序分，仅用于模拟结果横向比较，不代表真实投资评级。
+                {lowSample ? ' 当前可比 run 数较少，排行仅供参考。' : ''}
+            </Typography.Text>
+
+            {/* 2) Strategy Version 排行表 */}
+            <Card size="small" title="Strategy Version 排行（按风险调整分）">
+                <NqDataTable<PaperStrategyRankingRow>
+                    rowKey="key"
+                    pagination={false}
+                    dataSource={strategyRows}
+                    columns={rankingColumns('策略版本', true)}
+                    scroll={{x: 1280, y: 280}}
+                    locale={{emptyText: '暂无可分组的策略版本数据。'}}
+                />
+            </Card>
+
+            {/* 3) Publish 排行表 */}
+            <Card size="small" title="Publish 排行（按风险调整分）">
+                <NqDataTable<PaperStrategyRankingRow>
+                    rowKey="key"
+                    pagination={false}
+                    dataSource={publishRows}
+                    columns={rankingColumns('发布', false)}
+                    scroll={{x: 1080, y: 280}}
+                    locale={{emptyText: '暂无可分组的发布数据。'}}
+                />
+            </Card>
+
+            {/* 4) 数据质量提示 */}
+            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                数据质量：累计收益率 / 最大回撤缺失的策略不参与风险调整排序（显示「数据不足」）；
+                缺 equity / 缺 publish / 缺 backtest 来源详见上方风险驾驶舱与组合看板的数据质量提示。
+            </Typography.Text>
         </Space>
     );
 }
