@@ -1101,11 +1101,16 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.locator('.nq-metric-card', {hasText: '组合当前回撤'}).locator('.nq-metric-card__value')).toContainText('-11.76%');
         await expect(risk.locator('.nq-metric-card', {hasText: '组合最大回撤'}).locator('.nq-metric-card__value')).toContainText('-23.53%');
         await expect(risk.locator('.nq-metric-card', {hasText: '可比 run'}).locator('.nq-metric-card__value')).toHaveText('2');
-        await expect(risk.getByText('缺 equity 1 · 不完整点 1')).toBeVisible();
-        // 组合曲线采样点表（列头 + 在册/缺失 run 列）。
-        await expect(risk.getByRole('columnheader', {name: '组合权益'})).toBeVisible();
-        await expect(risk.getByRole('columnheader', {name: '在册 run'})).toBeVisible();
-        await expect(risk.getByText('Paper 模拟、简化组合资金合计曲线', {exact: false})).toBeVisible();
+        await expect(risk.locator('.nq-metric-card', {hasText: '可比 run'})).toContainText('缺 equity 1 · 不完整点 1');
+        // 组合资金曲线 + 回撤曲线图（复用 Design System ECharts 封装），及覆盖度/口径说明。
+        await expect(risk.getByText('组合资金曲线', {exact: true})).toBeVisible();
+        await expect(risk.getByText('组合回撤曲线', {exact: true})).toBeVisible();
+        await expect(risk.locator('.nq-chart')).toHaveCount(2);
+        await expect(risk.getByText('每个时间点 sourceRunCount 为已在册 run 数', {exact: false})).toBeVisible();
+        await expect(risk.getByText('该组合资金曲线仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。', {exact: false})).toBeVisible();
+        await expect(risk.getByText('该曲线是组合资金合计曲线，不等同于严格时间加权收益。', {exact: false})).toBeVisible();
+        // 采样点表折叠保留（默认折叠，header 可见，保持数据透明度）。
+        await expect(risk.getByText('组合曲线采样点（共 4，展开查看最近 4 条）')).toBeVisible();
 
         // 3) 回撤分析（单 run 口径，与组合曲线互补）。
         await expect(risk.getByText('回撤分析')).toBeVisible();

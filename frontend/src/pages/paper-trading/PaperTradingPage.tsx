@@ -3,6 +3,7 @@ import {
     Button,
     Card,
     Col,
+    Collapse,
     Descriptions,
     Form,
     Input,
@@ -33,6 +34,8 @@ import {
     NqMetricCard,
     NqPageHeader,
     NqPercentText,
+    NqPortfolioDrawdownChart,
+    NqPortfolioEquityChart,
     NqPriceText,
     NqRiskBanner,
     NqStatusTag,
@@ -3029,7 +3032,11 @@ function PortfolioEquityCurveCard({curve}: {curve: PaperPortfolioCurve | null | 
     const hasCurve = Boolean(curve) && points.length > 0;
 
     return (
-        <Card size="small" title="组合资金曲线与回撤">
+        <Card
+            size="small"
+            title="组合资金曲线与回撤"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · LIVE 未开启</Typography.Text>}
+        >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 {hasCurve && curve ? (
                     <>
@@ -3057,17 +3064,49 @@ function PortfolioEquityCurveCard({curve}: {curve: PaperPortfolioCurve | null | 
                                 footer={`缺 equity ${curve.coverage.missingEquityRunCount} · 不完整点 ${curve.coverage.incompletePointCount}`}
                             />
                         </div>
+
+                        {/* 组合资金曲线图（复用 Design System ECharts 主题；hover 见每点组合权益/PnL/收益率/在册·缺失 run） */}
+                        <div>
+                            <Typography.Text strong style={{fontSize: 13}}>组合资金曲线</Typography.Text>
+                            <NqPortfolioEquityChart points={points}/>
+                            <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                实线为组合资金合计，虚线为可比 run 初始资金合计基线；hover 查看每点组合权益 / PnL / 收益率 / 在册·缺失 run。
+                            </Typography.Text>
+                        </div>
+
+                        {/* 组合回撤曲线图（y 轴反向、回撤向下；hover 见回撤/资金峰值/组合权益） */}
+                        <div>
+                            <Typography.Text strong style={{fontSize: 13}}>组合回撤曲线</Typography.Text>
+                            <NqPortfolioDrawdownChart points={points}/>
+                        </div>
+
                         <Typography.Text type="secondary" style={{fontSize: 12}}>
-                            组合当前回撤 / 最大回撤 / 资金峰值基于组合 equity 时间序列（共 {curve.pointCount} 个采样点，下表为最近若干点）。
-                            该曲线为 Paper 模拟、简化组合资金合计曲线，不代表真实时间加权组合收益，也不代表 LIVE 或真实交易表现。
+                            覆盖度：可比 run {curve.coverage.comparableRunCount} · 缺 equity {curve.coverage.missingEquityRunCount}
+                            {' '}· 不完整点 {curve.coverage.incompletePointCount}（共 {curve.pointCount} 个采样点）。
+                            每个时间点 sourceRunCount 为已在册 run 数，missingRunCount 为尚未起跑的可比 run 数。
                         </Typography.Text>
-                        <NqDataTable<PaperPortfolioCurvePoint>
-                            rowKey="timestamp"
-                            pagination={false}
-                            dataSource={[...points].slice(-12).reverse()}
-                            columns={portfolioCurveColumns()}
-                            scroll={{x: 900, y: 240}}
-                            locale={{emptyText: '暂无组合曲线采样点。'}}
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>
+                            该组合资金曲线仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。
+                            该曲线是组合资金合计曲线，不等同于严格时间加权收益。
+                        </Typography.Text>
+
+                        {/* 采样点表保留为可折叠辅助展示，保持数据透明度（默认折叠，避免与图表重复占屏） */}
+                        <Collapse
+                            size="small"
+                            items={[{
+                                key: 'curve-points',
+                                label: `组合曲线采样点（共 ${curve.pointCount}，展开查看最近 ${Math.min(points.length, 12)} 条）`,
+                                children: (
+                                    <NqDataTable<PaperPortfolioCurvePoint>
+                                        rowKey="timestamp"
+                                        pagination={false}
+                                        dataSource={[...points].slice(-12).reverse()}
+                                        columns={portfolioCurveColumns()}
+                                        scroll={{x: 900, y: 240}}
+                                        locale={{emptyText: '暂无组合曲线采样点。'}}
+                                    />
+                                ),
+                            }]}
                         />
                     </>
                 ) : (

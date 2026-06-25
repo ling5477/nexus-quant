@@ -18,3 +18,4 @@ export {NqAmountText, NqPercentText, NqPriceText, formatNqNumber} from '@/compon
 export {NqEmptyState, NqErrorState, NqLoadingState} from '@/components/nq/NqStates';
 export {NqEquityCurveChart} from '@/components/nq/charts/NqEquityCurveChart';
 export {NqDrawdownChart} from '@/components/nq/charts/NqDrawdownChart';
+export {NqPortfolioEquityChart, NqPortfolioDrawdownChart} from '@/components/nq/charts/NqPortfolioCurveChart';
