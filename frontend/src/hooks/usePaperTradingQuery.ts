@@ -33,6 +33,14 @@ export function usePaperRunSummaryQuery(paperRunId: string | null) {
     });
 }
 
+/** Paper 组合看板只读聚合；首屏即加载，单请求覆盖多 run 组合表现，不在前端逐 run 扇出。 */
+export function usePaperPortfolioSummaryQuery() {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.portfolioSummary(),
+        queryFn: () => paperTradingApi.portfolioSummary(),
+    });
+}
+
 export function usePaperTradingOrdersQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.orders(paperRunId ?? ''),

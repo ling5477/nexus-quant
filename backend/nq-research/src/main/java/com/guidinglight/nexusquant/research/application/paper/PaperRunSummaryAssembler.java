@@ -306,7 +306,8 @@ public final class PaperRunSummaryAssembler {
         return events;
     }
 
-    private static boolean isRiskBlocked(PaperRiskCheckResult latestRisk) {
+    /** 与组合看板共用的风控拦截判定口径（同包 {@link PaperPortfolioAssembler} 复用）。 */
+    static boolean isRiskBlocked(PaperRiskCheckResult latestRisk) {
         if (latestRisk == null) {
             return false;
         }

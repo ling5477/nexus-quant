@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.research.application.api.paper;
 
 import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioService;
+import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioSummary;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorRunService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoverCommand;
@@ -51,6 +53,7 @@ public class PaperTradingApiService {
     private final PaperRunStabilityCheckService stabilityCheckService;
     private final PaperRunMonitorRunService monitorRunService;
     private final PaperRunSummaryService summaryService;
+    private final PaperPortfolioService portfolioService;
 
     public PaperTradingApiService(
             PaperTradingRunService runService,
@@ -60,7 +63,8 @@ public class PaperTradingApiService {
             PaperRunRecoveryService recoveryService,
             PaperRunStabilityCheckService stabilityCheckService,
             PaperRunMonitorRunService monitorRunService,
-            PaperRunSummaryService summaryService
+            PaperRunSummaryService summaryService,
+            PaperPortfolioService portfolioService
     ) {
         this.runService = Objects.requireNonNull(runService, "runService must not be null");
         this.monitorService = Objects.requireNonNull(monitorService, "monitorService must not be null");
@@ -70,6 +74,7 @@ public class PaperTradingApiService {
         this.stabilityCheckService = Objects.requireNonNull(stabilityCheckService, "stabilityCheckService must not be null");
         this.monitorRunService = Objects.requireNonNull(monitorRunService, "monitorRunService must not be null");
         this.summaryService = Objects.requireNonNull(summaryService, "summaryService must not be null");
+        this.portfolioService = Objects.requireNonNull(portfolioService, "portfolioService must not be null");
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
@@ -118,6 +123,14 @@ public class PaperTradingApiService {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         }
+    }
+
+    /**
+     * Paper 组合看板只读聚合：跨多个 Paper run 汇总总览、策略/发布排行、Run 排行与数据质量。
+     * 只读，无 run 时返回稳定空结构，不触发任何状态机或外部调用。
+     */
+    public PaperPortfolioSummary portfolioSummary() {
+        return portfolioService.summarize();
     }
 
     public List<PaperTradingOrder> listOrders(String paperRunId) {

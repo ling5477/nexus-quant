@@ -1,0 +1,109 @@
+package com.guidinglight.nexusquant.research.application.paper;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * PaperPortfolioSummary —— Paper 组合看板只读聚合事实源（GateJ 后产品化 Loop-13）。
+ *
+ * 职责：把多个 Paper run 的已有事实（run / equity 快照 / 日报 / 风控 / 告警 / 成交计数 / 来源）
+ * 归纳为组合级总览、策略/发布维度排行、Run 排行与数据质量提示，供前端组合看板直接消费。
+ * 关键约束：
+ * 1) 纯派生，不写库、不触发任何状态机 / 下单 / 调度 / 回测 / 发布动作。
+ * 2) 只覆盖 SIM/Paper，不读取真实交易所账户余额，不代表 LIVE 或真实交易表现。
+ * 3) 所有收益率 / 回撤为比例值（如 0.1 表示 +10%，-0.25 表示回撤 25%）；
+ *    数据不足时相关字段为 null，不外推、不伪造收益率。
+ */
+public record PaperPortfolioSummary(
+        Overview overview,
+        List<Group> strategyGroups,
+        List<Group> publishGroups,
+        Highlights highlights,
+        DataQuality dataQuality
+) {
+
+    /**
+     * 组合总览。
+     * totalInitialEquity / totalCurrentEquity / totalPnl / totalReturn 仅基于「同时具备
+     * 当前权益与初始资金」的可比 run（returnEligibleRunCount），避免对不同口径的 run 求和后相减导致误导。
+     * worstRunDrawdown 为「按单 run 最大回撤统计」的最差值（最负的比例），无可计算回撤时为 null。
+     */
+    public record Overview(
+            int totalRuns,
+            int runningCount,
+            int stoppedCount,
+            int failedCount,
+            int cancelledCount,
+            int createdCount,
+            BigDecimal totalInitialEquity,
+            BigDecimal totalCurrentEquity,
+            BigDecimal totalPnl,
+            BigDecimal totalReturn,
+            int returnEligibleRunCount,
+            BigDecimal worstRunDrawdown,
+            int openAlertCount,
+            int riskBlockedRunCount,
+            int noTradeRunCount,
+            int dataInsufficientRunCount
+    ) {}
+
+    /**
+     * 策略版本 / 发布维度分组。
+     * currentEquity / totalPnl / totalReturn 仅基于组内可比 run；worstDrawdown 为组内最差单 run 回撤。
+     * lastRunTime 为组内最近活动时间（startedAt / stoppedAt / updatedAt / createdAt 取最大）。
+     */
+    public record Group(
+            String key,
+            int runCount,
+            BigDecimal currentEquity,
+            BigDecimal totalPnl,
+            BigDecimal totalReturn,
+            BigDecimal worstDrawdown,
+            int riskBlockedCount,
+            int openAlertCount,
+            Instant lastRunTime
+    ) {}
+
+    /**
+     * Run 维度精简引用，用于排行榜与数据质量清单。
+     * 金额 / 收益率 / 回撤字段可为 null（数据不足）。
+     */
+    public record RunRef(
+            String paperRunId,
+            String status,
+            String symbol,
+            String strategyVersionId,
+            String publishId,
+            BigDecimal currentEquity,
+            BigDecimal initialEquity,
+            BigDecimal totalPnl,
+            BigDecimal totalReturn,
+            BigDecimal maxDrawdown,
+            boolean riskBlocked,
+            int openAlertCount,
+            int tradeCount,
+            Instant lastActivityAt
+    ) {}
+
+    /**
+     * Run 排行：收益最高 / 回撤最大 / 风险最高 / 最近活跃为单个 run（可为 null）；
+     * 无交易 / 风控拦截为 run 清单（已截断到上限）。
+     */
+    public record Highlights(
+            RunRef topWinner,
+            RunRef worstDrawdown,
+            RunRef highestRisk,
+            RunRef mostRecent,
+            List<RunRef> noTradeRuns,
+            List<RunRef> riskBlockedRuns
+    ) {}
+
+    /** 数据质量提示：缺 equity / 数据不足 / 缺 backtest 来源 / 缺 publish 来源的 run 清单（已截断到上限）。 */
+    public record DataQuality(
+            List<RunRef> missingEquityRuns,
+            List<RunRef> dataInsufficientRuns,
+            List<RunRef> missingBacktestSourceRuns,
+            List<RunRef> missingPublishSourceRuns
+    ) {}
+}

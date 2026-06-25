@@ -225,6 +225,80 @@ const defaultSummary = {
     },
 };
 
+// Paper 组合看板默认聚合（Loop-13）：盈利 run + 亏损高回撤 run + 数据不足/无交易 run。
+// 前端组合看板直接消费后端 /portfolio/summary 单请求结果，无需对每个 run 扇出 summary。
+const PORTFOLIO_RUN_A = 'paper-portfolio-a';
+const PORTFOLIO_RUN_B = 'paper-portfolio-b';
+const PORTFOLIO_RUN_C = 'paper-portfolio-c';
+const portfolioRunA = {
+    paperRunId: PORTFOLIO_RUN_A, status: 'STOPPED', symbol: 'BTC-USDT',
+    strategyVersionId: 'sv-portfolio-1', publishId: 'pub-portfolio-1',
+    currentEquity: 120000, initialEquity: 100000, totalPnl: 20000, totalReturn: 0.2,
+    maxDrawdown: 0, riskBlocked: false, openAlertCount: 0, tradeCount: 5,
+    lastActivityAt: '2026-06-22T02:00:00Z',
+};
+const portfolioRunB = {
+    paperRunId: PORTFOLIO_RUN_B, status: 'STOPPED', symbol: 'ETH-USDT',
+    strategyVersionId: 'sv-portfolio-2', publishId: 'pub-portfolio-2',
+    currentEquity: 90000, initialEquity: 100000, totalPnl: -10000, totalReturn: -0.1,
+    maxDrawdown: -0.25, riskBlocked: true, openAlertCount: 2, tradeCount: 3,
+    lastActivityAt: '2026-06-21T02:00:00Z',
+};
+const portfolioRunC = {
+    paperRunId: PORTFOLIO_RUN_C, status: 'CREATED', symbol: 'SOL-USDT',
+    strategyVersionId: 'sv-portfolio-1', publishId: 'pub-portfolio-1',
+    currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
+    maxDrawdown: null, riskBlocked: false, openAlertCount: 0, tradeCount: 0,
+    lastActivityAt: '2026-06-20T00:00:00Z',
+};
+const defaultPortfolioSummary = {
+    overview: {
+        totalRuns: 3, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 1,
+        totalInitialEquity: 200000, totalCurrentEquity: 210000, totalPnl: 10000, totalReturn: 0.05,
+        returnEligibleRunCount: 2, worstRunDrawdown: -0.25, openAlertCount: 2,
+        riskBlockedRunCount: 1, noTradeRunCount: 1, dataInsufficientRunCount: 1,
+    },
+    strategyGroups: [
+        {key: 'sv-portfolio-1', runCount: 2, currentEquity: 120000, totalPnl: 20000, totalReturn: 0.2, worstDrawdown: 0, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z'},
+        {key: 'sv-portfolio-2', runCount: 1, currentEquity: 90000, totalPnl: -10000, totalReturn: -0.1, worstDrawdown: -0.25, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-21T02:00:00Z'},
+    ],
+    publishGroups: [
+        {key: 'pub-portfolio-1', runCount: 2, currentEquity: 120000, totalPnl: 20000, totalReturn: 0.2, worstDrawdown: 0, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z'},
+        {key: 'pub-portfolio-2', runCount: 1, currentEquity: 90000, totalPnl: -10000, totalReturn: -0.1, worstDrawdown: -0.25, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-21T02:00:00Z'},
+    ],
+    highlights: {
+        topWinner: portfolioRunA,
+        worstDrawdown: portfolioRunB,
+        highestRisk: portfolioRunB,
+        mostRecent: portfolioRunA,
+        noTradeRuns: [portfolioRunC],
+        riskBlockedRuns: [portfolioRunB],
+    },
+    dataQuality: {
+        missingEquityRuns: [portfolioRunC],
+        dataInsufficientRuns: [portfolioRunC],
+        missingBacktestSourceRuns: [portfolioRunC],
+        missingPublishSourceRuns: [],
+    },
+    safety: {
+        environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false,
+        message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现',
+    },
+};
+const emptyPortfolioSummary = {
+    overview: {
+        totalRuns: 0, runningCount: 0, stoppedCount: 0, failedCount: 0, cancelledCount: 0, createdCount: 0,
+        totalInitialEquity: null, totalCurrentEquity: null, totalPnl: null, totalReturn: null,
+        returnEligibleRunCount: 0, worstRunDrawdown: null, openAlertCount: 0,
+        riskBlockedRunCount: 0, noTradeRunCount: 0, dataInsufficientRunCount: 0,
+    },
+    strategyGroups: [],
+    publishGroups: [],
+    highlights: {topWinner: null, worstDrawdown: null, highestRisk: null, mostRecent: null, noTradeRuns: [], riskBlockedRuns: []},
+    dataQuality: {missingEquityRuns: [], dataInsufficientRuns: [], missingBacktestSourceRuns: [], missingPublishSourceRuns: []},
+    safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
+};
+
 type PaperLoopStubOptions = {
     seedRun?: boolean;
     status?: string;
@@ -243,6 +317,8 @@ type PaperLoopStubOptions = {
     runStrategyVersionId?: string | null;
     // summary 覆盖：传入对象即用作 /summary 响应；传入 null 时返回 null（前端回退到明细派生）。
     summary?: unknown;
+    // portfolio 覆盖：传入对象即用作 /portfolio/summary 响应（含空结构）；缺省用 defaultPortfolioSummary。
+    portfolioSummary?: unknown;
 };
 
 async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptions = {}): Promise<{setRunStatus: (status: string) => void}> {
@@ -317,6 +393,11 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/summary`, (route: Route) => route.fulfill({
         status: 200,
         json: ('summary' in options ? options.summary : defaultSummary) ?? null,
+    }));
+    // Paper 组合看板聚合路由（Loop-13）；缺省用 defaultPortfolioSummary，可注入空结构覆盖。
+    await page.route('**/api/paper-trading/portfolio/summary', (route: Route) => route.fulfill({
+        status: 200,
+        json: ('portfolioSummary' in options ? options.portfolioSummary : defaultPortfolioSummary) ?? null,
     }));
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/start`, (route: Route) => {
         currentRun = {
@@ -899,5 +980,67 @@ test.describe('paper trading product loop panel', () => {
         await expect.poll(() => calls.risk).toBeGreaterThan(0);
         // 订单只在切到订单 Tab 时请求过一次，未被重复全量拉取。
         expect(calls.positions).toBe(0);
+    });
+
+    test('Paper 组合看板展示组合总览、分组排行、Run 排行与数据质量提示', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const dashboard = page.getByRole('region', {name: 'Paper 组合看板'});
+        await expect(dashboard).toBeVisible();
+        // Paper-only / 不代表真实交易表现安全提示。
+        await expect(dashboard.getByText('跨多个 Paper run 只读汇总组合表现。')).toBeVisible();
+        await expect(dashboard.getByText('该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+
+        // 组合总览：总资产 / 总 PnL / 累计收益率 / 最大回撤 / 状态数量。
+        await expect(dashboard.getByText('Paper run 总数')).toBeVisible();
+        await expect(dashboard.getByText('当前总资产')).toBeVisible();
+        await expect(dashboard.getByText('210,000.00')).toBeVisible();            // 组合当前总资产
+        await expect(dashboard.getByText('累计收益率').first()).toBeVisible();
+        await expect(dashboard.getByText('+5.00%')).toBeVisible();                // 组合累计收益率 = 10000/200000
+        await expect(dashboard.getByText('-25.00%').first()).toBeVisible();       // 组合最大回撤（按单 run 统计）
+        await expect(dashboard.getByText('按单 run 最大回撤统计')).toBeVisible();
+        await expect(dashboard.getByText('RUNNING 数量')).toBeVisible();
+        await expect(dashboard.getByText(/状态分布：RUNNING 0 · STOPPED 2 · FAILED 0/)).toBeVisible();
+
+        // 策略 / 发布维度排行表。
+        await expect(dashboard.getByText('Strategy Version 收益排行')).toBeVisible();
+        await expect(dashboard.getByText('Publish 收益排行')).toBeVisible();
+        await expect(dashboard.getByText('sv-portfolio-1').first()).toBeVisible();
+        await expect(dashboard.getByText('sv-portfolio-2').first()).toBeVisible();
+        await expect(dashboard.getByText('pub-portfolio-1').first()).toBeVisible();
+        await expect(dashboard.getByText('+20.00%').first()).toBeVisible();       // 策略/发布组 A 累计收益率
+        await expect(dashboard.getByText('-10.00%').first()).toBeVisible();       // 策略/发布组 B 累计收益率
+
+        // Run 排行：收益最高 / 回撤最大 / 风险最高 / 最近活跃。
+        await expect(dashboard.getByText('收益最高')).toBeVisible();
+        await expect(dashboard.getByText('回撤最大')).toBeVisible();
+        await expect(dashboard.getByText('风险最高')).toBeVisible();
+        await expect(dashboard.getByText('最近活跃')).toBeVisible();
+        await expect(dashboard.getByText('风控拦截 run')).toBeVisible();
+        await expect(dashboard.getByText('无交易 run')).toBeVisible();
+        await expect(dashboard.getByText(PORTFOLIO_RUN_A).first()).toBeVisible(); // 收益最高 run
+        await expect(dashboard.getByText(PORTFOLIO_RUN_B).first()).toBeVisible(); // 回撤最大 / 风控拦截 run
+        await expect(dashboard.getByText(PORTFOLIO_RUN_C).first()).toBeVisible(); // 无交易 / 数据不足 run
+
+        // 数据质量提示。
+        await expect(dashboard.getByText('数据质量提示')).toBeVisible();
+        await expect(dashboard.getByText('缺 equity（1）')).toBeVisible();
+        await expect(dashboard.getByText('数据不足（1）')).toBeVisible();
+        await expect(dashboard.getByText('缺 backtest 来源（1）')).toBeVisible();
+        await expect(dashboard.getByText('缺 publish 来源（0）')).toBeVisible();
+    });
+
+    test('Paper 组合看板无 run 时展示空态且不伪造组合收益率', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {portfolioSummary: emptyPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const dashboard = page.getByRole('region', {name: 'Paper 组合看板'});
+        await expect(dashboard).toBeVisible();
+        await expect(dashboard.getByText('暂无 Paper run，创建并运行后自动汇总组合表现。')).toBeVisible();
+        await expect(dashboard.getByText('数据不足，无法计算组合收益率')).toBeVisible();
+        await expect(dashboard.getByText('该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
     });
 });

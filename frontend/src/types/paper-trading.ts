@@ -381,3 +381,88 @@ export interface PaperRunSummaryResponse {
     timeline: PaperRunSummaryTimelineEntry[];
     safety: PaperRunSummarySafety;
 }
+
+/**
+ * Paper 组合看板只读聚合响应（GateJ 后产品化 Loop-13）。
+ * 跨多个 Paper run 聚合组合总览、策略/发布排行、Run 排行与数据质量；
+ * 收益率 / 回撤为比例值，数据不足时为 null（不外推、不伪造收益率），仅代表 SIM/Paper。
+ */
+export interface PaperPortfolioOverview {
+    totalRuns: number;
+    runningCount: number;
+    stoppedCount: number;
+    failedCount: number;
+    cancelledCount: number;
+    createdCount: number;
+    totalInitialEquity: string | number | null;
+    totalCurrentEquity: string | number | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    returnEligibleRunCount: number;
+    worstRunDrawdown: string | number | null;
+    openAlertCount: number;
+    riskBlockedRunCount: number;
+    noTradeRunCount: number;
+    dataInsufficientRunCount: number;
+}
+
+export interface PaperPortfolioGroup {
+    key: string;
+    runCount: number;
+    currentEquity: string | number | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    worstDrawdown: string | number | null;
+    riskBlockedCount: number;
+    openAlertCount: number;
+    lastRunTime: string | null;
+}
+
+export interface PaperPortfolioRunRef {
+    paperRunId: string;
+    status: string;
+    symbol: string;
+    strategyVersionId: string | null;
+    publishId: string;
+    currentEquity: string | number | null;
+    initialEquity: string | number | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    maxDrawdown: string | number | null;
+    riskBlocked: boolean;
+    openAlertCount: number;
+    tradeCount: number;
+    lastActivityAt: string | null;
+}
+
+export interface PaperPortfolioHighlights {
+    topWinner: PaperPortfolioRunRef | null;
+    worstDrawdown: PaperPortfolioRunRef | null;
+    highestRisk: PaperPortfolioRunRef | null;
+    mostRecent: PaperPortfolioRunRef | null;
+    noTradeRuns: PaperPortfolioRunRef[];
+    riskBlockedRuns: PaperPortfolioRunRef[];
+}
+
+export interface PaperPortfolioDataQuality {
+    missingEquityRuns: PaperPortfolioRunRef[];
+    dataInsufficientRuns: PaperPortfolioRunRef[];
+    missingBacktestSourceRuns: PaperPortfolioRunRef[];
+    missingPublishSourceRuns: PaperPortfolioRunRef[];
+}
+
+export interface PaperPortfolioSafety {
+    environment: string;
+    liveEnabled: boolean;
+    realExchangeTouched: boolean;
+    message: string;
+}
+
+export interface PaperPortfolioSummaryResponse {
+    overview: PaperPortfolioOverview;
+    strategyGroups: PaperPortfolioGroup[];
+    publishGroups: PaperPortfolioGroup[];
+    highlights: PaperPortfolioHighlights;
+    dataQuality: PaperPortfolioDataQuality;
+    safety: PaperPortfolioSafety;
+}
