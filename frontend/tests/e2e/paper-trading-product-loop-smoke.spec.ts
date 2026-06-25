@@ -1043,4 +1043,70 @@ test.describe('paper trading product loop panel', () => {
         await expect(dashboard.getByText('数据不足，无法计算组合收益率')).toBeVisible();
         await expect(dashboard.getByText('该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
     });
+
+    test('Paper 风险与回撤驾驶舱展示风险总览、回撤排行与风控/无交易清单', async ({page}) => {
+        // 复用 Loop-13 组合 summary（runA 盈利低风险 / runB 亏损高回撤且风控拦截 / runC 无交易且数据不足）。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        await expect(risk).toBeVisible();
+
+        // Paper-only / 不代表真实交易风险安全提示。
+        await expect(risk.getByText('该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。')).toBeVisible();
+        await expect(risk.getByText('聚焦组合内最高风险、最大回撤、风控拦截、无交易与数据不足的 Paper run。')).toBeVisible();
+
+        // 1) 风险总览指标：最大回撤 / 风控拦截 / 未处理告警 / 无交易 / 数据不足 / FAILED·CANCELLED / 高风险。
+        const ddCard = risk.locator('.nq-metric-card', {hasText: '最大单 run 回撤'});
+        await expect(ddCard.locator('.nq-metric-card__value')).toContainText('-25.00%');
+        await expect(ddCard).toContainText('当前最大回撤 run：paper-portfolio-b');
+        await expect(risk.locator('.nq-metric-card', {hasText: '风控拦截 run'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.locator('.nq-metric-card', {hasText: '未处理告警'}).locator('.nq-metric-card__value')).toHaveText('2');
+        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.locator('.nq-metric-card', {hasText: '数据不足 run'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.locator('.nq-metric-card', {hasText: 'FAILED / CANCELLED'}).locator('.nq-metric-card__value')).toHaveText('0');
+        await expect(risk.getByText('FAILED 0 · CANCELLED 0')).toBeVisible();
+        await expect(risk.locator('.nq-metric-card', {hasText: '高风险 run 数'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.getByText('风控拦截 + 异常终态合计')).toBeVisible();
+
+        // 2) 回撤分析：阈值分布 + 排行 + 风险口径说明（不伪造当前回撤）。
+        await expect(risk.getByText('回撤分析')).toBeVisible();
+        await expect(risk.getByText('0% ~ -5%')).toBeVisible();
+        await expect(risk.getByText('-5% ~ -10%')).toBeVisible();
+        await expect(risk.getByText('-10% ~ -20%')).toBeVisible();
+        await expect(risk.getByText('< -20%')).toBeVisible();
+        await expect(risk.getByText('组合层真实时间序列回撤需后续 portfolio equity curve 支撑。')).toBeVisible();
+        await expect(risk.getByText('当前回撤 run 排行需 portfolio equity curve，暂以单 run 最大回撤为准，不伪造当前回撤。')).toBeVisible();
+        // 回撤排行表含高回撤 run 与低风险 run。
+        await expect(risk.getByText(PORTFOLIO_RUN_B).first()).toBeVisible();
+        await expect(risk.getByText(PORTFOLIO_RUN_A).first()).toBeVisible();
+
+        // 3) 风控与异常清单。
+        await expect(risk.getByText('风控与异常清单')).toBeVisible();
+        await expect(risk.getByText('未处理告警 run（1）')).toBeVisible();
+        await expect(risk.getByText('FAILED / CANCELLED run（共 0）')).toBeVisible();
+
+        // 4) 无交易 / 数据不足清单：无交易 run 与可能原因（runC 状态 CREATED → 尚未启动）。
+        await expect(risk.getByText('无交易 / 数据不足清单')).toBeVisible();
+        await expect(risk.getByText(PORTFOLIO_RUN_C).first()).toBeVisible();
+        await expect(risk.getByText('尚未启动', {exact: true})).toBeVisible();
+
+        // 5) 风险数据质量：缺 equity / 缺 PnL（runC currentEquity/totalPnl 均为 null）。
+        await expect(risk.getByText('风险数据质量')).toBeVisible();
+        await expect(risk.getByText('缺 equity snapshot（1）')).toBeVisible();
+        await expect(risk.getByText('缺 PnL（1）')).toBeVisible();
+    });
+
+    test('Paper 风险与回撤驾驶舱无 run 时展示空态且不伪造风险数值', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {portfolioSummary: emptyPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        await expect(risk).toBeVisible();
+        await expect(risk.getByText('暂无 Paper 风险数据，创建并运行 Paper run 后自动汇总风险与回撤。')).toBeVisible();
+        await expect(risk.getByText('数据不足，不展示回撤 / 风险数值')).toBeVisible();
+        await expect(risk.getByText('该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。')).toBeVisible();
+    });
 });

@@ -1579,6 +1579,8 @@ export function PaperTradingPage() {
 
                 <PaperPortfolioDashboard query={portfolioQuery}/>
 
+                <PaperRiskDrawdownDashboard query={portfolioQuery}/>
+
                 <NqFilterBar
                     actions={(
                         <Space>
@@ -2870,6 +2872,366 @@ function PaperPortfolioDashboardBody({portfolio}: {portfolio: PaperPortfolioSumm
                         </Descriptions.Item>
                         <Descriptions.Item label={`数据不足（${dataQuality.dataInsufficientRuns.length}）`}>
                             {renderRunRefTags(dataQuality.dataInsufficientRuns)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label={`缺 backtest 来源（${dataQuality.missingBacktestSourceRuns.length}）`}>
+                            {renderRunRefTags(dataQuality.missingBacktestSourceRuns)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label={`缺 publish 来源（${dataQuality.missingPublishSourceRuns.length}）`}>
+                            {renderRunRefTags(dataQuality.missingPublishSourceRuns)}
+                        </Descriptions.Item>
+                    </Descriptions>
+                </Space>
+            </Card>
+        </Space>
+    );
+}
+
+/**
+ * 汇总组合看板里出现过的「风险相关 run 引用」（highlights + dataQuality 去重）。
+ * 注意：组合 summary 不下发全量 run 清单，本池为风险相关子集（含 top/worst/highestRisk/mostRecent
+ * 与无交易 / 风控拦截 / 数据质量清单），用于回撤排行与阈值分布派生；展示层会显式标注口径，避免误读为全量。
+ */
+function collectRiskRunPool(portfolio: PaperPortfolioSummaryResponse): PaperPortfolioRunRef[] {
+    const {highlights, dataQuality} = portfolio;
+    const byId = new Map<string, PaperPortfolioRunRef>();
+    const push = (run: PaperPortfolioRunRef | null | undefined) => {
+        if (run && !byId.has(run.paperRunId)) {
+            byId.set(run.paperRunId, run);
+        }
+    };
+    push(highlights.topWinner);
+    push(highlights.worstDrawdown);
+    push(highlights.highestRisk);
+    push(highlights.mostRecent);
+    highlights.noTradeRuns.forEach(push);
+    highlights.riskBlockedRuns.forEach(push);
+    dataQuality.missingEquityRuns.forEach(push);
+    dataQuality.dataInsufficientRuns.forEach(push);
+    dataQuality.missingBacktestSourceRuns.forEach(push);
+    dataQuality.missingPublishSourceRuns.forEach(push);
+    return Array.from(byId.values());
+}
+
+/** 单 run 最大回撤（比例值，<=0）落桶；null 视为数据不足，不参与回撤分桶（不伪造回撤）。 */
+const RISK_DRAWDOWN_BUCKETS: ReadonlyArray<{key: string; match: (dd: number) => boolean}> = [
+    {key: '0% ~ -5%', match: (dd) => dd > -0.05},
+    {key: '-5% ~ -10%', match: (dd) => dd <= -0.05 && dd > -0.1},
+    {key: '-10% ~ -20%', match: (dd) => dd <= -0.1 && dd > -0.2},
+    {key: '< -20%', match: (dd) => dd <= -0.2},
+];
+
+/** 无交易 run 的可能原因（基于组合 summary 可得字段派生，不臆测策略内部行为）。 */
+function deriveNoTradeCause(
+    run: PaperPortfolioRunRef,
+    dataInsufficientIds: Set<string>,
+    missingEquityIds: Set<string>,
+): {label: string; tone: NqStatusTone} {
+    if (run.riskBlocked) {
+        return {label: '风控拦截', tone: 'danger'};
+    }
+    if (run.status === 'FAILED' || run.status === 'CANCELLED') {
+        return {label: '异常结束', tone: 'danger'};
+    }
+    if (run.status === 'CREATED') {
+        return {label: '尚未启动', tone: 'neutral'};
+    }
+    if (dataInsufficientIds.has(run.paperRunId) || missingEquityIds.has(run.paperRunId)) {
+        return {label: '数据不足', tone: 'warning'};
+    }
+    return {label: '策略未触发', tone: 'info'};
+}
+
+/** 风险 run 表通用列：run / 状态 / 策略版本+发布 / 当前权益 / 总 PnL / 最大回撤 / 未处理告警 / 最近活跃。 */
+function riskRunColumns(): ColumnsType<PaperPortfolioRunRef> {
+    return [
+        {title: 'Paper Run', dataIndex: 'paperRunId', key: 'paperRunId', width: 180, render: (v: string) => <span className="nq-mono">{v}</span>},
+        {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v}/>},
+        {
+            title: '策略版本 / 发布',
+            key: 'lineage',
+            width: 200,
+            render: (_: unknown, run: PaperPortfolioRunRef) => (
+                <Space direction="vertical" size={0}>
+                    <span className="nq-mono" style={{fontSize: 11}}>{run.strategyVersionId ?? '(未绑定策略版本)'}</span>
+                    <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 11}}>{run.publishId || '(未知发布)'}</Typography.Text>
+                </Space>
+            ),
+        },
+        nqNumericColumn({title: '当前权益', dataIndex: 'currentEquity', key: 'currentEquity', width: 120, render: (v) => <NqAmountText value={v as string | number | null}/>}),
+        nqNumericColumn({
+            title: '总 PnL',
+            dataIndex: 'totalPnl',
+            key: 'totalPnl',
+            width: 120,
+            render: (v) => (v === null || v === undefined
+                ? <Typography.Text type="secondary">数据不足</Typography.Text>
+                : <NqAmountText value={v as string | number} signed colorBySign/>),
+        }),
+        nqNumericColumn({
+            title: '最大回撤',
+            dataIndex: 'maxDrawdown',
+            key: 'maxDrawdown',
+            width: 110,
+            render: (v) => (v === null || v === undefined
+                ? <Typography.Text type="secondary">数据不足</Typography.Text>
+                : <NqPercentText value={v as string | number} ratio signed={false}/>),
+        }),
+        nqNumericColumn({title: '未处理告警', dataIndex: 'openAlertCount', key: 'openAlertCount', width: 100}),
+        {title: '最近活跃', dataIndex: 'lastActivityAt', key: 'lastActivityAt', width: 170, render: (v: string | null) => formatDateTime(v)},
+    ];
+}
+
+/**
+ * PaperRiskDrawdownDashboard —— Paper 风险与回撤驾驶舱（GateJ 后产品化 Loop-14）。
+ * 复用 Loop-13 组合 summary 单请求结果，把「风险面」从组合看板中独立出来只读派生：
+ * 风险总览、回撤分析（阈值分布 + 单 run 最大回撤排行）、风控与异常清单、无交易 / 数据不足清单、数据质量。
+ * 仅代表 SIM/Paper 模拟运行，不读真实交易所账户余额，不代表 LIVE 或真实交易风险；数据不足不伪造回撤。
+ */
+function PaperRiskDrawdownDashboard({query}: {query: ReturnType<typeof usePaperPortfolioSummaryQuery>}) {
+    const raw = query.data;
+    const portfolio: PaperPortfolioSummaryResponse | null =
+        raw && !Array.isArray(raw) && (raw as PaperPortfolioSummaryResponse).overview
+            ? (raw as PaperPortfolioSummaryResponse)
+            : null;
+
+    return (
+      <section aria-label="Paper 风险与回撤驾驶舱">
+        <Card
+            className="page-section"
+            bordered={false}
+            title="Paper 风险与回撤驾驶舱"
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · LIVE 未开启</Typography.Text>}
+        >
+            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                <NqRiskBanner
+                    level="warning"
+                    message="聚焦组合内最高风险、最大回撤、风控拦截、无交易与数据不足的 Paper run。"
+                    description="该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。"
+                />
+                {query.error ? (
+                    <NqErrorState
+                        title="Paper 风险与回撤驾驶舱加载失败"
+                        error={query.error as AppApiError}
+                        onRetry={() => query.refetch()}
+                    />
+                ) : query.isFetching && !portfolio ? (
+                    <NqLoadingState/>
+                ) : !portfolio || portfolio.overview.totalRuns === 0 ? (
+                    <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                        <NqEmptyState description="暂无 Paper 风险数据，创建并运行 Paper run 后自动汇总风险与回撤。"/>
+                        <Typography.Text type="warning" style={{fontSize: 12}}>数据不足，不展示回撤 / 风险数值</Typography.Text>
+                    </Space>
+                ) : (
+                    <PaperRiskDrawdownBody portfolio={portfolio}/>
+                )}
+            </Space>
+        </Card>
+      </section>
+    );
+}
+
+function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryResponse}) {
+    const {overview, highlights, dataQuality} = portfolio;
+
+    const pool = collectRiskRunPool(portfolio);
+    const dataInsufficientIds = new Set(dataQuality.dataInsufficientRuns.map((r) => r.paperRunId));
+    const missingEquityIds = new Set(dataQuality.missingEquityRuns.map((r) => r.paperRunId));
+
+    // 回撤排行：池内有最大回撤的 run 按最负优先排序；无回撤的 run 单列「数据不足」，不伪造回撤。
+    const drawdownRanked = pool
+        .filter((r) => toNullableNumber(r.maxDrawdown) !== null)
+        .sort((a, b) => (toNullableNumber(a.maxDrawdown) ?? 0) - (toNullableNumber(b.maxDrawdown) ?? 0));
+    const drawdownInsufficient = pool.filter((r) => toNullableNumber(r.maxDrawdown) === null);
+
+    // 回撤阈值分布：仅对有回撤的 run 分桶；数据不足单独计数。
+    const bucketCounts = RISK_DRAWDOWN_BUCKETS.map((bucket) => ({
+        key: bucket.key,
+        count: drawdownRanked.filter((r) => bucket.match(toNullableNumber(r.maxDrawdown) ?? 0)).length,
+    }));
+
+    // 异常 / 风险细分清单（均来自组合 summary 已下发的风险相关子集）。
+    const openAlertRuns = pool.filter((r) => r.openAlertCount > 0);
+    const failedCancelledRuns = pool.filter((r) => r.status === 'FAILED' || r.status === 'CANCELLED');
+    const missingPnlRuns = pool.filter((r) => toNullableNumber(r.totalPnl) === null);
+
+    // 高风险 run 数：风控拦截 + 异常终态（按 overview 权威计数合计，定义在 footer 明示，避免误读）。
+    const failedCancelledCount = overview.failedCount + overview.cancelledCount;
+    const highRiskCount = overview.riskBlockedRunCount + failedCancelledCount;
+
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            {/* 1) 风险总览指标 */}
+            <div className="nq-status-strip">
+                <NqMetricCard
+                    label="最大单 run 回撤"
+                    value={overview.worstRunDrawdown !== null
+                        ? <NqPercentText value={overview.worstRunDrawdown} ratio signed={false}/>
+                        : '-'}
+                    tone="warning"
+                    footer={highlights.worstDrawdown ? `当前最大回撤 run：${highlights.worstDrawdown.paperRunId}` : '按单 run 最大回撤统计'}
+                />
+                <NqMetricCard
+                    label="风控拦截 run"
+                    value={String(overview.riskBlockedRunCount)}
+                    tone={overview.riskBlockedRunCount > 0 ? 'danger' : 'muted'}
+                />
+                <NqMetricCard
+                    label="未处理告警"
+                    value={String(overview.openAlertCount)}
+                    tone={overview.openAlertCount > 0 ? 'warning' : 'muted'}
+                />
+                <NqMetricCard
+                    label="无交易 run"
+                    value={String(overview.noTradeRunCount)}
+                    tone={overview.noTradeRunCount > 0 ? 'warning' : 'muted'}
+                />
+                <NqMetricCard
+                    label="数据不足 run"
+                    value={String(overview.dataInsufficientRunCount)}
+                    tone={overview.dataInsufficientRunCount > 0 ? 'warning' : 'muted'}
+                />
+                <NqMetricCard
+                    label="FAILED / CANCELLED"
+                    value={String(failedCancelledCount)}
+                    tone={failedCancelledCount > 0 ? 'danger' : 'muted'}
+                    footer={`FAILED ${overview.failedCount} · CANCELLED ${overview.cancelledCount}`}
+                />
+                <NqMetricCard
+                    label="高风险 run 数"
+                    value={String(highRiskCount)}
+                    tone={highRiskCount > 0 ? 'danger' : 'muted'}
+                    footer="风控拦截 + 异常终态合计"
+                />
+            </div>
+
+            {/* 2) 回撤分析 */}
+            <Card size="small" title="回撤分析">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <div className="nq-status-strip">
+                        {bucketCounts.map((bucket) => (
+                            <NqMetricCard
+                                key={bucket.key}
+                                label={bucket.key}
+                                value={String(bucket.count)}
+                                tone={bucket.count > 0 && (bucket.key === '-10% ~ -20%' || bucket.key === '< -20%') ? 'danger' : 'default'}
+                            />
+                        ))}
+                        <NqMetricCard
+                            label="数据不足"
+                            value={String(drawdownInsufficient.length)}
+                            tone={drawdownInsufficient.length > 0 ? 'warning' : 'muted'}
+                            footer="无 equity / 无法计算回撤"
+                        />
+                    </div>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                        回撤阈值分布与排行均按单 run 最大回撤统计；组合层真实时间序列回撤需后续 portfolio equity curve 支撑。
+                        当前回撤 run 排行需 portfolio equity curve，暂以单 run 最大回撤为准，不伪造当前回撤。
+                    </Typography.Text>
+                    <NqDataTable<PaperPortfolioRunRef>
+                        rowKey="paperRunId"
+                        pagination={false}
+                        dataSource={drawdownRanked}
+                        columns={riskRunColumns()}
+                        scroll={{x: 1100, y: 260}}
+                        locale={{emptyText: '暂无可计算最大回撤的 Paper run。'}}
+                    />
+                    {drawdownInsufficient.length > 0 ? (
+                        <Descriptions bordered size="small" column={1}>
+                            <Descriptions.Item label={`数据不足（无回撤，${drawdownInsufficient.length}）`}>
+                                {renderRunRefTags(drawdownInsufficient)}
+                            </Descriptions.Item>
+                        </Descriptions>
+                    ) : null}
+                </Space>
+            </Card>
+
+            {/* 3) 风控与异常清单 */}
+            <Card size="small" title="风控与异常清单">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                        风控拦截与未处理告警优先处理；FAILED / CANCELLED 为异常终态，需复盘运行原因。
+                    </Typography.Text>
+                    <NqDataTable<PaperPortfolioRunRef>
+                        rowKey="paperRunId"
+                        pagination={false}
+                        dataSource={highlights.riskBlockedRuns}
+                        columns={riskRunColumns()}
+                        scroll={{x: 1100, y: 220}}
+                        locale={{emptyText: '暂无被风控拦截的 Paper run。'}}
+                    />
+                    <Descriptions bordered size="small" column={1}>
+                        <Descriptions.Item label={`未处理告警 run（${openAlertRuns.length}）`}>
+                            {renderRunRefTags(openAlertRuns)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label={`FAILED / CANCELLED run（共 ${failedCancelledCount}）`}>
+                            {failedCancelledRuns.length > 0 ? renderRunRefTags(failedCancelledRuns) : (
+                                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                    {failedCancelledCount > 0 ? '异常终态 run 未在风险清单样本中，详见下方 Paper run 列表。' : '无'}
+                                </Typography.Text>
+                            )}
+                        </Descriptions.Item>
+                    </Descriptions>
+                </Space>
+            </Card>
+
+            {/* 4) 无交易 / 数据不足清单 */}
+            <Card size="small" title="无交易 / 数据不足清单">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <NqDataTable<PaperPortfolioRunRef>
+                        rowKey="paperRunId"
+                        pagination={false}
+                        dataSource={highlights.noTradeRuns}
+                        columns={[
+                            {title: 'Paper Run', dataIndex: 'paperRunId', key: 'paperRunId', width: 180, render: (v: string) => <span className="nq-mono">{v}</span>},
+                            {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v}/>},
+                            {
+                                title: '可能原因',
+                                key: 'cause',
+                                width: 120,
+                                render: (_: unknown, run: PaperPortfolioRunRef) => {
+                                    const cause = deriveNoTradeCause(run, dataInsufficientIds, missingEquityIds);
+                                    return <NqStatusTag status={cause.label} tone={cause.tone}/>;
+                                },
+                            },
+                            {
+                                title: '策略版本 / 发布',
+                                key: 'lineage',
+                                width: 200,
+                                render: (_: unknown, run: PaperPortfolioRunRef) => (
+                                    <Space direction="vertical" size={0}>
+                                        <span className="nq-mono" style={{fontSize: 11}}>{run.strategyVersionId ?? '(未绑定策略版本)'}</span>
+                                        <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 11}}>{run.publishId || '(未知发布)'}</Typography.Text>
+                                    </Space>
+                                ),
+                            },
+                            {title: '最近活跃', dataIndex: 'lastActivityAt', key: 'lastActivityAt', width: 170, render: (v: string | null) => formatDateTime(v)},
+                        ]}
+                        scroll={{x: 780, y: 220}}
+                        locale={{emptyText: '暂无无交易的 Paper run。'}}
+                    />
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                        无交易可能由策略未触发、风控拦截、数据不足或 run 尚未启动 / 异常结束导致；组合 summary 暂不区分「无订单」与「有订单无成交」，详细需查看单 run。
+                    </Typography.Text>
+                    <Descriptions bordered size="small" column={1}>
+                        <Descriptions.Item label={`数据不足 run（${dataQuality.dataInsufficientRuns.length}）`}>
+                            {renderRunRefTags(dataQuality.dataInsufficientRuns)}
+                        </Descriptions.Item>
+                    </Descriptions>
+                </Space>
+            </Card>
+
+            {/* 5) 数据质量分析 */}
+            <Card size="small" title="风险数据质量">
+                <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                        缺 equity / 初始资金 / PnL / 来源的 run 无法参与回撤与收益风险评估，已明确标注，不以缺省值伪造风险。
+                    </Typography.Text>
+                    <Descriptions bordered size="small" column={1}>
+                        <Descriptions.Item label={`缺 equity snapshot（${dataQuality.missingEquityRuns.length}）`}>
+                            {renderRunRefTags(dataQuality.missingEquityRuns)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label={`缺 PnL（${missingPnlRuns.length}）`}>
+                            {renderRunRefTags(missingPnlRuns)}
                         </Descriptions.Item>
                         <Descriptions.Item label={`缺 backtest 来源（${dataQuality.missingBacktestSourceRuns.length}）`}>
                             {renderRunRefTags(dataQuality.missingBacktestSourceRuns)}
