@@ -41,8 +41,9 @@ public final class PaperPortfolioAssembler {
 
     /**
      * 单个 Paper run 的聚合输入；全部为已查询出的只读事实，由 {@code PaperPortfolioService} 装配。
-     * openAlertCount / tradeCount 直接传计数（看板只需计数，避免无谓传递告警与成交明细，
+     * openAlertCount / orderCount / tradeCount 直接传计数（看板只需计数，避免无谓传递告警、订单与成交明细，
      * 也便于仓储以 GROUP BY 批量聚合）；hasPublishSource / hasBacktestSource 由 service 依据 publish 记录预先判定。
+     * orderCount 用于把「无交易」精确拆分为「无订单」与「有订单无成交」（Loop-18）。
      */
     public record RunInput(
             PaperTradingRun run,
@@ -50,6 +51,7 @@ public final class PaperPortfolioAssembler {
             List<PaperRunDailyReport> dailyReports,
             List<PaperRiskCheckResult> riskResults,
             int openAlertCount,
+            int orderCount,
             int tradeCount,
             boolean hasPublishSource,
             boolean hasBacktestSource
@@ -60,7 +62,11 @@ public final class PaperPortfolioAssembler {
             PaperPortfolioSummary.RunRef ref,
             boolean hasEquity,
             boolean dataInsufficient,
-            boolean noTrade
+            boolean noTrade,
+            // Loop-18：执行进度三态（互斥穷尽），用于组合 / 分组级精确计数。noTrade == noOrder || orderNoFill。
+            boolean noOrder,
+            boolean orderNoFill,
+            boolean hasFill
     ) {}
 
     public static PaperPortfolioSummary assemble(List<RunInput> inputs) {
@@ -121,6 +127,13 @@ public final class PaperPortfolioAssembler {
 
         boolean riskBlocked = PaperRunSummaryAssembler.isRiskBlocked(latestRisk(input.riskResults()));
         int openAlertCount = Math.max(0, input.openAlertCount());
+        int orderCount = Math.max(0, input.orderCount());
+        int tradeCount = Math.max(0, input.tradeCount());
+
+        // 执行进度三态（互斥穷尽）：成交优先（成交必然隐含订单）；其次有订单无成交；最后无订单。
+        boolean hasFill = tradeCount > 0;
+        boolean orderNoFill = !hasFill && orderCount > 0;
+        boolean noOrder = !hasFill && orderCount == 0;
 
         var ref = new PaperPortfolioSummary.RunRef(
                 run.paperRunId(),
@@ -135,13 +148,18 @@ public final class PaperPortfolioAssembler {
                 maxDrawdown,
                 riskBlocked,
                 openAlertCount,
-                input.tradeCount(),
+                orderCount,
+                tradeCount,
+                noOrder,
+                orderNoFill,
+                hasFill,
                 lastActivityAt(run));
 
         boolean hasEquity = !points.isEmpty();
         boolean dataInsufficient = currentEquity == null || initialEquity == null;
-        boolean noTrade = input.tradeCount() == 0;
-        return new RunMetrics(ref, hasEquity, dataInsufficient, noTrade);
+        // noTrade 旧口径不变（tradeCount==0），等价于 noOrder || orderNoFill。
+        boolean noTrade = tradeCount == 0;
+        return new RunMetrics(ref, hasEquity, dataInsufficient, noTrade, noOrder, orderNoFill, hasFill);
     }
 
     private static BigDecimal computeMaxDrawdown(List<EquityPoint> points) {
@@ -177,6 +195,9 @@ public final class PaperPortfolioAssembler {
         int riskBlocked = 0;
         int noTrade = 0;
         int dataInsufficient = 0;
+        int noOrder = 0;
+        int orderNoFill = 0;
+        int filled = 0;
         int returnEligible = 0;
         BigDecimal totalCurrent = BigDecimal.ZERO;
         BigDecimal totalInitial = BigDecimal.ZERO;
@@ -198,6 +219,16 @@ public final class PaperPortfolioAssembler {
             }
             if (m.noTrade()) {
                 noTrade++;
+            }
+            // 执行进度三态互斥计数（合计恒等于 totalRuns）。
+            if (m.noOrder()) {
+                noOrder++;
+            }
+            if (m.orderNoFill()) {
+                orderNoFill++;
+            }
+            if (m.hasFill()) {
+                filled++;
             }
             if (m.dataInsufficient()) {
                 dataInsufficient++;
@@ -221,7 +252,8 @@ public final class PaperPortfolioAssembler {
                 returnEligible > 0 ? totalInitial : null,
                 returnEligible > 0 ? totalCurrent : null,
                 totalPnl, totalReturn, returnEligible,
-                worstDrawdown, openAlerts, riskBlocked, noTrade, dataInsufficient);
+                worstDrawdown, openAlerts, riskBlocked, noTrade, dataInsufficient,
+                noOrder, orderNoFill, filled);
     }
 
     // ---- 分组排行 ----
@@ -246,6 +278,11 @@ public final class PaperPortfolioAssembler {
             int openAlerts = 0;
             int noTrade = 0;
             int dataInsufficient = 0;
+            int orderCountSum = 0;
+            int tradeCountSum = 0;
+            int noOrder = 0;
+            int orderNoFill = 0;
+            int filled = 0;
             int running = 0;
             int stopped = 0;
             int failed = 0;
@@ -268,6 +305,18 @@ public final class PaperPortfolioAssembler {
                 // 组内精确计数基于完整 bounded run 子集（members 来自全部 inputs，非 highlights 截断），口径稳定。
                 if (m.noTrade()) {
                     noTrade++;
+                }
+                orderCountSum += ref.orderCount();
+                tradeCountSum += ref.tradeCount();
+                // 执行进度三态互斥计数（合计恒等于 runCount，且 noOrder + orderNoFill == noTrade）。
+                if (m.noOrder()) {
+                    noOrder++;
+                }
+                if (m.orderNoFill()) {
+                    orderNoFill++;
+                }
+                if (m.hasFill()) {
+                    filled++;
                 }
                 if (m.dataInsufficient()) {
                     dataInsufficient++;
@@ -307,7 +356,12 @@ public final class PaperPortfolioAssembler {
                     stopped,
                     failed,
                     cancelled,
-                    created));
+                    created,
+                    orderCountSum,
+                    tradeCountSum,
+                    noOrder,
+                    orderNoFill,
+                    filled));
         }
 
         // 排序：先按总 PnL 降序（null 收益排末尾），再按 run 数降序，保证盈利组靠前、稳定可读。

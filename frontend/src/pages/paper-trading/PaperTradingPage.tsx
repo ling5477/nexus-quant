@@ -2949,6 +2949,21 @@ function deriveNoTradeCause(
     return {label: '策略未触发', tone: 'info'};
 }
 
+/**
+ * 无交易 run 的执行进度细分（Loop-18）：基于后端 run 级 noOrder / orderNoFill 标记，
+ * 区分「无订单」与「有订单无成交」；旧后端缺该标记时回退到「无成交」泛标签，不臆测。
+ */
+function deriveExecProgress(run: PaperPortfolioRunRef): {label: string; tone: NqStatusTone; hint: string} {
+    if (run.orderNoFill) {
+        return {label: '有订单无成交', tone: 'warning', hint: '撮合 / 价格条件未满足或流动性模拟不足'};
+    }
+    if (run.noOrder) {
+        return {label: '无订单', tone: 'info', hint: '策略未触发 / 尚未启动 / 数据不足'};
+    }
+    // 旧后端无 order 拆分字段（noOrder/orderNoFill 均缺失）：泛标签兜底，不伪造拆分。
+    return {label: '无成交', tone: 'neutral', hint: '需查看单 run 订单与成交明细'};
+}
+
 /** 风险 run 表通用列：run / 状态 / 策略版本+发布 / 当前权益 / 总 PnL / 最大回撤 / 未处理告警 / 最近活跃。 */
 function riskRunColumns(): ColumnsType<PaperPortfolioRunRef> {
     return [
@@ -3200,6 +3215,13 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
     const failedCancelledCount = overview.failedCount + overview.cancelledCount;
     const highRiskCount = overview.riskBlockedRunCount + failedCancelledCount;
 
+    // Loop-18：把「无交易」按后端精确口径拆为「无订单」与「有订单无成交」。
+    // 旧后端缺该拆分字段时 footer 退化为提示「单 run 查看」，不伪造拆分计数。
+    const hasOrderSplit = overview.noOrderRunCount !== undefined && overview.orderNoFillRunCount !== undefined;
+    const noTradeSplitFooter = hasOrderSplit
+        ? `无订单 ${overview.noOrderRunCount} · 有订单无成交 ${overview.orderNoFillRunCount}`
+        : '无订单 / 有订单无成交需查看单 run';
+
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             {/* 1) 风险总览指标 */}
@@ -3226,6 +3248,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                     label="无交易 run"
                     value={String(overview.noTradeRunCount)}
                     tone={overview.noTradeRunCount > 0 ? 'warning' : 'muted'}
+                    footer={noTradeSplitFooter}
                 />
                 <NqMetricCard
                     label="数据不足 run"
@@ -3339,6 +3362,21 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                                 },
                             },
                             {
+                                // Loop-18：执行进度细分（无订单 / 有订单无成交），基于后端 run 级标记，附原因提示。
+                                title: '执行进度',
+                                key: 'execProgress',
+                                width: 160,
+                                render: (_: unknown, run: PaperPortfolioRunRef) => {
+                                    const prog = deriveExecProgress(run);
+                                    return (
+                                        <Space direction="vertical" size={0}>
+                                            <NqStatusTag status={prog.label} tone={prog.tone}/>
+                                            <Typography.Text type="secondary" style={{fontSize: 11}}>{prog.hint}</Typography.Text>
+                                        </Space>
+                                    );
+                                },
+                            },
+                            {
                                 title: '策略版本 / 发布',
                                 key: 'lineage',
                                 width: 200,
@@ -3351,11 +3389,12 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                             },
                             {title: '最近活跃', dataIndex: 'lastActivityAt', key: 'lastActivityAt', width: 170, render: (v: string | null) => formatDateTime(v)},
                         ]}
-                        scroll={{x: 780, y: 220}}
+                        scroll={{x: 940, y: 220}}
                         locale={{emptyText: '暂无无交易的 Paper run。'}}
                     />
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        无交易可能由策略未触发、风控拦截、数据不足或 run 尚未启动 / 异常结束导致；组合 summary 暂不区分「无订单」与「有订单无成交」，详细需查看单 run。
+                        无交易已按执行进度细分为「无订单」（策略未触发 / 尚未启动 / 数据不足）与「有订单无成交」（撮合 / 价格条件未满足或流动性模拟不足）；
+                        旧后端响应缺该拆分字段时回退为「无成交」泛标签，详细仍可查看单 run。
                     </Typography.Text>
                     <Descriptions bordered size="small" column={1}>
                         <Descriptions.Item label={`数据不足 run（${dataQuality.dataInsufficientRuns.length}）`}>
@@ -3405,6 +3444,11 @@ interface PaperStrategyRankingRow {
     noTradeCount: number;
     dataInsufficientCount: number;
     failedCancelledCount: number;
+    // Loop-18：把无交易拆为无订单 / 有订单无成交，并显式有成交。无订单 / 有订单无成交在旧后端无法拆分时为 null（显示「-」）；
+    // 有成交可由 runCount - noTradeCount 稳定派生，恒为 number。
+    noOrderCount: number | null;
+    orderNoFillCount: number | null;
+    filledRunCount: number;
     score: number | null;
 }
 
@@ -3457,6 +3501,11 @@ function buildRankingRows(
         const noTradeCount = group.noTradeCount ?? (noTradeByKey.get(group.key) ?? 0);
         const dataInsufficientCount = group.dataInsufficientCount ?? (dataInsufficientByKey.get(group.key) ?? 0);
         const failedCancelledCount = (group.failedCount ?? 0) + (group.cancelledCount ?? 0);
+        // Loop-18：无订单 / 有订单无成交需后端拆分字段，缺失则为 null（列显示「-」，不臆造拆分）；
+        // 有成交可由 runCount - noTradeCount 稳定派生（noTradeCount == 无订单 + 有订单无成交）。
+        const noOrderCount = group.noOrderCount ?? null;
+        const orderNoFillCount = group.orderNoFillCount ?? null;
+        const filledRunCount = group.filledRunCount ?? Math.max(0, group.runCount - noTradeCount);
         return {
             key: group.key,
             runCount: group.runCount,
@@ -3470,6 +3519,9 @@ function buildRankingRows(
             noTradeCount,
             dataInsufficientCount,
             failedCancelledCount,
+            noOrderCount,
+            orderNoFillCount,
+            filledRunCount,
             score: riskAdjustedScore(group, dataInsufficientCount),
         };
     });
@@ -3539,6 +3591,9 @@ function rankingColumns(keyTitle: string): ColumnsType<PaperStrategyRankingRow> 
         nqNumericColumn({title: '风控拦截', dataIndex: 'riskBlockedCount', key: 'riskBlockedCount', width: 84}),
         nqNumericColumn({title: '告警', dataIndex: 'openAlertCount', key: 'openAlertCount', width: 72}),
         nqNumericColumn({title: '无交易', dataIndex: 'noTradeCount', key: 'noTradeCount', width: 76}),
+        nqNumericColumn({title: '无订单', dataIndex: 'noOrderCount', key: 'noOrderCount', width: 76, render: (v) => (v === null || v === undefined ? '-' : String(v))}),
+        nqNumericColumn({title: '有单无成交', dataIndex: 'orderNoFillCount', key: 'orderNoFillCount', width: 96, render: (v) => (v === null || v === undefined ? '-' : String(v))}),
+        nqNumericColumn({title: '有成交', dataIndex: 'filledRunCount', key: 'filledRunCount', width: 76}),
         nqNumericColumn({title: '数据不足', dataIndex: 'dataInsufficientCount', key: 'dataInsufficientCount', width: 84}),
         nqNumericColumn({title: '异常终态', dataIndex: 'failedCancelledCount', key: 'failedCancelledCount', width: 84}),
         nqNumericColumn({title: '风险调整分', dataIndex: 'score', key: 'score', width: 110, render: (v) => renderScore(v as number | null)}),
@@ -3676,7 +3731,7 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     pagination={false}
                     dataSource={strategyRows}
                     columns={rankingColumns('策略版本')}
-                    scroll={{x: 1360, y: 280}}
+                    scroll={{x: 1610, y: 280}}
                     locale={{emptyText: '暂无可分组的策略版本数据。'}}
                 />
             </Card>
@@ -3688,7 +3743,7 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     pagination={false}
                     dataSource={publishRows}
                     columns={rankingColumns('发布')}
-                    scroll={{x: 1360, y: 280}}
+                    scroll={{x: 1610, y: 280}}
                     locale={{emptyText: '暂无可分组的发布数据。'}}
                 />
             </Card>

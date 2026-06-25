@@ -131,6 +131,28 @@ class JdbcPaperPortfolioBatchReadTest {
         assertEquals(5L, counts.get("run-b"));
     }
 
+    @Test
+    void orderCountByRunIdsShouldShortCircuitEmptyAndAggregateGroupBy() {
+        RecordingNamedParameterJdbcTemplate named = new RecordingNamedParameterJdbcTemplate();
+        JdbcPaperTradingOrderRepository repo = new JdbcPaperTradingOrderRepository(UNUSED_JDBC, named);
+
+        assertTrue(repo.countByRunIds(List.of()).isEmpty());
+        assertEquals(0, named.queryCallCount);
+
+        named.queryResults = List.of(Map.entry("run-a", 4L), Map.entry("run-b", 2L));
+        Map<String, Long> counts = repo.countByRunIds(List.of("run-a", "run-b", "run-c"));
+
+        assertEquals(1, named.queryCallCount, "应只批量查询一次");
+        assertTrue(named.lastSql.contains("FROM paper_trading_orders"), "应查询订单表");
+        assertTrue(named.lastSql.contains("IN (:runIds)"), "应使用参数化 IN 绑定");
+        assertTrue(named.lastSql.contains("GROUP BY paper_run_id"));
+        assertBoundRunIds(named, "run-a", "run-b", "run-c");
+        assertEquals(4L, counts.get("run-a"));
+        assertEquals(2L, counts.get("run-b"));
+        // run-c 无订单 → 不出现在结果中（调用方缺省 0）。
+        assertTrue(!counts.containsKey("run-c"));
+    }
+
     // ---- helpers ----
 
     private static void assertBoundRunIds(RecordingNamedParameterJdbcTemplate named, String... expected) {

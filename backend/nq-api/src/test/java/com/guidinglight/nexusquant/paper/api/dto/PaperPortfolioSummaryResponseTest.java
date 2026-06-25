@@ -31,7 +31,7 @@ class PaperPortfolioSummaryResponseTest {
                 List.of(
                         equity("eqz1", "run-z", "2026-06-01T00:00:00Z", "100000", "0", "0"),
                         equity("eqz2", "run-z", "2026-06-02T00:00:00Z", "110000", "10000", "0")),
-                List.of(), List.of(), 0, 3, true, true);
+                List.of(), List.of(), 0, 3, 3, true, true);
         PaperPortfolioSummary summary = PaperPortfolioAssembler.assemble(List.of(input));
 
         PaperPortfolioSummaryResponse response = PaperPortfolioSummaryResponse.from(summary);
@@ -39,6 +39,11 @@ class PaperPortfolioSummaryResponseTest {
         // 旧字段保持映射（向后兼容）。
         assertEquals(1, response.overview().totalRuns());
         assertEquals("SIM/PAPER", response.safety().environment());
+
+        // Loop-18 执行进度三态字段映射（run-z 3 单 3 成交 → 有成交）。
+        assertEquals(0, response.overview().noOrderRunCount());
+        assertEquals(0, response.overview().orderNoFillRunCount());
+        assertEquals(1, response.overview().filledRunCount());
 
         // Loop-17 组内精确计数字段映射（run-z = sv-1，STOPPED，可比，有成交）。
         var strategyGroup = response.strategyGroups().get(0);
@@ -51,6 +56,12 @@ class PaperPortfolioSummaryResponseTest {
         assertEquals(0, strategyGroup.cancelledCount());
         assertEquals(0, strategyGroup.createdCount());
         assertEquals(0, strategyGroup.runningCount());
+        // Loop-18 组内订单/成交总数与执行进度三态映射。
+        assertEquals(3, strategyGroup.orderCount());
+        assertEquals(3, strategyGroup.tradeCount());
+        assertEquals(0, strategyGroup.noOrderCount());
+        assertEquals(0, strategyGroup.orderNoFillCount());
+        assertEquals(1, strategyGroup.filledRunCount());
 
         // 新增组合曲线字段映射。
         var curve = response.portfolioCurve();

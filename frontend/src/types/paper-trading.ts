@@ -404,6 +404,11 @@ export interface PaperPortfolioOverview {
     riskBlockedRunCount: number;
     noTradeRunCount: number;
     dataInsufficientRunCount: number;
+    // Loop-18 向后兼容新增：把「无交易」拆为「无订单」「有订单无成交」并显式给出「有成交」run 数；
+    // 旧后端响应可能缺失，消费方需对 undefined 做 fallback（noOrderRunCount + orderNoFillRunCount == noTradeRunCount）。
+    noOrderRunCount?: number;
+    orderNoFillRunCount?: number;
+    filledRunCount?: number;
 }
 
 export interface PaperPortfolioGroup {
@@ -425,6 +430,13 @@ export interface PaperPortfolioGroup {
     failedCount?: number;
     cancelledCount?: number;
     createdCount?: number;
+    // Loop-18 组内订单/成交总数与执行进度三态 run 计数（向后兼容新增）；
+    // noOrderCount + orderNoFillCount == noTradeCount（旧字段语义不变）。
+    orderCount?: number;
+    tradeCount?: number;
+    noOrderCount?: number;
+    orderNoFillCount?: number;
+    filledRunCount?: number;
 }
 
 export interface PaperPortfolioRunRef {
@@ -442,6 +454,11 @@ export interface PaperPortfolioRunRef {
     openAlertCount: number;
     tradeCount: number;
     lastActivityAt: string | null;
+    // Loop-18 向后兼容新增：orderCount 与执行进度三态标记；旧后端响应可能缺失，消费方需对 undefined 做 fallback。
+    orderCount?: number;
+    noOrder?: boolean;
+    orderNoFill?: boolean;
+    hasFill?: boolean;
 }
 
 export interface PaperPortfolioHighlights {

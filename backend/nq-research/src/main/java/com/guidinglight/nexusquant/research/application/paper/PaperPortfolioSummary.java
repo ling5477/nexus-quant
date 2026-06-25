@@ -46,7 +46,13 @@ public record PaperPortfolioSummary(
             int openAlertCount,
             int riskBlockedRunCount,
             int noTradeRunCount,
-            int dataInsufficientRunCount
+            int dataInsufficientRunCount,
+            // Loop-18 向后兼容新增：把「无交易」拆为「无订单」与「有订单无成交」，并显式给出有成交 run 数。
+            // 三者互斥且穷尽全部 run：noOrderRunCount + orderNoFillRunCount + filledRunCount == totalRuns；
+            // 且 noOrderRunCount + orderNoFillRunCount == noTradeRunCount（旧字段语义不变）。
+            int noOrderRunCount,
+            int orderNoFillRunCount,
+            int filledRunCount
     ) {}
 
     /**
@@ -76,7 +82,16 @@ public record PaperPortfolioSummary(
             int stoppedCount,
             int failedCount,
             int cancelledCount,
-            int createdCount
+            int createdCount,
+            // Loop-18 向后兼容新增（均基于「完整 bounded runs」聚合，不依赖 highlights/dataQuality 截断列表）：
+            // orderCount/tradeCount 为组内订单/成交总数；noOrderCount（orderCount==0 的 run 数）、
+            // orderNoFillCount（orderCount>0 且 tradeCount==0 的 run 数）、filledRunCount（tradeCount>0 的 run 数）
+            // 三者互斥穷尽组内全部 run，且 noOrderCount + orderNoFillCount == noTradeCount（旧字段语义不变）。
+            int orderCount,
+            int tradeCount,
+            int noOrderCount,
+            int orderNoFillCount,
+            int filledRunCount
     ) {}
 
     /**
@@ -96,7 +111,14 @@ public record PaperPortfolioSummary(
             BigDecimal maxDrawdown,
             boolean riskBlocked,
             int openAlertCount,
+            // Loop-18 向后兼容新增：orderCount 为该 run 订单数（tradeCount 已有，语义不变）；
+            // noOrder/orderNoFill/hasFill 为互斥的执行进度标记（hasFill = tradeCount>0；
+            // orderNoFill = orderCount>0 且 tradeCount==0；noOrder = orderCount==0 且 tradeCount==0）。
+            int orderCount,
             int tradeCount,
+            boolean noOrder,
+            boolean orderNoFill,
+            boolean hasFill,
             Instant lastActivityAt
     ) {}
 

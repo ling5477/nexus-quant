@@ -40,7 +40,11 @@ public record PaperPortfolioSummaryResponse(
             int openAlertCount,
             int riskBlockedRunCount,
             int noTradeRunCount,
-            int dataInsufficientRunCount
+            int dataInsufficientRunCount,
+            // Loop-18 向后兼容新增：把「无交易」拆为「无订单」「有订单无成交」，并显式给出「有成交」run 数。
+            int noOrderRunCount,
+            int orderNoFillRunCount,
+            int filledRunCount
     ) {}
 
     public record GroupResponse(
@@ -60,7 +64,13 @@ public record PaperPortfolioSummaryResponse(
             int stoppedCount,
             int failedCount,
             int cancelledCount,
-            int createdCount
+            int createdCount,
+            // Loop-18 向后兼容新增：组内订单/成交总数与执行进度三态 run 计数。
+            int orderCount,
+            int tradeCount,
+            int noOrderCount,
+            int orderNoFillCount,
+            int filledRunCount
     ) {}
 
     public record RunRefResponse(
@@ -76,7 +86,12 @@ public record PaperPortfolioSummaryResponse(
             BigDecimal maxDrawdown,
             boolean riskBlocked,
             int openAlertCount,
+            // Loop-18 向后兼容新增：orderCount 与执行进度三态标记（noOrder/orderNoFill/hasFill）。
+            int orderCount,
             int tradeCount,
+            boolean noOrder,
+            boolean orderNoFill,
+            boolean hasFill,
             Instant lastActivityAt
     ) {}
 
@@ -140,7 +155,8 @@ public record PaperPortfolioSummaryResponse(
         var overview = new OverviewResponse(
                 o.totalRuns(), o.runningCount(), o.stoppedCount(), o.failedCount(), o.cancelledCount(), o.createdCount(),
                 o.totalInitialEquity(), o.totalCurrentEquity(), o.totalPnl(), o.totalReturn(), o.returnEligibleRunCount(),
-                o.worstRunDrawdown(), o.openAlertCount(), o.riskBlockedRunCount(), o.noTradeRunCount(), o.dataInsufficientRunCount());
+                o.worstRunDrawdown(), o.openAlertCount(), o.riskBlockedRunCount(), o.noTradeRunCount(), o.dataInsufficientRunCount(),
+                o.noOrderRunCount(), o.orderNoFillRunCount(), o.filledRunCount());
 
         PaperPortfolioSummary.Highlights h = summary.highlights();
         var highlights = new HighlightsResponse(
@@ -188,7 +204,8 @@ public record PaperPortfolioSummaryResponse(
                 g.key(), g.runCount(), g.currentEquity(), g.totalPnl(), g.totalReturn(),
                 g.worstDrawdown(), g.riskBlockedCount(), g.openAlertCount(), g.lastRunTime(),
                 g.noTradeCount(), g.dataInsufficientCount(), g.comparableRunCount(),
-                g.runningCount(), g.stoppedCount(), g.failedCount(), g.cancelledCount(), g.createdCount());
+                g.runningCount(), g.stoppedCount(), g.failedCount(), g.cancelledCount(), g.createdCount(),
+                g.orderCount(), g.tradeCount(), g.noOrderCount(), g.orderNoFillCount(), g.filledRunCount());
     }
 
     private static RunRefResponse runRef(PaperPortfolioSummary.RunRef r) {
@@ -198,7 +215,8 @@ public record PaperPortfolioSummaryResponse(
         return new RunRefResponse(
                 r.paperRunId(), r.status(), r.symbol(), r.strategyVersionId(), r.publishId(),
                 r.currentEquity(), r.initialEquity(), r.totalPnl(), r.totalReturn(), r.maxDrawdown(),
-                r.riskBlocked(), r.openAlertCount(), r.tradeCount(), r.lastActivityAt());
+                r.riskBlocked(), r.openAlertCount(), r.orderCount(), r.tradeCount(),
+                r.noOrder(), r.orderNoFill(), r.hasFill(), r.lastActivityAt());
     }
 
     private static List<RunRefResponse> runRefs(List<PaperPortfolioSummary.RunRef> refs) {

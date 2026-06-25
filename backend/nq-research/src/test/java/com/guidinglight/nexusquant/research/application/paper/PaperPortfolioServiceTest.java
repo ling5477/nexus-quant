@@ -13,7 +13,9 @@ import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlert;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertSeverity;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertStatus;
+import com.guidinglight.nexusquant.research.domain.paper.PaperOrderStatus;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingOrder;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingTrade;
@@ -21,6 +23,7 @@ import com.guidinglight.nexusquant.research.domain.paper.port.EquityCurveSnapsho
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRiskCheckResultRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunAlertRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunDailyReportRepository;
+import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingOrderRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingTradeRepository;
 
 import java.math.BigDecimal;
@@ -50,6 +53,7 @@ class PaperPortfolioServiceTest {
     private CountingDailyReportRepo reportRepo;
     private CountingRiskRepo riskRepo;
     private CountingAlertRepo alertRepo;
+    private CountingOrderRepo orderRepo;
     private CountingTradeRepo tradeRepo;
     private PaperTradingRunServiceTest.InMemoryPublishRepo publishRepo;
     private PaperPortfolioService service;
@@ -61,9 +65,10 @@ class PaperPortfolioServiceTest {
         reportRepo = new CountingDailyReportRepo();
         riskRepo = new CountingRiskRepo();
         alertRepo = new CountingAlertRepo();
+        orderRepo = new CountingOrderRepo();
         tradeRepo = new CountingTradeRepo();
         publishRepo = new PaperTradingRunServiceTest.InMemoryPublishRepo();
-        service = new PaperPortfolioService(runRepo, equityRepo, reportRepo, riskRepo, alertRepo, tradeRepo, publishRepo);
+        service = new PaperPortfolioService(runRepo, equityRepo, reportRepo, riskRepo, alertRepo, orderRepo, tradeRepo, publishRepo);
     }
 
     @Test
@@ -145,11 +150,15 @@ class PaperPortfolioServiceTest {
                 alert("al-a3", "run-a", PaperRunAlertStatus.RESOLVED))));
         tradeRepo.byRun.put("run-a", new ArrayList<>(List.of(
                 trade("tr-a1", "run-a"), trade("tr-a2", "run-a"), trade("tr-a3", "run-a"))));
-        // run-b：1 个 OPEN 告警；1 笔成交。
+        // run-a：4 单 3 成交 → 有成交（hasFill）。
+        orderRepo.byRun.put("run-a", new ArrayList<>(List.of(
+                order("or-a1", "run-a"), order("or-a2", "run-a"), order("or-a3", "run-a"), order("or-a4", "run-a"))));
+        // run-b：1 个 OPEN 告警；2 单 1 成交 → 有成交（hasFill）。
         alertRepo.byRun.put("run-b", new ArrayList<>(List.of(
                 alert("al-b1", "run-b", PaperRunAlertStatus.OPEN))));
         tradeRepo.byRun.put("run-b", new ArrayList<>(List.of(trade("tr-b1", "run-b"))));
-        // run-c：无告警、无成交。
+        orderRepo.byRun.put("run-b", new ArrayList<>(List.of(order("or-b1", "run-b"), order("or-b2", "run-b"))));
+        // run-c：无告警、无订单、无成交 → 无订单（noOrder），唯一的无交易 run。
 
         PaperPortfolioSummary summary = service.summarize();
 
@@ -158,27 +167,35 @@ class PaperPortfolioServiceTest {
         assertEquals(1, reportRepo.batchCalls);
         assertEquals(1, riskRepo.batchCalls);
         assertEquals(1, alertRepo.batchCalls);
+        assertEquals(1, orderRepo.batchCalls);
         assertEquals(1, tradeRepo.batchCalls);
         // ---- 不再逐 run 调用单条读取（消除 O(run 数) 读放大）----
         assertEquals(0, equityRepo.perRunCalls);
         assertEquals(0, reportRepo.perRunCalls);
         assertEquals(0, riskRepo.perRunCalls);
         assertEquals(0, alertRepo.perRunCalls);
+        assertEquals(0, orderRepo.perRunCalls);
         assertEquals(0, tradeRepo.perRunCalls);
 
         // ---- 计数聚合口径正确：OPEN 告警 3（run-a 2 + run-b 1），无交易 run 1（run-c）----
         assertEquals(3, summary.overview().totalRuns());
         assertEquals(3, summary.overview().openAlertCount());
         assertEquals(1, summary.overview().noTradeRunCount());
-        // run-c 无成交 → 进入无交易清单。
+        // ---- Loop-18 执行进度三态来自完整 bounded runs：run-a / run-b 有成交 / run-c 无订单 ----
+        assertEquals(1, summary.overview().noOrderRunCount());
+        assertEquals(0, summary.overview().orderNoFillRunCount());
+        assertEquals(2, summary.overview().filledRunCount());
+        // run-c 无成交 → 进入无交易清单，且 noOrder 标记为真。
         assertEquals(1, summary.highlights().noTradeRuns().size());
         assertEquals("run-c", summary.highlights().noTradeRuns().get(0).paperRunId());
+        assertTrue(summary.highlights().noTradeRuns().get(0).noOrder());
     }
 
     @Test
     void inMemoryBatchReadShouldHandleEmptyAndMultiRunIds() {
         // 空 runIds → 空 Map，无异常。
         assertTrue(equityRepo.listByRunIds(List.of()).isEmpty());
+        assertTrue(orderRepo.countByRunIds(List.of()).isEmpty());
         assertTrue(tradeRepo.countByRunIds(List.of()).isEmpty());
         assertTrue(alertRepo.countOpenByRunIds(List.of()).isEmpty());
 
@@ -246,6 +263,13 @@ class PaperPortfolioServiceTest {
         return new PaperTradingTrade(
                 id, "ord-" + id, runId, "BTC-USDT", "BUY",
                 BigDecimal.ONE, new BigDecimal("100"), BigDecimal.ZERO,
+                Instant.parse("2026-06-02T00:00:00Z"), Instant.parse("2026-06-02T00:00:00Z"));
+    }
+
+    private PaperTradingOrder order(String id, String runId) {
+        return new PaperTradingOrder(
+                id, runId, "BTC-USDT", "BUY", "LIMIT",
+                BigDecimal.ONE, new BigDecimal("100"), PaperOrderStatus.CREATED, null, "{}",
                 Instant.parse("2026-06-02T00:00:00Z"), Instant.parse("2026-06-02T00:00:00Z"));
     }
 
@@ -365,6 +389,30 @@ class PaperPortfolioServiceTest {
             byRun.computeIfAbsent(trade.paperRunId(), k -> new ArrayList<>()).add(trade);
         }
         @Override public List<PaperTradingTrade> listByRunId(String paperRunId) {
+            perRunCalls++;
+            return byRun.getOrDefault(paperRunId, List.of());
+        }
+        @Override public Map<String, Long> countByRunIds(Collection<String> runIds) {
+            batchCalls++;
+            Map<String, Long> result = new LinkedHashMap<>();
+            for (String runId : runIds) {
+                long count = byRun.getOrDefault(runId, List.of()).size();
+                if (count > 0) {
+                    result.put(runId, count);
+                }
+            }
+            return result;
+        }
+    }
+
+    static final class CountingOrderRepo implements PaperTradingOrderRepository {
+        final Map<String, List<PaperTradingOrder>> byRun = new HashMap<>();
+        int perRunCalls;
+        int batchCalls;
+        @Override public void insert(PaperTradingOrder order) {
+            byRun.computeIfAbsent(order.paperRunId(), k -> new ArrayList<>()).add(order);
+        }
+        @Override public List<PaperTradingOrder> listByRunId(String paperRunId) {
             perRunCalls++;
             return byRun.getOrDefault(paperRunId, List.of());
         }

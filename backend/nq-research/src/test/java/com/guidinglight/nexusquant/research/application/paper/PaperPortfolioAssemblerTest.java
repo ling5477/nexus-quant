@@ -34,6 +34,9 @@ class PaperPortfolioAssemblerTest {
 
         assertEquals(0, summary.overview().totalRuns());
         assertEquals(0, summary.overview().returnEligibleRunCount());
+        assertEquals(0, summary.overview().noOrderRunCount());
+        assertEquals(0, summary.overview().orderNoFillRunCount());
+        assertEquals(0, summary.overview().filledRunCount());
         assertNull(summary.overview().totalCurrentEquity());
         assertNull(summary.overview().totalReturn());
         assertNull(summary.overview().worstRunDrawdown());
@@ -71,6 +74,13 @@ class PaperPortfolioAssemblerTest {
         assertEquals(1, overview.riskBlockedRunCount());
         assertEquals(1, overview.noTradeRunCount());
         assertEquals(1, overview.dataInsufficientRunCount());
+        // ---- Loop-18 执行进度三态（profit/loss 有成交，empty 无订单）：互斥穷尽，且 noOrder+orderNoFill == noTrade ----
+        assertEquals(1, overview.noOrderRunCount());
+        assertEquals(0, overview.orderNoFillRunCount());
+        assertEquals(2, overview.filledRunCount());
+        assertEquals(overview.totalRuns(),
+                overview.noOrderRunCount() + overview.orderNoFillRunCount() + overview.filledRunCount());
+        assertEquals(overview.noTradeRunCount(), overview.noOrderRunCount() + overview.orderNoFillRunCount());
 
         // ---- 策略分组（按总 PnL 降序）----
         assertEquals(2, summary.strategyGroups().size());
@@ -95,11 +105,22 @@ class PaperPortfolioAssemblerTest {
         assertEquals(0, topStrategy.failedCount());
         assertEquals(0, topStrategy.cancelledCount());
         assertEquals(0, topStrategy.runningCount());
+        // sv-1 执行进度：profit 有成交 + empty 无订单 → 订单合计 5、成交合计 5、无订单 1、有订单无成交 0、有成交 1。
+        assertEquals(5, topStrategy.orderCount());
+        assertEquals(5, topStrategy.tradeCount());
+        assertEquals(1, topStrategy.noOrderCount());
+        assertEquals(0, topStrategy.orderNoFillCount());
+        assertEquals(1, topStrategy.filledRunCount());
+        assertEquals(topStrategy.noTradeCount(), topStrategy.noOrderCount() + topStrategy.orderNoFillCount());
         // sv-2 = loss(STOPPED,可比,有成交)。
         assertEquals(0, bottomStrategy.noTradeCount());
         assertEquals(0, bottomStrategy.dataInsufficientCount());
         assertEquals(1, bottomStrategy.comparableRunCount());
         assertEquals(1, bottomStrategy.stoppedCount());
+        assertEquals(3, bottomStrategy.orderCount());
+        assertEquals(3, bottomStrategy.tradeCount());
+        assertEquals(1, bottomStrategy.filledRunCount());
+        assertEquals(0, bottomStrategy.noOrderCount());
 
         // ---- 发布分组 ----
         assertEquals(2, summary.publishGroups().size());
@@ -117,6 +138,12 @@ class PaperPortfolioAssemblerTest {
         assertEquals("run-loss", highlights.mostRecent().paperRunId());  // updatedAt 最新
         assertEquals(1, highlights.noTradeRuns().size());
         assertEquals("run-empty", highlights.noTradeRuns().get(0).paperRunId());
+        // run-empty 无订单：noOrder 标记 + orderCount 0 + 非 hasFill；topWinner（run-profit）有成交且订单数=5。
+        assertTrue(highlights.noTradeRuns().get(0).noOrder());
+        assertFalse(highlights.noTradeRuns().get(0).hasFill());
+        assertEquals(0, highlights.noTradeRuns().get(0).orderCount());
+        assertTrue(highlights.topWinner().hasFill());
+        assertEquals(5, highlights.topWinner().orderCount());
         assertEquals(1, highlights.riskBlockedRuns().size());
         assertEquals("run-loss", highlights.riskBlockedRuns().get(0).paperRunId());
 
@@ -156,14 +183,14 @@ class PaperPortfolioAssemblerTest {
                         equity("eqx1", "run-x", "2026-06-01T00:00:00Z", "100000", "0", "0"),
                         equity("eqx2", "run-x", "2026-06-02T00:00:00Z", "120000", "15000", "5000"),
                         equity("eqx3", "run-x", "2026-06-03T00:00:00Z", "90000", "-10000", "0")),
-                List.of(), List.of(), 0, 4, true, true);
+                List.of(), List.of(), 0, 4, 4, true, true);
         // run-y：初始 50000，t2=50000 / t3=55000（最新已实现 5000 回推初始 50000），t1 时尚未起跑。
         var runY = new PaperPortfolioAssembler.RunInput(
                 run("run-y", "sv-2", "pub-2", PaperTradingRunStatus.STOPPED, Instant.parse("2026-06-03T00:00:00Z")),
                 List.of(
                         equity("eqy1", "run-y", "2026-06-02T00:00:00Z", "50000", "0", "0"),
                         equity("eqy2", "run-y", "2026-06-03T00:00:00Z", "55000", "5000", "0")),
-                List.of(), List.of(), 0, 2, true, true);
+                List.of(), List.of(), 0, 2, 2, true, true);
 
         var curve = PaperPortfolioAssembler.assemble(List.of(runX, runY)).portfolioCurve();
 
@@ -221,20 +248,21 @@ class PaperPortfolioAssemblerTest {
 
     @Test
     void assembleShouldComputeGroupStatusAndRiskCountsFromFullRuns() {
-        // 同一 strategy/publish 组内混合状态：1 RUNNING(可比) + 1 FAILED(无成交,数据不足) + 1 CREATED(无成交,数据不足)。
+        // 同一 strategy/publish 组内混合状态与执行进度：
+        // 1 RUNNING(可比,3 单 3 成交→有成交) + 1 FAILED(2 单 0 成交→有订单无成交,数据不足) + 1 CREATED(0 单 0 成交→无订单,数据不足)。
         // 注：PaperTradingRunStatus 仅 CREATED/RUNNING/STOPPED/FAILED；cancelledCount 字段恒为 0（稳定契约位）。
         var runningRun = new PaperPortfolioAssembler.RunInput(
                 run("g-running", "sv-g", "pub-g", PaperTradingRunStatus.RUNNING, Instant.parse("2026-06-03T00:00:00Z")),
                 List.of(
                         equity("eg1", "g-running", "2026-06-01T00:00:00Z", "100000", "0", "0"),
                         equity("eg2", "g-running", "2026-06-02T00:00:00Z", "110000", "10000", "0")),
-                List.of(), List.of(), 0, 3, true, true);
+                List.of(), List.of(), 0, 3, 3, true, true);
         var failedRun = new PaperPortfolioAssembler.RunInput(
                 run("g-failed", "sv-g", "pub-g", PaperTradingRunStatus.FAILED, Instant.parse("2026-06-02T00:00:00Z")),
-                List.of(), List.of(), List.of(), 1, 0, true, true);
+                List.of(), List.of(), List.of(), 1, 2, 0, true, true);
         var createdRun = new PaperPortfolioAssembler.RunInput(
                 run("g-created", "sv-g", "pub-g", PaperTradingRunStatus.CREATED, Instant.parse("2026-06-01T00:00:00Z")),
-                List.of(), List.of(), List.of(), 0, 0, true, true);
+                List.of(), List.of(), List.of(), 0, 0, 0, true, true);
 
         var summary = PaperPortfolioAssembler.assemble(List.of(runningRun, failedRun, createdRun));
 
@@ -251,6 +279,19 @@ class PaperPortfolioAssemblerTest {
         assertEquals(2, group.dataInsufficientCount());
         assertEquals(2, group.noTradeCount());
         assertEquals(1, group.comparableRunCount());
+        // Loop-18 执行进度三态：created 无订单(noOrder) + failed 有订单无成交(orderNoFill) + running 有成交(hasFill)。
+        // 订单合计 3+2+0=5、成交合计 3+0+0=3；三态各 1，且 noOrder+orderNoFill==noTrade==2。
+        assertEquals(5, group.orderCount());
+        assertEquals(3, group.tradeCount());
+        assertEquals(1, group.noOrderCount());
+        assertEquals(1, group.orderNoFillCount());
+        assertEquals(1, group.filledRunCount());
+        assertEquals(group.noTradeCount(), group.noOrderCount() + group.orderNoFillCount());
+
+        // 组合总览同步三态计数（穷尽全部 run）。
+        assertEquals(1, summary.overview().noOrderRunCount());
+        assertEquals(1, summary.overview().orderNoFillRunCount());
+        assertEquals(1, summary.overview().filledRunCount());
 
         // publish 维度同步组内精确计数。
         assertEquals(1, summary.publishGroups().size());
@@ -260,6 +301,9 @@ class PaperPortfolioAssemblerTest {
         assertEquals(2, pub.dataInsufficientCount());
         assertEquals(2, pub.noTradeCount());
         assertEquals(1, pub.comparableRunCount());
+        assertEquals(1, pub.noOrderCount());
+        assertEquals(1, pub.orderNoFillCount());
+        assertEquals(1, pub.filledRunCount());
     }
 
     // ---- fixtures ----
@@ -272,7 +316,8 @@ class PaperPortfolioAssemblerTest {
                 equity("eq-p1", "run-profit", "2026-06-01T00:00:00Z", "100000", "0", "0"),
                 equity("eq-p2", "run-profit", "2026-06-01T01:00:00Z", "120000", "20000", "0"));
         var risk = List.of(risk("rk-p1", "run-profit", RiskCheckStatus.PASSED, RiskCheckSeverity.LOW, "2026-06-01T01:30:00Z"));
-        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, 0, 5, true, true);
+        // 5 单 5 成交 → 有成交（hasFill）。
+        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, 0, 5, 5, true, true);
     }
 
     private PaperPortfolioAssembler.RunInput lossRun() {
@@ -284,15 +329,15 @@ class PaperPortfolioAssemblerTest {
                 equity("eq-l2", "run-loss", "2026-06-02T00:30:00Z", "120000", "20000", "0"),
                 equity("eq-l3", "run-loss", "2026-06-02T01:00:00Z", "90000", "-10000", "0"));
         var risk = List.of(risk("rk-l1", "run-loss", RiskCheckStatus.REJECTED, RiskCheckSeverity.HIGH, "2026-06-02T01:30:00Z"));
-        // 2 个 OPEN + 1 个 RESOLVED → openAlertCount=2（计数口径由 service 经批量聚合得出）。
-        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, 2, 3, true, true);
+        // 2 个 OPEN + 1 个 RESOLVED → openAlertCount=2（计数口径由 service 经批量聚合得出）；3 单 3 成交 → 有成交。
+        return new PaperPortfolioAssembler.RunInput(run, equity, List.of(), risk, 2, 3, 3, true, true);
     }
 
     private PaperPortfolioAssembler.RunInput dataInsufficientRun() {
-        // 无 equity / 无成交 / 无 backtest 来源：数据不足、无交易、缺 equity、缺 backtest。
+        // 无 equity / 无订单 / 无成交 / 无 backtest 来源：数据不足、无订单（noOrder）、缺 equity、缺 backtest。
         var run = run("run-empty", "sv-1", "pub-1", PaperTradingRunStatus.CREATED,
                 Instant.parse("2026-05-30T00:00:00Z"));
-        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(), List.of(), 0, 0, true, false);
+        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(), List.of(), 0, 0, 0, true, false);
     }
 
     private PaperPortfolioAssembler.RunInput reportOnlyRun() {
@@ -302,7 +347,7 @@ class PaperPortfolioAssemblerTest {
                 "rep-1", "run-report", LocalDate.parse("2026-06-04"), PaperRunDailyReportStatus.GENERATED,
                 new BigDecimal("98000"), new BigDecimal("-2000"), new BigDecimal("-0.02"), new BigDecimal("0.18"),
                 4, 4, 0, 0, "{}", Instant.parse("2026-06-04T01:00:00Z"), Instant.parse("2026-06-04T01:00:00Z"));
-        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(report), List.of(), 0, 4, true, true);
+        return new PaperPortfolioAssembler.RunInput(run, List.of(), List.of(report), List.of(), 0, 4, 4, true, true);
     }
 
     private PaperTradingRun run(String id, String sv, String pub, PaperTradingRunStatus status, Instant updatedAt) {

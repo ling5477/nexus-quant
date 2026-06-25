@@ -234,21 +234,24 @@ const portfolioRunA = {
     paperRunId: PORTFOLIO_RUN_A, status: 'STOPPED', symbol: 'BTC-USDT',
     strategyVersionId: 'sv-portfolio-1', publishId: 'pub-portfolio-1',
     currentEquity: 120000, initialEquity: 100000, totalPnl: 20000, totalReturn: 0.2,
-    maxDrawdown: 0, riskBlocked: false, openAlertCount: 0, tradeCount: 5,
+    maxDrawdown: 0, riskBlocked: false, openAlertCount: 0, orderCount: 5, tradeCount: 5,
+    noOrder: false, orderNoFill: false, hasFill: true,
     lastActivityAt: '2026-06-22T02:00:00Z',
 };
 const portfolioRunB = {
     paperRunId: PORTFOLIO_RUN_B, status: 'STOPPED', symbol: 'ETH-USDT',
     strategyVersionId: 'sv-portfolio-2', publishId: 'pub-portfolio-2',
     currentEquity: 90000, initialEquity: 100000, totalPnl: -10000, totalReturn: -0.1,
-    maxDrawdown: -0.25, riskBlocked: true, openAlertCount: 2, tradeCount: 3,
+    maxDrawdown: -0.25, riskBlocked: true, openAlertCount: 2, orderCount: 4, tradeCount: 3,
+    noOrder: false, orderNoFill: false, hasFill: true,
     lastActivityAt: '2026-06-21T02:00:00Z',
 };
 const portfolioRunC = {
     paperRunId: PORTFOLIO_RUN_C, status: 'CREATED', symbol: 'SOL-USDT',
     strategyVersionId: 'sv-portfolio-1', publishId: 'pub-portfolio-1',
     currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
-    maxDrawdown: null, riskBlocked: false, openAlertCount: 0, tradeCount: 0,
+    maxDrawdown: null, riskBlocked: false, openAlertCount: 0, orderCount: 0, tradeCount: 0,
+    noOrder: true, orderNoFill: false, hasFill: false,
     lastActivityAt: '2026-06-20T00:00:00Z',
 };
 // Loop-15 组合 equity / drawdown 时间序列：t1 仅 run-a 在册（run-b 未起跑 → missingRunCount 1），
@@ -279,14 +282,16 @@ const defaultPortfolioSummary = {
         totalInitialEquity: 200000, totalCurrentEquity: 210000, totalPnl: 10000, totalReturn: 0.05,
         returnEligibleRunCount: 2, worstRunDrawdown: -0.25, openAlertCount: 2,
         riskBlockedRunCount: 1, noTradeRunCount: 1, dataInsufficientRunCount: 1,
+        // Loop-18：A/B 有成交、C 无订单 → 无订单 1 / 有订单无成交 0 / 有成交 2（互斥穷尽 totalRuns）。
+        noOrderRunCount: 1, orderNoFillRunCount: 0, filledRunCount: 2,
     },
     strategyGroups: [
-        {key: 'sv-portfolio-1', runCount: 2, currentEquity: 120000, totalPnl: 20000, totalReturn: 0.2, worstDrawdown: 0, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z'},
-        {key: 'sv-portfolio-2', runCount: 1, currentEquity: 90000, totalPnl: -10000, totalReturn: -0.1, worstDrawdown: -0.25, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-21T02:00:00Z'},
+        {key: 'sv-portfolio-1', runCount: 2, currentEquity: 120000, totalPnl: 20000, totalReturn: 0.2, worstDrawdown: 0, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z', orderCount: 5, tradeCount: 5, noOrderCount: 1, orderNoFillCount: 0, filledRunCount: 1},
+        {key: 'sv-portfolio-2', runCount: 1, currentEquity: 90000, totalPnl: -10000, totalReturn: -0.1, worstDrawdown: -0.25, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-21T02:00:00Z', orderCount: 4, tradeCount: 3, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 1},
     ],
     publishGroups: [
-        {key: 'pub-portfolio-1', runCount: 2, currentEquity: 120000, totalPnl: 20000, totalReturn: 0.2, worstDrawdown: 0, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z'},
-        {key: 'pub-portfolio-2', runCount: 1, currentEquity: 90000, totalPnl: -10000, totalReturn: -0.1, worstDrawdown: -0.25, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-21T02:00:00Z'},
+        {key: 'pub-portfolio-1', runCount: 2, currentEquity: 120000, totalPnl: 20000, totalReturn: 0.2, worstDrawdown: 0, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z', orderCount: 5, tradeCount: 5, noOrderCount: 1, orderNoFillCount: 0, filledRunCount: 1},
+        {key: 'pub-portfolio-2', runCount: 1, currentEquity: 90000, totalPnl: -10000, totalReturn: -0.1, worstDrawdown: -0.25, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-21T02:00:00Z', orderCount: 4, tradeCount: 3, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 1},
     ],
     highlights: {
         topWinner: portfolioRunA,
@@ -314,6 +319,7 @@ const emptyPortfolioSummary = {
         totalInitialEquity: null, totalCurrentEquity: null, totalPnl: null, totalReturn: null,
         returnEligibleRunCount: 0, worstRunDrawdown: null, openAlertCount: 0,
         riskBlockedRunCount: 0, noTradeRunCount: 0, dataInsufficientRunCount: 0,
+        noOrderRunCount: 0, orderNoFillRunCount: 0, filledRunCount: 0,
     },
     strategyGroups: [],
     publishGroups: [],
@@ -353,15 +359,17 @@ const rankingPortfolioSummary = {
         totalInitialEquity: 200000, totalCurrentEquity: 280000, totalPnl: 80000, totalReturn: 0.4,
         returnEligibleRunCount: 3, worstRunDrawdown: -0.4, openAlertCount: 3,
         riskBlockedRunCount: 3, noTradeRunCount: 2, dataInsufficientRunCount: 2,
+        // Loop-18：good/highrisk 有成交，weak 组 2 个无交易（1 无订单 + 1 有订单无成交）。
+        noOrderRunCount: 1, orderNoFillRunCount: 1, filledRunCount: 3,
     },
     strategyGroups: [
-        {key: 'sv-rank-good', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 2, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0},
-        {key: 'sv-rank-highrisk', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 1, runningCount: 0, stoppedCount: 1, failedCount: 0, cancelledCount: 0, createdCount: 0},
-        {key: 'sv-rank-weak', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 2, openAlertCount: 1, lastRunTime: '2026-06-20T02:00:00Z', noTradeCount: 2, dataInsufficientCount: 2, comparableRunCount: 0, runningCount: 0, stoppedCount: 0, failedCount: 1, cancelledCount: 0, createdCount: 1},
+        {key: 'sv-rank-good', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 2, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0, orderCount: 12, tradeCount: 11, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 2},
+        {key: 'sv-rank-highrisk', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 1, runningCount: 0, stoppedCount: 1, failedCount: 0, cancelledCount: 0, createdCount: 0, orderCount: 4, tradeCount: 4, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 1},
+        {key: 'sv-rank-weak', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 2, openAlertCount: 1, lastRunTime: '2026-06-20T02:00:00Z', noTradeCount: 2, dataInsufficientCount: 2, comparableRunCount: 0, runningCount: 0, stoppedCount: 0, failedCount: 1, cancelledCount: 0, createdCount: 1, orderCount: 2, tradeCount: 0, noOrderCount: 1, orderNoFillCount: 1, filledRunCount: 0},
     ],
     publishGroups: [
-        {key: 'pub-rank-1', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 2, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0},
-        {key: 'pub-rank-2', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 1, runningCount: 0, stoppedCount: 1, failedCount: 0, cancelledCount: 0, createdCount: 0},
+        {key: 'pub-rank-1', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 2, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0, orderCount: 12, tradeCount: 11, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 2},
+        {key: 'pub-rank-2', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 1, runningCount: 0, stoppedCount: 1, failedCount: 0, cancelledCount: 0, createdCount: 0, orderCount: 4, tradeCount: 4, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 1},
     ],
     highlights: {
         topWinner: rankHighRiskRun, worstDrawdown: rankHighRiskRun, highestRisk: rankWeakRun1, mostRecent: rankGoodRun,
@@ -1155,6 +1163,8 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.locator('.nq-metric-card', {hasText: '风控拦截 run'}).locator('.nq-metric-card__value')).toHaveText('1');
         await expect(risk.locator('.nq-metric-card', {hasText: '未处理告警'}).locator('.nq-metric-card__value')).toHaveText('2');
         await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'}).locator('.nq-metric-card__value')).toHaveText('1');
+        // Loop-18：无交易 run 卡 footer 按精确口径拆分（runC 无订单）。
+        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'})).toContainText('无订单 1 · 有订单无成交 0');
         await expect(risk.locator('.nq-metric-card', {hasText: '数据不足 run'}).locator('.nq-metric-card__value')).toHaveText('1');
         await expect(risk.locator('.nq-metric-card', {hasText: 'FAILED / CANCELLED'}).locator('.nq-metric-card__value')).toHaveText('0');
         await expect(risk.getByText('FAILED 0 · CANCELLED 0')).toBeVisible();
@@ -1199,11 +1209,124 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.getByText('无交易 / 数据不足清单')).toBeVisible();
         await expect(risk.getByText(PORTFOLIO_RUN_C).first()).toBeVisible();
         await expect(risk.getByText('尚未启动', {exact: true})).toBeVisible();
+        // Loop-18：执行进度列区分无订单 / 有订单无成交（runC 无订单）。
+        await expect(risk.getByRole('columnheader', {name: '执行进度'})).toBeVisible();
+        await expect(risk.getByText('无订单', {exact: true})).toBeVisible();
 
         // 5) 风险数据质量：缺 equity / 缺 PnL（runC currentEquity/totalPnl 均为 null）。
         await expect(risk.getByText('风险数据质量')).toBeVisible();
         await expect(risk.getByText('缺 equity snapshot（1）')).toBeVisible();
         await expect(risk.getByText('缺 PnL（1）')).toBeVisible();
+    });
+
+    test('Paper 风险与回撤驾驶舱区分无订单 / 有订单无成交（Loop-18 精确口径）', async ({page}) => {
+        // 两个无交易 run：一个无订单、一个有订单无成交，验证 footer 拆分与「执行进度」列细分。
+        const noOrderRun = {
+            paperRunId: 'paper-split-noorder', status: 'STOPPED', symbol: 'BTC-USDT',
+            strategyVersionId: 'sv-split', publishId: 'pub-split',
+            currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
+            maxDrawdown: null, riskBlocked: false, openAlertCount: 0, orderCount: 0, tradeCount: 0,
+            noOrder: true, orderNoFill: false, hasFill: false, lastActivityAt: '2026-06-22T02:00:00Z',
+        };
+        const orderNoFillRun = {
+            paperRunId: 'paper-split-ordernofill', status: 'STOPPED', symbol: 'ETH-USDT',
+            strategyVersionId: 'sv-split', publishId: 'pub-split',
+            currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
+            maxDrawdown: null, riskBlocked: false, openAlertCount: 0, orderCount: 2, tradeCount: 0,
+            noOrder: false, orderNoFill: true, hasFill: false, lastActivityAt: '2026-06-21T02:00:00Z',
+        };
+        const splitSummary = {
+            overview: {
+                totalRuns: 2, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0,
+                totalInitialEquity: null, totalCurrentEquity: null, totalPnl: null, totalReturn: null,
+                returnEligibleRunCount: 0, worstRunDrawdown: null, openAlertCount: 0,
+                riskBlockedRunCount: 0, noTradeRunCount: 2, dataInsufficientRunCount: 2,
+                noOrderRunCount: 1, orderNoFillRunCount: 1, filledRunCount: 0,
+            },
+            strategyGroups: [
+                {key: 'sv-split', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z', noTradeCount: 2, dataInsufficientCount: 2, comparableRunCount: 0, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0, orderCount: 2, tradeCount: 0, noOrderCount: 1, orderNoFillCount: 1, filledRunCount: 0},
+            ],
+            publishGroups: [
+                {key: 'pub-split', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z', noTradeCount: 2, dataInsufficientCount: 2, comparableRunCount: 0, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0, orderCount: 2, tradeCount: 0, noOrderCount: 1, orderNoFillCount: 1, filledRunCount: 0},
+            ],
+            highlights: {
+                topWinner: null, worstDrawdown: null, highestRisk: null, mostRecent: noOrderRun,
+                noTradeRuns: [noOrderRun, orderNoFillRun], riskBlockedRuns: [],
+            },
+            dataQuality: {
+                missingEquityRuns: [noOrderRun, orderNoFillRun],
+                dataInsufficientRuns: [noOrderRun, orderNoFillRun],
+                missingBacktestSourceRuns: [], missingPublishSourceRuns: [],
+            },
+            safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
+            portfolioCurve: emptyPortfolioCurve,
+        };
+
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: splitSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        await expect(risk).toBeVisible();
+
+        // 无交易 run 卡：合计 2，footer 拆分为「无订单 1 · 有订单无成交 1」。
+        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'}).locator('.nq-metric-card__value')).toHaveText('2');
+        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'})).toContainText('无订单 1 · 有订单无成交 1');
+
+        // 无交易清单「执行进度」列同时出现无订单与有订单无成交标签。
+        await expect(risk.getByText('无交易 / 数据不足清单')).toBeVisible();
+        await expect(risk.getByRole('columnheader', {name: '执行进度'})).toBeVisible();
+        await expect(risk.getByText('无订单', {exact: true})).toBeVisible();
+        await expect(risk.getByText('有订单无成交', {exact: true})).toBeVisible();
+        await expect(risk.getByText('该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。')).toBeVisible();
+    });
+
+    test('Paper 风险/排行在旧后端缺 order/fill 字段时回退不崩', async ({page}) => {
+        // 模拟旧后端：overview / group / run 均缺 Loop-18 的 order/fill 拆分字段，前端应回退展示且不崩溃。
+        const legacyRun = {
+            paperRunId: 'paper-legacy-x', status: 'CREATED', symbol: 'BTC-USDT',
+            strategyVersionId: 'sv-legacy', publishId: 'pub-legacy',
+            currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
+            maxDrawdown: null, riskBlocked: false, openAlertCount: 0, tradeCount: 0,
+            lastActivityAt: '2026-06-20T00:00:00Z',
+            // 故意不含 orderCount / noOrder / orderNoFill / hasFill。
+        };
+        const legacySummary = {
+            overview: {
+                totalRuns: 1, runningCount: 0, stoppedCount: 0, failedCount: 0, cancelledCount: 0, createdCount: 1,
+                totalInitialEquity: null, totalCurrentEquity: null, totalPnl: null, totalReturn: null,
+                returnEligibleRunCount: 0, worstRunDrawdown: null, openAlertCount: 0,
+                riskBlockedRunCount: 0, noTradeRunCount: 1, dataInsufficientRunCount: 1,
+                // 故意不含 noOrderRunCount / orderNoFillRunCount / filledRunCount。
+            },
+            strategyGroups: [
+                {key: 'sv-legacy', runCount: 1, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-20T00:00:00Z'},
+            ],
+            publishGroups: [
+                {key: 'pub-legacy', runCount: 1, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-20T00:00:00Z'},
+            ],
+            highlights: {topWinner: null, worstDrawdown: null, highestRisk: null, mostRecent: legacyRun, noTradeRuns: [legacyRun], riskBlockedRuns: []},
+            dataQuality: {missingEquityRuns: [legacyRun], dataInsufficientRuns: [legacyRun], missingBacktestSourceRuns: [], missingPublishSourceRuns: []},
+            safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
+            portfolioCurve: emptyPortfolioCurve,
+        };
+
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: legacySummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        await expect(risk).toBeVisible();
+        // 旧后端无拆分字段：footer 回退提示，不伪造拆分，不崩溃。
+        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'})).toContainText('无订单 / 有订单无成交需查看单 run');
+        // 执行进度列回退「无成交」泛标签（run 缺 noOrder/orderNoFill 标记）。
+        await expect(risk.getByText('无成交', {exact: true})).toBeVisible();
+
+        // 策略排行表：无订单 / 有单无成交列回退「-」，有成交由 runCount - noTradeCount 派生，不崩。
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        await expect(ranking.getByRole('columnheader', {name: '无订单'}).first()).toBeVisible();
+        await expect(ranking.getByText('sv-legacy').first()).toBeVisible();
     });
 
     test('Paper 风险与回撤驾驶舱无 run 时展示空态且不伪造风险数值', async ({page}) => {
@@ -1271,6 +1394,10 @@ test.describe('paper trading product loop panel', () => {
         await expect(ranking.getByText('Strategy Version 排行（按风险调整分）')).toBeVisible();
         await expect(ranking.getByRole('columnheader', {name: '风险调整分'}).first()).toBeVisible();
         await expect(ranking.getByRole('columnheader', {name: '无交易'}).first()).toBeVisible();
+        // Loop-18：策略/发布排行表新增无订单 / 有单无成交 / 有成交列（后端 group 精确计数）。
+        await expect(ranking.getByRole('columnheader', {name: '无订单'}).first()).toBeVisible();
+        await expect(ranking.getByRole('columnheader', {name: '有单无成交'}).first()).toBeVisible();
+        await expect(ranking.getByRole('columnheader', {name: '有成交'}).first()).toBeVisible();
         await expect(ranking.getByRole('columnheader', {name: '异常终态'}).first()).toBeVisible();
         await expect(ranking.getByText('sv-rank-good').first()).toBeVisible();
         await expect(ranking.getByText('sv-rank-highrisk').first()).toBeVisible();

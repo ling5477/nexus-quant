@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.research.domain.paper.port.EquityCurveSnapsho
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRiskCheckResultRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunAlertRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunDailyReportRepository;
+import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingOrderRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingRunRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingTradeRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
@@ -37,7 +38,7 @@ import org.springframework.stereotype.Service;
  *
  * 复杂度说明：组合聚合按「最近 {@link #MAX_PORTFOLIO_RUNS} 个 run」上限。run 清单一次 list()，
  * publish 来源一次 listAll() 建索引，equity / dailyReport / risk 一次 listByRunIds() 批量取，
- * alert / trade 一次 countOpenByRunIds() / countByRunIds() 批量聚合计数；run 循环内仅做内存 Map 查找，
+ * alert / order / trade 一次 countOpenByRunIds() / countByRunIds() 批量聚合计数；run 循环内仅做内存 Map 查找，
  * 不再逐 run 查询仓储。读放大由「O(run 数)」收敛为「固定数量批量查询」，规模增长下不再放大。
  */
 @Service
@@ -51,6 +52,7 @@ public class PaperPortfolioService {
     private final PaperRunDailyReportRepository dailyReportRepository;
     private final PaperRiskCheckResultRepository riskCheckResultRepository;
     private final PaperRunAlertRepository alertRepository;
+    private final PaperTradingOrderRepository orderRepository;
     private final PaperTradingTradeRepository tradeRepository;
     private final BacktestPublishRecordRepository publishRecordRepository;
 
@@ -60,6 +62,7 @@ public class PaperPortfolioService {
             PaperRunDailyReportRepository dailyReportRepository,
             PaperRiskCheckResultRepository riskCheckResultRepository,
             PaperRunAlertRepository alertRepository,
+            PaperTradingOrderRepository orderRepository,
             PaperTradingTradeRepository tradeRepository,
             BacktestPublishRecordRepository publishRecordRepository
     ) {
@@ -68,6 +71,7 @@ public class PaperPortfolioService {
         this.dailyReportRepository = Objects.requireNonNull(dailyReportRepository, "dailyReportRepository must not be null");
         this.riskCheckResultRepository = Objects.requireNonNull(riskCheckResultRepository, "riskCheckResultRepository must not be null");
         this.alertRepository = Objects.requireNonNull(alertRepository, "alertRepository must not be null");
+        this.orderRepository = Objects.requireNonNull(orderRepository, "orderRepository must not be null");
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
         this.publishRecordRepository = Objects.requireNonNull(publishRecordRepository, "publishRecordRepository must not be null");
     }
@@ -100,6 +104,7 @@ public class PaperPortfolioService {
         Map<String, List<PaperRunDailyReport>> reportsByRun = dailyReportRepository.listByRunIds(runIds);
         Map<String, List<PaperRiskCheckResult>> riskByRun = riskCheckResultRepository.listByRunIds(runIds);
         Map<String, Long> openAlertCountByRun = alertRepository.countOpenByRunIds(runIds);
+        Map<String, Long> orderCountByRun = orderRepository.countByRunIds(runIds);
         Map<String, Long> tradeCountByRun = tradeRepository.countByRunIds(runIds);
 
         List<PaperPortfolioAssembler.RunInput> inputs = new ArrayList<>(runs.size());
@@ -117,6 +122,7 @@ public class PaperPortfolioService {
                     reportsByRun.getOrDefault(runId, List.of()),
                     riskByRun.getOrDefault(runId, List.of()),
                     Math.toIntExact(openAlertCountByRun.getOrDefault(runId, 0L)),
+                    Math.toIntExact(orderCountByRun.getOrDefault(runId, 0L)),
                     Math.toIntExact(tradeCountByRun.getOrDefault(runId, 0L)),
                     hasPublishSource,
                     hasBacktestSource));
