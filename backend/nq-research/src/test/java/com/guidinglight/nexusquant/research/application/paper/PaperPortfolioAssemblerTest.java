@@ -85,9 +85,29 @@ class PaperPortfolioAssemblerTest {
         assertEquals(2, bottomStrategy.openAlertCount());
         assertEquals(0, new BigDecimal("-0.25").compareTo(bottomStrategy.worstDrawdown()));
 
+        // ---- Loop-17 组内精确计数（基于完整 run，非 highlights 截断）----
+        // sv-1 = profit(STOPPED,可比,有成交) + empty(CREATED,无成交,数据不足)。
+        assertEquals(1, topStrategy.noTradeCount());
+        assertEquals(1, topStrategy.dataInsufficientCount());
+        assertEquals(1, topStrategy.comparableRunCount());
+        assertEquals(1, topStrategy.stoppedCount());
+        assertEquals(1, topStrategy.createdCount());
+        assertEquals(0, topStrategy.failedCount());
+        assertEquals(0, topStrategy.cancelledCount());
+        assertEquals(0, topStrategy.runningCount());
+        // sv-2 = loss(STOPPED,可比,有成交)。
+        assertEquals(0, bottomStrategy.noTradeCount());
+        assertEquals(0, bottomStrategy.dataInsufficientCount());
+        assertEquals(1, bottomStrategy.comparableRunCount());
+        assertEquals(1, bottomStrategy.stoppedCount());
+
         // ---- 发布分组 ----
         assertEquals(2, summary.publishGroups().size());
         assertEquals("pub-1", summary.publishGroups().get(0).key());
+        // 发布分组同步组内精确计数（pub-1 = profit + empty）。
+        assertEquals(1, summary.publishGroups().get(0).noTradeCount());
+        assertEquals(1, summary.publishGroups().get(0).dataInsufficientCount());
+        assertEquals(1, summary.publishGroups().get(0).createdCount());
 
         // ---- Run 排行 ----
         var highlights = summary.highlights();
@@ -197,6 +217,49 @@ class PaperPortfolioAssemblerTest {
         assertNull(noEquityCurve.maxDrawdown());
         assertEquals(0, noEquityCurve.coverage().comparableRunCount());
         assertEquals(1, noEquityCurve.coverage().missingEquityRunCount());
+    }
+
+    @Test
+    void assembleShouldComputeGroupStatusAndRiskCountsFromFullRuns() {
+        // 同一 strategy/publish 组内混合状态：1 RUNNING(可比) + 1 FAILED(无成交,数据不足) + 1 CREATED(无成交,数据不足)。
+        // 注：PaperTradingRunStatus 仅 CREATED/RUNNING/STOPPED/FAILED；cancelledCount 字段恒为 0（稳定契约位）。
+        var runningRun = new PaperPortfolioAssembler.RunInput(
+                run("g-running", "sv-g", "pub-g", PaperTradingRunStatus.RUNNING, Instant.parse("2026-06-03T00:00:00Z")),
+                List.of(
+                        equity("eg1", "g-running", "2026-06-01T00:00:00Z", "100000", "0", "0"),
+                        equity("eg2", "g-running", "2026-06-02T00:00:00Z", "110000", "10000", "0")),
+                List.of(), List.of(), 0, 3, true, true);
+        var failedRun = new PaperPortfolioAssembler.RunInput(
+                run("g-failed", "sv-g", "pub-g", PaperTradingRunStatus.FAILED, Instant.parse("2026-06-02T00:00:00Z")),
+                List.of(), List.of(), List.of(), 1, 0, true, true);
+        var createdRun = new PaperPortfolioAssembler.RunInput(
+                run("g-created", "sv-g", "pub-g", PaperTradingRunStatus.CREATED, Instant.parse("2026-06-01T00:00:00Z")),
+                List.of(), List.of(), List.of(), 0, 0, true, true);
+
+        var summary = PaperPortfolioAssembler.assemble(List.of(runningRun, failedRun, createdRun));
+
+        assertEquals(1, summary.strategyGroups().size());
+        var group = summary.strategyGroups().get(0);
+        assertEquals("sv-g", group.key());
+        assertEquals(3, group.runCount());
+        assertEquals(1, group.runningCount());
+        assertEquals(1, group.failedCount());
+        assertEquals(1, group.createdCount());
+        assertEquals(0, group.stoppedCount());
+        assertEquals(0, group.cancelledCount());
+        // failed + created 无 equity → 数据不足；无成交 → 无交易；running 有 equity 可比。
+        assertEquals(2, group.dataInsufficientCount());
+        assertEquals(2, group.noTradeCount());
+        assertEquals(1, group.comparableRunCount());
+
+        // publish 维度同步组内精确计数。
+        assertEquals(1, summary.publishGroups().size());
+        var pub = summary.publishGroups().get(0);
+        assertEquals(1, pub.failedCount());
+        assertEquals(1, pub.createdCount());
+        assertEquals(2, pub.dataInsufficientCount());
+        assertEquals(2, pub.noTradeCount());
+        assertEquals(1, pub.comparableRunCount());
     }
 
     // ---- fixtures ----

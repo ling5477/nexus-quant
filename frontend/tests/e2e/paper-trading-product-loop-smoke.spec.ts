@@ -355,13 +355,13 @@ const rankingPortfolioSummary = {
         riskBlockedRunCount: 3, noTradeRunCount: 2, dataInsufficientRunCount: 2,
     },
     strategyGroups: [
-        {key: 'sv-rank-good', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z'},
-        {key: 'sv-rank-highrisk', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z'},
-        {key: 'sv-rank-weak', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 2, openAlertCount: 1, lastRunTime: '2026-06-20T02:00:00Z'},
+        {key: 'sv-rank-good', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 2, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0},
+        {key: 'sv-rank-highrisk', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 1, runningCount: 0, stoppedCount: 1, failedCount: 0, cancelledCount: 0, createdCount: 0},
+        {key: 'sv-rank-weak', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 2, openAlertCount: 1, lastRunTime: '2026-06-20T02:00:00Z', noTradeCount: 2, dataInsufficientCount: 2, comparableRunCount: 0, runningCount: 0, stoppedCount: 0, failedCount: 1, cancelledCount: 0, createdCount: 1},
     ],
     publishGroups: [
-        {key: 'pub-rank-1', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z'},
-        {key: 'pub-rank-2', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z'},
+        {key: 'pub-rank-1', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 2, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 0},
+        {key: 'pub-rank-2', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z', noTradeCount: 0, dataInsufficientCount: 0, comparableRunCount: 1, runningCount: 0, stoppedCount: 1, failedCount: 0, cancelledCount: 0, createdCount: 0},
     ],
     highlights: {
         topWinner: rankHighRiskRun, worstDrawdown: rankHighRiskRun, highestRisk: rankWeakRun1, mostRecent: rankGoodRun,
@@ -375,6 +375,19 @@ const rankingPortfolioSummary = {
     },
     safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
     portfolioCurve: emptyPortfolioCurve,
+};
+// 旧后端响应（group 缺 Loop-17 精确计数字段）：前端应回退到 highlights/dataQuality 派生 noTrade/dataInsufficient，不崩溃。
+const rankingLegacySummary = {
+    ...rankingPortfolioSummary,
+    strategyGroups: [
+        {key: 'sv-rank-good', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z'},
+        {key: 'sv-rank-highrisk', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z'},
+        {key: 'sv-rank-weak', runCount: 2, currentEquity: null, totalPnl: null, totalReturn: null, worstDrawdown: null, riskBlockedCount: 2, openAlertCount: 1, lastRunTime: '2026-06-20T02:00:00Z'},
+    ],
+    publishGroups: [
+        {key: 'pub-rank-1', runCount: 2, currentEquity: 130000, totalPnl: 30000, totalReturn: 0.3, worstDrawdown: -0.05, riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-24T02:00:00Z'},
+        {key: 'pub-rank-2', runCount: 1, currentEquity: 150000, totalPnl: 50000, totalReturn: 0.5, worstDrawdown: -0.4, riskBlockedCount: 1, openAlertCount: 2, lastRunTime: '2026-06-23T02:00:00Z'},
+    ],
 };
 
 type PaperLoopStubOptions = {
@@ -1248,22 +1261,44 @@ test.describe('paper trading product loop panel', () => {
         await expect(ranking.locator('.nq-metric-card', {hasText: '风险调整后最高'}).locator('.nq-metric-card__value')).toContainText('+0.2500');
         await expect(ranking.locator('.nq-metric-card', {hasText: '回撤最大'})).toContainText('sv-rank-highrisk');
         await expect(ranking.locator('.nq-metric-card', {hasText: '风控拦截最多'})).toContainText('sv-rank-weak');
+        // Loop-17：无交易最多 / 数据不足最多 / 异常终态最多 基于后端 group 精确计数。
+        await expect(ranking.locator('.nq-metric-card', {hasText: '无交易最多'})).toContainText('sv-rank-weak');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '无交易最多'}).locator('.nq-metric-card__value')).toHaveText('2');
         await expect(ranking.locator('.nq-metric-card', {hasText: '数据不足最多'})).toContainText('sv-rank-weak');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '异常终态最多'})).toContainText('sv-rank-weak');
 
-        // 2) Strategy Version 排行表：三组策略 + 风险调整分列 + 无交易列。
+        // 2) Strategy Version 排行表：三组策略 + 风险调整分 / 无交易 / 异常终态列。
         await expect(ranking.getByText('Strategy Version 排行（按风险调整分）')).toBeVisible();
         await expect(ranking.getByRole('columnheader', {name: '风险调整分'}).first()).toBeVisible();
-        await expect(ranking.getByRole('columnheader', {name: '无交易'})).toBeVisible();
+        await expect(ranking.getByRole('columnheader', {name: '无交易'}).first()).toBeVisible();
+        await expect(ranking.getByRole('columnheader', {name: '异常终态'}).first()).toBeVisible();
         await expect(ranking.getByText('sv-rank-good').first()).toBeVisible();
         await expect(ranking.getByText('sv-rank-highrisk').first()).toBeVisible();
         await expect(ranking.getByText('sv-rank-weak').first()).toBeVisible();
         // 风险调整分缺失（totalReturn/回撤缺失）→ 该行展示「数据不足」。
         await expect(ranking.locator('tr[data-row-key="sv-rank-weak"]')).toContainText('数据不足');
 
-        // 3) Publish 排行表：两组发布。
+        // 3) Publish 排行表：两组发布，同样含无交易 / 异常终态列。
         await expect(ranking.getByText('Publish 排行（按风险调整分）')).toBeVisible();
         await expect(ranking.getByText('pub-rank-1').first()).toBeVisible();
         await expect(ranking.getByText('pub-rank-2').first()).toBeVisible();
+    });
+
+    test('Paper 策略表现排行在旧后端缺 group 计数字段时回退派生且不崩', async ({page}) => {
+        // group 缺 Loop-17 精确计数 → 前端回退 highlights/dataQuality 派生 noTrade/dataInsufficient（异常终态无法派生记 0）。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: rankingLegacySummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        await expect(ranking).toBeVisible();
+        // 回退派生：sv-rank-weak 的 dataInsufficient 仍由 dataQuality.dataInsufficientRuns（2 条）推导，不崩溃。
+        await expect(ranking.locator('.nq-metric-card', {hasText: '数据不足最多'})).toContainText('sv-rank-weak');
+        await expect(ranking.locator('.nq-metric-card', {hasText: '无交易最多'})).toContainText('sv-rank-weak');
+        await expect(ranking.getByText('sv-rank-weak').first()).toBeVisible();
+        // 异常终态无法从 highlights 派生 → 概览回退「暂无异常终态」。
+        await expect(ranking.locator('.nq-metric-card', {hasText: '异常终态最多'})).toContainText('暂无异常终态');
+        await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
     });
 
     test('Paper 策略表现排行无分组时展示空态且不做排行', async ({page}) => {

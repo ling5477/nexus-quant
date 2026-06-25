@@ -53,6 +53,11 @@ public record PaperPortfolioSummary(
      * 策略版本 / 发布维度分组。
      * currentEquity / totalPnl / totalReturn 仅基于组内可比 run；worstDrawdown 为组内最差单 run 回撤。
      * lastRunTime 为组内最近活动时间（startedAt / stoppedAt / updatedAt / createdAt 取最大）。
+     *
+     * Loop-17 向后兼容新增组内精确计数（均基于「完整 bounded runs」聚合，不依赖 highlights/dataQuality 截断列表）：
+     * noTradeCount（tradeCount==0 的 run 数，no-fill/no-trade 简化口径）、dataInsufficientCount（无法计算
+     * currentEquity/initialEquity 的 run 数，与 overview/dataQuality 同口径）、comparableRunCount（可计算收益率的
+     * 可比 run 数）、runningCount/stoppedCount/failedCount/cancelledCount/createdCount（按 run.status 聚合）。
      */
     public record Group(
             String key,
@@ -63,7 +68,15 @@ public record PaperPortfolioSummary(
             BigDecimal worstDrawdown,
             int riskBlockedCount,
             int openAlertCount,
-            Instant lastRunTime
+            Instant lastRunTime,
+            int noTradeCount,
+            int dataInsufficientCount,
+            int comparableRunCount,
+            int runningCount,
+            int stoppedCount,
+            int failedCount,
+            int cancelledCount,
+            int createdCount
     ) {}
 
     /**

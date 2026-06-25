@@ -52,7 +52,15 @@ public record PaperPortfolioSummaryResponse(
             BigDecimal worstDrawdown,
             int riskBlockedCount,
             int openAlertCount,
-            Instant lastRunTime
+            Instant lastRunTime,
+            int noTradeCount,
+            int dataInsufficientCount,
+            int comparableRunCount,
+            int runningCount,
+            int stoppedCount,
+            int failedCount,
+            int cancelledCount,
+            int createdCount
     ) {}
 
     public record RunRefResponse(
@@ -178,7 +186,9 @@ public record PaperPortfolioSummaryResponse(
     private static GroupResponse group(PaperPortfolioSummary.Group g) {
         return new GroupResponse(
                 g.key(), g.runCount(), g.currentEquity(), g.totalPnl(), g.totalReturn(),
-                g.worstDrawdown(), g.riskBlockedCount(), g.openAlertCount(), g.lastRunTime());
+                g.worstDrawdown(), g.riskBlockedCount(), g.openAlertCount(), g.lastRunTime(),
+                g.noTradeCount(), g.dataInsufficientCount(), g.comparableRunCount(),
+                g.runningCount(), g.stoppedCount(), g.failedCount(), g.cancelledCount(), g.createdCount());
     }
 
     private static RunRefResponse runRef(PaperPortfolioSummary.RunRef r) {

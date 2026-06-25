@@ -416,6 +416,15 @@ export interface PaperPortfolioGroup {
     riskBlockedCount: number;
     openAlertCount: number;
     lastRunTime: string | null;
+    // Loop-17 组内精确计数（向后兼容新增，基于完整 bounded runs）；旧后端响应可能缺失，消费方需对 undefined 做 fallback。
+    noTradeCount?: number;
+    dataInsufficientCount?: number;
+    comparableRunCount?: number;
+    runningCount?: number;
+    stoppedCount?: number;
+    failedCount?: number;
+    cancelledCount?: number;
+    createdCount?: number;
 }
 
 export interface PaperPortfolioRunRef {

@@ -244,6 +244,13 @@ public final class PaperPortfolioAssembler {
             int eligible = 0;
             int riskBlocked = 0;
             int openAlerts = 0;
+            int noTrade = 0;
+            int dataInsufficient = 0;
+            int running = 0;
+            int stopped = 0;
+            int failed = 0;
+            int cancelled = 0;
+            int created = 0;
             BigDecimal worstDrawdown = null;
             Instant lastRunTime = null;
 
@@ -258,6 +265,21 @@ public final class PaperPortfolioAssembler {
                     riskBlocked++;
                 }
                 openAlerts += ref.openAlertCount();
+                // 组内精确计数基于完整 bounded run 子集（members 来自全部 inputs，非 highlights 截断），口径稳定。
+                if (m.noTrade()) {
+                    noTrade++;
+                }
+                if (m.dataInsufficient()) {
+                    dataInsufficient++;
+                }
+                switch (ref.status()) {
+                    case "RUNNING" -> running++;
+                    case "STOPPED" -> stopped++;
+                    case "FAILED" -> failed++;
+                    case "CANCELLED" -> cancelled++;
+                    case "CREATED" -> created++;
+                    default -> { /* 未知状态不计入分桶，仅计入 runCount。 */ }
+                }
                 if (ref.maxDrawdown() != null
                         && (worstDrawdown == null || ref.maxDrawdown().compareTo(worstDrawdown) < 0)) {
                     worstDrawdown = ref.maxDrawdown();
@@ -277,7 +299,15 @@ public final class PaperPortfolioAssembler {
                     worstDrawdown,
                     riskBlocked,
                     openAlerts,
-                    lastRunTime));
+                    lastRunTime,
+                    noTrade,
+                    dataInsufficient,
+                    eligible,
+                    running,
+                    stopped,
+                    failed,
+                    cancelled,
+                    created));
         }
 
         // 排序：先按总 PnL 降序（null 收益排末尾），再按 run 数降序，保证盈利组靠前、稳定可读。

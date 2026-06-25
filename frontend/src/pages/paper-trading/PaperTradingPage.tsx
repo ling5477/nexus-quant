@@ -3391,7 +3391,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
     );
 }
 
-/** 策略 / 发布维度排行行：组合 summary 的 group 字段 + 前端派生的无交易 / 数据不足计数与风险调整分。 */
+/** 策略 / 发布维度排行行：组合 summary 的 group 字段 + 无交易 / 数据不足 / 异常终态计数与风险调整分。 */
 interface PaperStrategyRankingRow {
     key: string;
     runCount: number;
@@ -3404,6 +3404,7 @@ interface PaperStrategyRankingRow {
     lastRunTime: string | null;
     noTradeCount: number;
     dataInsufficientCount: number;
+    failedCancelledCount: number;
     score: number | null;
 }
 
@@ -3438,7 +3439,9 @@ function countRunsByKey(runs: PaperPortfolioRunRef[], keyOf: (run: PaperPortfoli
 }
 
 /**
- * 组装某一维度（strategy / publish）的排行行：复用组 group 字段，派生每组无交易 / 数据不足计数与风险调整分，
+ * 组装某一维度（strategy / publish）的排行行：
+ * Loop-17 起优先用后端 group 精确计数（noTradeCount / dataInsufficientCount / failedCount / cancelledCount，
+ * 基于完整 bounded runs）；旧后端缺字段时回退到 highlights / dataQuality 截断子集派生（异常终态无法派生时记 0）。
  * 按风险调整分降序（null 分末尾），同分按总 PnL 降序，得到稳定的「风险调整后排行」。
  */
 function buildRankingRows(
@@ -3450,7 +3453,10 @@ function buildRankingRows(
     const noTradeByKey = countRunsByKey(noTradeRuns, keyOf);
     const dataInsufficientByKey = countRunsByKey(dataInsufficientRuns, keyOf);
     const rows = groups.map((group) => {
-        const dataInsufficientCount = dataInsufficientByKey.get(group.key) ?? 0;
+        // `?? 派生`：后端字段缺失（undefined）才回退；后端精确 0 会被尊重（0 非 nullish）。
+        const noTradeCount = group.noTradeCount ?? (noTradeByKey.get(group.key) ?? 0);
+        const dataInsufficientCount = group.dataInsufficientCount ?? (dataInsufficientByKey.get(group.key) ?? 0);
+        const failedCancelledCount = (group.failedCount ?? 0) + (group.cancelledCount ?? 0);
         return {
             key: group.key,
             runCount: group.runCount,
@@ -3461,8 +3467,9 @@ function buildRankingRows(
             riskBlockedCount: group.riskBlockedCount,
             openAlertCount: group.openAlertCount,
             lastRunTime: group.lastRunTime,
-            noTradeCount: noTradeByKey.get(group.key) ?? 0,
+            noTradeCount,
             dataInsufficientCount,
+            failedCancelledCount,
             score: riskAdjustedScore(group, dataInsufficientCount),
         };
     });
@@ -3506,9 +3513,9 @@ function renderScore(score: number | null): ReactNode {
         : <span className="nq-num">{formatNqNumber(score, {precision: 4, signed: true})}</span>;
 }
 
-/** 排行表列：includeActivity=true（策略表）额外展示无交易 / 数据不足列。 */
-function rankingColumns(keyTitle: string, includeActivity: boolean): ColumnsType<PaperStrategyRankingRow> {
-    const columns: ColumnsType<PaperStrategyRankingRow> = [
+/** 排行表列：策略表与发布表均展示无交易 / 数据不足 / 异常终态（FAILED+CANCELLED）计数（Loop-17 精确口径）。 */
+function rankingColumns(keyTitle: string): ColumnsType<PaperStrategyRankingRow> {
+    return [
         {title: keyTitle, dataIndex: 'key', key: 'key', width: 190, render: (v: string) => <span className="nq-mono">{v}</span>},
         nqNumericColumn({title: 'Run 数', dataIndex: 'runCount', key: 'runCount', width: 76}),
         nqNumericColumn({title: '当前权益', dataIndex: 'currentEquity', key: 'currentEquity', width: 120, render: (v) => <NqAmountText value={v as string | number | null}/>}),
@@ -3531,18 +3538,12 @@ function rankingColumns(keyTitle: string, includeActivity: boolean): ColumnsType
         }),
         nqNumericColumn({title: '风控拦截', dataIndex: 'riskBlockedCount', key: 'riskBlockedCount', width: 84}),
         nqNumericColumn({title: '告警', dataIndex: 'openAlertCount', key: 'openAlertCount', width: 72}),
-    ];
-    if (includeActivity) {
-        columns.push(
-            nqNumericColumn({title: '无交易', dataIndex: 'noTradeCount', key: 'noTradeCount', width: 76}),
-            nqNumericColumn({title: '数据不足', dataIndex: 'dataInsufficientCount', key: 'dataInsufficientCount', width: 84}),
-        );
-    }
-    columns.push(
+        nqNumericColumn({title: '无交易', dataIndex: 'noTradeCount', key: 'noTradeCount', width: 76}),
+        nqNumericColumn({title: '数据不足', dataIndex: 'dataInsufficientCount', key: 'dataInsufficientCount', width: 84}),
+        nqNumericColumn({title: '异常终态', dataIndex: 'failedCancelledCount', key: 'failedCancelledCount', width: 84}),
         nqNumericColumn({title: '风险调整分', dataIndex: 'score', key: 'score', width: 110, render: (v) => renderScore(v as number | null)}),
         {title: '最近运行', dataIndex: 'lastRunTime', key: 'lastRunTime', width: 170, render: (v: string | null) => formatDateTime(v)},
-    );
-    return columns;
+    ];
 }
 
 /**
@@ -3605,12 +3606,14 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
     const publishRows = buildRankingRows(
         publishGroups, highlights.noTradeRuns, dataQuality.dataInsufficientRuns, (run) => run.publishId);
 
-    // 榜单概览基于策略维度（口径与表格一致）。
+    // 榜单概览基于策略维度（口径与表格一致）；无交易 / 数据不足 / 异常终态均用后端 group 精确计数。
     const topReturn = topRankingRow(strategyRows, (row) => toNullableNumber(row.totalReturn), true);
     const topScore = topRankingRow(strategyRows, (row) => row.score, true);
     const worstDrawdown = topRankingRow(strategyRows, (row) => toNullableNumber(row.worstDrawdown), false);
     const mostRiskBlocked = topRankingRow(strategyRows, (row) => row.riskBlockedCount, true);
+    const mostNoTrade = topRankingRow(strategyRows, (row) => row.noTradeCount, true);
     const mostDataInsufficient = topRankingRow(strategyRows, (row) => row.dataInsufficientCount, true);
+    const mostFailedCancelled = topRankingRow(strategyRows, (row) => row.failedCancelledCount, true);
 
     const totalGroupRuns = strategyRows.reduce((sum, row) => sum + row.runCount, 0);
     const lowSample = totalGroupRuns < 3;
@@ -3643,10 +3646,22 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     tone={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? 'danger' : 'muted'}
                 />
                 <NqMetricCard
+                    label="无交易最多"
+                    value={mostNoTrade ? String(mostNoTrade.noTradeCount) : '0'}
+                    footer={mostNoTrade && mostNoTrade.noTradeCount > 0 ? mostNoTrade.key : '暂无无交易'}
+                    tone={mostNoTrade && mostNoTrade.noTradeCount > 0 ? 'warning' : 'muted'}
+                />
+                <NqMetricCard
                     label="数据不足最多"
                     value={mostDataInsufficient ? String(mostDataInsufficient.dataInsufficientCount) : '0'}
                     footer={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? mostDataInsufficient.key : '暂无数据不足'}
                     tone={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? 'warning' : 'muted'}
+                />
+                <NqMetricCard
+                    label="异常终态最多"
+                    value={mostFailedCancelled ? String(mostFailedCancelled.failedCancelledCount) : '0'}
+                    footer={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? mostFailedCancelled.key : '暂无异常终态'}
+                    tone={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? 'danger' : 'muted'}
                 />
             </div>
             <Typography.Text type="secondary" style={{fontSize: 12}}>
@@ -3660,8 +3675,8 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     rowKey="key"
                     pagination={false}
                     dataSource={strategyRows}
-                    columns={rankingColumns('策略版本', true)}
-                    scroll={{x: 1280, y: 280}}
+                    columns={rankingColumns('策略版本')}
+                    scroll={{x: 1360, y: 280}}
                     locale={{emptyText: '暂无可分组的策略版本数据。'}}
                 />
             </Card>
@@ -3672,8 +3687,8 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     rowKey="key"
                     pagination={false}
                     dataSource={publishRows}
-                    columns={rankingColumns('发布', false)}
-                    scroll={{x: 1080, y: 280}}
+                    columns={rankingColumns('发布')}
+                    scroll={{x: 1360, y: 280}}
                     locale={{emptyText: '暂无可分组的发布数据。'}}
                 />
             </Card>

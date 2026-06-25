@@ -112,6 +112,15 @@ class PaperPortfolioServiceTest {
         assertEquals(0, BigDecimal.ZERO.compareTo(curve.currentDrawdown()));
         assertEquals(1, curve.coverage().comparableRunCount());
         assertEquals(0, curve.coverage().missingEquityRunCount());
+
+        // Loop-17 组内精确计数从完整 bounded run 聚合（非 highlights 截断）：sv-1 = run-1(STOPPED,可比,无成交)。
+        var strategyGroup = summary.strategyGroups().get(0);
+        assertEquals("sv-1", strategyGroup.key());
+        assertEquals(1, strategyGroup.noTradeCount());
+        assertEquals(0, strategyGroup.dataInsufficientCount());
+        assertEquals(1, strategyGroup.comparableRunCount());
+        assertEquals(1, strategyGroup.stoppedCount());
+        assertEquals(0, strategyGroup.failedCount());
     }
 
     @Test

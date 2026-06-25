@@ -40,6 +40,18 @@ class PaperPortfolioSummaryResponseTest {
         assertEquals(1, response.overview().totalRuns());
         assertEquals("SIM/PAPER", response.safety().environment());
 
+        // Loop-17 组内精确计数字段映射（run-z = sv-1，STOPPED，可比，有成交）。
+        var strategyGroup = response.strategyGroups().get(0);
+        assertEquals("sv-1", strategyGroup.key());
+        assertEquals(0, strategyGroup.noTradeCount());
+        assertEquals(0, strategyGroup.dataInsufficientCount());
+        assertEquals(1, strategyGroup.comparableRunCount());
+        assertEquals(1, strategyGroup.stoppedCount());
+        assertEquals(0, strategyGroup.failedCount());
+        assertEquals(0, strategyGroup.cancelledCount());
+        assertEquals(0, strategyGroup.createdCount());
+        assertEquals(0, strategyGroup.runningCount());
+
         // 新增组合曲线字段映射。
         var curve = response.portfolioCurve();
         assertNotNull(curve);
