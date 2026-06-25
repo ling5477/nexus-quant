@@ -33,6 +33,9 @@ public final class PaperPortfolioAssembler {
     /** 排行 / 数据质量清单截断上限，避免响应体无界膨胀。 */
     static final int MAX_LIST_SIZE = 50;
 
+    /** 组合曲线响应点上限；超出时只回传最近 N 个点（指标仍基于完整曲线计算），避免响应体无界膨胀。 */
+    static final int MAX_CURVE_POINTS = 500;
+
     private PaperPortfolioAssembler() {
     }
 
@@ -72,8 +75,9 @@ public final class PaperPortfolioAssembler {
         var publishGroups = buildGroups(metrics, ref -> normalizeKey(ref.publishId(), "(未知发布)"));
         var highlights = buildHighlights(metrics);
         var dataQuality = buildDataQuality(safeInputs, metrics);
+        var portfolioCurve = buildPortfolioCurve(safeInputs);
 
-        return new PaperPortfolioSummary(overview, strategyGroups, publishGroups, highlights, dataQuality);
+        return new PaperPortfolioSummary(overview, strategyGroups, publishGroups, highlights, dataQuality, portfolioCurve);
     }
 
     // ---- 单 run 派生 ----
@@ -82,14 +86,7 @@ public final class PaperPortfolioAssembler {
         PaperTradingRun run = input.run();
 
         // 仅保留有合法时间与数值权益的快照，按时间升序，作为资产与回撤的唯一派生源（与前端 Loop-12 同口径）。
-        List<EquityPoint> points = new ArrayList<>();
-        for (EquityCurveSnapshot snapshot : nonNull(input.equityCurve())) {
-            if (snapshot.snapshotTime() != null && snapshot.totalEquity() != null) {
-                points.add(new EquityPoint(snapshot.snapshotTime(), snapshot.totalEquity(),
-                        snapshot.realizedPnl(), snapshot.unrealizedPnl()));
-            }
-        }
-        points.sort(Comparator.comparing(EquityPoint::time));
+        List<EquityPoint> points = sortedEquityPoints(input.equityCurve());
 
         PaperRunDailyReport latestReport = nonNull(input.dailyReports()).stream()
                 .max(Comparator.comparing(PaperRunDailyReport::reportDate))
@@ -103,19 +100,8 @@ public final class PaperPortfolioAssembler {
         BigDecimal unrealizedPnl = latest != null ? latest.unrealizedPnl() : null;
 
         // 初始资金：优先用「当前权益 - 已实现 - 未实现」回推；否则退化到最早快照权益；均不可得则数据不足。
-        BigDecimal initialEquity = null;
-        if (currentEquity != null && realizedPnl != null && unrealizedPnl != null) {
-            BigDecimal inferred = currentEquity.subtract(realizedPnl).subtract(unrealizedPnl);
-            if (inferred.signum() > 0) {
-                initialEquity = inferred;
-            }
-        }
-        if (initialEquity == null && !points.isEmpty()) {
-            BigDecimal earliest = points.get(0).equity();
-            if (earliest != null && earliest.signum() > 0) {
-                initialEquity = earliest;
-            }
-        }
+        // 抽取为共享口径，组合曲线 buildPortfolioCurve 与单 run 派生使用同一回推逻辑，避免分叉。
+        BigDecimal initialEquity = deriveInitialEquity(points);
 
         BigDecimal maxDrawdown = computeMaxDrawdown(points);
         if (maxDrawdown == null && latestReport != null && latestReport.maxDrawdown() != null) {
@@ -396,9 +382,156 @@ public final class PaperPortfolioAssembler {
                 cap(missingEquity), cap(dataInsufficient), cap(missingBacktest), cap(missingPublish));
     }
 
+    // ---- 组合 equity / drawdown 曲线 ----
+
+    /** 纳入组合曲线的单个可比 run：升序权益点 + 初始资金（与单 run 同口径回推得到）。 */
+    private record CurveRun(List<EquityPoint> points, BigDecimal initialEquity) {}
+
+    /** 时间事件：某 run 在某时刻的权益快照，用于单遍按时间合并组合曲线。 */
+    private record CurveEvent(Instant time, int runIndex, BigDecimal equity) {}
+
+    /**
+     * 构建组合级 equity / drawdown 曲线（纯内存派生，复用 RunInput 已批量读取的 equity 快照，不新增查询）。
+     * 复杂度 O(N log N)（N=可比 run 总快照数）：所有快照作为事件按时间排序后单遍合并，
+     * 维护 totalEquity 与可用 run 初始资金合计的运行值，无 O(时间点数 × run 数) 放大。
+     */
+    private static PaperPortfolioSummary.PortfolioCurve buildPortfolioCurve(List<RunInput> inputs) {
+        List<CurveRun> curveRuns = new ArrayList<>();
+        int missingEquityRunCount = 0;
+        for (RunInput input : inputs) {
+            List<EquityPoint> points = sortedEquityPoints(input.equityCurve());
+            if (points.isEmpty()) {
+                // 无 equity 快照：无法纳入组合曲线，仅计入覆盖度提示（不伪造点）。
+                missingEquityRunCount++;
+                continue;
+            }
+            BigDecimal initial = deriveInitialEquity(points);
+            if (initial == null) {
+                // 有快照但无法回推初始资金 → 口径不可比，剔除以免污染组合收益/回撤（不外推）。
+                continue;
+            }
+            curveRuns.add(new CurveRun(points, initial));
+        }
+
+        int comparableRunCount = curveRuns.size();
+        if (curveRuns.isEmpty()) {
+            // 无可比 run：稳定空结构，指标全 null（前端展示「数据不足」并回退单 run 口径）。
+            return new PaperPortfolioSummary.PortfolioCurve(
+                    List.of(), null, null, null, null, 0,
+                    new PaperPortfolioSummary.PortfolioCurve.Coverage(0, missingEquityRunCount, 0));
+        }
+
+        List<CurveEvent> events = new ArrayList<>();
+        for (int i = 0; i < curveRuns.size(); i++) {
+            for (EquityPoint p : curveRuns.get(i).points()) {
+                events.add(new CurveEvent(p.time(), i, p.equity()));
+            }
+        }
+        events.sort(Comparator.comparing(CurveEvent::time));
+
+        BigDecimal[] runEquity = new BigDecimal[comparableRunCount]; // null = 该 run 尚未产生首笔快照（未可用）
+        BigDecimal totalEquity = BigDecimal.ZERO;
+        BigDecimal availableInitialSum = BigDecimal.ZERO;
+        int availableCount = 0;
+        BigDecimal runningPeak = null;
+        BigDecimal maxDrawdown = null;
+        int incompletePointCount = 0;
+        List<PaperPortfolioSummary.PortfolioCurve.CurvePoint> allPoints = new ArrayList<>();
+
+        int idx = 0;
+        int n = events.size();
+        while (idx < n) {
+            Instant t = events.get(idx).time();
+            // 先应用同一时间戳上的全部事件，再产出该时间点（保证同刻多 run 更新一次性反映）。
+            while (idx < n && events.get(idx).time().equals(t)) {
+                CurveEvent e = events.get(idx);
+                BigDecimal old = runEquity[e.runIndex()];
+                if (old == null) {
+                    availableInitialSum = availableInitialSum.add(curveRuns.get(e.runIndex()).initialEquity());
+                    availableCount++;
+                    totalEquity = totalEquity.add(e.equity());
+                } else {
+                    totalEquity = totalEquity.add(e.equity().subtract(old));
+                }
+                runEquity[e.runIndex()] = e.equity();
+                idx++;
+            }
+
+            int missingRunCount = comparableRunCount - availableCount;
+            if (missingRunCount > 0) {
+                incompletePointCount++;
+            }
+            BigDecimal pointInitial = availableInitialSum;
+            BigDecimal pointPnl = pointInitial.signum() > 0 ? totalEquity.subtract(pointInitial) : null;
+            BigDecimal pointReturn = ratio(pointPnl, pointInitial);
+            if (runningPeak == null || totalEquity.compareTo(runningPeak) > 0) {
+                runningPeak = totalEquity;
+            }
+            BigDecimal drawdown = runningPeak.signum() > 0 ? ratio(totalEquity.subtract(runningPeak), runningPeak) : null;
+            if (drawdown != null && (maxDrawdown == null || drawdown.compareTo(maxDrawdown) < 0)) {
+                maxDrawdown = drawdown;
+            }
+            allPoints.add(new PaperPortfolioSummary.PortfolioCurve.CurvePoint(
+                    t, totalEquity, pointInitial, pointPnl, pointReturn,
+                    runningPeak, drawdown, availableCount, missingRunCount));
+        }
+
+        PaperPortfolioSummary.PortfolioCurve.CurvePoint last = allPoints.get(allPoints.size() - 1);
+        int fullPointCount = allPoints.size();
+        // 响应点上限保护：超限只回传最近 N 个点；指标（峰值 / maxDrawdown / currentDrawdown）已基于完整历史。
+        List<PaperPortfolioSummary.PortfolioCurve.CurvePoint> emitted = fullPointCount <= MAX_CURVE_POINTS
+                ? allPoints
+                : allPoints.subList(fullPointCount - MAX_CURVE_POINTS, fullPointCount);
+
+        return new PaperPortfolioSummary.PortfolioCurve(
+                List.copyOf(emitted),
+                last.totalEquity(),
+                runningPeak,
+                last.drawdown(),
+                maxDrawdown,
+                fullPointCount,
+                new PaperPortfolioSummary.PortfolioCurve.Coverage(
+                        comparableRunCount, missingEquityRunCount, incompletePointCount));
+    }
+
     // ---- helpers ----
 
     private record EquityPoint(Instant time, BigDecimal equity, BigDecimal realizedPnl, BigDecimal unrealizedPnl) {}
+
+    /** 提取并升序排序单 run 的有效权益点（过滤缺时间 / 缺权益的快照）。 */
+    private static List<EquityPoint> sortedEquityPoints(List<EquityCurveSnapshot> snapshots) {
+        List<EquityPoint> points = new ArrayList<>();
+        for (EquityCurveSnapshot snapshot : nonNull(snapshots)) {
+            if (snapshot.snapshotTime() != null && snapshot.totalEquity() != null) {
+                points.add(new EquityPoint(snapshot.snapshotTime(), snapshot.totalEquity(),
+                        snapshot.realizedPnl(), snapshot.unrealizedPnl()));
+            }
+        }
+        points.sort(Comparator.comparing(EquityPoint::time));
+        return points;
+    }
+
+    /**
+     * 单 run 初始资金回推（升序点输入）：优先「最新权益 - 已实现 - 未实现」(>0)，否则退化到最早快照权益(>0)，
+     * 均不可得返回 null（数据不足，不外推）。组合曲线与单 run 派生共用此口径。
+     */
+    private static BigDecimal deriveInitialEquity(List<EquityPoint> points) {
+        if (points.isEmpty()) {
+            return null;
+        }
+        EquityPoint latest = points.get(points.size() - 1);
+        if (latest.equity() != null && latest.realizedPnl() != null && latest.unrealizedPnl() != null) {
+            BigDecimal inferred = latest.equity().subtract(latest.realizedPnl()).subtract(latest.unrealizedPnl());
+            if (inferred.signum() > 0) {
+                return inferred;
+            }
+        }
+        BigDecimal earliest = points.get(0).equity();
+        if (earliest != null && earliest.signum() > 0) {
+            return earliest;
+        }
+        return null;
+    }
 
     private static PaperRiskCheckResult latestRisk(List<PaperRiskCheckResult> riskResults) {
         return nonNull(riskResults).stream()

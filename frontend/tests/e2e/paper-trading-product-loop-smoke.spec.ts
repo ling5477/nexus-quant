@@ -251,6 +251,28 @@ const portfolioRunC = {
     maxDrawdown: null, riskBlocked: false, openAlertCount: 0, tradeCount: 0,
     lastActivityAt: '2026-06-20T00:00:00Z',
 };
+// Loop-15 组合 equity / drawdown 时间序列：t1 仅 run-a 在册（run-b 未起跑 → missingRunCount 1），
+// t2 双 run 在册刷新峰值 170000，t3 回落到 130000（最大回撤），t4 回升到 150000（当前回撤）。
+const defaultPortfolioCurve = {
+    points: [
+        {timestamp: '2026-06-20T00:00:00Z', totalEquity: 100000, totalInitialEquity: 100000, totalPnl: 0, totalReturn: 0, peakEquity: 100000, drawdown: 0, sourceRunCount: 1, missingRunCount: 1},
+        {timestamp: '2026-06-21T00:00:00Z', totalEquity: 170000, totalInitialEquity: 150000, totalPnl: 20000, totalReturn: 0.133333, peakEquity: 170000, drawdown: 0, sourceRunCount: 2, missingRunCount: 0},
+        {timestamp: '2026-06-22T00:00:00Z', totalEquity: 130000, totalInitialEquity: 150000, totalPnl: -20000, totalReturn: -0.133333, peakEquity: 170000, drawdown: -0.235294, sourceRunCount: 2, missingRunCount: 0},
+        {timestamp: '2026-06-23T00:00:00Z', totalEquity: 150000, totalInitialEquity: 150000, totalPnl: 0, totalReturn: 0, peakEquity: 170000, drawdown: -0.117647, sourceRunCount: 2, missingRunCount: 0},
+    ],
+    latestEquity: 150000,
+    peakEquity: 170000,
+    currentDrawdown: -0.117647,
+    maxDrawdown: -0.235294,
+    pointCount: 4,
+    coverage: {comparableRunCount: 2, missingEquityRunCount: 1, incompletePointCount: 1},
+};
+const emptyPortfolioCurve = {
+    points: [],
+    latestEquity: null, peakEquity: null, currentDrawdown: null, maxDrawdown: null,
+    pointCount: 0,
+    coverage: {comparableRunCount: 0, missingEquityRunCount: 0, incompletePointCount: 0},
+};
 const defaultPortfolioSummary = {
     overview: {
         totalRuns: 3, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 1,
@@ -284,6 +306,7 @@ const defaultPortfolioSummary = {
         environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false,
         message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现',
     },
+    portfolioCurve: defaultPortfolioCurve,
 };
 const emptyPortfolioSummary = {
     overview: {
@@ -297,6 +320,7 @@ const emptyPortfolioSummary = {
     highlights: {topWinner: null, worstDrawdown: null, highestRisk: null, mostRecent: null, noTradeRuns: [], riskBlockedRuns: []},
     dataQuality: {missingEquityRuns: [], dataInsufficientRuns: [], missingBacktestSourceRuns: [], missingPublishSourceRuns: []},
     safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
+    portfolioCurve: emptyPortfolioCurve,
 };
 
 type PaperLoopStubOptions = {
@@ -1070,14 +1094,26 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.locator('.nq-metric-card', {hasText: '高风险 run 数'}).locator('.nq-metric-card__value')).toHaveText('1');
         await expect(risk.getByText('风控拦截 + 异常终态合计')).toBeVisible();
 
-        // 2) 回撤分析：阈值分布 + 排行 + 风险口径说明（不伪造当前回撤）。
+        // 2) 组合资金曲线与回撤（Loop-15 真实组合时间序列口径）。
+        await expect(risk.getByText('组合资金曲线与回撤', {exact: true})).toBeVisible();
+        await expect(risk.locator('.nq-metric-card', {hasText: '最新组合 equity'}).locator('.nq-metric-card__value')).toContainText('150,000.00');
+        await expect(risk.locator('.nq-metric-card', {hasText: '资金峰值'}).locator('.nq-metric-card__value')).toContainText('170,000.00');
+        await expect(risk.locator('.nq-metric-card', {hasText: '组合当前回撤'}).locator('.nq-metric-card__value')).toContainText('-11.76%');
+        await expect(risk.locator('.nq-metric-card', {hasText: '组合最大回撤'}).locator('.nq-metric-card__value')).toContainText('-23.53%');
+        await expect(risk.locator('.nq-metric-card', {hasText: '可比 run'}).locator('.nq-metric-card__value')).toHaveText('2');
+        await expect(risk.getByText('缺 equity 1 · 不完整点 1')).toBeVisible();
+        // 组合曲线采样点表（列头 + 在册/缺失 run 列）。
+        await expect(risk.getByRole('columnheader', {name: '组合权益'})).toBeVisible();
+        await expect(risk.getByRole('columnheader', {name: '在册 run'})).toBeVisible();
+        await expect(risk.getByText('Paper 模拟、简化组合资金合计曲线', {exact: false})).toBeVisible();
+
+        // 3) 回撤分析（单 run 口径，与组合曲线互补）。
         await expect(risk.getByText('回撤分析')).toBeVisible();
         await expect(risk.getByText('0% ~ -5%')).toBeVisible();
         await expect(risk.getByText('-5% ~ -10%')).toBeVisible();
         await expect(risk.getByText('-10% ~ -20%')).toBeVisible();
         await expect(risk.getByText('< -20%')).toBeVisible();
-        await expect(risk.getByText('组合层真实时间序列回撤需后续 portfolio equity curve 支撑。')).toBeVisible();
-        await expect(risk.getByText('当前回撤 run 排行需 portfolio equity curve，暂以单 run 最大回撤为准，不伪造当前回撤。')).toBeVisible();
+        await expect(risk.getByText('组合层真实时间序列回撤见上方「组合资金曲线与回撤」。', {exact: false})).toBeVisible();
         // 回撤排行表含高回撤 run 与低风险 run。
         await expect(risk.getByText(PORTFOLIO_RUN_B).first()).toBeVisible();
         await expect(risk.getByText(PORTFOLIO_RUN_A).first()).toBeVisible();
@@ -1107,6 +1143,30 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk).toBeVisible();
         await expect(risk.getByText('暂无 Paper 风险数据，创建并运行 Paper run 后自动汇总风险与回撤。')).toBeVisible();
         await expect(risk.getByText('数据不足，不展示回撤 / 风险数值')).toBeVisible();
+        await expect(risk.getByText('该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。')).toBeVisible();
+    });
+
+    test('portfolioCurve 缺失时组合曲线卡回退且单 run 回撤口径仍在', async ({page}) => {
+        // 有 run 但 portfolioCurve 为 null（模拟旧版本响应 / 数据不足）→ 曲线卡回退提示，不崩溃，单 run 排行保留。
+        await seedAuthAndPaperLoopStubs(page, {
+            seedRun: true,
+            status: 'STOPPED',
+            portfolioSummary: {...defaultPortfolioSummary, portfolioCurve: null},
+        });
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        await expect(risk).toBeVisible();
+
+        // 组合曲线卡回退文案（不伪造组合回撤）。
+        await expect(risk.getByText('组合资金曲线与回撤', {exact: true})).toBeVisible();
+        await expect(risk.getByText('组合 equity curve 暂不可用（数据不足或旧版本响应），回退按单 run 最大回撤统计口径展示。')).toBeVisible();
+        await expect(risk.getByText('数据不足，不展示组合时间序列回撤')).toBeVisible();
+
+        // 单 run 回撤口径仍在，风险总览不受影响。
+        await expect(risk.getByText('回撤分析')).toBeVisible();
+        await expect(risk.locator('.nq-metric-card', {hasText: '最大单 run 回撤'}).locator('.nq-metric-card__value')).toContainText('-25.00%');
         await expect(risk.getByText('该风险看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易风险。')).toBeVisible();
     });
 });

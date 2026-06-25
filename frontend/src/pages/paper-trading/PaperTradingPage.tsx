@@ -87,6 +87,8 @@ import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
     type EquityCurveSnapshotItem,
+    type PaperPortfolioCurve,
+    type PaperPortfolioCurvePoint,
     type PaperPortfolioGroup,
     type PaperPortfolioRunRef,
     type PaperPortfolioSummaryResponse,
@@ -2981,6 +2983,104 @@ function riskRunColumns(): ColumnsType<PaperPortfolioRunRef> {
     ];
 }
 
+/** 组合曲线采样点表列：时间 / 组合权益 / 组合 PnL / 收益率 / 回撤 / 在册 run / 缺失 run。 */
+function portfolioCurveColumns(): ColumnsType<PaperPortfolioCurvePoint> {
+    return [
+        {title: '时间', dataIndex: 'timestamp', key: 'timestamp', width: 170, render: (v: string) => formatDateTime(v)},
+        nqNumericColumn({title: '组合权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 130, render: (v) => <NqAmountText value={v as string | number | null}/>}),
+        nqNumericColumn({
+            title: '组合 PnL',
+            dataIndex: 'totalPnl',
+            key: 'totalPnl',
+            width: 130,
+            render: (v) => (v === null || v === undefined
+                ? <Typography.Text type="secondary">数据不足</Typography.Text>
+                : <NqAmountText value={v as string | number} signed colorBySign/>),
+        }),
+        nqNumericColumn({
+            title: '收益率',
+            dataIndex: 'totalReturn',
+            key: 'totalReturn',
+            width: 110,
+            render: (v) => (v === null || v === undefined
+                ? <Typography.Text type="secondary">数据不足</Typography.Text>
+                : <NqPercentText value={v as string | number} ratio colorBySign/>),
+        }),
+        nqNumericColumn({
+            title: '回撤',
+            dataIndex: 'drawdown',
+            key: 'drawdown',
+            width: 110,
+            render: (v) => (v === null || v === undefined ? '-' : <NqPercentText value={v as string | number} ratio signed={false}/>),
+        }),
+        nqNumericColumn({title: '在册 run', dataIndex: 'sourceRunCount', key: 'sourceRunCount', width: 90}),
+        nqNumericColumn({title: '缺失 run', dataIndex: 'missingRunCount', key: 'missingRunCount', width: 90}),
+    ];
+}
+
+/**
+ * PortfolioEquityCurveCard —— 组合级 equity / drawdown 时间序列卡（Loop-15）。
+ * 优先消费后端 portfolioCurve（真实组合时间序列：当前回撤 / 最大回撤 / 资金峰值 / 最新组合 equity + 采样点）；
+ * 不可用（数据不足或旧版本响应缺字段）时回退提示，由上层「回撤分析」继续以单 run 最大回撤口径兜底。
+ * 仅代表 SIM/Paper 模拟、简化组合资金合计曲线，不代表真实时间加权组合收益，也不代表 LIVE 或真实交易。
+ */
+function PortfolioEquityCurveCard({curve}: {curve: PaperPortfolioCurve | null | undefined}) {
+    const points: PaperPortfolioCurvePoint[] = curve?.points ?? [];
+    const hasCurve = Boolean(curve) && points.length > 0;
+
+    return (
+        <Card size="small" title="组合资金曲线与回撤">
+            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                {hasCurve && curve ? (
+                    <>
+                        <div className="nq-status-strip">
+                            <NqMetricCard label="最新组合 equity" value={<NqAmountText value={curve.latestEquity}/>}/>
+                            <NqMetricCard label="资金峰值" value={<NqAmountText value={curve.peakEquity}/>}/>
+                            <NqMetricCard
+                                label="组合当前回撤"
+                                value={curve.currentDrawdown !== null
+                                    ? <NqPercentText value={curve.currentDrawdown} ratio signed={false}/>
+                                    : '-'}
+                                tone="warning"
+                                footer="组合时间序列口径"
+                            />
+                            <NqMetricCard
+                                label="组合最大回撤"
+                                value={curve.maxDrawdown !== null
+                                    ? <NqPercentText value={curve.maxDrawdown} ratio signed={false}/>
+                                    : '-'}
+                                tone="danger"
+                            />
+                            <NqMetricCard
+                                label="可比 run"
+                                value={String(curve.coverage.comparableRunCount)}
+                                footer={`缺 equity ${curve.coverage.missingEquityRunCount} · 不完整点 ${curve.coverage.incompletePointCount}`}
+                            />
+                        </div>
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>
+                            组合当前回撤 / 最大回撤 / 资金峰值基于组合 equity 时间序列（共 {curve.pointCount} 个采样点，下表为最近若干点）。
+                            该曲线为 Paper 模拟、简化组合资金合计曲线，不代表真实时间加权组合收益，也不代表 LIVE 或真实交易表现。
+                        </Typography.Text>
+                        <NqDataTable<PaperPortfolioCurvePoint>
+                            rowKey="timestamp"
+                            pagination={false}
+                            dataSource={[...points].slice(-12).reverse()}
+                            columns={portfolioCurveColumns()}
+                            scroll={{x: 900, y: 240}}
+                            locale={{emptyText: '暂无组合曲线采样点。'}}
+                        />
+                    </>
+                ) : (
+                    <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                        <NqEmptyState description="组合 equity curve 暂不可用（数据不足或旧版本响应），回退按单 run 最大回撤统计口径展示。"/>
+                        <Typography.Text type="warning" style={{fontSize: 12}}>数据不足，不展示组合时间序列回撤</Typography.Text>
+                    </Space>
+                )}
+            </Space>
+        </Card>
+    );
+}
+
 /**
  * PaperRiskDrawdownDashboard —— Paper 风险与回撤驾驶舱（GateJ 后产品化 Loop-14）。
  * 复用 Loop-13 组合 summary 单请求结果，把「风险面」从组合看板中独立出来只读派生：
@@ -3104,7 +3204,10 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                 />
             </div>
 
-            {/* 2) 回撤分析 */}
+            {/* 2) 组合资金曲线与回撤（Loop-15：真实组合时间序列口径，不可用时回退单 run 口径） */}
+            <PortfolioEquityCurveCard curve={portfolio.portfolioCurve}/>
+
+            {/* 3) 回撤分析（单 run 最大回撤口径，与上方组合时间序列口径互补） */}
             <Card size="small" title="回撤分析">
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <div className="nq-status-strip">
@@ -3124,8 +3227,8 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         />
                     </div>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        回撤阈值分布与排行均按单 run 最大回撤统计；组合层真实时间序列回撤需后续 portfolio equity curve 支撑。
-                        当前回撤 run 排行需 portfolio equity curve，暂以单 run 最大回撤为准，不伪造当前回撤。
+                        回撤阈值分布与排行按单 run 最大回撤统计；组合层真实时间序列回撤见上方「组合资金曲线与回撤」。
+                        单 run 口径与组合曲线口径互补，数据不足的 run 单列「数据不足」，不伪造回撤。
                     </Typography.Text>
                     <NqDataTable<PaperPortfolioRunRef>
                         rowKey="paperRunId"

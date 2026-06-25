@@ -458,6 +458,38 @@ export interface PaperPortfolioSafety {
     message: string;
 }
 
+/**
+ * 组合级 equity / drawdown 时间序列（Loop-15 向后兼容新增）。
+ * 仅代表 SIM/Paper 模拟、简化组合资金合计曲线；数据不足时 points 为空、指标为 null（不伪造回撤）。
+ */
+export interface PaperPortfolioCurvePoint {
+    timestamp: string;
+    totalEquity: string | number | null;
+    totalInitialEquity: string | number | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    peakEquity: string | number | null;
+    drawdown: string | number | null;
+    sourceRunCount: number;
+    missingRunCount: number;
+}
+
+export interface PaperPortfolioCurveCoverage {
+    comparableRunCount: number;
+    missingEquityRunCount: number;
+    incompletePointCount: number;
+}
+
+export interface PaperPortfolioCurve {
+    points: PaperPortfolioCurvePoint[];
+    latestEquity: string | number | null;
+    peakEquity: string | number | null;
+    currentDrawdown: string | number | null;
+    maxDrawdown: string | number | null;
+    pointCount: number;
+    coverage: PaperPortfolioCurveCoverage;
+}
+
 export interface PaperPortfolioSummaryResponse {
     overview: PaperPortfolioOverview;
     strategyGroups: PaperPortfolioGroup[];
@@ -465,4 +497,6 @@ export interface PaperPortfolioSummaryResponse {
     highlights: PaperPortfolioHighlights;
     dataQuality: PaperPortfolioDataQuality;
     safety: PaperPortfolioSafety;
+    // 向后兼容：旧后端响应可能不含该字段；消费方需对 null/undefined/空 points 做 fallback。
+    portfolioCurve?: PaperPortfolioCurve | null;
 }

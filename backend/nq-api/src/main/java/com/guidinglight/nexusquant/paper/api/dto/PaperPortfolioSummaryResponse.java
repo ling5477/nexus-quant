@@ -20,7 +20,8 @@ public record PaperPortfolioSummaryResponse(
         List<GroupResponse> publishGroups,
         HighlightsResponse highlights,
         DataQualityResponse dataQuality,
-        SafetyResponse safety
+        SafetyResponse safety,
+        PortfolioCurveResponse portfolioCurve
 ) {
 
     public record OverviewResponse(
@@ -94,6 +95,38 @@ public record PaperPortfolioSummaryResponse(
             String message
     ) {}
 
+    /**
+     * 组合级 equity / drawdown 时间序列响应（Loop-15 向后兼容新增）。
+     * 数据不足时 points 为空列表、指标为 null（前端展示「数据不足」并回退单 run 口径）；仅代表 SIM/Paper 模拟。
+     */
+    public record PortfolioCurveResponse(
+            List<CurvePointResponse> points,
+            BigDecimal latestEquity,
+            BigDecimal peakEquity,
+            BigDecimal currentDrawdown,
+            BigDecimal maxDrawdown,
+            int pointCount,
+            CurveCoverageResponse coverage
+    ) {}
+
+    public record CurvePointResponse(
+            Instant timestamp,
+            BigDecimal totalEquity,
+            BigDecimal totalInitialEquity,
+            BigDecimal totalPnl,
+            BigDecimal totalReturn,
+            BigDecimal peakEquity,
+            BigDecimal drawdown,
+            int sourceRunCount,
+            int missingRunCount
+    ) {}
+
+    public record CurveCoverageResponse(
+            int comparableRunCount,
+            int missingEquityRunCount,
+            int incompletePointCount
+    ) {}
+
     public static PaperPortfolioSummaryResponse from(PaperPortfolioSummary summary) {
         PaperPortfolioSummary.Overview o = summary.overview();
         var overview = new OverviewResponse(
@@ -119,7 +152,27 @@ public record PaperPortfolioSummaryResponse(
                 overview,
                 summary.strategyGroups().stream().map(PaperPortfolioSummaryResponse::group).toList(),
                 summary.publishGroups().stream().map(PaperPortfolioSummaryResponse::group).toList(),
-                highlights, dataQuality, safety);
+                highlights, dataQuality, safety, portfolioCurve(summary.portfolioCurve()));
+    }
+
+    private static PortfolioCurveResponse portfolioCurve(PaperPortfolioSummary.PortfolioCurve curve) {
+        if (curve == null) {
+            // 兼容防御：理论上 assembler 总返回非空曲线（含空结构），此处仍保证响应稳定不为 null。
+            return new PortfolioCurveResponse(List.of(), null, null, null, null, 0,
+                    new CurveCoverageResponse(0, 0, 0));
+        }
+        PaperPortfolioSummary.PortfolioCurve.Coverage c = curve.coverage();
+        return new PortfolioCurveResponse(
+                curve.points().stream().map(PaperPortfolioSummaryResponse::curvePoint).toList(),
+                curve.latestEquity(), curve.peakEquity(), curve.currentDrawdown(), curve.maxDrawdown(),
+                curve.pointCount(),
+                new CurveCoverageResponse(c.comparableRunCount(), c.missingEquityRunCount(), c.incompletePointCount()));
+    }
+
+    private static CurvePointResponse curvePoint(PaperPortfolioSummary.PortfolioCurve.CurvePoint p) {
+        return new CurvePointResponse(
+                p.timestamp(), p.totalEquity(), p.totalInitialEquity(), p.totalPnl(), p.totalReturn(),
+                p.peakEquity(), p.drawdown(), p.sourceRunCount(), p.missingRunCount());
     }
 
     private static GroupResponse group(PaperPortfolioSummary.Group g) {

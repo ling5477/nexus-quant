@@ -103,6 +103,15 @@ class PaperPortfolioServiceTest {
         assertTrue(summary.dataQuality().missingPublishSourceRuns().isEmpty());
         // 该 run 无成交 → 计入无交易清单。
         assertEquals(1, summary.overview().noTradeRunCount());
+
+        // 组合曲线由 batch-read 的 equity 快照派生（无额外 per-run 查询）：单 run 两点、初始 100000、当前回撤 0。
+        var curve = summary.portfolioCurve();
+        assertEquals(2, curve.pointCount());
+        assertEquals(0, new BigDecimal("112000").compareTo(curve.latestEquity()));
+        assertEquals(0, new BigDecimal("112000").compareTo(curve.peakEquity()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(curve.currentDrawdown()));
+        assertEquals(1, curve.coverage().comparableRunCount());
+        assertEquals(0, curve.coverage().missingEquityRunCount());
     }
 
     @Test

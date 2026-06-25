@@ -20,7 +20,8 @@ public record PaperPortfolioSummary(
         List<Group> strategyGroups,
         List<Group> publishGroups,
         Highlights highlights,
-        DataQuality dataQuality
+        DataQuality dataQuality,
+        PortfolioCurve portfolioCurve
 ) {
 
     /**
@@ -106,4 +107,59 @@ public record PaperPortfolioSummary(
             List<RunRef> missingBacktestSourceRuns,
             List<RunRef> missingPublishSourceRuns
     ) {}
+
+    /**
+     * 组合级 equity / drawdown 时间序列（GateJ 后产品化 Loop-15，向后兼容新增）。
+     *
+     * 口径（简化版组合曲线，非时间加权收益率）：
+     * 1) 仅纳入「可比 run」（有 equity 快照且可回推初始资金，与单 run 同口径）。
+     * 2) 时间轴取所有可比 run 快照时间的并集；每个时间点对每个可比 run 取「该点及之前最近一笔快照」的权益（阶梯保持）。
+     * 3) totalEquity / totalInitialEquity 只对该点「已可用」run 求和，二者口径一致，保证 totalPnl/totalReturn 可解释；
+     *    尚未产生首笔快照的可比 run 计入该点 missingRunCount，不计入权益与初始资金（不伪造）。
+     * 4) running peak = max(totalEquity)；drawdown = (totalEquity - peak)/peak；
+     *    maxDrawdown = min(drawdown)，currentDrawdown = 最后一个点的 drawdown。
+     * 5) 数据不足（无可比 run / 无有效点 / 初始资金合计 <=0）时 points 为空、指标为 null，不外推、不伪造回撤。
+     *
+     * 注意：run 在不同时间起跑会使 totalEquity 在组合「成员变化」时阶跃，因此本曲线是组合资金合计曲线，
+     * 不等同真实时间加权组合收益；展示层须标注「Paper 模拟、简化组合曲线」。
+     */
+    public record PortfolioCurve(
+            List<CurvePoint> points,
+            BigDecimal latestEquity,
+            BigDecimal peakEquity,
+            BigDecimal currentDrawdown,
+            BigDecimal maxDrawdown,
+            int pointCount,
+            Coverage coverage
+    ) {
+
+        /**
+         * 单个时间点的组合聚合。
+         * peakEquity 为「截至该点」的运行峰值（完整曲线口径，即使 points 被截断也基于完整历史）。
+         * sourceRunCount 为该点已贡献权益的可比 run 数；missingRunCount 为尚未产生快照的可比 run 数。
+         */
+        public record CurvePoint(
+                Instant timestamp,
+                BigDecimal totalEquity,
+                BigDecimal totalInitialEquity,
+                BigDecimal totalPnl,
+                BigDecimal totalReturn,
+                BigDecimal peakEquity,
+                BigDecimal drawdown,
+                int sourceRunCount,
+                int missingRunCount
+        ) {}
+
+        /**
+         * 覆盖度提示：
+         * comparableRunCount 为纳入曲线的可比 run 数；
+         * missingEquityRunCount 为无 equity 快照、无法纳入曲线的 run 数；
+         * incompletePointCount 为存在缺失 run（missingRunCount &gt; 0）的时间点数。
+         */
+        public record Coverage(
+                int comparableRunCount,
+                int missingEquityRunCount,
+                int incompletePointCount
+        ) {}
+    }
 }

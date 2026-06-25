@@ -127,6 +127,78 @@ class PaperPortfolioAssemblerTest {
         assertFalse(summary.dataQuality().missingEquityRuns().isEmpty());
     }
 
+    @Test
+    void assembleShouldBuildPortfolioCurveAcrossRunsWithDrawdown() {
+        // run-x：初始 100000，t1=100000 / t2=120000 / t3=90000（最新已实现 -10000 回推初始 100000）。
+        var runX = new PaperPortfolioAssembler.RunInput(
+                run("run-x", "sv-1", "pub-1", PaperTradingRunStatus.STOPPED, Instant.parse("2026-06-03T00:00:00Z")),
+                List.of(
+                        equity("eqx1", "run-x", "2026-06-01T00:00:00Z", "100000", "0", "0"),
+                        equity("eqx2", "run-x", "2026-06-02T00:00:00Z", "120000", "15000", "5000"),
+                        equity("eqx3", "run-x", "2026-06-03T00:00:00Z", "90000", "-10000", "0")),
+                List.of(), List.of(), 0, 4, true, true);
+        // run-y：初始 50000，t2=50000 / t3=55000（最新已实现 5000 回推初始 50000），t1 时尚未起跑。
+        var runY = new PaperPortfolioAssembler.RunInput(
+                run("run-y", "sv-2", "pub-2", PaperTradingRunStatus.STOPPED, Instant.parse("2026-06-03T00:00:00Z")),
+                List.of(
+                        equity("eqy1", "run-y", "2026-06-02T00:00:00Z", "50000", "0", "0"),
+                        equity("eqy2", "run-y", "2026-06-03T00:00:00Z", "55000", "5000", "0")),
+                List.of(), List.of(), 0, 2, true, true);
+
+        var curve = PaperPortfolioAssembler.assemble(List.of(runX, runY)).portfolioCurve();
+
+        // 时间轴并集 t1/t2/t3 共 3 点；指标基于完整曲线。
+        assertEquals(3, curve.pointCount());
+        assertEquals(3, curve.points().size());
+        assertEquals(0, new BigDecimal("145000").compareTo(curve.latestEquity()));   // t3: 90000 + 55000
+        assertEquals(0, new BigDecimal("170000").compareTo(curve.peakEquity()));     // t2: 120000 + 50000
+        assertEquals(0, new BigDecimal("-0.147059").compareTo(curve.currentDrawdown())); // (145000-170000)/170000
+        assertEquals(0, new BigDecimal("-0.147059").compareTo(curve.maxDrawdown()));
+        assertEquals(2, curve.coverage().comparableRunCount());
+        assertEquals(0, curve.coverage().missingEquityRunCount());
+        assertEquals(1, curve.coverage().incompletePointCount()); // 仅 t1 缺 run-y
+
+        // t1：仅 run-x 可用，run-y 计入 missingRunCount，不计入权益与初始资金。
+        var p0 = curve.points().get(0);
+        assertEquals(0, new BigDecimal("100000").compareTo(p0.totalEquity()));
+        assertEquals(0, new BigDecimal("100000").compareTo(p0.totalInitialEquity()));
+        assertEquals(1, p0.sourceRunCount());
+        assertEquals(1, p0.missingRunCount());
+
+        // t2：两 run 均可用，组合权益 170000、初始 150000、PnL +20000，刷新峰值后回撤 0。
+        var p1 = curve.points().get(1);
+        assertEquals(0, new BigDecimal("170000").compareTo(p1.totalEquity()));
+        assertEquals(0, new BigDecimal("150000").compareTo(p1.totalInitialEquity()));
+        assertEquals(0, new BigDecimal("20000").compareTo(p1.totalPnl()));
+        assertEquals(0, p1.missingRunCount());
+
+        // t3：组合回落到 145000，PnL -5000，当前回撤 -0.147059。
+        var p2 = curve.points().get(2);
+        assertEquals(0, new BigDecimal("-5000").compareTo(p2.totalPnl()));
+        assertEquals(0, new BigDecimal("-0.147059").compareTo(p2.drawdown()));
+    }
+
+    @Test
+    void assembleShouldReturnStablePortfolioCurveWhenNoComparableRuns() {
+        // 无 run → 稳定空曲线，指标全 null。
+        var emptyCurve = PaperPortfolioAssembler.assemble(List.of()).portfolioCurve();
+        assertTrue(emptyCurve.points().isEmpty());
+        assertEquals(0, emptyCurve.pointCount());
+        assertNull(emptyCurve.latestEquity());
+        assertNull(emptyCurve.peakEquity());
+        assertNull(emptyCurve.currentDrawdown());
+        assertNull(emptyCurve.maxDrawdown());
+        assertEquals(0, emptyCurve.coverage().comparableRunCount());
+        assertEquals(0, emptyCurve.coverage().missingEquityRunCount());
+
+        // 有 run 但无 equity 快照 → 不可比，计入 missingEquityRunCount，仍稳定空曲线、不伪造回撤。
+        var noEquityCurve = PaperPortfolioAssembler.assemble(List.of(dataInsufficientRun())).portfolioCurve();
+        assertTrue(noEquityCurve.points().isEmpty());
+        assertNull(noEquityCurve.maxDrawdown());
+        assertEquals(0, noEquityCurve.coverage().comparableRunCount());
+        assertEquals(1, noEquityCurve.coverage().missingEquityRunCount());
+    }
+
     // ---- fixtures ----
 
     private PaperPortfolioAssembler.RunInput profitRun() {
