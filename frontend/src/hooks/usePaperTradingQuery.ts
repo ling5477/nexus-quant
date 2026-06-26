@@ -41,6 +41,18 @@ export function usePaperPortfolioSummaryQuery() {
     });
 }
 
+/**
+ * Paper 执行诊断只读聚合（GateK K2）；独立 query key，失败不连累组合看板等其他模块。
+ * retry:false 让 404/500 快速进入错误态（旧后端无该 endpoint 时不无限重试，由诊断区域单独兜底展示）。
+ */
+export function usePaperExecutionDiagnosticsQuery() {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.executionDiagnostics(),
+        queryFn: () => paperTradingApi.executionDiagnostics(),
+        retry: false,
+    });
+}
+
 export function usePaperTradingOrdersQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.orders(paperRunId ?? ''),

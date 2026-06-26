@@ -526,3 +526,100 @@ export interface PaperPortfolioSummaryResponse {
     // 向后兼容：旧后端响应可能不含该字段；消费方需对 null/undefined/空 points 做 fallback。
     portfolioCurve?: PaperPortfolioCurve | null;
 }
+
+/**
+ * Paper 执行诊断只读聚合响应（GateK Batch K1/K2）。
+ * 对 bounded Paper run 做规则化归因（无订单/有订单无成交/成交亏损/风控拦截/数据不足/高回撤/异常终态），
+ * 并按 strategyVersionId / publishId 聚合定位问题集中点。仅 Paper-only 规则化归因，不构成真实投资建议。
+ */
+export type PaperExecutionCause =
+    | 'NO_ORDER'
+    | 'ORDER_NO_FILL'
+    | 'FILLED_LOSS'
+    | 'RISK_BLOCKED'
+    | 'DATA_INSUFFICIENT'
+    | 'HIGH_DRAWDOWN'
+    | 'FAILED_RUN'
+    | 'RUNNING_NO_RESULT'
+    | 'HEALTHY'
+    | 'UNKNOWN';
+
+export type PaperExecutionSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
+export type PaperExecutionCauseConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export interface PaperExecutionDiagnosticsOverview {
+    totalRuns: number;
+    noOrderRunCount: number;
+    orderNoFillRunCount: number;
+    filledRunCount: number;
+    filledLossRunCount: number;
+    riskBlockedRunCount: number;
+    dataInsufficientRunCount: number;
+    highDrawdownRunCount: number;
+    failedRunCount: number;
+    runningRunCount: number;
+}
+
+export interface PaperExecutionDiagnosticCauseDistribution {
+    cause: PaperExecutionCause;
+    count: number;
+    severity: PaperExecutionSeverity;
+    confidence: PaperExecutionCauseConfidence;
+    description: string;
+}
+
+export interface PaperExecutionRunDiagnostic {
+    paperRunId: string;
+    strategyVersionId: string | null;
+    publishId: string | null;
+    status: string;
+    orderCount: number;
+    tradeCount: number;
+    currentEquity: string | number | null;
+    initialEquity: string | number | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    maxDrawdown: string | number | null;
+    riskBlocked: boolean;
+    openAlertCount: number;
+    primaryCause: PaperExecutionCause;
+    secondaryCauses: PaperExecutionCause[];
+    severity: PaperExecutionSeverity;
+    causeConfidence: PaperExecutionCauseConfidence;
+    explanation: string;
+    suggestedAction: string;
+    lastRunTime: string | null;
+}
+
+/** strategyVersionId / publishId 维度聚合诊断；key 为对应维度标识（后端口径）。 */
+export interface PaperExecutionGroupDiagnostic {
+    key: string;
+    runCount: number;
+    primaryCause: PaperExecutionCause;
+    topCauses: PaperExecutionCause[];
+    noOrderCount: number;
+    orderNoFillCount: number;
+    filledLossCount: number;
+    riskBlockedCount: number;
+    dataInsufficientCount: number;
+    highDrawdownCount: number;
+    severity: PaperExecutionSeverity;
+    causeConfidence: PaperExecutionCauseConfidence;
+}
+
+export interface PaperExecutionDiagnosticsSafety {
+    environment: string;
+    liveEnabled: boolean;
+    realExchangeTouched: boolean;
+    message: string;
+}
+
+export interface PaperExecutionDiagnosticsResponse {
+    overview: PaperExecutionDiagnosticsOverview;
+    causeDistribution: PaperExecutionDiagnosticCauseDistribution[];
+    runDiagnostics: PaperExecutionRunDiagnostic[];
+    strategyDiagnostics: PaperExecutionGroupDiagnostic[];
+    publishDiagnostics: PaperExecutionGroupDiagnostic[];
+    safety: PaperExecutionDiagnosticsSafety;
+}

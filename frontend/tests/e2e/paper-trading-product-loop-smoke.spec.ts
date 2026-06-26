@@ -398,6 +398,53 @@ const rankingLegacySummary = {
     ],
 };
 
+// ---- GateK K2：Paper 执行诊断 fixture ----
+const diagSafety = {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该执行诊断仅基于 Paper 模拟运行与本地执行事实做规则化归因，不构成真实投资建议，不代表 LIVE 或真实交易表现'};
+
+// 默认空诊断结构：稳定空态，避免给既有用例引入诊断噪声（既有 seed 默认拿到这个）。
+const emptyExecutionDiagnostics = {
+    overview: {totalRuns: 0, noOrderRunCount: 0, orderNoFillRunCount: 0, filledRunCount: 0, filledLossRunCount: 0, riskBlockedRunCount: 0, dataInsufficientRunCount: 0, highDrawdownRunCount: 0, failedRunCount: 0, runningRunCount: 0},
+    causeDistribution: [],
+    runDiagnostics: [],
+    strategyDiagnostics: [],
+    publishDiagnostics: [],
+    safety: diagSafety,
+};
+
+// 丰富诊断 fixture：覆盖 NO_ORDER / ORDER_NO_FILL / FILLED_LOSS / RISK_BLOCKED / DATA_INSUFFICIENT / HIGH_DRAWDOWN / FAILED_RUN / HEALTHY 八类主因。
+const richExecutionDiagnostics = {
+    overview: {totalRuns: 8, noOrderRunCount: 1, orderNoFillRunCount: 1, filledRunCount: 3, filledLossRunCount: 1, riskBlockedRunCount: 1, dataInsufficientRunCount: 1, highDrawdownRunCount: 1, failedRunCount: 1, runningRunCount: 1},
+    causeDistribution: [
+        {cause: 'FAILED_RUN', count: 1, severity: 'CRITICAL', confidence: 'HIGH', description: '异常终态 run：执行链路失败。'},
+        {cause: 'DATA_INSUFFICIENT', count: 1, severity: 'WARNING', confidence: 'HIGH', description: '数据不足 run：缺权益/初始资金，无法计算收益率。'},
+        {cause: 'RISK_BLOCKED', count: 1, severity: 'CRITICAL', confidence: 'HIGH', description: '风控拦截 run：执行被风控阻断或判为高风险。'},
+        {cause: 'ORDER_NO_FILL', count: 1, severity: 'WARNING', confidence: 'HIGH', description: '有订单无成交 run：已下单但未撮合成交。'},
+        {cause: 'NO_ORDER', count: 1, severity: 'WARNING', confidence: 'HIGH', description: '无订单 run：未产生任何订单与成交。'},
+        {cause: 'FILLED_LOSS', count: 1, severity: 'WARNING', confidence: 'HIGH', description: '成交亏损 run：已成交但当前 PnL 为负。'},
+        {cause: 'HIGH_DRAWDOWN', count: 1, severity: 'CRITICAL', confidence: 'HIGH', description: '高回撤 run：单 run 最大回撤达到/超过 10%。'},
+        {cause: 'HEALTHY', count: 1, severity: 'INFO', confidence: 'HIGH', description: '健康 run：已成交、非亏损、无高回撤、无风控拦截。'},
+    ],
+    runDiagnostics: [
+        {paperRunId: 'diag-no-order', strategyVersionId: 'sv-diag-1', publishId: 'pub-diag-1', status: 'RUNNING', orderCount: 0, tradeCount: 0, currentEquity: 100000, initialEquity: 100000, totalPnl: 0, totalReturn: 0, maxDrawdown: 0, riskBlocked: false, openAlertCount: 0, primaryCause: 'NO_ORDER', secondaryCauses: [], severity: 'WARNING', causeConfidence: 'HIGH', explanation: '已运行但未产生任何订单，可能是策略信号未触发或数据/信号条件不足。', suggestedAction: '确认 run 是否已启动，并复盘策略触发条件、参数与输入数据覆盖范围。', lastRunTime: '2026-06-24T02:00:00Z'},
+        {paperRunId: 'diag-order-no-fill', strategyVersionId: 'sv-diag-1', publishId: 'pub-diag-1', status: 'RUNNING', orderCount: 3, tradeCount: 0, currentEquity: 100000, initialEquity: 100000, totalPnl: 0, totalReturn: 0, maxDrawdown: 0, riskBlocked: false, openAlertCount: 0, primaryCause: 'ORDER_NO_FILL', secondaryCauses: [], severity: 'WARNING', causeConfidence: 'HIGH', explanation: '已产生订单但未形成成交，可能是撮合条件、价格条件、流动性模拟或风控后置限制。', suggestedAction: '复盘下单价格/类型与撮合（模拟成交）条件，确认订单是否长期挂单未成交。', lastRunTime: '2026-06-24T02:01:00Z'},
+        {paperRunId: 'diag-filled-loss', strategyVersionId: 'sv-diag-1', publishId: 'pub-diag-1', status: 'STOPPED', orderCount: 4, tradeCount: 2, currentEquity: 94000, initialEquity: 100000, totalPnl: -6000, totalReturn: -0.06, maxDrawdown: -0.06, riskBlocked: false, openAlertCount: 0, primaryCause: 'FILLED_LOSS', secondaryCauses: [], severity: 'WARNING', causeConfidence: 'HIGH', explanation: '已成交但当前 PnL 为负，需结合回撤、持仓与成交价格继续分析。', suggestedAction: '结合回撤曲线与成交明细复盘亏损来源（Paper 模拟结果，不代表真实交易表现）。', lastRunTime: '2026-06-24T02:02:00Z'},
+        {paperRunId: 'diag-risk-blocked', strategyVersionId: 'sv-diag-2', publishId: 'pub-diag-2', status: 'RUNNING', orderCount: 1, tradeCount: 0, currentEquity: 100000, initialEquity: 100000, totalPnl: 0, totalReturn: 0, maxDrawdown: 0, riskBlocked: true, openAlertCount: 2, primaryCause: 'RISK_BLOCKED', secondaryCauses: ['ORDER_NO_FILL'], severity: 'CRITICAL', causeConfidence: 'HIGH', explanation: '风控规则阻断执行或判定为高风险结果。', suggestedAction: '检查最近一次风控检查结果与触发规则，确认是否为预期风控行为。', lastRunTime: '2026-06-24T02:03:00Z'},
+        {paperRunId: 'diag-data-insufficient', strategyVersionId: 'sv-diag-2', publishId: 'pub-diag-2', status: 'RUNNING', orderCount: 0, tradeCount: 0, currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null, maxDrawdown: null, riskBlocked: false, openAlertCount: 0, primaryCause: 'DATA_INSUFFICIENT', secondaryCauses: ['NO_ORDER', 'RUNNING_NO_RESULT'], severity: 'WARNING', causeConfidence: 'HIGH', explanation: '缺少可用权益/初始资金等事实，无法计算收益率与盈亏。', suggestedAction: '检查 equity 快照、日报与数据采集是否正常生成。', lastRunTime: '2026-06-24T02:04:00Z'},
+        {paperRunId: 'diag-high-drawdown', strategyVersionId: 'sv-diag-2', publishId: 'pub-diag-2', status: 'STOPPED', orderCount: 4, tradeCount: 3, currentEquity: 105000, initialEquity: 100000, totalPnl: 5000, totalReturn: 0.05, maxDrawdown: -0.15, riskBlocked: false, openAlertCount: 0, primaryCause: 'HIGH_DRAWDOWN', secondaryCauses: [], severity: 'CRITICAL', causeConfidence: 'HIGH', explanation: '单 run 最大回撤已达到或超过 10%（首版规则阈值）。', suggestedAction: '复盘仓位与回撤来源（Paper 模拟口径）。', lastRunTime: '2026-06-24T02:05:00Z'},
+        {paperRunId: 'diag-failed', strategyVersionId: 'sv-diag-2', publishId: 'pub-diag-2', status: 'FAILED', orderCount: 0, tradeCount: 0, currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null, maxDrawdown: null, riskBlocked: false, openAlertCount: 1, primaryCause: 'FAILED_RUN', secondaryCauses: ['DATA_INSUFFICIENT', 'NO_ORDER'], severity: 'CRITICAL', causeConfidence: 'HIGH', explanation: 'Run 处于 FAILED 终态，执行链路异常终止。', suggestedAction: '检查异常停机/告警/恢复事件，定位失败步骤后再决定是否重试。', lastRunTime: '2026-06-24T02:06:00Z'},
+        {paperRunId: 'diag-healthy', strategyVersionId: 'sv-diag-1', publishId: 'pub-diag-1', status: 'STOPPED', orderCount: 4, tradeCount: 3, currentEquity: 112000, initialEquity: 100000, totalPnl: 12000, totalReturn: 0.12, maxDrawdown: -0.03, riskBlocked: false, openAlertCount: 0, primaryCause: 'HEALTHY', secondaryCauses: [], severity: 'INFO', causeConfidence: 'HIGH', explanation: '已成交、当前非亏损、无高回撤、无风控拦截、数据充分。', suggestedAction: '无需处理；继续按 Paper 计划观察（不代表真实交易表现）。', lastRunTime: '2026-06-24T02:07:00Z'},
+    ],
+    strategyDiagnostics: [
+        {key: 'sv-diag-2', runCount: 4, primaryCause: 'FAILED_RUN', topCauses: ['FAILED_RUN', 'RISK_BLOCKED', 'DATA_INSUFFICIENT'], noOrderCount: 2, orderNoFillCount: 1, filledLossCount: 0, riskBlockedCount: 1, dataInsufficientCount: 2, highDrawdownCount: 1, severity: 'CRITICAL', causeConfidence: 'HIGH'},
+        {key: 'sv-diag-1', runCount: 4, primaryCause: 'ORDER_NO_FILL', topCauses: ['ORDER_NO_FILL', 'NO_ORDER', 'FILLED_LOSS'], noOrderCount: 1, orderNoFillCount: 1, filledLossCount: 1, riskBlockedCount: 0, dataInsufficientCount: 0, highDrawdownCount: 0, severity: 'WARNING', causeConfidence: 'HIGH'},
+    ],
+    publishDiagnostics: [
+        {key: 'pub-diag-2', runCount: 4, primaryCause: 'FAILED_RUN', topCauses: ['FAILED_RUN', 'RISK_BLOCKED', 'DATA_INSUFFICIENT'], noOrderCount: 2, orderNoFillCount: 1, filledLossCount: 0, riskBlockedCount: 1, dataInsufficientCount: 2, highDrawdownCount: 1, severity: 'CRITICAL', causeConfidence: 'HIGH'},
+        {key: 'pub-diag-1', runCount: 4, primaryCause: 'ORDER_NO_FILL', topCauses: ['ORDER_NO_FILL', 'NO_ORDER', 'FILLED_LOSS'], noOrderCount: 1, orderNoFillCount: 1, filledLossCount: 1, riskBlockedCount: 0, dataInsufficientCount: 0, highDrawdownCount: 0, severity: 'WARNING', causeConfidence: 'HIGH'},
+    ],
+    safety: diagSafety,
+};
+
 type PaperLoopStubOptions = {
     seedRun?: boolean;
     status?: string;
@@ -418,6 +465,9 @@ type PaperLoopStubOptions = {
     summary?: unknown;
     // portfolio 覆盖：传入对象即用作 /portfolio/summary 响应（含空结构）；缺省用 defaultPortfolioSummary。
     portfolioSummary?: unknown;
+    // execution-diagnostics 覆盖：传入对象即用作响应（缺省空诊断结构）；status 非 200 时模拟 404/500 fallback。
+    executionDiagnostics?: unknown;
+    executionDiagnosticsStatus?: number;
 };
 
 async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptions = {}): Promise<{setRunStatus: (status: string) => void}> {
@@ -498,6 +548,17 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
         status: 200,
         json: ('portfolioSummary' in options ? options.portfolioSummary : defaultPortfolioSummary) ?? null,
     }));
+    // Paper 执行诊断聚合路由（GateK K2）；缺省空诊断结构，可注入丰富 fixture 或非 200 状态模拟 fallback。
+    await page.route('**/api/paper-trading/execution-diagnostics', (route: Route) => {
+        const statusCode = options.executionDiagnosticsStatus ?? 200;
+        if (statusCode !== 200) {
+            return route.fulfill({status: statusCode, json: {code: 'DIAGNOSTICS_ERROR', message: 'execution diagnostics unavailable', traceId: 'trc-diag-err'}});
+        }
+        return route.fulfill({
+            status: 200,
+            json: ('executionDiagnostics' in options ? options.executionDiagnostics : emptyExecutionDiagnostics) ?? null,
+        });
+    });
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/start`, (route: Route) => {
         currentRun = {
             ...currentRun,
@@ -1872,5 +1933,140 @@ test.describe('paper trading product loop panel', () => {
         await dataCard.click();
         await expect(dataCard).toHaveAttribute('aria-pressed', 'true');
         await expect(riskCard).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    // ─── GateK K2：Paper 执行诊断 UI ──────────────────────────────────────────
+
+    test('K2：Paper 执行诊断区域渲染总览/分布/Run/Strategy/Publish 与 Paper-only 文案', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', executionDiagnostics: richExecutionDiagnostics});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const diag = page.getByRole('region', {name: 'Paper 执行诊断'});
+        await expect(diag.getByText('Paper 执行诊断', {exact: true})).toBeVisible();
+        await expect(diag.getByText('SIM/Paper only · Rules-based diagnostics')).toBeVisible();
+        await expect(diag.getByText('基于 Paper 执行事实的规则化归因，不代表 LIVE 或真实交易建议。')).toBeVisible();
+
+        // A) 诊断总览：纳入诊断 run = 8。
+        await expect(diag.locator('.nq-metric-card', {hasText: '纳入诊断 run'}).locator('.nq-metric-card__value')).toHaveText('8');
+
+        // B) Cause Distribution 表存在且含风控拦截行。
+        const distTable = page.getByRole('region', {name: 'Paper 执行诊断主因分布表'});
+        await expect(distTable).toBeVisible();
+        await expect(distTable.getByText('风控拦截 run：执行被风控阻断或判为高风险。')).toBeVisible();
+
+        // C) Run Diagnostics 表：八类 run 均渲染。
+        const runTable = page.getByRole('region', {name: 'Paper 执行诊断 Run 表'});
+        for (const runId of ['diag-no-order', 'diag-order-no-fill', 'diag-filled-loss', 'diag-risk-blocked',
+            'diag-data-insufficient', 'diag-high-drawdown', 'diag-failed', 'diag-healthy']) {
+            await expect(runTable.locator(`tbody tr[data-row-key="${runId}"]`)).toHaveCount(1);
+        }
+
+        // D/E) Strategy / Publish 诊断表存在并含聚合行。
+        const strategyTable = page.getByRole('region', {name: 'Paper 执行诊断 Strategy 表'});
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-diag-2"]')).toHaveCount(1);
+        const publishTable = page.getByRole('region', {name: 'Paper 执行诊断 Publish 表'});
+        await expect(publishTable.locator('tbody tr[data-row-key="pub-diag-2"]')).toHaveCount(1);
+
+        // Paper-only / 非 AI 投资建议文案。
+        await expect(diag.getByText(/该诊断仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现/)).toBeVisible();
+        await expect(diag.getByText(/诊断结果为规则化归因，不是 AI 投资建议，也不构成真实交易建议/)).toBeVisible();
+        await expect(diag.getByText(/confidence 表示该诊断原因由事实直接判断或推断得到，不代表真实交易结论/)).toBeVisible();
+    });
+
+    test('K2：Run 诊断展示 primaryCause/severity/confidence/explanation/suggestedAction', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', executionDiagnostics: richExecutionDiagnostics});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const runTable = page.getByRole('region', {name: 'Paper 执行诊断 Run 表'});
+        const riskRow = runTable.locator('tbody tr[data-row-key="diag-risk-blocked"]');
+        // primaryCause tag（风控拦截）、severity（CRITICAL）、confidence（HIGH）同行可见。
+        await expect(riskRow.getByText('风控拦截', {exact: true})).toBeVisible();
+        await expect(riskRow.getByText('CRITICAL')).toBeVisible();
+        await expect(riskRow.getByText('HIGH')).toBeVisible();
+        // explanation 与 suggestedAction 文本可见。
+        await expect(riskRow.getByText('风控规则阻断执行或判定为高风险结果。')).toBeVisible();
+        await expect(riskRow.getByText(/建议：检查最近一次风控检查结果与触发规则/)).toBeVisible();
+    });
+
+    test('K2：cause / severity 筛选联动 Run 诊断表', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', executionDiagnostics: richExecutionDiagnostics});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const diag = page.getByRole('region', {name: 'Paper 执行诊断'});
+        const filterGroup = diag.getByRole('group', {name: 'Paper 执行诊断筛选'});
+        const runTable = page.getByRole('region', {name: 'Paper 执行诊断 Run 表'});
+
+        // 选 NO_ORDER → 仅 diag-no-order。
+        await filterGroup.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '无订单 NO_ORDER', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="diag-no-order"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="diag-order-no-fill"]')).toHaveCount(0);
+        await expect(runTable.locator('tbody tr[data-row-key="diag-healthy"]')).toHaveCount(0);
+
+        // 选 ORDER_NO_FILL → 仅 diag-order-no-fill。
+        await filterGroup.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '有订单无成交 ORDER_NO_FILL', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="diag-order-no-fill"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="diag-no-order"]')).toHaveCount(0);
+
+        // 选 DATA_INSUFFICIENT → 仅 diag-data-insufficient。
+        await filterGroup.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '数据不足 DATA_INSUFFICIENT', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="diag-data-insufficient"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="diag-failed"]')).toHaveCount(0);
+
+        // 「查看全部」清空筛选 → 八类 run 全部回到表中。
+        await diag.getByRole('button', {name: '查看全部'}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="diag-failed"]')).toHaveCount(1);
+
+        // severity = CRITICAL → 仅 risk-blocked / high-drawdown / failed 三条。
+        await filterGroup.locator('.ant-select-selector').last().click();
+        await page.getByRole('option', {name: 'CRITICAL', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="diag-risk-blocked"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="diag-high-drawdown"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="diag-failed"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="diag-healthy"]')).toHaveCount(0);
+
+        // cause=HEALTHY + severity=CRITICAL 无命中 → 空态。
+        await filterGroup.locator('.ant-select-selector').first().click();
+        await page.getByRole('option', {name: '健康 HEALTHY', exact: true}).click();
+        await expect(runTable.getByText('当前筛选条件下暂无匹配的 Run 诊断。')).toBeVisible();
+    });
+
+    test('K2：诊断 500 错误隔离，其余 Paper 模块仍可见', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', executionDiagnosticsStatus: 500});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const diag = page.getByRole('region', {name: 'Paper 执行诊断'});
+        // 诊断区域错误态 + 重试按钮（antd 对双字中文按钮会插入空格 "重 试"）。
+        await expect(diag.getByText('Paper 执行诊断加载失败')).toBeVisible();
+        await expect(diag.getByRole('button', {name: /重\s*试/})).toBeVisible();
+        // Paper-only 文案仍在（错误态不掩盖边界声明）。
+        await expect(diag.getByText(/不是 AI 投资建议/)).toBeVisible();
+        // 其他模块不受影响：组合看板与风险驾驶舱仍渲染。
+        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'})).toBeVisible();
+    });
+
+    test('K2：诊断 404 / 空结构兼容回退，不崩溃显示空态', async ({page}) => {
+        // 404 → 错误态（retry:false 不无限重试），其他模块可见。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', executionDiagnosticsStatus: 404});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        const diag = page.getByRole('region', {name: 'Paper 执行诊断'});
+        await expect(diag.getByText('Paper 执行诊断加载失败')).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+
+        // 空诊断结构（默认 emptyExecutionDiagnostics，totalRuns=0）→ 空态文案。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        const diagEmpty = page.getByRole('region', {name: 'Paper 执行诊断'});
+        await expect(diagEmpty.getByText('暂无 Paper 执行诊断数据，创建并运行 Paper run 后自动生成执行归因。')).toBeVisible();
+        await expect(diagEmpty.getByText(/不是 AI 投资建议/)).toBeVisible();
     });
 });
