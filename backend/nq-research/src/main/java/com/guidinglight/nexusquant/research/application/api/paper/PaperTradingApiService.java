@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.research.application.api.paper;
 
 import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.PaperAutoReviewService;
 import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics;
 import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnosticsService;
 import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioService;
@@ -60,6 +62,7 @@ public class PaperTradingApiService {
     private final PaperPortfolioService portfolioService;
     private final PaperExecutionDiagnosticsService executionDiagnosticsService;
     private final PaperStrategyEvaluationService strategyEvaluationService;
+    private final PaperAutoReviewService autoReviewService;
 
     public PaperTradingApiService(
             PaperTradingRunService runService,
@@ -72,7 +75,8 @@ public class PaperTradingApiService {
             PaperRunSummaryService summaryService,
             PaperPortfolioService portfolioService,
             PaperExecutionDiagnosticsService executionDiagnosticsService,
-            PaperStrategyEvaluationService strategyEvaluationService
+            PaperStrategyEvaluationService strategyEvaluationService,
+            PaperAutoReviewService autoReviewService
     ) {
         this.runService = Objects.requireNonNull(runService, "runService must not be null");
         this.monitorService = Objects.requireNonNull(monitorService, "monitorService must not be null");
@@ -87,6 +91,7 @@ public class PaperTradingApiService {
                 executionDiagnosticsService, "executionDiagnosticsService must not be null");
         this.strategyEvaluationService = Objects.requireNonNull(
                 strategyEvaluationService, "strategyEvaluationService must not be null");
+        this.autoReviewService = Objects.requireNonNull(autoReviewService, "autoReviewService must not be null");
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
@@ -161,6 +166,14 @@ public class PaperTradingApiService {
      */
     public PaperStrategyEvaluation strategyEvaluations() {
         return strategyEvaluationService.evaluate();
+    }
+
+    /**
+     * Paper 规则化自动复盘只读聚合：复用 K1 执行诊断与 K3 策略评估，规则化归纳组合 / 重点 run / 策略 / 发布复盘与问题聚类。
+     * 只读，无 run / 无策略时返回稳定空结构，不触发任何状态机或外部调用；不接 AI / DH runtime，不构成真实投资建议。
+     */
+    public PaperAutoReview autoReviews() {
+        return autoReviewService.review();
     }
 
     public List<PaperTradingOrder> listOrders(String paperRunId) {
