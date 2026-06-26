@@ -53,6 +53,18 @@ export function usePaperExecutionDiagnosticsQuery() {
     });
 }
 
+/**
+ * Paper 策略评估只读聚合（GateK K3B）；独立 query key，失败不连累组合看板 / 执行诊断 / 策略排行等模块。
+ * retry:false 让 404/500 快速进入错误态（旧后端无该 endpoint 时不无限重试，由评估区域单独兜底展示）。
+ */
+export function usePaperStrategyEvaluationsQuery() {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.strategyEvaluations(),
+        queryFn: () => paperTradingApi.strategyEvaluations(),
+        retry: false,
+    });
+}
+
 export function usePaperTradingOrdersQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.orders(paperRunId ?? ''),

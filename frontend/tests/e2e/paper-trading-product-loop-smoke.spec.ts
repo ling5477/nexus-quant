@@ -445,6 +445,44 @@ const richExecutionDiagnostics = {
     safety: diagSafety,
 };
 
+// ---- GateK K3B：Paper 策略评估 fixture ----
+const evalSafety = {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该策略评估仅基于 Paper 模拟运行与本地执行事实做 Paper 内部启发式评分，不是真实投资评级，不构成投资建议，不代表 LIVE 或真实交易表现'};
+
+const emptyStrategyEvaluations = {
+    overview: {strategyCount: 0, publishCount: 0, evaluatedRunCount: 0, comparableRunCount: 0, sampleInsufficientStrategyCount: 0, profitableStrategyCount: 0, lossStrategyCount: 0, highRiskStrategyCount: 0, backtestDeviationStrategyCount: 0, topCompositeScore: null, worstCompositeScore: null},
+    strategyEvaluations: [],
+    publishEvaluations: [],
+    rankings: {topCompositeStrategies: [], worstCompositeStrategies: [], topReturnStrategies: [], worstDrawdownStrategies: [], sampleInsufficientStrategies: [], highDeviationStrategies: [], highRiskStrategies: []},
+    safety: evalSafety,
+};
+
+// 丰富评估 fixture：覆盖 6 类 ratingLabel + HIGH/UNAVAILABLE backtest 偏差。
+const richStrategyEvaluations = {
+    overview: {strategyCount: 6, publishCount: 3, evaluatedRunCount: 16, comparableRunCount: 12, sampleInsufficientStrategyCount: 1, profitableStrategyCount: 3, lossStrategyCount: 1, highRiskStrategyCount: 1, backtestDeviationStrategyCount: 1, topCompositeScore: 85, worstCompositeScore: 25},
+    strategyEvaluations: [
+        {strategyVersionId: 'eval-strong', runCount: 4, comparableRunCount: 4, publishCount: 1, latestRunTime: '2026-06-24T02:00:00Z', currentEquity: 448000, initialEquity: 400000, totalPnl: 48000, totalReturn: 0.12, maxDrawdown: -0.03, winRunCount: 4, lossRunCount: 0, winRate: 1, averageReturn: 0.12, averageDrawdown: -0.03, riskBlockedCount: 0, dataInsufficientCount: 0, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 4, filledLossCount: 0, failedRunCount: 0, sampleScore: 40, returnScore: 80, riskScore: 94, executionScore: 100, backtestDeviationScore: 96, compositeScore: 85, ratingLabel: 'STRONG_PAPER_PERFORMER', evaluationConfidence: 'HIGH', primaryWeakness: 'SAMPLE', warnings: [], backtestDeviation: {backtestReturn: 0.1, paperReturn: 0.12, returnDeviation: 0.02, backtestMaxDrawdown: -0.03, paperMaxDrawdown: -0.03, drawdownDeviation: 0, deviationLevel: 'LOW', deviationExplanation: 'Paper 与 Backtest 收益偏差较小（首版阈值 < 5%）。'}},
+        {strategyVersionId: 'eval-watch', runCount: 3, comparableRunCount: 3, publishCount: 1, latestRunTime: '2026-06-23T02:00:00Z', currentEquity: 306000, initialEquity: 300000, totalPnl: 6000, totalReturn: 0.02, maxDrawdown: -0.08, winRunCount: 2, lossRunCount: 1, winRate: 0.67, averageReturn: 0.02, averageDrawdown: -0.06, riskBlockedCount: 0, dataInsufficientCount: 0, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 3, filledLossCount: 1, failedRunCount: 0, sampleScore: 40, returnScore: 55, riskScore: 80, executionScore: 100, backtestDeviationScore: 80, compositeScore: 60, ratingLabel: 'WATCHLIST', evaluationConfidence: 'MEDIUM', primaryWeakness: 'SAMPLE', warnings: ['BACKTEST_PAPER_DEVIATION_HIGH'], backtestDeviation: {backtestReturn: 0.12, paperReturn: 0.02, returnDeviation: -0.1, backtestMaxDrawdown: -0.05, paperMaxDrawdown: -0.08, drawdownDeviation: -0.03, deviationLevel: 'MEDIUM', deviationExplanation: 'Paper 与 Backtest 收益存在中等偏差（首版阈值 5%~15%），建议结合执行诊断复盘。'}},
+        {strategyVersionId: 'eval-risk', runCount: 2, comparableRunCount: 2, publishCount: 1, latestRunTime: '2026-06-22T02:00:00Z', currentEquity: 140000, initialEquity: 200000, totalPnl: -60000, totalReturn: -0.3, maxDrawdown: -0.35, winRunCount: 0, lossRunCount: 2, winRate: 0, averageReturn: -0.3, averageDrawdown: -0.34, riskBlockedCount: 2, dataInsufficientCount: 0, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 2, filledLossCount: 2, failedRunCount: 1, sampleScore: 40, returnScore: 0, riskScore: 10, executionScore: 90, backtestDeviationScore: 20, compositeScore: 35, ratingLabel: 'HIGH_RISK', evaluationConfidence: 'MEDIUM', primaryWeakness: 'RISK', warnings: ['HIGH_DRAWDOWN', 'RISK_BLOCKED_PRESENT', 'FAILED_RUN_PRESENT', 'BACKTEST_PAPER_DEVIATION_HIGH'], backtestDeviation: {backtestReturn: 0.1, paperReturn: -0.3, returnDeviation: -0.4, backtestMaxDrawdown: -0.05, paperMaxDrawdown: -0.35, drawdownDeviation: -0.3, deviationLevel: 'HIGH', deviationExplanation: 'Paper 与 Backtest 收益偏差较大（首版阈值 > 15%），Paper 模拟与回测差异显著，需重点复盘。'}},
+        {strategyVersionId: 'eval-sample', runCount: 1, comparableRunCount: 1, publishCount: 1, latestRunTime: '2026-06-21T02:00:00Z', currentEquity: 110000, initialEquity: 100000, totalPnl: 10000, totalReturn: 0.1, maxDrawdown: -0.03, winRunCount: 1, lossRunCount: 0, winRate: 1, averageReturn: 0.1, averageDrawdown: -0.03, riskBlockedCount: 0, dataInsufficientCount: 0, noOrderCount: 0, orderNoFillCount: 0, filledRunCount: 1, filledLossCount: 0, failedRunCount: 0, sampleScore: 10, returnScore: 75, riskScore: 94, executionScore: 100, backtestDeviationScore: null, compositeScore: 40, ratingLabel: 'SAMPLE_INSUFFICIENT', evaluationConfidence: 'LOW', primaryWeakness: 'SAMPLE', warnings: ['SAMPLE_INSUFFICIENT', 'BACKTEST_DATA_UNAVAILABLE'], backtestDeviation: {backtestReturn: null, paperReturn: 0.1, returnDeviation: null, backtestMaxDrawdown: null, paperMaxDrawdown: -0.03, drawdownDeviation: null, deviationLevel: 'UNAVAILABLE', deviationExplanation: '无可比 Backtest 评估数据，无法计算 Paper 与 Backtest 偏差。'}},
+        {strategyVersionId: 'eval-data', runCount: 3, comparableRunCount: 0, publishCount: 1, latestRunTime: '2026-06-20T02:00:00Z', currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null, maxDrawdown: null, winRunCount: 0, lossRunCount: 0, winRate: null, averageReturn: null, averageDrawdown: null, riskBlockedCount: 0, dataInsufficientCount: 3, noOrderCount: 3, orderNoFillCount: 0, filledRunCount: 0, filledLossCount: 0, failedRunCount: 0, sampleScore: 10, returnScore: 0, riskScore: 100, executionScore: 0, backtestDeviationScore: null, compositeScore: 25, ratingLabel: 'DATA_INSUFFICIENT', evaluationConfidence: 'LOW', primaryWeakness: 'RETURN', warnings: ['DATA_INSUFFICIENT', 'EXECUTION_NO_FILL', 'BACKTEST_DATA_UNAVAILABLE'], backtestDeviation: null},
+        {strategyVersionId: 'eval-exec', runCount: 3, comparableRunCount: 2, publishCount: 1, latestRunTime: '2026-06-19T02:00:00Z', currentEquity: 201000, initialEquity: 200000, totalPnl: 1000, totalReturn: 0.005, maxDrawdown: -0.02, winRunCount: 1, lossRunCount: 0, winRate: 0.5, averageReturn: 0.005, averageDrawdown: -0.02, riskBlockedCount: 0, dataInsufficientCount: 1, noOrderCount: 1, orderNoFillCount: 1, filledRunCount: 1, filledLossCount: 0, failedRunCount: 0, sampleScore: 40, returnScore: 51, riskScore: 96, executionScore: 23, backtestDeviationScore: 90, compositeScore: 45, ratingLabel: 'EXECUTION_PROBLEM', evaluationConfidence: 'LOW', primaryWeakness: 'EXECUTION', warnings: ['EXECUTION_NO_FILL'], backtestDeviation: {backtestReturn: 0.0, paperReturn: 0.005, returnDeviation: 0.005, backtestMaxDrawdown: -0.02, paperMaxDrawdown: -0.02, drawdownDeviation: 0, deviationLevel: 'LOW', deviationExplanation: 'Paper 与 Backtest 收益偏差较小（首版阈值 < 5%）。'}},
+    ],
+    publishEvaluations: [
+        {publishId: 'pub-eval-1', strategyVersionId: 'eval-strong', runCount: 4, comparableRunCount: 4, latestRunTime: '2026-06-24T02:00:00Z', totalPnl: 48000, totalReturn: 0.12, maxDrawdown: -0.03, winRate: 1, sampleScore: 40, riskScore: 94, returnScore: 80, executionScore: 100, backtestDeviationScore: 96, compositeScore: 85, ratingLabel: 'STRONG_PAPER_PERFORMER', evaluationConfidence: 'HIGH', warnings: [], backtestDeviation: {backtestReturn: 0.1, paperReturn: 0.12, returnDeviation: 0.02, backtestMaxDrawdown: -0.03, paperMaxDrawdown: -0.03, drawdownDeviation: 0, deviationLevel: 'LOW', deviationExplanation: 'Paper 与 Backtest 收益偏差较小（首版阈值 < 5%）。'}},
+        {publishId: 'pub-eval-2', strategyVersionId: 'eval-risk', runCount: 2, comparableRunCount: 2, latestRunTime: '2026-06-22T02:00:00Z', totalPnl: -60000, totalReturn: -0.3, maxDrawdown: -0.35, winRate: 0, sampleScore: 40, riskScore: 10, returnScore: 0, executionScore: 90, backtestDeviationScore: 20, compositeScore: 35, ratingLabel: 'HIGH_RISK', evaluationConfidence: 'MEDIUM', warnings: ['HIGH_DRAWDOWN'], backtestDeviation: {backtestReturn: 0.1, paperReturn: -0.3, returnDeviation: -0.4, backtestMaxDrawdown: -0.05, paperMaxDrawdown: -0.35, drawdownDeviation: -0.3, deviationLevel: 'HIGH', deviationExplanation: 'Paper 与 Backtest 收益偏差较大。'}},
+    ],
+    rankings: {
+        topCompositeStrategies: ['eval-strong', 'eval-watch', 'eval-exec'],
+        worstCompositeStrategies: ['eval-data', 'eval-risk', 'eval-sample'],
+        topReturnStrategies: ['eval-strong', 'eval-sample', 'eval-watch'],
+        worstDrawdownStrategies: ['eval-risk', 'eval-watch'],
+        sampleInsufficientStrategies: ['eval-sample'],
+        highDeviationStrategies: ['eval-risk'],
+        highRiskStrategies: ['eval-risk'],
+    },
+    safety: evalSafety,
+};
+
 type PaperLoopStubOptions = {
     seedRun?: boolean;
     status?: string;
@@ -468,6 +506,9 @@ type PaperLoopStubOptions = {
     // execution-diagnostics 覆盖：传入对象即用作响应（缺省空诊断结构）；status 非 200 时模拟 404/500 fallback。
     executionDiagnostics?: unknown;
     executionDiagnosticsStatus?: number;
+    // strategy-evaluations 覆盖：传入对象即用作响应（缺省空评估结构）；status 非 200 时模拟 404/500 fallback。
+    strategyEvaluations?: unknown;
+    strategyEvaluationsStatus?: number;
 };
 
 async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptions = {}): Promise<{setRunStatus: (status: string) => void}> {
@@ -557,6 +598,17 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
         return route.fulfill({
             status: 200,
             json: ('executionDiagnostics' in options ? options.executionDiagnostics : emptyExecutionDiagnostics) ?? null,
+        });
+    });
+    // Paper 策略评估聚合路由（GateK K3B）；缺省空评估结构，可注入丰富 fixture 或非 200 状态模拟 fallback。
+    await page.route('**/api/paper-trading/strategy-evaluations', (route: Route) => {
+        const statusCode = options.strategyEvaluationsStatus ?? 200;
+        if (statusCode !== 200) {
+            return route.fulfill({status: statusCode, json: {code: 'EVALUATION_ERROR', message: 'strategy evaluations unavailable', traceId: 'trc-eval-err'}});
+        }
+        return route.fulfill({
+            status: 200,
+            json: ('strategyEvaluations' in options ? options.strategyEvaluations : emptyStrategyEvaluations) ?? null,
         });
     });
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/start`, (route: Route) => {
@@ -2068,5 +2120,172 @@ test.describe('paper trading product loop panel', () => {
         const diagEmpty = page.getByRole('region', {name: 'Paper 执行诊断'});
         await expect(diagEmpty.getByText('暂无 Paper 执行诊断数据，创建并运行 Paper run 后自动生成执行归因。')).toBeVisible();
         await expect(diagEmpty.getByText(/不是 AI 投资建议/)).toBeVisible();
+    });
+
+    // ─── GateK K3B：Paper 策略评估 UI ─────────────────────────────────────────
+
+    test('K3B：Paper 策略评估区域渲染总览/Strategy/Publish/偏差/Rankings 与 Paper-only 文案', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        await expect(evalRegion.getByText('Paper 策略评估', {exact: true})).toBeVisible();
+        await expect(evalRegion.getByText('SIM/Paper only · Internal evaluation')).toBeVisible();
+        await expect(evalRegion.getByText('基于 Paper 表现、执行质量、样本充足性与 Backtest 偏差的内部评估。')).toBeVisible();
+
+        // A) 总览：策略数 = 6。
+        await expect(evalRegion.locator('.nq-metric-card', {hasText: '策略数'}).locator('.nq-metric-card__value')).toHaveText('6');
+
+        // B) Strategy 表：六类评级行均渲染。
+        const strategyTable = page.getByRole('region', {name: 'Paper 策略评估表'});
+        for (const sv of ['eval-strong', 'eval-watch', 'eval-risk', 'eval-sample', 'eval-data', 'eval-exec']) {
+            await expect(strategyTable.locator(`tbody tr[data-row-key="${sv}"]`)).toHaveCount(1);
+        }
+
+        // C) Publish 表。
+        const publishTable = page.getByRole('region', {name: 'Paper 发布评估表'});
+        await expect(publishTable.locator('tbody tr[data-row-key="pub-eval-1"]')).toHaveCount(1);
+
+        // D) 偏差表存在且含 HIGH 偏差说明。
+        const deviationTable = page.getByRole('region', {name: 'Paper 回测偏差表'});
+        await expect(deviationTable.locator('tbody tr[data-row-key="eval-risk"]')).toHaveCount(1);
+        await expect(deviationTable.getByText(/Paper 模拟与回测差异显著/)).toBeVisible();
+
+        // E) Rankings。
+        const rankingsRegion = page.getByRole('region', {name: 'Paper 策略评估榜单'});
+        await expect(rankingsRegion.getByText('综合分最高')).toBeVisible();
+        await expect(rankingsRegion.getByText('高风险')).toBeVisible();
+
+        // Paper-only / 非真实投资评级 / 非投资建议文案。
+        await expect(evalRegion.getByText(/该评分是 Paper 内部启发式评估，不是真实投资评级/).first()).toBeVisible();
+        await expect(evalRegion.getByText(/不代表 LIVE 或真实交易表现，也不构成投资建议/).first()).toBeVisible();
+        await expect(evalRegion.getByText(/Backtest 偏差用于比较 Paper 与回测表现差异，缺失数据不会被伪造/)).toBeVisible();
+    });
+
+    test('K3B：Strategy 行展示 compositeScore/子分/ratingLabel/confidence/warnings/primaryWeakness', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const strategyTable = page.getByRole('region', {name: 'Paper 策略评估表'});
+        const riskRow = strategyTable.locator('tbody tr[data-row-key="eval-risk"]');
+        await expect(riskRow.getByText('35', {exact: true})).toBeVisible(); // compositeScore
+        await expect(riskRow.getByText('高风险', {exact: true})).toBeVisible(); // ratingLabel tag
+        await expect(riskRow.getByText('MEDIUM', {exact: true})).toBeVisible(); // confidence
+        await expect(riskRow.getByText('RISK', {exact: true})).toBeVisible(); // primaryWeakness
+        await expect(riskRow.getByText('HIGH_DRAWDOWN')).toBeVisible(); // warning tag
+        // 子分（backtestDeviationScore=20）在行内可见。
+        await expect(riskRow.getByText('20', {exact: true})).toBeVisible(); // backtestDeviationScore
+
+        // 缺 backtestDeviationScore 显示「数据不足」（eval-data）。
+        const dataRow = strategyTable.locator('tbody tr[data-row-key="eval-data"]');
+        await expect(dataRow.getByText('数据不足').first()).toBeVisible();
+    });
+
+    test('K3B：评级 / 可信度 / 偏差筛选联动 Strategy 表', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        const filterGroup = evalRegion.getByRole('group', {name: 'Paper 策略评估筛选'});
+        const strategyTable = page.getByRole('region', {name: 'Paper 策略评估表'});
+
+        // 评级 HIGH_RISK → 仅 eval-risk。
+        await filterGroup.locator('.ant-select-selector').nth(0).click();
+        await page.getByRole('option', {name: '高风险 HIGH_RISK', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-risk"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-strong"]')).toHaveCount(0);
+
+        // 查看全部 → 重置。
+        await evalRegion.getByRole('button', {name: '查看全部'}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-strong"]')).toHaveCount(1);
+
+        // 评级 SAMPLE_INSUFFICIENT → 仅 eval-sample。
+        await filterGroup.locator('.ant-select-selector').nth(0).click();
+        await page.getByRole('option', {name: '样本不足 SAMPLE_INSUFFICIENT', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-sample"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-strong"]')).toHaveCount(0);
+        await evalRegion.getByRole('button', {name: '查看全部'}).click();
+
+        // 可信度 LOW → eval-sample / eval-data / eval-exec（3 条），strong（HIGH）不在。
+        await filterGroup.locator('.ant-select-selector').nth(1).click();
+        await page.getByRole('option', {name: 'LOW', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-sample"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-data"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-exec"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-strong"]')).toHaveCount(0);
+        await evalRegion.getByRole('button', {name: '查看全部'}).click();
+
+        // Backtest 偏差 HIGH → 仅 eval-risk。
+        await filterGroup.locator('.ant-select-selector').nth(2).click();
+        await page.getByRole('option', {name: 'HIGH', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-risk"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="eval-strong"]')).toHaveCount(0);
+
+        // 叠加评级 STRONG_PAPER_PERFORMER + 偏差 HIGH → 无命中 → 空态。
+        await filterGroup.locator('.ant-select-selector').nth(0).click();
+        await page.getByRole('option', {name: '稳健表现 STRONG_PAPER_PERFORMER', exact: true}).click();
+        await expect(strategyTable.getByText('当前筛选条件下暂无匹配的策略评估。')).toBeVisible();
+    });
+
+    test('K3B：排序控件按综合分升降序，null 分恒排末尾', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        const sortGroup = evalRegion.getByRole('group', {name: 'Paper 策略评估排序'});
+        const strategyTable = page.getByRole('region', {name: 'Paper 策略评估表'});
+
+        // 默认综合分降序：首行为 eval-strong（85）。
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).toHaveAttribute('data-row-key', 'eval-strong');
+
+        // 切升序：首行为 eval-data（25）。
+        await sortGroup.locator('.ant-segmented-item-label', {hasText: '升序'}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key]').first()).toHaveAttribute('data-row-key', 'eval-data');
+
+        // 切回降序 + 按 Backtest 偏差分排序：eval-data / eval-sample（null 分）排末尾。
+        await sortGroup.locator('.ant-segmented-item-label', {hasText: '降序'}).click();
+        await sortGroup.locator('.ant-select-selector').click();
+        await page.getByRole('option', {name: 'Backtest 偏差分', exact: true}).click();
+        const lastTwo = strategyTable.locator('tbody tr[data-row-key]');
+        const count = await lastTwo.count();
+        const lastKey = await lastTwo.nth(count - 1).getAttribute('data-row-key');
+        // null backtestDeviationScore 的两个策略恒排末尾。
+        expect(['eval-data', 'eval-sample']).toContain(lastKey);
+    });
+
+    test('K3B：评估 500 错误隔离，其余 Paper 模块仍可见', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluationsStatus: 500});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        await expect(evalRegion.getByText('Paper 策略评估加载失败')).toBeVisible();
+        await expect(evalRegion.getByRole('button', {name: /重\s*试/})).toBeVisible();
+        await expect(evalRegion.getByText(/不是真实投资评级/)).toBeVisible();
+        // 其他模块不受影响。
+        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+    });
+
+    test('K3B：评估 404 / 空结构兼容回退，不崩溃显示空态', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluationsStatus: 404});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        await expect(evalRegion.getByText('Paper 策略评估加载失败')).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+
+        // 空评估结构（默认 emptyStrategyEvaluations，strategyCount=0）→ 空态文案。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        const evalEmpty = page.getByRole('region', {name: 'Paper 策略评估'});
+        await expect(evalEmpty.getByText('暂无 Paper 策略评估数据，创建并运行 Paper run 后自动生成策略评估。')).toBeVisible();
+        await expect(evalEmpty.getByText(/不是真实投资评级/)).toBeVisible();
     });
 });

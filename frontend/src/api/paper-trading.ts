@@ -21,6 +21,7 @@ import type {
     PaperRunStabilityCheckGenerateRequest,
     PaperExecutionDiagnosticsResponse,
     PaperPortfolioSummaryResponse,
+    PaperStrategyEvaluationsResponse,
     PaperRunStabilityCheckItem,
     PaperRunSummaryResponse,
     PaperTradingOrderItem,
@@ -58,6 +59,10 @@ export const paperTradingApi = {
     },
     async executionDiagnostics(): Promise<PaperExecutionDiagnosticsResponse> {
         const {data} = await apiClient.get<PaperExecutionDiagnosticsResponse>('/paper-trading/execution-diagnostics');
+        return data;
+    },
+    async strategyEvaluations(): Promise<PaperStrategyEvaluationsResponse> {
+        const {data} = await apiClient.get<PaperStrategyEvaluationsResponse>('/paper-trading/strategy-evaluations');
         return data;
     },
     async create(request: PaperTradingRunCreateRequest): Promise<PaperTradingRunItem> {

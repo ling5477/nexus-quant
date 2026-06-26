@@ -623,3 +623,129 @@ export interface PaperExecutionDiagnosticsResponse {
     publishDiagnostics: PaperExecutionGroupDiagnostic[];
     safety: PaperExecutionDiagnosticsSafety;
 }
+
+/**
+ * Paper 策略评估只读聚合响应（GateK Batch K3/K3B）。
+ * 从 strategyVersionId / publishId 维度评估 Paper 模拟表现、Paper vs Backtest 偏差、样本充足性与风险调整评分。
+ * 评分为 0~100 Paper 内部启发式分，不是真实投资评级、不代表 LIVE 或真实交易表现、不构成投资建议。
+ */
+export type PaperStrategyRatingLabel =
+    | 'STRONG_PAPER_PERFORMER'
+    | 'WATCHLIST'
+    | 'HIGH_RISK'
+    | 'SAMPLE_INSUFFICIENT'
+    | 'DATA_INSUFFICIENT'
+    | 'EXECUTION_PROBLEM'
+    | 'UNKNOWN';
+
+export type PaperStrategyEvaluationConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export type PaperBacktestDeviationLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'UNAVAILABLE';
+
+export interface PaperStrategyEvaluationOverview {
+    strategyCount: number;
+    publishCount: number;
+    evaluatedRunCount: number;
+    comparableRunCount: number;
+    sampleInsufficientStrategyCount: number;
+    profitableStrategyCount: number;
+    lossStrategyCount: number;
+    highRiskStrategyCount: number;
+    backtestDeviationStrategyCount: number;
+    topCompositeScore: number | null;
+    worstCompositeScore: number | null;
+}
+
+export interface PaperBacktestDeviation {
+    backtestReturn: string | number | null;
+    paperReturn: string | number | null;
+    returnDeviation: string | number | null;
+    backtestMaxDrawdown: string | number | null;
+    paperMaxDrawdown: string | number | null;
+    drawdownDeviation: string | number | null;
+    deviationLevel: PaperBacktestDeviationLevel;
+    deviationExplanation: string;
+}
+
+export interface PaperStrategyEvaluationItem {
+    strategyVersionId: string;
+    runCount: number;
+    comparableRunCount: number;
+    publishCount: number;
+    latestRunTime: string | null;
+    currentEquity: string | number | null;
+    initialEquity: string | number | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    maxDrawdown: string | number | null;
+    winRunCount: number;
+    lossRunCount: number;
+    winRate: string | number | null;
+    averageReturn: string | number | null;
+    averageDrawdown: string | number | null;
+    riskBlockedCount: number;
+    dataInsufficientCount: number;
+    noOrderCount: number;
+    orderNoFillCount: number;
+    filledRunCount: number;
+    filledLossCount: number;
+    failedRunCount: number;
+    sampleScore: number;
+    riskScore: number;
+    returnScore: number;
+    executionScore: number;
+    backtestDeviationScore: number | null;
+    compositeScore: number;
+    ratingLabel: PaperStrategyRatingLabel;
+    evaluationConfidence: PaperStrategyEvaluationConfidence;
+    primaryWeakness: string;
+    warnings: string[];
+    backtestDeviation: PaperBacktestDeviation | null;
+}
+
+export interface PaperPublishEvaluationItem {
+    publishId: string;
+    strategyVersionId: string | null;
+    runCount: number;
+    comparableRunCount: number;
+    latestRunTime: string | null;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    maxDrawdown: string | number | null;
+    winRate: string | number | null;
+    sampleScore: number;
+    riskScore: number;
+    returnScore: number;
+    executionScore: number;
+    backtestDeviationScore: number | null;
+    compositeScore: number;
+    ratingLabel: PaperStrategyRatingLabel;
+    evaluationConfidence: PaperStrategyEvaluationConfidence;
+    warnings: string[];
+    backtestDeviation: PaperBacktestDeviation | null;
+}
+
+export interface PaperStrategyEvaluationRankings {
+    topCompositeStrategies: string[];
+    worstCompositeStrategies: string[];
+    topReturnStrategies: string[];
+    worstDrawdownStrategies: string[];
+    sampleInsufficientStrategies: string[];
+    highDeviationStrategies: string[];
+    highRiskStrategies: string[];
+}
+
+export interface PaperStrategyEvaluationSafety {
+    environment: string;
+    liveEnabled: boolean;
+    realExchangeTouched: boolean;
+    message: string;
+}
+
+export interface PaperStrategyEvaluationsResponse {
+    overview: PaperStrategyEvaluationOverview;
+    strategyEvaluations: PaperStrategyEvaluationItem[];
+    publishEvaluations: PaperPublishEvaluationItem[];
+    rankings: PaperStrategyEvaluationRankings;
+    safety: PaperStrategyEvaluationSafety;
+}

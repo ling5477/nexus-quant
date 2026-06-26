@@ -122,6 +122,7 @@ export const paperTradingQueryKeys = {
     summary: (paperRunId: string) => [...paperTradingQueryKeys.all, 'summary', paperRunId] as const,
     portfolioSummary: () => [...paperTradingQueryKeys.all, 'portfolio-summary'] as const,
     executionDiagnostics: () => [...paperTradingQueryKeys.all, 'execution-diagnostics'] as const,
+    strategyEvaluations: () => [...paperTradingQueryKeys.all, 'strategy-evaluations'] as const,
     orders: (paperRunId: string) => [...paperTradingQueryKeys.all, 'orders', paperRunId] as const,
     trades: (paperRunId: string) => [...paperTradingQueryKeys.all, 'trades', paperRunId] as const,
     positions: (paperRunId: string) => [...paperTradingQueryKeys.all, 'positions', paperRunId] as const,
