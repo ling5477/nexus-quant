@@ -13,3 +13,11 @@ export function toNullableNumber(value: string | number | null | undefined): num
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : null;
 }
+
+/** PnL 语义色调：0 / null 视为中性（muted），正为 up，负为 down。 */
+export function pnlTone(value: number | null): 'up' | 'down' | 'muted' {
+    if (value === null || value === 0) {
+        return 'muted';
+    }
+    return value > 0 ? 'up' : 'down';
+}
