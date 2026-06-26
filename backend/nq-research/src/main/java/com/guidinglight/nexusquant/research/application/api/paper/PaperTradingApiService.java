@@ -6,6 +6,8 @@ import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiag
 import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnosticsService;
 import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioService;
 import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioSummary;
+import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluationService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorRunService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorService;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoverCommand;
@@ -57,6 +59,7 @@ public class PaperTradingApiService {
     private final PaperRunSummaryService summaryService;
     private final PaperPortfolioService portfolioService;
     private final PaperExecutionDiagnosticsService executionDiagnosticsService;
+    private final PaperStrategyEvaluationService strategyEvaluationService;
 
     public PaperTradingApiService(
             PaperTradingRunService runService,
@@ -68,7 +71,8 @@ public class PaperTradingApiService {
             PaperRunMonitorRunService monitorRunService,
             PaperRunSummaryService summaryService,
             PaperPortfolioService portfolioService,
-            PaperExecutionDiagnosticsService executionDiagnosticsService
+            PaperExecutionDiagnosticsService executionDiagnosticsService,
+            PaperStrategyEvaluationService strategyEvaluationService
     ) {
         this.runService = Objects.requireNonNull(runService, "runService must not be null");
         this.monitorService = Objects.requireNonNull(monitorService, "monitorService must not be null");
@@ -81,6 +85,8 @@ public class PaperTradingApiService {
         this.portfolioService = Objects.requireNonNull(portfolioService, "portfolioService must not be null");
         this.executionDiagnosticsService = Objects.requireNonNull(
                 executionDiagnosticsService, "executionDiagnosticsService must not be null");
+        this.strategyEvaluationService = Objects.requireNonNull(
+                strategyEvaluationService, "strategyEvaluationService must not be null");
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
@@ -146,6 +152,15 @@ public class PaperTradingApiService {
      */
     public PaperExecutionDiagnostics executionDiagnostics() {
         return executionDiagnosticsService.diagnose();
+    }
+
+    /**
+     * Paper 策略评估只读聚合：从 strategyVersionId / publishId 维度评估 Paper 模拟表现、Paper vs Backtest 偏差、
+     * 样本充足性与风险调整评分（Paper 内部启发式分，非真实投资评级）。
+     * 只读，无 run 时返回稳定空结构，不触发任何状态机或外部调用；不构成真实投资建议。
+     */
+    public PaperStrategyEvaluation strategyEvaluations() {
+        return strategyEvaluationService.evaluate();
     }
 
     public List<PaperTradingOrder> listOrders(String paperRunId) {
