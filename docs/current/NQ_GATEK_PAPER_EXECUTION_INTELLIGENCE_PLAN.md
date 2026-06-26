@@ -1,8 +1,11 @@
 # NQ GateK Paper Execution Intelligence Plan
 
-> 任务：NQ-GATEK-PLAN-PAPER-PORTFOLIO-TO-EXECUTION-INTELLIGENCE  
-> 日期：2026-06-26  
-> 等级：M 级规划文档（planning only；不改 backend/frontend/migration/endpoint）  
+> 任务：NQ-GATEK-PLAN-PAPER-PORTFOLIO-TO-EXECUTION-INTELLIGENCE
+>
+> 日期：2026-06-26
+>
+> 等级：M 级规划文档（planning only；不改 backend/frontend/migration/endpoint）
+>
 > 状态：**PLAN / PENDING IMPLEMENTATION**
 
 ---
@@ -73,8 +76,10 @@
 
 ## 2. GateK Paper 产品线核心目标
 
-> **从"组合看板"升级到"执行智能诊断"**  
-> **从"展示结果"升级到"解释原因"**  
+> **从"组合看板"升级到"执行智能诊断"**
+>
+> **从"展示结果"升级到"解释原因"**
+>
 > **从"单 run 复盘"升级到"组合/策略/发布维度复盘"**
 
 ### 2.1 Execution Intelligence 三层能力目标
@@ -82,13 +87,13 @@
 ```
 Layer 1: 结果展示（已完成，GateJ）
   - 有没有成交？多少 PnL？有没有风控？最大回撤？
-  
+
 Layer 2: 执行诊断（GateK 目标）
   - 为什么无订单？为什么有订单但无成交？
   - 风控拒绝是哪类规则触发？
   - 回撤主要来自哪个 run / 哪个时间段？
   - 数据不足的根本原因？
-  
+
 Layer 3: 策略评估与复盘（GateK 目标）
   - Paper 执行与 Backtest 的偏差（规律性 or 随机？）
   - 策略多维评分（收益/稳定性/风险/样本充分度）
