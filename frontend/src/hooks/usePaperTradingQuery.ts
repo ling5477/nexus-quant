@@ -65,6 +65,18 @@ export function usePaperStrategyEvaluationsQuery() {
     });
 }
 
+/**
+ * Paper 规则化自动复盘只读聚合（GateK K4B）；独立 query key，失败不连累组合看板 / 执行诊断 / 策略评估 / 策略排行等模块。
+ * retry:false 让 404/500 快速进入错误态（旧后端无该 endpoint 时不无限重试，由复盘区域单独兜底展示）。
+ */
+export function usePaperAutoReviewsQuery() {
+    return useQuery({
+        queryKey: paperTradingQueryKeys.autoReviews(),
+        queryFn: () => paperTradingApi.autoReviews(),
+        retry: false,
+    });
+}
+
 export function usePaperTradingOrdersQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.orders(paperRunId ?? ''),

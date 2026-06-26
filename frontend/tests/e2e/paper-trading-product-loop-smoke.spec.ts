@@ -483,6 +483,61 @@ const richStrategyEvaluations = {
     safety: evalSafety,
 };
 
+// ---- GateK K4B：Paper 自动复盘 fixture ----
+const autoReviewSafety = {paperOnly: true, rulesBased: true, noInvestmentAdvice: true, noLiveTrading: true, noAiRuntime: true, message: '该自动复盘仅基于 Paper 模拟运行与本地执行事实做规则化摘要，未接 AI / DH runtime，不构成真实投资建议，不代表 LIVE 或真实交易表现'};
+
+// 默认空复盘结构：稳定空态。
+const emptyAutoReviews = {
+    overview: {totalRuns: 0, reviewedRunCount: 0, issueRunCount: 0, healthyRunCount: 0, criticalIssueCount: 0, warningIssueCount: 0, strategyReviewedCount: 0, publishReviewedCount: 0, topIssueCause: null, topWeakness: null, generatedAt: '2026-06-24T03:00:00Z'},
+    portfolioReview: {headline: '暂无足够 Paper 事实生成复盘。', summary: '当前没有可用的 bounded Paper run 与策略评估事实，无法生成自动复盘。', keyFindings: [], riskHighlights: [], executionHighlights: [], strategyHighlights: [], backtestDeviationHighlights: [], suggestedNextActions: [], limitations: ['结论基于 SIM/Paper 模拟执行事实，不代表 LIVE 或真实交易表现。']},
+    runReviews: [],
+    strategyReviews: [],
+    publishReviews: [],
+    issueClusters: [],
+    safety: autoReviewSafety,
+};
+
+// 丰富复盘 fixture：覆盖 CRITICAL/WARNING 聚类、NO_ORDER/ORDER_NO_FILL/RISK_BLOCKED/HIGH_DRAWDOWN run、
+// STRONG/HIGH_RISK/SAMPLE_INSUFFICIENT 策略复盘与 BACKTEST_DEVIATION_HIGH 聚类。
+const richAutoReviews = {
+    overview: {totalRuns: 8, reviewedRunCount: 5, issueRunCount: 5, healthyRunCount: 1, criticalIssueCount: 2, warningIssueCount: 3, strategyReviewedCount: 3, publishReviewedCount: 1, topIssueCause: 'RISK_BLOCKED', topWeakness: 'RISK', generatedAt: '2026-06-24T03:00:00Z'},
+    portfolioReview: {
+        headline: 'Paper 组合存在关键执行问题，需优先处理高风险 run。',
+        summary: '共 8 个 bounded Paper run，其中 5 个存在问题、1 个健康；关键问题 run 2 个、警告 run 3 个；已评估策略 3 个、发布 1 个。结论为规则化 Paper 复盘，不构成投资建议。',
+        keyFindings: ['共 8 个 Paper run：问题 5 个、健康 1 个。', '关键问题 run 2 个，建议优先排查。', '最集中问题类型: RISK_BLOCKED。'],
+        riskHighlights: ['RISK_BLOCKED: 1 项 —— 多个 Paper run 被风控阻断或判为高风险。', 'HIGH_DRAWDOWN: 1 项 —— 多个 Paper run 回撤达到/超过首版高回撤阈值。'],
+        executionHighlights: ['EXECUTION_NO_ORDER: 1 项 —— 多个 Paper run 未产生任何订单，可能是信号未触发或数据不足。'],
+        strategyHighlights: ['Paper 内部表现较强策略 1 个（非投资推荐）。', '高风险策略 1 个，需复核风险来源。'],
+        backtestDeviationHighlights: ['1 个策略版本 Paper 与 Backtest 偏差显著（HIGH），需重点复核策略稳定性。'],
+        suggestedNextActions: ['检查风控规则、仓位限制与风险阈值。', '检查策略触发条件、行情数据覆盖与调度窗口。', '复核策略稳定性与 Paper/Backtest 偏差来源。'],
+        limitations: ['结论基于 SIM/Paper 模拟执行事实，不代表 LIVE 或真实交易表现。', '复盘为规则化启发式结果，非真实投资评级、不构成投资建议。'],
+    },
+    runReviews: [
+        {paperRunId: 'ar-risk-blocked', strategyVersionId: 'ar-strat-risk', publishId: 'ar-pub-2', status: 'STOPPED', primaryCause: 'RISK_BLOCKED', severity: 'CRITICAL', confidence: 'HIGH', totalPnl: -2000, totalReturn: -0.02, maxDrawdown: -0.08, reviewHeadline: '风控拦截：执行被风控阻断或判为高风险', reviewSummary: '风控阻断或高风险结果出现。', keyFacts: ['状态=STOPPED', '订单数=4', '成交数=2', '风控拦截=是'], likelyReasons: ['风控规则可能触发', '仓位可能超限', '风险阈值可能被突破'], suggestedActions: ['检查风控规则', '检查仓位限制', '检查风险阈值'], tags: ['RISK_BLOCKED', 'CRITICAL']},
+        {paperRunId: 'ar-high-drawdown', strategyVersionId: 'ar-strat-risk', publishId: 'ar-pub-2', status: 'STOPPED', primaryCause: 'HIGH_DRAWDOWN', severity: 'CRITICAL', confidence: 'HIGH', totalPnl: 5000, totalReturn: 0.05, maxDrawdown: -0.15, reviewHeadline: '高回撤：回撤超过首版高回撤阈值', reviewSummary: '回撤超过首版高回撤阈值。', keyFacts: ['状态=STOPPED', '订单数=4', '成交数=3', '最大回撤=-0.15'], likelyReasons: ['风险暴露可能过高', '策略参数可能过于激进', '止损 / 资金管理可能不足'], suggestedActions: ['检查风险暴露', '检查策略参数', '检查止损与资金管理'], tags: ['HIGH_DRAWDOWN', 'CRITICAL']},
+        {paperRunId: 'ar-no-order', strategyVersionId: 'ar-strat-exec', publishId: 'ar-pub-3', status: 'RUNNING', primaryCause: 'NO_ORDER', severity: 'WARNING', confidence: 'HIGH', totalPnl: 0, totalReturn: 0, maxDrawdown: -0.01, reviewHeadline: '无订单：策略未产生任何订单', reviewSummary: '策略未产生订单，可能由信号未触发、数据不足或 run 尚未进入有效执行阶段导致。', keyFacts: ['状态=RUNNING', '订单数=0', '成交数=0'], likelyReasons: ['策略触发条件可能未满足', '行情/输入数据覆盖可能不足'], suggestedActions: ['检查策略触发条件', '检查行情数据覆盖', '检查调度窗口'], tags: ['NO_ORDER', 'WARNING']},
+        {paperRunId: 'ar-order-no-fill', strategyVersionId: 'ar-strat-exec', publishId: 'ar-pub-3', status: 'RUNNING', primaryCause: 'ORDER_NO_FILL', severity: 'WARNING', confidence: 'HIGH', totalPnl: 0, totalReturn: 0, maxDrawdown: -0.01, reviewHeadline: '有订单无成交：订单未撮合成交', reviewSummary: '已有订单但未成交，可能由撮合条件、价格条件或流动性模拟导致。', keyFacts: ['状态=RUNNING', '订单数=3', '成交数=0'], likelyReasons: ['订单价格可能偏离可成交区间', '撮合参数可能限制成交'], suggestedActions: ['检查订单价格', '检查撮合参数', '检查市场数据与成交模拟规则'], tags: ['ORDER_NO_FILL', 'WARNING']},
+        {paperRunId: 'ar-filled-loss', strategyVersionId: 'ar-strat-exec', publishId: 'ar-pub-3', status: 'STOPPED', primaryCause: 'FILLED_LOSS', severity: 'WARNING', confidence: 'HIGH', totalPnl: -3000, totalReturn: -0.03, maxDrawdown: -0.05, reviewHeadline: '成交亏损：已成交但当前为亏损', reviewSummary: '已有成交但当前亏损，需要结合回撤、持仓和出入场条件复核。', keyFacts: ['状态=STOPPED', '订单数=4', '成交数=2'], likelyReasons: ['出入场条件可能不利', '止损规则可能缺失或过宽'], suggestedActions: ['检查亏损交易', '检查止损规则', '检查持仓时长与信号延迟'], tags: ['FILLED_LOSS', 'WARNING']},
+    ],
+    strategyReviews: [
+        {strategyVersionId: 'ar-strat-strong', ratingLabel: 'STRONG_PAPER_PERFORMER', compositeScore: 85, evaluationConfidence: 'HIGH', primaryWeakness: 'SAMPLE', reviewHeadline: 'Paper 内部表现较强（非投资推荐）', reviewSummary: '该策略版本在 Paper 模拟内部表现较强，但这是 Paper 内部启发式评估，不代表真实交易表现，也不构成投资建议。', strengths: ['Paper 收益评分较高（returnScore=80）', '风险评分较高（riskScore=94）'], weaknesses: ['主要短板: 样本不足'], warnings: [], suggestedActions: ['继续积累 Paper 样本以提升评估置信度', '持续复核 Paper 与 Backtest 偏差']},
+        {strategyVersionId: 'ar-strat-risk', ratingLabel: 'HIGH_RISK', compositeScore: 35, evaluationConfidence: 'MEDIUM', primaryWeakness: 'RISK', reviewHeadline: '高风险：存在回撤/风控/失败问题', reviewSummary: '该策略版本存在较高回撤、风控拦截或失败终态等风险信号，需重点复核风险来源。', strengths: [], weaknesses: ['主要短板: 风险评分偏低', '收益评分偏低（得分 0）'], warnings: ['HIGH_DRAWDOWN', 'RISK_BLOCKED_PRESENT', 'BACKTEST_PAPER_DEVIATION_HIGH'], suggestedActions: ['检查风控阈值与仓位限制', '复核回撤来源与策略参数']},
+        {strategyVersionId: 'ar-strat-sample', ratingLabel: 'SAMPLE_INSUFFICIENT', compositeScore: 40, evaluationConfidence: 'LOW', primaryWeakness: 'SAMPLE', reviewHeadline: '样本不足：评估置信度低', reviewSummary: '该策略版本可比 Paper 样本不足，评估置信度低，需增加 Paper 样本后再评估。', strengths: [], weaknesses: ['主要短板: 样本不足'], warnings: ['SAMPLE_INSUFFICIENT', 'BACKTEST_DATA_UNAVAILABLE'], suggestedActions: ['增加 Paper 样本', '补齐 equity / 成交事实']},
+    ],
+    publishReviews: [
+        {publishId: 'ar-pub-1', strategyVersionId: 'ar-strat-strong', ratingLabel: 'STRONG_PAPER_PERFORMER', compositeScore: 85, evaluationConfidence: 'HIGH', primaryWeakness: 'SAMPLE', reviewHeadline: 'Paper 内部表现较强（非投资推荐）', reviewSummary: '该策略版本在 Paper 模拟内部表现较强，不代表真实交易表现，也不构成投资建议。', strengths: ['Paper 收益评分较高（returnScore=80）'], weaknesses: ['主要短板: 样本不足'], warnings: [], suggestedActions: ['继续积累 Paper 样本以提升评估置信度']},
+    ],
+    issueClusters: [
+        {clusterKey: 'RISK_BLOCKED', cause: 'RISK_BLOCKED', severity: 'CRITICAL', count: 1, affectedRunIds: ['ar-risk-blocked'], affectedStrategyVersionIds: ['ar-strat-risk'], affectedPublishIds: ['ar-pub-2'], summary: '多个 Paper run 被风控阻断或判为高风险。', suggestedAction: '检查风控规则、仓位限制与风险阈值。'},
+        {clusterKey: 'HIGH_DRAWDOWN', cause: 'HIGH_DRAWDOWN', severity: 'CRITICAL', count: 1, affectedRunIds: ['ar-high-drawdown'], affectedStrategyVersionIds: ['ar-strat-risk'], affectedPublishIds: ['ar-pub-2'], summary: '多个 Paper run 回撤达到/超过首版高回撤阈值。', suggestedAction: '检查风险暴露、策略参数与止损/资金管理。'},
+        {clusterKey: 'EXECUTION_NO_ORDER', cause: 'NO_ORDER', severity: 'WARNING', count: 1, affectedRunIds: ['ar-no-order'], affectedStrategyVersionIds: ['ar-strat-exec'], affectedPublishIds: ['ar-pub-3'], summary: '多个 Paper run 未产生任何订单，可能是信号未触发或数据不足。', suggestedAction: '检查策略触发条件、行情数据覆盖与调度窗口。'},
+        {clusterKey: 'EXECUTION_ORDER_NO_FILL', cause: 'ORDER_NO_FILL', severity: 'WARNING', count: 1, affectedRunIds: ['ar-order-no-fill'], affectedStrategyVersionIds: ['ar-strat-exec'], affectedPublishIds: ['ar-pub-3'], summary: '多个 Paper run 有订单但未成交。', suggestedAction: '检查订单价格、撮合参数与成交模拟规则。'},
+        {clusterKey: 'BACKTEST_DEVIATION_HIGH', cause: 'BACKTEST_DEVIATION_HIGH', severity: 'WARNING', count: 1, affectedRunIds: [], affectedStrategyVersionIds: ['ar-strat-risk'], affectedPublishIds: [], summary: '多个策略版本 Paper 与 Backtest 偏差显著。', suggestedAction: '复核策略稳定性与 Paper/Backtest 偏差来源。'},
+        {clusterKey: 'SAMPLE_INSUFFICIENT', cause: 'SAMPLE_INSUFFICIENT', severity: 'INFO', count: 1, affectedRunIds: [], affectedStrategyVersionIds: ['ar-strat-sample'], affectedPublishIds: [], summary: '多个策略版本可比 Paper 样本不足。', suggestedAction: '增加 Paper 样本后再评估。'},
+    ],
+    safety: autoReviewSafety,
+};
+
 type PaperLoopStubOptions = {
     seedRun?: boolean;
     status?: string;
@@ -509,6 +564,9 @@ type PaperLoopStubOptions = {
     // strategy-evaluations 覆盖：传入对象即用作响应（缺省空评估结构）；status 非 200 时模拟 404/500 fallback。
     strategyEvaluations?: unknown;
     strategyEvaluationsStatus?: number;
+    // auto-reviews 覆盖：传入对象即用作响应（缺省空复盘结构）；status 非 200 时模拟 404/500 fallback。
+    autoReviews?: unknown;
+    autoReviewsStatus?: number;
 };
 
 async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptions = {}): Promise<{setRunStatus: (status: string) => void}> {
@@ -609,6 +667,17 @@ async function seedAuthAndPaperLoopStubs(page: Page, options: PaperLoopStubOptio
         return route.fulfill({
             status: 200,
             json: ('strategyEvaluations' in options ? options.strategyEvaluations : emptyStrategyEvaluations) ?? null,
+        });
+    });
+    // Paper 自动复盘聚合路由（GateK K4B）；缺省空复盘结构，可注入丰富 fixture 或非 200 状态模拟 fallback。
+    await page.route('**/api/paper-trading/auto-reviews', (route: Route) => {
+        const statusCode = options.autoReviewsStatus ?? 200;
+        if (statusCode !== 200) {
+            return route.fulfill({status: statusCode, json: {code: 'AUTO_REVIEW_ERROR', message: 'auto reviews unavailable', traceId: 'trc-auto-err'}});
+        }
+        return route.fulfill({
+            status: 200,
+            json: ('autoReviews' in options ? options.autoReviews : emptyAutoReviews) ?? null,
         });
     });
     await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/start`, (route: Route) => {
@@ -2287,5 +2356,182 @@ test.describe('paper trading product loop panel', () => {
         const evalEmpty = page.getByRole('region', {name: 'Paper 策略评估'});
         await expect(evalEmpty.getByText('暂无 Paper 策略评估数据，创建并运行 Paper run 后自动生成策略评估。')).toBeVisible();
         await expect(evalEmpty.getByText(/不是真实投资评级/)).toBeVisible();
+    });
+
+    // ─── GateK K4B：Paper 自动复盘 UI ─────────────────────────────────────────
+
+    test('K4B：Paper 自动复盘区域渲染总览/组合/聚类/Run/Strategy/Publish 与 rules-based 文案', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
+        await expect(region.getByText('Paper 自动复盘', {exact: true})).toBeVisible();
+        await expect(region.getByText('SIM/Paper only · Rules-based review')).toBeVisible();
+        await expect(region.getByText('基于 Paper 执行事实、诊断与策略评估的规则化复盘摘要。')).toBeVisible();
+
+        // A) 复盘总览：纳入复盘 run = 8。
+        await expect(region.locator('.nq-metric-card', {hasText: '纳入复盘 run'}).locator('.nq-metric-card__value')).toHaveText('8');
+
+        // B) Portfolio Review：headline / summary / keyFindings / suggestedNextActions 可见。
+        const portfolio = page.getByRole('region', {name: 'Paper 自动复盘组合摘要'});
+        await expect(portfolio.getByText('Paper 组合存在关键执行问题，需优先处理高风险 run。')).toBeVisible();
+        await expect(portfolio.getByText(/共 8 个 bounded Paper run/)).toBeVisible();
+        await expect(portfolio.getByText('关键问题 run 2 个，建议优先排查。')).toBeVisible();
+        await expect(portfolio.getByText('检查风控规则、仓位限制与风险阈值。')).toBeVisible();
+
+        // C) Issue Clusters：summary 与 suggestedAction 可见，含 CRITICAL 与 BACKTEST_DEVIATION_HIGH。
+        const clusterTable = page.getByRole('region', {name: 'Paper 自动复盘问题聚类'});
+        await expect(clusterTable.locator('tbody tr[data-row-key="RISK_BLOCKED"]')).toHaveCount(1);
+        await expect(clusterTable.locator('tbody tr[data-row-key="BACKTEST_DEVIATION_HIGH"]')).toHaveCount(1);
+        await expect(clusterTable.getByText('多个 Paper run 被风控阻断或判为高风险。')).toBeVisible();
+        await expect(clusterTable.getByText('复核策略稳定性与 Paper/Backtest 偏差来源。')).toBeVisible();
+
+        // D) Run Reviews：reviewHeadline / reviewSummary 可见。
+        const runTable = page.getByRole('region', {name: 'Paper 自动复盘 Run 表'});
+        for (const runId of ['ar-risk-blocked', 'ar-high-drawdown', 'ar-no-order', 'ar-order-no-fill']) {
+            await expect(runTable.locator(`tbody tr[data-row-key="${runId}"]`)).toHaveCount(1);
+        }
+        await expect(runTable.getByText('无订单：策略未产生任何订单')).toBeVisible();
+        await expect(runTable.getByText('策略未产生订单，可能由信号未触发、数据不足或 run 尚未进入有效执行阶段导致。')).toBeVisible();
+
+        // E) Strategy Reviews：strengths / weaknesses / warnings 可见。
+        const strategyTable = page.getByRole('region', {name: 'Paper 自动复盘 Strategy 表'});
+        for (const sv of ['ar-strat-strong', 'ar-strat-risk', 'ar-strat-sample']) {
+            await expect(strategyTable.locator(`tbody tr[data-row-key="${sv}"]`)).toHaveCount(1);
+        }
+        await expect(strategyTable.getByText('Paper 收益评分较高（returnScore=80）')).toBeVisible();
+        await expect(strategyTable.getByText('主要短板: 风险评分偏低')).toBeVisible();
+        await expect(strategyTable.getByText('HIGH_DRAWDOWN').first()).toBeVisible();
+
+        // F) Publish Reviews。
+        const publishTable = page.getByRole('region', {name: 'Paper 自动复盘 Publish 表'});
+        await expect(publishTable.locator('tbody tr[data-row-key="ar-pub-1"]')).toHaveCount(1);
+
+        // Paper-only / rules-based / 非投资建议文案（安全声明三句话）。
+        await expect(region.getByText(/该复盘仅基于 Paper 模拟运行、诊断与策略评估结果/)).toBeVisible();
+        await expect(region.getByText(/复盘由规则引擎生成，不接 AI \/ DH runtime/).first()).toBeVisible();
+        await expect(region.getByText(/内容不代表 LIVE 或真实交易表现，也不构成投资建议/)).toBeVisible();
+    });
+
+    test('K4B：suggestedActions 不渲染交易动作词（工程排查语义）', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        // 复盘区域内不得出现交易动作词（仅工程排查动作）。
+        const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
+        await expect(region).toBeVisible();
+        for (const banned of ['买入', '卖出', '加仓', '减仓', '做多', '做空', '实盘执行']) {
+            await expect(region.getByText(banned, {exact: false})).toHaveCount(0);
+        }
+    });
+
+    test('K4B：severity / cause 筛选联动 Run 复盘与问题聚类', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
+        const filterGroup = region.getByRole('group', {name: 'Paper 自动复盘筛选'});
+        const runTable = page.getByRole('region', {name: 'Paper 自动复盘 Run 表'});
+        const clusterTable = page.getByRole('region', {name: 'Paper 自动复盘问题聚类'});
+
+        // 严重度 CRITICAL → run 仅 risk-blocked / high-drawdown；聚类仅 RISK_BLOCKED / HIGH_DRAWDOWN。
+        await filterGroup.locator('.ant-select-selector').nth(0).click();
+        await page.getByRole('option', {name: 'CRITICAL', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="ar-risk-blocked"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="ar-high-drawdown"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="ar-no-order"]')).toHaveCount(0);
+        await expect(clusterTable.locator('tbody tr[data-row-key="RISK_BLOCKED"]')).toHaveCount(1);
+        await expect(clusterTable.locator('tbody tr[data-row-key="EXECUTION_NO_ORDER"]')).toHaveCount(0);
+        await region.getByRole('button', {name: '查看全部'}).click();
+
+        // 严重度 WARNING → run 仅 no-order / order-no-fill / filled-loss。
+        await filterGroup.locator('.ant-select-selector').nth(0).click();
+        await page.getByRole('option', {name: 'WARNING', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="ar-no-order"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="ar-risk-blocked"]')).toHaveCount(0);
+        await region.getByRole('button', {name: '查看全部'}).click();
+
+        // 原因 NO_ORDER → run 仅 ar-no-order；聚类仅 EXECUTION_NO_ORDER。
+        await filterGroup.locator('.ant-select-selector').nth(1).click();
+        await page.getByRole('option', {name: '无订单 NO_ORDER', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="ar-no-order"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="ar-order-no-fill"]')).toHaveCount(0);
+        await expect(clusterTable.locator('tbody tr[data-row-key="EXECUTION_NO_ORDER"]')).toHaveCount(1);
+        await expect(clusterTable.locator('tbody tr[data-row-key="RISK_BLOCKED"]')).toHaveCount(0);
+        await region.getByRole('button', {name: '查看全部'}).click();
+
+        // 原因 RISK_BLOCKED → run 仅 ar-risk-blocked；聚类仅 RISK_BLOCKED。
+        await filterGroup.locator('.ant-select-selector').nth(1).click();
+        await page.getByRole('option', {name: '风控拦截 RISK_BLOCKED', exact: true}).click();
+        await expect(runTable.locator('tbody tr[data-row-key="ar-risk-blocked"]')).toHaveCount(1);
+        await expect(runTable.locator('tbody tr[data-row-key="ar-no-order"]')).toHaveCount(0);
+        await expect(clusterTable.locator('tbody tr[data-row-key="RISK_BLOCKED"]')).toHaveCount(1);
+        await region.getByRole('button', {name: '查看全部'}).click();
+
+        // 原因 HEALTHY → 无命中 run 与聚类 → 空态。
+        await filterGroup.locator('.ant-select-selector').nth(1).click();
+        await page.getByRole('option', {name: '健康 HEALTHY', exact: true}).click();
+        await expect(runTable.getByText('当前筛选条件下暂无匹配的 Run 复盘。')).toBeVisible();
+        await expect(clusterTable.getByText('当前筛选条件下暂无匹配的问题聚类。')).toBeVisible();
+    });
+
+    test('K4B：展示维度筛选切换 Run / Cluster / Strategy / Publish 区块', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
+        const filterGroup = region.getByRole('group', {name: 'Paper 自动复盘筛选'});
+
+        // 选择 Run → 仅 Run 表可见，Strategy / Publish / Cluster 隐藏。
+        await filterGroup.locator('.ant-select-selector').nth(2).click();
+        await page.getByRole('option', {name: 'Run', exact: true}).click();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘 Run 表'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘 Strategy 表'})).toHaveCount(0);
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘问题聚类'})).toHaveCount(0);
+
+        // 切 Cluster → 仅聚类可见。
+        await filterGroup.locator('.ant-select-selector').nth(2).click();
+        await page.getByRole('option', {name: 'Cluster', exact: true}).click();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘问题聚类'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘 Run 表'})).toHaveCount(0);
+    });
+
+    test('K4B：复盘 500 错误隔离，其余 Paper 模块仍可见', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviewsStatus: 500});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
+        await expect(region.getByText('Paper 自动复盘加载失败')).toBeVisible();
+        await expect(region.getByRole('button', {name: /重\s*试/})).toBeVisible();
+        // Paper-only 文案仍在（错误态不掩盖边界声明）。
+        await expect(region.getByText(/不接 AI \/ DH runtime/)).toBeVisible();
+        // 其他模块不受影响。
+        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略评估'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+    });
+
+    test('K4B：复盘 404 / 空结构兼容回退，不崩溃显示空态', async ({page}) => {
+        // 404 → 错误态（retry:false 不无限重试），其他模块可见。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviewsStatus: 404});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
+        await expect(region.getByText('Paper 自动复盘加载失败')).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+
+        // 空复盘结构（默认 emptyAutoReviews，totalRuns=0）→ 空态文案。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        const regionEmpty = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
+        await expect(regionEmpty.getByText('暂无 Paper 自动复盘数据，创建并运行 Paper run 后自动生成规则化复盘。')).toBeVisible();
+        await expect(regionEmpty.getByText(/不接 AI \/ DH runtime/)).toBeVisible();
     });
 });

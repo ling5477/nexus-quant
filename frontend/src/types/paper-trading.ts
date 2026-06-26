@@ -749,3 +749,115 @@ export interface PaperStrategyEvaluationsResponse {
     rankings: PaperStrategyEvaluationRankings;
     safety: PaperStrategyEvaluationSafety;
 }
+
+/**
+ * Paper 规则化自动复盘只读聚合响应（GateK Batch K4/K4B）。
+ * 复用 K1 执行诊断与 K3 策略评估，把组合 / 重点 run / 策略 / 发布事实规则化归纳为复盘摘要并按问题类型聚类。
+ * 复盘由规则引擎生成，不接 AI / DH runtime；仅 Paper 模拟口径，不代表 LIVE 或真实交易表现，也不构成投资建议。
+ */
+export type PaperAutoReviewSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
+
+export interface PaperAutoReviewOverview {
+    totalRuns: number;
+    reviewedRunCount: number;
+    issueRunCount: number;
+    healthyRunCount: number;
+    criticalIssueCount: number;
+    warningIssueCount: number;
+    strategyReviewedCount: number;
+    publishReviewedCount: number;
+    topIssueCause: string | null;
+    topWeakness: string | null;
+    generatedAt: string;
+}
+
+export interface PaperPortfolioReview {
+    headline: string;
+    summary: string;
+    keyFindings: string[];
+    riskHighlights: string[];
+    executionHighlights: string[];
+    strategyHighlights: string[];
+    backtestDeviationHighlights: string[];
+    suggestedNextActions: string[];
+    limitations: string[];
+}
+
+export interface PaperRunAutoReview {
+    paperRunId: string;
+    strategyVersionId: string | null;
+    publishId: string | null;
+    status: string;
+    primaryCause: string;
+    severity: PaperAutoReviewSeverity;
+    confidence: string;
+    totalPnl: string | number | null;
+    totalReturn: string | number | null;
+    maxDrawdown: string | number | null;
+    reviewHeadline: string;
+    reviewSummary: string;
+    keyFacts: string[];
+    likelyReasons: string[];
+    suggestedActions: string[];
+    tags: string[];
+}
+
+export interface PaperStrategyAutoReview {
+    strategyVersionId: string;
+    ratingLabel: string;
+    compositeScore: number;
+    evaluationConfidence: string;
+    primaryWeakness: string;
+    reviewHeadline: string;
+    reviewSummary: string;
+    strengths: string[];
+    weaknesses: string[];
+    warnings: string[];
+    suggestedActions: string[];
+}
+
+export interface PaperPublishAutoReview {
+    publishId: string;
+    strategyVersionId: string | null;
+    ratingLabel: string;
+    compositeScore: number;
+    evaluationConfidence: string;
+    primaryWeakness: string;
+    reviewHeadline: string;
+    reviewSummary: string;
+    strengths: string[];
+    weaknesses: string[];
+    warnings: string[];
+    suggestedActions: string[];
+}
+
+export interface PaperIssueCluster {
+    clusterKey: string;
+    cause: string;
+    severity: PaperAutoReviewSeverity;
+    count: number;
+    affectedRunIds: string[];
+    affectedStrategyVersionIds: string[];
+    affectedPublishIds: string[];
+    summary: string;
+    suggestedAction: string;
+}
+
+export interface PaperAutoReviewSafety {
+    paperOnly: boolean;
+    rulesBased: boolean;
+    noInvestmentAdvice: boolean;
+    noLiveTrading: boolean;
+    noAiRuntime: boolean;
+    message: string;
+}
+
+export interface PaperAutoReviewsResponse {
+    overview: PaperAutoReviewOverview;
+    portfolioReview: PaperPortfolioReview;
+    runReviews: PaperRunAutoReview[];
+    strategyReviews: PaperStrategyAutoReview[];
+    publishReviews: PaperPublishAutoReview[];
+    issueClusters: PaperIssueCluster[];
+    safety: PaperAutoReviewSafety;
+}
