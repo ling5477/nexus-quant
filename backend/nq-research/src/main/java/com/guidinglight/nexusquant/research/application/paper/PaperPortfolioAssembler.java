@@ -69,6 +69,20 @@ public final class PaperPortfolioAssembler {
             boolean hasFill
     ) {}
 
+    /**
+     * 仅派生单 run 的 {@link PaperPortfolioSummary.RunRef} 列表（顺序与输入一致），不做组合 / 分组 / 曲线聚合。
+     * 供 GateK 执行诊断（K1）复用同一套单 run 事实派生口径（执行进度三态 / 风控拦截 / 收益率 / 回撤），
+     * 避免诊断侧另起一份单 run 归因事实导致口径分叉。
+     */
+    public static List<PaperPortfolioSummary.RunRef> deriveRunRefs(List<RunInput> inputs) {
+        List<RunInput> safeInputs = inputs != null ? inputs : List.of();
+        List<PaperPortfolioSummary.RunRef> refs = new ArrayList<>(safeInputs.size());
+        for (RunInput input : safeInputs) {
+            refs.add(deriveRun(input).ref());
+        }
+        return refs;
+    }
+
     public static PaperPortfolioSummary assemble(List<RunInput> inputs) {
         List<RunInput> safeInputs = inputs != null ? inputs : List.of();
         List<RunMetrics> metrics = new ArrayList<>(safeInputs.size());

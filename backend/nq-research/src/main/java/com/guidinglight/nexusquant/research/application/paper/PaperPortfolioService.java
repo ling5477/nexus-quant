@@ -81,6 +81,24 @@ public class PaperPortfolioService {
      * 无 run 时返回稳定空结构（总数 0、各清单为空、可比收益率为 null）。
      */
     public PaperPortfolioSummary summarize() {
+        return PaperPortfolioAssembler.assemble(loadRunInputs());
+    }
+
+    /**
+     * 仅返回 bounded run 的 {@link PaperPortfolioSummary.RunRef} 列表，复用与 {@link #summarize()} 完全相同的
+     * 批量读取与单 run 派生口径（GateK 执行诊断 K1 消费）。无 run 时返回空列表。
+     * 与组合看板共用同一次批量读取语义，不引入 per-run 查询放大。
+     */
+    public List<PaperPortfolioSummary.RunRef> listRunRefs() {
+        return PaperPortfolioAssembler.deriveRunRefs(loadRunInputs());
+    }
+
+    /**
+     * 装配 bounded run 的批量只读事实为 {@link PaperPortfolioAssembler.RunInput} 列表。
+     * run 清单一次 list()，publish 来源一次 listAll() 建索引，equity / dailyReport / risk 一次 listByRunIds() 批量取，
+     * alert / order / trade 一次 countOpenByRunIds() / countByRunIds() 批量聚合计数；循环内仅做内存 Map 查找。
+     */
+    private List<PaperPortfolioAssembler.RunInput> loadRunInputs() {
         List<PaperTradingRun> runs = new ArrayList<>(runRepository.list(null, null));
         // 按更新时间倒序截断到上限，保证「最近活跃」优先纳入聚合，并保护查询规模。
         runs.sort(Comparator.comparing(
@@ -128,6 +146,6 @@ public class PaperPortfolioService {
                     hasBacktestSource));
         }
 
-        return PaperPortfolioAssembler.assemble(inputs);
+        return inputs;
     }
 }
