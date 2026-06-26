@@ -3247,6 +3247,51 @@ function runExecTag(run: PaperPortfolioRunRef): {label: string; tone: NqStatusTo
     return {label: '无成交', tone: 'neutral'};
 }
 
+/**
+ * 可点击筛选指标卡包装器（Loop-21 统一 affordance）。
+ * - cursor pointer + 键盘可访问（Enter / Space）
+ * - 激活态：2px primary outline，aria-pressed=true
+ * - NqMetricCard 不支持 onClick，通过包装层实现，不修改共享组件
+ */
+function ClickableMetricCard({
+    children,
+    onClick,
+    ariaLabel,
+    testId,
+    isActive,
+}: {
+    children: ReactNode;
+    onClick: () => void;
+    ariaLabel: string;
+    testId: string;
+    isActive: boolean;
+}) {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') onClick();
+    };
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            aria-label={ariaLabel}
+            aria-pressed={isActive}
+            data-testid={testId}
+            onClick={onClick}
+            onKeyDown={handleKeyDown}
+            style={{
+                cursor: 'pointer',
+                borderRadius: 'var(--nq-radius-lg)',
+                outline: isActive
+                    ? '2px solid var(--nq-color-primary)'
+                    : '2px solid transparent',
+                outlineOffset: '2px',
+            }}
+        >
+            {children}
+        </div>
+    );
+}
+
 function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryResponse}) {
     const {overview, highlights, dataQuality} = portfolio;
 
@@ -3295,9 +3340,6 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
 
     /** 点击指标卡直接切换风险 Run 清单筛选（Loop-20 click-to-filter）。 */
     const handleRiskCardClick = (filter: RiskRunFilter) => setRiskFilter(filter);
-    const riskCardKeyDown = (filter: RiskRunFilter) => (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') handleRiskCardClick(filter);
-    };
 
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
@@ -3311,13 +3353,11 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                     tone="warning"
                     footer={highlights.worstDrawdown ? `当前最大回撤 run：${highlights.worstDrawdown.paperRunId}` : '按单 run 最大回撤统计'}
                 />
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="筛选风控拦截风险 Run"
-                    data-testid="risk-filter-card-risk-blocked"
-                    style={{cursor: 'pointer'}}
+                <ClickableMetricCard
+                    ariaLabel="筛选风控拦截风险 Run"
+                    testId="risk-filter-card-risk-blocked"
+                    isActive={riskFilter === 'riskBlocked'}
                     onClick={() => handleRiskCardClick('riskBlocked')}
-                    onKeyDown={riskCardKeyDown('riskBlocked')}
                 >
                     <NqMetricCard
                         label="风控拦截 run"
@@ -3325,7 +3365,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         tone={overview.riskBlockedRunCount > 0 ? 'danger' : 'muted'}
                         footer="点击筛选"
                     />
-                </div>
+                </ClickableMetricCard>
                 <NqMetricCard
                     label="未处理告警"
                     value={String(overview.openAlertCount)}
@@ -3333,13 +3373,11 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                 />
                 {hasOrderSplit ? (
                     <>
-                        <div
-                            role="button" tabIndex={0}
-                            aria-label="筛选无订单风险 Run"
-                            data-testid="risk-filter-card-no-order"
-                            style={{cursor: 'pointer'}}
+                        <ClickableMetricCard
+                            ariaLabel="筛选无订单风险 Run"
+                            testId="risk-filter-card-no-order"
+                            isActive={riskFilter === 'noOrder'}
                             onClick={() => handleRiskCardClick('noOrder')}
-                            onKeyDown={riskCardKeyDown('noOrder')}
                         >
                             <NqMetricCard
                                 label="无订单"
@@ -3347,14 +3385,12 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                                 tone={(overview.noOrderRunCount ?? 0) > 0 ? 'warning' : 'muted'}
                                 footer="点击筛选"
                             />
-                        </div>
-                        <div
-                            role="button" tabIndex={0}
-                            aria-label="筛选有订单无成交风险 Run"
-                            data-testid="risk-filter-card-order-no-fill"
-                            style={{cursor: 'pointer'}}
+                        </ClickableMetricCard>
+                        <ClickableMetricCard
+                            ariaLabel="筛选有订单无成交风险 Run"
+                            testId="risk-filter-card-order-no-fill"
+                            isActive={riskFilter === 'orderNoFill'}
                             onClick={() => handleRiskCardClick('orderNoFill')}
-                            onKeyDown={riskCardKeyDown('orderNoFill')}
                         >
                             <NqMetricCard
                                 label="有订单无成交"
@@ -3362,14 +3398,12 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                                 tone={(overview.orderNoFillRunCount ?? 0) > 0 ? 'warning' : 'muted'}
                                 footer="点击筛选"
                             />
-                        </div>
-                        <div
-                            role="button" tabIndex={0}
-                            aria-label="筛选有成交风险 Run"
-                            data-testid="risk-filter-card-has-fill"
-                            style={{cursor: 'pointer'}}
+                        </ClickableMetricCard>
+                        <ClickableMetricCard
+                            ariaLabel="筛选有成交风险 Run"
+                            testId="risk-filter-card-has-fill"
+                            isActive={riskFilter === 'hasFill'}
                             onClick={() => handleRiskCardClick('hasFill')}
-                            onKeyDown={riskCardKeyDown('hasFill')}
                         >
                             <NqMetricCard
                                 label="有成交"
@@ -3377,7 +3411,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                                 tone={(overview.filledRunCount ?? 0) > 0 ? 'success' : 'muted'}
                                 footer="点击筛选"
                             />
-                        </div>
+                        </ClickableMetricCard>
                     </>
                 ) : (
                     <NqMetricCard
@@ -3387,13 +3421,11 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         footer={noTradeSplitFooter}
                     />
                 )}
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="筛选数据不足风险 Run"
-                    data-testid="risk-filter-card-data-insufficient"
-                    style={{cursor: 'pointer'}}
+                <ClickableMetricCard
+                    ariaLabel="筛选数据不足风险 Run"
+                    testId="risk-filter-card-data-insufficient"
+                    isActive={riskFilter === 'dataInsufficient'}
                     onClick={() => handleRiskCardClick('dataInsufficient')}
-                    onKeyDown={riskCardKeyDown('dataInsufficient')}
                 >
                     <NqMetricCard
                         label="数据不足 run"
@@ -3401,14 +3433,12 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         tone={overview.dataInsufficientRunCount > 0 ? 'warning' : 'muted'}
                         footer="点击筛选"
                     />
-                </div>
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="筛选异常终态风险 Run"
-                    data-testid="risk-filter-card-terminal"
-                    style={{cursor: 'pointer'}}
+                </ClickableMetricCard>
+                <ClickableMetricCard
+                    ariaLabel="筛选异常终态风险 Run"
+                    testId="risk-filter-card-terminal"
+                    isActive={riskFilter === 'terminal'}
                     onClick={() => handleRiskCardClick('terminal')}
-                    onKeyDown={riskCardKeyDown('terminal')}
                 >
                     <NqMetricCard
                         label="FAILED / CANCELLED"
@@ -3416,14 +3446,12 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         tone={failedCancelledCount > 0 ? 'danger' : 'muted'}
                         footer={`FAILED ${overview.failedCount} · CANCELLED ${overview.cancelledCount}`}
                     />
-                </div>
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="筛选高回撤风险 Run"
-                    data-testid="risk-filter-card-high-drawdown"
-                    style={{cursor: 'pointer'}}
+                </ClickableMetricCard>
+                <ClickableMetricCard
+                    ariaLabel="筛选高回撤风险 Run"
+                    testId="risk-filter-card-high-drawdown"
+                    isActive={riskFilter === 'highDrawdown'}
                     onClick={() => handleRiskCardClick('highDrawdown')}
-                    onKeyDown={riskCardKeyDown('highDrawdown')}
                 >
                     <NqMetricCard
                         label="高回撤 run"
@@ -3431,7 +3459,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         tone={highDrawdownCount > 0 ? 'danger' : 'muted'}
                         footer="回撤 ≤ -10%，点击筛选"
                     />
-                </div>
+                </ClickableMetricCard>
             </div>
 
             {/* 1.5) 统一风险 Run 清单（Loop-19）：合并 highlights/dataQuality 去重，按条件筛选快速定位 */}
@@ -3489,7 +3517,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         <NqEmptyState description={`当前筛选「${riskFilterLabel}」下暂无匹配的风险 Run。`}/>
                     )}
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        风险 Run 清单合并 highlights 与数据质量清单去重，按筛选条件展示；仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。
+                        风险 Run 清单合并 highlights 与数据质量清单去重后按筛选条件展示。
                     </Typography.Text>
                 </Space>
             </Card>
@@ -3999,9 +4027,6 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
 
     /** 点击榜单概览卡直接切换排行过滤（Loop-20 click-to-filter）。 */
     const handleRankingCardClick = (filter: RankingFilter) => setRankFilter(filter);
-    const rankingCardKeyDown = (filter: RankingFilter) => (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') handleRankingCardClick(filter);
-    };
 
     // 榜单概览基于策略维度（口径与表格一致）；无交易 / 数据不足 / 异常终态均用后端 group 精确计数。
     const topReturn = topRankingRow(strategyRows, (row) => toNullableNumber(row.totalReturn), true);
@@ -4036,13 +4061,11 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     footer={worstDrawdown ? worstDrawdown.key : '暂无可比数据'}
                     tone="warning"
                 />
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="过滤仅有风控拦截的策略"
-                    data-testid="ranking-filter-card-risk-blocked"
-                    style={{cursor: 'pointer'}}
+                <ClickableMetricCard
+                    ariaLabel="过滤仅有风控拦截的策略"
+                    testId="ranking-filter-card-risk-blocked"
+                    isActive={rankFilter === 'riskBlocked'}
                     onClick={() => handleRankingCardClick('riskBlocked')}
-                    onKeyDown={rankingCardKeyDown('riskBlocked')}
                 >
                     <NqMetricCard
                         label="风控拦截最多"
@@ -4050,14 +4073,12 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                         footer={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? mostRiskBlocked.key : '暂无风控拦截'}
                         tone={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? 'danger' : 'muted'}
                     />
-                </div>
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="过滤仅无订单的策略"
-                    data-testid="ranking-filter-card-no-order"
-                    style={{cursor: 'pointer'}}
+                </ClickableMetricCard>
+                <ClickableMetricCard
+                    ariaLabel="过滤仅无订单的策略"
+                    testId="ranking-filter-card-no-order"
+                    isActive={rankFilter === 'noOrder'}
                     onClick={() => handleRankingCardClick('noOrder')}
-                    onKeyDown={rankingCardKeyDown('noOrder')}
                 >
                     <NqMetricCard
                         label="无交易最多"
@@ -4065,14 +4086,12 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                         footer={mostNoTrade && mostNoTrade.noTradeCount > 0 ? mostNoTrade.key : '暂无无交易'}
                         tone={mostNoTrade && mostNoTrade.noTradeCount > 0 ? 'warning' : 'muted'}
                     />
-                </div>
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="过滤仅数据不足的策略"
-                    data-testid="ranking-filter-card-data-insufficient"
-                    style={{cursor: 'pointer'}}
+                </ClickableMetricCard>
+                <ClickableMetricCard
+                    ariaLabel="过滤仅数据不足的策略"
+                    testId="ranking-filter-card-data-insufficient"
+                    isActive={rankFilter === 'dataInsufficient'}
                     onClick={() => handleRankingCardClick('dataInsufficient')}
-                    onKeyDown={rankingCardKeyDown('dataInsufficient')}
                 >
                     <NqMetricCard
                         label="数据不足最多"
@@ -4080,14 +4099,12 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                         footer={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? mostDataInsufficient.key : '暂无数据不足'}
                         tone={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? 'warning' : 'muted'}
                     />
-                </div>
-                <div
-                    role="button" tabIndex={0}
-                    aria-label="过滤仅异常终态的策略"
-                    data-testid="ranking-filter-card-abnormal-terminal"
-                    style={{cursor: 'pointer'}}
+                </ClickableMetricCard>
+                <ClickableMetricCard
+                    ariaLabel="过滤仅异常终态的策略"
+                    testId="ranking-filter-card-abnormal-terminal"
+                    isActive={rankFilter === 'abnormalTerminal'}
                     onClick={() => handleRankingCardClick('abnormalTerminal')}
-                    onKeyDown={rankingCardKeyDown('abnormalTerminal')}
                 >
                     <NqMetricCard
                         label="异常终态最多"
@@ -4095,7 +4112,7 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                         footer={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? mostFailedCancelled.key : '暂无异常终态'}
                         tone={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? 'danger' : 'muted'}
                     />
-                </div>
+                </ClickableMetricCard>
             </div>
             <Typography.Text type="secondary" style={{fontSize: 12}}>
                 风险调整分为 Paper 内部排序分，仅用于模拟结果横向比较，不代表真实投资评级。

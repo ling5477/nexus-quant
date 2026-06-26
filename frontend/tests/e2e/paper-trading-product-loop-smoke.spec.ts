@@ -1604,7 +1604,7 @@ test.describe('paper trading product loop panel', () => {
         await expect(risk.getByText('当前筛选「异常终态」下暂无匹配的风险 Run。')).toBeVisible();
 
         // Paper-only 文案保留。
-        await expect(risk.getByText('风险 Run 清单合并 highlights 与数据质量清单去重，按筛选条件展示；仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+        await expect(risk.getByText('风险 Run 清单合并 highlights 与数据质量清单去重后按筛选条件展示。')).toBeVisible();
     });
 
     test('Loop-20：风险指标卡 click-to-filter 联动风险 Run 清单', async ({page}) => {
@@ -1716,7 +1716,7 @@ test.describe('paper trading product loop panel', () => {
         await expect(riskTable.locator('tbody tr[data-row-key="l20-ordernofill"]')).toHaveCount(1);
 
         // Paper-only 文案保留。
-        await expect(risk.getByText('风险 Run 清单合并 highlights 与数据质量清单去重，按筛选条件展示；仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+        await expect(risk.getByText('风险 Run 清单合并 highlights 与数据质量清单去重后按筛选条件展示。')).toBeVisible();
     });
 
     test('Loop-20：排行概览卡 click-to-filter 联动排行过滤', async ({page}) => {
@@ -1802,5 +1802,75 @@ test.describe('paper trading product loop panel', () => {
         const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
         await expect(risk.getByRole('group', {name: '风险 Run 筛选'})).toBeVisible();
         await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+    });
+
+    // ─── Loop-21：ClickableMetricCard aria-pressed 激活态 ──────────────────────
+
+    test('Loop-21：风险指标卡点击后 aria-pressed 变为 true，切换后原卡片恢复 false', async ({page}) => {
+        // l20Summary fixture 含三个 run；noOrderRunCount=1 触发 hasOrderSplit。
+        const l20Summary = {
+            overview: {
+                totalRuns: 3, runningCount: 1, stoppedCount: 1, failedCount: 0, cancelledCount: 0, createdCount: 1,
+                totalInitialEquity: '30000', totalCurrentEquity: '31000', totalPnl: '1000', totalReturn: '0.033',
+                returnEligibleRunCount: 1, worstRunDrawdown: '-0.08', openAlertCount: 0,
+                riskBlockedRunCount: 1, noTradeRunCount: 1, dataInsufficientRunCount: 0,
+                noOrderRunCount: 1, orderNoFillRunCount: 0, filledRunCount: 2,
+            },
+            strategyGroups: [], publishGroups: [],
+            highlights: {
+                topWinner: null, worstDrawdown: null, highestRisk: null, mostRecent: null,
+                noTradeRuns: [{paperRunId: 'l20-noorder', status: 'RUNNING', symbol: 'BTC/USDT', strategyVersionId: 'sv1', publishId: 'pub1', currentEquity: null, initialEquity: '10000', totalPnl: null, totalReturn: null, maxDrawdown: null, riskBlocked: false, openAlertCount: 0, tradeCount: 0, lastActivityAt: null, noOrder: true}],
+                riskBlockedRuns: [{paperRunId: 'l20-fill', status: 'STOPPED', symbol: 'BTC/USDT', strategyVersionId: 'sv1', publishId: 'pub1', currentEquity: '11000', initialEquity: '10000', totalPnl: '1000', totalReturn: '0.1', maxDrawdown: '-0.05', riskBlocked: true, openAlertCount: 0, tradeCount: 2, lastActivityAt: null, hasFill: true}],
+            },
+            dataQuality: {missingEquityRuns: [], dataInsufficientRuns: [], missingBacktestSourceRuns: [], missingPublishSourceRuns: []},
+            safety: {environment: 'SIM', liveEnabled: false, realExchangeTouched: false, message: 'SIM only'},
+        };
+
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: l20Summary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        const riskBlockedCard = risk.locator('[data-testid="risk-filter-card-risk-blocked"]');
+        const noOrderCard = risk.locator('[data-testid="risk-filter-card-no-order"]');
+
+        // 初始状态：所有卡片 aria-pressed=false。
+        await expect(riskBlockedCard).toHaveAttribute('aria-pressed', 'false');
+        await expect(noOrderCard).toHaveAttribute('aria-pressed', 'false');
+
+        // 点击「风控拦截 run」卡片 → aria-pressed=true。
+        await riskBlockedCard.click();
+        await expect(riskBlockedCard).toHaveAttribute('aria-pressed', 'true');
+        // 未激活卡片保持 false。
+        await expect(noOrderCard).toHaveAttribute('aria-pressed', 'false');
+
+        // 切换到「无订单」卡片 → 原卡片恢复 false，新卡片变 true。
+        await noOrderCard.click();
+        await expect(noOrderCard).toHaveAttribute('aria-pressed', 'true');
+        await expect(riskBlockedCard).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    test('Loop-21：排行概览卡点击后 aria-pressed 变为 true，再点另一卡片时原卡恢复', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: rankingPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        const riskCard = ranking.locator('[data-testid="ranking-filter-card-risk-blocked"]');
+        const dataCard = ranking.locator('[data-testid="ranking-filter-card-data-insufficient"]');
+
+        // 初始 aria-pressed=false。
+        await expect(riskCard).toHaveAttribute('aria-pressed', 'false');
+        await expect(dataCard).toHaveAttribute('aria-pressed', 'false');
+
+        // 点击风控拦截卡 → true。
+        await riskCard.click();
+        await expect(riskCard).toHaveAttribute('aria-pressed', 'true');
+        await expect(dataCard).toHaveAttribute('aria-pressed', 'false');
+
+        // 点击数据不足卡 → 切换。
+        await dataCard.click();
+        await expect(dataCard).toHaveAttribute('aria-pressed', 'true');
+        await expect(riskCard).toHaveAttribute('aria-pressed', 'false');
     });
 });
