@@ -1162,14 +1162,16 @@ test.describe('paper trading product loop panel', () => {
         await expect(ddCard).toContainText('当前最大回撤 run：paper-portfolio-b');
         await expect(risk.locator('.nq-metric-card', {hasText: '风控拦截 run'}).locator('.nq-metric-card__value')).toHaveText('1');
         await expect(risk.locator('.nq-metric-card', {hasText: '未处理告警'}).locator('.nq-metric-card__value')).toHaveText('2');
-        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'}).locator('.nq-metric-card__value')).toHaveText('1');
-        // Loop-18：无交易 run 卡 footer 按精确口径拆分（runC 无订单）。
-        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'})).toContainText('无订单 1 · 有订单无成交 0');
+        // Loop-18/20：默认 portfolio 有 order/fill 拆分字段 → 显示三张独立卡片（无订单 / 有订单无成交 / 有成交）。
+        await expect(risk.locator('.nq-metric-card', {hasText: '无订单'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.locator('.nq-metric-card', {hasText: '有订单无成交'}).locator('.nq-metric-card__value')).toHaveText('0');
+        await expect(risk.locator('.nq-metric-card', {hasText: '有成交'}).locator('.nq-metric-card__value')).toHaveText('2');
         await expect(risk.locator('.nq-metric-card', {hasText: '数据不足 run'}).locator('.nq-metric-card__value')).toHaveText('1');
         await expect(risk.locator('.nq-metric-card', {hasText: 'FAILED / CANCELLED'}).locator('.nq-metric-card__value')).toHaveText('0');
         await expect(risk.getByText('FAILED 0 · CANCELLED 0')).toBeVisible();
-        await expect(risk.locator('.nq-metric-card', {hasText: '高风险 run 数'}).locator('.nq-metric-card__value')).toHaveText('1');
-        await expect(risk.getByText('风控拦截 + 异常终态合计')).toBeVisible();
+        // Loop-20：新增「高回撤 run」卡替代「高风险 run 数」（pool 中 runB maxDrawdown=-0.25 ≤ -0.1 → 高回撤 1）。
+        await expect(risk.locator('.nq-metric-card', {hasText: '高回撤 run'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.getByText('回撤 ≤ -10%，点击筛选')).toBeVisible();
 
         // 2) 组合资金曲线与回撤（Loop-15 真实组合时间序列口径）。
         await expect(risk.getByText('组合资金曲线与回撤', {exact: true})).toBeVisible();
@@ -1269,9 +1271,10 @@ test.describe('paper trading product loop panel', () => {
         const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
         await expect(risk).toBeVisible();
 
-        // 无交易 run 卡：合计 2，footer 拆分为「无订单 1 · 有订单无成交 1」。
-        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'}).locator('.nq-metric-card__value')).toHaveText('2');
-        await expect(risk.locator('.nq-metric-card', {hasText: '无交易 run'})).toContainText('无订单 1 · 有订单无成交 1');
+        // Loop-18/20：有 order/fill 拆分字段 → 显示三张独立卡片（无订单 1 / 有订单无成交 1 / 有成交 0）。
+        await expect(risk.locator('.nq-metric-card', {hasText: '无订单'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.locator('.nq-metric-card', {hasText: '有订单无成交'}).locator('.nq-metric-card__value')).toHaveText('1');
+        await expect(risk.locator('.nq-metric-card', {hasText: '有成交'}).locator('.nq-metric-card__value')).toHaveText('0');
 
         // 无交易清单「执行进度」列同时出现无订单与有订单无成交标签。
         await expect(risk.getByText('无交易 / 数据不足清单')).toBeVisible();
@@ -1602,6 +1605,176 @@ test.describe('paper trading product loop panel', () => {
 
         // Paper-only 文案保留。
         await expect(risk.getByText('风险 Run 清单合并 highlights 与数据质量清单去重，按筛选条件展示；仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+    });
+
+    test('Loop-20：风险指标卡 click-to-filter 联动风险 Run 清单', async ({page}) => {
+        // 使用与 Loop-19 同结构的 riskFilterSummary（3 个 run：有成交 / 无订单 / 有订单无成交）。
+        const runFill20 = {
+            paperRunId: 'l20-fill', status: 'STOPPED', symbol: 'BTC-USDT',
+            strategyVersionId: 'sv-l20', publishId: 'pub-l20',
+            currentEquity: 110000, initialEquity: 100000, totalPnl: 10000, totalReturn: 0.1,
+            maxDrawdown: -0.03, riskBlocked: false, openAlertCount: 0, orderCount: 4, tradeCount: 4,
+            noOrder: false, orderNoFill: false, hasFill: true, lastActivityAt: '2026-06-22T02:00:00Z',
+        };
+        const runNoOrder20 = {
+            paperRunId: 'l20-noorder', status: 'CREATED', symbol: 'ETH-USDT',
+            strategyVersionId: 'sv-l20', publishId: 'pub-l20',
+            currentEquity: null, initialEquity: null, totalPnl: null, totalReturn: null,
+            maxDrawdown: null, riskBlocked: false, openAlertCount: 0, orderCount: 0, tradeCount: 0,
+            noOrder: true, orderNoFill: false, hasFill: false, lastActivityAt: '2026-06-21T02:00:00Z',
+        };
+        const runOrderNoFill20 = {
+            paperRunId: 'l20-ordernofill', status: 'STOPPED', symbol: 'SOL-USDT',
+            strategyVersionId: 'sv-l20', publishId: 'pub-l20',
+            currentEquity: 100000, initialEquity: 100000, totalPnl: 0, totalReturn: 0,
+            maxDrawdown: -0.01, riskBlocked: false, openAlertCount: 0, orderCount: 3, tradeCount: 0,
+            noOrder: false, orderNoFill: true, hasFill: false, lastActivityAt: '2026-06-20T02:00:00Z',
+        };
+        const l20Group = {
+            key: 'sv-l20', runCount: 3, currentEquity: 210000, totalPnl: 10000, totalReturn: 0.05, worstDrawdown: -0.03,
+            riskBlockedCount: 0, openAlertCount: 0, lastRunTime: '2026-06-22T02:00:00Z',
+            noTradeCount: 2, dataInsufficientCount: 1, comparableRunCount: 2,
+            runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 1,
+            orderCount: 7, tradeCount: 4, noOrderCount: 1, orderNoFillCount: 1, filledRunCount: 1,
+        };
+        const l20Summary = {
+            overview: {
+                totalRuns: 3, runningCount: 0, stoppedCount: 2, failedCount: 0, cancelledCount: 0, createdCount: 1,
+                totalInitialEquity: 200000, totalCurrentEquity: 210000, totalPnl: 10000, totalReturn: 0.05,
+                returnEligibleRunCount: 2, worstRunDrawdown: -0.03, openAlertCount: 0,
+                riskBlockedRunCount: 0, noTradeRunCount: 2, dataInsufficientRunCount: 1,
+                noOrderRunCount: 1, orderNoFillRunCount: 1, filledRunCount: 1,
+            },
+            strategyGroups: [l20Group],
+            publishGroups: [{...l20Group, key: 'pub-l20'}],
+            highlights: {
+                topWinner: runFill20, worstDrawdown: runFill20, highestRisk: null, mostRecent: runFill20,
+                noTradeRuns: [runNoOrder20, runOrderNoFill20], riskBlockedRuns: [],
+            },
+            dataQuality: {
+                missingEquityRuns: [runNoOrder20],
+                dataInsufficientRuns: [runNoOrder20],
+                missingBacktestSourceRuns: [], missingPublishSourceRuns: [],
+            },
+            safety: {environment: 'SIM/PAPER', liveEnabled: false, realExchangeTouched: false, message: '该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现'},
+            portfolioCurve: emptyPortfolioCurve,
+        };
+
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: l20Summary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const risk = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        const riskTable = page.getByRole('region', {name: '风险 Run 清单表'});
+
+        // 默认全部：三个 run 都在。
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-fill"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-noorder"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-ordernofill"]')).toHaveCount(1);
+
+        // 点击「无订单」指标卡 → 清单筛选为「无订单」。
+        const noOrderCard = risk.locator('[data-testid="risk-filter-card-no-order"]');
+        await expect(noOrderCard).toBeVisible();
+        await noOrderCard.click();
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-noorder"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-fill"]')).toHaveCount(0);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-ordernofill"]')).toHaveCount(0);
+        // 卡片标题显示当前筛选状态。
+        await expect(risk.getByText(/风险 Run 清单 · 当前筛选：无订单/)).toBeVisible();
+
+        // 点击「有订单无成交」指标卡 → 筛选切换。
+        const orderNoFillCard = risk.locator('[data-testid="risk-filter-card-order-no-fill"]');
+        await expect(orderNoFillCard).toBeVisible();
+        await orderNoFillCard.click();
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-ordernofill"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-noorder"]')).toHaveCount(0);
+        await expect(risk.getByText(/风险 Run 清单 · 当前筛选：有订单无成交/)).toBeVisible();
+
+        // 点击「数据不足」指标卡 → 仅 l20-noorder（dataInsufficientRuns）。
+        const dataInsufficientCard = risk.locator('[data-testid="risk-filter-card-data-insufficient"]');
+        await expect(dataInsufficientCard).toBeVisible();
+        await dataInsufficientCard.click();
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-noorder"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-fill"]')).toHaveCount(0);
+
+        // 点击「异常终态」指标卡（无匹配 run）→ 空态文案（label='异常终态'）。
+        const terminalCard = risk.locator('[data-testid="risk-filter-card-terminal"]');
+        await expect(terminalCard).toBeVisible();
+        await terminalCard.click();
+        await expect(risk.getByText(/当前筛选「异常终态」下暂无匹配的风险 Run/)).toBeVisible();
+
+        // 点击「高回撤」指标卡（pool 内 maxDrawdown=-0.03 与 null，均 > -10%）→ 空态文案。
+        const highDrawdownCard = risk.locator('[data-testid="risk-filter-card-high-drawdown"]');
+        await expect(highDrawdownCard).toBeVisible();
+        await highDrawdownCard.click();
+        await expect(risk.getByText(/当前筛选「高回撤」下暂无匹配的风险 Run/)).toBeVisible();
+
+        // 点击「查看全部」→ 清除筛选，三个 run 均回到清单。
+        await risk.getByRole('button', {name: '查看全部'}).click();
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-fill"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-noorder"]')).toHaveCount(1);
+        await expect(riskTable.locator('tbody tr[data-row-key="l20-ordernofill"]')).toHaveCount(1);
+
+        // Paper-only 文案保留。
+        await expect(risk.getByText('风险 Run 清单合并 highlights 与数据质量清单去重，按筛选条件展示；仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
+    });
+
+    test('Loop-20：排行概览卡 click-to-filter 联动排行过滤', async ({page}) => {
+        // 使用 rankingPortfolioSummary：
+        //   sv-rank-highrisk riskBlockedCount=1，sv-rank-weak riskBlockedCount=2 / dataInsufficientCount=2 / failedCancelledCount=1。
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', portfolioSummary: rankingPortfolioSummary});
+        await page.goto('/paper-trading');
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+
+        const ranking = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        const sortControls = ranking.getByRole('group', {name: '策略排行排序控制'});
+        const strategyTable = page.getByRole('region', {name: '策略版本排行表'});
+
+        // 点击「风控拦截最多」卡片 → ranking filter 切换为「仅有风控拦截」。
+        const riskBlockedCard = ranking.locator('[data-testid="ranking-filter-card-risk-blocked"]');
+        await expect(riskBlockedCard).toBeVisible();
+        await riskBlockedCard.click();
+        // 过滤后：sv-rank-highrisk (riskBlockedCount=1) + sv-rank-weak (riskBlockedCount=2) 均命中。
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-highrisk"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-weak"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-good"]')).toHaveCount(0);
+        // 控件状态栏显示当前过滤（通过 Typography 状态文本确认，避免 Select 同名文本歧义）。
+        await expect(sortControls.getByText(/当前：.*仅有风控拦截/)).toBeVisible();
+
+        // 点击「数据不足最多」卡片 → 切换为「仅数据不足」。
+        const dataInsufficientCard = ranking.locator('[data-testid="ranking-filter-card-data-insufficient"]');
+        await dataInsufficientCard.click();
+        // sv-rank-weak 有 dataInsufficientCount=2 → 命中；其余两个 → 不命中。
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-weak"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-good"]')).toHaveCount(0);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-highrisk"]')).toHaveCount(0);
+
+        // 点击「无交易最多」卡片 → 切换为「仅无订单」。
+        const noOrderCard = ranking.locator('[data-testid="ranking-filter-card-no-order"]');
+        await noOrderCard.click();
+        // sv-rank-weak noOrderCount=1 → 命中。
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-weak"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-good"]')).toHaveCount(0);
+
+        // 点击「异常终态最多」卡片 → 切换为「仅异常终态」。
+        const abnormalCard = ranking.locator('[data-testid="ranking-filter-card-abnormal-terminal"]');
+        await abnormalCard.click();
+        // sv-rank-weak failedCount=1 + cancelledCount=0 = 1 > 0 → 命中。
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-weak"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-good"]')).toHaveCount(0);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-highrisk"]')).toHaveCount(0);
+        // 当前状态文案包含过滤标签（通过 Typography 状态文本确认）。
+        await expect(sortControls.getByText(/当前：.*仅异常终态/)).toBeVisible();
+
+        // 用 Select 切回「全部」→ 三个策略均显示。
+        await sortControls.locator('.ant-select-selector').last().click();
+        await page.getByRole('option', {name: '全部', exact: true}).click();
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-good"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-highrisk"]')).toHaveCount(1);
+        await expect(strategyTable.locator('tbody tr[data-row-key="sv-rank-weak"]')).toHaveCount(1);
+
+        // Paper-only 文案保留。
+        await expect(ranking.getByText('该策略排行仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现。')).toBeVisible();
     });
 
     test('Loop-19：旧后端缺 order/fill 字段时排行与风险筛选控件不崩', async ({page}) => {

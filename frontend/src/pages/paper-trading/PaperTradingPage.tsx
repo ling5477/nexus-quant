@@ -18,7 +18,7 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useEffect, useState, type ReactNode} from 'react';
+import React, {useEffect, useState, type ReactNode} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {
@@ -3274,9 +3274,8 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
     const failedCancelledRuns = pool.filter((r) => r.status === 'FAILED' || r.status === 'CANCELLED');
     const missingPnlRuns = pool.filter((r) => toNullableNumber(r.totalPnl) === null);
 
-    // 高风险 run 数：风控拦截 + 异常终态（按 overview 权威计数合计，定义在 footer 明示，避免误读）。
+    // 高风险 run 数：风控拦截 + 异常终态（按 overview 权威计数合计）。
     const failedCancelledCount = overview.failedCount + overview.cancelledCount;
-    const highRiskCount = overview.riskBlockedRunCount + failedCancelledCount;
 
     // Loop-18：把「无交易」按后端精确口径拆为「无订单」与「有订单无成交」。
     // 旧后端缺该拆分字段时 footer 退化为提示「单 run 查看」，不伪造拆分计数。
@@ -3288,10 +3287,21 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
     // Loop-19：统一风险 Run 清单（合并去重的 pool）按筛选条件展示。
     const riskRunFiltered = filterRiskRuns(pool, riskFilter, dataInsufficientIds);
     const riskFilterLabel = RISK_RUN_FILTER_OPTIONS.find((o) => o.value === riskFilter)?.label ?? '全部';
+    // Loop-20：高回撤 run 数（用于 click-to-filter 指标卡，阈值与 filterRiskRuns 保持一致）。
+    const highDrawdownCount = pool.filter((r) => {
+        const dd = toNullableNumber(r.maxDrawdown);
+        return dd !== null && dd <= RISK_RUN_HIGH_DRAWDOWN_THRESHOLD;
+    }).length;
+
+    /** 点击指标卡直接切换风险 Run 清单筛选（Loop-20 click-to-filter）。 */
+    const handleRiskCardClick = (filter: RiskRunFilter) => setRiskFilter(filter);
+    const riskCardKeyDown = (filter: RiskRunFilter) => (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') handleRiskCardClick(filter);
+    };
 
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
-            {/* 1) 风险总览指标 */}
+            {/* 1) 风险总览指标（Loop-20：可点击卡片直接联动下方风险 Run 清单筛选） */}
             <div className="nq-status-strip">
                 <NqMetricCard
                     label="最大单 run 回撤"
@@ -3301,43 +3311,139 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                     tone="warning"
                     footer={highlights.worstDrawdown ? `当前最大回撤 run：${highlights.worstDrawdown.paperRunId}` : '按单 run 最大回撤统计'}
                 />
-                <NqMetricCard
-                    label="风控拦截 run"
-                    value={String(overview.riskBlockedRunCount)}
-                    tone={overview.riskBlockedRunCount > 0 ? 'danger' : 'muted'}
-                />
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="筛选风控拦截风险 Run"
+                    data-testid="risk-filter-card-risk-blocked"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRiskCardClick('riskBlocked')}
+                    onKeyDown={riskCardKeyDown('riskBlocked')}
+                >
+                    <NqMetricCard
+                        label="风控拦截 run"
+                        value={String(overview.riskBlockedRunCount)}
+                        tone={overview.riskBlockedRunCount > 0 ? 'danger' : 'muted'}
+                        footer="点击筛选"
+                    />
+                </div>
                 <NqMetricCard
                     label="未处理告警"
                     value={String(overview.openAlertCount)}
                     tone={overview.openAlertCount > 0 ? 'warning' : 'muted'}
                 />
-                <NqMetricCard
-                    label="无交易 run"
-                    value={String(overview.noTradeRunCount)}
-                    tone={overview.noTradeRunCount > 0 ? 'warning' : 'muted'}
-                    footer={noTradeSplitFooter}
-                />
-                <NqMetricCard
-                    label="数据不足 run"
-                    value={String(overview.dataInsufficientRunCount)}
-                    tone={overview.dataInsufficientRunCount > 0 ? 'warning' : 'muted'}
-                />
-                <NqMetricCard
-                    label="FAILED / CANCELLED"
-                    value={String(failedCancelledCount)}
-                    tone={failedCancelledCount > 0 ? 'danger' : 'muted'}
-                    footer={`FAILED ${overview.failedCount} · CANCELLED ${overview.cancelledCount}`}
-                />
-                <NqMetricCard
-                    label="高风险 run 数"
-                    value={String(highRiskCount)}
-                    tone={highRiskCount > 0 ? 'danger' : 'muted'}
-                    footer="风控拦截 + 异常终态合计"
-                />
+                {hasOrderSplit ? (
+                    <>
+                        <div
+                            role="button" tabIndex={0}
+                            aria-label="筛选无订单风险 Run"
+                            data-testid="risk-filter-card-no-order"
+                            style={{cursor: 'pointer'}}
+                            onClick={() => handleRiskCardClick('noOrder')}
+                            onKeyDown={riskCardKeyDown('noOrder')}
+                        >
+                            <NqMetricCard
+                                label="无订单"
+                                value={String(overview.noOrderRunCount ?? 0)}
+                                tone={(overview.noOrderRunCount ?? 0) > 0 ? 'warning' : 'muted'}
+                                footer="点击筛选"
+                            />
+                        </div>
+                        <div
+                            role="button" tabIndex={0}
+                            aria-label="筛选有订单无成交风险 Run"
+                            data-testid="risk-filter-card-order-no-fill"
+                            style={{cursor: 'pointer'}}
+                            onClick={() => handleRiskCardClick('orderNoFill')}
+                            onKeyDown={riskCardKeyDown('orderNoFill')}
+                        >
+                            <NqMetricCard
+                                label="有订单无成交"
+                                value={String(overview.orderNoFillRunCount ?? 0)}
+                                tone={(overview.orderNoFillRunCount ?? 0) > 0 ? 'warning' : 'muted'}
+                                footer="点击筛选"
+                            />
+                        </div>
+                        <div
+                            role="button" tabIndex={0}
+                            aria-label="筛选有成交风险 Run"
+                            data-testid="risk-filter-card-has-fill"
+                            style={{cursor: 'pointer'}}
+                            onClick={() => handleRiskCardClick('hasFill')}
+                            onKeyDown={riskCardKeyDown('hasFill')}
+                        >
+                            <NqMetricCard
+                                label="有成交"
+                                value={String(overview.filledRunCount ?? '-')}
+                                tone={(overview.filledRunCount ?? 0) > 0 ? 'success' : 'muted'}
+                                footer="点击筛选"
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <NqMetricCard
+                        label="无交易 run"
+                        value={String(overview.noTradeRunCount)}
+                        tone={overview.noTradeRunCount > 0 ? 'warning' : 'muted'}
+                        footer={noTradeSplitFooter}
+                    />
+                )}
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="筛选数据不足风险 Run"
+                    data-testid="risk-filter-card-data-insufficient"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRiskCardClick('dataInsufficient')}
+                    onKeyDown={riskCardKeyDown('dataInsufficient')}
+                >
+                    <NqMetricCard
+                        label="数据不足 run"
+                        value={String(overview.dataInsufficientRunCount)}
+                        tone={overview.dataInsufficientRunCount > 0 ? 'warning' : 'muted'}
+                        footer="点击筛选"
+                    />
+                </div>
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="筛选异常终态风险 Run"
+                    data-testid="risk-filter-card-terminal"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRiskCardClick('terminal')}
+                    onKeyDown={riskCardKeyDown('terminal')}
+                >
+                    <NqMetricCard
+                        label="FAILED / CANCELLED"
+                        value={String(failedCancelledCount)}
+                        tone={failedCancelledCount > 0 ? 'danger' : 'muted'}
+                        footer={`FAILED ${overview.failedCount} · CANCELLED ${overview.cancelledCount}`}
+                    />
+                </div>
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="筛选高回撤风险 Run"
+                    data-testid="risk-filter-card-high-drawdown"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRiskCardClick('highDrawdown')}
+                    onKeyDown={riskCardKeyDown('highDrawdown')}
+                >
+                    <NqMetricCard
+                        label="高回撤 run"
+                        value={String(highDrawdownCount)}
+                        tone={highDrawdownCount > 0 ? 'danger' : 'muted'}
+                        footer="回撤 ≤ -10%，点击筛选"
+                    />
+                </div>
             </div>
 
             {/* 1.5) 统一风险 Run 清单（Loop-19）：合并 highlights/dataQuality 去重，按条件筛选快速定位 */}
-            <Card size="small" title="风险 Run 清单">
+            <Card
+                size="small"
+                title={riskFilter !== 'all'
+                    ? `风险 Run 清单 · 当前筛选：${riskFilterLabel}（${riskRunFiltered.length} 条）`
+                    : '风险 Run 清单'}
+                extra={riskFilter !== 'all' ? (
+                    <Button size="small" type="link" onClick={() => setRiskFilter('all')}>查看全部</Button>
+                ) : null}
+            >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <div
                         role="group"
@@ -3726,7 +3832,7 @@ type RankingSortDim =
     'score' | 'totalReturn' | 'totalPnl' | 'worstDrawdown' | 'riskBlocked'
     | 'noOrder' | 'orderNoFill' | 'dataInsufficient' | 'lastRun';
 type RankingSortDir = 'desc' | 'asc';
-type RankingFilter = 'all' | 'hasReturn' | 'dataInsufficient' | 'riskBlocked' | 'noOrder' | 'orderNoFill';
+type RankingFilter = 'all' | 'hasReturn' | 'dataInsufficient' | 'riskBlocked' | 'noOrder' | 'orderNoFill' | 'abnormalTerminal';
 
 const RANKING_SORT_OPTIONS: ReadonlyArray<{label: string; value: RankingSortDim}> = [
     {label: '风险调整分', value: 'score'},
@@ -3747,6 +3853,7 @@ const RANKING_FILTER_OPTIONS: ReadonlyArray<{label: string; value: RankingFilter
     {label: '仅有风控拦截', value: 'riskBlocked'},
     {label: '仅无订单', value: 'noOrder'},
     {label: '仅有单无成交', value: 'orderNoFill'},
+    {label: '仅异常终态', value: 'abnormalTerminal'},
 ];
 
 /**
@@ -3810,6 +3917,7 @@ function filterRankingRows(rows: PaperStrategyRankingRow[], filter: RankingFilte
         case 'riskBlocked': return rows.filter((r) => r.riskBlockedCount > 0);
         case 'noOrder': return rows.filter((r) => (r.noOrderCount ?? 0) > 0);
         case 'orderNoFill': return rows.filter((r) => (r.orderNoFillCount ?? 0) > 0);
+        case 'abnormalTerminal': return rows.filter((r) => r.failedCancelledCount > 0);
         case 'all':
         default: return rows;
     }
@@ -3885,8 +3993,15 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
     const publishRowsView = sortRankingRows(filterRankingRows(publishRows, rankFilter), sortDim, sortDir);
     const sortDimLabel = RANKING_SORT_OPTIONS.find((o) => o.value === sortDim)?.label ?? '风险调整分';
     const sortDirLabel = sortDir === 'desc' ? '降序' : '升序';
+    const rankFilterLabel = RANKING_FILTER_OPTIONS.find((o) => o.value === rankFilter)?.label ?? '全部';
     const filtered = rankFilter !== 'all';
     const filterEmptyText = '当前筛选条件下暂无匹配的数据。';
+
+    /** 点击榜单概览卡直接切换排行过滤（Loop-20 click-to-filter）。 */
+    const handleRankingCardClick = (filter: RankingFilter) => setRankFilter(filter);
+    const rankingCardKeyDown = (filter: RankingFilter) => (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') handleRankingCardClick(filter);
+    };
 
     // 榜单概览基于策略维度（口径与表格一致）；无交易 / 数据不足 / 异常终态均用后端 group 精确计数。
     const topReturn = topRankingRow(strategyRows, (row) => toNullableNumber(row.totalReturn), true);
@@ -3921,30 +4036,66 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     footer={worstDrawdown ? worstDrawdown.key : '暂无可比数据'}
                     tone="warning"
                 />
-                <NqMetricCard
-                    label="风控拦截最多"
-                    value={mostRiskBlocked ? String(mostRiskBlocked.riskBlockedCount) : '0'}
-                    footer={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? mostRiskBlocked.key : '暂无风控拦截'}
-                    tone={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? 'danger' : 'muted'}
-                />
-                <NqMetricCard
-                    label="无交易最多"
-                    value={mostNoTrade ? String(mostNoTrade.noTradeCount) : '0'}
-                    footer={mostNoTrade && mostNoTrade.noTradeCount > 0 ? mostNoTrade.key : '暂无无交易'}
-                    tone={mostNoTrade && mostNoTrade.noTradeCount > 0 ? 'warning' : 'muted'}
-                />
-                <NqMetricCard
-                    label="数据不足最多"
-                    value={mostDataInsufficient ? String(mostDataInsufficient.dataInsufficientCount) : '0'}
-                    footer={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? mostDataInsufficient.key : '暂无数据不足'}
-                    tone={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? 'warning' : 'muted'}
-                />
-                <NqMetricCard
-                    label="异常终态最多"
-                    value={mostFailedCancelled ? String(mostFailedCancelled.failedCancelledCount) : '0'}
-                    footer={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? mostFailedCancelled.key : '暂无异常终态'}
-                    tone={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? 'danger' : 'muted'}
-                />
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="过滤仅有风控拦截的策略"
+                    data-testid="ranking-filter-card-risk-blocked"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRankingCardClick('riskBlocked')}
+                    onKeyDown={rankingCardKeyDown('riskBlocked')}
+                >
+                    <NqMetricCard
+                        label="风控拦截最多"
+                        value={mostRiskBlocked ? String(mostRiskBlocked.riskBlockedCount) : '0'}
+                        footer={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? mostRiskBlocked.key : '暂无风控拦截'}
+                        tone={mostRiskBlocked && mostRiskBlocked.riskBlockedCount > 0 ? 'danger' : 'muted'}
+                    />
+                </div>
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="过滤仅无订单的策略"
+                    data-testid="ranking-filter-card-no-order"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRankingCardClick('noOrder')}
+                    onKeyDown={rankingCardKeyDown('noOrder')}
+                >
+                    <NqMetricCard
+                        label="无交易最多"
+                        value={mostNoTrade ? String(mostNoTrade.noTradeCount) : '0'}
+                        footer={mostNoTrade && mostNoTrade.noTradeCount > 0 ? mostNoTrade.key : '暂无无交易'}
+                        tone={mostNoTrade && mostNoTrade.noTradeCount > 0 ? 'warning' : 'muted'}
+                    />
+                </div>
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="过滤仅数据不足的策略"
+                    data-testid="ranking-filter-card-data-insufficient"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRankingCardClick('dataInsufficient')}
+                    onKeyDown={rankingCardKeyDown('dataInsufficient')}
+                >
+                    <NqMetricCard
+                        label="数据不足最多"
+                        value={mostDataInsufficient ? String(mostDataInsufficient.dataInsufficientCount) : '0'}
+                        footer={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? mostDataInsufficient.key : '暂无数据不足'}
+                        tone={mostDataInsufficient && mostDataInsufficient.dataInsufficientCount > 0 ? 'warning' : 'muted'}
+                    />
+                </div>
+                <div
+                    role="button" tabIndex={0}
+                    aria-label="过滤仅异常终态的策略"
+                    data-testid="ranking-filter-card-abnormal-terminal"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleRankingCardClick('abnormalTerminal')}
+                    onKeyDown={rankingCardKeyDown('abnormalTerminal')}
+                >
+                    <NqMetricCard
+                        label="异常终态最多"
+                        value={mostFailedCancelled ? String(mostFailedCancelled.failedCancelledCount) : '0'}
+                        footer={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? mostFailedCancelled.key : '暂无异常终态'}
+                        tone={mostFailedCancelled && mostFailedCancelled.failedCancelledCount > 0 ? 'danger' : 'muted'}
+                    />
+                </div>
             </div>
             <Typography.Text type="secondary" style={{fontSize: 12}}>
                 风险调整分为 Paper 内部排序分，仅用于模拟结果横向比较，不代表真实投资评级。
@@ -3978,12 +4129,12 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     value={rankFilter}
                     onChange={setRankFilter}
                     options={RANKING_FILTER_OPTIONS as Array<{label: string; value: RankingFilter}>}
-                    style={{width: 150}}
+                    style={{width: 160}}
                     virtual={false}
                 />
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
                     当前：{sortDimLabel} · {sortDirLabel}
-                    {filtered ? `（已过滤，命中 Strategy ${strategyRowsView.length} · Publish ${publishRowsView.length}）` : ''}
+                    {filtered ? ` · ${rankFilterLabel}（命中 Strategy ${strategyRowsView.length} · Publish ${publishRowsView.length}）` : ''}
                 </Typography.Text>
             </div>
 
