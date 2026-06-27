@@ -16,6 +16,7 @@ import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
 import {LoginPage} from '@/pages/login/LoginPage';
 import {MarketdataPage} from '@/pages/marketdata/MarketdataPage';
 import {NotFoundPage} from '@/pages/not-found/NotFoundPage';
+import {PaperDiagnosticsPage} from '@/pages/paper-trading/PaperDiagnosticsPage';
 import {PaperPortfolioPage} from '@/pages/paper-trading/PaperPortfolioPage';
 import {PaperTradingPlaceholderPage} from '@/pages/paper-trading/PaperTradingPlaceholderPage';
 import {PaperTradingRouteShell} from '@/pages/paper-trading/PaperTradingRouteShell';
@@ -168,7 +169,7 @@ export const appRouter = createBrowserRouter([
                             },
                             {
                                 path: 'diagnostics',
-                                element: <PaperTradingPlaceholderPage title="Paper Diagnostics"/>,
+                                element: <PaperDiagnosticsPage/>,
                                 handle: createHandle('paper-trading'),
                             },
                             {

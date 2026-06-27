@@ -830,8 +830,8 @@ test.describe('paper trading product loop panel', () => {
         await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
     });
 
-    test('K5-C1：portfolio 子路由渲染真实看板，diagnostics / reviews 仍为 placeholder', async ({page}) => {
-        await seedAuthAndPaperLoopStubs(page);
+    test('K5-C2：portfolio / diagnostics 子路由渲染真实页面，reviews 仍为 placeholder', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {executionDiagnostics: richExecutionDiagnostics});
 
         await page.goto('/paper-trading/portfolio');
         await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
@@ -842,23 +842,26 @@ test.describe('paper trading product loop panel', () => {
         await expect(page.getByText('组合资金曲线与回撤')).toBeVisible();
         await expect(page.getByRole('heading', {name: '模拟交易'})).toHaveCount(0);
 
-        for (const route of [
-            {path: '/paper-trading/diagnostics', title: 'Paper Diagnostics'},
-            {path: '/paper-trading/reviews', title: 'Paper Reviews'},
-        ]) {
-            await page.goto(route.path);
+        await page.goto('/paper-trading/diagnostics');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 执行诊断', exact: true})).toBeVisible();
+        await expect(page.getByText('SIM/Paper only · Rules-based diagnostics')).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 执行诊断 Run 表'})).toBeVisible();
+        await expect(page.getByText('diag-risk-blocked')).toBeVisible();
+        await expect(page.getByRole('heading', {name: 'Paper Diagnostics'})).toHaveCount(0);
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toHaveCount(0);
 
-            await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
-            await expect(page.getByRole('heading', {name: route.title})).toBeVisible();
-            await expect(page.getByText('该模块将在 K5-C 迁移到当前子路由，当前完整视图仍在 Runs 兼容页可用。')).toBeVisible();
-            await expect(page.getByText('SIM/Paper only').first()).toBeVisible();
-            await expect(page.getByText('LIVE 未开启').first()).toBeVisible();
-            await expect(page.getByText('不接真实交易所').first()).toBeVisible();
-            await expect(page.getByText('不构成投资建议').first()).toBeVisible();
-            await expect(page.getByText('不读取 credential、不访问真实交易所、不新增查询，也不构成投资建议。')).toBeVisible();
-            await expect(page.getByRole('button', {name: '返回 Runs'})).toBeVisible();
-            await expect(page.getByRole('heading', {name: '模拟交易'})).toHaveCount(0);
-        }
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: 'Paper Reviews'})).toBeVisible();
+        await expect(page.getByText('该模块将在 K5-C 迁移到当前子路由，当前完整视图仍在 Runs 兼容页可用。')).toBeVisible();
+        await expect(page.getByText('SIM/Paper only').first()).toBeVisible();
+        await expect(page.getByText('LIVE 未开启').first()).toBeVisible();
+        await expect(page.getByText('不接真实交易所').first()).toBeVisible();
+        await expect(page.getByText('不构成投资建议').first()).toBeVisible();
+        await expect(page.getByText('不读取 credential、不访问真实交易所、不新增查询，也不构成投资建议。')).toBeVisible();
+        await expect(page.getByRole('button', {name: '返回 Runs'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toHaveCount(0);
     });
 
     test('创建、启动、停止后仍聚合展示执行闭环', async ({page}) => {
@@ -2352,7 +2355,7 @@ test.describe('paper trading product loop panel', () => {
 
         // Backtest 偏差 HIGH → 仅 eval-risk。
         await filterGroup.locator('.ant-select-selector').nth(2).click();
-        await page.getByRole('option', {name: 'HIGH', exact: true}).click();
+        await page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').getByRole('option', {name: 'HIGH', exact: true}).click();
         await expect(strategyTable.locator('tbody tr[data-row-key="eval-risk"]')).toHaveCount(1);
         await expect(strategyTable.locator('tbody tr[data-row-key="eval-strong"]')).toHaveCount(0);
 
