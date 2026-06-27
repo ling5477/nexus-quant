@@ -8,8 +8,8 @@ import type {PaperPortfolioRunRef} from '@/types/paper-trading';
  * paperPortfolioShared —— Portfolio / Risk / Strategy Ranking 三个 dashboard 共享的小型展示件。
  *
  * K5-A2 行为保持型抽取：`renderRunRefTags`（Portfolio + Risk 共用）与 `ClickableMetricCard`
- * （Risk + Ranking 共用）原先内联在 PaperTradingPage.tsx，按依赖集中到此局部 shared 文件，
- * 实现逐字一致，仅改变定义位置，不改变任何渲染或交互行为。
+ * （Risk + Ranking 共用）来源于旧 all-in-one Paper Trading 页，删除旧页后继续按依赖集中在此局部 shared 文件。
+ * 实现保留原语义，不改变任何渲染或交互行为。
  */
 
 /** 把 run 引用清单渲染为紧凑 Tag 列表；空清单显示「无」，超过 12 条折叠为「等 N 个」。 */

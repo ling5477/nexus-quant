@@ -30,13 +30,31 @@ import {formatDateTime} from '@/utils/formatters';
 import {toNullableNumber} from './paperFormatters';
 import {ClickableMetricCard, renderRunRefTags} from './paperPortfolioShared';
 
+const EMPTY_PORTFOLIO_HIGHLIGHTS = {
+    topWinner: null,
+    worstDrawdown: null,
+    highestRisk: null,
+    mostRecent: null,
+    noTradeRuns: [],
+    riskBlockedRuns: [],
+} satisfies PaperPortfolioSummaryResponse['highlights'];
+
+const EMPTY_PORTFOLIO_DATA_QUALITY = {
+    missingEquityRuns: [],
+    dataInsufficientRuns: [],
+    missingBacktestSourceRuns: [],
+    missingPublishSourceRuns: [],
+} satisfies PaperPortfolioSummaryResponse['dataQuality'];
+
 /**
  * 汇总组合看板里出现过的「风险相关 run 引用」（highlights + dataQuality 去重）。
  * 注意：组合 summary 不下发全量 run 清单，本池为风险相关子集（含 top/worst/highestRisk/mostRecent
  * 与无交易 / 风控拦截 / 数据质量清单），用于回撤排行与阈值分布派生；展示层会显式标注口径，避免误读为全量。
  */
 function collectRiskRunPool(portfolio: PaperPortfolioSummaryResponse): PaperPortfolioRunRef[] {
-    const {highlights, dataQuality} = portfolio;
+    // 兼容旧版 / 精简 Portfolio summary 响应：缺少清单时按空清单处理，只展示数据不足，不制造风险事实。
+    const highlights = portfolio.highlights ?? EMPTY_PORTFOLIO_HIGHLIGHTS;
+    const dataQuality = portfolio.dataQuality ?? EMPTY_PORTFOLIO_DATA_QUALITY;
     const byId = new Map<string, PaperPortfolioRunRef>();
     const push = (run: PaperPortfolioRunRef | null | undefined) => {
         if (run && !byId.has(run.paperRunId)) {
@@ -383,7 +401,10 @@ function runExecTag(run: PaperPortfolioRunRef): {label: string; tone: NqStatusTo
 }
 
 function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryResponse}) {
-    const {overview, highlights, dataQuality} = portfolio;
+    const {overview} = portfolio;
+    // Risk dashboard 被独立挂载后必须能消费旧 summary；缺失详情清单时 fail-closed 到空清单。
+    const highlights = portfolio.highlights ?? EMPTY_PORTFOLIO_HIGHLIGHTS;
+    const dataQuality = portfolio.dataQuality ?? EMPTY_PORTFOLIO_DATA_QUALITY;
 
     // Loop-19：风险 Run 清单筛选状态（默认全部）。
     const [riskFilter, setRiskFilter] = useState<RiskRunFilter>('all');

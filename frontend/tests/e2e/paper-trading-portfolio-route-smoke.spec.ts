@@ -297,15 +297,20 @@ test.describe('paper trading portfolio child route', () => {
         await page.goto('/paper-trading/portfolio');
 
         await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
+        const portfolioDashboard = page.getByRole('region', {name: 'Paper 组合看板'});
+        const riskDashboard = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
+        const rankingDashboard = page.getByRole('region', {name: 'Paper 策略表现排行'});
+        await expect(portfolioDashboard).toBeVisible();
+        await expect(riskDashboard).toBeVisible();
+        await expect(rankingDashboard).toBeVisible();
         await expect(page.getByText('Paper run 总数')).toBeVisible();
         await expect(page.getByText('Strategy Version 收益排行')).toBeVisible();
         await expect(page.getByText('Publish 收益排行')).toBeVisible();
-        await expect(page.getByText('strategy-portfolio-a')).toBeVisible();
-        await expect(page.getByText('publish-portfolio-risk')).toBeVisible();
-        await expect(page.getByText('组合资金曲线与回撤')).toBeVisible();
-        await expect(page.getByText('组合资金曲线', {exact: true})).toBeVisible();
-        await expect(page.getByText('组合回撤曲线', {exact: true})).toBeVisible();
+        await expect(portfolioDashboard.getByText('strategy-portfolio-a').first()).toBeVisible();
+        await expect(portfolioDashboard.getByText('publish-portfolio-risk').first()).toBeVisible();
+        await expect(riskDashboard.getByText('组合资金曲线与回撤', {exact: true}).first()).toBeVisible();
+        await expect(riskDashboard.getByText('组合资金曲线', {exact: true}).first()).toBeVisible();
+        await expect(riskDashboard.getByText('组合回撤曲线', {exact: true}).first()).toBeVisible();
         await expect(page.getByText('SIM/Paper only').first()).toBeVisible();
         await expect(page.getByText('LIVE 未开启').first()).toBeVisible();
         await expect(page.getByText('不接真实交易所').first()).toBeVisible();

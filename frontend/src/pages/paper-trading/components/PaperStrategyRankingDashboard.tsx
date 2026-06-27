@@ -26,6 +26,22 @@ import {formatDateTime} from '@/utils/formatters';
 import {pnlTone, toNullableNumber} from './paperFormatters';
 import {ClickableMetricCard} from './paperPortfolioShared';
 
+const EMPTY_PORTFOLIO_HIGHLIGHTS = {
+    topWinner: null,
+    worstDrawdown: null,
+    highestRisk: null,
+    mostRecent: null,
+    noTradeRuns: [],
+    riskBlockedRuns: [],
+} satisfies PaperPortfolioSummaryResponse['highlights'];
+
+const EMPTY_PORTFOLIO_DATA_QUALITY = {
+    missingEquityRuns: [],
+    dataInsufficientRuns: [],
+    missingBacktestSourceRuns: [],
+    missingPublishSourceRuns: [],
+} satisfies PaperPortfolioSummaryResponse['dataQuality'];
+
 /** 策略 / 发布维度排行行：组合 summary 的 group 字段 + 无交易 / 数据不足 / 异常终态计数与风险调整分。 */
 interface PaperStrategyRankingRow {
     key: string;
@@ -307,8 +323,11 @@ export function PaperStrategyRankingDashboard({query}: {query: ReturnType<typeof
             ? (raw as PaperPortfolioSummaryResponse)
             : null;
 
+    // 兼容旧版 / 精简 Portfolio summary 响应：缺少分组字段时按空分组处理，避免 Ranking 子路由挂载后白屏。
+    const strategyGroups = portfolio?.strategyGroups ?? [];
+    const publishGroups = portfolio?.publishGroups ?? [];
     const hasGroups = Boolean(portfolio)
-        && (portfolio!.strategyGroups.length > 0 || portfolio!.publishGroups.length > 0);
+        && (strategyGroups.length > 0 || publishGroups.length > 0);
 
     return (
       <section aria-label="Paper 策略表现排行">
@@ -347,7 +366,11 @@ export function PaperStrategyRankingDashboard({query}: {query: ReturnType<typeof
 }
 
 function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummaryResponse}) {
-    const {strategyGroups, publishGroups, highlights, dataQuality} = portfolio;
+    // Portfolio summary 历史响应可能缺少 highlights / dataQuality；这里 fail-closed 到空清单，不伪造排行依据。
+    const strategyGroups = portfolio.strategyGroups ?? [];
+    const publishGroups = portfolio.publishGroups ?? [];
+    const highlights = portfolio.highlights ?? EMPTY_PORTFOLIO_HIGHLIGHTS;
+    const dataQuality = portfolio.dataQuality ?? EMPTY_PORTFOLIO_DATA_QUALITY;
 
     // Loop-19：排行控件状态（默认风险调整分降序、不过滤），同一套控件同时作用于 Strategy / Publish 两张表。
     const [sortDim, setSortDim] = useState<RankingSortDim>('score');

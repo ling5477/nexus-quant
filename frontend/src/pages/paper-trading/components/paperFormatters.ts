@@ -1,8 +1,8 @@
 /**
  * paperFormatters —— Paper Trading 页面共享纯函数。
  *
- * K5-A 行为保持型组件抽取：把同时被 PaperTradingPage 与抽出的 dashboard 组件使用的纯取值/格式化函数
- * 集中到此文件。实现与原 PaperTradingPage.tsx 内定义逐字一致，只改变定义位置，不改变任何取值或格式化语义。
+ * K5-A 行为保持型组件抽取：这些纯取值 / 格式化函数来源于旧 all-in-one Paper Trading 页，
+ * 现在由拆分后的 dashboard 组件共享。实现保留原语义，不改变任何取值或格式化行为。
  */
 
 /** 解析为有限数值；空串 / null / undefined / 非有限值统一返回 null（不伪造 0）。 */
