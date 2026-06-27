@@ -9,8 +9,8 @@ test.describe('GateI-3 paper trading run smoke', () => {
 
         const fixture = await prepareGateI3PaperTradingFixture(page);
 
-        await page.goto('/paper-trading');
-        await expect(page).toHaveURL(/\/paper-trading$/);
+        await page.goto('/paper-trading/runs');
+        await expect(page).toHaveURL(/\/paper-trading\/runs$/);
         await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
 
         await page.getByRole('button', {name: /查\s*询/}).click();
@@ -95,7 +95,7 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         const fixture = await prepareGateI3PaperTradingFixture(page);
 
         // Create paper run via UI
-        await page.goto('/paper-trading');
+        await page.goto('/paper-trading/runs');
         await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
 
         await page.getByRole('button', {name: /创建\s*Paper\s*Run/i}).click();

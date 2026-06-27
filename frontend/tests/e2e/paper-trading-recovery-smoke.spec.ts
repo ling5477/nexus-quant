@@ -9,7 +9,7 @@ test.describe('GateJ-3 paper trading recovery smoke', () => {
 
         const fixture = await prepareGateI3PaperTradingFixture(page);
 
-        await page.goto('/paper-trading');
+        await page.goto('/paper-trading/runs');
         await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
 
         // Create paper run via UI

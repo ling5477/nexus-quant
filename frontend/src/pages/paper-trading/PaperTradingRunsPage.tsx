@@ -29,12 +29,13 @@ import {
     NqLoadingState,
     NqMetricCard,
     NqPageHeader,
+    NqPercentText,
     NqPriceText,
     NqRiskBanner,
     NqStatusTag,
     nqNumericColumn,
 } from '@/components/nq';
-import {NqAlertPanel, NqRecoveryPanel} from '@/components/paper';
+import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/components/paper';
 import {
     EXCHANGE_OPTIONS,
     INTERVAL_OPTIONS,
@@ -46,6 +47,8 @@ import {
 import {
     useCreatePaperTradingRunMutation,
     useEmergencyStopMutation,
+    useGenerateDailyReportMutation,
+    usePaperDailyReportsQuery,
     usePaperRunSummaryQuery,
     usePaperTradingDetailQuery,
     usePaperTradingEmergencyStopsQuery,
@@ -65,6 +68,7 @@ import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
     type EquityCurveSnapshotItem,
+    type PaperRunDailyReportItem,
     type PaperRunSummaryResponse,
     type PaperRiskCheckResultItem,
     type PaperTradingListFilters,
@@ -546,6 +550,10 @@ export function PaperTradingRunsPage() {
                                                         ) : null}
                                                     </Space>
                                                 </Card>
+                                                <NqScheduleFirePanel paperRunId={selectedRow.paperRunId}/>
+                                                <NqHeartbeatPanel paperRunId={selectedRow.paperRunId}/>
+                                                <RunDailyReportPanel paperRunId={selectedRow.paperRunId}/>
+                                                <NqStabilityCheckPanel paperRunId={selectedRow.paperRunId}/>
                                                 <NqRecoveryPanel paperRunId={selectedRow.paperRunId}/>
                                                 <NqAlertPanel paperRunId={selectedRow.paperRunId}/>
                                             </Space>
@@ -867,6 +875,87 @@ function RunFactsCard({
                     },
                 ]}
             />
+        </Card>
+    );
+}
+
+/**
+ * RunDailyReportPanel 恢复 K5 `/paper-trading/runs` 的 run-local 日报入口。
+ *
+ * Why:
+ * K5 拆分只迁出跨 run 分析 dashboard；日报仍是单个 Paper Run 的执行事实与验收辅助证据。
+ * 如果 runs 页不挂载该 panel，既有 backend-dependent smoke 无法覆盖日报生成链路，也会让用户从执行控制台失去
+ * run-local 日报入口。
+ *
+ * Boundary / Failure Modes:
+ * - 复用既有 `usePaperDailyReportsQuery` 与 `useGenerateDailyReportMutation`，不新增 API、query key 或 global store。
+ * - 只展示当前 `paperRunId` 的日报列表；生成按钮省略 reportDate，由后端按“今日”幂等生成。
+ * - 查询失败只影响本 panel，通过 `NqErrorState` 局部展示，不阻塞订单、风控、调度、心跳或恢复面板。
+ * - 日报仅代表 SIM/Paper 执行事实，不构成 LIVE 或真实交易表现。
+ */
+function RunDailyReportPanel({paperRunId}: {paperRunId: string}) {
+    const {message} = App.useApp();
+    const dailyReportsQuery = usePaperDailyReportsQuery(paperRunId);
+    const generateDailyReportMutation = useGenerateDailyReportMutation();
+    const data = dailyReportsQuery.data ?? [];
+
+    return (
+        <Card
+            className="page-section"
+            size="small"
+            title="日报"
+            extra={(
+                <Button
+                    size="small"
+                    type="primary"
+                    ghost
+                    loading={generateDailyReportMutation.isPending}
+                    onClick={() => generateDailyReportMutation.mutate(
+                        {paperRunId, request: {}},
+                        {
+                            onSuccess: () => {
+                                message.success('日报已生成。');
+                                void dailyReportsQuery.refetch();
+                            },
+                            onError: (err) => message.error(formatApiError(err as AppApiError)),
+                        },
+                    )}
+                >
+                    生成今日日报
+                </Button>
+            )}
+        >
+            <Space direction="vertical" size={8} style={{display: 'flex'}}>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>
+                    日报只汇总当前 SIM/Paper run 的执行事实，不代表 LIVE 或真实交易表现。
+                </Typography.Text>
+                {dailyReportsQuery.isFetching && data.length === 0 ? (
+                    <NqLoadingState/>
+                ) : dailyReportsQuery.error ? (
+                    <NqErrorState error={dailyReportsQuery.error as AppApiError} onRetry={() => dailyReportsQuery.refetch()}/>
+                ) : data.length === 0 ? (
+                    <NqEmptyState description="当前 Paper run 暂无日报。"/>
+                ) : (
+                    <NqDataTable<PaperRunDailyReportItem>
+                        rowKey="reportId"
+                        pagination={false}
+                        dataSource={data}
+                        scroll={{x: 900, y: 240}}
+                        columns={[
+                            {title: '日期', dataIndex: 'reportDate', key: 'reportDate', width: 120},
+                            {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v} tone={v === 'GENERATED' ? 'success' : 'warning'}/>},
+                            nqNumericColumn({title: '总权益', dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                            nqNumericColumn({title: '日盈亏', dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
+                            nqNumericColumn({title: '日收益', dataIndex: 'dailyReturn', key: 'dailyReturn', width: 110, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),
+                            nqNumericColumn({title: '最大回撤', dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 110, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                            nqNumericColumn({title: '订单', dataIndex: 'orderCount', key: 'orderCount', width: 80}),
+                            nqNumericColumn({title: '成交', dataIndex: 'tradeCount', key: 'tradeCount', width: 80}),
+                            nqNumericColumn({title: '告警', dataIndex: 'alertCount', key: 'alertCount', width: 80}),
+                            {title: '生成时间', dataIndex: 'generatedAt', key: 'generatedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                        ]}
+                    />
+                )}
+            </Space>
         </Card>
     );
 }

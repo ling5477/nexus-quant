@@ -9,7 +9,7 @@ test.describe('GateJ-1 paper trading schedule and heartbeat smoke', () => {
 
         const fixture = await prepareGateI3PaperTradingFixture(page);
 
-        await page.goto('/paper-trading');
+        await page.goto('/paper-trading/runs');
         await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
 
         // Create paper run via UI
