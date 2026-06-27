@@ -1,7 +1,19 @@
-import {expect, test} from 'playwright/test';
+import {expect, test, type Locator} from 'playwright/test';
 
 import {loginToConsole} from '@/../tests/e2e/support';
 import {prepareGateI3PaperTradingFixture} from '@/../tests/e2e/paper-trading-fixtures';
+
+async function selectRunFactTab(drawer: Locator, name: string) {
+    const tab = drawer.getByRole('tab', {name, exact: true});
+    await tab.scrollIntoViewIfNeeded();
+    await tab.click();
+    if ((await tab.getAttribute('aria-selected')) !== 'true') {
+        // Why: backend smoke 视口下 Ant Design overflow tabs 可能只收到 pointer active 状态，
+        // 但未切换 panel；native click 仍作用于同一个用户可见 tab button，不绕过业务状态。
+        await tab.evaluate((element) => (element as HTMLElement).click());
+    }
+    await expect(tab).toHaveAttribute('aria-selected', 'true', {timeout: 10_000});
+}
 
 test.describe('GateI-3 paper trading run smoke', () => {
     test('Paper Trading 页面可创建、启动、停止 run，并展示订单/成交/持仓区域', async ({page}) => {
@@ -65,26 +77,27 @@ test.describe('GateI-3 paper trading run smoke', () => {
         const stoppedPayload = await stopped.json();
         expect(stoppedPayload.status).toBe('STOPPED');
         await expect(drawer.getByText('STOPPED').first()).toBeVisible({timeout: 15_000});
-        await expect(drawer.getByText('Paper 执行闭环')).toBeVisible();
-        await expect(drawer.getByText('订单 → 成交 → 持仓 / PnL → 风控')).toBeVisible();
+        await expect(drawer.getByText('运行控制台')).toBeVisible();
+        await expect(drawer.getByText('运行事实')).toBeVisible();
+        await expect(drawer.getByText('生命周期操作仅作用于当前 SIM/Paper run')).toBeVisible();
         await expect(drawer.getByText('订单事实').first()).toBeVisible();
         await expect(drawer.getByText('成交事实').first()).toBeVisible();
         await expect(drawer.getByText('持仓事实').first()).toBeVisible();
         await expect(drawer.getByText('净 PnL').first()).toBeVisible();
         await expect(drawer.getByText('风控闭环').first()).toBeVisible();
 
-        await page.getByRole('tab', {name: '订单'}).click();
-        await expect(page.getByText('当前 Paper run 暂无订单事实。')).toBeVisible();
+        await selectRunFactTab(drawer, '订单');
+        await expect(drawer.getByText('当前 Paper run 暂无订单事实。')).toBeVisible();
 
-        await page.getByRole('tab', {name: '成交'}).click();
-        await expect(page.getByText('当前 Paper run 暂无成交事实。')).toBeVisible();
+        await selectRunFactTab(drawer, '成交');
+        await expect(drawer.getByText('当前 Paper run 暂无成交事实。')).toBeVisible();
 
-        await page.getByRole('tab', {name: '持仓', exact: true}).click();
-        await expect(page.getByText('当前 Paper run 暂无持仓事实。')).toBeVisible();
+        await selectRunFactTab(drawer, '持仓');
+        await expect(drawer.getByText('当前 Paper run 暂无持仓事实。')).toBeVisible();
 
-        await page.getByRole('tab', {name: '快照'}).click();
-        await expect(page.getByText('Publish Snapshot')).toBeVisible();
-        await expect(page.getByText('Strategy Version Snapshot')).toBeVisible();
+        await selectRunFactTab(drawer, '快照');
+        await expect(drawer.getByText('Publish Snapshot')).toBeVisible();
+        await expect(drawer.getByText('Strategy Version Snapshot')).toBeVisible();
     });
 });
 
@@ -151,16 +164,16 @@ test.describe('GateI-4 paper trading monitor smoke', () => {
         await expect(drawer.getByText('BASIC_HEALTH_CHECK · LOW', {exact: true})).toBeVisible({timeout: 10_000});
 
         // Tab: 资金曲线
-        await page.getByRole('tab', {name: '资金曲线'}).click();
-        await expect(page.getByText('当前 Paper run 暂无资金曲线数据。')).toBeVisible();
+        await selectRunFactTab(drawer, '资金曲线');
+        await expect(drawer.getByText('当前 Paper run 暂无资金曲线数据。')).toBeVisible();
 
         // Tab: 持仓曲线
-        await page.getByRole('tab', {name: '持仓曲线'}).click();
-        await expect(page.getByText('当前 Paper run 暂无持仓曲线数据。')).toBeVisible();
+        await selectRunFactTab(drawer, '持仓曲线');
+        await expect(drawer.getByText('当前 Paper run 暂无持仓曲线数据。')).toBeVisible();
 
         // Tab: 交易复盘
-        await page.getByRole('tab', {name: '交易复盘'}).click();
-        await expect(page.getByText('当前 Paper run 暂无交易复盘记录。')).toBeVisible();
+        await selectRunFactTab(drawer, '交易复盘');
+        await expect(drawer.getByText('当前 Paper run 暂无交易复盘记录。')).toBeVisible();
 
         // 紧急停机现在位于右侧「操作区」（内联控制台），始终可见，无需切换 Tab。
         const esButton = page.getByRole('button', {name: /紧急停机/});
