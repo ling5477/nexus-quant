@@ -798,6 +798,61 @@ async function expectLifecycleButtons(
 }
 
 test.describe('paper trading product loop panel', () => {
+    test('K5-B：/paper-trading 重定向到 runs 并保留旧完整页与 route shell', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true});
+
+        await page.goto('/paper-trading');
+
+        await expect(page).toHaveURL(/\/paper-trading\/runs$/);
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        await expect(page.getByText('Paper 模拟运行、组合监控、诊断、评估与自动复盘')).toBeVisible();
+        await expect(page.getByLabel('Paper Trading 子路由导航')).toBeVisible();
+        await expect(page.getByText('SIM/Paper only').first()).toBeVisible();
+        await expect(page.getByText('LIVE 未开启').first()).toBeVisible();
+        await expect(page.getByText('不接真实交易所').first()).toBeVisible();
+        await expect(page.getByText('不构成投资建议').first()).toBeVisible();
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略评估'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
+    });
+
+    test('K5-B：runs 子路由可直接访问旧完整页', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {seedRun: true});
+
+        await page.goto('/paper-trading/runs');
+
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
+    });
+
+    test('K5-B：portfolio、diagnostics、reviews 子路由显示静态 placeholder', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page);
+
+        for (const route of [
+            {path: '/paper-trading/portfolio', title: 'Paper Portfolio'},
+            {path: '/paper-trading/diagnostics', title: 'Paper Diagnostics'},
+            {path: '/paper-trading/reviews', title: 'Paper Reviews'},
+        ]) {
+            await page.goto(route.path);
+
+            await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+            await expect(page.getByRole('heading', {name: route.title})).toBeVisible();
+            await expect(page.getByText('该模块将在 K5-C 迁移到当前子路由，当前完整视图仍在 Runs 兼容页可用。')).toBeVisible();
+            await expect(page.getByText('SIM/Paper only').first()).toBeVisible();
+            await expect(page.getByText('LIVE 未开启').first()).toBeVisible();
+            await expect(page.getByText('不接真实交易所').first()).toBeVisible();
+            await expect(page.getByText('不构成投资建议').first()).toBeVisible();
+            await expect(page.getByText('不读取 credential、不访问真实交易所、不新增查询，也不构成投资建议。')).toBeVisible();
+            await expect(page.getByRole('button', {name: '返回 Runs'})).toBeVisible();
+            await expect(page.getByRole('heading', {name: '模拟交易'})).toHaveCount(0);
+        }
+    });
+
     test('创建、启动、停止后仍聚合展示执行闭环', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page);
 

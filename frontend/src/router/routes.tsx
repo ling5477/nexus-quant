@@ -16,7 +16,9 @@ import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
 import {LoginPage} from '@/pages/login/LoginPage';
 import {MarketdataPage} from '@/pages/marketdata/MarketdataPage';
 import {NotFoundPage} from '@/pages/not-found/NotFoundPage';
-import {PaperTradingPage} from '@/pages/paper-trading/PaperTradingPage';
+import {PaperTradingPlaceholderPage} from '@/pages/paper-trading/PaperTradingPlaceholderPage';
+import {PaperTradingRouteShell} from '@/pages/paper-trading/PaperTradingRouteShell';
+import {PaperTradingRunsPage} from '@/pages/paper-trading/PaperTradingRunsPage';
 import {PublishesPage} from '@/pages/publishes/PublishesPage';
 import {ResearchPage} from '@/pages/research/ResearchPage';
 import {RunsPage} from '@/pages/runs/RunsPage';
@@ -145,8 +147,35 @@ export const appRouter = createBrowserRouter([
                     },
                     {
                         path: 'paper-trading',
-                        element: <PaperTradingPage/>,
+                        element: <PaperTradingRouteShell/>,
                         handle: createHandle('paper-trading'),
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="runs" replace/>,
+                                handle: createHandle('paper-trading'),
+                            },
+                            {
+                                path: 'runs',
+                                element: <PaperTradingRunsPage/>,
+                                handle: createHandle('paper-trading'),
+                            },
+                            {
+                                path: 'portfolio',
+                                element: <PaperTradingPlaceholderPage title="Paper Portfolio"/>,
+                                handle: createHandle('paper-trading'),
+                            },
+                            {
+                                path: 'diagnostics',
+                                element: <PaperTradingPlaceholderPage title="Paper Diagnostics"/>,
+                                handle: createHandle('paper-trading'),
+                            },
+                            {
+                                path: 'reviews',
+                                element: <PaperTradingPlaceholderPage title="Paper Reviews"/>,
+                                handle: createHandle('paper-trading'),
+                            },
+                        ],
                     },
                 ],
             },
