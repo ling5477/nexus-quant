@@ -830,11 +830,19 @@ test.describe('paper trading product loop panel', () => {
         await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
     });
 
-    test('K5-B：portfolio、diagnostics、reviews 子路由显示静态 placeholder', async ({page}) => {
+    test('K5-C1：portfolio 子路由渲染真实看板，diagnostics / reviews 仍为 placeholder', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page);
 
+        await page.goto('/paper-trading/portfolio');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
+        await expect(page.getByText('Paper run 总数')).toBeVisible();
+        await expect(page.getByText('Strategy Version 收益排行')).toBeVisible();
+        await expect(page.getByText('Publish 收益排行')).toBeVisible();
+        await expect(page.getByText('组合资金曲线与回撤')).toBeVisible();
+        await expect(page.getByRole('heading', {name: '模拟交易'})).toHaveCount(0);
+
         for (const route of [
-            {path: '/paper-trading/portfolio', title: 'Paper Portfolio'},
             {path: '/paper-trading/diagnostics', title: 'Paper Diagnostics'},
             {path: '/paper-trading/reviews', title: 'Paper Reviews'},
         ]) {
