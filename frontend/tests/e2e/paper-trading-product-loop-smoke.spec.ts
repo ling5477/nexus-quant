@@ -814,8 +814,8 @@ test.describe('paper trading product loop panel', () => {
         await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
         await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
         await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 策略评估'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略评估'})).toHaveCount(0);
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toHaveCount(0);
     });
 
     test('K5-B：runs 子路由可直接访问旧完整页', async ({page}) => {
@@ -827,11 +827,15 @@ test.describe('paper trading product loop panel', () => {
         await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
         await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
         await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toHaveCount(0);
     });
 
-    test('K5-C2：portfolio / diagnostics 子路由渲染真实页面，reviews 仍为 placeholder', async ({page}) => {
-        await seedAuthAndPaperLoopStubs(page, {executionDiagnostics: richExecutionDiagnostics});
+    test('K5-C3：portfolio / diagnostics / reviews 子路由渲染真实页面', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, {
+            executionDiagnostics: richExecutionDiagnostics,
+            strategyEvaluations: richStrategyEvaluations,
+            autoReviews: richAutoReviews,
+        });
 
         await page.goto('/paper-trading/portfolio');
         await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
@@ -853,14 +857,16 @@ test.describe('paper trading product loop panel', () => {
 
         await page.goto('/paper-trading/reviews');
         await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
-        await expect(page.getByRole('heading', {name: 'Paper Reviews'})).toBeVisible();
-        await expect(page.getByText('该模块将在 K5-C 迁移到当前子路由，当前完整视图仍在 Runs 兼容页可用。')).toBeVisible();
+        await expect(page.getByText('Section A · Strategy Evaluation Dashboard')).toBeVisible();
+        await expect(page.getByText('Section B · Auto Review Dashboard')).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略评估', exact: true})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
         await expect(page.getByText('SIM/Paper only').first()).toBeVisible();
         await expect(page.getByText('LIVE 未开启').first()).toBeVisible();
         await expect(page.getByText('不接真实交易所').first()).toBeVisible();
         await expect(page.getByText('不构成投资建议').first()).toBeVisible();
-        await expect(page.getByText('不读取 credential、不访问真实交易所、不新增查询，也不构成投资建议。')).toBeVisible();
-        await expect(page.getByRole('button', {name: '返回 Runs'})).toBeVisible();
+        await expect(page.getByText(/Paper-only reviews/)).toBeVisible();
+        await expect(page.getByText(/no investment advice/)).toBeVisible();
         await expect(page.getByRole('heading', {name: '模拟交易'})).toHaveCount(0);
     });
 
@@ -2261,10 +2267,10 @@ test.describe('paper trading product loop panel', () => {
 
     test('K3B：Paper 策略评估区域渲染总览/Strategy/Publish/偏差/Rankings 与 Paper-only 文案', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
-        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估', exact: true});
         await expect(evalRegion.getByText('Paper 策略评估', {exact: true})).toBeVisible();
         await expect(evalRegion.getByText('SIM/Paper only · Internal evaluation')).toBeVisible();
         await expect(evalRegion.getByText('基于 Paper 表现、执行质量、样本充足性与 Backtest 偏差的内部评估。')).toBeVisible();
@@ -2300,8 +2306,8 @@ test.describe('paper trading product loop panel', () => {
 
     test('K3B：Strategy 行展示 compositeScore/子分/ratingLabel/confidence/warnings/primaryWeakness', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
         const strategyTable = page.getByRole('region', {name: 'Paper 策略评估表'});
         const riskRow = strategyTable.locator('tbody tr[data-row-key="eval-risk"]');
@@ -2320,10 +2326,10 @@ test.describe('paper trading product loop panel', () => {
 
     test('K3B：评级 / 可信度 / 偏差筛选联动 Strategy 表', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
-        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估', exact: true});
         const filterGroup = evalRegion.getByRole('group', {name: 'Paper 策略评估筛选'});
         const strategyTable = page.getByRole('region', {name: 'Paper 策略评估表'});
 
@@ -2355,7 +2361,7 @@ test.describe('paper trading product loop panel', () => {
 
         // Backtest 偏差 HIGH → 仅 eval-risk。
         await filterGroup.locator('.ant-select-selector').nth(2).click();
-        await page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').getByRole('option', {name: 'HIGH', exact: true}).click();
+        await page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last().getByRole('option', {name: 'HIGH', exact: true}).click();
         await expect(strategyTable.locator('tbody tr[data-row-key="eval-risk"]')).toHaveCount(1);
         await expect(strategyTable.locator('tbody tr[data-row-key="eval-strong"]')).toHaveCount(0);
 
@@ -2367,10 +2373,10 @@ test.describe('paper trading product loop panel', () => {
 
     test('K3B：排序控件按综合分升降序，null 分恒排末尾', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluations: richStrategyEvaluations});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
-        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估', exact: true});
         const sortGroup = evalRegion.getByRole('group', {name: 'Paper 策略评估排序'});
         const strategyTable = page.getByRole('region', {name: 'Paper 策略评估表'});
 
@@ -2394,32 +2400,30 @@ test.describe('paper trading product loop panel', () => {
 
     test('K3B：评估 500 错误隔离，其余 Paper 模块仍可见', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluationsStatus: 500});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
-        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估', exact: true});
         await expect(evalRegion.getByText('Paper 策略评估加载失败')).toBeVisible();
         await expect(evalRegion.getByRole('button', {name: /重\s*试/})).toBeVisible();
         await expect(evalRegion.getByText(/不是真实投资评级/)).toBeVisible();
-        // 其他模块不受影响。
-        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+        // Auto Review 区域不受 Strategy Evaluation 错误影响。
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
     });
 
     test('K3B：评估 404 / 空结构兼容回退，不崩溃显示空态', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', strategyEvaluationsStatus: 404});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
-        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估'});
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        const evalRegion = page.getByRole('region', {name: 'Paper 策略评估', exact: true});
         await expect(evalRegion.getByText('Paper 策略评估加载失败')).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 自动复盘', exact: true})).toBeVisible();
 
         // 空评估结构（默认 emptyStrategyEvaluations，strategyCount=0）→ 空态文案。
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
-        const evalEmpty = page.getByRole('region', {name: 'Paper 策略评估'});
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        const evalEmpty = page.getByRole('region', {name: 'Paper 策略评估', exact: true});
         await expect(evalEmpty.getByText('暂无 Paper 策略评估数据，创建并运行 Paper run 后自动生成策略评估。')).toBeVisible();
         await expect(evalEmpty.getByText(/不是真实投资评级/)).toBeVisible();
     });
@@ -2428,8 +2432,8 @@ test.describe('paper trading product loop panel', () => {
 
     test('K4B：Paper 自动复盘区域渲染总览/组合/聚类/Run/Strategy/Publish 与 rules-based 文案', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
         const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
         await expect(region.getByText('Paper 自动复盘', {exact: true})).toBeVisible();
@@ -2482,8 +2486,8 @@ test.describe('paper trading product loop panel', () => {
 
     test('K4B：suggestedActions 不渲染交易动作词（工程排查语义）', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
         // 复盘区域内不得出现交易动作词（仅工程排查动作）。
         const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
@@ -2495,8 +2499,8 @@ test.describe('paper trading product loop panel', () => {
 
     test('K4B：severity / cause 筛选联动 Run 复盘与问题聚类', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
         const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
         const filterGroup = region.getByRole('group', {name: 'Paper 自动复盘筛选'});
@@ -2546,8 +2550,8 @@ test.describe('paper trading product loop panel', () => {
 
     test('K4B：展示维度筛选切换 Run / Cluster / Strategy / Publish 区块', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviews: richAutoReviews});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
         const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
         const filterGroup = region.getByRole('group', {name: 'Paper 自动复盘筛选'});
@@ -2568,34 +2572,31 @@ test.describe('paper trading product loop panel', () => {
 
     test('K4B：复盘 500 错误隔离，其余 Paper 模块仍可见', async ({page}) => {
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviewsStatus: 500});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
 
         const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
         await expect(region.getByText('Paper 自动复盘加载失败')).toBeVisible();
         await expect(region.getByRole('button', {name: /重\s*试/})).toBeVisible();
         // Paper-only 文案仍在（错误态不掩盖边界声明）。
         await expect(region.getByText(/不接 AI \/ DH runtime/)).toBeVisible();
-        // 其他模块不受影响。
-        await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 策略评估'})).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+        // Strategy Evaluation 区域不受 Auto Review 错误影响。
+        await expect(page.getByRole('region', {name: 'Paper 策略评估', exact: true})).toBeVisible();
     });
 
     test('K4B：复盘 404 / 空结构兼容回退，不崩溃显示空态', async ({page}) => {
         // 404 → 错误态（retry:false 不无限重试），其他模块可见。
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED', autoReviewsStatus: 404});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
         const region = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
         await expect(region.getByText('Paper 自动复盘加载失败')).toBeVisible();
-        await expect(page.getByRole('region', {name: 'Paper 策略表现排行'})).toBeVisible();
+        await expect(page.getByRole('region', {name: 'Paper 策略评估', exact: true})).toBeVisible();
 
         // 空复盘结构（默认 emptyAutoReviews，totalRuns=0）→ 空态文案。
         await seedAuthAndPaperLoopStubs(page, {seedRun: true, status: 'STOPPED'});
-        await page.goto('/paper-trading');
-        await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+        await page.goto('/paper-trading/reviews');
+        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
         const regionEmpty = page.getByRole('region', {name: 'Paper 自动复盘', exact: true});
         await expect(regionEmpty.getByText('暂无 Paper 自动复盘数据，创建并运行 Paper run 后自动生成规则化复盘。')).toBeVisible();
         await expect(regionEmpty.getByText(/不接 AI \/ DH runtime/)).toBeVisible();

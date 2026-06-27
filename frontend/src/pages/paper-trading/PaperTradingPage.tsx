@@ -60,12 +60,10 @@ import {
     useGenerateDailyReportMutation,
     usePaperAlertsQuery,
     usePaperDailyReportsQuery,
-    usePaperAutoReviewsQuery,
     usePaperExecutionDiagnosticsQuery,
     usePaperHeartbeatsQuery,
     usePaperPortfolioSummaryQuery,
     usePaperRecoveryEventsQuery,
-    usePaperStrategyEvaluationsQuery,
     usePaperRunSummaryQuery,
     usePaperSchedulesQuery,
     usePaperStabilityChecksQuery,
@@ -106,11 +104,9 @@ import type {BacktestPublishDetailItem} from '@/types/publishes';
 import {appEnv} from '@/utils/env';
 import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
-import {PaperAutoReviewDashboard} from './components/PaperAutoReviewDashboard';
 import {PaperExecutionDiagnosticsDashboard} from './components/PaperExecutionDiagnosticsDashboard';
 import {PaperPortfolioDashboard} from './components/PaperPortfolioDashboard';
 import {PaperRiskDrawdownDashboard} from './components/PaperRiskDashboard';
-import {PaperStrategyEvaluationDashboard} from './components/PaperStrategyEvaluationDashboard';
 import {PaperStrategyRankingDashboard} from './components/PaperStrategyRankingDashboard';
 import {pnlTone, toNullableNumber} from './components/paperFormatters';
 
@@ -1261,10 +1257,6 @@ export function PaperTradingPage() {
     const portfolioQuery = usePaperPortfolioSummaryQuery();
     // GateK K2：Paper 执行诊断独立加载，失败不连累组合看板/风险驾驶舱/策略排行等其他模块。
     const diagnosticsQuery = usePaperExecutionDiagnosticsQuery();
-    // GateK K3B：Paper 策略评估独立加载，失败不连累其他模块。
-    const strategyEvaluationsQuery = usePaperStrategyEvaluationsQuery();
-    // GateK K4B：Paper 规则化自动复盘独立加载，失败不连累组合看板/诊断/评估/排行等其他模块。
-    const autoReviewsQuery = usePaperAutoReviewsQuery();
 
     const focusRunId = selectedRow?.paperRunId ?? null;
     const detailQuery = usePaperTradingDetailQuery(focusRunId);
@@ -1581,10 +1573,6 @@ export function PaperTradingPage() {
                 <PaperRiskDrawdownDashboard query={portfolioQuery}/>
 
                 <PaperExecutionDiagnosticsDashboard query={diagnosticsQuery}/>
-
-                <PaperStrategyEvaluationDashboard query={strategyEvaluationsQuery}/>
-
-                <PaperAutoReviewDashboard query={autoReviewsQuery}/>
 
                 <PaperStrategyRankingDashboard query={portfolioQuery}/>
 
