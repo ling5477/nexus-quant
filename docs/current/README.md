@@ -80,6 +80,7 @@ GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / err
 - [BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md](BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md)：回测权益/回撤曲线后端契约 planning（planning only，未实现）。
 - DB / Credential 治理：`DB_SCHEMA_GOVERNANCE_PLAN.md`、`DB_SCHEMA_GOVERNANCE_REVIEW.md`、`CREDENTIAL_*`。
 - NQ-DH Integration-0（contract / mock / docs，未实现 runtime 集成）：`NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`、`NQ_DH_INTEGRATION0_SECURITY_POLICY.md`、`NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`、`NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`。
+- NQ-DH timestamp format alignment：**CLOSED / ACCEPTED（2026-06-28）**。Canonical timestamp = RFC3339 / ISO-8601 UTC `Z`；DH/NQ INT0 均拒绝 epoch seconds / epoch milliseconds / 数字时区偏移；±300s replay window 不变。CLOSED 不授权 Integration-1 runtime；DH not integrated；Runtime integration NOT STARTED；LIVE disabled。
 
 ## Codex Workflow 入口
 

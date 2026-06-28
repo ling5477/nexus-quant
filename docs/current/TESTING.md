@@ -5669,7 +5669,7 @@ target conflicts = 0
 
 ## NQ-DH-TIMESTAMP-FORMAT-COMPANION-IMPL（2026-06-28）
 
-结论：**PASS / NQ SIDE ALIGNMENT IMPLEMENTED；PENDING COMPANION REVIEW**。本轮仅对 NQ docs/current timestamp contract 与 NQ INT0 test/support 做 companion alignment：canonical timestamp 从 epoch seconds / epoch milliseconds 对齐为 RFC3339 / ISO-8601 UTC `Z`（示例 `2026-06-15T12:34:56Z`）。未改 NQ production runtime、未新增 API、未新增 migration、未真实 HTTP、未接 DH runtime、未启用 LIVE。
+结论：**PASS / NQ SIDE ALIGNMENT ACCEPTED；T4 ACCEPTED**。本轮仅对 NQ docs/current timestamp contract 与 NQ INT0 test/support 做 companion alignment：canonical timestamp 从 epoch seconds / epoch milliseconds 对齐为 RFC3339 / ISO-8601 UTC `Z`（示例 `2026-06-15T12:34:56Z`）。未改 NQ production runtime、未新增 API、未新增 migration、未真实 HTTP、未接 DH runtime、未启用 LIVE。
 
 | 命令 / 检查 | 结果 | 说明 |
 | --- | --- | --- |
@@ -5677,7 +5677,7 @@ target conflicts = 0
 | `mvn -f backend/pom.xml test` | **BUILD SUCCESS** | 后端全量 Maven 测试通过；Surefire reports 汇总 537 tests / 0 failures / 0 errors / 4 skipped。保留既有 SLF4J / Mockito dynamic agent warning，不影响结果。 |
 | Backend quality profile 探测 | **未运行 quality profile** | `backend/pom.xml` 与 backend 子模块 POM 未检出 `<id>quality</id>` / `spotless` / `checkstyle`；本轮未把不存在的 `mvn -Pquality validate` 记录为成功。 |
 
-边界确认：未改 DH 仓库；未改 NQ Java production code；未新增 production timestamp parser/generator；未新增 API / migration / RealClient / provider；未读取凭证；未真实 HTTP / 交易所调用；未启动 Integration-1；DH 仍 not integrated；LIVE 仍 disabled。Timestamp alignment overall 仍 **NOT CLOSED**，需进入 `NQ-DH-TIMESTAMP-FORMAT-COMPANION-IMPL-REVIEW`。
+边界确认：未改 DH 仓库；未改 NQ Java production code；未新增 production timestamp parser/generator；未新增 API / migration / RealClient / provider；未读取凭证；未真实 HTTP / 交易所调用；未启动 Integration-1；DH 仍 not integrated；LIVE 仍 disabled。T4 companion 已 ACCEPTED；timestamp alignment overall 已由 DH/NQ FINALIZE 收口为 **CLOSED / ACCEPTED**。
 
 ---
 
@@ -5695,3 +5695,16 @@ target conflicts = 0
 未运行 Maven / npm / pytest / mypy / ruff / GitHub Actions，原因：本轮只改 docs/current 路线/定义文档，不改代码、workflow、测试、migration 或运行时配置。
 
 边界确认：No real credential read；No outbound call；No LIVE；No AI；No DH runtime；No RealClient；No real provider；No real exchange adapter；No real permission probe。NoReal permission probe remains SKIPPED。
+---
+
+## DH-NQ-TIMESTAMP-FORMAT-ALIGNMENT-FINALIZE（2026-06-28）
+
+结论：**CLOSED / ACCEPTED**。NQ T4 companion 与 DH T1/T2/T3 全部 accepted 后，timestamp alignment overall 最终收口。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | **BUILD SUCCESS** | 后端 23-module reactor 全量回归通过；保留既有 SLF4J / Mockito dynamic-agent warning，不影响结果。 |
+| `mvn -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | NQ INT0 scoped 6+2+9=17/17；覆盖 contract validation、no side-effect、security contract。 |
+| Backend quality profile 探测 | **未运行 quality profile** | Backend POM 未检出 quality profile / Spotless / Checkstyle，未伪造 quality 成功。 |
+
+边界确认：本轮只允许 docs/current 收口与回归验证；不改 NQ Java production code，不改 NQ test code，不新增 API / migration / RealClient / provider，不真实 HTTP，不读取凭证，不启动 Integration-1，不开启 LIVE。Timestamp CLOSED 不放开 runtime。

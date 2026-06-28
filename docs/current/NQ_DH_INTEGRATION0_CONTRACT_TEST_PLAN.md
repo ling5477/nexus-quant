@@ -502,7 +502,7 @@ fixture 约束：全部为占位/脱敏数据；禁止包含真实 API key/secre
 [ ] rate limit：新增 429 限流 contract test（租户/能力级），Int-0 mock 未覆盖真实限流
 [ ] memory cap：DH InMemory 仓储上限/外部存储就绪后补容量/退化测试
 [ ] replay nonce persistence：T06 必须以持久化/集中缓存 nonce 在多实例场景重跑
-[ ] header 命名 X-DH-NQ-* 与 X-NQ-DH-* 对齐验证
+[x] header alignment：DH production 入站 canonical-only X-NQ-DH-*，header alignment CLOSED
 [ ] 真实通道隔离 staging/test cluster，Paper-only，LIVE 关闭
 ```
 

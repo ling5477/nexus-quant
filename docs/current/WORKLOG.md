@@ -10030,8 +10030,39 @@ push 第二次修复 → re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLY
 
 ### 边界
 
-未改 DH；未改 NQ Java production code；未新增 production runtime timestamp parser/generator；未新增 API / migration / RealClient / provider；未真实 HTTP；未真实交易所调用；未读取凭证；未启动 Integration-1；未把 DH 写成 integrated；未把 Runtime integration 写成 started；未开启 LIVE。Timestamp alignment overall 仍 **NOT CLOSED**，下一步进入 **NQ-DH-TIMESTAMP-FORMAT-COMPANION-IMPL-REVIEW**。
+未改 DH；未改 NQ Java production code；未新增 production runtime timestamp parser/generator；未新增 API / migration / RealClient / provider；未真实 HTTP；未真实交易所调用；未读取凭证；未启动 Integration-1；未把 DH 写成 integrated；未把 Runtime integration 写成 started；未开启 LIVE。T4 companion 已 ACCEPTED；timestamp alignment overall 已由 DH/NQ FINALIZE 收口为 **CLOSED / ACCEPTED**。
 
 ### 回滚方式
 
 `git restore -- docs/current/NQ_DH_INTEGRATION0_SECURITY_POLICY.md docs/current/NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md docs/current/NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md docs/current/TESTING.md docs/current/WORKLOG.md backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/support/Int0RequestFactory.java backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/support/Int0ContractValidator.java backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/NqDhIntegration0SecurityContractTest.java` 可回滚本轮全部改动；无 DB / runtime / credential / provider / exchange 副作用。
+---
+
+## DH-NQ-TIMESTAMP-FORMAT-ALIGNMENT-FINALIZE
+
+日期：2026-06-28
+
+### 范围
+
+与 DH 仓库同步完成 timestamp format alignment 最终收口。NQ 侧仅更新允许的 `docs/current` 文档状态和 stale header alignment wording，不修改 Java production code，不修改测试代码，不新增 API / migration / RealClient / real provider，不真实 HTTP，不启动 Integration-1。
+
+### Final state
+
+- timestamp alignment overall：**CLOSED / ACCEPTED**。
+- T4 NQ companion：**ACCEPTED**。
+- canonical timestamp：RFC3339 / ISO-8601 UTC `Z`，示例 `2026-06-15T12:34:56Z`。
+- NQ INT0：拒绝 epoch seconds、epoch milliseconds、数字时区偏移；±300s replay window 保持。
+- DH production：已由 DH T3 强制 `endsWith("Z") + Instant.parse`。
+- DH-NQ header alignment：**CLOSED**；DH production 入站 canonical-only `X-NQ-DH-*`。
+
+### 边界
+
+Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integration-1 runtime。DH NOT INTEGRATED；Runtime integration NOT STARTED；LIVE DISABLED。未读取或输出凭证，未处理 Maven wrapper / datasource 默认弱口令 / nonce-burn race。
+
+### 验证
+
+- git status --short：仅允许的 8 个 docs/current 文件 modified。
+- git diff --check：通过；仅 LF/CRLF warning，无 whitespace error。
+- git diff --stat：8 files changed, 55 insertions(+), 12 deletions(-)。
+- mvn -f backend/pom.xml test：BUILD SUCCESS。
+- mvn -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test：BUILD SUCCESS；INT0 6+2+9=17/17。
+- Backend POM quality profile 探测：未检出 <id>quality</id> / spotless / checkstyle，未伪造 quality gate 成功。

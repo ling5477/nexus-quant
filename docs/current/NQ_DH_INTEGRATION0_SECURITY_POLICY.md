@@ -134,10 +134,10 @@ token / API key / secret / passphrase / cookie / 私钥 / 助记词 /
 
 ## 11. 与现有实现的关系（诚实声明）
 
-- DH 已实现 NQ feedback 认证使用 `X-DH-NQ-*` header 族与 HMAC/timestamp/nonce/source allowlist/payload gate（见 DH `DH_AUDIT_FIX_REPORT.md`，P1-1/P1-2/P1-3 已关闭）。
-- 本策略冻结的 canonical 跨系统 header 族为 `X-NQ-DH-*`。
-- 两者对齐（统一命名或映射层转换）是 **Integration-1 前置项**，不在本轮实现。
-- NQ production runtime timestamp handling 仍为 **NOT PRESENT / NOT STARTED**；本策略仅约束 Integration-0 docs 与 test/support companion alignment，不代表 DH integrated、runtime integration started 或 Integration-1 started。
+- DH-NQ header alignment 已 **CLOSED**；DH production 入站已切到 canonical-only `X-NQ-DH-*`，不再接受 legacy `X-DH-NQ-*` 作为成功路径。
+- 本策略冻结的 canonical 跨系统 header 族为 `X-NQ-DH-*`；timestamp canonical 为 RFC3339 / ISO-8601 UTC `Z`。
+- NQ production runtime timestamp handling 仍为 **NOT PRESENT / NOT STARTED**；NQ T4 companion 已 **ACCEPTED**，timestamp alignment overall 已 **CLOSED / ACCEPTED**。
+- CLOSED 仅表示 timestamp 契约与 INT0 companion 收口完成，不代表 DH integrated、runtime integration started 或 Integration-1 started。
 
 ## 12. Integration-1 安全前置（冻结）
 

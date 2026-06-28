@@ -146,10 +146,10 @@ Content-Type: application/json
 
 与现有实现的关系（诚实声明，不在本轮修复）：
 
-- DH 已实现的 NQ feedback authenticator 当前使用 `X-DH-NQ-*` 命名族（见 DH `DH_AUDIT_FIX_REPORT.md`）。
+- DH-NQ header alignment 已 **CLOSED**；DH production 入站已切到 canonical-only `X-NQ-DH-*`，不再接受 legacy `X-DH-NQ-*` 作为成功路径。
 - Integration-0 冻结的 canonical 跨系统 header 族为 `X-NQ-DH-*`。
-- Integration-1 实现时必须把两者对齐：要么统一到 `X-NQ-DH-*`，要么在显式映射层转换。该对齐是 **Integration-1 前置项**，不在本轮修复。
-- NQ production runtime timestamp handling 仍为 **NOT PRESENT / NOT STARTED**；本轮仅做 NQ docs 与 INT0 test/support companion alignment，不能把 timestamp alignment overall 写成 CLOSED。
+- NQ production runtime timestamp handling 仍为 **NOT PRESENT / NOT STARTED**；NQ T4 companion 已 **ACCEPTED**，timestamp alignment overall 已 **CLOSED / ACCEPTED**。
+- CLOSED 仅表示 timestamp 契约与 INT0 companion 收口完成，不代表 DH integrated、runtime integration started 或 Integration-1 started。
 
 ## 7. Data Contracts（冻结草案，contract-only / mock-only）
 
@@ -347,7 +347,7 @@ Integration-0 视为通过当且仅当：
 其它前置：
 
 - NQ 侧 DH 入站端点、DH client、feedback outbox 均未实现，Integration-1 才允许设计/实现，且必须先过安全审查。
-- header 命名 `X-DH-NQ-*` 与 `X-NQ-DH-*` 对齐（见第 6 节）。
+- header alignment 已 **CLOSED**，DH production 入站 canonical-only `X-NQ-DH-*`；当前不再作为 Integration-1 blocker。
 
 ## 13. Out-of-Scope（本轮不做）
 
