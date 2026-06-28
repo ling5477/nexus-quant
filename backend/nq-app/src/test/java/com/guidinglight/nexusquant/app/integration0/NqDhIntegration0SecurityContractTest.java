@@ -13,6 +13,7 @@ import com.guidinglight.nexusquant.app.integration0.support.Int0CredentialAccess
 import com.guidinglight.nexusquant.app.integration0.support.Int0NonceStore;
 import com.guidinglight.nexusquant.app.integration0.support.Int0RequestFactory;
 import com.guidinglight.nexusquant.app.integration0.support.Int0ValidationResult;
+import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -98,7 +99,7 @@ class NqDhIntegration0SecurityContractTest {
         return com.guidinglight.nexusquant.app.integration0.support.Int0Signing.canonical(headers, body);
     }
 
-    /** INT0-T05：timestamp 窗口。窗口内通过；过去超窗与未来超窗均拒绝。 */
+    /** INT0-T05：timestamp 窗口。RFC3339 UTC Z 窗口内通过；过去超窗与未来超窗均拒绝。 */
     @Test
     void int0T05_timestampWindow() {
         JsonNode payload = Int0RequestFactory.loadFixture("fx-candidate-valid.json");
@@ -106,6 +107,10 @@ class NqDhIntegration0SecurityContractTest {
         long checkNow = now();
 
         Map<String, String> inWindow = Int0RequestFactory.validHeaders(body, checkNow, "nonce-int0-t05a");
+        assertEquals(
+                Instant.ofEpochSecond(checkNow).toString(),
+                inWindow.get(Int0Contract.H_TIMESTAMP),
+                "valid fixture timestamp must use RFC3339 UTC Z");
         assertTrue(
                 validate(payload, inWindow, checkNow, new Int0NonceStore()).accepted(),
                 "in-window timestamp must be accepted");
@@ -121,6 +126,36 @@ class NqDhIntegration0SecurityContractTest {
         Int0ValidationResult futureResult = validate(payload, future, checkNow, new Int0NonceStore());
         assertFalse(futureResult.accepted());
         assertEquals(401, futureResult.statusCode());
+        assertEquals("TIMESTAMP_OUT_OF_WINDOW", futureResult.errorCategory());
+    }
+
+    /** INT0-T05：epoch seconds / epoch milliseconds / 数字时区偏移都不是 canonical timestamp，必须 fail-closed。 */
+    @Test
+    void int0T05_timestampFormatRejectsEpochAndOffsetValues() {
+        JsonNode payload = Int0RequestFactory.loadFixture("fx-candidate-valid.json");
+        String body = Int0RequestFactory.toJson(payload);
+        long checkNow = now();
+
+        assertTimestampInvalid(payload, body, checkNow, Long.toString(checkNow), "epoch seconds must be rejected");
+        assertTimestampInvalid(
+                payload, body, checkNow, Long.toString(checkNow * 1000L), "epoch milliseconds must be rejected");
+        assertTimestampInvalid(
+                payload,
+                body,
+                checkNow,
+                "2026-06-15T20:34:56+08:00",
+                "numeric timezone offsets must be rejected");
+    }
+
+    private void assertTimestampInvalid(
+            JsonNode payload, String body, long checkNow, String timestampValue, String message) {
+        Map<String, String> headers =
+                new java.util.LinkedHashMap<>(Int0RequestFactory.validHeaders(body, checkNow, "nonce-" + timestampValue));
+        headers.put(Int0Contract.H_TIMESTAMP, timestampValue);
+        Int0ValidationResult result = validate(payload, headers, checkNow, new Int0NonceStore());
+        assertFalse(result.accepted(), message);
+        assertEquals(401, result.statusCode());
+        assertEquals("TIMESTAMP_INVALID", result.errorCategory());
     }
 
     /**

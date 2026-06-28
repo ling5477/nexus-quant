@@ -125,7 +125,7 @@ X-NQ-DH-Source         请求来源系统标识，必须命中 allowlist
 X-NQ-DH-Tenant-Id      租户标识，必须与认证主体绑定
 X-NQ-DH-Request-Id     幂等键，用于幂等与审计
 X-NQ-DH-Trace-Id       端到端追踪键，用于跨系统排查
-X-NQ-DH-Timestamp      请求时间戳，必须落在允许窗口
+X-NQ-DH-Timestamp      请求时间戳，canonical wire format 固定为 RFC3339 UTC Z，例如 2026-06-15T12:34:56Z，且必须落在允许窗口
 X-NQ-DH-Nonce          一次性随机值，用于防重放
 X-NQ-DH-Signature      HMAC-SHA256 签名（候选方案）
 Content-Type: application/json
@@ -133,6 +133,7 @@ Content-Type: application/json
 
 规则：
 
+- Timestamp 必须是 RFC3339 / ISO-8601 UTC `Z`，示例 `2026-06-15T12:34:56Z`；epoch seconds / epoch milliseconds 不是 canonical wire format，必须拒绝；数字时区偏移（如 `+08:00`）也不是 canonical wire format，必须拒绝。
 - Timestamp 必须有允许窗口，默认 ±300 秒；超窗拒绝。
 - Nonce 必须防重放；`Source + Nonce + RequestId` 组合在 TTL 内唯一，重放拒绝（409 或等价）。
 - Signature 使用 HMAC-SHA256 作为候选方案；签名原材料至少包含 source、tenantId、requestId、traceId、timestamp、nonce、body。
@@ -148,6 +149,7 @@ Content-Type: application/json
 - DH 已实现的 NQ feedback authenticator 当前使用 `X-DH-NQ-*` 命名族（见 DH `DH_AUDIT_FIX_REPORT.md`）。
 - Integration-0 冻结的 canonical 跨系统 header 族为 `X-NQ-DH-*`。
 - Integration-1 实现时必须把两者对齐：要么统一到 `X-NQ-DH-*`，要么在显式映射层转换。该对齐是 **Integration-1 前置项**，不在本轮修复。
+- NQ production runtime timestamp handling 仍为 **NOT PRESENT / NOT STARTED**；本轮仅做 NQ docs 与 INT0 test/support companion alignment，不能把 timestamp alignment overall 写成 CLOSED。
 
 ## 7. Data Contracts（冻结草案，contract-only / mock-only）
 

@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.app.integration0.support;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -95,15 +97,13 @@ public final class Int0ContractValidator {
                             Int0AuditEvent.PAYLOAD_TOO_LARGE, source, tenant, requestId, traceId, "PAYLOAD_TOO_LARGE"));
         }
 
-        // timestamp 窗口（401）
-        long ts;
-        try {
-            ts = Long.parseLong(headers.get(Int0Contract.H_TIMESTAMP));
-        } catch (NumberFormatException ex) {
+        // timestamp 窗口（401）。线缆格式冻结为 RFC3339 UTC Z；epoch seconds / millis 与 +08:00 这类数字时区偏移都 fail-closed。
+        Long ts = parseCanonicalTimestamp(headers.get(Int0Contract.H_TIMESTAMP));
+        if (ts == null) {
             return Int0ValidationResult.reject(
                     401,
                     "TIMESTAMP_INVALID",
-                    List.of("timestamp not numeric"),
+                    List.of("timestamp must be RFC3339 UTC Z"),
                     Int0AuditEvent.rejected(
                             Int0AuditEvent.REJECTED, source, tenant, requestId, traceId, "TIMESTAMP_INVALID"));
         }
@@ -184,6 +184,17 @@ public final class Int0ContractValidator {
         }
 
         return Int0ValidationResult.accept(Int0AuditEvent.received(source, tenant, requestId, traceId));
+    }
+
+    private Long parseCanonicalTimestamp(String value) {
+        if (value == null || value.isBlank() || !value.endsWith("Z")) {
+            return null;
+        }
+        try {
+            return Instant.parse(value).getEpochSecond();
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
     }
 
     /** 递归扫描禁止的敏感字段，返回命中字段路径（不含字段值）。 */

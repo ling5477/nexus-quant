@@ -9998,3 +9998,40 @@ push 第二次修复 → re-run `NQ CI Baseline`（dev）→ `NQ-CI-POSTGRES-FLY
 ### 下一步
 
 进入 **GateL-1（exchange adapter contract review，docs/contract-only）**；真实交易所接入仍须另起 Gate。
+
+---
+
+## NQ-DH-TIMESTAMP-FORMAT-COMPANION-IMPL
+
+日期：2026-06-28
+
+### 本轮目标
+
+仅在 NQ 仓库侧对齐 NQ-DH Integration-0 timestamp contract：docs/current 与 INT0 test/support 统一使用 RFC3339 / ISO-8601 UTC `Z`，拒绝 epoch seconds / epoch milliseconds / 数字时区偏移。NQ production runtime timestamp handling 仍为 **NOT PRESENT / NOT STARTED**。
+
+### 范围
+
+- 修改：`docs/current/NQ_DH_INTEGRATION0_SECURITY_POLICY.md`、`docs/current/NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`、`docs/current/NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 修改：`backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/support/Int0RequestFactory.java`、`backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/support/Int0ContractValidator.java`、`backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/NqDhIntegration0SecurityContractTest.java`。
+- 只读核对：`AGENTS.md`、`CLAUDE.md`、`README.md`、`docs/current/README.md`、INT0 contract/support/test 相关文件。
+
+### 实现决策
+
+- `Int0RequestFactory.validHeaders` 使用 `Instant.ofEpochSecond(nowEpochSeconds).toString()` 生成 canonical UTC `Z` timestamp。
+- `Int0ContractValidator` 使用 `Instant.parse(...).getEpochSecond()` 校验窗口，并在 parse 前要求 header value 以 `Z` 结尾，使 epoch seconds / epoch milliseconds / `+08:00` 等数字时区偏移 fail-closed 为 `TIMESTAMP_INVALID`。
+- HMAC canonical string 仍按既有字段顺序读取 header value，不把 header name 纳入 signature material；requestId / traceId / nonce / tenant / payload 语义不变。
+- INT0-T05 补充断言：RFC3339 UTC `Z` accept、epoch seconds reject、epoch milliseconds reject、数字时区偏移 reject、超出 ±300s 返回 `TIMESTAMP_OUT_OF_WINDOW`。
+
+### 验证
+
+- `mvn -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration0SecurityContractTest,NqDhIntegration0ContractValidationTest,NqDhIntegration0NoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：**BUILD SUCCESS**，17 tests / 0 failures / 0 errors / 0 skipped。
+- `mvn -f backend/pom.xml test`：**BUILD SUCCESS**；Surefire reports 汇总 537 tests / 0 failures / 0 errors / 4 skipped。
+- backend POM 未检出 `quality` profile / Spotless / Checkstyle，本轮未运行不存在的 `mvn -Pquality validate`。
+
+### 边界
+
+未改 DH；未改 NQ Java production code；未新增 production runtime timestamp parser/generator；未新增 API / migration / RealClient / provider；未真实 HTTP；未真实交易所调用；未读取凭证；未启动 Integration-1；未把 DH 写成 integrated；未把 Runtime integration 写成 started；未开启 LIVE。Timestamp alignment overall 仍 **NOT CLOSED**，下一步进入 **NQ-DH-TIMESTAMP-FORMAT-COMPANION-IMPL-REVIEW**。
+
+### 回滚方式
+
+`git restore -- docs/current/NQ_DH_INTEGRATION0_SECURITY_POLICY.md docs/current/NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md docs/current/NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md docs/current/TESTING.md docs/current/WORKLOG.md backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/support/Int0RequestFactory.java backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/support/Int0ContractValidator.java backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration0/NqDhIntegration0SecurityContractTest.java` 可回滚本轮全部改动；无 DB / runtime / credential / provider / exchange 副作用。

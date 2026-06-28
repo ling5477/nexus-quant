@@ -183,6 +183,7 @@
 ## 6. 公共约定
 
 - canonical headers：`X-NQ-DH-Source / X-NQ-DH-Tenant-Id / X-NQ-DH-Request-Id / X-NQ-DH-Trace-Id / X-NQ-DH-Timestamp / X-NQ-DH-Nonce / X-NQ-DH-Signature` + `Content-Type: application/json`。
+- canonical timestamp：`X-NQ-DH-Timestamp` 固定为 RFC3339 / ISO-8601 UTC `Z`，示例 `2026-06-15T12:34:56Z`；epoch seconds、epoch milliseconds、数字时区偏移（如 `+08:00`）均不是 canonical wire format。
 - 拒绝码：`400 schema/字段` `401 认证` `403 权限/tenant/source` `409 幂等/replay` `413 payload>64KiB` `423 gate disabled` `429 限流`。
 - 审计事件命名（mock 断言用）：`REQUEST_RECEIVED / REQUEST_REJECTED / SIGNATURE_FAILED / REPLAY_REJECTED / TENANT_MISMATCH / PAYLOAD_TOO_LARGE / FORBIDDEN_FIELD_REJECTED / RATE_LIMITED / IDEMPOTENCY_CONFLICT / RISK_RESULT_RECORDED`。
 - tenant 固定用 `t-test-*`；secret 用测试占位（绝不用真实密钥）。
@@ -261,12 +262,12 @@
 - testName：timestamp_window_rejection
 - targetSystem：NQ
 - testType：SECURITY / NEGATIVE
-- purpose：超出 ±300 秒窗口必须拒绝。
-- inputFixture：`FX-TIMESTAMP`（窗口前 / 窗口后 / 边界值）。
-- requiredHeaders：全 7 个，Timestamp 越界。
+- purpose：验证 `X-NQ-DH-Timestamp` 必须使用 RFC3339 / ISO-8601 UTC `Z`，且超出 ±300 秒窗口必须拒绝。
+- inputFixture：`FX-TIMESTAMP`（合法 `2026-06-15T12:34:56Z`、窗口前 / 窗口后 / 边界值、epoch seconds、epoch milliseconds、数字时区偏移如 `+08:00`）。
+- requiredHeaders：全 7 个，Timestamp 使用 canonical UTC `Z` 或非法格式 / 越界变体。
 - payload：合法 `DHSignalCandidate`。
 - expectedStatus：401 或 403。
-- expectedResult：拒绝过期请求。
+- expectedResult：接受窗口内 RFC3339 UTC `Z`；拒绝过期请求；拒绝 epoch seconds / epoch milliseconds / 数字时区偏移。
 - expectedAuditEvent：`REQUEST_REJECTED`。
 - forbiddenSideEffect：接受过期请求。
 - blocksIntegration0：true ｜ blocksIntegration1：true

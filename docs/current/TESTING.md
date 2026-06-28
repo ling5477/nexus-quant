@@ -5667,6 +5667,20 @@ target conflicts = 0
 
 ---
 
+## NQ-DH-TIMESTAMP-FORMAT-COMPANION-IMPL（2026-06-28）
+
+结论：**PASS / NQ SIDE ALIGNMENT IMPLEMENTED；PENDING COMPANION REVIEW**。本轮仅对 NQ docs/current timestamp contract 与 NQ INT0 test/support 做 companion alignment：canonical timestamp 从 epoch seconds / epoch milliseconds 对齐为 RFC3339 / ISO-8601 UTC `Z`（示例 `2026-06-15T12:34:56Z`）。未改 NQ production runtime、未新增 API、未新增 migration、未真实 HTTP、未接 DH runtime、未启用 LIVE。
+
+| 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration0SecurityContractTest,NqDhIntegration0ContractValidationTest,NqDhIntegration0NoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | INT0 相关 3 个测试类共 17 tests / 0 failures / 0 errors / 0 skipped；覆盖 RFC3339 UTC `Z` accept、epoch seconds reject、epoch milliseconds reject、数字时区偏移 reject、±300s window reject、no side-effect / no credential access。 |
+| `mvn -f backend/pom.xml test` | **BUILD SUCCESS** | 后端全量 Maven 测试通过；Surefire reports 汇总 537 tests / 0 failures / 0 errors / 4 skipped。保留既有 SLF4J / Mockito dynamic agent warning，不影响结果。 |
+| Backend quality profile 探测 | **未运行 quality profile** | `backend/pom.xml` 与 backend 子模块 POM 未检出 `<id>quality</id>` / `spotless` / `checkstyle`；本轮未把不存在的 `mvn -Pquality validate` 记录为成功。 |
+
+边界确认：未改 DH 仓库；未改 NQ Java production code；未新增 production timestamp parser/generator；未新增 API / migration / RealClient / provider；未读取凭证；未真实 HTTP / 交易所调用；未启动 Integration-1；DH 仍 not integrated；LIVE 仍 disabled。Timestamp alignment overall 仍 **NOT CLOSED**，需进入 `NQ-DH-TIMESTAMP-FORMAT-COMPANION-IMPL-REVIEW`。
+
+---
+
 ## NQ-GATEL-CANONICAL-ROUTE-SYNC（2026-06-22）
 
 结论：**PASS / DOCS-ONLY**。docs-only route sync，修正 GateL canonical 定义冲突；未改代码 / API / migration / workflow / 测试 / frontend / research / scripts / deploy，未运行或触发 GitHub Actions。

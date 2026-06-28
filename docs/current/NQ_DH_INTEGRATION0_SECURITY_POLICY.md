@@ -25,7 +25,7 @@ X-NQ-DH-Source         来源系统标识，必须命中 allowlist
 X-NQ-DH-Tenant-Id      租户标识，必须与认证主体绑定
 X-NQ-DH-Request-Id     幂等键
 X-NQ-DH-Trace-Id       端到端追踪键
-X-NQ-DH-Timestamp      请求时间戳（epoch 毫秒或 RFC3339，二选一冻结为 epoch 毫秒）
+X-NQ-DH-Timestamp      请求时间戳，canonical wire format 固定为 RFC3339 / ISO-8601 UTC Z，例如 2026-06-15T12:34:56Z
 X-NQ-DH-Nonce          一次性随机值
 X-NQ-DH-Signature      HMAC-SHA256 签名（候选方案）
 Content-Type: application/json
@@ -54,6 +54,9 @@ sha256(body)
 
 ## 4. Timestamp & Replay Protection（冻结）
 
+- Timestamp canonical 格式：RFC3339 / ISO-8601 UTC `Z`，示例 `2026-06-15T12:34:56Z`。
+- Epoch seconds / epoch milliseconds 均不是 canonical wire format，必须拒绝。
+- 数字时区偏移不是 canonical wire format，例如 `+08:00` 不作为契约线缆格式，必须拒绝。
 - Timestamp 允许窗口：默认 ±300 秒（5 分钟），超窗拒绝（401/403）。
 - Nonce 防重放：`Source + Nonce + Request-Id` 组合在 TTL 内必须唯一；重放拒绝（409 或等价）。
 - Nonce TTL：建议 ≥ 2 × maxClockSkew。
@@ -134,6 +137,7 @@ token / API key / secret / passphrase / cookie / 私钥 / 助记词 /
 - DH 已实现 NQ feedback 认证使用 `X-DH-NQ-*` header 族与 HMAC/timestamp/nonce/source allowlist/payload gate（见 DH `DH_AUDIT_FIX_REPORT.md`，P1-1/P1-2/P1-3 已关闭）。
 - 本策略冻结的 canonical 跨系统 header 族为 `X-NQ-DH-*`。
 - 两者对齐（统一命名或映射层转换）是 **Integration-1 前置项**，不在本轮实现。
+- NQ production runtime timestamp handling 仍为 **NOT PRESENT / NOT STARTED**；本策略仅约束 Integration-0 docs 与 test/support companion alignment，不代表 DH integrated、runtime integration started 或 Integration-1 started。
 
 ## 12. Integration-1 安全前置（冻结）
 
