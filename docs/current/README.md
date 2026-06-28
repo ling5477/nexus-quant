@@ -17,6 +17,7 @@ GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / err
 - 架构：[ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md)
 - API / DB：[API.md](API.md) / [DB_SCHEMA.md](DB_SCHEMA.md)
 - 运行手册：[RUNBOOK.md](RUNBOOK.md)
+- 项目任务流程权威：[NQ_PROJECT_WORKFLOW_AUTHORITY.md](NQ_PROJECT_WORKFLOW_AUTHORITY.md)
 
 ## 文档治理权威基线
 
