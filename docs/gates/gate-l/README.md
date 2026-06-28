@@ -3,7 +3,7 @@
 ## Archive Identity
 
 - Gate: `GateL`
-- Directory: `gate/GateL/`
+- Directory: `docs/gates/gate-l/`
 - Archive type: repository-level historical gate archive
 - Status: `COMPLETED / ARCHIVED / NON-ACTIVE`
 
@@ -11,9 +11,9 @@ This directory materializes GateL as a structured historical archive. It does no
 
 ## Archive Contents
 
-- `GATEL_ARCHITECTURE_SUMMARY.md`: GateL architecture summary, goals, modules, dependencies, inputs, and outputs.
-- `GATEL_EXECUTION_MODEL.md`: GateL execution model, data flow, constraints, and runtime boundary.
-- `GATEL_COMPLETION_EVIDENCE.md`: CI/backend/frontend/E2E state, completion evidence, freeze and non-freeze status explanation, and final declaration.
+- `ARCHITECTURE.md`: GateL architecture summary, goals, modules, dependencies, inputs, and outputs.
+- `EXECUTION_MODEL.md`: GateL execution model, data flow, constraints, and runtime boundary.
+- `COMPLETION_EVIDENCE.md`: CI/backend/frontend/E2E state, completion evidence, freeze and non-freeze status explanation, and final declaration.
 - `source/`: copied source GateL documents from `docs/current/GATEL*.md` for historical traceability.
 
 ## Source Preservation Rule

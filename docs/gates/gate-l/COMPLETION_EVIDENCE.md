@@ -6,7 +6,7 @@
 GateL: COMPLETED / ARCHIVED / NON-ACTIVE
 ```
 
-This declaration applies to the repository archive state in `gate/GateL/`. It means the GateL phase is represented as a structured historical archive and is no longer an active execution or implementation layer.
+This declaration applies to the repository archive state in `docs/gates/gate-l/`. It means the GateL phase is represented as a structured historical archive and is no longer an active execution or implementation layer.
 
 ## Completion Markers
 
@@ -60,11 +60,11 @@ The copied source documents intentionally preserve mixed historical language:
 - GateL-1E source documents record checklist and review acceptance language rather than a separate source freeze document.
 - The directory-level archive state treats GateL as completed, archived, and non-active for structural repository consistency.
 
-This distinction preserves historical integrity: source evidence remains unchanged, while the `gate/GateL/` directory records the current archive state requested for the repository.
+This distinction preserves historical integrity: source evidence remains unchanged, while the `docs/gates/gate-l/` directory records the current archive state requested for the repository.
 
 ## Historical Integrity
 
-The archive preserves the current source documents by copying `docs/current/GATEL*.md` into `gate/GateL/source/`. The copy operation is one-way archival materialization. It does not delete, move, or modify `docs/current`.
+The archive preserves the current source documents by copying `docs/current/GATEL*.md` into `docs/gates/gate-l/source/`. The copy operation is one-way archival materialization. It does not delete, move, or modify `docs/current`.
 
 ## No Runtime Impact
 
