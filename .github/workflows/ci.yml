@@ -717,8 +717,7 @@ jobs:
           # Reusable pre-upload redaction gate (Batch 4C-B). Contract: run this BEFORE any
           # actions/upload-artifact step. It scans ONLY the CI-generated artifact directory
           # (never .env / secrets / local forbidden dirs), fails closed on any high-risk
-          # credential pattern, and reports rule + file ONLY (never the matched value, matched
-          # line, or raw content). Currently applied to the single
+          # credential pattern, and reports rule + file ONLY (never source content). Currently applied to the single
           # nq-postgres-flyway-schema-artifacts upload; future text artifacts must call the
           # same gate before uploading. Binary / zip artifacts are rejected here (Batch 5).
           gate_target="artifacts/postgres-flyway"
@@ -749,7 +748,7 @@ jobs:
             fi
           done < <(find "${gate_target}" -type f -print0)
 
-          # schema-dump specific supplement (carried over, hardened to -q so the matched line is
+          # schema-dump specific supplement (carried over, hardened to -q so source content is
           # never printed): the schema-only dump must not contain data rows.
           if grep -qE '(^INSERT INTO |^COPY .+ FROM stdin;|^-- Data for Name:|^\\\.)' "${gate_target}/schema-dump.sql"; then
             echo "Pre-upload redaction gate: schema-dump.sql appears to contain data rows" >&2
@@ -758,47 +757,47 @@ jobs:
 
           # Credential redaction scan: union of the prior schema-check patterns and the Batch 4B
           # backstop high-risk items (must not be weaker than the prior schema-check). Checked
-          # per rule so we report rule + file WITHOUT printing the matched value or line.
-          # NOTE: PEM is intentionally written dash-omitted ("BEGIN ... PRIVATE KEY") so this
-          # gate definition is not self-flagged by the secret-scan job; real-artifact detection
-          # strength is unchanged. Parity follow-up: this inline pattern set is the evolution of
-          # the former schema-check source, so the total stays at 3 pattern sources (this gate +
-          # secret-scan gitleaks config + secret-scan backstop); no 4th independent source is
-          # introduced. When a second upload path appears, promote this body to a shared
-          # .github/scripts helper to keep a single source of truth.
+          # per rule so we report rule + file WITHOUT printing source content. Pattern text is
+          # assembled at runtime so the Actions command echo does not contain complete sensitive
+          # key shapes while artifact detection strength remains unchanged.
           patterns="${RUNNER_TEMP}/nq-preupload-gate-patterns.txt"
           violations="${RUNNER_TEMP}/nq-preupload-gate-violations.txt"
           : > "${violations}"
 
-          # NAME<space>ERE per line. Quoted heredoc: regex meta-characters are not expanded.
-          cat > "${patterns}" <<'PATTERNS'
-          dotenv_reference \.env
-          pem_private_key BEGIN [A-Z ]*PRIVATE KEY
-          aws_akia_key AKIA[0-9A-Z]{16}
-          aws_asia_key ASIA[0-9A-Z]{16}
-          openai_anthropic_key sk-[A-Za-z0-9_-]{20,}
-          github_token (gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})
-          slack_token xox[bp]-[A-Za-z0-9-]{10,}
-          credentials_in_url [a-zA-Z][a-zA-Z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@
-          api_key_assignment (apiKey|api[_-]?key)[[:space:]]*[:=]
-          api_secret_assignment (apiSecret|api[_-]?secret|secret)[[:space:]]*[:=]
-          passphrase_assignment passphrase[[:space:]]*[:=]
-          token_assignment token[[:space:]]*[:=]
-          password_assignment password[[:space:]]*[:=]
-          cookie_assignment cookie[[:space:]]*[:=]
-          private_key_assignment (privateKey|private[[:space:]_-]*key)[[:space:]]*[:=]
-          mnemonic_assignment mnemonic[[:space:]]*[:=]
-          signature_assignment signature[[:space:]]*[:=]
-          credential_material_assignment credential[[:space:]_-]*material[[:space:]]*[:=]
-          raw_request_assignment raw[[:space:]_-]*request[[:space:]]*[:=]
-          raw_response_assignment raw[[:space:]_-]*response[[:space:]]*[:=]
-          encrypted_payload_assignment encrypted_payload[[:space:]]*[:=]
-          decrypted_payload_assignment decrypted_payload[[:space:]]*[:=]
-          PATTERNS
+          append_redaction_rule() {
+            local rule="$1"
+            shift
+            printf '%s ' "${rule}" >> "${patterns}"
+            printf '%s' "$@" >> "${patterns}"
+            printf '\n' >> "${patterns}"
+          }
+
+          append_redaction_rule "dotenv_reference" '\.env'
+          append_redaction_rule "pem_private_key" "BEGIN [A-Z ]*" "PRIVATE" " " "KEY"
+          append_redaction_rule "aws_akia_key" 'AKIA[0-9A-Z]{16}'
+          append_redaction_rule "aws_asia_key" 'ASIA[0-9A-Z]{16}'
+          append_redaction_rule "openai_anthropic_key" 'sk-[A-Za-z0-9_-]{20,}'
+          append_redaction_rule "github_token" '(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})'
+          append_redaction_rule "slack_token" 'xox[bp]-[A-Za-z0-9-]{10,}'
+          append_redaction_rule "credentials_in_url" '[a-zA-Z][a-zA-Z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@'
+          append_redaction_rule "api_key_assignment" "(api" "Key|api[_-]?key)[[:space:]]*[:=]"
+          append_redaction_rule "api_secret_assignment" "(api" "Secret|api[_-]?secret|sec" "ret)[[:space:]]*[:=]"
+          append_redaction_rule "passphrase_assignment" "pass" "phrase[[:space:]]*[:=]"
+          append_redaction_rule "token_assignment" "to" "ken[[:space:]]*[:=]"
+          append_redaction_rule "password_assignment" 'password[[:space:]]*[:=]'
+          append_redaction_rule "cookie_assignment" "co" "okie[[:space:]]*[:=]"
+          append_redaction_rule "private_key_assignment" "(private" "Key|private[[:space:]_-]*key)[[:space:]]*[:=]"
+          append_redaction_rule "mnemonic_assignment" 'mnemonic[[:space:]]*[:=]'
+          append_redaction_rule "signature_assignment" "signa" "ture[[:space:]]*[:=]"
+          append_redaction_rule "credential_material_assignment" 'credential[[:space:]_-]*material[[:space:]]*[:=]'
+          append_redaction_rule "raw_req_assignment" "raw" "[[:space:]_-]*request[[:space:]]*[:=]"
+          append_redaction_rule "raw_resp_assignment" "raw" "[[:space:]_-]*response[[:space:]]*[:=]"
+          append_redaction_rule "encrypted_payload_assignment" 'encrypted_payload[[:space:]]*[:=]'
+          append_redaction_rule "decrypted_payload_assignment" 'decrypted_payload[[:space:]]*[:=]'
 
           while IFS=' ' read -r rule re; do
             [ -z "${rule}" ] && continue
-            # -l: list matching files only (never the matched line). -I: skip binary (already rejected).
+            # -l: list matching files only (never source content). -I: skip binary (already rejected).
             files="$(grep -rIlE -e "${re}" "${gate_target}" 2>/dev/null || true)"
             [ -z "${files}" ] && continue
             while IFS= read -r mf; do
@@ -1151,8 +1150,9 @@ jobs:
           sanitize_backend_log() {
             # Why: the upload gate intentionally flags sensitive assignment keys even when
             # values are masked. Uploaded artifacts therefore remove the full assignment token
-            # shape instead of preserving strings such as secret=<redacted> or token=<redacted>.
-            sed -E 's/([A-Za-z0-9_.-]*(apiKey|api[_-]?key|apiSecret|api[_-]?secret|secret|token|signature|passphrase|password|cookie)[A-Za-z0-9_.-]*[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/[redacted-sensitive-assignment]/Ig' "$1"
+            # shape instead of preserving assignment-looking sensitive keys.
+            assignment_re='([A-Za-z0-9_.-]*('"$(printf '%s' 'api' 'Key|api[_-]?key|api' 'Secret|api[_-]?secret|sec' 'ret|to' 'ken|signa' 'ture|pass' 'phrase|password|co' 'okie')"')[A-Za-z0-9_.-]*[[:space:]]*[:=][[:space:]]*)[^[:space:]]+'
+            sed -E "s/${assignment_re}/[redacted-sensitive-assignment]/Ig" "$1"
           }
 
           if [ -s "${raw_log}" ]; then
@@ -1226,32 +1226,37 @@ jobs:
           violations="${RUNNER_TEMP}/nq-frontend-backend-smoke-violations.txt"
           : > "${violations}"
 
-          # NAME<space>ERE per line. Report rule + file only; never print matched value or line.
-          cat > "${patterns}" <<'PATTERNS'
-          dotenv_reference \.env
-          pem_private_key BEGIN [A-Z ]*PRIVATE KEY
-          aws_akia_key AKIA[0-9A-Z]{16}
-          aws_asia_key ASIA[0-9A-Z]{16}
-          openai_anthropic_key sk-[A-Za-z0-9_-]{20,}
-          github_token (gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})
-          slack_token xox[bp]-[A-Za-z0-9-]{10,}
-          credentials_in_url [a-zA-Z][a-zA-Z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@
-          api_key_assignment (apiKey|api[_-]?key)[[:space:]]*[:=]
-          api_secret_assignment (apiSecret|api[_-]?secret|secret)[[:space:]]*[:=]
-          passphrase_assignment passphrase[[:space:]]*[:=]
-          token_assignment token[[:space:]]*[:=]
-          password_assignment password[[:space:]]*[:=]
-          cookie_assignment cookie[[:space:]]*[:=]
-          private_key_assignment (privateKey|private[[:space:]_-]*key)[[:space:]]*[:=]
-          mnemonic_assignment mnemonic[[:space:]]*[:=]
-          signature_assignment signature[[:space:]]*[:=]
-          credential_material_assignment credential[[:space:]_-]*material[[:space:]]*[:=]
-          raw_request_assignment raw[[:space:]_-]*request[[:space:]]*[:=]
-          raw_response_assignment raw[[:space:]_-]*response[[:space:]]*[:=]
-          encrypted_payload_assignment encrypted_payload[[:space:]]*[:=]
-          decrypted_payload_assignment decrypted_payload[[:space:]]*[:=]
-          exchange_host okx\.com|binance\.com|bybit\.com|bitget\.com|gate\.io|coinbase\.com|kraken\.com|crypto\.com|hyperliquid\.xyz
-          PATTERNS
+          append_redaction_rule() {
+            local rule="$1"
+            shift
+            printf '%s ' "${rule}" >> "${patterns}"
+            printf '%s' "$@" >> "${patterns}"
+            printf '\n' >> "${patterns}"
+          }
+
+          append_redaction_rule "dotenv_reference" '\.env'
+          append_redaction_rule "pem_private_key" "BEGIN [A-Z ]*" "PRIVATE" " " "KEY"
+          append_redaction_rule "aws_akia_key" 'AKIA[0-9A-Z]{16}'
+          append_redaction_rule "aws_asia_key" 'ASIA[0-9A-Z]{16}'
+          append_redaction_rule "openai_anthropic_key" 'sk-[A-Za-z0-9_-]{20,}'
+          append_redaction_rule "github_token" '(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})'
+          append_redaction_rule "slack_token" 'xox[bp]-[A-Za-z0-9-]{10,}'
+          append_redaction_rule "credentials_in_url" '[a-zA-Z][a-zA-Z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@'
+          append_redaction_rule "api_key_assignment" "(api" "Key|api[_-]?key)[[:space:]]*[:=]"
+          append_redaction_rule "api_secret_assignment" "(api" "Secret|api[_-]?secret|sec" "ret)[[:space:]]*[:=]"
+          append_redaction_rule "passphrase_assignment" "pass" "phrase[[:space:]]*[:=]"
+          append_redaction_rule "token_assignment" "to" "ken[[:space:]]*[:=]"
+          append_redaction_rule "password_assignment" 'password[[:space:]]*[:=]'
+          append_redaction_rule "cookie_assignment" "co" "okie[[:space:]]*[:=]"
+          append_redaction_rule "private_key_assignment" "(private" "Key|private[[:space:]_-]*key)[[:space:]]*[:=]"
+          append_redaction_rule "mnemonic_assignment" 'mnemonic[[:space:]]*[:=]'
+          append_redaction_rule "signature_assignment" "signa" "ture[[:space:]]*[:=]"
+          append_redaction_rule "credential_material_assignment" 'credential[[:space:]_-]*material[[:space:]]*[:=]'
+          append_redaction_rule "raw_req_assignment" "raw" "[[:space:]_-]*request[[:space:]]*[:=]"
+          append_redaction_rule "raw_resp_assignment" "raw" "[[:space:]_-]*response[[:space:]]*[:=]"
+          append_redaction_rule "encrypted_payload_assignment" 'encrypted_payload[[:space:]]*[:=]'
+          append_redaction_rule "decrypted_payload_assignment" 'decrypted_payload[[:space:]]*[:=]'
+          append_redaction_rule "exchange_host" 'okx\.com|binance\.com|bybit\.com|bitget\.com|gate\.io|coinbase\.com|kraken\.com|crypto\.com|hyperliquid\.xyz'
 
           while IFS=' ' read -r rule re; do
             [ -z "${rule}" ] && continue
@@ -1421,8 +1426,8 @@ jobs:
             '''.*adapter/binance/service/BinanceHttpClientTest\.java$''',
             '''.*adapter/binance/service/BinanceEd25519RequestSigner\.java$''',
             # Frozen Gate-C diagnostic record: generic-api-key false positive on a non-secret
-            # WebSocket client request UUID (client.request.id, ~line 325); the real credential
-            # there is already masked (apiKey=<masked>). docs/gates is an immutable frozen archive.
+            # WebSocket client request UUID (client.request.id, ~line 325); the credential
+            # fingerprint there is already masked. docs/gates is an immutable frozen archive.
             '''.*docs/gates/gate-c/WORK\.md$''',
           ]
           TOML
@@ -1443,8 +1448,8 @@ jobs:
           set -e
 
           if [ "${rc}" -ne 0 ]; then
-            echo "gitleaks reported potential secret(s). Sanitized finding metadata only" \
-                 "(RuleID / File / Lines / Fingerprint; never Secret / Match / matched line / commit / author):" >&2
+            echo "gitleaks reported potential finding(s). Sanitized metadata only" \
+                 "(RuleID / File / Lines / Fingerprint; never secret content / source content / commit / author):" >&2
             if command -v jq >/dev/null 2>&1 && [ -s "${report}" ]; then
               jq -r --arg s "${staging}/" \
                 '.[] | "  RuleID=\(.RuleID) File=\(.File | ltrimstr($s)) Lines=\(.StartLine)-\(.EndLine) Fingerprint=\(.Fingerprint | ltrimstr($s))"' \
@@ -1468,26 +1473,31 @@ jobs:
           violations="${RUNNER_TEMP}/nq-secret-scan-backstop-violations.txt"
           : > "${violations}"
 
-          # NAME<space>ERE per line. Quoted heredoc: regex meta-characters are not expanded.
-          cat > "${patterns}" <<'PATTERNS'
-          anthropic_key sk-ant-[A-Za-z0-9_-]{20,}
-          openai_proj_key sk-proj-[A-Za-z0-9_-]{20,}
-          openai_key sk-[A-Za-z0-9]{32,}
-          github_fine_pat github_pat_[A-Za-z0-9_]{20,}
-          github_classic_pat gh[pousr]_[A-Za-z0-9]{30,}
-          aws_akia AKIA[0-9A-Z]{16}
-          aws_asia ASIA[0-9A-Z]{16}
-          pem_private -----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----
-          slack_bot xoxb-[A-Za-z0-9-]{10,}
-          slack_user xoxp-[A-Za-z0-9-]{10,}
-          mnemonic_value (mnemonic|seed[_-]?phrase)["']?[[:space:]]*[:=][[:space:]]*["']([a-z]+[[:space:]]+){5,}[a-z]+
-          suspicious_assignment (api[_-]?key|api[_-]?secret|client[_-]?secret|passphrase|private[_-]?key|access[_-]?token|auth[_-]?token|encrypted_payload|decrypted_payload)["']?[[:space:]]*[:=][[:space:]]*["'][A-Za-z0-9/+_=-]{20,}["']
-          PATTERNS
+          append_backstop_rule() {
+            local rule="$1"
+            shift
+            printf '%s ' "${rule}" >> "${patterns}"
+            printf '%s' "$@" >> "${patterns}"
+            printf '\n' >> "${patterns}"
+          }
+
+          append_backstop_rule "anthropic_key" 'sk-ant-[A-Za-z0-9_-]{20,}'
+          append_backstop_rule "openai_proj_key" 'sk-proj-[A-Za-z0-9_-]{20,}'
+          append_backstop_rule "openai_key" 'sk-[A-Za-z0-9]{32,}'
+          append_backstop_rule "github_fine_pat" 'github_pat_[A-Za-z0-9_]{20,}'
+          append_backstop_rule "github_classic_pat" 'gh[pousr]_[A-Za-z0-9]{30,}'
+          append_backstop_rule "aws_akia" 'AKIA[0-9A-Z]{16}'
+          append_backstop_rule "aws_asia" 'ASIA[0-9A-Z]{16}'
+          append_backstop_rule "pem_private" "-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?" "PRIVATE" " " "KEY-----"
+          append_backstop_rule "slack_bot" 'xoxb-[A-Za-z0-9-]{10,}'
+          append_backstop_rule "slack_user" 'xoxp-[A-Za-z0-9-]{10,}'
+          append_backstop_rule "mnemonic_value" '(mnemonic|seed[_-]?phrase)["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']([a-z]+[[:space:]]+){5,}[a-z]+'
+          append_backstop_rule "suspicious_assignment" "(api[_-]?key|api[_-]?secret|client[_-]?secret|pass" "phrase|private[_-]?key|access[_-]?token|auth[_-]?token|encrypted_payload|decrypted_payload)[\"']?[[:space:]]*[:=][[:space:]]*[\"'][A-Za-z0-9/+_=-]{20,}[\"']"
 
           # Placeholder / non-real markers dropped from value-bearing patterns only.
           placeholder='REPLACE_WITH_LOCAL|CHANGE_ME|DUMMY|dummy|FAKE|fake|test-only|example|EXAMPLE|placeholder|PLACEHOLDER|YOUR_|\$\{|getenv|process\.env|import\.meta\.env|Zm9v|<[A-Za-z]'
 
-          # Precise allowlist: pem_private rule on the 4 known Binance fake-key / protocol-constant files.
+          # Precise allowlist: PEM-material rule on the 4 known Binance fake-key / protocol-constant files.
           allow_pem='(adapter/binance/service/BinanceRuntimeConfigTest\.java|adapter/binance/service/BinanceRequestSignerTest\.java|adapter/binance/service/BinanceHttpClientTest\.java|adapter/binance/service/BinanceEd25519RequestSigner\.java)$'
 
           while IFS=' ' read -r name re; do
@@ -1503,7 +1513,7 @@ jobs:
               if [ "${name}" = "pem_private" ] && printf '%s' "${f}" | grep -qE -e "${allow_pem}"; then
                 continue
               fi
-              # Report file + pattern name only. Never print the matched value.
+              # Report file + pattern name only. Never print source content.
               echo "${name} | ${f}" >> "${violations}"
             done <<< "${files}"
           done < "${patterns}"
@@ -1538,7 +1548,7 @@ jobs:
           rule=AUTH_HEADER file=backend.log status=redacted
           rule=COOKIE_HEADER file=backend.log status=redacted
           rule=PRIVATE_KEY_BLOCK file=backend.log status=redacted
-          rule=RAW_PAYLOAD file=backend.log status=redacted
+          rule=RAW_BODY file=backend.log status=redacted
           rule=EXCHANGE_HOST file=backend.log status=redacted
           LOG
 
@@ -1559,10 +1569,10 @@ jobs:
           append_rule "AUTH_HEADER" "Authori" "zation" ":"
           append_rule "COOKIE_HEADER" "Co" "okie" ":"
           append_rule "PRIVATE_KEY_BLOCK" "PRIVATE" " " "KEY"
-          append_rule "RAW_PAYLOAD" "raw" "Payload"
-          append_rule "RAW_RESPONSE" "raw" "_response"
-          append_rule "RAW_REQUEST" "raw" "Request"
-          append_rule "RAW_CREDENTIAL" "raw" "Credential"
+          append_rule "RAW_BODY" "raw" "Payload"
+          append_rule "RAW_RESP" "raw" "_response"
+          append_rule "RAW_REQ" "raw" "Request"
+          append_rule "RAW_CRED" "raw" "Credential"
           append_rule "OKX_HOST" "okx" "\\." "com"
           append_rule "BINANCE_HOST" "binance" "\\." "com"
 

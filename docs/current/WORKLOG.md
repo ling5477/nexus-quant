@@ -1,3 +1,31 @@
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-PRODUCTION-LOG-SHAPE-FIX（2026-06-28）
+
+状态：**IMPLEMENTED / PENDING RE-RUN REVIEW**。
+
+本轮修复 Batch 4C-C first-run review 发现的 workflow log hygiene P1：run `28312306143` overall success，但日志中仍出现 sensitive key-shape，且 camel API-key assignment label 来源包含 OKX/Binance production fingerprint 输出。修复范围严格限定为 fingerprint / label / workflow pattern construction / test class output name；未修改 credential 读取、mask 算法、storage schema、adapter 交易逻辑、API DTO 或 migration。
+
+同步文件：
+
+- `.github/workflows/ci.yml`
+- `backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxRuntimeConfig.java`
+- `backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceRuntimeConfig.java`
+- `backend/nq-adapter-okx/src/test/java/com/guidinglight/nexusquant/adapter/okx/service/OkxRuntimeConfigTest.java`
+- `backend/nq-adapter-binance/src/test/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceRuntimeConfigTest.java`
+- `backend/nq-adapter-okx/src/test/java/com/guidinglight/nexusquant/adapter/okx/service/OkxExchangeAdapterRawBodySuppressionTest.java`
+- `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+修复摘要：
+
+- OKX / Binance runtime fingerprint 输出 label 改为 neutral credential fingerprint；credential source、unconfigured placeholder、mask 计算不变。
+- OKX raw-body suppression test class renamed，避免 Surefire success output 出现 raw payload camel-case shape；测试仍断言 provider raw body 不进入 adapter-facing model。
+- CI pre-upload gates / secret backstop / proof patterns 改为 runtime 拼接写入临时 pattern 文件；runner command echo 不再包含完整 sensitive assignment / header / PEM / raw-body shape。
+- Proof clean path 仍只输出 `PROOF_OK`；failure path 仍只输出 `REDACTION_HIT rule=<rule> file=<file>`；fail-closed 不降级。
+
+下一步：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-FIRST-RUN-REVIEW-2`。不得把本轮写成 first green / frozen；不得进入 Batch 5。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION-IMPL
 
 状态：**IMPLEMENTED / PENDING FIRST CI RUN**。

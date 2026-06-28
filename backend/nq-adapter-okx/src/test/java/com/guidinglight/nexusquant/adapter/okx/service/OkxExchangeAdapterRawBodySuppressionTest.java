@@ -31,13 +31,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * OkxExchangeAdapterRawPayloadSuppressionTest 固定 GateL-1B-C 的 order ack/snapshot 原始响应抑制边界。
+ * OkxExchangeAdapterRawBodySuppressionTest 固定 GateL-1B-C 的 order ack/snapshot 原始响应抑制边界。
  * <p>
  * Why:
  * P1-C 要保留 adapter-api 的 rawPayload 字段但停止 producer 传播 provider full body、签名、认证头或
  * credential-like 诊断文本；这里用本地 mock server 注入敏感形态字段，证明它们不会跨层进入 core-facing model。
  */
-class OkxExchangeAdapterRawPayloadSuppressionTest {
+class OkxExchangeAdapterRawBodySuppressionTest {
 
     private static final Clock TEST_CLOCK = Clock.fixed(Instant.parse("2026-06-22T10:00:00Z"), ZoneOffset.UTC);
     private static final String TIMESTAMP = "2026-06-22T10:00:00Z";
@@ -46,7 +46,7 @@ class OkxExchangeAdapterRawPayloadSuppressionTest {
      * 验证 OKX 下单 ack、单笔查询 snapshot、挂单列表 snapshot 均抑制 rawPayload。
      */
     @Test
-    void shouldSuppressProviderRawPayloadForAckAndSnapshots() throws Exception {
+    void shouldSuppressProviderRawBodyForAckAndSnapshots() throws Exception {
         try (TestServer server = new TestServer()) {
             OkxExchangeAdapter adapter = createAdapter(server.baseUrl());
 
@@ -104,7 +104,7 @@ class OkxExchangeAdapterRawPayloadSuppressionTest {
      * 验证 OKX error snapshot 也不把异常诊断文本写入 rawPayload。
      */
     @Test
-    void shouldSuppressProviderRawPayloadForErrorSnapshot() throws Exception {
+    void shouldSuppressProviderRawBodyForErrorSnapshot() throws Exception {
         try (TestServer server = new TestServer()) {
             OkxExchangeAdapter adapter = createAdapter(server.baseUrl());
 

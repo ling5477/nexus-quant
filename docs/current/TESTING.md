@@ -1,3 +1,29 @@
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-PRODUCTION-LOG-SHAPE-FIX（2026-06-28）
+
+结论：**IMPLEMENTED / PENDING RE-RUN REVIEW**。本轮仅修复 Batch 4C-C first-run review 暴露的 production log shape / workflow command echo 问题；未修改 credential 业务逻辑、加解密、schema、真实交易逻辑、frontend、research、scripts、deploy、README 或 migration；未读取真实 `.env` / key / pem / token / secret；未启用 LIVE / AI / DH runtime；未访问真实交易所。
+
+Local proof：
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Clean sanitized log | PASS | PowerShell simulation 输出 `PROOF_OK`。 |
+| Synthetic sensitive shape fail | PASS | synthetic forbidden assignment/header/raw-body shapes 命中后 fail closed。 |
+| Failure output redaction | PASS | 失败输出仅包含 `REDACTION_HIT rule=<rule> file=<file>`；不输出 source content 或 synthetic value。 |
+| Cleanup | PASS | 临时目录位于 `$env:TEMP`，验证后删除。 |
+
+Validation commands：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | PASS | Reactor 23/23 SUCCESS，BUILD SUCCESS；既有 SLF4J / Mockito / dynamic agent warnings 非阻断。 |
+| `git diff --check` | PASS | Exit 0；仅 LF/CRLF working-copy 提示，无 whitespace error。 |
+| forbidden-area diff | PASS | frontend / research / scripts / deploy / README / migration path 无输出。 |
+| workflow static review | PASS | no `continue-on-error` / no `secrets.*` / no `NQ_LIVE_ENABLED=true` / no real OKX/Binance URL / no Playwright binary upload path；workflow command echo 中 forbidden shape count = 0。 |
+
+Limitation：本机 `bash` 指向未安装的 WSL，无法执行本地 `bash -n`；本地 proof 使用 PowerShell simulation，最终仍需 GitHub Actions `ubuntu-latest` bash re-run review-2。
+
+Next：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-FIRST-RUN-REVIEW-2`。不得写成 first green / frozen。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION-IMPL（2026-06-28）
 
 结论：**IMPLEMENTED / PENDING FIRST CI RUN**。本轮只在 `.github/workflows/ci.yml` 的 `secret-scan` job 末尾新增 `Verify CI log redaction proof` step，并同步 current CI 文档；未修改 backend / frontend / research / scripts / deploy / migration；未读取 `.env`、key、pem、token、secret dump 或真实日志；未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe。

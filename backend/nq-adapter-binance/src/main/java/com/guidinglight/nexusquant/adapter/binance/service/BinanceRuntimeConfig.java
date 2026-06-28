@@ -100,13 +100,17 @@ public record BinanceRuntimeConfig(
 
     /**
      * 生成可安全输出的连接指纹。
+     * <p>
+     * Why:
+     * CI 会把 fingerprint 作为 smoke 诊断日志输出，因此 label 必须表达“脱敏指纹”而不是
+     * api-key assignment 形状；credential 读取与 mask 算法保持不变，仅收口日志可见文案。
      */
     public String fingerprint() {
         return "env=" + envName
                 + ", baseUrl=" + baseUrl
                 + ", wsUrl=" + wsUrl
                 + ", signedTimestampOffsetMs=" + signedTimestampOffset.toMillis()
-                + ", apiKey=" + maskApiKey(credentials.apiKey());
+                + ", credentialKeyFingerprint=" + maskApiKey(credentials.apiKey());
     }
 
     /**

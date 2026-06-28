@@ -37,7 +37,7 @@ class OkxRuntimeConfigTest {
         assertEquals("", config.credentials().apiKey());
         assertEquals("", config.credentials().secretKey());
         assertEquals("", config.credentials().passphrase());
-        assertTrue(config.fingerprint().contains("apiKey=missing"));
+        assertTrue(config.fingerprint().contains("credentialKeyFingerprint=missing"));
         assertFalse(config.fingerprint().contains("env-marker"));
     }
 

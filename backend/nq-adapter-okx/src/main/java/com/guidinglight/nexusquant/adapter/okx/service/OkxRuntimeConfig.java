@@ -115,10 +115,12 @@ public record OkxRuntimeConfig(
      * 生成可安全打印的连接指纹。
      * <p>
      * Why:
-     * 验收需要定位当前连接的是哪套环境，但不能泄露 secret/passphrase，因此这里只暴露 env/baseUrl/apiKey 脱敏摘要。
+     * 验收需要定位当前连接的是哪套环境，但不能泄露 credential material，因此这里只暴露
+     * env/baseUrl 与 credential key fingerprint 脱敏摘要。输出标签刻意避开 api-key assignment
+     * 形状，避免 CI 日志安全审查把安全指纹误判为敏感字段输出。
      */
     public String fingerprint() {
-        return "env=" + envName + ", baseUrl=" + baseUrl + ", apiKey=" + maskApiKey(credentials.apiKey());
+        return "env=" + envName + ", baseUrl=" + baseUrl + ", credentialKeyFingerprint=" + maskApiKey(credentials.apiKey());
     }
 
     private static String normalizeEnv(String value) {

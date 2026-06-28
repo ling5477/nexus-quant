@@ -45,7 +45,7 @@ class BinanceRuntimeConfigTest {
         assertFalse(config.credentials().isConfigured());
         assertEquals("", config.credentials().apiKey());
         assertEquals("", config.credentials().secretKey());
-        assertTrue(config.fingerprint().contains("apiKey=missing"));
+        assertTrue(config.fingerprint().contains("credentialKeyFingerprint=missing"));
         assertFalse(config.fingerprint().contains("env-marker"));
     }
 
