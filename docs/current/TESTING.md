@@ -1,3 +1,43 @@
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION-IMPL（2026-06-28）
+
+结论：**IMPLEMENTED / PENDING FIRST CI RUN**。本轮只在 `.github/workflows/ci.yml` 的 `secret-scan` job 末尾新增 `Verify CI log redaction proof` step，并同步 current CI 文档；未修改 backend / frontend / research / scripts / deploy / migration；未读取 `.env`、key、pem、token、secret dump 或真实日志；未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe。
+
+Workflow proof behavior：
+
+- Job：`secret-scan`。
+- Step：`Verify CI log redaction proof`。
+- Proof dir：`${RUNNER_TEMP}/nq-ci-log-redaction-proof`；只生成 synthetic sanitized log，不上传 artifact。
+- Clean output policy：runtime 只输出 `PROOF_OK`。
+- Failure output policy：只输出 `REDACTION_HIT rule=<rule> file=<file>`，不输出 matched value / matched line。
+- Fail-closed：任一 forbidden pattern 命中即 `exit 1`；无 `continue-on-error`。
+- Boundary：无 `secrets.*`、无 repository secret、无真实 credential、无真实 exchange endpoint、无 Playwright binary artifact upload。
+
+Local proof：
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| Clean sanitized log | PASS | PowerShell 复刻 rule/file-only 扫描输出 `PROOF_OK`。 |
+| Synthetic assignment fail | PASS | synthetic `secret=` 命中后输出 `REDACTION_HIT rule=SECRET_ASSIGNMENT file=security-redaction.log`。 |
+| Synthetic raw payload fail | PASS | synthetic `rawPayload` 命中后输出 `REDACTION_HIT rule=RAW_PAYLOAD file=security-redaction.log`。 |
+| Failure output redaction | PASS | 失败输出不包含 synthetic fake value。 |
+| Cleanup | PASS | 临时目录位于 `$env:TEMP`，边界校验后已删除。 |
+
+Final local boundary validation：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git diff --check` | PASS | Exit 0；仅出现 docs/current working-copy LF/CRLF 提示，无 whitespace error。 |
+| `git diff --name-only | Select-String -Pattern '^(backend/|frontend/|research/|scripts/|deploy/|README\.md|backend/.*/db/migration/)'` | PASS | 无输出；forbidden area 未改。 |
+| workflow dangerous pattern check | PASS | 无 `continue-on-error`、`secrets.*`、`NQ_LIVE_ENABLED: true`、真实 OKX/Binance URL 命中。 |
+| upload / binary artifact check | PASS | 仅既有 `upload-artifact`；Playwright `test-results` / `playwright-report` 仍只 cleanup、不上传。 |
+| exchange endpoint assignment check | PASS | `NQ_OKX_*` / `NQ_BINANCE_*` endpoint env 仍为 `PLACEHOLDER_ONLY`，未新增真实 endpoint。 |
+| `git status --short` | PASS | 仅 `.github/workflows/ci.yml` 与允许的 4 个 `docs/current` 文件变更。 |
+
+Limitations：
+
+- 本机 `bash.exe` 指向 WSL，但 WSL 未安装；本地降级为 PowerShell simulation。CI 中该 step 仍由 GitHub Actions `ubuntu-latest` bash 执行。
+- 本轮未提交 / push，未触发 GitHub Actions first-run review；不得写成 frozen。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW（2026-06-23）
 
 结论：**PASS / FROZEN / ACCEPTED**。本轮只做 freeze review 与 current docs 同步；未修改 workflow、Java / TypeScript / Python 代码、frontend tests、migration、scripts/deploy。

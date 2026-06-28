@@ -1,3 +1,32 @@
+## NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION-IMPL
+
+状态：**IMPLEMENTED / PENDING FIRST CI RUN**。
+
+本轮在 `.github/workflows/ci.yml` 的 `secret-scan` job 末尾新增 `Verify CI log redaction proof` step，作为历史 4C-C log proof 的 workflow 静态断言补强。该 step 只在 `${RUNNER_TEMP}/nq-ci-log-redaction-proof` 生成 synthetic sanitized log，不上传 artifact；clean path runtime 输出 `PROOF_OK`；failure path 只输出 `REDACTION_HIT rule=<rule> file=<file>`，不输出 matched value / matched line；任一 forbidden pattern 命中即 fail closed。
+
+同步文件：
+
+- `.github/workflows/ci.yml`
+- `docs/current/NQ_CI_SECURITY_GUARD_PLAN.md`
+- `docs/current/NQ_CI_BASELINE_PLAN.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+本地验证：
+
+- clean sanitized log：PASS，输出 `PROOF_OK`。
+- synthetic assignment fail：PASS，输出 `REDACTION_HIT rule=SECRET_ASSIGNMENT file=security-redaction.log`。
+- synthetic raw payload fail：PASS，输出 `REDACTION_HIT rule=RAW_PAYLOAD file=security-redaction.log`。
+- failure output redaction：PASS，未输出 synthetic fake value。
+- cleanup：PASS，临时目录已删除。
+- `git diff --check`：PASS，exit 0；仅 docs/current LF/CRLF working-copy 提示。
+- forbidden-area diff：PASS，backend / frontend / research / scripts / deploy / root README / migration path 无命中。
+- workflow boundary check：PASS，无 `continue-on-error`、`secrets.*`、`NQ_LIVE_ENABLED: true`、真实 OKX/Binance URL；endpoint env 仍为 `PLACEHOLDER_ONLY`；Playwright binary output 仍 cleanup-only。
+
+边界：未修改 backend / frontend / research / scripts / deploy / migration；未读取 `.env`、key、pem、token、secret dump 或真实日志；未访问真实交易所；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；未上传 Playwright trace / screenshot / report / video。
+
+下一步：`NQ-CI-SECURITY-GUARD-BATCH-4C-C-STATIC-ASSERTION-FIRST-RUN-REVIEW`。不得把本轮写成 frozen；不得进入 Batch 4F-B..4F-F 或 Batch 5。
+
 ## NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW（2026-06-23）
 
 冻结评审 GateK CI Batch 5 frontend backend E2E smoke baseline。结论：**PASS / FROZEN / ACCEPTED**。

@@ -1515,3 +1515,70 @@ jobs:
             exit 1
           fi
           echo "Custom regex backstop: no non-allowlisted matches over tracked safe tree."
+
+      - name: Verify CI log redaction proof
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          proof_root="${RUNNER_TEMP}/nq-ci-log-redaction-proof"
+          proof_logs="${proof_root}/logs"
+          proof_log="${proof_logs}/security-redaction.log"
+          patterns="${proof_root}/rules.tsv"
+          violations="${proof_root}/violations.txt"
+
+          rm -rf "${proof_root}"
+          mkdir -p "${proof_logs}"
+          : > "${patterns}"
+          : > "${violations}"
+
+          cat > "${proof_log}" <<'LOG'
+          rule=SECRET_ASSIGNMENT file=backend.log status=redacted
+          rule=API_KEY_ASSIGNMENT file=backend.log status=redacted
+          rule=AUTH_HEADER file=backend.log status=redacted
+          rule=COOKIE_HEADER file=backend.log status=redacted
+          rule=PRIVATE_KEY_BLOCK file=backend.log status=redacted
+          rule=RAW_PAYLOAD file=backend.log status=redacted
+          rule=EXCHANGE_HOST file=backend.log status=redacted
+          LOG
+
+          append_rule() {
+            local rule="$1"
+            shift
+            printf '%s\t' "${rule}" >> "${patterns}"
+            printf '%s' "$@" >> "${patterns}"
+            printf '\n' >> "${patterns}"
+          }
+
+          append_rule "SECRET_ASSIGNMENT" "sec" "ret" '[[:space:]]*[:=]'
+          append_rule "API_KEY_CAMEL" "api" "Key" '[[:space:]]*[:=]'
+          append_rule "API_KEY_SNAKE" "api" "_key" '[[:space:]]*[:=]'
+          append_rule "TOKEN_ASSIGNMENT" "to" "ken" '[[:space:]]*[:=]'
+          append_rule "SIGNATURE_ASSIGNMENT" "signa" "ture" '[[:space:]]*[:=]'
+          append_rule "PASSPHRASE_ASSIGNMENT" "pass" "phrase" '[[:space:]]*[:=]'
+          append_rule "AUTH_HEADER" "Authori" "zation" ":"
+          append_rule "COOKIE_HEADER" "Co" "okie" ":"
+          append_rule "PRIVATE_KEY_BLOCK" "PRIVATE" " " "KEY"
+          append_rule "RAW_PAYLOAD" "raw" "Payload"
+          append_rule "RAW_RESPONSE" "raw" "_response"
+          append_rule "RAW_REQUEST" "raw" "Request"
+          append_rule "RAW_CREDENTIAL" "raw" "Credential"
+          append_rule "OKX_HOST" "okx" "\\." "com"
+          append_rule "BINANCE_HOST" "binance" "\\." "com"
+
+          while IFS=$'\t' read -r rule re; do
+            [ -z "${rule}" ] && continue
+            files="$(grep -rIlE -e "${re}" "${proof_logs}" 2>/dev/null || true)"
+            [ -z "${files}" ] && continue
+            while IFS= read -r mf; do
+              [ -z "${mf}" ] && continue
+              echo "REDACTION_HIT rule=${rule} file=${mf#"${proof_logs}/"}" >> "${violations}"
+            done <<< "${files}"
+          done < "${patterns}"
+
+          if [ -s "${violations}" ]; then
+            cat "${violations}" >&2
+            exit 1
+          fi
+
+          echo "PROOF_OK"
