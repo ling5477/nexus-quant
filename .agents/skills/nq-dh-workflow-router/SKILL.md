@@ -1,6 +1,6 @@
 ---
 name: nq-dh-workflow-router
-description: NQ/DH workflow router for NexusQuant and Decision Hub tasks. Use when a task mentions NexusQuant, NQ, Decision Hub, DH, quant trading platform work, Gate or FREEZE planning, frontend optimization, architecture review, deployment, security audit, exchange integration, documentation, spreadsheets, presentations, or domain websites, and Codex must classify the task, choose only relevant plugins or project skills, define scope, preserve Gate boundaries, and produce the standard NQ/DH execution report.
+description: NQ/DH workflow router for NexusQuant and Decision Hub tasks. Use when a task mentions NexusQuant, NQ, Decision Hub, DH, quant trading platform work, Gate or FREEZE planning, frontend optimization, architecture review, deployment, security audit, exchange integration, documentation, spreadsheets, presentations, or domain websites, and Codex must classify the task, choose only relevant plugins or project skills, route pure documentation work to nq-docs-writer when appropriate, define scope, preserve Gate boundaries, and produce the standard NQ/DH execution report.
 ---
 
 # NQ-DH Workflow Router
@@ -37,6 +37,8 @@ Choose exactly one primary type. Record auxiliary types only when they materiall
 - `PRESENTATION`
 - `DOMAIN_WEBSITE`
 
+For `DOCUMENTATION`, record a subtype when it changes routing or validation: `DOCS_ONLY`, `DOCUMENTATION_CLEANUP`, `DOCUMENTATION_RECONCILIATION`, `FACT_SOURCE_SYNC`, `ROADMAP_CLEANUP`, `PLAN`, `PLANNING_ONLY`, `REVIEW`, `FREEZE_REVIEW`, `FINAL_FREEZE`, `STATUS_SYNC`, `TESTING_SYNC`, `WORKLOG_SYNC`, `API_DOC_UPDATE`, `DB_SCHEMA_DOC_UPDATE`, `FRONTEND_DOC_UPDATE`, `CI_DOC_UPDATE`, `GATE_PLAN`, `GATE_FREEZE`, `ACCEPTANCE_REPORT`, `IMPLEMENTATION_REPORT`, `RELEASE_HANDOFF`, or `POST_FREEZE_FIX_DOCS`.
+
 If the user request is ambiguous, make a conservative default assumption, state it, and avoid crossing module, Gate, trading, or credential boundaries.
 
 ## Step 2: Select Plugins And Skills
@@ -47,6 +49,12 @@ Select only the tools needed for the classified task. Do not enable every availa
 - Use project active skills only when directly relevant to the task.
 - Use at most one primary skill; supporting skills must have a clear reason.
 - If plugin or skill guidance conflicts with Gate, security, trading, module, or user instructions, follow the stricter project boundary.
+- Use `nq-docs-writer` as the primary skill for pure documentation work: `DOCUMENTATION`, `DOCS_ONLY`, planning-only docs, review/freeze docs, current fact-source reconciliation, status/testing/worklog sync, API docs, DB schema docs, frontend docs, CI docs, acceptance reports, implementation reports, release handoffs, and post-freeze fix docs.
+- If the task implements backend, frontend, DB, CI, security, credential, LIVE, real-provider, or exchange changes and also needs documentation, keep the domain skill primary and use `nq-docs-writer` only as a supporting documentation skill.
+- If the task exposes fact-source conflict between attachments, prompts, old docs, current docs, tests, or code, select `nq-docs-writer` first for documentation reconciliation before editing current facts.
+- For migration work, keep `db-schema-migration-review` as primary; `nq-docs-writer` may only synchronize `DB_SCHEMA.md`, `TESTING.md`, and `WORKLOG.md`.
+- For frontend implementation, keep the relevant frontend skill primary; `nq-docs-writer` may only synchronize frontend docs, `TESTING.md`, and `WORKLOG.md`.
+- For CI workflow, security, credential, LIVE, or real-provider work, keep the CI/security/domain review primary; `nq-docs-writer` may only keep documentation facts from crossing the approved boundary.
 
 Never use a plugin or skill to bypass restrictions on AI, DH integration, LIVE trading, credentials, real providers, RealClient, migrations, or production paths.
 
@@ -86,6 +94,7 @@ Default to code-first / test-first work. Documentation is not a default delivera
 - Dedicated PLAN docs are reserved for CI, migration, security, LIVE, credential, API contract, or similarly high-risk epics.
 - Do not create docs-only follow-up tasks merely to keep documents synchronized.
 - Prompts for future NQ/DH tasks should state the docs budget explicitly, for example: "docs default unchanged; if recording is needed, only one WORKLOG line is allowed."
+- When documentation is explicitly authorized, apply `nq-docs-writer` rules for fact-source priority, anti-churn, output shape, and validation.
 
 ## Step 5: Enforce NQ Boundaries
 
@@ -127,7 +136,7 @@ Run validation based on the changed area, or explain why a narrower validation i
 - Backend: `mvn -f backend/pom.xml test` or a justified module-specific Maven test.
 - Frontend: `Set-Location frontend; npm run build; npm run test:e2e`; page work should also use Browser or Chrome verification.
 - Python: `Set-Location research/py; python -m pytest -q; python -m mypy src; python -m ruff check .`.
-- Docs: check links, paths, stage state, forbidden boundaries, duplicate entry points, and whether verification claims match executed commands.
+- Docs: check links, paths, stage state, forbidden boundaries, duplicate entry points, whether verification claims match executed commands, and `nq-docs-writer` validation when documentation was created or synchronized.
 - Deployment: check Docker, env examples, health checks, migrations, and rollback.
 
 If validation fails, report the root cause, apply the smallest fix when feasible, and rerun the relevant validation.

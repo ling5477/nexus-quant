@@ -411,23 +411,25 @@ git status --short
 
 #### 7.1 Active skills（唯一默认启用集合）
 
-当前 active skills 仅允许以下 9 个：
+当前 active skills 仅允许以下 10 个：
 
 1. `nq-dh-workflow-router`
-2. `frontend-product-ui-design`
-3. `ui-visual-system-polish`
-4. `frontend-antd-page-builder`
-5. `frontend-quality-regression`
-6. `java-backend-maintenance`
-7. `java-backend-regression-tests`
-8. `db-schema-migration-review`
-9. `python-ops-tooling`
+2. `nq-docs-writer`
+3. `frontend-product-ui-design`
+4. `ui-visual-system-polish`
+5. `frontend-antd-page-builder`
+6. `frontend-quality-regression`
+7. `java-backend-maintenance`
+8. `java-backend-regression-tests`
+9. `db-schema-migration-review`
+10. `python-ops-tooling`
 
 使用原则：
 
 - 只选择与本轮任务直接相关的 skill，不要一次性激活所有 skills。
 - 一个任务最多一个主 skill；其他 skill 只能作为补充，并说明为什么需要。
 - NQ / DH / Gate / FREEZE / 插件路由相关任务先使用 `nq-dh-workflow-router` 做任务分类、范围限定和边界检查，再选择具体执行 skill。
+- 纯文档、docs-only、plan/review/freeze、fact-source sync、STATUS / TESTING / WORKLOG / API / DB_SCHEMA / frontend docs / CI docs 同步任务使用 `nq-docs-writer`；若任务同时涉及代码实现、DB、CI、安全、credential、LIVE 或 real provider，`nq-docs-writer` 只作为文档辅助 skill。
 - 如果 skill 路由与当前 Gate 边界、安全边界、技术栈边界冲突，优先遵守 Gate / Freeze / Work Order / 安全 / 技术栈规则。
 - 不得用 skill 名义绕过禁止项：不接 AI/DH、不接真实 provider、不接 NQ RealClient、不触碰 LIVE 交易、不新增未要求的 API / migration / 业务能力。
 
