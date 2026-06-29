@@ -22,6 +22,9 @@ public enum AdapterReadinessReason {
     /** PAPER / SIM 仅允许纸面语义，不能被提升为 LIVE / real-ready。 */
     READY_FOR_PAPER_ONLY,
 
+    /** Paper order / fill / balance / risk / publish artefact 不构成真实交易授权。 */
+    PAPER_ARTIFACT_NOT_REAL_AUTHORIZATION,
+
     /** 默认 endpoint 为 disabled:// sentinel，请求期 loud fail-closed（对应 GateL-1D NETWORK_DISABLED）。 */
     ENDPOINT_DISABLED_SENTINEL,
 

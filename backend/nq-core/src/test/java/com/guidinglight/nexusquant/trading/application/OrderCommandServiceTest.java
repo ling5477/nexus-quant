@@ -1,43 +1,24 @@
 package com.guidinglight.nexusquant.trading.application;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
-import com.guidinglight.nexusquant.contracts.model.OrderSide;
-import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.contracts.model.RiskDecision;
-import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
+import com.guidinglight.nexusquant.contracts.model.*;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
-import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
-import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
-import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
-import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSnapshot;
-import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
-import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
+import com.guidinglight.nexusquant.trading.application.port.*;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * OrderCommandServiceTest 覆盖 PRE-1 之后的 trading anti-corruption 行为。
@@ -224,6 +205,44 @@ class OrderCommandServiceTest {
         OrderRecord order = orderRepository.findByAccountAndClientOrderId(1001L, "coid-206").orElseThrow();
         assertEquals(OrderStatus.SENT, order.status());
         assertEquals(null, order.externalOrderId());
+    }
+
+    /**
+     * 验证 Paper run / order artefact 不会进入正式下单编排。
+     * Why:
+     * GateM-4 要求 Paper order 不得被提交到 real order path；这里证明 guard 发生在本地写库和 gateway
+     * 调用之前，因此不会产生订单事实、不会触达 adapter。
+     */
+    @Test
+    void shouldRejectPaperArtifactBeforePersistingOrCallingGateway() {
+        InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
+        RecordingAuditLogRepository auditLogRepository = new RecordingAuditLogRepository();
+        RecordingTradingVenueGateway tradingVenueGateway = new RecordingTradingVenueGateway();
+        OrderCommandService service = createService(orderRepository, auditLogRepository, tradingVenueGateway);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.placeOrder(new PlaceOrderRequest(
+                        "req-paper-order",
+                        1001L,
+                        "ptr-1",
+                        "OKX",
+                        "BTC-USDT",
+                        "coid-real-should-not-run",
+                        "1001:coid-real-should-not-run",
+                        "paper_trading",
+                        OrderSide.BUY,
+                        OrderType.MARKET,
+                        null,
+                        new BigDecimal("0.01000000"),
+                        "IOC",
+                        "trc-paper-order"
+                ))
+        );
+
+        assertTrue(ex.getMessage().contains("PAPER_ORDER_NOT_REAL_AUTHORIZATION"));
+        assertEquals(0, orderRepository.insertCount());
+        assertEquals(0, tradingVenueGateway.placeInvocationCount());
     }
 
     private OrderCommandService createService(

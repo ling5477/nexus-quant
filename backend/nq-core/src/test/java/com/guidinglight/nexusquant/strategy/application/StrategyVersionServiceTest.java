@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -94,6 +95,13 @@ class StrategyVersionServiceTest {
                 "{}",
                 "tester"
         )));
+    }
+
+    @Test
+    void strategyVersionStatusMustNotAuthorizeLiveTrading() {
+        for (StrategyVersionStatus status : StrategyVersionStatus.values()) {
+            assertFalse(status.authorizesLiveTrading(), status + " must not enable LIVE trading");
+        }
     }
 
     private StrategyDefinition defaultDefinition() {

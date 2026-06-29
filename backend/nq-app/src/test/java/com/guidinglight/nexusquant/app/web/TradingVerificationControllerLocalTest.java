@@ -50,6 +50,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -119,6 +120,35 @@ class TradingVerificationControllerLocalTest {
     }
 
     @Test
+    void shouldRejectLiveAccountBeforePlaceOrderService() throws Exception {
+        mockExchangeAccount(1001L, 1001L, "LIVE");
+        OrderSubmitRequest request = new OrderSubmitRequest(
+                1001L,
+                null,
+                "OKX",
+                "coid-live-blocked",
+                "BTC-USDT",
+                OrderSide.BUY,
+                OrderType.MARKET,
+                null,
+                new BigDecimal("0.002")
+        );
+
+        mockMvc.perform(post("/api/trading/orders")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-live-blocked")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("STATE_CONFLICT"))
+                .andExpect(jsonPath("$.message").value(
+                        "placeOrder blocked: LIVE trading is disabled and cannot authorize real mutating path"
+                ));
+
+        verify(orderCommandService, never()).placeOrder(any());
+    }
+
+    @Test
     void shouldTriggerCancelOrderThroughService() throws Exception {
         mockExchangeAccount(1001L, 1001L);
         when(orderCommandService.cancelOrder(any())).thenReturn(new CancelOrderResult("ord-1", OrderStatus.CANCELLED, false));
@@ -132,6 +162,25 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(jsonPath("$.action").value("cancelOrder"))
                 .andExpect(jsonPath("$.traceId").value("trc-local-2"));
         verify(orderCommandService).cancelOrder(any());
+    }
+
+    @Test
+    void shouldRejectLiveAccountBeforeCancelOrderServiceWhenAccountLocatorIsPresent() throws Exception {
+        mockExchangeAccount(1001L, 1001L, "LIVE");
+        OrderCancelRequestBody request = new OrderCancelRequestBody(null, 1001L, "coid-live-cancel", "user_cancel");
+
+        mockMvc.perform(post("/api/trading/orders/cancel")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-live-cancel-blocked")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("STATE_CONFLICT"))
+                .andExpect(jsonPath("$.message").value(
+                        "cancelOrder blocked: LIVE trading is disabled and cannot authorize real mutating path"
+                ));
+
+        verify(orderCommandService, never()).cancelOrder(any());
     }
 
     @Test
@@ -423,12 +472,16 @@ class TradingVerificationControllerLocalTest {
     }
 
     private void mockExchangeAccount(Long exchangeAccountId, Long legacyAccountId) {
+        mockExchangeAccount(exchangeAccountId, legacyAccountId, "SIM");
+    }
+
+    private void mockExchangeAccount(Long exchangeAccountId, Long legacyAccountId, String tradeEnv) {
         when(exchangeAccountQueryService.findById(exchangeAccountId)).thenReturn(Optional.of(new ExchangeAccountSummary(
                 exchangeAccountId,
                 legacyAccountId,
                 1L,
                 "OKX",
-                "SIM",
+                tradeEnv,
                 "local-admin",
                 null,
                 true,

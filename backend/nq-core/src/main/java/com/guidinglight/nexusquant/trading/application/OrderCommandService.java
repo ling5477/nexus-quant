@@ -7,14 +7,17 @@ import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.trading.application.boundary.PaperToRealBoundaryGuard;
 import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
-import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
 import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -26,10 +29,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 /**
  * OrderCommandService 负责 GateD 的统一下单/撤单编排。
@@ -285,6 +284,7 @@ public class OrderCommandService {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
         }
+        PaperToRealBoundaryGuard.requireNoPaperArtifactForRealOrderPath(request);
         if (request.requestId() == null || request.requestId().isBlank()) {
             throw new IllegalArgumentException("requestId must not be blank");
         }
@@ -328,6 +328,7 @@ public class OrderCommandService {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
         }
+        PaperToRealBoundaryGuard.requireNoPaperArtifactForRealCancelPath(request);
         if (request.requestId() == null || request.requestId().isBlank()) {
             throw new IllegalArgumentException("requestId must not be blank");
         }

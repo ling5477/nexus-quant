@@ -1,9 +1,11 @@
 package com.guidinglight.nexusquant.risk.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
 import com.guidinglight.nexusquant.contracts.model.RiskDecision;
+import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 
 import java.math.BigDecimal;
@@ -89,6 +91,25 @@ class PreTradeRiskServiceTest {
 
         assertEquals(RiskDecision.REJECT, third.decision());
         assertEquals("RATE_LIMIT_EXCEEDED", third.ruleCode());
+    }
+
+    @Test
+    void riskAllowMustNotAuthorizeLiveTrading() {
+        PreTradeRiskService service = createService(defaultSettings());
+
+        RiskDecisionResult result = service.evaluate(context(
+                "coid-risk-live-boundary",
+                new BigDecimal("100.00000000"),
+                new BigDecimal("0.10000000"),
+                Instant.parse("2026-03-12T09:00:20Z")
+        ));
+
+        assertEquals(RiskDecision.ALLOW, result.decision());
+        assertFalse(result.authorizesLiveTrading());
+        assertEquals(
+                RiskDecisionResult.PAPER_RISK_NOT_LIVE_RISK_APPROVAL,
+                result.liveAuthorizationBoundaryReason()
+        );
     }
 
     private PreTradeRiskService createService(PreTradeRiskSettings settings) {

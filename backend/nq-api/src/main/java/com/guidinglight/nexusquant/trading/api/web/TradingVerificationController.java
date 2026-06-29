@@ -237,7 +237,8 @@ public class TradingVerificationController {
     })
     public OperationTriggerResponse placeOrder(@Valid @RequestBody OrderSubmitRequest request) {
         String traceId = TraceIdContext.getOrCreate();
-        Long tradingAccountId = resolveTradingAccountId(request.accountId());
+        ExchangeAccountSummary account = requireLiveDisabledMutatingAccount(request.accountId(), "placeOrder");
+        Long tradingAccountId = resolveTradingAccountId(account);
         PlaceOrderResult result = orderCommandService.placeOrder(new PlaceOrderRequest(
                 buildRequestId("place", request.clientOrderId()),
                 tradingAccountId,
@@ -271,7 +272,11 @@ public class TradingVerificationController {
     })
     public OperationTriggerResponse cancelOrder(@Valid @RequestBody OrderCancelRequestBody request) {
         String traceId = TraceIdContext.getOrCreate();
-        Long tradingAccountId = request.accountId() == null ? null : resolveTradingAccountId(request.accountId());
+        Long tradingAccountId = null;
+        if (request.accountId() != null) {
+            ExchangeAccountSummary account = requireLiveDisabledMutatingAccount(request.accountId(), "cancelOrder");
+            tradingAccountId = resolveTradingAccountId(account);
+        }
         CancelOrderResult result = orderCommandService.cancelOrder(new CancelOrderRequest(
                 buildRequestId("cancel", request.orderId() != null ? request.orderId() : request.clientOrderId()),
                 blankToNull(request.orderId()),
@@ -354,6 +359,23 @@ public class TradingVerificationController {
     private ExchangeAccountSummary requireExchangeAccount(Long exchangeAccountId) {
         return exchangeAccountQueryService.findById(exchangeAccountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "exchange account not found: " + exchangeAccountId));
+    }
+
+    /**
+     * 对正式交易 mutating API 强制 LIVE disabled fail-closed。
+     *
+     * <p>Why: 当前 GateM 仍禁止 LIVE 和真实交易所执行。即使账户上下文存在 `tradeEnv=LIVE`，
+     * HTTP 下单 / 撤单入口也不能把它传入 order command service 形成真实交易授权。</p>
+     */
+    private ExchangeAccountSummary requireLiveDisabledMutatingAccount(Long exchangeAccountId, String action) {
+        ExchangeAccountSummary account = requireExchangeAccount(exchangeAccountId);
+        if ("LIVE".equalsIgnoreCase(account.tradeEnv())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    action + " blocked: LIVE trading is disabled and cannot authorize real mutating path"
+            );
+        }
+        return account;
     }
 
     private Long resolveTradingAccountId(ExchangeAccountSummary summary) {

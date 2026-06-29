@@ -72,6 +72,8 @@ class DefaultAdapterReadinessServiceTest {
             assertFalse(decision.liveAuthorized(), venue + " must not be live-authorized");
             assertEquals(AdapterReadinessStatus.NO_REAL, decision.status());
             assertTrue(decision.reasons().contains(AdapterReadinessReason.READY_FOR_PAPER_ONLY));
+            assertTrue(decision.reasons().contains(
+                    AdapterReadinessReason.PAPER_ARTIFACT_NOT_REAL_AUTHORIZATION));
             assertTrue(decision.reasons().contains(AdapterReadinessReason.NO_REAL_PROVIDER));
             assertFalse(decision.status().isReady());
         }

@@ -107,6 +107,7 @@ public final class DefaultAdapterReadinessService implements AdapterReadinessSer
         reasons.add(AdapterReadinessReason.NO_REAL_PROVIDER);
         if (VENUE_PAPER.equals(venue) || VENUE_SIM.equals(venue)) {
             reasons.add(AdapterReadinessReason.READY_FOR_PAPER_ONLY);
+            reasons.add(AdapterReadinessReason.PAPER_ARTIFACT_NOT_REAL_AUTHORIZATION);
         }
         if (capability == AdapterCapability.PERMISSION_PROBE) {
             reasons.add(AdapterReadinessReason.PERMISSION_PROBE_DISABLED);

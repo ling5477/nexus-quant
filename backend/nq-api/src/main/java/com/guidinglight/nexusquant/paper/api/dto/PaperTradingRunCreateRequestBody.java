@@ -11,7 +11,7 @@ public record PaperTradingRunCreateRequestBody(
         @Size(max = 64)
         String publishId,
         @NotBlank(message = "tradeEnv must not be blank")
-        @Pattern(regexp = "SIM|LIVE", message = "tradeEnv must be SIM or LIVE")
+        @Pattern(regexp = "SIM", message = "tradeEnv must be SIM because Paper Trading cannot enable LIVE")
         String tradeEnv,
         @NotBlank(message = "exchangeCode must not be blank")
         @Size(max = 32)

@@ -1,3 +1,15 @@
+## NQ-GATEM-4-PAPER-TO-REAL-BOUNDARY-HARDENING（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮强化 GateM-4 Paper-to-Real runtime boundary：`nq-core` 新增 `PaperToRealBoundaryGuard` 并接入 `OrderCommandService`，拒绝 Paper run/order/fill/position marker 进入正式 order/cancel/real-fact 语义；`nq-api` 正式交易 HTTP mutating 入口对 `tradeEnv=LIVE` 账户 fail-closed，并把 Paper run 创建请求限制为 `SIM`；`nq-risk` 明确 `RiskDecisionResult.ALLOW` 不构成 LIVE 风控授权；`nq-adapter-api` 在 PAPER/SIM readiness reason 中显式加入 `PAPER_ARTIFACT_NOT_REAL_AUTHORIZATION`；`StrategyVersionStatus` 明确版本 publish/ACTIVE 不等于 LIVE enabled。
+
+验证结果：
+
+- `mvn -f backend/pom.xml -pl nq-core,nq-risk,nq-ledger,nq-api,nq-app,nq-adapter-api,nq-infra -am test`：PASS，23/23 reactor modules SUCCESS。
+
+边界：未修改 frontend / research / scripts / deploy / `.github/workflows`；未新增或修改 migration；未接 OKX / Binance / Bybit / Gate / Coinbase / Kraken 真实交易；未实现 RealClient / real provider；未创建真实 permission probe；未读取、输出或记录 credential material；未启用 LIVE；未新增真实下单、撤单、转账、提现路径；未接 AI / DH runtime。Maven 输出中的 SLF4J / Mockito dynamic agent / JVM class sharing warning 为既有测试运行环境告警，本轮非阻断。
+
 ## NQ-GATEM-3-NO-REAL-EXCHANGE-CONTRACT-HARDENING（2026-06-29）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。

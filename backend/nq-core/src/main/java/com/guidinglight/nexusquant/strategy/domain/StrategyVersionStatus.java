@@ -25,4 +25,17 @@ public enum StrategyVersionStatus {
         }
         return StrategyVersionStatus.valueOf(value.trim().toUpperCase());
     }
+
+    /**
+     * 策略版本状态是否构成 LIVE 启用授权。
+     *
+     * <p>Why:
+     * GateM-4 明确要求 strategy publish / ACTIVE 只能表示可被 backtest、evaluation、Paper 链路引用，
+     * 不能被升级解释为 LIVE enabled。真实 LIVE 仍必须另起 Gate 并通过独立授权。</p>
+     *
+     * @return 当前所有版本状态都不授权 LIVE
+     */
+    public boolean authorizesLiveTrading() {
+        return false;
+    }
 }

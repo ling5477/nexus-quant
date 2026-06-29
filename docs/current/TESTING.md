@@ -1,3 +1,27 @@
+## NQ-GATEM-4-PAPER-TO-REAL-BOUNDARY-HARDENING（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只加固后端 Paper-to-Real runtime boundary 与回归测试；未修改 frontend、research、scripts、deploy、`.github/workflows` 或 migration，未接真实交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- `PaperToRealBoundaryGuardTest` / `OrderCommandServiceTest`：Paper run/order artefact 在进入正式下单/撤单语义前 fail-closed，不写本地订单、不调用 gateway。
+- `TradingVerificationControllerLocalTest`：`tradeEnv=LIVE` 的账户在 HTTP 下单与带 account locator 的撤单入口被 409 拒绝，不进入 `OrderCommandService`。
+- `PreTradeRiskServiceTest`：`RiskDecisionResult.ALLOW` 不构成 LIVE risk approval。
+- `StrategyVersionServiceTest`：`DRAFT/ACTIVE/ARCHIVED` 策略版本状态均不构成 LIVE enabled。
+- `DefaultAdapterReadinessServiceTest`：`PAPER/SIM` readiness 继续 `allowed=false/liveAuthorized=false`，并显式携带 `PAPER_ARTIFACT_NOT_REAL_AUTHORIZATION`。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-core,nq-risk,nq-ledger,nq-api,nq-app,nq-adapter-api,nq-infra -am test` | PASS | 23/23 reactor modules SUCCESS；新增 core/risk/api/app/adapter-api 回归均在范围内执行。 |
+
+已知非阻断输出：Maven 测试日志仍有既有 SLF4J no-provider、Mockito dynamic agent、JVM class sharing warning；不影响本轮结果。
+
+未运行：frontend build / Playwright、Python pytest/mypy/ruff。本轮未改 frontend 或 research；后续如触达对应区域需单独运行。
+
+边界结论：Paper order/fill/position/risk/publish/readiness 不被写成 real authorization；LIVE account mutating API fail-closed；permission probe disabled / skipped 与 `READY_FOR_PAPER_ONLY` 不构成 live authorization；未创建 RealClient、real provider 或真实 HTTP permission probe。
+
 ## NQ-GATEM-3-NO-REAL-EXCHANGE-CONTRACT-HARDENING（2026-06-29）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只加固后端 adapter readiness 合同与回归测试；未修改 frontend、research、scripts、deploy、`.github/workflows` 或 migration，未接真实交易所，未启用 LIVE / AI / DH runtime。
