@@ -10133,3 +10133,36 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 边界
 
 未改 backend / backend migration / research / scripts / deploy / `.github/workflows`；未新增 API；未修改 MarketdataController / 后端 bars 查询逻辑；未改 TradingWorkbench；未接真实交易所、WebSocket、real exchange adapter、RealClient 或 real provider；未读取 credential；未开启 LIVE / AI / DH runtime；未做下单联动、买卖点、均线、VWAP 或指标系统。真实后端 bars E2E 未在本轮执行。
+
+---
+
+## NQ-GATEM-2B-MARKETDATA-QUALITY-READINESS-VIEW
+
+日期：2026-06-29
+
+### 本轮目标
+
+在 MarketData 页面补充 Data Quality / Readiness 区域，让用户能基于现有 bars 查询判断数据是否新鲜、是否存在缺口、qualityStatus 是否异常，以及 source health 是否可用。本轮只使用现有前端数据和现有 API 字段。
+
+### 完成内容
+
+- `MarketdataPage` 新增 `Data Quality / Readiness` 区域。
+- 基于现有 `barsQuery` 派生 bar count、first bar time、last bar time、latest close、latest volume、freshness、qualityStatus 聚合、gap count、unknown quality count。
+- 前端级 quality summary 支持 `GOOD` / `WARN` / `STALE` / `GAP` / `ERROR` / `UNKNOWN`，并保证 `UNKNOWN` 不展示为 READY。
+- 当 source health API 不存在时显示 `Pending backend support` / `not available from current API`，不伪造真实交易所 source health。
+- 保留既有 K 线、成交量、Bars 表格、接入任务、运行结果和 Datasets。
+- 新增 `marketdata-quality-readiness-smoke.spec.ts`，backend-free mock bars 验证 quality readiness 和 K-line canvas。
+- 新增 `docs/current/frontend/NQ_GATEM_2B_MARKETDATA_QUALITY_READINESS_VIEW.md` 记录本轮边界与验证事实。
+
+### 验证
+
+- `npm run build`：PASS。
+- `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium`：PASS，1 passed。
+
+### 边界
+
+未改 backend / backend migration / research / scripts / deploy / `.github/workflows`；未新增 API；未修改 MarketdataController / 后端 bars 查询逻辑；未改 TradingWorkbench；未接真实交易所、WebSocket、real exchange adapter、RealClient 或 real provider；未读取 credential；未开启 LIVE / AI / DH runtime；未做下单联动、买卖点、均线、VWAP 或指标系统。真实后端 bars E2E 本轮不要求且未执行。
+
+### 回滚方式
+
+还原 `frontend/src/pages/marketdata/MarketdataPage.tsx`、`frontend/src/types/marketdata.ts`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`，并删除 `frontend/tests/e2e/marketdata-quality-readiness-smoke.spec.ts` 与 `docs/current/frontend/NQ_GATEM_2B_MARKETDATA_QUALITY_READINESS_VIEW.md` 即可回滚本轮改动；无后端、DB、workflow、provider、exchange 或 LIVE 副作用。

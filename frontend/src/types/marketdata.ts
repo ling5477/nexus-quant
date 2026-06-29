@@ -12,7 +12,7 @@ export interface MarketdataBar {
     volume: number;
     quoteVolume?: number | null;
     tradeCount?: number | null;
-    qualityStatus: string;
+    qualityStatus?: string | null;
 }
 
 export interface MarketdataBarsQuery {

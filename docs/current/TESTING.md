@@ -5749,3 +5749,18 @@ target conflicts = 0
 未运行真实后端 bars E2E；本轮 smoke 明确 stub auth、account context 与 `/api/marketdata/bars`，不触达真实后端或真实交易所。
 
 边界确认：未改 `MarketdataController` 或后端 bars 查询逻辑；未改 TradingWorkbench；未新增 API；未实现 real exchange adapter / RealClient / real provider；未新增 WebSocket；未做下单联动、买卖点、均线、VWAP 或指标系统；未读取或输出 credential material。
+
+---
+
+## NQ-GATEM-2B-MARKETDATA-QUALITY-READINESS-VIEW（2026-06-29）
+
+结论：**PASS / IMPLEMENTED / READY FOR REVIEW**。本轮只补 MarketData 页面数据质量 / freshness / gap / qualityStatus 前端表达，复用现有 `marketdataApi.listBars()` / `/api/marketdata/bars` 查询结果；未改 backend / API / migration / workflow / research / scripts / deploy，未接真实交易所、WebSocket、LIVE、AI 或 DH runtime。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build` | **PASS** | TypeScript build + Vite production build 通过；保留既有 Vite large chunk warning。 |
+| `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | **PASS** | 1 Chromium smoke passed；backend-free mock，验证 Data Quality 区域、bar count、freshness、last bar time、sequence gap、unknown quality、source health unavailable 和 K-line canvas。 |
+
+未要求、未运行真实后端 bars E2E；本轮 smoke 明确 stub auth、account context 与 `/api/marketdata/bars`，不触达真实后端或真实交易所。
+
+边界确认：未改 `MarketdataController` 或后端 bars 查询逻辑；未改 TradingWorkbench；未新增 API；未实现 real exchange adapter / RealClient / real provider；未新增 WebSocket；未做下单联动、买卖点、均线、VWAP 或指标系统；未读取或输出 credential material。

@@ -34,10 +34,30 @@ const columns: ColumnsType<MarketdataBar> = [
     {title: 'Close', dataIndex: 'closePrice', key: 'closePrice', width: 120, render: (value: number) => formatNumber(value, 8)},
     {title: 'Volume', dataIndex: 'volume', key: 'volume', width: 120, render: (value: number) => formatNumber(value, 8)},
     {title: 'Quote Volume', dataIndex: 'quoteVolume', key: 'quoteVolume', width: 140, render: (value?: number | null) => value == null ? '-' : formatNumber(value, 8)},
-    {title: 'Quality', dataIndex: 'qualityStatus', key: 'qualityStatus', width: 130, render: (value: string) => <Tag color={value === 'OK' ? 'green' : 'orange'}>{value}</Tag>},
+    {
+        title: 'Quality',
+        dataIndex: 'qualityStatus',
+        key: 'qualityStatus',
+        width: 130,
+        render: (value?: string | null) => value
+            ? <Tag color={value === 'OK' ? 'green' : 'orange'}>{value}</Tag>
+            : <Tag>unavailable</Tag>,
+    },
 ];
 
 const GAP_QUALITY_STATUSES = new Set(['GAP_DETECTED', 'MISSING_BAR', 'INCOMPLETE', 'DEGRADED']);
+const OK_QUALITY_STATUSES = new Set(['OK', 'GOOD']);
+
+type QualityReadinessStatus = 'GOOD' | 'WARN' | 'STALE' | 'GAP' | 'ERROR' | 'UNKNOWN';
+
+const QUALITY_READINESS_COLOR: Record<QualityReadinessStatus, string> = {
+    GOOD: 'green',
+    WARN: 'gold',
+    STALE: 'orange',
+    GAP: 'orange',
+    ERROR: 'red',
+    UNKNOWN: 'default',
+};
 
 type MarketdataDateValue = string | null | undefined | {
     toISOString?: () => string;
@@ -148,21 +168,82 @@ function timestampMs(value: string | undefined | null): number | null {
 
 interface BarsQualitySummary {
     statuses: string[];
+    statusCounts: Array<{status: string; count: number}>;
     gapCount: number;
+    qualityGapCount: number;
+    sequenceGapCount: number | null;
+    unknownQualityCount: number;
+    nonOkQualityCount: number;
     hasQualityStatus: boolean;
+    gapDetectionUnavailable: boolean;
 }
 
-function summarizeBarsQuality(bars: readonly MarketdataBar[]): BarsQualitySummary {
-    const statuses = Array.from(new Set(
-        bars
-            .map((bar) => bar.qualityStatus)
-            .filter((value): value is string => Boolean(value)),
-    ));
+function countSequenceGaps(bars: readonly MarketdataBar[], interval: string | undefined): number | null {
+    if (bars.length < 2) {
+        return 0;
+    }
+
+    const intervalMs = intervalToMs(interval);
+    if (intervalMs === null) {
+        return null;
+    }
+
+    let gapCount = 0;
+    const sortedOpenTimes = bars
+        .map((bar) => timestampMs(bar.openTime))
+        .filter((value): value is number => value !== null)
+        .sort((left, right) => left - right);
+
+    if (sortedOpenTimes.length !== bars.length) {
+        return null;
+    }
+
+    for (let index = 1; index < sortedOpenTimes.length; index += 1) {
+        const diff = sortedOpenTimes[index] - sortedOpenTimes[index - 1];
+        if (diff > intervalMs * 1.5) {
+            gapCount += Math.max(1, Math.round(diff / intervalMs) - 1);
+        }
+    }
+
+    return gapCount;
+}
+
+function summarizeBarsQuality(bars: readonly MarketdataBar[], interval: string | undefined): BarsQualitySummary {
+    const statusCounter = new Map<string, number>();
+    let unknownQualityCount = 0;
+
+    bars.forEach((bar) => {
+        const status = bar.qualityStatus?.trim();
+        if (!status) {
+            unknownQualityCount += 1;
+            return;
+        }
+
+        const normalized = status.toUpperCase();
+        statusCounter.set(normalized, (statusCounter.get(normalized) ?? 0) + 1);
+    });
+
+    const statusCounts = Array.from(statusCounter.entries()).map(([status, count]) => ({status, count}));
+    const sequenceGapCount = countSequenceGaps(bars, interval);
+    const qualityGapCount = statusCounts.reduce(
+        (total, item) => total + (GAP_QUALITY_STATUSES.has(item.status) ? item.count : 0),
+        0,
+    );
+    const nonOkQualityCount = statusCounts.reduce(
+        (total, item) => total + (OK_QUALITY_STATUSES.has(item.status) ? 0 : item.count),
+        0,
+    );
 
     return {
-        statuses,
-        gapCount: bars.filter((bar) => GAP_QUALITY_STATUSES.has((bar.qualityStatus ?? '').toUpperCase())).length,
-        hasQualityStatus: statuses.length > 0,
+        statuses: statusCounts.map((item) => item.status),
+        statusCounts,
+        gapCount: qualityGapCount + (sequenceGapCount ?? 0),
+        qualityGapCount,
+        sequenceGapCount,
+        unknownQualityCount,
+        nonOkQualityCount,
+        hasQualityStatus: statusCounts.length > 0,
+        gapDetectionUnavailable: bars.length > 0 && !statusCounts.length && sequenceGapCount === null,
     };
 }
 
@@ -221,6 +302,95 @@ function summarizeBarsFreshness(
     };
 }
 
+interface DataQualityReadinessSummary {
+    status: QualityReadinessStatus;
+    title: string;
+    detail: string;
+    sourceHealth: 'UNAVAILABLE';
+    sourceHealthDetail: string;
+}
+
+function summarizeDataQualityReadiness(
+    submittedQuery: MarketdataBarsQuery | null,
+    bars: readonly MarketdataBar[],
+    quality: BarsQualitySummary,
+    freshness: BarsFreshnessSummary,
+    error: unknown,
+    loading: boolean,
+): DataQualityReadinessSummary {
+    if (error) {
+        return {
+            status: 'ERROR',
+            title: 'ERROR',
+            detail: 'bars query failed; data quality cannot be trusted for this request',
+            sourceHealth: 'UNAVAILABLE',
+            sourceHealthDetail: 'not available from current API',
+        };
+    }
+    if (!submittedQuery) {
+        return {
+            status: 'UNKNOWN',
+            title: 'UNKNOWN',
+            detail: 'submit a bars query to evaluate current data quality',
+            sourceHealth: 'UNAVAILABLE',
+            sourceHealthDetail: 'not available from current API',
+        };
+    }
+    if (loading) {
+        return {
+            status: 'UNKNOWN',
+            title: 'UNKNOWN',
+            detail: 'bars query is still loading',
+            sourceHealth: 'UNAVAILABLE',
+            sourceHealthDetail: 'not available from current API',
+        };
+    }
+    if (bars.length === 0) {
+        return {
+            status: 'UNKNOWN',
+            title: 'UNKNOWN',
+            detail: 'no bars returned for the submitted window',
+            sourceHealth: 'UNAVAILABLE',
+            sourceHealthDetail: 'not available from current API',
+        };
+    }
+    if (quality.gapCount > 0) {
+        return {
+            status: 'GAP',
+            title: 'GAP',
+            detail: `${quality.gapCount} gap signal(s) detected from qualityStatus or interval sequence`,
+            sourceHealth: 'UNAVAILABLE',
+            sourceHealthDetail: 'not available from current API',
+        };
+    }
+    if (freshness.stale) {
+        return {
+            status: 'STALE',
+            title: 'STALE',
+            detail: 'last bar does not cover the submitted query end window',
+            sourceHealth: 'UNAVAILABLE',
+            sourceHealthDetail: 'not available from current API',
+        };
+    }
+    if (quality.unknownQualityCount > 0 || quality.nonOkQualityCount > 0 || quality.gapDetectionUnavailable) {
+        return {
+            status: 'WARN',
+            title: 'WARN',
+            detail: 'qualityStatus is incomplete or contains non-OK values',
+            sourceHealth: 'UNAVAILABLE',
+            sourceHealthDetail: 'not available from current API',
+        };
+    }
+
+    return {
+        status: 'GOOD',
+        title: 'GOOD',
+        detail: 'bars are present, sequential and qualityStatus is OK',
+        sourceHealth: 'UNAVAILABLE',
+        sourceHealthDetail: 'not available from current API',
+    };
+}
+
 function QualityTags({quality}: {quality: BarsQualitySummary}) {
     if (!quality.hasQualityStatus) {
         return <Tag>qualityStatus unavailable</Tag>;
@@ -228,9 +398,9 @@ function QualityTags({quality}: {quality: BarsQualitySummary}) {
 
     return (
         <Space size={4} wrap>
-            {quality.statuses.map((status) => (
-                <Tag key={status} color={status === 'OK' ? 'green' : 'orange'}>
-                    {status}
+            {quality.statusCounts.map(({status, count}) => (
+                <Tag key={status} color={OK_QUALITY_STATUSES.has(status) ? 'green' : 'orange'}>
+                    {status}: {count}
                 </Tag>
             ))}
         </Space>
@@ -239,6 +409,32 @@ function QualityTags({quality}: {quality: BarsQualitySummary}) {
 
 function MetricText({children}: {children: ReactNode}) {
     return <Typography.Text style={{fontFamily: 'var(--nq-font-mono)'}}>{children}</Typography.Text>;
+}
+
+function MetricTile({label, value, detail}: {label: string; value: ReactNode; detail?: ReactNode}) {
+    return (
+        <div
+            style={{
+                border: '1px solid var(--nq-color-border)',
+                borderRadius: 8,
+                padding: 12,
+                minHeight: 92,
+                background: 'var(--nq-color-surface)',
+            }}
+        >
+            <Typography.Text type="secondary" style={{display: 'block', fontSize: 12}}>
+                {label}
+            </Typography.Text>
+            <div style={{marginTop: 8, fontSize: 20, fontWeight: 600, lineHeight: 1.2}}>
+                {value}
+            </div>
+            {detail ? (
+                <Typography.Text type="secondary" style={{display: 'block', marginTop: 6, fontSize: 12}}>
+                    {detail}
+                </Typography.Text>
+            ) : null}
+        </div>
+    );
 }
 
 const jobColumns = (
@@ -389,11 +585,23 @@ export function MarketdataPage() {
     });
     const bars = barsQuery.data ?? [];
     const chartBars = useMemo(() => bars.map(toNqKlineBar), [bars]);
-    const barsQuality = useMemo(() => summarizeBarsQuality(bars), [bars]);
+    const barsQuality = useMemo(() => summarizeBarsQuality(bars, submittedQuery?.interval), [bars, submittedQuery?.interval]);
     const barsFreshness = useMemo(
         () => summarizeBarsFreshness(submittedQuery, bars, barsQuality, barsQuery.error, barsQuery.isLoading),
         [bars, barsQuality, barsQuery.error, barsQuery.isLoading, submittedQuery],
     );
+    const dataQualityReadiness = useMemo(
+        () => summarizeDataQualityReadiness(
+            submittedQuery,
+            bars,
+            barsQuality,
+            barsFreshness,
+            barsQuery.error,
+            barsQuery.isLoading,
+        ),
+        [bars, barsFreshness, barsQuality, barsQuery.error, barsQuery.isLoading, submittedQuery],
+    );
+    const firstBar = bars.length > 0 ? bars[0] : null;
     const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
     const chartError = barsQuery.error ? formatApiError(barsQuery.error as AppApiError) : null;
     const chartEmptyText = submittedQuery
@@ -538,6 +746,127 @@ export function MarketdataPage() {
                     <Typography.Text type="secondary">
                         本视图复用现有 /api/marketdata/bars 与 marketdataApi.listBars()；不接 WebSocket、不接真实交易所私有流、不做买卖点或指标系统。
                     </Typography.Text>
+                </div>
+            </Card>
+            <Card className="page-section" bordered={false} title="Data Quality / Readiness">
+                <div data-testid="marketdata-quality-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                    <Descriptions
+                        size="small"
+                        column={{xs: 1, sm: 2, md: 3}}
+                        items={[
+                            {key: 'queryExchange', label: 'Exchange', children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
+                            {key: 'queryInstrument', label: 'Instrument / Symbol', children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
+                            {key: 'queryInterval', label: 'Interval / timeframe', children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
+                            {key: 'queryStart', label: 'Query start', children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.startTime) : '-'}</MetricText>},
+                            {key: 'queryEnd', label: 'Query end', children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.endTime) : '-'}</MetricText>},
+                            {
+                                key: 'readinessStatus',
+                                label: 'Quality summary',
+                                children: (
+                                    <Tag color={QUALITY_READINESS_COLOR[dataQualityReadiness.status]}>
+                                        {dataQualityReadiness.title}
+                                    </Tag>
+                                ),
+                            },
+                        ]}
+                    />
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                            gap: 12,
+                        }}
+                    >
+                        <MetricTile
+                            label="Bars loaded"
+                            value={<MetricText>{bars.length}</MetricText>}
+                            detail={submittedQuery ? 'from /api/marketdata/bars' : 'pending query'}
+                        />
+                        <MetricTile
+                            label="First bar time"
+                            value={<MetricText>{firstBar ? formatDateTime(firstBar.openTime) : '-'}</MetricText>}
+                            detail={firstBar ? firstBar.openTime : 'no data'}
+                        />
+                        <MetricTile
+                            label="Last bar time"
+                            value={<MetricText>{lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-'}</MetricText>}
+                            detail={lastBar ? (lastBar.closeTime ?? lastBar.openTime) : 'no data'}
+                        />
+                        <MetricTile
+                            label="Latest close"
+                            value={<MetricText>{lastBar ? formatNumber(lastBar.closePrice, 8) : '-'}</MetricText>}
+                            detail={lastBar ? 'last returned bar' : 'no data'}
+                        />
+                        <MetricTile
+                            label="Latest volume"
+                            value={<MetricText>{lastBar ? formatNumber(lastBar.volume, 8) : '-'}</MetricText>}
+                            detail={lastBar ? 'last returned bar' : 'no data'}
+                        />
+                        <MetricTile
+                            label="Freshness"
+                            value={<DataFreshness source="bars" state={barsFreshness.state} detail={barsFreshness.detail} inline />}
+                            detail={barsFreshness.stale ? 'stale by query interval estimate' : 'front-end estimate'}
+                        />
+                        <MetricTile
+                            label="Quality status"
+                            value={<QualityTags quality={barsQuality}/>}
+                            detail={barsQuality.hasQualityStatus ? 'aggregated from bars payload' : 'unavailable / pending backend support'}
+                        />
+                        <MetricTile
+                            label="Gap count"
+                            value={<MetricText>{barsQuality.gapDetectionUnavailable ? '-' : barsQuality.gapCount}</MetricText>}
+                            detail={barsQuality.gapDetectionUnavailable ? 'gap detection pending backend support' : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`}
+                        />
+                        <MetricTile
+                            label="Unknown quality count"
+                            value={<MetricText>{barsQuality.unknownQualityCount}</MetricText>}
+                            detail={barsQuality.unknownQualityCount > 0 ? 'qualityStatus missing on returned bars' : 'none'}
+                        />
+                        <MetricTile
+                            label="Source health"
+                            value={<Tag>Pending backend support</Tag>}
+                            detail={dataQualityReadiness.sourceHealthDetail}
+                        />
+                    </div>
+                    <Space size={8} wrap>
+                        <Tag color={QUALITY_READINESS_COLOR[dataQualityReadiness.status]}>
+                            {dataQualityReadiness.status}
+                        </Tag>
+                        {barsQuality.gapDetectionUnavailable ? (
+                            <Tag>gap detection pending backend support</Tag>
+                        ) : null}
+                        <Tag>source health: not available from current API</Tag>
+                    </Space>
+                    {chartError ? (
+                        <Alert
+                            type="error"
+                            showIcon
+                            message="Data quality unavailable"
+                            description="bars query failed; this view does not infer data readiness from a failed response."
+                        />
+                    ) : null}
+                    {!chartError && submittedQuery && bars.length === 0 ? (
+                        <Alert
+                            type="info"
+                            showIcon
+                            message="No bars returned"
+                            description="当前查询窗口没有返回 bars；freshness、gap 和 qualityStatus 只能显示 no data / unavailable。"
+                        />
+                    ) : null}
+                    {barsQuality.gapDetectionUnavailable ? (
+                        <Alert
+                            type="info"
+                            showIcon
+                            message="Gap detection pending backend support"
+                            description="当前 bars payload 无 qualityStatus，且周期或时间字段不足以稳定推断序列缺口；页面不会伪造 gap=0 或 source health=OK。"
+                        />
+                    ) : null}
+                    <Alert
+                        type={dataQualityReadiness.status === 'GOOD' ? 'success' : dataQualityReadiness.status === 'ERROR' ? 'error' : 'warning'}
+                        showIcon
+                        message={`MarketData readiness: ${dataQualityReadiness.title}`}
+                        description={`${dataQualityReadiness.detail}. Source health is ${dataQualityReadiness.sourceHealthDetail}.`}
+                    />
                 </div>
             </Card>
             <Card className="page-section" bordered={false} title="Bars 结果">
