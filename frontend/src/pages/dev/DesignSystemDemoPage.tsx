@@ -11,6 +11,8 @@ import {
     DataFreshness,
     EnvironmentBadge,
     MoneyCell,
+    NqKlineChart,
+    NqVolumeChart,
     NumberCell,
     NQ_TABLE_DENSITY,
     PercentCell,
@@ -26,6 +28,7 @@ import {
     type FreshnessState,
     type MarketConvention,
     type NqEnv,
+    type NqKlineBar,
     type NqTableDensity,
     type StatusTone,
 } from '@/nq-design-system';
@@ -83,6 +86,20 @@ const NAV_DEMOS: ReadonlyArray<{label: string; active?: boolean}> = [
 const SAMPLE_LABELS = ['09:30', '10:30', '11:30', '13:30', '14:30', '15:00'];
 const SAMPLE_EQUITY = [100000, 100420, 100180, 100910, 101350, 101120];
 const SAMPLE_PNL = [420, -240, 730, 440, -230, -180];
+const SAMPLE_KLINE_BARS: readonly NqKlineBar[] = [
+    {time: '2026-06-29T01:00:00Z', open: 64210, high: 64520, low: 64080, close: 64480, volume: 128.4, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:05:00Z', open: 64480, high: 64610, low: 64330, close: 64390, volume: 96.2, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:10:00Z', open: 64390, high: 64840, low: 64320, close: 64790, volume: 154.7, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:15:00Z', open: 64790, high: 64980, low: 64620, close: 64840, volume: 111.3, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:20:00Z', open: 64840, high: 64880, low: 64490, close: 64520, volume: 132.8, qualityStatus: 'GAP_DETECTED'},
+    {time: '2026-06-29T01:25:00Z', open: 64520, high: 64630, low: 64240, close: 64310, volume: 118.1, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:30:00Z', open: 64310, high: 64720, low: 64290, close: 64680, volume: 141.6, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:35:00Z', open: 64680, high: 65020, low: 64610, close: 64970, volume: 176.4, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:40:00Z', open: 64970, high: 65110, low: 64740, close: 64810, volume: 102.9, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:45:00Z', open: 64810, high: 65240, low: 64770, close: 65190, volume: 190.5, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:50:00Z', open: 65190, high: 65300, low: 65010, close: 65060, volume: 136.2, qualityStatus: 'OK'},
+    {time: '2026-06-29T01:55:00Z', open: 65060, high: 65480, low: 65030, close: 65420, volume: 205.7, qualityStatus: 'OK'},
+];
 
 const TABLE_DENSITIES: readonly NqTableDensity[] = ['compact', 'standard', 'comfortable'];
 
@@ -501,6 +518,59 @@ export function DesignSystemDemoPage() {
                                 实时数据(useLiveQuery)— polling / 手动刷新 / fresh·stale·error·disabled(不接 socket)
                             </h3>
                             <LiveQueryDemo/>
+                        </section>
+
+                        <section className="nq-ds-demo__section" data-testid="chart-foundation-section">
+                            <h3 className="nq-ds-demo__section-title">
+                                K 线 / 成交量基础组件(B0.4) · 静态 mock 数据,不接真实 API / WebSocket / 交易入口
+                            </h3>
+                            <div
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                                    gap: 16,
+                                    alignItems: 'stretch',
+                                }}
+                            >
+                                <div style={{display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0}}>
+                                    <NqKlineChart
+                                        bars={SAMPLE_KLINE_BARS}
+                                        convention={convention}
+                                        height={300}
+                                        title="BTC-USDT 1m K-line (mock)"
+                                        sourceLabel="Mock Kline Source"
+                                        stale
+                                        staleDetail="12m ago"
+                                    />
+                                    <NqVolumeChart
+                                        bars={SAMPLE_KLINE_BARS}
+                                        convention={convention}
+                                        height={170}
+                                        title="BTC-USDT 1m Volume (mock)"
+                                        sourceLabel="Mock Volume Source"
+                                    />
+                                </div>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0}}>
+                                    <NqKlineChart
+                                        bars={[]}
+                                        height={132}
+                                        title="Empty state"
+                                        emptyText="暂无 chart foundation 样本数据"
+                                    />
+                                    <NqKlineChart
+                                        bars={SAMPLE_KLINE_BARS}
+                                        height={132}
+                                        title="Loading state"
+                                        loading
+                                    />
+                                    <NqVolumeChart
+                                        bars={SAMPLE_KLINE_BARS}
+                                        height={132}
+                                        title="Error state"
+                                        error="SIMULATED_CHART_ERROR"
+                                    />
+                                </div>
+                            </div>
                         </section>
 
                         <section className="nq-ds-demo__section">

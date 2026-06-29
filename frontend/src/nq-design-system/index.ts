@@ -14,6 +14,8 @@ export { DataFreshness } from './status/DataFreshness';
 export type { DataFreshnessProps, FreshnessState } from './status/DataFreshness';
 export { AppShell } from './shell/AppShell';
 export type { AppShellProps } from './shell/AppShell';
+export { NqKlineChart, NqVolumeChart } from './charts';
+export type { NqChartBaseProps, NqChartState, NqKlineBar } from './charts';
 
 // 格式化(B0.2):纯函数 + 表格列组件
 export {

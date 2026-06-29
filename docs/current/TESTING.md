@@ -5721,3 +5721,16 @@ target conflicts = 0
 - 代码事实只读核对：`AdapterReadinessService`、`AdapterReadinessController`、`AdapterReadinessPage` 均存在。
 
 边界确认：LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT IMPLEMENTED；未读取或输出 credential material；未调用真实交易所。
+
+---
+
+## NQ-FRONTEND-CHART-FOUNDATION-B0.4（2026-06-29）
+
+结论：**PASS / IMPLEMENTED / READY FOR REVIEW**。本轮只实现 NQ Console design-system chart foundation 与 `/dev/design-system` 静态 mock 自检；未改 backend / API / migration / workflow / research / scripts / deploy，未接真实行情源，未开启 LIVE / AI / DH runtime。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `npm run build` | **PASS** | TypeScript build + Vite production build 通过；保留既有 Vite large chunk warning。 |
+| `npm run test:e2e -- tests/e2e/design-system-chart-smoke.spec.ts --project=chromium` | **PASS** | 1 Chromium smoke passed；验证 `NqKlineChart` / `NqVolumeChart` 静态 mock 渲染、loading / empty / error / stale 状态、行情惯例色切换。 |
+
+边界确认：chart foundation 只消费调用方传入的内部 bar 数据；不绑定后端 DTO；不读取 credential；不连接 WebSocket；不实现 real exchange adapter / RealClient / real provider；不新增 order / cancel / withdraw / transfer 能力；不触碰 TradingWorkbench 或 MarketdataController。

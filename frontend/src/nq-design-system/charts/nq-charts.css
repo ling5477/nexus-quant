@@ -1,0 +1,55 @@
+.nq-chart {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--nq-border-subtle);
+  border-radius: 6px;
+  background: var(--nq-bg-panel);
+}
+
+.nq-chart__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 8px 10px 0;
+}
+
+.nq-chart__title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--nq-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nq-chart__canvas {
+  width: 100%;
+  min-height: 120px;
+}
+
+.nq-chart__state {
+  position: absolute;
+  inset: 34px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--nq-bg-panel) 82%, transparent);
+  color: var(--nq-text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.nq-chart__state--error {
+  color: var(--nq-danger);
+}
+
+.nq-chart__stale {
+  flex: 0 0 auto;
+}

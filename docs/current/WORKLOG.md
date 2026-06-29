@@ -10077,3 +10077,30 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 - 降级旧口径：AI Paper Trading 仅作为 future candidate / historical route note / NOT CURRENT GATEM；AI / DH runtime boundary 必须后续单独规划。
 - 同步文件：`README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
 - 边界：未改 backend / frontend / research / scripts / deploy / workflow / migration；未新增 API、测试或功能；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real exchange adapter；未读取 credential material；未调用真实交易所。
+
+---
+
+## NQ-FRONTEND-CHART-FOUNDATION-B0.4
+
+日期：2026-06-29
+
+### 本轮目标
+
+为 NQ Console design system 增加 K-line / volume chart foundation，并在 `/dev/design-system` 提供静态 mock 自检。范围仅限前端设计系统、dev 页面、E2E smoke 与 docs/current 记录。
+
+### 完成内容
+
+- 新增 `NqKlineChart` 与 `NqVolumeChart`，基于 `lightweight-charts` 渲染调用方传入的内部 bar 数据。
+- `nqLwcOptions` 统一 Lightweight Charts chrome/theme，颜色来源保持在 NQ tokens。
+- `/dev/design-system` 增加 B0.4 chart foundation section，覆盖静态 mock canvas、loading、empty、error、stale 状态。
+- 新增 `design-system-chart-smoke.spec.ts`，验证 no-backend chart smoke、状态占位与行情惯例色切换。
+- 新增 `docs/current/frontend/NQ_FRONTEND_CHART_FOUNDATION_B0_4.md` 记录组件边界与验证事实。
+
+### 验证
+
+- `npm run build`：PASS。
+- `npm run test:e2e -- tests/e2e/design-system-chart-smoke.spec.ts --project=chromium`：PASS，1 passed。
+
+### 边界
+
+未改 backend / backend migration / research / scripts / deploy / `.github/workflows`；未新增 API；未修改 MarketdataController / TradingWorkbench；未接真实行情源、WebSocket、real exchange adapter、RealClient 或 real provider；未读取 credential；未开启 LIVE / AI / DH runtime。

@@ -12,6 +12,8 @@ tokens/nq-tokens.css      静态 :root 兜底(默认 INTL_CRYPTO)+ 数字/CJK �
 theme/nqAntdTheme.ts      AntD 5 ConfigProvider 主题
 theme/nqEchartsTheme.ts   ECharts 主题(registerTheme('nq'),从 echarts/core 注册)
 theme/nqLwcOptions.ts     Lightweight Charts 选项 + K 线涨跌色(随惯例翻转)
+charts/NqKlineChart.tsx   K-line 基础组件(调用方传入 bar,组件内不取数)
+charts/NqVolumeChart.tsx  成交量基础组件(调用方传入 bar,组件内不取数)
 status/StatusTag.tsx          实体状态
 status/EnvironmentBadge.tsx   环境(LIVE 高危样式区分)
 status/RiskBanner.tsx         页级阻断/警报
@@ -46,4 +48,5 @@ npm run build            # tsc -b && vite build
   - LIVE 与 PAPER 样式明显不同(EnvironmentBadge)
   - 中文 14px / 数字 tabular-nums 等宽
   - 行情惯例开关(CN_STOCK/INTL_CRYPTO)涨跌色与图表同步翻转
+  - B0.4 K-line / volume 静态 mock 渲染、loading / empty / error / stale 状态
 ```
