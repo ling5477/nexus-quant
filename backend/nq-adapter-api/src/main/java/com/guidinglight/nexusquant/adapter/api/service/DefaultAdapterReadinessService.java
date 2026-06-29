@@ -26,10 +26,13 @@ import java.util.Objects;
  */
 public final class DefaultAdapterReadinessService implements AdapterReadinessService {
 
-    // 已知 no-real / paper 家族 venue 标识。Noop 永远不是真实 provider。
+    // 已知 no-real / fake / stub / future-real venue 标识。它们均不得被解释为真实 provider。
     private static final String VENUE_NOOP = "NOOP";
     private static final String VENUE_PAPER = "PAPER";
     private static final String VENUE_SIM = "SIM";
+    private static final String VENUE_FAKE = "FAKE";
+    private static final String VENUE_STUB = "STUB";
+    private static final String VENUE_FUTURE_REAL = "FUTURE_REAL";
     private static final String VENUE_OKX = "OKX";
     private static final String VENUE_BINANCE = "BINANCE";
 
@@ -72,7 +75,22 @@ public final class DefaultAdapterReadinessService implements AdapterReadinessSer
         }
 
         return switch (normalized) {
-            case VENUE_NOOP, VENUE_PAPER, VENUE_SIM -> evaluateNoop(normalized, capability, checkedAt);
+            case VENUE_NOOP, VENUE_PAPER, VENUE_SIM -> evaluateNoopFamily(normalized, capability, checkedAt);
+            case VENUE_FAKE -> evaluateSyntheticAdapter(
+                    normalized,
+                    capability,
+                    checkedAt,
+                    AdapterReadinessStatus.FAKE,
+                    List.of(AdapterReadinessReason.FAKE_ADAPTER_DISABLED),
+                    "fake adapter is disabled for real exchange readiness");
+            case VENUE_STUB -> evaluateSyntheticAdapter(
+                    normalized,
+                    capability,
+                    checkedAt,
+                    AdapterReadinessStatus.STUB,
+                    List.of(AdapterReadinessReason.STUB_ADAPTER_DISABLED),
+                    "stub adapter is disabled for real exchange readiness");
+            case VENUE_FUTURE_REAL -> evaluateFutureReal(normalized, capability, checkedAt);
             case VENUE_OKX, VENUE_BINANCE -> evaluateExchange(normalized, capability, checkedAt);
             default -> unknownVenue(venue, capability, checkedAt);
         };
@@ -80,18 +98,81 @@ public final class DefaultAdapterReadinessService implements AdapterReadinessSer
 
     /**
      * Noop / paper stub：不是真实 provider，任何能力 allowed=false，状态 NO_REAL。
+     * PAPER / SIM 额外携带 READY_FOR_PAPER_ONLY reason，显式说明纸面可用语义不能提升为 real-ready。
      */
-    private AdapterReadinessDecision evaluateNoop(
+    private AdapterReadinessDecision evaluateNoopFamily(
             String venue, AdapterCapability capability, Instant checkedAt) {
+        List<AdapterReadinessReason> reasons = new ArrayList<>();
+        reasons.add(AdapterReadinessReason.NO_REAL_DISABLED);
+        reasons.add(AdapterReadinessReason.NO_REAL_PROVIDER);
+        if (VENUE_PAPER.equals(venue) || VENUE_SIM.equals(venue)) {
+            reasons.add(AdapterReadinessReason.READY_FOR_PAPER_ONLY);
+        }
+        if (capability == AdapterCapability.PERMISSION_PROBE) {
+            reasons.add(AdapterReadinessReason.PERMISSION_PROBE_DISABLED);
+        }
         return new AdapterReadinessDecision(
                 venue,
                 capability,
                 AdapterReadinessStatus.NO_REAL,
                 false,
                 false,
-                List.of(AdapterReadinessReason.NO_REAL_DISABLED),
+                reasons,
                 checkedAt,
                 "no-real stub adapter; not a real provider");
+    }
+
+    /**
+     * Fake / stub adapter：只作为测试替身或占位实现，永远不得穿透到真实交易能力。
+     */
+    private AdapterReadinessDecision evaluateSyntheticAdapter(
+            String venue,
+            AdapterCapability capability,
+            Instant checkedAt,
+            AdapterReadinessStatus status,
+            List<AdapterReadinessReason> baseReasons,
+            String message) {
+        List<AdapterReadinessReason> reasons = new ArrayList<>(baseReasons);
+        reasons.add(AdapterReadinessReason.NO_REAL_PROVIDER);
+        if (capability == AdapterCapability.PERMISSION_PROBE) {
+            reasons.add(AdapterReadinessReason.PERMISSION_PROBE_DISABLED);
+        }
+        return new AdapterReadinessDecision(
+                venue,
+                capability,
+                status,
+                false,
+                false,
+                reasons,
+                checkedAt,
+                message);
+    }
+
+    /**
+     * FutureReal 是未来真实接入 Gate 的占位，不是当前 real provider。
+     */
+    private AdapterReadinessDecision evaluateFutureReal(
+            String venue, AdapterCapability capability, Instant checkedAt) {
+        List<AdapterReadinessReason> reasons = new ArrayList<>();
+        reasons.add(AdapterReadinessReason.FUTURE_REAL_DISABLED);
+        reasons.add(AdapterReadinessReason.NO_REAL_PROVIDER);
+        reasons.add(AdapterReadinessReason.REAL_PROVIDER_NOT_IMPLEMENTED);
+        if (capability == AdapterCapability.PERMISSION_PROBE) {
+            reasons.add(AdapterReadinessReason.PERMISSION_PROBE_DISABLED);
+        }
+        if (capability.isLiveMutating()) {
+            reasons.add(AdapterReadinessReason.LIVE_DISABLED);
+            reasons.add(AdapterReadinessReason.LIVE_NOT_AUTHORIZED);
+        }
+        return new AdapterReadinessDecision(
+                venue,
+                capability,
+                AdapterReadinessStatus.NOT_IMPLEMENTED,
+                false,
+                false,
+                reasons,
+                checkedAt,
+                "future-real adapter not implemented; disabled until a separate Gate authorizes it");
     }
 
     /**
@@ -106,14 +187,20 @@ public final class DefaultAdapterReadinessService implements AdapterReadinessSer
         if (capability.requiresCredentials()) {
             // runtime credential 默认 *.unconfigured()，私有能力 fail-closed。
             reasons.add(AdapterReadinessReason.CREDENTIALS_MISSING);
+            reasons.add(AdapterReadinessReason.CREDENTIAL_UNCONFIGURED);
         }
         if (capability.isLiveMutating()) {
             // LIVE DISABLED，真实下单 / 撤单类能力 fail-closed。
             reasons.add(AdapterReadinessReason.LIVE_DISABLED);
+            reasons.add(AdapterReadinessReason.LIVE_NOT_AUTHORIZED);
         }
         if (capability == AdapterCapability.PERMISSION_PROBE || capability.isMarketData()) {
             // real permission probe / real marketdata provider 均 NOT IMPLEMENTED。
             reasons.add(AdapterReadinessReason.REAL_PROVIDER_NOT_IMPLEMENTED);
+        }
+        if (capability == AdapterCapability.PERMISSION_PROBE) {
+            // 默认 NoReal / skipped probe 不得被解释为真实权限已验证。
+            reasons.add(AdapterReadinessReason.PERMISSION_PROBE_DISABLED);
         }
         return new AdapterReadinessDecision(
                 venue,

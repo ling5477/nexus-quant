@@ -5,9 +5,12 @@ import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionPr
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.http.HttpClient;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,6 +50,15 @@ class NoRealExchangeCredentialPermissionProbePortTest {
         } finally {
             ProxySelector.setDefault(previous);
         }
+    }
+
+    @Test
+    void noRealProbeDoesNotDeclareRealHttpClientDependency() {
+        boolean hasHttpClientField = Arrays.stream(NoRealExchangeCredentialPermissionProbePort.class.getDeclaredFields())
+                .map(Field::getType)
+                .anyMatch(HttpClient.class::isAssignableFrom);
+
+        assertFalse(hasHttpClientField, "NoReal probe must remain pure no-http and must not hold a real HttpClient");
     }
 
     /**

@@ -91,7 +91,12 @@ class AdapterReadinessStatusServiceTest {
             assertFalse(item.allowed(), "no-real capability must not be allowed: " + item);
             assertEquals("NO_REAL", item.status(), "no-real venue must report NO_REAL status: " + item);
             assertTrue(item.reasons().contains("NO_REAL_DISABLED"), "no-real reason must be present: " + item);
+            assertTrue(item.reasons().contains("NO_REAL_PROVIDER"), "no-real provider reason must be present: " + item);
         }
+        assertTrue(noRealItems.stream()
+                        .filter(item -> "PAPER".equals(item.venue()) || "SIM".equals(item.venue()))
+                        .allMatch(item -> item.reasons().contains("READY_FOR_PAPER_ONLY")),
+                "PAPER / SIM must be explicitly paper-only, not real-ready");
     }
 
     @Test
@@ -129,6 +134,8 @@ class AdapterReadinessStatusServiceTest {
             assertFalse(item.allowed(), "permission probe must not be allowed: " + item);
             assertTrue(item.reasons().contains("REAL_PROVIDER_NOT_IMPLEMENTED"),
                     "permission probe must report real provider not implemented: " + item);
+            assertTrue(item.reasons().contains("PERMISSION_PROBE_DISABLED"),
+                    "permission probe must report disabled/skipped, not verified: " + item);
         }
     }
 

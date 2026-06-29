@@ -1,3 +1,24 @@
+## NQ-GATEM-3-NO-REAL-EXCHANGE-CONTRACT-HARDENING（2026-06-29）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只加固后端 adapter readiness 合同与回归测试；未修改 frontend、research、scripts、deploy、`.github/workflows` 或 migration，未接真实交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- `DefaultAdapterReadinessServiceTest` 覆盖 NoReal / PAPER / SIM / FAKE / STUB / FUTURE_REAL / OKX / BINANCE 全矩阵 fail-closed。
+- `AdapterReadinessStatusServiceTest` 覆盖只读 readiness API 聚合仍无 READY / allowed / liveAuthorized，PAPER / SIM 仅为 `READY_FOR_PAPER_ONLY` reason，permission probe 明确 `PERMISSION_PROBE_DISABLED`。
+- `NoRealExchangeCredentialPermissionProbePortTest` 覆盖 no-real permission probe 仍返回 `SKIPPED`、不访问 OKX / Binance host、requestId 脱敏且不复用 traceId，并补充 NoReal port 不持有真实 `HttpClient` 依赖。
+- 既有 GateM-0..5C readiness guard / Spring 装配 / runtime smoke / MarketData readiness tests 均随目标 Maven 命令回归。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance,nq-app,nq-api,nq-core -am test` | PASS | 23/23 reactor modules SUCCESS；`nq-app` 74 tests / 0 failures / 0 errors / 2 skipped。 |
+
+未运行：frontend build / Playwright、Python pytest/mypy/ruff。本轮未改 frontend 或 research；后续如触达对应区域需单独运行。
+
+边界结论：permission probe disabled / skipped 不被写成 verified；marketdata readiness 不提升为 trading readiness；NoReal / Fake / Stub / FutureReal 不返回 live-ready；OKX / Binance 当前仍 not ready / not authorized；未读取 credential material、未真实外联、未新增交易动作。
+
 ## NQ-GATEM-2I-MARKETDATA-POSITIVE-BARS-FIXTURE-SMOKE（2026-06-29）
 
 结论：**PASS / IMPLEMENTED / READY FOR REVIEW**。本轮只新增 MarketData positive real-backend E2E fixture smoke；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 production API，未修改 `MarketdataController` 或 bars/readiness 查询逻辑，未调用真实交易所，未启用 LIVE / AI / DH runtime。

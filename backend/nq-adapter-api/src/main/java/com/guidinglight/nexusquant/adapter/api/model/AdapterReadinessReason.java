@@ -13,17 +13,41 @@ public enum AdapterReadinessReason {
     /** Noop / no-real stub 明确禁用，未创建真实订阅或真实执行（对应 GateL-1D NO_REAL_DISABLED）。 */
     NO_REAL_DISABLED,
 
+    /** fake adapter 只能作为测试替身或显式 fake，不能被解释为真实交易所能力。 */
+    FAKE_ADAPTER_DISABLED,
+
+    /** stub adapter 只能作为占位实现，不能被解释为真实交易所能力。 */
+    STUB_ADAPTER_DISABLED,
+
+    /** PAPER / SIM 仅允许纸面语义，不能被提升为 LIVE / real-ready。 */
+    READY_FOR_PAPER_ONLY,
+
     /** 默认 endpoint 为 disabled:// sentinel，请求期 loud fail-closed（对应 GateL-1D NETWORK_DISABLED）。 */
     ENDPOINT_DISABLED_SENTINEL,
 
     /** runtime credential 未配置；authenticated 请求网络前 fail-closed（对应 GateL-1D CREDENTIALS_MISSING）。 */
     CREDENTIALS_MISSING,
 
+    /** runtime credential 显式处于 unconfigured，占位不是可用 credential。 */
+    CREDENTIAL_UNCONFIGURED,
+
     /** real provider / real permission probe 尚未实现，须另起 Gate。 */
     REAL_PROVIDER_NOT_IMPLEMENTED,
 
+    /** future-real 入口仍处于 disabled 状态；不能作为真实 provider 使用。 */
+    FUTURE_REAL_DISABLED,
+
+    /** 当前没有真实 provider，可执行路径必须 fail-closed。 */
+    NO_REAL_PROVIDER,
+
     /** LIVE 处于 DISABLED；真实交易能力 fail-closed（对应 GateL baseline LIVE DISABLED）。 */
     LIVE_DISABLED,
+
+    /** LIVE 未获得明确授权；与 LIVE_DISABLED 一起防止 mutating 能力被误放行。 */
+    LIVE_NOT_AUTHORIZED,
+
+    /** permission probe 被禁用 / skipped，不能被解释为真实权限已验证。 */
+    PERMISSION_PROBE_DISABLED,
 
     /** 该能力在 GateL / GateM-0 内被明确禁止（对应 GateL-1C FORBIDDEN_IN_GATEL）。 */
     CAPABILITY_FORBIDDEN_IN_GATEL,

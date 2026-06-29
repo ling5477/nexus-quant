@@ -1,3 +1,15 @@
+## NQ-GATEM-3-NO-REAL-EXCHANGE-CONTRACT-HARDENING（2026-06-29）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮加固 GateM-3 NoReal / Fake / Stub / FutureReal adapter readiness 合同。`nq-adapter-api` 新增显式 fail-closed status / reason 词汇，`DefaultAdapterReadinessService` 对 `NOOP/PAPER/SIM/FAKE/STUB/FUTURE_REAL/OKX/BINANCE` 全部保持 `allowed=false`、`liveAuthorized=false`，并把 `PERMISSION_PROBE_DISABLED`、`NO_REAL_PROVIDER`、`READY_FOR_PAPER_ONLY`、`FUTURE_REAL_DISABLED`、`CREDENTIAL_UNCONFIGURED`、`LIVE_NOT_AUTHORIZED` 等原因落到结构化决策里。`nq-api` readiness 聚合测试同步断言 paper-only 与 permission probe disabled；`nq-infra` NoReal permission probe 测试补充 no-http-client 依赖约束。
+
+验证结果：
+
+- `mvn -f backend/pom.xml -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance,nq-app,nq-api,nq-core -am test`：PASS，23/23 reactor modules SUCCESS；`nq-app` 74 tests / 0 failures / 0 errors / 2 skipped。
+
+边界：未修改 frontend / research / scripts / deploy / `.github/workflows`；未新增或修改 migration；未接真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未实现 RealClient / real provider；未创建真实 permission probe；未读取、输出或记录 credential material；未启用 LIVE；未新增订单、撤单、转账、提现路径；未接 AI / DH runtime。Maven 输出中的 SLF4J / Mockito dynamic agent warnings 为既有测试运行环境警告，本轮非阻断。
+
 ## NQ-GATEM-2I-MARKETDATA-POSITIVE-BARS-FIXTURE-SMOKE（2026-06-29）
 
 状态：**PASS / IMPLEMENTED / READY FOR REVIEW**。

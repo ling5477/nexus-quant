@@ -84,8 +84,9 @@ public class AdapterReadinessStatusService {
      * 返回当前 readiness 快照。
      * <p>
      * Why:
-     * 逐项 evaluate 固定矩阵，纯计算无副作用。当前 baseline 下：NOOP/PAPER/SIM → NO_REAL，
-     * OKX/BINANCE → NOT_READY，全部 allowed=false / liveAuthorized=false，绝不返回 READY。
+     * 逐项 evaluate 固定矩阵，纯计算无副作用。当前 baseline 下：NOOP/PAPER/SIM → NO_REAL
+     * （PAPER/SIM 额外携带 READY_FOR_PAPER_ONLY reason），OKX/BINANCE → NOT_READY，
+     * 全部 allowed=false / liveAuthorized=false，绝不返回 READY。
      *
      * @return 不可变 readiness 响应（generatedAt + items）
      */

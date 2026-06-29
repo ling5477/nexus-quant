@@ -47,6 +47,7 @@ class DefaultAdapterReadinessServiceTest {
             assertFalse(decision.isReadyAndAllowed());
             assertEquals(AdapterReadinessStatus.NO_REAL, decision.status());
             assertTrue(decision.reasons().contains(AdapterReadinessReason.NO_REAL_DISABLED));
+            assertTrue(decision.reasons().contains(AdapterReadinessReason.NO_REAL_PROVIDER));
             assertEquals("NOOP", decision.venue());
             assertNotNull(decision.checkedAt());
         }
@@ -60,6 +61,55 @@ class DefaultAdapterReadinessServiceTest {
         assertEquals(AdapterReadinessStatus.NO_REAL, decision.status());
         assertFalse(decision.status().isReady());
         assertFalse(decision.reasons().isEmpty());
+    }
+
+    @Test
+    void paperAndSimArePaperOnlyButNeverLiveReady() {
+        for (String venue : new String[]{"PAPER", "SIM"}) {
+            AdapterReadinessDecision decision = service.evaluate(venue, AdapterCapability.PLACE_ORDER);
+
+            assertFalse(decision.allowed(), venue + " must not allow real trading");
+            assertFalse(decision.liveAuthorized(), venue + " must not be live-authorized");
+            assertEquals(AdapterReadinessStatus.NO_REAL, decision.status());
+            assertTrue(decision.reasons().contains(AdapterReadinessReason.READY_FOR_PAPER_ONLY));
+            assertTrue(decision.reasons().contains(AdapterReadinessReason.NO_REAL_PROVIDER));
+            assertFalse(decision.status().isReady());
+        }
+    }
+
+    @Test
+    void fakeAndStubAdaptersAreExplicitlyNotLiveReady() {
+        AdapterReadinessDecision fake = service.evaluate("FAKE", AdapterCapability.PLACE_ORDER);
+        AdapterReadinessDecision stub = service.evaluate("STUB", AdapterCapability.CANCEL_ORDER);
+
+        assertEquals(AdapterReadinessStatus.FAKE, fake.status());
+        assertFalse(fake.allowed());
+        assertFalse(fake.liveAuthorized());
+        assertTrue(fake.reasons().contains(AdapterReadinessReason.FAKE_ADAPTER_DISABLED));
+        assertTrue(fake.reasons().contains(AdapterReadinessReason.NO_REAL_PROVIDER));
+        assertFalse(fake.status().isReady());
+
+        assertEquals(AdapterReadinessStatus.STUB, stub.status());
+        assertFalse(stub.allowed());
+        assertFalse(stub.liveAuthorized());
+        assertTrue(stub.reasons().contains(AdapterReadinessReason.STUB_ADAPTER_DISABLED));
+        assertTrue(stub.reasons().contains(AdapterReadinessReason.NO_REAL_PROVIDER));
+        assertFalse(stub.status().isReady());
+    }
+
+    @Test
+    void futureRealAdapterIsNotImplementedAndNoRealProvider() {
+        AdapterReadinessDecision decision = service.evaluate("FUTURE_REAL", AdapterCapability.PLACE_ORDER);
+
+        assertFalse(decision.allowed());
+        assertFalse(decision.liveAuthorized());
+        assertEquals(AdapterReadinessStatus.NOT_IMPLEMENTED, decision.status());
+        assertTrue(decision.reasons().contains(AdapterReadinessReason.FUTURE_REAL_DISABLED));
+        assertTrue(decision.reasons().contains(AdapterReadinessReason.NO_REAL_PROVIDER));
+        assertTrue(decision.reasons().contains(AdapterReadinessReason.REAL_PROVIDER_NOT_IMPLEMENTED));
+        assertTrue(decision.reasons().contains(AdapterReadinessReason.LIVE_DISABLED));
+        assertTrue(decision.reasons().contains(AdapterReadinessReason.LIVE_NOT_AUTHORIZED));
+        assertFalse(decision.status().isReady());
     }
 
     @Test
@@ -117,6 +167,7 @@ class DefaultAdapterReadinessServiceTest {
         assertFalse(decision.allowed());
         assertFalse(decision.liveAuthorized());
         assertTrue(decision.reasons().contains(AdapterReadinessReason.LIVE_DISABLED));
+        assertTrue(decision.reasons().contains(AdapterReadinessReason.LIVE_NOT_AUTHORIZED));
     }
 
     @Test
@@ -128,6 +179,21 @@ class DefaultAdapterReadinessServiceTest {
         assertFalse(binance.allowed());
         assertTrue(okx.reasons().contains(AdapterReadinessReason.REAL_PROVIDER_NOT_IMPLEMENTED));
         assertTrue(binance.reasons().contains(AdapterReadinessReason.REAL_PROVIDER_NOT_IMPLEMENTED));
+        assertTrue(okx.reasons().contains(AdapterReadinessReason.PERMISSION_PROBE_DISABLED));
+        assertTrue(binance.reasons().contains(AdapterReadinessReason.PERMISSION_PROBE_DISABLED));
+    }
+
+    @Test
+    void permissionProbeDisabledOrSkippedIsNeverVerified() {
+        for (String venue : new String[]{"NOOP", "PAPER", "SIM", "FAKE", "STUB", "FUTURE_REAL", "OKX", "BINANCE"}) {
+            AdapterReadinessDecision decision = service.evaluate(venue, AdapterCapability.PERMISSION_PROBE);
+
+            assertFalse(decision.allowed(), "permission probe must not be allowed: " + venue);
+            assertFalse(decision.liveAuthorized(), "permission probe must not be live-authorized: " + venue);
+            assertTrue(decision.reasons().contains(AdapterReadinessReason.PERMISSION_PROBE_DISABLED),
+                    "permission probe must be explicitly disabled/skipped: " + decision);
+            assertFalse(decision.status().isReady(), "disabled/skipped probe must not be READY: " + venue);
+        }
     }
 
     @Test
@@ -136,6 +202,20 @@ class DefaultAdapterReadinessServiceTest {
 
         assertFalse(decision.allowed());
         assertTrue(decision.reasons().contains(AdapterReadinessReason.REAL_PROVIDER_NOT_IMPLEMENTED));
+    }
+
+    @Test
+    void marketDataReadinessDoesNotAuthorizeTradingReadiness() {
+        AdapterReadinessDecision marketData = service.evaluate("OKX", AdapterCapability.PUBLIC_MARKETDATA);
+        AdapterReadinessDecision trading = service.evaluate("OKX", AdapterCapability.PLACE_ORDER);
+
+        assertFalse(marketData.allowed());
+        assertFalse(trading.allowed());
+        assertTrue(marketData.reasons().contains(AdapterReadinessReason.REAL_PROVIDER_NOT_IMPLEMENTED));
+        assertTrue(trading.reasons().contains(AdapterReadinessReason.LIVE_DISABLED));
+        assertTrue(trading.reasons().contains(AdapterReadinessReason.CREDENTIAL_UNCONFIGURED));
+        assertFalse(marketData.reasons().contains(AdapterReadinessReason.LIVE_DISABLED),
+                "marketdata denial must not be treated as trading authorization or trading denial");
     }
 
     @Test
@@ -181,7 +261,7 @@ class DefaultAdapterReadinessServiceTest {
     @Test
     void everyKnownVenueCapabilityIsFailClosed() {
         // 全矩阵回归：GateM-0 内 NOOP / OKX / BINANCE 的任一能力都不得 allowed，且必须给出原因。
-        for (String venue : new String[]{"NOOP", "PAPER", "SIM", "OKX", "BINANCE", "okx", " binance "}) {
+        for (String venue : new String[]{"NOOP", "PAPER", "SIM", "FAKE", "STUB", "FUTURE_REAL", "OKX", "BINANCE", "okx", " binance "}) {
             for (AdapterCapability capability : AdapterCapability.values()) {
                 AdapterReadinessDecision decision = service.evaluate(venue, capability);
 
