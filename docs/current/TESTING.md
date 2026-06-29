@@ -1,3 +1,19 @@
+## NQ-GATEM-2H-MARKETDATA-POSITIVE-BARS-FIXTURE-PLAN（2026-06-29）
+
+结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。本轮只规划 MarketData real-backend positive bars fixture；未实现 fixture，未修改 backend Java、frontend TypeScript、research、scripts、deploy、`.github/workflows` 或 migration，未新增 API，未修改 `MarketdataController` 或 bars/readiness 查询逻辑，未调用真实交易所，未启用 LIVE / AI / DH runtime。
+
+只读核对结论：
+
+- `marketdata_bars` 现有字段和唯一键已支持受控 fake bars：`exchange_code + market_type + symbol + interval + open_time`；不需要 migration。
+- `/api/marketdata/bars` 查询维度为 `exchangeCode / marketType / symbol / interval / startTime / endTime / page / size`。
+- `/api/marketdata/readiness` 维度为 `exchangeCode / marketType / symbol|instrumentId / interval / from / to`，聚合依赖 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs`，不依赖真实交易所。
+- 现有 `POST /api/marketdata/bars/ingestions/fixture` 可导入注册 fixture，但注册 fixture 使用 `BTCUSDT` / `ETHUSDT`；当前 MarketData 页面和 2G smoke 使用 `BTC-USDT` / `ETH-USDT`，因此不能直接满足当前 UI positive branch。
+- 推荐后续实现采用 test-only DB fixture helper 写入 `BINANCE / SPOT / BTC-USDT / 1m` 的受控 fake rows，`source=E2E_POSITIVE_FIXTURE`，并让页面查询同一 fixture window。
+
+验证命令：本轮为 docs-only planning，未运行 Maven / npm build / Playwright；只运行文档、diff、禁止范围和检索验证。后续 implementation task 必须在真实 local backend 可用时跑 positive smoke。
+
+边界结论：positive fixture 仍 **NOT IMPLEMENTED**；2G empty/no-data real-backend smoke 仍是当前已验证基线；后续不得使用 ingestion `run-once`、legacy OKX/Binance provider、真实交易所网络、credential material、LIVE、RealClient、real provider 或 WebSocket 来准备 fixture。
+
 ## NQ-GATEM-2G-MARKETDATA-READINESS-REAL-BACKEND-SMOKE（2026-06-29）
 
 结论：**PASS / EMPTY-NO-DATA REAL BACKEND READINESS SMOKE**。本轮只新增真实本地后端 MarketData readiness 联合 smoke；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未修改 `MarketdataController` 或后端 bars/readiness 查询逻辑，未调用 adapter 或外部交易所，未启用 LIVE / AI / DH runtime。

@@ -1,3 +1,21 @@
+## NQ-GATEM-2H-MARKETDATA-POSITIVE-BARS-FIXTURE-PLAN（2026-06-29）
+
+状态：**PLAN ONLY / NOT IMPLEMENTED**。
+
+本轮只规划 MarketData positive bars fixture 机制，用于后续 real-backend smoke 覆盖 K 线正向渲染、成交量、bar count、last bar time 与 `/api/marketdata/readiness` 的 positive summary。未实现 fixture，未改 backend / frontend / research / scripts / deploy / `.github/workflows` / migration，未新增 API，未修改 `MarketdataController` 或 bars/readiness 查询逻辑。
+
+只读发现：
+
+- `marketdata_bars` 已有足够字段支撑 deterministic fake bars，唯一键为 `exchange_code + market_type + symbol + interval + open_time`，不需要 migration。
+- 2E readiness 聚合只读使用 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs`；不调用 adapter、provider、credential 或外部交易所。
+- 已有 `FixtureMarketdataRegistry` + `MarketdataBarIngestService` + `POST /api/marketdata/bars/ingestions/fixture`，GateI E2E 已复用该路径。
+- 现有注册 fixture 是 `BTCUSDT` / `ETHUSDT`，而当前 MarketData UI 选项和 2G real-backend smoke 使用 `BTC-USDT` / `ETH-USDT` / `SOL-USDT`，所以现有 fixture ingest 不能直接证明当前 UI positive branch。
+- 推荐后续采用 test-only DB fixture helper，显式写入 `BINANCE / SPOT / BTC-USDT / 1m`、`source=E2E_POSITIVE_FIXTURE`、固定窗口 `2025-01-01T00:00:00Z..00:05:59Z` 的 fake rows；页面查询必须使用同一窗口，避免 readiness 被误判为 `STALE` 或 `GAP`。
+
+边界：不使用 ingestion `run-once`；不调用 OKX / Binance / Bybit / Gate / Coinbase / Kraken；不读取 credential；不启用 LIVE；不接 AI / DH runtime；不实现 RealClient / real provider；不新增 WebSocket；不做订单/撤单/提现/转账联动；不把 fake bars 写成真实 market data。
+
+后续建议任务：`NQ-GATEM-2I-MARKETDATA-POSITIVE-BARS-FIXTURE-SMOKE`，只做 test-only helper + positive real-backend smoke，不新增 migration 或 production API。
+
 ## NQ-GATEM-2G-MARKETDATA-READINESS-REAL-BACKEND-SMOKE（2026-06-29）
 
 状态：**PASS / EMPTY-NO-DATA REAL BACKEND READINESS SMOKE**。
