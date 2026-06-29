@@ -5708,3 +5708,16 @@ target conflicts = 0
 | Backend quality profile 探测 | **未运行 quality profile** | Backend POM 未检出 quality profile / Spotless / Checkstyle，未伪造 quality 成功。 |
 
 边界确认：本轮只允许 docs/current 收口与回归验证；不改 NQ Java production code，不改 NQ test code，不新增 API / migration / RealClient / provider，不真实 HTTP，不读取凭证，不启动 Integration-1，不开启 LIVE。Timestamp CLOSED 不放开 runtime。
+
+## NQ-GATEM-STATE-ROUTE-RECONCILIATION（2026-06-29）
+
+结论：**PASS / DOCS-ONLY FACT SOURCE SYNC**。本轮只修正 GateM 命名/状态事实源冲突，不修改 Java、TypeScript、Python、测试代码、migration、CI workflow 或运行时配置；未新增功能，未新增 GateM plan。
+
+验证范围：
+
+- `docs/current/README.md` / `STATUS.md` / `ROADMAP.md`：统一当前 GateM = Exchange / MarketData Runtime Readiness，状态为 STARTED / PARTIALLY IMPLEMENTED。
+- `docs/current/TESTING.md` / `WORKLOG.md`：仅追加本轮 reconciliation 记录，不重写 GateM-0..5C 历史验证。
+- 根 `README.md`：同步当前状态入口，避免继续停留在 GateK-PLAN。
+- 代码事实只读核对：`AdapterReadinessService`、`AdapterReadinessController`、`AdapterReadinessPage` 均存在。
+
+边界确认：LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT IMPLEMENTED；未读取或输出 credential material；未调用真实交易所。

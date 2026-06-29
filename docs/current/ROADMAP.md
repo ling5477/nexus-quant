@@ -11,11 +11,13 @@ GateI：虚拟币量化 V1 完整闭环 completed
   ↓
 GateJ：Paper Trading 稳定运行 completed
   ↓
-GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口 ← NEXT
+GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口 finalized / frozen / tagged
   ↓
 GateL：No-Real Exchange / MarketData Readiness（planning / contract / readiness）
   ↓
-GateM：AI Paper Trading（后续独立 AI/DH 阶段，当前 NOT STARTED）
+GateM：Exchange / MarketData Runtime Readiness（STARTED / PARTIALLY IMPLEMENTED）
+  ↓
+Future AI Paper Trading candidate（NOT CURRENT GATEM；requires separate AI/DH/runtime boundary planning）
   ↓
 GateN：AI 小资金 LIVE
   ↓
@@ -36,7 +38,10 @@ GateP：A 股适配
 - GateJ-3-WO completed。
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed。
 - GateJ completed。
-- Next: GateK-PLAN（planning / 收口工作线；GateK 产品/runtime 实现仍 not started）。
+- GateK finalized / frozen / tagged（tag：`nq-gatek-freeze`）。
+- GateM authoritative definition = Exchange / MarketData Runtime Readiness。
+- GateM runtime readiness = STARTED / PARTIALLY IMPLEMENTED；GateM-0..5C 运行时 readiness 事实保留，不回滚。
+- Future AI Paper Trading candidate = NOT CURRENT GATEM / NOT STARTED；必须等待 AI / DH runtime boundary 单独规划。
 - **NQ GateK CI mainline = COMPLETED / ACCEPTED**（CI 状态权威以 STATUS.md + NQ_CI_BASELINE_PLAN.md 为准）：Batch 5A no-backend frontend E2E = FROZEN / ACCEPTED（仅 4 个 no-backend smoke spec，非 authenticated/backend E2E coverage）；Batch 5B-ENV runtime no-outbound = P1 SECURITY ENHANCEMENT / **FROZEN / ACCEPTED**（freeze 卷宗 NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md，evidence run `27876451289` / headSha `8ba140d9` / 8 jobs success；规划 NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md，review NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md）；Batch 5B-SMOKE = **FROZEN / ACCEPTED**（implementation plan **REVIEWED / ACCEPTED**，implementation **DONE**，ci.yml `ci-security-smoke` job 复用 EnvSafety / no-outbound / NoReal 最小 smoke；first run evidence PASS（run `27903497008`，9 jobs success）；freeze **FROZEN / ACCEPTED**，卷宗 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`；**Batch 5B = CLOSED / ACCEPTED**；只允许 no-real / no-outbound / mock / fake / NoReal 路径）；Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
 - **NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW = PASS / FROZEN / ACCEPTED**（2026-06-23）：基于 re-run `28035713236`（commit `ba3f4c69`，branch `dev`，workflow `NQ CI Baseline`）冻结 `frontend-e2e-backend-smoke` 窄口 CI baseline。冻结范围仅覆盖单 spec `adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`、真实 local backend `/actuator/health=UP`、真实 `GET /api/adapters/readiness` 200、fail-closed readiness UI/payload、pre-upload redaction gate 与 text-only artifact；不冻结 full E2E、frontend feature expansion、backend production logic、real provider、real permission probe、LIVE、AI、DH runtime 或 OKX/Binance future-real-ready。Artifact 仅 `backend.log` / `health.json`，无 secret-like / real exchange host / outbound error，未上传 Playwright trace/screenshot/report/video。下一步允许 Batch 5E 或 CI 总结。
 - 文档治理：G1 authority/evidence index = FROZEN / ACCEPTED；G2 current-control drift repair = IMPLEMENTED / READY FOR REVIEW；G3~G6 = NOT STARTED（治理入口见 `NQ_DOCS_AUTHORITY_INDEX.md` / `NQ_DOCS_EVIDENCE_INDEX.md`）。
@@ -76,7 +81,7 @@ GateP：A 股适配
 - **NQ-GATEM-5A-ADAPTER-READINESS-STATUS-API = IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（2026-06-23）：从 **GateM-4 runtime smoke → GateM-5A readiness status API**。nq-api 新增只读 `GET /api/adapters/readiness`（`AdapterReadinessController` + `AdapterReadinessStatusService` + DTO `AdapterReadinessResponse`/`AdapterReadinessItemResponse`），给后续前端展示 OKX / Binance / Noop 当前不可实盘及原因。service 对固定 5 venue × 9 capability 矩阵逐项 `AdapterReadinessService.evaluate`，只读静态决策，不触达 adapter delegate / HTTP / socket / env / credential、不触发下单/撤单/行情订阅。nq-api 显式新增 `nq-adapter-api` 依赖。行为：NOOP/PAPER/SIM → `NO_REAL`，OKX/BINANCE → `NOT_READY`，全部 `allowed=false`/`liveAuthorized=false`，无 `READY`，PLACE/CANCEL 带 `LIVE_DISABLED`，PERMISSION_PROBE 带 `REAL_PROVIDER_NOT_IMPLEMENTED`，响应脱敏。新增 `AdapterReadinessStatusServiceTest`（6）+ `AdapterReadinessControllerTest`（1）；`mvn -o -pl nq-adapter-api,nq-adapter-okx,nq-adapter-binance,nq-api,nq-app -am test` BUILD SUCCESS（nq-api 34；nq-app 73 / 0 / 0 / 2 skipped；GateM-0/1/2/3/4 + OKX/Binance 回归全绿）。未新增 migration/workflow，未改 frontend/research/scripts/deploy。adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；real exchange access / LIVE / real credential / AI / DH runtime / future-real-ready 全部 NO。下一步 commit 本轮实现。
 - **NQ-GATEM-5B-FRONTEND-ADAPTER-READINESS-PANEL = IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（2026-06-23）：从 **GateM-5A readiness status API → GateM-5B frontend panel**。NQ Console 新增只读 adapter readiness 面板（路由 `/adapter-readiness`、菜单「适配器就绪」），消费 GateM-5A `GET /api/adapters/readiness`（TanStack Query + Ant Design Table，`retry:false` 让错误态 fail-closed）。展示 NOOP/PAPER/SIM/OKX/BINANCE × 9 capability 的 status/allowed/liveAuthorized/reasons/message：OKX/Binance 明显 `未就绪 NOT_READY`+`不可用`+`LIVE 未授权`，Noop 家族 `NO_REAL`，PLACE/CANCEL 不可用、permission probe `真实 provider 未实现`；常驻 banner 声明全局未就绪/不可真实交易；错误态显示 `readiness API unavailable` 且不回退成 ready；`allowed=false` 永不显示「可交易」。新增前端文件（types/api/hook/page/e2e）+ `query-keys`/`routes`/`navigation`；`cd frontend && npm run build` BUILD SUCCESS；`npm run test:e2e -- adapter-readiness-panel-smoke.spec.ts` 2 passed（自带 stub，不依赖真实后端）。未改后端、未新增后端 API/migration/workflow，未 mock 成 ready。adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；real exchange access / LIVE / real credential / AI / DH runtime / future-real-ready 全部 NO。下一步 commit 本轮实现。
 - **NQ-GATEM-5C-ADAPTER-READINESS-FULL-E2E-BACKEND-RUN = PASS**（2026-06-23）：从 **GateM-5B stub E2E → GateM-5C 真实后端 E2E**。在真实本地 local 后端（Spring Boot 18888 + 本地 PostgreSQL 5432，`spring-boot:run -Dspring-boot.run.profiles=local`）+ Vite（5179，`/api`→18888 代理）下，证明 adapter readiness 面板真实消费 GateM-5A `GET /api/adapters/readiness` 且 fail-closed。直接 HTTP：未认证 401 / admin 登录后 authed 200，payload 45 条全 fail-closed（无 allowed=true / READY / liveAuthorized=true，OKX/Binance NOT_READY，Noop/Paper/Sim NO_REAL，PLACE/CANCEL liveAuthorized=false，exchange PERMISSION_PROBE REAL_PROVIDER_NOT_IMPLEMENTED，无 secret）。新增 `frontend/tests/e2e/adapter-readiness-panel-backend-smoke.spec.ts`（不 stub，真实登录 + 捕获真实响应），`npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts` 1 passed，连同 stub spec 共 3 passed，`npm run build` BUILD SUCCESS。后端日志 0 次真实交易所外联、0 ERROR、OKX recovery disabled；验证后已停止后端。仅新增 1 个前端 e2e spec + docs，未改 backend，未访问真实交易所，未读真实 credential（用 local 默认 admin），未启用 LIVE。adapter readiness 仍 **NOT READY / NOT FROZEN / NOT AUTHORIZED**；real exchange access / LIVE / real credential / AI / DH runtime / future-real-ready 全部 NO。下一步 commit 本轮 e2e spec。
-- **路线图 GateL 语义已裁决（canonical，2026-06-22）**：经 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决，**GateL canonical = No-Real Exchange / MarketData Readiness**（planning / contract / readiness）。旧口径「GateL = AI Paper Trading」作废；**AI Paper Trading 后移到 GateM**（后续独立 AI/DH 阶段，当前 NOT STARTED），AI 小资金 LIVE → GateN，美股 → GateO，A 股 → GateP。AI Paper Trading 不属于 GateL 入场任务（见 `GATEL_PLAN.md` §6 / §10）。
+- **路线图 GateL 语义已裁决（canonical，2026-06-22；GateM 口径已于 2026-06-29 reconciliation 修正）**：经 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决，**GateL canonical = No-Real Exchange / MarketData Readiness**（planning / contract / readiness）。旧口径「GateL = AI Paper Trading」作废；后续曾将 AI Paper Trading 记为 GateM，但该口径已被当前事实源取代。**当前 GateM = Exchange / MarketData Runtime Readiness**；AI Paper Trading 仅保留为 future candidate / NOT CURRENT GATEM，必须等待 AI / DH runtime boundary 单独规划。AI 小资金 LIVE → GateN，美股 → GateO，A 股 → GateP。AI Paper Trading 不属于 GateL 入场任务，也不属于当前 GateM 任务。
 - AI not started。
 - DH integration not started / not connected to NQ。
 - LIVE disabled。
@@ -89,18 +94,19 @@ GateP：A 股适配
 - GateH 已完成交易工作台、历史行情接入和 dataset 绑定。
 - GateI 已完成虚拟币量化 V1 完整闭环（策略版本、发布、回测追溯、评估增强、Paper Trading 运行闭环、风控回写、资金曲线、持仓曲线、交易复盘、异常停机）。
 - GateJ 已完成 Paper Trading 稳定运行验收。
-- GateK-PLAN 用于规划 GateJ 后的事实源收口、架构与测试基线、前端产品化、CI / 可观测性 / 部署基线、安全 hardening 和 Integration-0 只读登记；不能直接实现 AI、DH runtime、LIVE、真实交易所扩展或真实 adapter。
+- GateK 已 finalized / frozen / tagged；GateM 当前只覆盖 Exchange / MarketData Runtime Readiness，不能直接实现 AI、DH runtime、LIVE、真实交易所扩展或真实 adapter。
 - NQ_CI_BASELINE_PLAN.md 已作为 CI baseline 文档落档（CI 状态权威以 STATUS.md 为准）；**NQ GateK CI mainline = COMPLETED / ACCEPTED**：Batch 1 first green，Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound guard、Batch 4B secret scan、Batch 4C artifact/log redaction、Batch 4F-A dependency-audit preflight、Batch 5A no-backend frontend E2E 均 FROZEN / ACCEPTED；Batch 5B-ENV = FROZEN / ACCEPTED（freeze evidence run `27876451289`，卷宗 NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md），Batch 5B-SMOKE = FROZEN / ACCEPTED（implementation plan reviewed / accepted；implementation DONE；ci-security-smoke job 已落地；first run evidence PASS（run 27903497008，9 jobs success）；freeze FROZEN / ACCEPTED，卷宗 NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md；Batch 5B CLOSED / ACCEPTED），Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED，Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
 - `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` 已作为 Batch 3 plan / implementation / freeze baseline 落档；Batch 3B 已实现最小 workflow / test-scope no-outbound guard，并由 GitHub Actions run `27634370657` first green confirmed（6 jobs green），经 Batch 3E freeze review 固化为 FROZEN / ACCEPTED，是当前 `dev` no-outbound guard baseline。
-- GateL 进入 No-Real Exchange / MarketData Readiness（planning / contract / readiness，不实盘、不接真实交易所）。
-- AI Paper Trading 是后续独立阶段（GateM），当前 NOT STARTED。
+- GateL 已完成 No-Real Exchange / MarketData Readiness 文档边界（planning / contract / readiness，不实盘、不接真实交易所）。
+- GateM 进入 Exchange / MarketData Runtime Readiness，当前 STARTED / PARTIALLY IMPLEMENTED，仍不实盘、不接真实交易所。
+- AI Paper Trading 只是 future candidate，不是 current GateM，当前 NOT STARTED。
 - GateN 才允许 AI 小资金 LIVE。
 - 美股/A 股复用虚拟币 V1 沉淀的通用底座。
 
 ## 当前边界
 
-- Current stage: GateJ completed。
-- Next: GateK-PLAN。
+- Current stage: GateM Exchange / MarketData Runtime Readiness（STARTED / PARTIALLY IMPLEMENTED）。
+- GateK finalized / frozen / tagged（tag：`nq-gatek-freeze`）。
 - NQ / DH 三轮只读审计已完成；DH not integrated；GateK implementation not started；AI not started；LIVE disabled。
 - Integration-0 allowed only as contract / mock / documentation work line, not runtime integration；它是独立文档与契约工作线，不等于 GateK 实现，也不是真实集成。
 - NQ-DH Integration-0 契约冻结已完成（contract / mock / docs）；下一步只允许 mock / contract test 设计或安全文档固化，禁止真实联调；真实通道必须等 Integration-1 并先修复 DH P1-4 残留（rate limit / memory cap / replay nonce 持久化）。

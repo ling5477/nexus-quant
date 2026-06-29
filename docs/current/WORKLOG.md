@@ -10066,3 +10066,14 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 - mvn -f backend/pom.xml test：BUILD SUCCESS。
 - mvn -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test：BUILD SUCCESS；INT0 6+2+9=17/17。
 - Backend POM quality profile 探测：未检出 <id>quality</id> / spotless / checkstyle，未伪造 quality gate 成功。
+
+## NQ-GATEM-STATE-ROUTE-RECONCILIATION（2026-06-29）
+
+完成 GateM 状态与路线事实源修复。结论：**PASS / FACT SOURCE SYNCED**。
+
+- 冲突：`docs/current/ROADMAP.md` / `docs/current/README.md` / `docs/current/STATUS.md` 仍残留旧 AI Paper Trading GateM 口径，但当前仓库已存在 GateM runtime readiness 代码与 GateM-0..5C 文档记录。
+- 裁决：当前 GateM authoritative definition = **Exchange / MarketData Runtime Readiness**；当前 GateM status = **STARTED / PARTIALLY IMPLEMENTED**。
+- 保留事实：`AdapterReadinessService`、readiness guard、`AdapterReadinessController`、`AdapterReadinessPage`、GateM-0..5C runtime readiness 记录均保留，不回滚。
+- 降级旧口径：AI Paper Trading 仅作为 future candidate / historical route note / NOT CURRENT GATEM；AI / DH runtime boundary 必须后续单独规划。
+- 同步文件：`README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 边界：未改 backend / frontend / research / scripts / deploy / workflow / migration；未新增 API、测试或功能；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real exchange adapter；未读取 credential material；未调用真实交易所。
