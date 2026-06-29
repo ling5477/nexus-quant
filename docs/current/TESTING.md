@@ -1,3 +1,30 @@
+## NQ-GATEM-2I-MARKETDATA-POSITIVE-BARS-FIXTURE-SMOKE（2026-06-29）
+
+结论：**PASS / IMPLEMENTED / READY FOR REVIEW**。本轮只新增 MarketData positive real-backend E2E fixture smoke；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 production API，未修改 `MarketdataController` 或 bars/readiness 查询逻辑，未调用真实交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- test-only helper 通过 `psql` 写入本地测试 DB 的 fake bars，`source=E2E_POSITIVE_FIXTURE`。
+- fixture scope 为 `BINANCE / SPOT / BTC-USDT / 1m`，UTC 窗口 `2025-01-01T00:00:00Z..2025-01-01T00:05:59Z`，连续 6 根 1m bars。
+- smoke 不 stub `/api/marketdata/bars`，不 stub `/api/marketdata/readiness`。
+- preflight 验证 `bars.length=6`、`readiness.barCount=6`、`status/freshnessStatus/sourceHealthStatus=FRESH`。
+- 页面提交同一 fixture window，验证 K-line canvas、volume canvas、Data Quality / Readiness、bar count、last bar time、readiness status、freshnessStatus、sourceHealthStatus、quality summary、gap count。
+- `finally` cleanup 只删除同一 `source + exchange + market + symbol + interval + window`，补充 scoped count 复核为 `0`。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 变更限定在允许的 frontend E2E 与 docs/current 路径。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS | 最终 scoped diff 已复核。 |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/marketdata-positive-bars-fixture-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；日志显示 `fixtureBars=6 preflightBars=6 readinessBarCount=6 readinessStatus=FRESH freshnessStatus=FRESH sourceHealthStatus=FRESH`。 |
+
+实现期修正：首次 helper 使用 data-modifying CTE 后同 statement 计数，PostgreSQL snapshot 返回 `0`；已改成事务后独立 `SELECT COUNT`。首次页面提交未命中 fixture，根因为 Ant Design DatePicker 本地时间转 ISO 后窗口偏移；已改成由固定 UTC fixture window 动态派生本地 DatePicker 输入。
+
+边界结论：未触达 backend / migration / TradingWorkbench / real exchange / credential material / WebSocket / order / cancel / withdraw / transfer；未删除既有 backend-free smoke 或 empty/no-data real-backend smoke。fake fixture 明确标识为 `E2E_POSITIVE_FIXTURE`，不写成真实行情。
+
 ## NQ-GATEM-2H-MARKETDATA-POSITIVE-BARS-FIXTURE-PLAN（2026-06-29）
 
 结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。本轮只规划 MarketData real-backend positive bars fixture；未实现 fixture，未修改 backend Java、frontend TypeScript、research、scripts、deploy、`.github/workflows` 或 migration，未新增 API，未修改 `MarketdataController` 或 bars/readiness 查询逻辑，未调用真实交易所，未启用 LIVE / AI / DH runtime。

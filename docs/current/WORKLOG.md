@@ -1,3 +1,29 @@
+## NQ-GATEM-2I-MARKETDATA-POSITIVE-BARS-FIXTURE-SMOKE（2026-06-29）
+
+状态：**PASS / IMPLEMENTED / READY FOR REVIEW**。
+
+本轮新增 `frontend/tests/e2e/marketdata-positive-bars-fixture.ts` 与 `frontend/tests/e2e/marketdata-positive-bars-fixture-smoke.spec.ts`，实现受控 fake bars positive real-backend smoke。fixture 只写本地测试 DB，`source=E2E_POSITIVE_FIXTURE`，scope 为 `BINANCE / SPOT / BTC-USDT / 1m`，UTC 窗口 `2025-01-01T00:00:00Z..2025-01-01T00:05:59Z`，连续 6 根 1m bars，`quality_status=OK`，`raw_payload_json.fake=true`。
+
+验证结果：
+
+- local backend `127.0.0.1:18888` health：UP；Flyway schema version `31` up to date。
+- `npm run build`：PASS，保留既有 Vite large chunk warning。
+- `npm run test:e2e -- tests/e2e/marketdata-positive-bars-fixture-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+- positive smoke 日志：`fixtureBars=6 preflightBars=6 readinessBarCount=6 readinessStatus=FRESH freshnessStatus=FRESH sourceHealthStatus=FRESH`。
+- 测试结束后 scoped cleanup count：`0`。
+
+实现期修正：helper 初版 data-modifying CTE 同 statement 计数返回 `0`，已改成事务后单独计数；页面初版 DatePicker 输入因本地时区转换未命中 UTC fixture，已改成从固定 UTC fixture window 动态派生本地输入。
+
+同步文件：
+
+- `frontend/tests/e2e/marketdata-positive-bars-fixture.ts`
+- `frontend/tests/e2e/marketdata-positive-bars-fixture-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_2I_MARKETDATA_POSITIVE_BARS_FIXTURE_SMOKE.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+边界：未修改 backend / migration / workflow / research / scripts / deploy；未修改 `MarketdataPage.tsx`、`marketdataApi.ts` 或 `marketdata.ts` 类型；未新增 production API；未修改 `MarketdataController` 或后端 bars/readiness 查询逻辑；未接真实交易所、未启用 LIVE、未接 AI、未接 DH runtime、未实现 RealClient / real provider、未新增 WebSocket、未做订单/撤单/提现/转账联动；未删除既有 backend-free smoke 或 empty/no-data real-backend smoke。
+
 ## NQ-GATEM-2H-MARKETDATA-POSITIVE-BARS-FIXTURE-PLAN（2026-06-29）
 
 状态：**PLAN ONLY / NOT IMPLEMENTED**。
