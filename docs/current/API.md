@@ -103,6 +103,18 @@ GateH-2 固定范围：
 
 GateH-2 不新增 AI 自动交易、AI 信号接入、dataset/backtest 绑定、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配或复杂因子平台 API。
 
+## GateM-2E Marketdata Readiness API
+
+GateM-2E 新增只读 MarketData readiness 后端 MVP：
+
+- `GET /api/marketdata/readiness`：按本地 DB 既有 MarketData facts 聚合 source health / freshness / gap / qualityStatus summary。该接口只读，不触发采集，不调用 adapter，不访问外部网络，不读取 credential，不启用 LIVE，不接 AI / DH runtime。
+  - Query：`exchangeCode` 必填；`marketType` 可选，默认 `SPOT`；`symbol` 或 `instrumentId` 至少提供一个，二者同时提供时必须一致；`interval` 必填；`from` / `to` 可选，使用 ISO-8601 instant。
+  - Response：`exchangeCode / marketType / instrumentId / symbol / interval / status / freshnessStatus / sourceHealthStatus / sourceHealthReason / qualityStatusSummary / barCount / firstBarTime / lastBarTime / expectedBarCount / gapCount / unknownQualityCount / lastSuccessAt / lastFailureAt / backendSupportLevel / generatedAt`。
+  - `qualityStatusSummary` 包含 `okCount / gapSignalCount / invalidCount / unknownQualityCount / statuses`。
+  - Status set：`FRESH / STALE / GAP / ERROR / DISABLED / UNKNOWN / NO_DATA`。`NO_DATA`、`UNKNOWN`、`STALE`、`GAP`、`ERROR`、`DISABLED` 均不得解释成 ready。
+  - `backendSupportLevel=NO_MIGRATION_MVP` 表示本轮仅基于 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` 的本地聚合，不代表真实交易所 source health 已完成。
+  - Gap 只基于本地 bars 序列和 `quality_status` 证据估算；不猜测真实交易所状态，不伪造 OKX / Binance health。
+
 ## GateH-3 Dataset and Backtest Binding API
 
 当前已实现的 GateH-3 数据集与回测绑定入口：

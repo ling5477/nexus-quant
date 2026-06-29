@@ -1,3 +1,22 @@
+## NQ-GATEM-2E-MARKETDATA-SOURCE-HEALTH-BACKEND-MVP（2026-06-29）
+
+结论：**IMPLEMENTED / BACKEND TESTS PASS / READY FOR REVIEW**。本轮新增只读 `GET /api/marketdata/readiness` 后端 MVP；未新增 migration，未修改 frontend / research / scripts / deploy / `.github/workflows`，未调用 adapter 或外部交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- `MarketdataReadinessServiceTest` 覆盖 no bars → `NO_DATA`、连续 bars → `FRESH`、openTime 序列缺口 → `GAP` / `gapCount > 0`、`UNKNOWN` / `BAD` / `GAP_DETECTED` qualityStatus summary、`unknownQualityCount`、最新失败 run 后置时 `ERROR`、非法时间范围在 repository 调用前拒绝。
+- `MarketdataControllerTest` 覆盖 `GET /api/marketdata/readiness` 响应 shape、credential material 字符串不出现在响应中、API 不调用 `HistoricalMarketDataPort` / `MarketdataIngestionService` / `MarketdataBarIngestService`、缺少 symbol/instrumentId 返回明确 400、非法 interval 返回明确 400。
+- 既有 `/api/marketdata/bars` controller 测试仍保留并通过。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写入前工作区 clean；本轮变更限定 backend marketdata 与允许的 docs/current 文件。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test` | PASS after fix | 首次失败根因为 `MarketdataReadinessService` 双构造函数缺少 production `@Autowired`；已最小修复并重跑通过。最终 reactor 23/23 SUCCESS，`nq-app` 74 tests / 0 failures / 0 errors / 2 skipped。 |
+
+边界结论：readiness API 仅从本地 DB 聚合 bars 与 ingestion run facts；不触发采集、不调用 `HistoricalKlineProvider` / OKX / Binance / Bybit / Gate / Coinbase / Kraken、不读取 credential、不返回 raw payload / stack trace / secret-like material、不把 `NO_DATA` / `UNKNOWN` 写成 ready。
+
 ## NQ-GATEM-2D-MARKETDATA-SOURCE-HEALTH-PLAN（2026-06-29）
 
 结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。本轮只做 MarketData source health / freshness / gap / ingestion readiness 后端聚合能力规划；新增 `docs/current/NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md` 并同步 current 索引/测试/工作日志。未修改 backend、frontend、migration、workflow、research、scripts、deploy、MarketdataController、bars 查询逻辑、TradingWorkbench 或任何 API 实现。

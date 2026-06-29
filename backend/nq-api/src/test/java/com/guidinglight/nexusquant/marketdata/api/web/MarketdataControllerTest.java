@@ -2,7 +2,9 @@ package com.guidinglight.nexusquant.marketdata.api.web;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -15,6 +17,7 @@ import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestSer
 import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataFixtureIngestionResult;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
@@ -23,12 +26,17 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionJob;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionRun;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionStatus;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataBackendSupportLevel;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatusSummary;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatus;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessStatus;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSummary;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.servlet.FilterChain;
@@ -50,6 +58,7 @@ class MarketdataControllerTest {
     private MarketdataBarIngestService marketdataBarIngestService;
     private MarketdataIngestionService marketdataIngestionService;
     private MarketdataDatasetService marketdataDatasetService;
+    private MarketdataReadinessService marketdataReadinessService;
 
     @BeforeEach
     void setUp() {
@@ -57,15 +66,107 @@ class MarketdataControllerTest {
         marketdataBarIngestService = mock(MarketdataBarIngestService.class);
         marketdataIngestionService = mock(MarketdataIngestionService.class);
         marketdataDatasetService = mock(MarketdataDatasetService.class);
+        marketdataReadinessService = mock(MarketdataReadinessService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new MarketdataController(
                         marketdataBarIngestService,
                         historicalMarketDataPort,
                         marketdataIngestionService,
-                        marketdataDatasetService
+                        marketdataDatasetService,
+                        marketdataReadinessService
                 ))
                 .addFilters(new TestTraceIdFilter())
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
+    }
+
+    @Test
+    void shouldExposeReadinessSummaryWithoutCallingBarsOrIngestionPorts() throws Exception {
+        when(marketdataReadinessService.summarize(argThat(query ->
+                "BINANCE".equals(query.exchangeCode())
+                        && "SPOT".equals(query.marketType())
+                        && "BTC-USDT".equals(query.symbol())
+                        && query.interval() == BarInterval.ONE_MINUTE
+                        && Instant.parse("2026-06-29T00:00:00Z").equals(query.from())
+                        && Instant.parse("2026-06-29T00:02:59Z").equals(query.to())
+        ))).thenReturn(new MarketdataReadinessSummary(
+                "BINANCE",
+                "SPOT",
+                "BTC-USDT",
+                "BTC-USDT",
+                "1m",
+                MarketdataReadinessStatus.FRESH,
+                MarketdataReadinessStatus.FRESH,
+                MarketdataReadinessStatus.FRESH,
+                "Local bars satisfy the requested readiness window using DB-only aggregation.",
+                new MarketdataQualityStatusSummary(3, 0, 0, 0, Map.of("OK", 3L)),
+                3,
+                Instant.parse("2026-06-29T00:00:00Z"),
+                Instant.parse("2026-06-29T00:02:59Z"),
+                3L,
+                0L,
+                0,
+                Instant.parse("2026-06-29T00:03:10Z"),
+                null,
+                MarketdataBackendSupportLevel.NO_MIGRATION_MVP,
+                Instant.parse("2026-06-29T00:04:00Z")
+        ));
+
+        String responseBody = mockMvc.perform(get("/api/marketdata/readiness")
+                        .param("exchangeCode", "BINANCE")
+                        .param("marketType", "SPOT")
+                        .param("instrumentId", "BTC-USDT")
+                        .param("interval", "1m")
+                        .param("from", "2026-06-29T00:00:00Z")
+                        .param("to", "2026-06-29T00:02:59Z")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-readiness"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-readiness"))
+                .andExpect(jsonPath("$.exchangeCode").value("BINANCE"))
+                .andExpect(jsonPath("$.instrumentId").value("BTC-USDT"))
+                .andExpect(jsonPath("$.symbol").value("BTC-USDT"))
+                .andExpect(jsonPath("$.status").value("FRESH"))
+                .andExpect(jsonPath("$.freshnessStatus").value("FRESH"))
+                .andExpect(jsonPath("$.sourceHealthStatus").value("FRESH"))
+                .andExpect(jsonPath("$.qualityStatusSummary.okCount").value(3))
+                .andExpect(jsonPath("$.barCount").value(3))
+                .andExpect(jsonPath("$.expectedBarCount").value(3))
+                .andExpect(jsonPath("$.gapCount").value(0))
+                .andExpect(jsonPath("$.unknownQualityCount").value(0))
+                .andExpect(jsonPath("$.backendSupportLevel").value("NO_MIGRATION_MVP"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertFalse(responseBody.contains("apiKey"));
+        assertFalse(responseBody.contains("secret"));
+        assertFalse(responseBody.contains("passphrase"));
+        assertFalse(responseBody.contains("private key"));
+        verifyNoInteractions(historicalMarketDataPort, marketdataIngestionService, marketdataBarIngestService);
+    }
+
+    @Test
+    void shouldRejectReadinessWithoutSymbolOrInstrumentId() throws Exception {
+        mockMvc.perform(get("/api/marketdata/readiness")
+                        .param("exchangeCode", "BINANCE")
+                        .param("marketType", "SPOT")
+                        .param("interval", "1m"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        verifyNoInteractions(marketdataReadinessService);
+    }
+
+    @Test
+    void shouldRejectReadinessWithUnsupportedInterval() throws Exception {
+        mockMvc.perform(get("/api/marketdata/readiness")
+                        .param("exchangeCode", "BINANCE")
+                        .param("marketType", "SPOT")
+                        .param("symbol", "BTC-USDT")
+                        .param("interval", "3m"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        verifyNoInteractions(marketdataReadinessService);
     }
 
     @Test

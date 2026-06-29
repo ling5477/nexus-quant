@@ -9,15 +9,18 @@ import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataBarResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataDatasetResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionJobResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionRunResponse;
+import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataReadinessResponse;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessService;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataDatasetCommand;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataIngestionJobCommand;
 import com.guidinglight.nexusquant.marketdata.application.command.FixtureMarketdataIngestionCommand;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessQuery;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -61,12 +64,14 @@ public class MarketdataController {
     private final HistoricalMarketDataPort historicalMarketDataPort;
     private final MarketdataIngestionService marketdataIngestionService;
     private final MarketdataDatasetService marketdataDatasetService;
+    private final MarketdataReadinessService marketdataReadinessService;
 
     public MarketdataController(
             MarketdataBarIngestService marketdataBarIngestService,
             HistoricalMarketDataPort historicalMarketDataPort,
             MarketdataIngestionService marketdataIngestionService,
-            MarketdataDatasetService marketdataDatasetService
+            MarketdataDatasetService marketdataDatasetService,
+            MarketdataReadinessService marketdataReadinessService
     ) {
         this.marketdataBarIngestService = Objects.requireNonNull(
                 marketdataBarIngestService,
@@ -84,6 +89,38 @@ public class MarketdataController {
                 marketdataDatasetService,
                 "marketdataDatasetService must not be null"
         );
+        this.marketdataReadinessService = Objects.requireNonNull(
+                marketdataReadinessService,
+                "marketdataReadinessService must not be null"
+        );
+    }
+
+    @GetMapping("/readiness")
+    @Operation(
+            summary = "查询 MarketData readiness",
+            description = "只读聚合本地 DB bars / ingestion facts，不触发采集、不调用 adapter、不访问外部交易所。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(responseCode = "200", description = "查询成功")
+    public MarketdataReadinessResponse getReadiness(
+            @RequestParam String exchangeCode,
+            @RequestParam(defaultValue = "SPOT") String marketType,
+            @RequestParam(required = false) String symbol,
+            @RequestParam(required = false) String instrumentId,
+            @RequestParam String interval,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to
+    ) {
+        String resolvedSymbol = resolveReadinessSymbol(symbol, instrumentId);
+        BarInterval normalizedInterval = BarInterval.fromWireValue(interval);
+        return MarketdataReadinessResponse.from(marketdataReadinessService.summarize(new MarketdataReadinessQuery(
+                exchangeCode,
+                marketType,
+                resolvedSymbol,
+                normalizedInterval,
+                from,
+                to
+        )));
     }
 
     @GetMapping("/bars")
@@ -272,5 +309,17 @@ public class MarketdataController {
             // Why: 某些测试会直接传入 TokenClaims 风格 principal；失败时继续走标准 Principal name。
         }
         return principal.getName();
+    }
+
+    private String resolveReadinessSymbol(String symbol, String instrumentId) {
+        boolean hasSymbol = symbol != null && !symbol.isBlank();
+        boolean hasInstrumentId = instrumentId != null && !instrumentId.isBlank();
+        if (!hasSymbol && !hasInstrumentId) {
+            throw new IllegalArgumentException("symbol or instrumentId must be provided");
+        }
+        if (hasSymbol && hasInstrumentId && !symbol.trim().equalsIgnoreCase(instrumentId.trim())) {
+            throw new IllegalArgumentException("symbol and instrumentId must match when both are provided");
+        }
+        return hasSymbol ? symbol.trim() : instrumentId.trim();
     }
 }

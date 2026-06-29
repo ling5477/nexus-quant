@@ -515,3 +515,14 @@ Suggested follow-up tasks:
 Proceed with a no-migration backend MVP in the next implementation task. The MVP should add one read-only readiness endpoint backed by existing bars, ingestion job/run and optional dataset coverage facts. It must never call external exchanges or mark missing evidence as ready.
 
 This 2D task remains `PLAN ONLY / NOT IMPLEMENTED`.
+
+## 15. GateM-2E implementation follow-up
+
+`NQ-GATEM-2E-MARKETDATA-SOURCE-HEALTH-BACKEND-MVP` implemented the planned no-migration backend MVP as a separate follow-up task:
+
+- Added read-only `GET /api/marketdata/readiness`.
+- Aggregates local `marketdata_bars` and `marketdata_ingestion_jobs/runs` facts only.
+- Returns `NO_MIGRATION_MVP` support level and fail-closed statuses for `NO_DATA`, `UNKNOWN`, `STALE`, `GAP`, `ERROR` and `DISABLED`.
+- Does not add migration, does not modify frontend, does not call OKX / Binance / Bybit / Gate / Coinbase / Kraken, does not read credential material, does not enable LIVE, AI or DH runtime.
+
+This addendum records the follow-up implementation status only. The original 2D planning task itself remains `PLAN ONLY / NOT IMPLEMENTED`, and 2E does not mean MarketData source health is fully complete or future persisted source-health policy exists.

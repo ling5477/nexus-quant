@@ -106,6 +106,16 @@ GateH-2 新增 `marketdata_ingestion_runs`：
 - 外键：`job_id` 关联 `marketdata_ingestion_jobs.job_id`。
 - 关键索引：`idx_marketdata_ingestion_runs_job_started`，用于任务详情按运行开始时间倒序查询。
 
+## GateM-2E no-migration Marketdata Readiness Aggregation
+
+GateM-2E 未新增 migration、未修改历史 migration、未新增表、字段、索引或约束。`GET /api/marketdata/readiness` 只复用既有表聚合：
+
+- `marketdata_bars`：按 `exchange_code + market_type + symbol + interval` 与可选时间窗口统计 `barCount`、`firstBarTime`、`lastBarTime`、`qualityStatusSummary`、`unknownQualityCount`，并根据 open time 序列估算 `expectedBarCount` 与 `gapCount`。
+- `marketdata_ingestion_jobs` / `marketdata_ingestion_runs`：按同一 scope 聚合派生 `lastSuccessAt`、`lastFailureAt` 与最新 run 状态，用于 `sourceHealthReason`。这些字段是 derived evidence，不是持久 source-health 状态。
+- `marketdata_datasets` / `marketdata_dataset_coverage`：仍是 dataset 质量事实；本轮 API 不要求必须存在 dataset/coverage，也不新增 dataset 依赖。
+
+边界：该聚合不读取 `raw_payload_json` 内容，不读取 credential material，不调用历史行情 provider / adapter，不访问外部交易所，不启用 LIVE。`backendSupportLevel=NO_MIGRATION_MVP` 表示当前仍是现有表支撑的 MVP，不代表 source health 全量持久化完成。
+
 ## 注释与 JSONB 约定
 
 - GateH-2 新增表均包含 `COMMENT ON TABLE`。
