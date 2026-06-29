@@ -1,3 +1,24 @@
+## NQ-GATEM-2F-MARKETDATA-SOURCE-HEALTH-FRONTEND-INTEGRATION（2026-06-29）
+
+结论：**IMPLEMENTED / FRONTEND BUILD PASS / BACKEND-FREE E2E PASS / READY FOR REVIEW**。本轮只把 MarketData 页面接入既有只读 `GET /api/marketdata/readiness`；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未调用 adapter 或外部交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- `marketdataApi.getReadiness()` 新增 readonly readiness 查询。
+- `MarketdataReadinessSummary` / `MarketdataQualityStatusSummary` / `MarketdataReadinessQuery` 前端类型新增。
+- `MarketdataPage` 在提交 bars 查询条件后并行查询 `/api/marketdata/readiness`，Data Quality / Readiness 区域优先显示后端 `status / freshnessStatus / sourceHealthStatus / sourceHealthReason / backendSupportLevel / barCount / firstBarTime / lastBarTime / gapCount / unknownQualityCount / lastSuccessAt / lastFailureAt`；readiness 不可用时降级为 bars-derived fallback，不显示 READY。
+- `marketdata-quality-readiness-smoke.spec.ts` 更新为 backend-free mock readiness smoke，保留 K 线 canvas 断言并验证旧 `Pending backend support` 文案不再出现在成功 readiness summary 下。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；mock `/api/marketdata/readiness`，验证 `GAP / STALE / NO_MIGRATION_MVP / source health: GAP` 与 K 线容器。 |
+| local backend health check `http://127.0.0.1:18888/actuator/health` | UNAVAILABLE | 本地真实后端未运行；未补跑 real backend smoke。 |
+
+边界结论：本轮未触达 backend / migration / TradingWorkbench / real exchange / credential material / WebSocket / order / cancel / withdraw / transfer。readiness fallback 明确为 `UNAVAILABLE`，不把 backend 不可用写成 READY。
+
 ## NQ-GATEM-2E-MARKETDATA-SOURCE-HEALTH-BACKEND-MVP（2026-06-29）
 
 结论：**IMPLEMENTED / BACKEND TESTS PASS / READY FOR REVIEW**。本轮新增只读 `GET /api/marketdata/readiness` 后端 MVP；未新增 migration，未修改 frontend / research / scripts / deploy / `.github/workflows`，未调用 adapter 或外部交易所，未启用 LIVE / AI / DH runtime。

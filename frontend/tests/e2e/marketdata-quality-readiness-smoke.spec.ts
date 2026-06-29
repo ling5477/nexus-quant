@@ -17,6 +17,39 @@ interface MarketdataBarFixture {
     qualityStatus?: string | null;
 }
 
+const SAMPLE_READINESS = {
+    exchangeCode: 'BINANCE',
+    marketType: 'SPOT',
+    instrumentId: 'BTC-USDT',
+    symbol: 'BTC-USDT',
+    interval: '1m',
+    status: 'GAP',
+    freshnessStatus: 'STALE',
+    sourceHealthStatus: 'GAP',
+    sourceHealthReason: 'Local bar sequence or qualityStatus evidence indicates a gap; gapCount=2.',
+    qualityStatusSummary: {
+        okCount: 2,
+        gapSignalCount: 1,
+        invalidCount: 0,
+        unknownQualityCount: 1,
+        statuses: {
+            OK: 2,
+            GAP_DETECTED: 1,
+            UNKNOWN: 1,
+        },
+    },
+    barCount: 3,
+    firstBarTime: '2026-06-29T01:00:00Z',
+    lastBarTime: '2026-06-29T01:03:59Z',
+    expectedBarCount: 5,
+    gapCount: 2,
+    unknownQualityCount: 1,
+    lastSuccessAt: '2026-06-29T01:05:00Z',
+    lastFailureAt: null,
+    backendSupportLevel: 'NO_MIGRATION_MVP',
+    generatedAt: '2026-06-29T01:06:00Z',
+};
+
 const SAMPLE_BARS: MarketdataBarFixture[] = [
     {
         exchangeCode: 'BINANCE',
@@ -114,6 +147,11 @@ async function seedAuthAndMarketdataStubs(page: Page): Promise<void> {
         status: 200,
         json: SAMPLE_BARS,
     }));
+
+    await page.route('**/api/marketdata/readiness**', (route: Route) => route.fulfill({
+        status: 200,
+        json: SAMPLE_READINESS,
+    }));
 }
 
 async function fillQueryWindow(page: Page): Promise<void> {
@@ -126,7 +164,7 @@ async function fillQueryWindow(page: Page): Promise<void> {
 }
 
 test.describe('marketdata quality readiness view', () => {
-    test('mock bars expose freshness, gap, unknown quality and source health unavailable state', async ({page}) => {
+    test('mock readiness summary replaces pending source health and keeps kline visible', async ({page}) => {
         await seedAuthAndMarketdataStubs(page);
         await page.goto('/marketdata');
 
@@ -135,7 +173,12 @@ test.describe('marketdata quality readiness view', () => {
         await expect(qualityPanel).toContainText('UNKNOWN');
 
         await fillQueryWindow(page);
+        const readinessResponse = page.waitForResponse((response) => (
+            response.url().includes('/api/marketdata/readiness')
+            && response.status() === 200
+        ));
         await page.getByRole('button', {name: /查\s*询/}).first().click();
+        await readinessResponse;
 
         const chartPanel = page.getByTestId('marketdata-kline-readiness-view');
         const kline = chartPanel.getByTestId('nq-kline-chart').filter({hasText: 'OHLCV K-line'}).first();
@@ -145,10 +188,16 @@ test.describe('marketdata quality readiness view', () => {
         await expect(qualityPanel).toContainText('Last bar time');
         await expect(qualityPanel).toContainText('Freshness');
         await expect(qualityPanel).toContainText('GAP');
-        await expect(qualityPanel).toContainText(/Gap count[\s\S]*1/);
+        await expect(qualityPanel).toContainText('STALE');
+        await expect(qualityPanel).toContainText(/Gap count[\s\S]*2/);
         await expect(qualityPanel).toContainText(/Unknown quality count[\s\S]*1/);
-        await expect(qualityPanel).toContainText('source health: not available from current API');
-        await expect(qualityPanel).toContainText('Pending backend support');
+        await expect(qualityPanel).toContainText('Source health status');
+        await expect(qualityPanel).toContainText('source health: GAP');
+        await expect(qualityPanel).toContainText('NO_MIGRATION_MVP');
+        await expect(qualityPanel).toContainText('Local bar sequence or qualityStatus evidence indicates a gap');
+        await expect(qualityPanel).toContainText('Last success');
+        await expect(qualityPanel).not.toContainText('Pending backend support');
+        await expect(qualityPanel).not.toContainText('source health: not available from current API');
         await expect(page.getByText('Marketdata bars 查询失败')).toHaveCount(0);
     });
 });

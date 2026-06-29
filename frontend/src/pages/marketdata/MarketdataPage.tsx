@@ -18,6 +18,8 @@ import type {
     MarketdataDataset,
     MarketdataIngestionJob,
     MarketdataIngestionRun,
+    MarketdataReadinessQuery,
+    MarketdataReadinessSummary,
 } from '@/types/marketdata';
 import {formatDateTime, formatNumber} from '@/utils/formatters';
 
@@ -50,13 +52,26 @@ const OK_QUALITY_STATUSES = new Set(['OK', 'GOOD']);
 
 type QualityReadinessStatus = 'GOOD' | 'WARN' | 'STALE' | 'GAP' | 'ERROR' | 'UNKNOWN';
 
-const QUALITY_READINESS_COLOR: Record<QualityReadinessStatus, string> = {
-    GOOD: 'green',
-    WARN: 'gold',
+const READINESS_STATUS_COLOR: Record<string, string> = {
+    FRESH: 'green',
     STALE: 'orange',
     GAP: 'orange',
     ERROR: 'red',
+    DISABLED: 'default',
     UNKNOWN: 'default',
+    NO_DATA: 'default',
+    GOOD: 'green',
+    WARN: 'gold',
+};
+
+const READINESS_FRESHNESS_STATE: Record<string, FreshnessState> = {
+    FRESH: 'fresh',
+    STALE: 'stale',
+    GAP: 'degraded',
+    ERROR: 'error',
+    DISABLED: 'disabled',
+    UNKNOWN: 'delayed',
+    NO_DATA: 'no_data',
 };
 
 type MarketdataDateValue = string | null | undefined | {
@@ -100,6 +115,17 @@ function normalizeBarsQuery(values: MarketdataBarsFormValues): MarketdataBarsQue
         ...values,
         startTime: toIsoString(values.startTime),
         endTime: toIsoString(values.endTime),
+    };
+}
+
+function toReadinessQuery(query: MarketdataBarsQuery): MarketdataReadinessQuery {
+    return {
+        exchangeCode: query.exchangeCode,
+        marketType: query.marketType,
+        symbol: query.symbol,
+        interval: query.interval,
+        from: query.startTime,
+        to: query.endTime,
     };
 }
 
@@ -324,7 +350,7 @@ function summarizeDataQualityReadiness(
             title: 'ERROR',
             detail: 'bars query failed; data quality cannot be trusted for this request',
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'not available from current API',
+            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
         };
     }
     if (!submittedQuery) {
@@ -333,7 +359,7 @@ function summarizeDataQualityReadiness(
             title: 'UNKNOWN',
             detail: 'submit a bars query to evaluate current data quality',
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'not available from current API',
+            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
         };
     }
     if (loading) {
@@ -342,7 +368,7 @@ function summarizeDataQualityReadiness(
             title: 'UNKNOWN',
             detail: 'bars query is still loading',
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'not available from current API',
+            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
         };
     }
     if (bars.length === 0) {
@@ -351,7 +377,7 @@ function summarizeDataQualityReadiness(
             title: 'UNKNOWN',
             detail: 'no bars returned for the submitted window',
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'not available from current API',
+            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
         };
     }
     if (quality.gapCount > 0) {
@@ -360,7 +386,7 @@ function summarizeDataQualityReadiness(
             title: 'GAP',
             detail: `${quality.gapCount} gap signal(s) detected from qualityStatus or interval sequence`,
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'not available from current API',
+            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
         };
     }
     if (freshness.stale) {
@@ -369,7 +395,7 @@ function summarizeDataQualityReadiness(
             title: 'STALE',
             detail: 'last bar does not cover the submitted query end window',
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'not available from current API',
+            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
         };
     }
     if (quality.unknownQualityCount > 0 || quality.nonOkQualityCount > 0 || quality.gapDetectionUnavailable) {
@@ -378,7 +404,7 @@ function summarizeDataQualityReadiness(
             title: 'WARN',
             detail: 'qualityStatus is incomplete or contains non-OK values',
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'not available from current API',
+            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
         };
     }
 
@@ -387,7 +413,7 @@ function summarizeDataQualityReadiness(
         title: 'GOOD',
         detail: 'bars are present, sequential and qualityStatus is OK',
         sourceHealth: 'UNAVAILABLE',
-        sourceHealthDetail: 'not available from current API',
+        sourceHealthDetail: 'readiness API unavailable; using bars fallback',
     };
 }
 
@@ -399,6 +425,72 @@ function QualityTags({quality}: {quality: BarsQualitySummary}) {
     return (
         <Space size={4} wrap>
             {quality.statusCounts.map(({status, count}) => (
+                <Tag key={status} color={OK_QUALITY_STATUSES.has(status) ? 'green' : 'orange'}>
+                    {status}: {count}
+                </Tag>
+            ))}
+        </Space>
+    );
+}
+
+function readinessStatusColor(status?: string | null): string {
+    return status ? (READINESS_STATUS_COLOR[status] ?? 'default') : 'default';
+}
+
+function readinessFreshnessState(status?: string | null): FreshnessState {
+    return status ? (READINESS_FRESHNESS_STATE[status] ?? 'degraded') : 'disabled';
+}
+
+function countText(value?: number | null): string {
+    return value == null ? '-' : String(value);
+}
+
+function dateText(value?: string | null): string {
+    return value ? formatDateTime(value) : '-';
+}
+
+function isMarketdataQualityStatusSummary(value: unknown): value is MarketdataReadinessSummary['qualityStatusSummary'] {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return false;
+    }
+
+    const candidate = value as Partial<MarketdataReadinessSummary['qualityStatusSummary']>;
+    return typeof candidate.okCount === 'number'
+        && typeof candidate.gapSignalCount === 'number'
+        && typeof candidate.invalidCount === 'number'
+        && typeof candidate.unknownQualityCount === 'number'
+        && Boolean(candidate.statuses)
+        && typeof candidate.statuses === 'object'
+        && !Array.isArray(candidate.statuses);
+}
+
+function isMarketdataReadinessSummary(value: unknown): value is MarketdataReadinessSummary {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return false;
+    }
+
+    const candidate = value as Partial<MarketdataReadinessSummary>;
+    return typeof candidate.status === 'string'
+        && typeof candidate.freshnessStatus === 'string'
+        && typeof candidate.sourceHealthStatus === 'string'
+        && typeof candidate.sourceHealthReason === 'string'
+        && typeof candidate.backendSupportLevel === 'string'
+        && typeof candidate.generatedAt === 'string'
+        && typeof candidate.barCount === 'number'
+        && typeof candidate.unknownQualityCount === 'number'
+        && isMarketdataQualityStatusSummary(candidate.qualityStatusSummary);
+}
+
+function ReadinessQualityTags({readiness}: {readiness: MarketdataReadinessSummary}) {
+    const entries = Object.entries(readiness.qualityStatusSummary?.statuses ?? {});
+
+    if (entries.length === 0) {
+        return <Tag>qualityStatus unavailable</Tag>;
+    }
+
+    return (
+        <Space size={4} wrap>
+            {entries.map(([status, count]) => (
                 <Tag key={status} color={OK_QUALITY_STATUSES.has(status) ? 'green' : 'orange'}>
                     {status}: {count}
                 </Tag>
@@ -530,6 +622,16 @@ export function MarketdataPage() {
         queryFn: () => marketdataApi.listBars(submittedQuery as MarketdataBarsQuery),
         enabled: submittedQuery !== null,
     });
+    const readinessQueryInput = useMemo(
+        () => submittedQuery ? toReadinessQuery(submittedQuery) : null,
+        [submittedQuery],
+    );
+    const readinessQuery = useQuery({
+        queryKey: ['marketdata-readiness', readinessQueryInput],
+        queryFn: () => marketdataApi.getReadiness(readinessQueryInput as MarketdataReadinessQuery),
+        enabled: readinessQueryInput !== null,
+        retry: false,
+    });
     const jobsQuery = useQuery({
         queryKey: ['marketdata-ingestion-jobs'],
         queryFn: marketdataApi.listIngestionJobs,
@@ -561,6 +663,7 @@ export function MarketdataPage() {
             await queryClient.invalidateQueries({queryKey: ['marketdata-ingestion-jobs']});
             await queryClient.invalidateQueries({queryKey: ['marketdata-ingestion-runs', run.jobId]});
             await queryClient.invalidateQueries({queryKey: ['marketdata-bars']});
+            await queryClient.invalidateQueries({queryKey: ['marketdata-readiness']});
         },
         onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
         onSettled: () => setPendingJobId(null),
@@ -584,6 +687,13 @@ export function MarketdataPage() {
         onSettled: () => setPendingDatasetId(null),
     });
     const bars = barsQuery.data ?? [];
+    const backendReadiness = useMemo(
+        () => isMarketdataReadinessSummary(readinessQuery.data) ? readinessQuery.data : null,
+        [readinessQuery.data],
+    );
+    const readinessLoading = submittedQuery !== null && (readinessQuery.isLoading || readinessQuery.isFetching);
+    const readinessUnavailable = submittedQuery !== null && !readinessLoading && backendReadiness === null;
+    const readinessError = readinessQuery.error ? formatApiError(readinessQuery.error as AppApiError) : null;
     const chartBars = useMemo(() => bars.map(toNqKlineBar), [bars]);
     const barsQuality = useMemo(() => summarizeBarsQuality(bars, submittedQuery?.interval), [bars, submittedQuery?.interval]);
     const barsFreshness = useMemo(
@@ -761,12 +871,26 @@ export function MarketdataPage() {
                             {key: 'queryEnd', label: 'Query end', children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.endTime) : '-'}</MetricText>},
                             {
                                 key: 'readinessStatus',
-                                label: 'Quality summary',
+                                label: 'Readiness status',
                                 children: (
-                                    <Tag color={QUALITY_READINESS_COLOR[dataQualityReadiness.status]}>
-                                        {dataQualityReadiness.title}
+                                    <Tag color={readinessStatusColor(backendReadiness?.status ?? dataQualityReadiness.status)}>
+                                        {backendReadiness?.status ?? dataQualityReadiness.title}
                                     </Tag>
                                 ),
+                            },
+                            {
+                                key: 'sourceHealthStatus',
+                                label: 'Source health status',
+                                children: (
+                                    <Tag color={readinessStatusColor(backendReadiness?.sourceHealthStatus)}>
+                                        {backendReadiness?.sourceHealthStatus ?? (readinessLoading ? 'LOADING' : 'UNAVAILABLE')}
+                                    </Tag>
+                                ),
+                            },
+                            {
+                                key: 'backendSupportLevel',
+                                label: 'Backend support',
+                                children: <MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>,
                             },
                         ]}
                     />
@@ -779,18 +903,18 @@ export function MarketdataPage() {
                     >
                         <MetricTile
                             label="Bars loaded"
-                            value={<MetricText>{bars.length}</MetricText>}
-                            detail={submittedQuery ? 'from /api/marketdata/bars' : 'pending query'}
+                            value={<MetricText>{backendReadiness?.barCount ?? bars.length}</MetricText>}
+                            detail={backendReadiness ? 'from /api/marketdata/readiness' : (submittedQuery ? 'from /api/marketdata/bars fallback' : 'pending query')}
                         />
                         <MetricTile
                             label="First bar time"
-                            value={<MetricText>{firstBar ? formatDateTime(firstBar.openTime) : '-'}</MetricText>}
-                            detail={firstBar ? firstBar.openTime : 'no data'}
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.firstBarTime) : (firstBar ? formatDateTime(firstBar.openTime) : '-')}</MetricText>}
+                            detail={backendReadiness ? (backendReadiness.firstBarTime ?? 'no data') : (firstBar ? firstBar.openTime : 'no data')}
                         />
                         <MetricTile
                             label="Last bar time"
-                            value={<MetricText>{lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-'}</MetricText>}
-                            detail={lastBar ? (lastBar.closeTime ?? lastBar.openTime) : 'no data'}
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastBarTime) : (lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-')}</MetricText>}
+                            detail={backendReadiness ? (backendReadiness.lastBarTime ?? 'no data') : (lastBar ? (lastBar.closeTime ?? lastBar.openTime) : 'no data')}
                         />
                         <MetricTile
                             label="Latest close"
@@ -804,38 +928,76 @@ export function MarketdataPage() {
                         />
                         <MetricTile
                             label="Freshness"
-                            value={<DataFreshness source="bars" state={barsFreshness.state} detail={barsFreshness.detail} inline />}
-                            detail={barsFreshness.stale ? 'stale by query interval estimate' : 'front-end estimate'}
+                            value={(
+                                <DataFreshness
+                                    source={backendReadiness ? 'backend readiness' : 'bars'}
+                                    state={backendReadiness ? readinessFreshnessState(backendReadiness.freshnessStatus) : barsFreshness.state}
+                                    detail={backendReadiness?.freshnessStatus ?? barsFreshness.detail}
+                                    inline
+                                />
+                            )}
+                            detail={backendReadiness ? 'from /api/marketdata/readiness' : (barsFreshness.stale ? 'stale by query interval estimate' : 'front-end estimate')}
                         />
                         <MetricTile
                             label="Quality status"
-                            value={<QualityTags quality={barsQuality}/>}
-                            detail={barsQuality.hasQualityStatus ? 'aggregated from bars payload' : 'unavailable / pending backend support'}
+                            value={backendReadiness ? <ReadinessQualityTags readiness={backendReadiness}/> : <QualityTags quality={barsQuality}/>}
+                            detail={backendReadiness ? `ok=${backendReadiness.qualityStatusSummary.okCount}, gap=${backendReadiness.qualityStatusSummary.gapSignalCount}, invalid=${backendReadiness.qualityStatusSummary.invalidCount}` : (barsQuality.hasQualityStatus ? 'aggregated from bars payload' : 'unavailable / readiness unavailable')}
                         />
                         <MetricTile
                             label="Gap count"
-                            value={<MetricText>{barsQuality.gapDetectionUnavailable ? '-' : barsQuality.gapCount}</MetricText>}
-                            detail={barsQuality.gapDetectionUnavailable ? 'gap detection pending backend support' : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`}
+                            value={<MetricText>{backendReadiness ? countText(backendReadiness.gapCount) : (barsQuality.gapDetectionUnavailable ? '-' : barsQuality.gapCount)}</MetricText>}
+                            detail={backendReadiness ? `expected=${countText(backendReadiness.expectedBarCount)}` : (barsQuality.gapDetectionUnavailable ? 'gap detection unavailable' : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`)}
                         />
                         <MetricTile
                             label="Unknown quality count"
-                            value={<MetricText>{barsQuality.unknownQualityCount}</MetricText>}
-                            detail={barsQuality.unknownQualityCount > 0 ? 'qualityStatus missing on returned bars' : 'none'}
+                            value={<MetricText>{backendReadiness?.unknownQualityCount ?? barsQuality.unknownQualityCount}</MetricText>}
+                            detail={backendReadiness ? 'from backend qualityStatusSummary' : (barsQuality.unknownQualityCount > 0 ? 'qualityStatus missing on returned bars' : 'none')}
                         />
                         <MetricTile
                             label="Source health"
-                            value={<Tag>Pending backend support</Tag>}
-                            detail={dataQualityReadiness.sourceHealthDetail}
+                            value={(
+                                <Tag color={readinessStatusColor(backendReadiness?.sourceHealthStatus)}>
+                                    {backendReadiness?.sourceHealthStatus ?? (readinessLoading ? 'LOADING' : 'UNAVAILABLE')}
+                                </Tag>
+                            )}
+                            detail={backendReadiness?.sourceHealthReason ?? (readinessLoading ? 'loading /api/marketdata/readiness' : dataQualityReadiness.sourceHealthDetail)}
+                        />
+                        <MetricTile
+                            label="Backend support"
+                            value={<MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>}
+                            detail={backendReadiness ? `generated ${formatDateTime(backendReadiness.generatedAt)}` : 'readiness API fallback'}
+                        />
+                        <MetricTile
+                            label="Last success"
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastSuccessAt) : '-'}</MetricText>}
+                            detail={backendReadiness?.lastSuccessAt ?? 'not returned'}
+                        />
+                        <MetricTile
+                            label="Last failure"
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastFailureAt) : '-'}</MetricText>}
+                            detail={backendReadiness?.lastFailureAt ?? 'not returned'}
                         />
                     </div>
                     <Space size={8} wrap>
-                        <Tag color={QUALITY_READINESS_COLOR[dataQualityReadiness.status]}>
-                            {dataQualityReadiness.status}
+                        <Tag color={readinessStatusColor(backendReadiness?.status ?? dataQualityReadiness.status)}>
+                            {backendReadiness?.status ?? dataQualityReadiness.status}
                         </Tag>
+                        {backendReadiness ? (
+                            <>
+                                <Tag color={readinessStatusColor(backendReadiness.freshnessStatus)}>
+                                    freshness: {backendReadiness.freshnessStatus}
+                                </Tag>
+                                <Tag color={readinessStatusColor(backendReadiness.sourceHealthStatus)}>
+                                    source health: {backendReadiness.sourceHealthStatus}
+                                </Tag>
+                                <Tag>backend support: {backendReadiness.backendSupportLevel}</Tag>
+                            </>
+                        ) : (
+                            <Tag>source health: {readinessLoading ? 'LOADING' : 'UNAVAILABLE'}</Tag>
+                        )}
                         {barsQuality.gapDetectionUnavailable ? (
-                            <Tag>gap detection pending backend support</Tag>
+                            <Tag>gap detection unavailable</Tag>
                         ) : null}
-                        <Tag>source health: not available from current API</Tag>
                     </Space>
                     {chartError ? (
                         <Alert
@@ -857,16 +1019,35 @@ export function MarketdataPage() {
                         <Alert
                             type="info"
                             showIcon
-                            message="Gap detection pending backend support"
+                            message="Gap detection unavailable"
                             description="当前 bars payload 无 qualityStatus，且周期或时间字段不足以稳定推断序列缺口；页面不会伪造 gap=0 或 source health=OK。"
                         />
                     ) : null}
-                    <Alert
-                        type={dataQualityReadiness.status === 'GOOD' ? 'success' : dataQualityReadiness.status === 'ERROR' ? 'error' : 'warning'}
-                        showIcon
-                        message={`MarketData readiness: ${dataQualityReadiness.title}`}
-                        description={`${dataQualityReadiness.detail}. Source health is ${dataQualityReadiness.sourceHealthDetail}.`}
-                    />
+                    {readinessUnavailable ? (
+                        <Alert
+                            type="warning"
+                            showIcon
+                            message="MarketData source health unavailable"
+                            description={readinessError
+                                ? `readiness API failed: ${readinessError}; using bars-derived fallback only.`
+                                : 'readiness API did not return a usable summary; using bars-derived fallback only.'}
+                        />
+                    ) : null}
+                    {backendReadiness ? (
+                        <Alert
+                            type={backendReadiness.status === 'FRESH' ? 'success' : backendReadiness.status === 'ERROR' ? 'error' : 'warning'}
+                            showIcon
+                            message={`MarketData readiness: ${backendReadiness.status}`}
+                            description={`${backendReadiness.sourceHealthReason} Backend support: ${backendReadiness.backendSupportLevel}.`}
+                        />
+                    ) : (
+                        <Alert
+                            type={dataQualityReadiness.status === 'GOOD' ? 'success' : dataQualityReadiness.status === 'ERROR' ? 'error' : 'warning'}
+                            showIcon
+                            message={`MarketData readiness: ${dataQualityReadiness.title}`}
+                            description={`${dataQualityReadiness.detail}. Source health is ${readinessLoading ? 'loading' : dataQualityReadiness.sourceHealthDetail}.`}
+                        />
+                    )}
                 </div>
             </Card>
             <Card className="page-section" bordered={false} title="Bars 结果">

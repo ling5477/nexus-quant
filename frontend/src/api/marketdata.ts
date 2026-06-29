@@ -7,11 +7,19 @@ import type {
     MarketdataDataset,
     MarketdataIngestionJob,
     MarketdataIngestionRun,
+    MarketdataReadinessQuery,
+    MarketdataReadinessSummary,
 } from '@/types/marketdata';
 
 export const marketdataApi = {
     async listBars(query: MarketdataBarsQuery): Promise<MarketdataBar[]> {
         const {data} = await apiClient.get<MarketdataBar[]>('/marketdata/bars', {
+            params: query,
+        });
+        return data;
+    },
+    async getReadiness(query: MarketdataReadinessQuery): Promise<MarketdataReadinessSummary> {
+        const {data} = await apiClient.get<MarketdataReadinessSummary>('/marketdata/readiness', {
             params: query,
         });
         return data;

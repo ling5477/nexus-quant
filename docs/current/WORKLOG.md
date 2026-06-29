@@ -1,3 +1,24 @@
+## NQ-GATEM-2F-MARKETDATA-SOURCE-HEALTH-FRONTEND-INTEGRATION（2026-06-29）
+
+状态：**IMPLEMENTED / FRONTEND BUILD PASS / BACKEND-FREE E2E PASS / READY FOR REVIEW**。
+
+本轮只在 MarketData 前端接入既有 `GET /api/marketdata/readiness`，用后端 readiness summary 替换 Data Quality / Readiness 区域原先的 source health pending backend support 表达。页面在 bars 查询条件提交后并行读取 readiness；后端 summary 可用时显示 `status`、`freshnessStatus`、`sourceHealthStatus`、`sourceHealthReason`、`backendSupportLevel`、`barCount`、`firstBarTime`、`lastBarTime`、`gapCount`、`unknownQualityCount`、`lastSuccessAt`、`lastFailureAt`；不可用时保留 bars-derived fallback 并显示 `UNAVAILABLE`，不显示 READY。
+
+修改摘要：
+
+- `frontend/src/types/marketdata.ts`：新增 readiness query/response/quality summary 类型。
+- `frontend/src/api/marketdata.ts`：新增 `marketdataApi.getReadiness()`。
+- `frontend/src/pages/marketdata/MarketdataPage.tsx`：新增 readiness TanStack Query、运行时 payload guard、后端优先展示和 fallback 文案。
+- `frontend/tests/e2e/marketdata-quality-readiness-smoke.spec.ts`：mock `/api/marketdata/readiness` 并断言后端 readiness 字段、source health 不再是旧 pending 表达、K 线容器仍可见。
+
+验证：
+
+- `npm run build`：PASS。
+- `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium`：PASS，1 test passed。
+- 本地 `18888` backend health：UNAVAILABLE，未补跑 real backend smoke。
+
+边界：未修改 backend / migration / research / scripts / deploy / `.github/workflows`；未新增 API；未修改后端 readiness API / MarketdataController / bars 查询逻辑；未接真实交易所；未读取 credential material；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider；未新增 WebSocket；未做订单/撤单/提现/转账联动。
+
 ## NQ-GATEM-2E-MARKETDATA-SOURCE-HEALTH-BACKEND-MVP（2026-06-29）
 
 状态：**IMPLEMENTED / BACKEND TESTS PASS / READY FOR REVIEW**。

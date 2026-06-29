@@ -26,6 +26,47 @@ export interface MarketdataBarsQuery {
     size?: number;
 }
 
+export interface MarketdataReadinessQuery {
+    exchangeCode: string;
+    marketType?: string;
+    symbol?: string;
+    instrumentId?: string;
+    interval: string;
+    from?: string;
+    to?: string;
+}
+
+export interface MarketdataQualityStatusSummary {
+    okCount: number;
+    gapSignalCount: number;
+    invalidCount: number;
+    unknownQualityCount: number;
+    statuses: Record<string, number>;
+}
+
+export interface MarketdataReadinessSummary {
+    exchangeCode: string;
+    marketType: string;
+    instrumentId: string;
+    symbol: string;
+    interval: string;
+    status: string;
+    freshnessStatus: string;
+    sourceHealthStatus: string;
+    sourceHealthReason: string;
+    qualityStatusSummary: MarketdataQualityStatusSummary;
+    barCount: number;
+    firstBarTime?: string | null;
+    lastBarTime?: string | null;
+    expectedBarCount?: number | null;
+    gapCount?: number | null;
+    unknownQualityCount: number;
+    lastSuccessAt?: string | null;
+    lastFailureAt?: string | null;
+    backendSupportLevel: string;
+    generatedAt: string;
+}
+
 export interface CreateMarketdataIngestionJobRequest {
     exchangeCode: string;
     marketType: string;
