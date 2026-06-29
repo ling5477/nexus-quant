@@ -1,12 +1,13 @@
-import {Alert, Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Typography, message} from 'antd';
+import {Alert, Button, Card, DatePicker, Descriptions, Form, Input, Select, Space, Table, Tag, Typography, message} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {useState} from 'react';
+import {useEffect, useMemo, useState, type ReactNode} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {PageHero} from '@/components/page/PageHero';
 import {EXCHANGE_OPTIONS, INTERVAL_OPTIONS, MARKET_TYPE_OPTIONS, SYMBOL_OPTIONS} from '@/constants/filter-options';
+import {DataFreshness, NqKlineChart, NqVolumeChart, applyNqCssVars, type FreshnessState, type NqKlineBar} from '@/nq-design-system';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import type {
@@ -35,6 +36,8 @@ const columns: ColumnsType<MarketdataBar> = [
     {title: 'Quote Volume', dataIndex: 'quoteVolume', key: 'quoteVolume', width: 140, render: (value?: number | null) => value == null ? '-' : formatNumber(value, 8)},
     {title: 'Quality', dataIndex: 'qualityStatus', key: 'qualityStatus', width: 130, render: (value: string) => <Tag color={value === 'OK' ? 'green' : 'orange'}>{value}</Tag>},
 ];
+
+const GAP_QUALITY_STATUSES = new Set(['GAP_DETECTED', 'MISSING_BAR', 'INCOMPLETE', 'DEGRADED']);
 
 type MarketdataDateValue = string | null | undefined | {
     toISOString?: () => string;
@@ -94,6 +97,148 @@ function normalizeDataset(values: CreateMarketdataDatasetFormValues): CreateMark
         startTime: toIsoString(values.startTime),
         endTime: toIsoString(values.endTime),
     };
+}
+
+function toNqKlineBar(bar: MarketdataBar): NqKlineBar {
+    return {
+        time: bar.openTime,
+        open: Number(bar.openPrice),
+        high: Number(bar.highPrice),
+        low: Number(bar.lowPrice),
+        close: Number(bar.closePrice),
+        volume: Number(bar.volume),
+        qualityStatus: bar.qualityStatus ?? null,
+    };
+}
+
+function intervalToMs(interval: string | undefined): number | null {
+    if (!interval) {
+        return null;
+    }
+
+    const match = /^(\d+)([mhd])$/i.exec(interval.trim());
+    if (!match) {
+        return null;
+    }
+
+    const amount = Number(match[1]);
+    const unit = match[2].toLowerCase();
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return null;
+    }
+
+    if (unit === 'm') {
+        return amount * 60_000;
+    }
+    if (unit === 'h') {
+        return amount * 60 * 60_000;
+    }
+    return amount * 24 * 60 * 60_000;
+}
+
+function timestampMs(value: string | undefined | null): number | null {
+    if (!value) {
+        return null;
+    }
+
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+interface BarsQualitySummary {
+    statuses: string[];
+    gapCount: number;
+    hasQualityStatus: boolean;
+}
+
+function summarizeBarsQuality(bars: readonly MarketdataBar[]): BarsQualitySummary {
+    const statuses = Array.from(new Set(
+        bars
+            .map((bar) => bar.qualityStatus)
+            .filter((value): value is string => Boolean(value)),
+    ));
+
+    return {
+        statuses,
+        gapCount: bars.filter((bar) => GAP_QUALITY_STATUSES.has((bar.qualityStatus ?? '').toUpperCase())).length,
+        hasQualityStatus: statuses.length > 0,
+    };
+}
+
+interface BarsFreshnessSummary {
+    state: FreshnessState;
+    detail: string;
+    stale: boolean;
+}
+
+function summarizeBarsFreshness(
+    submittedQuery: MarketdataBarsQuery | null,
+    bars: readonly MarketdataBar[],
+    quality: BarsQualitySummary,
+    error: unknown,
+    loading: boolean,
+): BarsFreshnessSummary {
+    if (error) {
+        return {state: 'error', detail: 'bars query failed', stale: false};
+    }
+    if (!submittedQuery) {
+        return {state: 'disabled', detail: 'not queried', stale: false};
+    }
+    if (loading) {
+        return {state: 'delayed', detail: 'loading', stale: false};
+    }
+    if (bars.length === 0) {
+        return {state: 'no_data', detail: '0 bars', stale: false};
+    }
+    if (quality.gapCount > 0) {
+        return {state: 'degraded', detail: `${quality.gapCount} gap bars`, stale: false};
+    }
+
+    const lastBar = bars[bars.length - 1];
+    const lastCloseMs = timestampMs(lastBar?.closeTime ?? lastBar?.openTime);
+    const requestedEndMs = timestampMs(submittedQuery.endTime);
+    const intervalMs = intervalToMs(submittedQuery.interval);
+    const isStale = Boolean(
+        lastCloseMs !== null
+        && requestedEndMs !== null
+        && intervalMs !== null
+        && lastCloseMs + intervalMs < requestedEndMs,
+    );
+
+    if (isStale) {
+        return {
+            state: 'stale',
+            detail: `last ${formatDateTime(lastBar.closeTime ?? lastBar.openTime)}`,
+            stale: true,
+        };
+    }
+
+    return {
+        state: 'fresh',
+        detail: `last ${formatDateTime(lastBar.closeTime ?? lastBar.openTime)}`,
+        stale: false,
+    };
+}
+
+function QualityTags({quality}: {quality: BarsQualitySummary}) {
+    if (!quality.hasQualityStatus) {
+        return <Tag>qualityStatus unavailable</Tag>;
+    }
+
+    return (
+        <Space size={4} wrap>
+            {quality.statuses.map((status) => (
+                <Tag key={status} color={status === 'OK' ? 'green' : 'orange'}>
+                    {status}
+                </Tag>
+            ))}
+        </Space>
+    );
+}
+
+function MetricText({children}: {children: ReactNode}) {
+    return <Typography.Text style={{fontFamily: 'var(--nq-font-mono)'}}>{children}</Typography.Text>;
 }
 
 const jobColumns = (
@@ -179,6 +324,11 @@ export function MarketdataPage() {
     const [pendingJobId, setPendingJobId] = useState<string | null>(null);
     const [pendingDatasetId, setPendingDatasetId] = useState<string | null>(null);
 
+    // Chart foundation(B0.4) 使用 additive v2 CSS vars；页级注入不改全局 AppProviders。
+    useEffect(() => {
+        applyNqCssVars();
+    }, []);
+
     const barsQuery = useQuery({
         queryKey: ['marketdata-bars', submittedQuery],
         queryFn: () => marketdataApi.listBars(submittedQuery as MarketdataBarsQuery),
@@ -237,6 +387,21 @@ export function MarketdataPage() {
         onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
         onSettled: () => setPendingDatasetId(null),
     });
+    const bars = barsQuery.data ?? [];
+    const chartBars = useMemo(() => bars.map(toNqKlineBar), [bars]);
+    const barsQuality = useMemo(() => summarizeBarsQuality(bars), [bars]);
+    const barsFreshness = useMemo(
+        () => summarizeBarsFreshness(submittedQuery, bars, barsQuality, barsQuery.error, barsQuery.isLoading),
+        [bars, barsQuality, barsQuery.error, barsQuery.isLoading, submittedQuery],
+    );
+    const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
+    const chartError = barsQuery.error ? formatApiError(barsQuery.error as AppApiError) : null;
+    const chartEmptyText = submittedQuery
+        ? '当前查询没有返回 OHLCV bars'
+        : '提交查询后展示 K 线主图';
+    const chartSourceLabel = submittedQuery
+        ? `${submittedQuery.exchangeCode} ${submittedQuery.symbol} ${submittedQuery.interval}`
+        : 'Marketdata bars';
 
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
@@ -289,6 +454,91 @@ export function MarketdataPage() {
                     </Space>
                 </Form>
                 <Typography.Text type="secondary">默认交易所来自当前账户上下文：{contextExchangeCode ?? '未选择'}</Typography.Text>
+            </Card>
+            <Card className="page-section" bordered={false} title="K 线 readiness 视图">
+                <div data-testid="marketdata-kline-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                    <Descriptions
+                        size="small"
+                        column={{xs: 1, sm: 2, md: 3}}
+                        items={[
+                            {key: 'exchange', label: 'Exchange', children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
+                            {key: 'symbol', label: 'Instrument', children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
+                            {key: 'interval', label: 'Timeframe', children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
+                            {key: 'barCount', label: 'Bar count', children: <MetricText>{bars.length}</MetricText>},
+                            {key: 'lastBar', label: 'Last bar time', children: <MetricText>{lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-'}</MetricText>},
+                            {key: 'quality', label: 'Data quality', children: <QualityTags quality={barsQuality}/>},
+                        ]}
+                    />
+                    <Space size={12} wrap>
+                        <DataFreshness
+                            source={chartSourceLabel}
+                            state={barsFreshness.state}
+                            detail={barsFreshness.detail}
+                            inline
+                        />
+                        {barsQuality.gapCount > 0 ? (
+                            <Tag color="orange">gap / qualityStatus: {barsQuality.gapCount}</Tag>
+                        ) : null}
+                        {!barsQuality.hasQualityStatus && bars.length > 0 ? (
+                            <Tag>qualityStatus missing: non-blocking</Tag>
+                        ) : null}
+                    </Space>
+                    {barsFreshness.state === 'stale' ? (
+                        <Alert
+                            type="warning"
+                            showIcon
+                            message="Marketdata bars stale"
+                            description="最后一根 K 线未覆盖查询结束时间；本视图只展示已有历史 bars，不做实时刷新或 WebSocket 补齐。"
+                        />
+                    ) : null}
+                    {barsQuality.gapCount > 0 ? (
+                        <Alert
+                            type="warning"
+                            showIcon
+                            message="Marketdata bars quality degraded"
+                            description="后端返回了非 OK qualityStatus；图表继续展示已有 bars，gap 修复仍由 MarketData ingestion / dataset quality 流程处理。"
+                        />
+                    ) : null}
+                    {!barsQuality.hasQualityStatus && bars.length > 0 ? (
+                        <Alert
+                            type="info"
+                            showIcon
+                            message="qualityStatus unavailable"
+                            description="当前 bars payload 未携带 qualityStatus；这是非阻断提示，不会伪造 gap 状态。"
+                        />
+                    ) : null}
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                            gap: 16,
+                        }}
+                    >
+                        <NqKlineChart
+                            bars={chartBars}
+                            loading={barsQuery.isLoading}
+                            error={chartError}
+                            stale={barsFreshness.stale}
+                            staleDetail={barsFreshness.detail}
+                            sourceLabel={chartSourceLabel}
+                            title="OHLCV K-line"
+                            emptyText={chartEmptyText}
+                            height={320}
+                        />
+                        <NqVolumeChart
+                            bars={chartBars}
+                            loading={barsQuery.isLoading}
+                            error={chartError}
+                            sourceLabel={chartSourceLabel}
+                            title="Volume"
+                            emptyText={submittedQuery ? '当前查询没有返回成交量 bars' : '提交查询后展示成交量'}
+                            height={180}
+                        />
+                    </div>
+                    <Typography.Text type="secondary">
+                        本视图复用现有 /api/marketdata/bars 与 marketdataApi.listBars()；不接 WebSocket、不接真实交易所私有流、不做买卖点或指标系统。
+                    </Typography.Text>
+                </div>
             </Card>
             <Card className="page-section" bordered={false} title="Bars 结果">
                 {barsQuery.error ? (

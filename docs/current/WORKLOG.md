@@ -10104,3 +10104,32 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 边界
 
 未改 backend / backend migration / research / scripts / deploy / `.github/workflows`；未新增 API；未修改 MarketdataController / TradingWorkbench；未接真实行情源、WebSocket、real exchange adapter、RealClient 或 real provider；未读取 credential；未开启 LIVE / AI / DH runtime。
+
+---
+
+## NQ-GATEM-2-MARKETDATA-KLINE-READINESS
+
+日期：2026-06-29
+
+### 本轮目标
+
+将 B0.4 `NqKlineChart` / `NqVolumeChart` 接入 MarketData 页面，使用现有 `marketdataApi.listBars()` 查询结果展示历史 OHLCV K 线和成交量。
+
+### 完成内容
+
+- `MarketdataPage` 新增「K 线 readiness 视图」区域。
+- 复用既有 `barsQuery` / `marketdataApi.listBars()`，将 `MarketdataBar` 页面层映射为 `NqKlineBar`。
+- 渲染 `NqKlineChart` 与 `NqVolumeChart`，并保留原 Bars 表格、接入任务、运行结果和 Datasets。
+- 展示 exchange / instrument / timeframe / bar count / last bar time / qualityStatus / DataFreshness。
+- 支持 loading、初始 empty、查询 empty、error、stale、gap / degraded quality 状态表达。
+- 新增 `marketdata-kline-readiness-smoke.spec.ts`，backend-free mock bars 验证图表与 `GAP_DETECTED`。
+- 新增 `docs/current/frontend/NQ_GATEM_2_MARKETDATA_KLINE_READINESS.md` 记录边界与验证事实。
+
+### 验证
+
+- `npm run build`：PASS。
+- `npm run test:e2e -- tests/e2e/marketdata-kline-readiness-smoke.spec.ts --project=chromium`：PASS，1 passed。
+
+### 边界
+
+未改 backend / backend migration / research / scripts / deploy / `.github/workflows`；未新增 API；未修改 MarketdataController / 后端 bars 查询逻辑；未改 TradingWorkbench；未接真实交易所、WebSocket、real exchange adapter、RealClient 或 real provider；未读取 credential；未开启 LIVE / AI / DH runtime；未做下单联动、买卖点、均线、VWAP 或指标系统。真实后端 bars E2E 未在本轮执行。
