@@ -1,3 +1,24 @@
+## NQ-GATEM-2D-MARKETDATA-SOURCE-HEALTH-PLAN（2026-06-29）
+
+状态：**PLAN ONLY / NOT IMPLEMENTED**。
+
+本轮只做 MarketData source health / freshness / gap / ingestion readiness 后端聚合规划，新增 `docs/current/NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md`，并同步 `docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。规划推荐后续 no-migration backend MVP：新增只读 `GET /api/marketdata/readiness`，基于现有 `marketdata_bars`、`marketdata_ingestion_jobs/runs`、`marketdata_datasets/coverage` 聚合 `FRESH / STALE / GAP / ERROR / DISABLED / UNKNOWN / NO_DATA`，不触发采集、不访问真实交易所、不读取 credential、不返回 secret/raw payload/stack trace。
+
+只读结论：
+
+- `/api/marketdata/bars` 当前返回 bar 级 OHLCV、`quoteVolume`、`tradeCount`、`qualityStatus`，不返回 source health 聚合。
+- `MarketdataPage` 当前的 source health 文案 `Pending backend support` 是正确状态；2E backend API 未实现前不得写成 READY。
+- 现有 dataset coverage 可复用 `expected/actual/missing/invalid` 模型，但不应要求先创建 dataset 才能查询 source readiness。
+- `lastSuccessAt` / `lastFailureAt` 可从 ingestion runs 派生；`latencyMs` 可从 `finished_at - started_at` 派生；`errorCode`、`disabledReason`、source-specific policy 需要 future migration/config 才能持久表达。
+
+边界：本轮未修改 backend / frontend / research / scripts / deploy / `.github/workflows` / migration；未新增 API；未修改 `MarketdataController` / 后端 bars 查询逻辑；未改 `MarketdataPage.tsx` 或 `marketdataApi.listBars()`；未接 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未读取 credential material；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider；未新增 WebSocket；未做订单/撤单/提现/转账联动。
+
+后续：
+
+- `NQ-GATEM-2E-MARKETDATA-SOURCE-HEALTH-BACKEND-MVP`：实现 no-migration readonly readiness API。
+- `NQ-GATEM-2F-MARKETDATA-SOURCE-HEALTH-FRONTEND-WIRING`：前端消费 readiness API。
+- `NQ-GATEM-2G-MARKETDATA-POSITIVE-BARS-FIXTURE-SMOKE`：通过既有受控 seed/test 机制补 positive bars smoke。
+
 ## NQ-GATEM-2C-MARKETDATA-REAL-BACKEND-SMOKE（2026-06-29）
 
 状态：**PASS / EMPTY-NO-DATA REAL BACKEND SMOKE**。

@@ -79,6 +79,7 @@ GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / err
 - [NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md](NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md)：上述纵深防御的 post-freeze addendum（**FROZEN / ACCEPTED**；fix commit `c749cef7`，CI run `27926903155` / 9 jobs success；**P2 OkxRuntimeConfig default real endpoint defense = CLOSED / ACCEPTED**）。
 - [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md)：前端设计系统当前事实。
 - [BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md](BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md)：回测权益/回撤曲线后端契约 planning（planning only，未实现）。
+- [NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md](NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md)：GateM-2D MarketData source health / freshness / gap / ingestion readiness 后端聚合 planning（**PLAN ONLY / NOT IMPLEMENTED**）。推荐后续以 no-migration MVP 新增只读 `GET /api/marketdata/readiness`，仅聚合现有本地 DB facts；不新增 API 实现、不新增 migration、不改前端、不接真实交易所、不启用 LIVE / AI / DH runtime。
 - DB / Credential 治理：`DB_SCHEMA_GOVERNANCE_PLAN.md`、`DB_SCHEMA_GOVERNANCE_REVIEW.md`、`CREDENTIAL_*`。
 - NQ-DH Integration-0（contract / mock / docs，未实现 runtime 集成）：`NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`、`NQ_DH_INTEGRATION0_SECURITY_POLICY.md`、`NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`、`NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`。
 - NQ-DH timestamp format alignment：**CLOSED / ACCEPTED（2026-06-28）**。Canonical timestamp = RFC3339 / ISO-8601 UTC `Z`；DH/NQ INT0 均拒绝 epoch seconds / epoch milliseconds / 数字时区偏移；±300s replay window 不变。CLOSED 不授权 Integration-1 runtime；DH not integrated；Runtime integration NOT STARTED；LIVE disabled。

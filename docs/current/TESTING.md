@@ -1,3 +1,33 @@
+## NQ-GATEM-2D-MARKETDATA-SOURCE-HEALTH-PLAN（2026-06-29）
+
+结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。本轮只做 MarketData source health / freshness / gap / ingestion readiness 后端聚合能力规划；新增 `docs/current/NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md` 并同步 current 索引/测试/工作日志。未修改 backend、frontend、migration、workflow、research、scripts、deploy、MarketdataController、bars 查询逻辑、TradingWorkbench 或任何 API 实现。
+
+只读检查范围：
+
+- backend MarketData Controller / DTO / Service / Repository / migration。
+- frontend `MarketdataPage`、`marketdataApi`、MarketData 类型与相关 E2E。
+- current docs 中 GateM-2 / 2B / 2C MarketData readiness 事实。
+
+规划结论：
+
+- 当前 `/api/marketdata/bars` 只返回 bar 级 OHLCV 与 `qualityStatus`，没有 source health 聚合字段。
+- 当前 `marketdata_bars`、`marketdata_ingestion_jobs/runs`、`marketdata_datasets/coverage` 已足够支撑后续 no-migration backend MVP。
+- 推荐后续独立任务 `NQ-GATEM-2E-MARKETDATA-SOURCE-HEALTH-BACKEND-MVP` 新增只读 `GET /api/marketdata/readiness`；不得在本轮实现。
+- Positive bars fixture 仍为单独 P3 follow-up，不在本轮实现。
+
+Validation commands：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写入前工作区无未提交改动；写入后仅允许 docs/current diff。 |
+| `git diff --check` | PASS | Exit 0；仅 LF -> CRLF working-copy 提示，无 whitespace error。 |
+| `git diff --stat` | PASS | Tracked docs diff 为 README/TESTING/WORKLOG；新增 plan 文件由 `git status --short` 显示。 |
+| `rg "marketdata|Marketdata|bars|qualityStatus|ingestion|dataset|gap|freshness|source health|readiness" backend frontend docs/current` | PASS | Required broad scan 已执行；输出很宽且包含 generated/dependency paths，另用排除 `target/node_modules/dist/build/test-results/logs` 的 scoped scan 确认相关证据。 |
+| `rg "OKX|Binance|Bybit|Gate|Coinbase|Kraken|LIVE=true|LIVE_ENABLED|RealClient|apiKey|secret|passphrase|private key|mnemonic|WebSocket|order|cancel|withdraw|transfer" backend frontend docs/current` | PASS | Required boundary scan 已执行；另用 scoped scan 复核命中主要为代码标识与边界文档，本轮未读取或输出 credential material。 |
+| forbidden scope diffs | PASS | `git diff -- backend/frontend/research/scripts/deploy/.github/backend/**/db/migration` 均无输出。 |
+
+Boundary：LIVE disabled；AI not started；DH runtime not integrated；real exchange adapter / RealClient / real provider not implemented。本轮不调用 OKX / Binance / Bybit / Gate / Coinbase / Kraken，不读取 credential material，不新增 API，不新增 migration，不改 frontend/backend 代码，不开启 WebSocket，不做下单/撤单/提现/转账联动。
+
 ## NQ-GATEM-2C-MARKETDATA-REAL-BACKEND-SMOKE（2026-06-29）
 
 结论：**PASS / EMPTY-NO-DATA REAL BACKEND SMOKE**。本轮新增一个真实本地后端 MarketData bars 页面 smoke；未修改 backend、migration、workflow、research、scripts、deploy、MarketdataController、后端 bars 查询逻辑、TradingWorkbench、`MarketdataPage.tsx` 或 `marketdataApi.listBars()`。
