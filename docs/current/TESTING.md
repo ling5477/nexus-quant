@@ -1,3 +1,30 @@
+## NQ-GATEM-2G-MARKETDATA-READINESS-REAL-BACKEND-SMOKE（2026-06-29）
+
+结论：**PASS / EMPTY-NO-DATA REAL BACKEND READINESS SMOKE**。本轮只新增真实本地后端 MarketData readiness 联合 smoke；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未修改 `MarketdataController` 或后端 bars/readiness 查询逻辑，未调用 adapter 或外部交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- 本地真实后端 `/actuator/health = UP`。
+- 登录并进入控制台。
+- 打开 MarketData 页面并提交查询。
+- 页面真实请求 `/api/marketdata/bars`。
+- 页面真实请求 `/api/marketdata/readiness`。
+- K 线容器、成交量容器、Data Quality / Readiness 区域均可见。
+- Data Quality / Readiness 区域展示真实后端 readiness 字段，包含 `NO_DATA` / `NO_MIGRATION_MVP` 等后端返回值。
+- bars preflight 结果为 `preflightBars=0`、`readinessBarCount=0`、`readinessStatus=NO_DATA`，因此本轮走 empty/no-data 分支。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `npm ci` | PASS | 首次 build 发现本地 `node_modules` 缺少 `lightweight-charts` install artifact；按 lockfile 重装依赖后继续验证。 |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/marketdata-readiness-real-backend-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；真实页面请求命中 `/api/marketdata/bars` 与 `/api/marketdata/readiness`；分支日志：`empty-no-data`，scope=`BINANCE/SPOT/BTC-USDT/1m`。 |
+
+Finding：P3 `positive bars fixture pending`。本地 DB 在 UI-supported MarketData 维度下无可查询 bars；后续如需 positive bars smoke，只能通过既有受控 seed/test 机制准备 fixture，不得新增 migration、不得写真实交易所来源、不得接外部交易所网络。
+
+边界结论：本轮未触达 backend / migration / TradingWorkbench / real exchange / credential material / WebSocket / order / cancel / withdraw / transfer；未删除既有 backend-free smoke。readiness empty/no-data 仍 fail-closed，不写成 READY。
+
 ## NQ-GATEM-2F-MARKETDATA-SOURCE-HEALTH-FRONTEND-INTEGRATION（2026-06-29）
 
 结论：**IMPLEMENTED / FRONTEND BUILD PASS / BACKEND-FREE E2E PASS / READY FOR REVIEW**。本轮只把 MarketData 页面接入既有只读 `GET /api/marketdata/readiness`；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未调用 adapter 或外部交易所，未启用 LIVE / AI / DH runtime。

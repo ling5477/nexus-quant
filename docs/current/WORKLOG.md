@@ -1,3 +1,28 @@
+## NQ-GATEM-2G-MARKETDATA-READINESS-REAL-BACKEND-SMOKE（2026-06-29）
+
+状态：**PASS / EMPTY-NO-DATA REAL BACKEND READINESS SMOKE**。
+
+本轮新增 `frontend/tests/e2e/marketdata-readiness-real-backend-smoke.spec.ts`，验证 MarketData 页面在真实本地后端下同时通过 `/api/marketdata/bars` 与 `/api/marketdata/readiness` 渲染 K 线、成交量和 Data Quality / Readiness 区域。测试不 stub 这两个接口；先检查 local backend health，再通过真实登录进入控制台，执行只读 bars/readiness preflight，最后通过页面表单触发真实请求并监听页面响应。
+
+验证结果：
+
+- `npm ci`：PASS；用于恢复本地前端 lockfile 依赖，解决首次 build 暴露的缺失 `lightweight-charts` install artifact。
+- `npm run build`：PASS；仅保留既有 Vite large chunk warning。
+- real local backend：`local` profile，`18888` health UP；本地 PostgreSQL health UP，Flyway version `31` up to date。
+- `npm run test:e2e -- tests/e2e/marketdata-readiness-real-backend-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+- 本地 bars 数据：`BINANCE/SPOT/BTC-USDT/1m` preflight bars=0，readinessBarCount=0，readinessStatus=`NO_DATA`；本轮通过 empty/no-data real-backend readiness smoke，未创建 fixture。
+
+同步文件：
+
+- `frontend/tests/e2e/marketdata-readiness-real-backend-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_2G_MARKETDATA_READINESS_REAL_BACKEND_SMOKE.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+边界：未修改 backend / migration / workflow / research / scripts / deploy；未修改 `MarketdataPage.tsx`、`marketdataApi.ts` 或 `marketdata.ts` 类型；未新增 API；未修改 `MarketdataController` 或后端 bars/readiness 查询逻辑；未接真实交易所、未启用 LIVE、未接 AI、未接 DH runtime、未实现 RealClient / real provider、未新增 WebSocket、未做订单/撤单/提现/转账联动；未删除既有 backend-free smoke。
+
+后续：P3 `positive bars fixture pending`；若需要 positive bars smoke，只能通过既有公开测试/seed 机制提供受控 fixture，不得新增 migration 或真实交易所来源。
+
 ## NQ-GATEM-2F-MARKETDATA-SOURCE-HEALTH-FRONTEND-INTEGRATION（2026-06-29）
 
 状态：**IMPLEMENTED / FRONTEND BUILD PASS / BACKEND-FREE E2E PASS / READY FOR REVIEW**。
