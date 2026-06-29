@@ -1,3 +1,33 @@
+## NQ-GATEM-2C-MARKETDATA-REAL-BACKEND-SMOKE（2026-06-29）
+
+结论：**PASS / EMPTY-NO-DATA REAL BACKEND SMOKE**。本轮新增一个真实本地后端 MarketData bars 页面 smoke；未修改 backend、migration、workflow、research、scripts、deploy、MarketdataController、后端 bars 查询逻辑、TradingWorkbench、`MarketdataPage.tsx` 或 `marketdataApi.listBars()`。
+
+Backend environment：
+
+- 使用 real local `nq-app` 后端，`local` profile，端口 `18888`。
+- `/actuator/health` = `UP`。
+- 后端启动日志显示本地 PostgreSQL `17.7`，Flyway schema version `31` 且 up to date。
+- 只读 bars 前置检查在 GateH/GateM 固定 MarketData 维度内未找到本地 bars；本轮未创建 fixture、未新增 migration、未接真实交易所。
+
+Validation commands：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build and Vite production build completed；保留既有 Vite large chunk warning。 |
+| backend startup + `cd frontend; npm run test:e2e -- tests/e2e/marketdata-real-backend-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；真实页面请求命中 `/api/marketdata/bars`；本地 bars count = 0，因此通过 empty/no data real-backend smoke。 |
+
+Coverage：
+
+- 登录 / 控制台进入 MarketData 页面。
+- 使用真实本地后端 `/api/marketdata/bars`。
+- 触发 bars 查询。
+- 渲染 K 线 readiness 区域、成交量区域、Data Quality / Readiness 区域。
+- 显示 bar count、last bar time / no-data、freshness、qualityStatus / gap / unavailable 状态。
+
+Finding：P3 `positive bars fixture pending`。本地 DB 没有可查询 bars；后续如需 positive smoke，只能通过既有公开测试/seed 机制准备受控 fixture，不得新增 migration、不得写真实交易所来源、不得接 OKX/Binance 外部网络。
+
+Boundary：LIVE disabled；AI not started；DH runtime not integrated；real exchange adapter / RealClient / real provider not implemented。本轮未触达真实交易所、credential material、订单、撤单、提现、转账、WebSocket 或 TradingWorkbench。
+
 ## NQ-CI-SECURITY-GUARD-BATCH-4C-C-PRODUCTION-LOG-SHAPE-FIX（2026-06-28）
 
 结论：**IMPLEMENTED / PENDING RE-RUN REVIEW**。本轮仅修复 Batch 4C-C first-run review 暴露的 production log shape / workflow command echo 问题；未修改 credential 业务逻辑、加解密、schema、真实交易逻辑、frontend、research、scripts、deploy、README 或 migration；未读取真实 `.env` / key / pem / token / secret；未启用 LIVE / AI / DH runtime；未访问真实交易所。
