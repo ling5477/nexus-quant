@@ -1,3 +1,30 @@
+## NQ-GATEM-5E-RUNTIME-UI-FINAL-SMOKE（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只新增 backend-free Runtime Guarded UI 汇总 smoke；未修改 frontend 页面源码、backend、migration、research、scripts、deploy 或 `.github/workflows`，未新增 API，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- `/dashboard`：验证 `Runtime Readiness` summary card、`LIVE disabled`、`Real provider not implemented`、`Paper simulated only`、`Permission probe skipped / NoReal`、Dashboard -> Runtime Readiness、Dashboard -> MarketData Readiness。
+- `/runtime/readiness`：验证 `Runtime Readiness Overview`、`LIVE disabled`、`READY_FOR_PAPER_ONLY`、`PERMISSION_PROBE_DISABLED / SKIPPED`、`NoReal / Fake / Stub / FutureReal`、`RealClient / real provider / real exchange adapter not implemented`、Runtime -> MarketData deep link。
+- `/marketdata`：验证 K-line 与 Data Quality / Readiness 区域仍可见；Runtime deep link 只安全预填 `exchangeCode / marketType / symbol / interval`，不自动触发采集。
+- `/paper-trading`：验证 `Paper-only boundary` 与 Paper simulated boundary 文案。
+- `/trading`：验证 `Runtime guarded: LIVE disabled`、`Real provider not implemented`、`NoReal/Fake/Stub/FutureReal not live-ready`、`Permission probe SKIPPED / disabled is not verified`。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-ui-final-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；backend-free route stub，不依赖真实后端、真实交易所、真实 credential 或 LIVE。 |
+
+实现期修正：首次 smoke 失败是测试把 Vite dev-server HMR `ws://127.0.0.1:<port>/?token=...` 当作业务 WebSocket；已改为过滤本地 Vite HMR，同时继续断言无 application WebSocket / external exchange WebSocket。
+
+已知非阻断输出：Vite large chunk warning 保留；Playwright 运行中仍有既有 `NO_COLOR` / `FORCE_COLOR` warning；既有 Ant Design `Card.bordered` / `Modal.destroyOnClose`、React 19 compatibility 和 inactive `useForm` warning 保留。本轮未扩大处理这些历史 UI warning。
+
+未运行：full E2E、Maven backend tests、Python pytest/mypy/ruff、真实 local backend smoke。本轮未改 backend / research，且任务要求 backend-free UI final smoke。
+
+边界结论：未调用 permission probe POST；未触发 ingestion run-once、order、cancel、transfer、withdraw 或应用 WebSocket；未读取或输出 credential material；未新增 LIVE UI 入口或下单能力；未修改 TradingWorkbench 下单逻辑；Paper-ready / DB-fresh / permission probe `SKIPPED` 均不构成 real-ready 或 LIVE authorization。
+
 ## NQ-GATEM-5D-RUNTIME-UI-DASHBOARD-SUMMARY-CARD（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只在 Dashboard 增加 Runtime Readiness 只读摘要卡片；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未修改后端 readiness / paper / trading API，未启用 LIVE / AI / DH runtime。

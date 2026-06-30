@@ -1,3 +1,25 @@
+## NQ-GATEM-5E-RUNTIME-UI-FINAL-SMOKE（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮新增 Runtime Guarded UI backend-free final smoke，汇总覆盖 Dashboard、Runtime Readiness Overview、MarketData、Paper Trading 与 Trading Workbench 的只读 guard 文案和导航链路。不新增业务功能，不改页面源码，不改后端 API，不新增 migration，不扩展状态组合矩阵。
+
+同步文件：
+
+- `frontend/tests/e2e/runtime-ui-final-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_5E_RUNTIME_UI_FINAL_SMOKE.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证结果：
+
+- `npm run build`：PASS，保留既有 Vite large chunk warning。
+- `npm run test:e2e -- tests/e2e/runtime-ui-final-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+
+实现期修正：首跑失败原因是测试误把 Vite dev-server HMR WebSocket 计为业务 WebSocket；已过滤本地 Vite HMR，并继续断言无 application WebSocket / external exchange WebSocket。
+
+边界：未修改 backend / migration / workflow / research / scripts / deploy；未修改 frontend 页面源码；未新增 API；未修改后端 readiness / paper / trading API；未改 TradingWorkbench 下单逻辑；未新增 LIVE UI 入口或下单能力；未调用 permission probe POST；未触发 ingestion run-once、order、cancel、transfer、withdraw 或应用 WebSocket；未读取 credential material；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real exchange adapter。
+
 ## NQ-GATEM-5D-RUNTIME-UI-DASHBOARD-SUMMARY-CARD（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
