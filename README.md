@@ -19,7 +19,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ completed（详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`）
 - GateK finalized / frozen / archived / tagged（tag：`nq-gatek-freeze`）
 - GateM = Exchange / MarketData Runtime Readiness
-- GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`；no-real runtime readiness baseline；GateM-1..6 事实见 `docs/current/`）
+- GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`；no-real runtime readiness baseline；current summary 见 `docs/current/`，freeze / release archive 见 `docs/gates/gate-m/`）
 - NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；推荐下一阶段为 GateN Public MarketData / Exchange Sandbox Planning（implementation NOT STARTED）
 - NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = PASS / PLAN ONLY / READY TO COMMIT；GateN planning baseline 已落档（implementation NOT STARTED）
 - Future AI Paper Trading candidate is not current GateM
@@ -68,7 +68,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/GATEJ_FREEZE_ACCEPTANCE_TEMPLATE.md`：GateJ-FREEZE 1h/24h/7d 验收记录模板
 - `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`：GateJ-FREEZE 最终验收报告
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
-- `docs/current/NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md`：GateM release tag and archive 记录（`nq-gatem-freeze`）
+- `docs/gates/gate-m/README.md`：GateM historical archive；Batch 1 已归档 freeze readiness / freeze review / release tag evidence（`nq-gatem-freeze`）
 - `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateM 后下一阶段 planning-only 文档；推荐 GateN Public MarketData / Exchange Sandbox Planning，implementation NOT STARTED
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`：GateN Public MarketData / Exchange Sandbox planning baseline；no-real / no-private / no-trading，implementation NOT STARTED
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
@@ -83,6 +83,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - GateH 冻结卷宗：`docs/gates/gate-h/`
 - GateI 冻结卷宗：`docs/gates/gate-i/`
 - GateJ 冻结卷宗：`docs/gates/gate-j/`
+- GateM 冻结/发布历史卷宗：`docs/gates/gate-m/`
 
 ## 当前验证基线
 

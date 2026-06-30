@@ -1,3 +1,24 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-1（2026-06-30）
+
+结论：**PASS / ARCHIVE MOVE BATCH 1 / READY TO COMMIT**。本轮只执行 GateM freeze / release / closeout evidence archive move；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow 或运行时行为。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only archive move，仅移动已批准的 historical evidence 并更新索引。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 显示 3 个 `git mv` rename、GateM archive README 新增以及允许的 docs 索引/记录变更。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS | 普通 diff 显示 root README、docs/current 与 docs/gates 索引/记录变更；`git mv` 产生的 staged rename 由 cached stat 单独核对。 |
+| `git diff --name-status` | PASS | 用户指定命令已运行；因 `git mv` 自动 staged rename，普通 name-status 只显示未 staged 索引/记录修改。 |
+| `git diff --cached --name-status` | PASS | 3 个 Batch 1 文件以 `R100` 从 `docs/current/` rename 到 `docs/gates/gate-m/freeze/`。 |
+| `git diff --cached --stat` | PASS | staged rename 为 3 files changed，0 insertions / 0 deletions。 |
+| 指定 GateM / freeze / release `rg` 搜索 | PASS | `docs/current` 仅保留摘要与 archive pointer；moved evidence 位于 `docs/gates/gate-m/`。 |
+| 禁止范围 diff | PASS | `frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`、`docs/archive` 均无 diff。 |
+
+Boundary：GateM archive Batch 1 不是新功能；GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；未调用真实交易所，未读取或输出 credential material。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-PLAN-REVIEW（2026-06-30）
 
 结论：**PASS / PLAN REVIEW ONLY / READY TO COMMIT**。本轮只评审 `NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md` 中 22 个 `MOVE_TO_docs/gates/GateM` 候选；未移动、删除、重命名、stub、复制或归档任何文件；未改代码、API、migration、CI workflow、页面、E2E、LIVE、AI、DH runtime、RealClient、real provider、真实交易所或 credential material。

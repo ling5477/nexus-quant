@@ -10,4 +10,5 @@
 
 ## Gate release notes
 
+- GateM historical archive: [gate-m/README.md](gate-m/README.md)
 - GateK release/tag prep: [gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md](gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md)
