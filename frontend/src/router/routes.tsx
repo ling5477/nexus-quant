@@ -23,6 +23,7 @@ import {PaperTradingRouteShell} from '@/pages/paper-trading/PaperTradingRouteShe
 import {PaperTradingRunsPage} from '@/pages/paper-trading/PaperTradingRunsPage';
 import {PublishesPage} from '@/pages/publishes/PublishesPage';
 import {ResearchPage} from '@/pages/research/ResearchPage';
+import {RuntimeReadinessPage} from '@/pages/runtime/RuntimeReadinessPage';
 import {RunsPage} from '@/pages/runs/RunsPage';
 import {SchedulesPage} from '@/pages/schedules/SchedulesPage';
 import {StrategiesPage} from '@/pages/strategies/StrategiesPage';
@@ -105,6 +106,11 @@ export const appRouter = createBrowserRouter([
                         path: 'adapter-readiness',
                         element: <AdapterReadinessPage/>,
                         handle: createHandle('adapter-readiness'),
+                    },
+                    {
+                        path: 'runtime/readiness',
+                        element: <RuntimeReadinessPage/>,
+                        handle: createHandle('runtime-readiness'),
                     },
                     {
                         path: 'strategies',

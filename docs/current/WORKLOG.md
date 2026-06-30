@@ -1,3 +1,27 @@
+## NQ-GATEM-5-RUNTIME-UI-5A-RUNTIME-READINESS-OVERVIEW（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮新增只读 Runtime Readiness Overview：`/runtime/readiness` 使用现有 adapter readiness query 展示 GateM 当前运行边界，包括 `LIVE disabled`、Adapter no-real、permission probe disabled / skipped、Paper-only readiness、MarketData readiness 入口、central runtime flags / Paper-to-Real aggregate 的 `PENDING_BACKEND_SUPPORT`。保留 `/adapter-readiness` 兼容，不修改 TradingWorkbench 行为。
+
+同步文件：
+
+- `frontend/src/pages/runtime/RuntimeReadinessPage.tsx`
+- `frontend/src/components/app/AppLoadingScreen.tsx`
+- `frontend/src/router/routes.tsx`
+- `frontend/src/router/navigation.tsx`
+- `frontend/tests/e2e/runtime-readiness-overview-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_5_RUNTIME_UI_5A_RUNTIME_READINESS_OVERVIEW.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证结果：
+
+- `npm run build`：PASS，保留既有 Vite large chunk warning。
+- `npm run test:e2e -- tests/e2e/runtime-readiness-overview-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+
+边界：未修改 backend / migration / workflow / research / scripts / deploy；未新增 API；未调用 permission probe POST；未触发 ingestion、order、cancel、withdraw、transfer 或 WebSocket；未读取 credential material；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real exchange adapter。`MarketData fresh` 仅作为 query-scoped DB readiness 入口，不代表 overview global source health 或 live exchange readiness。
+
 ## NQ-GATEM-4-PAPER-TO-REAL-BOUNDARY-HARDENING（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。

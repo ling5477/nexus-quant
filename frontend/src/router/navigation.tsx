@@ -70,6 +70,15 @@ export const appNavItems: AppNavItem[] = [
         section: '市场与主数据',
     },
     {
+        key: 'runtime-readiness',
+        path: '/runtime/readiness',
+        label: '运行边界',
+        icon: <ApiOutlined/>,
+        title: 'Runtime Readiness',
+        description: '只读总览 Paper-only、MarketData readiness、Adapter no-real、LIVE disabled 与缺失后端聚合支持。',
+        section: '市场与主数据',
+    },
+    {
         key: 'strategies',
         path: '/strategies',
         label: '策略定义',

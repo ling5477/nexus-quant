@@ -1,3 +1,27 @@
+## NQ-GATEM-5-RUNTIME-UI-5A-RUNTIME-READINESS-OVERVIEW（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只新增只读 Runtime Readiness Overview 前端页面与 backend-free Playwright smoke；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未调用真实交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- `/runtime/readiness` 路由与侧边栏「运行边界」入口。
+- `RuntimeReadinessPage` 复用 `GET /api/adapters/readiness` query，展示 `LIVE disabled`、Adapter no-real、permission probe disabled / skipped、Paper-only readiness、MarketData readiness 入口和 `PENDING_BACKEND_SUPPORT`。
+- `AppLoadingScreen` 最小替换为 Ant Design `Card` `variant="borderless"`，避免本轮页面加载期继续触发 deprecated `bordered` warning。
+- backend-free smoke stub `/api/adapters/readiness`，验证页面不展示 verified / live-ready / LIVE 已授权，不调用 permission probe、ingestion run-once 或任何 `/api/**` 写端点。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-readiness-overview-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；backend-free route stub，不依赖真实后端、真实交易所、真实 credential 或 LIVE。 |
+
+已知非阻断输出：Playwright 运行中仍有既有 `NO_COLOR` / `FORCE_COLOR` warning；不影响本轮结果。
+
+未运行：Maven backend tests、Python pytest/mypy/ruff、真实 local backend smoke。本轮未改 backend / research，且任务要求 backend-free UI smoke。
+
+边界结论：未新增 API；未调用 permission probe POST；未触发采集、交易、下单、撤单、转账、提现或 WebSocket；未读取或输出 credential material；`READY_FOR_PAPER_ONLY` 不构成真实授权；MarketData `FRESH` 只作为 query-scoped DB readiness 入口，不伪造 overview global source health。
+
 ## NQ-GATEM-4-PAPER-TO-REAL-BOUNDARY-HARDENING（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只加固后端 Paper-to-Real runtime boundary 与回归测试；未修改 frontend、research、scripts、deploy、`.github/workflows` 或 migration，未接真实交易所，未启用 LIVE / AI / DH runtime。

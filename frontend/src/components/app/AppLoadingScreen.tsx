@@ -8,7 +8,7 @@ interface AppLoadingScreenProps {
 export function AppLoadingScreen({message, detail}: AppLoadingScreenProps) {
     return (
         <div className="loading-screen">
-            <Card className="loading-screen__panel page-card" bordered={false}>
+            <Card className="loading-screen__panel page-card" variant="borderless">
                 <Space direction="vertical" size={12}>
                     <Spin size="large"/>
                     <Typography.Title level={4} style={{margin: 0}}>
