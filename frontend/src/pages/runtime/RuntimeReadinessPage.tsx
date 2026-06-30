@@ -32,6 +32,7 @@ const MARKETDATA_READINESS_PATH = `/marketdata?${new URLSearchParams({
     symbol: 'BTC-USDT',
     interval: '1m',
 }).toString()}`;
+const DASHBOARD_RUNTIME_SUMMARY_PATH = '/dashboard';
 const BLOCKED_RUNTIME_REASONS = [
     'NO_REAL',
     'FAKE',
@@ -49,6 +50,15 @@ interface RuntimeBlocker {
     status: string;
     source: string;
     impact: string;
+    tone: StatusTone;
+}
+
+interface OperationalReadinessItem {
+    key: string;
+    area: string;
+    status: string;
+    source: string;
+    detail: string;
     tone: StatusTone;
 }
 
@@ -175,6 +185,75 @@ function buildRuntimeBlockers(items: AdapterReadinessItem[]): RuntimeBlocker[] {
     ];
 }
 
+function buildOperationalReadinessItems(): OperationalReadinessItem[] {
+    return [
+        {
+            key: 'process-health',
+            area: 'Process health',
+            status: 'PROCESS_HEALTH_ONLY',
+            source: '/actuator/health',
+            detail: 'Available via actuator health; it is process health only, not runtime readiness or LIVE authorization.',
+            tone: 'neutral',
+        },
+        {
+            key: 'runtime-readiness',
+            area: 'Runtime readiness',
+            status: 'EXISTING_GUARDED_UI_AVAILABLE',
+            source: '/runtime/readiness',
+            detail: 'This guarded UI is a read-only boundary view; runtime UI does not mean real provider readiness.',
+            tone: 'info',
+        },
+        {
+            key: 'adapter-readiness',
+            area: 'Adapter readiness',
+            status: 'EXISTING_READINESS_SOURCE_AVAILABLE',
+            source: 'GET /api/adapters/readiness',
+            detail: 'Adapter readiness is descriptive and fail-closed; NoReal / Paper-only / SKIPPED are not real-ready.',
+            tone: 'warning',
+        },
+        {
+            key: 'marketdata-readiness',
+            area: 'MarketData readiness',
+            status: 'EXISTING_READINESS_SOURCE_AVAILABLE',
+            source: 'GET /api/marketdata/readiness',
+            detail: 'MarketData readiness is DB/query scoped and never proves live exchange connectivity.',
+            tone: 'warning',
+        },
+        {
+            key: 'profile-boundary',
+            area: 'Profile boundary',
+            status: 'PENDING_BACKEND_SUPPORT',
+            source: 'No safe profile summary API',
+            detail: 'Current frontend must not infer active profile or print runtime env/config values.',
+            tone: 'warning',
+        },
+        {
+            key: 'config-diagnostics',
+            area: 'Config diagnostics',
+            status: 'PENDING_BACKEND_SUPPORT',
+            source: 'No safe config diagnostics API',
+            detail: 'Raw env, full config dump and credential-like material stay out of UI.',
+            tone: 'warning',
+        },
+        {
+            key: 'startup-checks',
+            area: 'Startup checks',
+            status: 'PENDING_BACKEND_SUPPORT',
+            source: 'No user-facing startup check summary',
+            detail: 'Startup guard results need backend support before they can be shown safely.',
+            tone: 'warning',
+        },
+        {
+            key: 'safe-log-diagnostics',
+            area: 'Safe log diagnostics',
+            status: 'PENDING_BACKEND_SUPPORT',
+            source: 'No safe log diagnostics API',
+            detail: 'Safe diagnostics pending; no raw log, raw request, raw response or provider payload is displayed.',
+            tone: 'warning',
+        },
+    ];
+}
+
 function isReadinessSignalUnexpected(item: AdapterReadinessItem): boolean {
     return item.status === 'READY' || item.allowed || item.liveAuthorized;
 }
@@ -274,6 +353,35 @@ const blockerColumns: ColumnsType<RuntimeBlocker> = [
     },
 ];
 
+const operationalColumns: ColumnsType<OperationalReadinessItem> = [
+    {
+        title: 'Operational area',
+        dataIndex: 'area',
+        key: 'area',
+        width: 210,
+        render: (area: string, row) => (
+            <Space direction="vertical" size={2}>
+                <Text strong>{area}</Text>
+                <Text type="secondary">{row.source}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'Status',
+        dataIndex: 'status',
+        key: 'status',
+        width: 280,
+        render: (status: string, row) => (
+            <StatusTag label={status} tone={row.tone} variant="pill"/>
+        ),
+    },
+    {
+        title: 'Boundary',
+        dataIndex: 'detail',
+        key: 'detail',
+    },
+];
+
 /**
  * RuntimeReadinessPage 是 GateM Runtime UI 5A 的只读运行边界总览。
  *
@@ -287,6 +395,7 @@ export function RuntimeReadinessPage() {
     const items = readinessQuery.data?.items ?? [];
     const venueSummaries = buildVenueSummaries(items);
     const runtimeBlockers = buildRuntimeBlockers(items);
+    const operationalReadinessItems = buildOperationalReadinessItems();
     const unexpectedSignals = items.filter(isReadinessSignalUnexpected);
     const permissionRows = items.filter((item) => item.capability === 'PERMISSION_PROBE');
     const noRealRows = items.filter((item) => item.status === 'NO_REAL' || NO_REAL_VENUES.has(item.venue));
@@ -355,6 +464,36 @@ export function RuntimeReadinessPage() {
                     />
                 </Col>
             </Row>
+
+            <Card
+                className="page-section"
+                variant="borderless"
+                title="Operational Readiness"
+                data-testid="operational-readiness-overview"
+                extra={(
+                    <Space size={12} wrap>
+                        <Link to={MARKETDATA_READINESS_PATH}>View MarketData readiness</Link>
+                        <Link to={DASHBOARD_RUNTIME_SUMMARY_PATH}>View Dashboard runtime summary</Link>
+                    </Space>
+                )}
+            >
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="Process health is not runtime readiness or LIVE authorization"
+                        description="Actuator health only indicates process/dependency reachability. Runtime UI does not prove real provider readiness, and Paper-only / SKIPPED / NoReal signals are not real-ready."
+                    />
+                    <Table<OperationalReadinessItem>
+                        rowKey="key"
+                        columns={operationalColumns}
+                        dataSource={operationalReadinessItems}
+                        pagination={false}
+                        size="small"
+                        scroll={{x: 920}}
+                    />
+                </Space>
+            </Card>
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} xl={14}>

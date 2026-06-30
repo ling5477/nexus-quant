@@ -129,7 +129,7 @@ test.describe('runtime to marketdata readiness deep link', () => {
         await expect(page.getByText('LIVE disabled').first()).toBeVisible();
         await expect(page.getByText('PERMISSION_PROBE_DISABLED / SKIPPED').first()).toBeVisible();
 
-        await page.getByRole('link', {name: 'View MarketData readiness'}).click();
+        await page.getByRole('button', {name: 'View MarketData readiness'}).getByRole('link').click();
 
         await expect(page).toHaveURL(/\/marketdata\?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m$/);
         await expect(page.getByRole('heading', {name: 'Marketdata'})).toBeVisible();

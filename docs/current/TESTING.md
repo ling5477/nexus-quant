@@ -1,3 +1,23 @@
+## NQ-GATEM-6A-RUNTIME-HEALTH-CONFIG-PROFILE-OVERVIEW（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只增强 `/runtime/readiness` 的 `Operational Readiness` 只读概览，不新增后端 API、不改后端、不新增 migration、不改 CI workflow、不改变 Trading / Paper / MarketData / adapter 行为。
+
+Scope：新增 Operational Readiness 区块，展示 process health、runtime readiness、adapter readiness、MarketData readiness、profile boundary、config diagnostics、startup checks、safe log diagnostics。`/actuator/health` 只表达 process health，不是 readiness 或 LIVE authorization；profile/config/startup/log 缺失后端支持时统一显示 `PENDING_BACKEND_SUPPORT`。
+
+Validation：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts --project=chromium` | PASS | 1 Chromium backend-free smoke passed；覆盖 Operational Readiness 文案、`PENDING_BACKEND_SUPPORT`、MarketData / Dashboard 只读链接、无 write endpoint、无 permission probe、无 ingestion run-once、无 order/cancel/transfer/withdraw、无外部交易所请求、无 credential-like UI 泄漏。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts tests/e2e/runtime-readiness-overview-smoke.spec.ts tests/e2e/runtime-marketdata-readiness-link-smoke.spec.ts tests/e2e/runtime-ui-final-smoke.spec.ts --project=chromium` | PASS | 4 Chromium backend-free Runtime smoke passed；覆盖新增 6A smoke、既有 Runtime overview、Runtime -> MarketData deep link、Runtime final smoke。 |
+
+Not run：未运行 Maven backend tests、full frontend E2E、Python pytest/mypy/ruff、真实 local backend smoke；原因是本轮只改 frontend UI + 单个 backend-free smoke + current docs，不改 backend/research，也不要求真实后端。
+
+Boundary：LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT IMPLEMENTED。actuator health、runtime UI、Paper-only、`SKIPPED`、NoReal、DB/query freshness 均不构成 real-ready 或 LIVE authorization。
+
+Implementation-period fix：新增 Operational Readiness 区块复用了 `View MarketData readiness` 链接文本，首次 rerun 既有 Runtime overview smoke 时触发 Playwright strict-locator collision；已把既有 smoke 对原 MarketData card CTA 的断言/点击 scope 到 button link，随后 4-spec Runtime 回归 PASS。
+
 ## NQ-GATEM-6-OPERATIONAL-READINESS-PLAN（2026-06-30）
 
 结论：**PASS / PLAN ONLY / READY TO COMMIT**。本轮只做 GateM-6 Operational Readiness planning，不新增页面、不新增测试、不新增 API、不新增 migration、不修改 CI workflow、不实现运行时能力。

@@ -192,7 +192,7 @@ test.describe('runtime guarded UI final smoke', () => {
         await expect(page.getByText('NoReal / Fake / Stub / FutureReal').first()).toBeVisible();
         await expectNoFalseReadyCopy(page);
 
-        await page.getByRole('link', {name: 'View MarketData readiness'}).click();
+        await page.getByRole('button', {name: 'View MarketData readiness'}).getByRole('link').click();
         await expect(page).toHaveURL(/\/marketdata\?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m$/);
         await expect(page.getByRole('heading', {name: 'Marketdata'})).toBeVisible();
         await expect(page.getByTestId('marketdata-runtime-deep-link')).toContainText('Runtime readiness context applied');

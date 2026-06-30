@@ -1,3 +1,37 @@
+## NQ-GATEM-6A-RUNTIME-HEALTH-CONFIG-PROFILE-OVERVIEW（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮在 `/runtime/readiness` 新增 `Operational Readiness` 只读概览。页面明确展示 process health、runtime readiness、adapter readiness、MarketData readiness，以及 profile boundary / config diagnostics / startup checks / safe log diagnostics 的 `PENDING_BACKEND_SUPPORT` 状态。
+
+同步内容：
+
+- `Process health`：仅说明 `/actuator/health` 可作为 process health，不是 readiness 或 LIVE authorization。
+- `Runtime readiness`：现有 guarded UI 可用，但 runtime UI 不代表 real provider readiness。
+- `Adapter readiness` / `MarketData readiness`：仅作为既有只读 readiness source。
+- `Profile boundary` / `Config diagnostics` / `Startup checks` / `Safe log diagnostics`：缺失 safe backend summary API，统一 fail-closed 显示 `PENDING_BACKEND_SUPPORT`。
+- 新增只读链接 `View MarketData readiness` 与 `View Dashboard runtime summary`。
+- 新增 backend-free smoke `runtime-operational-readiness-overview-smoke.spec.ts`。
+- 实现期修复既有 Runtime smoke strict-locator collision：新增区块复用 `View MarketData readiness` 文案后，既有 smoke 全页 locator 匹配到两个链接；已把既有 smoke 的原 MarketData card CTA 定位收窄到 button link。
+
+同步文件：
+
+- `frontend/src/pages/runtime/RuntimeReadinessPage.tsx`
+- `frontend/tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_6A_RUNTIME_HEALTH_CONFIG_PROFILE_OVERVIEW.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证：
+
+- `cd frontend; npm run build`：PASS，保留既有 Vite large chunk warning。
+- `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts --project=chromium`：PASS，1 Chromium backend-free smoke passed。
+- `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts tests/e2e/runtime-readiness-overview-smoke.spec.ts tests/e2e/runtime-marketdata-readiness-link-smoke.spec.ts tests/e2e/runtime-ui-final-smoke.spec.ts --project=chromium`：PASS，4 Chromium backend-free Runtime smoke passed。
+
+边界：未修改 backend / migration / research / scripts / deploy / `.github`；未新增 API；未修改 actuator / health / readiness backend；未修改 TradingWorkbench 下单逻辑；未新增 LIVE UI 入口；未调用 permission probe POST、ingestion run-once、order、cancel、transfer、withdraw 或外部交易所；未读取或输出 credential material；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider。actuator health、runtime UI、Paper-only、`SKIPPED`、NoReal 与 DB/query freshness 均不构成 real-ready。
+
+下一步：可进入 GateM-6B startup check / disabled capability summary planning or implementation，但必须另起任务明确是否允许后端支持；默认仍不新增 API、不读 credential、不触碰 LIVE/AI/DH/real provider。
+
 ## NQ-GATEM-6-OPERATIONAL-READINESS-PLAN（2026-06-30）
 
 状态：**PASS / PLAN ONLY / READY TO COMMIT**。
