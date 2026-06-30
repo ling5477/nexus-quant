@@ -1,3 +1,29 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-2（2026-06-30）
+
+状态：**PASS / ARCHIVE MOVE BATCH 2 / READY TO COMMIT**。
+
+本轮执行 GateM archive Batch 2。范围只包括 plan review 批准的 GateM-5 Runtime Guarded UI evidence：`NQ_GATEM_5_RUNTIME_GUARDED_UI_PLAN.md`、`NQ_GATEM_5_RUNTIME_UI_5A_RUNTIME_READINESS_OVERVIEW.md`、`NQ_GATEM_5B_RUNTIME_UI_MARKETDATA_READINESS_DEEP_LINK.md`、`NQ_GATEM_5C_RUNTIME_UI_PAPER_BOUNDARY_BANNERS.md`、`NQ_GATEM_5D_RUNTIME_UI_DASHBOARD_SUMMARY_CARD.md`、`NQ_GATEM_5E_RUNTIME_UI_FINAL_SMOKE.md`。六份文件已用 `git mv` 从 `docs/current/frontend/` 移动到 `docs/gates/gate-m/frontend/`，并更新 `docs/gates/gate-m/README.md` 的 Runtime Guarded UI evidence 索引。
+
+索引同步：
+
+- `docs/current/README.md`：移除 GateM-5 current 长证据入口，改为 GateM archive frontend pointer。
+- `README.md`：补充 GateM archive 已包含 Runtime UI evidence。
+- `docs/current/STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`：追加本轮 Batch 2 摘要和验证记录。
+
+验证：已运行用户指定的 `git status --short`、`git diff --check`、`git diff --stat`、`git diff --name-status`、GateM-5 / Runtime UI `rg` 搜索和禁止范围 diff。由于 `git mv` 自动 staged rename，另补 `git diff --cached --name-status` / `git diff --cached --stat` 核对 6 个 Batch 2 文件均为 `R100` rename。未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only archive move。
+
+边界：
+
+- 未移动 GateM-6 Operational Readiness docs。
+- 未移动 GateM-2/3/4 implementation evidence。
+- 未移动 GateM freeze / release docs。
+- 未移动 GateK / GateJ / GateL / GateN 文档。
+- 未新增 redirect stub，未删除 historical evidence。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/archive。
+- GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**。
+
+下一步：进入 `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-3`，仅处理 GateM-6 Operational Readiness docs，前提是单独授权并再次验证索引引用。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-1（2026-06-30）
 
 状态：**PASS / ARCHIVE MOVE BATCH 1 / READY TO COMMIT**。

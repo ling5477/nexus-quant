@@ -26,11 +26,21 @@ Moved from `docs/current/` by `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-1`:
 - [freeze/NQ_GATEM_FREEZE_REVIEW.md](freeze/NQ_GATEM_FREEZE_REVIEW.md)
 - [freeze/NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md](freeze/NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md)
 
+## Batch 2: Runtime Guarded UI Evidence
+
+Moved from `docs/current/frontend/` by `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-2`:
+
+- [frontend/NQ_GATEM_5_RUNTIME_GUARDED_UI_PLAN.md](frontend/NQ_GATEM_5_RUNTIME_GUARDED_UI_PLAN.md)
+- [frontend/NQ_GATEM_5_RUNTIME_UI_5A_RUNTIME_READINESS_OVERVIEW.md](frontend/NQ_GATEM_5_RUNTIME_UI_5A_RUNTIME_READINESS_OVERVIEW.md)
+- [frontend/NQ_GATEM_5B_RUNTIME_UI_MARKETDATA_READINESS_DEEP_LINK.md](frontend/NQ_GATEM_5B_RUNTIME_UI_MARKETDATA_READINESS_DEEP_LINK.md)
+- [frontend/NQ_GATEM_5C_RUNTIME_UI_PAPER_BOUNDARY_BANNERS.md](frontend/NQ_GATEM_5C_RUNTIME_UI_PAPER_BOUNDARY_BANNERS.md)
+- [frontend/NQ_GATEM_5D_RUNTIME_UI_DASHBOARD_SUMMARY_CARD.md](frontend/NQ_GATEM_5D_RUNTIME_UI_DASHBOARD_SUMMARY_CARD.md)
+- [frontend/NQ_GATEM_5E_RUNTIME_UI_FINAL_SMOKE.md](frontend/NQ_GATEM_5E_RUNTIME_UI_FINAL_SMOKE.md)
+
 ## Remaining Approved Batches
 
-These approved GateM candidate classes are intentionally not moved in Batch 1:
+These approved GateM candidate classes are intentionally not moved in Batch 1 or Batch 2:
 
-- Batch 2: GateM-5 Runtime Guarded UI evidence.
 - Batch 3: GateM-6 Operational Readiness evidence.
 - Batch 4: GateM-2/3/4 implementation evidence.
 
