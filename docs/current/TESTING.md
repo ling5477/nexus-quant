@@ -1,8 +1,20 @@
+## NQ-GATEM-6-OPERATIONAL-READINESS-PLAN（2026-06-30）
+
+结论：**PASS / PLAN ONLY / READY TO COMMIT**。本轮只做 GateM-6 Operational Readiness planning，不新增页面、不新增测试、不新增 API、不新增 migration、不修改 CI workflow、不实现运行时能力。
+
+Scope：新增 `NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`，同步 current 控制文档。规划后续 6A runtime health/config/profile overview、6B startup check / disabled capability summary、6C log boundary / safe diagnostic summary、6D operations Dashboard / Runtime status refinement、6E deployment runbook / local operational checklist、6F GateM operational final smoke。
+
+Testing record：本轮未运行 frontend build、Playwright、Maven backend tests、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 planning-only 且只改 docs/current。实现阶段测试策略为 frontend build + 一个主 backend-free smoke，不扩展状态矩阵；real backend smoke 仅在后续任务明确授权时决定。
+
+Validation record：本轮按任务要求运行 `git status --short`、`git diff --check`、`git diff --stat`、health/readiness/runtime/profile/config/log/observability/LIVE/credential 相关 `rg` 检索，以及 frontend/backend/research/scripts/deploy/.github/migration 禁止范围 diff。最终命令结果以本轮 final response 为准。
+
+Boundary：LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT IMPLEMENTED。Actuator health、Paper-ready、DB-fresh、permission probe `SKIPPED` 均不构成 real-ready。GateM-6 plan 不调用真实交易所、不读取或输出 credential material、不打印 raw env / full config dump、不实现 health aggregation / startup checks / runtime config guard / deploy runbook。
+
 ## NQ-GATEM-5-RUNTIME-GUARDED-UI-CLOSEOUT（2026-06-30）
 
 结论：**PASS / CLOSED / READY TO COMMIT**。本轮只做 docs/current 状态收口，不新增页面、不新增 E2E、不新增 Runtime UI 测试矩阵。
 
-Scope：GateM-5 Runtime Guarded UI 状态同步。5A Runtime Readiness Overview completed；5B Runtime ↔ MarketData readiness deep link completed；5C Paper / Trading boundary banners completed；5D Dashboard Runtime summary completed；5E Runtime Guarded UI final smoke passed。GateM-5 = **IMPLEMENTED / SMOKE VERIFIED / CLOSED**；GateM-6 = **NEXT / NOT STARTED**。
+Scope：GateM-5 Runtime Guarded UI 状态同步。5A Runtime Readiness Overview completed；5B Runtime ↔ MarketData readiness deep link completed；5C Paper / Trading boundary banners completed；5D Dashboard Runtime summary completed；5E Runtime Guarded UI final smoke passed。GateM-5 = **IMPLEMENTED / SMOKE VERIFIED / CLOSED**；GateM-6 后续已进入 Operational Readiness planning-only，implementation 仍 **NOT STARTED**。
 
 Testing record：5E final smoke 已在上一轮通过，命令为 `cd frontend; npm run test:e2e -- tests/e2e/runtime-ui-final-smoke.spec.ts --project=chromium`，结果 PASS（1 Chromium test passed，backend-free）。`cd frontend; npm run build` 同轮结果 PASS。
 

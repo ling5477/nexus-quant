@@ -1,3 +1,31 @@
+## NQ-GATEM-6-OPERATIONAL-READINESS-PLAN（2026-06-30）
+
+状态：**PASS / PLAN ONLY / READY TO COMMIT**。
+
+本轮只规划 GateM-6 Operational Readiness，不改代码、不新增 API、不新增 migration、不改 CI workflow、不实现运行时能力。GateM-6 implementation 仍 **NOT STARTED**。
+
+同步内容：
+
+- 新增 `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`。
+- 盘点 actuator health、Runtime Readiness UI、adapter readiness、MarketData readiness、paper/trading guard banner、Dashboard runtime summary、logs / config / profile 当前边界。
+- 规划 6A runtime health/config/profile overview、6B startup check / disabled capability summary、6C log boundary / safe diagnostic summary、6D operations Dashboard / Runtime status refinement、6E deployment runbook / local operational checklist、6F GateM operational final smoke。
+- 明确缺失数据源必须标记为 `PENDING_BACKEND_SUPPORT`，不得伪造 ready。
+
+同步文件：
+
+- `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`
+- `docs/current/STATUS.md`
+- `docs/current/ROADMAP.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证：已按任务要求运行 `git status --short`、`git diff --check`、`git diff --stat`、health/readiness/runtime/profile/config/log/observability/LIVE/credential 相关 `rg` 检索和禁止范围 diff；最终结果见本轮 final response。
+
+边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增页面、E2E、API 或 workflow；未实现 health aggregation、startup checks、runtime config guard、deploy runbook；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material；未把 GateM 写成实盘阶段；未把 actuator health、Paper-ready、DB-fresh 或 permission probe `SKIPPED` 写成 real-ready。
+
+下一步：推荐 `NQ-GATEM-6A-RUNTIME-HEALTH-CONFIG-PROFILE-OVERVIEW`，以前端只读 Runtime 页面增强和 backend-free smoke 为首选，不新增后端 API，除非后续任务单独授权。
+
 ## NQ-GATEM-5-RUNTIME-GUARDED-UI-CLOSEOUT（2026-06-30）
 
 状态：**PASS / CLOSED / READY TO COMMIT**。
@@ -11,7 +39,7 @@
 - GateM-5C Paper / Trading boundary banners completed。
 - GateM-5D Dashboard Runtime summary completed。
 - GateM-5E Runtime Guarded UI final smoke passed。
-- GateM-6 = **NEXT / NOT STARTED**。
+- GateM-6 后续已进入 Operational Readiness planning-only；implementation 仍 **NOT STARTED**。
 
 同步文件：
 
@@ -25,7 +53,7 @@
 
 边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增 API、页面、E2E、review/freeze 文档或 GateM-5F/5G 小测试；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material；未把 Paper-ready / DB-fresh / permission probe `SKIPPED` 写成 real-ready。
 
-下一步：进入 **GateM-6 NEXT / NOT STARTED**；GateM-6 必须另起任务明确 scope、允许范围、禁止范围与验证要求。
+下一步：进入 **GateM-6 Operational Readiness planning-only**；implementation 必须另起任务明确 scope、允许范围、禁止范围与验证要求。
 
 ## NQ-GATEM-5E-RUNTIME-UI-FINAL-SMOKE（2026-06-30）
 

@@ -15,7 +15,7 @@ GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收
   ↓
 GateL：No-Real Exchange / MarketData Readiness（planning / contract / readiness）
   ↓
-GateM：Exchange / MarketData Runtime Readiness（STARTED / PARTIALLY IMPLEMENTED；GateM-5 Runtime Guarded UI CLOSED；GateM-6 NEXT / NOT STARTED）
+GateM：Exchange / MarketData Runtime Readiness（STARTED / PARTIALLY IMPLEMENTED；GateM-5 Runtime Guarded UI CLOSED；GateM-6 Operational Readiness PLAN ONLY / implementation NOT STARTED）
   ↓
 Future AI Paper Trading candidate（NOT CURRENT GATEM；requires separate AI/DH/runtime boundary planning）
   ↓
@@ -42,7 +42,7 @@ GateP：A 股适配
 - GateM authoritative definition = Exchange / MarketData Runtime Readiness。
 - GateM runtime readiness = STARTED / PARTIALLY IMPLEMENTED；GateM-0..5C 运行时 readiness 事实保留，不回滚。
 - GateM-5 Runtime Guarded UI = **IMPLEMENTED / SMOKE VERIFIED / CLOSED**：5A Runtime Readiness Overview completed；5B Runtime ↔ MarketData readiness deep link completed；5C Paper / Trading boundary banners completed；5D Dashboard Runtime summary completed；5E Runtime Guarded UI final smoke passed。
-- GateM-6 = **NEXT / NOT STARTED**。
+- GateM-6 Operational Readiness = **PLAN ONLY / READY TO COMMIT**；implementation 仍 **NOT STARTED**。已规划 6A runtime health/config/profile overview、6B startup check / disabled capability summary、6C log boundary / safe diagnostic summary、6D operations Dashboard / Runtime status refinement、6E deployment runbook / local operational checklist、6F GateM operational final smoke。
 - Future AI Paper Trading candidate = NOT CURRENT GATEM / NOT STARTED；必须等待 AI / DH runtime boundary 单独规划。
 - **NQ GateK CI mainline = COMPLETED / ACCEPTED**（CI 状态权威以 STATUS.md + NQ_CI_BASELINE_PLAN.md 为准）：Batch 5A no-backend frontend E2E = FROZEN / ACCEPTED（仅 4 个 no-backend smoke spec，非 authenticated/backend E2E coverage）；Batch 5B-ENV runtime no-outbound = P1 SECURITY ENHANCEMENT / **FROZEN / ACCEPTED**（freeze 卷宗 NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md，evidence run `27876451289` / headSha `8ba140d9` / 8 jobs success；规划 NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md，review NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md）；Batch 5B-SMOKE = **FROZEN / ACCEPTED**（implementation plan **REVIEWED / ACCEPTED**，implementation **DONE**，ci.yml `ci-security-smoke` job 复用 EnvSafety / no-outbound / NoReal 最小 smoke；first run evidence PASS（run `27903497008`，9 jobs success）；freeze **FROZEN / ACCEPTED**，卷宗 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`；**Batch 5B = CLOSED / ACCEPTED**；只允许 no-real / no-outbound / mock / fake / NoReal 路径）；Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED；Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
 - **NQ-CI-FRONTEND-E2E-BACKEND-BATCH-5D-FREEZE-REVIEW = PASS / FROZEN / ACCEPTED**（2026-06-23）：基于 re-run `28035713236`（commit `ba3f4c69`，branch `dev`，workflow `NQ CI Baseline`）冻结 `frontend-e2e-backend-smoke` 窄口 CI baseline。冻结范围仅覆盖单 spec `adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`、真实 local backend `/actuator/health=UP`、真实 `GET /api/adapters/readiness` 200、fail-closed readiness UI/payload、pre-upload redaction gate 与 text-only artifact；不冻结 full E2E、frontend feature expansion、backend production logic、real provider、real permission probe、LIVE、AI、DH runtime 或 OKX/Binance future-real-ready。Artifact 仅 `backend.log` / `health.json`，无 secret-like / real exchange host / outbound error，未上传 Playwright trace/screenshot/report/video。下一步允许 Batch 5E 或 CI 总结。
@@ -100,14 +100,14 @@ GateP：A 股适配
 - NQ_CI_BASELINE_PLAN.md 已作为 CI baseline 文档落档（CI 状态权威以 STATUS.md 为准）；**NQ GateK CI mainline = COMPLETED / ACCEPTED**：Batch 1 first green，Batch 2 PostgreSQL/Flyway、Batch 3 no-outbound guard、Batch 4B secret scan、Batch 4C artifact/log redaction、Batch 4F-A dependency-audit preflight、Batch 5A no-backend frontend E2E 均 FROZEN / ACCEPTED；Batch 5B-ENV = FROZEN / ACCEPTED（freeze evidence run `27876451289`，卷宗 NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md），Batch 5B-SMOKE = FROZEN / ACCEPTED（implementation plan reviewed / accepted；implementation DONE；ci-security-smoke job 已落地；first run evidence PASS（run 27903497008，9 jobs success）；freeze FROZEN / ACCEPTED，卷宗 NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md；Batch 5B CLOSED / ACCEPTED），Batch 4F-B 至 4F-F = OPTIONAL BACKLOG / NOT STARTED，Static workflow assertion = OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED。
 - `NQ_CI_NO_OUTBOUND_GUARD_PLAN.md` 已作为 Batch 3 plan / implementation / freeze baseline 落档；Batch 3B 已实现最小 workflow / test-scope no-outbound guard，并由 GitHub Actions run `27634370657` first green confirmed（6 jobs green），经 Batch 3E freeze review 固化为 FROZEN / ACCEPTED，是当前 `dev` no-outbound guard baseline。
 - GateL 已完成 No-Real Exchange / MarketData Readiness 文档边界（planning / contract / readiness，不实盘、不接真实交易所）。
-- GateM 进入 Exchange / MarketData Runtime Readiness，当前 STARTED / PARTIALLY IMPLEMENTED；GateM-5 Runtime Guarded UI 已 CLOSED，GateM-6 NEXT / NOT STARTED；仍不实盘、不接真实交易所。
+- GateM 进入 Exchange / MarketData Runtime Readiness，当前 STARTED / PARTIALLY IMPLEMENTED；GateM-5 Runtime Guarded UI 已 CLOSED，GateM-6 Operational Readiness 已完成 planning-only，implementation 仍 NOT STARTED；仍不实盘、不接真实交易所。
 - AI Paper Trading 只是 future candidate，不是 current GateM，当前 NOT STARTED。
 - GateN 才允许 AI 小资金 LIVE。
 - 美股/A 股复用虚拟币 V1 沉淀的通用底座。
 
 ## 当前边界
 
-- Current stage: GateM Exchange / MarketData Runtime Readiness（STARTED / PARTIALLY IMPLEMENTED；GateM-5 Runtime Guarded UI CLOSED；GateM-6 NEXT / NOT STARTED）。
+- Current stage: GateM Exchange / MarketData Runtime Readiness（STARTED / PARTIALLY IMPLEMENTED；GateM-5 Runtime Guarded UI CLOSED；GateM-6 Operational Readiness PLAN ONLY / implementation NOT STARTED）。
 - GateK finalized / frozen / tagged（tag：`nq-gatek-freeze`）。
 - NQ / DH 三轮只读审计已完成；DH not integrated；GateK implementation not started；AI not started；LIVE disabled。
 - Integration-0 allowed only as contract / mock / documentation work line, not runtime integration；它是独立文档与契约工作线，不等于 GateK 实现，也不是真实集成。
