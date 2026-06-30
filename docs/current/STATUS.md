@@ -6,6 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ-GATEM-5-RUNTIME-GUARDED-UI-CLOSEOUT（2026-06-30）：**PASS / CLOSED / READY TO COMMIT**。GateM-5 Runtime Guarded UI 状态收口为 **IMPLEMENTED / SMOKE VERIFIED / CLOSED**。已完成 GateM-5A Runtime Readiness Overview、GateM-5B Runtime ↔ MarketData readiness deep link、GateM-5C Paper / Trading boundary banners、GateM-5D Dashboard Runtime summary card、GateM-5E Runtime Guarded UI final smoke（PASS）。GateM-6 = **NEXT / NOT STARTED**。本 closeout 仅同步 current 控制文档，不新增页面、不新增测试、不新增 review/freeze 文档、不扩展 Runtime UI 状态矩阵。LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT INTEGRATED**；real exchange adapter / RealClient / real provider 仍 **NOT IMPLEMENTED**；Paper-ready / DB-fresh / permission probe `SKIPPED` 不构成 real-ready。
+
 - NQ-GATEM-STATE-ROUTE-RECONCILIATION（2026-06-29）：**PASS / FACT SOURCE SYNCED**。GateM 当前权威定义统一为 **Exchange / MarketData Runtime Readiness**；当前状态为 **STARTED / PARTIALLY IMPLEMENTED**。保留并承认 GateM-0..5C 已有 runtime readiness 事实（`AdapterReadinessService`、readiness guard、`AdapterReadinessController`、`AdapterReadinessPage`、真实后端 readiness E2E）。旧 AI Paper Trading GateM 口径已降级为 historical / future candidate / NOT CURRENT GATEM，不再作为当前 GateM 状态。LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT INTEGRATED**；real exchange adapter / RealClient / real provider 仍 **NOT IMPLEMENTED**。
 
 - NQ-DH timestamp format alignment（2026-06-28）：**CLOSED / ACCEPTED**。T4 NQ companion 已 ACCEPTED，并与 DH T1/T2/T3 共同完成最终收口；canonical timestamp = RFC3339 / ISO-8601 UTC `Z`；DH/NQ INT0 均拒绝 epoch seconds / epoch milliseconds / 数字时区偏移；replay window 保持 ±300s。CLOSED 仅表示 timestamp 契约收口完成，不授权 Integration-1 runtime；DH NOT INTEGRATED；Runtime integration NOT STARTED；LIVE DISABLED。

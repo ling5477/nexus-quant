@@ -1,3 +1,32 @@
+## NQ-GATEM-5-RUNTIME-GUARDED-UI-CLOSEOUT（2026-06-30）
+
+状态：**PASS / CLOSED / READY TO COMMIT**。
+
+本轮只做 Runtime Guarded UI 状态收口，不新增页面、不新增测试、不新增 review/freeze 文档、不改代码。GateM-5 Runtime Guarded UI 关闭为 **IMPLEMENTED / SMOKE VERIFIED / CLOSED**。
+
+同步内容：
+
+- GateM-5A Runtime Readiness Overview completed。
+- GateM-5B Runtime ↔ MarketData readiness deep link completed。
+- GateM-5C Paper / Trading boundary banners completed。
+- GateM-5D Dashboard Runtime summary completed。
+- GateM-5E Runtime Guarded UI final smoke passed。
+- GateM-6 = **NEXT / NOT STARTED**。
+
+同步文件：
+
+- `docs/current/STATUS.md`
+- `docs/current/ROADMAP.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证：已运行 `git status --short`、`git diff --check`、`git diff --stat`、禁止范围 diff 与 GateM-5 / Runtime Guarded UI / GateM-6 / LIVE / AI / DH runtime / RealClient / real provider / real-ready / SKIPPED 关键词检索；`git diff --check` 仅有既有 Windows CRLF 提示，无 whitespace error，禁止范围 diff 为空。未运行新增前端或后端测试；5E final smoke 已在上一轮 PASS。
+
+边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增 API、页面、E2E、review/freeze 文档或 GateM-5F/5G 小测试；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material；未把 Paper-ready / DB-fresh / permission probe `SKIPPED` 写成 real-ready。
+
+下一步：进入 **GateM-6 NEXT / NOT STARTED**；GateM-6 必须另起任务明确 scope、允许范围、禁止范围与验证要求。
+
 ## NQ-GATEM-5E-RUNTIME-UI-FINAL-SMOKE（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。

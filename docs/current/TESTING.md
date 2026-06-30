@@ -1,3 +1,17 @@
+## NQ-GATEM-5-RUNTIME-GUARDED-UI-CLOSEOUT（2026-06-30）
+
+结论：**PASS / CLOSED / READY TO COMMIT**。本轮只做 docs/current 状态收口，不新增页面、不新增 E2E、不新增 Runtime UI 测试矩阵。
+
+Scope：GateM-5 Runtime Guarded UI 状态同步。5A Runtime Readiness Overview completed；5B Runtime ↔ MarketData readiness deep link completed；5C Paper / Trading boundary banners completed；5D Dashboard Runtime summary completed；5E Runtime Guarded UI final smoke passed。GateM-5 = **IMPLEMENTED / SMOKE VERIFIED / CLOSED**；GateM-6 = **NEXT / NOT STARTED**。
+
+Testing record：5E final smoke 已在上一轮通过，命令为 `cd frontend; npm run test:e2e -- tests/e2e/runtime-ui-final-smoke.spec.ts --project=chromium`，结果 PASS（1 Chromium test passed，backend-free）。`cd frontend; npm run build` 同轮结果 PASS。
+
+Known warnings：保留既有 Vite large chunk warning、Playwright `NO_COLOR` / `FORCE_COLOR` warning、Ant Design / React 19 compatibility warning。本 closeout 未重新运行前端命令，也不处理这些非阻断 warning。
+
+Not run：本轮 closeout 未运行 full E2E、Maven backend tests、Python pytest/mypy/ruff、真实 local backend smoke；原因是本轮只改 current 控制文档，不改代码、页面、测试、API、migration 或 runtime 配置。
+
+Boundary：LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT IMPLEMENTED。5E final smoke 的 PASS 只证明 backend-free Runtime Guarded UI 汇总链路未回归，不代表 real-ready、LIVE authorization、真实 permission probe verified 或真实交易所接入。
+
 ## NQ-GATEM-5E-RUNTIME-UI-FINAL-SMOKE（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只新增 backend-free Runtime Guarded UI 汇总 smoke；未修改 frontend 页面源码、backend、migration、research、scripts、deploy 或 `.github/workflows`，未新增 API，未启用 LIVE / AI / DH runtime。
