@@ -1,6 +1,6 @@
 ---
 name: nq-dh-workflow-router
-description: NQ/DH workflow router for NexusQuant and Decision Hub tasks. Use when a task mentions NexusQuant, NQ, Decision Hub, DH, quant trading platform work, Gate or FREEZE planning, frontend optimization, architecture review, deployment, security audit, exchange integration, documentation, spreadsheets, presentations, or domain websites, and Codex must classify the task, choose only relevant plugins or project skills, route pure documentation work to nq-docs-writer when appropriate, define scope, preserve Gate boundaries, and produce the standard NQ/DH execution report.
+description: NQ/DH workflow router for NexusQuant and Decision Hub tasks. Use when a task mentions NexusQuant, NQ, Decision Hub, DH, quant trading platform work, Gate or FREEZE planning, stage transition archive governance, frontend optimization, architecture review, deployment, security audit, exchange integration, documentation, spreadsheets, presentations, or domain websites, and Codex must classify the task, choose only relevant plugins or project skills, route pure documentation and archive governance work to nq-docs-writer when appropriate, define scope, preserve Gate boundaries, and produce the standard NQ/DH execution report.
 ---
 
 # NQ-DH Workflow Router
@@ -37,7 +37,7 @@ Choose exactly one primary type. Record auxiliary types only when they materiall
 - `PRESENTATION`
 - `DOMAIN_WEBSITE`
 
-For `DOCUMENTATION`, record a subtype when it changes routing or validation: `DOCS_ONLY`, `DOCUMENTATION_CLEANUP`, `DOCUMENTATION_RECONCILIATION`, `FACT_SOURCE_SYNC`, `ROADMAP_CLEANUP`, `PLAN`, `PLANNING_ONLY`, `REVIEW`, `FREEZE_REVIEW`, `FINAL_FREEZE`, `STATUS_SYNC`, `TESTING_SYNC`, `WORKLOG_SYNC`, `API_DOC_UPDATE`, `DB_SCHEMA_DOC_UPDATE`, `FRONTEND_DOC_UPDATE`, `CI_DOC_UPDATE`, `GATE_PLAN`, `GATE_FREEZE`, `ACCEPTANCE_REPORT`, `IMPLEMENTATION_REPORT`, `RELEASE_HANDOFF`, or `POST_FREEZE_FIX_DOCS`.
+For `DOCUMENTATION`, record a subtype when it changes routing or validation: `DOCS_ONLY`, `DOCUMENTATION_CLEANUP`, `DOCUMENTATION_RECONCILIATION`, `FACT_SOURCE_SYNC`, `ROADMAP_CLEANUP`, `PLAN`, `PLANNING_ONLY`, `REVIEW`, `FREEZE_REVIEW`, `FINAL_FREEZE`, `STATUS_SYNC`, `TESTING_SYNC`, `WORKLOG_SYNC`, `API_DOC_UPDATE`, `DB_SCHEMA_DOC_UPDATE`, `FRONTEND_DOC_UPDATE`, `CI_DOC_UPDATE`, `GATE_PLAN`, `GATE_FREEZE`, `ACCEPTANCE_REPORT`, `IMPLEMENTATION_REPORT`, `RELEASE_HANDOFF`, `POST_FREEZE_FIX_DOCS`, `STAGE_TRANSITION_ARCHIVE`, `ARCHIVE_INVENTORY`, `ARCHIVE_PLAN_REVIEW`, `ARCHIVE_MOVE_BATCH`, `ARCHIVE_CLOSEOUT`, `RELEASE_TAG_AND_ARCHIVE`, `FINAL_CLOSURE`, `DOCS_GOVERNANCE`, or `CURRENT_DOCS_CLASSIFICATION`.
 
 If the user request is ambiguous, make a conservative default assumption, state it, and avoid crossing module, Gate, trading, or credential boundaries.
 
@@ -50,6 +50,8 @@ Select only the tools needed for the classified task. Do not enable every availa
 - Use at most one primary skill; supporting skills must have a clear reason.
 - If plugin or skill guidance conflicts with Gate, security, trading, module, or user instructions, follow the stricter project boundary.
 - Use `nq-docs-writer` as the primary skill for pure documentation work: `DOCUMENTATION`, `DOCS_ONLY`, planning-only docs, review/freeze docs, current fact-source reconciliation, status/testing/worklog sync, API docs, DB schema docs, frontend docs, CI docs, acceptance reports, implementation reports, release handoffs, and post-freeze fix docs.
+- Route stage archive governance to `nq-docs-writer`: task names or prompts matching `*_ARCHIVE_INVENTORY`, `*_ARCHIVE_PLAN_REVIEW`, `*_ARCHIVE_MOVE_BATCH`, `*_ARCHIVE_CLOSEOUT`, `POST_*CURRENT_ARCHIVE*` / `POST_**CURRENT_ARCHIVE**`, `STAGE_TRANSITION_ARCHIVE`, `RELEASE_TAG_AND_ARCHIVE`, `FINAL_CLOSURE`, `DOCS_GOVERNANCE`, or `CURRENT_DOCS_CLASSIFICATION`.
+- Archive governance must stay separate from implementation. If a task also includes backend, frontend, DB, CI, security, credential, LIVE, real-provider, or exchange implementation, keep the implementation skill primary and let `nq-docs-writer` only synchronize TESTING, WORKLOG, current state, or archive policy inside the approved docs budget.
 - If the task implements backend, frontend, DB, CI, security, credential, LIVE, real-provider, or exchange changes and also needs documentation, keep the domain skill primary and use `nq-docs-writer` only as a supporting documentation skill.
 - If the task exposes fact-source conflict between attachments, prompts, old docs, current docs, tests, or code, select `nq-docs-writer` first for documentation reconciliation before editing current facts.
 - For migration work, keep `db-schema-migration-review` as primary; `nq-docs-writer` may only synchronize `DB_SCHEMA.md`, `TESTING.md`, and `WORKLOG.md`.

@@ -1,4 +1,4 @@
 interface:
   display_name: "NQ-DH Workflow Router"
   short_description: "Classify NQ/DH tasks and route project skills safely"
-  default_prompt: "Use $nq-dh-workflow-router to classify a NexusQuant or Decision Hub task before choosing tools, and route pure documentation work to $nq-docs-writer when appropriate."
+  default_prompt: "Use $nq-dh-workflow-router to classify a NexusQuant or Decision Hub task before choosing tools, and route pure documentation, stage transition archive, release tag archive, and current archive governance work to $nq-docs-writer when appropriate."
