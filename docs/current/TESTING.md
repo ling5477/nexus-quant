@@ -1,3 +1,25 @@
+## NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN（2026-06-30）
+
+结论：**PASS / PLAN ONLY / READY TO COMMIT**。本轮只做 GateN Public MarketData / Exchange Sandbox planning、exchange boundary review、security boundary review 和 current 文档同步；未新增代码、API、migration、CI workflow、frontend 页面、E2E、业务功能、LIVE、AI、DH runtime、RealClient、real provider、真实 public internet 默认路径或真实交易所能力。
+
+Testing record：未运行新的 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only planning，不修改 backend / frontend / research / scripts / deploy / `.github` / migration，也不新增运行时行为。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` | PASS | 工作目录为 `F:\project\nexus-quant`。 |
+| `git status --short` | PASS | 写入前工作区 clean；写入后仅包含允许的 docs/current 和 root README 文档变更。 |
+| `git branch --show-current` | PASS | 当前分支 `dev`。 |
+| `git tag --list "nq-gatem-freeze"` | PASS | 本地存在 GateM release tag `nq-gatem-freeze`。 |
+| `git show --stat --oneline --decorate nq-gatem-freeze` | PASS | tag message 为 `Freeze GateM runtime readiness baseline`，tagged commit 为 `64194844`。 |
+| `git diff --check` | PASS | 无 whitespace error；保留既有 CRLF working copy warning。 |
+| `git diff --stat` | PASS | 仅 root `README.md` 和 `docs/current` 文档变更；新建 `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`。 |
+| 禁止范围 diff | PASS | `frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。 |
+| 指定 `rg` 状态/边界搜索 | PASS | broad search 含历史 append-only 文档输出；changed-file scoped search 未发现新增 LIVE authorization、real-ready、secret、RealClient、real provider、permission probe、order/cancel/withdraw/transfer 正向授权语义。 |
+
+Boundary：GateN planning baseline 只规划 public marketdata / fake-server / no-egress / exchange sandbox contract。GateN implementation **NOT STARTED**。Public marketdata readiness 仍为 diagnostic only，不是 trading authorization；sandbox 不代表 production readiness；LIVE / AI / DH runtime / real provider / RealClient / real permission probe 均未启用或未实现。
+
 ## NQ-NEXT-PHASE-PLAN（2026-06-30）
 
 结论：**PASS / PLAN ONLY / READY TO COMMIT**。本轮只做 GateM freeze/tag 后的下一阶段规划、路线审查、安全边界审查和 current 文档同步；未新增代码、API、migration、CI workflow、frontend 页面、E2E、业务功能、LIVE、AI、DH runtime、RealClient、real provider 或真实交易所能力。

@@ -1,3 +1,36 @@
+## NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN（2026-06-30）
+
+状态：**PASS / PLAN ONLY / READY TO COMMIT**。
+
+本轮完成 GateN Public MarketData / Exchange Sandbox planning baseline。范围仅为 public marketdata、fake-server、no-egress、exchange sandbox contract、adapter/public-private boundary、frontend display boundary、安全边界、测试策略和批次规划；不新增代码、API、migration、CI workflow、frontend 页面、E2E、业务功能、LIVE、AI、DH runtime、RealClient、real provider、真实 public internet 默认路径或真实交易所能力。
+
+同步内容：
+
+- 新增 `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`。
+- 同步 `docs/current/NQ_NEXT_PHASE_PLAN.md`：登记 GateN planning baseline 文档与 implementation NOT STARTED。
+- 同步 root `README.md`、`docs/current/README.md`、`docs/current/ROADMAP.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`。
+- GateN 批次建议固定为 GateN-1 Public MarketData Contract Plan Review、GateN-2 Fake Server / No-Egress Test Plan、GateN-3 Public MarketData Adapter Skeleton、GateN-4 MarketData Sandbox Fixture Smoke、GateN-5 Runtime UI Sandbox Source Display、GateN-FREEZE。
+
+最终边界：
+
+- GateN：**PLAN ONLY / NOT IMPLEMENTED**。
+- LIVE：**DISABLED**。
+- AI：**NOT STARTED**。
+- DH runtime：**NOT_INTEGRATED**。
+- RealClient / real provider：**NOT_IMPLEMENTED**。
+- real exchange private trading：**NOT_IMPLEMENTED**。
+- permission probe real execution：**NOT_IMPLEMENTED**。
+- public marketdata readiness：diagnostic only，不是 trading authorization。
+- sandbox：不是 production readiness。
+
+验证：
+
+- 已确认 `nq-gatem-freeze` 本地 tag 存在，并通过 `git show --stat --oneline --decorate nq-gatem-freeze` 核对 annotated tag / tagged commit。
+- 已运行 `git diff --check`、`git diff --stat`、禁止范围 diff、指定 `rg` 状态/边界搜索。
+- 未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only planning，没有代码或运行时行为变更。
+
+下一步：建议进入 **NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW**；若先补测试策略，可进入 **NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-TEST-PLAN**。任一实现任务都必须单独授权。
+
 ## NQ-NEXT-PHASE-PLAN（2026-06-30）
 
 状态：**PASS / PLAN ONLY / READY TO COMMIT**。

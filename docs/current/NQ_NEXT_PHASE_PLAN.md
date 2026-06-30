@@ -301,6 +301,13 @@ Recommended status after this document:
 - DH runtime: **NOT_INTEGRATED**.
 - RealClient / real provider: **NOT_IMPLEMENTED**.
 
+GateN planning baseline document:
+
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
+- Status: **PASS / PLAN ONLY / READY TO COMMIT**.
+- Scope: public marketdata / fake-server / no-egress / exchange sandbox planning only.
+- Implementation remains **NOT STARTED**.
+
 ## Recommended Name
 
 Use:
@@ -499,6 +506,7 @@ Final boundary:
 
 - This plan does not start GateN implementation.
 - GateN implementation remains **NOT STARTED**.
+- GateN planning baseline is now tracked in `NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
 - AI small-funds LIVE is deferred to a later separately planned phase.
 - DH Integration-1 remains planning-only until security blockers and runtime boundaries are separately accepted.
 - Wallet / Agent Wallet remains design-only until a separate threat model and security review are accepted.
