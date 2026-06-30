@@ -1,3 +1,23 @@
+## NQ-GATEM-6E-LOCAL-OPERATIONAL-RUNBOOK（2026-06-30）
+
+结论：**PASS / DOCS ONLY / READY TO COMMIT**。本轮新增 GateM-6 本地 operational readiness runbook，并同步 current 状态入口；不改 frontend / backend / research / scripts / deploy / `.github`，不新增 API、不新增 migration、不新增 E2E、不改 CI workflow，不启动 LIVE / AI / DH runtime / real provider。
+
+Scope：新增 `docs/current/NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`，记录 local-only 验证路径：启动 `nq-app` local backend、检查 `/actuator/health`、认证调用 `GET /api/runtime/operational-readiness`、访问 `/runtime/readiness`、检查 forbidden actions、停止后端并确认 health unreachable。同步 `NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`、`README.md`、`STATUS.md`、`ROADMAP.md`、`WORKLOG.md` 的 6E 状态。
+
+Validation：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写操作前工作区 clean，当前分支 `dev`；写后仅允许的 docs/current 文件变更。 |
+| `git diff --check` | PASS | docs-only diff check 通过；仅保留 Git 对部分 Markdown 文件 LF/CRLF 的非阻断 warning。 |
+| `git diff --stat` | PASS | 用于核对 docs-only 变更规模。 |
+| forbidden-scope diffs | PASS | `git diff -- frontend/backend/research/scripts/deploy/.github/"backend/**/db/migration"` 均为空。 |
+| required `rg` boundary search | PASS | 搜索命中均为 runbook/current docs 的状态说明、禁止项或 historical/current boundary；未发现把 local runbook 写成 production readiness、LIVE authorization、AI/DH started、real provider implemented 或 credential material exposed。 |
+
+Not run：未运行 Maven backend tests、frontend build/E2E、Python pytest/mypy/ruff；原因是本轮 docs-only，未修改代码、配置、migration、workflow 或 E2E。
+
+Boundary：runbook 明确 `Local operational readiness validation only`，不是 production deploy，不代表 LIVE authorization；`/actuator/health=UP` 不是 readiness / LIVE authorization；`GET /api/runtime/operational-readiness` 仍为 safe summary；禁止 permission probe POST、ingestion run-once、order、cancel、transfer、withdraw、external exchange call、credential output、raw env/full config dump/generated password value output。LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT_INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT_IMPLEMENTED。
+
 ## NQ-GATEM-6D-OPERATIONAL-READINESS-REAL-BACKEND-SMOKE（2026-06-30）
 
 结论：**PASS / REAL BACKEND SMOKE VERIFIED / SELF-REVIEWED / READY TO COMMIT**。本轮只新增真实 local backend targeted Playwright smoke，验证 GateM-6B `GET /api/runtime/operational-readiness` 与 GateM-6C `/runtime/readiness` 前端接入闭环；不新增 API、不新增 migration、不改 backend / frontend production code / research / scripts / deploy / `.github`，不改变 Trading / Paper / MarketData / adapter / actuator 行为。

@@ -1,3 +1,27 @@
+## NQ-GATEM-6E-LOCAL-OPERATIONAL-RUNBOOK（2026-06-30）
+
+状态：**PASS / DOCS ONLY / READY TO COMMIT**。
+
+本轮新增 GateM-6E 本地 operational readiness runbook，只服务 local validation，不是 production deploy runbook，也不代表 LIVE authorization。runbook 覆盖 local backend startup、`/actuator/health`、认证 `GET /api/runtime/operational-readiness`、`/runtime/readiness` 前端检查、forbidden actions checklist、shutdown、troubleshooting 和 completion criteria。
+
+同步内容：
+
+- 新增 `docs/current/NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`。
+- 更新 `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`：6A/6B/6C/6D/6E completed，6F NOT STARTED。
+- 更新 `docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`。
+
+验证：
+
+- 写操作前 `Get-Location`：`F:\project\nexus-quant`；`git status --short`：clean；`git branch --show-current`：`dev`。
+- `git diff --check`：PASS；仅保留 Markdown LF/CRLF 非阻断 warning。
+- `git diff --stat`：PASS，用于核对 docs-only 变更规模。
+- 禁止范围 diff：`frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均为空。
+- 指定 `rg` 搜索：命中均为 local runbook/current docs 的状态说明、禁止项或边界提醒；未发现 credential material、raw env、full config dump 或 generated password value。
+
+边界：未修改 frontend / backend / research / scripts / deploy / `.github`；未新增 API / migration / E2E / CI workflow；未启动后端；未调用真实交易所；未读取或输出 credential material；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider。`/actuator/health` 继续只表示 process health，不是 readiness / LIVE authorization。
+
+下一步：GateM-6F final smoke 仍 **NOT STARTED**；若继续，只能按单独授权的小范围 smoke 执行，不得把 local runbook 或 actuator health 写成 production readiness / LIVE-ready。
+
 ## NQ-GATEM-6D-OPERATIONAL-READINESS-REAL-BACKEND-SMOKE（2026-06-30）
 
 状态：**PASS / REAL BACKEND SMOKE VERIFIED / SELF-REVIEWED / READY TO COMMIT**。
