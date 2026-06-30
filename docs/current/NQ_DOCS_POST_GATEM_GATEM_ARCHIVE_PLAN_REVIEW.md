@@ -6,6 +6,8 @@
 
 This document reviews the GateM archive candidates listed in `docs/current/NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md`. It does not move, delete, rename, copy, stub, archive, or rewrite any candidate file.
 
+Closeout status: subsequent `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-1` through Batch 4 tasks moved all 22 approved GateM candidates under `docs/gates/gate-m/`. `NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md` verifies **PASS / GATEM ARCHIVE CLOSED / READY TO COMMIT** with missing candidates = 0 and `docs/current` GateM long evidence residuals = 0. This plan review remains the approval record and was not itself an archive move.
+
 ## Task Classification
 
 - Primary type: `DOCUMENTATION`.
@@ -258,7 +260,7 @@ This plan review did not:
 
 **PASS / PLAN REVIEW ONLY / READY TO COMMIT**
 
-All 22 GateM candidates in the inventory are approved for a later archive move, subject to the batch plan and reference-update prerequisites above. This document is only a plan review; GateM archive movement remains **NOT EXECUTED**.
+All 22 GateM candidates in the inventory were approved for later archive movement, subject to the batch plan and reference-update prerequisites above. This document is only a plan review; it did not execute archive movement. Subsequent Batch 1-4 move tasks and the closeout report now record GateM archive movement as completed.
 
 ## Recommended Next Task
 
@@ -266,7 +268,7 @@ All 22 GateM candidates in the inventory are approved for a later archive move, 
 NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-1
 ```
 
-Recommended scope: create `docs/gates/gate-m/README.md`, create `docs/gates/gate-m/freeze/`, move only Batch 1 freeze / release files, and update current indexes. Do not move Batch 2-4 until Batch 1 validates cleanly.
+Status note: this recommended Batch 1 task was subsequently completed, followed by Batch 2, Batch 3, Batch 4, and the GateM archive closeout. The next task is no longer another GateM archive move; move to GateN planning review unless a separate archive delta is explicitly authorized.
 
 ## Commit Recommendation
 

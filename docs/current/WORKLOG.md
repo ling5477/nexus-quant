@@ -1,3 +1,28 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-CLOSEOUT（2026-06-30）
+
+状态：**PASS / GATEM ARCHIVE CLOSED / READY TO COMMIT**。
+
+本轮执行 GateM archive closeout verification。核对结果：plan review approved GateM candidates = 22；moved candidates = 22；missing candidates = 0；`docs/current` 下 `NQ_GATEM*.md` 长证据残留 = 0。GateM archive 目录已收口为 `docs/gates/gate-m/`：Batch 1 freeze / release / closeout evidence 在 `freeze/`，Batch 2 Runtime Guarded UI evidence 在 `frontend/`，Batch 3 Operational Readiness evidence 在 `operational/`，Batch 4 GateM-2 MarketData readiness evidence 在 archive root / `frontend/` / `testing/`。
+
+索引同步：
+
+- 新增 `docs/current/NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md`。
+- `docs/current/NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md`、`docs/current/NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md`：补充后续 closeout 状态，保留原 inventory / plan review 事实。
+- `docs/current/README.md`、`README.md`、`docs/gates/gate-m/README.md`、`docs/gates/README.md`：同步 GateM archive closed / 22 of 22 moved 摘要或 archive pointer。
+- `docs/current/STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`：追加本轮 closeout 状态与验证记录。
+
+验证：已运行用户指定的 `git status --short`、`git diff --check`、`git diff --stat`、PowerShell `docs/gates/gate-m` Markdown 列表、PowerShell `docs/current` `NQ_GATEM*.md` 残留列表、GateM archive / GateN / tag / plan-only `rg` 搜索和禁止范围 diff。未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only archive closeout。
+
+边界：
+
+- 未移动任何新文件，未删除文件，未新增 redirect stub。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/archive。
+- 未新增 API、页面、E2E、CI workflow、migration 或运行时行为。
+- GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**。
+- 未调用真实交易所，未读取或输出 credential material，未把 public marketdata sandbox 写成 trading authorization。
+
+下一步：进入 GateN-1 Public MarketData Contract Plan Review；不得再开启 GateM archive move，除非后续有单独 inventory delta review 明确授权。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-4（2026-06-30）
 
 状态：**PASS / ARCHIVE MOVE BATCH 4 / READY TO COMMIT**。

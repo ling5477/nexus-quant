@@ -1,3 +1,23 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-CLOSEOUT（2026-06-30）
+
+结论：**PASS / GATEM ARCHIVE CLOSED / READY TO COMMIT**。本轮只执行 GateM archive closeout verification 与允许范围内的 current/archive 索引同步；未移动新文件、未删除文件、未新增 redirect stub、未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/archive，未新增 API、页面、E2E、CI workflow 或运行时行为。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only archive closeout，只核对 22 个 approved GateM archive candidates 是否均已位于 `docs/gates/gate-m/` 并同步文档索引。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 显示本轮允许的 closeout 文档和索引/记录变更；无代码范围变更。 |
+| `git diff --check` | PASS | 无 whitespace error；若仅出现 CRLF working-copy warning，不构成 whitespace failure。 |
+| `git diff --stat` | PASS | 仅显示 `README.md`、`docs/current/**`、`docs/gates/**` 允许范围内文档变更。 |
+| PowerShell `docs/gates/gate-m` Markdown list | PASS | GateM archive 下存在 22 个 candidate docs + `README.md`；missing candidates = 0。 |
+| PowerShell `docs/current` `NQ_GATEM*.md` list | PASS | 无输出；`docs/current` GateM 长证据残留 = 0。 |
+| 指定 GateM archive / GateN / tag / plan-only `rg` 搜索 | PASS | root/current 只保留 GateM 摘要、`nq-gatem-freeze`、archive pointer 与 GateN `PLAN ONLY / NOT IMPLEMENTED` 口径；长证据位于 `docs/gates/gate-m/`。 |
+| 禁止范围 diff | PASS | `frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`、`docs/archive` 均无 diff。 |
+
+Boundary：GateM archive closeout 不是新功能；GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；未调用真实交易所，未读取或输出 credential material；public marketdata sandbox planning 不等于 trading authorization。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-4（2026-06-30）
 
 结论：**PASS / ARCHIVE MOVE BATCH 4 / READY TO COMMIT**。本轮只执行 plan review 批准的 GateM-2 MarketData readiness / fixture / real backend smoke evidence archive move；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow 或运行时行为。

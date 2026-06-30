@@ -18,6 +18,17 @@ This directory is historical evidence only. It is not the current implementation
 
 Current facts and active planning remain under `docs/current/`.
 
+## Archive Closeout
+
+- Closeout task: `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-CLOSEOUT`.
+- Closeout decision: **PASS / GATEM ARCHIVE CLOSED / READY TO COMMIT**.
+- Approved candidates count: 22.
+- Moved candidates count: 22.
+- Missing candidates: 0.
+- `docs/current` GateM long evidence residuals: 0 `NQ_GATEM*.md` files.
+
+The closeout confirms this archive contains the completed GateM evidence set approved by the Post-GateM inventory and plan review. It does not start GateN implementation; GateN remains **PLAN ONLY / NOT IMPLEMENTED**.
+
 ## Batch 1: Freeze / Release / Closeout Evidence
 
 Moved from `docs/current/` by `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-1`:

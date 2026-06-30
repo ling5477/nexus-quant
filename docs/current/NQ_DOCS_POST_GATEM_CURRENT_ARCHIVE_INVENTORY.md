@@ -8,6 +8,8 @@ This document is a Post-GateM current-document archive inventory. It does not mo
 
 Follow-up review completed: `NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md` records **PASS / PLAN REVIEW ONLY / READY TO COMMIT** for the 22 GateM archive candidates. That review approves later batched movement only; no archive movement has been executed by this inventory or by the plan review.
 
+Archive closeout completed: `NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md` records **PASS / GATEM ARCHIVE CLOSED / READY TO COMMIT**. Subsequent Batch 1-4 archive move tasks moved all 22 approved GateM candidates under `docs/gates/gate-m/`; missing candidates = 0; `docs/current` GateM long evidence residuals = 0. This inventory remains an inventory record and did not itself move files.
+
 ## Current Baseline
 
 - GateM is **FINALIZED / FROZEN / ACCEPTED / TAGGED**.

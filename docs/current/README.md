@@ -18,7 +18,7 @@ GateM freeze review 已完成：**PASS / FROZEN / ACCEPTED / READY TO COMMIT**�
 
 GateM release tag and archive 已完成：**PASS / COMPLETED / RELEASE TAG PUSHED**。Release tag：`nq-gatem-freeze`；tag object：`f44c62833c5c9f895ee292eef7f5d497b23089cc`；tagged commit：`64194844813bdd3d6541d5a07c576af27b28e5db`。GateM 最终状态为 **FINALIZED / FROZEN / ACCEPTED / TAGGED**；下一阶段规划已完成：**NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT**；GateN planning baseline 已完成：**NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = PASS / PLAN ONLY / READY TO COMMIT**。GateN implementation **NOT STARTED**。该 tag 与 GateN planning 均不代表 production readiness、LIVE authorization、real provider ready、真实 OKX / Binance private adapter implemented、AI started 或 DH runtime integrated。
 
-GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行：freeze readiness、freeze review、release tag / archive、GateM-5 Runtime Guarded UI、GateM-6 Operational Readiness、GateM-2 MarketData readiness 长证据已归档到 [docs/gates/gate-m/](../gates/gate-m/README.md)。`docs/current` 仅保留当前摘要和 archive pointer；plan review 未批准独立 GateM-3/4 文件移动。
+GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout：22 个 approved GateM archive candidates 均已归档到 [docs/gates/gate-m/](../gates/gate-m/README.md)，missing candidates = 0，`docs/current` 无 `NQ_GATEM*.md` 长证据残留。`docs/current` 仅保留 GateM final/tag/no-real runtime readiness 摘要和 archive pointer；plan review 未批准独立 GateM-3/4 文件移动。
 
 ## 当前控制入口
 
@@ -35,6 +35,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行：freeze readiness
 - GateN public marketdata sandbox plan：[NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md](NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md)
 - Post-GateM current archive inventory：[NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md](NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md)
 - Post-GateM GateM archive plan review：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md)
+- Post-GateM GateM archive closeout：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md)
 
 ## 文档治理权威基线
 
@@ -115,7 +116,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行：freeze readiness
 当前 current 不再堆放历史过程证据；按主题分别归档：
 
 - GateJ canonical records：`docs/gates/gate-j/`
-- GateM historical archive：`docs/gates/gate-m/`（Batch 1 已归档 freeze / release / closeout evidence；Batch 2 已归档 Runtime Guarded UI evidence；Batch 3 已归档 Operational Readiness evidence；Batch 4 已归档 GateM-2 MarketData readiness evidence；无独立 GateM-3/4 批准文件待移动）
+- GateM historical archive：`docs/gates/gate-m/`（GateM archive closed；22/22 approved candidates moved；Batch 1 已归档 freeze / release / closeout evidence；Batch 2 已归档 Runtime Guarded UI evidence；Batch 3 已归档 Operational Readiness evidence；Batch 4 已归档 GateM-2 MarketData readiness evidence；无独立 GateM-3/4 批准文件待移动）
 - 早期 Gate 历史卷宗：`docs/gates/gate-h/`、`docs/gates/gate-i/`、`docs/gates/gate-a..g/`
 - CI historical evidence：`docs/evidence/ci/`（导航 `docs/evidence/ci/README.md`）
 - Documentation governance evidence（G1～G6 plan/review/freeze/implementation/final freeze）：`docs/evidence/governance/`（导航 `docs/evidence/governance/README.md`）
