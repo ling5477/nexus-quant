@@ -6,6 +6,8 @@
 
 This document is a Post-GateM current-document archive inventory. It does not move, delete, rename, stub, copy, or archive any file.
 
+Follow-up review completed: `NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md` records **PASS / PLAN REVIEW ONLY / READY TO COMMIT** for the 22 GateM archive candidates. That review approves later batched movement only; no archive movement has been executed by this inventory or by the plan review.
+
 ## Current Baseline
 
 - GateM is **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
@@ -233,6 +235,8 @@ Required before moving:
 - Rewrite current indexes to point to the GateM archive.
 - Preserve `nq-gatem-freeze` tag facts and no-real boundaries.
 - Run link checks and forbidden-scope diff checks.
+
+Plan review note: `NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md` reviewed all 22 GateM candidates and recommends later Batch 1-4 movement under `docs/gates/gate-m/`, with `freeze/`, `frontend/`, and `testing/` subfolders. The review does not authorize moving files in this inventory task.
 
 ## Move To GateK
 

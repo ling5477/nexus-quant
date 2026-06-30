@@ -1,3 +1,34 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-PLAN-REVIEW（2026-06-30）
+
+状态：**PASS / PLAN REVIEW ONLY / READY TO COMMIT**。
+
+本轮完成 Post-GateM GateM archive plan review。范围为 inventory 中 22 个 `MOVE_TO_docs/gates/GateM` 候选、current authority 引用、现有 `docs/gates/` 结构和后续 batch planning；写入仅限新增 `NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md`，并在 `docs/current/README.md`、`NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md`、`TESTING.md`、`WORKLOG.md` 做最小索引/记录。
+
+审查结论：
+
+- GateM candidates reviewed count：22。
+- Approved to move in later task：22。
+- Keep in current as long evidence docs：0。
+- Needs review before candidate-level move：0。
+- 目标路径按现有仓库约定使用 `docs/gates/gate-m/`，建议子目录为 `freeze/`、`frontend/`、`testing/`。
+- 后续批次：Batch 1 GateM freeze / release；Batch 2 GateM-5 Runtime UI；Batch 3 GateM-6 Operational Readiness；Batch 4 GateM-2/3/4 implementation evidence。
+- 不建议新增 redirect stub；优先更新 current 索引和 GateM archive README。
+
+边界：
+
+- 未移动、删除、重命名、stub、复制或归档任何文件。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/gates / docs/archive。
+- 未新增 API、页面、E2E、CI workflow 或业务功能。
+- 未开启 LIVE，未接 AI / DH runtime，未实现 RealClient / real provider / real permission probe，未调用真实交易所，未读取或输出 credential material。
+- 未把 GateN 写成 implementation started，未把 GateM archive 写成 completed，未把 public marketdata sandbox 写成 trading authorization。
+
+验证：
+
+- 已运行用户指定的 `git status --short`、`git diff --check`、`git diff --stat`、GateM / freeze / release `rg` 搜索和禁止范围 diff。
+- 未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only plan review，没有代码或运行时行为变更。
+
+下一步：建议进入 `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-1`，仅创建 GateM archive README / freeze 子目录、移动 Batch 1 freeze / release 文件并更新 current 索引；Batch 2-4 后置。
+
 ## NQ-DOCS-POST-GATEM-CURRENT-ARCHIVE-INVENTORY（2026-06-30）
 
 状态：**PASS / INVENTORY ONLY / READY TO COMMIT**。
