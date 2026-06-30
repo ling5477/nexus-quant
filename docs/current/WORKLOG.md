@@ -10337,3 +10337,35 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 回滚方式
 
 还原 `frontend/src/pages/marketdata/MarketdataPage.tsx`、`frontend/src/types/marketdata.ts`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`，并删除 `frontend/tests/e2e/marketdata-quality-readiness-smoke.spec.ts` 与 `docs/current/frontend/NQ_GATEM_2B_MARKETDATA_QUALITY_READINESS_VIEW.md` 即可回滚本轮改动；无后端、DB、workflow、provider、exchange 或 LIVE 副作用。
+
+---
+
+## NQ-GATEM-5-RUNTIME-GUARDED-UI-PLAN
+
+日期：2026-06-30
+
+### 本轮目标
+
+规划 Runtime Guarded UI，让用户在前端清楚看到当前 NQ runtime 能做什么、不能做什么、为什么不能做。覆盖 Adapter readiness、MarketData readiness、Paper runtime readiness、LIVE disabled、permission probe `SKIPPED` / disabled、Paper-to-Real boundary、environment flags 与 runtime blockers。
+
+### 完成内容
+
+- 新增 `docs/current/frontend/NQ_GATEM_5_RUNTIME_GUARDED_UI_PLAN.md`。
+- 规划推荐入口：后续新增只读 `/runtime/readiness`，复用或扩展现有 `/adapter-readiness` 能力；Dashboard 只放摘要卡；MarketData / Paper Trading / TradingWorkbench 只放只读 guard banner / blockers。
+- 明确数据来源：`GET /api/adapters/readiness`、`GET /api/marketdata/readiness`、Paper Trading read APIs、可选 `/actuator/health`，以及缺失的 central runtime flags / Paper-to-Real aggregate 均标记 `PENDING_BACKEND_SUPPORT`。
+- 明确状态模型：`READY_FOR_PAPER_ONLY`、`NO_REAL`、`FAKE`、`STUB`、`FUTURE_REAL_DISABLED`、`LIVE_NOT_AUTHORIZED`、`PERMISSION_PROBE_DISABLED`、`CREDENTIAL_UNCONFIGURED`、`FRESH`、`STALE`、`GAP`、`NO_DATA`、`UNKNOWN`、`BLOCKED`、`DISABLED`、`PENDING_BACKEND_SUPPORT`。
+- 明确后续 Runtime UI 5A-5D 最小批次；这些是本计划局部命名，不覆盖既有 GateM-5A/5B/5C adapter readiness 历史记录。
+
+### 验证
+
+- 本轮已按要求执行 `git status --short`、readiness 关键词 `rg`、`git diff --check`、`git diff --stat` 和 forbidden-scope diff；`rg` 退出码 0，forbidden-scope diff 均为空，`git diff --check` 无 whitespace error（仅 Windows 行尾转换 warning）。
+- 补充执行 trailing whitespace 检查，`docs/current/frontend/NQ_GATEM_5_RUNTIME_GUARDED_UI_PLAN.md`、`docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 均无命中。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改 docs/current planning 文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `frontend/**`、`backend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API；未新增 migration；未修改 TradingWorkbench；未新增下单 UI；未新增 LIVE UI 入口；未新增 AI / DH runtime 页面；未接真实交易所；未读取或输出 credential material；未把 LIVE 写成 enabled；未把 no-real / fake / stub / paper-only / permission probe skipped 写成 real-ready。
+
+### 推荐下一步
+
+`NQ-GATEM-5-RUNTIME-UI-5A-RUNTIME-READINESS-OVERVIEW`：前端只读实现 `/runtime/readiness`，复用现有 adapter readiness API/query，添加 LIVE disabled / NoReal / permission probe skipped summary，并补 backend-free Playwright smoke。不得改 backend、API、migration、TradingWorkbench order actions、credential APIs、real adapters、LIVE、AI 或 DH runtime。

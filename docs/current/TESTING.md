@@ -5967,6 +5967,35 @@ target conflicts = 0
 
 ---
 
+## NQ-GATEM-5-RUNTIME-GUARDED-UI-PLAN（2026-06-30）
+
+结论：**PLAN ONLY / NOT IMPLEMENTED / READY FOR REVIEW**。本轮只做 Runtime Guarded UI planning 与 API boundary read-only review；未实现页面、未改前端代码、未改后端 API、未新增 migration、未触发真实交易所、未读取 credential、未启用 LIVE、未接 AI 或 DH runtime。
+
+本轮验证范围：
+
+- 只读核对 existing Adapter readiness UI/API、MarketData readiness UI/API、Paper Trading read APIs、TradingWorkbench、Dashboard / Operations 入口。
+- 新增 `docs/current/frontend/NQ_GATEM_5_RUNTIME_GUARDED_UI_PLAN.md`。
+- 同步 `docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 检查 forbidden scope diff，确认未修改 `frontend/**`、`backend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`。
+
+必须命令：
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | 仅允许的 docs/current 文档变更。 |
+| `rg "AdapterReadiness\|readiness\|MarketData\|PaperTrading\|TradingWorkbench\|LIVE\|NoReal\|READY_FOR_PAPER_ONLY\|permission probe\|sourceHealth\|freshness\|gap" frontend backend docs/current --glob "!**/node_modules/**" --glob "!**/target/**" --glob "!**/dist/**" --glob "!**/build/**"` | **PASS** | 退出码 0；输出很大，覆盖现有 UI/API/status 文案与 readiness source。 |
+| `git diff --check` | **PASS** | 无 whitespace error；仅有 Windows 行尾转换 warning。 |
+| `git diff --stat` | **PASS** | diff 范围为 docs/current 允许文档。 |
+| `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` | **PASS / EMPTY** | 禁止范围未触达。 |
+
+补充检查：`rg -n "[ \t]+$" docs/current/frontend/NQ_GATEM_5_RUNTIME_GUARDED_UI_PLAN.md docs/current/README.md docs/current/TESTING.md docs/current/WORKLOG.md` 无命中。
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮是 docs-only planning，不改 Java / TypeScript / Python / workflow / migration / runtime 配置。后续 Runtime UI 5A implementation 才需要 backend-free Playwright smoke；真实 local backend smoke 可后置。
+
+边界确认：LIVE 仍 `DISABLED`；AI 仍 `NOT STARTED`；DH runtime 仍 `NOT INTEGRATED`；real exchange adapter / RealClient / real provider 仍 `NOT IMPLEMENTED`；permission probe `SKIPPED` 不等于 verified；Paper readiness 不等于 real readiness；MarketData `FRESH` 仅代表本地 DB freshness，不代表 live exchange readiness。
+
+---
+
 ## NQ-GATEM-2B-MARKETDATA-QUALITY-READINESS-VIEW（2026-06-29）
 
 结论：**PASS / IMPLEMENTED / READY FOR REVIEW**。本轮只补 MarketData 页面数据质量 / freshness / gap / qualityStatus 前端表达，复用现有 `marketdataApi.listBars()` / `/api/marketdata/bars` 查询结果；未改 backend / API / migration / workflow / research / scripts / deploy，未接真实交易所、WebSocket、LIVE、AI 或 DH runtime。
