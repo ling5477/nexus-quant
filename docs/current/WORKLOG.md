@@ -1,3 +1,31 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-4（2026-06-30）
+
+状态：**PASS / ARCHIVE MOVE BATCH 4 / READY TO COMMIT**。
+
+本轮执行 GateM archive Batch 4。范围只包括 plan review 批准的 GateM-2 MarketData readiness / fixture / real backend smoke evidence：`NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md`、`NQ_GATEM_2_MARKETDATA_KLINE_READINESS.md`、`NQ_GATEM_2B_MARKETDATA_QUALITY_READINESS_VIEW.md`、`NQ_GATEM_2C_MARKETDATA_REAL_BACKEND_SMOKE.md`、`NQ_GATEM_2G_MARKETDATA_READINESS_REAL_BACKEND_SMOKE.md`、`NQ_GATEM_2H_MARKETDATA_POSITIVE_BARS_FIXTURE_PLAN.md`、`NQ_GATEM_2I_MARKETDATA_POSITIVE_BARS_FIXTURE_SMOKE.md`。七份文件已用 `git mv` 从 `docs/current/` / `docs/current/frontend/` 移动到 `docs/gates/gate-m/`、`docs/gates/gate-m/frontend/`、`docs/gates/gate-m/testing/`，并更新 `docs/gates/gate-m/README.md` 的 Batch 4 evidence 索引。
+
+索引同步：
+
+- `docs/current/README.md`：移除 GateM-2 current 长证据入口，改为 GateM archive pointer。
+- `README.md`：补充 GateM archive 已包含 GateM-2 MarketData readiness evidence。
+- `docs/current/STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`：追加本轮 Batch 4 摘要和验证记录。
+
+验证：已运行用户指定的 `git status --short`、`git diff --check`、`git diff --stat`、`git diff --name-status`、GateM-2/3/4 / MarketData / NoReal / Paper-to-Real `rg` 搜索和禁止范围 diff。由于 `git mv` 自动 staged rename，另补 `git diff --cached --name-status` / `git diff --cached --stat` 核对 7 个 Batch 4 文件均为 `R100` rename。未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only archive move。
+
+边界：
+
+- 未移动 GateM-5 Runtime UI docs。
+- 未移动 GateM-6 Operational Readiness docs。
+- 未移动 GateM freeze / release docs。
+- 未移动 GateK / GateJ / GateL / GateN 文档。
+- 未移动 `NQ_NEXT_PHASE_PLAN.md` 或 `NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`。
+- 未新增 redirect stub，未删除 historical evidence。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/archive。
+- GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**。
+- Plan review 明确当前 inventory 没有独立 GateM-3/4 root evidence rows；本轮未猜测或移动未批准文件。
+
+下一步：进入 GateM archive closeout review，只核对 22 个 approved GateM candidates 是否均已完成移动、current/root 索引是否仅保留摘要与 archive pointer，并继续保持 GateN PLAN ONLY / NOT IMPLEMENTED。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-3（2026-06-30）
 
 状态：**PASS / ARCHIVE MOVE BATCH 3 / READY TO COMMIT**。

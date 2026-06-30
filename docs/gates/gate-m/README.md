@@ -48,10 +48,18 @@ Moved from `docs/current/` and `docs/current/frontend/` by `NQ-DOCS-POST-GATEM-G
 - [operational/NQ_GATEM_6D_OPERATIONAL_READINESS_REAL_BACKEND_SMOKE.md](operational/NQ_GATEM_6D_OPERATIONAL_READINESS_REAL_BACKEND_SMOKE.md)
 - [operational/NQ_GATEM_6F_OPERATIONAL_READINESS_FINAL_SMOKE.md](operational/NQ_GATEM_6F_OPERATIONAL_READINESS_FINAL_SMOKE.md)
 
-## Remaining Approved Batch
+## Batch 4: MarketData Readiness Evidence
 
-This approved GateM candidate class is intentionally not moved in Batch 1, Batch 2, or Batch 3:
+Moved from `docs/current/` and `docs/current/frontend/` by `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-4`:
 
-- Batch 4: GateM-2/3/4 implementation evidence.
+- [NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md](NQ_GATEM_2D_MARKETDATA_SOURCE_HEALTH_PLAN.md)
+- [frontend/NQ_GATEM_2_MARKETDATA_KLINE_READINESS.md](frontend/NQ_GATEM_2_MARKETDATA_KLINE_READINESS.md)
+- [frontend/NQ_GATEM_2B_MARKETDATA_QUALITY_READINESS_VIEW.md](frontend/NQ_GATEM_2B_MARKETDATA_QUALITY_READINESS_VIEW.md)
+- [frontend/NQ_GATEM_2H_MARKETDATA_POSITIVE_BARS_FIXTURE_PLAN.md](frontend/NQ_GATEM_2H_MARKETDATA_POSITIVE_BARS_FIXTURE_PLAN.md)
+- [testing/NQ_GATEM_2C_MARKETDATA_REAL_BACKEND_SMOKE.md](testing/NQ_GATEM_2C_MARKETDATA_REAL_BACKEND_SMOKE.md)
+- [testing/NQ_GATEM_2G_MARKETDATA_READINESS_REAL_BACKEND_SMOKE.md](testing/NQ_GATEM_2G_MARKETDATA_READINESS_REAL_BACKEND_SMOKE.md)
+- [testing/NQ_GATEM_2I_MARKETDATA_POSITIVE_BARS_FIXTURE_SMOKE.md](testing/NQ_GATEM_2I_MARKETDATA_POSITIVE_BARS_FIXTURE_SMOKE.md)
+
+The approved Batch 4 move set contains GateM-2 MarketData readiness evidence only. The plan review explicitly recorded no `MOVE_TO_docs/gates/GateM` rows for standalone GateM-3 or GateM-4 evidence files; any future GateM-3/4 file movement requires a separate inventory delta review.
 
 Do not use this archive as proof that GateN implementation has started. GateN remains **PLAN ONLY / NOT IMPLEMENTED**.
