@@ -1,3 +1,35 @@
+## NQ-NEXT-PHASE-PLAN（2026-06-30）
+
+状态：**PASS / PLAN ONLY / READY TO COMMIT**。
+
+本轮完成 GateM freeze/tag 后的下一阶段规划、路线审查、安全边界审查和 current 文档同步；不新增代码、API、migration、CI workflow、frontend 页面、E2E、业务功能、LIVE、AI、DH runtime、RealClient、real provider 或真实交易所能力。
+
+同步内容：
+
+- 新增 `docs/current/NQ_NEXT_PHASE_PLAN.md`，列出 6 个候选后续阶段并给出推荐。
+- 推荐下一阶段：`GateN Public MarketData / Exchange Sandbox Planning`。
+- 同步 root `README.md`、`docs/current/README.md`、`docs/current/ROADMAP.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`。
+- 修正 current 路线中旧 `GateN：AI 小资金 LIVE` 表述，将 AI / DH / LIVE 候选改为后续 deferred candidate，不作为当前 GateN。
+
+最终边界：
+
+- GateN：**PLAN ONLY / NOT IMPLEMENTED**。
+- LIVE：**DISABLED**。
+- AI：**NOT STARTED**。
+- DH runtime：**NOT_INTEGRATED**。
+- RealClient / real provider：**NOT_IMPLEMENTED**。
+- real exchange private trading：**NOT_IMPLEMENTED**。
+- permission probe real execution：**NOT_IMPLEMENTED**。
+- public market data / exchange sandbox：仅为后续规划推荐，不构成交易授权、真实 provider readiness 或生产就绪。
+
+验证：
+
+- 已确认 `nq-gatem-freeze` 本地 tag 与 origin tag ref 存在。
+- 已运行 `git diff --check`、`git diff --stat`、禁止范围 diff、指定 `rg` 状态/边界搜索。
+- 未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only planning，没有代码或运行时行为变更。
+
+下一步：若用户确认该路线，建议另起 **NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN**，仍保持 plan/contract review first，implementation 单独授权。
+
 ## NQ-GATEM-RELEASE-TAG-AND-ARCHIVE（2026-06-30）
 
 状态：**PASS / COMPLETED / RELEASE TAG PUSHED**。

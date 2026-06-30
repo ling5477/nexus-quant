@@ -20,13 +20,14 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateK finalized / frozen / archived / tagged（tag：`nq-gatek-freeze`）
 - GateM = Exchange / MarketData Runtime Readiness
 - GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`；no-real runtime readiness baseline；GateM-1..6 事实见 `docs/current/`）
+- NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；推荐下一阶段为 GateN Public MarketData / Exchange Sandbox Planning（implementation NOT STARTED）
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
 - LIVE disabled
 - RealClient / real provider / real exchange adapter not implemented
 
-GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM 已 final / frozen / accepted / tagged 为 no-real runtime readiness baseline（release tag：`nq-gatem-freeze`）：adapter readiness、MarketData readiness、NoReal contract、Paper-to-Real boundary、Runtime Guarded UI 和 Operational Readiness 均已收口；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
+GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM 已 final / frozen / accepted / tagged 为 no-real runtime readiness baseline（release tag：`nq-gatem-freeze`）：adapter readiness、MarketData readiness、NoReal contract、Paper-to-Real boundary、Runtime Guarded UI 和 Operational Readiness 均已收口；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。GateM 后下一阶段规划已完成，推荐 GateN 作为 Public MarketData / Exchange Sandbox Planning，仅限 PLAN ONLY / NOT IMPLEMENTED；AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
 
 ## 当前能力摘要
 
@@ -67,6 +68,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`：GateJ-FREEZE 最终验收报告
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
 - `docs/current/NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md`：GateM release tag and archive 记录（`nq-gatem-freeze`）
+- `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateM 后下一阶段 planning-only 文档；推荐 GateN Public MarketData / Exchange Sandbox Planning，implementation NOT STARTED
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
 - `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：credential active uniqueness Batch 5-E-C 只读审计报告
 - `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：credential enable governance Batch 5-F-A 只读审计报告；Batch 5-F-B 已完成 schema-only `ENABLED` audit event 准备，Batch 5-F-C 已实现最小 enable command

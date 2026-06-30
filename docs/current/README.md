@@ -3,7 +3,7 @@
 `docs/current/` 是 NexusQuant 的**当前事实入口**：只保留当前控制文档、当前权威基线和必要运行手册。
 历史过程证据、治理 review/freeze、旧路径 compatibility stub 已移出 current，归档到 `docs/evidence/`（见下方“历史证据位置”）。
 
-当前阶段：**GateK finalized / frozen / tagged（tag：`nq-gatek-freeze`）；GateM = Exchange / MarketData Runtime Readiness；GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`）；GateM-5 Runtime Guarded UI IMPLEMENTED / SMOKE VERIFIED / CLOSED；GateM-6 Operational Readiness IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED；next phase NOT STARTED，需后续单独 planning**。
+当前阶段：**GateK finalized / frozen / tagged（tag：`nq-gatek-freeze`）；GateM = Exchange / MarketData Runtime Readiness；GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`）；GateM-5 Runtime Guarded UI IMPLEMENTED / SMOKE VERIFIED / CLOSED；GateM-6 Operational Readiness IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED；NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；推荐下一阶段 GateN Public MarketData / Exchange Sandbox Planning；GateN implementation NOT STARTED**。
 AI not started；DH runtime not integrated；LIVE disabled；real provider / RealClient / real exchange adapter / real permission probe 未实现。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。旧 AI Paper Trading GateM 口径已降级为 future candidate / historical route note，不再是当前 GateM 定义。
 
 GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / error model / capability matrix / readiness checklist）。当前进入 **GateM adapter readiness runtime enforcement**：GateM-0 在 `nq-adapter-api` 新增运行时 `AdapterReadinessService` / `DefaultAdapterReadinessService` 与 readiness 模型；GateM-1 进一步把 guard 接入行情订阅与交易动作入口（`ReadinessGuardedMarketDataAdapter` / `ReadinessGuardedTradingAdapter`），运行时强制 OKX / Binance / Noop fail-closed（NOT_READY / NO_REAL / UNKNOWN_REQUIRES_REVIEW）；GateM-2 把 marketdata Bean 经 `ReadinessGuardedAdapterFactory` 接入装配层；GateM-3 已把 `ExchangeAdapterConfiguration` 装配出的 OKX / Binance trading adapter 接入 readiness guard（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），使 `placeOrder` / `cancelOrder` / `getOrder` / `listOpenOrders` 在当前 no-real / LIVE disabled / not-ready 状态下 fail-closed；GateM-4 补一个更贴近真实调用路径的消费侧 runtime smoke（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），证明 scheduler 侧 `AdapterBackedTradingVenueGateway` 消费 Spring 装配的 OKX / Binance guarded trading adapter 时仍 fail-closed（降级为 `REMOTE_UNAVAILABLE`、message 脱敏、无 duplicate venue）；GateM-5A 新增只读 `GET /api/adapters/readiness`（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），供前端展示各 venue × capability 当前 readiness（NOOP/PAPER/SIM→NO_REAL、OKX/BINANCE→NOT_READY，全部 allowed=false、无 READY、脱敏、不触达真实交易所/credential，见 API.md）；GateM-5B 在 NQ Console 新增只读 adapter readiness 面板（路由 `/adapter-readiness`、菜单「适配器就绪」，**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），消费该 API 并 fail-closed 展示（OKX/Binance NOT_READY/不可用/LIVE 未授权、Noop NO_REAL、错误态显示 readiness API unavailable，绝不显示可交易）；GateM-5C 在真实本地 local 后端（18888 + 本地 PostgreSQL）下跑通该面板的真实后端 E2E（**PASS**），证明前端确实消费真实 `GET /api/adapters/readiness`（200、45 条全 fail-closed、无 secret），后端 0 次真实交易所外联。不允许真实交易所、LIVE、真实 credential、AI、DH runtime 或 future-real-ready。详见 STATUS.md / WORKLOG.md / TESTING.md。
@@ -16,7 +16,7 @@ GateM freeze readiness review 已完成：**PASS / READY FOR GATEM FREEZE REVIEW
 
 GateM freeze review 已完成：**PASS / FROZEN / ACCEPTED / READY TO COMMIT**。GateM 当前冻结为 no-real runtime readiness baseline；该 freeze review 已由 **NQ-GATEM-RELEASE-TAG-AND-ARCHIVE** 消费。该冻结不代表 production readiness、LIVE authorization、real provider ready、真实 OKX / Binance private adapter implemented、AI started 或 DH runtime integrated。
 
-GateM release tag and archive 已完成：**PASS / COMPLETED / RELEASE TAG PUSHED**。Release tag：`nq-gatem-freeze`；tag object：`f44c62833c5c9f895ee292eef7f5d497b23089cc`；tagged commit：`64194844813bdd3d6541d5a07c576af27b28e5db`。GateM 最终状态为 **FINALIZED / FROZEN / ACCEPTED / TAGGED**；next phase **NOT STARTED**，需后续单独 planning。该 tag 不代表 production readiness、LIVE authorization、real provider ready、真实 OKX / Binance private adapter implemented、AI started 或 DH runtime integrated。
+GateM release tag and archive 已完成：**PASS / COMPLETED / RELEASE TAG PUSHED**。Release tag：`nq-gatem-freeze`；tag object：`f44c62833c5c9f895ee292eef7f5d497b23089cc`；tagged commit：`64194844813bdd3d6541d5a07c576af27b28e5db`。GateM 最终状态为 **FINALIZED / FROZEN / ACCEPTED / TAGGED**；下一阶段规划已完成：**NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT**，推荐 GateN Public MarketData / Exchange Sandbox Planning；GateN implementation **NOT STARTED**。该 tag 与下一阶段规划均不代表 production readiness、LIVE authorization、real provider ready、真实 OKX / Binance private adapter implemented、AI started 或 DH runtime integrated。
 
 ## 当前控制入口
 
@@ -29,6 +29,7 @@ GateM release tag and archive 已完成：**PASS / COMPLETED / RELEASE TAG PUSHE
 - 运行手册：[RUNBOOK.md](RUNBOOK.md)
 - 项目任务流程权威：[NQ_PROJECT_WORKFLOW_AUTHORITY.md](NQ_PROJECT_WORKFLOW_AUTHORITY.md)
 - GateM release tag / archive：[NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md](NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md)
+- Next phase plan：[NQ_NEXT_PHASE_PLAN.md](NQ_NEXT_PHASE_PLAN.md)
 
 ## 文档治理权威基线
 
@@ -137,7 +138,19 @@ GateI：虚拟币量化 V1 完整闭环 completed
   ↓
 GateJ：Paper Trading 稳定运行 completed
   ↓
-GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口（NEXT）
+GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口 completed
   ↓
-GateL：No-Real Exchange / MarketData Readiness → GateM：Exchange / MarketData Runtime Readiness（FINALIZED / FROZEN / ACCEPTED / TAGGED；tag：`nq-gatem-freeze`；no-real runtime readiness baseline；next phase NOT STARTED） → Future AI Paper Trading candidate（NOT CURRENT GATEM；AI/DH runtime boundaries must be separately planned） → GateN：AI 小资金 LIVE → GateO：美股适配 → GateP：A 股适配
+GateL：No-Real Exchange / MarketData Readiness completed
+  ↓
+GateM：Exchange / MarketData Runtime Readiness（FINALIZED / FROZEN / ACCEPTED / TAGGED；tag：`nq-gatem-freeze`；no-real runtime readiness baseline）
+  ↓
+GateN：Public MarketData / Exchange Sandbox Planning（RECOMMENDED NEXT / PLAN ONLY / NOT IMPLEMENTED）
+  ↓
+Future AI Paper Trading candidate（NOT CURRENT GATEM；AI/DH runtime boundaries must be separately planned）
+  ↓
+Future AI small-funds LIVE candidate（DEFERRED；requires separate AI / DH / LIVE authorization planning）
+  ↓
+GateO：美股适配
+  ↓
+GateP：A 股适配
 ```
