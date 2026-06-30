@@ -1,3 +1,24 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-3（2026-06-30）
+
+结论：**PASS / ARCHIVE MOVE BATCH 3 / READY TO COMMIT**。本轮只执行 GateM-6 Operational Readiness evidence archive move；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow 或运行时行为。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only archive move，仅移动已批准的 historical evidence 并更新索引。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 显示 6 个 `git mv` rename 以及允许的 docs 索引/记录变更。 |
+| `git diff --check` | PASS | 无 whitespace error；若仅出现 CRLF working-copy warning，不构成 whitespace failure。 |
+| `git diff --stat` | PASS | 普通 diff 显示 root README、docs/current 与 docs/gates 索引/记录变更；`git mv` 产生的 staged rename 由 cached stat 单独核对。 |
+| `git diff --name-status` | PASS | 用户指定命令已运行；因 `git mv` 自动 staged rename，普通 name-status 只显示未 staged 索引/记录修改。 |
+| `git diff --cached --name-status` | PASS | 6 个 Batch 3 文件以 `R100` 从 `docs/current/` / `docs/current/frontend/` rename 到 `docs/gates/gate-m/operational/`。 |
+| `git diff --cached --stat` | PASS | staged rename 为 6 files changed，0 insertions / 0 deletions。 |
+| 指定 GateM-6 / Operational Readiness `rg` 搜索 | PASS | `docs/current` 仅保留摘要与 archive pointer；moved evidence 位于 `docs/gates/gate-m/operational/`。 |
+| 禁止范围 diff | PASS | `frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`、`docs/archive` 均无 diff。 |
+
+Boundary：GateM archive Batch 3 不是新功能；GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；未调用真实交易所，未读取或输出 credential material。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-2（2026-06-30）
 
 结论：**PASS / ARCHIVE MOVE BATCH 2 / READY TO COMMIT**。本轮只执行 GateM-5 Runtime Guarded UI evidence archive move；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow 或运行时行为。

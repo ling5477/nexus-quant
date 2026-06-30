@@ -37,11 +37,21 @@ Moved from `docs/current/frontend/` by `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-2
 - [frontend/NQ_GATEM_5D_RUNTIME_UI_DASHBOARD_SUMMARY_CARD.md](frontend/NQ_GATEM_5D_RUNTIME_UI_DASHBOARD_SUMMARY_CARD.md)
 - [frontend/NQ_GATEM_5E_RUNTIME_UI_FINAL_SMOKE.md](frontend/NQ_GATEM_5E_RUNTIME_UI_FINAL_SMOKE.md)
 
-## Remaining Approved Batches
+## Batch 3: Operational Readiness Evidence
 
-These approved GateM candidate classes are intentionally not moved in Batch 1 or Batch 2:
+Moved from `docs/current/` and `docs/current/frontend/` by `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-3`:
 
-- Batch 3: GateM-6 Operational Readiness evidence.
+- [operational/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md](operational/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md)
+- [operational/NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md](operational/NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md)
+- [operational/NQ_GATEM_6A_RUNTIME_HEALTH_CONFIG_PROFILE_OVERVIEW.md](operational/NQ_GATEM_6A_RUNTIME_HEALTH_CONFIG_PROFILE_OVERVIEW.md)
+- [operational/NQ_GATEM_6C_OPERATIONAL_READINESS_FRONTEND_INTEGRATION.md](operational/NQ_GATEM_6C_OPERATIONAL_READINESS_FRONTEND_INTEGRATION.md)
+- [operational/NQ_GATEM_6D_OPERATIONAL_READINESS_REAL_BACKEND_SMOKE.md](operational/NQ_GATEM_6D_OPERATIONAL_READINESS_REAL_BACKEND_SMOKE.md)
+- [operational/NQ_GATEM_6F_OPERATIONAL_READINESS_FINAL_SMOKE.md](operational/NQ_GATEM_6F_OPERATIONAL_READINESS_FINAL_SMOKE.md)
+
+## Remaining Approved Batch
+
+This approved GateM candidate class is intentionally not moved in Batch 1, Batch 2, or Batch 3:
+
 - Batch 4: GateM-2/3/4 implementation evidence.
 
 Do not use this archive as proof that GateN implementation has started. GateN remains **PLAN ONLY / NOT IMPLEMENTED**.

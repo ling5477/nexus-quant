@@ -1,3 +1,29 @@
+## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-3（2026-06-30）
+
+状态：**PASS / ARCHIVE MOVE BATCH 3 / READY TO COMMIT**。
+
+本轮执行 GateM archive Batch 3。范围只包括 plan review 批准的 GateM-6 Operational Readiness evidence：`NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`、`NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`、`NQ_GATEM_6A_RUNTIME_HEALTH_CONFIG_PROFILE_OVERVIEW.md`、`NQ_GATEM_6C_OPERATIONAL_READINESS_FRONTEND_INTEGRATION.md`、`NQ_GATEM_6D_OPERATIONAL_READINESS_REAL_BACKEND_SMOKE.md`、`NQ_GATEM_6F_OPERATIONAL_READINESS_FINAL_SMOKE.md`。六份文件已用 `git mv` 从 `docs/current/` / `docs/current/frontend/` 移动到 `docs/gates/gate-m/operational/`，并更新 `docs/gates/gate-m/README.md` 的 Operational Readiness evidence 索引。
+
+索引同步：
+
+- `docs/current/README.md`：移除 GateM-6 current 长证据入口，改为 GateM archive operational pointer。
+- `README.md`：补充 GateM archive 已包含 Operational Readiness evidence。
+- `docs/current/STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`：追加本轮 Batch 3 摘要和验证记录。
+
+验证：已运行用户指定的 `git status --short`、`git diff --check`、`git diff --stat`、`git diff --name-status`、GateM-6 / Operational Readiness `rg` 搜索和禁止范围 diff。由于 `git mv` 自动 staged rename，另补 `git diff --cached --name-status` / `git diff --cached --stat` 核对 6 个 Batch 3 文件均为 `R100` rename。未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only archive move。
+
+边界：
+
+- 未移动 GateM-5 Runtime UI docs。
+- 未移动 GateM-2/3/4 implementation evidence。
+- 未移动 GateM freeze / release docs。
+- 未移动 GateK / GateJ / GateL / GateN 文档。
+- 未新增 redirect stub，未删除 historical evidence。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/archive。
+- GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**。
+
+下一步：进入 `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-4`，仅处理 GateM-2/3/4 implementation evidence，前提是单独授权并再次验证索引引用。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-BATCH-2（2026-06-30）
 
 状态：**PASS / ARCHIVE MOVE BATCH 2 / READY TO COMMIT**。
