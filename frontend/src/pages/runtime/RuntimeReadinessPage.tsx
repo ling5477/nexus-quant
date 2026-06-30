@@ -26,6 +26,12 @@ const {Paragraph, Text} = Typography;
 
 const REAL_EXCHANGE_VENUES = new Set(['OKX', 'BINANCE']);
 const NO_REAL_VENUES = new Set(['NOOP', 'PAPER', 'SIM', 'FAKE', 'STUB', 'FUTURE_REAL']);
+const MARKETDATA_READINESS_PATH = `/marketdata?${new URLSearchParams({
+    exchangeCode: 'BINANCE',
+    marketType: 'SPOT',
+    symbol: 'BTC-USDT',
+    interval: '1m',
+}).toString()}`;
 const BLOCKED_RUNTIME_REASONS = [
     'NO_REAL',
     'FAKE',
@@ -402,7 +408,7 @@ export function RuntimeReadinessPage() {
                         className="page-section"
                         variant="borderless"
                         title="MarketData readiness card"
-                        extra={<Link to="/marketdata">打开 MarketData readiness</Link>}
+                        extra={<Link to={MARKETDATA_READINESS_PATH}>Open MarketData</Link>}
                     >
                         <Space direction="vertical" size={12} style={{display: 'flex'}}>
                             <DataFreshness
@@ -421,8 +427,8 @@ export function RuntimeReadinessPage() {
                                 <StatusTag label="NO_MIGRATION_MVP" tone="warning" variant="pill"/>
                                 <StatusTag label="PENDING_BACKEND_SUPPORT" tone="warning" variant="pill"/>
                             </Space>
-                            <Button>
-                                <Link to="/marketdata">查看 query-scoped MarketData readiness</Link>
+                            <Button type="primary">
+                                <Link to={MARKETDATA_READINESS_PATH}>View MarketData readiness</Link>
                             </Button>
                         </Space>
                     </Card>

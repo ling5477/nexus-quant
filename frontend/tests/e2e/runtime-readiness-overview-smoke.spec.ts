@@ -143,8 +143,8 @@ test.describe('runtime readiness overview', () => {
         await expect(page.getByText('NoReal / Fake / Stub / FutureReal').first()).toBeVisible();
         await expect(page.getByText('RealClient / real provider / real exchange adapter not implemented')).toBeVisible();
         await expect(page.getByText('PENDING_BACKEND_SUPPORT').first()).toBeVisible();
-        await expect(page.getByRole('link', {name: '打开 MarketData readiness'})).toHaveAttribute('href', '/marketdata');
-        await expect(page.getByRole('link', {name: '查看 query-scoped MarketData readiness'})).toHaveAttribute('href', '/marketdata');
+        await expect(page.getByRole('link', {name: 'Open MarketData'})).toHaveAttribute('href', '/marketdata?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m');
+        await expect(page.getByRole('link', {name: 'View MarketData readiness'})).toHaveAttribute('href', '/marketdata?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m');
 
         await expect(page.getByText(/verified/i)).toHaveCount(0);
         await expect(page.getByText(/live-ready/i)).toHaveCount(0);

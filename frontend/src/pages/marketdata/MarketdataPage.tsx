@@ -2,6 +2,7 @@ import {Alert, Button, Card, DatePicker, Descriptions, Form, Input, Select, Spac
 import type {ColumnsType} from 'antd/es/table';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useMemo, useState, type ReactNode} from 'react';
+import {useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
@@ -93,6 +94,47 @@ type CreateMarketdataDatasetFormValues = Omit<CreateMarketdataDatasetRequest, 's
     startTime?: MarketdataDateValue;
     endTime?: MarketdataDateValue;
 };
+
+type MarketdataRuntimeDeepLinkValues = Partial<Pick<MarketdataBarsQuery, 'exchangeCode' | 'marketType' | 'symbol' | 'interval'>>;
+
+const EXCHANGE_OPTION_VALUES = new Set(EXCHANGE_OPTIONS.map((option) => option.value));
+const MARKET_TYPE_OPTION_VALUES = new Set(MARKET_TYPE_OPTIONS.map((option) => option.value));
+const SYMBOL_OPTION_VALUES = new Set(SYMBOL_OPTIONS.map((option) => option.value));
+const INTERVAL_OPTION_VALUES = new Set(INTERVAL_OPTIONS.map((option) => option.value));
+
+function safeQueryParam(searchParams: URLSearchParams, key: string, allowedValues: ReadonlySet<string>): string | undefined {
+    const value = searchParams.get(key)?.trim();
+    if (!value || !allowedValues.has(value)) {
+        return undefined;
+    }
+    return value;
+}
+
+function readRuntimeDeepLinkValues(searchParams: URLSearchParams): MarketdataRuntimeDeepLinkValues {
+    const values: MarketdataRuntimeDeepLinkValues = {};
+    const exchangeCode = safeQueryParam(searchParams, 'exchangeCode', EXCHANGE_OPTION_VALUES);
+    const marketType = safeQueryParam(searchParams, 'marketType', MARKET_TYPE_OPTION_VALUES);
+    const symbol = safeQueryParam(searchParams, 'symbol', SYMBOL_OPTION_VALUES);
+    const interval = safeQueryParam(searchParams, 'interval', INTERVAL_OPTION_VALUES);
+
+    if (exchangeCode) {
+        values.exchangeCode = exchangeCode;
+    }
+    if (marketType) {
+        values.marketType = marketType;
+    }
+    if (symbol) {
+        values.symbol = symbol;
+    }
+    if (interval) {
+        values.interval = interval;
+    }
+    return values;
+}
+
+function hasRuntimeDeepLinkValues(values: MarketdataRuntimeDeepLinkValues): boolean {
+    return Boolean(values.exchangeCode || values.marketType || values.symbol || values.interval);
+}
 
 function toIsoString(value: MarketdataDateValue): string {
     if (!value) {
@@ -604,6 +646,7 @@ export function MarketdataPage() {
     const [form] = Form.useForm<MarketdataBarsFormValues>();
     const [jobForm] = Form.useForm<CreateMarketdataIngestionJobFormValues>();
     const [datasetForm] = Form.useForm<CreateMarketdataDatasetFormValues>();
+    const [searchParams] = useSearchParams();
     const [messageApi, contextHolder] = message.useMessage();
     const queryClient = useQueryClient();
     const contextExchangeCode = useAccountContextStore((state) => state.exchangeCode);
@@ -616,6 +659,16 @@ export function MarketdataPage() {
     useEffect(() => {
         applyNqCssVars();
     }, []);
+
+    const runtimeDeepLinkValues = useMemo(() => readRuntimeDeepLinkValues(searchParams), [searchParams]);
+    const hasRuntimeDeepLink = hasRuntimeDeepLinkValues(runtimeDeepLinkValues);
+
+    useEffect(() => {
+        if (!hasRuntimeDeepLink) {
+            return;
+        }
+        form.setFieldsValue(runtimeDeepLinkValues);
+    }, [form, hasRuntimeDeepLink, runtimeDeepLinkValues]);
 
     const barsQuery = useQuery({
         queryKey: ['marketdata-bars', submittedQuery],
@@ -772,6 +825,16 @@ export function MarketdataPage() {
                     </Space>
                 </Form>
                 <Typography.Text type="secondary">默认交易所来自当前账户上下文：{contextExchangeCode ?? '未选择'}</Typography.Text>
+                {hasRuntimeDeepLink ? (
+                    <Alert
+                        data-testid="marketdata-runtime-deep-link"
+                        type="info"
+                        showIcon
+                        style={{marginTop: 12}}
+                        message="Runtime readiness context applied"
+                        description="已从 /runtime/readiness 安全预填 exchangeCode / marketType / symbol / interval。页面不会自动触发采集、ingestion run-once 或任何写端点；点击查询后仅调用既有只读 bars/readiness API。"
+                    />
+                ) : null}
             </Card>
             <Card className="page-section" bordered={false} title="K 线 readiness 视图">
                 <div data-testid="marketdata-kline-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>

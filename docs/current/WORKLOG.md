@@ -1,3 +1,27 @@
+## NQ-GATEM-5B-RUNTIME-UI-MARKETDATA-READINESS-DEEP-LINK（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮增强 Runtime Readiness Overview 到 MarketData readiness 的只读深链联动。`/runtime/readiness` 的 MarketData card 提供 `View MarketData readiness` CTA，跳转到 `/marketdata?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m`；`/marketdata` 只读取并白名单校验 `exchangeCode / marketType / symbol / interval`，安全预填查询条件，不自动提交，不触发采集或任何写端点。
+
+同步文件：
+
+- `frontend/src/pages/runtime/RuntimeReadinessPage.tsx`
+- `frontend/src/pages/marketdata/MarketdataPage.tsx`
+- `frontend/tests/e2e/runtime-readiness-overview-smoke.spec.ts`
+- `frontend/tests/e2e/runtime-marketdata-readiness-link-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_5B_RUNTIME_UI_MARKETDATA_READINESS_DEEP_LINK.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证结果：
+
+- `npm run build`：PASS，保留既有 Vite large chunk warning。
+- `npm run test:e2e -- tests/e2e/runtime-marketdata-readiness-link-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+- `npm run test:e2e -- tests/e2e/runtime-readiness-overview-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+
+边界：未修改 backend / migration / workflow / research / scripts / deploy；未新增 API；未修改 `MarketdataController`；未改 TradingWorkbench；未调用 permission probe POST；未触发 ingestion run-once、order、cancel、withdraw、transfer 或 WebSocket；未读取 credential material；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real exchange adapter。MarketData deep link 只做查询条件预填，`MarketData fresh` 不展示为 live-ready。
+
 ## NQ-GATEM-5-RUNTIME-UI-5A-RUNTIME-READINESS-OVERVIEW（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。

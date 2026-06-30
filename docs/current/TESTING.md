@@ -1,3 +1,29 @@
+## NQ-GATEM-5B-RUNTIME-UI-MARKETDATA-READINESS-DEEP-LINK（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只增强 `/runtime/readiness` 与 `/marketdata` 的只读深链联动；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未调用真实交易所，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- Runtime Readiness Overview 的 MarketData card CTA 指向 `/marketdata?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m`。
+- URL query 只包含非敏感字段 `exchangeCode / marketType / symbol / interval`。
+- MarketData 页面读取 query 后先按现有 select options 白名单校验，再只预填查询条件。
+- MarketData 页面不因 deep link 自动提交查询；用户点击查询后才调用既有只读 bars/readiness API。
+- backend-free smoke 验证从 Runtime CTA 跳转到 MarketData、查询条件安全预填、K 线 / Data Quality 区块仍存在、无 `/api/**` 写请求、无 permission probe endpoint、无 ingestion run-once、无自动 bars/readiness query。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-marketdata-readiness-link-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；backend-free route stub，不依赖真实后端、真实交易所、真实 credential 或 LIVE。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-readiness-overview-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；复核既有 Runtime overview smoke 的 deep link 断言。 |
+
+已知非阻断输出：Vite large chunk warning 保留；新增 deep link smoke 导航到既有 MarketData 页面时仍打印 React 19 / Ant Design compatibility warning 与既有 Card `bordered` deprecation warning，本轮未把该历史 UI warning 扩大为功能阻断。
+
+未运行：Maven backend tests、Python pytest/mypy/ruff、真实 local backend smoke。本轮未改 backend / research，且任务要求 backend-free UI smoke。
+
+边界结论：未新增 API；未调用 permission probe POST；未触发采集、交易、下单、撤单、转账、提现或 WebSocket；未读取或输出 credential material；未新增 LIVE UI 入口；`MarketData fresh` 仍只是 query-scoped DB readiness，不构成 live-ready；`READY_FOR_PAPER_ONLY` / NoReal / Fake / Stub / permission probe `SKIPPED` 均不构成真实授权。
+
 ## NQ-GATEM-5-RUNTIME-UI-5A-RUNTIME-READINESS-OVERVIEW（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只新增只读 Runtime Readiness Overview 前端页面与 backend-free Playwright smoke；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未调用真实交易所，未启用 LIVE / AI / DH runtime。
