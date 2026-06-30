@@ -11,6 +11,8 @@ export {NqStatusTag} from '@/components/nq/NqStatusTag';
 export type {NqStatusTone} from '@/components/nq/NqStatusTag';
 export {NqEnvironmentBadge} from '@/components/nq/NqEnvironmentBadge';
 export {NqRiskBanner} from '@/components/nq/NqRiskBanner';
+export {RuntimeGuardBanner} from '@/components/nq/RuntimeGuardBanner';
+export type {RuntimeGuardBannerVariant} from '@/components/nq/RuntimeGuardBanner';
 export {NqFilterBar} from '@/components/nq/NqFilterBar';
 export {NqDataTable, nqNumericColumn} from '@/components/nq/NqDataTable';
 export {NqDangerConfirmButton} from '@/components/nq/NqDangerConfirmButton';

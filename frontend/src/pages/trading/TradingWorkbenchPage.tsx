@@ -22,6 +22,7 @@ import type {FormInstance} from 'antd';
 import {useEffect, useMemo, useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
+import {RuntimeGuardBanner} from '@/components/nq';
 import {PageHero} from '@/components/page/PageHero';
 import {
     useCancelOrderMutation,
@@ -294,6 +295,8 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                         badge="Trading"
                     />
                 </Card>
+
+                <RuntimeGuardBanner variant="trading-workbench"/>
 
                 <Card className="page-section" bordered={false} title="账户上下文">
                     {accountContextReady ? (

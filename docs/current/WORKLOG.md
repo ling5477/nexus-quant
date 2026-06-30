@@ -1,3 +1,27 @@
+## NQ-GATEM-5C-RUNTIME-UI-PAPER-BOUNDARY-BANNERS（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮为 Paper Trading 与 TradingWorkbench 增加只读 runtime guard banner。`/paper-trading/*` route shell 显示 `Paper-only boundary`，强调 Paper Trading is simulated、Paper order/fill/balance/position/risk pass 均不等于真实交易或 LIVE authorization；`/trading` 显示 `Runtime guarded: LIVE disabled`，强调 LIVE disabled、real provider not implemented、NoReal/Fake/Stub/FutureReal not live-ready、permission probe SKIPPED / disabled is not verified。
+
+同步文件：
+
+- `frontend/src/components/nq/RuntimeGuardBanner.tsx`
+- `frontend/src/components/nq/index.ts`
+- `frontend/src/pages/paper-trading/PaperTradingRouteShell.tsx`
+- `frontend/src/pages/trading/TradingWorkbenchPage.tsx`
+- `frontend/tests/e2e/runtime-paper-boundary-banners-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_5C_RUNTIME_UI_PAPER_BOUNDARY_BANNERS.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证结果：
+
+- `npm run build`：PASS，保留既有 Vite large chunk warning。
+- `npm run test:e2e -- tests/e2e/runtime-paper-boundary-banners-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+
+边界：未修改 backend / migration / workflow / research / scripts / deploy；未新增 API；未修改后端 Trading / Paper / readiness API；未改 TradingWorkbench 下单逻辑；未调用 permission probe POST；未触发 ingestion run-once、order、cancel、withdraw、transfer 或 WebSocket；未读取 credential material；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real exchange adapter。Banner 是只读提示，不是可关闭后绕过的安全控制。
+
 ## NQ-GATEM-5B-RUNTIME-UI-MARKETDATA-READINESS-DEEP-LINK（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。

@@ -1,7 +1,7 @@
-import {Alert, Card, Segmented, Space, Tag, Typography} from 'antd';
+import {Card, Segmented, Space, Tag} from 'antd';
 import {Outlet, useLocation, useNavigate} from 'react-router-dom';
 
-import {NqPageHeader} from '@/components/nq';
+import {NqPageHeader, RuntimeGuardBanner} from '@/components/nq';
 
 const PAPER_TRADING_ROUTE_OPTIONS = [
     {label: 'Runs', value: '/paper-trading/runs'},
@@ -54,17 +54,7 @@ export function PaperTradingRouteShell() {
                         value={activeRoute}
                         onChange={(value) => navigate(value)}
                     />
-                    <Alert
-                        type="info"
-                        showIcon
-                        message="SIM/Paper only · LIVE 未开启 · 不接真实交易所 · 不构成投资建议"
-                        description={(
-                            <Typography.Text type="secondary">
-                                该入口仅组织 Paper Trading 模拟运行页面；当前不触发真实交易所访问，不读取 credential，
-                                也不代表任何 LIVE 交易能力已开启。
-                            </Typography.Text>
-                        )}
-                    />
+                    <RuntimeGuardBanner variant="paper-boundary"/>
                 </Space>
             </Card>
 

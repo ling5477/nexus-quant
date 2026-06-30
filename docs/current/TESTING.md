@@ -1,3 +1,27 @@
+## NQ-GATEM-5C-RUNTIME-UI-PAPER-BOUNDARY-BANNERS（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只在 Paper Trading 与 TradingWorkbench 现有页面增加只读 runtime guard banner；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未修改后端 Trading / Paper / readiness API，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- 新增共享 `RuntimeGuardBanner`。
+- `/paper-trading/*` route shell 显示 `Paper-only boundary`，明确 Paper order/fill/balance/position/risk pass 均不构成真实订单、真实成交、真实账户或 LIVE authorization。
+- `/trading` 显示 `Runtime guarded: LIVE disabled`，明确 LIVE disabled、real provider not implemented、NoReal/Fake/Stub/FutureReal not live-ready、permission probe SKIPPED / disabled is not verified。
+- backend-free smoke 验证两个页面 banner 文案、无 `/api/**` 写请求、无 permission probe endpoint、无 ingestion run-once、无 transfer / withdraw endpoint。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-paper-boundary-banners-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；backend-free route stub，不依赖真实后端、真实交易所、真实 credential 或 LIVE。 |
+
+已知非阻断输出：Playwright 运行中仍有既有 `NO_COLOR` / `FORCE_COLOR` warning；既有 Ant Design `Card.bordered` / `Modal.destroyOnClose` deprecation warning；TradingWorkbench inactive drawer 表单仍打印既有 `useForm` not connected warning。本轮未扩大处理这些历史 UI warning。
+
+未运行：Maven backend tests、Python pytest/mypy/ruff、真实 local backend smoke。本轮未改 backend / research，且任务要求 backend-free UI smoke。
+
+边界结论：guard banner 只读展示，不调用 permission probe POST，不触发采集、ingestion run-once、下单、撤单、转账、提现或 WebSocket；未读取或输出 credential material；未新增 LIVE UI 入口；未修改 TradingWorkbench 下单逻辑或任何后端 guard；Paper-ready / DB-fresh / readiness row / permission probe `SKIPPED` 均不构成 real-ready 或 LIVE authorization。
+
 ## NQ-GATEM-5B-RUNTIME-UI-MARKETDATA-READINESS-DEEP-LINK（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只增强 `/runtime/readiness` 与 `/marketdata` 的只读深链联动；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未调用真实交易所，未启用 LIVE / AI / DH runtime。
