@@ -1,3 +1,25 @@
+## NQ-GATEM-6C-OPERATIONAL-READINESS-FRONTEND-INTEGRATION（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮在 Runtime Readiness 页面接入 GateM-6B 只读 `GET /api/runtime/operational-readiness` safe summary；不新增后端 API、不改 backend / migration / research / scripts / deploy / `.github`，不改变 Trading / Paper / MarketData / adapter / actuator 行为。
+
+Scope：新增 frontend operational readiness types/API client/query key；`RuntimeReadinessPage` 的 `Operational Readiness` 区域优先展示后端 safe summary，API 失败或 payload 不完整时显示 `UNAVAILABLE / PENDING_BACKEND_SUPPORT`，每项保持 `BLOCKED`，不伪造 ready。
+
+Validation：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-integration-smoke.spec.ts --project=chromium` | PASS | 2 Chromium backend-free smoke passed；覆盖后端 safe summary 成功分支、API unavailable fail-closed 分支、无 write endpoint、无 permission probe POST、无 ingestion run-once、无 order/cancel/transfer/withdraw、无外部交易所 host、无敏感值显示。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts --project=chromium` | PASS | 1 Chromium backend-free smoke passed；既有 6A smoke 已更新为当前 6B/6C 行为。 |
+
+Implementation-period fix：新 integration smoke 首跑失败，因为 unavailable fallback reason 使用了 `ready` 字样；已改为 `available` 并复跑通过。既有 6A smoke 首次复跑失败，因为 `Operational Readiness` 文案匹配 title 和 alert 两处；已用 exact title locator 修复并复跑通过。
+
+Known warnings：Vite large chunk warning 保留；Playwright 仍打印既有 `NO_COLOR` / `FORCE_COLOR` warning。
+
+Not run：未运行 Maven backend tests、full frontend E2E、Python pytest/mypy/ruff、真实 local backend smoke；原因是本轮只改 frontend UI/API client/types/E2E + docs，且任务要求 backend-free UI smoke only。
+
+Boundary：LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT IMPLEMENTED。未调用 permission probe POST、ingestion run-once、order、cancel、transfer、withdraw 或外部交易所；未读取或输出 credential material；actuator health、runtime UI、Paper-only、`SKIPPED`、NoReal 均不构成 real-ready。
+
 ## NQ-GATEM-6B-DISABLED-CAPABILITY-SUMMARY-BACKEND-MVP（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增只读 `GET /api/runtime/operational-readiness` 后端 MVP，返回 GateM-6B disabled capability / startup boundary safe summary；不新增 migration、不改 frontend / research / scripts / deploy / `.github`，不改变 Trading / Paper / MarketData / adapter readiness / actuator 行为。

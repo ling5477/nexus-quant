@@ -8,6 +8,11 @@ export const adapterReadinessQueryKeys = {
     status: () => [...adapterReadinessQueryKeys.all, 'status'] as const,
 };
 
+export const operationalReadinessQueryKeys = {
+    all: ['operational-readiness'] as const,
+    status: () => [...operationalReadinessQueryKeys.all, 'status'] as const,
+};
+
 export const accountQueryKeys = {
     all: ['exchange-accounts'] as const,
     list: (accessToken?: string | null) => [...accountQueryKeys.all, 'list', accessToken ?? 'anonymous'] as const,

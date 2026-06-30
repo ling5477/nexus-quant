@@ -1,3 +1,31 @@
+## NQ-GATEM-6C-OPERATIONAL-READINESS-FRONTEND-INTEGRATION（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮把 `/runtime/readiness` 的 `Operational Readiness` 区域接入 GateM-6B 只读 `GET /api/runtime/operational-readiness` safe summary。页面优先展示后端返回的 `liveStatus / aiStatus / dhRuntimeStatus / realProviderStatus / credentialExposureStatus / externalExchangeCallStatus / permissionProbeStatus / startupBoundaryStatus / profileBoundaryStatus / configDiagnosticsStatus / logDiagnosticsStatus`；每项展示 `status / reasonCode / safe reason`，并把当前 `ready=false` 表达为 `BLOCKED`。接口失败或 payload 不完整时统一显示 `UNAVAILABLE / PENDING_BACKEND_SUPPORT`，不伪造可用状态。
+
+同步内容：
+
+- 新增 `frontend/src/types/operational-readiness.ts`。
+- 新增 `frontend/src/api/operational-readiness.ts`。
+- `frontend/src/api/query-keys.ts` 新增 `operationalReadinessQueryKeys`。
+- `frontend/src/pages/runtime/RuntimeReadinessPage.tsx` 接入 TanStack Query + runtime payload guard + fail-closed fallback。
+- 新增 `frontend/tests/e2e/runtime-operational-readiness-integration-smoke.spec.ts`。
+- 更新既有 `frontend/tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts`，移除旧 6A 静态 pending assumption，改为当前 6B/6C safe summary 行为。
+- 新增 `docs/current/frontend/NQ_GATEM_6C_OPERATIONAL_READINESS_FRONTEND_INTEGRATION.md`，同步本文件与 `TESTING.md`。
+
+验证：
+
+- `cd frontend; npm run build`：PASS，保留既有 Vite large chunk warning。
+- `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-integration-smoke.spec.ts --project=chromium`：PASS，2 Chromium backend-free smoke passed。
+- `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-overview-smoke.spec.ts --project=chromium`：PASS，1 Chromium backend-free smoke passed。
+
+实现期修正：integration smoke 首跑发现 unavailable fallback reason 含 `ready` 字样，已改为 `available`；既有 6A smoke 首次复跑发现 title/alert strict-locator collision，已用 exact title locator 修复。两项均已复跑通过。
+
+边界：未修改 backend / migration / research / scripts / deploy / `.github`；未新增后端 API；未改 actuator / backend readiness；未改 TradingWorkbench 下单逻辑；未新增 LIVE UI 入口；未调用 permission probe POST、ingestion run-once、order、cancel、withdraw、transfer、WebSocket 或外部交易所；未读取或输出 credential material；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider。
+
+下一步：若继续 GateM-6D，只允许在 Operations Dashboard / Runtime status refinement 范围内做只读前端状态表达；仍不得把 actuator health、Paper-only、`SKIPPED`、NoReal 或 backend-free smoke 写成 real-ready。
+
 ## NQ-GATEM-6B-DISABLED-CAPABILITY-SUMMARY-BACKEND-MVP（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。

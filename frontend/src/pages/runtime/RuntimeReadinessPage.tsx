@@ -11,15 +11,22 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
+import {useQuery} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
+import {operationalReadinessApi} from '@/api/operational-readiness';
+import {operationalReadinessQueryKeys} from '@/api/query-keys';
 import {NqMetricCard, NqRiskBanner} from '@/components/nq';
 import {PageHero} from '@/components/page/PageHero';
 import {useAdapterReadinessQuery} from '@/hooks/useAdapterReadinessQuery';
 import {DataFreshness, StatusTag, type StatusTone} from '@/nq-design-system';
 import type {AdapterReadinessItem} from '@/types/adapter-readiness';
 import type {AppApiError} from '@/types/api';
+import type {
+    OperationalReadinessResponse,
+    OperationalReadinessStatusResponse,
+} from '@/types/operational-readiness';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Paragraph, Text} = Typography;
@@ -58,7 +65,9 @@ interface OperationalReadinessItem {
     area: string;
     status: string;
     source: string;
-    detail: string;
+    reasonCode: string;
+    reason: string;
+    safeState: string;
     tone: StatusTone;
 }
 
@@ -72,19 +81,30 @@ interface VenueSummary {
     tone: StatusTone;
 }
 
+type OperationalReadinessStatusKey = Exclude<keyof OperationalReadinessResponse, 'generatedAt'>;
+
 function uniqueSorted(values: string[]): string[] {
     return [...new Set(values.filter(Boolean))].sort((left, right) => left.localeCompare(right));
 }
 
 function statusTone(status: string): StatusTone {
     switch (status) {
+        case 'DISABLED':
+        case 'UNAVAILABLE':
         case 'NO_REAL':
         case 'READY_FOR_PAPER_ONLY':
-            return 'info';
+            return status === 'READY_FOR_PAPER_ONLY' ? 'info' : 'warning';
         case 'NOT_READY':
+        case 'NOT_STARTED':
+        case 'NOT_INTEGRATED':
+        case 'NOT_IMPLEMENTED':
         case 'LIVE_NOT_AUTHORIZED':
         case 'UNKNOWN_REQUIRES_REVIEW':
             return 'danger';
+        case 'NOT_EXPOSED':
+        case 'SAFE_BY_DEFAULT':
+        case 'SAFE_SUMMARY_ONLY':
+            return 'info';
         case 'DISABLED_SENTINEL':
         case 'CREDENTIAL_UNCONFIGURED':
         case 'CAPABILITY_NOT_IMPLEMENTED':
@@ -100,6 +120,87 @@ function statusTone(status: string): StatusTone {
         default:
             return status.includes('READY') ? 'danger' : 'neutral';
     }
+}
+
+const OPERATIONAL_STATUS_FIELDS: Array<{
+    key: OperationalReadinessStatusKey;
+    area: string;
+    source: string;
+}> = [
+    {key: 'liveStatus', area: 'LIVE status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'aiStatus', area: 'AI status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'dhRuntimeStatus', area: 'DH runtime status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'realProviderStatus', area: 'Real provider status', source: 'GET /api/runtime/operational-readiness'},
+    {
+        key: 'credentialExposureStatus',
+        area: 'Credential exposure status',
+        source: 'GET /api/runtime/operational-readiness'
+    },
+    {
+        key: 'externalExchangeCallStatus',
+        area: 'External exchange call status',
+        source: 'GET /api/runtime/operational-readiness'
+    },
+    {key: 'permissionProbeStatus', area: 'Permission probe status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'startupBoundaryStatus', area: 'Startup boundary status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'profileBoundaryStatus', area: 'Profile boundary status', source: 'GET /api/runtime/operational-readiness'},
+    {
+        key: 'configDiagnosticsStatus',
+        area: 'Config diagnostics status',
+        source: 'GET /api/runtime/operational-readiness'
+    },
+    {key: 'logDiagnosticsStatus', area: 'Log diagnostics status', source: 'GET /api/runtime/operational-readiness'},
+];
+
+function isOperationalReadinessStatusResponse(value: unknown): value is OperationalReadinessStatusResponse {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    return typeof candidate.status === 'string'
+        && typeof candidate.ready === 'boolean'
+        && typeof candidate.reasonCode === 'string'
+        && typeof candidate.reason === 'string';
+}
+
+function isOperationalReadinessResponse(value: unknown): value is OperationalReadinessResponse {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const candidate = value as Partial<Record<keyof OperationalReadinessResponse, unknown>>;
+    return typeof candidate.generatedAt === 'string'
+        && OPERATIONAL_STATUS_FIELDS.every(({key}) => isOperationalReadinessStatusResponse(candidate[key]));
+}
+
+function unavailableOperationalStatus(): OperationalReadinessStatusResponse {
+    return {
+        status: 'UNAVAILABLE',
+        ready: false,
+        reasonCode: 'PENDING_BACKEND_SUPPORT',
+        reason: 'Operational readiness summary is unavailable; runtime UI remains fail-closed and no capability is treated as available.',
+    };
+}
+
+function buildOperationalReadinessItems(summary?: OperationalReadinessResponse): OperationalReadinessItem[] {
+    const unavailable = unavailableOperationalStatus();
+
+    return OPERATIONAL_STATUS_FIELDS.map(({key, area, source}) => {
+        const status = summary?.[key] ?? unavailable;
+        const normalizedStatus = status.ready ? 'REVIEW_REQUIRED' : status.status;
+
+        return {
+            key: String(key),
+            area,
+            status: normalizedStatus,
+            source: summary ? source : 'Operational readiness summary unavailable',
+            reasonCode: status.reasonCode || 'PENDING_BACKEND_SUPPORT',
+            reason: status.reason || unavailable.reason,
+            safeState: status.ready ? 'MANUAL_REVIEW_REQUIRED' : 'BLOCKED',
+            tone: status.ready ? 'danger' : statusTone(status.status),
+        };
+    });
 }
 
 function buildVenueSummaries(items: AdapterReadinessItem[]): VenueSummary[] {
@@ -180,75 +281,6 @@ function buildRuntimeBlockers(items: AdapterReadinessItem[]): RuntimeBlocker[] {
             status: 'PENDING_BACKEND_SUPPORT',
             source: 'No Paper-to-Real aggregate API',
             impact: 'Paper-only readiness 与真实交易授权必须分开展示，当前不提供跨环境聚合通过态。',
-            tone: 'warning',
-        },
-    ];
-}
-
-function buildOperationalReadinessItems(): OperationalReadinessItem[] {
-    return [
-        {
-            key: 'process-health',
-            area: 'Process health',
-            status: 'PROCESS_HEALTH_ONLY',
-            source: '/actuator/health',
-            detail: 'Available via actuator health; it is process health only, not runtime readiness or LIVE authorization.',
-            tone: 'neutral',
-        },
-        {
-            key: 'runtime-readiness',
-            area: 'Runtime readiness',
-            status: 'EXISTING_GUARDED_UI_AVAILABLE',
-            source: '/runtime/readiness',
-            detail: 'This guarded UI is a read-only boundary view; runtime UI does not mean real provider readiness.',
-            tone: 'info',
-        },
-        {
-            key: 'adapter-readiness',
-            area: 'Adapter readiness',
-            status: 'EXISTING_READINESS_SOURCE_AVAILABLE',
-            source: 'GET /api/adapters/readiness',
-            detail: 'Adapter readiness is descriptive and fail-closed; NoReal / Paper-only / SKIPPED are not real-ready.',
-            tone: 'warning',
-        },
-        {
-            key: 'marketdata-readiness',
-            area: 'MarketData readiness',
-            status: 'EXISTING_READINESS_SOURCE_AVAILABLE',
-            source: 'GET /api/marketdata/readiness',
-            detail: 'MarketData readiness is DB/query scoped and never proves live exchange connectivity.',
-            tone: 'warning',
-        },
-        {
-            key: 'profile-boundary',
-            area: 'Profile boundary',
-            status: 'PENDING_BACKEND_SUPPORT',
-            source: 'No safe profile summary API',
-            detail: 'Current frontend must not infer active profile or print runtime env/config values.',
-            tone: 'warning',
-        },
-        {
-            key: 'config-diagnostics',
-            area: 'Config diagnostics',
-            status: 'PENDING_BACKEND_SUPPORT',
-            source: 'No safe config diagnostics API',
-            detail: 'Raw env, full config dump and credential-like material stay out of UI.',
-            tone: 'warning',
-        },
-        {
-            key: 'startup-checks',
-            area: 'Startup checks',
-            status: 'PENDING_BACKEND_SUPPORT',
-            source: 'No user-facing startup check summary',
-            detail: 'Startup guard results need backend support before they can be shown safely.',
-            tone: 'warning',
-        },
-        {
-            key: 'safe-log-diagnostics',
-            area: 'Safe log diagnostics',
-            status: 'PENDING_BACKEND_SUPPORT',
-            source: 'No safe log diagnostics API',
-            detail: 'Safe diagnostics pending; no raw log, raw request, raw response or provider payload is displayed.',
             tone: 'warning',
         },
     ];
@@ -370,15 +402,31 @@ const operationalColumns: ColumnsType<OperationalReadinessItem> = [
         title: 'Status',
         dataIndex: 'status',
         key: 'status',
-        width: 280,
+        width: 220,
         render: (status: string, row) => (
             <StatusTag label={status} tone={row.tone} variant="pill"/>
         ),
     },
     {
-        title: 'Boundary',
-        dataIndex: 'detail',
-        key: 'detail',
+        title: 'Safe state',
+        dataIndex: 'safeState',
+        key: 'safeState',
+        width: 150,
+        render: (safeState: string, row) => (
+            <StatusTag label={safeState} tone={row.tone} variant="pill"/>
+        ),
+    },
+    {
+        title: 'Reason code',
+        dataIndex: 'reasonCode',
+        key: 'reasonCode',
+        width: 230,
+        render: (reasonCode: string) => <Tag color="warning">{reasonCode}</Tag>,
+    },
+    {
+        title: 'Safe reason',
+        dataIndex: 'reason',
+        key: 'reason',
     },
 ];
 
@@ -392,10 +440,20 @@ const operationalColumns: ColumnsType<OperationalReadinessItem> = [
  */
 export function RuntimeReadinessPage() {
     const readinessQuery = useAdapterReadinessQuery();
+    const operationalReadinessQuery = useQuery({
+        queryKey: operationalReadinessQueryKeys.status(),
+        queryFn: operationalReadinessApi.getReadiness,
+        retry: false,
+    });
     const items = readinessQuery.data?.items ?? [];
     const venueSummaries = buildVenueSummaries(items);
     const runtimeBlockers = buildRuntimeBlockers(items);
-    const operationalReadinessItems = buildOperationalReadinessItems();
+    const operationalReadinessSummary = isOperationalReadinessResponse(operationalReadinessQuery.data)
+        ? operationalReadinessQuery.data
+        : undefined;
+    const operationalReadinessUnavailable = operationalReadinessQuery.isError
+        || (operationalReadinessQuery.isSuccess && !operationalReadinessSummary);
+    const operationalReadinessItems = buildOperationalReadinessItems(operationalReadinessSummary);
     const unexpectedSignals = items.filter(isReadinessSignalUnexpected);
     const permissionRows = items.filter((item) => item.capability === 'PERMISSION_PROBE');
     const noRealRows = items.filter((item) => item.status === 'NO_REAL' || NO_REAL_VENUES.has(item.venue));
@@ -472,6 +530,17 @@ export function RuntimeReadinessPage() {
                 data-testid="operational-readiness-overview"
                 extra={(
                     <Space size={12} wrap>
+                        {operationalReadinessSummary?.generatedAt ? (
+                            <Text type="secondary">
+                                generated {formatDateTime(operationalReadinessSummary.generatedAt)}
+                            </Text>
+                        ) : null}
+                        <Button
+                            onClick={() => operationalReadinessQuery.refetch()}
+                            loading={operationalReadinessQuery.isFetching}
+                        >
+                            刷新 operational summary
+                        </Button>
                         <Link to={MARKETDATA_READINESS_PATH}>View MarketData readiness</Link>
                         <Link to={DASHBOARD_RUNTIME_SUMMARY_PATH}>View Dashboard runtime summary</Link>
                     </Space>
@@ -479,18 +548,23 @@ export function RuntimeReadinessPage() {
             >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
-                        type="warning"
+                        type={operationalReadinessUnavailable ? 'error' : 'warning'}
                         showIcon
-                        message="Process health is not runtime readiness or LIVE authorization"
-                        description="Actuator health only indicates process/dependency reachability. Runtime UI does not prove real provider readiness, and Paper-only / SKIPPED / NoReal signals are not real-ready."
+                        message={operationalReadinessUnavailable
+                            ? 'operational readiness summary unavailable'
+                            : 'Operational readiness summary is fail-closed'}
+                        description={operationalReadinessUnavailable
+                            ? 'UNAVAILABLE / PENDING_BACKEND_SUPPORT：后端 safe summary 不可用或 payload 不完整，页面不显示任何可用能力。'
+                            : 'Actuator health is process health only, not LIVE authorization. Runtime UI does not prove real provider readiness, and Paper-only / SKIPPED / NoReal signals are not real-ready.'}
                     />
                     <Table<OperationalReadinessItem>
                         rowKey="key"
                         columns={operationalColumns}
                         dataSource={operationalReadinessItems}
+                        loading={operationalReadinessQuery.isLoading || operationalReadinessQuery.isFetching}
                         pagination={false}
                         size="small"
-                        scroll={{x: 920}}
+                        scroll={{x: 1180}}
                     />
                 </Space>
             </Card>

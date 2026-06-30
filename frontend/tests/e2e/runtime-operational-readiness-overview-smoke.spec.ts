@@ -1,12 +1,12 @@
 import {expect, test, type Page, type Route} from 'playwright/test';
 
 /**
- * GateM-6A backend-free smoke for the Operational Readiness section.
+ * GateM-6A/6C backend-free smoke for the Operational Readiness section.
  *
  * Why:
- * The section is a read-only UI boundary. It may mention actuator process health and missing
- * profile/config/startup/log support, but it must not call write endpoints, permission probe POST,
- * ingestion run-once, trading actions, real exchanges, or credential-bearing diagnostics.
+ * The section is a read-only UI boundary. After GateM-6B, the page should prefer backend safe
+ * summary fields while still avoiding write endpoints, permission probe POST, ingestion run-once,
+ * trading actions, real exchanges, or credential-bearing diagnostics.
  */
 
 interface ReadinessItem {
@@ -17,6 +17,13 @@ interface ReadinessItem {
     liveAuthorized: boolean;
     reasons: string[];
     message: string;
+}
+
+interface OperationalStatus {
+    status: string;
+    ready: boolean;
+    reasonCode: string;
+    reason: string;
 }
 
 const SECRET_TOKENS = ['apiKey', 'api_key', 'secret', 'token', 'signature', 'passphrase', 'private key', 'mnemonic'];
@@ -70,6 +77,27 @@ function buildReadinessItems(): ReadinessItem[] {
     return items;
 }
 
+function operationalStatus(status: string, reasonCode: string, reason: string): OperationalStatus {
+    return {status, ready: false, reasonCode, reason};
+}
+
+function buildOperationalReadinessSummary() {
+    return {
+        generatedAt: '2026-06-30T14:00:00Z',
+        liveStatus: operationalStatus('DISABLED', 'LIVE_DISABLED', 'LIVE is disabled.'),
+        aiStatus: operationalStatus('NOT_STARTED', 'AI_NOT_STARTED', 'AI runtime has not started.'),
+        dhRuntimeStatus: operationalStatus('NOT_INTEGRATED', 'DH_RUNTIME_NOT_INTEGRATED', 'DH runtime is not integrated.'),
+        realProviderStatus: operationalStatus('NOT_IMPLEMENTED', 'REAL_PROVIDER_NOT_IMPLEMENTED', 'Real provider is not implemented.'),
+        credentialExposureStatus: operationalStatus('NOT_EXPOSED', 'CREDENTIAL_MATERIAL_NOT_EXPOSED', 'Credential material is not exposed.'),
+        externalExchangeCallStatus: operationalStatus('DISABLED', 'EXTERNAL_EXCHANGE_CALL_DISABLED', 'No external exchange call is performed.'),
+        permissionProbeStatus: operationalStatus('SKIPPED', 'PERMISSION_PROBE_SKIPPED', 'Permission probe is skipped.'),
+        startupBoundaryStatus: operationalStatus('SAFE_BY_DEFAULT', 'STARTUP_BOUNDARY_SAFE', 'Startup boundary is safe-by-default.'),
+        profileBoundaryStatus: operationalStatus('SAFE_SUMMARY_ONLY', 'PROFILE_BOUNDARY_SAFE_SUMMARY_ONLY', 'Safe profile summary only.'),
+        configDiagnosticsStatus: operationalStatus('SAFE_SUMMARY_ONLY', 'CONFIG_DIAGNOSTICS_SAFE_SUMMARY_ONLY', 'Safe config diagnostics summary only.'),
+        logDiagnosticsStatus: operationalStatus('SAFE_SUMMARY_ONLY', 'LOG_DIAGNOSTICS_SAFE_SUMMARY_ONLY', 'Safe log diagnostics summary only.'),
+    };
+}
+
 async function seedOperationalReadinessStubs(page: Page): Promise<void> {
     await page.addInitScript(() => {
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify({
@@ -106,10 +134,15 @@ async function seedOperationalReadinessStubs(page: Page): Promise<void> {
         status: 200,
         json: {generatedAt: '2026-06-30T13:00:00Z', items: buildReadinessItems()},
     }));
+
+    await page.route('**/api/runtime/operational-readiness', (route: Route) => route.fulfill({
+        status: 200,
+        json: buildOperationalReadinessSummary(),
+    }));
 }
 
 test.describe('runtime operational readiness overview', () => {
-    test('shows process health boundaries and pending backend support without write endpoint calls', async ({page}) => {
+    test('shows backend summary boundaries without write endpoint calls', async ({page}) => {
         const apiWrites: string[] = [];
         const apiRequests: string[] = [];
         const externalExchangeRequests: string[] = [];
@@ -137,25 +170,27 @@ test.describe('runtime operational readiness overview', () => {
 
         const overview = page.getByTestId('operational-readiness-overview');
         await expect(overview).toBeVisible();
-        await expect(overview.getByText('Operational Readiness')).toBeVisible();
+        await expect(overview.getByText('Operational Readiness', {exact: true})).toBeVisible();
 
-        await expect(overview).toContainText('Process health');
-        await expect(overview).toContainText('PROCESS_HEALTH_ONLY');
-        await expect(overview).toContainText('/actuator/health');
-        await expect(overview).toContainText('Process health is not runtime readiness or LIVE authorization');
-        await expect(overview).toContainText('Actuator health only indicates process/dependency reachability.');
+        await expect(overview).toContainText('LIVE status');
+        await expect(overview).toContainText('DISABLED');
+        await expect(overview).toContainText('LIVE_DISABLED');
+        await expect(overview).toContainText('AI status');
+        await expect(overview).toContainText('NOT_STARTED');
+        await expect(overview).toContainText('DH runtime status');
+        await expect(overview).toContainText('NOT_INTEGRATED');
+        await expect(overview).toContainText('Real provider status');
+        await expect(overview).toContainText('NOT_IMPLEMENTED');
+        await expect(overview).toContainText('Credential exposure status');
+        await expect(overview).toContainText('NOT_EXPOSED');
+        await expect(overview).toContainText('Permission probe status');
+        await expect(overview).toContainText('SKIPPED');
+        await expect(overview).toContainText('Profile boundary status');
+        await expect(overview).toContainText('SAFE_SUMMARY_ONLY');
+        await expect(overview).toContainText('Operational readiness summary is fail-closed');
+        await expect(overview).toContainText('Actuator health is process health only, not LIVE authorization.');
         await expect(overview).toContainText('Runtime UI does not prove real provider readiness');
         await expect(overview).toContainText('Paper-only / SKIPPED / NoReal signals are not real-ready.');
-
-        await expect(overview).toContainText('Runtime readiness');
-        await expect(overview).toContainText('Adapter readiness');
-        await expect(overview).toContainText('MarketData readiness');
-        await expect(overview).toContainText('EXISTING_READINESS_SOURCE_AVAILABLE');
-        await expect(overview).toContainText('Profile boundary');
-        await expect(overview).toContainText('Config diagnostics');
-        await expect(overview).toContainText('Startup checks');
-        await expect(overview).toContainText('Safe log diagnostics');
-        await expect(overview.getByText('PENDING_BACKEND_SUPPORT')).toHaveCount(4);
 
         await expect(overview.getByRole('link', {name: 'View MarketData readiness'}))
             .toHaveAttribute('href', '/marketdata?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m');
