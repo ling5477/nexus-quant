@@ -1,3 +1,29 @@
+## NQ-GATEM-FREEZE-REVIEW（2026-06-30）
+
+状态：**PASS / FROZEN / ACCEPTED / READY TO COMMIT**。
+
+本轮只冻结 GateM 当前已完成基线，不新增功能、不新增 API、不新增 migration、不新增 E2E、不启动 LIVE / AI / DH runtime / real provider。冻结对象是 GateM no-real runtime readiness baseline，不是 production deploy、LIVE authorization 或 real provider ready。
+
+同步内容：
+
+- 新增 `docs/current/NQ_GATEM_FREEZE_REVIEW.md`。
+- 更新 root `README.md`：修正旧 GateM runtime readiness started / partially implemented 摘要为 FROZEN / ACCEPTED no-real runtime readiness baseline。
+- 更新 `docs/current/STATUS.md`：登记 GateM freeze review 通过，P0/P1/P2 freeze blockers = 0。
+- 更新 `docs/current/ROADMAP.md`：GateM 标为 FROZEN / ACCEPTED，Next 改为 `NQ-GATEM-RELEASE-TAG-AND-ARCHIVE`。
+- 更新 `docs/current/README.md`：同步 current stage、GateM freeze review 入口和 route。
+- 更新 `docs/current/TESTING.md`：记录本轮 docs-only freeze review，不新增测试矩阵。
+- 更新 `docs/current/NQ_GATEM_FREEZE_READINESS_REVIEW.md`：补充该 readiness decision 已由 freeze review 消费。
+
+验证：
+
+- 本轮需运行 `git status --short`、`git diff --check`、`git diff --stat`。
+- 本轮需检查禁止范围 diff：`frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`。
+- 本轮需执行指定 `rg` 状态/边界搜索，确认未把 GateM 写成实盘、未把 `/actuator/health` 写成 LIVE authorization、未把 Paper / NoReal / `SKIPPED` / DB freshness 写成 real-ready、未把真实 OKX / Binance private adapter 写成 implemented。
+
+边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增 API / 页面 / E2E / 业务功能；未启用 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material。MarketData readiness 仍是 diagnostic only；Operational readiness 仍是 safe summary only。
+
+下一步：**NQ-GATEM-RELEASE-TAG-AND-ARCHIVE**。
+
 ## NQ-GATEM-FREEZE-READINESS-REVIEW（2026-06-30）
 
 状态：**PASS / READY FOR GATEM FREEZE REVIEW / READY TO COMMIT**。
@@ -20,7 +46,7 @@
 
 边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增 API / 页面 / E2E / 业务功能；未启用 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material。该 review 不是 freeze，不是 production readiness，不是 LIVE authorization。
 
-P3 residual：root `README.md` 仍有较早的 GateM runtime readiness started / partially implemented 摘要；本轮允许范围只覆盖 `docs/current/**`，因此不越权修改。`docs/current/` 已作为 authoritative current fact source 同步 GateM freeze readiness review 通过。
+P3 residual at readiness review time：root `README.md` 当时仍有较早的 GateM runtime readiness started / partially implemented 摘要；该 P3 已由后续 `NQ-GATEM-FREEZE-REVIEW` 在允许范围内修正。`docs/current/` 已作为 authoritative current fact source 同步 GateM freeze readiness review 通过。
 
 下一步：**NQ-GATEM-FREEZE-REVIEW**。
 

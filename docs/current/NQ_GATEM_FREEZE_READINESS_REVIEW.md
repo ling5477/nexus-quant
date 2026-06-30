@@ -8,6 +8,8 @@ Date: 2026-06-30
 
 GateM authoritative definition: Exchange / MarketData Runtime Readiness.
 
+Freeze follow-up: `NQ-GATEM-FREEZE-REVIEW` completed on 2026-06-30 with PASS / FROZEN / ACCEPTED / READY TO COMMIT. This readiness decision has been consumed by the GateM freeze review.
+
 ## Review Target
 
 This review checks whether GateM has enough completed runtime readiness evidence to enter the next stage-level freeze review. It is not the freeze itself, not production deployment readiness, not LIVE authorization, and not real provider readiness.
@@ -124,19 +126,19 @@ None blocking GateM freeze review.
 
 - Current documentation keeps both detailed GateM-0..5C evidence and stage-level GateM-1..6 grouping. This is acceptable for review traceability, but a post-freeze cleanup could add a short mapping note if future readers need it.
 - `TESTING.md` and `WORKLOG.md` are append-only and large; broad keyword scans return many historical hits. Current top-of-file status and targeted GateM entries are consistent, so this is not a freeze blocker.
-- Root `README.md` still contains an older GateM summary that says GateM runtime readiness is started / partially implemented and references GateM-0..5C evidence. `docs/current/` is the authoritative current fact source and now records GateM freeze readiness as passed; because root `README.md` is outside this task's allowed edit scope, this remains a non-blocking post-freeze entrypoint cleanup item.
+- Root `README.md` contained an older GateM summary that said GateM runtime readiness was started / partially implemented and referenced GateM-0..5C evidence. This P3 has been corrected by `NQ-GATEM-FREEZE-REVIEW`, which was allowed to update root `README.md` only for current-state GateM wording.
 
 ## Decision
 
 PASS / READY FOR GATEM FREEZE REVIEW / READY TO COMMIT.
 
-GateM may enter `NQ-GATEM-FREEZE-REVIEW`.
+GateM entered `NQ-GATEM-FREEZE-REVIEW`; the follow-up freeze review completed with PASS / FROZEN / ACCEPTED / READY TO COMMIT.
 
 This decision does not freeze GateM yet. It does not enable LIVE, AI, DH runtime, RealClient, real provider, real exchange adapter, real permission probe, external exchange calls, production deployment, or real trading.
 
 ## Recommended Next Task
 
-`NQ-GATEM-FREEZE-REVIEW`
+`NQ-GATEM-RELEASE-TAG-AND-ARCHIVE`
 
 ## Commit Recommendation
 
