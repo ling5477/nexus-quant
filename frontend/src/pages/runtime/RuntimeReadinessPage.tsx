@@ -319,7 +319,7 @@ const venueColumns: ColumnsType<VenueSummary> = [
         ),
     },
     {
-        title: 'LIVE authorized',
+        title: 'LIVE auth count',
         dataIndex: 'liveAuthorized',
         key: 'liveAuthorized',
         width: 150,

@@ -1,3 +1,27 @@
+## NQ-GATEM-6F-OPERATIONAL-READINESS-FINAL-SMOKE（2026-06-30）
+
+结论：**PASS / FINAL SMOKE VERIFIED / SELF-REVIEWED / READY TO COMMIT**。本轮执行 GateM-6 operational readiness final smoke，复用 local runbook 路线验证真实 local backend、`GET /api/runtime/operational-readiness`、`/runtime/readiness` Runtime UI 和 no-write / no-real 边界闭环。
+
+Scope：新增 `frontend/tests/e2e/runtime-operational-readiness-final-smoke.spec.ts`。该 spec 不 mock `/api/runtime/operational-readiness`，通过真实 local login 建立浏览器 session，直接认证预检 readiness API 200，再打开 `/runtime/readiness` 等待页面自身真实 GET，断言 `LIVE=DISABLED`、`AI=NOT_STARTED`、`DH runtime=NOT_INTEGRATED`、`real provider=NOT_IMPLEMENTED`、`credential exposure=NOT_EXPOSED`、`permission probe=SKIPPED`，所有 operational rows 仍为 `ready=false` / `BLOCKED`。
+
+Validation：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 Vite large chunk warning。 |
+| backend startup: `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run "-Dspring-boot.run.profiles=local"` | PASS | pre-start health unavailable；启动后 `/actuator/health = UP`。 |
+| authenticated `GET /api/runtime/operational-readiness` | PASS | direct readiness preflight returned HTTP `200`；未记录 token 值或 credential material。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-final-smoke.spec.ts --project=chromium` | PASS | 1 Chromium final real-backend smoke passed。覆盖真实 API/UI 闭环、无 live-ready / verified / LIVE authorized、无 permission-probe endpoint、无 ingestion run-once、无 order/cancel/transfer/withdraw endpoint、无外部交易所 browser request、无 credential-like UI 泄漏。 |
+| backend stop + `/actuator/health` recheck | PASS | backend job stopped；post-stop health unavailable。 |
+
+Implementation-period fix：final smoke 首跑发现 Runtime page 的 Adapter readiness matrix 表头显示 `LIVE authorized`，虽然值为 `0`，但与 6F 负向文案要求冲突；已最小改为 `LIVE auth count`，不改 data field / API contract / readiness calculation / trading logic，并复跑 build + final smoke 通过。
+
+Known warnings：Vite large chunk warning 保留；Playwright 仍打印既有 `NO_COLOR` / `FORCE_COLOR` warning；backend startup 的 local development warning 未复制任何 generated password value 到文档。
+
+Not run：未运行 full frontend E2E、Maven backend test suite、Python pytest/mypy/ruff；原因是本轮为 GateM-6F targeted final smoke-only，且未修改 backend / research / scripts / deploy / `.github` / migration。
+
+Boundary：LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT_INTEGRATED；real exchange adapter / RealClient / real provider 仍 NOT_IMPLEMENTED。未调用 permission probe POST、ingestion run-once、order、cancel、transfer、withdraw 或外部交易所；未读取或输出 credential material；actuator health、runtime UI、Paper-only、`SKIPPED`、NoReal 均不构成 real-ready。
+
 ## NQ-GATEM-6E-LOCAL-OPERATIONAL-RUNBOOK（2026-06-30）
 
 结论：**PASS / DOCS ONLY / READY TO COMMIT**。本轮新增 GateM-6 本地 operational readiness runbook，并同步 current 状态入口；不改 frontend / backend / research / scripts / deploy / `.github`，不新增 API、不新增 migration、不新增 E2E、不改 CI workflow，不启动 LIVE / AI / DH runtime / real provider。

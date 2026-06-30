@@ -1,3 +1,30 @@
+## NQ-GATEM-6F-OPERATIONAL-READINESS-FINAL-SMOKE（2026-06-30）
+
+状态：**PASS / FINAL SMOKE VERIFIED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮新增 GateM-6F final real-backend smoke，复用 6E local operational runbook 路线验证真实 local backend、认证 `GET /api/runtime/operational-readiness`、`/runtime/readiness` Runtime UI 和 no-write / no-real 边界闭环。该 smoke 不 mock operational readiness API，不新增状态矩阵，不跑全量 E2E，不调用真实交易所。
+
+同步内容：
+
+- 新增 `frontend/tests/e2e/runtime-operational-readiness-final-smoke.spec.ts`。
+- 新增 `docs/current/frontend/NQ_GATEM_6F_OPERATIONAL_READINESS_FINAL_SMOKE.md`。
+- 更新 `frontend/src/pages/runtime/RuntimeReadinessPage.tsx`：把 Adapter readiness matrix 表头 `LIVE authorized` 最小改为 `LIVE auth count`，避免 Runtime UI 输出 6F 禁止的正向授权短语；未改变 data field / API contract / readiness calculation / trading logic。
+- 更新 `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md` 与 `docs/current/TESTING.md`。
+
+验证：
+
+- `cd frontend; npm run build`：PASS，保留既有 Vite large chunk warning。
+- 后端启动命令 `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run "-Dspring-boot.run.profiles=local"`：PASS；pre-start health unavailable，启动后 `/actuator/health = UP`。
+- authenticated `GET /api/runtime/operational-readiness`：HTTP `200`。
+- `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-final-smoke.spec.ts --project=chromium`：PASS，1 Chromium final real-backend smoke passed。
+- 后端停止后 `/actuator/health`：unavailable。
+
+实现期修正：final smoke 首跑失败于 `LIVE authorized` 负向断言，定位为 Adapter readiness matrix 旧表头仍输出该短语；已用最小 UI 文案修复并复跑 build + final smoke 通过。
+
+边界：未修改 backend / migration / research / scripts / deploy / `.github`；未新增 API；未改 TradingWorkbench 下单逻辑；未新增 LIVE UI 入口；未调用 permission probe POST、ingestion run-once、order、cancel、withdraw、transfer 或外部交易所；未读取或输出 credential material / raw env / full config dump / generated password value；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider。
+
+下一步：GateM-6F 已完成 targeted final smoke；后续若要冻结或提交，应只基于当前变更做 review/commit，不得扩展到新 API、状态矩阵、LIVE、AI、DH runtime 或 real provider。
+
 ## NQ-GATEM-6E-LOCAL-OPERATIONAL-RUNBOOK（2026-06-30）
 
 状态：**PASS / DOCS ONLY / READY TO COMMIT**。

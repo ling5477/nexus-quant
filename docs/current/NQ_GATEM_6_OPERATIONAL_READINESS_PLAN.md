@@ -2,7 +2,7 @@
 
 Task: NQ-GATEM-6-OPERATIONAL-READINESS-PLAN
 
-Status: PLAN BASELINE / 6A IMPLEMENTED / 6B BACKEND MVP IMPLEMENTED / 6C FRONTEND INTEGRATION IMPLEMENTED / 6D REAL BACKEND SMOKE VERIFIED / 6E LOCAL RUNBOOK DOCS ONLY / 6F NOT STARTED
+Status: PLAN BASELINE / 6A IMPLEMENTED / 6B BACKEND MVP IMPLEMENTED / 6C FRONTEND INTEGRATION IMPLEMENTED / 6D REAL BACKEND SMOKE VERIFIED / 6E LOCAL RUNBOOK DOCS ONLY / 6F FINAL SMOKE VERIFIED
 
 Date: 2026-06-30
 
@@ -10,7 +10,7 @@ GateM authoritative definition: Exchange / MarketData Runtime Readiness.
 
 GateM-5 Runtime Guarded UI is IMPLEMENTED / SMOKE VERIFIED / CLOSED. GateM-6 is the next planning slice for operational readiness. The original plan baseline did not implement any runtime capability, API, page, migration, workflow, startup check, health aggregation, runtime config guard, deploy automation, LIVE trading, AI runtime, DH runtime, RealClient, real provider, or real exchange integration.
 
-Implementation update: GateM-6A has implemented a frontend read-only runtime health/config/profile overview. GateM-6B has implemented a backend read-only disabled capability summary MVP at `GET /api/runtime/operational-readiness`. GateM-6C has integrated `/runtime/readiness` with that backend safe summary. GateM-6D has verified the API/UI loop with a real local backend smoke. GateM-6E has added the local operational readiness runbook `NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`. GateM-6F remains NOT STARTED. These updates still do not enable LIVE, AI runtime, DH runtime, RealClient, real provider, real exchange integration, real permission probe, external exchange calls, production deployment, or startup mutation.
+Implementation update: GateM-6A has implemented a frontend read-only runtime health/config/profile overview. GateM-6B has implemented a backend read-only disabled capability summary MVP at `GET /api/runtime/operational-readiness`. GateM-6C has integrated `/runtime/readiness` with that backend safe summary. GateM-6D has verified the API/UI loop with a real local backend smoke. GateM-6E has added the local operational readiness runbook `NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`. GateM-6F has verified the local runbook / real backend API / Runtime UI loop with a final targeted smoke. These updates still do not enable LIVE, AI runtime, DH runtime, RealClient, real provider, real exchange integration, real permission probe, external exchange calls, production deployment, or startup mutation.
 
 ## Current Facts
 
@@ -271,10 +271,21 @@ Success:
 
 Goal: add one final smoke that covers the GateM-6 operational UI chain after 6A-6E.
 
-Allowed future scope:
+Implementation status: **PASS / FINAL SMOKE VERIFIED / SELF-REVIEWED / READY TO COMMIT**. The targeted final smoke validates the local runbook path against a real local backend: `/actuator/health = UP`, authenticated `GET /api/runtime/operational-readiness = 200`, `/runtime/readiness` displays the backend safe summary, no forbidden write endpoint is invoked, and backend shutdown makes health unavailable.
 
-- one backend-free primary smoke by default;
-- optional real-backend smoke only if a later task explicitly authorizes it and preserves no-outbound / no-secret boundaries.
+Implemented scope:
+
+- `frontend/tests/e2e/runtime-operational-readiness-final-smoke.spec.ts`;
+- real local backend profile `local`;
+- authenticated operational readiness API preflight;
+- Runtime UI final smoke for `LIVE=DISABLED`, `AI=NOT_STARTED`, `DH runtime=NOT_INTEGRATED`, `real provider=NOT_IMPLEMENTED`, `credential exposure=NOT_EXPOSED`, and `permission probe=SKIPPED`;
+- no `live-ready`, `verified`, `LIVE authorized`, or `LIVE 已授权` positive UI signal;
+- no permission-probe endpoint, ingestion run-once, order, cancel, transfer, withdraw, or external exchange browser request;
+- post-smoke backend stop and health unreachable check.
+
+Implementation-period fix:
+
+- the final smoke exposed an old Adapter readiness matrix table header `LIVE authorized`; this was minimally changed to `LIVE auth count` so the Runtime UI does not display the prohibited positive authorization phrase. The `liveAuthorized` data field and readiness calculations were not changed.
 
 Forbidden future scope:
 
@@ -287,7 +298,7 @@ Forbidden future scope:
 
 Success:
 
-- build and one main smoke pass; operational readiness UI communicates disabled / no-real / paper-only boundaries correctly.
+- build and one final real-backend smoke pass; operational readiness UI communicates disabled / no-real / paper-only boundaries correctly.
 
 ## Security Boundary
 
@@ -319,7 +330,7 @@ Implementation batches should use narrow validation:
 Expected 6F final validation:
 
 - `cd frontend; npm run build`
-- `cd frontend; npm run test:e2e -- tests/e2e/<gatem-6-operational-final-smoke>.spec.ts --project=chromium`
+- `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-final-smoke.spec.ts --project=chromium`
 
 Maven backend tests are not required for frontend-only or docs-only batches unless backend code is explicitly changed in a future task.
 
@@ -377,4 +388,4 @@ Suggested explicit prohibitions:
 
 ## Final Decision
 
-GateM-6 Operational Readiness remains a partial implementation line, not a final closeout. GateM-6A frontend overview, GateM-6B backend disabled capability summary MVP, GateM-6C frontend integration, GateM-6D real local backend smoke, and GateM-6E local operational runbook are complete. GateM-6F final smoke remains NOT STARTED. LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; RealClient / real provider / real exchange adapter / real permission probe remain NOT IMPLEMENTED.
+GateM-6 Operational Readiness has completed the planned local validation line through 6F final smoke. GateM-6A frontend overview, GateM-6B backend disabled capability summary MVP, GateM-6C frontend integration, GateM-6D real local backend smoke, GateM-6E local operational runbook, and GateM-6F final smoke are complete. This is not production readiness and not LIVE authorization. LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; RealClient / real provider / real exchange adapter / real permission probe remain NOT IMPLEMENTED.
