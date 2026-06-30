@@ -1,3 +1,28 @@
+## NQ-GATEM-6D-OPERATIONAL-READINESS-REAL-BACKEND-SMOKE（2026-06-30）
+
+状态：**PASS / REAL BACKEND SMOKE VERIFIED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮新增真实 local backend targeted Playwright smoke，验证 GateM-6B 只读 `GET /api/runtime/operational-readiness` 与 GateM-6C `/runtime/readiness` 页面在真实本地后端下闭环。spec 不 mock `/api/runtime/operational-readiness`，只用真实 `/api/auth/login` 获取浏览器 session，不使用会创建/重置 exchange account 的 E2E account fixture。
+
+同步内容：
+
+- 新增 `frontend/tests/e2e/runtime-operational-readiness-real-backend-smoke.spec.ts`。
+- 新增 `docs/current/frontend/NQ_GATEM_6D_OPERATIONAL_READINESS_REAL_BACKEND_SMOKE.md`。
+- 同步本文件与 `docs/current/TESTING.md`。
+
+验证：
+
+- 写操作前 `Get-Location`：`F:\project\nexus-quant`；`git status --short`：clean；`git branch --show-current`：`dev`。
+- `cd frontend; npm run build`：PASS，保留既有 Vite large chunk warning。
+- 后端启动命令 `mvn -f backend/pom.xml -pl nq-app -am spring-boot:run "-Dspring-boot.run.profiles=local"`：PASS；pre-start health unavailable，启动后 `/actuator/health = UP`。
+- authenticated `GET /api/runtime/operational-readiness`：HTTP `200`。
+- `cd frontend; npm run test:e2e -- tests/e2e/runtime-operational-readiness-real-backend-smoke.spec.ts --project=chromium`：PASS，1 Chromium real-backend smoke passed。
+- 后端停止后 `/actuator/health`：unavailable。
+
+边界：未修改 backend / migration / frontend production code / research / scripts / deploy / `.github`；未新增 API；未改 TradingWorkbench 下单逻辑；未新增 LIVE UI 入口；未调用 permission probe POST、ingestion run-once、order、cancel、withdraw、transfer 或外部交易所；未读取或输出 credential material；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider。
+
+下一步：如继续 GateM-6 operational closeout，只允许基于本次真实后端 smoke 结果做文档冻结或下一个明确授权的小切片；不得把 actuator health、Paper-only、`SKIPPED`、NoReal 或 real-backend smoke 写成 LIVE-ready / verified。
+
 ## NQ-GATEM-6C-OPERATIONAL-READINESS-FRONTEND-INTEGRATION（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
