@@ -1,3 +1,29 @@
+## NQ-GATEM-FREEZE-READINESS-REVIEW（2026-06-30）
+
+状态：**PASS / READY FOR GATEM FREEZE REVIEW / READY TO COMMIT**。
+
+本轮只做 GateM stage-level freeze readiness review，判断 GateM 是否具备进入 freeze review 的条件。审查范围覆盖 adapter readiness、MarketData readiness、NoReal contract hardening、Paper-to-Real boundary、Runtime Guarded UI、Operational Readiness、测试证据、current 文档状态与安全边界。
+
+同步内容：
+
+- 新增 `docs/current/NQ_GATEM_FREEZE_READINESS_REVIEW.md`。
+- 更新 `docs/current/STATUS.md`：登记 GateM freeze readiness review 通过，P0/P1/P2 blocking = 0。
+- 更新 `docs/current/ROADMAP.md`：GateM 标为 PASS / READY FOR GATEM FREEZE REVIEW / NOT FROZEN，Next 改为 `NQ-GATEM-FREEZE-REVIEW`。
+- 更新 `docs/current/README.md`：同步 current stage、GateM review 入口和 route。
+- 更新 `docs/current/TESTING.md`：记录本轮 docs-only/read-only review，不新增测试矩阵。
+
+验证：
+
+- 本轮需运行 `git status --short`、`git diff --check`、`git diff --stat`。
+- 本轮需检查禁止范围 diff：`frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`。
+- 本轮需执行指定 `rg` 状态/边界搜索，确认未把 GateM 写成实盘、未把 `/actuator/health` 写成 LIVE authorization、未把 Paper / NoReal / `SKIPPED` / DB freshness 写成 real-ready。
+
+边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增 API / 页面 / E2E / 业务功能；未启用 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material。该 review 不是 freeze，不是 production readiness，不是 LIVE authorization。
+
+P3 residual：root `README.md` 仍有较早的 GateM runtime readiness started / partially implemented 摘要；本轮允许范围只覆盖 `docs/current/**`，因此不越权修改。`docs/current/` 已作为 authoritative current fact source 同步 GateM freeze readiness review 通过。
+
+下一步：**NQ-GATEM-FREEZE-REVIEW**。
+
 ## NQ-GATEM-6-OPERATIONAL-READINESS-CLOSEOUT（2026-06-30）
 
 状态：**PASS / CLOSED / READY TO COMMIT**。
