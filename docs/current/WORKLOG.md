@@ -1,3 +1,27 @@
+## NQ-GATEM-6-OPERATIONAL-READINESS-CLOSEOUT（2026-06-30）
+
+状态：**PASS / CLOSED / READY TO COMMIT**。
+
+本轮只做 GateM-6 Operational Readiness 状态收口，将 current 控制文档同步为 **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**。GateM-6A Runtime Operational Readiness Overview completed；GateM-6B Operational Readiness Summary API completed；GateM-6C Frontend Integration completed；GateM-6D Real Backend Smoke completed；GateM-6E Local Operational Runbook completed；GateM-6F Final Smoke passed。
+
+同步内容：
+
+- 更新 `docs/current/STATUS.md`：新增 GateM-6 closeout 当前状态与下一步。
+- 更新 `docs/current/ROADMAP.md`：GateM-6 标为 closed，Next 标为 `NQ-GATEM-FREEZE-READINESS-REVIEW`。
+- 更新 `docs/current/README.md`：同步 current milestone / GateM-6 索引。
+- 更新 `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`：状态改为 closed，下一步改为 GateM freeze readiness review。
+- 更新 `docs/current/TESTING.md`：只记录 6F final smoke 已通过与本轮 closeout docs-only 验证口径，不新增测试矩阵。
+
+验证：
+
+- 本轮需运行 `git status --short`、`git diff --check`、`git diff --stat`。
+- 本轮需检查禁止范围 diff：`frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`。
+- 本轮需执行指定 `rg` 状态/边界搜索，确认 GateM-6 closeout 未写成 production readiness、LIVE authorization 或 real provider ready。
+
+边界：未修改 frontend / backend / research / scripts / deploy / `.github`；未新增 API / migration / E2E / 页面 / review-freeze 大文档 / GateM-6G 或 6H；未启用 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material。`/actuator/health` 仍不是 LIVE authorization；operational readiness 仍是 fail-closed safe summary，不是 real provider ready。
+
+下一步：**NQ-GATEM-FREEZE-READINESS-REVIEW**。
+
 ## NQ-GATEM-6F-OPERATIONAL-READINESS-FINAL-SMOKE（2026-06-30）
 
 状态：**PASS / FINAL SMOKE VERIFIED / SELF-REVIEWED / READY TO COMMIT**。
@@ -34,7 +58,7 @@
 同步内容：
 
 - 新增 `docs/current/NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`。
-- 更新 `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`：6A/6B/6C/6D/6E completed，6F NOT STARTED。
+- 更新 `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`：6A/6B/6C/6D/6E completed；后续 6F 已 passed，并由 closeout 收口为 **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**。
 - 更新 `docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`。
 
 验证：
@@ -47,7 +71,7 @@
 
 边界：未修改 frontend / backend / research / scripts / deploy / `.github`；未新增 API / migration / E2E / CI workflow；未启动后端；未调用真实交易所；未读取或输出 credential material；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider。`/actuator/health` 继续只表示 process health，不是 readiness / LIVE authorization。
 
-下一步：GateM-6F final smoke 仍 **NOT STARTED**；若继续，只能按单独授权的小范围 smoke 执行，不得把 local runbook 或 actuator health 写成 production readiness / LIVE-ready。
+下一步（6E 当时）：仅允许单独授权的小范围 GateM-6F final smoke；当前 closeout 已记录 6F passed，下一步为 **NQ-GATEM-FREEZE-READINESS-REVIEW**。local runbook 或 actuator health 仍不得写成 production readiness / LIVE-ready。
 
 ## NQ-GATEM-6D-OPERATIONAL-READINESS-REAL-BACKEND-SMOKE（2026-06-30）
 
@@ -178,7 +202,7 @@
 
 状态：**PASS / PLAN ONLY / READY TO COMMIT**。
 
-本轮只规划 GateM-6 Operational Readiness，不改代码、不新增 API、不新增 migration、不改 CI workflow、不实现运行时能力。GateM-6 implementation 仍 **NOT STARTED**。
+本轮只规划 GateM-6 Operational Readiness，不改代码、不新增 API、不新增 migration、不改 CI workflow、不实现运行时能力。该 planning 记录为历史状态；后续 GateM-6 已完成 6A/6B/6C/6D/6E/6F，并收口为 **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**。
 
 同步内容：
 
@@ -215,7 +239,7 @@
 - GateM-5C Paper / Trading boundary banners completed。
 - GateM-5D Dashboard Runtime summary completed。
 - GateM-5E Runtime Guarded UI final smoke passed。
-- GateM-6 后续已进入 Operational Readiness planning-only；implementation 仍 **NOT STARTED**。
+- 后续 GateM-6 Operational Readiness 已完成 6A/6B/6C/6D/6E/6F，并收口为 **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**。
 
 同步文件：
 
@@ -229,7 +253,7 @@
 
 边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增 API、页面、E2E、review/freeze 文档或 GateM-5F/5G 小测试；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material；未把 Paper-ready / DB-fresh / permission probe `SKIPPED` 写成 real-ready。
 
-下一步：进入 **GateM-6 Operational Readiness planning-only**；implementation 必须另起任务明确 scope、允许范围、禁止范围与验证要求。
+下一步（GateM-5 closeout 当时）：进入 **GateM-6 Operational Readiness planning-only**；当前 closeout 已更新为 **NQ-GATEM-FREEZE-READINESS-REVIEW**。
 
 ## NQ-GATEM-5E-RUNTIME-UI-FINAL-SMOKE（2026-06-30）
 

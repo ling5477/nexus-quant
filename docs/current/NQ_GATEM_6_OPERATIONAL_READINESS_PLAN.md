@@ -2,15 +2,15 @@
 
 Task: NQ-GATEM-6-OPERATIONAL-READINESS-PLAN
 
-Status: PLAN BASELINE / 6A IMPLEMENTED / 6B BACKEND MVP IMPLEMENTED / 6C FRONTEND INTEGRATION IMPLEMENTED / 6D REAL BACKEND SMOKE VERIFIED / 6E LOCAL RUNBOOK DOCS ONLY / 6F FINAL SMOKE VERIFIED
+Status: IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED
 
 Date: 2026-06-30
 
 GateM authoritative definition: Exchange / MarketData Runtime Readiness.
 
-GateM-5 Runtime Guarded UI is IMPLEMENTED / SMOKE VERIFIED / CLOSED. GateM-6 is the next planning slice for operational readiness. The original plan baseline did not implement any runtime capability, API, page, migration, workflow, startup check, health aggregation, runtime config guard, deploy automation, LIVE trading, AI runtime, DH runtime, RealClient, real provider, or real exchange integration.
+GateM-5 Runtime Guarded UI is IMPLEMENTED / SMOKE VERIFIED / CLOSED. This document started as the GateM-6 operational readiness planning baseline; GateM-6 is now IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED. The original plan baseline did not implement any runtime capability, API, page, migration, workflow, startup check, health aggregation, runtime config guard, deploy automation, LIVE trading, AI runtime, DH runtime, RealClient, real provider, or real exchange integration.
 
-Implementation update: GateM-6A has implemented a frontend read-only runtime health/config/profile overview. GateM-6B has implemented a backend read-only disabled capability summary MVP at `GET /api/runtime/operational-readiness`. GateM-6C has integrated `/runtime/readiness` with that backend safe summary. GateM-6D has verified the API/UI loop with a real local backend smoke. GateM-6E has added the local operational readiness runbook `NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`. GateM-6F has verified the local runbook / real backend API / Runtime UI loop with a final targeted smoke. These updates still do not enable LIVE, AI runtime, DH runtime, RealClient, real provider, real exchange integration, real permission probe, external exchange calls, production deployment, or startup mutation.
+Implementation update: GateM-6A has implemented a frontend read-only runtime health/config/profile overview. GateM-6B has implemented a backend read-only disabled capability summary MVP at `GET /api/runtime/operational-readiness`. GateM-6C has integrated `/runtime/readiness` with that backend safe summary. GateM-6D has verified the API/UI loop with a real local backend smoke. GateM-6E has added the local operational readiness runbook `NQ_GATEM_6_LOCAL_OPERATIONAL_RUNBOOK.md`. GateM-6F has verified the local runbook / real backend API / Runtime UI loop with a final targeted smoke. GateM-6 is now closed as **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED** and the next step is **NQ-GATEM-FREEZE-READINESS-REVIEW**. These updates still do not enable LIVE, AI runtime, DH runtime, RealClient, real provider, real exchange integration, real permission probe, external exchange calls, production deployment, or startup mutation.
 
 ## Current Facts
 
@@ -23,7 +23,7 @@ Implementation update: GateM-6A has implemented a frontend read-only runtime hea
 
 ## Goal
 
-GateM-6 plans how to make the runtime operational state easier to inspect without changing the runtime itself. The implementation line should clarify:
+GateM-6 makes the runtime operational state easier to inspect without changing the runtime itself. The completed implementation line clarifies:
 
 - runtime health and profile status;
 - safe config boundary and disabled capability summary;
@@ -50,19 +50,21 @@ GateM-6 does not:
 - add trading, order, cancel, withdraw, transfer, or WebSocket capability;
 - treat disabled, no-real, fake, stub, paper-only, or SKIPPED as ready.
 
-## Current Operational Baseline
+## Original Operational Baseline
+
+This section records the baseline observed when GateM-6 was planned. It is retained as historical planning context; current GateM-6 closeout status is recorded above as **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**.
 
 ### Actuator Health
 
 Current backend configuration exposes actuator health / info and has liveness / readiness probe support in app configuration. `/actuator/health` is useful for process and dependency health, but it is not a trading readiness signal and must not be shown as LIVE-ready.
 
-Gap: there is no consolidated operational readiness summary that safely combines actuator health, profile, env safety, adapter readiness, MarketData readiness, and runtime blockers.
+Original gap: there was no consolidated operational readiness summary that safely combined actuator health, profile, env safety, adapter readiness, MarketData readiness, and runtime blockers.
 
 ### Runtime Readiness UI
 
 `/runtime/readiness` exists and is read-only. It already shows LIVE disabled, paper-only readiness, NoReal / Fake / Stub / FutureReal not live-ready, permission probe skipped or disabled, and links to MarketData. It consumes adapter readiness and labels missing runtime flags / paper boundary aggregation as `PENDING_BACKEND_SUPPORT`.
 
-Gap: the page does not yet provide a full operational health / profile / startup / diagnostics summary.
+Original gap: the page did not yet provide the GateM-6 scoped operational health / profile / startup / diagnostics summary.
 
 ### Adapter Readiness
 
@@ -72,23 +74,23 @@ Gap: the page does not yet provide a full operational health / profile / startup
 
 `GET /api/marketdata/readiness` exists and is read-only. It derives source health / freshness / gap state from existing local DB facts and does not call exchange adapters or external exchanges. K-line and volume inspection remains under `/marketdata`.
 
-Gap: MarketData freshness can support paper/runtime diagnosis, but it must not be rendered as live-ready.
+Original boundary: MarketData freshness can support paper/runtime diagnosis, but it must not be rendered as live-ready.
 
 ### Paper / Trading Guard Banner
 
 Paper Trading and Trading Workbench have read-only guard banners. They distinguish paper simulation from real execution and state that LIVE is disabled, real provider is not implemented, and permission probe SKIPPED / disabled is not verified.
 
-Gap: banners are UI communication, not a replacement for backend fail-closed guards.
+Original boundary: banners are UI communication, not a replacement for backend fail-closed guards.
 
 ### Dashboard Runtime Summary
 
 Dashboard has a Runtime Readiness summary card with links to Runtime Readiness and MarketData. It is read-only and must remain a summary, not a trading control.
 
-Gap: the card does not yet roll up actuator health, startup blockers, safe config status, or diagnostic state.
+Original gap: the card did not roll up actuator health, startup blockers, safe config status, or diagnostic state.
 
 ### Logs, Config, Profile
 
-The backend has env-safety startup guard code and profile-specific no-outbound / LIVE / AI / DH / real-provider flags. Observability registers trace ID handling. These are useful foundations, but a safe user-facing runtime config / profile summary is not yet implemented.
+The backend has env-safety startup guard code and profile-specific no-outbound / LIVE / AI / DH / real-provider flags. Observability registers trace ID handling. At the original planning baseline, a safe user-facing runtime config / profile summary was not yet implemented; GateM-6B/6C now expose the scoped operational readiness safe summary without raw env, full config dumps, or credential material.
 
 Current boundary: raw env, raw config, credential values, secret values, token values, passphrase values, request signatures, cookies, and full diagnostic dumps must never be printed to the UI or docs.
 
@@ -138,7 +140,9 @@ UI colors and wording must not use green or success language for LIVE readiness 
 
 Goal: extend the existing Runtime Readiness overview with an operational section for process health, safe profile category, and config boundary.
 
-Allowed future scope:
+Implementation status: **COMPLETED**. The frontend Runtime Operational Readiness Overview was implemented as a read-only overview and kept unknown / missing backend support fail-closed.
+
+Implemented scope:
 
 - frontend read-only UI under existing Runtime Readiness page;
 - existing actuator health only if safely reachable in the frontend runtime;
@@ -365,14 +369,13 @@ Maven backend tests are not required for frontend-only or docs-only batches unle
 
 Recommended next task:
 
-`NQ-GATEM-6F-OPERATIONAL-READINESS-FINAL-SMOKE`
+`NQ-GATEM-FREEZE-READINESS-REVIEW`
 
 Suggested scope:
 
-- one final narrow smoke for the GateM-6 operational UI chain;
-- backend-free primary smoke by default unless the task explicitly authorizes a real-backend rerun;
-- preserve fail-closed runtime wording and no-real boundaries;
-- update docs/current/TESTING.md and docs/current/WORKLOG.md only if implementation and smoke pass.
+- review whether GateM runtime readiness is ready for freeze based on already completed GateM-5 and GateM-6 evidence;
+- no new API, migration, page, E2E, status matrix, LIVE, AI, DH runtime, RealClient, real provider, or real exchange integration;
+- preserve fail-closed runtime wording and no-real boundaries.
 
 Suggested explicit prohibitions:
 
@@ -388,4 +391,4 @@ Suggested explicit prohibitions:
 
 ## Final Decision
 
-GateM-6 Operational Readiness has completed the planned local validation line through 6F final smoke. GateM-6A frontend overview, GateM-6B backend disabled capability summary MVP, GateM-6C frontend integration, GateM-6D real local backend smoke, GateM-6E local operational runbook, and GateM-6F final smoke are complete. This is not production readiness and not LIVE authorization. LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; RealClient / real provider / real exchange adapter / real permission probe remain NOT IMPLEMENTED.
+GateM-6 Operational Readiness is **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**. GateM-6A Runtime Operational Readiness Overview, GateM-6B Operational Readiness Summary API, GateM-6C Frontend Integration, GateM-6D Real Backend Smoke, GateM-6E Local Operational Runbook, and GateM-6F Final Smoke are complete. The next step is **NQ-GATEM-FREEZE-READINESS-REVIEW**. This is not production readiness and not LIVE authorization. LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; RealClient / real provider / real exchange adapter / real permission probe remain NOT IMPLEMENTED.
