@@ -1,7 +1,7 @@
 import {ArrowRightOutlined} from '@ant-design/icons';
 import {Button, Card, Col, List, Row, Space, Tag, Typography} from 'antd';
 import {useMemo} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 
 import {NqEmptyState, NqErrorState, NqMetricCard, NqPageHeader, NqPercentText, NqRiskBanner, NqStatusTag, formatNqNumber} from '@/components/nq';
 import {
@@ -184,6 +184,51 @@ export function DashboardPage() {
                     loading={Boolean(focusRunId) && heartbeatsQuery.isPending}
                 />
             </div>
+
+            <Card
+                data-testid="dashboard-runtime-readiness-card"
+                className="page-section"
+                bordered={false}
+                title="Runtime Readiness"
+                extra={<NqStatusTag status="LIVE_DISABLED" tone="danger"/>}
+            >
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <NqRiskBanner
+                        level="warning"
+                        message="Runtime guarded: LIVE disabled"
+                        description="Dashboard 仅展示当前运行边界摘要，不提供交易执行入口。Paper-ready、DB-fresh 与 permission probe SKIPPED 都不构成 real-ready。"
+                    />
+                    <div className="nq-status-strip">
+                        <NqMetricCard
+                            label="LIVE"
+                            value={<NqStatusTag status="Disabled" tone="danger"/>}
+                            tone="danger"
+                        />
+                        <NqMetricCard
+                            label="Real provider"
+                            value={<NqStatusTag status="Not implemented" tone="warning"/>}
+                            tone="warning"
+                        />
+                        <NqMetricCard
+                            label="Paper"
+                            value={<NqStatusTag status="Simulated only" tone="info"/>}
+                            tone="muted"
+                        />
+                        <NqMetricCard
+                            label="Permission probe"
+                            value={<NqStatusTag status="Skipped / NoReal" tone="neutral"/>}
+                            tone="muted"
+                        />
+                    </div>
+                    <Typography.Text type="secondary">
+                        NoReal/Fake/Stub/FutureReal not live-ready. Permission probe SKIPPED / disabled is not verified.
+                    </Typography.Text>
+                    <Space size={12} wrap>
+                        <Link to="/runtime/readiness">View Runtime Readiness</Link>
+                        <Link to="/marketdata">View MarketData Readiness</Link>
+                    </Space>
+                </Space>
+            </Card>
 
             <Row gutter={[12, 12]}>
                 <Col xs={24} xl={14}>

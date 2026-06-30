@@ -1,3 +1,24 @@
+## NQ-GATEM-5D-RUNTIME-UI-DASHBOARD-SUMMARY-CARD（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮在 Dashboard 增加只读 `Runtime Readiness` summary card：首页直接展示 GateM 当前 runtime 边界，包括 LIVE disabled、Real provider not implemented、Paper simulated only、Permission probe skipped / NoReal、NoReal/Fake/Stub/FutureReal not live-ready，并提供只读跳转到 `/runtime/readiness` 与 `/marketdata`。
+
+同步文件：
+
+- `frontend/src/pages/dashboard/DashboardPage.tsx`
+- `frontend/tests/e2e/dashboard-runtime-readiness-summary-smoke.spec.ts`
+- `docs/current/frontend/NQ_GATEM_5D_RUNTIME_UI_DASHBOARD_SUMMARY_CARD.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+
+验证结果：
+
+- `npm run build`：PASS，保留既有 Vite large chunk warning。
+- `npm run test:e2e -- tests/e2e/dashboard-runtime-readiness-summary-smoke.spec.ts --project=chromium`：PASS，1 Chromium test passed。
+
+边界：未修改 backend / migration / workflow / research / scripts / deploy；未新增 API；未修改后端 readiness / paper / trading API；未改 TradingWorkbench 下单逻辑；未新增 LIVE UI 入口或下单能力；未调用 permission probe POST；未触发 ingestion run-once、order、cancel、withdraw、transfer 或 WebSocket；未读取 credential material；未启用 LIVE；未接 AI / DH runtime；未实现 RealClient / real provider / real exchange adapter。Dashboard 卡片是只读摘要，不是可执行交易入口。
+
 ## NQ-GATEM-5C-RUNTIME-UI-PAPER-BOUNDARY-BANNERS（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。

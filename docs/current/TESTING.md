@@ -1,3 +1,27 @@
+## NQ-GATEM-5D-RUNTIME-UI-DASHBOARD-SUMMARY-CARD（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只在 Dashboard 增加 Runtime Readiness 只读摘要卡片；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未修改后端 readiness / paper / trading API，未启用 LIVE / AI / DH runtime。
+
+覆盖范围：
+
+- `/dashboard` 新增 `Runtime Readiness` summary card。
+- 卡片展示 `LIVE disabled`、`Real provider not implemented`、`Paper simulated only`、`Permission probe skipped / NoReal`、`NoReal/Fake/Stub/FutureReal not live-ready`。
+- 卡片提供只读链接 `View Runtime Readiness -> /runtime/readiness` 与 `View MarketData Readiness -> /marketdata`。
+- backend-free smoke 验证 Dashboard 卡片文案、Runtime / MarketData 链接、无 `/api/**` 写请求、无 permission probe endpoint、无 ingestion run-once、无 order / cancel / transfer / withdraw endpoint。
+
+验证命令：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `cd frontend; npm run build` | PASS | TypeScript build + Vite production build passed；保留既有 large chunk warning。 |
+| `cd frontend; npm run test:e2e -- tests/e2e/dashboard-runtime-readiness-summary-smoke.spec.ts --project=chromium` | PASS | 1 Chromium test passed；backend-free route stub，不依赖真实后端、真实交易所、真实 credential 或 LIVE。 |
+
+已知非阻断输出：Vite large chunk warning 保留；Playwright 运行中仍有既有 `NO_COLOR` / `FORCE_COLOR` warning；既有 Ant Design `Card.bordered` deprecation warning 保留。本轮未扩大处理这些历史 UI warning。
+
+未运行：Maven backend tests、Python pytest/mypy/ruff、真实 local backend smoke。本轮未改 backend / research，且任务要求 backend-free UI smoke。
+
+边界结论：Dashboard Runtime card 是只读摘要，不调用 permission probe POST，不触发采集、ingestion run-once、下单、撤单、转账、提现或 WebSocket；未读取或输出 credential material；未新增 LIVE UI 入口；未修改 Dashboard 其他业务行为或 TradingWorkbench 下单逻辑；Paper-ready / DB-fresh / permission probe `SKIPPED` 均不构成 real-ready 或 LIVE authorization。
+
 ## NQ-GATEM-5C-RUNTIME-UI-PAPER-BOUNDARY-BANNERS（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只在 Paper Trading 与 TradingWorkbench 现有页面增加只读 runtime guard banner；未修改 backend、migration、research、scripts、deploy、`.github/workflows`，未新增 API，未修改后端 Trading / Paper / readiness API，未启用 LIVE / AI / DH runtime。
