@@ -1,3 +1,13 @@
+## NQ-GATEM-RELEASE-TAG-AND-ARCHIVE（2026-06-30）
+
+结论：**PASS / COMPLETED / RELEASE TAG PUSHED**。本轮只做 GateM release tag、最终状态同步和归档记录；不新增代码、API、migration、E2E、测试矩阵或 workflow。
+
+Testing record：未运行新的 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 release tag + docs sync，GateM freeze commit 已提交且当前 GitHub Actions `NQ CI Baseline` 对 head SHA `64194844813bdd3d6541d5a07c576af27b28e5db` 的 run `28435425742` 结论为 `success`。该 run 覆盖 CI security smoke、no-outbound guard、frontend build、frontend no-backend E2E、Backend Maven test、PostgreSQL / Flyway smoke、Frontend backend E2E smoke、secret scan、diff check、research quality gate。
+
+Release tag：annotated tag `nq-gatem-freeze` 已创建并推送到 `origin`；tag object `f44c62833c5c9f895ee292eef7f5d497b23089cc`，tagged commit `64194844813bdd3d6541d5a07c576af27b28e5db`。
+
+Boundary：GateM tag 只冻结 no-real runtime readiness baseline，不代表 production readiness、LIVE authorization、trading authorization、real provider ready、AI started 或 DH runtime integrated。LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT_INTEGRATED；RealClient / real provider 仍 NOT_IMPLEMENTED；permission probe real execution 仍 NOT_IMPLEMENTED。
+
 ## NQ-GATEM-FREEZE-REVIEW（2026-06-30）
 
 结论：**PASS / FROZEN / ACCEPTED / READY TO COMMIT**。本轮只做 GateM stage freeze review 和 current 文档同步，不新增代码、API、migration、E2E、页面、业务功能、CI workflow、LIVE、AI、DH runtime、RealClient 或 real provider。

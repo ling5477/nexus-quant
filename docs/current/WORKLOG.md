@@ -1,3 +1,40 @@
+## NQ-GATEM-RELEASE-TAG-AND-ARCHIVE（2026-06-30）
+
+状态：**PASS / COMPLETED / RELEASE TAG PUSHED**。
+
+本轮只做 GateM release tag、最终状态同步和归档记录，不新增代码、API、migration、E2E、业务功能或 workflow。
+
+同步内容：
+
+- 创建并推送 annotated tag `nq-gatem-freeze`。
+- 记录 tag object `f44c62833c5c9f895ee292eef7f5d497b23089cc`。
+- 记录 tagged commit `64194844813bdd3d6541d5a07c576af27b28e5db`（`docs(gatem): freeze GateM runtime readiness baseline`）。
+- 确认 GitHub Actions `NQ CI Baseline` run `28435425742` 对当前 `dev` commit 为 `success`。
+- 新增 `docs/current/NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md`。
+- 同步 `STATUS.md`、`ROADMAP.md`、`README.md`、`TESTING.md` 和 root `README.md` 的 GateM final/tag 状态。
+
+最终状态：
+
+- GateM：**FINALIZED / FROZEN / ACCEPTED / TAGGED**。
+- Release tag：`nq-gatem-freeze`。
+- LIVE：**DISABLED**。
+- AI：**NOT STARTED**。
+- DH runtime：**NOT_INTEGRATED**。
+- RealClient / real provider：**NOT_IMPLEMENTED**。
+- real exchange private trading：**NOT_IMPLEMENTED**。
+- permission probe real execution：**NOT_IMPLEMENTED**。
+- next phase：**NOT STARTED**，需后续单独 planning。
+
+验证：
+
+- 已运行 `git status --short`、`git log --oneline -5`、`git fetch origin`。
+- 已确认 `dev` 与 `origin/dev` 对齐于 `64194844813bdd3d6541d5a07c576af27b28e5db`。
+- 已确认 `NQ CI Baseline` run `28435425742` 为 `success`。
+- 已创建并推送 `nq-gatem-freeze`。
+- 收尾需运行 `git diff --check`、`git diff --stat`、tag 检查和禁止范围 diff。
+
+边界：未修改 frontend / backend / research / scripts / deploy / `.github` 或 migration；未新增 API / 页面 / E2E / 业务功能；未启用 LIVE；未接 AI；未接 DH runtime；未实现 RealClient / real provider；未调用真实交易所；未读取或输出 credential material。
+
 ## NQ-GATEM-FREEZE-REVIEW（2026-06-30）
 
 状态：**PASS / FROZEN / ACCEPTED / READY TO COMMIT**。
