@@ -1,3 +1,22 @@
+## NQ-GATEM-6B-DISABLED-CAPABILITY-SUMMARY-BACKEND-MVP（2026-06-30）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增只读 `GET /api/runtime/operational-readiness` 后端 MVP，返回 GateM-6B disabled capability / startup boundary safe summary；不新增 migration、不改 frontend / research / scripts / deploy / `.github`，不改变 Trading / Paper / MarketData / adapter readiness / actuator 行为。
+
+Scope：`nq-api` 新增 explicit DTO + `OperationalReadinessService` + `OperationalReadinessController`。响应每个 status item 均含 `status / ready / reasonCode / reason`；当前 baseline 全部 `ready=false`，覆盖 `LIVE=DISABLED`、`AI=NOT_STARTED`、`DH=NOT_INTEGRATED`、`real provider=NOT_IMPLEMENTED`、sensitive material `NOT_EXPOSED`、external exchange call `DISABLED`、permission probe `SKIPPED`、startup `SAFE_BY_DEFAULT`、profile/config/log `SAFE_SUMMARY_ONLY`。
+
+Validation：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api -am test` | PASS | Local targeted backend API regression `BUILD SUCCESS`；新增 `OperationalReadinessBoundaryTest` 2、`OperationalReadinessServiceTest` 3、`OperationalReadinessControllerTest` 1 均通过。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS | Required backend validation `BUILD SUCCESS`；`nq-api` 55/0/0/0，`nq-app` 76/0/0/2 skipped（既有 local/Postgres/no-outbound 条件 skip）。 |
+
+Known warnings：Maven settings 存在既有 `Unrecognised tag: 'profiles'` warning；若干既有 Mockito dynamic agent / SLF4J NOP / unchecked-deprecated compile warning；`TradingVerificationControllerLocalTest.shouldReturnUnifiedInternalError` 打印预期 500 错误路径栈但测试通过。
+
+Not run：未运行 frontend build / Playwright、Python pytest/mypy/ruff、真实 local backend smoke；原因是本轮只改 `nq-api` read-only 后端 API + docs，不改 frontend/research，且指定 Maven 验证已覆盖 `nq-api,nq-core,nq-app`。
+
+Boundary：endpoint/service 无 adapter、permission probe、external exchange、DB、file、HTTP client 依赖；响应不含 secret/token/passphrase/private key/cookie/signature/raw env；不触发真实交易所、order/cancel/withdraw/transfer、permission probe POST、ingestion run-once；LIVE 仍 DISABLED，AI 仍 NOT STARTED，DH runtime 仍 NOT INTEGRATED，RealClient / real provider 仍 NOT IMPLEMENTED。
+
 ## NQ-GATEM-6A-RUNTIME-HEALTH-CONFIG-PROFILE-OVERVIEW（2026-06-30）
 
 结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只增强 `/runtime/readiness` 的 `Operational Readiness` 只读概览，不新增后端 API、不改后端、不新增 migration、不改 CI workflow、不改变 Trading / Paper / MarketData / adapter 行为。

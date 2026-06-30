@@ -17,6 +17,7 @@
 - Instrument API：交易标的、交易所、市场类型、symbol catalog。
 - Marketdata API：行情基础 ingest/query 能力。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
+- Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
 - Actuator / Health：Spring Boot actuator、健康检查。
 
 ## 当前边界
@@ -30,6 +31,7 @@
 - GateI-1 新增策略版本与发布版本绑定 API；不接 AI。
 - GateI-2 增强 backtest config、backtest run 和 evaluation report 追溯 API；不进入 GateI-3/4，不接 AI。
 - GateM-5A 新增只读 adapter readiness status API；只读静态 readiness 决策，no-real / fail-closed，不接 AI、不接真实交易所、不读 credential、不启用 LIVE。
+- GateM-6B 新增只读 runtime operational readiness summary API；仅返回安全 DTO 摘要，不读取 raw env/config，不触发 adapter / permission probe / external exchange call，不启用 LIVE / AI / DH runtime / real provider。
 
 ## Adapter Readiness API
 
@@ -40,6 +42,16 @@ GateM-5A 新增的只读 adapter readiness 状态查询入口：
   - 覆盖 venue：`NOOP / PAPER / SIM / OKX / BINANCE`；覆盖 capability：`PUBLIC_MARKETDATA / SUBSCRIBE_BARS / SUBSCRIBE_TRADES / SUBSCRIBE_ORDERBOOK / PLACE_ORDER / CANCEL_ORDER / QUERY_ORDER / ACCOUNT_BALANCE / PERMISSION_PROBE`（5 × 9 = 45 条）。
   - 当前 baseline（no-real / LIVE disabled）行为：NOOP/PAPER/SIM → `status=NO_REAL`；OKX/BINANCE → `status=NOT_READY`；所有条目 `allowed=false`、`liveAuthorized=false`，无 `READY`；PLACE_ORDER/CANCEL_ORDER 带 `LIVE_DISABLED` 原因，PERMISSION_PROBE 带 `REAL_PROVIDER_NOT_IMPLEMENTED` 原因。
   - 边界：只读静态 readiness 决策；不触达 adapter delegate、不发起 HTTP/socket、不读取 env/credential、不触发下单/撤单/行情订阅；响应不含 secret/apiKey/token/signature/passphrase 或 raw payload。
+
+## Runtime Operational Readiness API
+
+GateM-6B 新增的只读运行边界与禁用能力摘要入口：
+
+- `GET /api/runtime/operational-readiness`：只读返回当前 runtime disabled capability / startup boundary summary。需要认证（bearerAuth），归属 `/api/**` 受保护路由。
+  - 响应：`{ generatedAt, liveStatus, aiStatus, dhRuntimeStatus, realProviderStatus, credentialExposureStatus, externalExchangeCallStatus, permissionProbeStatus, startupBoundaryStatus, profileBoundaryStatus, configDiagnosticsStatus, logDiagnosticsStatus }`。
+  - 每个 status item 含 `status / ready / reasonCode / reason`；当前 baseline 全部 `ready=false`，不得解释为 real-ready 或 LIVE authorization。
+  - 当前 baseline：`liveStatus=DISABLED`、`aiStatus=NOT_STARTED`、`dhRuntimeStatus=NOT_INTEGRATED`、`realProviderStatus=NOT_IMPLEMENTED`、`credentialExposureStatus=NOT_EXPOSED`、`externalExchangeCallStatus=DISABLED`、`permissionProbeStatus=SKIPPED`、`startupBoundaryStatus=SAFE_BY_DEFAULT`、`profileBoundaryStatus=SAFE_SUMMARY_ONLY`、`configDiagnosticsStatus=SAFE_SUMMARY_ONLY`、`logDiagnosticsStatus=SAFE_SUMMARY_ONLY`。
+  - 边界：safe DTO only；不返回 raw env / full config / credential material / provider payload；不触达 adapter、permission probe、HTTP client、DB、file、external exchange；不改变 actuator、adapter readiness、MarketData readiness、Trading、Paper Trading 或 scheduler 行为。
 
 ## Account Credential API
 

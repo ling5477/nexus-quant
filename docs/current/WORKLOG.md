@@ -1,3 +1,41 @@
+## NQ-GATEM-6B-DISABLED-CAPABILITY-SUMMARY-BACKEND-MVP（2026-06-30）
+
+状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
+
+本轮新增 GateM-6B 只读后端 MVP：`GET /api/runtime/operational-readiness`。该接口返回 safe DTO，不返回 raw env / full config / credential material / provider payload，不触发 adapter、permission probe、external exchange、DB、file 或 HTTP client。
+
+同步内容：
+
+- 新增 `OperationalReadinessResponse` / `OperationalReadinessStatusResponse` explicit DTO。
+- 新增 `OperationalReadinessService`，唯一实例依赖为 `Clock`；默认 fail-closed，所有 status item 均 `ready=false`。
+- 新增 `OperationalReadinessController`，只暴露 GET `/api/runtime/operational-readiness`。
+- 新增 `OperationalReadinessServiceTest`，覆盖 default fail-closed、disabled / no-real / skipped not-ready、reasonCode / reason 与 no runtime value。
+- 新增 `OperationalReadinessBoundaryTest`，用反射固定 service 不得引入 adapter / probe / exchange / client / DB / repository 协作者。
+- 新增 `OperationalReadinessControllerTest`，覆盖 HTTP 200、关键状态字段、响应不含 secret/token/passphrase/private key/cookie/signature/raw env。
+
+同步文件：
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/runtime/api/dto/OperationalReadinessResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/runtime/api/dto/OperationalReadinessStatusResponse.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/runtime/api/OperationalReadinessService.java`
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/runtime/api/web/OperationalReadinessController.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/runtime/api/OperationalReadinessServiceTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/runtime/api/OperationalReadinessBoundaryTest.java`
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/runtime/api/web/OperationalReadinessControllerTest.java`
+- `docs/current/API.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `docs/current/STATUS.md`
+- `docs/current/README.md`
+- `docs/current/NQ_GATEM_6_OPERATIONAL_READINESS_PLAN.md`
+
+验证：
+
+- `mvn -f backend/pom.xml -pl nq-api -am test`：PASS，`BUILD SUCCESS`。
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：PASS，`BUILD SUCCESS`；`nq-api` 新增 6B 测试均通过，`nq-app` 76/0/0/2 skipped 为既有条件 skip。
+
+边界：未修改 frontend / research / scripts / deploy / `.github` / migration；未改 actuator / adapter readiness / MarketData readiness / Trading / Paper Trading 行为；未新增 POST / mutation endpoint；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；未读取 credential material；未调用真实交易所。
+
 ## NQ-GATEM-6A-RUNTIME-HEALTH-CONFIG-PROFILE-OVERVIEW（2026-06-30）
 
 状态：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。
