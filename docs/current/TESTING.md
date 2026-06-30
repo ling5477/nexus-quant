@@ -1,3 +1,24 @@
+## NQ-DOCS-POST-GATEM-CURRENT-ARCHIVE-INVENTORY（2026-06-30）
+
+结论：**PASS / INVENTORY ONLY / READY TO COMMIT**。本轮只做 Post-GateM `docs/current` archive inventory；未移动、删除、重命名、stub、复制或归档任何文件；未改代码、API、migration、CI workflow、页面、E2E、LIVE、AI、DH runtime、RealClient、real provider、真实交易所或 credential material。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only inventory，不修改 backend / frontend / research / scripts / deploy / `.github` / migration，也不新增运行时行为。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` | PASS | 工作目录为 `F:\project\nexus-quant`。 |
+| `git status --short` | PASS | 写入前工作区 clean；写入后仅包含允许的 docs/current 文档变更。 |
+| `git branch --show-current` | PASS | 当前分支 `dev`。 |
+| `find docs/current -maxdepth 2 -type f -name "*.md"` | ATTEMPTED / FALLBACK PASS | `bash -lc "find ..."` 因本机 WSL/bash 不可用失败；Git for Windows `find.exe` 未安装，PowerShell 仅有 Windows `find.exe`（字符串搜索工具，不支持 `-maxdepth`）。已用 `Get-ChildItem` 等价清点 `docs/current/*.md` 与 `docs/current/frontend/*.md`；inventory 记录 97 + 19 = 116 份。 |
+| 指定 `rg` 阶段/边界搜索 | PASS | broad search 含历史 append-only 文档输出；未发现新增 LIVE / AI / DH runtime / RealClient / real provider 正向启用语义。 |
+| `git diff --check` | PASS | 无 whitespace error；如出现 CRLF warning，按既有 working-copy 行尾提示处理，不构成 whitespace failure。 |
+| `git diff --stat` | PASS | 仅新增 inventory 文档并最小同步 current README / TESTING / WORKLOG。 |
+| 禁止范围 diff | PASS | `frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。 |
+
+Boundary：本轮不是 docs/current cleanup Round 4；只是 Post-GateM stage transition archive inventory。任何实际移动、删除、归档或 link rewrite 都必须另起任务并单独授权。
+
 ## NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN（2026-06-30）
 
 结论：**PASS / PLAN ONLY / READY TO COMMIT**。本轮只做 GateN Public MarketData / Exchange Sandbox planning、exchange boundary review、security boundary review 和 current 文档同步；未新增代码、API、migration、CI workflow、frontend 页面、E2E、业务功能、LIVE、AI、DH runtime、RealClient、real provider、真实 public internet 默认路径或真实交易所能力。

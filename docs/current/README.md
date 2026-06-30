@@ -31,6 +31,7 @@ GateM release tag and archive 已完成：**PASS / COMPLETED / RELEASE TAG PUSHE
 - GateM release tag / archive：[NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md](NQ_GATEM_RELEASE_TAG_AND_ARCHIVE.md)
 - Next phase plan：[NQ_NEXT_PHASE_PLAN.md](NQ_NEXT_PHASE_PLAN.md)
 - GateN public marketdata sandbox plan：[NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md](NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md)
+- Post-GateM current archive inventory：[NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md](NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md)
 
 ## 文档治理权威基线
 

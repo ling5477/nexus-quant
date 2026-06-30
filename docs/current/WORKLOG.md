@@ -1,3 +1,36 @@
+## NQ-DOCS-POST-GATEM-CURRENT-ARCHIVE-INVENTORY（2026-06-30）
+
+状态：**PASS / INVENTORY ONLY / READY TO COMMIT**。
+
+本轮完成 Post-GateM `docs/current` archive inventory。范围为 `docs/current/*.md`、`docs/current/frontend/*.md`、root `README.md` 只读上下文，以及 current authority 文档读取；写入仅限新增 `NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md`，并在 `docs/current/README.md`、`TESTING.md`、`WORKLOG.md` 做最小索引/记录。
+
+清点结果：
+
+- `docs/current/*.md`：97 份。
+- `docs/current/frontend/*.md`：19 份。
+- 总 inventory rows：116。
+- 建议分类覆盖 `DO_NOT_TOUCH`、`KEEP_IN_CURRENT`、`KEEP_BUT_REVIEW_LATER`、`MOVE_TO_docs/gates/GateM`、`MOVE_TO_docs/gates/GateK`、`MOVE_TO_docs/gates/GateJ`、`MOVE_TO_docs/archive/superseded`。
+- GateM 相关 implementation / smoke / closeout / freeze / release / frontend evidence 建议后续进入 GateM archive plan review。
+- GateK 相关 CI / docs governance cleanup / architecture / security / credential governance evidence 建议后续进入 GateK archive plan review，但 CI current authority 和部分 backlog 文档需人工确认。
+- GateJ 三个 accepted known compatibility residual 只能在独立 link-rewrite proposal 后处理。
+- GateL / old route 文档建议作为 superseded historical evidence，不能再作为 current route。
+
+边界：
+
+- 未移动、删除、重命名、stub、复制或归档任何文件。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration。
+- 未新增 API、页面、E2E、CI workflow 或业务功能。
+- 未开启 LIVE，未接 AI / DH runtime，未实现 RealClient / real provider / real permission probe，未调用真实交易所，未读取或输出 credential material。
+- 未把 GateN 写成 implementation started，未把 public marketdata sandbox 写成 trading authorization。
+
+验证：
+
+- 已运行写入前 `Get-Location` / `git status --short` / `git branch --show-current`。
+- 已尝试执行 `find docs/current -maxdepth 2 -type f -name "*.md"`；因本机 WSL/bash 不可用且 Git for Windows `find.exe` 未安装，改用 PowerShell `Get-ChildItem` 等价清点。已执行指定 `rg` 阶段/边界搜索、`git diff --check`、`git diff --stat`、禁止范围 diff。
+- 未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是 docs-only inventory，没有代码或运行时行为变更。
+
+下一步：建议进入 `NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-PLAN-REVIEW`，先只规划 GateM archive target / link rewrite / rollback；实际移动必须另行授权。
+
 ## NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN（2026-06-30）
 
 状态：**PASS / PLAN ONLY / READY TO COMMIT**。
