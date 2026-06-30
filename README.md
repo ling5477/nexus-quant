@@ -19,14 +19,14 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ completed（详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`）
 - GateK finalized / frozen / archived / tagged（tag：`nq-gatek-freeze`）
 - GateM = Exchange / MarketData Runtime Readiness
-- GateM runtime readiness started / partially implemented（GateM-0..5C 事实见 `docs/current/`）
+- GateM runtime readiness FROZEN / ACCEPTED（no-real runtime readiness baseline；GateM-1..6 事实见 `docs/current/`）
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
 - LIVE disabled
 - RealClient / real provider / real exchange adapter not implemented
 
-GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM-0..5C 已记录运行时 readiness 模型、guard、只读 API、前端面板和真实后端 E2E 的 fail-closed 事实；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
+GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM 已冻结为 no-real runtime readiness baseline：adapter readiness、MarketData readiness、NoReal contract、Paper-to-Real boundary、Runtime Guarded UI 和 Operational Readiness 均已收口；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
 
 ## 当前能力摘要
 
@@ -39,7 +39,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - Paper Trading 风控回写、资金曲线、持仓曲线、交易复盘、异常停机最小结构已完成（GateI）。
 - Paper Trading 调度 / 心跳 / 日报 / 告警 / 恢复事件 / 稳定性验收结构 / HEARTBEAT_LAG / SCHEDULE_FIRE_FAILED 自动告警最小落库已完成（GateJ-1/2/3）。
 - GateJ-FREEZE 30m / 1h / 24h / 7d 连续运行验收已通过，GateJ completed。
-- GateM Exchange / MarketData Runtime Readiness 已启动并部分实现：adapter readiness service / guard / status API / readiness panel / backend E2E 均保持 fail-closed，不授权 real exchange / LIVE。
+- GateM Exchange / MarketData Runtime Readiness 已 FROZEN / ACCEPTED：adapter readiness service / guard / status API / readiness panel / MarketData readiness / operational readiness / backend E2E 均保持 fail-closed，不授权 real exchange / LIVE。
 
 ## 当前明确不做
 
