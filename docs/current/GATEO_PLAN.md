@@ -12,7 +12,7 @@
 - GateK：`VERIFIED`（已验证）。
 - GateM：`VERIFIED`（已验证）。
 - GateN：`PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`（部分验证 / 已显式接受 CI 可见性残留）。GateN tag / archive / local freeze validation / later dev CI 存在，但 `nq-gaten-freeze` tagged commit `361d2ac7bb595f72067b0e2c2d0485361e9a0540` 的 direct CI run 未定位，不能把 GateN 写成完整 `VERIFIED`。
-- `NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION` 已完成并提交，当前 HEAD 为 `bd745561 docs(governance): reconcile GateJ-K-M-N freeze evidence`。
+- `NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION` 已完成并提交，是 GateO planning-only 入场边界证据；本文件后续只记录 GateO O-0 / O-1 的计划与审查状态，不把瞬时 `HEAD` 写成长期事实。
 
 当前禁止能力保持不变：
 
@@ -87,7 +87,7 @@ GateO 不是 DH runtime 接入阶段。
 | Batch | 名称 | 状态 | 目标 | 明确不做 |
 | --- | --- | --- | --- | --- |
 | O-0 | GateO Plan | `PASS / PLAN ONLY / NOT IMPLEMENTED` | 建立 GateO 目标、非目标、批次、验收和安全边界 | 不改代码、不改 CI、不真实外联 |
-| O-1 | Public MarketData Controlled Outbound Plan | `PLANNED / NOT STARTED`（已规划 / 未开始） | 规划 OKX / Binance public REST only 受控外联 | 不实现 HTTP client、不进默认 CI |
+| O-1 | Public MarketData Controlled Outbound Plan | `REVISION COMPLETED / READY FOR REVIEW / NOT IMPLEMENTED`（修订已完成 / 可重新审查 / 未实现） | 补齐 OKX / Binance public REST only 受控外联的 official docs baseline、allowlist/denylist、manual profile、redaction/rollback、rate limit/timeout/retry、Data Quality linkage 与 acceptance criteria；implementation 仍需重新 review 通过后才允许开始 | 不实现 HTTP client、不进默认 CI、不执行真实 public smoke |
 | O-2 | Data Quality Center Plan | `PLANNED / NOT STARTED` | 规划 source health / freshness / gap / latency / error rate 数据质量中心 | 不新增表、不新增 API、不改 UI |
 | O-3 | MarketData Runtime Readiness API Plan | `PLANNED / NOT STARTED` | 基于现有 readiness/source/quality 模型规划 API 收口 | 不重复造接口、不实现接口 |
 | O-4 | MarketData Quality UI Plan | `PLANNED / NOT STARTED` | 规划数据质量 UI 与图表选型 | 不新增页面、不做 mock AI/DH/LIVE |
@@ -125,6 +125,295 @@ O-1 不得产出：
 - credential lookup。
 - permission probe。
 - trading authorization。
+
+### 6.1 O-1 Plan Review（2026-07-01）
+
+任务：`NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW`。
+
+Review verdict：`FAIL`（未通过）/ `PLAN REVIEWED`（计划已审查）/ `NOT IMPLEMENTED`（未实现）/ `IMPLEMENTATION BLOCKED`（实现阻塞）。
+
+结论：O-1 的方向是安全的，已经保持 public-only、no credential、no signed route、默认 no-egress 和 trading authorization 禁止边界；但当前 O-1 仍只是高层 checklist，没有形成可进入 implementation 的受控外联基线。O-1 implementation 不允许开始。
+
+已审查证据：
+
+- `docs/current/GATEO_PLAN.md` O-0 baseline 与 O-1 高层规划。
+- `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md` 中 GateN residual 与 GateO planning-only 入场边界。
+- 现有 `GET /api/marketdata/readiness`、MarketData readiness service / repository、frontend marketdata client 与 `.github/workflows/ci.yml` no-outbound / redaction / secret-scan baseline。
+- GateN historical official-docs inventory 与 no-egress sandbox evidence，只作为历史参考，不替代 GateO O-1 的 current review baseline。
+
+P0 findings：0。
+
+P1 findings：
+
+1. Official docs baseline 不完整：当前 O-1 只要求“协议事实必须来自交易所官方文档”和“产出官方文档入口与版本记录”，但没有列出 GateO O-1 自身的官方文档名称、用途、访问日期、版本/维护状态、引用范围和不得引用范围。
+2. Public REST allowlist 不完整：当前 O-1 只写 `OKX / Binance public REST only`，没有冻结候选类别 allowlist。后续 O-1 必须至少明确 OHLCV / klines / candlesticks、ticker、instrument / symbol metadata、exchange status / server time、market capability metadata；不得把 private WebSocket、signed route 或 user data stream 夹入 allowlist。
+3. Private endpoint denylist 不完整：当前 O-1 已禁止 account / order / balance / withdraw / transfer、private WebSocket、signed route 和 permission probe，但尚未完整列出 cancel、amend、position、deposit、subaccount、API key / secret / passphrase、signed request、anything requiring authentication 等禁止类别。
+4. Manual profile / feature flag 不完整：当前 O-1 只要求显式 profile，尚未给出 profile / feature flag 名称、默认关闭值、关闭路径、不得读取 credential、不得启用 LIVE、不得接 private adapter、不得进入默认 CI 的验收表达。
+5. Redaction / rollback 规则不完整：当前 O-1 只列出 request/response redaction 与 rollback / disable switch 的必产项，尚未冻结“不记录完整 request/response body、不记录 raw headers、不记录 query string、不上传 raw response artifact、日志只保留 source / endpoint category / status / error category / latency / traceId”的最小规则。
+
+P2 findings：
+
+1. Rate limit / timeout / retry 只有方向，没有默认 timeout、有限 retry 次数、backoff/circuit breaker 条件、`429 -> DEGRADED / RATE_LIMITED`、`5xx -> ERROR / TEMPORARY_FAILURE`、stale 数据不可误判 fresh 的验收规则。
+2. Data Quality linkage 已列 source health / freshness / gap / latency / error rate，但尚未把 O-1 outbound result 明确映射到 O-2 source health / freshness / gap / latency / error rate 的降级语义。
+3. Existing API / adapter reuse 仍需细化：现有 `/api/marketdata/readiness` 是 DB-only read model，可优先扩展质量语义；历史 OKX / Binance `HistoricalKlineAdapter` 是 network-capable legacy path，不能直接写成 current real provider enabled。
+4. O-1 implementation acceptance criteria 需要补齐无 credential、无 signed request、无 private endpoint、默认 no-egress 不破坏、CI 不真实外联、manual profile 明确、allowlist/denylist 生效、redaction 生效、failure downgrade 生效、public marketdata 不等于 trading authorization 的逐项验收。
+
+P3 findings：
+
+- O-1 与 O-5 都提到 manual public outbound smoke。后续修订应把 O-1 限定为“设计与实现准入 plan”，把真实 public outbound smoke 留到 O-5 手动阶段，避免读者误以为 O-1 会执行真实外联。
+
+分项 verdict：
+
+| 项目 | Verdict | 说明 |
+| --- | --- | --- |
+| Official docs baseline | `FAIL`（未通过） | 没有 GateO O-1 自身的官方文档入口、访问日期、版本/维护状态和引用范围。 |
+| Public REST allowlist | `FAIL`（未通过） | 只有 public REST only 方向，没有冻结具体公开只读类别。 |
+| Private endpoint denylist | `CONDITIONAL FAIL`（有条件未通过） | 已有禁止方向，但 denylist 不完整。 |
+| Manual profile / no-egress | `CONDITIONAL PASS`（有条件通过） | 默认 no-egress 边界清楚；manual profile 名称、flag 与关闭路径缺失。 |
+| Redaction / rollback | `CONDITIONAL FAIL`（有条件未通过） | 已要求 redaction/rollback，但最小日志字段、raw artifact 禁止和 query/header 脱敏规则未冻结。 |
+| Rate limit / timeout / retry | `FAIL`（未通过） | 缺少可验收的默认值、有限重试、429/5xx 降级语义。 |
+| Data quality linkage | `CONDITIONAL PASS`（有条件通过） | O-2 字段方向正确，但 O-1 result 到 source health 语义仍需映射。 |
+| Existing API / adapter boundary | `CONDITIONAL PASS`（有条件通过） | 已声明优先复用 readiness；仍需避免复用 legacy network-capable adapter 时越过 GateO guard。 |
+| Acceptance criteria | `FAIL`（未通过） | 缺少 O-1 implementation 前逐项验收清单。 |
+
+是否允许 O-1 implementation start：**NO**（不允许）。下一步必须先修订 O-1 plan，使 P1=0，并重新执行 `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW`。
+
+### 6.2 O-1 Plan Revision（2026-07-01）
+
+任务：`NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION`。
+
+Revision status：`REVISION COMPLETED`（修订已完成）/ `READY FOR REVIEW`（可重新审查）/ `NOT IMPLEMENTED`（未实现）。本节只把 O-1 从高层 checklist 修订为可复审的计划基线，不启动 implementation。O-1 implementation 仍必须等待后续 plan review 通过；在 review 通过前继续视为 blocked。
+
+#### 6.2.1 Official Docs Baseline
+
+O-1 协议事实只能来自 OKX / Binance 官方文档入口。本轮只记录官方文档 baseline，不复制大段官方协议正文，不调用任何交易所 API endpoint，不访问需要登录或 API key 的页面。
+
+| Exchange | Official docs entry | Access date | O-1 usage | Reference scope | Explicitly out of scope |
+| --- | --- | --- | --- | --- | --- |
+| OKX | OKX API v5 docs：<https://www.okx.com/docs-v5/en/> | 2026-07-01 | public REST endpoint 定义、public WebSocket 是否后置、rate limit、instrument metadata、kline/candlestick、ticker、server time / exchange status、error code / response shape | 仅引用 public data、market data、status 与错误响应相关官方章节；implementation 前必须重新打开官方页面确认 path、参数、分页、时间戳单位、频率限制与废弃状态 | account、balance、order、cancel、amend、positions、wallet、transfer、withdraw、private WebSocket、API key / signature、permission probe real execution |
+| Binance | Binance Spot REST market data endpoints：<https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints> | 2026-07-01 | public instruments/symbol metadata、OHLCV / kline、ticker、order book / aggregated trades candidate、权重/限制和 response shape | 仅引用 Spot public market data endpoints；implementation 前必须重新确认 request weight、symbol 参数、时间窗口、limit 与错误语义 | signed account/order endpoints、user data stream、wallet、transfer、withdraw、margin/loan、API key validation、permission probe real execution |
+| Binance | Binance Spot REST general endpoints：<https://developers.binance.com/docs/binance-spot-api-docs/rest-api/general-endpoints> | 2026-07-01 | public server time、exchange status / system status 候选、通用 response / error handling 补充 | 仅引用无需 credential 的 general endpoint；如官方文档将某状态 endpoint 标为非 public、需 API key 或迁移到 private/SAPI 受限入口，则 O-1 自动禁止 | 任何 signed endpoint、需要 API key 的 endpoint、账号或钱包类 general/SAPI endpoint |
+| Binance | Binance Spot WebSocket streams：<https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams> | 2026-07-01 | 仅用于确认 public WebSocket 后置范围和不得误入 O-1 最小实现 | O-1 只记录 WebSocket 后置，不实现 WebSocket，不进入 O-1 最小 public REST implementation | private/user data stream、listenKey、account/order update stream |
+
+引用规则：
+
+- 禁止把第三方 SDK、博客、旧经验、历史 spike 或历史 live-0 证据当作协议事实来源。
+- GateN historical official-docs inventory 只能作为查找线索；GateO O-1 implementation 前必须重新以本节 official docs baseline 为准。
+- 若官方文档之间存在冲突，以 implementation 当日官方页面为准，并在 O-1 review 中记录冲突与取舍。
+
+#### 6.2.2 Public REST Allowlist
+
+O-1 最小实现优先只允许 OHLCV / instruments / ticker / server time。order book、recent trades / aggregated trades 即使 public，也默认后置，除非后续 review 明确纳入。public WebSocket 默认后置，不进入 O-1 最小实现。O-1 不允许任何 signed endpoint。
+
+| Exchange | Category | Official doc source | Allowed endpoint family | Purpose | Auth required | O-1 status |
+| --- | --- | --- | --- | --- | --- | --- |
+| OKX | public server time | OKX API v5 docs / Public Data | `/api/v5/public/time` | 校验交易所时间与本地采集时间差 | No | `MINIMUM_ALLOWLIST` |
+| OKX | public exchange status | OKX API v5 docs / Status | `/api/v5/system/status` | 只读判断官方系统状态，作为 source health 降级输入 | No | `MINIMUM_ALLOWLIST` |
+| OKX | public instruments metadata | OKX API v5 docs / Public Data | `/api/v5/public/instruments` | 获取 SPOT instrument metadata、tick/lot/状态等候选字段 | No | `MINIMUM_ALLOWLIST` |
+| OKX | public ticker | OKX API v5 docs / Market Data | `/api/v5/market/ticker`、`/api/v5/market/tickers` | 获取只读 ticker 快照 | No | `MINIMUM_ALLOWLIST` |
+| OKX | public OHLCV / kline / candlestick | OKX API v5 docs / Market Data | `/api/v5/market/candles`、`/api/v5/market/history-candles` | 获取 public OHLCV K 线数据 | No | `MINIMUM_ALLOWLIST` |
+| OKX | public trades aggregated summary | OKX API v5 docs / Market Data | `/api/v5/market/trades` | 只读 recent trades summary，若纳入必须限制窗口、脱敏并映射为 diagnostic | No | `OPTIONAL_LATER` |
+| OKX | public order book snapshot | OKX API v5 docs / Market Data | `/api/v5/market/books`、`/api/v5/market/books-lite` | 只读 order book snapshot，用于 future quality diagnostics | No | `OPTIONAL_LATER` |
+| Binance | public server time | Binance Spot general endpoints | `/api/v3/time` | 校验交易所时间与本地采集时间差 | No | `MINIMUM_ALLOWLIST` |
+| Binance | public exchange status | Binance Spot general endpoints | public system / exchange status endpoint only if official docs confirm unauthenticated access | 只读判断官方系统状态，作为 source health 降级输入 | No, must be confirmed | `CANDIDATE_REVIEW_REQUIRED` |
+| Binance | public instruments / symbols metadata | Binance Spot market data endpoints | `/api/v3/exchangeInfo` | 获取 symbol metadata、filters、trading status 等候选字段 | No | `MINIMUM_ALLOWLIST` |
+| Binance | public ticker | Binance Spot market data endpoints | `/api/v3/ticker/price`、`/api/v3/ticker/24hr` | 获取只读 ticker 快照 | No | `MINIMUM_ALLOWLIST` |
+| Binance | public OHLCV / kline / candlestick | Binance Spot market data endpoints | `/api/v3/klines`、`/api/v3/uiKlines` | 获取 public OHLCV K 线数据 | No | `MINIMUM_ALLOWLIST` |
+| Binance | public trades aggregated summary | Binance Spot market data endpoints | `/api/v3/aggTrades` | 只读 aggregated trades summary，若纳入必须限制窗口、脱敏并映射为 diagnostic | No | `OPTIONAL_LATER` |
+| Binance | public order book snapshot | Binance Spot market data endpoints | `/api/v3/depth` | 只读 order book snapshot，用于 future quality diagnostics | No | `OPTIONAL_LATER` |
+
+Allowlist enforcement rules：
+
+- 新增 endpoint 必须先证明属于 official public unauthenticated REST，并在 plan review 中补入本表。
+- `OPTIONAL_LATER` 不属于 O-1 最小实现，不能被 implementation 默认带入。
+- public WebSocket、private WebSocket、user data stream、listenKey 或任何 signed route 均不在 O-1 allowlist。
+- public marketdata readiness 只能表达数据诊断状态，不能表达 trading authorization。
+
+#### 6.2.3 Private Endpoint Denylist
+
+O-1 denylist 采用 fail-closed：任何未列入 allowlist 的 endpoint 都默认禁止；任何需要 credential / signature / API key / secret / passphrase 的 endpoint 自动禁止。
+
+禁止类别：
+
+- account。
+- balance。
+- order。
+- cancel。
+- amend。
+- positions。
+- trade private history。
+- wallet。
+- transfer。
+- withdraw。
+- deposit。
+- subaccount。
+- margin / leverage / loan。
+- private WebSocket。
+- user data stream / listenKey。
+- API key validation。
+- permission probe real execution。
+- signed request。
+- any endpoint requiring API key / secret / passphrase / signature。
+
+补充规则：
+
+- permission probe real execution 不属于 GateO；真实 permission probe 必须另起 Gate 和安全审查。
+- 历史 OKX / Binance private adapter、credential governance、permission probe no-real baseline 不能被 O-1 转译为 current real provider enabled。
+- 若某官方页面同时包含 public 与 private sections，O-1 只允许引用 public unauthenticated REST 部分。
+
+#### 6.2.4 Manual Profile / Feature Flag
+
+O-1 固定采用以下名称：
+
+```text
+spring.profiles.active=public-marketdata-manual
+NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=false
+```
+
+启用条件：
+
+1. 默认 local / test / CI / paper / freeze profile 下 outbound disabled。
+2. 只有 `public-marketdata-manual` profile 与 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true` 同时成立，后续 O-1 implementation 才能允许 public outbound candidate。
+3. manual profile 不读取 credential。
+4. manual profile 不开启 LIVE。
+5. manual profile 不启用 RealClient / real provider。
+6. manual profile 不启用 private adapter。
+7. manual profile 可一键关闭：移除 `public-marketdata-manual` profile 或把 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=false`。
+8. 关闭后 fallback 到 `LOCAL_DB` / `FIXTURE` / `FAKE_SERVER`。
+9. manual profile 不进入默认 CI。
+10. O-5 之前不得执行真实 public smoke；O-1 只做设计和实现准入 plan。
+
+#### 6.2.5 Redaction / Logging Minimum Rules
+
+O-1 后续实现必须最小化日志与 artifact：
+
+1. 不记录 raw request body。
+2. 不记录 raw response body。
+3. 不记录 raw headers。
+4. 不记录 full query string。
+5. 不记录 credential material。
+6. 即使 public endpoint 不需要 credential，也必须防止未来 header/token 混入日志。
+7. 允许记录字段仅限：`exchange`、`source_type`、`endpoint_category`、`status_code`、`error_category`、`latency_ms`、`trace_id`、`request_id`、`data_window`、`row_count`。
+8. 不上传 raw response artifact。
+9. 不把 public outbound response 原文写入 `TESTING.md` / `WORKLOG.md`。
+10. 错误日志必须脱敏，只保留错误类别、状态码、endpoint category 和 trace/request id。
+
+#### 6.2.6 Rollback / Disable Rules
+
+O-1 后续实现必须具备无 migration 回滚路径：
+
+1. 关闭 feature flag：`NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=false`。
+2. 下线 profile：移除 `public-marketdata-manual`。
+3. source disable：将 public source 标为 `DISABLED`，停止新的 public outbound candidate。
+4. adapter fallback：回退到 `LOCAL_DB` / `FIXTURE` / `FAKE_SERVER`。
+5. stale / error / degraded 状态降级：只影响 Data Quality diagnostics，不影响交易链路。
+6. public outbound 失败不影响 Paper / no-real baseline。
+7. public outbound 失败不得启用 private trading。
+8. public outbound 失败不得让 readiness 变成 trading-ready。
+9. 回滚后可继续使用 `LOCAL_DB` / `FIXTURE` / `FAKE_SERVER`。
+10. 回滚不需要 migration，不修改历史 migration。
+
+#### 6.2.7 Rate Limit / Timeout / Retry Safety Baseline
+
+默认值是 NQ safety baseline，不是交易所协议事实；最终实现必须以 official docs 的频率限制为准。默认值只用于 O-1 设计审查与 future implementation 起点。
+
+| Item | Default | Failure / status mapping | Boundary |
+| --- | --- | --- | --- |
+| connect timeout | 3s | `TIMEOUT / DEGRADED` | 不得无限等待 |
+| read timeout | 5s | `TIMEOUT / DEGRADED` | 不得阻塞 Paper/no-real baseline |
+| total request timeout | 8s | `TIMEOUT / DEGRADED` | 含连接、读取和解析预算 |
+| retry | max 2 retries | retry exhausted -> `TEMPORARY_FAILURE / ERROR` | 不得无限重试 |
+| backoff | 500ms / 1000ms 或指数退避等价实现 | backoff exhausted -> degraded/error | 不得绕过 no-egress |
+| 429 | no immediate aggressive retry | `RATE_LIMITED / DEGRADED` | 遵守官方限制，不扩大 endpoint |
+| 408 / timeout | bounded retry only | `TIMEOUT / DEGRADED` | 不得访问 private endpoint |
+| 5xx | bounded retry only | `TEMPORARY_FAILURE / ERROR` | 不得提升为 healthy |
+| malformed response | no retry unless review accepts | `INVALID_RESPONSE` | 不上传 raw response artifact |
+| stale data | no success promotion | `STALE` | stale 不等于 fresh |
+| gap detected | no success promotion | `GAP` | gap 不等于 healthy |
+| disabled | no outbound | `DISABLED` | flag/profile 关闭后必须立即生效 |
+
+Retry 不能绕过 no-egress、不能访问 private endpoint、不能触发 signed request、不能把 public endpoint 失败升级为 trading-ready。
+
+#### 6.2.8 O-1 To O-2 Data Quality Linkage
+
+O-1 的 outbound result 只作为 O-2 Data Quality Center 的诊断输入。数据成功拉取不等于数据可靠；数据可靠不等于可以交易；marketdata readiness 不等于 trading authorization。
+
+| O-1 event/result | O-2 field/status |
+| --- | --- |
+| success | `source_health=HEALTHY` |
+| latency high | `source_health=DEGRADED` |
+| 429 | `source_health=RATE_LIMITED` |
+| timeout | `source_health=DEGRADED / TIMEOUT` |
+| 5xx | `source_health=ERROR` |
+| stale kline | `freshness=STALE` |
+| missing interval | `gap_count > 0` |
+| disabled flag | `source_status=DISABLED` |
+| fallback used | `data_origin=LOCAL_DB / FIXTURE / FAKE_SERVER` |
+| malformed response | `source_health=ERROR` and `error_category=INVALID_RESPONSE` |
+| public endpoint not allowlisted | `source_status=DISABLED` and `error_category=ENDPOINT_NOT_ALLOWLISTED` |
+
+#### 6.2.9 Existing API / Legacy Adapter Reuse Boundary
+
+只读梳理结果：
+
+1. 现有 MarketData API 包括 `GET /api/marketdata/readiness`、`GET /api/marketdata/bars`、`POST /api/marketdata/ingestion-jobs`、`GET /api/marketdata/ingestion-jobs`、`GET /api/marketdata/ingestion-jobs/{jobId}`、`GET /api/marketdata/ingestion-jobs/{jobId}/runs`、`POST /api/marketdata/ingestion-jobs/{jobId}/run-once`、`GET /api/marketdata/datasets`、`POST /api/marketdata/datasets`、`GET /api/marketdata/datasets/{datasetId}`、`POST /api/marketdata/datasets/{datasetId}/refresh-quality`，以及 test/local fixture ingestion 入口。
+2. 现有 readiness/source/quality 模型存在：`GET /api/marketdata/readiness` 当前基于本地 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` 聚合 `status`、`freshnessStatus`、`sourceHealthStatus`、`sourceHealthReason`、`qualityStatusSummary`、`barCount`、`expectedBarCount`、`gapCount`、`unknownQualityCount`、`lastSuccessAt`、`lastFailureAt`、`backendSupportLevel`、`generatedAt`。
+3. O-1 implementation 应优先扩展现有 readiness/source/quality 语义或在 O-2/O-3 规划后补字段，不应重复造 readiness API；任何新 endpoint 仍需单独 API contract plan review。
+4. 历史 OKX / Binance `HistoricalKlineAdapter`、历史 spike、历史 live-0 和 GateN fixture evidence 只能作为 historical evidence。
+5. 不能把历史实盘 0、legacy adapter 或 network-capable historical kline path 写成当前 real provider enabled。
+6. 不能把 legacy adapter 直接变成 GateO public outbound implementation；后续若复用，必须先套入 O-1 allowlist、manual profile、feature flag、redaction、timeout/retry、no-egress 与 rollback guard。
+7. 不能重复造 readiness API，除非 O-3 证明现有模型无法承载，并完成单独 review。
+
+#### 6.2.10 O-1 Implementation Acceptance Criteria
+
+O-1 implementation 只有在后续 review 通过后才允许开始；implementation 结束时至少逐项满足：
+
+1. official docs baseline complete。
+2. allowlist complete。
+3. denylist complete。
+4. manual profile fixed：`public-marketdata-manual`。
+5. feature flag fixed：`NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=false` default。
+6. default no-egress intact。
+7. no credential。
+8. no signed request。
+9. no private endpoint。
+10. no LIVE。
+11. no RealClient。
+12. no permission probe real execution。
+13. no CI public outbound。
+14. redaction rules documented and implemented。
+15. rollback rules documented and implemented。
+16. rate limit / timeout / retry baseline documented and bounded。
+17. O-2 mapping documented。
+18. existing API reuse decision documented。
+19. O-5 manual smoke not started。
+20. public marketdata 不等于 trading authorization。
+
+#### 6.2.11 P1 / P2 / P3 Closure
+
+P1 closure：
+
+| Finding | Closure in revision |
+| --- | --- |
+| Official docs baseline 不完整 | §6.2.1 固定 OKX / Binance official docs entry、用途、访问日期、引用范围和禁止来源。 |
+| Public REST allowlist 不完整 | §6.2.2 分交易所列出 minimum allowlist、optional later 与 candidate review required。 |
+| Private endpoint denylist 不完整 | §6.2.3 固定 fail-closed denylist 和 credential/signature 自动禁止规则。 |
+| Manual profile / feature flag 不完整 | §6.2.4 固定 `public-marketdata-manual` 和 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=false`。 |
+| Redaction / rollback 规则不完整 | §6.2.5 / §6.2.6 固定最小日志字段、raw artifact 禁止和关闭/回滚路径。 |
+
+P2 closure：
+
+| Finding | Closure in revision |
+| --- | --- |
+| Rate limit / timeout / retry 默认值不足 | §6.2.7 固定 NQ safety baseline、错误映射、有限 retry 和 no-egress/private endpoint 边界。 |
+| O-1 result 到 O-2 映射不足 | §6.2.8 固定 outbound result 到 source health / freshness / gap / source status / data origin 的映射。 |
+| existing API / legacy adapter 复用边界不足 | §6.2.9 记录现有 API、readiness 模型、legacy adapter historical-only 与复用条件。 |
+| acceptance criteria 不够逐项 | §6.2.10 固定 20 条 implementation acceptance criteria。 |
+
+P3 closure：
+
+- O-1 只做 design / implementation entry plan 和后续最小 implementation 准入；真实 public outbound smoke 保留到 O-5 manual stage，不在 O-1 执行，不进入默认 CI。
 
 ## 7. O-2 Data Quality Center Plan
 
@@ -249,7 +538,7 @@ P0 触发条件：
 
 后续批次测试策略：
 
-- O-1 plan review：只做文档、endpoint allowlist/denylist、no-egress 规则与官方文档证据审查。
+- O-1 plan review：已完成，结论为 `FAIL / PLAN REVIEWED / NOT IMPLEMENTED / IMPLEMENTATION BLOCKED`；后续必须先补齐官方文档基线、allowlist/denylist、manual profile、redaction/rollback、rate limit/timeout/retry 与 acceptance criteria，再重新 review。
 - O-2 plan review：审查字段语义、数据来源、质量状态和误导性 wording。
 - O-3 API plan review：审查是否复用现有 `/api/marketdata/readiness`，并确认 candidate endpoint 不被写成当前 API。
 - O-4 UI plan review：审查 UI copy 是否避免 real-ready / live-ready / trading-authorized。
@@ -331,7 +620,7 @@ P3：
 
 推荐下一步：
 
-1. `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW`：只做 O-1 plan review，官方文档、allowlist/denylist、manual profile、no-egress default 与 rollback 先冻结。
+1. `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION`：只修订 O-1 plan 文档基线，补齐 official docs、allowlist/denylist、manual profile、no-egress default、redaction/rollback、rate limit/timeout/retry 和 acceptance criteria；不做实现、不真实外联。
 2. `NQ-GATEO-O2-DATA-QUALITY-CENTER-PLAN-REVIEW`：只做字段、状态、来源、freshness/gap/latency/error rate 语义审查。
 3. `NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN-REVIEW`：只做 API contract plan，优先复用现有 readiness。
 4. `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN-REVIEW`：只做 UI 信息架构与 wording 审查。

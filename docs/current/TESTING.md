@@ -1,3 +1,47 @@
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION（2026-07-01）
+
+结论：**REVISION COMPLETED / READY FOR REVIEW / NOT IMPLEMENTED**。含义：`REVISION COMPLETED`（修订已完成）、`READY FOR REVIEW`（可重新审查）、`NOT IMPLEMENTED`（未实现）。本轮只做 O-1 public marketdata controlled outbound plan revision 与允许范围内文档状态同步，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置，不实现 public outbound，不调用真实交易所 API endpoint。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 仅显示允许范围内 `README.md` 与 `docs/current/**` Markdown 文档变更。 |
+| Official docs HEAD checks | PASS | `Invoke-WebRequest -Method Head` 仅访问官方文档页面：OKX docs、Binance Spot market data docs、Binance general endpoints docs、Binance WebSocket docs 均返回 200；未访问交易所 API endpoint。 |
+| `README.md` / `docs/current/README.md` / `STATUS.md` / `ROADMAP.md` / `TESTING.md` / `WORKLOG.md` / `GATEO_PLAN.md` / `API.md` | PASS / REVIEWED | 复核 GateO O-0 completed、O-1 review fail、O-1 revision 目标、current API 与 docs-only 同步位置。 |
+| MarketData API / readiness / legacy adapter 只读复核 | PASS / REVIEWED | 复核 `MarketdataController`、`HistoricalKlineAdapter`、`AdapterHistoricalKlineProvider`、OKX/Binance historical kline adapters；确认现有 readiness 为 DB/ingestion facts 聚合，legacy adapter 不能直接写成 GateO real provider enabled。 |
+| `git diff --check` | PASS | 退出码 0；仅出现 Windows LF/CRLF working-copy warning，按非阻塞提示记录。 |
+| `git diff --stat` | PASS | diff 仅为允许范围内 docs/current 与 root README 文档变更。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 禁止范围 diff 为空。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮只做 docs-only plan revision 与状态同步，不改代码、workflow、测试、migration、API、页面或运行时配置。
+
+Boundary：未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API、页面、E2E、CI workflow、migration、provider、RealClient、adapter skeleton、fake-server runtime、public outbound 或 real permission probe；未读取或输出 credential material；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API endpoint；未开启 LIVE、AI 或 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW（2026-07-01）
+
+结论：**FAIL / PLAN REVIEWED / NOT IMPLEMENTED / IMPLEMENTATION BLOCKED**。含义：`FAIL`（未通过）、`PLAN REVIEWED`（已审查）、`NOT IMPLEMENTED`（未实现）、`IMPLEMENTATION BLOCKED`（实现阻塞）。本轮只做 docs/security boundary review 与允许范围内文档状态同步，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置，不实现 public outbound，不调用真实交易所。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写前 clean；写后仅显示允许范围内 Markdown 文档变更。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git log --oneline -5` | PASS | HEAD 为 `77ec3bc2 docs(gateo): plan public marketdata controlled outbound`。 |
+| GateO O-1 attachment read | PASS / REVIEWED | 已读取 `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW` 任务附件，确认 review-only、allowed files 与 forbidden scope。 |
+| `nq-dh-workflow-router` / `nq-docs-writer` skill files | PASS / REVIEWED | 已读取 active skills，按 Gate / docs-only / no-real / no-egress 边界执行。 |
+| `README.md` / `docs/current/README.md` / `STATUS.md` / `ROADMAP.md` / `TESTING.md` / `WORKLOG.md` / `GATEO_PLAN.md` / `NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md` | PASS / REVIEWED | 确认 GateO O-0 completed、O-1 not implemented、GateN residual、LIVE/AI/DH/RealClient/real provider/permission probe 禁止边界。 |
+| MarketData API / readiness / adapter / frontend / CI 只读复核 | PASS / REVIEWED | 复核现有 `/api/marketdata/readiness` DB-only read model、MarketData readiness service/repository、frontend marketdata client、历史 OKX/Binance network-capable adapter 与 `.github/workflows/ci.yml` no-outbound / redaction / secret-scan baseline；未修改这些文件。 |
+| `rg` / `Select-String` GateO / O-1 / marketdata / official-docs / no-egress / private endpoint / redaction / readiness 关键词 | REVIEWED | 输出用于定位 O-1 plan gaps；结论为 P0=0、P1=5、P2=4。 |
+| `git diff --check` | PASS | 退出码 0；仅出现 Windows LF/CRLF working-copy warning，按非阻塞提示记录。 |
+| `git diff --stat` | PASS | diff 仅为允许范围内 docs/current 与 root README 文档变更。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 禁止范围 diff 为空。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮只做 docs-only plan review 与状态同步，不改代码、workflow、测试、migration、API、页面或运行时配置。
+
+Boundary：未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API、页面、E2E、CI workflow、migration、provider、RealClient、adapter skeleton、fake-server runtime、public outbound 或 real permission probe；未读取或输出 credential material；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未开启 LIVE、AI 或 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND（2026-07-01）
 
 结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。含义：`PASS`（通过）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。本轮只做 GateO O-0 planning baseline 与 current/root 文档同步，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置，不实现 public outbound。

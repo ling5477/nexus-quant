@@ -35,6 +35,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - NQ-GATEN-RELEASE-TAG-AND-ARCHIVE = PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT；release tag：`nq-gaten-freeze`；tag object：`d191474bd3ec0fb52566896fd9ef081eb843b520`；tagged commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`
 - NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION = PASS / EVIDENCE RECONCILED / GATEO-PLAN CONDITIONALLY ALLOWED；GateJ / GateK / GateM freeze evidence = VERIFIED；GateN no-real sandbox baseline = PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL（tag / archive / local freeze validation / later dev CI 存在，但 tagged commit direct CI run 不可见且已显式接受为 residual）；GateO 只允许 planning-only，implementation NOT STARTED
 - NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND = PASS（通过）/ PLAN ONLY（仅规划）/ NOT IMPLEMENTED（未实现）；新增 GateO O-0 planning baseline，范围为公开行情受控外联与数据质量运行化阶段规划；GateO implementation 仍 NOT STARTED，public marketdata readiness 不等于 trading authorization
+- NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION = REVISION COMPLETED（修订已完成）/ READY FOR REVIEW（可重新审查）/ NOT IMPLEMENTED（未实现）；已补齐 O-1 official docs baseline、public REST allowlist、private endpoint denylist、manual profile / feature flag、redaction / rollback、rate limit / timeout / retry、Data Quality linkage、existing API reuse boundary 和逐项 acceptance criteria；O-1 implementation 仍需重新 review 通过后才允许开始
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
@@ -76,7 +77,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/GATEK_PLAN.md`：GateK planning-only 阶段规划；明确 GateK implementation、AI、DH runtime、LIVE、multi-exchange expansion 均未启动
 - `docs/current/GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、P2 follow-up required，未启动 GateK implementation
 - `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`：GateJ/K/M/N freeze、CI、no-real/no-outbound 与 GateO-PLAN 入场边界证据收口；不启动 GateO implementation
-- `docs/current/GATEO_PLAN.md`：GateO O-0 planning-only baseline；规划 public marketdata controlled outbound、Data Quality Center、readiness API、quality UI、manual public outbound smoke 与 freeze criteria；不启动 GateO implementation
+- `docs/current/GATEO_PLAN.md`：GateO O-0 planning-only baseline 与 O-1 plan revision baseline；规划 public marketdata controlled outbound、Data Quality Center、readiness API、quality UI、manual public outbound smoke 与 freeze criteria；O-1 revision 已 ready for review，但不启动 GateO implementation
 - `docs/gates/gate-j/PLAN_GATEJ.md`：GateJ 规划（historical archive）
 - `docs/gates/gate-j/GATEJ_WORK_ORDER.md`：GateJ 工作单（含 GateJ-FREEZE 范围；historical archive）
 - `docs/gates/gate-j/PRE_FREEZE_AUDIT_REPORT.md`：GateJ-FREEZE 前置代码 / 文档 / 实现真实性审查报告（historical archive）

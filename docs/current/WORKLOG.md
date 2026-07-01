@@ -1,3 +1,75 @@
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION
+
+日期：2026-07-01
+
+### 本轮目标
+
+只修订 GateO O-1 public marketdata controlled outbound 计划，补齐上一轮 plan review 发现的 P1/P2/P3 缺口，使 O-1 可以重新进入 plan review。本轮不做代码实现、不改 CI、不新增 API / migration / 页面 / E2E、不调用真实交易所 API endpoint。
+
+### 完成内容
+
+- 在 `docs/current/GATEO_PLAN.md` 新增 O-1 plan revision baseline，状态为 **REVISION COMPLETED / READY FOR REVIEW / NOT IMPLEMENTED**。
+- P1 closure：补齐 official docs baseline、public REST allowlist、private endpoint denylist、manual profile / feature flag、redaction / rollback。
+- P2 closure：补齐 rate limit / timeout / retry 默认安全基线、O-1 到 O-2 Data Quality linkage、existing API / legacy adapter reuse boundary、20 条 implementation acceptance criteria。
+- P3 closure：明确 O-1 只做 design / implementation entry plan，真实 public outbound smoke 留到 O-5 manual stage，不进入 O-1 或默认 CI。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md` 的当前状态入口。
+
+### 验证
+
+- 已执行官方文档 HEAD checks：OKX docs、Binance Spot market data docs、Binance general endpoints docs、Binance WebSocket docs 均返回 200；未访问交易所 API endpoint。
+- 已只读复核 current docs、`API.md`、`MarketdataController`、`HistoricalKlineAdapter`、`AdapterHistoricalKlineProvider`、OKX/Binance historical kline adapters。
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat` 和 forbidden diff；`git diff --check` 退出码 0，仅有 Windows LF/CRLF working-copy warning；`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` diff 均为空。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只做 docs-only plan revision 与状态同步，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 public outbound、adapter skeleton、fake-server runtime、RealClient、real provider、private trading adapter 或 real permission probe；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API endpoint；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 回滚方式
+
+还原 `docs/current/GATEO_PLAN.md`、`README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 的本轮 diff 即可；无代码、DB、workflow、runtime、credential 或交易副作用。
+
+### 推荐下一步
+
+重新执行 `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW`。若 review 通过，后续才允许另起 O-1 implementation；当前不得直接开始 implementation。
+
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW
+
+日期：2026-07-01
+
+### 本轮目标
+
+只审查 GateO O-1 public marketdata controlled outbound 规划是否完整、安全、可进入后续 implementation。重点审查 official docs、public REST allowlist、private endpoint denylist、manual profile / feature flag、默认 no-egress、redaction、rollback、rate limit / timeout / retry、Data Quality linkage、existing API / adapter boundary 和 acceptance criteria。本轮不做代码实现、不改 CI、不新增 API / migration / 页面 / E2E、不调用真实交易所。
+
+### 完成内容
+
+- 在 `docs/current/GATEO_PLAN.md` 记录 O-1 plan review verdict：**FAIL / PLAN REVIEWED / NOT IMPLEMENTED / IMPLEMENTATION BLOCKED**。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md` 的 O-1 current state，明确 O-1 implementation 不允许开始。
+- P0=0；P1=5：official docs baseline、public REST allowlist、private endpoint denylist、manual profile / feature flag、redaction / rollback 均未达到 implementation entry bar。
+- P2=4：rate limit / timeout / retry、Data Quality linkage、existing API / adapter reuse、O-1 acceptance criteria 需要细化。
+- 保留默认 no-egress、LIVE disabled、AI not started、DH runtime not integrated、RealClient / real provider / real permission probe not implemented、public marketdata readiness 不等于 trading authorization。
+
+### 验证
+
+- 已执行 `git status --short`、`git branch --show-current`、`git log --oneline -5`。
+- 已读取任务附件、`nq-dh-workflow-router`、`nq-docs-writer`、root/current README、STATUS、ROADMAP、TESTING、WORKLOG、GATEO_PLAN、NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION。
+- 已只读复核 MarketData API / readiness service / readiness repository / frontend marketdata client / OKX-Binance historical adapter / `.github/workflows/ci.yml` no-outbound 与 redaction baseline。
+- 已执行 GateO / O-1 / official-docs / no-egress / private endpoint / redaction / readiness 关键词检索与 `Select-String` 定位。
+- 已执行 `git diff --check`、`git diff --stat` 和 forbidden diff；`git diff --check` 退出码 0，仅有 Windows LF/CRLF working-copy warning；`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` diff 均为空。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只做 docs-only plan review 与状态同步，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 public outbound、adapter skeleton、fake-server runtime、RealClient、real provider、private trading adapter 或 real permission probe；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 回滚方式
+
+还原 `docs/current/GATEO_PLAN.md`、`README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 的本轮 diff 即可；无代码、DB、workflow、runtime、credential 或交易副作用。
+
+### 推荐下一步
+
+进入 `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION`：只修订 O-1 plan 文档基线，补齐 official docs baseline、public REST allowlist、private endpoint denylist、manual profile / feature flag、redaction / rollback、rate limit / timeout / retry、Data Quality linkage 和 implementation acceptance criteria；修订后重新执行 O-1 plan review。不得直接进入 implementation。
+
 ## NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND
 
 日期：2026-07-01
