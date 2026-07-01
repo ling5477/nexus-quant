@@ -11543,3 +11543,35 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 `NQ-GATEN-ARCHIVE-PLAN-REVIEW`：只 review inventory 的 move candidates、target paths、index/reference update scope 和 forbidden files；不得移动文件、删除文件或启动下一阶段 implementation。
+
+---
+
+## NQ-GATEN-ARCHIVE-PLAN-REVIEW
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于 `docs/current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md` 审查是否可以进入 GateN physical archive move batch。本轮只做 archive plan review，不移动文件、不删除文件、不新增 `docs/gates/gate-n/**`、不改代码、不改 API、不改 migration、不改 CI。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md`。
+- 审查 11 个 GateN process docs，结论为全部可进入后续 `docs/gates/gate-n/**` move batch。
+- 明确 current keep list：`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md`、`NQ_GATEN_ARCHIVE_PLAN_REVIEW.md`。
+- 明确后续需要创建 `docs/gates/gate-n/README.md`，但本轮未创建。
+- 明确 root/current/gates 引用改写清单、rollback strategy 和 move batch validation commands。
+- 同步 inventory 的 plan review 状态、current README 入口、TESTING docs-only 记录和 `docs/gates/README.md` GateN archive 状态。
+
+### 验证
+
+- 已按本轮要求执行 `git status --short`、`git diff --check`、`git diff --stat`、禁止范围 diff 和 GateN/archive/no-real boundary 关键词 `rg`。
+- 未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff；原因是本轮仅修改允许范围内文档，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+### 边界
+
+未移动文件，未删除文件，未新增 `docs/gates/gate-n/**`；未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现真实 HTTP / WebSocket、adapter skeleton、fake-server runtime、RealClient、real provider、private trading adapter 或 real permission probe；未调用真实交易所 API，未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH`：只移动 plan review 批准的 11 个 GateN process docs，创建 `docs/gates/gate-n/README.md` 和必要子目录，改写 current/root/gates 引用，并运行 plan review 指定验证命令。

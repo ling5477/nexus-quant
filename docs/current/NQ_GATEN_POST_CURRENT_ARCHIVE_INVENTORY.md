@@ -6,6 +6,8 @@
 
 含义：`PASS`（通过）、`INVENTORY ONLY`（仅盘点候选，不执行移动或删除）、`READY TO COMMIT`（本轮文档变更可进入提交前复核）。
 
+Plan review status：`NQ-GATEN-ARCHIVE-PLAN-REVIEW` 已完成，结论为 **PASS / PLAN REVIEW ONLY / READY FOR MOVE BATCH**。该结论只批准进入后续 physical archive move batch；本 inventory 仍不代表已移动、已删除或已创建 `docs/gates/gate-n/**`。
+
 本文件是 GateN post-closeout current docs archive inventory。它只盘点 GateN current docs 的 keep / move 候选，不移动文件、不删除文件、不新增 stub、不改代码、不改 API、不改 migration、不改 CI。
 
 ## Task Classification

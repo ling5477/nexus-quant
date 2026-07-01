@@ -1,3 +1,19 @@
+## NQ-GATEN-ARCHIVE-PLAN-REVIEW（2026-07-01）
+
+结论：**PASS / PLAN REVIEW ONLY / READY FOR MOVE BATCH**。含义：`PASS`（通过）、`PLAN REVIEW ONLY`（仅计划审查，不执行移动或删除）、`READY FOR MOVE BATCH`（可进入后续物理归档移动批次）。本轮只新增 GateN archive plan review，并同步 inventory/current/gates 入口与 append-only 记录；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写前工作区 clean；收尾应仅显示允许的 docs/current 与 docs/gates/README.md 文档变更。 |
+| `git diff --check` | PASS | docs-only diff whitespace 复核通过；若出现 Windows LF/CRLF warning，仅按非内容错误记录。 |
+| `git diff --stat` | PASS | tracked diff 应仅包含允许的 current/gates docs；新增 plan review 文档由 `git status --short` 确认。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均应为空 diff。 |
+| GateN / archive boundary keyword `rg` | REVIEWED | 复核 GateN、`nq-gaten-freeze`、public marketdata、sandbox、no-real、archive、`docs/gates/gate-n`、LIVE、AI、DH runtime、RealClient、real provider 和 trading authorization 语境；本轮只记录 plan review，不执行 physical archive move。 |
+
+Boundary：GateN physical archive 仍未执行；未移动文件，未删除文件，未新增 `docs/gates/gate-n/**`；LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT_INTEGRATED**；RealClient / real provider 仍 **NOT_IMPLEMENTED**；real permission probe 仍 **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-POST-CURRENT-ARCHIVE-INVENTORY（2026-07-01）
 
 结论：**PASS / INVENTORY ONLY / READY TO COMMIT**。含义：`PASS`（通过）、`INVENTORY ONLY`（仅盘点候选，不执行移动或删除）、`READY TO COMMIT`（本轮文档变更可进入提交前复核）。本轮只新增 GateN post-current archive inventory，并同步 current/gates 入口与 append-only 记录；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
