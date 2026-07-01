@@ -11511,3 +11511,35 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 `NQ-GATEN-POST-CURRENT-ARCHIVE-INVENTORY`：只列出 GateN current docs 的 keep/move 候选，不移动文件、不删除历史证据、不启动下一阶段 implementation。
+
+---
+
+## NQ-GATEN-POST-CURRENT-ARCHIVE-INVENTORY
+
+日期：2026-07-01
+
+### 本轮目标
+
+盘点 GateN post-closeout current docs 的 keep / move 候选，输出后续是否需要 physical archive 到 `docs/gates/gate-n/**` 的候选清单。本轮只做 inventory，不移动文件、不删除文件、不新增 stub、不改代码、不改 API、不改 migration、不改 CI。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md`。
+- 盘点 11 个 `docs/current/NQ_GATEN_*.md`：全部列为后续 `docs/gates/gate-n/**` move candidates，但本轮不移动。
+- 明确 `docs/current/NQ_NEXT_PHASE_PLAN.md`、`README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md` 和本 inventory 应保留在 current。
+- 同步 `docs/current/README.md` 的 GateN inventory 入口。
+- 同步 `docs/current/TESTING.md` 的 docs-only validation 记录。
+- 同步 `docs/gates/README.md`，明确 GateN physical archive 尚未执行，inventory 已完成，后续仍需 plan review / move batch。
+
+### 验证
+
+- 已按本轮要求执行 `git status --short`、`git diff --check`、`git diff --stat`、禁止范围 diff 和 GateN/no-real boundary 关键词 `rg`。
+- 未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff；原因是本轮仅修改允许范围内文档，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+### 边界
+
+未移动文件，未删除文件，未新增 `docs/gates/gate-n/**`；未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现真实 HTTP / WebSocket、adapter skeleton、fake-server runtime、RealClient、real provider、private trading adapter 或 real permission probe；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEN-ARCHIVE-PLAN-REVIEW`：只 review inventory 的 move candidates、target paths、index/reference update scope 和 forbidden files；不得移动文件、删除文件或启动下一阶段 implementation。

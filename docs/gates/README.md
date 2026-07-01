@@ -10,6 +10,6 @@
 
 ## Gate release notes
 
-- GateN release/tag closeout: [../current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md](../current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md)（tag：`nq-gaten-freeze`；FINALIZED 最终定版 / FROZEN 已冻结 / ACCEPTED 已接受 / CLOSED 已关闭 / TAGGED 已打 tag；GateN current docs 尚未物理移动，后续需单独 inventory / plan review）
+- GateN release/tag closeout: [../current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md](../current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md)（tag：`nq-gaten-freeze`；FINALIZED 最终定版 / FROZEN 已冻结 / ACCEPTED 已接受 / CLOSED 已关闭 / TAGGED 已打 tag；GateN physical archive 尚未执行；inventory 已记录于 [../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)，后续仍需单独 plan review / move batch）
 - GateM historical archive: [gate-m/README.md](gate-m/README.md)（archive closed；22/22 approved candidates moved）
 - GateK release/tag prep: [gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md](gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md)

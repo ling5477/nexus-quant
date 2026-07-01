@@ -1,3 +1,19 @@
+## NQ-GATEN-POST-CURRENT-ARCHIVE-INVENTORY（2026-07-01）
+
+结论：**PASS / INVENTORY ONLY / READY TO COMMIT**。含义：`PASS`（通过）、`INVENTORY ONLY`（仅盘点候选，不执行移动或删除）、`READY TO COMMIT`（本轮文档变更可进入提交前复核）。本轮只新增 GateN post-current archive inventory，并同步 current/gates 入口与 append-only 记录；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写前工作区 clean；收尾仅显示允许的 `docs/current/**` 与 `docs/gates/README.md` 文档变更。 |
+| `git diff --check` | PASS | docs-only diff whitespace 复核通过；若出现 Windows LF/CRLF warning，仅按非内容错误记录。 |
+| `git diff --stat` | PASS | tracked diff 仅包含 `docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/gates/README.md`；新增 inventory 文档由 `git status --short` 确认。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均应为空 diff。 |
+| GateN / boundary keyword `rg` | REVIEWED | 复核 GateN、`nq-gaten-freeze`、public marketdata、sandbox、no-real、LIVE、AI、DH runtime、RealClient、real provider 和 trading authorization 语境；本轮只记录 archive inventory，不改变 no-real 边界。 |
+
+Boundary：GateN physical archive 尚未执行；未移动文件，未删除文件，未新增 `docs/gates/gate-n/**`；LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT_INTEGRATED**；RealClient / real provider 仍 **NOT_IMPLEMENTED**；real permission probe 仍 **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-RELEASE-TAG-AND-ARCHIVE（2026-07-01）
 
 结论：**PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT**。含义：`PASS`（通过）、`COMPLETED`（本轮 release/tag/archive closeout 已完成）、`RELEASE TAG PUSHED`（release tag 已推送到远端）、`READY TO COMMIT`（本轮文档同步可提交）。本轮只执行 GateN release tag、archive/index sync、current docs 状态同步和 no-real 边界复核；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改代码、测试、API、migration、CI workflow 或运行时配置。
