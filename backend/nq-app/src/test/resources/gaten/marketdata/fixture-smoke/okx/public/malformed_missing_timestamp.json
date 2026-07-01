@@ -1,0 +1,14 @@
+{
+  "fixtureId": "okx-malformed-missing-timestamp",
+  "provider": "OKX",
+  "family": "MALFORMED_PAYLOAD",
+  "scenario": "malformed_payload",
+  "source": "FIXTURE",
+  "supportLevel": "FIXTURE",
+  "readiness": "ERROR",
+  "symbol": "BTC-USDT",
+  "payload": {
+    "bars": "not-an-array",
+    "reason": "missing_as_of_for_payload"
+  }
+}

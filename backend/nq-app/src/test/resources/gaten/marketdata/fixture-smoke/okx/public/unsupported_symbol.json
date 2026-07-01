@@ -1,0 +1,18 @@
+{
+  "fixtureId": "okx-unsupported-symbol",
+  "provider": "OKX",
+  "family": "ERROR_CASE",
+  "scenario": "unsupported_symbol",
+  "source": "FIXTURE",
+  "supportLevel": "FIXTURE",
+  "readiness": "ERROR",
+  "symbol": "NQ-UNKNOWN",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "reason": "UNSUPPORTED_SYMBOL",
+    "supportedSymbols": [
+      "BTC-USDT",
+      "ETH-USDT"
+    ]
+  }
+}

@@ -6590,6 +6590,25 @@ target conflicts = 0
 
 ---
 
+## NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION（2026-07-01）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只实现 GateN-4 deterministic marketdata sandbox fixture smoke：新增 test resources 与 test-only JUnit smoke，覆盖 public marketdata shape、readiness mapping、fixture hygiene、no-egress route fail-closed、fake-server unavailable fallback blocked 和 private/trading boundary。未改 production adapter / API / migration / CI / frontend；未实现真实 HTTP、WebSocket、RealClient、real provider、private TradingAdapter 或 permission probe real execution。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app -am "-Dtest=GateNMarketdataSandboxFixtureSmokeTest,NoOutboundExchangeGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | `GateNMarketdataSandboxFixtureSmokeTest` 4 tests / 0 failures / 0 errors / 0 skipped；`NoOutboundExchangeGuardTest` 3 tests / 0 failures / 0 errors / 1 skipped（CI/no-outbound guard 条件性 env absence 断言）。 |
+
+覆盖范围：
+
+- Fixture resources：OKX / Binance synthetic public fixtures under `backend/nq-app/src/test/resources/gaten/marketdata/fixture-smoke/**`。
+- Fixture families：OHLCV bars、instrument metadata、ticker、exchange status、stale、gap、timeout simulated、rate-limit simulated、malformed payload、unsupported symbol、fake-server unavailable、disabled source。
+- Readiness mapping：`FRESH` / `STALE` / `GAP` / `ERROR` / `DISABLED` / `PENDING_BACKEND_SUPPORT`。
+- No-egress assertions：real exchange hosts、unknown host、unknown path、unsupported method、private path、signed query all fail closed；fake-server unavailable does not fall back to a real host.
+
+边界确认：public marketdata readiness 仍是 diagnostic-only，不是 trading authorization；未读取 credential material；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未下单、撤单、转账或提现；LIVE 仍 DISABLED；AI 仍 NOT STARTED；DH runtime 仍 NOT_INTEGRATED；RealClient / real provider 仍 NOT_IMPLEMENTED。
+
+---
+
 ## NQ-GATEM-5-RUNTIME-GUARDED-UI-PLAN（2026-06-30）
 
 结论：**PLAN ONLY / NOT IMPLEMENTED / READY FOR REVIEW**。本轮只做 Runtime Guarded UI planning 与 API boundary read-only review；未实现页面、未改前端代码、未改后端 API、未新增 migration、未触发真实交易所、未读取 credential、未启用 LIVE、未接 AI 或 DH runtime。

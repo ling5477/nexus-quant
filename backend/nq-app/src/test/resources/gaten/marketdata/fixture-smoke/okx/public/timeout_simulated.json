@@ -1,0 +1,17 @@
+{
+  "fixtureId": "okx-timeout-simulated",
+  "provider": "OKX",
+  "family": "ERROR_CASE",
+  "scenario": "timeout",
+  "source": "NO_EGRESS_SANDBOX",
+  "supportLevel": "NO_EGRESS_SANDBOX",
+  "readiness": "ERROR",
+  "symbol": "BTC-USDT",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "type": "TIMEOUT_SIMULATED",
+    "elapsedMs": 3000,
+    "timeoutMs": 1000,
+    "retryable": true
+  }
+}

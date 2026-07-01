@@ -1,0 +1,17 @@
+{
+  "fixtureId": "okx-rate-limit-429-simulated",
+  "provider": "OKX",
+  "family": "ERROR_CASE",
+  "scenario": "rate_limit",
+  "source": "NO_EGRESS_SANDBOX",
+  "supportLevel": "NO_EGRESS_SANDBOX",
+  "readiness": "ERROR",
+  "symbol": "BTC-USDT",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "type": "RATE_LIMIT_SIMULATED",
+    "statusCode": 429,
+    "retryAfterMs": 1000,
+    "retryable": true
+  }
+}

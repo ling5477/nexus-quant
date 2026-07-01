@@ -2,33 +2,33 @@
 
 ## Status
 
-**PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**
+**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**
 
-This document is the GateN-4 marketdata sandbox fixture smoke implementation plan. It consumes the GateN-4 fixture smoke plan review and defines the smallest future implementation slice, future allowed file ranges, fixture set, readiness expectation matrix, no-egress verification design, validation commands, GateN-5 entry criteria, and forbidden carry-over list.
+This document now records the GateN-4 marketdata sandbox fixture smoke implementation plan and the completed minimal implementation. It consumes the GateN-4 fixture smoke plan review and records the implemented test-only fixture resources, readiness expectation matrix, no-egress verification, validation results, GateN-5 entry criteria, and forbidden carry-over list.
 
-This task is implementation planning only. It does not implement fixture smoke code, does not add tests, does not implement a fake server, does not implement an adapter skeleton, does not add API, does not add migration, does not modify CI, does not call real exchange APIs, and does not authorize LIVE, private trading, RealClient, real provider, credential access, or real permission probe execution.
+This task implemented only deterministic fixture resources and test-scope fixture smoke assertions. It did not implement a real fake server process, did not implement an adapter skeleton, did not add API, did not add migration, did not modify CI, did not call real exchange APIs, and did not authorize LIVE, private trading, RealClient, real provider, credential access, or real permission probe execution.
 
-## Current GateN-4 Implementation Planning Decision
+## Current GateN-4 Implementation Decision
 
 Decision:
 
-- Accept a future GateN-4 implementation slice only if it remains deterministic fixture / local fake-server / no-egress.
-- Keep the first future implementation slice test-oriented and backend-local.
-- Do not implement real HTTP client behavior in the first slice.
-- Do not implement WebSocket behavior in the first slice.
-- Do not implement private trading adapter behavior in the first slice.
-- Do not add backend API or frontend UI in the first slice.
+- Implement the GateN-4 slice only as deterministic fixture / local fake-server-state / no-egress smoke.
+- Keep the implementation test-oriented and backend-local.
+- Do not implement real HTTP client behavior.
+- Do not implement WebSocket behavior.
+- Do not implement private trading adapter behavior.
+- Do not add backend API or frontend UI.
 - Do not make fixture smoke a prerequisite for LIVE, trading authorization, real provider readiness, or permission probe readiness.
 
 Current baseline:
 
 - GateN route: **Public MarketData / Exchange Sandbox Planning**.
-- GateN current status: **PLAN ONLY / NOT IMPLEMENTED**.
-- GateN implementation: **NOT STARTED**.
+- GateN-4 fixture smoke status: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
+- GateN production adapter / API / runtime implementation: **NOT STARTED**.
 - fake server: **NOT_IMPLEMENTED**.
 - adapter skeleton: **NOT_IMPLEMENTED**.
-- sandbox fixture smoke: **NOT_IMPLEMENTED**.
-- test code: **NOT_ADDED**.
+- sandbox fixture smoke: **IMPLEMENTED**.
+- test code: **ADDED**.
 - LIVE: **DISABLED**.
 - AI: **NOT STARTED**.
 - DH runtime: **NOT_INTEGRATED**.
@@ -37,6 +37,44 @@ Current baseline:
 - permission probe real execution: **NOT_IMPLEMENTED**.
 - Public marketdata readiness is not trading authorization.
 
+## Implemented Fixture Smoke Evidence
+
+Implemented files:
+
+- `backend/nq-app/src/test/resources/gaten/marketdata/fixture-smoke/**`.
+- `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/gaten/marketdata/GateNMarketdataSandboxFixtureSmokeTest.java`.
+
+Implemented fixture families:
+
+- OHLCV bars.
+- Instrument metadata.
+- Ticker.
+- Exchange status.
+- Stale.
+- Gap.
+- Timeout simulated.
+- Rate-limit simulated.
+- Malformed payload.
+- Unsupported symbol.
+- Fake-server unavailable.
+- Disabled source.
+
+Implemented readiness coverage:
+
+- `FRESH`.
+- `STALE`.
+- `GAP`.
+- `ERROR`.
+- `DISABLED`.
+- `PENDING_BACKEND_SUPPORT`.
+
+Implemented no-egress / boundary coverage:
+
+- Real exchange hosts fail closed in URI-level route assertions.
+- Unknown host, unknown path, unsupported method, private path, and signed query fail closed.
+- Fake-server unavailable fixture maps to blocked fallback and never promotes to real host.
+- Fixture smoke does not read credentials, does not invoke private `TradingAdapter`, does not run real permission probe, and does not call order / cancel / transfer / withdraw / user-data-stream behavior.
+
 ## Inputs From GateN-4 Plan Review
 
 GateN-4 plan review accepted these inputs:
@@ -44,16 +82,16 @@ GateN-4 plan review accepted these inputs:
 - Deterministic fixture smoke is the minimum future acceptance baseline.
 - Minimum fixture families are OHLCV bars, instrument metadata, ticker, exchange status, source taxonomy mapping, freshness / stale / gap / error / disabled states, timeout simulation, rate-limit simulated error, and malformed payload simulation.
 - Readiness states are `FRESH`, `STALE`, `GAP`, `ERROR`, `DISABLED`, and `PENDING_BACKEND_SUPPORT`.
-- `ticker` and `exchangeStatus` may stay `PENDING_BACKEND_SUPPORT` if the first implementation slice does not implement them.
+- `ticker` and `exchangeStatus` may stay `PENDING_BACKEND_SUPPORT` where runtime backend support remains intentionally out of scope.
 - No-egress validation must block real exchange hosts by default.
 - Unknown host, unknown path, private endpoint, signed endpoint, credential lookup, and real permission probe execution must fail closed.
 - GateN-5 Runtime UI Sandbox Source Display may start only after fixture smoke implementation is separately authorized, implemented, verified, and accepted.
 
-GateN-4 plan review does not authorize current implementation. It supplies constraints for a later implementation task only.
+GateN-4 plan review supplied the constraints consumed by this separately authorized implementation task.
 
 ## Minimal Implementation Slice
 
-The recommended future implementation slice is:
+The implemented slice is:
 
 1. Add deterministic fixture resources for public marketdata scenarios only.
 2. Add a local fixture loader or test-local fake source only if needed by tests.
@@ -62,7 +100,7 @@ The recommended future implementation slice is:
 5. Add no-egress guard assertions for real exchange host denial and private/signed endpoint denial.
 6. Add fixture hygiene checks for no credential-like material and no private account/order/balance/transfer/withdraw payloads.
 
-The first future implementation slice must not include:
+The implemented fixture-smoke slice does not include:
 
 - Real HTTP client.
 - Real WebSocket client.
@@ -76,17 +114,17 @@ The first future implementation slice must not include:
 - CI workflow change.
 - Scheduler, ingestion job, or runtime poller behavior.
 
-Expected future result if implemented and verified:
+Implemented result after validation:
 
 ```text
 IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
 ```
 
-That future status is allowed only after code/tests actually exist and validation commands pass.
+That status is now recorded because code/tests exist and scoped validation passed.
 
-## Allowed Future Implementation File Ranges
+## Allowed Implementation File Ranges Used
 
-These ranges are for the separately authorized future implementation task. They are not modified by this planning task.
+These ranges were used by the separately authorized implementation task.
 
 Preferred future test/resource ranges:
 
@@ -189,7 +227,7 @@ Fixture hygiene requirements:
 | Fake-server unavailable | `ERROR` or `DISABLED` | `FAKE_SERVER` | No fallback to real host. |
 | Explicit disabled source | `DISABLED` | `FIXTURE` or `FAKE_SERVER` | Not implementation success. |
 
-The future implementation must not introduce `LIVE_READY`, `TRADING_AUTHORIZED`, `REAL_PROVIDER_READY`, `PRIVATE_READY`, `ACCOUNT_AUTHORIZED`, or `PERMISSION_VERIFIED`.
+The implementation must not introduce `LIVE_READY`, `TRADING_AUTHORIZED`, `REAL_PROVIDER_READY`, `PRIVATE_READY`, `ACCOUNT_AUTHORIZED`, or `PERMISSION_VERIFIED`.
 
 ## No-Egress Verification Design
 
@@ -232,7 +270,7 @@ The future implementation should prefer a test-scope guard over production rewir
 
 ## Forbidden Carry-Over List
 
-Forbidden in this planning task and in the first future implementation slice:
+Forbidden in this implementation task and in any follow-up unless separately reviewed:
 
 - Real HTTP client.
 - Real WebSocket client.
@@ -261,14 +299,24 @@ Forbidden in this planning task and in the first future implementation slice:
 - Statement that fake server is a real provider.
 - Statement that public marketdata readiness is trading authorization.
 
-## Validation Commands For Future Implementation
+## Validation Commands For This Implementation
 
-Future GateN-4 implementation must run at least:
+GateN-4 implementation ran the scoped Maven command below before this document was updated:
+
+```powershell
+mvn -f backend/pom.xml -pl nq-app -am -Dtest=*GateN*MarketData*,*Marketdata*Fixture*,*NoOutbound* "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+Result:
+
+- `GateNMarketdataSandboxFixtureSmokeTest`: 4 tests, 0 failures, 0 errors, 0 skipped.
+- `NoOutboundExchangeGuardTest`: 3 tests, 0 failures, 0 errors, 1 skipped because the credential-env absence assertion is CI/no-outbound guard conditional.
+- Reactor result: **BUILD SUCCESS**.
+
+The final implementation task also requires the closeout validation commands below before commit:
 
 ```powershell
 git status --short
-mvn -f backend/pom.xml -pl nq-app -am -Dtest=*GateN*MarketData*,*Marketdata*Fixture*,*NoOutbound* "-Dsurefire.failIfNoSpecifiedTests=false" test
-mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am -Dtest=*Marketdata*Readiness*,*Fixture*,*NoOutbound* "-Dsurefire.failIfNoSpecifiedTests=false" test
 git diff --check
 git diff --stat
 git diff -- frontend
@@ -277,8 +325,9 @@ git diff -- scripts
 git diff -- deploy
 git diff -- .github
 git diff -- "backend/**/db/migration"
-rg "apiKey|secret|passphrase|private key|mnemonic|cookie|signature|Authorization|withdraw|transfer|order|cancel|balance|account|position|user data|okx.com|binance.com|bybit.com|gate.io|gate.com|coinbase.com|kraken.com" backend/nq-app/src/test/resources/gaten backend/nq-app/src/test/java backend/nq-core/src/test/java backend/nq-infra/src/test/java
-rg "LIVE_READY|TRADING_AUTHORIZED|REAL_PROVIDER_READY|PRIVATE_READY|ACCOUNT_AUTHORIZED|PERMISSION_VERIFIED" backend docs/current
+rg "apiKey|secret|token|signature|privateKey|passphrase|mnemonic|withdraw|transfer|order|cancel|account|balance" backend/nq-app/src/test/resources/gaten/marketdata/fixture-smoke
+rg "okx.com|binance.com|bybit.com|gate.io|gate.com|coinbase.com|kraken.com" backend/nq-app/src/test/resources/gaten/marketdata/fixture-smoke backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/gaten/marketdata
+rg "LIVE_READY|TRADING_AUTHORIZED|REAL_PROVIDER_READY|PRIVATE_READY|ACCOUNT_AUTHORIZED|PERMISSION_VERIFIED" backend/nq-app/src/test/resources/gaten/marketdata/fixture-smoke backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/gaten/marketdata docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md
 ```
 
 Static guard / ArchUnit requirement:
@@ -300,7 +349,7 @@ No-real-host string check:
 
 GateN-5 Runtime UI Sandbox Source Display may start only after all criteria below are met in a separate future task:
 
-- GateN-4 fixture smoke implementation is separately authorized.
+- GateN-4 fixture smoke implementation is authorized and completed.
 - GateN-4 fixture smoke code/tests are implemented.
 - Required Maven tests pass.
 - No-egress validation passes.
@@ -318,7 +367,7 @@ GateN-5 must still remain display-only unless separately authorized. It must sho
 
 ### P0
 
-- None in this docs-only implementation planning task.
+- None in this test-only fixture smoke implementation task.
 
 Potential future P0:
 
@@ -327,16 +376,16 @@ Potential future P0:
 
 ### P1
 
-- First implementation must stay test/resource scoped and no-egress by default.
-- Fixture payloads must not contain credential/account/order/balance/private payload material.
-- Readiness states must not add or imply `LIVE_READY`, `TRADING_AUTHORIZED`, or `REAL_PROVIDER_READY`.
-- Any production adapter, API, CI, frontend, migration, or real-network need must be split into a separate review task.
+- None open after the test-only implementation and scoped Maven validation.
+- The implemented slice stayed test/resource scoped and no-egress by default.
+- Fixture payloads are intended to contain no credential/account/order/balance/private payload material; final closeout includes an explicit fixture sensitive keyword scan.
+- Readiness states do not add or imply `LIVE_READY`, `TRADING_AUTHORIZED`, or `REAL_PROVIDER_READY`.
+- Any production adapter, API, CI, frontend, migration, or real-network need remains a separate review task.
 
 ### P2
 
-- The precise future test class names remain implementation choices, but they must map back to the fixture families and readiness matrix in this plan.
-- Static/ArchUnit guards are optional only while implementation remains test/resource scoped; they become required if shared production boundaries change.
-- `ticker` and `exchangeStatus` can remain `PENDING_BACKEND_SUPPORT`; forcing them into the first slice would enlarge scope.
+- Static/ArchUnit guards remain optional because this implementation did not touch shared production boundaries.
+- `ticker` and `exchangeStatus` include fixture coverage; Binance ticker/status also record `PENDING_BACKEND_SUPPORT` to keep readiness mapping explicit without enlarging runtime scope.
 
 ### P3
 
@@ -345,16 +394,16 @@ Potential future P0:
 
 ## Final Decision
 
-**PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**
+**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**
 
-GateN-4 fixture smoke implementation planning is accepted as the baseline for a future, separately authorized implementation task. It does not start GateN implementation and does not add fixture smoke code, fake server code, adapter code, test code, API, migration, CI workflow, real outbound calls, private trading, credentials, permission probe, LIVE, AI, DH runtime, RealClient, or real provider work.
+GateN-4 fixture smoke is implemented as a deterministic fixture / no-egress / test-only baseline. It adds fixture resources and scoped tests only. It does not implement fake server runtime code, adapter code, API, migration, CI workflow, real outbound calls, private trading, credentials, permission probe, LIVE, AI, DH runtime, RealClient, or real provider work.
 
 ## Recommended Next Task
 
-`NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION`
+`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW`
 
-That future task must be separately authorized and must remain deterministic fixture / local fake-server / no-egress only by default. It must target `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT` only after code and validation actually exist.
+That next task must remain planning/review only unless separately authorized. GateN-5 may display sandbox source/readiness diagnostics only and must not display real-ready, live-ready, trading-authorized, account-authorized, permission-probe-ready, private-ready, order, cancel, transfer, withdraw, account, balance, or credential actions.
 
 Commit recommendation:
 
-`docs(gaten): plan marketdata sandbox fixture smoke implementation`
+`test(gaten): add marketdata sandbox fixture smoke`

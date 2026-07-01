@@ -20,21 +20,22 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateK finalized / frozen / archived / tagged（tag：`nq-gatek-freeze`）
 - GateM = Exchange / MarketData Runtime Readiness
 - GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`；no-real runtime readiness baseline；current summary 见 `docs/current/`；GateM archive closed，22/22 approved candidates 已归档到 `docs/gates/gate-m/`）
-- NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；推荐下一阶段为 GateN Public MarketData / Exchange Sandbox Planning（implementation NOT STARTED）
-- NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = PASS / PLAN ONLY / READY TO COMMIT；GateN planning baseline 已落档（implementation NOT STARTED）
+- NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；推荐下一阶段为 GateN Public MarketData / Exchange Sandbox Planning（GateN-4 fixture smoke test-only implementation 已完成；production adapter/API/runtime implementation NOT STARTED）
+- NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = PASS / PLAN ONLY / READY TO COMMIT；GateN planning baseline 已落档（GateN-4 fixture smoke test-only implementation 已完成；production adapter/API/runtime implementation NOT STARTED）
 - NQ-GATEN-0-EXCHANGE-DOCS-AND-EXISTING-ADAPTER-RECONCILIATION = PASS / RECONCILIATION BASELINE / READY TO COMMIT；复核早期 OKX / Binance 官方文档整理、现有 public marketdata adapter/interface/API/test 证据、历史 live-0/spike 证据与 private trading 禁止边界；不启动 GateN implementation
 - NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW = PASS / CONTRACT PLAN REVIEW / READY TO COMMIT；定义 public-only marketdata internal contract、source taxonomy、freshness/health/gap model、rate-limit/timeout/retry model、public/private separation rules 与 GateN-2 fake-server/no-egress 输入；不启动 GateN implementation
 - NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN = PASS / TEST PLAN BASELINE / READY TO COMMIT；规划 fake-server contract、no-egress boundary、forbidden endpoint list、test matrix、fixture taxonomy、readiness simulation 与 GateN-3 entry criteria；不启动 GateN implementation
 - NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW = PASS / SKELETON PLAN REVIEW / READY TO COMMIT；定义 public-only adapter skeleton 最小接口、adapter class/package proposal、DTO/capability/readiness model、no-egress constraints 与 GateN-4 entry criteria；不启动 GateN implementation
 - NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW = PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT；定义 deterministic fixture smoke 最小范围、fixture hygiene、readiness simulation matrix、timeout/rate-limit/malformed payload simulation、no-egress validation plan 与 GateN-5 entry criteria；不启动 GateN implementation
-- NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN = PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT；规划 deterministic fixture / local fake-server / no-egress fixture smoke 的最小未来实现切片、允许文件范围、fixture set、readiness expectation matrix、no-egress verification design 与 future validation commands；不启动 GateN implementation
+- NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN = PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT；规划 deterministic fixture / local fake-server / no-egress fixture smoke 的最小未来实现切片、允许文件范围、fixture set、readiness expectation matrix、no-egress verification design 与 future validation commands
+- NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION = IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT；新增 deterministic OKX / Binance fixture resources 与 test-only no-egress fixture smoke，覆盖 public marketdata shape、readiness mapping、fixture hygiene、real-host denial、private/signed route fail-closed、fake-server unavailable fallback blocked；不启动 production adapter/API/runtime implementation
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
 - LIVE disabled
 - RealClient / real provider / real exchange adapter not implemented
 
-GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM 已 final / frozen / accepted / tagged 为 no-real runtime readiness baseline（release tag：`nq-gatem-freeze`）：adapter readiness、MarketData readiness、NoReal contract、Paper-to-Real boundary、Runtime Guarded UI 和 Operational Readiness 均已收口；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。GateM 后下一阶段规划已完成，GateN Public MarketData / Exchange Sandbox Planning 已作为 planning baseline 落档，仅限 PLAN ONLY / NOT IMPLEMENTED；AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
+GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM 已 final / frozen / accepted / tagged 为 no-real runtime readiness baseline（release tag：`nq-gatem-freeze`）：adapter readiness、MarketData readiness、NoReal contract、Paper-to-Real boundary、Runtime Guarded UI 和 Operational Readiness 均已收口；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。GateM 后下一阶段规划已完成，GateN Public MarketData / Exchange Sandbox Planning 已作为 planning baseline 落档；GateN-4 fixture smoke test-only implementation 已完成，但 production adapter/API/runtime implementation 仍未开始。AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
 
 ## 当前能力摘要
 
@@ -75,14 +76,14 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`：GateJ-FREEZE 最终验收报告
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
 - `docs/gates/gate-m/README.md`：GateM historical archive；archive closed，22/22 approved candidates moved；Batch 1 已归档 freeze readiness / freeze review / release tag evidence（`nq-gatem-freeze`），Batch 2 已归档 Runtime Guarded UI evidence，Batch 3 已归档 Operational Readiness evidence，Batch 4 已归档 GateM-2 MarketData readiness evidence
-- `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateM 后下一阶段 planning-only 文档；推荐 GateN Public MarketData / Exchange Sandbox Planning，implementation NOT STARTED
-- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`：GateN Public MarketData / Exchange Sandbox planning baseline；no-real / no-private / no-trading，implementation NOT STARTED
+- `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateM 后下一阶段 planning-only 文档；推荐 GateN Public MarketData / Exchange Sandbox Planning；GateN-4 fixture smoke test-only implementation 已完成，production adapter/API/runtime implementation NOT STARTED
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`：GateN Public MarketData / Exchange Sandbox planning baseline；no-real / no-private / no-trading；GateN-4 fixture smoke test-only implementation 已完成，production adapter/API/runtime implementation NOT STARTED
 - `docs/current/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`：GateN-0 exchange docs and adapter reconciliation baseline；early official docs can be reused as inventory, public marketdata and private trading remain separated, historical live-0 is not current LIVE readiness
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`：GateN-1 public marketdata contract plan review；public readiness 不是 trading readiness，public adapter 不是 private trading adapter，任何真实外联仍需单独 review
 - `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`：GateN-2 fake-server / no-egress public marketdata test plan；default tests must not contact real exchange hosts, read credentials, or touch private trading endpoints
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`：GateN-3 public marketdata adapter skeleton plan review；public adapter skeleton must stay separate from private trading adapter, fake-server / fixture / no-egress only by default
 - `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`：GateN-4 marketdata sandbox fixture smoke plan review；fixture smoke must stay deterministic, offline, no-egress, public-only, and diagnostic-only
-- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`：GateN-4 marketdata sandbox fixture smoke implementation plan；future implementation must stay deterministic fixture / local fake-server / no-egress only and does not start GateN implementation
+- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`：GateN-4 marketdata sandbox fixture smoke implementation plan / record；current implementation is deterministic fixture / no-egress / test-only and does not start production adapter/API/runtime implementation
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
 - `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：credential active uniqueness Batch 5-E-C 只读审计报告
 - `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：credential enable governance Batch 5-F-A 只读审计报告；Batch 5-F-B 已完成 schema-only `ENABLED` audit event 准备，Batch 5-F-C 已实现最小 enable command

@@ -1,0 +1,15 @@
+{
+  "fixtureId": "okx-source-disabled",
+  "provider": "OKX",
+  "family": "SOURCE_STATE",
+  "scenario": "disabled",
+  "source": "NO_EGRESS_SANDBOX",
+  "supportLevel": "NO_EGRESS_SANDBOX",
+  "readiness": "DISABLED",
+  "symbol": "BTC-USDT",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "reason": "SOURCE_DISABLED",
+    "state": "BLOCKED"
+  }
+}

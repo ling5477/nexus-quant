@@ -11292,3 +11292,37 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN`：若用户单独授权，基于 GateN-4 plan review 规划 deterministic fixture / fake-server / no-egress fixture smoke 的实现边界；仍不得真实外联、不得读取 credential、不得接 private trading、不得开启 LIVE。
+
+---
+
+## NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于已接受的 GateN-4 fixture smoke implementation plan，执行最小 test-only implementation。范围只覆盖 deterministic fixture resources 与 scoped JUnit smoke，不实现 production adapter、fake server runtime、API、migration、CI workflow、frontend UI、真实 HTTP/WebSocket、RealClient、real provider、private TradingAdapter、credential lookup 或 real permission probe。
+
+### 完成内容
+
+- 新增 `backend/nq-app/src/test/resources/gaten/marketdata/fixture-smoke/**`，包含 OKX / Binance synthetic public fixtures。
+- 新增 `GateNMarketdataSandboxFixtureSmokeTest`，以 test-local parser / mapper 验证 fixture shape、required public fields、fixture families 和 readiness mapping。
+- 覆盖 fixture families：OHLCV bars、instrument metadata、ticker、exchange status、stale、gap、timeout simulated、rate-limit simulated、malformed payload、unsupported symbol、fake-server unavailable、disabled source。
+- 覆盖 readiness：`FRESH`、`STALE`、`GAP`、`ERROR`、`DISABLED`、`PENDING_BACKEND_SUPPORT`。
+- 覆盖 no-egress assertions：real exchange hosts denylisted、unknown host / unknown path / unsupported method fail closed、private path fail closed、signed query fail closed、fake-server unavailable fallback blocked。
+- 覆盖 boundary assertions：不触发 real permission probe、不读取 credential、不复用 private TradingAdapter、不调用 private/write endpoint 行为。
+- 同步 `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`、`docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`docs/current/TESTING.md`、`docs/current/README.md` 和根 `README.md` 的 GateN-4 implementation 状态。
+
+### 验证
+
+- 已运行 scoped Maven：`mvn -f backend/pom.xml -pl nq-app -am "-Dtest=GateNMarketdataSandboxFixtureSmokeTest,NoOutboundExchangeGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`。
+- 结果：**BUILD SUCCESS**；`GateNMarketdataSandboxFixtureSmokeTest` 4 tests / 0 failures / 0 errors / 0 skipped；`NoOutboundExchangeGuardTest` 3 tests / 0 failures / 0 errors / 1 skipped（CI/no-outbound guard 条件性 env absence 断言）。
+- 收尾继续执行 `git status --short`、`git diff --check`、`git diff --stat`、fixture sensitive keyword scan、real-host scan、forbidden readiness scan 和禁止范围 diff。
+
+### 边界
+
+未改 production adapter 真实连接逻辑；未改 `frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现真实 HTTP client / WebSocket；未实现 private TradingAdapter；未实现 RealClient / real provider；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；fixture smoke 不等于 real exchange connectivity。
+
+### 推荐下一步
+
+`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW`：只做 plan/review，规划如何展示 sandbox source / readiness / diagnostic state；不得展示 real-ready、live-ready、trading-authorized、private-ready 或 permission-probe-ready，不得启动 frontend implementation，除非后续单独授权。

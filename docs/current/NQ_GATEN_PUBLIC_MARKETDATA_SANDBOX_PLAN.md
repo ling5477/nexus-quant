@@ -18,6 +18,8 @@ Fixture smoke plan review status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke P
 
 Fixture smoke implementation planning status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Implementation Plan](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md) = **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**. It plans the minimum future implementation slice, future allowed file ranges, fixture set, readiness expectation matrix, no-egress verification design, future validation commands, and GateN-5 entry criteria. It does not implement fixture smoke, fake server, adapter skeleton, tests, API, migration, CI workflow, or real outbound.
 
+Fixture smoke implementation status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Implementation Plan](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md) = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**. GateN-4 now has deterministic OKX / Binance fixture resources and test-only no-egress fixture smoke covering public marketdata shape, readiness mapping, fixture hygiene, real-host denial, private/signed route fail-closed behavior, fake-server unavailable fallback blocking, and no credential / no permission-probe / no private trading boundary. It does not implement fake server runtime code, adapter skeleton, API, migration, CI workflow, frontend UI, real outbound, private trading, LIVE, AI, DH runtime, RealClient, or real provider work.
+
 ## Current Baseline
 
 GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
@@ -26,13 +28,15 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - Tagged commit: `64194844` (`docs(gatem): freeze GateM runtime readiness baseline`).
 - Frozen baseline: no-real runtime readiness baseline.
 - NQ-NEXT-PHASE-PLAN already recommends **GateN Public MarketData / Exchange Sandbox Planning**.
-- GateN current status: **PLAN ONLY / NOT IMPLEMENTED**.
+- GateN current status: **Public MarketData / Exchange Sandbox baseline with GateN-4 fixture smoke implemented; production adapter / API / runtime implementation NOT STARTED**.
 - GateN-0 exchange docs and existing adapter reconciliation: **PASS / RECONCILIATION BASELINE / READY TO COMMIT**.
 - GateN-1 public marketdata contract plan review: **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**.
 - GateN-2 fake-server / no-egress public marketdata test plan: **PASS / TEST PLAN BASELINE / READY TO COMMIT**.
 - GateN-3 public marketdata adapter skeleton plan review: **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**.
 - GateN-4 marketdata sandbox fixture smoke plan review: **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**.
 - GateN-4 marketdata sandbox fixture smoke implementation plan: **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**.
+- GateN-4 marketdata sandbox fixture smoke implementation: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
+- GateN production adapter / API / runtime implementation: **NOT STARTED**.
 
 Current negative boundaries remain unchanged:
 
@@ -435,7 +439,7 @@ Acceptance criteria:
 3. `NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW`.
 4. `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW`.
 5. `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN`.
-6. `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION`.
+6. `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION` - completed as **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
 7. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW`.
 8. `NQ-GATEN-FREEZE`.
 
@@ -473,26 +477,26 @@ Potential future P1:
 - Historical docs still contain old AI / LIVE route wording in append-only records; current README / ROADMAP / STATUS are the authority.
 - Paper Trading productization and UI/UX professionalism remain valuable follow-ups but are not GateN entry blockers.
 
-## Recommended First Implementation Task
+## Recommended Next Task
 
-Current precise next pointer after GateN-4 implementation planning: `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION`. It still requires separate authorization and remains deterministic fixture / local fake-server / no-egress only by default.
+Current precise next pointer after GateN-4 fixture smoke implementation: `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW`. It still requires separate authorization and must remain display-planning only unless a later implementation task is explicitly approved.
 
-Recommended first implementation task after this planning task:
+Recommended next task:
 
 ```text
-NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION
+NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW
 ```
 
 Reason:
 
-- It keeps the next step fixture/test-first.
-- It avoids real exchange, credentials, LIVE, and private endpoints.
-- It creates deterministic fixture / no-egress acceptance evidence before GateN-5 UI planning.
+- GateN-4 now has deterministic fixture / no-egress acceptance evidence.
+- GateN-5 can plan how to display source/readiness diagnostics without implying real provider or trading authorization.
+- It still avoids real exchange, credentials, LIVE, private endpoints, backend API expansion, and frontend implementation unless separately authorized.
 
 Entry conditions:
 
-- GateN-4 fixture smoke implementation plan is accepted.
-- User explicitly authorizes implementation or the next planning task.
+- GateN-4 fixture smoke implementation is accepted.
+- User explicitly authorizes the next planning task.
 - P0/P1/P2 blockers are not open.
 
 ## Final Decision
@@ -502,7 +506,8 @@ Decision: **PASS / PLAN ONLY / READY TO COMMIT**.
 GateN baseline:
 
 - GateN Public MarketData / Exchange Sandbox Planning.
-- GateN implementation **NOT STARTED**.
+- GateN-4 fixture smoke test-only implementation **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
+- GateN production adapter / API / runtime implementation **NOT STARTED**.
 - No real provider.
 - No private trading.
 - No credential.

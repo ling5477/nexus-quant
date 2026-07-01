@@ -1,0 +1,14 @@
+{
+  "fixtureId": "binance-exchange-status-pending-backend-support",
+  "provider": "BINANCE",
+  "family": "EXCHANGE_STATUS",
+  "scenario": "pending_backend_support",
+  "source": "FIXTURE",
+  "supportLevel": "PENDING_BACKEND_SUPPORT",
+  "readiness": "PENDING_BACKEND_SUPPORT",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "reason": "STATUS_MAPPING_PENDING",
+    "state": "BLOCKED"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "fixtureId": "binance-ohlcv-btc-usdt-1m-fresh",
+  "provider": "BINANCE",
+  "family": "OHLCV",
+  "scenario": "fresh",
+  "source": "FIXTURE",
+  "supportLevel": "FIXTURE",
+  "readiness": "FRESH",
+  "symbol": "BTCUSDT",
+  "interval": "1m",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "bars": [
+      {
+        "openTime": "2026-07-01T00:00:00Z",
+        "closeTime": "2026-07-01T00:00:59Z",
+        "open": "61000.00",
+        "high": "61030.00",
+        "low": "60980.00",
+        "close": "61018.00",
+        "volume": "11.000"
+      }
+    ]
+  }
+}

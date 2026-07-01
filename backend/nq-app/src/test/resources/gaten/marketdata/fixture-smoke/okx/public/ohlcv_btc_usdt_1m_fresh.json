@@ -1,0 +1,43 @@
+{
+  "fixtureId": "okx-ohlcv-btc-usdt-1m-fresh",
+  "provider": "OKX",
+  "family": "OHLCV",
+  "scenario": "fresh",
+  "source": "FIXTURE",
+  "supportLevel": "FIXTURE",
+  "readiness": "FRESH",
+  "symbol": "BTC-USDT",
+  "interval": "1m",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "bars": [
+      {
+        "openTime": "2026-07-01T00:00:00Z",
+        "closeTime": "2026-07-01T00:00:59Z",
+        "open": "61000.00",
+        "high": "61025.50",
+        "low": "60990.10",
+        "close": "61010.25",
+        "volume": "12.345"
+      },
+      {
+        "openTime": "2026-07-01T00:01:00Z",
+        "closeTime": "2026-07-01T00:01:59Z",
+        "open": "61010.25",
+        "high": "61045.75",
+        "low": "61002.00",
+        "close": "61040.00",
+        "volume": "8.125"
+      },
+      {
+        "openTime": "2026-07-01T00:02:00Z",
+        "closeTime": "2026-07-01T00:02:59Z",
+        "open": "61040.00",
+        "high": "61060.00",
+        "low": "61020.00",
+        "close": "61055.50",
+        "volume": "9.500"
+      }
+    ]
+  }
+}

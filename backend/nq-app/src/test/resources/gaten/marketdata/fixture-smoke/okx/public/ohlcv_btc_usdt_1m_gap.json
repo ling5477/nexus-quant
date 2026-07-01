@@ -1,0 +1,42 @@
+{
+  "fixtureId": "okx-ohlcv-btc-usdt-1m-gap",
+  "provider": "OKX",
+  "family": "OHLCV",
+  "scenario": "gap",
+  "source": "FIXTURE",
+  "supportLevel": "FIXTURE",
+  "readiness": "GAP",
+  "symbol": "BTC-USDT",
+  "interval": "1m",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "expectedBars": 3,
+    "actualBars": 2,
+    "gapWindows": [
+      {
+        "from": "2026-07-01T00:01:00Z",
+        "to": "2026-07-01T00:01:59Z"
+      }
+    ],
+    "bars": [
+      {
+        "openTime": "2026-07-01T00:00:00Z",
+        "closeTime": "2026-07-01T00:00:59Z",
+        "open": "61000.00",
+        "high": "61020.00",
+        "low": "60995.00",
+        "close": "61005.00",
+        "volume": "5.000"
+      },
+      {
+        "openTime": "2026-07-01T00:02:00Z",
+        "closeTime": "2026-07-01T00:02:59Z",
+        "open": "61020.00",
+        "high": "61050.00",
+        "low": "61015.00",
+        "close": "61045.00",
+        "volume": "6.000"
+      }
+    ]
+  }
+}

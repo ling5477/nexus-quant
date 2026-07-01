@@ -1,0 +1,16 @@
+{
+  "fixtureId": "okx-fake-server-unavailable",
+  "provider": "OKX",
+  "family": "FAKE_SERVER",
+  "scenario": "fake_server_unavailable",
+  "source": "FAKE_SERVER",
+  "supportLevel": "FAKE_SERVER",
+  "readiness": "ERROR",
+  "symbol": "BTC-USDT",
+  "asOf": "2026-07-01T00:03:00Z",
+  "payload": {
+    "endpoint": "local-fake://marketdata",
+    "state": "UNAVAILABLE",
+    "fallback": "BLOCKED"
+  }
+}
