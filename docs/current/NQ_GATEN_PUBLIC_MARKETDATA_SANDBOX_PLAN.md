@@ -2,9 +2,11 @@
 
 ## Status
 
-**PASS / PLAN ONLY / READY TO COMMIT**
+**PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**
 
-本文件是 GateN Public MarketData / Exchange Sandbox 的当前基线。GateN-0 到 GateN-5 已形成从文档复核、contract planning、fixture smoke 到最小 UI display 的 no-real 证据链；但 GateN production adapter / API / runtime implementation 仍未开始。
+本文件是 GateN Public MarketData / Exchange Sandbox 的当前基线。GateN-0 到 GateN-5 已形成从文档复核、contract planning、fixture smoke 到最小 UI display 的 no-real 证据链，并已由 [NQ-GATEN-FREEZE-REVIEW](NQ_GATEN_FREEZE_REVIEW.md) 冻结为 **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**；但 GateN production adapter / API / runtime implementation 仍未开始。
+
+Freeze review status: [NQ-GATEN Freeze Review](NQ_GATEN_FREEZE_REVIEW.md) = **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**。GateN freeze 只冻结 no-real / no-egress / fixture / sandbox source display 基线，不代表 production readiness、LIVE authorization、real provider readiness、private trading authorization、real permission probe 或 trading authorization。
 
 Reconciliation status: [NQ-GATEN-0 Exchange Docs And Existing Adapter Reconciliation](NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md) = **PASS / RECONCILIATION BASELINE / READY TO COMMIT**. GateN-0 inventories early OKX / Binance official-docs records, existing public marketdata adapters, historical live-0 evidence, private/trading forbidden surfaces, and current no-real/security boundaries for GateN-1 input.
 
@@ -18,11 +20,11 @@ Fixture smoke plan review status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke P
 
 Fixture smoke implementation planning status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Implementation Plan](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md) = **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**. It plans the minimum future implementation slice, future allowed file ranges, fixture set, readiness expectation matrix, no-egress verification design, future validation commands, and GateN-5 entry criteria. It does not implement fixture smoke, fake server, adapter skeleton, tests, API, migration, CI workflow, or real outbound.
 
-Fixture smoke implementation status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Implementation Plan](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md) = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**. GateN-4 now has deterministic OKX / Binance fixture resources and test-only no-egress fixture smoke covering public marketdata shape, readiness mapping, fixture hygiene, real-host denial, private/signed route fail-closed behavior, fake-server unavailable fallback blocking, and no credential / no permission-probe / no private trading boundary. It does not implement fake server runtime code, adapter skeleton, API, migration, CI workflow, frontend UI, real outbound, private trading, LIVE, AI, DH runtime, RealClient, or real provider work.
+Fixture smoke implementation status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Implementation Plan](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md) = **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**. GateN-4 now has deterministic OKX / Binance fixture resources and test-only no-egress fixture smoke covering public marketdata shape, readiness mapping, fixture hygiene, real-host denial, private/signed route fail-closed behavior, fake-server unavailable fallback blocking, and no credential / no permission-probe / no private trading boundary. It does not implement fake server runtime code, adapter skeleton, API, migration, CI workflow, frontend UI, real outbound, private trading, LIVE, AI, DH runtime, RealClient, or real provider work.
 
 Runtime UI sandbox source display plan review status: [NQ-GATEN-5 Runtime UI Sandbox Source Display Plan Review](NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md) = **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**. GateN-5 defines the minimal UI display scope for sandbox source taxonomy, readiness status, diagnostic reason, no-egress labels, page placement, data-source assumptions, forbidden UI wording, validation expectations, and GateN-FREEZE entry criteria. It does not implement frontend UI, backend API, fake-server runtime, adapter skeleton, tests, E2E, CI workflow, real outbound, private trading, LIVE, AI, DH runtime, RealClient, or real provider work.
 
-Runtime UI sandbox source display implementation status: [NQ-GATEN-5 Runtime UI Sandbox Source Display Implementation](NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md) = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**. GateN-5 已在既有 `/marketdata` Data Quality / Readiness 区域加入最小 sandbox/source display block，复用现有 readiness / bars / route query facts，缺失后端字段显示 `PENDING_BACKEND_SUPPORT`（等待后端支持），并通过 frontend build 与最小 Playwright smoke。它不新增 backend API、fake-server runtime、adapter skeleton、CI workflow、real outbound、private trading、LIVE、AI、DH runtime、RealClient 或 real provider。
+Runtime UI sandbox source display implementation status: [NQ-GATEN-5 Runtime UI Sandbox Source Display Implementation](NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md) = **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**. GateN-5 已在既有 `/marketdata` Data Quality / Readiness 区域加入最小 sandbox/source display block，复用现有 readiness / bars / route query facts，缺失后端字段显示 `PENDING_BACKEND_SUPPORT`（等待后端支持），并通过 frontend build 与最小 Playwright smoke。它不新增 backend API、fake-server runtime、adapter skeleton、CI workflow、real outbound、private trading、LIVE、AI、DH runtime、RealClient 或 real provider。
 
 ## Current Baseline
 
@@ -32,17 +34,18 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - Tagged commit: `64194844` (`docs(gatem): freeze GateM runtime readiness baseline`).
 - Frozen baseline: no-real runtime readiness baseline.
 - NQ-NEXT-PHASE-PLAN already recommends **GateN Public MarketData / Exchange Sandbox Planning**.
-- GateN current status: **Public MarketData / Exchange Sandbox baseline with GateN-4 fixture smoke implemented and GateN-5 UI display implemented; production adapter / API / runtime implementation NOT STARTED**.
+- GateN current status: **Public MarketData / Exchange Sandbox baseline FROZEN / ACCEPTED / CLOSED with GateN-4 fixture smoke implemented and GateN-5 UI display implemented; production adapter / API / runtime implementation NOT STARTED**.
 - GateN-0 exchange docs and existing adapter reconciliation: **PASS / RECONCILIATION BASELINE / READY TO COMMIT**.
 - GateN-1 public marketdata contract plan review: **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**.
 - GateN-2 fake-server / no-egress public marketdata test plan: **PASS / TEST PLAN BASELINE / READY TO COMMIT**.
 - GateN-3 public marketdata adapter skeleton plan review: **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**.
 - GateN-4 marketdata sandbox fixture smoke plan review: **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**.
 - GateN-4 marketdata sandbox fixture smoke implementation plan: **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**.
-- GateN-4 marketdata sandbox fixture smoke implementation: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
+- GateN-4 marketdata sandbox fixture smoke implementation: **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
 - GateN-5 runtime UI sandbox source display plan review: **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
-- GateN-5 runtime UI sandbox source display implementation plan / record: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
-- GateN-5 runtime UI sandbox source display implementation: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
+- GateN-5 runtime UI sandbox source display implementation plan / record: **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
+- GateN-5 runtime UI sandbox source display implementation: **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
+- GateN freeze review: **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
 - GateN production adapter / API / runtime implementation: **NOT STARTED**.
 
 Current negative boundaries remain unchanged:
@@ -450,7 +453,7 @@ Acceptance criteria:
 7. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW` - completed as **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
 8. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN` - completed as **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**.
 9. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION` - completed as **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
-10. `NQ-GATEN-FREEZE` - recommended next task; it still requires a separate freeze review and must not add implementation.
+10. `NQ-GATEN-FREEZE` - completed as **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
 
 ## P0 / P1 / P2 / P3 Risks
 
@@ -488,12 +491,12 @@ Potential future P1:
 
 ## Recommended Next Task
 
-Current precise next pointer after GateN-5 implementation: `NQ-GATEN-FREEZE`. It requires separate authorization and must remain a freeze/review task, not an implementation task.
+Current precise next pointer after GateN freeze: `NQ-GATEN-RELEASE-TAG-AND-ARCHIVE`. It requires separate authorization and must remain a release/tag/archive closeout task, not an implementation task.
 
 Recommended next task:
 
 ```text
-NQ-GATEN-FREEZE
+NQ-GATEN-RELEASE-TAG-AND-ARCHIVE
 ```
 
 Reason:
@@ -501,7 +504,8 @@ Reason:
 - GateN-4 now has deterministic fixture / no-egress acceptance evidence.
 - GateN-5 plan review and implementation plan are accepted.
 - GateN-5 minimal UI implementation is complete and validated by build plus smoke.
-- GateN-FREEZE can now verify GateN-0 到 GateN-5 的状态一致性与 no-real boundary；不得新增实现。
+- GateN-FREEZE has verified GateN-0 到 GateN-5 的状态一致性与 no-real boundary。
+- Release/tag/archive closeout can preserve the frozen GateN baseline without adding implementation.
 
 Entry conditions:
 
@@ -509,20 +513,22 @@ Entry conditions:
 - GateN-5 plan review is accepted.
 - GateN-5 implementation plan is accepted.
 - GateN-5 implementation is accepted.
-- User explicitly authorizes the freeze task.
+- GateN freeze review is accepted.
+- User explicitly authorizes the release/tag/archive task.
 - P0/P1/P2 blockers are not open.
 
 ## Final Decision
 
-Decision: **PASS / PLAN ONLY / READY TO COMMIT**.
+Decision: **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
 
 GateN baseline:
 
 - GateN Public MarketData / Exchange Sandbox Planning.
-- GateN-4 fixture smoke test-only implementation **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
+- GateN-4 fixture smoke test-only implementation **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
 - GateN-5 Runtime UI Sandbox Source Display plan review **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
 - GateN-5 Runtime UI Sandbox Source Display implementation plan / record **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
-- GateN-5 Runtime UI Sandbox Source Display implementation **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
+- GateN-5 Runtime UI Sandbox Source Display implementation **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
+- GateN freeze review **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
 - GateN production adapter / API / runtime implementation **NOT STARTED**.
 - No real provider.
 - No private trading.
@@ -534,5 +540,5 @@ GateN baseline:
 Commit recommendation:
 
 ```text
-feat(gaten): add marketdata sandbox source display
+docs(gaten): freeze public marketdata sandbox baseline
 ```

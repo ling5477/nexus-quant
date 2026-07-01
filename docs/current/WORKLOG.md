@@ -11432,3 +11432,36 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-FREEZE`：单独执行 GateN-0 到 GateN-5 状态一致性与 no-real boundary freeze review；不得在 freeze 中新增实现、开启 LIVE、接 AI / DH runtime、实现 real provider 或 private trading。
+
+---
+
+## NQ-GATEN-FREEZE
+
+日期：2026-07-01
+
+### 本轮目标
+
+冻结 GateN public marketdata / exchange sandbox baseline。范围只覆盖 GateN-0 到 GateN-5 状态一致性、no-real boundary、documentation review 和 test baseline review；不新增实现、不改 API、不改 migration、不改 CI、不接真实交易所。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_FREEZE_REVIEW.md`，记录 GateN freeze baseline、accepted evidence、validation、known residuals、post-freeze rules、P0/P1/P2/P3 findings 和 final decision。
+- 将 `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md` 更新为 `PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT`。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/NQ_NEXT_PHASE_PLAN.md` 的 GateN freeze 状态。
+- 明确 GateN-4 fixture smoke 与 GateN-5 sandbox/source display 均已接受，但 production adapter / API / runtime、fake server runtime、adapter skeleton、real public outbound、private trading adapter、RealClient、real provider、real permission probe、LIVE、AI runtime 和 DH runtime 均未启动或未实现。
+
+### 验证
+
+- 已运行 scoped Maven：`mvn -f backend/pom.xml -pl nq-app -am "-Dtest=GateNMarketdataSandboxFixtureSmokeTest,NoOutboundExchangeGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`，结果 **BUILD SUCCESS**；GateN fixture smoke 4 tests pass，no-outbound guard 3 tests / 1 skipped。
+- 已运行 frontend build：`Set-Location frontend; npm run build`，结果 **PASS**。
+- 已运行 frontend smoke：`Set-Location frontend; npm run test:e2e -- marketdata-quality-readiness-smoke.spec.ts --project=chromium`，结果 **PASS**，1 passed。
+- 已执行 forbidden wording scan；命中历史/否定语境、forbidden wording 清单和 GateN 边界说明，未发现 GateN 当前状态被写成 real provider ready、LIVE ready 或 trading authorization。
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat` 和禁止范围 diff；收尾复核仅显示允许的 root `README.md` 与 `docs/current/**` 文档变更，`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现真实 HTTP / WebSocket、adapter skeleton、fake server runtime、RealClient、real provider、private trading adapter 或 real permission probe；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEN-RELEASE-TAG-AND-ARCHIVE`：只做 release tag / archive closeout / current docs 瘦身计划，不新增实现、不改 API、不改 CI、不接真实交易所。

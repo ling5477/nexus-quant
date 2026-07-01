@@ -1,6 +1,23 @@
+## NQ-GATEN-FREEZE（2026-07-01）
+
+结论：**PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**。本轮执行 GateN-0 到 GateN-5 freeze review、no-real boundary review、documentation review 和 test baseline review；冻结对象仅为 public marketdata / exchange sandbox 的 no-real / no-egress / fixture / sandbox source display baseline，不是 real provider readiness、LIVE readiness、private trading authorization 或 trading authorization。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app -am "-Dtest=GateNMarketdataSandboxFixtureSmokeTest,NoOutboundExchangeGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | BUILD SUCCESS；`GateNMarketdataSandboxFixtureSmokeTest` 4 tests / 0 failures / 0 errors / 0 skipped；`NoOutboundExchangeGuardTest` 3 tests / 0 failures / 0 errors / 1 skipped。Maven settings 存在既有 non-blocking `profiles` tag warning。 |
+| `Set-Location frontend; npm run build` | PASS | `tsc -b && vite build` 成功；保留既有 Vite chunk size warning。 |
+| `Set-Location frontend; npm run test:e2e -- marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS | 1 passed；保留既有 `NO_COLOR` / `FORCE_COLOR`、Ant Design `Card.bordered` deprecation 和 React 19 compatibility warning。 |
+| `rg "ready for live|live ready|real-ready|provider ready|trading authorized|account authorized|permission verified|private ready|LIVE_READY|TRADING_AUTHORIZED|REAL_PROVIDER_READY|PRIVATE_READY|ACCOUNT_AUTHORIZED|PERMISSION_VERIFIED" frontend docs/current README.md` | REVIEWED | 命中历史/否定语境、forbidden wording 清单和 GateN 边界说明；未发现 GateN 当前状态被写成 real provider ready、LIVE ready、private ready 或 trading authorization。 |
+| `git status --short` / `git diff --check` / `git diff --stat` | PASS | 收尾复核只允许 root `README.md` 与 `docs/current/**` 文档变更；`git diff --check` 无 whitespace error。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。 |
+
+Boundary：GateN production adapter / API / runtime **NOT STARTED**；fake server runtime **NOT_IMPLEMENTED**；adapter skeleton **NOT_IMPLEMENTED**；real public outbound **NOT STARTED**；private trading adapter **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real permission probe **NOT_IMPLEMENTED**。public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION（2026-07-01）
 
-结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮实现 GateN-5 最小 `/marketdata` sandbox/source display：只在既有 Data Quality / Readiness 区域展示 source / readiness / diagnostic，不新增 backend API、页面、migration、CI workflow、fake-server runtime、adapter skeleton、真实 HTTP/WebSocket、RealClient、real provider、private trading、LIVE、AI runtime 或 DH runtime。
+结论：**IMPLEMENTED / SELF-REVIEWED / ACCEPTED**。本轮实现 GateN-5 最小 `/marketdata` sandbox/source display：只在既有 Data Quality / Readiness 区域展示 source / readiness / diagnostic，不新增 backend API、页面、migration、CI workflow、fake-server runtime、adapter skeleton、真实 HTTP/WebSocket、RealClient、real provider、private trading、LIVE、AI runtime 或 DH runtime。GateN-FREEZE 已接受该 baseline。
 
 Testing record：
 
@@ -13,7 +30,7 @@ Testing record：
 | `rg "okx.com|binance.com|bybit.com|gate.io|gate.com|coinbase.com|kraken.com" frontend` | PASS | 未命中 frontend real exchange host 字符串；本轮 UI 没有引入真实交易所 host。 |
 | forbidden-scope diff | PASS | `backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff；`frontend/src/api/marketdata.ts` 与 `frontend/dist` 也无 diff。 |
 
-Boundary：GateN-5 runtime UI sandbox source display **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**；GateN production adapter / API / runtime implementation **NOT STARTED**；fake server runtime **NOT_IMPLEMENTED**；adapter skeleton **NOT_IMPLEMENTED**；real public outbound **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real exchange private trading **NOT_IMPLEMENTED**；permission probe real execution **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+Boundary：GateN-5 runtime UI sandbox source display **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**；GateN production adapter / API / runtime implementation **NOT STARTED**；fake server runtime **NOT_IMPLEMENTED**；adapter skeleton **NOT_IMPLEMENTED**；real public outbound **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real exchange private trading **NOT_IMPLEMENTED**；permission probe real execution **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
 
 ## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN（2026-07-01）
 
