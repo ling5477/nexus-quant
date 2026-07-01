@@ -171,6 +171,11 @@ test.describe('marketdata quality readiness view', () => {
         const qualityPanel = page.getByTestId('marketdata-quality-readiness-view');
         await expect(qualityPanel).toBeVisible();
         await expect(qualityPanel).toContainText('UNKNOWN');
+        const sandboxPanel = page.getByTestId('marketdata-sandbox-source-display');
+        await expect(sandboxPanel).toBeVisible();
+        await expect(sandboxPanel).toContainText('Sandbox Source');
+        await expect(sandboxPanel).toContainText('LOCAL_DB');
+        await expect(sandboxPanel).toContainText('PENDING_BACKEND_SUPPORT');
 
         await fillQueryWindow(page);
         const readinessResponse = page.waitForResponse((response) => (
@@ -196,6 +201,20 @@ test.describe('marketdata quality readiness view', () => {
         await expect(qualityPanel).toContainText('NO_MIGRATION_MVP');
         await expect(qualityPanel).toContainText('Local bar sequence or qualityStatus evidence indicates a gap');
         await expect(qualityPanel).toContainText('Last success');
+        await expect(sandboxPanel).toContainText('sourceType');
+        await expect(sandboxPanel).toContainText('venue');
+        await expect(sandboxPanel).toContainText('BINANCE');
+        await expect(sandboxPanel).toContainText('sourceLabel');
+        await expect(sandboxPanel).toContainText('Local DB marketdata readiness');
+        await expect(sandboxPanel).toContainText('reasonCode');
+        await expect(sandboxPanel).toContainText('checkedAt');
+        await expect(sandboxPanel).toContainText('2026-06-29T01:06:00Z');
+        await expect(sandboxPanel).toContainText('noEgress');
+        await expect(sandboxPanel).toContainText('bars: GAP');
+        await expect(sandboxPanel).toContainText('instrument metadata: PENDING_BACKEND_SUPPORT');
+        await expect(sandboxPanel).toContainText('ticker: PENDING_BACKEND_SUPPORT');
+        await expect(sandboxPanel).toContainText('exchange status: PENDING_BACKEND_SUPPORT');
+        await expect(sandboxPanel).toContainText('不代表交易授权');
         await expect(qualityPanel).not.toContainText('Pending backend support');
         await expect(qualityPanel).not.toContainText('source health: not available from current API');
         await expect(page.getByText('Marketdata bars 查询失败')).toHaveCount(0);

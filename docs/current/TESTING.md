@@ -1,3 +1,20 @@
+## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION（2026-07-01）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮实现 GateN-5 最小 `/marketdata` sandbox/source display：只在既有 Data Quality / Readiness 区域展示 source / readiness / diagnostic，不新增 backend API、页面、migration、CI workflow、fake-server runtime、adapter skeleton、真实 HTTP/WebSocket、RealClient、real provider、private trading、LIVE、AI runtime 或 DH runtime。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Set-Location frontend; npm run build` | PASS | `tsc -b && vite build` 成功；保留既有 Vite chunk size warning。 |
+| `Set-Location frontend; npm run test:e2e -- marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS | 1 passed；smoke 断言 sandbox/source block 可见、`LOCAL_DB` / `PENDING_BACKEND_SUPPORT` / per-capability fallback / `不代表交易授权` 文案存在。既有 non-blocking warning：`NO_COLOR`/`FORCE_COLOR`、Ant Design `Card.bordered` deprecation、React 19 compatibility。 |
+| `rg "ready for live|live ready|real-ready|provider ready|trading authorized|account authorized|permission verified|private ready|LIVE_READY|TRADING_AUTHORIZED|REAL_PROVIDER_READY|PRIVATE_READY|ACCOUNT_AUTHORIZED|PERMISSION_VERIFIED" frontend docs/current README.md` | REVIEWED | 命中既有历史/否定语境、forbidden wording 清单和本轮边界说明；未发现本轮 MarketData sandbox/source UI 把 forbidden wording 作为正向状态展示。 |
+| `rg "apiKey|secret|token|signature|privateKey|passphrase|mnemonic" frontend docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md` | REVIEWED | 命中既有前端 auth/token/credential 字段名、设计 token、E2E 防泄漏断言和 account credential 页面；未命中本轮 MarketData sandbox/source UI 的真实 credential material。 |
+| `rg "okx.com|binance.com|bybit.com|gate.io|gate.com|coinbase.com|kraken.com" frontend` | PASS | 未命中 frontend real exchange host 字符串；本轮 UI 没有引入真实交易所 host。 |
+| forbidden-scope diff | PASS | `backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff；`frontend/src/api/marketdata.ts` 与 `frontend/dist` 也无 diff。 |
+
+Boundary：GateN-5 runtime UI sandbox source display **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**；GateN production adapter / API / runtime implementation **NOT STARTED**；fake server runtime **NOT_IMPLEMENTED**；adapter skeleton **NOT_IMPLEMENTED**；real public outbound **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real exchange private trading **NOT_IMPLEMENTED**；permission probe real execution **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN（2026-07-01）
 
 结论：**PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**。本轮只执行 GateN-5 Runtime UI Sandbox Source Display implementation planning 和 current docs sync；未修改 frontend / backend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、测试代码、CI workflow 或运行时行为。

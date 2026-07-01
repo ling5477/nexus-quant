@@ -11397,3 +11397,38 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION`：若用户单独授权，只做最小 frontend implementation slice；必须保持 compact `/marketdata` block，不新增 API/页面/backend/migration/CI，不展示 real-ready/live-ready/provider-ready/trading-authorized，不触发真实 host、credential、permission probe、private trading、LIVE、AI 或 DH runtime。
+
+---
+
+## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于已接受的 GateN-5 implementation plan，执行最小前端实现。范围只覆盖既有 `/marketdata` Data Quality / Readiness 区域的 compact sandbox/source display block、UI-safe type、最小 Playwright smoke 和 current docs sync；不新增 backend API、页面、migration、CI workflow、fake-server runtime、adapter skeleton、真实 HTTP/WebSocket、RealClient、real provider、private trading adapter、credential lookup 或 real permission probe。
+
+### 完成内容
+
+- 在 `frontend/src/pages/marketdata/MarketdataPage.tsx` 新增 `SandboxSourceDisplay`，展示 `sourceType`、`readiness`、`venue`、capability 状态和 diagnostic fields。
+- 在 `frontend/src/types/marketdata.ts` 增加 UI-safe source/readiness/capability 类型，不新增 API contract。
+- 扩展 `frontend/tests/e2e/marketdata-quality-readiness-smoke.spec.ts`，断言 sandbox/source block、`LOCAL_DB`、`PENDING_BACKEND_SUPPORT`、per-capability fallback 和“不代表交易授权”边界。
+- 将 `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md` 从 implementation plan 更新为中文 implementation record。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md` 的 GateN-5 状态。
+
+### 验证
+
+- 已运行 `Set-Location frontend; npm run build`：PASS；`tsc -b && vite build` 成功，保留既有 Vite chunk size warning。
+- 已运行 `Set-Location frontend; npm run test:e2e -- marketdata-quality-readiness-smoke.spec.ts --project=chromium`：PASS；1 passed，保留既有 Ant Design / React 19 compatibility warning。
+- 已执行 forbidden wording scan：命中历史/否定语境、forbidden wording 清单和本轮边界说明；未发现本轮 MarketData UI 把 forbidden wording 作为正向状态展示。
+- 已执行 sensitive keyword scan：命中既有 auth/token/credential 字段名、设计 token 和 E2E 防泄漏断言；未命中本轮 MarketData sandbox/source UI 的真实 credential material。
+- 已执行 frontend real-host scan：未命中 OKX / Binance / Bybit / Gate / Coinbase / Kraken real host 字符串。
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat` 和禁止范围 diff；`git diff --check` 无 whitespace error，仅有 Windows LF/CRLF working-copy warning；禁止范围 diff 为空。
+
+### 边界
+
+未改 `backend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未修改 `frontend/src/api/marketdata.ts`；未新增 API / migration / 页面 / CI workflow；未实现真实 HTTP client / WebSocket；未实现 adapter skeleton；未实现 fake server runtime；未实现 private TradingAdapter；未实现 RealClient / real provider；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；sandbox/source display 不等于 real provider readiness。
+
+### 推荐下一步
+
+`NQ-GATEN-FREEZE`：单独执行 GateN-0 到 GateN-5 状态一致性与 no-real boundary freeze review；不得在 freeze 中新增实现、开启 LIVE、接 AI / DH runtime、实现 real provider 或 private trading。

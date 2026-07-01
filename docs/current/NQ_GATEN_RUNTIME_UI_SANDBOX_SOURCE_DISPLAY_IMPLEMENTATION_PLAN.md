@@ -1,119 +1,100 @@
-# NQ-GATEN-5 Runtime UI Sandbox Source Display Implementation Plan
+# NQ-GATEN-5 Runtime UI Sandbox Source Display Implementation
 
 ## Status
 
-**PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**
+**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**
 
-This document is a GateN implementation planning baseline. It does not implement frontend code, backend code, API, tests, fake-server runtime, adapter skeleton, real provider, RealClient, LIVE, AI runtime, DH runtime, or real exchange egress.
+本文件记录 GateN-5 Runtime UI Sandbox Source Display 的最小前端实现结果。`IMPLEMENTED` 表示本轮已完成允许范围内实现；`SELF-REVIEWED` 表示已按 no-real / no-egress / forbidden wording 边界自检；`READY TO COMMIT` 表示当前工作区变更可进入提交前复核。
 
-## Current GateN-5 Implementation Planning Decision
+本轮没有实现 backend API、fake-server runtime、adapter skeleton、RealClient、real provider、真实 HTTP / WebSocket、private trading adapter、真实 permission probe、LIVE、AI runtime 或 DH runtime。
 
-- GateN-5 Runtime UI Sandbox Source Display implementation remains **NOT STARTED**.
-- The next implementation slice is limited to one compact sandbox/source display block inside the existing `/marketdata` Data Quality / Readiness area.
-- The first slice must not add a sidebar entry, dashboard, standalone page, runtime readiness page change, backend endpoint, migration, CI workflow, or broad E2E expansion.
-- The display must stay no-real by default: public marketdata readiness is not trading authorization.
-- LIVE remains **DISABLED**.
-- AI remains **NOT STARTED**.
-- DH runtime remains **NOT_INTEGRATED**.
-- RealClient / real provider remains **NOT_IMPLEMENTED**.
-- Real exchange private trading remains **NOT_IMPLEMENTED**.
-- Permission probe real execution remains **NOT_IMPLEMENTED**.
+## 本轮实现结论
 
-## Inputs From GateN-5 Plan Review
+- GateN-5 最小实现已落在既有 `/marketdata` 页面 Data Quality / Readiness 区域内。
+- 新增的是 compact sandbox/source display block，不是新页面、不是新菜单、不是 runtime readiness dashboard。
+- UI 只显示 public marketdata 的 source / readiness / diagnostic 信息；public marketdata readiness 仍只是诊断，不是交易授权。
+- 缺少后端明确字段时，UI 显示 `PENDING_BACKEND_SUPPORT`（等待后端支持），不推断 real provider、LIVE 或 trading state。
+- GateN production adapter / API / runtime implementation 仍为 **NOT STARTED**。
 
-- GateN-5 plan review completed as **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
-- Accepted placement is the existing MarketData readiness/source-health area, not a new page.
-- Accepted source taxonomy is `LOCAL_DB / FIXTURE / FAKE_SERVER / NO_EGRESS_SANDBOX / PUBLIC_SANDBOX_CANDIDATE`.
-- Accepted readiness taxonomy is `FRESH / STALE / GAP / ERROR / DISABLED / PENDING_BACKEND_SUPPORT`.
-- Accepted venue and capability display scope is `OKX / Binance` with `bars / instrument metadata / ticker / exchange status`.
-- Accepted diagnostics are `reasonCode`, `reasonText`, `checkedAt`, `noEgress`, and `sourceLabel`.
-- Historical live-0 evidence must not appear as a current UI readiness badge.
+## 实现范围
 
-## Existing Frontend Evidence For Future Implementation
+本轮改动只覆盖允许文件：
 
-- `frontend/src/pages/marketdata/MarketdataPage.tsx` already has a Data Quality / Readiness view identified by `data-testid="marketdata-quality-readiness-view"`.
-- The existing MarketData page already renders readiness, source health, backend support, freshness, gap counts, last success, last failure, and quality summary from local backend data.
-- `frontend/src/api/marketdata.ts` already calls the existing marketdata readiness and bars endpoints.
-- `frontend/src/types/marketdata.ts` already defines `MarketdataReadinessSummary` with `status`, `freshnessStatus`, `sourceHealthStatus`, `sourceHealthReason`, `backendSupportLevel`, `generatedAt`, and related local DB-derived fields.
-- Runtime readiness navigation exists elsewhere in the frontend, but GateN-5 first slice must not modify it.
+- `frontend/src/pages/marketdata/MarketdataPage.tsx`
+  - 在既有 Data Quality / Readiness 卡片中加入 `SandboxSourceDisplay`。
+  - 根据现有 bars / readiness / route query 状态生成 UI-only summary。
+  - 显示 `sourceType`、`readiness`、`venue`、`capability` 和 `diagnostic` 字段。
+- `frontend/src/types/marketdata.ts`
+  - 增加 UI-safe source/readiness/capability 类型。
+  - 没有新增 API contract，也没有引入真实 provider 字段。
+- `frontend/tests/e2e/marketdata-quality-readiness-smoke.spec.ts`
+  - 扩展既有 MarketData readiness smoke，断言 sandbox/source block 可见、字段可读、缺失能力显示等待后端支持，并保留“不代表交易授权”边界。
+- `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`
+  - 将 GateN-5 implementation plan 更新为 implementation record。
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`
+- `docs/current/README.md`
+- `docs/current/TESTING.md`
+- `docs/current/WORKLOG.md`
+- `README.md`
 
-## Minimal UI Implementation Slice
+未修改 `frontend/src/api/marketdata.ts`，因为既有 `/api/marketdata/readiness` 与 `/api/marketdata/bars` 已足够支持本轮 UI-only display；不需要新增 API。
 
-Future GateN-5 implementation should add a compact `Sandbox source` block to the existing `/marketdata` Data Quality / Readiness area.
+## UI 展示行为
 
-Required display behavior:
+Source taxonomy（来源分类）：
 
-- `sourceType`
-  - Show `LOCAL_DB` when the value is derived from current `/api/marketdata/readiness` or `/api/marketdata/bars` local backend facts.
-  - Show `PENDING_BACKEND_SUPPORT` for fixture, fake-server, no-egress sandbox, or public sandbox candidate source facts unless a future approved backend contract supplies explicit fields.
-  - Do not infer real provider status from local DB facts.
-- `readiness`
-  - Map existing readiness and source-health fields only into `FRESH / STALE / GAP / ERROR / DISABLED / PENDING_BACKEND_SUPPORT`.
-  - If existing fields are missing or ambiguous, show `PENDING_BACKEND_SUPPORT`.
-  - Never display trading or account authorization.
-- `venue`
-  - Display `OKX` or `Binance` only from existing marketdata query/context.
-  - Do not probe a provider to discover venues.
-- `capability`
-  - Display `bars` from the existing marketdata bars/readiness flow.
-  - Display `instrument metadata`, `ticker`, and `exchange status` as `PENDING_BACKEND_SUPPORT` unless the existing data model already provides current local facts.
-- `diagnostic`
-  - `reasonCode`: use existing status/source-health codes when available; otherwise `PENDING_BACKEND_SUPPORT`.
-  - `reasonText`: use existing source-health reason or a local explanatory text; do not mention real readiness.
-  - `checkedAt`: use existing `generatedAt` or local query timestamp if available.
-  - `noEgress`: show `PENDING_BACKEND_SUPPORT` until an approved backend contract supplies an explicit no-egress fact; the UI may state that the first slice performs no browser-side exchange egress.
-  - `sourceLabel`: use a UI-local label such as `Local DB marketdata readiness` or `Sandbox source pending backend support`.
+- `LOCAL_DB`：当前 UI 使用既有 MarketData readiness / bars 本地事实时显示。
+- `FIXTURE`：本轮不从运行时读取 fixture 结果；后续如需展示必须由单独 API plan 批准。
+- `FAKE_SERVER`：fake-server runtime 未实现，本轮不展示为当前运行来源。
+- `NO_EGRESS_SANDBOX`：本轮仅以 UI 标签说明浏览器侧不触发交易所外联，不把它写成后端已确认的运行状态。
+- `PUBLIC_SANDBOX_CANDIDATE`：仅保留未来候选语义，本轮不显示为 real provider readiness。
 
-Required UI states:
+Readiness taxonomy（就绪/健康诊断分类）：
 
-- No submitted query: compact empty state, no real-source claim.
-- Loading: existing MarketData loading pattern.
-- Backend readiness unavailable: `PENDING_BACKEND_SUPPORT` or `ERROR`, depending on the existing error state.
-- Bars present with known quality: show local DB facts only.
-- Stale, gap, or error state: display the mapped readiness and diagnostic reason without implying trading capability.
+- `FRESH`：现有 readiness / source-health 表示新鲜可用时映射。
+- `STALE`：现有 freshness/source-health 表示过期时映射。
+- `GAP`：现有质量统计存在 gap 时映射。
+- `ERROR`：现有 readiness error / loading failure / backend unavailable 时映射。
+- `DISABLED`：现有状态明确 disabled 时映射。
+- `PENDING_BACKEND_SUPPORT`：既有 API 没有明确字段、per-capability diagnostics 或 no-egress fact 时显示。
 
-## Allowed Future File Ranges
+Capability（能力项）显示：
 
-Future implementation, if separately authorized, may only touch:
+- `bars`：使用既有 bars/readiness 事实映射。
+- `instrument metadata`：本轮显示 `PENDING_BACKEND_SUPPORT`。
+- `ticker`：本轮显示 `PENDING_BACKEND_SUPPORT`。
+- `exchange status`：本轮显示 `PENDING_BACKEND_SUPPORT`。
 
-- `frontend/src/pages/marketdata/**`
-- `frontend/src/api/marketdata.ts`, only for existing interface or light type adaptation; if a new endpoint or method is needed, stop and request an API plan.
-- `frontend/src/types/marketdata.ts`, only for UI-safe source/readiness display types.
-- `frontend/tests/e2e/**` or an existing component/smoke test location, only for the minimum assertion required by the implementation task.
-- `docs/current/**` for status synchronization.
-- `README.md`, only for GateN status and document index synchronization if the implementation task explicitly allows it.
+Diagnostic（诊断）字段：
 
-Still forbidden in the future implementation slice:
+- `reasonCode`：优先使用现有 readiness / source-health / freshness / gap / error 事实，否则为 `PENDING_BACKEND_SUPPORT`。
+- `reasonText`：只描述 local DB / sandbox source 的诊断原因，不描述 real provider authorization。
+- `checkedAt`：使用现有 `generatedAt` 或查询上下文时间；缺失时为 `PENDING_BACKEND_SUPPORT`。
+- `noEgress`：显示为 `PENDING_BACKEND_SUPPORT`，因为当前后端 contract 没有显式 no-egress 字段；UI 同时标注本前端块不触发交易所外联。
+- `sourceLabel`：使用 `Local DB marketdata readiness` 或 `Sandbox source pending backend support`。
 
-- `backend/**`
-- `research/**`
-- `scripts/**`
-- `deploy/**`
-- `.github/**`
-- database migration paths
-- new API
-- new page
-- CI workflow changes
-- real HTTP / WebSocket implementation
-- adapter skeleton implementation
-- fake-server runtime implementation
-- RealClient / real provider implementation
-- real permission probe
-- credential access
-- order, cancel, transfer, withdraw, account, or balance capability
+## 数据来源行为
 
-## Data Source Constraints
+本轮只消费既有数据源：
 
-- First slice data sources are limited to existing `/api/marketdata/readiness`, existing `/api/marketdata/bars`, existing local DB-derived facts, and current route/query context.
-- No new API is allowed in the GateN-5 UI implementation slice.
-- No dynamic fixture smoke result is allowed unless it is already exposed by an approved existing no-real contract.
-- No fake-server runtime result is allowed because fake-server runtime is not implemented.
-- No real exchange host, provider base URL, credential, signed endpoint, account endpoint, or permission probe may be used.
-- Missing source fields must be represented as `PENDING_BACKEND_SUPPORT`, not guessed.
+- `marketdataApi.getReadiness`，对应既有 `/api/marketdata/readiness`。
+- `marketdataApi.listBars`，对应既有 `/api/marketdata/bars`。
+- 当前 `/marketdata` 页面查询上下文，例如 venue、symbol、interval。
+- 既有前端错误、loading、empty、quality summary 状态。
 
-## UI Wording Rules
+本轮没有：
 
-Allowed wording:
+- 新增 API。
+- 新增 backend DTO。
+- 暴露 GateN-4 fixture smoke 动态结果。
+- 读取 fake-server runtime 状态。
+- 读取 credential。
+- 调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken host。
+- 调用 account、balance、order、cancel、transfer、withdraw、user-data-stream 或 signed endpoint。
+
+## 文案边界
+
+允许 UI 文案：
 
 - `Sandbox`
 - `Fixture`
@@ -123,7 +104,7 @@ Allowed wording:
 - `Pending backend support`
 - `Public marketdata candidate`
 
-Forbidden wording:
+禁止 UI 文案仍保持禁止：
 
 - `ready for live`
 - `live ready`
@@ -140,95 +121,75 @@ Forbidden wording:
 - `ACCOUNT_AUTHORIZED`
 - `PERMISSION_VERIFIED`
 
-Historical live-0 evidence must remain historical documentation evidence only and must not appear in the current UI source/readiness block.
+历史 live-0 只能留在历史证据或 reconciliation 文档中，不进入当前 UI readiness badge。
 
-## Validation Commands For Future Implementation
+## 验证结果
 
-Future implementation must run at minimum:
+已执行前端构建：
 
 ```powershell
 Set-Location frontend
 npm run build
 ```
 
-Future implementation must also run at least one smoke or component-level assertion that proves:
+结果：PASS。`tsc -b && vite build` 成功；仅保留既有 Vite chunk size warning。
 
-- The MarketData sandbox/source block renders in the existing `/marketdata` readiness area.
-- It uses only allowed source/readiness wording.
-- It does not show forbidden real/live/trading authorization wording.
-- It does not require a real backend fixture-smoke result API.
-
-Required future scans:
+已执行最小 smoke：
 
 ```powershell
-rg -n "ready for live|live ready|real-ready|provider ready|trading authorized|account authorized|permission verified|private ready|LIVE_READY|TRADING_AUTHORIZED|REAL_PROVIDER_READY|PRIVATE_READY|ACCOUNT_AUTHORIZED|PERMISSION_VERIFIED" frontend/src/pages/marketdata frontend/tests/e2e docs/current
-rg -n "secret|token|apiKey|passphrase|privateKey|mnemonic" frontend/src/pages/marketdata frontend/src/types/marketdata.ts frontend/src/api/marketdata.ts frontend/tests/e2e
-rg -n "okx.com|binance.com|bybit.com|gate.io|gate.com|coinbase.com|kraken.com" frontend/src/pages/marketdata frontend/src/api/marketdata.ts frontend/tests/e2e
-git diff -- backend
-git diff -- research
-git diff -- scripts
-git diff -- deploy
-git diff -- .github
-git diff -- backend/**/db/migration
+Set-Location frontend
+npm run test:e2e -- marketdata-quality-readiness-smoke.spec.ts --project=chromium
 ```
 
-## API Stop Condition
+结果：PASS。`marketdata-quality-readiness-smoke.spec.ts` 1 passed。运行中出现既有 non-blocking warning：`NO_COLOR` 被 `FORCE_COLOR` 覆盖、Ant Design `Card.bordered` deprecation、Ant Design React 19 compatibility warning。
 
-If implementation needs any field that cannot be derived from existing `/api/marketdata/readiness`, `/api/marketdata/bars`, local DB facts, or route/query context, the implementation must stop.
+收尾阶段继续执行 `git status --short`、`git diff --check`、`git diff --stat`、forbidden wording scan、sensitive keyword scan、real-host scan 和 forbidden-scope diff。
 
-Stop and create a separate API plan request if any of the following is required:
+## Boundary Confirmation
 
-- explicit backend `sourceType`
-- explicit backend `noEgress`
-- per-capability source diagnostics
-- fixture-smoke result exposure
-- fake-server runtime status
-- provider public sandbox result
-- real-host probe result
-- credential, account, permission, private trading, or provider authorization status
-
-## GateN-FREEZE Entry Criteria
-
-GateN-FREEZE can start only after:
-
-- GateN-0 exchange docs and existing adapter reconciliation remains accepted.
-- GateN-1 public marketdata contract plan review remains accepted.
-- GateN-2 fake-server / no-egress test plan remains accepted.
-- GateN-3 public marketdata adapter skeleton plan review remains accepted.
-- GateN-4 fixture smoke implementation remains implemented and self-reviewed.
-- GateN-5 plan review remains accepted.
-- GateN-5 implementation plan remains accepted.
-- GateN-5 implementation is separately implemented and validated.
-
-GateN-FREEZE must still confirm:
-
-- LIVE is **DISABLED**.
-- AI is **NOT STARTED**.
-- DH runtime is **NOT_INTEGRATED**.
-- RealClient / real provider is **NOT_IMPLEMENTED**.
-- Real exchange private trading is **NOT_IMPLEMENTED**.
-- Permission probe real execution is **NOT_IMPLEMENTED**.
-- Public marketdata readiness is not trading authorization.
+- `backend/**` 未修改。
+- `research/**` 未修改。
+- `scripts/**` 未修改。
+- `deploy/**` 未修改。
+- `.github/**` 未修改。
+- `backend/**/db/migration/**` 未修改。
+- 未新增 API。
+- 未新增页面。
+- 未新增 migration。
+- 未改 CI workflow。
+- 未实现真实 HTTP client。
+- 未实现真实 WebSocket。
+- 未实现 adapter skeleton。
+- 未实现 fake server runtime。
+- 未实现 RealClient / real provider。
+- 未读取或输出 credential material。
+- 未开启 LIVE。
+- 未接 AI runtime。
+- 未接 DH runtime。
+- 未执行真实 permission probe。
+- 未下单、撤单、转账或提现。
 
 ## P0/P1/P2/P3 Findings
 
-- P0: None.
-- P1: None.
-- P2: Existing frontend/backend contracts do not expose explicit `sourceType`, `noEgress`, or per-capability diagnostics. Future implementation must render `PENDING_BACKEND_SUPPORT` or stop for an API plan instead of inventing provider facts.
-- P3: Keep the first slice compact inside existing `/marketdata`; adding a new page or runtime dashboard would create scope bloat and weaken the GateN no-real boundary.
+- P0：无。
+- P1：无。
+- P2：现有 backend readiness contract 仍没有显式 `sourceType`、`noEgress` 与 per-capability diagnostics；本轮按边界显示 `PENDING_BACKEND_SUPPORT`，未伪造 provider facts。
+- P3：本轮构建和 smoke 仍暴露既有前端 warning（Vite chunk size、Ant Design deprecated/React 19 compatibility），不阻断 GateN-5 no-real UI slice。
 
 ## Final Decision
 
-**PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**
+**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**
 
-GateN-5 may proceed to a separately authorized minimal frontend implementation task. This plan does not authorize backend, API, adapter, fake-server runtime, real provider, private trading, LIVE, AI, DH runtime, credential access, or real exchange egress.
+GateN-5 Runtime UI Sandbox Source Display 已完成最小前端实现。当前状态仍不是 LIVE ready、不是 real provider ready、不是 trading authorization、不是 private trading authorization。GateN-FREEZE 尚未开始，需单独任务确认 GateN-0 到 GateN-5 状态一致后才能进入。
 
 ## Recommended Next Task
 
-`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION`
+`NQ-GATEN-FREEZE`
 
-Recommended commit message:
+该任务应只冻结 GateN-0 到 GateN-5 已完成状态与 no-real 边界；不得开启 LIVE / AI / DH runtime / private trading / real provider。
+
+推荐 commit message：
 
 ```text
-docs(gaten): plan runtime ui sandbox source display implementation
+feat(gaten): add marketdata sandbox source display
 ```

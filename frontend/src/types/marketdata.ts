@@ -67,6 +67,27 @@ export interface MarketdataReadinessSummary {
     generatedAt: string;
 }
 
+export type MarketdataSandboxSourceType =
+    | 'LOCAL_DB'
+    | 'FIXTURE'
+    | 'FAKE_SERVER'
+    | 'NO_EGRESS_SANDBOX'
+    | 'PUBLIC_SANDBOX_CANDIDATE';
+
+export type MarketdataSandboxReadiness =
+    | 'FRESH'
+    | 'STALE'
+    | 'GAP'
+    | 'ERROR'
+    | 'DISABLED'
+    | 'PENDING_BACKEND_SUPPORT';
+
+export type MarketdataSandboxCapability =
+    | 'bars'
+    | 'instrument metadata'
+    | 'ticker'
+    | 'exchange status';
+
 export interface CreateMarketdataIngestionJobRequest {
     exchangeCode: string;
     marketType: string;

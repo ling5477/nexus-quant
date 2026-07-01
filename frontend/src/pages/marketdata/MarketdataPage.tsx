@@ -21,6 +21,9 @@ import type {
     MarketdataIngestionRun,
     MarketdataReadinessQuery,
     MarketdataReadinessSummary,
+    MarketdataSandboxCapability,
+    MarketdataSandboxReadiness,
+    MarketdataSandboxSourceType,
 } from '@/types/marketdata';
 import {formatDateTime, formatNumber} from '@/utils/formatters';
 
@@ -59,6 +62,7 @@ const READINESS_STATUS_COLOR: Record<string, string> = {
     GAP: 'orange',
     ERROR: 'red',
     DISABLED: 'default',
+    PENDING_BACKEND_SUPPORT: 'default',
     UNKNOWN: 'default',
     NO_DATA: 'default',
     GOOD: 'green',
@@ -71,9 +75,19 @@ const READINESS_FRESHNESS_STATE: Record<string, FreshnessState> = {
     GAP: 'degraded',
     ERROR: 'error',
     DISABLED: 'disabled',
+    PENDING_BACKEND_SUPPORT: 'delayed',
     UNKNOWN: 'delayed',
     NO_DATA: 'no_data',
 };
+
+const SANDBOX_READINESS_VALUES = new Set<MarketdataSandboxReadiness>([
+    'FRESH',
+    'STALE',
+    'GAP',
+    'ERROR',
+    'DISABLED',
+    'PENDING_BACKEND_SUPPORT',
+]);
 
 type MarketdataDateValue = string | null | undefined | {
     toISOString?: () => string;
@@ -459,6 +473,151 @@ function summarizeDataQualityReadiness(
     };
 }
 
+interface SandboxCapabilityStatus {
+    capability: MarketdataSandboxCapability;
+    readiness: MarketdataSandboxReadiness;
+    reason: string;
+}
+
+interface SandboxSourceDisplaySummary {
+    sourceType: MarketdataSandboxSourceType;
+    readiness: MarketdataSandboxReadiness;
+    venue: string;
+    reasonCode: string;
+    reasonText: string;
+    checkedAt: string;
+    noEgress: 'PENDING_BACKEND_SUPPORT';
+    sourceLabel: string;
+    capabilities: SandboxCapabilityStatus[];
+}
+
+function mapBackendSandboxReadiness(status: string | undefined | null): MarketdataSandboxReadiness {
+    const normalized = status?.trim().toUpperCase();
+    if (normalized && SANDBOX_READINESS_VALUES.has(normalized as MarketdataSandboxReadiness)) {
+        return normalized as MarketdataSandboxReadiness;
+    }
+    return 'PENDING_BACKEND_SUPPORT';
+}
+
+function mapFallbackSandboxReadiness(summary: DataQualityReadinessSummary): MarketdataSandboxReadiness {
+    if (summary.status === 'GOOD') {
+        return 'FRESH';
+    }
+    if (summary.status === 'STALE' || summary.status === 'GAP' || summary.status === 'ERROR') {
+        return summary.status;
+    }
+    return 'PENDING_BACKEND_SUPPORT';
+}
+
+function summarizeSandboxSourceDisplay(
+    submittedQuery: MarketdataBarsQuery | null,
+    backendReadiness: MarketdataReadinessSummary | null,
+    dataQualityReadiness: DataQualityReadinessSummary,
+    readinessLoading: boolean,
+    chartError: string | null,
+): SandboxSourceDisplaySummary {
+    const readiness = backendReadiness
+        ? mapBackendSandboxReadiness(backendReadiness.status)
+        : readinessLoading
+            ? 'PENDING_BACKEND_SUPPORT'
+            : chartError
+                ? 'ERROR'
+                : mapFallbackSandboxReadiness(dataQualityReadiness);
+    const reasonCode = backendReadiness?.sourceHealthStatus
+        ?? (readinessLoading ? 'PENDING_BACKEND_SUPPORT' : readiness);
+    const reasonText = backendReadiness?.sourceHealthReason
+        ?? (readinessLoading
+            ? '等待现有 readiness API 返回；当前 UI 不发起外部交易所请求。'
+            : `${dataQualityReadiness.detail}；当前 UI 只展示本地 bars/readiness 结果。`);
+    const barsCapabilityReadiness = submittedQuery ? readiness : 'PENDING_BACKEND_SUPPORT';
+
+    return {
+        sourceType: 'LOCAL_DB',
+        readiness,
+        venue: submittedQuery?.exchangeCode ?? '-',
+        reasonCode,
+        reasonText,
+        checkedAt: backendReadiness?.generatedAt ?? 'PENDING_BACKEND_SUPPORT',
+        noEgress: 'PENDING_BACKEND_SUPPORT',
+        sourceLabel: submittedQuery
+            ? 'Local DB marketdata readiness'
+            : 'Local DB readiness pending query',
+        capabilities: [
+            {
+                capability: 'bars',
+                readiness: barsCapabilityReadiness,
+                reason: submittedQuery
+                    ? '现有 bars/readiness API 返回本地行情事实。'
+                    : '提交查询后展示 bars source 状态。',
+            },
+            {
+                capability: 'instrument metadata',
+                readiness: 'PENDING_BACKEND_SUPPORT',
+                reason: '当前接口未暴露 metadata source diagnostic。',
+            },
+            {
+                capability: 'ticker',
+                readiness: 'PENDING_BACKEND_SUPPORT',
+                reason: '当前接口未暴露 ticker source diagnostic。',
+            },
+            {
+                capability: 'exchange status',
+                readiness: 'PENDING_BACKEND_SUPPORT',
+                reason: '当前接口未暴露 exchange status source diagnostic。',
+            },
+        ],
+    };
+}
+
+function SandboxSourceDisplay({summary}: {summary: SandboxSourceDisplaySummary}) {
+    return (
+        <div
+            data-testid="marketdata-sandbox-source-display"
+            style={{
+                border: '1px solid var(--nq-color-border)',
+                borderRadius: 8,
+                padding: 12,
+                background: 'var(--nq-color-surface)',
+            }}
+        >
+            <Space direction="vertical" size={10} style={{display: 'flex'}}>
+                <Space size={8} wrap>
+                    <Typography.Text strong>Sandbox Source</Typography.Text>
+                    <Tag color="blue">Sandbox</Tag>
+                    <Tag>No-egress</Tag>
+                    <Tag>Public candidate</Tag>
+                    <Tag color={readinessStatusColor(summary.readiness)}>{summary.readiness}</Tag>
+                </Space>
+                <Descriptions
+                    size="small"
+                    column={{xs: 1, sm: 2, md: 3}}
+                    items={[
+                        {key: 'sourceType', label: 'sourceType', children: <MetricText>{summary.sourceType}</MetricText>},
+                        {key: 'venue', label: 'venue', children: <MetricText>{summary.venue}</MetricText>},
+                        {key: 'sourceLabel', label: 'sourceLabel', children: <MetricText>{summary.sourceLabel}</MetricText>},
+                        {key: 'reasonCode', label: 'reasonCode', children: <MetricText>{summary.reasonCode}</MetricText>},
+                        {key: 'checkedAt', label: 'checkedAt', children: <MetricText>{summary.checkedAt}</MetricText>},
+                        {key: 'noEgress', label: 'noEgress', children: <MetricText>{summary.noEgress}</MetricText>},
+                    ]}
+                />
+                <Typography.Text type="secondary">
+                    {summary.reasonText}
+                </Typography.Text>
+                <Space size={6} wrap>
+                    {summary.capabilities.map((item) => (
+                        <Tag key={item.capability} color={readinessStatusColor(item.readiness)} title={item.reason}>
+                            {item.capability}: {item.readiness}
+                        </Tag>
+                    ))}
+                </Space>
+                <Typography.Text type="secondary">
+                    当前区块只消费现有 bars/readiness 和本地查询上下文；缺失的 sandbox source 字段显示 PENDING_BACKEND_SUPPORT（等待后端支持），不代表交易授权。
+                </Typography.Text>
+            </Space>
+        </div>
+    );
+}
+
 function QualityTags({quality}: {quality: BarsQualitySummary}) {
     if (!quality.hasQualityStatus) {
         return <Tag>qualityStatus unavailable</Tag>;
@@ -767,6 +926,16 @@ export function MarketdataPage() {
     const firstBar = bars.length > 0 ? bars[0] : null;
     const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
     const chartError = barsQuery.error ? formatApiError(barsQuery.error as AppApiError) : null;
+    const sandboxSourceDisplay = useMemo(
+        () => summarizeSandboxSourceDisplay(
+            submittedQuery,
+            backendReadiness,
+            dataQualityReadiness,
+            readinessLoading,
+            chartError,
+        ),
+        [backendReadiness, chartError, dataQualityReadiness, readinessLoading, submittedQuery],
+    );
     const chartEmptyText = submittedQuery
         ? '当前查询没有返回 OHLCV bars'
         : '提交查询后展示 K 线主图';
@@ -957,6 +1126,7 @@ export function MarketdataPage() {
                             },
                         ]}
                     />
+                    <SandboxSourceDisplay summary={sandboxSourceDisplay} />
                     <div
                         style={{
                             display: 'grid',
