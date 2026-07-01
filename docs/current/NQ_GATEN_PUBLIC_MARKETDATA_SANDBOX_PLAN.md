@@ -14,6 +14,8 @@ Test plan status: [NQ-GATEN-2 Fake Server / No-Egress Public MarketData Test Pla
 
 Skeleton plan review status: [NQ-GATEN-3 Public MarketData Adapter Skeleton Plan Review](NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md) = **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**. GateN-3 defines the public-only adapter skeleton minimal interface proposal, adapter class/package proposal, DTO/capability/readiness model, source taxonomy mapping, no-egress constraints, forbidden carry-over list, and GateN-4 entry criteria. It does not implement adapter skeleton, fake server, tests, API, migration, CI workflow, or real outbound.
 
+Fixture smoke plan review status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Plan Review](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md) = **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**. GateN-4 defines deterministic fixture smoke scope, fixture hygiene, readiness simulation matrix, timeout / rate-limit / malformed payload simulation, no-egress validation plan, forbidden carry-over list, and GateN-5 entry criteria. It does not implement fixture smoke tests, fake server, adapter skeleton, API, migration, CI workflow, or real outbound.
+
 ## Current Baseline
 
 GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
@@ -27,6 +29,7 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - GateN-1 public marketdata contract plan review: **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**.
 - GateN-2 fake-server / no-egress public marketdata test plan: **PASS / TEST PLAN BASELINE / READY TO COMMIT**.
 - GateN-3 public marketdata adapter skeleton plan review: **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**.
+- GateN-4 marketdata sandbox fixture smoke plan review: **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**.
 
 Current negative boundaries remain unchanged:
 
@@ -428,7 +431,7 @@ Acceptance criteria:
 2. `NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN`.
 3. `NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW`.
 4. `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW`.
-5. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY`.
+5. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW`.
 6. `NQ-GATEN-FREEZE`.
 
 ## P0 / P1 / P2 / P3 Risks
@@ -467,7 +470,7 @@ Potential future P1:
 
 ## Recommended First Implementation Task
 
-Current precise next pointer after GateN-3 plan review: `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW`. GateN-4 still requires separate authorization and remains fake-server / fixture / no-egress only by default.
+Current precise next pointer after GateN-4 plan review: `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN`. It still requires separate authorization and remains deterministic fixture / fake-server / no-egress only by default.
 
 Recommended first implementation task after plan review:
 

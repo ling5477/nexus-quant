@@ -10,6 +10,8 @@ This is a planning-only and docs-only test plan. It does not implement a fake se
 
 GateN-3 status update: [NQ-GATEN-3 Public MarketData Adapter Skeleton Plan Review](NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md) = **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**. GateN-3 accepts a public-only skeleton design baseline and GateN-4 entry criteria, but still does not implement adapter skeleton, fake server, tests, API, migration, CI workflow, real outbound, private trading, credential access, LIVE, AI, DH runtime, RealClient, real provider, or real permission probe behavior.
 
+GateN-4 status update: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Plan Review](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md) = **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**. GateN-4 accepts deterministic fixture / fake-server / no-egress fixture smoke scope, readiness simulation, and GateN-5 entry criteria, but still does not implement fixture smoke tests, fake server, adapter skeleton, API, migration, CI workflow, real outbound, private trading, credential access, LIVE, AI, DH runtime, RealClient, real provider, or real permission probe behavior.
+
 ## Current GateN-2 Decision
 
 GateN-2 decision:

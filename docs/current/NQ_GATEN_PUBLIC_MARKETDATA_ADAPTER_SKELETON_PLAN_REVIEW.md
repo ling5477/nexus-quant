@@ -8,6 +8,8 @@ This document is the GateN-3 public marketdata adapter skeleton plan review. It 
 
 This is a planning-only and docs-only review. It does not implement an adapter skeleton, does not add fake-server code, does not add test code, does not add API, does not add migration, does not modify CI, does not call real exchange APIs, and does not authorize LIVE, private trading, RealClient, real provider, credential access, or real permission probe execution.
 
+GateN-4 input status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Plan Review](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md) = **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**. GateN-4 consumes this skeleton plan review as input for deterministic fixture smoke scope, readiness simulation, no-egress validation, and GateN-5 entry criteria, but still does not implement adapter skeleton, fake server, tests, API, migration, CI workflow, real outbound, private trading, credential access, LIVE, AI, DH runtime, RealClient, real provider, or real permission probe behavior.
+
 ## Current GateN-3 Decision
 
 GateN-3 decision:

@@ -11227,3 +11227,37 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW`：基于 GateN-3 skeleton plan review 和后续单独授权/接受的 skeleton implementation，规划 fixture smoke 对 OHLCV、instrument metadata、ticker/status、freshness、gap、timeout、simulated rate-limit error 的覆盖；仍不得真实外联、不得接 private trading、不得开启 LIVE。
+
+---
+
+## NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于 GateN-3 public marketdata adapter skeleton plan review，执行 GateN-4 marketdata sandbox fixture smoke plan review。范围只覆盖 fixture smoke 最小范围、fixture hygiene、readiness simulation matrix、timeout / rate-limit / malformed payload simulation、no-egress validation plan、forbidden carry-over list 和 GateN-5 entry criteria；不实现 fixture smoke、fake server、adapter skeleton、测试代码、API、migration、CI workflow、页面或运行时行为。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`。
+- 定义 fixture smoke 最小范围：fixture OHLCV bars、fixture instrument metadata、fixture ticker、fixture exchange status、source taxonomy mapping、freshness / stale / gap / error / disabled simulation、timeout simulation、rate-limit simulated error 和 malformed payload simulation。
+- 定义 fixture hygiene：fixture 必须 deterministic、offline-runnable、标注 `FIXTURE` / `FAKE_SERVER` / `NO_EGRESS_SANDBOX` source，不得从真实 API raw dump 直接复制，不得包含 credential、secret、token、signature、private key、passphrase、account/order/balance/transfer/withdraw/private payload material。
+- 定义 readiness simulation matrix：`FRESH`、`STALE`、`GAP`、`ERROR`、`DISABLED`、`PENDING_BACKEND_SUPPORT`；所有 readiness 结果均为 diagnostic-only，不代表 trading authorization。
+- 定义 no-egress validation plan：默认不得访问真实 `okx.com`、`binance.com`、`bybit.com`、`gate.io`、`gate.com`、`coinbase.com`、`kraken.com`；unknown host / unknown path / private endpoint / signed endpoint / credential lookup / real permission probe 必须 fail closed。
+- 明确 forbidden carry-over：不得调用 private `TradingAdapter`、signed/private/account/order/balance/transfer/withdraw/user-data-stream endpoint、permission probe real execution、credential、real provider、LIVE、AI、DH runtime。
+- 明确 GateN-5 entry criteria：只有在 GateN-4 fixture smoke implementation 单独授权、实现、验证、接受后，才允许进入 Runtime UI Sandbox Source Display；GateN-5 只能显示 source / readiness / diagnostic，不得显示 real-ready / live-ready / trading-authorized。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`。
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、forbidden-scope diff 和指定 GateN/fixture/sandbox/fake/no-egress/adapter/MarketData/public-private/LIVE 边界关键词 `rg`。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改允许范围内文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 adapter skeleton；未实现 fake server；未实现 fixture smoke；未新增测试代码；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；fixture smoke 不等于 real exchange connectivity；fake server 不等于 real provider。
+
+### 推荐下一步
+
+`NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN`：若用户单独授权，基于 GateN-4 plan review 规划 deterministic fixture / fake-server / no-egress fixture smoke 的实现边界；仍不得真实外联、不得读取 credential、不得接 private trading、不得开启 LIVE。
