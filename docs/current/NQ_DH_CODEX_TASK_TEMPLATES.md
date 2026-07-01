@@ -2,6 +2,19 @@
 
 本文提供常用任务模板。执行时必须先按 `NQ-DH Workflow Router` 分类，再按 `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md` 选择插件，不默认调用所有插件。
 
+## 0. 文档语言规则
+
+使用本模板生成或更新 NQ/DH 文档时，必须遵守以下语言规则：
+
+- 文档正文必须中文为主；`README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG` 和 `docs/current` 说明文档不得整篇英文化。
+- 允许保留英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、配置键、commit message 和协议原文。
+- 英文状态值首次出现时必须附中文解释，例如 `PASS`（通过）、`PLAN ONLY`（仅规划）、`READY TO COMMIT`（可进入提交前复核）。
+- 代码注释中的业务规则说明优先中文；协议字段、API contract、enum 可保留英文或中英双语。
+- DB comment 使用中文业务语义；表名、字段名、索引名和约束名保持英文。
+- 不翻译 `docs/archive/**` 与 `docs/gates/**` 历史文档；旧文档只在后续任务自然触碰时顺手修正。
+- Agent 输出报告的栏目名可以保留英文，但每个栏目内容必须中文为主。
+- 不得为了中文化改写英文枚举、API 字段、类名、接口名、文件名、release tag 或历史事实。
+
 ## 1. 代码审查模板
 
 按 NQ-DH Workflow Router 执行。

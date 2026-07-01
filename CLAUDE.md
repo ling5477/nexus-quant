@@ -129,6 +129,13 @@ GateI 已整体完成，覆盖以下内容：
 - No document inertia：不得为了“保持文档一致”而新增 docs-only 任务；必须由代码、测试、CI、migration、安全边界或用户明确要求触发。
 - Prompt rule：后续任务提示词必须明确 docs 预算，例如“docs 默认不改；如需记录，只允许 WORKLOG 一行”。
 - 文档描述必须与代码和测试状态一致；未执行验证不能写成通过。
+- Language rule：文档正文必须中文为主；`README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG` 和 `docs/current` 说明文档不得整篇英文化。
+- 允许保留英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、配置键、commit message 和协议原文。
+- 英文状态值首次出现时必须附中文解释，例如 `PASS`（通过）、`FROZEN`（已冻结）、`READY TO COMMIT`（可进入提交前复核）。
+- 代码注释中的业务规则说明优先中文；协议字段、API contract、enum 可保留英文或中英双语。
+- DB comment 使用中文业务语义；表名、字段名、索引名和约束名保持英文。
+- 不翻译 `docs/archive/**` 与 `docs/gates/**` 历史文档；旧文档只在后续任务自然触碰时顺手修正。
+- Agent 输出报告的栏目名可以保留英文，但每个栏目内容必须中文为主。
 
 ## 5. 数据库规则
 

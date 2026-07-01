@@ -55,6 +55,19 @@ Never write:
 
 Never output credential material, API keys, exchange secrets, tokens, cookies, signatures, private keys, passphrases, mnemonic material, raw credential payloads, or raw provider responses.
 
+## Language Governance
+
+Use these language rules for all new NQ/DH documentation, documentation governance, templates, and implementation or review reports:
+
+- 文档正文必须中文为主；`README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG` 和 `docs/current` 说明文档不得整篇英文化。
+- 允许保留英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、配置键、commit message 和协议原文。
+- 英文状态值首次出现时必须附中文解释，例如 `PASS`（通过）、`FROZEN`（已冻结）、`READY TO COMMIT`（可进入提交前复核）。
+- 代码注释中的业务规则说明优先使用中文；协议字段、API contract、enum、wire format 可保留英文或使用中英双语。
+- DB comment 必须使用中文业务语义；表名、字段名、索引名、约束名保持英文。
+- 不翻译 `docs/archive/**`、`docs/gates/**` 历史文档；旧文档只在后续因任务触碰时顺手修正语言漂移。
+- Agent 输出报告的栏目名可以保留英文，但每个栏目内容必须中文为主，并保留精确英文状态值和文件路径。
+- 不得为了中文化而改写英文枚举、API 字段、类名、接口名、文件名或历史 release/tag 事实。
+
 Prefer append-only updates. Do not rewrite history unless the task explicitly asks for a reconciliation edit and the current-control source proves the old line is stale. `WORKLOG.md` and `TESTING.md` should append this turn's result; do not overwrite existing GateK, GateL, GateM, frontend, CI, or integration records.
 
 `docs/current` must not expand without current-control value. New docs need a clear reason: stage freeze, P0/P1 risk, security boundary, migration, CI workflow, credential, LIVE, real provider, API contract, DB schema, frontend current fact, acceptance report, or explicit user instruction.

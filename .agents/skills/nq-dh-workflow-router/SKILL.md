@@ -98,6 +98,18 @@ Default to code-first / test-first work. Documentation is not a default delivera
 - Prompts for future NQ/DH tasks should state the docs budget explicitly, for example: "docs default unchanged; if recording is needed, only one WORKLOG line is allowed."
 - When documentation is explicitly authorized, apply `nq-docs-writer` rules for fact-source priority, anti-churn, output shape, and validation.
 
+## Step 4.1: Apply Documentation Language Rules
+
+When a task writes or updates documentation, templates, task prompts, skill instructions, review reports, implementation reports, `README`, `STATUS`, `ROADMAP`, `TESTING`, `WORKLOG`, or any `docs/current` explanatory document, enforce the `nq-docs-writer` language governance rules:
+
+- 文档正文必须中文为主，不能把 current docs 或入口文档整篇英文化。
+- 英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、commit message 和协议原文可以保留英文。
+- 英文状态值首次出现时必须附中文解释；后续可复用精确英文状态值。
+- 代码注释的业务规则说明优先中文；API contract、协议字段和 enum 可保留英文或中英双语。
+- DB comment 使用中文业务语义，表名和字段名保持英文。
+- 不翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；只在后续自然触碰时修正旧文档语言漂移。
+- Agent 输出栏目名可以保留英文，但栏目内容必须中文为主。
+
 ## Step 5: Enforce NQ Boundaries
 
 For NexusQuant tasks:

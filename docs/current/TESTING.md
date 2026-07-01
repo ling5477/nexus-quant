@@ -1,3 +1,21 @@
+## NQ-DOCS-SKILL-LANGUAGE-RULES-UPDATE（2026-07-01）
+
+结论：**PASS / DOCS GOVERNANCE UPDATED / READY TO COMMIT**。含义：`PASS`（通过）、`DOCS GOVERNANCE UPDATED`（文档治理规则已更新）、`READY TO COMMIT`（可进入提交前复核）。本轮只修改 NQ/DH 文档语言规则、skill、template 和 current docs 记录；未翻译历史文档，未改代码、测试代码、workflow、migration 或 runtime 配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 仅显示允许的 `.agents/skills/**`、`AGENTS.md`、`CLAUDE.md`、`docs/current/**` 文档变更。 |
+| `git diff --check` | PASS | 无 whitespace error；如出现 Windows LF/CRLF working-copy warning，按非内容错误记录。 |
+| `git diff --stat` | PASS | diff 仅包含文档规则、skill/template 和 current docs 记录更新。 |
+| `rg "中文为主|文档正文|英文状态值|README|STATUS|ROADMAP|TESTING|WORKLOG" .agents docs/current AGENTS.md CLAUDE.md` | PASS / REVIEWED | 退出码 0；输出很大，命中新增语言规则及既有 docs budget / current docs 语境。 |
+| 禁止范围 diff | PASS / EMPTY | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均为空 diff。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮只改允许范围内的文档规则、skill、template 和 current docs 记录，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+Boundary：未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或历史 migration；未新增 migration；未翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；未把英文枚举、类名、接口名、字段名、文件名改成中文；未启动新功能实现；LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT_INTEGRATED**。
+
 ## NQ-GATEN-ARCHIVE-CLOSEOUT（2026-07-01）
 
 结论：**PASS / ARCHIVE CLOSED / READY TO COMMIT**。含义：`PASS`（通过）、`ARCHIVE CLOSED`（归档线已关闭）、`READY TO COMMIT`（本轮文档 closeout 可进入提交前复核）。本轮只新增 GateN archive closeout 并同步允许范围内的 current/root/gates 状态；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。

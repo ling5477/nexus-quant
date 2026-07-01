@@ -48,6 +48,14 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - [NQ_DOCS_MIGRATION_MAP.md](NQ_DOCS_MIGRATION_MAP.md)
 - [NQ_DOCS_G1_IMPLEMENTATION.md](NQ_DOCS_G1_IMPLEMENTATION.md)
 
+## 文档语言治理
+
+- 后续 `README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG`、`docs/current` 说明文档、skill、模板、review / implementation report 的文档正文必须中文为主。
+- 英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、commit message 和协议原文可以保留英文；英文状态值首次出现时必须附中文解释。
+- 代码注释中的业务规则说明优先中文；协议字段、API contract、enum 可保留英文或中英双语；DB comment 使用中文业务语义，表名和字段名保持英文。
+- 不翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；旧文档只在后续任务自然触碰时顺手修正。
+- Agent 输出报告栏目名可以保留英文，但栏目内容必须中文为主。
+
 ## CI current authority
 
 - [NQ_CI_BASELINE_PLAN.md](NQ_CI_BASELINE_PLAN.md)

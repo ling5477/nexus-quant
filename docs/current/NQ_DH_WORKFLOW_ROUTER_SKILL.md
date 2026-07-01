@@ -16,6 +16,18 @@
 
 当任务涉及 NexusQuant、NQ、Decision Hub、DH、量化交易平台、前端优化、架构评估、部署、安全审计、交易所接入、Gate/FREEZE 规划时，自动使用该 Skill。
 
+## 文档语言规则
+
+当任务类型为 `DOCUMENTATION`、`DOCS_GOVERNANCE`、`PLAN`、`REVIEW`、`FREEZE`、`STATUS_SYNC`、`TESTING_SYNC`、`WORKLOG_SYNC` 或需要更新 `README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG`、`docs/current` 说明文档、skill、模板、报告时，必须执行以下规则：
+
+- 文档正文必须中文为主，不得把 current docs、README、STATUS、ROADMAP、TESTING、WORKLOG 整篇写成英文模板。
+- 英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、配置键、commit message 和协议原文可以保留英文。
+- 英文状态值首次出现时必须附中文解释；例如 `PASS`（通过）、`FROZEN`（已冻结）、`ACCEPTED`（已接受）。
+- 代码注释中的业务规则说明优先中文；协议字段、API contract、enum 可以保留英文或中英双语。
+- DB comment 使用中文业务语义；表名、字段名、索引名和约束名保持英文。
+- 不翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；旧文档只在后续任务自然触碰时顺手修正。
+- Agent 输出报告的栏目名可以保留英文，但栏目内容必须中文为主。
+
 ## Skill 执行步骤
 
 ### Step 1：任务分类

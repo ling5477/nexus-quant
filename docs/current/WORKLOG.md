@@ -1,3 +1,39 @@
+## NQ-DOCS-SKILL-LANGUAGE-RULES-UPDATE
+
+日期：2026-07-01
+
+### 本轮目标
+
+更新 NQ/DH 文档写作 skill、workflow router skill、任务模板和 current 文档入口，明确后续文档正文必须中文为主，防止 `README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG` 和 `docs/current` 说明文档被英文模板带偏。本轮只做文档治理规则更新，不翻译历史文档，不改代码。
+
+### 完成内容
+
+- `.agents/skills/nq-docs-writer/SKILL.md`：新增 `Language Governance`，规定文档正文中文为主、英文状态值首次出现附中文解释、DB comment 使用中文业务语义、历史 archive/gates 不主动翻译。
+- `.agents/skills/nq-dh-workflow-router/SKILL.md`：新增 documentation language routing step，要求文档任务调用 `nq-docs-writer` 语言治理规则。
+- `docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md`：新增任务模板语言规则，防止模板输出整篇英文化。
+- `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md`：同步 router 源规格的文档语言规则。
+- `AGENTS.md`、`CLAUDE.md`：在仓库执行规范的文档规则中加入中文为主要求、英文状态解释、代码注释和 DB comment 语言边界。
+- `docs/current/README.md`：新增文档语言治理入口，明确 current docs 的语言约束。
+- `docs/current/TESTING.md`、`docs/current/WORKLOG.md`：追加本轮 docs-only 验证与边界记录。
+
+### 验证
+
+- 已执行 `git status --short`、`git diff --check`、`git diff --stat` 和指定关键词 `rg "中文为主|文档正文|英文状态值|README|STATUS|ROADMAP|TESTING|WORKLOG" .agents docs/current AGENTS.md CLAUDE.md`。
+- `rg` 输出很大，命中新增规则及既有 docs budget / current docs 语境；退出码为 0。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只修改允许范围内的文档规则、skill、template 和 current docs 记录，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或历史 migration；未新增 migration；未翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；未把英文枚举、类名、接口名、字段名、文件名改成中文；未启动新功能实现；未读取或输出 credential material；未开启 LIVE、AI 或 DH runtime。
+
+### 回滚方式
+
+还原 `.agents/skills/nq-docs-writer/SKILL.md`、`.agents/skills/nq-dh-workflow-router/SKILL.md`、`docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md`、`docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md`、`AGENTS.md`、`CLAUDE.md`、`docs/current/README.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 的本轮 diff 即可；无代码、DB、workflow、runtime、credential 或交易副作用。
+
+### 推荐下一步
+
+后续 NQ/DH 文档任务继续保留英文任务名、状态枚举、类名、接口名、字段名、文件名和 commit message；正文说明、业务规则和报告内容以中文为主，英文状态值首次出现附中文解释。
+
 ## NQ-GATEN-ARCHIVE-CLOSEOUT
 
 日期：2026-07-01
