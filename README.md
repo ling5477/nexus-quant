@@ -20,8 +20,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateK finalized / frozen / archived / tagged（tag：`nq-gatek-freeze`）
 - GateM = Exchange / MarketData Runtime Readiness
 - GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`；no-real runtime readiness baseline；current summary 见 `docs/current/`；GateM archive closed，22/22 approved candidates 已归档到 `docs/gates/gate-m/`）
-- NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；推荐下一阶段为 GateN Public MarketData / Exchange Sandbox Planning（GateN-4 fixture smoke test-only implementation 已完成；GateN-5 runtime UI sandbox source display 已完成；GateN freeze review 已完成；production adapter/API/runtime implementation NOT STARTED）
-- NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT；GateN public marketdata / exchange sandbox no-real baseline 已冻结（GateN-4 fixture smoke test-only implementation 已完成；GateN-5 runtime UI sandbox source display 已完成；production adapter/API/runtime implementation NOT STARTED）
+- NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；推荐下一阶段为 GateN Public MarketData / Exchange Sandbox Planning（GateN-4 fixture smoke test-only implementation 已完成；GateN-5 runtime UI sandbox source display 已完成；GateN freeze review 已完成；GateN release tag 已完成；production adapter/API/runtime implementation NOT STARTED）
+- NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = FINALIZED（最终定版）/ FROZEN（已冻结）/ ACCEPTED（已接受）/ CLOSED（已关闭）/ TAGGED（已打 tag）；GateN public marketdata / exchange sandbox no-real baseline 已冻结并打 tag `nq-gaten-freeze`（GateN-4 fixture smoke test-only implementation 已完成；GateN-5 runtime UI sandbox source display 已完成；production adapter/API/runtime implementation NOT STARTED）
 - NQ-GATEN-0-EXCHANGE-DOCS-AND-EXISTING-ADAPTER-RECONCILIATION = PASS / RECONCILIATION BASELINE / READY TO COMMIT；复核早期 OKX / Binance 官方文档整理、现有 public marketdata adapter/interface/API/test 证据、历史 live-0/spike 证据与 private trading 禁止边界；不启动 GateN implementation
 - NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW = PASS / CONTRACT PLAN REVIEW / READY TO COMMIT；定义 public-only marketdata internal contract、source taxonomy、freshness/health/gap model、rate-limit/timeout/retry model、public/private separation rules 与 GateN-2 fake-server/no-egress 输入；不启动 GateN implementation
 - NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN = PASS / TEST PLAN BASELINE / READY TO COMMIT；规划 fake-server contract、no-egress boundary、forbidden endpoint list、test matrix、fixture taxonomy、readiness simulation 与 GateN-3 entry criteria；不启动 GateN implementation
@@ -31,14 +31,15 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION = IMPLEMENTED / SELF-REVIEWED / ACCEPTED；新增 deterministic OKX / Binance fixture resources 与 test-only no-egress fixture smoke，覆盖 public marketdata shape、readiness mapping、fixture hygiene、real-host denial、private/signed route fail-closed、fake-server unavailable fallback blocked；不启动 production adapter/API/runtime implementation
 - NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW = PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT；规划 sandbox source taxonomy、readiness status、diagnostic reason、fixture/no-egress 标签、页面入口和 forbidden UI wording；不启动 frontend/API/runtime implementation
 - NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION = IMPLEMENTED / SELF-REVIEWED / ACCEPTED；在既有 `/marketdata` Data Quality / Readiness 区域增加 compact sandbox/source display block，复用现有 readiness / bars facts，缺失后端字段显示 `PENDING_BACKEND_SUPPORT`；不新增 backend API、真实外联、fake-server runtime、adapter skeleton、LIVE、AI 或 DH runtime
-- NQ-GATEN-FREEZE = PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT；冻结 GateN public marketdata / exchange sandbox no-real baseline；不代表 production readiness、LIVE authorization、real provider readiness、private trading authorization、real permission probe 或 trading authorization
+- NQ-GATEN-FREEZE = PASS / FROZEN / ACCEPTED / CLOSED；冻结 GateN public marketdata / exchange sandbox no-real baseline；不代表 production readiness、LIVE authorization、real provider readiness、private trading authorization、real permission probe 或 trading authorization
+- NQ-GATEN-RELEASE-TAG-AND-ARCHIVE = PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT；release tag：`nq-gaten-freeze`；tag object：`d191474bd3ec0fb52566896fd9ef081eb843b520`；tagged commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
 - LIVE disabled
 - RealClient / real provider / real exchange adapter not implemented
 
-GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM 已 final / frozen / accepted / tagged 为 no-real runtime readiness baseline（release tag：`nq-gatem-freeze`）：adapter readiness、MarketData readiness、NoReal contract、Paper-to-Real boundary、Runtime Guarded UI 和 Operational Readiness 均已收口；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。GateM 后下一阶段规划已完成，GateN Public MarketData / Exchange Sandbox Planning 已作为 no-real baseline 冻结；GateN-4 fixture smoke test-only implementation 已完成；GateN-5 runtime UI sandbox source display 已完成，但 production adapter/API/runtime implementation 仍未开始。AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
+GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI Paper Trading 阶段。GateM 已 final / frozen / accepted / tagged 为 no-real runtime readiness baseline（release tag：`nq-gatem-freeze`）：adapter readiness、MarketData readiness、NoReal contract、Paper-to-Real boundary、Runtime Guarded UI 和 Operational Readiness 均已收口；这些事实不代表真实交易所接入、LIVE、AI 或 DH runtime 已启动。GateM 后下一阶段规划已完成，GateN Public MarketData / Exchange Sandbox Planning 已作为 no-real baseline 冻结并打 release tag（`nq-gaten-freeze`）；GateN-4 fixture smoke test-only implementation 已完成；GateN-5 runtime UI sandbox source display 已完成，但 production adapter/API/runtime implementation 仍未开始。AI、AI 信号、AI 自动交易、AI Paper Trading、DH runtime integration、LIVE、真实交易所 adapter / RealClient / real provider 仍未开始或未实现。
 
 ## 当前能力摘要
 
@@ -52,6 +53,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - Paper Trading 调度 / 心跳 / 日报 / 告警 / 恢复事件 / 稳定性验收结构 / HEARTBEAT_LAG / SCHEDULE_FIRE_FAILED 自动告警最小落库已完成（GateJ-1/2/3）。
 - GateJ-FREEZE 30m / 1h / 24h / 7d 连续运行验收已通过，GateJ completed。
 - GateM Exchange / MarketData Runtime Readiness 已 FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`）：adapter readiness service / guard / status API / readiness panel / MarketData readiness / operational readiness / backend E2E 均保持 fail-closed，不授权 real exchange / LIVE。
+- GateN Public MarketData / Exchange Sandbox 已 FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED（tag：`nq-gaten-freeze`）：deterministic fixture smoke 与 sandbox/source display 均保持 no-real / no-egress / diagnostic-only，不授权 real provider / LIVE / private trading / trading authorization。
 
 ## 当前明确不做
 
@@ -79,8 +81,8 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`：GateJ-FREEZE 最终验收报告
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
 - `docs/gates/gate-m/README.md`：GateM historical archive；archive closed，22/22 approved candidates moved；Batch 1 已归档 freeze readiness / freeze review / release tag evidence（`nq-gatem-freeze`），Batch 2 已归档 Runtime Guarded UI evidence，Batch 3 已归档 Operational Readiness evidence，Batch 4 已归档 GateM-2 MarketData readiness evidence
-- `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateM 后下一阶段 planning-only 文档；推荐 GateN Public MarketData / Exchange Sandbox Planning；GateN-4 fixture smoke test-only implementation 已完成，GateN-5 runtime UI sandbox source display 已完成，GateN freeze review 已完成，production adapter/API/runtime implementation NOT STARTED
-- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`：GateN Public MarketData / Exchange Sandbox frozen baseline；no-real / no-private / no-trading；GateN-4 fixture smoke test-only implementation 已完成，GateN-5 runtime UI sandbox source display 已完成，production adapter/API/runtime implementation NOT STARTED
+- `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateM 后下一阶段 planning-only 文档；推荐 GateN Public MarketData / Exchange Sandbox Planning；GateN-4 fixture smoke test-only implementation 已完成，GateN-5 runtime UI sandbox source display 已完成，GateN freeze review 已完成，GateN release tag 已完成，production adapter/API/runtime implementation NOT STARTED
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`：GateN Public MarketData / Exchange Sandbox finalized/tagged baseline；no-real / no-private / no-trading；release tag `nq-gaten-freeze`；GateN-4 fixture smoke test-only implementation 已完成，GateN-5 runtime UI sandbox source display 已完成，production adapter/API/runtime implementation NOT STARTED
 - `docs/current/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`：GateN-0 exchange docs and adapter reconciliation baseline；early official docs can be reused as inventory, public marketdata and private trading remain separated, historical live-0 is not current LIVE readiness
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`：GateN-1 public marketdata contract plan review；public readiness 不是 trading readiness，public adapter 不是 private trading adapter，任何真实外联仍需单独 review
 - `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`：GateN-2 fake-server / no-egress public marketdata test plan；default tests must not contact real exchange hosts, read credentials, or touch private trading endpoints
@@ -90,6 +92,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md`：GateN-5 runtime UI sandbox source display plan review；UI display scope is sandbox source / readiness / diagnostics only and must not imply real-ready, live-ready, provider-ready, or trading authorization
 - `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`：GateN-5 runtime UI sandbox source display implementation record；已在既有 `/marketdata` readiness 区块完成 compact sandbox/source display，仍不代表 real provider ready、LIVE ready 或 trading authorization
 - `docs/current/NQ_GATEN_FREEZE_REVIEW.md`：GateN freeze review；冻结 public marketdata / exchange sandbox no-real baseline，不授权真实外联、private trading、LIVE、AI、DH runtime、RealClient、real provider 或 real permission probe
+- `docs/current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md`：GateN release tag and archive closeout；release tag `nq-gaten-freeze` 已推送，GateN final state = FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
 - `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：credential active uniqueness Batch 5-E-C 只读审计报告
 - `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：credential enable governance Batch 5-F-A 只读审计报告；Batch 5-F-B 已完成 schema-only `ENABLED` audit event 准备，Batch 5-F-C 已实现最小 enable command

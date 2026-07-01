@@ -2,9 +2,11 @@
 
 ## Status
 
-**PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**
+**PASS / FROZEN / ACCEPTED / CLOSED**
 
-本文件冻结 GateN Public MarketData / Exchange Sandbox 基线。冻结对象是 GateN-0 到 GateN-5 已完成的 no-real / no-egress / fixture / sandbox source display 证据链，不是实盘、不是真实外联、不是 private trading，也不是 LIVE readiness。
+本文件冻结 GateN Public MarketData / Exchange Sandbox 基线。冻结对象是 GateN-0 到 GateN-5 已完成的 no-real / no-egress / fixture / sandbox source display 证据链，不是实盘、不是真实外联、不是 private trading，也不是 LIVE readiness。本 freeze review 已由 [NQ-GATEN-RELEASE-TAG-AND-ARCHIVE](NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md) 消费并打 release tag。
+
+Release tag：`nq-gaten-freeze`；tag object：`d191474bd3ec0fb52566896fd9ef081eb843b520`；tagged commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`。
 
 ## Task Classification
 
@@ -167,7 +169,7 @@ GateN-5 accepted evidence：
 - 不得把 fixture smoke 解释为真实交易所外联成功。
 - 不得把 sandbox/source display 解释为 LIVE readiness。
 - 后续任何 real public outbound、fake-server runtime、adapter skeleton、backend API、RealClient、real provider、private trading、permission probe、LIVE、AI runtime 或 DH runtime 都必须单独 review，默认禁止。
-- 若进入下一阶段，应先做 release/tag/archive 或下一阶段 planning，不得在 freeze 中夹带实现。
+- release/tag/archive 已完成；后续若进入下一阶段，必须单独 planning，不得把 GateN tag 解释为下一阶段 implementation started。
 
 ## P0/P1/P2/P3 Findings
 

@@ -55,7 +55,8 @@ Current negative boundaries remain unchanged:
 - GateN-4 marketdata sandbox fixture smoke implementation is **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**; it adds deterministic fixture resources and test-only no-egress fixture smoke, but does not start production adapter / API / runtime implementation.
 - GateN-5 runtime UI sandbox source display plan review is **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**; it plans display scope only and does not implement UI, API, fake-server runtime, adapter skeleton, tests, E2E, CI workflow, or real outbound.
 - GateN-5 runtime UI sandbox source display implementation is **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**; it implements only a compact existing `/marketdata` Data Quality / Readiness sandbox/source display using existing readiness / bars facts and does not add backend API, fake-server runtime, adapter skeleton, CI workflow, real outbound, private trading, LIVE, AI, DH runtime, RealClient, or real provider.
-- GateN freeze review is **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**; it freezes the public marketdata / exchange sandbox no-real baseline and does not authorize production readiness, LIVE authorization, real provider readiness, private trading authorization, real permission probe, or trading authorization.
+- GateN freeze review is **PASS / FROZEN / ACCEPTED / CLOSED**; it freezes the public marketdata / exchange sandbox no-real baseline and does not authorize production readiness, LIVE authorization, real provider readiness, private trading authorization, real permission probe, or trading authorization.
+- GateN release tag and archive is **PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT**; tag `nq-gaten-freeze` points to commit `361d2ac7bb595f72067b0e2c2d0485361e9a0540`, and GateN final state is **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**. The next phase remains **NOT STARTED**.
 
 ## Goal
 
@@ -299,20 +300,25 @@ Review requirement:
 
 - Security review required before any code, storage, key management, connector, or external network implementation.
 
-## Recommended Next Phase
+## GateN Closeout State
 
-Recommended next phase: **GateN Public MarketData / Exchange Sandbox Planning**.
+GateN Public MarketData / Exchange Sandbox Planning 已由 GateN-0 到 GateN-5、GateN-FREEZE 和 GateN release tag closeout 消费完成。
 
-Recommended status after this document:
+Current status after release closeout:
 
-- GateN planning baseline: **PLAN ONLY / NOT IMPLEMENTED**.
-- GateN implementation: **NOT STARTED**.
+- GateN baseline: **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**.
+- Release tag: `nq-gaten-freeze`.
+- GateN production adapter / API / runtime: **NOT STARTED**.
+- fake-server runtime: **NOT_IMPLEMENTED**.
+- real public outbound: **NOT STARTED**.
+- private trading adapter: **NOT STARTED**.
 - LIVE: **DISABLED**.
 - AI: **NOT STARTED**.
 - DH runtime: **NOT_INTEGRATED**.
 - RealClient / real provider: **NOT_IMPLEMENTED**.
+- 下一阶段：**NOT STARTED**。
 
-GateN planning baseline document:
+GateN baseline documents:
 
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
 - `docs/current/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`.
@@ -321,7 +327,11 @@ GateN planning baseline document:
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`.
 - `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`.
 - `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`.
-- Status: **PASS / PLAN ONLY / READY TO COMMIT**.
+- `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md`.
+- `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`.
+- `docs/current/NQ_GATEN_FREEZE_REVIEW.md`.
+- `docs/current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md`.
+- Status: **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**.
 - Scope: public marketdata / fake-server / no-egress / exchange sandbox planning only.
 - Implementation remains **NOT STARTED**.
 

@@ -2,11 +2,15 @@
 
 ## Status
 
-**PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**
+**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**
 
-本文件是 GateN Public MarketData / Exchange Sandbox 的当前基线。GateN-0 到 GateN-5 已形成从文档复核、contract planning、fixture smoke 到最小 UI display 的 no-real 证据链，并已由 [NQ-GATEN-FREEZE-REVIEW](NQ_GATEN_FREEZE_REVIEW.md) 冻结为 **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**；但 GateN production adapter / API / runtime implementation 仍未开始。
+含义：`FINALIZED`（最终定版）、`FROZEN`（已冻结）、`ACCEPTED`（已接受）、`CLOSED`（已关闭）、`TAGGED`（已打 release tag）。
 
-Freeze review status: [NQ-GATEN Freeze Review](NQ_GATEN_FREEZE_REVIEW.md) = **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**。GateN freeze 只冻结 no-real / no-egress / fixture / sandbox source display 基线，不代表 production readiness、LIVE authorization、real provider readiness、private trading authorization、real permission probe 或 trading authorization。
+本文件是 GateN Public MarketData / Exchange Sandbox 的当前基线。GateN-0 到 GateN-5 已形成从文档复核、contract planning、fixture smoke 到最小 UI display 的 no-real 证据链，并已由 [NQ-GATEN-FREEZE-REVIEW](NQ_GATEN_FREEZE_REVIEW.md) 冻结、由 [NQ-GATEN-RELEASE-TAG-AND-ARCHIVE](NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md) 打 tag 收口为 **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**；但 GateN production adapter / API / runtime implementation 仍未开始。
+
+Freeze review status: [NQ-GATEN Freeze Review](NQ_GATEN_FREEZE_REVIEW.md) = **PASS / FROZEN / ACCEPTED / CLOSED**。GateN freeze 只冻结 no-real / no-egress / fixture / sandbox source display 基线，不代表 production readiness、LIVE authorization、real provider readiness、private trading authorization、real permission probe 或 trading authorization。
+
+Release tag status: [NQ-GATEN Release Tag And Archive](NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md) = **PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT**。Release tag：`nq-gaten-freeze`；tag object：`d191474bd3ec0fb52566896fd9ef081eb843b520`；tagged commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`。
 
 Reconciliation status: [NQ-GATEN-0 Exchange Docs And Existing Adapter Reconciliation](NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md) = **PASS / RECONCILIATION BASELINE / READY TO COMMIT**. GateN-0 inventories early OKX / Binance official-docs records, existing public marketdata adapters, historical live-0 evidence, private/trading forbidden surfaces, and current no-real/security boundaries for GateN-1 input.
 
@@ -34,7 +38,7 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - Tagged commit: `64194844` (`docs(gatem): freeze GateM runtime readiness baseline`).
 - Frozen baseline: no-real runtime readiness baseline.
 - NQ-NEXT-PHASE-PLAN already recommends **GateN Public MarketData / Exchange Sandbox Planning**.
-- GateN current status: **Public MarketData / Exchange Sandbox baseline FROZEN / ACCEPTED / CLOSED with GateN-4 fixture smoke implemented and GateN-5 UI display implemented; production adapter / API / runtime implementation NOT STARTED**.
+- GateN current status: **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED with GateN-4 fixture smoke implemented and GateN-5 UI display implemented; production adapter / API / runtime implementation NOT STARTED**.
 - GateN-0 exchange docs and existing adapter reconciliation: **PASS / RECONCILIATION BASELINE / READY TO COMMIT**.
 - GateN-1 public marketdata contract plan review: **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**.
 - GateN-2 fake-server / no-egress public marketdata test plan: **PASS / TEST PLAN BASELINE / READY TO COMMIT**.
@@ -45,7 +49,9 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - GateN-5 runtime UI sandbox source display plan review: **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
 - GateN-5 runtime UI sandbox source display implementation plan / record: **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
 - GateN-5 runtime UI sandbox source display implementation: **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
-- GateN freeze review: **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
+- GateN freeze review: **PASS / FROZEN / ACCEPTED / CLOSED**.
+- GateN release tag and archive: **PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT**.
+- GateN release tag: `nq-gaten-freeze`.
 - GateN production adapter / API / runtime implementation: **NOT STARTED**.
 
 Current negative boundaries remain unchanged:
@@ -453,7 +459,8 @@ Acceptance criteria:
 7. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW` - completed as **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
 8. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN` - completed as **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**.
 9. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION` - completed as **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
-10. `NQ-GATEN-FREEZE` - completed as **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
+10. `NQ-GATEN-FREEZE` - completed as **PASS / FROZEN / ACCEPTED / CLOSED**.
+11. `NQ-GATEN-RELEASE-TAG-AND-ARCHIVE` - completed as **PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT**.
 
 ## P0 / P1 / P2 / P3 Risks
 
@@ -491,12 +498,12 @@ Potential future P1:
 
 ## Recommended Next Task
 
-Current precise next pointer after GateN freeze: `NQ-GATEN-RELEASE-TAG-AND-ARCHIVE`. It requires separate authorization and must remain a release/tag/archive closeout task, not an implementation task.
+Current precise next pointer after GateN release tag: `NQ-GATEN-POST-CURRENT-ARCHIVE-INVENTORY`. It requires separate authorization and must remain an inventory-only archive planning task, not an implementation or move task.
 
 Recommended next task:
 
 ```text
-NQ-GATEN-RELEASE-TAG-AND-ARCHIVE
+NQ-GATEN-POST-CURRENT-ARCHIVE-INVENTORY
 ```
 
 Reason:
@@ -505,7 +512,8 @@ Reason:
 - GateN-5 plan review and implementation plan are accepted.
 - GateN-5 minimal UI implementation is complete and validated by build plus smoke.
 - GateN-FREEZE has verified GateN-0 到 GateN-5 的状态一致性与 no-real boundary。
-- Release/tag/archive closeout can preserve the frozen GateN baseline without adding implementation.
+- Release/tag/archive closeout has pushed tag `nq-gaten-freeze` and recorded the frozen baseline.
+- Post-current archive inventory can decide which GateN current docs should remain current and which should later move to `docs/gates/gate-n/**`.
 
 Entry conditions:
 
@@ -514,12 +522,13 @@ Entry conditions:
 - GateN-5 implementation plan is accepted.
 - GateN-5 implementation is accepted.
 - GateN freeze review is accepted.
-- User explicitly authorizes the release/tag/archive task.
+- GateN release tag and archive closeout is accepted.
+- User explicitly authorizes the post-current archive inventory task.
 - P0/P1/P2 blockers are not open.
 
 ## Final Decision
 
-Decision: **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
+Decision: **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**.
 
 GateN baseline:
 
@@ -528,7 +537,9 @@ GateN baseline:
 - GateN-5 Runtime UI Sandbox Source Display plan review **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
 - GateN-5 Runtime UI Sandbox Source Display implementation plan / record **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**.
 - GateN-5 Runtime UI Sandbox Source Display implementation **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**.
-- GateN freeze review **PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**.
+- GateN freeze review **PASS / FROZEN / ACCEPTED / CLOSED**.
+- GateN release tag and archive **PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT**.
+- Release tag `nq-gaten-freeze` pushed to `origin`.
 - GateN production adapter / API / runtime implementation **NOT STARTED**.
 - No real provider.
 - No private trading.
@@ -540,5 +551,5 @@ GateN baseline:
 Commit recommendation:
 
 ```text
-docs(gaten): freeze public marketdata sandbox baseline
+docs(gaten): record release tag and archive closeout
 ```

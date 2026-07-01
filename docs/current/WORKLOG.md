@@ -11465,3 +11465,49 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-RELEASE-TAG-AND-ARCHIVE`：只做 release tag / archive closeout / current docs 瘦身计划，不新增实现、不改 API、不改 CI、不接真实交易所。
+
+---
+
+## NQ-GATEN-RELEASE-TAG-AND-ARCHIVE
+
+日期：2026-07-01
+
+### 本轮目标
+
+完成 GateN release tag and archive closeout。范围只覆盖 release tag、archive/index sync、current docs 状态同步和 no-real 边界复核；不新增实现、不改代码、不新增 API、不改 migration、不改 CI。
+
+### 完成内容
+
+- 已确认 `dev` 当前 `HEAD` 为 GateN-FREEZE commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`（`docs(gaten): freeze public marketdata sandbox baseline`）。
+- 已创建 annotated tag：`nq-gaten-freeze`。
+- 已推送 tag 到 `origin`。
+- 新增 `docs/current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md`，记录 tag object、tagged commit、remote ref、archive/index sync、no-real boundary 和 final decision。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/NQ_NEXT_PHASE_PLAN.md`、`docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`docs/current/NQ_GATEN_FREEZE_REVIEW.md`。
+- 同步 `docs/gates/README.md` 的 GateN release/tag 索引；未移动 GateN current docs，未删除历史证据。
+
+### Tag
+
+- Tag name：`nq-gaten-freeze`。
+- Tag message：`NQ GateN public marketdata sandbox baseline freeze`。
+- Tag object：`d191474bd3ec0fb52566896fd9ef081eb843b520`。
+- Tagged commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`。
+- Remote ref：`origin refs/tags/nq-gaten-freeze`。
+
+### 验证
+
+- 已执行 `git status --short`：tag 前工作区 clean；文档同步后仅允许 docs / README 变更。
+- 已执行 `git log --oneline -5`：`HEAD` 为 GateN-FREEZE commit。
+- 已执行 `git tag --list "nq-gaten-freeze"`：返回 `nq-gaten-freeze`。
+- 已执行 `git rev-parse "nq-gaten-freeze^{tag}"` 与 `git rev-parse "nq-gaten-freeze^{}"`：tag object 与 tagged commit 已确认。
+- 已执行 `git ls-remote --tags origin refs/tags/nq-gaten-freeze`：remote tag 已确认。
+- 已执行 `git diff --check` 与 `git diff --stat`：无 whitespace error，diff 仅限 root `README.md`、`docs/current/**` 与 `docs/gates/README.md` 文档变更。
+- 已执行禁止范围 diff：`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。
+- 已执行 GateN/no-real boundary `rg`：命中 current / historical / negative / index 语境；未发现 GateN 当前状态被写成 real provider ready、LIVE ready 或 trading authorization。
+
+### 边界
+
+GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最终定版 / 已冻结 / 已接受 / 已关闭 / 已打 tag）。GateN production adapter / API / runtime **NOT STARTED**；fake-server runtime **NOT_IMPLEMENTED**；adapter skeleton **NOT_IMPLEMENTED**；real public outbound **NOT STARTED**；private trading adapter **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real permission probe **NOT_IMPLEMENTED**。未读取或输出 credential material，未调用真实交易所，未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEN-POST-CURRENT-ARCHIVE-INVENTORY`：只列出 GateN current docs 的 keep/move 候选，不移动文件、不删除历史证据、不启动下一阶段 implementation。

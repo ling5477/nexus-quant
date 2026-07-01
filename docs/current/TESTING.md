@@ -1,3 +1,23 @@
+## NQ-GATEN-RELEASE-TAG-AND-ARCHIVE（2026-07-01）
+
+结论：**PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT**。含义：`PASS`（通过）、`COMPLETED`（本轮 release/tag/archive closeout 已完成）、`RELEASE TAG PUSHED`（release tag 已推送到远端）、`READY TO COMMIT`（本轮文档同步可提交）。本轮只执行 GateN release tag、archive/index sync、current docs 状态同步和 no-real 边界复核；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改代码、测试、API、migration、CI workflow 或运行时配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | tag 前工作区 clean；文档同步后仅显示允许的 root `README.md`、`docs/current/**` 与 `docs/gates/README.md` 变更。 |
+| `git log --oneline -5` | PASS | `HEAD` 为 `361d2ac7 docs(gaten): freeze public marketdata sandbox baseline`，即 GateN-FREEZE commit。 |
+| `git tag --list "nq-gaten-freeze"` | PASS | 返回 `nq-gaten-freeze`。 |
+| `git rev-parse "nq-gaten-freeze^{tag}"` | PASS | tag object = `d191474bd3ec0fb52566896fd9ef081eb843b520`。 |
+| `git rev-parse "nq-gaten-freeze^{}"` | PASS | tagged commit = `361d2ac7bb595f72067b0e2c2d0485361e9a0540`。 |
+| `git ls-remote --tags origin refs/tags/nq-gaten-freeze` | PASS | remote ref 返回 `d191474bd3ec0fb52566896fd9ef081eb843b520 refs/tags/nq-gaten-freeze`。 |
+| `git diff --check` / `git diff --stat` | PASS | `git diff --check` 无 whitespace error；`git diff --stat` 仅显示 root `README.md`、`docs/current/**` 与 `docs/gates/README.md` 文档变更；新增 release 文档由 `git status --short` 确认。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。 |
+| GateN / boundary keyword `rg` | REVIEWED | README / docs/current / docs/gates 中命中 GateN、TAGGED、no-real、LIVE、AI、DH runtime、RealClient、real provider 和 trading authorization 语境；未发现 GateN 当前状态被写成 real provider ready、LIVE ready 或 trading authorization。 |
+
+Boundary：GateN 最终状态 **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最终定版 / 已冻结 / 已接受 / 已关闭 / 已打 tag）；GateN production adapter / API / runtime **NOT STARTED**；fake-server runtime **NOT_IMPLEMENTED**；adapter skeleton **NOT_IMPLEMENTED**；real public outbound **NOT STARTED**；private trading adapter **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real permission probe **NOT_IMPLEMENTED**。public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-FREEZE（2026-07-01）
 
 结论：**PASS / FROZEN / ACCEPTED / CLOSED / READY TO COMMIT**。本轮执行 GateN-0 到 GateN-5 freeze review、no-real boundary review、documentation review 和 test baseline review；冻结对象仅为 public marketdata / exchange sandbox 的 no-real / no-egress / fixture / sandbox source display baseline，不是 real provider readiness、LIVE readiness、private trading authorization 或 trading authorization。
