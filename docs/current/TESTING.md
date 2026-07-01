@@ -6609,6 +6609,22 @@ target conflicts = 0
 
 ---
 
+## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW（2026-07-01）
+
+结论：**PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**。本轮只做 docs-only plan review，规划 GateN-5 Runtime UI Sandbox Source Display 的展示范围、页面建议、数据来源、forbidden wording、validation expectations 和 GateN-FREEZE entry criteria；未改 frontend / backend / research / scripts / deploy / `.github` / migration，未新增 API / 页面 / E2E / 测试代码 / CI workflow，未实现 fake-server runtime、adapter skeleton、真实 HTTP/WebSocket、RealClient、real provider、private trading adapter、credential lookup 或 permission probe real execution。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | 仅允许的 root/current docs 变更；新 GateN-5 plan review 文档为 untracked。 |
+| `git diff --check` | **PASS** | 无 whitespace error；仅 Windows 行尾转换 warning。 |
+| `git diff --stat` | **PASS** | tracked diff 范围为允许文档；新文档由 `git status --short` 显示。 |
+| forbidden-scope diff | **PASS / EMPTY** | `backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration diff 均为空。 |
+| GateN/source/readiness keyword `rg` | **PASS** | 用户指定关键词扫描退出码 0；输出很大，命中为既有 current/gates/backend/frontend 证据与本轮 docs wording。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮仅修改允许范围内文档，不改 Java / TypeScript / Python / workflow / migration / runtime 配置。后续 GateN-5 implementation 必须至少运行 frontend build，并补一个 smoke test 或 component-level assertion。
+
+---
+
 ## NQ-GATEM-5-RUNTIME-GUARDED-UI-PLAN（2026-06-30）
 
 结论：**PLAN ONLY / NOT IMPLEMENTED / READY FOR REVIEW**。本轮只做 Runtime Guarded UI planning 与 API boundary read-only review；未实现页面、未改前端代码、未改后端 API、未新增 migration、未触发真实交易所、未读取 credential、未启用 LIVE、未接 AI 或 DH runtime。

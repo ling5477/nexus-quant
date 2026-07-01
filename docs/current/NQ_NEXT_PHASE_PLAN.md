@@ -52,6 +52,8 @@ Current negative boundaries remain unchanged:
 - GateN-3 public marketdata adapter skeleton plan review is **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**; it defines public-only skeleton scope, adapter boundary, DTO/capability/readiness model, no-egress constraints, forbidden carry-over list, and GateN-4 entry criteria, and still does not start GateN implementation.
 - GateN-4 marketdata sandbox fixture smoke plan review is **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**; it defines deterministic fixture smoke scope, fixture hygiene, readiness simulation matrix, timeout / rate-limit / malformed payload simulation, no-egress validation plan, forbidden carry-over list, and GateN-5 entry criteria, and still does not start GateN implementation.
 - GateN-4 marketdata sandbox fixture smoke implementation plan is **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**; it defines the minimum future implementation slice, future allowed file ranges, fixture set, readiness expectation matrix, no-egress verification design, future validation commands, and GateN-5 entry criteria, and still does not start GateN implementation.
+- GateN-4 marketdata sandbox fixture smoke implementation is **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**; it adds deterministic fixture resources and test-only no-egress fixture smoke, but does not start production adapter / API / runtime implementation.
+- GateN-5 runtime UI sandbox source display plan review is **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**; it plans display scope only and does not implement UI, API, fake-server runtime, adapter skeleton, tests, E2E, CI workflow, or real outbound.
 
 ## Goal
 

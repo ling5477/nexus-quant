@@ -400,9 +400,9 @@ GateN-4 fixture smoke is implemented as a deterministic fixture / no-egress / te
 
 ## Recommended Next Task
 
-`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW`
+`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN`
 
-That next task must remain planning/review only unless separately authorized. GateN-5 may display sandbox source/readiness diagnostics only and must not display real-ready, live-ready, trading-authorized, account-authorized, permission-probe-ready, private-ready, order, cancel, transfer, withdraw, account, balance, or credential actions.
+GateN-5 plan review is now recorded as **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT** in [NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md](NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md). The next task must remain a separate implementation plan unless explicitly authorized. GateN-5 may display sandbox source/readiness diagnostics only and must not display real-ready, live-ready, trading-authorized, account-authorized, permission-probe-ready, private-ready, order, cancel, transfer, withdraw, account, balance, or credential actions.
 
 Commit recommendation:
 

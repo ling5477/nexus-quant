@@ -11326,3 +11326,37 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW`：只做 plan/review，规划如何展示 sandbox source / readiness / diagnostic state；不得展示 real-ready、live-ready、trading-authorized、private-ready 或 permission-probe-ready，不得启动 frontend implementation，除非后续单独授权。
+
+---
+
+## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于 GateN-4 fixture smoke implementation，执行 Runtime UI Sandbox Source Display planning-only / docs-only review。范围只覆盖 UI 展示范围、页面入口建议、数据来源假设、forbidden UI wording、implementation constraints、validation expectations 和 GateN-FREEZE entry criteria；不实现 UI、不改 frontend、不新增 API、不新增测试、不改 CI、不触发真实外联。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md`。
+- 定义 UI source taxonomy：`LOCAL_DB`、`FIXTURE`、`FAKE_SERVER`、`NO_EGRESS_SANDBOX`、`PUBLIC_SANDBOX_CANDIDATE`。
+- 定义 readiness display scope：`FRESH`、`STALE`、`GAP`、`ERROR`、`DISABLED`、`PENDING_BACKEND_SUPPORT`，仅作为 public marketdata diagnostic。
+- 定义 diagnostic fields：reason code、reason text、checkedAt、`noEgress=true`、sourceLabel，以及 OKX / Binance × bars / instrument metadata / ticker / exchange status 的展示范围。
+- 页面建议：首批实现优先在既有 `/marketdata` K-line readiness / source health 局部块增加 sandbox/source badge；`/runtime/readiness` 只放摘要或 deep link；不新增完整页面或导航入口。
+- 数据来源假设：无新增 API 时只使用现有 `/api/marketdata/readiness`、`/api/marketdata/bars`、local DB facts 和前端 route/query context；若需要动态 fixture smoke result、fake-server availability 或 backend-generated `noEgress=true`，必须停止并转 API plan。
+- 明确 forbidden UI wording：不得展示 real-ready、live-ready、provider-ready、trading-authorized、account-authorized、permission-verified、private-ready 或对应 uppercase readiness strings。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`。
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、forbidden-scope diff 和指定 GateN/source/readiness/MarketData/OKX/Binance/public-private/LIVE 边界关键词 `rg`。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改允许范围内文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未新增测试代码；未实现真实 HTTP / WebSocket；未实现 adapter skeleton；未实现 fake server runtime；未实现 RealClient / real provider；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；historical live-0 不得出现在当前 UI readiness badge。
+
+### 推荐下一步
+
+`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN`：只做 implementation planning，确认最小 frontend block、现有数据源可用性、build/smoke/component assertion 验证和 no-real wording 断言；仍不得本轮实现 UI、API、fake-server runtime、adapter skeleton、真实外联、credential、private trading、LIVE、AI 或 DH runtime。
