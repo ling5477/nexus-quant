@@ -11193,3 +11193,37 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW`：基于 GateN-2 test-plan baseline，审查是否可以进入 fake-server / fixture / no-egress public adapter skeleton；仍不得真实外联、不得接 private trading、不得开启 LIVE。
+
+---
+
+## NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于 GateN-2 fake-server / no-egress public marketdata test plan，执行 GateN-3 public marketdata adapter skeleton plan review。范围只覆盖 skeleton minimal interface、adapter type boundary、DTO / capability / readiness model、source taxonomy、no-egress implementation constraints、forbidden carry-over list、later implementation test expectations 和 GateN-4 entry criteria；不实现 adapter skeleton、fake server、测试代码、API、migration、CI workflow、页面或运行时行为。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`。
+- 定义 `NqPublicMarketDataAdapter` 或等价 public-only interface proposal：`getBars` 与 `getInstrumentMetadata` 为 first-slice surface，`getTicker` 与 `getExchangeStatus` 为 named public capability，允许在首个实现中保持 `PENDING_BACKEND_SUPPORT` 以避免 scope bloat。
+- 规划 adapter class / package proposal：`FakePublicMarketDataAdapter`、`FixturePublicMarketDataAdapter`、`OkxPublicMarketDataAdapter` skeleton、`BinancePublicMarketDataAdapter` skeleton 与 `FutureRealPublicMarketDataAdapter` naming placeholder；明确 public adapter 不得复用 private `TradingAdapter`。
+- 定义 public-only DTO、`MarketDataCapability` 与 `MarketDataReadinessDecision` proposal；DTO 禁止 credential、account、order、balance、transfer、withdraw、signature、private raw payload 等字段。
+- 对齐 source taxonomy：`LOCAL_DB`、`FIXTURE`、`FAKE_SERVER`、`NO_EGRESS_SANDBOX`、`PUBLIC_SANDBOX_CANDIDATE`。
+- 明确 no-egress implementation constraints：默认不得 real host auto-call，不得 credential lookup，不得 signed request，不得 private endpoint path；fake-server URL 必须 local-only 且显式。
+- 明确 GateN-4 entry criteria：只有在 GateN-3 skeleton implementation 单独授权、实现、review、接受后，才允许进入 fixture smoke；GateN-4 仍必须覆盖 OHLCV、instrument metadata、ticker/status、freshness、gap、timeout、simulated rate-limit error，且默认 no-egress。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`。
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、forbidden-scope diff 和指定 GateN/fake/no-egress/adapter/MarketData/public-private/LIVE 边界关键词 `rg`。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改允许范围内文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 adapter skeleton；未实现 fake server；未新增测试代码；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；public adapter 必须与 private trading adapter 分离；skeleton plan review 不等于 implementation started。
+
+### 推荐下一步
+
+`NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW`：基于 GateN-3 skeleton plan review 和后续单独授权/接受的 skeleton implementation，规划 fixture smoke 对 OHLCV、instrument metadata、ticker/status、freshness、gap、timeout、simulated rate-limit error 的覆盖；仍不得真实外联、不得接 private trading、不得开启 LIVE。

@@ -1,3 +1,22 @@
+## NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW（2026-07-01）
+
+结论：**PASS / SKELETON PLAN REVIEW / READY TO COMMIT**。本轮只执行 GateN-3 public marketdata adapter skeleton plan review、no-egress boundary review 和 current docs sync；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow、adapter skeleton、fake server 或测试代码，未新增运行时行为。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only / planning-only skeleton review，只规划 skeleton minimal interface、adapter boundary、DTO / capability / readiness model、source taxonomy、no-egress constraints、forbidden carry-over list、later implementation test expectations 和 GateN-4 entry criteria，不改代码或运行时。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 仅显示允许的 root `README.md`、`docs/current/**` 文档修改与新增 GateN-3 skeleton plan review 文档。 |
+| `git diff --check` | PASS | 无 whitespace error；仅出现 Windows LF/CRLF working-copy warning。 |
+| `git diff --stat` | PASS | tracked diff 仅显示允许文档变更；新增 untracked GateN-3 skeleton plan review 文档由 `git status --short` 单独确认。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。 |
+| 指定 GateN/fake/no-egress/adapter/MarketData/public-private/LIVE 边界关键词 `rg` | PASS | 命令退出码 0；命中 current docs、historical gates 和 backend 中 GateN、fake/no-egress、adapter、MarketData、OKX/Binance、public/private、LIVE、RealClient、permission probe、order/cancel/withdraw/transfer 与 trading authorization 边界证据。 |
+| 新增文档 trailing whitespace 检查 | PASS | `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md` 无行尾空白命中。 |
+
+Boundary：GateN implementation **NOT STARTED**；adapter skeleton **NOT_IMPLEMENTED**；fake server **NOT_IMPLEMENTED**；test code **NOT_ADDED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real exchange private trading **NOT_IMPLEMENTED**；permission probe real execution **NOT_IMPLEMENTED**；public readiness 不等于 trading readiness；public adapter 不等于 private trading adapter。
+
 ## NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN（2026-07-01）
 
 结论：**PASS / TEST PLAN BASELINE / READY TO COMMIT**。本轮只执行 GateN-2 fake-server / no-egress public marketdata test plan、security boundary review 和 current docs sync；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow、fake server、adapter 或测试代码，未新增运行时行为。

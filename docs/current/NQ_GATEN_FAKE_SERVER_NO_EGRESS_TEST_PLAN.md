@@ -8,6 +8,8 @@ This document is the GateN-2 fake-server / no-egress public marketdata test plan
 
 This is a planning-only and docs-only test plan. It does not implement a fake server, does not add test code, does not add API, does not add migration, does not modify CI, does not call real exchange APIs, and does not authorize LIVE, private trading, RealClient, real provider, credential access, or real permission probe execution.
 
+GateN-3 status update: [NQ-GATEN-3 Public MarketData Adapter Skeleton Plan Review](NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md) = **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**. GateN-3 accepts a public-only skeleton design baseline and GateN-4 entry criteria, but still does not implement adapter skeleton, fake server, tests, API, migration, CI workflow, real outbound, private trading, credential access, LIVE, AI, DH runtime, RealClient, real provider, or real permission probe behavior.
+
 ## Current GateN-2 Decision
 
 GateN-2 decision:

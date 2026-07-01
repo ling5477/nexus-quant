@@ -25,6 +25,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - NQ-GATEN-0-EXCHANGE-DOCS-AND-EXISTING-ADAPTER-RECONCILIATION = PASS / RECONCILIATION BASELINE / READY TO COMMIT；复核早期 OKX / Binance 官方文档整理、现有 public marketdata adapter/interface/API/test 证据、历史 live-0/spike 证据与 private trading 禁止边界；不启动 GateN implementation
 - NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW = PASS / CONTRACT PLAN REVIEW / READY TO COMMIT；定义 public-only marketdata internal contract、source taxonomy、freshness/health/gap model、rate-limit/timeout/retry model、public/private separation rules 与 GateN-2 fake-server/no-egress 输入；不启动 GateN implementation
 - NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN = PASS / TEST PLAN BASELINE / READY TO COMMIT；规划 fake-server contract、no-egress boundary、forbidden endpoint list、test matrix、fixture taxonomy、readiness simulation 与 GateN-3 entry criteria；不启动 GateN implementation
+- NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW = PASS / SKELETON PLAN REVIEW / READY TO COMMIT；定义 public-only adapter skeleton 最小接口、adapter class/package proposal、DTO/capability/readiness model、no-egress constraints 与 GateN-4 entry criteria；不启动 GateN implementation
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
@@ -77,6 +78,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`：GateN-0 exchange docs and adapter reconciliation baseline；early official docs can be reused as inventory, public marketdata and private trading remain separated, historical live-0 is not current LIVE readiness
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`：GateN-1 public marketdata contract plan review；public readiness 不是 trading readiness，public adapter 不是 private trading adapter，任何真实外联仍需单独 review
 - `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`：GateN-2 fake-server / no-egress public marketdata test plan；default tests must not contact real exchange hosts, read credentials, or touch private trading endpoints
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`：GateN-3 public marketdata adapter skeleton plan review；public adapter skeleton must stay separate from private trading adapter, fake-server / fixture / no-egress only by default
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
 - `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：credential active uniqueness Batch 5-E-C 只读审计报告
 - `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：credential enable governance Batch 5-F-A 只读审计报告；Batch 5-F-B 已完成 schema-only `ENABLED` audit event 准备，Batch 5-F-C 已实现最小 enable command
