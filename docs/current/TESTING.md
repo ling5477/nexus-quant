@@ -1,3 +1,21 @@
+## NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN（2026-07-01）
+
+结论：**PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**。本轮只执行 GateN-4 marketdata sandbox fixture smoke implementation planning、test slice design、no-egress boundary review 和 current docs sync；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow、adapter skeleton、fake server、fixture smoke 或测试代码，未新增运行时行为。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only / implementation-planning-only，只规划 future implementation slice、future allowed file ranges、fixture set、readiness expectation matrix、no-egress verification design、future validation commands 和 GateN-5 entry criteria，不改代码或运行时。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 仅显示允许的 root `README.md`、`docs/current/**` 文档修改与新增 GateN-4 fixture smoke implementation plan 文档。 |
+| `git diff --check` | PASS | 无 whitespace error；仅出现 Windows LF/CRLF working-copy warning。 |
+| `git diff --stat` | PASS | tracked diff 仅显示允许文档变更；新增 untracked GateN-4 fixture smoke implementation plan 文档由 `git status --short` 单独确认。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。 |
+| 指定 GateN/fixture/sandbox/fake/no-egress/adapter/MarketData/public-private/LIVE 边界关键词 `rg` | PASS | 命令退出码 0；命中 root README、current docs、historical gates 和 backend 中 GateN、fixture/sandbox/fake/no-egress、adapter、MarketData、OKX/Binance、public/private、LIVE、RealClient、permission probe、order/cancel/withdraw/transfer、ticker、metadata、freshness、gap、rate-limit、timeout 与 trading authorization 边界证据。 |
+
+Boundary：GateN implementation **NOT STARTED**；sandbox fixture smoke **NOT_IMPLEMENTED**；adapter skeleton **NOT_IMPLEMENTED**；fake server **NOT_IMPLEMENTED**；test code **NOT_ADDED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real exchange private trading **NOT_IMPLEMENTED**；permission probe real execution **NOT_IMPLEMENTED**；implementation plan 不等于 implementation started；fixture smoke 不等于 real exchange connectivity；public readiness 不等于 trading readiness。
+
 ## NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW（2026-07-01）
 
 结论：**PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**。本轮只执行 GateN-4 marketdata sandbox fixture smoke plan review、no-egress test boundary review、readiness simulation review 和 current docs sync；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow、adapter skeleton、fake server、fixture smoke 或测试代码，未新增运行时行为。

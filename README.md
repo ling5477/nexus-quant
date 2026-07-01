@@ -27,6 +27,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN = PASS / TEST PLAN BASELINE / READY TO COMMIT；规划 fake-server contract、no-egress boundary、forbidden endpoint list、test matrix、fixture taxonomy、readiness simulation 与 GateN-3 entry criteria；不启动 GateN implementation
 - NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW = PASS / SKELETON PLAN REVIEW / READY TO COMMIT；定义 public-only adapter skeleton 最小接口、adapter class/package proposal、DTO/capability/readiness model、no-egress constraints 与 GateN-4 entry criteria；不启动 GateN implementation
 - NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW = PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT；定义 deterministic fixture smoke 最小范围、fixture hygiene、readiness simulation matrix、timeout/rate-limit/malformed payload simulation、no-egress validation plan 与 GateN-5 entry criteria；不启动 GateN implementation
+- NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN = PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT；规划 deterministic fixture / local fake-server / no-egress fixture smoke 的最小未来实现切片、允许文件范围、fixture set、readiness expectation matrix、no-egress verification design 与 future validation commands；不启动 GateN implementation
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
@@ -81,6 +82,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`：GateN-2 fake-server / no-egress public marketdata test plan；default tests must not contact real exchange hosts, read credentials, or touch private trading endpoints
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`：GateN-3 public marketdata adapter skeleton plan review；public adapter skeleton must stay separate from private trading adapter, fake-server / fixture / no-egress only by default
 - `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`：GateN-4 marketdata sandbox fixture smoke plan review；fixture smoke must stay deterministic, offline, no-egress, public-only, and diagnostic-only
+- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`：GateN-4 marketdata sandbox fixture smoke implementation plan；future implementation must stay deterministic fixture / local fake-server / no-egress only and does not start GateN implementation
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
 - `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：credential active uniqueness Batch 5-E-C 只读审计报告
 - `docs/current/CREDENTIAL_ENABLE_GOVERNANCE_REVIEW.md`：credential enable governance Batch 5-F-A 只读审计报告；Batch 5-F-B 已完成 schema-only `ENABLED` audit event 准备，Batch 5-F-C 已实现最小 enable command

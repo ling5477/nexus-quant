@@ -8,6 +8,8 @@ This document is the GateN-4 marketdata sandbox fixture smoke plan review. It co
 
 This is a planning-only and docs-only review. It does not implement fixture smoke tests, does not add test code, does not implement a fake server, does not implement an adapter skeleton, does not add API, does not add migration, does not modify CI, does not call real exchange APIs, and does not authorize LIVE, private trading, RealClient, real provider, credential access, or real permission probe execution.
 
+Implementation planning status: [NQ-GATEN-4 MarketData Sandbox Fixture Smoke Implementation Plan](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md) = **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**. It defines the minimum future implementation slice, future allowed file ranges, fixture set, readiness expectation matrix, no-egress verification design, future validation commands, and GateN-5 entry criteria. It still does not start GateN implementation.
+
 ## Current GateN-4 Decision
 
 GateN-4 decision:

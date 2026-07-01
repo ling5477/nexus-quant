@@ -51,6 +51,7 @@ Current negative boundaries remain unchanged:
 - GateN-2 fake-server / no-egress public marketdata test plan is **PASS / TEST PLAN BASELINE / READY TO COMMIT**; it defines fake-server contract scope, no-egress strategy, forbidden endpoint list, test matrix, fixture taxonomy, readiness simulation, security boundary, and GateN-3 entry criteria, and still does not start GateN implementation.
 - GateN-3 public marketdata adapter skeleton plan review is **PASS / SKELETON PLAN REVIEW / READY TO COMMIT**; it defines public-only skeleton scope, adapter boundary, DTO/capability/readiness model, no-egress constraints, forbidden carry-over list, and GateN-4 entry criteria, and still does not start GateN implementation.
 - GateN-4 marketdata sandbox fixture smoke plan review is **PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT**; it defines deterministic fixture smoke scope, fixture hygiene, readiness simulation matrix, timeout / rate-limit / malformed payload simulation, no-egress validation plan, forbidden carry-over list, and GateN-5 entry criteria, and still does not start GateN implementation.
+- GateN-4 marketdata sandbox fixture smoke implementation plan is **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT**; it defines the minimum future implementation slice, future allowed file ranges, fixture set, readiness expectation matrix, no-egress verification design, future validation commands, and GateN-5 entry criteria, and still does not start GateN implementation.
 
 ## Goal
 
@@ -315,6 +316,7 @@ GateN planning baseline document:
 - `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`.
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`.
 - `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`.
+- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`.
 - Status: **PASS / PLAN ONLY / READY TO COMMIT**.
 - Scope: public marketdata / fake-server / no-egress / exchange sandbox planning only.
 - Implementation remains **NOT STARTED**.
