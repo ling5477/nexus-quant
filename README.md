@@ -81,7 +81,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`：GateJ-FREEZE 最终验收报告
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
 - `docs/gates/gate-m/README.md`：GateM historical archive；archive closed，22/22 approved candidates moved；Batch 1 已归档 freeze readiness / freeze review / release tag evidence（`nq-gatem-freeze`），Batch 2 已归档 Runtime Guarded UI evidence，Batch 3 已归档 Operational Readiness evidence，Batch 4 已归档 GateM-2 MarketData readiness evidence
-- `docs/gates/gate-n/README.md`：GateN historical archive；archive move batch completed，11/11 approved GateN process docs moved（tag：`nq-gaten-freeze`）；current authority 仍保留在 `docs/current/`
+- `docs/gates/gate-n/README.md`：GateN historical archive；archive closed，11/11 approved GateN process docs moved（tag：`nq-gaten-freeze`）；current authority 仍保留在 `docs/current/`
 - `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateM 后下一阶段 planning-only 文档；推荐 GateN Public MarketData / Exchange Sandbox Planning；GateN-4 fixture smoke test-only implementation 已完成，GateN-5 runtime UI sandbox source display 已完成，GateN freeze review 已完成，GateN release tag 已完成，production adapter/API/runtime implementation NOT STARTED
 - `docs/current/CREDENTIAL_ACTIVE_MATERIAL_SELECTION_REVIEW.md`：credential active material selection Batch 5-E-A 只读审计报告
 - `docs/current/CREDENTIAL_ACTIVE_CREDENTIAL_UNIQUENESS_REVIEW.md`：credential active uniqueness Batch 5-E-C 只读审计报告

@@ -1,3 +1,32 @@
+## NQ-GATEN-ARCHIVE-CLOSEOUT
+
+日期：2026-07-01
+
+### 本轮目标
+
+完成 GateN archive final closeout。只验证 11 个 GateN process docs 已完成物理归档、current 事实源已收口、archive index 可发现、no-real / no-LIVE / no-AI / no-DH / no-real-provider 边界未漂移；不移动未批准文件，不删除文件，不启动下一阶段 implementation。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_ARCHIVE_CLOSEOUT.md`。
+- 更新 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/NQ_NEXT_PHASE_PLAN.md`、`docs/gates/README.md`、`docs/gates/gate-n/README.md`，同步 GateN archive closed 状态。
+- 确认 `docs/current/NQ_GATEN_*.md` 仅保留 inventory、plan review 和 closeout 三个 governance evidence。
+- 确认 `docs/gates/gate-n/README.md` 与 `docs/gates/gate-n/**` 可发现完整 11 个 archived process docs。
+- 将 inventory / archive plan review 明确分类为 pre-move governance evidence，不作为继续 archive 任务的触发条件。
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、`git ls-files "docs/current/NQ_GATEN_*.md"`、`git ls-files "docs/gates/gate-n/**/*.md"`、`git ls-files "docs/gates/gate-n/*.md"`、GateN current path / archive path `rg` 搜索、GateN / no-real / LIVE / AI / DH runtime / RealClient / real provider / trading authorization 关键词 `rg` 搜索和禁止范围 diff。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只做 docs-only archive closeout，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未移动任何文件，未删除历史证据，未新增 `docs/gates/gate-n/**` 过程文档；未修改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、E2E、CI workflow、adapter skeleton、fake-server runtime、RealClient、real provider 或真实 permission probe；未调用真实交易所 API，未读取或输出 credential material，未开启 LIVE，未接 AI runtime，未接 DH runtime，未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+无新的 GateN archive task。除非发现真实断链或错误索引，GateN archive 文档线关闭；后续任何下一阶段 planning / implementation review 必须另起任务并重新声明边界。
+
 ## NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH
 
 日期：2026-07-01

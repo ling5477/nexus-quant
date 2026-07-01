@@ -308,6 +308,7 @@ Current status after release closeout:
 
 - GateN baseline: **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**.
 - Release tag: `nq-gaten-freeze`.
+- GateN archive closeout: **PASS / ARCHIVE CLOSED / READY TO COMMIT**.
 - GateN production adapter / API / runtime: **NOT STARTED**.
 - fake-server runtime: **NOT_IMPLEMENTED**.
 - real public outbound: **NOT STARTED**.

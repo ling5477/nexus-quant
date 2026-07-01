@@ -4,7 +4,7 @@
 
 ## Archive state
 
-- Archive status: **PASS / ARCHIVE MOVE BATCH / READY TO COMMIT**。含义：`PASS`（通过）、`ARCHIVE MOVE BATCH`（物理归档移动批次已执行）、`READY TO COMMIT`（本轮文档归档变更可进入提交前复核）。
+- Archive status: **PASS / ARCHIVE CLOSED / READY TO COMMIT**。含义：`PASS`（通过）、`ARCHIVE CLOSED`（归档线已关闭）、`READY TO COMMIT`（本轮文档归档变更可进入提交前复核）。
 - GateN final state: **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**。含义：`FINALIZED`（最终定版）、`FROZEN`（已冻结）、`ACCEPTED`（已接受）、`CLOSED`（已关闭）、`TAGGED`（已打 tag）。
 - Release tag: `nq-gaten-freeze`.
 - Moved candidates: 11 / 11 approved GateN process documents.
@@ -60,11 +60,12 @@ Freeze:
 - [../../current/NQ_NEXT_PHASE_PLAN.md](../../current/NQ_NEXT_PHASE_PLAN.md)
 - [../../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](../../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)
 - [../../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](../../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)
+- [../../current/NQ_GATEN_ARCHIVE_CLOSEOUT.md](../../current/NQ_GATEN_ARCHIVE_CLOSEOUT.md)
 
 ## Do-not-delete evidence
 
 本批次只移动上述 11 个批准候选，不删除任何历史证据，不新增 redirect stub，不改写 moved docs 的历史正文证据。若后续需要清理 residual，只能先做单独 inventory / review，不得把历史过程记录当成可删除内容。
 
-## Next task
+## Archive closeout
 
-推荐下一步：`NQ-GATEN-ARCHIVE-CLOSEOUT`，只做归档完成核对、引用残留分类和 current / gates 索引复核；不得再次移动未批准文件，不得新增代码、API、migration、CI workflow 或 runtime 能力。
+GateN archive closeout 已完成。除非后续发现真实断链或错误索引，不建议继续开启 GateN archive 任务；任何下一阶段 planning / implementation review 都必须另起任务并重新声明 no-real、LIVE、AI、DH runtime、RealClient / real provider 和 trading authorization 边界。

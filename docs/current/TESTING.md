@@ -1,3 +1,24 @@
+## NQ-GATEN-ARCHIVE-CLOSEOUT（2026-07-01）
+
+结论：**PASS / ARCHIVE CLOSED / READY TO COMMIT**。含义：`PASS`（通过）、`ARCHIVE CLOSED`（归档线已关闭）、`READY TO COMMIT`（本轮文档 closeout 可进入提交前复核）。本轮只新增 GateN archive closeout 并同步允许范围内的 current/root/gates 状态；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 仅显示允许范围内 docs 变更和新增 closeout 文档。 |
+| `git diff --check` | PASS | docs-only diff whitespace 复核通过；Windows LF/CRLF warning 如出现为非内容错误。 |
+| `git diff --stat` | PASS | unstaged diff 仅包含 root README、`docs/current/**`、`docs/gates/README.md`、`docs/gates/gate-n/README.md` 允许文档变更。 |
+| `git diff --cached --check` / `git diff --cached --stat` | PASS | staged diff 仅包含新增 `docs/current/NQ_GATEN_ARCHIVE_CLOSEOUT.md`；无 whitespace error。 |
+| `git ls-files "docs/current/NQ_GATEN_*.md"` | PASS | 仅列出 inventory、plan review、closeout 三个 current governance evidence。 |
+| `git ls-files "docs/gates/gate-n/**/*.md"` / `git ls-files "docs/gates/gate-n/*.md"` | PASS | archive index 与 11 个 GateN process docs 均可发现。 |
+| `rg "docs/current/NQ_GATEN_" README.md docs/current docs/gates` | REVIEWED | active indexes 不再把 11 个 process docs 列为 current authority；剩余命中为 pre-move governance evidence、closeout 分类、append-only history 或 moved evidence 内历史路径。 |
+| `rg "docs/gates/gate-n" README.md docs/current docs/gates` | REVIEWED | root/current/gates/closeout/archive index 均指向 GateN archive。 |
+| GateN / no-real boundary keyword `rg` | REVIEWED | 未发现 GateN archive closeout 被写成 implementation started、LIVE ready、real provider ready 或 trading authorization。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均为空 diff。 |
+
+Boundary：GateN archive closeout 只关闭文档归档线；未移动文件，未删除文件，未新增 `docs/gates/gate-n/**` 过程文档；LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT_INTEGRATED**；RealClient / real provider 仍 **NOT_IMPLEMENTED**；real permission probe 仍 **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH（2026-07-01）
 
 结论：**PASS / ARCHIVE MOVE BATCH / READY TO COMMIT**。含义：`PASS`（通过）、`ARCHIVE MOVE BATCH`（物理归档移动批次已执行）、`READY TO COMMIT`（本轮文档归档变更可进入提交前复核）。本轮只移动已批准的 GateN 过程文档并更新允许范围内文档索引；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。

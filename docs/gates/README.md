@@ -10,6 +10,6 @@
 
 ## Gate release notes
 
-- GateN historical archive: [gate-n/README.md](gate-n/README.md)（tag：`nq-gaten-freeze`；FINALIZED 最终定版 / FROZEN 已冻结 / ACCEPTED 已接受 / CLOSED 已关闭 / TAGGED 已打 tag；GateN physical archive move batch 已执行，11/11 approved GateN process docs moved；inventory 保留于 [../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)，plan review 保留于 [../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)）
+- GateN historical archive: [gate-n/README.md](gate-n/README.md)（tag：`nq-gaten-freeze`；FINALIZED 最终定版 / FROZEN 已冻结 / ACCEPTED 已接受 / CLOSED 已关闭 / TAGGED 已打 tag；GateN archive closed，11/11 approved GateN process docs moved；inventory 保留于 [../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)，plan review 保留于 [../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)，closeout 保留于 [../current/NQ_GATEN_ARCHIVE_CLOSEOUT.md](../current/NQ_GATEN_ARCHIVE_CLOSEOUT.md)）
 - GateM historical archive: [gate-m/README.md](gate-m/README.md)（archive closed；22/22 approved candidates moved）
 - GateK release/tag prep: [gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md](gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md)

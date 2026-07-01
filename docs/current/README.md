@@ -31,10 +31,11 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 运行手册：[RUNBOOK.md](RUNBOOK.md)
 - 项目任务流程权威：[NQ_PROJECT_WORKFLOW_AUTHORITY.md](NQ_PROJECT_WORKFLOW_AUTHORITY.md)
 - GateM historical archive：[docs/gates/gate-m/](../gates/gate-m/README.md)
-- GateN historical archive：[docs/gates/gate-n/](../gates/gate-n/README.md)（PASS / ARCHIVE MOVE BATCH / READY TO COMMIT；11/11 approved GateN process docs moved；tag：`nq-gaten-freeze`；no-real baseline）
+- GateN historical archive：[docs/gates/gate-n/](../gates/gate-n/README.md)（PASS / ARCHIVE CLOSED / READY TO COMMIT；11/11 approved GateN process docs moved；tag：`nq-gaten-freeze`；no-real baseline）
 - Next phase plan：[NQ_NEXT_PHASE_PLAN.md](NQ_NEXT_PHASE_PLAN.md)
 - GateN post-current archive inventory：[NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)
 - GateN archive plan review：[NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)（PASS / PLAN REVIEW ONLY / READY FOR MOVE BATCH；已由 `NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH` 消费，GateN physical archive move batch 已执行）
+- GateN archive closeout：[NQ_GATEN_ARCHIVE_CLOSEOUT.md](NQ_GATEN_ARCHIVE_CLOSEOUT.md)（PASS / ARCHIVE CLOSED / READY TO COMMIT；GateN archive 文档线已关闭）
 - Post-GateM current archive inventory：[NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md](NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md)
 - Post-GateM GateM archive plan review：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md)
 - Post-GateM GateM archive closeout：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md)
