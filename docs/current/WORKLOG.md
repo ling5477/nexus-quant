@@ -11091,3 +11091,35 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEM-5-RUNTIME-UI-5A-RUNTIME-READINESS-OVERVIEW`：前端只读实现 `/runtime/readiness`，复用现有 adapter readiness API/query，添加 LIVE disabled / NoReal / permission probe skipped summary，并补 backend-free Playwright smoke。不得改 backend、API、migration、TradingWorkbench order actions、credential APIs、real adapters、LIVE、AI 或 DH runtime。
+
+---
+
+## NQ-GATEN-0-EXCHANGE-DOCS-AND-EXISTING-ADAPTER-RECONCILIATION
+
+日期：2026-07-01
+
+### 本轮目标
+
+复核并复用早期 OKX / Binance 官方文档整理、已有 OKX / Binance adapter/interface/API/test 证据、历史模拟盘 / live-0 / spike 证据，并对齐当前 GateN Public MarketData / Exchange Sandbox Planning baseline。本轮只做 documentation reconciliation、existing adapter inventory、official docs delta-check pointer review 和 security boundary review。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`。
+- 确认 `docs/gates/gate-d/SOURCES.md` 已记录 OKX Spot REST / WebSocket 与 Binance Spot REST / WebSocket official docs source inventory，可作为历史官方文档整理入口复用。
+- 盘点现有 public marketdata surface：`HistoricalKlineAdapter`、`OkxHistoricalKlineAdapter`、`BinanceHistoricalKlineAdapter`、`AdapterHistoricalKlineProvider`、`GET /api/marketdata/bars`、marketdata ingestion jobs/runs、`GET /api/marketdata/readiness` 与 local DB facts。
+- 盘点 existing private / trading surface：`TradingAdapter`、OKX/Binance trading adapters、GateD historical live-0 / spike evidence；明确这些只作为 forbidden-boundary / historical evidence，不是 GateN public marketdata implementation authority。
+- 记录 Official docs delta-check needs：GateN-1 必须从 OKX / Binance 当前官方 docs 重新抽取 endpoint schema、参数、rate limits、timestamp、pagination、error payload、public/private/auth boundary 和 deprecation caveats。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md` 的 GateN-0 状态与入口。
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、指定 OKX/Binance/marketdata/readiness 关键词 `rg` 和 forbidden-scope diff。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改允许范围内文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**`、`backend/**/db/migration/**` 或 `docs/archive/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 adapter；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未执行真实 permission probe；未下单、撤单、转账或提现。历史 live-0 只作为 historical evidence / spike，不是当前 LIVE readiness；public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW`：基于 GateN-0 reconciliation baseline，按官方 docs 重新抽取 public marketdata endpoint contract，冻结 public adapter 与 private trading adapter 分离边界；仍不得调用真实交易所、不得接 private trading、不得开启 LIVE。

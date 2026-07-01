@@ -46,6 +46,7 @@ Current negative boundaries remain unchanged:
 - real exchange private trading: **NOT_IMPLEMENTED**.
 - permission probe real execution: **NOT_IMPLEMENTED**.
 - OKX / Binance existing adapters are not future-real-ready and are not authorized as real execution providers.
+- GateN-0 exchange docs and existing adapter reconciliation is **PASS / RECONCILIATION BASELINE / READY TO COMMIT**; it is a documentation baseline only and does not start GateN implementation.
 
 ## Goal
 
@@ -100,6 +101,7 @@ Important backend readonly evidence:
 
 - `DefaultAdapterReadinessService` is a static fail-closed policy with no IO, credential, network, or runtime side effect.
 - `OperationalReadinessService` returns a safe summary with no adapter, permission probe, HTTP, database, file, or exchange client dependency.
+- `HistoricalKlineAdapter`, `OkxHistoricalKlineAdapter`, `BinanceHistoricalKlineAdapter`, and `AdapterHistoricalKlineProvider` are existing public historical marketdata inventory for GateN-1 review, not current real-provider authorization.
 
 Important frontend readonly evidence:
 

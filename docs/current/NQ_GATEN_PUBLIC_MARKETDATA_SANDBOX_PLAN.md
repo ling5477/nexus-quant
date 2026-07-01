@@ -6,6 +6,8 @@
 
 This document is the GateN planning baseline for Public MarketData / Exchange Sandbox. It does not start GateN implementation.
 
+Reconciliation status: [NQ-GATEN-0 Exchange Docs And Existing Adapter Reconciliation](NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md) = **PASS / RECONCILIATION BASELINE / READY TO COMMIT**. GateN-0 inventories early OKX / Binance official-docs records, existing public marketdata adapters, historical live-0 evidence, private/trading forbidden surfaces, and current no-real/security boundaries for GateN-1 input.
+
 ## Current Baseline
 
 GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
@@ -15,6 +17,7 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - Frozen baseline: no-real runtime readiness baseline.
 - NQ-NEXT-PHASE-PLAN already recommends **GateN Public MarketData / Exchange Sandbox Planning**.
 - GateN current status: **PLAN ONLY / NOT IMPLEMENTED**.
+- GateN-0 exchange docs and existing adapter reconciliation: **PASS / RECONCILIATION BASELINE / READY TO COMMIT**.
 
 Current negative boundaries remain unchanged:
 

@@ -1,3 +1,21 @@
+## NQ-GATEN-0-EXCHANGE-DOCS-AND-EXISTING-ADAPTER-RECONCILIATION（2026-07-01）
+
+结论：**PASS / RECONCILIATION BASELINE / READY TO COMMIT**。本轮只执行 GateN-0 documentation reconciliation、existing adapter inventory、official docs delta-check pointer review 和 security boundary review；未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/archive，未新增 API、页面、E2E、CI workflow 或运行时行为。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only / planning-only reconciliation，只复核早期 OKX / Binance 官方文档整理、已有 adapter/interface/test/API 证据与当前 GateN public marketdata / exchange sandbox 边界。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 仅显示允许的 root `README.md`、`docs/current/**` 文档修改与新增 reconciliation 文档。 |
+| `git diff --check` | PASS | 无 whitespace error；仅出现 Windows LF/CRLF working-copy warning。 |
+| `git diff --stat` | PASS | tracked diff 仅显示允许文档变更；新增 untracked reconciliation 文档由 `git status --short` 单独确认。 |
+| 指定 OKX/Binance/marketdata/readiness 关键词 `rg` | PASS | 命令退出码 0；命中 root README、docs 和 backend 中 official docs、adapter、marketdata、historical live-0 / sandbox / no-real boundary 证据。 |
+| 禁止范围 diff | PASS | `frontend`、`backend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`、`docs/archive` 均无 diff。 |
+
+Boundary：GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real exchange private trading **NOT_IMPLEMENTED**；permission probe real execution **NOT_IMPLEMENTED**；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API，未读取或输出 credential material；public marketdata readiness 不等于 trading authorization；历史 live-0 只作为 historical evidence / spike。
+
 ## NQ-DOCS-POST-GATEM-GATEM-ARCHIVE-CLOSEOUT（2026-06-30）
 
 结论：**PASS / GATEM ARCHIVE CLOSED / READY TO COMMIT**。本轮只执行 GateM archive closeout verification 与允许范围内的 current/archive 索引同步；未移动新文件、未删除文件、未新增 redirect stub、未修改 backend / frontend / research / scripts / deploy / `.github` / migration / docs/archive，未新增 API、页面、E2E、CI workflow 或运行时行为。
