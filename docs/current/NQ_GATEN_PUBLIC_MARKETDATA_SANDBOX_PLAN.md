@@ -8,6 +8,8 @@ This document is the GateN planning baseline for Public MarketData / Exchange Sa
 
 Reconciliation status: [NQ-GATEN-0 Exchange Docs And Existing Adapter Reconciliation](NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md) = **PASS / RECONCILIATION BASELINE / READY TO COMMIT**. GateN-0 inventories early OKX / Binance official-docs records, existing public marketdata adapters, historical live-0 evidence, private/trading forbidden surfaces, and current no-real/security boundaries for GateN-1 input.
 
+Contract review status: [NQ-GATEN-1 Public MarketData Contract Plan Review](NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md) = **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**. GateN-1 defines the public-only internal contract, source taxonomy, freshness/health/gap model, rate-limit/timeout/retry model, public/private separation rules, and GateN-2 fake-server/no-egress inputs. It does not start implementation.
+
 ## Current Baseline
 
 GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
@@ -18,6 +20,7 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - NQ-NEXT-PHASE-PLAN already recommends **GateN Public MarketData / Exchange Sandbox Planning**.
 - GateN current status: **PLAN ONLY / NOT IMPLEMENTED**.
 - GateN-0 exchange docs and existing adapter reconciliation: **PASS / RECONCILIATION BASELINE / READY TO COMMIT**.
+- GateN-1 public marketdata contract plan review: **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**.
 
 Current negative boundaries remain unchanged:
 

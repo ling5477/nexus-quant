@@ -11123,3 +11123,38 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW`：基于 GateN-0 reconciliation baseline，按官方 docs 重新抽取 public marketdata endpoint contract，冻结 public adapter 与 private trading adapter 分离边界；仍不得调用真实交易所、不得接 private trading、不得开启 LIVE。
+
+---
+
+## NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于 GateN-0 reconciliation baseline，执行 GateN-1 public marketdata contract plan review。范围只覆盖公开行情、公开标的元数据、公开交易所状态、数据新鲜度、数据缺口、source health、rate limit / timeout / retry 规则，以及 public/private boundary；不处理 private trading、账户、余额、订单、撤单、提现、权限探针、私有 WebSocket 或真实交易。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`。
+- 复核官方 docs：OKX API v5；Binance Spot REST market data、general endpoints、WebSocket streams；Bybit / Gate / Coinbase / Kraken 仅作为候选官方 docs 入口登记。
+- 定义 GateN public-only internal contract proposal：public source、instrument、OHLCV bar、ticker、exchange status。
+- 定义 source taxonomy：`LOCAL_DB`、`FIXTURE`、`FAKE_SERVER`、`NO_EGRESS_SANDBOX`、`PUBLIC_SANDBOX_CANDIDATE`。
+- 定义 readiness states：`FRESH`、`STALE`、`GAP`、`ERROR`、`DISABLED`、`PENDING_BACKEND_SUPPORT`。
+- 定义 rate limit / timeout / retry model，要求 provider weights、limit windows、timeouts、max attempts 和 retryability 都来自官方 docs / review，不允许散落 magic constants。
+- 明确 public/private separation rules：public readiness 不是 trading readiness，public adapter 不是 private trading adapter，public WebSocket market stream 不是 private user data stream。
+- 明确 GateN-2 输入：fake-server / no-egress public marketdata test plan，仍不授权真实外联。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`。
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、forbidden-scope diff 和指定 GateN/MarketData/OKX/Binance 边界关键词 `rg`。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改允许范围内文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 adapter；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API endpoint；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；任何真实外联仍需单独 review。
+
+### 推荐下一步
+
+`NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN`：基于 GateN-1 contract review，规划 fake-server / fixture / no-egress test harness，先证明不访问真实 exchange host、不读取 credential、不触发 private/trading path，再考虑后续 adapter skeleton。

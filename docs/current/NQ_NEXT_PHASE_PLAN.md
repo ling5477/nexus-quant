@@ -47,6 +47,7 @@ Current negative boundaries remain unchanged:
 - permission probe real execution: **NOT_IMPLEMENTED**.
 - OKX / Binance existing adapters are not future-real-ready and are not authorized as real execution providers.
 - GateN-0 exchange docs and existing adapter reconciliation is **PASS / RECONCILIATION BASELINE / READY TO COMMIT**; it is a documentation baseline only and does not start GateN implementation.
+- GateN-1 public marketdata contract plan review is **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**; it defines contract inputs for GateN-2 fake-server/no-egress planning and still does not start GateN implementation.
 
 ## Goal
 

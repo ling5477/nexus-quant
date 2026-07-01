@@ -8,6 +8,8 @@ This document records the GateN-0 reconciliation baseline for early OKX / Binanc
 
 This is a planning-only and docs-only reconciliation. It does not start GateN implementation, does not rewrite exchange official docs from scratch, does not call real exchange APIs, and does not authorize LIVE or private trading.
 
+GateN-1 reference status: [NQ-GATEN-1 Public MarketData Contract Plan Review](NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md) = **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**. GateN-1 consumes this reconciliation as input and keeps GateN implementation **NOT STARTED**.
+
 ## Task Classification
 
 - Task name: `NQ-GATEN-0-EXCHANGE-DOCS-AND-EXISTING-ADAPTER-RECONCILIATION`.
