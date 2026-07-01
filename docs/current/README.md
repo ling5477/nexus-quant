@@ -8,6 +8,8 @@ AI not started；DH runtime not integrated；LIVE disabled；real provider / Rea
 
 NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION = **PASS / EVIDENCE RECONCILED / GATEO-PLAN CONDITIONALLY ALLOWED**。含义：`PASS`（通过）、`EVIDENCE RECONCILED`（证据已收口）、`GATEO-PLAN CONDITIONALLY ALLOWED`（只允许有条件进入 GateO 规划）。GateJ / GateK / GateM freeze evidence = `VERIFIED`；GateN no-real sandbox baseline = `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`，因为 tag / archive / local freeze validation / later dev CI 存在，但 tagged commit direct CI run 不可见且已显式接受为 residual。GateO implementation **NOT STARTED**，仍禁止真实 provider、RealClient、real permission probe、LIVE、AI 和 DH runtime。
 
+NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND = **PASS / PLAN ONLY / NOT IMPLEMENTED**。含义：`PASS`（通过）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。GateO O-0 planning baseline 已落档 [GATEO_PLAN.md](GATEO_PLAN.md)，只规划公开行情受控外联、数据质量中心、readiness API、quality UI、manual public outbound smoke 与 freeze criteria；GateO implementation **NOT STARTED**，public marketdata readiness 不等于 trading authorization。
+
 GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / error model / capability matrix / readiness checklist）。当前进入 **GateM adapter readiness runtime enforcement**：GateM-0 在 `nq-adapter-api` 新增运行时 `AdapterReadinessService` / `DefaultAdapterReadinessService` 与 readiness 模型；GateM-1 进一步把 guard 接入行情订阅与交易动作入口（`ReadinessGuardedMarketDataAdapter` / `ReadinessGuardedTradingAdapter`），运行时强制 OKX / Binance / Noop fail-closed（NOT_READY / NO_REAL / UNKNOWN_REQUIRES_REVIEW）；GateM-2 把 marketdata Bean 经 `ReadinessGuardedAdapterFactory` 接入装配层；GateM-3 已把 `ExchangeAdapterConfiguration` 装配出的 OKX / Binance trading adapter 接入 readiness guard（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），使 `placeOrder` / `cancelOrder` / `getOrder` / `listOpenOrders` 在当前 no-real / LIVE disabled / not-ready 状态下 fail-closed；GateM-4 补一个更贴近真实调用路径的消费侧 runtime smoke（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），证明 scheduler 侧 `AdapterBackedTradingVenueGateway` 消费 Spring 装配的 OKX / Binance guarded trading adapter 时仍 fail-closed（降级为 `REMOTE_UNAVAILABLE`、message 脱敏、无 duplicate venue）；GateM-5A 新增只读 `GET /api/adapters/readiness`（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），供前端展示各 venue × capability 当前 readiness（NOOP/PAPER/SIM→NO_REAL、OKX/BINANCE→NOT_READY，全部 allowed=false、无 READY、脱敏、不触达真实交易所/credential，见 API.md）；GateM-5B 在 NQ Console 新增只读 adapter readiness 面板（路由 `/adapter-readiness`、菜单「适配器就绪」，**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），消费该 API 并 fail-closed 展示（OKX/Binance NOT_READY/不可用/LIVE 未授权、Noop NO_REAL、错误态显示 readiness API unavailable，绝不显示可交易）；GateM-5C 在真实本地 local 后端（18888 + 本地 PostgreSQL）下跑通该面板的真实后端 E2E（**PASS**），证明前端确实消费真实 `GET /api/adapters/readiness`（200、45 条全 fail-closed、无 secret），后端 0 次真实交易所外联。不允许真实交易所、LIVE、真实 credential、AI、DH runtime 或 future-real-ready。详见 STATUS.md / WORKLOG.md / TESTING.md。
 
 GateM-5 Runtime Guarded UI 已收口为 **IMPLEMENTED / SMOKE VERIFIED / CLOSED**：5A Runtime Readiness Overview completed；5B Runtime ↔ MarketData readiness deep link completed；5C Paper / Trading boundary banners completed；5D Dashboard Runtime summary completed；5E Runtime Guarded UI final smoke passed。该收口不新增能力、不授权真实交易所、不启用 LIVE；Paper-ready / DB-fresh / permission probe `SKIPPED` 仍不得写成 real-ready。
@@ -33,6 +35,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 运行手册：[RUNBOOK.md](RUNBOOK.md)
 - 项目任务流程权威：[NQ_PROJECT_WORKFLOW_AUTHORITY.md](NQ_PROJECT_WORKFLOW_AUTHORITY.md)
 - GateJ/K/M/N freeze evidence reconciliation：[NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md](NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md)
+- GateO planning baseline：[GATEO_PLAN.md](GATEO_PLAN.md)（公开行情受控外联与数据质量运行化阶段；O-0 planning-only；implementation NOT STARTED）
 - GateM historical archive：[docs/gates/gate-m/](../gates/gate-m/README.md)
 - GateN historical archive：[docs/gates/gate-n/](../gates/gate-n/README.md)（PASS / ARCHIVE CLOSED / READY TO COMMIT；11/11 approved GateN process docs moved；tag：`nq-gaten-freeze`；no-real baseline）
 - Next phase plan：[NQ_NEXT_PHASE_PLAN.md](NQ_NEXT_PHASE_PLAN.md)
@@ -168,7 +171,9 @@ Future AI Paper Trading candidate（NOT CURRENT GATEM；AI/DH runtime boundaries
   ↓
 Future AI small-funds LIVE candidate（DEFERRED；requires separate AI / DH / LIVE authorization planning）
   ↓
-GateO-PLAN：NEXT / planning-only conditionally allowed after J/K/M/N evidence reconciliation；implementation NOT STARTED
+GateO-PLAN：ALLOWED / planning-only after J/K/M/N evidence reconciliation；O-0 baseline completed；implementation NOT STARTED
+  ↓
+GateO O-0：Public MarketData Controlled Outbound & Data Quality Runtime planning baseline（PASS / PLAN ONLY / NOT IMPLEMENTED；implementation NOT STARTED）
   ↓
 GateP：A 股适配
 ```

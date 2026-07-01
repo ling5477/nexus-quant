@@ -1,3 +1,24 @@
+## NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND（2026-07-01）
+
+结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。含义：`PASS`（通过）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。本轮只做 GateO O-0 planning baseline 与 current/root 文档同步，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置，不实现 public outbound。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写前工作区 clean；写后应仅显示允许的 `README.md` 与 `docs/current/**` 文档变更。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git log --oneline -5` | PASS | HEAD 为 `bd745561 docs(governance): reconcile GateJ-K-M-N freeze evidence`。 |
+| `Test-Path docs/current/GATEO_PLAN.md` | PASS | 写前返回 `False`，确认本轮新增 GateO plan。 |
+| GateO attachment read | PASS / REVIEWED | 已读取 `NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND` 任务附件，确认 planning-only、allowed files 与 forbidden scope。 |
+| `README.md` / `docs/current/README.md` / `STATUS.md` / `ROADMAP.md` / `TESTING.md` / `WORKLOG.md` | PASS / REVIEWED | 已只读复核 current fact source 与文档同步位置。 |
+| `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md` | PASS / REVIEWED | 已确认 GateJ/K/M = `VERIFIED`，GateN = `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`，GateO implementation `NOT STARTED`。 |
+| MarketData API / readiness / frontend / CI 只读复核 | PASS / REVIEWED | 已复核现有 `/api/marketdata/readiness`、DB-only readiness service、frontend marketdata API 与 `.github/workflows/ci.yml` no-outbound / security baseline；未修改这些文件。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮只改允许范围内的文档计划和状态入口，不改代码、workflow、测试、migration、API、页面或运行时配置。
+
+Boundary：未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API、页面、E2E、CI workflow、migration、provider、RealClient、adapter skeleton、fake-server runtime、public outbound 或 real permission probe；未读取或输出 credential material；未调用真实交易所；未开启 LIVE、AI 或 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-TAG-TARGET-CI-EVIDENCE-CLOSEOUT（2026-07-01）
 
 结论：**PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL**。含义：`PARTIAL`（部分验证）、`ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`（已显式接受 CI 可见性残留）。本轮只关闭 GateN tag-target direct CI 可见性缺口，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。

@@ -1,3 +1,38 @@
+## NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND
+
+日期：2026-07-01
+
+### 本轮目标
+
+建立 GateO O-0 planning baseline。范围只覆盖公开行情受控外联与数据质量运行化阶段的目标、非目标、批次拆分、验收标准、安全边界和后续 plan/review 建议；不做 public outbound 实现，不改代码，不改 CI，不新增 API / migration / 页面 / E2E。
+
+### 完成内容
+
+- 新增 `docs/current/GATEO_PLAN.md`，定义 GateO = Public MarketData Controlled Outbound & Data Quality Runtime / 公开行情受控外联与数据质量运行化阶段。
+- 明确 O-0 本轮完成 planning baseline；O-1 public marketdata controlled outbound、O-2 Data Quality Center、O-3 readiness API、O-4 quality UI、O-5 manual public outbound smoke 和 O-FREEZE 均保持 planned / not started。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md` 的 GateO planning-only 状态。
+- 保留 GateN 结论为 `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`，不提升为 `VERIFIED`。
+- 明确 GateO implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider / real permission probe **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+
+### 验证
+
+- 已执行 `git status --short`、`git branch --show-current`、`git log --oneline -5`、`Test-Path docs/current/GATEO_PLAN.md`。
+- 已只读复核 GateO 任务附件、`README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`。
+- 已只读复核现有 MarketData API / readiness service / frontend marketdata API / `.github/workflows/ci.yml`，用于确认 GateO 计划优先复用现有 readiness，不重复造接口，且 manual public outbound smoke 不进入默认 CI。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只做 docs-only planning，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 public outbound、adapter skeleton、fake-server runtime、RealClient、real provider、private trading adapter 或 real permission probe；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 回滚方式
+
+还原 `docs/current/GATEO_PLAN.md`、`README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 的本轮 diff 即可；无代码、DB、workflow、runtime、credential 或交易副作用。
+
+### 推荐下一步
+
+进入 `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVIEW`，只审查 official docs、public REST only、endpoint allowlist/denylist、manual profile、默认 no-egress、rollback 和 redaction 规则。不得从 O-0 直接进入 GateO implementation。
+
 ## NQ-GATEN-TAG-TARGET-CI-EVIDENCE-CLOSEOUT
 
 日期：2026-07-01
