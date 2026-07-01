@@ -48,6 +48,7 @@ Current negative boundaries remain unchanged:
 - OKX / Binance existing adapters are not future-real-ready and are not authorized as real execution providers.
 - GateN-0 exchange docs and existing adapter reconciliation is **PASS / RECONCILIATION BASELINE / READY TO COMMIT**; it is a documentation baseline only and does not start GateN implementation.
 - GateN-1 public marketdata contract plan review is **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**; it defines contract inputs for GateN-2 fake-server/no-egress planning and still does not start GateN implementation.
+- GateN-2 fake-server / no-egress public marketdata test plan is **PASS / TEST PLAN BASELINE / READY TO COMMIT**; it defines fake-server contract scope, no-egress strategy, forbidden endpoint list, test matrix, fixture taxonomy, readiness simulation, security boundary, and GateN-3 entry criteria, and still does not start GateN implementation.
 
 ## Goal
 
@@ -307,6 +308,7 @@ Recommended status after this document:
 GateN planning baseline document:
 
 - `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
+- `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`.
 - Status: **PASS / PLAN ONLY / READY TO COMMIT**.
 - Scope: public marketdata / fake-server / no-egress / exchange sandbox planning only.
 - Implementation remains **NOT STARTED**.

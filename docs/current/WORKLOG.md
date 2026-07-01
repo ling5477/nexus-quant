@@ -11158,3 +11158,38 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN`：基于 GateN-1 contract review，规划 fake-server / fixture / no-egress test harness，先证明不访问真实 exchange host、不读取 credential、不触发 private/trading path，再考虑后续 adapter skeleton。
+
+---
+
+## NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于 GateN-1 public marketdata contract plan review，规划 GateN-2 fake-server / no-egress public marketdata test baseline。范围只覆盖 fake-server contract、no-egress boundary、forbidden endpoint list、test category matrix、fixture taxonomy、readiness state simulation、security boundary 和 GateN-3 entry criteria；不实现 fake server、adapter、测试代码、API、migration、CI workflow、页面或运行时行为。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`。
+- 规划 OKX / Binance 最小 fake-server public payload scope：kline / candlestick、ticker、instrument metadata / exchangeInfo、exchange status / system status。
+- 明确默认 tests 不得访问真实 `okx.com`、`binance.com`、`bybit.com`、`gate.io`、`gate.com`、`coinbase.com`、`kraken.com`。
+- 明确 forbidden endpoint list：private/signed/account/balance/order/cancel/transfer/withdraw/user-data-stream/permission-probe。
+- 定义 test categories：unit fake parser、fake-server contract、no-egress guard、forbidden endpoint static / route、timeout / rate-limit simulated、stale / gap / disabled / error simulated、readiness mapping、log redaction。
+- 定义 source taxonomy test expectations：`LOCAL_DB`、`FIXTURE`、`FAKE_SERVER`、`NO_EGRESS_SANDBOX`、`PUBLIC_SANDBOX_CANDIDATE`。
+- 定义 readiness state simulation expectations：`FRESH`、`STALE`、`GAP`、`ERROR`、`DISABLED`、`PENDING_BACKEND_SUPPORT`。
+- 明确 GateN-3 entry criteria：只有在单独授权下进入 fake-server / fixture / no-egress public adapter skeleton review；仍禁止真实外联、credential、private trading、LIVE、AI、DH runtime、RealClient、real provider 和 real permission probe。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`。
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、forbidden-scope diff 和指定 GateN/fake/no-egress/public-private/LIVE 边界关键词 `rg`。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改允许范围内文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未实现 fake server；未新增测试代码；未实现 adapter；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；fake-server/no-egress test plan 不等于 real provider readiness。
+
+### 推荐下一步
+
+`NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW`：基于 GateN-2 test-plan baseline，审查是否可以进入 fake-server / fixture / no-egress public adapter skeleton；仍不得真实外联、不得接 private trading、不得开启 LIVE。

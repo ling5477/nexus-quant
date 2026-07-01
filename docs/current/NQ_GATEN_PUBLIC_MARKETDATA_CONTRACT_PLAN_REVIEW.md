@@ -418,6 +418,13 @@ GateN-2 inputs:
 
 GateN-2 must remain planning/test-plan unless separately authorized for code. If implementation is authorized later, first implementation must use fake server / fixture / no-egress before any real public outbound.
 
+GateN-2 status update:
+
+- [NQ-GATEN-2 Fake Server / No-Egress Public MarketData Test Plan](NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md) = **PASS / TEST PLAN BASELINE / READY TO COMMIT**.
+- GateN-2 defines fake-server contract scope, no-egress strategy, forbidden endpoint list, test category matrix, fixture and taxonomy plan, readiness state simulation plan, security boundary, and GateN-3 entry criteria.
+- GateN implementation remains **NOT STARTED**.
+- GateN-2 does not implement fake server, adapter code, test code, API, migration, CI workflow, real outbound, private trading, credential access, LIVE, AI, DH runtime, RealClient, real provider, or real permission probe execution.
+
 ## P0/P1/P2/P3 Findings
 
 ### P0

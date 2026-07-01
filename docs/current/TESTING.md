@@ -1,3 +1,21 @@
+## NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN（2026-07-01）
+
+结论：**PASS / TEST PLAN BASELINE / READY TO COMMIT**。本轮只执行 GateN-2 fake-server / no-egress public marketdata test plan、security boundary review 和 current docs sync；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow、fake server、adapter 或测试代码，未新增运行时行为。
+
+Testing record：未运行 Maven、frontend build/E2E、Python pytest/mypy/ruff 或真实 local backend smoke；原因是本轮为 docs-only / planning-only test plan，只规划 fake-server contract、no-egress boundary、forbidden endpoint list、test matrix、fixture taxonomy、readiness simulation 和 GateN-3 entry criteria，不改代码或运行时。
+
+Validation record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 仅显示允许的 root `README.md`、`docs/current/**` 文档修改与新增 GateN-2 test plan 文档。 |
+| `git diff --check` | PASS | 无 whitespace error；仅出现 Windows LF/CRLF working-copy warning。 |
+| `git diff --stat` | PASS | tracked diff 仅显示允许文档变更；新增 untracked GateN-2 test plan 文档由 `git status --short` 单独确认。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。 |
+| 指定 GateN/fake/no-egress/public-private/LIVE 边界关键词 `rg` | PASS | 命令退出码 0；命中 current docs、historical gates 和 backend 中 GateN、fake/no-egress、public/private、LIVE、RealClient、permission probe、order/cancel/withdraw/transfer 与 trading authorization 边界证据。 |
+
+Boundary：GateN implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real exchange private trading **NOT_IMPLEMENTED**；permission probe real execution **NOT_IMPLEMENTED**；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API，未读取或输出 credential material；未实现 fake server、adapter 或测试代码；public readiness 不等于 trading readiness；fake-server/no-egress test plan 不等于 real provider readiness。
+
 ## NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW（2026-07-01）
 
 结论：**PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**。本轮只执行 GateN-1 public marketdata contract plan review、official docs delta-check、security boundary review 和 current docs sync；未修改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、E2E、CI workflow 或运行时行为。

@@ -10,6 +10,8 @@ Reconciliation status: [NQ-GATEN-0 Exchange Docs And Existing Adapter Reconcilia
 
 Contract review status: [NQ-GATEN-1 Public MarketData Contract Plan Review](NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md) = **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**. GateN-1 defines the public-only internal contract, source taxonomy, freshness/health/gap model, rate-limit/timeout/retry model, public/private separation rules, and GateN-2 fake-server/no-egress inputs. It does not start implementation.
 
+Test plan status: [NQ-GATEN-2 Fake Server / No-Egress Public MarketData Test Plan](NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md) = **PASS / TEST PLAN BASELINE / READY TO COMMIT**. GateN-2 defines fake-server public payload scope, no-egress strategy, forbidden endpoint list, test matrix, fixture taxonomy, readiness state simulation, security boundary, and GateN-3 entry criteria. It does not implement fake server, tests, adapter code, API, migration, CI workflow, or real outbound.
+
 ## Current Baseline
 
 GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
@@ -21,6 +23,7 @@ GateM is already **FINALIZED / FROZEN / ACCEPTED / TAGGED**.
 - GateN current status: **PLAN ONLY / NOT IMPLEMENTED**.
 - GateN-0 exchange docs and existing adapter reconciliation: **PASS / RECONCILIATION BASELINE / READY TO COMMIT**.
 - GateN-1 public marketdata contract plan review: **PASS / CONTRACT PLAN REVIEW / READY TO COMMIT**.
+- GateN-2 fake-server / no-egress public marketdata test plan: **PASS / TEST PLAN BASELINE / READY TO COMMIT**.
 
 Current negative boundaries remain unchanged:
 
@@ -419,7 +422,7 @@ Acceptance criteria:
 ## Proposed Task Order
 
 1. `NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW`.
-2. `NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-TEST-PLAN`.
+2. `NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN`.
 3. `NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON`.
 4. `NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE`.
 5. `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY`.
