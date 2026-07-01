@@ -1,3 +1,46 @@
+## NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH
+
+日期：2026-07-01
+
+### 本轮目标
+
+执行 GateN physical archive move batch，只移动 plan review 批准的 11 个 GateN 过程文档到 `docs/gates/gate-n/**`，并更新 current/root/gates 索引。本轮不删除文件，不新增 redirect stub，不移动 current authority docs，不改代码、API、migration、CI 或 runtime 行为。
+
+### 完成内容
+
+- 使用 `git mv` 将 11/11 个 approved GateN process docs 从 `docs/current/` 移动到 `docs/gates/gate-n/**`。
+- 新增 `docs/gates/gate-n/README.md` 作为 GateN historical archive index。
+- `README.md`、`docs/current/README.md`、`docs/gates/README.md`：GateN 入口改为 archive pointer，不再把 11 个过程文档列为 current docs。
+- `docs/current/NQ_NEXT_PHASE_PLAN.md`：GateN baseline documents 改为 archive index 与 `docs/gates/gate-n/**` 路径。
+- `docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`：追加本轮 archive move batch 状态、验证与边界记录。
+
+### Files moved
+
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md` -> `docs/gates/gate-n/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`
+- `docs/current/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md` -> `docs/gates/gate-n/planning/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md` -> `docs/gates/gate-n/planning/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`
+- `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md` -> `docs/gates/gate-n/planning/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`
+- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md` -> `docs/gates/gate-n/planning/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`
+- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md` -> `docs/gates/gate-n/testing/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`
+- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md` -> `docs/gates/gate-n/testing/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`
+- `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md` -> `docs/gates/gate-n/frontend/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md`
+- `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md` -> `docs/gates/gate-n/frontend/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`
+- `docs/current/NQ_GATEN_FREEZE_REVIEW.md` -> `docs/gates/gate-n/freeze/NQ_GATEN_FREEZE_REVIEW.md`
+- `docs/current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md` -> `docs/gates/gate-n/freeze/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md`
+
+### 验证
+
+- 按任务要求执行 `git status --short`、`git diff --check`、`git diff --stat`、`Test-Path docs/gates/gate-n`、`git diff --name-status`、GateN current path / archive path `rg` 搜索、GateN / no-real / LIVE / AI / DH runtime / RealClient / real provider / trading authorization 关键词 `rg` 搜索和禁止范围 diff。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只做 docs-only archive move，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未移动 current authority docs，未删除历史证据，未新增 redirect stub，未新增 `docs/gates/gate-n/**` 之外的 archive docs；未修改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、E2E、CI workflow、adapter skeleton、fake-server runtime、RealClient、real provider 或真实 permission probe；未调用真实交易所 API，未读取或输出 credential material，未开启 LIVE，未接 AI runtime，未接 DH runtime，未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEN-ARCHIVE-CLOSEOUT`：只做归档完成核对、current residual 分类和索引复核；不得再次移动未批准文件，不得把 archive closeout 写成 runtime readiness 或 trading authorization。
+
 ## NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN
 
 日期：2026-07-01

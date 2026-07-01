@@ -1,3 +1,24 @@
+## NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH（2026-07-01）
+
+结论：**PASS / ARCHIVE MOVE BATCH / READY TO COMMIT**。含义：`PASS`（通过）、`ARCHIVE MOVE BATCH`（物理归档移动批次已执行）、`READY TO COMMIT`（本轮文档归档变更可进入提交前复核）。本轮只移动已批准的 GateN 过程文档并更新允许范围内文档索引；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 显示 11 个 `git mv` rename、允许范围内 current/root/gates 文档更新，以及新增 `docs/gates/gate-n/README.md`。 |
+| `git diff --check` | PASS | docs-only diff whitespace 复核通过。 |
+| `git diff --stat` | PASS | unstaged diff 仅包含允许的 root README、`docs/current/**` 与 `docs/gates/README.md` 文档更新；11 个 `git mv` rename 由 staged diff 复核。 |
+| `Test-Path docs/gates/gate-n` | PASS | GateN physical archive directory exists。 |
+| `git diff --name-status` | PASS | unstaged name-status 仅显示允许的索引文档更新；未出现禁止范围文件。 |
+| `git diff --cached --check` / `git diff --cached --stat` / `git diff --cached --name-status` | PASS | staged diff 显示 11 个 approved GateN process docs 均为 `R100` rename，0 insertions / 0 deletions。 |
+| `rg "docs/current/NQ_GATEN_" README.md docs/current docs/gates` | REVIEWED | root/current active indexes 不再把 11 个过程文档列为 current docs；剩余命中为 inventory / plan review / moved historical evidence / append-only 历史记录。 |
+| `rg "docs/gates/gate-n" README.md docs/current docs/gates` | REVIEWED | archive index 与 reference updates 已建立。 |
+| 禁止范围 diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均为空 diff。 |
+| GateN / no-real boundary keyword `rg` | REVIEWED | 复核 GateN、`nq-gaten-freeze`、public marketdata、sandbox、no-real、LIVE、AI、DH runtime、RealClient、real provider 和 trading authorization 语境；本轮未改变 no-real 边界。 |
+
+Boundary：GateN physical archive move batch 已执行；未删除文件，未新增 redirect stub，未新增 `docs/gates/gate-n/**` 以外的 archive docs；LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT_INTEGRATED**；RealClient / real provider 仍 **NOT_IMPLEMENTED**；real permission probe 仍 **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEN-ARCHIVE-PLAN-REVIEW（2026-07-01）
 
 结论：**PASS / PLAN REVIEW ONLY / READY FOR MOVE BATCH**。含义：`PASS`（通过）、`PLAN REVIEW ONLY`（仅计划审查，不执行移动或删除）、`READY FOR MOVE BATCH`（可进入后续物理归档移动批次）。本轮只新增 GateN archive plan review，并同步 inventory/current/gates 入口与 append-only 记录；未运行 Maven、frontend build/E2E 或 Python 测试，原因是本轮不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。

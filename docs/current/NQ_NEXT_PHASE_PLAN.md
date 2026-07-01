@@ -318,19 +318,20 @@ Current status after release closeout:
 - RealClient / real provider: **NOT_IMPLEMENTED**.
 - 下一阶段：**NOT STARTED**。
 
-GateN baseline documents:
+GateN baseline archive documents:
 
-- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
-- `docs/current/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`.
-- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`.
-- `docs/current/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`.
-- `docs/current/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`.
-- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`.
-- `docs/current/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`.
-- `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md`.
-- `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`.
-- `docs/current/NQ_GATEN_FREEZE_REVIEW.md`.
-- `docs/current/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md`.
+- Archive index: `docs/gates/gate-n/README.md`.
+- `docs/gates/gate-n/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
+- `docs/gates/gate-n/planning/NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md`.
+- `docs/gates/gate-n/planning/NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md`.
+- `docs/gates/gate-n/planning/NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md`.
+- `docs/gates/gate-n/planning/NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md`.
+- `docs/gates/gate-n/testing/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md`.
+- `docs/gates/gate-n/testing/NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md`.
+- `docs/gates/gate-n/frontend/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md`.
+- `docs/gates/gate-n/frontend/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`.
+- `docs/gates/gate-n/freeze/NQ_GATEN_FREEZE_REVIEW.md`.
+- `docs/gates/gate-n/freeze/NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md`.
 - Status: **FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**.
 - Scope: public marketdata / fake-server / no-egress / exchange sandbox planning only.
 - Implementation remains **NOT STARTED**.
@@ -533,7 +534,7 @@ Final boundary:
 
 - This plan does not start GateN implementation.
 - GateN implementation remains **NOT STARTED**.
-- GateN planning baseline is now tracked in `NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
+- GateN planning baseline historical archive is now tracked in `docs/gates/gate-n/README.md` and `docs/gates/gate-n/NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`.
 - AI small-funds LIVE is deferred to a later separately planned phase.
 - DH Integration-1 remains planning-only until security blockers and runtime boundaries are separately accepted.
 - Wallet / Agent Wallet remains design-only until a separate threat model and security review are accepted.

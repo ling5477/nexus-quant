@@ -31,20 +31,10 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 运行手册：[RUNBOOK.md](RUNBOOK.md)
 - 项目任务流程权威：[NQ_PROJECT_WORKFLOW_AUTHORITY.md](NQ_PROJECT_WORKFLOW_AUTHORITY.md)
 - GateM historical archive：[docs/gates/gate-m/](../gates/gate-m/README.md)
+- GateN historical archive：[docs/gates/gate-n/](../gates/gate-n/README.md)（PASS / ARCHIVE MOVE BATCH / READY TO COMMIT；11/11 approved GateN process docs moved；tag：`nq-gaten-freeze`；no-real baseline）
 - Next phase plan：[NQ_NEXT_PHASE_PLAN.md](NQ_NEXT_PHASE_PLAN.md)
-- GateN public marketdata sandbox plan：[NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md](NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md)
-- GateN exchange docs and adapter reconciliation：[NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md](NQ_GATEN_EXCHANGE_DOCS_AND_ADAPTER_RECONCILIATION.md)
-- GateN public marketdata contract plan review：[NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md](NQ_GATEN_PUBLIC_MARKETDATA_CONTRACT_PLAN_REVIEW.md)
-- GateN fake-server / no-egress public marketdata test plan：[NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md](NQ_GATEN_FAKE_SERVER_NO_EGRESS_TEST_PLAN.md)
-- GateN public marketdata adapter skeleton plan review：[NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md](NQ_GATEN_PUBLIC_MARKETDATA_ADAPTER_SKELETON_PLAN_REVIEW.md)
-- GateN marketdata sandbox fixture smoke plan review：[NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_PLAN_REVIEW.md)
-- GateN marketdata sandbox fixture smoke implementation plan / record：[NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md](NQ_GATEN_MARKETDATA_SANDBOX_FIXTURE_SMOKE_IMPLEMENTATION_PLAN.md)
-- GateN runtime UI sandbox source display plan review：[NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md](NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md)
-- GateN runtime UI sandbox source display implementation record：[NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md](NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md)
-- GateN freeze review：[NQ_GATEN_FREEZE_REVIEW.md](NQ_GATEN_FREEZE_REVIEW.md)
-- GateN release tag and archive closeout：[NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md](NQ_GATEN_RELEASE_TAG_AND_ARCHIVE.md)
 - GateN post-current archive inventory：[NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)
-- GateN archive plan review：[NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)（PASS / PLAN REVIEW ONLY / READY FOR MOVE BATCH；GateN physical archive 尚未执行）
+- GateN archive plan review：[NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)（PASS / PLAN REVIEW ONLY / READY FOR MOVE BATCH；已由 `NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH` 消费，GateN physical archive move batch 已执行）
 - Post-GateM current archive inventory：[NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md](NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md)
 - Post-GateM GateM archive plan review：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md)
 - Post-GateM GateM archive closeout：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md)
