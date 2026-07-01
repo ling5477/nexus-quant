@@ -6,6 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION（2026-07-01）：**PASS / EVIDENCE RECONCILED / GATEO-PLAN CONDITIONALLY ALLOWED**。含义：`PASS`（通过）、`EVIDENCE RECONCILED`（GateJ/K/M/N 冻结、CI、no-real/no-outbound 证据已收口）、`GATEO-PLAN CONDITIONALLY ALLOWED`（只允许有条件进入 GateO 规划）。新增 `NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`，统一 GateJ / GateK / GateM / GateN 证据矩阵：GateJ = `VERIFIED`，GateK = `VERIFIED`，GateM = `VERIFIED`，GateN = `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`。GateN partial 原因是 `nq-gaten-freeze` tagged commit `361d2ac7bb595f72067b0e2c2d0485361e9a0540` 的 direct CI run 不可见；本轮已用 short SHA、full SHA、branch 和 workflow 过滤复查并显式接受该 visibility residual。已有 release/archive CI run `28499823395` success 与 latest dev CI run `28507993629` success 只能证明后续提交链 green，不替代 strict tag-target CI。GateO 仅允许 planning-only，implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real permission probe **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+
 - NQ-GATEN-ARCHIVE-CLOSEOUT（2026-07-01）：**PASS / ARCHIVE CLOSED / READY TO COMMIT**。新增 `NQ_GATEN_ARCHIVE_CLOSEOUT.md`，完成 GateN archive final closeout。核对结果：11/11 个 GateN process docs 已位于 `docs/gates/gate-n/**`，`docs/current/NQ_GATEN_*.md` 仅保留 `NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md`、`NQ_GATEN_ARCHIVE_PLAN_REVIEW.md` 和本 closeout；`docs/gates/gate-n/README.md` 已列出完整 evidence chain。inventory / archive plan review 作为 pre-move governance evidence 保留在 current，不再触发后续 move batch。GateN 文档线关闭；除非发现真实断链或错误索引，不再继续 GateN archive 任务。下一阶段 implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider **NOT_IMPLEMENTED**；real permission probe **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
 
 - NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH（2026-07-01）：**PASS / ARCHIVE MOVE BATCH / READY TO COMMIT**。使用 `git mv` 将 11/11 个已批准 GateN 过程文档从 `docs/current/` 物理归档到 `docs/gates/gate-n/**`，并新增 `docs/gates/gate-n/README.md` 作为 GateN historical archive 索引。`docs/current` 仅保留当前事实源与控制入口：`README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md`、`NQ_GATEN_ARCHIVE_PLAN_REVIEW.md`。本轮不删除历史证据，不新增 redirect stub，不移动未批准文件，不改 backend / frontend / research / scripts / deploy / `.github` / migration，不新增 API / 页面 / E2E / CI workflow，不实现真实 HTTP / WebSocket、adapter skeleton、fake-server runtime、RealClient、real provider 或 real permission probe。LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；public marketdata readiness 不等于 trading authorization。
@@ -490,7 +492,7 @@ GateI：虚拟币量化 V1 完整闭环
   ↓
 GateJ：Paper Trading 稳定运行 completed
   ↓
-GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口（NEXT）
+GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口 finalized / frozen / tagged
   ↓
 GateL：No-Real Exchange / MarketData Readiness（planning / contract / readiness）
   ↓
@@ -498,11 +500,13 @@ GateM：Exchange / MarketData Runtime Readiness（FINALIZED / FROZEN / ACCEPTED 
   ↓
 GateN：Public MarketData / Exchange Sandbox（FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED；tag：nq-gaten-freeze；no-real baseline；production adapter/API/runtime NOT STARTED）
   ↓
+Pre-GateO / GateO-0A：GateJ/K/M/N freeze + CI evidence reconciliation（PASS / EVIDENCE RECONCILED；GateJ/K/M VERIFIED；GateN PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL；GateO-PLAN conditionally allowed）
+  ↓
 Future AI Paper Trading candidate：NOT CURRENT GATEM；NOT STARTED；blocked until AI / DH runtime boundaries are separately planned
   ↓
 Future AI small-funds LIVE candidate：DEFERRED；requires separate AI / DH / LIVE authorization planning
   ↓
-GateO：美股适配
+GateO-PLAN：NEXT / planning-only conditionally allowed；implementation NOT STARTED
   ↓
 GateP：A 股适配
 ```

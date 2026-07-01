@@ -1,3 +1,73 @@
+## NQ-GATEN-TAG-TARGET-CI-EVIDENCE-CLOSEOUT
+
+日期：2026-07-01
+
+### 本轮目标
+
+只处理 GateN tag-target direct CI 证据缺口。复核 `nq-gaten-freeze` tag target `361d2ac7bb595f72067b0e2c2d0485361e9a0540` 是否存在 direct GitHub Actions CI run；不改代码、不改 CI、不新增测试、不启动 GateO implementation。
+
+### 完成内容
+
+- 确认 `nq-gaten-freeze` tag 存在，tag target 为 `361d2ac7bb595f72067b0e2c2d0485361e9a0540`。
+- 本地 `dev` 与 `origin/dev` 对齐在 `cc0fb537`；tag target 在最近 30 个提交历史中可见。
+- 使用 short SHA、full SHA、workflow 过滤、branch 过滤和 `ci.yml` workflow 过滤查询 GitHub Actions，均未定位到 `361d2ac7...` 的 direct run。
+- 替代证据：GateN release/archive run `28499823395` success，latest dev run `28507993629` success，二者均为 `NQ CI Baseline` 且 10 个 job 全 success。
+- 文档结论：GateN 维持 `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`，不提升为 `VERIFIED`；GateO-PLAN 仍允许继续，GateO implementation 仍 **NOT STARTED**。
+
+### 验证
+
+- 已执行 `git tag --list "nq-gaten-freeze"`、`git rev-list -n 1 nq-gaten-freeze`、`git show --stat --oneline nq-gaten-freeze`、`git log --oneline --decorate -30`、`git status --short`、`git status -sb`、`git branch --show-current`、`git log --oneline -5`。
+- 已执行 `gh run list --commit 361d2ac7 --limit 20`、`gh run list --commit 361d2ac7bb595f72067b0e2c2d0485361e9a0540 --limit 20`、`gh run list --commit 361d2ac7bb595f72067b0e2c2d0485361e9a0540 --workflow "NQ CI Baseline" --limit 20`，均为空结果。
+- 已执行 `gh run list --branch dev --limit 50`、`gh run list --workflow ci.yml --limit 50`、`gh run view 28499823395 --json status,conclusion,headSha,displayTitle,workflowName,jobs`、`gh run view 28507993629 --json status,conclusion,headSha,displayTitle,workflowName,jobs`。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只做 CI evidence closeout 与文档同步，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API、页面、E2E、CI workflow、migration、provider、RealClient、adapter skeleton、fake-server runtime 或 real permission probe；未读取或输出 credential material；未调用真实交易所；未开启 LIVE、AI 或 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 回滚方式
+
+还原 `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`、`README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 的本轮 diff 即可；无代码、DB、workflow、runtime、credential 或交易副作用。
+
+### 推荐下一步
+
+进入 `NQ-GATEO-PLAN`，并在 planning-only 文档中保留 GateN explicit CI visibility residual。不得继续做 GateJ/K/M/N 纯文档 freeze/review 循环，也不得从本 closeout 直接进入 GateO implementation。
+
+## NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION
+
+日期：2026-07-01
+
+### 本轮目标
+
+建立 GateJ / GateK / GateM / GateN freeze、tag、CI、no-real、no-outbound 与禁止能力统一证据矩阵，回答哪些 claim 已由代码 / 测试 / CI / 文档支撑，哪些仍只是文档声明或未实现能力。本轮是 Pre-GateO / GateO-0A docs-only evidence reconciliation，不启动 GateO implementation。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`。
+- 结论：GateJ = `VERIFIED`，GateK = `VERIFIED`，GateM = `VERIFIED`，GateN = `PARTIAL`。
+- GateN partial 原因：`nq-gaten-freeze` tag / archive / local freeze validation / later dev CI 存在，但 tagged commit `361d2ac7bb595f72067b0e2c2d0485361e9a0540` 的 direct CI run 未稳定定位。
+- `README.md`：新增本 evidence reconciliation 入口，修正 GateJ 已归档证据仍指向 `docs/current/**` 的 P2 link drift。
+- `docs/current/README.md`：新增 current control entry，并将 GateO 写成 planning-only conditionally allowed。
+- `docs/current/STATUS.md`、`ROADMAP.md`、`TESTING.md`：同步当前证据状态、GateO-PLAN 决策、验证记录和边界。
+
+### 验证
+
+- 已复核 `git status --short`、分支、最近提交、tags、tag dereference、latest dev CI、GateK/GateM/GateN 相关 GitHub Actions run、Gate/status/no-real/no-outbound/LIVE/AI/DH/real provider 关键词与 CI/security/test 命令语境。
+- GateK run `28322853404` success；GateM run `28435425742` success；GateN release/archive run `28499823395` success；latest dev run `28507993629` success。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只做 docs-only evidence reconciliation，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API、页面、E2E、CI workflow、migration、provider、RealClient、adapter skeleton、fake-server runtime 或 real permission probe；未读取或输出 credential material；未调用真实交易所；未开启 LIVE、AI 或 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 回滚方式
+
+删除 `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`，并还原 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 的本轮 diff 即可；无代码、DB、workflow、runtime、credential 或交易副作用。
+
+### 推荐下一步
+
+进入 `NQ-GATEO-PLAN` 时必须保持 planning-only，并显式继承 GateN tag-target direct CI visibility residual。GateN tag-target CI closeout 本轮已完成为 explicit residual；不得继续做纯文档 freeze/review 循环，也不得从本收口直接进入 GateO implementation。
+
 ## NQ-DOCS-SKILL-LANGUAGE-RULES-UPDATE
 
 日期：2026-07-01

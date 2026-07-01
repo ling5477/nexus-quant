@@ -13,10 +13,10 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-2-WO completed
 - GateJ-3-WO completed
 - DOC-CLEAN-2 completed
-- PRE-FREEZE-CODE-AUDIT second pass completed（无 P0；E2E 与 Python 基线已由 Codex 实际重跑通过，详见 `docs/current/PRE_FREEZE_AUDIT_REPORT.md`）
-- GateJ-FREEZE-FIX second pass completed（详见 `docs/current/GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md`）
+- PRE-FREEZE-CODE-AUDIT second pass completed（无 P0；E2E 与 Python 基线已由 Codex 实际重跑通过，详见 `docs/gates/gate-j/PRE_FREEZE_AUDIT_REPORT.md`）
+- GateJ-FREEZE-FIX second pass completed（详见 `docs/gates/gate-j/GATEJ_FREEZE_FIX_SECOND_PASS_REPORT.md`）
 - GateJ-FREEZE 30m / 1h / 24h / 7d acceptance passed
-- GateJ completed（详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`）
+- GateJ completed（详见 `docs/gates/gate-j/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`）
 - GateK finalized / frozen / archived / tagged（tag：`nq-gatek-freeze`）
 - GateM = Exchange / MarketData Runtime Readiness
 - GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`；no-real runtime readiness baseline；current summary 见 `docs/current/`；GateM archive closed，22/22 approved candidates 已归档到 `docs/gates/gate-m/`）
@@ -33,6 +33,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION = IMPLEMENTED / SELF-REVIEWED / ACCEPTED；在既有 `/marketdata` Data Quality / Readiness 区域增加 compact sandbox/source display block，复用现有 readiness / bars facts，缺失后端字段显示 `PENDING_BACKEND_SUPPORT`；不新增 backend API、真实外联、fake-server runtime、adapter skeleton、LIVE、AI 或 DH runtime
 - NQ-GATEN-FREEZE = PASS / FROZEN / ACCEPTED / CLOSED；冻结 GateN public marketdata / exchange sandbox no-real baseline；不代表 production readiness、LIVE authorization、real provider readiness、private trading authorization、real permission probe 或 trading authorization
 - NQ-GATEN-RELEASE-TAG-AND-ARCHIVE = PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT；release tag：`nq-gaten-freeze`；tag object：`d191474bd3ec0fb52566896fd9ef081eb843b520`；tagged commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`
+- NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION = PASS / EVIDENCE RECONCILED / GATEO-PLAN CONDITIONALLY ALLOWED；GateJ / GateK / GateM freeze evidence = VERIFIED；GateN no-real sandbox baseline = PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL（tag / archive / local freeze validation / later dev CI 存在，但 tagged commit direct CI run 不可见且已显式接受为 residual）；GateO 只允许 planning-only，implementation NOT STARTED
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ
@@ -73,12 +74,13 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/ROADMAP.md`：总路线
 - `docs/current/GATEK_PLAN.md`：GateK planning-only 阶段规划；明确 GateK implementation、AI、DH runtime、LIVE、multi-exchange expansion 均未启动
 - `docs/current/GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、P2 follow-up required，未启动 GateK implementation
-- `docs/current/PLAN_GATEJ.md`：GateJ 规划
-- `docs/current/GATEJ_WORK_ORDER.md`：GateJ 工作单（含 GateJ-FREEZE 范围）
-- `docs/current/PRE_FREEZE_AUDIT_REPORT.md`：GateJ-FREEZE 前置代码 / 文档 / 实现真实性审查报告
-- `docs/current/PRE_FREEZE_AUDIT_FIX_PLAN.md`：PRE-FREEZE-CODE-AUDIT 修复计划与 GateJ-FREEZE 入场条件
-- `docs/current/GATEJ_FREEZE_ACCEPTANCE_TEMPLATE.md`：GateJ-FREEZE 1h/24h/7d 验收记录模板
-- `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`：GateJ-FREEZE 最终验收报告
+- `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`：GateJ/K/M/N freeze、CI、no-real/no-outbound 与 GateO-PLAN 入场边界证据收口；不启动 GateO implementation
+- `docs/gates/gate-j/PLAN_GATEJ.md`：GateJ 规划（historical archive）
+- `docs/gates/gate-j/GATEJ_WORK_ORDER.md`：GateJ 工作单（含 GateJ-FREEZE 范围；historical archive）
+- `docs/gates/gate-j/PRE_FREEZE_AUDIT_REPORT.md`：GateJ-FREEZE 前置代码 / 文档 / 实现真实性审查报告（historical archive）
+- `docs/gates/gate-j/PRE_FREEZE_AUDIT_FIX_PLAN.md`：PRE-FREEZE-CODE-AUDIT 修复计划与 GateJ-FREEZE 入场条件（historical archive）
+- `docs/gates/gate-j/GATEJ_FREEZE_ACCEPTANCE_TEMPLATE.md`：GateJ-FREEZE 1h/24h/7d 验收记录模板（historical archive）
+- `docs/gates/gate-j/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`：GateJ-FREEZE 最终验收报告（historical archive）
 - `docs/current/API.md`、`docs/current/DB_SCHEMA.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`
 - `docs/gates/gate-m/README.md`：GateM historical archive；archive closed，22/22 approved candidates moved；Batch 1 已归档 freeze readiness / freeze review / release tag evidence（`nq-gatem-freeze`），Batch 2 已归档 Runtime Guarded UI evidence，Batch 3 已归档 Operational Readiness evidence，Batch 4 已归档 GateM-2 MarketData readiness evidence
 - `docs/gates/gate-n/README.md`：GateN historical archive；archive closed，11/11 approved GateN process docs moved（tag：`nq-gaten-freeze`）；current authority 仍保留在 `docs/current/`

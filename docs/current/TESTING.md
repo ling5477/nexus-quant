@@ -1,3 +1,60 @@
+## NQ-GATEN-TAG-TARGET-CI-EVIDENCE-CLOSEOUT（2026-07-01）
+
+结论：**PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL**。含义：`PARTIAL`（部分验证）、`ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`（已显式接受 CI 可见性残留）。本轮只关闭 GateN tag-target direct CI 可见性缺口，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git tag --list "nq-gaten-freeze"` | PASS | 返回 `nq-gaten-freeze`。 |
+| `git rev-list -n 1 nq-gaten-freeze` | PASS | 返回 `361d2ac7bb595f72067b0e2c2d0485361e9a0540`，与 GateN release/tag 文档一致。 |
+| `git show --stat --oneline nq-gaten-freeze` | PASS | tag message `NQ GateN public marketdata sandbox baseline freeze`；tag target subject `docs(gaten): freeze public marketdata sandbox baseline`；diff 范围为 GateN freeze docs/current 文档同步。 |
+| `git log --oneline --decorate -30` | PASS | 当前 `dev` / `origin/dev` 为 `cc0fb537`；`361d2ac7` 位于历史中并带 tag `nq-gaten-freeze`。 |
+| `git status --short` / `git status -sb` | PASS | 当前分支 `dev` 与 `origin/dev` 对齐；工作区仅有允许的 docs-only 变更。 |
+| `gh run list --commit 361d2ac7 --limit 20` | EMPTY / REVIEWED | 未返回 direct GitHub Actions run。 |
+| `gh run list --commit 361d2ac7bb595f72067b0e2c2d0485361e9a0540 --limit 20` | EMPTY / REVIEWED | 使用 full SHA 仍未返回 direct run。 |
+| `gh run list --commit 361d2ac7bb595f72067b0e2c2d0485361e9a0540 --workflow "NQ CI Baseline" --limit 20` | EMPTY / REVIEWED | workflow 过滤后仍未返回 direct run。 |
+| `gh run list --branch dev --limit 50` | PASS / REVIEWED | 最近 50 个 dev run 未包含 `361d2ac7`；可见 GateN release/archive run `28499823395` success 和 latest dev run `28507993629` success。 |
+| `gh run list --workflow ci.yml --limit 50` | PASS / REVIEWED | 与 branch 查询一致，未发现 tag target direct run。 |
+| `gh run view 28499823395 --json status,conclusion,headSha,displayTitle,workflowName,jobs` | PASS | GateN release/archive commit `c7ac5cfc88dd0aab2023c5716d50720eda11f84e`，workflow `NQ CI Baseline`，conclusion `success`；10 个 job 全 success：Diff check、No-outbound guard、CI security smoke、PostgreSQL / Flyway smoke、Backend Maven test、Frontend build、Frontend no-backend E2E、Frontend backend E2E smoke、Research quality gate、Secret scan。 |
+| `gh run view 28507993629 --json status,conclusion,headSha,displayTitle,workflowName,jobs` | PASS | Latest dev commit `cc0fb537549906e53f4f0ce44ec50f4d90c78774`，workflow `NQ CI Baseline`，conclusion `success`；10 个 job 全 success。 |
+
+结论：未定位到 `361d2ac7...` 的 direct CI run，GateN 不提升为 `VERIFIED`。GateN 维持 `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`；该 residual 不阻止 GateO-PLAN，但必须保留到 GateO implementation 前置条件中。
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮只做 CI evidence closeout 与文档同步，不改代码、workflow、测试、migration 或运行时配置。
+
+Boundary：未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API、页面、E2E、CI workflow、migration、provider、RealClient 或 real permission probe；未读取或输出 credential material；LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT_INTEGRATED**；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION（2026-07-01）
+
+结论：**PASS / EVIDENCE RECONCILED / GATEO-PLAN CONDITIONALLY ALLOWED**。含义：`PASS`（通过）、`EVIDENCE RECONCILED`（证据已收口）、`GATEO-PLAN CONDITIONALLY ALLOWED`（只允许有条件进入 GateO 规划）。本轮只做 docs-only evidence reconciliation，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写前工作区 clean；写后应仅显示允许的 `README.md` 与 `docs/current/**` 文档变更。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git log --oneline -20` | PASS | 当前 HEAD 为 `cc0fb537 docs(nq): 更新文档中文为主规则`；最近历史可见 GateN archive / release / freeze 相关提交。 |
+| `git tag --list` | PASS | 存在 `nq-gatek-freeze`、`nq-gatem-freeze`、`nq-gaten-freeze`。 |
+| `git show --stat --oneline HEAD` | PASS | HEAD 为 docs governance language update；本轮未基于 HEAD 推断运行时能力。 |
+| `git ls-files .github` | PASS | `.github/workflows/ci.yml` 为 current CI workflow source。 |
+| `git rev-parse "nq-gatek-freeze^{tag}"` / `git rev-parse "nq-gatek-freeze^{}"` | PASS | tag object `7289cc3993661bee03dce9a290cc5691d725259c`；tagged commit `bc8e996c7cf19b15250688c5a638c70921c7f012`。 |
+| `git rev-parse "nq-gatem-freeze^{tag}"` / `git rev-parse "nq-gatem-freeze^{}"` | PASS | tag object `f44c62833c5c9f895ee292eef7f5d497b23089cc`；tagged commit `64194844813bdd3d6541d5a07c576af27b28e5db`。 |
+| `git rev-parse "nq-gaten-freeze^{tag}"` / `git rev-parse "nq-gaten-freeze^{}"` | PASS | tag object `d191474bd3ec0fb52566896fd9ef081eb843b520`；tagged commit `361d2ac7bb595f72067b0e2c2d0485361e9a0540`。 |
+| `gh run list --workflow "NQ CI Baseline" --branch dev --limit 10` | PASS / REVIEWED | latest dev run `28507993629` completed / success，head SHA `cc0fb537`。 |
+| `gh run view 28322853404` | PASS / REVIEWED | GateK tag-prep commit `bc8e996c...` 对应 run success。 |
+| `gh run view 28435425742` | PASS / REVIEWED | GateM freeze/tag commit `64194844813...` 对应 run success。 |
+| `gh run view 28499823395` | PASS / REVIEWED | GateN release/archive commit `c7ac5cfc...` 对应 run success。 |
+| Gate/status/no-real/live keyword `rg` over `README.md docs .github backend frontend research scripts deploy` | REVIEWED | 输出很大；用于定位 GateJ/K/M/N、FREEZE/FROZEN/ACCEPTED、LIVE/AI/DH runtime、RealClient、real provider、no-real/no-outbound 等语境。 |
+| env flag `rg` over `.github backend docs` | REVIEWED | 复核 LIVE / AI / DH / real provider 相关 flag 语境。 |
+| `pytest|mypy|ruff` `rg` over `.github research docs` | REVIEWED | 复核 Python research CI / docs 命令语境。 |
+| `mvn|npm run build|test:e2e|Flyway|postgres|no-outbound|gitleaks|secret` `rg` over `.github docs` | REVIEWED | 复核 CI jobs、build/test/security/no-outbound/secret scan 证据语境。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮只改允许范围内的文档证据收口和入口状态，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。GateJ/K/M/N 的代码测试与 CI 证据引用历史 freeze / tag / archive 和 live GitHub Actions run；GateN strict tag-target direct CI 未稳定定位，因此 GateN 结论写为 `PARTIAL` 而不是 `VERIFIED`。
+
+Boundary：未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API、页面、E2E、CI workflow、migration、provider、RealClient 或 real permission probe；未读取或输出 credential material；LIVE 仍 **DISABLED**；AI 仍 **NOT STARTED**；DH runtime 仍 **NOT_INTEGRATED**；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-DOCS-SKILL-LANGUAGE-RULES-UPDATE（2026-07-01）
 
 结论：**PASS / DOCS GOVERNANCE UPDATED / READY TO COMMIT**。含义：`PASS`（通过）、`DOCS GOVERNANCE UPDATED`（文档治理规则已更新）、`READY TO COMMIT`（可进入提交前复核）。本轮只修改 NQ/DH 文档语言规则、skill、template 和 current docs 记录；未翻译历史文档，未改代码、测试代码、workflow、migration 或 runtime 配置。
