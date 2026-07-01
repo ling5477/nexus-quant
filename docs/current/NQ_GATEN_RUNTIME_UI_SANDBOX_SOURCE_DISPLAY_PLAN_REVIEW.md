@@ -11,6 +11,7 @@ This document is a planning-only / docs-only review for GateN-5. It does not imp
 GateN-5 is accepted as a minimal display-planning baseline for sandbox marketdata source visibility.
 
 - GateN-5 plan review status: **PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT**.
+- GateN-5 implementation planning status: **PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT** in `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`.
 - GateN-5 implementation status: **NOT STARTED**.
 - GateN production adapter / API / runtime status: **NOT STARTED**.
 - fake server runtime: **NOT IMPLEMENTED**.
@@ -24,7 +25,7 @@ GateN-5 is accepted as a minimal display-planning baseline for sandbox marketdat
 - real exchange private trading: **NOT_IMPLEMENTED**.
 - permission probe real execution: **NOT_IMPLEMENTED**.
 
-GateN-5 may proceed only as a future implementation plan or separately authorized implementation. That future work must remain display-only unless a later Gate explicitly changes the boundary.
+GateN-5 may proceed only as a separately authorized implementation. That future work must remain display-only unless a later Gate explicitly changes the boundary.
 
 ## Inputs From GateN-4
 
@@ -235,7 +236,7 @@ GateN-5 is approved as a display-planning baseline only. The next work item shou
 
 ## Recommended Next Task
 
-`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN`
+`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION`
 
 Recommended commit:
 

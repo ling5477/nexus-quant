@@ -11360,3 +11360,40 @@ Timestamp CLOSED 只表示 contract / INT0 / docs 收口完成，不授权 Integ
 ### 推荐下一步
 
 `NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN`：只做 implementation planning，确认最小 frontend block、现有数据源可用性、build/smoke/component assertion 验证和 no-real wording 断言；仍不得本轮实现 UI、API、fake-server runtime、adapter skeleton、真实外联、credential、private trading、LIVE、AI 或 DH runtime。
+
+---
+
+## NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION-PLAN
+
+日期：2026-07-01
+
+### 本轮目标
+
+基于 GateN-5 plan review，执行 Runtime UI Sandbox Source Display implementation planning-only / docs-only。范围只覆盖未来最小 `/marketdata` UI slice、允许未来文件范围、数据来源约束、UI wording rules、future validation commands、API stop condition 和 GateN-FREEZE entry criteria；不实现 UI、不改 frontend、不新增 API、不新增测试、不改 CI、不触发真实外联。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md`。
+- 明确未来 implementation 只允许在既有 `/marketdata` Data Quality / Readiness 区域增加 compact sandbox/source display block。
+- 明确未来首批数据源只允许使用既有 `/api/marketdata/readiness`、`/api/marketdata/bars`、local DB-derived facts 和 route/query context。
+- 明确缺失 `sourceType`、`noEgress` 或 per-capability diagnostics 时必须显示 `PENDING_BACKEND_SUPPORT` 或停止转 API plan。
+- 明确 forbidden UI wording：不得展示 real-ready、live-ready、provider-ready、trading-authorized、account-authorized、permission-verified、private-ready 或对应 uppercase readiness strings。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`NQ_NEXT_PHASE_PLAN.md`、`NQ_GATEN_PUBLIC_MARKETDATA_SANDBOX_PLAN.md`、`NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_PLAN_REVIEW.md`。
+
+### 验证
+
+- 已执行 `git status --short`：仅显示允许的 root `README.md`、`docs/current/**` 文档修改与新增 GateN-5 implementation plan 文档。
+- 已执行 `git diff --check`：无 whitespace error；仅出现 Windows LF/CRLF working-copy warning。
+- 已执行 `git diff --stat`：tracked diff 仅显示允许文档变更；新增 untracked GateN-5 implementation plan 文档由 `git status --short` 单独确认。
+- 已执行 forbidden-scope diff：`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均无 diff。
+- 已执行指定 GateN/source/readiness/MarketData/OKX/Binance/public-private/LIVE 边界关键词 `rg`：命令退出码 0；输出很大，命中 root README、current docs、historical gates、backend 和 frontend 中既有证据与本轮 docs wording。
+- 已执行新增文档 trailing whitespace 检查：`docs/current/NQ_GATEN_RUNTIME_UI_SANDBOX_SOURCE_DISPLAY_IMPLEMENTATION_PLAN.md` 无行尾空白命中。
+- 未运行 Maven / npm build / Playwright / pytest / mypy / ruff；原因是本轮只改允许范围内文档，不改代码、workflow、测试、migration 或运行时配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未新增测试代码；未实现真实 HTTP / WebSocket；未实现 adapter skeleton；未实现 fake server runtime；未实现 RealClient / real provider；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未执行真实 permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization；historical live-0 不得出现在当前 UI readiness badge。
+
+### 推荐下一步
+
+`NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION`：若用户单独授权，只做最小 frontend implementation slice；必须保持 compact `/marketdata` block，不新增 API/页面/backend/migration/CI，不展示 real-ready/live-ready/provider-ready/trading-authorized，不触发真实 host、credential、permission probe、private trading、LIVE、AI 或 DH runtime。
