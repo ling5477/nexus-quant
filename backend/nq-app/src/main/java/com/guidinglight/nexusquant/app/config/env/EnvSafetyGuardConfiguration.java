@@ -56,7 +56,8 @@ public class EnvSafetyGuardConfiguration {
             Map.entry("NQ_BINANCE_DOME_BASE_URL", "nq.binance.dome.base-url"),
             Map.entry("NQ_BINANCE_REAL_BASE_URL", "nq.binance.real.base-url"),
             Map.entry("NQ_BINANCE_DOME_WS_URL", "nq.binance.dome.ws-url"),
-            Map.entry("NQ_BINANCE_REAL_WS_URL", "nq.binance.real.ws-url")
+            Map.entry("NQ_BINANCE_REAL_WS_URL", "nq.binance.real.ws-url"),
+            Map.entry("NQ_PUBLIC_MARKETDATA_BASE_URL", "nq.public-marketdata.outbound.base-url")
     );
 
     @Bean
@@ -91,6 +92,8 @@ public class EnvSafetyGuardConfiguration {
         boolean realClient = booleanValue(environment, processEnv, systemProperties, "nq.env-safety.real-client-enabled", "NQ_REAL_CLIENT_ENABLED", false);
         boolean realExchange = booleanValue(environment, processEnv, systemProperties, "nq.env-safety.real-exchange-enabled", "NQ_REAL_EXCHANGE_ENABLED", false);
         boolean noOutbound = booleanValue(environment, processEnv, systemProperties, "nq.env-safety.no-outbound", "NQ_NO_OUTBOUND", false);
+        boolean testProfileActive = testProfileActive(activeProfiles);
+        boolean effectiveNoOutbound = noOutbound || ci || testProfileActive;
 
         if ("real".equalsIgnoreCase(value(environment, processEnv, systemProperties, "nq.okx.env", "NQ_OKX_ENV"))
                 || "real".equalsIgnoreCase(value(environment, processEnv, systemProperties, "nq.binance.env", "NQ_BINANCE_ENV"))) {
@@ -107,8 +110,23 @@ public class EnvSafetyGuardConfiguration {
                 realClient,
                 realExchange,
                 noOutbound,
-                values(environment, processEnv, systemProperties, CREDENTIAL_KEYS),
-                values(environment, processEnv, systemProperties, ENDPOINT_KEYS)
+                ci || testProfileActive || effectiveNoOutbound
+                        ? values(environment, processEnv, systemProperties, CREDENTIAL_KEYS)
+                        : Map.of(),
+                effectiveNoOutbound
+                        ? values(environment, processEnv, systemProperties, ENDPOINT_KEYS)
+                        : Map.of()
+        );
+    }
+
+    private static boolean testProfileActive(Set<String> activeProfiles) {
+        return activeProfiles.stream().map(profile -> profile.toLowerCase(java.util.Locale.ROOT)).anyMatch(profile ->
+                profile.equals("test")
+                        || profile.equals("ci")
+                        || profile.equals("ci-app-smoke")
+                        || profile.equals("paper")
+                        || profile.endsWith("-test")
+                        || profile.endsWith("-smoke")
         );
     }
 

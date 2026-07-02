@@ -175,6 +175,47 @@ class EnvSafetyValidatorTest {
         assertContains(violations, "CI/test profile forbids DH runtime");
     }
 
+    @Test
+    void shouldFailClosedForPublicMarketdataManualLiveAiDhOrRealProvider() {
+        var violations = EnvSafetyValidator.validate(new EnvSafetyValidator.Facts(
+                Set.of("public-marketdata-manual"),
+                false,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                false,
+                Map.of(),
+                Map.of()
+        ));
+
+        assertContains(violations, "public-marketdata-manual profile forbids LIVE=true");
+        assertContains(violations, "public-marketdata-manual profile forbids AI runtime");
+        assertContains(violations, "public-marketdata-manual profile forbids DH runtime");
+        assertContains(violations, "public-marketdata-manual profile forbids real provider/client/exchange");
+    }
+
+    @Test
+    void shouldAllowPublicMarketdataManualWithoutCredentialFacts() {
+        var violations = EnvSafetyValidator.validate(new EnvSafetyValidator.Facts(
+                Set.of("public-marketdata-manual"),
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                Map.of(),
+                Map.of()
+        ));
+
+        assertTrue(violations.isEmpty());
+    }
+
     private static EnvSafetyValidator.Facts defaultSafeFacts() {
         return new EnvSafetyValidator.Facts(
                 Set.of("ci"),

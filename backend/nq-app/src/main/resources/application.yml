@@ -35,6 +35,19 @@ nq:
     real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
     real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
     no-outbound: ${NQ_NO_OUTBOUND:false}
+  public-marketdata:
+    outbound:
+      # Why: GateO O-1 默认 no-egress。只有 public-marketdata-manual profile 允许读取
+      # NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true 并构造受 policy 保护的 public REST client。
+      enabled: false
+      fallback-origin: ${NQ_PUBLIC_MARKETDATA_FALLBACK_ORIGIN:LOCAL_DB}
+      base-url: ${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}
+      connect-timeout: ${NQ_PUBLIC_MARKETDATA_CONNECT_TIMEOUT:PT3S}
+      read-timeout: ${NQ_PUBLIC_MARKETDATA_READ_TIMEOUT:PT5S}
+      total-request-timeout: ${NQ_PUBLIC_MARKETDATA_TOTAL_REQUEST_TIMEOUT:PT8S}
+      max-retries: ${NQ_PUBLIC_MARKETDATA_MAX_RETRIES:2}
+      first-backoff: ${NQ_PUBLIC_MARKETDATA_FIRST_BACKOFF:PT0.5S}
+      second-backoff: ${NQ_PUBLIC_MARKETDATA_SECOND_BACKOFF:PT1S}
   account:
     credentials:
       master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY:change-me-account-credentials-master-key-123456}

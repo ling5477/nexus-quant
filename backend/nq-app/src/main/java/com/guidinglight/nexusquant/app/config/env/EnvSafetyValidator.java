@@ -73,6 +73,20 @@ final class EnvSafetyValidator {
         if (ciOrTestBoundary && facts.dhRuntimeEnabled()) {
             violations.add("CI/test profile forbids DH runtime");
         }
+        if (facts.publicMarketDataManualProfileActive()) {
+            if (facts.liveEnabled()) {
+                violations.add("public-marketdata-manual profile forbids LIVE=true");
+            }
+            if (facts.aiEnabled()) {
+                violations.add("public-marketdata-manual profile forbids AI runtime");
+            }
+            if (facts.dhRuntimeEnabled()) {
+                violations.add("public-marketdata-manual profile forbids DH runtime");
+            }
+            if (facts.realProviderEnabled() || facts.realClientEnabled() || facts.realExchangeEnabled()) {
+                violations.add("public-marketdata-manual profile forbids real provider/client/exchange");
+            }
+        }
         if (noOutbound) {
             facts.endpointValues().forEach((name, value) -> {
                 if (isRealExchangeEndpoint(value)) {
@@ -167,6 +181,12 @@ final class EnvSafetyValidator {
                             || profile.equals("paper")
                             || profile.endsWith("-test")
                             || profile.endsWith("-smoke")
+            );
+        }
+
+        boolean publicMarketDataManualProfileActive() {
+            return activeProfiles.stream().map(profile -> profile.toLowerCase(Locale.ROOT)).anyMatch(profile ->
+                    profile.equals("public-marketdata-manual")
             );
         }
 

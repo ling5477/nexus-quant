@@ -1,3 +1,64 @@
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-P1-FIX
+
+日期：2026-07-02
+
+### 本轮目标
+
+修复 GateO O-1 implementation review 发现的 P1：endpointPath 未锁定为相对路径，`baseUri.resolve("//example.invalid/ticker")` 可切换 host。本轮只关闭 controlled public outbound endpoint authority escape，不执行真实 public outbound smoke，不提交。
+
+### 完成内容
+
+- `PublicMarketDataOutboundRequest` 不再把 blank endpointPath 归一成 `/`，空路径交给 policy fail-closed。
+- `PublicMarketDataOutboundPolicy` 新增 endpoint reference validation：拒绝 `http://...`、`https://...`、`//host/path`、authority / userInfo、fragment、only-query、blank 和非法 URI；拒绝原因不回显 raw query。
+- `JdkPublicMarketDataOutboundClient` 在 `baseUri.resolve(endpointPath)` 后二次校验 resolved URI 的 scheme / host / port 与 base URI 一致，防止 future policy drift 改写出站 host。
+- 新增回归测试：恶意 endpoint 被 `DENIED`、attempts=0、fake server 0 请求；`/ticker?symbol=BTC-USDT` 与 `ticker?symbol=BTC-USDT` 保持 path-only + query 允许并解析到 base host。
+- 补充 P2 测试覆盖：high latency -> `DEGRADED`、stale -> `STALE`、gap -> `gapCount > 0`。`DataOrigin.FAKE_SERVER` 语义保留为 O-1 fake-server baseline，后续 O-5 前再单独评估。
+
+### 验证
+
+- `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=PublicMarketDataOutboundPolicyTest,JdkPublicMarketDataOutboundClientTest,PublicMarketDataOutboundConfigurationTest,EnvSafetyValidatorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / `BUILD SUCCESS`；`nq-adapter-api` 19 tests，`nq-app` 14 tests。
+
+### 边界
+
+未执行 O-5 manual real public outbound smoke；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未改 frontend / research / scripts / deploy / `.github` / migration；未新增对外 API；未读取或输出 credential material；未实现 signed request、private endpoint、private WebSocket、RealClient、real provider 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+重新执行 `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-IMPLEMENTATION-REVIEW`。在 review PASS 前不得提交，也不得进入 O-2/O-3/O-4/O-5 implementation。
+
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-IMPLEMENTATION
+
+日期：2026-07-01
+
+### 本轮目标
+
+落地 GateO O-1 public marketdata controlled outbound 的最小实现闭环：manual profile / feature flag、默认 disabled fallback、public REST allowlist、private/signed denylist、redaction/log summary、bounded timeout/retry/backoff、fake-server/no-egress 测试和 Data Quality linkage。本轮不执行真实 public outbound smoke，不接真实 provider / RealClient / real permission probe / LIVE / AI / DH runtime。
+
+### 完成内容
+
+- 新增 `backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/**`：public outbound client 抽象、JDK manual client、disabled fallback、endpoint category、policy decision、request/result/error/settings、Data Quality summary/mapper、redactor 和 log summary。
+- 新增 `backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/PublicMarketDataOutboundConfiguration.java` 与 `backend/nq-app/src/main/resources/application-public-marketdata-manual.yml`，固定 `public-marketdata-manual` profile 与 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED` feature flag；默认 `application.yml` 保持 outbound disabled。
+- 扩展 `EnvSafetyGuardConfiguration` / `EnvSafetyValidator` 与对应测试，确保 manual profile 禁止 LIVE、AI、DH runtime、real provider、RealClient 和 real exchange。
+- 新增 `PublicMarketDataOutboundPolicyTest`、`JdkPublicMarketDataOutboundClientTest`、`PublicMarketDataOutboundConfigurationTest` 并扩展 `EnvSafetyValidatorTest`；fake server 只使用 localhost。
+- 同步 `GATEO_PLAN.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`docs/current/README.md` 和 root `README.md` 的 O-1 当前状态。
+
+### 验证
+
+- `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=PublicMarketDataOutboundPolicyTest,JdkPublicMarketDataOutboundClientTest,PublicMarketDataOutboundConfigurationTest,EnvSafetyValidatorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / `BUILD SUCCESS`；`nq-adapter-api` 14 tests，`nq-app` 14 tests。
+- `mvn -f backend/pom.xml test`：PASS / `BUILD SUCCESS`；23 个 backend reactor module 全部 SUCCESS；仅有既有非阻塞 warning。
+
+### 边界
+
+未执行 O-5 manual real public outbound smoke；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未改 frontend / research / scripts / deploy / `.github` / migration；未新增对外 API；未读取或输出 credential material；未实现 signed request、private endpoint、private WebSocket、RealClient、real provider 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 回滚方式
+
+关闭 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=false` 或移除 `public-marketdata-manual` profile 即可让运行时回到 disabled fallback；如需代码回滚，还原本轮 `backend/nq-adapter-api/publicmarketdata/**`、`PublicMarketDataOutboundConfiguration`、manual profile YAML、`application.yml` public-marketdata 配置段、EnvSafety diff、对应 tests 与 current docs / README diff。无 DB、CI workflow、frontend、research 或 credential 副作用。
+
+### 推荐下一步
+
+执行 O-1 implementation review；只有 review 接受后，才允许单独规划 O-2 Data Quality Center 或后续 O-5 manual public outbound smoke。O-5 真实 public smoke 不得提前执行，也不得进入默认 CI。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION
 
 日期：2026-07-01
@@ -84,7 +145,7 @@
 - 明确 O-0 本轮完成 planning baseline；O-1 public marketdata controlled outbound、O-2 Data Quality Center、O-3 readiness API、O-4 quality UI、O-5 manual public outbound smoke 和 O-FREEZE 均保持 planned / not started。
 - 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md` 的 GateO planning-only 状态。
 - 保留 GateN 结论为 `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`，不提升为 `VERIFIED`。
-- 明确 GateO implementation **NOT STARTED**；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider / real permission probe **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
+- 当时明确 GateO implementation **NOT STARTED**；该 O-0 历史记录已由后续 O-1 implementation 消费，当前状态以上方最新记录为准。LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；RealClient / real provider / real permission probe **NOT_IMPLEMENTED**；public marketdata readiness 不等于 trading authorization。
 
 ### 验证
 

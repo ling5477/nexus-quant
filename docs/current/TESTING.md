@@ -1,3 +1,43 @@
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-P1-FIX（2026-07-02）
+
+结论：**P1 FIXED / READY FOR RE-REVIEW / NOT ACCEPTED**。含义：`P1 FIXED`（P1 已修复）、`READY FOR RE-REVIEW`（可重新复核）、`NOT ACCEPTED`（尚未接受）。本轮只验证 endpoint path authority escape 修复；真实 public outbound smoke 未执行，O-5 仍 `PLANNED / NOT STARTED`。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=PublicMarketDataOutboundPolicyTest,JdkPublicMarketDataOutboundClientTest,PublicMarketDataOutboundConfigurationTest,EnvSafetyValidatorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / `BUILD SUCCESS` | P1 窄口验证通过；`nq-adapter-api` 19 tests / 0 failures / 0 errors / 0 skipped，`nq-app` 14 tests / 0 failures / 0 errors / 0 skipped。覆盖 `//example.invalid/ticker`、`http://example.invalid/ticker`、`https://example.invalid/ticker`、authority、fragment、blank、only-query fail-closed，path-only + query 仍解析到 base host；fake server 对恶意 endpoint 收到 0 请求。 |
+
+Scope：
+
+- 覆盖 `backend/nq-adapter-api` 的 endpoint reference validation、resolved URI scheme / host / port 二次校验、fake-server no-egress 回归、high latency / stale / gap mapper 回归。
+- 覆盖 `backend/nq-app` 既有 manual profile / feature flag / EnvSafety 测试，确认本轮 P1 fix 未破坏配置边界。
+
+Boundary：
+
+未执行 O-5 manual real public outbound smoke；未访问真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API endpoint；未读取或输出 credential material；未新增对外 API / migration / frontend / research / scripts / deploy / `.github` 变更；未实现 signed request、private endpoint、private WebSocket、RealClient、real provider 或 real permission probe；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-IMPLEMENTATION（2026-07-01）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY FOR REVIEW**。含义：`IMPLEMENTED`（已实现）、`SELF-REVIEWED`（已自审）、`READY FOR REVIEW`（可进入复核）。本轮验证 O-1 public marketdata controlled outbound 的 policy/client/config/env safety/fake-server/no-egress 闭环；真实 public outbound smoke 未执行，O-5 仍 `PLANNED / NOT STARTED`。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=PublicMarketDataOutboundPolicyTest,JdkPublicMarketDataOutboundClientTest,PublicMarketDataOutboundConfigurationTest,EnvSafetyValidatorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / `BUILD SUCCESS` | O-1 窄口验证通过；`nq-adapter-api` 14 tests / 0 failures / 0 errors / 0 skipped，`nq-app` 14 tests / 0 failures / 0 errors / 0 skipped。fake server 仅绑定 localhost，未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken。 |
+| `mvn -f backend/pom.xml test` | PASS / `BUILD SUCCESS` | 后端 23 个 reactor module 全部 SUCCESS。已知非阻塞 warning：部分测试编译 unchecked/deprecation 提示、SLF4J no-provider warning、Mockito dynamic agent / ByteBuddy warning。 |
+
+Scope：
+
+- 覆盖 `backend/nq-adapter-api` 的 publicmarketdata policy、client、redaction、quality mapper 和 fake-server tests。
+- 覆盖 `backend/nq-app` 的 manual profile / feature flag 装配和 EnvSafety manual profile 禁止 LIVE / AI / DH / real provider / RealClient / real exchange 规则。
+- 未运行 `frontend` build / Playwright / `research/py` pytest/mypy/ruff，原因是本轮未修改 frontend、research、scripts、deploy 或 CI workflow。
+
+Boundary：
+
+未执行 O-5 manual real public outbound smoke；未访问真实交易所 API endpoint；未读取或输出 credential material；未新增对外 API / migration / frontend / research / scripts / deploy / `.github` 变更；未实现 signed request、private endpoint、private WebSocket、RealClient、real provider 或 real permission probe；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION（2026-07-01）
 
 结论：**REVISION COMPLETED / READY FOR REVIEW / NOT IMPLEMENTED**。含义：`REVISION COMPLETED`（修订已完成）、`READY FOR REVIEW`（可重新审查）、`NOT IMPLEMENTED`（未实现）。本轮只做 O-1 public marketdata controlled outbound plan revision 与允许范围内文档状态同步，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置，不实现 public outbound，不调用真实交易所 API endpoint。

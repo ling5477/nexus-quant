@@ -1,0 +1,26 @@
+spring:
+  config:
+    activate:
+      on-profile: public-marketdata-manual
+
+nq:
+  env-safety:
+    # Why: manual public marketdata 只允许公开行情受控外联，不得顺带打开 LIVE、AI、DH、RealClient 或 real provider。
+    live-enabled: ${NQ_LIVE_ENABLED:false}
+    ai-enabled: ${NQ_AI_ENABLED:false}
+    dh-runtime-enabled: ${NQ_DH_RUNTIME_ENABLED:false}
+    real-provider-enabled: ${NQ_REAL_PROVIDER_ENABLED:false}
+    real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
+    real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
+  public-marketdata:
+    outbound:
+      # Why: 这是后续 O-5 手动 public smoke 的唯一 feature flag；默认 false，O-1 不执行真实 public outbound。
+      enabled: ${NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED:false}
+      fallback-origin: ${NQ_PUBLIC_MARKETDATA_FALLBACK_ORIGIN:LOCAL_DB}
+      base-url: ${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}
+      connect-timeout: ${NQ_PUBLIC_MARKETDATA_CONNECT_TIMEOUT:PT3S}
+      read-timeout: ${NQ_PUBLIC_MARKETDATA_READ_TIMEOUT:PT5S}
+      total-request-timeout: ${NQ_PUBLIC_MARKETDATA_TOTAL_REQUEST_TIMEOUT:PT8S}
+      max-retries: ${NQ_PUBLIC_MARKETDATA_MAX_RETRIES:2}
+      first-backoff: ${NQ_PUBLIC_MARKETDATA_FIRST_BACKOFF:PT0.5S}
+      second-backoff: ${NQ_PUBLIC_MARKETDATA_SECOND_BACKOFF:PT1S}
