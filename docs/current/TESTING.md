@@ -1,3 +1,19 @@
+## NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN final validation（2026-07-02）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 仅位于允许的 `docs/current` 文档：P1 canonical contract plan、P0 rebase plan、current index/status/work order 与验证记录；未见 forbidden code area diff。 |
+| `git log --oneline -5` / `git rev-parse HEAD` | PASS | HEAD 为 `5dee05d6a10cc967f1b0cf88dd20a5a0fd9452e2`，基线包含 P0 factsource rebase 与既有 P1 plan commit。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current` 文档；新增 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md` 由 `git status --short` 标识。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻断。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
+
+Scope：本轮只完成 `NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN` canonical contract dry-run planning 与验证记录同步；不新增 API、migration、production code、test code、fixture 文件、client、provider、dispatcher 或真实 HTTP。
+
+Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只规划并记录 dry-run request / read-only DecisionOutput / header / security / audit / replay / test matrix，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
+
 ## NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN（2026-07-02）
 
 | Command | Result | Notes |

@@ -1,3 +1,47 @@
+## NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN final validation
+
+日期：2026-07-02。
+
+范围：
+
+- 新增 canonical contract plan：`docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`。
+- 最小同步 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/WORK_ORDER.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 本轮仍是 docs-only / plan-only；不修改 backend、frontend、research、scripts、deploy、`.github`、migration、contracts 或 golden_cases。
+
+结果：
+
+```text
+NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED
+Canonical plan: docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md
+Next: NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN / NOT STARTED
+ALLOW_I1_P1_CONTRACT_PLAN_CLOSE: YES
+ALLOW_I1_P2_CONTRACT_FIXTURES_PLAN: YES
+ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+规划摘要：
+
+- 固定 NQ -> DH dry-run `DecisionRequest` 规划字段、禁止字段、schema gap 和 header/body/auth binding。
+- 固定 DH -> NQ read-only `DecisionOutput` 规划字段、`forbiddenActions`、no-side-effect 语义和 schema gap。
+- 固定 canonical `X-NQ-DH-*` header、UTC `Z` timestamp、nonce replay、HMAC signatureMaterial、payload size gate、rate limit、error taxonomy、trace / audit / replay 边界和后续 P2-P6 批次。
+
+验证：
+
+- `git status --short`：PASS / CHANGES PRESENT；dirty 限于允许的 `docs/current` 文档。
+- `git diff --check`：PASS；无 whitespace error，仅 Windows LF/CRLF warning。
+- `git diff --stat`：PASS / DOCS-ONLY。
+- forbidden diff：`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration 均为空。
+- `mvn -ntp -f backend/pom.xml test`：PASS / BUILD SUCCESS；23 个 backend reactor module 全部 SUCCESS；`nq-app` 86 tests 中 2 skipped。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS；17 Integration-0 tests，0 failures / 0 errors / 0 skipped。
+
+边界：未改生产代码；未改测试代码；未改 contracts 或 golden_cases；未新增 API、Controller、Client、Repository、Service、migration、fixture 文件或 CI workflow；未真实 HTTP；未启动 NQ/DH runtime；未读取 credential；未接 real provider、AI 或 LangGraph；未开启 LIVE；未让 DH 输出进入 order、risk mutation、ledger mutation、Paper Run 或 private trading 路径。
+
 ## NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN
 
 日期：2026-07-02。

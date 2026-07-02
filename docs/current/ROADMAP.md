@@ -38,8 +38,8 @@ GateP：A 股适配
 
 ## 当前阶段
 
-- NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN = **COMPLETED / PLAN ONLY / NOT IMPLEMENTED**。本轮只完成 Integration-1 contract dry-run 规划，覆盖 dry-run request / response schema、canonical `X-NQ-DH-*` header、tenant / requestId / traceId / timestamp / nonce / HMAC、source allowlist、payload size、错误码、audit、P1-A..P1-E batch 与 no-side-effect 测试前置。Implementation **NOT STARTED**；runtime integration **NOT STARTED**；DH integrated **NO / NOT_INTEGRATED**；LIVE **DISABLED**；AI / LangGraph **NOT STARTED**；RealClient / real provider **NOT_IMPLEMENTED**。下一步只允许 P1-A contract schema / fixture plan review，不得直接进入 runtime implementation。
-- NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE = **CLOSED / ACCEPTED / DOCS-ONLY**。Integration-1 dry-run plan baseline 已接受；前置条件固定为 `NQ GateN + DH Stage4 Decision Pipeline MVP CLOSED`；下一集成文档任务为 `NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED`。P1 仍是 plan，不是 implementation；Integration-1 implementation / runtime / real HTTP / real provider / LIVE 均保持 NOT STARTED / DISABLED。
+- NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN = **COMPLETED / PLAN ONLY / NOT IMPLEMENTED**。本轮 canonical 计划见 `NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`，覆盖 NQ -> DH dry-run DecisionRequest、DH -> NQ read-only DecisionOutput、canonical `X-NQ-DH-*` header、tenant / requestId / traceId / timestamp / nonce / HMAC、source allowlist、payload size、error taxonomy、trace/audit/replay、I1-P2..P6 后续 batch 与 no-side-effect 测试矩阵。Implementation **NOT STARTED**；runtime integration **NOT STARTED**；DH integrated **NO / NOT_INTEGRATED**；LIVE **DISABLED**；AI / LangGraph **NOT STARTED**；RealClient / real provider **NOT_IMPLEMENTED**。下一步只允许 `NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN / NOT STARTED`，不得直接进入 runtime implementation。
+- NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE = **CLOSED / ACCEPTED / DOCS-ONLY**。Integration-1 dry-run plan baseline 已接受；前置条件固定为 `NQ GateN + DH Stage4 Decision Pipeline MVP CLOSED`；P1 contract dry-run plan 已完成；下一集成文档任务为 `NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN / NOT STARTED`。P2 仍是 plan，不是 implementation；Integration-1 implementation / runtime / real HTTP / real provider / LIVE 均保持 NOT STARTED / DISABLED。
 - DOC-CLEAN completed。
 - BASELINE-FIX completed。
 - GateH completed。
