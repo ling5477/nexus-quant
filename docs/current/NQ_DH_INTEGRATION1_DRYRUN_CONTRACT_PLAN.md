@@ -270,7 +270,7 @@ replayRef: DH replay read model 引用；只读审计入口，不重跑 provider
 
 | Batch | 状态 | 目标 | 禁止 |
 | --- | --- | --- | --- |
-| `I1-P2-CONTRACT-FIXTURES-PLAN` | `NOT STARTED` | 规划双仓 fixture / schema / golden case 对齐，不写 runtime。 | 不写 runtime、不新增真实 endpoint、不真实 HTTP。 |
+| `I1-P2-CONTRACT-FIXTURES-PLAN` | `COMPLETED / PLAN ONLY / NOT IMPLEMENTED` | 已规划双仓 fixture / schema / golden case 对齐，不写 runtime。 | 不写 runtime、不新增真实 endpoint、不真实 HTTP。 |
 | `I1-P3-NQ-DRYRUN-STUB-TEST-PLAN` | `NOT STARTED` | 规划 NQ 侧 stub / no-outbound / no-order 测试，不写真实 client。 | 不接 DH runtime、不触发 order/risk/ledger/Paper/LIVE。 |
 | `I1-P4-DH-DRYRUN-ENTRY-PLAN` | `NOT STARTED` | 规划 DH 侧 dry-run 入口需求，不实现 Controller/API。 | 不新增 API path、Controller、migration。 |
 | `I1-P5-JOINT-MOCK-VALIDATION-PLAN` | `NOT STARTED` | 规划联合 mock 验证，不真实 HTTP。 | 不启动 NQ/DH runtime。 |
@@ -281,6 +281,7 @@ replayRef: DH replay read model 引用；只读审计入口，不重跑 provider
 ```text
 ALLOW_I1_P1_CONTRACT_PLAN_CLOSE: YES
 ALLOW_I1_P2_CONTRACT_FIXTURES_PLAN: YES
+ALLOW_I1_P3_NQ_DRYRUN_STUB_TEST_PLAN: YES
 ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
 ALLOW_INTEGRATION_1_RUNTIME: NO
 ALLOW_REAL_HTTP: NO
@@ -293,3 +294,13 @@ ALLOW_LIVE: NO
 ## 11. 边界确认
 
 本 P1 不修改生产代码；不修改测试代码；不修改 `contracts/**`；不修改 `golden_cases/**`；不新增 API；不新增 migration；不新增 Controller / Client / Repository / Service；不真实 HTTP；不启动 runtime；不读取 credential；不接 provider；不接 AI / LangGraph；不进入 Paper Run；不进入 LIVE；不让 DH 输出进入 order、risk mutation、paper/live trading 或 private trading 路径。
+
+## 12. P2 contract fixtures plan
+
+`NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN` 已完成 planning-only 收口，文档见 `NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`。P2 只规划 future fixtures、schema gap、golden case alignment、error taxonomy alignment 和 P3-P6 后续批次；不创建 fixture JSON，不改 JSON Schema，不改 `contracts/**` 或 `golden_cases/**`，不写测试代码或生产代码，不启动 runtime。
+
+下一步只允许：
+
+```text
+NQ-DH-I1-P3-NQ-DRYRUN-STUB-TEST-PLAN / NOT STARTED
+```
