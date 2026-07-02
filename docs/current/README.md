@@ -8,11 +8,9 @@ AI not started；DH runtime not integrated；LIVE disabled；real provider / Rea
 
 NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION = **PASS / EVIDENCE RECONCILED / GATEO-PLAN CONDITIONALLY ALLOWED**。含义：`PASS`（通过）、`EVIDENCE RECONCILED`（证据已收口）、`GATEO-PLAN CONDITIONALLY ALLOWED`（只允许有条件进入 GateO 规划）。GateJ / GateK / GateM freeze evidence = `VERIFIED`；GateN no-real sandbox baseline = `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`，因为 tag / archive / local freeze validation / later dev CI 存在，但 tagged commit direct CI run 不可见且已显式接受为 residual。GateO O-1 controlled public outbound guard baseline **PASS / ACCEPTED / FROZEN**，GateO stage **NOT COMPLETED**；仍禁止真实 provider、RealClient、real permission probe、LIVE、AI 和 DH runtime。
 
-NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND = **PASS / PLAN ONLY / NOT IMPLEMENTED**。含义：`PASS`（通过）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。GateO O-0 planning baseline 已落档 [GATEO_PLAN.md](GATEO_PLAN.md)，规划公开行情受控外联、数据质量中心、readiness API、quality UI、manual public outbound smoke 与 freeze criteria；O-1 controlled public outbound guard baseline 已冻结接受；O-2 Data Quality Center planning baseline 已完成为 `PASS / PLAN ONLY / NOT IMPLEMENTED`；O-3/O-4/O-5/O-FREEZE 仍 `PLANNED / NOT STARTED`；public marketdata readiness 不等于 trading authorization。
+NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND = **PASS / PLAN ONLY / NOT IMPLEMENTED**。含义：`PASS`（通过）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。GateO O-0 planning baseline 已落档 [GATEO_PLAN.md](GATEO_PLAN.md)，规划公开行情受控外联、数据质量中心、readiness API、quality UI、manual public outbound smoke 与 freeze criteria；O-1 controlled public outbound guard baseline 已冻结接受，O-2/O-3/O-4/O-5/O-FREEZE 仍 `PLANNED / NOT STARTED`；public marketdata readiness 不等于 trading authorization。
 
 NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW = **PASS / ACCEPTED / FROZEN**。含义：`PASS`（通过）、`ACCEPTED`（已接受）、`FROZEN`（已冻结）。O-1 已落地并冻结 manual profile / feature flag、默认 disabled fallback、public REST allowlist、private/signed denylist、endpoint authority escape guard、redaction/log summary、bounded timeout/retry/backoff、fake-server/no-egress tests 与 Data Quality linkage；未执行真实 public outbound smoke，未新增对外 API / migration / frontend / research / CI workflow，未读取 credential；O-5 manual real public smoke 仍 `NOT STARTED`。
-
-NQ-GATEO-O2-DATA-QUALITY-CENTER-PLAN = **PASS / PLAN ONLY / NOT IMPLEMENTED**。O-2 只完成 Data Quality Center planning baseline，定义 source status / source health / freshness / data origin / gap status、核心字段、O-1 result mapping、gap/freshness/error 模型、现有 API/DB/frontend 复用边界和后续测试策略；未实现 Data Quality Center，未新增 API / migration / 页面 / E2E / CI workflow，未执行真实 public outbound smoke，未读取 credential。O-2 implementation may start，但只能在后续单独授权任务中开始。
 
 NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION = **REVISION COMPLETED / READY FOR REVIEW / NOT IMPLEMENTED**。该条为 O-1 implementation 前历史 plan revision baseline，已由 O-1 implementation 消费；不再代表当前 O-1 未实现。
 
@@ -41,9 +39,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 运行手册：[RUNBOOK.md](RUNBOOK.md)
 - 项目任务流程权威：[NQ_PROJECT_WORKFLOW_AUTHORITY.md](NQ_PROJECT_WORKFLOW_AUTHORITY.md)
 - GateJ/K/M/N freeze evidence reconciliation：[NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md](NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md)
-- GateO planning / O-1 implementation baseline：[GATEO_PLAN.md](GATEO_PLAN.md)（公开行情受控外联与数据质量运行化阶段；O-0 planning-only；O-1 controlled public outbound guard = `PASS / ACCEPTED / FROZEN`；O-2 Data Quality Center plan = `PASS / PLAN ONLY / NOT IMPLEMENTED`；O-5 manual real public smoke `NOT STARTED`）
-- GateO O-2 Data Quality Center plan：[NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md](NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md)
-- NQ-DH Integration-1 dry-run plan rebase：[NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md](NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md)（`PASS / PLAN ONLY / READY FOR P0 FACTSOURCE REBASE`；基于 NQ GateN 与 DH GateK MVP CLOSED 重新规划 dry-run；不启动 runtime、真实 HTTP、real provider、AI / LangGraph 或 LIVE）
+- GateO planning / O-1 implementation baseline：[GATEO_PLAN.md](GATEO_PLAN.md)（公开行情受控外联与数据质量运行化阶段；O-0 planning-only；O-1 controlled public outbound guard = `PASS / ACCEPTED / FROZEN`；O-5 manual real public smoke `NOT STARTED`）
 - GateM historical archive：[docs/gates/gate-m/](../gates/gate-m/README.md)
 - GateN historical archive：[docs/gates/gate-n/](../gates/gate-n/README.md)（PASS / ARCHIVE CLOSED / READY TO COMMIT；11/11 approved GateN process docs moved；tag：`nq-gaten-freeze`；no-real baseline）
 - Next phase plan：[NQ_NEXT_PHASE_PLAN.md](NQ_NEXT_PHASE_PLAN.md)
@@ -181,9 +177,7 @@ Future AI small-funds LIVE candidate（DEFERRED；requires separate AI / DH / LI
   ↓
 GateO-PLAN：ALLOWED / planning-only after J/K/M/N evidence reconciliation；O-0 baseline completed；O-1 controlled public outbound guard baseline PASS / ACCEPTED / FROZEN；stage NOT COMPLETED
   ↓
-GateO O-0：Public MarketData Controlled Outbound & Data Quality Runtime planning baseline（PASS / PLAN ONLY / NOT IMPLEMENTED；O-1 controlled public outbound guard PASS / ACCEPTED / FROZEN；O-2 Data Quality Center plan PASS / PLAN ONLY / NOT IMPLEMENTED；stage NOT COMPLETED）
-  ↓
-GateO O-2：Data Quality Center planning baseline（PASS / PLAN ONLY / NOT IMPLEMENTED；implementation may start only in a separate authorized task；O-3/O-4/O-5/O-FREEZE NOT STARTED）
+GateO O-0：Public MarketData Controlled Outbound & Data Quality Runtime planning baseline（PASS / PLAN ONLY / NOT IMPLEMENTED；O-1 controlled public outbound guard PASS / ACCEPTED / FROZEN；stage NOT COMPLETED）
   ↓
 GateP：A 股适配
 ```
