@@ -1,3 +1,46 @@
+## NQ-DH-INTEGRATION1-DRYRUN-PLAN-REBASEN（2026-07-02）
+
+结论：**PASS / PLAN ONLY / READY FOR P0 FACTSOURCE REBASE**。含义：`PASS`（通过）、`PLAN ONLY`（仅规划）、`READY FOR P0 FACTSOURCE REBASE`（可进入 P0 事实源 rebase）。本轮只做 NQ GateN rebase 后的 Integration-1 dry-run planning 与允许范围内 docs/current 同步；不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置，不启动真实 HTTP、真实 DH/NQ runtime、real provider、AI / LangGraph 或 LIVE。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / REVIEWED | 工作区包含本轮 NQ-DH Integration-1 plan 文档与 current docs 同步；同时存在 GateO O-2 Data Quality Center plan 相关并行文档 diff，未在本轮回退或归入本轮结论。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows 行尾转换 warning。 |
+| `git diff --stat` | PASS / REVIEWED | tracked diff 中包含本轮 Integration-1 plan sync，也包含既有 GateO O-2 docs diff；新 plan 文档由 `git status --short` 标识。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 后端 23 个 reactor module 全部 SUCCESS；Finished at 2026-07-02T20:11:38+08:00；保留既有 SLF4J / Mockito dynamic agent warning，非阻塞。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration0 scoped regression 通过；Finished at 2026-07-02T20:12:00+08:00。 |
+| `rg -n "<id>quality</id>|spotless|checkstyle" backend -g pom.xml` | PASS / ABSENT | 未发现 NQ backend Maven `quality` profile、Spotless 或 Checkstyle 配置；因此未执行不存在的 quality profile。 |
+
+Boundary：
+
+未修改 NQ 生产代码、测试代码、API、migration、backend/frontend/research/scripts/deploy/.github；未新增 Controller / Service / Repository / Client；未真实 HTTP；未真实 DH 调用；未真实 NQ runtime；未调用交易所；未读取或输出 credential material；未启动 Integration-1 runtime；未把 DH 写成 integrated；未把 Runtime integration 写成 started；未把 AI / Agent runtime 写成 started；未接 LangGraph；未开启 LIVE；未把 dry-run 写成真实联调或实盘准备完成。
+
+## NQ-GATEO-O2-DATA-QUALITY-CENTER-PLAN（2026-07-02）
+
+结论：**PASS / PLAN ONLY / NOT IMPLEMENTED**。含义：`PASS`（通过）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。本轮只做 O-2 Data Quality Center planning 与允许范围内文档同步；不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置，不执行真实 public outbound smoke。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 写前工作区干净。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git log --oneline -5` | PASS | 最近提交包含 `44b4b060 docs(gateo): freeze controlled public outbound guard` 与 `8638dec0 feat(marketdata): add controlled public outbound guard`。 |
+| `Test-Path docs/current/NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md` | PASS | 写前返回 `False`，确认本轮新增 O-2 plan 文档。 |
+| `rg` / `idea-mcp` scoped read | PASS / REVIEWED | 只读核对 `README.md`、`docs/current/**`、现有 `GET /api/marketdata/readiness` / `GET /api/marketdata/bars`、`marketdata_bars`、O-1 `PublicMarketDataQualitySummary` / `PublicMarketDataSourceHealthMapper`、前端 `/marketdata` Data Quality / Readiness 区域。 |
+| `git diff --check` | PASS | 文档修改后无 whitespace error。 |
+| `git diff --stat` | PASS | diff 范围仅为允许的 root/current docs。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 禁止范围未触达。 |
+| O-2 boundary wording scan | PASS / REVIEWED | 确认 O-2 为 plan-only，GateO stage 仍 `NOT COMPLETED`，O-5 manual public smoke 未执行，public marketdata readiness 未写成 trading authorization。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮仅修改允许范围内文档，不改 backend、frontend、research、scripts、deploy、CI workflow、migration、API、页面、E2E 或 runtime 配置。
+
+Boundary：
+
+未修改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未执行 O-5 manual public outbound smoke；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider / real permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW（2026-07-02）
 
 结论：**PASS / ACCEPTED / FROZEN**。含义：`PASS`（通过）、`ACCEPTED`（已接受）、`FROZEN`（已冻结）。本轮只做 O-1 controlled public outbound guard freeze review 和文档状态同步；不改后端代码，不执行真实 public outbound smoke。

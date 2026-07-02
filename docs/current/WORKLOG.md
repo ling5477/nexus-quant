@@ -1,3 +1,84 @@
+## NQ-DH-INTEGRATION1-DRYRUN-PLAN-REBASEN
+
+日期：2026-07-02
+
+### 本轮目标
+
+完成 NQ-DH Integration-1 dry-run 的 GateN rebase planning。范围只覆盖 dry-run 目标、NQ / DH 职责边界、request / response 合同规划、安全协议、I1-P0..P5 批次、测试矩阵、readiness decision 和 current docs 同步；不做 implementation，不新增 API / migration / client / provider / runtime 配置，不启动真实 HTTP、真实 DH/NQ runtime、AI / LangGraph 或 LIVE。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md`。
+- 将旧 `NQ-DH-GATEK-INTEGRATION1-PLAN-PACK` 保持为 **SUPERSEDED / REBASE_REQUIRED**。
+- 明确新 Integration-1 第一阶段只能是 dry-run；dry-run 不等于 runtime integration、真实 HTTP、真实交易或 LIVE。
+- 同步 `docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md` 的 NQ-DH Integration-1 plan 状态。
+- 记录 `ALLOW_INTEGRATION1_DRYRUN_PLAN_CLOSE: YES` 与后续 `NQ-DH-I1-P0-FACTSOURCE-REBASE / NOT STARTED`，同时保持 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 全部为 `NO` 或 `NOT STARTED`。
+
+### 验证
+
+- `git status --short`：PASS / REVIEWED；工作区包含本轮 NQ-DH plan 文档与 current docs 同步，同时存在 GateO O-2 Data Quality Center plan 相关并行文档 diff，未在本轮回退或归入本轮结论。
+- `git diff --check`：PASS；无 whitespace error，仅 Windows 行尾转换 warning。
+- `git diff --stat`：PASS / REVIEWED；tracked diff 中包含本轮 Integration-1 plan sync，也包含既有 GateO O-2 docs diff。
+- `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS；后端 23 个 reactor module 全部 SUCCESS；Finished at 2026-07-02T20:11:38+08:00。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；Integration0 scoped regression 通过；Finished at 2026-07-02T20:12:00+08:00。
+- `rg -n "<id>quality</id>|spotless|checkstyle" backend -g pom.xml`：未发现 NQ backend Maven `quality` profile、Spotless 或 Checkstyle 配置；因此未执行不存在的 quality profile。
+
+### Readiness decision
+
+```text
+ALLOW_INTEGRATION1_DRYRUN_PLAN_CLOSE: YES
+ALLOW_NQ_DH_I1_P0_FACTSOURCE_REBASE: YES
+ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+### 边界
+
+未修改 NQ 生产代码、测试代码、API、migration、backend/frontend/research/scripts/deploy/.github；未新增 Controller / Service / Repository / Client；未真实 HTTP；未真实 DH 调用；未真实 NQ runtime；未调用交易所；未读取或输出 credential material；未启动 Integration-1 runtime；未把 DH 写成 integrated；未把 Runtime integration 写成 started；未把 AI / Agent runtime 写成 started；未接 LangGraph；未开启 LIVE；未把 dry-run 写成真实联调或实盘准备完成。
+
+### 推荐下一步
+
+`NQ-DH-I1-P0-FACTSOURCE-REBASE`：只同步 NQ / DH 当前事实源，清理旧 GateK Integration-1 当前主线残留；不得启动 implementation、runtime、真实 HTTP、real provider、AI / LangGraph 或 LIVE。
+
+## NQ-GATEO-O2-DATA-QUALITY-CENTER-PLAN
+
+日期：2026-07-02
+
+### 本轮目标
+
+完成 GateO O-2 Data Quality Center planning baseline。范围只覆盖数据质量中心目标、状态模型、字段、O-1 映射、gap/freshness/error 口径、与现有 MarketData API / DB / 前端关系、测试策略、验收标准和 current docs 同步；不做 implementation，不新增 API / migration / 页面 / E2E / CI workflow，不执行真实 public outbound smoke。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md`。
+- 将 O-2 状态同步为 **PASS / PLAN ONLY / NOT IMPLEMENTED**，并明确 O-2 implementation may start 只能在后续单独授权任务中开始。
+- 在 `docs/current/GATEO_PLAN.md` 补齐 O-2 状态模型、O-1 result 到 O-2 diagnostic mapping、O-3/O-4/O-5 边界和下一步建议。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md` 的 O-2 当前状态与入口。
+
+### 验证
+
+- `git status --short`：写前 PASS，工作区干净。
+- `git branch --show-current`：PASS，当前分支 `dev`。
+- `git log --oneline -5`：PASS，确认 O-1 freeze commit `44b4b060` 与 O-1 implementation commit `8638dec0` 存在。
+- `Test-Path docs/current/NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md`：写前返回 `False`。
+- `idea-mcp` / `rg` / `Get-Content`：只读核对 current docs、现有 readiness API、DB schema、O-1 Data Quality bridge、前端 `/marketdata` Data Quality / Readiness 区域。
+- `git diff --check` / `git diff --stat` / forbidden diff / boundary wording scan：文档修改后 PASS，禁止范围 diff 为空。
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮只改允许范围内文档，不改 Java / TypeScript / Python / API / migration / CI workflow / runtime 配置。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未执行 O-5 manual public outbound smoke；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider / real permission probe；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEO-O2-DATA-QUALITY-CENTER-IMPLEMENTATION`：仅在单独授权后开始，最小实现 O-2 状态模型 / mapper / freshness / gap / source health 规则与测试；不得真实外联、读取 credential、启用 LIVE、接 AI/DH runtime、实现 RealClient/real provider/real permission probe 或产生 trading authorization。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW
 
 日期：2026-07-02
@@ -11,7 +92,7 @@
 - 复核 O-1 commit：`8638dec0 feat(marketdata): add controlled public outbound guard`。
 - 确认 endpoint authority escape P1 已关闭：scheme、authority、userInfo、fragment、only-query、blank、非法 URI 均 fail-closed；JDK client resolve 后二次校验 scheme / host / port。
 - 确认 default no-egress、disabled fallback、manual profile + feature flag fail-closed、redaction/log summary、bounded timeout/retry/backoff、Data Quality mapper 与 EnvSafety 禁止矩阵仍成立。
-- 将 O-1 final status 同步为 **PASS / ACCEPTED / FROZEN**；GateO stage 仍 **NOT COMPLETED**，O-2/O-3/O-4/O-5/O-FREEZE 仍 **PLANNED / NOT STARTED**。
+- 将 O-1 final status 同步为 **PASS / ACCEPTED / FROZEN**；GateO stage 仍 **NOT COMPLETED**；O-2 后续已完成 planning baseline，O-3/O-4/O-5/O-FREEZE 仍 **PLANNED / NOT STARTED**。
 - 登记 P2 residual：`DataOrigin.FAKE_SERVER` 保留为 O-1 fake-server baseline，不阻塞本次 O-1 freeze；O-5 前需单独评估是否引入 `PUBLIC_OUTBOUND`。
 
 ### 验证
