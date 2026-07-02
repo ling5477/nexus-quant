@@ -1,3 +1,37 @@
+## NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE
+
+日期：2026-07-02。
+
+范围：
+
+- 新增 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md`，记录 NQ 侧 Integration-1 dry-run plan baseline accepted 与 P0 factsource rebase close。
+- 新增 `docs/current/WORK_ORDER.md`，记录当前集成文档线工单、允许范围、禁止范围和下一步。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+
+结果：
+
+```text
+NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE: CLOSED / ACCEPTED / DOCS-ONLY
+Integration-1 dry-run plan baseline: ACCEPTED
+Prerequisite: NQ GateN + DH Stage4 Decision Pipeline MVP CLOSED
+Next: NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED
+Integration-1 implementation: NOT STARTED
+Integration-1 runtime: NOT STARTED
+Runtime integration: NOT STARTED
+Real HTTP: NOT STARTED
+Real provider: NOT STARTED
+DH integrated: NO
+AI / Agent runtime: NOT STARTED
+LangGraph runtime: NOT STARTED
+LIVE: DISABLED
+```
+
+说明：NQ 当前 GateO 主线不被本 P0 回滚或覆盖。GateN 只作为 Integration-1 dry-run rebase input；P1 仍是 plan-only，不是 implementation。
+
+验证：`git diff --check` PASS（仅 LF/CRLF warning）；GateK/GateN residual scan 已分类；`mvn -ntp -f backend/pom.xml test` PASS / BUILD SUCCESS（23 个 reactor module SUCCESS，`nq-app` 86 tests 中 2 skipped）；`mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` PASS / BUILD SUCCESS（17 Integration-0 tests）。
+
+边界：未改 backend / frontend / research / scripts / deploy / `.github`；未新增 API、migration、production code、test code、contracts 或 golden_cases；未真实 HTTP；未真实 DH/NQ runtime；未读取 credential；未启用 AI、LangGraph 或 LIVE。
+
 ## NQ-GATEO-O2-DATA-QUALITY-CENTER-IMPLEMENTATION
 
 日期：2026-07-02。

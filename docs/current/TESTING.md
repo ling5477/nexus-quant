@@ -1,3 +1,18 @@
+## NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE（2026-07-02）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | P0 允许文档改动可见；另有既有 GateO current docs 改动，本 P0 不覆盖或回滚 GateO 主线。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows LF/CRLF 工作区提示。 |
+| `git diff --stat` | PASS | docs-only diff；无 backend / frontend / research / scripts / deploy / `.github` 生产面改动。 |
+| `rg -n "DH-GATEK|dh-gatek|DH GateK|GateK|GateL|GateN|GATEN" AGENTS.md README.md docs/current docs/gates .agents` | PASS / CLASSIFIED | 命中已分类：NQ GateK/GateL/GateN 当前或历史 Gate 事实允许；`docs/gates/**` 为冻结快照；skill 命中为禁止示例；P0 当前文档中的 `DH GateK CLOSED` 只作为禁止前置条件示例出现。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；保留既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning，非阻断。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
+
+Scope：本轮只完成 NQ / DH Integration-1 dry-run P0 factsource rebase close；不新增 API、migration、production code、test code、contracts 或 golden_cases。
+
+Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO；NQ 只记录 dry-run planning fact，不执行 DH 输出。
+
 ## NQ-GATEO-O2-DATA-QUALITY-CENTER-IMPLEMENTATION（2026-07-02）
 
 | Command | Result | Notes |

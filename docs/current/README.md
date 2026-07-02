@@ -12,6 +12,8 @@ NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND = **PASS / PLAN ONLY / NOT I
 
 NQ-GATEO-O2-DATA-QUALITY-CENTER-FREEZE-REVIEW = **PASS / ACCEPTED / FROZEN**。含义：`PASS`（通过）、`ACCEPTED`（已接受）、`FROZEN`（已冻结）。O-2 已冻结为 Data Quality Center baseline，覆盖后端 Data Quality 纯模型、O-1 result mapper、freshness/gap/source health 规则和单元测试；未新增 API / migration / frontend / research / scripts / deploy / CI workflow，未真实外联，未读取 credential，未启用 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe；O-2 未接 API read model 作为 P2 residual 保留到 O-3。
 
+NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE = **CLOSED / ACCEPTED / DOCS-ONLY**。Integration-1 dry-run plan baseline 已接受；当前前置条件固定为 `NQ GateN + DH Stage4 Decision Pipeline MVP CLOSED`。该条件使用 GateN no-real public marketdata / exchange sandbox frozen baseline 作为 NQ 侧 dry-run rebase input，不回滚或覆盖 NQ 当前 GateO O-2 主线。Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED。当前记录见 [NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md](NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md) / [WORK_ORDER.md](WORK_ORDER.md)。下一步只允许 `NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED`，且仍为 plan-only。
+
 NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW = **PASS / ACCEPTED / FROZEN**。含义：`PASS`（通过）、`ACCEPTED`（已接受）、`FROZEN`（已冻结）。O-1 已落地并冻结 manual profile / feature flag、默认 disabled fallback、public REST allowlist、private/signed denylist、endpoint authority escape guard、redaction/log summary、bounded timeout/retry/backoff、fake-server/no-egress tests 与 Data Quality linkage；未执行真实 public outbound smoke，未新增对外 API / migration / frontend / research / CI workflow，未读取 credential；O-5 manual real public smoke 仍 `NOT STARTED`。
 
 NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-PLAN-REVISION = **REVISION COMPLETED / READY FOR REVIEW / NOT IMPLEMENTED**。该条为 O-1 implementation 前历史 plan revision baseline，已由 O-1 implementation 消费；不再代表当前 O-1 未实现。
@@ -32,6 +34,8 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 
 ## 当前控制入口
 
+- NQ-DH Integration-1 dry-run：[NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md](NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md)
+- 当前工单：[WORK_ORDER.md](WORK_ORDER.md)
 - 当前状态：[STATUS.md](STATUS.md)
 - 路线图：[ROADMAP.md](ROADMAP.md)
 - 测试：[TESTING.md](TESTING.md)

@@ -38,6 +38,7 @@ GateP：A 股适配
 
 ## 当前阶段
 
+- NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE = **CLOSED / ACCEPTED / DOCS-ONLY**。Integration-1 dry-run plan baseline 已接受；前置条件固定为 `NQ GateN + DH Stage4 Decision Pipeline MVP CLOSED`；下一集成文档任务为 `NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED`。P1 仍是 plan，不是 implementation；Integration-1 implementation / runtime / real HTTP / real provider / LIVE 均保持 NOT STARTED / DISABLED。
 - DOC-CLEAN completed。
 - BASELINE-FIX completed。
 - GateH completed。
