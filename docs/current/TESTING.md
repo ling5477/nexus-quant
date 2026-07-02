@@ -1,3 +1,22 @@
+## NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN（2026-07-02）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 仅允许文档变更；新增 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md`，未见 forbidden code area diff。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git log --oneline -5` | PASS | HEAD 基线包含 P0 factsource rebase commit `22c343cd docs(nq-dh): isolate Integration-1 P0 factsource rebase`。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 仅 README / docs/current 文档；新增 P1 plan 文件在 `git status --short` 中可见，staged stat 会在提交前复核。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| Integration-1 boundary `rg` | PASS / REVIEWED | 命中均为 planning-only、forbidden、negative、risk checklist 或历史状态语境；未发现 runtime / DH integrated / LIVE / AI / RealClient / real provider 正向启用。 |
+| credential material scan | PASS / REVIEWED | 未新增真实 credential material；计划文档只出现禁止字段名、mock signer、脱敏占位和 no-log 规则。 |
+
+Scope：本轮只完成 Integration-1 contract dry-run planning；新增 P1 plan 并同步 current/root 文档状态，不新增 API、migration、production code、test code、fixture 文件、client、provider、dispatcher 或真实 HTTP。
+
+What was not run：未运行 Maven、frontend build / Playwright、Python pytest / mypy / ruff、真实 NQ/DH runtime 或真实联调；原因是本轮 docs-only / planning-only，未修改代码、测试、CI 或运行时配置。
+
+Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只规划 dry-run contract validation / security validation / dry-run response，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
+
 ## NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE（2026-07-02）
 
 | Command | Result | Notes |

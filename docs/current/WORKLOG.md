@@ -1,3 +1,38 @@
+## NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN
+
+日期：2026-07-02。
+
+范围：
+
+- 新增 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md`，规划 Integration-1 contract dry-run 的定位、允许/禁止范围、header/auth/replay、dry-run schema、错误码、audit、future batch 和测试前置。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/WORK_ORDER.md` 和 P0 factsource baseline `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md`。
+- 本轮是 planning-only；未新增 API、migration、production code、test code、fixture 文件、client、provider、dispatcher 或真实 HTTP。
+
+结果：
+
+```text
+NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED
+P1-A contract schema / fixture plan review: NOT STARTED
+Integration-1 implementation: NOT STARTED
+Integration-1 runtime: NOT STARTED
+Runtime integration: NOT STARTED
+DH integrated: NO / NOT_INTEGRATED
+LIVE: DISABLED
+AI / LangGraph runtime: NOT STARTED
+RealClient / real provider: NOT IMPLEMENTED
+```
+
+规划摘要：
+
+- Dry-run 只验证消息、canonical `X-NQ-DH-*` header、tenant、requestId、traceId、timestamp、nonce、HMAC、source allowlist、payload size、错误码和 audit 语义。
+- NQ 只做 contract validation / security validation / dry-run response；NQ 是交易事实源，DH 不是交易执行方。
+- DH 侧仅允许 `StrategyCandidate`、`DecisionAdvice`、`FeedbackDryRunRequest`、`RiskOpinion`、`ContractTestRequest`、dry-run fixture、mock outbound payload 和 audit-friendly trace context。
+- 所有疑似 order、risk mutation、ledger mutation、Paper Run mutation、credential access、provider path、LIVE 或 AI / LangGraph runtime 都必须 fail-closed。
+
+边界：未改 backend / frontend / research / scripts / deploy / `.github`；未新增 API、migration、production code、test code、contracts 或 golden_cases；未真实 HTTP；未真实 DH/NQ runtime；未读取 credential；未启用 AI、LangGraph 或 LIVE；未混入 GateO O-3 / O-4 / O-5 内容。
+
+下一步：只能进入独立授权的 `NQ-DH-I1-P1-A-CONTRACT-SCHEMA-FIXTURE-PLAN-REVIEW` 或等价 contract fixture planning/review；不得直接进入 runtime implementation。
+
 ## NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE
 
 日期：2026-07-02。

@@ -4,7 +4,7 @@
 > 仓库视角：NexusQuant（NQ）
 > 日期：2026-07-02
 > 状态：`PLAN BASELINE ACCEPTED / I1-P0 FACTSOURCE REBASE CLOSED`
-> 下一步：`NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED`
+> 下一步：`NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / COMPLETED / PLAN ONLY / NOT IMPLEMENTED`
 
 ## 1. P0 事实源结论
 
@@ -48,6 +48,7 @@ NQ-DH 集成任务可以引用 NQ GateN rebase，但不得把 DH 自身阶段写
 Plan baseline accepted: YES.
 P0 factsource rebase closed: YES.
 P1 contract dry-run plan allowed: YES, but plan-only.
+P1 contract dry-run plan completed: YES, plan-only.
 Implementation allowed: NO.
 Runtime allowed: NO.
 Real HTTP allowed: NO.
@@ -106,8 +107,10 @@ ALLOW_LIVE: NO
 ## 6. 下一步
 
 ```text
-NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED
+NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / COMPLETED / PLAN ONLY / NOT IMPLEMENTED
 ```
+
+P1 contract dry-run plan 见 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md`。该计划只冻结 dry-run contract、header/auth/replay、schema、错误码、audit、batch 和测试前置；不授权 implementation、runtime、real HTTP、provider、LIVE 或 AI / LangGraph。
 
 如果后续发现 current factsource 又把 DH Stage4 写成 DH GateK、把 dry-run 写成 runtime、或把 implementation/runtime/real HTTP/provider/LIVE 写成 started，则必须先回到：
 

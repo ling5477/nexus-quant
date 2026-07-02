@@ -1,12 +1,12 @@
 # NexusQuant 当前工单
 
 > NQ 当前主线：GateO current work line remains separate and is not overwritten by this P0 factsource rebase
-> NQ-DH 集成文档线：NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE / CLOSED / ACCEPTED
-> 下一集成文档任务：NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED
+> NQ-DH 集成文档线：NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / COMPLETED / PLAN ONLY / NOT IMPLEMENTED
+> 下一集成文档任务：NQ-DH-I1-P1-A-CONTRACT-SCHEMA-FIXTURE-PLAN-REVIEW / NOT STARTED
 
 ## 1. 当前工单结论
 
-`NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE` 已完成 docs-only / factsource-only 收口。本工单记录 NQ 侧 Integration-1 dry-run 文档线，不覆盖 GateO 当前主线，不启动 Integration-1 implementation 或 runtime。
+`NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN` 已完成 planning-only 收口。本工单记录 NQ 侧 Integration-1 contract dry-run 规划线，不覆盖 GateO 当前主线，不启动 Integration-1 implementation 或 runtime。
 
 当前 Integration-1 dry-run 前置条件固定为：
 
@@ -27,7 +27,7 @@ NQ Integration-1 rebase input: GateN no-real public marketdata / exchange sandbo
 DH prerequisite: DH Stage4 Decision Pipeline MVP CLOSED / ACCEPTED.
 Integration-1 dry-run plan baseline: ACCEPTED.
 I1-P0 factsource rebase: CLOSED / ACCEPTED.
-I1-P1 contract dry-run plan: NOT STARTED.
+I1-P1 contract dry-run plan: COMPLETED / PLAN ONLY / NOT IMPLEMENTED.
 Integration-1 implementation: NOT STARTED.
 Integration-1 runtime: NOT STARTED.
 Runtime integration: NOT STARTED.
@@ -48,10 +48,11 @@ docs/current/ROADMAP.md
 docs/current/TESTING.md
 docs/current/WORKLOG.md
 docs/current/WORK_ORDER.md
+docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md
 docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md
 ```
 
-P1 如启动，仍只能是 plan-only / contract-dryrun-plan；必须单独授权，并继续保持 no runtime、no real HTTP、no provider、no LIVE。
+后续如启动 P1-A，仍只能是 contract schema / fixture plan review；必须单独授权，并继续保持 no runtime、no real HTTP、no provider、no LIVE。
 
 ## 4. 禁止范围
 
@@ -77,7 +78,9 @@ golden_cases/**
 
 ```text
 ALLOW_I1_P0_CLOSE: YES
-ALLOW_I1_P1_CONTRACT_PLAN: YES
+ALLOW_I1_P1_CONTRACT_PLAN: YES / COMPLETED / PLAN ONLY
+ALLOW_I1_P1_A_CONTRACT_SCHEMA_FIXTURE_PLAN_REVIEW: YES
+ALLOW_P1_IMPLEMENTATION_FROM_THIS_TASK: NO
 ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
 ALLOW_INTEGRATION_1_RUNTIME: NO
 ALLOW_REAL_HTTP: NO
@@ -90,7 +93,7 @@ ALLOW_LIVE: NO
 ## 6. 下一步
 
 ```text
-NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN / NOT STARTED
+NQ-DH-I1-P1-A-CONTRACT-SCHEMA-FIXTURE-PLAN-REVIEW / NOT STARTED
 ```
 
-P1 只能规划 dry-run request / response 合同、禁止字段、安全 header、no-outbound/no-live-trade 约束和 mock-only validation；不得实现 runtime。
+下一步只能 review / refine dry-run schema、fixture catalog、forbidden field list、mock-only validation 和 no-side-effect 测试计划；不得直接实现 runtime。implementation 前必须先完成独立 implementation review，确认 no runtime、no provider、no LIVE、no credential、no order / risk / ledger / Paper Run mutation。
