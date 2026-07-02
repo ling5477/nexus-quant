@@ -1,3 +1,18 @@
+## NQ-GATEO-O2-DATA-QUALITY-CENTER-IMPLEMENTATION（2026-07-02）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=*DataQuality*,*Freshness*,*Gap*,PublicMarketData*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | `PASS / BUILD SUCCESS` | O-2 Data Quality + O-1 PublicMarketData 窄口回归；`nq-adapter-api` 33 tests，`nq-app` 4 tests，0 failures / 0 errors / 0 skipped。 |
+| `mvn -f backend/pom.xml test` | `PASS / BUILD SUCCESS` | 后端 23 个 reactor module 全量回归全部 `SUCCESS`；保留既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning，非阻断；`nq-app` 86 tests 中 2 skipped 为既有跳过项。 |
+
+Scope：新增 `backend/nq-adapter-api` Data Quality 纯模型、O-1 result mapper、freshness/gap/source health 规则和单元测试。
+
+Environment：Windows / PowerShell，本地 Maven；未执行真实 public outbound smoke，未访问 OKX / Binance / Bybit / Gate / Coinbase / Kraken。
+
+What was not run：未运行 frontend build / Playwright / Python pytest / mypy / ruff，原因是本轮未修改 frontend 或 research/Python。
+
+Boundary：未新增 API / migration / frontend / research / scripts / deploy / `.github/workflows/**`；未读取 credential；未启用 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW（2026-07-02）
 
 结论：**PASS / ACCEPTED / FROZEN**。含义：`PASS`（通过）、`ACCEPTED`（已接受）、`FROZEN`（已冻结）。本轮只做 O-1 controlled public outbound guard freeze review 和文档状态同步；不改后端代码，不执行真实 public outbound smoke。

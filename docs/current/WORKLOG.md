@@ -1,3 +1,37 @@
+## NQ-GATEO-O2-DATA-QUALITY-CENTER-IMPLEMENTATION
+
+日期：2026-07-02。
+
+范围：
+
+- 新增 `backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/dataquality/**`。
+- 新增 `backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/dataquality/**`。
+- 同步 `docs/current/GATEO_PLAN.md`、`docs/current/NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/README.md` 与 root `README.md` 的 O-2 状态。
+
+结果：
+
+- O-2 implementation 状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
+- 新增 `DataQualitySummary`、`DataQualitySourceHealthMapper`、`DataQualityFreshnessRule`、`DataQualityGapRule`。
+- 覆盖 success、high latency、429、timeout、5xx、malformed response、disabled、fallback、stale、gap、freshness 1m/5m/1h/1d、no data、complete candles、no trading authorization、no credential/no real HTTP/no LIVE/AI/DH runtime 依赖。
+
+Validation：
+
+- `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=*DataQuality*,*Freshness*,*Gap*,PublicMarketData*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：`PASS / BUILD SUCCESS`。
+- `mvn -f backend/pom.xml test`：`PASS / BUILD SUCCESS`。
+
+Boundary：
+
+- 未新增 API、migration、frontend、research、scripts、deploy 或 CI workflow。
+- 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken public outbound smoke。
+- 未读取 credential；未启用 LIVE / AI / DH runtime。
+- 未实现 RealClient、real provider、real permission probe、signed request、private WebSocket 或 private trading endpoint。
+- GateO stage 仍 `NOT COMPLETED`；O-3/O-4/O-5/O-FREEZE 仍 `PLANNED / NOT STARTED`。
+- public marketdata readiness 不等于 trading authorization。
+
+Next step：
+
+执行 `NQ-GATEO-O2-DATA-QUALITY-CENTER-IMPLEMENTATION-REVIEW`；review 前不直接提交。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW
 
 日期：2026-07-02
