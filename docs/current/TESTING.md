@@ -6955,6 +6955,31 @@ target conflicts = 0
 
 ---
 
+## NQ-GATEO-O2-DATA-QUALITY-CENTER-FREEZE-REVIEW（2026-07-02）
+
+结论：**PASS / ACCEPTED / FROZEN**。本轮只冻结已提交的 O-2 Data Quality Center baseline，不新增功能，不改后端代码，不新增 API，不新增 migration，不执行真实 public outbound smoke。
+
+| Command | Result | Scope |
+| --- | --- | --- |
+| `git status --short` | **PASS / EMPTY** | freeze review 写前工作区干净。 |
+| `git log --oneline -5` | **PASS / REVIEWED** | 最近提交包含 `4d659d72 feat(marketdata): add data quality center baseline`。 |
+| `git diff --check` | **PASS / EMPTY** | 写前无 whitespace error。 |
+| `git diff --stat` | **PASS / EMPTY** | 写前无 tracked diff。 |
+| `git show --name-status --format=fuller 4d659d72` | **PASS / REVIEWED** | O-2 commit 只新增 dataquality 模型/规则/测试并同步允许文档；未显示 frontend / research / scripts / deploy / `.github` 或 migration 变更。 |
+| `rg -n "@(RestController\|Controller\|RequestMapping\|GetMapping\|PostMapping\|PutMapping\|DeleteMapping)\|/api/\|HttpClient\|Jdbc\|Repository\|Flyway\|migration" backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/dataquality backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/dataquality` | **PASS / NO MATCH** | O-2 dataquality 包未新增 HTTP API、HTTP client、JDBC/Repository 或 migration 入口。 |
+| `git diff --name-only 4d659d72^ 4d659d72 -- frontend research scripts deploy .github` | **PASS / EMPTY** | O-2 commit 未触碰禁止目录。 |
+| `git diff --name-only 4d659d72^ 4d659d72 -- 'backend/**/db/migration'` | **PASS / EMPTY** | O-2 commit 未新增或修改 migration。 |
+| `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=*DataQuality*,*Freshness*,*Gap*,PublicMarketData*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **PASS / BUILD SUCCESS** | O-2 Data Quality + O-1 PublicMarketData 窄口回归；`nq-adapter-api` 33 tests，`nq-app` 4 tests，0 failures / 0 errors / 0 skipped。 |
+| `mvn -f backend/pom.xml test` | **PASS / BUILD SUCCESS** | backend 23 个 reactor module 全量回归全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped 为既有跳过项。 |
+
+Known warnings：保留既有 SLF4J no-provider warning、Mockito dynamic agent warning、unchecked / deprecation warning，非本轮阻断。
+
+What was not run：未运行 npm build、Playwright、pytest、mypy、ruff；原因是本轮只做 O-2 freeze review 与允许范围内文档同步，不改 frontend / research / Python。未执行 O-5 manual real public smoke，未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP，未读取 credential material。
+
+Blocking status：P0=0，P1=0；P2=1，O-2 未接 API read model，保留到 O-3 MarketData Runtime Readiness API plan/review。
+
+---
+
 ## NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION（2026-07-01）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只实现 GateN-4 deterministic marketdata sandbox fixture smoke：新增 test resources 与 test-only JUnit smoke，覆盖 public marketdata shape、readiness mapping、fixture hygiene、no-egress route fail-closed、fake-server unavailable fallback blocked 和 private/trading boundary。未改 production adapter / API / migration / CI / frontend；未实现真实 HTTP、WebSocket、RealClient、real provider、private TradingAdapter 或 permission probe real execution。

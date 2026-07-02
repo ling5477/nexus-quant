@@ -11989,3 +11989,43 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 `NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH`：只移动 plan review 批准的 11 个 GateN process docs，创建 `docs/gates/gate-n/README.md` 和必要子目录，改写 current/root/gates 引用，并运行 plan review 指定验证命令。
+
+---
+
+## NQ-GATEO-O2-DATA-QUALITY-CENTER-FREEZE-REVIEW
+
+日期：2026-07-02
+
+### 本轮目标
+
+冻结已提交的 GateO O-2 Data Quality Center baseline。范围只覆盖 O-2 commit、状态模型、O-1 到 O-2 mapping、freshness/gap 规则、JUnit 测试、禁止范围和 current docs 状态同步；不新增功能、不改代码、不新增 API、不新增 migration、不执行真实 public outbound smoke。
+
+### 完成内容
+
+- 确认 O-2 commit 存在：`4d659d72 feat(marketdata): add data quality center baseline`。
+- 审查 `DataQualitySummary`、`DataQualitySourceHealthMapper`、`DataQualityFreshnessRule`、`DataQualityGapRule` 与 3 个 dataquality JUnit 测试。
+- 确认 `DataQualitySummary` 不包含 credential、raw request、raw response、raw headers、full query string 或 trading authorization 字段；测试已用 record component 断言防止 authorization 字段回流。
+- 确认 O-1 result 到 O-2 mapping 覆盖 success、high latency、429、timeout、5xx、malformed response、disabled、fallback、stale data、gap 和 `PUBLIC_OUTBOUND -> PUBLIC_CANDIDATE` 兼容降级。
+- 确认 freshness / gap 规则可测试，并保留 fail-closed 行为。
+- 同步 `NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md`、`GATEO_PLAN.md`、`README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md` 和本 `WORKLOG.md` 的 O-2 freeze 状态。
+
+### 验证
+
+- `git status --short`：写前为空。
+- `git log --oneline -5`：包含 O-2 commit `4d659d72`。
+- `git diff --check`：写前无 whitespace error。
+- `git diff --stat`：写前无 tracked diff。
+- `git show --name-status --format=fuller 4d659d72`：O-2 commit 未显示 frontend / research / scripts / deploy / `.github` 或 migration 变更。
+- dataquality 包 API / DB / migration 关键词扫描：无 Spring MVC API 注解、`/api/`、HTTP client、JDBC / Repository 或 migration 命中。
+- `git diff --name-only 4d659d72^ 4d659d72 -- frontend research scripts deploy .github`：为空。
+- `git diff --name-only 4d659d72^ 4d659d72 -- 'backend/**/db/migration'`：为空。
+- `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=*DataQuality*,*Freshness*,*Gap*,PublicMarketData*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：`BUILD SUCCESS`；`nq-adapter-api` 33 tests，`nq-app` 4 tests。
+- `mvn -f backend/pom.xml test`：`BUILD SUCCESS`；23 个 backend reactor module 全部 `SUCCESS`，`nq-app` 86 tests 中 2 skipped 为既有跳过项。
+
+### 边界
+
+未改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`；未新增 API / migration / 页面 / E2E / CI workflow；未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider / real permission probe；未下单、撤单、转账或提现。public marketdata readiness / quality / diagnostic 不等于 trading authorization。
+
+### 推荐下一步
+
+`NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN-REVIEW`：只做 API contract plan，优先复用现有 `/api/marketdata/readiness`，不得绕过 O-3 直接把 O-2 纯模型接入 read model；O-5 manual public smoke 仍不得提前执行。
