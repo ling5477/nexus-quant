@@ -4,7 +4,7 @@
 
 本轮任务 `NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND` 是 GateO O-0 planning baseline。
 
-当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 最小实现为 `IMPLEMENTED`（已实现）/ `P1 FIXED`（P1 已修复）/ `READY FOR RE-REVIEW`（可重新复核）。GateO stage 仍未 completed，O-2 / O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`（已规划 / 未开始）。
+当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 controlled public outbound guard baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）。GateO stage 仍未 completed，O-2 / O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`（已规划 / 未开始）。
 
 当前上游证据：
 
@@ -87,7 +87,7 @@ GateO 不是 DH runtime 接入阶段。
 | Batch | 名称 | 状态 | 目标 | 明确不做 |
 | --- | --- | --- | --- | --- |
 | O-0 | GateO Plan | `PASS / PLAN ONLY / NOT IMPLEMENTED` | 建立 GateO 目标、非目标、批次、验收和安全边界 | 不改代码、不改 CI、不真实外联 |
-| O-1 | Public MarketData Controlled Outbound Implementation | `IMPLEMENTED / P1 FIXED / READY FOR RE-REVIEW`（已实现 / P1 已修复 / 可重新复核） | 落地 public marketdata outbound 最小抽象、manual profile / feature flag、allowlist/denylist、disabled fallback、redaction/log summary、bounded timeout/retry、endpoint authority escape guard 与 Data Quality linkage | 不进默认 CI、不执行真实 public smoke、不接真实 provider / RealClient / permission probe / LIVE |
+| O-1 | Public MarketData Controlled Outbound Implementation | `PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结） | 冻结 public marketdata outbound 最小抽象、manual profile / feature flag、allowlist/denylist、disabled fallback、redaction/log summary、bounded timeout/retry、endpoint authority escape guard 与 Data Quality linkage | 不进默认 CI、不执行真实 public smoke、不接真实 provider / RealClient / permission probe / LIVE |
 | O-2 | Data Quality Center Plan | `PLANNED / NOT STARTED` | 规划 source health / freshness / gap / latency / error rate 数据质量中心 | 不新增表、不新增 API、不改 UI |
 | O-3 | MarketData Runtime Readiness API Plan | `PLANNED / NOT STARTED` | 基于现有 readiness/source/quality 模型规划 API 收口 | 不重复造接口、不实现接口 |
 | O-4 | MarketData Quality UI Plan | `PLANNED / NOT STARTED` | 规划数据质量 UI 与图表选型 | 不新增页面、不做 mock AI/DH/LIVE |
@@ -96,7 +96,7 @@ GateO 不是 DH runtime 接入阶段。
 
 ## 6. O-1 Public MarketData Controlled Outbound
 
-O-1 当前已完成最小 implementation，但只代表受控 public marketdata outbound guard 与 fake-server/no-egress 测试闭环已落地；不代表 GateO completed，不代表 O-5 manual real public smoke 已执行，也不代表真实 provider、RealClient、real permission probe、LIVE 或 trading authorization 已启动。
+O-1 当前已完成最小 implementation 并在 freeze review 中被接受为 controlled public outbound guard baseline；该冻结只代表受控 public marketdata outbound guard 与 fake-server/no-egress 测试闭环已冻结，不代表 GateO completed，不代表 O-5 manual real public smoke 已执行，也不代表真实 provider、RealClient、real permission probe、LIVE 或 trading authorization 已启动。
 
 范围：
 
@@ -120,7 +120,7 @@ O-1 必须产出：
 
 O-1 不得产出：
 
-- production HTTP client 实现。
+- 默认 profile / production path HTTP client；O-1 仅允许 manual profile 下受 policy 保护的 JDK client。
 - default CI public outbound。
 - credential lookup。
 - permission probe。
@@ -419,7 +419,7 @@ P3 closure：
 
 任务：`NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-IMPLEMENTATION`。
 
-Implementation status：`IMPLEMENTED`（已实现）/ `P1 FIXED`（P1 已修复）/ `READY FOR RE-REVIEW`（可重新复核）。本状态只覆盖 O-1 最小受控出站边界和 endpoint authority escape P1 修复，不表示 GateO stage completed，也不表示 O-1 已 accepted。
+Implementation status：`IMPLEMENTED`（已实现）/ `P1 FIXED`（P1 已修复）/ `ACCEPTED BY FREEZE REVIEW`（已由冻结复核接受）。本状态只覆盖 O-1 最小受控出站边界和 endpoint authority escape P1 修复，不表示 GateO stage completed，也不表示 O-5 manual real public smoke 已执行。
 
 已实现范围：
 
@@ -459,7 +459,7 @@ Rollback：
 
 任务：`NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-P1-FIX`。
 
-Fix status：`P1 FIXED`（P1 已修复）/ `READY FOR RE-REVIEW`（可重新复核）/ `NOT ACCEPTED`（尚未接受）。本修复只关闭上一轮 implementation review 发现的 endpoint path authority escape：`http://...`、`https://...`、`//host/path`、带 authority / userInfo / fragment、only-query、blank 或非法 URI 均 fail-closed；`/ticker?symbol=BTC-USDT` 与 `ticker?symbol=BTC-USDT` 这类 path-only + query 仍可在 fake-server 测试中解析到配置 base host。
+Fix status：`P1 FIXED`（P1 已修复）/ `ACCEPTED BY FREEZE REVIEW`（已由冻结复核接受）。本修复关闭 implementation review 发现的 endpoint path authority escape：`http://...`、`https://...`、`//host/path`、带 authority / userInfo / fragment、only-query、blank 或非法 URI 均 fail-closed；`/ticker?symbol=BTC-USDT` 与 `ticker?symbol=BTC-USDT` 这类 path-only + query 仍可在 fake-server 测试中解析到配置 base host。
 
 修复要点：
 
@@ -477,7 +477,58 @@ Fix status：`P1 FIXED`（P1 已修复）/ `READY FOR RE-REVIEW`（可重新复�
 
 边界确认：未执行 O-5 manual real public outbound smoke；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未读取或输出 credential material；未新增 API、migration、frontend、research、scripts、deploy 或 CI workflow；未开启 LIVE、AI 或 DH runtime；未实现 RealClient、real provider、real permission probe、signed request、private WebSocket 或 private trading endpoint。
 
-下一步：重新执行 `NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-IMPLEMENTATION-REVIEW`。在 review 通过前不得提交，也不得把 O-1 写成 accepted。
+下一步：该 P1 修复已由 §6.5 O-1 freeze review 消费并接受；后续不得回退 endpoint authority guard，不得把 O-1 freeze 写成 O-5 manual real public smoke 或 trading authorization。
+
+### 6.5 O-1 Controlled Public Outbound Guard Freeze Review（2026-07-02）
+
+任务：`NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW`。
+
+Freeze verdict：`PASS`（通过）/ `ACCEPTED`（已接受）。
+
+Frozen baseline：O-1 controlled public outbound guard baseline。冻结对象仅覆盖已提交 commit `8638dec0 feat(marketdata): add controlled public outbound guard` 中的 controlled public outbound guard、endpoint authority escape P1 修复、fake-server/no-egress 测试与 current docs 状态同步；不新增功能，不执行真实 public outbound smoke。
+
+Accepted evidence：
+
+1. O-1 commit 存在：`8638dec0 feat(marketdata): add controlled public outbound guard`。
+2. freeze review 前 `git status --short` 为空；`git diff --check` 与 `git diff --stat` 为空。
+3. endpoint authority escape P1 已修复：policy 拒绝 scheme、authority、userInfo、fragment、only-query、blank 和非法 URI；JDK client 在 `baseUri.resolve(endpointPath)` 后二次校验 scheme / host / port 不变。
+4. O-1 窄口 Maven 通过：`nq-adapter-api` 19 tests，`nq-app` 14 tests，0 failures / 0 errors / 0 skipped。
+5. 后端全量 Maven 通过：23 个 backend reactor module `SUCCESS`，整体 `BUILD SUCCESS`。
+6. 禁止范围 diff 为空：未改 frontend / research / scripts / deploy / `.github` / migration。
+7. 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken public outbound smoke；O-5 manual real public smoke 仍为 `PLANNED / NOT STARTED`。
+8. 未读取、打印、复制或输出 credential material。
+9. 默认 no-egress 不变；`application.yml` 默认 `nq.public-marketdata.outbound.enabled=false`。
+10. `public-marketdata-manual` profile 与 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED` 仍 fail-closed：profile + flag=true 才装配 JDK client，flag false / 缺失回到 disabled fallback。
+11. EnvSafety 仍禁止 `public-marketdata-manual` 与 LIVE、AI、DH runtime、real provider、RealClient、real exchange 同时启用。
+12. O-2 / O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`。
+13. `DataOrigin.FAKE_SERVER` 记录为 P2 residual：O-1 fake-server baseline 继续使用该语义，不阻塞本次 O-1 freeze；是否引入 `PUBLIC_OUTBOUND` 留到 O-5 前单独审查。
+14. 文档未把 GateO 写成 completed，也未把 public marketdata readiness 写成 trading authorization。
+
+Validation commands：
+
+| Command | Result | Scope |
+| --- | --- | --- |
+| `git status --short` | `PASS`（通过） | freeze review 写前工作区干净。 |
+| `git log --oneline -5` | `PASS`（通过） | HEAD 为 `8638dec0 feat(marketdata): add controlled public outbound guard`。 |
+| `git diff --check` | `PASS`（通过） | 写前无 whitespace error。 |
+| `git diff --stat` | `PASS`（通过） | 写前无 tracked diff。 |
+| `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=PublicMarketDataOutboundPolicyTest,JdkPublicMarketDataOutboundClientTest,PublicMarketDataOutboundConfigurationTest,EnvSafetyValidatorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | `PASS / BUILD SUCCESS`（通过 / 构建通过） | O-1 policy/client/fake-server/config/env safety 窄口测试；`nq-adapter-api` 19 tests，`nq-app` 14 tests。 |
+| `mvn -f backend/pom.xml test` | `PASS / BUILD SUCCESS`（通过 / 构建通过） | 后端 23 个 reactor module 全量回归；保留既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning，非阻塞。 |
+
+Findings：
+
+- P0：0。
+- P1：0。
+- P2：1，`DataOrigin.FAKE_SERVER` 仍作为 O-1 fake-server baseline 语义保留；不阻塞 O-1 freeze，O-5 manual real public smoke 前需单独评估是否引入 `PUBLIC_OUTBOUND`。
+- P3：1，历史测试记录保留 `READY FOR RE-REVIEW / NOT ACCEPTED` 当时状态；该历史语境不再代表当前 O-1 状态，current entry 已同步为 `PASS / ACCEPTED / FROZEN`。
+
+Post-freeze rules：
+
+- 不得删除或弱化 endpoint authority guard、private/signed denylist、redaction、bounded timeout/retry/backoff、disabled fallback、manual profile fail-closed 或 EnvSafety 禁止矩阵。
+- 不得把 O-1 freeze 写成 GateO completed、O-5 executed、real provider ready、RealClient implemented、real permission probe implemented、LIVE enabled、AI started、DH integrated 或 trading authorization。
+- 后续 O-2 / O-3 / O-4 / O-5 必须单独 plan/review；O-5 manual public smoke 必须手动 profile、显式 flag、无 credential、无 private endpoint、默认 CI 不执行。
+
+O-1 final status：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。GateO stage 仍 `NOT COMPLETED`（未完成）。
 
 ## 7. O-2 Data Quality Center Plan
 

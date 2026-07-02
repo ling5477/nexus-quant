@@ -1,6 +1,29 @@
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW（2026-07-02）
+
+结论：**PASS / ACCEPTED / FROZEN**。含义：`PASS`（通过）、`ACCEPTED`（已接受）、`FROZEN`（已冻结）。本轮只做 O-1 controlled public outbound guard freeze review 和文档状态同步；不改后端代码，不执行真实 public outbound smoke。
+
+Testing record：
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | freeze review 写前工作区干净。 |
+| `git log --oneline -5` | PASS | HEAD 为 `8638dec0 feat(marketdata): add controlled public outbound guard`；确认 O-1 commit 存在。 |
+| `git diff --check` | PASS | 写前退出码 0，无 whitespace error。 |
+| `git diff --stat` | PASS | 写前无 tracked diff。 |
+| `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=PublicMarketDataOutboundPolicyTest,JdkPublicMarketDataOutboundClientTest,PublicMarketDataOutboundConfigurationTest,EnvSafetyValidatorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / `BUILD SUCCESS` | O-1 policy/client/fake-server/config/env safety 窄口回归通过；`nq-adapter-api` 19 tests / 0 failures / 0 errors / 0 skipped，`nq-app` 14 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -f backend/pom.xml test` | PASS / `BUILD SUCCESS` | 后端 23 个 reactor module 全量回归全部 `SUCCESS`；保留既有 SLF4J no-provider、Mockito dynamic agent / ByteBuddy、unchecked / deprecation warning，非阻塞。 |
+| forbidden diff：`git diff --name-only -- frontend research scripts deploy .github` / `git diff --name-only -- "backend/**/db/migration"` | PASS / EMPTY | 未触达 frontend / research / scripts / deploy / `.github` / migration。 |
+| O-1 boundary `rg` / code read | PASS / REVIEWED | 复核 endpoint authority guard、manual profile fail-closed、default disabled fallback、EnvSafety LIVE/AI/DH/real provider/RealClient/real exchange 禁止矩阵、redaction 与 `tradingAuthorization=false`。 |
+
+未运行 frontend build / Playwright / Python pytest/mypy/ruff，原因是本轮 freeze review 只同步允许范围内文档，不修改 frontend、research、scripts、deploy、CI workflow 或 Python 工具链。
+
+Boundary：
+
+未执行 O-5 manual real public outbound smoke；未访问真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API endpoint；未读取或输出 credential material；未新增对外 API / migration / frontend / research / scripts / deploy / `.github` 变更；未实现 signed request、private endpoint、private WebSocket、RealClient、real provider 或 real permission probe；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT_INTEGRATED**；public marketdata readiness 不等于 trading authorization。`DataOrigin.FAKE_SERVER` 作为 O-1 fake-server baseline P2 residual 保留，不阻塞本次 freeze。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-P1-FIX（2026-07-02）
 
-结论：**P1 FIXED / READY FOR RE-REVIEW / NOT ACCEPTED**。含义：`P1 FIXED`（P1 已修复）、`READY FOR RE-REVIEW`（可重新复核）、`NOT ACCEPTED`（尚未接受）。本轮只验证 endpoint path authority escape 修复；真实 public outbound smoke 未执行，O-5 仍 `PLANNED / NOT STARTED`。
+历史结论：**P1 FIXED / READY FOR RE-REVIEW / NOT ACCEPTED**。含义：`P1 FIXED`（P1 已修复）、`READY FOR RE-REVIEW`（当时可重新复核）、`NOT ACCEPTED`（当时尚未接受）。该条为 O-1 freeze review 之前的 P1 fix 测试记录，已由上方 `PASS / ACCEPTED / FROZEN` freeze review 消费；真实 public outbound smoke 未执行，O-5 仍 `PLANNED / NOT STARTED`。
 
 Testing record：
 

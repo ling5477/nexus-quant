@@ -1,3 +1,37 @@
+## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-FREEZE-REVIEW
+
+日期：2026-07-02
+
+### 本轮目标
+
+冻结已提交的 GateO O-1 controlled public outbound guard baseline。只做 freeze review、security boundary review、test review 和 documentation review；不新增功能，不改 backend/frontend/research/scripts/deploy/.github/migration，不执行 O-5 manual public outbound smoke，不读取 credential。
+
+### 完成内容
+
+- 复核 O-1 commit：`8638dec0 feat(marketdata): add controlled public outbound guard`。
+- 确认 endpoint authority escape P1 已关闭：scheme、authority、userInfo、fragment、only-query、blank、非法 URI 均 fail-closed；JDK client resolve 后二次校验 scheme / host / port。
+- 确认 default no-egress、disabled fallback、manual profile + feature flag fail-closed、redaction/log summary、bounded timeout/retry/backoff、Data Quality mapper 与 EnvSafety 禁止矩阵仍成立。
+- 将 O-1 final status 同步为 **PASS / ACCEPTED / FROZEN**；GateO stage 仍 **NOT COMPLETED**，O-2/O-3/O-4/O-5/O-FREEZE 仍 **PLANNED / NOT STARTED**。
+- 登记 P2 residual：`DataOrigin.FAKE_SERVER` 保留为 O-1 fake-server baseline，不阻塞本次 O-1 freeze；O-5 前需单独评估是否引入 `PUBLIC_OUTBOUND`。
+
+### 验证
+
+- `git status --short`：PASS；freeze review 写前工作区干净。
+- `git log --oneline -5`：PASS；HEAD 为 `8638dec0 feat(marketdata): add controlled public outbound guard`。
+- `git diff --check`：PASS；写前无 whitespace error。
+- `git diff --stat`：PASS；写前无 tracked diff。
+- `mvn -f backend/pom.xml -pl nq-adapter-api,nq-app -am "-Dtest=PublicMarketDataOutboundPolicyTest,JdkPublicMarketDataOutboundClientTest,PublicMarketDataOutboundConfigurationTest,EnvSafetyValidatorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / `BUILD SUCCESS`；`nq-adapter-api` 19 tests，`nq-app` 14 tests。
+- `mvn -f backend/pom.xml test`：PASS / `BUILD SUCCESS`；23 个 backend reactor module 全部 SUCCESS；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻塞。
+- forbidden diff：frontend / research / scripts / deploy / `.github` / migration diff 均为空。
+
+### 边界
+
+未执行 O-5 manual real public outbound smoke；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken；未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增对外 API；未读取或输出 credential material；未实现 signed request、private endpoint、private WebSocket、RealClient、real provider 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。public marketdata readiness 不等于 trading authorization。
+
+### 推荐下一步
+
+后续只允许单独进入 O-2 / O-3 / O-4 / O-5 / O-FREEZE 的 plan/review；O-5 manual real public smoke 不得提前执行，也不得进入默认 CI。
+
 ## NQ-GATEO-O1-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND-P1-FIX
 
 日期：2026-07-02
