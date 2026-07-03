@@ -1,3 +1,45 @@
+## NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION
+
+日期：2026-07-03。
+
+范围：
+
+- 执行一次已 review 的 `GateOManualPublicOutboundSmokeTest` manual public readonly smoke。
+- 只允许 `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`。
+- 只保存 text-only redacted summary；不保存 raw response body、raw headers、full URL、full query string、credential、signature、cookie 或 raw provider payload。
+- 同步本条 `README.md` / `docs/current` 状态；未改 backend、frontend、research、scripts、deploy、`.github` 或 migration。
+
+结果：
+
+```text
+NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION: COMPLETED / PENDING RESULT REVIEW
+runId: gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7
+SERVER_TIME: httpStatus=200, latencyMs=803, resultStatus=SUCCESS, errorCategory=NONE
+INSTRUMENTS: httpStatus=200, latencyMs=680, resultStatus=SUCCESS, errorCategory=NONE
+TICKER: httpStatus=200, latencyMs=173, resultStatus=SUCCESS, errorCategory=NONE
+OHLCV: httpStatus=200, latencyMs=177, resultStatus=SUCCESS, errorCategory=NONE
+O-5C first smoke result review: NOT STARTED
+O-5D DataOrigin.PUBLIC_OUTBOUND decision: NOT STARTED
+O-5E freeze review: NOT STARTED
+O-FREEZE: NOT STARTED
+GateO stage: NOT COMPLETED
+```
+
+验证：
+
+- `git status --short`、`git branch --show-current`、`git log --oneline -10`：PASS / REVIEWED；写前工作区 clean，分支 `dev`，历史包含 O-5B-R2 review commit 与 O-5B-R1 runner binding commit。
+- `GateOManualPublicOutboundSmokeTest` / O-1 policy / manual profile config 核对：PASS / REVIEWED；runner 仍只允许 public readonly categories，并在 HTTP 前检查 manual flags、LIVE / AI / DH / real provider / credential absence。
+- `mvn -f backend/pom.xml -pl nq-app,nq-adapter-api -am "-Dtest=GateOManualPublicOutboundSmokeTest" "-Dnq.gateo.o5.manualSmoke.required=true" "-Dspring.profiles.active=public-marketdata-manual" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS；`GateOManualPublicOutboundSmokeTest` 1 test / 0 failures / 0 errors / 0 skipped。
+
+边界：
+
+- 未读取 `.env`，未使用 repository secrets，未传 API key / secret / passphrase / token / cookie。
+- 未访问 private endpoint，未执行 signed request，未触发 account / balance / order / cancel / amend / position / wallet / transfer / withdraw / deposit / subaccount / permission probe / API key validation。
+- 未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe。
+- public marketdata readiness 不等于 trading authorization；本轮 smoke success 不自动落地 `DataOrigin.PUBLIC_OUTBOUND`。
+
+Next step：`NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW`。
+
 ## NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW
 
 日期：2026-07-03。
@@ -35,7 +77,7 @@ GateO stage: NOT COMPLETED
 - 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
 - public marketdata readiness 不等于 trading authorization。
 
-Next step：`NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`；只能人工、只读、public marketdata，且必须显式使用 O-5B 允许的 manual gates。
+Next step（已由上方 O-5B execution 消费）：当前下一步为 `NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW`；只能复核本轮脱敏 summary 与边界证据，不得跳到 O-5D / O-5E / O-FREEZE。
 
 ## NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION
 
@@ -80,7 +122,7 @@ GateO stage: NOT COMPLETED
 - 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
 - public marketdata readiness 不等于 trading authorization。
 
-Next step（已由上方 R2 review 消费）：`NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`；当前下一步只允许后续单独 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`，且必须保持人工、公开、只读、no credential。
+Next step（已由上方 R2 review 与 O-5B execution 消费）：当前下一步只允许 `NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW`，且必须保持人工、公开、只读、no credential、no signed request、no private endpoint。
 
 ## NQ-GATEO-O5B-RUNNER-BINDING-PLAN
 
@@ -117,7 +159,7 @@ GateO stage: NOT COMPLETED
 - 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
 - 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
 - public marketdata readiness 不等于 trading authorization。
-- 该 planning-only 轮次的后续 implementation 与 R2 review 已由本文件上方记录消费；当前下一步只允许后续单独 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`，不得在 review/docs sync 任务中执行真实 smoke。
+- 该 planning-only 轮次的后续 implementation、R2 review 与 O-5B execution 已由本文件上方记录消费；当前下一步只允许 `NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW`，不得在 review/docs sync 任务中新增 DataOrigin、API、migration、frontend、CI、LIVE、AI、DH runtime、RealClient 或 real provider。
 
 ## NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN
 
