@@ -1,3 +1,40 @@
+## NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN
+
+日期：2026-07-03。
+
+范围：
+
+- 新增 `docs/current/NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md`。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/GATEO_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、CI、runner 或测试代码；未执行 O-5 manual public outbound smoke。
+
+结果：
+
+```text
+NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED
+O-5 execution: NOT STARTED
+O-FREEZE: NOT STARTED
+GateO stage: NOT COMPLETED
+```
+
+验证：
+
+- `Get-Location` / `git branch --show-current` / `git status --short`：PASS，工作目录 `F:\project\nexus-quant`，分支 `dev`，写前工作区 clean。
+- `git log --oneline -5`：PASS / REVIEWED，HEAD 为 O-4 freeze baseline。
+- O-5 任务附件、current docs、O-1 guard 代码、O-3/O-4 readiness/UI 文档：PASS / REVIEWED。
+- `rg` public/private/credential/readiness boundary scans：PASS / REVIEWED，宽范围命中历史/否定语境，O-5 plan 未新增 private endpoint、credential、signed request、LIVE、permission probe 或 trading authorization 语义。
+- `git diff --check`、`git diff --stat`、forbidden diff checks：PASS；diff 限于允许文档。
+- Backend Maven / frontend build/E2E / Python pytest/mypy/ruff / O-5 smoke：NOT RUN，本轮为 docs-only / planning-only 且禁止执行真实 HTTP。
+
+边界：
+
+- 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
+- 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
+- O-5 plan 只允许后续 O-5A 进入 plan review；不得从 plan 直接跳到 O-5B execution 或 O-FREEZE。
+- public marketdata readiness 不等于 trading authorization。
+
+Next step：`NQ-GATEO-O5A-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN-REVIEW`；只做计划审查，不执行真实 HTTP，不进入默认 CI。
+
 ## NQ-GATEO-O4E-MARKETDATA-QUALITY-UI-FREEZE-REVIEW
 
 日期：2026-07-03。

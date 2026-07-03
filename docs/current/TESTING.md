@@ -1,3 +1,22 @@
+## NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | HEAD 为 `78542b60 docs(gateo): freeze marketdata quality UI baseline`，前序包含 O-4 freeze baseline。 |
+| O-5 attachment read | PASS / REVIEWED | 已读取 `NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN` 任务附件，确认 planning-only、allowed files、forbidden scope 和提交条件。 |
+| current docs / O-1..O-4 evidence read | PASS / REVIEWED | 已复核 `README.md`、`docs/current/README.md`、`GATEO_PLAN.md`、O-3/O-4 plan、`API.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。 |
+| O-1 guard 只读代码核对 | PASS / REVIEWED | 已复核 `PublicMarketDataOutboundPolicy`、`PublicMarketDataEndpointCategory`、`PublicMarketDataOutboundSettings`、`PublicMarketDataOutboundConfiguration`、`application-public-marketdata-manual.yml`；确认 manual profile、feature flag、public allowlist、private/signed denylist、bounded timeout/retry 和 disabled fallback。 |
+| `rg` public/private/credential/readiness boundary scans | PASS / REVIEWED | 宽范围命中历史/否定语境和既有 credential 模块；O-5 plan 未新增 private endpoint、credential、signed request、LIVE、permission probe 或 trading authorization 语义。 |
+| `git diff --check` | PASS | 无 whitespace error。Git 对部分文档提示 LF 将按配置转为 CRLF，非阻断 P3。 |
+| `git diff --stat` / `git diff --name-only` | PASS / DOCS-ONLY | diff 限于 `README.md` 与允许的 `docs/current` 文档，并新增 O-5 plan 文件。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| Backend Maven / frontend build/E2E / Python pytest/mypy/ruff / O-5 manual public outbound smoke | NOT RUN | 本轮为 docs-only / planning-only；明确禁止执行真实 HTTP 和 O-5 smoke，未修改 backend/frontend/research/Python。 |
+
+Scope：本轮完成 `NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN`，新增 planning-only 文档并同步允许的 GateO 状态入口。O-5 plan `COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；O-5 execution `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Boundary：未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未读取 credential；未开启 LIVE/AI/DH runtime；未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O4E-MARKETDATA-QUALITY-UI-FREEZE-REVIEW validation（2026-07-03）
 
 | Command | Result | Notes |
@@ -11,7 +30,7 @@
 | `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS / 6 passed | no-backend / mocked readiness smoke；覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 字段“暂无稳定事实”、forbidden wording、private/credential/trading endpoint 与真实交易所 host 禁止请求。保留既有 Ant Design `Card.bordered` deprecated warning 与 React 19 compatibility warning，非阻断 P3。 |
 | Backend Maven / Python pytest/mypy/ruff / O-5 manual public outbound smoke | NOT RUN | 本轮为 O-4 UI freeze review + docs sync；未修改 backend/research/Python；明确禁止执行 O-5 manual public outbound smoke和真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。 |
 
-Scope：本轮冻结 O-4 MarketData Quality UI baseline。O-4 final status `FROZEN / ACCEPTED`；O-4B `COMPLETED / ACCEPTED`；O-4E `PASS / ACCEPTED`；GateO stage `NOT COMPLETED`；O-5 / O-FREEZE `NOT STARTED`。
+Scope：本轮冻结 O-4 MarketData Quality UI baseline。O-4 final status `FROZEN / ACCEPTED`；O-4B `COMPLETED / ACCEPTED`；O-4E `PASS / ACCEPTED`；GateO stage `NOT COMPLETED`；O-5 execution / O-FREEZE `NOT STARTED`。
 
 Boundary：未读取 credential，未开启 LIVE/AI/DH runtime，未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
 
