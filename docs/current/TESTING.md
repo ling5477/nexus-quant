@@ -17,24 +17,6 @@ Result：`NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / 
 
 Boundary：`/api/marketdata/readiness` 只作为后续扩展对象；本轮不调用 public marketdata outbound，不读取 credential，不做 private trading permission probe，不新增 RealClient / provider，不开启 LIVE / AI / DH runtime；readiness 不等于 trading authorization、LIVE-ready、permission granted 或 real provider ready。
 
-## NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX final validation（2026-07-03）
-
-| Command | Result | Notes |
-| --- | --- | --- |
-| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 限于允许的 `docs/current` 文档；未见 forbidden code area diff。 |
-| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
-| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current` 文档。 |
-| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
-| stale old-next scan | PASS / EMPTY | current docs 已无旧 P4 not-started next 残留；验证记录不保留完整旧 next 字符串，避免后续自匹配。 |
-| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻断。 |
-| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
-
-Scope：本轮只完成 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` docs-only gate-fix 与验证记录同步；不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
-
-Result：`NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX: COMPLETED / DOCS-ONLY / GATE-FIX`；当前 next 为 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED`。
-
-Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只同步 gate-fix、schema gap 分类、下一步 WO 入口和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
-
 ## NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN final validation（2026-07-03）
 
 | Command | Result | Notes |
@@ -49,7 +31,7 @@ Boundary：Integration-1 implementation / runtime / real HTTP / real provider / 
 
 Scope：本轮只完成 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` canonical dry-run implementation readiness planning 与验证记录同步；合并旧 P3 NQ dry-run stub test plan、旧 P4 DH dry-run entry plan、旧 P5 joint mock validation plan；不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
 
-Result：`NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；P3 next 已由 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX / COMPLETED / DOCS-ONLY / GATE-FIX` 消费；当前 next 为 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED`。
+Result：`NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；当前 next 为 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED`。
 
 Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只规划 future stub test readiness、joint mock validation readiness、schema gap gate 和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
 

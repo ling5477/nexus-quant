@@ -40,52 +40,6 @@ Next concrete action: NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW
 
 未实现 API、DTO、Service、Repository、migration、frontend、tests、CI、research、scripts 或 deploy；未调用 public marketdata outbound；未读取 credential；未执行 private trading permission probe；未新增 RealClient / provider；未开启 LIVE / AI / DH runtime；未把 readiness 写成 trading authorization。
 
-## NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX final validation
-
-日期：2026-07-03。
-
-范围：
-
-- 同步 P4 gate-fix 结论：`NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX / COMPLETED / DOCS-ONLY / GATE-FIX`。
-- 最小同步 `docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`、`docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`、`docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`、`docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/WORK_ORDER.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
-- 本轮仍是 docs-only / gate-fix；不修改 backend、frontend、research、scripts、deploy、`.github`、migration、contracts 或 golden_cases。
-
-结果：
-
-```text
-NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX: COMPLETED / DOCS-ONLY / GATE-FIX
-Current next: NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
-ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW_FIX_CLOSE: YES
-ALLOW_I1_P4_RETRY: YES
-ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_WORK_ORDER: YES
-ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
-ALLOW_SCHEMA_CHANGE: NO
-ALLOW_FIXTURE_IMPLEMENTATION: NO
-ALLOW_CONTRACTS_MODIFICATION: NO
-ALLOW_GOLDEN_CASES_MODIFICATION: NO
-ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
-ALLOW_INTEGRATION_1_RUNTIME: NO
-ALLOW_REAL_HTTP: NO
-ALLOW_REAL_PROVIDER: NO
-ALLOW_AGENT_PHASE: NO
-ALLOW_LANGGRAPH_RUNTIME: NO
-ALLOW_LIVE: NO
-```
-
-验证：
-
-- `git status --short`：PASS / CHANGES PRESENT；dirty 限于允许的 `docs/current` 文档。
-- `git diff --check`：PASS；退出码 0，仅 Windows LF/CRLF warning。
-- `git diff --stat`：PASS / DOCS-ONLY。
-- stale old next scan：PASS / EMPTY；`docs/current` 无旧 P4 not-started next 残留。
-- forbidden diff：`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration 均为空。
-- `mvn -ntp -f backend/pom.xml test`：PASS / BUILD SUCCESS；23 个 backend reactor module 全部 SUCCESS；`nq-app` 86 tests 中 2 skipped。
-- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS；Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped。
-
-边界确认：
-
-未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增生产代码、测试代码、fixture JSON、API、Controller、Client、Provider、dispatcher 或真实 HTTP；未读取 credential；未接 RealClient、real provider、AI 或 LangGraph；未启动 Integration-1 runtime；未开启 LIVE；未让 DH 输出进入 order、risk mutation、ledger mutation、Paper Run 或 private trading 路径。
-
 ## NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN final validation
 
 日期：2026-07-03。
@@ -101,8 +55,7 @@ ALLOW_LIVE: NO
 ```text
 NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED
 Canonical plan: docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md
-P3 next consumed by: NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX / COMPLETED / DOCS-ONLY / GATE-FIX
-Current next: NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
+Current next: NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED
 ALLOW_I1_P3_DRYRUN_IMPLEMENTATION_READINESS_PLAN_CLOSE: YES
 ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES
 ALLOW_SCHEMA_CHANGE: NO
@@ -154,8 +107,7 @@ ALLOW_LIVE: NO
 NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED
 Canonical plan: docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md
 P2 next consumed by: NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN / COMPLETED / PLAN ONLY / NOT IMPLEMENTED
-P2 next consumed by: NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN and NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX
-Current next: NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
+Current next: NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED
 ALLOW_I1_P2_CONTRACT_FIXTURES_PLAN_CLOSE: YES
 ALLOW_I1_P3_DRYRUN_IMPLEMENTATION_READINESS_PLAN: YES / COMPLETED / PLAN ONLY
 ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES

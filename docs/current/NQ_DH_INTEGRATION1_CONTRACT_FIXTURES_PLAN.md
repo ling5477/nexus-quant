@@ -34,16 +34,8 @@ NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN / COMPLETED / PLAN ONLY / NOT I
 当前下一步只允许进入：
 
 ```text
-NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
+NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED
 ```
-
-P4 gate-fix 已完成：
-
-```text
-NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX / COMPLETED / DOCS-ONLY / GATE-FIX
-```
-
-P4 fix 只关闭 implementation gate review 的文档阻塞与 schema gap review 阻塞，不修改本文件的 P2 plan-only / not implemented 状态，不创建 fixture JSON，不改 JSON Schema、contracts、golden_cases 或测试代码。
 
 ## 2. P1 当前状态复核
 
@@ -77,26 +69,6 @@ P2 只把 P1 的 schema gap、fixture family、golden case 和 error code 对齐
 | `ForbiddenAction` fixed set | `EXISTS_NOW` | `PLACE_ORDER / CANCEL_ORDER / MUTATE_NQ_STATE / READ_NQ_DB / WRITE_NQ_DB`。 | output fixture 必须完整包含五项。 |
 | `BUY / SELL / quantity / price / leverage` | `PROHIBITED` | 不在 request/output 合同内。 | 命中即 fail-closed；不得作为扩展候选。 |
 | `placeOrder / cancelOrder / paperRunStart / liveRunStart / mutateRisk / mutateLedger` | `PROHIBITED` | 与 DH/NQ 边界冲突。 | 不允许加入 dry-run 合同。 |
-
-### 3.1 P4 gate-fix contract review conclusion（2026-07-03）
-
-本节为 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` 对 P2/P3 gap 的 implementation 前 review 结论；不修改 schema、contracts、golden_cases 或 fixture JSON。后续 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO` 只能引用 `EXISTS_NOW` 与 `DOC_ONLY_ALIAS` 项；`NEEDS_CONTRACT_REVIEW_BEFORE_CODE` 项不得写成 runtime、API、fixture 或 schema 已实现。
-
-| 项 | P4 分类 | 结论 |
-| --- | --- | --- |
-| `dryRun` | `DOC_ONLY_ALIAS` | 当前 DH request/output schema 不含该字段；后续 WO 可把 dry-run 语义写成 `source=NQ_DRYRUN` planning alias 与 no-side-effect assertion，不得要求 wire-level `dryRun`。 |
-| `decisionId` | `DOC_ONLY_ALIAS` | DH internal persistence / replay 存在 decision id 语义，但 output schema 不含该字段；后续 WO 不得把它写成 required response field。 |
-| `confidence` | `DOC_ONLY_ALIAS` | 仅可作为历史/internal/golden 语境；当前 `DecisionOutput` schema 不支持，不能进入 required fixture。 |
-| `traceSummary` | `DOC_ONLY_ALIAS` | 当前 output schema 不支持；后续仅可规划 NQ 本地脱敏 summary 或 future envelope。 |
-| `replayRef` | `DOC_ONLY_ALIAS` | DH replay read model 已存在，但 wire output 无该字段；后续只能作为 future reference planning。 |
-| `auditRef` | `DOC_ONLY_ALIAS` | DH audit records 已存在，但 wire output 无该字段；后续只能作为 future reference planning。 |
-| `X-NQ-DH-Schema-Version` | `DOC_ONLY_ALIAS` | 当前 schema version 在 body，Integration-0 canonical header 不含该 header；后续若加入 header 必须另做 header/body/signature review。 |
-| `NQ_DRYRUN` source allowlist | `NEEDS_CONTRACT_REVIEW_BEFORE_CODE` | `source` 字段存在，但该 value 未作为 runtime allowlist 落地；后续 WO 只能写 mock/test-support planning，不得实现 allowlist code。 |
-| canonical error code names | `NEEDS_CONTRACT_REVIEW_BEFORE_CODE` | `SIGNATURE_INVALID`、`PAYLOAD_TOO_LARGE`、`RATE_LIMITED`、`FORBIDDEN_FIELD`、`TENANT_MISMATCH` 可直接引用；`TIMESTAMP_SKEW`、`NONCE_REPLAY`、`SOURCE_DENIED`、`CONTRACT_INVALID`、`AUTH_FAILED`、`INTERNAL_FAIL_CLOSED` 必须保持 alias review 语义。 |
-| dry-run endpoint shape | `NEEDS_CONTRACT_REVIEW_BEFORE_CODE` | DH dry-run endpoint 仍未实现；后续 WO 不授权 API path、Controller、OpenAPI 或 migration。 |
-| `DecisionAction` whitelist | `EXISTS_NOW` | 当前固定为 `ABSTAIN / OBSERVE / NO_TRADE / LONG_BIAS / SHORT_BIAS`；`LONG_BIAS / SHORT_BIAS` 仅为只读倾向。 |
-| `ForbiddenAction` fixed list | `EXISTS_NOW` | 当前固定为 `PLACE_ORDER / CANCEL_ORDER / MUTATE_NQ_STATE / READ_NQ_DB / WRITE_NQ_DB`，future response shape 必须完整保留。 |
-| `BUY / SELL / quantity / price / leverage / order / account / credential / mutation` | `PROHIBITED` | 继续 fail-closed；不得作为 schema extension、fixture required field 或 mock output。 |
 
 ## 4. NQ -> DH request fixture plan
 

@@ -31,16 +31,8 @@ LIVE: DISABLED.
 下一步只允许进入：
 
 ```text
-NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
+NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED
 ```
-
-P4 gate-fix 已完成：
-
-```text
-NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX / COMPLETED / DOCS-ONLY / GATE-FIX
-```
-
-P4 fix 只关闭 gate review 的文档提交状态阻塞和 schema gap review 阻塞；本 P3 仍保持 `COMPLETED / PLAN ONLY / NOT IMPLEMENTED`，不代表 implementation started。
 
 ## 2. 范围与边界
 
@@ -172,42 +164,7 @@ DH 执行边界：
 | `I1-P3-NQ-DRYRUN-STUB-TEST-PLAN` | 已合并进本 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` 的 NQ stub readiness 章节。 | `MERGED_INTO_NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` |
 | `I1-P4-DH-DRYRUN-ENTRY-PLAN` | 已合并进本 P3 的 DH entry readiness 章节。 | `MERGED_INTO_NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` |
 | `I1-P5-JOINT-MOCK-VALIDATION-PLAN` | 已合并进本 P3 的 joint mock validation readiness 章节。 | `MERGED_INTO_NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` |
-| `I1-P6-IMPLEMENTATION-GATE-REVIEW` | 重新编号为 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` 并已完成 docs-only gate-fix。 | `COMPLETED / DOCS-ONLY / GATE-FIX` |
-
-## 7.1 P4 gate-fix outcome（2026-07-03）
-
-`NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` 已复核双仓 P3 docs 提交状态、当前工作区边界和 P2/P3 schema gap。结论只允许进入下一步 work order，不授权 code implementation、schema change、fixture implementation、contracts/golden_cases modification、runtime、real HTTP、real provider、AI/LangGraph 或 LIVE。
-
-Schema gap 结论：
-
-| 项 | P4 分类 | 后续 WO 处理 |
-| --- | --- | --- |
-| `dryRun / decisionId / confidence / traceSummary / replayRef / auditRef / X-NQ-DH-Schema-Version` | `DOC_ONLY_ALIAS` | 只能作为文档 alias 或 future envelope planning；不得进入 required fixture、schema、API 或 code。 |
-| `NQ_DRYRUN` source allowlist | `NEEDS_CONTRACT_REVIEW_BEFORE_CODE` | `source` 字段存在，但 value 未落地 allowlist；WO 只能规划 mock/test-support，不能改 runtime allowlist。 |
-| canonical error code names | `NEEDS_CONTRACT_REVIEW_BEFORE_CODE` | 既有 code 可引用；gap code 保留 alias，不改 enum/code/schema。 |
-| dry-run endpoint shape | `NEEDS_CONTRACT_REVIEW_BEFORE_CODE` | 不新增 API path、Controller、OpenAPI 或 migration。 |
-| `DecisionAction` whitelist / `ForbiddenAction` fixed list | `EXISTS_NOW` | 后续 mock planning 必须使用当前固定枚举和五项 forbiddenActions。 |
-| executable trading fields and mutations | `PROHIBITED` | 继续 fail-closed；不得写入 output、fixture 或 mock action。 |
-
-Gate-fix readiness：
-
-```text
-ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW_FIX_CLOSE: YES
-ALLOW_I1_P4_RETRY: YES
-ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_WORK_ORDER: YES
-ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
-ALLOW_SCHEMA_CHANGE: NO
-ALLOW_FIXTURE_IMPLEMENTATION: NO
-ALLOW_CONTRACTS_MODIFICATION: NO
-ALLOW_GOLDEN_CASES_MODIFICATION: NO
-ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
-ALLOW_INTEGRATION_1_RUNTIME: NO
-ALLOW_REAL_HTTP: NO
-ALLOW_REAL_PROVIDER: NO
-ALLOW_AGENT_PHASE: NO
-ALLOW_LANGGRAPH_RUNTIME: NO
-ALLOW_LIVE: NO
-```
+| `I1-P6-IMPLEMENTATION-GATE-REVIEW` | 重新编号为下一步 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW`。 | `NOT STARTED` |
 
 ## 8. 验证计划
 
@@ -226,9 +183,7 @@ mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.f
 
 ```text
 ALLOW_I1_P3_DRYRUN_IMPLEMENTATION_READINESS_PLAN_CLOSE: YES
-ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES / COMPLETED AS FIX
-ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_WORK_ORDER: YES
-ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
+ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES
 ALLOW_SCHEMA_CHANGE: NO
 ALLOW_FIXTURE_IMPLEMENTATION: NO
 ALLOW_CONTRACTS_MODIFICATION: NO
