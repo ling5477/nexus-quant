@@ -135,7 +135,7 @@ ALLOW_LANGGRAPH_RUNTIME: NO
 ALLOW_LIVE: NO
 ```
 
-NQ 下一步只消费 DH M1 work order 结果；NQ M2 仍未开始，且必须等待 M1 review 关闭后另起 M2 工单。
+NQ 已消费 DH M1 work order 结果，并已完成 M2 stub recorder work order planning。当前下一步只允许 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY`；不得直接进入 implementation。
 
 ## 9. 禁止项确认
 
@@ -164,7 +164,7 @@ NQ dev 只做 pathspec boundary check，不能写文件。
 ## 11. 下一步
 
 ```text
-NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO / COMPLETED / WORK_ORDER_ONLY / DH_RESULT_CONSUMED / NOT IMPLEMENTED
+NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / COMPLETED / WORK_ORDER_ONLY / NQ_DRYRUN_STUB_RECORDER_PLANNED / NOT IMPLEMENTED
 ```
 
-M1 已完成 work-order-only planning 并由 NQ worktree 记录只读影响；不允许 NQ backend implementation。后续唯一允许动作是 `NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / NOT STARTED / WORK_ORDER_ONLY_ALLOWED`。
+M1 与 M2 已完成 work-order-only planning 并由 NQ worktree 记录只读影响；不允许 NQ backend implementation。后续唯一允许动作是 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY_ALLOWED`。

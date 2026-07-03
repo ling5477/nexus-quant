@@ -12475,3 +12475,54 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 进入 `NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / NOT STARTED / WORK_ORDER_ONLY`；不得在 NQ dev mainline worktree 修改 Integration-1 文档或代码；不得提前实现 stub recorder、runtime、API、fixture、golden case、真实 HTTP、real provider、AI/LangGraph 或 LIVE。
+
+---
+
+## NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO
+
+日期：2026-07-03
+
+### 本轮目标
+
+在 NQ dry-run worktree 关闭 M2 work order，规划 test-support mock-only stub recorder、in-memory recorder、request builder boundary、no-side-effect test matrix 和 M3 准入判断。本轮为 `WORK_ORDER_ONLY + NQ_DRYRUN_STUB_RECORDER_PLANNING + NO_SIDE_EFFECT_TEST_DESIGN + WORKTREE_ONLY + SECURITY_BOUNDARY + NO_RUNTIME + NO_LIVE`。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_DH_INTEGRATION1_M2_NQ_DRYRUN_STUB_RECORDER_WO.md`。
+- 同步 `docs/current/WORK_ORDER.md`、`STATUS.md`、`ROADMAP.md`、`README.md`、M0/M1 work order 与 dry-run mock implementation placeholder。
+- 明确 M2 只规划 stub recorder，不实现 stub recorder、不新增 runtime、不新增 API、不新增 fixture/golden/contracts/test code。
+- 明确 request builder allowed fields、forbidden fields、recorder allowed fields、no-side-effect test matrix、review gate 和 rollback plan。
+- 明确下一步只允许 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / WORK_ORDER_ONLY`，并且必须继续在 worktree 执行。
+
+### 验证
+
+- NQ dry-run worktree `git status --short` / `git diff --check` / forbidden-scope diff：通过；仅 docs/current 变更；未改 backend/frontend/research/scripts/deploy/.github/migration。
+- `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS；reactor 23/23 SUCCESS；`nq-infra` 1 skip、`nq-app` 2 skips 为既有环境/guard 条件。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；Integration0 17 tests / 0 failures / 0 errors / 0 skipped。
+- NQ dev worktree 仅做 read-only git guard；终检存在非本任务 GateO/current dirty diff，但 `docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 dirty diff，未触发 `WORKSTREAM_MIXED_BLOCKED`。
+- DH 侧同步验证：`mvn -ntp test` 与 `mvn -ntp -Pquality validate` 均 BUILD SUCCESS。
+
+### 边界
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API / Controller / runtime / RealClient / real provider / real HTTP / schema / contracts / golden cases / fixture JSON / test code；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation。
+
+### Readiness
+
+- `ALLOW_M2_WO_CLOSE: YES`
+- `ALLOW_I1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO: YES`
+- `ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO`
+- `ALLOW_SCHEMA_CHANGE: NO`
+- `ALLOW_CONTRACTS_MODIFICATION: NO`
+- `ALLOW_FIXTURE_IMPLEMENTATION: NO`
+- `ALLOW_GOLDEN_CASES_MODIFICATION: NO`
+- `ALLOW_API_CONTROLLER_CHANGE: NO`
+- `ALLOW_REAL_HTTP: NO`
+- `ALLOW_REAL_PROVIDER: NO`
+- `ALLOW_INTEGRATION_1_RUNTIME: NO`
+- `ALLOW_AGENT_PHASE: NO`
+- `ALLOW_LANGGRAPH_RUNTIME: NO`
+- `ALLOW_LIVE: NO`
+
+### 推荐下一步
+
+进入 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY`；不得在 NQ dev mainline worktree 修改 Integration-1 文档或代码；不得提前实现 fixture、contracts、golden_cases、contract tests、runtime、API、真实 HTTP、real provider、AI/LangGraph 或 LIVE。

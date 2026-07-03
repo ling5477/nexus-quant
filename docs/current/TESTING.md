@@ -7237,3 +7237,42 @@ ALLOW_LIVE: NO
 ```
 
 边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；NQ 仍不把 DH output 转换为交易意图。
+
+---
+
+## NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO（2026-07-03）
+
+结论：**PASS / WORK_ORDER_ONLY / NQ_DRYRUN_STUB_RECORDER_PLANNED / NO_RUNTIME**。
+
+本轮只在 `F:\worktrees\nexus-quant-i1-dryrun` 规划 M2 stub recorder work order；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case、contracts 或 test code。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | NQ dry-run worktree 仅显示允许的 `docs/current` 修改与新增 M2 work order 文档，未 stage。 |
+| `git diff --check` | **PASS** | exit 0；仅 Windows LF/CRLF 转换 warning；无 whitespace error。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | **PASS / EMPTY** | 禁止范围无 diff；未改代码、API、migration、CI、前端。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T18:18:14+08:00；`nq-infra` 1 skip、`nq-app` 2 skips 为既有环境/guard 条件。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T18:19:25+08:00。 |
+| NQ dev worktree read-only diff guard | **PASS** | `F:\project\nexus-quant` 只执行 git status/branch/log/diff；终检存在非本任务 GateO/current dirty diff，但 `docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+| DH side validation | **BUILD SUCCESS** | DH `mvn -ntp test` 与 `mvn -ntp -Pquality validate` 均通过；仅 docs/current 同步变更，无代码/契约/golden_cases diff。 |
+
+M2 readiness：
+
+```text
+ALLOW_M2_WO_CLOSE: YES
+ALLOW_I1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO: YES
+ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation；M3 仅允许作为 work-order-only 进入。
