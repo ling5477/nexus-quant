@@ -1,3 +1,45 @@
+## NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN
+
+日期：2026-07-03。
+
+范围：
+
+- 新增 O-3 planning authority：`docs/current/NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md`。
+- 同步当前入口与状态文档：`README.md`、`docs/current/README.md`、`docs/current/GATEO_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 本轮仅做 NQ-only / docs-only / plan-only；不修改 backend、frontend、research、scripts、deploy、`.github`、migration、production code 或 test code。
+
+结果：
+
+```text
+NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED
+O-3B backend implementation: NOT STARTED
+O-4 frontend wiring: NOT STARTED
+O-5 local smoke: NOT STARTED
+O-FREEZE: NOT STARTED
+Next concrete action: NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW
+```
+
+规划结论：
+
+- 现有 `GET /api/marketdata/readiness` 已存在，且当前 `MarketdataReadiness*` implementation 是 DB-only / no-migration MVP；O-3 应优先扩展该 endpoint，而不是新增重复 primary readiness endpoint。
+- O-2 `DataQualitySummary` / `DataQualitySourceHealthMapper` 是后续 O-3 语义输入；本轮只规划 API read model 对齐，不把 mapper 接入现有 API。
+- 候选 endpoint `/api/marketdata/readiness/sources`、`/api/marketdata/readiness/gaps`、`/api/marketdata/readiness/quality/overview` 延后到 O-3A/O-3B 评审后按需拆分。
+- readiness API 必须 fail-closed：`NO_DATA`、`UNKNOWN`、`DISABLED`、`STALE`、`GAP`、`ERROR` 均不得被解释为 ready、LIVE-ready、trading authorized、permission granted 或 real provider ready。
+
+验证：
+
+- `git status --short`：PASS / CHANGES PRESENT；dirty 限于允许的 README 与 `docs/current` 文档。
+- `git branch --show-current`：PASS；当前分支为 `dev`。
+- `git log --oneline -5`：PASS / REVIEWED。
+- `rg` readiness inventory：PASS / REVIEWED；覆盖现有 readiness endpoint、DB-only read model、O-2 data quality mapper 与 forbidden field 语境。
+- `git diff --check`：PASS；退出码 0，仅 Windows LF/CRLF warning。
+- `git diff --stat`：PASS / DOCS-ONLY。
+- forbidden diff：`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration 均为空。
+
+边界确认：
+
+未实现 API、DTO、Service、Repository、migration、frontend、tests、CI、research、scripts 或 deploy；未调用 public marketdata outbound；未读取 credential；未执行 private trading permission probe；未新增 RealClient / provider；未开启 LIVE / AI / DH runtime；未把 readiness 写成 trading authorization。
+
 ## NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX final validation
 
 日期：2026-07-03。

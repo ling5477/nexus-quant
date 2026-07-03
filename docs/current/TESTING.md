@@ -1,3 +1,22 @@
+## NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN final validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | dirty 限于允许的 README 与 `docs/current` 文档；未见 forbidden code area diff。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git log --oneline -5` | PASS / REVIEWED | 基线包含最近 Integration-1 docs closeout commits；本轮未改 Git 历史。 |
+| `rg "MarketdataReadiness\|marketdata/readiness\|DataQualitySummary\|DataQualitySourceHealthMapper\|FreshnessStatus\|GapStatus\|DataOrigin\|sourceHealth\|freshness\|gap\|tradingAuthorized\|permission\|credential\|PUBLIC_OUTBOUND" backend docs/current README.md` | PASS / REVIEWED | 已核对现有 `/api/marketdata/readiness`、`MarketdataReadiness*` DB-only read model、O-2 `DataQualitySummary` / mapper 与禁止字段语境；未作为 O-3 implementation。 |
+| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 README 与 `docs/current` 文档；新增 O-3 plan 由 `git status --short` 标识。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only / plan-only；未修改 production code、test code、API、migration、frontend、research 或 scripts。 |
+
+Scope：本轮只完成 `NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN` planning 与 current fact-source 同步；不实现 API、DTO、Service、Repository、migration、frontend、tests、CI、research、scripts 或 deploy。
+
+Result：`NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED`；O-3B backend implementation / O-4 / O-5 / O-FREEZE 仍为 NOT STARTED；next concrete action 为 `NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW`。
+
+Boundary：`/api/marketdata/readiness` 只作为后续扩展对象；本轮不调用 public marketdata outbound，不读取 credential，不做 private trading permission probe，不新增 RealClient / provider，不开启 LIVE / AI / DH runtime；readiness 不等于 trading authorization、LIVE-ready、permission granted 或 real provider ready。
+
 ## NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX final validation（2026-07-03）
 
 | Command | Result | Notes |

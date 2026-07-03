@@ -4,7 +4,7 @@
 
 本轮任务 `NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND` 是 GateO O-0 planning baseline。
 
-当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 controlled public outbound guard baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-2 Data Quality Center baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）。GateO stage 仍为 `NOT COMPLETED`（未完成），O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`（已规划 / 未开始）。
+当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 controlled public outbound guard baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-2 Data Quality Center baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-3 MarketData Runtime Readiness API plan 已完成为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。GateO stage 仍为 `NOT COMPLETED`（未完成），O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`（已规划 / 未开始）。
 
 当前上游证据：
 
@@ -89,7 +89,7 @@ GateO 不是 DH runtime 接入阶段。
 | O-0 | GateO Plan | `PASS / PLAN ONLY / NOT IMPLEMENTED` | 建立 GateO 目标、非目标、批次、验收和安全边界 | 不改代码、不改 CI、不真实外联 |
 | O-1 | Public MarketData Controlled Outbound Implementation | `PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结） | 冻结 public marketdata outbound 最小抽象、manual profile / feature flag、allowlist/denylist、disabled fallback、redaction/log summary、bounded timeout/retry、endpoint authority escape guard 与 Data Quality linkage | 不进默认 CI、不执行真实 public smoke、不接真实 provider / RealClient / permission probe / LIVE |
 | O-2 | Data Quality Center Implementation | `PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结） | 冻结 source health / freshness / gap / latency / error category / data origin 的后端纯模型、mapper 和单元测试 baseline | 不新增表、不新增 API、不改 UI、不真实外联 |
-| O-3 | MarketData Runtime Readiness API Plan | `PLANNED / NOT STARTED` | 基于现有 readiness/source/quality 模型规划 API 收口 | 不重复造接口、不实现接口 |
+| O-3 | MarketData Runtime Readiness API Plan | `PASS / PLAN ONLY / NOT IMPLEMENTED`（通过 / 仅规划 / 未实现） | 基于现有 readiness/source/quality 模型规划 API 收口；优先扩展现有 `GET /api/marketdata/readiness` read model | 不重复造接口、不实现接口 |
 | O-4 | MarketData Quality UI Plan | `PLANNED / NOT STARTED` | 规划数据质量 UI 与图表选型 | 不新增页面、不做 mock AI/DH/LIVE |
 | O-5 | Manual Public Outbound Smoke Plan | `PLANNED / NOT STARTED` | 规划最后阶段手动 profile 的最小 public outbound smoke | 不进入默认 CI、不读 credential |
 | O-FREEZE | GateO Freeze Criteria | `PLANNED / NOT STARTED` | 明确 GateO 冻结验收 | 不把 planning 写成 implementation |
@@ -500,7 +500,7 @@ Accepted evidence：
 9. 默认 no-egress 不变；`application.yml` 默认 `nq.public-marketdata.outbound.enabled=false`。
 10. `public-marketdata-manual` profile 与 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED` 仍 fail-closed：profile + flag=true 才装配 JDK client，flag false / 缺失回到 disabled fallback。
 11. EnvSafety 仍禁止 `public-marketdata-manual` 与 LIVE、AI、DH runtime、real provider、RealClient、real exchange 同时启用。
-12. O-1 freeze review 当时 O-2 / O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`；当前 O-2 Data Quality Center baseline 已进入 `PASS / ACCEPTED / FROZEN`，O-3/O-4/O-5/O-FREEZE 仍未开始。
+12. O-1 freeze review 当时 O-2 / O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`；当前 O-2 Data Quality Center baseline 已进入 `PASS / ACCEPTED / FROZEN`，O-3 API plan 已进入 `PASS / PLAN ONLY / NOT IMPLEMENTED`，O-4/O-5/O-FREEZE 仍未开始。
 13. `DataOrigin.FAKE_SERVER` 记录为 P2 residual：O-1 fake-server baseline 继续使用该语义，不阻塞本次 O-1 freeze；是否引入 `PUBLIC_OUTBOUND` 留到 O-5 前单独审查。
 14. 文档未把 GateO 写成 completed，也未把 public marketdata readiness 写成 trading authorization。
 
@@ -590,30 +590,48 @@ Findings：
 - P2：1，O-2 未接 API read model，仍保留为 O-3 API plan/review residual。
 - P3：0。
 
-O-2 final status：`PASS / ACCEPTED / FROZEN`。GateO stage 仍 `NOT COMPLETED`；O-3 / O-4 / O-5 / O-FREEZE 仍 `PLANNED / NOT STARTED`；O-5 manual real public smoke 仍 `NOT STARTED`。
+O-2 final status：`PASS / ACCEPTED / FROZEN`。GateO stage 仍 `NOT COMPLETED`；当前 O-3 API plan 已 `PASS / PLAN ONLY / NOT IMPLEMENTED`；O-3B backend implementation、O-4、O-5、O-FREEZE 仍 `PLANNED / NOT STARTED`；O-5 manual real public smoke 仍 `NOT STARTED`。
 
 ## 8. O-3 MarketData Runtime Readiness API Plan
 
-O-3 只规划 API，不实现 API。
+O-3 plan status：`PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。
+
+O-3 只规划 API read model，不实现 API。完整计划见 [NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md](NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md)。
 
 现有事实：
 
 - `GET /api/marketdata/readiness` 已存在，当前基于本地 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` 聚合 readiness summary。
 - `GET /api/marketdata/bars` 已存在，返回本地 historical bars。
 - existing readiness fields 已覆盖 status、freshnessStatus、sourceHealthStatus、sourceHealthReason、qualityStatusSummary、barCount、expectedBarCount、gapCount、unknownQualityCount、lastSuccessAt、lastFailureAt、backendSupportLevel、generatedAt。
+- O-2 `DataQualitySummary` 已覆盖 sourceCode、exchange、symbol、timeframe、dataOrigin、sourceStatus、sourceHealth、freshnessStatus、gapStatus、lastSuccessAt、lastFailureAt、latencyMs、errorCategory、gapCount、degradedReason、disabledReason、traceId 和 requestId。
 
 规划原则：
 
-- 如已有 readiness/source/quality 模型，优先扩展，不重复造接口。
+- 优先扩展现有 `GET /api/marketdata/readiness` read model，不重复造接口。
 - API 只返回 read model，不触发采集、不访问外部交易所、不读取 credential、不授权交易。
 - 新 endpoint 只允许在 plan 中作为 candidate，后续必须单独做 API contract plan review。
+- `dataOrigin` 只允许 `LOCAL_DB`、`FIXTURE`、`FAKE_SERVER`、`PUBLIC_CANDIDATE`、`UNKNOWN`；O-3 不引入 `PUBLIC_OUTBOUND` 作为已落地事实。
+- `sourceStatus` / `sourceHealth` / `freshnessStatus` / `gapStatus` 必须 fail-closed；`NO_DATA`、`UNKNOWN`、`STALE`、`GAP`、`ERROR`、`DISABLED` 均不得解释成 ready。
+- response 不得包含 `tradingAuthorized`、`liveReady`、`privateTradingReady`、`permissionGranted`、`realProviderReady`、`apiKey`、`secret`、`passphrase`、`credentialRef`、`rawRequest`、`rawResponse`、`rawHeaders` 或 `fullQueryString`。
 
 候选接口仅作为 plan：
 
-- `GET /api/marketdata/readiness`
-- `GET /api/marketdata/sources`
-- `GET /api/marketdata/gaps`
-- `GET /api/marketdata/quality/overview`
+- `GET /api/marketdata/readiness`：O-3 主入口，后续优先扩展 existing read model。
+- `GET /api/marketdata/readiness/sources`：后置候选，仅当 O-3A/O-3B 证明需要多 source 列表时进入单独 contract review。
+- `GET /api/marketdata/readiness/gaps`：后置候选，仅当 gap detail 需要分页明细时进入单独 contract review。
+- `GET /api/marketdata/readiness/quality/overview`：后置候选，可作为 O-4 UI 聚合输入，但不得写成当前 API。
+
+O-3 implementation 批次：
+
+| Batch | 名称 | 状态 | 目标 |
+| --- | --- | --- | --- |
+| O-3A | API read model contract + DTO plan review | `NEXT / NOT STARTED` | 冻结字段、enum、兼容策略和测试矩阵。 |
+| O-3B | backend read-only endpoint implementation | `NOT STARTED` | 扩展现有 `/api/marketdata/readiness` read model。 |
+| O-3C | controller/service tests | `NOT STARTED` | 覆盖 no-outbound、no-credential、no-authorization、状态映射回归。 |
+| O-3D | docs/API sync | `NOT STARTED` | 只把已实现的真实 endpoint 写入 API/current docs。 |
+| O-3E | O-3 freeze review | `NOT STARTED` | 冻结 O-3 read-only API baseline。 |
+
+Final decision：O-3B backend implementation 不允许直接开始。下一步只能进入 O-3A API read model contract + DTO plan review；O-5 manual real public smoke 仍不得提前执行。
 
 ## 9. O-4 MarketData Quality UI Plan
 
@@ -695,7 +713,8 @@ O-2 implementation 与 freeze review 均已运行 Maven 窄口与后端全量回
 
 - O-1 controlled public outbound guard：已 `PASS / ACCEPTED / FROZEN`。
 - O-2 Data Quality Center baseline：已 `PASS / ACCEPTED / FROZEN`；O-2 未接 API read model 作为 P2 residual 留给 O-3。
-- O-3 API plan review：审查是否复用现有 `/api/marketdata/readiness`，并确认 candidate endpoint 不被写成当前 API。
+- O-3 API plan：已 `PASS / PLAN ONLY / NOT IMPLEMENTED`，决策为优先扩展现有 `/api/marketdata/readiness`，并确认 candidate endpoint 不被写成当前 API。
+- O-3A API read model contract + DTO plan review：下一步，只冻结字段、enum、兼容策略和测试矩阵，不写代码。
 - O-4 UI plan review：审查 UI copy 是否避免 real-ready / live-ready / trading-authorized。
 - O-5 manual smoke plan review：确认 smoke 不进默认 CI、不读 credential、不访问 private endpoint。
 - O-FREEZE：只在所有前置 planning/review 证据完成后冻结；任何实现或真实外联都必须有单独授权。
@@ -760,7 +779,7 @@ P1：
 
 P2：
 
-- O-2 已冻结为纯模型和规则 baseline，尚未接入 API read model；该项留给 O-3 plan/review 决定。
+- O-2 已冻结为纯模型和规则 baseline，尚未接入 API read model；O-3 plan 已决定优先扩展现有 `/api/marketdata/readiness`，具体字段/enum/兼容策略留给 O-3A contract review 和 O-3B implementation 单独验证。
 - 前端 source/status 文案可能误导。
 - API plan 与现有 marketdata API 重复。
 - 官方文档引用入口未列清。
@@ -775,11 +794,11 @@ P3：
 
 推荐下一步：
 
-1. `NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN-REVIEW`：只做 API contract plan，优先复用现有 readiness。
+1. `NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW`：只做 API read model contract + DTO plan review，优先复用现有 readiness，不写代码。
 2. `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN-REVIEW`：只做 UI 信息架构与 wording 审查。
 3. `NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN-REVIEW`：只做手动 smoke 规则审查，不进默认 CI。
 
-不得跳过 O-3 plan/review 直接把 O-2 纯模型接入 API read model；不得提前执行 O-5 manual public smoke。
+不得跳过 O-3A contract review 直接把 O-2 纯模型接入 API read model；不得提前执行 O-5 manual public smoke。
 
 ## 17. 本轮未做事项
 
