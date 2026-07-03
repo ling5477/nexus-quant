@@ -12594,3 +12594,52 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 进入 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY`；不得在 NQ dev mainline worktree 修改 Integration-1 文档或代码；不得提前实现 fixture、contracts、golden_cases、contract tests、runtime、API、真实 HTTP、real provider、AI/LangGraph 或 LIVE。
+
+---
+
+## NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION
+
+日期：2026-07-03
+
+### 本轮目标
+
+在 NQ dry-run worktree 落地 Integration-1 contract gap test-support guard，验证 future `NQ_DRYRUN` source、safe request builder、summary-only recorder、readonly bias 和 no-real/no-side-effect 边界。本轮为 `CONTROLLED_IMPLEMENTATION + TEST_SUPPORT_ONLY + CONTRACT_GAP_GUARD_IMPLEMENTATION + MOCK_ONLY + NO_RUNTIME + NO_LIVE`。
+
+### 完成内容
+
+- 新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration1/NqDhIntegration1ContractGapGuardTest.java`。
+- 同步 `docs/current/WORK_ORDER.md`、`STATUS.md`、`ROADMAP.md`、`README.md`、`TESTING.md`、`WORKLOG.md`。
+- 验证 future `NQ_DRYRUN` 不进入 production allowlist；NQ production Java source 不含 `NQ_DRYRUN`、`NqDhDryRun` 或 `/api/nq-dh`。
+- 验证 request builder 拒绝 `accountId`、`orderId`、credential/API secret、quantity/price/leverage、BUY/SELL、PLACE_ORDER/CANCEL_ORDER、risk/ledger/Paper/LIVE mutation、real URL 与 HTTP client。
+- 验证 recorder 只保存 readonly summary，不触发 order/risk/ledger/Paper/LIVE/HTTP/credential side effect。
+
+### 验证
+
+- NQ narrow `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration1ContractGapGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；5 tests / 0 failures / 0 errors。
+- NQ `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS；reactor 23/23 SUCCESS。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；Integration0 17 tests / 0 failures / 0 errors / 0 skipped。
+- DH 侧同步验证：新增 `DecisionContractGapGuardTest` 6 tests 通过；DH `mvn -ntp test` 与 `mvn -ntp -Pquality validate` 均 BUILD SUCCESS。
+
+### 边界
+
+未改 backend production code / frontend / research / scripts / deploy / `.github` / migration；未新增 API / Controller / runtime / RealClient / real provider / real HTTP / schema / contracts / golden cases / fixture JSON；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation。
+
+### Readiness
+
+- `ALLOW_IMP0_CLOSE: YES`
+- `ALLOW_I1_IMP1_DH_DRYRUN_TEST_SUPPORT_ENTRY: YES`
+- `ALLOW_I1_RUNTIME: NO`
+- `ALLOW_REAL_HTTP: NO`
+- `ALLOW_REAL_PROVIDER: NO`
+- `ALLOW_SCHEMA_CHANGE: NO`
+- `ALLOW_CONTRACTS_MODIFICATION: NO`
+- `ALLOW_FIXTURE_IMPLEMENTATION: NO`
+- `ALLOW_GOLDEN_CASES_MODIFICATION: NO`
+- `ALLOW_API_CONTROLLER_CHANGE: NO`
+- `ALLOW_AGENT_PHASE: NO`
+- `ALLOW_LANGGRAPH_RUNTIME: NO`
+- `ALLOW_LIVE: NO`
+
+### 推荐下一步
+
+进入 `NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY / NOT STARTED / TEST_SUPPORT_ONLY / MOCK_ONLY`；不得在 NQ dev mainline worktree 修改 Integration-1 文档或代码；不得提前实现 runtime、API、fixture、golden case、真实 HTTP、real provider、AI/LangGraph 或 LIVE。

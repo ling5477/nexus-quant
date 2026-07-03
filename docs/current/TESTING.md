@@ -7299,3 +7299,38 @@ ALLOW_LIVE: NO
 ```
 
 边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation；M3 仅允许作为 work-order-only 进入。
+
+---
+
+## NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION（2026-07-03）
+
+结论：**PASS / IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_REVIEW**。
+
+本轮只在 `F:\worktrees\nexus-quant-i1-dryrun` 新增 Integration-1 contract gap test-support guard；未改 NQ backend production code、frontend、research、scripts、deploy、`.github`、migration、schema、contracts、golden_cases、fixture JSON、API / Controller、runtime、provider、RealClient、真实 HTTP、AI/LangGraph 或 LIVE。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration1ContractGapGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 新增 NQ Integration-1 guard 5 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T20:21:36+08:00。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T20:40:48+08:00；输出显示既有环境/guard 条件 skips：`nq-adapter-binance` 1、`nq-app` 2。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 定向验证 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T20:41:36+08:00。 |
+| DH side narrow / full / quality validation | **BUILD SUCCESS** | DH 新增 contract gap guard 6 tests 通过；DH `mvn -ntp test` 与 `mvn -ntp -Pquality validate` 均通过。 |
+
+IMP0 readiness：
+
+```text
+ALLOW_IMP0_CLOSE: YES
+ALLOW_I1_IMP1_DH_DRYRUN_TEST_SUPPORT_ENTRY: YES
+ALLOW_I1_RUNTIME: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation；下一步仅允许 `NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY / NOT STARTED / TEST_SUPPORT_ONLY / MOCK_ONLY`。
