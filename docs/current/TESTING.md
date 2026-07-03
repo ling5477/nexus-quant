@@ -95,7 +95,7 @@ Boundary：Integration-1 implementation / runtime / real HTTP / real provider / 
 
 Scope：本轮只完成 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` canonical dry-run implementation readiness planning 与验证记录同步；合并旧 P3 NQ dry-run stub test plan、旧 P4 DH dry-run entry plan、旧 P5 joint mock validation plan；不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
 
-Result：`NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；P3 next 已由 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX / COMPLETED / DOCS-ONLY / GATE-FIX` 消费；当前 next 为 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED`。
+Result：`NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；P3 当时 next 已由后续 P4、IMP0、IMP1 消费；当前 next 为 `NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT / NOT STARTED / NQ_WORKTREE_ONLY / MOCK_ONLY`。
 
 Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只规划 future stub test readiness、joint mock validation readiness、schema gap gate 和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
 
@@ -7121,6 +7121,24 @@ target conflicts = 0
 
 ---
 
+## NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY（2026-07-03）
+
+结论：**PASS / DOCS SYNC ONLY IN NQ WORKTREE / TEST_SUPPORT_ONLY / MOCK_ONLY**。
+
+本轮 NQ worktree 只同步 Integration-1 IMP1 状态与 IMP2 下一步；未改 NQ backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API / Controller / client / provider / runtime。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | 仅 `docs/current/README.md`、`ROADMAP.md`、`STATUS.md`、`WORK_ORDER.md`、`TESTING.md`、`WORKLOG.md` 文档变更。 |
+| `git diff --check` | **PASS** | exit 0；仅 Windows LF/CRLF 转换 warning；无 whitespace error。 |
+| `git diff --name-only -- backend/**/src/main frontend research scripts deploy .github "backend/**/db/migration"` | **PASS / EMPTY** | NQ 禁止代码、前端、脚本、部署、CI、migration 范围无 diff。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T23:19:48+08:00；`nq-app` 2 skipped 为既有环境/guard 条件。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T23:20:08+08:00。 |
+
+边界确认：未改 NQ production code、test code、contracts、golden_cases、fixture JSON、API、Controller、migration、client、provider、runtime wiring、real HTTP、AI/LangGraph 或 LIVE；未读取 credential；未触发订单、风控、账本、Paper Run 或真实交易链路。
+
+---
+
 ## NQ-GATEO-O2-DATA-QUALITY-CENTER-FREEZE-REVIEW（2026-07-02）
 
 结论：**PASS / ACCEPTED / FROZEN**。本轮只冻结已提交的 O-2 Data Quality Center baseline，不新增功能，不改后端代码，不新增 API，不新增 migration，不执行真实 public outbound smoke。
@@ -7229,7 +7247,7 @@ Blocking status：P0=0，P1=0；P2=1，O-2 未接 API read model，保留到 O-3
 
 结论：**PASS / WORK_ORDER_ONLY / DH_RESULT_CONSUMED / NO_RUNTIME**。
 
-本轮只在 `F:\worktrees\nexus-quant-i1-dryrun` 同步 M1 work order 结果和 M2 准入判断；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case 或 test code。
+本轮只在 `E:\Project\nexus-quant-i1-dryrun` 同步 M1 work order 结果和 M2 准入判断；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case 或 test code。
 
 | 命令 | 结果 | 说明 |
 | --- | --- | --- |
@@ -7267,7 +7285,7 @@ ALLOW_LIVE: NO
 
 结论：**PASS / WORK_ORDER_ONLY / NQ_DRYRUN_STUB_RECORDER_PLANNED / NO_RUNTIME**。
 
-本轮只在 `F:\worktrees\nexus-quant-i1-dryrun` 规划 M2 stub recorder work order；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case、contracts 或 test code。
+本轮只在 `E:\Project\nexus-quant-i1-dryrun` 规划 M2 stub recorder work order；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case、contracts 或 test code。
 
 | 命令 | 结果 | 说明 |
 | --- | --- | --- |
@@ -7306,7 +7324,7 @@ ALLOW_LIVE: NO
 
 结论：**PASS / IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_REVIEW**。
 
-本轮只在 `F:\worktrees\nexus-quant-i1-dryrun` 新增 Integration-1 contract gap test-support guard；未改 NQ backend production code、frontend、research、scripts、deploy、`.github`、migration、schema、contracts、golden_cases、fixture JSON、API / Controller、runtime、provider、RealClient、真实 HTTP、AI/LangGraph 或 LIVE。
+本轮只在 `E:\Project\nexus-quant-i1-dryrun` 新增 Integration-1 contract gap test-support guard；未改 NQ backend production code、frontend、research、scripts、deploy、`.github`、migration、schema、contracts、golden_cases、fixture JSON、API / Controller、runtime、provider、RealClient、真实 HTTP、AI/LangGraph 或 LIVE。
 
 | 命令 | 结果 | 说明 |
 | --- | --- | --- |

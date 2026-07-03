@@ -261,6 +261,16 @@ NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IM
 Canonical plan: docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md
 P3 next consumed by: NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX / COMPLETED / DOCS-ONLY / GATE-FIX
 Current next: NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
+
+---
+
+## NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY
+
+日期：2026-07-03
+
+### 本轮目标
+
+Current next: NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT / NOT STARTED / NQ_WORKTREE_ONLY / MOCK_ONLY
 ALLOW_I1_P3_DRYRUN_IMPLEMENTATION_READINESS_PLAN_CLOSE: YES
 ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES
 ALLOW_SCHEMA_CHANGE: NO
@@ -287,7 +297,7 @@ ALLOW_LIVE: NO
 - `git status --short`：PASS / CHANGES PRESENT；dirty 限于允许的 `docs/current` 文档。
 - `git diff --check`：PASS；无 whitespace error，仅 Windows LF/CRLF warning。
 - `git diff --stat`：PASS / DOCS-ONLY。
-- stale old next scan：PASS / EMPTY；旧 P3/P4/P5 active next 已合并到 P3 readiness plan，当前 next 统一为 P4 implementation gate review。
+- stale old next scan：PASS / EMPTY；旧 P3/P4/P5 active next 已合并到 P3 readiness plan；P4 后续已由 IMP0 / IMP1 消费，当前 next 统一为 IMP2 no-side-effect stub recorder。
 - forbidden diff：`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration 均为空。
 - `mvn -ntp -f backend/pom.xml test`：PASS / BUILD SUCCESS；23 个 backend reactor module 全部 SUCCESS；`nq-app` 86 tests 中 2 skipped。
 - `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS；Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped。
@@ -314,6 +324,16 @@ Canonical plan: docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md
 P2 next consumed by: NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN / COMPLETED / PLAN ONLY / NOT IMPLEMENTED
 P2 next consumed by: NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN and NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX
 Current next: NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
+
+---
+
+## NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY
+
+日期：2026-07-03
+
+### 本轮目标
+
+Current next consumed later by: NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / COMPLETED, then IMP0 / IMP1
 ALLOW_I1_P2_CONTRACT_FIXTURES_PLAN_CLOSE: YES
 ALLOW_I1_P3_DRYRUN_IMPLEMENTATION_READINESS_PLAN: YES / COMPLETED / PLAN ONLY
 ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES
@@ -12509,7 +12529,7 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - 新增 `docs/current/NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md`。
 - 同步 `docs/current/WORK_ORDER.md`、`STATUS.md`、`ROADMAP.md`、`README.md`、M0 work order 与 dry-run mock implementation placeholder。
 - 明确 NQ 侧只消费 DH M1 规划结果，不实现 stub recorder、不实现 runtime、不新增 API、不新增 fixture/golden/test code。
-- 明确下一步只允许 `NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / WORK_ORDER_ONLY`，并且必须继续在 `F:\worktrees\nexus-quant-i1-dryrun` 执行。
+- 明确下一步只允许 `NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / WORK_ORDER_ONLY`，并且必须继续在 `E:\Project\nexus-quant-i1-dryrun` 执行。
 
 ### 验证
 
@@ -12643,3 +12663,34 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 进入 `NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY / NOT STARTED / TEST_SUPPORT_ONLY / MOCK_ONLY`；不得在 NQ dev mainline worktree 修改 Integration-1 文档或代码；不得提前实现 runtime、API、fixture、golden case、真实 HTTP、real provider、AI/LangGraph 或 LIVE。
+
+---
+
+## NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY
+
+日期：2026-07-03
+
+### 本轮目标
+
+在 NQ Integration worktree 最小同步 DH IMP1 状态，为后续 `NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT` 保持正确边界；本轮 NQ 侧不实现代码。
+
+### 完成内容
+
+- 同步 `docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`WORK_ORDER.md`、`TESTING.md`、`WORKLOG.md`。
+- 记录 DH 侧 IMP1 已完成 test-support dry-run entry harness 与 validation chain 测试支撑。
+- 记录 NQ 下一步只允许在 `E:\Project\nexus-quant-i1-dryrun` / `nq-dh-i1-dryrun` 执行 no-side-effect stub / recorder 支撑。
+
+### 验证
+
+- `git diff --check`：PASS；仅 Windows LF/CRLF 转换 warning。
+- forbidden-scope diff：PASS / EMPTY；`backend/**/src/main`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 无 diff。
+- `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS；reactor 23/23 SUCCESS；`nq-app` 2 skipped 为既有环境/guard 条件。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；Integration0 17 tests / 0 failures / 0 errors / 0 skipped。
+
+### 边界
+
+未改 NQ production code、test code、contracts、golden_cases、fixture JSON、API、Controller、migration、client、provider、runtime wiring、real HTTP、AI/LangGraph 或 LIVE；未读取 credential；未触发订单、风控、账本、Paper Run 或真实交易链路。
+
+### 推荐下一步
+
+`NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT / NOT STARTED / NQ_WORKTREE_ONLY / MOCK_ONLY`。不得提前实现 runtime endpoint、真实 HTTP、real provider、schema/contracts/golden_cases/fixture JSON、OpenAPI、Controller、migration、AI/LangGraph 或 LIVE。
