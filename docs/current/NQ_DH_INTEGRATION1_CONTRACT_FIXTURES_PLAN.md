@@ -25,10 +25,16 @@ Agent / LangGraph runtime: NOT STARTED.
 LIVE: DISABLED.
 ```
 
-下一步只允许进入：
+下一步已由 P3 readiness plan 消费并关闭：
 
 ```text
-NQ-DH-I1-P3-NQ-DRYRUN-STUB-TEST-PLAN / NOT STARTED
+NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN / COMPLETED / PLAN ONLY / NOT IMPLEMENTED
+```
+
+当前下一步只允许进入：
+
+```text
+NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED
 ```
 
 ## 2. P1 当前状态复核
@@ -180,10 +186,10 @@ raw provider response
 
 | Batch | 目标 | 仍然禁止 |
 | --- | --- | --- |
-| `I1-P3-NQ-DRYRUN-STUB-TEST-PLAN` | 规划 NQ 侧 stub / no-outbound / no-order 测试，不写真实 client。 | 不接 DH runtime、不触发 order/risk/ledger/Paper/LIVE。 |
-| `I1-P4-DH-DRYRUN-ENTRY-PLAN` | 规划 DH 侧 dry-run 入口需求，不实现 Controller/API。 | 不新增 API path、Controller、migration。 |
-| `I1-P5-JOINT-MOCK-VALIDATION-PLAN` | 规划联合 mock 验证，不真实 HTTP。 | 不启动 NQ/DH runtime，不真实 HTTP。 |
-| `I1-P6-IMPLEMENTATION-GATE-REVIEW` | 判断 P0-P5 是否足以允许 implementation。 | 即使进入 implementation，也仍禁止 LIVE、real provider、自动下单。 |
+| `I1-P3-NQ-DRYRUN-STUB-TEST-PLAN` | 已合并进 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN`。 | 不接 DH runtime、不触发 order/risk/ledger/Paper/LIVE。 |
+| `I1-P4-DH-DRYRUN-ENTRY-PLAN` | 已合并进 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN`。 | 不新增 API path、Controller、migration。 |
+| `I1-P5-JOINT-MOCK-VALIDATION-PLAN` | 已合并进 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN`。 | 不启动 NQ/DH runtime，不真实 HTTP。 |
+| `I1-P4-IMPLEMENTATION-GATE-REVIEW` | 由旧 `I1-P6-IMPLEMENTATION-GATE-REVIEW` 重新编号；判断 P0-P3 是否足以允许后续 implementation。 | 即使 gate 通过，也仍禁止 LIVE、real provider、自动下单。 |
 
 ## 10. 验证计划
 
@@ -202,7 +208,8 @@ mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.f
 
 ```text
 ALLOW_I1_P2_CONTRACT_FIXTURES_PLAN_CLOSE: YES
-ALLOW_I1_P3_NQ_DRYRUN_STUB_TEST_PLAN: YES
+ALLOW_I1_P3_DRYRUN_IMPLEMENTATION_READINESS_PLAN: YES / COMPLETED / PLAN ONLY
+ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES
 ALLOW_SCHEMA_CHANGE: NO
 ALLOW_FIXTURE_IMPLEMENTATION: NO
 ALLOW_CONTRACTS_MODIFICATION: NO
