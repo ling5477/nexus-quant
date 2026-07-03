@@ -164,7 +164,7 @@ NQ dev 只做 pathspec boundary check，不能写文件。
 ## 11. 下一步
 
 ```text
-NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO / NOT STARTED
+NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO / COMPLETED / WORK_ORDER_ONLY / DH_RESULT_CONSUMED / NOT IMPLEMENTED
 ```
 
-下一步仍只允许工单 / mock contract planning；不允许 NQ backend implementation。
+M1 已完成 work-order-only planning 并由 NQ worktree 记录只读影响；不允许 NQ backend implementation。后续唯一允许动作是 `NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / NOT STARTED / WORK_ORDER_ONLY_ALLOWED`。

@@ -12425,3 +12425,53 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 `NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN-REVIEW`：只做 API contract plan，优先复用现有 `/api/marketdata/readiness`，不得绕过 O-3 直接把 O-2 纯模型接入 read model；O-5 manual public smoke 仍不得提前执行。
+
+---
+
+## NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO
+
+日期：2026-07-03
+
+### 本轮目标
+
+在 NQ dry-run worktree 消费 DH M1 结果，形成 M2 stub recorder work order 的入口条件。本轮为 `WORK_ORDER_ONLY + DH_RESULT_CONSUMED + CONTRACT_VALIDATION_CHAIN + SECURITY_CHAIN_DESIGN + NO_RUNTIME + NO_LIVE`。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md`。
+- 同步 `docs/current/WORK_ORDER.md`、`STATUS.md`、`ROADMAP.md`、`README.md`、M0 work order 与 dry-run mock implementation placeholder。
+- 明确 NQ 侧只消费 DH M1 规划结果，不实现 stub recorder、不实现 runtime、不新增 API、不新增 fixture/golden/test code。
+- 明确下一步只允许 `NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / WORK_ORDER_ONLY`，并且必须继续在 `F:\worktrees\nexus-quant-i1-dryrun` 执行。
+
+### 验证
+
+- NQ dry-run worktree `git status --short` / `git diff --check` / forbidden-scope diff：通过；仅 docs/current 变更；未改 backend/frontend/research/scripts/deploy/.github/migration。
+- `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS；reactor 23/23 SUCCESS；`nq-app` 86 tests 中 2 skips 为既有环境/guard 条件。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；Integration0 17 tests / 0 failures / 0 errors / 0 skipped。
+- NQ dev worktree 仅做 read-only git guard；存在非本任务 mainline dirty 文件，但 `docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 dirty diff，未触发 `WORKSTREAM_MIXED_BLOCKED`。
+- DH 侧同步验证：`mvn -ntp test` 与 `mvn -ntp -Pquality validate` 均 BUILD SUCCESS。
+
+### 边界
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API / Controller / runtime / RealClient / real provider / real HTTP / schema / contracts / golden cases / fixture JSON / test code；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation。
+
+### Readiness
+
+- `ALLOW_M1_WO_CLOSE: YES`
+- `ALLOW_I1_M2_NQ_DRYRUN_STUB_RECORDER_WO: YES`
+- `ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO`
+- `ALLOW_SCHEMA_CHANGE: NO`
+- `ALLOW_CONTRACTS_MODIFICATION: NO`
+- `ALLOW_FIXTURE_IMPLEMENTATION: NO`
+- `ALLOW_GOLDEN_CASES_MODIFICATION: NO`
+- `ALLOW_API_CONTROLLER_CHANGE: NO`
+- `ALLOW_REAL_HTTP: NO`
+- `ALLOW_REAL_PROVIDER: NO`
+- `ALLOW_INTEGRATION_1_RUNTIME: NO`
+- `ALLOW_AGENT_PHASE: NO`
+- `ALLOW_LANGGRAPH_RUNTIME: NO`
+- `ALLOW_LIVE: NO`
+
+### 推荐下一步
+
+进入 `NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / NOT STARTED / WORK_ORDER_ONLY`；不得在 NQ dev mainline worktree 修改 Integration-1 文档或代码；不得提前实现 stub recorder、runtime、API、fixture、golden case、真实 HTTP、real provider、AI/LangGraph 或 LIVE。

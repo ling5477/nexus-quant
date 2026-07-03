@@ -7199,3 +7199,41 @@ Blocking status：P0=0，P1=0；P2=1，O-2 未接 API read model，保留到 O-3
 未要求、未运行真实后端 bars E2E；本轮 smoke 明确 stub auth、account context 与 `/api/marketdata/bars`，不触达真实后端或真实交易所。
 
 边界确认：未改 `MarketdataController` 或后端 bars 查询逻辑；未改 TradingWorkbench；未新增 API；未实现 real exchange adapter / RealClient / real provider；未新增 WebSocket；未做下单联动、买卖点、均线、VWAP 或指标系统；未读取或输出 credential material。
+
+---
+
+## NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO（2026-07-03）
+
+结论：**PASS / WORK_ORDER_ONLY / DH_RESULT_CONSUMED / NO_RUNTIME**。
+
+本轮只在 `F:\worktrees\nexus-quant-i1-dryrun` 同步 M1 work order 结果和 M2 准入判断；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case 或 test code。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | NQ dry-run worktree 仅显示允许的 `docs/current` 修改与新增 M1 work order 文档，未 stage。 |
+| `git diff --check` | **PASS** | exit 0；仅 Windows LF/CRLF 转换 warning；无 whitespace error。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | **PASS / EMPTY** | 禁止范围无 diff；未改代码、API、migration、CI、前端。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T17:45:27+08:00；`nq-app` 86 tests 中 2 skips 为既有环境/guard 条件。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T17:47:23+08:00。 |
+| NQ dev worktree read-only diff guard | **PASS** | `F:\project\nexus-quant` 只执行 git status/branch/log/diff；存在非本任务 mainline dirty 文件，但 `docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+
+M1 readiness：
+
+```text
+ALLOW_M1_WO_CLOSE: YES
+ALLOW_I1_M2_NQ_DRYRUN_STUB_RECORDER_WO: YES
+ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；NQ 仍不把 DH output 转换为交易意图。
