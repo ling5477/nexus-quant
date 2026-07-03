@@ -6,11 +6,13 @@
 
 任务归属：NQ-only。
 
-任务类型：`FRONTEND_UI_PLANNING` / `MARKETDATA_QUALITY_VIEW_PLANNING` / `DATA_SOURCE_STATUS_DESIGN` / `SECURITY_BOUNDARY_REVIEW` / `DOCUMENTATION`。
+任务类型：`FRONTEND_UI_PLANNING` / `MARKETDATA_QUALITY_VIEW_PLANNING` / `DATA_SOURCE_STATUS_DESIGN` / `SECURITY_BOUNDARY_REVIEW` / `FREEZE_REVIEW` / `DOCUMENTATION`。
 
-本轮结论：`PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。
+O-4 final status：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
 
-O-4B implementation：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自查）/ `READY TO COMMIT`（可进入提交前复核）。
+O-4B implementation：`COMPLETED`（已完成）/ `ACCEPTED`（已接受）。
+
+O-4E freeze review：`PASS`（通过）/ `ACCEPTED`（已接受）。
 
 GateO 当前事实：
 
@@ -18,9 +20,10 @@ GateO 当前事实：
 - O-2 Data Quality Center：`PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结）。
 - O-3 MarketData Runtime Readiness API：`FROZEN / ACCEPTED`（已冻结 / 已接受）。
 - O-3 已冻结 `GET /api/marketdata/readiness` read-only API baseline。
-- O-4 MarketData Quality UI plan：`PASS / PLAN ONLY / NOT IMPLEMENTED`（通过 / 仅规划 / 未实现）。
+- O-4 MarketData Quality UI baseline：`FROZEN / ACCEPTED`（已冻结 / 已接受）。
 - O-4A UI contract plan review：`PASS / ACCEPTED`（通过 / 已接受）。
-- O-4B MarketData Quality read-only UI implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自查 / 可进入提交前复核）。
+- O-4B MarketData Quality read-only UI implementation：`COMPLETED / ACCEPTED`（已完成 / 已接受）。
+- O-4E MarketData Quality UI freeze review：`PASS / ACCEPTED`（通过 / 已接受）。
 - O-5 manual public outbound smoke：`NOT STARTED`（未开始）。
 - GateO stage：`NOT COMPLETED`（未完成）。
 - LIVE：`DISABLED`（已禁用）。
@@ -28,7 +31,7 @@ GateO 当前事实：
 - DH runtime：`NOT_INTEGRATED`（未集成）。
 - RealClient / real provider / real permission probe：`NOT_IMPLEMENTED`（未实现）。
 
-本文件最初规划 NQ Console 中 MarketData Quality UI 的信息架构、组件、API 消费、状态展示、测试策略和后续实现批次；本轮 O-4B 已按该计划完成只读 UI implementation 状态同步。O-4B 未改后端、不新增 API、不新增 migration、不执行真实 public outbound。
+本文件最初规划 NQ Console 中 MarketData Quality UI 的信息架构、组件、API 消费、状态展示、测试策略和后续实现批次；本轮 O-4E 已复核并接受 O-4B 只读 UI baseline。O-4B / O-4E 均未改后端、不新增 API、不新增 migration、不执行真实 public outbound。
 
 ## 2. 目标
 
@@ -370,15 +373,16 @@ O-4 planning 轮次为 planning-only，未运行 `npm run build` 或 Playwright�
 | Batch | 名称 | 状态 | 目标 | 成功标准 |
 | --- | --- | --- | --- | --- |
 | O-4A | UI contract plan review | `PASS / ACCEPTED`（通过 / 已接受） | 已复核路由、页面、字段、文案、风险提示和测试矩阵；API.md enum drift 已修正 | P0/P1=0，允许进入 O-4B。 |
-| O-4B | MarketData Quality read-only page/table implementation | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自查 / 可进入提交前复核） | 已在既有 `/marketdata` 复用 Data Quality / Readiness 分区，补齐前端 readiness type、只读 source health table、summary、notice、nullable 中文空态和 mocked no-backend smoke | `npm run build` 与 O-4B mocked no-backend smoke 通过。 |
+| O-4B | MarketData Quality read-only page/table implementation | `COMPLETED / ACCEPTED`（已完成 / 已接受） | 已在既有 `/marketdata` 复用 Data Quality / Readiness 分区，补齐前端 readiness type、只读 source health table、summary、notice、nullable 中文空态和 mocked no-backend smoke | 已由 O-4E freeze review 接受。 |
 | O-4C | 状态 badge / notice / drawer polish | `NOT STARTED`（未开始） | 统一状态 badge、null 展示、风险提示和详情抽屉 | forbidden wording test 通过。 |
 | O-4D | 图表 foundation | `OPTIONAL / NOT STARTED`（可选 / 未开始） | 如果 API 提供趋势事实，再做 latency/error/gap 趋势或 K 线增强 | 不伪造历史趋势，不新增真实外联。 |
-| O-4E | O-4 freeze review | `NOT STARTED`（未开始） | 冻结 O-4 UI baseline | P0/P1=0，验证记录完整。 |
+| O-4E | O-4 freeze review | `PASS / ACCEPTED`（通过 / 已接受） | 冻结 O-4 UI baseline | P0/P1=0，验证记录完整。 |
 
 O-4B implementation 结果：
 
 - O-4A UI contract plan review 已 `PASS / ACCEPTED`。
-- O-4B 已实现 read-only UI：复用 `/marketdata`，补齐 frontend readiness type、状态表、summary、notice、nullable 中文空态和 no-backend smoke。
+- O-4B 已完成并接受 read-only UI：复用 `/marketdata`，补齐 frontend readiness type、状态表、summary、notice、nullable 中文空态和 no-backend smoke。
+- O-4E freeze review 已 `PASS / ACCEPTED`，O-4 final status 为 `FROZEN / ACCEPTED`。
 - O-4B 未新增独立 `/marketdata/quality` route，未改 backend/API/migration，未执行 O-5 public smoke，未触碰 LIVE、AI、DH runtime、RealClient、real provider 或 permission probe。
 - Backend-dependent smoke 本轮未运行，不得写成通过。
 
@@ -389,6 +393,17 @@ O-4B implementation 结果：
 | `npm run build` | `PASS`（通过） | TypeScript + Vite production build；保留既有 Vite chunk > 500 kB warning，非阻断。 |
 | `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | `PASS`（通过），6 passed | no-backend / mocked readiness smoke；覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 中文空态、forbidden wording、private/credential/trading endpoint 和真实交易所 host 禁止请求。 |
 | Backend-dependent smoke | `NOT RUN`（未运行） | 本轮不启动后端，不执行真实 public outbound，不执行 O-5。 |
+
+### 13.2 O-4E freeze review validation（2026-07-03）
+
+| Command | Result | Scope |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -5` | `PASS / REVIEWED`（通过 / 已复核） | 工作区写前 clean，分支 `dev`；HEAD 包含 `e62f1e43 feat(frontend): add marketdata quality readiness view`。 |
+| `git show --stat --oneline e62f1e43` / `git show --name-only --oneline e62f1e43` | `PASS / REVIEWED`（通过 / 已复核） | commit 只触达 README、允许的 `docs/current` 文件、`frontend/src/pages/marketdata/MarketdataPage.tsx`、`frontend/src/types/marketdata.ts` 和指定 E2E；未触达 backend / research / scripts / deploy / `.github` / migration。 |
+| `rg` forbidden wording / endpoint / readiness field scans | `PASS / REVIEWED`（通过 / 已复核） | 宽范围命中历史/否定语境；O-4 相关文件未发现正向 trading authorization、LIVE ready、credential、private endpoint、permission probe 或真实交易所 host 调用语义。 |
+| `npm run build` | `PASS`（通过） | TypeScript + Vite production build 通过；保留既有 Vite chunk > 500 kB warning，非阻断 P3。 |
+| `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | `PASS`（通过），6 passed | 覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 中文空态、forbidden wording、private/credential/trading endpoint 和真实交易所 host 禁止请求。 |
+| `git diff --check` / `git diff --stat` / forbidden diff checks | `PASS`（通过） | 写前 diff 为空；写后仅允许文档 diff，不得触达 backend / frontend / research / scripts / deploy / `.github` / migration。 |
 
 ## 14. 安全边界
 
@@ -467,11 +482,15 @@ git revert <commit>
 
 ## 17. Final decision
 
+O-4 final status：`FROZEN / ACCEPTED`。
+
 O-4 plan 结论：`PASS / PLAN ONLY / NOT IMPLEMENTED`。
 
 O-4A review：`PASS / ACCEPTED`。
 
-O-4B implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`。
+O-4B implementation：`COMPLETED / ACCEPTED`。
+
+O-4E freeze review：`PASS / ACCEPTED`。
 
 O-5 manual public outbound smoke：`NOT STARTED`。
 
@@ -484,7 +503,7 @@ API 消费推荐：只消费 `GET /api/marketdata/readiness`；不消费真实�
 下一步：
 
 ```text
-NQ-GATEO-O4C-MARKETDATA-QUALITY-UI-POLISH-OR-O4E-FREEZE-REVIEW
+NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN
 ```
 
-O-4B 已完成只读 UI，不代表 GateO completed。后续仍不得执行 O-5 manual public outbound smoke，不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading，除非后续任务单独授权并通过边界审查。
+O-4B / O-4E 已完成并冻结只读 UI baseline，不代表 GateO completed。后续进入 O-5 前仍必须单独规划 manual public outbound smoke；不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading，除非后续任务单独授权并通过边界审查。

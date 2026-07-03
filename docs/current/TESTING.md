@@ -1,3 +1,20 @@
+## NQ-GATEO-O4E-MARKETDATA-QUALITY-UI-FREEZE-REVIEW validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | HEAD 为 `e62f1e43 feat(frontend): add marketdata quality readiness view`，包含 O-4B commit。 |
+| `git show --stat --oneline e62f1e43` / `git show --name-only --oneline e62f1e43` | PASS / REVIEWED | O-4B commit 触达 README、允许的 current docs、`frontend/src/pages/marketdata/MarketdataPage.tsx`、`frontend/src/types/marketdata.ts` 和指定 E2E；未触达 backend / research / scripts / deploy / `.github` / migration。 |
+| `git diff --check` / `git diff --stat` / forbidden diff：`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` | PASS | 写前 diff 为空；写后仅同步允许文档，不得触达禁止范围。 |
+| 三组附件要求 `rg` | PASS / REVIEWED | 宽范围命中历史/否定语境；O-4 相关文件确认只消费 `/api/marketdata/readiness`，未新增 `/marketdata/quality` route，未发现正向 trading authorization、LIVE ready、credential/private endpoint、permission probe 或真实交易所 host 调用语义。 |
+| `npm run build` | PASS | 在 `frontend` 目录执行；TypeScript + Vite production build 通过。保留既有 Vite chunk > 500 kB warning，非阻断 P3。 |
+| `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS / 6 passed | no-backend / mocked readiness smoke；覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 字段“暂无稳定事实”、forbidden wording、private/credential/trading endpoint 与真实交易所 host 禁止请求。保留既有 Ant Design `Card.bordered` deprecated warning 与 React 19 compatibility warning，非阻断 P3。 |
+| Backend Maven / Python pytest/mypy/ruff / O-5 manual public outbound smoke | NOT RUN | 本轮为 O-4 UI freeze review + docs sync；未修改 backend/research/Python；明确禁止执行 O-5 manual public outbound smoke和真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。 |
+
+Scope：本轮冻结 O-4 MarketData Quality UI baseline。O-4 final status `FROZEN / ACCEPTED`；O-4B `COMPLETED / ACCEPTED`；O-4E `PASS / ACCEPTED`；GateO stage `NOT COMPLETED`；O-5 / O-FREEZE `NOT STARTED`。
+
+Boundary：未读取 credential，未开启 LIVE/AI/DH runtime，未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION validation（2026-07-03）
 
 | Command | Result | Notes |

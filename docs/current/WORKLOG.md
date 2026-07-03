@@ -1,3 +1,43 @@
+## NQ-GATEO-O4E-MARKETDATA-QUALITY-UI-FREEZE-REVIEW
+
+日期：2026-07-03。
+
+范围：
+
+- 只读复核并冻结已提交的 O-4B MarketData Quality / Readiness UI baseline（commit `e62f1e43 feat(frontend): add marketdata quality readiness view`）。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/GATEO_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/NQ_GATEO_O4_MARKETDATA_QUALITY_UI_PLAN.md`。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API；未执行 O-5 manual public outbound smoke。
+
+结果：
+
+```text
+NQ-GATEO-O4E-MARKETDATA-QUALITY-UI-FREEZE-REVIEW: PASS / ACCEPTED
+O-4 final status: FROZEN / ACCEPTED
+O-4B implementation: COMPLETED / ACCEPTED
+GateO stage: NOT COMPLETED
+O-5 manual public outbound smoke: NOT STARTED
+O-FREEZE: NOT STARTED
+```
+
+验证：
+
+- `git status --short` / `git branch --show-current` / `git log --oneline -5`：PASS / REVIEWED。
+- `git show --stat --oneline e62f1e43` / `git show --name-only --oneline e62f1e43`：PASS / REVIEWED，未触达 backend / research / scripts / deploy / `.github` / migration。
+- `git diff --check`、`git diff --stat`、forbidden diff checks：PASS；写前 diff 为空，写后仅允许文档 diff。
+- 三组附件要求 `rg`：PASS / REVIEWED；宽范围命中历史/否定语境，O-4 相关文件未发现正向 trading authorization、credential/private endpoint、permission probe 或真实交易所 host 调用语义。
+- `npm run build`：PASS；保留既有 Vite chunk > 500 kB warning，非阻断 P3。
+- `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium`：PASS，6 passed；保留既有 Ant Design deprecated / React 19 compatibility warning，非阻断 P3。
+
+边界：
+
+- 只消费 `marketdataApi.getReadiness()` / `GET /api/marketdata/readiness`。
+- 未新增 `/marketdata/quality` route，未新增 API / migration。
+- 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
+- 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
+- 页面明确提示 public marketdata readiness 不等于 trading authorization。
+
+Next step：`NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN`；不得把 O-4 freeze 写成 GateO completed，不得提前执行 O-5 manual public outbound smoke。
+
 ## NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION
 
 日期：2026-07-03。
