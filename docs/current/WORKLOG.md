@@ -1,3 +1,42 @@
+## NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW
+
+日期：2026-07-03。
+
+范围：
+
+- 只读复核已提交的 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/GateOManualPublicOutboundSmokeTest.java`。
+- 只读复核 O-1 publicmarketdata policy、manual profile config、EnvSafety guard、O-5 / O-5B current docs 状态。
+- 同步本条 `README.md` / `docs/current` 状态；未改 backend production code、frontend、research、scripts、deploy、`.github` 或 migration。
+- 未设置 manual enabling property、manual env flag 或 public outbound feature flag；未执行真实 public outbound smoke。
+
+结果：
+
+```text
+NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW: PASS / ACCEPTED
+O-5B-R1 runner binding implementation: IMPLEMENTED / SELF-REVIEWED / COMMITTED
+Manual smoke execution: ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED
+O-5 smoke execution: NOT STARTED
+O-5D DataOrigin.PUBLIC_OUTBOUND decision: NOT STARTED
+O-FREEZE: NOT STARTED
+GateO stage: NOT COMPLETED
+```
+
+验证：
+
+- `git status --short`、`git branch --show-current`、`git log --oneline -5`：PASS / REVIEWED；分支 `dev`，R1 commit `35413109` 为最新提交；最终工作区仅保留本轮允许的 `README.md` / `docs/current` 状态同步 diff。
+- `git show --stat --oneline 35413109`、`git show --name-only --oneline 35413109`：PASS / REVIEWED；scope 为 test-only runner + allowed docs/current/README。
+- `git diff --check`、`git diff --stat`、forbidden diff checks：PASS / REVIEWED；无 whitespace error，`git diff --stat` 仅列出允许文档同步，禁止区域 diff 为空。
+- `mvn -f backend/pom.xml -pl nq-app,nq-adapter-api -am "-Dtest=GateOManualPublicOutboundSmokeTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS；runner skipped before HTTP。
+- `mvn -f backend/pom.xml test`：PASS / BUILD SUCCESS；默认 Maven 未执行真实 public HTTP。
+
+边界：
+
+- 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
+- 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
+- public marketdata readiness 不等于 trading authorization。
+
+Next step：`NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`；只能人工、只读、public marketdata，且必须显式使用 O-5B 允许的 manual gates。
+
 ## NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION
 
 日期：2026-07-03。
@@ -11,8 +50,8 @@
 结果：
 
 ```text
-NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
-O-5B execution: BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED
+NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION: IMPLEMENTED / SELF-REVIEWED / COMMITTED
+O-5B execution: SUPERSEDED BY R2 REVIEW / ALLOWED MANUAL PUBLIC READONLY ONLY / NOT EXECUTED
 O-5 smoke execution: NOT STARTED
 O-5D DataOrigin.PUBLIC_OUTBOUND decision: NOT STARTED
 O-FREEZE: NOT STARTED
@@ -41,7 +80,7 @@ GateO stage: NOT COMPLETED
 - 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
 - public marketdata readiness 不等于 trading authorization。
 
-Next step：`NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`；只做 runner 绑定复核，不执行真实 public outbound smoke。
+Next step（已由上方 R2 review 消费）：`NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`；当前下一步只允许后续单独 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`，且必须保持人工、公开、只读、no credential。
 
 ## NQ-GATEO-O5B-RUNNER-BINDING-PLAN
 
@@ -78,7 +117,7 @@ GateO stage: NOT COMPLETED
 - 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
 - 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
 - public marketdata readiness 不等于 trading authorization。
-- 该 planning-only 轮次的后续 implementation 步骤已由本文件上方 O-5B-R1 implementation 记录消费；当前下一步只允许 `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`，不得执行真实 smoke。
+- 该 planning-only 轮次的后续 implementation 与 R2 review 已由本文件上方记录消费；当前下一步只允许后续单独 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`，不得在 review/docs sync 任务中执行真实 smoke。
 
 ## NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN
 

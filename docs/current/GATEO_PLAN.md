@@ -4,7 +4,7 @@
 
 本轮任务 `NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND` 是 GateO O-0 planning baseline。
 
-当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 controlled public outbound guard baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-2 Data Quality Center baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-3 MarketData Runtime Readiness API plan 已完成为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现），O-3B backend read-only API implementation 已完成并接受为 `COMPLETED`（已完成）/ `ACCEPTED`（已接受），O-3E freeze review 已 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-4 MarketData Quality UI baseline 已冻结为 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），O-4A UI contract plan review 已 `PASS`（通过）/ `ACCEPTED`（已接受），O-4B read-only UI implementation 已 `COMPLETED`（已完成）/ `ACCEPTED`（已接受），O-4E freeze review 已 `PASS`（通过）/ `ACCEPTED`（已接受）；O-5 manual public outbound smoke plan 已完成为 `COMPLETED`（已完成）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现），O-5A review 已 `PASS`（通过）/ `ACCEPTED`（已接受），O-5B runner binding plan 已 `PASS`（通过）/ `ACCEPTED`（已接受），O-5B-R1 runner binding implementation 已 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。GateO stage 仍为 `NOT COMPLETED`（未完成），O-5B execution 为 `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED`，O-5 smoke execution / O-5D DataOrigin.PUBLIC_OUTBOUND decision / O-FREEZE 仍为 `NOT STARTED`（未开始）。
+当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 controlled public outbound guard baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-2 Data Quality Center baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-3 MarketData Runtime Readiness API plan 已完成为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现），O-3B backend read-only API implementation 已完成并接受为 `COMPLETED`（已完成）/ `ACCEPTED`（已接受），O-3E freeze review 已 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-4 MarketData Quality UI baseline 已冻结为 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），O-4A UI contract plan review 已 `PASS`（通过）/ `ACCEPTED`（已接受），O-4B read-only UI implementation 已 `COMPLETED`（已完成）/ `ACCEPTED`（已接受），O-4E freeze review 已 `PASS`（通过）/ `ACCEPTED`（已接受）；O-5 manual public outbound smoke plan 已完成为 `COMPLETED`（已完成）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现），O-5A review 已 `PASS`（通过）/ `ACCEPTED`（已接受），O-5B runner binding plan 已 `PASS`（通过）/ `ACCEPTED`（已接受），O-5B-R1 runner binding implementation 已 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `COMMITTED`（已提交，commit `35413109`），O-5B-R2 runner binding review 已 `PASS`（通过）/ `ACCEPTED`（已接受）。GateO stage 仍为 `NOT COMPLETED`（未完成），manual smoke execution 后续为 `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED`（允许 / 仅手动公开只读 / 未执行），O-5 smoke execution / O-5D DataOrigin.PUBLIC_OUTBOUND decision / O-FREEZE 仍为 `NOT STARTED`（未开始）。
 
 当前上游证据：
 
@@ -91,7 +91,7 @@ GateO 不是 DH runtime 接入阶段。
 | O-2 | Data Quality Center Implementation | `PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结） | 冻结 source health / freshness / gap / latency / error category / data origin 的后端纯模型、mapper 和单元测试 baseline | 不新增表、不新增 API、不改 UI、不真实外联 |
 | O-3 | MarketData Runtime Readiness API | `FROZEN / ACCEPTED`（已冻结 / 已接受） | 基于现有 readiness/source/quality 模型收口 API；O-3B 已扩展现有 `GET /api/marketdata/readiness` read model，O-3E 已冻结该 read-only API baseline | 不重复造接口、不新增 migration、不改 frontend、不真实外联 |
 | O-4 | MarketData Quality UI Plan / O-4B Read-only UI / O-4E Freeze Review | `FROZEN / ACCEPTED`（已冻结 / 已接受）；O-4A `PASS / ACCEPTED`（通过 / 已接受）；O-4B `COMPLETED / ACCEPTED`（已完成 / 已接受）；O-4E `PASS / ACCEPTED`（通过 / 已接受） | 已规划、评审、实现并冻结数据质量只读 UI；O-4B 已在既有 `/marketdata` 实现只读 Quality / Readiness 展示、类型补齐和 mocked smoke | O-4B/O-4E 未改 backend/API/migration，未做 O-5 public smoke，不做 mock AI/DH/LIVE |
-| O-5 | Manual Public Outbound Smoke Plan / O-5B Runner Binding | `COMPLETED / PLAN ONLY / NOT IMPLEMENTED`（已完成 / 仅规划 / 未实现）；O-5A `PASS / ACCEPTED`；O-5B runner binding plan `PASS / ACCEPTED`；O-5B-R1 runner binding implementation `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT` | 已规划最后阶段手动 profile 的最小 public outbound smoke 安全方案，并已绑定 test-only manual runner；O-5B execution 为 `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED` | 不进入默认 CI、不读 credential、不执行真实 HTTP；本轮不执行 smoke |
+| O-5 | Manual Public Outbound Smoke Plan / O-5B Runner Binding | `COMPLETED / PLAN ONLY / NOT IMPLEMENTED`（已完成 / 仅规划 / 未实现）；O-5A `PASS / ACCEPTED`；O-5B runner binding plan `PASS / ACCEPTED`；O-5B-R1 runner binding implementation `IMPLEMENTED / SELF-REVIEWED / COMMITTED`；O-5B-R2 runner binding review `PASS / ACCEPTED` | 已规划最后阶段手动 profile 的最小 public outbound smoke 安全方案，并已绑定且接受 test-only manual runner；manual smoke execution 后续为 `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED` | 不进入默认 CI、不读 credential、不执行真实 HTTP；本轮不执行 smoke |
 | O-FREEZE | GateO Freeze Criteria | `PLANNED / NOT STARTED` | 明确 GateO 冻结验收 | 不把 planning 写成 implementation |
 
 ## 6. O-1 Public MarketData Controlled Outbound
@@ -500,7 +500,7 @@ Accepted evidence：
 9. 默认 no-egress 不变；`application.yml` 默认 `nq.public-marketdata.outbound.enabled=false`。
 10. `public-marketdata-manual` profile 与 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED` 仍 fail-closed：profile + flag=true 才装配 JDK client，flag false / 缺失回到 disabled fallback。
 11. EnvSafety 仍禁止 `public-marketdata-manual` 与 LIVE、AI、DH runtime、real provider、RealClient、real exchange 同时启用。
-12. O-1 freeze review 当时 O-2 / O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`；当前 O-2 Data Quality Center baseline 已进入 `PASS / ACCEPTED / FROZEN`，O-3 final status 已为 `FROZEN / ACCEPTED`，O-4 final status 已为 `FROZEN / ACCEPTED`，O-5 plan 已完成，O-5A review 与 O-5B runner binding plan 已接受，O-5B-R1 runner binding implementation 已完成；O-5B execution 当前 `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED`，O-5 smoke execution、O-FREEZE 仍未开始。
+12. O-1 freeze review 当时 O-2 / O-3 / O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`；当前 O-2 Data Quality Center baseline 已进入 `PASS / ACCEPTED / FROZEN`，O-3 final status 已为 `FROZEN / ACCEPTED`，O-4 final status 已为 `FROZEN / ACCEPTED`，O-5 plan 已完成，O-5A review 与 O-5B runner binding plan 已接受，O-5B-R1 runner binding implementation 已提交，O-5B-R2 runner binding review 已接受；manual smoke execution 后续为 `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED`，O-5 smoke execution、O-FREEZE 仍未开始。
 13. `DataOrigin.FAKE_SERVER` 记录为 P2 residual：O-1 fake-server baseline 继续使用该语义，不阻塞本次 O-1 freeze；是否引入 `PUBLIC_OUTBOUND` 留到 O-5 前单独审查。
 14. 文档未把 GateO 写成 completed，也未把 public marketdata readiness 写成 trading authorization。
 
@@ -590,7 +590,7 @@ Findings：
 - P2：1，O-2 未接 API read model，仍保留为 O-3 API plan/review residual。
 - P3：0。
 
-O-2 final status：`PASS / ACCEPTED / FROZEN`。GateO stage 仍 `NOT COMPLETED`；当前 O-3 API plan 已 `PASS / PLAN ONLY / NOT IMPLEMENTED` 并由 O-3B/O-3E 消费，O-3B backend read-only API implementation 已 `COMPLETED / ACCEPTED`，O-3 final status 为 `FROZEN / ACCEPTED`；O-4 final status 已 `FROZEN / ACCEPTED`；O-5 plan 已 `COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；O-5A review 与 O-5B runner binding plan 已接受，O-5B-R1 runner binding implementation 已完成；O-5B execution 当前 `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED`，O-5 smoke execution、O-FREEZE 仍 `NOT STARTED`。
+O-2 final status：`PASS / ACCEPTED / FROZEN`。GateO stage 仍 `NOT COMPLETED`；当前 O-3 API plan 已 `PASS / PLAN ONLY / NOT IMPLEMENTED` 并由 O-3B/O-3E 消费，O-3B backend read-only API implementation 已 `COMPLETED / ACCEPTED`，O-3 final status 为 `FROZEN / ACCEPTED`；O-4 final status 已 `FROZEN / ACCEPTED`；O-5 plan 已 `COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；O-5A review 与 O-5B runner binding plan 已接受，O-5B-R1 runner binding implementation 已提交，O-5B-R2 runner binding review 已接受；manual smoke execution 后续为 `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED`，O-5 smoke execution、O-FREEZE 仍 `NOT STARTED`。
 
 ## 8. O-3 MarketData Runtime Readiness API Plan
 
@@ -697,11 +697,11 @@ O-4 已完成并冻结前端数据质量只读 UI baseline：复用既有 `/mark
 | O-4D | 图表 foundation | `OPTIONAL / NOT STARTED` | 仅在有稳定历史窗口事实后规划趋势图。 |
 | O-4E | O-4 freeze review | `PASS / ACCEPTED` | 冻结 O-4 UI baseline；P0/P1=0，build 与指定 mocked smoke 已通过。 |
 
-Final decision：O-4 final status 已 `FROZEN / ACCEPTED`；O-4A UI contract plan review 已 `PASS / ACCEPTED`；O-4B read-only UI implementation 已 `COMPLETED / ACCEPTED`；O-4E freeze review 已 `PASS / ACCEPTED`。O-4B/O-4E 未改 backend/API/migration，未执行 O-5 manual public outbound smoke；GateO stage 仍 `NOT COMPLETED`，O-5B execution 当前 `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED`，O-5 smoke execution / O-FREEZE 仍 `NOT STARTED`。
+Final decision：O-4 final status 已 `FROZEN / ACCEPTED`；O-4A UI contract plan review 已 `PASS / ACCEPTED`；O-4B read-only UI implementation 已 `COMPLETED / ACCEPTED`；O-4E freeze review 已 `PASS / ACCEPTED`。O-4B/O-4E 未改 backend/API/migration，未执行 O-5 manual public outbound smoke；GateO stage 仍 `NOT COMPLETED`，manual smoke execution 后续为 `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED`，O-5 smoke execution / O-FREEZE 仍 `NOT STARTED`。
 
 ## 10. O-5 Manual Public Outbound Smoke Plan
 
-O-5 planning baseline 已完成，详见 [NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md](NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md)。O-5A review 已 `PASS / ACCEPTED`；O-5B runner binding plan 已 `PASS / ACCEPTED`，详见 [NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md](NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md)；O-5B-R1 runner binding implementation 已 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`。O-5B execution 当前为 `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED`；O-5 smoke execution 仍未开始，本轮不执行真实 HTTP。
+O-5 planning baseline 已完成，详见 [NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md](NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md)。O-5A review 已 `PASS / ACCEPTED`；O-5B runner binding plan 已 `PASS / ACCEPTED`，详见 [NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md](NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md)；O-5B-R1 runner binding implementation 已 `IMPLEMENTED / SELF-REVIEWED / COMMITTED`（commit `35413109`）；O-5B-R2 runner binding review 已 `PASS / ACCEPTED`。Manual smoke execution 后续为 `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED`；O-5 smoke execution 仍未开始，本轮不执行真实 HTTP。
 
 O-5 定位：
 
@@ -754,15 +754,15 @@ O-5 后续必须拆分：
 | --- | --- | --- |
 | O-5A | `PASS / ACCEPTED` | manual public outbound smoke plan review |
 | O-5B runner binding plan | `PASS / ACCEPTED` | test-only manual runner 形态、默认不运行策略、allowlist/denylist 与 redacted evidence 契约 |
-| O-5B-R1 runner implementation | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT` | 已新增 test-only manual runner，不执行 smoke |
-| O-5B-R2 runner binding review | `NOT STARTED` | 后续复核 runner gate、allowlist/denylist、redaction 与默认 skip |
-| O-5B smoke execution | `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED` | manual public outbound smoke execution |
+| O-5B-R1 runner implementation | `IMPLEMENTED / SELF-REVIEWED / COMMITTED` | 已新增并提交 test-only manual runner，不执行 smoke |
+| O-5B-R2 runner binding review | `PASS / ACCEPTED` | 已复核 runner gate、allowlist/denylist、redaction 与默认 skip |
+| O-5B smoke execution | `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED` | 后续单独人工 public readonly smoke execution |
 | O-5C | `NOT STARTED` | first smoke result review |
 | O-5D | `NOT STARTED` | DataOrigin / `PUBLIC_OUTBOUND` decision review |
 | O-5E | `NOT STARTED` | O-5 freeze review |
 | O-FREEZE | `NOT STARTED` | GateO freeze |
 
-O-5A review 和 O-5B runner binding plan 均 P0/P1=0；O-5B-R1 已实现 test-only manual runner；下一步只允许执行 O-5B-R2 runner binding review，不得从 implementation 直接跳到 O-5B smoke execution 或 O-FREEZE。
+O-5A review、O-5B runner binding plan 与 O-5B-R2 runner binding review 均 P0/P1=0；O-5B-R1 已实现并提交 test-only manual runner。下一步只允许单独执行 O-5B manual public outbound smoke execution，不得从 review 直接跳到 O-FREEZE。
 
 ## 11. 安全边界
 
@@ -874,12 +874,11 @@ P3：
 
 推荐下一步：
 
-1. `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`：只复核 test-only manual runner，默认不运行，不执行真实 HTTP，不进默认 CI。
-2. `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`：仅在 runner implementation review P0/P1=0 后执行手动 public readonly smoke。
-3. `NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW`：只复核脱敏 smoke 结果。
-4. `NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW`：单独决定是否引入 `PUBLIC_OUTBOUND`，不得在 O-5 plan 中预写成当前事实。
-5. `NQ-GATEO-O5E-FREEZE-REVIEW`：冻结 O-5 baseline。
-6. `NQ-GATEO-O-FREEZE-CRITERIA-PLAN-REVIEW`：只在 O-5 前置证据完成后规划 GateO freeze criteria。
+1. `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`：仅在后续单独任务中执行手动 public readonly smoke，必须显式 manual gates，且不得使用 credential、signed request 或 private endpoint。
+2. `NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW`：只复核脱敏 smoke 结果。
+3. `NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW`：单独决定是否引入 `PUBLIC_OUTBOUND`，不得在 O-5 plan 中预写成当前事实。
+4. `NQ-GATEO-O5E-FREEZE-REVIEW`：冻结 O-5 baseline。
+5. `NQ-GATEO-O-FREEZE-CRITERIA-PLAN-REVIEW`：只在 O-5 前置证据完成后规划 GateO freeze criteria。
 
 不得把 O-3/O-4/O-5 plan 写成 GateO completed、O-5 execution、LIVE-ready、real-provider-ready 或 trading authorization；不得提前执行 O-5 manual public outbound smoke。
 
