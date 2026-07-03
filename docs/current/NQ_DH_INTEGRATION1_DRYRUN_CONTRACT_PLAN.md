@@ -274,7 +274,7 @@ replayRef: DH replay read model 引用；只读审计入口，不重跑 provider
 | `I1-P3-NQ-DRYRUN-STUB-TEST-PLAN` | `MERGED_INTO_NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` | 已并入 NQ stub readiness。 | 不接 DH runtime、不触发 order/risk/ledger/Paper/LIVE。 |
 | `I1-P4-DH-DRYRUN-ENTRY-PLAN` | `MERGED_INTO_NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` | 已并入 DH dry-run entry readiness。 | 不新增 API path、Controller、migration。 |
 | `I1-P5-JOINT-MOCK-VALIDATION-PLAN` | `MERGED_INTO_NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` | 已并入 joint mock validation readiness。 | 不启动 NQ/DH runtime。 |
-| `I1-P4-IMPLEMENTATION-GATE-REVIEW` | `NOT STARTED` | 由旧 P6 重新编号，判断 P0-P3 是否足以允许后续 implementation。 | 即使进入 implementation，也仍禁止 LIVE、real provider、自动下单。 |
+| `I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` | `COMPLETED / DOCS-ONLY / GATE-FIX` | 已关闭 P3 提交状态阻塞与 schema gap review 阻塞，只允许后续 WO。 | 仍禁止 implementation code、schema change、fixture implementation、runtime、LIVE、real provider、自动下单。 |
 
 ## 10. Readiness decision
 
@@ -282,7 +282,9 @@ replayRef: DH replay read model 引用；只读审计入口，不重跑 provider
 ALLOW_I1_P1_CONTRACT_PLAN_CLOSE: YES
 ALLOW_I1_P2_CONTRACT_FIXTURES_PLAN: YES
 ALLOW_I1_P3_DRYRUN_IMPLEMENTATION_READINESS_PLAN: YES / COMPLETED / PLAN ONLY
-ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES
+ALLOW_I1_P4_IMPLEMENTATION_GATE_REVIEW: YES / COMPLETED AS FIX
+ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_WORK_ORDER: YES
+ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
 ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
 ALLOW_INTEGRATION_1_RUNTIME: NO
 ALLOW_REAL_HTTP: NO
@@ -302,8 +304,8 @@ ALLOW_LIVE: NO
 
 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` 已完成 planning-only readiness 收口，文档见 `NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`。原 P3/P4/P5 已合并进该 P3；旧 P6 implementation gate review 重新编号为 P4。
 
-当前下一步只允许：
+P4 gate-fix 已完成；当前下一步只允许：
 
 ```text
-NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED
+NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
 ```
