@@ -1,3 +1,59 @@
+## NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW
+
+日期：2026-07-04。
+
+范围：
+
+- 基于 O-5B/O-5C accepted smoke evidence，决策后续是否允许引入 `DataOrigin.PUBLIC_OUTBOUND` 语义。
+- 新增 `docs/current/NQ_GATEO_O5D_DATAORIGIN_PUBLIC_OUTBOUND_DECISION.md`，同步 `README.md` 与允许的 `docs/current` 状态入口。
+- 不实现 enum / DTO / mapper / API / UI / test，不改变 readiness API 运行语义。
+- 不重跑 O-5B smoke，不执行真实 HTTP，不读取 `.env`、key、pem、credential material、repository secrets 或任何 API key / secret / passphrase / token / cookie。
+- 未修改 backend、frontend、research、scripts、deploy、`.github` 或 migration。
+
+结果：
+
+```text
+NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW: PASS / ACCEPTED
+Decision: ALLOW_FUTURE_IMPLEMENTATION
+O-5B smoke result: COMPLETED / RESULT REVIEWED / ACCEPTED
+O-5C first smoke result review: PASS / ACCEPTED
+O-5D DataOrigin.PUBLIC_OUTBOUND decision: PASS / ACCEPTED
+O-5E freeze review: NOT STARTED
+O-FREEZE: NOT STARTED
+GateO stage: NOT COMPLETED
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT_INTEGRATED
+RealClient / real provider / real permission probe: NOT_IMPLEMENTED
+```
+
+证据：
+
+- runId：`gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7`。
+- endpoint categories：`SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`。
+- 四类 endpoint 均为 `httpStatus=200`、`resultStatus=SUCCESS`、`errorCategory=NONE`。
+- evidence 只保存 redacted summary；未保存 raw response body、raw headers、full URL、full query、credential、signature、cookie 或 raw provider payload。
+- O-5B/O-5C 证据确认 no credential、no signed request、no private endpoint、no trading side effect；LIVE / AI / DH runtime disabled or not integrated。
+
+验证：
+
+- `git status --short`、`git branch --show-current`、`git log --oneline -5`：PASS / REVIEWED。
+- `git diff --check`：PASS；无 whitespace error，LF→CRLF warning 仅为 P3 非阻断。
+- `git diff --stat`：PASS / DOCS-ONLY。
+- forbidden diff：`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均为空。
+- DataOrigin / readiness semantic `rg`：PASS / REVIEWED；命中包含既有 publicmarketdata `PUBLIC_OUTBOUND` source/test/target 事实，但本轮 diff 未把 Data Quality / readiness `PUBLIC_OUTBOUND` 写成已实现代码事实、LIVE ready 或 trading authorization。
+- O-5B evidence / redaction `rg`：PASS / REVIEWED；未发现 raw response/header/full URL/full query/credential/signature/cookie/raw provider payload 保存事实。
+- Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun：NOT RUN；本轮 docs-only decision review，且任务明确禁止重跑 O-5B smoke 或执行真实 HTTP。
+
+边界：
+
+- `PUBLIC_OUTBOUND` 只表示公开行情只读外联来源，只能用于 data quality / readiness / UI diagnostic context。
+- `PUBLIC_OUTBOUND` 不表示 private trading ready、LIVE ready、permission granted、credential configured、provider ready for trading、可下单、可撤单、可转账或提现。
+- 后续若实现，只能另起 `NQ-GATEO-O5D-R1-DATAORIGIN-PUBLIC-OUTBOUND-IMPLEMENTATION` 并单独 review；本轮不得把 enum / DTO / mapper / readiness API response / frontend type / badge / tests / API.md 写成当前已实现。
+- public marketdata readiness 不等于 trading authorization；单次 smoke success 不等于长期稳定，也不等于多 provider / 多 symbol / default runtime / scheduled ingestion readiness。
+
+Next step：只允许 `NQ-GATEO-O5E-FREEZE-REVIEW`，或单独开启 `NQ-GATEO-O5D-R1-DATAORIGIN-PUBLIC-OUTBOUND-IMPLEMENTATION`；不得直接写成 GateO completed / frozen。
+
 ## NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW
 
 日期：2026-07-04。

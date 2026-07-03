@@ -24,7 +24,7 @@ O-5 manual smoke execution status：`COMPLETED`（已完成）/ `RESULT REVIEWED
 
 O-5C first smoke result review：`PASS`（通过）/ `ACCEPTED`（已接受）。
 
-O-5D DataOrigin / `PUBLIC_OUTBOUND` decision：`NOT STARTED`（未开始）。
+O-5D DataOrigin / `PUBLIC_OUTBOUND` decision：`PASS`（通过）/ `ACCEPTED`（已接受）；decision = `ALLOW_FUTURE_IMPLEMENTATION`（允许后续单独实现）。
 
 O-5E freeze review：`NOT STARTED`（未开始）。
 
@@ -45,9 +45,9 @@ GateO stage：`NOT COMPLETED`（未完成）。
 - DH runtime：`NOT_INTEGRATED`（未集成）。
 - RealClient / real provider / real permission probe：`NOT_IMPLEMENTED`（未实现）。
 - public marketdata readiness 不等于 trading authorization。
-- O-5A plan review 已 `PASS / ACCEPTED`；O-5B-R1 已绑定 test-only manual runner，O-5B-R2 runner binding review 已 `PASS / ACCEPTED`；O-5B manual public outbound smoke 已在受控 manual gates 下执行，并由 O-5C result review 接受为 `COMPLETED / RESULT REVIEWED / ACCEPTED`；后续只能进入 O-5D DataOrigin decision review。
+- O-5A plan review 已 `PASS / ACCEPTED`；O-5B-R1 已绑定 test-only manual runner，O-5B-R2 runner binding review 已 `PASS / ACCEPTED`；O-5B manual public outbound smoke 已在受控 manual gates 下执行，并由 O-5C result review 接受为 `COMPLETED / RESULT REVIEWED / ACCEPTED`；O-5D DataOrigin decision review 已 `PASS / ACCEPTED`，允许后续单独实现 `PUBLIC_OUTBOUND` 诊断语义。
 
-本文件原为 O-5 manual public outbound smoke 的安全执行方案；当前记录 O-5B execution 脱敏结果摘要与 O-5C result review 结论。O-5B-R1 已新增默认跳过的 test-only JUnit manual runner，并已通过 `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`。O-5B 只通过该 runner 执行一次 public readonly smoke，不改 CI、不新增 API、不新增 migration；O-5C first smoke result review 已 `PASS / ACCEPTED`，O-5D DataOrigin.PUBLIC_OUTBOUND decision、O-5E freeze review、O-FREEZE 仍未开始。
+本文件原为 O-5 manual public outbound smoke 的安全执行方案；当前记录 O-5B execution 脱敏结果摘要、O-5C result review 结论与 O-5D DataOrigin decision。O-5B-R1 已新增默认跳过的 test-only JUnit manual runner，并已通过 `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`。O-5B 只通过该 runner 执行一次 public readonly smoke，不改 CI、不新增 API、不新增 migration；O-5C first smoke result review 已 `PASS / ACCEPTED`；O-5D decision 已 `PASS / ACCEPTED`，decision = `ALLOW_FUTURE_IMPLEMENTATION`；O-5E freeze review、O-FREEZE 仍未开始。
 
 ## 1.1 O-5B manual public outbound smoke execution result（2026-07-03）
 
@@ -94,7 +94,7 @@ Maven result：`PASS / BUILD SUCCESS`；`GateOManualPublicOutboundSmokeTest` 1 t
 
 Boundary confirmation：未读取 `.env`；未使用 repository secrets；未传 API key / secret / passphrase / token / cookie；未访问 private endpoint；未执行 signed request；未进行 account / balance / order / cancel / amend / position / wallet / transfer / withdraw / deposit / subaccount / permission probe / API key validation；未开启 LIVE / AI / DH runtime / RealClient / real provider；未保存 raw response body、raw headers、full URL 或 full query string。
 
-DataOrigin decision status：O-5D DataOrigin.PUBLIC_OUTBOUND decision 仍 `NOT STARTED`（未开始）；本轮 smoke success 不自动把 `PUBLIC_OUTBOUND` 写成已落地 data origin，也不代表 trading authorization。
+DataOrigin decision status：O-5D DataOrigin.PUBLIC_OUTBOUND decision 已 `PASS / ACCEPTED`；decision = `ALLOW_FUTURE_IMPLEMENTATION`。本轮 smoke success 只允许作为后续单独实现 `PUBLIC_OUTBOUND` 诊断语义的 evidence，不自动把 `PUBLIC_OUTBOUND` 写成已落地代码事实，也不代表 trading authorization。
 
 ## 1.2 O-5C first smoke result review（2026-07-04）
 
@@ -132,13 +132,43 @@ Final decision：
 
 O-5B smoke result：`ACCEPTED`。
 
-O-5D DataOrigin.PUBLIC_OUTBOUND decision：`NOT STARTED`（未开始）。
+O-5D DataOrigin.PUBLIC_OUTBOUND decision：`PASS / ACCEPTED`（通过 / 已接受）；decision = `ALLOW_FUTURE_IMPLEMENTATION`。
 
 O-5E freeze review：`NOT STARTED`（未开始）。
 
 O-FREEZE：`NOT STARTED`（未开始）。
 
 GateO stage：`NOT COMPLETED`（未完成）。
+
+## 1.3 O-5D DataOrigin.PUBLIC_OUTBOUND decision review（2026-07-04）
+
+任务名称：`NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW`。
+
+Review conclusion：`PASS`（通过）/ `ACCEPTED`（已接受）。
+
+Decision：`ALLOW_FUTURE_IMPLEMENTATION`（允许后续单独实现）。
+
+Evidence basis：
+
+- O-5B runId `gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7` 已由 O-5C 接受。
+- `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV` 四类 endpoint 均为 public readonly category，均 `httpStatus=200`、`resultStatus=SUCCESS`、`errorCategory=NONE`。
+- Evidence 只保存 redacted summary，未保存 raw response body、raw headers、full URL、full query、credential、signature、cookie 或 raw provider payload。
+- O-5B/O-5C 均确认 no credential、no signed request、no private endpoint、no trading side effect。
+- LIVE / AI / DH runtime / RealClient / real provider / real permission probe 均未启用。
+
+Semantic boundary：
+
+- `PUBLIC_OUTBOUND` 只表示公开行情只读外联来源。
+- `PUBLIC_OUTBOUND` 只能用于 data quality / readiness / UI diagnostic context。
+- `PUBLIC_OUTBOUND` 不表示 trading authorization、LIVE ready、permission granted、credential configured、provider ready for trading、可下单、可撤单或可转账/提现。
+
+Implementation boundary：
+
+- 本轮不实现 enum / DTO / mapper / API / UI / test。
+- 后续如需实现，必须另起 `NQ-GATEO-O5D-R1-DATAORIGIN-PUBLIC-OUTBOUND-IMPLEMENTATION` 并单独 review。
+- 后续实现仍必须保持 no credential、no private endpoint、no trading authorization、no LIVE、no default CI public outbound、no raw response storage。
+
+Final status：O-5D `PASS / ACCEPTED`；O-5E `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
 
 ## 2. O-5 定位
 
@@ -427,12 +457,13 @@ O-5B 证据记录必须包含：
 
 O-5 smoke 成功后，不得自动更新 `DataQualitySummary` 或 readiness API 语义。
 
-是否引入 `PUBLIC_OUTBOUND` 作为 `DataOrigin` 必须单独进入 O-5D review。当前规则：
+是否引入 `PUBLIC_OUTBOUND` 作为 `DataOrigin` 已由 O-5D review 决策为 `ALLOW_FUTURE_IMPLEMENTATION`。当前规则：
 
-- O-5 plan 不得把 `PUBLIC_OUTBOUND` 写成已落地事实。
-- O-2 / O-3 当前 `dataOrigin` 仍以 `LOCAL_DB / FIXTURE / FAKE_SERVER / PUBLIC_CANDIDATE / UNKNOWN` 为诊断语义。
+- O-5 plan 不得把 `PUBLIC_OUTBOUND` 写成已落地代码事实。
+- O-2 / O-3 当前 `dataOrigin` 仍以 `LOCAL_DB / FIXTURE / FAKE_SERVER / PUBLIC_CANDIDATE / UNKNOWN` 为诊断语义，直到后续 O-5D-R1 单独实现并通过 review。
 - readiness API 不得因为 smoke 成功而显示 trading-ready、LIVE-ready、permission-granted、provider-ready 或 private trading ready。
 - O-5C 只能复核 smoke 结果，不能直接改 API / DTO / DB / UI。
+- O-5D 只决策后续实现许可，不能替代代码实现或 O-5E freeze。
 
 ## 11. 测试与验证计划
 
@@ -491,11 +522,11 @@ O-5 必须拆分，不得从 plan 直接跳到 O-FREEZE：
 | O-5B-R2 runner binding review | `PASS / ACCEPTED` | 已复核 runner gate、allowlist/denylist、redaction 与默认 skip。 |
 | O-5B smoke execution | `COMPLETED / RESULT REVIEWED / ACCEPTED` | 已完成一次 manual public readonly smoke；结果已由 O-5C 接受。 |
 | O-5C | `PASS / ACCEPTED` | first smoke result review 已接受，P0/P1=0。 |
-| O-5D | `NOT STARTED` | DataOrigin / `PUBLIC_OUTBOUND` decision review。 |
+| O-5D | `PASS / ACCEPTED` | DataOrigin / `PUBLIC_OUTBOUND` decision review；decision = `ALLOW_FUTURE_IMPLEMENTATION`。 |
 | O-5E | `NOT STARTED` | O-5 freeze review。 |
 | O-FREEZE | `NOT STARTED` | GateO freeze。 |
 
-O-5A review 已完成并接受。O-5B-R1 已实现并提交 test-only manual runner，O-5B-R2 runner binding review 已 `PASS / ACCEPTED`。O-5B 已单独完成 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`，且保持人工、公开、只读、无 credential、无签名、无 private endpoint；O-5C 已接受该结果。下一步只能进入 `NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW`。
+O-5A review 已完成并接受。O-5B-R1 已实现并提交 test-only manual runner，O-5B-R2 runner binding review 已 `PASS / ACCEPTED`。O-5B 已单独完成 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`，且保持人工、公开、只读、无 credential、无签名、无 private endpoint；O-5C 已接受该结果；O-5D 已决策允许后续单独实现 `PUBLIC_OUTBOUND` 诊断语义。下一步只能进入 `NQ-GATEO-O5E-FREEZE-REVIEW`，或另起 `NQ-GATEO-O5D-R1-DATAORIGIN-PUBLIC-OUTBOUND-IMPLEMENTATION`；不得把 O-5D decision 写成代码已实现或 GateO freeze。
 
 ## 14. Security / No-Trading Boundary
 
@@ -530,7 +561,7 @@ public marketdata readiness 只能表示行情数据诊断，不得表示交易�
 
 ### P2
 
-1. 是否引入 `PUBLIC_OUTBOUND` 作为 `DataOrigin` 仍需 O-5D 单独 review；本计划不把它写成当前事实。
+1. `PUBLIC_OUTBOUND` 已允许后续单独实现，但当前仍不是已落地代码事实；后续 O-5D-R1 必须补 enum / mapper / readiness / UI / test review。
 
 ### P3
 
@@ -552,7 +583,7 @@ O-5B-R1 runner implementation：`IMPLEMENTED / SELF-REVIEWED / COMMITTED`。
 
 O-5B-R2 runner binding review：`PASS / ACCEPTED`。
 
-O-5D DataOrigin.PUBLIC_OUTBOUND decision：`NOT STARTED`。
+O-5D DataOrigin.PUBLIC_OUTBOUND decision：`PASS / ACCEPTED`；decision = `ALLOW_FUTURE_IMPLEMENTATION`。
 
 O-5E freeze review：`NOT STARTED`。
 
@@ -567,7 +598,13 @@ GateO stage：`NOT COMPLETED`。
 推荐下一步：
 
 ```text
-NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW
+NQ-GATEO-O5E-FREEZE-REVIEW
+```
+
+如需先实现 DataOrigin 语义，必须另起：
+
+```text
+NQ-GATEO-O5D-R1-DATAORIGIN-PUBLIC-OUTBOUND-IMPLEMENTATION
 ```
 
 Commit recommendation for this review result：

@@ -1,3 +1,23 @@
+## NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -5` | PASS / REVIEWED | 分支保持 `dev`；写前已有 O-5C/O-5B accepted evidence；本轮最终只允许 root `README.md` 与 `docs/current` 文档 diff。 |
+| `git diff --check` | PASS | 无 whitespace error；如 Git 提示 LF 将按配置转为 CRLF，记为 P3 非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 范围限于允许的 `README.md` 与 `docs/current` 文档；新增 O-5D decision 文档为允许新增文件。 |
+| forbidden-area diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 本轮未触达代码、CI、部署、research 或 migration。 |
+| DataOrigin / readiness semantic `rg` | PASS / REVIEWED | 命中为本轮 O-5D decision、既有 `PUBLIC_CANDIDATE` / `DataOrigin` 文档与代码事实、既有 publicmarketdata `PUBLIC_OUTBOUND` source/test/target 事实，以及明确否定的 trading authorization / LIVE / permission / provider-ready 边界；未发现本轮 diff 把 Data Quality / readiness `PUBLIC_OUTBOUND` 写成已实现代码事实或交易授权。 |
+| O-5B evidence / redaction `rg` | PASS / REVIEWED | 命中 runId `gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7`、`SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`、redacted evidence 和 forbidden raw/credential 字段的否定语境；未发现 raw response body、raw headers、full URL、full query、credential、signature、cookie 或 raw provider payload 被写成保存事实。 |
+| Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun | NOT RUN | 本轮是 docs-only decision review，任务明确禁止重跑 O-5B smoke、执行真实 HTTP 或修改 Java / TypeScript / Python / workflow / migration / runtime 配置。 |
+
+Scope：本轮完成 `NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW`。只基于 O-5B/O-5C accepted smoke evidence 决策是否允许后续引入 `DataOrigin.PUBLIC_OUTBOUND` 语义；不实现 enum / DTO / mapper / API / UI / test，不改变 readiness API 运行语义。
+
+Result：`NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW: PASS / ACCEPTED`。Decision：`ALLOW_FUTURE_IMPLEMENTATION`；O-5C first smoke result review `PASS / ACCEPTED`；O-5B manual smoke result `COMPLETED / RESULT REVIEWED / ACCEPTED`；O-5E freeze review `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Evidence：runId `gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7`；`SERVER_TIME / INSTRUMENTS / TICKER / OHLCV` 均 `httpStatus=200`、`resultStatus=SUCCESS`、`errorCategory=NONE`；evidence 只保存 redacted summary；未保存 raw response body、raw headers、full URL、full query、credential、signature、cookie 或 raw provider payload。
+
+Boundary：`PUBLIC_OUTBOUND` 只表示公开行情只读外联来源，只能用于 data quality / readiness / UI diagnostic context；不表示 trading authorization、LIVE ready、permission granted、credential configured、provider ready for trading、可下单、可撤单、可转账或提现。未读取 `.env`，未使用 repository secrets，未传 API key / secret / passphrase / token / cookie；未访问 private endpoint，未执行 signed request，未触发 account / balance / order / cancel / transfer / withdraw / permission probe；未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe。
+
 ## NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW validation（2026-07-04）
 
 | Command | Result | Notes |
