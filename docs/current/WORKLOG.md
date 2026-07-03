@@ -1,3 +1,42 @@
+## NQ-GATEO-O3E-MARKETDATA-READINESS-API-FREEZE-REVIEW
+
+日期：2026-07-03。
+
+范围：
+
+- 只读复核并冻结 commit `7a42ca03 feat(marketdata): extend readiness API read model` 中既有 `GET /api/marketdata/readiness` read-only API baseline。
+- 复核 O-2 `DataQualitySummary` vocabulary 到 O-3 readiness response 的字段与 enum 兼容。
+- 复核 Controller / Service / Repository 是否保持 DB-only / no-egress / no-credential / no-trading-authorization。
+- 同步 `README.md` 与允许范围内 `docs/current` 状态入口。
+- 不新增功能，不修改 backend、frontend、research、scripts、deploy、`.github`、migration、test 或 CI workflow，不执行 O-5 manual public outbound smoke。
+
+结果：
+
+```text
+NQ-GATEO-O3E-MARKETDATA-READINESS-API-FREEZE-REVIEW: PASS / ACCEPTED / FROZEN
+Frozen commit: 7a42ca03 feat(marketdata): extend readiness API read model
+O-3B backend implementation: COMPLETED / ACCEPTED
+O-3 final status: FROZEN / ACCEPTED
+O-4: NOT STARTED
+O-5 manual public outbound smoke: NOT STARTED
+GateO stage: NOT COMPLETED
+Next concrete action: NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN
+```
+
+验证：
+
+- `git log --oneline -5`：确认 `7a42ca03` 为 HEAD。
+- `git show --stat --oneline 7a42ca03` / `git show --name-only --oneline 7a42ca03`：复核 O-3B 变更文件清单。
+- `git diff --check`、`git diff --stat`、forbidden-scope `git diff`：freeze review 写前均通过或为空。
+- targeted `rg`：复核 readiness DTO/service/controller 无 credential、raw payload、trading authorization、LIVE-ready、permission-granted、real-provider-ready 字段暴露。
+- endpoint `rg`：未发现新增 `/api/marketdata/readiness/sources`、`/gaps`、`/quality/overview` 后端实现。
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-adapter-api -am "-Dtest=*MarketdataReadiness*,*DataQuality*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+- `mvn -f backend/pom.xml test`：PASS / BUILD SUCCESS；23 个 backend reactor module 全部 SUCCESS。
+
+边界确认：
+
+未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未读取 credential；未开启 LIVE、AI 或 DH runtime；未实现 RealClient、real provider、real permission probe、signed request、private WebSocket 或 private trading endpoint；public marketdata readiness 不等于 trading authorization、LIVE-ready、permission-granted 或 real-provider-ready。
+
 ## NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION
 
 日期：2026-07-03。
@@ -13,10 +52,10 @@
 结果：
 
 ```text
-NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION: COMPLETED / ACCEPTED
 Existing endpoint: GET /api/marketdata/readiness
 No new endpoints: /readiness/sources, /readiness/gaps, /readiness/quality/overview
-O-3E freeze review: NOT STARTED
+O-3E freeze review: PASS / ACCEPTED / FROZEN
 O-4: NOT STARTED
 O-5 manual public outbound smoke: NOT STARTED
 GateO stage: NOT COMPLETED
@@ -54,11 +93,12 @@ GateO stage: NOT COMPLETED
 
 ```text
 NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED
-O-3B backend implementation: CONSUMED BY NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION
+O-3B backend implementation: COMPLETED / ACCEPTED
+O-3E freeze review: PASS / ACCEPTED / FROZEN
 O-4 frontend wiring: NOT STARTED
 O-5 local smoke: NOT STARTED
 O-FREEZE: NOT STARTED
-Next concrete action: NQ-GATEO-O3E-MARKETDATA-READINESS-READ-ONLY-API-FREEZE-REVIEW
+Next concrete action: NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN
 ```
 
 规划结论：

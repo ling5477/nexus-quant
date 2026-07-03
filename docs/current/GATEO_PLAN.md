@@ -4,7 +4,7 @@
 
 本轮任务 `NQ-GATEO-PLAN-PUBLIC-MARKETDATA-CONTROLLED-OUTBOUND` 是 GateO O-0 planning baseline。
 
-当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 controlled public outbound guard baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-2 Data Quality Center baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-3 MarketData Runtime Readiness API plan 已完成为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现），O-3B backend read-only API implementation 已完成为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自查）/ `READY TO COMMIT`（可进入提交前复核）。GateO stage 仍为 `NOT COMPLETED`（未完成），O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`（已规划 / 未开始）。
+当前结论：O-0 planning baseline 仍为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）；O-1 controlled public outbound guard baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-2 Data Quality Center baseline 已冻结为 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）；O-3 MarketData Runtime Readiness API plan 已完成为 `PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现），O-3B backend read-only API implementation 已完成并接受为 `COMPLETED`（已完成）/ `ACCEPTED`（已接受），O-3E freeze review 已 `PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）。GateO stage 仍为 `NOT COMPLETED`（未完成），O-4 / O-5 / O-FREEZE 仍为 `PLANNED / NOT STARTED`（已规划 / 未开始）。
 
 当前上游证据：
 
@@ -89,7 +89,7 @@ GateO 不是 DH runtime 接入阶段。
 | O-0 | GateO Plan | `PASS / PLAN ONLY / NOT IMPLEMENTED` | 建立 GateO 目标、非目标、批次、验收和安全边界 | 不改代码、不改 CI、不真实外联 |
 | O-1 | Public MarketData Controlled Outbound Implementation | `PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结） | 冻结 public marketdata outbound 最小抽象、manual profile / feature flag、allowlist/denylist、disabled fallback、redaction/log summary、bounded timeout/retry、endpoint authority escape guard 与 Data Quality linkage | 不进默认 CI、不执行真实 public smoke、不接真实 provider / RealClient / permission probe / LIVE |
 | O-2 | Data Quality Center Implementation | `PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结） | 冻结 source health / freshness / gap / latency / error category / data origin 的后端纯模型、mapper 和单元测试 baseline | 不新增表、不新增 API、不改 UI、不真实外联 |
-| O-3 | MarketData Runtime Readiness API | `PLAN PASS / O-3B IMPLEMENTED / READY TO COMMIT`（计划通过 / O-3B 已实现 / 可进入提交前复核） | 基于现有 readiness/source/quality 模型收口 API；O-3B 已扩展现有 `GET /api/marketdata/readiness` read model | 不重复造接口、不新增 migration、不改 frontend、不真实外联 |
+| O-3 | MarketData Runtime Readiness API | `FROZEN / ACCEPTED`（已冻结 / 已接受） | 基于现有 readiness/source/quality 模型收口 API；O-3B 已扩展现有 `GET /api/marketdata/readiness` read model，O-3E 已冻结该 read-only API baseline | 不重复造接口、不新增 migration、不改 frontend、不真实外联 |
 | O-4 | MarketData Quality UI Plan | `PLANNED / NOT STARTED` | 规划数据质量 UI 与图表选型 | 不新增页面、不做 mock AI/DH/LIVE |
 | O-5 | Manual Public Outbound Smoke Plan | `PLANNED / NOT STARTED` | 规划最后阶段手动 profile 的最小 public outbound smoke | 不进入默认 CI、不读 credential |
 | O-FREEZE | GateO Freeze Criteria | `PLANNED / NOT STARTED` | 明确 GateO 冻结验收 | 不把 planning 写成 implementation |
@@ -590,15 +590,17 @@ Findings：
 - P2：1，O-2 未接 API read model，仍保留为 O-3 API plan/review residual。
 - P3：0。
 
-O-2 final status：`PASS / ACCEPTED / FROZEN`。GateO stage 仍 `NOT COMPLETED`；当前 O-3 API plan 已 `PASS / PLAN ONLY / NOT IMPLEMENTED`，O-3B backend read-only API implementation 已 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；O-4、O-5、O-FREEZE 仍 `PLANNED / NOT STARTED`；O-5 manual real public smoke 仍 `NOT STARTED`。
+O-2 final status：`PASS / ACCEPTED / FROZEN`。GateO stage 仍 `NOT COMPLETED`；当前 O-3 API plan 已 `PASS / PLAN ONLY / NOT IMPLEMENTED` 并由 O-3B/O-3E 消费，O-3B backend read-only API implementation 已 `COMPLETED / ACCEPTED`，O-3 final status 为 `FROZEN / ACCEPTED`；O-4、O-5、O-FREEZE 仍 `PLANNED / NOT STARTED`；O-5 manual real public smoke 仍 `NOT STARTED`。
 
 ## 8. O-3 MarketData Runtime Readiness API Plan
 
 O-3 plan status：`PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。
 
-O-3B backend implementation status：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自查）/ `READY TO COMMIT`（可进入提交前复核）。
+O-3 final status：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
 
-O-3 原 plan 只规划 API read model；O-3B 本轮已按该计划扩展既有 `GET /api/marketdata/readiness` read model。完整计划与实现状态见 [NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md](NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md)。
+O-3B backend implementation status：`COMPLETED`（已完成）/ `ACCEPTED`（已接受）。
+
+O-3 原 plan 只规划 API read model；O-3B 已按该计划扩展既有 `GET /api/marketdata/readiness` read model；O-3E 已冻结该 read-only API baseline。完整计划、实现与 freeze 状态见 [NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md](NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md)。
 
 现有事实：
 
@@ -628,12 +630,12 @@ O-3 implementation 批次：
 | Batch | 名称 | 状态 | 目标 |
 | --- | --- | --- | --- |
 | O-3A | API read model contract + DTO plan review | `CONSUMED BY O-3B`（已由 O-3B 消费） | 字段、enum、兼容策略和测试矩阵已随 O-3B 落地。 |
-| O-3B | backend read-only endpoint implementation | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自查 / 可进入提交前复核） | 扩展现有 `/api/marketdata/readiness` read model。 |
+| O-3B | backend read-only endpoint implementation | `COMPLETED / ACCEPTED`（已完成 / 已接受） | 扩展现有 `/api/marketdata/readiness` read model，已由 O-3E freeze review 接受。 |
 | O-3C | controller/service tests | `COVERED IN O-3B`（已随 O-3B 覆盖） | 覆盖 no-outbound、no-credential、no-authorization、状态映射回归。 |
 | O-3D | docs/API sync | `CURRENT DOCS SYNCED`（当前文档已同步） | 只把已实现的真实 endpoint 写入 API/current docs。 |
-| O-3E | O-3 freeze review | `NOT STARTED` | 冻结 O-3 read-only API baseline。 |
+| O-3E | O-3 freeze review | `PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结） | 冻结 O-3 read-only API baseline。 |
 
-Final decision：O-3B backend read-only API implementation 已完成；下一步只能进入 O-3E read-only API freeze review，或另起 O-4/O-5 plan/review；O-5 manual real public smoke 仍不得提前执行。
+Final decision：O-3B backend read-only API implementation 已完成并接受；O-3 final status 为 `FROZEN / ACCEPTED`。下一步只能进入 `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN`，或另起 O-5/O-FREEZE plan/review；O-5 manual real public smoke 仍不得提前执行。
 
 ## 9. O-4 MarketData Quality UI Plan
 
@@ -716,8 +718,8 @@ O-2 implementation 与 freeze review 均已运行 Maven 窄口与后端全量回
 - O-1 controlled public outbound guard：已 `PASS / ACCEPTED / FROZEN`。
 - O-2 Data Quality Center baseline：已 `PASS / ACCEPTED / FROZEN`；O-2 未接 API read model 作为 P2 residual 留给 O-3。
 - O-3 API plan：已 `PASS / PLAN ONLY / NOT IMPLEMENTED`，决策为优先扩展现有 `/api/marketdata/readiness`，并确认 candidate endpoint 不被写成当前 API。
-- O-3B backend read-only API implementation：已 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；必须通过 scoped Maven、controller/service/DTO tests、后端全量 Maven、forbidden diff 和 forbidden field scan 后才能提交。
-- O-3E read-only API freeze review：下一步，只冻结已实现 read-only API baseline，不新增功能。
+- O-3B backend read-only API implementation：已 `COMPLETED / ACCEPTED`；scoped Maven、controller/service/DTO tests、后端全量 Maven、forbidden diff 和 forbidden field scan 已作为 O-3E freeze evidence。
+- O-3E read-only API freeze review：已 `PASS / ACCEPTED / FROZEN`；只冻结已实现 read-only API baseline，不新增功能。
 - O-4 UI plan review：审查 UI copy 是否避免 real-ready / live-ready / trading-authorized。
 - O-5 manual smoke plan review：确认 smoke 不进默认 CI、不读 credential、不访问 private endpoint。
 - O-FREEZE：只在所有前置 planning/review 证据完成后冻结；任何实现或真实外联都必须有单独授权。
@@ -782,7 +784,7 @@ P1：
 
 P2：
 
-- O-2 已冻结为纯模型和规则 baseline；O-3B 已接入现有 `/api/marketdata/readiness` read model 并保持 DB-only / no-egress / no-credential。`errorRate`、`missingFrom`、`missingTo` 在缺少稳定事实时返回 `null`，后续若需真实窗口指标必须另起设计。
+- O-2 已冻结为纯模型和规则 baseline；O-3B 已接入现有 `/api/marketdata/readiness` read model 并保持 DB-only / no-egress / no-credential；O-3E 已冻结该 read-only API baseline。`errorRate`、`missingFrom`、`missingTo` 在缺少稳定事实时返回 `null`，后续若需真实窗口指标必须另起设计。
 - 前端 source/status 文案可能误导。
 - API plan 与现有 marketdata API 重复。
 - 官方文档引用入口未列清。
@@ -797,11 +799,11 @@ P3：
 
 推荐下一步：
 
-1. `NQ-GATEO-O3E-MARKETDATA-READINESS-READ-ONLY-API-FREEZE-REVIEW`：只冻结已实现 read-only API baseline，不新增功能。
-2. `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN-REVIEW`：只做 UI 信息架构与 wording 审查。
-3. `NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN-REVIEW`：只做手动 smoke 规则审查，不进默认 CI。
+1. `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN`：只做 UI 信息架构与 wording plan，不新增页面或 API。
+2. `NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN-REVIEW`：只做手动 smoke 规则审查，不进默认 CI。
+3. `NQ-GATEO-O-FREEZE-CRITERIA-PLAN-REVIEW`：只在 O-4/O-5 前置证据完成后规划 GateO freeze criteria。
 
-不得把 O-3B implementation 写成 O-3E freeze、GateO completed、O-5 manual public smoke 或 trading authorization；不得提前执行 O-5 manual public smoke。
+不得把 O-3 freeze 写成 GateO completed、O-5 manual public smoke、LIVE-ready、real-provider-ready 或 trading authorization；不得提前执行 O-5 manual public smoke。
 
 ## 17. 本轮未做事项
 

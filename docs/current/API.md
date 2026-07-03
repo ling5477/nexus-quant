@@ -115,9 +115,11 @@ GateH-2 固定范围：
 
 GateH-2 不新增 AI 自动交易、AI 信号接入、dataset/backtest 绑定、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配或复杂因子平台 API。
 
-## GateM-2E / GateO O-3B Marketdata Readiness API
+## GateM-2E / GateO O-3E Marketdata Readiness API Frozen Baseline
 
 GateM-2E 新增只读 MarketData readiness 后端 MVP；GateO O-3B 在不新增重复 endpoint 的前提下扩展同一个 read model：
+
+GateO O-3E freeze review（2026-07-03）结论：`PASS`（通过）/ `ACCEPTED`（已接受）/ `FROZEN`（已冻结）。冻结对象为 commit `7a42ca03 feat(marketdata): extend readiness API read model` 中既有 `GET /api/marketdata/readiness` read-only response baseline；GateO stage 仍 `NOT COMPLETED`（未完成），O-4 / O-5 / O-FREEZE 仍 `NOT STARTED`（未开始）。
 
 - `GET /api/marketdata/readiness`：按本地 DB 既有 MarketData facts 聚合 source health / freshness / gap / qualityStatus summary。该接口只读，不触发采集，不调用 adapter，不访问外部网络，不读取 credential，不启用 LIVE，不接 AI / DH runtime。
   - Query：`exchangeCode` 必填；`marketType` 可选，默认 `SPOT`；`symbol` 或 `instrumentId` 至少提供一个，二者同时提供时必须一致；`interval` 必填；`from` / `to` 可选，使用 ISO-8601 instant。O-3B 未新增 query 参数。
