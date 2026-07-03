@@ -1,3 +1,24 @@
+## NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO final validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 限于允许的 `docs/current` 文档和新增 WO；未见 forbidden code area diff。 |
+| `git branch --show-current` | PASS / `nq-dh-i1-dryrun` | NQ dry-run worktree 当前分支正确。 |
+| `git rev-parse HEAD` | PASS / `2eaa5fe83242a5fb35fb44bce7dd279eccd891f8` | 基线为 NQ dry-run worktree P4 gate-fix close commit。 |
+| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current` 文档；新增 WO 由 `git status --short` 标识。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| NQ dev `git diff --name-only -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 NQ-DH / Integration1 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+| NQ dev `git diff --name-only --cached -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 staged NQ-DH / Integration1 diff。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻断。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
+
+Scope：本轮复核上一轮中断后的 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO` 收口状态，并补齐 NQ dry-run worktree WO、current docs 与验证记录；本轮仍是 `WORK_ORDER_ONLY`，不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
+
+Result：`NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO: COMPLETED / WORK_ORDER_ONLY / NOT IMPLEMENTED`；当前 next 为 `NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO / NOT STARTED`；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只同步 work order、M0-M4 批次设计、precheck rule 与 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
+
 ## NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX final validation（2026-07-03）
 
 | Command | Result | Notes |

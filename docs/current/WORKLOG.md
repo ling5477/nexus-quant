@@ -1,3 +1,67 @@
+## NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO final validation
+
+日期：2026-07-03。
+
+范围：
+
+- 复核上一轮中断后的 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO` 落盘状态。
+- 补齐 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md` 的 M0-M4 批次字段、安全边界、测试要求、验收标准与回滚方式。
+- 同步 `docs/current/TESTING.md` 与 `docs/current/WORKLOG.md` 的本轮 final validation。
+- 本轮仍是 `WORK_ORDER_ONLY`；不修改 backend、frontend、research、scripts、deploy、`.github`、migration、contracts 或 golden_cases。
+
+新增文件：
+
+```text
+docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md
+```
+
+修改文件：
+
+```text
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+docs/current/WORK_ORDER.md
+```
+
+结果：
+
+```text
+NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO: COMPLETED / WORK_ORDER_ONLY / NOT IMPLEMENTED
+Current next: NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO / NOT STARTED
+WORKSTREAM_MIXED_BLOCKED: NO
+ALLOW_WORK_ORDER_CLOSE: YES
+ALLOW_I1_M0_CONTRACT_GAP_CLOSE_WO: YES
+ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+验证：
+
+- `git status --short`：PASS / CHANGES PRESENT；dirty 限于允许的 `docs/current` 文档和新增 WO。
+- `git diff --check`：PASS；退出码 0，仅 Windows LF/CRLF warning。
+- `git diff --stat`：PASS / DOCS-ONLY；tracked diff 限于 `docs/current` 文档。
+- forbidden diff：`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration 均为空。
+- NQ dev pathspec diff：PASS / EMPTY；`docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 unstaged 或 staged diff，`WORKSTREAM_MIXED_BLOCKED: NO`。
+- `mvn -ntp -f backend/pom.xml test`：PASS / BUILD SUCCESS；23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS；Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped。
+
+边界确认：
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增生产代码、测试代码、fixture JSON、API、Controller、Client、Provider、dispatcher 或真实 HTTP；未读取 credential；未接 RealClient、real provider、AI 或 LangGraph；未启动 Integration-1 runtime；未开启 LIVE；未让 DH 输出进入 order、risk mutation、ledger mutation、Paper Run 或 private trading 路径。
+
 ## NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX final validation
 
 日期：2026-07-03。
