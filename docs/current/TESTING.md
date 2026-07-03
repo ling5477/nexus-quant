@@ -1,3 +1,14 @@
+## NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `npm run build` | PASS | 在 `frontend` 目录执行；TypeScript + Vite production build 通过。保留既有 Vite chunk > 500 kB warning，非阻断。 |
+| `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS / 6 passed | no-backend / mocked readiness smoke；覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 字段“暂无稳定事实”、forbidden wording、private/credential/trading endpoint 与真实交易所 host 禁止请求。 |
+| Backend-dependent smoke | NOT RUN | 本轮不启动后端，不执行真实 public outbound，不执行 O-5 manual smoke；不得写成通过。 |
+
+Scope：本轮只验证前端 O-4B read-only UI implementation，改动范围为 frontend MarketData 页面/type/E2E 与指定 current docs。未运行 backend Maven / Python pytest/mypy/ruff，原因是本轮未修改 backend/research/Python。未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP，未读取 credential，未开启 LIVE/AI/DH runtime，未实现 RealClient / real provider / real permission probe。
+
 ## NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW validation（2026-07-03）
 
 | Command | Result | Notes |

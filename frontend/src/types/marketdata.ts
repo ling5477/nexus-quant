@@ -44,27 +44,97 @@ export interface MarketdataQualityStatusSummary {
     statuses: Record<string, number>;
 }
 
+export type MarketdataReadinessStatus =
+    | 'FRESH'
+    | 'STALE'
+    | 'VERY_STALE'
+    | 'GAP'
+    | 'ERROR'
+    | 'DISABLED'
+    | 'UNKNOWN'
+    | 'NO_DATA';
+
+export type MarketdataReadinessSourceStatus =
+    | 'ENABLED'
+    | 'DISABLED'
+    | 'DEGRADED'
+    | 'ERROR'
+    | 'RATE_LIMITED';
+
+export type MarketdataReadinessSourceHealth =
+    | 'HEALTHY'
+    | 'DEGRADED'
+    | 'RATE_LIMITED'
+    | 'TIMEOUT'
+    | 'ERROR'
+    | 'UNKNOWN';
+
+export type MarketdataReadinessGapStatus =
+    | 'NONE'
+    | 'PARTIAL'
+    | 'GAP'
+    | 'UNKNOWN';
+
+export type MarketdataReadinessDataOrigin =
+    | 'LOCAL_DB'
+    | 'FIXTURE'
+    | 'FAKE_SERVER'
+    | 'PUBLIC_CANDIDATE'
+    | 'UNKNOWN';
+
+export type MarketdataReadinessErrorCategory =
+    | 'NONE'
+    | 'DISABLED'
+    | 'POLICY_DENIED'
+    | 'RATE_LIMITED'
+    | 'TIMEOUT'
+    | 'TEMPORARY_FAILURE'
+    | 'INVALID_RESPONSE'
+    | 'STALE'
+    | 'GAP'
+    | 'TRANSPORT_ERROR'
+    | 'UNKNOWN';
+
 export interface MarketdataReadinessSummary {
     exchangeCode: string;
+    exchange: string;
     marketType: string;
     instrumentId: string;
     symbol: string;
     interval: string;
-    status: string;
-    freshnessStatus: string;
-    sourceHealthStatus: string;
+    timeframe: string;
+    sourceCode: string;
+    dataOrigin: MarketdataReadinessDataOrigin | string;
+    status: MarketdataReadinessStatus | string;
+    sourceStatus: MarketdataReadinessSourceStatus | string;
+    freshnessStatus: MarketdataReadinessStatus | string;
+    sourceHealthStatus: MarketdataReadinessStatus | string;
+    sourceHealth: MarketdataReadinessSourceHealth | string;
     sourceHealthReason: string;
+    gapStatus: MarketdataReadinessGapStatus | string;
     qualityStatusSummary: MarketdataQualityStatusSummary;
     barCount: number;
     firstBarTime?: string | null;
     lastBarTime?: string | null;
     expectedBarCount?: number | null;
     gapCount?: number | null;
+    missingFrom?: string | null;
+    missingTo?: string | null;
     unknownQualityCount: number;
     lastSuccessAt?: string | null;
     lastFailureAt?: string | null;
+    lastObservedAt?: string | null;
+    latencyMs?: number | null;
+    errorRate?: number | null;
+    errorCategory: MarketdataReadinessErrorCategory | string;
+    staleAfterSeconds?: number | null;
+    degradedReason?: string | null;
+    disabledReason?: string | null;
+    traceId?: string | null;
+    requestId?: string | null;
     backendSupportLevel: string;
     generatedAt: string;
+    updatedAt: string;
 }
 
 export type MarketdataSandboxSourceType =

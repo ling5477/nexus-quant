@@ -10,7 +10,7 @@
 
 本轮结论：`PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。
 
-O-4 implementation：`NOT STARTED`（未开始）。
+O-4B implementation：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自查）/ `READY TO COMMIT`（可进入提交前复核）。
 
 GateO 当前事实：
 
@@ -20,7 +20,7 @@ GateO 当前事实：
 - O-3 已冻结 `GET /api/marketdata/readiness` read-only API baseline。
 - O-4 MarketData Quality UI plan：`PASS / PLAN ONLY / NOT IMPLEMENTED`（通过 / 仅规划 / 未实现）。
 - O-4A UI contract plan review：`PASS / ACCEPTED`（通过 / 已接受）。
-- O-4B MarketData Quality read-only UI implementation：`ALLOWED / READ-ONLY UI ONLY / NOT STARTED`（允许 / 仅只读 UI / 未开始）。
+- O-4B MarketData Quality read-only UI implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自查 / 可进入提交前复核）。
 - O-5 manual public outbound smoke：`NOT STARTED`（未开始）。
 - GateO stage：`NOT COMPLETED`（未完成）。
 - LIVE：`DISABLED`（已禁用）。
@@ -28,7 +28,7 @@ GateO 当前事实：
 - DH runtime：`NOT_INTEGRATED`（未集成）。
 - RealClient / real provider / real permission probe：`NOT_IMPLEMENTED`（未实现）。
 
-本文件只规划 NQ Console 中 MarketData Quality UI 的信息架构、组件、API 消费、状态展示、测试策略和后续实现批次；不实现页面、不改前端源码、不改后端、不新增 API、不新增 migration、不执行真实 public outbound。
+本文件最初规划 NQ Console 中 MarketData Quality UI 的信息架构、组件、API 消费、状态展示、测试策略和后续实现批次；本轮 O-4B 已按该计划完成只读 UI implementation 状态同步。O-4B 未改后端、不新增 API、不新增 migration、不执行真实 public outbound。
 
 ## 2. 目标
 
@@ -108,7 +108,7 @@ O-4 的目标是在 NQ Console 中让用户清楚判断行情数据是否可信�
 - `backendSupportLevel`
 - `generatedAt`
 
-O-4B implementation 前必须补齐 O-3B 后端已追加字段的前端 contract 类型，但本轮不修改前端类型。
+O-4B implementation 已补齐 O-3B 后端已追加字段的前端 contract 类型；该类型扩展仅用于消费既有 `GET /api/marketdata/readiness` read-only response，不新增后端 API 或 migration。
 
 ### 4.4 O-3 readiness API 字段
 
@@ -363,23 +363,32 @@ npm run test:e2e
 - 不调用 private endpoint。
 - 不读取 credential。
 
-本轮为 planning-only，不运行 `npm run build` 或 Playwright；不能把未运行 E2E 写成通过。
+O-4 planning 轮次为 planning-only，未运行 `npm run build` 或 Playwright；O-4B implementation 已运行 `npm run build` 与 mocked no-backend Playwright smoke。backend-dependent smoke 未运行，不能写成通过。
 
 ## 13. O-4 implementation 批次
 
 | Batch | 名称 | 状态 | 目标 | 成功标准 |
 | --- | --- | --- | --- | --- |
 | O-4A | UI contract plan review | `PASS / ACCEPTED`（通过 / 已接受） | 已复核路由、页面、字段、文案、风险提示和测试矩阵；API.md enum drift 已修正 | P0/P1=0，允许进入 O-4B。 |
-| O-4B | MarketData Quality read-only page/table implementation | `ALLOWED / READ-ONLY UI ONLY / NOT STARTED`（允许 / 仅只读 UI / 未开始） | 在既有 `/marketdata` 复用 Quality / Readiness tab 或分区，补齐前端 types 与只读表格 | `npm run build` 与对应 no-backend smoke 通过。 |
+| O-4B | MarketData Quality read-only page/table implementation | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自查 / 可进入提交前复核） | 已在既有 `/marketdata` 复用 Data Quality / Readiness 分区，补齐前端 readiness type、只读 source health table、summary、notice、nullable 中文空态和 mocked no-backend smoke | `npm run build` 与 O-4B mocked no-backend smoke 通过。 |
 | O-4C | 状态 badge / notice / drawer polish | `NOT STARTED`（未开始） | 统一状态 badge、null 展示、风险提示和详情抽屉 | forbidden wording test 通过。 |
 | O-4D | 图表 foundation | `OPTIONAL / NOT STARTED`（可选 / 未开始） | 如果 API 提供趋势事实，再做 latency/error/gap 趋势或 K 线增强 | 不伪造历史趋势，不新增真实外联。 |
 | O-4E | O-4 freeze review | `NOT STARTED`（未开始） | 冻结 O-4 UI baseline | P0/P1=0，验证记录完整。 |
 
-是否允许 O-4 implementation 开始：
+O-4B implementation 结果：
 
 - O-4A UI contract plan review 已 `PASS / ACCEPTED`。
-- 允许进入 O-4B implementation，但只允许 read-only UI：复用 `/marketdata`，补齐 frontend readiness type、状态表、summary、notice、drawer 和 no-backend smoke。
-- 任何 O-4B+ 代码实现仍不得触碰 backend、API、migration、O-5 public smoke、LIVE、AI、DH runtime、RealClient、real provider 或 permission probe。
+- O-4B 已实现 read-only UI：复用 `/marketdata`，补齐 frontend readiness type、状态表、summary、notice、nullable 中文空态和 no-backend smoke。
+- O-4B 未新增独立 `/marketdata/quality` route，未改 backend/API/migration，未执行 O-5 public smoke，未触碰 LIVE、AI、DH runtime、RealClient、real provider 或 permission probe。
+- Backend-dependent smoke 本轮未运行，不得写成通过。
+
+### 13.1 O-4B implementation validation（2026-07-03）
+
+| Command | Result | Scope |
+| --- | --- | --- |
+| `npm run build` | `PASS`（通过） | TypeScript + Vite production build；保留既有 Vite chunk > 500 kB warning，非阻断。 |
+| `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | `PASS`（通过），6 passed | no-backend / mocked readiness smoke；覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 中文空态、forbidden wording、private/credential/trading endpoint 和真实交易所 host 禁止请求。 |
+| Backend-dependent smoke | `NOT RUN`（未运行） | 本轮不启动后端，不执行真实 public outbound，不执行 O-5。 |
 
 ## 14. 安全边界
 
@@ -462,7 +471,7 @@ O-4 plan 结论：`PASS / PLAN ONLY / NOT IMPLEMENTED`。
 
 O-4A review：`PASS / ACCEPTED`。
 
-O-4B implementation：`ALLOWED / READ-ONLY UI ONLY / NOT STARTED`。
+O-4B implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`。
 
 O-5 manual public outbound smoke：`NOT STARTED`。
 
@@ -475,7 +484,7 @@ API 消费推荐：只消费 `GET /api/marketdata/readiness`；不消费真实�
 下一步：
 
 ```text
-NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION
+NQ-GATEO-O4C-MARKETDATA-QUALITY-UI-POLISH-OR-O4E-FREEZE-REVIEW
 ```
 
-O-4B 只能实现只读 UI，不得执行 O-5 manual public outbound smoke，不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading。
+O-4B 已完成只读 UI，不代表 GateO completed。后续仍不得执行 O-5 manual public outbound smoke，不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading，除非后续任务单独授权并通过边界审查。

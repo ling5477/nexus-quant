@@ -56,12 +56,22 @@ const OK_QUALITY_STATUSES = new Set(['OK', 'GOOD']);
 
 type QualityReadinessStatus = 'GOOD' | 'WARN' | 'STALE' | 'GAP' | 'ERROR' | 'UNKNOWN';
 
+const STABLE_FACT_PENDING_TEXT = '暂无稳定事实';
+
 const READINESS_STATUS_COLOR: Record<string, string> = {
+    ENABLED: 'blue',
     FRESH: 'green',
     STALE: 'orange',
+    VERY_STALE: 'red',
     GAP: 'orange',
     ERROR: 'red',
     DISABLED: 'default',
+    HEALTHY: 'green',
+    DEGRADED: 'orange',
+    RATE_LIMITED: 'gold',
+    TIMEOUT: 'orange',
+    NONE: 'green',
+    PARTIAL: 'gold',
     PENDING_BACKEND_SUPPORT: 'default',
     UNKNOWN: 'default',
     NO_DATA: 'default',
@@ -72,6 +82,7 @@ const READINESS_STATUS_COLOR: Record<string, string> = {
 const READINESS_FRESHNESS_STATE: Record<string, FreshnessState> = {
     FRESH: 'fresh',
     STALE: 'stale',
+    VERY_STALE: 'stale',
     GAP: 'degraded',
     ERROR: 'error',
     DISABLED: 'disabled',
@@ -643,11 +654,163 @@ function readinessFreshnessState(status?: string | null): FreshnessState {
 }
 
 function countText(value?: number | null): string {
-    return value == null ? '-' : String(value);
+    return value == null ? STABLE_FACT_PENDING_TEXT : String(value);
 }
 
 function dateText(value?: string | null): string {
-    return value ? formatDateTime(value) : '-';
+    return value ? formatDateTime(value) : STABLE_FACT_PENDING_TEXT;
+}
+
+function optionalText(value?: string | null): string {
+    return value && value.trim() ? value : STABLE_FACT_PENDING_TEXT;
+}
+
+function numberText(value?: number | null, suffix = ''): string {
+    return value == null ? STABLE_FACT_PENDING_TEXT : `${formatNumber(value, 2)}${suffix}`;
+}
+
+function percentText(value?: number | null): string {
+    return value == null ? STABLE_FACT_PENDING_TEXT : `${formatNumber(value * 100, 2)}%`;
+}
+
+function readinessSourceHealth(readiness: MarketdataReadinessSummary): string {
+    return readiness.sourceHealth ?? readiness.sourceHealthStatus ?? 'UNKNOWN';
+}
+
+function readinessUpdatedAt(readiness: MarketdataReadinessSummary): string | null {
+    return readiness.updatedAt ?? readiness.generatedAt ?? null;
+}
+
+function MarketDataStatusBadge({status}: {status?: string | null}) {
+    return <Tag color={readinessStatusColor(status)}>{status ?? 'UNKNOWN'}</Tag>;
+}
+
+function MarketDataOriginBadge({origin}: {origin?: string | null}) {
+    const color = origin === 'LOCAL_DB'
+        ? 'blue'
+        : origin === 'FIXTURE' || origin === 'FAKE_SERVER'
+            ? 'gold'
+            : origin === 'PUBLIC_CANDIDATE'
+                ? 'purple'
+                : 'default';
+    return <Tag color={color}>{origin ?? 'UNKNOWN'}</Tag>;
+}
+
+interface MarketDataSourceHealthRow {
+    key: string;
+    sourceCode: string;
+    dataOrigin: string;
+    exchange: string;
+    symbol: string;
+    timeframe: string;
+    sourceStatus: string;
+    sourceHealth: string;
+    freshnessStatus: string;
+    gapStatus: string;
+    errorCategory: string;
+    updatedAt: string;
+    reason: string;
+}
+
+const sourceHealthColumns: ColumnsType<MarketDataSourceHealthRow> = [
+    {title: '数据源', dataIndex: 'sourceCode', key: 'sourceCode', width: 180, render: (value: string) => <MetricText>{value}</MetricText>},
+    {title: '数据来源', dataIndex: 'dataOrigin', key: 'dataOrigin', width: 150, render: (value: string) => <MarketDataOriginBadge origin={value} />},
+    {title: '交易所', dataIndex: 'exchange', key: 'exchange', width: 120},
+    {title: '交易对', dataIndex: 'symbol', key: 'symbol', width: 140},
+    {title: '周期', dataIndex: 'timeframe', key: 'timeframe', width: 100},
+    {title: '源状态', dataIndex: 'sourceStatus', key: 'sourceStatus', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {title: '健康状态', dataIndex: 'sourceHealth', key: 'sourceHealth', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {title: '新鲜度', dataIndex: 'freshnessStatus', key: 'freshnessStatus', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {title: '缺口', dataIndex: 'gapStatus', key: 'gapStatus', width: 120, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {title: '错误类别', dataIndex: 'errorCategory', key: 'errorCategory', width: 170, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 190, render: (value: string) => <MetricText>{value}</MetricText>},
+    {title: '原因', dataIndex: 'reason', key: 'reason', width: 360, ellipsis: true},
+];
+
+function sourceHealthRows(
+    readiness: MarketdataReadinessSummary | null,
+    submittedQuery: MarketdataBarsQuery | null,
+): MarketDataSourceHealthRow[] {
+    if (!readiness) {
+        return [{
+            key: 'pending-readiness',
+            sourceCode: submittedQuery
+                ? `${submittedQuery.exchangeCode}:${submittedQuery.symbol}:${submittedQuery.interval}`
+                : STABLE_FACT_PENDING_TEXT,
+            dataOrigin: 'UNKNOWN',
+            exchange: submittedQuery?.exchangeCode ?? STABLE_FACT_PENDING_TEXT,
+            symbol: submittedQuery?.symbol ?? STABLE_FACT_PENDING_TEXT,
+            timeframe: submittedQuery?.interval ?? STABLE_FACT_PENDING_TEXT,
+            sourceStatus: 'UNKNOWN',
+            sourceHealth: 'UNKNOWN',
+            freshnessStatus: submittedQuery ? 'UNKNOWN' : 'NO_DATA',
+            gapStatus: 'UNKNOWN',
+            errorCategory: 'UNKNOWN',
+            updatedAt: STABLE_FACT_PENDING_TEXT,
+            reason: submittedQuery
+                ? '等待 /api/marketdata/readiness 返回本地 DB 诊断事实；页面不会发起外部交易所请求。'
+                : '提交查询后展示 readiness 只读诊断。',
+        }];
+    }
+
+    return [{
+        key: readiness.sourceCode ?? `${readiness.exchangeCode}:${readiness.symbol}:${readiness.interval}`,
+        sourceCode: readiness.sourceCode ?? STABLE_FACT_PENDING_TEXT,
+        dataOrigin: readiness.dataOrigin ?? 'UNKNOWN',
+        exchange: readiness.exchangeCode ?? readiness.exchange ?? STABLE_FACT_PENDING_TEXT,
+        symbol: readiness.symbol ?? STABLE_FACT_PENDING_TEXT,
+        timeframe: readiness.interval ?? readiness.timeframe ?? STABLE_FACT_PENDING_TEXT,
+        sourceStatus: readiness.sourceStatus ?? 'UNKNOWN',
+        sourceHealth: readinessSourceHealth(readiness),
+        freshnessStatus: readiness.freshnessStatus ?? 'UNKNOWN',
+        gapStatus: readiness.gapStatus ?? 'UNKNOWN',
+        errorCategory: readiness.errorCategory ?? 'UNKNOWN',
+        updatedAt: dateText(readinessUpdatedAt(readiness)),
+        reason: readiness.disabledReason
+            ?? readiness.degradedReason
+            ?? readiness.sourceHealthReason
+            ?? STABLE_FACT_PENDING_TEXT,
+    }];
+}
+
+function MarketDataSourceHealthTable({
+    readiness,
+    submittedQuery,
+    loading,
+}: {
+    readiness: MarketdataReadinessSummary | null;
+    submittedQuery: MarketdataBarsQuery | null;
+    loading: boolean;
+}) {
+    return (
+        <Table<MarketDataSourceHealthRow>
+            size="small"
+            rowKey="key"
+            columns={sourceHealthColumns}
+            dataSource={sourceHealthRows(readiness, submittedQuery)}
+            pagination={false}
+            loading={loading}
+            scroll={{x: 1800}}
+        />
+    );
+}
+
+function MarketDataQualityNotice() {
+    return (
+        <Alert
+            type="warning"
+            showIcon
+            message="行情数据质量只读诊断"
+            description={(
+                <Space direction="vertical" size={2}>
+                    <span>本页仅展示行情数据质量诊断结果。</span>
+                    <span>数据质量正常不代表可以交易。</span>
+                    <span>Public marketdata readiness 不等于 trading authorization。</span>
+                    <span>LIVE 当前禁用，private trading / permission probe / real provider 未实现。</span>
+                </Space>
+            )}
+        />
+    );
 }
 
 function isMarketdataQualityStatusSummary(value: unknown): value is MarketdataReadinessSummary['qualityStatusSummary'] {
@@ -1092,6 +1255,7 @@ export function MarketdataPage() {
             </Card>
             <Card className="page-section" bordered={false} title="Data Quality / Readiness">
                 <div data-testid="marketdata-quality-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                    <MarketDataQualityNotice />
                     <Descriptions
                         size="small"
                         column={{xs: 1, sm: 2, md: 3}}
@@ -1114,9 +1278,28 @@ export function MarketdataPage() {
                                 key: 'sourceHealthStatus',
                                 label: 'Source health status',
                                 children: (
-                                    <Tag color={readinessStatusColor(backendReadiness?.sourceHealthStatus)}>
-                                        {backendReadiness?.sourceHealthStatus ?? (readinessLoading ? 'LOADING' : 'UNAVAILABLE')}
-                                    </Tag>
+                                    <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
+                                ),
+                            },
+                            {
+                                key: 'sourceStatus',
+                                label: 'Source status',
+                                children: (
+                                    <MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? (readinessLoading ? 'LOADING' : 'UNKNOWN')} />
+                                ),
+                            },
+                            {
+                                key: 'dataOrigin',
+                                label: 'Data origin',
+                                children: (
+                                    <MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />
+                                ),
+                            },
+                            {
+                                key: 'gapStatus',
+                                label: 'Gap status',
+                                children: (
+                                    <MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />
                                 ),
                             },
                             {
@@ -1127,6 +1310,11 @@ export function MarketdataPage() {
                         ]}
                     />
                     <SandboxSourceDisplay summary={sandboxSourceDisplay} />
+                    <MarketDataSourceHealthTable
+                        readiness={backendReadiness}
+                        submittedQuery={submittedQuery}
+                        loading={readinessLoading}
+                    />
                     <div
                         style={{
                             display: 'grid',
@@ -1182,6 +1370,11 @@ export function MarketdataPage() {
                             detail={backendReadiness ? `expected=${countText(backendReadiness.expectedBarCount)}` : (barsQuality.gapDetectionUnavailable ? 'gap detection unavailable' : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`)}
                         />
                         <MetricTile
+                            label="Gap status"
+                            value={<MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />}
+                            detail={backendReadiness ? `missingFrom=${dateText(backendReadiness.missingFrom)}, missingTo=${dateText(backendReadiness.missingTo)}` : STABLE_FACT_PENDING_TEXT}
+                        />
+                        <MetricTile
                             label="Unknown quality count"
                             value={<MetricText>{backendReadiness?.unknownQualityCount ?? barsQuality.unknownQualityCount}</MetricText>}
                             detail={backendReadiness ? 'from backend qualityStatusSummary' : (barsQuality.unknownQualityCount > 0 ? 'qualityStatus missing on returned bars' : 'none')}
@@ -1189,11 +1382,74 @@ export function MarketdataPage() {
                         <MetricTile
                             label="Source health"
                             value={(
-                                <Tag color={readinessStatusColor(backendReadiness?.sourceHealthStatus)}>
-                                    {backendReadiness?.sourceHealthStatus ?? (readinessLoading ? 'LOADING' : 'UNAVAILABLE')}
-                                </Tag>
+                                <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
                             )}
                             detail={backendReadiness?.sourceHealthReason ?? (readinessLoading ? 'loading /api/marketdata/readiness' : dataQualityReadiness.sourceHealthDetail)}
+                        />
+                        <MetricTile
+                            label="Source status"
+                            value={<MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? 'UNKNOWN'} />}
+                            detail="sourceStatus 只表示数据源诊断状态，不代表 provider 或交易授权。"
+                        />
+                        <MetricTile
+                            label="Data origin"
+                            value={<MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />}
+                            detail="LOCAL_DB / FIXTURE / FAKE_SERVER / PUBLIC_CANDIDATE 均为诊断来源，不代表真实外联已执行。"
+                        />
+                        <MetricTile
+                            label="Error category"
+                            value={<MarketDataStatusBadge status={backendReadiness?.errorCategory ?? 'UNKNOWN'} />}
+                            detail={backendReadiness ? optionalText(backendReadiness.degradedReason ?? backendReadiness.disabledReason) : STABLE_FACT_PENDING_TEXT}
+                        />
+                        <MetricTile
+                            label="Error rate"
+                            value={<MetricText>{backendReadiness ? percentText(backendReadiness.errorRate) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="null 表示暂无稳定事实，不显示为 0%。"
+                        />
+                        <MetricTile
+                            label="Latency"
+                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.latencyMs, ' ms') : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="null 表示暂无稳定事实，不硬编码延迟阈值。"
+                        />
+                        <MetricTile
+                            label="Missing from"
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingFrom) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="缺口起点；null 不等于无缺口。"
+                        />
+                        <MetricTile
+                            label="Missing to"
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingTo) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="缺口终点；null 不等于无缺口。"
+                        />
+                        <MetricTile
+                            label="Last observed"
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastObservedAt) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="最近观测到的本地行情或 ingestion 事实。"
+                        />
+                        <MetricTile
+                            label="Updated at"
+                            value={<MetricText>{backendReadiness ? dateText(readinessUpdatedAt(backendReadiness)) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail={backendReadiness ? '优先使用 updatedAt，兼容 generatedAt。' : STABLE_FACT_PENDING_TEXT}
+                        />
+                        <MetricTile
+                            label="Stale threshold"
+                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.staleAfterSeconds, ' s') : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="过期阈值来自后端只读事实；前端不推导业务阈值。"
+                        />
+                        <MetricTile
+                            label="Degraded reason"
+                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.degradedReason) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="仅显示脱敏诊断原因。"
+                        />
+                        <MetricTile
+                            label="Disabled reason"
+                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.disabledReason) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="仅显示脱敏禁用原因。"
+                        />
+                        <MetricTile
+                            label="Trace / Request"
+                            value={<MetricText>{backendReadiness ? `${optionalText(backendReadiness.traceId)} / ${optionalText(backendReadiness.requestId)}` : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                            detail="traceId/requestId 可为空；不得显示 credential、header 或 raw payload。"
                         />
                         <MetricTile
                             label="Backend support"
@@ -1203,12 +1459,12 @@ export function MarketdataPage() {
                         <MetricTile
                             label="Last success"
                             value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastSuccessAt) : '-'}</MetricText>}
-                            detail={backendReadiness?.lastSuccessAt ?? 'not returned'}
+                            detail={backendReadiness?.lastSuccessAt ?? STABLE_FACT_PENDING_TEXT}
                         />
                         <MetricTile
                             label="Last failure"
                             value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastFailureAt) : '-'}</MetricText>}
-                            detail={backendReadiness?.lastFailureAt ?? 'not returned'}
+                            detail={backendReadiness?.lastFailureAt ?? STABLE_FACT_PENDING_TEXT}
                         />
                     </div>
                     <Space size={8} wrap>
@@ -1220,9 +1476,16 @@ export function MarketdataPage() {
                                 <Tag color={readinessStatusColor(backendReadiness.freshnessStatus)}>
                                     freshness: {backendReadiness.freshnessStatus}
                                 </Tag>
-                                <Tag color={readinessStatusColor(backendReadiness.sourceHealthStatus)}>
-                                    source health: {backendReadiness.sourceHealthStatus}
+                                <Tag color={readinessStatusColor(readinessSourceHealth(backendReadiness))}>
+                                    source health: {readinessSourceHealth(backendReadiness)}
                                 </Tag>
+                                <Tag color={readinessStatusColor(backendReadiness.gapStatus)}>
+                                    gap: {backendReadiness.gapStatus ?? 'UNKNOWN'}
+                                </Tag>
+                                <Tag color={readinessStatusColor(backendReadiness.sourceStatus)}>
+                                    source status: {backendReadiness.sourceStatus ?? 'UNKNOWN'}
+                                </Tag>
+                                <Tag>data origin: {backendReadiness.dataOrigin ?? 'UNKNOWN'}</Tag>
                                 <Tag>backend support: {backendReadiness.backendSupportLevel}</Tag>
                             </>
                         ) : (
@@ -1271,7 +1534,7 @@ export function MarketdataPage() {
                             type={backendReadiness.status === 'FRESH' ? 'success' : backendReadiness.status === 'ERROR' ? 'error' : 'warning'}
                             showIcon
                             message={`MarketData readiness: ${backendReadiness.status}`}
-                            description={`${backendReadiness.sourceHealthReason} Backend support: ${backendReadiness.backendSupportLevel}.`}
+                            description={`${backendReadiness.sourceHealthReason} Backend support: ${backendReadiness.backendSupportLevel}. 本结论只表示行情数据诊断，不代表交易授权。`}
                         />
                     ) : (
                         <Alert

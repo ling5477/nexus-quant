@@ -1,3 +1,38 @@
+## NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION
+
+日期：2026-07-03。
+
+范围：
+
+- 在现有 `/marketdata` 页面增强 MarketData Quality / Readiness 只读展示，不新增独立 `/marketdata/quality` route。
+- 补齐 `frontend/src/types/marketdata.ts` 中 `MarketdataReadinessSummary` O-3B 字段与 nullable 建模。
+- 更新 `frontend/tests/e2e/marketdata-quality-readiness-smoke.spec.ts`，用 mocked no-backend readiness smoke 覆盖 O-4B 状态矩阵和安全边界。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/GATEO_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/NQ_GATEO_O4_MARKETDATA_QUALITY_UI_PLAN.md`。
+
+结果：
+
+```text
+NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+GateO stage: NOT COMPLETED
+O-5 manual public outbound smoke: NOT STARTED
+Backend-dependent smoke: NOT RUN
+```
+
+验证：
+
+- `npm run build`：PASS。
+- `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium`：PASS，6 passed。
+
+边界：
+
+- 只消费 `marketdataApi.getReadiness()` / `GET /api/marketdata/readiness`。
+- 未改 backend / API / migration / research / scripts / deploy / `.github`。
+- 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
+- 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
+- 页面明确提示 public marketdata readiness 不等于 trading authorization。
+
+Next step：O-4C UI polish 或 O-4E freeze review 均需另起任务；O-5 manual public outbound smoke 仍不得提前执行。
+
 ## NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW
 
 日期：2026-07-03。
