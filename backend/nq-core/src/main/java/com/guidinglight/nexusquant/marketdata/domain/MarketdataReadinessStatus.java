@@ -9,6 +9,7 @@ package com.guidinglight.nexusquant.marketdata.domain;
 public enum MarketdataReadinessStatus {
     FRESH,
     STALE,
+    VERY_STALE,
     GAP,
     ERROR,
     DISABLED,

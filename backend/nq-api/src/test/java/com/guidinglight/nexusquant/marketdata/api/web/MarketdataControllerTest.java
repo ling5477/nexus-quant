@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,6 +30,11 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataBackendSupportLevel;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatusSummary;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatus;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessDataOrigin;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessErrorCategory;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessGapStatus;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSourceHealth;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSourceStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSummary;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
@@ -90,24 +96,43 @@ class MarketdataControllerTest {
                         && Instant.parse("2026-06-29T00:02:59Z").equals(query.to())
         ))).thenReturn(new MarketdataReadinessSummary(
                 "BINANCE",
+                "BINANCE",
                 "SPOT",
                 "BTC-USDT",
                 "BTC-USDT",
                 "1m",
+                "1m",
+                "BINANCE_SPOT_BTC-USDT_1m",
+                MarketdataReadinessDataOrigin.LOCAL_DB,
+                MarketdataReadinessStatus.FRESH,
+                MarketdataReadinessSourceStatus.ENABLED,
                 MarketdataReadinessStatus.FRESH,
                 MarketdataReadinessStatus.FRESH,
-                MarketdataReadinessStatus.FRESH,
+                MarketdataReadinessSourceHealth.HEALTHY,
                 "Local bars satisfy the requested readiness window using DB-only aggregation.",
+                MarketdataReadinessGapStatus.NONE,
                 new MarketdataQualityStatusSummary(3, 0, 0, 0, Map.of("OK", 3L)),
                 3,
                 Instant.parse("2026-06-29T00:00:00Z"),
                 Instant.parse("2026-06-29T00:02:59Z"),
                 3L,
                 0L,
+                null,
+                null,
                 0,
                 Instant.parse("2026-06-29T00:03:10Z"),
                 null,
+                Instant.parse("2026-06-29T00:03:10Z"),
+                450L,
+                null,
+                MarketdataReadinessErrorCategory.NONE,
+                300L,
+                null,
+                null,
+                null,
+                null,
                 MarketdataBackendSupportLevel.NO_MIGRATION_MVP,
+                Instant.parse("2026-06-29T00:04:00Z"),
                 Instant.parse("2026-06-29T00:04:00Z")
         ));
 
@@ -122,17 +147,36 @@ class MarketdataControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-readiness"))
                 .andExpect(jsonPath("$.exchangeCode").value("BINANCE"))
+                .andExpect(jsonPath("$.exchange").value("BINANCE"))
                 .andExpect(jsonPath("$.instrumentId").value("BTC-USDT"))
                 .andExpect(jsonPath("$.symbol").value("BTC-USDT"))
+                .andExpect(jsonPath("$.interval").value("1m"))
+                .andExpect(jsonPath("$.timeframe").value("1m"))
+                .andExpect(jsonPath("$.sourceCode").value("BINANCE_SPOT_BTC-USDT_1m"))
+                .andExpect(jsonPath("$.dataOrigin").value("LOCAL_DB"))
                 .andExpect(jsonPath("$.status").value("FRESH"))
+                .andExpect(jsonPath("$.sourceStatus").value("ENABLED"))
                 .andExpect(jsonPath("$.freshnessStatus").value("FRESH"))
                 .andExpect(jsonPath("$.sourceHealthStatus").value("FRESH"))
+                .andExpect(jsonPath("$.sourceHealth").value("HEALTHY"))
+                .andExpect(jsonPath("$.gapStatus").value("NONE"))
                 .andExpect(jsonPath("$.qualityStatusSummary.okCount").value(3))
                 .andExpect(jsonPath("$.barCount").value(3))
                 .andExpect(jsonPath("$.expectedBarCount").value(3))
                 .andExpect(jsonPath("$.gapCount").value(0))
+                .andExpect(jsonPath("$.missingFrom").hasJsonPath())
+                .andExpect(jsonPath("$.missingFrom").value(nullValue()))
+                .andExpect(jsonPath("$.missingTo").hasJsonPath())
+                .andExpect(jsonPath("$.missingTo").value(nullValue()))
                 .andExpect(jsonPath("$.unknownQualityCount").value(0))
+                .andExpect(jsonPath("$.lastObservedAt").exists())
+                .andExpect(jsonPath("$.latencyMs").value(450))
+                .andExpect(jsonPath("$.errorRate").hasJsonPath())
+                .andExpect(jsonPath("$.errorRate").value(nullValue()))
+                .andExpect(jsonPath("$.errorCategory").value("NONE"))
+                .andExpect(jsonPath("$.staleAfterSeconds").value(300))
                 .andExpect(jsonPath("$.backendSupportLevel").value("NO_MIGRATION_MVP"))
+                .andExpect(jsonPath("$.updatedAt").exists())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -141,7 +185,24 @@ class MarketdataControllerTest {
         assertFalse(responseBody.contains("secret"));
         assertFalse(responseBody.contains("passphrase"));
         assertFalse(responseBody.contains("private key"));
-        verifyNoInteractions(historicalMarketDataPort, marketdataIngestionService, marketdataBarIngestService);
+        assertFalse(responseBody.contains("credentialRef"));
+        assertFalse(responseBody.contains("tradingAuthorized"));
+        assertFalse(responseBody.contains("liveReady"));
+        assertFalse(responseBody.contains("privateTradingReady"));
+        assertFalse(responseBody.contains("permissionGranted"));
+        assertFalse(responseBody.contains("realProviderReady"));
+        assertFalse(responseBody.contains("rawRequest"));
+        assertFalse(responseBody.contains("rawResponse"));
+        assertFalse(responseBody.contains("rawHeaders"));
+        assertFalse(responseBody.contains("fullQueryString"));
+        assertFalse(responseBody.contains("encrypted_payload"));
+        assertFalse(responseBody.contains("decrypted_payload"));
+        verifyNoInteractions(
+                historicalMarketDataPort,
+                marketdataIngestionService,
+                marketdataBarIngestService,
+                marketdataDatasetService
+        );
     }
 
     @Test

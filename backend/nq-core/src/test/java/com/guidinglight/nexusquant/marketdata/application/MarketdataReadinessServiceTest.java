@@ -5,10 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessDataOrigin;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessErrorCategory;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessGapStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatusSummary;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessBarFacts;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessIngestionFacts;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessQuery;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSourceHealth;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSourceStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessStatus;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataReadinessRepository;
 
@@ -37,10 +42,42 @@ class MarketdataReadinessServiceTest {
 
         assertEquals(MarketdataReadinessStatus.NO_DATA, summary.status());
         assertEquals(MarketdataReadinessStatus.NO_DATA, summary.freshnessStatus());
+        assertEquals(MarketdataReadinessDataOrigin.LOCAL_DB, summary.dataOrigin());
+        assertEquals(MarketdataReadinessSourceStatus.DEGRADED, summary.sourceStatus());
+        assertEquals(MarketdataReadinessSourceHealth.UNKNOWN, summary.sourceHealth());
+        assertEquals(MarketdataReadinessGapStatus.GAP, summary.gapStatus());
+        assertEquals(MarketdataReadinessErrorCategory.UNKNOWN, summary.errorCategory());
         assertEquals(0, summary.barCount());
         assertEquals(3L, summary.expectedBarCount());
         assertEquals(3L, summary.gapCount());
+        assertNull(summary.errorRate());
+        assertNull(summary.missingFrom());
+        assertNull(summary.missingTo());
         assertEquals("NO_MIGRATION_MVP", summary.backendSupportLevel().name());
+    }
+
+    @Test
+    void shouldReturnDisabledWhenLocalSourceStatusIsDisabled() {
+        MarketdataReadinessService service = new MarketdataReadinessService(
+                new StubReadinessRepository(
+                        MarketdataReadinessBarFacts.empty(),
+                        new MarketdataReadinessIngestionFacts(null, null, null, "DISABLED")
+                ),
+                fixedClock
+        );
+
+        var summary = service.summarize(query(
+                Instant.parse("2026-06-29T00:00:00Z"),
+                Instant.parse("2026-06-29T00:02:59Z")
+        ));
+
+        assertEquals(MarketdataReadinessStatus.DISABLED, summary.status());
+        assertEquals(MarketdataReadinessStatus.DISABLED, summary.freshnessStatus());
+        assertEquals(MarketdataReadinessSourceStatus.DISABLED, summary.sourceStatus());
+        assertEquals(MarketdataReadinessSourceHealth.UNKNOWN, summary.sourceHealth());
+        assertEquals(MarketdataReadinessErrorCategory.DISABLED, summary.errorCategory());
+        assertEquals("Local marketdata source is disabled by local evidence; readiness remains diagnostic only.",
+                summary.disabledReason());
     }
 
     @Test
@@ -63,10 +100,44 @@ class MarketdataReadinessServiceTest {
 
         assertEquals(MarketdataReadinessStatus.FRESH, summary.status());
         assertEquals(MarketdataReadinessStatus.FRESH, summary.freshnessStatus());
+        assertEquals(MarketdataReadinessSourceStatus.ENABLED, summary.sourceStatus());
+        assertEquals(MarketdataReadinessSourceHealth.HEALTHY, summary.sourceHealth());
+        assertEquals(MarketdataReadinessGapStatus.NONE, summary.gapStatus());
+        assertEquals(MarketdataReadinessErrorCategory.NONE, summary.errorCategory());
         assertEquals(3, summary.barCount());
         assertEquals(3L, summary.expectedBarCount());
         assertEquals(0L, summary.gapCount());
         assertEquals(0, summary.unknownQualityCount());
+        assertEquals(300L, summary.staleAfterSeconds());
+    }
+
+    @Test
+    void shouldReturnStaleWhenLatestLocalBarExceedsFreshnessWindow() {
+        MarketdataReadinessService service = new MarketdataReadinessService(
+                new StubReadinessRepository(new MarketdataReadinessBarFacts(
+                        1,
+                        Instant.parse("2026-06-28T23:50:00Z"),
+                        Instant.parse("2026-06-28T23:50:00Z"),
+                        Instant.parse("2026-06-28T23:50:59Z"),
+                        new MarketdataQualityStatusSummary(1, 0, 0, 0, Map.of("OK", 1L))
+                ), MarketdataReadinessIngestionFacts.empty()),
+                fixedClock
+        );
+
+        var summary = service.summarize(new MarketdataReadinessQuery(
+                "BINANCE",
+                "SPOT",
+                "BTC-USDT",
+                BarInterval.ONE_MINUTE,
+                null,
+                null
+        ));
+
+        assertEquals(MarketdataReadinessStatus.STALE, summary.status());
+        assertEquals(MarketdataReadinessStatus.STALE, summary.freshnessStatus());
+        assertEquals(MarketdataReadinessSourceStatus.DEGRADED, summary.sourceStatus());
+        assertEquals(MarketdataReadinessSourceHealth.DEGRADED, summary.sourceHealth());
+        assertEquals(MarketdataReadinessErrorCategory.STALE, summary.errorCategory());
     }
 
     @Test
@@ -88,6 +159,10 @@ class MarketdataReadinessServiceTest {
         ));
 
         assertEquals(MarketdataReadinessStatus.GAP, summary.status());
+        assertEquals(MarketdataReadinessSourceStatus.DEGRADED, summary.sourceStatus());
+        assertEquals(MarketdataReadinessSourceHealth.DEGRADED, summary.sourceHealth());
+        assertEquals(MarketdataReadinessGapStatus.GAP, summary.gapStatus());
+        assertEquals(MarketdataReadinessErrorCategory.GAP, summary.errorCategory());
         assertEquals(3L, summary.expectedBarCount());
         assertEquals(1L, summary.gapCount());
     }
@@ -117,6 +192,9 @@ class MarketdataReadinessServiceTest {
         ));
 
         assertEquals(MarketdataReadinessStatus.ERROR, summary.status());
+        assertEquals(MarketdataReadinessSourceStatus.ERROR, summary.sourceStatus());
+        assertEquals(MarketdataReadinessSourceHealth.ERROR, summary.sourceHealth());
+        assertEquals(MarketdataReadinessErrorCategory.UNKNOWN, summary.errorCategory());
         assertEquals(1, summary.qualityStatusSummary().gapSignalCount());
         assertEquals(1, summary.qualityStatusSummary().invalidCount());
         assertEquals(1, summary.qualityStatusSummary().unknownQualityCount());
@@ -147,8 +225,12 @@ class MarketdataReadinessServiceTest {
         ));
 
         assertEquals(MarketdataReadinessStatus.ERROR, summary.status());
+        assertEquals(MarketdataReadinessSourceStatus.ERROR, summary.sourceStatus());
+        assertEquals(MarketdataReadinessSourceHealth.ERROR, summary.sourceHealth());
         assertEquals(Instant.parse("2026-06-29T00:00:30Z"), summary.lastSuccessAt());
         assertEquals(Instant.parse("2026-06-29T00:01:30Z"), summary.lastFailureAt());
+        assertEquals(Instant.parse("2026-06-29T00:01:30Z"), summary.lastObservedAt());
+        assertEquals(1_000L, summary.latencyMs());
     }
 
     @Test

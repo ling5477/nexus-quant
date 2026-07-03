@@ -1,3 +1,45 @@
+## NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION
+
+日期：2026-07-03。
+
+范围：
+
+- 扩展既有 `GET /api/marketdata/readiness` read model；不新增重复 endpoint。
+- 修改 `backend/nq-core` readiness domain / service mapping，新增 `dataOrigin`、`sourceStatus`、`sourceHealth`、`gapStatus`、`errorCategory` 等诊断 enum。
+- 修改 `backend/nq-api` readiness response DTO 与 controller 回归测试。
+- 同步 `README.md` 与 `docs/current` 中 GateO / O-3B 状态、API 文档、测试记录和工作日志。
+- 不改 frontend、research、scripts、deploy、`.github`、migration 或 CI workflow。
+
+结果：
+
+```text
+NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+Existing endpoint: GET /api/marketdata/readiness
+No new endpoints: /readiness/sources, /readiness/gaps, /readiness/quality/overview
+O-3E freeze review: NOT STARTED
+O-4: NOT STARTED
+O-5 manual public outbound smoke: NOT STARTED
+GateO stage: NOT COMPLETED
+```
+
+实现摘要：
+
+- Response 保留旧字段，并追加 `sourceCode / exchange / timeframe / dataOrigin / sourceStatus / sourceHealth / gapStatus / lastObservedAt / latencyMs / errorRate / errorCategory / missingFrom / missingTo / staleAfterSeconds / degradedReason / disabledReason / traceId / requestId / updatedAt`。
+- `exchange` 为 `exchangeCode` alias；`timeframe` 为 `interval` alias。
+- 当前 `dataOrigin=LOCAL_DB`；`errorRate`、`missingFrom`、`missingTo`、`traceId`、`requestId` 在缺少稳定本地事实时返回 `null`。
+- Service 仍只读本地 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` facts，不触发 adapter、public outbound、credential read、permission probe 或 trading path。
+- Controller test 覆盖 forbidden response fields absent，并验证 readiness 查询不调用 bars / ingestion / dataset ports。
+
+验证：
+
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-adapter-api -am "-Dtest=*MarketdataReadiness*,*DataQuality*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+- `mvn -f backend/pom.xml -pl nq-api -am "-Dtest=MarketdataControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+- `mvn -f backend/pom.xml test`：PASS / BUILD SUCCESS；23 个 reactor module 全部 `SUCCESS`；`nq-app` 86 tests / 0 failures / 0 errors / 2 skipped（既有跳过项）。
+
+边界确认：
+
+未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未读取 credential；未开启 LIVE、AI 或 DH runtime；未实现 RealClient、real provider、real permission probe、signed request、private WebSocket 或 private trading endpoint；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN
 
 日期：2026-07-03。
@@ -12,18 +54,18 @@
 
 ```text
 NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED
-O-3B backend implementation: NOT STARTED
+O-3B backend implementation: CONSUMED BY NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION
 O-4 frontend wiring: NOT STARTED
 O-5 local smoke: NOT STARTED
 O-FREEZE: NOT STARTED
-Next concrete action: NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW
+Next concrete action: NQ-GATEO-O3E-MARKETDATA-READINESS-READ-ONLY-API-FREEZE-REVIEW
 ```
 
 规划结论：
 
 - 现有 `GET /api/marketdata/readiness` 已存在，且当前 `MarketdataReadiness*` implementation 是 DB-only / no-migration MVP；O-3 应优先扩展该 endpoint，而不是新增重复 primary readiness endpoint。
-- O-2 `DataQualitySummary` / `DataQualitySourceHealthMapper` 是后续 O-3 语义输入；本轮只规划 API read model 对齐，不把 mapper 接入现有 API。
-- 候选 endpoint `/api/marketdata/readiness/sources`、`/api/marketdata/readiness/gaps`、`/api/marketdata/readiness/quality/overview` 延后到 O-3A/O-3B 评审后按需拆分。
+- O-2 `DataQualitySummary` / `DataQualitySourceHealthMapper` 是 O-3B 语义输入；原 planning 只规划 API read model 对齐，后续 O-3B 已按该方向扩展现有 API。
+- 候选 endpoint `/api/marketdata/readiness/sources`、`/api/marketdata/readiness/gaps`、`/api/marketdata/readiness/quality/overview` 在 O-3B 仍未新增，继续后置到单独 review。
 - readiness API 必须 fail-closed：`NO_DATA`、`UNKNOWN`、`DISABLED`、`STALE`、`GAP`、`ERROR` 均不得被解释为 ready、LIVE-ready、trading authorized、permission granted 或 real provider ready。
 
 验证：

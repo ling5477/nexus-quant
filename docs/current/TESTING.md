@@ -1,3 +1,15 @@
+## NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-adapter-api -am "-Dtest=*MarketdataReadiness*,*DataQuality*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | 窄口覆盖 `MarketdataReadinessServiceTest` 8 tests、O-2 `DataQuality*` rules/mapper tests、`MarketdataReadinessResponseTest` enum vocabulary 兼容测试；0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml -pl nq-api -am "-Dtest=MarketdataControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `MarketdataControllerTest` 7 tests，覆盖 readiness response 新字段、forbidden fields absent、read-only no-side-effect；0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-api` 56 tests / 0 failures / 0 errors；`nq-app` 86 tests / 0 failures / 0 errors / 2 skipped（既有跳过项）。 |
+
+Scope：本轮只验证 O-3B backend read-only API implementation 与后端回归；未运行 frontend build / Playwright，原因是本轮未修改 frontend；未运行 Python pytest / mypy / ruff，原因是本轮未修改 research / Python。
+
+Boundary：验证未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP，未读取 credential，未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe；`GET /api/marketdata/readiness` 仍为 DB-only / no-egress / no-credential / diagnostic-only。
+
 ## NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN final validation（2026-07-03）
 
 | Command | Result | Notes |
@@ -13,7 +25,7 @@
 
 Scope：本轮只完成 `NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN` planning 与 current fact-source 同步；不实现 API、DTO、Service、Repository、migration、frontend、tests、CI、research、scripts 或 deploy。
 
-Result：`NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED`；O-3B backend implementation / O-4 / O-5 / O-FREEZE 仍为 NOT STARTED；next concrete action 为 `NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW`。
+Result：`NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED`；该 planning-only validation 已由上方 O-3B backend implementation validation 消费；O-3E freeze review / O-4 / O-5 / O-FREEZE 仍为 NOT STARTED；next concrete action 为 `NQ-GATEO-O3E-MARKETDATA-READINESS-READ-ONLY-API-FREEZE-REVIEW`。
 
 Boundary：`/api/marketdata/readiness` 只作为后续扩展对象；本轮不调用 public marketdata outbound，不读取 credential，不做 private trading permission probe，不新增 RealClient / provider，不开启 LIVE / AI / DH runtime；readiness 不等于 trading authorization、LIVE-ready、permission granted 或 real provider ready。
 

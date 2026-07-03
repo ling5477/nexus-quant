@@ -115,17 +115,22 @@ GateH-2 固定范围：
 
 GateH-2 不新增 AI 自动交易、AI 信号接入、dataset/backtest 绑定、合约全量接入、资金费率、深度、逐笔成交、美股/A 股适配或复杂因子平台 API。
 
-## GateM-2E Marketdata Readiness API
+## GateM-2E / GateO O-3B Marketdata Readiness API
 
-GateM-2E 新增只读 MarketData readiness 后端 MVP：
+GateM-2E 新增只读 MarketData readiness 后端 MVP；GateO O-3B 在不新增重复 endpoint 的前提下扩展同一个 read model：
 
 - `GET /api/marketdata/readiness`：按本地 DB 既有 MarketData facts 聚合 source health / freshness / gap / qualityStatus summary。该接口只读，不触发采集，不调用 adapter，不访问外部网络，不读取 credential，不启用 LIVE，不接 AI / DH runtime。
-  - Query：`exchangeCode` 必填；`marketType` 可选，默认 `SPOT`；`symbol` 或 `instrumentId` 至少提供一个，二者同时提供时必须一致；`interval` 必填；`from` / `to` 可选，使用 ISO-8601 instant。
-  - Response：`exchangeCode / marketType / instrumentId / symbol / interval / status / freshnessStatus / sourceHealthStatus / sourceHealthReason / qualityStatusSummary / barCount / firstBarTime / lastBarTime / expectedBarCount / gapCount / unknownQualityCount / lastSuccessAt / lastFailureAt / backendSupportLevel / generatedAt`。
+  - Query：`exchangeCode` 必填；`marketType` 可选，默认 `SPOT`；`symbol` 或 `instrumentId` 至少提供一个，二者同时提供时必须一致；`interval` 必填；`from` / `to` 可选，使用 ISO-8601 instant。O-3B 未新增 query 参数。
+  - Response 保留既有字段：`exchangeCode / marketType / instrumentId / symbol / interval / status / freshnessStatus / sourceHealthStatus / sourceHealthReason / qualityStatusSummary / barCount / firstBarTime / lastBarTime / expectedBarCount / gapCount / unknownQualityCount / lastSuccessAt / lastFailureAt / backendSupportLevel / generatedAt`。
+  - O-3B 追加字段：`exchange / timeframe / sourceCode / dataOrigin / sourceStatus / sourceHealth / gapStatus / missingFrom / missingTo / lastObservedAt / latencyMs / errorRate / errorCategory / staleAfterSeconds / degradedReason / disabledReason / traceId / requestId / updatedAt`。
+  - Alias 兼容：`exchange` 是 `exchangeCode` 的展示别名；`timeframe` 是 `interval` 的展示别名。二者不表示真实 provider、LIVE 或 permission probe readiness。
   - `qualityStatusSummary` 包含 `okCount / gapSignalCount / invalidCount / unknownQualityCount / statuses`。
-  - Status set：`FRESH / STALE / GAP / ERROR / DISABLED / UNKNOWN / NO_DATA`。`NO_DATA`、`UNKNOWN`、`STALE`、`GAP`、`ERROR`、`DISABLED` 均不得解释成 ready。
+  - Status set：`status` 为 `FRESH / STALE / VERY_STALE / GAP / ERROR / DISABLED / UNKNOWN / NO_DATA`；`sourceStatus` 为 `ENABLED / DISABLED / DEGRADED / ERROR / UNKNOWN`；`sourceHealth` 为 `HEALTHY / DEGRADED / ERROR / UNKNOWN`；`gapStatus` 为 `NONE / PARTIAL / GAP / UNKNOWN`；`errorCategory` 为 `NONE / TIMEOUT / RATE_LIMIT / NETWORK / INVALID_RESPONSE / UPSTREAM_ERROR / STALE / GAP / DISABLED / UNKNOWN`。`NO_DATA`、`UNKNOWN`、`STALE`、`VERY_STALE`、`GAP`、`ERROR`、`DISABLED` 均不得解释成 ready。
+  - `dataOrigin` 当前由本地 facts 映射为 `LOCAL_DB`；允许枚举仍只用于诊断表达：`LOCAL_DB / FIXTURE / FAKE_SERVER / PUBLIC_CANDIDATE / UNKNOWN`。O-3B 不把 `PUBLIC_OUTBOUND` 写成已执行事实。
+  - `errorRate`、`missingFrom`、`missingTo`、`traceId`、`requestId` 在没有稳定本地事实时返回 `null`，不得伪造窗口错误率、缺口区间或追踪 ID。
   - `backendSupportLevel=NO_MIGRATION_MVP` 表示本轮仅基于 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` 的本地聚合，不代表真实交易所 source health 已完成。
   - Gap 只基于本地 bars 序列和 `quality_status` 证据估算；不猜测真实交易所状态，不伪造 OKX / Binance health。
+  - Response 不得包含 `tradingAuthorized`、`liveReady`、`privateTradingReady`、`permissionGranted`、`realProviderReady`、`apiKey`、`secret`、`passphrase`、`credentialRef`、`rawRequest`、`rawResponse`、`rawHeaders`、`fullQueryString`、`encrypted_payload`、`decrypted_payload`。
 
 ## GateH-3 Dataset and Backtest Binding API
 

@@ -6,15 +6,17 @@
 
 任务归属：NQ-only。
 
-任务类型：`MARKETDATA_API_PLANNING` / `DATA_QUALITY_READINESS_MODELING` / `SECURITY_BOUNDARY_REVIEW` / `DOCUMENTATION`。
+任务类型：`MARKETDATA_API_PLANNING` / `DATA_QUALITY_READINESS_MODELING` / `SECURITY_BOUNDARY_REVIEW` / `READ_ONLY_API_IMPLEMENTATION` / `DOCUMENTATION`。
 
-本轮结论：`PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。
+原 O-3 planning 结论：`PASS`（通过）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。
+
+O-3B backend implementation 当前结论：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自查）/ `READY TO COMMIT`（可进入提交前复核）。
 
 GateO 当前状态：
 
 - O-1 controlled public outbound guard：`PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结）。
 - O-2 Data Quality Center：`PASS / ACCEPTED / FROZEN`（通过 / 已接受 / 已冻结）。
-- O-3 MarketData Runtime Readiness API：本轮完成 planning-only；API implementation 仍 `NOT STARTED`（未开始）。
+- O-3 MarketData Runtime Readiness API：planning-only baseline 已完成；O-3B backend read-only API implementation 已完成为 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；O-3E freeze review 仍 `NOT STARTED`（未开始）。
 - O-4 MarketData Quality UI：`NOT STARTED`（未开始）。
 - O-5 manual public outbound smoke：`NOT STARTED`（未开始）。
 - GateO stage：`NOT COMPLETED`（未完成）。
@@ -23,7 +25,26 @@ GateO 当前状态：
 - DH runtime：`NOT_INTEGRATED`（未集成）。
 - RealClient / real provider / real permission probe：`NOT_IMPLEMENTED`（未实现）。
 
-本计划只规划 MarketData Runtime Readiness API read model，不新增 API 实现，不新增 migration，不改 frontend，不执行真实 public outbound，不读取 credential。
+本文件保留 O-3 planning baseline，并记录 O-3B backend read-only API implementation 的当前事实。O-3B 只扩展既有 `GET /api/marketdata/readiness` read model，不新增重复 endpoint，不新增 migration，不改 frontend，不执行真实 public outbound，不读取 credential。
+
+### 1.1 O-3B implementation update（2026-07-03）
+
+任务名称：`NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION`。
+
+实现范围：
+
+- 扩展 `MarketdataReadinessSummary` 与 `MarketdataReadinessResponse`，保留旧字段并追加 `sourceCode / exchange / timeframe / dataOrigin / sourceStatus / sourceHealth / gapStatus / lastObservedAt / latencyMs / errorRate / errorCategory / missingFrom / missingTo / staleAfterSeconds / degradedReason / disabledReason / traceId / requestId / updatedAt`。
+- 在 `MarketdataReadinessService` 内用本地 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` facts 做 fail-closed 映射；`dataOrigin` 当前为 `LOCAL_DB`，`sourceCode` 为本地诊断 source key。
+- `exchange` 是 `exchangeCode` 的 alias，`timeframe` 是 `interval` 的 alias；alias 只用于展示兼容，不表示 provider、LIVE、permission probe 或 trading readiness。
+- `errorRate`、`missingFrom`、`missingTo`、`traceId`、`requestId` 在当前缺少稳定事实时返回 `null`，不得伪造。
+- 补充 core service tests、controller JSON contract / no-side-effect test、DTO enum vocabulary test。
+
+边界保持：
+
+- 未新增 `/api/marketdata/readiness/sources`、`/api/marketdata/readiness/gaps`、`/api/marketdata/readiness/quality/overview`。
+- 未新增 migration、frontend、research、scripts、deploy、`.github` 或 CI workflow。
+- 未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP，未读取 credential，未触发 adapter、public outbound、private trading、permission probe、RealClient、real provider、LIVE、AI 或 DH runtime。
+- Response 不得包含 `tradingAuthorized`、`liveReady`、`privateTradingReady`、`permissionGranted`、`realProviderReady`、`apiKey`、`secret`、`passphrase`、`credentialRef`、`rawRequest`、`rawResponse`、`rawHeaders`、`fullQueryString`、`encrypted_payload`、`decrypted_payload`。
 
 ## 2. 目标
 
@@ -312,13 +333,13 @@ mvn -f backend/pom.xml test
 
 ## 10. O-3 implementation 批次
 
-| Batch | 名称 | 目标 | 允许范围 | 禁止范围 | 成功标准 |
-| --- | --- | --- | --- | --- | --- |
-| O-3A | API read model contract + DTO plan review | 冻结字段、enum、兼容策略和测试矩阵 | docs/current plan/review | 不写代码 | P0/P1=0，允许进入 O-3B |
-| O-3B | backend read-only endpoint implementation | 扩展现有 `/api/marketdata/readiness` read model | `backend/nq-api`、`backend/nq-core`、`backend/nq-infra`、必要 `backend/nq-adapter-api` 引用 | 不新增 migration、不新增真实 HTTP、不读 credential | scoped Maven 通过，response 兼容 |
-| O-3C | controller/service tests | 补齐 no-outbound、no-credential、no-authorization、status mapping 回归 | backend test | 不触发真实外联 | tests 覆盖全部安全矩阵 |
-| O-3D | docs/API sync | 只把已实现的真实 endpoint 写入 `API.md` 和 current docs | docs/current | 不把计划写成已实现 | docs 与代码事实一致 |
-| O-3E | O-3 freeze review | 冻结 O-3 read-only API baseline | docs/current / freeze review | 不新增功能 | P0/P1=0，GateO 可继续 O-4/O-5 |
+| Batch | 名称 | 当前状态 | 目标 | 允许范围 | 禁止范围 | 成功标准 |
+| --- | --- | --- | --- | --- | --- | --- |
+| O-3A | API read model contract + DTO plan review | `CONSUMED BY O-3B`（已由 O-3B 消费） | 冻结字段、enum、兼容策略和测试矩阵 | docs/current plan/review | 不写代码 | 字段、enum、兼容策略已在 O-3B implementation 中落地并由测试覆盖 |
+| O-3B | backend read-only endpoint implementation | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自查 / 可进入提交前复核） | 扩展现有 `/api/marketdata/readiness` read model | `backend/nq-api`、`backend/nq-core`、必要 `backend/nq-adapter-api` 测试引用 | 不新增 migration、不新增真实 HTTP、不读 credential | scoped Maven 与后端全量 Maven 通过，response 兼容 |
+| O-3C | controller/service tests | `COVERED IN O-3B`（已随 O-3B 覆盖） | 补齐 no-outbound、no-credential、no-authorization、status mapping 回归 | backend test | 不触发真实外联 | tests 覆盖 no-side-effect、forbidden fields、状态映射与 null stable-fact 语义 |
+| O-3D | docs/API sync | `CURRENT DOCS SYNCED`（当前文档已同步） | 只把已实现的真实 endpoint 写入 `API.md` 和 current docs | docs/current | 不把计划写成 freeze 或 GateO completed | docs 与代码事实一致 |
+| O-3E | O-3 freeze review | `NOT STARTED`（未开始） | 冻结 O-3 read-only API baseline | docs/current / freeze review | 不新增功能 | P0/P1=0 后才可作为 freeze evidence；GateO 仍未完成 |
 
 ## 11. 风险分级
 
@@ -350,24 +371,26 @@ P1 触发条件：
 
 当前 P2：
 
-1. `errorRate`、`missingFrom`、`missingTo` 是否能从现有 DB facts 稳定派生，需 O-3A/O-3B 进一步确认；不能稳定派生时必须返回 null 或后置，不能伪造。
-2. `sourceStatus` / `sourceHealth` 与现有 `status` / `sourceHealthStatus` 的 enum 兼容层需要 O-3A 固化，避免前端误读。
-3. 候选 `/sources`、`/gaps`、`/quality/overview` 需要保持后置，防止 API surface 膨胀。
+1. `errorRate`、`missingFrom`、`missingTo` 当前无法从现有 DB facts 稳定派生；O-3B 已按计划返回 `null`，后续如需真实窗口指标必须另起 source facts / repository 设计，不得伪造。
+2. 候选 `/sources`、`/gaps`、`/quality/overview` 继续后置，防止 API surface 膨胀。
+3. O-3E freeze review 尚未执行；O-3B implemented 不等于 GateO completed。
 
 ### P3
 
 当前 P3：
 
-1. `exchangeCode` 与 `exchange`、`interval` 与 `timeframe` 命名存在重复风险，O-3A 需要选择兼容表达。
+1. `exchangeCode` 与 `exchange`、`interval` 与 `timeframe` 以 alias 形式保留，后续 O-4 UI copy 需要避免把 alias 解释为 real provider readiness。
 2. current docs 中 O-3 状态入口较多，后续 O-3E freeze 时需要集中同步，避免入口重复。
 
 ## 12. 回滚方式
 
-本轮是 docs-only planning。回滚方式：
+本轮包含 backend read-only API implementation 与 docs sync。回滚方式：
 
 ```powershell
-git restore --worktree -- README.md docs/current/README.md docs/current/GATEO_PLAN.md docs/current/STATUS.md docs/current/ROADMAP.md docs/current/TESTING.md docs/current/WORKLOG.md docs/current/NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md
+git restore --worktree -- backend/nq-api/src/main/java/com/guidinglight/nexusquant/marketdata/api/dto/MarketdataReadinessResponse.java backend/nq-api/src/test/java/com/guidinglight/nexusquant/marketdata/api/web/MarketdataControllerTest.java backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/MarketdataReadinessService.java backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataReadinessStatus.java backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataReadinessSummary.java backend/nq-core/src/test/java/com/guidinglight/nexusquant/marketdata/application/MarketdataReadinessServiceTest.java README.md docs/current/README.md docs/current/API.md docs/current/GATEO_PLAN.md docs/current/STATUS.md docs/current/ROADMAP.md docs/current/TESTING.md docs/current/WORKLOG.md docs/current/NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md
 ```
+
+新增文件回滚：先执行 `git status --short` 复核只包含本任务新增文件，再逐一删除 `backend/nq-api/src/test/java/com/guidinglight/nexusquant/marketdata/api/dto/MarketdataReadinessResponseTest.java`、`backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/MarketdataReadinessDataOrigin.java`、`MarketdataReadinessErrorCategory.java`、`MarketdataReadinessGapStatus.java`、`MarketdataReadinessSourceHealth.java`、`MarketdataReadinessSourceStatus.java`。不得使用批量 `git clean -fd` 处理本任务回滚。
 
 如果已提交，使用普通 revert：
 
@@ -380,6 +403,8 @@ git revert <commit>
 ## 13. Final decision
 
 O-3 planning-only baseline 结论：`PASS / PLAN ONLY / NOT IMPLEMENTED`。
+
+O-3B backend implementation 结论：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`。
 
 是否扩展现有 API：是。优先扩展现有 `GET /api/marketdata/readiness` read model。
 
@@ -395,12 +420,12 @@ O-3 planning-only baseline 结论：`PASS / PLAN ONLY / NOT IMPLEMENTED`。
 
 是否允许 private trading / permission probe：否。
 
-O-3 implementation 是否可以直接开始：不可以直接开始 O-3B 代码实现。下一步只能进入 `NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW` 或等价的 O-3A API read model contract + DTO plan review；O-3B backend implementation 必须等 O-3A `PASS / ACCEPTED` 后再单独授权。
+O-3B implementation 是否完成：已完成本地 DB read-only API 扩展、状态映射、controller/service/DTO 回归测试与 current docs sync。
 
 推荐下一步：
 
 ```text
-NQ-GATEO-O3A-MARKETDATA-READINESS-API-CONTRACT-PLAN-REVIEW
+NQ-GATEO-O3E-MARKETDATA-READINESS-READ-ONLY-API-FREEZE-REVIEW
 ```
 
-该下一步仍不得执行 O-5 manual public outbound smoke，不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading。
+该下一步仍不得新增功能或执行 O-5 manual public outbound smoke，不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading。
