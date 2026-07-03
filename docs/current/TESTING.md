@@ -1,3 +1,22 @@
+## NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | 基线包含 `294de92d docs(gateo): freeze marketdata readiness API baseline`、`7a42ca03 feat(marketdata): extend readiness API read model` 等 O-3 evidence。 |
+| `rg "marketdata/readiness\|MarketdataReadiness\|DataQuality\|dataOrigin\|freshnessStatus\|gapStatus\|sourceHealth\|tradingAuthorized\|liveReady\|permissionGranted" backend frontend docs/current README.md` | PASS / REVIEWED | 已核对 O-3 readiness API、现有 `/marketdata` 前端、E2E smoke、current docs 和 forbidden wording 语境；docs 命中 forbidden wording 仅为禁止说明。 |
+| `rg "MarketData\|marketdata\|routes\|readiness\|quality" frontend/src frontend/tests docs/current` | PASS / REVIEWED | 已核对现有 `/marketdata` 路由、navigation、API client、types、MarketdataPage、E2E 和 current docs 入口。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 README 与 `docs/current` 文档；新增 O-4 plan 文件由 `git status --short` 标识。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only / planning-only；未修改 production code、test code、API、migration、frontend、research 或 scripts。 |
+
+Scope：本轮只完成 `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN` planning 与 current fact-source 同步；不实现页面、组件、API、DTO、Service、Repository、migration、frontend tests、CI、research、scripts 或 deploy。
+
+Result：`NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED`；O-4 implementation 仍 `NOT STARTED`；O-5 manual public outbound smoke 仍 `NOT STARTED`；GateO stage 仍 `NOT COMPLETED`；next concrete action 为 `NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW`。
+
+Boundary：O-4 只规划消费 `GET /api/marketdata/readiness`；不调用 public marketdata outbound，不读取 credential，不做 private trading permission probe，不新增 RealClient / provider，不开启 LIVE / AI / DH runtime；readiness 不等于 trading authorization、LIVE-ready、permission granted 或 real provider ready。
+
 ## NQ-GATEO-O3E-MARKETDATA-READINESS-API-FREEZE-REVIEW validation（2026-07-03）
 
 | Command | Result | Notes |

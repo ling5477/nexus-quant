@@ -1,3 +1,42 @@
+## NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN
+
+日期：2026-07-03。
+
+范围：
+
+- 新增 O-4 planning authority：`docs/current/NQ_GATEO_O4_MARKETDATA_QUALITY_UI_PLAN.md`。
+- 同步当前入口与状态文档：`README.md`、`docs/current/README.md`、`docs/current/GATEO_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 本轮仅做 NQ-only / docs-only / plan-only；不修改 backend、frontend、research、scripts、deploy、`.github`、migration、production code 或 test code。
+
+结果：
+
+```text
+NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED
+O-4 implementation: NOT STARTED
+O-5 manual public outbound smoke: NOT STARTED
+GateO stage: NOT COMPLETED
+Next concrete action: NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW
+```
+
+规划结论：
+
+- 页面/路由建议：优先复用现有 `/marketdata` 页面并增加 `Quality / Readiness` tab 或等价分区；暂不新增独立 `/marketdata/quality` 或 `/marketdata/readiness` 路由。
+- API 来源：只规划消费已冻结的 `GET /api/marketdata/readiness` read-only API；不规划消费真实交易所 public/private endpoint、credential endpoint、permission probe endpoint 或 O-5 manual public smoke endpoint。
+- 字段范围：固化 dataOrigin、sourceStatus、sourceHealth、freshnessStatus、gapStatus、lastSuccessAt、lastFailureAt、lastObservedAt、latencyMs、errorRate、errorCategory、gapCount、missingFrom、missingTo、staleAfterSeconds、degradedReason、disabledReason、updatedAt 等字段展示规则。
+- null 规则：`errorRate`、`missingFrom`、`missingTo`、`gapCount` 等缺少稳定事实时显示“暂无稳定事实”，不得显示为 0。
+- 安全文案：页面必须提示 public marketdata readiness 不等于 trading authorization；LIVE disabled；private trading / permission probe / real provider 未实现。
+
+验证：
+
+- `Get-Location`、`git branch --show-current`、`git status --short`、`git log --oneline -5` 已执行。
+- 两组 readiness / frontend inventory `rg` 已执行。
+- `git diff --check`、`git diff --stat` 和 forbidden-scope diff 已执行。
+- 后端 / 前端 / Python 测试未运行，原因是本轮 docs-only / planning-only，未修改代码、测试、API、migration 或前端源码。
+
+边界确认：
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、migration、页面、E2E、CI workflow 或业务功能；未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未读取 credential；未开启 LIVE；未接 AI；未接 DH runtime；未实现 RealClient、real provider、real permission probe、signed request、private WebSocket 或 private trading endpoint；未把 readiness 写成 trading authorization。
+
 ## NQ-GATEO-O3E-MARKETDATA-READINESS-API-FREEZE-REVIEW
 
 日期：2026-07-03。
