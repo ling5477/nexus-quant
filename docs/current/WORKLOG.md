@@ -1,3 +1,68 @@
+## NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT
+
+日期：2026-07-04。
+
+范围：
+
+- 完成 `NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT`。
+- 新增 NQ dry-run worktree test-support guard，验证 future dry-run request builder、readonly recorder 和 no-side-effect boundary。
+- 同步 NQ / DH `docs/current` 的 IMP2 状态、验证记录和下一步 IMP3 入口。
+- 本轮不修改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、fixture JSON、API / Controller、runtime wiring、provider 或真实 HTTP。
+
+新增文件：
+
+```text
+backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration1/NqDhIntegration1StubRecorderNoSideEffectTest.java
+```
+
+修改文件：
+
+```text
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+docs/current/WORK_ORDER.md
+```
+
+结果：
+
+```text
+NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT: VERIFY PASS / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_IMP3_JOINT_MOCK_CONTRACT_TESTS
+Next: NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS / NOT STARTED / MOCK_ONLY / NO_RUNTIME
+ALLOW_IMP2_CLOSE: YES
+ALLOW_I1_IMP3_JOINT_MOCK_CONTRACT_TESTS: YES
+ALLOW_PRODUCTION_CODE_CHANGE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+验证：
+
+- `git status --short`：PASS / CHANGES PRESENT；dirty 限于允许的 `docs/current` 文档和新增 test-support guard。
+- `git diff --check`：PASS。
+- forbidden diff：`backend/**/src/main` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration 均为空。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS；6 tests，0 failures，0 errors，0 skipped。
+- `mvn -ntp -f backend/pom.xml test`：PASS / BUILD SUCCESS；23 个 backend reactor module SUCCESS；surefire reports 汇总 628 tests，0 failures，0 errors，4 skipped。
+- `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS。
+- DH `mvn -ntp test`：PASS / BUILD SUCCESS；19 个 reactor module SUCCESS；surefire reports 汇总 451 tests，0 failures，0 errors，4 skipped；Docker/Testcontainers 不可用导致 Docker-gated smoke skipped，非代码失败。
+- DH `mvn -ntp -Pquality validate`：PASS / BUILD SUCCESS。
+- NQ dev pathspec diff：PASS / EMPTY；`docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 unstaged 或 staged diff，`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+边界确认：
+
+未改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、fixture JSON、API / Controller、runtime wiring、provider 或真实 HTTP；未修改 NQ dev；未读取 credential / token / cookie / API secret / passphrase；未接 RealClient、real provider、AI 或 LangGraph；未启动 Integration-1 runtime；未开启 LIVE；未让 DH 输出进入 order、execution、risk mutation、ledger mutation、Paper Run 或 private trading 路径。
+
 ## NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO
 
 日期：2026-07-03。
