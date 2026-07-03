@@ -1,3 +1,19 @@
+## NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | 基线包含 `f69b5cc0 docs(gateo): plan marketdata quality UI`、`294de92d docs(gateo): freeze marketdata readiness API baseline`、`7a42ca03 feat(marketdata): extend readiness API read model`。 |
+| 三组附件要求 `rg` | PASS / REVIEWED | 已核对 O-4 plan、API.md、后端 enum/DTO、现有 `/marketdata` 路由/API/type/page/E2E 和 no-trading wording；未读取 credential。 |
+| `git diff --check` | PASS | 无 whitespace error；Git 仍提示部分文档未来可能按配置 LF -> CRLF，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于 README 与 `docs/current` 文档。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only / review-only；未修改 production code、test code、API 实现、migration、frontend 源码或 research。 |
+
+Scope：本轮完成 `NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW`。只修正 current API 文档 enum drift 并同步 O-4A review 状态；不实现页面、不改前端源码、不改后端实现、不新增 API、不新增 migration、不执行 O-5 manual public outbound smoke。
+
+Result：`NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW: PASS / ACCEPTED`；O-4B implementation `ALLOWED / READ-ONLY UI ONLY / NOT STARTED`；O-5 manual public outbound smoke `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
 ## NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN validation（2026-07-03）
 
 | Command | Result | Notes |

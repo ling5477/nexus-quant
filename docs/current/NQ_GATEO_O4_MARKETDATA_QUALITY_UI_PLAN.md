@@ -19,6 +19,8 @@ GateO 当前事实：
 - O-3 MarketData Runtime Readiness API：`FROZEN / ACCEPTED`（已冻结 / 已接受）。
 - O-3 已冻结 `GET /api/marketdata/readiness` read-only API baseline。
 - O-4 MarketData Quality UI plan：`PASS / PLAN ONLY / NOT IMPLEMENTED`（通过 / 仅规划 / 未实现）。
+- O-4A UI contract plan review：`PASS / ACCEPTED`（通过 / 已接受）。
+- O-4B MarketData Quality read-only UI implementation：`ALLOWED / READ-ONLY UI ONLY / NOT STARTED`（允许 / 仅只读 UI / 未开始）。
 - O-5 manual public outbound smoke：`NOT STARTED`（未开始）。
 - GateO stage：`NOT COMPLETED`（未完成）。
 - LIVE：`DISABLED`（已禁用）。
@@ -367,16 +369,16 @@ npm run test:e2e
 
 | Batch | 名称 | 状态 | 目标 | 成功标准 |
 | --- | --- | --- | --- | --- |
-| O-4A | UI contract plan review | `NOT STARTED`（未开始） | 复核路由、页面、字段、文案、风险提示和测试矩阵 | P0/P1=0 后才能进入 O-4B。 |
-| O-4B | MarketData Quality read-only page/table implementation | `NOT STARTED`（未开始） | 在既有 `/marketdata` 复用 Quality / Readiness tab 或分区，补齐前端 types 与只读表格 | `npm run build` 与对应 no-backend smoke 通过。 |
+| O-4A | UI contract plan review | `PASS / ACCEPTED`（通过 / 已接受） | 已复核路由、页面、字段、文案、风险提示和测试矩阵；API.md enum drift 已修正 | P0/P1=0，允许进入 O-4B。 |
+| O-4B | MarketData Quality read-only page/table implementation | `ALLOWED / READ-ONLY UI ONLY / NOT STARTED`（允许 / 仅只读 UI / 未开始） | 在既有 `/marketdata` 复用 Quality / Readiness tab 或分区，补齐前端 types 与只读表格 | `npm run build` 与对应 no-backend smoke 通过。 |
 | O-4C | 状态 badge / notice / drawer polish | `NOT STARTED`（未开始） | 统一状态 badge、null 展示、风险提示和详情抽屉 | forbidden wording test 通过。 |
 | O-4D | 图表 foundation | `OPTIONAL / NOT STARTED`（可选 / 未开始） | 如果 API 提供趋势事实，再做 latency/error/gap 趋势或 K 线增强 | 不伪造历史趋势，不新增真实外联。 |
 | O-4E | O-4 freeze review | `NOT STARTED`（未开始） | 冻结 O-4 UI baseline | P0/P1=0，验证记录完整。 |
 
 是否允许 O-4 implementation 开始：
 
-- 允许进入 O-4A UI contract plan review。
-- 不建议直接进入 O-4B implementation；必须先完成 O-4A，确认路由、字段、文案和测试矩阵。
+- O-4A UI contract plan review 已 `PASS / ACCEPTED`。
+- 允许进入 O-4B implementation，但只允许 read-only UI：复用 `/marketdata`，补齐 frontend readiness type、状态表、summary、notice、drawer 和 no-backend smoke。
 - 任何 O-4B+ 代码实现仍不得触碰 backend、API、migration、O-5 public smoke、LIVE、AI、DH runtime、RealClient、real provider 或 permission probe。
 
 ## 14. 安全边界
@@ -410,6 +412,8 @@ P0 触发条件：
 ### P1
 
 当前 P1：0。
+
+O-4A review 曾发现 `docs/current/API.md` 的 readiness enum 描述与后端 enum 不一致；本轮已修正为后端实际 vocabulary，因此不再阻断 O-4B。
 
 P1 触发条件：
 
@@ -456,7 +460,9 @@ git revert <commit>
 
 O-4 plan 结论：`PASS / PLAN ONLY / NOT IMPLEMENTED`。
 
-O-4 implementation：`NOT STARTED`。
+O-4A review：`PASS / ACCEPTED`。
+
+O-4B implementation：`ALLOWED / READ-ONLY UI ONLY / NOT STARTED`。
 
 O-5 manual public outbound smoke：`NOT STARTED`。
 
@@ -469,7 +475,7 @@ API 消费推荐：只消费 `GET /api/marketdata/readiness`；不消费真实�
 下一步：
 
 ```text
-NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW
+NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION
 ```
 
-O-4A 通过前，不建议直接进入 O-4B implementation。后续 O-4B 仍不得执行 O-5 manual public outbound smoke，不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading。
+O-4B 只能实现只读 UI，不得执行 O-5 manual public outbound smoke，不得触碰 LIVE、AI、DH runtime、RealClient、real provider、real permission probe 或 private trading。

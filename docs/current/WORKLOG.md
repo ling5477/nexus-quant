@@ -1,3 +1,39 @@
+## NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW
+
+日期：2026-07-03。
+
+范围：
+
+- 只读复核 O-4 MarketData Quality UI plan 是否可作为 O-4B implementation baseline。
+- 修正 `docs/current/API.md` readiness enum drift，使 API 文档与后端 enum 一致。
+- 同步 O-4A review acceptance 到 `README.md`、`docs/current/README.md`、`docs/current/GATEO_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/NQ_GATEO_O4_MARKETDATA_QUALITY_UI_PLAN.md`。
+- 未修改 backend / frontend / research / scripts / deploy / `.github` / migration / production code / test code。
+
+结果：
+
+```text
+NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW: PASS / ACCEPTED
+O-4B implementation: ALLOWED / READ-ONLY UI ONLY / NOT STARTED
+O-5 manual public outbound smoke: NOT STARTED
+GateO stage: NOT COMPLETED
+Next concrete action: NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION
+```
+
+审查结论：
+
+- 页面/路由：优先复用现有 `/marketdata`，增加 `Quality / Readiness` tab 或等价分区；暂不新增独立 `/marketdata/quality`。
+- API/type：现有 `marketdataApi.getReadiness()` 可复用；O-4B 前必须补齐 frontend `MarketdataReadinessSummary` O-3B 字段；nullable 字段不得显示为 0。
+- API.md enum：发现并修正 `sourceStatus`、`sourceHealth`、`errorCategory` 与后端 enum 不一致问题；修正后 P0/P1=0。
+- 组件计划：第一批优先状态表、summary、notice、drawer；复杂图表推迟到 O-4D。
+- 安全边界：只消费 `GET /api/marketdata/readiness`；不调用 private endpoint、credential endpoint、permission probe endpoint 或 O-5 manual smoke；readiness 不等于 trading authorization。
+
+验证：
+
+- `Get-Location`、`git branch --show-current`、`git status --short`、`git log --oneline -5` 已执行。
+- 附件要求三组 `rg` 已执行，并额外执行排除生成物的聚焦检索。
+- `git diff --check`、`git diff --stat` 和 forbidden-scope diff 已执行。
+- 后端 / 前端 / Python 测试未运行，原因是本轮 docs-only / review-only，未修改代码、测试、API 实现、migration 或前端源码。
+
 ## NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN
 
 日期：2026-07-03。
