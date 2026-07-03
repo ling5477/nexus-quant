@@ -1,3 +1,48 @@
+## NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION
+
+日期：2026-07-03。
+
+范围：
+
+- 新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/GateOManualPublicOutboundSmokeTest.java`。
+- 同步 `README.md`、`docs/current/README.md`、`docs/current/NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md`、`docs/current/NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md`、`docs/current/GATEO_PLAN.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+- 未修改 backend production code / frontend / research / scripts / deploy / `.github` / migration；未新增 API、CI、dependency 或 migration；未执行 O-5B manual public outbound smoke。
+
+结果：
+
+```text
+NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+O-5B execution: BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED
+O-5 smoke execution: NOT STARTED
+O-5D DataOrigin.PUBLIC_OUTBOUND decision: NOT STARTED
+O-FREEZE: NOT STARTED
+GateO stage: NOT COMPLETED
+```
+
+实现摘要：
+
+- Runner 是 test-only JUnit entry，class-level `@EnabledIfSystemProperty(named = "nq.gateo.o5.manualSmoke.required", matches = "true")` 默认跳过。
+- 测试体额外要求 `NQ_GATEO_O5_MANUAL_SMOKE=true`、`SPRING_PROFILES_ACTIVE=public-marketdata-manual`、`NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true`。
+- HTTP 前 fail-closed 校验 LIVE / AI / DH runtime / real provider / RealClient / real exchange disabled，并拒绝 credential-like env / system property。
+- Endpoint category 只允许 `SERVER_TIME`、`INSTRUMENTS`、`TICKER`、`OHLCV`；provider 固定为 OKX reviewed public host；不接受 raw URL、raw path、任意 query 或 credential。
+- Evidence 仅允许 text-only redacted summary，不输出 raw response body、raw headers、full URL、full query string、credential、token、signature、cookie 或 raw provider payload。
+
+验证：
+
+- `git status --short` / `git branch --show-current`：PASS / REVIEWED，分支 `dev`，变更限允许范围。
+- `git diff --check`、`git diff --stat`、forbidden diff checks：PASS；未触达 frontend / research / scripts / deploy / `.github` / migration。
+- `mvn -f backend/pom.xml -pl nq-app,nq-adapter-api -am "-Dtest=*ManualPublic*Smoke*,*GateO*Outbound*Smoke*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS；默认未设置 manual gate，runner skipped before HTTP。
+- `mvn -f backend/pom.xml test`：PASS / BUILD SUCCESS；默认 Maven 未触发真实 public HTTP。
+- 本轮未设置 `NQ_GATEO_O5_MANUAL_SMOKE=true`，未设置 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true`，未运行 O-5B smoke。
+
+边界：
+
+- 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
+- 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
+- public marketdata readiness 不等于 trading authorization。
+
+Next step：`NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`；只做 runner 绑定复核，不执行真实 public outbound smoke。
+
 ## NQ-GATEO-O5B-RUNNER-BINDING-PLAN
 
 日期：2026-07-03。
@@ -13,8 +58,8 @@
 ```text
 NQ-GATEO-O5B-RUNNER-BINDING-PLAN: PASS / ACCEPTED
 O-5A review: PASS / ACCEPTED
-O-5B execution: BLOCKED / MANUAL RUNNER NOT BOUND / NOT EXECUTED
-Runner implementation: ALLOWED / TEST-ONLY MANUAL ENTRY PREFERRED / NOT STARTED
+O-5B execution: 当时因 runner 未绑定而阻塞且未执行；已由 O-5B-R1 implementation 消费
+Runner implementation at that planning turn: ALLOWED / TEST-ONLY MANUAL ENTRY PREFERRED / NOT STARTED
 O-5 smoke execution: NOT STARTED
 O-5D DataOrigin.PUBLIC_OUTBOUND decision: NOT STARTED
 O-FREEZE: NOT STARTED
@@ -33,7 +78,7 @@ GateO stage: NOT COMPLETED
 - 未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
 - 未读取 credential，未开启 LIVE，未接 AI，未接 DH runtime，未实现 RealClient / real provider / real permission probe。
 - public marketdata readiness 不等于 trading authorization。
-- 下一步只允许 `NQ-GATEO-O5B-RUNNER-BINDING-IMPLEMENTATION`，且只能实现 test-only manual runner；不得执行真实 smoke。
+- 该 planning-only 轮次的后续 implementation 步骤已由本文件上方 O-5B-R1 implementation 记录消费；当前下一步只允许 `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`，不得执行真实 smoke。
 
 ## NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN
 

@@ -12,9 +12,11 @@ O-5 plan status：`COMPLETED`（已完成）/ `PLAN ONLY`（仅规划）/ `NOT I
 
 O-5A manual public outbound smoke plan review：`PASS`（通过）/ `ACCEPTED`（已接受）。
 
-O-5B execution status：`BLOCKED`（阻塞）/ `MANUAL RUNNER NOT BOUND`（手动 runner 未绑定）/ `NOT EXECUTED`（未执行）。
+O-5B execution status：`BLOCKED`（阻塞）/ `PENDING O-5B-R2 RUNNER BINDING REVIEW`（等待 O-5B-R2 runner 绑定复核）/ `NOT EXECUTED`（未执行）。
 
 O-5B runner binding plan：`COMPLETED`（已完成）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现），详见 [NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md](NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md)。
+
+O-5B-R1 runner binding implementation：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。
 
 O-5 smoke execution status：`NOT STARTED`（未开始）。
 
@@ -37,9 +39,9 @@ GateO stage：`NOT COMPLETED`（未完成）。
 - DH runtime：`NOT_INTEGRATED`（未集成）。
 - RealClient / real provider / real permission probe：`NOT_IMPLEMENTED`（未实现）。
 - public marketdata readiness 不等于 trading authorization。
-- O-5A plan review 已 `PASS / ACCEPTED`；O-5B execution 已确认因 manual runner 未绑定而阻塞，不能执行。
+- O-5A plan review 已 `PASS / ACCEPTED`；O-5B-R1 已绑定 test-only manual runner，但 O-5B execution 仍因等待 O-5B-R2 runner binding review 而阻塞，不能执行。
 
-本文件只规划 O-5 manual public outbound smoke 的安全执行方案，不执行真实 HTTP，不新增 runner，不改代码，不改 CI，不新增 API，不新增 migration。后续 runner 绑定方案已在 O-5B runner binding plan 中接受，但 runner implementation 尚未开始。
+本文件只规划 O-5 manual public outbound smoke 的安全执行方案。O-5B-R1 已新增默认跳过的 test-only JUnit manual runner，但本轮仍不执行真实 HTTP、不改 CI、不新增 API、不新增 migration；O-5B smoke execution 必须等 `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW` 通过后才能单独启动。
 
 ## 2. O-5 定位
 
@@ -105,7 +107,7 @@ O-5B execution 不得开始，除非 O-5A review 逐项确认以下条件：
 | signed request | forbidden | 任何签名请求直接拒绝。 |
 | private endpoint | forbidden | allowlist/denylist review 通过后才允许执行。 |
 
-O-5A review 已 `PASS / ACCEPTED`，但 O-5B execution 仍不得开始，因为仓库当前没有独立可审查的 O-5B manual smoke runner。后续必须先完成 `NQ-GATEO-O5B-RUNNER-BINDING-IMPLEMENTATION`，并保持 test-only manual entry、默认不运行和 no-credential 边界。
+O-5A review 已 `PASS / ACCEPTED`，O-5B-R1 runner binding implementation 已新增独立可审查的 O-5B manual smoke runner。但 O-5B execution 仍不得开始，因为 runner 还必须先经过 `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`，并继续证明 test-only manual entry、默认不运行和 no-credential 边界。
 
 执行前人工声明必须包含：
 
@@ -217,7 +219,7 @@ O-5B 执行前必须用 O-1 policy 和人工 review 双重确认：即使 endpoi
 
 ### 8.2 命令草案
 
-当前仓库已存在 O-1 client、policy、profile 与配置；O-5B 只读核对已确认独立 O-5B manual smoke runner 尚未绑定。因此下列命令仍只是 runner implementation 完成后的命令形态草案，不是当前可执行承诺。
+当前仓库已存在 O-1 client、policy、profile 与配置；O-5B-R1 已绑定默认跳过的 test-only manual runner。因此下列命令仍只是 O-5B-R2 review 通过后的命令形态草案，不是当前可执行承诺；本轮不得运行带 `NQ_GATEO_O5_MANUAL_SMOKE=true` 的命令。
 
 PowerShell 草案：
 
@@ -388,14 +390,15 @@ O-5 必须拆分，不得从 plan 直接跳到 O-FREEZE：
 | --- | --- | --- |
 | O-5A | `PASS / ACCEPTED` | manual public outbound smoke plan review。 |
 | O-5B runner binding plan | `COMPLETED / PLAN ONLY / NOT IMPLEMENTED` | manual smoke runner 形态、命令、allowlist/denylist 与 evidence 契约规划。 |
-| O-5B runner implementation | `ALLOWED / TEST-ONLY MANUAL ENTRY PREFERRED / NOT STARTED` | 后续单独实现 test-only manual runner，不执行 smoke。 |
-| O-5B smoke execution | `BLOCKED / MANUAL RUNNER NOT BOUND / NOT EXECUTED` | manual public outbound smoke execution，必须等 runner implementation review 通过。 |
+| O-5B-R1 runner implementation | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT` | 已新增 test-only manual runner，不执行 smoke。 |
+| O-5B-R2 runner binding review | `NOT STARTED` | 后续复核 runner gate、allowlist/denylist、redaction 与默认 skip。 |
+| O-5B smoke execution | `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED` | manual public outbound smoke execution，必须等 R2 review 通过。 |
 | O-5C | `NOT STARTED` | first smoke result review。 |
 | O-5D | `NOT STARTED` | DataOrigin / `PUBLIC_OUTBOUND` decision review。 |
 | O-5E | `NOT STARTED` | O-5 freeze review。 |
 | O-FREEZE | `NOT STARTED` | GateO freeze。 |
 
-O-5A review 已完成并接受。下一步不得直接执行 smoke；必须先实现并审查 O-5B test-only manual runner。
+O-5A review 已完成并接受。O-5B-R1 已实现 test-only manual runner。下一步不得直接执行 smoke；必须先完成 O-5B-R2 runner binding review。
 
 ## 14. Security / No-Trading Boundary
 
@@ -430,7 +433,7 @@ public marketdata readiness 只能表示行情数据诊断，不得表示交易�
 
 ### P2
 
-1. O-5B runner implementation 仍未开始；O-5B smoke execution 继续阻塞。
+1. O-5B-R1 runner implementation 已完成，但尚未经过 O-5B-R2 runner binding review；O-5B smoke execution 继续阻塞。
 2. 是否引入 `PUBLIC_OUTBOUND` 作为 `DataOrigin` 仍需 O-5D 单独 review；本计划不把它写成当前事实。
 
 ### P3
@@ -443,28 +446,30 @@ O-5 plan：`COMPLETED / PLAN ONLY / NOT IMPLEMENTED`。
 
 O-5A review：`PASS / ACCEPTED`。
 
-O-5B execution：`BLOCKED / MANUAL RUNNER NOT BOUND / NOT EXECUTED`。
+O-5B execution：`BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED`。
 
 O-5 smoke execution：`NOT STARTED`。
 
-O-5B runner implementation：`ALLOWED / TEST-ONLY MANUAL ENTRY PREFERRED / NOT STARTED`。
+O-5B-R1 runner implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`。
+
+O-5B-R2 runner binding review：`NOT STARTED`。
 
 O-FREEZE：`NOT STARTED`。
 
 GateO stage：`NOT COMPLETED`。
 
-是否允许执行 O-5B smoke：否。必须先完成 O-5B test-only manual runner implementation 并通过 review。
+是否允许执行 O-5B smoke：否。必须先完成 O-5B-R2 runner binding review。
 
-是否允许 runner implementation start：允许，形态限定为 test-only manual entry，不得执行真实 smoke。
+是否允许 runner implementation start：已由 O-5B-R1 完成，形态限定为 test-only manual entry，本轮未执行真实 smoke。
 
 推荐下一步：
 
 ```text
-NQ-GATEO-O5B-RUNNER-BINDING-IMPLEMENTATION
+NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW
 ```
 
 Commit recommendation：
 
 ```text
-docs(gateo): plan manual public outbound smoke
+test(gateo): bind manual public outbound smoke runner
 ```

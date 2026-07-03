@@ -10,9 +10,11 @@
 
 Runner binding plan status：`COMPLETED`（已完成）/ `PLAN ONLY`（仅规划）/ `NOT IMPLEMENTED`（未实现）。
 
+O-5B-R1 runner binding implementation：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。
+
 O-5A manual public outbound smoke plan review：`PASS`（通过）/ `ACCEPTED`（已接受）。
 
-O-5B execution status：`BLOCKED`（阻塞）/ `MANUAL RUNNER NOT BOUND`（手动 runner 未绑定）/ `NOT EXECUTED`（未执行）。
+O-5B execution status：`BLOCKED`（阻塞）/ `PENDING O-5B-R2 RUNNER BINDING REVIEW`（等待 O-5B-R2 runner 绑定复核）/ `NOT EXECUTED`（未执行）。
 
 O-5 smoke execution：`NOT STARTED`（未开始）。
 
@@ -22,14 +24,16 @@ O-FREEZE：`NOT STARTED`（未开始）。
 
 GateO stage：`NOT COMPLETED`（未完成）。
 
-本轮只做 runner binding 规划，不实现 runner，不新增测试代码，不执行真实 HTTP，不读取 credential，不修改 backend / frontend / research / scripts / deploy / `.github` / migration。
+O-5B-R1 已按本计划绑定 test-only manual JUnit runner。该实现只新增 test scope runner，不执行真实 HTTP，不读取 credential，不修改 backend production code / frontend / research / scripts / deploy / `.github` / migration，不新增 API / CI / migration。O-5B smoke execution 仍必须等待 `NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW`，不得从本状态直接执行 smoke。
 
 ## 2. 背景事实
 
-上一轮 O-5B execution 只读核对确认：仓库已有 O-1 controlled public outbound client / policy / manual profile / feature flag，但没有可审查的独立 O-5B manual smoke runner。因此 O-5B execution 不能开始，状态固定为：
+上一轮 O-5B execution 只读核对确认：仓库已有 O-1 controlled public outbound client / policy / manual profile / feature flag，但当时没有可审查的独立 O-5B manual smoke runner。因此 O-5B execution 不能开始。
+
+O-5B-R1 已补齐 runner 绑定，但该 runner 尚未经过 O-5B-R2 专项复核，也未执行真实 public outbound smoke。因此 O-5B execution 仍不能开始，当前状态固定为：
 
 ```text
-BLOCKED / MANUAL RUNNER NOT BOUND / NOT EXECUTED
+BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED
 ```
 
 已存在能力：
@@ -41,10 +45,15 @@ BLOCKED / MANUAL RUNNER NOT BOUND / NOT EXECUTED
 - `PublicMarketDataOutboundConfiguration`：默认 disabled fallback；仅 `public-marketdata-manual` profile + `nq.public-marketdata.outbound.enabled=true` 时创建真实 outbound client。
 - `EnvSafetyValidator`：manual public profile 下阻断 LIVE / AI / DH runtime / real provider / RealClient / real exchange 组合。
 
-尚不存在能力：
+本轮新增能力：
 
-- 独立 O-5B manual smoke runner。
-- O-5B 执行命令绑定。
+- 独立 O-5B manual smoke runner：`backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/GateOManualPublicOutboundSmokeTest.java`。
+- 默认跳过的 test-only manual JUnit entry：class-level `@EnabledIfSystemProperty(named = "nq.gateo.o5.manualSmoke.required", matches = "true")`，并带 `manual-public-outbound` / `gateo-o5-manual` tags。
+- Runner 内部固定 OKX public REST category-to-path map，不接受 raw URL、raw path、任意 query 或用户输入 credential。
+
+仍不存在能力：
+
+- 已复核并接受的 O-5B 执行命令。
 - O-5B redacted evidence artifact。
 - `DataOrigin.PUBLIC_OUTBOUND` 当前事实。
 
@@ -246,8 +255,9 @@ NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW
 | --- | --- | --- |
 | O-5A | `PASS / ACCEPTED` | manual public outbound smoke plan review。 |
 | O-5B runner binding plan | `COMPLETED / PLAN ONLY / NOT IMPLEMENTED` | 绑定 runner 形态、命令、allowlist/denylist 与证据契约。 |
-| O-5B runner implementation | `ALLOWED / TEST-ONLY MANUAL ENTRY PREFERRED / NOT STARTED` | 后续单独实现 test-only manual runner；不得执行 smoke。 |
-| O-5B smoke execution | `BLOCKED / MANUAL RUNNER NOT BOUND / NOT EXECUTED` | 必须等 runner implementation review 通过后才可执行。 |
+| O-5B-R1 runner implementation | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT` | 已新增 test-only manual runner；本轮未执行 smoke。 |
+| O-5B-R2 runner binding review | `NOT STARTED` | 后续只读复核 runner 的 gate、allowlist/denylist、redaction 与默认 skip 行为。 |
+| O-5B smoke execution | `BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED` | 必须等 R2 review 通过后才可执行。 |
 | O-5C | `NOT STARTED` | first smoke result review。 |
 | O-5D | `NOT STARTED` | DataOrigin / `PUBLIC_OUTBOUND` decision review。 |
 | O-5E | `NOT STARTED` | O-5 freeze review。 |
@@ -265,12 +275,12 @@ NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW
 
 ### P2
 
-1. Runner implementation 仍未完成；O-5B smoke execution 继续阻塞，直到 test-only manual entry 被实现并通过 review。
+1. O-5B-R1 runner implementation 已完成，但尚未经过 O-5B-R2 runner binding review；O-5B smoke execution 继续阻塞。
 2. `PUBLIC_OUTBOUND` 仍未进入当前 `DataOrigin` 事实；该决策必须留给 O-5D。
 
 ### P3
 
-1. O-5 plan、O-5B runner binding plan 和 O-5B smoke execution 状态相近，current 入口必须持续区分 `PLAN ONLY`、`RUNNER NOT BOUND` 和 `NOT EXECUTED`。
+1. O-5 plan、O-5B runner binding plan、O-5B-R1 implementation、O-5B-R2 review 和 O-5B smoke execution 状态相近，current 入口必须持续区分 `PLAN ONLY`、`RUNNER IMPLEMENTED`、`PENDING REVIEW` 和 `NOT EXECUTED`。
 
 ## 13. Final Decision
 
@@ -278,7 +288,9 @@ NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW
 
 Runner implementation：`ALLOWED / TEST-ONLY MANUAL ENTRY PREFERRED`。
 
-O-5B smoke execution：`BLOCKED / MANUAL RUNNER NOT BOUND / NOT EXECUTED`。
+O-5B-R1 runner binding implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`。
+
+O-5B smoke execution：`BLOCKED / PENDING O-5B-R2 RUNNER BINDING REVIEW / NOT EXECUTED`。
 
 O-5 smoke execution：`NOT STARTED`。
 
@@ -291,13 +303,50 @@ GateO stage：`NOT COMPLETED`。
 推荐下一步：
 
 ```text
-NQ-GATEO-O5B-RUNNER-BINDING-IMPLEMENTATION
+NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW
 ```
 
-该下一步只能实现 test-only manual runner，不得执行真实 public outbound smoke；smoke execution 必须再单独开 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`。
+该下一步只能 review 已绑定的 test-only manual runner，不得执行真实 public outbound smoke；smoke execution 必须再单独开 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`。
 
 Commit recommendation：
 
 ```text
-docs(gateo): plan O5B manual smoke runner binding
+test(gateo): bind manual public outbound smoke runner
 ```
+
+## 14. O-5B-R1 Runner Binding Implementation Addendum（2026-07-03）
+
+任务名称：`NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION`。
+
+实现状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。
+
+修改范围：
+
+- 新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/GateOManualPublicOutboundSmokeTest.java`。
+- 同步允许的 `docs/current` 与根 `README.md` 状态入口。
+- 未修改 backend production code、frontend、research、scripts、deploy、`.github`、migration、API、CI 或 dependency。
+
+Runner shape：
+
+- Test-only JUnit runner，class-level `@EnabledIfSystemProperty(named = "nq.gateo.o5.manualSmoke.required", matches = "true")`。
+- JUnit tags：`manual-public-outbound`、`gateo-o5-manual`。
+- 测试体额外要求 `NQ_GATEO_O5_MANUAL_SMOKE=true`、`SPRING_PROFILES_ACTIVE=public-marketdata-manual`、`NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true`。
+- HTTP 之前统一校验 LIVE / AI / DH runtime / real provider / RealClient / real exchange disabled，并拒绝 credential-like env / system property。
+
+Endpoint binding：
+
+- Provider 固定为 OKX reviewed public base host。
+- Runner 只允许 `SERVER_TIME`、`INSTRUMENTS`、`TICKER`、`OHLCV`。
+- Runner 不接受 raw URL、raw path、任意 query、credential 或用户输入 endpoint。
+- 每个 request 必须经过 `PublicMarketDataOutboundPolicy`；`ORDER_BOOK`、`RECENT_TRADES`、`PUBLIC_WEBSOCKET`、private / signed / authenticated / permission probe category 均 fail-closed。
+
+Evidence / redaction：
+
+- 只输出 text-only redacted summary：`runId`、`startedAt`、`finishedAt`、`provider`、`endpointCategory`、`instrument`、`httpStatus`、`latencyMs`、`resultStatus`、`errorCategory`、`redactedError` 与 no-credential / no-signed / no-private / no-trading / live-disabled / ai-disabled / dh-not-integrated facts。
+- 禁止输出 raw response body、raw headers、full URL、full query string、credential、API key、secret、passphrase、token、signature、cookie、private key 或 raw provider payload。
+
+Validation evidence：
+
+- Targeted runner validation：`mvn -f backend/pom.xml -pl nq-app,nq-adapter-api -am "-Dtest=*ManualPublic*Smoke*,*GateO*Outbound*Smoke*" "-Dsurefire.failIfNoSpecifiedTests=false" test` = `PASS / BUILD SUCCESS`；默认未设置 manual gate，runner skipped before HTTP。
+- Backend full validation：`mvn -f backend/pom.xml test` = `PASS / BUILD SUCCESS`；默认 Maven test 未触发真实 public HTTP。
+- O-5B smoke execution：`NOT EXECUTED`。本轮未设置 `NQ_GATEO_O5_MANUAL_SMOKE=true`，未设置 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true`，未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。
