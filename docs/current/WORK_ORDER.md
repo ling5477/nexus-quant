@@ -1,12 +1,12 @@
 # NexusQuant 当前工单
 
 > NQ 当前主线：GateO current work line remains separate and is not overwritten by this P0 factsource rebase
-> NQ-DH 集成文档线：NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO / COMPLETED / WORK_ORDER_ONLY / NQ_DRYRUN_STUB_RECORDER_PLANNED / NOT IMPLEMENTED
-> 下一集成文档任务：NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY_ALLOWED
+> NQ-DH 集成文档线：NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / COMPLETED / WORK_ORDER_ONLY / FINAL_WO_BEFORE_IMPLEMENTATION / NOT IMPLEMENTED
+> 下一集成文档任务：NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION / NOT STARTED / CONTROLLED_IMPLEMENTATION_BATCH_ALLOWED
 
 ## 1. 当前工单结论
 
-`NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN`、`NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN` 与 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` 已完成 planning-only 收口；`NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` 已完成 docs-only gate-fix；`NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO` 已完成 work-order-only 批次拆分；`NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO` 已完成 contract gap close work order；`NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO` 已完成 DH dry-run contract entry mock work order并由 NQ worktree 记录只读影响；`NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO` 已完成 NQ dry-run stub recorder work order。本工单记录 NQ 侧 Integration-1 contract dry-run、fixtures、readiness、gate-fix、dry-run mock WO、M0 gap close、M1 DH result consuming 与 M2 stub recorder planning 规划线，不覆盖 GateO 当前主线，不启动 Integration-1 implementation 或 runtime。P1 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`；P2 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`；P3 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`；dry-run mock WO 为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md`；M0 工单为 `docs/current/NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md`；M1 影响记录为 `docs/current/NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md`；M2 工单为 `docs/current/NQ_DH_INTEGRATION1_M2_NQ_DRYRUN_STUB_RECORDER_WO.md`；旧 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md` 仅作为 P1 初稿 / residual reference。
+`NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN`、`NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN` 与 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` 已完成 planning-only 收口；`NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` 已完成 docs-only gate-fix；`NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO` 已完成 work-order-only 批次拆分；`NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO` 已完成 contract gap close work order；`NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO` 已完成 DH dry-run contract entry mock work order并由 NQ worktree 记录只读影响；`NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO` 已完成 NQ dry-run stub recorder work order；`NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO` 已完成 final work-order-only 收口。本工单记录 NQ 侧 Integration-1 contract dry-run、fixtures、readiness、gate-fix、dry-run mock WO、M0 gap close、M1 DH result consuming、M2 stub recorder planning 与 M3 fixture/test planning 规划线，不覆盖 GateO 当前主线，不启动 Integration-1 runtime。P1 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`；P2 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`；P3 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`；dry-run mock WO 为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md`；M0 工单为 `docs/current/NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md`；M1 影响记录为 `docs/current/NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md`；M2 工单为 `docs/current/NQ_DH_INTEGRATION1_M2_NQ_DRYRUN_STUB_RECORDER_WO.md`；M3 工单为 `docs/current/NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md`；旧 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md` 仅作为 P1 初稿 / residual reference。
 
 当前 Integration-1 dry-run 前置条件固定为：
 
@@ -35,7 +35,8 @@ I1 dry-run mock implementation work order: COMPLETED / WORK_ORDER_ONLY / NOT IMP
 I1-M0 contract gap close work order: COMPLETED / WORK_ORDER_ONLY / CONTRACT_GAP_CLOSED / NOT IMPLEMENTED.
 I1-M1 DH dry-run contract entry mock work order: COMPLETED / WORK_ORDER_ONLY / DH_RESULT_CONSUMED / NOT IMPLEMENTED.
 I1-M2 NQ dry-run stub recorder work order: COMPLETED / WORK_ORDER_ONLY / NQ_DRYRUN_STUB_RECORDER_PLANNED / NOT IMPLEMENTED.
-Next concrete action: NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY_ALLOWED.
+I1-M3 joint mock fixtures and contract tests work order: COMPLETED / WORK_ORDER_ONLY / FINAL_WO_BEFORE_IMPLEMENTATION / NOT IMPLEMENTED.
+Next concrete action: NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION / NOT STARTED / CONTROLLED_IMPLEMENTATION_BATCH_ALLOWED.
 Integration-1 implementation: NOT STARTED.
 Integration-1 runtime: NOT STARTED.
 Runtime integration: NOT STARTED.
@@ -62,6 +63,7 @@ docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md
 docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md
 docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md
 docs/current/NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md
+docs/current/NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md
 ```
 
 后续如启动 P4，仍只能是 implementation gate review；必须单独授权，并继续保持 no runtime、no real HTTP、no provider、no LIVE。
@@ -99,7 +101,9 @@ ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_WORK_ORDER: YES
 ALLOW_I1_M0_CONTRACT_GAP_CLOSE_WO: YES / COMPLETED
 ALLOW_I1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO: YES / COMPLETED
 ALLOW_I1_M2_NQ_DRYRUN_STUB_RECORDER_WO: YES / COMPLETED / WORK_ORDER_ONLY
-ALLOW_I1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO: YES / WORK_ORDER_ONLY
+ALLOW_M3_WO_CLOSE: YES
+ALLOW_I1_IMP0_CONTRACT_GAP_TEST_SUPPORT_IMPLEMENTATION: YES
+ALLOW_MORE_PLANNING_WO: NO
 ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
 ALLOW_P1_IMPLEMENTATION_FROM_THIS_TASK: NO
 ALLOW_INTEGRATION1_DRYRUN_IMPLEMENTATION: NO
@@ -114,7 +118,7 @@ ALLOW_LIVE: NO
 ## 6. 下一步
 
 ```text
-NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY_ALLOWED
+NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION / NOT STARTED / CONTROLLED_IMPLEMENTATION_BATCH_ALLOWED
 ```
 
-下一步只能输出 joint mock fixtures and contract tests work order；不得在 NQ dev 执行，不得创建 fixture JSON 或测试代码，不得创建真实 client，不得真实 HTTP，不得直接实现 runtime，不得修改 schema/contracts/golden_cases。implementation 前必须先完成独立 implementation review，确认 no runtime、no provider、no LIVE、no credential、no order / risk / ledger / Paper Run mutation。
+下一步只能进入受控 test-support implementation batch；不得在 NQ dev 执行，不得创建真实 client，不得真实 HTTP，不得直接实现 runtime，不得修改 schema/contracts/golden_cases/API/Controller。implementation 前必须复核 M0/M1/M2/M3 全部 closed，并确认 no runtime、no provider、no LIVE、no credential、no order / risk / ledger / Paper Run mutation。

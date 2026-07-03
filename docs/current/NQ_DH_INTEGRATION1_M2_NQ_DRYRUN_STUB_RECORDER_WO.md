@@ -254,13 +254,15 @@ ALLOW_LANGGRAPH_RUNTIME: NO
 ALLOW_LIVE: NO
 ```
 
-M3 只能是：
+M3 已完成 work-order-only 收口，结论见 `docs/current/NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md`。M3 未创建 fixture JSON、测试代码、schema/contracts/golden_cases、API、Controller、runtime、真实 HTTP、real provider、AI / LangGraph 或 LIVE。
+
+M3 已收口为：
 
 ```text
-NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO
+NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / COMPLETED / WORK_ORDER_ONLY / FINAL_WO_BEFORE_IMPLEMENTATION / NOT IMPLEMENTED
 ```
 
-M3 仍必须是 work-order-only。M3 可规划 fixture/test，但创建 fixture JSON、golden case、schema/contracts 修改和测试代码必须在 M3 之后单独授权。若 `NQ_DRYRUN` source allowlist、canonical error taxonomy 或 endpoint shape 无法支持 joint fixture/test 设计，M3 不得继续，必须回到 M2 fix。
+M3 之后不再继续创建 M4/M5 大规划文档。若进入下一步，必须只走受控 IMP0 test-support implementation。
 
 ## 9. 验收标准
 
@@ -285,7 +287,7 @@ NQ dev 不应出现任何回滚动作，因为本轮不修改 NQ dev。
 ## 11. 下一步
 
 ```text
-NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO / NOT STARTED / WORK_ORDER_ONLY
+NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION / NOT STARTED / CONTROLLED_IMPLEMENTATION_BATCH_ALLOWED
 ```
 
-下一步只能输出 joint mock fixtures and contract tests work order；不得直接创建 fixture JSON、测试代码、schema/contracts/golden_cases、API、Controller、runtime、真实 HTTP、real provider、AI / LangGraph 或 LIVE。
+下一步只能进入受控 test-support implementation batch；不得直接创建 runtime、真实 HTTP、real provider、AI / LangGraph 或 LIVE。
