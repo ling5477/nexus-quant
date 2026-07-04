@@ -1,3 +1,65 @@
+## NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS
+
+日期：2026-07-04。
+
+范围：
+
+- 完成 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS`。
+- 新增 NQ dry-run worktree joint mock fixture / contract tests，与 DH 测试资源保持相同 fixture family names。
+- 同步 NQ / DH `docs/current` 的 IMP3 状态、验证记录和下一步 mock close review 入口。
+- 本轮不修改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、API / Controller、runtime wiring、provider 或真实 HTTP。
+
+新增文件：
+
+```text
+backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration1/NqDhIntegration1JointMockContractFixtureTest.java
+backend/nq-app/src/test/resources/nq-dh/integration1/joint_mock_contract_fixtures.json
+```
+
+修改文件：
+
+```text
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+docs/current/WORK_ORDER.md
+```
+
+结果：
+
+```text
+NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS: IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW
+Next: NQ-DH-I1-MOCK-CLOSE-REVIEW / NOT STARTED / REVIEW_ONLY / NO_RUNTIME
+ALLOW_IMP3_CLOSE: YES
+ALLOW_I1_MOCK_CLOSE_REVIEW: YES
+ALLOW_PRODUCTION_CODE_CHANGE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+验证：
+
+- NQ targeted test：`NqDhIntegration1JointMockContractFixtureTest` PASS；7 tests，0 failures，0 errors，0 skipped。
+- NQ full backend test：PASS / BUILD SUCCESS；23 个 backend reactor module SUCCESS。
+- NQ Integration-0 scoped test：PASS；17 tests，0 failures，0 errors，0 skipped。
+- DH targeted test：`DhIntegration1JointMockContractFixtureTest` PASS；6 tests，0 failures，0 errors，0 skipped。
+- DH `mvn -ntp test`：PASS / BUILD SUCCESS；19 个 reactor module SUCCESS；Docker/Testcontainers 不可用导致 Docker-gated smoke skipped，非代码失败。
+- DH `mvn -ntp -Pquality validate`：PASS / BUILD SUCCESS；Checkstyle 0 violations；Spotless check passed。
+
+边界确认：
+
+未改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、API / Controller、runtime wiring、provider 或真实 HTTP；未修改 NQ dev；未读取 credential / token / cookie / API secret / passphrase；未接 RealClient、real provider、AI 或 LangGraph；未启动 Integration-1 runtime；未开启 LIVE；未让 DH 输出进入 order、execution、risk mutation、ledger mutation、Paper Run 或 private trading 路径。
+
 ## NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT
 
 日期：2026-07-04。
@@ -30,7 +92,7 @@ docs/current/WORK_ORDER.md
 
 ```text
 NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT: VERIFY PASS / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_IMP3_JOINT_MOCK_CONTRACT_TESTS
-Next: NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS / NOT STARTED / MOCK_ONLY / NO_RUNTIME
+Next consumed: NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS / IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW
 ALLOW_IMP2_CLOSE: YES
 ALLOW_I1_IMP3_JOINT_MOCK_CONTRACT_TESTS: YES
 ALLOW_PRODUCTION_CODE_CHANGE: NO

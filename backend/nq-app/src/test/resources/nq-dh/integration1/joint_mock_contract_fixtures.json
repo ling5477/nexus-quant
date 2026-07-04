@@ -1,0 +1,547 @@
+{
+  "fixtureSet": "NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS",
+  "mockOnly": true,
+  "runtimeState": "NO_RUNTIME",
+  "families": [
+    {
+      "fixtureFamily": "valid_read_only_recommendation_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "ACCEPTED",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-valid",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-valid",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-valid",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-valid",
+        "traceId": "trace-i1-imp3-valid",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3",
+          "researchRef": "readonly-research-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/valid",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-valid",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-valid"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "missing_signature_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "MISSING_CANONICAL_HEADER",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-missing-signature",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-missing-signature",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-missing-signature",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-missing-signature",
+        "traceId": "trace-i1-imp3-missing-signature",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/missing-signature",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-missing-signature",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-missing-signature"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "invalid_signature_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "SIGNATURE_INVALID",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-invalid-signature",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-invalid-signature",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-invalid-signature",
+        "X-NQ-DH-Signature": "fixture-invalid-signature",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-invalid-signature",
+        "traceId": "trace-i1-imp3-invalid-signature",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/invalid-signature",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-invalid-signature",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-invalid-signature"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "timestamp_skew_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "TIMESTAMP_INVALID",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-timestamp-skew",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-timestamp-skew",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:10:01Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-timestamp-skew",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-timestamp-skew",
+        "traceId": "trace-i1-imp3-timestamp-skew",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/timestamp-skew",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-timestamp-skew",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-timestamp-skew"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "nonce_replay_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED_ON_REPLAY",
+      "expectedErrorCode": "NONCE_REPLAY",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-nonce-replay",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-nonce-replay",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-replayed",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-nonce-replay",
+        "traceId": "trace-i1-imp3-nonce-replay",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/nonce-replay",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-nonce-replay",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-nonce-replay"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "source_denied_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "SOURCE_DENIED",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_DRYRUN",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-source-denied",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-source-denied",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-source-denied",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-source-denied",
+        "traceId": "trace-i1-imp3-source-denied",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_DRYRUN",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/source-denied",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-source-denied",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-source-denied"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "tenant_mismatch_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "HEADER_BINDING_MISMATCH",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3-other",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-tenant-mismatch",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-tenant-mismatch",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-tenant-mismatch",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-tenant-mismatch",
+        "traceId": "trace-i1-imp3-tenant-mismatch",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/tenant-mismatch",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-tenant-mismatch",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-tenant-mismatch"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "forbidden_credential_field_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "FORBIDDEN_FIELD",
+      "mutationClass": "SENSITIVE_FIELD_SYNTHETIC",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-sensitive-field",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-sensitive-field",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-sensitive-field",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-sensitive-field",
+        "traceId": "trace-i1-imp3-sensitive-field",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/sensitive-field",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-sensitive-field",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-sensitive-field"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "forbidden_order_account_field_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "FORBIDDEN_FIELD",
+      "mutationClass": "REFERENCE_FIELD_SYNTHETIC",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-reference-field",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-reference-field",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-reference-field",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-reference-field",
+        "traceId": "trace-i1-imp3-reference-field",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/reference-field",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-reference-field",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-reference-field"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "forbidden_execution_intent_request",
+      "fixtureKind": "request",
+      "expectedOutcome": "FAIL_CLOSED",
+      "expectedErrorCode": "FORBIDDEN_FIELD",
+      "mutationClass": "ACTION_INTENT_SYNTHETIC",
+      "headers": {
+        "X-NQ-DH-Source": "NQ_MOCK",
+        "X-NQ-DH-Tenant-Id": "tenant-i1-imp3",
+        "X-NQ-DH-Request-Id": "req-i1-imp3-action-intent",
+        "X-NQ-DH-Trace-Id": "trace-i1-imp3-action-intent",
+        "X-NQ-DH-Timestamp": "2026-07-04T00:00:00Z",
+        "X-NQ-DH-Nonce": "nonce-i1-imp3-action-intent",
+        "X-NQ-DH-Signature": "fixture-signature-placeholder",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "requestId": "req-i1-imp3-action-intent",
+        "traceId": "trace-i1-imp3-action-intent",
+        "tenantId": "tenant-i1-imp3",
+        "source": "NQ_MOCK",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "subject": {
+          "symbol": "BTC-USDT",
+          "market": "CRYPTO_SPOT",
+          "timeframe": "1h",
+          "strategyRef": "readonly-strategy-i1-imp3"
+        },
+        "contextRef": "mock-nq:i1/context/action-intent",
+        "contextSnapshot": {
+          "snapshotId": "snapshot-i1-imp3-action-intent",
+          "capturedAt": "2026-07-04T00:00:00Z",
+          "evidenceRefs": ["evidence:i1-imp3-action-intent"]
+        },
+        "requestedAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "valid_abstain_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY",
+      "response": {
+        "requestId": "req-i1-imp3-valid-abstain",
+        "traceId": "trace-i1-imp3-valid-abstain",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "ABSTAIN",
+        "status": "ABSTAINED",
+        "riskLevel": "UNKNOWN",
+        "policyStatus": "REVIEW_REQUIRED",
+        "providerStatus": "NOT_CALLED",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["NO_EVIDENCE"],
+        "evidenceRefs": [],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "valid_observe_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY",
+      "response": {
+        "requestId": "req-i1-imp3-valid-observe",
+        "traceId": "trace-i1-imp3-valid-observe",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "OBSERVE",
+        "status": "OBSERVATION_ONLY",
+        "riskLevel": "LOW",
+        "policyStatus": "ALLOWED",
+        "providerStatus": "MOCKED",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["OBSERVE_ONLY"],
+        "evidenceRefs": ["evidence:i1-imp3-observe"],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "valid_no_trade_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY",
+      "response": {
+        "requestId": "req-i1-imp3-valid-no-trade",
+        "traceId": "trace-i1-imp3-valid-no-trade",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "NO_TRADE",
+        "status": "OBSERVATION_ONLY",
+        "riskLevel": "LOW",
+        "policyStatus": "ALLOWED",
+        "providerStatus": "MOCKED",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["NO_TRADE_READONLY"],
+        "evidenceRefs": ["evidence:i1-imp3-no-trade"],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "readonly_long_bias_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY",
+      "response": {
+        "requestId": "req-i1-imp3-long-bias",
+        "traceId": "trace-i1-imp3-long-bias",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "LONG_BIAS",
+        "status": "DIRECTIONAL_BIAS",
+        "riskLevel": "LOW",
+        "policyStatus": "ALLOWED",
+        "providerStatus": "MOCKED",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["READONLY_LONG_BIAS"],
+        "evidenceRefs": ["evidence:i1-imp3-long-bias"],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "readonly_short_bias_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY",
+      "response": {
+        "requestId": "req-i1-imp3-short-bias",
+        "traceId": "trace-i1-imp3-short-bias",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "SHORT_BIAS",
+        "status": "DIRECTIONAL_BIAS",
+        "riskLevel": "LOW",
+        "policyStatus": "ALLOWED",
+        "providerStatus": "MOCKED",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["READONLY_SHORT_BIAS"],
+        "evidenceRefs": ["evidence:i1-imp3-short-bias"],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "fail_closed_provider_timeout_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY_FAIL_CLOSED",
+      "response": {
+        "requestId": "req-i1-imp3-provider-timeout",
+        "traceId": "trace-i1-imp3-provider-timeout",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "ABSTAIN",
+        "status": "ABSTAINED",
+        "riskLevel": "UNKNOWN",
+        "policyStatus": "REVIEW_REQUIRED",
+        "providerStatus": "TIMEOUT",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["PROVIDER_TIMEOUT"],
+        "evidenceRefs": [],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "fail_closed_risk_blocked_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY_FAIL_CLOSED",
+      "response": {
+        "requestId": "req-i1-imp3-risk-blocked",
+        "traceId": "trace-i1-imp3-risk-blocked",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "ABSTAIN",
+        "status": "BLOCKED",
+        "riskLevel": "BLOCKED",
+        "policyStatus": "BLOCKED",
+        "providerStatus": "NOT_CALLED",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["RISK_BLOCKED"],
+        "evidenceRefs": [],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    },
+    {
+      "fixtureFamily": "fail_closed_internal_error_response",
+      "fixtureKind": "response",
+      "expectedOutcome": "RECORD_ONLY_FAIL_CLOSED",
+      "response": {
+        "requestId": "req-i1-imp3-internal-error",
+        "traceId": "trace-i1-imp3-internal-error",
+        "tenantId": "tenant-i1-imp3",
+        "decisionType": "READ_ONLY_RECOMMENDATION",
+        "action": "ABSTAIN",
+        "status": "ABSTAINED",
+        "riskLevel": "UNKNOWN",
+        "policyStatus": "REVIEW_REQUIRED",
+        "providerStatus": "NOT_CALLED",
+        "forbiddenActions": ["PLACE_ORDER", "CANCEL_ORDER", "MUTATE_NQ_STATE", "READ_NQ_DB", "WRITE_NQ_DB"],
+        "reasonCodes": ["INTERNAL_FAIL_CLOSED"],
+        "evidenceRefs": [],
+        "createdAt": "2026-07-04T00:00:00Z",
+        "schemaVersion": "1.0.0"
+      }
+    }
+  ]
+}

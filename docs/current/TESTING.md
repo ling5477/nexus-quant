@@ -1,3 +1,20 @@
+## NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS final validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| NQ dry-run worktree `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration1JointMockContractFixtureTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | 新增 NQ IMP3 joint mock contract fixture test 7 tests，0 failures，0 errors，0 skipped。 |
+| NQ dry-run worktree `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module SUCCESS；`nq-app` 104 tests 中 2 skipped；保留既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning。 |
+| NQ dry-run worktree `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | Integration-0 scoped tests 17 tests，0 failures，0 errors，0 skipped；不代表 Integration-1 runtime started。 |
+| DH `mvn -ntp -pl dh-usecase -am "-Dtest=DhIntegration1JointMockContractFixtureTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | 新增 DH IMP3 joint mock contract fixture test 6 tests，0 failures，0 errors，0 skipped。 |
+| DH `mvn -ntp test` | PASS / BUILD SUCCESS | 19 个 reactor module SUCCESS；Docker/Testcontainers 不可用导致 Docker-gated smoke skipped，非代码失败。 |
+| DH `mvn -ntp -Pquality validate` | PASS / BUILD SUCCESS | Checkstyle 0 violations；Spotless check passed。 |
+
+Scope：本轮完成 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS`；新增 NQ dry-run worktree joint mock fixture / contract tests，与 DH 测试资源保持同名 fixture family；同步 NQ/DH `docs/current` 状态和验证记录；不修改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、API、Controller、runtime wiring、provider 或真实 HTTP。
+
+Result：`NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS: IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW`；当前 next 为 `NQ-DH-I1-MOCK-CLOSE-REVIEW / NOT STARTED / REVIEW_ONLY / NO_RUNTIME`；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+Boundary：Integration-1 runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只新增 test-support fixture / tests，不执行 DH 输出，不触发 order / execution / risk / ledger / Paper Run / LIVE mutation，不读取 credential。
+
 ## NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT final validation（2026-07-04）
 
 | Command | Result | Notes |
@@ -19,7 +36,7 @@
 
 Scope：本轮完成 `NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT`；新增 NQ dry-run worktree test-support stub / readonly recorder / no-side-effect guard 测试；同步 NQ/DH `docs/current` 状态和验证记录；不修改 NQ production code、contracts、golden_cases、fixture JSON、API、Controller、migration、runtime wiring、provider 或真实 HTTP。
 
-Result：`NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT: VERIFY PASS / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_IMP3_JOINT_MOCK_CONTRACT_TESTS`；当前 next 为 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS / NOT STARTED / MOCK_ONLY / NO_RUNTIME`；`WORKSTREAM_MIXED_BLOCKED: NO`。
+Result：`NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT: VERIFY PASS / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_IMP3_JOINT_MOCK_CONTRACT_TESTS`；该 next 已由 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS / IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW` 消费；`WORKSTREAM_MIXED_BLOCKED: NO`。
 
 Boundary：Integration-1 runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只新增 test-support guard，不执行 DH 输出，不触发 order / execution / risk / ledger / Paper Run / LIVE mutation，不读取 credential。
 
