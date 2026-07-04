@@ -147,6 +147,25 @@ test.describe('runtime readiness overview', () => {
         await expect(page.getByRole('button', {name: 'View MarketData readiness'}).getByRole('link'))
             .toHaveAttribute('href', '/marketdata?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m');
 
+        const releaseMatrix = page.getByTestId('runtime-release-matrix');
+        await expect(releaseMatrix).toBeVisible();
+        await expect(releaseMatrix).toContainText('Data quality');
+        await expect(releaseMatrix).toContainText('DIAGNOSTIC_ONLY');
+        await expect(releaseMatrix).toContainText('只表示行情数据诊断');
+        await expect(releaseMatrix).toContainText('Public marketdata');
+        await expect(releaseMatrix).toContainText('READ_ONLY');
+        await expect(releaseMatrix).toContainText('Permission probe');
+        await expect(releaseMatrix).toContainText('NOT_IMPLEMENTED / READ_ONLY_STATUS');
+        await expect(releaseMatrix).toContainText('Private trading');
+        await expect(releaseMatrix).toContainText('NOT_IMPLEMENTED');
+        await expect(releaseMatrix).toContainText('LIVE');
+        await expect(releaseMatrix).toContainText('DISABLED');
+        await expect(releaseMatrix).toContainText('AI');
+        await expect(releaseMatrix).toContainText('NOT_STARTED');
+        await expect(releaseMatrix).toContainText('DH runtime');
+        await expect(releaseMatrix).toContainText('NOT_INTEGRATED');
+        await expect(releaseMatrix).toContainText('数据质量通过不等于 trading authorization');
+
         await expect(page.getByText(/verified/i)).toHaveCount(0);
         await expect(page.getByText(/live-ready/i)).toHaveCount(0);
         await expect(page.getByText('LIVE 已授权')).toHaveCount(0);

@@ -13597,6 +13597,40 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 
 ---
 
+## NQ-GATEP-BATCH-3-FRONTEND-DATA-QUALITY-CENTER-AND-RUNTIME-RELEASE-MATRIX
+
+日期：2026-07-04
+
+### 本轮目标
+
+在 NQ Console 中实现 Market Data Data Quality Center 前端只读展示，并在 Runtime 页面增加 release matrix。范围限定为 `frontend/**` 与本轮允许的 `docs/current` 文档同步；只消费 Batch 2 后端只读 API，不新增后端 API，不接真实交易所，不启用 LIVE，不接 AI / DH runtime。
+
+### 完成内容
+
+- 更新 `frontend/src/types/marketdata.ts`，新增 `MarketdataQualityOverviewQuery`、overview scope、metric、data origin summary、dataset coverage summary、topIssues 与 response 类型。
+- 更新 `frontend/src/api/marketdata.ts`，新增 `marketdataApi.getQualityOverview()`，只读调用 `GET /api/marketdata/quality/overview`。
+- 更新 `frontend/src/api/query-keys.ts`，新增 marketdata query key 集合，覆盖 bars、readiness、quality overview、ingestion jobs/runs 与 datasets。
+- 更新 `frontend/src/pages/marketdata/MarketdataPage.tsx`，新增 `Data Quality Center` 区块，展示 scope、`totalBars / expectedBars / gapCount / duplicateCount / outOfOrderCount / staleCount`、latest/earliest bar time、last success/failure、last ingestion run、`sourceHealth / freshnessStatus / qualityStatus`、`dataOriginSummary`、`datasetCoverageSummary` 与 `topIssues`；`UNKNOWN / NOT_AVAILABLE / NO_DATA / INCOMPLETE` 明确显示，不伪造成 0。
+- 更新 `frontend/src/pages/runtime/RuntimeReadinessPage.tsx`，新增 `Runtime release matrix`，明确 Data quality 仅诊断、Public marketdata 只读、Permission probe 未实现或只读状态、Private trading `NOT_IMPLEMENTED`、LIVE `DISABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`。
+- 新增 `frontend/tests/e2e/marketdata-data-quality-center-smoke.spec.ts`，覆盖正常 overview、`NO_DATA / UNKNOWN / NOT_AVAILABLE / INCOMPLETE`、topIssues、误导性 `tradingReady / liveReady / authorizedForTrading` 文案缺失和无真实外联 / 无写端点。
+- 更新 `frontend/tests/e2e/runtime-readiness-overview-smoke.spec.ts`，补 Runtime release matrix 断言。
+- 同步 `docs/current/README.md`、`STATUS.md`、`TESTING.md` 与本文件；未改 `API.md`，因为后端 API contract 已在 Batch 2 记录，本轮只做前端消费。
+
+### 验证
+
+- `npm --prefix frontend run build`：PASS；保留既有 Vite large chunk warning。
+- `npm --prefix frontend run test:e2e -- tests/e2e/marketdata-data-quality-center-smoke.spec.ts tests/e2e/runtime-readiness-overview-smoke.spec.ts --project=chromium`：首跑 2 passed / 1 failed，失败原因为测试断言过窄；修正后重跑 3 passed。
+
+### 边界
+
+未改 backend / research / scripts / deploy / `.github` / migration；未新增后端 API；未新增 migration；未触发真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken 外联；未读取或输出 credential material；未接 credential；未接 private trading adapter；未实现真实 permission probe、RealClient 或 real provider；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 data quality ready 写成 trading authorization；未把 public marketdata 写成 live authorization；未把 GateP 写成 frozen 或 accepted。
+
+### 推荐下一步
+
+提交前复核本轮 diff，推荐 commit message：`feat(frontend): add marketdata quality center view`。
+
+---
+
 ## NQ-GATEO-ARCHIVE-CLOSEOUT
 
 日期：2026-07-04

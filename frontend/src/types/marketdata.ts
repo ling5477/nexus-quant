@@ -36,6 +36,86 @@ export interface MarketdataReadinessQuery {
     to?: string;
 }
 
+export interface MarketdataQualityOverviewQuery {
+    exchangeCode?: string;
+    exchange?: string;
+    marketType?: string;
+    symbol?: string;
+    interval?: string;
+    sourceType?: string;
+    dataOrigin?: string;
+    datasetId?: string;
+    from?: string;
+    to?: string;
+}
+
+export interface MarketdataQualityOverviewScope {
+    exchangeCode?: string | null;
+    marketType?: string | null;
+    symbol?: string | null;
+    interval?: string | null;
+    sourceType?: string | null;
+    dataOrigin?: string | null;
+    datasetId?: string | null;
+    from?: string | null;
+    to?: string | null;
+}
+
+export interface MarketdataQualityMetric {
+    value?: number | null;
+    status: 'AVAILABLE' | 'UNKNOWN' | 'NOT_AVAILABLE' | string;
+    reason?: string | null;
+}
+
+export interface MarketdataQualityDataOriginSummary {
+    requestedDataOrigin?: string | null;
+    effectiveDataOrigin: string;
+    localDbBars: number;
+    fixtureBars: number;
+    unknownOriginBars: number;
+    supportLevel: string;
+}
+
+export interface MarketdataQualityDatasetCoverageSummary {
+    datasetCount: number;
+    expectedBars?: number | null;
+    actualBars?: number | null;
+    missingBars?: number | null;
+    duplicateBars?: number | null;
+    invalidBars?: number | null;
+    latestDatasetId?: string | null;
+    latestCoverageAt?: string | null;
+}
+
+export interface MarketdataQualityIssue {
+    code: string;
+    severity: string;
+    count: number;
+    message: string;
+}
+
+export interface MarketdataQualityOverview {
+    scope: MarketdataQualityOverviewScope;
+    totalBars: number;
+    expectedBars?: number | null;
+    gapCount?: number | null;
+    duplicateCount: MarketdataQualityMetric;
+    outOfOrderCount: MarketdataQualityMetric;
+    staleCount: MarketdataQualityMetric;
+    latestBarTime?: string | null;
+    earliestBarTime?: string | null;
+    lastSuccessAt?: string | null;
+    lastFailureAt?: string | null;
+    lastIngestionRunId?: string | null;
+    sourceHealth: string;
+    freshnessStatus: string;
+    qualityStatus: string;
+    dataOriginSummary: MarketdataQualityDataOriginSummary;
+    datasetCoverageSummary: MarketdataQualityDatasetCoverageSummary;
+    topIssues: MarketdataQualityIssue[];
+    generatedAt: string;
+}
+
 export interface MarketdataQualityStatusSummary {
     okCount: number;
     gapSignalCount: number;

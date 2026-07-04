@@ -3,10 +3,12 @@
 `docs/current/` 是 NexusQuant 的**当前事实入口**：只保留当前控制文档、当前权威基线和必要运行手册。
 历史过程证据、治理 review/freeze、旧路径 compatibility stub 已移出 current，归档到 `docs/evidence/` 或 `docs/gates/`（见下方“历史证据位置”）。
 
-当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）/ Batch 1 fact source closeout 已完成；Batch 2 后端只读切片 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）**。GateP 主线是“真实数据质量与交易准备阶段”；Batch 2 只代表 Market Data Data Quality Center 后端只读切片完成，不代表 GateP 已实现、已冻结或已接受。
+当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）/ Batch 1 fact source closeout 已完成；Batch 2 后端只读切片 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；Batch 3 前端 Data Quality Center 与 Runtime release matrix `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）**。GateP 主线是“真实数据质量与交易准备阶段”；Batch 2 / Batch 3 只代表各自切片完成，不代表 GateP 已实现、已冻结或已接受。
 当前边界：LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / real exchange adapter / real permission probe / private trading adapter `NOT IMPLEMENTED`（未实现）。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。Python Research 当前仅为 offline research minimal skeleton，后续仍需 dataset manifest、evaluation skeleton 和 experiment metadata。
 
 NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 `GET /api/marketdata/quality/overview`，只读聚合本地 `marketdata_bars`、dataset coverage 与 ingestion facts；不新增 migration，不改 frontend，不触发真实外联，不读取 credential，不启用 LIVE / AI / DH runtime，不实现 `DataOrigin.PUBLIC_OUTBOUND` runtime provider、RealClient、real provider、private trading adapter 或 real permission probe。该 data quality diagnostic 不等于 trading authorization。
+
+NQ-GATEP-BATCH-3-FRONTEND-DATA-QUALITY-CENTER-AND-RUNTIME-RELEASE-MATRIX = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮前端在 `/marketdata` 新增 Data Quality Center 只读区块，消费 `GET /api/marketdata/quality/overview` 并展示 scope、bar/coverage/ingestion 指标、source health、freshness、quality status、data origin、dataset coverage 与 topIssues；在 `/runtime/readiness` 新增 Runtime release matrix，明确 Data quality 仅诊断、Public marketdata 只读、Permission probe 未实现或只读状态、Private trading `NOT_IMPLEMENTED`、LIVE `DISABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`。本轮未改 backend / research / scripts / deploy / `.github` / migration，未新增后端 API，未触发真实外联，未读取 credential，未启用 LIVE / AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。Data quality diagnostic 不等于 trading authorization。
 
 NQ-GATEO-ARCHIVE-CLOSEOUT = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`IMPLEMENTED`（已实施）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。GateO final status = **FROZEN / ACCEPTED**（已冻结 / 已接受）；GateO freeze review = **PASS / ACCEPTED / CLOSED / READY FOR ARCHIVAL**（通过 / 已接受 / 已关闭 / 可归档）。GateO 过程与证据文档已归档到 [docs/gates/gate-o/](../gates/gate-o/README.md)，`docs/current` 只保留当前事实入口、状态摘要和归档指针。
 
@@ -57,6 +59,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 当前状态：[STATUS.md](STATUS.md)
 - 当前事实源索引：[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)
 - GateP Batch 2 Marketdata Data Quality Center 只读 API：见 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
+- GateP Batch 3 Marketdata Data Quality Center 前端与 Runtime release matrix：见 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
 - 路线图：[ROADMAP.md](ROADMAP.md)
 - 测试：[TESTING.md](TESTING.md)
 - 工作日志：[WORKLOG.md](WORKLOG.md)

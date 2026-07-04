@@ -7,6 +7,8 @@ import type {
     MarketdataDataset,
     MarketdataIngestionJob,
     MarketdataIngestionRun,
+    MarketdataQualityOverview,
+    MarketdataQualityOverviewQuery,
     MarketdataReadinessQuery,
     MarketdataReadinessSummary,
 } from '@/types/marketdata';
@@ -20,6 +22,12 @@ export const marketdataApi = {
     },
     async getReadiness(query: MarketdataReadinessQuery): Promise<MarketdataReadinessSummary> {
         const {data} = await apiClient.get<MarketdataReadinessSummary>('/marketdata/readiness', {
+            params: query,
+        });
+        return data;
+    },
+    async getQualityOverview(query: MarketdataQualityOverviewQuery): Promise<MarketdataQualityOverview> {
+        const {data} = await apiClient.get<MarketdataQualityOverview>('/marketdata/quality/overview', {
             params: query,
         });
         return data;

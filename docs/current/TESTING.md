@@ -7759,6 +7759,36 @@ What was not run：
 
 ---
 
+## NQ-GATEP-BATCH-3-FRONTEND-DATA-QUALITY-CENTER-AND-RUNTIME-RELEASE-MATRIX（2026-07-04）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`PASS`（通过）、`IMPLEMENTED`（已实现）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateP Batch 3 前端只读切片，不代表 GateP 已冻结或已接受。
+
+本轮验证范围：
+
+- 前端 API client / type：`GET /api/marketdata/quality/overview`。
+- `/marketdata`：Data Quality Center 只读区块、`UNKNOWN / NOT_AVAILABLE / NO_DATA / INCOMPLETE` 显式状态、topIssues 与 no-trading-authorization 文案。
+- `/runtime/readiness`：Runtime release matrix，覆盖 Data quality、Public marketdata、Permission probe、Private trading、LIVE、AI、DH runtime。
+- Backend / research / scripts / deploy / `.github` / migration 均为禁止修改范围。
+
+| Command | Result | Scope | Notes |
+| --- | --- | --- | --- |
+| `npm --prefix frontend run build` | **PASS** | 前端 TypeScript + Vite build | 构建通过；保留既有 Vite chunk > 500 kB warning。 |
+| `npm --prefix frontend run test:e2e -- tests/e2e/marketdata-data-quality-center-smoke.spec.ts tests/e2e/runtime-readiness-overview-smoke.spec.ts --project=chromium` | **FAIL / FIXED / RE-RUN PASS** | 本轮相关 Playwright smoke | 首跑 2 passed / 1 failed，失败原因为新增测试断言过窄，UI 已正确显示后端返回的 metric reason；修正断言后重跑 3 passed。 |
+
+Known warnings：
+
+- Playwright 运行期间保留既有 Ant Design React 19 compatibility warning 与 `Card.bordered` deprecated warning；本轮未处理该历史 UI 技术债。
+
+What was not run：
+
+- 未运行 Maven，原因是本轮禁止且未修改 `backend/**`。
+- 未运行 Python `pytest / mypy / ruff`，原因是本轮禁止且未修改 `research/**`。
+- 未运行真实后端 E2E 或真实 public outbound smoke，原因是本轮只验证前端只读展示和 mock/stubbed no-backend smoke，不触发真实外联。
+
+边界确认：未新增后端 API；未新增 migration；未改 backend / research / scripts / deploy / `.github`；未读取或输出 credential material；未启用 LIVE；未接 AI runtime；未接 DH runtime；未实现真实 public outbound provider、`DataOrigin.PUBLIC_OUTBOUND` runtime provider、RealClient、real provider、private trading adapter 或 real permission probe；未下单、撤单、转账或提现；data quality diagnostic 不等于 trading authorization。
+
+---
+
 ## NQ-GATEO-ARCHIVE-CLOSEOUT（2026-07-04）
 
 结论：**PASS / DOCS ARCHIVE CLOSEOUT / READY TO COMMIT**。含义：`PASS`（通过）、`DOCS ARCHIVE CLOSEOUT`（文档归档收口）、`READY TO COMMIT`（可提交前复核）。

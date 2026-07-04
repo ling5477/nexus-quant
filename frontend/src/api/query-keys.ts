@@ -13,6 +13,19 @@ export const operationalReadinessQueryKeys = {
     status: () => [...operationalReadinessQueryKeys.all, 'status'] as const,
 };
 
+export const marketdataQueryKeys = {
+    all: ['marketdata'] as const,
+    barsAll: () => [...marketdataQueryKeys.all, 'bars'] as const,
+    bars: (query: unknown) => [...marketdataQueryKeys.barsAll(), query] as const,
+    readinessAll: () => [...marketdataQueryKeys.all, 'readiness'] as const,
+    readiness: (query: unknown) => [...marketdataQueryKeys.readinessAll(), query] as const,
+    qualityOverviewAll: () => [...marketdataQueryKeys.all, 'quality-overview'] as const,
+    qualityOverview: (query: unknown) => [...marketdataQueryKeys.qualityOverviewAll(), query] as const,
+    ingestionJobs: () => [...marketdataQueryKeys.all, 'ingestion-jobs'] as const,
+    ingestionRuns: (jobId: string | null) => [...marketdataQueryKeys.all, 'ingestion-runs', jobId ?? 'none'] as const,
+    datasets: () => [...marketdataQueryKeys.all, 'datasets'] as const,
+};
+
 export const accountQueryKeys = {
     all: ['exchange-accounts'] as const,
     list: (accessToken?: string | null) => [...accountQueryKeys.all, 'list', accessToken ?? 'anonymous'] as const,

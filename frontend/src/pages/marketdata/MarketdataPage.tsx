@@ -6,6 +6,7 @@ import {useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
+import {marketdataQueryKeys} from '@/api/query-keys';
 import {PageHero} from '@/components/page/PageHero';
 import {EXCHANGE_OPTIONS, INTERVAL_OPTIONS, MARKET_TYPE_OPTIONS, SYMBOL_OPTIONS} from '@/constants/filter-options';
 import {DataFreshness, NqKlineChart, NqVolumeChart, applyNqCssVars, type FreshnessState, type NqKlineBar} from '@/nq-design-system';
@@ -19,6 +20,10 @@ import type {
     MarketdataDataset,
     MarketdataIngestionJob,
     MarketdataIngestionRun,
+    MarketdataQualityIssue,
+    MarketdataQualityMetric,
+    MarketdataQualityOverview,
+    MarketdataQualityOverviewQuery,
     MarketdataReadinessQuery,
     MarketdataReadinessSummary,
     MarketdataSandboxCapability,
@@ -186,6 +191,17 @@ function normalizeBarsQuery(values: MarketdataBarsFormValues): MarketdataBarsQue
 }
 
 function toReadinessQuery(query: MarketdataBarsQuery): MarketdataReadinessQuery {
+    return {
+        exchangeCode: query.exchangeCode,
+        marketType: query.marketType,
+        symbol: query.symbol,
+        interval: query.interval,
+        from: query.startTime,
+        to: query.endTime,
+    };
+}
+
+function toQualityOverviewQuery(query: MarketdataBarsQuery): MarketdataQualityOverviewQuery {
     return {
         exchangeCode: query.exchangeCode,
         marketType: query.marketType,
@@ -845,6 +861,80 @@ function isMarketdataReadinessSummary(value: unknown): value is MarketdataReadin
         && isMarketdataQualityStatusSummary(candidate.qualityStatusSummary);
 }
 
+function isQualityMetric(value: unknown): value is MarketdataQualityMetric {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return false;
+    }
+
+    const candidate = value as Partial<MarketdataQualityMetric>;
+    return typeof candidate.status === 'string'
+        && (candidate.value === undefined || candidate.value === null || typeof candidate.value === 'number');
+}
+
+function isMarketdataQualityIssue(value: unknown): value is MarketdataQualityIssue {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return false;
+    }
+
+    const candidate = value as Partial<MarketdataQualityIssue>;
+    return typeof candidate.code === 'string'
+        && typeof candidate.severity === 'string'
+        && typeof candidate.count === 'number'
+        && typeof candidate.message === 'string';
+}
+
+function isMarketdataQualityOverview(value: unknown): value is MarketdataQualityOverview {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return false;
+    }
+
+    const candidate = value as Partial<MarketdataQualityOverview>;
+    return Boolean(candidate.scope)
+        && typeof candidate.totalBars === 'number'
+        && isQualityMetric(candidate.duplicateCount)
+        && isQualityMetric(candidate.outOfOrderCount)
+        && isQualityMetric(candidate.staleCount)
+        && typeof candidate.sourceHealth === 'string'
+        && typeof candidate.freshnessStatus === 'string'
+        && typeof candidate.qualityStatus === 'string'
+        && Boolean(candidate.dataOriginSummary)
+        && typeof candidate.dataOriginSummary?.effectiveDataOrigin === 'string'
+        && typeof candidate.dataOriginSummary?.supportLevel === 'string'
+        && Boolean(candidate.datasetCoverageSummary)
+        && typeof candidate.datasetCoverageSummary?.datasetCount === 'number'
+        && Array.isArray(candidate.topIssues)
+        && candidate.topIssues.every(isMarketdataQualityIssue)
+        && typeof candidate.generatedAt === 'string';
+}
+
+function metricStatusColor(status?: string | null): string {
+    if (status === 'AVAILABLE') {
+        return 'green';
+    }
+    if (status === 'UNKNOWN' || status === 'NOT_AVAILABLE') {
+        return 'gold';
+    }
+    return readinessStatusColor(status);
+}
+
+function metricValueText(metric?: MarketdataQualityMetric | null): string {
+    if (!metric) {
+        return STABLE_FACT_PENDING_TEXT;
+    }
+    if (metric.status === 'AVAILABLE' && metric.value != null) {
+        return String(metric.value);
+    }
+    return metric.status;
+}
+
+function overviewCountText(value?: number | null): string {
+    return value == null ? STABLE_FACT_PENDING_TEXT : String(value);
+}
+
+function ScopeValue({value}: {value?: string | null}) {
+    return <MetricText>{value && value.trim() ? value : STABLE_FACT_PENDING_TEXT}</MetricText>;
+}
+
 function ReadinessQualityTags({readiness}: {readiness: MarketdataReadinessSummary}) {
     const entries = Object.entries(readiness.qualityStatusSummary?.statuses ?? {});
 
@@ -890,6 +980,254 @@ function MetricTile({label, value, detail}: {label: string; value: ReactNode; de
                 </Typography.Text>
             ) : null}
         </div>
+    );
+}
+
+function issueSeverityColor(severity: string): string {
+    const normalized = severity.toUpperCase();
+    if (normalized === 'CRITICAL' || normalized === 'ERROR') {
+        return 'red';
+    }
+    if (normalized === 'WARN' || normalized === 'WARNING') {
+        return 'gold';
+    }
+    if (normalized === 'INFO') {
+        return 'blue';
+    }
+    return 'default';
+}
+
+const qualityIssueColumns: ColumnsType<MarketdataQualityIssue> = [
+    {
+        title: 'Issue code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 190,
+        render: (value: string) => <MetricText>{value}</MetricText>,
+    },
+    {
+        title: 'Severity',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 130,
+        render: (value: string) => <Tag color={issueSeverityColor(value)}>{value}</Tag>,
+    },
+    {
+        title: 'Count',
+        dataIndex: 'count',
+        key: 'count',
+        width: 100,
+        render: (value: number) => <MetricText>{value}</MetricText>,
+    },
+    {
+        title: 'Message',
+        dataIndex: 'message',
+        key: 'message',
+    },
+];
+
+function QualityMetricTile({label, metric}: {label: string; metric?: MarketdataQualityMetric | null}) {
+    return (
+        <MetricTile
+            label={label}
+            value={<MetricText>{metricValueText(metric)}</MetricText>}
+            detail={(
+                <Space direction="vertical" size={2}>
+                    <Tag color={metricStatusColor(metric?.status)}>{metric?.status ?? 'UNKNOWN'}</Tag>
+                    <span>{metric?.reason ?? '缺少稳定本地事实时不推断为 0。'}</span>
+                </Space>
+            )}
+        />
+    );
+}
+
+/**
+ * MarketdataQualityCenterPanel 消费 GateP Batch 2 只读 overview API。
+ *
+ * Why:
+ * 该区块把 Data Quality Center 与交易授权完全拆开：所有 UNKNOWN / NOT_AVAILABLE / NO_DATA / INCOMPLETE
+ * 都必须原样可见，且页面只发起 GET 只读请求，不触发 ingestion、permission probe、private trading 或外部交易所调用。
+ */
+function MarketdataQualityCenterPanel({
+    overview,
+    submittedQuery,
+    loading,
+    fetching,
+    error,
+    unavailable,
+}: {
+    overview: MarketdataQualityOverview | null;
+    submittedQuery: MarketdataBarsQuery | null;
+    loading: boolean;
+    fetching: boolean;
+    error: unknown;
+    unavailable: boolean;
+}) {
+    const errorText = error ? formatApiError(error as AppApiError) : null;
+
+    return (
+        <Card className="page-section" bordered={false} title="Data Quality Center">
+            <div data-testid="marketdata-data-quality-center" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                <Alert
+                    type="warning"
+                    showIcon
+                    message="Data Quality diagnostic only"
+                    description="Data Quality Center 只表示数据质量诊断；数据质量通过不等于 trading authorization，不代表 LIVE 可用、private trading 可用、权限探活通过或 real provider 可用。"
+                />
+                {!submittedQuery ? (
+                    <Alert
+                        type="info"
+                        showIcon
+                        message="等待查询条件"
+                        description="提交查询后只读调用 GET /api/marketdata/quality/overview。当前不会触发采集、refresh-quality、permission probe 或真实交易所外联。"
+                    />
+                ) : null}
+                {errorText ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Data Quality Center unavailable"
+                        description={`overview API failed: ${errorText}; 页面不会用 bars fallback 伪造 overview 通过态。`}
+                    />
+                ) : null}
+                {unavailable ? (
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="Data Quality Center payload incomplete"
+                        description="后端响应缺少 overview 必需字段；页面保持 fail-closed，不把缺失字段推断为 0 或 READY。"
+                    />
+                ) : null}
+
+                <Descriptions
+                    size="small"
+                    column={{xs: 1, sm: 2, md: 3}}
+                    items={[
+                        {key: 'scopeExchange', label: 'scope.exchangeCode', children: <ScopeValue value={overview?.scope.exchangeCode ?? submittedQuery?.exchangeCode} />},
+                        {key: 'scopeMarket', label: 'scope.marketType', children: <ScopeValue value={overview?.scope.marketType ?? submittedQuery?.marketType} />},
+                        {key: 'scopeSymbol', label: 'scope.symbol', children: <ScopeValue value={overview?.scope.symbol ?? submittedQuery?.symbol} />},
+                        {key: 'scopeInterval', label: 'scope.interval', children: <ScopeValue value={overview?.scope.interval ?? submittedQuery?.interval} />},
+                        {key: 'scopeSourceType', label: 'scope.sourceType', children: <ScopeValue value={overview?.scope.sourceType} />},
+                        {key: 'scopeDataOrigin', label: 'scope.dataOrigin', children: <ScopeValue value={overview?.scope.dataOrigin} />},
+                        {key: 'scopeDatasetId', label: 'scope.datasetId', children: <ScopeValue value={overview?.scope.datasetId} />},
+                        {key: 'scopeFrom', label: 'scope.from', children: <MetricText>{overview?.scope.from ? formatDateTime(overview.scope.from) : (submittedQuery ? formatDateTime(submittedQuery.startTime) : STABLE_FACT_PENDING_TEXT)}</MetricText>},
+                        {key: 'scopeTo', label: 'scope.to', children: <MetricText>{overview?.scope.to ? formatDateTime(overview.scope.to) : (submittedQuery ? formatDateTime(submittedQuery.endTime) : STABLE_FACT_PENDING_TEXT)}</MetricText>},
+                        {key: 'generatedAt', label: 'generatedAt', children: <MetricText>{overview ? formatDateTime(overview.generatedAt) : STABLE_FACT_PENDING_TEXT}</MetricText>},
+                    ]}
+                />
+
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                        gap: 12,
+                    }}
+                >
+                    <MetricTile
+                        label="totalBars"
+                        value={<MetricText>{overview?.totalBars ?? (loading || fetching ? 'LOADING' : STABLE_FACT_PENDING_TEXT)}</MetricText>}
+                        detail="本地 bars 聚合计数；0 只在后端明确返回时显示。"
+                    />
+                    <MetricTile
+                        label="expectedBars"
+                        value={<MetricText>{overviewCountText(overview?.expectedBars)}</MetricText>}
+                        detail="null 表示暂无稳定 expected 事实。"
+                    />
+                    <MetricTile
+                        label="gapCount"
+                        value={<MetricText>{overviewCountText(overview?.gapCount)}</MetricText>}
+                        detail="null 不等于无缺口；缺少事实时保持未知。"
+                    />
+                    <QualityMetricTile label="duplicateCount" metric={overview?.duplicateCount} />
+                    <QualityMetricTile label="outOfOrderCount" metric={overview?.outOfOrderCount} />
+                    <QualityMetricTile label="staleCount" metric={overview?.staleCount} />
+                    <MetricTile
+                        label="latestBarTime"
+                        value={<MetricText>{overview ? dateText(overview.latestBarTime) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                        detail={overview?.latestBarTime ?? 'NO_DATA / UNKNOWN 时保持空态。'}
+                    />
+                    <MetricTile
+                        label="earliestBarTime"
+                        value={<MetricText>{overview ? dateText(overview.earliestBarTime) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                        detail={overview?.earliestBarTime ?? 'NO_DATA / UNKNOWN 时保持空态。'}
+                    />
+                    <MetricTile
+                        label="lastSuccessAt"
+                        value={<MetricText>{overview ? dateText(overview.lastSuccessAt) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                        detail={overview?.lastSuccessAt ?? '暂无 ingestion success 事实。'}
+                    />
+                    <MetricTile
+                        label="lastFailureAt"
+                        value={<MetricText>{overview ? dateText(overview.lastFailureAt) : STABLE_FACT_PENDING_TEXT}</MetricText>}
+                        detail={overview?.lastFailureAt ?? '暂无 ingestion failure 事实。'}
+                    />
+                    <MetricTile
+                        label="lastIngestionRunId"
+                        value={<MetricText>{overview?.lastIngestionRunId ?? STABLE_FACT_PENDING_TEXT}</MetricText>}
+                        detail="仅显示 run id，不显示 raw request、headers 或 credential。"
+                    />
+                    <MetricTile
+                        label="sourceHealth"
+                        value={<MarketDataStatusBadge status={overview?.sourceHealth ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
+                        detail="sourceHealth 是数据源健康诊断，不代表 provider 交易权限。"
+                    />
+                    <MetricTile
+                        label="freshnessStatus"
+                        value={<MarketDataStatusBadge status={overview?.freshnessStatus ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
+                        detail="NO_DATA / UNKNOWN 均为显式非通过态。"
+                    />
+                    <MetricTile
+                        label="qualityStatus"
+                        value={<MarketDataStatusBadge status={overview?.qualityStatus ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
+                        detail="INCOMPLETE / INVALID / GAP_DETECTED 不会被隐藏。"
+                    />
+                </div>
+
+                <Descriptions
+                    title="dataOriginSummary"
+                    size="small"
+                    column={{xs: 1, sm: 2, md: 3}}
+                    items={[
+                        {key: 'requestedDataOrigin', label: 'requestedDataOrigin', children: <ScopeValue value={overview?.dataOriginSummary.requestedDataOrigin} />},
+                        {key: 'effectiveDataOrigin', label: 'effectiveDataOrigin', children: <MarketDataOriginBadge origin={overview?.dataOriginSummary.effectiveDataOrigin ?? 'UNKNOWN'} />},
+                        {key: 'localDbBars', label: 'localDbBars', children: <MetricText>{overview?.dataOriginSummary.localDbBars ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'fixtureBars', label: 'fixtureBars', children: <MetricText>{overview?.dataOriginSummary.fixtureBars ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'unknownOriginBars', label: 'unknownOriginBars', children: <MetricText>{overview?.dataOriginSummary.unknownOriginBars ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'supportLevel', label: 'supportLevel', children: <MetricText>{overview?.dataOriginSummary.supportLevel ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
+                    ]}
+                />
+                <Typography.Text type="secondary">
+                    `effectiveDataOrigin=LOCAL_DB` 表示当前只读聚合本地事实；请求或历史 decision 中出现 PUBLIC_OUTBOUND 不代表 public outbound runtime provider 已启用。
+                </Typography.Text>
+
+                <Descriptions
+                    title="datasetCoverageSummary"
+                    size="small"
+                    column={{xs: 1, sm: 2, md: 4}}
+                    items={[
+                        {key: 'datasetCount', label: 'datasetCount', children: <MetricText>{overview?.datasetCoverageSummary.datasetCount ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'coverageExpected', label: 'expectedBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.expectedBars)}</MetricText>},
+                        {key: 'actualBars', label: 'actualBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.actualBars)}</MetricText>},
+                        {key: 'missingBars', label: 'missingBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.missingBars)}</MetricText>},
+                        {key: 'duplicateBars', label: 'duplicateBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.duplicateBars)}</MetricText>},
+                        {key: 'invalidBars', label: 'invalidBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.invalidBars)}</MetricText>},
+                        {key: 'latestDatasetId', label: 'latestDatasetId', children: <ScopeValue value={overview?.datasetCoverageSummary.latestDatasetId} />},
+                        {key: 'latestCoverageAt', label: 'latestCoverageAt', children: <MetricText>{overview ? dateText(overview.datasetCoverageSummary.latestCoverageAt) : STABLE_FACT_PENDING_TEXT}</MetricText>},
+                    ]}
+                />
+
+                <Table<MarketdataQualityIssue>
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.message}`}
+                    columns={qualityIssueColumns}
+                    dataSource={overview?.topIssues ?? []}
+                    loading={loading || fetching}
+                    pagination={false}
+                    size="small"
+                    scroll={{x: 760}}
+                    locale={{emptyText: '暂无 topIssues；这只表示后端未返回问题项，不代表交易授权。'}}
+                />
+            </div>
+        </Card>
     );
 }
 
@@ -993,7 +1331,7 @@ export function MarketdataPage() {
     }, [form, hasRuntimeDeepLink, runtimeDeepLinkValues]);
 
     const barsQuery = useQuery({
-        queryKey: ['marketdata-bars', submittedQuery],
+        queryKey: marketdataQueryKeys.bars(submittedQuery),
         queryFn: () => marketdataApi.listBars(submittedQuery as MarketdataBarsQuery),
         enabled: submittedQuery !== null,
     });
@@ -1002,22 +1340,32 @@ export function MarketdataPage() {
         [submittedQuery],
     );
     const readinessQuery = useQuery({
-        queryKey: ['marketdata-readiness', readinessQueryInput],
+        queryKey: marketdataQueryKeys.readiness(readinessQueryInput),
         queryFn: () => marketdataApi.getReadiness(readinessQueryInput as MarketdataReadinessQuery),
         enabled: readinessQueryInput !== null,
         retry: false,
     });
+    const qualityOverviewQueryInput = useMemo(
+        () => submittedQuery ? toQualityOverviewQuery(submittedQuery) : null,
+        [submittedQuery],
+    );
+    const qualityOverviewQuery = useQuery({
+        queryKey: marketdataQueryKeys.qualityOverview(qualityOverviewQueryInput),
+        queryFn: () => marketdataApi.getQualityOverview(qualityOverviewQueryInput as MarketdataQualityOverviewQuery),
+        enabled: qualityOverviewQueryInput !== null,
+        retry: false,
+    });
     const jobsQuery = useQuery({
-        queryKey: ['marketdata-ingestion-jobs'],
+        queryKey: marketdataQueryKeys.ingestionJobs(),
         queryFn: marketdataApi.listIngestionJobs,
     });
     const runsQuery = useQuery({
-        queryKey: ['marketdata-ingestion-runs', selectedJobId],
+        queryKey: marketdataQueryKeys.ingestionRuns(selectedJobId),
         queryFn: () => marketdataApi.listIngestionRuns(selectedJobId as string),
         enabled: selectedJobId !== null,
     });
     const datasetsQuery = useQuery({
-        queryKey: ['marketdata-datasets'],
+        queryKey: marketdataQueryKeys.datasets(),
         queryFn: marketdataApi.listDatasets,
     });
     const createJobMutation = useMutation({
@@ -1025,7 +1373,7 @@ export function MarketdataPage() {
         onSuccess: async (job) => {
             setSelectedJobId(job.jobId);
             messageApi.success('Marketdata ingestion job created');
-            await queryClient.invalidateQueries({queryKey: ['marketdata-ingestion-jobs']});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.ingestionJobs()});
         },
         onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
     });
@@ -1035,10 +1383,11 @@ export function MarketdataPage() {
         onSuccess: async (run) => {
             setSelectedJobId(run.jobId);
             messageApi.info(`Run finished: ${run.status}`);
-            await queryClient.invalidateQueries({queryKey: ['marketdata-ingestion-jobs']});
-            await queryClient.invalidateQueries({queryKey: ['marketdata-ingestion-runs', run.jobId]});
-            await queryClient.invalidateQueries({queryKey: ['marketdata-bars']});
-            await queryClient.invalidateQueries({queryKey: ['marketdata-readiness']});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.ingestionJobs()});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.ingestionRuns(run.jobId)});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.barsAll()});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.readinessAll()});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
         onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
         onSettled: () => setPendingJobId(null),
@@ -1047,7 +1396,8 @@ export function MarketdataPage() {
         mutationFn: marketdataApi.createDataset,
         onSuccess: async (dataset) => {
             messageApi.success(`Dataset created: ${dataset.qualityStatus}`);
-            await queryClient.invalidateQueries({queryKey: ['marketdata-datasets']});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.datasets()});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
         onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
     });
@@ -1056,7 +1406,8 @@ export function MarketdataPage() {
         onMutate: (datasetId) => setPendingDatasetId(datasetId),
         onSuccess: async (dataset) => {
             messageApi.info(`Dataset quality: ${dataset.qualityStatus}`);
-            await queryClient.invalidateQueries({queryKey: ['marketdata-datasets']});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.datasets()});
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
         onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
         onSettled: () => setPendingDatasetId(null),
@@ -1066,7 +1417,17 @@ export function MarketdataPage() {
         () => isMarketdataReadinessSummary(readinessQuery.data) ? readinessQuery.data : null,
         [readinessQuery.data],
     );
+    const qualityOverview = useMemo(
+        () => isMarketdataQualityOverview(qualityOverviewQuery.data) ? qualityOverviewQuery.data : null,
+        [qualityOverviewQuery.data],
+    );
     const readinessLoading = submittedQuery !== null && (readinessQuery.isLoading || readinessQuery.isFetching);
+    const qualityOverviewLoading = submittedQuery !== null && qualityOverviewQuery.isLoading;
+    const qualityOverviewUnavailable = submittedQuery !== null
+        && !qualityOverviewQuery.isLoading
+        && !qualityOverviewQuery.isError
+        && qualityOverviewQuery.data !== undefined
+        && qualityOverview === null;
     const readinessUnavailable = submittedQuery !== null && !readinessLoading && backendReadiness === null;
     const readinessError = readinessQuery.error ? formatApiError(readinessQuery.error as AppApiError) : null;
     const chartBars = useMemo(() => bars.map(toNqKlineBar), [bars]);
@@ -1253,6 +1614,14 @@ export function MarketdataPage() {
                     </Typography.Text>
                 </div>
             </Card>
+            <MarketdataQualityCenterPanel
+                overview={qualityOverview}
+                submittedQuery={submittedQuery}
+                loading={qualityOverviewLoading}
+                fetching={qualityOverviewQuery.isFetching}
+                error={qualityOverviewQuery.error}
+                unavailable={qualityOverviewUnavailable}
+            />
             <Card className="page-section" bordered={false} title="Data Quality / Readiness">
                 <div data-testid="marketdata-quality-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
                     <MarketDataQualityNotice />

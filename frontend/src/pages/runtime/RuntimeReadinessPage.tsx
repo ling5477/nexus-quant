@@ -60,6 +60,15 @@ interface RuntimeBlocker {
     tone: StatusTone;
 }
 
+interface RuntimeReleaseMatrixRow {
+    key: string;
+    area: string;
+    status: string;
+    meaning: string;
+    boundary: string;
+    source: string;
+}
+
 interface OperationalReadinessItem {
     key: string;
     area: string;
@@ -104,6 +113,8 @@ function statusTone(status: string): StatusTone {
         case 'NOT_EXPOSED':
         case 'SAFE_BY_DEFAULT':
         case 'SAFE_SUMMARY_ONLY':
+        case 'DIAGNOSTIC_ONLY':
+        case 'READ_ONLY':
             return 'info';
         case 'DISABLED_SENTINEL':
         case 'CREDENTIAL_UNCONFIGURED':
@@ -385,6 +396,105 @@ const blockerColumns: ColumnsType<RuntimeBlocker> = [
     },
 ];
 
+/**
+ * Runtime release matrix 是 GateP Batch 3 的前端静态放行解释层。
+ *
+ * Why:
+ * 当前没有任何 API 能把 Data Quality、public marketdata、permission probe、private trading、LIVE、AI、
+ * DH runtime 合并为“可交易”结论，因此矩阵必须显式 fail-closed：只展示诊断/只读/未实现/未启动状态，
+ * 不派生 tradingReady、liveReady 或 authorization 文案。
+ */
+const runtimeReleaseMatrixRows: RuntimeReleaseMatrixRow[] = [
+    {
+        key: 'data-quality',
+        area: 'Data quality',
+        status: 'DIAGNOSTIC_ONLY',
+        meaning: '只表示行情数据诊断和缺口可见性。',
+        boundary: '数据质量通过不等于 trading authorization。',
+        source: 'GET /api/marketdata/quality/overview',
+    },
+    {
+        key: 'public-marketdata',
+        area: 'Public marketdata',
+        status: 'READ_ONLY',
+        meaning: '只读公共行情；不得推导 private endpoint、signed request 或 provider trading readiness。',
+        boundary: 'Public marketdata readiness 不等于 LIVE 可用。',
+        source: 'MarketData readonly APIs',
+    },
+    {
+        key: 'permission-probe',
+        area: 'Permission probe',
+        status: 'NOT_IMPLEMENTED / READ_ONLY_STATUS',
+        meaning: '仅展示未实现、disabled 或 skipped 状态；本页不执行 probe POST。',
+        boundary: 'SKIPPED / disabled 不代表权限通过。',
+        source: 'Operational / adapter readiness summary',
+    },
+    {
+        key: 'private-trading',
+        area: 'Private trading',
+        status: 'NOT_IMPLEMENTED',
+        meaning: '真实下单、撤单、转账、提现和 private trading adapter 均未实现。',
+        boundary: '不提供 write endpoint 或交易授权入口。',
+        source: 'GateP boundary',
+    },
+    {
+        key: 'live',
+        area: 'LIVE',
+        status: 'DISABLED',
+        meaning: 'LIVE 当前关闭。',
+        boundary: '不允许真实 LIVE 下单或资金操作。',
+        source: 'Current fact source',
+    },
+    {
+        key: 'ai',
+        area: 'AI',
+        status: 'NOT_STARTED',
+        meaning: 'AI runtime、AI 信号、AI 自动交易未开始。',
+        boundary: '不把任何数据质量或 runtime 状态转换为 AI 建议或交易动作。',
+        source: 'Current fact source',
+    },
+    {
+        key: 'dh-runtime',
+        area: 'DH runtime',
+        status: 'NOT_INTEGRATED',
+        meaning: 'DH runtime 未集成到 NQ。',
+        boundary: 'DH 不允许启动 Paper Run、修改 NQ 交易状态或访问 credential。',
+        source: 'Current fact source',
+    },
+];
+
+const runtimeReleaseMatrixColumns: ColumnsType<RuntimeReleaseMatrixRow> = [
+    {
+        title: 'Matrix item',
+        dataIndex: 'area',
+        key: 'area',
+        width: 190,
+        render: (area: string, row) => (
+            <Space direction="vertical" size={2}>
+                <Text strong>{area}</Text>
+                <Text type="secondary">{row.source}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'Status',
+        dataIndex: 'status',
+        key: 'status',
+        width: 240,
+        render: (status: string) => <StatusTag label={status} tone={statusTone(status)} variant="pill"/>,
+    },
+    {
+        title: 'Meaning',
+        dataIndex: 'meaning',
+        key: 'meaning',
+    },
+    {
+        title: 'Boundary',
+        dataIndex: 'boundary',
+        key: 'boundary',
+    },
+];
+
 const operationalColumns: ColumnsType<OperationalReadinessItem> = [
     {
         title: 'Operational area',
@@ -483,6 +593,30 @@ export function RuntimeReadinessPage() {
                     </span>
                 )}
             />
+
+            <Card
+                className="page-section"
+                variant="borderless"
+                title="Runtime release matrix"
+                data-testid="runtime-release-matrix"
+            >
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="Release matrix remains fail-closed"
+                        description="Data quality、public marketdata、permission probe、private trading、LIVE、AI 与 DH runtime 分开解释；任一诊断通过都不会被写成交易授权。"
+                    />
+                    <Table<RuntimeReleaseMatrixRow>
+                        rowKey="key"
+                        columns={runtimeReleaseMatrixColumns}
+                        dataSource={runtimeReleaseMatrixRows}
+                        pagination={false}
+                        size="small"
+                        scroll={{x: 980}}
+                    />
+                </Space>
+            </Card>
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} xl={6}>
