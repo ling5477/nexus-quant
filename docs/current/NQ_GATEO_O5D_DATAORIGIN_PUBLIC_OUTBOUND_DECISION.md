@@ -218,7 +218,9 @@ O-5D：`PASS / ACCEPTED`（通过 / 已接受）。
 
 O-5D decision：`ALLOW_FUTURE_IMPLEMENTATION`（允许后续单独实现）。
 
-O-5E：`NOT STARTED`（未开始）。
+O-5E：`PASS`（通过）/ `ACCEPTED`（已接受）。
+
+O-5 final status：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
 
 O-FREEZE：`NOT STARTED`（未开始）。
 
@@ -236,7 +238,7 @@ public marketdata readiness 不等于 trading authorization。
 
 ## 10. Commit Recommendation
 
-如果最终验证确认 P0/P1=0 且 diff 仅限允许文档，可以提交：
+该 decision 已由 O-5E freeze review 消费。如果最终验证确认 P0/P1=0 且 diff 仅限允许文档，可以随 O-5E freeze baseline 一并提交：
 
 ```powershell
 git add README.md `
@@ -247,17 +249,18 @@ git add README.md `
   docs/current/TESTING.md `
   docs/current/WORKLOG.md `
   docs/current/NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md `
-  docs/current/NQ_GATEO_O5D_DATAORIGIN_PUBLIC_OUTBOUND_DECISION.md
+  docs/current/NQ_GATEO_O5D_DATAORIGIN_PUBLIC_OUTBOUND_DECISION.md `
+  docs/current/NQ_GATEO_O5E_MANUAL_PUBLIC_OUTBOUND_SMOKE_FREEZE_REVIEW.md
 
-git commit -m "docs(gateo): decide public outbound data origin semantics"
+git commit -m "docs(gateo): freeze manual public outbound smoke baseline"
 ```
 
 ## 11. Next Concrete Action
 
-下一步只允许：
+O-5E 已完成并接受。下一步只允许：
 
 ```text
-NQ-GATEO-O5E-FREEZE-REVIEW
+NQ-GATEO-FREEZE-REVIEW
 ```
 
 如果选择先实现 `DataOrigin.PUBLIC_OUTBOUND` 语义，则必须另起：
@@ -266,4 +269,4 @@ NQ-GATEO-O5E-FREEZE-REVIEW
 NQ-GATEO-O5D-R1-DATAORIGIN-PUBLIC-OUTBOUND-IMPLEMENTATION
 ```
 
-该实现任务必须单独 review，且不得默认进入 O-5E / O-FREEZE。
+该实现任务必须单独 review，且不得默认进入 O-FREEZE。

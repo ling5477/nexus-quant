@@ -1,3 +1,24 @@
+## NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -8` | PASS / REVIEWED | 分支 `dev`；写前工作区 clean；最近 8 个提交覆盖 O-5 plan、runner binding、manual smoke、O-5C result review 与 O-5D decision。写后状态仅允许 root/current Markdown diff 与新增 O-5E freeze review 文档。 |
+| `git show --stat --oneline 91c4abec` / `35413109` / `3c7f904b` / `15793fac` / `c933676e` | PASS / REVIEWED | O-5 关键提交存在；`35413109` 为 test-only runner commit；`3c7f904b`、`15793fac`、`c933676e` 为 smoke result、result review、DataOrigin decision 文档链路。 |
+| Runner / policy source review | PASS / REVIEWED | `GateOManualPublicOutboundSmokeTest` 仍默认 skip，需 system property + manual env/profile/feature flag；HTTP 前检查 no LIVE / no AI / no DH / no real provider / no credential；`PublicMarketDataOutboundPolicy` 仍只允许 `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`，并拒绝 private/signed/credential/permission/trading category。 |
+| DataOrigin implementation surface review | PASS / REVIEWED | `PublicMarketDataQualitySummary.DataOrigin.PUBLIC_OUTBOUND` 仅存在于 O-1 bridge model；`DataQualitySummary` 不暴露 `PUBLIC_OUTBOUND`；mapper 仍映射为 `PUBLIC_CANDIDATE`；core readiness enum 与 frontend type 均未包含 `PUBLIC_OUTBOUND`。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于允许的 `README.md` 与 `docs/current` Markdown 文档。 |
+| forbidden-area diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 本轮未触达代码、CI、部署、research 或 migration。 |
+| redaction / credential `rg` | PASS / REVIEWED | 命中为历史、否定语境、禁止字段清单或安全边界；未发现 raw response body、raw headers、full URL、full query、credential、signature、cookie、private key 或 raw provider payload 被写成保存事实。 |
+| trading / readiness `rg` | PASS / REVIEWED | 未发现 O-5 success 或 public outbound 被写成 trading authorization、LIVE ready、permission granted、credential configured 或 provider ready for trading。 |
+| Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun | NOT RUN | 本轮是 docs-only freeze review，任务明确禁止重跑 O-5B smoke、执行真实 HTTP 或修改 Java / TypeScript / Python / workflow / migration / runtime 配置。 |
+
+Scope：本轮完成 `NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW`。只冻结 O-5 manual public outbound smoke baseline，不冻结 GateO 总阶段。
+
+Result：`NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW: PASS / ACCEPTED`。O-5 final status `FROZEN / ACCEPTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`；O-5D-R1 DataOrigin implementation `NOT STARTED / optional next branch`。
+
+Boundary：未执行真实 HTTP，未重跑 O-5B smoke，未设置 manual smoke flags/profile，未读取 `.env`、key、pem、credential material、repository secrets、API key、secret、passphrase、token 或 cookie；未修改 backend、frontend、research、scripts、deploy、`.github` 或 migration；未实现 `DataOrigin.PUBLIC_OUTBOUND`；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW validation（2026-07-04）
 
 | Command | Result | Notes |
