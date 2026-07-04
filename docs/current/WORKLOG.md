@@ -1,3 +1,61 @@
+## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN
+
+日期：2026-07-04。
+
+范围：
+
+- 完成 NQ dry-run worktree 视角的 `NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN` 文档同步。
+- 本轮只改 NQ dry-run worktree 与 DH 的 `docs/current` 允许文档。
+- 不修改 NQ dev，不修改 production code、test code、contracts、golden_cases、fixture JSON、API / Controller / Client、migration、runtime wiring、real HTTP、provider、AI / LangGraph 或 LIVE。
+
+新增文件：
+
+```text
+docs/current/NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md
+```
+
+修改文件：
+
+```text
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+docs/current/WORK_ORDER.md
+```
+
+结果：
+
+```text
+NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN: CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME
+ALLOW_LIMITED_DRYRUN_RUNTIME_PLAN_CLOSE: YES
+ALLOW_RUNTIME_IMPLEMENTATION: NO
+ALLOW_RUNTIME_API_CONTRACT_REVIEW: YES
+ALLOW_MOCK_BASELINE_PR_PREP: YES
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+NEXT_ACTION: NQ-DH-I1-MOCK-BASELINE-PR-PREP
+```
+
+验证：
+
+- `git diff --check`：PASS；forbidden-scope diff 为空。
+- `mvn -ntp -f backend/pom.xml test`：PASS / BUILD SUCCESS。
+- Integration0 scoped test：PASS / BUILD SUCCESS；17 tests，0 failures，0 errors，0 skipped。
+- NQ dev pathspec diff：PASS / EMPTY；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+边界确认：
+
+未改 NQ dev；未改 NQ production code；未改测试代码；未改 contracts、golden_cases、fixture JSON、API / Controller、migration、runtime wiring、real HTTP、provider、AI / LangGraph 或 LIVE；未读取 credential / token / cookie / API secret / passphrase。
+
 ## NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS
 
 日期：2026-07-04。
