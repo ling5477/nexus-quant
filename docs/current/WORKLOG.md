@@ -1,3 +1,42 @@
+## NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION
+
+日期：2026-07-05。
+
+范围：
+
+- 只在 NQ integration worktree `E:/Project/nexus-quant-i1-dryrun` 实现 limited dry-run runtime client。
+- 新增 isolated `backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/**`，包含 request/response DTO、disabled-by-default properties、canonical headers、nonce、HMAC signing、transport port、disabled transport、runtime client、record-only recorder 与 result record。
+- 新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/integration/dh/**`，覆盖 disabled gate、request generation、response handling、forbidden action、fail-closed、no side effect 与 no real HTTP client boundary。
+- 只在 `backend/nq-app/src/main/resources/application.yml` / `application-prod.yml` 增加 disabled-by-default 配置；production profile 显式保持 disabled、kill switch enabled。
+- 更新 `NqDhIntegration1StubRecorderNoSideEffectTest` 的旧 production scan，使其从“禁止任何 production `NQ_DRYRUN`”调整为“只扫描本轮 isolated integration package 是否引入真实 HTTP/provider/execution mutation token”。
+- 同步 `docs/current` 当前事实：limited client 已实现但默认关闭；Integration-1 runtime、Runtime integration、DH integrated、real DH call、real HTTP、real provider、LIVE 仍未启动或禁用。
+
+结果：
+
+```text
+NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION: IMPLEMENTED / TARGETED_TEST_PASS / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY / READY_FOR_CLOSE_REVIEW
+real DH call: NO
+real HTTP: NO
+real provider: NO
+contracts/OpenAPI/schema/golden_cases/fixture JSON: unchanged
+migration: none
+order/execution/risk/ledger/account/paper/live production path: untouched
+Next: NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW
+```
+
+验证：
+
+- Targeted Maven 已通过：`mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`，24 tests / 0 failures / 0 errors / 0 skipped。
+- Full validation 结果记录见 `docs/current/TESTING.md` 的本任务章节。
+
+边界：
+
+- 未修改 NQ dev；未修改 DH Java；未改 DH endpoint。
+- 未真实调用 DH，未执行真实外网 HTTP，未接 provider，未读取 credential。
+- 未改 contracts / OpenAPI / JSON Schema / golden_cases / fixture JSON，未新增 migration。
+- 未触碰 order / execution / risk mutation / ledger / account / paper / live 生产链路。
+- 未接 Agent / LangGraph，未开启 LIVE。
+
 ## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN
 ## NQ-GATEO-FREEZE-REVIEW
 

@@ -34,13 +34,13 @@
 - GateM-5A 新增只读 adapter readiness status API；只读静态 readiness 决策，no-real / fail-closed，不接 AI、不接真实交易所、不读 credential、不启用 LIVE。
 - GateM-6B 新增只读 runtime operational readiness summary API；仅返回安全 DTO 摘要，不读取 raw env/config，不触发 adapter / permission probe / external exchange call，不启用 LIVE / AI / DH runtime / real provider。
 - GateP Batch 2 新增只读 Marketdata Data Quality Center overview API；只读取现有本地 DB 事实，不新增 migration，不改 ingestion 行为，不接 `DataOrigin.PUBLIC_OUTBOUND` runtime provider，不表示 trading authorization。
-- NQ-DH-I1-NQ-RUNTIME-CLIENT-WO 只冻结 NQ limited dry-run runtime client implementation 的后续边界，不新增 NQ API / Controller / HTTP client / OpenAPI / JSON Schema / contracts / golden_cases / fixture JSON。DH endpoint `POST /api/ai/decision-dry-runs` 属 DH-only inbound limited dry-run；当前 NQ API 文档不把它写成 NQ 已实现 API，也不表示 NQ runtime client、real HTTP、real provider、Integration-1 runtime 或 LIVE 已启动。
+- NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION 已实现 NQ 内部 isolated limited dry-run client，但不新增 NQ API / Controller / OpenAPI / JSON Schema / contracts / golden_cases / fixture JSON。DH endpoint `POST /api/ai/decision-dry-runs` 属 DH-only inbound limited dry-run；当前 NQ API 文档不把它写成 NQ 已实现 HTTP API，也不表示 real HTTP、real provider、Integration-1 runtime 或 LIVE 已启动。
 
 ## NQ-DH Integration-1 Runtime Client API Boundary
 
-`NQ-DH-I1-NQ-RUNTIME-CLIENT-WO` 已 `CLOSED / ACCEPTED / WORK_ORDER_ONLY / NO_CLIENT_IMPLEMENTATION / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。本轮未新增 NQ endpoint、NQ Controller、NQ client、HTTP client、schema、OpenAPI、contracts、golden_cases、fixture JSON 或 migration。
+`NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION` 已 `IMPLEMENTED / TARGETED_TEST_PASS / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY / READY_FOR_CLOSE_REVIEW`。本轮未新增 NQ endpoint、NQ Controller、HTTP client、schema、OpenAPI、contracts、golden_cases、fixture JSON 或 migration；新增的是 isolated internal client / DTO / config / tests / recorder。
 
-后续如单独授权 `NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION`，唯一允许方向为：
+当前 internal client 的唯一允许方向仍是：
 
 ```text
 NQ limited dry-run client -> DH POST /api/ai/decision-dry-runs
@@ -49,7 +49,7 @@ NQ limited dry-run client -> DH POST /api/ai/decision-dry-runs
 该方向仍必须默认关闭、dev/test only、production disabled、kill switch fail-closed，并保持：
 
 ```text
-NQ runtime client implementation now: NO
+NQ limited runtime client implementation: IMPLEMENTED / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY
 real outbound HTTP now: NO
 real provider: NO
 contracts/OpenAPI/schema/golden_cases formalization now: NO
@@ -58,7 +58,7 @@ DH integrated: NO
 LIVE: DISABLED
 ```
 
-`LONG_BIAS / SHORT_BIAS` 只能作为 readonly bias 记录，不得映射为 `BUY / SELL`，不得进入 order / execution / risk / ledger / paper / live 链路。
+`LONG_BIAS / SHORT_BIAS` 只能作为 readonly bias 记录，不得映射为 `BUY / SELL`，不得进入 order / execution / risk / ledger / paper / live 链路。下一步只能做 `NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW`；joint runtime dry-run tests、real DH call、real HTTP、real provider、schema/contracts/golden_cases formalization 均仍需另起任务且当前不允许。
 
 ## Adapter Readiness API
 

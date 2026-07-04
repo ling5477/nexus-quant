@@ -6,6 +6,8 @@
 > 仓库视角：NexusQuant dry-run worktree
 > 状态：`CLOSED / ACCEPTED / WORK_ORDER_ONLY / NO_CLIENT_IMPLEMENTATION / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`
 
+> 2026-07-05 addendum：该 WO 已由 `NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION` 消费；NQ limited client 当前为 `IMPLEMENTED / TARGETED_TEST_PASS / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY / READY_FOR_CLOSE_REVIEW`。该 addendum 不改变 WO 当轮历史状态，也不启动 Integration-1 runtime、real DH call、real HTTP、real provider、schema formalization、contracts/golden_cases 修改或 LIVE。
+
 ## 1. 目标
 
 本 work order 只冻结下一轮 NQ limited dry-run runtime client implementation 的边界、文件范围、安全门槛、请求/响应约束、测试要求、禁止项、回滚要求和后续验收条件。
@@ -45,6 +47,24 @@ ALLOW_DH_CODE_CHANGE_NOW: NO
 ALLOW_AGENT_PHASE: NO
 ALLOW_LANGGRAPH_RUNTIME: NO
 ALLOW_LIVE: NO
+```
+
+Implementation consumption（2026-07-05）：
+
+```text
+NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION: IMPLEMENTED / TARGETED_TEST_PASS / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY / READY_FOR_CLOSE_REVIEW
+Implemented package: backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/**
+Test package: backend/nq-app/src/test/java/com/guidinglight/nexusquant/integration/dh/**
+Config: disabled-by-default only in application.yml and application-prod.yml
+Transport: fake/disabled only; no real HTTP client
+Recorder: summary-only / record-only
+Runtime integration: NOT STARTED
+DH integrated: NO
+real DH call: NO
+real HTTP: NO
+real provider: NO
+LIVE: DISABLED
+Next: NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW
 ```
 
 ## 2. 本轮范围

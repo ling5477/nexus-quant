@@ -61,7 +61,7 @@ class NqDhIntegration1ContractGapGuardTest {
         assertEquals("NQ_DRYRUN", request.source());
         assertTrue(sourcePlan.reviewGated());
         assertFalse(sourcePlan.productionAllowlisted());
-        assertNoProductionToken("NQ_DRYRUN");
+        assertNoProductionTokenOutsideIntegrationDhPackage("NQ_DRYRUN");
         assertNoProductionToken("NqDhDryRun");
         assertNoProductionToken("/api/nq-dh");
     }
@@ -206,6 +206,29 @@ class NqDhIntegration1ContractGapGuardTest {
                 }
             }
         }
+    }
+
+    private static void assertNoProductionTokenOutsideIntegrationDhPackage(final String token) throws IOException {
+        for (Path root : mainJavaRoots()) {
+            try (Stream<Path> files = Files.walk(root)) {
+                for (Path file : files.filter(Files::isRegularFile)
+                        .filter(NqDhIntegration1ContractGapGuardTest::isJavaFile)
+                        .filter(path -> !isIntegrationDhPackage(path))
+                        .toList()) {
+                    assertFalse(
+                            Files.readString(file).contains(token),
+                            "production Java source outside Integration-1 isolated package must not contain "
+                                    + token
+                                    + " in "
+                                    + file);
+                }
+            }
+        }
+    }
+
+    private static boolean isIntegrationDhPackage(final Path path) {
+        String normalized = path.toString().replace('\\', '/');
+        return normalized.contains("/com/guidinglight/nexusquant/integration/dh/");
     }
 
     private static List<Path> mainJavaRoots() throws IOException {

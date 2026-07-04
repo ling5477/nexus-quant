@@ -24,6 +24,20 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
 
 nq:
+  dh:
+    integration1:
+      runtime:
+        # Why: Integration-1 limited runtime client 本轮仅允许 dev/test dry-run fake transport；
+        # 默认关闭且 kill switch 打开，避免误触发真实 DH HTTP、provider、order/execution/risk/ledger/paper/live。
+        enabled: false
+        client:
+          enabled: false
+        source: ${NQ_DH_INTEGRATION1_RUNTIME_SOURCE:NQ_DRYRUN}
+        endpoint-url: ${NQ_DH_INTEGRATION1_RUNTIME_ENDPOINT_URL:}
+        production-enabled: false
+        kill-switch: true
+        timeout-ms: ${NQ_DH_INTEGRATION1_RUNTIME_TIMEOUT_MS:1500}
+        signing-secret: ${NQ_DH_INTEGRATION1_RUNTIME_SIGNING_SECRET:}
   env-safety:
     # Why: 5B-ENV 把 CI/test/paper 的安全默认值集中到启动期 guard；local 默认不启 no-outbound，
     # 但 CI/test/profile 会在 guard 内自动提升为 no-outbound，避免误入真实外联。

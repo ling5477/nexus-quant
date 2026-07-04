@@ -1,3 +1,35 @@
+## NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION validation（2026-07-05）
+
+```text
+Scope:
+  - 本轮只在 NQ Integration worktree 实现 isolated limited dry-run runtime client。
+  - client 位于 nq-app `com.guidinglight.nexusquant.integration.dh` 包；默认关闭、dev/test only、kill switch 默认阻断。
+  - 不真实调用 DH，不创建真实 HTTP client，不接 provider，不触碰 order / execution / risk / ledger / account / paper / live。
+  - NQ dev 与 DH dev 只读确认；不修改 contracts / OpenAPI / json-schema / golden_cases / fixture JSON / migration。
+
+Result:
+  NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION: IMPLEMENTED / DRY_RUN_ONLY / DEFAULT_DISABLED / READY_FOR_CLOSE_REVIEW
+  Next: NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW / NOT STARTED / REVIEW_ONLY
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| NQ worktree `git status --short` | PASS / CHANGES PRESENT | Dirty 限于允许的 `backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/**`、`backend/nq-app/src/test/java/com/guidinglight/nexusquant/integration/dh/**`、既有 Integration-1 guard tests、disabled config 与 `docs/current` 允许文件。 |
+| NQ worktree `git branch --show-current` | PASS / `nq-dh-i1-nq-runtime-client-impl` | 分支符合本轮要求。 |
+| NQ worktree `git diff --check` | PASS | 退出码 0；仅 LF/CRLF working-copy warning，无 whitespace error。 |
+| NQ worktree `git diff --stat` | PASS / ALLOWED_SCOPE | tracked diff 限于 disabled config、Integration-1 guard tests 与 `docs/current`；新增 isolated client/test package 由 `git status --short` 标识。 |
+| NQ worktree forbidden diff：`git diff --name-only -- "backend/**/db/migration" frontend research scripts deploy .github` | PASS / EMPTY | 未触达 migration、frontend、research、scripts、deploy 或 `.github`。 |
+| NQ worktree boundary `rg` scan | PASS / REVIEWED | broad scan 命中大量既有 historical docs、fixtures、credential/env field names、交易模块和测试；新增 isolated package 未引入 `WebClient` / `RestTemplate` / `OkHttp` / `java.net.http.HttpClient`，未新增真实 provider、RealClient、order/execution/risk/ledger/paper/live mutation。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module SUCCESS；`nq-app` 123 tests，0 failures，0 errors，3 skipped；保留既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration-0 scoped tests 17 tests，0 failures，0 errors，0 skipped；不代表 Integration-1 runtime started。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration-1 existing guard / joint mock tests 18 tests，0 failures，0 errors，0 skipped；新增 `DhDryRun*Test` 已由 full backend test 覆盖。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | 24 tests，0 failures，0 errors，0 skipped；直接覆盖 disabled、request generation、response handling、forbidden action、no-side-effect 和 no-real-HTTP guard。 |
+| `mvn -ntp -f backend/pom.xml -Pquality validate` | PASS / BUILD SUCCESS / NO_QUALITY_PROFILE | validate lifecycle 退出码 0；Maven 明确提示 requested profile `quality` does not exist，因此不声明额外 quality profile checks 通过。 |
+
+Boundary:
+
+未真实调用 DH；未真实外网 HTTP；未修改 NQ dev；未修改 DH Java；未改 contracts / OpenAPI / json-schema / golden_cases / fixture JSON；未新增 migration；未读取 credential、token、cookie、apiKey、apiSecret 或 passphrase；未接 provider、AI / LangGraph 或 LIVE；未触碰 order / execution / risk / ledger / account / paper / live 生产路径。
+
 ## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN validation（2026-07-04）
 
 ```text

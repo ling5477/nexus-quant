@@ -191,12 +191,18 @@ class NqDhIntegration1StubRecorderNoSideEffectTest {
     }
 
     @Test
-    void noRealClientUrlCredentialOrSourceAllowlistIsAddedToProductionCode() throws Exception {
-        assertNoProductionToken("NQ_DRYRUN");
-        assertNoProductionToken("NqDhDryRun");
-        assertNoProductionToken("RealNqDhDryRunClient");
-        assertNoProductionToken("/api/nq-dh");
-        assertNoProductionToken("/dry-run");
+    void noRealHttpProviderExecutionOrRuntimeMutationIsAddedToProductionCode() throws Exception {
+        assertNoIntegrationDhProductionToken("RealNqDhDryRunClient");
+        assertNoIntegrationDhProductionToken("WebClient");
+        assertNoIntegrationDhProductionToken("RestTemplate");
+        assertNoIntegrationDhProductionToken("OkHttp");
+        assertNoIntegrationDhProductionToken("java.net.http.HttpClient");
+        assertNoIntegrationDhProductionToken("placeOrder(");
+        assertNoIntegrationDhProductionToken("cancelOrder(");
+        assertNoIntegrationDhProductionToken("paperRunStart(");
+        assertNoIntegrationDhProductionToken("liveRunStart(");
+        assertNoIntegrationDhProductionToken("mutateRisk(");
+        assertNoIntegrationDhProductionToken("mutateLedger(");
     }
 
     private static Map<String, Object> validInput() {
@@ -245,6 +251,23 @@ class NqDhIntegration1StubRecorderNoSideEffectTest {
                             Files.readString(file).contains(token),
                             "production Java source must not contain " + token + " in " + file);
                 }
+            }
+        }
+    }
+
+    private static void assertNoIntegrationDhProductionToken(final String token) throws IOException {
+        final Path packageRoot =
+                Path.of("src", "main", "java", "com", "guidinglight", "nexusquant", "integration", "dh");
+        if (!Files.isDirectory(packageRoot)) {
+            return;
+        }
+        try (Stream<Path> files = Files.walk(packageRoot)) {
+            for (Path file : files.filter(Files::isRegularFile)
+                    .filter(NqDhIntegration1StubRecorderNoSideEffectTest::isJavaFile)
+                    .toList()) {
+                assertFalse(
+                        Files.readString(file).contains(token),
+                        "Integration-1 dry-run production package must not contain " + token + " in " + file);
             }
         }
     }
