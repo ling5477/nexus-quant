@@ -11,7 +11,7 @@ from nq_research.dataset.manifest import build_dataset_manifest_from_csv
 from nq_research.evaluation.metrics import NOT_AVAILABLE, evaluate_bars
 from nq_research.experiment.metadata import build_experiment_metadata
 
-FIXTURE = Path("research/py/fixtures/btcusdt_1m_sample.csv")
+FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "btcusdt_1m_sample.csv"
 CREATED_AT = "2026-07-04T00:00:00Z"
 
 

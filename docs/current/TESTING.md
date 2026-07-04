@@ -1,3 +1,44 @@
+## NQ-GATEP-FREEZE-CLOSEOUT-REVIEW validation（2026-07-05）
+
+本轮结论为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。下表中的 `PASS` 表示命令或审查通过。
+
+```text
+Scope:
+  - 完成 GateP Batch 1-6A final freeze closeout review 与 current fact-source sync。
+  - 按用户追加要求修复 GitHub Actions Research quality gate：pytest fixture path resolution + mypy SQLite cache backend disable。
+  - 不新增 API、migration、CI workflow、页面、业务能力、真实交易所访问、credential 读取、LIVE、AI 或 DH runtime。
+
+Result:
+  NQ-GATEP-FREEZE-CLOSEOUT-REVIEW: PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL
+  GateP Batch 1-6A: COMPLETED
+  LIVE: DISABLED
+  AI: NOT STARTED
+  DH runtime: NOT INTEGRATED
+  Integration-1: NOT STARTED / mock-test-support only where applicable
+  RealClient / real provider / private trading adapter / real permission probe: NOT IMPLEMENTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `gh run list --branch dev --limit 8 --json databaseId,headSha,status,conclusion,workflowName,createdAt,url` | REVIEWED | 最新 `NQ CI Baseline` run `28713266992` / headSha `5fdaecb1` 为 failure；前一批 failures 为 `51a6793a`、`e57d9b0c`；`d4592e3e` 及更早 run 为 success。 |
+| GitHub Actions log review for run `28713266992` | REVIEWED | 失败 job 为 `Research quality gate`；pytest 在 `research/py` working directory 下找不到 `research/py/fixtures/btcusdt_1m_sample.csv`。 |
+| `Set-Location research/py; python -m pytest -q` | PASS | 10 passed；fixture path 已改为基于 `__file__` 解析，消除 working directory 依赖。 |
+| `Set-Location research/py; python -m mypy src` | PASS | Success: no issues found in 16 source files；`pyproject.toml` 设置 `sqlite_cache = false`，避免 mypy 2.1.0 在当前 Windows workspace 因 SQLite cache DB 打开失败而 internal error。 |
+| `Set-Location research/py; python -m ruff check .` | PASS | All checks passed。 |
+| `git status --short` | PASS / EXPECTED DIRTY | 仅 root/current docs、`research/py/pyproject.toml`、`research/py/tests/test_research_foundation.py` 与新增 `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md`。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 LF -> CRLF 工作区换行提示。 |
+| `git diff --stat` | PASS / REVIEWED | tracked diff 为 10 files changed；新增 closeout 文档为 untracked，见 `git status --short`。 |
+| `git diff -- backend` / `frontend` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、scripts、deploy、CI workflow 或 migration。 |
+| `git diff -- research` | PASS / EXPECTED CI FIX | 仅 `research/py/tests/test_research_foundation.py` fixture path 与 `research/py/pyproject.toml` mypy cache backend 配置。 |
+| 指定 GateP / Batch / LIVE / AI / DH / Integration / RealClient / provider / trading authorization / Python research 关键词 `rg` | PASS / REVIEWED | 输出很大；命中为当前冻结事实、历史证据、否定边界、字段名检查或禁止误写清单；用户列出的禁用大写状态短语无命中。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | NOT RERUN | 本轮未改 backend；沿用 Batch 6 freeze readiness review 最近通过证据：BUILD SUCCESS，`nq-core` 89 tests / 0 failures，`nq-app` 105 tests / 0 failures / 3 skipped。 |
+| `npm --prefix frontend run build` | NOT RERUN | 本轮未改 frontend；沿用 Batch 6 freeze readiness review 最近通过证据：build PASS，保留既有 Vite large chunk warning。 |
+| GitHub Actions rerun after fix | NOT RUN | 本轮未提交/推送，旧 run 仍显示 failure；提交并推送后应等待新的 `NQ CI Baseline` run 作为 release/tag 前证据。 |
+
+Boundary:
+
+本轮未改 backend / frontend / scripts / deploy / `.github` / migration；未新增 API、页面、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality diagnostic、preflight readiness、permission probe observability 或 public marketdata readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready。
+
 ## NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX validation（2026-07-05）
 
 本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；下表中的 `PASS`（通过）表示命令或审查通过。

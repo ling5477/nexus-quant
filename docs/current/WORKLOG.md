@@ -1,3 +1,50 @@
+## NQ-GATEP-FREEZE-CLOSEOUT-REVIEW
+
+日期：2026-07-05。
+
+范围：
+
+- 完成 GateP final freeze closeout review，复核 Batch 1-6A 的状态、测试证据、current fact-source 和边界声明。
+- 新增 `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md`，并同步 root `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md`。
+- 按用户追加要求修复 CI 报错：`research/py/tests/test_research_foundation.py` 改为基于 test file 解析 fixture；`research/py/pyproject.toml` 关闭 mypy SQLite cache 后端，避免 cache DB 打开失败误伤 Research quality gate。
+
+结果：
+
+```text
+NQ-GATEP-FREEZE-CLOSEOUT-REVIEW: PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL
+GateP Batch 1-6A: COMPLETED
+Data Quality Center: read-only diagnostic completed
+Runtime release matrix: frontend diagnostic view completed
+Trading preflight readiness: read-only baseline completed
+Python research: reproducible offline experiment foundation completed
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+Integration-1: NOT STARTED / mock-test-support only where applicable
+RealClient / real provider / private trading adapter / real permission probe: NOT IMPLEMENTED
+```
+
+验证：
+
+- `gh run list --branch dev --limit 8 --json databaseId,headSha,status,conclusion,workflowName,createdAt,url`：确认最新失败 run `28713266992` 指向 `5fdaecb1`，Research quality gate 失败。
+- `Set-Location research/py; python -m pytest -q`：PASS，10 passed。
+- `Set-Location research/py; python -m mypy src`：PASS，16 source files。
+- `Set-Location research/py; python -m ruff check .`：PASS，All checks passed。
+- `git status --short`：PASS / expected dirty；变更限于允许文档、`research/py/pyproject.toml`、`research/py/tests/test_research_foundation.py` 和新增 `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md`。
+- `git diff --check`：PASS，无 whitespace error；仅 LF -> CRLF 工作区换行提示。
+- `git diff -- backend` / `frontend` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"`：PASS / EMPTY。
+- `git diff -- research`：PASS / expected CI fix；仅 fixture path 与 mypy cache backend 配置。
+- 指定 GateP / Batch / LIVE / AI / DH / Integration / RealClient / provider / trading authorization / Python research 关键词 `rg`：PASS / REVIEWED；命中为当前冻结事实、历史证据、否定边界、字段名检查或禁止误写清单。
+- 后端 Maven 与前端 build 未重跑；本轮未改 backend / frontend，沿用 Batch 6 freeze readiness review 最近通过证据。
+
+边界：
+
+未改 backend / frontend / scripts / deploy / `.github` / migration；未新增 API、页面、CI workflow 或 migration；未调用真实交易所；未读取 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未下单、撤单、转账或提现。Data Quality / Permission Readiness / Risk Preflight / Public outbound 仍不代表 trading authorization；Python Research 仍不代表 ML ready 或 live execution ready。
+
+下一步：
+
+- 建议另起 GateP release tag / archive，或下一阶段 `PLAN ONLY` 入口；本轮不启动下一阶段 implementation。
+
 ## NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING
 
 日期：2026-07-04。
