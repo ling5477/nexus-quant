@@ -4,8 +4,13 @@ import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataBackendSupportLevel;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatusSummary;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessBarFacts;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessDataOrigin;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessErrorCategory;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessGapStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessIngestionFacts;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessQuery;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSourceHealth;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSourceStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSummary;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataReadinessRepository;
@@ -60,33 +65,60 @@ public class MarketdataReadinessService {
         MarketdataReadinessIngestionFacts ingestionFacts = readinessRepository.loadIngestionFacts(query);
         Long expectedBarCount = expectedBarCount(query, barFacts);
         Long gapCount = gapCount(expectedBarCount, barFacts);
-        MarketdataReadinessStatus freshnessStatus = resolveFreshnessStatus(query, barFacts, generatedAt);
-        MarketdataReadinessStatus status = resolveOverallStatus(
-                barFacts,
-                ingestionFacts,
-                gapCount,
-                freshnessStatus
-        );
+        boolean sourceDisabled = sourceDisabled(ingestionFacts);
+        MarketdataReadinessStatus freshnessStatus = sourceDisabled
+                ? MarketdataReadinessStatus.DISABLED
+                : resolveFreshnessStatus(query, barFacts, generatedAt);
+        MarketdataReadinessStatus status = sourceDisabled
+                ? MarketdataReadinessStatus.DISABLED
+                : resolveOverallStatus(
+                        barFacts,
+                        ingestionFacts,
+                        gapCount,
+                        freshnessStatus
+                );
+        MarketdataReadinessGapStatus gapStatus = resolveGapStatus(expectedBarCount, barFacts, gapCount);
+        MarketdataReadinessSourceHealth sourceHealth = sourceHealth(status);
+        String sourceHealthReason = sourceHealthReason(status, freshnessStatus, barFacts, ingestionFacts, gapCount);
         return new MarketdataReadinessSummary(
+                query.exchangeCode(),
                 query.exchangeCode(),
                 query.marketType(),
                 query.symbol(),
                 query.symbol(),
                 query.interval().wireValue(),
+                query.interval().wireValue(),
+                sourceCode(query),
+                MarketdataReadinessDataOrigin.LOCAL_DB,
                 status,
+                sourceStatus(status),
                 freshnessStatus,
                 status,
-                sourceHealthReason(status, freshnessStatus, barFacts, ingestionFacts, gapCount),
+                sourceHealth,
+                sourceHealthReason,
+                gapStatus,
                 barFacts.qualityStatusSummary(),
                 barFacts.barCount(),
                 barFacts.firstOpenTime(),
                 barFacts.lastCloseTime(),
                 expectedBarCount,
                 gapCount,
+                null,
+                null,
                 barFacts.qualityStatusSummary().unknownQualityCount(),
                 ingestionFacts.lastSuccessAt(),
                 ingestionFacts.lastFailureAt(),
+                lastObservedAt(barFacts, ingestionFacts),
+                ingestionFacts.latestLatencyMs(),
+                null,
+                errorCategory(status),
+                freshnessThreshold(query.interval()).toSeconds(),
+                degradedReason(status, sourceHealth, sourceHealthReason),
+                disabledReason(status),
+                null,
+                null,
                 MarketdataBackendSupportLevel.NO_MIGRATION_MVP,
+                generatedAt,
                 generatedAt
         );
     }
@@ -180,6 +212,84 @@ public class MarketdataReadinessService {
         return (gapCount != null && gapCount > 0) || qualitySummary.gapSignalCount() > 0;
     }
 
+    private boolean sourceDisabled(MarketdataReadinessIngestionFacts ingestionFacts) {
+        String status = ingestionFacts.latestRunStatus();
+        return status != null && ("DISABLED".equalsIgnoreCase(status.trim())
+                || "PAUSED".equalsIgnoreCase(status.trim())
+                || "SKIPPED_DISABLED".equalsIgnoreCase(status.trim()));
+    }
+
+    private MarketdataReadinessGapStatus resolveGapStatus(
+            Long expectedBarCount,
+            MarketdataReadinessBarFacts barFacts,
+            Long gapCount
+    ) {
+        if (gapCount != null && gapCount > 0) {
+            return MarketdataReadinessGapStatus.GAP;
+        }
+        if (expectedBarCount == null) {
+            return barFacts.barCount() > 0
+                    ? MarketdataReadinessGapStatus.PARTIAL
+                    : MarketdataReadinessGapStatus.UNKNOWN;
+        }
+        if (barFacts.barCount() > expectedBarCount) {
+            return MarketdataReadinessGapStatus.PARTIAL;
+        }
+        return MarketdataReadinessGapStatus.NONE;
+    }
+
+    private MarketdataReadinessSourceStatus sourceStatus(MarketdataReadinessStatus status) {
+        return switch (status) {
+            case FRESH -> MarketdataReadinessSourceStatus.ENABLED;
+            case DISABLED -> MarketdataReadinessSourceStatus.DISABLED;
+            case ERROR -> MarketdataReadinessSourceStatus.ERROR;
+            case STALE, VERY_STALE, GAP, UNKNOWN, NO_DATA -> MarketdataReadinessSourceStatus.DEGRADED;
+        };
+    }
+
+    private MarketdataReadinessSourceHealth sourceHealth(MarketdataReadinessStatus status) {
+        return switch (status) {
+            case FRESH -> MarketdataReadinessSourceHealth.HEALTHY;
+            case STALE, VERY_STALE, GAP -> MarketdataReadinessSourceHealth.DEGRADED;
+            case ERROR -> MarketdataReadinessSourceHealth.ERROR;
+            case DISABLED, UNKNOWN, NO_DATA -> MarketdataReadinessSourceHealth.UNKNOWN;
+        };
+    }
+
+    private MarketdataReadinessErrorCategory errorCategory(MarketdataReadinessStatus status) {
+        return switch (status) {
+            case FRESH -> MarketdataReadinessErrorCategory.NONE;
+            case DISABLED -> MarketdataReadinessErrorCategory.DISABLED;
+            case STALE, VERY_STALE -> MarketdataReadinessErrorCategory.STALE;
+            case GAP -> MarketdataReadinessErrorCategory.GAP;
+            case ERROR, UNKNOWN, NO_DATA -> MarketdataReadinessErrorCategory.UNKNOWN;
+        };
+    }
+
+    private Instant lastObservedAt(
+            MarketdataReadinessBarFacts barFacts,
+            MarketdataReadinessIngestionFacts ingestionFacts
+    ) {
+        Instant observed = barFacts.lastCloseTime();
+        observed = maxInstant(observed, ingestionFacts.lastSuccessAt());
+        return maxInstant(observed, ingestionFacts.lastFailureAt());
+    }
+
+    private Instant maxInstant(Instant left, Instant right) {
+        if (left == null) {
+            return right;
+        }
+        if (right == null) {
+            return left;
+        }
+        return left.isAfter(right) ? left : right;
+    }
+
+    private String sourceCode(MarketdataReadinessQuery query) {
+        return query.exchangeCode() + "_" + query.marketType() + "_"
+                + query.symbol() + "_" + query.interval().wireValue();
+    }
+
     private Duration freshnessThreshold(BarInterval interval) {
         Duration doubleInterval = interval.duration().multipliedBy(2);
         return doubleInterval.compareTo(MIN_FRESHNESS_THRESHOLD) >= 0 ? doubleInterval : MIN_FRESHNESS_THRESHOLD;
@@ -192,6 +302,9 @@ public class MarketdataReadinessService {
             MarketdataReadinessIngestionFacts ingestionFacts,
             Long gapCount
     ) {
+        if (status == MarketdataReadinessStatus.DISABLED) {
+            return "Local marketdata source is disabled by local evidence; backend did not call external exchange.";
+        }
         if (status == MarketdataReadinessStatus.NO_DATA) {
             return "No local bars found for the requested scope; backend did not call external exchange.";
         }
@@ -218,5 +331,24 @@ public class MarketdataReadinessService {
             return "Local bars exist, but backend support remains limited to no-migration MVP aggregation.";
         }
         return "Readiness is unavailable from local evidence.";
+    }
+
+    private String degradedReason(
+            MarketdataReadinessStatus status,
+            MarketdataReadinessSourceHealth sourceHealth,
+            String sourceHealthReason
+    ) {
+        if (sourceHealth == MarketdataReadinessSourceHealth.HEALTHY
+                || status == MarketdataReadinessStatus.DISABLED) {
+            return null;
+        }
+        return sourceHealthReason;
+    }
+
+    private String disabledReason(MarketdataReadinessStatus status) {
+        if (status != MarketdataReadinessStatus.DISABLED) {
+            return null;
+        }
+        return "Local marketdata source is disabled by local evidence; readiness remains diagnostic only.";
     }
 }

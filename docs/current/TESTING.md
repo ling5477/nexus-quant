@@ -152,6 +152,280 @@ Scope：本轮只完成 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` docs-only g
 Result：`NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX: COMPLETED / DOCS-ONLY / GATE-FIX`；当前 next 为 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED`。
 
 Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只同步 gate-fix、schema gap 分类、下一步 WO 入口和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
+## NQ-GATEO-FREEZE-REVIEW validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -12` | PASS / REVIEWED | 分支 `dev`；最终检查只包含允许的 root/current Markdown diff 与新增本文档；最近 12 个提交覆盖 O-5 plan、runner binding、manual smoke、O-5C result review、O-5D decision 与 O-5E freeze review。 |
+| `git show --stat --oneline 91c4abec` / `35413109` / `d9dcb8a4` / `3c7f904b` / `15793fac` / `c933676e` / `1180ed37` | PASS / REVIEWED | O-5 关键提交存在；`35413109` 为 test-only runner commit；`1180ed37` 为 O-5E freeze review commit。 |
+| Runner / policy / API / UI source review | PASS / REVIEWED | `GateOManualPublicOutboundSmokeTest` 仍默认 skip 且需 system property + manual env/profile/feature flag；`PublicMarketDataOutboundPolicy` 仍只允许 `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV` 并拒绝 private/signed/credential/permission/trading category；readiness API 与 frontend type/UI 不暴露 `PUBLIC_OUTBOUND` 当前事实。 |
+| GateO evidence matrix review | PASS / ACCEPTED | O-1 / O-2 / O-3 / O-4 / O-5 均已 `FROZEN / ACCEPTED`；O-5D decision = `ALLOW_FUTURE_IMPLEMENTATION`；P0/P1=0。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于允许的 `README.md` 与 `docs/current` Markdown 文档；新增 `docs/current/NQ_GATEO_FREEZE_REVIEW.md`。 |
+| forbidden-area diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 本轮未触达代码、CI、部署、research 或 migration。 |
+| GateO status / redaction / credential / trading readiness `rg` | PASS / REVIEWED | 命中为当前 freeze 状态、历史/否定语境、禁止字段清单或安全边界；未发现 raw provider payload/credential 保存事实，也未发现 public outbound 被写成 trading authorization、LIVE ready、permission granted 或 provider ready for trading。 |
+| Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun | NOT RUN | 本轮是 docs-only Gate freeze review，任务明确禁止重跑 O-5B smoke、执行真实 HTTP 或修改 Java / TypeScript / Python / workflow / migration / runtime 配置。 |
+
+Scope：本轮完成 `NQ-GATEO-FREEZE-REVIEW`。冻结 GateO overall baseline，只同步允许的 root/current 文档；不执行真实 HTTP，不重跑 O-5B smoke，不实现 `DataOrigin.PUBLIC_OUTBOUND`。
+
+Result：`NQ-GATEO-FREEZE-REVIEW: PASS / ACCEPTED`。GateO final status `FROZEN / ACCEPTED`；O-FREEZE `PASS / ACCEPTED`；O-1/O-2/O-3/O-4/O-5 均 `FROZEN / ACCEPTED`；O-5D-R1 DataOrigin implementation `OPTIONAL / NOT STARTED`。
+
+Boundary：未读取 `.env`、key、pem、credential material、repository secrets、API key、secret、passphrase、token 或 cookie；未修改 backend、frontend、research、scripts、deploy、`.github` 或 migration；未新增 API / migration / CI workflow / enum / DTO / mapper / UI / test；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -8` | PASS / REVIEWED | 分支 `dev`；写前工作区 clean；最近 8 个提交覆盖 O-5 plan、runner binding、manual smoke、O-5C result review 与 O-5D decision。写后状态仅允许 root/current Markdown diff 与新增 O-5E freeze review 文档。 |
+| `git show --stat --oneline 91c4abec` / `35413109` / `3c7f904b` / `15793fac` / `c933676e` | PASS / REVIEWED | O-5 关键提交存在；`35413109` 为 test-only runner commit；`3c7f904b`、`15793fac`、`c933676e` 为 smoke result、result review、DataOrigin decision 文档链路。 |
+| Runner / policy source review | PASS / REVIEWED | `GateOManualPublicOutboundSmokeTest` 仍默认 skip，需 system property + manual env/profile/feature flag；HTTP 前检查 no LIVE / no AI / no DH / no real provider / no credential；`PublicMarketDataOutboundPolicy` 仍只允许 `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`，并拒绝 private/signed/credential/permission/trading category。 |
+| DataOrigin implementation surface review | PASS / REVIEWED | `PublicMarketDataQualitySummary.DataOrigin.PUBLIC_OUTBOUND` 仅存在于 O-1 bridge model；`DataQualitySummary` 不暴露 `PUBLIC_OUTBOUND`；mapper 仍映射为 `PUBLIC_CANDIDATE`；core readiness enum 与 frontend type 均未包含 `PUBLIC_OUTBOUND`。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于允许的 `README.md` 与 `docs/current` Markdown 文档。 |
+| forbidden-area diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 本轮未触达代码、CI、部署、research 或 migration。 |
+| redaction / credential `rg` | PASS / REVIEWED | 命中为历史、否定语境、禁止字段清单或安全边界；未发现 raw response body、raw headers、full URL、full query、credential、signature、cookie、private key 或 raw provider payload 被写成保存事实。 |
+| trading / readiness `rg` | PASS / REVIEWED | 未发现 O-5 success 或 public outbound 被写成 trading authorization、LIVE ready、permission granted、credential configured 或 provider ready for trading。 |
+| Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun | NOT RUN | 本轮是 docs-only freeze review，任务明确禁止重跑 O-5B smoke、执行真实 HTTP 或修改 Java / TypeScript / Python / workflow / migration / runtime 配置。 |
+
+Scope：本轮完成 `NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW`。只冻结 O-5 manual public outbound smoke baseline，不冻结 GateO 总阶段。
+
+Result：`NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW: PASS / ACCEPTED`。O-5 final status `FROZEN / ACCEPTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`；O-5D-R1 DataOrigin implementation `NOT STARTED / optional next branch`。
+
+Boundary：未执行真实 HTTP，未重跑 O-5B smoke，未设置 manual smoke flags/profile，未读取 `.env`、key、pem、credential material、repository secrets、API key、secret、passphrase、token 或 cookie；未修改 backend、frontend、research、scripts、deploy、`.github` 或 migration；未实现 `DataOrigin.PUBLIC_OUTBOUND`；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -5` | PASS / REVIEWED | 分支保持 `dev`；写前已有 O-5C/O-5B accepted evidence；本轮最终只允许 root `README.md` 与 `docs/current` 文档 diff。 |
+| `git diff --check` | PASS | 无 whitespace error；如 Git 提示 LF 将按配置转为 CRLF，记为 P3 非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 范围限于允许的 `README.md` 与 `docs/current` 文档；新增 O-5D decision 文档为允许新增文件。 |
+| forbidden-area diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 本轮未触达代码、CI、部署、research 或 migration。 |
+| DataOrigin / readiness semantic `rg` | PASS / REVIEWED | 命中为本轮 O-5D decision、既有 `PUBLIC_CANDIDATE` / `DataOrigin` 文档与代码事实、既有 publicmarketdata `PUBLIC_OUTBOUND` source/test/target 事实，以及明确否定的 trading authorization / LIVE / permission / provider-ready 边界；未发现本轮 diff 把 Data Quality / readiness `PUBLIC_OUTBOUND` 写成已实现代码事实或交易授权。 |
+| O-5B evidence / redaction `rg` | PASS / REVIEWED | 命中 runId `gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7`、`SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`、redacted evidence 和 forbidden raw/credential 字段的否定语境；未发现 raw response body、raw headers、full URL、full query、credential、signature、cookie 或 raw provider payload 被写成保存事实。 |
+| Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun | NOT RUN | 本轮是 docs-only decision review，任务明确禁止重跑 O-5B smoke、执行真实 HTTP 或修改 Java / TypeScript / Python / workflow / migration / runtime 配置。 |
+
+Scope：本轮完成 `NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW`。只基于 O-5B/O-5C accepted smoke evidence 决策是否允许后续引入 `DataOrigin.PUBLIC_OUTBOUND` 语义；不实现 enum / DTO / mapper / API / UI / test，不改变 readiness API 运行语义。
+
+Result：`NQ-GATEO-O5D-DATAORIGIN-PUBLIC-OUTBOUND-DECISION-REVIEW: PASS / ACCEPTED`。Decision：`ALLOW_FUTURE_IMPLEMENTATION`；O-5C first smoke result review `PASS / ACCEPTED`；O-5B manual smoke result `COMPLETED / RESULT REVIEWED / ACCEPTED`；O-5E freeze review `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Evidence：runId `gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7`；`SERVER_TIME / INSTRUMENTS / TICKER / OHLCV` 均 `httpStatus=200`、`resultStatus=SUCCESS`、`errorCategory=NONE`；evidence 只保存 redacted summary；未保存 raw response body、raw headers、full URL、full query、credential、signature、cookie 或 raw provider payload。
+
+Boundary：`PUBLIC_OUTBOUND` 只表示公开行情只读外联来源，只能用于 data quality / readiness / UI diagnostic context；不表示 trading authorization、LIVE ready、permission granted、credential configured、provider ready for trading、可下单、可撤单、可转账或提现。未读取 `.env`，未使用 repository secrets，未传 API key / secret / passphrase / token / cookie；未访问 private endpoint，未执行 signed request，未触发 account / balance / order / cancel / transfer / withdraw / permission probe；未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe。
+
+## NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -5` | PASS / REVIEWED | 工作区写前 clean；分支 `dev`；最近提交包含 `3c7f904b test(gateo): run manual public outbound smoke`。 |
+| `git show --name-status --format=fuller 3c7f904b` | PASS / REVIEWED | O-5B 提交只更新 `README.md` 与 `docs/current` 文档；未修改 backend / frontend / research / scripts / deploy / `.github` / migration。 |
+| Runner / policy source review：`GateOManualPublicOutboundSmokeTest` / `PublicMarketDataEndpointCategory` / `PublicMarketDataOutboundPolicy` / `JdkPublicMarketDataOutboundClient` / `PublicMarketDataOutboundResult` / `PublicMarketDataLogSummary` | PASS / REVIEWED | Runner 仍只允许 `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`；`ORDER_BOOK / RECENT_TRADES / PUBLIC_WEBSOCKET` 未纳入；private/signed/account/order/transfer/withdraw/permission probe/API key validation 均 fail-closed；summary 禁止 raw URL/query/header/body/credential/signature/cookie/provider payload。 |
+| Redaction / boundary `rg` scans over `README.md docs/current backend frontend` with generated directories excluded | PASS / REVIEWED | 命中历史、否定语境、官方文档 URL、测试 placeholder 与禁止字段清单；O-5B/O-5C 证据未保存 raw response body、raw headers、full URL、full query string、credential、signature、cookie 或 raw provider payload，未把 readiness 写成 trading authorization。 |
+| Forbidden-area diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / REVIEWED | 全部无输出；本轮未改代码、CI、部署或 migration。 |
+
+Scope：本轮完成 `NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW`。本轮不重新执行 O-5B smoke，不执行真实 HTTP，不设置 `NQ_GATEO_O5_MANUAL_SMOKE=true`、`NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true` 或 `public-marketdata-manual` profile。
+
+Result：`NQ-GATEO-O5C-FIRST-SMOKE-RESULT-REVIEW: PASS / ACCEPTED`。O-5B manual smoke result `COMPLETED / RESULT REVIEWED / ACCEPTED`；O-5D DataOrigin.PUBLIC_OUTBOUND decision `NOT STARTED`；O-5E freeze review `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Boundary：未读取 `.env`，未使用 repository secrets，未传 API key / secret / passphrase / token / cookie；未访问 private endpoint，未执行 signed request，未触发 account / balance / order / cancel / amend / position / wallet / transfer / withdraw / deposit / subaccount / permission probe / API key validation；未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -10` | PASS / REVIEWED | 写前工作区 clean；分支 `dev`；历史包含 `d9dcb8a4 docs(gateo): review manual public outbound runner binding` 与 `35413109 test(gateo): bind manual public outbound smoke runner`。 |
+| Runner source review：`GateOManualPublicOutboundSmokeTest` / `PublicMarketDataEndpointCategory` / `PublicMarketDataOutboundPolicy` / `application-public-marketdata-manual.yml` | PASS / REVIEWED | Runner 为 test-only JUnit entry；manual tags 为 `manual-public-outbound` / `gateo-o5-manual`；system property 为 `nq.gateo.o5.manualSmoke.required=true`；manual env flag 为 `NQ_GATEO_O5_MANUAL_SMOKE=true`；profile 为 `public-marketdata-manual`；feature flag 为 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true`；仅允许 `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV`。 |
+| `mvn -f backend/pom.xml -pl nq-app,nq-adapter-api -am "-Dtest=GateOManualPublicOutboundSmokeTest" "-Dnq.gateo.o5.manualSmoke.required=true" "-Dspring.profiles.active=public-marketdata-manual" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | 本轮仅设置必要 manual flags，并在 finally 中清理。`GateOManualPublicOutboundSmokeTest` 1 test / 0 failures / 0 errors / 0 skipped。保留既有 unchecked/deprecation warning，非阻断。 |
+| O-5B manual public outbound smoke summary | COMPLETED / RESULT REVIEWED / ACCEPTED | runId `gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7`；provider `OKX`；`SERVER_TIME / INSTRUMENTS / TICKER / OHLCV` 均 `httpStatus=200`、`resultStatus=SUCCESS`、`errorCategory=NONE`；latencyMs 803 / 680 / 173 / 177；只保存脱敏 summary；已由 O-5C 接受。 |
+
+Scope：本轮完成 `NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION`。执行前未读取 `.env`，未使用 repository secrets，未传 API key / secret / passphrase / token / cookie；执行后清理本轮设置的 `NQ_GATEO_O5_MANUAL_SMOKE`、`NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED`、`NQ_LIVE_ENABLED`、`NQ_AI_ENABLED`、`NQ_DH_RUNTIME_ENABLED`、`NQ_REAL_PROVIDER_ENABLED`、`NQ_REAL_CLIENT_ENABLED`、`NQ_REAL_EXCHANGE_ENABLED`。
+
+Result：`NQ-GATEO-O5B-MANUAL-PUBLIC-OUTBOUND-SMOKE-EXECUTION: COMPLETED / RESULT REVIEWED / ACCEPTED`。O-5C first smoke result review `PASS / ACCEPTED`；O-5D DataOrigin.PUBLIC_OUTBOUND decision `NOT STARTED`；O-5E freeze review `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Boundary：未访问 private endpoint，未执行 signed request，未触发 account / balance / order / cancel / amend / position / wallet / transfer / withdraw / deposit / subaccount / permission probe / API key validation；未保存 raw response body、raw headers、full URL、full query string 或 raw provider payload；未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -5` | PASS / REVIEWED | 分支 `dev`；最新提交为 `35413109 test(gateo): bind manual public outbound smoke runner`；最终工作区仅保留本轮允许的 `README.md` / `docs/current` 状态同步 diff。 |
+| `git show --stat --oneline 35413109` / `git show --name-only --oneline 35413109` | PASS / REVIEWED | commit 仅新增 test-only runner 与允许的 `README.md` / `docs/current` 状态同步；未触达 frontend、research、scripts、deploy、`.github` 或 migration。 |
+| `git diff --check` / `git diff --stat` / forbidden diff checks | PASS / REVIEWED | 无 whitespace error；`git diff --stat` 仅列出允许的 `README.md` / `docs/current` 文档同步；禁止区域 diff 为空。 |
+| `mvn -f backend/pom.xml -pl nq-app,nq-adapter-api -am "-Dtest=GateOManualPublicOutboundSmokeTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | 未设置 manual enabling property；`GateOManualPublicOutboundSmokeTest` 1 test / 0 failures / 0 errors / 1 skipped，跳过发生在 HTTP 前。 |
+| `mvn -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 SUCCESS；默认 Maven 未触发 O-5B manual public outbound smoke。保留既有 SLF4J no-provider、Mockito dynamic agent、unchecked/deprecation warning，均为 P3 非阻断。 |
+| O-5B manual public outbound smoke | NOT RUN | 本轮禁止并实际未设置 `nq.gateo.o5.manualSmoke.required=true`、`NQ_GATEO_O5_MANUAL_SMOKE=true`、`NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true` 或 `public-marketdata-manual` profile；未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。 |
+
+Result：`NQ-GATEO-O5B-R2-MANUAL-RUNNER-BINDING-REVIEW: PASS / ACCEPTED`。该 R2 当轮仅接受 runner binding，manual smoke execution 后续为 `ALLOWED / MANUAL PUBLIC READONLY ONLY / NOT EXECUTED`；后续 O-5B execution 与 O-5C result review 已完成并接受。O-5D DataOrigin.PUBLIC_OUTBOUND decision、O-5E freeze review、O-FREEZE 仍 `NOT STARTED`；GateO stage 仍 `NOT COMPLETED`；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` | PASS / REVIEWED | 分支 `dev`；变更范围限新增 test-only runner 与允许的 `docs/current` / `README.md` 状态同步。 |
+| `git diff --check` / `git diff --stat` | PASS / REVIEWED | 无 whitespace error；diff 仅覆盖允许范围。 |
+| forbidden diff：`git diff -- frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 frontend、research、scripts、deploy、`.github` 或 migration。 |
+| `mvn -f backend/pom.xml -pl nq-app,nq-adapter-api -am "-Dtest=*ManualPublic*Smoke*,*GateO*Outbound*Smoke*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | 默认未设置 `nq.gateo.o5.manualSmoke.required=true` 或 `NQ_GATEO_O5_MANUAL_SMOKE=true`，`GateOManualPublicOutboundSmokeTest` skipped before HTTP；未触发真实 public HTTP。 |
+| `mvn -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；默认 Maven 未触发 O-5B manual runner 真实外联。保留既有 SLF4J no-provider、Mockito dynamic agent、unchecked/deprecation warnings，非阻断。 |
+| forbidden / sensitive wording scans | PASS / REVIEWED | 命中历史、否定语境、禁止字段清单和受控 test runner 常量；未发现真实 credential 值、raw response/header/full URL 输出承诺、LIVE/trading authorization 正向语义。 |
+| O-5B manual public outbound smoke | NOT RUN | 本轮明确禁止设置 `NQ_GATEO_O5_MANUAL_SMOKE=true` 和 `NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true`；未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。 |
+
+Scope：本轮完成 `NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION`。只新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/GateOManualPublicOutboundSmokeTest.java`，并同步允许的 current docs / root README。
+
+Result：`NQ-GATEO-O5B-R1-MANUAL-PUBLIC-OUTBOUND-RUNNER-BINDING-IMPLEMENTATION: IMPLEMENTED / SELF-REVIEWED / COMMITTED`。O-5B-R2 runner binding review 已 `PASS / ACCEPTED`；该 R1 当轮未执行 manual smoke，后续已由 O-5B execution 与 O-5C result review 消费；O-5B manual smoke result 已 `COMPLETED / RESULT REVIEWED / ACCEPTED`；O-5D DataOrigin.PUBLIC_OUTBOUND decision `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Boundary：未执行真实 public outbound smoke，未读取 credential，未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O5B-RUNNER-BINDING-PLAN validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `rg "ManualPublic|OutboundSmoke|O5Manual|O-5B|PublicMarketDataOutboundClient|CommandLineRunner|ApplicationRunner|EnabledIf|Disabled|Tag|manual-public" backend docs/current --glob "!**/target/**"` | PASS / REVIEWED | 命中 O-1 client/config/test、现有 env safety runners 和 O-5 plan；未发现独立 O-5B manual smoke runner。 |
+| `rg "public-marketdata-manual|NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED|PUBLIC_OUTBOUND|allowlist|denylist|signed|private|account|balance|order|cancel|withdraw|transfer|permission probe|OKX|Binance" backend docs/current README.md --glob "!**/target/**"` | PASS / REVIEWED | 输出很大，命中 O-1/O-5 文档、安全边界和既有 credential/account 模块；本轮 runner binding plan 保持 public readonly / no credential / no signed / no private endpoint。 |
+| `rg "apiKey|secret|passphrase|token|signature|cookie|raw response|raw headers|full URL|query string|trading authorization" docs/current README.md` | PASS / REVIEWED | 命中历史/否定语境、凭证治理和本轮禁止字段清单；未输出真实 credential 值。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` / `git diff --name-only` / `git status --short` | PASS / DOCS-ONLY | tracked diff 限于 `README.md` 与允许的 `docs/current` 文档；新增 O-5B runner binding plan 文件由 `git status --short` 显示为 untracked。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| Backend Maven / frontend build/E2E / Python pytest/mypy/ruff / O-5 manual public outbound smoke | NOT RUN | 本轮为 docs-only / planning-only；明确禁止实现 runner、执行真实 HTTP 和 O-5 smoke，未修改 backend/frontend/research/Python。 |
+
+Scope：本轮完成 `NQ-GATEO-O5B-RUNNER-BINDING-PLAN`。结论为 `PASS / ACCEPTED`；O-5A review `PASS / ACCEPTED`；该 planning-only 轮次确认 O-5B execution 当时因 runner 未绑定而阻塞且未执行，runner 代码当时尚未开始。当前 R1 implementation、R2 review、O-5B execution 与 O-5C result review 最新状态见上方 validation；O-5B manual smoke result 已 `COMPLETED / RESULT REVIEWED / ACCEPTED`；O-5C first smoke result review `PASS / ACCEPTED`；O-5D DataOrigin.PUBLIC_OUTBOUND decision `NOT STARTED`；O-FREEZE `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Boundary：未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未读取 credential；未开启 LIVE/AI/DH runtime；未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | HEAD 为 `78542b60 docs(gateo): freeze marketdata quality UI baseline`，前序包含 O-4 freeze baseline。 |
+| O-5 attachment read | PASS / REVIEWED | 已读取 `NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN` 任务附件，确认 planning-only、allowed files、forbidden scope 和提交条件。 |
+| current docs / O-1..O-4 evidence read | PASS / REVIEWED | 已复核 `README.md`、`docs/current/README.md`、`GATEO_PLAN.md`、O-3/O-4 plan、`API.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`。 |
+| O-1 guard 只读代码核对 | PASS / REVIEWED | 已复核 `PublicMarketDataOutboundPolicy`、`PublicMarketDataEndpointCategory`、`PublicMarketDataOutboundSettings`、`PublicMarketDataOutboundConfiguration`、`application-public-marketdata-manual.yml`；确认 manual profile、feature flag、public allowlist、private/signed denylist、bounded timeout/retry 和 disabled fallback。 |
+| `rg` public/private/credential/readiness boundary scans | PASS / REVIEWED | 宽范围命中历史/否定语境和既有 credential 模块；O-5 plan 未新增 private endpoint、credential、signed request、LIVE、permission probe 或 trading authorization 语义。 |
+| `git diff --check` | PASS | 无 whitespace error。Git 对部分文档提示 LF 将按配置转为 CRLF，非阻断 P3。 |
+| `git diff --stat` / `git diff --name-only` | PASS / DOCS-ONLY | diff 限于 `README.md` 与允许的 `docs/current` 文档，并新增 O-5 plan 文件。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| Backend Maven / frontend build/E2E / Python pytest/mypy/ruff / O-5 manual public outbound smoke | NOT RUN | 本轮为 docs-only / planning-only；明确禁止执行真实 HTTP 和 O-5 smoke，未修改 backend/frontend/research/Python。 |
+
+Scope：本轮完成 `NQ-GATEO-O5-MANUAL-PUBLIC-OUTBOUND-SMOKE-PLAN`，新增 planning-only 文档并同步允许的 GateO 状态入口。O-5 plan `COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；该 planning-only 当轮 O-5 execution `NOT STARTED`，后续 O-5B execution 与 O-5C result review 已完成并接受；O-5D DataOrigin.PUBLIC_OUTBOUND decision、O-5E freeze review、O-FREEZE 仍 `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+Boundary：未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP；未读取 credential；未开启 LIVE/AI/DH runtime；未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O4E-MARKETDATA-QUALITY-UI-FREEZE-REVIEW validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | HEAD 为 `e62f1e43 feat(frontend): add marketdata quality readiness view`，包含 O-4B commit。 |
+| `git show --stat --oneline e62f1e43` / `git show --name-only --oneline e62f1e43` | PASS / REVIEWED | O-4B commit 触达 README、允许的 current docs、`frontend/src/pages/marketdata/MarketdataPage.tsx`、`frontend/src/types/marketdata.ts` 和指定 E2E；未触达 backend / research / scripts / deploy / `.github` / migration。 |
+| `git diff --check` / `git diff --stat` / forbidden diff：`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` | PASS | 写前 diff 为空；写后仅同步允许文档，不得触达禁止范围。 |
+| 三组附件要求 `rg` | PASS / REVIEWED | 宽范围命中历史/否定语境；O-4 相关文件确认只消费 `/api/marketdata/readiness`，未新增 `/marketdata/quality` route，未发现正向 trading authorization、LIVE ready、credential/private endpoint、permission probe 或真实交易所 host 调用语义。 |
+| `npm run build` | PASS | 在 `frontend` 目录执行；TypeScript + Vite production build 通过。保留既有 Vite chunk > 500 kB warning，非阻断 P3。 |
+| `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS / 6 passed | no-backend / mocked readiness smoke；覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 字段“暂无稳定事实”、forbidden wording、private/credential/trading endpoint 与真实交易所 host 禁止请求。保留既有 Ant Design `Card.bordered` deprecated warning 与 React 19 compatibility warning，非阻断 P3。 |
+| Backend Maven / Python pytest/mypy/ruff / O-5 manual public outbound smoke | NOT RUN | 本轮为 O-4 UI freeze review + docs sync；未修改 backend/research/Python；明确禁止执行 O-5 manual public outbound smoke和真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP。 |
+
+Scope：本轮冻结 O-4 MarketData Quality UI baseline。O-4 final status `FROZEN / ACCEPTED`；O-4B `COMPLETED / ACCEPTED`；O-4E `PASS / ACCEPTED`；GateO stage `NOT COMPLETED`；O-5 execution / O-FREEZE `NOT STARTED`。
+
+Boundary：未读取 credential，未开启 LIVE/AI/DH runtime，未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
+## NQ-GATEO-O4B-MARKETDATA-QUALITY-READ-ONLY-UI-IMPLEMENTATION validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `npm run build` | PASS | 在 `frontend` 目录执行；TypeScript + Vite production build 通过。保留既有 Vite chunk > 500 kB warning，非阻断。 |
+| `npm run test:e2e -- tests/e2e/marketdata-quality-readiness-smoke.spec.ts --project=chromium` | PASS / 6 passed | no-backend / mocked readiness smoke；覆盖 `FRESH / HEALTHY / NONE`、`STALE`、`NO_DATA`、`ERROR`、`DISABLED`、`GAP`、nullable 字段“暂无稳定事实”、forbidden wording、private/credential/trading endpoint 与真实交易所 host 禁止请求。 |
+| Backend-dependent smoke | NOT RUN | 本轮不启动后端，不执行真实 public outbound，不执行 O-5 manual smoke；不得写成通过。 |
+
+Scope：本轮只验证前端 O-4B read-only UI implementation，改动范围为 frontend MarketData 页面/type/E2E 与指定 current docs。未运行 backend Maven / Python pytest/mypy/ruff，原因是本轮未修改 backend/research/Python。未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP，未读取 credential，未开启 LIVE/AI/DH runtime，未实现 RealClient / real provider / real permission probe。
+
+## NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | 基线包含 `f69b5cc0 docs(gateo): plan marketdata quality UI`、`294de92d docs(gateo): freeze marketdata readiness API baseline`、`7a42ca03 feat(marketdata): extend readiness API read model`。 |
+| 三组附件要求 `rg` | PASS / REVIEWED | 已核对 O-4 plan、API.md、后端 enum/DTO、现有 `/marketdata` 路由/API/type/page/E2E 和 no-trading wording；未读取 credential。 |
+| `git diff --check` | PASS | 无 whitespace error；Git 仍提示部分文档未来可能按配置 LF -> CRLF，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于 README 与 `docs/current` 文档。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only / review-only；未修改 production code、test code、API 实现、migration、frontend 源码或 research。 |
+
+Scope：本轮完成 `NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW`。只修正 current API 文档 enum drift 并同步 O-4A review 状态；不实现页面、不改前端源码、不改后端实现、不新增 API、不新增 migration、不执行 O-5 manual public outbound smoke。
+
+Result：`NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW: PASS / ACCEPTED`；O-4B implementation `ALLOWED / READ-ONLY UI ONLY / NOT STARTED`；O-5 manual public outbound smoke `NOT STARTED`；GateO stage `NOT COMPLETED`。
+
+## NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；写前工作区 clean。 |
+| `git log --oneline -5` | PASS / REVIEWED | 基线包含 `294de92d docs(gateo): freeze marketdata readiness API baseline`、`7a42ca03 feat(marketdata): extend readiness API read model` 等 O-3 evidence。 |
+| `rg "marketdata/readiness\|MarketdataReadiness\|DataQuality\|dataOrigin\|freshnessStatus\|gapStatus\|sourceHealth\|tradingAuthorized\|liveReady\|permissionGranted" backend frontend docs/current README.md` | PASS / REVIEWED | 已核对 O-3 readiness API、现有 `/marketdata` 前端、E2E smoke、current docs 和 forbidden wording 语境；docs 命中 forbidden wording 仅为禁止说明。 |
+| `rg "MarketData\|marketdata\|routes\|readiness\|quality" frontend/src frontend/tests docs/current` | PASS / REVIEWED | 已核对现有 `/marketdata` 路由、navigation、API client、types、MarketdataPage、E2E 和 current docs 入口。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 README 与 `docs/current` 文档；新增 O-4 plan 文件由 `git status --short` 标识。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only / planning-only；未修改 production code、test code、API、migration、frontend、research 或 scripts。 |
+
+Scope：本轮只完成 `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN` planning 与 current fact-source 同步；不实现页面、组件、API、DTO、Service、Repository、migration、frontend tests、CI、research、scripts 或 deploy。
+
+Result：`NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED`；O-4 implementation 仍 `NOT STARTED`；O-5 manual public outbound smoke 仍 `NOT STARTED`；GateO stage 仍 `NOT COMPLETED`；next concrete action 为 `NQ-GATEO-O4A-MARKETDATA-QUALITY-UI-CONTRACT-PLAN-REVIEW`。
+
+Boundary：O-4 只规划消费 `GET /api/marketdata/readiness`；不调用 public marketdata outbound，不读取 credential，不做 private trading permission probe，不新增 RealClient / provider，不开启 LIVE / AI / DH runtime；readiness 不等于 trading authorization、LIVE-ready、permission granted 或 real provider ready。
+
+## NQ-GATEO-O3E-MARKETDATA-READINESS-API-FREEZE-REVIEW validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Get-Location` / `git branch --show-current` / `git status --short` | PASS | 工作目录 `F:\project\nexus-quant`；分支 `dev`；freeze review 写前工作区 clean。 |
+| `git log --oneline -5` | PASS | HEAD 为 `7a42ca03 feat(marketdata): extend readiness API read model`。 |
+| `git show --stat --oneline 7a42ca03` / `git show --name-only --oneline 7a42ca03` | PASS / REVIEWED | commit 涉及 readiness read model、对应 tests、`README.md` 与 `docs/current`；未新增 frontend/research/scripts/deploy/.github/migration。 |
+| `git diff --check` / `git diff --stat` | PASS / EMPTY BEFORE DOC SYNC | freeze review 写前无 whitespace error、无 tracked diff；本节及状态同步为 review 后 docs-only 记录。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY BEFORE DOC SYNC | freeze review 写前未触达 forbidden scope；本轮后续只同步允许的 current docs 与 root README。 |
+| readiness DTO / service / controller / docs targeted `rg` forbidden-field scan | PASS | 未发现 readiness DTO / service / controller 暴露 `apiKey`、`secret`、`passphrase`、credential/raw payload、`tradingAuthorized`、`liveReady`、`permissionGranted` 或 `realProviderReady`；docs 命中仅为禁止字段说明。 |
+| endpoint `rg` scan | PASS | `GET /api/marketdata/readiness` 仍为主入口；未发现新增 `/api/marketdata/readiness/sources`、`/gaps`、`/quality/overview` 后端实现。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-adapter-api -am "-Dtest=*MarketdataReadiness*,*DataQuality*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `MarketdataReadinessServiceTest` 8 tests、O-2 `DataQuality*` rules/mapper tests、`MarketdataReadinessResponseTest` enum vocabulary 兼容测试；0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-api` 56 tests / 0 failures / 0 errors；`nq-app` 86 tests / 0 failures / 0 errors / 2 skipped（既有跳过项）。 |
+
+Scope：本轮为 O-3E freeze review + docs-only final status sync；未修改 backend/frontend/research/scripts/deploy/.github/migration/test/CI，未运行 frontend build / Playwright，未运行 Python pytest / mypy / ruff。
+
+Known warnings/skips：Maven settings 存在既有 `Unrecognised tag: 'profiles'` warning；既有 SLF4J no-provider、Mockito dynamic agent、unchecked/deprecation warnings 非阻断；既有 skipped test 不属于 O-3B/O-3E 缺口。后端全量 Maven 中 local integration test 触达本地 PostgreSQL / Flyway；未执行真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken public outbound。
+
+Result：`NQ-GATEO-O3E-MARKETDATA-READINESS-API-FREEZE-REVIEW: PASS / ACCEPTED / FROZEN`；O-3 final status：`FROZEN / ACCEPTED`；next concrete action：`NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN`。
+
+Boundary：`GET /api/marketdata/readiness` 仍为 DB-only / no-egress / no-credential / diagnostic-only；未读取 credential，未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization、LIVE-ready、permission-granted 或 real-provider-ready。
+
+## NQ-GATEO-O3B-MARKETDATA-READINESS-READ-ONLY-API-IMPLEMENTATION validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-adapter-api -am "-Dtest=*MarketdataReadiness*,*DataQuality*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | 窄口覆盖 `MarketdataReadinessServiceTest` 8 tests、O-2 `DataQuality*` rules/mapper tests、`MarketdataReadinessResponseTest` enum vocabulary 兼容测试；0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml -pl nq-api -am "-Dtest=MarketdataControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `MarketdataControllerTest` 7 tests，覆盖 readiness response 新字段、forbidden fields absent、read-only no-side-effect；0 failures / 0 errors。 |
+| `mvn -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-api` 56 tests / 0 failures / 0 errors；`nq-app` 86 tests / 0 failures / 0 errors / 2 skipped（既有跳过项）。 |
+
+Scope：本轮只验证 O-3B backend read-only API implementation 与后端回归；该 validation 已由 O-3E freeze review 接受。未运行 frontend build / Playwright，原因是本轮未修改 frontend；未运行 Python pytest / mypy / ruff，原因是本轮未修改 research / Python。
+
+Boundary：验证未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP，未读取 credential，未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe；`GET /api/marketdata/readiness` 仍为 DB-only / no-egress / no-credential / diagnostic-only。
+
+## NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN final validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | dirty 限于允许的 README 与 `docs/current` 文档；未见 forbidden code area diff。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git log --oneline -5` | PASS / REVIEWED | 基线包含最近 Integration-1 docs closeout commits；本轮未改 Git 历史。 |
+| `rg "MarketdataReadiness\|marketdata/readiness\|DataQualitySummary\|DataQualitySourceHealthMapper\|FreshnessStatus\|GapStatus\|DataOrigin\|sourceHealth\|freshness\|gap\|tradingAuthorized\|permission\|credential\|PUBLIC_OUTBOUND" backend docs/current README.md` | PASS / REVIEWED | 已核对现有 `/api/marketdata/readiness`、`MarketdataReadiness*` DB-only read model、O-2 `DataQualitySummary` / mapper 与禁止字段语境；未作为 O-3 implementation。 |
+| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 README 与 `docs/current` 文档；新增 O-3 plan 由 `git status --short` 标识。 |
+| forbidden diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only / plan-only；未修改 production code、test code、API、migration、frontend、research 或 scripts。 |
+
+Scope：本轮只完成 `NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN` planning 与 current fact-source 同步；不实现 API、DTO、Service、Repository、migration、frontend、tests、CI、research、scripts 或 deploy。
+
+Result：`NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN: PASS / PLAN ONLY / NOT IMPLEMENTED`；该 planning-only validation 已由上方 O-3B backend implementation validation 与 O-3E freeze review 消费；O-3 final status 已为 `FROZEN / ACCEPTED`；O-4 / O-5 / O-FREEZE 仍为 NOT STARTED；next concrete action 为 `NQ-GATEO-O4-MARKETDATA-QUALITY-UI-PLAN`。
+
+Boundary：`/api/marketdata/readiness` 只作为后续扩展对象；本轮不调用 public marketdata outbound，不读取 credential，不做 private trading permission probe，不新增 RealClient / provider，不开启 LIVE / AI / DH runtime；readiness 不等于 trading authorization、LIVE-ready、permission granted 或 real provider ready。
 
 ## NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN final validation（2026-07-03）
 
