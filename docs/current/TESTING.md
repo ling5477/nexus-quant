@@ -1,3 +1,36 @@
+## NQ-DH-I1-RUNTIME-API-CONTRACT-REVIEW validation（2026-07-04）
+
+```text
+Scope:
+  - 本轮只做 NQ-DH Integration-1 limited dry-run runtime 的 API / contract / security review。
+  - NQ dry-run worktree 只改 docs/current 允许文件。
+  - NQ dev 只做 post-PR baseline 与 scoped diff read-only 检查，未写入。
+  - 不修改 NQ production code、test code、contracts、golden_cases、fixture JSON、API / Controller / Client、migration、runtime wiring、real HTTP、provider、AI / LangGraph 或 LIVE。
+
+Result:
+  NQ-DH-I1-RUNTIME-API-CONTRACT-REVIEW: CLOSED / ACCEPTED / REVIEW_ONLY / NO_RUNTIME
+  Recommended option: Option D / freeze API contract, error taxonomy, and envelope before split DH/NQ implementation
+  Next: NQ-DH-I1-DH-RUNTIME-API-WO / NOT STARTED / WORK_ORDER_ONLY / NO_RUNTIME_IMPLEMENTATION
+  WORKSTREAM_MIXED_BLOCKED: NO
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| NQ worktree `git status --short` | PASS / CHANGES PRESENT | Dirty 限于允许的 `docs/current` 文档；新增 `docs/current/NQ_DH_INTEGRATION1_RUNTIME_API_CONTRACT_REVIEW.md`。 |
+| NQ worktree `git diff --check` | PASS | 退出码 0；仅有 LF/CRLF warning。 |
+| NQ worktree `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current/README.md`、`ROADMAP.md`、`STATUS.md`、`WORK_ORDER.md`；本条记录追加后包含 `TESTING.md` / `WORKLOG.md`。 |
+| NQ worktree forbidden diff：`git diff --name-only -- backend/**/src/main frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 NQ production code、frontend、research、scripts、deploy、CI 或 migration。 |
+| NQ security scan：`rg -n "NQ_DRYRUN|RealClient|HttpClient|WebClient|RestTemplate|OkHttp|placeOrder|cancelOrder|paperRunStart|liveRunStart|mutateRisk|mutateLedger|apiKey|apiSecret|passphrase|credential|token|cookie|BUY|SELL|quantity|price|leverage" backend docs/current` | PASS / REVIEWED | 命中分类为 docs prohibition、test guard、existing unrelated code 或既有 NQ trading / adapter / public-marketdata 代码；未发现 NQ-DH runtime actual risk。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module SUCCESS；`nq-app` 105 tests，0 failures，0 errors，3 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration0 scoped tests 17 tests，0 failures，0 errors。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration1 scoped tests 18 tests，0 failures，0 errors。 |
+| NQ dev post-PR baseline | PASS / READ-ONLY | 当前 `dev` / `origin/dev` 为 `b856cf07155de26f87fad9c21234c1a8a07b964a`；PR #12 merge commit `578eb65e851086d0668bbebef74c319df1e5d63c` 是当前 dev ancestor；scoped NQ-DH / Integration-1 unstaged 与 staged diff 均为空。 |
+| DH side validation | PASS / PARTIAL | DH `mvn -ntp -Pquality validate` 与 targeted Integration-1 tests 通过；DH full `mvn -ntp test` 与 README baseline full test 均 20 分钟 timeout，未写成通过。 |
+
+Boundary:
+
+未改 NQ dev；未改 NQ production code；未改测试代码；未改 contracts、golden_cases、fixture JSON、API / Controller、Client、migration、runtime wiring、real HTTP、provider、AI / LangGraph 或 LIVE；未读取 credential / token / cookie / API secret / passphrase；未把 DH output 映射为 NQ order、risk mutation、ledger mutation、Paper Run 或 private trading 路径。
+
 ## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN validation（2026-07-04）
 
 ```text

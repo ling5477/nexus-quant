@@ -1,12 +1,12 @@
 # NexusQuant 当前工单
 
 > NQ 当前主线：GateO current work line remains separate and is not overwritten by this P0 factsource rebase
-> NQ-DH 集成实现线：NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN / CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME
-> 下一集成任务：NQ-DH-I1-MOCK-BASELINE-PR-PREP / NOT STARTED / PR_PREP_ONLY / NO_RUNTIME
+> NQ-DH 集成实现线：NQ-DH-I1-RUNTIME-API-CONTRACT-REVIEW / CLOSED / ACCEPTED / REVIEW_ONLY / NO_RUNTIME
+> 下一集成任务：NQ-DH-I1-DH-RUNTIME-API-WO / NOT STARTED / WORK_ORDER_ONLY / NO_RUNTIME_IMPLEMENTATION
 
 ## 1. 当前工单结论
 
-`NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN`、`NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN` 与 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` 已完成 planning-only 收口；`NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO`、`NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO`、`NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO` 与 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO` 已完成 work-order-only 收口；`NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION`、`NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY`、`NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT` 与 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS` 已完成 test-support / mock-only 实现准备线，mock close review 已 `CLOSED / ACCEPTED / REVIEW_ONLY / NO_RUNTIME`。`NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN` 已评估受限 dry-run runtime planning，结论为 `CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME`。本工单记录 NQ 侧 Integration-1 contract dry-run、fixtures、readiness、test-support baseline 与受限 runtime planning，不覆盖 GateO 当前主线，不启动 Integration-1 runtime。P1 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`；P2 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`；P3 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`；dry-run mock WO 为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md`；M0 工单为 `docs/current/NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md`；M1 影响记录为 `docs/current/NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md`；M2 工单为 `docs/current/NQ_DH_INTEGRATION1_M2_NQ_DRYRUN_STUB_RECORDER_WO.md`；M3 工单为 `docs/current/NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md`；limited runtime plan 为 `docs/current/NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md`；旧 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md` 仅作为 P1 初稿 / residual reference。
+`NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN`、`NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN` 与 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` 已完成 planning-only 收口；`NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO`、`NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO`、`NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO` 与 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO` 已完成 work-order-only 收口；`NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION`、`NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY`、`NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT` 与 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS` 已完成 test-support / mock-only 实现准备线，mock close review 已 `CLOSED / ACCEPTED / REVIEW_ONLY / NO_RUNTIME`。`NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN` 已评估受限 dry-run runtime planning，结论为 `CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME`；mock/test-support baseline PR 已合并到 NQ dev；`NQ-DH-I1-RUNTIME-API-CONTRACT-REVIEW` 已完成 review-only 收口，结论为 `CLOSED / ACCEPTED / REVIEW_ONLY / NO_RUNTIME`。本工单记录 NQ 侧 Integration-1 contract dry-run、fixtures、readiness、test-support baseline、受限 runtime planning 与 runtime API contract review，不覆盖 GateO 当前主线，不启动 Integration-1 runtime。P1 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`；P2 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`；P3 canonical 计划为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`；dry-run mock WO 为 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md`；M0 工单为 `docs/current/NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md`；M1 影响记录为 `docs/current/NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md`；M2 工单为 `docs/current/NQ_DH_INTEGRATION1_M2_NQ_DRYRUN_STUB_RECORDER_WO.md`；M3 工单为 `docs/current/NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md`；limited runtime plan 为 `docs/current/NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md`；runtime API contract review 为 `docs/current/NQ_DH_INTEGRATION1_RUNTIME_API_CONTRACT_REVIEW.md`；旧 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md` 仅作为 P1 初稿 / residual reference。
 
 当前 Integration-1 dry-run 前置条件固定为：
 
@@ -41,7 +41,9 @@ I1-IMP1 DH dry-run test-support entry: IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ON
 I1-IMP2 NQ stub recorder no-side-effect: VERIFY PASS / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_IMP3_JOINT_MOCK_CONTRACT_TESTS.
 I1-IMP3 joint mock contract tests: IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW.
 I1 limited dry-run runtime plan: CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME.
-Next concrete action: NQ-DH-I1-MOCK-BASELINE-PR-PREP / NOT STARTED / PR_PREP_ONLY / NO_RUNTIME.
+I1 mock baseline PR prep: CLOSED / MERGED / NO_RUNTIME.
+I1 runtime API contract review: CLOSED / ACCEPTED / REVIEW_ONLY / NO_RUNTIME.
+Next concrete action: NQ-DH-I1-DH-RUNTIME-API-WO / NOT STARTED / WORK_ORDER_ONLY / NO_RUNTIME_IMPLEMENTATION.
 Integration-1 implementation: NOT STARTED.
 Integration-1 runtime: NOT STARTED.
 Runtime integration: NOT STARTED.
@@ -70,6 +72,7 @@ docs/current/NQ_DH_INTEGRATION1_DRYRUN_MOCK_IMPLEMENTATION_WO.md
 docs/current/NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md
 docs/current/NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md
 docs/current/NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md
+docs/current/NQ_DH_INTEGRATION1_RUNTIME_API_CONTRACT_REVIEW.md
 backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration1/NqDhIntegration1ContractGapGuardTest.java
 backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration1/NqDhIntegration1StubRecorderNoSideEffectTest.java
 backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration1/NqDhIntegration1JointMockContractFixtureTest.java
@@ -80,6 +83,10 @@ backend/nq-app/src/test/resources/nq-dh/integration1/joint_mock_contract_fixture
 
 ```text
 ALLOW_LIMITED_DRYRUN_RUNTIME_PLAN_CLOSE: YES
+ALLOW_RUNTIME_API_CONTRACT_REVIEW_CLOSE: YES
+ALLOW_DH_RUNTIME_API_WO: YES
+ALLOW_NQ_RUNTIME_CLIENT_WO: YES
+ALLOW_RUNTIME_IMPLEMENTATION_NOW: NO
 ALLOW_RUNTIME_IMPLEMENTATION: NO
 ALLOW_RUNTIME_API_CONTRACT_REVIEW: YES
 ALLOW_MOCK_BASELINE_PR_PREP: YES
@@ -151,10 +158,14 @@ ALLOW_LANGGRAPH_RUNTIME: NO
 ALLOW_LIVE: NO
 ```
 
-## 6. 下一步
+## 6. 当前 review 结论
+
+`NQ-DH-I1-RUNTIME-API-CONTRACT-REVIEW` 推荐 Option D：先冻结 API contract / error taxonomy / envelope，再拆 DH/NQ implementation。future DH endpoint candidate 为 `POST /api/ai/decision-dry-runs`，但当前仍是 `NOT IMPLEMENTED`；NQ runtime client 仍是 `NOT IMPLEMENTED`；`NQ_DRYRUN` 仍不进入 production allowlist；canonical error enum/schema、HMAC material、schema/envelope、kill switch、rate limit、payload cap、memory cap 和 runtime nonce namespace 均必须在后续 work order / implementation review 中关闭。
+
+## 7. 下一步
 
 ```text
-NQ-DH-I1-MOCK-BASELINE-PR-PREP / NOT STARTED / PR_PREP_ONLY / NO_RUNTIME
+NQ-DH-I1-DH-RUNTIME-API-WO / NOT STARTED / WORK_ORDER_ONLY / NO_RUNTIME_IMPLEMENTATION
 ```
 
-`NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN` 已关闭为 planning-only 文档；当前下一步推荐 `NQ-DH-I1-MOCK-BASELINE-PR-PREP / NOT STARTED / PR_PREP_ONLY / NO_RUNTIME`，随后才允许单独进入 `NQ-DH-I1-RUNTIME-API-CONTRACT-REVIEW`。PR prep 与 review 均不得在 NQ dev 直接改文件，不得创建真实 client，不得真实 HTTP，不得直接实现 runtime，不得修改 schema/contracts/golden_cases/API/Controller，仍必须保持 no runtime、no provider、no LIVE、no credential、no order / risk / ledger / Paper Run mutation。
+`NQ-DH-I1-DH-RUNTIME-API-WO` 只允许在 DH 侧写 work order，不得直接实现 runtime endpoint。NQ 侧后续 client 只能在 DH API WO 和合同冻结后另起 `NQ-DH-I1-NQ-LIMITED-DRYRUN-CLIENT-WO`；不得在 NQ dev 直接改文件，不得创建真实 client，不得真实 HTTP，不得直接实现 runtime，不得修改 schema/contracts/golden_cases/API/Controller，仍必须保持 no runtime、no provider、no LIVE、no credential、no order / risk / ledger / Paper Run mutation。
