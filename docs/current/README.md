@@ -3,8 +3,8 @@
 `docs/current/` 是 NexusQuant 的**当前事实入口**：只保留当前控制文档、当前权威基线和必要运行手册。
 历史过程证据、治理 review/freeze、旧路径 compatibility stub 已移出 current，归档到 `docs/evidence/` 或 `docs/gates/`（见下方“历史证据位置”）。
 
-当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）/ Batch 1 fact source closeout 已完成；Batch 2 后端只读切片 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；Batch 3 前端 Data Quality Center 与 Runtime release matrix `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；Batch 4 single venue account permission and risk preflight read-only baseline `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；Batch 5 Python research foundation engineering `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）**。GateP 主线是“真实数据质量与交易准备阶段”；Batch 2 / Batch 3 / Batch 4 / Batch 5 只代表各自切片完成，不代表 GateP 已实现、已冻结或已接受。
-当前边界：LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / real exchange adapter / real permission probe / private trading adapter `NOT IMPLEMENTED`（未实现）。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。Python Research 当前为 offline research foundation skeleton：已具备 dataset manifest、evaluation skeleton、experiment metadata 与 CLI run summary 基础，但仍不是 ML ready、live execution ready 或 Java runtime bridge。
+当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）；Batch 1 fact source closeout 已完成；Batch 2 后端只读切片 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；Batch 3 前端 Data Quality Center 与 Runtime release matrix `IMPLEMENTED` / `SELF-REVIEWED` / `READY TO COMMIT`；Batch 4 single venue account permission and risk preflight read-only baseline `IMPLEMENTED` / `SELF-REVIEWED` / `READY TO COMMIT`；Batch 5 Python research foundation engineering `IMPLEMENTED` / `SELF-REVIEWED` / `READY TO COMMIT`；Batch 6 freeze readiness review `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；Batch 6A current fact-source drift fix `IMPLEMENTED` / `SELF-REVIEWED` / `READY TO COMMIT`**。GateP 主线是“真实数据质量与交易准备阶段”；Batch 1-5 只代表各自切片完成，Batch 6A 只代表 current fact-source drift 已修复，不代表 GateP 已冻结或已接受。
+当前边界：LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / real exchange adapter / real permission probe / private trading adapter `NOT IMPLEMENTED`（未实现）。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。Python Research 当前为 reproducible offline experiment foundation：已具备 dataset manifest、evaluation skeleton、experiment metadata 与 CLI run summary 基础，但仍不是 ML ready、live execution ready 或 Java runtime bridge。
 
 NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 `GET /api/marketdata/quality/overview`，只读聚合本地 `marketdata_bars`、dataset coverage 与 ingestion facts；不新增 migration，不改 frontend，不触发真实外联，不读取 credential，不启用 LIVE / AI / DH runtime，不实现 `DataOrigin.PUBLIC_OUTBOUND` runtime provider、RealClient、real provider、private trading adapter 或 real permission probe。该 data quality diagnostic 不等于 trading authorization。
 
@@ -62,7 +62,8 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 当前工单：[WORK_ORDER.md](WORK_ORDER.md)
 - 当前状态：[STATUS.md](STATUS.md)
 - 当前事实源索引：[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)
-- GateP Batch 6 freeze readiness review：[GATEP_FREEZE_READINESS_REVIEW.md](GATEP_FREEZE_READINESS_REVIEW.md)（`CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；冻结 closeout 前需先修复 root README、FACT_SOURCE_INDEX、ROADMAP 的 Batch 1 / Python Research 旧口径）
+- GateP Batch 6 freeze readiness review：[GATEP_FREEZE_READINESS_REVIEW.md](GATEP_FREEZE_READINESS_REVIEW.md)（`CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；P1 current fact-source drift 已由 Batch 6A 修复，仍不表示 GateP `FROZEN` / `ACCEPTED`）
+- GateP Batch 6A current fact-source drift fix：见 [STATUS.md](STATUS.md)、[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)、[ROADMAP.md](ROADMAP.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)；状态为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）
 - GateP Batch 2 Marketdata Data Quality Center 只读 API：见 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
 - GateP Batch 3 Marketdata Data Quality Center 前端与 Runtime release matrix：见 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
 - GateP Batch 4 Trading Preflight readiness 只读 API：见 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
@@ -215,5 +216,5 @@ Future AI small-funds LIVE candidate（DEFERRED；requires separate AI / DH / LI
   ↓
 GateO：FROZEN / ACCEPTED；archive closed to docs/gates/gate-o；public readonly smoke accepted；DataOrigin.PUBLIC_OUTBOUND decision = ALLOW_FUTURE_IMPLEMENTATION / implementation NOT STARTED；不授权 LIVE / real provider / private trading / AI / DH runtime
   ↓
-GateP：真实数据质量与交易准备阶段（`PLANNING` / `BATCH 1 FACT SOURCE CLOSEOUT`；当前只做事实源与状态收口；不启用 LIVE、不实现 real provider、不授权 private trading）
+GateP：真实数据质量与交易准备阶段（`PLANNING`；Batch 1-5 completed；Batch 6 `CONDITIONAL PASS / FIX REQUIRED`；Batch 6A `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；仍未 `FROZEN / ACCEPTED`；不启用 LIVE、不实现 real provider、不授权 private trading）
 ```

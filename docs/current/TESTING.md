@@ -1,3 +1,32 @@
+## NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；下表中的 `PASS`（通过）表示命令或审查通过。
+
+```text
+Scope:
+  - 本轮只修复 Batch 6 freeze readiness review 发现的 P1 current fact-source drift。
+  - 修改范围限定为 root README.md、docs/current/FACT_SOURCE_INDEX.md、ROADMAP.md、README.md、STATUS.md、TESTING.md、WORKLOG.md、GATEP_FREEZE_READINESS_REVIEW.md。
+  - 不修改 backend、frontend、research、scripts、deploy、.github、migration、API、页面、测试代码或 CI workflow。
+
+Result:
+  NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  GateP: not FROZEN / not ACCEPTED.
+  Python Research: reproducible offline experiment foundation；not ML ready；not live execution ready.
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / DOCS-ONLY | 写后仅允许文档变更。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于 root README 与允许的 `docs/current` 文档。 |
+| 指定 GateP / Batch / Python Research / LIVE / AI / DH / RealClient / real provider / permission probe / trading authorization 关键词 `rg` | PASS / REVIEWED | root README、FACT_SOURCE_INDEX、ROADMAP 已不再把 GateP 写成只到 Batch 1，也不再把 Python Research 写成仍缺 manifest / evaluation / metadata；剩余命中为当前事实、禁止边界、历史 review 语境或否定语境。 |
+| `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达禁止范围。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only current fact-source drift fix；未修改代码、测试、API、migration、CI workflow、前端页面或 Python 实现。 |
+
+Boundary:
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality diagnostic、preflight readiness、permission probe observability 或 public marketdata readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready；未把 GateP 写成 `FROZEN` / `ACCEPTED`。
+
 ## NQ-GATEP-BATCH-6-FREEZE-READINESS-REVIEW validation（2026-07-05）
 
 本轮结论为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；下表中的 `PASS` 表示通过。

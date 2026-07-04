@@ -14,14 +14,14 @@
 6. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
 7. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
 8. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
-9. `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`：GateP Batch 6 freeze readiness review 证据入口；结论为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复），用于提示 freeze closeout 前需先修复 GateP fact-source drift，不把 GateP 写成 `FROZEN` 或 `ACCEPTED`。
+9. `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`：GateP Batch 6 freeze readiness review 证据入口；结论为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复），用于解释 Batch 6A current fact-source drift fix 的来源，不把 GateP 写成 `FROZEN` 或 `ACCEPTED`。
 
 `docs/gates/**`、`docs/archive/**` 和历史 review/freeze 文档只作为证据或归档引用，不覆盖 `docs/current` 当前事实入口。
 
 ## 2. 当前阶段声明
 
 - GateO：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
-- GateP：`PLANNING`（规划中）/ `BATCH 1 FACT SOURCE CLOSEOUT`（第一批事实源收口）。
+- GateP：`PLANNING`（规划中）/ Batch 1-5 completed（已完成）/ Batch 6 freeze readiness review `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）/ Batch 6A current fact-source drift fix `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -30,9 +30,9 @@
 - real provider：`NOT IMPLEMENTED`（未实现）。
 - real permission probe：`NOT IMPLEMENTED`（未实现）。
 - private trading adapter：`NOT IMPLEMENTED`（未实现）。
-- Python Research：offline research minimal skeleton；dataset manifest、evaluation skeleton、experiment metadata 均为后续工作。
+- Python Research：reproducible offline experiment foundation；dataset manifest、experiment metadata、evaluation metrics skeleton 与 CLI run summary 已完成。该能力仍不是 ML ready、live execution ready 或 Java runtime bridge。
 
-GateP 不是已实现、已冻结或已接受。GateP Batch 1 只收口事实源和状态边界，不启动真实交易所接入、LIVE、AI、DH runtime、RealClient、real provider、private trading 或真实 permission probe。
+GateP 不是已冻结或已接受；Batch 1-5 的切片完成不等于 GateP 总体实现完成、freeze 或 acceptance。GateP 当前不启动真实交易所接入、LIVE、AI、DH runtime、RealClient、real provider、private trading 或真实 permission probe。
 
 ## 3. GateO 完成边界
 
@@ -57,7 +57,7 @@ GateO 未完成或未授权的内容：
 
 ## 4. GateP 主线边界
 
-GateP 主线为真实数据质量与交易准备阶段。当前 Batch 1 只完成事实源与状态收口，后续方向只能在单独任务中逐批推进：
+GateP 主线为真实数据质量与交易准备阶段。当前事实为 Batch 1-5 已完成、Batch 6 freeze readiness review 已给出 `CONDITIONAL PASS / FIX REQUIRED`、Batch 6A current fact-source drift fix 已完成待提交；这些只构成 freeze closeout review 的前置条件，不构成 GateP freeze 或 acceptance。GateP 主线能力边界仍是：
 
 - true data quality。
 - single venue readiness。
@@ -73,7 +73,7 @@ GateP 当前不做：
 - no RealClient implementation。
 - no real permission probe implementation。
 - no AI / DH runtime integration。
-- no migration / API / CI / frontend / Python implementation in Batch 1。
+- no additional implementation / API / migration / CI / frontend / backend / research change in Batch 6A。
 
 ## 5. 禁止误写清单
 
@@ -85,14 +85,18 @@ GateP 当前不做：
 - 不得把 Paper / SIM 写成 LIVE。
 - 不得把 GateO public readonly smoke 写成 production readiness。
 - 不得把 Integration-1 mock-only baseline 写成 runtime started。
-- 不得把 Python Research skeleton 写成 ML ready / direct execution ready。
+- 不得把 Python Research offline foundation 写成 ML ready / live execution ready / direct execution ready。
 - 不得把 existing OKX/Binance legacy network-capable code 写成 real provider ready。
 
-## 6. 下一批任务入口
+## 6. GateP Batch 1-6A 当前事实
 
-- Batch 2：Market Data Data Quality Center 后端只读切片。
-- Batch 3：前端 Data Quality Center 与 Runtime 放行矩阵。
-- Batch 4：单交易所账户权限与风险前置只读基线。
-- Batch 5：Python 研究域地基工程化。
+- Batch 1：事实源与状态收口已完成。
+- Batch 2：Market Data Data Quality Center 后端只读切片已完成。
+- Batch 3：前端 Data Quality Center 与 Runtime 放行矩阵已完成。
+- Batch 4：单交易所账户权限与风险前置只读基线已完成。
+- Batch 5：Python offline research foundation 已完成；当前是 reproducible offline experiment foundation，不是 ML ready 或 live execution ready。
+- Batch 6：freeze readiness review 为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；P1 finding 是 current fact-source drift。
+- Batch 6A：current fact-source drift fix 为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。
+- 下一步只能是 GateP freeze closeout review 或复跑 freeze readiness review；不得在 Batch 6A 内把 GateP 写成 `FROZEN` / `ACCEPTED`。
 
 所有后续批次必须重新声明 allowed files、forbidden areas、validation commands 和 no-LIVE / no-AI / no-DH / no-real-provider / no-private-trading 边界。

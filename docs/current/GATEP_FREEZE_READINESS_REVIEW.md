@@ -4,7 +4,7 @@
 
 审查日期：2026-07-05
 
-结论：`CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）。代码、测试、API、前端和 Python offline foundation 证据未发现 P0/P1 阻断；但 root `README.md`、`docs/current/FACT_SOURCE_INDEX.md`、`docs/current/ROADMAP.md` 仍存在 GateP Batch 1 / Python Research 旧口径，冻结 closeout 前必须先做一个最小 docs consistency fix。本结论不是 GateP `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+结论：`CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）。代码、测试、API、前端和 Python offline foundation 证据未发现 P0/P1 阻断；但 root `README.md`、`docs/current/FACT_SOURCE_INDEX.md`、`docs/current/ROADMAP.md` 仍存在 GateP Batch 1 / Python Research 旧口径，冻结 closeout 前必须先做一个最小 docs consistency fix。本结论不是 GateP `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。后续 Batch 6A 已按本报告要求修复 current fact-source drift，状态见本文 §12.1。
 
 ## 1. GateP Current State
 
@@ -194,12 +194,16 @@ git diff -- "backend/**/db/migration"
 rg -n "GateP|Batch 1|Batch 2|Batch 3|Batch 4|Batch 5|FROZEN|ACCEPTED|LIVE|AI|DH|Integration-1|RealClient|real provider|private trading|permission probe|trading authorization|ML ready|live execution" README.md docs/current
 
 最终状态只能写：
-NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX：PASS / DOCS DRIFT FIXED / READY FOR FREEZE CLOSEOUT REVIEW
+NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
 ```
+
+## 12.1 Batch 6A Follow-up Status
+
+`NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX` 已执行：root `README.md`、`docs/current/FACT_SOURCE_INDEX.md`、`docs/current/ROADMAP.md` 的 GateP Batch 1 / Python Research 旧口径已修复，并最小同步 `docs/current/README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。本 follow-up 只关闭 P1 current fact-source drift，不把 GateP 写成 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不改变 LIVE / AI / DH / RealClient / real provider / private trading / real permission probe 禁止边界。
 
 ## 13. Next Concrete Action
 
-先执行 `NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX`。修复通过后，再另起 `NQ-GATEP-FREEZE-CLOSEOUT` 或复跑 freeze readiness review；不要在本轮把 GateP 写成 `FROZEN` / `ACCEPTED`。
+Batch 6A 修复通过后，再另起 `NQ-GATEP-FREEZE-CLOSEOUT` 或复跑 freeze readiness review；不要在 Batch 6A 内把 GateP 写成 `FROZEN` / `ACCEPTED`。
 
 ## 14. Commit Recommendation
 

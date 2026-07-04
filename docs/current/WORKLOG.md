@@ -13812,3 +13812,37 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 先执行 `NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX`，修复 root README、FACT_SOURCE_INDEX、ROADMAP 的 current fact-source drift；修复通过后再另起 GateP freeze closeout。
+
+---
+
+## NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX
+
+日期：2026-07-05
+
+### 本轮目标
+
+修复 GateP Batch 6 freeze readiness review 发现的 P1 current fact-source drift，使 root `README.md`、`docs/current/FACT_SOURCE_INDEX.md`、`docs/current/ROADMAP.md` 与 GateP Batch 1-5 完成事实一致；本轮为 docs-only，不实现功能、不改业务代码、不新增 API / migration / CI。
+
+### 完成内容
+
+- 更新 root `README.md`，不再写 GateP 当前仅 Batch 1；改为 Batch 1-5 completed、Batch 6 `CONDITIONAL PASS / FIX REQUIRED`、Batch 6A `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`。
+- 更新 root `README.md` 的 Python Research 摘要，不再写仍缺 dataset manifest / evaluation skeleton / experiment metadata；改为 reproducible offline experiment foundation，且明确不是 ML ready / live execution ready。
+- 更新 `docs/current/FACT_SOURCE_INDEX.md`，补齐 Batch 1-6A 当前事实、Python offline foundation 边界和 freeze closeout 前置状态。
+- 更新 `docs/current/ROADMAP.md`，把 GateP 路线和当前边界从 Batch 2 入口推进到 Batch 6A drift fix 后的 freeze closeout review。
+- 最小同步 `docs/current/README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 与 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` follow-up pointer。
+
+### 验证
+
+- `git status --short`：PASS / DOCS-ONLY；仅允许文档变更。
+- `git diff --check`：PASS；无 whitespace error。
+- `git diff --stat`：PASS / DOCS-ONLY。
+- 指定 GateP / Batch / Python Research / LIVE / AI / DH / RealClient / real provider / permission probe / trading authorization 关键词 `rg`：PASS / REVIEWED；剩余命中为当前事实、禁止边界、历史 review 或否定语境。
+- forbidden-scope diff：PASS / EMPTY；`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` 无 diff。
+
+### 边界
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 data quality / preflight / permission readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready；未把 GateP 写成 frozen 或 accepted。
+
+### 推荐下一步
+
+另起 GateP freeze closeout review 或复跑 freeze readiness review；本轮推荐 commit message：`docs(gatep): fix current fact source drift`。

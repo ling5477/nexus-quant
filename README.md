@@ -6,8 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前状态
 
-- NQ-GATEP-BATCH-1-FACT-SOURCE-AND-STATUS-CLOSEOUT = IMPLEMENTED（已实现）/ SELF-REVIEWED（已自审）/ READY TO COMMIT（可提交前复核）；本轮仅做 fact source / status 文档收口，GateP 主线为真实数据质量与交易准备阶段，当前只进入 Batch 1 fact source closeout，不代表 GateP 已实现、已冻结或已接受。
-- Current fact source：GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）/ `BATCH 1 FACT SOURCE CLOSEOUT`（第一批事实源收口）；LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter `NOT IMPLEMENTED`（未实现）。
+- NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX = IMPLEMENTED（已实现）/ SELF-REVIEWED（已自审）/ READY TO COMMIT（可提交前复核）；本轮只修复 Batch 6 freeze readiness review 发现的 current fact-source drift，不实现功能、不改代码、不新增 API / migration / CI。GateP Batch 1-5 已有完成证据，Batch 6 review 为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；GateP 仍不是 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- Current fact source：GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）/ Batch 1-5 completed（已完成）/ Batch 6 freeze readiness review `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）/ Batch 6A current fact-source drift fix `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
 - GateH completed
 - GateI completed
 - GateJ-PLAN completed
@@ -78,8 +78,8 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - GateM Exchange / MarketData Runtime Readiness 已 FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`）：adapter readiness service / guard / status API / readiness panel / MarketData readiness / operational readiness / backend E2E 均保持 fail-closed，不授权 real exchange / LIVE。
 - GateN Public MarketData / Exchange Sandbox 已 FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED（tag：`nq-gaten-freeze`）：deterministic fixture smoke 与 sandbox/source display 均保持 no-real / no-egress / diagnostic-only，不授权 real provider / LIVE / private trading / trading authorization。
 - GateO Public MarketData Controlled Outbound & Data Quality Runtime 已 FROZEN / ACCEPTED：O-1 受控外联、O-2 Data Quality、O-3 readiness API、O-4 Quality UI、O-5 manual public readonly smoke 均已冻结；该状态不授权 LIVE、trading authorization、real provider、permission probe、AI 或 DH runtime。
-- GateP 下一阶段主线是真实数据质量与交易准备：true data quality、single venue readiness、permission probe observability、risk preflight、Shadow Live design；当前仅 Batch 1 fact source closeout，不启动真实交易、不启用 LIVE。
-- Python Research 当前仅为 offline research minimal skeleton；后续仍需 dataset manifest、evaluation skeleton 和 experiment metadata，不得写成 research platform ready / ML ready / direct execution ready。
+- GateP 主线是真实数据质量与交易准备：Batch 1 事实源与状态收口已完成；Batch 2 Market Data Data Quality Center 后端只读切片已完成；Batch 3 前端 Data Quality Center 与 Runtime 放行矩阵已完成；Batch 4 单交易所账户权限与风险前置只读基线已完成；Batch 5 Python offline research foundation 已完成；Batch 6 freeze readiness review 为 `CONDITIONAL PASS / FIX REQUIRED`；Batch 6A current fact-source drift fix 已完成待提交。上述事实不代表真实交易、不启用 LIVE、不授权 private trading。
+- Python Research 当前是 reproducible offline experiment foundation：已具备 dataset manifest、experiment metadata、evaluation metrics skeleton 与 CLI run summary；仍不是 research platform ready、ML ready 或 live execution ready。
 
 ## 当前明确不做
 
