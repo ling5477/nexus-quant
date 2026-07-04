@@ -6,8 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前状态
 
-- NQ-GATEP-FREEZE-CLOSEOUT-REVIEW = PASS（通过）/ FROZEN（已冻结）/ ACCEPTED（已接受）/ READY FOR ARCHIVAL（可归档）；GateP Batch 1-6A 已完成，Batch 6 P1 current fact-source drift 已由 Batch 6A 关闭，本轮额外按用户追加要求最小修复 GitHub Actions `Research quality gate` 的 Python pytest fixture 路径问题，并关闭 mypy SQLite cache 后端以避免本地/CI cache DB 打开失败误伤质量门。GateP freeze 只冻结真实数据质量与交易准备阶段的只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout，不代表真实交易授权。
-- Current fact source：GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ Batch 1-6A `COMPLETED`（已完成）；LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
+- NQ-GATEP-RELEASE-TAG-AND-ARCHIVE = PASS（通过）/ COMPLETED（已完成）/ RELEASE TAG PUSHED（release tag 已推送）；release tag：`nq-gatep-freeze`，tagged commit：`3650714ae9cd441e59eb5b09c605a14bbc9998dc`，archive pointer：`docs/gates/gate-p/README.md`。GateP freeze 只冻结真实数据质量与交易准备阶段的只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout，不代表真实交易授权。
+- Current fact source：GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；GateQ `PLAN / NOT STARTED`（仅规划 / 未开始）；LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
 - GateH completed
 - GateI completed
 - GateJ-PLAN completed
@@ -78,14 +78,14 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - GateM Exchange / MarketData Runtime Readiness 已 FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`）：adapter readiness service / guard / status API / readiness panel / MarketData readiness / operational readiness / backend E2E 均保持 fail-closed，不授权 real exchange / LIVE。
 - GateN Public MarketData / Exchange Sandbox 已 FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED（tag：`nq-gaten-freeze`）：deterministic fixture smoke 与 sandbox/source display 均保持 no-real / no-egress / diagnostic-only，不授权 real provider / LIVE / private trading / trading authorization。
 - GateO Public MarketData Controlled Outbound & Data Quality Runtime 已 FROZEN / ACCEPTED：O-1 受控外联、O-2 Data Quality、O-3 readiness API、O-4 Quality UI、O-5 manual public readonly smoke 均已冻结；该状态不授权 LIVE、trading authorization、real provider、permission probe、AI 或 DH runtime。
-- GateP 主线是真实数据质量与交易准备：Batch 1 事实源与状态收口已完成；Batch 2 Market Data Data Quality Center 后端只读切片已完成；Batch 3 前端 Data Quality Center 与 Runtime 放行矩阵已完成；Batch 4 单交易所账户权限与风险前置只读基线已完成；Batch 5 Python offline research foundation 已完成；Batch 6 freeze readiness review 的 P1 drift 已由 Batch 6A 修复；GateP final freeze closeout 已 `PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL`。上述事实不代表真实交易、不启用 LIVE、不授权 private trading。
+- GateP 主线是真实数据质量与交易准备：Batch 1 事实源与状态收口已完成；Batch 2 Market Data Data Quality Center 后端只读切片已完成；Batch 3 前端 Data Quality Center 与 Runtime 放行矩阵已完成；Batch 4 单交易所账户权限与风险前置只读基线已完成；Batch 5 Python offline research foundation 已完成；Batch 6 freeze readiness review 的 P1 drift 已由 Batch 6A 修复；GateP final freeze closeout 已 `PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL`；release tag `nq-gatep-freeze` 已推送，历史归档在 `docs/gates/gate-p/`。上述事实不代表真实交易、不启用 LIVE、不授权 private trading。
 - Python Research 当前是 reproducible offline experiment foundation：已具备 dataset manifest、experiment metadata、evaluation metrics skeleton 与 CLI run summary；仍不是 research platform ready、ML ready 或 live execution ready。
 
 ## 当前明确不做
 
 - AI / AI 信号 / AI 自动交易 / AI Paper Trading
 - 真实 LIVE 下单与真实交易所下单接口调用
-- GateP release tag / archive 以外的下一阶段 implementation
+- GateQ implementation（下一阶段只允许 `GateQ PLAN / NOT STARTED`）
 - RealClient / real provider / private trading adapter / real permission probe
 - 美股 / A 股
 - 合约全量
@@ -100,8 +100,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/FACT_SOURCE_INDEX.md`：当前事实源优先级、GateO/GateP/LIVE/AI/DH/Integration/RealClient 边界与禁止误写清单
 - `docs/current/STATUS.md`：当前项目状态
 - `docs/current/ROADMAP.md`：总路线
-- `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md`：GateP final freeze closeout；结论为 PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL；只冻结真实数据质量与交易准备阶段的只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout
-- `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`：GateP Batch 6 freeze readiness review；历史结论为 CONDITIONAL PASS / FIX REQUIRED，P1 current fact-source drift 已由 Batch 6A 修复，并由 GateP closeout 消费
+- `docs/gates/gate-p/README.md`：GateP historical archive；GateP release tag、freeze closeout、Batch 1-6A evidence matrix 与 testing summary 已归档。当前摘要：GateP final state = FROZEN / ACCEPTED / TAGGED；release tag = `nq-gatep-freeze`；Data Quality / Permission Readiness / Risk Preflight 不等于 trading authorization；Python Research 不等于 ML ready 或 live execution ready
 - `docs/current/GATEK_PLAN.md`：GateK planning-only 阶段规划；明确 GateK implementation、AI、DH runtime、LIVE、multi-exchange expansion 均未启动
 - `docs/current/GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、P2 follow-up required，未启动 GateK implementation
 - `docs/current/NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md`：GateJ/K/M/N freeze、CI、no-real/no-outbound 与 GateO-PLAN 入场边界证据收口；GateN explicit CI visibility residual 仍保留

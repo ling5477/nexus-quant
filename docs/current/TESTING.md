@@ -1,3 +1,45 @@
+## NQ-GATEP-RELEASE-TAG-AND-ARCHIVE validation（2026-07-05）
+
+本轮结论为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）。
+
+```text
+Scope:
+  - 创建并推送 GateP release tag。
+  - 建立 docs/gates/gate-p/ historical archive。
+  - 同步 README.md 与 docs/current current summary / archive pointer。
+  - 不修改 backend、frontend、research、scripts、deploy、.github、migration、API、页面、测试代码或 CI workflow。
+
+Result:
+  NQ-GATEP-RELEASE-TAG-AND-ARCHIVE: PASS / COMPLETED / RELEASE TAG PUSHED
+  Tag: nq-gatep-freeze
+  Tagged commit: 3650714ae9cd441e59eb5b09c605a14bbc9998dc
+  GateP: FROZEN / ACCEPTED / TAGGED
+  GateQ: PLAN / NOT STARTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git fetch origin dev` | PASS | 更新 `origin/dev` 后复核。 |
+| `git status --short` | REVIEWED | 写前存在 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 允许范围内未提交修改；本轮保留并补 archive pointer。 |
+| `git log --oneline -10` | REVIEWED | 最新 commit 为 `3650714a chore(gatep): freeze baseline and stabilize research quality gate`。 |
+| `git branch --show-current` | PASS | `dev`。 |
+| `git rev-parse HEAD` / `git rev-parse origin/dev` | PASS | 均为 `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。 |
+| `git tag --list "nq-gatep-freeze"` | PASS / EMPTY BEFORE TAG | 本地 tag 不存在，允许创建。 |
+| `git ls-remote --tags origin refs/tags/nq-gatep-freeze` | PASS / EMPTY BEFORE TAG | 远端 tag 不存在，允许创建。 |
+| `gh run list --limit 10` | REVIEWED | 最新 `NQ CI Baseline` run `28714258374` 为 `completed / success`。 |
+| `gh run view 28714258374 --json status,conclusion,headSha,name,createdAt,updatedAt` | PASS | `status=completed`、`conclusion=success`、`headSha=3650714ae9cd441e59eb5b09c605a14bbc9998dc`。 |
+| `git tag -a nq-gatep-freeze -m "NexusQuant GateP freeze: data quality and trading readiness baseline"` | PASS | 首次沙箱内执行因 `.git/objects` 写权限不足失败；按权限规则提权重跑后成功。 |
+| `git push origin nq-gatep-freeze` | PASS | 远端新 tag 已创建。 |
+| `git rev-parse "nq-gatep-freeze^{tag}"` | PASS | tag object `ae94f7a47a3e7604efe061bf9be9ed48d2b98aa9`。 |
+| `git rev-parse "nq-gatep-freeze^{}"` | PASS | tagged commit `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。 |
+| `git ls-remote --tags origin refs/tags/nq-gatep-freeze` | PASS | remote tag object `ae94f7a47a3e7604efe061bf9be9ed48d2b98aa9`。 |
+
+本轮未复跑 Maven / frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮是 docs-only release tag and archive closeout，不修改 Java、TypeScript、Python、workflow、migration 或 runtime 配置；tag target 已有 `NQ CI Baseline` success 证据。提交前仍需执行 `git diff --check`、`git diff --stat` 与 forbidden-scope diff。
+
+Boundary:
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality diagnostic、Permission Readiness、Risk Preflight 或 public marketdata readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready；未启动 GateQ implementation。
+
 ## NQ-GATEP-FREEZE-CLOSEOUT-REVIEW validation（2026-07-05）
 
 本轮结论为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。下表中的 `PASS` 表示命令或审查通过。

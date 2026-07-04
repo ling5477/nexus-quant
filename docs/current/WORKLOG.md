@@ -1,3 +1,50 @@
+## NQ-GATEP-RELEASE-TAG-AND-ARCHIVE
+
+日期：2026-07-05。
+
+范围：
+
+- NQ-only GateP post-freeze release closeout。
+- 创建并推送 release tag `nq-gatep-freeze`。
+- 建立 `docs/gates/gate-p/` historical archive，归档 GateP freeze closeout、readiness review、Batch 1-6A evidence matrix 与 testing summary。
+- 同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md`。
+- 仅给 `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md` 补 tag/archive 状态，仅给 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 补 archive pointer。
+
+结果：
+
+```text
+NQ-GATEP-RELEASE-TAG-AND-ARCHIVE: PASS / COMPLETED / RELEASE TAG PUSHED
+Release tag: nq-gatep-freeze
+Tag object: ae94f7a47a3e7604efe061bf9be9ed48d2b98aa9
+Tagged commit: 3650714ae9cd441e59eb5b09c605a14bbc9998dc
+Tagged commit subject: chore(gatep): freeze baseline and stabilize research quality gate
+Latest CI evidence: NQ CI Baseline run 28714258374 success
+Archive: docs/gates/gate-p/
+GateP: FROZEN / ACCEPTED / TAGGED
+GateQ: PLAN / NOT STARTED
+```
+
+验证：
+
+- `git fetch origin dev`：PASS。
+- `git status --short`：写前发现允许范围内的 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 修改；本轮保留并追加 archive pointer。
+- `git rev-parse HEAD` / `git rev-parse origin/dev`：均为 `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。
+- `git tag --list "nq-gatep-freeze"` 与 `git ls-remote --tags origin refs/tags/nq-gatep-freeze`：tag 前均为空。
+- `gh run list --limit 10` 与 `gh run view 28714258374 --json status,conclusion,headSha,name,createdAt,updatedAt`：最新 `NQ CI Baseline` 为 success，headSha 与 tag target 一致。
+- `git tag -a nq-gatep-freeze -m "NexusQuant GateP freeze: data quality and trading readiness baseline"`：沙箱内首跑因 `.git/objects` 写权限不足失败；按权限规则提权重跑成功。
+- `git push origin nq-gatep-freeze`：PASS，远端新 tag 已创建。
+- `git rev-parse "nq-gatep-freeze^{tag}"`：`ae94f7a47a3e7604efe061bf9be9ed48d2b98aa9`。
+- `git rev-parse "nq-gatep-freeze^{}"`：`3650714ae9cd441e59eb5b09c605a14bbc9998dc`。
+- `git ls-remote --tags origin refs/tags/nq-gatep-freeze`：远端 tag object 与本地一致。
+
+边界：
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality diagnostic、Permission Readiness、Risk Preflight 或 public marketdata readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready；未启动 GateQ implementation。
+
+下一步：
+
+只允许另起 `GateQ PLAN / NOT STARTED`；不得在本 release/archive closeout 内启动 GateQ implementation。
+
 ## NQ-GATEP-FREEZE-CLOSEOUT-REVIEW
 
 日期：2026-07-05。

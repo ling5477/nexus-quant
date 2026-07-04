@@ -6,6 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ-GATEP-RELEASE-TAG-AND-ARCHIVE（2026-07-05）：**PASS / COMPLETED / RELEASE TAG PUSHED**。含义：`PASS`（通过）、`COMPLETED`（已完成）、`RELEASE TAG PUSHED`（release tag 已推送）。Release tag：`nq-gatep-freeze`；tag object：`ae94f7a47a3e7604efe061bf9be9ed48d2b98aa9`；tagged commit：`3650714ae9cd441e59eb5b09c605a14bbc9998dc`（`chore(gatep): freeze baseline and stabilize research quality gate`）；latest CI evidence：GitHub Actions `NQ CI Baseline` run `28714258374` success，headSha 与 tagged commit 一致。GateP final state = **FROZEN / ACCEPTED / TAGGED**；archive pointer：`docs/gates/gate-p/README.md`。本轮只做 release tag、GateP archive 和 current summary sync；未改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、页面、测试、CI workflow 或 migration，未调用真实交易所，未读取 credential material，未开启 LIVE / AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。下一阶段只能是 **GateQ PLAN / NOT STARTED**，不得启动 GateQ implementation。
+
 - NQ-GATEP-FREEZE-CLOSEOUT-REVIEW（2026-07-05）：**PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL**。含义：`PASS`（通过）、`FROZEN`（已冻结）、`ACCEPTED`（已接受）、`READY FOR ARCHIVAL`（可归档）。本轮完成 GateP final freeze closeout：Batch 1-6A 均为 `COMPLETED`（已完成），Batch 6 的 P1 current fact-source drift 已由 Batch 6A 修复，GateP 可冻结为“真实数据质量与交易准备阶段”的接受基线。用户追加的 CI 修复已最小化限定为 `research/py/tests/test_research_foundation.py` fixture path resolution 与 `research/py/pyproject.toml` mypy SQLite cache backend disable，不改变 Python Research 生产逻辑，不新增 API、migration、CI workflow、页面或业务能力。GateP freeze 只代表 Data Quality Center read-only diagnostic、Runtime release matrix frontend diagnostic view、Trading preflight readiness read-only baseline、Python reproducible offline experiment foundation 与 current fact-source closeout 已完成；LIVE 仍 `DISABLED`（关闭）；AI 仍 `NOT STARTED`（未开始）；DH runtime 仍 `NOT INTEGRATED`（未集成）；Integration-1 仍 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe 仍 `NOT IMPLEMENTED`（未实现）。Data Quality diagnostic、Permission Readiness、Risk Preflight 与 Public outbound 不代表 trading authorization；Python Research 不代表 ML ready 或 live execution ready。
 
   说明：下方 Batch 1-6A 条目保留各自当轮历史状态；其中“GateP 仍不是 FROZEN / ACCEPTED”只描述对应批次发生时的状态，不覆盖本条 final closeout 结论。
@@ -478,7 +480,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-FREEZE 最终验收事实：30m observation PASS，1h acceptance PASS，24h acceptance PASS，7d acceptance PASS，GateJ completed: yes。
 - FIX-5 / FIX-6 / FIX-7 已完成并通过 ECS 复验；安全组已确认 `5179` 只允许本人 IP 访问。
 - UI/UX smoke review 发现的 Dashboard 工程实现文案、freeze 写按钮可点击、Instrument Catalog 同步入口未前端禁用、Paper Trading / Schedules / Runs 缺摘要等问题应作为 post-freeze remediation 跟踪，不应写成后端或运行稳定性 FAIL。
-- Historical note：本段记录 GateJ → GateK 时期执行状态。当前权威阶段见本文件顶部：GateO `FROZEN / ACCEPTED`，GateP `PLANNING`，Batch 1-5 completed，Batch 6 review `CONDITIONAL PASS / FIX REQUIRED`，Batch 6A drift fix `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；GateP 仍未 `FROZEN / ACCEPTED`。
+- Historical note：本段记录 GateJ → GateK 时期执行状态。当前权威阶段见本文件顶部：GateO `FROZEN / ACCEPTED`，GateP `FROZEN / ACCEPTED / TAGGED`，release tag `nq-gatep-freeze` 已推送；GateQ `PLAN / NOT STARTED`。
 - GateK implementation: historical record completed / archived；不得用本段覆盖当前 GateO/GateP 事实源。
 - GateK CI Batch 4F-A dependency audit input / toolchain preflight freeze review completed：**PASS / ACCEPTED / FROZEN**（preflight `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`；preflight review `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_REVIEW.md`；freeze review `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_FREEZE_REVIEW.md`）。Batch 4F plan review = **PASS / ACCEPTED**；Batch 4F plan = **ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4F execution sequence = **SYNCED / ACCEPTED**；Batch 4F-A preflight = **FROZEN / ACCEPTED**。Python local audit = **NOT READY**，P2 保留为 4F-B execution prerequisite；4F-B 若覆盖 Python，必须使用已确认的真实解释器路径或 `actions/setup-python@v5`。4F-B sanitized summary 的 10 个 mandatory fields 已冻结，`scope` 为 bounded field；vulnerability findings 仅 report-only/advisory。Batch 4F-B 至 4F-F = **NOT STARTED**。Batch 4C overall = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**。本轮未改 workflow / code / test / migration / frontend / research / scripts / deploy，未运行 dependency audit、scanner、SBOM、构建或测试，未开启 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。
 - GateK CI Batch 4C overall security artifact/log redaction baseline freeze review completed：**PASS / ACCEPTED / FROZEN**（overall review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`；Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**，immutable green run `27701669084`；Batch 4C-C log redaction proof **FROZEN / ACCEPTED**，immutable green run `27732660516`，7/7 jobs green，14 类 high-risk pattern 真实值命中 = 0；4C-B / 4C-C P0/P1=0）。Batch 4C overall = **FROZEN / ACCEPTED**；Static workflow assertion 仍 **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F-A preflight 后续已 **FROZEN / ACCEPTED**，Python local audit = **NOT READY**，4F-B 至 4F-F = **NOT STARTED**；Batch 5 **PENDING**。本轮未改 workflow / code / test / migration / frontend / research / scripts / deploy，未上传 logs artifact，未开启 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。
@@ -526,7 +528,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 NQ 当前阶段口径（必须按此理解，不得误判）：
 
 - Current: GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
-- GateP: `PLANNING`（规划中）；Batch 1-5 completed，Batch 6 review `CONDITIONAL PASS / FIX REQUIRED`，Batch 6A drift fix `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；主线为真实数据质量与交易准备阶段，当前不是 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）阶段。
+- GateP: `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；release tag `nq-gatep-freeze` 已推送；主线为真实数据质量与交易准备阶段，仍不代表 LIVE、real provider、private trading、real permission probe、AI 或 DH runtime 已启动。
 - AI: `NOT STARTED`（未开始）。
 - DH runtime: `NOT INTEGRATED`（未集成）。
 - LIVE: `DISABLED`（关闭）。
@@ -592,7 +594,9 @@ GateO：FROZEN / ACCEPTED；O-FREEZE PASS / ACCEPTED；O-0 baseline completed；
   ↓
 GateO O-0：Public MarketData Controlled Outbound & Data Quality Runtime planning baseline（PASS / PLAN ONLY / NOT IMPLEMENTED；O-1 controlled public outbound guard PASS / ACCEPTED / FROZEN；O-2 Data Quality Center PASS / ACCEPTED / FROZEN；GateO final status FROZEN / ACCEPTED）
   ↓
-GateP：真实数据质量与交易准备阶段（PLANNING；Batch 1-5 completed；Batch 6 review CONDITIONAL PASS / FIX REQUIRED；Batch 6A drift fix IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT；不启用 LIVE、不实现 real provider、不授权 private trading；GateP 仍未 FROZEN / ACCEPTED）
+GateP：真实数据质量与交易准备阶段（FROZEN / ACCEPTED / TAGGED；release tag `nq-gatep-freeze`；Batch 1-6A completed；archive pointer `docs/gates/gate-p/`；不启用 LIVE、不实现 real provider、不授权 private trading）
+  ↓
+GateQ：PLAN / NOT STARTED（仅规划 / 未开始；implementation NOT STARTED）
 ```
 
 ## 本地环境约定

@@ -13,16 +13,18 @@
 5. `docs/current/WORKLOG.md`：当前任务执行记录。
 6. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
 7. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
-8. `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md`：GateP final freeze closeout 当前冻结入口；结论为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。
+8. `docs/gates/gate-p/README.md`：GateP freeze / release tag / Batch 1-6A evidence matrix / testing summary 历史归档入口；当前摘要为 GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag），release tag `nq-gatep-freeze` 已推送。
 9. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
-10. `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`：GateP Batch 6 freeze readiness review 证据入口；结论为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复），用于解释 Batch 6A current fact-source drift fix 的来源；当前 GateP 最终冻结状态以上方 closeout 为准。
+
+`docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md` 与 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 仅保留 tag/archive pointer 和历史过渡证据，不再作为 current authority 入口；GateP 过程型长证据以 `docs/gates/gate-p/` 为归档入口。
 
 `docs/gates/**`、`docs/archive/**` 和历史 review/freeze 文档只作为证据或归档引用，不覆盖 `docs/current` 当前事实入口。
 
 ## 2. 当前阶段声明
 
 - GateO：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
-- GateP：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）；Batch 1-6A `COMPLETED`（已完成）；final closeout `PASS`（通过）/ `READY FOR ARCHIVAL`（可归档）。
+- GateP：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；final closeout `PASS`（通过）/ `READY FOR ARCHIVAL`（可归档）；release tag `nq-gatep-freeze` 已推送。
+- GateQ：`PLAN / NOT STARTED`（仅规划 / 未开始）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -58,7 +60,7 @@ GateO 未完成或未授权的内容：
 
 ## 4. GateP 主线边界
 
-GateP 主线为真实数据质量与交易准备阶段。当前事实为 Batch 1-6A 已完成，final freeze closeout 已给出 `PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL`。GateP 主线冻结的能力边界仍是：
+GateP 主线为真实数据质量与交易准备阶段。当前事实为 Batch 1-6A 已完成，final freeze closeout 已给出 `PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL`，release tag `nq-gatep-freeze` 已推送，历史归档入口为 `docs/gates/gate-p/README.md`。GateP 主线冻结的能力边界仍是：
 
 - true data quality。
 - single venue readiness。
@@ -99,6 +101,7 @@ GateP 当前不做：
 - Batch 6：freeze readiness review 为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；P1 finding 是 current fact-source drift，已由 Batch 6A 关闭。
 - Batch 6A：current fact-source drift fix 已完成。
 - Final closeout：`NQ-GATEP-FREEZE-CLOSEOUT-REVIEW` 为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。
-- 下一步建议只做 GateP release tag / archive，或另起下一阶段 `PLAN ONLY`（仅规划）入口；不得在本 closeout 内启动下一阶段 implementation。
+- Release tag / archive：`NQ-GATEP-RELEASE-TAG-AND-ARCHIVE` 为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）；tag `nq-gatep-freeze` 指向 commit `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。
+- 下一步只能另起 `GateQ PLAN / NOT STARTED`（GateQ 仅规划 / 未开始）；不得在本 closeout 或 archive 线启动下一阶段 implementation。
 
 所有后续批次必须重新声明 allowed files、forbidden areas、validation commands 和 no-LIVE / no-AI / no-DH / no-real-provider / no-private-trading 边界。

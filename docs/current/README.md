@@ -3,18 +3,10 @@
 `docs/current/` 是 NexusQuant 的**当前事实入口**：只保留当前控制文档、当前权威基线和必要运行手册。
 历史过程证据、治理 review/freeze、旧路径 compatibility stub 已移出 current，归档到 `docs/evidence/` 或 `docs/gates/`（见下方“历史证据位置”）。
 
-当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；Batch 1-6A `COMPLETED`（已完成）；GateP final closeout `PASS`（通过）/ `READY FOR ARCHIVAL`（可归档）**。GateP 主线是“真实数据质量与交易准备阶段”；本次 freeze 只冻结只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout，不代表真实交易、LIVE、real provider、private trading、real permission probe、AI 或 DH runtime 已启动。
+当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；GateP release tag `nq-gatep-freeze` 已推送；GateQ `PLAN / NOT STARTED`（仅规划 / 未开始）**。GateP 主线是“真实数据质量与交易准备阶段”；本次 freeze 只冻结只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout，不代表真实交易、LIVE、real provider、private trading、real permission probe、AI 或 DH runtime 已启动。
 当前边界：LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / real exchange adapter / real permission probe / private trading adapter `NOT IMPLEMENTED`（未实现）。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。Python Research 当前为 reproducible offline experiment foundation：已具备 dataset manifest、evaluation skeleton、experiment metadata 与 CLI run summary 基础，但仍不是 ML ready、live execution ready 或 Java runtime bridge。
 
-NQ-GATEP-FREEZE-CLOSEOUT-REVIEW = **PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL**。含义：`PASS`（通过）、`FROZEN`（已冻结）、`ACCEPTED`（已接受）、`READY FOR ARCHIVAL`（可归档）。本轮完成 GateP Batch 1-6A final freeze closeout，并按用户追加要求最小修复 GitHub Actions `Research quality gate`：修复 Python pytest fixture 路径问题，并关闭 mypy SQLite cache 后端以避免 cache DB 打开失败误伤质量门。GateP freeze 不新增 API、migration、CI workflow、页面或业务能力，不调用真实交易所，不读取 credential material，不授权交易。
-
-NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 `GET /api/marketdata/quality/overview`，只读聚合本地 `marketdata_bars`、dataset coverage 与 ingestion facts；不新增 migration，不改 frontend，不触发真实外联，不读取 credential，不启用 LIVE / AI / DH runtime，不实现 `DataOrigin.PUBLIC_OUTBOUND` runtime provider、RealClient、real provider、private trading adapter 或 real permission probe。该 data quality diagnostic 不等于 trading authorization。
-
-NQ-GATEP-BATCH-3-FRONTEND-DATA-QUALITY-CENTER-AND-RUNTIME-RELEASE-MATRIX = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮前端在 `/marketdata` 新增 Data Quality Center 只读区块，消费 `GET /api/marketdata/quality/overview` 并展示 scope、bar/coverage/ingestion 指标、source health、freshness、quality status、data origin、dataset coverage 与 topIssues；在 `/runtime/readiness` 新增 Runtime release matrix，明确 Data quality 仅诊断、Public marketdata 只读、Permission probe 未实现或只读状态、Private trading `NOT_IMPLEMENTED`、LIVE `DISABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`。本轮未改 backend / research / scripts / deploy / `.github` / migration，未新增后端 API，未触发真实外联，未读取 credential，未启用 LIVE / AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。Data quality diagnostic 不等于 trading authorization。
-
-NQ-GATEP-BATCH-4-SINGLE-VENUE-ACCOUNT-PERMISSION-AND-RISK-PREFLIGHT-READONLY-BASELINE = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮新增 `GET /api/trading/preflight/readiness`，只读聚合当前用户的 exchange account metadata、active credential metadata、permission probe latest summary、Data Quality diagnostic 与风险前置阻断原因；默认单交易所候选为 OKX，但不调用 OKX API，不实现 OKX private endpoint。接口始终 fail-closed：LIVE disabled、real provider not implemented、private trading not implemented、real permission probe not implemented 均作为 blocker；risk preflight 只做只读诊断，不返回 `tradingReady / liveReady / authorizedForTrading`。本轮未新增 migration，未改 frontend / research / scripts / deploy / `.github`，未读取或输出 credential material，未调用真实交易所，未开启 LIVE / AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
-
-NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。本轮只在 `research/py` 落地 offline research foundation：新增 dataset manifest、experiment metadata、evaluation metrics skeleton、research run summary 与 CLI JSON/text 输出；补充 pytest 覆盖 manifest 稳定性、checksum、metadata 参数哈希、evaluation skeleton、CLI 输出、缺字段 CSV、空 CSV、no-network/no-credential/no-Java-runtime 边界；保留现有 `--bars-csv` CLI 兼容。该切片不新增 backend API、frontend 页面、migration、真实交易所 SDK、Java runtime 写链路、LIVE、AI runtime 或 DH runtime；Python Research 仍只处理本地 CSV / 文件产物，不得写成 ML ready 或 live execution ready。
+NQ-GATEP-RELEASE-TAG-AND-ARCHIVE = **PASS / COMPLETED / RELEASE TAG PUSHED**。含义：`PASS`（通过）、`COMPLETED`（已完成）、`RELEASE TAG PUSHED`（release tag 已推送）。GateP final state 为 **FROZEN / ACCEPTED / TAGGED**；release tag 为 `nq-gatep-freeze`；tagged commit 为 `3650714ae9cd441e59eb5b09c605a14bbc9998dc`；历史证据入口为 [../gates/gate-p/README.md](../gates/gate-p/README.md)。GateP Batch 1-6A evidence matrix、freeze closeout、readiness review 与 testing summary 已归档，current 只保留摘要和归档指针。
 
 NQ-GATEO-ARCHIVE-CLOSEOUT = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`IMPLEMENTED`（已实施）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。GateO final status = **FROZEN / ACCEPTED**（已冻结 / 已接受）；GateO freeze review = **PASS / ACCEPTED / CLOSED / READY FOR ARCHIVAL**（通过 / 已接受 / 已关闭 / 可归档）。GateO 过程与证据文档已归档到 [docs/gates/gate-o/](../gates/gate-o/README.md)，`docs/current` 只保留当前事实入口、状态摘要和归档指针。
 
@@ -64,13 +56,8 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 当前工单：[WORK_ORDER.md](WORK_ORDER.md)
 - 当前状态：[STATUS.md](STATUS.md)
 - 当前事实源索引：[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)
-- GateP final freeze closeout：[GATEP_FREEZE_CLOSEOUT_REVIEW.md](GATEP_FREEZE_CLOSEOUT_REVIEW.md)（`PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）；Batch 1-6A completed；P0/P1=0）
-- GateP Batch 6 freeze readiness review：[GATEP_FREEZE_READINESS_REVIEW.md](GATEP_FREEZE_READINESS_REVIEW.md)（历史前置证据；当轮为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；P1 current fact-source drift 已由 Batch 6A 修复，并由 final closeout 消费）
-- GateP Batch 6A current fact-source drift fix：见 [STATUS.md](STATUS.md)、[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)、[ROADMAP.md](ROADMAP.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)；该条为 closeout 前置修复，当前 GateP 总状态以上方 final closeout 为准
-- GateP Batch 2 Marketdata Data Quality Center 只读 API：见 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
-- GateP Batch 3 Marketdata Data Quality Center 前端与 Runtime release matrix：见 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
-- GateP Batch 4 Trading Preflight readiness 只读 API：见 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
-- GateP Batch 5 Python research foundation engineering：见 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)，代码入口为 `research/py/src/nq_research/`
+- GateP historical archive：[../gates/gate-p/README.md](../gates/gate-p/README.md)（GateP `FROZEN` / `ACCEPTED` / `TAGGED`；release tag `nq-gatep-freeze`；Batch 1-6A evidence matrix、freeze closeout、readiness review 与 testing summary 已归档）
+- GateP current summary：见 [STATUS.md](STATUS.md)、[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)、[ROADMAP.md](ROADMAP.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)；current 不再把 GateP 过程型长文档作为当前 authority
 - 路线图：[ROADMAP.md](ROADMAP.md)
 - 测试：[TESTING.md](TESTING.md)
 - 工作日志：[WORKLOG.md](WORKLOG.md)
@@ -180,6 +167,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - GateM historical archive：`docs/gates/gate-m/`（GateM archive closed；22/22 approved candidates moved；Batch 1 已归档 freeze / release / closeout evidence；Batch 2 已归档 Runtime Guarded UI evidence；Batch 3 已归档 Operational Readiness evidence；Batch 4 已归档 GateM-2 MarketData readiness evidence；无独立 GateM-3/4 批准文件待移动）
 - GateN historical archive：`docs/gates/gate-n/`（GateN archive closed；11/11 approved GateN process docs moved）
 - GateO historical archive：`docs/gates/gate-o/`（GateO archive closeout completed；9/9 GateO process and evidence docs moved）
+- GateP historical archive：`docs/gates/gate-p/`（GateP release tag `nq-gatep-freeze` 已推送；freeze closeout、readiness review、Batch 1-6A evidence matrix 和 testing summary 已归档）
 - 早期 Gate 历史卷宗：`docs/gates/gate-h/`、`docs/gates/gate-i/`、`docs/gates/gate-a..g/`
 - CI historical evidence：`docs/evidence/ci/`（导航 `docs/evidence/ci/README.md`）
 - Documentation governance evidence（G1～G6 plan/review/freeze/implementation/final freeze）：`docs/evidence/governance/`（导航 `docs/evidence/governance/README.md`）
@@ -219,7 +207,7 @@ Future AI small-funds LIVE candidate（DEFERRED；requires separate AI / DH / LI
   ↓
 GateO：FROZEN / ACCEPTED；archive closed to docs/gates/gate-o；public readonly smoke accepted；DataOrigin.PUBLIC_OUTBOUND decision = ALLOW_FUTURE_IMPLEMENTATION / implementation NOT STARTED；不授权 LIVE / real provider / private trading / AI / DH runtime
   ↓
-GateP：真实数据质量与交易准备阶段（`FROZEN` / `ACCEPTED`；Batch 1-6A completed；final closeout `PASS / READY FOR ARCHIVAL`；不启用 LIVE、不实现 real provider、不授权 private trading）
+GateP：真实数据质量与交易准备阶段（`FROZEN` / `ACCEPTED` / `TAGGED`；release tag `nq-gatep-freeze`；Batch 1-6A completed；archive pointer `docs/gates/gate-p/`；不启用 LIVE、不实现 real provider、不授权 private trading）
   ↓
-Post-GateP：release tag / archive 或下一阶段 `PLAN ONLY` 入口（implementation NOT STARTED）
+GateQ：`PLAN / NOT STARTED`（仅规划 / 未开始；implementation NOT STARTED）
 ```
