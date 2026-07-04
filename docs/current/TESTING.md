@@ -7698,3 +7698,26 @@ ALLOW_LIVE: NO
 ```
 
 边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation；下一步仅允许 `NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY / NOT STARTED / TEST_SUPPORT_ONLY / MOCK_ONLY`。
+
+---
+
+## NQ-GATEP-BATCH-1-FACT-SOURCE-AND-STATUS-CLOSEOUT（2026-07-04）
+
+结论：**PASS / DOCS-ONLY VALIDATION / READY TO COMMIT**。含义：`PASS`（通过）、`DOCS-ONLY VALIDATION`（仅文档校验）、`READY TO COMMIT`（可提交前复核）。
+
+本轮验证范围：
+
+- 修改范围仅限 `README.md` 与 `docs/current` 白名单文档。
+- 新增 `docs/current/FACT_SOURCE_INDEX.md`。
+- 核对 GateO / GateP / LIVE / AI / DH / Integration-1 / RealClient / real provider / private trading / `PUBLIC_OUTBOUND` / readiness / 当前事实源关键词。
+- 检查 forbidden-scope diff，确认未修改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**` 或 `backend/**/db/migration/**`。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 工作区仅包含本轮允许的文档变更与新增 `FACT_SOURCE_INDEX.md`。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS | diff 限于 root/current Markdown 文档。 |
+| `rg "GateO|GateP|LIVE|AI|DH|Integration-1|RealClient|real provider|private trading|PUBLIC_OUTBOUND|DataOrigin|permission probe|readiness|current fact|事实源" README.md docs/current docs/gates` | PASS | 命中为 current/gates 事实源、历史证据、否定语境或本轮边界说明。 |
+| forbidden-scope diff | PASS / EMPTY | `backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration diff 均为空。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮为 docs-only fact source/status closeout，未修改 Java / TypeScript / Python / workflow / migration / runtime 配置。

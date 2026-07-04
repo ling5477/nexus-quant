@@ -6,6 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前状态
 
+- NQ-GATEP-BATCH-1-FACT-SOURCE-AND-STATUS-CLOSEOUT = IMPLEMENTED（已实现）/ SELF-REVIEWED（已自审）/ READY TO COMMIT（可提交前复核）；本轮仅做 fact source / status 文档收口，GateP 主线为真实数据质量与交易准备阶段，当前只进入 Batch 1 fact source closeout，不代表 GateP 已实现、已冻结或已接受。
+- Current fact source：GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）/ `BATCH 1 FACT SOURCE CLOSEOUT`（第一批事实源收口）；LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter `NOT IMPLEMENTED`（未实现）。
 - GateH completed
 - GateI completed
 - GateJ-PLAN completed
@@ -76,11 +78,15 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - GateM Exchange / MarketData Runtime Readiness 已 FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`）：adapter readiness service / guard / status API / readiness panel / MarketData readiness / operational readiness / backend E2E 均保持 fail-closed，不授权 real exchange / LIVE。
 - GateN Public MarketData / Exchange Sandbox 已 FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED（tag：`nq-gaten-freeze`）：deterministic fixture smoke 与 sandbox/source display 均保持 no-real / no-egress / diagnostic-only，不授权 real provider / LIVE / private trading / trading authorization。
 - GateO Public MarketData Controlled Outbound & Data Quality Runtime 已 FROZEN / ACCEPTED：O-1 受控外联、O-2 Data Quality、O-3 readiness API、O-4 Quality UI、O-5 manual public readonly smoke 均已冻结；该状态不授权 LIVE、trading authorization、real provider、permission probe、AI 或 DH runtime。
+- GateP 下一阶段主线是真实数据质量与交易准备：true data quality、single venue readiness、permission probe observability、risk preflight、Shadow Live design；当前仅 Batch 1 fact source closeout，不启动真实交易、不启用 LIVE。
+- Python Research 当前仅为 offline research minimal skeleton；后续仍需 dataset manifest、evaluation skeleton 和 experiment metadata，不得写成 research platform ready / ML ready / direct execution ready。
 
 ## 当前明确不做
 
 - AI / AI 信号 / AI 自动交易 / AI Paper Trading
 - 真实 LIVE 下单与真实交易所下单接口调用
+- GateP 实现 / 冻结 / 接受
+- RealClient / real provider / private trading adapter / real permission probe
 - 美股 / A 股
 - 合约全量
 - 高频
@@ -91,6 +97,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 ## 当前文档入口
 
 - `docs/current/README.md`：当前事实入口索引
+- `docs/current/FACT_SOURCE_INDEX.md`：当前事实源优先级、GateO/GateP/LIVE/AI/DH/Integration/RealClient 边界与禁止误写清单
 - `docs/current/STATUS.md`：当前项目状态
 - `docs/current/ROADMAP.md`：总路线
 - `docs/current/GATEK_PLAN.md`：GateK planning-only 阶段规划；明确 GateK implementation、AI、DH runtime、LIVE、multi-exchange expansion 均未启动

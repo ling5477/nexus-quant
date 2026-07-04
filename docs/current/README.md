@@ -3,8 +3,8 @@
 `docs/current/` 是 NexusQuant 的**当前事实入口**：只保留当前控制文档、当前权威基线和必要运行手册。
 历史过程证据、治理 review/freeze、旧路径 compatibility stub 已移出 current，归档到 `docs/evidence/` 或 `docs/gates/`（见下方“历史证据位置”）。
 
-当前阶段：**GateK finalized / frozen / tagged（tag：`nq-gatek-freeze`）；GateM = Exchange / MarketData Runtime Readiness；GateM runtime readiness FINALIZED / FROZEN / ACCEPTED / TAGGED（tag：`nq-gatem-freeze`）；GateM-5 Runtime Guarded UI IMPLEMENTED / SMOKE VERIFIED / CLOSED；GateM-6 Operational Readiness IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED；NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT；NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = FINALIZED（最终定版）/ FROZEN（已冻结）/ ACCEPTED（已接受）/ CLOSED（已关闭）/ TAGGED（已打 tag）；NQ-GATEN-0-EXCHANGE-DOCS-AND-EXISTING-ADAPTER-RECONCILIATION = PASS / RECONCILIATION BASELINE / READY TO COMMIT；NQ-GATEN-1-PUBLIC-MARKETDATA-CONTRACT-PLAN-REVIEW = PASS / CONTRACT PLAN REVIEW / READY TO COMMIT；NQ-GATEN-2-FAKE-SERVER-NO-EGRESS-PUBLIC-MARKETDATA-TEST-PLAN = PASS / TEST PLAN BASELINE / READY TO COMMIT；NQ-GATEN-3-PUBLIC-MARKETDATA-ADAPTER-SKELETON-PLAN-REVIEW = PASS / SKELETON PLAN REVIEW / READY TO COMMIT；NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-PLAN-REVIEW = PASS / FIXTURE SMOKE PLAN REVIEW / READY TO COMMIT；NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION-PLAN = PASS / IMPLEMENTATION PLAN READY / READY TO COMMIT；NQ-GATEN-4-MARKETDATA-SANDBOX-FIXTURE-SMOKE-IMPLEMENTATION = IMPLEMENTED / SELF-REVIEWED / ACCEPTED；NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-PLAN-REVIEW = PASS / RUNTIME UI SANDBOX SOURCE DISPLAY PLAN REVIEW / READY TO COMMIT；NQ-GATEN-5-RUNTIME-UI-SANDBOX-SOURCE-DISPLAY-IMPLEMENTATION = IMPLEMENTED / SELF-REVIEWED / ACCEPTED；NQ-GATEN-FREEZE = PASS / FROZEN / ACCEPTED / CLOSED；NQ-GATEN-RELEASE-TAG-AND-ARCHIVE = PASS / COMPLETED / RELEASE TAG PUSHED / READY TO COMMIT；GateN Public MarketData / Exchange Sandbox no-real baseline 已冻结并打 tag `nq-gaten-freeze`；GateN production adapter/API/runtime implementation NOT STARTED**。
-AI not started；DH runtime not integrated；LIVE disabled；real provider / RealClient / real exchange adapter / real permission probe 未实现。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。旧 AI Paper Trading GateM 口径已降级为 future candidate / historical route note，不再是当前 GateM 定义。
+当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `PLANNING`（规划中）/ `BATCH 1 FACT SOURCE CLOSEOUT`（第一批事实源收口）**。GateP 主线是“真实数据质量与交易准备阶段”，当前只做事实源与状态收口，不代表 GateP 已实现、已冻结或已接受。
+当前边界：LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / real exchange adapter / real permission probe / private trading adapter `NOT IMPLEMENTED`（未实现）。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。Python Research 当前仅为 offline research minimal skeleton，后续仍需 dataset manifest、evaluation skeleton 和 experiment metadata。
 
 NQ-GATES-JKMN-FREEZE-CI-EVIDENCE-RECONCILIATION = **PASS / EVIDENCE RECONCILED / GATEO-PLAN CONDITIONALLY ALLOWED**。含义：`PASS`（通过）、`EVIDENCE RECONCILED`（证据已收口）、`GATEO-PLAN CONDITIONALLY ALLOWED`（只允许有条件进入 GateO 规划）。GateJ / GateK / GateM freeze evidence = `VERIFIED`；GateN no-real sandbox baseline = `PARTIAL / ACCEPTED WITH EXPLICIT CI VISIBILITY RESIDUAL`，因为 tag / archive / local freeze validation / later dev CI 存在，但 tagged commit direct CI run 不可见且已显式接受为 residual。该条为 GateO plan 入场前置历史状态；当前 GateO final status 已 **FROZEN / ACCEPTED**；仍禁止真实 provider、RealClient、real permission probe、LIVE、AI 和 DH runtime。
 
@@ -85,6 +85,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - NQ-DH Integration-1 limited dry-run runtime planning blocker：[NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md](NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md)
 - 当前工单：[WORK_ORDER.md](WORK_ORDER.md)
 - 当前状态：[STATUS.md](STATUS.md)
+- 当前事实源索引：[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)
 - 路线图：[ROADMAP.md](ROADMAP.md)
 - 测试：[TESTING.md](TESTING.md)
 - 工作日志：[WORKLOG.md](WORKLOG.md)
@@ -244,5 +245,5 @@ GateO O-4：MarketData Quality UI baseline（FROZEN / ACCEPTED；O-4B read-only 
   ↓
 GateO O-5 baseline：Manual Public Outbound Smoke baseline（O-5 plan COMPLETED / PLAN ONLY / NOT IMPLEMENTED；O-5A PASS / ACCEPTED；O-5B runner binding plan PASS / ACCEPTED；O-5B-R1 runner binding implementation IMPLEMENTED / SELF-REVIEWED / COMMITTED；O-5B-R2 runner binding review PASS / ACCEPTED；O-5B manual smoke result COMPLETED / RESULT REVIEWED / ACCEPTED；O-5C first smoke result review PASS / ACCEPTED；O-5D DataOrigin.PUBLIC_OUTBOUND decision PASS / ACCEPTED，decision = ALLOW_FUTURE_IMPLEMENTATION；O-5E PASS / ACCEPTED；O-5 final status FROZEN / ACCEPTED；O-FREEZE PASS / ACCEPTED；GateO final status FROZEN / ACCEPTED）
   ↓
-GateP：A 股适配
+GateP：真实数据质量与交易准备阶段（`PLANNING` / `BATCH 1 FACT SOURCE CLOSEOUT`；当前只做事实源与状态收口；不启用 LIVE、不实现 real provider、不授权 private trading）
 ```

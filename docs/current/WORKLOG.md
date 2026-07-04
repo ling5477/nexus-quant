@@ -13523,3 +13523,38 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 `NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT / NOT STARTED / NQ_WORKTREE_ONLY / MOCK_ONLY`。不得提前实现 runtime endpoint、真实 HTTP、real provider、schema/contracts/golden_cases/fixture JSON、OpenAPI、Controller、migration、AI/LangGraph 或 LIVE。
+
+---
+
+## NQ-GATEP-BATCH-1-FACT-SOURCE-AND-STATUS-CLOSEOUT
+
+日期：2026-07-04
+
+### 本轮目标
+
+收口 NQ 当前事实入口，修正 root README 与 `docs/current` 的 GateO / GateP / LIVE / AI / DH / Integration-1 / RealClient / real provider / private trading / Python Research 状态边界。本轮为 `DOCUMENTATION_CLOSEOUT + FACT_SOURCE_RECONCILIATION + STATUS_BOUNDARY_FIX + GATEP_PREPARATION`。
+
+### 完成内容
+
+- 更新 `README.md`，补 GateP Batch 1 当前状态、GateO/GateP 边界、当前明确不做和事实源索引入口。
+- 更新 `docs/current/README.md`，把当前阶段入口改为 GateO frozen/accepted + GateP planning / Batch 1 fact source closeout。
+- 更新 `docs/current/STATUS.md`，追加本轮 closeout 状态并修正旧 GateJ/GateK 阶段口径。
+- 更新 `docs/current/ROADMAP.md`，把 GateP 从“A 股适配”改为“真实数据质量与交易准备阶段”，并指向 Batch 2 后端只读切片。
+- 新增 `docs/current/FACT_SOURCE_INDEX.md`，固定当前事实源优先级、GateO/GateP 边界、禁止误写清单和 Batch 2-5 入口。
+- 更新 `docs/current/TESTING.md` 与 `docs/current/WORKLOG.md` 记录本轮 docs-only 校验边界。
+
+### 验证
+
+- `git status --short`：PASS；仅允许文档变更。
+- `git diff --check`：PASS；无 whitespace error。
+- `git diff --stat`：PASS；diff 限于 root/current Markdown 文档。
+- GateO/GateP/LIVE/AI/DH/Integration-1/RealClient/real provider/private trading/PUBLIC_OUTBOUND/readiness/事实源关键词 `rg`：PASS；命中为 current/gates 事实源、历史证据、否定语境或本轮边界说明。
+- forbidden-scope diff：PASS / EMPTY；`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration 无 diff。
+
+### 边界
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API / CI workflow / E2E / migration；未实现 `DataOrigin.PUBLIC_OUTBOUND`；未调用真实 OKX / Binance / Bybit / Gate / Coinbase / Kraken API；未读取或输出 credential material；未接 private trading adapter；未实现真实 permission probe、RealClient 或 real provider；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 public marketdata readiness 写成 trading authorization；未把 Integration-1 mock/test-support 写成 runtime started。
+
+### 推荐下一步
+
+进入 `NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE / NOT STARTED`；继续保持 no-LIVE / no-AI / no-DH-runtime / no-real-provider / no-private-trading 边界。

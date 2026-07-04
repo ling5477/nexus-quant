@@ -6,6 +6,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 ## 当前完成状态
 
+- NQ-GATEP-BATCH-1-FACT-SOURCE-AND-STATUS-CLOSEOUT（2026-07-04）：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`IMPLEMENTED`（已实现）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。本轮只做 root README 与 `docs/current` fact source / status reconciliation，新增当前事实源索引，修正 GateO/GateP/LIVE/AI/DH/Integration-1/RealClient/real provider/private trading/Python Research 入口口径；未改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API、CI workflow、E2E 或 migration，未调用真实交易所，未读取 credential material。GateO final status 仍为 **FROZEN / ACCEPTED**；GateP 仅为 **PLANNING / BATCH 1 FACT SOURCE CLOSEOUT**，不是已实现、已冻结或已接受；LIVE **DISABLED**；AI **NOT STARTED**；DH runtime **NOT INTEGRATED**；Integration-1 **NOT STARTED / mock-test-support only**；RealClient / real provider / real permission probe / private trading adapter **NOT IMPLEMENTED**。下一批入口：Batch 2 Market Data Data Quality Center 后端只读切片。
+
 - NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN（2026-07-04）：**CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME**。含义：`CLOSED / ACCEPTED`（本 planning 文档已关闭并接受）、`PLAN_ONLY`（仅规划评估）、`NOT_IMPLEMENTED`（未实现）、`NO_RUNTIME`（未启动 runtime）。本轮只生成 `docs/current/NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md` 与 DH 对应文档；不写 NQ production code、test code、API / Controller / Client、migration、contracts、golden_cases、fixture JSON、real HTTP、provider、AI / LangGraph 或 LIVE。mock / test-support baseline 已关闭；`NQ_DRYRUN` 仍为 test-support / review-gated source，DH dry-run runtime endpoint 与 NQ runtime client 均不存在，canonical error enum/schema 与 schema alias 仍未正式冻结。`ALLOW_LIMITED_DRYRUN_RUNTIME_PLAN_CLOSE: YES`；`ALLOW_RUNTIME_IMPLEMENTATION: NO`；`ALLOW_RUNTIME_API_CONTRACT_REVIEW: YES`；`ALLOW_MOCK_BASELINE_PR_PREP: YES`；`ALLOW_REAL_HTTP: NO`；`ALLOW_REAL_PROVIDER: NO`；`ALLOW_API_CONTROLLER_CHANGE: NO`；`ALLOW_SCHEMA_CHANGE: NO`；`ALLOW_CONTRACTS_MODIFICATION: NO`；`ALLOW_GOLDEN_CASES_MODIFICATION: NO`；`ALLOW_AGENT_PHASE: NO`；`ALLOW_LANGGRAPH_RUNTIME: NO`；`ALLOW_LIVE: NO`。下一步只允许 mock baseline PR 合并或另起 runtime API contract review。
 
 - NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS（2026-07-04）：**IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW**。含义：`IMPLEMENTED`（已实现）、`TEST_SUPPORT_ONLY`（仅测试支撑）、`MOCK_ONLY`（仅 mock）、`READY_FOR_MOCK_CLOSE_REVIEW`（允许进入 mock close review）。NQ worktree 新增 `NqDhIntegration1JointMockContractFixtureTest` 与 `backend/nq-app/src/test/resources/nq-dh/integration1/joint_mock_contract_fixtures.json`，与 DH 测试资源保持同名 fixture family，覆盖 read-only request / response shape、forbidden credential / order-account / execution intent synthetic rejection、long / short bias 不映射 `BUY / SELL`、fail-closed record-only、no NQ-DH dry-run runtime client token。未改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、API / Controller、runtime、provider、RealClient、真实 HTTP、AI / LangGraph 或 LIVE。该条已由 mock close review 与 limited runtime planning 消费。Integration-1 runtime **NOT STARTED**；real HTTP **NOT STARTED**；real provider **NOT STARTED**；DH integrated **NO / NOT_INTEGRATED**；LIVE **DISABLED**；AI / LangGraph **NOT STARTED**。
@@ -458,9 +460,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - GateJ-FREEZE 最终验收事实：30m observation PASS，1h acceptance PASS，24h acceptance PASS，7d acceptance PASS，GateJ completed: yes。
 - FIX-5 / FIX-6 / FIX-7 已完成并通过 ECS 复验；安全组已确认 `5179` 只允许本人 IP 访问。
 - UI/UX smoke review 发现的 Dashboard 工程实现文案、freeze 写按钮可点击、Instrument Catalog 同步入口未前端禁用、Paper Trading / Schedules / Runs 缺摘要等问题应作为 post-freeze remediation 跟踪，不应写成后端或运行稳定性 FAIL。
-- Current stage: GateJ completed。
-- Next: GateK-PLAN。
-- GateK implementation: not started。GateK-PLAN 只做 GateJ 后的 planning / architecture / productization / deployment / observability / security boundary 收口，不代表实现已启动。
+- Historical note：本段记录 GateJ → GateK 时期执行状态。当前权威阶段见本文件顶部：GateO `FROZEN / ACCEPTED`，GateP `PLANNING / BATCH 1 FACT SOURCE CLOSEOUT`；GateP 仍未进入实现、冻结或接受。
+- GateK implementation: historical record completed / archived；不得用本段覆盖当前 GateO/GateP 事实源。
 - GateK CI Batch 4F-A dependency audit input / toolchain preflight freeze review completed：**PASS / ACCEPTED / FROZEN**（preflight `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT.md`；preflight review `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_REVIEW.md`；freeze review `NQ_CI_DEPENDENCY_AUDIT_PREFLIGHT_FREEZE_REVIEW.md`）。Batch 4F plan review = **PASS / ACCEPTED**；Batch 4F plan = **ACCEPTED AS IMPLEMENTATION BASELINE**；Batch 4F execution sequence = **SYNCED / ACCEPTED**；Batch 4F-A preflight = **FROZEN / ACCEPTED**。Python local audit = **NOT READY**，P2 保留为 4F-B execution prerequisite；4F-B 若覆盖 Python，必须使用已确认的真实解释器路径或 `actions/setup-python@v5`。4F-B sanitized summary 的 10 个 mandatory fields 已冻结，`scope` 为 bounded field；vulnerability findings 仅 report-only/advisory。Batch 4F-B 至 4F-F = **NOT STARTED**。Batch 4C overall = **FROZEN / ACCEPTED**；Static workflow assertion = **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 5 = **PENDING**。本轮未改 workflow / code / test / migration / frontend / research / scripts / deploy，未运行 dependency audit、scanner、SBOM、构建或测试，未开启 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。
 - GateK CI Batch 4C overall security artifact/log redaction baseline freeze review completed：**PASS / ACCEPTED / FROZEN**（overall review `NQ_CI_SECURITY_GUARD_BATCH_4C_FREEZE_REVIEW.md`；Batch 4C-B pre-upload artifact redaction gate **FROZEN / ACCEPTED**，immutable green run `27701669084`；Batch 4C-C log redaction proof **FROZEN / ACCEPTED**，immutable green run `27732660516`，7/7 jobs green，14 类 high-risk pattern 真实值命中 = 0；4C-B / 4C-C P0/P1=0）。Batch 4C overall = **FROZEN / ACCEPTED**；Static workflow assertion 仍 **OPTIONAL FUTURE HARDENING / NOT IMPLEMENTED**；Batch 4F-A preflight 后续已 **FROZEN / ACCEPTED**，Python local audit = **NOT READY**，4F-B 至 4F-F = **NOT STARTED**；Batch 5 **PENDING**。本轮未改 workflow / code / test / migration / frontend / research / scripts / deploy，未上传 logs artifact，未开启 LIVE / AI / DH runtime / RealClient / real provider / real exchange adapter。
 - GateJ-3-WO 已完成。
@@ -506,12 +507,13 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 NQ 当前阶段口径（必须按此理解，不得误判）：
 
-- Current: GateJ completed。
-- Next: GateK-PLAN。
-- GateK implementation: not started。
-- AI: not started。
-- DH: not integrated（NQ 侧仍无 DH 入站端点、无 DH client、无 feedback outbox）。
-- LIVE: disabled。
+- Current: GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
+- GateP: `PLANNING`（规划中）/ `BATCH 1 FACT SOURCE CLOSEOUT`（第一批事实源收口）；主线为真实数据质量与交易准备阶段，当前不是实现、冻结或接受阶段。
+- AI: `NOT STARTED`（未开始）。
+- DH runtime: `NOT INTEGRATED`（未集成）。
+- LIVE: `DISABLED`（关闭）。
+- Integration-1: `NOT STARTED`（未开始）/ mock-test-support only；不得写成 runtime started。
+- RealClient / real provider / real permission probe / private trading adapter: `NOT IMPLEMENTED`（未实现）。
 - Integration-0: allowed only as contract / mock / documentation work line, not runtime integration。
 
 Integration-0 允许范围（仅文档与契约线，不是真实集成）：
@@ -572,7 +574,7 @@ GateO：FROZEN / ACCEPTED；O-FREEZE PASS / ACCEPTED；O-0 baseline completed；
   ↓
 GateO O-0：Public MarketData Controlled Outbound & Data Quality Runtime planning baseline（PASS / PLAN ONLY / NOT IMPLEMENTED；O-1 controlled public outbound guard PASS / ACCEPTED / FROZEN；O-2 Data Quality Center PASS / ACCEPTED / FROZEN；GateO final status FROZEN / ACCEPTED）
   ↓
-GateP：A 股适配
+GateP：真实数据质量与交易准备阶段（PLANNING / BATCH 1 FACT SOURCE CLOSEOUT；当前只做事实源与状态收口；不启用 LIVE、不实现 real provider、不授权 private trading）
 ```
 
 ## 本地环境约定
@@ -656,7 +658,7 @@ GateP：A 股适配
 - GateJ-3-WO 已完成（异常恢复、失败重试、稳定性验收结构、HEARTBEAT_LAG/SCHEDULE_FIRE_FAILED 自动告警最小落库）。
 - DOC-CLEAN-2 已完成（删除 docs/current/ 中 GateH/GateI 计划副本）。
 - PRE-FREEZE-CODE-AUDIT second pass 已完成（无 P0；E2E 与 Python 基线均已实际重跑通过，详见 PRE_FREEZE_AUDIT_REPORT.md）。
-- GateI 的历史下一步 GateJ 已完成；当前状态是 GateJ completed / Next: GateK-PLAN，AI 仍 not started。
+- GateI 的历史下一步 GateJ 已完成；该条为历史路线记录。当前权威状态以本文件顶部 GateO / GateP 事实源为准，AI 仍 `NOT STARTED`。
 
 ---
 
