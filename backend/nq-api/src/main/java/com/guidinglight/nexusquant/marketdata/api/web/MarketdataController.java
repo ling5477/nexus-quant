@@ -9,10 +9,12 @@ import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataBarResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataDatasetResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionJobResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionRunResponse;
+import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataQualityOverviewResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataReadinessResponse;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataQualityOverviewService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessService;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataDatasetCommand;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataIngestionJobCommand;
@@ -20,6 +22,7 @@ import com.guidinglight.nexusquant.marketdata.application.command.FixtureMarketd
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityOverviewQuery;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessQuery;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 import io.swagger.v3.oas.annotations.Operation;
@@ -65,13 +68,15 @@ public class MarketdataController {
     private final MarketdataIngestionService marketdataIngestionService;
     private final MarketdataDatasetService marketdataDatasetService;
     private final MarketdataReadinessService marketdataReadinessService;
+    private final MarketdataQualityOverviewService marketdataQualityOverviewService;
 
     public MarketdataController(
             MarketdataBarIngestService marketdataBarIngestService,
             HistoricalMarketDataPort historicalMarketDataPort,
             MarketdataIngestionService marketdataIngestionService,
             MarketdataDatasetService marketdataDatasetService,
-            MarketdataReadinessService marketdataReadinessService
+            MarketdataReadinessService marketdataReadinessService,
+            MarketdataQualityOverviewService marketdataQualityOverviewService
     ) {
         this.marketdataBarIngestService = Objects.requireNonNull(
                 marketdataBarIngestService,
@@ -93,6 +98,44 @@ public class MarketdataController {
                 marketdataReadinessService,
                 "marketdataReadinessService must not be null"
         );
+        this.marketdataQualityOverviewService = Objects.requireNonNull(
+                marketdataQualityOverviewService,
+                "marketdataQualityOverviewService must not be null"
+        );
+    }
+
+    @GetMapping("/quality/overview")
+    @Operation(
+            summary = "查询 MarketData Data Quality overview",
+            description = "只读聚合本地 bars / dataset coverage / ingestion facts；不触发采集、不调用 adapter、不访问外部交易所、不读取 credential。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(responseCode = "200", description = "查询成功")
+    public MarketdataQualityOverviewResponse getQualityOverview(
+            @RequestParam(required = false) String exchangeCode,
+            @RequestParam(required = false) String exchange,
+            @RequestParam(required = false) String marketType,
+            @RequestParam(required = false) String symbol,
+            @RequestParam(required = false) String interval,
+            @RequestParam(required = false) String sourceType,
+            @RequestParam(required = false) String dataOrigin,
+            @RequestParam(required = false) UUID datasetId,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to
+    ) {
+        return MarketdataQualityOverviewResponse.from(marketdataQualityOverviewService.summarize(
+                new MarketdataQualityOverviewQuery(
+                        resolveQualityExchangeCode(exchangeCode, exchange),
+                        marketType,
+                        symbol,
+                        interval == null || interval.isBlank() ? null : BarInterval.fromWireValue(interval),
+                        sourceType,
+                        dataOrigin,
+                        datasetId,
+                        from,
+                        to
+                )
+        ));
     }
 
     @GetMapping("/readiness")
@@ -321,5 +364,17 @@ public class MarketdataController {
             throw new IllegalArgumentException("symbol and instrumentId must match when both are provided");
         }
         return hasSymbol ? symbol.trim() : instrumentId.trim();
+    }
+
+    private String resolveQualityExchangeCode(String exchangeCode, String exchange) {
+        boolean hasExchangeCode = exchangeCode != null && !exchangeCode.isBlank();
+        boolean hasExchange = exchange != null && !exchange.isBlank();
+        if (hasExchangeCode && hasExchange && !exchangeCode.trim().equalsIgnoreCase(exchange.trim())) {
+            throw new IllegalArgumentException("exchangeCode and exchange must match when both are provided");
+        }
+        if (hasExchangeCode) {
+            return exchangeCode.trim();
+        }
+        return hasExchange ? exchange.trim() : null;
     }
 }

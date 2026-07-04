@@ -18,6 +18,7 @@ import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestSer
 import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataFixtureIngestionResult;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
+import com.guidinglight.nexusquant.marketdata.application.MarketdataQualityOverviewService;
 import com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
@@ -28,6 +29,13 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionJob;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionRun;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataBackendSupportLevel;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityDataOriginSummary;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityDatasetCoverageSummary;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityIssue;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityMetric;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityOverview;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityOverviewQuery;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityOverviewScope;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatusSummary;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessDataOrigin;
@@ -65,6 +73,7 @@ class MarketdataControllerTest {
     private MarketdataIngestionService marketdataIngestionService;
     private MarketdataDatasetService marketdataDatasetService;
     private MarketdataReadinessService marketdataReadinessService;
+    private MarketdataQualityOverviewService marketdataQualityOverviewService;
 
     @BeforeEach
     void setUp() {
@@ -73,12 +82,14 @@ class MarketdataControllerTest {
         marketdataIngestionService = mock(MarketdataIngestionService.class);
         marketdataDatasetService = mock(MarketdataDatasetService.class);
         marketdataReadinessService = mock(MarketdataReadinessService.class);
+        marketdataQualityOverviewService = mock(MarketdataQualityOverviewService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new MarketdataController(
                         marketdataBarIngestService,
                         historicalMarketDataPort,
                         marketdataIngestionService,
                         marketdataDatasetService,
-                        marketdataReadinessService
+                        marketdataReadinessService,
+                        marketdataQualityOverviewService
                 ))
                 .addFilters(new TestTraceIdFilter())
                 .setControllerAdvice(new ApiExceptionHandler())
@@ -201,7 +212,130 @@ class MarketdataControllerTest {
                 historicalMarketDataPort,
                 marketdataIngestionService,
                 marketdataBarIngestService,
-                marketdataDatasetService
+                marketdataDatasetService,
+                marketdataQualityOverviewService
+        );
+    }
+
+    @Test
+    void shouldExposeQualityOverviewWithoutTradingAuthorizationFieldsOrSideEffects() throws Exception {
+        UUID datasetId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        UUID runId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        when(marketdataQualityOverviewService.summarize(argThat(query ->
+                "BINANCE".equals(query.exchangeCode())
+                        && "SPOT".equals(query.marketType())
+                        && "BTC-USDT".equals(query.symbol())
+                        && query.interval() == BarInterval.ONE_MINUTE
+                        && "MARKETDATA_BARS".equals(query.sourceType())
+                        && "PUBLIC_OUTBOUND".equals(query.dataOrigin())
+                        && datasetId.equals(query.datasetId())
+                        && Instant.parse("2026-07-04T00:00:00Z").equals(query.from())
+                        && Instant.parse("2026-07-04T00:05:59Z").equals(query.to())
+        ))).thenReturn(new MarketdataQualityOverview(
+                new MarketdataQualityOverviewScope(
+                        "BINANCE",
+                        "SPOT",
+                        "BTC-USDT",
+                        "1m",
+                        "MARKETDATA_BARS",
+                        "PUBLIC_OUTBOUND",
+                        datasetId,
+                        Instant.parse("2026-07-04T00:00:00Z"),
+                        Instant.parse("2026-07-04T00:05:59Z")
+                ),
+                5,
+                6L,
+                1L,
+                MarketdataQualityMetric.available(0, "duplicate_bars 来源于最新 dataset coverage 聚合。"),
+                MarketdataQualityMetric.notAvailable("当前 schema 未持久化跨 scope out-of-order 诊断；本轮不新增 migration。"),
+                MarketdataQualityMetric.available(1, "staleCount 表示最新 bar 超过本地 freshness 阈值的 scope 数。"),
+                Instant.parse("2026-07-04T00:04:59Z"),
+                Instant.parse("2026-07-04T00:00:00Z"),
+                Instant.parse("2026-07-04T00:05:10Z"),
+                Instant.parse("2026-07-04T00:06:10Z"),
+                runId,
+                MarketdataReadinessSourceHealth.ERROR,
+                MarketdataReadinessStatus.STALE,
+                MarketdataQualityStatus.GAP_DETECTED,
+                new MarketdataQualityDataOriginSummary(
+                        "PUBLIC_OUTBOUND",
+                        "LOCAL_DB",
+                        5,
+                        0,
+                        0,
+                        "LOCAL_DB_ONLY_READ_MODEL"
+                ),
+                new MarketdataQualityDatasetCoverageSummary(
+                        1,
+                        6L,
+                        5L,
+                        1L,
+                        0L,
+                        0L,
+                        datasetId,
+                        Instant.parse("2026-07-04T00:05:00Z")
+                ),
+                List.of(new MarketdataQualityIssue(
+                        "GAP_DETECTED",
+                        "WARNING",
+                        1,
+                        "本地 bar 序列、quality_status 或 dataset coverage 表明存在缺口。"
+                )),
+                Instant.parse("2026-07-04T00:10:00Z")
+        ));
+
+        String responseBody = mockMvc.perform(get("/api/marketdata/quality/overview")
+                        .param("exchange", "BINANCE")
+                        .param("marketType", "SPOT")
+                        .param("symbol", "BTC-USDT")
+                        .param("interval", "1m")
+                        .param("sourceType", "marketdata_bars")
+                        .param("dataOrigin", "PUBLIC_OUTBOUND")
+                        .param("datasetId", datasetId.toString())
+                        .param("from", "2026-07-04T00:00:00Z")
+                        .param("to", "2026-07-04T00:05:59Z")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-quality"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-marketdata-quality"))
+                .andExpect(jsonPath("$.scope.exchangeCode").value("BINANCE"))
+                .andExpect(jsonPath("$.scope.dataOrigin").value("PUBLIC_OUTBOUND"))
+                .andExpect(jsonPath("$.totalBars").value(5))
+                .andExpect(jsonPath("$.expectedBars").value(6))
+                .andExpect(jsonPath("$.gapCount").value(1))
+                .andExpect(jsonPath("$.duplicateCount.status").value("AVAILABLE"))
+                .andExpect(jsonPath("$.outOfOrderCount.status").value("NOT_AVAILABLE"))
+                .andExpect(jsonPath("$.staleCount.value").value(1))
+                .andExpect(jsonPath("$.lastIngestionRunId").value(runId.toString()))
+                .andExpect(jsonPath("$.sourceHealth").value("ERROR"))
+                .andExpect(jsonPath("$.freshnessStatus").value("STALE"))
+                .andExpect(jsonPath("$.qualityStatus").value("GAP_DETECTED"))
+                .andExpect(jsonPath("$.dataOriginSummary.requestedDataOrigin").value("PUBLIC_OUTBOUND"))
+                .andExpect(jsonPath("$.dataOriginSummary.effectiveDataOrigin").value("LOCAL_DB"))
+                .andExpect(jsonPath("$.dataOriginSummary.supportLevel").value("LOCAL_DB_ONLY_READ_MODEL"))
+                .andExpect(jsonPath("$.datasetCoverageSummary.datasetCount").value(1))
+                .andExpect(jsonPath("$.datasetCoverageSummary.missingBars").value(1))
+                .andExpect(jsonPath("$.topIssues[0].code").value("GAP_DETECTED"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertFalse(responseBody.contains("apiKey"));
+        assertFalse(responseBody.contains("secret"));
+        assertFalse(responseBody.contains("passphrase"));
+        assertFalse(responseBody.contains("private key"));
+        assertFalse(responseBody.contains("credential"));
+        assertFalse(responseBody.contains("tradingReady"));
+        assertFalse(responseBody.contains("liveReady"));
+        assertFalse(responseBody.contains("authorizedForTrading"));
+        assertFalse(responseBody.contains("RealClient"));
+        assertFalse(responseBody.contains("rawRequest"));
+        assertFalse(responseBody.contains("rawResponse"));
+        verifyNoInteractions(
+                historicalMarketDataPort,
+                marketdataIngestionService,
+                marketdataBarIngestService,
+                marketdataDatasetService,
+                marketdataReadinessService
         );
     }
 

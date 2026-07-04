@@ -13558,3 +13558,39 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 进入 `NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE / NOT STARTED`；继续保持 no-LIVE / no-AI / no-DH-runtime / no-real-provider / no-private-trading 边界。
+
+---
+
+## NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE
+
+日期：2026-07-04
+
+### 本轮目标
+
+建立 Market Data Data Quality Center 后端只读切片，提供 `GET /api/marketdata/quality/overview`，只读聚合本地 bars、dataset coverage 与 ingestion facts；不新增 migration，不改 frontend，不触发真实外联，不读取 credential，不启用 LIVE / AI / DH runtime。
+
+### 完成内容
+
+- 新增 core read model：`MarketdataQualityOverviewQuery`、scope、metric、issue、data origin summary、dataset coverage summary、ingestion facts、bar scope facts 与 quality status。
+- 新增 `MarketdataQualityOverviewService`，聚合 `totalBars / expectedBars / gapCount / duplicateCount / outOfOrderCount / staleCount / sourceHealth / freshnessStatus / qualityStatus / topIssues`。
+- 新增 `MarketdataQualityOverviewRepository` port 与 `JdbcMarketdataQualityOverviewRepository` 只读实现；仅使用本地 DB `SELECT` 读取 `marketdata_bars`、`marketdata_datasets`、`marketdata_dataset_coverage`、`marketdata_ingestion_jobs/runs`。
+- 新增 API DTO 与 Controller endpoint：`GET /api/marketdata/quality/overview`。
+- 新增 core service tests 与 MockMvc endpoint tests，覆盖空数据、coverage gap、ingestion failure、stale/multi-scope、敏感字段/交易授权字段缺失和 no-side-effect。
+- 同步 `docs/current/API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 与 `docs/current/README.md`。
+
+### 验证
+
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：BUILD SUCCESS；23 个 reactor module SUCCESS；`MarketdataQualityOverviewServiceTest` 5 tests / 0 failures / 0 errors / 0 skipped；`MarketdataControllerTest` 8 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 3 skipped。
+- `git status --short`：PASS；变更集中在本轮 backend marketdata quality 只读切片与允许的 current docs。
+- `git diff --check`：PASS；无 whitespace error。
+- `git diff --stat`：PASS。
+- forbidden-scope diff：PASS / EMPTY；`frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` 无 diff。
+- boundary `rg` search：PASS / REVIEWED；未发现本轮新增真实外联实现、credential 输出、private endpoint、LIVE 开关、RealClient / real provider / private trading 启用路径。
+
+### 边界
+
+未新增 migration；未改 frontend / research / scripts / deploy / `.github`；未新增真实 public outbound provider；未实现 `DataOrigin.PUBLIC_OUTBOUND` runtime provider；未实现 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP client；未调用真实交易所 API；未读取、打印或输出 credential material；未新增 signed/private endpoint；未实现真实 permission probe、RealClient、real provider 或 private trading adapter；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 marketdata readiness / data quality diagnostic 写成 trading authorization。
+
+### 推荐下一步
+
+提交前复核本轮 diff，推荐 commit message：`feat(marketdata): add read-only data quality overview`。

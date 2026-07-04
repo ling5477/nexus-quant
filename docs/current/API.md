@@ -16,6 +16,7 @@
 - Publish API：发布候选、发布状态。
 - Instrument API：交易标的、交易所、市场类型、symbol catalog。
 - Marketdata API：行情基础 ingest/query 能力。
+- Marketdata Data Quality Center API：只读聚合本地 bars、dataset coverage 与 ingestion facts，供 GateP Batch 2 数据质量诊断使用。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
 - Actuator / Health：Spring Boot actuator、健康检查。
@@ -32,6 +33,7 @@
 - GateI-2 增强 backtest config、backtest run 和 evaluation report 追溯 API；不进入 GateI-3/4，不接 AI。
 - GateM-5A 新增只读 adapter readiness status API；只读静态 readiness 决策，no-real / fail-closed，不接 AI、不接真实交易所、不读 credential、不启用 LIVE。
 - GateM-6B 新增只读 runtime operational readiness summary API；仅返回安全 DTO 摘要，不读取 raw env/config，不触发 adapter / permission probe / external exchange call，不启用 LIVE / AI / DH runtime / real provider。
+- GateP Batch 2 新增只读 Marketdata Data Quality Center overview API；只读取现有本地 DB 事实，不新增 migration，不改 ingestion 行为，不接 `DataOrigin.PUBLIC_OUTBOUND` runtime provider，不表示 trading authorization。
 
 ## Adapter Readiness API
 
@@ -133,6 +135,19 @@ GateO O-3E freeze review（2026-07-03）结论：`PASS`（通过）/ `ACCEPTED`�
   - `backendSupportLevel=NO_MIGRATION_MVP` 表示本轮仅基于 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` 的本地聚合，不代表真实交易所 source health 已完成。
   - Gap 只基于本地 bars 序列和 `quality_status` 证据估算；不猜测真实交易所状态，不伪造 OKX / Binance health。
   - Response 不得包含 `tradingAuthorized`、`liveReady`、`privateTradingReady`、`permissionGranted`、`realProviderReady`、`apiKey`、`secret`、`passphrase`、`credentialRef`、`rawRequest`、`rawResponse`、`rawHeaders`、`fullQueryString`、`encrypted_payload`、`decrypted_payload`。
+
+## GateP Batch 2 Marketdata Data Quality Center Read-only API
+
+NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读切片，不代表 GateP 已实现、已冻结或已接受。
+
+- `GET /api/marketdata/quality/overview`：按本地 `marketdata_bars`、`marketdata_datasets`、`marketdata_dataset_coverage`、`marketdata_ingestion_jobs/runs` 聚合 Data Quality overview。该接口只读，不写库，不触发采集，不调用 adapter，不访问外部网络，不读取 credential，不启用 LIVE，不接 AI / DH runtime。
+  - Query：`exchangeCode` 或别名 `exchange` 可选，二者同时提供时必须一致；`marketType` 可选，默认 `SPOT`；`symbol`、`interval`、`sourceType`、`dataOrigin`、`datasetId`、`from`、`to` 均可选；`interval` 使用既有 `1m / 5m / 15m / 1h / 4h / 1d`；`from/to` 使用 ISO-8601 instant。
+  - Response：`scope / totalBars / expectedBars / gapCount / duplicateCount / outOfOrderCount / staleCount / latestBarTime / earliestBarTime / lastSuccessAt / lastFailureAt / lastIngestionRunId / sourceHealth / freshnessStatus / qualityStatus / dataOriginSummary / datasetCoverageSummary / topIssues / generatedAt`。
+  - `duplicateCount` 仅在现有 dataset coverage 存在 `duplicate_bars` 事实时返回 `AVAILABLE`；否则返回 `NOT_AVAILABLE` 并说明原因。`outOfOrderCount` 当前 schema 未持久化跨 scope out-of-order 诊断，固定返回 `NOT_AVAILABLE`，不得伪造为 0。
+  - `dataOriginSummary.requestedDataOrigin` 只回显请求维度；`effectiveDataOrigin` 当前固定为 `LOCAL_DB`，`supportLevel=LOCAL_DB_ONLY_READ_MODEL`。即使请求传入 `PUBLIC_OUTBOUND`，也不表示 `DataOrigin.PUBLIC_OUTBOUND` runtime provider 已实现或 public outbound 已默认启用。
+  - `datasetCoverageSummary` 复用最新 dataset coverage 的 `expectedBars / actualBars / missingBars / duplicateBars / invalidBars / latestDatasetId / latestCoverageAt`；接口不会触发 `refresh-quality`，不会新增 coverage。
+  - `topIssues` 仅来自本地聚合结果，例如 `NO_DATA / INGESTION_FAILURE / GAP_DETECTED / STALE_DATA / INVALID_BARS`；不包含 provider raw response、headers、credential、URL 或交易建议。
+  - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`privateTradingReady`、`permissionGranted`、`realProviderReady`、`apiKey`、`secret`、`passphrase`、`credential`、`rawRequest`、`rawResponse`、`rawHeaders`、`fullQueryString`、`encrypted_payload`、`decrypted_payload`。
 
 ## GateH-3 Dataset and Backtest Binding API
 

@@ -7721,3 +7721,38 @@ ALLOW_LIVE: NO
 | forbidden-scope diff | PASS / EMPTY | `backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / migration diff 均为空。 |
 
 未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮为 docs-only fact source/status closeout，未修改 Java / TypeScript / Python / workflow / migration / runtime 配置。
+
+---
+
+## NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE（2026-07-04）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`PASS`（通过）、`IMPLEMENTED`（已实现）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateP Batch 2 后端只读切片，不代表 GateP 已冻结或已接受。
+
+本轮验证范围：
+
+- 后端只读 API：`GET /api/marketdata/quality/overview`。
+- Core 聚合：本地 bars、dataset coverage、ingestion facts 的 Data Quality overview。
+- Infra 只读 JDBC repository：仅 `SELECT`，不写库、不新增 migration、不调用 adapter。
+- 文档同步：`API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 与 `docs/current/README.md` 入口。
+
+| Command | Result | Scope | Notes |
+| --- | --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | **BUILD SUCCESS** | 后端 `nq-api` / `nq-core` / `nq-app` 及依赖 reactor | 23 个 reactor module SUCCESS；`MarketdataQualityOverviewServiceTest` 5 tests / 0 failures / 0 errors / 0 skipped；`MarketdataControllerTest` 8 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 3 skipped。 |
+| `git status --short` | **PASS** | 工作区变更清点 | 仅本轮 backend marketdata quality 只读切片与允许的 current docs 变更；未见 frontend / research / scripts / deploy / `.github` / migration diff。 |
+| `git diff --check` | **PASS** | Whitespace 检查 | 无 whitespace error；PowerShell / Git 提示若干 LF/CRLF 转换 warning，不阻断。 |
+| `git diff --stat` | **PASS** | Tracked diff 摘要 | Git 仅展示已跟踪文件 diff：Controller、Controller test 与 current docs；新增 core / infra / DTO / service test 文件由 `git status --short` 作为 untracked 文件列出，提交前需一并 staged。 |
+| forbidden-scope diff | **PASS / EMPTY** | `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` | 无 diff；本轮未新增 migration、E2E、workflow、脚本或前端变更。 |
+| boundary `rg` search | **PASS / REVIEWED** | backend + docs/current + README | 命中包含既有 adapter/test 代码、历史或否定边界说明；未发现本轮新增真实外联实现、credential 输出、private endpoint、LIVE 开关、RealClient / real provider / private trading 启用路径。 |
+
+Known warnings：
+
+- Maven 输出包含既有 SLF4J no-provider、Mockito dynamic agent / ByteBuddy agent warning；不影响本轮测试结论。
+- `nq-app` 3 skipped 为既有环境/guard 条件，本轮未修改相关测试。
+
+What was not run：
+
+- 未运行 frontend `npm run build` / Playwright，原因是本轮禁止且未修改 `frontend/**`。
+- 未运行 Python `pytest` / `mypy` / `ruff`，原因是本轮禁止且未修改 `research/**`。
+- 未执行真实 public outbound smoke，原因是本轮后端 API 只读聚合本地事实，不允许外部网络 IO。
+
+边界确认：未新增 migration；未改 frontend / research / scripts / deploy / `.github`；未读取或输出 credential material；未启用 LIVE；未接 AI runtime；未接 DH runtime；未实现真实 public outbound provider、`DataOrigin.PUBLIC_OUTBOUND` runtime provider、OKX/Binance HTTP client、RealClient、real provider、private trading adapter 或 real permission probe；未下单、撤单、转账或提现；data quality diagnostic 不等于 trading authorization。
