@@ -53,6 +53,7 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 - NQ-GATEO-O3-MARKETDATA-RUNTIME-READINESS-API-PLAN = PASS（通过）/ PLAN ONLY（仅规划）/ NOT IMPLEMENTED（未实现）；该 planning-only baseline 已由 O-3B implementation 消费，原决策为优先扩展现有 `GET /api/marketdata/readiness` read model，不重复造主 endpoint
 - NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE = CLOSED / ACCEPTED / DOCS-ONLY；Integration-1 dry-run plan baseline accepted；前置条件固定为 `NQ GateN + DH Stage4 Decision Pipeline MVP CLOSED`；implementation / runtime / real HTTP / real provider / LIVE 均 NOT STARTED。GateO 当前主线不被本 P0 回滚或覆盖。
 - NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN = COMPLETED / PLAN ONLY / NOT IMPLEMENTED；规划 Integration-1 contract dry-run 的 schema、canonical `X-NQ-DH-*` header、tenant/requestId/traceId/timestamp/nonce/HMAC、错误码、audit、batch 和 no-side-effect 测试前置；不新增 API / migration / code / test，不启动 runtime，不真实 HTTP，不接 RealClient/provider/LIVE/AI/LangGraph，下一步只能 P1-A contract schema / fixture plan review
+- NQ-DH-I1-MOCK-BASELINE = IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY；IMP1/IMP2/IMP3 mock baseline guards、stub recorder 和 joint mock contract fixtures 已在 PR 分支收口；Integration-1 limited runtime planning 已 CLOSED / ACCEPTED / PLAN_ONLY / NO_RUNTIME；不启动 NQ runtime DH client、DH dry-run runtime endpoint、real HTTP、real provider、AI / LangGraph 或 LIVE。
 - Future AI Paper Trading candidate is not current GateM
 - AI not started
 - DH runtime not integrated / not connected to NQ

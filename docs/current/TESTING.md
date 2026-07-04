@@ -1,3 +1,157 @@
+## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN validation（2026-07-04）
+
+```text
+Scope:
+  - 本轮只做 NQ-DH Integration-1 limited dry-run runtime planning 文档同步。
+  - NQ dry-run worktree 只改 docs/current 允许文件。
+  - NQ dev 只做 git status / diff 边界确认，未写入。
+  - 不修改 NQ production code、test code、contracts、golden_cases、fixture JSON、API / Controller / Client、migration、runtime wiring、real HTTP、provider、AI / LangGraph 或 LIVE。
+
+Result:
+  NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN: CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME
+  Next: NQ-DH-I1-MOCK-BASELINE-PR-PREP / NOT STARTED / PR_PREP_ONLY / NO_RUNTIME
+  WORKSTREAM_MIXED_BLOCKED: NO
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| NQ worktree `git status --short` | PASS / CHANGES PRESENT | Dirty 限于允许的 `docs/current` 文档；新增 `docs/current/NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md`。 |
+| NQ worktree `git diff --check` | PASS | 退出码 0；仅有 LF/CRLF warning。 |
+| NQ worktree `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current/README.md`、`ROADMAP.md`、`STATUS.md`、`WORK_ORDER.md`；新 plan 文件为 untracked。 |
+| NQ worktree forbidden diff：`git diff --name-only -- backend/**/src/main frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 NQ production code、frontend、research、scripts、deploy、CI 或 migration。 |
+| NQ production token scan | PASS / NO NQ-DH RUNTIME CLIENT | `backend/**/src/main/**` 未命中 `NQ_DRYRUN`、`NqDhIntegration1`、DH runtime client 或 `/dry-run` runtime token；仅命中既有 credential permission probe DTO 的普通 `dryRun` 字段。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module SUCCESS；`nq-app` 104 tests，0 failures，0 errors，2 skipped；保留既有 SLF4J / Mockito dynamic agent warnings。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | 串行重跑通过；Integration-0 scoped tests 17 tests，0 failures，0 errors，0 skipped。并行首跑曾与 full backend test 竞争 target/test-classes 导致 test-compile 符号解析失败，已由串行重跑消除。 |
+| NQ dev scoped diff | PASS / EMPTY | `docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 unstaged / staged diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+
+Boundary:
+
+未改 NQ dev；未改 NQ production code；未改测试代码；未改 contracts、golden_cases、fixture JSON、API / Controller、migration、runtime wiring、real HTTP、provider、AI / LangGraph 或 LIVE；未读取 credential / token / cookie / API secret / passphrase。
+
+## NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS final validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| NQ dry-run worktree `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration1JointMockContractFixtureTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | 新增 NQ IMP3 joint mock contract fixture test 7 tests，0 failures，0 errors，0 skipped。 |
+| NQ dry-run worktree `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module SUCCESS；`nq-app` 104 tests 中 2 skipped；保留既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning。 |
+| NQ dry-run worktree `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | Integration-0 scoped tests 17 tests，0 failures，0 errors，0 skipped；不代表 Integration-1 runtime started。 |
+| DH `mvn -ntp -pl dh-usecase -am "-Dtest=DhIntegration1JointMockContractFixtureTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | 新增 DH IMP3 joint mock contract fixture test 6 tests，0 failures，0 errors，0 skipped。 |
+| DH `mvn -ntp test` | PASS / BUILD SUCCESS | 19 个 reactor module SUCCESS；Docker/Testcontainers 不可用导致 Docker-gated smoke skipped，非代码失败。 |
+| DH `mvn -ntp -Pquality validate` | PASS / BUILD SUCCESS | Checkstyle 0 violations；Spotless check passed。 |
+
+Scope：本轮完成 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS`；新增 NQ dry-run worktree joint mock fixture / contract tests，与 DH 测试资源保持同名 fixture family；同步 NQ/DH `docs/current` 状态和验证记录；不修改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、API、Controller、runtime wiring、provider 或真实 HTTP。
+
+Result：`NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS: IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW`；当前 next 为 `NQ-DH-I1-MOCK-CLOSE-REVIEW / NOT STARTED / REVIEW_ONLY / NO_RUNTIME`；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+Boundary：Integration-1 runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只新增 test-support fixture / tests，不执行 DH 输出，不触发 order / execution / risk / ledger / Paper Run / LIVE mutation，不读取 credential。
+
+## NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT final validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 限于允许的 `docs/current` 文档和 `backend/nq-app/src/test/**` 新增 test-support guard；未见 forbidden production area diff。 |
+| `git branch --show-current` | PASS / `nq-dh-i1-dryrun` | NQ dry-run worktree 当前分支正确。 |
+| `git rev-parse HEAD` | PASS / `6ff104fb44cdbab0bb38f7c8da3307fad69d275c` | 基线为 NQ dry-run worktree IMP1 sync commit。 |
+| `git diff --check` | PASS | 退出码 0。 |
+| `git diff --stat` | PASS / ALLOWED_SCOPE | tracked diff 限于 `docs/current`；新增测试文件由 `git status --short` 标识。 |
+| `git diff --name-only -- backend/**/src/main frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 NQ production code、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | `NqDhIntegration1StubRecorderNoSideEffectTest` 6 tests，0 failures，0 errors，0 skipped。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module SUCCESS；surefire reports 汇总 628 tests，0 failures，0 errors，4 skipped；仅保留既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS | Integration-0 scoped tests 通过；不代表 Integration-1 runtime started。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app spotless:apply` | NOT AVAILABLE | Maven 未配置 `spotless` prefix；未将 formatter 写成成功。 |
+| DH `mvn -ntp test` | PASS / BUILD SUCCESS | 19 个 reactor module SUCCESS；surefire reports 汇总 451 tests，0 failures，0 errors，4 skipped；Docker/Testcontainers 不可用导致 Docker-gated smoke skipped，非代码失败。 |
+| DH `mvn -ntp -Pquality validate` | PASS / BUILD SUCCESS | quality profile validate 通过。 |
+| NQ dev `git diff --name-only -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 NQ-DH / Integration1 unstaged diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+| NQ dev `git diff --name-only --cached -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 NQ-DH / Integration1 staged diff；本轮未写 NQ dev。 |
+
+Scope：本轮完成 `NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT`；新增 NQ dry-run worktree test-support stub / readonly recorder / no-side-effect guard 测试；同步 NQ/DH `docs/current` 状态和验证记录；不修改 NQ production code、contracts、golden_cases、fixture JSON、API、Controller、migration、runtime wiring、provider 或真实 HTTP。
+
+Result：`NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT: VERIFY PASS / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_IMP3_JOINT_MOCK_CONTRACT_TESTS`；该 next 已由 `NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS / IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW` 消费；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+Boundary：Integration-1 runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只新增 test-support guard，不执行 DH 输出，不触发 order / execution / risk / ledger / Paper Run / LIVE mutation，不读取 credential。
+
+## NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO final validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 限于允许的 current docs 和新增 M3 WO；未见 forbidden code area diff。 |
+| `git branch --show-current` | PASS / `nq-dh-i1-dryrun` | NQ dry-run worktree 当前分支正确。 |
+| `git rev-parse HEAD` | PASS / `c651110890e79609ad1ac56f3b98955a4b4708e9` | 基线为 NQ dry-run worktree M2 close commit。 |
+| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于文档；新增 M3 WO 由 `git status --short` 标识。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| NQ dev `git diff --name-only -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 NQ-DH / Integration1 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+| NQ dev `git diff --name-only --cached -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 staged NQ-DH / Integration1 diff；初始 precheck 曾观察到非 NQ-DH dirty，final spot-check `git status --short` 返回空且 HEAD 为 `91c4abecf497f196f861fa3a4dc89d23d1d58427`；本轮未写 NQ dev。 |
+| DH `mvn -ntp test` | PASS / BUILD SUCCESS | 19 个 DH reactor module 全部 `SUCCESS`；Docker/Testcontainers 不可用导致 Docker-gated smoke tests skipped，非代码失败。 |
+| DH `mvn -ntp -Pquality validate` | PASS / BUILD SUCCESS | 19 个 DH reactor module 全部 `SUCCESS`；Checkstyle 0 violations；Spotless check passed。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻断。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
+
+Scope：本轮完成 `NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO`；同步 NQ dry-run worktree M3 工单、current docs 和验证记录；本轮仍是 `WORK_ORDER_ONLY`，不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
+
+Result：`NQ-DH-I1-M3-JOINT-MOCK-FIXTURES-AND-CONTRACT-TESTS-WO: COMPLETED / WORK_ORDER_ONLY / FINAL_WO_BEFORE_IMPLEMENTATION / NOT IMPLEMENTED`；当前 next 为 `NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION / NOT STARTED / CONTROLLED_IMPLEMENTATION_BATCH_ALLOWED`；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+Boundary：Integration-1 runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只同步 M3 fixture/test planning、IMP0 next 和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
+
+## NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO final validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 限于允许的 `docs/current` 文档和新增 M0 WO；未见 forbidden code area diff。 |
+| `git branch --show-current` | PASS / `nq-dh-i1-dryrun` | NQ dry-run worktree 当前分支正确。 |
+| `git rev-parse HEAD` | PASS / `752f228abe3e4e4a7e6d223211291e10a894d5c7` | 基线为 NQ dry-run worktree dry-run mock implementation WO close commit。 |
+| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current` 文档；新增 M0 WO 由 `git status --short` 标识。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| NQ dev `git diff --name-only -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 NQ-DH / Integration1 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+| NQ dev `git diff --name-only --cached -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 staged NQ-DH / Integration1 diff。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻断。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
+
+Scope：本轮完成 `NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO`；同步 NQ dry-run worktree M0 工单、current docs 和验证记录；本轮仍是 `WORK_ORDER_ONLY`，不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
+
+Result：`NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO: COMPLETED / WORK_ORDER_ONLY / CONTRACT_GAP_CLOSED / NOT IMPLEMENTED`；当前 next 为 `NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO / NOT STARTED`；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只同步 M0 contract gap close、M1 next 和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
+
+## NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO final validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 限于允许的 `docs/current` 文档和新增 WO；未见 forbidden code area diff。 |
+| `git branch --show-current` | PASS / `nq-dh-i1-dryrun` | NQ dry-run worktree 当前分支正确。 |
+| `git rev-parse HEAD` | PASS / `2eaa5fe83242a5fb35fb44bce7dd279eccd891f8` | 基线为 NQ dry-run worktree P4 gate-fix close commit。 |
+| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current` 文档；新增 WO 由 `git status --short` 标识。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| NQ dev `git diff --name-only -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 NQ-DH / Integration1 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+| NQ dev `git diff --name-only --cached -- "docs/current/*NQ_DH*" "docs/current/*INTEGRATION1*"` | PASS / EMPTY | NQ dev 无 staged NQ-DH / Integration1 diff。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻断。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
+
+Scope：本轮复核上一轮中断后的 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO` 收口状态，并补齐 NQ dry-run worktree WO、current docs 与验证记录；本轮仍是 `WORK_ORDER_ONLY`，不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
+
+Result：`NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO: COMPLETED / WORK_ORDER_ONLY / NOT IMPLEMENTED`；当前 next 为 `NQ-DH-I1-M0-CONTRACT-GAP-CLOSE-WO / NOT STARTED`；`WORKSTREAM_MIXED_BLOCKED: NO`。
+
+Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只同步 work order、M0-M4 批次设计、precheck rule 与 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
+
+## NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX final validation（2026-07-03）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CHANGES PRESENT | 当前 dirty 限于允许的 `docs/current` 文档；未见 forbidden code area diff。 |
+| `git diff --check` | PASS | 退出码 0；仅 Windows LF/CRLF 工作区提示，非阻断。 |
+| `git diff --stat` | PASS / DOCS-ONLY | tracked diff 限于 `docs/current` 文档。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、research、scripts、deploy、`.github` 或 migration。 |
+| stale old-next scan | PASS / EMPTY | current docs 已无旧 P4 not-started next 残留；验证记录不保留完整旧 next 字符串，避免后续自匹配。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23 个 backend reactor module 全部 `SUCCESS`；`nq-app` 86 tests 中 2 skipped；既有 SLF4J / Mockito dynamic agent / unchecked / deprecation warning 非阻断。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | `nq-app` Integration-0 contract/security/no-side-effect 3 个测试类共 17 tests，0 failures / 0 errors / 0 skipped；不代表 Integration-1 runtime started。 |
+
+Scope：本轮只完成 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX` docs-only gate-fix 与验证记录同步；不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
+
+Result：`NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW-FIX: COMPLETED / DOCS-ONLY / GATE-FIX`；当前 next 为 `NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED`。
+
+Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只同步 gate-fix、schema gap 分类、下一步 WO 入口和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
 ## NQ-GATEO-FREEZE-REVIEW validation（2026-07-04）
 
 | Command | Result | Notes |
@@ -287,7 +441,7 @@ Boundary：`/api/marketdata/readiness` 只作为后续扩展对象；本轮不�
 
 Scope：本轮只完成 `NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN` canonical dry-run implementation readiness planning 与验证记录同步；合并旧 P3 NQ dry-run stub test plan、旧 P4 DH dry-run entry plan、旧 P5 joint mock validation plan；不创建 fixture JSON，不新增 API、migration、production code、test code、client、provider、dispatcher 或真实 HTTP。
 
-Result：`NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；当前 next 为 `NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED`。
+Result：`NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN: COMPLETED / PLAN ONLY / NOT IMPLEMENTED`；P3 当时 next 已由后续 P4、IMP0、IMP1 消费；当前 next 为 `NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT / NOT STARTED / NQ_WORKTREE_ONLY / MOCK_ONLY`。
 
 Boundary：Integration-1 implementation / runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED；DH integrated 仍为 NO / NOT_INTEGRATED；NQ 只规划 future stub test readiness、joint mock validation readiness、schema gap gate 和 no-side-effect boundary，不执行 DH 输出，不触发 order / risk / ledger / Paper Run mutation。
 
@@ -7313,6 +7467,24 @@ target conflicts = 0
 
 ---
 
+## NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY（2026-07-03）
+
+结论：**PASS / DOCS SYNC ONLY IN NQ WORKTREE / TEST_SUPPORT_ONLY / MOCK_ONLY**。
+
+本轮 NQ worktree 只同步 Integration-1 IMP1 状态与 IMP2 下一步；未改 NQ backend / frontend / research / scripts / deploy / `.github` / migration，未新增 API / Controller / client / provider / runtime。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | 仅 `docs/current/README.md`、`ROADMAP.md`、`STATUS.md`、`WORK_ORDER.md`、`TESTING.md`、`WORKLOG.md` 文档变更。 |
+| `git diff --check` | **PASS** | exit 0；仅 Windows LF/CRLF 转换 warning；无 whitespace error。 |
+| `git diff --name-only -- backend/**/src/main frontend research scripts deploy .github "backend/**/db/migration"` | **PASS / EMPTY** | NQ 禁止代码、前端、脚本、部署、CI、migration 范围无 diff。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T23:19:48+08:00；`nq-app` 2 skipped 为既有环境/guard 条件。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T23:20:08+08:00。 |
+
+边界确认：未改 NQ production code、test code、contracts、golden_cases、fixture JSON、API、Controller、migration、client、provider、runtime wiring、real HTTP、AI/LangGraph 或 LIVE；未读取 credential；未触发订单、风控、账本、Paper Run 或真实交易链路。
+
+---
+
 ## NQ-GATEO-O2-DATA-QUALITY-CENTER-FREEZE-REVIEW（2026-07-02）
 
 结论：**PASS / ACCEPTED / FROZEN**。本轮只冻结已提交的 O-2 Data Quality Center baseline，不新增功能，不改后端代码，不新增 API，不新增 migration，不执行真实 public outbound smoke。
@@ -7414,3 +7586,115 @@ Blocking status：P0=0，P1=0；P2=1，O-2 未接 API read model，保留到 O-3
 未要求、未运行真实后端 bars E2E；本轮 smoke 明确 stub auth、account context 与 `/api/marketdata/bars`，不触达真实后端或真实交易所。
 
 边界确认：未改 `MarketdataController` 或后端 bars 查询逻辑；未改 TradingWorkbench；未新增 API；未实现 real exchange adapter / RealClient / real provider；未新增 WebSocket；未做下单联动、买卖点、均线、VWAP 或指标系统；未读取或输出 credential material。
+
+---
+
+## NQ-DH-I1-M1-DH-DRYRUN-CONTRACT-ENTRY-MOCK-WO（2026-07-03）
+
+结论：**PASS / WORK_ORDER_ONLY / DH_RESULT_CONSUMED / NO_RUNTIME**。
+
+本轮只在 `E:\Project\nexus-quant-i1-dryrun` 同步 M1 work order 结果和 M2 准入判断；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case 或 test code。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | NQ dry-run worktree 仅显示允许的 `docs/current` 修改与新增 M1 work order 文档，未 stage。 |
+| `git diff --check` | **PASS** | exit 0；仅 Windows LF/CRLF 转换 warning；无 whitespace error。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | **PASS / EMPTY** | 禁止范围无 diff；未改代码、API、migration、CI、前端。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T17:45:27+08:00；`nq-app` 86 tests 中 2 skips 为既有环境/guard 条件。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T17:47:23+08:00。 |
+| NQ dev worktree read-only diff guard | **PASS** | `F:\project\nexus-quant` 只执行 git status/branch/log/diff；存在非本任务 mainline dirty 文件，但 `docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+
+M1 readiness：
+
+```text
+ALLOW_M1_WO_CLOSE: YES
+ALLOW_I1_M2_NQ_DRYRUN_STUB_RECORDER_WO: YES
+ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；NQ 仍不把 DH output 转换为交易意图。
+
+---
+
+## NQ-DH-I1-M2-NQ-DRYRUN-STUB-RECORDER-WO（2026-07-03）
+
+结论：**PASS / WORK_ORDER_ONLY / NQ_DRYRUN_STUB_RECORDER_PLANNED / NO_RUNTIME**。
+
+本轮只在 `E:\Project\nexus-quant-i1-dryrun` 规划 M2 stub recorder work order；未改 NQ backend/frontend/research/scripts/deploy/.github/migration，未新增 runtime、API、provider、RealClient、fixture、golden case、contracts 或 test code。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `git status --short` | **PASS** | NQ dry-run worktree 仅显示允许的 `docs/current` 修改与新增 M2 work order 文档，未 stage。 |
+| `git diff --check` | **PASS** | exit 0；仅 Windows LF/CRLF 转换 warning；无 whitespace error。 |
+| `git diff --name-only -- backend frontend research scripts deploy .github "backend/**/db/migration"` | **PASS / EMPTY** | 禁止范围无 diff；未改代码、API、migration、CI、前端。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T18:18:14+08:00；`nq-infra` 1 skip、`nq-app` 2 skips 为既有环境/guard 条件。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T18:19:25+08:00。 |
+| NQ dev worktree read-only diff guard | **PASS** | `F:\project\nexus-quant` 只执行 git status/branch/log/diff；终检存在非本任务 GateO/current dirty diff，但 `docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` 无 dirty diff；`WORKSTREAM_MIXED_BLOCKED: NO`。 |
+| DH side validation | **BUILD SUCCESS** | DH `mvn -ntp test` 与 `mvn -ntp -Pquality validate` 均通过；仅 docs/current 同步变更，无代码/契约/golden_cases diff。 |
+
+M2 readiness：
+
+```text
+ALLOW_M2_WO_CLOSE: YES
+ALLOW_I1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO: YES
+ALLOW_I1_DRYRUN_MOCK_IMPLEMENTATION_CODE: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_INTEGRATION_1_RUNTIME: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation；M3 仅允许作为 work-order-only 进入。
+
+---
+
+## NQ-DH-I1-IMP0-CONTRACT-GAP-TEST-SUPPORT-IMPLEMENTATION（2026-07-03）
+
+结论：**PASS / IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_REVIEW**。
+
+本轮只在 `E:\Project\nexus-quant-i1-dryrun` 新增 Integration-1 contract gap test-support guard；未改 NQ backend production code、frontend、research、scripts、deploy、`.github`、migration、schema、contracts、golden_cases、fixture JSON、API / Controller、runtime、provider、RealClient、真实 HTTP、AI/LangGraph 或 LIVE。
+
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=NqDhIntegration1ContractGapGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 新增 NQ Integration-1 guard 5 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T20:21:36+08:00。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | reactor 23/23 SUCCESS；Finished at 2026-07-03T20:40:48+08:00；输出显示既有环境/guard 条件 skips：`nq-adapter-binance` 1、`nq-app` 2。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 定向验证 17 tests / 0 failures / 0 errors / 0 skipped；Finished at 2026-07-03T20:41:36+08:00。 |
+| DH side narrow / full / quality validation | **BUILD SUCCESS** | DH 新增 contract gap guard 6 tests 通过；DH `mvn -ntp test` 与 `mvn -ntp -Pquality validate` 均通过。 |
+
+IMP0 readiness：
+
+```text
+ALLOW_IMP0_CLOSE: YES
+ALLOW_I1_IMP1_DH_DRYRUN_TEST_SUPPORT_ENTRY: YES
+ALLOW_I1_RUNTIME: NO
+ALLOW_REAL_HTTP: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_SCHEMA_CHANGE: NO
+ALLOW_CONTRACTS_MODIFICATION: NO
+ALLOW_FIXTURE_IMPLEMENTATION: NO
+ALLOW_GOLDEN_CASES_MODIFICATION: NO
+ALLOW_API_CONTROLLER_CHANGE: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未调用真实交易所 API；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider；未下单、撤单、转账或提现；未把 DH output 映射为 NQ order、position、account、ledger 或 Paper Run mutation；下一步仅允许 `NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY / NOT STARTED / TEST_SUPPORT_ONLY / MOCK_ONLY`。

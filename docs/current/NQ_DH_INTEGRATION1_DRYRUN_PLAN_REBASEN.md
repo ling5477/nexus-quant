@@ -110,10 +110,10 @@ ALLOW_LIVE: NO
 ## 6. 下一步
 
 ```text
-NQ-DH-I1-P4-IMPLEMENTATION-GATE-REVIEW / NOT STARTED
+NQ-DH-I1-DRYRUN-MOCK-IMPLEMENTATION-WO / NOT STARTED
 ```
 
-P1 contract dry-run canonical plan 见 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`。P2 contract fixtures canonical plan 见 `docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`。P3 dry-run implementation readiness canonical plan 见 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`。P4 仍只能做 implementation gate review，不授权 implementation、runtime、real HTTP、provider、LIVE 或 AI / LangGraph。旧 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md` 保留为 P1 初稿 / residual reference，不作为后续 current 入口。
+P1 contract dry-run canonical plan 见 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md`。P2 contract fixtures canonical plan 见 `docs/current/NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md`。P3 dry-run implementation readiness canonical plan 见 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md`。P4 gate-fix 已 `COMPLETED / DOCS-ONLY / GATE-FIX`；下一步仍只能写 mock/stub/test-support work order，不授权 implementation、runtime、real HTTP、provider、LIVE 或 AI / LangGraph。旧 `docs/current/NQ_DH_INTEGRATION1_DRYRUN_PLAN.md` 保留为 P1 初稿 / residual reference，不作为后续 current 入口。
 
 如果后续发现 current factsource 又把 DH Stage4 写成 DH GateK、把 dry-run 写成 runtime、或把 implementation/runtime/real HTTP/provider/LIVE 写成 started，则必须先回到：
 
