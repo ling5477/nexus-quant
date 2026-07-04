@@ -1,3 +1,75 @@
+## NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING
+
+日期：2026-07-04。
+
+范围：
+
+- 在 `research/py` 内实现 offline research foundation：dataset manifest、experiment metadata、evaluation metrics skeleton、research run summary 和 CLI JSON/text 输出。
+- 保持现有 `--bars-csv` CLI 兼容，并保留 `python -m nq_research` launcher；为避免 mypy 从仓库根重复识别包，根部 launcher 改为无 `__init__.py` 的 `__main__.py` 入口，canonical package 仍为 `src/nq_research`。
+- 补充 pytest 覆盖 manifest 稳定性、checksum、metadata 参数哈希、evaluation skeleton、CLI 输出、缺字段 CSV、空 CSV、no-network / no-credential / no-Java-runtime 边界。
+- 只同步允许的 `docs/current/README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+
+新增文件：
+
+```text
+research/py/src/nq_research/dataset/__init__.py
+research/py/src/nq_research/dataset/manifest.py
+research/py/src/nq_research/evaluation/__init__.py
+research/py/src/nq_research/evaluation/metrics.py
+research/py/src/nq_research/experiment/__init__.py
+research/py/src/nq_research/experiment/metadata.py
+research/py/src/nq_research/reporting/__init__.py
+research/py/src/nq_research/reporting/summary.py
+research/py/tests/test_research_foundation.py
+```
+
+修改文件：
+
+```text
+research/py/pyproject.toml
+research/py/nq_research/__main__.py
+research/py/src/nq_research/cli.py
+research/py/src/nq_research/data/models.py
+research/py/tests/test_cli.py
+docs/current/README.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+删除文件：
+
+```text
+research/py/nq_research/__init__.py
+```
+
+结果：
+
+```text
+NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+GateP: PLANNING / not frozen / not accepted
+Python Research: offline foundation skeleton only
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+RealClient / real provider / private trading adapter / real permission probe: NOT IMPLEMENTED
+```
+
+验证：
+
+- `Set-Location research/py; python -m nq_research --bars-csv fixtures\\btcusdt_1m_sample.csv --created-at 2026-07-04T00:00:00Z`：PASS。
+- `python -m pytest research/py`：PASS，10 passed。
+- `python -m ruff check research/py`：PASS，All checks passed。
+- `python -m mypy research/py`：PASS，20 source files。
+
+边界：
+
+未改 backend、frontend、scripts、deploy、`.github` 或 migration；未新增后端 API、前端页面、真实交易所 SDK、Java runtime 写链路或重型 ML 依赖；未访问网络、未读取 credential material、未开启 LIVE / AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未下单、撤单、转账或提现。
+
+下一步：
+
+- 可在后续单独任务中设计 experiment artifact 落盘规范或更完整的回测评估，但必须继续保持 offline boundary，并单独声明 allowed files / forbidden areas。
+
 ## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN
 ## NQ-GATEO-FREEZE-REVIEW
 

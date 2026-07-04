@@ -1,3 +1,28 @@
+## NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING validation（2026-07-04）
+
+```text
+Scope:
+  - 本轮只做 `research/py` offline research foundation engineering。
+  - 同步允许的 `docs/current/README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+  - 不修改 backend、frontend、scripts、deploy、`.github`、migration 或 Java runtime 写链路。
+
+Result:
+  NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  GateP: PLANNING；不是 FROZEN / ACCEPTED。
+  Python Research: offline foundation skeleton；不是 ML ready / live execution ready。
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `Set-Location research/py; python -m nq_research --bars-csv fixtures\\btcusdt_1m_sample.csv --created-at 2026-07-04T00:00:00Z` | PASS | 兼容入口可输出 JSON summary，包含 `dataset_id`、`experiment_id`、dataset manifest、experiment metadata、evaluation skeleton 与 offline boundary。 |
+| `python -m pytest research/py` | PASS | 10 passed；覆盖 manifest、metadata、evaluation、CLI、缺字段 CSV、空 CSV、no-network / no-credential / no-Java-runtime 边界及既有 sample strategy。 |
+| `python -m ruff check research/py` | PASS | All checks passed。 |
+| `python -m mypy research/py` | PASS | Success: no issues found in 20 source files。 |
+
+Boundary:
+
+未访问网络；未读取 credential material；未调用 Java runtime；未改 backend / frontend / scripts / deploy / `.github` / migration；未新增后端 API、前端页面、真实交易所 SDK、RealClient、real provider、private trading adapter、real permission probe、LIVE、AI runtime 或 DH runtime。
+
 ## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN validation（2026-07-04）
 
 ```text

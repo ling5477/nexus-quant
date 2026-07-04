@@ -36,3 +36,4 @@ python_version = "3.11"
 packages = ["nq_research"]
 warn_unused_configs = true
 disallow_untyped_defs = true
+exclude = ["research[\\\\/]py[\\\\/]nq_research[\\\\/]"]
