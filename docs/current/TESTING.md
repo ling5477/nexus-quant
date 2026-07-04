@@ -1,3 +1,41 @@
+## NQ-GATEP-BATCH-6-FREEZE-READINESS-REVIEW validation（2026-07-05）
+
+本轮结论为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；下表中的 `PASS` 表示通过。
+
+```text
+Scope:
+  - 本轮只做 GateP Batch 1-5 freeze readiness review、evidence audit、boundary review 和 current docs 指针记录。
+  - 允许新增 docs/current/GATEP_FREEZE_READINESS_REVIEW.md，并同步 docs/current/README.md、STATUS.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md 的 review pointer。
+  - 不修改 backend、frontend、research、scripts、deploy、.github、migration、API contract、页面或测试代码。
+
+Result:
+  NQ-GATEP-BATCH-6-FREEZE-READINESS-REVIEW: CONDITIONAL PASS / FIX REQUIRED
+  GateP: not FROZEN / not ACCEPTED.
+  Required fix: root README、docs/current/FACT_SOURCE_INDEX.md、docs/current/ROADMAP.md 的 GateP Batch 1 / Python Research 旧口径需另起 docs-only drift fix。
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / CLEAN BEFORE WRITE | 写前工作区干净。 |
+| `git log --oneline -20` | PASS / REVIEWED | 最近提交包含 Batch 1 `b856cf07`、Batch 2 `9a58b888`、Batch 3 `3d3ef6e7`、Batch 4 `d4592e3e`、Batch 5 `e57d9b0c` 与 GateO archive `7c669689`。 |
+| `git diff --check` | PASS | 写前无 whitespace error。 |
+| `git diff --stat` | PASS / EMPTY BEFORE WRITE | 写前无 diff。 |
+| `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY BEFORE WRITE | 写前 forbidden areas 无 diff。 |
+| GateP / LIVE / AI / DH / RealClient / real provider / permission probe / trading authorization / Python research 指定 `rg` | PASS / REVIEWED | 输出很大；命中 current docs、historical gates、backend、frontend、research/py 的正向、否定与历史语境。审查发现 P1 docs drift，但未发现代码层真实交易或授权启用。 |
+| `git show --stat --name-status b856cf07 9a58b888 3d3ef6e7 d4592e3e e57d9b0c` | PASS / REVIEWED | Batch 1-5 commit scope 与任务边界一致。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 89 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped；保留既有 SLF4J / Mockito dynamic agent warning。 |
+| `npm --prefix frontend run build` | PASS | `tsc -b && vite build` 通过；保留 Vite large chunk warning。 |
+| `python -m pytest research/py` | PASS | 10 passed。 |
+| `python -m ruff check research/py` | PASS | All checks passed。 |
+| `python -m mypy research/py` | PASS | Success: no issues found in 20 source files。 |
+| 写后 `git status --short` | PASS / DOCS-ONLY | 仅 5 个允许的 current docs 修改和新增 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`。 |
+| 写后 `git diff --check` | PASS | 仅 Git 提示 LF/CRLF 工作区换行 warning，非 whitespace error。 |
+| 写后 forbidden-area diff | PASS / EMPTY | `backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` 均无 diff。 |
+
+Boundary:
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality / preflight / Python offline foundation 写成 trading authorization、ML ready 或 live execution ready。
+
 ## NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING validation（2026-07-04）
 
 ```text

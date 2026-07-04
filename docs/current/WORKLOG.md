@@ -13765,3 +13765,50 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 提交前复核本轮 diff，推荐 commit message：`docs(gateo): archive GateO freeze evidence`。
+
+---
+
+## NQ-GATEP-BATCH-6-FREEZE-READINESS-REVIEW
+
+日期：2026-07-05
+
+### 本轮目标
+
+对 GateP Batch 1-5 做冻结前验收审查，复核提交范围、代码证据、测试证据、current docs 状态和禁止边界；本轮只允许新增 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 并同步 current docs 指针，不修改 backend / frontend / research / scripts / deploy / `.github` / migration。
+
+### 完成内容
+
+- 新增 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`，记录 Batch 1-5 evidence、boundary review、API/frontend/Python/docs consistency review、test evidence、P0/P1/P2/P3 findings、freeze readiness verdict、required fix 和 next concrete action。
+- 更新 `docs/current/README.md`，补 GateP Batch 6 freeze readiness review 指针。
+- 更新 `docs/current/STATUS.md`，登记 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）当前状态。
+- 更新 `docs/current/TESTING.md`，登记本轮复跑验证与边界验证。
+- 更新 `docs/current/FACT_SOURCE_INDEX.md`，仅补 GateP Batch 6 review pointer；未在本轮全面修正 FACT_SOURCE_INDEX 旧口径。
+
+### 验证
+
+- `git status --short`：写前 clean。
+- `git log --oneline -20`：PASS / REVIEWED；确认 Batch 1-5 commit 与 GateO archive closeout commit。
+- `git diff --check`：写前 PASS。
+- `git diff --stat`：写前 empty。
+- `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"`：写前均 empty。
+- 指定 GateP / LIVE / AI / DH / RealClient / real provider / permission probe / trading authorization / Python research 关键词 `rg`：PASS / REVIEWED；输出很大，审查发现 P1 docs drift，未发现代码层真实交易或授权启用。
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：PASS / BUILD SUCCESS；23 个 reactor module SUCCESS，`nq-core` 89 tests / 0 failures，`nq-app` 105 tests / 0 failures / 3 skipped。
+- `npm --prefix frontend run build`：PASS；保留 Vite large chunk warning。
+- `python -m pytest research/py`：PASS；10 passed。
+- `python -m ruff check research/py`：PASS；All checks passed。
+- `python -m mypy research/py`：PASS；Success: no issues found in 20 source files。
+- 写后 `git status --short`：PASS / DOCS-ONLY；仅 5 个允许的 current docs 修改和新增 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`。
+- 写后 `git diff --check`：PASS；仅 Git 提示 LF/CRLF 工作区换行 warning，非 whitespace error。
+- 写后 forbidden-area diff：PASS / EMPTY；`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` 均无 diff。
+
+### 结论
+
+`NQ-GATEP-BATCH-6-FREEZE-READINESS-REVIEW：CONDITIONAL PASS / FIX REQUIRED`。含义：`CONDITIONAL PASS`（有条件通过）、`FIX REQUIRED`（需要修复）。代码、测试、API、前端和 Python offline foundation 证据未发现 P0/P1；但 root `README.md`、`docs/current/FACT_SOURCE_INDEX.md`、`docs/current/ROADMAP.md` 仍有 GateP Batch 1 / Python Research 旧口径，freeze closeout 前必须另起最小 docs-only drift fix。GateP 仍不是 `FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
+
+### 边界
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality / preflight / Python offline foundation 写成 trading authorization、ML ready 或 live execution ready。
+
+### 推荐下一步
+
+先执行 `NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX`，修复 root README、FACT_SOURCE_INDEX、ROADMAP 的 current fact-source drift；修复通过后再另起 GateP freeze closeout。

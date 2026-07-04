@@ -14,6 +14,7 @@
 6. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
 7. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
 8. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
+9. `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`：GateP Batch 6 freeze readiness review 证据入口；结论为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复），用于提示 freeze closeout 前需先修复 GateP fact-source drift，不把 GateP 写成 `FROZEN` 或 `ACCEPTED`。
 
 `docs/gates/**`、`docs/archive/**` 和历史 review/freeze 文档只作为证据或归档引用，不覆盖 `docs/current` 当前事实入口。
 

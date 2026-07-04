@@ -62,6 +62,7 @@ GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout�
 - 当前工单：[WORK_ORDER.md](WORK_ORDER.md)
 - 当前状态：[STATUS.md](STATUS.md)
 - 当前事实源索引：[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)
+- GateP Batch 6 freeze readiness review：[GATEP_FREEZE_READINESS_REVIEW.md](GATEP_FREEZE_READINESS_REVIEW.md)（`CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；冻结 closeout 前需先修复 root README、FACT_SOURCE_INDEX、ROADMAP 的 Batch 1 / Python Research 旧口径）
 - GateP Batch 2 Marketdata Data Quality Center 只读 API：见 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
 - GateP Batch 3 Marketdata Data Quality Center 前端与 Runtime release matrix：见 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
 - GateP Batch 4 Trading Preflight readiness 只读 API：见 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)
