@@ -274,3 +274,16 @@ git add README.md `
 
 git commit -m "docs(gateo): freeze manual public outbound smoke baseline"
 ```
+
+## 10. GateO Freeze Consumption Addendum
+
+2026-07-04 后续 `NQ-GATEO-FREEZE-REVIEW` 已消费本文档作为 O-5 evidence input。
+
+当前权威状态：
+
+- GateO final status：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
+- O-FREEZE：`PASS`（通过）/ `ACCEPTED`（已接受）。
+- O-5 final status：`FROZEN / ACCEPTED`。
+- O-5D-R1 DataOrigin implementation：`OPTIONAL / NOT STARTED`。
+
+本文档原始结论仍只表示 O-5E 当轮冻结 O-5 baseline；GateO overall freeze 以 [NQ_GATEO_FREEZE_REVIEW.md](NQ_GATEO_FREEZE_REVIEW.md) 为当前权威。

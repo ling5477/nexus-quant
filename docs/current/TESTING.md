@@ -1,3 +1,23 @@
+## NQ-GATEO-FREEZE-REVIEW validation（2026-07-04）
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / `git branch --show-current` / `git log --oneline -12` | PASS / REVIEWED | 分支 `dev`；最终检查只包含允许的 root/current Markdown diff 与新增本文档；最近 12 个提交覆盖 O-5 plan、runner binding、manual smoke、O-5C result review、O-5D decision 与 O-5E freeze review。 |
+| `git show --stat --oneline 91c4abec` / `35413109` / `d9dcb8a4` / `3c7f904b` / `15793fac` / `c933676e` / `1180ed37` | PASS / REVIEWED | O-5 关键提交存在；`35413109` 为 test-only runner commit；`1180ed37` 为 O-5E freeze review commit。 |
+| Runner / policy / API / UI source review | PASS / REVIEWED | `GateOManualPublicOutboundSmokeTest` 仍默认 skip 且需 system property + manual env/profile/feature flag；`PublicMarketDataOutboundPolicy` 仍只允许 `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV` 并拒绝 private/signed/credential/permission/trading category；readiness API 与 frontend type/UI 不暴露 `PUBLIC_OUTBOUND` 当前事实。 |
+| GateO evidence matrix review | PASS / ACCEPTED | O-1 / O-2 / O-3 / O-4 / O-5 均已 `FROZEN / ACCEPTED`；O-5D decision = `ALLOW_FUTURE_IMPLEMENTATION`；P0/P1=0。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于允许的 `README.md` 与 `docs/current` Markdown 文档；新增 `docs/current/NQ_GATEO_FREEZE_REVIEW.md`。 |
+| forbidden-area diff：`git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 本轮未触达代码、CI、部署、research 或 migration。 |
+| GateO status / redaction / credential / trading readiness `rg` | PASS / REVIEWED | 命中为当前 freeze 状态、历史/否定语境、禁止字段清单或安全边界；未发现 raw provider payload/credential 保存事实，也未发现 public outbound 被写成 trading authorization、LIVE ready、permission granted 或 provider ready for trading。 |
+| Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun | NOT RUN | 本轮是 docs-only Gate freeze review，任务明确禁止重跑 O-5B smoke、执行真实 HTTP 或修改 Java / TypeScript / Python / workflow / migration / runtime 配置。 |
+
+Scope：本轮完成 `NQ-GATEO-FREEZE-REVIEW`。冻结 GateO overall baseline，只同步允许的 root/current 文档；不执行真实 HTTP，不重跑 O-5B smoke，不实现 `DataOrigin.PUBLIC_OUTBOUND`。
+
+Result：`NQ-GATEO-FREEZE-REVIEW: PASS / ACCEPTED`。GateO final status `FROZEN / ACCEPTED`；O-FREEZE `PASS / ACCEPTED`；O-1/O-2/O-3/O-4/O-5 均 `FROZEN / ACCEPTED`；O-5D-R1 DataOrigin implementation `OPTIONAL / NOT STARTED`。
+
+Boundary：未读取 `.env`、key、pem、credential material、repository secrets、API key、secret、passphrase、token 或 cookie；未修改 backend、frontend、research、scripts、deploy、`.github` 或 migration；未新增 API / migration / CI workflow / enum / DTO / mapper / UI / test；未开启 LIVE / AI / DH runtime；未实现 RealClient / real provider / real permission probe；public marketdata readiness 不等于 trading authorization。
+
 ## NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW validation（2026-07-04）
 
 | Command | Result | Notes |

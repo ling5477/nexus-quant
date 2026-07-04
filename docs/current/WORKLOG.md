@@ -1,3 +1,62 @@
+## NQ-GATEO-FREEZE-REVIEW
+
+日期：2026-07-04。
+
+范围：
+
+- 冻结 GateO overall baseline。
+- 新增 `docs/current/NQ_GATEO_FREEZE_REVIEW.md`。
+- 同步 `README.md` 与允许的 `docs/current` 状态入口。
+- 不执行真实 HTTP，不重跑 O-5B smoke，不设置 manual smoke flags/profile。
+- 不实现 `DataOrigin.PUBLIC_OUTBOUND`，不新增 enum / DTO / mapper / API / UI / test / migration / CI workflow。
+- 不修改 backend、frontend、research、scripts、deploy、`.github` 或 migration。
+
+结果：
+
+```text
+NQ-GATEO-FREEZE-REVIEW: PASS / ACCEPTED
+GateO final status: FROZEN / ACCEPTED
+O-FREEZE: PASS / ACCEPTED
+O-1: FROZEN / ACCEPTED
+O-2: FROZEN / ACCEPTED
+O-3: FROZEN / ACCEPTED
+O-4: FROZEN / ACCEPTED
+O-5: FROZEN / ACCEPTED
+O-5D decision: ALLOW_FUTURE_IMPLEMENTATION
+O-5D-R1 DataOrigin implementation: OPTIONAL / NOT STARTED
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT_INTEGRATED
+RealClient / real provider / real permission probe: NOT_IMPLEMENTED
+```
+
+证据：
+
+- O-1 controlled public outbound guard、O-2 Data Quality Center、O-3 readiness API、O-4 MarketData Quality UI、O-5 manual public outbound smoke baseline 均已冻结并接受。
+- O-5 runId：`gateo-o5b-r1-60723528-acf8-406b-933b-8949fcf5a4d7`。
+- `SERVER_TIME / INSTRUMENTS / TICKER / OHLCV` 均为 `httpStatus=200`、`resultStatus=SUCCESS`、`errorCategory=NONE`。
+- Evidence 只保存 redacted summary；未保存 raw response body、raw headers、full URL、full query、credential、signature、cookie 或 raw provider payload。
+- `PUBLIC_OUTBOUND` 当前只在 O-1 bridge model 中存在；Data Quality / readiness API / frontend 仍未暴露为当前实现事实。
+
+验证：
+
+- `git status --short` / `git branch --show-current` / `git log --oneline -12`：PASS / REVIEWED；最终检查只包含允许的 root/current Markdown diff 与新增本文档。
+- `git show --stat --oneline 91c4abec`、`35413109`、`d9dcb8a4`、`3c7f904b`、`15793fac`、`c933676e`、`1180ed37`：PASS / REVIEWED。
+- `git diff --check`：PASS。
+- `git diff --stat`：PASS / DOCS-ONLY。
+- forbidden diff：`backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 均为空。
+- GateO status / redaction / credential / trading readiness `rg`：PASS / REVIEWED。
+- Maven / frontend build / Playwright / Python pytest-mypy-ruff / O-5B smoke rerun：NOT RUN；本轮 docs-only Gate freeze review，且任务明确禁止真实 HTTP 与 smoke rerun。
+
+边界：
+
+- 未读取 `.env`、key、pem、credential material、repository secrets、API key、secret、passphrase、token 或 cookie。
+- 未访问 private endpoint，未执行 signed request，未触发 permission probe、account、balance、order、cancel、transfer 或 withdraw。
+- 未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / real permission probe。
+- public marketdata readiness 不等于 trading authorization；GateO freeze 不代表 production readiness / LIVE authorization / real provider readiness。
+
+Next step：单独 planning 下一阶段；不得直接 implementation。可选后续仅包括 `NQ-GATEO-O5D-R1-DATAORIGIN-PUBLIC-OUTBOUND-IMPLEMENTATION` 或 Post-GateO archive inventory，均需另起任务。
+
 ## NQ-GATEO-O5E-MANUAL-PUBLIC-OUTBOUND-SMOKE-FREEZE-REVIEW
 
 日期：2026-07-04。
