@@ -13631,6 +13631,38 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 
 ---
 
+## NQ-GATEP-BATCH-4-SINGLE-VENUE-ACCOUNT-PERMISSION-AND-RISK-PREFLIGHT-READONLY-BASELINE
+
+日期：2026-07-04
+
+### 本轮目标
+
+建立单交易所账户权限与风险前置只读基线，提供 `GET /api/trading/preflight/readiness`，只读解释当前真实交易为什么仍被阻断；不调用真实交易所，不实现真实 permission probe，不接 private endpoint，不读取 credential material，不启用 LIVE，不下单。
+
+### 完成内容
+
+- 新增 `TradingPreflightReadinessService`，只读取 `ExchangeAccountRepository.list/findByIdForOwner`、`ExchangeAccountCredentialRepository.listActiveSummaries` 与 `MarketdataQualityOverviewService.summarize`，不调用 material/probe/adapter/order/risk 写侧。
+- 新增 `TradingPreflightReadinessQuery`、`TradingPreflightReadiness`、`TradingPreflightScope`、`TradingPreflightReason`、`TradingPreflightCredentialTypeSummary`。
+- 新增 `TradingPreflightReadinessResponse` 与 `TradingPreflightController`，路径为 `GET /api/trading/preflight/readiness`。
+- 新增 `TradingPreflightReadinessServiceTest`，覆盖账号/凭证缺失、credential metadata-only 且不读取 material、Data Quality diagnostic 不构成交易授权。
+- 新增 `TradingPreflightControllerTest`，覆盖认证用户映射、响应字段、敏感字段和误导授权字段缺失。
+- 同步 `docs/current/API.md`、`README.md`、`STATUS.md`、`TESTING.md` 与本文件。
+
+### 验证
+
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am "-Dtest=TradingPreflightReadinessServiceTest,TradingPreflightControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；新增 service 3 tests、controller 2 tests 均 0 failure / 0 error。
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：BUILD SUCCESS；23 个 reactor module SUCCESS；`nq-core` 89 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped。
+
+### 边界
+
+未新增 migration；未改 frontend / research / scripts / deploy / `.github`；未新增真实 public outbound provider；未实现 OKX / Binance / Bybit / Gate / Coinbase / Kraken HTTP client；未调用真实交易所 API；未读取、打印或输出 credential material；未新增 signed/private endpoint；未实现真实 permission probe、RealClient、real provider 或 private trading adapter；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 preflight readiness、risk diagnostic 或 data quality diagnostic 写成 trading authorization；未把 GateP 写成 frozen 或 accepted。
+
+### 推荐下一步
+
+提交前复核本轮 diff，推荐 commit message：`feat(trading): add read-only preflight readiness baseline`。
+
+---
+
 ## NQ-GATEO-ARCHIVE-CLOSEOUT
 
 日期：2026-07-04

@@ -7789,6 +7789,37 @@ What was not run：
 
 ---
 
+## NQ-GATEP-BATCH-4-SINGLE-VENUE-ACCOUNT-PERMISSION-AND-RISK-PREFLIGHT-READONLY-BASELINE（2026-07-04）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`PASS`（通过）、`IMPLEMENTED`（已实现）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateP Batch 4 后端只读 preflight baseline，不代表 GateP 已冻结或已接受。
+
+本轮验证范围：
+
+- 后端只读 API：`GET /api/trading/preflight/readiness`。
+- Core service：只读聚合 exchange account metadata、active credential metadata、permission probe latest summary 和 Data Quality overview；始终 fail-closed。
+- API response：不返回 credential material，不包含 `tradingReady / liveReady / authorizedForTrading` 等授权字段。
+- Backend / current docs 为本轮修改范围；frontend / research / scripts / deploy / `.github` / migration 为禁止修改范围。
+
+| Command | Result | Scope | Notes |
+| --- | --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am "-Dtest=TradingPreflightReadinessServiceTest,TradingPreflightControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 新增 service/controller targeted tests | `TradingPreflightReadinessServiceTest` 3 tests / 0 failures / 0 errors / 0 skipped；`TradingPreflightControllerTest` 2 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | **BUILD SUCCESS** | 后端 `nq-api` / `nq-core` / `nq-app` 及依赖 reactor | 23 个 reactor module SUCCESS；`nq-core` 89 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 3 skipped。 |
+
+Known warnings：
+
+- Maven 输出包含既有 SLF4J no-provider warning、Mockito dynamic agent / ByteBuddy agent warning、部分 unchecked/deprecation 编译提示；不影响本轮测试结论。
+- `nq-app` 3 skipped 为既有环境/guard 条件，本轮未修改相关测试。
+
+What was not run：
+
+- 未运行 frontend `npm run build` / Playwright，原因是本轮禁止且未修改 `frontend/**`。
+- 未运行 Python `pytest / mypy / ruff`，原因是本轮禁止且未修改 `research/**`。
+- 未执行真实 permission probe 或真实 public/private exchange call，原因是本轮 API 必须只读且 no-real。
+
+边界确认：未新增 migration；未改 frontend / research / scripts / deploy / `.github`；未读取或输出 credential material；未启用 LIVE；未接 AI runtime；未接 DH runtime；未实现真实 permission probe、RealClient、real provider 或 private trading adapter；未下单、撤单、转账或提现；preflight readiness / risk diagnostic 不等于 trading authorization。
+
+---
+
 ## NQ-GATEO-ARCHIVE-CLOSEOUT（2026-07-04）
 
 结论：**PASS / DOCS ARCHIVE CLOSEOUT / READY TO COMMIT**。含义：`PASS`（通过）、`DOCS ARCHIVE CLOSEOUT`（文档归档收口）、`READY TO COMMIT`（可提交前复核）。

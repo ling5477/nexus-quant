@@ -17,6 +17,7 @@
 - Instrument API：交易标的、交易所、市场类型、symbol catalog。
 - Marketdata API：行情基础 ingest/query 能力。
 - Marketdata Data Quality Center API：只读聚合本地 bars、dataset coverage 与 ingestion facts，供 GateP Batch 2 数据质量诊断使用。
+- Trading Preflight API：只读聚合单交易所账户、credential metadata、permission probe 状态、Data Quality diagnostic 和风险前置阻断原因，供 GateP Batch 4 解释真实交易为什么仍被阻断。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
 - Actuator / Health：Spring Boot actuator、健康检查。
@@ -34,6 +35,7 @@
 - GateM-5A 新增只读 adapter readiness status API；只读静态 readiness 决策，no-real / fail-closed，不接 AI、不接真实交易所、不读 credential、不启用 LIVE。
 - GateM-6B 新增只读 runtime operational readiness summary API；仅返回安全 DTO 摘要，不读取 raw env/config，不触发 adapter / permission probe / external exchange call，不启用 LIVE / AI / DH runtime / real provider。
 - GateP Batch 2 新增只读 Marketdata Data Quality Center overview API；只读取现有本地 DB 事实，不新增 migration，不改 ingestion 行为，不接 `DataOrigin.PUBLIC_OUTBOUND` runtime provider，不表示 trading authorization。
+- GateP Batch 4 新增只读 Trading Preflight readiness API；只读取 account / credential summary 与 Data Quality overview，不读取 credential material，不调用 permission probe port / adapter / RiskGate / OrderCommandService，不写库，不触发真实交易所请求，不表示 trading authorization。
 
 ## Adapter Readiness API
 
@@ -148,6 +150,19 @@ NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE 当前�
   - `datasetCoverageSummary` 复用最新 dataset coverage 的 `expectedBars / actualBars / missingBars / duplicateBars / invalidBars / latestDatasetId / latestCoverageAt`；接口不会触发 `refresh-quality`，不会新增 coverage。
   - `topIssues` 仅来自本地聚合结果，例如 `NO_DATA / INGESTION_FAILURE / GAP_DETECTED / STALE_DATA / INVALID_BARS`；不包含 provider raw response、headers、credential、URL 或交易建议。
   - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`privateTradingReady`、`permissionGranted`、`realProviderReady`、`apiKey`、`secret`、`passphrase`、`credential`、`rawRequest`、`rawResponse`、`rawHeaders`、`fullQueryString`、`encrypted_payload`、`decrypted_payload`。
+
+## GateP Batch 4 Trading Preflight Readiness Read-only API
+
+NQ-GATEP-BATCH-4-SINGLE-VENUE-ACCOUNT-PERMISSION-AND-RISK-PREFLIGHT-READONLY-BASELINE 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读基线，不代表 GateP 已实现、已冻结或已接受。
+
+- `GET /api/trading/preflight/readiness`：按当前认证用户聚合单交易所 account metadata、active credential metadata、permission probe latest summary、Data Quality diagnostic 和风险前置阻断原因。该接口只读，不写库，不触发下单 / 撤单 / 转账 / 提现，不调用 adapter，不调用真实 permission probe，不访问外部网络，不读取 credential material，不启用 LIVE，不接 AI / DH runtime。
+  - Query：`exchangeCode` 可选，默认 `OKX`；`accountId` 可选，传入时必须为正数；`marketType` 可选，默认 `SPOT`；`symbol`、`strategyId` 可选，仅作为诊断 scope 回显或 Data Quality 查询维度，不触发策略读取或执行。
+  - Response：`scope / exchangeCode / accountId / marketType / symbol / liveStatus / realProviderStatus / privateTradingStatus / permissionProbeStatus / credentialConfigured / credentialStatus / credentialTypeSummary / accountConfigured / accountStatus / dataQualityStatus / riskPreflightStatus / blockers / warnings / requiredNextSteps / generatedAt`。
+  - 当前 fail-closed 基线：`liveStatus=LIVE_DISABLED`、`realProviderStatus=REAL_PROVIDER_NOT_IMPLEMENTED`、`privateTradingStatus=PRIVATE_TRADING_NOT_IMPLEMENTED`、`riskPreflightStatus=RISK_PREFLIGHT_BLOCKED`。只要真实 permission probe、real provider、private trading 和 LIVE 未完成独立授权，该接口不会返回交易放行语义。
+  - `credentialTypeSummary` 仅返回 `credentialId / credentialType / credentialStatus / verificationStatus / active / permissionProbeStatus / permissionScope / ipAllowlistProbeStatus / failedAuthCount / lastVerifiedAt / lastPermissionProbeAt` 等 metadata；不返回 `maskedAccessKey` 或任何 credential material。
+  - `blockers` 当前至少覆盖 `LIVE_DISABLED`、`REAL_PROVIDER_NOT_IMPLEMENTED`、`PRIVATE_TRADING_NOT_IMPLEMENTED`、`PERMISSION_PROBE_NOT_IMPLEMENTED`；账号或凭证缺失时追加 `ACCOUNT_UNCONFIGURED` / `CREDENTIAL_UNCONFIGURED`；Data Quality 非 OK 时追加 `DATA_QUALITY_NOT_OK`。
+  - `warnings` 固定说明 `DATA_QUALITY_DIAGNOSTIC_ONLY` 和 `RISK_PREFLIGHT_READONLY`：data quality 与 risk preflight 均是诊断，不代表交易授权、真实 provider readiness 或 LIVE readiness。
+  - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`privateTradingReady`、`permissionGranted`、`realProviderReady`、`apiKey`、`secret`、`token`、`passphrase`、`privateKey`、`encrypted_payload`、`decrypted_payload`、`rawRequest`、`rawResponse`、`rawHeaders` 或 provider payload。
 
 ## GateH-3 Dataset and Backtest Binding API
 
