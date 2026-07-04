@@ -1,3 +1,69 @@
+## NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW
+
+日期：2026-07-05。
+
+范围：
+
+- 只在 NQ integration worktree `E:/Project/nexus-quant-i1-dryrun` 做 limited dry-run runtime client close review。
+- 审查 isolated `backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/**` client boundary、disabled-by-default config、fake transport tests、summary-only recorder、HMAC/header、request/response envelope、fail-closed 与 no-side-effect。
+- NQ dev `E:/Project/nexus-quant` 与 DH dev `E:/Project/decision-hub` 只读确认。
+- 不修改 NQ Java 生产代码、NQ 测试代码、DH Java、contracts、OpenAPI、json-schema、golden_cases、fixture JSON 或 migration。
+- 不真实调用 DH，不真实 HTTP，不接 provider，不接 AI / LangGraph，不开启 LIVE。
+
+新增文件：
+
+```text
+docs/current/NQ_DH_INTEGRATION1_NQ_CLIENT_CLOSE_REVIEW.md
+```
+
+修改文件：
+
+```text
+docs/current/README.md
+docs/current/STATUS.md
+docs/current/ROADMAP.md
+docs/current/WORK_ORDER.md
+docs/current/API.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW: PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE
+ALLOW_NQ_LIMITED_RUNTIME_CLIENT_CLOSE: YES
+ALLOW_JOINT_RUNTIME_DRYRUN_TEST_WO: YES / WORK_ORDER_ONLY
+ALLOW_JOINT_RUNTIME_DRYRUN_TEST_IMPLEMENTATION_NOW: NO
+ALLOW_REAL_DH_CALL_NOW: NO
+ALLOW_REAL_HTTP_NOW: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_SCHEMA_FORMALIZATION_NOW: NO
+ALLOW_CONTRACTS_MODIFICATION_NOW: NO
+ALLOW_GOLDEN_CASES_MODIFICATION_NOW: NO
+ALLOW_DH_CODE_CHANGE_NOW: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+Next: NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO
+```
+
+验证：
+
+- NQ `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；17 tests / 0 failures / 0 errors / 0 skipped。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；18 tests / 0 failures / 0 errors / 0 skipped。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；24 tests / 0 failures / 0 errors / 0 skipped。
+- NQ `mvn -ntp -f backend/pom.xml -Pquality validate`：Maven validate `BUILD SUCCESS`，但 requested profile `quality` does not exist；不作为额外 quality gate 通过。
+- NQ worktree `git diff --check`：PASS。
+- forbidden-scope diff：PASS / EMPTY；未触达 migration、frontend、research、scripts、deploy、`.github`、contracts、golden_cases。
+- NQ dev read-only scoped diff：PASS / EMPTY；本轮未修改 NQ dev。
+- DH dev read-only scoped diff：PASS / EMPTY；本轮未修改 DH Java / contracts / golden_cases。
+
+边界：
+
+未改 NQ Java 生产代码；未改 NQ 测试代码；未改 NQ dev；未改 DH Java；未改 contracts、OpenAPI、json-schema、golden_cases、fixture JSON；未新增 migration；未真实调用 DH；未真实 HTTP；未读取 credential / token / cookie / apiKey / apiSecret / passphrase；未接 provider；未接 AI / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live。
+
 ## NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION
 
 日期：2026-07-05。
