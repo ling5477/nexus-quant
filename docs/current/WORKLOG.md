@@ -13594,3 +13594,36 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 提交前复核本轮 diff，推荐 commit message：`feat(marketdata): add read-only data quality overview`。
+
+---
+
+## NQ-GATEO-ARCHIVE-CLOSEOUT
+
+日期：2026-07-04
+
+### 本轮目标
+
+完成 GateO post-freeze archival closeout。确认 GateO 已 `FROZEN / ACCEPTED`，Freeze Review 已 `PASS / ACCEPTED / CLOSED / READY FOR ARCHIVAL`，并将 GateO freeze / acceptance / plan / key evidence 从 `docs/current` 迁入 `docs/gates/gate-o/`；本轮不写代码、不改 CI、不新增 API 或 migration。
+
+### 完成内容
+
+- 新增 `docs/gates/gate-o/README.md`，作为 GateO historical archive 入口。
+- 使用 `git mv` 移动 9 份 GateO 文档到 `docs/gates/gate-o/`：`GATEO_PLAN.md`、`NQ_GATEO_FREEZE_REVIEW.md`、`NQ_GATEO_O2_DATA_QUALITY_CENTER_PLAN.md`、`NQ_GATEO_O3_MARKETDATA_RUNTIME_READINESS_API_PLAN.md`、`NQ_GATEO_O4_MARKETDATA_QUALITY_UI_PLAN.md`、`NQ_GATEO_O5_MANUAL_PUBLIC_OUTBOUND_SMOKE_PLAN.md`、`NQ_GATEO_O5B_RUNNER_BINDING_PLAN.md`、`NQ_GATEO_O5D_DATAORIGIN_PUBLIC_OUTBOUND_DECISION.md`、`NQ_GATEO_O5E_MANUAL_PUBLIC_OUTBOUND_SMOKE_FREEZE_REVIEW.md`。
+- 更新 `docs/current/README.md`，把 GateO 过程文档入口压缩为当前状态摘要与 `docs/gates/gate-o/` 归档指针。
+- 更新 `docs/current/FACT_SOURCE_INDEX.md`，不再指向已移动的 current GateO freeze review 文件，改为把 `docs/gates/gate-o/README.md` 作为历史证据入口。
+- 更新 `docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 记录本轮 closeout。
+
+### 验证
+
+- `git status --short`：PASS；变更集中在 GateO docs archive move 与允许的 current docs。
+- `git diff --check`：PASS；无 whitespace error。
+- `git diff --stat`：PASS。
+- forbidden-scope diff：PASS / EMPTY；`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` 无 diff。
+
+### 边界
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API / migration / CI workflow；未执行真实交易所外联；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未把 `DataOrigin.PUBLIC_OUTBOUND` decision 写成 runtime implementation；未把 public marketdata readiness 写成 trading authorization；未把 GateP 写成 frozen 或 accepted。
+
+### 推荐下一步
+
+提交前复核本轮 diff，推荐 commit message：`docs(gateo): archive GateO freeze evidence`。

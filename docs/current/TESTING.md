@@ -7756,3 +7756,27 @@ What was not run：
 - 未执行真实 public outbound smoke，原因是本轮后端 API 只读聚合本地事实，不允许外部网络 IO。
 
 边界确认：未新增 migration；未改 frontend / research / scripts / deploy / `.github`；未读取或输出 credential material；未启用 LIVE；未接 AI runtime；未接 DH runtime；未实现真实 public outbound provider、`DataOrigin.PUBLIC_OUTBOUND` runtime provider、OKX/Binance HTTP client、RealClient、real provider、private trading adapter 或 real permission probe；未下单、撤单、转账或提现；data quality diagnostic 不等于 trading authorization。
+
+---
+
+## NQ-GATEO-ARCHIVE-CLOSEOUT（2026-07-04）
+
+结论：**PASS / DOCS ARCHIVE CLOSEOUT / READY TO COMMIT**。含义：`PASS`（通过）、`DOCS ARCHIVE CLOSEOUT`（文档归档收口）、`READY TO COMMIT`（可提交前复核）。
+
+本轮验证范围：
+
+- GateO archive status：确认 `docs/gates/gate-o/` 原先不存在，本轮新建 archive 入口。
+- GateO files moved：9 份 GateO freeze / acceptance / plan / key evidence 文档通过 `git mv` 从 `docs/current/` 移动到 `docs/gates/gate-o/`。
+- docs/current cleanup：`README.md` 与 `FACT_SOURCE_INDEX.md` 改为当前状态摘要和 `docs/gates/gate-o/` 归档指针；`STATUS.md`、`TESTING.md`、`WORKLOG.md` 仅追加本轮 closeout 记录。
+- forbidden-scope diff：检查 backend / frontend / research / scripts / deploy / `.github` / migration 均为空。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 工作区仅包含本轮允许的 docs/current 指针记录与 `docs/gates/gate-o/` 归档变更。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS | diff 集中在 GateO docs archive move 与允许的 current docs。 |
+| `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` | PASS / EMPTY | 禁止范围无 diff；未改代码、API、migration、CI、前端、Python、脚本或部署。 |
+
+未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮为 docs-only archive closeout，未修改 Java / TypeScript / Python / workflow / migration / runtime 配置。
+
+边界确认：未新增 API；未新增 migration；未改 CI；未真实交易所外联；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider / private trading adapter / real permission probe；未把 GateP 写成 frozen 或 accepted；public marketdata readiness 不等于 trading authorization。

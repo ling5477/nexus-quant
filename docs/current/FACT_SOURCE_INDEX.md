@@ -8,12 +8,12 @@
 
 1. `docs/current/STATUS.md`：当前项目状态与最新任务结论。
 2. `docs/current/README.md`：当前事实入口索引。
-3. `docs/current/NQ_GATEO_FREEZE_REVIEW.md`：GateO overall freeze 权威结论。
-4. `docs/current/ROADMAP.md`：当前阶段路线与下一批入口。
-5. `docs/current/TESTING.md`：当前验证记录与未运行说明。
-6. `docs/current/WORKLOG.md`：当前任务执行记录。
-7. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
-8. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
+3. `docs/current/ROADMAP.md`：当前阶段路线与下一批入口。
+4. `docs/current/TESTING.md`：当前验证记录与未运行说明。
+5. `docs/current/WORKLOG.md`：当前任务执行记录。
+6. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
+7. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
+8. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
 
 `docs/gates/**`、`docs/archive/**` 和历史 review/freeze 文档只作为证据或归档引用，不覆盖 `docs/current` 当前事实入口。
 
@@ -37,6 +37,7 @@ GateP 不是已实现、已冻结或已接受。GateP Batch 1 只收口事实源
 
 GateO 已完成并接受的边界：
 
+- GateO process and evidence archive 已收口到 `docs/gates/gate-o/`。
 - public readonly smoke 已作为 O-5 accepted evidence 消费。
 - `DataOrigin.PUBLIC_OUTBOUND` decision = `ALLOW_FUTURE_IMPLEMENTATION`（允许后续单独实现）。
 - O-1 controlled public outbound guard baseline 已冻结。
