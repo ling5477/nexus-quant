@@ -7810,3 +7810,32 @@ What was not run：
 未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮为 docs-only archive closeout，未修改 Java / TypeScript / Python / workflow / migration / runtime 配置。
 
 边界确认：未新增 API；未新增 migration；未改 CI；未真实交易所外联；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider / private trading adapter / real permission probe；未把 GateP 写成 frozen 或 accepted；public marketdata readiness 不等于 trading authorization。
+
+---
+
+## NQ-DH-I1-NQ-RUNTIME-CLIENT-WO（2026-07-04）
+
+结论：**PASS / WORK_ORDER_ONLY / NO_CLIENT_IMPLEMENTATION / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。
+
+本轮只在 `E:\Project\nexus-quant-i1-dryrun` 编写 NQ limited dry-run runtime client implementation work order，并同步允许范围内 `docs/current`。未改 NQ dev，未改 backend / frontend / research / scripts / deploy / `.github` / migration，未新增 client、HTTP client、provider、contracts、OpenAPI、JSON Schema、golden_cases、fixture JSON 或测试代码。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | **PASS** | 仅显示允许的 `docs/current` 修改与新增 `docs/current/NQ_DH_INTEGRATION1_NQ_RUNTIME_CLIENT_WO.md`。 |
+| `git branch --show-current` | **PASS** | 当前分支为 `nq-dh-i1-nq-runtime-client-wo`。 |
+| `git diff --check` | **PASS** | exit 0；仅 LF/CRLF 转换 warning，无 whitespace error。 |
+| `git diff --stat` | **REVIEWED** | 已跟踪 diff 为 5 个 `docs/current` 文件；新建未跟踪 WO 文件不进入 `git diff --stat`，以 `git status --short` 为准。 |
+| forbidden-scope diff | **PASS / EMPTY** | `backend/**/src/main`、`backend/**/src/test`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration` 无 diff。 |
+| boundary `rg` scan | **PASS / REVIEWED** | `docs/current backend` 共 8587 行命中；其中 `docs/current` 3886 行、`backend` 4701 行，均为既有业务词、历史/禁止语境或本轮 WO 边界说明。由于 forbidden-scope diff 为空，本轮未新增 backend client、HTTP、provider、order/risk/ledger/paper/live 实现。 |
+| NQ dev read-only guard | **PASS / SCOPED EMPTY** | `E:\Project\nexus-quant` 分支 `dev`；最终只读 `git status --short` 显示既有 `research/py` dirty/untracked 变更，但 NQ-DH/Integration-1 unstaged 与 staged scoped diff 均为空；本轮未修改 NQ dev。 |
+| DH side quality | **PASS / BUILD SUCCESS** | DH `mvn -ntp -Pquality validate` 19/19 reactor SUCCESS；0 Checkstyle violations；Spotless check passed。 |
+
+Not run：
+
+- 未运行 NQ `mvn -ntp -f backend/pom.xml test`。
+- 未运行 NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`。
+- 未运行 NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test`。
+
+原因：本轮为 docs-only / work-order-only，未修改 Java 生产代码、测试代码、runtime wiring、contracts、fixture 或 migration；不声明 NQ Maven full test 或 targeted Integration tests PASS。
+
+边界确认：未实现 NQ runtime client；未新增 WebClient / RestTemplate / OkHttp / HttpClient；未真实调用 DH；未真实 outbound HTTP；未接 real provider；未读取或输出 credential material；未修改 NQ dev；未改 contracts / OpenAPI / JSON Schema / golden_cases / fixture JSON / migration；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`；未接 Agent / LangGraph；未开启 LIVE。
