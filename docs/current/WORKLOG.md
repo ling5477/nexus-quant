@@ -1,3 +1,86 @@
+## NQ-DH-I1-MOCK-RUNTIME-PR-PREP
+
+日期：2026-07-05。
+
+范围：
+
+- 只在 NQ integration worktree `E:/Project/nexus-quant-i1-dryrun` 准备 Integration-1 mock runtime / test-only milestone 的 PR 边界与合并材料。
+- 审查 `origin/dev...HEAD` PR diff、forbidden paths、安全边界、cross-repo companion 状态、validation summary 与 PR title/body。
+- DH dev 仅做 companion 状态同步；NQ dev 只读确认。
+- 不修改 Java 生产代码，不修改测试代码，不新增测试。
+- 不真实调用 DH，不真实 HTTP，不访问 localhost runtime，不接 provider，不接 AI / LangGraph，不开启 LIVE。
+
+新增文件：
+
+```text
+docs/current/NQ_DH_INTEGRATION1_MOCK_RUNTIME_PR_PREP.md
+```
+
+修改文件：
+
+```text
+docs/current/API.md
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+docs/current/WORK_ORDER.md
+```
+
+结果：
+
+```text
+NQ-DH-I1-MOCK-RUNTIME-PR-PREP: READY / PR_PREP_ONLY / ALLOW_PR_CREATE / NO_MERGE
+PR branch: nq-dh-i1-joint-runtime-dryrun-test-impl
+PR base: origin/dev
+HEAD: 8424db53
+origin/dev: 1a749690
+PR title: test(nq-dh): add Integration-1 mock dry-run runtime boundary
+ALLOW_NQ_MOCK_RUNTIME_PR_CREATE: YES
+ALLOW_NQ_MOCK_RUNTIME_PR_MERGE_NOW: NO
+ALLOW_REAL_DH_CALL_NOW: NO
+ALLOW_REAL_HTTP_NOW: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_SCHEMA_FORMALIZATION_NOW: NO
+ALLOW_CONTRACTS_MODIFICATION_NOW: NO
+ALLOW_GOLDEN_CASES_MODIFICATION_NOW: NO
+ALLOW_DH_CODE_CHANGE_NOW: NO
+ALLOW_NQ_CODE_CHANGE_NOW: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+Findings：
+
+- PR diff 初始范围为 43 files / 4758 insertions / 49 deletions，全部归类到 allowed NQ isolated `integration/dh` package、allowed tests、disabled-by-default config 与 docs/current。
+- forbidden migration / contracts / golden_cases / frontend / research / scripts / deploy / `.github` / uncategorized diff 为空，不触发 `PR_PREP_BLOCKED_FORBIDDEN_DIFF`。
+- Isolated production `integration/dh` package 未引入真实 HTTP client API；runtime config 默认 disabled、production disabled、kill switch blocking。
+- DH companion commits 已存在；DH HMAC wire-level source fix、endpoint close review、joint test close review 已提交。
+- NQ `DEFAULT_SCHEMA_VERSION=1.0.0` 与 DH endpoint response `schemaVersion=1.0.0` 一致。
+- contracts/OpenAPI/json-schema/golden_cases 未 formalize，本 PR 不声明 formalized。
+
+Validation：
+
+- `git status --short` / branch / fetch / log / PR diff stat / PR diff name-only：已复核。
+- `git diff --check`：working-tree check PASS。
+- forbidden path diff：PASS / EMPTY。
+- boundary `rg`：已复核；命中均为禁止声明、测试断言、disabled config 或既有非 PR 语境。
+- Maven：未重跑；沿用 mock runtime close review 前一轮已记录结果。
+- NQ quality profile：missing / not effective quality gate，未写为 quality PASS。
+- NQ dev：只读；最终复核为 `## dev...origin/dev`，NQ-DH / Integration-1 scoped diff 为空。
+
+边界确认：
+
+未改 Java 生产代码；未改测试代码；未新增测试；未修改 NQ dev；未 merge；未真实调用 DH；未真实 HTTP；未访问 localhost runtime；未接 provider；未读取 credential、token、cookie、apiKey、apiSecret 或 passphrase；未修改 contracts / OpenAPI / json-schema / golden_cases / migration；未接 Agent / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live。
+
+下一步：
+
+```text
+NQ-DH-I1-MOCK-RUNTIME-PR-CREATE
+```
+
 ## NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW
 
 日期：2026-07-05。

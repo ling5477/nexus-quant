@@ -1,3 +1,51 @@
+## NQ-DH-I1-MOCK-RUNTIME-PR-PREP validation（2026-07-05）
+
+```text
+Scope:
+  - 本轮只准备 NQ-DH Integration-1 mock runtime / test-only milestone PR 材料。
+  - 重新执行轻量 git / diff / rg 边界检查。
+  - 不修改 Java 生产代码，不修改测试代码，不新增测试。
+  - 不真实调用 DH，不真实 HTTP，不访问 localhost runtime，不接 provider，不开启 LIVE。
+
+Result:
+  NQ-DH-I1-MOCK-RUNTIME-PR-PREP: READY / PR_PREP_ONLY / ALLOW_PR_CREATE / NO_MERGE
+  ALLOW_NQ_MOCK_RUNTIME_PR_CREATE: YES
+  ALLOW_NQ_MOCK_RUNTIME_PR_MERGE_NOW: NO
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short`; `git status -sb` | PASS / CLEAN BEFORE WRITE | 写入前 `git status --short` 无输出；branch tracking `origin/nq-dh-i1-joint-runtime-dryrun-test-impl`，未显示 ahead/behind。写入后仅本轮 docs/current PR prep diff。 |
+| `git branch --show-current`; `git branch -vv` | PASS | branch=`nq-dh-i1-joint-runtime-dryrun-test-impl`；remote branch head=`8424db53`。 |
+| `git fetch origin` | PASS | 远端 refs 已刷新；`origin/dev=1a749690`。 |
+| `git log --oneline origin/dev..HEAD` | REVIEWED | 7 commits：runtime client WO、limited client implementation、client close review、joint test WO、blocker fix、joint test close review、mock runtime milestone close review。 |
+| `git diff --stat origin/dev...HEAD`; `git diff --name-only origin/dev...HEAD` | REVIEWED | 初始 PR diff：43 files changed / 4758 insertions / 49 deletions；文件均分类到 allowed isolated `integration/dh` package、allowed tests、disabled-by-default config、docs/current。 |
+| forbidden path diff for migration/frontend/research/scripts/deploy/.github/contracts/golden_cases | PASS / EMPTY | 未发现 forbidden diff；uncategorized diff 为空。 |
+| `git diff --check` | PASS | Working-tree check 无 whitespace error。 |
+| additional `git diff --check origin/dev...HEAD` | WARNING / PRE-EXISTING PR DIFF | 命中 `docs/current/NQ_DH_INTEGRATION1_NQ_CLIENT_CLOSE_REVIEW.md:237: new blank line at EOF`；该文件不在本轮允许修改白名单内，未修复；merge 前如使用 PR-range whitespace gate 需单独授权 cleanup。 |
+| NQ boundary `rg` over docs/current and backend | REVIEWED | 命中项为既有 docs 禁止语境、disabled config、test assertions、forbidden capability 或 non-PR contexts；focused scan 确认 isolated production `integration/dh` package 未出现 `WebClient` / `RestTemplate` / `OkHttp` / `java.net.http.HttpClient`、order/paper/live mutation token。 |
+| NQ config diff review | PASS | `application.yml` / `application-prod.yml` 只新增 disabled-by-default config：`enabled=false`、`client.enabled=false`、`production-enabled=false`、`kill-switch=true`。 |
+| DH companion commit and boundary review | PASS / REVIEWED | DH dev clean before write；HEAD=`b5803bc`；HMAC wire-level source value、source allowlist exact match、tenant/source pair exact match、DH endpoint close review 与 joint close review 已存在。 |
+| DH boundary `rg` | REVIEWED | 原始 `rg ... dh-*` 在 Windows 下按字面路径报错；已用显式模块目录重跑。命中项为既有 docs/tests/contracts/golden forbidden context，不是本 PR 启用 runtime。 |
+| NQ dev read-only | PASS / FINAL CLEAN / SCOPED EMPTY | 最终只读复核 `E:\Project\nexus-quant` 为 `## dev...origin/dev`；`docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` staged/unstaged scoped diff 均为空。本轮未修改 NQ dev。 |
+| Maven | NOT RERUN | `Maven：未重跑；沿用 mock runtime close review 前一轮已记录结果。` |
+| NQ quality profile | MISSING / NOT EFFECTIVE QUALITY GATE | NQ `quality` profile missing；不得写成 quality PASS。 |
+
+沿用上一轮已记录验证结果：
+
+```text
+NQ backend full test: PASS / BUILD SUCCESS
+NQ Integration0 scoped: PASS / BUILD SUCCESS
+NQ Integration1 scoped: PASS / BUILD SUCCESS
+NQ dry-run targeted tests: PASS / BUILD SUCCESS
+DH companion tests: PASS / BUILD SUCCESS for dh-api, dh-usecase, and -Pquality validate
+NQ quality profile: missing / not effective quality gate
+```
+
+Boundary:
+
+未改 Java 生产代码；未改测试代码；未新增测试；未修改 NQ dev；未真实调用 DH；未真实 HTTP；未访问 localhost runtime；未接 provider；未读取 credential / token / cookie / apiKey / apiSecret / passphrase；未修改 contracts/OpenAPI/json-schema/golden_cases/migration；未接 Agent / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live。
+
 ## NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW validation（2026-07-05）
 
 ```text
