@@ -107,6 +107,268 @@ Result:
 | `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration1 targeted 18 tests。 |
 | `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Dry-run targeted 30 tests。 |
 | `mvn -ntp -f backend/pom.xml -Pquality validate` | PROFILE MISSING / NOT EFFECTIVE QUALITY GATE | Maven returned BUILD SUCCESS, but requested profile `quality` does not exist；不得写 NQ quality PASS。 |
+| NQ dev read-only guard | PASS / SCOPED EMPTY WITH UNRELATED DIRTY | `E:\Project\nexus-quant` 分支 `dev`；最终只读 scoped diff 为空；本轮未修改 NQ dev。 |
+
+Boundary:
+
+Runtime integration：`NOT STARTED`；DH integrated：`NO`；LIVE：`DISABLED`；real DH call：`NO`；real HTTP：`NO`；provider：`NO`；contracts/OpenAPI/json-schema/golden_cases：`UNCHANGED`；invalid signature / invalid source / invalid schemaVersion / executable action response 均保持 fail-closed。
+
+## NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-4 Python offline evaluation artifact 到 Java fact source 的只读 binding preview contract baseline；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表 artifact 已入库、策略已批准、Paper/Shadow run 可启动、交易授权、Python ML ready 或 live execution ready。
+
+```text
+Scope:
+  - 新增 Python evaluation artifact binding query / request model。
+  - 新增 core artifact validation service、binding preview read model、HTTP DTO 和 API endpoint。
+  - 只校验 request body 中的 artifact JSON，不读取磁盘路径，不新增 import / upload / persist endpoint。
+  - 不新增 repository / SQL / migration / scheduler，不写数据库，不外联，不读取 credential material。
+  - 不启动策略执行、Paper run 或 Shadow run，不修改 publish / evaluation / paper run 状态。
+
+Result:
+  NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: POST /api/research/evaluation-artifacts/binding-preview
+  Highest non-blocking status: VALID_FOR_BINDING_PREVIEW
+  Binding scope: PYTHON_OFFLINE / dry-run / request-body artifact only
+  GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=PythonEvaluationArtifactBindingServiceTest,PythonEvaluationArtifactBindingPreviewControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Targeted regression：`PythonEvaluationArtifactBindingServiceTest` 12 tests、`PythonEvaluationArtifactBindingPreviewControllerTest` 2 tests；覆盖 valid offline preview、runMode 非 OFFLINE、unsupported schema、dataset/strategy/checksum/parametersHash mismatch、metrics incomplete、forbidden boundary fields、traceability incomplete、response 不含交易授权字段或敏感字段、service read-only / no external IO / no persistence / no local path collaborators。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 131 tests / 0 failures / 0 errors / 0 skipped，含 GateQ-1 / GateQ-2 / GateQ-3 与新增 GateQ-4 service tests；`nq-api` 67 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 0 errors / 3 skipped。 |
+| `git status --short` | PASS / REVIEWED | 工作区仅包含本轮 GateQ-4 后端新增文件与允许的 current/root 文档修改；无非本轮 staged 内容。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows 工作区 LF -> CRLF 提示，非阻断。 |
+| `git diff --stat` | PASS / REVIEWED | tracked diff 集中在 `README.md` 与 `docs/current`；新增 Java 文件需结合 `git status --short` 读取，因为普通 diff stat 不统计 untracked 文件。 |
+| forbidden-scope diff | PASS / EMPTY | `git diff -- frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` 均为空。 |
+| 用户指定风险词 `rg` 扫描（backend / docs/current / README.md） | REVIEWED / NON-BLOCKING | 完整 pattern 已执行。命中主要来自历史文档、既有 adapter/trading 域代码、否定边界说明、当前 API 安全说明和负向测试断言；本轮新增代码窄口复核只命中 forbidden-field blacklist、no-HTTP-client 反射断言、DTO/Controller 否定注释和 response 字段缺失断言，未发现新增真实外联、credential material 输出、LIVE 开关、RealClient/real provider 实现、private endpoint、下单、撤单、提现或转账路径。 |
+| Known warnings | REVIEWED / NON-BLOCKING | 保留既有 SLF4J no-provider warning、Mockito dynamic agent warning、ByteBuddy dynamic agent warning、JVM bootstrap classpath sharing warning，以及既有 infra/scheduler test unchecked warning；本轮已清理新增 service 的 Jackson deprecated API warning。 |
+
+本轮未运行 frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮禁止修改 frontend 和 research，且实际未触达相关目录；Python 仅做只读字段核对。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未读取本地 artifact 路径；未新增 import / upload / persist endpoint；未写数据库；未把 Python artifact 写成 backtest_eval_reports、strategy evaluation、publish record 或 Paper evidence；未启动策略执行、Paper run 或 Shadow run；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。`VALID_FOR_BINDING_PREVIEW` 仅代表可进入只读绑定预览，不代表 Java fact 已写入、策略可发布、交易授权、Python ML ready 或 live execution ready。
+
+## NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-3 Shadow Live no-side-effect runner skeleton 与只读 preview API；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表真实 Shadow Live runner、LIVE、AI 或 DH runtime 已启动。
+
+```text
+Scope:
+  - 新增 Shadow Live no-side-effect preview query model、core read model、service、HTTP DTO 和 API endpoint。
+  - 复用 GateQ-1 Strategy Evaluation Gate 与 GateQ-2 Paper Shadow Comparison 只读 service。
+  - 仅返回 validation、readiness、trace preview、blocked reason、side-effect policy 和 next steps。
+  - 不新增 repository / SQL / migration / scheduler，不写数据库，不外联，不读取 credential material。
+  - 不启动真实 Shadow runner，不创建 shadow run，不启动 Paper run，不执行策略，不生成真实订单。
+
+Result:
+  NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: GET /api/strategies/shadow-live/preview
+  Highest non-blocking status: READY_FOR_NO_SIDE_EFFECT_PREVIEW
+  Runner status: SKELETON_AVAILABLE
+  Order intent preview status: NOT_EXECUTED
+  GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | REVIEWED / EXPECTED DIRTY | 工作区只包含本轮后端新增文件与允许的 `README.md`、`docs/current/API.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 修改。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows 工作区提示 LF 将在 Git touch 时转换为 CRLF，非阻断。 |
+| `git diff --stat` | REVIEWED | tracked diff 会统计文档修改；新增 Java 文件仍需结合 `git status --short` 读取，因为 untracked 文件不会完整体现在普通 diff stat 中。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS。`nq-core` 119 tests / 0 failures / 0 errors / 0 skipped，含新增 `ShadowLivePreviewServiceTest` 11 tests；`nq-api` 65 tests / 0 failures / 0 errors / 0 skipped，含新增 `ShadowLivePreviewControllerTest` 2 tests；`nq-app` 105 tests / 0 failures / 0 errors / 3 skipped。 |
+| `git diff -- frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达禁止范围；未新增 migration 或历史 migration 修改。 |
+| 用户指定风险词 `rg` 扫描（backend / docs/current / README.md） | REVIEWED / NON-BLOCKING | 已按任务提示的完整 pattern 执行。大量命中来自历史 current docs、既有 adapter / trading 域代码、Gate 命名、禁止边界说明和负向测试断言。窄口复核本轮新增内容只命中边界文案、forbidden-field 文档和 `assertFalse` 负向断言；未发现新增 HTTP client、真实外联、credential material 输出、LIVE 开关、RealClient/real provider 实现、private endpoint、下单、撤单、提现或转账路径。 |
+| IDEA problems check（新增 ShadowLivePreview service/controller/response/tests） | PASS | `errorsOnly=true` 返回 0 errors。 |
+
+Known warnings:
+
+- Maven 保留既有 SLF4J no-provider warning、Mockito dynamic agent warning、ByteBuddy dynamic agent warning 和 JVM bootstrap classpath sharing warning；本轮未引入新的阻断性测试失败。
+- `nq-app` 既有 3 skipped 保持不变；不属于 GateQ-3 阻断。
+
+Not run:
+
+- 未运行 frontend build / Playwright。原因：本轮禁止修改 frontend，且实际未触达 frontend。
+- 未运行 Python pytest / mypy / ruff。原因：本轮禁止修改 research，且实际未触达 research。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动真实 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未执行策略；未生成真实订单或真实 order intent；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。`READY_FOR_NO_SIDE_EFFECT_PREVIEW` 仅代表可生成只读预览计划，不代表 trading authorization、LIVE enable、Shadow Live 交易启用或真实 runner ready。
+
+## NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-2 后端只读 baseline；GateQ 总体仍为 `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）。
+
+```text
+Scope:
+  - 新增 Paper vs Shadow Comparison 只读 query model / DTO / service / repository query / API endpoint。
+  - 复用现有 strategy version、dataset coverage、evaluation、publish、SIM Paper facts。
+  - 当前无 shadow run 表或 runner；生产 repository 固定建模为 NOT_IMPLEMENTED / BLOCKED_SHADOW_NOT_IMPLEMENTED。
+  - 覆盖 fail-closed、缺失项、evaluation gate blocked、数据质量不足、trace incomplete、response 安全字段、无写库与无外联合同。
+  - 不启动 Shadow runner，不创建 shadow run，不启动 Paper run，不写数据库，不调用真实交易所。
+
+Result:
+  NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: GET /api/strategies/paper-shadow/comparison
+  Highest non-blocking status: READY_FOR_COMPARISON
+  Current production shadow status: NOT_IMPLEMENTED / BLOCKED_SHADOW_NOT_IMPLEMENTED
+  GateQ overall: PLAN READY / NOT IMPLEMENTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=PaperShadowComparisonServiceTest,PaperShadowComparisonControllerTest,StrategyEvaluationGateServiceTest,StrategyEvaluationGateControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Targeted regression：`PaperShadowComparisonServiceTest` 10 tests、`PaperShadowComparisonControllerTest` 2 tests，并重跑既有 GateQ-1 service/controller tests；覆盖缺 strategy version、evaluation gate blocked、缺 Paper run、Shadow 未实现、缺 Shadow run、数据质量不足、trace chain incomplete、可比较 fixture、response 不含交易授权字段或敏感字段、service read-only / repository no-write 合同。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 108 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped；新增 Paper Shadow tests 被纳入 full scoped Maven。 |
+| Known warnings | REVIEWED / NON-BLOCKING | 保留既有 Mockito dynamic agent warning、SLF4J provider warning 和少量 unrelated compiler warning；未发现本轮阻断。 |
+
+本轮未运行 frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮允许范围不包含 frontend 或 research，且未修改相关目录。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。`READY_FOR_COMPARISON` 仅代表 Paper / Shadow 只读对照证据可查看，不代表 trading authorization、LIVE enable 或 Shadow Live ready；Data Quality diagnostic、Strategy Evaluation Gate 与 Python offline foundation 也不代表交易授权、ML ready 或 live execution ready。
+
+## NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-1 后端只读 baseline；GateQ 总体仍为 `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）。
+
+```text
+Scope:
+  - 新增 Strategy Evaluation Gate 只读 DTO / service / repository query / API endpoint。
+  - 复用现有 strategy version、dataset coverage、evaluation、publish、SIM Paper facts。
+  - 覆盖 fail-closed、缺失项、failed evaluation、数据质量不足、敏感字段缺失与不返回交易授权字段。
+  - 不启动 Shadow Live runner，不启动 Paper run，不写数据库，不调用真实交易所。
+
+Result:
+  NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: GET /api/strategies/evaluation-gate
+  Highest non-blocking status: READY_FOR_SHADOW_REVIEW
+  GateQ overall: PLAN READY / NOT IMPLEMENTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=StrategyEvaluationGateServiceTest,StrategyEvaluationGateControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Targeted regression：`StrategyEvaluationGateServiceTest` 9 tests、`StrategyEvaluationGateControllerTest` 2 tests，覆盖缺 strategy version、缺 dataset、缺 evaluation、evaluation failed、数据质量不足、缺 Paper evidence、满足 evidence 仅返回 `READY_FOR_SHADOW_REVIEW`、response 不含交易授权字段或敏感字段。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 98 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped；新增 evaluation gate tests 被纳入 full scoped Maven。 |
+| Known warnings | REVIEWED / NON-BLOCKING | 保留既有 Mockito dynamic agent warning、SLF4J provider warning 和少量 unrelated compiler warning；未发现本轮阻断。 |
+
+本轮未运行 frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮允许范围不包含 frontend 或 research，且未修改相关目录。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动 Shadow Live runner；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Evaluation gate 不代表 trading authorization，不代表 LIVE enable，不代表 strategy live-ready；Python offline foundation 不代表 ML ready 或 live execution ready。
+
+## NQ-GATEP-RELEASE-TAG-AND-ARCHIVE validation（2026-07-05）
+
+本轮结论为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）。
+
+```text
+Scope:
+  - 创建并推送 GateP release tag。
+  - 建立 docs/gates/gate-p/ historical archive。
+  - 同步 README.md 与 docs/current current summary / archive pointer。
+  - 不修改 backend、frontend、research、scripts、deploy、.github、migration、API、页面、测试代码或 CI workflow。
+
+Result:
+  NQ-GATEP-RELEASE-TAG-AND-ARCHIVE: PASS / COMPLETED / RELEASE TAG PUSHED
+  Tag: nq-gatep-freeze
+  Tagged commit: 3650714ae9cd441e59eb5b09c605a14bbc9998dc
+  GateP: FROZEN / ACCEPTED / TAGGED
+  GateQ: PLAN / NOT STARTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git fetch origin dev` | PASS | 更新 `origin/dev` 后复核。 |
+| `git status --short` | REVIEWED | 写前存在 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 允许范围内未提交修改；本轮保留并补 archive pointer。 |
+| `git log --oneline -10` | REVIEWED | 最新 commit 为 `3650714a chore(gatep): freeze baseline and stabilize research quality gate`。 |
+| `git branch --show-current` | PASS | `dev`。 |
+| `git rev-parse HEAD` / `git rev-parse origin/dev` | PASS | 均为 `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。 |
+| `git tag --list "nq-gatep-freeze"` | PASS / EMPTY BEFORE TAG | 本地 tag 不存在，允许创建。 |
+| `git ls-remote --tags origin refs/tags/nq-gatep-freeze` | PASS / EMPTY BEFORE TAG | 远端 tag 不存在，允许创建。 |
+| `gh run list --limit 10` | REVIEWED | 最新 `NQ CI Baseline` run `28714258374` 为 `completed / success`。 |
+| `gh run view 28714258374 --json status,conclusion,headSha,name,createdAt,updatedAt` | PASS | `status=completed`、`conclusion=success`、`headSha=3650714ae9cd441e59eb5b09c605a14bbc9998dc`。 |
+| `git tag -a nq-gatep-freeze -m "NexusQuant GateP freeze: data quality and trading readiness baseline"` | PASS | 首次沙箱内执行因 `.git/objects` 写权限不足失败；按权限规则提权重跑后成功。 |
+| `git push origin nq-gatep-freeze` | PASS | 远端新 tag 已创建。 |
+| `git rev-parse "nq-gatep-freeze^{tag}"` | PASS | tag object `ae94f7a47a3e7604efe061bf9be9ed48d2b98aa9`。 |
+| `git rev-parse "nq-gatep-freeze^{}"` | PASS | tagged commit `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。 |
+| `git ls-remote --tags origin refs/tags/nq-gatep-freeze` | PASS | remote tag object `ae94f7a47a3e7604efe061bf9be9ed48d2b98aa9`。 |
+
+本轮未复跑 Maven / frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮是 docs-only release tag and archive closeout，不修改 Java、TypeScript、Python、workflow、migration 或 runtime 配置；tag target 已有 `NQ CI Baseline` success 证据。提交前仍需执行 `git diff --check`、`git diff --stat` 与 forbidden-scope diff。
+
+Boundary:
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality diagnostic、Permission Readiness、Risk Preflight 或 public marketdata readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready；未启动 GateQ implementation。
+
+## NQ-GATEP-FREEZE-CLOSEOUT-REVIEW validation（2026-07-05）
+
+本轮结论为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。下表中的 `PASS` 表示命令或审查通过。
+
+```text
+Scope:
+  - 完成 GateP Batch 1-6A final freeze closeout review 与 current fact-source sync。
+  - 按用户追加要求修复 GitHub Actions Research quality gate：pytest fixture path resolution + mypy SQLite cache backend disable。
+  - 不新增 API、migration、CI workflow、页面、业务能力、真实交易所访问、credential 读取、LIVE、AI 或 DH runtime。
+
+Result:
+  NQ-GATEP-FREEZE-CLOSEOUT-REVIEW: PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL
+  GateP Batch 1-6A: COMPLETED
+  LIVE: DISABLED
+  AI: NOT STARTED
+  DH runtime: NOT INTEGRATED
+  Integration-1: NOT STARTED / mock-test-support only where applicable
+  RealClient / real provider / private trading adapter / real permission probe: NOT IMPLEMENTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `gh run list --branch dev --limit 8 --json databaseId,headSha,status,conclusion,workflowName,createdAt,url` | REVIEWED | 最新 `NQ CI Baseline` run `28713266992` / headSha `5fdaecb1` 为 failure；前一批 failures 为 `51a6793a`、`e57d9b0c`；`d4592e3e` 及更早 run 为 success。 |
+| GitHub Actions log review for run `28713266992` | REVIEWED | 失败 job 为 `Research quality gate`；pytest 在 `research/py` working directory 下找不到 `research/py/fixtures/btcusdt_1m_sample.csv`。 |
+| `Set-Location research/py; python -m pytest -q` | PASS | 10 passed；fixture path 已改为基于 `__file__` 解析，消除 working directory 依赖。 |
+| `Set-Location research/py; python -m mypy src` | PASS | Success: no issues found in 16 source files；`pyproject.toml` 设置 `sqlite_cache = false`，避免 mypy 2.1.0 在当前 Windows workspace 因 SQLite cache DB 打开失败而 internal error。 |
+| `Set-Location research/py; python -m ruff check .` | PASS | All checks passed。 |
+| `git status --short` | PASS / EXPECTED DIRTY | 仅 root/current docs、`research/py/pyproject.toml`、`research/py/tests/test_research_foundation.py` 与新增 `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md`。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 LF -> CRLF 工作区换行提示。 |
+| `git diff --stat` | PASS / REVIEWED | tracked diff 为 10 files changed；新增 closeout 文档为 untracked，见 `git status --short`。 |
+| `git diff -- backend` / `frontend` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达 backend、frontend、scripts、deploy、CI workflow 或 migration。 |
+| `git diff -- research` | PASS / EXPECTED CI FIX | 仅 `research/py/tests/test_research_foundation.py` fixture path 与 `research/py/pyproject.toml` mypy cache backend 配置。 |
+| 指定 GateP / Batch / LIVE / AI / DH / Integration / RealClient / provider / trading authorization / Python research 关键词 `rg` | PASS / REVIEWED | 输出很大；命中为当前冻结事实、历史证据、否定边界、字段名检查或禁止误写清单；用户列出的禁用大写状态短语无命中。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | NOT RERUN | 本轮未改 backend；沿用 Batch 6 freeze readiness review 最近通过证据：BUILD SUCCESS，`nq-core` 89 tests / 0 failures，`nq-app` 105 tests / 0 failures / 3 skipped。 |
+| `npm --prefix frontend run build` | NOT RERUN | 本轮未改 frontend；沿用 Batch 6 freeze readiness review 最近通过证据：build PASS，保留既有 Vite large chunk warning。 |
+| GitHub Actions rerun after fix | NOT RUN | 本轮未提交/推送，旧 run 仍显示 failure；提交并推送后应等待新的 `NQ CI Baseline` run 作为 release/tag 前证据。 |
+
+Boundary:
+
+本轮未改 backend / frontend / scripts / deploy / `.github` / migration；未新增 API、页面、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality diagnostic、preflight readiness、permission probe observability 或 public marketdata readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready。
+
+## NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）；下表中的 `PASS`（通过）表示命令或审查通过。
+
+```text
+Scope:
+  - 本轮只修复 Batch 6 freeze readiness review 发现的 P1 current fact-source drift。
+  - 修改范围限定为 root README.md、docs/current/FACT_SOURCE_INDEX.md、ROADMAP.md、README.md、STATUS.md、TESTING.md、WORKLOG.md、GATEP_FREEZE_READINESS_REVIEW.md。
+  - 不修改 backend、frontend、research、scripts、deploy、.github、migration、API、页面、测试代码或 CI workflow。
+
+Result:
+  NQ-GATEP-BATCH-6A-CURRENT-FACT-SOURCE-DRIFT-FIX: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  GateP: not FROZEN / not ACCEPTED.
+  Python Research: reproducible offline experiment foundation；not ML ready；not live execution ready.
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / ALLOWED DIRTY | Dirty 限于允许的 isolated NQ `integration/dh` code/tests 与 `docs/current`。 |
+| `git branch --show-current` | PASS / `nq-dh-i1-joint-runtime-dryrun-test-impl` | 分支符合本轮要求。 |
+| `git diff --check` | PASS | exit 0；仅 LF/CRLF warning，无 whitespace error。 |
+| `git diff --stat` | REVIEWED | diff 限于允许的 NQ isolated client/schema alignment、tests 与 `docs/current`。 |
+| forbidden-scope diff | PASS / EMPTY | broad forbidden diff 为空；显式 `backend/nq-app/src/main` diff 仅 `DhDryRunRuntimeProperties.java`，属于本轮允许的 isolated client schemaVersion 对齐。 |
+| boundary `rg` scan | PASS / REVIEWED | `docs/current backend` 命中为既有业务词、历史/禁止语境、本轮 test assertions 或 docs 边界说明；未发现真实 HTTP、RealClient、provider、trading mutation 或 credential exposure。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23/23 reactor SUCCESS；`nq-app` 129 tests / 3 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration0 targeted 17 tests。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration1 targeted 18 tests。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Dry-run targeted 30 tests。 |
+| `mvn -ntp -f backend/pom.xml -Pquality validate` | PROFILE MISSING / NOT EFFECTIVE QUALITY GATE | Maven returned BUILD SUCCESS, but requested profile `quality` does not exist；不得写 NQ quality PASS。 |
 | NQ dev read-only guard | PASS / SCOPED EMPTY WITH UNRELATED DIRTY | `E:\Project\nexus-quant` 分支 `dev`；最终只读 `git status --short` 显示非本轮 `README.md`、`docs/current/API.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 修改，以及 paper shadow comparison untracked 文件；`docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` unstaged、staged scoped diff 均为空；本轮未修改 NQ dev。 |
 
 Boundary:
@@ -125,6 +387,31 @@ Scope:
 Result:
   NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW: PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE
   Next: NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO / NOT STARTED / WORK_ORDER_ONLY
+| `git status --short` | PASS / DOCS-ONLY | 写后仅允许文档变更。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | PASS / DOCS-ONLY | diff 限于 root README 与允许的 `docs/current` 文档。 |
+| 指定 GateP / Batch / Python Research / LIVE / AI / DH / RealClient / real provider / permission probe / trading authorization 关键词 `rg` | PASS / REVIEWED | root README、FACT_SOURCE_INDEX、ROADMAP 已不再把 GateP 写成只到 Batch 1，也不再把 Python Research 写成仍缺 manifest / evaluation / metadata；剩余命中为当前事实、禁止边界、历史 review 语境或否定语境。 |
+| `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达禁止范围。 |
+| backend / frontend / Python test suites | NOT RUN | 本轮为 docs-only current fact-source drift fix；未修改代码、测试、API、migration、CI workflow、前端页面或 Python 实现。 |
+
+Boundary:
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality diagnostic、preflight readiness、permission probe observability 或 public marketdata readiness 写成 trading authorization；未把 Python offline foundation 写成 ML ready 或 live execution ready；未把 GateP 写成 `FROZEN` / `ACCEPTED`。
+
+## NQ-GATEP-BATCH-6-FREEZE-READINESS-REVIEW validation（2026-07-05）
+
+本轮结论为 `CONDITIONAL PASS`（有条件通过）/ `FIX REQUIRED`（需要修复）；下表中的 `PASS` 表示通过。
+
+```text
+Scope:
+  - 本轮只做 GateP Batch 1-5 freeze readiness review、evidence audit、boundary review 和 current docs 指针记录。
+  - 允许新增 docs/current/GATEP_FREEZE_READINESS_REVIEW.md，并同步 docs/current/README.md、STATUS.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md 的 review pointer。
+  - 不修改 backend、frontend、research、scripts、deploy、.github、migration、API contract、页面或测试代码。
+
+Result:
+  NQ-GATEP-BATCH-6-FREEZE-READINESS-REVIEW: CONDITIONAL PASS / FIX REQUIRED
+  GateP: not FROZEN / not ACCEPTED.
+  Required fix: root README、docs/current/FACT_SOURCE_INDEX.md、docs/current/ROADMAP.md 的 GateP Batch 1 / Python Research 旧口径需另起 docs-only drift fix。
 ```
 
 | Command | Result | Notes |
@@ -159,6 +446,38 @@ Scope:
 Result:
   NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION: IMPLEMENTED / DRY_RUN_ONLY / DEFAULT_DISABLED / READY_FOR_CLOSE_REVIEW
   Next: NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW / NOT STARTED / REVIEW_ONLY
+| `git status --short` | PASS / CLEAN BEFORE WRITE | 写前工作区干净。 |
+| `git log --oneline -20` | PASS / REVIEWED | 最近提交包含 Batch 1 `b856cf07`、Batch 2 `9a58b888`、Batch 3 `3d3ef6e7`、Batch 4 `d4592e3e`、Batch 5 `e57d9b0c` 与 GateO archive `7c669689`。 |
+| `git diff --check` | PASS | 写前无 whitespace error。 |
+| `git diff --stat` | PASS / EMPTY BEFORE WRITE | 写前无 diff。 |
+| `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY BEFORE WRITE | 写前 forbidden areas 无 diff。 |
+| GateP / LIVE / AI / DH / RealClient / real provider / permission probe / trading authorization / Python research 指定 `rg` | PASS / REVIEWED | 输出很大；命中 current docs、historical gates、backend、frontend、research/py 的正向、否定与历史语境。审查发现 P1 docs drift，但未发现代码层真实交易或授权启用。 |
+| `git show --stat --name-status b856cf07 9a58b888 3d3ef6e7 d4592e3e e57d9b0c` | PASS / REVIEWED | Batch 1-5 commit scope 与任务边界一致。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 89 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped；保留既有 SLF4J / Mockito dynamic agent warning。 |
+| `npm --prefix frontend run build` | PASS | `tsc -b && vite build` 通过；保留 Vite large chunk warning。 |
+| `python -m pytest research/py` | PASS | 10 passed。 |
+| `python -m ruff check research/py` | PASS | All checks passed。 |
+| `python -m mypy research/py` | PASS | Success: no issues found in 20 source files。 |
+| 写后 `git status --short` | PASS / DOCS-ONLY | 仅 5 个允许的 current docs 修改和新增 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md`。 |
+| 写后 `git diff --check` | PASS | 仅 Git 提示 LF/CRLF 工作区换行 warning，非 whitespace error。 |
+| 写后 forbidden-area diff | PASS / EMPTY | `backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` 均无 diff。 |
+
+Boundary:
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试、CI workflow 或 migration；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现；未把 Data Quality / preflight / Python offline foundation 写成 trading authorization、ML ready 或 live execution ready。
+
+## NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING validation（2026-07-04）
+
+```text
+Scope:
+  - 本轮只做 `research/py` offline research foundation engineering。
+  - 同步允许的 `docs/current/README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`。
+  - 不修改 backend、frontend、scripts、deploy、`.github`、migration 或 Java runtime 写链路。
+
+Result:
+  NQ-GATEP-BATCH-5-PYTHON-RESEARCH-FOUNDATION-ENGINEERING: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  GateP: PLANNING；不是 FROZEN / ACCEPTED。
+  Python Research: offline foundation skeleton；不是 ML ready / live execution ready。
 ```
 
 | Command | Result | Notes |
@@ -178,6 +497,14 @@ Result:
 Boundary:
 
 未真实调用 DH；未真实外网 HTTP；未修改 NQ dev；未修改 DH Java；未改 contracts / OpenAPI / json-schema / golden_cases / fixture JSON；未新增 migration；未读取 credential、token、cookie、apiKey、apiSecret 或 passphrase；未接 provider、AI / LangGraph 或 LIVE；未触碰 order / execution / risk / ledger / account / paper / live 生产路径。
+| `Set-Location research/py; python -m nq_research --bars-csv fixtures\\btcusdt_1m_sample.csv --created-at 2026-07-04T00:00:00Z` | PASS | 兼容入口可输出 JSON summary，包含 `dataset_id`、`experiment_id`、dataset manifest、experiment metadata、evaluation skeleton 与 offline boundary。 |
+| `python -m pytest research/py` | PASS | 10 passed；覆盖 manifest、metadata、evaluation、CLI、缺字段 CSV、空 CSV、no-network / no-credential / no-Java-runtime 边界及既有 sample strategy。 |
+| `python -m ruff check research/py` | PASS | All checks passed。 |
+| `python -m mypy research/py` | PASS | Success: no issues found in 20 source files。 |
+
+Boundary:
+
+未访问网络；未读取 credential material；未调用 Java runtime；未改 backend / frontend / scripts / deploy / `.github` / migration；未新增后端 API、前端页面、真实交易所 SDK、RealClient、real provider、private trading adapter、real permission probe、LIVE、AI runtime 或 DH runtime。
 
 ## NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN validation（2026-07-04）
 
@@ -7970,6 +8297,37 @@ What was not run：
 
 ---
 
+## NQ-GATEP-BATCH-4-SINGLE-VENUE-ACCOUNT-PERMISSION-AND-RISK-PREFLIGHT-READONLY-BASELINE（2026-07-04）
+
+结论：**PASS / IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`PASS`（通过）、`IMPLEMENTED`（已实现）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateP Batch 4 后端只读 preflight baseline，不代表 GateP 已冻结或已接受。
+
+本轮验证范围：
+
+- 后端只读 API：`GET /api/trading/preflight/readiness`。
+- Core service：只读聚合 exchange account metadata、active credential metadata、permission probe latest summary 和 Data Quality overview；始终 fail-closed。
+- API response：不返回 credential material，不包含 `tradingReady / liveReady / authorizedForTrading` 等授权字段。
+- Backend / current docs 为本轮修改范围；frontend / research / scripts / deploy / `.github` / migration 为禁止修改范围。
+
+| Command | Result | Scope | Notes |
+| --- | --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am "-Dtest=TradingPreflightReadinessServiceTest,TradingPreflightControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 新增 service/controller targeted tests | `TradingPreflightReadinessServiceTest` 3 tests / 0 failures / 0 errors / 0 skipped；`TradingPreflightControllerTest` 2 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | **BUILD SUCCESS** | 后端 `nq-api` / `nq-core` / `nq-app` 及依赖 reactor | 23 个 reactor module SUCCESS；`nq-core` 89 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 3 skipped。 |
+
+Known warnings：
+
+- Maven 输出包含既有 SLF4J no-provider warning、Mockito dynamic agent / ByteBuddy agent warning、部分 unchecked/deprecation 编译提示；不影响本轮测试结论。
+- `nq-app` 3 skipped 为既有环境/guard 条件，本轮未修改相关测试。
+
+What was not run：
+
+- 未运行 frontend `npm run build` / Playwright，原因是本轮禁止且未修改 `frontend/**`。
+- 未运行 Python `pytest / mypy / ruff`，原因是本轮禁止且未修改 `research/**`。
+- 未执行真实 permission probe 或真实 public/private exchange call，原因是本轮 API 必须只读且 no-real。
+
+边界确认：未新增 migration；未改 frontend / research / scripts / deploy / `.github`；未读取或输出 credential material；未启用 LIVE；未接 AI runtime；未接 DH runtime；未实现真实 permission probe、RealClient、real provider 或 private trading adapter；未下单、撤单、转账或提现；preflight readiness / risk diagnostic 不等于 trading authorization。
+
+---
+
 ## NQ-GATEO-ARCHIVE-CLOSEOUT（2026-07-04）
 
 结论：**PASS / DOCS ARCHIVE CLOSEOUT / READY TO COMMIT**。含义：`PASS`（通过）、`DOCS ARCHIVE CLOSEOUT`（文档归档收口）、`READY TO COMMIT`（可提交前复核）。
@@ -8154,3 +8512,31 @@ ALLOW_LIVE: NO
 ```
 
 边界确认：未修改 NQ Java production code；未修改 DH Java production code；本 review 未修改测试代码；未修改 NQ dev；未改 contracts / OpenAPI / JSON Schema / golden_cases / migration；未真实调用 DH；未真实 HTTP；未访问 localhost 真实服务或外网；未接 real provider；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未接 Agent / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`。
+## NQ-GATEQ-PLAN-SHADOW-LIVE-READINESS（2026-07-05）
+
+结论：**PLAN READY / NOT IMPLEMENTED**。含义：`PLAN READY`（规划已就绪）、`NOT IMPLEMENTED`（未实现）。本轮类型为 planning-only / docs-only，只新增 GateQ 规划文档与 current fact-source 同步，不启动 GateQ implementation。
+
+本轮验证范围：
+
+- GateQ-0 planning 文档：`docs/current/GATEQ_PLAN.md`。
+- Current fact-source 入口同步：root `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`、`TESTING.md`、`WORKLOG.md`。
+- 禁止范围核对：`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration`。
+- 边界关键词核对：GateQ、Shadow Live、Paper、strategy version、dataset version、evaluation、publish、paper run、shadow run、LIVE、AI、DH、Integration-1、RealClient、real provider、private trading、permission probe、credential、order / cancel / withdraw / transfer、trading authorization、ML ready、live execution。
+
+| Command | Result | Scope | Notes |
+| --- | --- | --- | --- |
+| `git status --short` | **PASS / REVIEWED** | 工作区变更清点 | 变更限定在允许的 current/root 文档；新增 `docs/current/GATEQ_PLAN.md`。 |
+| `git diff --check` | **PASS** | Whitespace 检查 | 无 whitespace error；若 Git 提示 LF/CRLF 工作区换行 warning，不阻断本轮 docs-only 结论。 |
+| `git diff --stat` | **PASS / REVIEWED** | Tracked diff 摘要 | 用于核对已跟踪文档 diff；untracked `docs/current/GATEQ_PLAN.md` 以 `git status --short` 为准。 |
+| forbidden-scope diff | **PASS / EMPTY** | `backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` | 禁止范围无 diff；本轮未修改业务代码、脚本、部署、CI 或 migration。 |
+| boundary `rg` search | **PASS / REVIEWED** | `README.md`、`docs/current`、`docs/gates`、`backend`、`frontend`、`research/py` | 命中按规划语境、否定边界、历史证据和禁止项分类；未发现 GateQ 被写成实现、冻结或接受，也未发现 LIVE / AI / DH / real provider / private trading 正向启用语义。 |
+| staged checks | **PASS / REVIEWED** | 允许 staged 文件清单 | `git diff --cached --name-only`、`git diff --cached --stat`、`git diff --cached --check` 用于确认仅 stage 允许文档且无 whitespace error。 |
+
+What was not run：
+
+- 未运行 Maven，原因是本轮未修改 `backend/**`、未新增 API、未新增 migration、未修改 Java runtime 或测试。
+- 未运行 frontend `npm run build` / Playwright，原因是本轮未修改 `frontend/**`、未新增页面或前端契约。
+- 未运行 Python `pytest` / `mypy` / `ruff`，原因是本轮未修改 `research/**`、未新增 Python artifact 实现或运行脚本。
+- 未运行真实 public outbound、private endpoint、permission probe 或 exchange smoke，原因是 GateQ-0 为 docs-only planning，且本轮禁止真实交易所外联、credential material 读取和 LIVE 启用。
+
+边界确认：GateQ 未实现；Shadow Live 未实现；LIVE 仍 `DISABLED`（关闭）；AI 仍 `NOT STARTED`（未开始）；DH runtime 仍 `NOT INTEGRATED`（未集成）；Integration-1 仍 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe 仍 `NOT IMPLEMENTED`（未实现）。Shadow Live 只读规划不代表真实交易、trading authorization、LIVE readiness、private trading、ML ready 或 live execution ready。
