@@ -15,3 +15,15 @@ spring:
 
 server:
   port: ${NQ_PROD_APP_PORT:8080}
+
+nq:
+  dh:
+    integration1:
+      runtime:
+        # Why: prod profile 必须保持 NQ-DH Integration-1 runtime disabled；关闭状态不是临时占位，
+        # 而是阻断真实 DH HTTP、provider、交易链路和 LIVE 的生产安全边界。
+        enabled: false
+        client:
+          enabled: false
+        production-enabled: false
+        kill-switch: true

@@ -39,6 +39,33 @@
 - GateM-5A 新增只读 adapter readiness status API；只读静态 readiness 决策，no-real / fail-closed，不接 AI、不接真实交易所、不读 credential、不启用 LIVE。
 - GateM-6B 新增只读 runtime operational readiness summary API；仅返回安全 DTO 摘要，不读取 raw env/config，不触发 adapter / permission probe / external exchange call，不启用 LIVE / AI / DH runtime / real provider。
 - GateP Batch 2 新增只读 Marketdata Data Quality Center overview API；只读取现有本地 DB 事实，不新增 migration，不改 ingestion 行为，不接 `DataOrigin.PUBLIC_OUTBOUND` runtime provider，不表示 trading authorization。
+- NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION 已实现 NQ 内部 isolated limited dry-run client，但不新增 NQ API / Controller / OpenAPI / JSON Schema / contracts / golden_cases / fixture JSON。DH endpoint `POST /api/ai/decision-dry-runs` 属 DH-only inbound limited dry-run；当前 NQ API 文档不把它写成 NQ 已实现 HTTP API，也不表示 real HTTP、real provider、Integration-1 runtime 或 LIVE 已启动。
+- NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW 已 `PASS / CLOSED / ACCEPTED / REVIEW_ONLY`；该关闭只代表 mock runtime / test-only 里程碑可进入 PR preparation，不新增 NQ API / Controller / OpenAPI / JSON Schema / contracts / golden_cases / fixture JSON，不表示 real HTTP、real provider、Integration-1 runtime 或 LIVE 已启动。
+
+## NQ-DH Integration-1 Runtime Client API Boundary
+
+`NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW` 已 `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。`NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO` 已 `CLOSED / ACCEPTED / WORK_ORDER_ONLY / NO_TEST_IMPLEMENTATION / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。`NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION` 已新增 test-only / fake-transport / MockMvc / in-memory 级别测试证据；`NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX` 已将 HMAC source signing / verification 统一为 wire-level canonical value `NQ_DRYRUN`，并将 NQ `DEFAULT_SCHEMA_VERSION` 对齐 DH endpoint 实际返回值 `1.0.0`。`NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-CLOSE-REVIEW` 已 `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。`NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW` 已 `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / MOCK_RUNTIME_MILESTONE_CLOSED / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。`NQ-DH-I1-MOCK-RUNTIME-PR-PREP` 已 `READY / PR_PREP_ONLY / ALLOW_PR_CREATE / NO_MERGE`，只准备 NQ PR title/body、diff review、security boundary 与 validation summary；不新增 NQ endpoint、NQ Controller、真实 HTTP client、schema、OpenAPI、contracts、golden_cases、fixture JSON 或 migration。当前证据不表示 real HTTP、real provider、Integration-1 runtime 或 LIVE 已启动。
+
+当前 internal client 的唯一允许方向仍是：
+
+```text
+NQ limited dry-run client -> DH POST /api/ai/decision-dry-runs
+```
+
+该方向仍必须默认关闭、dev/test only、production disabled、kill switch fail-closed，并保持：
+
+```text
+NQ limited runtime client implementation: IMPLEMENTED / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY
+NQ limited runtime client close review: PASS / CLOSED / ACCEPTED
+real outbound HTTP now: NO
+real provider: NO
+contracts/OpenAPI/schema/golden_cases formalization now: NO
+Integration-1 runtime: NOT STARTED
+DH integrated: NO
+LIVE: DISABLED
+```
+
+`LONG_BIAS / SHORT_BIAS` 只能作为 readonly bias 记录，不得映射为 `BUY / SELL`，不得进入 order / execution / risk / ledger / paper / live 链路。invalid schemaVersion、invalid signature、source alias / lowercase source、`BUY / SELL / PLACE_ORDER / CANCEL_ORDER` response 仍 fail-closed；real DH call、real HTTP、real provider、schema/contracts/golden_cases formalization 均仍需另起任务且当前不允许。
 - GateP Batch 4 新增只读 Trading Preflight readiness API；只读取 account / credential summary 与 Data Quality overview，不读取 credential material，不调用 permission probe port / adapter / RiskGate / OrderCommandService，不写库，不触发真实交易所请求，不表示 trading authorization。
 - GateQ-1 新增只读 Strategy Evaluation Gate API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，不启动 Shadow Live runner，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 strategy live-ready。
 - GateQ-2 新增只读 Paper Shadow Comparison API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，并把 Shadow runner / Shadow run 当前建模为 `NOT_IMPLEMENTED`（未实现）/ `BLOCKED_SHADOW_NOT_IMPLEMENTED`（Shadow 未实现阻断）/ `NOT_AVAILABLE`（不可用）。该接口不启动 Shadow runner，不创建 shadow run，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live ready。
