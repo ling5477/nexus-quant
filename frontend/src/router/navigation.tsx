@@ -83,8 +83,8 @@ export const appNavItems: AppNavItem[] = [
         path: '/strategies/validation',
         label: '策略验证',
         icon: <FileSearchOutlined/>,
-        title: '策略验证与 Paper / Shadow 对照',
-        description: '只读查看 Evaluation Gate、Paper / Shadow 对照与 Shadow Live no-side-effect preview 证据链。',
+        title: '策略生命周期追溯与 Paper / Shadow 对照',
+        description: '只读查看 Evaluation Gate、Paper / Shadow 对照、Shadow Live no-side-effect preview 与 Python artifact binding preview 追溯链。',
         section: '策略运行',
     },
     {

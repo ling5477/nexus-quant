@@ -112,6 +112,40 @@ Result:
 Boundary:
 
 Runtime integration：`NOT STARTED`；DH integrated：`NO`；LIVE：`DISABLED`；real DH call：`NO`；real HTTP：`NO`；provider：`NO`；contracts/OpenAPI/json-schema/golden_cases：`UNCHANGED`；invalid signature / invalid source / invalid schemaVersion / executable action response 均保持 fail-closed。
+## NQ-GATEQ-6-STRATEGY-LIFECYCLE-TRACE-VIEW-ENHANCEMENT validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该结论只覆盖 GateQ-6 前端只读生命周期追溯增强；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表交易授权、LIVE 启用、Shadow Live 执行、artifact 已入库、AI 或 DH runtime 接入。
+
+```text
+Scope:
+  - 增强 /strategies/validation 现有前端只读页面。
+  - 展示 strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow -> pythonArtifactBindingPreview 生命周期追溯链。
+  - 新增 Evidence Matrix / 证据矩阵，聚合 requiredEvidence / missingEvidence / blockers / warnings / nextSteps。
+  - 新增 READY_FOR_* / VALID_FOR_BINDING_PREVIEW 状态解释和 no-side-effect / authorization boundary。
+  - GateQ-4 Python artifact binding preview 在本页显示为 PENDING_FRONTEND_SUPPORT / NOT_CONNECTED，不新增 artifact request UI。
+  - 不新增后端 API、不改 backend、不启动 Paper/Shadow runner、不触发真实外联。
+
+Result:
+  NQ-GATEQ-6-STRATEGY-LIFECYCLE-TRACE-VIEW-ENHANCEMENT: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Route: /strategies/validation
+  Smoke mode: mocked no-backend / no real outbound
+  GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `npm --prefix frontend run build` | PASS / BUILD SUCCESS | TypeScript build 与 Vite build 通过；保留既有 Vite chunk > 500 kB warning，非本轮阻断。 |
+| `npm --prefix frontend run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` | PASS / 2 passed | Mock/no-backend smoke 覆盖页面渲染、生命周期追溯链、Evidence Matrix、required / missing / blockers / warnings / nextSteps、`NOT_IMPLEMENTED` / `NOT_AVAILABLE` / `UNKNOWN` / `PENDING_FRONTEND_SUPPORT` 非成功态、no-side-effect / no-authorization boundary、禁止正向交易授权文案，以及不调用 GateQ-4 artifact binding endpoint。 |
+
+Not run:
+
+- 未运行真实后端 E2E。原因：本轮默认 no-backend / mocked smoke，且任务要求不触发真实后端外联；真实后端环境状态未作为本轮验收前置。状态记录为 `PENDING_BACKEND_ENV`（等待后端环境）。
+- 未运行 backend Maven / Python pytest / mypy / ruff。原因：本轮禁止修改 backend 与 research，实际未触达相关目录。
+
+Boundary:
+
+未改 backend / research / scripts / deploy / `.github` / migration；未新增 migration；未新增后端 API 或后端测试；未启动真实 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper / shadow 状态；未执行策略；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Strategy Evaluation Gate、Paper / Shadow Comparison、Shadow Live no-side-effect preview 与 Python artifact binding preview 均不代表 trading authorization；Python offline foundation 和 binding preview 不代表 ML ready 或 live execution ready。
+
 ## NQ-GATEQ-5-FRONTEND-PAPER-SHADOW-COMPARISON-VIEW validation（2026-07-05）
 
 本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-5 前端只读策略验证与 Paper / Shadow 对照视图；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表交易授权、LIVE 启用、Shadow Live 执行、AI 或 DH runtime 接入。

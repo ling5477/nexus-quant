@@ -81,6 +81,56 @@ Validation：
 NQ-DH-I1-MOCK-RUNTIME-PR-CREATE
 ```
 
+## NQ-GATEQ-6-STRATEGY-LIFECYCLE-TRACE-VIEW-ENHANCEMENT
+
+日期：2026-07-05。
+
+范围：
+
+- NQ-only GateQ-6 前端只读追溯增强。
+- 在现有 `/strategies/validation` 页面增强 Strategy Lifecycle Trace 视图，不新增顶层菜单。
+- 新增生命周期追溯链，展示 `strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow -> pythonArtifactBindingPreview`。
+- 新增 Evidence Matrix / 证据矩阵，聚合 GateQ-1 / GateQ-2 / GateQ-3 只读响应的 `requiredEvidence / missingEvidence / blockers / warnings / nextSteps`。
+- 新增状态解释与 no-side-effect / authorization boundary，明确 `READY_FOR_SHADOW_REVIEW`、`READY_FOR_COMPARISON`、`READY_FOR_NO_SIDE_EFFECT_PREVIEW` 和 `VALID_FOR_BINDING_PREVIEW` 均不是交易授权。
+- GateQ-4 Python artifact binding preview 在本页显示为 `PENDING_FRONTEND_SUPPORT` / `NOT_CONNECTED`；本轮不新增 artifact JSON 输入、不上传、不导入、不调用 GateQ-4 POST。
+- 扩展 mocked no-backend Playwright smoke。
+- 同步 `docs/current/STATUS.md`、`TESTING.md`、`WORKLOG.md`、`README.md` 与 root `README.md`。
+
+结果：
+
+```text
+NQ-GATEQ-6-STRATEGY-LIFECYCLE-TRACE-VIEW-ENHANCEMENT: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+Route: /strategies/validation
+Frontend mode: readonly / mocked smoke supported
+GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+RealClient / real provider / private trading adapter / real permission probe: NOT_IMPLEMENTED
+```
+
+实现摘要：
+
+- 页面：将 hero 与导航文案调整为“策略生命周期追溯与 Paper / Shadow 对照”，保留既有三组 GateQ GET 只读查询。
+- Lifecycle Trace：新增 8 个节点，覆盖 Strategy Version、Dataset、Evaluation Gate、Publish Trace、Paper Run、Paper / Shadow Comparison、Shadow Live Preview、Python Artifact Binding Preview。
+- Evidence Matrix：跨 Evaluation Gate、Paper / Shadow Comparison、Shadow Live Preview 聚合证据、缺失、阻断、警告和后续动作；并显式登记 Python artifact binding 前端未接入。
+- 状态语义：新增 `PENDING_FRONTEND_SUPPORT`、`NOT_CONNECTED`、`ACTION_REQUIRED`、`PARTIAL` 显示；`UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*` 均按非成功态处理。
+- 禁止动作边界：页面常驻展示不提交真实订单、不读取真实凭证、不启用 LIVE、不调用 private endpoint、不写真实账户 / 资金 / ledger、不接 AI / DH runtime 执行链路。
+- Smoke：扩展 `strategy-validation-paper-shadow-smoke.spec.ts`，覆盖 trace chain、Evidence Matrix、非成功缺失态、禁止正向交易授权文案和不调用 GateQ-4 artifact endpoint。
+
+验证：
+
+- `npm --prefix frontend run build`：PASS / BUILD SUCCESS；保留既有 Vite chunk warning。
+- `npm --prefix frontend run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium`：PASS / 2 passed。
+
+边界：
+
+未改 backend / research / scripts / deploy / `.github` / migration；未新增后端 API、后端测试或 migration；未启动真实 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper / shadow 状态；未调用真实交易所；未读取或输出 credential material；未开启 LIVE / AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未下单、撤单、转账或提现。
+
+下一步：
+
+提交前执行最终 `git status --short`、`git diff --check`、`git diff --stat`、禁止范围 diff 与风险词扫描；推荐 commit message：`feat(frontend): enhance strategy lifecycle trace view`。
+
 ## NQ-GATEQ-5-FRONTEND-PAPER-SHADOW-COMPARISON-VIEW
 
 日期：2026-07-05。

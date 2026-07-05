@@ -240,7 +240,7 @@ function validationUrl(): string {
 }
 
 function expectNoForbiddenCopy(page: Page) {
-    return expect(page.locator('body')).not.toContainText(/LIVE READY|TRADE APPROVED|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED/i);
+    return expect(page.locator('body')).not.toContainText(/LIVE READY|TRADE_APPROVED|TRADE APPROVED|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|Integration-1 RUNTIME STARTED|placeOrder|cancelOrder|withdraw|transfer|apiKey|secret|passphrase|token|private key|ML_READY|PYTHON ML READY|PYTHON LIVE READY/i);
 }
 
 function expectNoForbiddenRequests(requests: string[]): void {
@@ -254,6 +254,12 @@ function expectNoForbiddenRequests(requests: string[]): void {
     }
 }
 
+async function expectNoSuccessTagForStatuses(page: Page, statuses: string[]): Promise<void> {
+    for (const status of statuses) {
+        await expect(page.locator('.ant-tag-success').filter({hasText: status})).toHaveCount(0);
+    }
+}
+
 test.describe('strategy validation Paper / Shadow comparison view', () => {
     test('展示 evaluation gate、comparison、preview、blockers、nextSteps 与 sideEffectPolicy', async ({page}) => {
         const requests = await seedAuthAndGateQStubs(page);
@@ -262,12 +268,38 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
 
         const view = page.getByTestId('strategy-validation-page');
         await expect(view).toBeVisible();
-        await expect(view).toContainText('策略验证与 Paper / Shadow 对照');
+        await expect(view).toContainText('策略生命周期追溯与 Paper / Shadow 对照');
         await expect(view).toContainText('只读验证');
         await expect(view).toContainText('不代表交易授权');
         await expect(view).toContainText('不代表 LIVE 已启用');
         await expect(view).toContainText('不提交真实订单');
         await expect(view).toContainText('不读取真实凭证');
+        await expect(view).toContainText('不调用 private endpoint');
+        await expect(view).toContainText('不写真实账户 / 资金 / ledger');
+        await expect(view).toContainText('不接 AI / DH runtime 执行链路');
+
+        await expect(view).toContainText('状态解释');
+        await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
+        await expect(view).toContainText('UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*');
+        await expect(view).toContainText('生命周期追溯链');
+        await expect(view).toContainText('strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow');
+        await expect(view).toContainText('Strategy Version');
+        await expect(view).toContainText('Dataset');
+        await expect(view).toContainText('Evaluation Gate');
+        await expect(view).toContainText('Publish Trace');
+        await expect(view).toContainText('Paper Run');
+        await expect(view).toContainText('Paper / Shadow Comparison');
+        await expect(view).toContainText('Shadow Live Preview');
+        await expect(view).toContainText('Python Artifact Binding Preview');
+        await expect(view).toContainText('PENDING_FRONTEND_SUPPORT（等待前端接入支持）');
+        await expect(view).toContainText('NOT_CONNECTED');
+
+        await expect(view).toContainText('Evidence Matrix / 证据矩阵');
+        await expect(view).toContainText('requiredEvidence');
+        await expect(view).toContainText('missingEvidence');
+        await expect(view).toContainText('blockers');
+        await expect(view).toContainText('warnings');
+        await expect(view).toContainText('nextSteps');
 
         await expect(view).toContainText('READY_FOR_SHADOW_REVIEW（可进入 Shadow 评审）');
         await expect(view).toContainText('READY_FOR_COMPARISON（可查看只读对照）');
@@ -289,10 +321,12 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('shadow');
 
         await expectNoForbiddenCopy(page);
+        await expectNoSuccessTagForStatuses(page, ['NOT_IMPLEMENTED', 'NOT_AVAILABLE', 'UNKNOWN', 'PENDING_FRONTEND_SUPPORT']);
         expectNoForbiddenRequests(requests);
         expect(requests.some((url) => url.includes('/api/strategies/evaluation-gate'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/shadow-live/preview'))).toBeTruthy();
+        expect(requests.some((url) => url.includes('/api/research/evaluation-artifacts'))).toBeFalsy();
     });
 
     test('UNKNOWN / NOT_AVAILABLE 不显示为成功态', async ({page}) => {
@@ -337,6 +371,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).not.toContainText('READY_FOR_NO_SIDE_EFFECT_PREVIEW（可生成无副作用预览）');
 
         await expectNoForbiddenCopy(page);
+        await expectNoSuccessTagForStatuses(page, ['UNKNOWN', 'NOT_AVAILABLE', 'NOT_IMPLEMENTED']);
         expectNoForbiddenRequests(requests);
     });
 });

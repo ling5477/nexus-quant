@@ -15,7 +15,6 @@ import {
     Space,
     Table,
     Tag,
-    Timeline,
     Typography
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
@@ -75,17 +74,55 @@ interface ResultPanelProps<TData> {
     children: ReactNode;
 }
 
+interface LifecycleTraceItem {
+    key: string;
+    label: string;
+    value?: string | null;
+    status: string;
+    source: string;
+    detail: ReactNode;
+}
+
+type EvidenceMatrixCategory = 'requiredEvidence' | 'missingEvidence' | 'blockers' | 'warnings' | 'nextSteps';
+
+interface EvidenceMatrixRow {
+    key: string;
+    source: string;
+    category: EvidenceMatrixCategory;
+    code: string;
+    status: string;
+    message: string;
+}
+
+interface EvidenceSourceData {
+    requiredEvidence?: StrategyValidationEvidence[];
+    missingEvidence?: StrategyValidationEvidence[];
+    blockers?: StrategyValidationReason[];
+    warnings?: StrategyValidationReason[];
+    nextSteps?: string[];
+}
+
+interface StatusExplanationRow {
+    status: string;
+    meaning: string;
+    boundary: string;
+}
+
 const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     READY_FOR_SHADOW_REVIEW: {label: '可进入 Shadow 评审', tone: 'info'},
     READY_FOR_COMPARISON: {label: '可查看只读对照', tone: 'info'},
     READY_FOR_NO_SIDE_EFFECT_PREVIEW: {label: '可生成无副作用预览', tone: 'info'},
     VALID_FOR_BINDING_PREVIEW: {label: '可进入只读绑定预览', tone: 'info'},
+    PENDING_FRONTEND_SUPPORT: {label: '等待前端接入支持', tone: 'warning'},
+    NOT_CONNECTED: {label: '未接入', tone: 'warning'},
+    ACTION_REQUIRED: {label: '需要后续处理', tone: 'warning'},
     SKELETON_AVAILABLE: {label: '骨架可用', tone: 'info'},
     PREVIEW_ONLY: {label: '仅预览', tone: 'info'},
     NOT_EXECUTED: {label: '未执行', tone: 'neutral'},
     NOT_IMPLEMENTED: {label: '能力未实现', tone: 'warning'},
     UNKNOWN: {label: '未知', tone: 'neutral'},
     NOT_AVAILABLE: {label: '不可用', tone: 'neutral'},
+    PARTIAL: {label: '部分可见', tone: 'warning'},
     BLOCKED_SHADOW_NOT_IMPLEMENTED: {label: 'Shadow 未实现阻断', tone: 'danger'},
     PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE: {label: 'Shadow facts 不可用', tone: 'danger'},
     PREVIEW_BLOCKED_TRACE_CHAIN_INCOMPLETE: {label: '追踪链不完整', tone: 'danger'},
@@ -100,6 +137,51 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     SUCCEEDED: {label: '成功', tone: 'success'},
     ACTIVE: {label: '有效', tone: 'success'},
 };
+
+const EVIDENCE_CATEGORY_LABELS: Record<EvidenceMatrixCategory, string> = {
+    requiredEvidence: 'requiredEvidence',
+    missingEvidence: 'missingEvidence',
+    blockers: 'blockers',
+    warnings: 'warnings',
+    nextSteps: 'nextSteps',
+};
+
+const STATUS_EXPLANATIONS: StatusExplanationRow[] = [
+    {
+        status: 'READY_FOR_SHADOW_REVIEW',
+        meaning: '可进入 Shadow 评审',
+        boundary: '只表示研究与评估证据可进入后续评审，不表示可交易、可下单或可启用 LIVE。',
+    },
+    {
+        status: 'READY_FOR_COMPARISON',
+        meaning: '可查看只读对照',
+        boundary: '只表示 Paper / Shadow 只读证据可比较，不创建 Shadow run，不表示交易授权。',
+    },
+    {
+        status: 'READY_FOR_NO_SIDE_EFFECT_PREVIEW',
+        meaning: '可生成无副作用预览',
+        boundary: '只表示可以生成 no-side-effect preview，不执行策略、不提交订单、不写真实状态。',
+    },
+    {
+        status: 'VALID_FOR_BINDING_PREVIEW',
+        meaning: '可进入绑定预览',
+        boundary: '只表示 artifact 可做只读校验预览，不代表已入库、已发布、ML ready 或 live execution ready。',
+    },
+    {
+        status: 'UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*',
+        meaning: '未知、不可用、能力未实现或阻断',
+        boundary: '必须按缺失或阻断展示，不能显示为成功态；页面必须保留 blockers 与 nextSteps。',
+    },
+];
+
+const FORBIDDEN_BOUNDARY_ITEMS = [
+    '不提交真实订单',
+    '不读取真实凭证',
+    '不启用 LIVE',
+    '不调用 private endpoint',
+    '不写真实账户 / 资金 / ledger',
+    '不接 AI / DH runtime 执行链路',
+];
 
 const TONE_TO_COLOR: Record<StatusTone, string> = {
     success: 'success',
@@ -198,6 +280,108 @@ const sideEffectColumns: ColumnsType<ShadowLiveSideEffectPolicy> = [
     },
 ];
 
+const lifecycleColumns: ColumnsType<LifecycleTraceItem> = [
+    {
+        title: '节点',
+        dataIndex: 'label',
+        key: 'label',
+        width: 230,
+        render: (_value: string, record) => (
+            <Space direction="vertical" size={2}>
+                <Text strong>{record.label}</Text>
+                <Text code>{record.key}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'Trace value',
+        dataIndex: 'value',
+        key: 'value',
+        width: 220,
+        render: (value?: string | null) => optionalCode(value),
+    },
+    {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 220,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 260,
+        render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+    {
+        title: '边界说明',
+        dataIndex: 'detail',
+        key: 'detail',
+        render: (value: ReactNode) => <Text type="secondary">{value}</Text>,
+    },
+];
+
+const evidenceMatrixColumns: ColumnsType<EvidenceMatrixRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 210,
+        render: (value: string) => <Text>{value}</Text>,
+    },
+    {
+        title: '类别',
+        dataIndex: 'category',
+        key: 'category',
+        width: 170,
+        render: (value: EvidenceMatrixCategory) => <Text code>{EVIDENCE_CATEGORY_LABELS[value]}</Text>,
+    },
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 180,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: '说明 / nextSteps',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+];
+
+const statusExplanationColumns: ColumnsType<StatusExplanationRow> = [
+    {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 280,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: '页面解释',
+        dataIndex: 'meaning',
+        key: 'meaning',
+        width: 220,
+        render: (value: string) => <Text>{value}</Text>,
+    },
+    {
+        title: '禁止误读',
+        dataIndex: 'boundary',
+        key: 'boundary',
+        render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+];
+
 function normalizeStatus(status: string | null | undefined): string {
     const normalized = status?.trim().toUpperCase();
     return normalized || 'UNKNOWN';
@@ -222,6 +406,9 @@ function statusPresentation(status: string | null | undefined): StatusPresentati
     if (normalized.includes('WARNING') || normalized.includes('MISSING') || normalized.includes('INCOMPLETE')) {
         return {label: normalized, tone: 'warning'};
     }
+    if (normalized.includes('PENDING') || normalized === 'NOT_CONNECTED') {
+        return {label: normalized, tone: 'warning'};
+    }
     if (normalized.startsWith('READY_FOR')) {
         return {label: normalized, tone: 'info'};
     }
@@ -233,6 +420,8 @@ function isProblemStatus(status: string | null | undefined): boolean {
     return normalized === 'UNKNOWN'
         || normalized === 'NOT_AVAILABLE'
         || normalized === 'NOT_IMPLEMENTED'
+        || normalized === 'NOT_CONNECTED'
+        || normalized.includes('PENDING')
         || normalized.startsWith('BLOCKED')
         || normalized.startsWith('PREVIEW_BLOCKED')
         || normalized.includes('FAILED')
@@ -308,6 +497,72 @@ function firstScope(
         paperRunId: firstText(preview?.scope?.paperRunId, comparison?.scope?.paperRunId, gate?.scope?.paperRunId, query?.paperRunId),
         shadowRunId: firstText(preview?.scope?.shadowRunId, comparison?.scope?.shadowRunId, query?.shadowRunId),
     };
+}
+
+/**
+ * Evidence Matrix 聚合三个只读 GET 响应。
+ *
+ * Why:
+ * GateQ-6 需要横向查看 requiredEvidence / missingEvidence / blockers / warnings / nextSteps；
+ * 聚合只发生在前端内存中，不发起写侧请求，也不补造后端没有返回的通过态。
+ */
+function evidenceMatrixRows(source: string, data?: EvidenceSourceData): EvidenceMatrixRow[] {
+    if (!data) {
+        return [];
+    }
+
+    const rows: EvidenceMatrixRow[] = [];
+    data.requiredEvidence?.forEach((item, index) => {
+        rows.push({
+            key: `${source}-required-${index}-${item.code}`,
+            source,
+            category: 'requiredEvidence',
+            code: item.code,
+            status: item.status,
+            message: item.message,
+        });
+    });
+    data.missingEvidence?.forEach((item, index) => {
+        rows.push({
+            key: `${source}-missing-${index}-${item.code}`,
+            source,
+            category: 'missingEvidence',
+            code: item.code,
+            status: item.status,
+            message: item.message,
+        });
+    });
+    data.blockers?.forEach((item, index) => {
+        rows.push({
+            key: `${source}-blocker-${index}-${item.code}`,
+            source,
+            category: 'blockers',
+            code: item.code,
+            status: item.severity,
+            message: item.message,
+        });
+    });
+    data.warnings?.forEach((item, index) => {
+        rows.push({
+            key: `${source}-warning-${index}-${item.code}`,
+            source,
+            category: 'warnings',
+            code: item.code,
+            status: item.severity,
+            message: item.message,
+        });
+    });
+    data.nextSteps?.forEach((item, index) => {
+        rows.push({
+            key: `${source}-next-${index}-${item}`,
+            source,
+            category: 'nextSteps',
+            code: `NEXT_STEP_${index + 1}`,
+            status: 'ACTION_REQUIRED',
+            message: item,
+        });
+    });
+    return rows;
 }
 
 function StatusTag({status}: { status?: string | null }) {
@@ -694,71 +949,171 @@ function TraceabilityChain({
     preview?: ShadowLivePreviewResponse;
 }) {
     const scope = firstScope(submittedQuery, gate, comparison, preview);
-    const items = [
+    const items: LifecycleTraceItem[] = [
         {
             key: 'strategyVersion',
+            label: 'Strategy Version',
             value: scope.strategyVersionId,
             status: scope.strategyVersionId ? gate?.gateStatus ?? 'SATISFIED' : 'NOT_AVAILABLE',
+            source: 'Strategy Evaluation Gate / query',
             detail: 'strategy version 是本页查询链路的主锚点。',
         },
         {
             key: 'dataset',
+            label: 'Dataset',
             value: scope.datasetId,
             status: gate?.datasetQualityStatus ?? comparison?.dataQualityStatus ?? 'NOT_AVAILABLE',
+            source: 'Evaluation Gate / Paper Shadow',
             detail: 'dataset 只用于评估证据追踪，不代表行情可交易。',
         },
         {
-            key: 'evaluation',
+            key: 'evaluationGate',
+            label: 'Evaluation Gate',
             value: scope.evaluationId,
-            status: gate?.evaluationStatus ?? comparison?.evaluationGateStatus ?? 'NOT_AVAILABLE',
-            detail: 'evaluation 只表示评估事实，不代表策略批准。',
+            status: gate?.gateStatus ?? comparison?.evaluationGateStatus ?? 'NOT_AVAILABLE',
+            source: 'GateQ-1 GET /api/strategies/evaluation-gate',
+            detail: 'Evaluation Gate 只表示可进入 Shadow 评审的只读证据，不代表策略批准或交易授权。',
         },
         {
-            key: 'publish',
+            key: 'publishTrace',
+            label: 'Publish Trace',
             value: scope.publishId,
             status: gate?.publishTraceStatus ?? 'NOT_AVAILABLE',
+            source: 'Strategy Evaluation Gate',
             detail: 'publish trace 仅为链路证据，不触发发布写侧。',
         },
         {
-            key: 'paper',
+            key: 'paperRun',
+            label: 'Paper Run',
             value: scope.paperRunId,
             status: comparison?.paperRunStatus ?? gate?.paperEvidenceStatus ?? 'NOT_AVAILABLE',
+            source: 'Evaluation Gate / Paper Shadow',
             detail: 'Paper evidence 只表示 SIM/Paper 事实，不启动 Paper run。',
         },
         {
-            key: 'shadow',
+            key: 'paperShadowComparison',
+            label: 'Paper / Shadow Comparison',
             value: scope.shadowRunId,
-            status: comparison?.shadowRunStatus ?? preview?.paperShadowComparisonStatus ?? 'NOT_IMPLEMENTED',
-            detail: 'Shadow facts 当前只读；缺失或未实现必须显式展示。',
+            status: comparison?.comparisonStatus ?? 'NOT_AVAILABLE',
+            source: 'GateQ-2 GET /api/strategies/paper-shadow/comparison',
+            detail: '只读对照只说明是否可比较；Shadow 缺失、未知或未实现不能显示为成功。',
+        },
+        {
+            key: 'shadowLivePreview',
+            label: 'Shadow Live Preview',
+            value: scope.shadowRunId,
+            status: preview?.previewStatus ?? comparison?.shadowRunStatus ?? 'NOT_AVAILABLE',
+            source: 'GateQ-3 GET /api/strategies/shadow-live/preview',
+            detail: 'Shadow Live Preview 是 no-side-effect preview，不执行策略、不提交真实订单。',
+        },
+        {
+            key: 'pythonArtifactBindingPreview',
+            label: 'Python Artifact Binding Preview',
+            value: 'NOT_CONNECTED',
+            status: 'PENDING_FRONTEND_SUPPORT',
+            source: 'GateQ-4 POST API 已存在；本页不调用',
+            detail: '当前页面未接入 artifact JSON 请求 UI；仅展示只读追溯占位，不上传、不导入、不写 Java fact-source。',
         },
     ];
 
     return (
-        <Card className="page-section" variant="borderless" title="Traceability chain">
+        <Card className="page-section" variant="borderless" title="生命周期追溯链">
             {!submittedQuery ? (
                 <Empty
-                    description="提交查询后展示 strategy version -> dataset -> evaluation -> publish -> paper -> shadow 链路"/>
+                    description="提交查询后展示 strategy version -> dataset -> evaluation gate -> publish -> paper run -> Paper / Shadow Comparison -> Shadow Live Preview -> Python Artifact Binding Preview 链路"/>
             ) : (
-                <Timeline
-                    items={items.map((item) => ({
-                        color: statusPresentation(item.status).tone === 'danger'
-                            ? 'red'
-                            : statusPresentation(item.status).tone === 'warning'
-                                ? 'orange'
-                                : 'blue',
-                        children: (
-                            <Space direction="vertical" size={4}>
-                                <Space size={8} wrap>
-                                    <Text code>{item.key}</Text>
-                                    {optionalCode(item.value)}
-                                    <StatusTag status={item.status}/>
-                                </Space>
-                                <Text type="secondary">{item.detail}</Text>
-                            </Space>
-                        ),
-                    }))}
-                />
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <Alert
+                        type="info"
+                        showIcon
+                        message="Trace path"
+                        description="strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow -> pythonArtifactBindingPreview。所有节点均为只读展示；缺失、未知、未实现或阻断节点不会显示为成功。"
+                    />
+                    <Table<LifecycleTraceItem>
+                        size="small"
+                        rowKey={(record) => record.key}
+                        columns={lifecycleColumns}
+                        dataSource={items}
+                        pagination={false}
+                        scroll={{x: 1180}}
+                    />
+                </Space>
             )}
+        </Card>
+    );
+}
+
+function EvidenceMatrix({
+                            submittedQuery,
+                            gate,
+                            comparison,
+                            preview,
+                        }: {
+    submittedQuery: StrategyValidationQuery | null;
+    gate?: StrategyEvaluationGateResponse;
+    comparison?: PaperShadowComparisonResponse;
+    preview?: ShadowLivePreviewResponse;
+}) {
+    const rows = useMemo(() => [
+        ...evidenceMatrixRows('Evaluation Gate', gate),
+        ...evidenceMatrixRows('Paper / Shadow Comparison', comparison),
+        ...evidenceMatrixRows('Shadow Live Preview', preview),
+        {
+            key: 'Python Artifact Binding Preview-front-end-support',
+            source: 'Python Artifact Binding Preview',
+            category: 'missingEvidence' as const,
+            code: 'PENDING_FRONTEND_SUPPORT',
+            status: 'PENDING_FRONTEND_SUPPORT',
+            message: 'GateQ-4 binding preview API 已存在，但本页未接入 artifact request UI；本轮不补后端、不上传、不导入。',
+        },
+        {
+            key: 'Python Artifact Binding Preview-next-step',
+            source: 'Python Artifact Binding Preview',
+            category: 'nextSteps' as const,
+            code: 'NEXT_STEP_1',
+            status: 'ACTION_REQUIRED',
+            message: '后续如需 artifact binding 前端能力，必须单独授权只读 request-body preview UI。',
+        },
+    ], [gate, comparison, preview]);
+
+    return (
+        <Card className="page-section" variant="borderless" title="Evidence Matrix / 证据矩阵">
+            {!submittedQuery ? (
+                <Empty description="提交查询后展示 requiredEvidence / missingEvidence / blockers / warnings / nextSteps"/>
+            ) : (
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <Alert
+                        type="info"
+                        showIcon
+                        message="证据矩阵只聚合前端已收到的只读响应"
+                        description="requiredEvidence、missingEvidence、blockers、warnings 与 nextSteps 仅用于追溯和评审；缺失 nextSteps 不会被解释为已完成。"
+                    />
+                    <Table<EvidenceMatrixRow>
+                        size="small"
+                        rowKey={(record) => record.key}
+                        columns={evidenceMatrixColumns}
+                        dataSource={rows}
+                        pagination={false}
+                        scroll={{x: 1080}}
+                        locale={{emptyText: '暂无 evidence matrix；不能解释为证据完整。'}}
+                    />
+                </Space>
+            )}
+        </Card>
+    );
+}
+
+function StatusSemantics() {
+    return (
+        <Card className="page-section" variant="borderless" title="状态解释">
+            <Table<StatusExplanationRow>
+                size="small"
+                rowKey={(record) => record.status}
+                columns={statusExplanationColumns}
+                dataSource={STATUS_EXPLANATIONS}
+                pagination={false}
+                scroll={{x: 900}}
+            />
         </Card>
     );
 }
@@ -770,15 +1125,16 @@ function BoundarySummary() {
                 <Alert
                     type="warning"
                     showIcon
-                    message="本页仅用于策略验证与只读对照"
-                    description="Evaluation Gate 不代表交易授权；Paper vs Shadow Comparison 不代表交易授权；Shadow Live Preview 是 no-side-effect preview，不提交真实订单、不读取真实凭证。"
+                    message="本页仅用于策略生命周期追溯与只读证据检查"
+                    description="Evaluation Gate 不代表交易授权；Paper / Shadow Comparison 不代表交易授权；Shadow Live Preview 是 no-side-effect preview，不提交真实订单；Python artifact binding preview 不代表 artifact 已入库、不代表 ML ready、不代表 live execution ready。"
                 />
                 <Space size={[8, 8]} wrap>
                     <Tag color="default">只读验证</Tag>
                     <Tag color="error">不代表交易授权</Tag>
                     <Tag color="error">不代表 LIVE 已启用</Tag>
-                    <Tag color="error">不提交真实订单</Tag>
-                    <Tag color="error">不读取真实凭证</Tag>
+                    {FORBIDDEN_BOUNDARY_ITEMS.map((item) => (
+                        <Tag key={item} color="error">{item}</Tag>
+                    ))}
                     <Tag color="default">LIVE: DISABLED</Tag>
                     <Tag color="default">real provider: NOT_IMPLEMENTED</Tag>
                     <Tag color="default">private trading adapter: NOT_IMPLEMENTED</Tag>
@@ -786,6 +1142,12 @@ function BoundarySummary() {
                     <Tag color="default">AI: NOT STARTED</Tag>
                     <Tag color="default">DH runtime: NOT INTEGRATED</Tag>
                 </Space>
+                <Alert
+                    type="info"
+                    showIcon
+                    message="缺失态处理"
+                    description="UNKNOWN、NOT_AVAILABLE、NOT_IMPLEMENTED、PENDING_FRONTEND_SUPPORT 与 BLOCKED_* 均按非成功态展示，必须结合 blockers 与 nextSteps 处理。"
+                />
             </Space>
         </Card>
     );
@@ -817,16 +1179,23 @@ export function StrategyValidationPage() {
         <Space data-testid="strategy-validation-page" direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" variant="borderless">
                 <PageHero
-                    title="策略验证与 Paper / Shadow 对照"
-                    description="只读查看 strategy version、dataset、evaluation、publish、Paper run、Paper/Shadow 对照与 Shadow Live no-side-effect preview 证据链。"
-                    badge="GateQ-5 · 只读验证"
+                    title="策略生命周期追溯与 Paper / Shadow 对照"
+                    description="只读查看 strategy version、dataset、Evaluation Gate、publish、Paper run、Paper / Shadow Comparison、Shadow Live no-side-effect preview 与 Python Artifact Binding Preview 追溯链。"
+                    badge="GateQ-6 · 只读追溯"
                     tip="本页不创建运行、不启动 runner、不修改任何交易状态。"
                 />
             </Card>
 
             <BoundarySummary/>
             <QueryForm initialValues={initialQuery} onSubmit={submitQuery} onReset={resetQuery} loading={loading}/>
+            <StatusSemantics/>
             <TraceabilityChain
+                submittedQuery={submittedQuery}
+                gate={evaluationGateQuery.data}
+                comparison={paperShadowQuery.data}
+                preview={shadowLivePreviewQuery.data}
+            />
+            <EvidenceMatrix
                 submittedQuery={submittedQuery}
                 gate={evaluationGateQuery.data}
                 comparison={paperShadowQuery.data}
