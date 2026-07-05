@@ -38,7 +38,7 @@
 
 ## NQ-DH Integration-1 Runtime Client API Boundary
 
-`NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW` 已 `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。本轮未新增 NQ endpoint、NQ Controller、真实 HTTP client、schema、OpenAPI、contracts、golden_cases、fixture JSON 或 migration；已关闭接受的仍是 isolated internal client / DTO / config / tests / recorder 边界。
+`NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW` 已 `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。`NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO` 已 `CLOSED / ACCEPTED / WORK_ORDER_ONLY / NO_TEST_IMPLEMENTATION / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`。本轮未新增 NQ endpoint、NQ Controller、真实 HTTP client、schema、OpenAPI、contracts、golden_cases、fixture JSON 或 migration；已关闭接受的仍是 isolated internal client / DTO / config / tests / recorder 边界，以及下一轮 joint test 的 test-only / fake-transport / no-real-http 工单边界。
 
 当前 internal client 的唯一允许方向仍是：
 
@@ -59,7 +59,7 @@ DH integrated: NO
 LIVE: DISABLED
 ```
 
-`LONG_BIAS / SHORT_BIAS` 只能作为 readonly bias 记录，不得映射为 `BUY / SELL`，不得进入 order / execution / risk / ledger / paper / live 链路。下一步只能做 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO`；joint runtime dry-run test implementation、real DH call、real HTTP、real provider、schema/contracts/golden_cases formalization 均仍需另起任务且当前不允许。
+`LONG_BIAS / SHORT_BIAS` 只能作为 readonly bias 记录，不得映射为 `BUY / SELL`，不得进入 order / execution / risk / ledger / paper / live 链路。下一步只能在单独授权后做 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION`；该 implementation 仍必须 test-only / fake-transport / no-real-http。real DH call、real HTTP、real provider、schema/contracts/golden_cases formalization 均仍需另起任务且当前不允许。
 
 ## Adapter Readiness API
 

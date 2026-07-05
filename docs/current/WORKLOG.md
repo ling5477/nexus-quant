@@ -13820,3 +13820,59 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 进入 `NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION / NOT STARTED / CONTROLLED_IMPLEMENTATION / DEFAULT_DISABLED / DEV_TEST_ONLY / NO_LIVE`；必须由用户单独授权后才能修改 NQ 代码，且不得修改 NQ dev mainline worktree。
+
+---
+
+## NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO
+
+日期：2026-07-05
+
+### 本轮目标
+
+冻结下一轮 joint runtime dry-run test implementation 的测试边界、测试方式、允许文件范围、禁止项、测试矩阵、验收标准和回滚要求。本轮为 `WORK_ORDER_ONLY + JOINT_RUNTIME_DRYRUN_TEST_PLAN + CROSS_REPO_TEST_BOUNDARY_FREEZE + NO_TEST_IMPLEMENTATION + NO_REAL_DH_CALL + NO_REAL_HTTP + NO_REAL_PROVIDER + NO_LIVE`。
+
+### 完成内容
+
+- 新增 `docs/current/NQ_DH_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_WO.md`。
+- DH dev 新增 `docs/current/DH_NQ_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_WO.md`。
+- NQ worktree 同步 `docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`WORK_ORDER.md`、`API.md`、`TESTING.md` 与本文件。
+- DH dev 同步 `docs/current/DH_NQ_INTEGRATION.md`、`STATUS.md`、`ROADMAP.md`、`WORK_ORDER.md`、`TESTING.md` 与 `WORKLOG.md`。
+- 冻结唯一允许的下一轮验证链路：`NQ limited dry-run client -> fake / in-memory / MockMvc / test-only transport -> DH POST /api/ai/decision-dry-runs -> DH readonly decision envelope -> NQ response validation -> NQ dry-run record-only result`。
+- 固定下一轮只能使用 fake transport、in-memory adapter、MockMvc、test-only request/response vector 或 isolated test support module；禁止 WebClient / RestTemplate / OkHttp / java.net.http.HttpClient real outbound，禁止 WireMock 绑定真实网络端口、访问真实 DH 服务、localhost 真实运行服务或外网。
+- 固定下一轮成功矩阵、DH/NQ fail-closed 矩阵、no-side-effect 矩阵、audit/trace/record 验证、error taxonomy 对齐、验收门槛和回滚要求。
+- 明确 `LONG_BIAS / SHORT_BIAS` 只能作为 bias-only，不得映射为 `BUY / SELL`；NQ 只能 record-only，不执行。
+
+### 验证
+
+- NQ worktree `git status --short`：PASS / DOCS-ONLY CHANGES PRESENT；dirty 限于允许的 `docs/current` 文档。
+- NQ worktree `git branch --show-current`：PASS；`nq-dh-i1-joint-runtime-dryrun-test-wo`。
+- NQ worktree `git diff --check`：PASS；仅 LF/CRLF warning，无 whitespace error。
+- NQ worktree forbidden-scope diff：PASS / EMPTY；未改 backend migration、frontend、research、scripts、deploy、`.github`、contracts 或 golden_cases。
+- NQ worktree boundary `rg`：PASS / REVIEWED；命中为既有 docs/backend 业务词、历史/禁止语境、test guard 或本轮 WO 边界说明。
+- DH dev forbidden-scope diff：PASS / EMPTY；未改 DH Java、tests、contracts、golden_cases 或 migration。
+- NQ dev read-only guard：PASS / SCOPED EMPTY；NQ-DH / Integration-1 scoped unstaged 与 staged diff 均为空，本轮未修改 NQ dev。
+- 未运行 NQ / DH Maven full、targeted tests 或 quality profile；原因是本轮 docs-only / work-order-only，未修改 Java、测试、contracts、fixture、golden_cases 或 migration，不声明 Maven PASS。
+
+### 边界
+
+未实现测试；未修改 NQ 或 DH Java 生产代码；未修改测试代码；未新增测试 fixture；未改 DH endpoint；未改 NQ client；未修改 NQ dev；未改 contracts / OpenAPI / JSON Schema / golden_cases / migration；未真实调用 DH；未真实 HTTP；未接 real provider；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未触碰 order / execution / risk / ledger / account / paper / live；未把 Runtime integration 写成 started；未把 DH 写成 integrated；未接 Agent / LangGraph；未开启 LIVE。
+
+### Readiness
+
+- `ALLOW_JOINT_RUNTIME_DRYRUN_TEST_WO_CLOSE: YES`
+- `ALLOW_JOINT_RUNTIME_DRYRUN_TEST_IMPLEMENTATION: NO`
+- `ALLOW_REAL_DH_CALL_NOW: NO`
+- `ALLOW_REAL_HTTP_NOW: NO`
+- `ALLOW_REAL_PROVIDER: NO`
+- `ALLOW_SCHEMA_FORMALIZATION_NOW: NO`
+- `ALLOW_CONTRACTS_MODIFICATION_NOW: NO`
+- `ALLOW_GOLDEN_CASES_MODIFICATION_NOW: NO`
+- `ALLOW_DH_CODE_CHANGE_NOW: NO`
+- `ALLOW_NQ_PRODUCTION_CODE_CHANGE_NOW: NO`
+- `ALLOW_AGENT_PHASE: NO`
+- `ALLOW_LANGGRAPH_RUNTIME: NO`
+- `ALLOW_LIVE: NO`
+
+### 推荐下一步
+
+进入 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION`；该任务必须由用户单独授权，且只能做 test-only / fake-transport / no-real-http 联合验证，不得真实联调。
