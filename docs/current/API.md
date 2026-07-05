@@ -21,6 +21,7 @@
 - Strategy Evaluation Gate API：只读聚合 strategy version、dataset quality、evaluation、publish trace 与 SIM Paper evidence，供 GateQ-1 判断研究与评估证据是否可进入后续 Shadow review。
 - Paper Shadow Comparison API：只读聚合 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 与 Shadow 未实现状态，供 GateQ-2 判断 Paper vs Shadow 对照证据准备度。
 - Shadow Live No-side-effect Preview API：只读聚合 GateQ-1 evaluation gate 与 GateQ-2 Paper/Shadow comparison 结果，供 GateQ-3 判断是否能生成 Shadow Live no-side-effect 预览计划。
+- Python Evaluation Artifact Binding Preview API：只读校验 request body 中的 Python offline evaluation artifact，供 GateQ-4 生成 Java fact source binding preview，不导入、不上传、不写库。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
 - Actuator / Health：Spring Boot actuator、健康检查。
@@ -42,6 +43,7 @@
 - GateQ-1 新增只读 Strategy Evaluation Gate API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，不启动 Shadow Live runner，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 strategy live-ready。
 - GateQ-2 新增只读 Paper Shadow Comparison API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，并把 Shadow runner / Shadow run 当前建模为 `NOT_IMPLEMENTED`（未实现）/ `BLOCKED_SHADOW_NOT_IMPLEMENTED`（Shadow 未实现阻断）/ `NOT_AVAILABLE`（不可用）。该接口不启动 Shadow runner，不创建 shadow run，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live ready。
 - GateQ-3 新增只读 Shadow Live no-side-effect preview API；只调用 GateQ-1 / GateQ-2 只读 service 聚合既有事实，不新增 repository、SQL、migration 或 scheduler，不启动真实 Shadow runner，不创建 shadow run，不写数据库，不外联，不读取 credential material，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live execution ready。
+- GateQ-4 新增只读 Python Evaluation Artifact Binding Preview API；只校验 request body 中的 artifact JSON，不读取本地路径，不新增 import/upload endpoint，不把 Python artifact 写成 Java fact，不写数据库，不触发 strategy publish / Paper run / Shadow run，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 strategy approved、trading authorization、ML ready 或 live execution ready。
 
 ## GateQ-1 Strategy Evaluation Gate Read-only API
 
@@ -83,6 +85,18 @@ NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON 当前状态：`IMPLEMENTE
   - `orderIntentPreviewStatus` 当前固定为 `NOT_EXECUTED`；`riskPreflightPreviewStatus` 仅在 ready 时可为 `PREVIEW_ONLY`，否则为 `NOT_EXECUTED`。本轮不生成真实策略信号、真实执行建议、真实 order intent 或 buy/sell/market order 级别建议。
   - Fail-closed 规则：缺少或无法解析 `strategyVersionId`、evaluation gate 未通过、Paper/Shadow comparison 阻断、dataset 不存在或数据质量不足、publish trace 不存在、Paper run 不存在或不可比较、Shadow facts 不存在、trace chain 不完整、任一 side-effect policy 不能证明 forbidden，均返回阻断或不可用状态，不伪造 ready。
   - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED` 或 `AUTHORIZED` 放行语义。
+
+## GateQ-4 Python Evaluation Artifact Binding Preview API
+
+NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖 Python offline evaluation artifact 到 Java fact source 的只读绑定预览契约 baseline，不代表 GateQ 整体冻结或接受。
+
+- `POST /api/research/evaluation-artifacts/binding-preview`：只校验 request body 中的 Python offline evaluation artifact JSON 与 Java expected anchors，返回 binding preview。该接口只读 / dry-run / preview，不读取磁盘文件或真实路径，不新增 upload/import/persist endpoint，不写数据库，不把 artifact 转成 backtest_eval_reports、strategy evaluation、publish record 或 Paper evidence，不启动策略发布、Paper run 或 Shadow run，不外联，不读取 credential material，不启用 LIVE / AI / DH runtime。
+  - Request body：`artifact / expectedDatasetId / expectedStrategyVersionId / expectedStrategyVersion / expectedEvaluationVersion / expectedChecksum / expectedParametersHash / source / dryRun`。`artifact` 必须是 JSON object；`source` 允许 `PYTHON_OFFLINE`（Python 离线来源）；`dryRun=false` 会 fail-closed，`dryRun` 缺失按 preview endpoint 固有 dry-run 处理。
+  - Response：`scope / bindingStatus / validationStatus / artifactType / runMode / datasetId / strategyVersion / evaluationVersion / parametersHash / checksumStatus / schemaStatus / metricsStatus / offlineBoundaryStatus / traceabilityStatus / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt`。
+  - `bindingStatus` / `validationStatus` 当前语义：`VALID_FOR_BINDING_PREVIEW`（仅表示 artifact 可进入只读绑定预览）、`BLOCKED_SCHEMA_INVALID`（schema 无效阻断）、`BLOCKED_UNSUPPORTED_SCHEMA_VERSION`（schemaVersion 不支持阻断）、`BLOCKED_RUN_MODE_NOT_OFFLINE`（runMode 非 OFFLINE 阻断）、`BLOCKED_DATASET_MISMATCH`（dataset 不一致阻断）、`BLOCKED_STRATEGY_VERSION_MISMATCH`（strategyVersion 不一致阻断）、`BLOCKED_CHECKSUM_MISMATCH`（checksum 不一致阻断）、`BLOCKED_PARAMETERS_HASH_MISMATCH`（parametersHash 不一致阻断）、`BLOCKED_METRICS_INCOMPLETE`（metrics 不完整阻断）、`BLOCKED_TRACEABILITY_INCOMPLETE`（traceability 不完整阻断）、`BLOCKED_BOUNDARY_VIOLATION`（offline boundary 或敏感/runtime 字段违规阻断）、`UNKNOWN`（未知）、`NOT_AVAILABLE`（不可用）。
+  - Fail-closed 规则：artifact 为空或非 JSON object、`schemaVersion` 缺失或非 `python-evaluation-artifact.v1`、`runMode` 非 `OFFLINE`、`datasetId` / `strategyVersion` / `evaluationVersion` / `checksum` / `parametersHash` 缺失或与 expected anchors 不一致、required metrics 不完整、`startTime` / `endTime` / `barCount` 缺失、offline boundary 缺失或不完整、traceability fields 不完整、出现 `liveExecution` / `realOrder` / `credential` / `privateEndpoint` / `brokerAccount` / path-like 字段或 credential-like 字段，均返回阻断状态，不伪造 ready。
+  - `VALID_FOR_BINDING_PREVIEW` 仅代表“可生成只读绑定预览”。它不代表 Java fact 已写入，不代表 artifact 已导入，不代表策略已批准或可发布，不代表 Paper run / Shadow run 可启动，不代表交易授权，不代表 Python ML ready 或 live execution ready。
+  - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED`、`AUTHORIZED` 或 `ML_READY` 放行语义。
 
 ## Adapter Readiness API
 

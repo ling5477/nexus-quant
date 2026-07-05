@@ -1,3 +1,40 @@
+## NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-4 Python offline evaluation artifact 到 Java fact source 的只读 binding preview contract baseline；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表 artifact 已入库、策略已批准、Paper/Shadow run 可启动、交易授权、Python ML ready 或 live execution ready。
+
+```text
+Scope:
+  - 新增 Python evaluation artifact binding query / request model。
+  - 新增 core artifact validation service、binding preview read model、HTTP DTO 和 API endpoint。
+  - 只校验 request body 中的 artifact JSON，不读取磁盘路径，不新增 import / upload / persist endpoint。
+  - 不新增 repository / SQL / migration / scheduler，不写数据库，不外联，不读取 credential material。
+  - 不启动策略执行、Paper run 或 Shadow run，不修改 publish / evaluation / paper run 状态。
+
+Result:
+  NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: POST /api/research/evaluation-artifacts/binding-preview
+  Highest non-blocking status: VALID_FOR_BINDING_PREVIEW
+  Binding scope: PYTHON_OFFLINE / dry-run / request-body artifact only
+  GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=PythonEvaluationArtifactBindingServiceTest,PythonEvaluationArtifactBindingPreviewControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Targeted regression：`PythonEvaluationArtifactBindingServiceTest` 12 tests、`PythonEvaluationArtifactBindingPreviewControllerTest` 2 tests；覆盖 valid offline preview、runMode 非 OFFLINE、unsupported schema、dataset/strategy/checksum/parametersHash mismatch、metrics incomplete、forbidden boundary fields、traceability incomplete、response 不含交易授权字段或敏感字段、service read-only / no external IO / no persistence / no local path collaborators。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 131 tests / 0 failures / 0 errors / 0 skipped，含 GateQ-1 / GateQ-2 / GateQ-3 与新增 GateQ-4 service tests；`nq-api` 67 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 0 errors / 3 skipped。 |
+| `git status --short` | PASS / REVIEWED | 工作区仅包含本轮 GateQ-4 后端新增文件与允许的 current/root 文档修改；无非本轮 staged 内容。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows 工作区 LF -> CRLF 提示，非阻断。 |
+| `git diff --stat` | PASS / REVIEWED | tracked diff 集中在 `README.md` 与 `docs/current`；新增 Java 文件需结合 `git status --short` 读取，因为普通 diff stat 不统计 untracked 文件。 |
+| forbidden-scope diff | PASS / EMPTY | `git diff -- frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` 均为空。 |
+| 用户指定风险词 `rg` 扫描（backend / docs/current / README.md） | REVIEWED / NON-BLOCKING | 完整 pattern 已执行。命中主要来自历史文档、既有 adapter/trading 域代码、否定边界说明、当前 API 安全说明和负向测试断言；本轮新增代码窄口复核只命中 forbidden-field blacklist、no-HTTP-client 反射断言、DTO/Controller 否定注释和 response 字段缺失断言，未发现新增真实外联、credential material 输出、LIVE 开关、RealClient/real provider 实现、private endpoint、下单、撤单、提现或转账路径。 |
+| Known warnings | REVIEWED / NON-BLOCKING | 保留既有 SLF4J no-provider warning、Mockito dynamic agent warning、ByteBuddy dynamic agent warning、JVM bootstrap classpath sharing warning，以及既有 infra/scheduler test unchecked warning；本轮已清理新增 service 的 Jackson deprecated API warning。 |
+
+本轮未运行 frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮禁止修改 frontend 和 research，且实际未触达相关目录；Python 仅做只读字段核对。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未读取本地 artifact 路径；未新增 import / upload / persist endpoint；未写数据库；未把 Python artifact 写成 backtest_eval_reports、strategy evaluation、publish record 或 Paper evidence；未启动策略执行、Paper run 或 Shadow run；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。`VALID_FOR_BINDING_PREVIEW` 仅代表可进入只读绑定预览，不代表 Java fact 已写入、策略可发布、交易授权、Python ML ready 或 live execution ready。
+
 ## NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON validation（2026-07-05）
 
 本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-3 Shadow Live no-side-effect runner skeleton 与只读 preview API；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表真实 Shadow Live runner、LIVE、AI 或 DH runtime 已启动。

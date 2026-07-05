@@ -1,3 +1,54 @@
+## NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT
+
+日期：2026-07-05。
+
+范围：
+
+- NQ-only GateQ-4 后端只读 binding contract baseline。
+- 新增 Python offline evaluation artifact binding query / request model、core read model、validation service、HTTP response DTO 与 controller。
+- 新增 service / controller regression tests，覆盖 valid offline preview、schema/runMode/dataset/strategy/checksum/parametersHash/metrics/traceability/boundary fail-closed、敏感字段与交易授权字段缺失、无写库、无外联和无本地路径读取合同。
+- 同步 `docs/current/API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`README.md` 与 root `README.md`。
+
+结果：
+
+```text
+NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+Endpoint: POST /api/research/evaluation-artifacts/binding-preview
+Highest non-blocking status: VALID_FOR_BINDING_PREVIEW
+Binding scope: PYTHON_OFFLINE / dry-run / request-body artifact only
+GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+Integration-1: NOT STARTED / mock-test-support only where applicable
+RealClient / real provider / private trading adapter / real permission probe: NOT_IMPLEMENTED
+```
+
+实现摘要：
+
+- `nq-core`：新增 `PythonEvaluationArtifactBindingService` 与 binding preview read model；service 方法标记 `@Transactional(readOnly = true)`，只验证 in-memory `JsonNode`，不依赖 repository、SQL、migration、scheduler、HTTP client 或本地路径。
+- `nq-api`：新增 `POST /api/research/evaluation-artifacts/binding-preview`，返回 `scope / bindingStatus / validationStatus / artifactType / runMode / datasetId / strategyVersion / evaluationVersion / parametersHash / checksumStatus / schemaStatus / metricsStatus / offlineBoundaryStatus / traceabilityStatus / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt`。
+- 最高非阻断状态为 `VALID_FOR_BINDING_PREVIEW`；该状态仅代表可进入只读绑定预览，不代表 Java fact 已写入、artifact 已导入、策略已批准、交易授权、Paper/Shadow run 可启动、Python ML ready 或 live execution ready。
+- Artifact 只从 request body 读取；出现本地路径、runtime/private/sensitive 字段或 `dryRun=false` 时 fail-closed。
+
+验证：
+
+- Targeted Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=PythonEvaluationArtifactBindingServiceTest,PythonEvaluationArtifactBindingPreviewControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+- Required scoped Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：PASS / BUILD SUCCESS；23 个 reactor module SUCCESS；`nq-core` 131 tests / 0 failures / 0 errors / 0 skipped；`nq-api` 67 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 0 errors / 3 skipped。
+- `git status --short`：PASS / REVIEWED；工作区仅包含本轮 GateQ-4 后端新增文件与允许的 current/root 文档修改，无非本轮 staged 内容。
+- `git diff --check`：PASS；无 whitespace error，仅 Windows 工作区 LF -> CRLF 提示，非阻断。
+- `git diff --stat`：PASS / REVIEWED；tracked diff 集中在 root/current 文档；新增 Java 文件以 `git status --short` 清点。
+- 禁止范围 diff：PASS / EMPTY；`frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` 均无 diff。
+- 风险词扫描：按用户指定 `rg` pattern 对 `backend docs/current README.md` 执行并复核；命中主要来自历史文档、既有 adapter/trading 域代码、否定边界说明、当前 API 安全说明和负向测试断言。本轮新增代码窄口复核只命中 forbidden-field blacklist、no-HTTP-client 反射断言、DTO/Controller 否定注释和 response 字段缺失断言；未发现新增真实外联、credential material 输出、LIVE 开关、RealClient / real provider 实现、private endpoint、下单、撤单、提现或转账路径。
+
+边界：
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未读取本地 artifact 路径；未新增 import / upload / persist endpoint；未写数据库；未把 Python artifact 写成 backtest_eval_reports、strategy evaluation、publish record 或 Paper evidence；未启动策略执行、Paper run 或 Shadow run；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Strategy Evaluation Gate、Paper vs Shadow Comparison、Shadow Live skeleton 与 Python artifact binding preview 均不代表 trading authorization；Python offline foundation 和 binding preview 不代表 ML ready 或 live execution ready。
+
+下一步：
+
+提交前只需最终确认 diff/stage 文件清单；推荐 commit message：`feat(research): add evaluation artifact binding preview`。
+
 ## NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON
 
 日期：2026-07-05。
