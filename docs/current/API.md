@@ -19,6 +19,7 @@
 - Marketdata Data Quality Center API：只读聚合本地 bars、dataset coverage 与 ingestion facts，供 GateP Batch 2 数据质量诊断使用。
 - Trading Preflight API：只读聚合单交易所账户、credential metadata、permission probe 状态、Data Quality diagnostic 和风险前置阻断原因，供 GateP Batch 4 解释真实交易为什么仍被阻断。
 - Strategy Evaluation Gate API：只读聚合 strategy version、dataset quality、evaluation、publish trace 与 SIM Paper evidence，供 GateQ-1 判断研究与评估证据是否可进入后续 Shadow review。
+- Paper Shadow Comparison API：只读聚合 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 与 Shadow 未实现状态，供 GateQ-2 判断 Paper vs Shadow 对照证据准备度。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
 - Actuator / Health：Spring Boot actuator、健康检查。
@@ -38,6 +39,7 @@
 - GateP Batch 2 新增只读 Marketdata Data Quality Center overview API；只读取现有本地 DB 事实，不新增 migration，不改 ingestion 行为，不接 `DataOrigin.PUBLIC_OUTBOUND` runtime provider，不表示 trading authorization。
 - GateP Batch 4 新增只读 Trading Preflight readiness API；只读取 account / credential summary 与 Data Quality overview，不读取 credential material，不调用 permission probe port / adapter / RiskGate / OrderCommandService，不写库，不触发真实交易所请求，不表示 trading authorization。
 - GateQ-1 新增只读 Strategy Evaluation Gate API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，不启动 Shadow Live runner，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 strategy live-ready。
+- GateQ-2 新增只读 Paper Shadow Comparison API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，并把 Shadow runner / Shadow run 当前建模为 `NOT_IMPLEMENTED`（未实现）/ `BLOCKED_SHADOW_NOT_IMPLEMENTED`（Shadow 未实现阻断）/ `NOT_AVAILABLE`（不可用）。该接口不启动 Shadow runner，不创建 shadow run，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live ready。
 
 ## GateQ-1 Strategy Evaluation Gate Read-only API
 
@@ -50,6 +52,19 @@ NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE 当前状态：`IMPLEMENTE
   - `gateDecision` 当前语义：`RESEARCH_EVALUATION_READY_FOR_SHADOW_REVIEW`（研究评估证据可进入后续 review）、`RESEARCH_EVALUATION_BLOCKED`（研究评估证据阻断）、`RESEARCH_EVALUATION_UNKNOWN`（研究评估未知）、`RESEARCH_EVALUATION_NOT_AVAILABLE`（研究评估不可用）。
   - Fail-closed 规则：`strategyVersionId` 缺失、strategy version 不存在或不为 `ACTIVE`、strategyId 归属不匹配、dataset 缺失、dataset 非 `READY/OK` 或 coverage 有缺口/异常、evaluation 缺失、evaluation 非 `SUCCEEDED`、publish trace 缺失或非 `SUCCEEDED`、SIM Paper evidence 缺失或不足，均返回阻断状态，不伪造 ready。
   - `READY_FOR_SHADOW_REVIEW` 仅表示“研究与评估证据可进入后续 Shadow review”。它不代表交易授权、不代表 LIVE enable、不代表 strategy live-ready、不允许启动 Shadow Live runner，也不允许真实下单、撤单、转账或提现。
+  - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED` 或 `AUTHORIZED` 放行语义。
+
+## GateQ-2 Paper Shadow Comparison Read-only API
+
+NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读 baseline，不代表 GateQ 整体已实现、冻结或接受。
+
+- `GET /api/strategies/paper-shadow/comparison`：按当前本地 facts 聚合 strategy version、dataset quality、evaluation report、publish trace、SIM Paper evidence 与 Shadow 未实现状态。该接口只读，不写库，不创建或启动 backtest / evaluation / publish / Paper / Shadow run，不调用 adapter，不访问外部网络，不读取 credential material，不启用 LIVE / AI / DH runtime。
+  - Query：`strategyId` 可选，仅用于 scope 校验和回显；`strategyVersionId` 为核心查询字段，缺失时 fail-closed；`datasetId`、`evaluationId`、`publishId`、`paperRunId`、`shadowRunId` 均可选，repository 只在现有本地表中按 strategyVersion / publish / evaluation 解析既有 facts。当前没有 shadow run 表或 shadow runner，生产 repository 固定返回 Shadow fact source `NOT_IMPLEMENTED`。
+  - Response：`scope / strategyId / strategyVersionId / datasetId / evaluationId / publishId / paperRunId / shadowRunId / paperRunStatus / shadowRunStatus / comparisonStatus / evaluationGateStatus / paperEvidenceStatus / shadowEvidenceStatus / dataQualityStatus / comparable / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt`。
+  - `comparisonStatus` 当前语义：`READY_FOR_COMPARISON`（只读对照证据可查看）、`BLOCKED_MISSING_STRATEGY_VERSION`（缺少或找不到策略版本）、`BLOCKED_EVALUATION_GATE`（evaluation gate 阻断）、`BLOCKED_MISSING_PAPER_RUN`（缺少可比较 Paper run）、`BLOCKED_SHADOW_NOT_IMPLEMENTED`（Shadow runner / fact source 未实现）、`BLOCKED_MISSING_SHADOW_RUN`（Shadow fact source 存在后缺少 Shadow run）、`BLOCKED_DATA_QUALITY`（数据质量不足）、`BLOCKED_TRACE_INCOMPLETE`（追溯链不完整）、`UNKNOWN`（未知）、`NOT_AVAILABLE`（不可用）、`NOT_IMPLEMENTED`（未实现）。
+  - Fail-closed 规则：`strategyVersionId` 缺失、strategy version 不存在或不为 `ACTIVE`、strategyId 归属不匹配、dataset 缺失、dataset 非 `READY/OK` 或 coverage 有缺口/异常、evaluation 缺失或非 `SUCCEEDED`、publish trace 缺失或非 `SUCCEEDED`、SIM Paper run 缺失或不可比较、Shadow runner 未实现、Shadow run 缺失、trace chain 不完整，均返回阻断状态，不伪造 ready。
+  - `READY_FOR_COMPARISON` 仅表示“Paper / Shadow 只读对照证据可查看”。它不代表交易授权、不代表 LIVE enable、不代表 Shadow Live ready、不允许启动 Shadow runner，也不允许真实下单、撤单、转账或提现。
+  - 当前生产行为：即使 strategy version / dataset / evaluation / publish / SIM Paper evidence 均满足，因 Shadow runner / Shadow fact source 未实现，仍返回 `BLOCKED_SHADOW_NOT_IMPLEMENTED`，`shadowRunStatus=NOT_IMPLEMENTED`，`shadowEvidenceStatus=NOT_IMPLEMENTED`，`comparable=false`。
   - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED` 或 `AUTHORIZED` 放行语义。
 
 ## Adapter Readiness API

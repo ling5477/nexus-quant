@@ -1,3 +1,48 @@
+## NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO
+
+日期：2026-07-05。
+
+范围：
+
+- NQ-only GateQ-2 后端只读 baseline。
+- 新增 Paper vs Shadow Comparison query model、DTO、core service、只读 fact repository port、infra JDBC query、API response DTO 与 controller。
+- 新增 service / controller regression tests，覆盖 comparison 状态、缺失项、fail-closed 语义、Shadow 未实现/缺失语义、traceability、敏感字段与交易授权字段缺失、无写库和无外联合同。
+- 同步 `docs/current/API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`README.md` 与 root `README.md`。
+
+结果：
+
+```text
+NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+Endpoint: GET /api/strategies/paper-shadow/comparison
+GateQ overall: PLAN READY / NOT IMPLEMENTED
+Shadow runner / shadow fact source: NOT_IMPLEMENTED
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+Integration-1: NOT STARTED / mock-test-support only where applicable
+RealClient / real provider / private trading adapter / real permission probe: NOT_IMPLEMENTED
+```
+
+实现摘要：
+
+- `nq-core`：新增 `PaperShadowComparisonService` 与 read model，基于 strategy version、dataset quality、evaluation gate、publish trace、SIM Paper evidence 和 Shadow fact 状态做 fail-closed 判定。
+- `nq-infra`：新增 `JdbcPaperShadowComparisonFactRepository`，只执行本地 DB `SELECT`；当前没有 shadow run 表或 runner，生产路径固定返回 `NOT_IMPLEMENTED`，不伪造 shadow facts。
+- `nq-api`：新增 `GET /api/strategies/paper-shadow/comparison`，返回 `scope / comparisonStatus / evaluationGateStatus / paperEvidenceStatus / shadowEvidenceStatus / dataQualityStatus / comparable / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt` 等只读字段。
+- 最高非阻断状态为 `READY_FOR_COMPARISON`；该状态仅代表 Paper / Shadow 只读对照证据可查看，不代表 trading authorization、LIVE enable 或 Shadow Live ready。当前生产事实因 Shadow runner 未实现仍返回 `BLOCKED_SHADOW_NOT_IMPLEMENTED`。
+
+验证：
+
+- Targeted Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=PaperShadowComparisonServiceTest,PaperShadowComparisonControllerTest,StrategyEvaluationGateServiceTest,StrategyEvaluationGateControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+- Required scoped Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：PASS / BUILD SUCCESS；23 个 reactor module SUCCESS；`nq-core` 108 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped。
+
+边界：
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Data Quality diagnostic、Strategy Evaluation Gate、Paper vs Shadow Comparison 与 Python offline foundation 均不代表 trading authorization；Python offline foundation 不代表 ML ready 或 live execution ready。
+
+下一步：
+
+提交前复核 `git diff --check`、`git diff --stat`、禁止范围 diff 与风险词扫描；推荐 commit message：`feat(strategy): add paper shadow comparison baseline`。
+
 ## NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE
 
 日期：2026-07-05。

@@ -1,3 +1,35 @@
+## NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-2 后端只读 baseline；GateQ 总体仍为 `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）。
+
+```text
+Scope:
+  - 新增 Paper vs Shadow Comparison 只读 query model / DTO / service / repository query / API endpoint。
+  - 复用现有 strategy version、dataset coverage、evaluation、publish、SIM Paper facts。
+  - 当前无 shadow run 表或 runner；生产 repository 固定建模为 NOT_IMPLEMENTED / BLOCKED_SHADOW_NOT_IMPLEMENTED。
+  - 覆盖 fail-closed、缺失项、evaluation gate blocked、数据质量不足、trace incomplete、response 安全字段、无写库与无外联合同。
+  - 不启动 Shadow runner，不创建 shadow run，不启动 Paper run，不写数据库，不调用真实交易所。
+
+Result:
+  NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: GET /api/strategies/paper-shadow/comparison
+  Highest non-blocking status: READY_FOR_COMPARISON
+  Current production shadow status: NOT_IMPLEMENTED / BLOCKED_SHADOW_NOT_IMPLEMENTED
+  GateQ overall: PLAN READY / NOT IMPLEMENTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=PaperShadowComparisonServiceTest,PaperShadowComparisonControllerTest,StrategyEvaluationGateServiceTest,StrategyEvaluationGateControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Targeted regression：`PaperShadowComparisonServiceTest` 10 tests、`PaperShadowComparisonControllerTest` 2 tests，并重跑既有 GateQ-1 service/controller tests；覆盖缺 strategy version、evaluation gate blocked、缺 Paper run、Shadow 未实现、缺 Shadow run、数据质量不足、trace chain incomplete、可比较 fixture、response 不含交易授权字段或敏感字段、service read-only / repository no-write 合同。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 108 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped；新增 Paper Shadow tests 被纳入 full scoped Maven。 |
+| Known warnings | REVIEWED / NON-BLOCKING | 保留既有 Mockito dynamic agent warning、SLF4J provider warning 和少量 unrelated compiler warning；未发现本轮阻断。 |
+
+本轮未运行 frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮允许范围不包含 frontend 或 research，且未修改相关目录。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。`READY_FOR_COMPARISON` 仅代表 Paper / Shadow 只读对照证据可查看，不代表 trading authorization、LIVE enable 或 Shadow Live ready；Data Quality diagnostic、Strategy Evaluation Gate 与 Python offline foundation 也不代表交易授权、ML ready 或 live execution ready。
+
 ## NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE validation（2026-07-05）
 
 本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-1 后端只读 baseline；GateQ 总体仍为 `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）。
