@@ -1,3 +1,54 @@
+## NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON
+
+日期：2026-07-05。
+
+范围：
+
+- NQ-only GateQ-3 后端 no-side-effect runner skeleton。
+- 新增 Shadow Live preview query model、core read model、side-effect policy、service、HTTP response DTO 与 controller。
+- 新增 service / controller regression tests，覆盖 fail-closed、GateQ-1 / GateQ-2 阻断聚合、Shadow facts 不可用、数据质量不足、trace chain 不完整、side-effect policy、敏感字段与交易授权字段缺失、无写库和无外联合同。
+- 同步 `docs/current/API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`README.md` 与 root `README.md`。
+
+结果：
+
+```text
+NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+Endpoint: GET /api/strategies/shadow-live/preview
+Highest non-blocking status: READY_FOR_NO_SIDE_EFFECT_PREVIEW
+Runner status: SKELETON_AVAILABLE
+Order intent preview status: NOT_EXECUTED
+Side-effect policy: NO_DB_WRITE / NO_EXTERNAL_IO / NO_CREDENTIAL_ACCESS / NO_PRIVATE_ENDPOINT / NO_ORDER_SUBMISSION / NO_LEDGER_MUTATION / NO_ACCOUNT_MUTATION
+GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+Integration-1: NOT STARTED / mock-test-support only where applicable
+RealClient / real provider / private trading adapter / real permission probe: NOT_IMPLEMENTED
+```
+
+实现摘要：
+
+- `nq-core`：新增 `ShadowLivePreviewService` 与 read model，复用 `StrategyEvaluationGateService` 和 `PaperShadowComparisonService` 的只读结果；service 方法标记 `@Transactional(readOnly = true)`，不新增 repository、SQL、migration 或 scheduler。
+- `nq-api`：新增 `GET /api/strategies/shadow-live/preview`，返回 `scope / runnerStatus / previewStatus / evaluationGateStatus / paperShadowComparisonStatus / sideEffectPolicy / inputFactStatus / traceStatus / orderIntentPreviewStatus / riskPreflightPreviewStatus / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt`。
+- 最高非阻断状态为 `READY_FOR_NO_SIDE_EFFECT_PREVIEW`；该状态仅代表可生成只读预览计划，不代表 trading authorization、LIVE enable、Shadow Live 交易启用或真实 runner ready。
+- `orderIntentPreviewStatus` 固定 `NOT_EXECUTED`；本轮不生成真实策略信号、真实订单、buy/sell/market order 建议或 execution intent。
+
+验证：
+
+- Required scoped Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：PASS / BUILD SUCCESS；23 个 reactor module SUCCESS；`nq-core` 119 tests / 0 failures / 0 errors / 0 skipped；`nq-api` 65 tests / 0 failures / 0 errors / 0 skipped；`nq-app` 105 tests / 0 failures / 0 errors / 3 skipped。
+- 新增测试：`ShadowLivePreviewServiceTest` 11 tests；`ShadowLivePreviewControllerTest` 2 tests。
+- `git diff --check`：PASS；仅 LF -> CRLF 工作区提示，非阻断。
+- 禁止范围 diff：`frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` 均为空。
+- 风险词扫描：按用户指定 `rg` 命令执行并复核；命中主要来自历史文档、既有 adapter / trading 域代码、Gate 命名、禁止边界说明和负向测试断言。本轮新增内容窄口复核未发现真实外联、credential material 输出、LIVE 开关、RealClient/real provider 实现、private endpoint、下单、撤单、提现或转账路径。
+
+边界：
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动真实 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未执行策略；未生成真实订单或真实 order intent；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Strategy Evaluation Gate、Paper vs Shadow Comparison、Shadow Live skeleton 与 Python offline foundation 均不代表 trading authorization；Python offline foundation 不代表 ML ready 或 live execution ready。
+
+下一步：
+
+提交前复核最终 `git status --short`、`git diff --stat`、禁止范围 diff 与风险词扫描摘要；推荐 commit message：`feat(strategy): add no-side-effect shadow live preview`。
+
 ## NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO
 
 日期：2026-07-05。

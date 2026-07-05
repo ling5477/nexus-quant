@@ -20,6 +20,7 @@
 - Trading Preflight API：只读聚合单交易所账户、credential metadata、permission probe 状态、Data Quality diagnostic 和风险前置阻断原因，供 GateP Batch 4 解释真实交易为什么仍被阻断。
 - Strategy Evaluation Gate API：只读聚合 strategy version、dataset quality、evaluation、publish trace 与 SIM Paper evidence，供 GateQ-1 判断研究与评估证据是否可进入后续 Shadow review。
 - Paper Shadow Comparison API：只读聚合 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 与 Shadow 未实现状态，供 GateQ-2 判断 Paper vs Shadow 对照证据准备度。
+- Shadow Live No-side-effect Preview API：只读聚合 GateQ-1 evaluation gate 与 GateQ-2 Paper/Shadow comparison 结果，供 GateQ-3 判断是否能生成 Shadow Live no-side-effect 预览计划。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
 - Actuator / Health：Spring Boot actuator、健康检查。
@@ -40,6 +41,7 @@
 - GateP Batch 4 新增只读 Trading Preflight readiness API；只读取 account / credential summary 与 Data Quality overview，不读取 credential material，不调用 permission probe port / adapter / RiskGate / OrderCommandService，不写库，不触发真实交易所请求，不表示 trading authorization。
 - GateQ-1 新增只读 Strategy Evaluation Gate API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，不启动 Shadow Live runner，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 strategy live-ready。
 - GateQ-2 新增只读 Paper Shadow Comparison API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，并把 Shadow runner / Shadow run 当前建模为 `NOT_IMPLEMENTED`（未实现）/ `BLOCKED_SHADOW_NOT_IMPLEMENTED`（Shadow 未实现阻断）/ `NOT_AVAILABLE`（不可用）。该接口不启动 Shadow runner，不创建 shadow run，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live ready。
+- GateQ-3 新增只读 Shadow Live no-side-effect preview API；只调用 GateQ-1 / GateQ-2 只读 service 聚合既有事实，不新增 repository、SQL、migration 或 scheduler，不启动真实 Shadow runner，不创建 shadow run，不写数据库，不外联，不读取 credential material，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live execution ready。
 
 ## GateQ-1 Strategy Evaluation Gate Read-only API
 
@@ -65,6 +67,21 @@ NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO 当前状态：`IMPLEMENTED`�
   - Fail-closed 规则：`strategyVersionId` 缺失、strategy version 不存在或不为 `ACTIVE`、strategyId 归属不匹配、dataset 缺失、dataset 非 `READY/OK` 或 coverage 有缺口/异常、evaluation 缺失或非 `SUCCEEDED`、publish trace 缺失或非 `SUCCEEDED`、SIM Paper run 缺失或不可比较、Shadow runner 未实现、Shadow run 缺失、trace chain 不完整，均返回阻断状态，不伪造 ready。
   - `READY_FOR_COMPARISON` 仅表示“Paper / Shadow 只读对照证据可查看”。它不代表交易授权、不代表 LIVE enable、不代表 Shadow Live ready、不允许启动 Shadow runner，也不允许真实下单、撤单、转账或提现。
   - 当前生产行为：即使 strategy version / dataset / evaluation / publish / SIM Paper evidence 均满足，因 Shadow runner / Shadow fact source 未实现，仍返回 `BLOCKED_SHADOW_NOT_IMPLEMENTED`，`shadowRunStatus=NOT_IMPLEMENTED`，`shadowEvidenceStatus=NOT_IMPLEMENTED`，`comparable=false`。
+  - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED` 或 `AUTHORIZED` 放行语义。
+
+## GateQ-3 Shadow Live No-side-effect Preview API
+
+NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮 Shadow Live no-side-effect runner skeleton 与只读 preview API，不代表 GateQ 整体已冻结或接受，不代表真实 Shadow Live runner 已启动。
+
+- `GET /api/strategies/shadow-live/preview`：按当前本地 facts 聚合 GateQ-1 Strategy Evaluation Gate 与 GateQ-2 Paper Shadow Comparison 的只读结果，返回 validation、readiness、trace preview、blocked reason、side-effect policy 和 next steps。该接口只读，不写库，不新增 shadow facts，不创建或启动 backtest / evaluation / publish / Paper / Shadow run，不执行策略，不生成真实订单，不调用 adapter，不访问外部网络，不读取 credential material，不启用 LIVE / AI / DH runtime。
+  - Query：`strategyId` 可选，仅用于 scope 校验和回显；`strategyVersionId` 为核心查询字段，缺失时 fail-closed；`datasetId`、`evaluationId`、`publishId`、`paperRunId`、`shadowRunId` 均可选，service 只把它们传递给 GateQ-1 / GateQ-2 只读聚合，不创建任何新事实。
+  - Response：`scope / strategyId / strategyVersionId / datasetId / evaluationId / publishId / paperRunId / shadowRunId / runnerStatus / previewStatus / evaluationGateStatus / paperShadowComparisonStatus / sideEffectPolicy / inputFactStatus / traceStatus / orderIntentPreviewStatus / riskPreflightPreviewStatus / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt`。
+  - `runnerStatus` 当前固定为 `SKELETON_AVAILABLE`（骨架可用）；含义仅是 no-side-effect preview skeleton 可返回诊断，不代表真实 runner、真实 Shadow Live 执行或交易路径可用。
+  - `previewStatus` 当前语义：`READY_FOR_NO_SIDE_EFFECT_PREVIEW`（可生成只读预览）、`PREVIEW_BLOCKED_EVALUATION_GATE`（evaluation gate 阻断）、`PREVIEW_BLOCKED_PAPER_SHADOW_COMPARISON`（Paper/Shadow comparison 阻断）、`PREVIEW_BLOCKED_MISSING_STRATEGY_VERSION`（缺少或找不到 strategy version）、`PREVIEW_BLOCKED_DATA_QUALITY`（数据质量不足）、`PREVIEW_BLOCKED_MISSING_PAPER_EVIDENCE`（缺少 Paper evidence）、`PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE`（Shadow facts 不可用）、`PREVIEW_BLOCKED_TRACE_CHAIN_INCOMPLETE`（追溯链不完整）、`UNKNOWN`（未知）、`NOT_AVAILABLE`（不可用）。
+  - `READY_FOR_NO_SIDE_EFFECT_PREVIEW` 仅代表“已有事实最多允许生成只读预览计划”。它不代表交易授权、不代表实盘放行、不代表 Shadow Live 交易启用、不允许启动 Shadow runner，也不允许下单、撤单、转账或提现。
+  - `sideEffectPolicy` 当前固定全部 `FORBIDDEN`，包含 `NO_DB_WRITE / NO_EXTERNAL_IO / NO_CREDENTIAL_ACCESS / NO_PRIVATE_ENDPOINT / NO_ORDER_SUBMISSION / NO_LEDGER_MUTATION / NO_ACCOUNT_MUTATION`。
+  - `orderIntentPreviewStatus` 当前固定为 `NOT_EXECUTED`；`riskPreflightPreviewStatus` 仅在 ready 时可为 `PREVIEW_ONLY`，否则为 `NOT_EXECUTED`。本轮不生成真实策略信号、真实执行建议、真实 order intent 或 buy/sell/market order 级别建议。
+  - Fail-closed 规则：缺少或无法解析 `strategyVersionId`、evaluation gate 未通过、Paper/Shadow comparison 阻断、dataset 不存在或数据质量不足、publish trace 不存在、Paper run 不存在或不可比较、Shadow facts 不存在、trace chain 不完整、任一 side-effect policy 不能证明 forbidden，均返回阻断或不可用状态，不伪造 ready。
   - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED` 或 `AUTHORIZED` 放行语义。
 
 ## Adapter Readiness API

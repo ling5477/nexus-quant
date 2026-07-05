@@ -1,3 +1,48 @@
+## NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-3 Shadow Live no-side-effect runner skeleton 与只读 preview API；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表真实 Shadow Live runner、LIVE、AI 或 DH runtime 已启动。
+
+```text
+Scope:
+  - 新增 Shadow Live no-side-effect preview query model、core read model、service、HTTP DTO 和 API endpoint。
+  - 复用 GateQ-1 Strategy Evaluation Gate 与 GateQ-2 Paper Shadow Comparison 只读 service。
+  - 仅返回 validation、readiness、trace preview、blocked reason、side-effect policy 和 next steps。
+  - 不新增 repository / SQL / migration / scheduler，不写数据库，不外联，不读取 credential material。
+  - 不启动真实 Shadow runner，不创建 shadow run，不启动 Paper run，不执行策略，不生成真实订单。
+
+Result:
+  NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: GET /api/strategies/shadow-live/preview
+  Highest non-blocking status: READY_FOR_NO_SIDE_EFFECT_PREVIEW
+  Runner status: SKELETON_AVAILABLE
+  Order intent preview status: NOT_EXECUTED
+  GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | REVIEWED / EXPECTED DIRTY | 工作区只包含本轮后端新增文件与允许的 `README.md`、`docs/current/API.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 修改。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows 工作区提示 LF 将在 Git touch 时转换为 CRLF，非阻断。 |
+| `git diff --stat` | REVIEWED | tracked diff 会统计文档修改；新增 Java 文件仍需结合 `git status --short` 读取，因为 untracked 文件不会完整体现在普通 diff stat 中。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS。`nq-core` 119 tests / 0 failures / 0 errors / 0 skipped，含新增 `ShadowLivePreviewServiceTest` 11 tests；`nq-api` 65 tests / 0 failures / 0 errors / 0 skipped，含新增 `ShadowLivePreviewControllerTest` 2 tests；`nq-app` 105 tests / 0 failures / 0 errors / 3 skipped。 |
+| `git diff -- frontend` / `research` / `scripts` / `deploy` / `.github` / `"backend/**/db/migration"` | PASS / EMPTY | 未触达禁止范围；未新增 migration 或历史 migration 修改。 |
+| 用户指定风险词 `rg` 扫描（backend / docs/current / README.md） | REVIEWED / NON-BLOCKING | 已按任务提示的完整 pattern 执行。大量命中来自历史 current docs、既有 adapter / trading 域代码、Gate 命名、禁止边界说明和负向测试断言。窄口复核本轮新增内容只命中边界文案、forbidden-field 文档和 `assertFalse` 负向断言；未发现新增 HTTP client、真实外联、credential material 输出、LIVE 开关、RealClient/real provider 实现、private endpoint、下单、撤单、提现或转账路径。 |
+| IDEA problems check（新增 ShadowLivePreview service/controller/response/tests） | PASS | `errorsOnly=true` 返回 0 errors。 |
+
+Known warnings:
+
+- Maven 保留既有 SLF4J no-provider warning、Mockito dynamic agent warning、ByteBuddy dynamic agent warning 和 JVM bootstrap classpath sharing warning；本轮未引入新的阻断性测试失败。
+- `nq-app` 既有 3 skipped 保持不变；不属于 GateQ-3 阻断。
+
+Not run:
+
+- 未运行 frontend build / Playwright。原因：本轮禁止修改 frontend，且实际未触达 frontend。
+- 未运行 Python pytest / mypy / ruff。原因：本轮禁止修改 research，且实际未触达 research。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动真实 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未执行策略；未生成真实订单或真实 order intent；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。`READY_FOR_NO_SIDE_EFFECT_PREVIEW` 仅代表可生成只读预览计划，不代表 trading authorization、LIVE enable、Shadow Live 交易启用或真实 runner ready。
+
 ## NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO validation（2026-07-05）
 
 本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-2 后端只读 baseline；GateQ 总体仍为 `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）。
