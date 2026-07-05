@@ -13940,3 +13940,44 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 另起 GateP freeze closeout review 或复跑 freeze readiness review；本轮推荐 commit message：`docs(gatep): fix current fact source drift`。
+
+---
+
+## NQ-GATEQ-PLAN-SHADOW-LIVE-READINESS
+
+日期：2026-07-05
+
+### 本轮目标
+
+完成 GateQ planning-only / docs-only 收口。GateQ 定位为“策略有效性验证与 Paper / Shadow Live 一致性阶段”，目标是把 NQ 从“可运行、可诊断”推进到“可验证、可复盘、可比较”；本轮不启动 GateQ implementation，不新增 API、migration、页面、测试、CI workflow 或业务代码。
+
+### 完成内容
+
+- 新增 `docs/current/GATEQ_PLAN.md`，作为 GateQ planning-only 权威入口。
+- 同步 root `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`、`TESTING.md`、`WORKLOG.md`。
+- 明确 GateP freeze baseline 与 GateQ planning boundary：GateP `FROZEN / ACCEPTED / TAGGED`，release tag `nq-gatep-freeze`，GateQ 只能是 `PLAN READY / NOT IMPLEMENTED`。
+- 明确 Shadow Live 定义：只读影子运行模式；可消费 public marketdata snapshot，运行 strategy decision、risk preflight、order intent preview、paper-equivalent simulation；不得真实下单、不得调用 private endpoint、不得读取 credential material、不得改变真实账户、资金、订单或 ledger。
+- 明确 strategy version、dataset version、evaluation report、publish、paper run、shadow run 的 traceability model。
+- 明确 Python offline evaluation artifact 只能经 artifact contract 与 Java fact-source 绑定，不代表 ML ready、live execution ready、AI started 或 Java runtime bridge。
+- 明确 GateQ Batch：GateQ-0 plan/fact-source reconciliation，GateQ-1 strategy evaluation gate 只读 baseline，GateQ-2 Paper vs Shadow 数据模型与只读 DTO，GateQ-3 Shadow Live no-side-effect runner skeleton，GateQ-4 Python artifact -> Java binding contract，GateQ-5 frontend Paper vs Shadow 对照页，GateQ-6 strategy lifecycle trace 增强，GateQ-FREEZE closeout。
+
+### 验证
+
+- `git status --short`：PASS / REVIEWED；变更限定在允许的 current/root 文档与新增 `docs/current/GATEQ_PLAN.md`。
+- `git diff --check`：PASS；无 whitespace error。
+- `git diff --stat`：PASS / REVIEWED。
+- forbidden-scope diff：PASS / EMPTY；`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` 无 diff。
+- 指定 GateQ / Shadow Live / LIVE / AI / DH / RealClient / private trading / permission probe / credential / trading authorization / ML ready / live execution 关键词 `rg`：PASS / REVIEWED；命中为规划语境、否定边界、历史证据或禁止项提示，未发现正向越界启用语义。
+- staged checks：PASS / REVIEWED；只 stage 用户允许的 8 个文件。
+
+### 边界
+
+不启动 GateQ implementation；不启用 LIVE；不接 AI / DH runtime；不实现 RealClient、real provider、private trading adapter 或 real permission probe；不调用真实交易所；不读取 credential material；不新增 API、migration、页面、测试或 CI workflow；不修改 backend / frontend / research / scripts / deploy / `.github` / `docs/gates` / migration；不把 Shadow Live 写成真实交易、LIVE readiness 或 trading authorization；不把 Python offline evaluation 写成 ML ready 或 live execution ready。
+
+### 结果
+
+`NQ-GATEQ-PLAN-SHADOW-LIVE-READINESS：PLAN READY / NOT IMPLEMENTED`。
+
+### 推荐下一步
+
+提交前复核 staged docs，推荐 commit message：`docs(gateq): plan shadow live readiness`。下一步只能另起 `NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE / NOT STARTED`，并在新任务中重新声明 allowed files、forbidden areas、validation commands 和 no-LIVE / no-AI / no-DH-runtime / no-real-provider / no-private-trading / no-credential 边界。

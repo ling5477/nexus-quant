@@ -8016,3 +8016,34 @@ What was not run：
 未运行 Maven / npm build / Playwright / pytest / mypy / ruff，原因是本轮为 docs-only archive closeout，未修改 Java / TypeScript / Python / workflow / migration / runtime 配置。
 
 边界确认：未新增 API；未新增 migration；未改 CI；未真实交易所外联；未读取或输出 credential material；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient / real provider / private trading adapter / real permission probe；未把 GateP 写成 frozen 或 accepted；public marketdata readiness 不等于 trading authorization。
+
+---
+
+## NQ-GATEQ-PLAN-SHADOW-LIVE-READINESS（2026-07-05）
+
+结论：**PLAN READY / NOT IMPLEMENTED**。含义：`PLAN READY`（规划已就绪）、`NOT IMPLEMENTED`（未实现）。本轮类型为 planning-only / docs-only，只新增 GateQ 规划文档与 current fact-source 同步，不启动 GateQ implementation。
+
+本轮验证范围：
+
+- GateQ-0 planning 文档：`docs/current/GATEQ_PLAN.md`。
+- Current fact-source 入口同步：root `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`、`TESTING.md`、`WORKLOG.md`。
+- 禁止范围核对：`backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration`。
+- 边界关键词核对：GateQ、Shadow Live、Paper、strategy version、dataset version、evaluation、publish、paper run、shadow run、LIVE、AI、DH、Integration-1、RealClient、real provider、private trading、permission probe、credential、order / cancel / withdraw / transfer、trading authorization、ML ready、live execution。
+
+| Command | Result | Scope | Notes |
+| --- | --- | --- | --- |
+| `git status --short` | **PASS / REVIEWED** | 工作区变更清点 | 变更限定在允许的 current/root 文档；新增 `docs/current/GATEQ_PLAN.md`。 |
+| `git diff --check` | **PASS** | Whitespace 检查 | 无 whitespace error；若 Git 提示 LF/CRLF 工作区换行 warning，不阻断本轮 docs-only 结论。 |
+| `git diff --stat` | **PASS / REVIEWED** | Tracked diff 摘要 | 用于核对已跟踪文档 diff；untracked `docs/current/GATEQ_PLAN.md` 以 `git status --short` 为准。 |
+| forbidden-scope diff | **PASS / EMPTY** | `backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration` | 禁止范围无 diff；本轮未修改业务代码、脚本、部署、CI 或 migration。 |
+| boundary `rg` search | **PASS / REVIEWED** | `README.md`、`docs/current`、`docs/gates`、`backend`、`frontend`、`research/py` | 命中按规划语境、否定边界、历史证据和禁止项分类；未发现 GateQ 被写成实现、冻结或接受，也未发现 LIVE / AI / DH / real provider / private trading 正向启用语义。 |
+| staged checks | **PASS / REVIEWED** | 允许 staged 文件清单 | `git diff --cached --name-only`、`git diff --cached --stat`、`git diff --cached --check` 用于确认仅 stage 允许文档且无 whitespace error。 |
+
+What was not run：
+
+- 未运行 Maven，原因是本轮未修改 `backend/**`、未新增 API、未新增 migration、未修改 Java runtime 或测试。
+- 未运行 frontend `npm run build` / Playwright，原因是本轮未修改 `frontend/**`、未新增页面或前端契约。
+- 未运行 Python `pytest` / `mypy` / `ruff`，原因是本轮未修改 `research/**`、未新增 Python artifact 实现或运行脚本。
+- 未运行真实 public outbound、private endpoint、permission probe 或 exchange smoke，原因是 GateQ-0 为 docs-only planning，且本轮禁止真实交易所外联、credential material 读取和 LIVE 启用。
+
+边界确认：GateQ 未实现；Shadow Live 未实现；LIVE 仍 `DISABLED`（关闭）；AI 仍 `NOT STARTED`（未开始）；DH runtime 仍 `NOT INTEGRATED`（未集成）；Integration-1 仍 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe 仍 `NOT IMPLEMENTED`（未实现）。Shadow Live 只读规划不代表真实交易、trading authorization、LIVE readiness、private trading、ML ready 或 live execution ready。

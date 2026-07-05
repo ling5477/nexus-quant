@@ -8,13 +8,14 @@
 
 1. `docs/current/STATUS.md`：当前项目状态与最新任务结论。
 2. `docs/current/README.md`：当前事实入口索引。
-3. `docs/current/ROADMAP.md`：当前阶段路线与下一批入口。
-4. `docs/current/TESTING.md`：当前验证记录与未运行说明。
-5. `docs/current/WORKLOG.md`：当前任务执行记录。
-6. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
-7. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
-8. `docs/gates/gate-p/README.md`：GateP freeze / release tag / Batch 1-6A evidence matrix / testing summary 历史归档入口；当前摘要为 GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag），release tag `nq-gatep-freeze` 已推送。
-9. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
+3. `docs/current/GATEQ_PLAN.md`：GateQ planning-only 当前权威入口；记录 Shadow Live readiness、Paper vs Shadow boundary、strategy evaluation gate、traceability model、Python artifact binding 和 batch plan；不得解释为 implementation。
+4. `docs/current/ROADMAP.md`：当前阶段路线与下一批入口。
+5. `docs/current/TESTING.md`：当前验证记录与未运行说明。
+6. `docs/current/WORKLOG.md`：当前任务执行记录。
+7. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
+8. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
+9. `docs/gates/gate-p/README.md`：GateP freeze / release tag / Batch 1-6A evidence matrix / testing summary 历史归档入口；当前摘要为 GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag），release tag `nq-gatep-freeze` 已推送。
+10. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
 
 `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md` 与 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 仅保留 tag/archive pointer 和历史过渡证据，不再作为 current authority 入口；GateP 过程型长证据以 `docs/gates/gate-p/` 为归档入口。
 
@@ -24,7 +25,7 @@
 
 - GateO：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
 - GateP：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；final closeout `PASS`（通过）/ `READY FOR ARCHIVAL`（可归档）；release tag `nq-gatep-freeze` 已推送。
-- GateQ：`PLAN / NOT STARTED`（仅规划 / 未开始）。
+- GateQ：`PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）；planning authority 为 `docs/current/GATEQ_PLAN.md`，implementation 仍 `NOT STARTED`（未开始）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -36,6 +37,8 @@
 - Python Research：reproducible offline experiment foundation；dataset manifest、experiment metadata、evaluation metrics skeleton 与 CLI run summary 已完成。该能力仍不是 ML ready、live execution ready 或 Java runtime bridge。
 
 GateP 已冻结并接受的是“真实数据质量与交易准备阶段”的只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout。该冻结不启动真实交易所接入、LIVE、AI、DH runtime、RealClient、real provider、private trading 或真实 permission probe。
+
+GateQ 当前只完成 `NQ-GATEQ-PLAN-SHADOW-LIVE-READINESS` planning。GateQ 规划对象是 strategy evaluation gate、Paper vs Shadow 只读对照、Python offline evaluation artifact 与 Java fact-source 绑定、Shadow decision trace、shadow marketdata input snapshot、shadow risk snapshot 和 shadow order intent preview。上述全部为规划或未来候选，不代表 API、schema、runner、页面、测试或 runtime 已实现。
 
 ## 3. GateO 完成边界
 
@@ -90,6 +93,7 @@ GateP 当前不做：
 - 不得把 Integration-1 mock-only baseline 写成 runtime started。
 - 不得把 Python Research offline foundation 写成 ML ready / live execution ready / direct execution ready。
 - 不得把 existing OKX/Binance legacy network-capable code 写成 real provider ready。
+- 不得把 Shadow Live 写成真实交易、LIVE readiness、private trading 或 order execution。
 
 ## 6. GateP Batch 1-6A 与 freeze closeout 当前事实
 
@@ -102,6 +106,6 @@ GateP 当前不做：
 - Batch 6A：current fact-source drift fix 已完成。
 - Final closeout：`NQ-GATEP-FREEZE-CLOSEOUT-REVIEW` 为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。
 - Release tag / archive：`NQ-GATEP-RELEASE-TAG-AND-ARCHIVE` 为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）；tag `nq-gatep-freeze` 指向 commit `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。
-- 下一步只能另起 `GateQ PLAN / NOT STARTED`（GateQ 仅规划 / 未开始）；不得在本 closeout 或 archive 线启动下一阶段 implementation。
+- 下一步只能另起 `GateQ-1 Strategy Evaluation Gate 只读 baseline` implementation planning/review；当前 GateQ 仍为 `PLAN READY / NOT IMPLEMENTED`，不得在本 planning 线启动实现、API、migration、页面、测试、CI 或 runtime。
 
 所有后续批次必须重新声明 allowed files、forbidden areas、validation commands 和 no-LIVE / no-AI / no-DH / no-real-provider / no-private-trading 边界。
