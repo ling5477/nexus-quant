@@ -27,6 +27,7 @@ import {RuntimeReadinessPage} from '@/pages/runtime/RuntimeReadinessPage';
 import {RunsPage} from '@/pages/runs/RunsPage';
 import {SchedulesPage} from '@/pages/schedules/SchedulesPage';
 import {StrategiesPage} from '@/pages/strategies/StrategiesPage';
+import {StrategyValidationPage} from '@/pages/strategies/StrategyValidationPage';
 import {TradingWorkbenchPage} from '@/pages/trading/TradingWorkbenchPage';
 import {RequireAuth} from '@/router/RequireAuth';
 import {appNavItems} from '@/router/navigation';
@@ -111,6 +112,11 @@ export const appRouter = createBrowserRouter([
                         path: 'runtime/readiness',
                         element: <RuntimeReadinessPage/>,
                         handle: createHandle('runtime-readiness'),
+                    },
+                    {
+                        path: 'strategies/validation',
+                        element: <StrategyValidationPage/>,
+                        handle: createHandle('strategy-validation'),
                     },
                     {
                         path: 'strategies',

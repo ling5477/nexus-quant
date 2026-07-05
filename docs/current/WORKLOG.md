@@ -1,3 +1,58 @@
+## NQ-GATEQ-5-FRONTEND-PAPER-SHADOW-COMPARISON-VIEW
+
+日期：2026-07-05。
+
+范围：
+
+- NQ-only GateQ-5 前端只读视图。
+- 新增 `frontend/src/api/strategy-validation.ts`、`frontend/src/types/strategy-validation.ts`、`frontend/src/hooks/useStrategyValidationQueries.ts`。
+- 新增 `/strategies/validation` 页面，展示 Strategy Evaluation Gate、Paper vs Shadow Comparison、Shadow Live no-side-effect preview、traceability chain、blockers / warnings / nextSteps 与 side-effect policy。
+- 新增 mocked no-backend Playwright smoke：`frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts`。
+- 同步 `docs/current/STATUS.md`、`TESTING.md`、`WORKLOG.md`、`README.md` 与 root `README.md`。
+
+结果：
+
+```text
+NQ-GATEQ-5-FRONTEND-PAPER-SHADOW-COMPARISON-VIEW: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+Route: /strategies/validation
+API clients:
+  - GET /api/strategies/evaluation-gate
+  - GET /api/strategies/paper-shadow/comparison
+  - GET /api/strategies/shadow-live/preview
+Status semantics:
+  - READY_FOR_SHADOW_REVIEW = 可进入 Shadow 评审
+  - READY_FOR_COMPARISON = 可查看只读对照
+  - READY_FOR_NO_SIDE_EFFECT_PREVIEW = 可生成无副作用预览
+GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+Integration-1: NOT STARTED / mock-test-support only where applicable
+RealClient / real provider / private trading adapter / real permission probe: NOT_IMPLEMENTED
+```
+
+实现摘要：
+
+- 前端 API client：新增三个只读 GET client，统一走既有 Axios 实例和 `/api` base URL，不散落原始 URL。
+- Query keys / hooks：新增 `strategyValidationQueryKeys` 与三组 TanStack Query hooks，`retry=false`，失败态由页面 fail-closed 展示为不可用。
+- 页面：新增只读查询表单，字段为 `strategyId / strategyVersionId / datasetId / evaluationId / publishId / paperRunId / shadowRunId`；三块核心面板分别展示 GateQ-1、GateQ-2、GateQ-3 response；Traceability chain 固定展示 `strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow`。
+- 边界 UI：常驻展示“只读验证”“不代表交易授权”“不代表 LIVE 已启用”“不提交真实订单”“不读取真实凭证”，并展示 `NO_DB_WRITE / NO_EXTERNAL_IO / NO_CREDENTIAL_ACCESS / NO_PRIVATE_ENDPOINT / NO_ORDER_SUBMISSION / NO_LEDGER_MUTATION / NO_ACCOUNT_MUTATION`。
+- Smoke：mock 三个 GateQ 只读 API，覆盖 blockers / warnings / nextSteps、sideEffectPolicy、UNKNOWN / NOT_AVAILABLE 非成功态和禁止正向交易授权文案。
+
+验证：
+
+- `npm --prefix frontend run build`：PASS / BUILD SUCCESS；保留既有 Vite chunk warning。
+- `npm --prefix frontend run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium`：PASS / 2 passed。
+- 初跑 smoke 曾因页面边界文案中存在英文 ready 短语、UNKNOWN fixture 下游 READY_FOR_* 残留失败；已最小修正后复跑通过。
+
+边界：
+
+未改 backend / research / scripts / deploy / `.github` / migration；未新增后端 API、后端测试或 migration；未启动真实 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper / shadow 状态；未调用真实交易所；未读取或输出 credential material；未开启 LIVE / AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未下单、撤单、转账或提现。
+
+下一步：
+
+提交前执行最终 `git status --short`、`git diff --check`、`git diff --stat`、禁止范围 diff 与风险词扫描；推荐 commit message：`feat(frontend): add paper shadow comparison view`。
+
 ## NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT
 
 日期：2026-07-05。

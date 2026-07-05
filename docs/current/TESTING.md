@@ -1,3 +1,38 @@
+## NQ-GATEQ-5-FRONTEND-PAPER-SHADOW-COMPARISON-VIEW validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-5 前端只读策略验证与 Paper / Shadow 对照视图；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表交易授权、LIVE 启用、Shadow Live 执行、AI 或 DH runtime 接入。
+
+```text
+Scope:
+  - 新增 /strategies/validation 前端只读页面与策略验证导航入口。
+  - 新增 GateQ-5 frontend API client、types、query keys、TanStack Query hooks。
+  - 只消费 GateQ-1 / GateQ-2 / GateQ-3 既有 GET 只读 API。
+  - 展示 traceability chain、blockers、warnings、nextSteps、sideEffectPolicy。
+  - 不新增后端 API、不改 backend、不启动 Paper/Shadow runner、不触发真实外联。
+
+Result:
+  NQ-GATEQ-5-FRONTEND-PAPER-SHADOW-COMPARISON-VIEW: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Route: /strategies/validation
+  Smoke mode: mocked no-backend / no real outbound
+  GateQ overall: not FROZEN / not ACCEPTED / not fully implemented
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `npm --prefix frontend run build` | PASS / BUILD SUCCESS | TypeScript build 与 Vite build 通过；保留既有 Vite chunk > 500 kB warning，非本轮阻断。 |
+| `npm --prefix frontend run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` | PASS / 2 passed | Mock/no-backend smoke 覆盖页面渲染、mock evaluation gate / comparison / preview response 展示、blocker / warning / nextSteps、sideEffectPolicy、禁止正向交易授权文案、UNKNOWN / NOT_AVAILABLE 非成功态、无真实后端外联。 |
+| 初跑 RCA | FIXED / RE-RUN PASS | 初跑 smoke 暴露页面边界文案中存在英文 ready 短语，可能被解释为正向 LIVE 语义；已改为中文否定边界文案，并复跑通过。UNKNOWN 场景 fixture 也同步去除下游 READY_FOR_* 残留，未降低断言。 |
+| Known warnings | REVIEWED / NON-BLOCKING | 复跑 E2E 未再出现本页 `Card.bordered` deprecation warning；build 仍保留既有 Vite chunk > 500 kB warning，非本轮阻断。 |
+
+Not run:
+
+- 未运行真实后端 E2E。原因：本轮默认 no-backend / mocked smoke，且任务要求不触发真实后端外联；真实后端环境状态未作为本轮验收前置。状态记录为 `PENDING_BACKEND_ENV`（等待后端环境）。
+- 未运行 backend Maven / Python pytest / mypy / ruff。原因：本轮禁止修改 backend 与 research，实际未触达相关目录。
+
+Boundary:
+
+未改 backend / research / scripts / deploy / `.github` / migration；未新增 migration；未新增后端 API 或后端测试；未启动真实 Shadow runner；未创建 shadow run；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未执行策略；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Strategy Evaluation Gate、Paper vs Shadow Comparison 与 Shadow Live no-side-effect preview 均不代表 trading authorization。
+
 ## NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT validation（2026-07-05）
 
 本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-4 Python offline evaluation artifact 到 Java fact source 的只读 binding preview contract baseline；不代表 GateQ 整体 `FROZEN`（已冻结）/ `ACCEPTED`（已接受），也不代表 artifact 已入库、策略已批准、Paper/Shadow run 可启动、交易授权、Python ML ready 或 live execution ready。
