@@ -1,3 +1,47 @@
+## NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE
+
+日期：2026-07-05。
+
+范围：
+
+- NQ-only GateQ-1 后端只读 baseline。
+- 新增 Strategy Evaluation Gate DTO、core service、只读 fact repository port、infra JDBC query、API response DTO 与 controller。
+- 新增 service / controller regression tests，覆盖 gate 状态、缺失项、fail-closed 语义、敏感字段与交易授权字段缺失。
+- 同步 `docs/current/API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`README.md` 与 root `README.md`。
+
+结果：
+
+```text
+NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+Endpoint: GET /api/strategies/evaluation-gate
+GateQ overall: PLAN READY / NOT IMPLEMENTED
+LIVE: DISABLED
+AI: NOT STARTED
+DH runtime: NOT INTEGRATED
+Integration-1: NOT STARTED / mock-test-support only where applicable
+RealClient / real provider / private trading adapter / real permission probe: NOT IMPLEMENTED
+```
+
+实现摘要：
+
+- `nq-core`：新增 `StrategyEvaluationGateService` 与 read model，基于 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 做 fail-closed 判定。
+- `nq-infra`：新增 `JdbcStrategyEvaluationGateFactRepository`，只执行本地 DB `SELECT`，不写库、不触发 nq-research 写侧 service。
+- `nq-api`：新增 `GET /api/strategies/evaluation-gate`，返回 `scope / gateStatus / gateDecision / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt` 等只读字段。
+- 最高非阻断状态为 `READY_FOR_SHADOW_REVIEW`；该状态仅代表研究/评估证据可进入后续 Shadow review，不代表 trading authorization、LIVE enable 或 strategy live-ready。
+
+验证：
+
+- Targeted Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=StrategyEvaluationGateServiceTest,StrategyEvaluationGateControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+- Required scoped Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test`：PASS / BUILD SUCCESS；23 个 reactor module SUCCESS；`nq-core` 98 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped。
+
+边界：
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动 Shadow Live runner；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Data Quality diagnostic、Permission Readiness、Risk Preflight 与 Evaluation Gate 均不代表 trading authorization；Python offline foundation 不代表 ML ready 或 live execution ready。
+
+下一步：
+
+提交前复核 `git diff --check`、`git diff --stat`、禁止范围 diff 与风险词扫描；推荐 commit message：`feat(strategy): add read-only evaluation gate baseline`。
+
 ## NQ-GATEP-RELEASE-TAG-AND-ARCHIVE
 
 日期：2026-07-05。

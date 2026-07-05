@@ -8,7 +8,8 @@ NexusQuant 是通用量化交易平台，第一阶段聚焦虚拟币量化交易
 
 - NQ-GATEP-RELEASE-TAG-AND-ARCHIVE = PASS（通过）/ COMPLETED（已完成）/ RELEASE TAG PUSHED（release tag 已推送）；release tag：`nq-gatep-freeze`，tagged commit：`3650714ae9cd441e59eb5b09c605a14bbc9998dc`，archive pointer：`docs/gates/gate-p/README.md`。GateP freeze 只冻结真实数据质量与交易准备阶段的只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout，不代表真实交易授权。
 - NQ-GATEQ-PLAN-SHADOW-LIVE-READINESS = PLAN READY（规划已就绪）/ NOT IMPLEMENTED（未实现）；规划入口：`docs/current/GATEQ_PLAN.md`。GateQ 只定义 strategy evaluation gate、Paper vs Shadow 只读对照、Python offline artifact -> Java fact-source 绑定、Shadow Live no-side-effect 边界和未来批次，不启动 implementation。
-- Current fact source：GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；GateQ `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）；LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
+- NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE = IMPLEMENTED（已实现）/ SELF-REVIEWED（已自审）/ READY TO COMMIT（可提交前复核）；新增 `GET /api/strategies/evaluation-gate` 后端只读 baseline，只聚合 strategy version / dataset / evaluation / publish / SIM Paper 既有事实。`READY_FOR_SHADOW_REVIEW` 仅代表研究与评估可进入后续 review，不代表交易授权、LIVE enable 或 strategy live-ready。
+- Current fact source：GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；GateQ `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）；GateQ-1 read-only baseline `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可提交前复核）；LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
 - GateH completed
 - GateI completed
 - GateJ-PLAN completed
@@ -86,7 +87,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 
 - AI / AI 信号 / AI 自动交易 / AI Paper Trading
 - 真实 LIVE 下单与真实交易所下单接口调用
-- GateQ implementation（下一阶段只允许 `GateQ PLAN / NOT STARTED`）
+- GateQ overall implementation / Shadow Live runner implementation（总体仍只允许 `GateQ PLAN READY / NOT IMPLEMENTED`；GateQ-1 只读 baseline 不代表 Shadow Live runner 已启动）
 - RealClient / real provider / private trading adapter / real permission probe
 - 美股 / A 股
 - 合约全量
@@ -102,6 +103,7 @@ GateM 当前权威定义为 Exchange / MarketData Runtime Readiness，不是 AI 
 - `docs/current/STATUS.md`：当前项目状态
 - `docs/current/ROADMAP.md`：总路线
 - `docs/current/GATEQ_PLAN.md`：GateQ planning-only 权威入口；定义 Shadow Live 只读影子运行、Paper vs Shadow 边界、strategy evaluation gate、traceability model、Python artifact binding、candidate API/pages/tests 与 Q0..FREEZE batch plan；状态为 `PLAN READY / NOT IMPLEMENTED`
+- `docs/current/API.md`：已记录 GateQ-1 `GET /api/strategies/evaluation-gate` 只读 API；该 endpoint 只回答研究与评估准备度，不输出交易授权、LIVE enable 或 strategy live-ready。
 - `docs/gates/gate-p/README.md`：GateP historical archive；GateP release tag、freeze closeout、Batch 1-6A evidence matrix 与 testing summary 已归档。当前摘要：GateP final state = FROZEN / ACCEPTED / TAGGED；release tag = `nq-gatep-freeze`；Data Quality / Permission Readiness / Risk Preflight 不等于 trading authorization；Python Research 不等于 ML ready 或 live execution ready
 - `docs/current/GATEK_PLAN.md`：GateK planning-only 阶段规划；明确 GateK implementation、AI、DH runtime、LIVE、multi-exchange expansion 均未启动
 - `docs/current/GATEK_ARCHITECTURE_BASELINE_REVIEW.md`：GateK architecture baseline review；审查 backend/frontend/research/docs/test/security 边界，结论为 P0/P1=0、P2 follow-up required，未启动 GateK implementation

@@ -1,3 +1,33 @@
+## NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE validation（2026-07-05）
+
+本轮结论为 `IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该结论只覆盖 GateQ-1 后端只读 baseline；GateQ 总体仍为 `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现）。
+
+```text
+Scope:
+  - 新增 Strategy Evaluation Gate 只读 DTO / service / repository query / API endpoint。
+  - 复用现有 strategy version、dataset coverage、evaluation、publish、SIM Paper facts。
+  - 覆盖 fail-closed、缺失项、failed evaluation、数据质量不足、敏感字段缺失与不返回交易授权字段。
+  - 不启动 Shadow Live runner，不启动 Paper run，不写数据库，不调用真实交易所。
+
+Result:
+  NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE: IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+  Endpoint: GET /api/strategies/evaluation-gate
+  Highest non-blocking status: READY_FOR_SHADOW_REVIEW
+  GateQ overall: PLAN READY / NOT IMPLEMENTED
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=StrategyEvaluationGateServiceTest,StrategyEvaluationGateControllerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Targeted regression：`StrategyEvaluationGateServiceTest` 9 tests、`StrategyEvaluationGateControllerTest` 2 tests，覆盖缺 strategy version、缺 dataset、缺 evaluation、evaluation failed、数据质量不足、缺 Paper evidence、满足 evidence 仅返回 `READY_FOR_SHADOW_REVIEW`、response 不含交易授权字段或敏感字段。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 个 reactor module SUCCESS；`nq-core` 98 tests / 0 failures；`nq-app` 105 tests / 0 failures / 3 skipped；新增 evaluation gate tests 被纳入 full scoped Maven。 |
+| Known warnings | REVIEWED / NON-BLOCKING | 保留既有 Mockito dynamic agent warning、SLF4J provider warning 和少量 unrelated compiler warning；未发现本轮阻断。 |
+
+本轮未运行 frontend build / Playwright / Python pytest / mypy / ruff。原因：本轮允许范围不包含 frontend 或 research，且未修改相关目录。
+
+Boundary:
+
+未改 frontend / research / scripts / deploy / `.github` / migration；未新增 migration；未启动 Shadow Live runner；未启动 Paper run；未写数据库；未修改 publish / evaluation / paper run 状态；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI runtime；未接 DH runtime；未下单、撤单、转账或提现。Evaluation gate 不代表 trading authorization，不代表 LIVE enable，不代表 strategy live-ready；Python offline foundation 不代表 ML ready 或 live execution ready。
+
 ## NQ-GATEP-RELEASE-TAG-AND-ARCHIVE validation（2026-07-05）
 
 本轮结论为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）。
