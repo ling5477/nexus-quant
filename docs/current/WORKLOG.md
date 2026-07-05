@@ -13876,3 +13876,123 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 进入 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION`；该任务必须由用户单独授权，且只能做 test-only / fake-transport / no-real-http 联合验证，不得真实联调。
+
+---
+
+## NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX
+
+日期：2026-07-05
+
+### 本轮目标
+
+只修复 joint runtime dry-run test implementation close review 前的两个 blocker：`SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH` 与 `SCHEMA_VERSION_MISMATCH`。本轮不扩大范围，不真实调用 DH，不真实 HTTP，不接 provider，不修改 contracts / OpenAPI / JSON Schema / golden_cases / migration，不开启 LIVE。
+
+### 根因与修复
+
+- `SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH` 根因：NQ signing material 使用 wire value `NQ_DRYRUN`，DH verifier 先前对 source 做 lowercase normalization 后参与 HMAC material，导致 NQ-generated signature 与 DH verification material 不一致。本轮对齐为 wire-level canonical source value `NQ_DRYRUN`，source allowlist 在验签后 exact match，lowercase / alias source 不得通过。
+- `SCHEMA_VERSION_MISMATCH` 根因：DH endpoint 实际返回 `schemaVersion=1.0.0`，NQ response validator / tests 先前默认 `nq-dh-i1-dryrun-v1`。本轮以 DH endpoint 实际返回值为 source of truth，将 NQ `DEFAULT_SCHEMA_VERSION` 对齐为 `1.0.0`，invalid schemaVersion 仍 fail-closed。
+
+### 完成内容
+
+- 更新 NQ isolated `integration/dh` runtime properties，将 `DEFAULT_SCHEMA_VERSION` 对齐 DH endpoint 实际返回值 `1.0.0`。
+- 更新 NQ request generation / joint runtime / disabled preflight / response handling tests，覆盖 source exact `NQ_DRYRUN`、lowercase / alias source denied、DH `1.0.0` response accepted、invalid schemaVersion 与 `BUY / SELL / PLACE_ORDER / CANCEL_ORDER` fail-closed。
+- 同步 `docs/current/README.md`、`STATUS.md`、`WORK_ORDER.md`、`API.md`、`TESTING.md`、`WORKLOG.md` 与 joint test WO。
+
+### 验证
+
+- NQ `git status --short`：PASS / ALLOWED DIRTY；dirty 限于允许的 isolated `integration/dh` code/tests 与 `docs/current`。
+- NQ `git branch --show-current`：PASS；`nq-dh-i1-joint-runtime-dryrun-test-impl`。
+- NQ `git diff --check`：PASS；仅 LF/CRLF warning，无 whitespace error。
+- NQ forbidden-scope diff：PASS / EMPTY；broad forbidden diff 为空；显式 `backend/nq-app/src/main` diff 仅 `DhDryRunRuntimeProperties.java`，属于本轮允许的 isolated client schemaVersion 对齐。
+- NQ boundary `rg`：PASS / REVIEWED；命中为既有业务词、历史/禁止语境、本轮 test assertions 或 docs 边界说明。
+- NQ `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS；23/23 reactor SUCCESS；`nq-app` 129 tests / 3 skipped。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；Integration0 targeted 17 tests。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；Integration1 targeted 18 tests。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；dry-run targeted 30 tests。
+- NQ `mvn -ntp -f backend/pom.xml -Pquality validate`：PROFILE MISSING / NOT EFFECTIVE QUALITY GATE；Maven returned BUILD SUCCESS, but requested profile `quality` does not exist，不声明 NQ quality PASS。
+- NQ dev read-only guard：PASS / SCOPED EMPTY WITH UNRELATED DIRTY；`E:\Project\nexus-quant` 分支 `dev`，最终只读 `git status --short` 显示非本轮 `README.md`、`docs/current/API.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 修改，以及 paper shadow comparison untracked 文件；`docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` unstaged、staged scoped diff 均为空；本轮未修改 NQ dev。
+
+### 边界
+
+未修改 NQ dev；未真实调用 DH；未真实 HTTP；未接 provider；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未修改 contracts / OpenAPI / JSON Schema / golden_cases / migration；未接 Agent / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`。
+
+### Readiness
+
+- `ALLOW_JOINT_RUNTIME_DRYRUN_TEST_BLOCKER_FIX_CLOSE: YES`
+- `ALLOW_JOINT_RUNTIME_DRYRUN_TEST_CLOSE_REVIEW: YES / READY_FOR_CLOSE_REVIEW`
+- `ALLOW_REAL_DH_CALL_NOW: NO`
+- `ALLOW_REAL_HTTP_NOW: NO`
+- `ALLOW_REAL_PROVIDER: NO`
+- `ALLOW_SCHEMA_FORMALIZATION_NOW: NO`
+- `ALLOW_CONTRACTS_MODIFICATION_NOW: NO`
+- `ALLOW_GOLDEN_CASES_MODIFICATION_NOW: NO`
+- `ALLOW_DH_PRODUCTION_CODE_CHANGE_NOW: YES / LIMITED_TO_HMAC_SOURCE_WIRE_VALUE_ALIGNMENT_ONLY`
+- `ALLOW_NQ_PRODUCTION_CODE_CHANGE_NOW: YES / LIMITED_TO_ISOLATED_CLIENT_SCHEMA_VERSION_ALIGNMENT_ONLY`
+- `ALLOW_AGENT_PHASE: NO`
+- `ALLOW_LANGGRAPH_RUNTIME: NO`
+- `ALLOW_LIVE: NO`
+
+### 推荐下一步
+
+进入 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-CLOSE-REVIEW`；若 close review 发现新阻断，再进入 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX-2`。
+
+---
+
+## NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION
+
+日期：2026-07-05
+
+### 本轮目标
+
+实现 NQ-DH Integration-1 joint runtime dry-run test-only 验证，链路限定为 `NQ limited dry-run client -> fake / in-memory transport -> DH MockMvc / test-only validator -> DH readonly decision envelope -> NQ response validation -> NQ dry-run record-only result`。本轮不改生产代码，不真实调用 DH，不真实 HTTP，不接 real provider，不开启 LIVE。
+
+### 完成内容
+
+- 新增 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/integration/dh/DhDryRunJointRuntimeDryRunTest.java`。
+- 扩展 `DhDryRunResponseHandlingTest`，覆盖 NQ 接受 `OBSERVE / NO_TRADE` record-only、接受 `LONG_BIAS / SHORT_BIAS` bias-only，并对 `BUY / SELL / PLACE_ORDER / CANCEL_ORDER`、executable quantity、leverage、order price、dryRun=false、missing decisionId、invalid schema、DH error envelope、timeout、parse failure fail-closed。
+- 扩展 `DhDryRunTestSupport`，提供 test-only fake / in-memory transport 与 readonly response vector helper；不创建真实 URL，不绑定端口，不访问真实 DH。
+- 复用既有 request generation、disabled/kill-switch、no-side-effect 与 recorder tests，覆盖 canonical `X-NQ-DH-*` header、无 legacy `X-DH-NQ-*`、RFC3339 UTC `Z` timestamp、nonce unique、`dryRun=true`、`source=NQ_DRYRUN`、`forbiddenCapabilities`、HMAC value material、record-only、no provider、no trading side effect。
+- 同步 `docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`WORK_ORDER.md`、`API.md`、`TESTING.md`、`WORKLOG.md` 与 joint test implementation 状态。
+
+### 阻断项
+
+- `SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH`：NQ signing 使用 uppercase `NQ_DRYRUN`，DH HMAC verifier 对 source 做 lowercase normalization；真实 NQ signature 会被 DH-style verifier 拒绝。该问题已由测试固化为 fail-closed，不在本轮改生产代码修复。
+- `SCHEMA_VERSION_MISMATCH`：NQ expected response schema 为 `nq-dh-i1-dryrun-v1`，DH endpoint / MockMvc response 为 `1.0.0`；NQ response validator 正确 fail-closed。该问题需要后续跨仓 schemaVersion 对齐。
+
+### 验证
+
+- NQ `git status --short`：PASS / ALLOWED DIRTY；dirty 限于允许的 tests 与 `docs/current`。
+- NQ `git branch --show-current`：PASS；`nq-dh-i1-joint-runtime-dryrun-test-impl`。
+- NQ `git diff --check`：PASS；仅 LF/CRLF warning，无 whitespace error。
+- NQ forbidden-scope diff：PASS / EMPTY；未改 `backend/**/src/main`、migration、frontend、research、scripts、deploy、`.github`、contracts、golden_cases。
+- NQ boundary `rg`：PASS / REVIEWED；命中为既有业务词、历史/禁止语境、本轮 test assertions 或 docs 边界说明。
+- NQ `mvn -ntp -f backend/pom.xml test`：BUILD SUCCESS；23/23 reactor SUCCESS。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；17 tests。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；18 tests。
+- NQ `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：BUILD SUCCESS；29 tests。
+- NQ `mvn -ntp -f backend/pom.xml -Pquality validate`：PROFILE MISSING / NOT CLAIMED；Maven 提示 requested profile `quality` does not exist。
+- NQ dev read-only guard：PASS / EMPTY；`E:\Project\nexus-quant` 分支 `dev`，status 与 scoped diff 均为空。
+
+### 边界
+
+未修改 NQ production code；未修改 DH production code；未修改 NQ dev；未改 contracts / OpenAPI / JSON Schema / golden_cases / migration；未真实调用 DH；未真实 HTTP；未访问 localhost 真实服务或外网；未接 real provider；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未接 Agent / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`。
+
+### Readiness
+
+- `ALLOW_JOINT_RUNTIME_DRYRUN_TEST_IMPLEMENTATION_CLOSE: NO`
+- `ALLOW_JOINT_RUNTIME_DRYRUN_TEST_CLOSE_REVIEW: NO`
+- `ALLOW_REAL_DH_CALL_NOW: NO`
+- `ALLOW_REAL_HTTP_NOW: NO`
+- `ALLOW_REAL_PROVIDER: NO`
+- `ALLOW_SCHEMA_FORMALIZATION_NOW: NO`
+- `ALLOW_CONTRACTS_MODIFICATION_NOW: NO`
+- `ALLOW_GOLDEN_CASES_MODIFICATION_NOW: NO`
+- `ALLOW_DH_PRODUCTION_CODE_CHANGE_NOW: NO`
+- `ALLOW_NQ_PRODUCTION_CODE_CHANGE_NOW: NO`
+- `ALLOW_AGENT_PHASE: NO`
+- `ALLOW_LANGGRAPH_RUNTIME: NO`
+- `ALLOW_LIVE: NO`
+
+### 推荐下一步
+
+`NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX`：只修复 signature material source normalization 与 response schemaVersion 对齐阻断项；仍不得真实 HTTP、不得接 provider、不得修改 contracts / golden_cases / migration、不得开启 LIVE。

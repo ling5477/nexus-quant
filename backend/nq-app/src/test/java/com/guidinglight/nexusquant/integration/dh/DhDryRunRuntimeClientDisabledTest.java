@@ -107,6 +107,36 @@ class DhDryRunRuntimeClientDisabledTest {
         assertDisabledNoCall(result, transport, recorder, "production_disabled");
     }
 
+    @Test
+    void nonCanonicalSourceCaseAndAliasFailClosedWithoutCallingTransport() {
+        assertSourceDeniedNoCall("nq_dryrun");
+        assertSourceDeniedNoCall("NQ-DRYRUN");
+    }
+
+    private static void assertSourceDeniedNoCall(String source) {
+        DhDryRunRuntimeProperties properties = new DhDryRunRuntimeProperties(
+                true,
+                true,
+                source,
+                DhDryRunTestSupport.ENDPOINT,
+                false,
+                false,
+                1500,
+                DhDryRunTestSupport.SIGNING_KEY,
+                DhDryRunRuntimeProperties.DEFAULT_SCHEMA_VERSION);
+        DhDryRunTestSupport.FakeDhDryRunTransport transport = new DhDryRunTestSupport.FakeDhDryRunTransport();
+        InMemoryDhDryRunRecorder recorder = new InMemoryDhDryRunRecorder();
+
+        DhDryRunClientResult result =
+                DhDryRunTestSupport.client(properties, transport, recorder).execute(DhDryRunTestSupport.command());
+
+        assertTrue(result.failClosed());
+        assertEquals(DhDryRunErrorCode.SOURCE_DENIED, result.record().errorCode());
+        assertEquals("source_denied", result.record().failClosedReason());
+        assertEquals(0, transport.callCount());
+        assertEquals(1, recorder.records().size());
+    }
+
     private static void assertDisabledNoCall(
             DhDryRunClientResult result,
             DhDryRunTestSupport.FakeDhDryRunTransport transport,

@@ -43,7 +43,7 @@ final class DhDryRunTestSupport {
      */
     static DhDryRunRuntimeClient client(
             DhDryRunRuntimeProperties properties,
-            FakeDhDryRunTransport transport,
+            DhDryRunTransport transport,
             InMemoryDhDryRunRecorder recorder) {
         return new DhDryRunRuntimeClient(
                 properties,

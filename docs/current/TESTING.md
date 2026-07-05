@@ -1,3 +1,38 @@
+## NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX validation（2026-07-05）
+
+```text
+Scope:
+  - 本轮只修复 source normalization 与 schemaVersion 两个 blocker。
+  - HMAC signature material 使用 wire-level canonical source value NQ_DRYRUN。
+  - NQ DEFAULT_SCHEMA_VERSION 对齐 DH endpoint 实际返回值 1.0.0。
+  - 不真实调用 DH，不真实 HTTP，不接 provider，不开启 LIVE。
+  - 不修改 contracts/OpenAPI/json-schema/golden_cases/migration。
+
+Result:
+  NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX: PASS / IMPLEMENTED / FULL_VALIDATION_PASS / READY_FOR_CLOSE_REVIEW
+  SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH: FIXED
+  SCHEMA_VERSION_MISMATCH: FIXED
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / ALLOWED DIRTY | Dirty 限于允许的 isolated NQ `integration/dh` code/tests 与 `docs/current`。 |
+| `git branch --show-current` | PASS / `nq-dh-i1-joint-runtime-dryrun-test-impl` | 分支符合本轮要求。 |
+| `git diff --check` | PASS | exit 0；仅 LF/CRLF warning，无 whitespace error。 |
+| `git diff --stat` | REVIEWED | diff 限于允许的 NQ isolated client/schema alignment、tests 与 `docs/current`。 |
+| forbidden-scope diff | PASS / EMPTY | broad forbidden diff 为空；显式 `backend/nq-app/src/main` diff 仅 `DhDryRunRuntimeProperties.java`，属于本轮允许的 isolated client schemaVersion 对齐。 |
+| boundary `rg` scan | PASS / REVIEWED | `docs/current backend` 命中为既有业务词、历史/禁止语境、本轮 test assertions 或 docs 边界说明；未发现真实 HTTP、RealClient、provider、trading mutation 或 credential exposure。 |
+| `mvn -ntp -f backend/pom.xml test` | PASS / BUILD SUCCESS | 23/23 reactor SUCCESS；`nq-app` 129 tests / 3 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration0 targeted 17 tests。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Integration1 targeted 18 tests。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS | Dry-run targeted 30 tests。 |
+| `mvn -ntp -f backend/pom.xml -Pquality validate` | PROFILE MISSING / NOT EFFECTIVE QUALITY GATE | Maven returned BUILD SUCCESS, but requested profile `quality` does not exist；不得写 NQ quality PASS。 |
+| NQ dev read-only guard | PASS / SCOPED EMPTY WITH UNRELATED DIRTY | `E:\Project\nexus-quant` 分支 `dev`；最终只读 `git status --short` 显示非本轮 `README.md`、`docs/current/API.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 修改，以及 paper shadow comparison untracked 文件；`docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` unstaged、staged scoped diff 均为空；本轮未修改 NQ dev。 |
+
+Boundary:
+
+Runtime integration：`NOT STARTED`；DH integrated：`NO`；LIVE：`DISABLED`；real DH call：`NO`；real HTTP：`NO`；provider：`NO`；contracts/OpenAPI/json-schema/golden_cases：`UNCHANGED`；invalid signature / invalid source / invalid schemaVersion / executable action response 均保持 fail-closed。
+
 ## NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW validation（2026-07-05）
 
 ```text
@@ -7937,3 +7972,62 @@ Not run：
 原因：本轮为 docs-only / work-order-only，未修改 Java 生产代码、测试代码、runtime wiring、contracts、fixture、golden_cases 或 migration；不声明 Maven full test、targeted tests 或 quality profile PASS。
 
 边界确认：未实现测试；未修改 Java 生产代码；未修改测试代码；未新增测试 fixture；未新增 WebClient / RestTemplate / OkHttp / HttpClient；未真实调用 DH；未真实 outbound HTTP；未接 real provider；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未修改 NQ dev；未改 contracts / OpenAPI / JSON Schema / golden_cases / fixture JSON / migration；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`；未接 Agent / LangGraph；未开启 LIVE。
+
+---
+
+## NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION（2026-07-05）
+
+结论：**BLOCKED / TEST_IMPLEMENTED / FAIL-CLOSED_EVIDENCE_CAPTURED / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。
+
+本轮只验证 NQ worktree 内 test-only / fake-transport / in-memory dry-run 链路；未修改 NQ Java production code、contracts、OpenAPI、JSON Schema、golden_cases、migration、frontend、research、scripts、deploy 或 `.github`。DH 侧 MockMvc / HMAC / endpoint fail-closed 覆盖记录见 DH `docs/current/TESTING.md`。
+
+### 覆盖范围
+
+- `DhDryRunJointRuntimeDryRunTest`：验证 NQ signed request 与 DH-style verifier 的 source normalization blocker、DH `schemaVersion=1.0.0` 与 NQ expected schema blocker、readonly envelope record-only、canonical error taxonomy fail-closed。
+- `DhDryRunResponseHandlingTest`：验证 `OBSERVE / NO_TRADE` record-only、`LONG_BIAS / SHORT_BIAS` bias-only、`BUY / SELL / PLACE_ORDER / CANCEL_ORDER` 以及 quantity / leverage / orderPrice / dryRun=false / missing decisionId / invalid schema / DH error envelope / timeout / parse failure fail-closed。
+- `DhDryRunTestSupport`：补充 test-only fake / in-memory transport 与 readonly record helper；不绑定真实网络端口，不访问真实 DH 服务。
+- 既有 `DhDryRunRequestGenerationTest`、`DhDryRunNoSideEffectBoundaryTest`、`DhDryRunRuntimeClientDisabledTest`、`NqDhIntegration1StubRecorderNoSideEffectTest` 在本轮 targeted test 中复验 request generation、canonical header、nonce uniqueness、disabled / kill switch / missing endpoint fail-closed、no real HTTP、no provider、no order / execution / risk / ledger / account / paper / live side effect。
+
+### 阻断项
+
+| Blocker | 证据 | 影响 |
+| --- | --- | --- |
+| `SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH` | NQ `DhDryRunSigning.signatureMaterial(...)` 使用原始 uppercase `NQ_DRYRUN`；DH-style verifier 对 source 做 lowercase normalization；NQ 真实生成签名会被 DH 规则拒绝。 | 成功路径不能关闭；必须先对齐跨仓 HMAC signature material。 |
+| `SCHEMA_VERSION_MISMATCH` | NQ response validation 默认接受 `nq-dh-i1-dryrun-v1`；DH endpoint / MockMvc response 当前返回 `1.0.0`；NQ 正确 fail-closed。 | DH readonly response 尚不能被 NQ 作为 valid dry-run record 接受；必须先冻结 response schemaVersion。 |
+
+### 命令结果
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | **PASS / ALLOWED DIRTY** | Dirty 限于允许的 `backend/nq-app/src/test/java/com/guidinglight/nexusquant/integration/dh/**` 与 `docs/current/**`。 |
+| `git branch --show-current` | **PASS** | `nq-dh-i1-joint-runtime-dryrun-test-impl`。 |
+| `git diff --check` | **PASS** | exit 0；仅 LF/CRLF warning，无 whitespace error。 |
+| `git diff --stat` | **REVIEWED** | diff 限于允许的 NQ test code 与 `docs/current`。 |
+| forbidden-scope diff | **PASS / EMPTY** | `backend/**/src/main`、`backend/**/db/migration`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`contracts`、`golden_cases` 无 diff。 |
+| boundary `rg` scan | **PASS / REVIEWED** | 命中为既有业务词、历史/禁止语境、本轮 test assertions 或 docs 边界说明；未发现本轮新增真实 HTTP、RealClient、provider、order/risk/ledger/paper/live 实现。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | 23/23 reactor SUCCESS；full backend tests 通过，包含本轮新增/修改 dry-run tests。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration0 targeted 17 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | Integration1 targeted 18 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 29 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -ntp -f backend/pom.xml -Pquality validate` | **PROFILE MISSING / NOT CLAIMED** | Maven 返回 BUILD SUCCESS，但提示 requested profile `quality` does not exist；不声明 NQ quality PASS。 |
+| NQ dev read-only guard | **PASS / EMPTY** | `E:\Project\nexus-quant` 分支 `dev`；`git status --short`、diff stat、NQ-DH/Integration-1 unstaged 与 staged scoped diff 均为空；本轮未修改 NQ dev。 |
+
+### Readiness
+
+```text
+ALLOW_JOINT_RUNTIME_DRYRUN_TEST_IMPLEMENTATION_CLOSE: NO
+ALLOW_JOINT_RUNTIME_DRYRUN_TEST_CLOSE_REVIEW: NO
+ALLOW_REAL_DH_CALL_NOW: NO
+ALLOW_REAL_HTTP_NOW: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_SCHEMA_FORMALIZATION_NOW: NO
+ALLOW_CONTRACTS_MODIFICATION_NOW: NO
+ALLOW_GOLDEN_CASES_MODIFICATION_NOW: NO
+ALLOW_DH_PRODUCTION_CODE_CHANGE_NOW: NO
+ALLOW_NQ_PRODUCTION_CODE_CHANGE_NOW: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未修改 NQ production code；未修改 NQ dev；未真实调用 DH；未真实 HTTP；未访问 localhost 真实服务或外网；未改 contracts / OpenAPI / JSON Schema / golden_cases / migration；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未接 provider；未接 AI / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`。

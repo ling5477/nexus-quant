@@ -53,6 +53,33 @@ class DhDryRunResponseHandlingTest {
     }
 
     @Test
+    void executableOrderLeverageAndOrderPriceAreRejected() {
+        for (String executableFragment : new String[] {
+            "\"executableOrder\": {\"intent\": \"observe\"}",
+            "\"leverage\": \"2\"",
+            "\"orderPrice\": \"68000\""
+        }) {
+            assertPolicyViolation(
+                    """
+                    {
+                      "decisionId": "dh-dec-001",
+                      "dryRun": true,
+                      "action": "OBSERVE",
+                      "confidence": 0.72,
+                      "riskLevel": "LOW",
+                      "reasons": ["READ_ONLY_DRY_RUN"],
+                      "traceSummary": "trace-summary",
+                      "replayRef": "replay-001",
+                      "auditRef": "audit-001",
+                      "schemaVersion": "%s",
+                      %s
+                    }
+                    """
+                            .formatted(DhDryRunRuntimeProperties.DEFAULT_SCHEMA_VERSION, executableFragment));
+        }
+    }
+
+    @Test
     void dryRunFalseMissingDecisionIdAndInvalidSchemaAreRejected() {
         assertPolicyViolation(DhDryRunTestSupport.validResponse("OBSERVE").replace("\"dryRun\": true", "\"dryRun\": false"));
         assertPolicyViolation(DhDryRunTestSupport.validResponse("OBSERVE").replace("\"dh-dec-001\"", "\"\""));

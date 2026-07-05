@@ -32,6 +32,7 @@ class DhDryRunRequestGenerationTest {
 
         assertEquals(true, body.get("dryRun").asBoolean());
         assertEquals("NQ_DRYRUN", body.get("source").asText());
+        assertEquals("1.0.0", body.get("schemaVersion").asText());
         assertEquals("2026-07-05T01:02:03Z", body.get("timestamp").asText());
         assertFalse(body.get("timestamp").asText().matches("\\d{10}"));
         assertFalse(body.get("timestamp").asText().matches("\\d{13}"));
@@ -50,6 +51,8 @@ class DhDryRunRequestGenerationTest {
         assertEquals("nq-i1-req-001", headers.get(DhDryRunHeaderNames.REQUEST_ID));
         assertEquals("nq-i1-trace-001", headers.get(DhDryRunHeaderNames.TRACE_ID));
         assertEquals("tenant-i1", headers.get(DhDryRunHeaderNames.TENANT_ID));
+        assertEquals("NQ_DRYRUN", headers.get(DhDryRunHeaderNames.SOURCE));
+        assertEquals("1.0.0", headers.get(DhDryRunHeaderNames.SCHEMA_VERSION));
         assertFalse(headers.get(DhDryRunHeaderNames.SIGNATURE).isBlank());
     }
 
@@ -91,6 +94,7 @@ class DhDryRunRequestGenerationTest {
 
         assertEquals(expectedSignature, request.headers().get(DhDryRunHeaderNames.SIGNATURE));
         assertTrue(material.contains("NQ_DRYRUN"));
+        assertFalse(material.contains("nq_dryrun"));
         assertTrue(material.contains("tenant-i1"));
         assertTrue(material.contains("nq-i1-req-001"));
         assertTrue(material.contains("nq-i1-trace-001"));

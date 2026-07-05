@@ -33,8 +33,8 @@ public record DhDryRunRuntimeProperties(
 
     /** 当前唯一允许的 source，不能 fallback 到匿名或 legacy source。 */
     public static final String DEFAULT_SOURCE = "NQ_DRYRUN";
-    /** 本轮 NQ client 内部 schema 标识；不 formalize contracts/OpenAPI/json-schema。 */
-    public static final String DEFAULT_SCHEMA_VERSION = "nq-dh-i1-dryrun-v1";
+    /** DH endpoint 当前实际返回的 dry-run response schema version；不 formalize contracts/OpenAPI/json-schema。 */
+    public static final String DEFAULT_SCHEMA_VERSION = "1.0.0";
     private static final int DEFAULT_TIMEOUT_MS = 1500;
 
     public DhDryRunRuntimeProperties {
