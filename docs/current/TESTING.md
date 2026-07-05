@@ -1,3 +1,35 @@
+## NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW validation（2026-07-05）
+
+```text
+Scope:
+  - 本轮只做 Integration-1 mock runtime / test-only 里程碑 close review。
+  - 只修改允许的 docs/current close-review 文档与状态文件。
+  - 不修改 Java 生产代码、测试代码、contracts/OpenAPI/json-schema/golden_cases/migration。
+  - 不真实调用 DH，不真实 HTTP，不访问 localhost 真实服务或外网。
+  - 不接 provider、Agent / LangGraph 或 LIVE。
+
+Result:
+  NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW: PASS / CLOSED / ACCEPTED / REVIEW_ONLY / MOCK_RUNTIME_MILESTONE_CLOSED
+  ALLOW_INTEGRATION1_MOCK_RUNTIME_CLOSE: YES
+  ALLOW_MOCK_RUNTIME_PR_PREP: YES
+```
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| NQ worktree commit hygiene：`git status --short`; `git branch --show-current`; `git log --oneline -10` | PASS / RECORDED | 写入前 status 无输出；branch=`nq-dh-i1-joint-runtime-dryrun-test-impl`；最近提交覆盖 NQ runtime client WO、limited client implementation / close review、joint runtime dry-run test WO、blocker fix 与 close review。 |
+| DH commit hygiene：`git status --short`; `git branch --show-current`; `git log --oneline -8` | PASS | 写入前 status 无输出；branch=`dev`；最近 8 个 Integration-1 提交覆盖 runtime API contract review 到 joint runtime dry-run test close review。 |
+| NQ dev read-only hygiene | PASS / SCOPED EMPTY WITH UNRELATED DIRTY | 本轮只读；`git status --short` 显示 unrelated backend untracked 文件；`docs/current/*NQ_DH*` 与 `docs/current/*INTEGRATION1*` unstaged / staged scoped diff 为空；NQ dev 不作为全仓无改动 gate。 |
+| NQ phase-chain commit review | PASS | 上一轮 close review commit 为 docs-only；blocker fix commit 独立承载 schemaVersion alignment 与 dry-run tests；本轮未发现未提交 close-review docs。 |
+| DH phase-chain commit review | PASS | DH close review commit 为 docs-only；blocker fix commit 独立承载 HMAC source wire-value alignment 与测试更新；本轮未发现未提交 close-review docs。 |
+| NQ worktree forbidden-scope pre-write diff | PASS / EMPTY | `backend/**/src/main`、`backend/**/src/test`、migration、frontend、research、scripts、deploy、`.github`、contracts、golden_cases 无 diff。 |
+| DH forbidden-scope pre-write diff | PASS / EMPTY | `dh-domain/src/main`、`dh-usecase/src/main`、`dh-security/src/main`、`dh-api/src/main`、`dh-app/src/main`、`dh-infra/src/main`、contracts、golden_cases 与 migration 无 diff。 |
+| Maven | NOT RERUN | 本轮为 review-only / docs-only close review，未修改 Java 生产代码或测试代码；沿用上一轮已记录并接受的 NQ / DH 测试证据，不新增 Maven PASS 声明。 |
+| NQ quality profile | PROFILE MISSING / NOT EFFECTIVE QUALITY GATE | 沿用上一轮记录：NQ `-Pquality validate` 返回 Maven `BUILD SUCCESS` 但 requested profile `quality` does not exist；不得写为 NQ quality PASS。 |
+
+Boundary:
+
+Runtime integration：`NOT STARTED`；DH integrated：`NO`；LIVE：`DISABLED`；real DH call：`NO`；real HTTP：`NO`；provider / Agent / LangGraph：`NO`；contracts / golden_cases / migration：`UNCHANGED`；NQ dev：`READ_ONLY / SCOPED_EMPTY_WITH_UNRELATED_DIRTY`。
+
 ## NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX validation（2026-07-05）
 
 ```text
@@ -8053,7 +8085,7 @@ ALLOW_LIVE: NO
 | `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 18 tests / 0 failures / 0 errors / 0 skipped。 |
 | `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 30 tests / 0 failures / 0 errors / 0 skipped。 |
 | `mvn -ntp -f backend/pom.xml -Pquality validate` | **PROFILE MISSING / NOT EFFECTIVE QUALITY GATE** | Maven returned `BUILD SUCCESS`，但 requested profile `quality` does not exist；不声明 NQ quality PASS。 |
-| NQ dev read-only guard | **SCOPED EMPTY / NOT CLEAN GATE** | `E:\Project\nexus-quant` 只读；任务输入声明存在非本轮 unrelated dirty，本轮只确认 NQ-DH / Integration-1 scoped unstaged 与 staged diff 为空，未修改 NQ dev。 |
+| NQ dev read-only guard | **SCOPED EMPTY / NOT_FULL_WORKTREE_GATE** | `E:\Project\nexus-quant` 只读；任务输入声明存在非本轮 unrelated dirty，本轮只确认 NQ-DH / Integration-1 scoped unstaged 与 staged diff 为空，未修改 NQ dev。 |
 
 Readiness：
 
