@@ -1,3 +1,34 @@
+## NQ-GATEQ-FREEZE-READINESS-REVIEW validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮只做 GateQ-0..6 freeze readiness review、evidence audit、boundary review 和 current docs 同步。
+  - 不修改 backend / frontend / research / scripts / deploy / .github / migration。
+  - 不新增 API、页面、测试、CI workflow 或业务能力。
+  - 不调用真实交易所，不读取 credential material，不启动 Shadow Live runner，不创建 shadow run。
+
+Result:
+  NQ-GATEQ-FREEZE-READINESS-REVIEW: PASS / READY FOR FREEZE CLOSEOUT
+  P0: 0
+  P1: 0
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git branch --show-current` | PASS | branch=`dev`。 |
+| `git rev-parse HEAD`; `git rev-parse origin/dev` | PASS | 两者均为 `1c6e796657c126fb10b1f1d72e26d0c861f3aea4`。 |
+| `git status --short` before review doc write | PASS / CLEAN | 前序写入 review 文档前工作区干净；本轮最终 dirty 仅限允许的 docs/current 文件。 |
+| GitHub Actions run `28747045673` jobs fetch | PASS / SUCCESS | `Frontend build`、`Diff check`、`PostgreSQL / Flyway smoke`、`Frontend no-backend E2E (Batch 5A)`、`Backend Maven test`、`CI security smoke`、`No-outbound guard`、`Research quality gate`、`Frontend backend E2E smoke`、`Secret scan` 均 success。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-app -am test` | PASS / BUILD SUCCESS | 23 reactor modules success；`nq-core` 131 tests，`nq-api` 67 tests，`nq-app` 129 tests / 3 skipped。 |
+| `npm --prefix frontend run build` | PASS | 保留既有 Vite chunk size warning。 |
+| `npm --prefix frontend run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` | PASS | 2 passed；mock/no-backend smoke 覆盖 Strategy Validation / Paper Shadow Comparison / Evidence Matrix / forbidden wording。 |
+| GateQ risk-word scan | REVIEWED / PASS | 命中按实现事实、历史证据、否定边界、测试断言和禁止项分类；未发现 GateQ 当前正向越界表达。 |
+| Final docs-only validation | PASS | `git diff --check`、`git diff --stat`、forbidden-area diffs 与 scoped migration diff 在本轮收口后复核；变更限定在允许的 documentation files。 |
+
+Boundary:
+
+未改 backend、frontend、research、scripts、deploy、`.github` 或 migration；未新增 API、migration、页面、测试或 CI workflow；未读取 credential material；未调用真实交易所；未启动 Shadow Live runner；未创建 shadow run；未写真实账户、资金、订单或 ledger 状态；未开启 LIVE、AI runtime 或 DH runtime。
+
 ## NQ-DH-I1-MOCK-RUNTIME-PR-PREP validation（2026-07-05）
 
 ```text
