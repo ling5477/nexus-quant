@@ -79,6 +79,15 @@ export const appNavItems: AppNavItem[] = [
         section: '市场与主数据',
     },
     {
+        key: 'strategy-validation',
+        path: '/strategies/validation',
+        label: '策略验证',
+        icon: <FileSearchOutlined/>,
+        title: '策略验证与 Paper / Shadow 对照',
+        description: '只读查看 Evaluation Gate、Paper / Shadow 对照与 Shadow Live no-side-effect preview 证据链。',
+        section: '策略运行',
+    },
+    {
         key: 'strategies',
         path: '/strategies',
         label: '策略定义',

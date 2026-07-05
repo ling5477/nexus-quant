@@ -46,6 +46,13 @@ export const strategyQueryKeys = {
     ] as const,
 };
 
+export const strategyValidationQueryKeys = {
+    all: ['strategy-validation'] as const,
+    evaluationGate: (query: unknown) => [...strategyValidationQueryKeys.all, 'evaluation-gate', query ?? 'idle'] as const,
+    paperShadowComparison: (query: unknown) => [...strategyValidationQueryKeys.all, 'paper-shadow-comparison', query ?? 'idle'] as const,
+    shadowLivePreview: (query: unknown) => [...strategyValidationQueryKeys.all, 'shadow-live-preview', query ?? 'idle'] as const,
+};
+
 export const scheduleQueryKeys = {
     all: ['strategy-schedules'] as const,
     list: (strategyId: string, searchVersion: number) => [...scheduleQueryKeys.all, 'list', strategyId, searchVersion] as const,
@@ -91,7 +98,11 @@ export const evaluationsQueryKeys = {
 
 export const publishesQueryKeys = {
     all: ['publish-runs'] as const,
-    list: (request: { researchConfigId?: string; backtestConfigId?: string; strategyVersionId?: string }, searchVersion: number) => [
+    list: (request: {
+        researchConfigId?: string;
+        backtestConfigId?: string;
+        strategyVersionId?: string
+    }, searchVersion: number) => [
         ...publishesQueryKeys.all,
         'list',
         request.researchConfigId ?? '',
@@ -104,7 +115,16 @@ export const publishesQueryKeys = {
 
 export const tradingWorkbenchQueryKeys = {
     all: ['trading-workbench'] as const,
-    orders: (request: { accountId?: number; orderId?: string; venue?: string; symbol?: string; status?: string; environment?: string; page?: number; size?: number }, searchVersion: number) => [
+    orders: (request: {
+        accountId?: number;
+        orderId?: string;
+        venue?: string;
+        symbol?: string;
+        status?: string;
+        environment?: string;
+        page?: number;
+        size?: number
+    }, searchVersion: number) => [
         ...tradingWorkbenchQueryKeys.all,
         'orders',
         request.accountId ?? '',
