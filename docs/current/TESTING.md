@@ -9,7 +9,7 @@ Scope:
   - 不修改 contracts/OpenAPI/json-schema/golden_cases/migration。
 
 Result:
-  NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX: PASS / IMPLEMENTED / FULL_VALIDATION_PASS / READY_FOR_CLOSE_REVIEW
+  NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX: PASS / IMPLEMENTED / FULL_VALIDATION_PASS / CLOSED_BY_CLOSE_REVIEW
   SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH: FIXED
   SCHEMA_VERSION_MISMATCH: FIXED
 ```
@@ -8031,3 +8031,46 @@ ALLOW_LIVE: NO
 ```
 
 边界确认：未修改 NQ production code；未修改 NQ dev；未真实调用 DH；未真实 HTTP；未访问 localhost 真实服务或外网；未改 contracts / OpenAPI / JSON Schema / golden_cases / migration；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未接 provider；未接 AI / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`。
+
+---
+
+## NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-CLOSE-REVIEW（2026-07-05）
+
+结论：**PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。
+
+本轮只做 close review 文档收口；未修改 NQ Java production code、测试代码、contracts、OpenAPI、JSON Schema、golden_cases、migration、frontend、research、scripts、deploy 或 `.github`。DH 验证记录同步见 DH `docs/current/TESTING.md`。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | **PASS** | close review 写入前为空；写入后仅允许 `docs/current` 变更。 |
+| `git branch --show-current` | **PASS** | `nq-dh-i1-joint-runtime-dryrun-test-impl`。 |
+| `git diff --check` | **PASS** | exit 0；无 whitespace error。 |
+| `git diff --stat` | **REVIEWED** | close review 前无 tracked diff；写入后仅允许 docs/current。 |
+| forbidden-scope diff | **PASS / EMPTY** | `backend/**/src/main`、`backend/**/db/migration`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`contracts`、`golden_cases` 无 diff。 |
+| boundary `rg` scan | **REVIEWED / NO NEW VIOLATION** | broad scan 命中约 8899 行，为既有业务词、历史/禁止语境或测试断言；结合 scoped diff 与 targeted implementation scan，未发现本轮真实 HTTP、provider、order/risk/ledger/paper/live 越界。 |
+| `mvn -ntp -f backend/pom.xml test` | **BUILD SUCCESS** | 23/23 reactor SUCCESS；`nq-app` 129 tests / 0 failures / 0 errors / 3 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration0*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 17 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=*Integration1*" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 18 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-app -am "-Dtest=DhDryRun*Test,NqDhIntegration1StubRecorderNoSideEffectTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **BUILD SUCCESS** | 30 tests / 0 failures / 0 errors / 0 skipped。 |
+| `mvn -ntp -f backend/pom.xml -Pquality validate` | **PROFILE MISSING / NOT EFFECTIVE QUALITY GATE** | Maven returned `BUILD SUCCESS`，但 requested profile `quality` does not exist；不声明 NQ quality PASS。 |
+| NQ dev read-only guard | **SCOPED EMPTY / NOT CLEAN GATE** | `E:\Project\nexus-quant` 只读；任务输入声明存在非本轮 unrelated dirty，本轮只确认 NQ-DH / Integration-1 scoped unstaged 与 staged diff 为空，未修改 NQ dev。 |
+
+Readiness：
+
+```text
+ALLOW_JOINT_RUNTIME_DRYRUN_TEST_CLOSE: YES
+ALLOW_INTEGRATION1_MOCK_RUNTIME_CLOSE_REVIEW: YES
+ALLOW_REAL_DH_CALL_NOW: NO
+ALLOW_REAL_HTTP_NOW: NO
+ALLOW_REAL_PROVIDER: NO
+ALLOW_SCHEMA_FORMALIZATION_NOW: NO
+ALLOW_CONTRACTS_MODIFICATION_NOW: NO
+ALLOW_GOLDEN_CASES_MODIFICATION_NOW: NO
+ALLOW_DH_PRODUCTION_CODE_CHANGE_NOW: NO
+ALLOW_NQ_PRODUCTION_CODE_CHANGE_NOW: NO
+ALLOW_AGENT_PHASE: NO
+ALLOW_LANGGRAPH_RUNTIME: NO
+ALLOW_LIVE: NO
+```
+
+边界确认：未修改 NQ Java production code；未修改 DH Java production code；本 review 未修改测试代码；未修改 NQ dev；未改 contracts / OpenAPI / JSON Schema / golden_cases / migration；未真实调用 DH；未真实 HTTP；未访问 localhost 真实服务或外网；未接 real provider；未读取或输出 credential、token、cookie、apiKey、apiSecret、passphrase；未接 Agent / LangGraph；未开启 LIVE；未触碰 order / execution / risk / ledger / account / paper / live；未把 `LONG_BIAS / SHORT_BIAS` 映射为 `BUY / SELL`。
