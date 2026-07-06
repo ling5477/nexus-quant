@@ -10,7 +10,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
 - GateP release tag：`nq-gatep-freeze`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
-- GateR：`PLAN / NOT STARTED`（规划 / 未开始）。
+- GateR：`NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -23,6 +23,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - `docs/current/STATUS.md`：当前状态。
 - `docs/current/ROADMAP.md`：当前路线。
 - `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级。
+- `docs/current/GATER_PLAN.md`：GateR Shadow Run operationalization planning。
 - `docs/current/TESTING.md`：验证记录。
 - `docs/current/WORKLOG.md`：工作记录。
 - `docs/current/API.md`：当前 API 事实。
@@ -40,4 +41,4 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 
 ## Boundary
 
-GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner 或 Shadow run 写侧 fact source。下一步只能在用户单独授权后进入 GateR planning；不得把 GateR 写成 started 或 implemented。
+GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner 或 Shadow run 写侧 fact source。GateR 当前只完成 Shadow Run operationalization planning；不得把 GateR 写成 started 或 implemented，不得把 Shadow Run 写成 table created、record created、runner started、trading authorization 或 live-ready。

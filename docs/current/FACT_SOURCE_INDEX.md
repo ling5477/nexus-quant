@@ -10,14 +10,15 @@
 2. [STATUS.md](STATUS.md)：当前项目状态。
 3. [README.md](README.md)：current 入口和 archive pointer。
 4. [ROADMAP.md](ROADMAP.md)：当前路线与下一阶段边界。
-5. [TESTING.md](TESTING.md)：当前验证记录和未运行说明。
-6. [WORKLOG.md](WORKLOG.md)：当前任务记录。
-7. [API.md](API.md)：已实现 HTTP API 当前事实，不把未来 API 写成已实现。
-8. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实，不把未来 schema 写成已实现。
-9. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
-10. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
-11. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
-12. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：本轮 post-GateQ current cleanup 审计和移动索引。
+5. [GATER_PLAN.md](GATER_PLAN.md)：GateR Shadow Run operationalization planning；只作为 candidate plan，不代表 API、migration、页面、测试或 runner 已实现。
+6. [TESTING.md](TESTING.md)：当前验证记录和未运行说明。
+7. [WORKLOG.md](WORKLOG.md)：当前任务记录。
+8. [API.md](API.md)：已实现 HTTP API 当前事实，不把未来 API 写成已实现。
+9. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实，不把未来 schema 写成已实现。
+10. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
+11. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
+12. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
+13. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：本轮 post-GateQ current cleanup 审计和移动索引。
 
 `docs/gates/**` 与 `docs/archive/**` 是历史证据或归档引用，不覆盖 `docs/current` 当前事实入口。已从 `docs/current` 移出的过程型长文档不得再作为 current authority 引用。
 
@@ -26,7 +27,7 @@
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档），release tag `nq-gateq-freeze`。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档），release tag `nq-gatep-freeze`。
 - GateO 及更早 Gate：历史证据来源为 `docs/gates/**` 或 `docs/archive/**`。
-- GateR：`PLAN / NOT STARTED`（规划 / 未开始）。
+- GateR：`NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -51,6 +52,9 @@
 ## 4. 禁止误写清单
 
 - 不得把 GateR 写成 `STARTED`（已开始）或 `IMPLEMENTED`（已实现）。
+- 不得把 GateR planning 写成 GateR implementation。
+- 不得把 Shadow Run candidate state machine / data model / API / DTO / migration plan 写成已实现。
+- 不得把 Shadow Run 写成 table created、record created、runner started 或 live-ready。
 - 不得把 LIVE 写成 ready / enabled。
 - 不得把 AI 写成 started。
 - 不得把 DH runtime 写成 integrated。

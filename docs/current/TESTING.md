@@ -1,3 +1,45 @@
+## NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮只做 GateR-0 planning、fact-source reconciliation、boundary review 和 current docs sync。
+  - 不实现功能，不改业务代码，不新增 API，不新增 migration，不改 CI，不新增前端页面，不新增测试，不启动 Shadow runner。
+  - 允许写入范围限定为 docs/current/GATER_PLAN.md、docs/current/README.md、STATUS.md、ROADMAP.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md 和 root README.md。
+
+Result:
+  - NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED.
+  - GateR implementation: NOT STARTED.
+  - Shadow Run local fact / table / record / runner: NOT IMPLEMENTED.
+  - LIVE: DISABLED.
+  - AI: NOT STARTED.
+  - DH runtime: NOT INTEGRATED.
+  - RealClient / real provider / private trading adapter / real permission probe: NOT IMPLEMENTED.
+
+Commands already executed in this GateR-0 pass:
+  - Get-Location: F:\project\nexus-quant.
+  - git status --short: only allowed docs/current and root README changes plus new docs/current/GATER_PLAN.md.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 6f5517dd4e087221d66510ac5cd8005ae816dfa0.
+  - git rev-parse origin/dev: 6f5517dd4e087221d66510ac5cd8005ae816dfa0.
+  - git diff --check: PASS; only Git LF/CRLF working-copy warnings, no whitespace error.
+  - git diff --stat: reviewed; untracked GATER_PLAN.md is visible via git status until staged.
+  - git diff -- backend / frontend / research / scripts / deploy / .github / backend/**/db/migration: PASS, no diff output.
+  - Required broad rg risk scan: executed; output was truncated because the required target set includes frontend/node_modules and package-lock artifacts.
+  - Follow-up scoped rg with node_modules/dist/target/build excluded: executed for semantic review.
+  - Changed-docs precision scan: reviewed; GateR terms are planning-only or negative boundary statements.
+
+Not run:
+  - Maven tests were not run.
+  - frontend build / Playwright were not run.
+  - Python pytest / mypy / ruff were not run.
+  - Reason: docs-only GateR-0 planning; no Java / TypeScript / Python / test / migration / workflow implementation files changed.
+
+Boundary:
+  - Shadow Run is defined as local no-real-trading side-effect shadow fact planning only.
+  - Shadow Run may only write candidate local shadow facts after a future GateR-1 migration review; GateR-0 writes no DB.
+  - No real order, cancel, transfer, withdraw, private endpoint, credential material, account/fund/order/ledger mutation, LIVE, AI runtime, DH runtime, RealClient, real provider, private trading adapter, or real permission probe.
+```
+
 ## NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP validation（2026-07-06）
 
 ```text

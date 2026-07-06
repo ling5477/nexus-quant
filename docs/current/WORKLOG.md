@@ -1,3 +1,59 @@
+## NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateR-0 planning。
+- 只做 Shadow Run operationalization plan、GateQ freeze baseline 对齐、Paper / Shadow consistency plan、traceability runtime plan、安全边界 review 和 current docs sync。
+- 不实现功能，不改业务代码，不新增 API，不新增 migration，不改 CI，不新增前端页面，不新增测试，不启动 Shadow runner。
+
+新增文件：
+
+```text
+docs/current/GATER_PLAN.md
+```
+
+修改文件：
+
+```text
+README.md
+docs/current/FACT_SOURCE_INDEX.md
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED
+```
+
+同步内容：
+
+- `docs/current/GATER_PLAN.md` 建立 GateR current planning 入口。
+- root `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md` 和 `FACT_SOURCE_INDEX.md` 已同步 GateR planning-only 状态。
+- `TESTING.md` 记录本轮 docs-only validation、未运行代码测试原因和 forbidden-scope diff。
+
+边界：
+
+- GateR 仍不是 implementation started。
+- Shadow Run local fact / table / record / runner 仍未实现。
+- 不新增 API、migration、页面、测试或 CI。
+- 不调用真实交易所，不读取 credential material，不调用 private endpoint，不提交真实订单，不写真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。
+- AI = `NOT STARTED`（未开始）。
+- DH runtime = `NOT INTEGRATED`（未集成）。
+- Integration-1 = `NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
+
+下一步：
+
+- 只能进入单独 GateR-1：Shadow Run data model & migration plan review。
+- GateR-1 必须先审查候选 DDL、字段、状态枚举、JSONB 边界、索引、回滚和 forbidden writes；不得把 GateR-0 planning 当成 migration 或 implementation 授权。
+
 ## NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP
 
 日期：2026-07-06。

@@ -7,7 +7,7 @@
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gateq-freeze`；历史证据入口为 [../gates/gate-q/README.md](../gates/gate-q/README.md)。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gatep-freeze`；历史证据入口为 [../gates/gate-p/README.md](../gates/gate-p/README.md)。
 - GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
-- GateR：`PLAN / NOT STARTED`（规划 / 未开始）。当前不新增 `GATER_PLAN.md`，直到用户单独授权 GateR planning。
+- GateR：`NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。当前 planning 入口为 [GATER_PLAN.md](GATER_PLAN.md)；GateR implementation、Shadow Run local fact、API、migration、页面、测试和 CI 均未开始。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -21,6 +21,7 @@
 | 当前事实入口 | [README.md](README.md) |
 | 当前状态 | [STATUS.md](STATUS.md) |
 | 当前路线 | [ROADMAP.md](ROADMAP.md) |
+| GateR planning | [GATER_PLAN.md](GATER_PLAN.md) |
 | 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
 | 当前验证记录 | [TESTING.md](TESTING.md) |
 | 当前工作记录 | [WORKLOG.md](WORKLOG.md) |
@@ -42,6 +43,9 @@
 ## Current Is Not
 
 - 不是 GateR implementation started。
+- 不是 Shadow Run local fact implemented。
+- 不是 Shadow Run table created。
+- 不是 Shadow Run record created。
 - 不是实盘就绪。
 - 不代表真实 provider 已启用。
 - 不是私有交易适配已启用。
@@ -52,4 +56,4 @@
 
 ## Current Cleanup Rule
 
-`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；如需新增 GateR planning，必须由用户另起任务并明确 allowed files、forbidden scope 和验证命令。
+`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；GateR planning 只以 [GATER_PLAN.md](GATER_PLAN.md) 作为当前计划入口，后续 GateR-1 implementation / migration review 必须另起任务并明确 allowed files、forbidden scope 和验证命令。
