@@ -1,3 +1,34 @@
+## NQ-GATEQ-FREEZE-CLOSEOUT validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮只做 GateQ final freeze closeout、evidence audit、status sync 和 documentation。
+  - 不修改 backend / frontend / research / scripts / deploy / .github / migration。
+  - 不新增 API、页面、测试、CI workflow 或业务能力。
+  - 不调用真实交易所，不读取 credential material，不启动 Shadow Live runner，不创建 shadow run。
+
+Result:
+  NQ-GATEQ-FREEZE-CLOSEOUT: PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL
+  P0: 0
+  P1: 0
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git branch --show-current` | PASS | branch=`dev`。 |
+| `git rev-parse HEAD`; `git rev-parse origin/dev` | PASS | 两者均为 `972c0d806f33a1f511a6a2b8f944fae006ac0c28`。 |
+| `git status --short` before closeout doc write | PASS / CLEAN | 写入 closeout 文档前工作区无未提交改动。 |
+| GitHub Actions run `28748448316` | PASS / SUCCESS | `NQ CI Baseline` status=`completed`，conclusion=`success`，headSha=`972c0d806f33a1f511a6a2b8f944fae006ac0c28`。 |
+| GateQ readiness review prerequisite | PASS | `docs/current/GATEQ_FREEZE_READINESS_REVIEW.md` 结论为 `PASS / READY FOR FREEZE CLOSEOUT`，P0/P1=0。 |
+| Readiness review code validation evidence | ACCEPTED | 复用 readiness review 已记录的 backend scoped Maven、frontend build、strategy validation Playwright smoke 与 risk-word scan 证据。 |
+| Closeout docs-only validation | PASS | `git diff --check`、`git diff --stat`、forbidden-area diffs、migration diff、risk-word scan 与 cached diff checks 在本轮收口后复核；变更限定在允许的 documentation files。 |
+
+本轮未重跑 Maven、frontend build 或 Playwright：原因是 closeout 只改 documentation，不修改 backend、frontend、research、test 或 CI 文件；代码级验证以 readiness review 已接受证据和最新 GitHub Actions success 为准。
+
+Boundary:
+
+未改 backend、frontend、research、scripts、deploy、`.github` 或 migration；未新增 API、migration、页面、测试或 CI workflow；未读取 credential material；未调用真实交易所；未启动 Shadow Live runner；未创建 shadow run；未写真实账户、资金、订单或 ledger 状态；未开启 LIVE、AI runtime 或 DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。下一阶段只能进入 GateR `PLAN / NOT STARTED`。
+
 ## NQ-GATEQ-FREEZE-READINESS-REVIEW validation（2026-07-06）
 
 ```text
