@@ -1,3 +1,61 @@
+## NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateR-1 planning / review-only。
+- 只审查 Shadow Run 数据模型、状态机、表结构候选、索引、约束、JSONB 脱敏、敏感字段禁止、migration 版本、回滚策略和 GateR-2 entry criteria。
+- 不新增 migration，不修改历史 migration，不改 Java，不新增 API，不改前端，不改 research，不改 scripts，不改 deploy，不改 `.github`，不新增测试，不启动 Shadow runner。
+
+新增文件：
+
+```text
+docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md
+```
+
+修改文件：
+
+```text
+README.md
+docs/current/FACT_SOURCE_INDEX.md
+docs/current/GATER_PLAN.md
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED
+```
+
+同步内容：
+
+- `docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` 建立 GateR-1 review 入口。
+- 建议后续 GateR-2 使用 4 表最小方案：`shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`。
+- root `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`GATER_PLAN.md` 和 `FACT_SOURCE_INDEX.md` 已同步 GateR-1 plan-review-only 状态。
+- `TESTING.md` 记录本轮 docs-only validation、未运行代码测试原因、schema inventory 和 forbidden-scope diff。
+
+边界：
+
+- GateR-1 不是 migration implemented。
+- Shadow Run table / record / runner 仍未实现。
+- 不新增 API、页面、测试或 CI。
+- 不调用真实交易所，不读取 credential material，不调用 private endpoint，不提交真实订单，不写真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。
+- AI = `NOT STARTED`（未开始）。
+- DH runtime = `NOT INTEGRATED`（未集成）。
+- Integration-1 = `NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
+
+下一步：
+
+- 只能进入单独 GateR-2：Shadow Run local fact model / repository implementation。
+- GateR-2 必须基于本轮 review 的 allowed schema、状态机、JSONB policy、敏感字段禁令、migration versioning 和回滚策略单独落地；不得把 GateR-1 review 当成 migration 已实现或 Shadow runner 已启动。
+
 ## NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION
 
 日期：2026-07-06。

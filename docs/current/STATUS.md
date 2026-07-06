@@ -10,6 +10,7 @@
 - GateP archive：`docs/gates/gate-p/`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据来源。
 - GateR：`NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
+- GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -41,12 +42,29 @@
 - Shadow runner started。
 - LIVE / AI / DH runtime started。
 
-## 4. Post-GateQ Current Cleanup
+## 4. GateR-1 Data Model / Migration Plan Review Status
+
+`docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` 已完成 Shadow Run 数据模型、状态机、表结构候选、索引、外键、JSONB 脱敏、敏感字段禁止、migration 版本、回滚策略、`DB_SCHEMA.md` 后续更新计划和 GateR-2 entry criteria 审查。
+
+该状态只表示 migration plan ready，不表示：
+
+- migration implemented。
+- Shadow Run table created。
+- Shadow Run record created。
+- Shadow runner started。
+- API implemented。
+- frontend page implemented。
+- test implemented。
+- LIVE / AI / DH runtime started。
+
+GateR-1 结论建议后续 GateR-2 以独立 implementation 任务进入本地 Shadow Run fact model / repository 落地；GateR-2 仍必须遵守 no-LIVE、no-private-endpoint、no-credential-access、no-order-submission、no-ledger-mutation 边界。
+
+## 5. Post-GateQ Current Cleanup
 
 本轮将 `docs/current` tracked Markdown 从 125 个缩减为 17 个。108 个历史过程型 current copy 已通过 `git mv` 移入 `docs/archive/current-cleanup/post-gateq/**`，不删除历史证据，不移动 `docs/gates/gate-q/**` 已归档证据，不改 release tag 历史含义。
 
 保留在 `docs/current` 的文件只承担当前事实入口、当前状态、路线、验证、工作记录、API、DB schema、架构/模块摘要、运行手册、前端设计系统入口和 Codex workflow 入口。已冻结 Gate 的过程证据只保留 archive pointer，不在 current 保留正文。
 
-## 5. 当前验证口径
+## 6. 当前验证口径
 
-当前 GateR-0 是 docs-only planning。未运行 Maven、frontend build、Playwright、pytest、mypy、ruff 或 GitHub Actions，因为未修改 backend、frontend、research、scripts、deploy、`.github`、migration、API、页面或测试。验证以 Git、diff、链接/路径引用、关键词边界和 forbidden-scope diff 为准，详见 [TESTING.md](TESTING.md)。
+当前 GateR-1 是 docs-only / review-only schema and migration plan review。未运行 Maven、frontend build、Playwright、pytest、mypy、ruff，因为未修改 backend、frontend、research、scripts、deploy、`.github`、migration、API、页面或测试。验证以 Git、diff、schema inventory、代码/文档关键词审查、最新 CI 成功状态和 forbidden-scope diff 为准，详见 [TESTING.md](TESTING.md)。

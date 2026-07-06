@@ -1,3 +1,78 @@
+## NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮只做 GateR-1 Shadow Run data model / migration plan review。
+  - 审查范围包括 Shadow Run 数据模型、状态机、候选表、候选字段、索引、外键、JSONB 脱敏、敏感字段禁止、migration versioning、回滚策略、DB_SCHEMA.md 后续更新计划和 GateR-2 entry criteria。
+  - 不新增 migration，不修改历史 migration，不改 Java，不新增 API，不改前端，不改 research，不改 scripts，不改 deploy，不改 CI，不新增测试，不启动 Shadow runner。
+
+Result:
+  - NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED.
+  - Recommended minimum model: shadow_runs, shadow_run_events, shadow_run_snapshots, shadow_consistency_reports.
+  - Shadow Run migration / table / record / runner: NOT IMPLEMENTED.
+  - LIVE: DISABLED.
+  - AI: NOT STARTED.
+  - DH runtime: NOT INTEGRATED.
+  - RealClient / real provider / private trading adapter / real permission probe: NOT IMPLEMENTED.
+
+Preflight:
+  - Get-Location: F:\project\nexus-quant.
+  - git status --short: clean before this GateR-1 docs pass.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 175e2e00bd68a6240c6d2c8633c9ff0c3d5cddcc.
+  - git rev-parse origin/dev: 175e2e00bd68a6240c6d2c8633c9ff0c3d5cddcc.
+  - docs/current/GATER_PLAN.md: exists; status is PLAN READY / NOT IMPLEMENTED.
+  - Latest GitHub Actions `NQ CI Baseline` run: 28771006007，status=completed，conclusion=success，headSha=175e2e00bd68a6240c6d2c8633c9ff0c3d5cddcc.
+
+Commands executed for this GateR-1 pass:
+  - git status --short.
+  - git branch --show-current.
+  - git rev-parse HEAD.
+  - git rev-parse origin/dev.
+  - git diff --check.
+  - git diff --stat.
+  - git diff -- backend.
+  - git diff -- frontend.
+  - git diff -- research.
+  - git diff -- scripts.
+  - git diff -- deploy.
+  - git diff -- .github.
+  - git diff -- "backend/**/db/migration".
+  - git ls-files backend/nq-infra/src/main/resources/db/migration.
+  - Required broad rg scan over backend, docs/current, docs/gates and README.md.
+  - git diff --cached --name-only.
+  - git diff --cached --stat.
+  - git diff --cached --check.
+
+Schema inventory result:
+  - Existing Flyway migrations are V1 through V31; current highest migration is V31__schema_credential_permission_probe.sql.
+  - No existing Shadow Run tables were found in backend/nq-infra/src/main/resources/db/migration.
+  - Existing related tables include strategy_versions, marketdata_datasets, backtest_eval_reports, backtest_publish_records, paper_trading_runs/orders/trades/positions, paper risk / curve / replay / schedule tables, event_store and audit_logs.
+
+Forbidden-scope diff result:
+  - backend: no diff.
+  - frontend: no diff.
+  - research: no diff.
+  - scripts: no diff.
+  - deploy: no diff.
+  - .github: no diff.
+  - backend/**/db/migration: no diff.
+  - docs/gates and docs/archive: no diff.
+
+Not run:
+  - Maven tests were not run.
+  - frontend build / Playwright were not run.
+  - Python pytest / mypy / ruff were not run.
+  - Reason: docs-only / review-only GateR-1; no Java / TypeScript / Python / migration / workflow / API / page / test files changed.
+
+Boundary:
+  - GateR-1 is a migration plan review, not migration implementation.
+  - No shadow run tables were created.
+  - No shadow run records were created.
+  - No Shadow runner was started.
+  - No real order, cancel, transfer, withdraw, private endpoint, credential material, account/fund/order/ledger mutation, LIVE, AI runtime, DH runtime, RealClient, real provider, private trading adapter, or real permission probe.
+```
+
 ## NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION validation（2026-07-06）
 
 ```text

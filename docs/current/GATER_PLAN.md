@@ -4,6 +4,8 @@
 
 本文是 GateR-0 planning 文档。GateR 只进入 Shadow Run 运行化规划、事实源对齐、边界审查和批次设计；不实现功能，不改业务代码，不新增 API，不新增 migration，不改 CI，不新增前端页面，不新增测试，不启动 Shadow runner。
 
+GateR-1 review 指针：`docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` 已给出 `PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）结论。该结论只授权后续单独 GateR-2 implementation 任务使用 review 方案，不代表 migration、表、runner、API、页面或测试已经实现。
+
 ## 1. GateR Current Baseline
 
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
