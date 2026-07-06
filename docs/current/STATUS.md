@@ -11,6 +11,8 @@
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据来源。
 - GateR：`NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
 - GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
+- GateR-2：`NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
+- GateR-2 P1 fix：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -24,8 +26,8 @@
 - private trading adapter：`NOT IMPLEMENTED`（未实现）。
 - real permission probe：`NOT IMPLEMENTED`（未实现）。
 - Shadow Live runner：`NOT STARTED`（未开始）。
-- Shadow run 写侧 fact source：`NOT IMPLEMENTED`（未实现）。
-- Shadow Run local fact table / record：`NOT IMPLEMENTED`（未实现）。
+- Shadow run 写侧 local fact source：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核），仅限本地 Shadow Run 事实表与 repository，不代表 runner 或交易授权。
+- Shadow Run runner / scheduler / API / frontend page：`NOT IMPLEMENTED`（未实现）。
 
 ## 3. GateR-0 Planning Status
 
@@ -59,12 +61,31 @@
 
 GateR-1 结论建议后续 GateR-2 以独立 implementation 任务进入本地 Shadow Run fact model / repository 落地；GateR-2 仍必须遵守 no-LIVE、no-private-endpoint、no-credential-access、no-order-submission、no-ledger-mutation 边界。
 
-## 5. Post-GateQ Current Cleanup
+## 5. GateR-2 Shadow Run Local Fact Model Implementation Status
+
+GateR-2 已新增 `V32__gate_r_shadow_run_fact_model.sql`，创建 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports` 4 张本地事实表；已新增 Shadow Run domain model、状态机、repository port、JDBC implementation、repository/state machine/migration tests，并同步 `DB_SCHEMA.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md` 和 current 入口。
+
+GateR-2 review P1 finding 已做最小修复：新增 `JdbcShadowRunIllegalTransitionAuditWriter`，使用 `TransactionTemplate` + `PROPAGATION_REQUIRES_NEW`（独立新事务）直接写入 `shadow_run_events`，使非法状态流转的 `ILLEGAL_STATE_TRANSITION_ATTEMPT`（非法状态流转尝试）审计事件不再依赖 `updateStatus()` 外层事务提交。`updateStatus()` 仍重新抛出原始 `ShadowRunStateTransitionException`，并保持 `shadow_runs.status` 与 `version` 不变。
+
+该状态只表示 local fact model / repository 已实现并等待 review，不表示：
+
+- GateR frozen / accepted。
+- Shadow runner started。
+- HTTP API implemented。
+- frontend page implemented。
+- LIVE ready 或 trading authorization。
+- AI runtime started。
+- DH runtime integrated。
+- RealClient、real provider、private trading adapter 或 real permission probe implemented。
+
+GateR-2 后续只能进入 P1 fix review / implementation review；review 通过前不得写 `READY TO COMMIT`（可进入提交前复核），不得启动 GateR-3 command skeleton，不得启动 Shadow runner。
+
+## 6. Post-GateQ Current Cleanup
 
 本轮将 `docs/current` tracked Markdown 从 125 个缩减为 17 个。108 个历史过程型 current copy 已通过 `git mv` 移入 `docs/archive/current-cleanup/post-gateq/**`，不删除历史证据，不移动 `docs/gates/gate-q/**` 已归档证据，不改 release tag 历史含义。
 
 保留在 `docs/current` 的文件只承担当前事实入口、当前状态、路线、验证、工作记录、API、DB schema、架构/模块摘要、运行手册、前端设计系统入口和 Codex workflow 入口。已冻结 Gate 的过程证据只保留 archive pointer，不在 current 保留正文。
 
-## 6. 当前验证口径
+## 7. 当前验证口径
 
-当前 GateR-1 是 docs-only / review-only schema and migration plan review。未运行 Maven、frontend build、Playwright、pytest、mypy、ruff，因为未修改 backend、frontend、research、scripts、deploy、`.github`、migration、API、页面或测试。验证以 Git、diff、schema inventory、代码/文档关键词审查、最新 CI 成功状态和 forbidden-scope diff 为准，详见 [TESTING.md](TESTING.md)。
+当前 GateR-2 是 backend implementation + Flyway migration + repository/state-machine/test + docs sync；本轮 P1 fix 只修改 backend infra repository/audit writer、infra tests 和 current docs。已运行 Maven 后端测试；frontend build、Playwright、pytest、mypy、ruff 未运行，因为本轮未修改 frontend、research、scripts、deploy、`.github`、API Controller 或页面。验证以 Git preflight、Maven backend tests、PostgreSQL smoke 选择器、diff check、forbidden-scope diff 和 broad rg boundary scan 为准，详见 [TESTING.md](TESTING.md)。

@@ -1,3 +1,128 @@
+## NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮只修复 GateR-2 review P1：非法 Shadow Run 状态流转审计事件可能随 updateStatus() 外层事务回滚而丢失。
+  - 覆盖 JdbcShadowRunIllegalTransitionAuditWriter、JdbcShadowRunFactRepository.updateStatus() 非法流转分支、repository/writer unit tests、PostgreSQL smoke 触发条件和 current docs sync。
+  - 不新增 migration，不修改 schema，不新增 HTTP API，不新增前端页面，不启动 Shadow runner，不接 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+Result:
+  - NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：IMPLEMENTED / PENDING REVIEW（已实现 / 待复核）。
+  - P1 root cause fixed in code: ILLEGAL_STATE_TRANSITION_ATTEMPT audit event now writes through TransactionTemplate with PROPAGATION_REQUIRES_NEW.
+  - shadow_runs.status and version remain unchanged on illegal transition.
+  - Original ShadowRunStateTransitionException is still rethrown.
+
+Preflight:
+  - Get-Location: F:\project\nexus-quant.
+  - git status --short: existing GateR-2 implementation worktree was dirty before this P1 fix; changes were within prior GateR-2 allowed files.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 6e309cdd1590b7745ea808226b20356f50a02816.
+  - git rev-parse origin/dev: 6e309cdd1590b7745ea808226b20356f50a02816.
+  - git diff --check: PASS; no whitespace errors, only existing line-ending warnings.
+  - forbidden-scope diffs before write: frontend / research / scripts / deploy / .github / docs/gates / docs/archive all had no diff.
+
+Targeted unit validation:
+  - Final targeted command:
+    mvn -f backend/pom.xml -pl nq-infra -am "-Dtest=JdbcShadowRunFactRepositoryTest,JdbcShadowRunIllegalTransitionAuditWriterTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Tests run: 10, failures: 0, errors: 0, skipped: 0.
+  - Notes: a first nq-infra-only attempt without -am failed because upstream nq-core snapshot classes were not in the single-module reactor; PowerShell also required quoting comma-separated -Dtest and dotted surefire properties. Final command above is the effective validation command.
+
+Full Maven validation:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Reactor total from module summaries: 745 tests, 0 failures, 0 errors, 5 skipped.
+  - nq-core: 139 tests, 0 failures, 0 errors, 0 skipped.
+  - nq-infra: 42 tests, 0 failures, 0 errors, 1 skipped.
+  - nq-app: 129 tests, 0 failures, 0 errors, 3 skipped.
+  - The -am dependency chain also ran dependent modules including nq-api; no API source files were changed.
+
+PostgreSQL smoke selector:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-infra -am "-Dtest=JdbcRepositoryPostgresSmokeTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功），JdbcRepositoryPostgresSmokeTest skipped（已跳过）。
+  - Tests run: 1, failures: 0, errors: 0, skipped: 1.
+  - Profile / system properties: no Spring profile was set; no nq.postgres.smoke.url/user/password/required properties were provided.
+  - Reason for skip: existing smoke guard disables real PostgreSQL repository smoke unless nq.postgres.smoke.* system properties are explicitly provided.
+  - Coverage added for real smoke runs: when smoke properties are provided, the test now creates a committed terminal Shadow Run fixture, attempts COMPLETED -> RUNNING inside an outer rollback transaction, and asserts the REQUIRES_NEW illegal-transition event remains queryable while run status/version stay unchanged.
+
+Known warnings / skips:
+  - Existing Maven settings.xml unrecognised profiles tag warning remains.
+  - Existing SLF4J no-provider and Mockito dynamic-agent warnings remain.
+  - Existing generated Spring development password warnings appear in test logs; no generated value is recorded here.
+  - Existing manually gated real/outbound smoke tests skip where required properties or manual switches are absent.
+
+Boundary:
+  - No migration file was added or modified in this P1 fix.
+  - No HTTP Controller or endpoint was added.
+  - No frontend, research, scripts, deploy, .github, docs/gates or docs/archive changes were made.
+  - No credential material, private endpoint payload, real order id, real account balance or real position was added to the Shadow Run audit path.
+  - No real order, cancel, transfer, withdraw, private endpoint call, credential read, account/fund/order/ledger mutation, LIVE, AI runtime, DH runtime, RealClient, real provider, private trading adapter, real permission probe or Shadow runner startup was implemented.
+```
+
+## NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮实现 GateR-2 Shadow Run local fact model / repository。
+  - 覆盖 V32 Flyway migration、Shadow Run domain model、状态机、repository port、JDBC implementation、JSONB sensitive-data guard、repository/state machine/migration tests 和 current docs sync。
+  - 不新增 HTTP API，不新增前端页面，不启动 Shadow runner，不改 research/scripts/deploy/.github，不接 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+Result:
+  - NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / PENDING REVIEW.
+  - Migration version: V32__gate_r_shadow_run_fact_model.sql.
+  - Tables: shadow_runs, shadow_run_events, shadow_run_snapshots, shadow_consistency_reports.
+  - LIVE: DISABLED.
+  - AI: NOT STARTED.
+  - DH runtime: NOT INTEGRATED.
+  - Shadow runner / API / frontend page: NOT IMPLEMENTED.
+
+Preflight:
+  - Get-Location: F:\project\nexus-quant.
+  - git status --short: clean before this GateR-2 implementation.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 6e309cdd1590b7745ea808226b20356f50a02816.
+  - git rev-parse origin/dev: 6e309cdd1590b7745ea808226b20356f50a02816.
+  - Latest GitHub Actions `NQ CI Baseline` run: 28772964062，status=completed，conclusion=success，headSha=6e309cdd1590b7745ea808226b20356f50a02816.
+  - docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md: exists; conclusion is PASS / MIGRATION PLAN READY / NOT IMPLEMENTED.
+  - Highest Flyway migration before this task: V31__schema_credential_permission_probe.sql.
+  - No existing shadow_runs / shadow_run_events / shadow_run_snapshots / shadow_consistency_reports tables or implementation found before V32.
+
+Maven validation:
+  - First full command:
+    mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test
+  - First result: FAILED in nq-app local Spring context.
+  - RCA: JdbcShadowRunFactRepository had both production and test-support constructors; Spring could not select constructor injection and reported no default constructor for jdbcShadowRunFactRepository.
+  - Minimal fix: mark the production JdbcTemplate + ObjectMapper constructor with @Autowired; no repository behavior or schema changed.
+  - Final command:
+    mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test
+  - Final result: PASS / BUILD SUCCESS.
+  - Reactor total from module summaries: 743 tests, 0 failures, 0 errors, 5 skipped.
+  - nq-core: 139 tests, 0 failures, 0 errors, 0 skipped.
+  - nq-infra: 40 tests, 0 failures, 0 errors, 1 skipped.
+  - nq-app: 129 tests, 0 failures, 0 errors, 3 skipped.
+  - The -am dependency chain also ran dependent modules including nq-api; no API source files were changed.
+
+Migration / schema evidence:
+  - V32 validates with Flyway as migration 32.
+  - Local-profile integration tests applied V32 to local PostgreSQL nexus_quant; subsequent run reported current schema version 32 and no migration necessary.
+  - JdbcRepositoryPostgresSmokeTest remains skipped unless nq.postgres.smoke.* properties are provided, but it now includes V32 table / constraint / index / comment assertions for real PostgreSQL smoke runs.
+  - ShadowRunFactModelMigrationContractTest validates V32 DDL text for the 4 tables, key constraints, indexes and comments.
+
+Known warnings / skips:
+  - Maven settings.xml contains an existing unrecognised profiles tag warning.
+  - Existing SLF4J no-provider and Mockito dynamic-agent warnings appear in some tests.
+  - Existing no-real / manually gated smoke tests skip when external or real outbound prerequisites are intentionally unavailable.
+  - Spring test generated development password warnings appeared in test logs; no generated value is recorded here.
+
+Boundary:
+  - No HTTP Controller or endpoint was added.
+  - No frontend, research, scripts, deploy, .github, docs/gates or docs/archive changes were made.
+  - No credential material, private endpoint payload, real order id, real account balance or real position field is accepted by Shadow Run JSONB guard.
+  - No real order, cancel, transfer, withdraw, private endpoint call, credential read, account/fund/order/ledger mutation, LIVE, AI runtime, DH runtime, RealClient, real provider, private trading adapter, real permission probe or Shadow runner startup was implemented.
+```
+
 ## NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW validation（2026-07-06）
 
 ```text

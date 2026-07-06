@@ -1,3 +1,164 @@
+## NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateR-2 review P1 backend fix。
+- 只修复非法 Shadow Run 状态流转审计事件在真实 Spring/JDBC 事务回滚下可能不能持久化的问题。
+- 不新增 migration，不改 schema，不新增 API，不改前端，不启动 Shadow runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+新增文件：
+
+```text
+backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunIllegalTransitionAuditWriter.java
+backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunIllegalTransitionAuditWriterTest.java
+```
+
+修改文件：
+
+```text
+backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunFactRepository.java
+backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunFactRepositoryTest.java
+backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/JdbcRepositoryPostgresSmokeTest.java
+docs/current/GATER_PLAN.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：IMPLEMENTED / PENDING REVIEW
+```
+
+含义：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
+
+同步内容：
+
+- 新增 `JdbcShadowRunIllegalTransitionAuditWriter`，通过 `TransactionTemplate` 设置 `PROPAGATION_REQUIRES_NEW`（独立新事务）直接插入 `shadow_run_events`。
+- `JdbcShadowRunFactRepository.updateStatus()` 捕获 `ShadowRunStateTransitionException` 后调用 audit writer 写入 `ILLEGAL_STATE_TRANSITION_ATTEMPT`（非法状态流转尝试）事件，然后重新抛出原始 domain exception。
+- 非法流转仍保持 `shadow_runs.status` 与 `version` 不变；audit writer 写入失败不会被吞掉。
+- `JdbcShadowRunFactRepositoryTest` 覆盖合法流转不产生非法事件、非法终态回 RUNNING 时 writer 使用 REQUIRES_NEW。
+- `JdbcShadowRunIllegalTransitionAuditWriterTest` 覆盖 REQUIRES_NEW 设置、脱敏 metadata、写入失败传播和独立事务 rollback 计数。
+- `JdbcRepositoryPostgresSmokeTest` 在提供 `nq.postgres.smoke.*` 时新增真实 PostgreSQL 事务语义验证：外层 rollback 后仍可查询非法流转审计事件。
+
+验证：
+
+- Targeted unit：
+  `mvn -f backend/pom.xml -pl nq-infra -am "-Dtest=JdbcShadowRunFactRepositoryTest,JdbcShadowRunIllegalTransitionAuditWriterTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`
+  结果：PASS / BUILD SUCCESS（通过 / 构建成功），10 tests，0 failures，0 errors，0 skipped。
+- Full backend：
+  `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test`
+  结果：PASS / BUILD SUCCESS（通过 / 构建成功），module summaries 合计 745 tests，0 failures，0 errors，5 skipped。
+- PostgreSQL smoke selector：
+  `mvn -f backend/pom.xml -pl nq-infra -am "-Dtest=JdbcRepositoryPostgresSmokeTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`
+  结果：PASS / BUILD SUCCESS（通过 / 构建成功），1 test skipped；未提供 `nq.postgres.smoke.url/user/password/required` system properties，因此真实 PostgreSQL smoke 按既有 guard 跳过。
+
+边界：
+
+- 本轮没有新增 migration、没有修改历史 migration、没有修改 DB schema。
+- 本轮没有新增 API Controller、HTTP endpoint、frontend page、Playwright、runner、scheduler 或真实策略运行。
+- 本轮没有修改 frontend、research、scripts、deploy、`.github`、docs/gates 或 docs/archive。
+- 本轮没有调用真实交易所、没有读取 `.env` 或 credential 文件、没有修改真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。
+- AI = `NOT STARTED`（未开始）。
+- DH runtime = `NOT INTEGRATED`（未集成）。
+- RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+
+下一步：
+
+- 只能进入 GateR-2 P1 fix review / implementation review。
+- Review 通过前不得写 `READY TO COMMIT`，不得进入 GateR-3，不得启动 Shadow runner。
+
+## NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateR-2 backend implementation。
+- 按 GateR-1 已接受的 4 表方案实现 Shadow Run local fact model、Flyway migration、domain model、状态机、repository port、JDBC implementation、JSONB sensitive-data guard 和后端测试。
+- 不新增 HTTP API，不新增前端页面，不启动 Shadow runner，不改 research、scripts、deploy、`.github`、docs/gates 或 docs/archive，不接 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+新增文件：
+
+```text
+backend/nq-infra/src/main/resources/db/migration/V32__gate_r_shadow_run_fact_model.sql
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/ShadowRunFactRepository.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowConsistencyComparisonStatus.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowConsistencyReport.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRun.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunAuthorizationBoundary.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunEvent.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunEventType.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunJsonRules.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunOptimisticLockException.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunSensitiveDataGuard.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunSnapshot.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunSnapshotType.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStateMachine.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStateTransitionException.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStatus.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStatusUpdateResult.java
+backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunSensitiveDataGuardTest.java
+backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStateMachineTest.java
+backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunFactRepository.java
+backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/ShadowRunFactModelMigrationContractTest.java
+backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunFactRepositoryTest.java
+```
+
+修改文件：
+
+```text
+README.md
+backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/JdbcRepositoryPostgresSmokeTest.java
+docs/current/DB_SCHEMA.md
+docs/current/FACT_SOURCE_INDEX.md
+docs/current/GATER_PLAN.md
+docs/current/README.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / PENDING REVIEW
+```
+
+同步内容：
+
+- 新增 `V32__gate_r_shadow_run_fact_model.sql`，创建 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports` 4 张本地事实表，包含 status / event / snapshot / comparison CHECK、FK、unique/index、JSONB 边界和中文 COMMENT。
+- 新增 Shadow Run domain model、状态枚举、状态机、状态流转异常、乐观锁异常、敏感 JSONB guard 和 repository port。
+- 新增 JDBC repository，支持 create by idempotency key、find by id、find by idempotency key、append event、append snapshot、create consistency report、expected-version 状态更新、fail/block reason event、events/snapshots/latest report 查询。
+- 新增 state machine / sensitive-data guard / migration contract / JDBC repository tests；扩展 PostgreSQL smoke test，在提供 smoke properties 时验证 V32 4 表、关键约束、索引和 comments。
+- root `README.md` 和 `docs/current` 入口已同步 GateR-2 `IMPLEMENTED / PENDING REVIEW`，并明确不代表 API、页面、runner、LIVE、AI/DH runtime 或交易授权。
+
+验证：
+
+- `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test` 首次失败于 `nq-app` Spring context，RCA 为 `JdbcShadowRunFactRepository` 多构造器下未显式标注生产构造器导致 Spring 无法选择构造注入。
+- 最小修复：给生产构造器添加 `@Autowired`，未改变 repository 业务行为。
+- 同一 Maven 命令重跑通过：`PASS / BUILD SUCCESS`，module summaries 合计 743 tests，0 failures，0 errors，5 skipped。
+- local-profile integration tests 已验证 Flyway V32 可迁移；本地 PostgreSQL `nexus_quant` 已从 V31 迁移到 V32，后续 run 显示 schema up to date。
+
+边界：
+
+- 本轮没有新增 API Controller、HTTP endpoint、frontend page、Playwright、runner、scheduler 或真实策略运行。
+- 本轮没有修改 frontend、research、scripts、deploy、`.github`、docs/gates、docs/archive 或历史 migration。
+- Shadow Run JSONB guard 拒绝 credential-like / private endpoint / real order / real account balance / trading authorization 字段名；repository 不调用真实交易所，不读取 `.env` 或 credential 文件，不修改真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。
+- AI = `NOT STARTED`（未开始）。
+- DH runtime = `NOT INTEGRATED`（未集成）。
+- RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+
+下一步：
+
+- 只能进入 GateR-2 implementation review。
+- Review 通过前不得写 `READY TO COMMIT`，不得进入 GateR-3，不得启动 Shadow runner。
+
 ## NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW
 
 日期：2026-07-06。

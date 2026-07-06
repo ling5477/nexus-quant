@@ -521,3 +521,59 @@ GateJ-3 新增 `paper_run_stability_checks`：
 - JSONB 字段注释写明用途和敏感信息禁入规则。
 
 GateJ-3 不修改历史 migration，不新增无注释表，不新增无注释字段，不修改策略核心算法、回测核心算法或交易核心状态机。
+
+## GateR-2 Shadow Run 本地事实模型
+
+GateR-2 新增 Flyway migration：
+
+- `V32__gate_r_shadow_run_fact_model.sql`
+
+本批实现 Shadow Run local fact model 的最小后端持久化基础，状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。该状态只表示本地事实表、domain/state machine、repository 和测试已落地等待 review，不表示 GateR frozen，不表示 Shadow runner 已启动，不表示 HTTP API、前端页面、AI/DH runtime、LIVE 或真实交易能力已启用。
+
+GateR-2 新增 `shadow_runs`：
+
+- 身份字段：`id`，`UUID` 主键。
+- 追溯字段：`strategy_version_id`、`dataset_id`、`evaluation_id`、`publish_id`、`paper_run_id`，分别引用现有 strategy version、marketdata dataset、evaluation report、publish record 和 paper trading run；删除策略保持 `NO ACTION`，不级联删除审计事实。
+- 状态字段：`status`，CHECK 约束允许 `CREATED / PRECHECKING / READY / RUNNING / STOP_REQUESTED / STOPPED / COMPLETED / BLOCKED / FAILED / CANCELLED`。
+- 时间窗口：`window_start`、`window_end`，两者同时存在时要求 `window_end >= window_start`。
+- 无副作用边界：`side_effect_policy`、`no_order_submission`、`no_credential_access`、`no_private_endpoint`、`no_ledger_mutation`、`no_account_mutation`、`no_external_private_io`，所有 no-* flag 默认且必须为 `TRUE`。
+- 授权边界：`authorization_boundary`，CHECK 约束允许 `DIAGNOSTIC_ONLY / REVIEW_ONLY / REPLAY_ONLY`；不表达交易授权。
+- 追踪与幂等：`request_id`、`idempotency_key`、`trace_id`、`version`；`idempotency_key` 唯一，`version` 用于 repository 乐观锁。
+- 复盘信息：`blockers`、`warnings`、`next_steps`，均为 JSONB，默认空数组，注释明确不得保存 credential material、private payload、真实账户余额、真实订单状态或真实交易授权。
+- 索引：`idx_shadow_runs_idempotency_key`（unique）、`idx_shadow_runs_status_created_at`、`idx_shadow_runs_strategy_dataset`、`idx_shadow_runs_paper_run_id`。
+
+GateR-2 新增 `shadow_run_events`：
+
+- 身份字段：`id`，`UUID` 主键。
+- 归属字段：`shadow_run_id`，外键关联 `shadow_runs(id)`。
+- 事件字段：`event_type`，CHECK 约束允许 `CREATED / PRECHECK_STARTED / PRECHECK_PASSED / PRECHECK_BLOCKED / RUN_STARTED / STOP_REQUESTED / STOPPED / COMPLETED / FAILED / CANCELLED / ILLEGAL_STATE_TRANSITION_ATTEMPT / SNAPSHOT_CAPTURED / CONSISTENCY_REPORT_GENERATED`。
+- 状态流转字段：`from_status`、`to_status`，分别复用 Shadow Run status 枚举 CHECK，可为空。
+- 排障字段：`reason_code`、`message`、`metadata`；`metadata` 为 JSONB，默认空对象，注释明确禁止保存 credential、raw request、raw response、private endpoint payload、真实订单 ID 或真实账户数据。
+- 追踪字段：`request_id`、`trace_id`、`created_at`。
+- 索引：`idx_shadow_run_events_run_created_at`。
+
+GateR-2 新增 `shadow_run_snapshots`：
+
+- 身份字段：`id`，`UUID` 主键。
+- 归属字段：`shadow_run_id`，外键关联 `shadow_runs(id)`。
+- 类型字段：`snapshot_type`，CHECK 约束允许 `INPUT_MARKETDATA / STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW`。
+- 顺序与来源：`sequence_no`、`source`、`schema_version`、`checksum`。
+- 内容字段：`payload`，JSONB；只允许脱敏输入、决策、风控预检和 order intent preview，不允许 credential、private request/response、真实账户余额、真实订单状态或真实交易授权。
+- 时间与追踪：`captured_at`、`trace_id`、`created_at`。
+- 唯一约束：`uq_shadow_snapshots_run_type_seq (shadow_run_id, snapshot_type, sequence_no)`。
+- 索引：`idx_shadow_run_snapshots_run_type_sequence`。
+
+GateR-2 新增 `shadow_consistency_reports`：
+
+- 身份字段：`id`，`UUID` 主键。
+- 归属字段：`shadow_run_id`，外键关联 `shadow_runs(id)`；`paper_run_id` 可空引用 `paper_trading_runs(paper_run_id)`。
+- 对比状态：`comparison_status`，CHECK 约束允许 `CONSISTENT / DIVERGED / NOT_COMPARABLE / PARTIAL / FAILED`。
+- 复盘字段：`metric_delta`、`divergence_reasons`、`limitations`，均为 JSONB，只表达脱敏差异分析，不表达 approval、authorization 或 live-ready。
+- 时间与追踪：`generated_at`、`trace_id`、`created_at`。
+- 索引：`idx_shadow_consistency_reports_run_generated`、`idx_shadow_consistency_reports_paper_generated`。
+
+GateR-2 注释与边界：
+
+- `V32` 所有新增表均包含 PostgreSQL `COMMENT ON TABLE`。
+- `V32` 关键字段均包含 PostgreSQL `COMMENT ON COLUMN`，中文说明 Shadow Run 是本地事实，不保存 credential material，不代表 LIVE ready，不产生真实交易副作用。
+- 本批不新增 HTTP Controller，不新增 API endpoint，不新增前端页面，不启动 Shadow runner，不调用真实交易所，不读取 `.env` 或 credential 文件，不修改真实账户、资金、订单或 ledger 状态。

@@ -6,6 +6,10 @@
 
 GateR-1 review 指针：`docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` 已给出 `PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）结论。该结论只授权后续单独 GateR-2 implementation 任务使用 review 方案，不代表 migration、表、runner、API、页面或测试已经实现。
 
+GateR-2 implementation 指针：`V32__gate_r_shadow_run_fact_model.sql`、Shadow Run domain/state machine、`ShadowRunFactRepository` port、JDBC repository 和后端测试已落地，当前状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。该状态只表示本地 fact model / repository 已完成实现等待 review，不代表 GateR frozen，不代表 Shadow runner、HTTP API、前端页面、LIVE、AI/DH runtime 或真实交易能力已启用。
+
+GateR-2 P1 fix 指针：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW` 已实现，当前状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。本修复只收口非法状态流转审计事件的真实事务语义：`ILLEGAL_STATE_TRANSITION_ATTEMPT`（非法状态流转尝试）通过 `PROPAGATION_REQUIRES_NEW`（独立新事务）写入 `shadow_run_events`，不新增 migration、不改 schema、不新增 API、不启动 runner。
+
 ## 1. GateR Current Baseline
 
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
@@ -13,7 +17,10 @@ GateR-1 review 指针：`docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PL
 - GateQ tagged commit：`d4bafe47729c0007b7ef9f1bda9cd578dfd1e7e4`。
 - GateQ archive：`docs/gates/gate-q/`。
 - GateQ-0..6：`COMPLETED`（已完成）。
-- GateR：`PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
+- GateR-0：`PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
+- GateR-1：`PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
+- GateR-2：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
+- GateR-2 P1 fix：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -23,7 +30,7 @@ GateR-1 review 指针：`docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PL
 - Python ML ready：`NO`（否）。
 - Python live execution ready：`NO`（否）。
 
-GateR 的当前事实只表示 planning 文档已经建立，不表示 GateR implementation started，不表示 Shadow Run local fact 已落地，也不表示任何交易授权。
+GateR 当前事实表示 GateR-0 planning 已建立、GateR-1 migration plan review 已通过、GateR-2 Shadow Run local fact model / repository 已实现待复核，且 GateR-2 review P1 非法流转审计事务语义修复已实现待复核。该事实不表示 GateR frozen / accepted，不表示 Shadow runner started，不表示 HTTP API、前端页面、LIVE、AI/DH runtime 或任何交易授权。
 
 ## 2. GateQ Freeze Evidence Summary
 
@@ -84,7 +91,7 @@ Shadow Run 必须满足：
 - 不接 AI 自动交易。
 - 不接 DH runtime 写 NQ。
 
-Shadow Run 是否允许写数据库：GateR-0 不允许任何数据库写入。后续若 GateR-1 migration review 明确批准，可规划新增本地 Shadow Run fact / audit 表，用于写入本地、可审计、无交易副作用的 Shadow Run 事实；该写入不得触碰真实账户、资金、订单、ledger 或 credential material。
+Shadow Run 是否允许写数据库：GateR-0 不允许任何数据库写入；GateR-1 已批准 4 表 migration 方案；GateR-2 已实现本地 Shadow Run fact / audit 表和 repository，状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。GateR-2 P1 fix 已将非法状态流转审计事件改为独立新事务写入，避免外层事务回滚吞掉审计事实。该写入仅限本地、可审计、无交易副作用的 Shadow Run 事实，不得触碰真实账户、资金、订单、ledger 或 credential material。
 
 ## 6. Shadow Run vs Shadow Live Preview Boundary
 
@@ -108,7 +115,7 @@ Shadow Run 是 GateR 候选的本地运行化事实记录：
 
 ## 7. Shadow Run Candidate State Machine
 
-候选状态机只用于后续实现审查，不代表当前已实现：
+以下为 GateR-0 候选状态机语义；GateR-2 已按该最小状态枚举落地 Java 状态机并等待 review：
 
 ```text
 CREATED
@@ -148,7 +155,7 @@ Replay 建议作为独立 replay job 或 replay event 记录，不直接改写�
 
 ## 8. Shadow Run Candidate Data Model
 
-候选最小数据模型必须在 GateR-1 单独做 migration review；本轮不新增 migration，不更新 `DB_SCHEMA.md`。
+以下为 GateR-0 候选最小数据模型；GateR-1 已完成 migration plan review，GateR-2 已将最小 4 表方案落地到 `V32__gate_r_shadow_run_fact_model.sql` 并同步 `DB_SCHEMA.md`，当前等待 review。
 
 候选表/对象：
 
@@ -320,6 +327,7 @@ GateR 不接 AI runtime，不接 DH runtime：
 
 - 未经 GateR-1 migration review 直接新增 shadow run 表。
 - 状态机允许无条件覆盖终态或缺少非法状态流转保护。
+- GateR-2 review 已发现并修复非法状态流转审计事件可能随外层事务回滚的问题；当前修复状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核），review 通过前仍不得写成 accepted。
 - 缺少 no-egress / no-credential guard。
 - consistency report 把不可比或缺失事实显示为成功态。
 
@@ -342,7 +350,7 @@ GateR 不接 AI runtime，不接 DH runtime：
 | --- | --- | --- | --- |
 | GateR-0 | Plan / fact-source reconciliation | `docs/current/GATER_PLAN.md` 与 current 入口同步 | 实现、API、migration、页面、测试、CI |
 | GateR-1 | Shadow Run data model & migration plan review | DDL 设计审查、表/字段/comment/索引/回滚方案 | 写 migration、改历史 migration |
-| GateR-2 | Shadow Run local fact model / repository implementation | 本地 fact model 与 repository | 真实账户/资金/订单/ledger 写入 |
+| GateR-2 | Shadow Run local fact model / repository implementation | 本地 fact model 与 repository；当前 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）；P1 illegal-transition audit transaction fix 已实现待复核 | 真实账户/资金/订单/ledger 写入 |
 | GateR-3 | Shadow Run no-side-effect command skeleton | start/stop/precheck skeleton 与状态机保护 | 外联、credential、private endpoint、下单 |
 | GateR-4 | Shadow decision trace / risk snapshot / order intent preview | trace、risk snapshot、order intent preview | 真实订单、真实风控放行、交易授权 |
 | GateR-5 | Paper vs Shadow consistency report | consistency report 与 golden cases | 将 comparison 写成 trading authorization |
@@ -404,10 +412,12 @@ GateR-FREEZE exit criteria 必须在后续 GateR-FREEZE 单独执行，GateR-0 �
 
 ## 22. Next Concrete Action
 
-下一步只能进入 GateR-1：Shadow Run data model & migration plan review。GateR-1 必须是单独任务，先审查候选表、字段、状态枚举、JSONB 边界、索引、回滚和 forbidden writes；不得在 GateR-0 中实现 migration。
+下一步只能进入 GateR-2 P1 fix review / implementation review：复核 `JdbcShadowRunIllegalTransitionAuditWriter`、`JdbcShadowRunFactRepository.updateStatus()` 非法流转分支、repository/writer tests、PostgreSQL smoke 触发条件、Maven 测试证据和 forbidden-scope diff。review 通过前不得写 `READY TO COMMIT`，不得进入 GateR-3，不得启动 Shadow runner。
 
 当前最终状态：
 
 ```text
 NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED
+NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / PENDING REVIEW
+NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：IMPLEMENTED / PENDING REVIEW
 ```
