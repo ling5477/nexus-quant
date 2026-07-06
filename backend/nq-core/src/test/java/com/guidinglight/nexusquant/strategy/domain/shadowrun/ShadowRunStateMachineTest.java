@@ -31,6 +31,8 @@ class ShadowRunStateMachineTest {
                 stateMachine.transition(ShadowRunStatus.STOP_REQUESTED, ShadowRunStatus.STOPPED));
         assertEquals(ShadowRunStatus.BLOCKED,
                 stateMachine.transition(ShadowRunStatus.PRECHECKING, ShadowRunStatus.BLOCKED));
+        assertEquals(ShadowRunStatus.BLOCKED,
+                stateMachine.transition(ShadowRunStatus.RUNNING, ShadowRunStatus.BLOCKED));
         assertEquals(ShadowRunStatus.CANCELLED,
                 stateMachine.transition(ShadowRunStatus.READY, ShadowRunStatus.CANCELLED));
     }

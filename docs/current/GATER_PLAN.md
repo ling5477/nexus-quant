@@ -6,9 +6,11 @@
 
 GateR-1 review 指针：`docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` 已给出 `PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）结论。该结论只授权后续单独 GateR-2 implementation 任务使用 review 方案，不代表 migration、表、runner、API、页面或测试已经实现。
 
-GateR-2 implementation 指针：`V32__gate_r_shadow_run_fact_model.sql`、Shadow Run domain/state machine、`ShadowRunFactRepository` port、JDBC repository 和后端测试已落地，当前状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。该状态只表示本地 fact model / repository 已完成实现等待 review，不代表 GateR frozen，不代表 Shadow runner、HTTP API、前端页面、LIVE、AI/DH runtime 或真实交易能力已启用。
+GateR-2 implementation 指针：`V32__gate_r_shadow_run_fact_model.sql`、Shadow Run domain/state machine、`ShadowRunFactRepository` port、JDBC repository 和后端测试已通过 verified commit 接受，状态为 `IMPLEMENTED / VERIFIED COMMIT ACCEPTED`（已实现 / verified commit 已接受），commit `d21bb9886c60bbe7b40b09b7c01b4325c6899ca0`。该状态只表示本地 fact model / repository 已完成并接受，不代表 GateR frozen，不代表 Shadow runner、HTTP API、前端页面、LIVE、AI/DH runtime 或真实交易能力已启用。
 
-GateR-2 P1 fix 指针：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW` 已实现，当前状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。本修复只收口非法状态流转审计事件的真实事务语义：`ILLEGAL_STATE_TRANSITION_ATTEMPT`（非法状态流转尝试）通过 `PROPAGATION_REQUIRES_NEW`（独立新事务）写入 `shadow_run_events`，不新增 migration、不改 schema、不新增 API、不启动 runner。
+GateR-2 P1 fix 指针：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW` 已纳入 GateR-2 verified commit acceptance（verified commit 接受范围）。本修复只收口非法状态流转审计事件的真实事务语义：`ILLEGAL_STATE_TRANSITION_ATTEMPT`（非法状态流转尝试）通过 `PROPAGATION_REQUIRES_NEW`（独立新事务）写入 `shadow_run_events`，不新增 migration、不改 schema、不新增 API、不启动 runner。
+
+GateR-3 implementation 指针：`NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION` 已实现本地同步 Shadow Run runner skeleton，当前状态为 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。该 skeleton 只接受调用方传入的本地只读 payload，写入本地 run/events/snapshots，并强制 no-side-effect flags；不新增 API，不启动 scheduler 或后台 runner，不调用真实交易所，不读取 credential material，不提交订单，不修改真实 account / ledger / order。
 
 ## 1. GateR Current Baseline
 
@@ -19,8 +21,9 @@ GateR-2 P1 fix 指针：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW
 - GateQ-0..6：`COMPLETED`（已完成）。
 - GateR-0：`PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
 - GateR-1：`PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
-- GateR-2：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
-- GateR-2 P1 fix：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
+- GateR-2：`IMPLEMENTED / VERIFIED COMMIT ACCEPTED`（已实现 / verified commit 已接受），commit `d21bb9886c60bbe7b40b09b7c01b4325c6899ca0`。
+- GateR-2 P1 fix：纳入 GateR-2 verified commit acceptance（verified commit 接受范围）。
+- GateR-3：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -30,7 +33,7 @@ GateR-2 P1 fix 指针：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW
 - Python ML ready：`NO`（否）。
 - Python live execution ready：`NO`（否）。
 
-GateR 当前事实表示 GateR-0 planning 已建立、GateR-1 migration plan review 已通过、GateR-2 Shadow Run local fact model / repository 已实现待复核，且 GateR-2 review P1 非法流转审计事务语义修复已实现待复核。该事实不表示 GateR frozen / accepted，不表示 Shadow runner started，不表示 HTTP API、前端页面、LIVE、AI/DH runtime 或任何交易授权。
+GateR 当前事实表示 GateR-0 planning 已建立、GateR-1 migration plan review 已通过、GateR-2 Shadow Run local fact model / repository 已通过 verified commit 接受，且 GateR-3 本地 runner skeleton 已实现并自审待提交。该事实不表示 GateR frozen / accepted，不表示 Shadow runner 后台启动，不表示 HTTP API、前端页面、LIVE、AI/DH runtime 或任何交易授权。
 
 ## 2. GateQ Freeze Evidence Summary
 
@@ -91,7 +94,7 @@ Shadow Run 必须满足：
 - 不接 AI 自动交易。
 - 不接 DH runtime 写 NQ。
 
-Shadow Run 是否允许写数据库：GateR-0 不允许任何数据库写入；GateR-1 已批准 4 表 migration 方案；GateR-2 已实现本地 Shadow Run fact / audit 表和 repository，状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。GateR-2 P1 fix 已将非法状态流转审计事件改为独立新事务写入，避免外层事务回滚吞掉审计事实。该写入仅限本地、可审计、无交易副作用的 Shadow Run 事实，不得触碰真实账户、资金、订单、ledger 或 credential material。
+Shadow Run 是否允许写数据库：GateR-0 不允许任何数据库写入；GateR-1 已批准 4 表 migration 方案；GateR-2 已实现并接受本地 Shadow Run fact / audit 表和 repository；GateR-3 runner skeleton 只允许写入本地 Shadow Run 主事实、事件和 4 类只读快照。GateR-2 P1 fix 已将非法状态流转审计事件改为独立新事务写入，避免外层事务回滚吞掉审计事实。该写入仅限本地、可审计、无交易副作用的 Shadow Run 事实，不得触碰真实账户、资金、订单、ledger 或 credential material。
 
 ## 6. Shadow Run vs Shadow Live Preview Boundary
 
@@ -115,7 +118,7 @@ Shadow Run 是 GateR 候选的本地运行化事实记录：
 
 ## 7. Shadow Run Candidate State Machine
 
-以下为 GateR-0 候选状态机语义；GateR-2 已按该最小状态枚举落地 Java 状态机并等待 review：
+以下为 GateR-0 候选状态机语义；GateR-2 已按该最小状态枚举落地 Java 状态机，GateR-3 为 runner blocker 路径补充 `RUNNING -> BLOCKED`（运行中到已阻断）：
 
 ```text
 CREATED
@@ -126,6 +129,9 @@ CREATED
 
 RUNNING
   -> STOP_REQUESTED
+  -> BLOCKED
+
+STOP_REQUESTED
   -> STOPPED
 
 PRECHECKING
@@ -147,7 +153,7 @@ CREATED / READY / BLOCKED
 - `COMPLETED`（已完成）：Shadow facts、trace 和 summary 生成完毕。
 - `STOP_REQUESTED`（停止请求中）：用户或 guard 请求停止。
 - `STOPPED`（已停止）：无副作用停止完成，保留 audit event。
-- `BLOCKED`（已阻断）：precheck 发现缺失或禁止条件。
+- `BLOCKED`（已阻断）：precheck 或 runner 本地预览发现缺失、禁止条件或调用方提供的 blocker。
 - `FAILED`（失败）：运行时失败，必须记录 failure_code、failure_message、traceId。
 - `CANCELLED`（已取消）：启动前取消，不生成执行 trace。
 
@@ -281,7 +287,7 @@ GateR 测试策略候选：
 
 - GateR-1：migration review，检查 DDL comment、状态枚举、JSONB 敏感字段禁用、索引、回滚说明。
 - GateR-2：repository / local fact model 单测和集成测试，覆盖 created、blocked、completed、failed、append-only event。
-- GateR-3：command skeleton 测试，覆盖 start/stop 幂等、非法状态流转、no-side-effect guard。
+- GateR-3：runner skeleton 测试已覆盖成功路径、RUNNING -> BLOCKED、FAILED、idempotency、4 类 snapshot、event、sensitive guard、no-side-effect guard、ORDER_INTENT_PREVIEW preview-only、无 external adapter / account / ledger / real order 依赖和最小 Spring assembly。
 - GateR-4：decision trace / risk snapshot / order intent preview 测试，覆盖缺失输入、风险阻断、禁止真实订单字段。
 - GateR-5：Paper vs Shadow consistency golden cases，覆盖一致、偏离、缺失、不可比、指标不可用。
 - GateR-6：前端 build 与 Playwright smoke，覆盖 loading、empty、error、blocked、completed、failed、no authorization copy、no forbidden request。
@@ -327,7 +333,7 @@ GateR 不接 AI runtime，不接 DH runtime：
 
 - 未经 GateR-1 migration review 直接新增 shadow run 表。
 - 状态机允许无条件覆盖终态或缺少非法状态流转保护。
-- GateR-2 review 已发现并修复非法状态流转审计事件可能随外层事务回滚的问题；当前修复状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核），review 通过前仍不得写成 accepted。
+- GateR-2 review 已发现并修复非法状态流转审计事件可能随外层事务回滚的问题；该修复已纳入 GateR-2 verified commit acceptance。
 - 缺少 no-egress / no-credential guard。
 - consistency report 把不可比或缺失事实显示为成功态。
 
@@ -350,8 +356,8 @@ GateR 不接 AI runtime，不接 DH runtime：
 | --- | --- | --- | --- |
 | GateR-0 | Plan / fact-source reconciliation | `docs/current/GATER_PLAN.md` 与 current 入口同步 | 实现、API、migration、页面、测试、CI |
 | GateR-1 | Shadow Run data model & migration plan review | DDL 设计审查、表/字段/comment/索引/回滚方案 | 写 migration、改历史 migration |
-| GateR-2 | Shadow Run local fact model / repository implementation | 本地 fact model 与 repository；当前 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）；P1 illegal-transition audit transaction fix 已实现待复核 | 真实账户/资金/订单/ledger 写入 |
-| GateR-3 | Shadow Run no-side-effect command skeleton | start/stop/precheck skeleton 与状态机保护 | 外联、credential、private endpoint、下单 |
+| GateR-2 | Shadow Run local fact model / repository implementation | 本地 fact model 与 repository；`IMPLEMENTED / VERIFIED COMMIT ACCEPTED`（已实现 / verified commit 已接受）；P1 illegal-transition audit transaction fix 已纳入接受范围 | 真实账户/资金/订单/ledger 写入 |
+| GateR-3 | Shadow Run no-side-effect runner skeleton | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；本地同步 run/events/snapshots skeleton 与状态机保护 | 外联、credential、private endpoint、下单、scheduler、后台 runner |
 | GateR-4 | Shadow decision trace / risk snapshot / order intent preview | trace、risk snapshot、order intent preview | 真实订单、真实风控放行、交易授权 |
 | GateR-5 | Paper vs Shadow consistency report | consistency report 与 golden cases | 将 comparison 写成 trading authorization |
 | GateR-6 | Frontend Shadow Run detail / replay view | detail、replay、evidence、consistency 页面 | LIVE 操作入口、真实交易按钮 |
@@ -412,12 +418,13 @@ GateR-FREEZE exit criteria 必须在后续 GateR-FREEZE 单独执行，GateR-0 �
 
 ## 22. Next Concrete Action
 
-下一步只能进入 GateR-2 P1 fix review / implementation review：复核 `JdbcShadowRunIllegalTransitionAuditWriter`、`JdbcShadowRunFactRepository.updateStatus()` 非法流转分支、repository/writer tests、PostgreSQL smoke 触发条件、Maven 测试证据和 forbidden-scope diff。review 通过前不得写 `READY TO COMMIT`，不得进入 GateR-3，不得启动 Shadow runner。
+下一步只能完成 GateR-3 本地 commit 决策，或在 commit 后单独进入 GateR-4 decision trace / risk snapshot / order intent preview 扩展规划。不得把 GateR-3 写成后台 runner started，不得新增 API、scheduler、frontend、migration、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或交易授权。
 
 当前最终状态：
 
 ```text
 NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED
-NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / PENDING REVIEW
-NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：IMPLEMENTED / PENDING REVIEW
+NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / VERIFIED COMMIT ACCEPTED
+NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：INCLUDED IN GATER-2 VERIFIED COMMIT ACCEPTANCE
+NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
 ```

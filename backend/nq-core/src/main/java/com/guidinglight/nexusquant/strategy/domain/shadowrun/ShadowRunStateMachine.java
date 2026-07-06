@@ -24,6 +24,7 @@ public final class ShadowRunStateMachine {
                 ShadowRunStatus.RUNNING,
                 ShadowRunStatus.STOP_REQUESTED,
                 ShadowRunStatus.COMPLETED,
+                ShadowRunStatus.BLOCKED,
                 ShadowRunStatus.FAILED
         );
         register(ShadowRunStatus.STOP_REQUESTED, ShadowRunStatus.STOPPED, ShadowRunStatus.FAILED);

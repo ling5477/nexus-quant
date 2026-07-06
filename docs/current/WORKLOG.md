@@ -1,3 +1,69 @@
+## NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateR-3 backend implementation。
+- 实现最小 Shadow Run runner skeleton：本地同步调用、只接受调用方传入的只读 payload、创建本地 shadow run、推进状态机、写事件、写 4 类 snapshot、返回只读 result。
+- 不新增 migration，不改历史 migration，不新增 API Controller 或 HTTP endpoint，不改前端，不改 CI，不改 research/scripts/deploy，不启动 scheduler，不启动后台 runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+新增文件：
+
+```text
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunner.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerCommand.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerException.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerIssue.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerResult.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerStep.java
+backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java
+```
+
+修改文件：
+
+```text
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStateMachine.java
+backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStateMachineTest.java
+docs/current/GATER_PLAN.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+```
+
+同步内容：
+
+- 新增 `ShadowRunRunnerService`，通过 `ShadowRunFactRepository` 创建本地 run，并通过 `ShadowRunStateMachine` 推进 `CREATED -> PRECHECKING -> READY -> RUNNING -> COMPLETED / BLOCKED / FAILED`。
+- 新增 command / result / issue / step / exception，result 只表达本地状态、事件/快照计数、幂等复用、no-side-effect flags 和 failure result，不表达真实交易授权。
+- 写入 `INPUT_MARKETDATA`、`STRATEGY_DECISION`、`RISK_PREFLIGHT`、`ORDER_INTENT_PREVIEW` 4 类快照；ORDER_INTENT_PREVIEW 仅为 preview-only。
+- payload guard 复用 `ShadowRunSensitiveDataGuard`，拒绝 `apiKey`、`secret`、`token`、`credentialMaterial`、`realOrderId`、`realAccountBalance`、`tradingReady`、`liveReady`、`authorizedForTrading`、`tradeApproved` 等字段名。
+- `ShadowRunStateMachine` 增加 GateR-3 需要的 `RUNNING -> BLOCKED` 合法路径；终态仍不可回 `RUNNING`。
+
+验证：
+
+- Targeted tests：`mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowRunRunnerServiceTest,ShadowRunStateMachineTest,ShadowRunSensitiveDataGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`，结果 PASS / BUILD SUCCESS（通过 / 构建成功），15 tests，0 failures，0 errors，0 skipped。
+- Full Maven：`mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test`，结果 PASS / BUILD SUCCESS（通过 / 构建成功），Surefire reports 750 tests，0 failures，0 errors，5 skipped。
+
+边界：
+
+- 未新增 migration，未修改 `backend/nq-infra/src/main/resources/db/migration/**`。
+- 未新增 API Controller / HTTP endpoint，未改 frontend / research / scripts / deploy / `.github` / docs/gates / docs/archive。
+- 未调用真实交易所，未读取 `.env` 或 credential material，未提交真实订单，未撤单，未转账，未提现，未修改真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。AI = `NOT STARTED`（未开始）。DH runtime = `NOT INTEGRATED`（未集成）。RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+- Shadow Run runner skeleton 不是 scheduler，不是后台运行，不是 Shadow Live trading enabled，不是 trading authorization。
+
+下一步：
+
+- 若提交前 forbidden diff、rg boundary scan 和 staged checks 通过，可本地 commit：`feat(gater): add shadow run runner skeleton`。
+- 提交后若继续 GateR，只能单独进入 GateR-4 decision trace / risk snapshot / order intent preview 扩展规划或实现，不得顺带新增 API、scheduler、frontend、LIVE、AI/DH runtime 或真实交易路径。
+
 ## NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW
 
 日期：2026-07-06。
