@@ -1,3 +1,61 @@
+## NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮实现 GateR-5 Shadow consistency report service。
+  - 覆盖 ShadowConsistencyReportService、ShadowConsistencyReportCommand、PaperRunComparisonInput、ShadowRunComparisonInput、ConsistencyMetricDelta、ConsistencyThreshold、ShadowConsistencyReportResult 和 service unit tests。
+  - 不新增 migration，不修改历史 migration，不新增 HTTP API，不改前端，不改 CI，不启动 scheduler，不启动后台 runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+Result:
+  - NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT（已实现 / 已自审 / 可进入提交前复核）。
+  - service 只消费调用方提供的本地只读 Paper / Shadow summary。
+  - comparison_status 覆盖 CONSISTENT / DIVERGED / NOT_COMPARABLE / PARTIAL / FAILED（一致 / 偏离 / 不可比 / 部分可比 / 失败）。
+  - report 通过既有 ShadowRunFactRepository.createConsistencyReport 写入 shadow_consistency_reports，并追加 CONSISTENCY_REPORT_GENERATED 本地审计事件。
+
+New targeted validation:
+  - First command:
+    mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowConsistencyReportServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - First result: FAILED（失败），原因是测试断言使用默认 ObjectMapper 序列化含 Instant 的 result，缺少 JavaTime module；业务代码未失败。
+  - Minimal fix: 只调整测试断言，改为检查 result record 字段名和 report JSON 节点，不依赖时间序列化配置。
+  - Final command:
+    mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowConsistencyReportServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - Final result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Tests run: 9, failures: 0, errors: 0, skipped: 0.
+
+Required GateR regression:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowRunRunnerServiceTest,ShadowRunStateMachineTest,ShadowRunSensitiveDataGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Tests run: 18, failures: 0, errors: 0, skipped: 0.
+
+Full Maven validation:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Surefire reports after run: 762 tests, 0 failures, 0 errors, 5 skipped.
+  - nq-core module summary: 158 tests, 0 failures, 0 errors, 0 skipped.
+  - nq-app module summary: 129 tests, 0 failures, 0 errors, 3 skipped.
+
+Known warnings / skips:
+  - Existing SLF4J no-provider warnings remain.
+  - Existing Mockito dynamic-agent warnings remain.
+  - Existing JVM class sharing warnings remain.
+  - Existing manually gated smoke tests skip where required properties or manual switches are absent.
+
+Not run:
+  - Docker PostgreSQL required smoke was not rerun because this GateR-5 task did not modify JdbcShadowRunFactRepository or JdbcShadowRunIllegalTransitionAuditWriter and did not change repository transaction semantics.
+  - GitHub Actions was not rerun locally.
+  - frontend build / Playwright were not run because frontend was not modified.
+  - Python pytest / mypy / ruff were not run because research/py was not modified.
+
+Boundary:
+  - No migration was added or modified.
+  - No HTTP Controller or endpoint was added.
+  - No frontend, research, scripts, deploy, .github, docs/gates or docs/archive changes were made.
+  - No credential material, private endpoint payload, real order id, real account balance or trading authorization field is accepted by comparison summary payload guard.
+  - No real order, cancel, transfer, withdraw, private endpoint call, credential read, account/fund/order/ledger mutation, LIVE, AI runtime, DH runtime, RealClient, real provider, private trading adapter, real permission probe or background Shadow runner startup was implemented.
+```
+
 ## NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION validation（2026-07-06）
 
 ```text

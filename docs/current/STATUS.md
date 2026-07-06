@@ -15,6 +15,7 @@
 - GateR-2 P1 fix：已纳入 GateR-2 verified commit acceptance（verified commit 接受范围）。
 - GateR-3：`NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateR-4：`NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- GateR-5：`NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -31,6 +32,7 @@
 - Shadow run 写侧 local fact source：`IMPLEMENTED / VERIFIED COMMIT ACCEPTED`（已实现 / verified commit 已接受），仅限本地 Shadow Run 事实表与 repository，不代表交易授权。
 - Shadow Run runner skeleton：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限本地同步调用骨架，不是后台运行。
 - Shadow Run decision trace previews：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限本地结构化 trace / risk / order intent preview，不是交易授权。
+- Shadow consistency report service：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限调用方本地只读 Paper / Shadow summary 比较与本地 report 持久化，不是交易授权。
 - Shadow Run scheduler / API / frontend page：`NOT IMPLEMENTED`（未实现）。
 
 ## 3. GateR-0 Planning Status
@@ -82,7 +84,7 @@ GateR-2 review P1 finding 已纳入 verified commit 接受范围：`JdbcShadowRu
 - DH runtime integrated。
 - RealClient、real provider、private trading adapter 或 real permission probe implemented。
 
-GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerService` 使用 `ShadowRunFactRepository` 创建本地 run、通过 `ShadowRunStateMachine` 推进 `CREATED -> PRECHECKING -> READY -> RUNNING -> COMPLETED / BLOCKED / FAILED`，并写入 `INPUT_MARKETDATA / STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 4 类只读快照。GateR-4 已将 `STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 扩展为 structured decision trace、risk allow/block/warn snapshot 和 `previewOnly=true` 的 order intent preview envelope，并把 blocker / warning / nextSteps 写入 result。该状态不代表 scheduler、HTTP API、前端页面、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或交易授权已启用。
+GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerService` 使用 `ShadowRunFactRepository` 创建本地 run、通过 `ShadowRunStateMachine` 推进 `CREATED -> PRECHECKING -> READY -> RUNNING -> COMPLETED / BLOCKED / FAILED`，并写入 `INPUT_MARKETDATA / STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 4 类只读快照。GateR-4 已将 `STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 扩展为 structured decision trace、risk allow/block/warn snapshot 和 `previewOnly=true` 的 order intent preview envelope，并把 blocker / warning / nextSteps 写入 result。GateR-5 已新增 `ShadowConsistencyReportService`，只消费调用方提供的本地只读 Paper / Shadow summary，生成 `CONSISTENT / DIVERGED / NOT_COMPARABLE / PARTIAL / FAILED`（一致 / 偏离 / 不可比 / 部分可比 / 失败）report，并复用既有 repository port 写入 `shadow_consistency_reports`。该状态不代表 scheduler、HTTP API、前端页面、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或交易授权已启用。
 
 ## 6. Post-GateQ Current Cleanup
 
@@ -92,4 +94,4 @@ GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerServ
 
 ## 7. 当前验证口径
 
-当前 GateR-4 是 backend structured decision trace previews + core tests + minimal docs sync；未新增 migration，未修改 infra repository 事务语义，未新增 API Controller 或 endpoint，未修改 frontend、research、scripts、deploy、docs/gates 或 docs/archive。`.github/workflows/ci.yml` 仅因用户追加“CI失败了，顺手也修一下”而做窄范围例外：把 CI Flyway expected version 从 31 对齐到当前 V32。已运行 Maven 后端测试；frontend build、Playwright、pytest、mypy、ruff 未运行，因为本轮未修改对应范围。验证以 Git preflight、Maven backend tests、diff check、forbidden-scope diff 和 broad rg boundary scan 为准，详见 [TESTING.md](TESTING.md)。
+当前 GateR-5 是 backend consistency report service + core tests + minimal docs sync；未新增 migration，未修改 infra repository 生产代码或事务语义，未新增 API Controller 或 endpoint，未修改 frontend、research、scripts、deploy、`.github`、docs/gates 或 docs/archive。已运行新增 service targeted test、GateR-3/4 runner/state/sensitive 回归，以及 `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test`；frontend build、Playwright、pytest、mypy、ruff 未运行，因为本轮未修改对应范围。验证以 Git preflight、Maven backend tests、diff check、forbidden-scope diff 和 broad rg boundary scan 为准，详见 [TESTING.md](TESTING.md)。

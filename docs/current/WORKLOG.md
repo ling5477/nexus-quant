@@ -1,3 +1,72 @@
+## NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateR-5 backend implementation。
+- 新增最小 Shadow consistency report service，只消费调用方传入的本地只读 Paper / Shadow summary。
+- 支持 `CONSISTENT / DIVERGED / NOT_COMPARABLE / PARTIAL / FAILED`（一致 / 偏离 / 不可比 / 部分可比 / 失败）comparison_status。
+- 生成 metric_delta、divergence_reasons、limitations JSON，并通过既有 `ShadowRunFactRepository.createConsistencyReport` 写入 `shadow_consistency_reports`。
+- 追加 `CONSISTENCY_REPORT_GENERATED` 本地审计事件；不修改 `JdbcShadowRunFactRepository` 或事务语义。
+- 不新增 migration，不改历史 migration，不新增 API Controller 或 HTTP endpoint，不改前端，不改 CI，不改 research/scripts/deploy，不启动 scheduler，不启动后台 runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+新增文件：
+
+```text
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ConsistencyMetricDelta.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ConsistencyThreshold.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/PaperRunComparisonInput.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowConsistencyReportCommand.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowConsistencyReportException.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowConsistencyReportResult.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowConsistencyReportService.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunComparisonInput.java
+backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowConsistencyReportServiceTest.java
+```
+
+修改文件：
+
+```text
+docs/current/GATER_PLAN.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+```
+
+同步内容：
+
+- `ShadowConsistencyReportService` 通过 repository port 查询目标 Shadow Run、比较调用方传入的 Paper / Shadow summary、创建本地 consistency report，并追加 report-generated event。
+- count 类指标使用绝对差阈值；side、symbol、timeframe、strategyVersionId、datasetId 使用精确匹配；window mismatch 进入 NOT_COMPARABLE。
+- 缺 paperRunId、缺 Paper / Shadow input、缺关键身份字段进入 NOT_COMPARABLE；部分 count 指标缺失但仍有可比指标进入 PARTIAL。
+- 调用方明确报告 comparison failure 时生成 FAILED report；持久化异常不被吞掉。
+- Paper / Shadow summary payload 复用 `ShadowRunSensitiveDataGuard`，拒绝 `apiKey`、`secret`、`passphrase`、`token`、`credentialMaterial`、`realOrderId`、`realAccountBalance`、`tradingReady`、`liveReady`、`authorizedForTrading`、`tradeApproved`。
+
+验证：
+
+- 新增 targeted tests：`mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowConsistencyReportServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`，最终 PASS / BUILD SUCCESS（通过 / 构建成功），9 tests，0 failures，0 errors，0 skipped。
+- Required GateR regression：`mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowRunRunnerServiceTest,ShadowRunStateMachineTest,ShadowRunSensitiveDataGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`，PASS / BUILD SUCCESS（通过 / 构建成功），18 tests，0 failures，0 errors，0 skipped。
+- Full Maven：`mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test`，PASS / BUILD SUCCESS（通过 / 构建成功），Surefire reports 762 tests，0 failures，0 errors，5 skipped。
+
+边界：
+
+- 未新增 migration，未修改 `backend/nq-infra/src/main/resources/db/migration/**`。
+- 未新增 API Controller / HTTP endpoint，未改 frontend / research / scripts / deploy / `.github` / docs/gates / docs/archive。
+- 未调用真实交易所，未读取 `.env` 或 credential material，未提交真实订单，未撤单，未转账，未提现，未修改真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。AI = `NOT STARTED`（未开始）。DH runtime = `NOT INTEGRATED`（未集成）。RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+- GateR-5 不是 scheduler，不是后台运行，不是 Shadow Live trading enabled，不是 trading authorization。
+
+下一步：
+
+- 若提交前 diff check、forbidden diff、rg boundary scan 和 staged checks 通过，可本地 commit：`feat(gater): add shadow consistency report service`。
+- 提交后若继续 GateR，只能单独进入 GateR-6 frontend Shadow Run detail / replay view；不得顺带新增 API、scheduler、migration、LIVE、AI/DH runtime 或真实交易路径。
+
 ## NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION
 
 日期：2026-07-06。
