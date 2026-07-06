@@ -9,8 +9,9 @@ import java.util.UUID;
 /**
  * Shadow Run runner skeleton 的只读结果对象。
  *
- * <p>结果只描述本地 fact lifecycle、事件/快照计数、幂等复用和 no-side-effect guard 状态；
- * 不包含真实订单、账户余额、credential material、private endpoint response 或交易授权字段。
+ * <p>结果只描述本地 fact lifecycle、事件/快照计数、幂等复用、风险阻断/告警和
+ * no-side-effect guard 状态；不包含真实订单、账户余额、credential material、
+ * private endpoint response 或交易授权字段。
  */
 public record ShadowRunRunnerResult(
         UUID shadowRunId,
@@ -30,6 +31,8 @@ public record ShadowRunRunnerResult(
         int snapshotCount,
         List<ShadowRunRunnerStep> completedSteps,
         List<ShadowRunRunnerIssue> blockers,
+        List<ShadowRunRunnerIssue> warnings,
+        List<String> nextSteps,
         String failureCode,
         String failureMessage,
         Instant generatedAt
@@ -38,5 +41,7 @@ public record ShadowRunRunnerResult(
     public ShadowRunRunnerResult {
         completedSteps = completedSteps == null ? List.of() : List.copyOf(completedSteps);
         blockers = blockers == null ? List.of() : List.copyOf(blockers);
+        warnings = warnings == null ? List.of() : List.copyOf(warnings);
+        nextSteps = nextSteps == null ? List.of() : List.copyOf(nextSteps);
     }
 }

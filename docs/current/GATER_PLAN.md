@@ -12,6 +12,8 @@ GateR-2 P1 fix 指针：`NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW
 
 GateR-3 implementation 指针：`NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION` 已实现本地同步 Shadow Run runner skeleton，当前状态为 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。该 skeleton 只接受调用方传入的本地只读 payload，写入本地 run/events/snapshots，并强制 no-side-effect flags；不新增 API，不启动 scheduler 或后台 runner，不调用真实交易所，不读取 credential material，不提交订单，不修改真实 account / ledger / order。
 
+GateR-4 implementation 指针：`NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION` 已实现 structured decision trace / risk snapshot / order intent preview，当前状态为 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。本轮只增强本地 runner 的结构化只读 snapshot envelope 与 result blocker/warning/nextSteps，不新增 migration，不新增 API，不启动 scheduler 或后台 runner，不调用真实交易所，不读取 credential material，不提交订单，不修改真实 account / ledger / order。
+
 ## 1. GateR Current Baseline
 
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
@@ -24,6 +26,7 @@ GateR-3 implementation 指针：`NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENT
 - GateR-2：`IMPLEMENTED / VERIFIED COMMIT ACCEPTED`（已实现 / verified commit 已接受），commit `d21bb9886c60bbe7b40b09b7c01b4325c6899ca0`。
 - GateR-2 P1 fix：纳入 GateR-2 verified commit acceptance（verified commit 接受范围）。
 - GateR-3：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- GateR-4：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -33,7 +36,7 @@ GateR-3 implementation 指针：`NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENT
 - Python ML ready：`NO`（否）。
 - Python live execution ready：`NO`（否）。
 
-GateR 当前事实表示 GateR-0 planning 已建立、GateR-1 migration plan review 已通过、GateR-2 Shadow Run local fact model / repository 已通过 verified commit 接受，且 GateR-3 本地 runner skeleton 已实现并自审待提交。该事实不表示 GateR frozen / accepted，不表示 Shadow runner 后台启动，不表示 HTTP API、前端页面、LIVE、AI/DH runtime 或任何交易授权。
+GateR 当前事实表示 GateR-0 planning 已建立、GateR-1 migration plan review 已通过、GateR-2 Shadow Run local fact model / repository 已通过 verified commit 接受，GateR-3 本地 runner skeleton 已实现并自审待提交，且 GateR-4 structured decision trace / risk snapshot / order intent preview 已实现并自审待提交。该事实不表示 GateR frozen / accepted，不表示 Shadow runner 后台启动，不表示 HTTP API、前端页面、LIVE、AI/DH runtime 或任何交易授权。
 
 ## 2. GateQ Freeze Evidence Summary
 
@@ -358,7 +361,7 @@ GateR 不接 AI runtime，不接 DH runtime：
 | GateR-1 | Shadow Run data model & migration plan review | DDL 设计审查、表/字段/comment/索引/回滚方案 | 写 migration、改历史 migration |
 | GateR-2 | Shadow Run local fact model / repository implementation | 本地 fact model 与 repository；`IMPLEMENTED / VERIFIED COMMIT ACCEPTED`（已实现 / verified commit 已接受）；P1 illegal-transition audit transaction fix 已纳入接受范围 | 真实账户/资金/订单/ledger 写入 |
 | GateR-3 | Shadow Run no-side-effect runner skeleton | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；本地同步 run/events/snapshots skeleton 与状态机保护 | 外联、credential、private endpoint、下单、scheduler、后台 runner |
-| GateR-4 | Shadow decision trace / risk snapshot / order intent preview | trace、risk snapshot、order intent preview | 真实订单、真实风控放行、交易授权 |
+| GateR-4 | Shadow decision trace / risk snapshot / order intent preview | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；structured trace、risk snapshot、order intent preview snapshot envelope | 真实订单、真实风控放行、交易授权 |
 | GateR-5 | Paper vs Shadow consistency report | consistency report 与 golden cases | 将 comparison 写成 trading authorization |
 | GateR-6 | Frontend Shadow Run detail / replay view | detail、replay、evidence、consistency 页面 | LIVE 操作入口、真实交易按钮 |
 | GateR-7 | Operational guard / no-egress / no-credential smoke | no-egress、no-credential、forbidden request smoke | 读取 credential 或真实外联 |
@@ -418,7 +421,7 @@ GateR-FREEZE exit criteria 必须在后续 GateR-FREEZE 单独执行，GateR-0 �
 
 ## 22. Next Concrete Action
 
-下一步只能完成 GateR-3 本地 commit 决策，或在 commit 后单独进入 GateR-4 decision trace / risk snapshot / order intent preview 扩展规划。不得把 GateR-3 写成后台 runner started，不得新增 API、scheduler、frontend、migration、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或交易授权。
+下一步只能完成 GateR-4 本地 commit 决策，或在 commit 后单独进入 GateR-5 Paper vs Shadow consistency report。不得把 GateR-4 写成后台 runner started，不得新增 API、scheduler、frontend、migration、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或交易授权。
 
 当前最终状态：
 
@@ -427,4 +430,5 @@ NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED
 NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / VERIFIED COMMIT ACCEPTED
 NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：INCLUDED IN GATER-2 VERIFIED COMMIT ACCEPTANCE
 NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
 ```

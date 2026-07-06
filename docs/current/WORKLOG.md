@@ -1,3 +1,76 @@
+## NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateR-4 backend implementation。
+- 在 GateR-3 runner skeleton 基础上实现 structured `StrategyDecisionTrace`、`RiskPreflightSnapshot`、`RiskPreflightRuleResult`、`OrderIntentPreview`。
+- runner 写入包含 `traceId` / `source` / `schemaVersion` / `checksum` 的 `STRATEGY_DECISION`、`RISK_PREFLIGHT`、`ORDER_INTENT_PREVIEW` snapshot envelope，并把 blocker / warning / nextSteps 进入 result。
+- 用户追加“CI失败了，顺手也修一下”，本轮对 `.github/workflows/ci.yml` 做窄范围例外：将 BackendCiLegacyAccountFixture / FlywaySmoke expected Flyway version 从 31 对齐为 32。
+- 不新增 migration，不改历史 migration，不新增 API Controller 或 HTTP endpoint，不改前端，不改 research/scripts/deploy，不启动 scheduler，不启动后台 runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+新增文件：
+
+```text
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/OrderIntentPreview.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/RiskPreflightRuleResult.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/RiskPreflightSnapshot.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/StrategyDecisionTrace.java
+```
+
+修改文件：
+
+```text
+.github/workflows/ci.yml
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerCommand.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerResult.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java
+backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java
+docs/current/GATER_PLAN.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+```
+
+同步内容：
+
+- 新增 structured decision trace / risk snapshot / order intent preview 模型，字段说明保持 no-real / diagnostic-only 边界。
+- `RiskPreflightSnapshot` 支持 allow / block / warn；blocked risk preview 会驱动 runner 返回 BLOCKED。
+- `OrderIntentPreview` 构造时强制 `previewOnly=true`；false 会在本地输入阶段拒绝。
+- runner snapshot payload 统一加入 `traceId`、`source=LOCAL_CALLER_SUPPLIED_READONLY_INPUT`、`schemaVersion`、`checksum` 和 typed body。
+- snapshot event metadata 增加 `decisionTraceSummary`、`schemaVersion`、`checksum`、`traceId` 和 `orderIntentPreviewOnly`。
+- sensitive guard 覆盖 structured JSON 子结构和新增模型字段名回归；payload 含 `apiKey`、`secret`、`passphrase`、`token`、`credentialMaterial`、`realOrderId`、`realAccountBalance`、`tradingReady`、`liveReady`、`authorizedForTrading`、`tradeApproved` 会在创建 run 前拒绝。
+
+验证：
+
+- Targeted tests：
+  `mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowRunRunnerServiceTest,ShadowRunStateMachineTest,ShadowRunSensitiveDataGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`
+  结果 PASS / BUILD SUCCESS（通过 / 构建成功），18 tests，0 failures，0 errors，0 skipped。
+- Full Maven：
+  `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test`
+  结果 PASS / BUILD SUCCESS（通过 / 构建成功），Surefire reports 753 tests，0 failures，0 errors，5 skipped。
+
+边界：
+
+- 未新增 migration，未修改 `backend/nq-infra/src/main/resources/db/migration/**`。
+- 未新增 API Controller / HTTP endpoint，未改 frontend / research / scripts / deploy / docs/gates / docs/archive。
+- `.github/workflows/ci.yml` 只因最新用户授权修复 CI 失败而对齐 expected Flyway version，不新增 job、不改 CI 边界。
+- 未调用真实交易所，未读取 `.env` 或 credential material，未提交真实订单，未撤单，未转账，未提现，未修改真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。AI = `NOT STARTED`（未开始）。DH runtime = `NOT INTEGRATED`（未集成）。RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+- GateR-4 不是 scheduler，不是后台运行，不是 Shadow Live trading enabled，不是 trading authorization。
+
+下一步：
+
+- 若提交前 diff check、forbidden diff、rg boundary scan 和 staged checks 通过，可本地 commit：`feat(gater): add shadow run decision trace previews`。
+- 提交后若继续 GateR，只能单独进入 GateR-5 Paper vs Shadow consistency report，不得顺带新增 API、scheduler、frontend、migration、LIVE、AI/DH runtime 或真实交易路径。
+
 ## NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION
 
 日期：2026-07-06。

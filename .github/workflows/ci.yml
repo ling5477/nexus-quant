@@ -364,7 +364,7 @@ jobs:
           import org.flywaydb.core.api.MigrationInfo;
 
           public final class BackendCiLegacyAccountFixture {
-              private static final String EXPECTED_VERSION = "31";
+              private static final String EXPECTED_VERSION = "32";
               private static final String FIXTURE_ACCOUNT_CODE = "ci-backend-test-account";
 
               private BackendCiLegacyAccountFixture() {
@@ -555,7 +555,7 @@ jobs:
           import org.flywaydb.core.api.MigrationInfo;
 
           public final class FlywaySmoke {
-              private static final String EXPECTED_VERSION = "31";
+              private static final String EXPECTED_VERSION = "32";
 
               private FlywaySmoke() {
               }

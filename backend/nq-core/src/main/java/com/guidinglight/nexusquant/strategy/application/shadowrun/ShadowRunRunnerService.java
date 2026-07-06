@@ -33,11 +33,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * GateR-3 Shadow Run runner skeleton。
+ * GateR-4 Shadow Run runner skeleton。
  *
- * <p>职责：把调用方提供的本地只读 payload 组装为 Shadow Run 主事实、状态事件和四类快照。
- * Why：GateR-3 需要一个可调用、可测试、可复盘的 runner skeleton，但仍禁止真实策略执行、
- * marketdata 外联、private endpoint、credential 读取、下单、账户/ledger mutation 和后台调度。
+ * <p>职责：把调用方提供的本地只读 payload、decision trace、risk snapshot 和 order intent
+ * preview 组装为 Shadow Run 主事实、状态事件和四类快照。Why：GateR-4 需要结构化、可复盘的
+ * 本地决策轨迹，但仍禁止真实策略执行、marketdata 外联、private endpoint、credential 读取、
+ * 下单、账户/ledger mutation 和后台调度。
  *
  * <p>幂等/事务：幂等由 {@code idempotencyKey} 绑定到 {@code shadow_runs.idempotency_key}；
  * 已存在的 run 直接作为幂等复用结果返回，不会把终态强行推回 {@code RUNNING}。runner 不把整段
@@ -48,9 +49,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class ShadowRunRunnerService implements ShadowRunRunner {
 
-    private static final String POLICY_VERSION = "gate-r-3-shadow-runner-skeleton.v1";
+    private static final String POLICY_VERSION = "gate-r-4-shadow-decision-trace.v1";
     private static final String SNAPSHOT_SOURCE = "LOCAL_CALLER_SUPPLIED_READONLY_INPUT";
-    private static final String SNAPSHOT_SCHEMA_VERSION = "shadow-runner-snapshot.v1";
+    private static final String INPUT_MARKETDATA_SCHEMA_VERSION = "shadow-input-marketdata.v1";
+    private static final String STRATEGY_DECISION_SCHEMA_VERSION = "shadow-strategy-decision-trace.v1";
+    private static final String RISK_PREFLIGHT_SCHEMA_VERSION = "shadow-risk-preflight.v1";
+    private static final String ORDER_INTENT_SCHEMA_VERSION = "shadow-order-intent-preview.v1";
 
     private final ShadowRunFactRepository repository;
     private final ObjectMapper objectMapper;
@@ -95,6 +99,7 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
     @Override
     public ShadowRunRunnerResult run(ShadowRunRunnerCommand command) {
         validateCommand(command);
+        RunnerDecision decision = runnerDecision(command);
         Optional<ShadowRun> existing = repository.findByIdempotencyKey(command.idempotencyKey());
         if (existing.isPresent()) {
             return resultFromExisting(existing.get(), List.of(ShadowRunRunnerStep.IDEMPOTENT_REPLAY));
@@ -103,7 +108,7 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
         RunCursor cursor = null;
         List<ShadowRunRunnerStep> steps = new ArrayList<>();
         try {
-            ShadowRun requested = newRun(command);
+            ShadowRun requested = newRun(command, decision);
             ShadowRun created = repository.create(requested);
             if (!created.id().equals(requested.id())) {
                 return resultFromExisting(created, List.of(ShadowRunRunnerStep.IDEMPOTENT_REPLAY));
@@ -123,33 +128,53 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
                     "No-side-effect policy is satisfied.", command);
             steps.add(ShadowRunRunnerStep.READY);
 
-            appendSnapshot(cursor.id(), ShadowRunSnapshotType.INPUT_MARKETDATA, command.inputMarketdataPayload());
+            appendSnapshot(
+                    cursor.id(),
+                    ShadowRunSnapshotType.INPUT_MARKETDATA,
+                    INPUT_MARKETDATA_SCHEMA_VERSION,
+                    command.inputMarketdataPayload()
+            );
             steps.add(ShadowRunRunnerStep.INPUT_MARKETDATA_SNAPSHOT);
 
             cursor = transition(cursor, ShadowRunStatus.RUNNING, "SHADOW_RUN_STARTED",
                     "Local skeleton runner started without external IO.", command);
             steps.add(ShadowRunRunnerStep.RUNNING);
 
-            appendSnapshot(cursor.id(), ShadowRunSnapshotType.STRATEGY_DECISION, command.strategyDecisionPayload());
+            appendSnapshot(
+                    cursor.id(),
+                    ShadowRunSnapshotType.STRATEGY_DECISION,
+                    STRATEGY_DECISION_SCHEMA_VERSION,
+                    objectMapper.valueToTree(command.strategyDecisionTrace())
+            );
             steps.add(ShadowRunRunnerStep.STRATEGY_DECISION_SNAPSHOT);
-            appendSnapshot(cursor.id(), ShadowRunSnapshotType.RISK_PREFLIGHT, command.riskPreflightPayload());
+            appendSnapshot(
+                    cursor.id(),
+                    ShadowRunSnapshotType.RISK_PREFLIGHT,
+                    RISK_PREFLIGHT_SCHEMA_VERSION,
+                    objectMapper.valueToTree(command.riskPreflightSnapshot())
+            );
             steps.add(ShadowRunRunnerStep.RISK_PREFLIGHT_SNAPSHOT);
-            appendSnapshot(cursor.id(), ShadowRunSnapshotType.ORDER_INTENT_PREVIEW, command.orderIntentPreviewPayload());
+            appendSnapshot(
+                    cursor.id(),
+                    ShadowRunSnapshotType.ORDER_INTENT_PREVIEW,
+                    ORDER_INTENT_SCHEMA_VERSION,
+                    objectMapper.valueToTree(command.orderIntentPreview())
+            );
             steps.add(ShadowRunRunnerStep.ORDER_INTENT_PREVIEW_SNAPSHOT);
 
-            if (!command.blockers().isEmpty()) {
-                cursor = transition(cursor, ShadowRunStatus.BLOCKED, command.blockers().getFirst().code(),
-                        "Shadow Run skeleton blocked by caller-supplied local blocker.", command);
+            if (!decision.blockers().isEmpty()) {
+                cursor = transition(cursor, ShadowRunStatus.BLOCKED, decision.blockers().getFirst().code(),
+                        "Shadow Run skeleton blocked by local risk preflight preview.", command);
                 steps.add(ShadowRunRunnerStep.BLOCKED);
-                return resultFromCursor(cursor, steps, command.blockers(), null, null);
+                return resultFromCursor(cursor, steps, decision, null, null);
             }
 
             cursor = transition(cursor, ShadowRunStatus.COMPLETED, "SHADOW_RUN_COMPLETED",
                     "Local no-side-effect Shadow Run skeleton completed.", command);
             steps.add(ShadowRunRunnerStep.COMPLETED);
-            return resultFromCursor(cursor, steps, List.of(), null, null);
+            return resultFromCursor(cursor, steps, decision, null, null);
         } catch (RuntimeException ex) {
-            ShadowRunRunnerResult failureResult = failIfPossible(cursor, steps, command, ex);
+            ShadowRunRunnerResult failureResult = failIfPossible(cursor, steps, command, decision, ex);
             throw new ShadowRunRunnerException("Shadow Run runner skeleton failed", ex, failureResult);
         }
     }
@@ -167,9 +192,12 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
         requireText(command.idempotencyKey(), "idempotencyKey");
         requireText(command.traceId(), "traceId");
         validatePayload(ShadowRunSnapshotType.INPUT_MARKETDATA, command.inputMarketdataPayload());
-        validatePayload(ShadowRunSnapshotType.STRATEGY_DECISION, command.strategyDecisionPayload());
-        validatePayload(ShadowRunSnapshotType.RISK_PREFLIGHT, command.riskPreflightPayload());
-        validatePayload(ShadowRunSnapshotType.ORDER_INTENT_PREVIEW, command.orderIntentPreviewPayload());
+        Objects.requireNonNull(command.strategyDecisionTrace(), "strategyDecisionTrace must not be null");
+        Objects.requireNonNull(command.riskPreflightSnapshot(), "riskPreflightSnapshot must not be null");
+        Objects.requireNonNull(command.orderIntentPreview(), "orderIntentPreview must not be null");
+        requireTraceId(command.traceId(), command.strategyDecisionTrace().traceId(), "strategyDecisionTrace");
+        requireTraceId(command.traceId(), command.riskPreflightSnapshot().traceId(), "riskPreflightSnapshot");
+        requireTraceId(command.traceId(), command.orderIntentPreview().traceId(), "orderIntentPreview");
     }
 
     private void validatePayload(ShadowRunSnapshotType snapshotType, JsonNode payload) {
@@ -180,7 +208,7 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
         }
     }
 
-    private ShadowRun newRun(ShadowRunRunnerCommand command) {
+    private ShadowRun newRun(ShadowRunRunnerCommand command, RunnerDecision decision) {
         Instant now = Instant.now(clock);
         return new ShadowRun(
                 UUID.randomUUID(),
@@ -203,9 +231,9 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
                 command.requestId().trim(),
                 command.idempotencyKey().trim(),
                 command.traceId().trim(),
-                issuesArray(command.blockers()),
-                baseWarnings(),
-                nextSteps(command.blockers()),
+                issuesArray(decision.blockers()),
+                issuesArray(decision.warnings()),
+                stringArray(decision.nextSteps()),
                 0,
                 now,
                 now,
@@ -246,37 +274,51 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
         return new RunCursor(result.shadowRunId(), result.toStatus(), result.newVersion());
     }
 
-    private void appendSnapshot(UUID shadowRunId, ShadowRunSnapshotType snapshotType, JsonNode payload) {
+    private void appendSnapshot(
+            UUID shadowRunId,
+            ShadowRunSnapshotType snapshotType,
+            String schemaVersion,
+            JsonNode body
+    ) {
         int sequenceNo = 0;
         ShadowRun run = repository.findById(shadowRunId)
                 .orElseThrow(() -> new IllegalStateException("shadow run not found for snapshot trace: " + shadowRunId));
+        ObjectNode payload = snapshotPayload(snapshotType, schemaVersion, run.traceId(), body);
+        String snapshotChecksum = checksum(payload);
         ShadowRunSnapshot snapshot = new ShadowRunSnapshot(
                 UUID.randomUUID(),
                 shadowRunId,
                 snapshotType,
                 sequenceNo,
                 SNAPSHOT_SOURCE,
-                SNAPSHOT_SCHEMA_VERSION,
-                checksum(payload),
+                schemaVersion,
+                snapshotChecksum,
                 payload,
                 Instant.now(clock),
                 run.traceId(),
                 Instant.now(clock)
         );
         repository.appendSnapshot(snapshot);
-        appendSnapshotEvent(run, snapshotType, sequenceNo);
+        appendSnapshotEvent(run, snapshotType, sequenceNo, schemaVersion, snapshotChecksum, payload);
     }
 
     private void appendSnapshotEvent(
             ShadowRun run,
             ShadowRunSnapshotType snapshotType,
-            int sequenceNo
+            int sequenceNo,
+            String schemaVersion,
+            String snapshotChecksum,
+            JsonNode payload
     ) {
         ObjectNode metadata = objectMapper.createObjectNode()
                 .put("snapshotType", snapshotType.name())
                 .put("sequenceNo", sequenceNo)
                 .put("source", SNAPSHOT_SOURCE)
+                .put("schemaVersion", schemaVersion)
+                .put("checksum", snapshotChecksum)
+                .put("traceId", run.traceId())
                 .put("orderIntentPreviewOnly", snapshotType == ShadowRunSnapshotType.ORDER_INTENT_PREVIEW);
+        metadata.set("decisionTraceSummary", decisionTraceSummary(snapshotType, payload));
         repository.appendEvent(new ShadowRunEvent(
                 UUID.randomUUID(),
                 run.id(),
@@ -312,6 +354,7 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
             RunCursor cursor,
             List<ShadowRunRunnerStep> steps,
             ShadowRunRunnerCommand command,
+            RunnerDecision decision,
             RuntimeException cause
     ) {
         if (cursor == null || cursor.status().terminal()) {
@@ -325,7 +368,7 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
             return resultFromCursor(
                     failed,
                     failedSteps,
-                    command.blockers(),
+                    decision,
                     "SHADOW_RUN_RUNNER_EXCEPTION",
                     cause.getClass().getSimpleName()
             );
@@ -336,19 +379,37 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
     }
 
     private ShadowRunRunnerResult resultFromExisting(ShadowRun run, List<ShadowRunRunnerStep> steps) {
-        return result(run, true, steps, issuesFromJson(run.blockers()), null, null);
+        return result(
+                run,
+                true,
+                steps,
+                issuesFromJson(run.blockers()),
+                issuesFromJson(run.warnings()),
+                stringsFromJson(run.nextSteps()),
+                null,
+                null
+        );
     }
 
     private ShadowRunRunnerResult resultFromCursor(
             RunCursor cursor,
             List<ShadowRunRunnerStep> steps,
-            List<ShadowRunRunnerIssue> blockers,
+            RunnerDecision decision,
             String failureCode,
             String failureMessage
     ) {
         ShadowRun run = repository.findById(cursor.id())
                 .orElseThrow(() -> new IllegalStateException("shadow run not found after runner update: " + cursor.id()));
-        return result(run, false, steps, blockers, failureCode, failureMessage);
+        return result(
+                run,
+                false,
+                steps,
+                decision.blockers(),
+                decision.warnings(),
+                decision.nextSteps(),
+                failureCode,
+                failureMessage
+        );
     }
 
     private ShadowRunRunnerResult result(
@@ -356,6 +417,8 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
             boolean idempotentReplay,
             List<ShadowRunRunnerStep> steps,
             List<ShadowRunRunnerIssue> blockers,
+            List<ShadowRunRunnerIssue> warnings,
+            List<String> nextSteps,
             String failureCode,
             String failureMessage
     ) {
@@ -377,6 +440,8 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
                 repository.listSnapshots(run.id()).size(),
                 steps,
                 blockers,
+                warnings,
+                nextSteps,
                 failureCode,
                 failureMessage,
                 Instant.now(clock)
@@ -393,6 +458,7 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
                 .put("no_account_mutation", true)
                 .put("no_external_private_io", true)
                 .put("order_intent_preview_mode", "PREVIEW_ONLY")
+                .put("decision_trace_mode", "STRUCTURED_LOCAL_TRACE")
                 .put("authorization_boundary", "DIAGNOSTIC_ONLY");
     }
 
@@ -406,24 +472,11 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
         return array;
     }
 
-    private ArrayNode baseWarnings() {
+    private ArrayNode stringArray(List<String> values) {
         ArrayNode array = objectMapper.createArrayNode();
-        array.add(objectMapper.createObjectNode()
-                .put("code", "SHADOW_RUNNER_SKELETON_ONLY")
-                .put("message", "Runner skeleton only writes local facts and does not start background execution."));
-        array.add(objectMapper.createObjectNode()
-                .put("code", "ORDER_INTENT_PREVIEW_NOT_ORDER")
-                .put("message", "ORDER_INTENT_PREVIEW is preview-only and must not be treated as a real order."));
-        return array;
-    }
-
-    private ArrayNode nextSteps(List<ShadowRunRunnerIssue> blockers) {
-        ArrayNode array = objectMapper.createArrayNode();
-        if (blockers.isEmpty()) {
-            array.add("Review completed Shadow Run local facts before any later consistency report.");
-            return array;
+        for (String value : values) {
+            array.add(value);
         }
-        array.add("Resolve caller-supplied local blockers before retrying with a new Shadow Run.");
         return array;
     }
 
@@ -440,6 +493,105 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
             }
         }
         return issues;
+    }
+
+    private List<String> stringsFromJson(JsonNode values) {
+        if (values == null || !values.isArray()) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (JsonNode item : values) {
+            if (item != null && item.isTextual()) {
+                result.add(item.asText());
+            }
+        }
+        return result;
+    }
+
+    private RunnerDecision runnerDecision(ShadowRunRunnerCommand command) {
+        List<ShadowRunRunnerIssue> blockers = new ArrayList<>(command.riskPreflightSnapshot().effectiveBlockers());
+        blockers.addAll(command.blockers());
+
+        List<ShadowRunRunnerIssue> warnings = new ArrayList<>(baseWarningIssues());
+        warnings.addAll(command.riskPreflightSnapshot().warnings());
+
+        List<String> nextSteps = new ArrayList<>(command.riskPreflightSnapshot().requiredNextSteps());
+        if (nextSteps.isEmpty() && blockers.isEmpty()) {
+            nextSteps.add("Review completed Shadow Run decision trace before any later consistency report.");
+        }
+        if (nextSteps.isEmpty()) {
+            nextSteps.add("Resolve risk preflight blockers before retrying with a new Shadow Run.");
+        }
+        return new RunnerDecision(List.copyOf(blockers), List.copyOf(warnings), List.copyOf(nextSteps));
+    }
+
+    private List<ShadowRunRunnerIssue> baseWarningIssues() {
+        return List.of(
+                new ShadowRunRunnerIssue(
+                        "SHADOW_RUNNER_SKELETON_ONLY",
+                        "Runner skeleton only writes local facts and does not start background execution."
+                ),
+                new ShadowRunRunnerIssue(
+                        "ORDER_INTENT_PREVIEW_NOT_ORDER",
+                        "ORDER_INTENT_PREVIEW is preview-only and must not be treated as a real order."
+                )
+        );
+    }
+
+    private ObjectNode snapshotPayload(
+            ShadowRunSnapshotType snapshotType,
+            String schemaVersion,
+            String traceId,
+            JsonNode body
+    ) {
+        validatePayload(snapshotType, body);
+        ObjectNode payload = objectMapper.createObjectNode()
+                .put("traceId", traceId)
+                .put("source", SNAPSHOT_SOURCE)
+                .put("schemaVersion", schemaVersion)
+                .put("checksum", checksum(body));
+        payload.set(snapshotBodyField(snapshotType), body);
+        return payload;
+    }
+
+    private String snapshotBodyField(ShadowRunSnapshotType snapshotType) {
+        return switch (snapshotType) {
+            case INPUT_MARKETDATA -> "inputMarketdata";
+            case STRATEGY_DECISION -> "strategyDecisionTrace";
+            case RISK_PREFLIGHT -> "riskPreflight";
+            case ORDER_INTENT_PREVIEW -> "orderIntentPreview";
+        };
+    }
+
+    private ObjectNode decisionTraceSummary(ShadowRunSnapshotType snapshotType, JsonNode payload) {
+        return switch (snapshotType) {
+            case INPUT_MARKETDATA -> objectMapper.createObjectNode()
+                    .put("snapshotType", "INPUT_MARKETDATA")
+                    .put("source", payload.path("source").asText());
+            case STRATEGY_DECISION -> objectMapper.createObjectNode()
+                    .put("decisionType", payload.path("strategyDecisionTrace").path("decisionType").asText())
+                    .put("signalSide", payload.path("strategyDecisionTrace").path("signalSide").asText())
+                    .put("confidence", payload.path("strategyDecisionTrace").path("confidence").asText())
+                    .put("reasonCodeCount", payload.path("strategyDecisionTrace").path("reasonCodes").size());
+            case RISK_PREFLIGHT -> objectMapper.createObjectNode()
+                    .put("allowed", payload.path("riskPreflight").path("allowed").asBoolean(false))
+                    .put("blocked", payload.path("riskPreflight").path("blocked").asBoolean(false))
+                    .put("severity", payload.path("riskPreflight").path("severity").asText())
+                    .put("blockerCount", payload.path("riskPreflight").path("blockers").size())
+                    .put("warningCount", payload.path("riskPreflight").path("warnings").size());
+            case ORDER_INTENT_PREVIEW -> objectMapper.createObjectNode()
+                    .put("previewOnly", payload.path("orderIntentPreview").path("previewOnly").asBoolean(false))
+                    .put("side", payload.path("orderIntentPreview").path("side").asText())
+                    .put("symbol", payload.path("orderIntentPreview").path("symbol").asText())
+                    .put("orderType", payload.path("orderIntentPreview").path("orderType").asText())
+                    .put("reasonCode", payload.path("orderIntentPreview").path("reasonCode").asText());
+        };
+    }
+
+    private void requireTraceId(String expectedTraceId, String actualTraceId, String fieldName) {
+        if (!expectedTraceId.equals(actualTraceId)) {
+            throw new IllegalArgumentException(fieldName + " traceId must match command traceId");
+        }
     }
 
     private String checksum(JsonNode payload) {
@@ -465,5 +617,12 @@ public class ShadowRunRunnerService implements ShadowRunRunner {
     }
 
     private record RunCursor(UUID id, ShadowRunStatus status, long version) {
+    }
+
+    private record RunnerDecision(
+            List<ShadowRunRunnerIssue> blockers,
+            List<ShadowRunRunnerIssue> warnings,
+            List<String> nextSteps
+    ) {
     }
 }

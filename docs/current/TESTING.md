@@ -1,3 +1,54 @@
+## NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮实现 GateR-4 Shadow Run structured decision trace / risk snapshot / order intent preview。
+  - 覆盖 StrategyDecisionTrace、RiskPreflightSnapshot、RiskPreflightRuleResult、OrderIntentPreview、runner snapshot envelope、result blocker/warning/nextSteps、sensitive guard tests 和 CI Flyway expected version 窄范围修复。
+  - 不新增 migration，不修改历史 migration，不新增 HTTP API，不改前端，不启动 scheduler，不启动后台 runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+Result:
+  - NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT（已实现 / 已自审 / 可进入提交前复核）。
+  - runner 将 STRATEGY_DECISION、RISK_PREFLIGHT、ORDER_INTENT_PREVIEW 写成包含 traceId / source / schemaVersion / checksum 的结构化 snapshot envelope。
+  - RiskPreflightSnapshot 可表达 allow / block / warn；blocked 会进入 RUNNING -> BLOCKED。
+  - OrderIntentPreview 强制 previewOnly = true，不执行真实订单路径。
+  - CI 修复仅对齐 `.github/workflows/ci.yml` 内 BackendCiLegacyAccountFixture / FlywaySmoke 的 expected Flyway version：31 -> 32。
+
+Targeted validation:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-core -am "-Dtest=ShadowRunRunnerServiceTest,ShadowRunStateMachineTest,ShadowRunSensitiveDataGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Tests run: 18, failures: 0, errors: 0, skipped: 0.
+  - ShadowRunRunnerServiceTest: 10 tests, failures: 0, errors: 0, skipped: 0.
+
+Full Maven validation:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Surefire reports after run: 753 tests, 0 failures, 0 errors, 5 skipped.
+  - nq-core module summary: 149 tests, 0 failures, 0 errors, 0 skipped.
+  - nq-app module summary: 129 tests, 0 failures, 0 errors, 3 skipped.
+
+Known warnings / skips:
+  - Existing SLF4J no-provider warnings remain.
+  - Existing Mockito dynamic-agent warnings remain.
+  - Existing JVM class sharing warnings remain.
+  - Existing manually gated smoke tests skip where required properties or manual switches are absent.
+
+Not run:
+  - Docker PostgreSQL required smoke was not rerun because this GateR-4 task did not modify JdbcShadowRunFactRepository or JdbcShadowRunIllegalTransitionAuditWriter and did not change repository transaction semantics.
+  - GitHub Actions was not rerun locally; the CI fix is based on the observed failed run where current Flyway version was 32 but workflow expected 31.
+  - frontend build / Playwright were not run because frontend was not modified.
+  - Python pytest / mypy / ruff were not run because research/py was not modified.
+
+Boundary:
+  - No migration was added or modified.
+  - No HTTP Controller or endpoint was added.
+  - No frontend, research, scripts, deploy, docs/gates or docs/archive changes were made.
+  - `.github/workflows/ci.yml` was touched only for the newest-user-authorized CI failure fix; no CI behavior beyond Flyway expected version alignment was changed.
+  - No credential material, private endpoint payload, real order id, real account balance or trading authorization field is accepted by runner payload guard.
+  - No real order, cancel, transfer, withdraw, private endpoint call, credential read, account/fund/order/ledger mutation, LIVE, AI runtime, DH runtime, RealClient, real provider, private trading adapter, real permission probe or background Shadow runner startup was implemented.
+```
+
 ## NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION validation（2026-07-06）
 
 ```text

@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizat
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEvent;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEventType;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunOptimisticLockException;
+import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSensitiveDataGuard;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshot;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotType;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachine;
@@ -75,6 +76,11 @@ class ShadowRunRunnerServiceTest {
         ), result.completedSteps());
         assertNoSideEffectFlags(result);
         assertAllRunnerSnapshotTypes(repository, result.shadowRunId());
+        assertStructuredDecisionTraceSnapshot(repository, result);
+        assertRiskPreflightSnapshot(repository, result, true, false);
+        assertOrderIntentPreviewSnapshot(repository, result);
+        assertTrue(result.warnings().stream().anyMatch(warning -> warning.code().equals("RISK_PREFLIGHT_WARN")));
+        assertEquals(List.of("Review structured decision trace before consistency comparison."), result.nextSteps());
         assertHasTransition(repository.events, ShadowRunStatus.CREATED, ShadowRunStatus.PRECHECKING);
         assertHasTransition(repository.events, ShadowRunStatus.PRECHECKING, ShadowRunStatus.READY);
         assertHasTransition(repository.events, ShadowRunStatus.READY, ShadowRunStatus.RUNNING);
@@ -86,17 +92,23 @@ class ShadowRunRunnerServiceTest {
         InMemoryShadowRunFactRepository repository = new InMemoryShadowRunFactRepository();
         ShadowRunRunnerService service = service(repository);
 
-        ShadowRunRunnerResult result = service.run(command("idem-blocked", List.of(
-                new ShadowRunRunnerIssue("RISK_PREFLIGHT_BLOCKED", "Local risk preflight preview blocked the run.")
-        )));
+        ShadowRunRunnerResult result = service.run(blockedCommand());
 
         assertEquals(ShadowRunStatus.BLOCKED, result.status());
         assertEquals(List.of(new ShadowRunRunnerIssue(
                 "RISK_PREFLIGHT_BLOCKED",
                 "Local risk preflight preview blocked the run."
         )), result.blockers());
+        assertEquals(List.of(new ShadowRunRunnerIssue(
+                "RISK_PREFLIGHT_WARN",
+                "Local risk warning remains visible in the result."
+        )), result.warnings().stream()
+                .filter(warning -> warning.code().equals("RISK_PREFLIGHT_WARN"))
+                .toList());
+        assertEquals(List.of("Resolve risk preview blocker before retry."), result.nextSteps());
         assertHasTransition(repository.events, ShadowRunStatus.RUNNING, ShadowRunStatus.BLOCKED);
         assertAllRunnerSnapshotTypes(repository, result.shadowRunId());
+        assertRiskPreflightSnapshot(repository, result, false, true);
     }
 
     @Test
@@ -146,6 +158,7 @@ class ShadowRunRunnerServiceTest {
         List<String> forbiddenFields = List.of(
                 "apiKey",
                 "secret",
+                "passphrase",
                 "token",
                 "credentialMaterial",
                 "realOrderId",
@@ -162,9 +175,35 @@ class ShadowRunRunnerServiceTest {
             JsonNode forbiddenPayload = objectMapper.createObjectNode().put(field, "redacted");
 
             assertThrows(IllegalArgumentException.class,
-                    () -> service.run(commandWithInputPayload("idem-sensitive-" + field, forbiddenPayload)));
+                    () -> service.run(commandWithStrategyFeatures("idem-sensitive-" + field, forbiddenPayload)));
             assertEquals(0, repository.createCalls, "run should not be created for forbidden field " + field);
             assertTrue(repository.runs.isEmpty(), "no local fact should be persisted for forbidden field " + field);
+
+            InMemoryShadowRunFactRepository inputRefRepository = new InMemoryShadowRunFactRepository();
+            ShadowRunRunnerService inputRefService = service(inputRefRepository);
+            assertThrows(IllegalArgumentException.class,
+                    () -> inputRefService.run(commandWithStrategyInputRefs("idem-sensitive-ref-" + field, forbiddenPayload)));
+            assertEquals(0, inputRefRepository.createCalls, "run should not be created for inputRefs field " + field);
+            assertTrue(inputRefRepository.runs.isEmpty(), "no local fact should be persisted for inputRefs field " + field);
+        }
+    }
+
+    @Test
+    void shouldKeepStructuredModelFieldNamesAwayFromForbiddenSensitiveFields() {
+        List<Class<? extends Record>> models = List.of(
+                StrategyDecisionTrace.class,
+                RiskPreflightSnapshot.class,
+                RiskPreflightRuleResult.class,
+                OrderIntentPreview.class
+        );
+
+        for (Class<? extends Record> model : models) {
+            Arrays.stream(model.getRecordComponents())
+                    .map(component -> component.getName())
+                    .forEach(name -> assertFalse(
+                            ShadowRunSensitiveDataGuard.isForbiddenFieldName(name),
+                            model.getSimpleName() + " contains forbidden field name: " + name
+                    ));
         }
     }
 
@@ -197,6 +236,65 @@ class ShadowRunRunnerServiceTest {
     }
 
     @Test
+    void shouldRejectOrderIntentPreviewWhenPreviewOnlyIsFalse() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new OrderIntentPreview(
+                        false,
+                        "OBSERVE",
+                        "BTC-USDT",
+                        "0",
+                        "LIMIT",
+                        "0",
+                        "GTC",
+                        "TEST",
+                        "risk-ok",
+                        "trace-preview-false"
+                )
+        );
+
+        assertTrue(ex.getMessage().contains("previewOnly"));
+    }
+
+    @Test
+    void shouldRejectMismatchedStructuredTraceIdBeforeCreatingRun() throws Exception {
+        InMemoryShadowRunFactRepository repository = new InMemoryShadowRunFactRepository();
+        ShadowRunRunnerService service = service(repository);
+
+        ShadowRunRunnerCommand baseline = command("idem-trace-mismatch", List.of());
+        ShadowRunRunnerCommand mismatched = new ShadowRunRunnerCommand(
+                baseline.strategyVersionId(),
+                baseline.datasetId(),
+                baseline.evaluationId(),
+                baseline.publishId(),
+                baseline.paperRunId(),
+                baseline.windowStart(),
+                baseline.windowEnd(),
+                baseline.requestId(),
+                baseline.idempotencyKey(),
+                baseline.traceId(),
+                baseline.inputMarketdataPayload(),
+                new StrategyDecisionTrace(
+                        baseline.strategyVersionId(),
+                        baseline.datasetId(),
+                        "OBSERVE",
+                        "OBSERVE",
+                        "LOW",
+                        List.of("NO_SIGNAL"),
+                        objectMapper.createObjectNode(),
+                        objectMapper.createObjectNode(),
+                        "trace-other"
+                ),
+                baseline.riskPreflightSnapshot(),
+                baseline.orderIntentPreview(),
+                baseline.blockers()
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.run(mismatched));
+        assertEquals(0, repository.createCalls);
+    }
+
+    @Test
     void shouldWireRunnerInMinimalSpringContextWithoutOrderGatewayBean() {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
             context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
@@ -215,6 +313,7 @@ class ShadowRunRunnerServiceTest {
     }
 
     private ShadowRunRunnerCommand command(String idempotencyKey, List<ShadowRunRunnerIssue> blockers) throws Exception {
+        String traceId = "trace-" + idempotencyKey;
         return new ShadowRunRunnerCommand(
                 "sv-1",
                 DATASET_ID,
@@ -225,17 +324,60 @@ class ShadowRunRunnerServiceTest {
                 WINDOW_END,
                 "req-" + idempotencyKey,
                 idempotencyKey,
-                "trace-" + idempotencyKey,
-                json("{\"symbol\":\"BTC-USDT\",\"barCount\":2,\"source\":\"fixture\"}"),
-                json("{\"decision\":\"OBSERVE\",\"confidence\":\"LOW\",\"diagnosticOnly\":true}"),
-                json("{\"status\":\"PASSED_PREVIEW\",\"warnings\":[]}"),
-                json("{\"mode\":\"PREVIEW_ONLY\",\"symbol\":\"BTC-USDT\",\"side\":\"OBSERVE\",\"quantity\":\"0\"}"),
+                traceId,
+                inputMarketdataPayload(),
+                strategyDecisionTrace(traceId),
+                riskAllowed(traceId),
+                orderIntentPreview(traceId),
                 blockers
         );
     }
 
-    private ShadowRunRunnerCommand commandWithInputPayload(String idempotencyKey, JsonNode inputPayload) throws Exception {
+    private ShadowRunRunnerCommand blockedCommand() throws Exception {
+        String idempotencyKey = "idem-blocked";
+        String traceId = "trace-" + idempotencyKey;
+        return new ShadowRunRunnerCommand(
+                "sv-1",
+                DATASET_ID,
+                "eval-1",
+                "pub-1",
+                "ptr-1",
+                WINDOW_START,
+                WINDOW_END,
+                "req-" + idempotencyKey,
+                idempotencyKey,
+                traceId,
+                inputMarketdataPayload(),
+                strategyDecisionTrace(traceId),
+                riskBlocked(traceId),
+                orderIntentPreview(traceId),
+                List.of()
+        );
+    }
+
+    private ShadowRunRunnerCommand commandWithStrategyFeatures(String idempotencyKey, JsonNode features) throws Exception {
         ShadowRunRunnerCommand baseline = command(idempotencyKey, List.of());
+        return commandWithStrategyJson(
+                baseline,
+                features,
+                objectMapper.createObjectNode().put("inputSnapshot", "fixture-bars")
+        );
+    }
+
+    private ShadowRunRunnerCommand commandWithStrategyInputRefs(String idempotencyKey, JsonNode inputRefs) throws Exception {
+        ShadowRunRunnerCommand baseline = command(idempotencyKey, List.of());
+        return commandWithStrategyJson(
+                baseline,
+                objectMapper.createObjectNode().put("featureSet", "safe"),
+                inputRefs
+        );
+    }
+
+    private ShadowRunRunnerCommand commandWithStrategyJson(
+            ShadowRunRunnerCommand baseline,
+            JsonNode features,
+            JsonNode inputRefs
+    ) {
         return new ShadowRunRunnerCommand(
                 baseline.strategyVersionId(),
                 baseline.datasetId(),
@@ -247,16 +389,104 @@ class ShadowRunRunnerServiceTest {
                 baseline.requestId(),
                 baseline.idempotencyKey(),
                 baseline.traceId(),
-                inputPayload,
-                baseline.strategyDecisionPayload(),
-                baseline.riskPreflightPayload(),
-                baseline.orderIntentPreviewPayload(),
+                baseline.inputMarketdataPayload(),
+                new StrategyDecisionTrace(
+                        baseline.strategyVersionId(),
+                        baseline.datasetId(),
+                        "OBSERVE",
+                        "OBSERVE",
+                        "LOW",
+                        List.of("NO_SIGNAL"),
+                        features,
+                        inputRefs,
+                        baseline.traceId()
+                ),
+                baseline.riskPreflightSnapshot(),
+                baseline.orderIntentPreview(),
                 baseline.blockers()
         );
     }
 
-    private JsonNode json(String value) throws Exception {
-        return objectMapper.readTree(value);
+    private StrategyDecisionTrace strategyDecisionTrace(String traceId) {
+        return new StrategyDecisionTrace(
+                "sv-1",
+                DATASET_ID,
+                "OBSERVE",
+                "OBSERVE",
+                "LOW",
+                List.of("NO_SIGNAL", "LOW_CONFIDENCE"),
+                objectMapper.createObjectNode()
+                        .put("movingAverageFast", "100.12")
+                        .put("movingAverageSlow", "101.02"),
+                objectMapper.createObjectNode()
+                        .put("marketdataSnapshot", "fixture-bars")
+                        .put("datasetId", DATASET_ID.toString()),
+                traceId
+        );
+    }
+
+    private RiskPreflightSnapshot riskAllowed(String traceId) {
+        return new RiskPreflightSnapshot(
+                true,
+                false,
+                "WARN",
+                List.of(new RiskPreflightRuleResult(
+                        "NO_REAL_ORDER",
+                        "WARN",
+                        "WARN",
+                        "Preview remains diagnostic only."
+                )),
+                List.of(),
+                List.of(new ShadowRunRunnerIssue(
+                        "RISK_PREFLIGHT_WARN",
+                        "Local risk warning remains visible in the result."
+                )),
+                List.of("Review structured decision trace before consistency comparison."),
+                traceId
+        );
+    }
+
+    private RiskPreflightSnapshot riskBlocked(String traceId) {
+        return new RiskPreflightSnapshot(
+                false,
+                true,
+                "BLOCK",
+                List.of(new RiskPreflightRuleResult(
+                        "MAX_EXPOSURE_PREVIEW",
+                        "BLOCK",
+                        "BLOCK",
+                        "Local risk preview blocked the Shadow Run."
+                )),
+                List.of(new ShadowRunRunnerIssue(
+                        "RISK_PREFLIGHT_BLOCKED",
+                        "Local risk preflight preview blocked the run."
+                )),
+                List.of(new ShadowRunRunnerIssue(
+                        "RISK_PREFLIGHT_WARN",
+                        "Local risk warning remains visible in the result."
+                )),
+                List.of("Resolve risk preview blocker before retry."),
+                traceId
+        );
+    }
+
+    private OrderIntentPreview orderIntentPreview(String traceId) {
+        return new OrderIntentPreview(
+                true,
+                "OBSERVE",
+                "BTC-USDT",
+                "0",
+                "LIMIT",
+                "0",
+                "GTC",
+                "DIAGNOSTIC_ONLY",
+                "risk-ok",
+                traceId
+        );
+    }
+
+    private JsonNode inputMarketdataPayload() throws Exception {
+        return objectMapper.readTree("{\"symbol\":\"BTC-USDT\",\"barCount\":2,\"source\":\"fixture\"}");
     }
 
     private void assertNoSideEffectFlags(ShadowRunRunnerResult result) {
@@ -279,6 +509,77 @@ class ShadowRunRunnerServiceTest {
                 ShadowRunSnapshotType.RISK_PREFLIGHT,
                 ShadowRunSnapshotType.ORDER_INTENT_PREVIEW
         ), actual);
+    }
+
+    private void assertStructuredDecisionTraceSnapshot(
+            InMemoryShadowRunFactRepository repository,
+            ShadowRunRunnerResult result
+    ) {
+        ShadowRunSnapshot snapshot = findSnapshot(repository, result.shadowRunId(), ShadowRunSnapshotType.STRATEGY_DECISION);
+        assertSnapshotEnvelope(snapshot, result.traceId(), "shadow-strategy-decision-trace.v1");
+        assertEquals("OBSERVE", snapshot.payload().path("strategyDecisionTrace").path("decisionType").asText());
+        assertEquals("LOW", snapshot.payload().path("strategyDecisionTrace").path("confidence").asText());
+
+        ShadowRunEvent event = findStrategySnapshotEvent(repository, result.shadowRunId());
+        assertEquals("OBSERVE", event.metadata().path("decisionTraceSummary").path("decisionType").asText());
+        assertEquals("OBSERVE", event.metadata().path("decisionTraceSummary").path("signalSide").asText());
+    }
+
+    private void assertRiskPreflightSnapshot(
+            InMemoryShadowRunFactRepository repository,
+            ShadowRunRunnerResult result,
+            boolean allowed,
+            boolean blocked
+    ) {
+        ShadowRunSnapshot snapshot = findSnapshot(repository, result.shadowRunId(), ShadowRunSnapshotType.RISK_PREFLIGHT);
+        assertSnapshotEnvelope(snapshot, result.traceId(), "shadow-risk-preflight.v1");
+        assertEquals(allowed, snapshot.payload().path("riskPreflight").path("allowed").asBoolean());
+        assertEquals(blocked, snapshot.payload().path("riskPreflight").path("blocked").asBoolean());
+        assertTrue(snapshot.payload().path("riskPreflight").path("ruleResults").isArray());
+    }
+
+    private void assertOrderIntentPreviewSnapshot(
+            InMemoryShadowRunFactRepository repository,
+            ShadowRunRunnerResult result
+    ) {
+        ShadowRunSnapshot snapshot = findSnapshot(repository, result.shadowRunId(), ShadowRunSnapshotType.ORDER_INTENT_PREVIEW);
+        assertSnapshotEnvelope(snapshot, result.traceId(), "shadow-order-intent-preview.v1");
+        assertTrue(snapshot.payload().path("orderIntentPreview").path("previewOnly").asBoolean());
+        assertEquals("BTC-USDT", snapshot.payload().path("orderIntentPreview").path("symbol").asText());
+        assertEquals("OBSERVE", snapshot.payload().path("orderIntentPreview").path("side").asText());
+    }
+
+    private void assertSnapshotEnvelope(ShadowRunSnapshot snapshot, String traceId, String schemaVersion) {
+        assertEquals(traceId, snapshot.traceId());
+        assertEquals(traceId, snapshot.payload().path("traceId").asText());
+        assertEquals("LOCAL_CALLER_SUPPLIED_READONLY_INPUT", snapshot.source());
+        assertEquals("LOCAL_CALLER_SUPPLIED_READONLY_INPUT", snapshot.payload().path("source").asText());
+        assertEquals(schemaVersion, snapshot.schemaVersion());
+        assertEquals(schemaVersion, snapshot.payload().path("schemaVersion").asText());
+        assertTrue(snapshot.checksum().startsWith("sha256:"));
+        assertTrue(snapshot.payload().path("checksum").asText().startsWith("sha256:"));
+    }
+
+    private ShadowRunSnapshot findSnapshot(
+            InMemoryShadowRunFactRepository repository,
+            UUID shadowRunId,
+            ShadowRunSnapshotType snapshotType
+    ) {
+        return repository.snapshots.stream()
+                .filter(snapshot -> snapshot.shadowRunId().equals(shadowRunId))
+                .filter(snapshot -> snapshot.snapshotType() == snapshotType)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private ShadowRunEvent findStrategySnapshotEvent(InMemoryShadowRunFactRepository repository, UUID shadowRunId) {
+        return repository.events.stream()
+                .filter(event -> event.shadowRunId().equals(shadowRunId))
+                .filter(event -> event.eventType() == ShadowRunEventType.SNAPSHOT_CAPTURED)
+                .filter(event -> event.metadata().path("snapshotType").asText()
+                        .equals(ShadowRunSnapshotType.STRATEGY_DECISION.name()))
+                .findFirst()
+                .orElseThrow();
     }
 
     private void assertHasTransition(
