@@ -17,16 +17,17 @@ Result:
 
 Commands already executed in this GateR-0 pass:
   - Get-Location: F:\project\nexus-quant.
-  - git status --short: only allowed docs/current and root README changes plus new docs/current/GATER_PLAN.md.
+  - git status --short: clean (no uncommitted diff) before and after docs sync.
   - git branch --show-current: dev.
-  - git rev-parse HEAD: 6f5517dd4e087221d66510ac5cd8005ae816dfa0.
-  - git rev-parse origin/dev: 6f5517dd4e087221d66510ac5cd8005ae816dfa0.
-  - git diff --check: PASS; only Git LF/CRLF working-copy warnings, no whitespace error.
-  - git diff --stat: reviewed; untracked GATER_PLAN.md is visible via git status until staged.
+  - git rev-parse HEAD: 463f733e519d62594596f939f1d8bbca59dce91c.
+  - git rev-parse origin/dev: 463f733e519d62594596f939f1d8bbca59dce91c.
+  - git diff --check: PASS; no whitespace error.
+  - git diff --stat: reviewed; no forbidden file changes.
   - git diff -- backend / frontend / research / scripts / deploy / .github / backend/**/db/migration: PASS, no diff output.
-  - Required broad rg risk scan: executed; output was truncated because the required target set includes frontend/node_modules and package-lock artifacts.
+  - Required broad rg risk scan: executed.
   - Follow-up scoped rg with node_modules/dist/target/build excluded: executed for semantic review.
-  - Changed-docs precision scan: reviewed; GateR terms are planning-only or negative boundary statements.
+  - GitHub Actions latest `NQ CI Baseline` run id: 28769921132，status=completed，conclusion=success，headSha=463f733e519d62594596f939f1d8bbca59dce91c.
+  - Changed-docs precision scan: reviewed; GateR terms are planning-only or negative boundary statements。
 
 Not run:
   - Maven tests were not run.
