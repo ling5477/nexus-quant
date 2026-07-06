@@ -1,249 +1,55 @@
 # Current Stage
 
-`docs/current/` 是 NexusQuant 的**当前事实入口**：只保留当前控制文档、当前权威基线和必要运行手册。
-历史过程证据、治理 review/freeze、旧路径 compatibility stub 已移出 current，归档到 `docs/evidence/` 或 `docs/gates/`（见下方“历史证据位置”）。
+`docs/current/` 是 NexusQuant 的当前事实入口，只保留当前控制文档、当前事实源、当前状态、当前路线、验证/工作记录、API、DB schema、运行手册、架构/模块摘要和仍需作为 current 使用的 Codex workflow 入口。已冻结 Gate 的过程型证据不再放在 current；历史证据以 `docs/gates/**`、`docs/archive/**` 为准。
 
-当前阶段：**GateO `FROZEN`（已冻结）/ `ACCEPTED`（已接受）；GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；GateP release tag `nq-gatep-freeze` 已推送；GateQ-0..6 `COMPLETED`（已完成）；GateQ release archive 为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）；GateQ 当前最终状态为 `FROZEN / ACCEPTED / TAGGED`；下一阶段只能进入 GateR `PLAN`（规划）/ `NOT STARTED`（未开始）**。
+## 当前状态
 
-GateP 主线是“真实数据质量与交易准备阶段”；GateP freeze 只冻结只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout，不代表真实交易、LIVE、real provider、private trading、real permission probe、AI 或 DH runtime 已启动。GateQ 已完成 GateQ-0 planning、GateQ-1..4 后端只读 / preview API baseline、GateQ-5 / GateQ-6 前端只读验证视图、freeze readiness review 与 final freeze closeout；真实 Shadow Live runner、Shadow run 写侧 fact source、AI、DH runtime、real provider 与 private trading 仍未启动。GateQ freeze 只冻结只读验证、对照、preview、binding contract 与前端证据展示基线，不代表真实交易或 runtime 授权。
-当前增量：NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE = `PASS / COMPLETED / RELEASE TAG PUSHED`（通过 / 已完成 / release tag 已推送）。本轮只做 GateQ release tag、归档、CI evidence review、边界审查与 current docs 同步；P0/P1=0。GateQ 过程型长证据归档到 [../gates/gate-q/README.md](../gates/gate-q/README.md)，current docs 只保留 GateQ frozen/tagged 摘要和 archive pointer；GateR 只能进入 `PLAN / NOT STARTED`，不得启动 implementation。
+- GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gateq-freeze`；历史证据入口为 [../gates/gate-q/README.md](../gates/gate-q/README.md)。
+- GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gatep-freeze`；历史证据入口为 [../gates/gate-p/README.md](../gates/gate-p/README.md)。
+- GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
+- GateR：`PLAN / NOT STARTED`（规划 / 未开始）。当前不新增 `GATER_PLAN.md`，直到用户单独授权 GateR planning。
+- LIVE：`DISABLED`（关闭）。
+- AI：`NOT STARTED`（未开始）。
+- DH runtime：`NOT INTEGRATED`（未集成）。
+- Integration-1：`NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
+- RealClient / real provider / private trading adapter / real permission probe：`NOT IMPLEMENTED`（未实现）。
 
-当前边界：LIVE `DISABLED`（关闭）；AI `NOT STARTED`（未开始）；DH runtime `NOT INTEGRATED`（未集成）；Integration-1 `NOT STARTED`（未开始）/ mock-test-support only；NQ-DH mock runtime PR prep `READY / PR_PREP_ONLY / ALLOW_PR_CREATE / NO_MERGE / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`；mock runtime milestone close review `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / MOCK_RUNTIME_MILESTONE_CLOSED / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`；joint runtime dry-run test close review `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`；NQ limited runtime client close review `PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE`；NQ limited runtime client implementation `IMPLEMENTED / TARGETED_TEST_PASS / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY`；RealClient / real provider / real exchange adapter / real permission probe / private trading adapter `NOT IMPLEMENTED`（未实现）。NQ-DH limited client 默认关闭、production disabled、kill switch 默认阻断，测试只使用 fake transport，未真实调用 DH、未真实 HTTP、未接 provider、未触碰 order / execution / risk / ledger / account / paper / live。既有 OKX/Binance adapter 含 legacy network-capable code，但未获准作为 real execution provider，且尚未达到 future-real readiness。Python Research 当前为 reproducible offline experiment foundation：已具备 dataset manifest、evaluation skeleton、experiment metadata 与 CLI run summary 基础，但仍不是 ML ready、live execution ready 或 Java runtime bridge。
+## Current Authority
 
-NQ-GATEP-RELEASE-TAG-AND-ARCHIVE = **PASS / COMPLETED / RELEASE TAG PUSHED**。含义：`PASS`（通过）、`COMPLETED`（已完成）、`RELEASE TAG PUSHED`（release tag 已推送）。GateP final state 为 **FROZEN / ACCEPTED / TAGGED**；release tag 为 `nq-gatep-freeze`；tagged commit 为 `3650714ae9cd441e59eb5b09c605a14bbc9998dc`；历史证据入口为 [../gates/gate-p/README.md](../gates/gate-p/README.md)。GateP Batch 1-6A evidence matrix、freeze closeout、readiness review 与 testing summary 已归档，current 只保留摘要和归档指针。
+| 用途 | 当前文件 |
+| --- | --- |
+| 当前事实入口 | [README.md](README.md) |
+| 当前状态 | [STATUS.md](STATUS.md) |
+| 当前路线 | [ROADMAP.md](ROADMAP.md) |
+| 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
+| 当前验证记录 | [TESTING.md](TESTING.md) |
+| 当前工作记录 | [WORKLOG.md](WORKLOG.md) |
+| 当前 API 事实 | [API.md](API.md) |
+| 当前 DB schema 事实 | [DB_SCHEMA.md](DB_SCHEMA.md) |
+| 当前架构/模块摘要 | [ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md) |
+| 当前运行手册 | [RUNBOOK.md](RUNBOOK.md) |
+| 当前前端设计系统 | [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md) / [frontend/ref/nq-design-system/README.md](frontend/ref/nq-design-system/README.md) |
+| 当前 Codex workflow | [CODEX_PROJECT_INSTRUCTIONS.md](CODEX_PROJECT_INSTRUCTIONS.md), [NQ_DH_CODEX_PLUGIN_WORKFLOW.md](NQ_DH_CODEX_PLUGIN_WORKFLOW.md), [NQ_DH_WORKFLOW_ROUTER_SKILL.md](NQ_DH_WORKFLOW_ROUTER_SKILL.md), [NQ_DH_CODEX_TASK_TEMPLATES.md](NQ_DH_CODEX_TASK_TEMPLATES.md) |
 
-NQ-GATEO-ARCHIVE-CLOSEOUT = **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**。含义：`IMPLEMENTED`（已实施）、`SELF-REVIEWED`（已自审）、`READY TO COMMIT`（可提交前复核）。GateO final status = **FROZEN / ACCEPTED**（已冻结 / 已接受）；GateO freeze review = **PASS / ACCEPTED / CLOSED / READY FOR ARCHIVAL**（通过 / 已接受 / 已关闭 / 可归档）。GateO 过程与证据文档已归档到 [docs/gates/gate-o/](../gates/gate-o/README.md)，`docs/current` 只保留当前事实入口、状态摘要和归档指针。
+## Historical Evidence
 
-GateO 已接受的能力边界：O-1 controlled public outbound guard、O-2 Data Quality Center、O-3 `GET /api/marketdata/readiness` read-only API、O-4 `/marketdata` Quality / Readiness 只读 UI、O-5 manual public readonly smoke 均已 `FROZEN / ACCEPTED`；O-5D `DataOrigin.PUBLIC_OUTBOUND` decision = `ALLOW_FUTURE_IMPLEMENTATION`（允许后续单独实现），但 runtime implementation 仍 `OPTIONAL / NOT STARTED`。该归档不代表 LIVE、trading authorization、real provider、RealClient、real permission probe、private trading adapter、AI runtime 或 DH runtime 已启动。
+- GateQ historical archive: [../gates/gate-q/README.md](../gates/gate-q/README.md)。
+- GateP historical archive: [../gates/gate-p/README.md](../gates/gate-p/README.md)。
+- GateO historical archive: [../gates/gate-o/README.md](../gates/gate-o/README.md)。
+- GateM / GateN historical archives: [../gates/gate-m/README.md](../gates/gate-m/README.md), [../gates/gate-n/README.md](../gates/gate-n/README.md)。
+- Post-GateQ current cleanup archive: [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)。
 
-NQ-DH-I1-P0-FACTSOURCE-REBASE-CONTINUE = **CLOSED / ACCEPTED / DOCS-ONLY**。Integration-1 dry-run plan baseline 已接受；当前前置条件固定为 `NQ GateN + DH Stage4 Decision Pipeline MVP CLOSED`。该条件使用 GateN no-real public marketdata / exchange sandbox frozen baseline 作为 NQ 侧 dry-run rebase input，不回滚或覆盖 NQ 当前 GateO/GateP 主线。Integration-1 runtime / real HTTP / real provider / AI / LangGraph / LIVE 均保持 NOT STARTED 或 DISABLED。当前记录见 [NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md](NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md) / [WORK_ORDER.md](WORK_ORDER.md)。P1、P2、P3 与 P4 gate review 已完成，并由 IMP1 / IMP2 / IMP3 test-support mock baseline 消费；limited runtime planning、runtime API contract review、DH runtime API WO、DH limited runtime endpoint implementation 与 close review 已完成前置收口；[NQ_DH_INTEGRATION1_NQ_RUNTIME_CLIENT_WO.md](NQ_DH_INTEGRATION1_NQ_RUNTIME_CLIENT_WO.md) 已关闭为 **CLOSED / ACCEPTED / WORK_ORDER_ONLY / NO_CLIENT_IMPLEMENTATION / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。NQ limited runtime client close review 已关闭为 **PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**，见 [NQ_DH_INTEGRATION1_NQ_CLIENT_CLOSE_REVIEW.md](NQ_DH_INTEGRATION1_NQ_CLIENT_CLOSE_REVIEW.md)；该关闭只允许进入 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO`，不授权 joint test implementation、real DH call、real HTTP、provider、contracts/schema/golden_cases 修改、DH code change、Agent / LangGraph 或 LIVE。
+## Current Is Not
 
-NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO = **CLOSED / ACCEPTED / WORK_ORDER_ONLY / NO_TEST_IMPLEMENTATION / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。本轮只新增 [NQ_DH_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_WO.md](NQ_DH_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_WO.md)，冻结下一轮 joint runtime dry-run test implementation 的 test-only / fake-transport / no-real-http 边界、允许文件范围、成功/失败/no-side-effect/audit/error taxonomy 矩阵、验收门槛和回滚要求。下一轮只能在单独授权后进入 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION`；当前不允许实现测试、真实调用 DH、真实 HTTP、provider、contracts/schema/golden_cases 修改、DH code change、NQ production code change、Agent / LangGraph 或 LIVE。
+- 不是 GateR implementation started。
+- 不是实盘就绪。
+- 不代表真实 provider 已启用。
+- 不是私有交易适配已启用。
+- 不是 DH runtime 已集成。
+- 不是 AI 已开始。
+- 不是 Integration-1 runtime started。
+- 不是 Shadow Live runner enabled。
 
-NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-CLOSE-REVIEW = **PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。本轮只审查 joint runtime dry-run tests 与 blocker fix，不改 Java 生产代码，不改测试代码，不改 contracts/OpenAPI/json-schema/golden_cases/migration，不真实调用 DH，不真实 HTTP，不访问 localhost 真实服务，不接 provider，不开启 LIVE。审查确认 `SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH` 与 `SCHEMA_VERSION_MISMATCH` 均已修复；fake transport / in-memory / MockMvc / test-only 证据覆盖 success path、fail-closed、no-side-effect、audit/trace/record 与 redaction。NQ `-Pquality validate` 因 `quality` profile missing 不能写成 quality gate PASS。下一步只允许 `NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW`；Runtime integration 仍 `NOT STARTED`、DH integrated `NO`、LIVE `DISABLED`。完整 review 见 [NQ_DH_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_CLOSE_REVIEW.md](NQ_DH_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_CLOSE_REVIEW.md)。
+## Current Cleanup Rule
 
-NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW = **PASS / CLOSED / ACCEPTED / REVIEW_ONLY / MOCK_RUNTIME_MILESTONE_CLOSED / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。本轮只做 Integration-1 mock runtime / test-only 里程碑关闭审查与工作纪律复位，不改 Java 生产代码，不改测试代码，不改 contracts/OpenAPI/json-schema/golden_cases/migration，不真实调用 DH，不真实 HTTP，不访问 localhost 真实服务，不接 provider，不开启 LIVE。审查确认阶段链路完整、提交边界清晰、NQ dev 只读隔离、docs/current 口径未把 Runtime integration 写成 started、未把 DH integrated 写成 YES、未把 LIVE 写成 enabled、未把 NQ missing quality profile 写成 quality PASS。下一步只允许 `NQ-DH-I1-MOCK-RUNTIME-PR-PREP / PR_PREP_ONLY`；不得新增 implementation WO、real DH call、real HTTP、provider、schema/contracts/golden_cases formalization、Agent / LangGraph 或 LIVE。完整 review 见 [NQ_DH_INTEGRATION1_MOCK_RUNTIME_CLOSE_REVIEW.md](NQ_DH_INTEGRATION1_MOCK_RUNTIME_CLOSE_REVIEW.md)。
-
-NQ-DH-I1-MOCK-RUNTIME-PR-PREP = **READY / PR_PREP_ONLY / ALLOW_PR_CREATE / NO_MERGE / NO_REAL_DH_CALL / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。本轮只准备 NQ PR 材料与合并边界，不新增功能、不改 Java、不改测试、不改 contracts/OpenAPI/json-schema/golden_cases/migration、不真实调用 DH、不真实 HTTP、不接 provider、不启用 LIVE。PR diff review 确认 `origin/dev...HEAD` 只包含 allowed isolated `integration/dh` package、allowed tests、disabled-by-default config 和 docs/current；forbidden migration/contracts/golden_cases/frontend/research/scripts/deploy/.github diff 为空。PR title 固定为 `test(nq-dh): add Integration-1 mock dry-run runtime boundary`。完整 PR prep 见 [NQ_DH_INTEGRATION1_MOCK_RUNTIME_PR_PREP.md](NQ_DH_INTEGRATION1_MOCK_RUNTIME_PR_PREP.md)。
-
-NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-IMPLEMENTATION = **IMPLEMENTED / FULL_VALIDATION_PASS / TEST_ONLY / FAKE_TRANSPORT_ONLY / BLOCKER_FIX_APPLIED / CLOSED_BY_CLOSE_REVIEW**。NQ worktree 已新增 `DhDryRunJointRuntimeDryRunTest` 并扩展 response fail-closed 测试；DH dev 已扩展 MockMvc / HMAC authenticator 测试。实现仍限定为 fake transport / in-memory / MockMvc / record-only，不真实调用 DH，不真实 HTTP，不接 provider，不触碰 order / execution / risk / ledger / account / paper / live。`NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-BLOCKER-FIX` 已最小修复两个跨仓 blocker：`SIGNATURE_MATERIAL_SOURCE_NORMALIZATION_MISMATCH: FIXED`（HMAC signature material 使用 wire-level canonical source value `NQ_DRYRUN`，不做 lowercase / alias 重写）与 `SCHEMA_VERSION_MISMATCH: FIXED`（NQ `DEFAULT_SCHEMA_VERSION` 对齐 DH endpoint 实际返回值 `1.0.0`）。invalid signature、invalid source、invalid schemaVersion、`BUY / SELL / PLACE_ORDER / CANCEL_ORDER` 仍 fail-closed；contracts/OpenAPI/json-schema/golden_cases/migration 未 formalize 或修改。完整验证已通过并由 close review 接受；Runtime integration 仍 `NOT STARTED`、DH integrated `NO`、LIVE `DISABLED`。
-
-NQ-DH-I1-P1-CONTRACT-DRYRUN-PLAN = **COMPLETED / PLAN ONLY / NOT IMPLEMENTED**。含义：`COMPLETED`（已完成）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。本轮 canonical 计划为 [NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md](NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md)，只规划 NQ -> DH dry-run DecisionRequest、DH -> NQ read-only DecisionOutput、canonical `X-NQ-DH-*` header、tenant / requestId / traceId / timestamp / nonce / HMAC、安全拒绝、error taxonomy、trace/audit/replay、后续 batch 和 no-side-effect 测试矩阵；不新增 API / migration / production code / test code，不启动 NQ/DH runtime，不真实 HTTP，不接 RealClient / real provider / LIVE / AI / LangGraph。旧 [NQ_DH_INTEGRATION1_DRYRUN_PLAN.md](NQ_DH_INTEGRATION1_DRYRUN_PLAN.md) 仅作为 P1 初稿 / residual reference。
-
-NQ-DH-I1-P2-CONTRACT-FIXTURES-PLAN = **COMPLETED / PLAN ONLY / NOT IMPLEMENTED**。含义：`COMPLETED`（已完成）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。本轮 canonical 计划为 [NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md](NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md)，只规划 future request/response fixtures、schema gap、golden case alignment、error taxonomy alignment、no-runtime/no-live fixture boundary 和后续 readiness 批次；不创建 fixture JSON，不改 JSON Schema，不改 `contracts/**` 或 `golden_cases/**`，不写测试代码或生产代码。P3/P4 已完成并由后续 IMP1 / IMP2 / IMP3 test-support mock baseline 消费。
-
-NQ-DH-I1-P3-DRYRUN-IMPLEMENTATION-READINESS-PLAN = **COMPLETED / PLAN ONLY / NOT IMPLEMENTED**。含义：`COMPLETED`（已完成）、`PLAN ONLY`（仅规划）、`NOT IMPLEMENTED`（未实现）。本轮 canonical 计划为 [NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md](NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md)，合并原 `I1-P3-NQ-DRYRUN-STUB-TEST-PLAN`、`I1-P4-DH-DRYRUN-ENTRY-PLAN` 与 `I1-P5-JOINT-MOCK-VALIDATION-PLAN`，只规划 NQ dry-run stub readiness、DH dry-run entry readiness、joint mock validation readiness、security boundary 与 P4 gate checklist；不写 production/test code，不创建 fixture JSON，不改 schema / contracts / golden_cases / API / migration，不启动 runtime，不真实 HTTP，不接 provider / AI / LangGraph / LIVE。P4 已完成并由后续 IMP1 / IMP2 / IMP3 test-support mock baseline 消费。
-
-NQ-DH-I1-IMP1-DH-DRYRUN-TEST-SUPPORT-ENTRY = **IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_VALIDATION**。DH 侧已新增 test-support dry-run entry harness 与 validation chain 测试支撑；NQ worktree 当时只同步 docs/current 状态，不改 backend / frontend / research / scripts / deploy / `.github` / migration。Integration-1 runtime、real HTTP、real provider、AI / LangGraph 与 LIVE 仍 **NOT STARTED / DISABLED**。该条已由 IMP2 NQ test-support stub recorder 消费。
-
-NQ-DH-I1-IMP2-NQ-STUB-RECORDER-NO-SIDE-EFFECT = **VERIFY PASS / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_IMP3_JOINT_MOCK_CONTRACT_TESTS**。NQ worktree 新增 `NqDhIntegration1StubRecorderNoSideEffectTest`，覆盖 dry-run request builder 允许字段、forbidden execution / credential / HTTP shape、readonly recorder summary、LONG_BIAS / SHORT_BIAS 不映射 BUY / SELL、provider failure / high risk / no evidence / fail-closed / duplicate requestId record-only、生产路径无 NQ_DRYRUN / real dry-run client token。未改 NQ production code、contracts、golden_cases、fixture JSON、API / Controller、migration、runtime、provider 或 LIVE。该条已由 IMP3 joint mock contract tests 消费。
-
-NQ-DH-I1-IMP3-JOINT-MOCK-CONTRACT-TESTS = **IMPLEMENTED / TEST_SUPPORT_ONLY / MOCK_ONLY / READY_FOR_MOCK_CLOSE_REVIEW**。NQ worktree 新增 `NqDhIntegration1JointMockContractFixtureTest` 与 `backend/nq-app/src/test/resources/nq-dh/integration1/joint_mock_contract_fixtures.json`，与 DH 测试资源保持同名 fixture family，覆盖 read-only request / response shape、forbidden credential / order-account / execution intent synthetic rejection、long / short bias 不映射 `BUY / SELL`、fail-closed record-only、no NQ-DH dry-run runtime client token。未改 NQ production code、frontend、research、scripts、deploy、`.github`、migration、contracts、golden_cases、API / Controller、runtime、provider、RealClient、真实 HTTP、AI / LangGraph 或 LIVE。该条已由 mock close review 与 limited runtime planning 消费。
-
-NQ-DH-I1-LIMITED-DRYRUN-RUNTIME-PLAN = **CLOSED / ACCEPTED / PLAN_ONLY / NOT_IMPLEMENTED / NO_RUNTIME**。本轮只在 NQ dry-run worktree 与 DH current docs 中生成受限 dry-run runtime planning 文档，见 [NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md](NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md)。mock / test-support baseline 已关闭；在该 planning close 当时 DH dry-run runtime endpoint 与 NQ runtime DH client 均未实现。后续 DH 侧已完成并关闭接受 DH-only inbound endpoint `POST /api/ai/decision-dry-runs`；NQ runtime client 仍 `NOT STARTED`，canonical error enum/schema 与 schema alias 仍未 formalize。`NQ_DRYRUN` 仍为 review-gated source，不进入 production allowlist。
-
-NQ-DH-I1-NQ-RUNTIME-CLIENT-WO = **CLOSED / ACCEPTED / WORK_ORDER_ONLY / NO_CLIENT_IMPLEMENTATION / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。本轮只冻结 NQ 侧 limited dry-run runtime client implementation 的边界、配置开关、request envelope、canonical `X-NQ-DH-*` header、HMAC value material、timeout/retry/idempotency、response validation、no-side-effect integration point、audit/logging redaction、error taxonomy、测试矩阵、回滚要求和后续验收条件。DH endpoint 为 `POST /api/ai/decision-dry-runs`，但本轮未实现 NQ client、未新增 HTTP client、未真实调用 DH、未修改 NQ dev、未改 contracts/OpenAPI/schema/golden_cases/fixture JSON/migration，也未触碰 order / execution / risk / ledger / account / paper / live。下一步只能在用户单独授权后进入 `NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION / NOT STARTED / CONTROLLED_IMPLEMENTATION / DEFAULT_DISABLED / DEV_TEST_ONLY / NO_LIVE`。
-
-NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION = **IMPLEMENTED / TARGETED_TEST_PASS / DEFAULT_DISABLED / FAKE_TRANSPORT_ONLY / READY_FOR_CLOSE_REVIEW**。本轮只在 `E:/Project/nexus-quant-i1-dryrun` 的 isolated `com.guidinglight.nexusquant.integration.dh` 包内实现 limited dry-run client、DTO、properties、canonical headers、nonce、HMAC signing、response envelope validation、fail-closed result、summary-only recorder、disabled transport 与 fake transport tests。`application.yml` / `application-prod.yml` 只新增 disabled-by-default 配置；未实现真实 HTTP client，未调用 DH，未接 provider，未触碰 order / execution / risk / ledger / account / paper / live。下一步为 `NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW`；joint runtime dry-run tests、real DH call、schema formalization、contracts/golden_cases 修改、DH code change、Agent / LangGraph、LIVE 均仍不允许。
-
-NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-CLOSE-REVIEW = **PASS / CLOSED / ACCEPTED / REVIEW_ONLY / NO_REAL_HTTP / NO_PROVIDER / NO_LIVE**。close review 复核 client boundary、default disabled、production disabled、kill switch、missing config fail-closed、request envelope、canonical `X-NQ-DH-*` headers、value-based HMAC、response policy validation、error taxonomy、summary-only recorder、no-side-effect boundary 与测试覆盖；`-Pquality validate` 只返回 Maven validate BUILD SUCCESS，且 quality profile 不存在，不能作为额外 quality gate。下一步只允许 `NQ-DH-I1-JOINT-RUNTIME-DRYRUN-TEST-WO / NOT STARTED / WORK_ORDER_ONLY`；real DH call / real HTTP / provider / schema formalization / contracts / golden_cases / DH code / Agent / LangGraph / LIVE 仍为 NO。
-
-GateL-1A..1E 已完成 No-Real exchange/marketdata 文档边界（contract / error model / capability matrix / readiness checklist）。当前进入 **GateM adapter readiness runtime enforcement**：GateM-0 在 `nq-adapter-api` 新增运行时 `AdapterReadinessService` / `DefaultAdapterReadinessService` 与 readiness 模型；GateM-1 进一步把 guard 接入行情订阅与交易动作入口（`ReadinessGuardedMarketDataAdapter` / `ReadinessGuardedTradingAdapter`），运行时强制 OKX / Binance / Noop fail-closed（NOT_READY / NO_REAL / UNKNOWN_REQUIRES_REVIEW）；GateM-2 把 marketdata Bean 经 `ReadinessGuardedAdapterFactory` 接入装配层；GateM-3 已把 `ExchangeAdapterConfiguration` 装配出的 OKX / Binance trading adapter 接入 readiness guard（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），使 `placeOrder` / `cancelOrder` / `getOrder` / `listOpenOrders` 在当前 no-real / LIVE disabled / not-ready 状态下 fail-closed；GateM-4 补一个更贴近真实调用路径的消费侧 runtime smoke（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），证明 scheduler 侧 `AdapterBackedTradingVenueGateway` 消费 Spring 装配的 OKX / Binance guarded trading adapter 时仍 fail-closed（降级为 `REMOTE_UNAVAILABLE`、message 脱敏、无 duplicate venue）；GateM-5A 新增只读 `GET /api/adapters/readiness`（**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），供前端展示各 venue × capability 当前 readiness（NOOP/PAPER/SIM→NO_REAL、OKX/BINANCE→NOT_READY，全部 allowed=false、无 READY、脱敏、不触达真实交易所/credential，见 API.md）；GateM-5B 在 NQ Console 新增只读 adapter readiness 面板（路由 `/adapter-readiness`、菜单「适配器就绪」，**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**），消费该 API 并 fail-closed 展示（OKX/Binance NOT_READY/不可用/LIVE 未授权、Noop NO_REAL、错误态显示 readiness API unavailable，绝不显示可交易）；GateM-5C 在真实本地 local 后端（18888 + 本地 PostgreSQL）下跑通该面板的真实后端 E2E（**PASS**），证明前端确实消费真实 `GET /api/adapters/readiness`（200、45 条全 fail-closed、无 secret），后端 0 次真实交易所外联。不允许真实交易所、LIVE、真实 credential、AI、DH runtime 或 future-real-ready。详见 STATUS.md / WORKLOG.md / TESTING.md。
-
-GateM-5 Runtime Guarded UI 已收口为 **IMPLEMENTED / SMOKE VERIFIED / CLOSED**：5A Runtime Readiness Overview completed；5B Runtime ↔ MarketData readiness deep link completed；5C Paper / Trading boundary banners completed；5D Dashboard Runtime summary completed；5E Runtime Guarded UI final smoke passed。该收口不新增能力、不授权真实交易所、不启用 LIVE；Paper-ready / DB-fresh / permission probe `SKIPPED` 仍不得写成 real-ready。
-
-GateM-6 Operational Readiness 已收口为 **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**；6A Runtime Operational Readiness Overview completed，6B Operational Readiness Summary API completed，6C Frontend Integration completed，6D Real Backend Smoke completed，6E Local Operational Runbook completed，6F Final Smoke passed。6B 新增只读 `GET /api/runtime/operational-readiness`，仅返回 safe DTO summary，当前全部 `ready=false`，不触达 adapter / permission probe / external exchange / DB / file / HTTP client。6D/6F 已在真实 local backend 下验证 `/api/runtime/operational-readiness` 与 `/runtime/readiness` 闭环；6E runbook 仅服务本地验证，不是 production deploy runbook，不代表 LIVE authorization。GateM-6 closeout 仍不启用 LIVE、不接真实交易所、不做真实 permission probe、不接 AI / DH runtime、不实现 RealClient / real provider。
-
-GateM freeze readiness review 已完成：**PASS / READY FOR GATEM FREEZE REVIEW / READY TO COMMIT**。P0/P1/P2 blocking = 0；允许进入 **NQ-GATEM-FREEZE-REVIEW**。该结论不是 freeze，不代表 production readiness、LIVE authorization 或 real provider ready。
-
-GateM freeze review 已完成：**PASS / FROZEN / ACCEPTED / READY TO COMMIT**。GateM 当前冻结为 no-real runtime readiness baseline；该 freeze review 已由 **NQ-GATEM-RELEASE-TAG-AND-ARCHIVE** 消费。该冻结不代表 production readiness、LIVE authorization、real provider ready、真实 OKX / Binance private adapter implemented、AI started 或 DH runtime integrated。
-
-GateM release tag and archive 已完成：**PASS / COMPLETED / RELEASE TAG PUSHED**。Release tag：`nq-gatem-freeze`；tag object：`f44c62833c5c9f895ee292eef7f5d497b23089cc`；tagged commit：`64194844813bdd3d6541d5a07c576af27b28e5db`。GateM 最终状态为 **FINALIZED / FROZEN / ACCEPTED / TAGGED**；下一阶段规划已完成：**NQ-NEXT-PHASE-PLAN = PASS / PLAN ONLY / READY TO COMMIT**；GateN public marketdata / exchange sandbox no-real baseline 已冻结并打 tag：**NQ-GATEN-PUBLIC-MARKETDATA-SANDBOX-PLAN = FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**，release tag：`nq-gaten-freeze`，tag object：`d191474bd3ec0fb52566896fd9ef081eb843b520`，tagged commit：`361d2ac7bb595f72067b0e2c2d0485361e9a0540`。GateN-4 fixture smoke test-only implementation **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**；GateN-5 runtime UI sandbox source display **IMPLEMENTED / SELF-REVIEWED / ACCEPTED**；GateN production adapter/API/runtime implementation **NOT STARTED**。GateN tag 不代表 production readiness、LIVE authorization、real provider ready、真实 OKX / Binance private adapter implemented、AI started 或 DH runtime integrated。
-
-GateM archive Batch 1 / Batch 2 / Batch 3 / Batch 4 已执行并完成 closeout：22 个 approved GateM archive candidates 均已归档到 [docs/gates/gate-m/](../gates/gate-m/README.md)，missing candidates = 0，`docs/current` 无 `NQ_GATEM*.md` 长证据残留。`docs/current` 仅保留 GateM final/tag/no-real runtime readiness 摘要和 archive pointer；plan review 未批准独立 GateM-3/4 文件移动。
-
-## 当前控制入口
-
-- NQ-DH Integration-1 contract dry-run canonical plan：[NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md](NQ_DH_INTEGRATION1_DRYRUN_CONTRACT_PLAN.md)
-- NQ-DH Integration-1 P0 factsource baseline：[NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md](NQ_DH_INTEGRATION1_DRYRUN_PLAN_REBASEN.md)
-- NQ-DH Integration-1 P3 readiness plan：[NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md](NQ_DH_INTEGRATION1_DRYRUN_IMPLEMENTATION_READINESS_PLAN.md)
-- NQ-DH Integration-1 P4 gate-fix 结论：见 [STATUS.md](STATUS.md) / [WORK_ORDER.md](WORK_ORDER.md) / [NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md](NQ_DH_INTEGRATION1_CONTRACT_FIXTURES_PLAN.md)
-- NQ-DH Integration-1 M0 contract gap close：[NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md](NQ_DH_INTEGRATION1_M0_CONTRACT_GAP_CLOSE_WO.md)
-- NQ-DH Integration-1 M1 DH dry-run contract entry mock：[NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md](NQ_DH_INTEGRATION1_M1_DH_DRYRUN_CONTRACT_ENTRY_MOCK_WO.md)
-- NQ-DH Integration-1 M2 NQ dry-run stub recorder：[NQ_DH_INTEGRATION1_M2_NQ_DRYRUN_STUB_RECORDER_WO.md](NQ_DH_INTEGRATION1_M2_NQ_DRYRUN_STUB_RECORDER_WO.md)
-- NQ-DH Integration-1 M3 joint mock fixtures and contract tests：[NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md](NQ_DH_INTEGRATION1_M3_JOINT_MOCK_FIXTURES_AND_CONTRACT_TESTS_WO.md)
-- NQ-DH Integration-1 NQ client close review：[NQ_DH_INTEGRATION1_NQ_CLIENT_CLOSE_REVIEW.md](NQ_DH_INTEGRATION1_NQ_CLIENT_CLOSE_REVIEW.md)
-- NQ-DH Integration-1 joint runtime dry-run test close review：[NQ_DH_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_CLOSE_REVIEW.md](NQ_DH_INTEGRATION1_JOINT_RUNTIME_DRYRUN_TEST_CLOSE_REVIEW.md)
-- NQ-DH Integration-1 mock runtime close review：[NQ_DH_INTEGRATION1_MOCK_RUNTIME_CLOSE_REVIEW.md](NQ_DH_INTEGRATION1_MOCK_RUNTIME_CLOSE_REVIEW.md)
-- NQ-DH Integration-1 limited dry-run runtime planning blocker：[NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md](NQ_DH_INTEGRATION1_LIMITED_DRYRUN_RUNTIME_PLAN.md)
-- NQ-DH Integration-1 NQ runtime client WO：[NQ_DH_INTEGRATION1_NQ_RUNTIME_CLIENT_WO.md](NQ_DH_INTEGRATION1_NQ_RUNTIME_CLIENT_WO.md)
-- NQ-DH Integration-1 NQ limited runtime client implementation：见 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 与本索引；implementation package 为 `backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/`。
-- 当前工单：[WORK_ORDER.md](WORK_ORDER.md)
-- 当前状态：[STATUS.md](STATUS.md)
-- 当前事实源索引：[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)
-- GateQ planning-only 入口：[GATEQ_PLAN.md](GATEQ_PLAN.md)（`PLAN READY / CONSUMED BY GATEQ-1..6`；Shadow Live 只读影子运行、Paper vs Shadow 对照、strategy evaluation gate、traceability model、Python artifact binding 和 Q0..FREEZE batch plan；已由 GateQ-1..6 消费；不启用 LIVE / AI / DH runtime / real provider / private trading）
-- GateQ-1 Strategy Evaluation Gate 只读 baseline：见 [API.md](API.md) / [STATUS.md](STATUS.md) / [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md)（`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；仅 `GET /api/strategies/evaluation-gate` 后端只读聚合；`READY_FOR_SHADOW_REVIEW` 只代表研究/评估进入后续 review，不代表 trading authorization、LIVE 已启用或 strategy 可实盘运行）
-- GateQ-2 Paper Shadow Comparison 只读 baseline：见 [API.md](API.md) / [STATUS.md](STATUS.md) / [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md)（`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；仅 `GET /api/strategies/paper-shadow/comparison` 后端只读聚合；生产路径下 Shadow runner / shadow fact source 仍 `NOT_IMPLEMENTED`，`READY_FOR_COMPARISON` 只代表只读对照证据可查看，不代表 trading authorization、LIVE 已启用或 Shadow Live 执行就绪）
-- GateQ-3 Shadow Live no-side-effect runner skeleton：见 [API.md](API.md) / [STATUS.md](STATUS.md) / [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md)（`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；仅 `GET /api/strategies/shadow-live/preview` 后端只读聚合；`READY_FOR_NO_SIDE_EFFECT_PREVIEW` 只代表可生成只读预览计划，不代表 trading authorization、LIVE 已启用、Shadow Live 交易启用或真实 runner 就绪）
-- GateQ-4 Python Evaluation Artifact Binding Preview contract：见 [API.md](API.md) / [STATUS.md](STATUS.md) / [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md)（`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；仅 `POST /api/research/evaluation-artifacts/binding-preview` 校验 request body artifact JSON；`VALID_FOR_BINDING_PREVIEW` 只代表可进入只读绑定预览，不代表 Java fact 写入、artifact 导入、策略批准、Paper/Shadow run 启动、trading authorization、Python ML ready 或实盘执行就绪）
-- GateQ-5 Strategy Validation / Paper Shadow Comparison frontend view：见 [STATUS.md](STATUS.md) / [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md)（`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；前端入口 `/strategies/validation`，只读消费 GateQ-1 / GateQ-2 / GateQ-3 GET API；`READY_FOR_SHADOW_REVIEW` 只显示为“可进入 Shadow 评审”，`READY_FOR_COMPARISON` 只显示为“可查看只读对照”，`READY_FOR_NO_SIDE_EFFECT_PREVIEW` 只显示为“可生成无副作用预览”，均不代表 trading authorization、LIVE 已启用或 Shadow Live 执行就绪）
-- GateQ-6 Strategy Lifecycle Trace view enhancement：见 [STATUS.md](STATUS.md) / [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md)（`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；沿用 `/strategies/validation`，只读展示 strategy version -> dataset -> evaluation gate -> publish -> paper run -> Paper / Shadow Comparison -> Shadow Live Preview -> Python Artifact Binding Preview；GateQ-4 artifact binding 在本页为 `PENDING_FRONTEND_SUPPORT` / `NOT_CONNECTED`，不新增上传、导入、后端 API 或交易能力）
-- GateQ final freeze closeout historical evidence：[GATEQ_FREEZE_CLOSEOUT.md](GATEQ_FREEZE_CLOSEOUT.md)（`PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL`；已由 GateQ archive 消费；当前 GateQ final state 以 GateQ historical archive 的 `FROZEN / ACCEPTED / TAGGED` 摘要为准；不授权 LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe）
-- GateQ freeze readiness review：[GATEQ_FREEZE_READINESS_REVIEW.md](GATEQ_FREEZE_READINESS_REVIEW.md)（`PASS / READY FOR FREEZE CLOSEOUT`；P0/P1=0；已由 final closeout 消费，作为前置证据保留）
-- GateQ historical archive：[../gates/gate-q/README.md](../gates/gate-q/README.md)（GateQ `FROZEN` / `ACCEPTED` / `TAGGED`；release tag `nq-gateq-freeze`；GateQ plan、freeze closeout、readiness review、GateQ-0..6 evidence matrix、testing summary、API/frontend evidence index 与 boundary statement 已归档）
-- GateP historical archive：[../gates/gate-p/README.md](../gates/gate-p/README.md)（GateP `FROZEN` / `ACCEPTED` / `TAGGED`；release tag `nq-gatep-freeze`；Batch 1-6A evidence matrix、freeze closeout、readiness review 与 testing summary 已归档）
-- GateP current summary：见 [STATUS.md](STATUS.md)、[FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)、[ROADMAP.md](ROADMAP.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)；current 不再把 GateP 过程型长文档作为当前 authority
-- 路线图：[ROADMAP.md](ROADMAP.md)
-- 测试：[TESTING.md](TESTING.md)
-- 工作日志：[WORKLOG.md](WORKLOG.md)
-- 架构：[ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md)
-- API / DB：[API.md](API.md) / [DB_SCHEMA.md](DB_SCHEMA.md)
-- 运行手册：[RUNBOOK.md](RUNBOOK.md)
-- 项目任务流程权威：[NQ_PROJECT_WORKFLOW_AUTHORITY.md](NQ_PROJECT_WORKFLOW_AUTHORITY.md)
-- GateJ/K/M/N freeze evidence reconciliation：[NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md](NQ_GATES_JKMN_FREEZE_CI_EVIDENCE_RECONCILIATION.md)
-- GateO historical archive：[docs/gates/gate-o/](../gates/gate-o/README.md)（NQ-GATEO-ARCHIVE-CLOSEOUT = `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`；9/9 GateO process and evidence docs moved；GateO final status = `FROZEN / ACCEPTED`；GateO freeze review = `PASS / ACCEPTED / CLOSED / READY FOR ARCHIVAL`；public marketdata readiness 不等于 trading authorization）
-- GateM historical archive：[docs/gates/gate-m/](../gates/gate-m/README.md)
-- GateN historical archive：[docs/gates/gate-n/](../gates/gate-n/README.md)（PASS / ARCHIVE CLOSED / READY TO COMMIT；11/11 approved GateN process docs moved；tag：`nq-gaten-freeze`；no-real baseline）
-- Next phase plan：[NQ_NEXT_PHASE_PLAN.md](NQ_NEXT_PHASE_PLAN.md)
-- GateN post-current archive inventory：[NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)
-- GateN archive plan review：[NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)（PASS / PLAN REVIEW ONLY / READY FOR MOVE BATCH；已由 `NQ-GATEN-PHYSICAL-ARCHIVE-MOVE-BATCH` 消费，GateN physical archive move batch 已执行）
-- GateN archive closeout：[NQ_GATEN_ARCHIVE_CLOSEOUT.md](NQ_GATEN_ARCHIVE_CLOSEOUT.md)（PASS / ARCHIVE CLOSED / READY TO COMMIT；GateN archive 文档线已关闭）
-- Post-GateM current archive inventory：[NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md](NQ_DOCS_POST_GATEM_CURRENT_ARCHIVE_INVENTORY.md)
-- Post-GateM GateM archive plan review：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_PLAN_REVIEW.md)
-- Post-GateM GateM archive closeout：[NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md](NQ_DOCS_POST_GATEM_GATEM_ARCHIVE_CLOSEOUT.md)
-
-## 文档治理权威基线
-
-- [NQ_DOCS_GOVERNANCE_PLAN.md](NQ_DOCS_GOVERNANCE_PLAN.md)
-- [NQ_DOCS_AUTHORITY_INDEX.md](NQ_DOCS_AUTHORITY_INDEX.md)
-- [NQ_DOCS_EVIDENCE_INDEX.md](NQ_DOCS_EVIDENCE_INDEX.md)
-- [NQ_DOCS_MIGRATION_MAP.md](NQ_DOCS_MIGRATION_MAP.md)
-- [NQ_DOCS_G1_IMPLEMENTATION.md](NQ_DOCS_G1_IMPLEMENTATION.md)
-
-## 文档语言治理
-
-- 后续 `README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG`、`docs/current` 说明文档、skill、模板、review / implementation report 的文档正文必须中文为主。
-- 英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、commit message 和协议原文可以保留英文；英文状态值首次出现时必须附中文解释。
-- 代码注释中的业务规则说明优先中文；协议字段、API contract、enum 可保留英文或中英双语；DB comment 使用中文业务语义，表名和字段名保持英文。
-- 不翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；旧文档只在后续任务自然触碰时顺手修正。
-- Agent 输出报告栏目名可以保留英文，但栏目内容必须中文为主。
-
-## CI current authority
-
-- [NQ_CI_BASELINE_PLAN.md](NQ_CI_BASELINE_PLAN.md)
-- [NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md](NQ_CI_FRONTEND_E2E_BACKEND_PLAN.md)：真实 local/test 后端 + 前端 adapter readiness E2E readiness smoke 的 CI 基线（5A plan **PASS / PLAN ONLY / NOT IMPLEMENTED**；5A plan review **PASS / ACCEPTED AS BATCH 5B IMPLEMENTATION BASELINE**；5B implementation **IMPLEMENTED**；5C first-run review **FAIL / FIRST-RUN-FIX REQUIRED**；5C-fix implemented；5C re-run review **PASS / RE-RUN GREEN**，run `28035713236` / commit `ba3f4c69`；5D freeze review **PASS / FROZEN / ACCEPTED**）。冻结对象仅为 `frontend-e2e-backend-smoke` 窄口 job + `adapter-readiness-panel-backend-smoke.spec.ts --project=chromium`，目标 job、redaction gate、artifact upload 均 success；artifact 仅 text-only `backend.log` / `health.json` 且内容扫描无 secret-like / real exchange host / outbound error；未上传 Playwright trace/screenshot/report/video；不冻结 full E2E、real provider、real permission probe、LIVE、AI 或 DH runtime。
-- [NQ_CI_SECURITY_GUARD_PLAN.md](NQ_CI_SECURITY_GUARD_PLAN.md)
-- [NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md](NQ_CI_SECURITY_BATCH_5B_ENV_PLAN.md)：Batch 5B-ENV env/secret/no-outbound guard（plan ACCEPTED；implementation **FROZEN / ACCEPTED**，freeze evidence run `27876451289`；current Batch 5B-SMOKE **FROZEN / ACCEPTED**，见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`）。
-- [NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md](NQ_CI_SECURITY_BATCH_5B_ENV_PLAN_REVIEW.md)：Batch 5B-ENV plan review（PASS / ACCEPTED）。
-- [NQ_CI_SECURITY_BATCH_5B_ENV_FIRST_RUN_REVIEW.md](NQ_CI_SECURITY_BATCH_5B_ENV_FIRST_RUN_REVIEW.md)：Batch 5B-ENV first-run review（first run RED → fix-forward → fix rerun GREEN → FROZEN，见 §12）。
-- [NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md](NQ_CI_SECURITY_BATCH_5B_ENV_FREEZE.md)：Batch 5B-ENV freeze 卷宗（**FROZEN / ACCEPTED**，evidence run `27876451289` / headSha `8ba140d9`；freeze-time smoke remained blocked；current Batch 5B-SMOKE **FROZEN / ACCEPTED**，见 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`）。
-- [NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md](NQ_CI_SECURITY_BATCH_5B_SMOKE_PREFLIGHT_PLAN.md)：Batch 5B-SMOKE preflight plan（**REVIEWED / ACCEPTED**；该 plan 编写时 smoke 为 PLANNED / NOT STARTED，current Batch 5B-SMOKE **FROZEN / ACCEPTED**；no-real / no-outbound / no-secret-read）。
-- [NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md](NQ_CI_SECURITY_BATCH_5B_SMOKE_IMPLEMENTATION_PLAN.md)：Batch 5B-SMOKE implementation plan（**REVIEWED / ACCEPTED**）；Batch 5B-SMOKE = **FROZEN / ACCEPTED**（ci.yml `ci-security-smoke` job，复用 EnvSafety / no-outbound / NoReal 最小 smoke；first run evidence PASS（run `27903497008`，9 jobs success）；freeze **FROZEN / ACCEPTED**，卷宗 `NQ_CI_SECURITY_BATCH_5B_SMOKE_FREEZE.md`）；Batch 5B = **CLOSED / ACCEPTED**。
-- [NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md](NQ_CI_SECURITY_FINAL_BASELINE_REVIEW.md)：GateK CI/security final baseline review（**PASS / READY FOR FINAL FREEZE**；Batch 5B = CLOSED / ACCEPTED；final freeze 见 `NQ_CI_SECURITY_FINAL_FREEZE.md`）。
-- [NQ_CI_SECURITY_FINAL_FREEZE.md](NQ_CI_SECURITY_FINAL_FREEZE.md)：GateK CI/security final freeze 卷宗（**GateK CI/security = FROZEN / ACCEPTED**；Batch 1–5 全部 FROZEN/ACCEPTED 或 CLOSED；evidence run 27903497008 / 27876451289 / 27904207910 success）。
-- CI baseline 导航索引：`docs/baselines/CI_BASELINE_INDEX.md`
-
-## GateK / 规划与其他当前控制文档
-
-- [GATEK_PLAN.md](GATEK_PLAN.md)：GateK planning-only；不代表 GateK implementation started。
-- [NQ_GATEK_PAPER_EXECUTION_INTELLIGENCE_PLAN.md](NQ_GATEK_PAPER_EXECUTION_INTELLIGENCE_PLAN.md)：GateK Paper Execution Intelligence 分批规划（K1 执行诊断后端 → K2 诊断 UI → K3 策略评估 → K4 每日复盘 → K5 可选页面拆分；**PLAN / PENDING IMPLEMENTATION**；不改 backend/frontend/migration，不接 AI/LIVE）。
-- [NQ_GATEK_PAPER_TRADING_PAGE_SPLIT_PLAN.md](NQ_GATEK_PAPER_TRADING_PAGE_SPLIT_PLAN.md)：GateK K5 Paper Trading 页面拆分规划（推荐方案 D：单入口 `/paper-trading` + 子路由 `runs/portfolio/diagnostics/reviews`，旧入口 index redirect 兼容；分批 K5-A 抽组件 → K5-B 加子路由 → K5-C 逐群迁移 → K5-D 拆 E2E → K5-E 瘦身旧页；**PLAN ONLY / PENDING IMPLEMENTATION**；不改 backend/frontend/migration/测试，不接 AI/DH/LIVE）。
-- [NQ_GATEK_ARCHITECTURE_FREEZE.md](NQ_GATEK_ARCHITECTURE_FREEZE.md)
-- [NQ_GATEK_CI_SECURITY_CONTRACT.md](NQ_GATEK_CI_SECURITY_CONTRACT.md)
-- [NQ_GATEK_ARCHIVE_AND_HANDOVER.md](NQ_GATEK_ARCHIVE_AND_HANDOVER.md)
-- [GATEL_PLAN.md](GATEL_PLAN.md)：GateL planning baseline（**PASS / ACCEPTED**；GateL implementation NOT STARTED）。GateL = 真实交易所接入前的 No-Real 交易适配器 / 市场数据 / permission probe / paper-live execution 边界就绪规划（GateL-1..5 + real exchange readiness checklist）。canonical（2026-06-22 经 `NQ-GATEL-CANONICAL-ROUTE-SYNC` 裁决）：**GateL = No-Real exchange/marketdata readiness**；旧口径「GateL = AI Paper Trading」作废；后续曾将 AI Paper Trading 记为 GateM，但该历史口径已被 `NQ-GATEM-STATE-ROUTE-RECONCILIATION` superseded。当前 GateM = Exchange / MarketData Runtime Readiness。不接真实交易所、不读真实凭证、不外联、不启用 LIVE、不接 AI / DH runtime。
-- [GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md](GATEL_1_EXCHANGE_ADAPTER_CONTRACT_REVIEW.md)：GateL-1 adapter contract review（**CONDITIONAL PASS / DOCS-CONTRACT ONLY**）。确认现有 OKX/Binance 为 legacy network-capable code，不是纯 NoReal stub；登记 Binance 默认 endpoint、进程 credential、`rawPayload`、stub success 语义四项 P1。GateL implementation 仍 NOT STARTED，未授权真实交易所。
-- [GATEL_1_EXCHANGE_ADAPTER_CONTRACT_FREEZE_REVIEW.md](GATEL_1_EXCHANGE_ADAPTER_CONTRACT_FREEZE_REVIEW.md)：GateL-1A review fact baseline freeze（**PASS / FROZEN / ACCEPTED**）。冻结 GateL-1 review 事实、四项 P1、四项 P2 与后续顺序；P1/P2 仍 OPEN，adapter readiness **NOT READY / NOT FROZEN**。下一步 GateL-1B No-Real hardening plan；不授权真实交易所、LIVE、AI 或 DH runtime。
-- [GATEL_1B_NO_REAL_HARDENING_PLAN.md](GATEL_1B_NO_REAL_HARDENING_PLAN.md)：GateL-1B No-Real hardening planning baseline（**PASS / PLAN READY FOR REVIEW；NOT IMPLEMENTED**）。规划 A Binance endpoint、B runtime credential source、C rawPayload、D Noop status 四个独立切片；P1 仍 OPEN，adapter readiness NOT READY。下一步仅 plan review。
-- [GATEL_1B_NO_REAL_HARDENING_PLAN_REVIEW.md](GATEL_1B_NO_REAL_HARDENING_PLAN_REVIEW.md)：GateL-1B plan review（**PASS / ACCEPTED AS PLAN REVIEW BASELINE；NOT IMPLEMENTED**）。确认 A/B/C/D 拆分、测试、验收与回滚可冻结；A 限定 sentinel-only，B 限定 process credential removal。四项 P1 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。下一步仅 plan freeze。
-- [GATEL_1B_NO_REAL_HARDENING_PLAN_FREEZE_REVIEW.md](GATEL_1B_NO_REAL_HARDENING_PLAN_FREEZE_REVIEW.md)：GateL-1B plan baseline freeze（**PASS / FROZEN / ACCEPTED；IMPLEMENTATION NOT STARTED**）。冻结 plan + review 的 A/B/C/D 拆分、强制顺序和安全约束；P1 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED。GateL-1B-A（Binance endpoint sentinel/no-outbound）已 **CLOSED / ACCEPTED / FROZEN**（`NQ-GATEL-1B-A-IMPL-FREEZE`，commit `04ddb774`，详见 `GATEL_1B_A_IMPL_FREEZE_REVIEW.md`）；下一步 `NQ-GATEL-1B-B-IMPL`，不是 real adapter。
-- [GATEL_1B_A_IMPL_FREEZE_REVIEW.md](GATEL_1B_A_IMPL_FREEZE_REVIEW.md)：GateL-1B-A implementation freeze（**PASS / FROZEN / ACCEPTED；P1-A CLOSED / ACCEPTED**）。冻结 commit `04ddb774` 的 Binance 默认 endpoint no-real sentinel / no-outbound hardening 实现与测试；P1-B/C/D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，不代表允许真实 Binance 接入。GateL-1B-B（OKX/Binance runtime credential source）已 **CLOSED / ACCEPTED / FROZEN**（`NQ-GATEL-1B-B-IMPL-FREEZE`，commit `ad7f58b0`，详见 `GATEL_1B_B_IMPL_FREEZE_REVIEW.md`）；下一步 `NQ-GATEL-1B-C-IMPL`。
-- [GATEL_1B_B_IMPL_FREEZE_REVIEW.md](GATEL_1B_B_IMPL_FREEZE_REVIEW.md)：GateL-1B-B implementation freeze（**PASS / FROZEN / ACCEPTED；P1-B CLOSED / ACCEPTED**）。冻结 commit `ad7f58b0` 的 OKX/Binance runtime credential source hardening（默认不再读取进程环境 credential、`*.unconfigured()` 占位、private op 网络前 fail-closed）；P1-A 仍 CLOSED，P1-C/P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，未实现真实 credential bridge，不代表允许真实 OKX/Binance 接入。下一步 `NQ-GATEL-1B-C-IMPL`。
-- `NQ-GATEL-1B-C-IMPL`（记录于 [GATEL_1B_NO_REAL_HARDENING_PLAN.md](GATEL_1B_NO_REAL_HARDENING_PLAN.md) §19）：GateL-1B-C producer suppression（**PASS / IMPLEMENTED；PENDING REVIEW**）。OKX/Binance `AdapterOrderAck` / `AdapterOrderSnapshot` producer 固定 `rawPayload=null`，不再传播 provider raw response；`rawPayload` 字段删除未做，另起兼容性任务；P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，不代表允许真实 OKX/Binance 接入。下一步 `NQ-GATEL-1B-C-IMPL-REVIEW`。
-- [GATEL_1B_C_IMPL_FREEZE_REVIEW.md](GATEL_1B_C_IMPL_FREEZE_REVIEW.md)：GateL-1B-C implementation freeze（**PASS / FROZEN / ACCEPTED；P1-C producer suppression CLOSED / ACCEPTED**）。冻结 commit `316497ad` 的 OKX/Binance order ack/snapshot rawPayload producer suppression；`rawPayload` 字段删除未做，P1-D 仍 OPEN，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，不代表允许真实 OKX/Binance 接入。下一步 `NQ-GATEL-1B-D-IMPL`。
-- `NQ-GATEL-1B-D-IMPL`（记录于 [GATEL_1B_NO_REAL_HARDENING_PLAN.md](GATEL_1B_NO_REAL_HARDENING_PLAN.md) §21）：GateL-1B-D Noop marketdata status hardening（**PASS / IMPLEMENTED；后续已 freeze-close**）。`NoopMarketDataAdapter` bars / trades / order-book 订阅统一返回 `subscribed=false`、`NO_REAL_DISABLED`、`FATAL_FAILURE`、`retryable=false`；P1-A/P1-B/P1-C producer suppression 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除仍 NOT DONE，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，不代表允许真实 marketdata / real adapter / LIVE。冻结结论见 `GATEL_1B_D_IMPL_FREEZE_REVIEW.md`。
-- [GATEL_1B_D_IMPL_FREEZE_REVIEW.md](GATEL_1B_D_IMPL_FREEZE_REVIEW.md)：GateL-1B-D implementation freeze（**PASS / FROZEN / ACCEPTED；P1-D CLOSED / ACCEPTED**）。冻结 commit `7e442eb7` 的 NoopMarketDataAdapter no-real status hardening；P1-A/P1-B/P1-C producer suppression 仍 CLOSED / ACCEPTED，P1-C rawPayload 字段删除仍 NOT DONE / SEPARATE COMPATIBILITY TASK，adapter readiness NOT READY / NOT FROZEN / NOT AUTHORIZED，GateL-1B overall hardening NOT FROZEN；不代表允许真实 marketdata、real adapter、LIVE 或 future-real-ready。下一步 `NQ-GATEL-1B-OVERALL-HARDENING-FREEZE-REVIEW`。
-- [GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md](GATEL_1B_OVERALL_HARDENING_FREEZE_REVIEW.md)：GateL-1B overall No-Real hardening freeze（**PASS / FROZEN / ACCEPTED**）。冻结 A/B/C/D 组合证据：P1-A / P1-B / P1-C producer suppression / P1-D 均 CLOSED / ACCEPTED；P1-C rawPayload 字段删除仍 NOT DONE / SEPARATE COMPATIBILITY TASK；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；不授权真实交易所、real adapter、LIVE、真实 credential、AI 或 DH runtime。下一步 `NQ-GATEL-1C-CAPABILITY-MATRIX-CONTRACT`。
-- [GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md](GATEL_1C_CAPABILITY_MATRIX_CONTRACT.md)：GateL-1C capability matrix contract（**PASS / FROZEN / ACCEPTED**）。冻结 `CLOSED_NO_REAL` / `DISABLED_SENTINEL` / `NO_REAL_DISABLED` / `STUB_ONLY` / `NOT_IMPLEMENTED` / `FUTURE_REAL_REQUIRES_GATE` / `FORBIDDEN_IN_GATEL` / `UNKNOWN_REQUIRES_REVIEW` 状态枚举与 Noop / OKX / Binance / future-real / permission probe / marketdata placeholder 能力矩阵；OKX/Binance existing adapters 仍不是 future-real-ready，也不等于真实交易所授权；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；LIVE、真实 credential、AI、DH runtime 仍不允许。下一步 `NQ-GATEL-1D-ERROR-MODEL-CONTRACT`。
-- [GATEL_1C_CAPABILITY_MATRIX_CONTRACT_REVIEW.md](GATEL_1C_CAPABILITY_MATRIX_CONTRACT_REVIEW.md)：GateL-1C capability matrix contract review（**PASS / REVIEW ACCEPTED**）。只读复核 enum、adapter/venue、trading、marketdata、credential/endpoint/permission、forbidden interpretation，确认合同未把 no-real / disabled / stub 写成真实交易能力；不授权真实交易所、LIVE、真实 credential、AI、DH runtime 或 adapter future-real-ready。下一步 `NQ-GATEL-1D-ERROR-MODEL-CONTRACT`。
-- [GATEL_1C_CAPABILITY_MATRIX_CONTRACT_FREEZE_REVIEW.md](GATEL_1C_CAPABILITY_MATRIX_CONTRACT_FREEZE_REVIEW.md)：GateL-1C capability matrix contract freeze（**PASS / FROZEN / ACCEPTED**）。冻结 capability matrix contract + review 结论为后续 GateL-1D / GateL-1E 的能力边界基线；matrix 只能表达状态，不能启用能力；不授权真实交易所、LIVE、真实 credential、AI、DH runtime 或 adapter future-real-ready。下一步 `NQ-GATEL-1D-ERROR-MODEL-CONTRACT`。
-- [GATEL_1D_ERROR_MODEL_CONTRACT.md](GATEL_1D_ERROR_MODEL_CONTRACT.md)：GateL-1D adapter error model contract（**PASS / FROZEN / ACCEPTED；contract-only**）。冻结 error status enum（`NO_REAL_DISABLED` / `NETWORK_DISABLED` / `CREDENTIALS_MISSING` / `AUTH_FAILED` / `PERMISSION_DENIED` / `IP_NOT_ALLOWED` / `RATE_LIMITED` / `VENUE_UNAVAILABLE` / `INVALID_SYMBOL` / `UNSUPPORTED_OPERATION` / `RISK_REJECTED` / `ORDER_STATE_REJECTED` / `LEDGER_REJECTED` / `RAW_PAYLOAD_SUPPRESSED` / `UNKNOWN_REQUIRES_REVIEW`）与 retry 语义（retryable=false 终态集合；conditional 仅受控 RATE_LIMITED / VENUE_UNAVAILABLE；UNKNOWN fail-closed），并映射既有 `AdapterResultCategory`。统一 OKX / Binance / Noop / permission probe / future-real placeholder 的分类、fail-closed 与安全解释边界；`NO_REAL_DISABLED` 非成功、`CREDENTIALS_MISSING` 不 fallback、RISK/ORDER/LEDGER 由 NQ core 拥有、`RAW_PAYLOAD_SUPPRESSED` 是安全边界。真实交易所错误处理须另起 Gate；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；LIVE、真实 credential、AI、DH runtime、adapter future-real-ready 仍不允许。下一步 `NQ-GATEL-1D-ERROR-MODEL-CONTRACT-REVIEW`。
-- [GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md](GATEL_1D_ERROR_MODEL_CONTRACT_REVIEW.md)：GateL-1D adapter error model contract review（**PASS / REVIEW ACCEPTED；contract-only**）。只读复核 error status enum（15 项）、合同层 status ↔ 既有 `AdapterResultCategory`（9 类）映射、retry 语义、adapter/venue 与 trading/marketdata/credential/permission 路径矩阵、fail-closed 与禁止解释；`git grep` 校验 OKX `50035` / Binance `-2013`·`-2011` / Noop `NO_REAL_DISABLED` / `*_CREDENTIALS_MISSING` 源码事实与合同一致。P0/P1=0；P2 为既知 follow-up（细粒度 status 在既有 category 折叠为 AUTH_FAILURE、rawPayload field deletion 独立任务、真实 backoff/circuit breaker policy 属 future-real），不阻断冻结。adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；真实交易所、LIVE、真实 credential、AI、DH runtime、adapter future-real-ready 仍不允许。下一步 `NQ-GATEL-1D-ERROR-MODEL-CONTRACT-FREEZE`。
-- [GATEL_1D_ERROR_MODEL_CONTRACT_FREEZE_REVIEW.md](GATEL_1D_ERROR_MODEL_CONTRACT_FREEZE_REVIEW.md)：GateL-1D adapter error model contract freeze（**PASS / FROZEN / ACCEPTED**）。冻结 error model contract + review 为 GateL-1E readiness checklist refinement 与 future-real 实现 Gate 的错误分类、retry、fail-closed、安全解释基线；error status enum（15 项）、合同层 status ↔ 既有 `AdapterResultCategory`（9 类）映射、retry 语义（retryable=false 终态集合；conditional 仅受控 RATE_LIMITED / VENUE_UNAVAILABLE；UNKNOWN fail-closed）与路径矩阵全部固化。`git grep` 复核 Noop `NO_REAL_DISABLED` / OKX·Binance `disabled://` sentinel / `*.unconfigured()` credential 冻结不变量仍成立。冻结不启用能力；adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；真实交易所、LIVE、真实 credential、AI、DH runtime、adapter future-real-ready 仍不允许。下一步 `NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT`。
-- [GATEL_1E_READINESS_CHECKLIST_REFINEMENT.md](GATEL_1E_READINESS_CHECKLIST_REFINEMENT.md)：GateL-1E future-real readiness checklist refinement（**PASS / CHECKLIST CREATED / PENDING REVIEW；checklist-only**）。细化未来若进入真实交易所接入 Gate 必须满足的准入门槛（代码实现 / 安全 / credential / network·no-outbound / adapter 实现 / permission probe / marketdata / trading execution / risk·order·ledger·audit / testing·CI / rollout·rollback·incident / 用户显式授权 12 类）；锚定 `EnvSafetyValidator` / `NoOutboundExchangeGuard` / `NoRealExchangeCredentialPermissionProbePort` / `KillSwitchService` / `RiskGate` / `OrderStateMachine` / `AuditLogRepository` / `JdbcLedgerPostingRepository` 既有基线，引用 GateL-1C/1D 冻结合同。checklist 只定义准入门槛，不授权真实交易所、不启用 LIVE、不实现 real adapter；checklist 项“满足”不构成授权。adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；real exchange access / LIVE / real credential / AI / DH runtime / future-real-ready 全部 NO。下一步 `NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT-REVIEW`。
-- [GATEL_1E_READINESS_CHECKLIST_REFINEMENT_REVIEW.md](GATEL_1E_READINESS_CHECKLIST_REFINEMENT_REVIEW.md)：GateL-1E future-real readiness checklist refinement review（**PASS / REVIEW ACCEPTED；checklist-only**）。只读复核非授权声明与 12 类准入门类（security / credential / network·no-outbound / adapter / permission probe / marketdata / trading execution / risk·order·ledger·audit / testing·CI / rollout·rollback·incident / 用户授权）；`git grep` 校验安全基线组件、`NoRealExchangeCredentialPermissionProbePort` = `REAL_EXCHANGE_PROBE_DISABLED`/SKIPPED、OKX/Binance permission probe forbidden endpoint 源码事实与 checklist 一致。P0/P1=0；P2 为既知 follow-up（真实 backoff/circuit breaker/kill switch policy、credential governance bridge、real probe 属 future-real；rawPayload field deletion 独立任务；具体阈值待 future-real 配置化），不阻断冻结。checklist 只定义准入门槛，不构成授权；未放宽 GateL-1B/1C/1D 任一冻结边界。adapter readiness 仍 NOT READY / NOT FROZEN / NOT AUTHORIZED；real exchange access / LIVE / real credential / AI / DH runtime / future-real-ready 全部 NO。下一步 `NQ-GATEL-1E-READINESS-CHECKLIST-REFINEMENT-FREEZE`。
-- [NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md](NQ_GATEK_POST_FREEZE_HANDOFF_PLAN.md)：GateK post-freeze handoff（CI/security + OKX no-outbound + endpoint defense closure；**PASS / READY FOR NEXT PHASE**；**NEXT PHASE = READY TO PLAN**；evidence matrix + frozen boundaries + regression rules + 下一阶段入口候选 + optional backlog）。
-- [GATEK_ARCHITECTURE_BASELINE_REVIEW.md](GATEK_ARCHITECTURE_BASELINE_REVIEW.md)：GateK architecture baseline review（P0/P1=0，ACCEPTED WITH P2 FOLLOW-UP）。
-- [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_REVIEW.md)：OKX bootstrap / test isolation / no-outbound 边界复审（§13 post-CI-security freeze 复审 = PASS / READY FOR FREEZE；P0/P1=0，P2=1 非阻断纵深防御 follow-up，P3=1 命名差异）。
-- [NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md](NQ_TEST_ISOLATION_OKX_BOOTSTRAP_NO_OUTBOUND_FREEZE.md)：OKX bootstrap / test isolation / no-outbound 边界冻结卷宗（**FROZEN / ACCEPTED**，冻结 review commit `0b9c0b20`；原 P2 已经 post-freeze addendum 关闭，见下；regression boundary 见卷宗 §11）。
-- [NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md](NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_PLAN.md)：OKX runtime config 默认 endpoint 纵深防御计划与实现（Path A，sentinel `disabled://`；**FROZEN / ACCEPTED**）。
-- [NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md](NQ_OKX_RUNTIME_CONFIG_DEFAULT_ENDPOINT_DEFENSE_ADDENDUM.md)：上述纵深防御的 post-freeze addendum（**FROZEN / ACCEPTED**；fix commit `c749cef7`，CI run `27926903155` / 9 jobs success；**P2 OkxRuntimeConfig default real endpoint defense = CLOSED / ACCEPTED**）。
-- [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md)：前端设计系统当前事实。
-- [BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md](BACKTEST_EQUITY_DRAWDOWN_SERIES_API_PLAN.md)：回测权益/回撤曲线后端契约 planning（planning only，未实现）。
-- GateM-2 MarketData readiness historical evidence 已归档到 [docs/gates/gate-m/](../gates/gate-m/README.md)（Batch 4；含 MarketData source health plan、frontend readiness views、real backend smoke 和 positive bars fixture evidence）。当前摘要：GateM-2 MarketData readiness 已被 GateM no-real runtime readiness baseline 消费；MarketData readiness 仍为 diagnostic only，不是 trading authorization，不启用 LIVE / AI / DH runtime / real provider，不接真实交易所。
-- GateM-2E MarketData readiness backend MVP：新增只读 `GET /api/marketdata/readiness`（**IMPLEMENTED / READY FOR REVIEW**），仅基于本地 `marketdata_bars` 与 `marketdata_ingestion_jobs/runs` 聚合 `NO_MIGRATION_MVP` readiness summary；不新增 migration、不改 frontend、不调用 adapter / 外部交易所、不读取 credential、不启用 LIVE / AI / DH runtime。该 MVP 不代表 source health 全量完成或持久 source policy 已实现。
-- GateM-5 Runtime Guarded UI historical evidence 已归档到 [docs/gates/gate-m/frontend/](../gates/gate-m/frontend/)（Batch 2）。当前摘要：GateM-5 Runtime Guarded UI 已 **IMPLEMENTED / SMOKE VERIFIED / CLOSED**；5A Runtime Readiness Overview、5B Runtime ↔ MarketData readiness deep link、5C Paper / Trading boundary banners、5D Dashboard Runtime summary、5E final smoke 均已收口。该结论不触发真实交易所、credential、采集、adapter call、LIVE、AI 或 DH runtime；Paper-ready / DB-fresh / permission probe `SKIPPED` 不构成 real-ready。
-- GateM-6 Operational Readiness historical evidence 已归档到 [docs/gates/gate-m/operational/](../gates/gate-m/operational/)（Batch 3）。当前摘要：GateM-6 Operational Readiness baseline = **IMPLEMENTED / FINAL SMOKE VERIFIED / CLOSED**；6A overview、6B safe summary API、6C frontend integration、6D real backend smoke、6E local runbook、6F final smoke 已完成；后续 freeze readiness review 与 freeze review 已完成。6B 只读 `GET /api/runtime/operational-readiness` safe DTO summary；6D/6F 真实 local backend smoke 已验证 API/UI 闭环；6E 本地 runbook 仅用于 local validation；不新增 migration、workflow、生产 deploy runbook；不改 actuator / adapter readiness / MarketData readiness / Trading / Paper Trading；不启用 LIVE / AI / DH runtime / real provider。
-- GateM freeze / release historical evidence 已归档到 [docs/gates/gate-m/freeze/](../gates/gate-m/freeze/)：GateM stage-level freeze readiness review、GateM freeze review、GateM release tag / archive record。当前事实只保留摘要：GateM = **FINALIZED / FROZEN / ACCEPTED / TAGGED**，release tag = `nq-gatem-freeze`，baseline = no-real runtime readiness；不授权 LIVE、real provider、RealClient、真实 private trading、real permission probe、AI 或 DH runtime。
-- DB / Credential 治理：`DB_SCHEMA_GOVERNANCE_PLAN.md`、`DB_SCHEMA_GOVERNANCE_REVIEW.md`、`CREDENTIAL_*`。
-- NQ-DH Integration-0（contract / mock / docs，未实现 runtime 集成）：`NQ_DH_INTEGRATION0_CONTRACT_FREEZE.md`、`NQ_DH_INTEGRATION0_SECURITY_POLICY.md`、`NQ_DH_INTEGRATION0_CONTRACT_TEST_PLAN.md`、`NQ_DH_INTEGRATION0_ACCEPTANCE_REPORT.md`。
-- NQ-DH timestamp format alignment：**CLOSED / ACCEPTED（2026-06-28）**。Canonical timestamp = RFC3339 / ISO-8601 UTC `Z`；DH/NQ INT0 均拒绝 epoch seconds / epoch milliseconds / 数字时区偏移；±300s replay window 不变。CLOSED 不授权 Integration-1 runtime；DH not integrated；Runtime integration NOT STARTED；LIVE disabled。
-
-## Codex Workflow 入口
-
-- `../../AGENTS.md`：仓库级 Codex 开发指引、NQ/DH 边界与执行纪律。
-- `NQ_DH_CODEX_PLUGIN_WORKFLOW.md`、`NQ_DH_WORKFLOW_ROUTER_SKILL.md`、`NQ_DH_CODEX_TASK_TEMPLATES.md`、`CODEX_PROJECT_INSTRUCTIONS.md`。
-
-## 历史证据位置
-
-当前 current 不再堆放历史过程证据；按主题分别归档：
-
-- GateJ canonical records：`docs/gates/gate-j/`
-- GateM historical archive：`docs/gates/gate-m/`（GateM archive closed；22/22 approved candidates moved；Batch 1 已归档 freeze / release / closeout evidence；Batch 2 已归档 Runtime Guarded UI evidence；Batch 3 已归档 Operational Readiness evidence；Batch 4 已归档 GateM-2 MarketData readiness evidence；无独立 GateM-3/4 批准文件待移动）
-- GateN historical archive：`docs/gates/gate-n/`（GateN archive closed；11/11 approved GateN process docs moved）
-- GateO historical archive：`docs/gates/gate-o/`（GateO archive closeout completed；9/9 GateO process and evidence docs moved）
-- GateP historical archive：`docs/gates/gate-p/`（GateP release tag `nq-gatep-freeze` 已推送；freeze closeout、readiness review、Batch 1-6A evidence matrix 和 testing summary 已归档）
-- GateQ historical archive：`docs/gates/gate-q/`（GateQ release tag `nq-gateq-freeze` 已推送；freeze closeout、readiness review、GateQ plan、GateQ-0..6 evidence matrix、testing summary、API/frontend evidence index 和 boundary statement 已归档）
-- 早期 Gate 历史卷宗：`docs/gates/gate-h/`、`docs/gates/gate-i/`、`docs/gates/gate-a..g/`
-- CI historical evidence：`docs/evidence/ci/`（导航 `docs/evidence/ci/README.md`）
-- Documentation governance evidence（G1～G6 plan/review/freeze/implementation/final freeze）：`docs/evidence/governance/`（导航 `docs/evidence/governance/README.md`）
-- Compatibility stubs（旧 current 路径兼容 stub 归档副本）：`docs/evidence/compatibility/`
-  - GateJ：`docs/evidence/compatibility/gatej-current-stubs/`
-  - CI：`docs/evidence/compatibility/ci-current-stubs/`
-
-## 当前不是
-
-- 当前不是 AI 自动交易阶段；不允许 AI 直接下单；不允许真实 LIVE 下单。
-- AI 接入必须等 Paper Trading 稳定后再进入（最早 GateK 之后单独评审）。
-- 当前不是 GateK 产品 / runtime 实现阶段；CI mainline 完成不代表 AI、DH runtime、LIVE 或真实交易所扩展启动。
-- 当前不代表 UI/UX 专业化已完成，也不应描述为面向公开用户的生产就绪。
-
-## 项目路线
-
-```text
-DOC-CLEAN / BASELINE-FIX completed
-  ↓
-GateH：交易工作台 + 历史行情 + dataset 绑定 completed
-  ↓
-GateI：虚拟币量化 V1 完整闭环 completed
-  ↓
-GateJ：Paper Trading 稳定运行 completed
-  ↓
-GateK：规划 / 架构 / 产品化 / 部署化 / 可观测性 / 安全边界收口 completed
-  ↓
-GateL：No-Real Exchange / MarketData Readiness completed
-  ↓
-GateM：Exchange / MarketData Runtime Readiness（FINALIZED / FROZEN / ACCEPTED / TAGGED；tag：`nq-gatem-freeze`；no-real runtime readiness baseline）
-  ↓
-GateN：Public MarketData / Exchange Sandbox Planning（FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED；tag：`nq-gaten-freeze`；GateN-4 fixture smoke test-only implementation IMPLEMENTED / SELF-REVIEWED / ACCEPTED；GateN-5 runtime UI sandbox source display IMPLEMENTED / SELF-REVIEWED / ACCEPTED；production adapter/API/runtime implementation NOT STARTED）
-  ↓
-Future AI Paper Trading candidate（NOT CURRENT GATEM；AI/DH runtime boundaries must be separately planned）
-  ↓
-Future AI small-funds LIVE candidate（DEFERRED；requires separate AI / DH / LIVE authorization planning）
-  ↓
-GateO：FROZEN / ACCEPTED；archive closed to docs/gates/gate-o；public readonly smoke accepted；DataOrigin.PUBLIC_OUTBOUND decision = ALLOW_FUTURE_IMPLEMENTATION / implementation NOT STARTED；不授权 LIVE / real provider / private trading / AI / DH runtime
-  ↓
-GateP：真实数据质量与交易准备阶段（`FROZEN` / `ACCEPTED` / `TAGGED`；release tag `nq-gatep-freeze`；Batch 1-6A completed；archive pointer `docs/gates/gate-p/`；不启用 LIVE、不实现 real provider、不授权 private trading）
-  ↓
-GateQ：GateQ-0..6 read-only / preview / frontend baselines completed；release archive `PASS / COMPLETED / RELEASE TAG PUSHED`（通过 / 已完成 / release tag 已推送）；overall `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；archive pointer `docs/gates/gate-q/`；下一阶段只能进入 GateR `PLAN / NOT STARTED`；真实 Shadow Live runner、Shadow run 写侧 fact source、LIVE、AI 与 DH runtime 均未启动
-```
+`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；如需新增 GateR planning，必须由用户另起任务并明确 allowed files、forbidden scope 和验证命令。

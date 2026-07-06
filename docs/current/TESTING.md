@@ -1,3 +1,42 @@
+## NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮只做 docs/current post-GateQ cleanup、archive move、current fact-source sync 和 boundary validation。
+  - 不修改 backend、frontend、research、scripts、deploy、.github、migration、API、页面或测试。
+
+Result:
+  - docs/current tracked Markdown before: 125.
+  - docs/current tracked Markdown after: 17.
+  - moved current copies: 108.
+  - archive target: docs/archive/current-cleanup/post-gateq/.
+  - formal GateQ archive remains: docs/gates/gate-q/.
+  - historical evidence deletion: none.
+
+Commands:
+  - Get-Location: F:\project\nexus-quant.
+  - git status --short: pre-write clean.
+  - git branch --show-current: dev.
+  - git ls-files docs/current | Where-Object { $_ -like '*.md' }: counted current Markdown files.
+  - target path conflict check: PASS, no generated target existed before git mv.
+  - git mv: moved 108 docs/current process/history Markdown files into docs/archive/current-cleanup/post-gateq/**.
+
+Not run:
+  - Maven tests were not run.
+  - frontend build / Playwright were not run.
+  - Python pytest / mypy / ruff were not run.
+  - Reason: docs-only cleanup; no code, workflow, migration, API, page, or test files changed.
+
+Boundary:
+  - GateQ remains FROZEN / ACCEPTED / TAGGED / ARCHIVED.
+  - GateR remains PLAN / NOT STARTED.
+  - LIVE remains DISABLED.
+  - AI remains NOT STARTED.
+  - DH runtime remains NOT INTEGRATED.
+  - Integration-1 remains NOT STARTED / mock-test-support only where applicable.
+  - RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED.
+```
+
 ## NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE validation（2026-07-06）
 
 ```text

@@ -61,7 +61,7 @@ real outbound HTTP now: NO
 real provider: NO
 contracts/OpenAPI/schema/golden_cases formalization now: NO
 Integration-1 runtime: NOT STARTED
-DH integrated: NO
+DH runtime integrated: NO
 LIVE: DISABLED
 ```
 

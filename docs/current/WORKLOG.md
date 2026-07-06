@@ -1,3 +1,36 @@
+## NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP
+
+日期：2026-07-06。
+
+范围：
+
+- 只做 docs/current post-GateQ cleanup、archive move、current facts sync 和 docs-only validation。
+- 不实现功能，不改业务代码，不新增 API，不新增 migration，不改 CI，不新增前端页面，不新增测试。
+
+结果：
+
+- `docs/current` tracked Markdown 从 125 个缩减为 17 个。
+- 108 个历史过程型 current copy 已通过 `git mv` 移入 `docs/archive/current-cleanup/post-gateq/**`。
+- 新增 `docs/archive/current-cleanup/post-gateq/README.md` 作为本轮审计、分类、目标路径和 archive index。
+- `README.md`、`docs/current/README.md`、`FACT_SOURCE_INDEX.md`、`STATUS.md`、`ROADMAP.md` 已同步为 post-GateQ current facts。
+- `ARCHITECTURE.md`、`MODULES.md` 已同步到 GateQ archived / GateR plan-only 当前边界。
+- 未删除历史证据，未移动 `docs/gates/gate-q/**` 已归档证据，未改写 release tag 历史含义。
+
+边界：
+
+- GateQ = `FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
+- GateR = `PLAN / NOT STARTED`（规划 / 未开始）。
+- LIVE = `DISABLED`（关闭）。
+- AI = `NOT STARTED`（未开始）。
+- DH runtime = `NOT INTEGRATED`（未集成）。
+- Integration-1 = `NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
+- RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+
+下一步：
+
+- 提交前仅允许继续做 docs-only validation 和必要的链接/状态修正。
+- GateR planning 必须另起任务并由用户单独授权。
+
 ## NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE
 
 日期：2026-07-06。
