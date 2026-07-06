@@ -1,7 +1,5 @@
 # NQ-GATEQ-FREEZE-READINESS-REVIEW
 
-> Archive pointer: GateQ release tag and historical archive 已完成。当前 GateQ frozen/tagged 摘要见 [README.md](README.md)、[STATUS.md](STATUS.md) 与 [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)；完整归档入口见 [../gates/gate-q/README.md](../gates/gate-q/README.md)。本文作为 GateQ freeze readiness 前置证据保留，不再作为 GateQ current authority 入口。
-
 ## 1. GateQ Freeze Readiness Decision
 
 `NQ-GATEQ-FREEZE-READINESS-REVIEW` 结论：`PASS`（通过）/ `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）。
@@ -123,4 +121,4 @@ docs(gateq): review freeze readiness
 
 后续 `NQ-GATEQ-FREEZE-CLOSEOUT` 已完成，最终结论为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。
 
-历史 closeout 证据见 [GATEQ_FREEZE_CLOSEOUT.md](GATEQ_FREEZE_CLOSEOUT.md)；当前 GateQ final state 以 [docs/gates/gate-q/README.md](../gates/gate-q/README.md) 的 release archive 摘要为准。本 readiness review 仍作为 GateQ final freeze closeout 的前置证据保留，不再作为 GateQ 当前最终状态入口。
+历史 closeout 证据见 [GATEQ_FREEZE_CLOSEOUT.md](GATEQ_FREEZE_CLOSEOUT.md)；当前 GateQ final state 以 [README.md](README.md) 的 release archive 摘要为准。本 readiness review 仍作为 GateQ final freeze closeout 的前置证据保留，不再作为 GateQ 当前最终状态入口。

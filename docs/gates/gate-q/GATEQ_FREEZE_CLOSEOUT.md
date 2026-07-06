@@ -1,7 +1,5 @@
 # NQ-GATEQ-FREEZE-CLOSEOUT
 
-> Archive pointer: GateQ release tag and historical archive 已完成。当前 GateQ frozen/tagged 摘要见 [README.md](README.md)、[STATUS.md](STATUS.md) 与 [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)；完整归档入口见 [../gates/gate-q/README.md](../gates/gate-q/README.md)。本文作为 GateQ final freeze closeout 历史过渡证据保留，不再作为 GateQ current authority 入口。
-
 ## 1. GateQ Freeze Decision
 
 `NQ-GATEQ-FREEZE-CLOSEOUT` 最终结论：`PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。

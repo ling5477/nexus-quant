@@ -1,3 +1,38 @@
+## NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE validation（2026-07-06）
+
+```text
+Scope:
+  - 本轮只做 GateQ release tag、archive、CI evidence review、status sync 和 documentation。
+  - 不修改 backend / frontend / research / scripts / deploy / .github / migration。
+  - 不新增 API、页面、测试、CI workflow 或业务能力。
+  - 不调用真实交易所，不读取 credential material，不启动 Shadow Live runner，不创建 shadow run。
+
+Result:
+  NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE: PASS / COMPLETED / RELEASE TAG PUSHED
+  GateQ final state: FROZEN / ACCEPTED / TAGGED
+  Release tag: nq-gateq-freeze
+  Archive pointer: docs/gates/gate-q/README.md
+  P0: 0
+  P1: 0
+```
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git status --short` before archive write | PASS / CLEAN | 写入 archive 文档前工作区无未提交改动。 |
+| `git branch --show-current` | PASS | branch=`dev`。 |
+| `git rev-parse HEAD`; `git rev-parse origin/dev` | PASS | 两者均为 `9c8cbfe740751a1896cd6afdd04d1b9141531b10`。 |
+| `git tag --list "nq-gateq-freeze"` | PASS | 写入前本地 tag 不存在。 |
+| `git ls-remote --tags origin "refs/tags/nq-gateq-freeze*"` | PASS | 写入前远端 tag 不存在。 |
+| GitHub Actions run `28763029176` | PASS / SUCCESS | `NQ CI Baseline` status=`completed`，conclusion=`success`，headSha=`9c8cbfe740751a1896cd6afdd04d1b9141531b10`。 |
+| GateQ freeze closeout prerequisite | PASS | `docs/current/GATEQ_FREEZE_CLOSEOUT.md` 结论为 `PASS / FROZEN / ACCEPTED / READY FOR ARCHIVAL`。 |
+| Archive docs validation | PASS / PRE-COMMIT DOCS CHECKS | 本轮执行 `git diff --check`、`git diff --stat`、forbidden-area diffs 与风险词扫描；commit / push / tag / remote tag verification 的最终证据以本任务最终报告、Git commit history 和 remote tag 为准。 |
+
+本轮未重跑 Maven、frontend build、Playwright 或 Python：原因是 release tag / archive 只改 documentation 和 `docs/gates/gate-q/**`，不修改 backend、frontend、research、test、migration 或 CI 文件；代码级验证以前置 readiness review 已接受证据和最新 GitHub Actions success 为准。
+
+Boundary:
+
+未改 backend、frontend、research、scripts、deploy、`.github` 或 migration；未新增 API、migration、页面、测试或 CI workflow；未读取 credential material；未调用真实交易所；未启动 Shadow Live runner；未创建 shadow run；未写真实账户、资金、订单或 ledger 状态；未开启 LIVE、AI runtime 或 DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。下一阶段只能进入 GateR `PLAN / NOT STARTED`。
+
 ## NQ-GATEQ-FREEZE-CLOSEOUT validation（2026-07-06）
 
 ```text

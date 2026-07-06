@@ -1,6 +1,6 @@
 # Current Fact Source Index
 
-本文是 NexusQuant 当前事实源索引。用途是给后续 GateQ archive/tag、GateR planning、GateP/GateO historical archive、Integration-1、AI、LIVE、real provider、private trading 和 research 相关任务提供统一入口，避免把历史冻结证据、mock/test-support、readiness、preview 或 comparison 误写成当前 runtime 授权。
+本文是 NexusQuant 当前事实源索引。用途是给后续 GateR planning、GateQ/GateP/GateO historical archive、Integration-1、AI、LIVE、real provider、private trading 和 research 相关任务提供统一入口，避免把历史冻结证据、mock/test-support、readiness、preview 或 comparison 误写成当前 runtime 授权。
 
 ## 1. 当前事实源优先级
 
@@ -8,16 +8,17 @@
 
 1. `docs/current/STATUS.md`：当前项目状态与最新任务结论。
 2. `docs/current/README.md`：当前事实入口索引。
-3. `docs/current/GATEQ_FREEZE_CLOSEOUT.md`：GateQ final freeze closeout 当前权威入口；结论为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。
-4. `docs/current/GATEQ_FREEZE_READINESS_REVIEW.md`：GateQ-0..6 freeze readiness 前置证据；结论为 `PASS`（通过）/ `READY FOR FREEZE CLOSEOUT`（可进入冻结收口），已由 final closeout 消费。
-5. `docs/current/GATEQ_PLAN.md`：GateQ-0 planning baseline；记录 Shadow Live readiness、Paper vs Shadow boundary、strategy evaluation gate、traceability model、Python artifact binding 和 batch plan；该计划已由 GateQ-1..6 消费，不得单独解释为当前全阶段未实现。
-6. `docs/current/ROADMAP.md`：当前阶段路线与下一批入口。
-7. `docs/current/TESTING.md`：当前验证记录与未运行说明。
-8. `docs/current/WORKLOG.md`：当前任务执行记录。
-9. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
-10. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
-11. `docs/gates/gate-p/README.md`：GateP freeze / release tag / Batch 1-6A evidence matrix / testing summary 历史归档入口；当前摘要为 GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag），release tag `nq-gatep-freeze` 已推送。
-12. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
+3. `docs/gates/gate-q/README.md`：GateQ release tag / archive / GateQ-0..6 evidence matrix / testing summary / API/frontend evidence index / boundary statement 历史归档入口；当前摘要为 GateQ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag），release tag `nq-gateq-freeze` 已推送。
+4. `docs/current/ROADMAP.md`：当前阶段路线与下一批入口。
+5. `docs/current/TESTING.md`：当前验证记录与未运行说明。
+6. `docs/current/WORKLOG.md`：当前任务执行记录。
+7. `docs/current/API.md`：已实现 HTTP API 当前事实，不记录未来 API 为已实现。
+8. `docs/current/DB_SCHEMA.md`：已落地 Flyway schema 当前事实，不记录未来 schema 为已实现。
+9. `docs/current/GATEQ_FREEZE_CLOSEOUT.md`：GateQ final freeze closeout 历史过渡证据；已由 `docs/gates/gate-q/README.md` 归档，不再作为 GateQ current authority 入口。
+10. `docs/current/GATEQ_FREEZE_READINESS_REVIEW.md`：GateQ-0..6 freeze readiness 前置证据；已由 final closeout 与 GateQ archive 消费，不再作为 GateQ current authority 入口。
+11. `docs/current/GATEQ_PLAN.md`：GateQ-0 planning baseline；已由 GateQ-1..6 消费并归档到 `docs/gates/gate-q/`，不得单独解释为当前全阶段未实现。
+12. `docs/gates/gate-p/README.md`：GateP freeze / release tag / Batch 1-6A evidence matrix / testing summary 历史归档入口；当前摘要为 GateP `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag），release tag `nq-gatep-freeze` 已推送。
+13. `docs/gates/gate-o/README.md`：GateO freeze / acceptance / plan / key evidence 历史归档入口，只作 GateO 证据引用，不覆盖 current facts。
 
 `docs/current/GATEP_FREEZE_CLOSEOUT_REVIEW.md` 与 `docs/current/GATEP_FREEZE_READINESS_REVIEW.md` 仅保留 tag/archive pointer 和历史过渡证据，不再作为 current authority 入口；GateP 过程型长证据以 `docs/gates/gate-p/` 为归档入口。
 
@@ -27,7 +28,7 @@
 
 - GateO：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）。
 - GateP：`FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `TAGGED`（已打 tag）；Batch 1-6A `COMPLETED`（已完成）；final closeout `PASS`（通过）/ `READY FOR ARCHIVAL`（可归档）；release tag `nq-gatep-freeze` 已推送。
-- GateQ：GateQ-0 planning 已完成；GateQ-1 Strategy Evaluation Gate read-only baseline、GateQ-2 Paper vs Shadow Comparison read-only baseline、GateQ-3 Shadow Live no-side-effect preview skeleton、GateQ-4 Python Evaluation Artifact Binding Preview contract、GateQ-5 frontend Paper / Shadow Comparison view、GateQ-6 Strategy Lifecycle Trace view enhancement 均为 `COMPLETED`（已完成）；final freeze closeout 为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。GateQ 当前最终状态为 `FROZEN / ACCEPTED`。
+- GateQ：GateQ-0 planning 已完成；GateQ-1 Strategy Evaluation Gate read-only baseline、GateQ-2 Paper vs Shadow Comparison read-only baseline、GateQ-3 Shadow Live no-side-effect preview skeleton、GateQ-4 Python Evaluation Artifact Binding Preview contract、GateQ-5 frontend Paper / Shadow Comparison view、GateQ-6 Strategy Lifecycle Trace view enhancement 均为 `COMPLETED`（已完成）；release archive 为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）。GateQ 当前最终状态为 `FROZEN / ACCEPTED / TAGGED`。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -40,7 +41,7 @@
 
 GateP 已冻结并接受的是“真实数据质量与交易准备阶段”的只读诊断、前端诊断视图、交易前置只读基线、Python offline foundation 与 current fact-source closeout。该冻结不启动真实交易所接入、LIVE、AI、DH runtime、RealClient、real provider、private trading 或真实 permission probe。
 
-GateQ 当前已完成 GateQ-0 planning、GateQ-1 到 GateQ-4 后端只读 / preview API baseline、GateQ-5 / GateQ-6 前端只读验证视图、freeze readiness review 与 final freeze closeout。已冻结内容仍限定于 read-only aggregation、fail-closed comparison、no-side-effect preview、Python offline artifact binding preview 和 frontend evidence display；不代表真实 Shadow Live runner、shadow run 写侧 fact source、LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe 已启动。
+GateQ 当前已完成 GateQ-0 planning、GateQ-1 到 GateQ-4 后端只读 / preview API baseline、GateQ-5 / GateQ-6 前端只读验证视图、freeze readiness review、final freeze closeout 与 release tag / archive。已冻结内容仍限定于 read-only aggregation、fail-closed comparison、no-side-effect preview、Python offline artifact binding preview 和 frontend evidence display；不代表真实 Shadow Live runner、shadow run 写侧 fact source、LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe 已启动。
 
 ## 3. GateO 完成边界
 
@@ -109,7 +110,7 @@ GateP 当前不做：
 - Batch 6A：current fact-source drift fix 已完成。
 - Final closeout：`NQ-GATEP-FREEZE-CLOSEOUT-REVIEW` 为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。
 - Release tag / archive：`NQ-GATEP-RELEASE-TAG-AND-ARCHIVE` 为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）；tag `nq-gatep-freeze` 指向 commit `3650714ae9cd441e59eb5b09c605a14bbc9998dc`。
-- GateP archive 后的 GateQ-0 planning 已由 GateQ-1..6 消费；GateQ final freeze closeout 已完成。当前下一步只能另起 GateQ archive/tag 任务或 GateR `PLAN / NOT STARTED` planning 任务，不得借 closeout 新增 API、migration、页面、测试、CI、runtime 或业务能力。
+- GateP archive 后的 GateQ-0 planning 已由 GateQ-1..6 消费；GateQ final freeze closeout 与 release tag / archive 已完成。当前下一步只能另起 GateR `PLAN / NOT STARTED` planning 任务，不得借 GateQ archive 新增 API、migration、页面、测试、CI、runtime 或业务能力。
 
 ## 7. GateQ-0..6 与 final freeze 当前事实
 
@@ -121,6 +122,7 @@ GateP 当前不做：
 - GateQ-5：`/strategies/validation` Paper / Shadow Comparison 前端只读视图已完成；只消费 GateQ-1 / GateQ-2 / GateQ-3 GET API，不新增后端能力。
 - GateQ-6：Strategy Lifecycle Trace / Evidence Matrix 前端增强已完成；GateQ-4 在前端显示 `PENDING_FRONTEND_SUPPORT`（等待前端接入支持）/ `NOT_CONNECTED`（未接入）。
 - Freeze readiness review：`NQ-GATEQ-FREEZE-READINESS-REVIEW` 为 `PASS`（通过）/ `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）；P0/P1=0，已由 final freeze closeout 消费。
-- Final freeze closeout：`NQ-GATEQ-FREEZE-CLOSEOUT` 为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）；GateQ 当前最终状态为 `FROZEN / ACCEPTED`。
+- Final freeze closeout：`NQ-GATEQ-FREEZE-CLOSEOUT` 为 `PASS`（通过）/ `FROZEN`（已冻结）/ `ACCEPTED`（已接受）/ `READY FOR ARCHIVAL`（可归档）。
+- Release tag / archive：`NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE` 为 `PASS`（通过）/ `COMPLETED`（已完成）/ `RELEASE TAG PUSHED`（release tag 已推送）；tag `nq-gateq-freeze` 已推送；archive pointer 为 `docs/gates/gate-q/README.md`；GateQ 当前最终状态为 `FROZEN / ACCEPTED / TAGGED`。
 
 所有后续批次必须重新声明 allowed files、forbidden areas、validation commands 和 no-LIVE / no-AI / no-DH / no-real-provider / no-private-trading 边界。

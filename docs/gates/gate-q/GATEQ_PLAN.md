@@ -1,7 +1,5 @@
 # GateQ Plan: Shadow Live Readiness
 
-> Archive pointer: GateQ release tag and historical archive 已完成。当前 GateQ frozen/tagged 摘要见 [README.md](README.md)、[STATUS.md](STATUS.md) 与 [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md)；完整归档入口见 [../gates/gate-q/README.md](../gates/gate-q/README.md)。本文作为 GateQ-0 planning baseline 历史证据保留，已由 GateQ-1..6、freeze closeout 与 GateQ archive 消费，不再作为 GateQ current authority 入口。
-
 任务名称：`NQ-GATEQ-PLAN-SHADOW-LIVE-READINESS`
 
 日期：2026-07-05

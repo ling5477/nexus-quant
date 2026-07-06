@@ -1,3 +1,87 @@
+## NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE
+
+日期：2026-07-06。
+
+范围：
+
+- NQ-only GateQ release tag and archive。
+- 基于 GateQ freeze closeout commit、最新 NQ CI Baseline success、GateQ plan、freeze readiness review、freeze closeout、API / DB docs 和 GateP archive pattern 建立 `docs/gates/gate-q/`。
+- 同步 root `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md` 与三份 GateQ current evidence pointer。
+- 不实现新功能，不改业务代码，不新增 API / migration / CI workflow / 前端页面 / 测试。
+- 不调用真实交易所，不读取 credential material，不启动 Shadow Live runner，不创建 shadow run，不开启 LIVE / AI / DH runtime。
+
+新增文件：
+
+```text
+docs/gates/gate-q/README.md
+docs/gates/gate-q/GATEQ_FREEZE_CLOSEOUT.md
+docs/gates/gate-q/GATEQ_FREEZE_READINESS_REVIEW.md
+docs/gates/gate-q/GATEQ_PLAN.md
+docs/gates/gate-q/GATEQ_BATCH_0_6_EVIDENCE_MATRIX.md
+docs/gates/gate-q/GATEQ_TESTING_EVIDENCE_SUMMARY.md
+docs/gates/gate-q/GATEQ_API_AND_FRONTEND_EVIDENCE_INDEX.md
+docs/gates/gate-q/GATEQ_BOUNDARY_STATEMENT.md
+```
+
+修改文件：
+
+```text
+README.md
+docs/current/FACT_SOURCE_INDEX.md
+docs/current/GATEQ_FREEZE_CLOSEOUT.md
+docs/current/GATEQ_FREEZE_READINESS_REVIEW.md
+docs/current/GATEQ_PLAN.md
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE: PASS / COMPLETED / RELEASE TAG PUSHED
+GateQ final state: FROZEN / ACCEPTED / TAGGED
+Release tag: nq-gateq-freeze
+Tag message: NexusQuant GateQ freeze: strategy validation and paper shadow readiness baseline
+Archive pointer: docs/gates/gate-q/README.md
+Freeze closeout commit: 9c8cbfe740751a1896cd6afdd04d1b9141531b10
+Archive commit: docs(gateq): archive GateQ freeze evidence
+CI evidence: NQ CI Baseline run 28763029176 success on 9c8cbfe740751a1896cd6afdd04d1b9141531b10
+GateR: PLAN / NOT STARTED ONLY
+```
+
+Findings：
+
+- GateQ-0 planning 已由 GateQ-1..6 消费。
+- GateQ-1 Strategy Evaluation Gate read-only baseline 已完成；不是交易授权。
+- GateQ-2 Paper vs Shadow Comparison read-only baseline 已完成；不是交易授权。
+- GateQ-3 Shadow Live no-side-effect preview skeleton 已完成；不启动 runner，不创建 shadow run。
+- GateQ-4 Python Evaluation Artifact Binding Preview contract 已完成；不导入、不上传、不持久化，不代表 ML ready 或 live execution ready。
+- GateQ-5 / GateQ-6 `/strategies/validation` 前端只读视图与 Evidence Matrix 已完成；不代表交易台、AI 决策中心或 Shadow Live 执行入口。
+
+Validation：
+
+- 写入前 `git status --short`：clean。
+- `git branch --show-current`：`dev`。
+- `git rev-parse HEAD` / `git rev-parse origin/dev`：均为 `9c8cbfe740751a1896cd6afdd04d1b9141531b10`。
+- `git tag --list "nq-gateq-freeze"`：写入前无输出。
+- `git ls-remote --tags origin "refs/tags/nq-gateq-freeze*"`：写入前无输出。
+- GitHub Actions `NQ CI Baseline` run `28763029176`：status=`completed`，conclusion=`success`，headSha=`9c8cbfe740751a1896cd6afdd04d1b9141531b10`。
+- 本轮最终执行 `git diff --check`、`git diff --stat`、forbidden-area diff、migration diff、risk-word scan、cached checks、commit / push / tag / remote tag verification；最终命令结果以任务最终报告为准。
+- 本轮未重跑 Maven、frontend build、Playwright 或 Python；原因是 docs-only release tag / archive，未修改 Java / TypeScript / Python / tests / migration / workflow。
+
+边界确认：
+
+未改 backend / frontend / research / scripts / deploy / `.github` / migration；未新增 API、页面、测试或 CI workflow；未读取 credential material；未调用真实交易所；未启动 Shadow Live runner；未创建 shadow run；未写真实账户、资金、订单或 ledger 状态；未开启 LIVE、AI runtime 或 DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+
+下一步：
+
+```text
+NQ-GATER-PLAN / PLAN ONLY / NOT STARTED
+```
+
 ## NQ-GATEQ-FREEZE-CLOSEOUT
 
 日期：2026-07-06。
@@ -63,9 +147,7 @@ Validation：
 下一步：
 
 ```text
-NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE（需用户单独授权）
-或
-NQ-GATER-PLAN（只能 planning / NOT STARTED）
+GateQ release tag / archive 已由本文件顶部 `NQ-GATEQ-RELEASE-TAG-AND-ARCHIVE` 消费；下一步只能 `NQ-GATER-PLAN / PLAN ONLY / NOT STARTED`。
 ```
 
 ## NQ-GATEQ-FREEZE-READINESS-REVIEW
