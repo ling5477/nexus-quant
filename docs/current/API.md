@@ -22,6 +22,7 @@
 - Paper Shadow Comparison API：只读聚合 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 与 Shadow 未实现状态，供 GateQ-2 判断 Paper vs Shadow 对照证据准备度。
 - Shadow Live No-side-effect Preview API：只读聚合 GateQ-1 evaluation gate 与 GateQ-2 Paper/Shadow comparison 结果，供 GateQ-3 判断是否能生成 Shadow Live no-side-effect 预览计划。
 - Shadow Run Read-only API：只读查询本地 Shadow Run list、detail、events、snapshots 与 latest consistency report，供 GateR-6 / GateR-8 前端 list/detail/replay view 使用。
+- Shadow Run Overview API：只读聚合本地 Shadow Run overview、latest run、latest consistency、divergence severity、blockers / warnings / nextSteps 和 evidence anchors，供 GateS-1 最小后端 read model 使用。
 - Python Evaluation Artifact Binding Preview API：只读校验 request body 中的 Python offline evaluation artifact，供 GateQ-4 生成 Java fact source binding preview，不导入、不上传、不写库。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
@@ -74,6 +75,7 @@ LIVE: DISABLED
 - GateQ-4 新增只读 Python Evaluation Artifact Binding Preview API；只校验 request body 中的 artifact JSON，不读取本地路径，不新增 import/upload endpoint，不把 Python artifact 写成 Java fact，不写数据库，不触发 strategy publish / Paper run / Shadow run，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 strategy approved、trading authorization、ML ready 或 live execution ready。
 - GateR-6 新增 Shadow Run read-only API；只读取本地 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots` 与 `shadow_consistency_reports` 事实，不新增 migration，不新增写接口，不创建 / 启动 / 停止 / 取消 / 重跑 / 执行 Shadow runner，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable、trade approval 或 Shadow Live ready。
 - GateR-8 新增 Shadow Run read-only list API；只读取本地 `shadow_runs` 与已脱敏本地 result summary，用于前端列表入口和 detail 跳转，不新增 migration，不新增写接口，不启动 runner，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable、trade approval 或 Shadow Live ready。
+- GateS-1 新增 `GET /api/shadow-runs/overview` 最小后端 read model API；只读取 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports` 本地事实，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不启动 runner / scheduler，不深聚合 Paper / Strategy / MarketData / Risk / Incident，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable、trade approval 或 Shadow Live ready。
 
 ## GateR-6 / GateR-8 Shadow Run Read-only API
 
@@ -99,19 +101,26 @@ NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION 当前状态：`IMPLEMENTED`�
 - 固定禁止：本 API 不提供 `POST /api/shadow-runs`、`start`、`stop`、`cancel`、`rerun`、`execute`、`trade`、`placeOrder`、`cancelOrder`、`withdraw`、`transfer` 或任何写侧 / 交易动作 endpoint。
 - Response 禁止字段：`apiKey`、`secret`、`passphrase`、`token`、`privateKey`、`credentialMaterial`、`decryptedPayload`、`encryptedPayload` 真实值、`rawPrivateRequest`、`rawPrivateResponse`、private endpoint payload、`realOrderId`、`realAccountBalance`、`realPosition`、`tradingReady`、`liveReady`、`authorizedForTrading`、`tradeApproved`、order execution command、private adapter reference。
 
-## GateS-1 Read-model / Frontend Contract Proposal (Not Implemented)
+## GateS-1 Shadow Run Overview Read-only API
 
-GateS-1 当前仅为 `NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）。本节是 future contract proposal（未来契约提案），不是当前已实现 HTTP API，不新增 endpoint，不新增 Controller / DTO / repository / SQL / migration / frontend page / test。
+NQ-GATES-1-READ-MODEL-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖最小后端 read model、GET-only Controller/DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-1 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend page、GateS 全域 overview、Strategy Validation runtime、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
-候选 read model 应只读聚合既有本地 facts，覆盖 `Shadow Run overview`、`latest shadow status`、`stale evidence`、`divergence severity`、`Paper vs Shadow consistency summary`、`Strategy Validation decision`、`blocker`、`warning`、`nextSteps`、`evidence anchors`、`traceId` / `requestId` / `idempotencyKey`、`diagnostic-only boundary` 和 `not trading authorization boundary`。
-
-候选 `Strategy Validation decision` 状态仅允许表示 validation report 层面的准出结论：`APPROVED`（验证报告层通过）、`REJECTED`（拒绝）、`NEEDS_REVIEW`（需要复核）、`BLOCKED`（阻断）。`APPROVED` 不表示交易授权，不启用 LIVE，不允许真实下单、撤单、转账或提现。
-
-候选一致性与运行健康状态仅用于 Paper / Shadow / replay 证据层，不修改 `shadow_runs.status` 核心状态机：`CONSISTENT`（一致）、`DIVERGED`（偏离）、`PARTIAL`（部分可比）、`NOT_COMPARABLE`（不可比）、`FAILED`（失败）、`STALE_EVIDENCE`（证据过期）。
-
-候选 frontend contract 只允许只读展示 Dashboard v2、Strategy Validation Center、Paper vs Shadow Workbench、MarketData Quality Drilldown、Risk / Preflight Blocker Panel、Incident / Replay Center。固定禁止真实交易按钮、LIVE 操作入口、AI 决策中心、Binance Pro 式全屏交易终端、live-ready / trading-ready / provider-ready 文案。
-
-Response / UI 禁止字段或文案：`tradeApproved`、`authorizedForTrading`、`liveReady`、`tradingReady`、`realProviderReady`、`privateTradingReady`、`LIVE READY`、`SHADOW LIVE TRADING ENABLED`、`REAL PROVIDER ENABLED`、`PRIVATE TRADING ENABLED`、`REAL PERMISSION PROBE ENABLED`、credential material、真实订单、真实账户余额、真实仓位、private endpoint raw payload。
+- `GET /api/shadow-runs/overview`：只读聚合本地 Shadow Run overview。
+  - Query：无请求参数；不接受 request body。
+  - Response：`generatedAt / diagnosticOnly / noSideEffect / notTradingAuthorization / liveDisabled / realProviderImplemented / privateTradingImplemented / aiDhRuntimeIntegrated / totalRuns / runningRuns / blockedRuns / failedRuns / completedRuns / staleRuns / latestRun / latestConsistency / divergenceSeverity / blockers / warnings / nextSteps / evidenceAnchors / traceId`。
+  - `latestRun`：`shadowRunId / strategyVersionId / datasetId / paperRunId / status / authorizationBoundary / noOrderSubmission / noCredentialAccess / noPrivateEndpoint / noLedgerMutation / noAccountMutation / noExternalPrivateIo / createdAt / updatedAt / startedAt / completedAt`。
+  - `latestConsistency`：`reportId / shadowRunId / paperRunId / comparisonStatus / metricDelta / divergenceReasons / limitations / generatedAt / traceId`。
+  - `divergenceSeverity`：`NONE / LOW / MEDIUM / HIGH / CRITICAL / UNKNOWN`，由 latest consistency report 派生；无 report 时为 `UNKNOWN`（未知）。该字段只用于诊断排序，不回写 `shadow_runs.status`。
+  - `comparisonStatus` 只表达证据层状态：`CONSISTENT / DIVERGED / PARTIAL / NOT_COMPARABLE / FAILED`；`STALE_EVIDENCE`（证据过期）当前只作为 read model warning code，不新增表字段。
+  - 固定 boundary flags：`diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+  - 固定 blockers / warnings 至少包含：`LIVE_DISABLED`、`REAL_PROVIDER_NOT_IMPLEMENTED`、`PRIVATE_TRADING_NOT_IMPLEMENTED`、`SHADOW_RUN_DIAGNOSTIC_ONLY`；缺 report 时返回 `CONSISTENCY_REPORT_MISSING` warning；存在 run 但缺 snapshot 或 report 时返回 `STALE_EVIDENCE` warning。
+  - `nextSteps` 仅允许 review / inspect / compare / investigate / implement_frontend_readonly_overview 等诊断动作，不提供交易、批准、放行、执行、下单、撤单、转账或提现动作。
+  - `evidenceAnchors` 只引用 `SHADOW_RUN`、`SHADOW_EVENT`、`SHADOW_SNAPSHOT`、`SHADOW_CONSISTENCY_REPORT` 以及 `PAPER_RUN` / `STRATEGY_VERSION` / `DATASET` id anchor；不读取 Paper / Strategy / MarketData / Risk / Incident 域做深聚合。
+- 数据来源：仅 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`。
+- No-side-effect：Controller 只有 GET；service/repository 只做 SELECT；不 INSERT / UPDATE / DELETE；不 create shadow run；不 append event / snapshot / report；不启动 runner / scheduler；不调用 adapter、risk write side、order/account/ledger 服务。
+- 固定禁止：不提供 `POST /api/shadow-runs/overview`、`PUT`、`PATCH`、`DELETE`、`start`、`stop`、`cancel`、`rerun`、`execute`、`trade`、`placeOrder`、`cancelOrder`、`withdraw`、`transfer` 或任何写侧 / 交易动作 endpoint。
+- Response 禁止字段：`apiKey`、`secret`、`passphrase`、`token`、`privateKey`、`rawSignature`、`rawPrivateRequest`、`rawPrivateResponse`、`credentialMaterial`、`decryptedPayload`、`encryptedPayload` 真实值、private endpoint payload、`realOrderId`、`realAccountBalance`、`realPosition`、`withdrawAddress`、`transferTarget`、`tradeApproved`、`tradingReady`、`liveReady`、`authorizedForTrading`。
+- GateS-1 frontend IA 仍未实现；`GET /api/gates/s/overview`、`GET /api/validation/overview`、`GET /api/validation/strategies/{strategyVersionId}`、`GET /api/paper-shadow/consistency/drilldown`、`GET /api/risk/preflight/blockers`、`GET /api/incidents/replay` 均未实现。
 
 ## GateQ-1 Strategy Evaluation Gate Read-only API
 

@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunOverviewEvidenceFact;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunOverviewFacts;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunOverviewQueryPort;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -19,7 +22,9 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotTy
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatusUpdateResult;
 
+import java.time.Clock;
 import java.lang.reflect.Field;
+import java.time.ZoneOffset;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,6 +42,7 @@ class ShadowRunReadOnlyQueryServiceTest {
     private static final UUID RUN_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
     private static final UUID DATASET_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");
     private static final Instant NOW = Instant.parse("2026-07-06T12:00:00Z");
+    private static final Clock FIXED_CLOCK = Clock.fixed(NOW.plusSeconds(60), ZoneOffset.UTC);
 
     @Test
     void shouldReadDetailEventsSnapshotsAndLatestReportWithoutMutatingFacts() {
@@ -143,6 +149,154 @@ class ShadowRunReadOnlyQueryServiceTest {
         assertFalse(joined.contains("client"));
     }
 
+    @Test
+    void shouldReturnSafeOverviewForEmptyDataWithoutMutatingFacts() {
+        InMemoryShadowRunOverviewQueryPort queryPort = new InMemoryShadowRunOverviewQueryPort(ShadowRunOverviewFacts.empty());
+        ShadowRunOverviewQueryService service = new ShadowRunOverviewQueryService(queryPort, FIXED_CLOCK);
+
+        ShadowRunOverviewReadModel overview = service.overview("trace-empty");
+
+        assertEquals(NOW.plusSeconds(60), overview.generatedAt());
+        assertTrue(overview.diagnosticOnly());
+        assertTrue(overview.noSideEffect());
+        assertTrue(overview.notTradingAuthorization());
+        assertTrue(overview.liveDisabled());
+        assertFalse(overview.realProviderImplemented());
+        assertFalse(overview.privateTradingImplemented());
+        assertFalse(overview.aiDhRuntimeIntegrated());
+        assertEquals(0, overview.totalRuns());
+        assertEquals(0, overview.staleRuns());
+        assertEquals(ShadowRunOverviewDivergenceSeverity.UNKNOWN, overview.divergenceSeverity());
+        assertEquals(null, overview.latestRun());
+        assertEquals(null, overview.latestConsistency());
+        assertTrue(overview.blockers().stream().anyMatch(message -> message.code().equals("LIVE_DISABLED")));
+        assertTrue(overview.blockers().stream().anyMatch(message -> message.code().equals("REAL_PROVIDER_NOT_IMPLEMENTED")));
+        assertTrue(overview.blockers().stream().anyMatch(message -> message.code().equals("PRIVATE_TRADING_NOT_IMPLEMENTED")));
+        assertTrue(overview.warnings().stream().anyMatch(message -> message.code().equals("SHADOW_RUN_DIAGNOSTIC_ONLY")));
+        assertTrue(overview.warnings().stream().anyMatch(message -> message.code().equals("SHADOW_RUN_MISSING")));
+        assertTrue(overview.warnings().stream().anyMatch(message -> message.code().equals("CONSISTENCY_REPORT_MISSING")));
+        assertTrue(overview.nextSteps().stream().allMatch(step -> !step.action().toLowerCase().contains("trade")));
+        assertEquals(1, queryPort.loadCalls);
+    }
+
+    @Test
+    void shouldMapOverviewCountsLatestFactsAnchorsAndHighDivergenceSeverity() {
+        ShadowConsistencyReport report = report(NOW.plusSeconds(30), ShadowConsistencyComparisonStatus.DIVERGED);
+        ShadowRunOverviewFacts facts = facts(
+                5,
+                1,
+                1,
+                1,
+                2,
+                1,
+                Optional.of(run()),
+                Optional.of(report)
+        );
+        ShadowRunOverviewQueryService service = new ShadowRunOverviewQueryService(
+                new InMemoryShadowRunOverviewQueryPort(facts),
+                FIXED_CLOCK
+        );
+
+        ShadowRunOverviewReadModel overview = service.overview("trace-overview");
+
+        assertEquals(5, overview.totalRuns());
+        assertEquals(1, overview.runningRuns());
+        assertEquals(1, overview.blockedRuns());
+        assertEquals(1, overview.failedRuns());
+        assertEquals(2, overview.completedRuns());
+        assertEquals(1, overview.staleRuns());
+        assertEquals(RUN_ID, overview.latestRun().shadowRunId());
+        assertEquals("COMPLETED", overview.latestRun().status());
+        assertEquals(report.id(), overview.latestConsistency().reportId());
+        assertEquals("DIVERGED", overview.latestConsistency().comparisonStatus());
+        assertEquals(ShadowRunOverviewDivergenceSeverity.HIGH, overview.divergenceSeverity());
+        assertTrue(overview.warnings().stream().anyMatch(message -> message.code().equals("STALE_EVIDENCE")));
+        assertTrue(overview.nextSteps().stream().anyMatch(step -> step.action().equals("compare_paper_shadow_report")));
+        assertTrue(overview.evidenceAnchors().stream().anyMatch(anchor -> anchor.sourceType().equals("SHADOW_RUN")));
+        assertTrue(overview.evidenceAnchors().stream().anyMatch(anchor -> anchor.sourceType().equals("SHADOW_CONSISTENCY_REPORT")));
+        assertTrue(overview.evidenceAnchors().stream().anyMatch(anchor -> anchor.sourceType().equals("SHADOW_EVENT")));
+        assertTrue(overview.evidenceAnchors().stream().anyMatch(anchor -> anchor.sourceType().equals("SHADOW_SNAPSHOT")));
+    }
+
+    @Test
+    void shouldMapComparisonStatusToDivergenceSeverityWithoutChangingRunStatus() {
+        Map<ShadowConsistencyComparisonStatus, ShadowRunOverviewDivergenceSeverity> expected = Map.of(
+                ShadowConsistencyComparisonStatus.CONSISTENT, ShadowRunOverviewDivergenceSeverity.NONE,
+                ShadowConsistencyComparisonStatus.NOT_COMPARABLE, ShadowRunOverviewDivergenceSeverity.MEDIUM,
+                ShadowConsistencyComparisonStatus.DIVERGED, ShadowRunOverviewDivergenceSeverity.HIGH,
+                ShadowConsistencyComparisonStatus.FAILED, ShadowRunOverviewDivergenceSeverity.CRITICAL
+        );
+
+        for (Map.Entry<ShadowConsistencyComparisonStatus, ShadowRunOverviewDivergenceSeverity> entry : expected.entrySet()) {
+            ShadowRunOverviewQueryService service = new ShadowRunOverviewQueryService(
+                    new InMemoryShadowRunOverviewQueryPort(facts(
+                            1,
+                            0,
+                            0,
+                            0,
+                            1,
+                            0,
+                            Optional.of(run()),
+                            Optional.of(report(NOW, entry.getKey()))
+                    )),
+                    FIXED_CLOCK
+            );
+
+            ShadowRunOverviewReadModel overview = service.overview("trace-" + entry.getKey().name());
+
+            assertEquals(entry.getValue(), overview.divergenceSeverity());
+            assertEquals("COMPLETED", overview.latestRun().status());
+        }
+
+        ShadowRunOverviewQueryService partialWithoutReasons = new ShadowRunOverviewQueryService(
+                new InMemoryShadowRunOverviewQueryPort(facts(
+                        1,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        Optional.of(run()),
+                        Optional.of(report(NOW, ShadowConsistencyComparisonStatus.PARTIAL, false))
+                )),
+                FIXED_CLOCK
+        );
+        ShadowRunOverviewQueryService partialWithReasons = new ShadowRunOverviewQueryService(
+                new InMemoryShadowRunOverviewQueryPort(facts(
+                        1,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        Optional.of(run()),
+                        Optional.of(report(NOW, ShadowConsistencyComparisonStatus.PARTIAL, true))
+                )),
+                FIXED_CLOCK
+        );
+
+        assertEquals(ShadowRunOverviewDivergenceSeverity.LOW, partialWithoutReasons.overview("trace-partial-low").divergenceSeverity());
+        assertEquals(ShadowRunOverviewDivergenceSeverity.MEDIUM, partialWithReasons.overview("trace-partial-medium").divergenceSeverity());
+    }
+
+    @Test
+    void shouldKeepOverviewServiceDependencyAwayFromRunnerAdapterAccountLedgerAndOrderPorts() {
+        List<String> dependencyNames = List.of(ShadowRunOverviewQueryService.class.getDeclaredFields()).stream()
+                .filter(field -> !field.isSynthetic())
+                .map(Field::getType)
+                .map(Class::getName)
+                .toList();
+
+        assertEquals(List.of(ShadowRunOverviewQueryPort.class.getName(), Clock.class.getName()), dependencyNames);
+        String joined = String.join("|", dependencyNames).toLowerCase();
+        assertFalse(joined.contains("runner"));
+        assertFalse(joined.contains("adapter"));
+        assertFalse(joined.contains("account"));
+        assertFalse(joined.contains("ledger"));
+        assertFalse(joined.contains("order"));
+        assertFalse(joined.contains("client"));
+    }
+
     private InMemoryShadowRunFactRepository repositoryWithRun() {
         InMemoryShadowRunFactRepository repository = new InMemoryShadowRunFactRepository();
         repository.run = run();
@@ -221,17 +375,67 @@ class ShadowRunReadOnlyQueryServiceTest {
     }
 
     private ShadowConsistencyReport report(Instant generatedAt) {
+        return report(generatedAt, ShadowConsistencyComparisonStatus.CONSISTENT);
+    }
+
+    private ShadowConsistencyReport report(Instant generatedAt, ShadowConsistencyComparisonStatus status) {
+        return report(generatedAt, status, true);
+    }
+
+    private ShadowConsistencyReport report(
+            Instant generatedAt,
+            ShadowConsistencyComparisonStatus status,
+            boolean includeReason
+    ) {
         return new ShadowConsistencyReport(
                 UUID.randomUUID(),
                 RUN_ID,
                 "paper-1",
-                ShadowConsistencyComparisonStatus.CONSISTENT,
+                status,
                 OBJECT_MAPPER.createObjectNode().put("schemaVersion", "shadow-consistency-report.v1"),
-                OBJECT_MAPPER.createArrayNode(),
+                includeReason
+                        ? OBJECT_MAPPER.createArrayNode().add("paper-shadow-divergence")
+                        : OBJECT_MAPPER.createArrayNode(),
                 OBJECT_MAPPER.createArrayNode().add("diagnostic report only"),
                 generatedAt,
                 "trace-shadow",
                 generatedAt
+        );
+    }
+
+    private ShadowRunOverviewFacts facts(
+            long totalRuns,
+            long runningRuns,
+            long blockedRuns,
+            long failedRuns,
+            long completedRuns,
+            long staleRuns,
+            Optional<ShadowRun> latestRun,
+            Optional<ShadowConsistencyReport> latestReport
+    ) {
+        return new ShadowRunOverviewFacts(
+                totalRuns,
+                runningRuns,
+                blockedRuns,
+                failedRuns,
+                completedRuns,
+                staleRuns,
+                latestRun,
+                latestReport,
+                Optional.of(new ShadowRunOverviewEvidenceFact(
+                        "SHADOW_EVENT",
+                        UUID.randomUUID().toString(),
+                        "COMPLETED",
+                        NOW,
+                        null
+                )),
+                Optional.of(new ShadowRunOverviewEvidenceFact(
+                        "SHADOW_SNAPSHOT",
+                        UUID.randomUUID().toString(),
+                        "shadow-order-intent-preview.v1",
+                        NOW,
+                        "sha256-demo"
+                ))
         );
     }
 
@@ -351,6 +555,22 @@ class ShadowRunReadOnlyQueryServiceTest {
                     .max(Comparator.comparing(ShadowConsistencyReport::generatedAt)
                             .thenComparing(ShadowConsistencyReport::createdAt)
                             .thenComparing(ShadowConsistencyReport::id));
+        }
+    }
+
+    private static final class InMemoryShadowRunOverviewQueryPort implements ShadowRunOverviewQueryPort {
+
+        private final ShadowRunOverviewFacts facts;
+        private int loadCalls;
+
+        private InMemoryShadowRunOverviewQueryPort(ShadowRunOverviewFacts facts) {
+            this.facts = facts;
+        }
+
+        @Override
+        public ShadowRunOverviewFacts loadOverviewFacts() {
+            loadCalls++;
+            return facts;
         }
     }
 }

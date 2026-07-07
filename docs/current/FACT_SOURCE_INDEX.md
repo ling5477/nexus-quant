@@ -1,6 +1,6 @@
 # Current Fact Source Index
 
-本文是 NexusQuant 当前事实源索引。用途是给 GateR frozen baseline、GateS-0 planning / fact-source reconciliation、GateS-1 read model work order、历史 Gate archive、LIVE / AI / DH / Integration-1 / real provider 边界判断提供统一入口，避免把已冻结证据、mock/test-support、readiness、preview、local fact、read-only API、frontend replay、comparison 或 Strategy Validation 误写成 runtime 授权。
+本文是 NexusQuant 当前事实源索引。用途是给 GateR frozen baseline、GateS-0 planning / fact-source reconciliation、GateS-1 read model work order、GateS-1 minimal backend read model implementation、历史 Gate archive、LIVE / AI / DH / Integration-1 / real provider 边界判断提供统一入口，避免把已冻结证据、mock/test-support、readiness、preview、local fact、read-only API、frontend replay、comparison 或 Strategy Validation 误写成 runtime 授权。
 
 ## 1. 当前事实源优先级
 
@@ -11,11 +11,11 @@
 3. [README.md](README.md)：current 入口和 archive pointer。
 4. [ROADMAP.md](ROADMAP.md)：当前路线与下一阶段边界。
 5. [GATES_0_PLAN.md](GATES_0_PLAN.md)：GateS-0 plan / fact-source reconciliation、GateS batch plan、GateS-1 read-model / frontend contract proposal；只表示 planning ready，不表示 implementation。
-6. [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)：GateS-1 read model work order；只表示 owner / data source / DTO / API candidate / frontend IA / testing scope / boundary ready，不表示 implementation。
+6. [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)：GateS-1 read model work order；只表示 owner / data source / DTO / API candidate / frontend IA / testing scope / boundary ready；implementation 当前事实以代码、[API.md](API.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 [STATUS.md](STATUS.md) 为准。
 7. [GATER_PLAN.md](GATER_PLAN.md)：GateR historical planning 和 GateR-2..8 implementation 指针；GateR 当前已被 freeze closeout superseded，不再作为下一阶段入口。
-8. [API.md](API.md)：已实现 HTTP API 当前事实；GateR-6 / GateR-8 Shadow Run API 只包含 read-only GET endpoint，不包含写接口；GateS-1 仅允许作为 future contract proposal 标注。
-9. [TESTING.md](TESTING.md)：当前验证记录和未运行说明；GateR frozen baseline、GateS-0 docs-only validation 和 GateS-1 work order docs/read-only validation 证据以此为当前验证入口。
-10. [WORKLOG.md](WORKLOG.md)：当前任务记录；GateR frozen baseline、GateS-0 docs-only scope、GateS-1 work order scope 和边界以此为工作记录入口。
+8. [API.md](API.md)：已实现 HTTP API 当前事实；GateR-6 / GateR-8 Shadow Run API 只包含 read-only GET endpoint，不包含写接口；GateS-1 当前只实现 `GET /api/shadow-runs/overview` 最小 backend read model，不包含 frontend page、GateS 全域 overview 或写接口。
+9. [TESTING.md](TESTING.md)：当前验证记录和未运行说明；GateR frozen baseline、GateS-0 docs-only validation、GateS-1 work order docs/read-only validation 和 GateS-1 implementation Maven validation 证据以此为当前验证入口。
+10. [WORKLOG.md](WORKLOG.md)：当前任务记录；GateR frozen baseline、GateS-0 docs-only scope、GateS-1 work order scope、GateS-1 implementation scope 和边界以此为工作记录入口。
 11. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实；GateR-2 的 `V32__gate_r_shadow_run_fact_model.sql` 和 4 张 Shadow Run local fact 表以此为当前 schema 入口；GateS-1 work order 不新增 schema。
 12. [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)：GateR-1 Shadow Run data model / migration plan review；只表示 migration 方案曾经就绪，不代表当前要新增 migration。
 13. [../gates/gate-r/README.md](../gates/gate-r/README.md)：GateR 历史归档入口。
@@ -42,7 +42,8 @@
 - GateR-8：Shadow Run list / entrypoint 已完成。
 - GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）。
-- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现）。
+- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- GateS-1 minimal backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅表示 `GET /api/shadow-runs/overview` 后端只读聚合已实现，不表示 GateS-1 frozen / accepted、frontend page、GateS 全域 validation runtime、LIVE 或交易授权。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -69,12 +70,13 @@
 
 - GateR 已完成 freeze closeout，状态为 `FROZEN / ACCEPTED / TAGGED`；不得误读为 LIVE、trading authorization、AI / DH runtime 或 private trading 启动。
 - GateS 当前仅为下一阶段推荐主线，GateS-0 为 `PLAN / NOT IMPLEMENTED`；不得写成 implemented、frozen 或 accepted。
-- GateS-1 work order 当前为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`；GateS-1 implementation 仍 `NOT IMPLEMENTED`，不得写成 read model、API、frontend page 或 test 已实现。
+- GateS-1 work order 当前为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`；GateS-1 minimal backend read model 当前为 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`，不得误写成 GateS-1 frozen / accepted、frontend page 已实现、GateS 全域 validation runtime 已实现或交易授权。
 - 不得把 GateR readiness 写成 trading authorization 或 LIVE ready。
 - 不得把 GateR-1 migration plan review 本身写成 migration implemented；migration implemented 的当前事实只来自 GateR-2 `V32__gate_r_shadow_run_fact_model.sql`。
 - 不得把 GateR-2..8 已完成误写成未实现、trading authorization 或 LIVE ready。
 - Shadow Run read-only API / DTO 已实现；仍不得写成 write API、runner start endpoint、execute endpoint 或 trading endpoint。
 - Shadow Run frontend list / detail / replay view 已实现；仍不得写成带 start / stop / execute / rerun / approve / trade 执行按钮的页面。
+- Shadow Run overview backend read model 已实现；仍不得写成 write API、runner start endpoint、scheduler、frontend page、GateS 全域 validation overview、Strategy Validation approval、trading authorization 或 LIVE ready。
 - Shadow Run runner skeleton 已实现；仍不得写成 scheduler、后台 runner、runner started、shadow live trading enabled 或 live-ready。
 - 不得把 LIVE 写成 ready / enabled。
 - 不得把 AI 写成 started。

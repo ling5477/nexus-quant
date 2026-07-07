@@ -21,7 +21,8 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateR-8：Shadow Run list / entrypoint 已完成。
 - GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）；规划审查入口：`docs/current/GATES_0_PLAN.md`。
-- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；work order 入口：`docs/current/GATES_1_READ_MODEL_WO.md`。GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现），不代表 backend read model、API、frontend page 或测试已实现。
+- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；work order 入口：`docs/current/GATES_1_READ_MODEL_WO.md`。
+- GateS-1 minimal backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/shadow-runs/overview` 后端只读聚合，不代表 frontend page、GateS 全域 validation runtime、GateS-1 frozen / accepted、LIVE 或交易授权。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -55,4 +56,4 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 
 ## Boundary
 
-GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 当前为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateS 当前仅为推荐下一主线、GateS-0 `PLAN / NOT IMPLEMENTED` 和 GateS-1 work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`，不代表 GateS implementation、freeze、acceptance 或交易授权。
+GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 当前为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateS 当前仅为推荐下一主线、GateS-0 `PLAN / NOT IMPLEMENTED`、GateS-1 work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT` 和 GateS-1 minimal backend read model `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`，不代表 GateS freeze、acceptance、frontend、LIVE、AI/DH runtime、real provider 或交易授权。

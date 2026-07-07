@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.strategy.api.web;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyQueryService;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
@@ -40,9 +41,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class ShadowRunReadOnlyController {
 
     private final ShadowRunReadOnlyQueryService queryService;
+    private final ShadowRunOverviewQueryService overviewQueryService;
 
-    public ShadowRunReadOnlyController(ShadowRunReadOnlyQueryService queryService) {
+    public ShadowRunReadOnlyController(
+            ShadowRunReadOnlyQueryService queryService,
+            ShadowRunOverviewQueryService overviewQueryService
+    ) {
         this.queryService = Objects.requireNonNull(queryService, "queryService must not be null");
+        this.overviewQueryService = Objects.requireNonNull(overviewQueryService, "overviewQueryService must not be null");
     }
 
     /**
@@ -84,6 +90,30 @@ public class ShadowRunReadOnlyController {
                 limit,
                 offset
         )));
+    }
+
+    /**
+     * 查询 Shadow Run operational overview。
+     *
+     * <p>该 endpoint 只读取本地 Shadow Run facts 并返回系统级诊断摘要。它不是 start/stop/execute
+     * 入口，不创建 Shadow Run、不追加 event/snapshot/report、不启动 runner/scheduler、不调用真实交易所、
+     * 不读取 credential，也不修改 account / ledger / order。
+     *
+     * @return GateS-1 read-only overview；固定 not trading authorization
+     */
+    @GetMapping("/overview")
+    @Operation(
+            summary = "查询 Shadow Run overview",
+            description = "只读返回本地 Shadow Run 系统整体运行诊断；不启动 runner、不外联、不读取 credential、"
+                    + "不触发交易，不表示 trading authorization。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功")
+    })
+    public ShadowRunOverviewResponse overview() {
+        String traceId = TraceIdContext.getOrCreate();
+        return ShadowRunOverviewResponse.from(overviewQueryService.overview(traceId));
     }
 
     /**

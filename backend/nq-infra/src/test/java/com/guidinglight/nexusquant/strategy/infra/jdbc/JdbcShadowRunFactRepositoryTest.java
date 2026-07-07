@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunOverviewEvidenceFact;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunOverviewFacts;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -26,6 +28,7 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
@@ -216,6 +219,78 @@ class JdbcShadowRunFactRepositoryTest {
         assertEquals(5, jdbcTemplate.queryArgs.getFirst()[5]);
         assertTrue(jdbcTemplate.queryForObjectSqls.getFirst().startsWith("SELECT COUNT(*) FROM shadow_runs WHERE"));
         assertFalse(jdbcTemplate.queryForObjectSqls.getFirst().contains("LIMIT"));
+    }
+
+    @Test
+    void shouldLoadOverviewFactsWithSelectOnlyQueriesFromShadowTables() {
+        RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
+        ShadowRun run = run(ShadowRunStatus.COMPLETED, 2);
+        ShadowConsistencyReport report = report(run.id());
+        ShadowRunOverviewEvidenceFact eventAnchor = new ShadowRunOverviewEvidenceFact(
+                "SHADOW_EVENT",
+                UUID.randomUUID().toString(),
+                ShadowRunEventType.COMPLETED.name(),
+                NOW,
+                null
+        );
+        ShadowRunOverviewEvidenceFact snapshotAnchor = new ShadowRunOverviewEvidenceFact(
+                "SHADOW_SNAPSHOT",
+                UUID.randomUUID().toString(),
+                "shadow-order-intent-preview.v1",
+                NOW,
+                "sha256-demo"
+        );
+        for (long count : List.of(5L, 1L, 1L, 1L, 2L, 1L)) {
+            jdbcTemplate.queryForObjectResults.add(count);
+        }
+        jdbcTemplate.queryResults.add(List.of(run));
+        jdbcTemplate.queryResults.add(List.of(report));
+        jdbcTemplate.queryResults.add(List.of(eventAnchor));
+        jdbcTemplate.queryResults.add(List.of(snapshotAnchor));
+        JdbcShadowRunOverviewQueryRepository repository = new JdbcShadowRunOverviewQueryRepository(
+                jdbcTemplate,
+                OBJECT_MAPPER
+        );
+
+        ShadowRunOverviewFacts facts = repository.loadOverviewFacts();
+
+        assertEquals(5, facts.totalRuns());
+        assertEquals(1, facts.runningRuns());
+        assertEquals(1, facts.blockedRuns());
+        assertEquals(1, facts.failedRuns());
+        assertEquals(2, facts.completedRuns());
+        assertEquals(1, facts.staleRuns());
+        assertEquals(Optional.of(run), facts.latestRun());
+        assertEquals(Optional.of(report), facts.latestConsistency());
+        assertEquals(Optional.of(eventAnchor), facts.latestEvent());
+        assertEquals(Optional.of(snapshotAnchor), facts.latestSnapshot());
+        assertTrue(jdbcTemplate.updateSqls.isEmpty(), "overview repository must not execute writes");
+
+        String sql = String.join("\n", jdbcTemplate.queryForObjectSqls) + "\n" + String.join("\n", jdbcTemplate.querySqls);
+        String normalized = sql.toLowerCase(Locale.ROOT);
+        assertTrue(normalized.contains("from shadow_runs"));
+        assertTrue(normalized.contains("from shadow_run_events"));
+        assertTrue(normalized.contains("from shadow_run_snapshots"));
+        assertTrue(normalized.contains("from shadow_consistency_reports"));
+        assertTrue(normalized.contains("order by updated_at desc, created_at desc, id desc limit 1"));
+        assertTrue(normalized.contains("order by generated_at desc, created_at desc, id desc limit 1"));
+        assertFalse(normalized.contains("insert "));
+        assertFalse(normalized.contains("update "));
+        assertFalse(normalized.contains("delete "));
+        for (String forbiddenTable : List.of(
+                "from exchange_credentials",
+                "from trading_accounts",
+                "from orders",
+                "from order_",
+                "from ledger",
+                "from paper_trading_runs",
+                "from strategy_versions",
+                "from marketdata_",
+                "from paper_run_alerts",
+                "from trade_replay_records"
+        )) {
+            assertFalse(normalized.contains(forbiddenTable), "overview SQL must not read " + forbiddenTable + ": " + sql);
+        }
     }
 
     @Test

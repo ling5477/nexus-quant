@@ -22,7 +22,8 @@
 - GateR release tag：`nq-gater-freeze`（release tag 已创建并推送）。
 - GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现），当前 plan review baseline 为 [GATES_0_PLAN.md](GATES_0_PLAN.md)。
-- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)；GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现），当前未实现 backend read model、API、frontend page 或测试。
+- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)。
+- GateS-1 minimal backend read model：`NQ-GATES-1-READ-MODEL-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/shadow-runs/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-1 frozen / accepted、frontend page、GateS 全域 validation runtime 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -43,8 +44,9 @@
 - Shadow Run read-only API：`IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），仅限 GET list / detail / events / snapshots / latest consistency report，不是写接口、runner trigger 或交易授权。
 - Shadow Run list frontend page：`IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），仅限 `/strategies/shadow-runs` 只读列表、status 筛选和进入 detail，不提供写侧操作，不是交易授权。
 - Shadow Run detail / replay frontend page：`IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），仅限 `/strategies/shadow-runs/:shadowRunId` 只读查看本地 facts，不提供写侧操作，不是交易授权。
+- Shadow Run overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/shadow-runs/overview` 只读聚合本地 Shadow Run facts，不提供写侧 endpoint，不是 runner trigger 或交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
-- GateS implementation：`NOT IMPLEMENTED`（未实现）。
+- GateS frontend / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
 ## 3. GateR-0 Planning Status
 
@@ -105,7 +107,7 @@ GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerServ
 
 ## 7. 当前验证口径
 
-GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。当前 GateS-0 是 docs-only / planning-only fact-source reconciliation；本轮正常只运行 `git status --short`、`git branch --show-current`、`git diff --check`、`git diff --stat`、forbidden-area diff 和 boundary rg scan，不运行 Maven、frontend build / E2E、Python pytest / mypy / ruff，因为本轮不修改 Java、TypeScript、Python、migration、CI workflow、前端页面或测试代码。
+GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。GateS-1 minimal backend read model 本轮已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。本轮未运行 frontend build / E2E、Python pytest / mypy / ruff，因为未修改 `frontend/**` 或 `research/**`。
 
 ## 8. GateS-0 Planning Status
 
@@ -127,12 +129,25 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 
 该状态只表示 GateS-1 work order ready，不表示：
 
-- GateS-1 implementation started。
-- backend read model implemented。
-- `GET /api/shadow-runs/overview` implemented。
-- API endpoint / Controller / DTO / repository / SQL implemented。
+- GateS-1 frozen / accepted。
 - frontend page implemented。
 - migration implemented。
-- test implemented。
 - runner / scheduler started。
 - LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
+
+## 10. GateS-1 Minimal Backend Read Model Implementation Status
+
+本轮已实现 `NQ-GATES-1-READ-MODEL-IMPLEMENTATION`：新增 `GET /api/shadow-runs/overview` 的最小后端 read model。实现范围限定为 `nq-api` GET-only Controller / DTO、`nq-core` read model contract / query service / query port、`nq-infra` JDBC SELECT-only adapter，以及 API / service / repository 测试。
+
+该 read model 只读取 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports` 本地事实，返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`，并聚合 counts、latestRun、latestConsistency、divergenceSeverity、blockers、warnings、nextSteps 和 evidenceAnchors。
+
+该状态不表示：
+
+- GateS-1 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- GateS 全域 validation overview 已实现。
+- frontend page / route / API client 已实现。
+- Paper / Strategy / MarketData / Risk / Incident 全域聚合已实现。
+- runner / scheduler started。
+- migration implemented。
+- LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
+- trading authorization、live-ready、trade approval 或 Shadow Live trading enabled。

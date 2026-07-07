@@ -15837,3 +15837,40 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - 未新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、Playwright test、Python code、deploy 或 CI workflow。
 - next action: 在本 work order 提交后另起 `NQ-GATES-1-READ-MODEL-IMPLEMENTATION`，仅实现最小 backend read model；不得把 GateS-1 work order 写成 implementation started。
+
+## NQ-GATES-1-READ-MODEL-IMPLEMENTATION
+
+- date: 2026-07-07
+- scope: GateS-1 最小后端 read model implementation；NQ-only。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/**`
+  - `backend/nq-api/src/test/java/**`
+  - `backend/nq-core/src/main/java/**`
+  - `backend/nq-core/src/test/java/**`
+  - `backend/nq-infra/src/main/java/**`
+  - `backend/nq-infra/src/test/java/**`
+  - `docs/current/API.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key changes:
+  - 新增 `GET /api/shadow-runs/overview`，只读返回 Shadow Run overview、latestRun、latestConsistency、divergenceSeverity、blockers、warnings、nextSteps、evidenceAnchors 和固定 boundary flags。
+  - 新增 `ShadowRunOverviewQueryPort` / `ShadowRunOverviewFacts` / `ShadowRunOverviewReadModel` / `ShadowRunOverviewQueryService`，service 只依赖 SELECT-only port，不依赖 runner、adapter、account、ledger、order 或 client。
+  - 新增 `JdbcShadowRunOverviewQueryRepository`，只读取 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`，不执行 INSERT / UPDATE / DELETE。
+  - 扩展 API / service / repository tests，覆盖空数据、计数、latest 选择、severity 映射、禁止字段、GET-only route 和 no-side-effect 边界。
+  - 最小同步 current API / status / testing / fact source。
+- validation:
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=ShadowRunReadOnlyControllerTest,ShadowRunReadOnlyResponseTest,ShadowRunReadOnlyQueryServiceTest,JdbcShadowRunFactRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`：PASS / BUILD SUCCESS；选择原因是本轮未修改 `nq-app`。
+- not run:
+  - 未运行 frontend build / Playwright / E2E；未修改 `frontend/**`。
+  - 未运行 Python pytest / mypy / ruff；未修改 `research/**`。
+  - 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+- boundary:
+  - 未新增 migration；未修改历史 migration。
+  - 未新增 POST / PUT / PATCH / DELETE API；未新增 start / stop / execute / trade / placeOrder / cancelOrder / withdraw / transfer endpoint。
+  - 未深聚合 Paper / Strategy / MarketData / Risk / Incident；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - `notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
+- next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add shadow run overview read model`。

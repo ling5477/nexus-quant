@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewDivergenceSeverity;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -46,7 +48,8 @@ class ShadowRunReadOnlyResponseTest {
                 ShadowRunDetailResponse.from(run()),
                 ShadowRunEventResponse.from(event()),
                 ShadowRunSnapshotResponse.from(snapshot()),
-                ShadowConsistencyReportResponse.from(report())
+                ShadowConsistencyReportResponse.from(report()),
+                ShadowRunOverviewResponse.from(overview())
         ));
         String normalized = body.toLowerCase(Locale.ROOT);
 
@@ -59,12 +62,15 @@ class ShadowRunReadOnlyResponseTest {
                 "credentialmaterial",
                 "decryptedpayload",
                 "encryptedpayload",
+                "rawsignature",
                 "rawprivaterequest",
                 "rawprivateresponse",
                 "privateendpointpayload",
                 "realorderid",
                 "realaccountbalance",
                 "realposition",
+                "withdrawaddress",
+                "transfertarget",
                 "tradingready",
                 "liveready",
                 "authorizedfortrading",
@@ -200,6 +206,72 @@ class ShadowRunReadOnlyResponseTest {
                 NOW,
                 "trace-shadow",
                 NOW
+        );
+    }
+
+    private ShadowRunOverviewReadModel overview() {
+        return new ShadowRunOverviewReadModel(
+                NOW,
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                false,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0,
+                new ShadowRunOverviewReadModel.LatestRun(
+                        RUN_ID,
+                        "sv-1",
+                        DATASET_ID,
+                        "paper-1",
+                        "COMPLETED",
+                        "DIAGNOSTIC_ONLY",
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        NOW.minusSeconds(3600),
+                        NOW,
+                        NOW.minusSeconds(3500),
+                        NOW
+                ),
+                new ShadowRunOverviewReadModel.LatestConsistency(
+                        UUID.randomUUID(),
+                        RUN_ID,
+                        "paper-1",
+                        "CONSISTENT",
+                        JsonNodeFactory.instance.objectNode().put("schemaVersion", "shadow-consistency-report.v1"),
+                        JsonNodeFactory.instance.arrayNode(),
+                        JsonNodeFactory.instance.arrayNode().add("diagnostic only"),
+                        NOW,
+                        "trace-shadow"
+                ),
+                ShadowRunOverviewDivergenceSeverity.NONE,
+                List.of(new ShadowRunOverviewReadModel.BoundaryMessage("LIVE_DISABLED", "CRITICAL", "LIVE disabled", "SYSTEM_BOUNDARY", null)),
+                List.of(new ShadowRunOverviewReadModel.BoundaryMessage("SHADOW_RUN_DIAGNOSTIC_ONLY", "INFO", "diagnostic only", "SYSTEM_BOUNDARY", null)),
+                List.of(new ShadowRunOverviewReadModel.NextStep(
+                        "REVIEW_SHADOW_OVERVIEW",
+                        "backend",
+                        "review_shadow_overview",
+                        "overview reviewed",
+                        true
+                )),
+                List.of(new ShadowRunOverviewReadModel.EvidenceAnchor(
+                        "SHADOW_RUN",
+                        RUN_ID.toString(),
+                        "2",
+                        NOW,
+                        null
+                )),
+                "trace-shadow"
         );
     }
 }

@@ -14,6 +14,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewDivergenceSeverity;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunListResult;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyQueryService;
@@ -62,17 +65,19 @@ class ShadowRunReadOnlyControllerTest {
 
     private MockMvc mockMvc;
     private ShadowRunReadOnlyQueryService queryService;
+    private ShadowRunOverviewQueryService overviewQueryService;
 
     @BeforeEach
     void setUp() {
         queryService = mock(ShadowRunReadOnlyQueryService.class);
+        overviewQueryService = mock(ShadowRunOverviewQueryService.class);
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter(
                 Jackson2ObjectMapperBuilder.json()
                         .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                         .build()
         );
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new ShadowRunReadOnlyController(queryService))
+                .standaloneSetup(new ShadowRunReadOnlyController(queryService, overviewQueryService))
                 .addFilters(new TestTraceIdFilter())
                 .setMessageConverters(jsonConverter)
                 .setControllerAdvice(new ApiExceptionHandler())
@@ -140,6 +145,50 @@ class ShadowRunReadOnlyControllerTest {
                 .andExpect(jsonPath("$.total").value(0));
 
         verify(queryService).list(expectedQuery);
+    }
+
+    @Test
+    void shouldReturnShadowRunOverviewWithFailClosedBoundaryFlags() throws Exception {
+        when(overviewQueryService.overview("trc-shadow-overview")).thenReturn(overview());
+
+        MvcResult result = mockMvc.perform(get("/api/shadow-runs/overview")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-overview"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-overview"))
+                .andExpect(jsonPath("$.diagnosticOnly").value(true))
+                .andExpect(jsonPath("$.noSideEffect").value(true))
+                .andExpect(jsonPath("$.notTradingAuthorization").value(true))
+                .andExpect(jsonPath("$.liveDisabled").value(true))
+                .andExpect(jsonPath("$.realProviderImplemented").value(false))
+                .andExpect(jsonPath("$.privateTradingImplemented").value(false))
+                .andExpect(jsonPath("$.aiDhRuntimeIntegrated").value(false))
+                .andExpect(jsonPath("$.totalRuns").value(5))
+                .andExpect(jsonPath("$.runningRuns").value(1))
+                .andExpect(jsonPath("$.blockedRuns").value(1))
+                .andExpect(jsonPath("$.failedRuns").value(1))
+                .andExpect(jsonPath("$.completedRuns").value(2))
+                .andExpect(jsonPath("$.staleRuns").value(1))
+                .andExpect(jsonPath("$.latestRun.shadowRunId").value(RUN_ID.toString()))
+                .andExpect(jsonPath("$.latestRun.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.latestRun.noOrderSubmission").value(true))
+                .andExpect(jsonPath("$.latestRun.noCredentialAccess").value(true))
+                .andExpect(jsonPath("$.latestRun.noPrivateEndpoint").value(true))
+                .andExpect(jsonPath("$.latestRun.noLedgerMutation").value(true))
+                .andExpect(jsonPath("$.latestRun.noAccountMutation").value(true))
+                .andExpect(jsonPath("$.latestRun.noExternalPrivateIo").value(true))
+                .andExpect(jsonPath("$.latestConsistency.comparisonStatus").value("DIVERGED"))
+                .andExpect(jsonPath("$.divergenceSeverity").value("HIGH"))
+                .andExpect(jsonPath("$.blockers[0].code").value("LIVE_DISABLED"))
+                .andExpect(jsonPath("$.blockers[1].code").value("REAL_PROVIDER_NOT_IMPLEMENTED"))
+                .andExpect(jsonPath("$.blockers[2].code").value("PRIVATE_TRADING_NOT_IMPLEMENTED"))
+                .andExpect(jsonPath("$.warnings[0].code").value("SHADOW_RUN_DIAGNOSTIC_ONLY"))
+                .andExpect(jsonPath("$.nextSteps[0].action").value("review_shadow_overview"))
+                .andExpect(jsonPath("$.evidenceAnchors[0].sourceType").value("SHADOW_RUN"))
+                .andExpect(jsonPath("$.traceId").value("trc-shadow-overview"))
+                .andReturn();
+
+        verify(overviewQueryService).overview("trc-shadow-overview");
+        assertNoForbiddenFields(result.getResponse().getContentAsString());
     }
 
     @Test
@@ -222,7 +271,7 @@ class ShadowRunReadOnlyControllerTest {
                 .filter(method -> method.isAnnotationPresent(GetMapping.class))
                 .toList();
 
-        assertEquals(5, endpointMethods.size());
+        assertEquals(6, endpointMethods.size());
         for (Method method : endpointMethods) {
             assertFalse(method.isAnnotationPresent(PostMapping.class));
             assertFalse(method.isAnnotationPresent(PatchMapping.class));
@@ -246,6 +295,76 @@ class ShadowRunReadOnlyControllerTest {
         }
     }
 
+    private ShadowRunOverviewReadModel overview() {
+        return new ShadowRunOverviewReadModel(
+                NOW,
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                false,
+                5,
+                1,
+                1,
+                1,
+                2,
+                1,
+                new ShadowRunOverviewReadModel.LatestRun(
+                        RUN_ID,
+                        "sv-1",
+                        DATASET_ID,
+                        "paper-1",
+                        "COMPLETED",
+                        "DIAGNOSTIC_ONLY",
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        NOW.minusSeconds(3600),
+                        NOW,
+                        NOW.minusSeconds(3500),
+                        NOW
+                ),
+                new ShadowRunOverviewReadModel.LatestConsistency(
+                        UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                        RUN_ID,
+                        "paper-1",
+                        "DIVERGED",
+                        JsonNodeFactory.instance.objectNode().put("returnDelta", 0.12),
+                        JsonNodeFactory.instance.arrayNode().add("paper-shadow-diverged"),
+                        JsonNodeFactory.instance.arrayNode().add("diagnostic only"),
+                        NOW,
+                        "trace-shadow"
+                ),
+                ShadowRunOverviewDivergenceSeverity.HIGH,
+                List.of(
+                        new ShadowRunOverviewReadModel.BoundaryMessage("LIVE_DISABLED", "CRITICAL", "LIVE disabled", "SYSTEM_BOUNDARY", null),
+                        new ShadowRunOverviewReadModel.BoundaryMessage("REAL_PROVIDER_NOT_IMPLEMENTED", "CRITICAL", "real provider absent", "SYSTEM_BOUNDARY", null),
+                        new ShadowRunOverviewReadModel.BoundaryMessage("PRIVATE_TRADING_NOT_IMPLEMENTED", "CRITICAL", "private trading absent", "SYSTEM_BOUNDARY", null)
+                ),
+                List.of(new ShadowRunOverviewReadModel.BoundaryMessage("SHADOW_RUN_DIAGNOSTIC_ONLY", "INFO", "diagnostic only", "SYSTEM_BOUNDARY", null)),
+                List.of(new ShadowRunOverviewReadModel.NextStep(
+                        "REVIEW_SHADOW_OVERVIEW",
+                        "backend",
+                        "review_shadow_overview",
+                        "overview reviewed",
+                        true
+                )),
+                List.of(new ShadowRunOverviewReadModel.EvidenceAnchor(
+                        "SHADOW_RUN",
+                        RUN_ID.toString(),
+                        "2",
+                        NOW,
+                        null
+                )),
+                "trc-shadow-overview"
+        );
+    }
+
     private void assertNoForbiddenFields(String body) {
         String normalized = body.toLowerCase(Locale.ROOT);
         for (String forbidden : List.of(
@@ -257,12 +376,15 @@ class ShadowRunReadOnlyControllerTest {
                 "credentialmaterial",
                 "decryptedpayload",
                 "encryptedpayload",
+                "rawsignature",
                 "rawprivaterequest",
                 "rawprivateresponse",
                 "privateendpointpayload",
                 "realorderid",
                 "realaccountbalance",
                 "realposition",
+                "withdrawaddress",
+                "transfertarget",
                 "tradingready",
                 "liveready",
                 "authorizedfortrading",

@@ -9362,6 +9362,40 @@ Blocking status：non-blocking。当前可进入提交前复核。
 
 ---
 
+## NQ-GATES-1-READ-MODEL-IMPLEMENTATION（2026-07-07）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只实现 GateS-1 最小后端 read model：`GET /api/shadow-runs/overview`，覆盖 `nq-api` GET-only Controller / DTO、`nq-core` read model contract / query service / query port、`nq-infra` JDBC SELECT-only adapter 和后端测试。未修改 frontend、research、scripts、deploy、`.github`、migration、docs/gates 或 docs/archive。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=ShadowRunReadOnlyControllerTest,ShadowRunReadOnlyResponseTest,ShadowRunReadOnlyQueryServiceTest,JdbcShadowRunFactRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | **PASS / BUILD SUCCESS**（通过 / 构建成功） | Targeted regression；覆盖 overview API 200、固定 boundary flags、DTO 禁止字段、Controller GET-only 反射、空数据安全返回、状态计数、latestRun/latestConsistency、divergenceSeverity 映射、blockers/warnings/nextSteps、JDBC SELECT-only 与允许表范围。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` | **PASS / BUILD SUCCESS** | 选择原因：本轮只修改 `nq-api`、`nq-core`、`nq-infra`，未修改 `nq-app` Spring Boot application/test 配置，因此运行用户允许的最小覆盖命令。最终 reactor `BUILD SUCCESS`；`nq-core` 166 tests / 0 failures / 0 errors / 0 skipped，`nq-infra` 47 tests / 0 failures / 0 errors / 1 skipped，`nq-api` 76 tests / 0 failures / 0 errors / 0 skipped。 |
+
+Known warnings：
+
+- Maven 输出既有 Mockito dynamic agent warning 与 SLF4J no-provider warning；本轮未新增测试依赖或 logging 配置，非阻断。
+- 初次 targeted test 暴露 overview adapter 使用 `JdbcTemplate` 无参重载导致测试 double 未拦截；已改为显式 varargs 调用并重跑通过。
+- POST unsupported method 在当前 `ApiExceptionHandler` 下会被现有全局 handler 记录为 unhandled 500；本轮未改全局 error handler，改用 Controller 反射测试锁定没有 `POST` / `PUT` / `PATCH` / `DELETE` mapping，避免越过本轮 Shadow Run overview scope。
+
+What was not run：
+
+- 未运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test`；原因是本轮未修改 `nq-app`，且已运行用户允许的 `nq-api,nq-core,nq-infra -am test`。
+- 未运行 frontend build / Playwright / E2E；原因是未修改 `frontend/**`，且本轮明确不新增前端页面或 E2E。
+- 未运行 Python pytest / mypy / ruff；原因是未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- `GET /api/shadow-runs/overview` 只读聚合 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`。
+- 未新增 migration；未新增 POST / PUT / PATCH / DELETE API；未新增 start / stop / execute / trade / placeOrder / cancelOrder / withdraw / transfer endpoint。
+- 未深聚合 Paper / Strategy / MarketData / Risk / Incident；未调用真实交易所；未读取或输出 credential material；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+
+Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
 ## NQ-GATES-1-READ-MODEL-WO（2026-07-07）
 
 结论：**PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
