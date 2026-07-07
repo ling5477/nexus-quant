@@ -9306,3 +9306,19 @@ Not run：
 - 未修改 `.github/workflows/ci.yml`，原因是 workflow 规则本身没有被证明不合理；本轮没有弱化 secret scan。
 
 边界确认：未进入 GateR-8；未新增 Shadow Run list API；未新增页面；未修改 backend、migration、research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未接真实交易所；未读取 `.env` 或 credential material；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未新增 execute / approve / trade 语义；未弱化 CI。
+
+## NQ-GATER-FREEZE-CLOSEOUT（当前）
+
+- 状态：`FROZEN / ACCEPTED / TAGGED`。
+- 对应 release tag：`nq-gater-freeze`。
+- 归档目录：`docs/gates/gate-r/**`。
+- 最新 CI：`gh run view 28852212136 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs` 显示 `status=completed`、`conclusion=success`、`headSha=f2507cb2a061bfced5ea42554f75aba5ef879702`。
+- 关键边界结论：
+  - no-side-effect。
+  - read-only APIs only。
+  - no scheduler / no background runner。
+  - LIVE disabled。
+  - AI not started。
+  - DH not integrated。
+  - RealClient / real provider / private trading adapter / real permission probe not implemented。
+  - no real order / cancel / transfer / withdraw。

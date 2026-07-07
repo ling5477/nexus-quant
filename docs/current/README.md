@@ -7,7 +7,7 @@
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gateq-freeze`；历史证据入口为 [../gates/gate-q/README.md](../gates/gate-q/README.md)。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gatep-freeze`；历史证据入口为 [../gates/gate-p/README.md](../gates/gate-p/README.md)。
 - GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
-- GateR：`READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）。当前 planning 和批次证据入口为 [GATER_PLAN.md](GATER_PLAN.md)；GateR-8 已完成并 push，最新 GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
+- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；当前 planning 和批次证据入口为 [GATER_PLAN.md](GATER_PLAN.md)；release tag：`nq-gater-freeze`；archive pointer： [../gates/gate-r/README.md](../gates/gate-r/README.md)；GateR-8 已完成并 push，最新 GitHub Actions run `28852212136`（`NQ CI Baseline`）为 `success`（成功）。
 - GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。当前 review 入口为 [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)。
 - GateR-2：Shadow Run local fact model / `V32` / repository 已完成并接受；schema 入口为 [DB_SCHEMA.md](DB_SCHEMA.md)，验证入口为 [TESTING.md](TESTING.md)。
 - GateR-3：Shadow Run runner skeleton 已完成；它只在调用方显式调用时写本地诊断 facts，不是 scheduler 或后台 runner。

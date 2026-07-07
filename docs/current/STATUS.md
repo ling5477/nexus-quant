@@ -9,7 +9,7 @@
 - GateP release tag：`nq-gatep-freeze`。
 - GateP archive：`docs/gates/gate-p/`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据来源。
-- GateR：`READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）；GateR-8 已完成并 push，commit `00e025d0e9f422f1b9aedbd409ee576e8892af12`，GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
+- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateR-8 已完成并 push，commit `00e025d0e9f422f1b9aedbd409ee576e8892af12`，GitHub Actions run `28852212136`（`NQ CI Baseline`）为 `success`（成功）。
 - GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
 - GateR-2：`NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / VERIFIED COMMIT ACCEPTED`（已实现 / verified commit 已接受），commit `d21bb9886c60bbe7b40b09b7c01b4325c6899ca0`。
 - GateR-2 P1 fix：已纳入 GateR-2 verified commit acceptance（verified commit 接受范围）。
@@ -19,6 +19,7 @@
 - GateR-6：`NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION：IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功）。
 - GateR-7：`NQ-GATER-7-FRONTEND-SHADOW-RUN-DETAIL-REPLAY-VIEW：IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功）。
 - GateR-8：`NQ-GATER-8-SHADOW-RUN-LIST-AND-ENTRYPOINT-IMPLEMENTATION：IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），commit `00e025d0e9f422f1b9aedbd409ee576e8892af12`。
+- GateR release tag：`nq-gater-freeze`（release tag 已创建并推送）。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界

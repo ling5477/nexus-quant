@@ -10,7 +10,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
 - GateP release tag：`nq-gatep-freeze`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
-- GateR：`READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）；GateR-8 已完成并 push，最新 GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
+- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；归档入口：`docs/gates/gate-r/README.md`；GateR-8 已完成并 push，最新 GitHub Actions run `28852212136`（`NQ CI Baseline`）为 `success`（成功）。
 - GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
 - GateR-2：Shadow Run local fact model / `V32` / repository 已完成并接受。
 - GateR-3：Shadow Run runner skeleton 已完成；它不是 scheduler 或后台 runner。
@@ -50,4 +50,4 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 
 ## Boundary
 
-GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 尚未 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）；下一步只能进入 GateR freeze closeout，不新增功能。
+GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 当前为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；只做归档与状态同步，不代表 live execution ready。

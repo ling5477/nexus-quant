@@ -28,7 +28,7 @@
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档），release tag `nq-gateq-freeze`。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档），release tag `nq-gatep-freeze`。
 - GateO 及更早 Gate：历史证据来源为 `docs/gates/**` 或 `docs/archive/**`。
-- GateR：`READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）；GateR-8 已完成并 push，最新 GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
+- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；GateR 归档入口：`docs/gates/gate-r/README.md`；GateR-8 已完成并 push，最新 GitHub Actions run `28852212136`（`NQ CI Baseline`）为 `success`（成功）。
 - GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
 - GateR-2：Shadow Run local fact model / `V32` / repository 已完成并接受。
 - GateR-3：Shadow Run runner skeleton 已完成；它不是 scheduler 或后台 runner。
@@ -53,6 +53,7 @@
 | GateQ | `docs/gates/gate-q/README.md` |
 | GateP | `docs/gates/gate-p/README.md` |
 | GateO | `docs/gates/gate-o/README.md` |
+| GateR | `docs/gates/gate-r/README.md` |
 | GateN | `docs/gates/gate-n/README.md` |
 | GateM | `docs/gates/gate-m/README.md` |
 | GateJ/K/L current copies moved by this cleanup | `docs/archive/current-cleanup/post-gateq/README.md` |
@@ -60,10 +61,10 @@
 
 ## 4. 禁止误写清单
 
-- 不得把 GateR 写成 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
-- 不得把 GateR readiness 写成 GateR frozen 或 accepted。
+- GateR 已完成 freeze closeout，状态为 `FROZEN / ACCEPTED / TAGGED`；不得误读为 LIVE、trading authorization、AI / DH runtime 或 private trading 启动。
+- 不得把 GateR readiness 写成 trading authorization 或 LIVE ready。
 - 不得把 GateR-1 migration plan review 本身写成 migration implemented；migration implemented 的当前事实只来自 GateR-2 `V32__gate_r_shadow_run_fact_model.sql`。
-- 不得把 GateR-2..8 已完成写成 frozen、accepted、trading authorization 或 live-ready。
+- 不得把 GateR-2..8 已完成误写成未实现、trading authorization 或 LIVE ready。
 - Shadow Run read-only API / DTO 已实现；仍不得写成 write API、runner start endpoint、execute endpoint 或 trading endpoint。
 - Shadow Run frontend list / detail / replay view 已实现；仍不得写成带 start / stop / execute / rerun / approve / trade 执行按钮的页面。
 - Shadow Run runner skeleton 已实现；仍不得写成 scheduler、后台 runner、runner started、shadow live trading enabled 或 live-ready。

@@ -41,7 +41,7 @@ GateR freeze closeout
 - GateQ archive pointer: `docs/gates/gate-q/README.md`。
 - GateP final state: `FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
 - GateO 及更早 Gate：只作为历史证据读取。
-- GateR: `READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）。
+- GateR: `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateR-1: `NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
 - GateR-2: Shadow Run local fact model / `V32` / repository 已完成并接受。
 - GateR-3: Shadow Run runner skeleton 已完成；不是 scheduler 或后台 runner。
@@ -49,7 +49,7 @@ GateR freeze closeout
 - GateR-5: shadow consistency report service 已完成。
 - GateR-6: Shadow Run read-only API 已完成；没有写接口。
 - GateR-7: Shadow Run detail / replay view 已完成；没有执行按钮。
-- GateR-8: Shadow Run list / entrypoint 已完成并 push；最新 GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
+- GateR-8: Shadow Run list / entrypoint 已完成并 push；最新 GitHub Actions run `28852212136`（`NQ CI Baseline`）为 `success`（成功）。
 
 ## 下一步规则
 
@@ -70,7 +70,7 @@ GateR freeze closeout
 
 ## 当前不做
 
-- 不把 GateR 写成 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- 不把 GateR 实现写成 `trading authorization`、`LIVE ready` 或 `Shadow Live trading enabled`。
 - 不新增 GateR-9 或新功能。
 - 不启动 scheduler、后台 runner 或 Shadow Live runner。
 - 不新增 Shadow Run 写接口或执行按钮。

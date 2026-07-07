@@ -15744,3 +15744,28 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 完成 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。推荐 commit message：`feat(gater): add shadow run list view`。
+
+## NQ-GATER-FREEZE-CLOSEOUT
+
+- task name: `NQ-GATER-FREEZE-CLOSEOUT`
+- scope: docs/gates archive + current 状态同步 + release tag 仅做 freeze closeout，不改业务代码、migration、API、前端功能、CI workflow。
+- result: **PASS / COMPLETED / RELEASE TAG PUSHED**。
+- changed files:
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/GATER_PLAN.md`
+  - `docs/current/TESTING.md`
+  - `docs/gates/gate-r/README.md`
+  - `docs/gates/gate-r/GATER_EVIDENCE_MATRIX.md`
+  - `docs/gates/gate-r/GATER_TESTING_AND_CI_SUMMARY.md`
+  - `docs/gates/gate-r/GATER_DATABASE_EVIDENCE.md`
+  - `docs/gates/gate-r/GATER_BACKEND_EVIDENCE.md`
+  - `docs/gates/gate-r/GATER_FRONTEND_EVIDENCE.md`
+  - `docs/gates/gate-r/GATER_BOUNDARY_STATEMENT.md`
+- boundary enforcement: 未读取 `.env`、未读取/输出 credential material、未调用真实交易所、未下单/撤单/转账/提现。
+- validation references: `git status --short --untracked-files=all`、`git branch --show-current`、`git rev-parse HEAD`、`git rev-parse origin/dev`、`gh run list --limit 5`、`gh run view 28852212136 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs`、`git tag --list "nq-gater-freeze"`。
+- next action: 同步 commit 与推送 tag。
