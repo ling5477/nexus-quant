@@ -9499,3 +9499,40 @@ Boundary confirmation：
 - `GET /api/shadow-runs/overview` 仍只作为后端已实现 read-only endpoint；本轮仅规划前端消费。
 
 Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
+## NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION（2026-07-07）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只实现 GateS-2 Paper vs Shadow consistency drilldown 的最小后端 GET-only read model，范围限定在 `nq-api`、`nq-core`、`nq-infra` 和指定 current docs；未修改 frontend、research、scripts、deploy、`.github`、migration、`nq-app` context、package / lock files 或 `pom.xml`。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=PaperShadowConsistencyDrilldownControllerTest,PaperShadowConsistencyDrilldownQueryServiceTest,JdbcPaperShadowConsistencyDrilldownQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS（通过 / 构建成功） | 新增目标测试通过：API 3 tests、core service 5 tests、infra repository 2 tests。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` | PASS / BUILD SUCCESS（通过 / 构建成功） | 最终后端验证命令；选择原因是本轮只修改 `nq-api` / `nq-core` / `nq-infra` read model，不需要 `nq-app` context。 |
+
+RCA / fixes：
+
+- 首次目标测试失败：service 依赖反射断言把 `static final JsonNodeFactory` 误计为实例依赖；已修正为只检查非静态实例字段。
+- 第二次目标测试失败：项目当前 `ApiExceptionHandler` 对 unsupported HTTP method 的 standalone MockMvc 状态为 500；本切片不改全局异常处理，测试改为 controller annotation / route 级验证没有 `POST` / `PUT` / `PATCH` / `DELETE` mapping。
+
+Known warnings：
+
+- Maven 输出既有非阻断 warning：SLF4J no provider、Mockito dynamic agent self-attach、部分既有测试 unchecked operation warning；本轮未修改相关依赖或全局测试配置。
+
+What was not run：
+
+- 未运行 frontend build / Playwright / E2E；原因是本轮明确不修改 `frontend/**`，不新增 E2E。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- 新 endpoint 仅为 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`。
+- 只读取 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`；不读取 credential / account / order / ledger / private trading / provider 配置表。
+- 不 INSERT / UPDATE / DELETE；不创建 shadow run、event、snapshot 或 consistency report；不启动 runner / scheduler；不调用 adapter、risk write side、order/account/ledger 服务。
+- 固定 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`，并固定 `realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+
+Blocking status：non-blocking。当前可进入提交前复核。

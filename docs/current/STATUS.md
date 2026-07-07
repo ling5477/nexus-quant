@@ -26,6 +26,7 @@
 - GateS-1 minimal backend read model：`NQ-GATES-1-READ-MODEL-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/shadow-runs/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-1 frozen / accepted、frontend page、GateS 全域 validation runtime 或交易授权。
 - GateS-1 frontend overview work order：`NQ-GATES-1-FRONTEND-OVERVIEW-WO：PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；仅规划后续前端如何消费 `GET /api/shadow-runs/overview`，不代表前端已实现。
 - GateS-1 frontend overview implementation：`NQ-GATES-1-FRONTEND-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs` 顶部 Overview Summary、前端 type / client / query key / hook 和 `npm run build` 本地验证，不代表 GateS-1 frozen / accepted、Dashboard v2、后端 API、migration、E2E、LIVE 或交易授权。
+- GateS-2 paper shadow consistency drilldown implementation：`NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/paper-shadow/consistency/drilldown`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-2 frozen / accepted、前端页面、Dashboard v2、runner / scheduler、LIVE 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -49,6 +50,7 @@
 - Shadow Run overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/shadow-runs/overview` 只读聚合本地 Shadow Run facts，不提供写侧 endpoint，不是 runner trigger 或交易授权。
 - Shadow Run overview frontend work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），仅限规划 type / client / hook / UI placement / states / badges / test scope，不是前端实现。
 - Shadow Run overview frontend summary：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅在现有 `/strategies/shadow-runs` 列表页顶部消费 `GET /api/shadow-runs/overview` 并展示只读 Overview Summary，不新增 route、Dashboard v2、写侧动作、E2E、后端 API、migration 或交易授权。
+- Paper shadow consistency drilldown backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/paper-shadow/consistency/drilldown` 按单个 `shadowRunId` 只读聚合本地 Shadow Run / consistency / snapshot / event facts，不创建 report，不追加 event / snapshot，不提供写侧 endpoint，不是 runner trigger、scheduler trigger 或交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 - GateS frontend / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
@@ -111,7 +113,7 @@ GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerServ
 
 ## 7. 当前验证口径
 
-GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。GateS-1 minimal backend read model 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-1 frontend overview implementation 本轮已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为本轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。
+GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。GateS-1 minimal backend read model 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-1 frontend overview implementation 本轮已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为本轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。GateS-2 paper shadow consistency drilldown implementation 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）；选择三模块 Maven 是因为本轮只修改 `nq-api` / `nq-core` / `nq-infra` 只读后端切片，未修改 `nq-app` context、frontend、research、CI 或 migration。
 
 ## 8. GateS-0 Planning Status
 

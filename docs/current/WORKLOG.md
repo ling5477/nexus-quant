@@ -15943,3 +15943,45 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - Overview Summary 仅表达 read-only diagnostic facts，不表达 trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
 - next action: 完成 forbidden-area diff、wording / sensitive grep、staged checks 后提交；推荐 commit message：`feat(gates): add shadow run overview frontend summary`。
+
+## NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION
+
+- date: 2026-07-07
+- scope: GateS-2 backend implementation；NQ-only；只实现 Paper vs Shadow consistency drilldown 的最小 GET-only read model。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowConsistencyDrilldownController.java`
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowConsistencyDrilldownResponse.java`
+  - `backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowConsistencyDrilldownControllerTest.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/PaperShadowConsistencyDrilldownComparisonStatus.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/PaperShadowConsistencyDrilldownQueryService.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/PaperShadowConsistencyDrilldownReadModel.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/PaperShadowConsistencyDrilldownFacts.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/PaperShadowConsistencyDrilldownQueryPort.java`
+  - `backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/PaperShadowConsistencyDrilldownQueryServiceTest.java`
+  - `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcPaperShadowConsistencyDrilldownQueryRepository.java`
+  - `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcPaperShadowConsistencyDrilldownQueryRepositoryTest.java`
+  - `docs/current/API.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key changes:
+  - 新增 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`，按单个 Shadow Run 返回主事实、latest consistency、comparisonStatus、divergenceSeverity、metricDelta、divergenceReasons、limitations、snapshot / event summary、blockers、warnings、nextSteps、evidence anchors 和固定安全边界 flags。
+  - 新增 core read model / query service / query port；service 只依赖 SELECT-only port 和 `Clock`，缺 report 时返回 `NO_REPORT` / `UNKNOWN` 与 warning / nextStep，不自动生成 report。
+  - 新增 JDBC read repository；SQL 只读取 `shadow_runs`、`shadow_consistency_reports`、`shadow_run_snapshots`、`shadow_run_events`，不读取 credential / account / order / ledger / private provider 相关表。
+  - 新增 API、service、repository 回归测试，覆盖 200、404、安全 flags、敏感字段禁入、无写侧 mapping、severity 映射、snapshot / event 计数、SQL 只读和禁止表范围。
+  - 最小同步 `API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md`；未修改 `README.md` 或 `DB_SCHEMA.md`。
+- validation:
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=PaperShadowConsistencyDrilldownControllerTest,PaperShadowConsistencyDrilldownQueryServiceTest,JdbcPaperShadowConsistencyDrilldownQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`：PASS / BUILD SUCCESS。
+- not run:
+  - 未运行 frontend build / Playwright / E2E；未修改 `frontend/**`。
+  - 未运行 Python pytest / mypy / ruff；未修改 `research/**`。
+  - 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+- boundary:
+  - 未新增 migration；未修改历史 migration；未修改 `pom.xml`、package / lock files、deploy、scripts、CI workflow、docs/gates 或 docs/archive。
+  - 未新增 POST / PUT / PATCH / DELETE；未新增 start / stop / execute / trade / placeOrder / cancelOrder / withdraw / transfer endpoint。
+  - 未深聚合 Paper / Strategy / MarketData / Risk / Incident；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - `notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
+- next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add paper shadow consistency drilldown read model`。
