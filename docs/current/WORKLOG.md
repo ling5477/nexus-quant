@@ -15807,3 +15807,33 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - 未新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、Playwright test、Python code、deploy 或 CI workflow。
 - next action: 发起独立 `NQ-GATES-1-READ-MODEL-WO`，先审查 read model owner、数据来源、DTO 字段、frontend information architecture、测试范围和禁止边界；不得直接启动 implementation。
+
+## NQ-GATES-1-READ-MODEL-WO
+
+- date: 2026-07-07
+- scope: docs-only GateS-1 Shadow Run operational read model work order；NQ-only。
+- result: **PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
+- changed files:
+  - `README.md`
+  - `docs/current/GATES_1_READ_MODEL_WO.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+- key changes:
+  - 新增 GateS-1 work order，明确 read model owner、source tables / existing APIs、data source mapping、candidate DTO / API contract、frontend IA、status / enum semantics、evidence anchor、blocker / warning / nextSteps、testing scope 和边界。
+  - 建议后续 implementation 首切片只做 `GET /api/shadow-runs/overview` 的最小后端 read model，聚合 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`。
+  - 明确本轮不新增 API、migration、backend / frontend / research 代码、Playwright / E2E、CI workflow、runner、scheduler 或真实外部行为。
+- validation:
+  - `git status --short`：已执行。
+  - `git branch --show-current`：`dev`。
+  - GateS-0 前置复核：`HEAD = origin/dev = 801d705b88c9c8938d927395fff38c9790a70498`，最新提交为 `docs(gates): reconcile current facts and add GateS-0 plan review baseline`。
+  - 已只读检视 current docs、GateR archive pointer、backend Shadow / Paper / Strategy / Data Quality / Risk / Incident 相关文件、frontend Shadow / Paper / Strategy / runtime / marketdata / risk 相关文件、research/py offline artifact 相关文件。
+- not run:
+  - 未运行 Maven、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮未修改代码、测试、migration、CI workflow、前端页面或 Python research。
+- boundary:
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - 未新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、Playwright test、Python code、deploy 或 CI workflow。
+- next action: 在本 work order 提交后另起 `NQ-GATES-1-READ-MODEL-IMPLEMENTATION`，仅实现最小 backend read model；不得把 GateS-1 work order 写成 implementation started。

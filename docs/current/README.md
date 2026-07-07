@@ -18,7 +18,7 @@
 - GateR-8：Shadow Run list / entrypoint 已完成；支持列表进入 detail / replay。
 - GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）；current plan review 入口为 [GATES_0_PLAN.md](GATES_0_PLAN.md)。
-- GateS-1：`NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）；只允许后续独立任务审查 backend read model / frontend page contract，不代表已实现。
+- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；work order 入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)。GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现），不代表 backend read model、API、frontend page 或测试已实现。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -36,6 +36,7 @@
 | GateR-1 historical data model / migration plan review | [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md) |
 | GateR-2..8 Shadow Run closed-loop evidence | [STATUS.md](STATUS.md), [GATER_PLAN.md](GATER_PLAN.md), [API.md](API.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md) |
 | GateS-0 planning / fact-source reconciliation | [GATES_0_PLAN.md](GATES_0_PLAN.md) |
+| GateS-1 read model work order | [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md) |
 | 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
 | 当前验证记录 | [TESTING.md](TESTING.md) |
 | 当前工作记录 | [WORKLOG.md](WORKLOG.md) |
@@ -72,4 +73,4 @@
 
 ## Current Cleanup Rule
 
-`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；GateR frozen evidence 以 [../gates/gate-r/README.md](../gates/gate-r/README.md) 作为历史归档入口，GateR-2..8 的 current API / schema / validation 摘要只保留在 [STATUS.md](STATUS.md)、[API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md)。下一步推荐进入 GateS-1 work order / implementation plan review；不得新增 GateR-9、GateS implementation、写接口、scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易路径。
+`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；GateR frozen evidence 以 [../gates/gate-r/README.md](../gates/gate-r/README.md) 作为历史归档入口，GateR-2..8 的 current API / schema / validation 摘要只保留在 [STATUS.md](STATUS.md)、[API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md)。GateS-1 work order 入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)；下一步仅允许在该 work order 提交后另起最小 backend read model implementation，不得新增 GateR-9、广义 GateS implementation、写接口、scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易路径。

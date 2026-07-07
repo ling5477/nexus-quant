@@ -9359,3 +9359,38 @@ Known warnings：
 - `docs/current/GATER_PLAN.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 中存在历史 GateR planning / append-only 记录；本轮未重写历史，只在 current authority 中标注 GateR 已被 `FROZEN / ACCEPTED / TAGGED` baseline superseded，GateS-0 为当前 planning authority。
 
 Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
+## NQ-GATES-1-READ-MODEL-WO（2026-07-07）
+
+结论：**PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
+
+Scope：本轮只做 GateS-1 docs-only / read-only work order，审查 Shadow Run operational read model owner、数据来源、DTO / API candidate、frontend IA、testing scope 和 no-side-effect boundary；未修改 backend、frontend、research、scripts、deploy、`.github`、migration、测试代码或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / REVIEWED | 初始工作区为空；后续仅允许 current docs 变更。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git rev-parse HEAD` | PASS | `801d705b88c9c8938d927395fff38c9790a70498`。 |
+| `git rev-parse origin/dev` | PASS | `801d705b88c9c8938d927395fff38c9790a70498`；确认 GateS-0 commit 已在 `origin/dev`。 |
+| `git log -1 --oneline` | PASS | `801d705b docs(gates): reconcile current facts and add GateS-0 plan review baseline`。 |
+| `git ls-files docs/current/GATES_0_PLAN.md` | PASS | GateS-0 plan review baseline 已被 Git 跟踪。 |
+| docs/current fact-source read | PASS / REVIEWED | 已检视 `README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`、`GATES_0_PLAN.md`、`API.md`、`DB_SCHEMA.md`、`MODULES.md`、`ARCHITECTURE.md`、`RUNBOOK.md`、`TESTING.md`、`WORKLOG.md`。 |
+| GateR archive pointer read | PASS / REVIEWED | 已检视 `docs/gates/gate-r/README.md`，确认 GateR `FROZEN / ACCEPTED / TAGGED` 与 tag `nq-gater-freeze`。 |
+| backend read-only source inspection | PASS / REVIEWED | 已只读检视 Shadow Run、Strategy Evaluation Gate、Paper Shadow Comparison、Trading Preflight、Marketdata Quality、Paper alert/recovery/replay 相关文件；未修改代码。 |
+| frontend read-only source inspection | PASS / REVIEWED | 已只读检视 Shadow Run list/detail、Strategy Validation、Marketdata、Paper Trading、operational / adapter readiness 相关 API client / types / pages；未修改前端。 |
+| research/py read-only source inspection | PASS / REVIEWED | 已只读检视 offline metrics、dataset manifest、experiment metadata、reporting summary；未修改 Python。 |
+
+What was not run：
+
+- 未运行 Maven backend test；原因是本轮未修改 Java、API、migration 或测试代码。
+- 未运行 frontend build / Playwright / E2E；原因是本轮未修改前端代码、页面、route、API client、hooks 或测试。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/py/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Known warnings：
+
+- 本节记录的是 work order 阶段的 read-only evidence；后续 implementation 必须另起任务并运行后端相关测试。
+
+Blocking status：non-blocking。当前可进入提交前复核。

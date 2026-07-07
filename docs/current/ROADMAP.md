@@ -29,7 +29,9 @@ GateR frozen / accepted / tagged
   ↓
 GateS-0 plan / fact-source reconciliation
   ↓
-GateS-1 read-model / frontend contract work order
+GateS-1 read-model work order plan ready
+  ↓
+GateS-1 minimal backend read model implementation（future / not started）
 ```
 
 ## 当前阶段
@@ -41,18 +43,18 @@ GateS-1 read-model / frontend contract work order
 - GateS recommended definition：策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS core object：`Strategy Validation Runtime Baseline`（策略验证运行时基线）。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）。
-- GateS-1：`NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）。
+- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现）。
 
 ## 下一步规则
 
-下一步推荐进入 GateS-1 work order / implementation plan review，只审查 backend read model、frontend page contract、数据来源、测试策略和边界清单。该下一步仍不代表 GateS-1 implementation started，不允许新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、Playwright / E2E test、Python research code、CI workflow 或真实外部行为。
+下一步推荐在 GateS-1 work order 提交后，另起 `NQ-GATES-1-READ-MODEL-IMPLEMENTATION`，只实现最小 backend read model：future `GET /api/shadow-runs/overview`，聚合 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`。该下一步当前仍 `NOT STARTED`（未开始），不允许本轮新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、Playwright / E2E test、Python research code、CI workflow 或真实外部行为。
 
 ## GateS Batch Plan
 
 | Batch | 状态 | 目标 |
 | --- | --- | --- |
 | GateS-0 | `PLAN / NOT IMPLEMENTED` | Plan / fact-source reconciliation |
-| GateS-1 | `NEXT / NOT IMPLEMENTED` | Shadow Run operational dashboard / backend read model |
+| GateS-1 | work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`; implementation `NOT IMPLEMENTED` | Shadow Run operational dashboard / backend read model |
 | GateS-2 | `NOT STARTED`（未开始） | Paper vs Shadow consistency enhancement |
 | GateS-3 | `NOT STARTED` | Strategy Evaluation Gate runtime baseline |
 | GateS-4 | `NOT STARTED` | Python parameter sweep / evaluation artifact baseline |

@@ -22,7 +22,7 @@
 - GateR release tag：`nq-gater-freeze`（release tag 已创建并推送）。
 - GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现），当前 plan review baseline 为 [GATES_0_PLAN.md](GATES_0_PLAN.md)。
-- GateS-1：`NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现），后续只允许独立 work order / implementation plan review；当前未实现 backend read model、API、frontend page 或测试。
+- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)；GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现），当前未实现 backend read model、API、frontend page 或测试。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -119,4 +119,20 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - frontend page implemented。
 - migration implemented。
 - test implemented。
+- LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
+
+## 9. GateS-1 Read Model Work Order Status
+
+`docs/current/GATES_1_READ_MODEL_WO.md` 已建立 GateS-1 Shadow Run operational read model work order 入口，覆盖 read model owner、source tables / existing APIs、data source mapping、candidate DTO contract、candidate API contract、frontend IA contract、status / enum semantics、evidence anchor model、blocker / warning / nextSteps model、no-side-effect boundary、security / credential boundary、LIVE / AI / DH / Integration boundary、testing scope、implementation slice recommendation、P0/P1/P2/P3 findings、acceptance criteria 和 next concrete action。
+
+该状态只表示 GateS-1 work order ready，不表示：
+
+- GateS-1 implementation started。
+- backend read model implemented。
+- `GET /api/shadow-runs/overview` implemented。
+- API endpoint / Controller / DTO / repository / SQL implemented。
+- frontend page implemented。
+- migration implemented。
+- test implemented。
+- runner / scheduler started。
 - LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。

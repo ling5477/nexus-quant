@@ -21,7 +21,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateR-8：Shadow Run list / entrypoint 已完成。
 - GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）；规划审查入口：`docs/current/GATES_0_PLAN.md`。
-- GateS-1：`NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）；只允许后续独立任务审查 backend read model / frontend page contract，不代表已实现。
+- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；work order 入口：`docs/current/GATES_1_READ_MODEL_WO.md`。GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现），不代表 backend read model、API、frontend page 或测试已实现。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -37,6 +37,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - `docs/current/GATER_PLAN.md`：GateR historical Shadow Run operationalization planning evidence。
 - `docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md`：GateR-1 historical Shadow Run 数据模型与 migration 方案审查。
 - `docs/current/GATES_0_PLAN.md`：GateS-0 fact-source reconciliation、planning review、read-model / frontend contract baseline。
+- `docs/current/GATES_1_READ_MODEL_WO.md`：GateS-1 Shadow Run operational read model work order。
 - `docs/current/DB_SCHEMA.md`：当前 DB schema 事实；包含 GateR-2 Shadow Run local fact model 的 `V32` 说明。
 - `docs/current/TESTING.md`：验证记录。
 - `docs/current/WORKLOG.md`：工作记录。
@@ -54,4 +55,4 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 
 ## Boundary
 
-GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 当前为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateS 当前仅为推荐下一主线与 GateS-0 `PLAN / NOT IMPLEMENTED`，不代表 GateS implementation、freeze、acceptance 或交易授权。
+GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 当前为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateS 当前仅为推荐下一主线、GateS-0 `PLAN / NOT IMPLEMENTED` 和 GateS-1 work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`，不代表 GateS implementation、freeze、acceptance 或交易授权。
