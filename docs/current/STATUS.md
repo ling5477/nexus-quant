@@ -17,6 +17,7 @@
 - GateR-4：`NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateR-5：`NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateR-6：`NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- GateR-7：`NQ-GATER-7-FRONTEND-SHADOW-RUN-DETAIL-REPLAY-VIEW：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -35,7 +36,8 @@
 - Shadow Run decision trace previews：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限本地结构化 trace / risk / order intent preview，不是交易授权。
 - Shadow consistency report service：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限调用方本地只读 Paper / Shadow summary 比较与本地 report 持久化，不是交易授权。
 - Shadow Run read-only API：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 GET detail / events / snapshots / latest consistency report，不是写接口、runner trigger 或交易授权。
-- Shadow Run scheduler / frontend page：`NOT IMPLEMENTED`（未实现）。
+- Shadow Run detail / replay frontend page：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `/strategies/shadow-runs/:shadowRunId` 只读查看本地 facts，不提供写侧操作，不是交易授权。
+- Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 
 ## 3. GateR-0 Planning Status
 
@@ -86,7 +88,7 @@ GateR-2 review P1 finding 已纳入 verified commit 接受范围：`JdbcShadowRu
 - DH runtime integrated。
 - RealClient、real provider、private trading adapter 或 real permission probe implemented。
 
-GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerService` 使用 `ShadowRunFactRepository` 创建本地 run、通过 `ShadowRunStateMachine` 推进 `CREATED -> PRECHECKING -> READY -> RUNNING -> COMPLETED / BLOCKED / FAILED`，并写入 `INPUT_MARKETDATA / STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 4 类只读快照。GateR-4 已将 `STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 扩展为 structured decision trace、risk allow/block/warn snapshot 和 `previewOnly=true` 的 order intent preview envelope，并把 blocker / warning / nextSteps 写入 result。GateR-5 已新增 `ShadowConsistencyReportService`，只消费调用方提供的本地只读 Paper / Shadow summary，生成 `CONSISTENT / DIVERGED / NOT_COMPARABLE / PARTIAL / FAILED`（一致 / 偏离 / 不可比 / 部分可比 / 失败）report，并复用既有 repository port 写入 `shadow_consistency_reports`。GateR-6 已新增 Shadow Run read-only API，只通过 GET 读取本地 run detail、events、snapshots 与 latest consistency report。该状态不代表写接口、scheduler、前端页面、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或交易授权已启用。
+GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerService` 使用 `ShadowRunFactRepository` 创建本地 run、通过 `ShadowRunStateMachine` 推进 `CREATED -> PRECHECKING -> READY -> RUNNING -> COMPLETED / BLOCKED / FAILED`，并写入 `INPUT_MARKETDATA / STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 4 类只读快照。GateR-4 已将 `STRATEGY_DECISION / RISK_PREFLIGHT / ORDER_INTENT_PREVIEW` 扩展为 structured decision trace、risk allow/block/warn snapshot 和 `previewOnly=true` 的 order intent preview envelope，并把 blocker / warning / nextSteps 写入 result。GateR-5 已新增 `ShadowConsistencyReportService`，只消费调用方提供的本地只读 Paper / Shadow summary，生成 `CONSISTENT / DIVERGED / NOT_COMPARABLE / PARTIAL / FAILED`（一致 / 偏离 / 不可比 / 部分可比 / 失败）report，并复用既有 repository port 写入 `shadow_consistency_reports`。GateR-6 已新增 Shadow Run read-only API，只通过 GET 读取本地 run detail、events、snapshots 与 latest consistency report。GateR-7 已新增前端 Shadow Run detail / replay 只读页面，只展示本地 facts、events、snapshots、latest consistency report 和 no-side-effect flags。该状态不代表写接口、scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或交易授权已启用。
 
 ## 6. Post-GateQ Current Cleanup
 
@@ -96,4 +98,4 @@ GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerServ
 
 ## 7. 当前验证口径
 
-当前 GateR-6 是 backend read-only API + DTO + Controller + query service + tests + minimal docs sync；未新增 migration，未修改 infra repository 生产代码或事务语义，未新增写接口，未修改 frontend、research、scripts、deploy、`.github`、docs/gates 或 docs/archive。已运行新增 API targeted tests、GateR-3/4/5 regression，以及 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test`；frontend build、Playwright、pytest、mypy、ruff 未运行，因为本轮未修改对应范围。验证以 Git preflight、GitHub Actions latest success check、Maven backend tests、diff check、forbidden-scope diff 和 broad rg boundary scan 为准，详见 [TESTING.md](TESTING.md)。
+当前 GateR-7 是 frontend read-only view + API client + query hooks + route + backend-free Playwright smoke + minimal docs sync；未新增后端 API，未新增 migration，未修改 backend、research、scripts、deploy、`.github`、docs/gates 或 docs/archive。已运行 `cd frontend && npm run build` 与 `npm run test:e2e -- shadow-run-detail-smoke.spec.ts`；未运行后端 Maven / Python pytest / mypy / ruff，因为本轮未修改对应范围。验证以 Git preflight、GitHub Actions latest success check、frontend build、Playwright smoke、diff check、forbidden-scope diff 和 boundary rg scan 为准，详见 [TESTING.md](TESTING.md)。

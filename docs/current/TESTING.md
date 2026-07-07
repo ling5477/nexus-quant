@@ -9204,3 +9204,28 @@ What was not run：
 - 未运行真实 public outbound、private endpoint、permission probe 或 exchange smoke，原因是 GateQ-0 为 docs-only planning，且本轮禁止真实交易所外联、credential material 读取和 LIVE 启用。
 
 边界确认：GateQ 未实现；Shadow Live 未实现；LIVE 仍 `DISABLED`（关闭）；AI 仍 `NOT STARTED`（未开始）；DH runtime 仍 `NOT INTEGRATED`（未集成）；Integration-1 仍 `NOT STARTED`（未开始）/ mock-test-support only；RealClient / real provider / private trading adapter / real permission probe 仍 `NOT IMPLEMENTED`（未实现）。Shadow Live 只读规划不代表真实交易、trading authorization、LIVE readiness、private trading、ML ready 或 live execution ready。
+
+---
+
+## NQ-GATER-7-FRONTEND-SHADOW-RUN-DETAIL-REPLAY-VIEW（2026-07-07）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+本轮为 frontend read-only implementation：新增 Shadow Run detail / replay 页面、API client、React Query hooks、路由和 backend-free Playwright smoke。未新增后端 API，未新增 migration，未修改 backend / research / scripts / deploy / `.github` / `docs/gates` / `docs/archive`。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git fetch origin dev` | **PASS** | 已刷新 `origin/dev`。 |
+| `git rev-parse HEAD` | **PASS** | `b9a3a149cf154e6576c5e931a52fab047cfb362e`。 |
+| `git rev-parse origin/dev` | **PASS** | `b9a3a149cf154e6576c5e931a52fab047cfb362e`；确认 `HEAD = origin/dev`。 |
+| `gh run list --limit 5` | **PASS / LATEST SUCCESS** | 最新 run：`28835646317`，`completed / success`，`feat(gater): add shadow run read-only api`。 |
+| `cd frontend; npm run build` | **PASS** | `tsc -b && vite build` 通过；Vite 仅提示既有 chunk size warning。 |
+| `cd frontend; npm run test:e2e -- shadow-run-detail-smoke.spec.ts` | **PASS** | 3 tests passed；覆盖 detail、events timeline、snapshots、latest consistency report、no-side-effect flags、diagnostic only / no trading authorization、敏感字段过滤、404、loading、error 和禁止写侧按钮。 |
+
+Not run：
+
+- 未运行 `mvn -f backend/pom.xml test`，原因是本轮禁止并未修改 `backend/**`，也未新增后端 API 或 migration。
+- 未运行 Python `pytest` / `mypy` / `ruff`，原因是本轮未修改 `research/**`。
+- 未运行全量 Playwright 矩阵，原因是本轮只新增单页只读 smoke，已运行最相关 spec。
+
+边界确认：页面只调用 GateR-6 已存在 GET API；不提供 start / stop / execute / rerun / approve / trade 按钮；不触发 runner；不调用真实交易所；不读取或输出 credential material；不展示 private payload、real account、real order 或 trading approval 字段；LIVE 仍 `DISABLED`（关闭）；AI 仍 `NOT STARTED`（未开始）；DH runtime 仍 `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe 仍 `NOT IMPLEMENTED`（未实现）。

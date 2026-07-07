@@ -53,6 +53,18 @@ export const strategyValidationQueryKeys = {
     shadowLivePreview: (query: unknown) => [...strategyValidationQueryKeys.all, 'shadow-live-preview', query ?? 'idle'] as const,
 };
 
+export const shadowRunsQueryKeys = {
+    all: ['shadow-runs'] as const,
+    detail: (shadowRunId: string) => [...shadowRunsQueryKeys.all, 'detail', shadowRunId] as const,
+    events: (shadowRunId: string) => [...shadowRunsQueryKeys.all, 'events', shadowRunId] as const,
+    snapshots: (shadowRunId: string) => [...shadowRunsQueryKeys.all, 'snapshots', shadowRunId] as const,
+    latestConsistencyReport: (shadowRunId: string) => [
+        ...shadowRunsQueryKeys.all,
+        'latest-consistency-report',
+        shadowRunId,
+    ] as const,
+};
+
 export const scheduleQueryKeys = {
     all: ['strategy-schedules'] as const,
     list: (strategyId: string, searchVersion: number) => [...scheduleQueryKeys.all, 'list', strategyId, searchVersion] as const,

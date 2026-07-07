@@ -15593,3 +15593,30 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 提交前复核 staged docs，推荐 commit message：`docs(gateq): plan shadow live readiness`。下一步只能另起 `NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE / NOT STARTED`，并在新任务中重新声明 allowed files、forbidden areas、validation commands 和 no-LIVE / no-AI / no-DH-runtime / no-real-provider / no-private-trading / no-credential 边界。
+
+---
+
+## NQ-GATER-7-FRONTEND-SHADOW-RUN-DETAIL-REPLAY-VIEW
+
+日期：2026-07-07
+
+### 完成内容
+
+- 新增 Shadow Run read-only API client：`getShadowRunDetail`、`getShadowRunEvents`、`getShadowRunSnapshots`、`getShadowRunLatestConsistencyReport`。
+- 新增 React Query hooks 与 query keys，全部 `retry:false`，404 / error fail-closed 展示。
+- 新增 `/strategies/shadow-runs/:shadowRunId` 页面：展示 Shadow Run 基本信息、no-side-effect flags、events 时间线、snapshots 列表与详情、latest consistency report、blockers / warnings / nextSteps。
+- 新增前端 JSON 安全渲染兜底，递归过滤 `apiKey`、`secret`、`passphrase`、`credentialMaterial`、`realOrderId`、`realAccountBalance`、`authorizedForTrading`、`tradingReady`、`liveReady`、`tradeApproved` 等敏感或授权误导字段。
+- 新增 backend-free Playwright smoke：覆盖数据展示、404 not found、loading、error、敏感字段不渲染、只读请求边界和禁止写侧按钮。
+
+### 验证
+
+- `npm run build`：PASS。
+- `npm run test:e2e -- shadow-run-detail-smoke.spec.ts`：PASS，3 tests passed。
+
+### 边界
+
+未修改 backend、research、scripts、deploy、`.github`、migration、`docs/gates` 或 `docs/archive`；未新增后端 API；未启动 runner；未调用真实交易所；未读取或输出 credential material；未提供 start / stop / execute / rerun / approve / trade 操作；未把 consistency report 写成 approval、trading authorization 或 LIVE ready；LIVE 仍 `DISABLED`，AI 仍 `NOT STARTED`，DH runtime 仍 `NOT INTEGRATED`。
+
+### 推荐下一步
+
+完成提交前 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。
