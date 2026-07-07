@@ -1,6 +1,6 @@
 # Current Modules
 
-本文记录当前模块 owner 和职责边界。当前阶段为 GateQ `FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；下一阶段只能是 GateR `PLAN / NOT STARTED`（规划 / 未开始）。
+本文记录当前模块 owner 和职责边界。当前阶段为 GateR `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；下一阶段唯一推荐主线是 GateS，GateS-0 为 `PLAN / NOT IMPLEMENTED`（规划 / 未实现），GateS-1 为 `NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）。
 
 ## 当前禁止误写的事实
 
@@ -9,6 +9,7 @@
 - DH runtime `NOT INTEGRATED`（未集成）。
 - Integration-1 `NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
 - RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
+- GateS backend read model / API / frontend page / Python offline evaluation artifact binding 仍 `NOT IMPLEMENTED`（未实现）。
 
 ## 模块职责
 
@@ -28,8 +29,8 @@
 | `nq-adapter-api` | 交易所 adapter contract | 不实现具体交易所调用，不代表 real adapter permission probe 已实现 |
 | `nq-adapter-okx` | OKX 交易所适配实现；当前不得解释为 real provider 已启用 | 不定义平台交易主语义，不实现真实 permission probe adapter |
 | `nq-adapter-binance` | Binance 交易所适配实现；当前不得解释为 real provider 已启用 | 不定义平台交易主语义，不实现真实 permission probe adapter |
-| `frontend` | React / Vite / Ant Design / TanStack Query 控制台 | 不散写 API 请求，不做 AI / Agent / DH runtime 成熟页面 mock |
-| `research/py` | Python 独立离线研究工具链、CLI、pytest/mypy/ruff 验证 | 不进入 auth、recovery、ledger、live trading 主链 |
+| `frontend` | React / Vite / Ant Design / TanStack Query 控制台 | 不散写 API 请求，不做 AI / Agent / DH runtime 成熟页面 mock，不提供 LIVE / real trading 按钮 |
+| `research/py` | Python 独立离线研究工具链、CLI、pytest/mypy/ruff 验证 | 不进入 auth、recovery、ledger、live trading 主链，不表示 ML ready 或 live execution ready |
 
 ## 禁止依赖规则
 

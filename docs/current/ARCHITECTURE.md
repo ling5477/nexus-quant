@@ -5,7 +5,8 @@
 ## 当前事实
 
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
-- GateR：`PLAN / NOT STARTED`（规划 / 未开始）。
+- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
+- GateS：下一阶段唯一推荐主线；GateS-0 `PLAN / NOT IMPLEMENTED`（规划 / 未实现），GateS-1 `NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -14,7 +15,7 @@
 
 ## 总体架构
 
-NexusQuant 当前由 Java 后端多模块、React 前端控制台、Python 离线研究工具链和本地 PostgreSQL 组成。当前文档主线是 GateQ 归档后的 current facts 维护与后续 GateR planning-only 入口；这不代表 GateR implementation 已启动。
+NexusQuant 当前由 Java 后端多模块、React 前端控制台、Python 离线研究工具链和本地 PostgreSQL 组成。当前文档主线是 GateR frozen baseline 后的 GateS fact-source reconciliation 与 Strategy Validation Runtime Baseline planning；这不代表 GateS-1 implementation 已启动。
 
 ## 后端多模块结构
 
@@ -33,7 +34,7 @@ NexusQuant 当前由 Java 后端多模块、React 前端控制台、Python 离�
 
 ## Python Research
 
-`research/py` 是独立离线研究工具链，不进入 live trading、auth、recovery、ledger 主链，不作为 GateR implementation 的隐式入口。
+`research/py` 是独立离线研究工具链，不进入 live trading、auth、recovery、ledger 主链，不作为 GateS implementation、ML ready 或 live execution ready 的隐式入口。
 
 ## 禁止依赖规则
 
@@ -45,7 +46,8 @@ NexusQuant 当前由 Java 后端多模块、React 前端控制台、Python 离�
 
 ## 当前阶段禁止新增
 
-- 不启动 GateR implementation。
+- 不启动 GateS implementation。
+- 不新增 GateS read model、API、migration、frontend page 或测试。
 - 不新增 AI 模块、AI 信号、AI runtime 或 AI Paper Trading。
 - 不实现 DH runtime integration。
 - 不接 NQ RealClient，不接真实 Provider。

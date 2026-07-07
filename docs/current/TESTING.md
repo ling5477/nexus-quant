@@ -9322,3 +9322,40 @@ Not run：
   - DH not integrated。
   - RealClient / real provider / private trading adapter / real permission probe not implemented。
   - no real order / cancel / transfer / withdraw。
+
+---
+
+## NQ-GATES-0-PLAN-REVIEW（2026-07-07）
+
+结论：**PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
+
+Scope：本轮只做 GateS-0 docs-only fact-source reconciliation、planning review、read-model / frontend contract proposal 和 current docs closeout；未修改 backend、frontend、research、scripts、deploy、`.github`、migration、测试代码或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / REVIEWED | 仅显示允许的 root `README.md`、`docs/current/**` 文档变更和新增 `docs/current/GATES_0_PLAN.md`。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git diff --check` | PASS | 无 whitespace error；仅 Windows 工作区提示 LF 将在 Git touch 时转换为 CRLF，非阻断。 |
+| `git diff --stat` | PASS / REVIEWED | tracked diff 仅覆盖允许文档；新文件 `GATES_0_PLAN.md` 在 staging 前由 `git status --short` 识别。 |
+| `git diff -- backend` | PASS | 空输出；未改后端代码。 |
+| `git diff -- frontend` | PASS | 空输出；未改前端代码、页面或 E2E。 |
+| `git diff -- research` | PASS | 空输出；未改 Python research。 |
+| `git diff -- scripts` | PASS | 空输出；未改脚本。 |
+| `git diff -- deploy` | PASS | 空输出；未改部署配置。 |
+| `git diff -- .github` | PASS | 空输出；未改 CI workflow。 |
+| `git diff -- backend/**/db/migration` | PASS | 空输出；未改 Flyway migration。 |
+| `rg "GateR|GateS|Shadow Run|Shadow Live|Strategy Validation|Paper vs Shadow|consistency|diagnostic only|no-side-effect|not trading authorization|LIVE|AI|DH|Integration-1|RealClient|real provider|private trading|permission probe|ML ready|live execution|trading authorization|tradeApproved|authorizedForTrading|liveReady|tradingReady" README.md docs/current docs/gates backend frontend research/py` | PASS / REVIEWED | 命中为当前边界声明、GateR historical archive、append-only historical logs、禁止字段说明、frontend lock/build artifact 和 research `NOT_AVAILABLE` 语境；未发现本轮新增实盘、交易授权、AI started、DH integrated 或 real provider enabled 语义。 |
+
+What was not run：
+
+- 未运行 Maven backend test；原因是本轮 docs-only，未修改 Java、API、migration 或测试代码。
+- 未运行 frontend build / Playwright / E2E；原因是本轮未修改前端代码、页面、route、API client、hooks 或测试。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/py/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runtime。
+
+Known warnings：
+
+- `git diff --check` / `git diff --stat` 输出 Windows LF/CRLF 工作区提示，非 whitespace error。
+- `docs/current/GATER_PLAN.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md` 中存在历史 GateR planning / append-only 记录；本轮未重写历史，只在 current authority 中标注 GateR 已被 `FROZEN / ACCEPTED / TAGGED` baseline superseded，GateS-0 为当前 planning authority。
+
+Blocking status：non-blocking。当前可进入提交前复核。

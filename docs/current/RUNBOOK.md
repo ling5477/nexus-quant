@@ -60,3 +60,16 @@ python -m ruff check .
 - `nq-app` 无法连接 DB：检查 `NQ_DB_URL`、`NQ_DB_PORT`、`NQ_DB_NAME`、`NQ_DB_USER`、`NQ_DB_PASSWORD`。
 - `/api/auth/login` 失败：确认后端已启动、DB migration 已完成、local admin 用户配置与认证数据源一致。
 - `/api/auth/me` 失败：确认请求携带 `<redacted-authorization-header-example>`，并先通过 `/api/auth/login` 获取 token。
+
+## 8. GateS-0 docs-only 验证边界
+
+GateS-0 当前为 `PLAN / NOT IMPLEMENTED`（规划 / 未实现），只做 fact-source reconciliation、planning review、read-model / frontend contract proposal 和验收清单。正常情况下只运行 docs consistency 相关命令：
+
+```powershell
+git status --short
+git branch --show-current
+git diff --check
+git diff --stat
+```
+
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter 或真实 permission probe。除非误触代码，否则不运行 Maven 全量测试、frontend build / E2E 或 Python pytest / mypy / ruff。

@@ -15769,3 +15769,41 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary enforcement: 未读取 `.env`、未读取/输出 credential material、未调用真实交易所、未下单/撤单/转账/提现。
 - validation references: `git status --short --untracked-files=all`、`git branch --show-current`、`git rev-parse HEAD`、`git rev-parse origin/dev`、`gh run list --limit 5`、`gh run view 28852212136 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs`、`git tag --list "nq-gater-freeze"`。
 - next action: 同步 commit 与推送 tag。
+
+## NQ-GATES-0-PLAN-REVIEW
+
+- date: 2026-07-07
+- scope: docs-only GateS-0 fact-source reconciliation + planning review + read-model / frontend contract baseline；NQ-only。
+- result: **PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
+- changed files:
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/API.md`
+  - `docs/current/ARCHITECTURE.md`
+  - `docs/current/MODULES.md`
+  - `docs/current/RUNBOOK.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/GATES_0_PLAN.md`
+- key changes:
+  - 将 GateR current baseline 对齐为 `FROZEN / ACCEPTED / TAGGED`，tag 为 `nq-gater-freeze`。
+  - 将 GateS 写为下一阶段唯一推荐主线；GateS-0 为 `PLAN / NOT IMPLEMENTED`，GateS-1 为 `NEXT / NOT IMPLEMENTED`。
+  - 新增 GateS batch plan，覆盖 GateS-0、GateS-1、GateS-2、GateS-3、GateS-4、GateS-5、GateS-6、GateS-FREEZE。
+  - 新增 GateS-1 backend read-model contract proposal 和 frontend page contract proposal，明确 diagnostic only、no-side-effect、not trading authorization。
+  - 修正 `ARCHITECTURE.md`、`MODULES.md`、`API.md` 的 GateR / GateS 状态漂移。
+- validation:
+  - `git status --short`：已执行。
+  - `git branch --show-current`：`dev`。
+  - `git diff --check`：PASS；仅 LF/CRLF 工作区提示，无 whitespace error。
+  - `git diff --stat`：已复核。
+  - `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration`：均为空。
+  - 指定 GateR / GateS / LIVE / AI / DH / trading boundary `rg`：已执行，命中为当前边界声明、历史归档、append-only 记录、禁止字段说明和生成/锁文件语境。
+- not run:
+  - 未运行 Maven、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮未修改代码、测试、migration、CI workflow、前端页面或 Python research。
+- boundary:
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - 未新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、Playwright test、Python code、deploy 或 CI workflow。
+- next action: 发起独立 `NQ-GATES-1-READ-MODEL-WO`，先审查 read model owner、数据来源、DTO 字段、frontend information architecture、测试范围和禁止边界；不得直接启动 implementation。

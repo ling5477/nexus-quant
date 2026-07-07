@@ -1,6 +1,6 @@
 # Current Fact Source Index
 
-本文是 NexusQuant 当前事实源索引。用途是给 GateR planning、GateR-2..8 Shadow Run closed-loop implementation、历史 Gate archive、LIVE / AI / DH / Integration-1 / real provider 边界判断提供统一入口，避免把已冻结证据、mock/test-support、readiness、preview、local fact、read-only API、frontend replay 或 comparison 误写成 runtime 授权。
+本文是 NexusQuant 当前事实源索引。用途是给 GateR frozen baseline、GateS-0 planning / fact-source reconciliation、GateS-1 future read-model / frontend contract proposal、历史 Gate archive、LIVE / AI / DH / Integration-1 / real provider 边界判断提供统一入口，避免把已冻结证据、mock/test-support、readiness、preview、local fact、read-only API、frontend replay、comparison 或 Strategy Validation 误写成 runtime 授权。
 
 ## 1. 当前事实源优先级
 
@@ -10,16 +10,18 @@
 2. [STATUS.md](STATUS.md)：当前项目状态。
 3. [README.md](README.md)：current 入口和 archive pointer。
 4. [ROADMAP.md](ROADMAP.md)：当前路线与下一阶段边界。
-5. [GATER_PLAN.md](GATER_PLAN.md)：GateR Shadow Run operationalization planning 和 GateR-2..8 implementation 指针；GateR-8 已完成并 push，下一步是 GateR freeze closeout。
-6. [API.md](API.md)：已实现 HTTP API 当前事实；GateR-6 / GateR-8 Shadow Run API 只包含 read-only GET endpoint，不包含写接口。
-7. [TESTING.md](TESTING.md)：当前验证记录和未运行说明；GateR-2..8 的 Maven、Playwright、forbidden-scope、latest CI green 证据以此为当前验证入口。
-8. [WORKLOG.md](WORKLOG.md)：当前任务记录；GateR-2..8 实现范围、commit、CI 和边界以此为工作记录入口。
-9. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实；GateR-2 的 `V32__gate_r_shadow_run_fact_model.sql` 和 4 张 Shadow Run local fact 表以此为当前 schema 入口。
-10. [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)：GateR-1 Shadow Run data model / migration plan review；只表示 migration 方案已就绪，不代表 review 本身创建表。
-11. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
-12. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
-13. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
-14. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：本轮 post-GateQ current cleanup 审计和移动索引。
+5. [GATES_0_PLAN.md](GATES_0_PLAN.md)：GateS-0 plan / fact-source reconciliation、GateS batch plan、GateS-1 read-model / frontend contract proposal；只表示 planning ready，不表示 implementation。
+6. [GATER_PLAN.md](GATER_PLAN.md)：GateR historical planning 和 GateR-2..8 implementation 指针；GateR 当前已被 freeze closeout superseded，不再作为下一阶段入口。
+7. [API.md](API.md)：已实现 HTTP API 当前事实；GateR-6 / GateR-8 Shadow Run API 只包含 read-only GET endpoint，不包含写接口；GateS-1 仅允许作为 future contract proposal 标注。
+8. [TESTING.md](TESTING.md)：当前验证记录和未运行说明；GateR frozen baseline 和 GateS-0 docs-only validation 证据以此为当前验证入口。
+9. [WORKLOG.md](WORKLOG.md)：当前任务记录；GateR frozen baseline、GateS-0 docs-only scope 和边界以此为工作记录入口。
+10. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实；GateR-2 的 `V32__gate_r_shadow_run_fact_model.sql` 和 4 张 Shadow Run local fact 表以此为当前 schema 入口；GateS-0 不新增 schema。
+11. [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)：GateR-1 Shadow Run data model / migration plan review；只表示 migration 方案曾经就绪，不代表当前要新增 migration。
+12. [../gates/gate-r/README.md](../gates/gate-r/README.md)：GateR 历史归档入口。
+13. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
+14. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
+15. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
+16. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：post-GateQ current cleanup 审计和移动索引。
 
 `docs/gates/**` 与 `docs/archive/**` 是历史证据或归档引用，不覆盖 `docs/current` 当前事实入口。已从 `docs/current` 移出的过程型长文档不得再作为 current authority 引用。
 
@@ -37,6 +39,9 @@
 - GateR-6：Shadow Run read-only API 已完成；没有写接口。
 - GateR-7：Shadow Run detail / replay view 已完成；没有执行按钮。
 - GateR-8：Shadow Run list / entrypoint 已完成。
+- GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
+- GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）。
+- GateS-1：`NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -62,6 +67,8 @@
 ## 4. 禁止误写清单
 
 - GateR 已完成 freeze closeout，状态为 `FROZEN / ACCEPTED / TAGGED`；不得误读为 LIVE、trading authorization、AI / DH runtime 或 private trading 启动。
+- GateS 当前仅为下一阶段推荐主线，GateS-0 为 `PLAN / NOT IMPLEMENTED`；不得写成 implemented、frozen 或 accepted。
+- GateS-1 当前仅为 `NEXT / NOT IMPLEMENTED`；不得写成 read model、API、frontend page 或 test 已实现。
 - 不得把 GateR readiness 写成 trading authorization 或 LIVE ready。
 - 不得把 GateR-1 migration plan review 本身写成 migration implemented；migration implemented 的当前事实只来自 GateR-2 `V32__gate_r_shadow_run_fact_model.sql`。
 - 不得把 GateR-2..8 已完成误写成未实现、trading authorization 或 LIVE ready。

@@ -77,7 +77,7 @@ LIVE: DISABLED
 
 ## GateR-6 / GateR-8 Shadow Run Read-only API
 
-NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。NQ-GATER-8-SHADOW-RUN-LIST-AND-ENTRYPOINT-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖 Shadow Run 只读 API、DTO、Controller、query service、前端只读列表入口与测试，不代表 GateR 已冻结或接受，不代表 Shadow Run scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe 已启动。
+NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `PUSHED`（已推送）/ `CI SUCCESS`（CI 成功）。NQ-GATER-8-SHADOW-RUN-LIST-AND-ENTRYPOINT-IMPLEMENTATION 当前状态：`IMPLEMENTED` / `PUSHED` / `CI SUCCESS`。GateR 当前状态为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），release tag 为 `nq-gater-freeze`。该状态只覆盖 Shadow Run 只读 API、DTO、Controller、query service、前端只读列表入口与测试，不代表 Shadow Run scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe 已启动。
 
 - `GET /api/shadow-runs`：读取本地 Shadow Run list。
   - Query：`status` 可选；`strategyVersionId` 可选；`datasetId` 可选；`paperRunId` 可选；`limit` 默认 50、最大 100；`offset` 默认 0。
@@ -98,6 +98,20 @@ NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION 当前状态：`IMPLEMENTED`�
 - Not found：Shadow Run 不存在，或 latest consistency report 不存在，返回项目统一 not found 语义（HTTP 404 / `RESOURCE_NOT_FOUND`）。
 - 固定禁止：本 API 不提供 `POST /api/shadow-runs`、`start`、`stop`、`cancel`、`rerun`、`execute`、`trade`、`placeOrder`、`cancelOrder`、`withdraw`、`transfer` 或任何写侧 / 交易动作 endpoint。
 - Response 禁止字段：`apiKey`、`secret`、`passphrase`、`token`、`privateKey`、`credentialMaterial`、`decryptedPayload`、`encryptedPayload` 真实值、`rawPrivateRequest`、`rawPrivateResponse`、private endpoint payload、`realOrderId`、`realAccountBalance`、`realPosition`、`tradingReady`、`liveReady`、`authorizedForTrading`、`tradeApproved`、order execution command、private adapter reference。
+
+## GateS-1 Read-model / Frontend Contract Proposal (Not Implemented)
+
+GateS-1 当前仅为 `NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）。本节是 future contract proposal（未来契约提案），不是当前已实现 HTTP API，不新增 endpoint，不新增 Controller / DTO / repository / SQL / migration / frontend page / test。
+
+候选 read model 应只读聚合既有本地 facts，覆盖 `Shadow Run overview`、`latest shadow status`、`stale evidence`、`divergence severity`、`Paper vs Shadow consistency summary`、`Strategy Validation decision`、`blocker`、`warning`、`nextSteps`、`evidence anchors`、`traceId` / `requestId` / `idempotencyKey`、`diagnostic-only boundary` 和 `not trading authorization boundary`。
+
+候选 `Strategy Validation decision` 状态仅允许表示 validation report 层面的准出结论：`APPROVED`（验证报告层通过）、`REJECTED`（拒绝）、`NEEDS_REVIEW`（需要复核）、`BLOCKED`（阻断）。`APPROVED` 不表示交易授权，不启用 LIVE，不允许真实下单、撤单、转账或提现。
+
+候选一致性与运行健康状态仅用于 Paper / Shadow / replay 证据层，不修改 `shadow_runs.status` 核心状态机：`CONSISTENT`（一致）、`DIVERGED`（偏离）、`PARTIAL`（部分可比）、`NOT_COMPARABLE`（不可比）、`FAILED`（失败）、`STALE_EVIDENCE`（证据过期）。
+
+候选 frontend contract 只允许只读展示 Dashboard v2、Strategy Validation Center、Paper vs Shadow Workbench、MarketData Quality Drilldown、Risk / Preflight Blocker Panel、Incident / Replay Center。固定禁止真实交易按钮、LIVE 操作入口、AI 决策中心、Binance Pro 式全屏交易终端、live-ready / trading-ready / provider-ready 文案。
+
+Response / UI 禁止字段或文案：`tradeApproved`、`authorizedForTrading`、`liveReady`、`tradingReady`、`realProviderReady`、`privateTradingReady`、`LIVE READY`、`SHADOW LIVE TRADING ENABLED`、`REAL PROVIDER ENABLED`、`PRIVATE TRADING ENABLED`、`REAL PERMISSION PROBE ENABLED`、credential material、真实订单、真实账户余额、真实仓位、private endpoint raw payload。
 
 ## GateQ-1 Strategy Evaluation Gate Read-only API
 

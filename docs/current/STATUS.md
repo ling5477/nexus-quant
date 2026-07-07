@@ -20,6 +20,9 @@
 - GateR-7：`NQ-GATER-7-FRONTEND-SHADOW-RUN-DETAIL-REPLAY-VIEW：IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功）。
 - GateR-8：`NQ-GATER-8-SHADOW-RUN-LIST-AND-ENTRYPOINT-IMPLEMENTATION：IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），commit `00e025d0e9f422f1b9aedbd409ee576e8892af12`。
 - GateR release tag：`nq-gater-freeze`（release tag 已创建并推送）。
+- GateS：下一阶段唯一推荐主线，目标为策略验证运营化与 Shadow 诊断闭环阶段。
+- GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现），当前 plan review baseline 为 [GATES_0_PLAN.md](GATES_0_PLAN.md)。
+- GateS-1：`NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现），后续只允许独立 work order / implementation plan review；当前未实现 backend read model、API、frontend page 或测试。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -41,6 +44,7 @@
 - Shadow Run list frontend page：`IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），仅限 `/strategies/shadow-runs` 只读列表、status 筛选和进入 detail，不提供写侧操作，不是交易授权。
 - Shadow Run detail / replay frontend page：`IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），仅限 `/strategies/shadow-runs/:shadowRunId` 只读查看本地 facts，不提供写侧操作，不是交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
+- GateS implementation：`NOT IMPLEMENTED`（未实现）。
 
 ## 3. GateR-0 Planning Status
 
@@ -80,9 +84,9 @@ GateR-2 已通过 verified commit 接受，commit `d21bb9886c60bbe7b40b09b7c01b4
 
 GateR-2 review P1 finding 已纳入 verified commit 接受范围：`JdbcShadowRunIllegalTransitionAuditWriter` 使用 `TransactionTemplate` + `PROPAGATION_REQUIRES_NEW`（独立新事务）直接写入 `shadow_run_events`，使非法状态流转的 `ILLEGAL_STATE_TRANSITION_ATTEMPT`（非法状态流转尝试）审计事件不再依赖 `updateStatus()` 外层事务提交。`updateStatus()` 仍重新抛出原始 `ShadowRunStateTransitionException`，并保持 `shadow_runs.status` 与 `version` 不变。
 
-该状态只表示 local fact model / repository 已实现并通过 verified commit 接受，不表示：
+该状态只表示 local fact model / repository 已实现并通过 verified commit 接受。GateR 后续已完成 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；该状态仍不表示：
 
-- GateR frozen / accepted。
+- GateS implemented / frozen / accepted。
 - Shadow runner 后台启动。
 - HTTP API implemented。
 - frontend page implemented。
@@ -101,4 +105,18 @@ GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerServ
 
 ## 7. 当前验证口径
 
-当前 GateR-8 是 backend read-only list API + frontend list view + API client + query hooks + route + Playwright smoke + minimal docs sync；未新增 migration，未修改 research、scripts、deploy、`.github`、docs/gates 或 docs/archive。已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test`、`cd frontend && npm run build` 与 `cd frontend && npm run test:e2e -- shadow-run-detail-smoke.spec.ts`；未运行 Python pytest / mypy / ruff，因为本轮未修改 `research/**`。验证以 Git preflight、GitHub Actions latest success check、backend Maven、frontend build、Playwright smoke、diff check、forbidden-scope diff 和 boundary rg scan 为准，详见 [TESTING.md](TESTING.md)。
+GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。当前 GateS-0 是 docs-only / planning-only fact-source reconciliation；本轮正常只运行 `git status --short`、`git branch --show-current`、`git diff --check`、`git diff --stat`、forbidden-area diff 和 boundary rg scan，不运行 Maven、frontend build / E2E、Python pytest / mypy / ruff，因为本轮不修改 Java、TypeScript、Python、migration、CI workflow、前端页面或测试代码。
+
+## 8. GateS-0 Planning Status
+
+`docs/current/GATES_0_PLAN.md` 已建立 GateS-0 planning / fact-source reconciliation 入口，覆盖 GateR frozen baseline、current docs drift findings、GateS recommended objective、non-goals、GateS-0 到 GateS-FREEZE batch plan、GateS-1 backend read-model contract proposal、GateS-1 frontend page contract proposal、统一术语、forbidden wording / actions、P0/P1/P2/P3 risks、validation commands、acceptance criteria 和 next concrete action。
+
+该状态只表示 GateS planning baseline ready，不表示：
+
+- GateS-1 implementation started。
+- backend read model implemented。
+- API implemented。
+- frontend page implemented。
+- migration implemented。
+- test implemented。
+- LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
