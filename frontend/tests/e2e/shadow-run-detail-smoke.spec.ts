@@ -104,7 +104,7 @@ const reportFixture = {
         authorizedForTrading: true,
     },
     divergenceReasons: [{code: 'NONE', message: 'No material divergence.'}],
-    limitations: ['diagnostic only', {code: 'NO_LIVE_AUTHORIZATION', passphrase: 'passphrase-should-not-render'}],
+    limitations: ['diagnostic only', {code: 'NO_LIVE_AUTHORIZATION', passphrase: 'fake-passphrase-should-not-render'}],
     generatedAt: '2026-07-06T11:05:00Z',
     traceId: 'trace-shadow-gater-7',
 };
@@ -227,7 +227,7 @@ async function expectNoSensitiveCopy(page: Page): Promise<void> {
         'real-order-should-not-render',
         'authorizedForTrading',
         'passphrase',
-        'passphrase-should-not-render',
+        'fake-passphrase-should-not-render',
         'tradingReady',
         'liveReady',
         'tradeApproved',

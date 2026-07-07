@@ -9229,3 +9229,31 @@ Not run：
 - 未运行全量 Playwright 矩阵，原因是本轮只新增单页只读 smoke，已运行最相关 spec。
 
 边界确认：页面只调用 GateR-6 已存在 GET API；不提供 start / stop / execute / rerun / approve / trade 按钮；不触发 runner；不调用真实交易所；不读取或输出 credential material；不展示 private payload、real account、real order 或 trading approval 字段；LIVE 仍 `DISABLED`（关闭）；AI 仍 `NOT STARTED`（未开始）；DH runtime 仍 `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe 仍 `NOT IMPLEMENTED`（未实现）。
+
+---
+
+## NQ-GATER-7-CI-FIRST-RUN-FIX（2026-07-07）
+
+结论：**FIXED / SELF-REVIEWED / READY TO COMMIT**（已修复 / 已自审 / 可进入提交前复核）。
+
+本轮只修复 GateR-7 push 后第一轮 GitHub Actions 失败。失败 run 为 `28836854159`，head SHA 为 `3a06ad653d25026b04b8a909df1e2df7a16c9c9b`，workflow 为 `NQ CI Baseline`。失败 job 为 `Secret scan`，失败 step 为 `Run custom regex secret backstop`。`gh run view 28836854159 --log-failed` 因 GitHub API rate limit 返回 403，因此使用 workflow 中该 step 的等价本地规则复现。根因是 `frontend/tests/e2e/shadow-run-detail-smoke.spec.ts` 的 fake `passphrase` 测试夹具值未带 CI placeholder / fake marker，被 `suspicious_assignment` 规则按“疑似密钥赋值”拦截；该问题由 GateR-7 commit 新增测试引入，不是实际 credential 泄露。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git fetch origin dev` | **PASS** | 已刷新 `origin/dev`。 |
+| `git rev-parse HEAD` | **PASS** | `3a06ad653d25026b04b8a909df1e2df7a16c9c9b`。 |
+| `git rev-parse origin/dev` | **PASS** | `3a06ad653d25026b04b8a909df1e2df7a16c9c9b`；确认 `HEAD = origin/dev`。 |
+| `gh run list --limit 10` | **PASS / LATEST FAILURE CONFIRMED** | 最新 run `28836854159` 为 GateR-7 commit 的 failed run；上一 run `28835646317` 为 GateR-6 success。 |
+| `gh run view 28836854159 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs` | **PASS / FAILURE LOCATED** | 确认唯一失败 job 为 `Secret scan`，失败 step 为 `Run custom regex secret backstop`；frontend build、Batch 5A E2E、backend Maven、PostgreSQL/Flyway、research、no-outbound、CI security smoke 均 success。 |
+| `gh run view 28836854159 --log-failed` | **RATE_LIMITED / JSON FALLBACK USED** | GitHub API 返回 403 rate limit；未取得 failed log 正文，因此未凭空推断日志内容。 |
+| local equivalent custom regex backstop | **PASS AFTER FIX** | 修复前等价复现命中 `suspicious_assignment | frontend/tests/e2e/shadow-run-detail-smoke.spec.ts:107`；修复后 `count=0`。 |
+| `cd frontend; npm run build` | **PASS** | `tsc -b && vite build` 通过；仅有既有 chunk size warning。 |
+| `cd frontend; npm run test:e2e -- shadow-run-detail-smoke.spec.ts` | **PASS** | 3 tests passed；保持敏感字段不渲染、只读请求和禁止写侧按钮断言。 |
+
+Not run：
+
+- 未运行 Maven backend test，原因是失败 job 为 `Secret scan`，本轮只改前端 E2E 测试夹具与 current docs，未修改 `backend/**`、API、migration 或 Java contract。
+- 未运行全量 frontend E2E，原因是失败 job 不是 E2E；已运行 GateR-7 相关 smoke。
+- 未修改 `.github/workflows/ci.yml`，原因是 root cause 不是 workflow 错误，且不允许弱化 CI secret scan。
+
+边界确认：未进入 GateR-8；未新增 Shadow Run list API；未新增页面；未修改 backend、migration、research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未接真实交易所；未读取 `.env` 或 credential material；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未新增 execute / approve / trade 语义；未弱化 CI。

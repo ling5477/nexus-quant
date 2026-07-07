@@ -15620,3 +15620,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 完成提交前 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。
+
+---
+
+## NQ-GATER-7-CI-FIRST-RUN-FIX
+
+日期：2026-07-07
+
+### 完成内容
+
+- 定位 GateR-7 push 后 GitHub Actions run `28836854159` 失败原因：`Secret scan` job 的 `Run custom regex secret backstop` step 失败。
+- 通过 workflow 等价规则本地复现：`frontend/tests/e2e/shadow-run-detail-smoke.spec.ts:107` 的 fake `passphrase` 测试夹具值触发 `suspicious_assignment`。
+- 最小修复测试夹具：将 fake passphrase 值显式标记为 `fake-*`，保持敏感字段过滤断言，不修改页面逻辑、API client、路由或 workflow。
+- 追加本轮 CI RCA 与验证证据到 `docs/current/TESTING.md`。
+
+### 验证
+
+- `gh run view 28836854159 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs`：PASS，确认失败 job / step。
+- `gh run view 28836854159 --log-failed`：GitHub API rate limit 403，未取得 failed log 正文；已用 workflow step 等价规则复现。
+- local equivalent custom regex backstop：修复前命中 1 处；修复后 `count=0`。
+- `npm run build`：PASS。
+- `npm run test:e2e -- shadow-run-detail-smoke.spec.ts`：PASS，3 tests passed。
+
+### 边界
+
+未进入 GateR-8；未修改 backend、migration、research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未新增后端 API、Shadow Run list API、页面、写接口或 runner endpoint；未调用真实交易所；未读取或输出 credential material；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未弱化 secret scan / CI。
+
+### 推荐下一步
+
+完成 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。推荐 commit message：`fix(frontend): stabilize shadow run detail CI smoke`。
