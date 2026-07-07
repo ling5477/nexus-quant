@@ -60,6 +60,104 @@ export interface ShadowRunListResponse {
     total: number;
 }
 
+export type ShadowRunOverviewDivergenceSeverity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN' | string;
+
+/**
+ * GateS-1 Shadow Run overview response.
+ *
+ * Why:
+ * 该结构只承接 `GET /api/shadow-runs/overview` 的 read-only 运营诊断摘要。
+ * 字段名保持后端 DTO 原样，便于审计 trace 和 current docs 对齐；这里不得新增
+ * trading ready、trade approval、credential material、private endpoint payload 或真实账户/订单字段。
+ */
+export interface ShadowRunOverviewResponse {
+    generatedAt: string;
+    diagnosticOnly: boolean;
+    noSideEffect: boolean;
+    notTradingAuthorization: boolean;
+    liveDisabled: boolean;
+    realProviderImplemented: boolean;
+    privateTradingImplemented: boolean;
+    aiDhRuntimeIntegrated: boolean;
+    totalRuns: number;
+    runningRuns: number;
+    blockedRuns: number;
+    failedRuns: number;
+    completedRuns: number;
+    staleRuns: number;
+    latestRun: ShadowRunOverviewLatestRun | null;
+    latestConsistency: ShadowRunOverviewLatestConsistency | null;
+    divergenceSeverity: ShadowRunOverviewDivergenceSeverity;
+    blockers: ShadowRunOverviewBlocker[];
+    warnings: ShadowRunOverviewWarning[];
+    nextSteps: ShadowRunOverviewNextStep[];
+    evidenceAnchors: ShadowRunOverviewEvidenceAnchor[];
+    traceId: string;
+}
+
+export interface ShadowRunOverviewLatestRun {
+    shadowRunId: string;
+    strategyVersionId: string;
+    datasetId: string;
+    paperRunId: string | null;
+    status: string;
+    authorizationBoundary: string;
+    noOrderSubmission: boolean;
+    noCredentialAccess: boolean;
+    noPrivateEndpoint: boolean;
+    noLedgerMutation: boolean;
+    noAccountMutation: boolean;
+    noExternalPrivateIo: boolean;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+}
+
+export interface ShadowRunOverviewLatestConsistency {
+    reportId: string;
+    shadowRunId: string;
+    paperRunId: string | null;
+    comparisonStatus: string;
+    metricDelta: JsonValue;
+    divergenceReasons: JsonValue;
+    limitations: JsonValue;
+    generatedAt: string;
+    traceId: string | null;
+}
+
+export interface ShadowRunOverviewEvidenceAnchor {
+    sourceType: string;
+    sourceId: string;
+    sourceVersion: string | null;
+    sourceTimestamp: string | null;
+    checksum: string | null;
+}
+
+export interface ShadowRunOverviewBlocker {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface ShadowRunOverviewWarning {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface ShadowRunOverviewNextStep {
+    code: string;
+    owner: string;
+    action: string;
+    expectedEvidence: string;
+    blocking: boolean;
+}
+
 export interface ShadowRunDetailResponse {
     id: string;
     strategyVersionId: string;

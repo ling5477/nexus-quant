@@ -23,6 +23,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）；规划审查入口：`docs/current/GATES_0_PLAN.md`。
 - GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；work order 入口：`docs/current/GATES_1_READ_MODEL_WO.md`。
 - GateS-1 minimal backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/shadow-runs/overview` 后端只读聚合，不代表 frontend page、GateS 全域 validation runtime、GateS-1 frozen / accepted、LIVE 或交易授权。
+- GateS-1 frontend overview implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs` 列表页顶部 Overview Summary、前端 type / client / query key / hook，不新增 route、Dashboard v2、写侧动作、E2E、后端 API、migration、LIVE、AI/DH runtime 或交易授权。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -56,4 +57,4 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 
 ## Boundary
 
-GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 当前为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateS 当前仅为推荐下一主线、GateS-0 `PLAN / NOT IMPLEMENTED`、GateS-1 work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT` 和 GateS-1 minimal backend read model `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`，不代表 GateS freeze、acceptance、frontend、LIVE、AI/DH runtime、real provider 或交易授权。
+GateQ archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter、real permission probe，也不启动 Shadow Live runner。GateR-2 到 GateR-8 已形成 Shadow Run local fact / runner skeleton / decision trace / consistency report / read-only API / frontend list-detail-replay 闭环，但 Shadow Run 仍是 read-only diagnostic local fact（只读诊断本地事实）和 no-side-effect（无副作用）能力，不是 trading authorization，不是 LIVE ready，不是 Shadow Live trading enabled。GateR 当前为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateS 当前仅为推荐下一主线、GateS-0 `PLAN / NOT IMPLEMENTED`、GateS-1 work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`、GateS-1 minimal backend read model `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT` 和 GateS-1 frontend overview implementation `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`，不代表 GateS freeze、acceptance、Dashboard v2、GateS 全域 validation runtime、LIVE、AI/DH runtime、real provider 或交易授权。

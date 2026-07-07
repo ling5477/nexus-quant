@@ -5,6 +5,7 @@ import type {
     ShadowRunEventResponse,
     ShadowRunListRequest,
     ShadowRunListResponse,
+    ShadowRunOverviewResponse,
     ShadowRunSnapshotResponse,
 } from '@/types/shadow-runs';
 
@@ -36,6 +37,11 @@ export async function listShadowRuns(params: ShadowRunListRequest = {}): Promise
     return data;
 }
 
+export async function getShadowRunOverview(): Promise<ShadowRunOverviewResponse> {
+    const {data} = await apiClient.get<ShadowRunOverviewResponse>('/shadow-runs/overview');
+    return data;
+}
+
 export async function getShadowRunDetail(id: string): Promise<ShadowRunDetailResponse> {
     const {data} = await apiClient.get<ShadowRunDetailResponse>(`/shadow-runs/${id}`);
     return data;
@@ -60,11 +66,12 @@ export async function getShadowRunLatestConsistencyReport(id: string): Promise<S
  * GateR-7 Shadow Run API client。
  *
  * Why:
- * 只消费 GateR-6 已存在的 read-only GET API；不创建、不启动、不停止、不重跑 Shadow Run，
- * 不读取 credential，不调用 private endpoint，不触发 runner 或真实交易。
+ * 只消费 GateR/GateS 已存在的 read-only GET API；不创建、不启动、不停止、不重跑 Shadow Run，
+ * 不读取 credential，不调用 private endpoint，不触发 runner、scheduler 或真实交易。
  */
 export const shadowRunsApi = {
     listShadowRuns,
+    getShadowRunOverview,
     getShadowRunDetail,
     getShadowRunEvents,
     getShadowRunSnapshots,

@@ -55,6 +55,7 @@ export const strategyValidationQueryKeys = {
 
 export const shadowRunsQueryKeys = {
     all: ['shadow-runs'] as const,
+    overview: () => [...shadowRunsQueryKeys.all, 'overview'] as const,
     list: (request: {
         status?: string | null;
         strategyVersionId?: string | null;

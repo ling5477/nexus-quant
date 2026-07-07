@@ -11,6 +11,14 @@ import type {ShadowRunListRequest} from '@/types/shadow-runs';
  * 这些 query 只读取本地 diagnostic facts。关闭自动 retry 可以让 404 / 500 明确进入
  * not found / error 状态，避免 UI 把不可用误显示成加载中的可执行能力。
  */
+export function useShadowRunOverview() {
+    return useQuery({
+        queryKey: shadowRunsQueryKeys.overview(),
+        queryFn: () => shadowRunsApi.getShadowRunOverview(),
+        retry: false,
+    });
+}
+
 export function useShadowRunListQuery(params: ShadowRunListRequest) {
     return useQuery({
         queryKey: shadowRunsQueryKeys.list(params),
