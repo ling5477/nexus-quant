@@ -1,6 +1,6 @@
 # Current Fact Source Index
 
-本文是 NexusQuant 当前事实源索引。用途是给 GateR planning、GateR-2 local fact model implementation、历史 Gate archive、LIVE / AI / DH / Integration-1 / real provider 边界判断提供统一入口，避免把已冻结证据、mock/test-support、readiness、preview、local fact 或 comparison 误写成 runtime 授权。
+本文是 NexusQuant 当前事实源索引。用途是给 GateR planning、GateR-2..8 Shadow Run closed-loop implementation、历史 Gate archive、LIVE / AI / DH / Integration-1 / real provider 边界判断提供统一入口，避免把已冻结证据、mock/test-support、readiness、preview、local fact、read-only API、frontend replay 或 comparison 误写成 runtime 授权。
 
 ## 1. 当前事实源优先级
 
@@ -10,12 +10,12 @@
 2. [STATUS.md](STATUS.md)：当前项目状态。
 3. [README.md](README.md)：current 入口和 archive pointer。
 4. [ROADMAP.md](ROADMAP.md)：当前路线与下一阶段边界。
-5. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实；GateR-2 的 `V32__gate_r_shadow_run_fact_model.sql` 和 4 张 Shadow Run local fact 表以此为当前 schema 入口。
-6. [TESTING.md](TESTING.md)：当前验证记录和未运行说明；GateR-2 Maven 与 forbidden-scope 证据以此为当前验证入口。
-7. [WORKLOG.md](WORKLOG.md)：当前任务记录；GateR-2 实现范围、migration 版本和边界以此为工作记录入口。
-8. [GATER_PLAN.md](GATER_PLAN.md)：GateR Shadow Run operationalization planning；GateR-2 已实现 local fact model / repository 待复核，但不代表 API、页面或 runner 已实现。
-9. [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)：GateR-1 Shadow Run data model / migration plan review；只表示 migration 方案已就绪，不代表 review 本身创建表。
-10. [API.md](API.md)：已实现 HTTP API 当前事实，不把未来 API 写成已实现。
+5. [GATER_PLAN.md](GATER_PLAN.md)：GateR Shadow Run operationalization planning 和 GateR-2..8 implementation 指针；GateR-8 已完成并 push，下一步是 GateR freeze closeout。
+6. [API.md](API.md)：已实现 HTTP API 当前事实；GateR-6 / GateR-8 Shadow Run API 只包含 read-only GET endpoint，不包含写接口。
+7. [TESTING.md](TESTING.md)：当前验证记录和未运行说明；GateR-2..8 的 Maven、Playwright、forbidden-scope、latest CI green 证据以此为当前验证入口。
+8. [WORKLOG.md](WORKLOG.md)：当前任务记录；GateR-2..8 实现范围、commit、CI 和边界以此为工作记录入口。
+9. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实；GateR-2 的 `V32__gate_r_shadow_run_fact_model.sql` 和 4 张 Shadow Run local fact 表以此为当前 schema 入口。
+10. [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)：GateR-1 Shadow Run data model / migration plan review；只表示 migration 方案已就绪，不代表 review 本身创建表。
 11. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
 12. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
 13. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
@@ -28,9 +28,15 @@
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档），release tag `nq-gateq-freeze`。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档），release tag `nq-gatep-freeze`。
 - GateO 及更早 Gate：历史证据来源为 `docs/gates/**` 或 `docs/archive/**`。
-- GateR：`NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
+- GateR：`READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）；GateR-8 已完成并 push，最新 GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
 - GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
-- GateR-2：`NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。
+- GateR-2：Shadow Run local fact model / `V32` / repository 已完成并接受。
+- GateR-3：Shadow Run runner skeleton 已完成；它不是 scheduler 或后台 runner。
+- GateR-4：decision trace / risk snapshot / order intent preview 已完成。
+- GateR-5：shadow consistency report service 已完成。
+- GateR-6：Shadow Run read-only API 已完成；没有写接口。
+- GateR-7：Shadow Run detail / replay view 已完成；没有执行按钮。
+- GateR-8：Shadow Run list / entrypoint 已完成。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -55,11 +61,12 @@
 ## 4. 禁止误写清单
 
 - 不得把 GateR 写成 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
-- 不得把 GateR planning 写成 GateR completed。
+- 不得把 GateR readiness 写成 GateR frozen 或 accepted。
 - 不得把 GateR-1 migration plan review 本身写成 migration implemented；migration implemented 的当前事实只来自 GateR-2 `V32__gate_r_shadow_run_fact_model.sql`。
-- 不得把 GateR-2 local fact model / repository 写成 `READY TO COMMIT`（可进入提交前复核）、frozen、accepted、trading authorization 或 live-ready。
-- 不得把 Shadow Run API / DTO / frontend page / runner / scheduler / command skeleton 写成已实现。
-- 不得把 Shadow Run 写成 runner started、shadow live trading enabled 或 live-ready。
+- 不得把 GateR-2..8 已完成写成 frozen、accepted、trading authorization 或 live-ready。
+- Shadow Run read-only API / DTO 已实现；仍不得写成 write API、runner start endpoint、execute endpoint 或 trading endpoint。
+- Shadow Run frontend list / detail / replay view 已实现；仍不得写成带 start / stop / execute / rerun / approve / trade 执行按钮的页面。
+- Shadow Run runner skeleton 已实现；仍不得写成 scheduler、后台 runner、runner started、shadow live trading enabled 或 live-ready。
 - 不得把 LIVE 写成 ready / enabled。
 - 不得把 AI 写成 started。
 - 不得把 DH runtime 写成 integrated。

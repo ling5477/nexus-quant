@@ -25,9 +25,13 @@ GateP frozen / accepted / tagged / archived
   ↓
 GateQ frozen / accepted / tagged / archived
   ↓
-GateR PLAN READY / NOT IMPLEMENTED
+GateR-0 planning completed
   ↓
-GateR-1 MIGRATION PLAN READY / NOT IMPLEMENTED
+GateR-1 migration plan review completed
+  ↓
+GateR-2..8 completed / pushed / CI green
+  ↓
+GateR freeze closeout
 ```
 
 ## 当前阶段
@@ -37,12 +41,19 @@ GateR-1 MIGRATION PLAN READY / NOT IMPLEMENTED
 - GateQ archive pointer: `docs/gates/gate-q/README.md`。
 - GateP final state: `FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
 - GateO 及更早 Gate：只作为历史证据读取。
-- GateR: `NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。
+- GateR: `READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）。
 - GateR-1: `NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。
+- GateR-2: Shadow Run local fact model / `V32` / repository 已完成并接受。
+- GateR-3: Shadow Run runner skeleton 已完成；不是 scheduler 或后台 runner。
+- GateR-4: decision trace / risk snapshot / order intent preview 已完成。
+- GateR-5: shadow consistency report service 已完成。
+- GateR-6: Shadow Run read-only API 已完成；没有写接口。
+- GateR-7: Shadow Run detail / replay view 已完成；没有执行按钮。
+- GateR-8: Shadow Run list / entrypoint 已完成并 push；最新 GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
 
 ## 下一步规则
 
-下一步只能进入单独的 GateR-2 Shadow Run local fact model / repository implementation。GateR-2 可基于 GateR-1 review 的 4 表方案准备 migration 和 repository，但仍必须另起任务、明确 allowed files、补充 migration review evidence 和回归验证；不得把 GateR-1 review 直接解释为 migration 已实现或 Shadow runner 已启动。
+下一步只能进入 GateR freeze closeout。该 closeout 只做 freeze readiness 收口、证据矩阵和边界确认，不新增 GateR-9，不新增功能，不新增 migration，不新增 API，不新增页面，不启动 scheduler 或后台 runner，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter 或 real permission probe。
 
 ## 当前边界
 
@@ -52,15 +63,17 @@ GateR-1 MIGRATION PLAN READY / NOT IMPLEMENTED
 - Integration-1: `NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
 - RealClient / real provider / private trading adapter / real permission probe: `NOT IMPLEMENTED`（未实现）。
 - Shadow Live runner: `NOT STARTED`（未开始）。
-- Shadow run 写侧 fact source / local fact table / record: `NOT IMPLEMENTED`（未实现）。
-- Shadow Run migration: `NOT IMPLEMENTED`（未实现）。
+- Shadow Run local fact table / record: `IMPLEMENTED AS LOCAL DIAGNOSTIC FACT ONLY`（仅作为本地诊断事实已实现）。
+- Shadow Run read-only API: `IMPLEMENTED`（已实现）；写接口仍禁止。
+- Shadow Run frontend list / detail / replay view: `IMPLEMENTED`（已实现）；执行按钮仍禁止。
+- Shadow Run runner skeleton: `IMPLEMENTED`（已实现）；scheduler、后台 runner 和 Shadow Live runner 仍未启动。
 
 ## 当前不做
 
-- 不启动 GateR-2 implementation，除非后续单独授权。
-- 不把 GateR planning 写成 GateR implementation。
-- 不把 GateR-1 migration plan 写成 migration implemented。
-- 不创建 Shadow Run table 或 Shadow Run record。
+- 不把 GateR 写成 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- 不新增 GateR-9 或新功能。
+- 不启动 scheduler、后台 runner 或 Shadow Live runner。
+- 不新增 Shadow Run 写接口或执行按钮。
 - 不开启 LIVE。
 - 不接 AI runtime。
 - 不接 DH runtime。

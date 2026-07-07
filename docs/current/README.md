@@ -7,9 +7,15 @@
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gateq-freeze`；历史证据入口为 [../gates/gate-q/README.md](../gates/gate-q/README.md)。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag 为 `nq-gatep-freeze`；历史证据入口为 [../gates/gate-p/README.md](../gates/gate-p/README.md)。
 - GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
-- GateR：`NQ-GATER-PLAN-SHADOW-RUN-OPERATIONALIZATION：PLAN READY / NOT IMPLEMENTED`（计划已就绪 / 未实现）。当前 planning 入口为 [GATER_PLAN.md](GATER_PLAN.md)。
+- GateR：`READY FOR FREEZE CLOSEOUT / NOT FROZEN / NOT ACCEPTED`（可进入冻结收口 / 未冻结 / 未接受）。当前 planning 和批次证据入口为 [GATER_PLAN.md](GATER_PLAN.md)；GateR-8 已完成并 push，最新 GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）。
 - GateR-1：`NQ-GATER-1-SHADOW-RUN-DATA-MODEL-MIGRATION-PLAN-REVIEW：PASS / MIGRATION PLAN READY / NOT IMPLEMENTED`（通过 / migration 方案已就绪 / 未实现）。当前 review 入口为 [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)。
-- GateR-2：`NQ-GATER-2-SHADOW-RUN-LOCAL-FACT-MODEL-IMPLEMENTATION：IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。当前 local fact schema 入口为 [DB_SCHEMA.md](DB_SCHEMA.md)，验证入口为 [TESTING.md](TESTING.md)；该状态不代表 API、页面、runner、LIVE、AI/DH runtime 或真实交易能力已启用。
+- GateR-2：Shadow Run local fact model / `V32` / repository 已完成并接受；schema 入口为 [DB_SCHEMA.md](DB_SCHEMA.md)，验证入口为 [TESTING.md](TESTING.md)。
+- GateR-3：Shadow Run runner skeleton 已完成；它只在调用方显式调用时写本地诊断 facts，不是 scheduler 或后台 runner。
+- GateR-4：decision trace / risk snapshot / order intent preview 已完成。
+- GateR-5：shadow consistency report service 已完成。
+- GateR-6：Shadow Run read-only API 已完成；只提供 GET 查询，没有写接口。
+- GateR-7：Shadow Run detail / replay view 已完成；只读展示，没有执行按钮。
+- GateR-8：Shadow Run list / entrypoint 已完成；支持列表进入 detail / replay。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -23,9 +29,9 @@
 | 当前事实入口 | [README.md](README.md) |
 | 当前状态 | [STATUS.md](STATUS.md) |
 | 当前路线 | [ROADMAP.md](ROADMAP.md) |
-| GateR planning | [GATER_PLAN.md](GATER_PLAN.md) |
+| GateR planning / readiness evidence | [GATER_PLAN.md](GATER_PLAN.md) |
 | GateR-1 data model / migration plan review | [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md) |
-| GateR-2 local fact model schema | [DB_SCHEMA.md](DB_SCHEMA.md) |
+| GateR-2..8 Shadow Run closed-loop evidence | [STATUS.md](STATUS.md), [GATER_PLAN.md](GATER_PLAN.md), [API.md](API.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md) |
 | 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
 | 当前验证记录 | [TESTING.md](TESTING.md) |
 | 当前工作记录 | [WORKLOG.md](WORKLOG.md) |
@@ -47,11 +53,9 @@
 ## Current Is Not
 
 - 不是 GateR frozen / accepted。
-- 不是 Shadow Run API implemented。
-- 不是 Shadow Run frontend page implemented。
-- 不是 Shadow runner started。
-- 不是 Shadow Run command skeleton implemented。
-- 不是 Shadow Run record execution started。
+- 不是 Shadow Run write API implemented。
+- 不是 Shadow runner scheduler 或后台任务 started。
+- 不是 Shadow Run live execution started。
 - 不是实盘就绪。
 - 不代表真实 provider 已启用。
 - 不是私有交易适配已启用。
@@ -59,7 +63,8 @@
 - 不是 AI 已开始。
 - 不是 Integration-1 runtime started。
 - 不是 Shadow Live runner enabled。
+- 不是 trading authorization。
 
 ## Current Cleanup Rule
 
-`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；GateR planning 以 [GATER_PLAN.md](GATER_PLAN.md) 作为当前计划入口，GateR-1 schema review 以 [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md) 作为 current review 入口；GateR-2 local fact model 以 [DB_SCHEMA.md](DB_SCHEMA.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md) 作为 current implementation evidence。后续只能先做 GateR-2 implementation review；review 通过前不得写 `READY TO COMMIT`（可进入提交前复核），不得进入 GateR-3 或启动 Shadow runner。
+`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；GateR planning 以 [GATER_PLAN.md](GATER_PLAN.md) 作为当前计划入口，GateR-1 schema review 以 [GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md) 作为 current review 入口；GateR-2..8 以 [STATUS.md](STATUS.md)、[GATER_PLAN.md](GATER_PLAN.md)、[API.md](API.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md) 作为 current implementation evidence。下一步只能进入 GateR freeze closeout；不得新增 GateR-9、新功能、写接口、scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易路径。

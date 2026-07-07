@@ -1,3 +1,37 @@
+## NQ-GATER-FREEZE-READINESS-DOCS-FIX
+
+日期：2026-07-07。
+
+范围：
+
+- NQ-only GateR freeze readiness P1 docs drift fix。
+- 只同步 current fact-source 文档状态；不改代码、不新增 migration、不改 API、不改前端、不改 CI、不新增 GateR freeze archive。
+- 将 README / docs/current 当前入口更新为 GateR-8 已完成并 push、GitHub Actions run `28845427780`（`NQ CI Baseline`）为 `success`（成功）、下一步进入 GateR freeze closeout。
+
+修改文件：
+
+```text
+README.md
+docs/current/README.md
+docs/current/ROADMAP.md
+docs/current/FACT_SOURCE_INDEX.md
+docs/current/GATER_PLAN.md
+docs/current/STATUS.md
+docs/current/WORKLOG.md
+```
+
+边界：
+
+- GateR 仍不是 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- Shadow Run 仍是 read-only / diagnostic only / local fact / no-side-effect；不是 trading authorization。
+- Runner skeleton 已实现，但不是 scheduler 或后台 runner。
+- Read-only API 和 frontend list / detail / replay view 已实现，但没有写接口或执行按钮。
+- LIVE = `DISABLED`（关闭）；AI = `NOT STARTED`（未开始）；DH runtime = `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+
+下一步：
+
+- 进入 NQ-GATER-FREEZE-CLOSEOUT，不新增功能。
+
 ## NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION
 
 日期：2026-07-07。
