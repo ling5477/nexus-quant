@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.shadowrun;
 
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEvent;
@@ -50,6 +51,26 @@ public class ShadowRunReadOnlyQueryService {
     @Transactional(readOnly = true)
     public ShadowRun getDetail(UUID shadowRunId) {
         return requireRun(shadowRunId);
+    }
+
+    /**
+     * 查询 Shadow Run 主事实列表。
+     *
+     * <p>只做本地 bounded read-only 查询。limit/offset 已由 {@link ShadowRunListQuery}
+     * 约束，不会无界读取，也不会创建 run、触发 runner 或访问外部 adapter。
+     *
+     * @param query 列表筛选与分页参数
+     * @return 当前筛选条件下的列表和 total
+     */
+    @Transactional(readOnly = true)
+    public ShadowRunListResult list(ShadowRunListQuery query) {
+        Objects.requireNonNull(query, "query must not be null");
+        return new ShadowRunListResult(
+                repository.listRuns(query),
+                query.limit(),
+                query.offset(),
+                repository.countRuns(query)
+        );
     }
 
     /**

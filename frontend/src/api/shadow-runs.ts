@@ -3,8 +3,38 @@ import type {
     ShadowConsistencyReportResponse,
     ShadowRunDetailResponse,
     ShadowRunEventResponse,
+    ShadowRunListRequest,
+    ShadowRunListResponse,
     ShadowRunSnapshotResponse,
 } from '@/types/shadow-runs';
+
+function listParams(params: ShadowRunListRequest): Record<string, string | number> {
+    const result: Record<string, string | number> = {};
+    if (params.status) {
+        result.status = params.status;
+    }
+    if (params.strategyVersionId) {
+        result.strategyVersionId = params.strategyVersionId;
+    }
+    if (params.datasetId) {
+        result.datasetId = params.datasetId;
+    }
+    if (params.paperRunId) {
+        result.paperRunId = params.paperRunId;
+    }
+    if (params.limit !== undefined) {
+        result.limit = params.limit;
+    }
+    if (params.offset !== undefined) {
+        result.offset = params.offset;
+    }
+    return result;
+}
+
+export async function listShadowRuns(params: ShadowRunListRequest = {}): Promise<ShadowRunListResponse> {
+    const {data} = await apiClient.get<ShadowRunListResponse>('/shadow-runs', {params: listParams(params)});
+    return data;
+}
 
 export async function getShadowRunDetail(id: string): Promise<ShadowRunDetailResponse> {
     const {data} = await apiClient.get<ShadowRunDetailResponse>(`/shadow-runs/${id}`);
@@ -34,6 +64,7 @@ export async function getShadowRunLatestConsistencyReport(id: string): Promise<S
  * 不读取 credential，不调用 private endpoint，不触发 runner 或真实交易。
  */
 export const shadowRunsApi = {
+    listShadowRuns,
     getShadowRunDetail,
     getShadowRunEvents,
     getShadowRunSnapshots,

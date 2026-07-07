@@ -35,6 +35,20 @@ public interface ShadowRunFactRepository {
     Optional<ShadowRun> findByIdempotencyKey(String idempotencyKey);
 
     /**
+     * 按 bounded query 查询 Shadow Run 主事实列表；实现必须使用 limit/offset，不能无界扫描。
+     */
+    default List<ShadowRun> listRuns(ShadowRunListQuery query) {
+        throw new UnsupportedOperationException("shadow run list query is not implemented");
+    }
+
+    /**
+     * 按同一 bounded query 统计 Shadow Run 主事实数量；仅统计本地 shadow_runs，不触发外部 IO。
+     */
+    default long countRuns(ShadowRunListQuery query) {
+        throw new UnsupportedOperationException("shadow run count query is not implemented");
+    }
+
+    /**
      * 追加审计事件；事件 append-only，不修改真实账户、资金、订单或 ledger。
      */
     void appendEvent(ShadowRunEvent event);

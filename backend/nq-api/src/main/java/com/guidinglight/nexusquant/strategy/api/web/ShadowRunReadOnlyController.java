@@ -3,6 +3,8 @@ package com.guidinglight.nexusquant.strategy.api.web;
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyQueryService;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
+import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 import java.util.List;
 import java.util.Objects;
@@ -19,6 +23,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -38,6 +43,47 @@ public class ShadowRunReadOnlyController {
 
     public ShadowRunReadOnlyController(ShadowRunReadOnlyQueryService queryService) {
         this.queryService = Objects.requireNonNull(queryService, "queryService must not be null");
+    }
+
+    /**
+     * 查询 Shadow Run 列表。
+     *
+     * @param status            可选状态筛选
+     * @param strategyVersionId 可选策略版本筛选
+     * @param datasetId         可选 dataset 筛选
+     * @param paperRunId        可选 Paper run 筛选
+     * @param limit             最大返回条数，默认 50，最大 100
+     * @param offset            偏移量，默认 0
+     * @return 只读列表；不代表 trading authorization 或 LIVE ready
+     */
+    @GetMapping
+    @Operation(
+            summary = "查询 Shadow Run 列表",
+            description = "只读返回本地 Shadow Run 主事实摘要，支持 status / strategyVersionId / datasetId / paperRunId "
+                    + "筛选和 bounded limit/offset；不启动 runner、不外联、不读取 credential、不触发交易。",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "400", description = "查询参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ShadowRunListResponse list(
+            @RequestParam(required = false) ShadowRunStatus status,
+            @RequestParam(required = false) String strategyVersionId,
+            @RequestParam(required = false) UUID datasetId,
+            @RequestParam(required = false) String paperRunId,
+            @RequestParam(defaultValue = "50") @Min(value = 1, message = "limit must be positive") @Max(value = 100, message = "limit must not exceed 100") int limit,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "offset must not be negative") int offset
+    ) {
+        TraceIdContext.getOrCreate();
+        return ShadowRunListResponse.from(queryService.list(new ShadowRunListQuery(
+                status,
+                strategyVersionId,
+                datasetId,
+                paperRunId,
+                limit,
+                offset
+        )));
     }
 
     /**

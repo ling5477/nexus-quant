@@ -22,6 +22,44 @@ export interface ShadowRunSideEffectFlags {
     noExternalPrivateIo: boolean;
 }
 
+export interface ShadowRunListRequest {
+    status?: string | null;
+    strategyVersionId?: string | null;
+    datasetId?: string | null;
+    paperRunId?: string | null;
+    limit?: number;
+    offset?: number;
+}
+
+export interface ShadowRunListItemResponse {
+    id: string;
+    status: string;
+    strategyVersionId: string;
+    datasetId: string;
+    paperRunId: string | null;
+    authorizationBoundary: string;
+    traceId: string;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    blockersCount: number;
+    warningsCount: number;
+    nextStepsCount: number;
+    noOrderSubmission: boolean;
+    noCredentialAccess: boolean;
+    noPrivateEndpoint: boolean;
+    noLedgerMutation: boolean;
+    noAccountMutation: boolean;
+}
+
+export interface ShadowRunListResponse {
+    items: ShadowRunListItemResponse[];
+    limit: number;
+    offset: number;
+    total: number;
+}
+
 export interface ShadowRunDetailResponse {
     id: string;
     strategyVersionId: string;

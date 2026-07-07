@@ -26,6 +26,7 @@ import {ResearchPage} from '@/pages/research/ResearchPage';
 import {RuntimeReadinessPage} from '@/pages/runtime/RuntimeReadinessPage';
 import {RunsPage} from '@/pages/runs/RunsPage';
 import {ShadowRunDetailPage} from '@/pages/shadow-runs/ShadowRunDetailPage';
+import {ShadowRunListPage} from '@/pages/shadow-runs/ShadowRunListPage';
 import {SchedulesPage} from '@/pages/schedules/SchedulesPage';
 import {StrategiesPage} from '@/pages/strategies/StrategiesPage';
 import {StrategyValidationPage} from '@/pages/strategies/StrategyValidationPage';
@@ -120,9 +121,14 @@ export const appRouter = createBrowserRouter([
                         handle: createHandle('strategy-validation'),
                     },
                     {
+                        path: 'strategies/shadow-runs',
+                        element: <ShadowRunListPage/>,
+                        handle: createHandle('shadow-runs'),
+                    },
+                    {
                         path: 'strategies/shadow-runs/:shadowRunId',
                         element: <ShadowRunDetailPage/>,
-                        handle: createHandle('strategy-validation'),
+                        handle: createHandle('shadow-runs'),
                     },
                     {
                         path: 'strategies',

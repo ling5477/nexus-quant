@@ -55,6 +55,23 @@ export const strategyValidationQueryKeys = {
 
 export const shadowRunsQueryKeys = {
     all: ['shadow-runs'] as const,
+    list: (request: {
+        status?: string | null;
+        strategyVersionId?: string | null;
+        datasetId?: string | null;
+        paperRunId?: string | null;
+        limit?: number;
+        offset?: number;
+    }) => [
+        ...shadowRunsQueryKeys.all,
+        'list',
+        request.status ?? '',
+        request.strategyVersionId ?? '',
+        request.datasetId ?? '',
+        request.paperRunId ?? '',
+        request.limit ?? 50,
+        request.offset ?? 0,
+    ] as const,
     detail: (shadowRunId: string) => [...shadowRunsQueryKeys.all, 'detail', shadowRunId] as const,
     events: (shadowRunId: string) => [...shadowRunsQueryKeys.all, 'events', shadowRunId] as const,
     snapshots: (shadowRunId: string) => [...shadowRunsQueryKeys.all, 'snapshots', shadowRunId] as const,

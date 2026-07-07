@@ -9260,6 +9260,28 @@ Not run：
 
 ---
 
+## NQ-GATER-8-SHADOW-RUN-LIST-AND-ENTRYPOINT-IMPLEMENTATION（2026-07-07）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+本轮为 backend read-only API + frontend list view + API client + tests + minimal documentation。新增 Shadow Run 只读列表 API 与 `/strategies/shadow-runs` 列表入口，支持 status 筛选、进入 GateR-7 detail / replay 页面、no-side-effect flags 展示和 diagnostic only / no trading authorization 提示。本轮不新增 migration，不新增写接口，不启动 runner，不调用真实交易所，不读取 credential material，不修改真实 account / ledger / order。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test` | **PASS** | 23/23 reactor `SUCCESS`，最终 `BUILD SUCCESS`，`nq-api` 75 tests / 0 failures / 0 errors，`nq-core` 162 tests / 0 failures / 0 errors，`nq-infra` 43 tests / 0 failures / 0 errors / 1 skipped，`nq-app` 129 tests / 0 failures / 0 errors / 3 skipped。 |
+| initial Maven compile RCA | **FIXED / RE-RUN PASS** | 初次本地编译暴露既有 test fake 未实现新增 repository list/count 方法；已通过 repository port 默认 unsupported 方法与真实 JDBC override 收口，随后完整 Maven 命令重跑通过。 |
+| `cd frontend && npm run build` | **PASS** | `tsc -b && vite build` 通过；Vite 仅提示既有 chunk size warning。 |
+| `cd frontend && npm run test:e2e -- shadow-run-detail-smoke.spec.ts` | **PASS** | 2 tests passed；覆盖 Shadow Run list 渲染、loading / error / empty、status 筛选、点击进入 detail、no-side-effect flags、diagnostic only / no trading authorization、敏感字段不渲染和禁止 start / stop / execute / rerun / approve / trade 按钮。 |
+
+Not run：
+
+- 未运行 Python `pytest` / `mypy` / `ruff`，原因是本轮未修改 `research/**`。
+- 未运行全量 Playwright 矩阵，原因是本轮只新增 Shadow Run list/detail 相关只读 smoke，已运行最相关 spec。
+
+边界确认：未新增 migration；未修改 research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未新增 start / stop / execute / rerun / approve / trade endpoint；未启动 scheduler 或后台 runner；未调用真实交易所；未读取或输出 credential material；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未开启 LIVE；未接 AI / DH runtime；未把 Shadow Run list 或 consistency report 写成 trading approval、trading authorization 或 LIVE ready。
+
+---
+
 ## NQ-GATER-7-CI-SECOND-RUN-FIX（2026-07-07）
 
 结论：**FIXED / SELF-REVIEWED / READY TO COMMIT**（已修复 / 已自审 / 可进入提交前复核）。

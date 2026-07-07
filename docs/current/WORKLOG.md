@@ -15680,3 +15680,33 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 完成 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。推荐 commit message：`fix(frontend): mark shadow run smoke secrets as fake`。
+
+---
+
+## NQ-GATER-8-SHADOW-RUN-LIST-AND-ENTRYPOINT-IMPLEMENTATION
+
+日期：2026-07-07
+
+### 完成内容
+
+- 新增 Shadow Run 只读列表 API：`GET /api/shadow-runs`，支持 `status`、`strategyVersionId`、`datasetId`、`paperRunId`、`limit`、`offset` 查询。
+- 新增后端 read-only list query port / service / JDBC repository 支持，返回 list item、`limit`、`offset`、`total`，并复用敏感字段 guard 统计 blockers / warnings / nextSteps。
+- 新增 `/strategies/shadow-runs` 前端列表页、导航入口、status 筛选、loading / error / empty 状态、no-side-effect flags、diagnostic only / no trading authorization 提示。
+- 列表行和详情按钮进入 GateR-7 `/strategies/shadow-runs/:shadowRunId` detail / replay 页面。
+- 扩展 Playwright smoke 覆盖列表页、status 筛选、敏感字段过滤、只读请求边界和 detail 跳转。
+- 最小同步 `docs/current/API.md`、`GATER_PLAN.md`、`STATUS.md`、`TESTING.md` 与本文件。
+
+### 验证
+
+- `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test`：PASS，23/23 reactor `SUCCESS`，最终 `BUILD SUCCESS`。
+- `npm run build`：PASS。
+- `npm run test:e2e -- shadow-run-detail-smoke.spec.ts`：PASS，2 tests passed。
+- 初次本地 Maven 编译暴露既有 test fake 未实现新增 repository list/count 方法；已通过 repository port 默认 unsupported 方法与真实 JDBC override 收口，随后完整 Maven 命令重跑通过。
+
+### 边界
+
+未新增 migration；未修改历史 migration；未修改 research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未新增写接口、start / stop / execute / rerun / approve / trade endpoint；未启动 scheduler 或后台 runner；未调用真实交易所；未读取或输出 credential material；未修改真实 account / ledger / order；未开启 LIVE；未接 AI runtime；未接 DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未把 Shadow Run list 或 consistency report 写成 trading authorization、trade approval 或 LIVE ready。
+
+### 推荐下一步
+
+完成 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。推荐 commit message：`feat(gater): add shadow run list view`。

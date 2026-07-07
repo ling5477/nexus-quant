@@ -574,8 +574,8 @@ export function ShadowRunDetailPage() {
                     badge="GateR-7 · Read-only"
                     extra={(
                         <Space size={8} wrap>
-                            <Button icon={<ArrowLeftOutlined/>} onClick={() => navigate('/strategies/validation')}>
-                                返回策略验证
+                            <Button icon={<ArrowLeftOutlined/>} onClick={() => navigate('/strategies/shadow-runs')}>
+                                返回 Shadow Run 列表
                             </Button>
                             <Button icon={<ReloadOutlined/>} onClick={refreshAll} loading={fetching}>
                                 刷新只读数据

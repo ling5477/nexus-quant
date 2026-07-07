@@ -21,7 +21,7 @@
 - Strategy Evaluation Gate API：只读聚合 strategy version、dataset quality、evaluation、publish trace 与 SIM Paper evidence，供 GateQ-1 判断研究与评估证据是否可进入后续 Shadow review。
 - Paper Shadow Comparison API：只读聚合 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 与 Shadow 未实现状态，供 GateQ-2 判断 Paper vs Shadow 对照证据准备度。
 - Shadow Live No-side-effect Preview API：只读聚合 GateQ-1 evaluation gate 与 GateQ-2 Paper/Shadow comparison 结果，供 GateQ-3 判断是否能生成 Shadow Live no-side-effect 预览计划。
-- Shadow Run Read-only API：只读查询本地 Shadow Run detail、events、snapshots 与 latest consistency report，供 GateR-6 后续前端 detail / replay view 使用。
+- Shadow Run Read-only API：只读查询本地 Shadow Run list、detail、events、snapshots 与 latest consistency report，供 GateR-6 / GateR-8 前端 list/detail/replay view 使用。
 - Python Evaluation Artifact Binding Preview API：只读校验 request body 中的 Python offline evaluation artifact，供 GateQ-4 生成 Java fact source binding preview，不导入、不上传、不写库。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
@@ -73,11 +73,16 @@ LIVE: DISABLED
 - GateQ-3 新增只读 Shadow Live no-side-effect preview API；只调用 GateQ-1 / GateQ-2 只读 service 聚合既有事实，不新增 repository、SQL、migration 或 scheduler，不启动真实 Shadow runner，不创建 shadow run，不写数据库，不外联，不读取 credential material，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live execution ready。
 - GateQ-4 新增只读 Python Evaluation Artifact Binding Preview API；只校验 request body 中的 artifact JSON，不读取本地路径，不新增 import/upload endpoint，不把 Python artifact 写成 Java fact，不写数据库，不触发 strategy publish / Paper run / Shadow run，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 strategy approved、trading authorization、ML ready 或 live execution ready。
 - GateR-6 新增 Shadow Run read-only API；只读取本地 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots` 与 `shadow_consistency_reports` 事实，不新增 migration，不新增写接口，不创建 / 启动 / 停止 / 取消 / 重跑 / 执行 Shadow runner，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable、trade approval 或 Shadow Live ready。
+- GateR-8 新增 Shadow Run read-only list API；只读取本地 `shadow_runs` 与已脱敏本地 result summary，用于前端列表入口和 detail 跳转，不新增 migration，不新增写接口，不启动 runner，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable、trade approval 或 Shadow Live ready。
 
-## GateR-6 Shadow Run Read-only API
+## GateR-6 / GateR-8 Shadow Run Read-only API
 
-NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖后端只读 API、DTO、Controller、query service 与测试，不代表 GateR 已冻结或接受，不代表 Shadow Run scheduler、后台 runner、前端页面、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe 已启动。
+NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。NQ-GATER-8-SHADOW-RUN-LIST-AND-ENTRYPOINT-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖 Shadow Run 只读 API、DTO、Controller、query service、前端只读列表入口与测试，不代表 GateR 已冻结或接受，不代表 Shadow Run scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe 已启动。
 
+- `GET /api/shadow-runs`：读取本地 Shadow Run list。
+  - Query：`status` 可选；`strategyVersionId` 可选；`datasetId` 可选；`paperRunId` 可选；`limit` 默认 50、最大 100；`offset` 默认 0。
+  - Response：`items / limit / offset / total`；item 含 `id / status / strategyVersionId / datasetId / paperRunId / authorizationBoundary / traceId / createdAt / updatedAt / startedAt / completedAt / blockersCount / warningsCount / nextStepsCount / noOrderSubmission / noCredentialAccess / noPrivateEndpoint / noLedgerMutation / noAccountMutation`。
+  - 语义：只读 diagnostic only，用于列表查看和进入 detail / replay 页面；`authorizationBoundary` 与 no-side-effect flags 只表达诊断边界，不表达交易授权。
 - `GET /api/shadow-runs/{id}`：读取本地 Shadow Run detail。
   - Response：`id / strategyVersionId / datasetId / evaluationId / publishId / paperRunId / status / windowStart / windowEnd / authorizationBoundary / sideEffectFlags / blockers / warnings / nextSteps / requestId / traceId / createdAt / updatedAt / startedAt / stoppedAt / completedAt`。
   - `authorizationBoundary` 只表达边界说明，固定不得解释为交易授权；`sideEffectFlags` 只表达 no-order-submission、no-credential-access、no-private-endpoint、no-ledger-mutation、no-account-mutation、no-external-private-io 等只读诊断边界。

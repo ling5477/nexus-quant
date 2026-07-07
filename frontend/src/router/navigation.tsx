@@ -88,6 +88,15 @@ export const appNavItems: AppNavItem[] = [
         section: '策略运行',
     },
     {
+        key: 'shadow-runs',
+        path: '/strategies/shadow-runs',
+        label: 'Shadow Runs',
+        icon: <FileSearchOutlined/>,
+        title: 'Shadow Run 列表',
+        description: '只读查看本地 Shadow Run diagnostic facts，并进入 detail / replay 页面。',
+        section: '策略运行',
+    },
+    {
         key: 'strategies',
         path: '/strategies',
         label: '策略定义',

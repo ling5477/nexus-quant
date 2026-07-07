@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -184,6 +185,40 @@ class JdbcShadowRunFactRepositoryTest {
     }
 
     @Test
+    void shouldListShadowRunsWithBoundedFiltersAndCount() {
+        RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
+        ShadowRun run = run(ShadowRunStatus.COMPLETED, 2);
+        jdbcTemplate.queryResults.add(List.of(run));
+        jdbcTemplate.queryForObjectResults.add(1L);
+        JdbcShadowRunFactRepository repository = repository(jdbcTemplate);
+        ShadowRunListQuery query = new ShadowRunListQuery(
+                ShadowRunStatus.COMPLETED,
+                "sv-1",
+                run.datasetId(),
+                "paper-1",
+                25,
+                5
+        );
+
+        assertEquals(List.of(run), repository.listRuns(query));
+        assertEquals(1L, repository.countRuns(query));
+
+        assertTrue(jdbcTemplate.querySqls.getFirst().contains("WHERE status = ?"));
+        assertTrue(jdbcTemplate.querySqls.getFirst().contains("strategy_version_id = ?"));
+        assertTrue(jdbcTemplate.querySqls.getFirst().contains("dataset_id = ?"));
+        assertTrue(jdbcTemplate.querySqls.getFirst().contains("paper_run_id = ?"));
+        assertTrue(jdbcTemplate.querySqls.getFirst().contains("ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"));
+        assertEquals(ShadowRunStatus.COMPLETED.name(), jdbcTemplate.queryArgs.getFirst()[0]);
+        assertEquals("sv-1", jdbcTemplate.queryArgs.getFirst()[1]);
+        assertEquals(run.datasetId(), jdbcTemplate.queryArgs.getFirst()[2]);
+        assertEquals("paper-1", jdbcTemplate.queryArgs.getFirst()[3]);
+        assertEquals(25, jdbcTemplate.queryArgs.getFirst()[4]);
+        assertEquals(5, jdbcTemplate.queryArgs.getFirst()[5]);
+        assertTrue(jdbcTemplate.queryForObjectSqls.getFirst().startsWith("SELECT COUNT(*) FROM shadow_runs WHERE"));
+        assertFalse(jdbcTemplate.queryForObjectSqls.getFirst().contains("LIMIT"));
+    }
+
+    @Test
     void shouldRejectCredentialLikeSnapshotPayloadBeforeRepositoryWrite() {
         ObjectNode forbiddenPayload = JsonNodeFactory.instance.objectNode();
         forbiddenPayload.put("apiKey", "redacted");
@@ -313,6 +348,9 @@ class JdbcShadowRunFactRepositoryTest {
         private final List<String> updateSqls = new ArrayList<>();
         private final List<Object[]> updateArgs = new ArrayList<>();
         private final List<String> querySqls = new ArrayList<>();
+        private final List<Object[]> queryArgs = new ArrayList<>();
+        private final Queue<Long> queryForObjectResults = new ArrayDeque<>();
+        private final List<String> queryForObjectSqls = new ArrayList<>();
 
         @Override
         public int update(String sql, Object... args) {
@@ -324,9 +362,17 @@ class JdbcShadowRunFactRepositoryTest {
         @Override
         public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
             querySqls.add(sql);
+            queryArgs.add(args);
             @SuppressWarnings("unchecked")
             List<T> rows = (List<T>) (queryResults.isEmpty() ? List.of() : queryResults.remove());
             return rows;
+        }
+
+        @Override
+        public <T> T queryForObject(String sql, Class<T> requiredType, Object... args) {
+            queryForObjectSqls.add(sql);
+            Long value = queryForObjectResults.isEmpty() ? 0L : queryForObjectResults.remove();
+            return requiredType.cast(value);
         }
     }
 

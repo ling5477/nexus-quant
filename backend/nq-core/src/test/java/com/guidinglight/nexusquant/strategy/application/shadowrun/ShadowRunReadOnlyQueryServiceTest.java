@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -65,6 +66,41 @@ class ShadowRunReadOnlyQueryServiceTest {
     }
 
     @Test
+    void shouldListShadowRunsWithFiltersWithoutMutatingFacts() {
+        InMemoryShadowRunFactRepository repository = repositoryWithRun();
+        ShadowRun blockedRun = run(
+                UUID.fromString("66666666-6666-6666-6666-666666666667"),
+                "sv-2",
+                "paper-2",
+                ShadowRunStatus.BLOCKED
+        );
+        repository.runs.put(blockedRun.id(), blockedRun);
+        ShadowRunReadOnlyQueryService service = new ShadowRunReadOnlyQueryService(repository);
+        ShadowRunListQuery query = new ShadowRunListQuery(
+                ShadowRunStatus.COMPLETED,
+                "sv-1",
+                DATASET_ID,
+                "paper-1",
+                50,
+                0
+        );
+
+        ShadowRunListResult result = service.list(query);
+
+        assertEquals(List.of(repository.run), result.items());
+        assertEquals(50, result.limit());
+        assertEquals(0, result.offset());
+        assertEquals(1, result.total());
+        assertEquals(1, repository.listRunsCalls);
+        assertEquals(1, repository.countRunsCalls);
+        assertEquals(0, repository.createCalls);
+        assertEquals(0, repository.appendEventCalls);
+        assertEquals(0, repository.appendSnapshotCalls);
+        assertEquals(0, repository.createReportCalls);
+        assertEquals(0, repository.updateStatusCalls);
+    }
+
+    @Test
     void shouldReturnClearNotFoundForMissingRunAndMissingLatestReport() {
         InMemoryShadowRunFactRepository missingRunRepository = new InMemoryShadowRunFactRepository();
         ShadowRunReadOnlyQueryService missingRunService = new ShadowRunReadOnlyQueryService(missingRunRepository);
@@ -115,14 +151,18 @@ class ShadowRunReadOnlyQueryServiceTest {
     }
 
     private ShadowRun run() {
+        return run(RUN_ID, "sv-1", "paper-1", ShadowRunStatus.COMPLETED);
+    }
+
+    private ShadowRun run(UUID runId, String strategyVersionId, String paperRunId, ShadowRunStatus status) {
         return new ShadowRun(
-                RUN_ID,
-                "sv-1",
+                runId,
+                strategyVersionId,
                 DATASET_ID,
                 "eval-1",
                 "pub-1",
-                "paper-1",
-                ShadowRunStatus.COMPLETED,
+                paperRunId,
+                status,
                 NOW.minusSeconds(3600),
                 NOW,
                 OBJECT_MAPPER.createObjectNode().put("mode", "NO_SIDE_EFFECT_LOCAL_ONLY"),
@@ -203,6 +243,8 @@ class ShadowRunReadOnlyQueryServiceTest {
         private final List<ShadowConsistencyReport> reports = new ArrayList<>();
         private ShadowRun run;
         private int findByIdCalls;
+        private int listRunsCalls;
+        private int countRunsCalls;
         private int listEventsCalls;
         private int listSnapshotsCalls;
         private int findLatestReportCalls;
@@ -229,6 +271,32 @@ class ShadowRunReadOnlyQueryServiceTest {
             return runs.values().stream()
                     .filter(value -> value.idempotencyKey().equals(idempotencyKey))
                     .findFirst();
+        }
+
+        @Override
+        public List<ShadowRun> listRuns(ShadowRunListQuery query) {
+            listRunsCalls++;
+            return runs.values().stream()
+                    .filter(run -> query.status() == null || run.status() == query.status())
+                    .filter(run -> query.strategyVersionId() == null
+                            || run.strategyVersionId().equals(query.strategyVersionId()))
+                    .filter(run -> query.datasetId() == null || run.datasetId().equals(query.datasetId()))
+                    .filter(run -> query.paperRunId() == null || run.paperRunId().equals(query.paperRunId()))
+                    .skip(query.offset())
+                    .limit(query.limit())
+                    .toList();
+        }
+
+        @Override
+        public long countRuns(ShadowRunListQuery query) {
+            countRunsCalls++;
+            return runs.values().stream()
+                    .filter(run -> query.status() == null || run.status() == query.status())
+                    .filter(run -> query.strategyVersionId() == null
+                            || run.strategyVersionId().equals(query.strategyVersionId()))
+                    .filter(run -> query.datasetId() == null || run.datasetId().equals(query.datasetId()))
+                    .filter(run -> query.paperRunId() == null || run.paperRunId().equals(query.paperRunId()))
+                    .count();
         }
 
         @Override

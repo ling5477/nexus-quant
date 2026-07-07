@@ -1,6 +1,7 @@
 import {expect, test, type Page, type Route} from 'playwright/test';
 
 const SHADOW_RUN_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const SHADOW_RUN_ID_2 = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const DATASET_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
 const detailFixture = {
@@ -109,10 +110,66 @@ const reportFixture = {
     traceId: 'trace-shadow-gater-7',
 };
 
+const listFixture = {
+    items: [
+        {
+            id: SHADOW_RUN_ID,
+            status: 'COMPLETED',
+            strategyVersionId: 'sv-gater-8',
+            datasetId: DATASET_ID,
+            paperRunId: 'paper-gater-8',
+            authorizationBoundary: 'DIAGNOSTIC_ONLY',
+            traceId: 'trace-shadow-gater-8',
+            createdAt: '2026-07-06T10:00:00Z',
+            updatedAt: '2026-07-06T11:00:00Z',
+            startedAt: '2026-07-06T10:01:00Z',
+            completedAt: '2026-07-06T11:00:00Z',
+            blockersCount: 0,
+            warningsCount: 1,
+            nextStepsCount: 1,
+            noOrderSubmission: true,
+            noCredentialAccess: true,
+            noPrivateEndpoint: true,
+            noLedgerMutation: true,
+            noAccountMutation: true,
+            credentialMaterial: 'fake-list-cred',
+            authorizedForTrading: true,
+        },
+        {
+            id: SHADOW_RUN_ID_2,
+            status: 'BLOCKED',
+            strategyVersionId: 'sv-gater-8-blocked',
+            datasetId: DATASET_ID,
+            paperRunId: 'paper-gater-8-blocked',
+            authorizationBoundary: 'DIAGNOSTIC_ONLY',
+            traceId: 'trace-shadow-gater-8-blocked',
+            createdAt: '2026-07-06T09:00:00Z',
+            updatedAt: '2026-07-06T09:20:00Z',
+            startedAt: null,
+            completedAt: '2026-07-06T09:20:00Z',
+            blockersCount: 1,
+            warningsCount: 0,
+            nextStepsCount: 1,
+            noOrderSubmission: true,
+            noCredentialAccess: true,
+            noPrivateEndpoint: true,
+            noLedgerMutation: true,
+            noAccountMutation: true,
+            apiKey: 'fake-list-key',
+            tradeApproved: true,
+        },
+    ],
+    limit: 50,
+    offset: 0,
+    total: 2,
+};
+
 interface StubOptions {
     detailStatus?: number;
     reportStatus?: number;
+    listStatus?: number;
     delayDetailMs?: number;
+    delayListMs?: number;
 }
 
 function shadowRunUrl(): string {
@@ -169,6 +226,29 @@ async function seedAuthAndShadowRunStubs(page: Page, options: StubOptions = {}):
         json: [],
     }));
 
+    await page.route(/\/api\/shadow-runs(?:\?.*)?$/, async (route: Route) => {
+        if (options.delayListMs) {
+            await new Promise((resolve) => setTimeout(resolve, options.delayListMs));
+        }
+        if (options.listStatus === 500) {
+            return route.fulfill({status: 500, json: apiError(500, 'shadow run list query failed')});
+        }
+        const url = new URL(route.request().url());
+        const status = url.searchParams.get('status');
+        const items = status
+            ? listFixture.items.filter((item) => item.status === status)
+            : listFixture.items;
+        return route.fulfill({
+            status: 200,
+            json: {
+                items,
+                limit: 50,
+                offset: 0,
+                total: items.length,
+            },
+        });
+    });
+
     await page.route(`**/api/shadow-runs/${SHADOW_RUN_ID}`, async (route: Route) => {
         if (options.delayDetailMs) {
             await new Promise((resolve) => setTimeout(resolve, options.delayDetailMs));
@@ -207,7 +287,7 @@ function expectNoForbiddenRequests(requests: string[]): void {
         const [, requestUrl] = requestEntry.split(' ');
         const hostname = new URL(requestUrl).hostname;
         expect(hostname, `forbidden real exchange host request: ${requestEntry}`).not.toMatch(forbiddenHostPattern);
-        if (requestUrl.includes('/api/shadow-runs/')) {
+        if (requestUrl.includes('/api/shadow-runs')) {
             expect(requestEntry, `Shadow Run detail page must only call read-only API: ${requestEntry}`).toMatch(/^GET /);
             expect(requestUrl, `forbidden Shadow Run write/private API request: ${requestEntry}`).not.toMatch(forbiddenApiPattern);
         }
@@ -223,6 +303,8 @@ async function expectNoSensitiveCopy(page: Page): Promise<void> {
         'token-should-not-render',
         'credentialMaterial',
         'credential-should-not-render',
+        'fake-list-cred',
+        'fake-list-key',
         'realOrderId',
         'real-order-should-not-render',
         'authorizedForTrading',
@@ -238,6 +320,66 @@ async function expectNoSensitiveCopy(page: Page): Promise<void> {
 
 test.describe('Shadow Run detail / replay read-only view', () => {
     test.setTimeout(120_000);
+
+    test('展示列表、status 筛选、loading/error/empty、敏感字段过滤并进入 detail', async ({page}) => {
+        const stubOptions: StubOptions = {};
+        const requests = await seedAuthAndShadowRunStubs(page, stubOptions);
+
+        await page.goto('/strategies/shadow-runs');
+
+        const view = page.getByTestId('shadow-run-list-page');
+        await expect(view).toBeVisible();
+        await expect(view.getByRole('heading', {name: 'Shadow Run 列表'})).toBeVisible();
+        await expect(view).toContainText('Diagnostic only / No trading authorization');
+        await expect(view).toContainText('No order submission: true');
+        await expect(view).toContainText('No credential access: true');
+        await expect(view).toContainText('No private endpoint: true');
+        await expect(view).toContainText('No ledger mutation: true');
+        await expect(view).toContainText('No account mutation: true');
+        await expect(view).toContainText('sv-gater-8');
+        await expect(view).toContainText(DATASET_ID);
+        await expect(view).toContainText('trace-shadow-gater-8');
+        await expect(page.getByRole('button', {name: /start|stop|execute|rerun|approve|trade|下单|撤单|转账|提现/i})).toHaveCount(0);
+        await expectNoSensitiveCopy(page);
+        expectNoForbiddenRequests(requests);
+
+        requests.length = 0;
+        await page.getByTestId('shadow-run-status-filter').getByText('COMPLETED', {exact: true}).click();
+        await expect(view).toContainText('sv-gater-8');
+        await expect(view).not.toContainText('sv-gater-8-blocked');
+        expect(requests.some((entry) => entry.includes('/api/shadow-runs') && entry.includes('status=COMPLETED'))).toBeTruthy();
+        expectNoForbiddenRequests(requests);
+
+        requests.length = 0;
+        await page.getByTestId('shadow-run-status-filter').getByText('FAILED', {exact: true}).click();
+        await expect(view).toContainText('暂无 Shadow Run 列表数据');
+        expect(requests.some((entry) => entry.includes('/api/shadow-runs') && entry.includes('status=FAILED'))).toBeTruthy();
+        expectNoForbiddenRequests(requests);
+
+        requests.length = 0;
+        stubOptions.listStatus = 500;
+        await page.getByTestId('shadow-run-status-filter').getByText('CANCELLED', {exact: true}).click();
+        await expect(view).toContainText('Shadow Run list 加载失败');
+        await expect(view).toContainText('shadow run list query failed');
+        expectNoForbiddenRequests(requests);
+
+        requests.length = 0;
+        stubOptions.listStatus = undefined;
+        stubOptions.delayListMs = 2_000;
+        await page.getByTestId('shadow-run-status-filter').getByText('RUNNING', {exact: true}).click();
+        await expect(page.getByText('Shadow Run list loading')).toBeVisible();
+        await expect(view).toContainText('暂无 Shadow Run 列表数据');
+        expectNoForbiddenRequests(requests);
+
+        requests.length = 0;
+        stubOptions.delayListMs = undefined;
+        await page.getByTestId('shadow-run-status-filter').getByText('ALL', {exact: true}).click();
+        await expect(view).toContainText('sv-gater-8');
+        await view.getByText('sv-gater-8').first().click();
+        await expect(page).toHaveURL(new RegExp(`/strategies/shadow-runs/${SHADOW_RUN_ID}$`));
+        await expect(page.getByTestId('shadow-run-detail-page')).toBeVisible();
+        expectNoForbiddenRequests(requests);
+    });
 
     test('展示 detail、events、snapshots、latest report、404、loading/error 与只读边界', async ({page}) => {
         const stubOptions: StubOptions = {};

@@ -37,6 +37,12 @@ class ShadowRunReadOnlyResponseTest {
     @Test
     void shouldSerializeReadOnlyDtosWithoutForbiddenSensitiveFields() throws Exception {
         String body = OBJECT_MAPPER.writeValueAsString(List.of(
+                ShadowRunListResponse.from(new com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunListResult(
+                        List.of(run()),
+                        50,
+                        0,
+                        1
+                )),
                 ShadowRunDetailResponse.from(run()),
                 ShadowRunEventResponse.from(event()),
                 ShadowRunSnapshotResponse.from(snapshot()),

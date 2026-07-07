@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -22,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -172,6 +174,34 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 idempotencyKey
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
+    public List<ShadowRun> listRuns(ShadowRunListQuery query) {
+        Objects.requireNonNull(query, "query must not be null");
+        SqlWhereClause whereClause = runWhereClause(query);
+        List<Object> args = new ArrayList<>(whereClause.args());
+        args.add(query.limit());
+        args.add(query.offset());
+        return jdbcTemplate.query(
+                RUN_SELECT
+                        + whereClause.sql()
+                        + " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+                runRowMapper(),
+                args.toArray()
+        );
+    }
+
+    @Override
+    public long countRuns(ShadowRunListQuery query) {
+        Objects.requireNonNull(query, "query must not be null");
+        SqlWhereClause whereClause = runWhereClause(query);
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM shadow_runs" + whereClause.sql(),
+                Long.class,
+                whereClause.args().toArray()
+        );
+        return total == null ? 0L : total;
     }
 
     @Override
@@ -373,6 +403,29 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
         return this::mapReport;
     }
 
+    private SqlWhereClause runWhereClause(ShadowRunListQuery query) {
+        List<String> predicates = new ArrayList<>();
+        List<Object> args = new ArrayList<>();
+        if (query.status() != null) {
+            predicates.add("status = ?");
+            args.add(query.status().name());
+        }
+        if (query.strategyVersionId() != null) {
+            predicates.add("strategy_version_id = ?");
+            args.add(query.strategyVersionId());
+        }
+        if (query.datasetId() != null) {
+            predicates.add("dataset_id = ?");
+            args.add(query.datasetId());
+        }
+        if (query.paperRunId() != null) {
+            predicates.add("paper_run_id = ?");
+            args.add(query.paperRunId());
+        }
+        String sql = predicates.isEmpty() ? "" : " WHERE " + String.join(" AND ", predicates);
+        return new SqlWhereClause(sql, args);
+    }
+
     private ShadowRun mapRun(ResultSet rs, int rowNum) throws SQLException {
         return new ShadowRun(
                 rs.getObject("id", UUID.class),
@@ -478,5 +531,8 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
 
     private static Instant toInstant(Timestamp value) {
         return value == null ? null : value.toInstant();
+    }
+
+    private record SqlWhereClause(String sql, List<Object> args) {
     }
 }

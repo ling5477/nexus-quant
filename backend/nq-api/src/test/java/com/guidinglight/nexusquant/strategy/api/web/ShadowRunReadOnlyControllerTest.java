@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.strategy.api.web;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -14,7 +15,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunListResult;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyQueryService;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -74,6 +77,69 @@ class ShadowRunReadOnlyControllerTest {
                 .setMessageConverters(jsonConverter)
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
+    }
+
+    @Test
+    void shouldReturnShadowRunListWithFiltersWithoutSensitiveOrTradingApprovalFields() throws Exception {
+        ShadowRunListQuery expectedQuery = new ShadowRunListQuery(
+                ShadowRunStatus.COMPLETED,
+                "sv-1",
+                DATASET_ID,
+                "paper-1",
+                25,
+                10
+        );
+        when(queryService.list(expectedQuery)).thenReturn(new ShadowRunListResult(List.of(run()), 25, 10, 1));
+
+        MvcResult result = mockMvc.perform(get("/api/shadow-runs")
+                        .param("status", "COMPLETED")
+                        .param("strategyVersionId", " sv-1 ")
+                        .param("datasetId", DATASET_ID.toString())
+                        .param("paperRunId", " paper-1 ")
+                        .param("limit", "25")
+                        .param("offset", "10")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-list"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-list"))
+                .andExpect(jsonPath("$.limit").value(25))
+                .andExpect(jsonPath("$.offset").value(10))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(RUN_ID.toString()))
+                .andExpect(jsonPath("$.items[0].status").value("COMPLETED"))
+                .andExpect(jsonPath("$.items[0].strategyVersionId").value("sv-1"))
+                .andExpect(jsonPath("$.items[0].datasetId").value(DATASET_ID.toString()))
+                .andExpect(jsonPath("$.items[0].paperRunId").value("paper-1"))
+                .andExpect(jsonPath("$.items[0].authorizationBoundary").value("DIAGNOSTIC_ONLY"))
+                .andExpect(jsonPath("$.items[0].traceId").value("trace-shadow"))
+                .andExpect(jsonPath("$.items[0].blockersCount").value(0))
+                .andExpect(jsonPath("$.items[0].warningsCount").value(1))
+                .andExpect(jsonPath("$.items[0].nextStepsCount").value(1))
+                .andExpect(jsonPath("$.items[0].noOrderSubmission").value(true))
+                .andExpect(jsonPath("$.items[0].noCredentialAccess").value(true))
+                .andExpect(jsonPath("$.items[0].noPrivateEndpoint").value(true))
+                .andExpect(jsonPath("$.items[0].noLedgerMutation").value(true))
+                .andExpect(jsonPath("$.items[0].noAccountMutation").value(true))
+                .andReturn();
+
+        verify(queryService).list(expectedQuery);
+        assertNoForbiddenFields(result.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldReturnEmptyShadowRunListWhenNoFactsExist() throws Exception {
+        ShadowRunListQuery expectedQuery = new ShadowRunListQuery(null, null, null, null, 50, 0);
+        when(queryService.list(expectedQuery)).thenReturn(new ShadowRunListResult(List.of(), 50, 0, 0));
+
+        mockMvc.perform(get("/api/shadow-runs")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-empty-list"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isArray())
+                .andExpect(jsonPath("$.items.length()").value(0))
+                .andExpect(jsonPath("$.limit").value(50))
+                .andExpect(jsonPath("$.offset").value(0))
+                .andExpect(jsonPath("$.total").value(0));
+
+        verify(queryService).list(expectedQuery);
     }
 
     @Test
@@ -156,7 +222,7 @@ class ShadowRunReadOnlyControllerTest {
                 .filter(method -> method.isAnnotationPresent(GetMapping.class))
                 .toList();
 
-        assertEquals(4, endpointMethods.size());
+        assertEquals(5, endpointMethods.size());
         for (Method method : endpointMethods) {
             assertFalse(method.isAnnotationPresent(PostMapping.class));
             assertFalse(method.isAnnotationPresent(PatchMapping.class));
