@@ -16,6 +16,8 @@ GateR-4 implementation 指针：`NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTA
 
 GateR-5 implementation 指针：`NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION` 已实现最小 Paper vs Shadow consistency report service，当前状态为 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。本轮只消费调用方传入的本地只读 Paper / Shadow summary，生成 `CONSISTENT / DIVERGED / NOT_COMPARABLE / PARTIAL / FAILED`（一致 / 偏离 / 不可比 / 部分可比 / 失败）report，并通过既有 `ShadowRunFactRepository.createConsistencyReport` 写入本地 `shadow_consistency_reports`；不新增 migration，不新增 API，不启动 scheduler 或后台 runner，不调用真实交易所，不读取 credential material，不修改真实 account / ledger / order，不表达交易授权。
 
+GateR-6 implementation 指针：`NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION` 已实现 Shadow Run detail / events / snapshots / latest consistency report 只读 API，当前状态为 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。本轮只新增 GET endpoint、DTO、Controller、read-only query service 与测试；不新增 migration，不新增写接口，不启动 scheduler 或后台 runner，不触发 Shadow runner，不调用真实交易所，不读取 credential material，不修改真实 account / ledger / order，不表达交易授权。
+
 ## 1. GateR Current Baseline
 
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）。
@@ -30,6 +32,7 @@ GateR-5 implementation 指针：`NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTA
 - GateR-3：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateR-4：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateR-5：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- GateR-6：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -39,7 +42,7 @@ GateR-5 implementation 指针：`NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTA
 - Python ML ready：`NO`（否）。
 - Python live execution ready：`NO`（否）。
 
-GateR 当前事实表示 GateR-0 planning 已建立、GateR-1 migration plan review 已通过、GateR-2 Shadow Run local fact model / repository 已通过 verified commit 接受，GateR-3 本地 runner skeleton 已实现并自审待提交，GateR-4 structured decision trace / risk snapshot / order intent preview 已实现并自审待提交，且 GateR-5 最小 consistency report service 已实现并自审待提交。该事实不表示 GateR frozen / accepted，不表示 Shadow runner 后台启动，不表示 HTTP API、前端页面、LIVE、AI/DH runtime 或任何交易授权。
+GateR 当前事实表示 GateR-0 planning 已建立、GateR-1 migration plan review 已通过、GateR-2 Shadow Run local fact model / repository 已通过 verified commit 接受，GateR-3 本地 runner skeleton 已实现并自审待提交，GateR-4 structured decision trace / risk snapshot / order intent preview 已实现并自审待提交，GateR-5 最小 consistency report service 已实现并自审待提交，且 GateR-6 Shadow Run 只读 API 已实现并自审待提交。该事实不表示 GateR frozen / accepted，不表示 Shadow runner 后台启动，不表示写接口、前端页面、LIVE、AI/DH runtime 或任何交易授权。
 
 ## 2. GateQ Freeze Evidence Summary
 
@@ -244,27 +247,34 @@ Order intent preview snapshot 只能记录拟议订单意图，不得提交订�
 - 不得写真实订单表、真实账户表、资金表或 ledger。
 - 不得把 order intent preview 写成 order approval。
 
-## 12. Backend Candidate API / DTO / Migration Plan
+## 12. Backend API / DTO Status and Remaining Candidate Plan
 
-本节只描述候选，不代表已实现，不更新 `API.md` 或 `DB_SCHEMA.md`。
+GateR-6 已将 Shadow Run read-only API 最小切片落地并同步 `API.md`；该切片只读取既有本地 facts，不新增 migration，不新增写接口，不启动 runner。
 
-候选 API 需要拆到后续 GateR 批次逐项 review：
+已实现只读 API：
+
+- `GET /api/shadow-runs/{id}`：读取 Shadow Run detail。
+- `GET /api/shadow-runs/{id}/events`：读取 append-only lifecycle / audit events。
+- `GET /api/shadow-runs/{id}/snapshots`：读取本地 replay / diagnostic snapshots。
+- `GET /api/shadow-runs/{id}/consistency-report/latest`：读取 latest Paper vs Shadow consistency report。
+
+仍未实现且不得在 GateR-6 中补做的候选写侧 API：
 
 - `POST /api/shadow-runs`：候选创建本地 Shadow Run 请求。仅允许在本地 fact model 完成、migration review 通过、no-side-effect guard 完成后实现。
 - `POST /api/shadow-runs/{shadowRunId}/start`：候选启动本地 Shadow Run。必须只触发本地无副作用 runner，不外联、不下单、不读 credential。
 - `POST /api/shadow-runs/{shadowRunId}/stop`：候选停止本地 Shadow Run。必须幂等，不能触达交易路径。
-- `GET /api/shadow-runs/{shadowRunId}`：候选读取 detail。
-- `GET /api/shadow-runs/{shadowRunId}/trace`：候选读取 decision trace。
-- `GET /api/shadow-runs/{shadowRunId}/consistency-report`：候选读取 Paper vs Shadow consistency report。
 - `POST /api/shadow-runs/{shadowRunId}/replay-preview`：候选 replay preview，只读重放，不改写原始 facts。
 
-候选 DTO 必须包含：
+GateR-6 DTO 当前包含：
 
-- `sideEffectPolicy`。
 - `authorizationBoundary`。
+- `sideEffectFlags`。
 - `status`。
 - `blockers` / `warnings` / `nextSteps`。
 - `traceId` / `requestId`。
+- `eventType` / `metadata`。
+- `snapshotType` / `schemaVersion` / `checksum` / `payload`。
+- `comparisonStatus` / `metricDelta` / `divergenceReasons` / `limitations`。
 
 候选 migration 必须拆到 GateR-1 单独审查，重点检查：
 
@@ -296,10 +306,10 @@ GateR 测试策略候选：
 - GateR-3：runner skeleton 测试已覆盖成功路径、RUNNING -> BLOCKED、FAILED、idempotency、4 类 snapshot、event、sensitive guard、no-side-effect guard、ORDER_INTENT_PREVIEW preview-only、无 external adapter / account / ledger / real order 依赖和最小 Spring assembly。
 - GateR-4：decision trace / risk snapshot / order intent preview 测试，覆盖缺失输入、风险阻断、禁止真实订单字段。
 - GateR-5：Paper vs Shadow consistency report 测试已覆盖一致、偏离、缺失、不可比、部分可比、失败、指标 delta、divergence reasons、limitations、repository 持久化、latest report 查询、敏感字段拒绝和无 external adapter / account / ledger / real order 依赖。
-- GateR-6：前端 build 与 Playwright smoke，覆盖 loading、empty、error、blocked、completed、failed、no authorization copy、no forbidden request。
+- GateR-6：read-only API / DTO / Controller / query service tests 已覆盖 detail、events、snapshots、latest consistency report、404、forbidden sensitive fields、无写侧 endpoint、无 runner / external adapter / account / ledger / order 依赖、敏感 metadata / payload guard，以及 GateR-3/4/5 回归。
 - GateR-7：no-egress / no-credential smoke，覆盖无外联、无 credential read、无 private endpoint、无 LIVE、无 AI/DH runtime。
 
-本轮不新增测试，也不运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；验证仅限 docs-only diff、边界搜索和 forbidden-scope diff。
+GateR-6 本轮已运行 targeted Maven、后端全量 Maven、diff check、forbidden-scope diff 和 boundary rg；未运行 frontend build / Playwright / Python pytest / mypy / ruff，因为本轮未修改 frontend 或 research。
 
 ## 15. Security / Credential / LIVE Boundary
 
@@ -366,7 +376,7 @@ GateR 不接 AI runtime，不接 DH runtime：
 | GateR-3 | Shadow Run no-side-effect runner skeleton | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；本地同步 run/events/snapshots skeleton 与状态机保护 | 外联、credential、private endpoint、下单、scheduler、后台 runner |
 | GateR-4 | Shadow decision trace / risk snapshot / order intent preview | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；structured trace、risk snapshot、order intent preview snapshot envelope | 真实订单、真实风控放行、交易授权 |
 | GateR-5 | Paper vs Shadow consistency report | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；本地只读 consistency report service 与 golden cases | 将 comparison 写成 trading authorization |
-| GateR-6 | Frontend Shadow Run detail / replay view | detail、replay、evidence、consistency 页面 | LIVE 操作入口、真实交易按钮 |
+| GateR-6 | Shadow Run read-only API | `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；detail、events、snapshots、latest consistency report GET endpoints 与 DTO / Controller / service tests | 写接口、runner start/stop/cancel/rerun/execute、scheduler、外联、credential、真实交易、交易授权 |
 | GateR-7 | Operational guard / no-egress / no-credential smoke | no-egress、no-credential、forbidden request smoke | 读取 credential 或真实外联 |
 | GateR-FREEZE | GateR freeze closeout | freeze review、evidence matrix、current docs sync | 提前写 accepted/frozen |
 
@@ -424,7 +434,7 @@ GateR-FREEZE exit criteria 必须在后续 GateR-FREEZE 单独执行，GateR-0 �
 
 ## 22. Next Concrete Action
 
-下一步只能完成 GateR-5 本地 commit 决策；commit 后如继续 GateR，只能单独进入 GateR-6 前端 Shadow Run detail / replay view。不得把 GateR-5 写成后台 runner started、Shadow Live trading enabled 或 trading authorization，不得顺带新增 API、scheduler、frontend、migration、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实交易路径。
+下一步只能完成 GateR-6 本地 commit 决策；commit 后如继续 GateR，只能单独进入 frontend Shadow Run detail / replay view 或 GateR-7 operational guard / no-egress / no-credential smoke。不得把 GateR-6 写成后台 runner started、Shadow Live trading enabled 或 trading authorization，不得顺带新增写接口、scheduler、migration、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实交易路径。
 
 当前最终状态：
 
@@ -435,4 +445,5 @@ NQ-GATER-2-P1-FIX-ILLEGAL-TRANSITION-AUDIT-REQUIRES-NEW：INCLUDED IN GATER-2 VE
 NQ-GATER-3-SHADOW-RUN-RUNNER-SKELETON-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
 NQ-GATER-4-SHADOW-RUN-DECISION-TRACE-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
 NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
 ```

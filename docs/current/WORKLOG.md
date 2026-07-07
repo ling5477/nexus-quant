@@ -1,3 +1,80 @@
+## NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION
+
+日期：2026-07-07。
+
+范围：
+
+- NQ-only GateR-6 backend implementation。
+- 新增 Shadow Run read-only API，供后续前端 detail / replay view 读取本地 Shadow Run detail、events、snapshots 与 latest consistency report。
+- 新增 API DTO、Controller、read-only query service、not found exception 和 Controller / DTO / service tests。
+- 不新增 migration，不改历史 migration，不新增写接口，不改前端，不改 CI，不改 research/scripts/deploy，不启动 scheduler，不启动后台 runner，不触发 Shadow runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+新增文件：
+
+```text
+backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowConsistencyReportResponse.java
+backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunDetailResponse.java
+backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunEventResponse.java
+backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunReadOnlyController.java
+backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunSnapshotResponse.java
+backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunReadOnlyControllerTest.java
+backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunReadOnlyResponseTest.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunReadOnlyNotFoundException.java
+backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunReadOnlyQueryService.java
+backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunReadOnlyQueryServiceTest.java
+```
+
+修改文件：
+
+```text
+backend/nq-api/src/main/java/com/guidinglight/nexusquant/api/web/ApiExceptionHandler.java
+docs/current/API.md
+docs/current/GATER_PLAN.md
+docs/current/STATUS.md
+docs/current/TESTING.md
+docs/current/WORKLOG.md
+```
+
+结果：
+
+```text
+NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+```
+
+API endpoints：
+
+- `GET /api/shadow-runs/{id}`：读取 detail。
+- `GET /api/shadow-runs/{id}/events`：读取 events。
+- `GET /api/shadow-runs/{id}/snapshots`：读取 snapshots。
+- `GET /api/shadow-runs/{id}/consistency-report/latest`：读取 latest consistency report。
+
+同步内容：
+
+- `ShadowRunReadOnlyQueryService` 仅依赖 `ShadowRunFactRepository`，所有方法为 read-only 查询；events / snapshots 会先验证 run 存在，避免不存在 id 静默返回空列表。
+- `ShadowRunReadOnlyController` 只声明 4 个 GET endpoint；没有 POST / PUT / PATCH / DELETE，没有 start / stop / cancel / rerun / execute / trade action。
+- DTO 字段覆盖 detail、event、snapshot、latest report 展示需求；不暴露 credential、private payload、real account、real order 或 trading approval 字段。
+- `ApiExceptionHandler` 扩展统一 not found 映射，Shadow Run read-only not found 返回 `RESOURCE_NOT_FOUND`。
+- DTO 映射阶段再次调用 `ShadowRunSensitiveDataGuard`，metadata / payload / report JSON 含敏感字段时拒绝，不原样返回。
+
+验证：
+
+- Preflight：`HEAD == origin/dev == 3c20d53ca9aac2e85cdf11f9e5b34d7f5dffb94d`；`gh run list --limit 5` 显示 GateR-5 最新 run completed success。
+- Targeted tests：`mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=ShadowRunReadOnlyControllerTest,ShadowRunReadOnlyResponseTest,ShadowRunReadOnlyQueryServiceTest,ShadowConsistencyReportServiceTest,ShadowRunRunnerServiceTest,ShadowRunStateMachineTest,ShadowRunSensitiveDataGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`，PASS / BUILD SUCCESS（通过 / 构建成功），36 tests，0 failures，0 errors，0 skipped。
+- Full Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test`，PASS / BUILD SUCCESS（通过 / 构建成功），Surefire reports 773 tests，0 failures，0 errors，5 skipped。
+
+边界：
+
+- 未新增 migration，未修改 `backend/nq-infra/src/main/resources/db/migration/**`。
+- 未改 frontend / research / scripts / deploy / `.github` / docs/gates / docs/archive。
+- 未调用真实交易所，未读取 `.env` 或 credential material，未提交真实订单，未撤单，未转账，未提现，未修改真实账户、资金、订单或 ledger。
+- LIVE = `DISABLED`（关闭）。AI = `NOT STARTED`（未开始）。DH runtime = `NOT INTEGRATED`（未集成）。RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+- GateR-6 不是 scheduler，不是后台运行，不是 Shadow Live trading enabled，不是 trading authorization，不是 consistency approval。
+
+下一步：
+
+- 若提交前 diff check、forbidden diff、rg boundary scan 和 staged checks 通过，可本地 commit：`feat(gater): add shadow run read-only api`。
+- 提交后若继续 GateR，只能单独进入 frontend Shadow Run detail / replay view 或 GateR-7 operational guard / no-egress / no-credential smoke；不得顺带新增写接口、scheduler、migration、LIVE、AI/DH runtime 或真实交易路径。
+
 ## NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION
 
 日期：2026-07-06。

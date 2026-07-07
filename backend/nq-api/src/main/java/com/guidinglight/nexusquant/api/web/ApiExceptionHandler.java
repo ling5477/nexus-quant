@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.account.application.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundException;
 import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;
@@ -103,9 +104,13 @@ public class ApiExceptionHandler {
         return build(HttpStatus.CONFLICT, "ADMIN_NOT_INITIALIZED", ex.getMessage(), request, List.of());
     }
 
-    @ExceptionHandler({ExchangeAccountNotFoundException.class, ExchangeAccountCredentialNotFoundException.class})
+    @ExceptionHandler({
+            ExchangeAccountNotFoundException.class,
+            ExchangeAccountCredentialNotFoundException.class,
+            ShadowRunReadOnlyNotFoundException.class
+    })
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiErrorResponse handleExchangeAccountNotFound(RuntimeException ex, HttpServletRequest request) {
+    public ApiErrorResponse handleResourceNotFound(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage(), request, List.of());
     }
 

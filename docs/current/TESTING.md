@@ -1,3 +1,60 @@
+## NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION validation（2026-07-07）
+
+```text
+Scope:
+  - 本轮实现 GateR-6 Shadow Run read-only API。
+  - 覆盖 ShadowRunReadOnlyController、ShadowRunReadOnlyQueryService、ShadowRunDetailResponse、ShadowRunEventResponse、ShadowRunSnapshotResponse、ShadowConsistencyReportResponse 和 Controller / DTO / service tests。
+  - API 仅允许 GET /api/shadow-runs/{id}、GET /api/shadow-runs/{id}/events、GET /api/shadow-runs/{id}/snapshots、GET /api/shadow-runs/{id}/consistency-report/latest。
+  - 不新增 migration，不修改历史 migration，不新增写接口，不改前端，不改 CI，不启动 scheduler，不启动后台 runner，不触发 Shadow runner，不接真实交易所，不开启 LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或 real permission probe。
+
+Preflight:
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 3c20d53ca9aac2e85cdf11f9e5b34d7f5dffb94d.
+  - git rev-parse origin/dev: 3c20d53ca9aac2e85cdf11f9e5b34d7f5dffb94d.
+  - gh run list --limit 5: latest run completed success for GateR-5 commit.
+
+Result:
+  - NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT（已实现 / 已自审 / 可进入提交前复核）。
+  - detail / events / snapshots / latest consistency report 均通过 read-only query service 读取既有 Shadow Run facts。
+  - not found 使用项目统一 RESOURCE_NOT_FOUND / HTTP 404 语义。
+  - DTO 映射阶段再次复用 sensitive guard，避免 metadata / payload / report JSON 原样返回敏感字段。
+
+Targeted validation:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-api,nq-core -am "-Dtest=ShadowRunReadOnlyControllerTest,ShadowRunReadOnlyResponseTest,ShadowRunReadOnlyQueryServiceTest,ShadowConsistencyReportServiceTest,ShadowRunRunnerServiceTest,ShadowRunStateMachineTest,ShadowRunSensitiveDataGuardTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Relevant tests run: 36, failures: 0, errors: 0, skipped: 0.
+
+Full Maven validation:
+  - Command:
+    mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra,nq-app -am test
+  - Result: PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - Surefire reports after run: 773 tests, 0 failures, 0 errors, 5 skipped.
+  - nq-core module summary: 161 tests, 0 failures, 0 errors, 0 skipped.
+  - nq-api module summary included the new ShadowRunReadOnlyControllerTest and ShadowRunReadOnlyResponseTest.
+  - nq-app module summary: 129 tests, 0 failures, 0 errors, 3 skipped.
+
+Known warnings / skips:
+  - Existing Maven settings.xml unrecognised profiles tag warning remains.
+  - Existing SLF4J no-provider warnings remain.
+  - Existing Mockito dynamic-agent warnings remain.
+  - Existing JVM class sharing warnings remain.
+  - Existing manually gated real/outbound smoke tests skip where required properties or manual switches are absent.
+
+Not run:
+  - Docker PostgreSQL smoke was not rerun because this GateR-6 task did not modify migration files or JdbcShadowRunFactRepository production query/write SQL.
+  - frontend build / Playwright were not run because frontend was not modified.
+  - Python pytest / mypy / ruff were not run because research/py was not modified.
+
+Boundary:
+  - No migration was added or modified.
+  - No frontend, research, scripts, deploy, .github, docs/gates or docs/archive changes were made.
+  - No POST / start / stop / cancel / rerun / execute / trade endpoint was added.
+  - API does not depend on ShadowRunRunnerService, external adapter, account, ledger, order command, scheduler or real provider.
+  - No credential material, private endpoint payload, real order id, real account balance, real position or trading authorization field is returned.
+  - No real order, cancel, transfer, withdraw, private endpoint call, credential read, account/fund/order/ledger mutation, LIVE, AI runtime, DH runtime, RealClient, real provider, private trading adapter, real permission probe or background Shadow runner startup was implemented.
+```
+
 ## NQ-GATER-5-SHADOW-CONSISTENCY-REPORT-IMPLEMENTATION validation（2026-07-06）
 
 ```text
