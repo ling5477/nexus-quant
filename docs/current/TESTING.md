@@ -9257,3 +9257,30 @@ Not run：
 - 未修改 `.github/workflows/ci.yml`，原因是 root cause 不是 workflow 错误，且不允许弱化 CI secret scan。
 
 边界确认：未进入 GateR-8；未新增 Shadow Run list API；未新增页面；未修改 backend、migration、research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未接真实交易所；未读取 `.env` 或 credential material；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未新增 execute / approve / trade 语义；未弱化 CI。
+
+---
+
+## NQ-GATER-7-CI-SECOND-RUN-FIX（2026-07-07）
+
+结论：**FIXED / SELF-REVIEWED / READY TO COMMIT**（已修复 / 已自审 / 可进入提交前复核）。
+
+本轮只修复 GateR-7 first-run fix push 后第二轮 GitHub Actions 失败。失败 run 为 `28840117118`，head SHA 为 `2d0d42ef9627b3cea469c33bab37e482e2b70a94`，与本轮开始时 `HEAD = origin/dev` 一致。失败 job 仍为 `Secret scan`，失败 step 仍为 `Run custom regex secret backstop`。`gh run view 28840117118 --log-failed` 因 GitHub API rate limit 返回 403，记为 `GH_LOG_RATE_LIMIT`；本轮使用 `.github/workflows/ci.yml` 中该 step 的 Git Bash 等价脚本复现。根因是 first-run fix 将值改为 `fake-passphrase-should-not-render` 后，仍先命中 `suspicious_assignment` 的 `{20,}` value-bearing 规则；随后 placeholder 过滤把唯一命中清空，但该过滤管道在 `set -euo pipefail` 下返回非零，导致 step 在输出 violations 前失败。该问题由 GateR-7 first-run fix 引入，不是实际 credential 泄露。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git fetch origin dev` | **PASS** | 已刷新 `origin/dev`。 |
+| `git rev-parse HEAD` | **PASS** | `2d0d42ef9627b3cea469c33bab37e482e2b70a94`。 |
+| `git rev-parse origin/dev` | **PASS** | `2d0d42ef9627b3cea469c33bab37e482e2b70a94`；确认 failed run headSha 是当前 HEAD。 |
+| `gh run list --limit 10` | **PASS / LATEST FAILURE CONFIRMED** | 最新 failed run 为 `28840117118`，对应 `fix(frontend): stabilize shadow run detail CI smoke`。 |
+| `gh run view 28840117118 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs` | **PASS / FAILURE LOCATED** | 唯一失败 job 为 `Secret scan`，失败 step 为 `Run custom regex secret backstop`；frontend build、Batch 5A E2E、backend Maven、PostgreSQL/Flyway、research、no-outbound、CI security smoke 均 success。 |
+| `gh run view 28840117118 --log-failed` | **GH_LOG_RATE_LIMIT / JSON_AND_LOCAL_REPRO_USED** | GitHub API 返回 403 rate limit；未取得 failed log 正文，未编造日志。 |
+| Git Bash equivalent custom regex backstop | **PASS AFTER FIX** | 修复前该 step 等价脚本因 `fake-passphrase-should-not-render` 匹配后被 placeholder 过滤而触发 pipefail；修复后 `count=0`。 |
+| `cd frontend; npm run test:e2e -- shadow-run-detail-smoke.spec.ts` | **PASS** | 最终版 smoke 合并为 1 个 test，覆盖 detail、events、snapshots、latest report、404、loading/error、敏感字段不渲染和只读边界；1 passed。 |
+| `cd frontend; npm run build` | **PASS** | `tsc -b && vite build` 通过；仅有既有 chunk size warning。 |
+
+Not run：
+
+- 未运行 Maven backend test，原因是失败 job 为 `Secret scan`，本轮只改前端 E2E 测试和 current docs，未修改 `backend/**`、API、migration 或 Java contract。
+- 未修改 `.github/workflows/ci.yml`，原因是 workflow 规则本身没有被证明不合理；本轮没有弱化 secret scan。
+
+边界确认：未进入 GateR-8；未新增 Shadow Run list API；未新增页面；未修改 backend、migration、research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未接真实交易所；未读取 `.env` 或 credential material；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未新增 execute / approve / trade 语义；未弱化 CI。

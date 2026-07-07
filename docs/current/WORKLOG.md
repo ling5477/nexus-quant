@@ -15649,3 +15649,34 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 ### 推荐下一步
 
 完成 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。推荐 commit message：`fix(frontend): stabilize shadow run detail CI smoke`。
+
+---
+
+## NQ-GATER-7-CI-SECOND-RUN-FIX
+
+日期：2026-07-07
+
+### 完成内容
+
+- 定位 GateR-7 second CI run `28840117118` 失败原因：`Secret scan` job 的 `Run custom regex secret backstop` step 失败，failed head SHA 与本轮 `HEAD` 均为 `2d0d42ef9627b3cea469c33bab37e482e2b70a94`。
+- 记录 `GH_LOG_RATE_LIMIT`：`gh run view 28840117118 --log-failed` 返回 GitHub API rate limit 403，因此使用 workflow step 与 Git Bash 本地等价脚本复现。
+- 根因：first-run fix 的 `fake-passphrase-should-not-render` 仍命中 `suspicious_assignment`，随后 placeholder 过滤在 `set -euo pipefail` 下因无剩余行返回非零，导致 custom regex backstop step 提前失败。
+- 最小修复测试夹具：将 fake passphrase 值缩短为 `fake-passphrase`，不再命中 `{20,}` value-bearing secret assignment；敏感字段不渲染断言仍保留。
+- 稳定 GateR-7 smoke：把 success、404、loading/error 三个状态合并到同一个 Playwright test 内多次导航，避免本机第三次新建 page/context 超时，同时保留原有状态覆盖。
+- 追加本轮 CI RCA 与验证证据到 `docs/current/TESTING.md`。
+
+### 验证
+
+- `gh run view 28840117118 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs`：PASS，确认失败 job / step，且 failed head SHA 等于当前 HEAD。
+- `gh run view 28840117118 --log-failed`：`GH_LOG_RATE_LIMIT`，未取得 failed log 正文；已用 workflow step 等价脚本复现。
+- Git Bash equivalent custom regex backstop：PASS，`count=0`。
+- `npm run test:e2e -- shadow-run-detail-smoke.spec.ts`：PASS，1 test passed，覆盖 detail / events / snapshots / latest report / 404 / loading / error / sensitive guard / read-only boundary。
+- `npm run build`：PASS。
+
+### 边界
+
+未进入 GateR-8；未修改 backend、migration、research、scripts、deploy、`.github`、`docs/gates` 或 `docs/archive`；未新增后端 API、Shadow Run list API、页面、写接口或 runner endpoint；未调用真实交易所；未读取或输出 credential material；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe；未弱化 secret scan / CI。
+
+### 推荐下一步
+
+完成 forbidden diff、boundary rg、staged checks 后本地 commit；不 push。推荐 commit message：`fix(frontend): mark shadow run smoke secrets as fake`。

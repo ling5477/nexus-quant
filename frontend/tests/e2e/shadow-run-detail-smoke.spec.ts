@@ -104,7 +104,7 @@ const reportFixture = {
         authorizedForTrading: true,
     },
     divergenceReasons: [{code: 'NONE', message: 'No material divergence.'}],
-    limitations: ['diagnostic only', {code: 'NO_LIVE_AUTHORIZATION', passphrase: 'fake-passphrase-should-not-render'}],
+    limitations: ['diagnostic only', {code: 'NO_LIVE_AUTHORIZATION', passphrase: 'fake-passphrase'}],
     generatedAt: '2026-07-06T11:05:00Z',
     traceId: 'trace-shadow-gater-7',
 };
@@ -227,7 +227,7 @@ async function expectNoSensitiveCopy(page: Page): Promise<void> {
         'real-order-should-not-render',
         'authorizedForTrading',
         'passphrase',
-        'fake-passphrase-should-not-render',
+        'fake-passphrase',
         'tradingReady',
         'liveReady',
         'tradeApproved',
@@ -237,8 +237,11 @@ async function expectNoSensitiveCopy(page: Page): Promise<void> {
 }
 
 test.describe('Shadow Run detail / replay read-only view', () => {
-    test('展示 detail、events、snapshots、latest consistency report 与 no-side-effect flags', async ({page}) => {
-        const requests = await seedAuthAndShadowRunStubs(page);
+    test.setTimeout(120_000);
+
+    test('展示 detail、events、snapshots、latest report、404、loading/error 与只读边界', async ({page}) => {
+        const stubOptions: StubOptions = {};
+        const requests = await seedAuthAndShadowRunStubs(page, stubOptions);
 
         await page.goto(shadowRunUrl());
 
@@ -295,14 +298,14 @@ test.describe('Shadow Run detail / replay read-only view', () => {
         expect(requests.some((entry) => entry.includes('/events'))).toBeTruthy();
         expect(requests.some((entry) => entry.includes('/snapshots'))).toBeTruthy();
         expect(requests.some((entry) => entry.includes('/consistency-report/latest'))).toBeTruthy();
-    });
 
-    test('API 404 时展示 not found / empty state 且不继续请求 facts', async ({page}) => {
-        const requests = await seedAuthAndShadowRunStubs(page, {detailStatus: 404});
+        requests.length = 0;
+        stubOptions.detailStatus = 404;
+        stubOptions.reportStatus = undefined;
+        stubOptions.delayDetailMs = undefined;
 
         await page.goto(shadowRunUrl());
 
-        const view = page.getByTestId('shadow-run-detail-page');
         await expect(view).toContainText('Shadow Run not found / Shadow Run 不存在');
         await expect(view).toContainText(SHADOW_RUN_ID);
         await expect(page.getByRole('button', {name: /start|stop|execute|rerun|approve|trade/i})).toHaveCount(0);
@@ -310,18 +313,19 @@ test.describe('Shadow Run detail / replay read-only view', () => {
         expect(requests.some((entry) => entry.includes('/snapshots'))).toBeFalsy();
         expect(requests.some((entry) => entry.includes('/consistency-report/latest'))).toBeFalsy();
         expectNoForbiddenRequests(requests);
-    });
 
-    test('loading 与 latest consistency report error 状态可见', async ({page}) => {
-        await seedAuthAndShadowRunStubs(page, {delayDetailMs: 400, reportStatus: 500});
+        requests.length = 0;
+        stubOptions.detailStatus = undefined;
+        stubOptions.reportStatus = 500;
+        stubOptions.delayDetailMs = 2_000;
 
         await page.goto(shadowRunUrl());
 
         await expect(page.getByText('Shadow Run detail loading')).toBeVisible();
-        const view = page.getByTestId('shadow-run-detail-page');
         await expect(view).toContainText('Shadow Run 基本信息');
         await expect(view).toContainText('Consistency report 加载失败');
         await expect(view).toContainText('latest consistency report query failed');
         await expect(page.getByRole('button', {name: /start|stop|execute|rerun|approve|trade/i})).toHaveCount(0);
+        expectNoForbiddenRequests(requests);
     });
 });
