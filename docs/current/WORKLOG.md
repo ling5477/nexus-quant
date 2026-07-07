@@ -15874,3 +15874,37 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未深聚合 Paper / Strategy / MarketData / Risk / Incident；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - `notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
 - next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add shadow run overview read model`。
+
+## NQ-GATES-1-FRONTEND-OVERVIEW-WO
+
+- date: 2026-07-07
+- scope: docs-only GateS-1 frontend overview work order；NQ-only。
+- result: **PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
+- changed files:
+  - `docs/current/GATES_1_FRONTEND_OVERVIEW_WO.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+- key changes:
+  - 新增 GateS-1 frontend overview work order，明确后续最小前端实现如何消费 `GET /api/shadow-runs/overview`。
+  - 明确 TypeScript type、`getShadowRunOverview()`、`useShadowRunOverview()`、TanStack Query key `['shadow-runs', 'overview']`、UI 放置位置、UI 状态、boundary badges、颜色 / 文案规则和测试范围。
+  - 推荐后续实现只在现有 `/strategies/shadow-runs` 列表页顶部增加 Overview Summary，避免新增 Dashboard v2、route、写侧按钮或真实交易入口。
+  - 最小同步 current README / STATUS / ROADMAP / TESTING / WORKLOG / FACT_SOURCE_INDEX，不修改 root `README.md`。
+- validation:
+  - `git status --short`：已执行；初始工作区为空，文档修改后仅允许 current docs 变更。
+  - `git branch --show-current`：`dev`。
+  - `git fetch origin dev`：PASS。
+  - backend overview commit push check：`origin/dev` HEAD 为 `4c029110 feat(gates): add shadow run overview read model`，`git log origin/dev -S"shadow-runs/overview" -- backend docs/current` 命中该 commit。
+  - `git diff --check`：PASS。
+  - `git diff --stat`：已复核。
+  - `git diff -- backend` / `frontend` / `research` / `scripts` / `deploy` / `.github` / `backend/**/db/migration`：均为空。
+  - 指定 Shadow Run overview / GateS / LIVE / AI / DH / boundary `rg`：已执行并复核，命中为当前边界声明、API / frontend 基线、禁止字段说明和 append-only 记录。
+- not run:
+  - 未运行 Maven、`npm run build`、Playwright / E2E、Python pytest / mypy / ruff；原因是本轮未修改代码、测试、migration、CI workflow、前端页面或 Python research。
+- boundary:
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - 未新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、route、API client、hook、Playwright test、Python code、deploy 或 CI workflow。
+- next action: 在本 work order 提交后另起 `NQ-GATES-1-FRONTEND-OVERVIEW-IMPLEMENTATION`，仅实现现有 Shadow Run 页面顶部 overview summary、types/client/hook 和最小 frontend validation；不得把 work order 写成 frontend implemented。

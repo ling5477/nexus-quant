@@ -31,7 +31,11 @@ GateS-0 plan / fact-source reconciliation
   ↓
 GateS-1 read-model work order plan ready
   ↓
-GateS-1 minimal backend read model implementation（future / not started）
+GateS-1 minimal backend read model implementation completed
+  ↓
+GateS-1 frontend overview work order plan ready
+  ↓
+GateS-1 frontend overview implementation（future / not started）
 ```
 
 ## 当前阶段
@@ -43,18 +47,20 @@ GateS-1 minimal backend read model implementation（future / not started）
 - GateS recommended definition：策略验证运营化与 Shadow 诊断闭环阶段。
 - GateS core object：`Strategy Validation Runtime Baseline`（策略验证运行时基线）。
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）。
-- GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateS-1 implementation 仍 `NOT IMPLEMENTED`（未实现）。
+- GateS-1 read model work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- GateS-1 minimal backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅表示 `GET /api/shadow-runs/overview` 后端只读聚合已实现，不代表 frontend page、GateS 全域 validation runtime 或交易授权。
+- GateS-1 frontend overview work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；frontend implementation 仍 `NOT IMPLEMENTED`（未实现）。
 
 ## 下一步规则
 
-下一步推荐在 GateS-1 work order 提交后，另起 `NQ-GATES-1-READ-MODEL-IMPLEMENTATION`，只实现最小 backend read model：future `GET /api/shadow-runs/overview`，聚合 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports`。该下一步当前仍 `NOT STARTED`（未开始），不允许本轮新增 API、migration、controller、DTO、domain、repository、SQL、frontend page、Playwright / E2E test、Python research code、CI workflow 或真实外部行为。
+下一步推荐在 GateS-1 frontend overview work order 提交后，另起 `NQ-GATES-1-FRONTEND-OVERVIEW-IMPLEMENTATION`，只在现有 `/strategies/shadow-runs` 页面顶部实现 `GET /api/shadow-runs/overview` 的最小前端消费：TypeScript types、`getShadowRunOverview()`、`useShadowRunOverview()`、`['shadow-runs', 'overview']` query key 和 Overview Summary。该下一步当前仍 `NOT STARTED`（未开始），不允许本轮修改 frontend 源码、后端、API、migration、Playwright / E2E、Python research code、CI workflow 或真实外部行为。
 
 ## GateS Batch Plan
 
 | Batch | 状态 | 目标 |
 | --- | --- | --- |
 | GateS-0 | `PLAN / NOT IMPLEMENTED` | Plan / fact-source reconciliation |
-| GateS-1 | work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`; implementation `NOT IMPLEMENTED` | Shadow Run operational dashboard / backend read model |
+| GateS-1 | read model work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`; backend read model `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`; frontend overview work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`; frontend implementation `NOT IMPLEMENTED` | Shadow Run operational dashboard / backend read model / frontend overview |
 | GateS-2 | `NOT STARTED`（未开始） | Paper vs Shadow consistency enhancement |
 | GateS-3 | `NOT STARTED` | Strategy Evaluation Gate runtime baseline |
 | GateS-4 | `NOT STARTED` | Python parameter sweep / evaluation artifact baseline |

@@ -24,6 +24,7 @@
 - GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现），当前 plan review baseline 为 [GATES_0_PLAN.md](GATES_0_PLAN.md)。
 - GateS-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)。
 - GateS-1 minimal backend read model：`NQ-GATES-1-READ-MODEL-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/shadow-runs/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-1 frozen / accepted、frontend page、GateS 全域 validation runtime 或交易授权。
+- GateS-1 frontend overview work order：`NQ-GATES-1-FRONTEND-OVERVIEW-WO：PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；仅规划后续前端如何消费 `GET /api/shadow-runs/overview`，不代表前端已实现。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -45,6 +46,7 @@
 - Shadow Run list frontend page：`IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），仅限 `/strategies/shadow-runs` 只读列表、status 筛选和进入 detail，不提供写侧操作，不是交易授权。
 - Shadow Run detail / replay frontend page：`IMPLEMENTED / PUSHED / CI SUCCESS`（已实现 / 已推送 / CI 成功），仅限 `/strategies/shadow-runs/:shadowRunId` 只读查看本地 facts，不提供写侧操作，不是交易授权。
 - Shadow Run overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/shadow-runs/overview` 只读聚合本地 Shadow Run facts，不提供写侧 endpoint，不是 runner trigger 或交易授权。
+- Shadow Run overview frontend work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），仅限规划 type / client / hook / UI placement / states / badges / test scope，不是前端实现。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 - GateS frontend / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
@@ -151,3 +153,18 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - migration implemented。
 - LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
 - trading authorization、live-ready、trade approval 或 Shadow Live trading enabled。
+
+## 11. GateS-1 Frontend Overview Work Order Status
+
+`docs/current/GATES_1_FRONTEND_OVERVIEW_WO.md` 已建立 GateS-1 Shadow Run overview frontend work order 入口，覆盖 current frontend baseline、backend endpoint contract、API type plan、API client / hook plan、UI placement decision、UI state plan、boundary badge plan、color / wording rules、test scope、non-goals、P0/P1/P2/P3 findings、acceptance criteria 和 next concrete action。
+
+该状态只表示 frontend work order ready，不表示：
+
+- GateS-1 frontend implemented。
+- GateS-1 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- route / page / API client / hook / type 已修改。
+- E2E 已新增。
+- Dashboard v2 已启动。
+- runner / scheduler started。
+- LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
+- trading authorization、trade approval 或 Shadow Live trading enabled。

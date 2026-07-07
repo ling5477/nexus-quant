@@ -9360,8 +9360,6 @@ Known warnings：
 
 Blocking status：non-blocking。当前可进入提交前复核。
 
----
-
 ## NQ-GATES-1-READ-MODEL-IMPLEMENTATION（2026-07-07）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
@@ -9394,8 +9392,6 @@ Boundary confirmation：
 
 Blocking status：non-blocking。当前可进入提交前复核。
 
----
-
 ## NQ-GATES-1-READ-MODEL-WO（2026-07-07）
 
 结论：**PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
@@ -9426,5 +9422,49 @@ What was not run：
 Known warnings：
 
 - 本节记录的是 work order 阶段的 read-only evidence；后续 implementation 必须另起任务并运行后端相关测试。
+
+Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
+## NQ-GATES-1-FRONTEND-OVERVIEW-WO（2026-07-07）
+
+结论：**PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
+
+Scope：本轮只做 GateS-1 frontend overview docs-only / read-only work order，规划后续前端如何消费 `GET /api/shadow-runs/overview`。未修改 backend、frontend、research、scripts、deploy、`.github`、migration、测试代码、API 实现或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS / REVIEWED | 初始工作区为空；文档修改后仅包含允许的 `docs/current/**` 变更。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git fetch origin dev` | PASS | 已刷新 `origin/dev`。 |
+| `git log origin/dev -1 --decorate --oneline` | PASS | `4c029110 (HEAD -> dev, origin/dev) feat(gates): add shadow run overview read model`；确认 backend overview commit 已 push。 |
+| `git log origin/dev -S"shadow-runs/overview" -- backend docs/current -n 5 --oneline --decorate` | PASS / REVIEWED | 命中 `4c02911090c0353f0507e33d58c68a7da64ccbb8 feat(gates): add shadow run overview read model`。 |
+| docs/current fact-source read | PASS / REVIEWED | 已检视 `README.md`、`STATUS.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md`、`GATES_0_PLAN.md`、`GATES_1_READ_MODEL_WO.md`、`API.md`。 |
+| frontend read-only baseline inspection | PASS / REVIEWED | 已只读检视 API client、query keys、Shadow Run API/types/hooks/list/detail、Dashboard、Strategy Validation、Runtime、Marketdata、routing/navigation 和现有 smoke 结构；未修改前端。 |
+| `git diff --check` | PASS | 无 whitespace error；如出现 LF/CRLF 工作区提示，按 Windows 非阻断处理。 |
+| `git diff --stat` | PASS / REVIEWED | diff 限定在允许的 `docs/current/**`。 |
+| `git diff -- backend` | PASS | 空输出；未改后端代码。 |
+| `git diff -- frontend` | PASS | 空输出；未改前端代码、页面、route、API client、hooks 或 E2E。 |
+| `git diff -- research` | PASS | 空输出；未改 Python research。 |
+| `git diff -- scripts` | PASS | 空输出；未改脚本。 |
+| `git diff -- deploy` | PASS | 空输出；未改部署配置。 |
+| `git diff -- .github` | PASS | 空输出；未改 CI workflow。 |
+| `git diff -- backend/**/db/migration` | PASS | 空输出；未改 Flyway migration。 |
+| 指定 GateS / Shadow Run / LIVE / AI / DH / boundary `rg` | PASS / REVIEWED | 命中为当前边界声明、API / frontend 基线、禁止字段说明和 append-only 记录；未发现本轮新增实盘、交易授权、AI started、DH integrated、real provider enabled 或 frontend implemented 误写。 |
+
+What was not run：
+
+- 未运行 Maven backend test；原因是本轮未修改 Java、API、migration 或测试代码。
+- 未运行 `npm run build`；原因是本轮未修改前端源码、route、API client、hooks、页面或 package / lock files。
+- 未运行 Playwright / E2E；原因是本轮不改页面且不新增 E2E。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- 未修改 `backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**`、`docs/gates/**`、`docs/archive/**`、migration、package / lock files 或 `pom.xml`。
+- 未新增 API、route、page、test、runner、scheduler、交易动作或真实外部行为。
+- `GET /api/shadow-runs/overview` 仍只作为后端已实现 read-only endpoint；本轮仅规划前端消费。
 
 Blocking status：non-blocking。当前可进入提交前复核。
