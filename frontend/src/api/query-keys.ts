@@ -48,6 +48,7 @@ export const strategyQueryKeys = {
 
 export const strategyValidationQueryKeys = {
     all: ['strategy-validation'] as const,
+    overview: () => [...strategyValidationQueryKeys.all, 'overview'] as const,
     evaluationGate: (query: unknown) => [...strategyValidationQueryKeys.all, 'evaluation-gate', query ?? 'idle'] as const,
     paperShadowComparison: (query: unknown) => [...strategyValidationQueryKeys.all, 'paper-shadow-comparison', query ?? 'idle'] as const,
     shadowLivePreview: (query: unknown) => [...strategyValidationQueryKeys.all, 'shadow-live-preview', query ?? 'idle'] as const,

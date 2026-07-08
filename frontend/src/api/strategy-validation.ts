@@ -3,6 +3,7 @@ import type {
     PaperShadowComparisonResponse,
     ShadowLivePreviewResponse,
     StrategyEvaluationGateResponse,
+    StrategyValidationOverviewResponse,
     StrategyValidationQuery,
 } from '@/types/strategy-validation';
 
@@ -18,6 +19,11 @@ function toQueryParams(query: StrategyValidationQuery): StrategyValidationParams
     }, {});
 }
 
+export async function getStrategyValidationOverview(): Promise<StrategyValidationOverviewResponse> {
+    const {data} = await apiClient.get<StrategyValidationOverviewResponse>('/strategy-validation/overview');
+    return data;
+}
+
 /**
  * GateQ-5 只读 API client。
  *
@@ -26,6 +32,8 @@ function toQueryParams(query: StrategyValidationQuery): StrategyValidationParams
  * 不读取 credential，不调用 private endpoint，也不把任何 readiness 解释成交易授权。
  */
 export const strategyValidationApi = {
+    getStrategyValidationOverview,
+
     async getEvaluationGate(query: StrategyValidationQuery): Promise<StrategyEvaluationGateResponse> {
         const {data} = await apiClient.get<StrategyEvaluationGateResponse>('/strategies/evaluation-gate', {
             params: toQueryParams(query),

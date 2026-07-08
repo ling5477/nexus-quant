@@ -16063,3 +16063,38 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未创建或启动 evaluation、publish、Paper run、Shadow run、runner 或 scheduler；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - `APPROVED` 只表示 validation evidence 暂时满足后续 review；`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
 - next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add strategy validation overview read model`。
+
+## NQ-GATES-3-FRONTEND-STRATEGY-VALIDATION-OVERVIEW-IMPLEMENTATION
+
+- date: 2026-07-08
+- scope: GateS-3 frontend implementation；NQ-only；只在现有 `/strategies/validation` 页面顶部新增 Strategy Validation Overview panel，并消费已实现的 `GET /api/strategy-validation/overview`。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `frontend/src/types/strategy-validation.ts`
+  - `frontend/src/api/strategy-validation.ts`
+  - `frontend/src/api/query-keys.ts`
+  - `frontend/src/hooks/useStrategyValidationQueries.ts`
+  - `frontend/src/pages/strategies/StrategyValidationPage.tsx`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key changes:
+  - 新增 `StrategyValidationOverviewResponse`、latestDecision、blockers、warnings、nextSteps、evidenceAnchors 和 `StrategyValidationDecision` 前端类型。
+  - 新增 `getStrategyValidationOverview()`、`strategyValidationQueryKeys.overview()` 和 `useStrategyValidationOverview()`；canonical query key 为 `['strategy-validation', 'overview']`。
+  - 在现有 Strategy Validation 页面顶部新增 Overview panel，覆盖 loading / error / empty / no evidence / blocked / rejected / needs review / approved 展示。
+  - 固定展示 LIVE DISABLED、Real provider NOT IMPLEMENTED、Private trading NOT IMPLEMENTED、Validation is not trading authorization、Not trading authorization、AI/DH runtime not integrated boundary badges。
+  - 最小同步 current README / STATUS / TESTING / WORKLOG / FACT_SOURCE_INDEX 和 root README；未修改 API.md、DB_SCHEMA.md、ROADMAP.md、docs/gates 或 docs/archive。
+- validation:
+  - `npm run build`：PASS / BUILD SUCCESS；仅有既有 Vite chunk size warning。
+- tests:
+  - 未新增 E2E；本轮明确禁止新增 E2E。
+  - 未新增 component/unit smoke；当前 frontend 无独立 component test / unit smoke runner，新增无法由现有脚本执行的测试会扩大测试体系。
+- boundary:
+  - 未修改 backend、research、scripts、deploy、`.github`、migration、package / lock files、docs/gates 或 docs/archive。
+  - 未新增 Dashboard v2、route、后端 API、migration、CI workflow、Python code、真实交易按钮或写侧 client。
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - Overview panel 仅表达 read-only validation facts，不表达 trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
+- next action: 完成 forbidden-area diff、wording / sensitive grep、staged checks 后提交；推荐 commit message：`feat(gates): add strategy validation overview frontend`。

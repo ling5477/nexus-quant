@@ -11,6 +11,14 @@ import type {StrategyValidationQuery} from '@/types/strategy-validation';
  * 三个查询都属于安全边界读模型；失败时页面必须 fail-closed 展示 error / unavailable，
  * 因此关闭自动 retry，避免反复请求让 smoke 误判为真实联调或把错误态延迟隐藏。
  */
+export function useStrategyValidationOverview() {
+    return useQuery({
+        queryKey: strategyValidationQueryKeys.overview(),
+        queryFn: () => strategyValidationApi.getStrategyValidationOverview(),
+        retry: false,
+    });
+}
+
 export function useStrategyEvaluationGateQuery(query: StrategyValidationQuery | null) {
     return useQuery({
         queryKey: strategyValidationQueryKeys.evaluationGate(query),

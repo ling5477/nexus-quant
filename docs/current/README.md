@@ -24,6 +24,8 @@
 - GateS-1 frontend overview implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs` 顶部 Overview Summary、前端 type / client / query key / hook，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
 - GateS-2 paper shadow consistency drilldown backend implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/paper-shadow/consistency/drilldown` 后端只读 drilldown，不代表前端页面、Dashboard v2、runner / scheduler、LIVE 或交易授权。
 - GateS-2 frontend consistency drilldown implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs/:shadowRunId` detail / replay 页面消费 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
+- GateS-3 strategy evaluation gate runtime baseline：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/strategy-validation/overview` 后端只读 validation overview，不代表 GateS-3 frozen / accepted、前端页面、Dashboard v2、runner / scheduler、LIVE 或交易授权。
+- GateS-3 frontend strategy validation overview implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 顶部 Overview panel、前端 type / API client / query key / hook，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -46,6 +48,8 @@
 | GateS-1 frontend overview implementation | [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), `frontend/src/pages/shadow-runs/ShadowRunListPage.tsx` |
 | GateS-2 backend consistency drilldown implementation | [API.md](API.md), [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowConsistencyDrilldownController.java` |
 | GateS-2 frontend consistency drilldown implementation | [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), `frontend/src/pages/shadow-runs/ShadowRunDetailPage.tsx` |
+| GateS-3 backend strategy validation overview implementation | [API.md](API.md), [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyValidationOverviewController.java` |
+| GateS-3 frontend strategy validation overview implementation | [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), `frontend/src/pages/strategies/StrategyValidationPage.tsx` |
 | 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
 | 当前验证记录 | [TESTING.md](TESTING.md) |
 | 当前工作记录 | [WORKLOG.md](WORKLOG.md) |
@@ -68,7 +72,7 @@
 
 - 不是 GateS implemented / frozen / accepted。
 - 不是 GateS-1 frozen / accepted。
-- 不是 GateS-1 全域 frontend、Dashboard v2 或 Strategy Validation Center。
+- 不是 GateS 全域 frontend、Dashboard v2 或 Strategy Validation Center。
 - 不是 Shadow Run write API implemented。
 - 不是 Shadow runner scheduler 或后台任务 started。
 - 不是 Shadow Run live execution started。
@@ -83,4 +87,4 @@
 
 ## Current Cleanup Rule
 
-`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；GateR frozen evidence 以 [../gates/gate-r/README.md](../gates/gate-r/README.md) 作为历史归档入口，GateR-2..8 的 current API / schema / validation 摘要只保留在 [STATUS.md](STATUS.md)、[API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md)。GateS-1 work order 入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)；GateS-1 minimal backend read model 当前入口为 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md)；GateS-1 frontend overview work order 入口为 [GATES_1_FRONTEND_OVERVIEW_WO.md](GATES_1_FRONTEND_OVERVIEW_WO.md)；GateS-1 frontend overview implementation 当前入口为 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 与 `frontend/src/pages/shadow-runs/ShadowRunListPage.tsx`；GateS-2 backend drilldown 当前入口为 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)；GateS-2 frontend consistency drilldown 当前入口为 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 与 `frontend/src/pages/shadow-runs/ShadowRunDetailPage.tsx`。后续不得把这些最小 read model、frontend overview summary 或 frontend drilldown panel 扩写成 GateS freeze / accepted、Dashboard v2、写接口、scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易路径。
+`docs/current` 不再承载 GateO/P/Q、GateK/L/M/N、CI、credential、DB governance、NQ-DH Integration 或旧 docs cleanup 的过程型长文档。后续如需引用历史证据，只链接 `docs/gates/**` 或 `docs/archive/current-cleanup/post-gateq/**`；GateR frozen evidence 以 [../gates/gate-r/README.md](../gates/gate-r/README.md) 作为历史归档入口，GateR-2..8 的 current API / schema / validation 摘要只保留在 [STATUS.md](STATUS.md)、[API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md)。GateS-1 work order 入口为 [GATES_1_READ_MODEL_WO.md](GATES_1_READ_MODEL_WO.md)；GateS-1 minimal backend read model 当前入口为 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md) 和 [WORKLOG.md](WORKLOG.md)；GateS-1 frontend overview work order 入口为 [GATES_1_FRONTEND_OVERVIEW_WO.md](GATES_1_FRONTEND_OVERVIEW_WO.md)；GateS-1 frontend overview implementation 当前入口为 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 与 `frontend/src/pages/shadow-runs/ShadowRunListPage.tsx`；GateS-2 backend drilldown 当前入口为 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)；GateS-2 frontend consistency drilldown 当前入口为 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 与 `frontend/src/pages/shadow-runs/ShadowRunDetailPage.tsx`；GateS-3 backend validation overview 当前入口为 [API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)；GateS-3 frontend strategy validation overview 当前入口为 [STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 与 `frontend/src/pages/strategies/StrategyValidationPage.tsx`。后续不得把这些最小 read model、frontend overview summary、frontend drilldown panel 或 strategy validation overview panel 扩写成 GateS freeze / accepted、Dashboard v2、写接口、scheduler、后台 runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易路径。

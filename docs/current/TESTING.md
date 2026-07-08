@@ -9362,6 +9362,40 @@ Blocking status：non-blocking。当前可进入提交前复核。
 
 ---
 
+## NQ-GATES-3-FRONTEND-STRATEGY-VALIDATION-OVERVIEW-IMPLEMENTATION（2026-07-08）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只实现 GateS-3 frontend Strategy Validation overview 最小前端切片，在现有 `/strategies/validation` 页面顶部消费 `GET /api/strategy-validation/overview` 并展示 overview panel。未修改 backend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、package / lock files、`pom.xml` 或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `npm run build` | **PASS / BUILD SUCCESS**（通过 / 构建成功） | 在 `frontend/` 下运行；`tsc -b && vite build` 通过。Vite 输出既有 chunk size warning，非阻断；本轮未新增依赖或 chunk 策略变更。 |
+
+Minimal test / smoke：
+
+- 未新增 E2E；原因是本轮明确禁止新增 E2E。
+- 当前 `frontend/package.json` 只有 `build`、`dev`、`preview`、`test:e2e`，没有独立 component test / unit smoke runner；因此未新增无法被现有脚本执行的 component test。
+- 本轮覆盖通过 TypeScript build、页面状态分支和后续 forbidden-area / wording grep 复核完成。
+
+What was not run：
+
+- 未运行 `npm run test:e2e`；原因是本轮禁止新增 E2E，且用户要求只做最小前端切片。
+- 未运行 Maven backend test；原因是未修改 `backend/**`、API contract、migration 或 Java 测试。
+- 未运行 Python pytest / mypy / ruff；原因是未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- `GET /api/strategy-validation/overview` 仍是 read-only / no-side-effect / not trading authorization。
+- 前端只新增 type / client / query key / hook / existing Strategy Validation page overview panel；未新增 route、Dashboard v2、start / stop / execute / trade / placeOrder / cancelOrder / withdraw / transfer 入口。
+- 固定展示 LIVE DISABLED、Real provider NOT IMPLEMENTED、Private trading NOT IMPLEMENTED、Validation is not trading authorization、Not trading authorization、AI/DH runtime not integrated boundary badges。
+- `APPROVED` 只显示为 validation 层面通过，不显示为交易授权、LIVE ready、trade approval 或 strategy 实盘就绪。
+
+Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
 ## NQ-GATES-2-FRONTEND-CONSISTENCY-DRILLDOWN-IMPLEMENTATION（2026-07-08）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。

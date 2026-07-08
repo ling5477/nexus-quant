@@ -15,6 +15,7 @@ import {
     Space,
     Table,
     Tag,
+    Tooltip,
     Typography
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
@@ -27,6 +28,7 @@ import {
     usePaperShadowComparisonQuery,
     useShadowLivePreviewQuery,
     useStrategyEvaluationGateQuery,
+    useStrategyValidationOverview,
 } from '@/hooks/useStrategyValidationQueries';
 import type {AppApiError} from '@/types/api';
 import type {
@@ -34,10 +36,16 @@ import type {
     ShadowLivePreviewResponse,
     ShadowLiveSideEffectPolicy,
     StrategyEvaluationGateResponse,
+    StrategyValidationBlocker,
     StrategyValidationEvidence,
+    StrategyValidationEvidenceAnchor,
+    StrategyValidationLatestDecision,
+    StrategyValidationNextStep,
+    StrategyValidationOverviewResponse,
     StrategyValidationQuery,
     StrategyValidationReason,
     StrategyValidationScope,
+    StrategyValidationWarning,
 } from '@/types/strategy-validation';
 import {formatDateTime} from '@/utils/formatters';
 
@@ -102,6 +110,16 @@ interface EvidenceSourceData {
     nextSteps?: string[];
 }
 
+type StrategyValidationOverviewIssue = StrategyValidationBlocker | StrategyValidationWarning;
+
+type OverviewStateLevel = 'info' | 'warning' | 'error';
+
+interface OverviewPanelState {
+    level: OverviewStateLevel;
+    message: string;
+    description: string;
+}
+
 interface StatusExplanationRow {
     status: string;
     meaning: string;
@@ -109,6 +127,12 @@ interface StatusExplanationRow {
 }
 
 const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
+    APPROVED: {label: '验证层通过，非交易授权', tone: 'info'},
+    REJECTED: {label: '验证层拒绝', tone: 'danger'},
+    NEEDS_REVIEW: {label: '需要复核', tone: 'warning'},
+    BLOCKED: {label: '阻断', tone: 'danger'},
+    NO_EVIDENCE: {label: '无证据', tone: 'neutral'},
+    STALE_EVIDENCE: {label: '证据过期或不完整', tone: 'warning'},
     READY_FOR_SHADOW_REVIEW: {label: '可进入 Shadow 评审', tone: 'info'},
     READY_FOR_COMPARISON: {label: '可查看只读对照', tone: 'info'},
     READY_FOR_NO_SIDE_EFFECT_PREVIEW: {label: '可生成无副作用预览', tone: 'info'},
@@ -379,6 +403,113 @@ const statusExplanationColumns: ColumnsType<StatusExplanationRow> = [
         dataIndex: 'boundary',
         key: 'boundary',
         render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+];
+
+const overviewIssueColumns: ColumnsType<StrategyValidationOverviewIssue> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: '级别',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 150,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        key: 'source',
+        width: 240,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{record.sourceType}</Text>
+                {record.sourceId ? <Text code>{record.sourceId}</Text> : <Text type="secondary">无 sourceId</Text>}
+            </Space>
+        ),
+    },
+    {
+        title: '说明',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+];
+
+const overviewNextStepColumns: ColumnsType<StrategyValidationNextStep> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 240,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: 'Owner',
+        dataIndex: 'owner',
+        key: 'owner',
+        width: 160,
+    },
+    {
+        title: '动作',
+        dataIndex: 'action',
+        key: 'action',
+        render: (value: string) => <Text>{value}</Text>,
+    },
+    {
+        title: '完成条件',
+        dataIndex: 'completionCondition',
+        key: 'completionCondition',
+        render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+    {
+        title: '边界关键',
+        dataIndex: 'boundaryCritical',
+        key: 'boundaryCritical',
+        width: 130,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+    },
+];
+
+const overviewEvidenceAnchorColumns: ColumnsType<StrategyValidationEvidenceAnchor> = [
+    {
+        title: 'sourceType',
+        dataIndex: 'sourceType',
+        key: 'sourceType',
+        width: 190,
+        render: (value: string) => <Text>{value}</Text>,
+    },
+    {
+        title: 'sourceId',
+        dataIndex: 'sourceId',
+        key: 'sourceId',
+        width: 230,
+        render: (value: string | null) => optionalCode(value),
+    },
+    {
+        title: 'sourceVersion',
+        dataIndex: 'sourceVersion',
+        key: 'sourceVersion',
+        width: 180,
+        render: (value: string | null) => optionalCode(value),
+    },
+    {
+        title: 'sourceTimestamp',
+        dataIndex: 'sourceTimestamp',
+        key: 'sourceTimestamp',
+        width: 210,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'checksum',
+        dataIndex: 'checksum',
+        key: 'checksum',
+        width: 220,
+        render: (value: string | null) => optionalCode(value),
     },
 ];
 
@@ -794,9 +925,353 @@ function NextStepsList({nextSteps}: { nextSteps: string[] }) {
     );
 }
 
+function countValue(value: number | null | undefined): number {
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function decisionOf(overview: StrategyValidationOverviewResponse | undefined): string {
+    return normalizeStatus(overview?.latestDecision?.decision);
+}
+
+function overviewHasNoEvidence(overview: StrategyValidationOverviewResponse): boolean {
+    return countValue(overview.totalStrategyVersions) === 0
+        || countValue(overview.evaluatedStrategyVersions) === 0
+        || overview.evidenceAnchors.length === 0
+        || decisionOf(overview) === 'NO_EVIDENCE';
+}
+
+function overviewIsEmpty(overview: StrategyValidationOverviewResponse): boolean {
+    return countValue(overview.totalStrategyVersions) === 0
+        && countValue(overview.evaluatedStrategyVersions) === 0
+        && countValue(overview.approvedForValidation) === 0
+        && countValue(overview.rejectedForValidation) === 0
+        && countValue(overview.needsReview) === 0
+        && countValue(overview.blocked) === 0
+        && !overview.latestDecision
+        && overview.blockers.length === 0
+        && overview.warnings.length === 0
+        && overview.nextSteps.length === 0
+        && overview.evidenceAnchors.length === 0;
+}
+
+function resolveOverviewState(overview: StrategyValidationOverviewResponse): OverviewPanelState {
+    const decision = decisionOf(overview);
+
+    if (overviewIsEmpty(overview)) {
+        return {
+            level: 'info',
+            message: 'Strategy Validation overview 暂无数据',
+            description: '当前只读响应为空；页面不会补造 evidence，也不会把空态解释为验证通过。',
+        };
+    }
+    if (overviewHasNoEvidence(overview)) {
+        return {
+            level: 'warning',
+            message: 'Strategy Validation overview 缺少 evidence',
+            description: 'NO_EVIDENCE / 无 evidence anchors 表示验证证据不足，需要先补齐只读事实来源。',
+        };
+    }
+    if (decision === 'BLOCKED' || countValue(overview.blocked) > 0 || overview.blockers.length > 0) {
+        return {
+            level: 'error',
+            message: 'Strategy Validation overview 被阻断',
+            description: 'blocked 只表示 validation 诊断链路阻断，需要处理 blockers；不代表交易状态变化。',
+        };
+    }
+    if (decision === 'REJECTED' || countValue(overview.rejectedForValidation) > 0) {
+        return {
+            level: 'error',
+            message: 'Strategy Validation overview 被拒绝',
+            description: 'REJECTED 表示 validation 层证据不满足进入后续 review 的条件，不是交易方向或行情判断。',
+        };
+    }
+    if (decision === 'NEEDS_REVIEW' || countValue(overview.needsReview) > 0 || decision === 'STALE_EVIDENCE') {
+        return {
+            level: 'warning',
+            message: 'Strategy Validation overview 需要复核',
+            description: '需要人工检查 decisionReasons、limitations、warnings 与 nextSteps；不得解释为放行。',
+        };
+    }
+    if (decision === 'APPROVED' || countValue(overview.approvedForValidation) > 0) {
+        return {
+            level: 'info',
+            message: 'Strategy Validation overview 验证层通过',
+            description: 'APPROVED 只表示 validation evidence 暂时满足后续 review，不表示交易授权、LIVE enable 或实盘就绪。',
+        };
+    }
+    return {
+        level: 'info',
+        message: 'Strategy Validation overview 已加载',
+        description: '当前结果只用于只读 validation 诊断，不产生任何交易或运行副作用。',
+    };
+}
+
+function BoundaryBadge({label, tooltip, color}: { label: string; tooltip: string; color?: string }) {
+    return (
+        <Tooltip title={tooltip}>
+            <Tag color={color}>{label}</Tag>
+        </Tooltip>
+    );
+}
+
+function StrategyValidationOverviewBoundaryBadges({overview}: { overview?: StrategyValidationOverviewResponse }) {
+    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    return (
+        <Space size={[8, 8]} wrap>
+            <BoundaryBadge
+                color="error"
+                label="LIVE DISABLED（LIVE 关闭）"
+                tooltip={`liveDisabled=true，页面不得展示 LIVE 可用或实盘就绪${pending}`}
+            />
+            <BoundaryBadge
+                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
+                tooltip={`realProviderImplemented=false，不存在真实 provider 可用结论${pending}`}
+            />
+            <BoundaryBadge
+                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
+                tooltip={`privateTradingImplemented=false，不存在下单、撤单、转账或提现入口${pending}`}
+            />
+            <BoundaryBadge
+                color="warning"
+                label="Validation is not trading authorization（验证不是交易授权）"
+                tooltip={`validation 结果仅用于 review，不能解释为交易授权${pending}`}
+            />
+            <BoundaryBadge
+                color="error"
+                label="Not trading authorization（非交易授权）"
+                tooltip={`notTradingAuthorization=true，APPROVED 也不能解释为可交易${pending}`}
+            />
+            <BoundaryBadge
+                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
+                tooltip={`aiDhRuntimeIntegrated=false，不表示 AI started 或 DH integrated${pending}`}
+            />
+        </Space>
+    );
+}
+
+function OverviewBoundaryDriftAlert({overview}: { overview?: StrategyValidationOverviewResponse }) {
+    if (!overview) {
+        return null;
+    }
+    const drift = !overview.diagnosticOnly
+        || !overview.noSideEffect
+        || !overview.notTradingAuthorization
+        || !overview.liveDisabled
+        || overview.realProviderImplemented
+        || overview.privateTradingImplemented
+        || overview.aiDhRuntimeIntegrated;
+
+    return drift ? (
+        <Alert
+            type="error"
+            showIcon
+            message="Overview boundary flags 与当前安全基线不一致"
+            description="页面按 fail-closed 处理该响应；本前端不会把异常 flags 展示成可交易、可执行或实盘就绪。"
+        />
+    ) : null;
+}
+
+function OverviewCounts({overview}: { overview?: StrategyValidationOverviewResponse }) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+            <Descriptions.Item label="totalStrategyVersions">
+                {countValue(overview?.totalStrategyVersions)}
+            </Descriptions.Item>
+            <Descriptions.Item label="evaluatedStrategyVersions">
+                {countValue(overview?.evaluatedStrategyVersions)}
+            </Descriptions.Item>
+            <Descriptions.Item label="approvedForValidation">
+                {countValue(overview?.approvedForValidation)}
+            </Descriptions.Item>
+            <Descriptions.Item label="rejectedForValidation">
+                {countValue(overview?.rejectedForValidation)}
+            </Descriptions.Item>
+            <Descriptions.Item label="needsReview">
+                {countValue(overview?.needsReview)}
+            </Descriptions.Item>
+            <Descriptions.Item label="blocked">
+                {countValue(overview?.blocked)}
+            </Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function LatestDecisionSummary({latestDecision}: { latestDecision?: StrategyValidationLatestDecision | null }) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
+                <Descriptions.Item label="latestDecision.decision">
+                    <Tooltip title="APPROVED 只表示 validation 层面通过，不表示交易授权。">
+                        <span><StatusTag status={latestDecision?.decision}/></span>
+                    </Tooltip>
+                </Descriptions.Item>
+                <Descriptions.Item label="strategyVersionId">
+                    {optionalCode(latestDecision?.strategyVersionId)}
+                </Descriptions.Item>
+                <Descriptions.Item label="datasetId">{optionalCode(latestDecision?.datasetId)}</Descriptions.Item>
+                <Descriptions.Item label="evaluationReportId">
+                    {optionalCode(latestDecision?.evaluationReportId)}
+                </Descriptions.Item>
+                <Descriptions.Item label="publishId">{optionalCode(latestDecision?.publishId)}</Descriptions.Item>
+                <Descriptions.Item label="paperRunId">{optionalCode(latestDecision?.paperRunId)}</Descriptions.Item>
+                <Descriptions.Item label="shadowRunId">{optionalCode(latestDecision?.shadowRunId)}</Descriptions.Item>
+                <Descriptions.Item label="latestDecision.traceId">{optionalCode(latestDecision?.traceId)}</Descriptions.Item>
+                <Descriptions.Item label="generatedAt">{generatedAtText(latestDecision?.generatedAt)}</Descriptions.Item>
+            </Descriptions>
+            <TextList
+                title="decisionReasons"
+                items={latestDecision?.decisionReasons ?? []}
+                emptyText="暂无 decisionReasons；不能补造通过原因。"
+            />
+            <TextList
+                title="limitations"
+                items={latestDecision?.limitations ?? []}
+                emptyText="暂无 limitations；仍需遵守固定安全边界。"
+            />
+        </Space>
+    );
+}
+
+function TextList({title, items, emptyText}: { title: string; items: string[]; emptyText: string }) {
+    return (
+        <section aria-label={title}>
+            <Text strong>{title}</Text>
+            {items.length === 0 ? (
+                <Paragraph type="secondary" style={{marginBottom: 0}}>{emptyText}</Paragraph>
+            ) : (
+                <ul style={{margin: 0, paddingInlineStart: 20}}>
+                    {items.map((item) => (
+                        <li key={item}>{item}</li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+}
+
+function OverviewIssueTables({
+                                 blockers,
+                                 warnings,
+                             }: {
+    blockers: StrategyValidationBlocker[];
+    warnings: StrategyValidationWarning[];
+}) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <div>
+                <Text strong>Blockers</Text>
+                <Table<StrategyValidationBlocker>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={overviewIssueColumns}
+                    dataSource={blockers}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                />
+            </div>
+            <div>
+                <Text strong>Warnings</Text>
+                <Table<StrategyValidationWarning>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={overviewIssueColumns}
+                    dataSource={warnings}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 warnings；仍需遵守固定安全边界。'}}
+                />
+            </div>
+        </Space>
+    );
+}
+
+function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<StrategyValidationOverviewResponse> }) {
+    const overview = query.data;
+    const overviewState = overview ? resolveOverviewState(overview) : null;
+    const stateAlertType = overviewState?.level ?? 'info';
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="Strategy Validation Overview"
+            extra={(
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
+                    刷新 overview
+                </Button>
+            )}
+        >
+            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    只读消费 GET /api/strategy-validation/overview；用于 validation runtime baseline 总览，不新增 route、Dashboard v2 或写侧动作。
+                </Paragraph>
+                <StrategyValidationOverviewBoundaryBadges overview={overview}/>
+                <OverviewBoundaryDriftAlert overview={overview}/>
+                <OverviewCounts overview={overview}/>
+                {query.isLoading ? (
+                    <Skeleton active paragraph={{rows: 8}}/>
+                ) : query.isError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Strategy Validation overview 查询失败"
+                        description={(
+                            <Paragraph style={{marginBottom: 0}}>
+                                overview 失败时按不可用处理，不会显示为通过、授权或可执行。{formatApiError(query.error as AppApiError)}
+                            </Paragraph>
+                        )}
+                    />
+                ) : !overview ? (
+                    <Empty description="暂无 Strategy Validation overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                ) : (
+                    <>
+                        {overviewState ? (
+                            <Alert
+                                type={stateAlertType}
+                                showIcon
+                                message={overviewState.message}
+                                description={overviewState.description}
+                            />
+                        ) : null}
+                        {overviewHasNoEvidence(overview) ? (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                message="No evidence / 无证据"
+                                description="没有 evidenceAnchors 或 decision=NO_EVIDENCE 时，页面只展示缺证据状态，不补造 evidence。"
+                            />
+                        ) : null}
+                        <LatestDecisionSummary latestDecision={overview.latestDecision}/>
+                        <OverviewIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
+                        <Table<StrategyValidationNextStep>
+                            size="small"
+                            rowKey={(record) => record.code}
+                            columns={overviewNextStepColumns}
+                            dataSource={overview.nextSteps}
+                            pagination={false}
+                            scroll={{x: 1000}}
+                            locale={{emptyText: '暂无 nextSteps；不能解释为已经允许交易。'}}
+                        />
+                        <Table<StrategyValidationEvidenceAnchor>
+                            size="small"
+                            rowKey={(record) => `${record.sourceType}-${record.sourceId ?? 'none'}-${record.checksum ?? 'none'}`}
+                            columns={overviewEvidenceAnchorColumns}
+                            dataSource={overview.evidenceAnchors}
+                            pagination={false}
+                            scroll={{x: 1030}}
+                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                        />
+                    </>
+                )}
+            </Space>
+        </Card>
+    );
+}
+
 function EvaluationGatePanel({
-                                 submitted,
-                                 query,
+                                  submitted,
+                                  query,
                              }: {
     submitted: boolean;
     query: PanelQueryState<StrategyEvaluationGateResponse>;
@@ -1160,10 +1635,14 @@ export function StrategyValidationPage() {
         hasQueryValue(initialQuery) ? initialQuery : null,
     );
 
+    const overviewQuery = useStrategyValidationOverview();
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
     const paperShadowQuery = usePaperShadowComparisonQuery(submittedQuery);
     const shadowLivePreviewQuery = useShadowLivePreviewQuery(submittedQuery);
-    const loading = evaluationGateQuery.isFetching || paperShadowQuery.isFetching || shadowLivePreviewQuery.isFetching;
+    const loading = overviewQuery.isFetching
+        || evaluationGateQuery.isFetching
+        || paperShadowQuery.isFetching
+        || shadowLivePreviewQuery.isFetching;
 
     function submitQuery(query: StrategyValidationQuery) {
         setSubmittedQuery(query);
@@ -1186,6 +1665,7 @@ export function StrategyValidationPage() {
                 />
             </Card>
 
+            <StrategyValidationOverviewPanel query={overviewQuery}/>
             <BoundarySummary/>
             <QueryForm initialValues={initialQuery} onSubmit={submitQuery} onReset={resetQuery} loading={loading}/>
             <StatusSemantics/>
