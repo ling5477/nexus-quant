@@ -32,6 +32,7 @@
 - GateS-3 frontend strategy validation overview implementation：`NQ-GATES-3-FRONTEND-STRATEGY-VALIDATION-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面顶部 Strategy Validation Overview panel、前端 type / API client / query key / hook 和 `npm run build` 本地验证，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
 - GateS-4 Python offline evaluation artifact baseline：`NQ-GATES-4-PYTHON-EVALUATION-ARTIFACT-BASELINE：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 Python research 离线 artifact 数据结构、parameter grid、JSON writer / reader、checksum / validation 和 pytest / mypy / ruff 本地验证，不代表 GateS-4 frozen / accepted、Java 生产绑定、API、migration、CI、LIVE、Python ML ready、Python live execution ready、AI/DH runtime 或交易授权。
 - GateS-5 frontend Strategy Validation / Shadow Workbench：`NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面中的只读 Workbench 区块、现有 hooks/API client 复用、现有 smoke 更新和 `npm run build` / 目标 Playwright 验证，不新增 route、Dashboard v2、后端 API、migration、CI、Python artifact UI 接入、LIVE、AI/DH runtime 或交易授权。
+- GateS-6 Incident / Replay read model implementation：`NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/incidents/replay/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-6 frozen / accepted、前端页面、Dashboard v2、migration、CI、runner、scheduler、LIVE、AI/DH runtime 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -60,6 +61,7 @@
 - Strategy validation overview frontend panel：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限现有 `/strategies/validation` 页面顶部消费 `GET /api/strategy-validation/overview` 并展示 counts、latestDecision、decisionReasons、limitations、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不是 Dashboard v2、写侧动作或交易授权。
 - Python offline evaluation artifact baseline：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `research/py` 离线 JSON artifact / parameter grid / checksum / validation 工具和测试；不是 Java production fact import，不是 API，不是 runner，不是 ML ready、live execution ready 或交易授权。
 - Strategy Validation / Shadow Workbench frontend block：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限现有 `/strategies/validation` 页面聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown 的只读展示；不是新增 route、Dashboard v2、Python artifact UI 接入、写侧动作、Shadow Live trading enabled 或交易授权。
+- Incident Replay overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/incidents/replay/overview` 只读聚合本地 Shadow / consistency / Paper alert / recovery / trade replay 诊断事实；不是写侧 endpoint、真实 incident runtime、runner trigger、scheduler trigger、LIVE ready 或交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 - GateS 全域 frontend / Dashboard v2 / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
@@ -241,6 +243,28 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - GateS-5 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
 - 新 route、Dashboard v2、后端 API、DB migration、CI workflow、Python research code 或 Python artifact UI 接入已新增。
 - runner / scheduler、Paper run、Shadow run、Shadow Live trading、真实交易按钮或写侧 client 已启动或新增。
+- LIVE ready、trade approval、trading authorization、real provider、private trading adapter、real permission probe、AI started 或 DH integrated。
+
+## 18. GateS-6 Incident Replay Overview Read Model Status
+
+本轮已实现 `NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION`：新增 `GET /api/incidents/replay/overview` 的最小后端 Incident / Replay GET-only read model，用于只读查看本地诊断证据聚合状态。
+
+实现范围限定为：
+
+- `backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewController.java`、`IncidentReplayOverviewResponse.java`：新增 GET-only Controller 与 HTTP response DTO。
+- `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incident/**`、`backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/domain/port/**`：新增 Incident Replay severity、read model、query service、query port 和 facts contract。
+- `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/monitoring/infra/jdbc/JdbcIncidentReplayOverviewQueryRepository.java`：新增 JDBC SELECT-only adapter，只读取本地诊断 fact tables。
+- `backend/nq-api/src/test/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewControllerTest.java`、`backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incident/IncidentReplayOverviewQueryServiceTest.java`、`backend/nq-infra/src/test/java/com/guidinglight/nexusquant/monitoring/infra/jdbc/JdbcIncidentReplayOverviewQueryRepositoryTest.java`：覆盖 GET-only、boundary flags、severity、敏感 / 误导字段过滤、SQL 只读和禁止表范围。
+- `docs/current/API.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/FACT_SOURCE_INDEX.md`：最小同步当前事实与验证记录。
+
+该 read model 只读取 `shadow_run_events`、`shadow_consistency_reports`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records` 本地事实，返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`，并聚合 counts、latestEvidence、incidentSeverity、blockers、warnings、nextSteps 和 evidenceAnchors。当前没有独立 incident 表或 runtime readiness incident fact table，接口会以 `SOURCE_NOT_AVAILABLE` warning 明确边界。
+
+该状态不表示：
+
+- GateS-6 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- 前端页面、Dashboard v2、DB migration、CI workflow、Python research code、runner、scheduler 或 production incident runtime 已新增。
+- incident / alert / recovery / replay 被创建、确认、解决、重试、启动或停止。
+- 写侧、交易、资金、account、ledger、order 或 position 操作入口已新增或启用。
 - LIVE ready、trade approval、trading authorization、real provider、private trading adapter、real permission probe、AI started 或 DH integrated。
 
 ## 13. GateS-2 Frontend Consistency Drilldown Implementation Status

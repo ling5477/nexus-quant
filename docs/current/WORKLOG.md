@@ -16161,3 +16161,43 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - Workbench 仅表达 read-only validation / Shadow diagnostic facts，不表达 trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
 - next action: 完成 forbidden-area diff、wording / sensitive grep、staged checks 后提交；推荐 commit message：`feat(gates): add strategy validation shadow workbench`。
+
+## NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION
+
+- date: 2026-07-08
+- scope: GateS-6 backend implementation；NQ-only；只实现 Incident / Replay overview 的最小 GET-only read model。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewController.java`
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewResponse.java`
+  - `backend/nq-api/src/test/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewControllerTest.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incident/IncidentReplaySeverity.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incident/IncidentReplayOverviewReadModel.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incident/IncidentReplayOverviewQueryService.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/domain/port/IncidentReplayOverviewFacts.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/domain/port/IncidentReplayOverviewQueryPort.java`
+  - `backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incident/IncidentReplayOverviewQueryServiceTest.java`
+  - `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/monitoring/infra/jdbc/JdbcIncidentReplayOverviewQueryRepository.java`
+  - `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/monitoring/infra/jdbc/JdbcIncidentReplayOverviewQueryRepositoryTest.java`
+  - `docs/current/API.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key changes:
+  - 新增 `GET /api/incidents/replay/overview`，返回 Incident / Replay 诊断概览。
+  - 新增 `IncidentReplaySeverity`：`NONE` / `INFO` / `WARNING` / `HIGH` / `CRITICAL` / `UNKNOWN`，只用于诊断排序，不表示交易授权或 LIVE readiness。
+  - 新增 core read model / query service / query port；service 只依赖 SELECT-only port 和 `Clock`，固定输出 diagnostic / no-side-effect / not-trading-authorization boundary flags。
+  - 新增 JDBC read repository；SQL 只读取 `shadow_run_events`、`shadow_consistency_reports`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records`，不读取 credential / account / order / ledger / private provider 相关表，不返回 raw JSON payload。
+  - 新增 API、service、repository 回归测试，覆盖 GET-only route、empty facts、severity 派生、敏感 / 误导文案过滤、SQL 只读和禁止表范围。
+  - 最小同步 `API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md`；未修改 `README.md`、`docs/current/README.md`、`DB_SCHEMA.md` 或 `ROADMAP.md`。
+- validation:
+  - 首次 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`：FAIL / 1 test failure；RCA 为 sensitive / misleading wording guard 漏掉自然语言 `ready to trade`。
+  - `mvn -f backend/pom.xml -pl nq-core -Dtest=IncidentReplayOverviewQueryServiceTest test`：PASS / BUILD SUCCESS。
+  - 最终 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`：PASS / BUILD SUCCESS；目标 modules 及依赖 reactor 全部 SUCCESS。
+- boundary:
+  - 未修改 frontend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、`pom.xml`、package / lock files 或 CI workflow。
+  - 未新增 POST / PUT / PATCH / DELETE；未新增任何写侧 / 交易动作 endpoint。
+  - 未创建 incident、alert、recovery、replay、Paper run 或 Shadow run；未启动 runner / scheduler；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - `incidentSeverity` 只表示诊断优先级；`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
+- next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add incident replay overview read model`。

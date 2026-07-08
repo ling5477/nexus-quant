@@ -9362,6 +9362,51 @@ Blocking status：non-blocking。当前可进入提交前复核。
 
 ---
 
+## NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION（2026-07-08）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只实现 GateS-6 Incident / Replay overview 的最小后端 GET-only read model，范围限定在 `nq-api`、`nq-core`、`nq-infra` 和指定 current docs；未修改 frontend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、package / lock files、`pom.xml` 或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` | FAIL / 1 TEST FAILURE（失败 / 1 个测试失败） | 首次全量目标验证在 `IncidentReplayOverviewQueryServiceTest.shouldFilterSensitiveOrMisleadingEvidenceText` 失败；原因是敏感 / 误导字段过滤未覆盖自然语言 `ready to trade`。 |
+| `mvn -f backend/pom.xml -pl nq-core -Dtest=IncidentReplayOverviewQueryServiceTest test` | PASS / BUILD SUCCESS（通过 / 构建成功） | 修正 filter pattern 后目标 service test 通过；5 tests，0 failures。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` | PASS / BUILD SUCCESS（通过 / 构建成功） | 最终后端验证命令；reactor 中 `nq-api`、`nq-core`、`nq-infra` 及依赖模块全部 SUCCESS。 |
+
+Test coverage：
+
+- API：覆盖 `GET /api/incidents/replay/overview` 返回 200、boundary flags 固定值、counts / severity 映射、GET-only route，以及响应体不包含禁止敏感 / 交易授权字段。
+- Core service：覆盖 empty facts fail-closed、shadow-only `INFO`、consistency divergence `HIGH`、critical Paper alert `CRITICAL`、敏感 / 误导 evidence text 过滤。
+- Infra repository：覆盖 SQL 只读取允许 fact tables、只 SELECT 不 INSERT / UPDATE / DELETE、不读取 credential / account / order / ledger / private trading 表、不选择 raw JSON payload，并稳定返回 empty facts。
+
+RCA / fixes：
+
+- 首次失败根因：sensitive / misleading wording guard 只覆盖字段形式，漏掉自然语言 `ready to trade`。
+- 最小修复：在 `IncidentReplayOverviewQueryService` 的过滤 pattern 中补充 `ready to trade`、`live ready`、`trade approved` 等自然语言误导语义；不改 DTO contract、不放宽边界、不改测试断言目标。
+
+Known warnings：
+
+- Maven 输出既有非阻断 warning：本机 Maven settings 中 `profiles` tag warning、SLF4J no provider、Mockito dynamic agent self-attach、部分既有测试 unchecked operation warning；本轮未修改 Maven settings、依赖或全局测试配置。
+- 既有 adapter 测试输出 `credentialKeyFingerprint=missing`，为既有 no-real / missing credential 指纹日志，不包含 credential material。
+
+What was not run：
+
+- 未运行 frontend build / Playwright / E2E；原因是本轮明确不修改 `frontend/**`。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- 新 endpoint 仅为 `GET /api/incidents/replay/overview`。
+- 只读取 `shadow_run_events`、`shadow_consistency_reports`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records`；不读取 credential / account / order / ledger / private trading / provider 配置表。
+- 不 INSERT / UPDATE / DELETE；不创建 incident / alert / recovery / replay；不启动 runner / scheduler；不调用 adapter、risk write side、order/account/ledger 服务。
+- 固定 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`，并固定 `realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+
+Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
 ## NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH（2026-07-08）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
