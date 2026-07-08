@@ -32,6 +32,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateS-5 frontend Strategy Validation / Shadow Workbench：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面只读 Workbench，复用 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown，不新增 route、Dashboard v2、后端 API、migration、CI、Python artifact UI 接入、LIVE、AI/DH runtime 或交易授权。
 - GateS-6 Incident Replay overview read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/incidents/replay/overview` 后端只读诊断 overview，不代表 GateS-6 frozen / accepted、真实 incident runtime、Dashboard v2、runner / scheduler、LIVE 或交易授权。
 - GateS-6 frontend Incident / Replay overview implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面只读 Incident / Replay Overview panel、前端 type / API client / query key / hook 和 `npm run build` 本地验证，不新增 route、Dashboard v2、E2E、后端 API、migration、Python、CI、LIVE、AI/DH runtime 或交易授权。
+- GateS freeze readiness review：`READY FOR FREEZE CLOSEOUT`（可进入 freeze closeout）；入口：`docs/current/GATES_FREEZE_READINESS_REVIEW.md`；不表示 freeze 已执行、accepted 已完成或 release tag 已创建。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -48,6 +49,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - `docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md`：GateR-1 historical Shadow Run 数据模型与 migration 方案审查。
 - `docs/current/GATES_0_PLAN.md`：GateS-0 fact-source reconciliation、planning review、read-model / frontend contract baseline。
 - `docs/current/GATES_1_READ_MODEL_WO.md`：GateS-1 Shadow Run operational read model work order。
+- `docs/current/GATES_FREEZE_READINESS_REVIEW.md`：GateS freeze readiness review，当前结论为 `READY FOR FREEZE CLOSEOUT`（可进入 freeze closeout）。
 - GateS-3 backend / frontend 当前事实入口：`docs/current/API.md`、`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/FACT_SOURCE_INDEX.md`。
 - GateS-4 / GateS-5 / GateS-6 当前事实入口：`docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/FACT_SOURCE_INDEX.md`、`research/py/src/nq_research/evaluation/artifacts.py`、`frontend/src/pages/strategies/StrategyValidationPage.tsx`、`frontend/src/types/incident-replay.ts`。
 - `docs/current/DB_SCHEMA.md`：当前 DB schema 事实；包含 GateR-2 Shadow Run local fact model 的 `V32` 说明。

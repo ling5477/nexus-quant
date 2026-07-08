@@ -30,6 +30,7 @@
 - GateS-5 frontend Strategy Validation / Shadow Workbench：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面中的只读 Workbench 区块，不新增 route、Dashboard v2、后端 API、migration、CI、Python artifact UI 接入、LIVE、AI/DH runtime 或交易授权。
 - GateS-6 Incident Replay overview read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅表示 `GET /api/incidents/replay/overview` 后端只读诊断 overview 已实现，不表示 GateS-6 frozen / accepted、真实 incident runtime、Dashboard v2、runner / scheduler、LIVE 或交易授权。
 - GateS-6 frontend Incident / Replay overview implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅表示现有 `/strategies/validation` 页面新增只读 Incident / Replay Overview panel 并消费后端 overview，不新增 route、Dashboard v2、E2E、后端 API、migration、Python、CI、LIVE、AI/DH runtime 或交易授权。
+- GateS freeze readiness review：`READY FOR FREEZE CLOSEOUT`（可进入 freeze closeout）；入口为 [GATES_FREEZE_READINESS_REVIEW.md](GATES_FREEZE_READINESS_REVIEW.md)，只表示 readiness review 通过，不表示 freeze 已执行、accepted 已完成或 release tag 已创建。
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
@@ -58,6 +59,7 @@
 | GateS-5 frontend Strategy Validation / Shadow Workbench | [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md), `frontend/src/pages/strategies/StrategyValidationPage.tsx`, `frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts` |
 | GateS-6 Incident Replay overview backend read model | [API.md](API.md), [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md), `backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewController.java` |
 | GateS-6 frontend Incident / Replay overview implementation | [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md), `frontend/src/pages/strategies/StrategyValidationPage.tsx`, `frontend/src/types/incident-replay.ts` |
+| GateS freeze readiness review | [GATES_FREEZE_READINESS_REVIEW.md](GATES_FREEZE_READINESS_REVIEW.md), [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
 | 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
 | 当前验证记录 | [TESTING.md](TESTING.md) |
 | 当前工作记录 | [WORKLOG.md](WORKLOG.md) |

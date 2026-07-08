@@ -34,6 +34,7 @@
 - GateS-5 frontend Strategy Validation / Shadow Workbench：`NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面中的只读 Workbench 区块、现有 hooks/API client 复用、现有 smoke 更新和 `npm run build` / 目标 Playwright 验证，不新增 route、Dashboard v2、后端 API、migration、CI、Python artifact UI 接入、LIVE、AI/DH runtime 或交易授权。
 - GateS-6 Incident / Replay read model implementation：`NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/incidents/replay/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-6 frozen / accepted、前端页面、Dashboard v2、migration、CI、runner、scheduler、LIVE、AI/DH runtime 或交易授权。
 - GateS-6 frontend Incident / Replay overview implementation：`NQ-GATES-6-FRONTEND-INCIDENT-REPLAY-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面消费 `GET /api/incidents/replay/overview` 的只读 overview panel、前端 type / API client / query key / hook 和 `npm run build` 本地验证，不新增 route、Dashboard v2、E2E、后端 API、migration、Python、CI、LIVE、AI/DH runtime 或交易授权。
+- GateS freeze readiness review：`NQ-GATES-FREEZE-READINESS-REVIEW：READY FOR FREEZE CLOSEOUT`（可进入 freeze closeout）；仅表示 GateS-0 到 GateS-6 当前证据、CI 和边界已完成冻结前 readiness 审查，不表示 freeze 已执行、accepted 已完成或 release tag 已创建。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界

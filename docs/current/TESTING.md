@@ -9806,3 +9806,50 @@ Boundary confirmation：
 - LIVE = `DISABLED`（关闭）；AI = `NOT STARTED`（未开始）；DH runtime = `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
 
 Blocking status：non-blocking。当前可进入提交前复核。
+## NQ-GATES-FREEZE-READINESS-REVIEW（2026-07-08）
+
+结论：**READY FOR FREEZE CLOSEOUT**（可进入 freeze closeout）。
+
+Scope：本轮只做 GateS freeze readiness review；允许新增 `docs/current/GATES_FREEZE_READINESS_REVIEW.md` 并最小同步 current docs / root README。未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/gates 或 docs/archive。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 起始工作区 clean；文档写入后仅出现允许的 README / docs/current 变更。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git fetch origin dev` | PASS | 已刷新 `origin/dev`。 |
+| `git rev-parse HEAD` | PASS | `128fa08e1c71ad8dd62b1458acf105dee60a1b9d`。 |
+| `git rev-parse origin/dev` | PASS | `128fa08e1c71ad8dd62b1458acf105dee60a1b9d`；与 HEAD 对齐。 |
+| `git log --oneline -20` | REVIEWED | 最新提交为 `128fa08e feat(gates): add incident replay overview frontend`；GateS-0 到 GateS-6 提交链均在最近历史中。 |
+| `git tag --list "nq-gates-freeze"` | PASS | 空输出；本轮未创建 GateS release tag。 |
+| `gh run list --limit 10` | PASS / REVIEWED | 最新 10 个 run 均为 `completed / success`；最新 run 为 `28931100943`。 |
+| `gh run view 28931100943 --json status,conclusion,headSha,name,createdAt,updatedAt` | PASS | `status=completed`、`conclusion=success`、`headSha=128fa08e1c71ad8dd62b1458acf105dee60a1b9d`。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --stat` | REVIEWED | 写入前为空；写入后仅允许 docs/current 与 README 文档变更。 |
+| `git diff -- backend` | PASS | 空输出。 |
+| `git diff -- frontend` | PASS | 空输出。 |
+| `git diff -- research` | PASS | 空输出。 |
+| `git diff -- scripts` | PASS | 空输出。 |
+| `git diff -- deploy` | PASS | 空输出。 |
+| `git diff -- .github` | PASS | 空输出。 |
+| `git diff -- backend/**/db/migration` | PASS | 空输出。 |
+| `git diff -- docs/gates` | PASS | 空输出。 |
+| `git diff -- docs/archive` | PASS | 空输出。 |
+| GateS endpoint / hook / artifact `rg` | PASS / REVIEWED | 确认 `shadow-runs/overview`、`paper-shadow/consistency/drilldown`、`strategy-validation/overview`、`incidents/replay/overview`、frontend hooks / panels 和 `EvaluationArtifact` 均存在代码证据。 |
+| Required boundary `rg` | PASS / REVIEWED | 命中为 current 边界声明、append-only 历史记录、API 禁止字段说明、测试 guard 或否定语境；未发现当前 GateS 被写成交易授权、AI / DH runtime 已启动或真实 provider / private trading 已启用。 |
+
+What was not run：
+
+- 未运行 Maven backend test；原因是本轮未修改 `backend/**`、Java API、migration 或后端测试，且 GateS backend 批次已有本地 Maven 与 CI success 证据。
+- 未运行 `npm run build` / Playwright / E2E；原因是本轮未修改 `frontend/**`，且 GateS frontend 批次已有 build / targeted smoke / CI success 证据。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`，且 GateS-4 已有 pytest / mypy / ruff 与 CI success 证据。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Known warnings：
+
+- 宽范围 `rg` 命中大量历史 / 否定 / 禁止语境；本轮按上下文复核，不将历史 forbidden wording 清单本身作为当前阻断。
+- GateS-6 backend 首次 Maven 曾发现 wording guard 缺口，已在同一批次修复并最终 Maven PASS；当前为非阻断历史 RCA。
+- 部分 frontend 批次未新增 component test，原因是当前无 component test 脚本或依赖且任务禁止扩展 E2E；由 build、目标 smoke 和 CI baseline 覆盖。
+
+Blocking status：non-blocking。当前可进入 freeze closeout review。
+
+---
