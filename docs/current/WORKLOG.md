@@ -1,3 +1,53 @@
+## NQ-GATET-PLAN-SHADOW-VALIDATION-OPERATIONS
+
+日期：2026-07-08。
+
+范围：
+
+- NQ-only GateT-0 planning。
+- 新增 `docs/current/GATET_PLAN.md`，定义 Shadow Validation Operations、Strategy Validation workflow、Paper vs Shadow evidence refinement、Incident / Replay review、Python artifact read-only binding、frontend workbench candidate、backend candidate API / DTO、DB / migration decision、testing strategy、security / credential / LIVE / AI / DH boundary、P0/P1/P2/P3 risk list、GateT batch plan、acceptance / exit criteria 和 next action。
+- 最小同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`、`TESTING.md`、`WORKLOG.md`。
+- 只读检查 GateS archive、GateS backend read model / controller / repository、frontend page / hook / API client、`research/py` evaluation artifact baseline。
+
+结果：
+
+```text
+NQ-GATET-PLAN-SHADOW-VALIDATION-OPERATIONS：PLAN READY / NOT IMPLEMENTED / READY TO COMMIT
+```
+
+核心决策：
+
+- GateT 主线是 Shadow Validation Operations / 策略验证运营闭环规划。
+- GateS 提供 read-only evidence；GateT 规划运营复核、证据细化、incident / replay review、Python artifact read-only binding preview 和 frontend workbench。
+- GateT 第一批建议先做 backend read model / operator model plan，再做 frontend workbench。
+- GateT 默认不新增 DB migration；review / acknowledge 若需要 durable audit，必须另起 DB schema review。
+- GateT 可规划 no-side-effect scheduler readiness review，但不得启动 scheduler、连接真实交易所、调用 private endpoint 或创建真实订单。
+- GateT 不接 AI runtime、不接 DH runtime、不启动 Integration-1 runtime。
+
+验证：
+
+- `git branch --show-current`：dev。
+- `git rev-parse HEAD` / `git rev-parse origin/dev`：均为 `ea963b82583796fcbd07927e3c46dba24b33db74`。
+- `git tag --list "nq-gates-freeze"`：`nq-gates-freeze`。
+- `git tag --list "nq-gatet-freeze"`：空输出。
+- `git diff --check`：PASS，仅 Windows LF -> CRLF 工作区提示，无 whitespace error。
+- forbidden-area diff：backend、frontend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive 均为空。
+- required boundary `rg`：已执行并按上下文复核；命中为历史/否定语境、既有类型名、敏感字段 guard 或本轮边界声明。
+- staged checks：`git diff --cached --name-only` 仅包含允许的 8 个文档文件；`git diff --cached --stat` 为 8 files changed, 470 insertions(+), 17 deletions(-)；`git diff --cached --check` PASS；staged forbidden-area diff 为空。
+
+未运行：
+
+- 未运行 Maven / frontend build / Playwright / Python pytest / mypy / ruff；原因是本轮只改文档，不改代码、测试、migration、package / lock files 或 runtime 配置。
+
+边界：
+
+- 未新增 API、migration、前端页面、E2E、CI workflow、Python runtime、runner、scheduler、真实 provider、private trading adapter 或真实交易行为。
+- 未读取 credential material，未调用真实交易所，未启动 LIVE、AI runtime、DH runtime 或 Integration-1 runtime。
+
+下一步：
+
+- 推荐进入 `NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-WO`，先做 backend read model / operator model work order；仍不得顺带启动 scheduler、frontend 页面、Python binding、AI/DH 或真实交易路径。
+
 ## NQ-GATER-FREEZE-READINESS-DOCS-FIX
 
 日期：2026-07-07。

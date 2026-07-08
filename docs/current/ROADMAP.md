@@ -39,6 +39,7 @@ GateT plan / not started
 - GateS archive pointer：`docs/gates/gate-s/README.md`。
 - GateS completed scope：strategy validation、Shadow diagnostics、Paper vs Shadow consistency、Incident / Replay overview、Python offline evaluation artifact baseline。
 - GateT：`PLAN / NOT STARTED`（规划 / 未开始）。
+- GateT-0 planning entry：`docs/current/GATET_PLAN.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 
 ## 下一步规则
 
@@ -56,6 +57,19 @@ GateT plan / not started
 | GateS-5 | `COMPLETED` | Strategy Validation / Shadow Workbench frontend |
 | GateS-6 | `COMPLETED` | Incident / Replay overview backend + frontend |
 | GateS-FREEZE | `FROZEN / ACCEPTED / TAGGED` | freeze closeout、archive、release tag |
+
+## GateT Planning Route
+
+| Batch | 状态 | 目标 |
+| --- | --- | --- |
+| GateT-0 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Shadow Validation Operations plan / fact-source reconciliation |
+| GateT-1 | `PLANNED / NOT STARTED`（已规划 / 未开始） | Shadow Validation Workflow read model / operator model plan |
+| GateT-2 | `PLANNED / NOT STARTED` | Consistency Evidence Refinement |
+| GateT-3 | `PLANNED / NOT STARTED` | Incident / Replay Review Workflow plan |
+| GateT-4 | `PLANNED / NOT STARTED` | Python Evaluation Artifact read-only binding preview plan |
+| GateT-5 | `PLANNED / NOT STARTED` | Frontend Validation Operations Workbench plan |
+| GateT-6 | `PLANNED / NOT STARTED` | Runtime scheduling readiness review，仍不启动真实交易 |
+| GateT-FREEZE | `PLANNED / NOT STARTED` | GateT closeout 条件复核 |
 
 ## 当前边界
 

@@ -13,11 +13,13 @@
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive pointer：[../gates/gate-r/README.md](../gates/gate-r/README.md)。
 - GateQ / GateP / GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
 - 下一阶段：GateT `PLAN / NOT STARTED`（规划 / 未开始）；只允许后续另起 GateT plan，不得把本轮写成 GateT implementation。
+- GateT-0 planning：[GATET_PLAN.md](GATET_PLAN.md)，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 
 ## Current Authority
 
 | 用途 | 当前文件 |
 | --- | --- |
+| GateT planning 入口 | [GATET_PLAN.md](GATET_PLAN.md) |
 | 当前状态 | [STATUS.md](STATUS.md) |
 | 当前路线 | [ROADMAP.md](ROADMAP.md) |
 | 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |

@@ -14,10 +14,12 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gatep-freeze`；归档入口：`docs/gates/gate-p/README.md`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
 - 下一阶段：GateT `PLAN / NOT STARTED`（规划 / 未开始）。GateT 只能先做 plan，不得在 GateS closeout 中启动 implementation。
+- GateT-0 planning：`docs/current/GATET_PLAN.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 
 ## Current Docs
 
 - `docs/current/README.md`：当前事实入口和 GateS archive pointer。
+- `docs/current/GATET_PLAN.md`：GateT Shadow Validation Operations planning 入口；只定义批次、边界、候选 workflow 和 freeze 条件，不代表实现已启动。
 - `docs/current/STATUS.md`：当前状态摘要。
 - `docs/current/ROADMAP.md`：当前路线与 GateT 边界。
 - `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateS 归档指针。

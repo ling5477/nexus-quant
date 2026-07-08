@@ -1,3 +1,51 @@
+## NQ-GATET-PLAN-SHADOW-VALIDATION-OPERATIONS validation（2026-07-08）
+
+```text
+Scope:
+  - 本轮只做 GateT-0 planning、fact-source reconciliation、Shadow Validation Operations plan、strategy gate workflow plan、安全边界审查和 current docs 最小入口同步。
+  - 修改范围限定为 README.md、docs/current/GATET_PLAN.md、docs/current/README.md、STATUS.md、ROADMAP.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md。
+  - 未修改 backend、frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files 或业务代码。
+
+Git baseline:
+  - git status --short: only allowed docs modified/untracked before staging.
+  - git branch --show-current: dev.
+  - git log --oneline -20: latest commit ea963b82 docs(gates): archive GateS freeze evidence; GateS-0..6 and closeout commits visible in recent history.
+  - git rev-parse HEAD: ea963b82583796fcbd07927e3c46dba24b33db74.
+  - git rev-parse origin/dev: ea963b82583796fcbd07927e3c46dba24b33db74.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Docs validation:
+  - git diff --check: PASS; only Windows LF -> CRLF working-copy warnings, no whitespace error.
+  - git diff --stat: reviewed; tracked diff limited to README.md and docs/current entry docs before adding this validation/worklog record.
+  - git diff -- backend / frontend / research / scripts / deploy / .github / "backend/**/db/migration" / docs/gates / docs/archive: all empty.
+  - Required boundary rg: exit 0, 3673 matches; reviewed as historical docs, existing auth/token types, existing TradingWorkbench API names, sensitive-field guards, or explicit no-real / no-side-effect boundary wording.
+  - Targeted edited-doc forbidden-status scan: no match for banned final-state phrases in README.md, docs/current/GATET_PLAN.md, README/STATUS/ROADMAP/FACT_SOURCE_INDEX current updates.
+  - Final staged checks: git diff --cached --name-only contains only README.md and docs/current/GATET_PLAN.md / README.md / STATUS.md / ROADMAP.md / TESTING.md / WORKLOG.md / FACT_SOURCE_INDEX.md.
+  - git diff --cached --stat: 8 files changed, 470 insertions(+), 17 deletions(-).
+  - git diff --cached --check: PASS.
+  - staged forbidden-area diff for backend / frontend / research / scripts / deploy / .github / migration / docs/gates / docs/archive: all empty.
+
+What was not run:
+  - Maven backend tests were not run because this task did not modify Java, API, repository, DTO, SQL, migration or tests.
+  - frontend build / Playwright / E2E were not run because this task did not modify frontend source, route, API client, hook, page, package or lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - GateT remains PLAN / NOT STARTED.
+  - GateT-0 planning is PLAN READY / NOT IMPLEMENTED / READY TO COMMIT.
+  - Shadow Validation Operations is defined as review / evidence / audit workflow planning only.
+  - Strategy Validation APPROVED remains validation-only wording and is not trading authorization.
+  - Operator review / acknowledge is allowed only as future local review metadata planning; it must not trigger trading.
+  - Scheduler readiness is allowed only as future no-side-effect readiness review; it must not connect to real exchanges, private endpoints or real orders.
+  - DB migration default decision is no migration unless a later durable audit requirement proves otherwise.
+  - Python artifact boundary is read-only binding preview only; no DB import, no Java production fact write, no runtime execution.
+
+Blocking status:
+  - Non-blocking. Ready to commit.
+```
+
 ## NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION validation（2026-07-07）
 
 ```text
