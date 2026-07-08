@@ -24,6 +24,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {useIncidentReplayOverview} from '@/hooks/useIncidentReplayOverview';
 import {
     usePaperShadowConsistencyDrilldown,
     useShadowRunOverview,
@@ -35,6 +36,15 @@ import {
     useStrategyValidationOverview,
 } from '@/hooks/useStrategyValidationQueries';
 import type {AppApiError} from '@/types/api';
+import type {
+    IncidentReplayBlocker,
+    IncidentReplayEvidenceAnchor,
+    IncidentReplayLatestEvidence,
+    IncidentReplayNextStep,
+    IncidentReplayOverviewResponse,
+    IncidentReplaySeverity,
+    IncidentReplayWarning,
+} from '@/types/incident-replay';
 import type {
     JsonValue,
     PaperShadowConsistencyDrilldownResponse,
@@ -123,6 +133,8 @@ interface EvidenceSourceData {
 }
 
 type StrategyValidationOverviewIssue = StrategyValidationBlocker | StrategyValidationWarning;
+
+type IncidentReplayOverviewIssue = IncidentReplayBlocker | IncidentReplayWarning;
 
 type OverviewStateLevel = 'info' | 'warning' | 'error';
 
@@ -571,6 +583,153 @@ const overviewEvidenceAnchorColumns: ColumnsType<StrategyValidationEvidenceAncho
         key: 'checksum',
         width: 220,
         render: (value: string | null) => optionalCode(value),
+    },
+];
+
+const incidentLatestEvidenceColumns: ColumnsType<IncidentReplayLatestEvidence> = [
+    {
+        title: 'evidenceType',
+        dataIndex: 'evidenceType',
+        key: 'evidenceType',
+        width: 210,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'sourceStatus',
+        dataIndex: 'sourceStatus',
+        key: 'sourceStatus',
+        width: 170,
+        render: (value: string | null) => <StatusTag status={value}/>,
+    },
+    {
+        title: 'summary',
+        dataIndex: 'summary',
+        key: 'summary',
+        render: (value: string | null) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'occurredAt',
+        dataIndex: 'occurredAt',
+        key: 'occurredAt',
+        width: 210,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'traceId',
+        dataIndex: 'traceId',
+        key: 'traceId',
+        width: 240,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+];
+
+const incidentOverviewIssueColumns: ColumnsType<IncidentReplayOverviewIssue> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '级别',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 150,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        key: 'source',
+        width: 240,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{workbenchSafeText(record.sourceType)}</Text>
+                {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
+                    <Text type="secondary">无 sourceId</Text>
+                )}
+            </Space>
+        ),
+    },
+    {
+        title: '说明',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const incidentNextStepColumns: ColumnsType<IncidentReplayNextStep> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 240,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'Owner',
+        dataIndex: 'owner',
+        key: 'owner',
+        width: 160,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '动作',
+        dataIndex: 'action',
+        key: 'action',
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '完成条件',
+        dataIndex: 'completionCondition',
+        key: 'completionCondition',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '边界关键',
+        dataIndex: 'boundaryCritical',
+        key: 'boundaryCritical',
+        width: 130,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+    },
+];
+
+const incidentEvidenceAnchorColumns: ColumnsType<IncidentReplayEvidenceAnchor> = [
+    {
+        title: 'sourceType',
+        dataIndex: 'sourceType',
+        key: 'sourceType',
+        width: 190,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'sourceId',
+        dataIndex: 'sourceId',
+        key: 'sourceId',
+        width: 230,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceVersion',
+        dataIndex: 'sourceVersion',
+        key: 'sourceVersion',
+        width: 180,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceTimestamp',
+        dataIndex: 'sourceTimestamp',
+        key: 'sourceTimestamp',
+        width: 210,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'checksum',
+        dataIndex: 'checksum',
+        key: 'checksum',
+        width: 220,
+        render: (value: string | null) => optionalSafeCode(value),
     },
 ];
 
@@ -1601,6 +1760,343 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
     );
 }
 
+function normalizeIncidentSeverity(severity: IncidentReplaySeverity | null | undefined): string {
+    return normalizeStatus(severity);
+}
+
+function incidentSeverityPresentation(severity: IncidentReplaySeverity | null | undefined): {
+    alertType: 'info' | 'warning' | 'error';
+    color: string;
+    label: string;
+    message: string;
+    description: string;
+} {
+    const normalized = normalizeIncidentSeverity(severity);
+    switch (normalized) {
+        case 'CRITICAL':
+            return {
+                alertType: 'error',
+                color: 'error',
+                label: 'CRITICAL（严重诊断优先级）',
+                message: 'Incident / Replay overview：CRITICAL 诊断优先级',
+                description: 'CRITICAL 只表示需要优先人工复核本地诊断证据；页面不会自动处置、不会授权交易、不会启动 replay。',
+            };
+        case 'HIGH':
+            return {
+                alertType: 'error',
+                color: 'error',
+                label: 'HIGH（高诊断优先级）',
+                message: 'Incident / Replay overview：HIGH 诊断优先级',
+                description: 'HIGH 只表示诊断证据需要尽快复核；不表示自动恢复、自动执行或交易授权。',
+            };
+        case 'WARNING':
+            return {
+                alertType: 'warning',
+                color: 'warning',
+                label: 'WARNING（诊断警告）',
+                message: 'Incident / Replay overview：WARNING 诊断警告',
+                description: 'WARNING 表示存在需要复核的诊断信号；不表示行情方向、收益或自动处置。',
+            };
+        case 'NONE':
+            return {
+                alertType: 'info',
+                color: 'default',
+                label: 'NONE（无当前诊断优先级）',
+                message: 'Incident / Replay overview：暂无诊断优先级',
+                description: 'NONE 只表示当前 overview 未给出 incident-like priority；仍需遵守固定安全边界。',
+            };
+        case 'INFO':
+            return {
+                alertType: 'info',
+                color: 'processing',
+                label: 'INFO（诊断信息）',
+                message: 'Incident / Replay overview：INFO 诊断信息',
+                description: 'INFO 只表示普通诊断信息；不代表通过、收益、交易授权或 LIVE readiness。',
+            };
+        default:
+            return {
+                alertType: 'warning',
+                color: 'warning',
+                label: `${normalized}（未知诊断优先级）`,
+                message: 'Incident / Replay overview：未知诊断优先级',
+                description: '未知 severity 按 fail-closed 展示，需要人工确认后端事实来源和边界语义。',
+            };
+    }
+}
+
+function IncidentSeverityTag({severity}: { severity?: IncidentReplaySeverity | null }) {
+    const presentation = incidentSeverityPresentation(severity);
+    return (
+        <Tooltip title="severity 只表示诊断优先级，不表示自动处置、交易授权或实盘就绪。">
+            <Tag color={presentation.color}>{presentation.label}</Tag>
+        </Tooltip>
+    );
+}
+
+function incidentReplayIsEmpty(overview: IncidentReplayOverviewResponse): boolean {
+    return countValue(overview.totalEvidenceItems) === 0
+        && countValue(overview.shadowEventCount) === 0
+        && countValue(overview.consistencyDivergenceCount) === 0
+        && countValue(overview.paperAlertCount) === 0
+        && countValue(overview.recoveryEventCount) === 0
+        && countValue(overview.replayEventCount) === 0
+        && overview.latestEvidence.length === 0
+        && overview.blockers.length === 0
+        && overview.warnings.length === 0
+        && overview.nextSteps.length === 0
+        && overview.evidenceAnchors.length === 0;
+}
+
+function incidentReplayHasSourceUnavailable(overview: IncidentReplayOverviewResponse): boolean {
+    const sourceSignals = [
+        ...overview.latestEvidence.map((item) => `${item.evidenceType} ${item.sourceStatus ?? ''} ${item.summary ?? ''}`),
+        ...overview.blockers.map((item) => `${item.code} ${item.severity} ${item.message}`),
+        ...overview.warnings.map((item) => `${item.code} ${item.severity} ${item.message}`),
+    ];
+    return sourceSignals.some((value) => /SOURCE_UNAVAILABLE|UNAVAILABLE|NOT_AVAILABLE|NO_SOURCE|SOURCE_MISSING/i.test(value));
+}
+
+function incidentReplayHasPartialData(overview: IncidentReplayOverviewResponse): boolean {
+    if (incidentReplayIsEmpty(overview)) {
+        return false;
+    }
+    return overview.latestEvidence.length === 0
+        || overview.evidenceAnchors.length === 0
+        || normalizeIncidentSeverity(overview.incidentSeverity) === 'UNKNOWN'
+        || overview.latestEvidence.some((item) => /PARTIAL|INCOMPLETE|STALE/i.test(item.sourceStatus ?? ''));
+}
+
+function IncidentReplayBoundaryBadges({overview}: { overview?: IncidentReplayOverviewResponse }) {
+    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    return (
+        <Space size={[8, 8]} wrap>
+            <BoundaryBadge
+                color="error"
+                label="LIVE DISABLED（LIVE 关闭）"
+                tooltip={`liveDisabled=true；Incident / Replay overview 不表示实盘就绪${pending}`}
+            />
+            <BoundaryBadge
+                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
+                tooltip={`realProviderImplemented=false；本面板不调用真实 provider${pending}`}
+            />
+            <BoundaryBadge
+                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
+                tooltip={`privateTradingImplemented=false；本面板不提供下单、撤单、转账或提现入口${pending}`}
+            />
+            <BoundaryBadge
+                color="warning"
+                label="Incident / Replay is diagnostic only（仅诊断）"
+                tooltip={`diagnosticOnly=true；只聚合本地诊断证据，不创建 incident 或启动 replay${pending}`}
+            />
+            <BoundaryBadge
+                color="error"
+                label="Not trading authorization（非交易授权）"
+                tooltip={`notTradingAuthorization=true；HIGH / CRITICAL 也不能解释为交易授权${pending}`}
+            />
+            <BoundaryBadge
+                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
+                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+            />
+        </Space>
+    );
+}
+
+function IncidentReplayBoundaryDriftAlert({overview}: { overview?: IncidentReplayOverviewResponse }) {
+    if (!overview) {
+        return null;
+    }
+    const drift = !overview.diagnosticOnly
+        || !overview.noSideEffect
+        || !overview.notTradingAuthorization
+        || !overview.liveDisabled
+        || overview.realProviderImplemented
+        || overview.privateTradingImplemented
+        || overview.aiDhRuntimeIntegrated;
+
+    return drift ? (
+        <Alert
+            type="error"
+            showIcon
+            message="Incident / Replay boundary flags 与当前安全基线不一致"
+            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成可执行、可交易或实盘就绪。"
+        />
+    ) : null;
+}
+
+function IncidentReplayCounts({overview}: { overview?: IncidentReplayOverviewResponse }) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+            <Descriptions.Item label="incidentSeverity">
+                <IncidentSeverityTag severity={overview?.incidentSeverity}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="totalEvidenceItems">
+                {countValue(overview?.totalEvidenceItems)}
+            </Descriptions.Item>
+            <Descriptions.Item label="shadowEventCount">
+                {countValue(overview?.shadowEventCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="consistencyDivergenceCount">
+                {countValue(overview?.consistencyDivergenceCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="paperAlertCount">
+                {countValue(overview?.paperAlertCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="recoveryEventCount">
+                {countValue(overview?.recoveryEventCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="replayEventCount">
+                {countValue(overview?.replayEventCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="generatedAt">
+                {generatedAtText(overview?.generatedAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label="traceId">
+                {optionalSafeCode(overview?.traceId)}
+            </Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function IncidentReplayIssueTables({
+                                       blockers,
+                                       warnings,
+                                   }: {
+    blockers: IncidentReplayBlocker[];
+    warnings: IncidentReplayWarning[];
+}) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <div>
+                <Text strong>Blockers</Text>
+                <Table<IncidentReplayBlocker>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={incidentOverviewIssueColumns}
+                    dataSource={blockers}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                />
+            </div>
+            <div>
+                <Text strong>Warnings</Text>
+                <Table<IncidentReplayWarning>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={incidentOverviewIssueColumns}
+                    dataSource={warnings}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 warnings；不能解释为诊断链路已完成。'}}
+                />
+            </div>
+        </Space>
+    );
+}
+
+function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentReplayOverviewResponse> }) {
+    const overview = query.data;
+    const severity = overview ? incidentSeverityPresentation(overview.incidentSeverity) : null;
+    const sourceUnavailable = overview ? incidentReplayHasSourceUnavailable(overview) : false;
+    const partialData = overview ? incidentReplayHasPartialData(overview) : false;
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="Incident / Replay Overview"
+            extra={(
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
+                    刷新 Incident / Replay
+                </Button>
+            )}
+        >
+            <Space data-testid="incident-replay-overview-panel" direction="vertical" size={12} style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    只读消费 GET /api/incidents/replay/overview；用于聚合本地 Shadow event、consistency divergence、
+                    Paper alert、recovery 与 replay 诊断证据，不创建 incident、不启动 replay、不新增任何交易动作。
+                </Paragraph>
+                <IncidentReplayBoundaryBadges overview={overview}/>
+                <IncidentReplayBoundaryDriftAlert overview={overview}/>
+                <IncidentReplayCounts overview={overview}/>
+                {query.isLoading ? (
+                    <Skeleton active paragraph={{rows: 8}}/>
+                ) : query.isError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Incident / Replay overview 查询失败"
+                        description={(
+                            <Paragraph style={{marginBottom: 0}}>
+                                overview 失败时按 source unavailable 处理，不会显示为通过、授权、自动处置或可执行。
+                                {formatApiError(query.error as AppApiError)}
+                            </Paragraph>
+                        )}
+                    />
+                ) : !overview ? (
+                    <Empty description="暂无 Incident / Replay overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                ) : (
+                    <>
+                        {sourceUnavailable ? (
+                            <Alert
+                                type="error"
+                                showIcon
+                                message="Source unavailable / 事实源不可用"
+                                description="overview 返回了不可用或缺失事实源信号；页面只展示已返回证据，不补造 counts、latestEvidence 或 nextSteps。"
+                            />
+                        ) : partialData ? (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                message="Partial data / 部分数据"
+                                description="latestEvidence、evidenceAnchors、sourceStatus 或 severity 不完整时，面板仅展示可用事实，不把缺失数据解释为正常。"
+                            />
+                        ) : severity ? (
+                            <Alert
+                                type={severity.alertType}
+                                showIcon
+                                message={severity.message}
+                                description={severity.description}
+                            />
+                        ) : null}
+                        {incidentReplayIsEmpty(overview) ? (
+                            <Empty description="暂无 Incident / Replay evidence；空态不表示事件已解决或可交易。"/>
+                        ) : null}
+                        <Table<IncidentReplayLatestEvidence>
+                            size="small"
+                            rowKey={(record) => `${record.evidenceType}-${record.sourceId ?? 'none'}-${record.traceId ?? record.occurredAt ?? 'none'}`}
+                            columns={incidentLatestEvidenceColumns}
+                            dataSource={overview.latestEvidence}
+                            pagination={false}
+                            scroll={{x: 1080}}
+                            locale={{emptyText: '暂无 latestEvidence；不能补造最新证据。'}}
+                        />
+                        <IncidentReplayIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
+                        <Table<IncidentReplayNextStep>
+                            size="small"
+                            rowKey={(record) => record.code}
+                            columns={incidentNextStepColumns}
+                            dataSource={overview.nextSteps}
+                            pagination={false}
+                            scroll={{x: 1000}}
+                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成处置。'}}
+                        />
+                        <Table<IncidentReplayEvidenceAnchor>
+                            size="small"
+                            rowKey={(record) => `${record.sourceType}-${record.sourceId ?? 'none'}-${record.checksum ?? 'none'}`}
+                            columns={incidentEvidenceAnchorColumns}
+                            dataSource={overview.evidenceAnchors}
+                            pagination={false}
+                            scroll={{x: 1030}}
+                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                        />
+                    </>
+                )}
+            </Space>
+        </Card>
+    );
+}
+
 function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryBundle }) {
     const strategyOverview = queries.strategyOverview.data;
     const shadowOverview = queries.shadowOverview.data;
@@ -2170,6 +2666,7 @@ export function StrategyValidationPage() {
     );
 
     const overviewQuery = useStrategyValidationOverview();
+    const incidentReplayQuery = useIncidentReplayOverview();
     const shadowOverviewQuery = useShadowRunOverview();
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
     const paperShadowQuery = usePaperShadowComparisonQuery(submittedQuery);
@@ -2180,6 +2677,7 @@ export function StrategyValidationPage() {
     );
     const consistencyDrilldownQuery = usePaperShadowConsistencyDrilldown(selectedShadowRunId);
     const loading = overviewQuery.isFetching
+        || incidentReplayQuery.isFetching
         || shadowOverviewQuery.isFetching
         || consistencyDrilldownQuery.isFetching
         || evaluationGateQuery.isFetching
@@ -2208,6 +2706,7 @@ export function StrategyValidationPage() {
             </Card>
 
             <StrategyValidationOverviewPanel query={overviewQuery}/>
+            <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
             <StrategyValidationShadowWorkbench
                 queries={{
                     strategyOverview: overviewQuery,

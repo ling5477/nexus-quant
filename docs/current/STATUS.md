@@ -33,6 +33,7 @@
 - GateS-4 Python offline evaluation artifact baseline：`NQ-GATES-4-PYTHON-EVALUATION-ARTIFACT-BASELINE：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 Python research 离线 artifact 数据结构、parameter grid、JSON writer / reader、checksum / validation 和 pytest / mypy / ruff 本地验证，不代表 GateS-4 frozen / accepted、Java 生产绑定、API、migration、CI、LIVE、Python ML ready、Python live execution ready、AI/DH runtime 或交易授权。
 - GateS-5 frontend Strategy Validation / Shadow Workbench：`NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面中的只读 Workbench 区块、现有 hooks/API client 复用、现有 smoke 更新和 `npm run build` / 目标 Playwright 验证，不新增 route、Dashboard v2、后端 API、migration、CI、Python artifact UI 接入、LIVE、AI/DH runtime 或交易授权。
 - GateS-6 Incident / Replay read model implementation：`NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/incidents/replay/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-6 frozen / accepted、前端页面、Dashboard v2、migration、CI、runner、scheduler、LIVE、AI/DH runtime 或交易授权。
+- GateS-6 frontend Incident / Replay overview implementation：`NQ-GATES-6-FRONTEND-INCIDENT-REPLAY-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面消费 `GET /api/incidents/replay/overview` 的只读 overview panel、前端 type / API client / query key / hook 和 `npm run build` 本地验证，不新增 route、Dashboard v2、E2E、后端 API、migration、Python、CI、LIVE、AI/DH runtime 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -62,6 +63,7 @@
 - Python offline evaluation artifact baseline：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `research/py` 离线 JSON artifact / parameter grid / checksum / validation 工具和测试；不是 Java production fact import，不是 API，不是 runner，不是 ML ready、live execution ready 或交易授权。
 - Strategy Validation / Shadow Workbench frontend block：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限现有 `/strategies/validation` 页面聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown 的只读展示；不是新增 route、Dashboard v2、Python artifact UI 接入、写侧动作、Shadow Live trading enabled 或交易授权。
 - Incident Replay overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/incidents/replay/overview` 只读聚合本地 Shadow / consistency / Paper alert / recovery / trade replay 诊断事实；不是写侧 endpoint、真实 incident runtime、runner trigger、scheduler trigger、LIVE ready 或交易授权。
+- Incident Replay overview frontend panel：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限现有 `/strategies/validation` 页面展示 incidentSeverity、counts、latestEvidence、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不是新增 route、Dashboard v2、Incident Center、AI 决策中心、写侧动作、自动处置、实盘就绪或交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 - GateS 全域 frontend / Dashboard v2 / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
@@ -243,7 +245,7 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - GateS-5 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
 - 新 route、Dashboard v2、后端 API、DB migration、CI workflow、Python research code 或 Python artifact UI 接入已新增。
 - runner / scheduler、Paper run、Shadow run、Shadow Live trading、真实交易按钮或写侧 client 已启动或新增。
-- LIVE ready、trade approval、trading authorization、real provider、private trading adapter、real permission probe、AI started 或 DH integrated。
+- 实盘就绪、trade approval、trading authorization、real provider、private trading adapter、real permission probe、AI started 或 DH integrated。
 
 ## 18. GateS-6 Incident Replay Overview Read Model Status
 
@@ -259,12 +261,34 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 
 该 read model 只读取 `shadow_run_events`、`shadow_consistency_reports`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records` 本地事实，返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`，并聚合 counts、latestEvidence、incidentSeverity、blockers、warnings、nextSteps 和 evidenceAnchors。当前没有独立 incident 表或 runtime readiness incident fact table，接口会以 `SOURCE_NOT_AVAILABLE` warning 明确边界。
 
-该状态不表示：
+该后端 read model 状态本身不表示：
 
 - GateS-6 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
 - 前端页面、Dashboard v2、DB migration、CI workflow、Python research code、runner、scheduler 或 production incident runtime 已新增。
 - incident / alert / recovery / replay 被创建、确认、解决、重试、启动或停止。
 - 写侧、交易、资金、account、ledger、order 或 position 操作入口已新增或启用。
+- 实盘就绪、trade approval、trading authorization、real provider、private trading adapter、real permission probe、AI started 或 DH integrated。
+
+## 19. GateS-6 Frontend Incident / Replay Overview Implementation Status
+
+本轮已实现 `NQ-GATES-6-FRONTEND-INCIDENT-REPLAY-OVERVIEW-IMPLEMENTATION`：在现有 `/strategies/validation` 页面增加 Incident / Replay Overview 只读区块，最小消费 `GET /api/incidents/replay/overview`。
+
+实现范围限定为：
+
+- `frontend/src/types/incident-replay.ts`：新增 `IncidentReplayOverviewResponse`、`IncidentReplayLatestEvidence`、`IncidentReplayEvidenceAnchor`、`IncidentReplayBlocker`、`IncidentReplayWarning`、`IncidentReplayNextStep` 和 `IncidentReplaySeverity` 前端类型。
+- `frontend/src/api/incident-replay.ts`：新增 `getIncidentReplayOverview()`，仅调用 GET `/incidents/replay/overview`。
+- `frontend/src/api/query-keys.ts`：新增 canonical query key `['incidents', 'replay', 'overview']`。
+- `frontend/src/hooks/useIncidentReplayOverview.ts`：新增 `useIncidentReplayOverview()`，沿用 TanStack Query，`retry: false`，不启用 polling，不写入 Zustand。
+- `frontend/src/pages/strategies/StrategyValidationPage.tsx`：在现有 Strategy Validation 页面新增 Incident / Replay Overview panel，展示 incidentSeverity、totalEvidenceItems、shadowEventCount、consistencyDivergenceCount、paperAlertCount、recoveryEventCount、replayEventCount、latestEvidence、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges。
+
+该 panel 覆盖 loading、error、empty、normal / none、warning、high、critical、source unavailable 和 partial data 展示。`HIGH`（高诊断优先级）与 `CRITICAL`（严重诊断优先级）只表示人工复核优先级，不表示自动处置、交易授权、实盘就绪或真实 incident runtime。
+
+该状态不表示：
+
+- GateS-6 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- 新 route、Dashboard v2、完整 Incident Center、AI 决策中心、E2E、后端 API、DB migration、CI workflow、Python research code、runner、scheduler 或 production incident runtime 已新增。
+- incident / alert / recovery / replay 被创建、确认、解决、重试、启动或停止。
+- start / stop / execute / trade、真实交易按钮、写侧 client、真实交易所调用、credential 读取或 account / ledger / order / position 操作已新增或启用。
 - LIVE ready、trade approval、trading authorization、real provider、private trading adapter、real permission probe、AI started 或 DH integrated。
 
 ## 13. GateS-2 Frontend Consistency Drilldown Implementation Status

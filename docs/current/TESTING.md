@@ -9448,6 +9448,39 @@ Blocking status：non-blocking。当前可进入提交前复核。
 
 ---
 
+## NQ-GATES-6-FRONTEND-INCIDENT-REPLAY-OVERVIEW-IMPLEMENTATION（2026-07-08）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只实现 GateS-6 frontend Incident / Replay overview 最小 UI 切片，范围限定在 `frontend/src/**` 相关 type / API client / query key / hook / 现有 Strategy Validation 页面和指定 current docs；未修改 backend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、package / lock files、`pom.xml` 或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `npm run build` | PASS / BUILD SUCCESS（通过 / 构建成功） | `tsc -b && vite build` 通过；Vite 输出既有 chunk size warning，非阻断。 |
+
+Tests added / changed：
+
+- 未新增 E2E。原因：本轮明确禁止新增 E2E。
+- 未新增 component test。原因：当前 `frontend/package.json` 没有 Vitest / Jest / Testing Library 等组件测试脚本或依赖；现有 `frontend/tests/**` 结构为 Playwright E2E，本轮不为最小 UI 切片引入新依赖或测试框架。
+
+What was not run：
+
+- 未运行 `npm run test:e2e`；原因是本轮禁止新增 E2E，且只要求 `npm run build` 与最小合适测试。
+- 未运行 Maven backend test；原因是未修改 `backend/**`、Java API、migration 或后端测试。
+- 未运行 Python pytest / mypy / ruff；原因是未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- 新增前端 client 仅调用 `GET /api/incidents/replay/overview` 对应的 Axios path `/incidents/replay/overview`。
+- 不新增 POST / PUT / PATCH / DELETE，不新增 create / acknowledge / resolve / replay / execute / trade client。
+- 页面固定展示 `LIVE DISABLED`、`Real provider NOT IMPLEMENTED`、`Private trading NOT IMPLEMENTED`、`Incident / Replay is diagnostic only`、`Not trading authorization`、`AI/DH runtime not integrated` badges。
+- `HIGH` / `CRITICAL` 仅展示为诊断优先级，不表示自动处置、交易授权、实盘就绪或真实 incident runtime。
+
+Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
 ## NQ-GATES-3-FRONTEND-STRATEGY-VALIDATION-OVERVIEW-IMPLEMENTATION（2026-07-08）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。

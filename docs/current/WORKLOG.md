@@ -16201,3 +16201,35 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未创建 incident、alert、recovery、replay、Paper run 或 Shadow run；未启动 runner / scheduler；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - `incidentSeverity` 只表示诊断优先级；`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
 - next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add incident replay overview read model`。
+
+## NQ-GATES-6-FRONTEND-INCIDENT-REPLAY-OVERVIEW-IMPLEMENTATION
+
+- date: 2026-07-08
+- scope: GateS-6 frontend implementation；NQ-only；只在现有 `/strategies/validation` 页面增加 Incident / Replay Overview 只读区块，消费已存在的 `GET /api/incidents/replay/overview`。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `frontend/src/types/incident-replay.ts`
+  - `frontend/src/api/incident-replay.ts`
+  - `frontend/src/api/query-keys.ts`
+  - `frontend/src/hooks/useIncidentReplayOverview.ts`
+  - `frontend/src/pages/strategies/StrategyValidationPage.tsx`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/README.md`
+  - `README.md`
+- key changes:
+  - 新增 `IncidentReplayOverviewResponse` 等前端类型，覆盖 generatedAt、boundary flags、counts、latestEvidence、incidentSeverity、blockers / warnings / nextSteps、evidenceAnchors 和 traceId。
+  - 新增 `getIncidentReplayOverview()`、`incidentReplayQueryKeys.overview()` 和 `useIncidentReplayOverview()`；query key 为 `['incidents', 'replay', 'overview']`，`retry: false`，不启用 aggressive polling，不写入 Zustand。
+  - 在现有 Strategy Validation 页面增加 Incident / Replay Overview panel，覆盖 loading、error、empty、normal / none、warning、high、critical、source unavailable 和 partial data。
+  - 固定展示 `LIVE DISABLED`、`Real provider NOT IMPLEMENTED`、`Private trading NOT IMPLEMENTED`、`Incident / Replay is diagnostic only`、`Not trading authorization`、`AI/DH runtime not integrated` badges。
+- validation:
+  - `npm run build`：PASS / BUILD SUCCESS；仅有既有 Vite chunk size warning。
+  - 未新增组件测试：当前前端没有 component test 脚本或依赖；现有测试结构为 Playwright E2E，而本轮禁止新增 E2E。
+- boundary:
+  - 未修改 backend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、`pom.xml`、package / lock files 或 CI workflow。
+  - 未新增 route、Dashboard v2、完整 Incident Center、AI 决策中心、后端 API、DB migration、Python research code、E2E、真实交易按钮或写侧 client。
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - Incident / Replay Overview 仅表达 read-only diagnostic facts；`HIGH` / `CRITICAL` 仅表示诊断优先级，不表达 trading authorization、trade approval、automatic remediation、实盘就绪或真实 incident runtime。
+- next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add incident replay overview frontend`。
