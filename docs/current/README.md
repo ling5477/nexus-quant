@@ -12,9 +12,10 @@
 - GateS-0..6：`COMPLETED`（已完成）。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive pointer：[../gates/gate-r/README.md](../gates/gate-r/README.md)。
 - GateQ / GateP / GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 下一阶段：GateT `PLAN / NOT STARTED`（规划 / 未开始）；只允许后续另起 GateT plan，不得把本轮写成 GateT implementation。
+- 当前阶段：GateT-1 implementation 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：[GATET_PLAN.md](GATET_PLAN.md)，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
-- GateT-1 work order：[GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`；只定义 Shadow Validation Workflow backend read model / operator model 候选方案，不启动 implementation。
+- GateT-1 work order：[GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
+- GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
 
 ## Current Authority
 

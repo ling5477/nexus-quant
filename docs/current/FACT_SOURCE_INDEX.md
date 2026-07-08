@@ -34,26 +34,34 @@
 - GateS archive：`docs/gates/gate-s/README.md`。
 - GateS-0..6：`COMPLETED`（已完成）。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），release tag `nq-gater-freeze`。
-- GateT：`PLAN / NOT STARTED`（规划 / 未开始）。
+- GateT-1 implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_PLAN.md](GATET_PLAN.md)。
-- GateT-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)。
+- GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)。
 
 ## 3. GateT Planning Facts
 
 - GateT 主线是 Shadow Validation Operations / 策略验证运营闭环规划，基于 GateS 只读诊断 evidence，不启动真实交易。
-- GateT 第一批建议先做 backend read model / operator model plan，再做 frontend workbench。
-- GateT-1 已选择候选 endpoint `GET /api/shadow-validation/workflow/overview`，但尚未实现；operator item 默认 derived / not persisted。
+- GateT 第一批当前已实现 backend read model / operator model，后续如进入 frontend workbench 必须另起任务并重新审查边界。
+- GateT-1 已实现 endpoint `GET /api/shadow-validation/workflow/overview`；operator item 为 derived / deterministic / not persisted。
 - GateT 默认不新增 DB migration；review / acknowledge 若需要持久化，必须另起 DB schema review。
 - GateT 不接 Python production binding，只允许 Python artifact read-only binding preview。
 - GateT 不接 AI runtime，不接 DH runtime，不启动 Integration-1 runtime。
 
-## 4. GateS Current Code Facts
+## 4. GateT-1 Current Code Facts
+
+- GateT-1 API fact：`GET /api/shadow-validation/workflow/overview` 为 GET-only / read-only / no-side-effect / not trading authorization。
+- GateT-1 read model fact：`ShadowValidationWorkflowOverviewQueryService` 从 GateS 本地事实派生 `workflowState / validationDecision / severity / evidenceFreshness / blockers / warnings / nextSteps / evidenceAnchors`；不会持久化 operator item。
+- GateT-1 repository fact：`JdbcShadowValidationWorkflowOverviewQueryRepository` 只做 SELECT-only bounded union，不读取 credential / account / live order / ledger / private trading 表，不读取 raw JSONB payload。
+- GateT-1 validation fact：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）。
+- GateT-1 boundary fact：未新增 migration、frontend、Python、CI workflow、runner、scheduler、adapter 调用、真实交易所调用、credential 读取、account / order / ledger mutation。
+
+## 5. GateS Current Code Facts
 
 - GateS API facts：`GET /api/shadow-runs/overview`、`GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`、`GET /api/strategy-validation/overview`、`GET /api/incidents/replay/overview` 均为 GET-only / read-only / no-side-effect / not trading authorization。
 - GateS frontend facts：Shadow Run overview summary、Paper vs Shadow drilldown panel、Strategy Validation overview panel、Strategy Validation / Shadow Workbench 和 Incident / Replay overview panel 均为只读诊断展示。
 - GateS Python facts：`research/py/src/nq_research/evaluation/artifacts.py` 和 `parameters.py` 只提供 offline evaluation artifact baseline，不表示 Java production binding、API、migration、runner、Python ML readiness、Python live execution readiness 或真实交易授权。
 
-## 5. 禁止误写清单
+## 6. 禁止误写清单
 
 - 不得把 GateS freeze closeout 写成 GateT implementation。
 - 不得把 GateT plan 写成 runtime 已启动。

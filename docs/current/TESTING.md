@@ -1,3 +1,38 @@
+## NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION validation（2026-07-08）
+
+```text
+Scope:
+  - 本轮只实现 GateT-1 Shadow Validation Workflow backend GET-only read model / derived operator item model。
+  - 修改范围限定为 nq-api Controller/DTO/test、nq-core read model/service/port/facts/enums/test、nq-infra JDBC SELECT-only repository/test，以及允许的 current docs / README。
+  - 未修改 frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、package / lock files 或 CI workflow。
+
+Validation commands:
+  - mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=ShadowValidationWorkflowOverviewControllerTest,ShadowValidationWorkflowOverviewQueryServiceTest,JdbcShadowValidationWorkflowOverviewQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - result: PASS / BUILD SUCCESS（通过 / 构建成功）；新增 Controller 2 tests、service 8 tests、repository 2 tests 均通过。
+  - mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test
+  - result: PASS / BUILD SUCCESS；reactor 全部 SUCCESS，`nq-core` 189 tests、`nq-api` 86 tests 通过，新增 Shadow Validation Workflow tests 被纳入全量后端验证。
+
+Known warnings:
+  - SLF4J no provider warning：既有测试运行环境 warning，未导致失败。
+  - Mockito dynamic agent / ByteBuddy warning：既有测试运行环境 warning，未导致失败。
+  - nq-infra / nq-scheduler 部分测试存在 unchecked-operation 编译 warning，未导致失败。
+
+What was not run:
+  - frontend build / Playwright / E2E 未运行；本轮未修改 frontend source、route、API client、hook、page、package 或 lock files。
+  - Python pytest / mypy / ruff 未运行；本轮未修改 research/py code 或 tests。
+  - GitHub CI 未由本轮触发；本轮仅做本地 Maven 验证和后续 git boundary checks。
+  - 未执行真实交易所 HTTP / WebSocket、credential read、runner、scheduler、LIVE、AI runtime 或 DH runtime。
+
+Boundary:
+  - Endpoint 仅新增 `GET /api/shadow-validation/workflow/overview`；未新增 POST / PUT / PATCH / DELETE。
+  - Operator item 为 derived / deterministic，不持久化，不代表交易授权。
+  - Repository 只做 SELECT-only，不读取 credential / account / live order / ledger / private trading 表，不读取 raw JSONB payload。
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；Integration-1 runtime remains NOT STARTED。
+
+Blocking status:
+  - Non-blocking. Ready to commit after final staging checks.
+```
+
 ## NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-WO validation（2026-07-08）
 
 ```text

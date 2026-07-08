@@ -15,9 +15,10 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 下一阶段：GateT `PLAN / NOT STARTED`（规划 / 未开始）；只能后续另起 plan，不得在 GateS closeout 中启动 implementation。
+- 当前阶段：GateT-1 implementation 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
-- GateT-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`；只定义 backend read model / operator model 候选设计，不新增 API、migration 或代码。
+- GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
+- GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -61,12 +62,13 @@
 - Python artifact：只允许 read-only binding preview；不导入、不写库、不驱动 Java production runtime。
 - AI / DH：默认不接，仍保持 `NOT STARTED`（未开始）和 `NOT INTEGRATED`（未集成）。
 
-## 6. GateT-1 Work Order Decision
+## 6. GateT-1 Implementation Decision
 
-- GateT-1 主线目标：为 Shadow Validation Workflow backend read model / operator model 建立 implementation 前工作单。
-- 候选 endpoint：`GET /api/shadow-validation/workflow/overview`，仅为后续实现候选；本轮未实现，不写入 `API.md` 当前 API 事实。
-- Operator item：默认 derived read model，不持久化；`operatorItemId` 允许 deterministic id。
-- Operator review / acknowledge：只允许作为后续本地复核概念规划；不得触发交易、runner、scheduler、private endpoint、account / ledger / order / position mutation。
-- DB migration：GateT-1 默认不新增；durable review / acknowledge 若后续必须持久化，必须另起 DB schema review。
+- GateT-1 主线目标：实现 Shadow Validation Workflow backend read model / derived operator item model。
+- 已实现 endpoint：`GET /api/shadow-validation/workflow/overview`；详见 `docs/current/API.md`。
+- Operator item：derived / deterministic，不持久化；`operatorItemId` 由稳定事实锚点派生，不依赖数据库自增。
+- Operator review / acknowledge：仍未实现；不得触发交易、runner、scheduler、private endpoint、account / ledger / order / position mutation。
+- DB migration：本轮未新增；durable review / acknowledge 若后续必须持久化，必须另起 DB schema review。
 - Safety flags：`diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
-- 下一步只能是 `NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION` 或 close review；不得直接进入 frontend workbench、Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
+- 验证状态：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）。
+- 下一步只能是提交前复核、commit，或后续另起 GateT 任务；不得直接进入 frontend workbench、Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。

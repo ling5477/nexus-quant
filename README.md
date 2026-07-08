@@ -13,21 +13,22 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gateq-freeze`；归档入口：`docs/gates/gate-q/README.md`。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gatep-freeze`；归档入口：`docs/gates/gate-p/README.md`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
-- 下一阶段：GateT `PLAN / NOT STARTED`（规划 / 未开始）。GateT 只能先做 plan，不得在 GateS closeout 中启动 implementation。
+- 当前阶段：GateT-1 implementation 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：`docs/current/GATET_PLAN.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
-- GateT-1 work order：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`；只定义 Shadow Validation Workflow backend read model / operator model 候选方案，不代表 implementation started。
+- GateT-1 work order：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
+- GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
 
 ## Current Docs
 
 - `docs/current/README.md`：当前事实入口和 GateS archive pointer。
 - `docs/current/GATET_PLAN.md`：GateT Shadow Validation Operations planning 入口；只定义批次、边界、候选 workflow 和 freeze 条件，不代表实现已启动。
-- `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`：GateT-1 Shadow Validation Workflow read model / operator model work order；只定义候选 endpoint / DTO / query / repository / testing plan，不代表 API 或 schema 已实现。
+- `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`：GateT-1 Shadow Validation Workflow read model / operator model work order；定义 endpoint / DTO / query / repository / testing plan。
 - `docs/current/STATUS.md`：当前状态摘要。
 - `docs/current/ROADMAP.md`：当前路线与 GateT 边界。
 - `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateS 归档指针。
 - `docs/current/TESTING.md`：验证记录；GateS closeout 记录最新 GitHub Actions precondition run 与本轮未复跑本地测试说明。
 - `docs/current/WORKLOG.md`：工作记录；GateS closeout 记录 archive、commit、tag 和 CI run。
-- `docs/current/API.md`：当前 API 事实；GateS 新增能力均为 GET-only / read-only / no-side-effect。
+- `docs/current/API.md`：当前 API 事实；GateS 与 GateT-1 新增能力均为 GET-only / read-only / no-side-effect。
 - `docs/current/DB_SCHEMA.md`：当前 DB schema 事实。
 - `docs/current/ARCHITECTURE.md` / `docs/current/MODULES.md` / `docs/current/RUNBOOK.md`：当前架构、模块和运行手册。
 - `docs/current/GATES_FREEZE_READINESS_REVIEW.md`：GateS readiness review 的 current pointer；完整 freeze closeout 以 `docs/gates/gate-s/` 为准。

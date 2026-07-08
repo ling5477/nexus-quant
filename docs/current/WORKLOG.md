@@ -16396,3 +16396,40 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - GateT 只能是 PLAN / NOT STARTED；本轮未启动 GateT implementation。
 - next action: 后续如需进入 GateT，必须另起 GateT PLAN，并重新执行 Gate / LIVE / AI / DH / real-provider 边界审查。
+
+## NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION
+
+- date: 2026-07-08
+- scope: GateT-1 backend implementation；NQ-only；只实现 `GET /api/shadow-validation/workflow/overview` 的 GET-only read model、derived operator item model、core query service / port、JDBC SELECT-only repository 和后端测试。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowValidationWorkflowOverviewController.java`
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowValidationWorkflowOverviewResponse.java`
+  - `backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/ShadowValidationWorkflowOverviewControllerTest.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowvalidation/**`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/ShadowValidationWorkflowOverviewFacts.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/ShadowValidationWorkflowOverviewQueryPort.java`
+  - `backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowvalidation/ShadowValidationWorkflowOverviewQueryServiceTest.java`
+  - `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowValidationWorkflowOverviewQueryRepository.java`
+  - `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowValidationWorkflowOverviewQueryRepositoryTest.java`
+  - `README.md`
+  - `docs/current/API.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/README.md`
+- implementation:
+  - Controller 只暴露 `GET /api/shadow-validation/workflow/overview`，不接受 request body，不新增写侧 endpoint。
+  - DTO 固定返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+  - Core service 从 GateS 本地 facts 派生 `workflowState / validationDecision / severity / evidenceFreshness`、blockers、warnings、nextSteps 和 evidenceAnchors；`operatorItemId` 为 deterministic hash，不依赖数据库自增。
+  - JDBC repository 只读取允许的 local fact tables；不读取 credential、account、live order、ledger、private trading 表，不读取 raw JSONB payload。
+- validation:
+  - Targeted Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=ShadowValidationWorkflowOverviewControllerTest,ShadowValidationWorkflowOverviewQueryServiceTest,JdbcShadowValidationWorkflowOverviewQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` -> PASS / BUILD SUCCESS。
+  - Required Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` -> PASS / BUILD SUCCESS。
+- boundary:
+  - 未修改 frontend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、package / lock files 或 CI workflow。
+  - 未新增 DB migration、operator item persistence、review / acknowledge 写侧、runner、scheduler、adapter 调用、真实交易所调用或 credential read。
+  - 未修改 account、order、ledger、position 或真实资金状态。
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；Integration-1 runtime remains NOT STARTED；RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED。
+- next action: 完成 final diff / forbidden-area / staged checks 后提交；推荐 commit message：`feat(gatet): add shadow validation workflow read model`。
