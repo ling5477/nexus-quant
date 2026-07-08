@@ -1,3 +1,46 @@
+## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION validation（2026-07-08）
+
+```text
+Scope:
+  - 本轮只实现 GateT-2 Consistency Evidence Refinement 后端 GET-only read model。
+  - 修改范围限定为 nq-api Controller/DTO/test、nq-core read model/service/port/facts/enums/test、nq-infra JDBC SELECT-only repository/test，以及允许的 current docs / README。
+  - 未修改 frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、package / lock files 或 CI workflow。
+
+Preflight:
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 80f3af86593db426df04591e19843e4dedd69e8c.
+  - git rev-parse origin/dev: 80f3af86593db426df04591e19843e4dedd69e8c.
+  - latest GitHub Actions: NQ CI Baseline run 28951350646 completed success, headSha=80f3af86593db426df04591e19843e4dedd69e8c.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Validation commands:
+  - mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=ConsistencyEvidenceOverviewControllerTest,ConsistencyEvidenceOverviewQueryServiceTest,JdbcConsistencyEvidenceOverviewQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - first result: FAIL / TEST FAILURE（失败 / 测试失败）；RCA：service sensitive-field guard 未覆盖 camelCase `readyToTrade`，导致 metricDelta 多计一个 metric；随后扩展 guard 覆盖 `readyToTrade / canTrade / tradeReady`。
+  - second result: PASS / BUILD SUCCESS（通过 / 构建成功）；新增 Controller 2 tests、service 5 tests、repository 2 tests 均通过。
+  - mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test
+  - result: PASS / BUILD SUCCESS；reactor 全部 SUCCESS，新增 Consistency Evidence overview tests 被纳入目标模块全量后端验证。
+
+Known warnings:
+  - SLF4J no provider warning、Mockito dynamic agent warning、部分既有 unchecked warning 仍存在；未导致失败，本轮未新增测试依赖或 logging 配置。
+
+What was not run:
+  - Frontend build / Playwright / E2E were not run because this task did not modify frontend code, route, client, hook, page or package / lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - GitHub CI was not triggered by this implementation turn; preflight verified latest CI for previous HEAD only.
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Endpoint only adds `GET /api/paper-shadow/consistency/evidence/overview`; no POST / PUT / PATCH / DELETE.
+  - Consistency evidence item is derived / deterministic, not persisted, and not trading authorization.
+  - Repository is SELECT-only and reads only `shadow_consistency_reports`, `shadow_runs`, `shadow_run_snapshots`, `shadow_run_events`; no credential / account / live order / ledger / private trading table and no snapshot payload.
+  - metricDelta is summarized; raw JSONB is not returned, profit conclusion is not inferred, and trading signal is not inferred.
+  - LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; Integration-1 runtime remains NOT STARTED.
+
+Blocking status:
+  - Non-blocking. Ready for final diff / forbidden-area / staged checks.
+```
+
 ## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-WO validation（2026-07-08）
 
 ```text

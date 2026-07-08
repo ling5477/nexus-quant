@@ -1,3 +1,41 @@
+## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION
+
+- date: 2026-07-08
+- scope: GateT-2 backend implementation；NQ-only；只实现 `GET /api/paper-shadow/consistency/evidence/overview` 的 GET-only read model、derived consistency evidence item、core query service / port、JDBC SELECT-only repository 和后端测试。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ConsistencyEvidenceOverviewController.java`
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ConsistencyEvidenceOverviewResponse.java`
+  - `backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/ConsistencyEvidenceOverviewControllerTest.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/consistencyevidence/**`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/ConsistencyEvidenceOverviewFacts.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/ConsistencyEvidenceOverviewQueryPort.java`
+  - `backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/consistencyevidence/ConsistencyEvidenceOverviewQueryServiceTest.java`
+  - `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcConsistencyEvidenceOverviewQueryRepository.java`
+  - `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcConsistencyEvidenceOverviewQueryRepositoryTest.java`
+  - `README.md`
+  - `docs/current/API.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/README.md`
+- implementation:
+  - Controller 只暴露 `GET /api/paper-shadow/consistency/evidence/overview`，不接受 request body，不新增写侧 endpoint。
+  - DTO 固定返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+  - Core service 从本地 consistency facts 派生 `comparisonStatus / divergenceSeverity / evidenceFreshness`、severity / freshness summary、metricDelta 摘要、blockers、warnings、nextSteps 和 evidenceAnchors；`evidenceItemId` 为 deterministic hash，不依赖数据库自增。
+  - JDBC repository 只读取允许的 local fact tables；不读取 credential、account、live order、ledger、private trading 表，不读取 `shadow_run_snapshots.payload`。
+- validation:
+  - Targeted Maven 首次失败：sensitive-field guard 未覆盖 camelCase `readyToTrade`；已最小修复。
+  - Targeted Maven 二次：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=ConsistencyEvidenceOverviewControllerTest,ConsistencyEvidenceOverviewQueryServiceTest,JdbcConsistencyEvidenceOverviewQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` -> PASS / BUILD SUCCESS。
+  - Required Maven：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` -> PASS / BUILD SUCCESS。
+- boundary:
+  - 未修改 frontend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、package / lock files 或 CI workflow。
+  - 未新增 DB migration、evidence item persistence、review / acknowledge 写侧、consistency report 创建、runner、scheduler、adapter 调用、真实交易所调用或 credential read。
+  - 未修改 account、order、ledger、position 或真实资金状态。
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；Integration-1 runtime remains NOT STARTED；RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED。
+- next action: 完成 final diff / forbidden-area / staged checks 后提交；推荐 commit message：`feat(gatet): add consistency evidence overview read model`。
+
 ## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-WO
 
 日期：2026-07-08。
