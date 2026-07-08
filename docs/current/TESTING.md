@@ -9853,3 +9853,40 @@ Known warnings：
 Blocking status：non-blocking。当前可进入 freeze closeout review。
 
 ---
+
+## NQ-GATES-FREEZE-CLOSEOUT（2026-07-08）
+
+结论：**PASS / COMPLETED / RELEASE TAG PUSHED**（通过 / 已完成 / release tag 已推送）。
+
+Scope：本轮只做 GateS freeze closeout、`docs/gates/gate-s/` 归档、current 摘要同步、root README 同步、提交和 release tag。未修改 backend、frontend、research、scripts、deploy、`.github`、migration、API / Controller / DTO / Repository / SQL、前端页面、Python research 代码、CI workflow、package / lock files 或 `pom.xml`。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 起始工作区 clean。 |
+| `git branch --show-current` | PASS | `dev`。 |
+| `git fetch origin dev --tags` | PASS | 已刷新 `origin/dev` 与 tags。 |
+| `git rev-parse HEAD` / `git rev-parse origin/dev` | PASS | 写入前均为 `5f0fcb9d4dacab95202dc7a9fb78911e60c06afe`。 |
+| `git tag --list "nq-gates-freeze"` | PASS | 写入前为空。 |
+| `git ls-remote --tags origin | rg "nq-gates-freeze"` | PASS | 写入前空输出，远端未发现 tag。 |
+| `gh run list --limit 10` | PASS / REVIEWED | 最新 run 为 `28932927935`，`NQ CI Baseline`，`completed / success`。 |
+| `gh run view 28932927935 --json status,conclusion,headSha,name,createdAt,updatedAt` | PASS | `status=completed`、`conclusion=success`、`headSha=5f0fcb9d4dacab95202dc7a9fb78911e60c06afe`、created `2026-07-08T09:39:11Z`、updated `2026-07-08T09:41:03Z`。 |
+| `git diff --check` | PASS | 文档 diff 无 whitespace error。 |
+| `git diff --stat` | REVIEWED | diff 限定在允许的 root README、`docs/current/**` 和 `docs/gates/gate-s/**`。 |
+| forbidden-area diff | PASS | `backend`、`frontend`、`research`、`scripts`、`deploy`、`.github`、`backend/**/db/migration`、`docs/archive` 均为空。 |
+| required boundary `rg` | PASS / REVIEWED | 命中为 GateS archive/current 边界声明、API 名称、append-only 历史记录、测试 guard 或否定语境；未发现本轮新增实盘、AI/DH runtime、real provider、private trading 或 Python live execution 语义。 |
+
+What was not run：
+
+- 未运行 Maven backend test；原因是本轮未修改 `backend/**`、Java API、migration 或后端测试，GateS backend 批次已有 Maven 与 CI success 证据。
+- 未运行 `npm run build` / Playwright / E2E；原因是本轮未修改 `frontend/**`、页面、route、client、hook 或 package / lock files，GateS frontend 批次已有 build / targeted smoke / CI success 证据。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`，GateS-4 已有 pytest / mypy / ruff 与 CI success 证据。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- GateS 新增 API 均为 GET-only / read-only / no-side-effect / not trading authorization。
+- Frontend panels 均为只读诊断展示，不提供 start / stop / execute / trade / placeOrder / cancelOrder / withdraw / transfer。
+- Python artifact 仅为 offline research diagnostic baseline；Python ML ready = `NO`，Python live execution ready = `NO`。
+- LIVE = `DISABLED`；AI = `NOT STARTED`；DH runtime = `NOT INTEGRATED`；Integration-1 = `NOT STARTED / mock-test-support only where applicable`；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`；Shadow trading = `NOT ENABLED`。
+
+Blocking status：non-blocking。GateS closeout 已进入 release tag push 流程；最终 tag 和远端 tag 以本轮收尾验证为准。

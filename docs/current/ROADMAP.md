@@ -27,46 +27,35 @@ GateQ frozen / accepted / tagged / archived
   ↓
 GateR frozen / accepted / tagged
   ↓
-GateS-0 plan / fact-source reconciliation
+GateS frozen / accepted / tagged
   ↓
-GateS-1 read-model work order plan ready
-  ↓
-GateS-1 minimal backend read model implementation completed
-  ↓
-GateS-1 frontend overview work order plan ready
-  ↓
-GateS-1 frontend overview implementation（future / not started）
+GateT plan / not started
 ```
 
 ## 当前阶段
 
-- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateR release tag：`nq-gater-freeze`。
-- GateR archive pointer：`docs/gates/gate-r/README.md`。
-- GateS：下一阶段唯一推荐主线。
-- GateS recommended definition：策略验证运营化与 Shadow 诊断闭环阶段。
-- GateS core object：`Strategy Validation Runtime Baseline`（策略验证运行时基线）。
-- GateS-0：`PLAN / NOT IMPLEMENTED`（规划 / 未实现）。
-- GateS-1 read model work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
-- GateS-1 minimal backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅表示 `GET /api/shadow-runs/overview` 后端只读聚合已实现，不代表 frontend page、GateS 全域 validation runtime 或交易授权。
-- GateS-1 frontend overview work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；frontend implementation 仍 `NOT IMPLEMENTED`（未实现）。
+- GateS：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
+- GateS release tag：`nq-gates-freeze`。
+- GateS archive pointer：`docs/gates/gate-s/README.md`。
+- GateS completed scope：strategy validation、Shadow diagnostics、Paper vs Shadow consistency、Incident / Replay overview、Python offline evaluation artifact baseline。
+- GateT：`PLAN / NOT STARTED`（规划 / 未开始）。
 
 ## 下一步规则
 
-下一步推荐在 GateS-1 frontend overview work order 提交后，另起 `NQ-GATES-1-FRONTEND-OVERVIEW-IMPLEMENTATION`，只在现有 `/strategies/shadow-runs` 页面顶部实现 `GET /api/shadow-runs/overview` 的最小前端消费：TypeScript types、`getShadowRunOverview()`、`useShadowRunOverview()`、`['shadow-runs', 'overview']` query key 和 Overview Summary。该下一步当前仍 `NOT STARTED`（未开始），不允许本轮修改 frontend 源码、后端、API、migration、Playwright / E2E、Python research code、CI workflow 或真实外部行为。
+下一步只能是 GateT plan。GateT implementation、backend / frontend / Python / CI / DB 变更、API 新增、migration 新增、runner / scheduler 启动、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易行为都不是 GateS closeout 的一部分，必须另起任务并重新做边界审查。
 
-## GateS Batch Plan
+## GateS Closeout Summary
 
 | Batch | 状态 | 目标 |
 | --- | --- | --- |
-| GateS-0 | `PLAN / NOT IMPLEMENTED` | Plan / fact-source reconciliation |
-| GateS-1 | read model work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`; backend read model `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`; frontend overview work order `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`; frontend implementation `NOT IMPLEMENTED` | Shadow Run operational dashboard / backend read model / frontend overview |
-| GateS-2 | `NOT STARTED`（未开始） | Paper vs Shadow consistency enhancement |
-| GateS-3 | `NOT STARTED` | Strategy Evaluation Gate runtime baseline |
-| GateS-4 | `NOT STARTED` | Python parameter sweep / evaluation artifact baseline |
-| GateS-5 | `NOT STARTED` | Frontend Strategy Validation / Shadow Workbench |
-| GateS-6 | `NOT STARTED` | Monitoring / Incident / Replay read-only baseline |
-| GateS-FREEZE | `NOT STARTED` | freeze、docs、regression、boundary audit |
+| GateS-0 | `COMPLETED`（已完成） | Plan / fact-source reconciliation |
+| GateS-1 | `COMPLETED` | Shadow Run overview backend read model + frontend overview summary |
+| GateS-2 | `COMPLETED` | Paper vs Shadow consistency drilldown backend + frontend |
+| GateS-3 | `COMPLETED` | Strategy Evaluation Gate overview backend + frontend |
+| GateS-4 | `COMPLETED` | Python offline evaluation artifact baseline |
+| GateS-5 | `COMPLETED` | Strategy Validation / Shadow Workbench frontend |
+| GateS-6 | `COMPLETED` | Incident / Replay overview backend + frontend |
+| GateS-FREEZE | `FROZEN / ACCEPTED / TAGGED` | freeze closeout、archive、release tag |
 
 ## 当前边界
 
@@ -78,23 +67,15 @@ GateS-1 frontend overview implementation（future / not started）
 - Shadow trading：`NOT ENABLED`（未启用）。
 - Python ML ready：`NO`（否）。
 - Python live execution ready：`NO`（否）。
-- Shadow Run local fact table / record：`IMPLEMENTED AS LOCAL DIAGNOSTIC FACT ONLY`（仅作为本地诊断事实已实现）。
-- Shadow Run read-only API：`IMPLEMENTED`（已实现）；写接口仍禁止。
-- Shadow Run frontend list / detail / replay view：`IMPLEMENTED`（已实现）；执行按钮仍禁止。
-- Shadow Run runner skeleton：`IMPLEMENTED`（已实现）；scheduler、后台 runner 和 Shadow Live runner 仍未启动。
 
 ## 当前不做
 
-- 不把 GateS 写成 implemented / frozen / accepted。
-- 不把 GateR 写成 `PLAN / NOT STARTED` 或 implementation pending。
-- 不把 Shadow Run 写成真实交易、Shadow Live execution 或 trading approved。
-- 不把 Strategy Validation 的 `APPROVED` 写成交易授权。
-- 不新增 GateR-9 或 GateS implementation。
+- 不启动 GateT implementation。
+- 不新增后端、前端、research、scripts、deploy、workflow、migration、API、页面或测试。
 - 不新增 Shadow Run 写接口或执行按钮。
-- 不启动 scheduler、后台 runner 或 Shadow Live runner。
+- 不启动 scheduler、后台 runner 或 Shadow trading。
 - 不开启 LIVE。
 - 不接 AI runtime。
 - 不接 DH runtime。
 - 不实现 RealClient、real provider、private trading adapter 或 real permission probe。
-- 不把 readiness / preview / comparison / archive closeout / Data Quality / permission readiness / risk preflight 写成 trading authorization。
-- 不新增后端、前端、research、scripts、deploy、workflow、migration、API、页面或测试。
+- 不把 readiness、validation、consistency、incident、archive closeout 或 Python artifact 写成真实交易授权。

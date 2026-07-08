@@ -1,5 +1,7 @@
 # GateS Freeze Readiness Review
 
+> Archive pointer：GateS 已在 `NQ-GATES-FREEZE-CLOSEOUT` 中冻结并归档到 `docs/gates/gate-s/`。本文件仅保留 readiness review 历史入口；current authority 以 `docs/current/STATUS.md`、`docs/current/FACT_SOURCE_INDEX.md` 和 `docs/gates/gate-s/GATES_FREEZE_CLOSEOUT.md` 为准。
+
 任务：`NQ-GATES-FREEZE-READINESS-REVIEW`
 
 日期：2026-07-08

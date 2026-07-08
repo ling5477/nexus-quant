@@ -16268,3 +16268,40 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - Review decision 只表示 readiness 可进入下一步 freeze closeout；不表示 freeze 已执行、accepted 已完成或 release tag 已创建。
 - next action: 发起独立 `NQ-GATES-FREEZE-CLOSEOUT` 或同等 freeze closeout 任务；不得在本 readiness review 中直接执行 release tag、archive move 或 GateT 启动。
+
+## NQ-GATES-FREEZE-CLOSEOUT
+
+- date: 2026-07-08
+- scope: GateS freeze closeout；NQ-only；只做 GateS 最终冻结、归档、current 摘要同步、root README 同步、commit、push 和 release tag。
+- result: **PASS / COMPLETED / RELEASE TAG PUSHED**（通过 / 已完成 / release tag 已推送）。
+- archive:
+  - 新增 `docs/gates/gate-s/README.md`。
+  - 新增 `docs/gates/gate-s/GATES_FREEZE_CLOSEOUT.md`。
+  - 新增 `docs/gates/gate-s/GATES_FREEZE_READINESS_REVIEW.md`。
+  - 新增 `docs/gates/gate-s/GATES_0_PLAN.md`。
+  - 新增 `docs/gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md`。
+  - 新增 `docs/gates/gate-s/GATES_API_EVIDENCE_SUMMARY.md`。
+  - 新增 `docs/gates/gate-s/GATES_FRONTEND_EVIDENCE_SUMMARY.md`。
+  - 新增 `docs/gates/gate-s/GATES_PYTHON_RESEARCH_EVIDENCE_SUMMARY.md`。
+  - 新增 `docs/gates/gate-s/GATES_BOUNDARY_STATEMENT.md`。
+- current sync:
+  - `README.md`、`docs/current/README.md`、`docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/FACT_SOURCE_INDEX.md` 已收口为 GateS frozen/tagged 摘要和 archive pointer。
+  - `docs/current/GATES_FREEZE_READINESS_REVIEW.md` 仅补 archive pointer；不再作为 freeze closeout current authority。
+  - `docs/current/TESTING.md` 和 `docs/current/WORKLOG.md` 追加本轮 closeout 记录。
+- CI evidence:
+  - closeout precondition run：GitHub Actions `28932927935`，`NQ CI Baseline`，`completed / success`，`headSha=5f0fcb9d4dacab95202dc7a9fb78911e60c06afe`。
+- commit:
+  - message：`docs(gates): archive GateS freeze evidence`。
+  - closeout commit：本条所在提交；最终 hash 以 `git rev-parse HEAD`、`git show --stat nq-gates-freeze` 和远端 tag 校验为准。
+- tag:
+  - `nq-gates-freeze`。
+  - message：`NexusQuant GateS freeze: strategy validation, shadow diagnostics, and incident replay baseline`。
+- validation:
+  - 预检确认 `dev` clean、`HEAD=origin/dev=5f0fcb9d4dacab95202dc7a9fb78911e60c06afe`、local/remote tag 不存在、latest CI success 且 headSha 匹配。
+  - 本轮执行 docs diff、forbidden-area diff、staged checks、tag show 和 remote tag verification。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/archive、pom / package / lock files。
+  - 未新增 API、migration、前端页面、E2E、CI workflow、Python runtime、runner、scheduler、真实交易按钮或写侧 client。
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - GateT 只能是 PLAN / NOT STARTED；本轮未启动 GateT implementation。
+- next action: 后续如需进入 GateT，必须另起 GateT PLAN，并重新执行 Gate / LIVE / AI / DH / real-provider 边界审查。
