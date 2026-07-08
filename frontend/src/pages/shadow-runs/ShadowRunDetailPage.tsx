@@ -14,6 +14,7 @@ import {
     type NqStatusTone,
 } from '@/components/nq';
 import {
+    usePaperShadowConsistencyDrilldown,
     useShadowRunDetailQuery,
     useShadowRunEventsQuery,
     useShadowRunLatestConsistencyReportQuery,
@@ -23,6 +24,11 @@ import type {AppApiError} from '@/types/api';
 import type {
     JsonObject,
     JsonValue,
+    PaperShadowConsistencyBlocker,
+    PaperShadowConsistencyDrilldownResponse,
+    PaperShadowConsistencyEvidenceAnchor,
+    PaperShadowConsistencyNextStep,
+    PaperShadowConsistencyWarning,
     ShadowConsistencyReportResponse,
     ShadowRunDetailResponse,
     ShadowRunEventResponse,
@@ -32,8 +38,8 @@ import {formatDateTime} from '@/utils/formatters';
 
 const {Text, Paragraph} = Typography;
 
-const SENSITIVE_FIELD_NAME_PATTERN = /^(apiKey|api_key|secret|token|cookie|passphrase|privateKey|credential|credentialMaterial|encrypted_payload|decrypted_payload|rawRequest|rawResponse|rawHeaders|fullQueryString|privatePayload|privateEndpointPayload|rawPrivateRequest|rawPrivateResponse|realOrderId|realAccountBalance|realPosition|authorizedForTrading|tradingReady|liveReady|tradeApproved|orderExecutionCommand|privateAdapterReference)$/i;
-const SENSITIVE_TEXT_PATTERN = /(api[_-]?key|secret|passphrase|private[_ -]?key|credentialMaterial|encrypted_payload|decrypted_payload|realOrderId|realAccountBalance|authorizedForTrading|tradingReady|liveReady|tradeApproved)/i;
+const SENSITIVE_FIELD_NAME_PATTERN = /^(apiKey|api_key|secret|token|cookie|passphrase|privateKey|credential|credentialMaterial|encrypted_payload|encryptedPayload|decrypted_payload|decryptedPayload|rawSignature|rawRequest|rawResponse|rawHeaders|fullQueryString|privatePayload|privateEndpoint|privateEndpointPayload|rawPrivate|rawPrivateRequest|rawPrivateResponse|realOrderId|realAccountBalance|realPosition|authorizedForTrading|tradingReady|liveReady|tradeApproved|orderExecutionCommand|privateAdapterReference)$/i;
+const SENSITIVE_TEXT_PATTERN = /(api[_-]?key|secret|passphrase|private[_ -]?key|credentialMaterial|encrypted[_ -]?payload|decrypted[_ -]?payload|rawSignature|rawPrivate|private endpoint|realOrderId|realAccountBalance|authorizedForTrading|tradingReady|liveReady|tradeApproved)/i;
 
 function asAppApiError(error: unknown): AppApiError | null {
     if (!error || typeof error !== 'object') {
@@ -101,6 +107,16 @@ function OptionalCode({value}: { value: string | number | null | undefined }) {
     }
     const text = String(value);
     return <Text code copyable={{text}}>{text}</Text>;
+}
+
+function SafeText({value}: { value: string | null | undefined }) {
+    if (!value) {
+        return <Text type="secondary">-</Text>;
+    }
+    if (SENSITIVE_TEXT_PATTERN.test(value)) {
+        return <Text type="secondary">[filtered sensitive value]</Text>;
+    }
+    return <Text>{value}</Text>;
 }
 
 function SafeJsonBlock({value, emptyText}: { value: unknown; emptyText: string }) {
@@ -172,6 +188,98 @@ function sortedSnapshots(snapshots: ShadowRunSnapshotResponse[]): ShadowRunSnaps
     ));
 }
 
+type DrilldownBoundaryMessage = PaperShadowConsistencyBlocker | PaperShadowConsistencyWarning;
+
+type DrilldownStateKey = 'no-report' | 'failed' | 'blocked' | 'diverged' | 'stale' | 'normal';
+
+interface DrilldownStateMeta {
+    key: DrilldownStateKey;
+    label: string;
+    tone: NqStatusTone;
+    alertType: 'info' | 'warning' | 'error';
+    description: string;
+}
+
+function normalizedStatus(value: string | null | undefined): string {
+    return value?.toUpperCase() ?? '';
+}
+
+function hasAnyWarningCode(
+    drilldown: PaperShadowConsistencyDrilldownResponse,
+    patterns: RegExp[],
+): boolean {
+    return drilldown.warnings.some((warning) => patterns.some((pattern) => pattern.test(warning.code)));
+}
+
+function isUsableDrilldownResponse(
+    value: PaperShadowConsistencyDrilldownResponse | undefined,
+): value is PaperShadowConsistencyDrilldownResponse {
+    return Boolean(value?.shadowRun?.shadowRunId && value.snapshotSummary && value.eventSummary);
+}
+
+function resolveDrilldownState(drilldown: PaperShadowConsistencyDrilldownResponse): DrilldownStateMeta {
+    const comparisonStatus = normalizedStatus(drilldown.comparisonStatus);
+    const runStatus = normalizedStatus(drilldown.shadowRun.status);
+    const divergenceSeverity = normalizedStatus(drilldown.divergenceSeverity);
+
+    if (!drilldown.latestConsistency || comparisonStatus === 'NO_REPORT') {
+        return {
+            key: 'no-report',
+            label: 'NO_REPORT（无一致性报告）',
+            tone: 'neutral',
+            alertType: 'warning',
+            description: '当前 Shadow Run 尚无 latest consistency report；不能把缺失报告解释为 comparison 通过。',
+        };
+    }
+    if (comparisonStatus === 'FAILED' || runStatus.includes('FAILED')) {
+        return {
+            key: 'failed',
+            label: 'FAILED（本地证据失败）',
+            tone: 'danger',
+            alertType: 'error',
+            description: '失败只表示本地诊断证据或 comparison 失败，需要继续复核 traceId、metricDelta 与 evidence anchors。',
+        };
+    }
+    if (runStatus.includes('BLOCKED')) {
+        return {
+            key: 'blocked',
+            label: 'BLOCKED（Shadow Run 阻断）',
+            tone: 'danger',
+            alertType: 'error',
+            description: 'Shadow Run 当前处于阻断状态；该状态不表达交易授权变化，也不允许触发执行动作。',
+        };
+    }
+    if (comparisonStatus === 'DIVERGED' || divergenceSeverity === 'HIGH' || divergenceSeverity === 'CRITICAL') {
+        return {
+            key: 'diverged',
+            label: 'DIVERGED（证据存在偏离）',
+            tone: 'warning',
+            alertType: 'warning',
+            description: '偏离只表达 Paper 与 Shadow 本地证据不一致；颜色不表示盈利、亏损、上涨或下跌。',
+        };
+    }
+    if (
+        comparisonStatus === 'STALE_EVIDENCE'
+        || divergenceSeverity === 'UNKNOWN'
+        || hasAnyWarningCode(drilldown, [/STALE/i, /INCOMPLETE/i])
+    ) {
+        return {
+            key: 'stale',
+            label: 'STALE_EVIDENCE（证据不完整或过期）',
+            tone: 'warning',
+            alertType: 'warning',
+            description: '证据不完整时只能进入诊断复核，不能补造 snapshot/event，也不能视为 comparison 已通过。',
+        };
+    }
+    return {
+        key: 'normal',
+        label: 'NORMAL（只读诊断可查看）',
+        tone: 'info',
+        alertType: 'info',
+        description: '当前仅表示 drilldown 数据可读；comparisonStatus 仍只表达证据状态，不表达交易准入。',
+    };
+}
+
 function BoundaryFlag({label, enabled}: { label: string; enabled: boolean }) {
     return <Tag color={enabled ? 'success' : 'error'}>{label}: {enabled ? 'true' : 'false'}</Tag>;
 }
@@ -186,7 +294,7 @@ function BoundarySummary({detail}: { detail?: ShadowRunDetailResponse }) {
                 <NqRiskBanner
                     level="warning"
                     message="Diagnostic only / no trading authorization"
-                    description="Shadow Run detail / replay 只展示本地诊断事实；consistency report 不是 approval，不代表 LIVE ready，不允许据此下单、撤单、转账或提现。"
+                    description="Shadow Run detail / replay 只展示本地诊断事实；consistency report 不是 approval，不代表实盘就绪，不允许据此下单、撤单、转账或提现。"
                 />
                 <Space size={[8, 8]} wrap>
                     <Tag color="error">LIVE disabled</Tag>
@@ -214,6 +322,396 @@ function BoundarySummary({detail}: { detail?: ShadowRunDetailResponse }) {
                     )}
                 </Space>
             </Space>
+        </Card>
+    );
+}
+
+function DrilldownBoundaryBadges({drilldown}: { drilldown?: PaperShadowConsistencyDrilldownResponse }) {
+    return (
+        <Space size={[8, 8]} wrap>
+            <Tag color={drilldown?.liveDisabled === false ? 'warning' : 'error'}>LIVE DISABLED</Tag>
+            <Tag color={drilldown?.realProviderImplemented ? 'warning' : 'default'}>Real provider NOT IMPLEMENTED</Tag>
+            <Tag color={drilldown?.privateTradingImplemented ? 'warning' : 'default'}>Private trading NOT IMPLEMENTED</Tag>
+            <Tag color={drilldown?.diagnosticOnly === false ? 'warning' : 'blue'}>Shadow Run is diagnostic only</Tag>
+            <Tag color={drilldown?.notTradingAuthorization === false ? 'warning' : 'volcano'}>Not trading authorization</Tag>
+            <Tag color={drilldown?.aiDhRuntimeIntegrated ? 'warning' : 'default'}>AI/DH runtime not integrated</Tag>
+        </Space>
+    );
+}
+
+function DrilldownMessageTable({
+                                   title,
+                                   items,
+                                   emptyText,
+                               }: {
+    title: string;
+    items: DrilldownBoundaryMessage[];
+    emptyText: string;
+}) {
+    const columns = useMemo<ColumnsType<DrilldownBoundaryMessage>>(() => [
+        {
+            title: 'code',
+            dataIndex: 'code',
+            key: 'code',
+            width: 230,
+            render: (value: string) => <Text code>{value}</Text>,
+        },
+        {
+            title: 'severity',
+            dataIndex: 'severity',
+            key: 'severity',
+            width: 120,
+            render: (value: string) => <NqStatusTag status={value} tone={statusTone(value)}/>,
+        },
+        {
+            title: 'message',
+            dataIndex: 'message',
+            key: 'message',
+            render: (value: string) => <SafeText value={value}/>,
+        },
+        {
+            title: 'source',
+            key: 'source',
+            width: 260,
+            render: (_, record) => (
+                <Space direction="vertical" size={2}>
+                    <Text code>{record.sourceType}</Text>
+                    <OptionalCode value={record.sourceId}/>
+                </Space>
+            ),
+        },
+    ], []);
+
+    return (
+        <section aria-label={title}>
+            <Typography.Title level={5}>{title}</Typography.Title>
+            {items.length === 0 ? (
+                <Empty description={emptyText}/>
+            ) : (
+                <Table<DrilldownBoundaryMessage>
+                    size="small"
+                    rowKey={(record) => `${record.code}:${record.sourceType}:${record.sourceId ?? ''}`}
+                    columns={columns}
+                    dataSource={items}
+                    pagination={false}
+                    scroll={{x: 900}}
+                />
+            )}
+        </section>
+    );
+}
+
+function DrilldownNextStepsTable({items}: { items: PaperShadowConsistencyNextStep[] }) {
+    const columns = useMemo<ColumnsType<PaperShadowConsistencyNextStep>>(() => [
+        {
+            title: 'code',
+            dataIndex: 'code',
+            key: 'code',
+            width: 280,
+            render: (value: string) => <Text code>{value}</Text>,
+        },
+        {
+            title: 'owner',
+            dataIndex: 'owner',
+            key: 'owner',
+            width: 120,
+        },
+        {
+            title: 'action',
+            dataIndex: 'action',
+            key: 'action',
+            render: (value: string) => <SafeText value={value}/>,
+        },
+        {
+            title: 'expectedEvidence',
+            dataIndex: 'expectedEvidence',
+            key: 'expectedEvidence',
+            render: (value: string) => <SafeText value={value}/>,
+        },
+        {
+            title: 'blocking',
+            dataIndex: 'blocking',
+            key: 'blocking',
+            width: 110,
+            render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? 'true' : 'false'}</Tag>,
+        },
+    ], []);
+
+    return (
+        <section aria-label="Paper Shadow drilldown next steps">
+            <Typography.Title level={5}>NextSteps</Typography.Title>
+            {items.length === 0 ? (
+                <Empty description="暂无 nextSteps；不能自行补造执行动作。"/>
+            ) : (
+                <Table<PaperShadowConsistencyNextStep>
+                    size="small"
+                    rowKey={(record) => record.code}
+                    columns={columns}
+                    dataSource={items}
+                    pagination={false}
+                    scroll={{x: 1120}}
+                />
+            )}
+        </section>
+    );
+}
+
+function DrilldownEvidenceAnchorsTable({items}: { items: PaperShadowConsistencyEvidenceAnchor[] }) {
+    const columns = useMemo<ColumnsType<PaperShadowConsistencyEvidenceAnchor>>(() => [
+        {
+            title: 'sourceType',
+            dataIndex: 'sourceType',
+            key: 'sourceType',
+            width: 210,
+            render: (value: string) => <Text code>{value}</Text>,
+        },
+        {
+            title: 'sourceId',
+            dataIndex: 'sourceId',
+            key: 'sourceId',
+            width: 260,
+            render: (value: string) => <OptionalCode value={value}/>,
+        },
+        {
+            title: 'sourceVersion',
+            dataIndex: 'sourceVersion',
+            key: 'sourceVersion',
+            width: 180,
+            render: (value: string | null) => <OptionalCode value={value}/>,
+        },
+        {
+            title: 'sourceTimestamp',
+            dataIndex: 'sourceTimestamp',
+            key: 'sourceTimestamp',
+            width: 190,
+            render: (value: string | null) => formatDateTime(value),
+        },
+        {
+            title: 'checksum',
+            dataIndex: 'checksum',
+            key: 'checksum',
+            width: 220,
+            render: (value: string | null) => <OptionalCode value={value}/>,
+        },
+    ], []);
+
+    return (
+        <section aria-label="Paper Shadow drilldown evidence anchors">
+            <Typography.Title level={5}>Evidence anchors</Typography.Title>
+            {items.length === 0 ? (
+                <Empty description="暂无 evidence anchors；不能补造证据锚点。"/>
+            ) : (
+                <Table<PaperShadowConsistencyEvidenceAnchor>
+                    size="small"
+                    rowKey={(record) => `${record.sourceType}:${record.sourceId}:${record.checksum ?? ''}`}
+                    columns={columns}
+                    dataSource={items}
+                    pagination={false}
+                    scroll={{x: 1120}}
+                />
+            )}
+        </section>
+    );
+}
+
+export function PaperShadowConsistencyDrilldownPanel({
+                                                         drilldown,
+                                                         loading,
+                                                         error,
+                                                         onRetry,
+                                                         shadowRunId,
+                                                     }: {
+    drilldown?: PaperShadowConsistencyDrilldownResponse;
+    loading: boolean;
+    error: unknown;
+    onRetry: () => void;
+    shadowRunId: string;
+}) {
+    const usableDrilldown = isUsableDrilldownResponse(drilldown) ? drilldown : undefined;
+    const state = usableDrilldown ? resolveDrilldownState(usableDrilldown) : null;
+
+    if (isNotFound(error)) {
+        return (
+            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <DrilldownBoundaryBadges/>
+                    <NqEmptyState description={`drilldown missing / Shadow Run 不存在或 drilldown 不可用：${shadowRunId}`}/>
+                </Space>
+            </Card>
+        );
+    }
+    if (error) {
+        return (
+            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <DrilldownBoundaryBadges/>
+                    <NqErrorState title="Consistency drilldown 加载失败" error={asAppApiError(error)} onRetry={onRetry}/>
+                </Space>
+            </Card>
+        );
+    }
+    if (loading) {
+        return (
+            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <DrilldownBoundaryBadges/>
+                    <NqLoadingState message="Consistency drilldown loading"/>
+                </Space>
+            </Card>
+        );
+    }
+    if (!usableDrilldown || !state) {
+        return (
+            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <DrilldownBoundaryBadges/>
+                    <NqEmptyState description="暂无可用 drilldown response；不能解释为 report 已生成或 comparison 已通过。"/>
+                </Space>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+            <section aria-label="Paper Shadow consistency drilldown panel">
+                <Space direction="vertical" size={14} style={{display: 'flex'}}>
+                    <DrilldownBoundaryBadges drilldown={usableDrilldown}/>
+                    <Alert
+                        type={state.alertType}
+                        showIcon
+                        message={state.label}
+                        description={`${state.description} notTradingAuthorization=${String(usableDrilldown.notTradingAuthorization)}，本区块不是 trading authorization，也不是实盘就绪依据。`}
+                    />
+                    <Alert
+                        type="info"
+                        showIcon
+                        message="颜色与状态说明"
+                        description="success / warning / danger 只用于诊断证据层级；不表示盈利、亏损、上涨、下跌、可交易或交易放行。comparisonStatus 只表达证据状态。"
+                    />
+                    <Descriptions size="small" bordered column={1}>
+                        <Descriptions.Item label="comparisonStatus">
+                            <NqStatusTag status={usableDrilldown.comparisonStatus} tone={state.tone}/>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="divergenceSeverity">
+                            <NqStatusTag status={usableDrilldown.divergenceSeverity}
+                                         tone={statusTone(usableDrilldown.divergenceSeverity)}/>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="generatedAt">{formatDateTime(usableDrilldown.generatedAt)}</Descriptions.Item>
+                        <Descriptions.Item label="latestConsistency.generatedAt">
+                            {formatDateTime(usableDrilldown.latestConsistency?.generatedAt)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="traceId"><OptionalCode value={usableDrilldown.traceId}/></Descriptions.Item>
+                        <Descriptions.Item label="shadowRun.status">
+                            <NqStatusTag status={usableDrilldown.shadowRun.status}
+                                         tone={statusTone(usableDrilldown.shadowRun.status)}/>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="shadowRunId">
+                            <OptionalCode value={usableDrilldown.shadowRun.shadowRunId}/>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="paperRunId">
+                            <OptionalCode value={usableDrilldown.shadowRun.paperRunId}/>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="authorizationBoundary">
+                            <NqStatusTag status={usableDrilldown.shadowRun.authorizationBoundary}
+                                         tone={statusTone(usableDrilldown.shadowRun.authorizationBoundary)}/>
+                        </Descriptions.Item>
+                    </Descriptions>
+
+                    <Row gutter={[12, 12]}>
+                        <Col xs={24} lg={8}>
+                            <Descriptions size="small" bordered column={1} title="Snapshot summary">
+                                <Descriptions.Item label="totalSnapshots">
+                                    {usableDrilldown.snapshotSummary.totalSnapshots}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="inputMarketdata">
+                                    {usableDrilldown.snapshotSummary.inputMarketdataSnapshots}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="strategyDecision">
+                                    {usableDrilldown.snapshotSummary.strategyDecisionSnapshots}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="riskPreflight">
+                                    {usableDrilldown.snapshotSummary.riskPreflightSnapshots}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="orderIntentPreview">
+                                    {usableDrilldown.snapshotSummary.orderIntentPreviewSnapshots}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="latestSnapshotAt">
+                                    {formatDateTime(usableDrilldown.snapshotSummary.latestSnapshotAt)}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="latestSnapshotTypes">
+                                    {usableDrilldown.snapshotSummary.latestSnapshotTypes.length > 0
+                                        ? usableDrilldown.snapshotSummary.latestSnapshotTypes.join(', ')
+                                        : '-'}
+                                </Descriptions.Item>
+                            </Descriptions>
+                        </Col>
+                        <Col xs={24} lg={8}>
+                            <Descriptions size="small" bordered column={1} title="Event summary">
+                                <Descriptions.Item label="totalEvents">
+                                    {usableDrilldown.eventSummary.totalEvents}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="latestEventAt">
+                                    {formatDateTime(usableDrilldown.eventSummary.latestEventAt)}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="latestEventType">
+                                    <OptionalCode value={usableDrilldown.eventSummary.latestEventType}/>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="latestReasonCode">
+                                    <OptionalCode value={usableDrilldown.eventSummary.latestReasonCode}/>
+                                </Descriptions.Item>
+                            </Descriptions>
+                        </Col>
+                        <Col xs={24} lg={8}>
+                            <Descriptions size="small" bordered column={1} title="Latest report">
+                                <Descriptions.Item label="reportId">
+                                    <OptionalCode value={usableDrilldown.latestConsistency?.reportId}/>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="comparisonStatus">
+                                    <OptionalCode value={usableDrilldown.latestConsistency?.comparisonStatus}/>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="traceId">
+                                    <OptionalCode value={usableDrilldown.latestConsistency?.traceId}/>
+                                </Descriptions.Item>
+                            </Descriptions>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={[12, 12]}>
+                        <Col xs={24} lg={8}>
+                            <section aria-label="Paper Shadow drilldown metricDelta">
+                                <Typography.Title level={5}>metricDelta</Typography.Title>
+                                <SafeJsonBlock value={usableDrilldown.metricDelta} emptyText="metricDelta 为空。"/>
+                            </section>
+                        </Col>
+                        <Col xs={24} lg={8}>
+                            <section aria-label="Paper Shadow drilldown divergence reasons">
+                                <Typography.Title level={5}>divergenceReasons</Typography.Title>
+                                <SafeJsonBlock value={usableDrilldown.divergenceReasons}
+                                               emptyText="divergenceReasons 为空。"/>
+                            </section>
+                        </Col>
+                        <Col xs={24} lg={8}>
+                            <section aria-label="Paper Shadow drilldown limitations">
+                                <Typography.Title level={5}>limitations</Typography.Title>
+                                <SafeJsonBlock value={usableDrilldown.limitations} emptyText="limitations 为空。"/>
+                            </section>
+                        </Col>
+                    </Row>
+
+                    <DrilldownMessageTable
+                        title="Blockers"
+                        items={usableDrilldown.blockers}
+                        emptyText="暂无 blockers；仍不代表交易放行。"
+                    />
+                    <DrilldownMessageTable
+                        title="Warnings"
+                        items={usableDrilldown.warnings}
+                        emptyText="暂无 warnings。"
+                    />
+                    <DrilldownNextStepsTable items={usableDrilldown.nextSteps}/>
+                    <DrilldownEvidenceAnchorsTable items={usableDrilldown.evidenceAnchors}/>
+                </Space>
+            </section>
         </Card>
     );
 }
@@ -511,7 +1009,7 @@ export function ShadowConsistencyReportPanel({
                         type="warning"
                         showIcon
                         message="comparisonStatus 仅为诊断结果"
-                        description="Consistency report 不是 approval，不代表 trading authorization，不代表 LIVE ready。"
+                        description="Consistency report 不是 approval，不代表 trading authorization，不代表实盘就绪。"
                     />
                     <Descriptions size="small" bordered column={1}>
                         <Descriptions.Item label="reportId"><OptionalCode value={report.id}/></Descriptions.Item>
@@ -550,10 +1048,16 @@ export function ShadowRunDetailPage() {
     const eventsQuery = useShadowRunEventsQuery(normalizedShadowRunId, factsEnabled);
     const snapshotsQuery = useShadowRunSnapshotsQuery(normalizedShadowRunId, factsEnabled);
     const reportQuery = useShadowRunLatestConsistencyReportQuery(normalizedShadowRunId, factsEnabled);
-    const fetching = detailQuery.isFetching || eventsQuery.isFetching || snapshotsQuery.isFetching || reportQuery.isFetching;
+    const drilldownQuery = usePaperShadowConsistencyDrilldown(normalizedShadowRunId);
+    const fetching = detailQuery.isFetching
+        || eventsQuery.isFetching
+        || snapshotsQuery.isFetching
+        || reportQuery.isFetching
+        || drilldownQuery.isFetching;
 
     const refreshAll = () => {
         void detailQuery.refetch();
+        void drilldownQuery.refetch();
         if (factsEnabled) {
             void eventsQuery.refetch();
             void snapshotsQuery.refetch();
@@ -570,8 +1074,8 @@ export function ShadowRunDetailPage() {
             <Card className="page-card" variant="borderless">
                 <NqPageHeader
                     title="Shadow Run detail / replay"
-                    description="只读查看 Shadow Run 基本信息、no-side-effect flags、events 时间线、snapshots 和 latest consistency report。"
-                    badge="GateR-7 · Read-only"
+                    description="只读查看 Shadow Run 基本信息、Paper vs Shadow consistency drilldown、events 时间线、snapshots 和 latest consistency report。"
+                    badge="GateR-7 / GateS-2 · Read-only"
                     extra={(
                         <Space size={8} wrap>
                             <Button icon={<ArrowLeftOutlined/>} onClick={() => navigate('/strategies/shadow-runs')}>
@@ -605,8 +1109,23 @@ export function ShadowRunDetailPage() {
                     )}
                 </Card>
             ) : detailQuery.data ? (
+                <ShadowRunDetailPanel detail={detailQuery.data}/>
+            ) : (
+                <Card className="page-section" variant="borderless">
+                    <NqEmptyState description="暂无 Shadow Run detail。"/>
+                </Card>
+            )}
+
+            <PaperShadowConsistencyDrilldownPanel
+                shadowRunId={normalizedShadowRunId}
+                drilldown={drilldownQuery.data}
+                loading={drilldownQuery.isLoading}
+                error={drilldownQuery.error}
+                onRetry={() => drilldownQuery.refetch()}
+            />
+
+            {detailQuery.data ? (
                 <>
-                    <ShadowRunDetailPanel detail={detailQuery.data}/>
                     <ShadowRunEventTimeline
                         events={eventsQuery.data ?? []}
                         loading={eventsQuery.isLoading}
@@ -626,11 +1145,7 @@ export function ShadowRunDetailPage() {
                         onRetry={() => reportQuery.refetch()}
                     />
                 </>
-            ) : (
-                <Card className="page-section" variant="borderless">
-                    <NqEmptyState description="暂无 Shadow Run detail。"/>
-                </Card>
-            )}
+            ) : null}
         </Space>
     );
 }

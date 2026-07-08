@@ -27,6 +27,7 @@
 - GateS-1 frontend overview work order：`NQ-GATES-1-FRONTEND-OVERVIEW-WO：PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；仅规划后续前端如何消费 `GET /api/shadow-runs/overview`，不代表前端已实现。
 - GateS-1 frontend overview implementation：`NQ-GATES-1-FRONTEND-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs` 顶部 Overview Summary、前端 type / client / query key / hook 和 `npm run build` 本地验证，不代表 GateS-1 frozen / accepted、Dashboard v2、后端 API、migration、E2E、LIVE 或交易授权。
 - GateS-2 paper shadow consistency drilldown implementation：`NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/paper-shadow/consistency/drilldown`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-2 frozen / accepted、前端页面、Dashboard v2、runner / scheduler、LIVE 或交易授权。
+- GateS-2 frontend consistency drilldown implementation：`NQ-GATES-2-FRONTEND-CONSISTENCY-DRILLDOWN-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs/:shadowRunId` detail / replay 页面消费 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}` 的前端 type / API client / query key / hook / UI panel 和 `npm run build` 本地验证，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -113,7 +114,7 @@ GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerServ
 
 ## 7. 当前验证口径
 
-GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。GateS-1 minimal backend read model 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-1 frontend overview implementation 本轮已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为本轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。GateS-2 paper shadow consistency drilldown implementation 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）；选择三模块 Maven 是因为本轮只修改 `nq-api` / `nq-core` / `nq-infra` 只读后端切片，未修改 `nq-app` context、frontend、research、CI 或 migration。
+GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。GateS-1 minimal backend read model 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-1 frontend overview implementation 已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为该轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。GateS-2 paper shadow consistency drilldown backend implementation 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-2 frontend consistency drilldown implementation 本轮已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为本轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。
 
 ## 8. GateS-0 Planning Status
 
@@ -190,6 +191,27 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - GateS-1 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
 - Dashboard v2、新 route、AI 决策中心或 GateS 全域 validation runtime 已实现。
 - 后端 API、migration、Python、CI workflow 或 E2E 已新增。
-- start / stop / execute / trade / placeOrder / cancelOrder / withdraw / transfer 入口已存在。
+- 写侧、交易或资金操作入口已新增或启用。
+- LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
+- trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
+
+## 13. GateS-2 Frontend Consistency Drilldown Implementation Status
+
+本轮已实现 `NQ-GATES-2-FRONTEND-CONSISTENCY-DRILLDOWN-IMPLEMENTATION`：在现有 `/strategies/shadow-runs/:shadowRunId` detail / replay 页面新增 Paper vs Shadow Consistency Drilldown panel，并最小消费 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`。
+
+实现范围限定为：
+
+- `frontend/src/types/shadow-runs.ts`：新增 `PaperShadowConsistencyDrilldownResponse`、shadow run、latest consistency、snapshot / event summary、evidence anchor、blocker、warning、nextStep、`PaperShadowComparisonStatus` 和 divergence severity types。
+- `frontend/src/api/shadow-runs.ts`：新增 `getPaperShadowConsistencyDrilldown(shadowRunId)`，仅发起 GET 请求。
+- `frontend/src/api/query-keys.ts`：新增 canonical query key `['paper-shadow', 'consistency-drilldown', shadowRunId]`。
+- `frontend/src/hooks/useShadowRunQueries.ts`：新增 `usePaperShadowConsistencyDrilldown(shadowRunId)`，`shadowRunId` 缺失时 disabled，沿用 `retry: false`，不启用 polling，不写入 Zustand。
+- `frontend/src/pages/shadow-runs/ShadowRunDetailPage.tsx`：新增 Consistency Drilldown panel，覆盖 loading / error / missing / no report / normal / stale / diverged / blocked / failed 展示，固定显示 LIVE disabled、Real provider NOT IMPLEMENTED、Private trading NOT IMPLEMENTED、Shadow Run is diagnostic only、Not trading authorization、AI/DH runtime not integrated boundary badges。
+
+该状态不表示：
+
+- GateS-2 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- Dashboard v2、新 route、AI 决策中心或 GateS 全域 validation runtime 已实现。
+- 后端 API、migration、Python、CI workflow、E2E 或真实 provider 已新增。
+- 写侧、交易或资金操作入口已新增或启用。
 - LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
 - trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。

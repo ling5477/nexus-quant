@@ -158,6 +158,139 @@ export interface ShadowRunOverviewNextStep {
     blocking: boolean;
 }
 
+export type PaperShadowComparisonStatus =
+    'CONSISTENT'
+    | 'DIVERGED'
+    | 'PARTIAL'
+    | 'NOT_COMPARABLE'
+    | 'FAILED'
+    | 'STALE_EVIDENCE'
+    | 'NO_REPORT'
+    | string;
+
+export type PaperShadowConsistencyDivergenceSeverity =
+    'NONE'
+    | 'LOW'
+    | 'MEDIUM'
+    | 'HIGH'
+    | 'CRITICAL'
+    | 'UNKNOWN'
+    | string;
+
+/**
+ * GateS-2 Paper vs Shadow consistency drilldown response.
+ *
+ * Why:
+ * 该结构只承接 `GET /api/paper-shadow/consistency/drilldown` 的 read-only 诊断聚合。
+ * 前端不得在这里增加写侧命令、真实 provider 能力、交易放行语义或敏感材料字段。
+ */
+export interface PaperShadowConsistencyDrilldownResponse {
+    generatedAt: string;
+    diagnosticOnly: boolean;
+    noSideEffect: boolean;
+    notTradingAuthorization: boolean;
+    liveDisabled: boolean;
+    realProviderImplemented: boolean;
+    privateTradingImplemented: boolean;
+    aiDhRuntimeIntegrated: boolean;
+    shadowRun: PaperShadowConsistencyShadowRun;
+    latestConsistency: PaperShadowConsistencyLatestConsistency | null;
+    comparisonStatus: PaperShadowComparisonStatus;
+    divergenceSeverity: PaperShadowConsistencyDivergenceSeverity;
+    metricDelta: JsonValue;
+    divergenceReasons: JsonValue;
+    limitations: JsonValue;
+    snapshotSummary: PaperShadowConsistencySnapshotSummary;
+    eventSummary: PaperShadowConsistencyEventSummary;
+    blockers: PaperShadowConsistencyBlocker[];
+    warnings: PaperShadowConsistencyWarning[];
+    nextSteps: PaperShadowConsistencyNextStep[];
+    evidenceAnchors: PaperShadowConsistencyEvidenceAnchor[];
+    traceId: string;
+}
+
+export interface PaperShadowConsistencyShadowRun {
+    shadowRunId: string;
+    strategyVersionId: string;
+    datasetId: string;
+    evaluationId: string | null;
+    publishId: string | null;
+    paperRunId: string | null;
+    status: string;
+    authorizationBoundary: string;
+    noOrderSubmission: boolean;
+    noCredentialAccess: boolean;
+    noPrivateEndpoint: boolean;
+    noLedgerMutation: boolean;
+    noAccountMutation: boolean;
+    noExternalPrivateIo: boolean;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+}
+
+export interface PaperShadowConsistencyLatestConsistency {
+    reportId: string;
+    shadowRunId: string;
+    paperRunId: string | null;
+    comparisonStatus: string;
+    metricDelta: JsonValue;
+    divergenceReasons: JsonValue;
+    limitations: JsonValue;
+    generatedAt: string;
+    traceId: string | null;
+}
+
+export interface PaperShadowConsistencySnapshotSummary {
+    totalSnapshots: number;
+    inputMarketdataSnapshots: number;
+    strategyDecisionSnapshots: number;
+    riskPreflightSnapshots: number;
+    orderIntentPreviewSnapshots: number;
+    latestSnapshotAt: string | null;
+    latestSnapshotTypes: string[];
+}
+
+export interface PaperShadowConsistencyEventSummary {
+    totalEvents: number;
+    latestEventAt: string | null;
+    latestEventType: string | null;
+    latestReasonCode: string | null;
+}
+
+export interface PaperShadowConsistencyEvidenceAnchor {
+    sourceType: string;
+    sourceId: string;
+    sourceVersion: string | null;
+    sourceTimestamp: string | null;
+    checksum: string | null;
+}
+
+export interface PaperShadowConsistencyBlocker {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface PaperShadowConsistencyWarning {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface PaperShadowConsistencyNextStep {
+    code: string;
+    owner: string;
+    action: string;
+    expectedEvidence: string;
+    blocking: boolean;
+}
+
 export interface ShadowRunDetailResponse {
     id: string;
     strategyVersionId: string;

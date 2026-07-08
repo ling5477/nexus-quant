@@ -1,6 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 
-import {shadowRunsQueryKeys} from '@/api/query-keys';
+import {paperShadowQueryKeys, shadowRunsQueryKeys} from '@/api/query-keys';
 import {shadowRunsApi} from '@/api/shadow-runs';
 import type {ShadowRunListRequest} from '@/types/shadow-runs';
 
@@ -58,6 +58,15 @@ export function useShadowRunLatestConsistencyReportQuery(shadowRunId: string | n
     return useQuery({
         queryKey: shadowRunsQueryKeys.latestConsistencyReport(shadowRunId ?? ''),
         queryFn: () => shadowRunsApi.getShadowRunLatestConsistencyReport(shadowRunId ?? ''),
+        enabled: Boolean(shadowRunId) && enabled,
+        retry: false,
+    });
+}
+
+export function usePaperShadowConsistencyDrilldown(shadowRunId: string | null, enabled = true) {
+    return useQuery({
+        queryKey: paperShadowQueryKeys.consistencyDrilldown(shadowRunId ?? ''),
+        queryFn: () => shadowRunsApi.getPaperShadowConsistencyDrilldown(shadowRunId ?? ''),
         enabled: Boolean(shadowRunId) && enabled,
         retry: false,
     });

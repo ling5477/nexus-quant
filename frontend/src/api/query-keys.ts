@@ -53,6 +53,15 @@ export const strategyValidationQueryKeys = {
     shadowLivePreview: (query: unknown) => [...strategyValidationQueryKeys.all, 'shadow-live-preview', query ?? 'idle'] as const,
 };
 
+export const paperShadowQueryKeys = {
+    all: ['paper-shadow'] as const,
+    consistencyDrilldown: (shadowRunId: string) => [
+        ...paperShadowQueryKeys.all,
+        'consistency-drilldown',
+        shadowRunId,
+    ] as const,
+};
+
 export const shadowRunsQueryKeys = {
     all: ['shadow-runs'] as const,
     overview: () => [...shadowRunsQueryKeys.all, 'overview'] as const,

@@ -1,5 +1,6 @@
 import {apiClient} from '@/api/client';
 import type {
+    PaperShadowConsistencyDrilldownResponse,
     ShadowConsistencyReportResponse,
     ShadowRunDetailResponse,
     ShadowRunEventResponse,
@@ -62,6 +63,14 @@ export async function getShadowRunLatestConsistencyReport(id: string): Promise<S
     return data;
 }
 
+export async function getPaperShadowConsistencyDrilldown(shadowRunId: string): Promise<PaperShadowConsistencyDrilldownResponse> {
+    const {data} = await apiClient.get<PaperShadowConsistencyDrilldownResponse>(
+        '/paper-shadow/consistency/drilldown',
+        {params: {shadowRunId}},
+    );
+    return data;
+}
+
 /**
  * GateR-7 Shadow Run API client。
  *
@@ -76,4 +85,5 @@ export const shadowRunsApi = {
     getShadowRunEvents,
     getShadowRunSnapshots,
     getShadowRunLatestConsistencyReport,
+    getPaperShadowConsistencyDrilldown,
 };

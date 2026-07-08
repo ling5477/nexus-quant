@@ -15985,3 +15985,38 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未深聚合 Paper / Strategy / MarketData / Risk / Incident；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - `notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
 - next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add paper shadow consistency drilldown read model`。
+
+## NQ-GATES-2-FRONTEND-CONSISTENCY-DRILLDOWN-IMPLEMENTATION
+
+- date: 2026-07-08
+- scope: GateS-2 frontend implementation；NQ-only；只在现有 `/strategies/shadow-runs/:shadowRunId` detail / replay 页面新增 Paper vs Shadow Consistency Drilldown panel，并消费已实现的 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `frontend/src/types/shadow-runs.ts`
+  - `frontend/src/api/shadow-runs.ts`
+  - `frontend/src/api/query-keys.ts`
+  - `frontend/src/hooks/useShadowRunQueries.ts`
+  - `frontend/src/pages/shadow-runs/ShadowRunDetailPage.tsx`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key changes:
+  - 新增 `PaperShadowConsistencyDrilldownResponse`、shadow run、latest consistency、snapshot / event summary、blockers、warnings、nextSteps、evidenceAnchors、`PaperShadowComparisonStatus` 和 divergence severity 前端类型。
+  - 新增 `getPaperShadowConsistencyDrilldown(shadowRunId)`、`paperShadowQueryKeys.consistencyDrilldown(shadowRunId)` 和 `usePaperShadowConsistencyDrilldown(shadowRunId)`；canonical query key 为 `['paper-shadow', 'consistency-drilldown', shadowRunId]`。
+  - 在现有 Shadow Run detail / replay 页面新增 Consistency Drilldown panel，覆盖 loading / error / missing / no report / normal / stale / diverged / blocked / failed 展示。
+  - 固定展示 LIVE DISABLED、Real provider NOT IMPLEMENTED、Private trading NOT IMPLEMENTED、Shadow Run is diagnostic only、Not trading authorization、AI/DH runtime not integrated boundary badges。
+  - 最小同步 current README / STATUS / TESTING / WORKLOG / FACT_SOURCE_INDEX 和 root README；未修改 API.md、DB_SCHEMA.md、ROADMAP.md、docs/gates 或 docs/archive。
+- validation:
+  - `npm run build`：PASS / BUILD SUCCESS；仅有既有 Vite chunk size warning。
+- tests:
+  - 未新增 E2E；本轮明确禁止新增 E2E。
+  - 未新增 component/unit smoke；当前 frontend 无独立 component test / unit smoke runner，新增无法由现有脚本执行的测试会扩大测试体系。
+- boundary:
+  - 未修改 backend、research、scripts、deploy、`.github`、migration、package / lock files、docs/gates 或 docs/archive。
+  - 未新增 Dashboard v2、route、后端 API、migration、CI workflow、Python code、真实交易按钮或写侧 client。
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - Drilldown panel 仅表达 read-only diagnostic facts，不表达 trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
+- next action: 完成 forbidden-area diff、wording / sensitive grep、staged checks 后提交；推荐 commit message：`feat(gates): add paper shadow consistency drilldown frontend`。
