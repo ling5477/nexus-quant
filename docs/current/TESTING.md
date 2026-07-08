@@ -9639,3 +9639,51 @@ Boundary confirmation：
 - 固定 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`，并固定 `realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
 
 Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
+## NQ-GATES-4-PYTHON-EVALUATION-ARTIFACT-BASELINE（2026-07-08）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只实现 Python research 离线 evaluation artifact baseline 与最小 parameter grid。修改范围限定在 `research/py/**`、`research/py/tests/**` 和 `docs/current/STATUS.md` / `TESTING.md` / `WORKLOG.md` / `FACT_SOURCE_INDEX.md`；未修改 backend、frontend、scripts、deploy、`.github`、migration、docs/gates、docs/archive、`pom.xml`、package / lock files 或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `python -m pytest` / `python -m mypy src` / `python -m ruff check .` | BLOCKED / LOCAL PYTHON STUB（阻断 / 本机 Python stub） | PATH 中 `python.exe` 解析到 `C:\Users\lingy\AppData\Local\Microsoft\WindowsApps\python.exe`，未进入测试执行。后续使用 Codex bundled Python 路径复核。 |
+| `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pip install -e ".[dev]"` | PASS / INSTALLED DEV VALIDATION DEPS（通过 / 已安装验证依赖） | 按 `research/py/README.md` 安装本地子工程 dev extras；用于运行 pytest / mypy / ruff。未修改 tracked dependency 或 lock file。 |
+| `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pytest` | PASS / 24 PASSED（通过 / 24 项通过） | 覆盖现有 CLI / research foundation / sample strategy，以及新增 `test_evaluation_artifacts.py` 的 artifact / parameter grid / checksum / validation / no-network 回归。 |
+| `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m mypy src` | PASS / 18 SOURCE FILES（通过 / 18 个源码文件） | `Success: no issues found in 18 source files`。 |
+| `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m mypy .` | PASS / 23 SOURCE FILES（通过 / 23 个文件） | 补跑用户列出的全目录 mypy 口径；包含 tests，`Success: no issues found in 23 source files`。 |
+| `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m ruff check .` | PASS（通过） | `All checks passed!`。 |
+
+Test coverage：
+
+- Parameter grid 稳定展开、空 grid 语义和 `parameterSetId` 稳定生成。
+- Artifact 可写入 / 读取；JSON 输出稳定且以换行结尾。
+- Checksum 稳定且不包含 checksum 字段自身；payload tamper 可被发现。
+- 缺 `schemaVersion` / `artifactId` / `experimentId` 会 validation fail。
+- `diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false` 强制校验。
+- Artifact 中禁止敏感字段名会 validation fail。
+- `FAKE_METRICS_FIXTURE` 不能标记为真实交易表现。
+- 写入 / 读取 / 校验过程不创建网络连接。
+
+Known warnings / notes：
+
+- Codex bundled Python 的 Scripts 目录不在 PATH；本轮使用完整 `python.exe` 路径执行模块命令，不影响验证。
+- 本轮安装 dev validation dependencies 到 bundled runtime，仅用于本地验证；未写入仓库依赖文件、lock file 或 CI workflow。
+
+What was not run：
+
+- 未运行 Maven backend test；原因是未修改 `backend/**`、Java API、migration 或后端测试。
+- 未运行 frontend build / Playwright / E2E；原因是未修改 `frontend/**`、route、page、client、hook 或 package / lock files。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 backtest runner、live runner、Paper run、Shadow run、scheduler 或 runtime。
+
+Boundary confirmation：
+
+- Artifact baseline 仅在 Python offline research 域内读写本地 JSON。
+- 未新增 API、DB migration、Java production binding、CI workflow、frontend page、runner、scheduler、Optuna、Ray Tune、大规模并行、外部 DB 或真实交易执行。
+- Artifact 固定 `diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`；fake metrics fixture 不表示真实策略表现。
+- LIVE = `DISABLED`（关闭）；AI = `NOT STARTED`（未开始）；DH runtime = `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+
+Blocking status：non-blocking。当前可进入提交前复核。

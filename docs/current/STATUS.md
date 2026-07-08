@@ -30,6 +30,7 @@
 - GateS-2 frontend consistency drilldown implementation：`NQ-GATES-2-FRONTEND-CONSISTENCY-DRILLDOWN-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs/:shadowRunId` detail / replay 页面消费 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}` 的前端 type / API client / query key / hook / UI panel 和 `npm run build` 本地验证，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
 - GateS-3 strategy evaluation gate runtime baseline：`NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/strategy-validation/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-3 frozen / accepted、前端页面、Dashboard v2、scheduler、runner、LIVE 或交易授权。
 - GateS-3 frontend strategy validation overview implementation：`NQ-GATES-3-FRONTEND-STRATEGY-VALIDATION-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面顶部 Strategy Validation Overview panel、前端 type / API client / query key / hook 和 `npm run build` 本地验证，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
+- GateS-4 Python offline evaluation artifact baseline：`NQ-GATES-4-PYTHON-EVALUATION-ARTIFACT-BASELINE：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 Python research 离线 artifact 数据结构、parameter grid、JSON writer / reader、checksum / validation 和 pytest / mypy / ruff 本地验证，不代表 GateS-4 frozen / accepted、Java 生产绑定、API、migration、CI、LIVE、Python ML ready、Python live execution ready、AI/DH runtime 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -56,6 +57,7 @@
 - Paper shadow consistency drilldown backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/paper-shadow/consistency/drilldown` 按单个 `shadowRunId` 只读聚合本地 Shadow Run / consistency / snapshot / event facts，不创建 report，不追加 event / snapshot，不提供写侧 endpoint，不是 runner trigger、scheduler trigger 或交易授权。
 - Strategy validation overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/strategy-validation/overview` 只读聚合本地 strategy / evaluation / publish / Paper / Shadow evidence，不提供写侧 endpoint，不是 strategy approval、runner trigger、scheduler trigger 或交易授权。
 - Strategy validation overview frontend panel：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限现有 `/strategies/validation` 页面顶部消费 `GET /api/strategy-validation/overview` 并展示 counts、latestDecision、decisionReasons、limitations、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不是 Dashboard v2、写侧动作或交易授权。
+- Python offline evaluation artifact baseline：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `research/py` 离线 JSON artifact / parameter grid / checksum / validation 工具和测试；不是 Java production fact import，不是 API，不是 runner，不是 ML ready、live execution ready 或交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 - GateS 全域 frontend / Dashboard v2 / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
@@ -198,6 +200,27 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - 写侧、交易或资金操作入口已新增或启用。
 - LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
 - trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
+
+## 16. GateS-4 Python Offline Evaluation Artifact Baseline Status
+
+本轮已实现 `NQ-GATES-4-PYTHON-EVALUATION-ARTIFACT-BASELINE`：在 `research/py` 离线研究域新增 evaluation artifact baseline、最小 parameter grid、JSON writer / reader、checksum 和 validation。
+
+实现范围限定为：
+
+- `research/py/src/nq_research/evaluation/parameters.py`：新增 `ParameterSet`、`expand_parameter_grid()` 和 `build_parameter_set_id()`；空 grid 返回单个空参数集，非空 grid 按 key 稳定排序展开，不启动 Optuna / Ray / 并行任务 / runner。
+- `research/py/src/nq_research/evaluation/artifacts.py`：新增 `EvaluationArtifact`、`build_evaluation_artifact()`、`write_evaluation_artifact()`、`read_evaluation_artifact()`、`compute_checksum()`、`validate_artifact()` 和 sensitive field guard；checksum 不包含 checksum 字段自身。
+- `research/py/tests/test_evaluation_artifacts.py`：覆盖 parameter grid、parameterSetId、artifact write/read、checksum、tamper detection、必填字段、强制 `diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`、禁止敏感字段、fake metrics fixture 边界和 no-network guard。
+- `docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/FACT_SOURCE_INDEX.md`：最小同步当前事实与验证记录。
+
+该 artifact baseline 固定要求 `schemaVersion=python-evaluation-artifact.v1`、`source=PYTHON_OFFLINE`、`diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`。测试中的 metrics 仅为 `FAKE_METRICS_FIXTURE`（fixture 假指标），并强制 `realTradingPerformance=false`。
+
+该状态不表示：
+
+- GateS-4 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- Java 后端 API、DB migration、CI workflow、前端页面、runner / scheduler 或 production fact import 已新增。
+- artifact 已绑定 Java 生产链路、已导入数据库或可驱动 Paper / Shadow / LIVE。
+- Python ML ready、Python live execution ready、strategy approval、trading authorization、trade approval 或 LIVE enable。
+- AI runtime started、DH runtime integrated、RealClient / real provider / private trading adapter / real permission probe implemented。
 
 ## 13. GateS-2 Frontend Consistency Drilldown Implementation Status
 

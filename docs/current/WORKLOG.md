@@ -16098,3 +16098,37 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - Overview panel 仅表达 read-only validation facts，不表达 trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
 - next action: 完成 forbidden-area diff、wording / sensitive grep、staged checks 后提交；推荐 commit message：`feat(gates): add strategy validation overview frontend`。
+
+## NQ-GATES-4-PYTHON-EVALUATION-ARTIFACT-BASELINE
+
+- date: 2026-07-08
+- scope: GateS-4 Python research implementation；NQ-only；只实现 offline evaluation artifact baseline、最小 parameter grid、JSON writer / reader、checksum / validation 和 Python tests。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `research/py/src/nq_research/evaluation/artifacts.py`
+  - `research/py/src/nq_research/evaluation/parameters.py`
+  - `research/py/tests/test_evaluation_artifacts.py`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key changes:
+  - 新增 `EvaluationArtifact` 数据结构，输出 camelCase JSON 字段：`schemaVersion`、`artifactId`、`experimentId`、`strategyId`、`strategyVersion`、`datasetId`、`datasetVersion`、`parameterSetId`、`parameters`、`metricSummary`、`costAssumptions`、`slippageAssumptions`、`validationWarnings`、`limitations`、`generatedAt`、`source`、`checksum`、`diagnosticOnly`、`notTradingAuthorization`、`liveExecutionReady`。
+  - 新增 `expand_parameter_grid()` 和 `build_parameter_set_id()`；参数 key 稳定排序，value 顺序保持调用方输入，空 grid 返回一个空参数集，空 value list 直接 fail-fast。
+  - 新增 `write_evaluation_artifact()` / `read_evaluation_artifact()` / `compute_checksum()` / `validate_artifact()`；checksum 不包含 checksum 字段自身，writer 在落盘前强制 validation。
+  - validation 覆盖必填字段、schemaVersion、checksum、JSON serializable parameters、metricSummary required fields、`diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`、`source=PYTHON_OFFLINE` 和 forbidden sensitive field guard。
+  - 新增 pytest 回归，覆盖 parameter grid、parameterSetId、artifact write/read、checksum tamper、缺必填字段、安全字段、fake metrics fixture 不得标记真实交易表现、no-network guard。
+- validation:
+  - 初始 `python -m pytest` / `python -m mypy src` / `python -m ruff check .` 因本机 PATH 命中 WindowsApps Python stub 未进入测试执行。
+  - 使用 Codex bundled Python 安装 `research/py` dev extras：`& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pip install -e ".[dev]"`；未改 tracked dependency 或 lock file。
+  - `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pytest`：PASS / 24 passed。
+  - `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m mypy src`：PASS / 18 source files。
+  - `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m mypy .`：PASS / 23 files。
+  - `& 'C:\Users\lingy\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m ruff check .`：PASS。
+- boundary:
+  - 未修改 backend、frontend、scripts、deploy、`.github`、migration、docs/gates、docs/archive、`pom.xml`、package / lock files 或 CI workflow。
+  - 未新增 API、DB migration、Java production binding、frontend page、runner、scheduler、Optuna、Ray Tune、大规模并行、外部 DB 或真实交易执行。
+  - 未调用真实交易所，未读取或输出 credential material，未生成真实订单、撤单、转账、提现，未写 account / ledger / order / position。
+  - Artifact 固定 `diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`；`FAKE_METRICS_FIXTURE` 仅为测试 fixture，不表示真实策略表现。
+  - LIVE = `DISABLED`（关闭）；AI = `NOT STARTED`（未开始）；DH runtime = `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+- next action: 完成 forbidden-area diff、boundary / sensitive rg、staged checks 后提交；推荐 commit message：`feat(research): add offline evaluation artifact baseline`。
