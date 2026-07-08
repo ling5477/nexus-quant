@@ -1,3 +1,47 @@
+## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-WO validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只做 GateT-3 Incident / Replay Review Workflow work order、事实源审查、candidate endpoint / DTO / query / repository 方案、状态语义、安全边界审查和 current docs 最小同步。
+  - 修改范围限定为 README.md、docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md、docs/current/README.md、STATUS.md、ROADMAP.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md。
+  - 未修改 backend、frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files、业务代码或测试代码。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 6f7848f7b0d1c3f5dce4be6a9bb344bc3a2ec7ae.
+  - git rev-parse origin/dev: 6f7848f7b0d1c3f5dce4be6a9bb344bc3a2ec7ae.
+  - git log --oneline -20: latest commit is 6f7848f7 feat(gatet): add consistency evidence overview frontend.
+  - latest GitHub Actions: initial gh run list returned NQ CI Baseline run 28957253365 completed success, headSha=6f7848f7b0d1c3f5dce4be6a9bb344bc3a2ec7ae.
+  - final CI recheck note: a later repeated gh run list call returned GitHub API EOF / TLS handshake timeout; non-blocking because current HEAD did not change and initial current-HEAD CI success was already verified.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Docs validation:
+  - git diff --check: PASS（通过）.
+  - git diff --stat: reviewed; diff limited to allowed docs.
+  - git diff -- backend / frontend / research / scripts / deploy / .github / backend/**/db/migration / docs/gates / docs/archive: all empty.
+  - Required boundary rg: executed and reviewed; hits are current boundary wording, planned endpoint names, existing code guards, historical docs, or explicit forbidden-field tests.
+  - git diff --cached --name-only: empty; no staged files in this turn.
+  - git diff --cached --stat: empty.
+  - git diff --cached --check: PASS（通过）.
+
+What was not run:
+  - Maven backend tests were not run because this task did not modify Java, API implementation, repository, DTO, SQL, migration or tests.
+  - frontend build / Playwright / E2E were not run because this task did not modify frontend source, route, API client, hook, page, package or lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Candidate endpoint GET /api/incidents/replay/review/overview is not implemented.
+  - IncidentReplayReviewItem remains a derived read model by default; no persistence and no migration.
+  - review / acknowledge / escalation / closeout remain planning-only recommendations; no automatic remediation or trading authorization.
+  - LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; Integration-1 runtime remains NOT STARTED.
+
+Blocking status:
+  - Non-blocking. Ready for final diff / optional staging checks.
+```
+
 ## NQ-GATET-2-FRONTEND-CONSISTENCY-EVIDENCE-OVERVIEW validation（2026-07-08）
 
 ```text
