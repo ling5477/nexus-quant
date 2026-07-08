@@ -24,6 +24,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {useConsistencyEvidenceOverview} from '@/hooks/useConsistencyEvidenceOverview';
 import {useIncidentReplayOverview} from '@/hooks/useIncidentReplayOverview';
 import {
     usePaperShadowConsistencyDrilldown,
@@ -37,6 +38,15 @@ import {
     useStrategyValidationOverview,
 } from '@/hooks/useStrategyValidationQueries';
 import type {AppApiError} from '@/types/api';
+import type {
+    ConsistencyEvidenceAnchor,
+    ConsistencyEvidenceBlocker,
+    ConsistencyEvidenceItem,
+    ConsistencyEvidenceMetricDeltaItem,
+    ConsistencyEvidenceNextStep,
+    ConsistencyEvidenceOverviewResponse,
+    ConsistencyEvidenceWarning,
+} from '@/types/consistency-evidence';
 import type {
     IncidentReplayBlocker,
     IncidentReplayEvidenceAnchor,
@@ -147,6 +157,8 @@ type IncidentReplayOverviewIssue = IncidentReplayBlocker | IncidentReplayWarning
 
 type ShadowValidationWorkflowIssue = ShadowValidationBlocker | ShadowValidationWarning;
 
+type ConsistencyEvidenceOverviewIssue = ConsistencyEvidenceBlocker | ConsistencyEvidenceWarning;
+
 type OverviewStateLevel = 'info' | 'warning' | 'error';
 
 interface OverviewPanelState {
@@ -197,6 +209,13 @@ interface WorkbenchEvidenceAnchorRow {
     checksum: string | null;
 }
 
+interface ConsistencyEvidenceBucketRow {
+    key: string;
+    source: 'severityBuckets' | 'freshnessSummary';
+    bucket: string;
+    count: number;
+}
+
 const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     APPROVED: {label: '验证层通过，非交易授权', tone: 'info'},
     REJECTED: {label: '验证层拒绝', tone: 'danger'},
@@ -207,6 +226,8 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     CONSISTENT: {label: '证据一致，非盈利结论', tone: 'info'},
     DIVERGED: {label: '证据偏离', tone: 'warning'},
     NO_REPORT: {label: '无一致性报告', tone: 'neutral'},
+    NOT_COMPARABLE: {label: '不可比较', tone: 'warning'},
+    NO_CONSISTENCY_EVIDENCE: {label: '无 consistency evidence', tone: 'warning'},
     READY_FOR_SHADOW_REVIEW: {label: '可进入 Shadow 评审', tone: 'info'},
     READY_FOR_COMPARISON: {label: '可查看只读对照', tone: 'info'},
     READY_FOR_NO_SIDE_EFFECT_PREVIEW: {label: '可生成无副作用预览', tone: 'info'},
@@ -850,6 +871,244 @@ const shadowValidationWorkflowOperatorColumns: ColumnsType<ShadowValidationOpera
     },
 ];
 
+const consistencyEvidenceIssueColumns: ColumnsType<ConsistencyEvidenceOverviewIssue> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '诊断优先级',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 190,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        key: 'source',
+        width: 240,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{workbenchSafeText(record.sourceType)}</Text>
+                {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
+                    <Text type="secondary">无 sourceId</Text>
+                )}
+            </Space>
+        ),
+    },
+    {
+        title: '说明',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const consistencyEvidenceNextStepColumns: ColumnsType<ConsistencyEvidenceNextStep> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 240,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'Owner',
+        dataIndex: 'owner',
+        key: 'owner',
+        width: 150,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '动作',
+        dataIndex: 'action',
+        key: 'action',
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '完成条件',
+        dataIndex: 'completionCondition',
+        key: 'completionCondition',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '边界关键',
+        dataIndex: 'boundaryCritical',
+        key: 'boundaryCritical',
+        width: 130,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+    },
+];
+
+const consistencyEvidenceAnchorColumns: ColumnsType<ConsistencyEvidenceAnchor> = [
+    {
+        title: 'sourceType',
+        dataIndex: 'sourceType',
+        key: 'sourceType',
+        width: 190,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'sourceId',
+        dataIndex: 'sourceId',
+        key: 'sourceId',
+        width: 230,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceVersion',
+        dataIndex: 'sourceVersion',
+        key: 'sourceVersion',
+        width: 170,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceTimestamp',
+        dataIndex: 'sourceTimestamp',
+        key: 'sourceTimestamp',
+        width: 190,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'traceId',
+        dataIndex: 'traceId',
+        key: 'traceId',
+        width: 240,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'description',
+        dataIndex: 'description',
+        key: 'description',
+        render: (value: string | null) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const consistencyEvidenceBucketColumns: ColumnsType<ConsistencyEvidenceBucketRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 190,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: 'Bucket',
+        dataIndex: 'bucket',
+        key: 'bucket',
+        width: 220,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'count',
+        dataIndex: 'count',
+        key: 'count',
+        width: 120,
+        render: (value: number) => <Text>{value}</Text>,
+    },
+];
+
+const consistencyEvidenceMetricColumns: ColumnsType<ConsistencyEvidenceMetricDeltaItem> = [
+    {
+        title: 'metric',
+        dataIndex: 'name',
+        key: 'name',
+        width: 220,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'delta',
+        dataIndex: 'delta',
+        key: 'delta',
+        width: 140,
+        render: (value: number | null) => value === null ? <StatusTag status="NOT_AVAILABLE"/> : <Text>{value}</Text>,
+    },
+    {
+        title: 'unit',
+        dataIndex: 'unit',
+        key: 'unit',
+        width: 120,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'comparable',
+        dataIndex: 'comparable',
+        key: 'comparable',
+        width: 140,
+        render: (value: boolean) => (
+            <Tag color={value ? 'processing' : 'warning'}>
+                {value ? 'true（可诊断比较）' : 'false（不可比较）'}
+            </Tag>
+        ),
+    },
+    {
+        title: 'limitationCodes',
+        dataIndex: 'limitationCodes',
+        key: 'limitationCodes',
+        render: (value: string[]) => <Text type="secondary">{safeTextListSummary(value)}</Text>,
+    },
+];
+
+const consistencyEvidenceItemColumns: ColumnsType<ConsistencyEvidenceItem> = [
+    {
+        title: 'evidenceItemId',
+        dataIndex: 'evidenceItemId',
+        key: 'evidenceItemId',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'comparisonStatus',
+        dataIndex: 'comparisonStatus',
+        key: 'comparisonStatus',
+        width: 240,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'divergenceSeverity',
+        dataIndex: 'divergenceSeverity',
+        key: 'divergenceSeverity',
+        width: 220,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'evidenceFreshness',
+        dataIndex: 'evidenceFreshness',
+        key: 'evidenceFreshness',
+        width: 220,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: '关联 id',
+        key: 'ids',
+        width: 300,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>shadowRunId {record.shadowRunId ?
+                    <Text code>{workbenchSafeText(record.shadowRunId)}</Text> : '无'}</Text>
+                <Text>paperRunId {record.paperRunId ?
+                    <Text code>{workbenchSafeText(record.paperRunId)}</Text> : '无'}</Text>
+                <Text>consistencyReportId {record.consistencyReportId ? (
+                    <Text code>{workbenchSafeText(record.consistencyReportId)}</Text>
+                ) : '无'}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'divergenceReasons / limitations',
+        key: 'summaries',
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text type="secondary">reasons: {safeTextListSummary(record.divergenceReasons)}</Text>
+                <Text type="secondary">limitations: {safeTextListSummary(record.limitations)}</Text>
+            </Space>
+        ),
+    },
+];
+
 const incidentNextStepColumns: ColumnsType<IncidentReplayNextStep> = [
     {
         title: 'Code',
@@ -1179,6 +1438,16 @@ function jsonSummary(value: JsonValue | null | undefined): string {
     return String(value);
 }
 
+function safeTextListSummary(items: string[] | null | undefined): string {
+    const values = (items ?? [])
+        .map((item) => workbenchSafeText(item))
+        .filter((item) => item !== '无');
+    if (values.length === 0) {
+        return '无';
+    }
+    return values.slice(0, 3).join('；');
+}
+
 function workbenchShadowRunId(
     submittedQuery: StrategyValidationQuery | null,
     strategyOverview?: StrategyValidationOverviewResponse,
@@ -1387,7 +1656,11 @@ function StatusTag({status}: { status?: string | null }) {
     );
 }
 
-function workflowStatusPresentation(status: string | null | undefined): { label: string; color: string; tooltip: string } {
+function workflowStatusPresentation(status: string | null | undefined): {
+    label: string;
+    color: string;
+    tooltip: string
+} {
     const normalized = normalizeStatus(status);
     switch (normalized) {
         case 'INTAKE':
@@ -1449,6 +1722,36 @@ function workflowStatusPresentation(status: string | null | undefined): { label:
                 label: '证据过期',
                 color: 'warning',
                 tooltip: 'STALE_EVIDENCE 表示证据新鲜度不足，需要补证据。',
+            };
+        case 'CONSISTENT':
+            return {
+                label: '诊断一致，非交易授权',
+                color: 'processing',
+                tooltip: 'CONSISTENT 只表示 Paper vs Shadow evidence 暂未发现差异，不表示盈利、批准或交易授权。',
+            };
+        case 'DIVERGED':
+            return {
+                label: 'Paper / Shadow 证据不一致',
+                color: 'warning',
+                tooltip: 'DIVERGED 只表示本地 Paper vs Shadow 证据不一致，需要复核，不表示行情方向或自动处置。',
+            };
+        case 'NOT_COMPARABLE':
+            return {
+                label: '不可比较',
+                color: 'warning',
+                tooltip: 'NOT_COMPARABLE 表示比较基础不足或 schema 不兼容，必须 fail-closed 展示。',
+            };
+        case 'FAILED':
+            return {
+                label: '诊断失败',
+                color: 'error',
+                tooltip: 'FAILED 表示一致性诊断读取或计算失败，需要排查，不表示自动处置。',
+            };
+        case 'NO_REPORT':
+            return {
+                label: '无一致性报告',
+                color: 'default',
+                tooltip: 'NO_REPORT 表示缺少本地 consistency report，页面不会自动创建 report。',
             };
         case 'NO_DECISION':
             return {
@@ -1939,8 +2242,10 @@ function LatestDecisionSummary({latestDecision}: { latestDecision?: StrategyVali
                 <Descriptions.Item label="publishId">{optionalCode(latestDecision?.publishId)}</Descriptions.Item>
                 <Descriptions.Item label="paperRunId">{optionalCode(latestDecision?.paperRunId)}</Descriptions.Item>
                 <Descriptions.Item label="shadowRunId">{optionalCode(latestDecision?.shadowRunId)}</Descriptions.Item>
-                <Descriptions.Item label="latestDecision.traceId">{optionalCode(latestDecision?.traceId)}</Descriptions.Item>
-                <Descriptions.Item label="generatedAt">{generatedAtText(latestDecision?.generatedAt)}</Descriptions.Item>
+                <Descriptions.Item
+                    label="latestDecision.traceId">{optionalCode(latestDecision?.traceId)}</Descriptions.Item>
+                <Descriptions.Item
+                    label="generatedAt">{generatedAtText(latestDecision?.generatedAt)}</Descriptions.Item>
             </Descriptions>
             <TextList
                 title="decisionReasons"
@@ -2021,14 +2326,16 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
             variant="borderless"
             title="Strategy Validation Overview"
             extra={(
-                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
+                        onClick={() => query.refetch()}>
                     刷新 overview
                 </Button>
             )}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费 GET /api/strategy-validation/overview；用于 validation runtime baseline 总览，不新增 route、Dashboard v2 或写侧动作。
+                    只读消费 GET /api/strategy-validation/overview；用于 validation runtime baseline 总览，不新增
+                    route、Dashboard v2 或写侧动作。
                 </Paragraph>
                 <StrategyValidationOverviewBoundaryBadges overview={overview}/>
                 <OverviewBoundaryDriftAlert overview={overview}/>
@@ -2042,7 +2349,8 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
                         message="Strategy Validation overview 查询失败"
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                overview 失败时按不可用处理，不会显示为通过、授权或可执行。{formatApiError(query.error as AppApiError)}
+                                overview
+                                失败时按不可用处理，不会显示为通过、授权或可执行。{formatApiError(query.error as AppApiError)}
                             </Paragraph>
                         )}
                     />
@@ -2224,7 +2532,9 @@ function ShadowValidationWorkflowBoundaryBadges({overview}: { overview?: ShadowV
     );
 }
 
-function ShadowValidationWorkflowBoundaryDriftAlert({overview}: { overview?: ShadowValidationWorkflowOverviewResponse }) {
+function ShadowValidationWorkflowBoundaryDriftAlert({overview}: {
+    overview?: ShadowValidationWorkflowOverviewResponse
+}) {
     if (!overview) {
         return null;
     }
@@ -2306,16 +2616,17 @@ function ShadowValidationLatestOperatorItem({item}: { item?: ShadowValidationOpe
             <Descriptions.Item label="sourceId">{optionalSafeCode(item?.sourceId)}</Descriptions.Item>
             <Descriptions.Item label="strategyVersionId">{optionalSafeCode(item?.strategyVersionId)}</Descriptions.Item>
             <Descriptions.Item label="shadowRunId">{optionalSafeCode(item?.shadowRunId)}</Descriptions.Item>
-            <Descriptions.Item label="consistencyReportId">{optionalSafeCode(item?.consistencyReportId)}</Descriptions.Item>
+            <Descriptions.Item
+                label="consistencyReportId">{optionalSafeCode(item?.consistencyReportId)}</Descriptions.Item>
             <Descriptions.Item label="latestOperatorItem.traceId">{optionalSafeCode(item?.traceId)}</Descriptions.Item>
         </Descriptions>
     );
 }
 
 function ShadowValidationWorkflowIssueTables({
-                                                  blockers,
-                                                  warnings,
-                                              }: {
+                                                 blockers,
+                                                 warnings,
+                                             }: {
     blockers: ShadowValidationBlocker[];
     warnings: ShadowValidationWarning[];
 }) {
@@ -2359,12 +2670,14 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
             variant="borderless"
             title="影子验证工作流总览（Shadow Validation Workflow Overview）"
             extra={(
-                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
+                        onClick={() => query.refetch()}>
                     刷新总览
                 </Button>
             )}
         >
-            <Space data-testid="shadow-validation-workflow-panel" direction="vertical" size={12} style={{display: 'flex'}}>
+            <Space data-testid="shadow-validation-workflow-panel" direction="vertical" size={12}
+                   style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
                     只读消费 GET /api/shadow-validation/workflow/overview；展示 derived operator items、workflowState、
                     validationDecision、evidenceFreshness、evidence anchors 与 traceId，不新增 route、review 动作、交易按钮或写侧请求。
@@ -2387,7 +2700,8 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                         )}
                     />
                 ) : !overview ? (
-                    <Empty description="暂无 Shadow Validation Workflow overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                    <Empty
+                        description="暂无 Shadow Validation Workflow overview 响应；固定安全边界仍按 fail-closed 展示。"/>
                 ) : (
                     <>
                         {panelState ? (
@@ -2429,6 +2743,436 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                             pagination={false}
                             scroll={{x: 1550}}
                             locale={{emptyText: '暂无 operatorItems；不能补造复核条目。'}}
+                        />
+                    </>
+                )}
+            </Space>
+        </Card>
+    );
+}
+
+function consistencyEvidenceBucketRows(
+    source: ConsistencyEvidenceBucketRow['source'],
+    buckets: Record<string, number> | undefined,
+): ConsistencyEvidenceBucketRow[] {
+    return Object.entries(buckets ?? {}).map(([bucket, count]) => ({
+        key: `${source}-${bucket}`,
+        source,
+        bucket,
+        count: numberValue(count),
+    }));
+}
+
+function consistencyEvidenceIsEmpty(overview: ConsistencyEvidenceOverviewResponse): boolean {
+    return countValue(overview.totalEvidenceItems) === 0
+        && overview.evidenceItems.length === 0
+        && !overview.latestEvidenceItem
+        && overview.blockers.length === 0
+        && overview.warnings.length === 0
+        && overview.nextSteps.length === 0
+        && overview.evidenceAnchors.length === 0;
+}
+
+function consistencyEvidenceHasNoEvidence(overview: ConsistencyEvidenceOverviewResponse): boolean {
+    return countValue(overview.totalEvidenceItems) === 0
+        || overview.evidenceItems.length === 0
+        || overview.evidenceAnchors.length === 0
+        || !overview.latestEvidenceItem;
+}
+
+function consistencyEvidenceHasStaleEvidence(overview: ConsistencyEvidenceOverviewResponse): boolean {
+    const freshness = normalizeStatus(overview.latestEvidenceItem?.evidenceFreshness);
+    return countValue(overview.staleEvidenceCount) > 0
+        || freshness === 'STALE'
+        || freshness === 'MISSING'
+        || freshness === 'PARTIAL'
+        || freshness === 'UNKNOWN';
+}
+
+function consistencyEvidenceHasUnknown(overview: ConsistencyEvidenceOverviewResponse): boolean {
+    const item = overview.latestEvidenceItem;
+    return normalizeStatus(item?.comparisonStatus) === 'UNKNOWN'
+        || normalizeStatus(item?.divergenceSeverity) === 'UNKNOWN'
+        || normalizeStatus(item?.evidenceFreshness) === 'UNKNOWN';
+}
+
+function resolveConsistencyEvidenceState(overview: ConsistencyEvidenceOverviewResponse): OverviewPanelState {
+    const comparisonStatus = normalizeStatus(overview.latestEvidenceItem?.comparisonStatus);
+    const divergenceSeverity = normalizeStatus(overview.latestEvidenceItem?.divergenceSeverity);
+
+    if (consistencyEvidenceIsEmpty(overview) || consistencyEvidenceHasNoEvidence(overview)) {
+        return {
+            level: 'warning',
+            message: 'Consistency Evidence overview 暂无 consistency evidence',
+            description: 'empty / no consistency evidence 表示本地 Paper vs Shadow 证据不足；页面不会补造 evidence item，也不会创建 consistency report。',
+        };
+    }
+    if (countValue(overview.failedCount) > 0 || comparisonStatus === 'FAILED' || countValue(overview.criticalSeverityCount) > 0 || divergenceSeverity === 'CRITICAL') {
+        return {
+            level: 'error',
+            message: 'Consistency Evidence overview 存在 failed / critical 诊断阻断',
+            description: 'FAILED / CRITICAL 只表示诊断优先级或读取计算失败，需要人工排查；不表示自动处置、交易拒绝完成或交易授权。',
+        };
+    }
+    if (countValue(overview.highSeverityCount) > 0 || divergenceSeverity === 'HIGH') {
+        return {
+            level: 'warning',
+            message: 'Consistency Evidence overview 存在 high diagnostic priority',
+            description: 'HIGH 只表示诊断优先级高，需要优先复核 Paper vs Shadow 证据，不表示自动处置或交易状态。',
+        };
+    }
+    if (countValue(overview.divergedCount) > 0 || comparisonStatus === 'DIVERGED') {
+        return {
+            level: 'warning',
+            message: 'Consistency Evidence overview 存在 Paper vs Shadow 证据不一致',
+            description: 'DIVERGED 只表示本地 consistency evidence 不一致，需要查看 divergenceReasons、limitations 和 anchors，不表示行情方向。',
+        };
+    }
+    if (countValue(overview.partialCount) > 0 || countValue(overview.notComparableCount) > 0 || comparisonStatus === 'PARTIAL' || comparisonStatus === 'NOT_COMPARABLE') {
+        return {
+            level: 'warning',
+            message: 'Consistency Evidence overview 存在 partial / not comparable evidence',
+            description: 'PARTIAL / NOT_COMPARABLE 表示证据不完整或不可比较，必须按 fail-closed 展示并保留 nextSteps。',
+        };
+    }
+    if (consistencyEvidenceHasStaleEvidence(overview)) {
+        return {
+            level: 'warning',
+            message: 'Consistency Evidence overview 存在 stale evidence',
+            description: 'STALE / MISSING / PARTIAL / UNKNOWN freshness 只描述本地 evidence 新鲜度不足，不能显示为完成或通过。',
+        };
+    }
+    if (consistencyEvidenceHasUnknown(overview)) {
+        return {
+            level: 'warning',
+            message: 'Consistency Evidence overview 存在 unknown 状态',
+            description: 'UNKNOWN 状态按 fail-closed 处理；页面不会把未知 comparison / severity / freshness 解释为一致或可继续。',
+        };
+    }
+    if (comparisonStatus === 'CONSISTENT' || countValue(overview.consistentCount) > 0) {
+        return {
+            level: 'info',
+            message: 'Consistency Evidence overview 证据一致（非交易授权）',
+            description: 'CONSISTENT 只表示当前本地 Paper vs Shadow evidence 未发现差异，不表示盈利、交易批准、LIVE 可用或自动处置完成。',
+        };
+    }
+    return {
+        level: 'info',
+        message: 'Consistency Evidence overview 已加载',
+        description: '当前结果只用于只读 consistency evidence 诊断，不产生任何交易、运行、报告创建或持久化副作用。',
+    };
+}
+
+function ConsistencyEvidenceBoundaryBadges({overview}: { overview?: ConsistencyEvidenceOverviewResponse }) {
+    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    return (
+        <Space size={[8, 8]} wrap>
+            <BoundaryBadge
+                color="error"
+                label="LIVE DISABLED（LIVE 关闭）"
+                tooltip={`liveDisabled=true；本 consistency evidence 不表示 LIVE 可用${pending}`}
+            />
+            <BoundaryBadge
+                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
+                tooltip={`realProviderImplemented=false；本 overview 不调用真实 provider${pending}`}
+            />
+            <BoundaryBadge
+                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
+                tooltip={`privateTradingImplemented=false；本 overview 不提供下单、撤单、转账或提现入口${pending}`}
+            />
+            <BoundaryBadge
+                color="warning"
+                label="Consistency evidence is diagnostic only（一致性证据仅诊断）"
+                tooltip={`diagnosticOnly=true；evidence items 是 derived 诊断条目，不持久化、不执行${pending}`}
+            />
+            <BoundaryBadge
+                color="error"
+                label="Not trading authorization（非交易授权）"
+                tooltip={`notTradingAuthorization=true；CONSISTENT 也不能解释为交易授权${pending}`}
+            />
+            <BoundaryBadge
+                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
+                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+            />
+        </Space>
+    );
+}
+
+function ConsistencyEvidenceBoundaryDriftAlert({overview}: { overview?: ConsistencyEvidenceOverviewResponse }) {
+    if (!overview) {
+        return null;
+    }
+    const overviewDrift = !overview.diagnosticOnly
+        || !overview.noSideEffect
+        || !overview.notTradingAuthorization
+        || !overview.liveDisabled
+        || overview.realProviderImplemented
+        || overview.privateTradingImplemented
+        || overview.aiDhRuntimeIntegrated;
+    const itemDrift = overview.evidenceItems.some((item) => !item.diagnosticOnly
+        || !item.noSideEffect
+        || !item.notTradingAuthorization
+        || !item.liveDisabled
+        || item.realProviderImplemented
+        || item.privateTradingImplemented
+        || item.aiDhRuntimeIntegrated);
+    const metricDrift = overview.metricDeltaSummary.rawMetricDeltaExposed
+        || overview.metricDeltaSummary.profitConclusionInferred
+        || overview.metricDeltaSummary.tradingSignalInferred;
+
+    return overviewDrift || itemDrift || metricDrift ? (
+        <Alert
+            type="error"
+            showIcon
+            message="Consistency Evidence boundary flags 与当前安全基线不一致"
+            description="页面按 fail-closed 处理该响应；不会把异常 flags、raw metricDelta、收益推断或交易信号展示成可执行、可交易或实盘可用。"
+        />
+    ) : null;
+}
+
+function ConsistencyEvidenceCounts({overview}: { overview?: ConsistencyEvidenceOverviewResponse }) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+            <Descriptions.Item label="totalEvidenceItems">{countValue(overview?.totalEvidenceItems)}</Descriptions.Item>
+            <Descriptions.Item label="consistentCount">{countValue(overview?.consistentCount)}</Descriptions.Item>
+            <Descriptions.Item label="divergedCount">{countValue(overview?.divergedCount)}</Descriptions.Item>
+            <Descriptions.Item label="partialCount">{countValue(overview?.partialCount)}</Descriptions.Item>
+            <Descriptions.Item label="notComparableCount">{countValue(overview?.notComparableCount)}</Descriptions.Item>
+            <Descriptions.Item label="failedCount">{countValue(overview?.failedCount)}</Descriptions.Item>
+            <Descriptions.Item label="staleEvidenceCount">{countValue(overview?.staleEvidenceCount)}</Descriptions.Item>
+            <Descriptions.Item label="highSeverityCount">{countValue(overview?.highSeverityCount)}</Descriptions.Item>
+            <Descriptions.Item
+                label="criticalSeverityCount">{countValue(overview?.criticalSeverityCount)}</Descriptions.Item>
+            <Descriptions.Item label="generatedAt">{generatedAtText(overview?.generatedAt)}</Descriptions.Item>
+            <Descriptions.Item label="traceId">{optionalSafeCode(overview?.traceId)}</Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function ConsistencyEvidenceLatestItem({item}: { item?: ConsistencyEvidenceItem | null }) {
+    if (!item) {
+        return <Empty description="暂无 latestEvidenceItem；空态不表示 evidence 完整、可比较或可交易。"/>;
+    }
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
+            <Descriptions.Item label="latestEvidenceItem.comparisonStatus">
+                <WorkflowStatusTag status={item.comparisonStatus}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="latestEvidenceItem.divergenceSeverity">
+                <WorkflowStatusTag status={item.divergenceSeverity}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="latestEvidenceItem.evidenceFreshness">
+                <WorkflowStatusTag status={item.evidenceFreshness}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="shadowRunId">{optionalSafeCode(item.shadowRunId)}</Descriptions.Item>
+            <Descriptions.Item label="paperRunId">{optionalSafeCode(item.paperRunId)}</Descriptions.Item>
+            <Descriptions.Item
+                label="consistencyReportId">{optionalSafeCode(item.consistencyReportId)}</Descriptions.Item>
+            <Descriptions.Item label="strategyVersionId">{optionalSafeCode(item.strategyVersionId)}</Descriptions.Item>
+            <Descriptions.Item label="datasetId">{optionalSafeCode(item.datasetId)}</Descriptions.Item>
+            <Descriptions.Item label="latestEvidenceItem.traceId">{optionalSafeCode(item.traceId)}</Descriptions.Item>
+            <Descriptions.Item
+                label="latestEvidenceItem.generatedAt">{generatedAtText(item.generatedAt)}</Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function ConsistencyEvidenceMetricDeltaSummary({
+                                                   summary,
+                                               }: {
+    summary?: ConsistencyEvidenceOverviewResponse['metricDeltaSummary'];
+}) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+                <Descriptions.Item label="metricCount">{countValue(summary?.metricCount)}</Descriptions.Item>
+                <Descriptions.Item label="comparableMetricCount">
+                    {countValue(summary?.comparableMetricCount)}
+                </Descriptions.Item>
+                <Descriptions.Item label="nonComparableMetricCount">
+                    {countValue(summary?.nonComparableMetricCount)}
+                </Descriptions.Item>
+                <Descriptions.Item label="sensitiveFieldFilteredCount">
+                    {countValue(summary?.sensitiveFieldFilteredCount)}
+                </Descriptions.Item>
+                <Descriptions.Item label="rawMetricDeltaExposed">
+                    <Tag color={summary?.rawMetricDeltaExposed ? 'error' : 'default'}>
+                        {String(Boolean(summary?.rawMetricDeltaExposed))}（raw metricDelta 不应暴露）
+                    </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="profitConclusionInferred">
+                    <Tag color={summary?.profitConclusionInferred ? 'error' : 'default'}>
+                        {String(Boolean(summary?.profitConclusionInferred))}（不推断收益结论）
+                    </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="tradingSignalInferred">
+                    <Tag color={summary?.tradingSignalInferred ? 'error' : 'default'}>
+                        {String(Boolean(summary?.tradingSignalInferred))}（不生成交易信号）
+                    </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="limitationCodes">
+                    {safeTextListSummary(summary?.limitationCodes)}
+                </Descriptions.Item>
+            </Descriptions>
+            <Table<ConsistencyEvidenceMetricDeltaItem>
+                size="small"
+                rowKey={(record) => `${record.name}-${record.unit ?? 'none'}`}
+                columns={consistencyEvidenceMetricColumns}
+                dataSource={summary?.topDeltaMetrics ?? []}
+                pagination={false}
+                scroll={{x: 980}}
+                locale={{emptyText: '暂无 topDeltaMetrics；不能补造 metric delta 或收益结论。'}}
+            />
+        </Space>
+    );
+}
+
+function ConsistencyEvidenceIssueTables({
+                                            blockers,
+                                            warnings,
+                                        }: {
+    blockers: ConsistencyEvidenceBlocker[];
+    warnings: ConsistencyEvidenceWarning[];
+}) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <div>
+                <Text strong>Blockers（阻断项）</Text>
+                <Table<ConsistencyEvidenceBlocker>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={consistencyEvidenceIssueColumns}
+                    dataSource={blockers}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                />
+            </div>
+            <div>
+                <Text strong>Warnings（警告项）</Text>
+                <Table<ConsistencyEvidenceWarning>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={consistencyEvidenceIssueColumns}
+                    dataSource={warnings}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 warnings；不能解释为 consistency evidence 已完成。'}}
+                />
+            </div>
+        </Space>
+    );
+}
+
+function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<ConsistencyEvidenceOverviewResponse> }) {
+    const overview = query.data;
+    const panelState = overview ? resolveConsistencyEvidenceState(overview) : null;
+    const bucketRows = overview ? [
+        ...consistencyEvidenceBucketRows('severityBuckets', overview.severityBuckets),
+        ...consistencyEvidenceBucketRows('freshnessSummary', overview.freshnessSummary),
+    ] : [];
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="一致性证据总览（Consistency Evidence Overview）"
+            extra={(
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
+                        onClick={() => query.refetch()}>
+                    刷新证据
+                </Button>
+            )}
+        >
+            <Space data-testid="consistency-evidence-overview-panel" direction="vertical" size={12}
+                   style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    只读消费 GET /api/paper-shadow/consistency/evidence/overview；展示 evidence counts、
+                    latestEvidenceItem、severityBuckets、freshnessSummary、metricDeltaSummary、blockers / warnings /
+                    nextSteps、evidenceAnchors 与 traceId，不新增 route、review 动作、交易按钮或写侧请求。
+                </Paragraph>
+                <Alert
+                    type="info"
+                    showIcon
+                    message="文案边界"
+                    description="CONSISTENT 不表示盈利或可交易；DIVERGED 只表示 Paper vs Shadow 证据不一致；HIGH / CRITICAL 只表示诊断优先级；metricDelta 只显示诊断差异摘要。"
+                />
+                <ConsistencyEvidenceBoundaryBadges overview={overview}/>
+                <ConsistencyEvidenceBoundaryDriftAlert overview={overview}/>
+                <ConsistencyEvidenceCounts overview={overview}/>
+                {query.isLoading ? (
+                    <Skeleton active paragraph={{rows: 8}}/>
+                ) : query.isError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Consistency Evidence overview 查询失败"
+                        description={(
+                            <Paragraph style={{marginBottom: 0}}>
+                                consistency evidence overview 失败时按不可用处理，不会显示为一致、授权、自动处置或可执行。
+                                {formatApiError(query.error as AppApiError)}
+                            </Paragraph>
+                        )}
+                    />
+                ) : !overview ? (
+                    <Empty description="暂无 Consistency Evidence overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                ) : (
+                    <>
+                        {panelState ? (
+                            <Alert
+                                type={panelState.level}
+                                showIcon
+                                message={panelState.message}
+                                description={panelState.description}
+                            />
+                        ) : null}
+                        {consistencyEvidenceIsEmpty(overview) ? (
+                            <Empty description="暂无 consistency evidence；空态不表示证据完整、可比较、已复核或可交易。"/>
+                        ) : null}
+                        <ConsistencyEvidenceLatestItem item={overview.latestEvidenceItem}/>
+                        <div>
+                            <Text strong>Evidence summaries（证据摘要）</Text>
+                            <Table<ConsistencyEvidenceBucketRow>
+                                size="small"
+                                rowKey={(record) => record.key}
+                                columns={consistencyEvidenceBucketColumns}
+                                dataSource={bucketRows}
+                                pagination={false}
+                                scroll={{x: 560}}
+                                locale={{emptyText: '暂无 severityBuckets / freshnessSummary；不能补造桶统计。'}}
+                            />
+                        </div>
+                        <div>
+                            <Text strong>metricDeltaSummary（诊断差异摘要）</Text>
+                            <ConsistencyEvidenceMetricDeltaSummary summary={overview.metricDeltaSummary}/>
+                        </div>
+                        <ConsistencyEvidenceIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
+                        <Table<ConsistencyEvidenceNextStep>
+                            size="small"
+                            rowKey={(record) => record.code}
+                            columns={consistencyEvidenceNextStepColumns}
+                            dataSource={overview.nextSteps}
+                            pagination={false}
+                            scroll={{x: 1000}}
+                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成复核或处置。'}}
+                        />
+                        <Table<ConsistencyEvidenceAnchor>
+                            size="small"
+                            rowKey={(record) => `${record.sourceType}-${record.sourceId ?? 'none'}-${record.traceId ?? 'none'}`}
+                            columns={consistencyEvidenceAnchorColumns}
+                            dataSource={overview.evidenceAnchors}
+                            pagination={false}
+                            scroll={{x: 1190}}
+                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                        />
+                        <Table<ConsistencyEvidenceItem>
+                            size="small"
+                            rowKey={(record) => record.evidenceItemId}
+                            columns={consistencyEvidenceItemColumns}
+                            dataSource={overview.evidenceItems}
+                            pagination={false}
+                            scroll={{x: 1660}}
+                            locale={{emptyText: '暂无 evidenceItems；不能补造 consistency evidence。'}}
                         />
                     </>
                 )}
@@ -2683,12 +3427,14 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
             variant="borderless"
             title="Incident / Replay Overview"
             extra={(
-                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
+                        onClick={() => query.refetch()}>
                     刷新 Incident / Replay
                 </Button>
             )}
         >
-            <Space data-testid="incident-replay-overview-panel" direction="vertical" size={12} style={{display: 'flex'}}>
+            <Space data-testid="incident-replay-overview-panel" direction="vertical" size={12}
+                   style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
                     只读消费 GET /api/incidents/replay/overview；用于聚合本地 Shadow event、consistency divergence、
                     Paper alert、recovery 与 replay 诊断证据，不创建 incident、不启动 replay、不新增任何交易动作。
@@ -2823,9 +3569,11 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                 </Space>
             )}
         >
-            <Space data-testid="strategy-validation-shadow-workbench" direction="vertical" size={14} style={{display: 'flex'}}>
+            <Space data-testid="strategy-validation-shadow-workbench" direction="vertical" size={14}
+                   style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown 的只读运营视角；不新增 route、不触发 runner、不接 Python artifact，也不创建任何交易动作。
+                    聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown 的只读运营视角；不新增
+                    route、不触发 runner、不接 Python artifact，也不创建任何交易动作。
                 </Paragraph>
                 <Space size={[8, 8]} wrap>
                     <BoundaryBadge
@@ -2909,10 +3657,13 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
 
                 <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
                     <Descriptions.Item label="totalRuns">{numberValue(shadowOverview?.totalRuns)}</Descriptions.Item>
-                    <Descriptions.Item label="runningRuns">{numberValue(shadowOverview?.runningRuns)}</Descriptions.Item>
-                    <Descriptions.Item label="blockedRuns">{numberValue(shadowOverview?.blockedRuns)}</Descriptions.Item>
+                    <Descriptions.Item
+                        label="runningRuns">{numberValue(shadowOverview?.runningRuns)}</Descriptions.Item>
+                    <Descriptions.Item
+                        label="blockedRuns">{numberValue(shadowOverview?.blockedRuns)}</Descriptions.Item>
                     <Descriptions.Item label="failedRuns">{numberValue(shadowOverview?.failedRuns)}</Descriptions.Item>
-                    <Descriptions.Item label="completedRuns">{numberValue(shadowOverview?.completedRuns)}</Descriptions.Item>
+                    <Descriptions.Item
+                        label="completedRuns">{numberValue(shadowOverview?.completedRuns)}</Descriptions.Item>
                     <Descriptions.Item label="staleRuns">{numberValue(shadowOverview?.staleRuns)}</Descriptions.Item>
                     <Descriptions.Item label="latestRun.status">
                         <StatusTag status={shadowOverview?.latestRun?.status}/>
@@ -2928,7 +3679,8 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                         <StatusTag status={shadowOverview?.divergenceSeverity}/>
                     </Descriptions.Item>
                     <Descriptions.Item label="latestConsistency.comparisonStatus">
-                        <StatusTag status={drilldown?.comparisonStatus ?? shadowOverview?.latestConsistency?.comparisonStatus}/>
+                        <StatusTag
+                            status={drilldown?.comparisonStatus ?? shadowOverview?.latestConsistency?.comparisonStatus}/>
                     </Descriptions.Item>
                     <Descriptions.Item label="divergenceReasons">
                         {jsonSummary(drilldown?.divergenceReasons ?? shadowOverview?.latestConsistency?.divergenceReasons)}
@@ -2942,7 +3694,8 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                 </Descriptions>
 
                 {signalRows.length === 0 && nextStepRows.length === 0 && evidenceRows.length === 0 ? (
-                    <Empty description="暂无 blockers / warnings / nextSteps / evidence anchors；不能解释为证据完整或可执行。"/>
+                    <Empty
+                        description="暂无 blockers / warnings / nextSteps / evidence anchors；不能解释为证据完整或可执行。"/>
                 ) : null}
                 <Table<WorkbenchSignalRow>
                     size="small"
@@ -2977,8 +3730,8 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
 }
 
 function EvaluationGatePanel({
-                                  submitted,
-                                  query,
+                                 submitted,
+                                 query,
                              }: {
     submitted: boolean;
     query: PanelQueryState<StrategyEvaluationGateResponse>;
@@ -3261,7 +4014,8 @@ function EvidenceMatrix({
     return (
         <Card className="page-section" variant="borderless" title="Evidence Matrix / 证据矩阵">
             {!submittedQuery ? (
-                <Empty description="提交查询后展示 requiredEvidence / missingEvidence / blockers / warnings / nextSteps"/>
+                <Empty
+                    description="提交查询后展示 requiredEvidence / missingEvidence / blockers / warnings / nextSteps"/>
             ) : (
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
@@ -3344,6 +4098,7 @@ export function StrategyValidationPage() {
 
     const overviewQuery = useStrategyValidationOverview();
     const shadowValidationWorkflowQuery = useShadowValidationWorkflowOverview();
+    const consistencyEvidenceQuery = useConsistencyEvidenceOverview();
     const incidentReplayQuery = useIncidentReplayOverview();
     const shadowOverviewQuery = useShadowRunOverview();
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
@@ -3356,6 +4111,7 @@ export function StrategyValidationPage() {
     const consistencyDrilldownQuery = usePaperShadowConsistencyDrilldown(selectedShadowRunId);
     const loading = overviewQuery.isFetching
         || shadowValidationWorkflowQuery.isFetching
+        || consistencyEvidenceQuery.isFetching
         || incidentReplayQuery.isFetching
         || shadowOverviewQuery.isFetching
         || consistencyDrilldownQuery.isFetching
@@ -3386,6 +4142,7 @@ export function StrategyValidationPage() {
 
             <StrategyValidationOverviewPanel query={overviewQuery}/>
             <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>
+            <ConsistencyEvidenceOverviewPanel query={consistencyEvidenceQuery}/>
             <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
             <StrategyValidationShadowWorkbench
                 queries={{

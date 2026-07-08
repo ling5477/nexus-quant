@@ -1,3 +1,45 @@
+## NQ-GATET-2-FRONTEND-CONSISTENCY-EVIDENCE-OVERVIEW validation（2026-07-08）
+
+```text
+Scope:
+  - 本轮只实现 GateT-2 Consistency Evidence overview 的前端 GET-only 消费切片。
+  - 修改范围限定为 frontend types / API client / query key / TanStack Query hook、现有 StrategyValidationPage、既有 Strategy Validation targeted smoke，以及允许的 current docs / README。
+  - 未修改 backend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files 或 CI workflow。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: c012edd466f6cc6f5f36b12be69662878fcbbe8d.
+  - git rev-parse origin/dev: c012edd466f6cc6f5f36b12be69662878fcbbe8d.
+  - latest GitHub Actions: NQ CI Baseline run 28954425409 completed success, headSha=c012edd466f6cc6f5f36b12be69662878fcbbe8d.
+  - docs/current/API.md and backend code contain GET /api/paper-shadow/consistency/evidence/overview.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Validation commands:
+  - npm run build
+  - result: PASS / BUILD SUCCESS（通过 / 构建成功）；TypeScript build 与 Vite build 通过。
+  - known warning: Vite chunk > 500 kB warning remains non-blocking and pre-existing for this frontend build shape.
+  - npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium
+  - first result: BLOCKED / LOCAL_PORT_5179_EACCES；Vite dev server could not listen on 127.0.0.1:5179, so Playwright assertions did not run in that attempt.
+  - manual high-port rerun with E2E_EXTERNAL_DEV_SERVER=true and Vite on 127.0.0.1:39791.
+  - final result: PASS / 2 passed（通过 / 2 条通过）；覆盖 Consistency Evidence panel render、counts、latestEvidenceItem comparisonStatus / divergenceSeverity / evidenceFreshness、boundary badges、DIVERGED / HIGH / CRITICAL 非交易授权文案、forbidden copy guard 和 forbidden private/exchange request guard。
+
+What was not run:
+  - backend Maven tests were not rerun because this task did not modify backend Java, controller, DTO, service, repository, SQL, migration, pom.xml or backend tests.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - Full frontend E2E matrix was not run；本轮按任务要求只更新并执行现有 Strategy Validation targeted smoke。
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Frontend only consumes GET /api/paper-shadow/consistency/evidence/overview through apiClient and TanStack Query.
+  - No route, navigation, Dashboard v2, review / acknowledge / approve / reject client, start / stop / execute / trade client, package dependency, lock file, backend, migration, Python, CI workflow, docs/gates or docs/archive change.
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；Integration-1 runtime remains NOT STARTED。
+
+Blocking status:
+  - Non-blocking. Ready for final diff / forbidden-area / staged checks.
+```
+
 ## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION validation（2026-07-08）
 
 ```text

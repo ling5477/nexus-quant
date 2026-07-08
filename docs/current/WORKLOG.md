@@ -1,3 +1,37 @@
+## NQ-GATET-2-FRONTEND-CONSISTENCY-EVIDENCE-OVERVIEW
+
+- date: 2026-07-08
+- scope: GateT-2 frontend implementation；NQ-only；只在现有 `/strategies/validation` 页面最小只读消费 `GET /api/paper-shadow/consistency/evidence/overview`。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `frontend/src/types/consistency-evidence.ts`
+  - `frontend/src/api/consistency-evidence.ts`
+  - `frontend/src/hooks/useConsistencyEvidenceOverview.ts`
+  - `frontend/src/api/query-keys.ts`
+  - `frontend/src/pages/strategies/StrategyValidationPage.tsx`
+  - `frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- implementation:
+  - 新增 `ConsistencyEvidenceOverviewResponse`、`ConsistencyEvidenceItem`、comparisonStatus / divergenceSeverity / evidenceFreshness、metricDeltaSummary、blocker / warning / nextStep / evidenceAnchor 前端类型。
+  - 新增 `getConsistencyEvidenceOverview()` GET client、canonical query key `['paper-shadow', 'consistency', 'evidence', 'overview']` 和 `useConsistencyEvidenceOverview()` TanStack Query hook。
+  - 在现有 Strategy Validation 页面增加 Consistency Evidence Overview panel，展示 counts、latestEvidenceItem、severityBuckets、freshnessSummary、metricDeltaSummary、evidence list、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges。
+  - 页面处理 loading / error / empty / no evidence / consistent / diverged / partial / not comparable / failed / stale / high / critical / unknown fail-closed 状态；`CONSISTENT` 不表示盈利或交易授权，`DIVERGED` 只表示 Paper vs Shadow 证据不一致，`HIGH / CRITICAL` 只表示诊断优先级。
+  - 复用既有 `strategy-validation-paper-shadow-smoke.spec.ts`，补充 consistency evidence fixture、route mock、panel assertions、forbidden copy guard 和 forbidden private/exchange request guard。
+- validation:
+  - `npm run build` -> PASS / BUILD SUCCESS。
+  - 默认 `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` -> BLOCKED / LOCAL_PORT_5179_EACCES。
+  - 高位 loopback 外部 Vite rerun -> PASS / 2 passed。
+- boundary:
+  - 未修改 backend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、pom.xml、package.json 或 lock files。
+  - 未新增 route、Dashboard v2、review / acknowledge / approve / reject client、start / stop / execute / trade client、交易按钮或真实交易入口。
+  - 未调用真实交易所，未读取 credential，未启动 runner / scheduler / LIVE / AI runtime / DH runtime。
+- next action: 完成 final diff / forbidden-area / staged checks 后提交；推荐 commit message：`feat(gatet): add consistency evidence overview frontend`。
+
 ## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION
 
 - date: 2026-07-08

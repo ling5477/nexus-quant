@@ -394,6 +394,165 @@ const SHADOW_VALIDATION_WORKFLOW_FIXTURE = {
     traceId: 'trace-shadow-validation-workflow-overview-smoke',
 };
 
+const CONSISTENCY_EVIDENCE_LATEST_ITEM = {
+    evidenceItemId: 'cse-consistency-smoke-critical',
+    shadowRunId: '22222222-2222-4222-8222-222222222222',
+    paperRunId: 'paper-gateq-5',
+    consistencyReportId: '33333333-3333-4333-8333-333333333333',
+    strategyVersionId: 'sv-gateq-5',
+    datasetId: '11111111-1111-4111-8111-111111111111',
+    comparisonStatus: 'DIVERGED',
+    divergenceSeverity: 'CRITICAL',
+    evidenceFreshness: 'STALE',
+    metricDelta: {
+        metricCount: 2,
+        comparableMetricCount: 1,
+        nonComparableMetricCount: 1,
+        topDeltaMetrics: [
+            {
+                name: 'turnoverDelta',
+                delta: 0.02,
+                unit: 'ratio',
+                comparable: true,
+                limitationCodes: ['DIAGNOSTIC_ONLY'],
+            },
+        ],
+        limitationCodes: ['DIAGNOSTIC_ONLY'],
+        sensitiveFieldFilteredCount: 0,
+        rawMetricDeltaExposed: false,
+        profitConclusionInferred: false,
+        tradingSignalInferred: false,
+    },
+    divergenceReasons: ['fixture shadow consistency drift'],
+    limitations: ['fixture metric delta is diagnostic summary only'],
+    evidenceAnchors: [
+        {
+            sourceType: 'SHADOW_CONSISTENCY_REPORT',
+            sourceId: '33333333-3333-4333-8333-333333333333',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-08T14:10:00Z',
+            traceId: 'trace-consistency-evidence-smoke',
+            description: 'Fixture consistency evidence anchor.',
+        },
+    ],
+    traceId: 'trace-consistency-evidence-smoke',
+    generatedAt: '2026-07-08T14:11:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+};
+
+const CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE = {
+    generatedAt: '2026-07-08T14:12:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    totalEvidenceItems: 3,
+    consistentCount: 1,
+    divergedCount: 2,
+    partialCount: 0,
+    notComparableCount: 0,
+    failedCount: 0,
+    staleEvidenceCount: 1,
+    highSeverityCount: 1,
+    criticalSeverityCount: 1,
+    latestEvidenceItem: CONSISTENCY_EVIDENCE_LATEST_ITEM,
+    evidenceItems: [
+        CONSISTENCY_EVIDENCE_LATEST_ITEM,
+        {
+            ...CONSISTENCY_EVIDENCE_LATEST_ITEM,
+            evidenceItemId: 'cse-consistency-smoke-high',
+            comparisonStatus: 'DIVERGED',
+            divergenceSeverity: 'HIGH',
+            evidenceFreshness: 'FRESH',
+            traceId: 'trace-consistency-evidence-high-smoke',
+        },
+        {
+            ...CONSISTENCY_EVIDENCE_LATEST_ITEM,
+            evidenceItemId: 'cse-consistency-smoke-consistent',
+            comparisonStatus: 'CONSISTENT',
+            divergenceSeverity: 'NONE',
+            evidenceFreshness: 'FRESH',
+            divergenceReasons: [],
+            traceId: 'trace-consistency-evidence-consistent-smoke',
+        },
+    ],
+    severityBuckets: {
+        NONE: 1,
+        HIGH: 1,
+        CRITICAL: 1,
+    },
+    freshnessSummary: {
+        FRESH: 2,
+        STALE: 1,
+    },
+    metricDeltaSummary: {
+        metricCount: 2,
+        comparableMetricCount: 1,
+        nonComparableMetricCount: 1,
+        topDeltaMetrics: [
+            {
+                name: 'turnoverDelta',
+                delta: 0.02,
+                unit: 'ratio',
+                comparable: true,
+                limitationCodes: ['DIAGNOSTIC_ONLY'],
+            },
+        ],
+        limitationCodes: ['DIAGNOSTIC_ONLY'],
+        sensitiveFieldFilteredCount: 0,
+        rawMetricDeltaExposed: false,
+        profitConclusionInferred: false,
+        tradingSignalInferred: false,
+    },
+    blockers: [
+        {
+            code: 'CRITICAL_DIVERGENCE_REVIEW_REQUIRED',
+            severity: 'CRITICAL',
+            message: 'Critical consistency evidence requires diagnostic review.',
+            sourceType: 'CONSISTENCY_EVIDENCE',
+            sourceId: 'cse-consistency-smoke-critical',
+        },
+    ],
+    warnings: [
+        {
+            code: 'DIVERGED_IS_DIAGNOSTIC_ONLY',
+            severity: 'HIGH',
+            message: 'Diverged evidence is diagnostic priority only.',
+            sourceType: 'CONSISTENCY_EVIDENCE',
+            sourceId: 'cse-consistency-smoke-critical',
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'INSPECT_CONSISTENCY_EVIDENCE',
+            owner: 'operator',
+            action: 'Inspect consistency evidence anchors before later GateT work.',
+            completionCondition: 'Diagnostic evidence is inspected without introducing runtime actions.',
+            boundaryCritical: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'SHADOW_CONSISTENCY_REPORT',
+            sourceId: '33333333-3333-4333-8333-333333333333',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-08T14:10:00Z',
+            traceId: 'trace-consistency-evidence-smoke',
+            description: 'Fixture consistency evidence anchor.',
+        },
+    ],
+    traceId: 'trace-consistency-evidence-overview-smoke',
+};
+
 const INCIDENT_REPLAY_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-08T13:41:00Z',
     diagnosticOnly: true,
@@ -669,6 +828,11 @@ async function seedAuthAndGateQStubs(
         json: SHADOW_VALIDATION_WORKFLOW_FIXTURE,
     }));
 
+    await page.route('**/api/paper-shadow/consistency/evidence/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE,
+    }));
+
     await page.route('**/api/incidents/replay/overview', (route: Route) => route.fulfill({
         status: 200,
         json: INCIDENT_REPLAY_OVERVIEW_FIXTURE,
@@ -801,6 +965,35 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(workflow).toContainText('Not trading authorization（非交易授权）');
         await expect(workflow).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
 
+        const consistencyEvidence = page.getByTestId('consistency-evidence-overview-panel');
+        await expect(consistencyEvidence).toBeVisible();
+        await expect(view).toContainText('Consistency Evidence Overview');
+        await expect(consistencyEvidence).toContainText('totalEvidenceItems');
+        await expect(consistencyEvidence).toContainText('3');
+        await expect(consistencyEvidence).toContainText('consistentCount');
+        await expect(consistencyEvidence).toContainText('1');
+        await expect(consistencyEvidence).toContainText('divergedCount');
+        await expect(consistencyEvidence).toContainText('2');
+        await expect(consistencyEvidence).toContainText('staleEvidenceCount');
+        await expect(consistencyEvidence).toContainText('criticalSeverityCount');
+        await expect(consistencyEvidence).toContainText('latestEvidenceItem.comparisonStatus');
+        await expect(consistencyEvidence).toContainText('DIVERGED（Paper / Shadow 证据不一致）');
+        await expect(consistencyEvidence).toContainText('CRITICAL（严重诊断优先级）');
+        await expect(consistencyEvidence).toContainText('HIGH（高诊断优先级）');
+        await expect(consistencyEvidence).toContainText('STALE（证据过期）');
+        await expect(consistencyEvidence).toContainText('turnoverDelta');
+        await expect(consistencyEvidence).toContainText('metricDeltaSummary');
+        await expect(consistencyEvidence).toContainText('rawMetricDeltaExposed');
+        await expect(consistencyEvidence).toContainText('false（raw metricDelta 不应暴露）');
+        await expect(consistencyEvidence).toContainText('INSPECT_CONSISTENCY_EVIDENCE');
+        await expect(consistencyEvidence).toContainText('trace-consistency-evidence-smoke');
+        await expect(consistencyEvidence).toContainText('LIVE DISABLED（LIVE 关闭）');
+        await expect(consistencyEvidence).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
+        await expect(consistencyEvidence).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
+        await expect(consistencyEvidence).toContainText('Consistency evidence is diagnostic only（一致性证据仅诊断）');
+        await expect(consistencyEvidence).toContainText('Not trading authorization（非交易授权）');
+        await expect(consistencyEvidence).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+
         await expect(view).toContainText('状态解释');
         await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
         await expect(view).toContainText('UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*');
@@ -851,12 +1044,16 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
             'PENDING_FRONTEND_SUPPORT',
             'VALIDATION_READY',
             'READY_FOR_OPERATOR_REVIEW',
+            'DIVERGED',
+            'HIGH',
+            'CRITICAL',
         ]);
         expectNoForbiddenRequests(requests);
         expect(requests.some((url) => url.includes('/api/strategy-validation/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/shadow-runs/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/drilldown'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/shadow-validation/workflow/overview'))).toBeTruthy();
+        expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/evidence/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/evaluation-gate'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/shadow-live/preview'))).toBeTruthy();

@@ -60,6 +60,11 @@ export const shadowValidationWorkflowQueryKeys = {
     overview: () => [...shadowValidationWorkflowQueryKeys.workflow(), 'overview'] as const,
 };
 
+export const consistencyEvidenceQueryKeys = {
+    all: ['paper-shadow', 'consistency', 'evidence'] as const,
+    overview: () => [...consistencyEvidenceQueryKeys.all, 'overview'] as const,
+};
+
 export const incidentReplayQueryKeys = {
     all: ['incidents', 'replay'] as const,
     overview: () => [...incidentReplayQueryKeys.all, 'overview'] as const,

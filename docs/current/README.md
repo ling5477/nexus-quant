@@ -12,13 +12,14 @@
 - GateS-0..6：`COMPLETED`（已完成）。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive pointer：[../gates/gate-r/README.md](../gates/gate-r/README.md)。
 - GateQ / GateP / GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：GateT-2 Consistency Evidence Refinement backend read model 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：GateT-2 Consistency Evidence Refinement backend read model 与 frontend overview 最小切片已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：[GATET_PLAN.md](GATET_PLAN.md)，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 - GateT-1 work order：[GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
 - GateT-1 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/shadow-validation/workflow/overview`，只展示 derived operator workflow 诊断信息和固定安全边界，不新增 route、review / acknowledge 写侧或交易动作。
 - GateT-2 work order：[GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)，定义 consistency evidence refinement 的事实源、DTO、query、repository 和测试计划。
 - GateT-2 implementation：`GET /api/paper-shadow/consistency/evidence/overview` 后端 read model 已实现；只派生 deterministic consistency evidence item、severity / freshness summary、metricDelta 摘要、blockers / warnings / nextSteps 和 evidence anchors，不新增 migration、不创建 report、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
+- GateT-2 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/paper-shadow/consistency/evidence/overview`；只展示 consistency evidence 诊断证据和固定安全边界，不新增 route、review / acknowledge 写侧或交易动作。
 
 ## Current Authority
 

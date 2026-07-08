@@ -15,13 +15,14 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：GateT-2 Consistency Evidence Refinement backend read model 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：GateT-2 Consistency Evidence Refinement backend read model 与 frontend overview 最小切片已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
 - GateT-1 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/shadow-validation/workflow/overview`；展示 derived operator items、workflowState、validationDecision、severity、evidenceFreshness、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、Dashboard v2、review / acknowledge 写侧或交易入口。
 - GateT-2 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`。
 - GateT-2 implementation：`GET /api/paper-shadow/consistency/evidence/overview` 后端 read model 已实现；只派生 deterministic consistency evidence item 和 overview summary，不持久化、不新增 migration、不创建 report、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
+- GateT-2 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/paper-shadow/consistency/evidence/overview`；展示 evidence counts、latestEvidenceItem、severityBuckets、freshnessSummary、metricDeltaSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、Dashboard v2、review / acknowledge / approve / reject 写侧或交易入口。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -98,4 +99,6 @@
 - DB migration：本轮未新增；durable evidence review / acknowledge 若未来必须持久化，必须另起 DB schema review。
 - Safety flags：`diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
 - 验证状态：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）。
-- 下一步只能是提交前复核、stage、commit，或后续另起 GateT 任务；不得直接进入 frontend workbench、Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
+- Frontend overview：`frontend/src/types/consistency-evidence.ts`、`frontend/src/api/consistency-evidence.ts`、`frontend/src/hooks/useConsistencyEvidenceOverview.ts` 与现有 `StrategyValidationPage` 已接入 GET-only consistency evidence overview；`CONSISTENT` 不表示盈利或交易授权，`DIVERGED` 只表示 Paper vs Shadow 证据不一致，`HIGH / CRITICAL` 只表示诊断优先级，`metricDelta` 只显示诊断差异摘要。
+- 前端验证状态：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 在高位 loopback 外部 Vite 模式下为 `PASS / 2 passed`（通过 / 2 条通过）。默认 `5179` 端口在本机返回 `EACCES`，未写成测试失败。
+- 下一步只能是提交前复核、stage、commit，或后续另起 GateT 任务；不得直接进入 Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
