@@ -1,3 +1,45 @@
+## NQ-GATET-1-FRONTEND-SHADOW-VALIDATION-WORKFLOW-OVERVIEW
+
+日期：2026-07-08。
+
+范围：
+
+- NQ-only GateT-1 frontend implementation。
+- 在现有 `/strategies/validation` 页面增加 Shadow Validation Workflow overview 只读区块。
+- 新增前端 Shadow Validation Workflow response / operator item / blocker / warning / nextStep / evidenceAnchor 类型。
+- 新增 `getShadowValidationWorkflowOverview()` GET client、canonical query key `['shadow-validation', 'workflow', 'overview']` 和 `useShadowValidationWorkflowOverview()` TanStack Query hook。
+- 更新既有 Strategy Validation targeted smoke，增加 workflow overview fixture、panel assertions、boundary badges assertions 和 forbidden request guard。
+- 最小同步 root/current README、STATUS、TESTING、WORKLOG、FACT_SOURCE_INDEX。
+
+结果：
+
+```text
+NQ-GATET-1-FRONTEND-SHADOW-VALIDATION-WORKFLOW-OVERVIEW：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT
+```
+
+实现摘要：
+
+- UI placement：Shadow Validation Workflow panel 位于现有 Strategy Validation Overview 与 Incident / Replay Overview 附近，不新增 route 或导航。
+- Panel 展示：operator item counts、latest operator item、operator item list、workflowState、validationDecision、severity、evidenceFreshness、blockers / warnings / nextSteps、evidenceAnchors、traceId。
+- 状态处理：loading、error、empty / no evidence、blocked、needs evidence / stale evidence、evidence review、ready for operator review、closed recommendation 均按 fail-closed 文案展示。
+- 边界：固定展示 LIVE disabled、real provider not implemented、private trading not implemented、diagnostic only、not trading authorization、AI/DH runtime not integrated；`VALIDATION_READY` 和 `READY_FOR_OPERATOR_REVIEW` 均解释为人工复核材料语义，不表示交易授权。
+
+验证：
+
+- `npm run build`：PASS / BUILD SUCCESS（通过 / 构建成功）；保留既有 Vite chunk warning。
+- `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium`：默认 5179 端口因 `EACCES` 未能启动 Vite。
+- 手动高位端口外部 Vite rerun：PASS / 2 passed（通过 / 2 条通过）。
+
+边界：
+
+- 未修改 backend、research、scripts、deploy、`.github`、backend migration、docs/gates、docs/archive、pom.xml、package.json 或 lock files。
+- 未新增 POST / review / acknowledge / approve / reject / start / stop / execute / trade / placeOrder / cancelOrder / withdraw / transfer client。
+- 未调用真实交易所，未读取 credential，未启动 runner / scheduler / LIVE / AI runtime / DH runtime。
+
+下一步：
+
+- 执行最终 diff / safety / staged checks；推荐 commit message：`feat(gatet): add shadow validation workflow frontend`。
+
 ## NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-WO
 
 日期：2026-07-08。

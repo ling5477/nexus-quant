@@ -34,14 +34,14 @@
 - GateS archive：`docs/gates/gate-s/README.md`。
 - GateS-0..6：`COMPLETED`（已完成）。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），release tag `nq-gater-freeze`。
-- GateT-1 implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- GateT-1 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_PLAN.md](GATET_PLAN.md)。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)。
 
 ## 3. GateT Planning Facts
 
 - GateT 主线是 Shadow Validation Operations / 策略验证运营闭环规划，基于 GateS 只读诊断 evidence，不启动真实交易。
-- GateT 第一批当前已实现 backend read model / operator model，后续如进入 frontend workbench 必须另起任务并重新审查边界。
+- GateT 第一批当前已实现 backend read model / operator model 与现有 `/strategies/validation` 的最小 frontend overview 消费；后续如进入完整 Operator Console、review / acknowledge 写侧、Python binding 或 scheduler readiness，必须另起任务并重新审查边界。
 - GateT-1 已实现 endpoint `GET /api/shadow-validation/workflow/overview`；operator item 为 derived / deterministic / not persisted。
 - GateT 默认不新增 DB migration；review / acknowledge 若需要持久化，必须另起 DB schema review。
 - GateT 不接 Python production binding，只允许 Python artifact read-only binding preview。
@@ -53,7 +53,9 @@
 - GateT-1 read model fact：`ShadowValidationWorkflowOverviewQueryService` 从 GateS 本地事实派生 `workflowState / validationDecision / severity / evidenceFreshness / blockers / warnings / nextSteps / evidenceAnchors`；不会持久化 operator item。
 - GateT-1 repository fact：`JdbcShadowValidationWorkflowOverviewQueryRepository` 只做 SELECT-only bounded union，不读取 credential / account / live order / ledger / private trading 表，不读取 raw JSONB payload。
 - GateT-1 validation fact：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）。
-- GateT-1 boundary fact：未新增 migration、frontend、Python、CI workflow、runner、scheduler、adapter 调用、真实交易所调用、credential 读取、account / order / ledger mutation。
+- GateT-1 frontend fact：现有 `/strategies/validation` 页面通过 TanStack Query 只读消费 `GET /api/shadow-validation/workflow/overview`，展示 operator counts、latest item、item list、blockers / warnings / nextSteps、evidence anchors、traceId 和固定边界 badges；不新增 route、导航、写侧 client 或交易按钮。
+- GateT-1 frontend validation fact：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 在高位 loopback 外部 Vite 模式下为 `PASS / 2 passed`。
+- GateT-1 boundary fact：未新增 migration、Python、CI workflow、runner、scheduler、adapter 调用、真实交易所调用、credential 读取、account / order / ledger mutation。
 
 ## 5. GateS Current Code Facts
 

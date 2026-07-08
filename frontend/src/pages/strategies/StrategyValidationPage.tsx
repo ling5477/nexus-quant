@@ -29,6 +29,7 @@ import {
     usePaperShadowConsistencyDrilldown,
     useShadowRunOverview,
 } from '@/hooks/useShadowRunQueries';
+import {useShadowValidationWorkflowOverview} from '@/hooks/useShadowValidationWorkflowQueries';
 import {
     usePaperShadowComparisonQuery,
     useShadowLivePreviewQuery,
@@ -50,6 +51,14 @@ import type {
     PaperShadowConsistencyDrilldownResponse,
     ShadowRunOverviewResponse,
 } from '@/types/shadow-runs';
+import type {
+    ShadowValidationBlocker,
+    ShadowValidationEvidenceAnchor,
+    ShadowValidationNextStep,
+    ShadowValidationOperatorItem,
+    ShadowValidationWarning,
+    ShadowValidationWorkflowOverviewResponse,
+} from '@/types/shadow-validation-workflow';
 import type {
     PaperShadowComparisonResponse,
     ShadowLivePreviewResponse,
@@ -135,6 +144,8 @@ interface EvidenceSourceData {
 type StrategyValidationOverviewIssue = StrategyValidationBlocker | StrategyValidationWarning;
 
 type IncidentReplayOverviewIssue = IncidentReplayBlocker | IncidentReplayWarning;
+
+type ShadowValidationWorkflowIssue = ShadowValidationBlocker | ShadowValidationWarning;
 
 type OverviewStateLevel = 'info' | 'warning' | 'error';
 
@@ -656,6 +667,186 @@ const incidentOverviewIssueColumns: ColumnsType<IncidentReplayOverviewIssue> = [
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const shadowValidationWorkflowIssueColumns: ColumnsType<ShadowValidationWorkflowIssue> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '诊断优先级',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 190,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        key: 'source',
+        width: 240,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{workbenchSafeText(record.sourceType)}</Text>
+                {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
+                    <Text type="secondary">无 sourceId</Text>
+                )}
+            </Space>
+        ),
+    },
+    {
+        title: '说明',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const shadowValidationWorkflowNextStepColumns: ColumnsType<ShadowValidationNextStep> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 240,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'Owner',
+        dataIndex: 'owner',
+        key: 'owner',
+        width: 150,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '动作',
+        dataIndex: 'action',
+        key: 'action',
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '完成条件',
+        dataIndex: 'completionCondition',
+        key: 'completionCondition',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '边界关键',
+        dataIndex: 'boundaryCritical',
+        key: 'boundaryCritical',
+        width: 130,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+    },
+];
+
+const shadowValidationWorkflowEvidenceAnchorColumns: ColumnsType<ShadowValidationEvidenceAnchor> = [
+    {
+        title: 'sourceType',
+        dataIndex: 'sourceType',
+        key: 'sourceType',
+        width: 190,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'sourceId',
+        dataIndex: 'sourceId',
+        key: 'sourceId',
+        width: 230,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceVersion',
+        dataIndex: 'sourceVersion',
+        key: 'sourceVersion',
+        width: 170,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceTimestamp',
+        dataIndex: 'sourceTimestamp',
+        key: 'sourceTimestamp',
+        width: 190,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'traceId',
+        dataIndex: 'traceId',
+        key: 'traceId',
+        width: 240,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'description',
+        dataIndex: 'description',
+        key: 'description',
+        render: (value: string | null) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const shadowValidationWorkflowOperatorColumns: ColumnsType<ShadowValidationOperatorItem> = [
+    {
+        title: 'operatorItemId',
+        dataIndex: 'operatorItemId',
+        key: 'operatorItemId',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'workflowState',
+        dataIndex: 'workflowState',
+        key: 'workflowState',
+        width: 260,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'validationDecision',
+        dataIndex: 'validationDecision',
+        key: 'validationDecision',
+        width: 260,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'severity',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 190,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'evidenceFreshness',
+        dataIndex: 'evidenceFreshness',
+        key: 'evidenceFreshness',
+        width: 220,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        key: 'source',
+        width: 260,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{workbenchSafeText(record.sourceType)}</Text>
+                <Text code>{workbenchSafeText(record.sourceId)}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'blockers / warnings',
+        key: 'signals',
+        width: 190,
+        render: (_, record) => (
+            <Space size={6} wrap>
+                <Tag color={record.blockers.length > 0 ? 'error' : 'default'}>
+                    blockers {record.blockers.length}
+                </Tag>
+                <Tag color={record.warnings.length > 0 ? 'warning' : 'default'}>
+                    warnings {record.warnings.length}
+                </Tag>
+            </Space>
+        ),
     },
 ];
 
@@ -1193,6 +1384,148 @@ function StatusTag({status}: { status?: string | null }) {
         <Tag color={TONE_TO_COLOR[presentation.tone]}>
             {statusText(status)}
         </Tag>
+    );
+}
+
+function workflowStatusPresentation(status: string | null | undefined): { label: string; color: string; tooltip: string } {
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
+        case 'INTAKE':
+            return {
+                label: '已进入 intake',
+                color: 'default',
+                tooltip: 'INTAKE 只表示 item 已进入只读派生队列，尚未形成复核材料结论。',
+            };
+        case 'EVIDENCE_REVIEW':
+            return {
+                label: '证据复核中',
+                color: 'warning',
+                tooltip: 'EVIDENCE_REVIEW 表示需要继续查看 evidence，不代表验证通过。',
+            };
+        case 'NEEDS_EVIDENCE':
+            return {
+                label: '需要补证据',
+                color: 'warning',
+                tooltip: 'NEEDS_EVIDENCE 表示证据缺失或不足，必须 fail-closed 展示。',
+            };
+        case 'READY_FOR_OPERATOR_REVIEW':
+            return {
+                label: '可人工复核，非交易授权',
+                color: 'processing',
+                tooltip: 'READY_FOR_OPERATOR_REVIEW 只表示材料可给 operator 人工复核，不表示可交易。',
+            };
+        case 'BLOCKED':
+            return {
+                label: '阻断',
+                color: 'error',
+                tooltip: 'BLOCKED 表示诊断阻断，不能自动处置或触发交易动作。',
+            };
+        case 'CLOSED_RECOMMENDATION':
+            return {
+                label: '诊断建议已形成，非自动处置',
+                color: 'processing',
+                tooltip: 'CLOSED_RECOMMENDATION 只表示建议已形成，不表示处置完成或交易放行。',
+            };
+        case 'VALIDATION_READY':
+            return {
+                label: '验证材料可复核，非交易授权',
+                color: 'processing',
+                tooltip: 'VALIDATION_READY 只表示材料可进入人工复核，不表示策略批准或交易授权。',
+            };
+        case 'NEEDS_REVIEW':
+            return {
+                label: '需要人工查看',
+                color: 'warning',
+                tooltip: 'NEEDS_REVIEW 表示仍需人工检查 evidence、blockers、warnings 与 nextSteps。',
+            };
+        case 'REJECTED':
+            return {
+                label: '验证条件不满足',
+                color: 'error',
+                tooltip: 'REJECTED 是验证材料层面的拒绝，不表示行情方向。',
+            };
+        case 'STALE_EVIDENCE':
+            return {
+                label: '证据过期',
+                color: 'warning',
+                tooltip: 'STALE_EVIDENCE 表示证据新鲜度不足，需要补证据。',
+            };
+        case 'NO_DECISION':
+            return {
+                label: '无判断',
+                color: 'default',
+                tooltip: 'NO_DECISION 表示当前无法形成验证材料判断。',
+            };
+        case 'FRESH':
+            return {
+                label: '证据新鲜，仍需复核',
+                color: 'processing',
+                tooltip: 'FRESH 只描述 evidence freshness，不代表收益、批准或授权。',
+            };
+        case 'STALE':
+            return {
+                label: '证据过期',
+                color: 'warning',
+                tooltip: 'STALE 表示 evidence 需要刷新或补齐。',
+            };
+        case 'MISSING':
+            return {
+                label: '证据缺失',
+                color: 'warning',
+                tooltip: 'MISSING 表示缺少 evidence，不得显示为通过。',
+            };
+        case 'PARTIAL':
+            return {
+                label: '证据部分可见',
+                color: 'warning',
+                tooltip: 'PARTIAL 表示证据不完整，仍需人工补充或确认。',
+            };
+        case 'NONE':
+            return {
+                label: '无诊断优先级',
+                color: 'default',
+                tooltip: 'NONE 表示无当前诊断优先级，不代表流程完成。',
+            };
+        case 'INFO':
+            return {
+                label: '普通诊断信息',
+                color: 'processing',
+                tooltip: 'INFO 只表示普通诊断信息。',
+            };
+        case 'WARNING':
+            return {
+                label: '诊断警告',
+                color: 'warning',
+                tooltip: 'WARNING 表示需要查看的诊断警告。',
+            };
+        case 'HIGH':
+            return {
+                label: '高诊断优先级',
+                color: 'error',
+                tooltip: 'HIGH 只表示诊断优先级高，不表示自动处置或交易状态。',
+            };
+        case 'CRITICAL':
+            return {
+                label: '严重诊断优先级',
+                color: 'error',
+                tooltip: 'CRITICAL 只表示需要优先复核，不表示自动处置完成。',
+            };
+        default:
+            return {
+                label: normalized === 'UNKNOWN' ? '未知状态' : normalized,
+                color: normalized === 'UNKNOWN' ? 'default' : statusPresentation(normalized).tone === 'danger' ? 'error' : TONE_TO_COLOR[statusPresentation(normalized).tone],
+                tooltip: '未知或未专门映射的状态按 fail-closed 展示，不能解释为授权或成功。',
+            };
+    }
+}
+
+function WorkflowStatusTag({status}: { status?: string | null }) {
+    const normalized = normalizeStatus(status);
+    const presentation = workflowStatusPresentation(normalized);
+    return (
+        <Tooltip title={presentation.tooltip}>
+            <Tag color={presentation.color}>{`${normalized}（${presentation.label}）`}</Tag>
+        </Tooltip>
     );
 }
 
@@ -1752,6 +2085,350 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
                             pagination={false}
                             scroll={{x: 1030}}
                             locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                        />
+                    </>
+                )}
+            </Space>
+        </Card>
+    );
+}
+
+function shadowWorkflowIsEmpty(overview: ShadowValidationWorkflowOverviewResponse): boolean {
+    return countValue(overview.totalOperatorItems) === 0
+        && overview.operatorItems.length === 0
+        && !overview.latestOperatorItem
+        && overview.blockers.length === 0
+        && overview.warnings.length === 0
+        && overview.nextSteps.length === 0
+        && overview.evidenceAnchors.length === 0;
+}
+
+function shadowWorkflowHasNoEvidence(overview: ShadowValidationWorkflowOverviewResponse): boolean {
+    return countValue(overview.totalOperatorItems) === 0
+        || overview.operatorItems.length === 0
+        || overview.evidenceAnchors.length === 0
+        || normalizeStatus(overview.latestOperatorItem?.evidenceFreshness) === 'MISSING';
+}
+
+function shadowWorkflowNeedsEvidence(overview: ShadowValidationWorkflowOverviewResponse): boolean {
+    const item = overview.latestOperatorItem;
+    const freshness = normalizeStatus(item?.evidenceFreshness);
+    const decision = normalizeStatus(item?.validationDecision);
+    const state = normalizeStatus(item?.workflowState);
+    return state === 'NEEDS_EVIDENCE'
+        || decision === 'STALE_EVIDENCE'
+        || freshness === 'STALE'
+        || freshness === 'MISSING'
+        || freshness === 'PARTIAL';
+}
+
+function shadowWorkflowBlocked(overview: ShadowValidationWorkflowOverviewResponse): boolean {
+    return countValue(overview.blockedCount) > 0
+        || overview.blockers.length > 0
+        || normalizeStatus(overview.latestOperatorItem?.workflowState) === 'BLOCKED'
+        || normalizeStatus(overview.latestOperatorItem?.validationDecision) === 'BLOCKED';
+}
+
+/**
+ * GateT-1 workflow 面板状态按用户指定优先级 fail-closed 解析。
+ *
+ * Why:
+ * 前端不能把 ready-like 状态提前显示成正向结论；error / loading 由渲染分支优先处理，
+ * 数据态内部继续按 empty -> blocked -> needs evidence -> review -> ready -> closed 排序。
+ */
+function resolveShadowValidationWorkflowState(overview: ShadowValidationWorkflowOverviewResponse): OverviewPanelState {
+    const state = normalizeStatus(overview.latestOperatorItem?.workflowState);
+    const decision = normalizeStatus(overview.latestOperatorItem?.validationDecision);
+
+    if (shadowWorkflowIsEmpty(overview) || shadowWorkflowHasNoEvidence(overview)) {
+        return {
+            level: 'warning',
+            message: 'Shadow Validation Workflow 暂无 operator items 或缺少 evidence',
+            description: 'empty / no evidence 表示没有足够本地事实支撑复核；页面不会补造 operator item，也不会显示为通过。',
+        };
+    }
+    if (shadowWorkflowBlocked(overview)) {
+        return {
+            level: 'error',
+            message: 'Shadow Validation Workflow 被阻断',
+            description: 'BLOCKED 只表示诊断阻断，需要处理 blockers；不代表交易状态、风险处置或自动关闭。',
+        };
+    }
+    if (shadowWorkflowNeedsEvidence(overview)) {
+        return {
+            level: 'warning',
+            message: 'Shadow Validation Workflow 需要补证据',
+            description: 'NEEDS_EVIDENCE / STALE_EVIDENCE / STALE / PARTIAL 表示材料不足或过期，必须先补齐只读 evidence。',
+        };
+    }
+    if (state === 'EVIDENCE_REVIEW' || decision === 'NEEDS_REVIEW' || decision === 'REJECTED') {
+        return {
+            level: decision === 'REJECTED' ? 'error' : 'warning',
+            message: 'Shadow Validation Workflow 处于 evidence review',
+            description: 'EVIDENCE_REVIEW / NEEDS_REVIEW / REJECTED 均要求人工查看证据、警告和下一步；不表示交易授权。',
+        };
+    }
+    if (state === 'READY_FOR_OPERATOR_REVIEW' || decision === 'VALIDATION_READY') {
+        return {
+            level: 'info',
+            message: 'Shadow Validation Workflow 可进入人工复核',
+            description: 'READY_FOR_OPERATOR_REVIEW / VALIDATION_READY 只表示验证材料可人工复核，不表示可交易、已批准或 LIVE 可用。',
+        };
+    }
+    if (state === 'CLOSED_RECOMMENDATION') {
+        return {
+            level: 'info',
+            message: 'Shadow Validation Workflow 已形成诊断建议',
+            description: 'CLOSED_RECOMMENDATION 只表示诊断建议已形成，不表示自动处置完成或交易链路已放行。',
+        };
+    }
+    return {
+        level: 'info',
+        message: 'Shadow Validation Workflow 已加载',
+        description: '当前结果只用于只读 operator review 诊断，不产生任何交易、运行或持久化副作用。',
+    };
+}
+
+function ShadowValidationWorkflowBoundaryBadges({overview}: { overview?: ShadowValidationWorkflowOverviewResponse }) {
+    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    return (
+        <Space size={[8, 8]} wrap>
+            <BoundaryBadge
+                color="error"
+                label="LIVE DISABLED（LIVE 关闭）"
+                tooltip={`liveDisabled=true；本 workflow 不表示 LIVE 可用${pending}`}
+            />
+            <BoundaryBadge
+                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
+                tooltip={`realProviderImplemented=false；本 workflow 不调用真实 provider${pending}`}
+            />
+            <BoundaryBadge
+                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
+                tooltip={`privateTradingImplemented=false；本 workflow 不提供下单、撤单、转账或提现入口${pending}`}
+            />
+            <BoundaryBadge
+                color="warning"
+                label="Validation workflow is diagnostic only（验证 workflow 仅诊断）"
+                tooltip={`diagnosticOnly=true；operator items 是 derived 诊断条目，不持久化、不执行${pending}`}
+            />
+            <BoundaryBadge
+                color="error"
+                label="Not trading authorization（非交易授权）"
+                tooltip={`notTradingAuthorization=true；VALIDATION_READY 也不能解释为交易授权${pending}`}
+            />
+            <BoundaryBadge
+                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
+                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+            />
+        </Space>
+    );
+}
+
+function ShadowValidationWorkflowBoundaryDriftAlert({overview}: { overview?: ShadowValidationWorkflowOverviewResponse }) {
+    if (!overview) {
+        return null;
+    }
+    const overviewDrift = !overview.diagnosticOnly
+        || !overview.noSideEffect
+        || !overview.notTradingAuthorization
+        || !overview.liveDisabled
+        || overview.realProviderImplemented
+        || overview.privateTradingImplemented
+        || overview.aiDhRuntimeIntegrated;
+    const itemDrift = overview.operatorItems.some((item) => !item.diagnosticOnly
+        || !item.noSideEffect
+        || !item.notTradingAuthorization
+        || !item.liveDisabled
+        || item.realProviderImplemented
+        || item.privateTradingImplemented
+        || item.aiDhRuntimeIntegrated);
+
+    return overviewDrift || itemDrift ? (
+        <Alert
+            type="error"
+            showIcon
+            message="Shadow Validation Workflow boundary flags 与当前安全基线不一致"
+            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成可执行、可交易、可处置或实盘可用。"
+        />
+    ) : null;
+}
+
+function ShadowValidationWorkflowCounts({overview}: { overview?: ShadowValidationWorkflowOverviewResponse }) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+            <Descriptions.Item label="totalOperatorItems">
+                {countValue(overview?.totalOperatorItems)}
+            </Descriptions.Item>
+            <Descriptions.Item label="intakeCount">
+                {countValue(overview?.intakeCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="evidenceReviewCount">
+                {countValue(overview?.evidenceReviewCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="needsEvidenceCount">
+                {countValue(overview?.needsEvidenceCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="readyForOperatorReviewCount">
+                {countValue(overview?.readyForOperatorReviewCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="blockedCount">
+                {countValue(overview?.blockedCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="closedRecommendationCount">
+                {countValue(overview?.closedRecommendationCount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="generatedAt">
+                {generatedAtText(overview?.generatedAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label="traceId">
+                {optionalSafeCode(overview?.traceId)}
+            </Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function ShadowValidationLatestOperatorItem({item}: { item?: ShadowValidationOperatorItem | null }) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
+            <Descriptions.Item label="workflowState">
+                <WorkflowStatusTag status={item?.workflowState}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="validationDecision">
+                <WorkflowStatusTag status={item?.validationDecision}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="severity">
+                <WorkflowStatusTag status={item?.severity}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="evidenceFreshness">
+                <WorkflowStatusTag status={item?.evidenceFreshness}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="sourceType">{optionalText(item?.sourceType)}</Descriptions.Item>
+            <Descriptions.Item label="sourceId">{optionalSafeCode(item?.sourceId)}</Descriptions.Item>
+            <Descriptions.Item label="strategyVersionId">{optionalSafeCode(item?.strategyVersionId)}</Descriptions.Item>
+            <Descriptions.Item label="shadowRunId">{optionalSafeCode(item?.shadowRunId)}</Descriptions.Item>
+            <Descriptions.Item label="consistencyReportId">{optionalSafeCode(item?.consistencyReportId)}</Descriptions.Item>
+            <Descriptions.Item label="latestOperatorItem.traceId">{optionalSafeCode(item?.traceId)}</Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function ShadowValidationWorkflowIssueTables({
+                                                  blockers,
+                                                  warnings,
+                                              }: {
+    blockers: ShadowValidationBlocker[];
+    warnings: ShadowValidationWarning[];
+}) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <div>
+                <Text strong>Blockers（阻断项）</Text>
+                <Table<ShadowValidationBlocker>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={shadowValidationWorkflowIssueColumns}
+                    dataSource={blockers}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                />
+            </div>
+            <div>
+                <Text strong>Warnings（警告项）</Text>
+                <Table<ShadowValidationWarning>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={shadowValidationWorkflowIssueColumns}
+                    dataSource={warnings}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 warnings；不能解释为 workflow 已完成。'}}
+                />
+            </div>
+        </Space>
+    );
+}
+
+function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowValidationWorkflowOverviewResponse> }) {
+    const overview = query.data;
+    const panelState = overview ? resolveShadowValidationWorkflowState(overview) : null;
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="影子验证工作流总览（Shadow Validation Workflow Overview）"
+            extra={(
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
+                    刷新总览
+                </Button>
+            )}
+        >
+            <Space data-testid="shadow-validation-workflow-panel" direction="vertical" size={12} style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    只读消费 GET /api/shadow-validation/workflow/overview；展示 derived operator items、workflowState、
+                    validationDecision、evidenceFreshness、evidence anchors 与 traceId，不新增 route、review 动作、交易按钮或写侧请求。
+                </Paragraph>
+                <ShadowValidationWorkflowBoundaryBadges overview={overview}/>
+                <ShadowValidationWorkflowBoundaryDriftAlert overview={overview}/>
+                <ShadowValidationWorkflowCounts overview={overview}/>
+                {query.isLoading ? (
+                    <Skeleton active paragraph={{rows: 8}}/>
+                ) : query.isError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Shadow Validation Workflow overview 查询失败"
+                        description={(
+                            <Paragraph style={{marginBottom: 0}}>
+                                workflow overview 失败时按不可用处理，不会显示为可复核、授权、自动处置或可执行。
+                                {formatApiError(query.error as AppApiError)}
+                            </Paragraph>
+                        )}
+                    />
+                ) : !overview ? (
+                    <Empty description="暂无 Shadow Validation Workflow overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                ) : (
+                    <>
+                        {panelState ? (
+                            <Alert
+                                type={panelState.level}
+                                showIcon
+                                message={panelState.message}
+                                description={panelState.description}
+                            />
+                        ) : null}
+                        {shadowWorkflowIsEmpty(overview) ? (
+                            <Empty description="暂无 operator items；空态不表示验证完成、建议关闭或可交易。"/>
+                        ) : null}
+                        <ShadowValidationLatestOperatorItem item={overview.latestOperatorItem}/>
+                        <ShadowValidationWorkflowIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
+                        <Table<ShadowValidationNextStep>
+                            size="small"
+                            rowKey={(record) => record.code}
+                            columns={shadowValidationWorkflowNextStepColumns}
+                            dataSource={overview.nextSteps}
+                            pagination={false}
+                            scroll={{x: 1000}}
+                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成复核或处置。'}}
+                        />
+                        <Table<ShadowValidationEvidenceAnchor>
+                            size="small"
+                            rowKey={(record) => `${record.sourceType}-${record.sourceId ?? 'none'}-${record.traceId ?? 'none'}`}
+                            columns={shadowValidationWorkflowEvidenceAnchorColumns}
+                            dataSource={overview.evidenceAnchors}
+                            pagination={false}
+                            scroll={{x: 1190}}
+                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                        />
+                        <Table<ShadowValidationOperatorItem>
+                            size="small"
+                            rowKey={(record) => record.operatorItemId}
+                            columns={shadowValidationWorkflowOperatorColumns}
+                            dataSource={overview.operatorItems}
+                            pagination={false}
+                            scroll={{x: 1550}}
+                            locale={{emptyText: '暂无 operatorItems；不能补造复核条目。'}}
                         />
                     </>
                 )}
@@ -2666,6 +3343,7 @@ export function StrategyValidationPage() {
     );
 
     const overviewQuery = useStrategyValidationOverview();
+    const shadowValidationWorkflowQuery = useShadowValidationWorkflowOverview();
     const incidentReplayQuery = useIncidentReplayOverview();
     const shadowOverviewQuery = useShadowRunOverview();
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
@@ -2677,6 +3355,7 @@ export function StrategyValidationPage() {
     );
     const consistencyDrilldownQuery = usePaperShadowConsistencyDrilldown(selectedShadowRunId);
     const loading = overviewQuery.isFetching
+        || shadowValidationWorkflowQuery.isFetching
         || incidentReplayQuery.isFetching
         || shadowOverviewQuery.isFetching
         || consistencyDrilldownQuery.isFetching
@@ -2706,6 +3385,7 @@ export function StrategyValidationPage() {
             </Card>
 
             <StrategyValidationOverviewPanel query={overviewQuery}/>
+            <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>
             <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
             <StrategyValidationShadowWorkbench
                 queries={{

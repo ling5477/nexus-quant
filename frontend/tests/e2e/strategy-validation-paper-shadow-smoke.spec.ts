@@ -236,6 +236,221 @@ const PAPER_SHADOW_DRILLDOWN_FIXTURE = {
     traceId: 'trace-drilldown-smoke',
 };
 
+const SHADOW_VALIDATION_WORKFLOW_FIXTURE = {
+    generatedAt: '2026-07-08T13:40:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    totalOperatorItems: 3,
+    intakeCount: 1,
+    evidenceReviewCount: 1,
+    needsEvidenceCount: 0,
+    readyForOperatorReviewCount: 1,
+    blockedCount: 0,
+    closedRecommendationCount: 1,
+    latestOperatorItem: {
+        operatorItemId: 'op-shadow-validation-smoke-1',
+        sourceType: 'CONSISTENCY_REPORT',
+        sourceId: 'consistency-smoke-report',
+        strategyVersionId: 'sv-gateq-5',
+        datasetId: '11111111-1111-4111-8111-111111111111',
+        evaluationReportId: 'eval-gateq-5',
+        paperRunId: 'paper-gateq-5',
+        shadowRunId: '22222222-2222-4222-8222-222222222222',
+        consistencyReportId: '33333333-3333-4333-8333-333333333333',
+        incidentEvidenceId: null,
+        workflowState: 'READY_FOR_OPERATOR_REVIEW',
+        validationDecision: 'VALIDATION_READY',
+        severity: 'HIGH',
+        evidenceFreshness: 'FRESH',
+        blockers: [],
+        warnings: [
+            {
+                code: 'OPERATOR_REVIEW_REQUIRED',
+                severity: 'WARNING',
+                message: 'Fixture evidence requires operator review only.',
+                sourceType: 'CONSISTENCY_REPORT',
+                sourceId: 'consistency-smoke-report',
+            },
+        ],
+        nextSteps: [
+            {
+                code: 'REVIEW_WORKFLOW_EVIDENCE',
+                owner: 'operator',
+                action: 'Review workflow evidence anchors.',
+                completionCondition: 'Operator review notes are recorded in a later approved workflow.',
+                boundaryCritical: true,
+            },
+        ],
+        evidenceAnchors: [
+            {
+                sourceType: 'CONSISTENCY_REPORT',
+                sourceId: 'consistency-smoke-report',
+                sourceVersion: 'v1',
+                sourceTimestamp: '2026-07-08T13:39:00Z',
+                traceId: 'trace-shadow-validation-workflow-smoke',
+                description: 'Fixture consistency report anchor.',
+            },
+        ],
+        traceId: 'trace-shadow-validation-workflow-smoke',
+        generatedAt: '2026-07-08T13:40:00Z',
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+        realProviderImplemented: false,
+        privateTradingImplemented: false,
+        aiDhRuntimeIntegrated: false,
+    },
+    operatorItems: [
+        {
+            operatorItemId: 'op-shadow-validation-smoke-1',
+            sourceType: 'CONSISTENCY_REPORT',
+            sourceId: 'consistency-smoke-report',
+            strategyVersionId: 'sv-gateq-5',
+            datasetId: '11111111-1111-4111-8111-111111111111',
+            evaluationReportId: 'eval-gateq-5',
+            paperRunId: 'paper-gateq-5',
+            shadowRunId: '22222222-2222-4222-8222-222222222222',
+            consistencyReportId: '33333333-3333-4333-8333-333333333333',
+            incidentEvidenceId: null,
+            workflowState: 'READY_FOR_OPERATOR_REVIEW',
+            validationDecision: 'VALIDATION_READY',
+            severity: 'HIGH',
+            evidenceFreshness: 'FRESH',
+            blockers: [],
+            warnings: [
+                {
+                    code: 'OPERATOR_REVIEW_REQUIRED',
+                    severity: 'WARNING',
+                    message: 'Fixture evidence requires operator review only.',
+                    sourceType: 'CONSISTENCY_REPORT',
+                    sourceId: 'consistency-smoke-report',
+                },
+            ],
+            nextSteps: [
+                {
+                    code: 'REVIEW_WORKFLOW_EVIDENCE',
+                    owner: 'operator',
+                    action: 'Review workflow evidence anchors.',
+                    completionCondition: 'Operator review notes are recorded in a later approved workflow.',
+                    boundaryCritical: true,
+                },
+            ],
+            evidenceAnchors: [
+                {
+                    sourceType: 'CONSISTENCY_REPORT',
+                    sourceId: 'consistency-smoke-report',
+                    sourceVersion: 'v1',
+                    sourceTimestamp: '2026-07-08T13:39:00Z',
+                    traceId: 'trace-shadow-validation-workflow-smoke',
+                    description: 'Fixture consistency report anchor.',
+                },
+            ],
+            traceId: 'trace-shadow-validation-workflow-smoke',
+            generatedAt: '2026-07-08T13:40:00Z',
+            diagnosticOnly: true,
+            noSideEffect: true,
+            notTradingAuthorization: true,
+            liveDisabled: true,
+            realProviderImplemented: false,
+            privateTradingImplemented: false,
+            aiDhRuntimeIntegrated: false,
+        },
+    ],
+    blockers: [],
+    warnings: [
+        {
+            code: 'VALIDATION_READY_IS_REVIEW_ONLY',
+            severity: 'WARNING',
+            message: 'Validation ready means review material only.',
+            sourceType: 'SHADOW_VALIDATION_WORKFLOW',
+            sourceId: 'workflow-overview',
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'REVIEW_WORKFLOW_EVIDENCE',
+            owner: 'operator',
+            action: 'Review workflow evidence anchors.',
+            completionCondition: 'No execution action is introduced by this view.',
+            boundaryCritical: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'CONSISTENCY_REPORT',
+            sourceId: 'consistency-smoke-report',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-08T13:39:00Z',
+            traceId: 'trace-shadow-validation-workflow-smoke',
+            description: 'Fixture consistency report anchor.',
+        },
+    ],
+    traceId: 'trace-shadow-validation-workflow-overview-smoke',
+};
+
+const INCIDENT_REPLAY_OVERVIEW_FIXTURE = {
+    generatedAt: '2026-07-08T13:41:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    totalEvidenceItems: 1,
+    shadowEventCount: 1,
+    consistencyDivergenceCount: 1,
+    paperAlertCount: 0,
+    recoveryEventCount: 0,
+    replayEventCount: 0,
+    latestEvidence: [
+        {
+            evidenceType: 'CONSISTENCY_DIVERGENCE',
+            sourceId: 'consistency-smoke-report',
+            sourceStatus: 'AVAILABLE',
+            summary: 'Fixture divergence evidence for display only.',
+            occurredAt: '2026-07-08T13:40:00Z',
+            traceId: 'trace-incident-replay-smoke',
+        },
+    ],
+    incidentSeverity: 'WARNING',
+    blockers: [],
+    warnings: [
+        {
+            code: 'REPLAY_REVIEW_ONLY',
+            severity: 'WARNING',
+            message: 'Incident replay fixture is diagnostic only.',
+            sourceType: 'INCIDENT_REPLAY',
+            sourceId: 'consistency-smoke-report',
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'KEEP_REPLAY_DIAGNOSTIC',
+            owner: 'operator',
+            action: 'Review replay evidence without starting runtime actions.',
+            completionCondition: 'Evidence reviewed in a later approved workflow.',
+            boundaryCritical: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'CONSISTENCY_REPORT',
+            sourceId: 'consistency-smoke-report',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-08T13:40:00Z',
+            checksum: 'fixture-checksum-incident',
+        },
+    ],
+    traceId: 'trace-incident-replay-overview-smoke',
+};
+
 const EVALUATION_GATE_FIXTURE = {
     scope: {
         strategyId: 'strategy-gateq',
@@ -449,6 +664,16 @@ async function seedAuthAndGateQStubs(
         json: PAPER_SHADOW_DRILLDOWN_FIXTURE,
     }));
 
+    await page.route('**/api/shadow-validation/workflow/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: SHADOW_VALIDATION_WORKFLOW_FIXTURE,
+    }));
+
+    await page.route('**/api/incidents/replay/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: INCIDENT_REPLAY_OVERVIEW_FIXTURE,
+    }));
+
     await page.route('**/api/strategies/evaluation-gate**', (route: Route) => route.fulfill({
         status: 200,
         json: overrides.evaluationGate ?? EVALUATION_GATE_FIXTURE,
@@ -552,6 +777,30 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(workbench).toContainText('CHECK_DIVERGENCE');
         await expect(workbench).toContainText('fixture-checksum-drilldown');
 
+        const workflow = page.getByTestId('shadow-validation-workflow-panel');
+        await expect(workflow).toBeVisible();
+        await expect(view).toContainText('Shadow Validation Workflow Overview');
+        await expect(workflow).toContainText('totalOperatorItems');
+        await expect(workflow).toContainText('3');
+        await expect(workflow).toContainText('readyForOperatorReviewCount');
+        await expect(workflow).toContainText('1');
+        await expect(workflow).toContainText('workflowState');
+        await expect(workflow).toContainText('READY_FOR_OPERATOR_REVIEW（可人工复核，非交易授权）');
+        await expect(workflow).toContainText('validationDecision');
+        await expect(workflow).toContainText('VALIDATION_READY（验证材料可复核，非交易授权）');
+        await expect(workflow).toContainText('HIGH（高诊断优先级）');
+        await expect(workflow).toContainText('FRESH（证据新鲜，仍需复核）');
+        await expect(workflow).toContainText('op-shadow-validation-smoke-1');
+        await expect(workflow).toContainText('VALIDATION_READY_IS_REVIEW_ONLY');
+        await expect(workflow).toContainText('REVIEW_WORKFLOW_EVIDENCE');
+        await expect(workflow).toContainText('trace-shadow-validation-workflow-smoke');
+        await expect(workflow).toContainText('LIVE DISABLED（LIVE 关闭）');
+        await expect(workflow).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
+        await expect(workflow).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
+        await expect(workflow).toContainText('Validation workflow is diagnostic only（验证 workflow 仅诊断）');
+        await expect(workflow).toContainText('Not trading authorization（非交易授权）');
+        await expect(workflow).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+
         await expect(view).toContainText('状态解释');
         await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
         await expect(view).toContainText('UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*');
@@ -595,11 +844,19 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('shadow');
 
         await expectNoForbiddenCopy(page);
-        await expectNoSuccessTagForStatuses(page, ['NOT_IMPLEMENTED', 'NOT_AVAILABLE', 'UNKNOWN', 'PENDING_FRONTEND_SUPPORT']);
+        await expectNoSuccessTagForStatuses(page, [
+            'NOT_IMPLEMENTED',
+            'NOT_AVAILABLE',
+            'UNKNOWN',
+            'PENDING_FRONTEND_SUPPORT',
+            'VALIDATION_READY',
+            'READY_FOR_OPERATOR_REVIEW',
+        ]);
         expectNoForbiddenRequests(requests);
         expect(requests.some((url) => url.includes('/api/strategy-validation/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/shadow-runs/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/drilldown'))).toBeTruthy();
+        expect(requests.some((url) => url.includes('/api/shadow-validation/workflow/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/evaluation-gate'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/shadow-live/preview'))).toBeTruthy();

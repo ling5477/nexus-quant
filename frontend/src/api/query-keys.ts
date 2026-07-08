@@ -54,6 +54,12 @@ export const strategyValidationQueryKeys = {
     shadowLivePreview: (query: unknown) => [...strategyValidationQueryKeys.all, 'shadow-live-preview', query ?? 'idle'] as const,
 };
 
+export const shadowValidationWorkflowQueryKeys = {
+    all: ['shadow-validation'] as const,
+    workflow: () => [...shadowValidationWorkflowQueryKeys.all, 'workflow'] as const,
+    overview: () => [...shadowValidationWorkflowQueryKeys.workflow(), 'overview'] as const,
+};
+
 export const incidentReplayQueryKeys = {
     all: ['incidents', 'replay'] as const,
     overview: () => [...incidentReplayQueryKeys.all, 'overview'] as const,
