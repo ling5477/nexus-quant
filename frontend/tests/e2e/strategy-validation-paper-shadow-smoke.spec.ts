@@ -10,6 +10,232 @@ const SIDE_EFFECT_POLICY = [
     {code: 'NO_ACCOUNT_MUTATION', status: 'FORBIDDEN', message: 'Preview must not mutate account state.'},
 ];
 
+const STRATEGY_OVERVIEW_FIXTURE = {
+    generatedAt: '2026-07-08T10:03:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    totalStrategyVersions: 12,
+    evaluatedStrategyVersions: 9,
+    approvedForValidation: 3,
+    rejectedForValidation: 1,
+    needsReview: 4,
+    blocked: 1,
+    latestDecision: {
+        strategyVersionId: 'sv-gateq-5',
+        datasetId: '11111111-1111-4111-8111-111111111111',
+        evaluationReportId: 'eval-gateq-5',
+        publishId: 'pub-gateq-5',
+        paperRunId: 'paper-gateq-5',
+        shadowRunId: 'shadow-preview-only',
+        decision: 'APPROVED',
+        decisionReasons: ['Fixture validation evidence is sufficient for review only.'],
+        limitations: ['Fixture evidence does not authorize trading.'],
+        generatedAt: '2026-07-08T10:03:00Z',
+        traceId: 'trace-strategy-validation-smoke',
+    },
+    blockers: [],
+    warnings: [
+        {
+            code: 'REVIEW_ONLY',
+            severity: 'WARNING',
+            message: 'APPROVED is validation-layer only.',
+            sourceType: 'STRATEGY_VALIDATION',
+            sourceId: 'sv-gateq-5',
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'REVIEW_SHADOW_DRILLDOWN',
+            owner: 'operator',
+            action: 'Review Paper vs Shadow drilldown before later gates.',
+            completionCondition: 'Workbench evidence reviewed without enabling execution.',
+            boundaryCritical: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'EVALUATION_REPORT',
+            sourceId: 'eval-gateq-5',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-08T10:00:00Z',
+            checksum: 'fixture-checksum-eval',
+        },
+    ],
+    traceId: 'trace-strategy-overview-smoke',
+};
+
+const SHADOW_OVERVIEW_FIXTURE = {
+    generatedAt: '2026-07-08T10:04:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    totalRuns: 7,
+    runningRuns: 1,
+    blockedRuns: 2,
+    failedRuns: 1,
+    completedRuns: 3,
+    staleRuns: 1,
+    latestRun: {
+        shadowRunId: 'shadow-preview-only',
+        strategyVersionId: 'sv-gateq-5',
+        datasetId: '11111111-1111-4111-8111-111111111111',
+        paperRunId: 'paper-gateq-5',
+        status: 'RUNNING',
+        authorizationBoundary: 'DIAGNOSTIC_ONLY',
+        noOrderSubmission: true,
+        noCredentialAccess: true,
+        noPrivateEndpoint: true,
+        noLedgerMutation: true,
+        noAccountMutation: true,
+        noExternalPrivateIo: true,
+        createdAt: '2026-07-08T10:00:00Z',
+        updatedAt: '2026-07-08T10:04:00Z',
+        startedAt: '2026-07-08T10:01:00Z',
+        completedAt: null,
+    },
+    latestConsistency: {
+        reportId: 'consistency-smoke-report',
+        shadowRunId: 'shadow-preview-only',
+        paperRunId: 'paper-gateq-5',
+        comparisonStatus: 'DIVERGED',
+        metricDelta: {turnoverDelta: 0.02},
+        divergenceReasons: ['fixture shadow drift'],
+        limitations: ['fixture limitation'],
+        generatedAt: '2026-07-08T10:02:00Z',
+        traceId: 'trace-shadow-overview-smoke',
+    },
+    divergenceSeverity: 'HIGH',
+    blockers: [
+        {
+            code: 'SHADOW_REVIEW_BLOCKED',
+            severity: 'BLOCKER',
+            message: 'Shadow drilldown must be reviewed.',
+            sourceType: 'SHADOW_RUN',
+            sourceId: 'shadow-preview-only',
+        },
+    ],
+    warnings: [],
+    nextSteps: [
+        {
+            code: 'CHECK_DIVERGENCE',
+            owner: 'operator',
+            action: 'Check divergence reasons in the drilldown panel.',
+            expectedEvidence: 'Reviewed drilldown evidence anchors.',
+            blocking: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'SHADOW_RUN',
+            sourceId: 'shadow-preview-only',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-08T10:04:00Z',
+            checksum: 'fixture-checksum-shadow',
+        },
+    ],
+    traceId: 'trace-shadow-run-overview-smoke',
+};
+
+const PAPER_SHADOW_DRILLDOWN_FIXTURE = {
+    generatedAt: '2026-07-08T10:05:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    shadowRun: {
+        shadowRunId: 'shadow-preview-only',
+        strategyVersionId: 'sv-gateq-5',
+        datasetId: '11111111-1111-4111-8111-111111111111',
+        evaluationId: 'eval-gateq-5',
+        publishId: 'pub-gateq-5',
+        paperRunId: 'paper-gateq-5',
+        status: 'RUNNING',
+        authorizationBoundary: 'DIAGNOSTIC_ONLY',
+        noOrderSubmission: true,
+        noCredentialAccess: true,
+        noPrivateEndpoint: true,
+        noLedgerMutation: true,
+        noAccountMutation: true,
+        noExternalPrivateIo: true,
+        createdAt: '2026-07-08T10:00:00Z',
+        updatedAt: '2026-07-08T10:05:00Z',
+        startedAt: '2026-07-08T10:01:00Z',
+        completedAt: null,
+    },
+    latestConsistency: {
+        reportId: 'consistency-smoke-report',
+        shadowRunId: 'shadow-preview-only',
+        paperRunId: 'paper-gateq-5',
+        comparisonStatus: 'DIVERGED',
+        metricDelta: {turnoverDelta: 0.02},
+        divergenceReasons: ['fixture shadow drift'],
+        limitations: ['fixture limitation'],
+        generatedAt: '2026-07-08T10:02:00Z',
+        traceId: 'trace-drilldown-consistency-smoke',
+    },
+    comparisonStatus: 'DIVERGED',
+    divergenceSeverity: 'HIGH',
+    metricDelta: {turnoverDelta: 0.02},
+    divergenceReasons: ['fixture shadow drift'],
+    limitations: ['fixture limitation'],
+    snapshotSummary: {
+        totalSnapshots: 5,
+        inputMarketdataSnapshots: 1,
+        strategyDecisionSnapshots: 2,
+        riskPreflightSnapshots: 1,
+        orderIntentPreviewSnapshots: 1,
+        latestSnapshotAt: '2026-07-08T10:04:30Z',
+        latestSnapshotTypes: ['STRATEGY_DECISION', 'RISK_PREFLIGHT'],
+    },
+    eventSummary: {
+        totalEvents: 4,
+        latestEventAt: '2026-07-08T10:04:45Z',
+        latestEventType: 'STATE_ADVANCED',
+        latestReasonCode: 'FIXTURE_ONLY',
+    },
+    blockers: [],
+    warnings: [
+        {
+            code: 'DIVERGENCE_REVIEW_REQUIRED',
+            severity: 'WARNING',
+            message: 'Fixture divergence requires review.',
+            sourceType: 'CONSISTENCY_REPORT',
+            sourceId: 'consistency-smoke-report',
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'REVIEW_DRILLDOWN',
+            owner: 'operator',
+            action: 'Review drilldown before any later gate.',
+            expectedEvidence: 'Divergence reasons reviewed.',
+            blocking: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'CONSISTENCY_REPORT',
+            sourceId: 'consistency-smoke-report',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-08T10:05:00Z',
+            checksum: 'fixture-checksum-drilldown',
+        },
+    ],
+    traceId: 'trace-drilldown-smoke',
+};
+
 const EVALUATION_GATE_FIXTURE = {
     scope: {
         strategyId: 'strategy-gateq',
@@ -208,6 +434,21 @@ async function seedAuthAndGateQStubs(
         }],
     }));
 
+    await page.route('**/api/strategy-validation/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: STRATEGY_OVERVIEW_FIXTURE,
+    }));
+
+    await page.route('**/api/shadow-runs/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: SHADOW_OVERVIEW_FIXTURE,
+    }));
+
+    await page.route('**/api/paper-shadow/consistency/drilldown**', (route: Route) => route.fulfill({
+        status: 200,
+        json: PAPER_SHADOW_DRILLDOWN_FIXTURE,
+    }));
+
     await page.route('**/api/strategies/evaluation-gate**', (route: Route) => route.fulfill({
         status: 200,
         json: overrides.evaluationGate ?? EVALUATION_GATE_FIXTURE,
@@ -240,7 +481,7 @@ function validationUrl(): string {
 }
 
 function expectNoForbiddenCopy(page: Page) {
-    return expect(page.locator('body')).not.toContainText(/LIVE READY|TRADE_APPROVED|TRADE APPROVED|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|Integration-1 RUNTIME STARTED|placeOrder|cancelOrder|withdraw|transfer|apiKey|secret|passphrase|token|private key|ML_READY|PYTHON ML READY|PYTHON LIVE READY/i);
+    return expect(page.locator('body')).not.toContainText(/ready\s+to\s+trade|live\s+ready|trade[_\s]+approved|can\s+trade|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|Integration-1 RUNTIME STARTED|placeOrder|cancelOrder|withdraw|transfer|apiKey|secret|passphrase|token|private key|ML_READY|PYTHON ML READY|PYTHON LIVE READY/i);
 }
 
 function expectNoForbiddenRequests(requests: string[]): void {
@@ -277,6 +518,39 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('不调用 private endpoint');
         await expect(view).toContainText('不写真实账户 / 资金 / ledger');
         await expect(view).toContainText('不接 AI / DH runtime 执行链路');
+
+        const workbench = page.getByTestId('strategy-validation-shadow-workbench');
+        await expect(workbench).toBeVisible();
+        await expect(view).toContainText('Strategy Validation / Shadow Workbench');
+        await expect(workbench).toContainText('totalStrategyVersions');
+        await expect(workbench).toContainText('12');
+        await expect(workbench).toContainText('evaluatedStrategyVersions');
+        await expect(workbench).toContainText('9');
+        await expect(workbench).toContainText('approvedForValidation');
+        await expect(workbench).toContainText('3');
+        await expect(workbench).toContainText('totalRuns');
+        await expect(workbench).toContainText('7');
+        await expect(workbench).toContainText('runningRuns');
+        await expect(workbench).toContainText('1');
+        await expect(workbench).toContainText('blockedRuns');
+        await expect(workbench).toContainText('2');
+        await expect(workbench).toContainText('latestDecision.decision');
+        await expect(workbench).toContainText('APPROVED（验证层通过，非交易授权）');
+        await expect(workbench).toContainText('latestRun.status');
+        await expect(workbench).toContainText('RUNNING（诊断运行中）');
+        await expect(workbench).toContainText('DIVERGED（证据偏离）');
+        await expect(workbench).toContainText('HIGH（高偏离）');
+        await expect(workbench).toContainText('LIVE DISABLED（LIVE 关闭）');
+        await expect(workbench).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
+        await expect(workbench).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
+        await expect(workbench).toContainText('Validation is not trading authorization（验证不是交易授权）');
+        await expect(workbench).toContainText('Shadow Run is diagnostic only（Shadow Run 仅诊断）');
+        await expect(workbench).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+        await expect(workbench).toContainText('trace-strategy-validation-smoke');
+        await expect(workbench).toContainText('trace-drilldown-smoke');
+        await expect(workbench).toContainText('REVIEW_SHADOW_DRILLDOWN');
+        await expect(workbench).toContainText('CHECK_DIVERGENCE');
+        await expect(workbench).toContainText('fixture-checksum-drilldown');
 
         await expect(view).toContainText('状态解释');
         await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
@@ -323,6 +597,9 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expectNoForbiddenCopy(page);
         await expectNoSuccessTagForStatuses(page, ['NOT_IMPLEMENTED', 'NOT_AVAILABLE', 'UNKNOWN', 'PENDING_FRONTEND_SUPPORT']);
         expectNoForbiddenRequests(requests);
+        expect(requests.some((url) => url.includes('/api/strategy-validation/overview'))).toBeTruthy();
+        expect(requests.some((url) => url.includes('/api/shadow-runs/overview'))).toBeTruthy();
+        expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/drilldown'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/evaluation-gate'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/shadow-live/preview'))).toBeTruthy();

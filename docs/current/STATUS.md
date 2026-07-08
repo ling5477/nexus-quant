@@ -31,6 +31,7 @@
 - GateS-3 strategy evaluation gate runtime baseline：`NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/strategy-validation/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-3 frozen / accepted、前端页面、Dashboard v2、scheduler、runner、LIVE 或交易授权。
 - GateS-3 frontend strategy validation overview implementation：`NQ-GATES-3-FRONTEND-STRATEGY-VALIDATION-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面顶部 Strategy Validation Overview panel、前端 type / API client / query key / hook 和 `npm run build` 本地验证，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
 - GateS-4 Python offline evaluation artifact baseline：`NQ-GATES-4-PYTHON-EVALUATION-ARTIFACT-BASELINE：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 Python research 离线 artifact 数据结构、parameter grid、JSON writer / reader、checksum / validation 和 pytest / mypy / ruff 本地验证，不代表 GateS-4 frozen / accepted、Java 生产绑定、API、migration、CI、LIVE、Python ML ready、Python live execution ready、AI/DH runtime 或交易授权。
+- GateS-5 frontend Strategy Validation / Shadow Workbench：`NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/validation` 页面中的只读 Workbench 区块、现有 hooks/API client 复用、现有 smoke 更新和 `npm run build` / 目标 Playwright 验证，不新增 route、Dashboard v2、后端 API、migration、CI、Python artifact UI 接入、LIVE、AI/DH runtime 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -58,6 +59,7 @@
 - Strategy validation overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/strategy-validation/overview` 只读聚合本地 strategy / evaluation / publish / Paper / Shadow evidence，不提供写侧 endpoint，不是 strategy approval、runner trigger、scheduler trigger 或交易授权。
 - Strategy validation overview frontend panel：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限现有 `/strategies/validation` 页面顶部消费 `GET /api/strategy-validation/overview` 并展示 counts、latestDecision、decisionReasons、limitations、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不是 Dashboard v2、写侧动作或交易授权。
 - Python offline evaluation artifact baseline：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `research/py` 离线 JSON artifact / parameter grid / checksum / validation 工具和测试；不是 Java production fact import，不是 API，不是 runner，不是 ML ready、live execution ready 或交易授权。
+- Strategy Validation / Shadow Workbench frontend block：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限现有 `/strategies/validation` 页面聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown 的只读展示；不是新增 route、Dashboard v2、Python artifact UI 接入、写侧动作、Shadow Live trading enabled 或交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 - GateS 全域 frontend / Dashboard v2 / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
@@ -221,6 +223,25 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - artifact 已绑定 Java 生产链路、已导入数据库或可驱动 Paper / Shadow / LIVE。
 - Python ML ready、Python live execution ready、strategy approval、trading authorization、trade approval 或 LIVE enable。
 - AI runtime started、DH runtime integrated、RealClient / real provider / private trading adapter / real permission probe implemented。
+
+## 17. GateS-5 Frontend Strategy Validation / Shadow Workbench Status
+
+本轮已实现 `NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH`：在现有 `/strategies/validation` 页面增加最小 Strategy Validation / Shadow Workbench 区块，聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow consistency drilldown 的只读运营视角。
+
+实现范围限定为：
+
+- `frontend/src/pages/strategies/StrategyValidationPage.tsx`：复用现有 `useStrategyValidationOverview()`、`useShadowRunOverview()` 和 `usePaperShadowConsistencyDrilldown()`，新增 Workbench 区块，展示 validation counts、latest decision、Shadow run counts、latest run / consistency、divergence severity、blockers / warnings / nextSteps、evidence anchors、traceId 和 Shadow detail 链接。
+- `frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts`：更新现有 smoke fixture 与断言，覆盖 Workbench Strategy Validation counts、Shadow Run counts、boundary badges、`APPROVED`（验证层通过）非交易授权语义，以及误导性交易文案不得出现。
+- `docs/current/STATUS.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`、`docs/current/FACT_SOURCE_INDEX.md`、`docs/current/README.md` 和 `README.md`：最小同步当前事实与验证记录。
+
+该 Workbench 固定展示 `LIVE DISABLED`（LIVE 关闭）、`Real provider NOT IMPLEMENTED`（真实 provider 未实现）、`Private trading NOT IMPLEMENTED`（私有交易未实现）、`Validation is not trading authorization`（验证不是交易授权）、`Shadow Run is diagnostic only`（Shadow Run 仅诊断）和 `AI/DH runtime not integrated`（AI/DH runtime 未集成）。`APPROVED` 只显示为 validation 层通过，不表示交易授权。
+
+该状态不表示：
+
+- GateS-5 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- 新 route、Dashboard v2、后端 API、DB migration、CI workflow、Python research code 或 Python artifact UI 接入已新增。
+- runner / scheduler、Paper run、Shadow run、Shadow Live trading、真实交易按钮或写侧 client 已启动或新增。
+- LIVE ready、trade approval、trading authorization、real provider、private trading adapter、real permission probe、AI started 或 DH integrated。
 
 ## 13. GateS-2 Frontend Consistency Drilldown Implementation Status
 

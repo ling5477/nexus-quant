@@ -20,10 +20,14 @@ import {
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useEffect, useMemo, useState, type ReactNode} from 'react';
-import {useSearchParams} from 'react-router-dom';
+import {Link, useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {
+    usePaperShadowConsistencyDrilldown,
+    useShadowRunOverview,
+} from '@/hooks/useShadowRunQueries';
 import {
     usePaperShadowComparisonQuery,
     useShadowLivePreviewQuery,
@@ -31,6 +35,11 @@ import {
     useStrategyValidationOverview,
 } from '@/hooks/useStrategyValidationQueries';
 import type {AppApiError} from '@/types/api';
+import type {
+    JsonValue,
+    PaperShadowConsistencyDrilldownResponse,
+    ShadowRunOverviewResponse,
+} from '@/types/shadow-runs';
 import type {
     PaperShadowComparisonResponse,
     ShadowLivePreviewResponse,
@@ -57,6 +66,9 @@ interface StatusPresentation {
     label: string;
     tone: StatusTone;
 }
+
+const WORKBENCH_SENSITIVE_TEXT_PATTERN = /(api[_-]?key|secret|passphrase|private[_ -]?key|credentialMaterial|encrypted[_ -]?payload|decrypted[_ -]?payload|rawSignature|rawPrivate|private endpoint|realOrderId|realAccountBalance|authorizedForTrading|tradingReady|liveReady|tradeApproved|token)/i;
+const WORKBENCH_FORBIDDEN_ACTION_TEXT_PATTERN = /(ready\s+to\s+trade|live\s+ready|trade[_\s-]+approved|can\s+trade|placeOrder|cancelOrder|withdraw|transfer)/i;
 
 interface PanelQueryState<TData> {
     data?: TData;
@@ -126,6 +138,42 @@ interface StatusExplanationRow {
     boundary: string;
 }
 
+interface WorkbenchQueryBundle {
+    strategyOverview: PanelQueryState<StrategyValidationOverviewResponse>;
+    shadowOverview: PanelQueryState<ShadowRunOverviewResponse>;
+    drilldown: PanelQueryState<PaperShadowConsistencyDrilldownResponse>;
+    shadowRunId: string | null;
+}
+
+interface WorkbenchSignalRow {
+    key: string;
+    source: string;
+    kind: 'blocker' | 'warning';
+    code: string;
+    severity: string;
+    message: string;
+}
+
+interface WorkbenchNextStepRow {
+    key: string;
+    source: string;
+    code: string;
+    owner: string;
+    action: string;
+    evidence: string;
+    blocking: boolean;
+}
+
+interface WorkbenchEvidenceAnchorRow {
+    key: string;
+    source: string;
+    sourceType: string;
+    sourceId: string | null;
+    sourceVersion: string | null;
+    sourceTimestamp: string | null;
+    checksum: string | null;
+}
+
 const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     APPROVED: {label: '验证层通过，非交易授权', tone: 'info'},
     REJECTED: {label: '验证层拒绝', tone: 'danger'},
@@ -133,6 +181,9 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     BLOCKED: {label: '阻断', tone: 'danger'},
     NO_EVIDENCE: {label: '无证据', tone: 'neutral'},
     STALE_EVIDENCE: {label: '证据过期或不完整', tone: 'warning'},
+    CONSISTENT: {label: '证据一致，非盈利结论', tone: 'info'},
+    DIVERGED: {label: '证据偏离', tone: 'warning'},
+    NO_REPORT: {label: '无一致性报告', tone: 'neutral'},
     READY_FOR_SHADOW_REVIEW: {label: '可进入 Shadow 评审', tone: 'info'},
     READY_FOR_COMPARISON: {label: '可查看只读对照', tone: 'info'},
     READY_FOR_NO_SIDE_EFFECT_PREVIEW: {label: '可生成无副作用预览', tone: 'info'},
@@ -160,6 +211,16 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     WARNING: {label: '警告', tone: 'warning'},
     SUCCEEDED: {label: '成功', tone: 'success'},
     ACTIVE: {label: '有效', tone: 'success'},
+    CREATED: {label: '已创建', tone: 'info'},
+    READY: {label: '诊断就绪，非交易放行', tone: 'info'},
+    RUNNING: {label: '诊断运行中', tone: 'info'},
+    COMPLETED: {label: '诊断完成，非收益结论', tone: 'info'},
+    STOPPED: {label: '已停止', tone: 'neutral'},
+    CANCELLED: {label: '已取消', tone: 'neutral'},
+    LOW: {label: '低偏离', tone: 'warning'},
+    MEDIUM: {label: '中等偏离', tone: 'warning'},
+    HIGH: {label: '高偏离', tone: 'danger'},
+    CRITICAL: {label: '严重偏离', tone: 'danger'},
 };
 
 const EVIDENCE_CATEGORY_LABELS: Record<EvidenceMatrixCategory, string> = {
@@ -412,7 +473,7 @@ const overviewIssueColumns: ColumnsType<StrategyValidationOverviewIssue> = [
         dataIndex: 'code',
         key: 'code',
         width: 260,
-        render: (value: string) => <Text code>{value}</Text>,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
         title: '级别',
@@ -436,7 +497,7 @@ const overviewIssueColumns: ColumnsType<StrategyValidationOverviewIssue> = [
         title: '说明',
         dataIndex: 'message',
         key: 'message',
-        render: (value: string) => <Text type="secondary">{value}</Text>,
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
     },
 ];
 
@@ -513,6 +574,130 @@ const overviewEvidenceAnchorColumns: ColumnsType<StrategyValidationEvidenceAncho
     },
 ];
 
+const workbenchSignalColumns: ColumnsType<WorkbenchSignalRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 210,
+    },
+    {
+        title: '类别',
+        dataIndex: 'kind',
+        key: 'kind',
+        width: 120,
+        render: (value: WorkbenchSignalRow['kind']) => (
+            <Tag color={value === 'blocker' ? 'error' : 'warning'}>{value}</Tag>
+        ),
+    },
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: '级别',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 150,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: '说明',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+];
+
+const workbenchNextStepColumns: ColumnsType<WorkbenchNextStepRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 210,
+    },
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 240,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'Owner',
+        dataIndex: 'owner',
+        key: 'owner',
+        width: 150,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '动作',
+        dataIndex: 'action',
+        key: 'action',
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '证据 / 完成条件',
+        dataIndex: 'evidence',
+        key: 'evidence',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '阻断',
+        dataIndex: 'blocking',
+        key: 'blocking',
+        width: 110,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+    },
+];
+
+const workbenchEvidenceAnchorColumns: ColumnsType<WorkbenchEvidenceAnchorRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 210,
+    },
+    {
+        title: 'sourceType',
+        dataIndex: 'sourceType',
+        key: 'sourceType',
+        width: 180,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'sourceId',
+        dataIndex: 'sourceId',
+        key: 'sourceId',
+        width: 230,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceVersion',
+        dataIndex: 'sourceVersion',
+        key: 'sourceVersion',
+        width: 170,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceTimestamp',
+        dataIndex: 'sourceTimestamp',
+        key: 'sourceTimestamp',
+        width: 190,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'checksum',
+        dataIndex: 'checksum',
+        key: 'checksum',
+        width: 210,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+];
+
 function normalizeStatus(status: string | null | undefined): string {
     const normalized = status?.trim().toUpperCase();
     return normalized || 'UNKNOWN';
@@ -570,6 +755,22 @@ function optionalCode(value: string | null | undefined): ReactNode {
     return normalized ? <Text code>{normalized}</Text> : <StatusTag status="NOT_AVAILABLE"/>;
 }
 
+function workbenchSafeText(value: string | null | undefined): string {
+    const normalized = value?.trim();
+    if (!normalized) {
+        return '无';
+    }
+    if (WORKBENCH_SENSITIVE_TEXT_PATTERN.test(normalized) || WORKBENCH_FORBIDDEN_ACTION_TEXT_PATTERN.test(normalized)) {
+        return '[filtered diagnostic text]';
+    }
+    return normalized;
+}
+
+function optionalSafeCode(value: string | null | undefined): ReactNode {
+    const normalized = value?.trim();
+    return normalized ? <Text code>{workbenchSafeText(normalized)}</Text> : <StatusTag status="NOT_AVAILABLE"/>;
+}
+
 function optionalText(value: string | null | undefined): ReactNode {
     const normalized = value?.trim();
     return normalized ? <Text>{normalized}</Text> : <StatusTag status="NOT_AVAILABLE"/>;
@@ -606,6 +807,137 @@ function queryFromSearchParams(searchParams: URLSearchParams): StrategyValidatio
 function firstText(...values: Array<string | null | undefined>): string | null {
     const matched = values.find((value) => Boolean(value?.trim()));
     return matched?.trim() ?? null;
+}
+
+function numberValue(value: number | null | undefined): number {
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function jsonSummary(value: JsonValue | null | undefined): string {
+    if (value === null || value === undefined) {
+        return '无';
+    }
+    if (Array.isArray(value)) {
+        return value.length === 0 ? '空数组' : `数组 ${value.length} 项`;
+    }
+    if (typeof value === 'object') {
+        return `对象 ${Object.keys(value).length} 个字段`;
+    }
+    if (typeof value === 'string') {
+        return value.trim() ? workbenchSafeText(value) : '空文本';
+    }
+    return String(value);
+}
+
+function workbenchShadowRunId(
+    submittedQuery: StrategyValidationQuery | null,
+    strategyOverview?: StrategyValidationOverviewResponse,
+    shadowOverview?: ShadowRunOverviewResponse,
+): string | null {
+    return firstText(
+        submittedQuery?.shadowRunId,
+        strategyOverview?.latestDecision?.shadowRunId,
+        shadowOverview?.latestRun?.shadowRunId,
+    );
+}
+
+function workbenchSignalRows(
+    strategyOverview?: StrategyValidationOverviewResponse,
+    shadowOverview?: ShadowRunOverviewResponse,
+    drilldown?: PaperShadowConsistencyDrilldownResponse,
+): WorkbenchSignalRow[] {
+    const rows: WorkbenchSignalRow[] = [];
+    const pushIssues = (
+        source: string,
+        kind: WorkbenchSignalRow['kind'],
+        issues: Array<{ code: string; severity: string; message: string }>,
+    ) => {
+        issues.slice(0, 4).forEach((issue, index) => {
+            rows.push({
+                key: `${source}-${kind}-${index}`,
+                source,
+                kind,
+                code: workbenchSafeText(issue.code),
+                severity: issue.severity,
+                message: workbenchSafeText(issue.message),
+            });
+        });
+    };
+
+    pushIssues('Strategy Validation', 'blocker', strategyOverview?.blockers ?? []);
+    pushIssues('Strategy Validation', 'warning', strategyOverview?.warnings ?? []);
+    pushIssues('Shadow Run Overview', 'blocker', shadowOverview?.blockers ?? []);
+    pushIssues('Shadow Run Overview', 'warning', shadowOverview?.warnings ?? []);
+    pushIssues('Paper / Shadow Drilldown', 'blocker', drilldown?.blockers ?? []);
+    pushIssues('Paper / Shadow Drilldown', 'warning', drilldown?.warnings ?? []);
+    return rows;
+}
+
+function workbenchNextStepRows(
+    strategyOverview?: StrategyValidationOverviewResponse,
+    shadowOverview?: ShadowRunOverviewResponse,
+    drilldown?: PaperShadowConsistencyDrilldownResponse,
+): WorkbenchNextStepRow[] {
+    return [
+        ...(strategyOverview?.nextSteps ?? []).slice(0, 4).map((item, index) => ({
+            key: `strategy-${index}`,
+            source: 'Strategy Validation',
+            code: workbenchSafeText(item.code),
+            owner: workbenchSafeText(item.owner),
+            action: workbenchSafeText(item.action),
+            evidence: workbenchSafeText(item.completionCondition),
+            blocking: item.boundaryCritical,
+        })),
+        ...(shadowOverview?.nextSteps ?? []).slice(0, 4).map((item, index) => ({
+            key: `shadow-overview-${index}`,
+            source: 'Shadow Run Overview',
+            code: workbenchSafeText(item.code),
+            owner: workbenchSafeText(item.owner),
+            action: workbenchSafeText(item.action),
+            evidence: workbenchSafeText(item.expectedEvidence),
+            blocking: item.blocking,
+        })),
+        ...(drilldown?.nextSteps ?? []).slice(0, 4).map((item, index) => ({
+            key: `drilldown-${index}`,
+            source: 'Paper / Shadow Drilldown',
+            code: workbenchSafeText(item.code),
+            owner: workbenchSafeText(item.owner),
+            action: workbenchSafeText(item.action),
+            evidence: workbenchSafeText(item.expectedEvidence),
+            blocking: item.blocking,
+        })),
+    ];
+}
+
+function workbenchEvidenceRows(
+    strategyOverview?: StrategyValidationOverviewResponse,
+    shadowOverview?: ShadowRunOverviewResponse,
+    drilldown?: PaperShadowConsistencyDrilldownResponse,
+): WorkbenchEvidenceAnchorRow[] {
+    const toRows = (
+        source: string,
+        anchors: Array<{
+            sourceType: string;
+            sourceId: string | null;
+            sourceVersion: string | null;
+            sourceTimestamp: string | null;
+            checksum: string | null
+        }>,
+    ): WorkbenchEvidenceAnchorRow[] => anchors.slice(0, 4).map((anchor, index) => ({
+        key: `${source}-${index}`,
+        source,
+        sourceType: workbenchSafeText(anchor.sourceType),
+        sourceId: anchor.sourceId ? workbenchSafeText(anchor.sourceId) : null,
+        sourceVersion: anchor.sourceVersion ? workbenchSafeText(anchor.sourceVersion) : null,
+        sourceTimestamp: anchor.sourceTimestamp,
+        checksum: anchor.checksum ? workbenchSafeText(anchor.checksum) : null,
+    }));
+
+    return [
+        ...toRows('Strategy Validation', strategyOverview?.evidenceAnchors ?? []),
+        ...toRows('Shadow Run Overview', shadowOverview?.evidenceAnchors ?? []),
+        ...toRows('Paper / Shadow Drilldown', drilldown?.evidenceAnchors ?? []),
+    ];
 }
 
 function firstScope(
@@ -1269,6 +1601,208 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
     );
 }
 
+function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryBundle }) {
+    const strategyOverview = queries.strategyOverview.data;
+    const shadowOverview = queries.shadowOverview.data;
+    const drilldown = queries.drilldown.data;
+    const isLoading = queries.strategyOverview.isLoading || queries.shadowOverview.isLoading || queries.drilldown.isLoading;
+    const hasError = queries.strategyOverview.isError || queries.shadowOverview.isError || queries.drilldown.isError;
+    const hasPartialData = !strategyOverview || !shadowOverview || !queries.shadowRunId || !drilldown;
+    const signalRows = useMemo(
+        () => workbenchSignalRows(strategyOverview, shadowOverview, drilldown),
+        [strategyOverview, shadowOverview, drilldown],
+    );
+    const nextStepRows = useMemo(
+        () => workbenchNextStepRows(strategyOverview, shadowOverview, drilldown),
+        [strategyOverview, shadowOverview, drilldown],
+    );
+    const evidenceRows = useMemo(
+        () => workbenchEvidenceRows(strategyOverview, shadowOverview, drilldown),
+        [strategyOverview, shadowOverview, drilldown],
+    );
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="Strategy Validation / Shadow Workbench"
+            extra={(
+                <Space size={8} wrap>
+                    {queries.shadowRunId ? (
+                        <Link to={`/strategies/shadow-runs/${queries.shadowRunId}`}>
+                            <Button size="small">查看 Shadow Run detail</Button>
+                        </Link>
+                    ) : null}
+                    <Button
+                        size="small"
+                        icon={<ReloadOutlined/>}
+                        loading={queries.strategyOverview.isFetching || queries.shadowOverview.isFetching || queries.drilldown.isFetching}
+                        onClick={() => {
+                            queries.strategyOverview.refetch();
+                            queries.shadowOverview.refetch();
+                            if (queries.shadowRunId) {
+                                queries.drilldown.refetch();
+                            }
+                        }}
+                    >
+                        刷新 Workbench
+                    </Button>
+                </Space>
+            )}
+        >
+            <Space data-testid="strategy-validation-shadow-workbench" direction="vertical" size={14} style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown 的只读运营视角；不新增 route、不触发 runner、不接 Python artifact，也不创建任何交易动作。
+                </Paragraph>
+                <Space size={[8, 8]} wrap>
+                    <BoundaryBadge
+                        color="error"
+                        label="LIVE DISABLED（LIVE 关闭）"
+                        tooltip="LIVE 仍关闭；本 Workbench 不展示 live-ready 或实盘可用结论。"
+                    />
+                    <BoundaryBadge
+                        label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
+                        tooltip="真实 provider 未实现；本页不调用真实交易所。"
+                    />
+                    <BoundaryBadge
+                        label="Private trading NOT IMPLEMENTED（私有交易未实现）"
+                        tooltip="不提供下单、撤单、转账、提现或 private endpoint 能力。"
+                    />
+                    <BoundaryBadge
+                        color="warning"
+                        label="Validation is not trading authorization（验证不是交易授权）"
+                        tooltip="APPROVED 只表示 validation 层通过，不表示交易授权。"
+                    />
+                    <BoundaryBadge
+                        color="warning"
+                        label="Shadow Run is diagnostic only（Shadow Run 仅诊断）"
+                        tooltip="Shadow Run facts 仅用于诊断和回放，不代表 Shadow trading enabled。"
+                    />
+                    <BoundaryBadge
+                        label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
+                        tooltip="AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED。"
+                    />
+                </Space>
+
+                {hasError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Workbench 存在只读数据加载失败"
+                        description="失败区块按不可用处理；页面保留已返回的 partial data，但不会把缺失数据解释为通过或授权。"
+                    />
+                ) : null}
+                {isLoading ? <Skeleton active paragraph={{rows: 8}}/> : null}
+                {!isLoading && hasPartialData ? (
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="Partial data / 部分数据"
+                        description="缺少 Strategy overview、Shadow overview、shadowRunId 或 drilldown 时，Workbench 只展示可用事实；不会补造 evidence、comparison 或 nextSteps。"
+                    />
+                ) : null}
+
+                <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+                    <Descriptions.Item label="totalStrategyVersions">
+                        {numberValue(strategyOverview?.totalStrategyVersions)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="evaluatedStrategyVersions">
+                        {numberValue(strategyOverview?.evaluatedStrategyVersions)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="approvedForValidation">
+                        {numberValue(strategyOverview?.approvedForValidation)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="rejectedForValidation">
+                        {numberValue(strategyOverview?.rejectedForValidation)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="needsReview">
+                        {numberValue(strategyOverview?.needsReview)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="blocked">
+                        {numberValue(strategyOverview?.blocked)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="latestDecision.decision">
+                        <Tooltip title="APPROVED 只表示验证层通过，不表示交易授权。">
+                            <span><StatusTag status={strategyOverview?.latestDecision?.decision}/></span>
+                        </Tooltip>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="latestDecision.traceId">
+                        {optionalCode(strategyOverview?.latestDecision?.traceId)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="strategy traceId">
+                        {optionalCode(strategyOverview?.traceId)}
+                    </Descriptions.Item>
+                </Descriptions>
+
+                <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+                    <Descriptions.Item label="totalRuns">{numberValue(shadowOverview?.totalRuns)}</Descriptions.Item>
+                    <Descriptions.Item label="runningRuns">{numberValue(shadowOverview?.runningRuns)}</Descriptions.Item>
+                    <Descriptions.Item label="blockedRuns">{numberValue(shadowOverview?.blockedRuns)}</Descriptions.Item>
+                    <Descriptions.Item label="failedRuns">{numberValue(shadowOverview?.failedRuns)}</Descriptions.Item>
+                    <Descriptions.Item label="completedRuns">{numberValue(shadowOverview?.completedRuns)}</Descriptions.Item>
+                    <Descriptions.Item label="staleRuns">{numberValue(shadowOverview?.staleRuns)}</Descriptions.Item>
+                    <Descriptions.Item label="latestRun.status">
+                        <StatusTag status={shadowOverview?.latestRun?.status}/>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="shadowRunId">
+                        {queries.shadowRunId ? (
+                            <Link to={`/strategies/shadow-runs/${queries.shadowRunId}`}>
+                                <Text code>{queries.shadowRunId}</Text>
+                            </Link>
+                        ) : <StatusTag status="NOT_AVAILABLE"/>}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="divergenceSeverity">
+                        <StatusTag status={shadowOverview?.divergenceSeverity}/>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="latestConsistency.comparisonStatus">
+                        <StatusTag status={drilldown?.comparisonStatus ?? shadowOverview?.latestConsistency?.comparisonStatus}/>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="divergenceReasons">
+                        {jsonSummary(drilldown?.divergenceReasons ?? shadowOverview?.latestConsistency?.divergenceReasons)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="limitations">
+                        {jsonSummary(drilldown?.limitations ?? shadowOverview?.latestConsistency?.limitations)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="drilldown traceId">
+                        {optionalCode(drilldown?.traceId ?? shadowOverview?.latestConsistency?.traceId)}
+                    </Descriptions.Item>
+                </Descriptions>
+
+                {signalRows.length === 0 && nextStepRows.length === 0 && evidenceRows.length === 0 ? (
+                    <Empty description="暂无 blockers / warnings / nextSteps / evidence anchors；不能解释为证据完整或可执行。"/>
+                ) : null}
+                <Table<WorkbenchSignalRow>
+                    size="small"
+                    rowKey={(record) => record.key}
+                    columns={workbenchSignalColumns}
+                    dataSource={signalRows}
+                    pagination={false}
+                    scroll={{x: 980}}
+                    locale={{emptyText: '暂无 blockers / warnings；仍需遵守固定安全边界。'}}
+                />
+                <Table<WorkbenchNextStepRow>
+                    size="small"
+                    rowKey={(record) => record.key}
+                    columns={workbenchNextStepColumns}
+                    dataSource={nextStepRows}
+                    pagination={false}
+                    scroll={{x: 1180}}
+                    locale={{emptyText: '暂无 nextSteps；不能解释为已经允许交易。'}}
+                />
+                <Table<WorkbenchEvidenceAnchorRow>
+                    size="small"
+                    rowKey={(record) => record.key}
+                    columns={workbenchEvidenceAnchorColumns}
+                    dataSource={evidenceRows}
+                    pagination={false}
+                    scroll={{x: 1190}}
+                    locale={{emptyText: '暂无 evidence anchors；不能补造证据。'}}
+                />
+            </Space>
+        </Card>
+    );
+}
+
 function EvaluationGatePanel({
                                   submitted,
                                   query,
@@ -1636,10 +2170,18 @@ export function StrategyValidationPage() {
     );
 
     const overviewQuery = useStrategyValidationOverview();
+    const shadowOverviewQuery = useShadowRunOverview();
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
     const paperShadowQuery = usePaperShadowComparisonQuery(submittedQuery);
     const shadowLivePreviewQuery = useShadowLivePreviewQuery(submittedQuery);
+    const selectedShadowRunId = useMemo(
+        () => workbenchShadowRunId(submittedQuery, overviewQuery.data, shadowOverviewQuery.data),
+        [submittedQuery, overviewQuery.data, shadowOverviewQuery.data],
+    );
+    const consistencyDrilldownQuery = usePaperShadowConsistencyDrilldown(selectedShadowRunId);
     const loading = overviewQuery.isFetching
+        || shadowOverviewQuery.isFetching
+        || consistencyDrilldownQuery.isFetching
         || evaluationGateQuery.isFetching
         || paperShadowQuery.isFetching
         || shadowLivePreviewQuery.isFetching;
@@ -1666,6 +2208,14 @@ export function StrategyValidationPage() {
             </Card>
 
             <StrategyValidationOverviewPanel query={overviewQuery}/>
+            <StrategyValidationShadowWorkbench
+                queries={{
+                    strategyOverview: overviewQuery,
+                    shadowOverview: shadowOverviewQuery,
+                    drilldown: consistencyDrilldownQuery,
+                    shadowRunId: selectedShadowRunId,
+                }}
+            />
             <BoundarySummary/>
             <QueryForm initialValues={initialQuery} onSubmit={submitQuery} onReset={resetQuery} loading={loading}/>
             <StatusSemantics/>

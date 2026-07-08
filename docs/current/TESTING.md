@@ -9362,6 +9362,47 @@ Blocking status：non-blocking。当前可进入提交前复核。
 
 ---
 
+## NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH（2026-07-08）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只在现有 `/strategies/validation` 页面增加 Strategy Validation / Shadow Workbench 只读组合区块，并更新现有 Playwright smoke。修改范围限定在 `frontend/src/pages/strategies/StrategyValidationPage.tsx`、`frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts` 和允许的 current docs / README；未修改 backend、research、scripts、deploy、`.github`、migration、API / DB docs、package / lock files 或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `npm run build` | PASS / BUILD SUCCESS（通过 / 构建成功） | `tsc -b && vite build` 通过；仅有既有 Vite chunk size warning。 |
+| `npm run test:e2e -- strategy-validation-paper-shadow-smoke.spec.ts` | PASS / 2 PASSED（通过 / 2 项通过） | 覆盖 Workbench 渲染 Strategy Validation counts、Shadow Run counts、boundary badges、`APPROVED` 非交易授权语义、误导性交易文案不出现，以及无 forbidden private / exchange 请求。 |
+
+Test coverage：
+
+- Workbench 能渲染 `totalStrategyVersions`、`evaluatedStrategyVersions`、`approvedForValidation` 等 Strategy Validation counts。
+- Workbench 能渲染 `totalRuns`、`runningRuns`、`blockedRuns`、`latestRun.status`、`latestConsistency.comparisonStatus` 和 `divergenceSeverity` 等 Shadow Run / consistency 摘要。
+- 固定展示 `LIVE DISABLED`、`Real provider NOT IMPLEMENTED`、`Private trading NOT IMPLEMENTED`、`Validation is not trading authorization`、`Shadow Run is diagnostic only`、`AI/DH runtime not integrated` boundary badges。
+- `APPROVED` 只显示为 `APPROVED（验证层通过，非交易授权）`，不显示 ready-to-trade / live-ready / trade-approved / can-trade 等误导性文案。
+
+Known warnings：
+
+- Vite 输出既有 chunk size warning；本轮未修改 bundle splitting 或构建配置。
+- Playwright 输出既有 `NO_COLOR` / `FORCE_COLOR` warning；不影响测试结果。
+
+What was not run：
+
+- 未运行全量 `npm run test:e2e`；原因是本轮只新增 / 更新一个现有目标 smoke，且用户明确禁止新增复杂 E2E。
+- 未运行 Maven backend test；原因是未修改 `backend/**`、API、DTO、domain、repository、SQL 或 migration。
+- 未运行 Python pytest / mypy / ruff；原因是未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- Workbench 只复用现有 read-only hooks / API client，不新增 endpoint，不新增 route，不新增 Dashboard v2，不写 Zustand 服务端状态。
+- 未新增交易按钮、start / stop / execute / rerun / approve / trade 操作，也未接 Python artifact UI 或 Java production binding。
+- `APPROVED` 只表示 validation 层通过；Shadow Run 只表示 diagnostic local facts；Paper vs Shadow drilldown 只表示只读 consistency 证据。
+- LIVE = `DISABLED`（关闭）；AI = `NOT STARTED`（未开始）；DH runtime = `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
+
+Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
 ## NQ-GATES-3-FRONTEND-STRATEGY-VALIDATION-OVERVIEW-IMPLEMENTATION（2026-07-08）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。

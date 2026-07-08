@@ -16132,3 +16132,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - Artifact 固定 `diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`；`FAKE_METRICS_FIXTURE` 仅为测试 fixture，不表示真实策略表现。
   - LIVE = `DISABLED`（关闭）；AI = `NOT STARTED`（未开始）；DH runtime = `NOT INTEGRATED`（未集成）；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`（未实现）。
 - next action: 完成 forbidden-area diff、boundary / sensitive rg、staged checks 后提交；推荐 commit message：`feat(research): add offline evaluation artifact baseline`。
+
+## NQ-GATES-5-FRONTEND-STRATEGY-VALIDATION-SHADOW-WORKBENCH
+
+- date: 2026-07-08
+- scope: GateS-5 frontend implementation；NQ-only；只在现有 `/strategies/validation` 页面增加 Strategy Validation / Shadow Workbench 只读组合区块，复用现有 Strategy Validation overview、Shadow Run overview 和 Paper vs Shadow consistency drilldown hooks。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `frontend/src/pages/strategies/StrategyValidationPage.tsx`
+  - `frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/README.md`
+  - `README.md`
+- key changes:
+  - 在现有 Strategy Validation 页面新增 Workbench 区块，展示 Strategy Validation counts、latestDecision、Shadow Run counts、latestRun.status、latestConsistency.comparisonStatus、divergenceSeverity、blockers / warnings / nextSteps、evidence anchors、traceId 和 Shadow Run detail 链接。
+  - 复用 `useStrategyValidationOverview()`、`useShadowRunOverview()` 和 `usePaperShadowConsistencyDrilldown()`；不新增 route、不新增 API、不改后端、不接 Python artifact UI。
+  - 固定展示 `LIVE DISABLED`、`Real provider NOT IMPLEMENTED`、`Private trading NOT IMPLEMENTED`、`Validation is not trading authorization`、`Shadow Run is diagnostic only`、`AI/DH runtime not integrated` badges。
+  - 更新现有 `strategy-validation-paper-shadow-smoke.spec.ts` fixture 与断言，覆盖 Workbench counts、boundary badges、`APPROVED` 非交易授权语义、误导性交易文案不出现和 no forbidden private / exchange request。
+- validation:
+  - `npm run build`：PASS / BUILD SUCCESS；仅有既有 Vite chunk size warning。
+  - `npm run test:e2e -- strategy-validation-paper-shadow-smoke.spec.ts`：PASS / 2 passed；首次失败仅因 Card title 不在 `data-testid` locator 内，已调整测试断言范围后重跑通过。
+- boundary:
+  - 未修改 backend、research、scripts、deploy、`.github`、migration、API / DB docs、package / lock files、docs/gates 或 docs/archive。
+  - 未新增 Dashboard v2、route、后端 API、migration、CI workflow、Python code、真实交易按钮或写侧 client。
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - Workbench 仅表达 read-only validation / Shadow diagnostic facts，不表达 trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
+- next action: 完成 forbidden-area diff、wording / sensitive grep、staged checks 后提交；推荐 commit message：`feat(gates): add strategy validation shadow workbench`。
