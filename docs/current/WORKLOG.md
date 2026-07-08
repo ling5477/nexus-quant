@@ -1,3 +1,45 @@
+## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-WO
+
+日期：2026-07-08。
+
+范围：
+
+- NQ-only GateT-2 work order。
+- 新增 `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`，定义 Consistency Evidence Refinement、current fact sources、candidate endpoint / DTO / query / repository、freshness / severity / metric semantics、GateT-1 operator item 关系、DB / migration decision、GET-only / SELECT-only / no-side-effect testing plan 和 next implementation prompt。
+- 最小同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`、`TESTING.md`、`WORKLOG.md`。
+- 只读检查 GateS archive、GateS-2 Paper vs Shadow consistency backend / frontend 实现、GateT-1 Shadow Validation Workflow backend / frontend 实现、Shadow Run consistency schema 和相关测试。
+
+结果：
+
+```text
+NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-WO：PLAN READY / NOT IMPLEMENTED / READY TO COMMIT
+```
+
+核心决策：
+
+- GateT-2 只做 implementation 前工作单，不实现 endpoint，不新增 API，不新增 migration。
+- 候选 endpoint 选择 `GET /api/paper-shadow/consistency/evidence/overview`，原因是语义聚焦 Paper vs Shadow consistency evidence overview，并复用 GateS-2 namespace，避免与 GateT-1 operator workflow namespace 混淆。
+- Consistency evidence item 默认 derived / deterministic，不持久化；`DIVERGED` 只表示 Paper vs Shadow 证据不一致，`HIGH / CRITICAL` 只表示诊断优先级。
+- `metricDelta` 只做诊断差异摘要，不伪造收益结论，不表示交易建议。
+- GateT-2 与 GateT-1 的关系是 evidence anchor / read-only relation，不读取或修改 operator review / acknowledge 状态。
+
+验证：
+
+- preflight 确认 `dev` clean，`HEAD == origin/dev == ab65500e6e0e2baebc02d8941965996915fdce7d`。
+- 当前 HEAD 对应 `NQ CI Baseline` run `28949331307` 为 `completed / success`，headSha 等于当前 HEAD。
+- `nq-gates-freeze` 存在；`nq-gatet-freeze` 不存在。
+- `git diff --check`、forbidden-area diff、required boundary `rg` 和 staged checks 已执行；最终结果详见 `docs/current/TESTING.md` 本任务小节。
+
+边界：
+
+- 未修改 backend、frontend、research、scripts、deploy、`.github`、docs/gates、docs/archive、migration、业务代码或测试代码。
+- 未读取 credential material，未调用真实交易所，未启动 LIVE、AI runtime、DH runtime、Integration-1 runtime、runner 或 scheduler。
+- 未创建 consistency report，未写 account / order / ledger / position。
+
+下一步：
+
+- 推荐进入 `NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION` 或 close review；不得直接进入 GateT-3、frontend workbench、Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
+
 ## NQ-GATET-1-FRONTEND-SHADOW-VALIDATION-WORKFLOW-OVERVIEW
 
 日期：2026-07-08。

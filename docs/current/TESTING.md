@@ -1,3 +1,44 @@
+## NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-WO validation（2026-07-08）
+
+```text
+Scope:
+  - 本轮只做 GateT-2 work order、事实源审查、candidate endpoint / DTO / query / repository 方案、安全边界审查和 current docs 最小同步。
+  - 修改范围限定为 README.md、docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md、docs/current/README.md、STATUS.md、ROADMAP.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md。
+  - 未修改 backend、frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files、业务代码或测试代码。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: ab65500e6e0e2baebc02d8941965996915fdce7d.
+  - git rev-parse origin/dev: ab65500e6e0e2baebc02d8941965996915fdce7d.
+  - git log --oneline -20: latest commit is ab65500e feat(gatet): add shadow validation workflow frontend.
+  - gh run list --commit ab65500e6e0e2baebc02d8941965996915fdce7d --limit 10: NQ CI Baseline run 28949331307 completed success for current HEAD.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Docs validation:
+  - git diff --check: PASS after writing docs.
+  - git diff --stat: reviewed; diff limited to allowed docs.
+  - git diff -- backend / frontend / research / scripts / deploy / .github / backend/**/db/migration / docs/gates / docs/archive: all empty.
+  - Required boundary rg: executed and reviewed; hits are current boundary wording, planned endpoint names, existing code guards, historical docs, or explicit forbidden-field tests.
+  - Final staged checks: git diff --cached --name-only contains only allowed docs; git diff --cached --check PASS; staged forbidden-area diff is empty.
+
+What was not run:
+  - Maven backend tests were not run because this task did not modify Java, API implementation, repository, DTO, SQL, migration or tests.
+  - frontend build / Playwright / E2E were not run because this task did not modify frontend source, route, API client, hook, page, package or lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Candidate endpoint GET /api/paper-shadow/consistency/evidence/overview is not implemented.
+  - Consistency evidence item remains derived read model by default; no persistence and no migration.
+  - GateT-2 does not create report, start runner, start scheduler, call real exchange, read credential, or write account / order / ledger / position.
+  - LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; Integration-1 runtime remains NOT STARTED.
+
+Blocking status:
+  - Non-blocking. Ready to commit after final staging checks.
+```
+
 ## NQ-GATET-1-FRONTEND-SHADOW-VALIDATION-WORKFLOW-OVERVIEW validation（2026-07-08）
 
 ```text

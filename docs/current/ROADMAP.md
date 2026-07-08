@@ -29,7 +29,7 @@ GateR frozen / accepted / tagged
   ↓
 GateS frozen / accepted / tagged
   ↓
-GateT plan / not started
+GateT current work orders and limited implementation slices; not frozen / accepted / tagged
 ```
 
 ## 当前阶段
@@ -38,9 +38,10 @@ GateT plan / not started
 - GateS release tag：`nq-gates-freeze`。
 - GateS archive pointer：`docs/gates/gate-s/README.md`。
 - GateS completed scope：strategy validation、Shadow diagnostics、Paper vs Shadow consistency、Incident / Replay overview、Python offline evaluation artifact baseline。
-- GateT：`PLAN / NOT STARTED`（规划 / 未开始）。
+- GateT：已完成 GateT-0 planning、GateT-1 backend / frontend 最小只读切片和 GateT-2 work order；仍不是 `FROZEN`（已冻结）、`ACCEPTED`（已接受）或 `TAGGED`（已打 tag）。
 - GateT-0 planning entry：`docs/current/GATET_PLAN.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
-- GateT-1 work order entry：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` backend read model 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- GateT-2 work order entry：`docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 
 ## 下一步规则
 
@@ -64,8 +65,8 @@ GateT plan / not started
 | Batch | 状态 | 目标 |
 | --- | --- | --- |
 | GateT-0 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Shadow Validation Operations plan / fact-source reconciliation |
-| GateT-1 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Shadow Validation Workflow read model / operator model work order |
-| GateT-2 | `PLANNED / NOT STARTED` | Consistency Evidence Refinement |
+| GateT-1 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Shadow Validation Workflow read model / operator model backend + frontend overview 最小只读消费 |
+| GateT-2 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Consistency Evidence Refinement work order；候选 `GET /api/paper-shadow/consistency/evidence/overview`，尚未实现 |
 | GateT-3 | `PLANNED / NOT STARTED` | Incident / Replay Review Workflow plan |
 | GateT-4 | `PLANNED / NOT STARTED` | Python Evaluation Artifact read-only binding preview plan |
 | GateT-5 | `PLANNED / NOT STARTED` | Frontend Validation Operations Workbench plan |

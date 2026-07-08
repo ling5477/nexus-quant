@@ -13,17 +13,19 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gateq-freeze`；归档入口：`docs/gates/gate-q/README.md`。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gatep-freeze`；归档入口：`docs/gates/gate-p/README.md`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
-- 当前阶段：GateT-1 backend read model 与 frontend overview 最小切片已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：GateT-2 Consistency Evidence Refinement work order 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：`docs/current/GATET_PLAN.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 - GateT-1 work order：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
 - GateT-1 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/shadow-validation/workflow/overview`，展示 operator item counts、latest operator item、blockers / warnings / nextSteps、evidence anchors、traceId 和固定安全边界 badges；不新增 route 或交易动作。
+- GateT-2 work order：`docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`，选择候选 `GET /api/paper-shadow/consistency/evidence/overview`；只定义 Paper vs Shadow consistency evidence refinement 的 read-only plan，不实现 API、不新增 migration、不改后端 / 前端 / Python / CI。
 
 ## Current Docs
 
 - `docs/current/README.md`：当前事实入口和 GateS archive pointer。
 - `docs/current/GATET_PLAN.md`：GateT Shadow Validation Operations planning 入口；只定义批次、边界、候选 workflow 和 freeze 条件，不代表实现已启动。
 - `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`：GateT-1 Shadow Validation Workflow read model / operator model work order；定义 endpoint / DTO / query / repository / testing plan。
+- `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`：GateT-2 Consistency Evidence Refinement work order；定义 candidate endpoint、DTO、query、repository、freshness / severity / metric semantics 和 no-side-effect testing plan。
 - `docs/current/STATUS.md`：当前状态摘要。
 - `docs/current/ROADMAP.md`：当前路线与 GateT 边界。
 - `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateS 归档指针。
