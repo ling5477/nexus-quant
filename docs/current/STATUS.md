@@ -15,7 +15,7 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：GateT-2 Consistency Evidence Refinement backend read model 与 frontend overview 最小切片已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：GateT-3 Incident / Replay Review Workflow work order 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -23,6 +23,7 @@
 - GateT-2 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`。
 - GateT-2 implementation：`GET /api/paper-shadow/consistency/evidence/overview` 后端 read model 已实现；只派生 deterministic consistency evidence item 和 overview summary，不持久化、不新增 migration、不创建 report、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
 - GateT-2 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/paper-shadow/consistency/evidence/overview`；展示 evidence counts、latestEvidenceItem、severityBuckets、freshnessSummary、metricDeltaSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、Dashboard v2、review / acknowledge / approve / reject 写侧或交易入口。
+- GateT-3 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`；候选 endpoint 为 `GET /api/incidents/replay/review/overview`，尚未实现，不新增 API、不新增 migration、不实现 review / acknowledge 写侧。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -102,3 +103,14 @@
 - Frontend overview：`frontend/src/types/consistency-evidence.ts`、`frontend/src/api/consistency-evidence.ts`、`frontend/src/hooks/useConsistencyEvidenceOverview.ts` 与现有 `StrategyValidationPage` 已接入 GET-only consistency evidence overview；`CONSISTENT` 不表示盈利或交易授权，`DIVERGED` 只表示 Paper vs Shadow 证据不一致，`HIGH / CRITICAL` 只表示诊断优先级，`metricDelta` 只显示诊断差异摘要。
 - 前端验证状态：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 在高位 loopback 外部 Vite 模式下为 `PASS / 2 passed`（通过 / 2 条通过）。默认 `5179` 端口在本机返回 `EACCES`，未写成测试失败。
 - 下一步只能是提交前复核、stage、commit，或后续另起 GateT 任务；不得直接进入 Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
+
+## 9. GateT-3 Work Order Decision
+
+- GateT-3 主线目标：定义 Incident / Replay Review Workflow 的后续 read-only derived model work order。
+- 唯一候选 endpoint：`GET /api/incidents/replay/review/overview`；该路径延续 GateS-6 `GET /api/incidents/replay/overview` namespace，并明确这是 review overview 规划，不是完整 validation operations center 或 Shadow-only endpoint。
+- Candidate DTO：`IncidentReplayReviewOverviewResponse` 和 `IncidentReplayReviewItem`，字段覆盖 generatedAt、safety flags、review counts、latestReviewItem、reviewItems、severityBuckets、freshnessSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId。
+- Review item：derived / deterministic / not persisted；只表达诊断复核建议，不是 durable review / acknowledge 记录，不是自动处置，也不是交易授权。
+- Review / acknowledge / escalation：只允许 planning-only；`ACKNOWLEDGE_RECOMMENDED` 只表示建议人工确认已知诊断事实，`ESCALATE_RECOMMENDED` 只表示建议人工升级复核，`CLOSED_RECOMMENDATION` 只表示诊断闭环建议。
+- DB migration：默认不新增；durable review / acknowledge / escalation / closeout 若后续必须持久化，必须另起 DB schema review。
+- 实现边界：后续 implementation 必须 GET-only / SELECT-only / no-side-effect；不创建 incident / alert / replay，不修改 Paper / Shadow / account / order / ledger 状态，不启动 runner / scheduler，不调用真实交易所，不读取 credential。
+- 文案边界：`HIGH / CRITICAL` 只表示诊断优先级；`ACKNOWLEDGED` / `CLOSED_RECOMMENDATION` 不表示自动处置完成、真实 incident 已关闭或交易授权。

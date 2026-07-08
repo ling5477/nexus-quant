@@ -1,3 +1,34 @@
+## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-WO
+
+- date: 2026-07-09
+- scope: GateT-3 work order；NQ-only；只定义 Incident / Replay Review Workflow 的 read-only derived model plan、candidate endpoint / DTO / query / repository、reviewState / reviewDecision / severity / freshness 语义、DB / migration decision 和 no-side-effect testing plan。
+- result: `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- changed files:
+  - `docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- implementation:
+  - 新增 GateT-3 work order，选择唯一候选 endpoint `GET /api/incidents/replay/review/overview`；该 endpoint 尚未实现，不写入 `docs/current/API.md` 当前 API 事实。
+  - 定义 `IncidentReplayReviewOverviewResponse`、`IncidentReplayReviewItem`、`reviewState`、`reviewDecision`、`severity`、`evidenceFreshness`、blockers / warnings / nextSteps / evidenceAnchors / traceId。
+  - 明确 review item 默认 derived / deterministic / not persisted；review / acknowledge / escalation / closeout 只作为 planning-only recommendation。
+  - 明确 GateT-3 与 GateT-1 operator item、GateT-2 consistency evidence item 只能通过 read-only evidence anchors 关联，不读取或写回持久化 review 状态。
+  - 明确后续 implementation 默认不新增 migration；durable review / acknowledge / escalation / closeout 必须另起 DB schema review。
+- validation:
+  - preflight 确认 `dev` clean，`HEAD == origin/dev == 6f7848f7b0d1c3f5dce4be6a9bb344bc3a2ec7ae`。
+  - 当前 HEAD 对应 `NQ CI Baseline` run `28957253365` 为 `completed / success`，headSha 等于当前 HEAD。
+  - `nq-gates-freeze` 存在；`nq-gatet-freeze` 不存在。
+  - `git diff --check`、forbidden-area diff 和 required boundary `rg` 已执行；最终结果详见 `docs/current/TESTING.md` 本任务小节。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、docs/gates、docs/archive、migration、pom.xml、package.json 或 lock files。
+  - 未新增 API、DB migration、业务代码、测试代码、前端页面、review / acknowledge 写侧、runner、scheduler、AI / DH runtime 或真实交易路径。
+  - 未调用真实交易所，未读取 credential，未修改 Paper / Shadow / account / order / ledger 状态。
+- next action: 推荐进入 `NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION` 或 close review；不得直接进入 frontend workbench、Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
+
 ## NQ-GATET-2-FRONTEND-CONSISTENCY-EVIDENCE-OVERVIEW
 
 - date: 2026-07-08
