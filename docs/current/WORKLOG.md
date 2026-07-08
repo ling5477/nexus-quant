@@ -16020,3 +16020,46 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
   - Drilldown panel 仅表达 read-only diagnostic facts，不表达 trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
 - next action: 完成 forbidden-area diff、wording / sensitive grep、staged checks 后提交；推荐 commit message：`feat(gates): add paper shadow consistency drilldown frontend`。
+
+## NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE
+
+- date: 2026-07-08
+- scope: GateS-3 backend implementation；NQ-only；只实现 Strategy Evaluation Gate runtime baseline 的最小 GET-only read model。
+- result: **IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyValidationOverviewController.java`
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyValidationOverviewResponse.java`
+  - `backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/StrategyValidationOverviewControllerTest.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/StrategyValidationDecision.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/StrategyValidationOverviewQueryService.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/StrategyValidationOverviewReadModel.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/StrategyValidationOverviewFacts.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/StrategyValidationOverviewQueryPort.java`
+  - `backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/StrategyValidationOverviewQueryServiceTest.java`
+  - `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyValidationOverviewQueryRepository.java`
+  - `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyValidationOverviewQueryRepositoryTest.java`
+  - `docs/current/API.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key changes:
+  - 新增 `GET /api/strategy-validation/overview`，返回 Strategy Evaluation Gate runtime baseline 的 validation-only 聚合状态。
+  - 新增 `StrategyValidationDecision`：`APPROVED`（验证层通过）/ `REJECTED`（验证层拒绝）/ `NEEDS_REVIEW`（需要复核）/ `BLOCKED`（阻断）/ `NO_EVIDENCE`（无证据）/ `STALE_EVIDENCE`（证据不完整或过期）。
+  - 新增 core read model / query service / query port；service 只依赖 SELECT-only port 和 `Clock`，固定输出 no-side-effect / not-trading-authorization boundary flags。
+  - 新增 JDBC read repository；SQL 只读取 `strategy_versions`、`backtest_runs`、`backtest_eval_reports`、`backtest_publish_records`、`paper_trading_runs`、`shadow_runs`、`shadow_consistency_reports`，不读取 credential / account / order / ledger / private provider 相关表。
+  - 新增 API、service、repository 回归测试，覆盖 GET-only route、no evidence、blocked、needs review、approved validation-only、stale evidence、敏感字段禁入、SQL 只读和禁止表范围。
+  - 最小同步 `API.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md`、`FACT_SOURCE_INDEX.md`；未修改 `README.md`、`docs/current/README.md` 或 `DB_SCHEMA.md`。
+- validation:
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=StrategyValidationOverviewQueryServiceTest,StrategyValidationOverviewControllerTest,JdbcStrategyValidationOverviewQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test`：PASS / BUILD SUCCESS。
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`：PASS / BUILD SUCCESS。
+- not run:
+  - 未运行 frontend build / Playwright / E2E；未修改 `frontend/**`。
+  - 未运行 Python pytest / mypy / ruff；未修改 `research/**`。
+  - 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+- boundary:
+  - 未新增 migration；未修改历史 migration；未修改 `pom.xml`、package / lock files、deploy、scripts、CI workflow、docs/gates 或 docs/archive。
+  - 未新增 POST / PUT / PATCH / DELETE；未新增任何写侧 / 交易动作 endpoint。
+  - 未创建或启动 evaluation、publish、Paper run、Shadow run、runner 或 scheduler；未修改真实 account / ledger / order；未开启 LIVE；未接 AI / DH runtime；未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+  - `APPROVED` 只表示 validation evidence 暂时满足后续 review；`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false` 固定 fail-closed。
+- next action: 完成 forbidden-area diff、boundary rg、staged checks 后提交；推荐 commit message：`feat(gates): add strategy validation overview read model`。

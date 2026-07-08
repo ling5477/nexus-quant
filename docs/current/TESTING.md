@@ -9394,6 +9394,41 @@ Boundary confirmation：
 
 Blocking status：non-blocking。当前可进入提交前复核。
 
+## NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE（2026-07-08）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只实现 GateS-3 Strategy Evaluation Gate runtime baseline 的最小后端 GET-only read model：`GET /api/strategy-validation/overview`，覆盖 `nq-api` Controller / DTO、`nq-core` read model / query service / query port、`nq-infra` JDBC SELECT-only adapter 和后端测试。未修改 frontend、research、scripts、deploy、`.github`、migration、`nq-app` context、package / lock files 或 `pom.xml`。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=StrategyValidationOverviewQueryServiceTest,StrategyValidationOverviewControllerTest,JdbcStrategyValidationOverviewQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS / BUILD SUCCESS（通过 / 构建成功） | 新增目标测试通过：core service 5 tests、api controller 3 tests、infra repository 2 tests。覆盖 decision semantics、固定 boundary flags、GET-only route、no-evidence fallback、stale / blocked / needs-review / approved validation-only 状态、SQL 只读和禁止表范围。 |
+| `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` | PASS / BUILD SUCCESS（通过 / 构建成功） | 必跑后端验证命令；最终 reactor `BUILD SUCCESS`，总耗时约 01:12。目标模块和依赖模块均无 failure / error；既有 adapter / infra 里存在非阻断 skipped tests。 |
+
+RCA / command notes：
+
+- 首次目标测试命令因 PowerShell 未引用 `-Dtest` 中逗号，解析失败；未进入 Maven 测试执行。
+- 第二次目标测试命令因 `-Dtest` 传播到无匹配测试的上游模块触发 Surefire no matching tests；已按 Maven 多模块常规做法加入 `-Dsurefire.failIfNoSpecifiedTests=false` 后重跑通过。
+
+Known warnings：
+
+- Maven 输出既有非阻断 warning：全局 settings 中 `profiles` 标签提示、SLF4J no provider、Mockito dynamic agent self-attach、部分既有测试 unchecked operation warning；本轮未修改相关依赖或全局测试配置。
+
+What was not run：
+
+- 未运行 frontend build / Playwright / E2E；原因是本轮明确不修改 `frontend/**`，不新增前端页面或 E2E。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- 新 endpoint 仅为 `GET /api/strategy-validation/overview`。
+- 只读取 `strategy_versions`、`backtest_runs`、`backtest_eval_reports`、`backtest_publish_records`、`paper_trading_runs`、`shadow_runs`、`shadow_consistency_reports`；不读取 credential / account / order / ledger / private trading / provider 配置表。
+- 不 INSERT / UPDATE / DELETE；不创建或启动 evaluation、publish、Paper run、Shadow run、runner 或 scheduler；不调用 adapter、risk write side、order/account/ledger 服务。
+- 固定 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`，并固定 `realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+
+Blocking status：non-blocking。当前可进入提交前复核。
+
 ---
 
 ## NQ-GATES-1-FRONTEND-OVERVIEW-IMPLEMENTATION（2026-07-07）

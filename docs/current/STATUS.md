@@ -28,6 +28,7 @@
 - GateS-1 frontend overview implementation：`NQ-GATES-1-FRONTEND-OVERVIEW-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs` 顶部 Overview Summary、前端 type / client / query key / hook 和 `npm run build` 本地验证，不代表 GateS-1 frozen / accepted、Dashboard v2、后端 API、migration、E2E、LIVE 或交易授权。
 - GateS-2 paper shadow consistency drilldown implementation：`NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/paper-shadow/consistency/drilldown`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-2 frozen / accepted、前端页面、Dashboard v2、runner / scheduler、LIVE 或交易授权。
 - GateS-2 frontend consistency drilldown implementation：`NQ-GATES-2-FRONTEND-CONSISTENCY-DRILLDOWN-IMPLEMENTATION：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖现有 `/strategies/shadow-runs/:shadowRunId` detail / replay 页面消费 `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}` 的前端 type / API client / query key / hook / UI panel 和 `npm run build` 本地验证，不新增 route、Dashboard v2、后端 API、migration、E2E、LIVE、AI/DH runtime 或交易授权。
+- GateS-3 strategy evaluation gate runtime baseline：`NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅覆盖 `GET /api/strategy-validation/overview`、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试，不代表 GateS-3 frozen / accepted、前端页面、Dashboard v2、scheduler、runner、LIVE 或交易授权。
 - 本轮 cleanup：`NQ-DOCS-CURRENT-POST-GATEQ-CLEANUP：IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
 ## 2. 禁止边界
@@ -52,6 +53,7 @@
 - Shadow Run overview frontend work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），仅限规划 type / client / hook / UI placement / states / badges / test scope，不是前端实现。
 - Shadow Run overview frontend summary：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅在现有 `/strategies/shadow-runs` 列表页顶部消费 `GET /api/shadow-runs/overview` 并展示只读 Overview Summary，不新增 route、Dashboard v2、写侧动作、E2E、后端 API、migration 或交易授权。
 - Paper shadow consistency drilldown backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/paper-shadow/consistency/drilldown` 按单个 `shadowRunId` 只读聚合本地 Shadow Run / consistency / snapshot / event facts，不创建 report，不追加 event / snapshot，不提供写侧 endpoint，不是 runner trigger、scheduler trigger 或交易授权。
+- Strategy validation overview backend read model：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），仅限 `GET /api/strategy-validation/overview` 只读聚合本地 strategy / evaluation / publish / Paper / Shadow evidence，不提供写侧 endpoint，不是 strategy approval、runner trigger、scheduler trigger 或交易授权。
 - Shadow Run scheduler：`NOT IMPLEMENTED`（未实现）。
 - GateS frontend / GateS 全域 validation runtime / GateS freeze：`NOT IMPLEMENTED`（未实现）/ `NOT STARTED`（未开始）。
 
@@ -114,7 +116,7 @@ GateR-3 已新增本地 Shadow Run runner skeleton：通过 `ShadowRunRunnerServ
 
 ## 7. 当前验证口径
 
-GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。GateS-1 minimal backend read model 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-1 frontend overview implementation 已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为该轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。GateS-2 paper shadow consistency drilldown backend implementation 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-2 frontend consistency drilldown implementation 本轮已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为本轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。
+GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md) 和 `docs/gates/gate-r/` 归档为准。GateS-1 minimal backend read model 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-1 frontend overview implementation 已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为该轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。GateS-2 paper shadow consistency drilldown backend implementation 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。GateS-2 frontend consistency drilldown implementation 本轮已运行 `npm run build`，结果为 `PASS`（通过）；未新增或运行 E2E，因为本轮明确禁止新增 E2E，且当前 frontend 没有独立 component/smoke test runner。GateS-3 strategy evaluation gate runtime baseline 已运行 `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test`，结果为 `BUILD SUCCESS`（构建成功）。
 
 ## 8. GateS-0 Planning Status
 
@@ -212,6 +214,32 @@ GateR frozen baseline 的代码验证和 CI 证据以 [TESTING.md](TESTING.md)�
 - GateS-2 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
 - Dashboard v2、新 route、AI 决策中心或 GateS 全域 validation runtime 已实现。
 - 后端 API、migration、Python、CI workflow、E2E 或真实 provider 已新增。
+- 写侧、交易或资金操作入口已新增或启用。
+- LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
+- trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
+
+## 14. GateS-3 Strategy Evaluation Gate Runtime Baseline Status
+
+本轮已实现 `NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE`：新增 `GET /api/strategy-validation/overview` 的最小后端 read model，用于查看 Strategy Evaluation Gate runtime baseline 的 validation-only 聚合状态。
+
+实现范围限定为：
+
+- `nq-api`：GET-only Controller 与 HTTP response DTO。
+- `nq-core`：`StrategyValidationDecision` enum、overview read model、query service、query port 和 facts contract。
+- `nq-infra`：JDBC SELECT-only adapter，只读取本地 evidence tables。
+- tests：API / core service / JDBC repository 最小回归测试。
+- docs/current：最小同步 API、STATUS、TESTING、WORKLOG、FACT_SOURCE_INDEX。
+
+该 read model 只读取 `strategy_versions`、`backtest_runs`、`backtest_eval_reports`、`backtest_publish_records`、`paper_trading_runs`、`shadow_runs`、`shadow_consistency_reports` 本地事实，返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`，并聚合 total / evaluated / approvedForValidation / rejectedForValidation / needsReview / blocked、latestDecision、blockers、warnings、nextSteps 和 evidenceAnchors。
+
+`APPROVED`（验证层通过）只表示 validation evidence 暂时满足后续 review，不表示交易授权、LIVE enable、strategy 实盘就绪或 trade approval。
+
+该状态不表示：
+
+- GateS-3 `FROZEN`（已冻结）或 `ACCEPTED`（已接受）。
+- 前端页面、Dashboard v2、新 route 或 E2E 已实现。
+- 新 migration、Python research、CI workflow 或 `nq-app` context 已修改。
+- evaluation / publish / Paper / Shadow run 被创建、启动或停止。
 - 写侧、交易或资金操作入口已新增或启用。
 - LIVE、AI、DH runtime、RealClient、real provider、private trading adapter 或 real permission probe started / implemented。
 - trading authorization、trade approval、Shadow Live trading enabled、Python ML readiness 或 Python live execution readiness。
