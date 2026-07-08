@@ -40,6 +40,7 @@ GateT plan / not started
 - GateS completed scope：strategy validation、Shadow diagnostics、Paper vs Shadow consistency、Incident / Replay overview、Python offline evaluation artifact baseline。
 - GateT：`PLAN / NOT STARTED`（规划 / 未开始）。
 - GateT-0 planning entry：`docs/current/GATET_PLAN.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- GateT-1 work order entry：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 
 ## 下一步规则
 
@@ -63,7 +64,7 @@ GateT plan / not started
 | Batch | 状态 | 目标 |
 | --- | --- | --- |
 | GateT-0 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Shadow Validation Operations plan / fact-source reconciliation |
-| GateT-1 | `PLANNED / NOT STARTED`（已规划 / 未开始） | Shadow Validation Workflow read model / operator model plan |
+| GateT-1 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Shadow Validation Workflow read model / operator model work order |
 | GateT-2 | `PLANNED / NOT STARTED` | Consistency Evidence Refinement |
 | GateT-3 | `PLANNED / NOT STARTED` | Incident / Replay Review Workflow plan |
 | GateT-4 | `PLANNED / NOT STARTED` | Python Evaluation Artifact read-only binding preview plan |

@@ -1,3 +1,47 @@
+## NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-WO validation（2026-07-08）
+
+```text
+Scope:
+  - 本轮只做 GateT-1 work order、backend read model / operator model design、fact-source reconciliation、安全边界审查和 current docs 最小同步。
+  - 修改范围限定为 README.md、docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md、docs/current/README.md、STATUS.md、ROADMAP.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md。
+  - 未修改 backend、frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files、业务代码或测试代码。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: 524fdd55bb8cc242055691cb1ab75fdab0ba5f14.
+  - git rev-parse origin/dev: 524fdd55bb8cc242055691cb1ab75fdab0ba5f14.
+  - git log --oneline -20: latest commit is 524fdd55 docs(gatet): plan shadow validation operations.
+  - gh run list --branch dev --limit 5: latest NQ CI Baseline run 28942457484 completed success for current HEAD.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Docs validation:
+  - git diff --check: PASS after writing docs.
+  - git diff --stat: reviewed; diff limited to allowed docs.
+  - git diff -- backend / frontend / research / scripts / deploy / .github / backend/**/db/migration / docs/gates / docs/archive: all empty.
+  - Required boundary rg: executed and reviewed; hits are current boundary wording, existing code guards, historical docs, or explicit forbidden-field tests.
+  - Targeted edited-doc forbidden-final-status scan: no matches.
+  - Final staged checks: git diff --cached --name-only contains only 8 allowed docs; git diff --cached --stat shows 8 files changed, 588 insertions(+), 16 deletions(-); git diff --cached --check PASS; staged forbidden-area diff is empty.
+
+What was not run:
+  - Maven backend tests were not run because this task did not modify Java, API, repository, DTO, SQL, migration or tests.
+  - frontend build / Playwright / E2E were not run because this task did not modify frontend source, route, API client, hook, page, package or lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - GateT remains PLAN / NOT STARTED.
+  - GateT-1 is PLAN READY / NOT IMPLEMENTED / READY TO COMMIT.
+  - Candidate endpoint GET /api/shadow-validation/workflow/overview is not implemented.
+  - Operator item remains derived read model by default; no persistence and no migration.
+  - Operator review / acknowledge remains planning-only local review concept, not a trading authorization.
+  - LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; Integration-1 runtime remains NOT STARTED.
+
+Blocking status:
+  - Non-blocking. Ready to commit.
+```
+
 ## NQ-GATET-PLAN-SHADOW-VALIDATION-OPERATIONS validation（2026-07-08）
 
 ```text

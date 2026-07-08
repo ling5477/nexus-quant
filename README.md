@@ -15,11 +15,13 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
 - 下一阶段：GateT `PLAN / NOT STARTED`（规划 / 未开始）。GateT 只能先做 plan，不得在 GateS closeout 中启动 implementation。
 - GateT-0 planning：`docs/current/GATET_PLAN.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- GateT-1 work order：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`；只定义 Shadow Validation Workflow backend read model / operator model 候选方案，不代表 implementation started。
 
 ## Current Docs
 
 - `docs/current/README.md`：当前事实入口和 GateS archive pointer。
 - `docs/current/GATET_PLAN.md`：GateT Shadow Validation Operations planning 入口；只定义批次、边界、候选 workflow 和 freeze 条件，不代表实现已启动。
+- `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`：GateT-1 Shadow Validation Workflow read model / operator model work order；只定义候选 endpoint / DTO / query / repository / testing plan，不代表 API 或 schema 已实现。
 - `docs/current/STATUS.md`：当前状态摘要。
 - `docs/current/ROADMAP.md`：当前路线与 GateT 边界。
 - `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateS 归档指针。

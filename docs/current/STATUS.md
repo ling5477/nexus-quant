@@ -17,6 +17,7 @@
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
 - 下一阶段：GateT `PLAN / NOT STARTED`（规划 / 未开始）；只能后续另起 plan，不得在 GateS closeout 中启动 implementation。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
+- GateT-1 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`；只定义 backend read model / operator model 候选设计，不新增 API、migration 或代码。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -59,3 +60,13 @@
 - DB migration：默认不新增；只有 durable review / acknowledge audit 被证明必须持久化时，才另起 DB schema review。
 - Python artifact：只允许 read-only binding preview；不导入、不写库、不驱动 Java production runtime。
 - AI / DH：默认不接，仍保持 `NOT STARTED`（未开始）和 `NOT INTEGRATED`（未集成）。
+
+## 6. GateT-1 Work Order Decision
+
+- GateT-1 主线目标：为 Shadow Validation Workflow backend read model / operator model 建立 implementation 前工作单。
+- 候选 endpoint：`GET /api/shadow-validation/workflow/overview`，仅为后续实现候选；本轮未实现，不写入 `API.md` 当前 API 事实。
+- Operator item：默认 derived read model，不持久化；`operatorItemId` 允许 deterministic id。
+- Operator review / acknowledge：只允许作为后续本地复核概念规划；不得触发交易、runner、scheduler、private endpoint、account / ledger / order / position mutation。
+- DB migration：GateT-1 默认不新增；durable review / acknowledge 若后续必须持久化，必须另起 DB schema review。
+- Safety flags：`diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+- 下一步只能是 `NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION` 或 close review；不得直接进入 frontend workbench、Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。

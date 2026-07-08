@@ -1,3 +1,44 @@
+## NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-WO
+
+日期：2026-07-08。
+
+范围：
+
+- NQ-only GateT-1 work order。
+- 新增 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，定义 Shadow Validation Workflow、operator item model、candidate endpoint / DTO / query / repository、state / decision / severity semantics、no-side-effect guard、security / credential boundary、DB / migration decision、testing plan 和 next implementation prompt。
+- 最小同步 `README.md`、`docs/current/README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`、`TESTING.md`、`WORKLOG.md`。
+- 只读检查 GateS archive、GateS backend read model / controller / repository / tests、frontend API / hooks / pages / types、`research/py` evaluation artifact baseline。
+
+结果：
+
+```text
+NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-WO：PLAN READY / NOT IMPLEMENTED / READY TO COMMIT
+```
+
+核心决策：
+
+- GateT-1 只做 implementation 前工作单，不实现 endpoint，不新增 API，不新增 migration。
+- 候选 endpoint 选择 `GET /api/shadow-validation/workflow/overview`，原因是语义聚焦 Shadow Validation Workflow，且避免与既有 `GET /api/strategy-validation/overview` 混淆。
+- Operator item 默认 derived / deterministic，不持久化；review / acknowledge 仅作为后续本地复核概念规划。
+- `VALIDATION_READY` 只表示验证材料可进入人工复核，不表示交易授权。
+- GateT-1 implementation 后续必须 GET-only / SELECT-only / no-side-effect，并固定 diagnostic / no-side-effect / not trading authorization safety flags。
+
+验证：
+
+- preflight 确认 `dev` clean，`HEAD == origin/dev == 524fdd55bb8cc242055691cb1ab75fdab0ba5f14`。
+- 最新 `NQ CI Baseline` run `28942457484` 为 `success`，headSha 等于当前 HEAD。
+- `nq-gates-freeze` 存在；`nq-gatet-freeze` 不存在。
+- `git diff --check`、forbidden-area diff 和 required boundary `rg` 已执行；最终结果详见 `docs/current/TESTING.md` 本任务小节。
+
+边界：
+
+- 未修改 backend、frontend、research、scripts、deploy、`.github`、docs/gates、docs/archive、migration、业务代码或测试代码。
+- 未读取 credential material，未调用真实交易所，未启动 LIVE、AI runtime、DH runtime、Integration-1 runtime、runner 或 scheduler。
+
+下一步：
+
+- 推荐进入 `NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION` 或 close review；不得直接进入 frontend workbench、Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
+
 ## NQ-GATET-PLAN-SHADOW-VALIDATION-OPERATIONS
 
 日期：2026-07-08。
