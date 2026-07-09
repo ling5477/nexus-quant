@@ -15,7 +15,7 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-IMPLEMENTATION 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-6-RUNTIME-SCHEDULING-READINESS-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -31,6 +31,7 @@
 - GateT-4 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`；展示 No-file baseline、artifact preview counts、schema / checksum / metric coverage、warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、上传 / 导入 / 文件路径输入、Python 执行、写侧 client 或交易入口。
 - GateT-5 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`；定义现有 `/strategies/validation` 页面内 Workbench 整合计划。
 - GateT-5 frontend implementation：现有 `/strategies/validation` 页面已新增本地 `ValidationOperationsWorkbench`，整合 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections；不新增 route、API、migration、上传 / 导入 / 文件路径输入、Python 执行、review / acknowledge / approve / reject / escalate / closeout 写侧操作或交易入口。
+- GateT-6 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`；选择 `Readiness-review only`，只定义 runtime scheduling readiness、no-side-effect scheduling boundary、read-only refresh candidate matrix 和测试计划，不实现 scheduler / runner / runtime / API / migration / frontend / Python / CI。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -193,3 +194,13 @@
 - Boundary strip：固定显示 LIVE DISABLED、Real provider NOT IMPLEMENTED、Private trading NOT IMPLEMENTED、Not trading authorization、Python ML ready NO、Python live execution ready NO、AI/DH runtime not integrated。
 - 验证状态：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 为 `PASS / 2 passed`（通过 / 2 条通过）。
 - 下一步只能是提交前复核、stage、commit，或后续另起 GateT close review / freeze readiness；不得直接进入 route / API / migration / scheduler readiness / AI-DH runtime / 真实交易路径。
+
+## 16. GateT-6 Runtime Scheduling Readiness Work Order Decision
+
+- GateT-6 主线目标：定义 Runtime Scheduling Readiness Review 工作单，审查当前系统是否具备后续规划只读诊断刷新、operator review refresh 和 evidence snapshot refresh 的基础。
+- Candidate strategy：选择 `Readiness-review only`；本轮只输出 readiness matrix，不实现 runtime、不定义 scheduler contract、不新增 refresh endpoint / job。
+- Runtime fact sources：现有 strategy scheduler、paper schedule / monitor / recovery、shadow runner 和 `backend/nq-scheduler/**` 均存在写侧、runner、event、alert、recovery、adapter 或状态转换语义；本轮只读审查，不启动、不复用为 refresh runtime。
+- GateT-6 no-side-effect boundary：未来若另起任务规划 refresh，只能读取既有 GET-only overview fact；不得调用 POST / PUT / PATCH / DELETE，不得创建 Paper run、Shadow run、report、event、snapshot、incident、alert、replay、review 或 recovery record。
+- API / DTO / DB / frontend / Python decision：本轮均不新增、不修改、不执行；现有 `/strategies/validation` Workbench 的手动 TanStack Query refetch 已足够作为当前只读刷新事实源。
+- LIVE / real provider / AI / DH decision：LIVE remains `DISABLED`（禁用）；RealClient、real provider、private trading adapter、real permission probe 仍为 `NOT IMPLEMENTED`（未实现）；AI `NOT STARTED`（未启动）；DH runtime `NOT INTEGRATED`（未集成）。
+- 下一步只能是提交前复核、stage、commit，或后续另起 GateT close review / freeze readiness；不得直接进入 scheduler / runner / runtime / API / migration / frontend / Python / AI-DH runtime 或真实交易路径。

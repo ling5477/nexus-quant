@@ -1,3 +1,27 @@
+## NQ-GATET-6-RUNTIME-SCHEDULING-READINESS-WO
+
+- date: 2026-07-09
+- scope: GateT-6 docs-only work order；NQ-only；只定义 Runtime Scheduling Readiness Review、当前 runner / scheduler / shadow / strategy / monitoring 事实源、no-side-effect scheduling boundary、read-only refresh candidate matrix 和测试计划。
+- result: `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- changed files:
+  - `docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- decision:
+  - Candidate strategy 选择 `Readiness-review only`；不选择 no-op scheduler contract plan 或 read-only refresh implementation。
+  - 本轮不新增 API / DTO / DB migration / frontend / backend / Python / CI，不启动 scheduler、runner 或 runtime。
+  - 未来若另起任务规划 read-only refresh，只能读取既有 GET-only overview fact，不得创建 Paper run、Shadow run、report、event、snapshot、incident、alert、replay、review 或 recovery record。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、pom.xml、package / lock files。
+  - 未执行 Maven、npm、Python、scheduler、runner、Paper run、Shadow run、LIVE、AI runtime、DH runtime、真实交易所调用或 credential 读取。
+  - LIVE remains `DISABLED`；AI remains `NOT STARTED`；DH runtime remains `NOT INTEGRATED`；RealClient / real provider / private trading adapter / real permission probe remain `NOT IMPLEMENTED`。
+- next action: 提交前复核当前 diff 后提交；推荐 commit message：`docs(gatet): define runtime scheduling readiness work order`。
+
 ## NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-IMPLEMENTATION
 
 - date: 2026-07-09

@@ -38,13 +38,15 @@ GateT current work orders and limited implementation slices; not frozen / accept
 - GateS release tag：`nq-gates-freeze`。
 - GateS archive pointer：`docs/gates/gate-s/README.md`。
 - GateS completed scope：strategy validation、Shadow diagnostics、Paper vs Shadow consistency、Incident / Replay overview、Python offline evaluation artifact baseline。
-- GateT：已完成 GateT-0 planning、GateT-1 backend / frontend 最小只读切片、GateT-2 backend / frontend 最小只读切片、GateT-3 backend / frontend 最小只读切片、GateT-4 backend / frontend 最小只读切片和 GateT-5 Validation Operations Workbench work order；仍不是 `FROZEN`（已冻结）、`ACCEPTED`（已接受）或 `TAGGED`（已打 tag）。
+- GateT：已完成 GateT-0 planning、GateT-1 backend / frontend 最小只读切片、GateT-2 backend / frontend 最小只读切片、GateT-3 backend / frontend 最小只读切片、GateT-4 backend / frontend 最小只读切片、GateT-5 Validation Operations Workbench implementation，以及 GateT-6 Runtime Scheduling Readiness work order；仍不是 `FROZEN`（已冻结）、`ACCEPTED`（已接受）或 `TAGGED`（已打 tag）。
 - GateT-0 planning entry：`docs/current/GATET_PLAN.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` backend read model 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateT-2 implementation：`GET /api/paper-shadow/consistency/evidence/overview` backend read model 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateT-3 implementation：`GET /api/incidents/replay/review/overview` backend read model 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateT-4 implementation：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` backend No-file baseline 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateT-5 work order entry：`docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- GateT-5 implementation：现有 `/strategies/validation` 页面内 Validation Operations Workbench 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- GateT-6 work order entry：`docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；选择 `Readiness-review only`，不启动 scheduler / runner / runtime。
 
 ## 下一步规则
 
@@ -72,8 +74,8 @@ GateT current work orders and limited implementation slices; not frozen / accept
 | GateT-2 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Consistency Evidence overview backend read model + frontend overview 最小只读消费 |
 | GateT-3 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Incident / Replay Review overview backend read model + frontend overview 最小只读消费 |
 | GateT-4 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Python Evaluation Artifact read-only binding preview backend No-file baseline + frontend overview 最小只读消费 |
-| GateT-5 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Frontend Validation Operations Workbench work order；选择现有 `/strategies/validation` 页面内局部 Workbench component，不新增 route / API / migration |
-| GateT-6 | `PLANNED / NOT STARTED` | Runtime scheduling readiness review，仍不启动真实交易 |
+| GateT-5 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Frontend Validation Operations Workbench 已在现有 `/strategies/validation` 页面内落地；不新增 route / API / migration |
+| GateT-6 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Runtime Scheduling Readiness Review work order；选择 readiness-review only，不启动 scheduler / runner / runtime，不新增 API / migration / frontend / Python |
 | GateT-FREEZE | `PLANNED / NOT STARTED` | GateT closeout 条件复核 |
 
 ## 当前边界
@@ -89,7 +91,7 @@ GateT current work orders and limited implementation slices; not frozen / accept
 
 ## 当前不做
 
-- 不启动 GateT implementation。
+- 不启动未授权 GateT implementation；GateT-6 不实现 scheduler / runner / runtime。
 - 不新增后端、前端、research、scripts、deploy、workflow、migration、API、页面或测试。
 - 不新增 Shadow Run 写接口或执行按钮。
 - 不启动 scheduler、后台 runner 或 Shadow trading。

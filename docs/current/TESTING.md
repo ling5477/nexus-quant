@@ -1,3 +1,64 @@
+## NQ-GATET-6-RUNTIME-SCHEDULING-READINESS-WO validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只新增 GateT-6 Runtime Scheduling Readiness Review docs-only work order，并同步 current docs 入口、状态、路线、验证、工作记录和事实源索引。
+  - 修改范围限定为 README.md 与 docs/current 允许文件。
+  - 未修改 backend、frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files 或 CI workflow。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git fetch origin dev --tags: PASS.
+  - git log --oneline -20: latest commit is 7d446346 feat(gatet): add validation operations workbench.
+  - git rev-parse HEAD: 7d446346ae73d72ce15551ae0a091bf9855c45f2.
+  - git rev-parse origin/dev: 7d446346ae73d72ce15551ae0a091bf9855c45f2.
+  - latest GitHub Actions: NQ CI Baseline run 29004518263 completed success, headSha=7d446346ae73d72ce15551ae0a091bf9855c45f2.
+  - GateT-5 Workbench commit is pushed because HEAD equals origin/dev and latest CI headSha equals HEAD.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Validation commands:
+  - git diff --check
+  - git diff --stat
+  - git diff -- backend
+  - git diff -- frontend
+  - git diff -- research
+  - git diff -- scripts
+  - git diff -- deploy
+  - git diff -- .github
+  - git diff -- backend/**/db/migration
+  - git diff -- docs/gates
+  - git diff -- docs/archive
+  - rg safety scan over README.md docs/current docs/gates backend frontend research/py for GateT / runtime / scheduler / trading / credential / AI / DH / Python readiness terms.
+
+What was not run:
+  - Maven tests were not run because this is docs-only and did not modify backend Java, Controller, DTO, Service, Repository, SQL, migration, pom.xml or backend tests.
+  - Frontend build / Playwright were not run because this is docs-only and did not modify frontend code, route, client, hook, page, tests, package or lock files.
+  - Python pytest / mypy / ruff were not run because this task explicitly does not execute Python, does not access artifact files, and did not modify research/py code or tests.
+  - No scheduler, runner, Paper run, Shadow run, consistency report, incident / alert / replay / review record, event append, LIVE, AI runtime or DH runtime was executed.
+
+Future implementation test requirements:
+  - Must cover no scheduler start.
+  - Must cover no runner start.
+  - Must cover no POST / PUT / PATCH / DELETE.
+  - Must cover no report / event / run creation.
+  - Must cover notTradingAuthorization=true.
+  - Must cover liveDisabled=true.
+  - Must cover no credential read.
+  - Must cover no real exchange call.
+  - Must cover no Python execution.
+  - Must cover no artifact file access.
+
+Boundary:
+  - GateT-6 selects Readiness-review only.
+  - Runtime scheduling readiness is not LIVE ready, not Shadow trading, not trading authorization, not AI/DH runtime, not Python ML ready, and not Python live execution ready.
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED。
+
+Blocking status:
+  - Non-blocking. Ready for final diff / forbidden-area / staged checks.
+```
+
 ## NQ-GATET-4-FRONTEND-EVALUATION-ARTIFACT-PREVIEW-OVERVIEW validation（2026-07-09）
 
 ```text
