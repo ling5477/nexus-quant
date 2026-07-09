@@ -553,6 +553,171 @@ const CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE = {
     traceId: 'trace-consistency-evidence-overview-smoke',
 };
 
+const INCIDENT_REPLAY_REVIEW_LATEST_ITEM = {
+    reviewItemId: 'irr-critical-smoke-review',
+    sourceType: 'CONSISTENCY_DIVERGENCE',
+    sourceId: '33333333-3333-4333-8333-333333333333',
+    incidentEvidenceId: 'incident-evidence-smoke',
+    replayRecordId: 'replay-record-smoke',
+    shadowRunId: '22222222-2222-4222-8222-222222222222',
+    paperRunId: 'paper-gateq-5',
+    consistencyReportId: '33333333-3333-4333-8333-333333333333',
+    operatorItemId: 'op-shadow-validation-smoke-1',
+    reviewState: 'ESCALATED_RECOMMENDATION',
+    reviewDecision: 'ESCALATE_RECOMMENDED',
+    severity: 'CRITICAL',
+    evidenceFreshness: 'STALE',
+    summary: 'Critical review evidence requires manual escalation review only.',
+    limitations: ['Fixture review item is diagnostic only.'],
+    blockers: [
+        {
+            code: 'CRITICAL_REVIEW_REQUIRED',
+            severity: 'CRITICAL',
+            message: 'Critical review item requires operator review.',
+            sourceType: 'INCIDENT_REPLAY_REVIEW',
+            sourceId: 'irr-critical-smoke-review',
+        },
+    ],
+    warnings: [
+        {
+            code: 'ESCALATE_IS_RECOMMENDATION_ONLY',
+            severity: 'HIGH',
+            message: 'Escalate recommended is not system escalation.',
+            sourceType: 'INCIDENT_REPLAY_REVIEW',
+            sourceId: 'irr-critical-smoke-review',
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'REVIEW_REPLAY_ANCHORS',
+            owner: 'operator',
+            action: 'Review incident replay evidence anchors before later GateT work.',
+            completionCondition: 'Manual review notes are captured in a later approved workflow.',
+            boundaryCritical: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'SHADOW_CONSISTENCY_REPORT',
+            sourceId: '33333333-3333-4333-8333-333333333333',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-09T01:50:00Z',
+            traceId: 'trace-incident-replay-review-smoke',
+            description: 'Fixture review evidence anchor.',
+        },
+    ],
+    traceId: 'trace-incident-replay-review-smoke',
+    generatedAt: '2026-07-09T01:51:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+};
+
+const INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE = {
+    generatedAt: '2026-07-09T01:52:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    totalReviewItems: 7,
+    intakeCount: 1,
+    evidenceReviewCount: 1,
+    needsOperatorReviewCount: 1,
+    acknowledgedRecommendationCount: 1,
+    escalatedRecommendationCount: 1,
+    closedRecommendationCount: 1,
+    blockedCount: 1,
+    latestReviewItem: INCIDENT_REPLAY_REVIEW_LATEST_ITEM,
+    reviewItems: [
+        INCIDENT_REPLAY_REVIEW_LATEST_ITEM,
+        {
+            ...INCIDENT_REPLAY_REVIEW_LATEST_ITEM,
+            reviewItemId: 'irr-ack-smoke-review',
+            reviewState: 'ACKNOWLEDGED_RECOMMENDATION',
+            reviewDecision: 'ACKNOWLEDGE_RECOMMENDED',
+            severity: 'HIGH',
+            evidenceFreshness: 'FRESH',
+            traceId: 'trace-incident-replay-review-ack-smoke',
+            blockers: [],
+            warnings: [
+                {
+                    code: 'ACKNOWLEDGE_IS_RECOMMENDATION_ONLY',
+                    severity: 'HIGH',
+                    message: 'Acknowledge recommended means manual confirmation only.',
+                    sourceType: 'INCIDENT_REPLAY_REVIEW',
+                    sourceId: 'irr-ack-smoke-review',
+                },
+            ],
+        },
+        {
+            ...INCIDENT_REPLAY_REVIEW_LATEST_ITEM,
+            reviewItemId: 'irr-close-smoke-review',
+            reviewState: 'CLOSED_RECOMMENDATION',
+            reviewDecision: 'CLOSEOUT_RECOMMENDED',
+            severity: 'INFO',
+            evidenceFreshness: 'FRESH',
+            traceId: 'trace-incident-replay-review-close-smoke',
+            blockers: [],
+            warnings: [],
+            limitations: ['Closeout recommendation is not a real incident closure.'],
+        },
+    ],
+    severityBuckets: {
+        INFO: 1,
+        HIGH: 1,
+        CRITICAL: 1,
+    },
+    freshnessSummary: {
+        FRESH: 2,
+        STALE: 1,
+    },
+    blockers: [
+        {
+            code: 'CRITICAL_REVIEW_REQUIRED',
+            severity: 'CRITICAL',
+            message: 'Critical review item requires manual diagnostic review.',
+            sourceType: 'INCIDENT_REPLAY_REVIEW',
+            sourceId: 'irr-critical-smoke-review',
+        },
+    ],
+    warnings: [
+        {
+            code: 'ACKNOWLEDGE_IS_RECOMMENDATION_ONLY',
+            severity: 'HIGH',
+            message: 'Acknowledge recommendation does not confirm closure.',
+            sourceType: 'INCIDENT_REPLAY_REVIEW',
+            sourceId: 'irr-ack-smoke-review',
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'REVIEW_INCIDENT_REPLAY_WORKFLOW',
+            owner: 'operator',
+            action: 'Review incident replay review items without adding write side actions.',
+            completionCondition: 'Diagnostic review notes are handled in a later approved workflow.',
+            boundaryCritical: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'INCIDENT_REPLAY_REVIEW',
+            sourceId: 'irr-critical-smoke-review',
+            sourceVersion: 'v1',
+            sourceTimestamp: '2026-07-09T01:51:00Z',
+            traceId: 'trace-incident-replay-review-smoke',
+            description: 'Fixture review overview anchor.',
+        },
+    ],
+    traceId: 'trace-incident-replay-review-overview-smoke',
+};
+
 const INCIDENT_REPLAY_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-08T13:41:00Z',
     diagnosticOnly: true,
@@ -833,6 +998,11 @@ async function seedAuthAndGateQStubs(
         json: CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE,
     }));
 
+    await page.route('**/api/incidents/replay/review/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE,
+    }));
+
     await page.route('**/api/incidents/replay/overview', (route: Route) => route.fulfill({
         status: 200,
         json: INCIDENT_REPLAY_OVERVIEW_FIXTURE,
@@ -994,6 +1164,35 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(consistencyEvidence).toContainText('Not trading authorization（非交易授权）');
         await expect(consistencyEvidence).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
 
+        const incidentReplayReview = page.getByTestId('incident-replay-review-overview-panel');
+        await expect(incidentReplayReview).toBeVisible();
+        await expect(view).toContainText('Incident / Replay Review Overview');
+        await expect(incidentReplayReview).toContainText('totalReviewItems');
+        await expect(incidentReplayReview).toContainText('7');
+        await expect(incidentReplayReview).toContainText('acknowledgedRecommendationCount');
+        await expect(incidentReplayReview).toContainText('escalatedRecommendationCount');
+        await expect(incidentReplayReview).toContainText('closedRecommendationCount');
+        await expect(incidentReplayReview).toContainText('blockedCount');
+        await expect(incidentReplayReview).toContainText('latestReviewItem.reviewState');
+        await expect(incidentReplayReview).toContainText('ESCALATED_RECOMMENDATION（建议人工升级复核）');
+        await expect(incidentReplayReview).toContainText('latestReviewItem.reviewDecision');
+        await expect(incidentReplayReview).toContainText('ESCALATE_RECOMMENDED（建议人工升级复核，非系统已升级）');
+        await expect(incidentReplayReview).toContainText('ACKNOWLEDGE_RECOMMENDED（建议人工确认，非自动处置）');
+        await expect(incidentReplayReview).toContainText('CLOSEOUT_RECOMMENDED（建议形成诊断闭环，非真实关闭）');
+        await expect(incidentReplayReview).toContainText('CRITICAL（严重诊断优先级）');
+        await expect(incidentReplayReview).toContainText('HIGH（高诊断优先级）');
+        await expect(incidentReplayReview).toContainText('STALE（证据过期）');
+        await expect(incidentReplayReview).toContainText('Review summaries');
+        await expect(incidentReplayReview).toContainText('REVIEW_INCIDENT_REPLAY_WORKFLOW');
+        await expect(incidentReplayReview).toContainText('trace-incident-replay-review-smoke');
+        await expect(incidentReplayReview).toContainText('trace-incident-replay-review-overview-smoke');
+        await expect(incidentReplayReview).toContainText('LIVE DISABLED（LIVE 关闭）');
+        await expect(incidentReplayReview).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
+        await expect(incidentReplayReview).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
+        await expect(incidentReplayReview).toContainText('Incident / Replay review is diagnostic only（Incident / Replay review 仅诊断）');
+        await expect(incidentReplayReview).toContainText('Not trading authorization（非交易授权）');
+        await expect(incidentReplayReview).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+
         await expect(view).toContainText('状态解释');
         await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
         await expect(view).toContainText('UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*');
@@ -1044,6 +1243,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
             'PENDING_FRONTEND_SUPPORT',
             'VALIDATION_READY',
             'READY_FOR_OPERATOR_REVIEW',
+            'ACKNOWLEDGE_RECOMMENDED',
+            'ESCALATE_RECOMMENDED',
+            'CLOSEOUT_RECOMMENDED',
+            'ESCALATED_RECOMMENDATION',
             'DIVERGED',
             'HIGH',
             'CRITICAL',
@@ -1054,6 +1257,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/drilldown'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/shadow-validation/workflow/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/evidence/overview'))).toBeTruthy();
+        expect(requests.some((url) => url.includes('/api/incidents/replay/review/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/evaluation-gate'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/shadow-live/preview'))).toBeTruthy();

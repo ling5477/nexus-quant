@@ -26,6 +26,7 @@ import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {useConsistencyEvidenceOverview} from '@/hooks/useConsistencyEvidenceOverview';
 import {useIncidentReplayOverview} from '@/hooks/useIncidentReplayOverview';
+import {useIncidentReplayReviewOverview} from '@/hooks/useIncidentReplayReviewOverview';
 import {
     usePaperShadowConsistencyDrilldown,
     useShadowRunOverview,
@@ -56,6 +57,14 @@ import type {
     IncidentReplaySeverity,
     IncidentReplayWarning,
 } from '@/types/incident-replay';
+import type {
+    IncidentReplayReviewBlocker,
+    IncidentReplayReviewEvidenceAnchor,
+    IncidentReplayReviewItem,
+    IncidentReplayReviewNextStep,
+    IncidentReplayReviewOverviewResponse,
+    IncidentReplayReviewWarning,
+} from '@/types/incident-replay-review';
 import type {
     JsonValue,
     PaperShadowConsistencyDrilldownResponse,
@@ -159,6 +168,8 @@ type ShadowValidationWorkflowIssue = ShadowValidationBlocker | ShadowValidationW
 
 type ConsistencyEvidenceOverviewIssue = ConsistencyEvidenceBlocker | ConsistencyEvidenceWarning;
 
+type IncidentReplayReviewOverviewIssue = IncidentReplayReviewBlocker | IncidentReplayReviewWarning;
+
 type OverviewStateLevel = 'info' | 'warning' | 'error';
 
 interface OverviewPanelState {
@@ -210,6 +221,13 @@ interface WorkbenchEvidenceAnchorRow {
 }
 
 interface ConsistencyEvidenceBucketRow {
+    key: string;
+    source: 'severityBuckets' | 'freshnessSummary';
+    bucket: string;
+    count: number;
+}
+
+interface IncidentReplayReviewBucketRow {
     key: string;
     source: 'severityBuckets' | 'freshnessSummary';
     bucket: string;
@@ -1109,6 +1127,224 @@ const consistencyEvidenceItemColumns: ColumnsType<ConsistencyEvidenceItem> = [
     },
 ];
 
+const incidentReplayReviewIssueColumns: ColumnsType<IncidentReplayReviewOverviewIssue> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '诊断优先级',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 190,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        key: 'source',
+        width: 240,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{workbenchSafeText(record.sourceType)}</Text>
+                {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
+                    <Text type="secondary">无 sourceId</Text>
+                )}
+            </Space>
+        ),
+    },
+    {
+        title: '说明',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const incidentReplayReviewNextStepColumns: ColumnsType<IncidentReplayReviewNextStep> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 240,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'Owner',
+        dataIndex: 'owner',
+        key: 'owner',
+        width: 150,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '动作',
+        dataIndex: 'action',
+        key: 'action',
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '完成条件',
+        dataIndex: 'completionCondition',
+        key: 'completionCondition',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '边界关键',
+        dataIndex: 'boundaryCritical',
+        key: 'boundaryCritical',
+        width: 130,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+    },
+];
+
+const incidentReplayReviewEvidenceAnchorColumns: ColumnsType<IncidentReplayReviewEvidenceAnchor> = [
+    {
+        title: 'sourceType',
+        dataIndex: 'sourceType',
+        key: 'sourceType',
+        width: 190,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'sourceId',
+        dataIndex: 'sourceId',
+        key: 'sourceId',
+        width: 230,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceVersion',
+        dataIndex: 'sourceVersion',
+        key: 'sourceVersion',
+        width: 170,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceTimestamp',
+        dataIndex: 'sourceTimestamp',
+        key: 'sourceTimestamp',
+        width: 190,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'traceId',
+        dataIndex: 'traceId',
+        key: 'traceId',
+        width: 240,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'description',
+        dataIndex: 'description',
+        key: 'description',
+        render: (value: string | null) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const incidentReplayReviewBucketColumns: ColumnsType<IncidentReplayReviewBucketRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 190,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: 'Bucket',
+        dataIndex: 'bucket',
+        key: 'bucket',
+        width: 220,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'count',
+        dataIndex: 'count',
+        key: 'count',
+        width: 120,
+        render: (value: number) => <Text>{value}</Text>,
+    },
+];
+
+const incidentReplayReviewItemColumns: ColumnsType<IncidentReplayReviewItem> = [
+    {
+        title: 'reviewItemId',
+        dataIndex: 'reviewItemId',
+        key: 'reviewItemId',
+        width: 270,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'reviewState',
+        dataIndex: 'reviewState',
+        key: 'reviewState',
+        width: 280,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'reviewDecision',
+        dataIndex: 'reviewDecision',
+        key: 'reviewDecision',
+        width: 300,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'severity',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 190,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'evidenceFreshness',
+        dataIndex: 'evidenceFreshness',
+        key: 'evidenceFreshness',
+        width: 220,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: '关联 id',
+        key: 'ids',
+        width: 320,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>source {workbenchSafeText(record.sourceType)} / <Text code>{workbenchSafeText(record.sourceId)}</Text></Text>
+                <Text>shadowRunId {record.shadowRunId ? <Text code>{workbenchSafeText(record.shadowRunId)}</Text> : '无'}</Text>
+                <Text>paperRunId {record.paperRunId ? <Text code>{workbenchSafeText(record.paperRunId)}</Text> : '无'}</Text>
+                <Text>consistencyReportId {record.consistencyReportId ? (
+                    <Text code>{workbenchSafeText(record.consistencyReportId)}</Text>
+                ) : '无'}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'summary / limitations',
+        key: 'summaries',
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{workbenchSafeText(record.summary)}</Text>
+                <Text type="secondary">limitations: {safeTextListSummary(record.limitations)}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'blockers / warnings',
+        key: 'signals',
+        width: 190,
+        render: (_, record) => (
+            <Space size={6} wrap>
+                <Tag color={record.blockers.length > 0 ? 'error' : 'default'}>
+                    blockers {record.blockers.length}
+                </Tag>
+                <Tag color={record.warnings.length > 0 ? 'warning' : 'default'}>
+                    warnings {record.warnings.length}
+                </Tag>
+            </Space>
+        ),
+    },
+];
+
 const incidentNextStepColumns: ColumnsType<IncidentReplayNextStep> = [
     {
         title: 'Code',
@@ -1675,6 +1911,12 @@ function workflowStatusPresentation(status: string | null | undefined): {
                 color: 'warning',
                 tooltip: 'EVIDENCE_REVIEW 表示需要继续查看 evidence，不代表验证通过。',
             };
+        case 'NEEDS_OPERATOR_REVIEW':
+            return {
+                label: '需要人工复核',
+                color: 'warning',
+                tooltip: 'NEEDS_OPERATOR_REVIEW 表示需要 operator 人工复核诊断证据，不表示系统已处置。',
+            };
         case 'NEEDS_EVIDENCE':
             return {
                 label: '需要补证据',
@@ -1699,17 +1941,53 @@ function workflowStatusPresentation(status: string | null | undefined): {
                 color: 'processing',
                 tooltip: 'CLOSED_RECOMMENDATION 只表示建议已形成，不表示处置完成或交易放行。',
             };
+        case 'ACKNOWLEDGED_RECOMMENDATION':
+            return {
+                label: '建议人工确认诊断事实',
+                color: 'processing',
+                tooltip: 'ACKNOWLEDGED_RECOMMENDATION 只表示形成确认建议，不表示系统已自动确认或处置。',
+            };
+        case 'ESCALATED_RECOMMENDATION':
+            return {
+                label: '建议人工升级复核',
+                color: 'warning',
+                tooltip: 'ESCALATED_RECOMMENDATION 只表示建议升级人工复核，不表示系统已执行升级。',
+            };
         case 'VALIDATION_READY':
             return {
                 label: '验证材料可复核，非交易授权',
                 color: 'processing',
                 tooltip: 'VALIDATION_READY 只表示材料可进入人工复核，不表示策略批准或交易授权。',
             };
+        case 'REVIEW_NEEDED':
+            return {
+                label: '需要复核',
+                color: 'warning',
+                tooltip: 'REVIEW_NEEDED 表示需要人工 review，不表示自动处置或交易授权。',
+            };
         case 'NEEDS_REVIEW':
             return {
                 label: '需要人工查看',
                 color: 'warning',
                 tooltip: 'NEEDS_REVIEW 表示仍需人工检查 evidence、blockers、warnings 与 nextSteps。',
+            };
+        case 'ACKNOWLEDGE_RECOMMENDED':
+            return {
+                label: '建议人工确认，非自动处置',
+                color: 'processing',
+                tooltip: 'ACKNOWLEDGE_RECOMMENDED 只表示建议人工确认诊断事实，不表示系统已处置。',
+            };
+        case 'ESCALATE_RECOMMENDED':
+            return {
+                label: '建议人工升级复核，非系统已升级',
+                color: 'warning',
+                tooltip: 'ESCALATE_RECOMMENDED 只表示建议人工升级复核，不表示系统已执行升级。',
+            };
+        case 'CLOSEOUT_RECOMMENDED':
+            return {
+                label: '建议形成诊断闭环，非真实关闭',
+                color: 'processing',
+                tooltip: 'CLOSEOUT_RECOMMENDED 只表示形成诊断闭环建议，不表示真实 incident 已关闭。',
             };
         case 'REJECTED':
             return {
@@ -3181,6 +3459,408 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
     );
 }
 
+function incidentReplayReviewBucketRows(
+    source: IncidentReplayReviewBucketRow['source'],
+    buckets: Record<string, number> | undefined,
+): IncidentReplayReviewBucketRow[] {
+    return Object.entries(buckets ?? {}).map(([bucket, count]) => ({
+        key: `${source}-${bucket}`,
+        source,
+        bucket,
+        count: numberValue(count),
+    }));
+}
+
+function incidentReplayReviewIsEmpty(overview: IncidentReplayReviewOverviewResponse): boolean {
+    return countValue(overview.totalReviewItems) === 0
+        && overview.reviewItems.length === 0
+        && !overview.latestReviewItem
+        && overview.blockers.length === 0
+        && overview.warnings.length === 0
+        && overview.nextSteps.length === 0
+        && overview.evidenceAnchors.length === 0;
+}
+
+function incidentReplayReviewHasNoEvidence(overview: IncidentReplayReviewOverviewResponse): boolean {
+    return countValue(overview.totalReviewItems) === 0
+        || overview.reviewItems.length === 0
+        || overview.evidenceAnchors.length === 0
+        || !overview.latestReviewItem;
+}
+
+function incidentReplayReviewHasStaleEvidence(overview: IncidentReplayReviewOverviewResponse): boolean {
+    const freshness = normalizeStatus(overview.latestReviewItem?.evidenceFreshness);
+    const decision = normalizeStatus(overview.latestReviewItem?.reviewDecision);
+    return decision === 'STALE_EVIDENCE'
+        || freshness === 'STALE'
+        || freshness === 'MISSING'
+        || freshness === 'PARTIAL'
+        || freshness === 'UNKNOWN';
+}
+
+function incidentReplayReviewBlocked(overview: IncidentReplayReviewOverviewResponse): boolean {
+    return countValue(overview.blockedCount) > 0
+        || overview.blockers.length > 0
+        || normalizeStatus(overview.latestReviewItem?.reviewState) === 'BLOCKED'
+        || normalizeStatus(overview.latestReviewItem?.reviewDecision) === 'BLOCKED';
+}
+
+function incidentReplayReviewPriority(overview: IncidentReplayReviewOverviewResponse): 'critical' | 'high' | 'normal' {
+    const severity = normalizeStatus(overview.latestReviewItem?.severity);
+    if (severity === 'CRITICAL' || numberValue(overview.severityBuckets.CRITICAL) > 0) {
+        return 'critical';
+    }
+    if (severity === 'HIGH' || numberValue(overview.severityBuckets.HIGH) > 0) {
+        return 'high';
+    }
+    return 'normal';
+}
+
+function resolveIncidentReplayReviewState(overview: IncidentReplayReviewOverviewResponse): OverviewPanelState {
+    const state = normalizeStatus(overview.latestReviewItem?.reviewState);
+    const decision = normalizeStatus(overview.latestReviewItem?.reviewDecision);
+    const priority = incidentReplayReviewPriority(overview);
+
+    if (incidentReplayReviewIsEmpty(overview) || incidentReplayReviewHasNoEvidence(overview)) {
+        return {
+            level: 'warning',
+            message: 'Incident / Replay Review overview 暂无 review evidence',
+            description: 'empty / no review evidence 表示没有足够本地事实支撑复核；页面不会补造 review item，也不会显示为已确认、已升级或已关闭。',
+        };
+    }
+    if (incidentReplayReviewBlocked(overview)) {
+        return {
+            level: 'error',
+            message: 'Incident / Replay Review overview 被阻断',
+            description: 'BLOCKED 只表示诊断复核阻断，需要处理 blockers；不代表交易状态变化、风险处置完成或真实 incident 关闭。',
+        };
+    }
+    if (priority === 'critical') {
+        return {
+            level: 'error',
+            message: 'Incident / Replay Review overview 存在 CRITICAL diagnostic priority',
+            description: 'CRITICAL 只表示诊断优先级严重，需要人工优先复核；不表示系统自动处置、自动升级、真实 incident 已关闭或交易授权。',
+        };
+    }
+    if (priority === 'high') {
+        return {
+            level: 'warning',
+            message: 'Incident / Replay Review overview 存在 HIGH diagnostic priority',
+            description: 'HIGH 只表示诊断优先级高，需要人工查看 review items、blockers、warnings 与 nextSteps；不表示自动处置或交易状态。',
+        };
+    }
+    if (incidentReplayReviewHasStaleEvidence(overview)) {
+        return {
+            level: 'warning',
+            message: 'Incident / Replay Review overview 存在 stale evidence',
+            description: 'STALE_EVIDENCE / STALE / MISSING / PARTIAL / UNKNOWN freshness 只描述本地 evidence 新鲜度不足，必须先补齐只读事实来源。',
+        };
+    }
+    if (state === 'EVIDENCE_REVIEW' || state === 'NEEDS_OPERATOR_REVIEW' || decision === 'REVIEW_NEEDED') {
+        return {
+            level: 'warning',
+            message: 'Incident / Replay Review overview 需要人工复核',
+            description: 'EVIDENCE_REVIEW / NEEDS_OPERATOR_REVIEW / REVIEW_NEEDED 均只表示需要人工查看诊断事实，不表示系统已处置。',
+        };
+    }
+    if (state === 'ACKNOWLEDGED_RECOMMENDATION' || decision === 'ACKNOWLEDGE_RECOMMENDED') {
+        return {
+            level: 'info',
+            message: 'Incident / Replay Review overview 建议人工确认',
+            description: 'ACKNOWLEDGE_RECOMMENDED 只表示建议人工确认诊断事实，不表示系统已确认、自动处置或交易授权。',
+        };
+    }
+    if (state === 'ESCALATED_RECOMMENDATION' || decision === 'ESCALATE_RECOMMENDED') {
+        return {
+            level: 'warning',
+            message: 'Incident / Replay Review overview 建议人工升级复核',
+            description: 'ESCALATE_RECOMMENDED 只表示建议人工升级复核，不表示系统已执行升级或触发外部流程。',
+        };
+    }
+    if (state === 'CLOSED_RECOMMENDATION' || decision === 'CLOSEOUT_RECOMMENDED') {
+        return {
+            level: 'info',
+            message: 'Incident / Replay Review overview 已形成诊断闭环建议',
+            description: 'CLOSED_RECOMMENDATION / CLOSEOUT_RECOMMENDED 只表示诊断闭环建议，不表示真实 incident 已关闭或自动处置完成。',
+        };
+    }
+    if (state === 'INTAKE') {
+        return {
+            level: 'info',
+            message: 'Incident / Replay Review overview 处于 intake',
+            description: 'INTAKE 只表示 derived review item 已进入诊断复核视图，不表示已经形成处置或关闭建议。',
+        };
+    }
+    return {
+        level: 'info',
+        message: 'Incident / Replay Review overview 已加载',
+        description: '当前结果只用于只读 incident / replay review 诊断，不产生 review 持久化、升级、关闭、交易或运行副作用。',
+    };
+}
+
+function IncidentReplayReviewBoundaryBadges({overview}: { overview?: IncidentReplayReviewOverviewResponse }) {
+    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    return (
+        <Space size={[8, 8]} wrap>
+            <BoundaryBadge
+                color="error"
+                label="LIVE DISABLED（LIVE 关闭）"
+                tooltip={`liveDisabled=true；本 review overview 不表示 LIVE 可用${pending}`}
+            />
+            <BoundaryBadge
+                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
+                tooltip={`realProviderImplemented=false；本 review overview 不调用真实 provider${pending}`}
+            />
+            <BoundaryBadge
+                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
+                tooltip={`privateTradingImplemented=false；本 review overview 不提供下单、撤单、转账或提现入口${pending}`}
+            />
+            <BoundaryBadge
+                color="warning"
+                label="Incident / Replay review is diagnostic only（Incident / Replay review 仅诊断）"
+                tooltip={`diagnosticOnly=true；review items 是 derived 诊断条目，不持久化、不自动处置${pending}`}
+            />
+            <BoundaryBadge
+                color="error"
+                label="Not trading authorization（非交易授权）"
+                tooltip={`notTradingAuthorization=true；ACKNOWLEDGE / ESCALATE / CLOSED recommendation 都不能解释为交易授权${pending}`}
+            />
+            <BoundaryBadge
+                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
+                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+            />
+        </Space>
+    );
+}
+
+function IncidentReplayReviewBoundaryDriftAlert({overview}: { overview?: IncidentReplayReviewOverviewResponse }) {
+    if (!overview) {
+        return null;
+    }
+    const overviewDrift = !overview.diagnosticOnly
+        || !overview.noSideEffect
+        || !overview.notTradingAuthorization
+        || !overview.liveDisabled
+        || overview.realProviderImplemented
+        || overview.privateTradingImplemented
+        || overview.aiDhRuntimeIntegrated;
+    const itemDrift = overview.reviewItems.some((item) => !item.diagnosticOnly
+        || !item.noSideEffect
+        || !item.notTradingAuthorization
+        || !item.liveDisabled
+        || item.realProviderImplemented
+        || item.privateTradingImplemented
+        || item.aiDhRuntimeIntegrated);
+
+    return overviewDrift || itemDrift ? (
+        <Alert
+            type="error"
+            showIcon
+            message="Incident / Replay Review boundary flags 与当前安全基线不一致"
+            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成已确认、已升级、已关闭、可交易、可执行或实盘可用。"
+        />
+    ) : null;
+}
+
+function IncidentReplayReviewCounts({overview}: { overview?: IncidentReplayReviewOverviewResponse }) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+            <Descriptions.Item label="totalReviewItems">{countValue(overview?.totalReviewItems)}</Descriptions.Item>
+            <Descriptions.Item label="intakeCount">{countValue(overview?.intakeCount)}</Descriptions.Item>
+            <Descriptions.Item label="evidenceReviewCount">{countValue(overview?.evidenceReviewCount)}</Descriptions.Item>
+            <Descriptions.Item
+                label="needsOperatorReviewCount">{countValue(overview?.needsOperatorReviewCount)}</Descriptions.Item>
+            <Descriptions.Item
+                label="acknowledgedRecommendationCount">{countValue(overview?.acknowledgedRecommendationCount)}</Descriptions.Item>
+            <Descriptions.Item
+                label="escalatedRecommendationCount">{countValue(overview?.escalatedRecommendationCount)}</Descriptions.Item>
+            <Descriptions.Item
+                label="closedRecommendationCount">{countValue(overview?.closedRecommendationCount)}</Descriptions.Item>
+            <Descriptions.Item label="blockedCount">{countValue(overview?.blockedCount)}</Descriptions.Item>
+            <Descriptions.Item label="generatedAt">{generatedAtText(overview?.generatedAt)}</Descriptions.Item>
+            <Descriptions.Item label="traceId">{optionalSafeCode(overview?.traceId)}</Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function IncidentReplayReviewLatestItem({item}: { item?: IncidentReplayReviewItem | null }) {
+    if (!item) {
+        return <Empty description="暂无 latestReviewItem；空态不表示 review evidence 已完成、已确认、已升级或可交易。"/>;
+    }
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
+            <Descriptions.Item label="latestReviewItem.reviewState">
+                <WorkflowStatusTag status={item.reviewState}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="latestReviewItem.reviewDecision">
+                <WorkflowStatusTag status={item.reviewDecision}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="latestReviewItem.severity">
+                <WorkflowStatusTag status={item.severity}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="latestReviewItem.evidenceFreshness">
+                <WorkflowStatusTag status={item.evidenceFreshness}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="sourceType">{optionalText(item.sourceType)}</Descriptions.Item>
+            <Descriptions.Item label="sourceId">{optionalSafeCode(item.sourceId)}</Descriptions.Item>
+            <Descriptions.Item label="shadowRunId">{optionalSafeCode(item.shadowRunId)}</Descriptions.Item>
+            <Descriptions.Item label="paperRunId">{optionalSafeCode(item.paperRunId)}</Descriptions.Item>
+            <Descriptions.Item label="consistencyReportId">{optionalSafeCode(item.consistencyReportId)}</Descriptions.Item>
+            <Descriptions.Item label="replayRecordId">{optionalSafeCode(item.replayRecordId)}</Descriptions.Item>
+            <Descriptions.Item label="operatorItemId">{optionalSafeCode(item.operatorItemId)}</Descriptions.Item>
+            <Descriptions.Item label="latestReviewItem.traceId">{optionalSafeCode(item.traceId)}</Descriptions.Item>
+            <Descriptions.Item label="latestReviewItem.generatedAt">{generatedAtText(item.generatedAt)}</Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function IncidentReplayReviewIssueTables({
+                                             blockers,
+                                             warnings,
+                                         }: {
+    blockers: IncidentReplayReviewBlocker[];
+    warnings: IncidentReplayReviewWarning[];
+}) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <div>
+                <Text strong>Blockers（阻断项）</Text>
+                <Table<IncidentReplayReviewBlocker>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={incidentReplayReviewIssueColumns}
+                    dataSource={blockers}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                />
+            </div>
+            <div>
+                <Text strong>Warnings（警告项）</Text>
+                <Table<IncidentReplayReviewWarning>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={incidentReplayReviewIssueColumns}
+                    dataSource={warnings}
+                    pagination={false}
+                    scroll={{x: 930}}
+                    locale={{emptyText: '暂无 warnings；不能解释为 review 已完成、已确认或已关闭。'}}
+                />
+            </div>
+        </Space>
+    );
+}
+
+function IncidentReplayReviewOverviewPanel({query}: {
+    query: PanelQueryState<IncidentReplayReviewOverviewResponse>
+}) {
+    const overview = query.data;
+    const panelState = overview ? resolveIncidentReplayReviewState(overview) : null;
+    const bucketRows = overview ? [
+        ...incidentReplayReviewBucketRows('severityBuckets', overview.severityBuckets),
+        ...incidentReplayReviewBucketRows('freshnessSummary', overview.freshnessSummary),
+    ] : [];
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="事件回放复核总览（Incident / Replay Review Overview）"
+        >
+            <Space data-testid="incident-replay-review-overview-panel" direction="vertical" size={12}
+                   style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    只读消费 GET /api/incidents/replay/review/overview；展示 review counts、latestReviewItem、
+                    reviewItems、severityBuckets、freshnessSummary、blockers / warnings / nextSteps、
+                    evidenceAnchors 与 traceId，不新增 route、review / acknowledge / escalate / closeout 写侧、
+                    交易按钮或执行请求。
+                </Paragraph>
+                <Alert
+                    type="info"
+                    showIcon
+                    message="文案边界"
+                    description="ACKNOWLEDGE_RECOMMENDED 只表示建议人工确认诊断事实；ESCALATE_RECOMMENDED 只表示建议人工升级复核；CLOSEOUT_RECOMMENDED / CLOSED_RECOMMENDATION 只表示诊断闭环建议；HIGH / CRITICAL 只表示诊断优先级。"
+                />
+                <IncidentReplayReviewBoundaryBadges overview={overview}/>
+                <IncidentReplayReviewBoundaryDriftAlert overview={overview}/>
+                <IncidentReplayReviewCounts overview={overview}/>
+                {query.isLoading ? (
+                    <Skeleton active paragraph={{rows: 8}}/>
+                ) : query.isError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Incident / Replay Review overview 查询失败"
+                        description={(
+                            <Paragraph style={{marginBottom: 0}}>
+                                review overview 失败时按不可用处理，不会显示为已确认、已升级、已关闭、授权、
+                                自动处置或可执行。{formatApiError(query.error as AppApiError)}
+                            </Paragraph>
+                        )}
+                    />
+                ) : !overview ? (
+                    <Empty description="暂无 Incident / Replay Review overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                ) : (
+                    <>
+                        {panelState ? (
+                            <Alert
+                                type={panelState.level}
+                                showIcon
+                                message={panelState.message}
+                                description={panelState.description}
+                            />
+                        ) : null}
+                        {incidentReplayReviewIsEmpty(overview) ? (
+                            <Empty description="暂无 review evidence；空态不表示 incident 已关闭、建议已确认或可交易。"/>
+                        ) : null}
+                        <IncidentReplayReviewLatestItem item={overview.latestReviewItem}/>
+                        <div>
+                            <Text strong>Review summaries（复核摘要）</Text>
+                            <Table<IncidentReplayReviewBucketRow>
+                                size="small"
+                                rowKey={(record) => record.key}
+                                columns={incidentReplayReviewBucketColumns}
+                                dataSource={bucketRows}
+                                pagination={false}
+                                scroll={{x: 560}}
+                                locale={{emptyText: '暂无 severityBuckets / freshnessSummary；不能补造桶统计。'}}
+                            />
+                        </div>
+                        <IncidentReplayReviewIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
+                        <Table<IncidentReplayReviewNextStep>
+                            size="small"
+                            rowKey={(record) => record.code}
+                            columns={incidentReplayReviewNextStepColumns}
+                            dataSource={overview.nextSteps}
+                            pagination={false}
+                            scroll={{x: 1000}}
+                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成复核、升级、关闭或处置。'}}
+                        />
+                        <Table<IncidentReplayReviewEvidenceAnchor>
+                            size="small"
+                            rowKey={(record) => `${record.sourceType}-${record.sourceId ?? 'none'}-${record.traceId ?? 'none'}`}
+                            columns={incidentReplayReviewEvidenceAnchorColumns}
+                            dataSource={overview.evidenceAnchors}
+                            pagination={false}
+                            scroll={{x: 1190}}
+                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                        />
+                        <Table<IncidentReplayReviewItem>
+                            size="small"
+                            rowKey={(record) => record.reviewItemId}
+                            columns={incidentReplayReviewItemColumns}
+                            dataSource={overview.reviewItems}
+                            pagination={false}
+                            scroll={{x: 1820}}
+                            locale={{emptyText: '暂无 reviewItems；不能补造复核条目。'}}
+                        />
+                    </>
+                )}
+            </Space>
+        </Card>
+    );
+}
+
 function normalizeIncidentSeverity(severity: IncidentReplaySeverity | null | undefined): string {
     return normalizeStatus(severity);
 }
@@ -4099,6 +4779,7 @@ export function StrategyValidationPage() {
     const overviewQuery = useStrategyValidationOverview();
     const shadowValidationWorkflowQuery = useShadowValidationWorkflowOverview();
     const consistencyEvidenceQuery = useConsistencyEvidenceOverview();
+    const incidentReplayReviewQuery = useIncidentReplayReviewOverview();
     const incidentReplayQuery = useIncidentReplayOverview();
     const shadowOverviewQuery = useShadowRunOverview();
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
@@ -4112,6 +4793,7 @@ export function StrategyValidationPage() {
     const loading = overviewQuery.isFetching
         || shadowValidationWorkflowQuery.isFetching
         || consistencyEvidenceQuery.isFetching
+        || incidentReplayReviewQuery.isFetching
         || incidentReplayQuery.isFetching
         || shadowOverviewQuery.isFetching
         || consistencyDrilldownQuery.isFetching
@@ -4143,6 +4825,7 @@ export function StrategyValidationPage() {
             <StrategyValidationOverviewPanel query={overviewQuery}/>
             <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>
             <ConsistencyEvidenceOverviewPanel query={consistencyEvidenceQuery}/>
+            <IncidentReplayReviewOverviewPanel query={incidentReplayReviewQuery}/>
             <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
             <StrategyValidationShadowWorkbench
                 queries={{

@@ -1,3 +1,37 @@
+## NQ-GATET-3-FRONTEND-INCIDENT-REPLAY-REVIEW-OVERVIEW
+
+- date: 2026-07-09
+- scope: GateT-3 frontend implementation；NQ-only；只在现有 `/strategies/validation` 页面最小只读消费 `GET /api/incidents/replay/review/overview`。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `frontend/src/types/incident-replay-review.ts`
+  - `frontend/src/api/incident-replay-review.ts`
+  - `frontend/src/hooks/useIncidentReplayReviewOverview.ts`
+  - `frontend/src/api/query-keys.ts`
+  - `frontend/src/pages/strategies/StrategyValidationPage.tsx`
+  - `frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- implementation:
+  - 新增 `IncidentReplayReviewOverviewResponse`、`IncidentReplayReviewItem`、review state / decision / severity / freshness、evidence anchor、blocker、warning、next step 前端类型，字段覆盖后端 read model 契约。
+  - 新增 `getIncidentReplayReviewOverview()`，仅 GET `/api/incidents/replay/review/overview`；未新增 review / acknowledge / escalate / closeout / start / stop / trade 写侧 client。
+  - 新增 `incidentReplayReviewQueryKeys.overview()` 和 `useIncidentReplayReviewOverview()`，复用现有 Axios + TanStack Query 风格，不引入新依赖、不做 aggressive polling。
+  - 在 `StrategyValidationPage` 的 Consistency Evidence 与 Incident / Replay Overview 附近新增 Incident / Replay Review panel，展示 counts、latestReviewItem、reviewItems、severityBuckets、freshnessSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges。
+  - UI 文案明确 `ACKNOWLEDGE_RECOMMENDED`、`ESCALATE_RECOMMENDED`、`CLOSEOUT_RECOMMENDED` 只是人工诊断建议，不代表自动处置、真实升级、真实关闭或交易授权；HIGH / CRITICAL 只表示诊断优先级。
+- validation:
+  - `npm run build` -> PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` -> PASS / 2 passed（通过 / 2 条通过）。
+- boundary:
+  - 未新增 route、Dashboard v2、review / acknowledge / escalate / closeout 写侧操作、交易按钮、start / stop / execute / trade 操作。
+  - 未修改 backend、research、scripts、deploy、`.github`、docs/gates、docs/archive、migration、pom.xml、package.json 或 lock files。
+  - 未新增 API、migration、CI workflow、Python 代码、AI / DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易路径。
+  - 未调用真实交易所，未读取 credential，未修改 Paper / Shadow / account / order / ledger 状态。
+- next action: 提交前复核当前工作区 diff 后提交；推荐 commit message：`feat(gatet): add incident replay review frontend`。
+
 ## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION
 
 - date: 2026-07-09

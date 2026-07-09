@@ -70,6 +70,11 @@ export const incidentReplayQueryKeys = {
     overview: () => [...incidentReplayQueryKeys.all, 'overview'] as const,
 };
 
+export const incidentReplayReviewQueryKeys = {
+    all: ['incidents', 'replay', 'review'] as const,
+    overview: () => [...incidentReplayReviewQueryKeys.all, 'overview'] as const,
+};
+
 export const paperShadowQueryKeys = {
     all: ['paper-shadow'] as const,
     consistencyDrilldown: (shadowRunId: string) => [

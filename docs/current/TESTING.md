@@ -1,3 +1,52 @@
+## NQ-GATET-3-FRONTEND-INCIDENT-REPLAY-REVIEW-OVERVIEW validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只实现 GateT-3 Incident / Replay Review overview 的前端 GET-only 消费切片。
+  - 修改范围限定为 frontend types / API client / query key / TanStack Query hook、现有 StrategyValidationPage、既有 Strategy Validation targeted smoke，以及允许的 current docs / README。
+  - 未修改 backend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files 或 CI workflow。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: eec58e44dc5938e8642cc16dfc3e87d9064d53ab.
+  - git rev-parse origin/dev: eec58e44dc5938e8642cc16dfc3e87d9064d53ab.
+  - latest GitHub Actions: NQ CI Baseline run 28988649494 completed success, headSha=eec58e44dc5938e8642cc16dfc3e87d9064d53ab.
+  - latest pushed backend commit: eec58e44 feat(gatet): add incident replay review read model.
+  - docs/current/API.md and backend code contain GET /api/incidents/replay/review/overview.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Validation commands:
+  - npm run build
+  - result: PASS / BUILD SUCCESS（通过 / 构建成功）；TypeScript build 与 Vite build 通过。
+  - known warning: Vite chunk > 500 kB warning remains non-blocking and pre-existing for this frontend build shape.
+  - npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium
+  - result: PASS / 2 passed（通过 / 2 条通过）；覆盖 Incident / Replay Review panel render、counts、latestReviewItem reviewState / reviewDecision / severity / evidenceFreshness、boundary badges、ACKNOWLEDGE_RECOMMENDED / ESCALATE_RECOMMENDED / CLOSEOUT_RECOMMENDED / HIGH / CRITICAL / STALE 非交易授权和非自动处置文案、forbidden copy guard 和 forbidden private/exchange request guard。
+
+Final local checks:
+  - git diff --check: PASS（通过）；仅出现 Windows 工作区 LF -> CRLF 提示，无 whitespace error。
+  - git diff -- backend / research / scripts / deploy / .github / backend/**/db/migration / docs/gates / docs/archive: all empty（禁止范围 diff 为空）。
+  - required boundary rg: executed and reviewed；命中为当前 endpoint、类型 / 状态枚举、安全边界文案、existing docs history 或 targeted smoke forbidden guards，未发现新增写侧 client、交易授权文案、真实交易入口或 credential 输出。
+  - git diff --cached --name-only / --stat: empty；no staged files in this turn。
+  - git diff --cached --check: PASS（通过）。
+
+What was not run:
+  - backend Maven tests were not rerun because this task did not modify backend Java, controller, DTO, service, repository, SQL, migration, pom.xml or backend tests.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - GitHub CI was not triggered by this frontend implementation turn; preflight verified latest CI for previous clean HEAD only.
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Frontend only consumes GET /api/incidents/replay/review/overview; no POST / PUT / PATCH / DELETE client was added.
+  - No review / acknowledge / escalation / closeout write-side operation, no route, no Dashboard v2, no start / stop / execute / trade UI, no trading authorization wording.
+  - UI fixed badges keep LIVE DISABLED, Real provider NOT IMPLEMENTED, Private trading NOT IMPLEMENTED, diagnostic only, Not trading authorization, AI/DH runtime not integrated visible.
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED。
+
+Blocking status:
+  - Non-blocking. Ready to commit after human review of current working-tree diff.
+```
+
 ## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION validation（2026-07-09）
 
 ```text
