@@ -118,6 +118,106 @@ Archive target rules:
 - Do not add redirect stubs unless the project already has an explicit stub policy. Prefer updating indexes and references.
 - Keep `TESTING.md` and `WORKLOG.md` append-only and current by default unless the project defines a separate volume strategy.
 
+Gate archive required files template:
+
+- Every Gate freeze archive should include `README.md` as the archive entry.
+- Include `<GATE>_FREEZE_CLOSEOUT.md`.
+- Include `<GATE>_FREEZE_READINESS_REVIEW.md`.
+- Include `<GATE>_PLAN.md`, a plan archive copy, or a clearly named plan source file under the Gate archive. A file that only says "see docs/current" is not enough for a durable archive.
+- Include `<GATE>_BATCH_0_N_EVIDENCE_MATRIX.md` or the repository's established equivalent.
+- Include `<GATE>_TESTING_EVIDENCE_SUMMARY.md` or an equivalent testing / CI evidence summary.
+- Include `<GATE>_API_EVIDENCE_SUMMARY.md` when the Gate adds or changes API behavior.
+- Include `<GATE>_FRONTEND_EVIDENCE_SUMMARY.md` when the Gate changes frontend pages, routes, hooks, clients, components, or E2E coverage.
+- Include `<GATE>_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md` when the Gate touches backend, DB schema, migrations, repository behavior, SQL, or backend tests.
+- Include `<GATE>_PYTHON_RESEARCH_EVIDENCE_SUMMARY.md` when the Gate touches Python, research tooling, artifacts, ML/readiness wording, pytest, mypy, or ruff.
+- Include `<GATE>_RUNTIME_OR_SCHEDULING_BOUNDARY_SUMMARY.md` when the Gate touches runtime, scheduler, runner, background jobs, refresh loops, replay, recovery, alerts, or operational readiness.
+- Include `<GATE>_BOUNDARY_STATEMENT.md`.
+- Include `<GATE>_KNOWN_LIMITATIONS_AND_RESIDUALS.md` or an equivalent section that explicitly lists known limitations, deferred items, and allowed residuals.
+- Include tag / commit / CI evidence in the closeout or a dedicated evidence file: local tag, remote tag, peeled commit, HEAD, origin branch, latest CI run id, conclusion, and head SHA.
+- Include a `docs/current` cleanup pointer that says which current files remain authoritative, which historical files were moved or are allowed residuals, and what follow-up move batch remains.
+
+Current cleanup hard gate after freeze closeout:
+
+- After a Gate freeze closeout, `docs/current` must not keep that Gate's process-oriented WO / PLAN / REVIEW / CLOSEOUT / EVIDENCE long documents as fact sources.
+- `docs/current` should keep current authority docs and the next phase's active plan only.
+- Completed Gate process documents should move to `docs/gates/<gate-name>/` when they are Gate evidence, or to `docs/archive/` when they are superseded non-Gate evidence.
+- If a compatibility link requires a historical process document to remain in `docs/current`, mark it as `Allowed residual` in `FACT_SOURCE_INDEX.md`, record the reason, and create a follow-up move batch.
+- A Gate archive must not depend on `docs/current` historical process copies for durable evidence. Archive files may point to old current paths only as migration context, not as the only evidence body.
+
+Evidence matrix minimum fields:
+
+- `batch name`
+- `status`
+- `commit hash`
+- `tag / release relation`
+- `files changed summary`
+- `API / UI / backend / DB / Python summary`
+- `tests run`
+- `CI evidence`
+- `no-real / no-live / no-side-effect boundary`
+- `credential / secret boundary`
+- `known limitations`
+- `remaining residuals`
+- `freeze readiness verdict`
+
+Thin archive detection:
+
+- An archive file that only says "see `docs/current/<file>`" is thin.
+- A freeze closeout that does not freeze commit, tag, and CI run evidence is thin.
+- A Gate that adds or changes API behavior but lacks API evidence summary is thin.
+- A Gate that adds or changes frontend behavior but lacks frontend evidence summary is thin.
+- A Gate that adds or changes backend, DB, SQL, or migration behavior but lacks backend / DB / migration summary is thin.
+- A Gate archive that only repeats boundary statements but lacks an evidence matrix is thin.
+- A Gate archive that does not list known limitations and residuals is thin.
+- Thin archive does not automatically invalidate the freeze, but it must produce a `FIX RECOMMENDED` or `BLOCK_NEXT_GATE` decision before the next Gate plan proceeds.
+
+Residual document taxonomy:
+
+- `Current authority`: still-current status, roadmap, API, DB schema, architecture, module, runbook, testing, worklog, or workflow authority.
+- `Active current plan`: the next phase or currently authorized plan that still guides implementation.
+- `Allowed residual`: a historical file temporarily kept in `docs/current` for compatibility, audit chain, or unresolved move batch, and explicitly listed in `FACT_SOURCE_INDEX.md`.
+- `Archive pointer only`: a current entry that should retain only a short summary and a pointer to `docs/gates/**` or `docs/archive/**`.
+- `Should move to docs/gates`: completed Gate process evidence that belongs under the Gate archive.
+- `Should move to docs/archive`: superseded non-Gate evidence, legacy cleanup material, or historical workflow material that is not a Gate archive source.
+- `User decision`: a file whose authority cannot be determined from repository facts without user confirmation.
+- `Delete candidate`: generated or duplicate material that might be removable only after explicit user approval. Historical evidence must not be deleted by default.
+
+`FACT_SOURCE_INDEX.md` update rule:
+
+- Every freeze, archive, current residual inventory, archive move batch, or archive closeout must update `FACT_SOURCE_INDEX.md` in the same task unless the user explicitly forbids it.
+- The index must distinguish `current authority`, `gate archive`, `historical evidence`, and `allowed residual`.
+- The index must state that `docs/gates/**` and `docs/archive/**` are historical evidence and do not override current status in `docs/current`.
+- The index must avoid NQ / DH / NQ-DH Integration line mixing. NQ-only status, DH-only status, and Integration status must be separate facts with separate authority.
+- Allowed residual entries must include reason, target archive path or decision point, and follow-up move batch.
+
+Cross-line isolation rule:
+
+- NQ-only tasks must not modify DH status or declare DH runtime integration.
+- NQ-only tasks must not create Integration runtime conclusions, real HTTP conclusions, or provider readiness claims.
+- Integration tasks must not modify GateU / GateT / GateS status unless explicitly authorized by the task and verified from current facts.
+- Shared docs such as `README.md`, `STATUS.md`, `ROADMAP.md`, `TESTING.md`, and `WORKLOG.md` require staged diff review to confirm no NQ / DH / Integration line was accidentally changed.
+
+Freeze / tag verification rule:
+
+- Before freeze closeout or tag creation, verify local tag, remote tag, peeled commit, `HEAD`, `origin/<branch>`, and latest CI.
+- Do not overwrite an existing tag.
+- Do not create or push a freeze tag when latest CI is not `success` for the exact current `HEAD`.
+- Do not create or push a freeze tag when `HEAD` and `origin/<branch>` differ, unless the task explicitly covers the divergence and the user authorizes the release decision.
+- Record the exact CI run id, conclusion, head SHA, tag name, tag message, tagged commit, and remote tag verification in the archive.
+
+Docs-only churn prevention rule:
+
+- Docs-only review must not expand indefinitely into review after review without changing a real decision boundary.
+- Except for release tag, freeze, archive, governance hardening, high-risk security / credential / LIVE / real provider decisions, or explicit user request, do not open a standalone docs-only task for wording-only status changes.
+- Minor status wording can be synchronized during the next real development, verification, or archive task when doing so does not blur current facts.
+- GateU must not be delayed for ordinary documentation polish, but P1 archive / current-authority risks must be resolved before GateU planning starts.
+
+No GateU until archive audit passed rule:
+
+- If the latest completed Gate archive still depends on `docs/current` historical process docs for core evidence, GateU planning may be blocked until archive / current authority is separated.
+- GateU `PLAN` work may proceed only after archive entry points, current authority, allowed residuals, and follow-up move batches are explicit.
+- This rule blocks GateU planning readiness only; it does not invalidate the previous Gate freeze, release tag, or accepted baseline.
+
 Archive work must be split into at least three tasks. Do not collapse inventory, approval, and movement into one step.
 
 1. Inventory: list candidates only; do not move files. Classify each file as `KEEP_IN_CURRENT`, `MOVE_TO_docs/gates/<gate-name>`, `MOVE_TO_docs/archive/superseded`, `KEEP_BUT_REVIEW_LATER`, or `DO_NOT_TOUCH`. Include reason, risk if moved, and references to update.

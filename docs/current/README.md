@@ -29,9 +29,12 @@
 | 当前架构/模块摘要 | [ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md) |
 | 当前运行手册 | [RUNBOOK.md](RUNBOOK.md) |
 | 当前 Codex workflow | [CODEX_PROJECT_INSTRUCTIONS.md](CODEX_PROJECT_INSTRUCTIONS.md), [NQ_DH_CODEX_PLUGIN_WORKFLOW.md](NQ_DH_CODEX_PLUGIN_WORKFLOW.md), [NQ_DH_WORKFLOW_ROUTER_SKILL.md](NQ_DH_WORKFLOW_ROUTER_SKILL.md), [NQ_DH_CODEX_TASK_TEMPLATES.md](NQ_DH_CODEX_TASK_TEMPLATES.md) |
+| Archive governance hardening | [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md) |
 | GateT archive | [../gates/gate-t/README.md](../gates/gate-t/README.md) |
 
 GateT-0 plan、GateT-1 到 GateT-6 work order / implementation evidence、GateT freeze readiness review 和 GateT closeout 不再作为 current authority 扩写；它们的冻结证据以 [../gates/gate-t/README.md](../gates/gate-t/README.md) 为入口。
+
+GateR / GateS / GateT 过程型 residual 的后续迁移计划见 [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)。该计划只定义 move batch，不移动文件，不启动 GateU。
 
 ## Historical Evidence
 

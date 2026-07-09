@@ -1,3 +1,30 @@
+## NQ-DOCS-ARCHIVE-RULE-HARDENING-AND-GATET-CURRENT-RESIDUAL-PLAN
+
+- date: 2026-07-09
+- scope: NQ-only docs governance；只加硬 `nq-docs-writer` archive rules，并新增 GateR/S/T current residual move plan。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），以本轮最终 validation 和 staged checks 为准。
+- changed files:
+  - `.agents/skills/nq-docs-writer/SKILL.md`
+  - `docs/current/NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+- implementation:
+  - 在 `nq-docs-writer` 中补强 Gate archive required files template、current cleanup hard gate、evidence matrix minimum fields、thin archive detection、residual taxonomy、FACT_SOURCE_INDEX update rule、cross-line isolation、freeze/tag verification、docs-only churn prevention 和 No GateU until archive audit passed rule。
+  - 新增 residual move plan，列出 GateR / GateS / GateT current residual、建议 move target、Batch A-F 顺序和 GateS / GateT archive hardening 建议。
+  - `FACT_SOURCE_INDEX.md` 新增 allowed residual 清单，明确 residual 暂留不等于 current authority。
+- validation:
+  - 执行用户指定 Git / tag / current inventory / gate-s / gate-t / rg / diff / forbidden-area checks。
+  - 提交前 staged checks 应只包含允许文件；本轮不 commit / push。
+- boundary:
+  - 未移动 `docs/current` 文件。
+  - 未修改 `docs/gates/**`、`docs/archive/**`、backend、frontend、research、scripts、deploy、`.github`、migration、pom、package 或 lock files。
+  - 未新增 GateU plan，未启动 GateU implementation。
+  - 未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / private trading adapter / real permission probe。
+- next action: 执行 `NQ-DOCS-GATET-CURRENT-RESIDUAL-MOVE-PLAN-REVIEW`，先审 GateT residual move target 和 reference update scope，不直接 move。
+
 ## NQ-GATET-FREEZE-CLOSEOUT
 
 - date: 2026-07-09

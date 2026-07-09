@@ -1,3 +1,56 @@
+## NQ-DOCS-ARCHIVE-RULE-HARDENING-AND-GATET-CURRENT-RESIDUAL-PLAN validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只加硬 `.agents/skills/nq-docs-writer/SKILL.md` 的 Gate archive governance rules。
+  - 新增 `docs/current/NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md`。
+  - 最小同步 `docs/current/README.md`、`STATUS.md`、`FACT_SOURCE_INDEX.md`、`TESTING.md`、`WORKLOG.md`。
+  - 未移动 `docs/current` residual 文件，未修改 `docs/gates/**` 或 `docs/archive/**`，未启动 GateU。
+
+Validation commands:
+  - git status --short
+  - git branch --show-current
+  - git log --oneline -20
+  - git rev-parse HEAD
+  - git rev-parse origin/dev
+  - git tag --list "nq-gater-freeze"
+  - git tag --list "nq-gates-freeze"
+  - git tag --list "nq-gatet-freeze"
+  - git tag --list "nq-gateu-freeze"
+  - Get-ChildItem docs/current -File | Sort-Object Name
+  - Get-ChildItem docs/gates/gate-s -File -Recurse | Sort-Object FullName
+  - Get-ChildItem docs/gates/gate-t -File -Recurse | Sort-Object FullName
+  - rg "archive|归档|docs/current|docs/gates|FACT_SOURCE_INDEX|freeze|FROZEN|ACCEPTED|TAGGED|current authority|历史证据|过程文档|residual|残留|thin archive|evidence matrix" .agents docs/current docs/gates README.md AGENTS.md
+  - rg "GateU IMPLEMENTED|GateU STARTED|LIVE READY|SHADOW LIVE TRADING ENABLED|TRADE APPROVED|authorizedForTrading|tradingReady|liveReady|canTrade|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|PYTHON ML READY|PYTHON LIVE READY" README.md docs/current docs/gates .agents
+  - git diff --check
+  - git diff --stat
+  - git diff -- backend
+  - git diff -- frontend
+  - git diff -- research
+  - git diff -- scripts
+  - git diff -- deploy
+  - git diff -- .github
+  - git diff -- backend/**/db/migration
+  - git diff -- docs/gates
+  - git diff -- docs/archive
+
+What was not run:
+  - Maven tests were not run because this task changes only docs governance and current docs.
+  - Frontend build / Playwright were not run because no frontend source, route, page, hook, client, package or lock file changed.
+  - Python pytest / mypy / ruff were not run because no research/py source or test changed.
+  - No move batch was executed.
+
+Boundary:
+  - GateU remains PLAN / NOT STARTED.
+  - LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED.
+  - RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED.
+  - Shadow trading remains NOT ENABLED; Python ML ready remains NO; Python live execution ready remains NO.
+
+Blocking status:
+  - Non-blocking for this governance hardening task once diff and staged checks pass.
+  - GateU planning should wait until at least the GateT residual move plan review resolves archive/current authority P1 risk.
+```
+
 ## NQ-GATET-FREEZE-CLOSEOUT validation（2026-07-09）
 
 ```text
