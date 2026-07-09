@@ -13,7 +13,7 @@
 5. [GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)：GateT-2 Consistency Evidence Refinement work order。
 6. [GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md](GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md)：GateT-3 Incident / Replay Review Workflow work order。
 7. [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)：GateT-4 Python Evaluation Artifact read-only binding preview work order。
-8. [GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md)：GateT-5 Validation Operations Workbench work order。
+8. [GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md)：GateT-5 Validation Operations Workbench work order 与 frontend implementation 输入。
 9. [STATUS.md](STATUS.md)：当前项目状态。
 10. [README.md](README.md)：current 入口和 archive pointer。
 11. [ROADMAP.md](ROADMAP.md)：当前路线与 GateT 边界。
@@ -43,6 +43,7 @@
 - GateT-3 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-4 backend No-file baseline 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），入口为 [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)、[API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)。
 - GateT-5 Validation Operations Workbench work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md)。
+- GateT-5 Validation Operations Workbench frontend implementation：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；现有 `/strategies/validation` 页面已新增本地 Workbench 组合视图，GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_PLAN.md](GATET_PLAN.md)。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)。
 - GateT-2 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)。
@@ -63,7 +64,7 @@
 - GateT 默认不新增 DB migration；review / acknowledge 若需要持久化，必须另起 DB schema review。
 - GateT 不接 Python production binding，只允许 Python artifact read-only binding preview。
 - GateT 不接 AI runtime，不接 DH runtime，不启动 Integration-1 runtime。
-- GateT-5 只规划现有 `/strategies/validation` 页面内 Validation Operations Workbench 的 summary / detail 信息架构；不新增 route、API、migration、写侧操作或 runtime 能力。
+- GateT-5 已在现有 `/strategies/validation` 页面内实现 Validation Operations Workbench summary / detail 组合视图；不新增 route、API、migration、写侧操作或 runtime 能力。
 
 ## 4. GateT-1 Current Code Facts
 
@@ -112,13 +113,22 @@
 - GateT-4 DB fact：不新增 migration，不导入 Python artifact 到生产 DB；如果未来必须持久化 artifact catalog / import record，必须另起 DB schema review。
 - GateT-4 boundary fact：未修改 backend、research、scripts、deploy、CI、migration、docs/gates、docs/archive、pom.xml、package / lock files；未执行 Python、backtest、runner、scheduler、真实交易所或 credential 读取；未修改 Paper / Shadow / account / order / ledger 状态；未新增 artifact upload / import / file path input / Python execution / trade 操作入口。
 
-## 8. GateS Current Code Facts
+## 8. GateT-5 Current Code Facts
+
+- GateT-5 frontend fact：`frontend/src/pages/strategies/StrategyValidationPage.tsx` 新增本地 `ValidationOperationsWorkbench`，包含 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections。
+- GateT-5 data fact：Workbench 复用现有 TanStack Query hooks 和 GET-only response；未新增 API client、query key、DTO、endpoint、route 或 Zustand 服务端状态。
+- GateT-5 UI fact：现有 GateS / GateT 只读 panel 保留在 detail sections；Workbench summary 只派生展示已返回的 blockers、warnings、nextSteps、evidence anchors、operator items、review items 和 artifact preview flags。
+- GateT-5 status semantics fact：`VALIDATION_READY`、`CONSISTENT`、`ACKNOWLEDGE_RECOMMENDED`、`ESCALATE_RECOMMENDED`、`checksum VALID` 仅表示诊断 / 人工复核 / checksum 自洽语义，不表示交易授权、策略有效、自动处置、ML ready 或 live execution ready。
+- GateT-5 validation fact：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 为 `PASS / 2 passed`（通过 / 2 条通过）。
+- GateT-5 boundary fact：未修改 backend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、API / DB docs、package / lock files；未新增上传 / 导入 / 文件路径输入 / Python 执行 / review 写侧 / acknowledge 写侧 / approve / reject / escalate / closeout / start / stop / execute / trade 入口。
+
+## 9. GateS Current Code Facts
 
 - GateS API facts：`GET /api/shadow-runs/overview`、`GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`、`GET /api/strategy-validation/overview`、`GET /api/incidents/replay/overview` 均为 GET-only / read-only / no-side-effect / not trading authorization。
 - GateS frontend facts：Shadow Run overview summary、Paper vs Shadow drilldown panel、Strategy Validation overview panel、Strategy Validation / Shadow Workbench 和 Incident / Replay overview panel 均为只读诊断展示。
 - GateS Python facts：`research/py/src/nq_research/evaluation/artifacts.py` 和 `parameters.py` 只提供 offline evaluation artifact baseline，不表示 Java production binding、API、migration、runner、Python ML readiness、Python live execution readiness 或真实交易授权。
 
-## 9. 禁止误写清单
+## 10. 禁止误写清单
 
 - 不得把 GateS freeze closeout 写成 GateT implementation。
 - 不得把 GateT plan 写成 runtime 已启动。

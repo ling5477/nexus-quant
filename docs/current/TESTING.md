@@ -10496,3 +10496,46 @@ Boundary confirmation：
 - GateT-5 plan 明确选择现有 `/strategies/validation` 页面内局部 Workbench component，不新增 `/strategies/validation-operations`。
 
 Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
+## NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-IMPLEMENTATION（2026-07-09）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只在现有 `/strategies/validation` 页面内新增本地 Validation Operations Workbench，复用现有 hooks / types / GET-only API response，并更新现有 targeted smoke。未修改 backend、research、scripts、deploy、`.github`、migration、API / DB docs、package / lock files 或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 起始工作区 clean。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git rev-parse HEAD` / `git rev-parse origin/dev` | PASS | 均为 `e97a5f7d62b26f02d2a73cb740aacc62efd1b074`；dev 与 origin/dev 对齐。 |
+| `git tag --list "nq-gates-freeze"` | PASS | `nq-gates-freeze` 存在。 |
+| `git tag --list "nq-gatet-freeze"` | PASS | 空输出；GateT 未 freeze / accepted / tagged。 |
+| `gh run list --branch dev --limit 5 --json databaseId,workflowName,status,conclusion,headSha,createdAt,updatedAt,url` | PASS | 最新 `NQ CI Baseline` run `29002677141` 为 `completed / success`，`headSha` 等于当前 HEAD。 |
+| `npm run build` | PASS / BUILD SUCCESS | `tsc -b && vite build` 通过；Vite 仅提示 chunk size warning，非阻断。 |
+| `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` | PASS / 2 passed | 覆盖新 `validation-operations-workbench`、top summary、evidence matrix、operator queue preview、boundary strip、detail sections、禁用交易授权文案、无 artifact upload/import/path/Python execution 入口、无 forbidden private/exchange request。 |
+
+RCA / fix notes：
+
+- 初次 targeted smoke 对 top summary 的 `VALIDATION_READY` 断言不匹配，因为 Workbench summary 真实展示 `workflowState=READY_FOR_OPERATOR_REVIEW`，而 `VALIDATION_READY` 位于 operator queue decision 列；已调整断言。
+- 第二次 targeted smoke 因新增断言过多导致现有长 smoke 接近 30s timeout；已收缩新增断言到 Workbench summary / evidence matrix / queue / boundary strip 的最小验收点，避免扩展复杂 E2E 矩阵。
+
+Known warnings：
+
+- `npm run build` 输出 Vite chunk size warning；本轮未改 bundling / code splitting，非阻断。
+- Playwright 输出 `NO_COLOR` 与 `FORCE_COLOR` 环境变量 warning；不影响测试结果。
+
+What was not run：
+
+- 未运行 Maven backend test；原因是本轮未修改 `backend/**`、Java API、migration 或后端测试。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- Workbench 只复用现有 GET-only / read-only response，不新增 API、route、migration、query key、DTO、写侧 client 或 Zustand 服务端状态。
+- 页面固定展示 LIVE DISABLED、Real provider NOT IMPLEMENTED、Private trading NOT IMPLEMENTED、Not trading authorization、Python ML ready NO、Python live execution ready NO、AI/DH runtime not integrated。
+- 未新增上传、导入、文件路径输入、Python 执行、review / acknowledge / approve / reject / escalate / closeout 写侧操作，未新增 start / stop / execute / trade 或真实交易入口。
+
+Blocking status：non-blocking。当前可进入提交前复核。

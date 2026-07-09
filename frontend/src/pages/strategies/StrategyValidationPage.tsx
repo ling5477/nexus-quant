@@ -252,6 +252,45 @@ interface EvaluationArtifactPreviewBucketRow {
     count: number;
 }
 
+interface ValidationOperationsQueryBundle {
+    strategyOverview: PanelQueryState<StrategyValidationOverviewResponse>;
+    shadowWorkflow: PanelQueryState<ShadowValidationWorkflowOverviewResponse>;
+    consistencyEvidence: PanelQueryState<ConsistencyEvidenceOverviewResponse>;
+    incidentReplayReview: PanelQueryState<IncidentReplayReviewOverviewResponse>;
+    artifactPreview: PanelQueryState<PythonEvaluationArtifactPreviewOverviewResponse>;
+}
+
+interface ValidationOperationsSummaryRow {
+    key: string;
+    lane: string;
+    status: string;
+    primaryMetric: string;
+    blockers: number;
+    warnings: number;
+    nextStep: string;
+    generatedAt: string | null;
+}
+
+interface ValidationOperationsEvidenceRow {
+    key: string;
+    lane: string;
+    evidence: string;
+    status: string;
+    count: string;
+    detail: string;
+}
+
+interface ValidationOperationsOperatorQueueRow {
+    key: string;
+    source: string;
+    itemId: string;
+    state: string;
+    severity: string;
+    freshness: string;
+    decision: string;
+    traceId: string;
+}
+
 const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     APPROVED: {label: '验证层通过，非交易授权', tone: 'info'},
     REJECTED: {label: '验证层拒绝', tone: 'danger'},
@@ -273,6 +312,20 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     NO_REPORT: {label: '无一致性报告', tone: 'neutral'},
     NOT_COMPARABLE: {label: '不可比较', tone: 'warning'},
     NO_CONSISTENCY_EVIDENCE: {label: '无 consistency evidence', tone: 'warning'},
+    INTAKE: {label: '待进入证据流转', tone: 'info'},
+    EVIDENCE_REVIEW: {label: '证据复核中', tone: 'warning'},
+    NEEDS_EVIDENCE: {label: '需要补充证据', tone: 'warning'},
+    READY_FOR_OPERATOR_REVIEW: {label: '可人工复核，非交易授权', tone: 'info'},
+    VALIDATION_READY: {label: '验证材料可复核，非交易授权', tone: 'info'},
+    CLOSED_RECOMMENDATION: {label: '建议闭环，非真实关闭', tone: 'info'},
+    NEEDS_OPERATOR_REVIEW: {label: '需要人工复核', tone: 'warning'},
+    ACKNOWLEDGED_RECOMMENDATION: {label: '建议人工确认，非自动处置', tone: 'info'},
+    ESCALATED_RECOMMENDATION: {label: '建议人工升级复核', tone: 'danger'},
+    NO_DECISION: {label: '未形成诊断建议', tone: 'neutral'},
+    REVIEW_NEEDED: {label: '需要复核', tone: 'warning'},
+    ACKNOWLEDGE_RECOMMENDED: {label: '建议人工确认，非自动处置', tone: 'info'},
+    ESCALATE_RECOMMENDED: {label: '建议人工升级复核，非系统已升级', tone: 'danger'},
+    CLOSEOUT_RECOMMENDED: {label: '建议形成诊断闭环，非真实关闭', tone: 'info'},
     READY_FOR_SHADOW_REVIEW: {label: '可进入 Shadow 评审', tone: 'info'},
     READY_FOR_COMPARISON: {label: '可查看只读对照', tone: 'info'},
     READY_FOR_NO_SIDE_EFFECT_PREVIEW: {label: '可生成无副作用预览', tone: 'info'},
@@ -1808,6 +1861,146 @@ const workbenchEvidenceAnchorColumns: ColumnsType<WorkbenchEvidenceAnchorRow> = 
     },
 ];
 
+const validationOperationsSummaryColumns: ColumnsType<ValidationOperationsSummaryRow> = [
+    {
+        title: '运营主线',
+        dataIndex: 'lane',
+        key: 'lane',
+        width: 240,
+        render: (value: string) => <Text strong>{value}</Text>,
+    },
+    {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 240,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: '核心指标',
+        dataIndex: 'primaryMetric',
+        key: 'primaryMetric',
+        width: 260,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'blockers',
+        dataIndex: 'blockers',
+        key: 'blockers',
+        width: 110,
+        render: (value: number) => <Tag color={value > 0 ? 'error' : 'default'}>{value}</Tag>,
+    },
+    {
+        title: 'warnings',
+        dataIndex: 'warnings',
+        key: 'warnings',
+        width: 110,
+        render: (value: number) => <Tag color={value > 0 ? 'warning' : 'default'}>{value}</Tag>,
+    },
+    {
+        title: 'nextStep',
+        dataIndex: 'nextStep',
+        key: 'nextStep',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'generatedAt',
+        dataIndex: 'generatedAt',
+        key: 'generatedAt',
+        width: 210,
+        render: (value: string | null) => generatedAtText(value),
+    },
+];
+
+const validationOperationsEvidenceColumns: ColumnsType<ValidationOperationsEvidenceRow> = [
+    {
+        title: 'Evidence lane',
+        dataIndex: 'lane',
+        key: 'lane',
+        width: 230,
+        render: (value: string) => <Text strong>{value}</Text>,
+    },
+    {
+        title: 'Evidence',
+        dataIndex: 'evidence',
+        key: 'evidence',
+        width: 230,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 230,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: '数量',
+        dataIndex: 'count',
+        key: 'count',
+        width: 180,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '说明',
+        dataIndex: 'detail',
+        key: 'detail',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const validationOperationsOperatorQueueColumns: ColumnsType<ValidationOperationsOperatorQueueRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 210,
+    },
+    {
+        title: 'itemId',
+        dataIndex: 'itemId',
+        key: 'itemId',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'state',
+        dataIndex: 'state',
+        key: 'state',
+        width: 240,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: 'severity',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 150,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: 'freshness',
+        dataIndex: 'freshness',
+        key: 'freshness',
+        width: 170,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: 'decision / recommendation',
+        dataIndex: 'decision',
+        key: 'decision',
+        width: 280,
+        render: (value: string) => <StatusTag status={value}/>,
+    },
+    {
+        title: 'traceId',
+        dataIndex: 'traceId',
+        key: 'traceId',
+        width: 260,
+        render: (value: string) => optionalSafeCode(value),
+    },
+];
+
 function normalizeStatus(status: string | null | undefined): string {
     const normalized = status?.trim().toUpperCase();
     return normalized || 'UNKNOWN';
@@ -2204,6 +2397,161 @@ function evaluationArtifactPreviewMatrixRows(
         });
     });
     return rows;
+}
+
+function firstNextStepCode(
+    items: Array<{ code: string }> | null | undefined,
+    emptyCode = 'NO_NEXT_STEP_RETURNED',
+): string {
+    return workbenchSafeText(items?.[0]?.code ?? emptyCode);
+}
+
+function validationOperationsSummaryRows(
+    strategyOverview?: StrategyValidationOverviewResponse,
+    shadowWorkflow?: ShadowValidationWorkflowOverviewResponse,
+    consistencyEvidence?: ConsistencyEvidenceOverviewResponse,
+    incidentReplayReview?: IncidentReplayReviewOverviewResponse,
+    artifactPreview?: PythonEvaluationArtifactPreviewOverviewResponse,
+): ValidationOperationsSummaryRow[] {
+    return [
+        {
+            key: 'strategy-validation',
+            lane: 'Strategy validation',
+            status: strategyOverview ? decisionOf(strategyOverview) : 'UNKNOWN',
+            primaryMetric: `versions ${numberValue(strategyOverview?.evaluatedStrategyVersions)}/${numberValue(strategyOverview?.totalStrategyVersions)} · needsReview ${numberValue(strategyOverview?.needsReview)}`,
+            blockers: strategyOverview?.blockers.length ?? 0,
+            warnings: strategyOverview?.warnings.length ?? 0,
+            nextStep: firstNextStepCode(strategyOverview?.nextSteps),
+            generatedAt: strategyOverview?.generatedAt ?? null,
+        },
+        {
+            key: 'shadow-validation-workflow',
+            lane: 'Shadow validation workflow',
+            status: shadowWorkflow?.latestOperatorItem?.workflowState ?? (shadowWorkflow ? 'NO_OPERATOR_ITEMS' : 'UNKNOWN'),
+            primaryMetric: `operatorItems ${numberValue(shadowWorkflow?.totalOperatorItems)} · readyForOperatorReview ${numberValue(shadowWorkflow?.readyForOperatorReviewCount)}`,
+            blockers: shadowWorkflow?.blockers.length ?? 0,
+            warnings: shadowWorkflow?.warnings.length ?? 0,
+            nextStep: firstNextStepCode(shadowWorkflow?.nextSteps),
+            generatedAt: shadowWorkflow?.generatedAt ?? null,
+        },
+        {
+            key: 'consistency-evidence',
+            lane: 'Consistency evidence',
+            status: consistencyEvidence?.latestEvidenceItem?.comparisonStatus ?? (consistencyEvidence ? 'NO_EVIDENCE' : 'UNKNOWN'),
+            primaryMetric: `evidenceItems ${numberValue(consistencyEvidence?.totalEvidenceItems)} · diverged ${numberValue(consistencyEvidence?.divergedCount)} · stale ${numberValue(consistencyEvidence?.staleEvidenceCount)}`,
+            blockers: consistencyEvidence?.blockers.length ?? 0,
+            warnings: consistencyEvidence?.warnings.length ?? 0,
+            nextStep: firstNextStepCode(consistencyEvidence?.nextSteps),
+            generatedAt: consistencyEvidence?.generatedAt ?? null,
+        },
+        {
+            key: 'incident-replay-review',
+            lane: 'Incident / replay review',
+            status: incidentReplayReview?.latestReviewItem?.reviewState ?? (incidentReplayReview ? 'NO_REVIEW_ITEMS' : 'UNKNOWN'),
+            primaryMetric: `reviewItems ${numberValue(incidentReplayReview?.totalReviewItems)} · acknowledged ${numberValue(incidentReplayReview?.acknowledgedRecommendationCount)} · escalated ${numberValue(incidentReplayReview?.escalatedRecommendationCount)}`,
+            blockers: incidentReplayReview?.blockers.length ?? 0,
+            warnings: incidentReplayReview?.warnings.length ?? 0,
+            nextStep: firstNextStepCode(incidentReplayReview?.nextSteps),
+            generatedAt: incidentReplayReview?.generatedAt ?? null,
+        },
+        {
+            key: 'evaluation-artifact-preview',
+            lane: 'Evaluation artifact preview',
+            status: artifactPreview
+                ? evaluationArtifactPreviewIsNoFileBaseline(artifactPreview)
+                    ? 'NO_ARTIFACT_SOURCE_CONFIGURED'
+                    : artifactPreview.latestArtifactPreview?.checksumStatus ?? 'DIAGNOSTIC_ONLY'
+                : 'UNKNOWN',
+            primaryMetric: `artifactPreviews ${numberValue(artifactPreview?.totalArtifactPreviews)} · valid ${numberValue(artifactPreview?.validArtifactCount)} · checksumFailed ${numberValue(artifactPreview?.checksumFailedCount)}`,
+            blockers: artifactPreview?.blockers.length ?? 0,
+            warnings: artifactPreview?.warnings.length ?? 0,
+            nextStep: firstNextStepCode(artifactPreview?.nextSteps),
+            generatedAt: artifactPreview?.generatedAt ?? null,
+        },
+    ];
+}
+
+function validationOperationsEvidenceRows(
+    strategyOverview?: StrategyValidationOverviewResponse,
+    shadowWorkflow?: ShadowValidationWorkflowOverviewResponse,
+    consistencyEvidence?: ConsistencyEvidenceOverviewResponse,
+    incidentReplayReview?: IncidentReplayReviewOverviewResponse,
+    artifactPreview?: PythonEvaluationArtifactPreviewOverviewResponse,
+): ValidationOperationsEvidenceRow[] {
+    return [
+        {
+            key: 'strategy-validation-evidence',
+            lane: 'strategy validation',
+            evidence: 'latestDecision / evidenceAnchors / blockers',
+            status: strategyOverview ? decisionOf(strategyOverview) : 'UNKNOWN',
+            count: `anchors ${numberValue(strategyOverview?.evidenceAnchors.length)} · blockers ${numberValue(strategyOverview?.blockers.length)}`,
+            detail: '验证材料只用于人工复核，不代表交易授权。',
+        },
+        {
+            key: 'shadow-validation-evidence',
+            lane: 'shadow validation',
+            evidence: 'operatorItems / workflowState / evidenceFreshness',
+            status: shadowWorkflow?.latestOperatorItem?.validationDecision ?? (shadowWorkflow ? 'NO_DECISION' : 'UNKNOWN'),
+            count: `operatorItems ${numberValue(shadowWorkflow?.totalOperatorItems)} · needsEvidence ${numberValue(shadowWorkflow?.needsEvidenceCount)}`,
+            detail: 'operator item 是 derived diagnostic row，不是 approve / reject / execute 写侧任务。',
+        },
+        {
+            key: 'consistency-evidence',
+            lane: 'consistency evidence',
+            evidence: 'latestEvidenceItem / metricDeltaSummary / freshnessSummary',
+            status: consistencyEvidence?.latestEvidenceItem?.comparisonStatus ?? (consistencyEvidence ? 'NO_REPORT' : 'UNKNOWN'),
+            count: `consistent ${numberValue(consistencyEvidence?.consistentCount)} · diverged ${numberValue(consistencyEvidence?.divergedCount)}`,
+            detail: 'CONSISTENT 只表示本地 evidence 一致，不表示可交易。',
+        },
+        {
+            key: 'incident-replay-review-evidence',
+            lane: 'incident / replay review',
+            evidence: 'reviewItems / recommendation / replay anchors',
+            status: incidentReplayReview?.latestReviewItem?.reviewDecision ?? (incidentReplayReview ? 'NO_DECISION' : 'UNKNOWN'),
+            count: `reviewItems ${numberValue(incidentReplayReview?.totalReviewItems)} · blocked ${numberValue(incidentReplayReview?.blockedCount)}`,
+            detail: 'ACKNOWLEDGE_RECOMMENDED / ESCALATE_RECOMMENDED 只表示建议人工复核。',
+        },
+        {
+            key: 'python-artifact-preview-evidence',
+            lane: 'Python artifact preview',
+            evidence: 'no-file baseline / checksum / schema coverage',
+            status: artifactPreview
+                ? evaluationArtifactPreviewIsNoFileBaseline(artifactPreview)
+                    ? 'NO_ARTIFACT_SOURCE_CONFIGURED'
+                    : artifactPreview.latestArtifactPreview?.checksumStatus ?? 'NOT_CHECKED'
+                : 'UNKNOWN',
+            count: `previews ${numberValue(artifactPreview?.totalArtifactPreviews)} · stale ${numberValue(artifactPreview?.staleArtifactCount)}`,
+            detail: 'checksum VALID 不表示策略有效；Python artifact preview 不表示 ML ready 或 live execution ready。',
+        },
+    ];
+}
+
+function validationOperationsOperatorQueueRows(
+    shadowWorkflow?: ShadowValidationWorkflowOverviewResponse,
+    incidentReplayReview?: IncidentReplayReviewOverviewResponse,
+): ValidationOperationsOperatorQueueRow[] {
+    return [
+        ...(shadowWorkflow?.operatorItems ?? []).slice(0, 5).map((item) => ({
+            key: `operator-${item.operatorItemId}`,
+            source: 'derived operator item',
+            itemId: item.operatorItemId,
+            state: item.workflowState,
+            severity: item.severity,
+            freshness: item.evidenceFreshness,
+            decision: item.validationDecision,
+            traceId: item.traceId,
+        })),
+        ...(incidentReplayReview?.reviewItems ?? []).slice(0, 5).map((item) => ({
+            key: `review-${item.reviewItemId}`,
+            source: 'review item',
+            itemId: item.reviewItemId,
+            state: item.reviewState,
+            severity: item.severity,
+            freshness: item.evidenceFreshness,
+            decision: item.reviewDecision,
+            traceId: item.traceId,
+        })),
+    ];
 }
 
 function StatusTag({status}: { status?: string | null }) {
@@ -5017,6 +5365,231 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
     );
 }
 
+function ValidationOperationsBoundaryStrip() {
+    return (
+        <Space data-testid="validation-operations-boundary-strip" size={[8, 8]} wrap>
+            <BoundaryBadge
+                color="error"
+                label="LIVE DISABLED"
+                tooltip="LIVE 关闭；本 Workbench 不展示实盘就绪、交易批准或真实交易能力。"
+            />
+            <BoundaryBadge
+                label="Real provider NOT IMPLEMENTED"
+                tooltip="真实 provider 未实现；本页不调用真实交易所。"
+            />
+            <BoundaryBadge
+                label="Private trading NOT IMPLEMENTED"
+                tooltip="私有交易能力未实现；不提供下单、撤单、转账、提现或 private endpoint。"
+            />
+            <BoundaryBadge
+                color="warning"
+                label="Not trading authorization"
+                tooltip="Validation / consistency / review / artifact preview 均不是交易授权。"
+            />
+            <BoundaryBadge
+                label="Python ML ready NO"
+                tooltip="Python artifact preview 不表示 Python ML ready。"
+            />
+            <BoundaryBadge
+                label="Python live execution ready NO"
+                tooltip="Python artifact preview 不表示 live execution ready。"
+            />
+            <BoundaryBadge
+                label="AI/DH runtime not integrated"
+                tooltip="AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED。"
+            />
+        </Space>
+    );
+}
+
+function ValidationOperationsTopSummary({queries}: { queries: ValidationOperationsQueryBundle }) {
+    const rows = useMemo(
+        () => validationOperationsSummaryRows(
+            queries.strategyOverview.data,
+            queries.shadowWorkflow.data,
+            queries.consistencyEvidence.data,
+            queries.incidentReplayReview.data,
+            queries.artifactPreview.data,
+        ),
+        [
+            queries.strategyOverview.data,
+            queries.shadowWorkflow.data,
+            queries.consistencyEvidence.data,
+            queries.incidentReplayReview.data,
+            queries.artifactPreview.data,
+        ],
+    );
+
+    return (
+        <div data-testid="validation-operations-top-summary">
+            <Text strong>Top summary / 验证运营总览</Text>
+            <Table<ValidationOperationsSummaryRow>
+                size="small"
+                rowKey={(record) => record.key}
+                columns={validationOperationsSummaryColumns}
+                dataSource={rows}
+                pagination={false}
+                scroll={{x: 1450}}
+                locale={{emptyText: '暂无 summary；不能解释为验证运营已完成。'}}
+            />
+        </div>
+    );
+}
+
+function ValidationOperationsEvidenceMatrix({queries}: { queries: ValidationOperationsQueryBundle }) {
+    const rows = useMemo(
+        () => validationOperationsEvidenceRows(
+            queries.strategyOverview.data,
+            queries.shadowWorkflow.data,
+            queries.consistencyEvidence.data,
+            queries.incidentReplayReview.data,
+            queries.artifactPreview.data,
+        ),
+        [
+            queries.strategyOverview.data,
+            queries.shadowWorkflow.data,
+            queries.consistencyEvidence.data,
+            queries.incidentReplayReview.data,
+            queries.artifactPreview.data,
+        ],
+    );
+
+    return (
+        <div data-testid="validation-operations-evidence-matrix">
+            <Text strong>Evidence matrix / 证据矩阵</Text>
+            <Table<ValidationOperationsEvidenceRow>
+                size="small"
+                rowKey={(record) => record.key}
+                columns={validationOperationsEvidenceColumns}
+                dataSource={rows}
+                pagination={false}
+                scroll={{x: 1150}}
+                locale={{emptyText: '暂无 evidence matrix；不能解释为证据完整。'}}
+            />
+        </div>
+    );
+}
+
+function ValidationOperationsOperatorQueuePreview({queries}: { queries: ValidationOperationsQueryBundle }) {
+    const rows = useMemo(
+        () => validationOperationsOperatorQueueRows(
+            queries.shadowWorkflow.data,
+            queries.incidentReplayReview.data,
+        ),
+        [queries.shadowWorkflow.data, queries.incidentReplayReview.data],
+    );
+
+    return (
+        <div data-testid="validation-operations-operator-queue">
+            <Text strong>Operator queue preview / 人工复核队列预览</Text>
+            <Table<ValidationOperationsOperatorQueueRow>
+                size="small"
+                rowKey={(record) => record.key}
+                columns={validationOperationsOperatorQueueColumns}
+                dataSource={rows}
+                pagination={false}
+                scroll={{x: 1500}}
+                locale={{emptyText: '暂无 operator / review items；不能解释为已确认、已升级或已关闭。'}}
+            />
+        </div>
+    );
+}
+
+function ValidationOperationsWorkbench({queries}: { queries: ValidationOperationsQueryBundle }) {
+    const isLoading = queries.strategyOverview.isLoading
+        || queries.shadowWorkflow.isLoading
+        || queries.consistencyEvidence.isLoading
+        || queries.incidentReplayReview.isLoading
+        || queries.artifactPreview.isLoading;
+    const isFetching = queries.strategyOverview.isFetching
+        || queries.shadowWorkflow.isFetching
+        || queries.consistencyEvidence.isFetching
+        || queries.incidentReplayReview.isFetching
+        || queries.artifactPreview.isFetching;
+    const hasError = queries.strategyOverview.isError
+        || queries.shadowWorkflow.isError
+        || queries.consistencyEvidence.isError
+        || queries.incidentReplayReview.isError
+        || queries.artifactPreview.isError;
+    const hasPartialData = !queries.strategyOverview.data
+        || !queries.shadowWorkflow.data
+        || !queries.consistencyEvidence.data
+        || !queries.incidentReplayReview.data
+        || !queries.artifactPreview.data;
+
+    function refetchWorkbench() {
+        queries.strategyOverview.refetch();
+        queries.shadowWorkflow.refetch();
+        queries.consistencyEvidence.refetch();
+        queries.incidentReplayReview.refetch();
+        queries.artifactPreview.refetch();
+    }
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="Validation Operations Workbench"
+            extra={(
+                <Button size="small" icon={<ReloadOutlined/>} loading={isFetching} onClick={refetchWorkbench}>
+                    刷新 Workbench
+                </Button>
+            )}
+        >
+            <Space data-testid="validation-operations-workbench" direction="vertical" size={14}
+                   style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    汇总 Shadow Validation Workflow、Consistency Evidence、Incident / Replay Review 与 Evaluation
+                    Artifact Preview 的只读诊断结果；用于人工复核排序、证据链路检查和边界确认，不新增 route、API、DB
+                    migration 或交易入口。
+                </Paragraph>
+                <ValidationOperationsBoundaryStrip/>
+                {hasError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Workbench 存在只读数据加载失败"
+                        description="失败主线按 blocked / unknown fail-closed 处理；页面不会把缺失响应解释为通过、已确认或交易授权。"
+                    />
+                ) : null}
+                {isLoading ? <Skeleton active paragraph={{rows: 8}}/> : null}
+                {!isLoading && hasPartialData ? (
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="Partial data / 部分数据"
+                        description="缺少任一 GateT / GateS overview 时，Workbench 只展示已返回事实；不会补造 evidence、review decision 或 artifact readiness。"
+                    />
+                ) : null}
+                <ValidationOperationsTopSummary queries={queries}/>
+                <ValidationOperationsEvidenceMatrix queries={queries}/>
+                <ValidationOperationsOperatorQueuePreview queries={queries}/>
+                <Alert
+                    type="info"
+                    showIcon
+                    message="Detail sections 保留"
+                    description="下方保留现有 GateS / GateT 只读 panel，用于查看每条主线的原始 summary、blockers、warnings、nextSteps、traceId 和 evidence anchors。"
+                />
+            </Space>
+        </Card>
+    );
+}
+
+function ValidationOperationsDetailSections({children}: { children: ReactNode }) {
+    return (
+        <Space data-testid="validation-operations-detail-sections" direction="vertical" size={16}
+               style={{display: 'flex'}}>
+            <Alert
+                type="info"
+                showIcon
+                message="Detail sections / 只读详情区"
+                description="以下 panel 保留既有只读诊断语义；Workbench summary 用于复核顺序，detail sections 用于证据展开。"
+            />
+            {children}
+        </Space>
+    );
+}
+
 function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryBundle }) {
     const strategyOverview = queries.strategyOverview.data;
     const shadowOverview = queries.shadowOverview.data;
@@ -5626,28 +6199,39 @@ export function StrategyValidationPage() {
         <Space data-testid="strategy-validation-page" direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" variant="borderless">
                 <PageHero
-                    title="策略生命周期追溯与 Paper / Shadow 对照"
-                    description="只读查看 strategy version、dataset、Evaluation Gate、publish、Paper run、Paper / Shadow Comparison、Shadow Live no-side-effect preview 与 Python Artifact Binding Preview 追溯链。"
-                    badge="GateQ-6 · 只读追溯"
-                    tip="本页不创建运行、不启动 runner、不修改任何交易状态。"
+                    title="Validation Operations Workbench"
+                    description="只读整合 strategy validation、shadow validation、consistency evidence、incident / replay review 与 Python artifact preview，用于人工复核顺序、证据链路和边界确认。"
+                    badge="GateT-5 · 只读运营复核"
+                    tip="本页不新增 route、API、DB migration、runner、Python 执行入口或交易入口。"
                 />
             </Card>
 
-            <StrategyValidationOverviewPanel query={overviewQuery}/>
-            <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>
-            <ConsistencyEvidenceOverviewPanel query={consistencyEvidenceQuery}/>
-            <EvaluationArtifactPreviewOverviewPanel query={evaluationArtifactPreviewQuery}/>
-            <IncidentReplayReviewOverviewPanel query={incidentReplayReviewQuery}/>
-            <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
-            <StrategyValidationShadowWorkbench
+            <ValidationOperationsWorkbench
                 queries={{
                     strategyOverview: overviewQuery,
-                    shadowOverview: shadowOverviewQuery,
-                    drilldown: consistencyDrilldownQuery,
-                    shadowRunId: selectedShadowRunId,
+                    shadowWorkflow: shadowValidationWorkflowQuery,
+                    consistencyEvidence: consistencyEvidenceQuery,
+                    incidentReplayReview: incidentReplayReviewQuery,
+                    artifactPreview: evaluationArtifactPreviewQuery,
                 }}
             />
             <BoundarySummary/>
+            <ValidationOperationsDetailSections>
+                <StrategyValidationOverviewPanel query={overviewQuery}/>
+                <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>
+                <ConsistencyEvidenceOverviewPanel query={consistencyEvidenceQuery}/>
+                <EvaluationArtifactPreviewOverviewPanel query={evaluationArtifactPreviewQuery}/>
+                <IncidentReplayReviewOverviewPanel query={incidentReplayReviewQuery}/>
+                <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
+                <StrategyValidationShadowWorkbench
+                    queries={{
+                        strategyOverview: overviewQuery,
+                        shadowOverview: shadowOverviewQuery,
+                        drilldown: consistencyDrilldownQuery,
+                        shadowRunId: selectedShadowRunId,
+                    }}
+                />
+            </ValidationOperationsDetailSections>
             <QueryForm initialValues={initialQuery} onSubmit={submitQuery} onReset={resetQuery} loading={loading}/>
             <StatusSemantics/>
             <TraceabilityChain

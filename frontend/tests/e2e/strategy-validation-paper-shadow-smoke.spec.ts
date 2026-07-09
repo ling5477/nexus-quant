@@ -1156,7 +1156,8 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
 
         const view = page.getByTestId('strategy-validation-page');
         await expect(view).toBeVisible();
-        await expect(view).toContainText('策略生命周期追溯与 Paper / Shadow 对照');
+        await expect(view).toContainText('Validation Operations Workbench');
+        await expect(view).toContainText('GateT-5 · 只读运营复核');
         await expect(view).toContainText('只读验证');
         await expect(view).toContainText('不代表交易授权');
         await expect(view).toContainText('不代表 LIVE 已启用');
@@ -1165,6 +1166,42 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('不调用 private endpoint');
         await expect(view).toContainText('不写真实账户 / 资金 / ledger');
         await expect(view).toContainText('不接 AI / DH runtime 执行链路');
+
+        const operationsWorkbench = page.getByTestId('validation-operations-workbench');
+        await expect(operationsWorkbench).toBeVisible();
+
+        const operationsSummary = page.getByTestId('validation-operations-top-summary');
+        await expect(operationsSummary).toBeVisible();
+        await expect(operationsSummary).toContainText('Shadow validation workflow');
+        await expect(operationsSummary).toContainText('Evaluation artifact preview');
+        await expect(operationsSummary).toContainText('READY_FOR_OPERATOR_REVIEW（可人工复核，非交易授权）');
+        await expect(operationsSummary).toContainText('DIVERGED（证据偏离）');
+        await expect(operationsSummary).toContainText('NO_ARTIFACT_SOURCE_CONFIGURED');
+
+        const operationsEvidence = page.getByTestId('validation-operations-evidence-matrix');
+        await expect(operationsEvidence).toBeVisible();
+        await expect(operationsEvidence).toContainText('strategy validation');
+        await expect(operationsEvidence).toContainText('Python artifact preview');
+        await expect(operationsEvidence).toContainText('checksum VALID 不表示策略有效');
+
+        const operationsQueue = page.getByTestId('validation-operations-operator-queue');
+        await expect(operationsQueue).toBeVisible();
+        await expect(operationsQueue).toContainText('derived operator item');
+        await expect(operationsQueue).toContainText('review item');
+        await expect(operationsQueue).toContainText('ACKNOWLEDGE_RECOMMENDED（建议人工确认，非自动处置）');
+
+        const operationsBoundary = page.getByTestId('validation-operations-boundary-strip');
+        await expect(operationsBoundary).toBeVisible();
+        await expect(operationsBoundary).toContainText('LIVE DISABLED');
+        await expect(operationsBoundary).toContainText('Not trading authorization');
+        await expect(operationsBoundary).toContainText('Python ML ready NO');
+        await expect(operationsBoundary).toContainText('AI/DH runtime not integrated');
+
+        const detailSections = page.getByTestId('validation-operations-detail-sections');
+        await expect(detailSections).toBeVisible();
+        await expect(detailSections).toContainText('Detail sections / 只读详情区');
+        await expect(view.getByRole('button', {name: /上传|导入|执行 Python|upload|import|start|stop|trade|approve|reject|acknowledge|escalate|closeout/i})).toHaveCount(0);
+        await expect(view.locator('input[placeholder*="artifact"], input[placeholder*="path"], input[aria-label*="artifact"], input[aria-label*="path"]')).toHaveCount(0);
 
         const workbench = page.getByTestId('strategy-validation-shadow-workbench');
         await expect(workbench).toBeVisible();

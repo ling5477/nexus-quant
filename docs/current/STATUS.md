@@ -15,7 +15,7 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-IMPLEMENTATION 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -29,7 +29,8 @@
 - GateT-4 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`；默认选择 No-file baseline，不读取 artifact 文件、不执行 Python、不导入 DB、不新增 migration。
 - GateT-4 implementation：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 后端 No-file baseline read model 已实现；只返回 Python Evaluation Artifact binding preview 的安全空基线，不读取 artifact 文件或 manifest、不执行 Python、不访问网络、不读取 DB artifact catalog、不新增 migration、不表示 ML ready、live execution ready 或交易授权。
 - GateT-4 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`；展示 No-file baseline、artifact preview counts、schema / checksum / metric coverage、warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、上传 / 导入 / 文件路径输入、Python 执行、写侧 client 或交易入口。
-- GateT-5 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`；只定义现有 `/strategies/validation` 页面内 Workbench 整合计划，不实现页面、不新增 route、不新增 API、不新增 migration、不改 backend / frontend / research / CI。
+- GateT-5 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`；定义现有 `/strategies/validation` 页面内 Workbench 整合计划。
+- GateT-5 frontend implementation：现有 `/strategies/validation` 页面已新增本地 `ValidationOperationsWorkbench`，整合 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections；不新增 route、API、migration、上传 / 导入 / 文件路径输入、Python 执行、review / acknowledge / approve / reject / escalate / closeout 写侧操作或交易入口。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -180,4 +181,15 @@
 - DB migration：不新增；Workbench 只展示 derived view，不持久化 operator review、acknowledge、escalation 或 closeout。
 - Boundary：不新增 review / acknowledge / approve / reject / escalate / closeout 写侧操作，不新增 start / stop / execute / trade，不调用真实交易所，不读取 credential，不执行 Python，不接 AI / DH runtime。
 - Testing plan：后续 implementation 运行 `npm run build` 并复用现有 Strategy Validation targeted smoke；只覆盖 Workbench summary、boundary strip、禁用交易授权文案、无上传 / 导入 / 路径输入 / Python 执行入口和 forbidden private / exchange request，不新增复杂 E2E 矩阵。
-- 下一步只能是提交前复核、stage、commit，或后续另起 GateT-5 frontend implementation；不得直接进入 route / API / migration / scheduler readiness / AI-DH runtime / 真实交易路径。
+- 该 work order 已作为 GateT-5 frontend implementation 输入；不得直接进入 route / API / migration / scheduler readiness / AI-DH runtime / 真实交易路径。
+
+## 15. GateT-5 Frontend Implementation Decision
+
+- GateT-5 frontend implementation 主线目标：在现有 `/strategies/validation` 页面内新增本地 Validation Operations Workbench，降低 GateS / GateT 多 panel 堆叠感，并统一人工复核顺序、证据链路和边界提示。
+- UI placement：`ValidationOperationsWorkbench` 位于页面顶部 summary 区；现有 GateS / GateT 只读 panel 保留在 `ValidationOperationsDetailSections` 下方，不新增 route。
+- Workbench structure：top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections。
+- Data consumption：复用现有 `useStrategyValidationOverview()`、`useShadowValidationWorkflowOverview()`、`useConsistencyEvidenceOverview()`、`useIncidentReplayReviewOverview()`、`useEvaluationArtifactPreviewOverview()`；不新增 endpoint、API client、query key 或 DTO。
+- State semantics：`VALIDATION_READY`、`CONSISTENT`、`ACKNOWLEDGE_RECOMMENDED`、`ESCALATE_RECOMMENDED`、`checksum VALID` 均展示为诊断 / 人工复核语义，不表示交易授权、策略有效、自动处置、ML ready 或 live execution ready。
+- Boundary strip：固定显示 LIVE DISABLED、Real provider NOT IMPLEMENTED、Private trading NOT IMPLEMENTED、Not trading authorization、Python ML ready NO、Python live execution ready NO、AI/DH runtime not integrated。
+- 验证状态：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 为 `PASS / 2 passed`（通过 / 2 条通过）。
+- 下一步只能是提交前复核、stage、commit，或后续另起 GateT close review / freeze readiness；不得直接进入 route / API / migration / scheduler readiness / AI-DH runtime / 真实交易路径。

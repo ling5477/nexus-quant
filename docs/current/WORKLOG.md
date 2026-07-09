@@ -1,3 +1,32 @@
+## NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-IMPLEMENTATION
+
+- date: 2026-07-09
+- scope: GateT-5 frontend implementation；NQ-only；只在现有 `/strategies/validation` 页面内新增本地 Validation Operations Workbench，并更新现有 targeted smoke。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `frontend/src/pages/strategies/StrategyValidationPage.tsx`
+  - `frontend/tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- implementation:
+  - 新增本地 `ValidationOperationsWorkbench`，整合 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections。
+  - Workbench 复用现有 `useStrategyValidationOverview()`、`useShadowValidationWorkflowOverview()`、`useConsistencyEvidenceOverview()`、`useIncidentReplayReviewOverview()`、`useEvaluationArtifactPreviewOverview()`；不新增 endpoint、query key、API client、DTO 或 route。
+  - 保留现有 GateS / GateT 只读 panel，并移入 `ValidationOperationsDetailSections` 下方作为 detail 展开区。
+  - 补充状态文案映射，确保 `READY_FOR_OPERATOR_REVIEW`、`VALIDATION_READY`、`ACKNOWLEDGE_RECOMMENDED`、`ESCALATE_RECOMMENDED` 等状态显示为人工复核 / 诊断建议语义，不表示交易授权或自动处置。
+  - targeted smoke 增加 Workbench summary、evidence matrix、operator queue、boundary strip、detail sections、禁用 artifact upload/import/path/Python execution 入口和 forbidden request guard。
+- validation:
+  - `npm run build` -> PASS / BUILD SUCCESS（通过 / 构建成功）；仅 Vite chunk size warning，非阻断。
+  - `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` -> PASS / 2 passed（通过 / 2 条通过）。
+- boundary:
+  - 未新增 route、API、migration、backend、research、scripts、deploy、CI workflow、package / lock file 或 docs/gates / docs/archive 变更。
+  - 未新增上传、导入、文件路径输入、Python 执行、review / acknowledge / approve / reject / escalate / closeout 写侧操作。
+  - 未新增 start / stop / execute / trade、placeOrder / cancelOrder / withdraw / transfer、真实交易所调用、credential 读取、AI / DH runtime 或真实交易路径。
+- next action: 提交前复核当前 diff 后提交；推荐 commit message：`feat(gatet): add validation operations workbench`。
+
 ## NQ-GATET-4-FRONTEND-EVALUATION-ARTIFACT-PREVIEW-OVERVIEW
 
 - date: 2026-07-09
