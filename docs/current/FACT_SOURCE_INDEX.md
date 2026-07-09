@@ -12,20 +12,21 @@
 4. [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)：GateT-1 Shadow Validation Workflow read model / operator model work order。
 5. [GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)：GateT-2 Consistency Evidence Refinement work order。
 6. [GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md](GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md)：GateT-3 Incident / Replay Review Workflow work order。
-7. [STATUS.md](STATUS.md)：当前项目状态。
-8. [README.md](README.md)：current 入口和 archive pointer。
-9. [ROADMAP.md](ROADMAP.md)：当前路线与 GateT 边界。
-10. [TESTING.md](TESTING.md)：当前验证记录和未运行说明。
-11. [WORKLOG.md](WORKLOG.md)：当前工作记录。
-12. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实。
-13. [../gates/gate-s/README.md](../gates/gate-s/README.md)：GateS 历史归档入口。
-14. [../gates/gate-s/GATES_FREEZE_CLOSEOUT.md](../gates/gate-s/GATES_FREEZE_CLOSEOUT.md)：GateS freeze closeout authority。
-15. [../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md](../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md)：GateS-0 到 GateS-6 evidence matrix。
-16. [../gates/gate-r/README.md](../gates/gate-r/README.md)：GateR 历史归档入口。
-17. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
-18. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
-19. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
-20. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：post-GateQ current cleanup 审计和移动索引。
+7. [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)：GateT-4 Python Evaluation Artifact read-only binding preview work order。
+8. [STATUS.md](STATUS.md)：当前项目状态。
+9. [README.md](README.md)：current 入口和 archive pointer。
+10. [ROADMAP.md](ROADMAP.md)：当前路线与 GateT 边界。
+11. [TESTING.md](TESTING.md)：当前验证记录和未运行说明。
+12. [WORKLOG.md](WORKLOG.md)：当前工作记录。
+13. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实。
+14. [../gates/gate-s/README.md](../gates/gate-s/README.md)：GateS 历史归档入口。
+15. [../gates/gate-s/GATES_FREEZE_CLOSEOUT.md](../gates/gate-s/GATES_FREEZE_CLOSEOUT.md)：GateS freeze closeout authority。
+16. [../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md](../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md)：GateS-0 到 GateS-6 evidence matrix。
+17. [../gates/gate-r/README.md](../gates/gate-r/README.md)：GateR 历史归档入口。
+18. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
+19. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
+20. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
+21. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：post-GateQ current cleanup 审计和移动索引。
 
 `docs/gates/**` 与 `docs/archive/**` 是历史证据或归档引用，不覆盖 `docs/current` 的当前状态摘要。已完成 Gate 的过程型长文档不得再作为 current authority 扩写。
 
@@ -39,6 +40,7 @@
 - GateT-1 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-2 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-3 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- GateT-4 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)。
 - GateT-0 planning：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_PLAN.md](GATET_PLAN.md)。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)。
 - GateT-2 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)。
@@ -53,6 +55,8 @@
 - GateT-2 frontend overview 已在现有 `/strategies/validation` 页面消费该 GET-only endpoint；只展示 consistency evidence 诊断证据，不新增 route、写侧 client、交易按钮、Dashboard v2 或真实交易入口。
 - GateT-3 已实现 endpoint `GET /api/incidents/replay/review/overview`；这是 GET-only / read-only / no-side-effect / not trading authorization 后端 read model。
 - GateT-3 review item 为 derived / deterministic / not persisted；review / acknowledge / escalation / closeout 仅为 recommendation 语义，不表示自动处置、真实 incident 已关闭或交易授权。
+- GateT-4 已完成 work order；候选 endpoint 为 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`，但尚未实现，不属于当前 API 事实。
+- GateT-4 默认 No-file baseline：不读取 artifact 文件、不读取 manifest、不接受 file path query、不上传 artifact、不执行 Python、不访问网络、不导入 DB。
 - GateT 默认不新增 DB migration；review / acknowledge 若需要持久化，必须另起 DB schema review。
 - GateT 不接 Python production binding，只允许 Python artifact read-only binding preview。
 - GateT 不接 AI runtime，不接 DH runtime，不启动 Integration-1 runtime。
@@ -90,13 +94,23 @@
 - GateT-3 frontend validation fact：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 为 `PASS / 2 passed`（通过 / 2 条通过）。
 - GateT-3 boundary fact：未新增 migration、Python、CI workflow、runner、scheduler、adapter 调用、真实交易所调用、credential 读取、account / order / ledger mutation、review / acknowledge / escalation / closeout 写侧或交易入口。
 
-## 7. GateS Current Code Facts
+## 7. GateT-4 Current Plan Facts
+
+- GateT-4 work order fact：`docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md` 已定义 Python Evaluation Artifact read-only binding preview 的 implementation 输入。
+- GateT-4 candidate endpoint fact：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 是候选 GET-only overview，尚未实现，未写入 `API.md` 当前 API 事实。
+- GateT-4 source fact：默认 No-file baseline；后续第一版 backend implementation 不读取 artifact 文件、不读取 manifest、不接受 query path、不接受 request body、不上传 artifact、不执行 Python subprocess、不访问网络。
+- GateT-4 preview item fact：`PythonEvaluationArtifactPreviewItem` 为 derived / deterministic / not persisted，只表达离线诊断材料可预览，不是 DB entity、artifact import record、strategy evaluation result、publish approval 或交易授权。
+- GateT-4 validation fact：`schemaVersion=python-evaluation-artifact.v1`、checksum、`diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`、`pythonMlReady=false`、`pythonLiveExecutionReady=false` 必须 fail-closed。
+- GateT-4 DB fact：不新增 migration，不导入 Python artifact 到生产 DB；如果未来必须持久化 artifact catalog / import record，必须另起 DB schema review。
+- GateT-4 boundary fact：未修改 backend、frontend、research、scripts、deploy、CI、migration、业务代码或测试代码；未执行 Python、backtest、runner、scheduler、真实交易所或 credential 读取。
+
+## 8. GateS Current Code Facts
 
 - GateS API facts：`GET /api/shadow-runs/overview`、`GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`、`GET /api/strategy-validation/overview`、`GET /api/incidents/replay/overview` 均为 GET-only / read-only / no-side-effect / not trading authorization。
 - GateS frontend facts：Shadow Run overview summary、Paper vs Shadow drilldown panel、Strategy Validation overview panel、Strategy Validation / Shadow Workbench 和 Incident / Replay overview panel 均为只读诊断展示。
 - GateS Python facts：`research/py/src/nq_research/evaluation/artifacts.py` 和 `parameters.py` 只提供 offline evaluation artifact baseline，不表示 Java production binding、API、migration、runner、Python ML readiness、Python live execution readiness 或真实交易授权。
 
-## 8. 禁止误写清单
+## 9. 禁止误写清单
 
 - 不得把 GateS freeze closeout 写成 GateT implementation。
 - 不得把 GateT plan 写成 runtime 已启动。
@@ -105,6 +119,8 @@
 - 不得把 Strategy Validation 的 `APPROVED`（验证层通过）写成真实交易授权。
 - 不得把 Incident / Replay severity 写成真实 incident runtime 或实盘就绪。
 - 不得把 Python offline artifact 写成 Python ML ready 或 Python live execution ready。
+- 不得把 Python artifact checksum valid 写成策略有效、真实收益、交易授权或 live execution ready。
+- 不得把 No-file baseline 写成已读取 artifact 或 Java production binding。
 - 不得把 LIVE 写成 enabled。
 - 不得把 AI 写成 started。
 - 不得把 DH runtime 写成 integrated。

@@ -1,3 +1,35 @@
+## NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-WO
+
+- date: 2026-07-09
+- scope: GateT-4 work order；NQ-only；只定义 Python Evaluation Artifact read-only binding preview 的 No-file baseline、candidate endpoint / DTO / source / reader、checksum / schema / metric 语义、DB / migration decision 和 no-side-effect testing plan。
+- result: `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- changed files:
+  - `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- implementation:
+  - 新增 GateT-4 work order，选择唯一候选 endpoint `GET /api/strategy-validation/evaluation-artifacts/preview/overview`；该 endpoint 尚未实现，不写入 `docs/current/API.md` 当前 API 事实。
+  - 默认 No-file baseline：不读取 artifact 文件、不读取 manifest、不接受 file path query、不上传、不接受 request body、不执行 Python subprocess、不访问网络、不导入 DB。
+  - 定义 `PythonEvaluationArtifactPreviewOverviewResponse`、`PythonEvaluationArtifactPreviewItem`、`checksumStatus`、`artifactFreshness`、`metricSummaryStatus`。
+  - 明确 `schemaVersion=python-evaluation-artifact.v1`、checksum、`diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`、`pythonMlReady=false`、`pythonLiveExecutionReady=false` 必须 fail-closed。
+  - 明确 artifact preview 与 `strategyVersionId` / `datasetId` / `parameterSetId` / `evidenceAnchors` 只能建立只读关系，不写回任何 GateT / GateS fact。
+  - 明确后续 implementation 默认不新增 migration；durable artifact catalog / import record 必须另起 DB schema review。
+- validation:
+  - preflight 确认 `dev` clean，`HEAD == origin/dev == e6d2fa5d208d179abfcae8df0257bb9cbde0ec03`。
+  - 当前 HEAD 对应 `NQ CI Baseline` run `28989830496` 为 `completed / success`，headSha 等于当前 HEAD。
+  - `nq-gates-freeze` 存在；`nq-gatet-freeze` 不存在。
+  - `git diff --check`、forbidden-area diff 和 required boundary `rg` 已执行；最终结果详见 `docs/current/TESTING.md` 本任务小节。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、docs/gates、docs/archive、migration、pom.xml、package.json 或 lock files。
+  - 未新增 API、DB migration、业务代码、测试代码、前端页面、runner、scheduler、AI / DH runtime 或真实交易路径。
+  - 未执行 Python，未启动 backtest，未调用真实交易所，未读取 credential，未修改 Paper / Shadow / account / order / ledger 状态。
+- next action: 推荐进入 `NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION` 的 backend No-file baseline，或 close review；不得直接进入 frontend workbench、Manifest-only reader、scheduler readiness、AI / DH runtime 或真实交易路径。
+
 ## NQ-GATET-3-FRONTEND-INCIDENT-REPLAY-REVIEW-OVERVIEW
 
 - date: 2026-07-09

@@ -1,3 +1,47 @@
+## NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-WO validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只做 GateT-4 Python Evaluation Artifact read-only binding preview work order、事实源审查、candidate endpoint / DTO / source / reader 方案、checksum / schema / metric 语义、安全边界审查和 current docs 最小同步。
+  - 修改范围限定为 README.md、docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md、docs/current/README.md、STATUS.md、ROADMAP.md、TESTING.md、WORKLOG.md、FACT_SOURCE_INDEX.md。
+  - 未修改 backend、frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files、业务代码或测试代码。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git fetch origin dev --tags: PASS.
+  - git log --oneline -20: latest commit is e6d2fa5d feat(gatet): add incident replay review frontend.
+  - git rev-parse HEAD: e6d2fa5d208d179abfcae8df0257bb9cbde0ec03.
+  - git rev-parse origin/dev: e6d2fa5d208d179abfcae8df0257bb9cbde0ec03.
+  - latest GitHub Actions: NQ CI Baseline run 28989830496 completed success, headSha=e6d2fa5d208d179abfcae8df0257bb9cbde0ec03.
+  - GateT-3 frontend commit is pushed because HEAD equals origin/dev and latest CI headSha equals HEAD.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Docs validation:
+  - git diff --check: PASS（通过）；仅出现 Windows 工作区 LF -> CRLF 提示，无 whitespace error。
+  - git diff --stat: reviewed; diff limited to allowed README.md and docs/current files. New untracked GateT-4 WO appears in git status until staged.
+  - git diff -- backend / frontend / research / scripts / deploy / .github / backend/**/db/migration / docs/gates / docs/archive: all empty.
+  - Required wide rg was executed exactly as requested. Because the command includes frontend without excluding node_modules, output was very large and truncated; supplementary git-diff scoped rg and new WO rg were reviewed.
+  - Supplementary diff / new-doc boundary rg: hits are GateT-4 status, candidate endpoint, explicit forbidden-field lists, safety flags, no-file baseline, fail-closed rules and testing guards. No hit turns Python artifact into ML ready, live execution ready, trading authorization, real provider enabled, private trading enabled, AI started or DH integrated.
+
+What was not run:
+  - Maven backend tests were not run because this task did not modify Java, API implementation, repository, DTO, SQL, migration, pom.xml or backend tests.
+  - frontend build / Playwright / E2E were not run because this task did not modify frontend source, route, API client, hook, page, package or lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests and explicitly did not execute Python.
+  - No real exchange HTTP / WebSocket, credential read, backtest, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Candidate endpoint GET /api/strategy-validation/evaluation-artifacts/preview/overview is not implemented and not recorded in API.md as current API fact.
+  - GateT-4 default source strategy is No-file baseline: no artifact file read, no manifest read, no path query, no upload, no request body, no Python subprocess, no network, no DB import.
+  - PythonEvaluationArtifactPreviewItem remains a planned derived read model by default; no persistence and no migration.
+  - VALID checksum, metricSummary, FAKE_FIXTURE_ONLY and artifact freshness are diagnostic-only semantics, not strategy approval, real performance, ML ready, live execution ready or trading authorization.
+  - LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED; Integration-1 runtime remains NOT STARTED.
+
+Blocking status:
+  - Non-blocking. Ready for final diff / staged checks.
+```
+
 ## NQ-GATET-3-FRONTEND-INCIDENT-REPLAY-REVIEW-OVERVIEW validation（2026-07-09）
 
 ```text

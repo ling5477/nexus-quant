@@ -15,7 +15,7 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：NQ-GATET-3-FRONTEND-INCIDENT-REPLAY-REVIEW-OVERVIEW 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -26,6 +26,7 @@
 - GateT-3 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`。
 - GateT-3 implementation：`GET /api/incidents/replay/review/overview` 后端 read model 已实现；只派生 deterministic Incident / Replay review items，不持久化、不新增 migration、不创建 review / acknowledge / escalation / closeout / incident / alert / replay 记录、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权、真实 incident 已关闭或自动处置。
 - GateT-3 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/incidents/replay/review/overview`；展示 review counts、latestReviewItem、reviewItems、severityBuckets、freshnessSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、Dashboard v2、review / acknowledge / escalate / closeout 写侧、交易按钮或真实交易入口。
+- GateT-4 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`；默认选择 No-file baseline，不读取 artifact 文件、不执行 Python、不导入 DB、不新增 migration。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -130,3 +131,16 @@
 - Frontend overview：`frontend/src/types/incident-replay-review.ts`、`frontend/src/api/incident-replay-review.ts`、`frontend/src/hooks/useIncidentReplayReviewOverview.ts` 与现有 `StrategyValidationPage` 已接入 GET-only Incident / Replay Review overview；`ACKNOWLEDGE_RECOMMENDED` / `ESCALATE_RECOMMENDED` / `CLOSEOUT_RECOMMENDED` 均展示为人工诊断建议，不表示自动处置、真实 incident 已关闭或交易授权。
 - 前端验证状态：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 为 `PASS / 2 passed`（通过 / 2 条通过）。
 - 下一步只能是提交前复核、stage、commit，或后续另起 GateT 任务；不得直接进入 Python binding、scheduler readiness、AI/DH runtime 或真实交易路径。
+
+## 11. GateT-4 Work Order Decision
+
+- GateT-4 主线目标：定义 Python Evaluation Artifact read-only binding preview 的后续 backend read model work order。
+- 唯一候选 endpoint：`GET /api/strategy-validation/evaluation-artifacts/preview/overview`；该路径与 Strategy Validation / GateT validation operations 的只读 evidence 语义对齐，不选择 research namespace 或 shadow-only namespace。
+- 默认 source / query 策略：No-file baseline；后续 implementation 第一版不读取 artifact 文件、不读取 manifest、不接受 file path query、不接受 request body、不上传 artifact、不调用 Python subprocess。
+- Candidate DTO：`PythonEvaluationArtifactPreviewOverviewResponse` 和 `PythonEvaluationArtifactPreviewItem`，字段覆盖 generatedAt、safety flags、pythonMlReady、pythonLiveExecutionReady、artifact counts、latestArtifactPreview、artifactPreviews、schemaVersionSummary、checksumSummary、metricSummaryCoverage、blockers / warnings / nextSteps、evidenceAnchors、traceId。
+- Artifact preview item：derived / deterministic / not persisted；只表达 Python offline diagnostic material preview readiness，不是 artifact import record、strategy evaluation result、publish approval、Paper / Shadow / LIVE run trigger 或交易授权。
+- 校验边界：`schemaVersion=python-evaluation-artifact.v1`、checksum、`diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`、`pythonMlReady=false`、`pythonLiveExecutionReady=false` 必须 fail-closed；`VALID` checksum 只表示 payload 与 checksum 自洽，不表示策略有效。
+- Evidence relation：artifact preview 只能通过 `strategyVersionId`、`datasetId`、`parameterSetId` 和 evidence anchors 与 GateT / GateS 事实建立只读关系；不得写回 strategy validation、operator item、consistency report、review item 或 DB。
+- DB migration：默认不新增；若未来必须持久化 artifact catalog / import record，必须另起 DB schema review。
+- 本 work order 未实现 endpoint，未更新 `docs/current/API.md` 或 `docs/current/DB_SCHEMA.md` 当前事实。
+- 下一步只能是提交前复核、stage、commit，或后续另起 GateT-4 backend No-file baseline implementation；不得直接进入 frontend workbench、Manifest-only reader、scheduler readiness、AI/DH runtime 或真实交易路径。

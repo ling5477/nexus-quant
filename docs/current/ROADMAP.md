@@ -38,11 +38,12 @@ GateT current work orders and limited implementation slices; not frozen / accept
 - GateS release tag：`nq-gates-freeze`。
 - GateS archive pointer：`docs/gates/gate-s/README.md`。
 - GateS completed scope：strategy validation、Shadow diagnostics、Paper vs Shadow consistency、Incident / Replay overview、Python offline evaluation artifact baseline。
-- GateT：已完成 GateT-0 planning、GateT-1 backend / frontend 最小只读切片、GateT-2 backend / frontend 最小只读切片和 GateT-3 work order；仍不是 `FROZEN`（已冻结）、`ACCEPTED`（已接受）或 `TAGGED`（已打 tag）。
+- GateT：已完成 GateT-0 planning、GateT-1 backend / frontend 最小只读切片、GateT-2 backend / frontend 最小只读切片、GateT-3 backend / frontend 最小只读切片和 GateT-4 work order；仍不是 `FROZEN`（已冻结）、`ACCEPTED`（已接受）或 `TAGGED`（已打 tag）。
 - GateT-0 planning entry：`docs/current/GATET_PLAN.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` backend read model 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
 - GateT-2 implementation：`GET /api/paper-shadow/consistency/evidence/overview` backend read model 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
-- GateT-3 work order entry：`docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- GateT-3 implementation：`GET /api/incidents/replay/review/overview` backend read model 与现有 `/strategies/validation` frontend overview 最小只读消费均已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- GateT-4 work order entry：`docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`，`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 
 ## 下一步规则
 
@@ -68,8 +69,8 @@ GateT current work orders and limited implementation slices; not frozen / accept
 | GateT-0 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Shadow Validation Operations plan / fact-source reconciliation |
 | GateT-1 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Shadow Validation Workflow read model / operator model backend + frontend overview 最小只读消费 |
 | GateT-2 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Consistency Evidence overview backend read model + frontend overview 最小只读消费 |
-| GateT-3 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Incident / Replay Review Workflow work order；候选 `GET /api/incidents/replay/review/overview`，尚未实现 |
-| GateT-4 | `PLANNED / NOT STARTED` | Python Evaluation Artifact read-only binding preview plan |
+| GateT-3 | `IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审） | Incident / Replay Review overview backend read model + frontend overview 最小只读消费 |
+| GateT-4 | `PLAN READY / NOT IMPLEMENTED`（规划已就绪 / 未实现） | Python Evaluation Artifact read-only binding preview work order；候选 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`，尚未实现 |
 | GateT-5 | `PLANNED / NOT STARTED` | Frontend Validation Operations Workbench plan |
 | GateT-6 | `PLANNED / NOT STARTED` | Runtime scheduling readiness review，仍不启动真实交易 |
 | GateT-FREEZE | `PLANNED / NOT STARTED` | GateT closeout 条件复核 |
