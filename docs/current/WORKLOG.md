@@ -1,3 +1,33 @@
+## NQ-GATET-FREEZE-CLOSEOUT
+
+- date: 2026-07-09
+- scope: GateT freeze closeout；NQ-only；只做 GateT 最终冻结、docs/gates/gate-t 归档、docs/current final status sync、root README sync、CI evidence review、safety boundary review、commit / push 和 release tag。
+- result: `PASS / COMPLETED / RELEASE TAG PUSHED`（通过 / 已完成 / release tag 已推送），以本任务最终 tag push 验证为准。
+- changed files:
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+  - `docs/current/GATET_FREEZE_READINESS_REVIEW.md`
+  - `docs/gates/gate-t/**`
+- archive:
+  - 新增 `docs/gates/gate-t/README.md`、`GATET_FREEZE_CLOSEOUT.md`、`GATET_FREEZE_READINESS_REVIEW.md`、`GATET_0_PLAN.md`、`GATET_BATCH_0_6_EVIDENCE_MATRIX.md`、`GATET_API_EVIDENCE_SUMMARY.md`、`GATET_FRONTEND_EVIDENCE_SUMMARY.md`、`GATET_PYTHON_ARTIFACT_BOUNDARY_SUMMARY.md`、`GATET_RUNTIME_SCHEDULING_READINESS_SUMMARY.md`、`GATET_BOUNDARY_STATEMENT.md`。
+  - `docs/current` 收口为 GateT frozen/tagged 摘要和 archive pointer，不再把 GateT 过程型长文档作为 current authority 扩写。
+- validation:
+  - Precondition CI：`NQ CI Baseline` run `29009539370` 为 `completed / success`，`headSha=35458f1226d8bb8816e549d9e15c01ccf5f34fea`。
+  - 本轮按 closeout 要求执行 diff、forbidden-area、safety scan、cached diff、commit/push、annotated tag 和 remote tag 验证。
+  - 本地 Maven / frontend / Python 测试未重跑；原因见 `docs/current/TESTING.md`。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/archive、pom.xml、package / lock files。
+  - 未新增 API、migration、前端页面、E2E、CI workflow、Python runtime、runner、scheduler、RealClient、real provider、private trading adapter、real permission probe 或真实交易行为。
+  - LIVE remains `DISABLED`；AI remains `NOT STARTED`；DH runtime remains `NOT INTEGRATED`；Shadow trading remains `NOT ENABLED`；Python ML readiness remains `NO`；Python live execution readiness remains `NO`。
+- commit: `docs(gatet): archive GateT freeze evidence`。
+- tag: `nq-gatet-freeze` / `NexusQuant GateT freeze: validation operations, evidence refinement, and runtime readiness baseline`。
+- next action: GateU 只能进入 `PLAN / NOT STARTED` planning 任务；不得直接启动 GateU implementation。
+
 ## NQ-GATET-FREEZE-READINESS-REVIEW
 
 - date: 2026-07-09

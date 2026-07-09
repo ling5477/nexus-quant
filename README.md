@@ -4,80 +4,56 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 
 ## 当前状态
 
-- GateS：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateS release tag：`nq-gates-freeze`。
-- GateS archive：`docs/gates/gate-s/README.md`。
-- GateS closeout：`docs/gates/gate-s/GATES_FREEZE_CLOSEOUT.md`。
-- GateS-0..6：`COMPLETED`（已完成），证据矩阵见 `docs/gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md`。
-- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；归档入口：`docs/gates/gate-r/README.md`。
-- GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gateq-freeze`；归档入口：`docs/gates/gate-q/README.md`。
-- GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gatep-freeze`；归档入口：`docs/gates/gate-p/README.md`。
-- GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
-- 当前阶段：NQ-GATET-FREEZE-READINESS-REVIEW 已进入 `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）。GateT 尚未 freeze、accepted 或 tagged。
-- GateT-0 planning：`docs/current/GATET_PLAN.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
-- GateT-1 work order：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
-- GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
-- GateT-1 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/shadow-validation/workflow/overview`，展示 operator item counts、latest operator item、blockers / warnings / nextSteps、evidence anchors、traceId 和固定安全边界 badges；不新增 route 或交易动作。
-- GateT-2 work order：`docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`，定义 Paper vs Shadow consistency evidence refinement 的 read-only plan。
-- GateT-2 implementation：`GET /api/paper-shadow/consistency/evidence/overview` 后端 read model 已实现；只派生 deterministic consistency evidence item 和 evidence summary，不持久化、不新增 migration、不创建 consistency report、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
-- GateT-2 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/paper-shadow/consistency/evidence/overview`，展示 evidence counts、latestEvidenceItem、severityBuckets、freshnessSummary、metricDeltaSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、写侧 client 或交易入口。
-- GateT-3 implementation：`GET /api/incidents/replay/review/overview` 后端 read model 已实现；只派生 deterministic review items，不持久化、不新增 migration、不创建 review / acknowledge / escalation / closeout / incident / alert / replay 记录、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权或真实 incident 已关闭。
-- GateT-3 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/incidents/replay/review/overview`，展示 review counts、latestReviewItem、reviewItems、severityBuckets、freshnessSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、写侧 client、交易按钮或真实交易入口。
-- GateT-4 work order：`docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`，定义 Python Evaluation Artifact read-only binding preview 的 No-file baseline、候选 endpoint、DTO、source / reader 边界、校验语义和测试计划；不实现 endpoint、不新增 API、不新增 migration、不改 backend / frontend / research / CI。
-- GateT-4 implementation：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 后端 No-file baseline read model 已实现；只返回 Python Evaluation Artifact binding preview 的安全空基线，不读取 artifact 文件或 manifest、不执行 Python、不访问网络、不读取 DB artifact catalog、不新增 migration、不表示 ML ready、live execution ready 或交易授权。
-- GateT-4 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`，展示 No-file baseline、artifact preview counts、schema / checksum / metric coverage、warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、上传 / 导入 / 文件路径输入、Python 执行、写侧 client 或交易入口。
-- GateT-5 work order：`docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`，定义现有 `/strategies/validation` 页面内 Validation Operations Workbench 的信息架构、组件边界、API 消费矩阵、状态语义和测试计划。
-- GateT-5 frontend implementation：现有 `/strategies/validation` 页面已新增本地 `ValidationOperationsWorkbench`，整合 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections；不新增 route、API、migration、上传 / 导入 / 文件路径输入、Python 执行、写侧操作或交易入口。
-- GateT-6 work order：`docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`，选择 `Readiness-review only`；只定义 runtime scheduling readiness、no-side-effect scheduling boundary、read-only refresh candidate matrix 和测试计划，不实现 scheduler / runner / runtime / API / migration / frontend / Python / CI。
-- GateT freeze readiness review：`docs/current/GATET_FREEZE_READINESS_REVIEW.md`，结论为 `READY FOR FREEZE CLOSEOUT`；只表示可进入后续 freeze closeout，不表示 GateT 已冻结、已接受或已打 tag。
+- GateT：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
+- GateT release tag：`nq-gatet-freeze`。
+- GateT archive：`docs/gates/gate-t/README.md`。
+- GateT closeout：`docs/gates/gate-t/GATET_FREEZE_CLOSEOUT.md`。
+- GateT-0..6：`COMPLETED`（已完成），证据矩阵见 `docs/gates/gate-t/GATET_BATCH_0_6_EVIDENCE_MATRIX.md`。
+- GateS：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gates-freeze`；archive：`docs/gates/gate-s/README.md`。
+- GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/README.md`。
+- GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
+- 下一阶段：GateU `PLAN / NOT STARTED`（规划 / 未开始）。GateU 实现未启动。
 
 ## Current Docs
 
-- `docs/current/README.md`：当前事实入口和 GateS archive pointer。
-- `docs/current/GATET_PLAN.md`：GateT Shadow Validation Operations planning 入口；只定义批次、边界、候选 workflow 和 freeze 条件，不代表实现已启动。
-- `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`：GateT-1 Shadow Validation Workflow read model / operator model work order；定义 endpoint / DTO / query / repository / testing plan。
-- `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`：GateT-2 Consistency Evidence Refinement work order；定义 candidate endpoint、DTO、query、repository、freshness / severity / metric semantics 和 no-side-effect testing plan。
-- `docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`：GateT-3 Incident / Replay Review Workflow work order；定义 endpoint、review item model、reviewState / reviewDecision、query / repository、DB / migration decision 和 no-side-effect testing plan。
-- `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`：GateT-4 Python Evaluation Artifact read-only binding preview work order；选择 No-file baseline 和候选 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`。
-- `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`：GateT-5 Validation Operations Workbench work order；选择在现有 `/strategies/validation` 页面内做局部 Workbench component，不新增 route / API / migration。
-- `docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`：GateT-6 Runtime Scheduling Readiness Review work order；选择 readiness-review only，不启动 scheduler / runner，不新增 API / DB / frontend / Python runtime。
-- `docs/current/GATET_FREEZE_READINESS_REVIEW.md`：GateT freeze readiness review；建立 GateT-0 到 GateT-6 evidence matrix，结论为可进入后续 freeze closeout。
+- `docs/current/README.md`：当前事实入口和 GateT archive pointer。
 - `docs/current/STATUS.md`：当前状态摘要。
-- `docs/current/ROADMAP.md`：当前路线与 GateT 边界。
-- `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateS 归档指针。
-- `docs/current/TESTING.md`：验证记录；记录 GateT-6 docs-only readiness work order、GateT-5 frontend workbench implementation、GateT-5 docs-only work order、GateT-4 frontend overview、GateT-4 backend No-file baseline、GateT-4 docs-only 验证、GateT-3 backend / frontend 验证、GateT-2 backend / frontend 验证、GateT-1 backend / frontend 验证等当前验证事实。
-- `docs/current/WORKLOG.md`：工作记录；记录 GateT-6 Runtime Scheduling Readiness work order、GateT-5 Validation Operations Workbench implementation / work order、GateT-4 frontend overview、GateT-4 backend No-file baseline implementation、GateT-4 work order、GateT-3 Incident / Replay Review Workflow implementation、GateT-2 consistency evidence overview 实现范围、边界和下一步。
-- `docs/current/API.md`：当前 API 事实；GateS、GateT-1、GateT-2、GateT-3 与 GateT-4 新增能力均为 GET-only / read-only / no-side-effect。
+- `docs/current/ROADMAP.md`：当前路线与 GateU `PLAN / NOT STARTED` 边界。
+- `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateT archive 指针。
+- `docs/current/TESTING.md`：验证记录；记录 GateT freeze closeout precondition CI 和本轮未复跑本地测试原因。
+- `docs/current/WORKLOG.md`：工作记录；记录 GateT freeze closeout、archive、commit/tag 流程和边界。
+- `docs/current/API.md`：当前 API 事实；GateT 新增能力均为 GET-only / read-only / no-side-effect / not trading authorization。
 - `docs/current/DB_SCHEMA.md`：当前 DB schema 事实。
 - `docs/current/ARCHITECTURE.md` / `docs/current/MODULES.md` / `docs/current/RUNBOOK.md`：当前架构、模块和运行手册。
-- `docs/current/GATES_FREEZE_READINESS_REVIEW.md`：GateS readiness review 的 current pointer；完整 freeze closeout 以 `docs/gates/gate-s/` 为准。
 
-## GateS Archive
+GateT 过程型长文档不再作为 current authority 扩写；GateT-0 plan、GateT-1 到 GateT-6 evidence、freeze readiness review 和 closeout 证据以 `docs/gates/gate-t/` 为归档入口。
 
-- `docs/gates/gate-s/README.md`：GateS archive 入口。
-- `docs/gates/gate-s/GATES_FREEZE_CLOSEOUT.md`：GateS freeze closeout 归档。
-- `docs/gates/gate-s/GATES_FREEZE_READINESS_REVIEW.md`：readiness review 归档索引。
-- `docs/gates/gate-s/GATES_0_PLAN.md`：GateS-0 plan 归档索引。
-- `docs/gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md`：GateS-0 到 GateS-6 evidence matrix。
-- `docs/gates/gate-s/GATES_API_EVIDENCE_SUMMARY.md`：四个 GET-only API 证据摘要。
-- `docs/gates/gate-s/GATES_FRONTEND_EVIDENCE_SUMMARY.md`：frontend overview / drilldown / workbench / incident panel 证据摘要。
-- `docs/gates/gate-s/GATES_PYTHON_RESEARCH_EVIDENCE_SUMMARY.md`：Python offline evaluation artifact 证据摘要。
-- `docs/gates/gate-s/GATES_BOUNDARY_STATEMENT.md`：GateS 不代表什么的边界声明。
+## GateT Archive
+
+- `docs/gates/gate-t/README.md`：GateT archive 入口。
+- `docs/gates/gate-t/GATET_FREEZE_CLOSEOUT.md`：GateT freeze closeout 归档。
+- `docs/gates/gate-t/GATET_FREEZE_READINESS_REVIEW.md`：readiness review 归档索引。
+- `docs/gates/gate-t/GATET_0_PLAN.md`：GateT-0 plan 归档索引。
+- `docs/gates/gate-t/GATET_BATCH_0_6_EVIDENCE_MATRIX.md`：GateT-0 到 GateT-6 evidence matrix。
+- `docs/gates/gate-t/GATET_API_EVIDENCE_SUMMARY.md`：GateT GET-only API 证据摘要。
+- `docs/gates/gate-t/GATET_FRONTEND_EVIDENCE_SUMMARY.md`：Validation Operations Workbench 与各前端 panel 证据摘要。
+- `docs/gates/gate-t/GATET_PYTHON_ARTIFACT_BOUNDARY_SUMMARY.md`：Evaluation Artifact Preview No-file baseline 与 Python 边界摘要。
+- `docs/gates/gate-t/GATET_RUNTIME_SCHEDULING_READINESS_SUMMARY.md`：GateT-6 readiness-only 证据摘要。
+- `docs/gates/gate-t/GATET_BOUNDARY_STATEMENT.md`：GateT 不代表什么的边界声明。
 
 ## Boundary
 
-GateS freeze closeout 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter 或 real permission probe，也不启动 Shadow trading。GateS 新增 API 均为 GET-only / read-only / no-side-effect / not trading authorization；frontend panels 均为只读诊断展示；Python artifact 只属于 offline research diagnostic baseline。
+GateT freeze closeout 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter 或 real permission probe，也不启动 Shadow trading。GateT 新增 API 均为 GET-only / read-only / no-side-effect / not trading authorization；frontend Workbench 和 panels 均为只读诊断与人工复核视图；GateT-4 Evaluation Artifact Preview 是 No-file baseline，不读取 artifact、不执行 Python、不导入 DB；GateT-6 是 readiness-review only，未启动 scheduler / runner / runtime。
 
 固定边界：
 
 - LIVE：`DISABLED`（关闭）。
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
-- Integration-1：`NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
 - RealClient：`NOT IMPLEMENTED`（未实现）。
 - real provider：`NOT IMPLEMENTED`（未实现）。
 - private trading adapter：`NOT IMPLEMENTED`（未实现）。
 - real permission probe：`NOT IMPLEMENTED`（未实现）。
 - Shadow trading：`NOT ENABLED`（未启用）。
-- Python ML ready：`NO`（否）。
-- Python live execution ready：`NO`（否）。
+- Python ML readiness：`NO`（否）。
+- Python live execution readiness：`NO`（否）。

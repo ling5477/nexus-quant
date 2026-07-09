@@ -4,6 +4,8 @@ Status: `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）
 
 Scope: NQ-only；freeze readiness review；documentation-only。本审查只复核 GateT-0 到 GateT-6 的证据、CI、事实源和安全边界，不创建 tag，不把 GateT 写成 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不启动 GateU。
 
+Archive pointer：GateT freeze closeout 后，本 review 的归档索引为 [../gates/gate-t/GATET_FREEZE_READINESS_REVIEW.md](../gates/gate-t/GATET_FREEZE_READINESS_REVIEW.md)；GateT 最终冻结证据入口为 [../gates/gate-t/README.md](../gates/gate-t/README.md)。本文保留为兼容 current 链接的历史 review，不再作为 GateT 当前 authority 扩写。
+
 ## Review Target
 
 审查 GateT 是否可以进入后续 freeze closeout。GateT 当前仍不是 `FROZEN / ACCEPTED / TAGGED`；`nq-gatet-freeze` tag 不存在。

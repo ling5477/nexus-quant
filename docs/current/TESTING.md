@@ -1,3 +1,59 @@
+## NQ-GATET-FREEZE-CLOSEOUT validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只做 GateT freeze closeout、docs/gates/gate-t archive、docs/current final status sync、root README sync、CI evidence review、safety boundary review、commit / push 和 release tag。
+  - 修改范围限定为 README.md、docs/current 允许文件和 docs/gates/gate-t/**。
+  - 未修改 backend、frontend、research、scripts、deploy、.github、backend/**/db/migration、docs/archive、pom.xml、package / lock files、业务代码或测试代码。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git fetch origin dev --tags: PASS.
+  - git rev-parse HEAD: 35458f1226d8bb8816e549d9e15c01ccf5f34fea.
+  - git rev-parse origin/dev: 35458f1226d8bb8816e549d9e15c01ccf5f34fea.
+  - latest commit: 35458f12 docs(gatet): review GateT freeze readiness.
+  - gh run list --limit 10: latest NQ CI Baseline run 29009539370 completed success after queued / in_progress polling.
+  - gh run view 29009539370 --json status,conclusion,headSha,name,createdAt,updatedAt: completed / success, headSha=35458f1226d8bb8816e549d9e15c01ccf5f34fea.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty before closeout tag creation.
+
+Validation commands:
+  - git diff --check
+  - git diff --stat
+  - git diff -- backend
+  - git diff -- frontend
+  - git diff -- research
+  - git diff -- scripts
+  - git diff -- deploy
+  - git diff -- .github
+  - git diff -- backend/**/db/migration
+  - git diff -- docs/archive
+  - rg safety scan over README.md docs/current docs/gates backend frontend research/py for GateT / GateU / runtime / trading / credential / AI / DH / Python readiness terms.
+  - git diff --cached --check
+  - git diff --cached --stat
+  - git diff --cached --name-only
+  - git show --stat nq-gatet-freeze
+  - git ls-remote --tags origin | rg "nq-gatet-freeze"
+
+CI evidence:
+  - Closeout precondition run 29009539370: NQ CI Baseline / completed / success / headSha=35458f1226d8bb8816e549d9e15c01ccf5f34fea.
+  - Closeout commit CI and release tag remote evidence are verified by this task after commit / push / tag; exact final command output is captured in the closeout response.
+
+What was not run locally:
+  - Maven tests were not rerun locally because this is docs/tag-only closeout and did not modify backend Java, Controller, DTO, Service, Repository, SQL, migration, pom.xml or backend tests.
+  - npm build / Playwright were not rerun locally because this task did not modify frontend code, route, client, hook, page, tests, package or lock files.
+  - Python pytest / mypy / ruff were not rerun locally because this task does not modify research/py and does not execute Python or access artifact files.
+
+Boundary:
+  - GateT is frozen as FROZEN / ACCEPTED / TAGGED.
+  - GateU remains PLAN / NOT STARTED.
+  - No scheduler, runner, Paper run, Shadow run, LIVE, AI runtime, DH runtime, real exchange call, order, cancel, transfer, withdraw, credential read, API, migration, frontend page, E2E or CI workflow was added or executed.
+
+Blocking status:
+  - Non-blocking once commit, push and release tag verification complete.
+```
+
 ## NQ-GATET-FREEZE-READINESS-REVIEW validation（2026-07-09）
 
 ```text
