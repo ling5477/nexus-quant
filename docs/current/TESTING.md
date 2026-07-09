@@ -10458,3 +10458,41 @@ Boundary confirmation：
 - LIVE = `DISABLED`；AI = `NOT STARTED`；DH runtime = `NOT INTEGRATED`；Integration-1 = `NOT STARTED / mock-test-support only where applicable`；RealClient / real provider / private trading adapter / real permission probe = `NOT IMPLEMENTED`；Shadow trading = `NOT ENABLED`。
 
 Blocking status：non-blocking。GateS closeout 已进入 release tag push 流程；最终 tag 和远端 tag 以本轮收尾验证为准。
+
+---
+
+## NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-WO（2026-07-09）
+
+结论：**PLAN READY / NOT IMPLEMENTED / READY TO COMMIT**（规划已就绪 / 未实现 / 可进入提交前复核）。
+
+Scope：本轮只做 GateT-5 Validation Operations Workbench documentation-only work order，审查现有 `/strategies/validation` 页面、GateT / GateS panel、信息架构、组件边界、API 消费矩阵、状态语义和测试计划。未修改 backend、frontend、research、scripts、deploy、`.github`、migration、测试代码、API 实现或 CI workflow。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 起始工作区 clean。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git fetch origin dev --tags` | PASS | 已刷新 `origin/dev` 与 tags。 |
+| `git log --oneline -20` | REVIEWED | 最新提交为 `a5709f1a feat(gatet): add evaluation artifact preview frontend`，GateT-1 到 GateT-4 提交链可见。 |
+| `git rev-parse HEAD` | PASS | `a5709f1afc28502a4147630a0dc7f3f0dd019eb0`。 |
+| `git rev-parse origin/dev` | PASS | `a5709f1afc28502a4147630a0dc7f3f0dd019eb0`；与 HEAD 对齐。 |
+| `git tag --list "nq-gates-freeze"` | PASS | `nq-gates-freeze` 存在。 |
+| `git tag --list "nq-gatet-freeze"` | PASS | 空输出；GateT 未 freeze / accepted / tagged。 |
+| `gh run view 29000065991 --json status,conclusion,headSha,name,createdAt,updatedAt,jobs,url` | PASS | 最新 `NQ CI Baseline` 为 `completed / success`，`headSha` 等于当前 HEAD，jobs 均为 success。 |
+| docs/current fact-source read | PASS / REVIEWED | 已检视 current README、STATUS、ROADMAP、API、TESTING、WORKLOG、FACT_SOURCE_INDEX、GATET_PLAN、GateT-1/2/3/4 work orders。 |
+| frontend read-only source inspection | PASS / REVIEWED | 已只读检视 `StrategyValidationPage.tsx`、query keys、相关 hooks、types 和 targeted smoke；未修改前端。 |
+
+What was not run：
+
+- 未运行 `npm run build`；原因是本轮未修改 `frontend/**`，仅定义后续 implementation 的测试计划。
+- 未运行 Playwright / E2E；原因是本轮不改页面、不新增 route、不新增 E2E。
+- 未运行 Maven backend test；原因是本轮未修改 `backend/**`、Java API、migration 或后端测试。
+- 未运行 Python pytest / mypy / ruff；原因是本轮未修改 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- 本轮只新增 `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md` 并最小同步 current docs / README。
+- 未新增 API、route、page implementation、component implementation、migration、Python runtime、CI workflow、测试代码、交易按钮或写侧 client。
+- GateT-5 plan 明确选择现有 `/strategies/validation` 页面内局部 Workbench component，不新增 `/strategies/validation-operations`。
+
+Blocking status：non-blocking。当前可进入提交前复核。

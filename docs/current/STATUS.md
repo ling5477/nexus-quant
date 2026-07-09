@@ -15,7 +15,7 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：NQ-GATET-4-FRONTEND-EVALUATION-ARTIFACT-PREVIEW-OVERVIEW 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -29,6 +29,7 @@
 - GateT-4 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`；默认选择 No-file baseline，不读取 artifact 文件、不执行 Python、不导入 DB、不新增 migration。
 - GateT-4 implementation：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 后端 No-file baseline read model 已实现；只返回 Python Evaluation Artifact binding preview 的安全空基线，不读取 artifact 文件或 manifest、不执行 Python、不访问网络、不读取 DB artifact catalog、不新增 migration、不表示 ML ready、live execution ready 或交易授权。
 - GateT-4 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`；展示 No-file baseline、artifact preview counts、schema / checksum / metric coverage、warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、上传 / 导入 / 文件路径输入、Python 执行、写侧 client 或交易入口。
+- GateT-5 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`；只定义现有 `/strategies/validation` 页面内 Workbench 整合计划，不实现页面、不新增 route、不新增 API、不新增 migration、不改 backend / frontend / research / CI。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -170,3 +171,13 @@
 - 文案边界：页面颜色只表示诊断状态，success 不表示盈利，danger 不表示下跌；`VALID` checksum 只表示 payload integrity，不表示策略有效；`metricSummary` 不表示真实收益；`FAKE_FIXTURE_ONLY` 只表示测试 fixture；`pythonMlReady=false`、`pythonLiveExecutionReady=false` 必须可见。
 - 验证状态：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts` 为 `PASS / 2 passed`（通过 / 2 条通过）。
 - 下一步只能是提交前复核、stage、commit，或后续另起 GateT 任务；不得直接进入 artifact file reader、upload / import、Python execution、scheduler readiness、AI/DH runtime 或真实交易路径。
+
+## 14. GateT-5 Work Order Decision
+
+- GateT-5 主线目标：定义现有 `/strategies/validation` 页面内 Validation Operations Workbench 的 summary-first 信息架构、组件边界、API 消费矩阵、状态语义和测试计划。
+- 候选页面策略：选择在现有 `/strategies/validation` 页面内新增局部 Workbench component，不新增 route。
+- API decision：不新增 API；复用 `GET /api/strategy-validation/overview`、`GET /api/shadow-validation/workflow/overview`、`GET /api/paper-shadow/consistency/evidence/overview`、`GET /api/incidents/replay/review/overview`、`GET /api/incidents/replay/overview`、`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 和现有 Shadow Run / consistency drilldown 只读数据。
+- DB migration：不新增；Workbench 只展示 derived view，不持久化 operator review、acknowledge、escalation 或 closeout。
+- Boundary：不新增 review / acknowledge / approve / reject / escalate / closeout 写侧操作，不新增 start / stop / execute / trade，不调用真实交易所，不读取 credential，不执行 Python，不接 AI / DH runtime。
+- Testing plan：后续 implementation 运行 `npm run build` 并复用现有 Strategy Validation targeted smoke；只覆盖 Workbench summary、boundary strip、禁用交易授权文案、无上传 / 导入 / 路径输入 / Python 执行入口和 forbidden private / exchange request，不新增复杂 E2E 矩阵。
+- 下一步只能是提交前复核、stage、commit，或后续另起 GateT-5 frontend implementation；不得直接进入 route / API / migration / scheduler readiness / AI-DH runtime / 真实交易路径。

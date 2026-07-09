@@ -13,20 +13,21 @@
 5. [GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)：GateT-2 Consistency Evidence Refinement work order。
 6. [GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md](GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md)：GateT-3 Incident / Replay Review Workflow work order。
 7. [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)：GateT-4 Python Evaluation Artifact read-only binding preview work order。
-8. [STATUS.md](STATUS.md)：当前项目状态。
-9. [README.md](README.md)：current 入口和 archive pointer。
-10. [ROADMAP.md](ROADMAP.md)：当前路线与 GateT 边界。
-11. [TESTING.md](TESTING.md)：当前验证记录和未运行说明。
-12. [WORKLOG.md](WORKLOG.md)：当前工作记录。
-13. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实。
-14. [../gates/gate-s/README.md](../gates/gate-s/README.md)：GateS 历史归档入口。
-15. [../gates/gate-s/GATES_FREEZE_CLOSEOUT.md](../gates/gate-s/GATES_FREEZE_CLOSEOUT.md)：GateS freeze closeout authority。
-16. [../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md](../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md)：GateS-0 到 GateS-6 evidence matrix。
-17. [../gates/gate-r/README.md](../gates/gate-r/README.md)：GateR 历史归档入口。
-18. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
-19. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
-20. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
-21. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：post-GateQ current cleanup 审计和移动索引。
+8. [GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md)：GateT-5 Validation Operations Workbench work order。
+9. [STATUS.md](STATUS.md)：当前项目状态。
+10. [README.md](README.md)：current 入口和 archive pointer。
+11. [ROADMAP.md](ROADMAP.md)：当前路线与 GateT 边界。
+12. [TESTING.md](TESTING.md)：当前验证记录和未运行说明。
+13. [WORKLOG.md](WORKLOG.md)：当前工作记录。
+14. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实。
+15. [../gates/gate-s/README.md](../gates/gate-s/README.md)：GateS 历史归档入口。
+16. [../gates/gate-s/GATES_FREEZE_CLOSEOUT.md](../gates/gate-s/GATES_FREEZE_CLOSEOUT.md)：GateS freeze closeout authority。
+17. [../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md](../gates/gate-s/GATES_BATCH_0_6_EVIDENCE_MATRIX.md)：GateS-0 到 GateS-6 evidence matrix。
+18. [../gates/gate-r/README.md](../gates/gate-r/README.md)：GateR 历史归档入口。
+19. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
+20. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
+21. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
+22. [../archive/current-cleanup/post-gateq/README.md](../archive/current-cleanup/post-gateq/README.md)：post-GateQ current cleanup 审计和移动索引。
 
 `docs/gates/**` 与 `docs/archive/**` 是历史证据或归档引用，不覆盖 `docs/current` 的当前状态摘要。已完成 Gate 的过程型长文档不得再作为 current authority 扩写。
 
@@ -41,6 +42,7 @@
 - GateT-2 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-3 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-4 backend No-file baseline 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），入口为 [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)、[API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)。
+- GateT-5 Validation Operations Workbench work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md)。
 - GateT-0 planning：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_PLAN.md](GATET_PLAN.md)。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)。
 - GateT-2 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)。
@@ -61,6 +63,7 @@
 - GateT 默认不新增 DB migration；review / acknowledge 若需要持久化，必须另起 DB schema review。
 - GateT 不接 Python production binding，只允许 Python artifact read-only binding preview。
 - GateT 不接 AI runtime，不接 DH runtime，不启动 Integration-1 runtime。
+- GateT-5 只规划现有 `/strategies/validation` 页面内 Validation Operations Workbench 的 summary / detail 信息架构；不新增 route、API、migration、写侧操作或 runtime 能力。
 
 ## 4. GateT-1 Current Code Facts
 

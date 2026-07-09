@@ -16756,6 +16756,35 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - GateT 只能是 PLAN / NOT STARTED；本轮未启动 GateT implementation。
 - next action: 后续如需进入 GateT，必须另起 GateT PLAN，并重新执行 Gate / LIVE / AI / DH / real-provider 边界审查。
 
+## NQ-GATET-5-VALIDATION-OPERATIONS-WORKBENCH-WO
+
+- date: 2026-07-09
+- scope: GateT-5 documentation-only work order；NQ-only；只定义现有 `/strategies/validation` 页面内 Validation Operations Workbench 的整合计划、现有 panel 审查、信息架构、组件边界、API 消费矩阵、状态语义和测试计划。
+- result: `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
+- changed files:
+  - `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- key decisions:
+  - 候选页面策略选择在现有 `/strategies/validation` 页面内新增局部 Workbench component，不新增 route。
+  - Workbench 结构规划为 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections。
+  - 复用现有 GateS / GateT GET-only API、query key、hook 和 DTO；不新增 API、不新增 DB migration。
+  - `APPROVED`、`VALIDATION_READY`、`CONSISTENT`、`ACKNOWLEDGE_RECOMMENDED`、checksum `VALID` 和 Python artifact preview 均只表达诊断 / 复核 / integrity 语义，不表示交易授权、ML ready 或 live execution ready。
+- validation:
+  - 预检确认 `dev` clean，`HEAD=origin/dev=a5709f1afc28502a4147630a0dc7f3f0dd019eb0`。
+  - latest CI：GitHub Actions run `29000065991`，`NQ CI Baseline`，`completed / success`，`headSha` 等于当前 HEAD，jobs 均 success。
+  - 后续收尾执行 docs diff、forbidden-area diff、boundary rg 和 staged checks。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/gates、docs/archive、pom / package / lock files。
+  - 未实现页面、未新增 route、未新增 API、未新增测试、未新增组件目录、未执行 Python、未启动 runner / scheduler。
+  - 未调用真实交易所，未读取或输出 credential material，未开启 LIVE，未接 AI / DH runtime，未实现 RealClient、real provider、private trading adapter 或 real permission probe。
+- next action: 后续另起 GateT-5 frontend implementation；最小范围应优先限制在 `StrategyValidationPage.tsx` 和现有 targeted smoke，不新增 route / API / migration。
+
 ## NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION
 
 - date: 2026-07-08
