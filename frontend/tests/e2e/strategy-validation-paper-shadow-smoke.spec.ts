@@ -718,6 +718,89 @@ const INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE = {
     traceId: 'trace-incident-replay-review-overview-smoke',
 };
 
+const EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE = {
+    generatedAt: '2026-07-09T06:40:00Z',
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    pythonMlReady: false,
+    pythonLiveExecutionReady: false,
+    totalArtifactPreviews: 0,
+    validArtifactCount: 0,
+    invalidArtifactCount: 0,
+    staleArtifactCount: 0,
+    checksumFailedCount: 0,
+    latestArtifactPreview: null,
+    artifactPreviews: [],
+    schemaVersionSummary: {
+        'python-evaluation-artifact.v1': 0,
+        NO_ARTIFACT_SOURCE_CONFIGURED: 1,
+    },
+    checksumSummary: {
+        VALID: 0,
+        INVALID: 0,
+        MISSING: 0,
+        NOT_CHECKED: 1,
+        UNKNOWN: 0,
+    },
+    metricSummaryCoverage: {
+        PRESENT: 0,
+        INCOMPLETE: 0,
+        FAKE_FIXTURE_ONLY: 0,
+        MISSING: 0,
+        UNKNOWN: 1,
+    },
+    blockers: [
+        {
+            code: 'NOT_TRADING_AUTHORIZATION',
+            severity: 'CRITICAL',
+            message: 'Python artifact preview is not trading authorization.',
+            sourceType: 'SYSTEM_BOUNDARY',
+            sourceId: null,
+        },
+    ],
+    warnings: [
+        {
+            code: 'NO_ARTIFACT_SOURCE_CONFIGURED',
+            severity: 'WARNING',
+            message: 'No artifact file, manifest or runtime source is configured for GateT-4 No-file baseline.',
+            sourceType: 'NO_FILE_BASELINE',
+            sourceId: null,
+        },
+        {
+            code: 'FAKE_FIXTURE_ONLY_NOT_REAL_PERFORMANCE',
+            severity: 'WARNING',
+            message: 'FAKE_FIXTURE_ONLY metrics must stay fixture-only and are not real strategy performance.',
+            sourceType: 'METRIC_SUMMARY',
+            sourceId: null,
+        },
+    ],
+    nextSteps: [
+        {
+            code: 'KEEP_NO_FILE_BASELINE',
+            owner: 'backend',
+            action: 'Keep this overview GET-only and No-file baseline until a separate source review is approved.',
+            completionCondition: 'No artifact file, manifest, path query, upload, request body, Python subprocess, network or DB import is added.',
+            boundaryCritical: true,
+        },
+    ],
+    evidenceAnchors: [
+        {
+            sourceType: 'EVALUATION_ARTIFACT_CONTRACT',
+            sourceId: 'python-evaluation-artifact.v1',
+            sourceVersion: 'python-evaluation-artifact.v1',
+            sourceTimestamp: '2026-07-09T06:40:00Z',
+            traceId: 'trace-evaluation-artifact-preview-smoke',
+            description: 'Offline Python EvaluationArtifact contract; no artifact file is read by this endpoint.',
+        },
+    ],
+    traceId: 'trace-evaluation-artifact-preview-overview-smoke',
+};
+
 const INCIDENT_REPLAY_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-08T13:41:00Z',
     diagnosticOnly: true,
@@ -1003,6 +1086,11 @@ async function seedAuthAndGateQStubs(
         json: INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE,
     }));
 
+    await page.route('**/api/strategy-validation/evaluation-artifacts/preview/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE,
+    }));
+
     await page.route('**/api/incidents/replay/overview', (route: Route) => route.fulfill({
         status: 200,
         json: INCIDENT_REPLAY_OVERVIEW_FIXTURE,
@@ -1040,7 +1128,7 @@ function validationUrl(): string {
 }
 
 function expectNoForbiddenCopy(page: Page) {
-    return expect(page.locator('body')).not.toContainText(/ready\s+to\s+trade|live\s+ready|trade[_\s]+approved|can\s+trade|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|Integration-1 RUNTIME STARTED|placeOrder|cancelOrder|withdraw|transfer|apiKey|secret|passphrase|token|private key|ML_READY|PYTHON ML READY|PYTHON LIVE READY/i);
+    return expect(page.locator('body')).not.toContainText(/ready\s+to\s+trade|live\s+ready|trade[_\s]+approved|can\s+trade|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|Integration-1 RUNTIME STARTED|placeOrder|cancelOrder|withdraw|transfer|apiKey|secret|passphrase|token|private key|ML_READY\s*[:=]\s*true|PYTHON ML READY\s+YES|PYTHON LIVE READY\s+YES/i);
 }
 
 function expectNoForbiddenRequests(requests: string[]): void {
@@ -1193,6 +1281,37 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(incidentReplayReview).toContainText('Not trading authorization（非交易授权）');
         await expect(incidentReplayReview).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
 
+        const artifactPreview = page.getByTestId('evaluation-artifact-preview-overview-panel');
+        await expect(artifactPreview).toBeVisible();
+        await expect(view).toContainText('Python Evaluation Artifact Preview');
+        await expect(artifactPreview).toContainText('totalArtifactPreviews');
+        await expect(artifactPreview).toContainText('validArtifactCount');
+        await expect(artifactPreview).toContainText('invalidArtifactCount');
+        await expect(artifactPreview).toContainText('staleArtifactCount');
+        await expect(artifactPreview).toContainText('checksumFailedCount');
+        await expect(artifactPreview).toContainText('NO_ARTIFACT_SOURCE_CONFIGURED');
+        await expect(artifactPreview).toContainText('当前未配置 artifact source');
+        await expect(artifactPreview).toContainText('No-file baseline');
+        await expect(artifactPreview).toContainText('success 不表示盈利，danger 不表示下跌');
+        await expect(artifactPreview).toContainText('NOT_CHECKED（未检查）');
+        await expect(artifactPreview).toContainText('UNKNOWN（未知状态）');
+        await expect(artifactPreview).toContainText('FAKE_FIXTURE_ONLY');
+        await expect(artifactPreview).toContainText('pythonMlReady');
+        await expect(artifactPreview).toContainText('false（Python ML ready NO）');
+        await expect(artifactPreview).toContainText('pythonLiveExecutionReady');
+        await expect(artifactPreview).toContainText('false（Python live execution ready NO）');
+        await expect(artifactPreview).toContainText('LIVE DISABLED（LIVE 关闭）');
+        await expect(artifactPreview).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
+        await expect(artifactPreview).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
+        await expect(artifactPreview).toContainText('Python artifact preview is diagnostic only（Python artifact preview 仅诊断）');
+        await expect(artifactPreview).toContainText('Not trading authorization（非交易授权）');
+        await expect(artifactPreview).toContainText('Python ML ready NO（Python ML ready 否）');
+        await expect(artifactPreview).toContainText('Python live execution ready NO（Python live execution ready 否）');
+        await expect(artifactPreview).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+        await expect(artifactPreview).toContainText('trace-evaluation-artifact-preview-overview-smoke');
+        await expect(artifactPreview.getByRole('button', {name: /上传|导入|执行|upload|import/i})).toHaveCount(0);
+        await expect(artifactPreview.locator('input')).toHaveCount(0);
+
         await expect(view).toContainText('状态解释');
         await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
         await expect(view).toContainText('UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*');
@@ -1206,8 +1325,8 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('Paper / Shadow Comparison');
         await expect(view).toContainText('Shadow Live Preview');
         await expect(view).toContainText('Python Artifact Binding Preview');
-        await expect(view).toContainText('PENDING_FRONTEND_SUPPORT（等待前端接入支持）');
-        await expect(view).toContainText('NOT_CONNECTED');
+        await expect(view).toContainText('NO_ARTIFACT_SOURCE_CONFIGURED（未配置 artifact source）');
+        await expect(view).toContainText('trace-evaluation-artifact-preview-overview-smoke');
 
         await expect(view).toContainText('Evidence Matrix / 证据矩阵');
         await expect(view).toContainText('requiredEvidence');
@@ -1241,6 +1360,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
             'NOT_AVAILABLE',
             'UNKNOWN',
             'PENDING_FRONTEND_SUPPORT',
+            'NO_ARTIFACT_SOURCE_CONFIGURED',
+            'NO_FILE_BASELINE',
+            'NOT_CHECKED',
+            'FAKE_FIXTURE_ONLY',
             'VALIDATION_READY',
             'READY_FOR_OPERATOR_REVIEW',
             'ACKNOWLEDGE_RECOMMENDED',
@@ -1258,6 +1381,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         expect(requests.some((url) => url.includes('/api/shadow-validation/workflow/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/evidence/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/incidents/replay/review/overview'))).toBeTruthy();
+        expect(requests.some((url) => url.includes('/api/strategy-validation/evaluation-artifacts/preview/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/evaluation-gate'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategies/shadow-live/preview'))).toBeTruthy();

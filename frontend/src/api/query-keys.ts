@@ -75,6 +75,11 @@ export const incidentReplayReviewQueryKeys = {
     overview: () => [...incidentReplayReviewQueryKeys.all, 'overview'] as const,
 };
 
+export const evaluationArtifactPreviewQueryKeys = {
+    all: ['strategy-validation', 'evaluation-artifacts', 'preview'] as const,
+    overview: () => [...evaluationArtifactPreviewQueryKeys.all, 'overview'] as const,
+};
+
 export const paperShadowQueryKeys = {
     all: ['paper-shadow'] as const,
     consistencyDrilldown: (shadowRunId: string) => [

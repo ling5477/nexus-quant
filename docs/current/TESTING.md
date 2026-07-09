@@ -1,3 +1,47 @@
+## NQ-GATET-4-FRONTEND-EVALUATION-ARTIFACT-PREVIEW-OVERVIEW validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只实现 GateT-4 Python Evaluation Artifact Preview 的前端最小只读 overview。
+  - 修改范围限定为 frontend types / API client / query key / TanStack Query hook、现有 StrategyValidationPage、既有 Strategy Validation targeted smoke，以及允许的 current docs / README。
+  - 未修改 backend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files 或 CI workflow。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git fetch origin dev --tags: PASS.
+  - git rev-parse HEAD: 00e976818bae669b1ad46fa824152b161aef3b1d.
+  - git rev-parse origin/dev: 00e976818bae669b1ad46fa824152b161aef3b1d.
+  - latest GitHub Actions: NQ CI Baseline run 28998502578 completed success, headSha=00e976818bae669b1ad46fa824152b161aef3b1d.
+  - GateT-4 backend commit is pushed because HEAD equals origin/dev and latest CI headSha equals HEAD.
+  - docs/current/API.md and backend code contain GET /api/strategy-validation/evaluation-artifacts/preview/overview.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Validation commands:
+  - npm run build
+  - result: PASS / BUILD SUCCESS（通过 / 构建成功）；TypeScript build 与 Vite build 通过。
+  - known warning: Vite chunk > 500 kB warning remains non-blocking and pre-existing for this frontend build shape.
+  - npm run test:e2e -- tests/e2e/strategy-validation-paper-shadow-smoke.spec.ts
+  - result: PASS / 2 passed（通过 / 2 条通过）；覆盖 Evaluation Artifact Preview panel 渲染、No-file baseline、NO_ARTIFACT_SOURCE_CONFIGURED warning、pythonMlReady=false / pythonLiveExecutionReady=false、固定 boundary badges、forbidden copy guard、无上传 / 导入 / 文件路径输入 / Python 执行入口和 forbidden private/exchange request guard。
+
+What was not run:
+  - backend Maven tests were not rerun because this task did not modify backend Java, controller, DTO, service, repository, SQL, migration, pom.xml or backend tests.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests and explicitly did not execute Python.
+  - GitHub CI was not triggered by this frontend implementation turn; preflight verified latest CI for the pushed backend HEAD only.
+  - No real exchange HTTP / WebSocket, credential read, artifact file read, manifest read, upload / import, backtest, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Frontend only consumes GET /api/strategy-validation/evaluation-artifacts/preview/overview; no POST / PUT / PATCH / DELETE client was added.
+  - No route, Dashboard v2, artifact upload, file path input, import, manifest reader, artifact JSON reader, Python subprocess, review / acknowledge / approve / reject write-side operation, start / stop / execute / trade UI or trading authorization wording was added.
+  - UI fixed badges keep LIVE DISABLED, Real provider NOT IMPLEMENTED, Private trading NOT IMPLEMENTED, Python artifact preview diagnostic only, Not trading authorization, Python ML ready NO, Python live execution ready NO and AI/DH runtime not integrated visible.
+  - UI color only means diagnostic state；success is not profit；danger is not downside；VALID checksum is not strategy validity；metricSummary is not real return；FAKE_FIXTURE_ONLY is test fixture only；pythonMlReady=false and pythonLiveExecutionReady=false remain visible.
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED。
+
+Blocking status:
+  - Non-blocking. Ready for final diff / forbidden-area / staged checks.
+```
+
 ## NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION validation（2026-07-09）
 
 ```text

@@ -25,6 +25,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {useConsistencyEvidenceOverview} from '@/hooks/useConsistencyEvidenceOverview';
+import {useEvaluationArtifactPreviewOverview} from '@/hooks/useEvaluationArtifactPreviewOverview';
 import {useIncidentReplayOverview} from '@/hooks/useIncidentReplayOverview';
 import {useIncidentReplayReviewOverview} from '@/hooks/useIncidentReplayReviewOverview';
 import {
@@ -48,6 +49,14 @@ import type {
     ConsistencyEvidenceOverviewResponse,
     ConsistencyEvidenceWarning,
 } from '@/types/consistency-evidence';
+import type {
+    EvaluationArtifactPreviewBlocker,
+    EvaluationArtifactPreviewEvidenceAnchor,
+    EvaluationArtifactPreviewNextStep,
+    EvaluationArtifactPreviewWarning,
+    PythonEvaluationArtifactPreviewItem,
+    PythonEvaluationArtifactPreviewOverviewResponse,
+} from '@/types/evaluation-artifact-preview';
 import type {
     IncidentReplayBlocker,
     IncidentReplayEvidenceAnchor,
@@ -170,6 +179,8 @@ type ConsistencyEvidenceOverviewIssue = ConsistencyEvidenceBlocker | Consistency
 
 type IncidentReplayReviewOverviewIssue = IncidentReplayReviewBlocker | IncidentReplayReviewWarning;
 
+type EvaluationArtifactPreviewOverviewIssue = EvaluationArtifactPreviewBlocker | EvaluationArtifactPreviewWarning;
+
 type OverviewStateLevel = 'info' | 'warning' | 'error';
 
 interface OverviewPanelState {
@@ -234,6 +245,13 @@ interface IncidentReplayReviewBucketRow {
     count: number;
 }
 
+interface EvaluationArtifactPreviewBucketRow {
+    key: string;
+    source: 'schemaVersionSummary' | 'checksumSummary' | 'metricSummaryCoverage';
+    bucket: string;
+    count: number;
+}
+
 const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     APPROVED: {label: '验证层通过，非交易授权', tone: 'info'},
     REJECTED: {label: '验证层拒绝', tone: 'danger'},
@@ -241,6 +259,15 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     BLOCKED: {label: '阻断', tone: 'danger'},
     NO_EVIDENCE: {label: '无证据', tone: 'neutral'},
     STALE_EVIDENCE: {label: '证据过期或不完整', tone: 'warning'},
+    NO_ARTIFACT_SOURCE_CONFIGURED: {label: '未配置 artifact source', tone: 'warning'},
+    NO_FILE_BASELINE: {label: 'No-file baseline', tone: 'warning'},
+    DIAGNOSTIC_ONLY: {label: '仅诊断', tone: 'info'},
+    VALID: {label: 'checksum 自洽，非策略有效', tone: 'info'},
+    INVALID: {label: 'checksum 失败', tone: 'danger'},
+    NOT_CHECKED: {label: '未检查', tone: 'neutral'},
+    FAKE_FIXTURE_ONLY: {label: '测试 fixture，非真实表现', tone: 'warning'},
+    PRESENT: {label: '摘要存在，非收益结论', tone: 'info'},
+    INCOMPLETE: {label: '摘要不完整', tone: 'warning'},
     CONSISTENT: {label: '证据一致，非盈利结论', tone: 'info'},
     DIVERGED: {label: '证据偏离', tone: 'warning'},
     NO_REPORT: {label: '无一致性报告', tone: 'neutral'},
@@ -1345,6 +1372,244 @@ const incidentReplayReviewItemColumns: ColumnsType<IncidentReplayReviewItem> = [
     },
 ];
 
+const evaluationArtifactPreviewIssueColumns: ColumnsType<EvaluationArtifactPreviewOverviewIssue> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 280,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '诊断优先级',
+        dataIndex: 'severity',
+        key: 'severity',
+        width: 180,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: '来源',
+        key: 'source',
+        width: 250,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>{workbenchSafeText(record.sourceType)}</Text>
+                {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
+                    <Text type="secondary">无 sourceId</Text>
+                )}
+            </Space>
+        ),
+    },
+    {
+        title: '说明',
+        dataIndex: 'message',
+        key: 'message',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const evaluationArtifactPreviewNextStepColumns: ColumnsType<EvaluationArtifactPreviewNextStep> = [
+    {
+        title: 'Code',
+        dataIndex: 'code',
+        key: 'code',
+        width: 260,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'Owner',
+        dataIndex: 'owner',
+        key: 'owner',
+        width: 150,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '动作',
+        dataIndex: 'action',
+        key: 'action',
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '完成条件',
+        dataIndex: 'completionCondition',
+        key: 'completionCondition',
+        render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: '边界关键',
+        dataIndex: 'boundaryCritical',
+        key: 'boundaryCritical',
+        width: 130,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+    },
+];
+
+const evaluationArtifactPreviewEvidenceAnchorColumns: ColumnsType<EvaluationArtifactPreviewEvidenceAnchor> = [
+    {
+        title: 'sourceType',
+        dataIndex: 'sourceType',
+        key: 'sourceType',
+        width: 210,
+        render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'sourceId',
+        dataIndex: 'sourceId',
+        key: 'sourceId',
+        width: 230,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceVersion',
+        dataIndex: 'sourceVersion',
+        key: 'sourceVersion',
+        width: 170,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'sourceTimestamp',
+        dataIndex: 'sourceTimestamp',
+        key: 'sourceTimestamp',
+        width: 190,
+        render: (value: string | null) => generatedAtText(value),
+    },
+    {
+        title: 'traceId',
+        dataIndex: 'traceId',
+        key: 'traceId',
+        width: 240,
+        render: (value: string | null) => optionalSafeCode(value),
+    },
+    {
+        title: 'description',
+        dataIndex: 'description',
+        key: 'description',
+        render: (value: string | null) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
+    },
+];
+
+const evaluationArtifactPreviewBucketColumns: ColumnsType<EvaluationArtifactPreviewBucketRow> = [
+    {
+        title: '来源',
+        dataIndex: 'source',
+        key: 'source',
+        width: 230,
+        render: (value: string) => <Text code>{value}</Text>,
+    },
+    {
+        title: 'Bucket',
+        dataIndex: 'bucket',
+        key: 'bucket',
+        width: 260,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'count',
+        dataIndex: 'count',
+        key: 'count',
+        width: 120,
+        render: (value: number) => <Text>{value}</Text>,
+    },
+];
+
+const evaluationArtifactPreviewItemColumns: ColumnsType<PythonEvaluationArtifactPreviewItem> = [
+    {
+        title: 'artifactPreviewId',
+        dataIndex: 'artifactPreviewId',
+        key: 'artifactPreviewId',
+        width: 280,
+        render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
+    },
+    {
+        title: 'checksumStatus',
+        dataIndex: 'checksumStatus',
+        key: 'checksumStatus',
+        width: 240,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'artifactFreshness',
+        dataIndex: 'artifactFreshness',
+        key: 'artifactFreshness',
+        width: 220,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'metricSummaryStatus',
+        dataIndex: 'metricSummaryStatus',
+        key: 'metricSummaryStatus',
+        width: 270,
+        render: (value: string) => <WorkflowStatusTag status={value}/>,
+    },
+    {
+        title: 'Schema / source',
+        key: 'schemaSource',
+        width: 320,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>schemaVersion {record.schemaVersion ? <Text code>{workbenchSafeText(record.schemaVersion)}</Text> : '无'}</Text>
+                <Text>source {record.source ? <Text code>{workbenchSafeText(record.source)}</Text> : '无'}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: '关联 id',
+        key: 'ids',
+        width: 360,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>artifactId {record.artifactId ? <Text code>{workbenchSafeText(record.artifactId)}</Text> : '无'}</Text>
+                <Text>strategyVersionId {record.strategyVersionId ? (
+                    <Text code>{workbenchSafeText(record.strategyVersionId)}</Text>
+                ) : '无'}</Text>
+                <Text>datasetId {record.datasetId ? <Text code>{workbenchSafeText(record.datasetId)}</Text> : '无'}</Text>
+                <Text>parameterSetId {record.parameterSetId ? (
+                    <Text code>{workbenchSafeText(record.parameterSetId)}</Text>
+                ) : '无'}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'Assumptions',
+        key: 'assumptions',
+        width: 300,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text>cost {optionalText(record.costAssumptionsStatus)}</Text>
+                <Text>slippage {optionalText(record.slippageAssumptionsStatus)}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'warnings / limitations',
+        key: 'diagnostics',
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Text type="secondary">warnings: {safeTextListSummary(record.validationWarnings)}</Text>
+                <Text type="secondary">limitations: {safeTextListSummary(record.limitations)}</Text>
+            </Space>
+        ),
+    },
+    {
+        title: 'readiness flags',
+        key: 'readinessFlags',
+        width: 260,
+        render: (_, record) => (
+            <Space direction="vertical" size={2}>
+                <Tag color={record.liveExecutionReady ? 'error' : 'default'}>
+                    liveExecutionReady={String(record.liveExecutionReady)}
+                </Tag>
+                <Tag color={record.pythonMlReady ? 'error' : 'default'}>
+                    pythonMlReady={String(record.pythonMlReady)}
+                </Tag>
+                <Tag color={record.pythonLiveExecutionReady ? 'error' : 'default'}>
+                    pythonLiveExecutionReady={String(record.pythonLiveExecutionReady)}
+                </Tag>
+            </Space>
+        ),
+    },
+];
+
 const incidentNextStepColumns: ColumnsType<IncidentReplayNextStep> = [
     {
         title: 'Code',
@@ -1883,6 +2148,64 @@ function evidenceMatrixRows(source: string, data?: EvidenceSourceData): Evidence
     return rows;
 }
 
+function evaluationArtifactPreviewMatrixRows(
+    overview: PythonEvaluationArtifactPreviewOverviewResponse | undefined,
+): EvidenceMatrixRow[] {
+    if (!overview) {
+        return [{
+            key: 'Python Artifact Binding Preview-overview-unknown',
+            source: 'Python Artifact Binding Preview',
+            category: 'missingEvidence',
+            code: 'EVALUATION_ARTIFACT_PREVIEW_OVERVIEW',
+            status: 'UNKNOWN',
+            message: 'Evaluation Artifact Preview overview 尚未返回；页面按 fail-closed 处理，不补造 artifact source。',
+        }];
+    }
+
+    const rows: EvidenceMatrixRow[] = [];
+    overview.blockers.forEach((blocker) => {
+        rows.push({
+            key: `Python Artifact Binding Preview-blocker-${blocker.code}-${blocker.sourceId ?? 'none'}`,
+            source: 'Python Artifact Binding Preview',
+            category: 'blockers',
+            code: workbenchSafeText(blocker.code),
+            status: workbenchSafeText(blocker.severity),
+            message: workbenchSafeText(blocker.message),
+        });
+    });
+    overview.warnings.forEach((warning) => {
+        rows.push({
+            key: `Python Artifact Binding Preview-warning-${warning.code}-${warning.sourceId ?? 'none'}`,
+            source: 'Python Artifact Binding Preview',
+            category: 'warnings',
+            code: workbenchSafeText(warning.code),
+            status: workbenchSafeText(warning.severity),
+            message: workbenchSafeText(warning.message),
+        });
+    });
+    if (evaluationArtifactPreviewIsNoFileBaseline(overview)) {
+        rows.push({
+            key: 'Python Artifact Binding Preview-no-file-baseline',
+            source: 'Python Artifact Binding Preview',
+            category: 'missingEvidence',
+            code: 'NO_ARTIFACT_SOURCE_CONFIGURED',
+            status: 'NO_FILE_BASELINE',
+            message: '当前未配置 artifact source；不读取 artifact 文件、不执行 Python、不导入 DB。',
+        });
+    }
+    overview.nextSteps.forEach((step) => {
+        rows.push({
+            key: `Python Artifact Binding Preview-next-${step.code}`,
+            source: 'Python Artifact Binding Preview',
+            category: 'nextSteps',
+            code: workbenchSafeText(step.code),
+            status: 'ACTION_REQUIRED',
+            message: workbenchSafeText(step.action),
+        });
+    });
+    return rows;
+}
+
 function StatusTag({status}: { status?: string | null }) {
     const presentation = statusPresentation(status);
     return (
@@ -2000,6 +2323,42 @@ function workflowStatusPresentation(status: string | null | undefined): {
                 label: '证据过期',
                 color: 'warning',
                 tooltip: 'STALE_EVIDENCE 表示证据新鲜度不足，需要补证据。',
+            };
+        case 'VALID':
+            return {
+                label: 'checksum 自洽，非策略有效',
+                color: 'processing',
+                tooltip: 'VALID checksum 只表示 artifact payload 与 checksum 自洽，不表示策略有效、ML ready、收益真实或交易授权。',
+            };
+        case 'INVALID':
+            return {
+                label: 'checksum 失败',
+                color: 'error',
+                tooltip: 'INVALID checksum 表示 artifact 校验失败，必须 fail-closed 展示。',
+            };
+        case 'NOT_CHECKED':
+            return {
+                label: '未检查',
+                color: 'default',
+                tooltip: 'NOT_CHECKED 表示 No-file baseline 或未配置 source，没有执行 artifact 校验。',
+            };
+        case 'PRESENT':
+            return {
+                label: '摘要存在，非收益结论',
+                color: 'processing',
+                tooltip: 'PRESENT 只表示离线 metric summary 存在，不表示真实收益、策略有效或交易授权。',
+            };
+        case 'INCOMPLETE':
+            return {
+                label: '摘要不完整',
+                color: 'warning',
+                tooltip: 'INCOMPLETE 表示 metric summary 不完整，必须按诊断风险展示。',
+            };
+        case 'FAKE_FIXTURE_ONLY':
+            return {
+                label: '测试 fixture，非真实表现',
+                color: 'warning',
+                tooltip: 'FAKE_FIXTURE_ONLY 只能解释为测试 fixture，不是真实策略表现或收益结论。',
             };
         case 'CONSISTENT':
             return {
@@ -3861,6 +4220,464 @@ function IncidentReplayReviewOverviewPanel({query}: {
     );
 }
 
+function evaluationArtifactPreviewBucketRows(
+    source: EvaluationArtifactPreviewBucketRow['source'],
+    buckets: Record<string, number> | undefined,
+): EvaluationArtifactPreviewBucketRow[] {
+    return Object.entries(buckets ?? {}).map(([bucket, count]) => ({
+        key: `${source}-${bucket}`,
+        source,
+        bucket,
+        count: numberValue(count),
+    }));
+}
+
+function hasSummaryCount(summary: Record<string, number> | undefined, ...keys: string[]): boolean {
+    return keys.some((key) => numberValue(summary?.[key]) > 0);
+}
+
+function artifactItemsHaveStatus(
+    items: PythonEvaluationArtifactPreviewItem[],
+    field: keyof Pick<PythonEvaluationArtifactPreviewItem, 'checksumStatus' | 'artifactFreshness' | 'metricSummaryStatus'>,
+    ...statuses: string[]
+): boolean {
+    const expected = new Set(statuses.map((status) => normalizeStatus(status)));
+    return items.some((item) => expected.has(normalizeStatus(item[field])));
+}
+
+function evaluationArtifactPreviewIsNoFileBaseline(overview: PythonEvaluationArtifactPreviewOverviewResponse): boolean {
+    return countValue(overview.totalArtifactPreviews) === 0
+        && overview.artifactPreviews.length === 0
+        && !overview.latestArtifactPreview
+        && overview.warnings.some((warning) => normalizeStatus(warning.code) === 'NO_ARTIFACT_SOURCE_CONFIGURED');
+}
+
+function evaluationArtifactPreviewHasChecksumMissing(overview: PythonEvaluationArtifactPreviewOverviewResponse): boolean {
+    return hasSummaryCount(overview.checksumSummary, 'MISSING')
+        || artifactItemsHaveStatus(overview.artifactPreviews, 'checksumStatus', 'MISSING');
+}
+
+function evaluationArtifactPreviewHasChecksumFailed(overview: PythonEvaluationArtifactPreviewOverviewResponse): boolean {
+    return countValue(overview.checksumFailedCount) > 0
+        || hasSummaryCount(overview.checksumSummary, 'INVALID')
+        || artifactItemsHaveStatus(overview.artifactPreviews, 'checksumStatus', 'INVALID');
+}
+
+function evaluationArtifactPreviewHasFakeFixture(overview: PythonEvaluationArtifactPreviewOverviewResponse): boolean {
+    return hasSummaryCount(overview.metricSummaryCoverage, 'FAKE_FIXTURE_ONLY')
+        || artifactItemsHaveStatus(overview.artifactPreviews, 'metricSummaryStatus', 'FAKE_FIXTURE_ONLY')
+        || overview.warnings.some((warning) => normalizeStatus(warning.code).includes('FAKE_FIXTURE'));
+}
+
+function evaluationArtifactPreviewHasStaleArtifact(overview: PythonEvaluationArtifactPreviewOverviewResponse): boolean {
+    return countValue(overview.staleArtifactCount) > 0
+        || artifactItemsHaveStatus(overview.artifactPreviews, 'artifactFreshness', 'STALE');
+}
+
+function evaluationArtifactPreviewHasUnknown(overview: PythonEvaluationArtifactPreviewOverviewResponse): boolean {
+    return hasSummaryCount(overview.checksumSummary, 'UNKNOWN')
+        || hasSummaryCount(overview.metricSummaryCoverage, 'UNKNOWN')
+        || artifactItemsHaveStatus(overview.artifactPreviews, 'checksumStatus', 'UNKNOWN')
+        || artifactItemsHaveStatus(overview.artifactPreviews, 'artifactFreshness', 'UNKNOWN')
+        || artifactItemsHaveStatus(overview.artifactPreviews, 'metricSummaryStatus', 'UNKNOWN');
+}
+
+function resolveEvaluationArtifactPreviewState(
+    overview: PythonEvaluationArtifactPreviewOverviewResponse,
+): OverviewPanelState {
+    if (evaluationArtifactPreviewHasChecksumFailed(overview)) {
+        return {
+            level: 'error',
+            message: 'Evaluation Artifact Preview checksum failed',
+            description: 'checksum invalid / failed 只能解释为 artifact 校验失败，必须 fail-closed；VALID checksum 也不代表策略有效、ML ready 或交易授权。',
+        };
+    }
+    if (evaluationArtifactPreviewIsNoFileBaseline(overview)) {
+        return {
+            level: 'warning',
+            message: '当前未配置 artifact source',
+            description: 'GateT-4 当前是 No-file baseline：不读取 artifact 文件或 manifest，不接受路径或上传，不执行 Python，不导入 DB。',
+        };
+    }
+    if (evaluationArtifactPreviewHasChecksumMissing(overview)) {
+        return {
+            level: 'warning',
+            message: 'Evaluation Artifact Preview checksum missing',
+            description: 'checksum missing 表示没有足够完整性证据，页面不会把 artifact 显示为有效、可发布或可执行。',
+        };
+    }
+    if (evaluationArtifactPreviewHasFakeFixture(overview)) {
+        return {
+            level: 'warning',
+            message: 'Evaluation Artifact Preview 包含 fake fixture',
+            description: 'FAKE_FIXTURE_ONLY 只表示测试 fixture，不是真实策略表现、真实收益或 live execution readiness。',
+        };
+    }
+    if (evaluationArtifactPreviewHasStaleArtifact(overview)) {
+        return {
+            level: 'warning',
+            message: 'Evaluation Artifact Preview 存在 stale artifact',
+            description: 'STALE 只表示 artifact freshness 不足，必须补齐受控来源后复核，不能显示为 ready。',
+        };
+    }
+    if (evaluationArtifactPreviewHasUnknown(overview)) {
+        return {
+            level: 'warning',
+            message: 'Evaluation Artifact Preview 存在 unknown fail-closed 状态',
+            description: 'UNKNOWN / NOT_CHECKED 说明当前无法确认 schema、checksum 或 metric 覆盖，页面按 fail-closed 处理。',
+        };
+    }
+    return {
+        level: 'info',
+        message: 'Evaluation Artifact Preview 已加载',
+        description: '当前结果只用于 Python offline artifact 诊断预览，不表示 ML ready、live execution ready、交易授权或真实收益。',
+    };
+}
+
+function EvaluationArtifactPreviewBoundaryBadges({overview}: {
+    overview?: PythonEvaluationArtifactPreviewOverviewResponse
+}) {
+    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    return (
+        <Space size={[8, 8]} wrap>
+            <BoundaryBadge
+                color="error"
+                label="LIVE DISABLED（LIVE 关闭）"
+                tooltip={`liveDisabled=true；artifact preview 不表示 LIVE 可用${pending}`}
+            />
+            <BoundaryBadge
+                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
+                tooltip={`realProviderImplemented=false；本 overview 不调用真实 provider${pending}`}
+            />
+            <BoundaryBadge
+                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
+                tooltip={`privateTradingImplemented=false；本 overview 不提供下单、撤单、转账或提现入口${pending}`}
+            />
+            <BoundaryBadge
+                color="warning"
+                label="Python artifact preview is diagnostic only（Python artifact preview 仅诊断）"
+                tooltip={`diagnosticOnly=true；preview items 是离线诊断材料预览，不导入、不执行、不持久化${pending}`}
+            />
+            <BoundaryBadge
+                color="error"
+                label="Not trading authorization（非交易授权）"
+                tooltip={`notTradingAuthorization=true；VALID checksum、metric summary 或 artifact preview 都不能解释为交易授权${pending}`}
+            />
+            <BoundaryBadge
+                label="Python ML ready NO（Python ML ready 否）"
+                tooltip={`pythonMlReady=false；不表示 Python ML ready${pending}`}
+            />
+            <BoundaryBadge
+                label="Python live execution ready NO（Python live execution ready 否）"
+                tooltip={`pythonLiveExecutionReady=false；不表示 Python live execution ready${pending}`}
+            />
+            <BoundaryBadge
+                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
+                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+            />
+        </Space>
+    );
+}
+
+function EvaluationArtifactPreviewBoundaryDriftAlert({overview}: {
+    overview?: PythonEvaluationArtifactPreviewOverviewResponse
+}) {
+    if (!overview) {
+        return null;
+    }
+    const overviewDrift = !overview.diagnosticOnly
+        || !overview.noSideEffect
+        || !overview.notTradingAuthorization
+        || !overview.liveDisabled
+        || overview.realProviderImplemented
+        || overview.privateTradingImplemented
+        || overview.aiDhRuntimeIntegrated
+        || overview.pythonMlReady
+        || overview.pythonLiveExecutionReady;
+    const itemDrift = overview.artifactPreviews.some((item) => !item.diagnosticOnly
+        || !item.noSideEffect
+        || !item.notTradingAuthorization
+        || item.liveExecutionReady
+        || item.pythonMlReady
+        || item.pythonLiveExecutionReady);
+
+    return overviewDrift || itemDrift ? (
+        <Alert
+            type="error"
+            showIcon
+            message="Evaluation Artifact Preview boundary flags 与当前安全基线不一致"
+            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成 ML ready、live execution ready、交易授权、可执行或实盘可用。"
+        />
+    ) : null;
+}
+
+function EvaluationArtifactPreviewCounts({overview}: {
+    overview?: PythonEvaluationArtifactPreviewOverviewResponse
+}) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+            <Descriptions.Item label="totalArtifactPreviews">{countValue(overview?.totalArtifactPreviews)}</Descriptions.Item>
+            <Descriptions.Item label="validArtifactCount">{countValue(overview?.validArtifactCount)}</Descriptions.Item>
+            <Descriptions.Item label="invalidArtifactCount">{countValue(overview?.invalidArtifactCount)}</Descriptions.Item>
+            <Descriptions.Item label="staleArtifactCount">{countValue(overview?.staleArtifactCount)}</Descriptions.Item>
+            <Descriptions.Item label="checksumFailedCount">{countValue(overview?.checksumFailedCount)}</Descriptions.Item>
+            <Descriptions.Item label="generatedAt">{generatedAtText(overview?.generatedAt)}</Descriptions.Item>
+            <Descriptions.Item label="traceId">{optionalSafeCode(overview?.traceId)}</Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function EvaluationArtifactPreviewReadinessFlags({overview}: {
+    overview?: PythonEvaluationArtifactPreviewOverviewResponse
+}) {
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+            <Descriptions.Item label="diagnosticOnly">
+                <Tag color={overview?.diagnosticOnly === false ? 'error' : 'default'}>
+                    {String(Boolean(overview?.diagnosticOnly))}（只读诊断）
+                </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="noSideEffect">
+                <Tag color={overview?.noSideEffect === false ? 'error' : 'default'}>
+                    {String(Boolean(overview?.noSideEffect))}（无副作用）
+                </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="notTradingAuthorization">
+                <Tag color={overview?.notTradingAuthorization === false ? 'error' : 'default'}>
+                    {String(Boolean(overview?.notTradingAuthorization))}（非交易授权）
+                </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="liveDisabled">
+                <Tag color={overview?.liveDisabled === false ? 'error' : 'default'}>
+                    {String(Boolean(overview?.liveDisabled))}（LIVE 关闭）
+                </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="pythonMlReady">
+                <Tag color={overview?.pythonMlReady ? 'error' : 'default'}>
+                    {String(Boolean(overview?.pythonMlReady))}（Python ML ready NO）
+                </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="pythonLiveExecutionReady">
+                <Tag color={overview?.pythonLiveExecutionReady ? 'error' : 'default'}>
+                    {String(Boolean(overview?.pythonLiveExecutionReady))}（Python live execution ready NO）
+                </Tag>
+            </Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function EvaluationArtifactPreviewLatestItem({item}: {
+    item?: PythonEvaluationArtifactPreviewItem | null
+}) {
+    if (!item) {
+        return <Empty description="当前未配置 artifact source；No-file baseline 不读取 artifact 文件、不执行 Python、不导入 DB。"/>;
+    }
+    return (
+        <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
+            <Descriptions.Item label="latestArtifactPreview.checksumStatus">
+                <WorkflowStatusTag status={item.checksumStatus}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="latestArtifactPreview.artifactFreshness">
+                <WorkflowStatusTag status={item.artifactFreshness}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="latestArtifactPreview.metricSummaryStatus">
+                <WorkflowStatusTag status={item.metricSummaryStatus}/>
+            </Descriptions.Item>
+            <Descriptions.Item label="artifactPreviewId">{optionalSafeCode(item.artifactPreviewId)}</Descriptions.Item>
+            <Descriptions.Item label="artifactId">{optionalSafeCode(item.artifactId)}</Descriptions.Item>
+            <Descriptions.Item label="strategyVersionId">{optionalSafeCode(item.strategyVersionId)}</Descriptions.Item>
+            <Descriptions.Item label="datasetId">{optionalSafeCode(item.datasetId)}</Descriptions.Item>
+            <Descriptions.Item label="parameterSetId">{optionalSafeCode(item.parameterSetId)}</Descriptions.Item>
+            <Descriptions.Item label="schemaVersion">{optionalSafeCode(item.schemaVersion)}</Descriptions.Item>
+            <Descriptions.Item label="source">{optionalSafeCode(item.source)}</Descriptions.Item>
+            <Descriptions.Item label="latestArtifactPreview.traceId">{optionalSafeCode(item.traceId)}</Descriptions.Item>
+            <Descriptions.Item label="latestArtifactPreview.generatedAt">{generatedAtText(item.generatedAt)}</Descriptions.Item>
+        </Descriptions>
+    );
+}
+
+function EvaluationArtifactPreviewIssueTables({
+                                                  blockers,
+                                                  warnings,
+                                              }: {
+    blockers: EvaluationArtifactPreviewBlocker[];
+    warnings: EvaluationArtifactPreviewWarning[];
+}) {
+    return (
+        <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <div>
+                <Text strong>Blockers（阻断项）</Text>
+                <Table<EvaluationArtifactPreviewBlocker>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={evaluationArtifactPreviewIssueColumns}
+                    dataSource={blockers}
+                    pagination={false}
+                    scroll={{x: 960}}
+                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                />
+            </div>
+            <div>
+                <Text strong>Warnings（警告项）</Text>
+                <Table<EvaluationArtifactPreviewWarning>
+                    size="small"
+                    rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
+                    columns={evaluationArtifactPreviewIssueColumns}
+                    dataSource={warnings}
+                    pagination={false}
+                    scroll={{x: 960}}
+                    locale={{emptyText: '暂无 warnings；不能解释为 artifact source 已配置或 Python 可执行。'}}
+                />
+            </div>
+        </Space>
+    );
+}
+
+function EvaluationArtifactPreviewOverviewPanel({query}: {
+    query: PanelQueryState<PythonEvaluationArtifactPreviewOverviewResponse>
+}) {
+    const overview = query.data;
+    const panelState = overview ? resolveEvaluationArtifactPreviewState(overview) : null;
+    const bucketRows = overview ? [
+        ...evaluationArtifactPreviewBucketRows('schemaVersionSummary', overview.schemaVersionSummary),
+        ...evaluationArtifactPreviewBucketRows('checksumSummary', overview.checksumSummary),
+        ...evaluationArtifactPreviewBucketRows('metricSummaryCoverage', overview.metricSummaryCoverage),
+    ] : [];
+
+    return (
+        <Card
+            className="page-section"
+            variant="borderless"
+            title="Python Evaluation Artifact Preview（No-file baseline）"
+        >
+            <Space data-testid="evaluation-artifact-preview-overview-panel" direction="vertical" size={12}
+                   style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    只读消费 GET /api/strategy-validation/evaluation-artifacts/preview/overview；展示 No-file
+                    baseline、artifact preview counts、schema / checksum / metric coverage、warnings /
+                    nextSteps、evidenceAnchors 与 traceId，不新增 route、上传、导入、文件路径输入、Python 执行、
+                    review 写侧或交易入口。
+                </Paragraph>
+                <Alert
+                    type="info"
+                    showIcon
+                    message="文案边界"
+                    description="页面颜色只表示诊断状态，success 不表示盈利，danger 不表示下跌；VALID checksum 只表示 payload integrity，不表示策略有效；metricSummary 不表示真实收益；FAKE_FIXTURE_ONLY 是测试 fixture，不是真实策略表现；pythonMlReady=false 与 pythonLiveExecutionReady=false 必须保持可见。"
+                />
+                <EvaluationArtifactPreviewBoundaryBadges overview={overview}/>
+                <EvaluationArtifactPreviewBoundaryDriftAlert overview={overview}/>
+                <EvaluationArtifactPreviewCounts overview={overview}/>
+                <EvaluationArtifactPreviewReadinessFlags overview={overview}/>
+                {query.isLoading ? (
+                    <Skeleton active paragraph={{rows: 8}}/>
+                ) : query.isError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="Evaluation Artifact Preview overview 查询失败"
+                        description={(
+                            <Paragraph style={{marginBottom: 0}}>
+                                artifact preview overview 失败时按不可用处理，不会显示为 artifact source 已配置、
+                                Python 可执行、ML ready、live execution ready、授权或可交易。
+                                {formatApiError(query.error as AppApiError)}
+                            </Paragraph>
+                        )}
+                    />
+                ) : !overview ? (
+                    <Empty description="暂无 Evaluation Artifact Preview overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                ) : (
+                    <>
+                        {panelState ? (
+                            <Alert
+                                type={panelState.level}
+                                showIcon
+                                message={panelState.message}
+                                description={panelState.description}
+                            />
+                        ) : null}
+                        {evaluationArtifactPreviewHasChecksumMissing(overview) ? (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                message="checksum missing"
+                                description="checksum 缺失不能显示为 artifact valid、策略有效、ML ready 或交易授权。"
+                            />
+                        ) : null}
+                        {evaluationArtifactPreviewHasChecksumFailed(overview) ? (
+                            <Alert
+                                type="error"
+                                showIcon
+                                message="checksum invalid / failed"
+                                description="checksum 失败必须 fail-closed；页面不会允许继续上传、导入、执行或交易。"
+                            />
+                        ) : null}
+                        {evaluationArtifactPreviewHasFakeFixture(overview) ? (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                message="FAKE_FIXTURE_ONLY"
+                                description="FAKE_FIXTURE_ONLY 只表示测试 fixture，不是真实策略表现、真实收益或 live execution readiness。"
+                            />
+                        ) : null}
+                        {evaluationArtifactPreviewHasUnknown(overview) ? (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                message="unknown fail-closed"
+                                description="UNKNOWN / NOT_CHECKED 表示当前无法确认 source、checksum 或 metric 覆盖；页面按 fail-closed 展示。"
+                            />
+                        ) : null}
+                        <EvaluationArtifactPreviewLatestItem item={overview.latestArtifactPreview}/>
+                        <div>
+                            <Text strong>Schema / checksum / metric coverage（覆盖摘要）</Text>
+                            <Table<EvaluationArtifactPreviewBucketRow>
+                                size="small"
+                                rowKey={(record) => record.key}
+                                columns={evaluationArtifactPreviewBucketColumns}
+                                dataSource={bucketRows}
+                                pagination={false}
+                                scroll={{x: 640}}
+                                locale={{emptyText: '暂无 coverage summary；不能补造 schema / checksum / metric 状态。'}}
+                            />
+                        </div>
+                        <EvaluationArtifactPreviewIssueTables
+                            blockers={overview.blockers}
+                            warnings={overview.warnings}
+                        />
+                        <Table<EvaluationArtifactPreviewNextStep>
+                            size="small"
+                            rowKey={(record) => record.code}
+                            columns={evaluationArtifactPreviewNextStepColumns}
+                            dataSource={overview.nextSteps}
+                            pagination={false}
+                            scroll={{x: 1040}}
+                            locale={{emptyText: '暂无 nextSteps；不能解释为 artifact source 已配置、Python 可执行或已完成。'}}
+                        />
+                        <Table<EvaluationArtifactPreviewEvidenceAnchor>
+                            size="small"
+                            rowKey={(record) => `${record.sourceType}-${record.sourceId ?? 'none'}-${record.traceId ?? 'none'}`}
+                            columns={evaluationArtifactPreviewEvidenceAnchorColumns}
+                            dataSource={overview.evidenceAnchors}
+                            pagination={false}
+                            scroll={{x: 1190}}
+                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                        />
+                        <Table<PythonEvaluationArtifactPreviewItem>
+                            size="small"
+                            rowKey={(record) => record.artifactPreviewId}
+                            columns={evaluationArtifactPreviewItemColumns}
+                            dataSource={overview.artifactPreviews}
+                            pagination={false}
+                            scroll={{x: 2300}}
+                            locale={{emptyText: 'No-file baseline：当前未配置 artifact source，不读取 artifact 文件、不执行 Python、不导入 DB。'}}
+                        />
+                    </>
+                )}
+            </Space>
+        </Card>
+    );
+}
+
 function normalizeIncidentSeverity(severity: IncidentReplaySeverity | null | undefined): string {
     return normalizeStatus(severity);
 }
@@ -4557,13 +5374,18 @@ function TraceabilityChain({
                                gate,
                                comparison,
                                preview,
+                               artifactPreview,
                            }: {
     submittedQuery: StrategyValidationQuery | null;
     gate?: StrategyEvaluationGateResponse;
     comparison?: PaperShadowComparisonResponse;
     preview?: ShadowLivePreviewResponse;
+    artifactPreview?: PythonEvaluationArtifactPreviewOverviewResponse;
 }) {
     const scope = firstScope(submittedQuery, gate, comparison, preview);
+    const artifactPreviewStatus = artifactPreview
+        ? evaluationArtifactPreviewIsNoFileBaseline(artifactPreview) ? 'NO_ARTIFACT_SOURCE_CONFIGURED' : 'DIAGNOSTIC_ONLY'
+        : 'UNKNOWN';
     const items: LifecycleTraceItem[] = [
         {
             key: 'strategyVersion',
@@ -4624,10 +5446,10 @@ function TraceabilityChain({
         {
             key: 'pythonArtifactBindingPreview',
             label: 'Python Artifact Binding Preview',
-            value: 'NOT_CONNECTED',
-            status: 'PENDING_FRONTEND_SUPPORT',
-            source: 'GateQ-4 POST API 已存在；本页不调用',
-            detail: '当前页面未接入 artifact JSON 请求 UI；仅展示只读追溯占位，不上传、不导入、不写 Java fact-source。',
+            value: artifactPreview?.traceId ?? 'NO_FILE_BASELINE',
+            status: artifactPreviewStatus,
+            source: 'GateT-4 GET /api/strategy-validation/evaluation-artifacts/preview/overview',
+            detail: '当前页面只消费 No-file baseline overview；不读取 artifact 文件、不上传、不导入、不执行 Python、不写 Java fact-source。',
         },
     ];
 
@@ -4663,33 +5485,20 @@ function EvidenceMatrix({
                             gate,
                             comparison,
                             preview,
+                            artifactPreview,
                         }: {
     submittedQuery: StrategyValidationQuery | null;
     gate?: StrategyEvaluationGateResponse;
     comparison?: PaperShadowComparisonResponse;
     preview?: ShadowLivePreviewResponse;
+    artifactPreview?: PythonEvaluationArtifactPreviewOverviewResponse;
 }) {
     const rows = useMemo(() => [
         ...evidenceMatrixRows('Evaluation Gate', gate),
         ...evidenceMatrixRows('Paper / Shadow Comparison', comparison),
         ...evidenceMatrixRows('Shadow Live Preview', preview),
-        {
-            key: 'Python Artifact Binding Preview-front-end-support',
-            source: 'Python Artifact Binding Preview',
-            category: 'missingEvidence' as const,
-            code: 'PENDING_FRONTEND_SUPPORT',
-            status: 'PENDING_FRONTEND_SUPPORT',
-            message: 'GateQ-4 binding preview API 已存在，但本页未接入 artifact request UI；本轮不补后端、不上传、不导入。',
-        },
-        {
-            key: 'Python Artifact Binding Preview-next-step',
-            source: 'Python Artifact Binding Preview',
-            category: 'nextSteps' as const,
-            code: 'NEXT_STEP_1',
-            status: 'ACTION_REQUIRED',
-            message: '后续如需 artifact binding 前端能力，必须单独授权只读 request-body preview UI。',
-        },
-    ], [gate, comparison, preview]);
+        ...evaluationArtifactPreviewMatrixRows(artifactPreview),
+    ], [gate, comparison, preview, artifactPreview]);
 
     return (
         <Card className="page-section" variant="borderless" title="Evidence Matrix / 证据矩阵">
@@ -4779,6 +5588,7 @@ export function StrategyValidationPage() {
     const overviewQuery = useStrategyValidationOverview();
     const shadowValidationWorkflowQuery = useShadowValidationWorkflowOverview();
     const consistencyEvidenceQuery = useConsistencyEvidenceOverview();
+    const evaluationArtifactPreviewQuery = useEvaluationArtifactPreviewOverview();
     const incidentReplayReviewQuery = useIncidentReplayReviewOverview();
     const incidentReplayQuery = useIncidentReplayOverview();
     const shadowOverviewQuery = useShadowRunOverview();
@@ -4793,6 +5603,7 @@ export function StrategyValidationPage() {
     const loading = overviewQuery.isFetching
         || shadowValidationWorkflowQuery.isFetching
         || consistencyEvidenceQuery.isFetching
+        || evaluationArtifactPreviewQuery.isFetching
         || incidentReplayReviewQuery.isFetching
         || incidentReplayQuery.isFetching
         || shadowOverviewQuery.isFetching
@@ -4825,6 +5636,7 @@ export function StrategyValidationPage() {
             <StrategyValidationOverviewPanel query={overviewQuery}/>
             <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>
             <ConsistencyEvidenceOverviewPanel query={consistencyEvidenceQuery}/>
+            <EvaluationArtifactPreviewOverviewPanel query={evaluationArtifactPreviewQuery}/>
             <IncidentReplayReviewOverviewPanel query={incidentReplayReviewQuery}/>
             <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
             <StrategyValidationShadowWorkbench
@@ -4843,12 +5655,14 @@ export function StrategyValidationPage() {
                 gate={evaluationGateQuery.data}
                 comparison={paperShadowQuery.data}
                 preview={shadowLivePreviewQuery.data}
+                artifactPreview={evaluationArtifactPreviewQuery.data}
             />
             <EvidenceMatrix
                 submittedQuery={submittedQuery}
                 gate={evaluationGateQuery.data}
                 comparison={paperShadowQuery.data}
                 preview={shadowLivePreviewQuery.data}
+                artifactPreview={evaluationArtifactPreviewQuery.data}
             />
             <EvaluationGatePanel submitted={Boolean(submittedQuery)} query={evaluationGateQuery}/>
             <PaperShadowPanel submitted={Boolean(submittedQuery)} query={paperShadowQuery}/>
