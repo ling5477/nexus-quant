@@ -12,7 +12,7 @@
 - GateS-0..6：`COMPLETED`（已完成）。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive pointer：[../gates/gate-r/README.md](../gates/gate-r/README.md)。
 - GateQ / GateP / GateO 及更早 Gate：只作为历史证据读取，入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：NQ-GATET-6-RUNTIME-SCHEDULING-READINESS-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-FREEZE-READINESS-REVIEW 已进入 `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：[GATET_PLAN.md](GATET_PLAN.md)，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 - GateT-1 work order：[GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -29,6 +29,7 @@
 - GateT-5 work order：[GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md)，定义现有 `/strategies/validation` 页面内 Validation Operations Workbench 的信息架构、组件边界、API 消费矩阵、状态语义和测试计划。
 - GateT-5 frontend implementation：现有 `/strategies/validation` 页面已新增本地 `ValidationOperationsWorkbench`，整合 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections；不新增 route、API、migration、上传 / 导入 / 文件路径输入、Python 执行、写侧操作或交易入口。
 - GateT-6 work order：[GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md](GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md)，选择 `Readiness-review only`；只定义 runtime scheduling readiness、no-side-effect scheduling boundary、read-only refresh candidate matrix 和测试计划，不实现 scheduler / runner / runtime / API / migration / frontend / Python / CI。
+- GateT freeze readiness review：[GATET_FREEZE_READINESS_REVIEW.md](GATET_FREEZE_READINESS_REVIEW.md)，结论为 `READY FOR FREEZE CLOSEOUT`；只表示可进入后续 freeze closeout，不表示 GateT 已冻结、已接受或已打 tag。
 
 ## Current Authority
 
@@ -41,6 +42,7 @@
 | GateT-4 Python Evaluation Artifact Binding Preview backend / frontend overview | [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md), [API.md](API.md), [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md) |
 | GateT-5 Validation Operations Workbench work order / frontend implementation | [GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md) |
 | GateT-6 Runtime Scheduling Readiness work order | [GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md](GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
+| GateT freeze readiness review | [GATET_FREEZE_READINESS_REVIEW.md](GATET_FREEZE_READINESS_REVIEW.md), [STATUS.md](STATUS.md), [TESTING.md](TESTING.md), [WORKLOG.md](WORKLOG.md), [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |
 | 当前状态 | [STATUS.md](STATUS.md) |
 | 当前路线 | [ROADMAP.md](ROADMAP.md) |
 | 当前事实源优先级 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) |

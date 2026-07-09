@@ -15,7 +15,7 @@
 - GateS-6：`COMPLETED`（已完成），Incident / Replay overview backend + frontend。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- 当前阶段：NQ-GATET-6-RUNTIME-SCHEDULING-READINESS-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-FREEZE-READINESS-REVIEW 已进入 `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_PLAN.md`。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -32,6 +32,7 @@
 - GateT-5 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`；定义现有 `/strategies/validation` 页面内 Workbench 整合计划。
 - GateT-5 frontend implementation：现有 `/strategies/validation` 页面已新增本地 `ValidationOperationsWorkbench`，整合 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections；不新增 route、API、migration、上传 / 导入 / 文件路径输入、Python 执行、review / acknowledge / approve / reject / escalate / closeout 写侧操作或交易入口。
 - GateT-6 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 `docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`；选择 `Readiness-review only`，只定义 runtime scheduling readiness、no-side-effect scheduling boundary、read-only refresh candidate matrix 和测试计划，不实现 scheduler / runner / runtime / API / migration / frontend / Python / CI。
+- GateT freeze readiness review：`READY FOR FREEZE CLOSEOUT`（可进入冻结收口），入口为 `docs/current/GATET_FREEZE_READINESS_REVIEW.md`；只表示 GateT 可以进入后续 freeze closeout，不表示 GateT 已冻结、已接受或已打 tag。
 
 ## 2. GateS Freeze Closeout Evidence
 
@@ -204,3 +205,12 @@
 - API / DTO / DB / frontend / Python decision：本轮均不新增、不修改、不执行；现有 `/strategies/validation` Workbench 的手动 TanStack Query refetch 已足够作为当前只读刷新事实源。
 - LIVE / real provider / AI / DH decision：LIVE remains `DISABLED`（禁用）；RealClient、real provider、private trading adapter、real permission probe 仍为 `NOT IMPLEMENTED`（未实现）；AI `NOT STARTED`（未启动）；DH runtime `NOT INTEGRATED`（未集成）。
 - 下一步只能是提交前复核、stage、commit，或后续另起 GateT close review / freeze readiness；不得直接进入 scheduler / runner / runtime / API / migration / frontend / Python / AI-DH runtime 或真实交易路径。
+
+## 17. GateT Freeze Readiness Review Decision
+
+- GateT freeze readiness review 主线目标：审查 GateT-0 到 GateT-6 的代码、测试、文档、CI、no-live、no-real、no-trading、no-AI/DH-runtime 边界是否一致。
+- Review verdict：`READY FOR FREEZE CLOSEOUT`（可进入冻结收口）。
+- CI evidence：GitHub Actions `NQ CI Baseline` run `29008010089` 为 `success`（成功），`headSha=09cbc758f4c0a02d32ddd405b7db7edde2f4b707`，等于当前 `HEAD`。
+- Tag evidence：`nq-gates-freeze` 存在；`nq-gatet-freeze` 不存在。
+- Boundary decision：GateT 仍不是 `FROZEN`（已冻结）、`ACCEPTED`（已接受）或 `TAGGED`（已打 tag）；本 review 不创建 tag、不启动 GateU、不新增 API / migration / runtime / frontend / Python / CI。
+- 下一步只能是提交前复核、stage、commit，或另起 GateT freeze closeout；不得直接把 GateT 写成 FROZEN / ACCEPTED / TAGGED。

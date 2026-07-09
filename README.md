@@ -13,7 +13,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gateq-freeze`；归档入口：`docs/gates/gate-q/README.md`。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gatep-freeze`；归档入口：`docs/gates/gate-p/README.md`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
-- 当前阶段：NQ-GATET-6-RUNTIME-SCHEDULING-READINESS-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-FREEZE-READINESS-REVIEW 已进入 `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）。GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：`docs/current/GATET_PLAN.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 - GateT-1 work order：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -29,6 +29,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateT-5 work order：`docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`，定义现有 `/strategies/validation` 页面内 Validation Operations Workbench 的信息架构、组件边界、API 消费矩阵、状态语义和测试计划。
 - GateT-5 frontend implementation：现有 `/strategies/validation` 页面已新增本地 `ValidationOperationsWorkbench`，整合 top summary、evidence matrix、operator queue preview、boundary strip 和 detail sections；不新增 route、API、migration、上传 / 导入 / 文件路径输入、Python 执行、写侧操作或交易入口。
 - GateT-6 work order：`docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`，选择 `Readiness-review only`；只定义 runtime scheduling readiness、no-side-effect scheduling boundary、read-only refresh candidate matrix 和测试计划，不实现 scheduler / runner / runtime / API / migration / frontend / Python / CI。
+- GateT freeze readiness review：`docs/current/GATET_FREEZE_READINESS_REVIEW.md`，结论为 `READY FOR FREEZE CLOSEOUT`；只表示可进入后续 freeze closeout，不表示 GateT 已冻结、已接受或已打 tag。
 
 ## Current Docs
 
@@ -40,6 +41,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`：GateT-4 Python Evaluation Artifact read-only binding preview work order；选择 No-file baseline 和候选 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`。
 - `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`：GateT-5 Validation Operations Workbench work order；选择在现有 `/strategies/validation` 页面内做局部 Workbench component，不新增 route / API / migration。
 - `docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`：GateT-6 Runtime Scheduling Readiness Review work order；选择 readiness-review only，不启动 scheduler / runner，不新增 API / DB / frontend / Python runtime。
+- `docs/current/GATET_FREEZE_READINESS_REVIEW.md`：GateT freeze readiness review；建立 GateT-0 到 GateT-6 evidence matrix，结论为可进入后续 freeze closeout。
 - `docs/current/STATUS.md`：当前状态摘要。
 - `docs/current/ROADMAP.md`：当前路线与 GateT 边界。
 - `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateS 归档指针。
