@@ -1,3 +1,48 @@
+## NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只实现 GateT-4 Python Evaluation Artifact binding preview 的 Java 后端 No-file baseline。
+  - 修改范围限定为 nq-api GET-only Controller / DTO / controller test、nq-core read model / query service / enum / service test，以及允许的 current docs / README。
+  - 未修改 frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files 或 CI workflow。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git fetch origin dev --tags: PASS.
+  - git log --oneline -20: latest commit is 285ea33a docs(gatet): define python evaluation artifact binding preview work order.
+  - git rev-parse HEAD: 285ea33aefbea5618705f9996b4a6bd226029394.
+  - git rev-parse origin/dev: 285ea33aefbea5618705f9996b4a6bd226029394.
+  - latest GitHub Actions: NQ CI Baseline run 28992672356 completed success, headSha=285ea33aefbea5618705f9996b4a6bd226029394.
+  - GateT-4 Work Order commit is pushed because HEAD equals origin/dev and latest CI headSha equals HEAD.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+
+Validation commands:
+  - mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test
+  - result: PASS / BUILD SUCCESS（通过 / 构建成功）；新增 PythonEvaluationArtifactPreviewOverviewControllerTest 2 tests 和 PythonEvaluationArtifactPreviewOverviewQueryServiceTest 5 tests 已纳入目标模块验证。
+
+Known warnings:
+  - Maven settings.xml unrecognised tag warning、SLF4J no provider warning、Mockito dynamic agent warning、部分既有 unchecked warning 仍存在；未导致失败，本轮未新增测试依赖或 logging 配置。
+  - 既有 live diagnostic / Postgres smoke 类 skip 保持原状；未写成 GateT-4 阻塞。
+
+What was not run:
+  - Frontend build / Playwright / E2E were not run because this task did not modify frontend code, route, client, hook, page or package / lock files.
+  - Python pytest / mypy / ruff were not run because this task explicitly did not modify research/py code or tests and did not execute Python.
+  - GitHub CI was not triggered by this implementation turn; preflight verified latest CI for previous clean HEAD only.
+  - No real exchange HTTP / WebSocket, credential read, backtest, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Endpoint only adds `GET /api/strategy-validation/evaluation-artifacts/preview/overview`; no POST / PUT / PATCH / DELETE.
+  - No-file baseline returns `totalArtifactPreviews=0`, empty `artifactPreviews`, null latest item, `NO_ARTIFACT_SOURCE_CONFIGURED` warning, and Manifest-only / schema review as a future separate task.
+  - Service only derives safe overview from fixed boundaries and Clock; it does not read artifact files, manifest, arbitrary paths, upload files, network resources, DB artifact catalog, credential, account, live order, ledger or private trading tables.
+  - No migration, frontend, Python, CI workflow, runner, scheduler, adapter call, real exchange call, credential file read, account / order / ledger mutation or trading authorization was introduced.
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；Integration-1 runtime remains NOT STARTED。
+
+Blocking status:
+  - Non-blocking. Ready for final diff / forbidden-area / staged checks.
+```
+
 ## NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-WO validation（2026-07-09）
 
 ```text

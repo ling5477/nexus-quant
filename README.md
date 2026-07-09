@@ -13,7 +13,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateQ：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gateq-freeze`；归档入口：`docs/gates/gate-q/README.md`。
 - GateP：`FROZEN / ACCEPTED / TAGGED / ARCHIVED`（已冻结 / 已接受 / 已打 tag / 已归档）；release tag：`nq-gatep-freeze`；归档入口：`docs/gates/gate-p/README.md`。
 - GateO 及更早 Gate：以 `docs/gates/**` 或 `docs/archive/**` 作为历史证据。
-- 当前阶段：NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-WO 已进入 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。GateT 尚未 freeze、accepted 或 tagged。
+- 当前阶段：NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION 已进入 `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。GateT 尚未 freeze、accepted 或 tagged。
 - GateT-0 planning：`docs/current/GATET_PLAN.md`，状态为 `PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核）。
 - GateT-1 work order：`docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`，状态为 `PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现）。
 - GateT-1 implementation：`GET /api/shadow-validation/workflow/overview` 后端 read model 已实现；只派生 derived / deterministic operator items，不持久化、不新增 migration、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权。
@@ -24,6 +24,7 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - GateT-3 implementation：`GET /api/incidents/replay/review/overview` 后端 read model 已实现；只派生 deterministic review items，不持久化、不新增 migration、不创建 review / acknowledge / escalation / closeout / incident / alert / replay 记录、不启动 runner / scheduler、不调用真实交易所、不读取 credential、不表示交易授权或真实 incident 已关闭。
 - GateT-3 frontend overview：现有 `/strategies/validation` 页面已最小只读消费 `GET /api/incidents/replay/review/overview`，展示 review counts、latestReviewItem、reviewItems、severityBuckets、freshnessSummary、blockers / warnings / nextSteps、evidenceAnchors、traceId 和固定安全边界 badges；不新增 route、写侧 client、交易按钮或真实交易入口。
 - GateT-4 work order：`docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`，定义 Python Evaluation Artifact read-only binding preview 的 No-file baseline、候选 endpoint、DTO、source / reader 边界、校验语义和测试计划；不实现 endpoint、不新增 API、不新增 migration、不改 backend / frontend / research / CI。
+- GateT-4 implementation：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 后端 No-file baseline read model 已实现；只返回 Python Evaluation Artifact binding preview 的安全空基线，不读取 artifact 文件或 manifest、不执行 Python、不访问网络、不读取 DB artifact catalog、不新增 migration、不表示 ML ready、live execution ready 或交易授权。
 
 ## Current Docs
 
@@ -32,13 +33,13 @@ NexusQuant 是通用量化交易平台。当前事实入口以 `docs/current/` �
 - `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`：GateT-1 Shadow Validation Workflow read model / operator model work order；定义 endpoint / DTO / query / repository / testing plan。
 - `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`：GateT-2 Consistency Evidence Refinement work order；定义 candidate endpoint、DTO、query、repository、freshness / severity / metric semantics 和 no-side-effect testing plan。
 - `docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`：GateT-3 Incident / Replay Review Workflow work order；定义 endpoint、review item model、reviewState / reviewDecision、query / repository、DB / migration decision 和 no-side-effect testing plan。
-- `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`：GateT-4 Python Evaluation Artifact read-only binding preview work order；选择 No-file baseline 和候选 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`，但尚未实现。
+- `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`：GateT-4 Python Evaluation Artifact read-only binding preview work order；选择 No-file baseline 和候选 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`。
 - `docs/current/STATUS.md`：当前状态摘要。
 - `docs/current/ROADMAP.md`：当前路线与 GateT 边界。
 - `docs/current/FACT_SOURCE_INDEX.md`：事实源优先级和 GateS 归档指针。
-- `docs/current/TESTING.md`：验证记录；记录 GateT-4 docs-only 验证、GateT-3 backend / frontend 验证、GateT-2 backend / frontend 验证、GateT-1 backend / frontend 验证等当前验证事实。
-- `docs/current/WORKLOG.md`：工作记录；记录 GateT-4 work order、GateT-3 Incident / Replay Review Workflow implementation、GateT-2 consistency evidence overview 实现范围、边界和下一步。
-- `docs/current/API.md`：当前 API 事实；GateS、GateT-1、GateT-2 与 GateT-3 新增能力均为 GET-only / read-only / no-side-effect。
+- `docs/current/TESTING.md`：验证记录；记录 GateT-4 backend No-file baseline、GateT-4 docs-only 验证、GateT-3 backend / frontend 验证、GateT-2 backend / frontend 验证、GateT-1 backend / frontend 验证等当前验证事实。
+- `docs/current/WORKLOG.md`：工作记录；记录 GateT-4 backend No-file baseline implementation、GateT-4 work order、GateT-3 Incident / Replay Review Workflow implementation、GateT-2 consistency evidence overview 实现范围、边界和下一步。
+- `docs/current/API.md`：当前 API 事实；GateS、GateT-1、GateT-2、GateT-3 与 GateT-4 新增能力均为 GET-only / read-only / no-side-effect。
 - `docs/current/DB_SCHEMA.md`：当前 DB schema 事实。
 - `docs/current/ARCHITECTURE.md` / `docs/current/MODULES.md` / `docs/current/RUNBOOK.md`：当前架构、模块和运行手册。
 - `docs/current/GATES_FREEZE_READINESS_REVIEW.md`：GateS readiness review 的 current pointer；完整 freeze closeout 以 `docs/gates/gate-s/` 为准。

@@ -1,3 +1,37 @@
+## NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION
+
+- date: 2026-07-09
+- scope: GateT-4 backend implementation；NQ-only；只实现 `GET /api/strategy-validation/evaluation-artifacts/preview/overview` 的 GET-only No-file baseline read model、DTO、core query service / enum 和后端测试。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewController.java`
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewResponse.java`
+  - `backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewControllerTest.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/**`
+  - `backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java`
+  - `README.md`
+  - `docs/current/README.md`
+  - `docs/current/API.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- implementation:
+  - Controller 只暴露 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`，不接受 request body，不新增 file path query，不新增 POST / PUT / PATCH / DELETE、upload / import / bind / execute / validate-file 写侧入口。
+  - DTO 固定返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`、`pythonMlReady=false`、`pythonLiveExecutionReady=false`。
+  - Core No-file baseline 固定返回 `totalArtifactPreviews=0`、`artifactPreviews=[]`、`latestArtifactPreview=null`、`NO_ARTIFACT_SOURCE_CONFIGURED` warning、Manifest-only / schema review next step 和 evidence anchors。
+  - 新增 `checksumStatus`、`artifactFreshness`、`metricSummaryStatus` enum；`VALID` checksum、metricSummary 与 `FAKE_FIXTURE_ONLY` 均保持 diagnostic-only 语义，不表示策略有效、真实收益、ML ready、live execution ready 或交易授权。
+  - `PythonEvaluationArtifactPreviewOverviewQueryService` 只依赖 `Clock`；不引入 repository、JDBC、file/path reader、manifest reader、HTTP client、Python subprocess、runner、scheduler、adapter、account、order、ledger 或 credential service。
+- validation:
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` -> PASS / BUILD SUCCESS（通过 / 构建成功）。
+  - 新增 Controller 2 tests 和 service 5 tests 覆盖 GET 200、安全 flags、forbidden response fields、无写侧 mapping、No-file baseline、warning / nextSteps、`liveExecutionReady=true` / `pythonMlReady=true` / `pythonLiveExecutionReady=true` fail-closed、无 Python / network / arbitrary file / credential / account / ledger / real exchange dependency。
+- boundary:
+  - 未修改 frontend、research、scripts、deploy、`.github`、docs/gates、docs/archive、migration、pom.xml、package.json 或 lock files。
+  - 未新增 migration、infra JDBC repository、artifact catalog、import record、frontend route、runner、scheduler、AI / DH runtime、真实交易所 adapter 调用或真实交易路径。
+  - 未读取 artifact 文件、manifest、任意路径、用户目录、上传文件、网络资源、credential、account、live order、ledger 或 private trading 表。
+  - 未执行 Python，未启动 backtest，未创建 Paper / Shadow / LIVE run，未修改 Paper / Shadow / account / order / ledger 状态。
+- next action: 完成 final diff / forbidden-area / staged checks 后提交；推荐 commit message：`feat(gatet): add evaluation artifact preview baseline`。
+
 ## NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-WO
 
 - date: 2026-07-09

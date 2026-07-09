@@ -40,7 +40,7 @@
 - GateT-1 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-2 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
 - GateT-3 backend read model 与 frontend overview 最小切片：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；GateT 尚未 freeze、accepted 或 tagged。
-- GateT-4 work order：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)。
+- GateT-4 backend No-file baseline：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），入口为 [GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)、[API.md](API.md)、[STATUS.md](STATUS.md)、[TESTING.md](TESTING.md)、[WORKLOG.md](WORKLOG.md)。
 - GateT-0 planning：`PLAN READY / NOT IMPLEMENTED / READY TO COMMIT`（规划已就绪 / 未实现 / 可进入提交前复核），入口为 [GATET_PLAN.md](GATET_PLAN.md)。
 - GateT-1 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)。
 - GateT-2 work order：`PLAN READY / READY FOR IMPLEMENTATION`（规划已就绪 / 可实现），入口为 [GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)。
@@ -55,8 +55,8 @@
 - GateT-2 frontend overview 已在现有 `/strategies/validation` 页面消费该 GET-only endpoint；只展示 consistency evidence 诊断证据，不新增 route、写侧 client、交易按钮、Dashboard v2 或真实交易入口。
 - GateT-3 已实现 endpoint `GET /api/incidents/replay/review/overview`；这是 GET-only / read-only / no-side-effect / not trading authorization 后端 read model。
 - GateT-3 review item 为 derived / deterministic / not persisted；review / acknowledge / escalation / closeout 仅为 recommendation 语义，不表示自动处置、真实 incident 已关闭或交易授权。
-- GateT-4 已完成 work order；候选 endpoint 为 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`，但尚未实现，不属于当前 API 事实。
-- GateT-4 默认 No-file baseline：不读取 artifact 文件、不读取 manifest、不接受 file path query、不上传 artifact、不执行 Python、不访问网络、不导入 DB。
+- GateT-4 已实现 backend No-file baseline；endpoint 为 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`，属于当前 GET-only / read-only / no-side-effect API 事实。
+- GateT-4 默认 No-file baseline：不读取 artifact 文件、不读取 manifest、不接受 file path query、不接受 request body、不上传 artifact、不执行 Python、不访问网络、不导入 DB。
 - GateT 默认不新增 DB migration；review / acknowledge 若需要持久化，必须另起 DB schema review。
 - GateT 不接 Python production binding，只允许 Python artifact read-only binding preview。
 - GateT 不接 AI runtime，不接 DH runtime，不启动 Integration-1 runtime。
@@ -94,15 +94,17 @@
 - GateT-3 frontend validation fact：`npm run build` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；targeted smoke `strategy-validation-paper-shadow-smoke.spec.ts --project=chromium` 为 `PASS / 2 passed`（通过 / 2 条通过）。
 - GateT-3 boundary fact：未新增 migration、Python、CI workflow、runner、scheduler、adapter 调用、真实交易所调用、credential 读取、account / order / ledger mutation、review / acknowledge / escalation / closeout 写侧或交易入口。
 
-## 7. GateT-4 Current Plan Facts
+## 7. GateT-4 Current Code Facts
 
 - GateT-4 work order fact：`docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md` 已定义 Python Evaluation Artifact read-only binding preview 的 implementation 输入。
-- GateT-4 candidate endpoint fact：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 是候选 GET-only overview，尚未实现，未写入 `API.md` 当前 API 事实。
-- GateT-4 source fact：默认 No-file baseline；后续第一版 backend implementation 不读取 artifact 文件、不读取 manifest、不接受 query path、不接受 request body、不上传 artifact、不执行 Python subprocess、不访问网络。
-- GateT-4 preview item fact：`PythonEvaluationArtifactPreviewItem` 为 derived / deterministic / not persisted，只表达离线诊断材料可预览，不是 DB entity、artifact import record、strategy evaluation result、publish approval 或交易授权。
-- GateT-4 validation fact：`schemaVersion=python-evaluation-artifact.v1`、checksum、`diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`、`pythonMlReady=false`、`pythonLiveExecutionReady=false` 必须 fail-closed。
+- GateT-4 API fact：`GET /api/strategy-validation/evaluation-artifacts/preview/overview` 为 GET-only / read-only / no-side-effect / not trading authorization。
+- GateT-4 read model fact：`PythonEvaluationArtifactPreviewOverviewQueryService` 只依赖 `Clock` 并派生安全空基线；不读取 artifact 文件、manifest、任意路径、用户目录、上传文件、外部网络或 DB artifact catalog。
+- GateT-4 No-file baseline fact：当前固定 `totalArtifactPreviews=0`、`artifactPreviews=[]`、`latestArtifactPreview=null`、`NO_ARTIFACT_SOURCE_CONFIGURED` warning、Manifest-only / schema review next step、`pythonMlReady=false`、`pythonLiveExecutionReady=false`。
+- GateT-4 preview item fact：`PythonEvaluationArtifactPreviewItem` 为 derived / deterministic / not persisted；No-file baseline 不生成 item；预留字段只表达离线诊断材料可预览，不是 DB entity、artifact import record、strategy evaluation result、publish approval、Paper / Shadow / LIVE run trigger 或交易授权。
+- GateT-4 validation fact：`schemaVersion=python-evaluation-artifact.v1`、checksum、`diagnosticOnly=true`、`notTradingAuthorization=true`、`liveExecutionReady=false`、`pythonMlReady=false`、`pythonLiveExecutionReady=false` 必须 fail-closed；`VALID` checksum 只表示 payload integrity，不表示策略有效。
+- GateT-4 validation result fact：`mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` 为 `PASS / BUILD SUCCESS`（通过 / 构建成功）；新增 Controller 2 tests 和 service 5 tests 已纳入验证。
 - GateT-4 DB fact：不新增 migration，不导入 Python artifact 到生产 DB；如果未来必须持久化 artifact catalog / import record，必须另起 DB schema review。
-- GateT-4 boundary fact：未修改 backend、frontend、research、scripts、deploy、CI、migration、业务代码或测试代码；未执行 Python、backtest、runner、scheduler、真实交易所或 credential 读取。
+- GateT-4 boundary fact：未修改 frontend、research、scripts、deploy、CI、migration、docs/gates、docs/archive、pom.xml、package / lock files；未执行 Python、backtest、runner、scheduler、真实交易所或 credential 读取；未修改 Paper / Shadow / account / order / ledger 状态。
 
 ## 8. GateS Current Code Facts
 
