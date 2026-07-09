@@ -1,3 +1,41 @@
+## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION
+
+- date: 2026-07-09
+- scope: GateT-3 backend implementation；NQ-only；只实现 `GET /api/incidents/replay/review/overview` 的 GET-only read model、derived Incident / Replay review item、core query service / port、JDBC SELECT-only repository 和后端测试。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- changed files:
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewController.java`
+  - `backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewResponse.java`
+  - `backend/nq-api/src/test/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewControllerTest.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/**`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/domain/port/IncidentReplayReviewOverviewFacts.java`
+  - `backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/domain/port/IncidentReplayReviewOverviewQueryPort.java`
+  - `backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java`
+  - `backend/nq-infra/src/main/java/com/guidinglight/nexusquant/monitoring/infra/jdbc/JdbcIncidentReplayReviewOverviewQueryRepository.java`
+  - `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/monitoring/infra/jdbc/JdbcIncidentReplayReviewOverviewQueryRepositoryTest.java`
+  - `README.md`
+  - `docs/current/API.md`
+  - `docs/current/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- implementation:
+  - Controller 只暴露 `GET /api/incidents/replay/review/overview`，不接受 request body，不新增写侧 endpoint。
+  - DTO 固定返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+  - Core read model 从本地 incident / replay / shadow / consistency facts 派生 `IncidentReplayReviewItem`、review counts、severityBuckets、freshnessSummary、blockers / warnings / nextSteps 和 evidenceAnchors。
+  - `reviewItemId` 由 sourceType、sourceId、shadowRunId、paperRunId、consistencyReportId 稳定派生；review item 不持久化，不创建 review / acknowledge / escalation / closeout 记录。
+  - `ACKNOWLEDGE_RECOMMENDED`、`ESCALATE_RECOMMENDED`、`CLOSEOUT_RECOMMENDED` 只表示人工诊断复核建议，不表示自动处置、真实 incident 已关闭或交易授权。
+  - JDBC repository 仅 SELECT `shadow_run_events`、`shadow_consistency_reports`、`shadow_runs`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records`；不读取 credential / account / live order / ledger / private trading 表，不返回 raw JSONB payload。
+- validation:
+  - targeted Maven 首轮失败后已按 RCA 修正测试期望；重跑 targeted Maven -> PASS / BUILD SUCCESS。
+  - `mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test` -> PASS / BUILD SUCCESS。
+- boundary:
+  - 未修改 frontend、research、scripts、deploy、`.github`、docs/gates、docs/archive、migration、pom.xml、package.json 或 lock files。
+  - 未新增 migration、frontend route、review / acknowledge / escalation / closeout 写侧、runner、scheduler、AI / DH runtime、真实交易所 adapter 调用或真实交易路径。
+  - 未调用真实交易所，未读取 credential，未修改 Paper / Shadow / account / order / ledger 状态。
+- next action: 完成 final diff / forbidden-area / staged checks 后提交；推荐 commit message：`feat(gatet): add incident replay review read model`。
+
 ## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-WO
 
 - date: 2026-07-09

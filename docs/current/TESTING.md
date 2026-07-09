@@ -1,3 +1,49 @@
+## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION validation（2026-07-09）
+
+```text
+Scope:
+  - 本轮只实现 GateT-3 Incident / Replay Review Workflow 后端 GET-only read model。
+  - 修改范围限定为 nq-api Controller/DTO/test、nq-core read model/service/port/facts/enums/test、nq-infra JDBC SELECT-only repository/test，以及允许的 current docs / README。
+  - 未修改 frontend、research、scripts、deploy、.github、docs/gates、docs/archive、migration、pom.xml、package / lock files 或 CI workflow。
+
+Preflight:
+  - git status --short: clean before editing.
+  - git branch --show-current: dev.
+  - git rev-parse HEAD: a1dbd63c9f0cded2093fe362b4948671ee9a1021.
+  - git rev-parse origin/dev: a1dbd63c9f0cded2093fe362b4948671ee9a1021.
+  - latest GitHub Actions: NQ CI Baseline run 28959129540 completed success, headSha=a1dbd63c9f0cded2093fe362b4948671ee9a1021.
+  - git tag --list "nq-gates-freeze": nq-gates-freeze.
+  - git tag --list "nq-gatet-freeze": empty; GateT freeze tag does not exist.
+  - GateT-3 Work Order commit was pushed because HEAD equals origin/dev.
+
+Validation commands:
+  - mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am "-Dtest=IncidentReplayReviewOverviewControllerTest,IncidentReplayReviewOverviewQueryServiceTest,JdbcIncidentReplayReviewOverviewQueryRepositoryTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+  - first result: FAIL / TEST FAILURE（失败 / 测试失败）；RCA：service 正确将 `PAPER_ALERT HIGH OPEN` 与 `CONSISTENCY_DIVERGENCE HIGH DIVERGED` 都派生为 `NEEDS_OPERATOR_REVIEW`，并将 `SHADOW_EVENT FAILED` 单独派生为 `BLOCKED`，测试期望仍按旧计数断言。
+  - second result: PASS / BUILD SUCCESS（通过 / 构建成功）；新增 Controller 2 tests、service 7 tests、repository 2 tests 均通过。
+  - mvn -f backend/pom.xml -pl nq-api,nq-core,nq-infra -am test
+  - result: PASS / BUILD SUCCESS（通过 / 构建成功）；reactor 全部 SUCCESS，新增 Incident Replay Review overview tests 被纳入目标模块全量后端验证。
+
+Known warnings:
+  - Maven settings.xml unrecognised tag warning、SLF4J no provider warning、Mockito dynamic agent warning、部分既有 unchecked warning 仍存在；未导致失败，本轮未新增测试依赖或 logging 配置。
+  - 既有 live diagnostic / Postgres smoke 类 skip 保持原状；未写成 GateT-3 阻塞。
+
+What was not run:
+  - Frontend build / Playwright / E2E were not run because this task did not modify frontend code, route, client, hook, page or package / lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+  - GitHub CI was not triggered by this implementation turn; preflight verified latest CI for previous clean HEAD only.
+  - No real exchange HTTP / WebSocket, credential read, runner, scheduler, LIVE, AI runtime or DH runtime was executed.
+
+Boundary:
+  - Endpoint only adds `GET /api/incidents/replay/review/overview`; no POST / PUT / PATCH / DELETE.
+  - Review items are derived / deterministic / not persisted; no review / acknowledge / escalation / closeout record is created.
+  - JDBC repository only uses SELECT against allowed local fact tables and does not read credential / account / live order / ledger / private trading tables.
+  - No migration, frontend, Python, CI workflow, runner, scheduler, adapter call, real exchange call, credential file read, account / order / ledger mutation or trading authorization was introduced.
+  - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；Integration-1 runtime remains NOT STARTED。
+
+Blocking status:
+  - Non-blocking. Ready for final diff / forbidden-area / staged checks.
+```
+
 ## NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-WO validation（2026-07-09）
 
 ```text

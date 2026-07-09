@@ -27,6 +27,7 @@
 - Strategy Validation Overview API：只读聚合 strategy version、evaluation、publish、SIM Paper、Shadow Run 与 consistency evidence 的本地事实，供 GateS-3 Strategy Evaluation Gate runtime baseline 查看 validation-only 决策状态；不表示交易授权。
 - Incident Replay Overview API：只读聚合 Shadow / consistency / Paper alert / recovery / trade replay 本地诊断证据，供 GateS-6 Incident / Replay overview read model 使用；不表示交易授权、LIVE ready 或真实 incident runtime。
 - Shadow Validation Workflow API：只读聚合 GateS 本地事实并派生 Shadow Validation Workflow operator items，供 GateT-1 backend read model 使用；operator items 为 derived / deterministic，不持久化，不表示交易授权。
+- Incident Replay Review Workflow API：只读聚合 GateS-6、GateT-1、GateT-2 相关本地诊断事实并派生 Incident / Replay review items，供 GateT-3 backend read model 使用；review items 为 derived / deterministic，不持久化，不表示自动处置、真实 incident 已关闭或交易授权。
 - Python Evaluation Artifact Binding Preview API：只读校验 request body 中的 Python offline evaluation artifact，供 GateQ-4 生成 Java fact source binding preview，不导入、不上传、不写库。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
 - Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
@@ -85,6 +86,7 @@ LIVE: DISABLED
 - GateS-6 新增 `GET /api/incidents/replay/overview` 最小后端 Incident / Replay read model；只读取 `shadow_run_events`、`shadow_consistency_reports`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records` 本地诊断事实，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不创建 incident / alert / recovery / replay，不启动 runner / scheduler，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable、trade approval、LIVE ready 或真实 incident runtime。
 - GateT-1 新增 `GET /api/shadow-validation/workflow/overview` 最小后端 Shadow Validation Workflow read model；只读取 `strategy_versions`、`backtest_runs`、`backtest_eval_reports`、`backtest_publish_records`、`paper_trading_runs`、`shadow_runs`、`shadow_run_events`、`shadow_consistency_reports`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records` 本地事实，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不创建 operator item / review / acknowledge / incident / alert / replay / paper run / shadow run，不启动 runner / scheduler，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable、trade approval、LIVE ready 或 Shadow trading enabled。
 - GateT-2 新增 `GET /api/paper-shadow/consistency/evidence/overview` 最小后端 Consistency Evidence overview read model；只读取 `shadow_consistency_reports`、`shadow_runs`、`shadow_run_snapshots`、`shadow_run_events` 本地事实，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不创建 consistency report / snapshot / event / paper run / shadow run，不启动 runner / scheduler，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、trade approval、LIVE ready 或 Shadow trading enabled。
+- GateT-3 新增 `GET /api/incidents/replay/review/overview` 最小后端 Incident / Replay Review Workflow read model；只读取 `shadow_run_events`、`shadow_consistency_reports`、`shadow_runs`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records` 本地诊断事实，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不创建 review / acknowledge / escalation / closeout / incident / alert / replay 记录，不启动 runner / scheduler，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、trade approval、LIVE ready、真实 incident closure 或自动处置。
 
 ## GateR-6 / GateR-8 Shadow Run Read-only API
 
@@ -226,6 +228,26 @@ NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION 当前状态：`IMPLEM
 - 数据来源：仅允许读取 `shadow_consistency_reports`、`shadow_runs`、`shadow_run_snapshots`、`shadow_run_events`。
 - No-side-effect：Controller 只有 GET；service 标记 read-only；repository 只做 SELECT；不 INSERT / UPDATE / DELETE；不持久化 evidence item；不创建 consistency report、snapshot、event、Paper run 或 Shadow run；不启动 runner / scheduler；不调用 adapter、risk write side、order/account/ledger 服务。
 - 固定禁止：不提供 `POST`、`PUT`、`PATCH`、`DELETE` 或任何 review / acknowledge / approve / reject / create report / 写侧 / 交易动作 endpoint。
+- Response 禁止字段：`canTrade`、`tradeApproved`、`tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`passphrase`、`token`、`privateKey`、`credentialMaterial`、`decryptedPayload`、`encryptedPayload` 真实值、private endpoint payload、`realOrderId`、`realAccountBalance`、`realPosition`、`withdrawAddress`、`transferTarget`。
+
+## GateT-3 Incident Replay Review Workflow Overview Read-only API
+
+NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend workbench、review / acknowledge / escalation / closeout 写侧、scheduler readiness、Python binding、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+
+- `GET /api/incidents/replay/review/overview`：只读聚合 GateS-6、GateT-1、GateT-2 相关本地诊断事实，并派生 Incident / Replay Review Workflow overview。
+  - Query：无请求参数；不接受 request body。
+  - Response：`generatedAt / diagnosticOnly / noSideEffect / notTradingAuthorization / liveDisabled / realProviderImplemented / privateTradingImplemented / aiDhRuntimeIntegrated / totalReviewItems / intakeCount / evidenceReviewCount / needsOperatorReviewCount / acknowledgedRecommendationCount / escalatedRecommendationCount / closedRecommendationCount / blockedCount / latestReviewItem / reviewItems / severityBuckets / freshnessSummary / blockers / warnings / nextSteps / evidenceAnchors / traceId`。
+  - `reviewItems`：`reviewItemId / sourceType / sourceId / incidentEvidenceId / replayRecordId / shadowRunId / paperRunId / consistencyReportId / operatorItemId / reviewState / reviewDecision / severity / evidenceFreshness / summary / limitations / blockers / warnings / nextSteps / evidenceAnchors / traceId / generatedAt / diagnosticOnly / noSideEffect / notTradingAuthorization`。
+  - `reviewState` 当前取值：`INTAKE`（进入诊断复核）、`EVIDENCE_REVIEW`（证据复核）、`NEEDS_OPERATOR_REVIEW`（需要人工复核）、`ACKNOWLEDGED_RECOMMENDATION`（建议人工确认诊断事实）、`ESCALATED_RECOMMENDATION`（建议人工升级复核）、`CLOSED_RECOMMENDATION`（诊断闭环建议）、`BLOCKED`（阻断）。
+  - `reviewDecision` 当前取值：`NO_DECISION`（无决策）、`REVIEW_NEEDED`（需要复核）、`ACKNOWLEDGE_RECOMMENDED`（建议人工确认）、`ESCALATE_RECOMMENDED`（建议人工升级）、`CLOSEOUT_RECOMMENDED`（建议形成诊断闭环）、`BLOCKED`（阻断）、`STALE_EVIDENCE`（证据过期）。
+  - `severity` 当前取值：`NONE`（无优先级）、`INFO`（信息）、`WARNING`（警告）、`HIGH`（高优先级）、`CRITICAL`（严重）、`UNKNOWN`（未知）。`HIGH / CRITICAL` 只表示诊断优先级，不表示交易风险已处理。
+  - `evidenceFreshness` 当前取值：`FRESH`（新鲜）、`STALE`（过期）、`MISSING`（缺失）、`UNKNOWN`（未知）；当前 freshness window 为 7 天。
+  - `ACKNOWLEDGE_RECOMMENDED` 只表示建议人工确认诊断事实，不表示自动处置；`ESCALATE_RECOMMENDED` 只表示建议人工升级复核，不表示系统已执行升级；`CLOSEOUT_RECOMMENDED` / `CLOSED_RECOMMENDATION` 只表示诊断闭环建议，不表示真实 incident 已关闭。
+  - 固定 boundary flags：`diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`realProviderImplemented=false`、`privateTradingImplemented=false`、`aiDhRuntimeIntegrated=false`。
+- 数据来源：仅允许读取 `shadow_run_events`、`shadow_consistency_reports`、`shadow_runs`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records`。
+- Query design：review item 为 derived / deterministic / not persisted；`reviewItemId` 由 source type、source id、shadowRunId、paperRunId、consistencyReportId 稳定派生；`operatorItemId` 和 evidence anchors 只用于本地只读关联，不写回 GateT-1 / GateT-2 / GateS-6 facts。
+- No-side-effect：Controller 只有 GET；service 标记 read-only；repository 只做 SELECT；不 INSERT / UPDATE / DELETE；不持久化 review item；不创建 review / acknowledge / escalation / closeout / incident / alert / replay；不 append event / snapshot / report；不启动 runner / scheduler；不调用 adapter、risk write side、order/account/ledger 服务。
+- 固定禁止：不提供 `POST`、`PUT`、`PATCH`、`DELETE` 或任何 review / acknowledge / escalate / closeout / approve / reject / 写侧 / 交易动作 endpoint。
 - Response 禁止字段：`canTrade`、`tradeApproved`、`tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`passphrase`、`token`、`privateKey`、`credentialMaterial`、`decryptedPayload`、`encryptedPayload` 真实值、private endpoint payload、`realOrderId`、`realAccountBalance`、`realPosition`、`withdrawAddress`、`transferTarget`。
 
 ## GateQ-1 Strategy Evaluation Gate Read-only API
