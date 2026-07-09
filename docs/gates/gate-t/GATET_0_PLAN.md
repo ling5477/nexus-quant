@@ -2,9 +2,9 @@
 
 状态：GateT-0 `COMPLETED`（已完成）。
 
-## 原始文档
+## Source Durable Copy
 
-GateT-0 Shadow Validation Operations plan 的原始文档保留在 [../../current/GATET_PLAN.md](../../current/GATET_PLAN.md)。GateT freeze 后，该文档不再作为 current authority 扩写；GateT 阶段证据以本归档目录为准。
+GateT-0 Shadow Validation Operations plan 的完整历史 copy 已通过 current residual move 固化到 [source/GATET_PLAN.md](source/GATET_PLAN.md)。该 source copy 仅作为 historical evidence（历史证据），不作为 current authority（当前事实权威）扩写；当前状态仍以 `docs/current/` 的 status / roadmap / testing / worklog / API / DB facts 为准。
 
 ## 冻结摘要
 

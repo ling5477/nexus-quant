@@ -32,9 +32,9 @@
 | Archive governance hardening | [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md) |
 | GateT archive | [../gates/gate-t/README.md](../gates/gate-t/README.md) |
 
-GateT-0 plan、GateT-1 到 GateT-6 work order / implementation evidence、GateT freeze readiness review 和 GateT closeout 不再作为 current authority 扩写；它们的冻结证据以 [../gates/gate-t/README.md](../gates/gate-t/README.md) 为入口。
+GateT-0 plan、GateT-1 到 GateT-6 work order / implementation evidence、GateT freeze readiness review 和 GateT closeout 不再作为 current authority 扩写；它们的冻结证据以 [../gates/gate-t/README.md](../gates/gate-t/README.md) 为入口。GateT 过程型 residual 已迁入 [../gates/gate-t/source/](../gates/gate-t/source/) 作为 historical evidence（历史证据），不再保留在 `docs/current`。
 
-GateR / GateS / GateT 过程型 residual 的后续迁移计划见 [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)。该计划只定义 move batch，不移动文件，不启动 GateU。
+GateR / GateS 过程型 residual 的后续迁移计划见 [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)。该计划的 GateT move batch 已执行；GateS / GateR 后续 move 仍未启动，不启动 GateU。
 
 ## Historical Evidence
 
@@ -60,4 +60,4 @@ GateR / GateS / GateT 过程型 residual 的后续迁移计划见 [NQ_DOCS_ARCHI
 
 ## Current Cleanup Rule
 
-GateT 已完成 freeze closeout，GateT-0 plan、GateT-1 到 GateT-6 过程证据、readiness review 和 freeze closeout 证据均以 `docs/gates/gate-t/` 为历史归档入口。`docs/current` 后续只维护当前状态、路线、验证、工作记录和 still-current API / DB / architecture facts；不得把 GateT archive closeout 写成 GateU implementation、LIVE、AI/DH runtime、real provider、private trading 或真实交易路径。
+GateT 已完成 freeze closeout，GateT-0 plan、GateT-1 到 GateT-6 过程证据、readiness review 和 freeze closeout 证据均以 `docs/gates/gate-t/` 为历史归档入口，完整 source copy 位于 `docs/gates/gate-t/source/`。`docs/current` 后续只维护当前状态、路线、验证、工作记录和 still-current API / DB / architecture facts；不得把 GateT archive closeout 写成 GateU implementation、LIVE、AI/DH runtime、real provider、private trading 或真实交易路径。

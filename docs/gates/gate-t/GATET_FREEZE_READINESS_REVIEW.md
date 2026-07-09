@@ -4,7 +4,7 @@
 
 ## 归档说明
 
-GateT freeze readiness review 的原始审查文档保留在 [../../current/GATET_FREEZE_READINESS_REVIEW.md](../../current/GATET_FREEZE_READINESS_REVIEW.md)，用于兼容当前链接和历史检索。本归档文件冻结其结论和索引，不再把该 review 作为 GateT 当前 authority 扩写。
+GateT freeze readiness review 的完整历史 copy 已通过 current residual move 固化到 [source/GATET_FREEZE_READINESS_REVIEW.md](source/GATET_FREEZE_READINESS_REVIEW.md)，用于 archive source chain 和历史检索。本归档文件冻结其结论和索引；source copy 仅作为 historical evidence（历史证据），不作为 GateT current authority（当前事实权威）扩写。
 
 ## 冻结结论
 

@@ -16957,3 +16957,33 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未修改 account、order、ledger、position 或真实资金状态。
   - LIVE remains DISABLED；AI remains NOT STARTED；DH runtime remains NOT INTEGRATED；Integration-1 runtime remains NOT STARTED；RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED。
 - next action: 完成 final diff / forbidden-area / staged checks 后提交；推荐 commit message：`feat(gatet): add shadow validation workflow read model`。
+
+## NQ-DOCS-GATET-CURRENT-RESIDUAL-MOVE-BATCH
+
+- date: 2026-07-10
+- scope: NQ-only docs governance move batch；只处理 GateT current residual，不处理 GateS / GateR，不启动 GateU。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已执行 / 已自审 / 可进入提交前复核）。
+- moved files:
+  - `docs/current/GATET_PLAN.md` -> `docs/gates/gate-t/source/GATET_PLAN.md`
+  - `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md` -> `docs/gates/gate-t/source/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`
+  - `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md` -> `docs/gates/gate-t/source/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`
+  - `docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md` -> `docs/gates/gate-t/source/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`
+  - `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md` -> `docs/gates/gate-t/source/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`
+  - `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md` -> `docs/gates/gate-t/source/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`
+  - `docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md` -> `docs/gates/gate-t/source/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`
+  - `docs/current/GATET_FREEZE_READINESS_REVIEW.md` -> `docs/gates/gate-t/source/GATET_FREEZE_READINESS_REVIEW.md`
+- reference updates:
+  - `docs/gates/gate-t/README.md` 新增 `source/` durable copy 清单。
+  - `docs/gates/gate-t/GATET_0_PLAN.md` 与 `GATET_FREEZE_READINESS_REVIEW.md` 不再指向 `docs/current` historical copy。
+  - `docs/gates/gate-t/GATET_FREEZE_CLOSEOUT.md` 固化 tagged commit hash `534adec05eb0db1f4711bcbf0828a1f4dea84cd2`。
+  - `docs/current/FACT_SOURCE_INDEX.md` 将 GateT residual 从 allowed residual 移除，并记录为 historical evidence。
+  - `docs/current/README.md` / `STATUS.md` 记录 GateT process docs 已移入 `docs/gates/gate-t/source/`。
+- validation:
+  - preflight 确认 `dev` clean、`HEAD == origin/dev == 743b88d1d4bd1754bc57c4c1e840a8bd3000539e`。
+  - latest CI：GitHub Actions run `29031357849`，`NQ CI Baseline`，`completed / success`，`headSha` 等于当前 HEAD。
+  - 已执行 source/current 清单检查、引用 `rg`、forbidden boundary `rg`、diff check、forbidden-area diff 和 staged checks。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/gates/gate-r、docs/gates/gate-s、docs/archive、pom / package / lock files。
+  - 未新增 API、migration、前端页面、测试代码、CI workflow、Python runtime、runner、scheduler、RealClient、real provider、private trading adapter、real permission probe 或真实交易行为。
+  - GateU remains `PLAN / NOT STARTED`；LIVE remains `DISABLED`；AI remains `NOT STARTED`；DH runtime remains `NOT INTEGRATED`。
+- next action: 后续只允许先做 archive quality recheck / addendum；`GATET_TESTING_EVIDENCE_SUMMARY.md`、`GATET_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md`、`GATET_KNOWN_LIMITATIONS_AND_RESIDUALS.md` 可留到后续 archive quality recheck / addendum，本轮不扩范围。GateU planning 仍需等待 archive quality recheck 通过。

@@ -4,7 +4,7 @@ Status: `READY FOR FREEZE CLOSEOUT`（可进入冻结收口）
 
 Scope: NQ-only；freeze readiness review；documentation-only。本审查只复核 GateT-0 到 GateT-6 的证据、CI、事实源和安全边界，不创建 tag，不把 GateT 写成 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不启动 GateU。
 
-Archive pointer：GateT freeze closeout 后，本 review 的归档索引为 [../gates/gate-t/GATET_FREEZE_READINESS_REVIEW.md](../gates/gate-t/GATET_FREEZE_READINESS_REVIEW.md)；GateT 最终冻结证据入口为 [../gates/gate-t/README.md](../gates/gate-t/README.md)。本文保留为兼容 current 链接的历史 review，不再作为 GateT 当前 authority 扩写。
+Archive pointer：GateT freeze closeout 后，本 review 的归档索引为 [../GATET_FREEZE_READINESS_REVIEW.md](../GATET_FREEZE_READINESS_REVIEW.md)；GateT 最终冻结证据入口为 [../README.md](../README.md)。本文作为 archive source copy 保留，不再作为 GateT current authority 扩写。
 
 ## Review Target
 
@@ -31,13 +31,13 @@ Archive pointer：GateT freeze closeout 后，本 review 的归档索引为 [../
 - `docs/current/TESTING.md`
 - `docs/current/WORKLOG.md`
 - `docs/current/FACT_SOURCE_INDEX.md`
-- `docs/current/GATET_PLAN.md`
-- `docs/current/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`
-- `docs/current/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`
-- `docs/current/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`
-- `docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`
-- `docs/current/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`
-- `docs/current/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`
+- `docs/gates/gate-t/source/GATET_PLAN.md`
+- `docs/gates/gate-t/source/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md`
+- `docs/gates/gate-t/source/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md`
+- `docs/gates/gate-t/source/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md`
+- `docs/gates/gate-t/source/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md`
+- `docs/gates/gate-t/source/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md`
+- `docs/gates/gate-t/source/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md`
 - GateT backend / frontend / research commits and latest CI evidence.
 
 ## GateT Batch Evidence Matrix

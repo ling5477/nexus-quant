@@ -10153,6 +10153,58 @@ Blocking status：non-blocking。当前可进入提交前复核。
 
 ---
 
+## NQ-DOCS-GATET-CURRENT-RESIDUAL-MOVE-BATCH validation（2026-07-10）
+
+结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已执行 / 已自审 / 可进入提交前复核）。
+
+Scope：本轮只执行 GateT current residual move batch。8 个 GateT process docs 通过 `git mv` 从 `docs/current` 移入 `docs/gates/gate-t/source/`，并最小更新 GateT archive 索引、`FACT_SOURCE_INDEX.md`、current README / STATUS / TESTING / WORKLOG。不处理 GateS / GateR，不启动 GateU，不改业务代码、测试代码、API、migration、CI、frontend、backend、research、scripts 或 deploy。
+
+Preflight：
+
+- `git fetch origin dev` 已刷新远端。
+- `git status --short`：起始工作区 clean。
+- `git branch --show-current`：`dev`。
+- `git rev-parse HEAD` 与 `git rev-parse origin/dev` 均为 `743b88d1d4bd1754bc57c4c1e840a8bd3000539e`。
+- `gh run list --repo ling5477/nexus-quant --branch dev --limit 5`：最新 `NQ CI Baseline` run `29031357849` 为 `completed / success`（已完成 / 成功），`headSha=743b88d1d4bd1754bc57c4c1e840a8bd3000539e`。
+- `nq-gatet-freeze` 存在；`nq-gateu-freeze` 不存在。
+
+Validation commands：
+
+- `New-Item -ItemType Directory -Force docs/gates/gate-t/source`
+- 8 条 `git mv docs/current/GATET_* docs/gates/gate-t/source/*`
+- `Get-ChildItem docs/current -File | Sort-Object Name`
+- `Get-ChildItem docs/gates/gate-t/source -File | Sort-Object Name`
+- `rg "docs/current/GATET|../../current/GATET|current/GATET|GATET_PLAN|GATET_FREEZE_READINESS_REVIEW|GATET_1_|GATET_2_|GATET_3_|GATET_4_|GATET_5_|GATET_6_" README.md docs/current docs/gates/gate-t`
+- `rg "GateU IMPLEMENTED|GateU STARTED|LIVE READY|SHADOW LIVE TRADING ENABLED|TRADE APPROVED|authorizedForTrading|tradingReady|liveReady|canTrade|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|PYTHON ML READY|PYTHON LIVE READY" README.md docs/current docs/gates`
+- `git diff --check`
+- `git diff --stat`
+- `git diff --name-status`
+- forbidden-area diffs for backend、frontend、research、scripts、deploy、`.github`、`backend/**/db/migration`、`docs/gates/gate-r`、`docs/gates/gate-s`、`docs/archive`
+- staged checks：`git diff --cached --name-only`、`git diff --cached --name-status`、`git diff --cached --stat`、`git diff --cached --check`
+
+Known rg hits：
+
+- `TESTING.md` / `WORKLOG.md` 中旧任务记录仍包含历史 `docs/current/GATET_*` 文本，作为 append-only 历史日志保留。
+- `docs/current/NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md` 仍保留 move plan 原始 candidate / target 描述；该文件不在本轮允许修改清单内，不作为 GateT current authority。
+- `docs/gates/gate-t/source/**` 与 `docs/current/FACT_SOURCE_INDEX.md` 中的 `GATET_*` 命中是 source durable copy 或 historical evidence 指针，不是 active current authority。
+
+What was not run：
+
+- 未运行 Maven tests；原因是本轮只移动和更新文档，不修改 backend Java、API、repository、SQL、migration、pom 或后端测试。
+- 未运行 frontend build / Playwright；原因是本轮不修改 frontend source、route、client、hook、page、package 或 lock files。
+- 未运行 Python pytest / mypy / ruff；原因是本轮不修改 `research/**`，不执行 Python，不读取 artifact 文件。
+- 未启动 GateU、LIVE、AI runtime、DH runtime、runner、scheduler 或真实交易所调用。
+
+Boundary confirmation：
+
+- GateT 保持 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
+- GateU 保持 `PLAN / NOT STARTED`（规划 / 未开始）。
+- LIVE remains `DISABLED`（关闭）；AI remains `NOT STARTED`（未开始）；DH runtime remains `NOT INTEGRATED`（未集成）。
+- RealClient / real provider / private trading adapter / real permission probe remain `NOT IMPLEMENTED`（未实现）。
+- Shadow trading remains `NOT ENABLED`（未启用）；Python ML readiness remains `NO`（否）；Python live execution readiness remains `NO`（否）。
+
+---
+
 ## NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION（2026-07-08）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已实现 / 已自审 / 可进入提交前复核）。

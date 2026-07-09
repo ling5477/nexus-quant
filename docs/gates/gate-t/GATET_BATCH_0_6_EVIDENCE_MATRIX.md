@@ -2,6 +2,8 @@
 
 状态：GateT-0..6 `COMPLETED`（已完成）
 
+完整过程文档 source copies 已迁入 `docs/gates/gate-t/source/`。这些文件用于 historical evidence（历史证据）追溯，不覆盖 `docs/current` 当前状态事实。
+
 | Batch | Status | Commit evidence | Scope | Validation / CI evidence | Boundary |
 | --- | --- | --- | --- | --- | --- |
 | GateT-0 | `COMPLETED` | `524fdd55` | Shadow Validation Operations plan / fact-source reconciliation | docs-only validation recorded in `TESTING.md`; later CI chain green through run `29009539370` | 不实现 API、migration、runtime、frontend、Python 或 CI |

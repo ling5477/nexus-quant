@@ -11,7 +11,7 @@
 - GateT：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - Release tag：`nq-gatet-freeze`。
 - Tag message：`NexusQuant GateT freeze: validation operations, evidence refinement, and runtime readiness baseline`。
-- Tagged commit：GateT closeout archive commit；精确 hash 以 `git show --stat nq-gatet-freeze` 为准。
+- Tagged commit：`534adec05eb0db1f4711bcbf0828a1f4dea84cd2`（`docs(gatet): archive GateT freeze evidence`）。
 - GateT-0..6：`COMPLETED`（已完成）。
 - Next gate：GateU `PLAN / NOT STARTED`（规划 / 未开始）。
 

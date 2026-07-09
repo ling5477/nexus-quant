@@ -31,7 +31,7 @@ GateT-1 的目标是在 GateT 仍为 `PLAN / NOT STARTED`（规划 / 未开始�
 - `docs/current/DB_SCHEMA.md`：`strategy_versions`、`backtest_eval_reports`、`backtest_publish_records`、`paper_trading_runs`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records`、`shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、`shadow_consistency_reports` 当前 schema 事实。
 - `docs/current/TESTING.md` / `docs/current/WORKLOG.md`：GateS / GateT-0 验证记录。
 - `docs/current/FACT_SOURCE_INDEX.md`：当前事实源优先级。
-- `docs/current/GATET_PLAN.md`：GateT-0 Shadow Validation Operations plan。
+- `docs/gates/gate-t/source/GATET_PLAN.md`：GateT-0 Shadow Validation Operations plan 的 archive source copy。
 - `docs/gates/gate-s/**`：GateS freeze archive、evidence matrix、API / frontend / Python evidence summary、boundary statement。
 - backend GateS read model / controller / repository / tests：只读检查 GET mappings、SELECT-only repository 和 safety flags。
 - frontend GateS API client / hooks / pages / types：只读检查现有 panels 均为诊断展示。

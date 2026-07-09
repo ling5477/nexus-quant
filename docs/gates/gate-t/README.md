@@ -24,6 +24,19 @@ GateT 是 NexusQuant 的 Validation Operations、consistency evidence refinement
 | [GATET_RUNTIME_SCHEDULING_READINESS_SUMMARY.md](GATET_RUNTIME_SCHEDULING_READINESS_SUMMARY.md) | GateT-6 readiness-only 证据摘要 |
 | [GATET_BOUNDARY_STATEMENT.md](GATET_BOUNDARY_STATEMENT.md) | GateT 不代表什么的边界声明 |
 
+## Source Durable Copies
+
+以下 `source/` 文件是从 `docs/current` 迁出的 GateT 过程文档完整历史 copy，用于补齐 archive source chain。它们是 historical evidence（历史证据），不是 current authority（当前事实权威）：
+
+- [source/GATET_PLAN.md](source/GATET_PLAN.md)
+- [source/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md](source/GATET_1_SHADOW_VALIDATION_WORKFLOW_WO.md)
+- [source/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md](source/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md)
+- [source/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md](source/GATET_3_INCIDENT_REPLAY_REVIEW_WORKFLOW_WO.md)
+- [source/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md](source/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md)
+- [source/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md](source/GATET_5_VALIDATION_OPERATIONS_WORKBENCH_WO.md)
+- [source/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md](source/GATET_6_RUNTIME_SCHEDULING_READINESS_WO.md)
+- [source/GATET_FREEZE_READINESS_REVIEW.md](source/GATET_FREEZE_READINESS_REVIEW.md)
+
 ## 边界
 
 GateT archive 不代表真实交易授权，不开启 LIVE，不启用 Shadow trading，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter 或 real permission probe，也不表示 Python ML readiness 或 Python live execution readiness。
