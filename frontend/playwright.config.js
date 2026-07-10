@@ -11,7 +11,7 @@ var __assign = (this && this.__assign) || function () {
 };
 var _a;
 import { defineConfig, devices } from 'playwright/test';
-var baseURL = (_a = process.env.E2E_BASE_URL) !== null && _a !== void 0 ? _a : 'http://127.0.0.1:5179';
+var baseURL = (_a = process.env.E2E_BASE_URL) !== null && _a !== void 0 ? _a : 'http://127.0.0.1:51888';
 var useExternalDevServer = process.env.E2E_EXTERNAL_DEV_SERVER === 'true';
 /**
  * Playwright 只负责启动前端并验证关键导航。
@@ -37,7 +37,7 @@ export default defineConfig({
     webServer: useExternalDevServer
         ? undefined
         : {
-            command: 'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5179',
+            command: 'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 51888',
             url: baseURL,
             reuseExistingServer: true,
             timeout: 120000,
