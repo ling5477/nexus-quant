@@ -4977,6 +4977,10 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                 <EvaluationArtifactPreviewBoundaryBadges overview={overview}/>
                 <EvaluationArtifactPreviewBoundaryDriftAlert overview={overview}/>
                 <EvaluationArtifactPreviewCounts overview={overview}/>
+                <ReadModelEvidenceMetadataSummary
+                    metadata={overview?.evidenceMetadata}
+                    testId="evaluation-artifact-preview-evidence-metadata"
+                />
                 <EvaluationArtifactPreviewReadinessFlags overview={overview}/>
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>

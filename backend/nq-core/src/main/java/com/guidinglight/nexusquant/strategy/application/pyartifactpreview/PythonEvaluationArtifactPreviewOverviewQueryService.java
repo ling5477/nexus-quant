@@ -3,6 +3,9 @@ package com.guidinglight.nexusquant.strategy.application.pyartifactpreview;
 import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewReadModel.BoundaryMessage;
 import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewReadModel.EvidenceAnchor;
 import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewReadModel.NextStep;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculator;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -57,6 +60,7 @@ public class PythonEvaluationArtifactPreviewOverviewQueryService {
         Instant generatedAt = clock.instant();
         return new PythonEvaluationArtifactPreviewOverviewReadModel(
                 generatedAt,
+                evidenceMetadata(),
                 true,
                 true,
                 true,
@@ -81,6 +85,24 @@ public class PythonEvaluationArtifactPreviewOverviewQueryService {
                 nextSteps(),
                 evidenceAnchors(generatedAt, traceId),
                 traceId
+        );
+    }
+
+    /**
+     * 生成 No-file baseline 的统一 evidence metadata。
+     *
+     * <p>Why: 当前 overview 没有 artifact preview record、local DB preview metadata 或权威事实时间；
+     * {@code generatedAt} 只是本次响应组装时间，不能冒充 artifact 证据时间。因此固定按 UNAVAILABLE /
+     * UNKNOWN fail-closed 返回，且不读取文件、目录、Python runtime 或数据库来补造时间和新鲜度。
+     *
+     * @return 仅描述本地 No-file 安全基线的只读 metadata
+     */
+    private ReadModelEvidenceMetadata evidenceMetadata() {
+        return new ReadModelEvidenceMetadataCalculator(clock).calculate(
+                "LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW",
+                Availability.UNAVAILABLE,
+                null,
+                null
         );
     }
 

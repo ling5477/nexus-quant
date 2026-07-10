@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.pyartifactpreview;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,7 @@ import java.util.Objects;
  */
 public record PythonEvaluationArtifactPreviewOverviewReadModel(
         Instant generatedAt,
+        ReadModelEvidenceMetadata evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -41,6 +44,7 @@ public record PythonEvaluationArtifactPreviewOverviewReadModel(
 ) {
     public PythonEvaluationArtifactPreviewOverviewReadModel {
         generatedAt = Objects.requireNonNull(generatedAt, "generatedAt must not be null");
+        evidenceMetadata = Objects.requireNonNull(evidenceMetadata, "evidenceMetadata must not be null");
         artifactPreviews = artifactPreviews == null ? List.of() : List.copyOf(artifactPreviews);
         schemaVersionSummary = schemaVersionSummary == null ? Map.of() : Map.copyOf(schemaVersionSummary);
         checksumSummary = checksumSummary == null ? Map.of() : Map.copyOf(checksumSummary);

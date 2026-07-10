@@ -7,6 +7,8 @@
  * strategy approvals, ML readiness, live execution readiness, trading authorization,
  * credential views, private provider facts, or real order/account state.
  */
+import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+
 export type ArtifactChecksumStatus =
     'VALID'
     | 'INVALID'
@@ -113,6 +115,7 @@ export interface PythonEvaluationArtifactPreviewItem {
  */
 export interface PythonEvaluationArtifactPreviewOverviewResponse {
     generatedAt: string;
+    evidenceMetadata?: ReadModelEvidenceMetadata | null;
     diagnosticOnly: boolean;
     noSideEffect: boolean;
     notTradingAuthorization: boolean;

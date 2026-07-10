@@ -15,6 +15,7 @@ import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -82,6 +83,16 @@ class PythonEvaluationArtifactPreviewOverviewControllerTest {
                 .andExpect(jsonPath("$.aiDhRuntimeIntegrated").value(false))
                 .andExpect(jsonPath("$.pythonMlReady").value(false))
                 .andExpect(jsonPath("$.pythonLiveExecutionReady").value(false))
+                .andExpect(jsonPath("$.evidenceMetadata.source").value("LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW"))
+                .andExpect(jsonPath("$.evidenceMetadata.availability").value("UNAVAILABLE"))
+                .andExpect(jsonPath("$.evidenceMetadata.lastCalculatedAt").isEmpty())
+                .andExpect(jsonPath("$.evidenceMetadata.freshnessStatus").value("UNKNOWN"))
+                .andExpect(jsonPath("$.evidenceMetadata.ageSeconds").isEmpty())
+                .andExpect(jsonPath("$.evidenceMetadata.staleAfterSeconds").isEmpty())
+                .andExpect(jsonPath("$.evidenceMetadata.diagnosticOnly").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.noSideEffect").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.notTradingAuthorization").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.liveDisabled").value(true))
                 .andExpect(jsonPath("$.totalArtifactPreviews").value(0))
                 .andExpect(jsonPath("$.validArtifactCount").value(0))
                 .andExpect(jsonPath("$.invalidArtifactCount").value(0))
@@ -164,6 +175,19 @@ class PythonEvaluationArtifactPreviewOverviewControllerTest {
         metricSummaryCoverage.put("UNKNOWN", 1L);
         return new PythonEvaluationArtifactPreviewOverviewReadModel(
                 NOW,
+                new ReadModelEvidenceMetadata(
+                        "LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW",
+                        ReadModelEvidenceMetadata.Availability.UNAVAILABLE,
+                        null,
+                        ReadModelEvidenceMetadata.FreshnessStatus.UNKNOWN,
+                        null,
+                        null,
+                        "LAST_CALCULATED_AT_MISSING",
+                        true,
+                        true,
+                        true,
+                        true
+                ),
                 true,
                 true,
                 true,

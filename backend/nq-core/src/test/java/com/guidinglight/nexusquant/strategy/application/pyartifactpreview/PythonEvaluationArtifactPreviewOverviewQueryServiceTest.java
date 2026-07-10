@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -26,6 +29,17 @@ class PythonEvaluationArtifactPreviewOverviewQueryServiceTest {
         PythonEvaluationArtifactPreviewOverviewReadModel model = service().overview("trace-preview");
 
         assertEquals(Instant.parse("2026-07-09T12:00:00Z"), model.generatedAt());
+        assertEquals("LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW", model.evidenceMetadata().source());
+        assertEquals(Availability.UNAVAILABLE, model.evidenceMetadata().availability());
+        assertNull(model.evidenceMetadata().lastCalculatedAt());
+        assertEquals(FreshnessStatus.UNKNOWN, model.evidenceMetadata().freshnessStatus());
+        assertNull(model.evidenceMetadata().ageSeconds());
+        assertNull(model.evidenceMetadata().staleAfterSeconds());
+        assertEquals("LAST_CALCULATED_AT_MISSING", model.evidenceMetadata().staleReason());
+        assertTrue(model.evidenceMetadata().diagnosticOnly());
+        assertTrue(model.evidenceMetadata().noSideEffect());
+        assertTrue(model.evidenceMetadata().notTradingAuthorization());
+        assertTrue(model.evidenceMetadata().liveDisabled());
         assertTrue(model.diagnosticOnly());
         assertTrue(model.noSideEffect());
         assertTrue(model.notTradingAuthorization());
@@ -224,6 +238,19 @@ class PythonEvaluationArtifactPreviewOverviewQueryServiceTest {
     private PythonEvaluationArtifactPreviewOverviewReadModel overviewWithUnsafeTopLevelPythonReadiness() {
         return new PythonEvaluationArtifactPreviewOverviewReadModel(
                 Instant.parse("2026-07-09T12:00:00Z"),
+                new com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata(
+                        "LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW",
+                        Availability.UNAVAILABLE,
+                        null,
+                        FreshnessStatus.UNKNOWN,
+                        null,
+                        null,
+                        "LAST_CALCULATED_AT_MISSING",
+                        true,
+                        true,
+                        true,
+                        true
+                ),
                 true,
                 true,
                 true,

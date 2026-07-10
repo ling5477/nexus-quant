@@ -20,6 +20,7 @@ import java.util.Map;
 )
 public record PythonEvaluationArtifactPreviewOverviewResponse(
         Instant generatedAt,
+        ReadModelEvidenceMetadataResponse evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -48,6 +49,7 @@ public record PythonEvaluationArtifactPreviewOverviewResponse(
     public static PythonEvaluationArtifactPreviewOverviewResponse from(PythonEvaluationArtifactPreviewOverviewReadModel model) {
         return new PythonEvaluationArtifactPreviewOverviewResponse(
                 model.generatedAt(),
+                ReadModelEvidenceMetadataResponse.from(model.evidenceMetadata()),
                 model.diagnosticOnly(),
                 model.noSideEffect(),
                 model.notTradingAuthorization(),

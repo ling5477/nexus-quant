@@ -772,6 +772,19 @@ const INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE = {
 
 const EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-09T06:40:00Z',
+    evidenceMetadata: {
+        source: 'LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW',
+        availability: 'UNAVAILABLE',
+        lastCalculatedAt: null,
+        freshnessStatus: 'UNKNOWN',
+        ageSeconds: null,
+        staleAfterSeconds: null,
+        staleReason: 'LAST_CALCULATED_AT_MISSING',
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+    },
     diagnosticOnly: true,
     noSideEffect: true,
     notTradingAuthorization: true,
@@ -1399,6 +1412,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(artifactPreview).toContainText('false（Python ML ready NO）');
         await expect(artifactPreview).toContainText('pythonLiveExecutionReady');
         await expect(artifactPreview).toContainText('false（Python live execution ready NO）');
+        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW');
+        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('可用性：UNAVAILABLE');
+        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('最近计算时间：未提供');
         await expect(artifactPreview).toContainText('LIVE DISABLED（LIVE 关闭）');
         await expect(artifactPreview).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
         await expect(artifactPreview).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
