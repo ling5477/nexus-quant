@@ -1,3 +1,57 @@
+## NQ-DOCS-GATES-CURRENT-RESIDUAL-MOVE-BATCH validation（2026-07-10）
+
+```text
+Scope:
+  - 本轮只处理 GateS current residual move batch。
+  - 4 个 GateS process docs 通过 git mv 从 docs/current 移入 docs/gates/gate-s/source/。
+  - 同步 GateS archive index、FACT_SOURCE_INDEX、current README / STATUS / TESTING / WORKLOG。
+  - 未处理 GateR，不处理 GateT，不启动 GateU，不改业务代码、CI、API、migration、frontend、backend、research 或 archive 历史卷宗。
+
+Preflight:
+  - git status --short: clean before move。
+  - git branch --show-current: dev。
+  - git fetch origin dev --tags: PASS。
+  - git rev-parse HEAD: 1323cc469948efcf00d7f2bdf27cc470cb65fbfa。
+  - git rev-parse origin/dev: 1323cc469948efcf00d7f2bdf27cc470cb65fbfa。
+  - latest commit: 1323cc46 docs(gatet): move GateT residual docs into archive source。
+  - latest GitHub Actions: NQ CI Baseline run 29034120801 completed / success，headSha=1323cc469948efcf00d7f2bdf27cc470cb65fbfa。
+  - git tag --list "nq-gates-freeze": nq-gates-freeze。
+  - git tag --list "nq-gatet-freeze": nq-gatet-freeze。
+  - git tag --list "nq-gateu-freeze": empty。
+
+Validation commands:
+  - New-Item -ItemType Directory -Force docs/gates/gate-s/source。
+  - git mv docs/current/GATES_0_PLAN.md docs/gates/gate-s/source/GATES_0_PLAN.md。
+  - git mv docs/current/GATES_1_READ_MODEL_WO.md docs/gates/gate-s/source/GATES_1_READ_MODEL_WO.md。
+  - git mv docs/current/GATES_1_FRONTEND_OVERVIEW_WO.md docs/gates/gate-s/source/GATES_1_FRONTEND_OVERVIEW_WO.md。
+  - git mv docs/current/GATES_FREEZE_READINESS_REVIEW.md docs/gates/gate-s/source/GATES_FREEZE_READINESS_REVIEW.md。
+  - Get-ChildItem docs/current -File | Sort-Object Name。
+  - Get-ChildItem docs/gates/gate-s -File -Recurse | Sort-Object FullName。
+  - rg "docs/current/GATES|../../current/GATES|current/GATES|GATES_0_PLAN|GATES_FREEZE_READINESS_REVIEW|GATES_1_READ_MODEL_WO|GATES_1_FRONTEND_OVERVIEW_WO" README.md docs/current docs/gates/gate-s。
+  - rg "GateU IMPLEMENTED|GateU STARTED|LIVE READY|SHADOW LIVE TRADING ENABLED|TRADE APPROVED|authorizedForTrading|tradingReady|liveReady|canTrade|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|PYTHON ML READY|PYTHON LIVE READY" README.md docs/current docs/gates。
+  - git diff --check / --stat / --name-status。
+  - git diff -- backend / frontend / research / scripts / deploy / .github / backend/**/db/migration / docs/gates/gate-r / docs/gates/gate-t / docs/archive。
+  - git diff --cached --name-only / --name-status / --stat / --check。
+
+Known residual rg hits:
+  - docs/current/TESTING.md 与 docs/current/WORKLOG.md 的历史日志可保留。
+  - docs/current/NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md 不在本轮允许修改清单内，作为已批准 move plan / governance context 保留，不作为 GateS current authority。
+  - docs/gates/gate-s/source/** 是完整 historical copy，内部旧路径语境不改写，不作为 active authority。
+
+What was not run:
+  - Maven tests were not run because this is documentation-only and did not modify backend Java, Controller, DTO, Service, Repository, SQL, migration, pom.xml or backend tests.
+  - Frontend build / Playwright were not run because this task did not modify frontend source, route, API client, hook, page, package or lock files.
+  - Python pytest / mypy / ruff were not run because this task did not modify research/py code or tests.
+
+Boundary:
+  - GateS remains FROZEN / ACCEPTED / TAGGED.
+  - GateT remains FROZEN / ACCEPTED / TAGGED.
+  - GateU remains PLAN / NOT STARTED.
+  - LIVE remains DISABLED; AI remains NOT STARTED; DH runtime remains NOT INTEGRATED.
+  - RealClient / real provider / private trading adapter / real permission probe remain NOT IMPLEMENTED.
+  - Shadow trading remains NOT ENABLED; Python ML ready remains NO; Python live execution ready remains NO.
+```
+
 ## NQ-DOCS-ARCHIVE-RULE-HARDENING-AND-GATET-CURRENT-RESIDUAL-PLAN validation（2026-07-09）
 
 ```text

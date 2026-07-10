@@ -23,6 +23,15 @@ GateS 是 NexusQuant 的 strategy validation、Shadow diagnostics、Paper vs Sha
 | [GATES_PYTHON_RESEARCH_EVIDENCE_SUMMARY.md](GATES_PYTHON_RESEARCH_EVIDENCE_SUMMARY.md) | Python offline evaluation artifact 证据摘要 |
 | [GATES_BOUNDARY_STATEMENT.md](GATES_BOUNDARY_STATEMENT.md) | GateS 边界声明 |
 
+## Source Durable Copies
+
+以下 `source/` 文件是从 `docs/current` 通过 `git mv` 移入的 GateS process docs durable copies（持久历史副本），仅作为 historical evidence（历史证据）保存，不是 current authority：
+
+- [source/GATES_0_PLAN.md](source/GATES_0_PLAN.md)
+- [source/GATES_1_READ_MODEL_WO.md](source/GATES_1_READ_MODEL_WO.md)
+- [source/GATES_1_FRONTEND_OVERVIEW_WO.md](source/GATES_1_FRONTEND_OVERVIEW_WO.md)
+- [source/GATES_FREEZE_READINESS_REVIEW.md](source/GATES_FREEZE_READINESS_REVIEW.md)
+
 ## 边界
 
 GateS archive 不代表真实交易授权，不开启 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter 或 real permission probe，不启动 Shadow trading，也不表示 Python ML ready 或 Python live execution ready。

@@ -6,7 +6,7 @@
 
 ## 归档决策
 
-GateS-0 plan 已作为 GateS frozen baseline 的组成部分归档。该 plan 的 historical current copy 位于 `docs/current/GATES_0_PLAN.md`；GateS 完成冻结后，current authority 不再以该过程文档作为下一步实施入口，而以 GateS archive 和 GateT plan 边界为准。
+GateS-0 plan 已作为 GateS frozen baseline 的组成部分归档。该 plan 的 source durable copy 位于 [source/GATES_0_PLAN.md](source/GATES_0_PLAN.md)，仅作为 historical evidence（历史证据）保存；GateS 完成冻结后，current authority 不再以该过程文档作为下一步实施入口，而以 `docs/current/STATUS.md`、`docs/current/FACT_SOURCE_INDEX.md` 和本 GateS archive 为准。
 
 ## 范围摘要
 

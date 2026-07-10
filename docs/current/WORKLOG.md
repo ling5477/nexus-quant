@@ -1,3 +1,32 @@
+## NQ-DOCS-GATES-CURRENT-RESIDUAL-MOVE-BATCH
+
+- date: 2026-07-10
+- scope: NQ-only docs governance move batch；只处理 GateS current residual 的 `git mv`、GateS archive 引用更新、`FACT_SOURCE_INDEX.md` 同步和 current docs 最小记录。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核），以本轮 final validation 和 staged checks 为准。
+- moved files:
+  - `docs/current/GATES_0_PLAN.md` -> `docs/gates/gate-s/source/GATES_0_PLAN.md`
+  - `docs/current/GATES_1_READ_MODEL_WO.md` -> `docs/gates/gate-s/source/GATES_1_READ_MODEL_WO.md`
+  - `docs/current/GATES_1_FRONTEND_OVERVIEW_WO.md` -> `docs/gates/gate-s/source/GATES_1_FRONTEND_OVERVIEW_WO.md`
+  - `docs/current/GATES_FREEZE_READINESS_REVIEW.md` -> `docs/gates/gate-s/source/GATES_FREEZE_READINESS_REVIEW.md`
+- implementation:
+  - `docs/gates/gate-s/README.md` 新增 source durable copies 清单。
+  - `GATES_0_PLAN.md` 与 `GATES_FREEZE_READINESS_REVIEW.md` 的归档索引改为指向 `source/` durable copy，不再反向依赖 `docs/current` historical copy。
+  - `GATES_FREEZE_CLOSEOUT.md` 补充 GateS process docs residual move 状态。
+  - `FACT_SOURCE_INDEX.md` 将 GateS residual 从 allowed residual 移除，并登记为 historical evidence。
+  - `docs/current/README.md`、`STATUS.md`、`TESTING.md`、`WORKLOG.md` 记录本轮 docs-only move 和边界。
+- validation:
+  - preflight 确认 `dev` clean，`HEAD == origin/dev == 1323cc469948efcf00d7f2bdf27cc470cb65fbfa`。
+  - 当前 HEAD 对应 `NQ CI Baseline` run `29034120801` 为 `completed / success`，headSha 等于当前 HEAD。
+  - `nq-gates-freeze` 与 `nq-gatet-freeze` 存在；`nq-gateu-freeze` 不存在。
+  - 按任务要求执行 current inventory、GateS archive inventory、reference rg、boundary rg、diff、forbidden-area diff 和 staged checks。
+- boundary:
+  - 未处理 GateR residual move。
+  - 未处理 GateT archive / source。
+  - 未启动 GateU，未新增 GateU plan。
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/gates/gate-r、docs/gates/gate-t、docs/archive、pom.xml、package.json 或 lock files。
+  - 未开启 LIVE / AI / DH runtime，未实现 RealClient / real provider / private trading adapter / real permission probe，未启用 Shadow trading。
+- next action: GateU planning 仍需等待 GateR residual move 和 archive quality recheck 通过；GateS testing / backend DB migration / known limitations addendum 可留到后续 archive quality recheck，不在本轮扩范围。
+
 ## NQ-DOCS-ARCHIVE-RULE-HARDENING-AND-GATET-CURRENT-RESIDUAL-PLAN
 
 - date: 2026-07-09

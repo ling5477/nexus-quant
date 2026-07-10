@@ -70,6 +70,7 @@ git ls-remote --tags origin | rg "nq-gates-freeze"
 
 ## 已知残留
 
+- GateS process docs residual move 已完成：4 个 historical copies 已通过 `git mv` 移入 `docs/gates/gate-s/source/`，仅作为 historical evidence（历史证据）保存，不作为 current authority。
 - 本轮未运行本地 Maven、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮仅修改允许的文档和 tag，未修改 backend、frontend、research、migration、CI 或业务代码。
 - 宽范围 boundary `rg` 会命中历史记录、否定语境和禁止语清单；这些命中需按上下文审查，不自动视为失败。
 

@@ -6,7 +6,7 @@
 
 ## 归档决策
 
-GateS readiness review 已被 GateS freeze closeout 接受，并作为 GateS archive 的前置证据保存。本文件是归档索引；readiness review 的 current copy 位于 `docs/current/GATES_FREEZE_READINESS_REVIEW.md`，但 current authority 已切换为：
+GateS readiness review 已被 GateS freeze closeout 接受，并作为 GateS archive 的前置证据保存。本文件是归档索引；readiness review 的 source durable copy 位于 [source/GATES_FREEZE_READINESS_REVIEW.md](source/GATES_FREEZE_READINESS_REVIEW.md)，仅作为 historical evidence（历史证据）保存；current authority 已切换为：
 
 - `docs/current/STATUS.md`
 - `docs/current/FACT_SOURCE_INDEX.md`
