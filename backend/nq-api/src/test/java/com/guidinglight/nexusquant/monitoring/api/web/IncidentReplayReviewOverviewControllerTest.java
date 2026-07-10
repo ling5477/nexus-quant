@@ -19,6 +19,9 @@ import com.guidinglight.nexusquant.monitoring.application.incidentreview.Inciden
 import com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewReadModel;
 import com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewSeverity;
 import com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewState;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -77,6 +80,14 @@ class IncidentReplayReviewOverviewControllerTest {
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-incident-review"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-incident-review"))
+                .andExpect(jsonPath("$.evidenceMetadata.source").value("LOCAL_DB_INCIDENT_REPLAY_REVIEW"))
+                .andExpect(jsonPath("$.evidenceMetadata.availability").value("AVAILABLE"))
+                .andExpect(jsonPath("$.evidenceMetadata.freshnessStatus").value("FRESH"))
+                .andExpect(jsonPath("$.evidenceMetadata.lastCalculatedAt").value("2026-07-09T09:59:00Z"))
+                .andExpect(jsonPath("$.evidenceMetadata.diagnosticOnly").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.noSideEffect").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.notTradingAuthorization").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.liveDisabled").value(true))
                 .andExpect(jsonPath("$.diagnosticOnly").value(true))
                 .andExpect(jsonPath("$.noSideEffect").value(true))
                 .andExpect(jsonPath("$.notTradingAuthorization").value(true))
@@ -201,6 +212,19 @@ class IncidentReplayReviewOverviewControllerTest {
         }
         return new IncidentReplayReviewOverviewReadModel(
                 NOW,
+                new ReadModelEvidenceMetadata(
+                        "LOCAL_DB_INCIDENT_REPLAY_REVIEW",
+                        Availability.AVAILABLE,
+                        NOW.minusSeconds(60),
+                        FreshnessStatus.FRESH,
+                        60L,
+                        604800L,
+                        null,
+                        true,
+                        true,
+                        true,
+                        true
+                ),
                 true,
                 true,
                 true,

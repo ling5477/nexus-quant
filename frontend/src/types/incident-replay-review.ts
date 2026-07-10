@@ -131,6 +131,7 @@ export interface IncidentReplayReviewItem {
 
 export interface IncidentReplayReviewOverviewResponse {
     generatedAt: string;
+    evidenceMetadata?: ReadModelEvidenceMetadata | null;
     diagnosticOnly: boolean;
     noSideEffect: boolean;
     notTradingAuthorization: boolean;
@@ -156,3 +157,4 @@ export interface IncidentReplayReviewOverviewResponse {
     evidenceAnchors: IncidentReplayReviewEvidenceAnchor[];
     traceId: string;
 }
+import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';

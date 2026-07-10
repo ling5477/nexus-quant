@@ -4548,6 +4548,10 @@ function IncidentReplayReviewOverviewPanel({query}: {
                 />
                 <IncidentReplayReviewBoundaryBadges overview={overview}/>
                 <IncidentReplayReviewBoundaryDriftAlert overview={overview}/>
+                <ReadModelEvidenceMetadataSummary
+                    metadata={overview?.evidenceMetadata}
+                    testId="incident-replay-review-evidence-metadata"
+                />
                 <IncidentReplayReviewCounts overview={overview}/>
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>

@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.monitoring.api.web;
 
 import com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.api.web.ReadModelEvidenceMetadataResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -16,6 +17,7 @@ import java.util.Map;
 @Schema(name = "IncidentReplayReviewOverviewResponse", description = "GateT-3 read-only incident replay review overview")
 public record IncidentReplayReviewOverviewResponse(
         Instant generatedAt,
+        ReadModelEvidenceMetadataResponse evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -44,6 +46,7 @@ public record IncidentReplayReviewOverviewResponse(
     public static IncidentReplayReviewOverviewResponse from(IncidentReplayReviewOverviewReadModel model) {
         return new IncidentReplayReviewOverviewResponse(
                 model.generatedAt(),
+                ReadModelEvidenceMetadataResponse.from(model.evidenceMetadata()),
                 model.diagnosticOnly(),
                 model.noSideEffect(),
                 model.notTradingAuthorization(),

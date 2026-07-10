@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.monitoring.application.incidentreview;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -16,6 +18,7 @@ import java.util.Objects;
  */
 public record IncidentReplayReviewOverviewReadModel(
         Instant generatedAt,
+        ReadModelEvidenceMetadata evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -43,6 +46,7 @@ public record IncidentReplayReviewOverviewReadModel(
 ) {
     public IncidentReplayReviewOverviewReadModel {
         generatedAt = Objects.requireNonNull(generatedAt, "generatedAt must not be null");
+        evidenceMetadata = Objects.requireNonNull(evidenceMetadata, "evidenceMetadata must not be null");
         reviewItems = reviewItems == null ? List.of() : List.copyOf(reviewItems);
         severityBuckets = unmodifiableLinkedMap(severityBuckets);
         freshnessSummary = unmodifiableLinkedMap(freshnessSummary);

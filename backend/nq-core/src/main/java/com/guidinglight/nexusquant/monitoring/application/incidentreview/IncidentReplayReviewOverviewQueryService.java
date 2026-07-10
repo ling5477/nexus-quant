@@ -7,6 +7,9 @@ import com.guidinglight.nexusquant.monitoring.application.incidentreview.Inciden
 import com.guidinglight.nexusquant.monitoring.domain.port.IncidentReplayReviewOverviewFacts;
 import com.guidinglight.nexusquant.monitoring.domain.port.IncidentReplayReviewOverviewFacts.ReviewEvidenceFact;
 import com.guidinglight.nexusquant.monitoring.domain.port.IncidentReplayReviewOverviewQueryPort;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculator;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -90,13 +93,16 @@ public class IncidentReplayReviewOverviewQueryService {
         }
         Instant generatedAt = clock.instant();
         IncidentReplayReviewOverviewFacts facts = queryPort.loadOverviewFacts();
-        List<IncidentReplayReviewItem> items = facts.evidence().stream()
+        List<ReviewEvidenceFact> reviewFacts = facts.evidence().stream()
                 .limit(MAX_REVIEW_ITEMS)
+                .toList();
+        List<IncidentReplayReviewItem> items = reviewFacts.stream()
                 .map(fact -> reviewItem(fact, generatedAt, traceId))
                 .toList();
 
         return new IncidentReplayReviewOverviewReadModel(
                 generatedAt,
+                evidenceMetadata(reviewFacts),
                 true,
                 true,
                 true,
@@ -122,6 +128,36 @@ public class IncidentReplayReviewOverviewQueryService {
                 overviewEvidenceAnchors(items, generatedAt, traceId),
                 traceId
         );
+    }
+
+    /**
+     * 使用参与当前 overview 的本地事实派生统一证据元数据。
+     *
+     * <p>Why: {@code generatedAt} 只是本次只读组装时间，不能冒充事实更新时间；因此仅选择最多 50 条
+     * 当前 review facts 中的最大 {@code occurredAt}。空事实 fail-closed 为 UNAVAILABLE，缺失时间或
+     * sourceId 的事实降级为 PARTIAL；未来时间和 stale 结论交由共享 calculator 使用注入 Clock 处理。
+     */
+    private ReadModelEvidenceMetadata evidenceMetadata(List<ReviewEvidenceFact> reviewFacts) {
+        Availability availability = reviewFacts.isEmpty()
+                ? Availability.UNAVAILABLE
+                : reviewFacts.stream().anyMatch(this::hasIncompleteEvidence)
+                        ? Availability.PARTIAL
+                        : Availability.AVAILABLE;
+        Instant lastCalculatedAt = reviewFacts.stream()
+                .map(ReviewEvidenceFact::occurredAt)
+                .filter(Objects::nonNull)
+                .max(Instant::compareTo)
+                .orElse(null);
+        return new ReadModelEvidenceMetadataCalculator(clock).calculate(
+                "LOCAL_DB_INCIDENT_REPLAY_REVIEW",
+                availability,
+                lastCalculatedAt,
+                STALE_AFTER
+        );
+    }
+
+    private boolean hasIncompleteEvidence(ReviewEvidenceFact fact) {
+        return fact.occurredAt() == null || fact.sourceId() == null || fact.sourceId().isBlank();
     }
 
     private IncidentReplayReviewItem reviewItem(

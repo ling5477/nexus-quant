@@ -658,6 +658,19 @@ const INCIDENT_REPLAY_REVIEW_LATEST_ITEM = {
 
 const INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-09T01:52:00Z',
+    evidenceMetadata: {
+        source: 'LOCAL_DB_INCIDENT_REPLAY_REVIEW',
+        availability: 'AVAILABLE',
+        lastCalculatedAt: '2026-07-09T01:51:00Z',
+        freshnessStatus: 'FRESH',
+        ageSeconds: 60,
+        staleAfterSeconds: 604800,
+        staleReason: null,
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+    },
     diagnosticOnly: true,
     noSideEffect: true,
     notTradingAuthorization: true,
@@ -1049,6 +1062,7 @@ async function seedAuthAndGateQStubs(
         paperShadow?: Record<string, unknown>;
         preview?: Record<string, unknown>;
         consistencyEvidence?: Record<string, unknown>;
+        incidentReplayReview?: Record<string, unknown>;
     } = {},
 ): Promise<string[]> {
     const requests: string[] = [];
@@ -1123,7 +1137,7 @@ async function seedAuthAndGateQStubs(
 
     await page.route('**/api/incidents/replay/review/overview', (route: Route) => route.fulfill({
         status: 200,
-        json: INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE,
+        json: overrides.incidentReplayReview ?? INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE,
     }));
 
     await page.route('**/api/strategy-validation/evaluation-artifacts/preview/overview', (route: Route) => route.fulfill({
@@ -1355,6 +1369,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(incidentReplayReview).toContainText('REVIEW_INCIDENT_REPLAY_WORKFLOW');
         await expect(incidentReplayReview).toContainText('trace-incident-replay-review-smoke');
         await expect(incidentReplayReview).toContainText('trace-incident-replay-review-overview-smoke');
+        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('LOCAL_DB_INCIDENT_REPLAY_REVIEW');
+        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('可用性：AVAILABLE');
+        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('新鲜度：FRESH（新鲜）');
+        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('最近计算时间：');
         await expect(incidentReplayReview).toContainText('LIVE DISABLED（LIVE 关闭）');
         await expect(incidentReplayReview).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
         await expect(incidentReplayReview).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
@@ -1512,6 +1530,17 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
                     staleReason: 'LAST_CALCULATED_AT_MISSING',
                 },
             },
+            incidentReplayReview: {
+                ...INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE,
+                evidenceMetadata: {
+                    ...INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE.evidenceMetadata,
+                    availability: 'PARTIAL',
+                    lastCalculatedAt: null,
+                    freshnessStatus: 'UNKNOWN',
+                    ageSeconds: null,
+                    staleReason: 'LAST_CALCULATED_AT_MISSING',
+                },
+            },
         });
 
         await page.goto(validationUrl());
@@ -1527,6 +1556,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('可用性：UNAVAILABLE');
         await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
         await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('最近计算时间：未提供');
+        const incidentReplayReview = page.getByTestId('incident-replay-review-overview-panel');
+        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('可用性：PARTIAL');
+        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('最近计算时间：未提供');
 
         await expectNoForbiddenCopy(page);
         await expectNoSuccessTagForStatuses(page, ['UNKNOWN', 'NOT_AVAILABLE', 'NOT_IMPLEMENTED']);

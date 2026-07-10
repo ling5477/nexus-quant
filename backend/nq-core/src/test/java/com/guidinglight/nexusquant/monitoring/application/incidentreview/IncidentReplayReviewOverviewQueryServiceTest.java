@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.guidinglight.nexusquant.monitoring.domain.port.IncidentReplayReviewOverviewFacts;
 import com.guidinglight.nexusquant.monitoring.domain.port.IncidentReplayReviewOverviewFacts.ReviewEvidenceFact;
 import com.guidinglight.nexusquant.monitoring.domain.port.IncidentReplayReviewOverviewQueryPort;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -23,6 +25,7 @@ class IncidentReplayReviewOverviewQueryServiceTest {
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2026-07-09T10:00:00Z"), ZoneOffset.UTC);
     private static final Instant FRESH_TIME = Instant.parse("2026-07-09T09:59:00Z");
     private static final Instant STALE_TIME = Instant.parse("2026-06-28T10:00:00Z");
+    private static final Instant FUTURE_TIME = Instant.parse("2026-07-09T10:01:00Z");
 
     @Test
     void shouldReturnSafeOverviewForEmptyFactsWithoutCreatingReviewRecords() {
@@ -31,6 +34,11 @@ class IncidentReplayReviewOverviewQueryServiceTest {
 
         assertEquals(0, model.totalReviewItems());
         assertTrue(model.reviewItems().isEmpty());
+        assertEquals("LOCAL_DB_INCIDENT_REPLAY_REVIEW", model.evidenceMetadata().source());
+        assertEquals(Availability.UNAVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.UNKNOWN, model.evidenceMetadata().freshnessStatus());
+        assertEquals(null, model.evidenceMetadata().lastCalculatedAt());
+        assertEquals(null, model.evidenceMetadata().ageSeconds());
         assertTrue(model.diagnosticOnly());
         assertTrue(model.noSideEffect());
         assertTrue(model.notTradingAuthorization());
@@ -66,6 +74,10 @@ class IncidentReplayReviewOverviewQueryServiceTest {
         assertEquals(1, model.blockedCount());
         assertEquals(2L, model.severityBuckets().get("HIGH"));
         assertEquals(6L, model.freshnessSummary().get("FRESH"));
+        assertEquals(Availability.AVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FRESH_TIME, model.evidenceMetadata().lastCalculatedAt());
+        assertEquals(FreshnessStatus.FRESH, model.evidenceMetadata().freshnessStatus());
+        assertEquals(60L, model.evidenceMetadata().ageSeconds());
         assertHasMessage(model.warnings(), "ACKNOWLEDGE_RECOMMENDED_ONLY");
         assertHasMessage(model.warnings(), "CLOSED_RECOMMENDATION_ONLY");
         assertHasMessage(model.warnings(), "HIGH_CRITICAL_ARE_PRIORITY_ONLY");
@@ -86,8 +98,30 @@ class IncidentReplayReviewOverviewQueryServiceTest {
         assertEquals(IncidentReplayReviewFreshness.STALE, item.evidenceFreshness());
         assertEquals(IncidentReplayReviewState.BLOCKED, item.reviewState());
         assertEquals(IncidentReplayReviewDecision.STALE_EVIDENCE, item.reviewDecision());
+        assertEquals(Availability.AVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.STALE, model.evidenceMetadata().freshnessStatus());
+        assertEquals(604800L, model.evidenceMetadata().staleAfterSeconds());
         assertHasMessage(model.warnings(), "STALE_EVIDENCE");
         assertHasMessage(item.blockers(), "STALE_EVIDENCE");
+    }
+
+    @Test
+    void shouldFailClosedForPartialOrFutureEvidenceMetadata() {
+        IncidentReplayReviewOverviewReadModel partial = service(facts(
+                fact("PAPER_ALERT", "alt-missing-time", "OPEN", "HIGH", "paper-alert:alt-missing-time", null, null, "paper-1", null, "Missing time", null, null)
+        )).overview("trace-partial");
+        IncidentReplayReviewOverviewReadModel future = service(facts(
+                fact("PAPER_ALERT", "alt-future", "OPEN", "HIGH", "paper-alert:alt-future", null, null, "paper-1", null, "Future time", FUTURE_TIME, null)
+        )).overview("trace-future");
+
+        assertEquals(Availability.PARTIAL, partial.evidenceMetadata().availability());
+        assertEquals(null, partial.evidenceMetadata().lastCalculatedAt());
+        assertEquals(null, partial.evidenceMetadata().ageSeconds());
+        assertEquals(FreshnessStatus.UNKNOWN, partial.evidenceMetadata().freshnessStatus());
+        assertEquals(Availability.AVAILABLE, future.evidenceMetadata().availability());
+        assertEquals(FUTURE_TIME, future.evidenceMetadata().lastCalculatedAt());
+        assertEquals(null, future.evidenceMetadata().ageSeconds());
+        assertEquals(FreshnessStatus.UNKNOWN, future.evidenceMetadata().freshnessStatus());
     }
 
     @Test
