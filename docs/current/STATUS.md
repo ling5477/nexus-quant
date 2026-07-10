@@ -16,7 +16,7 @@
 - GateS：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gates-freeze`；archive：`docs/gates/gate-s/`。
 - GateR：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag：`nq-gater-freeze`；archive：`docs/gates/gate-r/`。
 - GateQ / GateP / GateO 及更早 Gate：历史证据入口为 `docs/gates/**` 或 `docs/archive/**`。
-- Archive governance hardening：GateT current residual move batch `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已执行 / 已自审 / 可进入提交前复核）；8 个 GateT process docs 已迁入 `docs/gates/gate-t/source/`。GateS current residual move batch `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`，4 个 GateS process docs 已迁入 `docs/gates/gate-s/source/`，仅作为 historical evidence（历史证据），不作为 current authority。GateR residual move 仍未启动；不启动 GateU。
+- Archive governance hardening：GateT current residual move batch `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已执行 / 已自审 / 可进入提交前复核）；8 个 GateT process docs 已迁入 `docs/gates/gate-t/source/`。GateS current residual move batch `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`，4 个 GateS process docs 已迁入 `docs/gates/gate-s/source/`。GateR current residual move batch `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`，2 个 GateR process docs 已迁入 `docs/gates/gate-r/source/`；三者均仅作为 historical evidence（历史证据），不作为 current authority。未启动 GateU。
 - 下一阶段：GateU `PLAN / NOT STARTED`（规划 / 未开始）。GateU 实现未启动。
 
 ## 2. GateT Freeze Closeout Evidence

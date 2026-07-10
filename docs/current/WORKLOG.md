@@ -17016,3 +17016,25 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未新增 API、migration、前端页面、测试代码、CI workflow、Python runtime、runner、scheduler、RealClient、real provider、private trading adapter、real permission probe 或真实交易行为。
   - GateU remains `PLAN / NOT STARTED`；LIVE remains `DISABLED`；AI remains `NOT STARTED`；DH runtime remains `NOT INTEGRATED`。
 - next action: 后续只允许先做 archive quality recheck / addendum；`GATET_TESTING_EVIDENCE_SUMMARY.md`、`GATET_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md`、`GATET_KNOWN_LIMITATIONS_AND_RESIDUALS.md` 可留到后续 archive quality recheck / addendum，本轮不扩范围。GateU planning 仍需等待 archive quality recheck 通过。
+
+## NQ-DOCS-GATER-CURRENT-RESIDUAL-MOVE-BATCH
+
+- date: 2026-07-10
+- scope: NQ-only docs governance move batch；只处理 GateR 两份 current residual，不处理 GateS / GateT，不启动 GateU。
+- result:
+  - `docs/current/GATER_PLAN.md` 已通过 `git mv` 移入 `docs/gates/gate-r/source/GATER_PLAN.md`。
+  - `docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` 已通过 `git mv` 移入 `docs/gates/gate-r/source/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md`。
+  - `docs/gates/gate-r/GATER_EVIDENCE_MATRIX.md` 的 GateR-0 / GateR-1 artifact pointer 已改为 archive `source/` 路径。
+  - `docs/gates/gate-r/README.md` 已登记 `source/` durable historical copies，并明确其不是 current authority。
+  - `docs/current/FACT_SOURCE_INDEX.md` 已移除 GateR Allowed residual，并登记两个 GateR `source/**` historical evidence；`docs/current/README.md` 与 `STATUS.md` 已最小同步。
+- validation:
+  - preflight 确认 `dev` clean、`HEAD == origin/dev == f64fdfa6670073a736526d8d88f78e214f2f5c33`。
+  - latest CI：GitHub Actions run `29062242473`，`NQ CI Baseline`，`completed / success`，`headSha` 等于当前 HEAD。
+  - `Get-ChildItem` 确认两份 GateR residual 不再存在于 `docs/current`，且 `docs/gates/gate-r/source/` 包含两份完整 historical copies。
+  - GateR archive / current reference `rg` 已复核；允许保留的命中仅为 archive testing summary 的历史校验描述与 `source/**` 内历史原文，不是 active artifact pointer。
+  - `git diff --cached --check`：PASS。
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、docs/gates/gate-s、docs/gates/gate-t、docs/archive、pom / package / lock files、GateU 文档、业务代码、测试代码或 CI workflow。
+  - 未新增 API、migration、前端页面、测试代码、Python runtime、runner、scheduler、RealClient、real provider、private trading adapter、real permission probe 或真实交易行为。
+  - GateR / GateS / GateT 保持 `FROZEN / ACCEPTED / TAGGED`；GateU 保持 `PLAN / NOT STARTED`；LIVE 保持 `DISABLED`；AI 保持 `NOT STARTED`；DH runtime 保持 `NOT INTEGRATED`。
+- next action: 完成 staged allowlist、`git diff --cached --check` 和最终提交前复核；推荐 commit message：`docs(gater): move GateR residual docs into archive source`。

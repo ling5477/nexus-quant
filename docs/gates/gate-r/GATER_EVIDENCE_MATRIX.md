@@ -9,8 +9,8 @@
 
 | Stage | Evidence / Commit | Evidence artifact | Boundary outcome |
 |---|---|---|---|
-| GateR-0 | `docs/current/GATER_PLAN.md` | 规划入口已建立 | 只允许规划，不代表 runtime 启动 |
-| GateR-1 | `docs/current/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` | migration plan review 已通过 | migration 方案仅为事实源对齐，不等于交易授权 |
+| GateR-0 | `docs/gates/gate-r/source/GATER_PLAN.md` | 规划入口已建立 | 只允许规划，不代表 runtime 启动 |
+| GateR-1 | `docs/gates/gate-r/source/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md` | migration plan review 已通过 | migration 方案仅为事实源对齐，不等于交易授权 |
 | GateR-2 | `d21bb9886` | `docs/current/DB_SCHEMA.md` + `backend/nq-infra/src/main/resources/db/migration/V32__gate_r_shadow_run_fact_model.sql` + `backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunFactRepositoryTest.java` | 本地 fact model 落地，仅本地事实写入与查询 |
 | GateR-3 | `346c2314` | `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java` | runner skeleton 为 local no-side-effect；不启动 scheduler 或后台 runner |
 | GateR-4 | `0391a044` | `backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/shadowrun/ShadowRunStateMachine.java` + `backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java` | structured decision trace 与 risk snapshot 为只读诊断 |

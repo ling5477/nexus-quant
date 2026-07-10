@@ -14,7 +14,7 @@
 6. [WORKLOG.md](WORKLOG.md)：当前工作记录。
 7. [API.md](API.md)：已实现 HTTP API 当前事实。
 8. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实。
-9. [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)：archive governance hardening 与 GateR/S/T residual move plan；GateT / GateS move batch 已执行，GateR move 尚未启动。
+9. [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)：archive governance hardening 与 GateR/S/T residual move plan；GateT / GateS / GateR move batch 均已执行。
 10. [../gates/gate-t/README.md](../gates/gate-t/README.md)：GateT 历史归档入口。
 11. [../gates/gate-t/GATET_FREEZE_CLOSEOUT.md](../gates/gate-t/GATET_FREEZE_CLOSEOUT.md)：GateT freeze closeout authority。
 12. [../gates/gate-t/GATET_BATCH_0_6_EVIDENCE_MATRIX.md](../gates/gate-t/GATET_BATCH_0_6_EVIDENCE_MATRIX.md)：GateT-0 到 GateT-6 evidence matrix。
@@ -27,9 +27,10 @@
 19. [../gates/gate-s/README.md](../gates/gate-s/README.md)：GateS 历史归档入口。
 20. [../gates/gate-s/source/](../gates/gate-s/source/)：GateS process docs source durable copies；historical evidence（历史证据），不作为 current authority。
 21. [../gates/gate-r/README.md](../gates/gate-r/README.md)：GateR 历史归档入口。
-22. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
-23. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
-24. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
+22. [../gates/gate-r/source/](../gates/gate-r/source/)：GateR process docs source durable copies；historical evidence（历史证据），不作为 current authority。
+23. [../gates/gate-q/README.md](../gates/gate-q/README.md)：GateQ 历史归档入口。
+24. [../gates/gate-p/README.md](../gates/gate-p/README.md)：GateP 历史归档入口。
+25. [../gates/gate-o/README.md](../gates/gate-o/README.md)：GateO 历史归档入口。
 
 `docs/gates/**` 与 `docs/archive/**` 是历史证据或归档引用，不覆盖 `docs/current` 的当前状态摘要。已完成 Gate 的过程型长文档不得再作为 current authority 扩写。
 
@@ -70,11 +71,7 @@
 
 ## 5. Allowed residuals
 
-以下文件在后续 move batch 执行前允许暂留于 `docs/current`，但不得作为 current authority 扩写：
-
-- GateR residual：`GATER_PLAN.md`、`GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md`。
-
-GateT residual 已在 `NQ-DOCS-GATET-CURRENT-RESIDUAL-MOVE-BATCH` 中移出 `docs/current`。GateS residual 已在 `NQ-DOCS-GATES-CURRENT-RESIDUAL-MOVE-BATCH` 中移出 `docs/current`。计划入口：[NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)。后续 GateR move batch 必须把已移动 residual 从本节移除，并把目标 `docs/gates/<gate>/source/` 或 `docs/archive/**` 路径记录为 historical evidence。
+当前无 GateR / GateS / GateT allowed residual。GateT、GateS、GateR process docs 已分别在 `NQ-DOCS-GATET-CURRENT-RESIDUAL-MOVE-BATCH`、`NQ-DOCS-GATES-CURRENT-RESIDUAL-MOVE-BATCH`、`NQ-DOCS-GATER-CURRENT-RESIDUAL-MOVE-BATCH` 中移出 `docs/current`。计划入口：[NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)。
 
 ## 6. Historical evidence moved from current
 
@@ -97,5 +94,12 @@ GateS process docs 已通过 `git mv` 移入 `docs/gates/gate-s/source/`，作�
 - `docs/gates/gate-s/source/GATES_1_READ_MODEL_WO.md`
 - `docs/gates/gate-s/source/GATES_1_FRONTEND_OVERVIEW_WO.md`
 - `docs/gates/gate-s/source/GATES_FREEZE_READINESS_REVIEW.md`
+
+这些 source copy 不覆盖 `docs/current/STATUS.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`API.md` 或 `DB_SCHEMA.md` 的当前事实，也不表示 GateU started / implemented。
+
+GateR process docs 已通过 `git mv` 移入 `docs/gates/gate-r/source/`，作为 historical evidence（历史证据）保留：
+
+- `docs/gates/gate-r/source/GATER_PLAN.md`
+- `docs/gates/gate-r/source/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md`
 
 这些 source copy 不覆盖 `docs/current/STATUS.md`、`README.md`、`ROADMAP.md`、`TESTING.md`、`WORKLOG.md`、`API.md` 或 `DB_SCHEMA.md` 的当前事实，也不表示 GateU started / implemented。

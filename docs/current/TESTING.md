@@ -10207,6 +10207,35 @@ Blocking status：non-blocking。当前可进入提交前复核。
 
 ---
 
+## NQ-DOCS-GATER-CURRENT-RESIDUAL-MOVE-BATCH（2026-07-10）
+
+Scope：NQ-only docs governance move batch；只将 GateR 两份 current residual 以 `git mv` 移入 `docs/gates/gate-r/source/`，并修正 GateR archive 引用、FACT_SOURCE_INDEX 与 current 摘要。未修改业务代码、测试、API、migration、CI、GateS、GateT、GateU 或 tag。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | move 前工作区与 staged 区 clean。 |
+| `git branch --show-current` | PASS | 当前分支为 `dev`。 |
+| `git rev-parse HEAD` / `git rev-parse origin/dev` | PASS | 均为 `f64fdfa6670073a736526d8d88f78e214f2f5c33`。 |
+| `git fetch origin dev --tags` | PASS | 已刷新 `origin/dev` 与 tags。 |
+| `gh run list --limit 15 --json databaseId,name,status,conclusion,headSha,createdAt,updatedAt` | PASS | 最新 `NQ CI Baseline` run `29062242473` 为 `completed / success`，`headSha` 等于当前 HEAD。 |
+| `git tag --list "nq-gater-freeze"` / `"nq-gates-freeze"` / `"nq-gatet-freeze"` / `"nq-gateu-freeze"` | PASS | GateR/S/T freeze tag 存在；`nq-gateu-freeze` 不存在。 |
+| `Get-ChildItem docs/current -File` / `Get-ChildItem docs/gates/gate-r -File -Recurse` | PASS | 两份 GateR residual 已不在 `docs/current`；`docs/gates/gate-r/source/` 包含两份完整 historical copies。 |
+| GateR archive / fact-source reference `rg` | PASS / REVIEWED | evidence matrix 已改为 `docs/gates/gate-r/source/GATER_*`；FACT_SOURCE_INDEX 已完成 Allowed residual → Historical evidence 转换。 |
+| `git diff --cached --check` | PASS | 当前已暂存 move 与引用更新无空白错误。 |
+
+What was not run：
+
+- 未运行 Maven、frontend build / E2E、Python pytest / mypy / ruff；原因是本轮只改文档归档路径和引用，未修改 `backend/**`、`frontend/**` 或 `research/**`。
+- 未运行真实交易所 HTTP / WebSocket，未读取 credential material，未启动 runner / scheduler / runtime。
+
+Boundary confirmation：
+
+- GateR / GateS / GateT 仍为 `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；GateU 仍为 `PLAN / NOT STARTED`（规划 / 未开始）。
+- LIVE 仍为 `DISABLED`（关闭）；AI 仍为 `NOT STARTED`（未开始）；DH runtime 仍为 `NOT INTEGRATED`（未集成）。
+- `source/` 仅为 historical evidence（历史证据），不作为 current authority；本轮不新增 archive addendum，也不删除历史证据。
+
+---
+
 ## NQ-DOCS-GATET-CURRENT-RESIDUAL-MOVE-BATCH validation（2026-07-10）
 
 结论：**IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT**（已执行 / 已自审 / 可进入提交前复核）。

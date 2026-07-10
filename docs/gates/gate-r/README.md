@@ -22,6 +22,13 @@
 - [GATER_FRONTEND_EVIDENCE.md](GATER_FRONTEND_EVIDENCE.md)
 - [GATER_BOUNDARY_STATEMENT.md](GATER_BOUNDARY_STATEMENT.md)
 
+## Source durable copies
+
+- [source/GATER_PLAN.md](source/GATER_PLAN.md)
+- [source/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md](source/GATER_1_SHADOW_RUN_DATA_MODEL_MIGRATION_PLAN_REVIEW.md)
+
+`source/` 仅保存 GateR 过程文档的 durable historical copies（持久历史副本），用于归档证据追溯；它不是 current authority，当前状态仍以 `docs/current/` 为准。
+
 ## GateR completed scope
 
 - GateR-0：规划文档已建立。
