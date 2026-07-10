@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.shadowrun;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 
 import java.time.Instant;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.UUID;
  */
 public record ShadowRunOverviewReadModel(
         Instant generatedAt,
+        ReadModelEvidenceMetadata evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -40,6 +42,7 @@ public record ShadowRunOverviewReadModel(
 ) {
     public ShadowRunOverviewReadModel {
         Objects.requireNonNull(generatedAt, "generatedAt must not be null");
+        Objects.requireNonNull(evidenceMetadata, "evidenceMetadata must not be null");
         Objects.requireNonNull(divergenceSeverity, "divergenceSeverity must not be null");
         blockers = List.copyOf(Objects.requireNonNull(blockers, "blockers must not be null"));
         warnings = List.copyOf(Objects.requireNonNull(warnings, "warnings must not be null"));

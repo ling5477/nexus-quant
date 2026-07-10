@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.shadowvalidation;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -14,6 +16,7 @@ import java.util.UUID;
  */
 public record ShadowValidationWorkflowOverviewReadModel(
         Instant generatedAt,
+        ReadModelEvidenceMetadata evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -38,6 +41,7 @@ public record ShadowValidationWorkflowOverviewReadModel(
 ) {
     public ShadowValidationWorkflowOverviewReadModel {
         generatedAt = Objects.requireNonNull(generatedAt, "generatedAt must not be null");
+        evidenceMetadata = Objects.requireNonNull(evidenceMetadata, "evidenceMetadata must not be null");
         operatorItems = operatorItems == null ? List.of() : List.copyOf(operatorItems);
         blockers = blockers == null ? List.of() : List.copyOf(blockers);
         warnings = warnings == null ? List.of() : List.copyOf(warnings);

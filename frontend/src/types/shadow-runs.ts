@@ -1,3 +1,5 @@
+import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+
 /**
  * GateR-7 Shadow Run read-only frontend types.
  *
@@ -72,6 +74,7 @@ export type ShadowRunOverviewDivergenceSeverity = 'NONE' | 'LOW' | 'MEDIUM' | 'H
  */
 export interface ShadowRunOverviewResponse {
     generatedAt: string;
+    evidenceMetadata?: ReadModelEvidenceMetadata | null;
     diagnosticOnly: boolean;
     noSideEffect: boolean;
     notTradingAuthorization: boolean;

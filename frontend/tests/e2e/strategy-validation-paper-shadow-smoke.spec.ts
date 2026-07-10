@@ -71,6 +71,19 @@ const STRATEGY_OVERVIEW_FIXTURE = {
 
 const SHADOW_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-08T10:04:00Z',
+    evidenceMetadata: {
+        source: 'LOCAL_DB_SHADOW_FACTS',
+        availability: 'PARTIAL',
+        lastCalculatedAt: '2026-07-08T10:04:00Z',
+        freshnessStatus: 'UNKNOWN',
+        ageSeconds: 0,
+        staleAfterSeconds: null,
+        staleReason: 'SOURCE_PARTIAL',
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+    },
     diagnosticOnly: true,
     noSideEffect: true,
     notTradingAuthorization: true,
@@ -238,6 +251,19 @@ const PAPER_SHADOW_DRILLDOWN_FIXTURE = {
 
 const SHADOW_VALIDATION_WORKFLOW_FIXTURE = {
     generatedAt: '2026-07-08T13:40:00Z',
+    evidenceMetadata: {
+        source: 'LOCAL_DB_VALIDATION_WORKFLOW',
+        availability: 'AVAILABLE',
+        lastCalculatedAt: '2026-07-08T13:39:00Z',
+        freshnessStatus: 'FRESH',
+        ageSeconds: 60,
+        staleAfterSeconds: 604800,
+        staleReason: null,
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+    },
     diagnosticOnly: true,
     noSideEffect: true,
     notTradingAuthorization: true,
@@ -1416,6 +1442,9 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         expect(requests.some((url) => url.includes('/api/shadow-runs/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/drilldown'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/shadow-validation/workflow/overview'))).toBeTruthy();
+        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText('LOCAL_DB_VALIDATION_WORKFLOW');
+        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText('可用性：AVAILABLE');
+        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText('新鲜度：FRESH（新鲜）');
         expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/evidence/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/incidents/replay/review/overview'))).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/strategy-validation/evaluation-artifacts/preview/overview'))).toBeTruthy();

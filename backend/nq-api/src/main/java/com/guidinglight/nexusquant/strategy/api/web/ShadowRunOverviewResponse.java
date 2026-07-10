@@ -18,6 +18,7 @@ import java.util.UUID;
 @Schema(name = "ShadowRunOverviewResponse", description = "GateS-1 read-only Shadow Run overview")
 public record ShadowRunOverviewResponse(
         Instant generatedAt,
+        ReadModelEvidenceMetadataResponse evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -43,6 +44,7 @@ public record ShadowRunOverviewResponse(
     public static ShadowRunOverviewResponse from(ShadowRunOverviewReadModel model) {
         return new ShadowRunOverviewResponse(
                 model.generatedAt(),
+                ReadModelEvidenceMetadataResponse.from(model.evidenceMetadata()),
                 model.diagnosticOnly(),
                 model.noSideEffect(),
                 model.notTradingAuthorization(),

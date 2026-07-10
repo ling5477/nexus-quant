@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.strategy.application.shadowvalidation;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculator;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewReadModel.BoundaryMessage;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewReadModel.EvidenceAnchor;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewReadModel.NextStep;
@@ -87,9 +90,11 @@ public class ShadowValidationWorkflowOverviewQueryService {
                 .limit(MAX_OPERATOR_ITEMS)
                 .map(fact -> operatorItem(fact, generatedAt, traceId))
                 .toList();
+        ReadModelEvidenceMetadata evidenceMetadata = evidenceMetadata(facts, items);
 
         return new ShadowValidationWorkflowOverviewReadModel(
                 generatedAt,
+                evidenceMetadata,
                 true,
                 true,
                 true,
@@ -111,6 +116,28 @@ public class ShadowValidationWorkflowOverviewQueryService {
                 overviewNextSteps(items),
                 overviewEvidenceAnchors(items, generatedAt, traceId),
                 traceId
+        );
+    }
+
+    private ReadModelEvidenceMetadata evidenceMetadata(
+            ShadowValidationWorkflowOverviewFacts facts,
+            List<OperatorItem> items
+    ) {
+        Instant lastCalculatedAt = facts.operatorEvidence().stream()
+                .map(OperatorEvidenceFact::evidenceUpdatedAt)
+                .max(Instant::compareTo)
+                .orElse(null);
+        Availability availability = items.isEmpty()
+                ? Availability.UNAVAILABLE
+                : items.stream().anyMatch(item -> item.evidenceFreshness() == ShadowValidationWorkflowEvidenceFreshness.PARTIAL
+                        || item.evidenceFreshness() == ShadowValidationWorkflowEvidenceFreshness.MISSING)
+                        ? Availability.PARTIAL
+                        : Availability.AVAILABLE;
+        return new ReadModelEvidenceMetadataCalculator(clock).calculate(
+                "LOCAL_DB_VALIDATION_WORKFLOW",
+                availability,
+                lastCalculatedAt,
+                STALE_AFTER
         );
     }
 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewDivergenceSeverity;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
@@ -212,6 +213,7 @@ class ShadowRunReadOnlyResponseTest {
     private ShadowRunOverviewReadModel overview() {
         return new ShadowRunOverviewReadModel(
                 NOW,
+                testEvidenceMetadata("LOCAL_DB_SHADOW_FACTS"),
                 true,
                 true,
                 true,
@@ -272,6 +274,22 @@ class ShadowRunReadOnlyResponseTest {
                         null
                 )),
                 "trace-shadow"
+        );
+    }
+
+    private ReadModelEvidenceMetadata testEvidenceMetadata(String source) {
+        return new ReadModelEvidenceMetadata(
+                source,
+                ReadModelEvidenceMetadata.Availability.AVAILABLE,
+                NOW,
+                ReadModelEvidenceMetadata.FreshnessStatus.UNKNOWN,
+                0L,
+                null,
+                "STALE_THRESHOLD_NOT_DEFINED",
+                true,
+                true,
+                true,
+                true
         );
     }
 }

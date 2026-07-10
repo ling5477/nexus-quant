@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowEvidenceFreshness;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewReadModel;
@@ -80,6 +81,10 @@ class ShadowValidationWorkflowOverviewControllerTest {
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-validation-workflow"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-validation-workflow"))
+                .andExpect(jsonPath("$.evidenceMetadata.source").value("LOCAL_DB_VALIDATION_WORKFLOW"))
+                .andExpect(jsonPath("$.evidenceMetadata.availability").value("AVAILABLE"))
+                .andExpect(jsonPath("$.evidenceMetadata.freshnessStatus").value("FRESH"))
+                .andExpect(jsonPath("$.evidenceMetadata.notTradingAuthorization").value(true))
                 .andExpect(jsonPath("$.diagnosticOnly").value(true))
                 .andExpect(jsonPath("$.noSideEffect").value(true))
                 .andExpect(jsonPath("$.notTradingAuthorization").value(true))
@@ -189,6 +194,19 @@ class ShadowValidationWorkflowOverviewControllerTest {
         );
         return new ShadowValidationWorkflowOverviewReadModel(
                 NOW,
+                new ReadModelEvidenceMetadata(
+                        "LOCAL_DB_VALIDATION_WORKFLOW",
+                        ReadModelEvidenceMetadata.Availability.AVAILABLE,
+                        NOW.minusSeconds(60),
+                        ReadModelEvidenceMetadata.FreshnessStatus.FRESH,
+                        60L,
+                        604800L,
+                        null,
+                        true,
+                        true,
+                        true,
+                        true
+                ),
                 true,
                 true,
                 true,

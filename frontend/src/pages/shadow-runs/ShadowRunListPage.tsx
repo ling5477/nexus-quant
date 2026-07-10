@@ -15,7 +15,9 @@ import {
     type NqStatusTone,
 } from '@/components/nq';
 import {useShadowRunListQuery, useShadowRunOverview} from '@/hooks/useShadowRunQueries';
+import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import type {AppApiError} from '@/types/api';
+import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
 import type {
     ShadowRunListItemResponse,
     ShadowRunListRequest,
@@ -103,6 +105,52 @@ function BoundaryTags({record}: { record: ShadowRunListItemResponse }) {
 function codeText(value: string | number | null | undefined) {
     const text = safeText(value);
     return text === '-' ? <Text type="secondary">-</Text> : <Text code>{text}</Text>;
+}
+
+function evidenceFreshnessState(metadata: ReadModelEvidenceMetadata | null | undefined): FreshnessState {
+    const availability = metadata?.availability?.toUpperCase() ?? 'UNKNOWN';
+    const freshness = metadata?.freshnessStatus?.toUpperCase() ?? 'UNKNOWN';
+    if (availability === 'UNAVAILABLE') {
+        return 'error';
+    }
+    if (availability === 'PARTIAL') {
+        return 'degraded';
+    }
+    if (freshness === 'FRESH') {
+        return 'fresh';
+    }
+    if (freshness === 'STALE') {
+        return 'stale';
+    }
+    return 'no_data';
+}
+
+function EvidenceMetadataSummary({metadata}: { metadata?: ReadModelEvidenceMetadata | null }) {
+    const source = metadata?.source?.trim() || 'UNKNOWN_SOURCE';
+    const availability = metadata?.availability?.toUpperCase() || 'UNKNOWN';
+    const freshness = metadata?.freshnessStatus?.toUpperCase() || 'UNKNOWN';
+    const freshnessText = freshness === 'FRESH'
+        ? '新鲜'
+        : freshness === 'STALE' ? '已过期' : '无法判断新鲜度';
+
+    return (
+        <Space data-testid="shadow-run-evidence-metadata" direction="vertical" size={6} style={{display: 'flex'}}>
+            <DataFreshness
+                source={`数据来源：${source}`}
+                state={evidenceFreshnessState(metadata)}
+                detail={metadata?.ageSeconds == null ? freshnessText : `${freshnessText}；age ${metadata.ageSeconds}s`}
+            />
+            <Space size={[8, 6]} wrap>
+                <Tag color={availability === 'AVAILABLE' && freshness === 'FRESH'
+                    ? 'success'
+                    : availability === 'PARTIAL' || freshness === 'STALE' ? 'warning' : availability === 'UNAVAILABLE' ? 'error' : 'default'}>
+                    可用性：{availability}
+                </Tag>
+                <Text>新鲜度：{freshness}（{freshnessText}）</Text>
+                <Text>最近计算时间：{metadata?.lastCalculatedAt ? formatDateTime(metadata.lastCalculatedAt) : '未提供'}</Text>
+            </Space>
+        </Space>
+    );
 }
 
 type OverviewMessage = ShadowRunOverviewBlocker | ShadowRunOverviewWarning;
@@ -420,6 +468,7 @@ function ShadowRunOverviewSummary({
                     只读消费 GET /api/shadow-runs/overview；用于 Shadow Run 运营诊断，不新增 route、Dashboard v2 或写侧动作。
                 </Text>
                 <OverviewBoundaryBadges overview={overview}/>
+                <EvidenceMetadataSummary metadata={overview?.evidenceMetadata}/>
                 <OverviewMetricStrip overview={overview} loading={isLoading}/>
 
                 {isLoading ? (

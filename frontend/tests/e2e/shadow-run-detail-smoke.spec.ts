@@ -110,6 +110,44 @@ const reportFixture = {
     traceId: 'trace-shadow-gater-7',
 };
 
+const overviewFixture = {
+    generatedAt: '2026-07-06T11:06:00Z',
+    evidenceMetadata: {
+        source: 'LOCAL_DB_SHADOW_FACTS',
+        availability: 'PARTIAL',
+        lastCalculatedAt: '2026-07-06T11:05:00Z',
+        freshnessStatus: 'UNKNOWN',
+        ageSeconds: 60,
+        staleAfterSeconds: null,
+        staleReason: 'SOURCE_PARTIAL',
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+    },
+    diagnosticOnly: true,
+    noSideEffect: true,
+    notTradingAuthorization: true,
+    liveDisabled: true,
+    realProviderImplemented: false,
+    privateTradingImplemented: false,
+    aiDhRuntimeIntegrated: false,
+    totalRuns: 2,
+    runningRuns: 0,
+    blockedRuns: 1,
+    failedRuns: 0,
+    completedRuns: 1,
+    staleRuns: 1,
+    latestRun: null,
+    latestConsistency: null,
+    divergenceSeverity: 'UNKNOWN',
+    blockers: [],
+    warnings: [],
+    nextSteps: [],
+    evidenceAnchors: [],
+    traceId: 'trace-shadow-overview-smoke',
+};
+
 const listFixture = {
     items: [
         {
@@ -170,6 +208,8 @@ interface StubOptions {
     listStatus?: number;
     delayDetailMs?: number;
     delayListMs?: number;
+    evidenceAvailability?: 'AVAILABLE' | 'PARTIAL' | 'UNAVAILABLE' | 'UNKNOWN';
+    evidenceFreshness?: 'FRESH' | 'STALE' | 'UNKNOWN';
 }
 
 function shadowRunUrl(): string {
@@ -224,6 +264,21 @@ async function seedAuthAndShadowRunStubs(page: Page, options: StubOptions = {}):
     await page.route('**/api/exchange-accounts', (route: Route) => route.fulfill({
         status: 200,
         json: [],
+    }));
+
+    await page.route('**/api/shadow-runs/overview', (route: Route) => route.fulfill({
+        status: 200,
+        json: {
+            ...overviewFixture,
+            evidenceMetadata: {
+                ...overviewFixture.evidenceMetadata,
+                availability: options.evidenceAvailability ?? 'PARTIAL',
+                freshnessStatus: options.evidenceFreshness ?? 'UNKNOWN',
+                staleReason: options.evidenceFreshness === 'FRESH' ? null : options.evidenceFreshness === 'STALE'
+                    ? 'STALE_THRESHOLD_EXCEEDED'
+                    : options.evidenceAvailability === 'UNAVAILABLE' ? 'SOURCE_UNAVAILABLE' : 'SOURCE_PARTIAL',
+            },
+        },
     }));
 
     await page.route(/\/api\/shadow-runs(?:\?.*)?$/, async (route: Route) => {
@@ -330,6 +385,10 @@ test.describe('Shadow Run detail / replay read-only view', () => {
         const view = page.getByTestId('shadow-run-list-page');
         await expect(view).toBeVisible();
         await expect(view.getByRole('heading', {name: 'Shadow Run 列表'})).toBeVisible();
+        const evidenceMetadata = page.getByTestId('shadow-run-evidence-metadata');
+        await expect(evidenceMetadata).toContainText('LOCAL_DB_SHADOW_FACTS');
+        await expect(evidenceMetadata).toContainText('可用性：PARTIAL');
+        await expect(evidenceMetadata).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
         await expect(view).toContainText('Diagnostic only / No trading authorization');
         await expect(view).toContainText('No order submission: true');
         await expect(view).toContainText('No credential access: true');
@@ -339,6 +398,19 @@ test.describe('Shadow Run detail / replay read-only view', () => {
         await expect(view).toContainText('sv-gater-8');
         await expect(view).toContainText(DATASET_ID);
         await expect(view).toContainText('trace-shadow-gater-8');
+        stubOptions.evidenceAvailability = 'UNAVAILABLE';
+        await view.getByRole('button', {name: '刷新 overview'}).click();
+        await expect(evidenceMetadata).toContainText('可用性：UNAVAILABLE');
+        await expect(evidenceMetadata).toContainText('无法判断新鲜度');
+
+        stubOptions.evidenceAvailability = 'AVAILABLE';
+        stubOptions.evidenceFreshness = 'STALE';
+        await view.getByRole('button', {name: '刷新 overview'}).click();
+        await expect(evidenceMetadata).toContainText('新鲜度：STALE（已过期）');
+
+        stubOptions.evidenceFreshness = 'FRESH';
+        await view.getByRole('button', {name: '刷新 overview'}).click();
+        await expect(evidenceMetadata).toContainText('新鲜度：FRESH（新鲜）');
         await expect(page.getByRole('button', {name: /start|stop|execute|rerun|approve|trade|下单|撤单|转账|提现/i})).toHaveCount(0);
         await expectNoSensitiveCopy(page);
         expectNoForbiddenRequests(requests);

@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.strategy.application.shadowrun;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculator;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel.BoundaryMessage;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel.EvidenceAnchor;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel.LatestConsistency;
@@ -13,9 +16,12 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyRe
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -68,6 +74,7 @@ public class ShadowRunOverviewQueryService {
         ShadowConsistencyReport latestReport = facts.latestConsistency().orElse(null);
         return new ShadowRunOverviewReadModel(
                 clock.instant(),
+                evidenceMetadata(facts),
                 true,
                 true,
                 true,
@@ -89,6 +96,38 @@ public class ShadowRunOverviewQueryService {
                 nextSteps(facts, latestReport),
                 evidenceAnchors(facts),
                 traceId
+        );
+    }
+
+    private ReadModelEvidenceMetadata evidenceMetadata(ShadowRunOverviewFacts facts) {
+        Instant lastCalculatedAt = Stream.of(
+                        facts.latestRun().map(ShadowRun::updatedAt),
+                        facts.latestConsistency().map(ShadowConsistencyReport::generatedAt),
+                        facts.latestEvent().map(ShadowRunOverviewEvidenceFact::sourceTimestamp),
+                        facts.latestSnapshot().map(ShadowRunOverviewEvidenceFact::sourceTimestamp)
+                )
+                .flatMap(java.util.Optional::stream)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        boolean hasAnyFacts = facts.totalRuns() > 0
+                || facts.latestRun().isPresent()
+                || facts.latestConsistency().isPresent()
+                || facts.latestEvent().isPresent()
+                || facts.latestSnapshot().isPresent();
+        boolean completeEvidence = facts.latestRun().isPresent()
+                && facts.latestConsistency().isPresent()
+                && facts.latestEvent().isPresent()
+                && facts.latestSnapshot().isPresent()
+                && facts.staleRuns() == 0;
+        Availability availability = !hasAnyFacts
+                ? Availability.UNAVAILABLE
+                : completeEvidence ? Availability.AVAILABLE : Availability.PARTIAL;
+        return new ReadModelEvidenceMetadataCalculator(clock).calculate(
+                "LOCAL_DB_SHADOW_FACTS",
+                availability,
+                lastCalculatedAt,
+                null
         );
     }
 

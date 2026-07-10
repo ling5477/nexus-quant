@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowValidationWorkflowOverviewFacts;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowValidationWorkflowOverviewFacts.OperatorEvidenceFact;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowValidationWorkflowOverviewQueryPort;
@@ -30,6 +34,10 @@ class ShadowValidationWorkflowOverviewQueryServiceTest {
 
         assertEquals(0, model.totalOperatorItems());
         assertEquals(0, model.operatorItems().size());
+        assertEquals("LOCAL_DB_VALIDATION_WORKFLOW", model.evidenceMetadata().source());
+        assertEquals(Availability.UNAVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.UNKNOWN, model.evidenceMetadata().freshnessStatus());
+        assertEquals(null, model.evidenceMetadata().lastCalculatedAt());
         assertTrue(model.diagnosticOnly());
         assertTrue(model.noSideEffect());
         assertTrue(model.notTradingAuthorization());
@@ -37,6 +45,9 @@ class ShadowValidationWorkflowOverviewQueryServiceTest {
         assertFalse(model.realProviderImplemented());
         assertFalse(model.privateTradingImplemented());
         assertFalse(model.aiDhRuntimeIntegrated());
+        assertEquals("LOCAL_DB_VALIDATION_WORKFLOW", model.evidenceMetadata().source());
+        assertEquals(Availability.UNAVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.UNKNOWN, model.evidenceMetadata().freshnessStatus());
         assertHasMessage(model.warnings(), "NO_OPERATOR_ITEMS");
         assertHasMessage(model.warnings(), "NO_EVIDENCE");
         assertHasNextStep(model.nextSteps(), "ADD_LOCAL_EVIDENCE");
@@ -53,6 +64,10 @@ class ShadowValidationWorkflowOverviewQueryServiceTest {
         assertEquals(ShadowValidationWorkflowValidationDecision.VALIDATION_READY, item.validationDecision());
         assertEquals(ShadowValidationWorkflowSeverity.INFO, item.severity());
         assertEquals(ShadowValidationWorkflowEvidenceFreshness.FRESH, item.evidenceFreshness());
+        assertEquals(Availability.AVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.FRESH, model.evidenceMetadata().freshnessStatus());
+        assertEquals(60L, model.evidenceMetadata().ageSeconds());
+        assertEquals(604800L, model.evidenceMetadata().staleAfterSeconds());
         assertTrue(item.notTradingAuthorization());
         assertTrue(item.liveDisabled());
         assertFalse(item.realProviderImplemented());
@@ -63,6 +78,11 @@ class ShadowValidationWorkflowOverviewQueryServiceTest {
         assertHasNextStep(item.nextSteps(), "MANUAL_OPERATOR_REVIEW");
         assertFalse(model.toString().toLowerCase(java.util.Locale.ROOT).contains("winrate"));
         assertFalse(model.toString().toLowerCase(java.util.Locale.ROOT).contains("totalreturn"));
+        assertEquals(Availability.AVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.FRESH, model.evidenceMetadata().freshnessStatus());
+        assertEquals(Instant.parse("2026-07-08T08:59:00Z"), model.evidenceMetadata().lastCalculatedAt());
+        assertEquals(60L, model.evidenceMetadata().ageSeconds());
+        assertEquals(604800L, model.evidenceMetadata().staleAfterSeconds());
     }
 
     @Test
@@ -96,8 +116,11 @@ class ShadowValidationWorkflowOverviewQueryServiceTest {
         assertEquals(ShadowValidationWorkflowState.NEEDS_EVIDENCE, item.workflowState());
         assertEquals(ShadowValidationWorkflowValidationDecision.STALE_EVIDENCE, item.validationDecision());
         assertEquals(ShadowValidationWorkflowEvidenceFreshness.STALE, item.evidenceFreshness());
+        assertEquals(FreshnessStatus.STALE, model.evidenceMetadata().freshnessStatus());
         assertHasMessage(item.warnings(), "STALE_EVIDENCE");
         assertHasNextStep(item.nextSteps(), "ADD_OR_REFRESH_EVIDENCE");
+        assertEquals(FreshnessStatus.STALE, model.evidenceMetadata().freshnessStatus());
+        assertEquals("STALE_THRESHOLD_EXCEEDED", model.evidenceMetadata().staleReason());
     }
 
     @Test

@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
@@ -157,6 +160,10 @@ class ShadowRunReadOnlyQueryServiceTest {
         ShadowRunOverviewReadModel overview = service.overview("trace-empty");
 
         assertEquals(NOW.plusSeconds(60), overview.generatedAt());
+        assertEquals("LOCAL_DB_SHADOW_FACTS", overview.evidenceMetadata().source());
+        assertEquals(Availability.UNAVAILABLE, overview.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.UNKNOWN, overview.evidenceMetadata().freshnessStatus());
+        assertEquals(null, overview.evidenceMetadata().lastCalculatedAt());
         assertTrue(overview.diagnosticOnly());
         assertTrue(overview.noSideEffect());
         assertTrue(overview.notTradingAuthorization());
@@ -205,6 +212,10 @@ class ShadowRunReadOnlyQueryServiceTest {
         assertEquals(1, overview.failedRuns());
         assertEquals(2, overview.completedRuns());
         assertEquals(1, overview.staleRuns());
+        assertEquals(Availability.PARTIAL, overview.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.UNKNOWN, overview.evidenceMetadata().freshnessStatus());
+        assertEquals(null, overview.evidenceMetadata().staleAfterSeconds());
+        assertEquals("SOURCE_PARTIAL", overview.evidenceMetadata().staleReason());
         assertEquals(RUN_ID, overview.latestRun().shadowRunId());
         assertEquals("COMPLETED", overview.latestRun().status());
         assertEquals(report.id(), overview.latestConsistency().reportId());

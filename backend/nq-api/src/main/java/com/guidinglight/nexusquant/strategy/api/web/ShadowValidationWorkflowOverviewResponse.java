@@ -16,6 +16,7 @@ import java.util.UUID;
 @Schema(name = "ShadowValidationWorkflowOverviewResponse", description = "GateT-1 read-only shadow validation workflow overview")
 public record ShadowValidationWorkflowOverviewResponse(
         Instant generatedAt,
+        ReadModelEvidenceMetadataResponse evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -41,6 +42,7 @@ public record ShadowValidationWorkflowOverviewResponse(
     public static ShadowValidationWorkflowOverviewResponse from(ShadowValidationWorkflowOverviewReadModel model) {
         return new ShadowValidationWorkflowOverviewResponse(
                 model.generatedAt(),
+                ReadModelEvidenceMetadataResponse.from(model.evidenceMetadata()),
                 model.diagnosticOnly(),
                 model.noSideEffect(),
                 model.notTradingAuthorization(),

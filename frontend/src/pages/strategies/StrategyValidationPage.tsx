@@ -24,6 +24,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import {useConsistencyEvidenceOverview} from '@/hooks/useConsistencyEvidenceOverview';
 import {useEvaluationArtifactPreviewOverview} from '@/hooks/useEvaluationArtifactPreviewOverview';
 import {useIncidentReplayOverview} from '@/hooks/useIncidentReplayOverview';
@@ -40,6 +41,7 @@ import {
     useStrategyValidationOverview,
 } from '@/hooks/useStrategyValidationQueries';
 import type {AppApiError} from '@/types/api';
+import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
 import type {
     ConsistencyEvidenceAnchor,
     ConsistencyEvidenceBlocker,
@@ -2083,6 +2085,56 @@ function generatedAtText(value: string | null | undefined): ReactNode {
     return value ? formatDateTime(value) : <StatusTag status="NOT_AVAILABLE"/>;
 }
 
+function readModelFreshnessState(metadata: ReadModelEvidenceMetadata | null | undefined): FreshnessState {
+    const availability = normalizeStatus(metadata?.availability);
+    const freshness = normalizeStatus(metadata?.freshnessStatus);
+    if (availability === 'UNAVAILABLE') {
+        return 'error';
+    }
+    if (availability === 'PARTIAL') {
+        return 'degraded';
+    }
+    if (freshness === 'FRESH') {
+        return 'fresh';
+    }
+    if (freshness === 'STALE') {
+        return 'stale';
+    }
+    return 'no_data';
+}
+
+function ReadModelEvidenceMetadataSummary({metadata}: {
+    metadata?: ReadModelEvidenceMetadata | null
+}) {
+    const source = metadata?.source?.trim() || 'UNKNOWN_SOURCE';
+    const availability = normalizeStatus(metadata?.availability) || 'UNKNOWN';
+    const freshness = normalizeStatus(metadata?.freshnessStatus) || 'UNKNOWN';
+    const availabilityColor = availability === 'AVAILABLE' && freshness === 'FRESH'
+        ? 'success'
+        : availability === 'PARTIAL' || freshness === 'STALE'
+            ? 'warning'
+            : availability === 'UNAVAILABLE' ? 'error' : 'default';
+    const freshnessText = freshness === 'FRESH'
+        ? '新鲜'
+        : freshness === 'STALE' ? '已过期' : '无法判断新鲜度';
+
+    return (
+        <Space data-testid="read-model-evidence-metadata" direction="vertical" size={6}
+               style={{display: 'flex'}}>
+            <DataFreshness
+                source={`数据来源：${source}`}
+                state={readModelFreshnessState(metadata)}
+                detail={metadata?.ageSeconds == null ? freshnessText : `${freshnessText}；age ${metadata.ageSeconds}s`}
+            />
+            <Space size={[8, 6]} wrap>
+                <Tag color={availabilityColor}>可用性：{availability}</Tag>
+                <Text>新鲜度：{freshness}（{freshnessText}）</Text>
+                <Text>最近计算时间：{metadata?.lastCalculatedAt ? formatDateTime(metadata.lastCalculatedAt) : '未提供'}</Text>
+            </Space>
+        </Space>
+    );
+}
+
 function normalizeQuery(values: StrategyValidationQuery): StrategyValidationQuery {
     return QUERY_FIELDS.reduce<StrategyValidationQuery>((query, field) => {
         const normalized = values[field]?.trim();
@@ -3669,6 +3721,7 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                 </Paragraph>
                 <ShadowValidationWorkflowBoundaryBadges overview={overview}/>
                 <ShadowValidationWorkflowBoundaryDriftAlert overview={overview}/>
+                <ReadModelEvidenceMetadataSummary metadata={overview?.evidenceMetadata}/>
                 <ShadowValidationWorkflowCounts overview={overview}/>
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>

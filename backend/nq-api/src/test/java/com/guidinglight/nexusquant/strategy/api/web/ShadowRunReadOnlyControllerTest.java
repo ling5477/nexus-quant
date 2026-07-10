@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewDivergenceSeverity;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel;
@@ -155,6 +156,11 @@ class ShadowRunReadOnlyControllerTest {
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-overview"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-shadow-overview"))
+                .andExpect(jsonPath("$.evidenceMetadata.source").value("LOCAL_DB_SHADOW_FACTS"))
+                .andExpect(jsonPath("$.evidenceMetadata.availability").value("AVAILABLE"))
+                .andExpect(jsonPath("$.evidenceMetadata.freshnessStatus").value("UNKNOWN"))
+                .andExpect(jsonPath("$.evidenceMetadata.staleReason").value("STALE_THRESHOLD_NOT_DEFINED"))
+                .andExpect(jsonPath("$.evidenceMetadata.notTradingAuthorization").value(true))
                 .andExpect(jsonPath("$.diagnosticOnly").value(true))
                 .andExpect(jsonPath("$.noSideEffect").value(true))
                 .andExpect(jsonPath("$.notTradingAuthorization").value(true))
@@ -298,6 +304,7 @@ class ShadowRunReadOnlyControllerTest {
     private ShadowRunOverviewReadModel overview() {
         return new ShadowRunOverviewReadModel(
                 NOW,
+                testEvidenceMetadata("LOCAL_DB_SHADOW_FACTS"),
                 true,
                 true,
                 true,
@@ -362,6 +369,22 @@ class ShadowRunReadOnlyControllerTest {
                         null
                 )),
                 "trc-shadow-overview"
+        );
+    }
+
+    private ReadModelEvidenceMetadata testEvidenceMetadata(String source) {
+        return new ReadModelEvidenceMetadata(
+                source,
+                ReadModelEvidenceMetadata.Availability.AVAILABLE,
+                NOW,
+                ReadModelEvidenceMetadata.FreshnessStatus.UNKNOWN,
+                0L,
+                null,
+                "STALE_THRESHOLD_NOT_DEFINED",
+                true,
+                true,
+                true,
+                true
         );
     }
 

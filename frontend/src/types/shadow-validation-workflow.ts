@@ -1,3 +1,5 @@
+import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+
 /**
  * GateT-1 Shadow Validation Workflow frontend types.
  *
@@ -142,6 +144,7 @@ export interface ShadowValidationOperatorItem {
  */
 export interface ShadowValidationWorkflowOverviewResponse {
     generatedAt: string;
+    evidenceMetadata?: ReadModelEvidenceMetadata | null;
     diagnosticOnly: boolean;
     noSideEffect: boolean;
     notTradingAuthorization: boolean;
