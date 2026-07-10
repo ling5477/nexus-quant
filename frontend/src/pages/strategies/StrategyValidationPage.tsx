@@ -29,6 +29,7 @@ import {useConsistencyEvidenceOverview} from '@/hooks/useConsistencyEvidenceOver
 import {useEvaluationArtifactPreviewOverview} from '@/hooks/useEvaluationArtifactPreviewOverview';
 import {useIncidentReplayOverview} from '@/hooks/useIncidentReplayOverview';
 import {useIncidentReplayReviewOverview} from '@/hooks/useIncidentReplayReviewOverview';
+import {useValidationOperationsRuntimeEvidenceOverview} from '@/hooks/useValidationOperationsRuntimeEvidenceOverview';
 import {
     usePaperShadowConsistencyDrilldown,
     useShadowRunOverview,
@@ -105,6 +106,10 @@ import type {
     StrategyValidationScope,
     StrategyValidationWarning,
 } from '@/types/strategy-validation';
+import type {
+    ValidationOperationsRuntimeEvidenceOverviewResponse,
+    ValidationOperationsRuntimeEvidenceSource,
+} from '@/types/validation-operations-runtime-evidence';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Paragraph, Text} = Typography;
@@ -2133,6 +2138,87 @@ function ReadModelEvidenceMetadataSummary({metadata, testId}: {
                 <Text>最近计算时间：{metadata?.lastCalculatedAt ? formatDateTime(metadata.lastCalculatedAt) : '未提供'}</Text>
             </Space>
         </Space>
+    );
+}
+
+/**
+ * 运行证据总览只展示后端聚合后的 metadata；各来源详细业务语义仍保留在下方既有 panel。
+ */
+function ValidationOperationsRuntimeEvidenceOverviewPanel({query}: {
+    query: PanelQueryState<ValidationOperationsRuntimeEvidenceOverviewResponse>
+}) {
+    const overview = query.data;
+    return (
+        <Card
+            className="page-section"
+            data-testid="validation-operations-runtime-evidence-card"
+            variant="borderless"
+            title="运行证据总览"
+            extra={(
+                <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
+                    刷新总览
+                </Button>
+            )}
+        >
+            <Space data-testid="validation-operations-runtime-evidence-panel" direction="vertical" size={12}
+                   style={{display: 'flex'}}>
+                <Paragraph type="secondary" style={{marginBottom: 0}}>
+                    只读消费五个既有 evidence metadata 的 aggregate GET；用于识别证据是否完整，不替代来源详情，
+                    不构成交易授权，也不会启动 runner、scheduler 或任何写侧动作。
+                </Paragraph>
+                {query.isLoading ? <Skeleton active paragraph={{rows: 5}}/> : query.isError ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message="运行证据总览查询失败"
+                        description={`聚合 GET 失败按不可用处理；不会显示为全部正常、可执行或已获交易授权。${formatApiError(query.error as AppApiError)}`}
+                    />
+                ) : !overview ? (
+                    <Empty description="暂无运行证据总览；按 fail-closed 处理。"/>
+                ) : (
+                    <>
+                        <ReadModelEvidenceMetadataSummary
+                            metadata={overview.evidenceMetadata}
+                            testId="validation-operations-runtime-evidence-metadata"
+                        />
+                        <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
+                            <Descriptions.Item label="证据来源数">{overview.sourceCount}</Descriptions.Item>
+                            <Descriptions.Item label="可用 / 不完整 / 不可用 / 未知">
+                                {`${overview.availableCount} / ${overview.partialCount} / ${overview.unavailableCount} / ${overview.unknownAvailabilityCount}`}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="新鲜 / 过期 / 未知">
+                                {`${overview.freshCount} / ${overview.staleCount} / ${overview.unknownFreshnessCount}`}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="最新事实时间">
+                                {overview.evidenceMetadata.lastCalculatedAt
+                                    ? formatDateTime(overview.evidenceMetadata.lastCalculatedAt)
+                                    : '暂无权威事实时间'}
+                            </Descriptions.Item>
+                        </Descriptions>
+                        <div>
+                            <Text strong>证据来源</Text>
+                            <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
+                                {overview.sources.map((source: ValidationOperationsRuntimeEvidenceSource) => (
+                                    <Descriptions.Item key={source.sourceKey} label={source.displayName}>
+                                        <Space size={[8, 6]} wrap>
+                                            <Text code>{source.sourceKey}</Text>
+                                            <Text>可用性：{source.evidenceMetadata.availability}</Text>
+                                            <Text>新鲜度：{source.evidenceMetadata.freshnessStatus}</Text>
+                                        </Space>
+                                    </Descriptions.Item>
+                                ))}
+                            </Descriptions>
+                        </div>
+                        <Alert
+                            type="info"
+                            showIcon
+                            message="仅用于诊断"
+                            description="五个来源当前均可用也只表示诊断证据可用；不构成交易授权，LIVE 保持已禁用。"
+                        />
+                    </>
+                )}
+            </Space>
+        </Card>
     );
 }
 
@@ -6229,6 +6315,7 @@ export function StrategyValidationPage() {
     const consistencyEvidenceQuery = useConsistencyEvidenceOverview();
     const evaluationArtifactPreviewQuery = useEvaluationArtifactPreviewOverview();
     const incidentReplayReviewQuery = useIncidentReplayReviewOverview();
+    const runtimeEvidenceQuery = useValidationOperationsRuntimeEvidenceOverview();
     const incidentReplayQuery = useIncidentReplayOverview();
     const shadowOverviewQuery = useShadowRunOverview();
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
@@ -6272,6 +6359,7 @@ export function StrategyValidationPage() {
                 />
             </Card>
 
+            <ValidationOperationsRuntimeEvidenceOverviewPanel query={runtimeEvidenceQuery}/>
             <ValidationOperationsWorkbench
                 queries={{
                     strategyOverview: overviewQuery,

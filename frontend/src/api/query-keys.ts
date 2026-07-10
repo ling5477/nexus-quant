@@ -80,6 +80,11 @@ export const evaluationArtifactPreviewQueryKeys = {
     overview: () => [...evaluationArtifactPreviewQueryKeys.all, 'overview'] as const,
 };
 
+export const validationOperationsRuntimeEvidenceQueryKeys = {
+    all: ['validation-operations', 'runtime-evidence'] as const,
+    overview: () => [...validationOperationsRuntimeEvidenceQueryKeys.all, 'overview'] as const,
+};
+
 export const paperShadowQueryKeys = {
     all: ['paper-shadow'] as const,
     consistencyDrilldown: (shadowRunId: string) => [

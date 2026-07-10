@@ -866,6 +866,79 @@ const EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE = {
     traceId: 'trace-evaluation-artifact-preview-overview-smoke',
 };
 
+const VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE = {
+    generatedAt: '2026-07-11T09:00:00Z',
+    evidenceMetadata: {
+        source: 'LOCAL_VALIDATION_OPERATIONS_RUNTIME_EVIDENCE',
+        availability: 'PARTIAL',
+        lastCalculatedAt: '2026-07-11T08:59:30Z',
+        freshnessStatus: 'UNKNOWN',
+        ageSeconds: 30,
+        staleAfterSeconds: null,
+        staleReason: 'INCOMPLETE_OR_UNKNOWN_EVIDENCE_SOURCES',
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+    },
+    sourceCount: 5,
+    availableCount: 4,
+    partialCount: 0,
+    unavailableCount: 1,
+    unknownAvailabilityCount: 0,
+    freshCount: 4,
+    staleCount: 0,
+    unknownFreshnessCount: 1,
+    sources: [
+        {
+            sourceKey: 'SHADOW_VALIDATION_WORKFLOW',
+            displayName: 'Shadow Validation Workflow',
+            evidenceMetadata: {
+                source: 'LOCAL_DB_VALIDATION_WORKFLOW', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:00Z',
+                freshnessStatus: 'FRESH', ageSeconds: 60, staleAfterSeconds: 604800, staleReason: null,
+                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+            },
+        },
+        {
+            sourceKey: 'SHADOW_RUNS',
+            displayName: 'Shadow Runs',
+            evidenceMetadata: {
+                source: 'LOCAL_DB_SHADOW_FACTS', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:10Z',
+                freshnessStatus: 'FRESH', ageSeconds: 50, staleAfterSeconds: null, staleReason: null,
+                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+            },
+        },
+        {
+            sourceKey: 'CONSISTENCY_EVIDENCE',
+            displayName: 'Consistency Evidence',
+            evidenceMetadata: {
+                source: 'LOCAL_DB_SHADOW_CONSISTENCY_REPORTS', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:20Z',
+                freshnessStatus: 'FRESH', ageSeconds: 40, staleAfterSeconds: 604800, staleReason: null,
+                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+            },
+        },
+        {
+            sourceKey: 'INCIDENT_REPLAY_REVIEW',
+            displayName: 'Incident / Replay Review',
+            evidenceMetadata: {
+                source: 'LOCAL_DB_INCIDENT_REPLAY_REVIEW', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:30Z',
+                freshnessStatus: 'FRESH', ageSeconds: 30, staleAfterSeconds: 604800, staleReason: null,
+                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+            },
+        },
+        {
+            sourceKey: 'EVALUATION_ARTIFACT_PREVIEW',
+            displayName: 'Evaluation Artifact Preview',
+            evidenceMetadata: {
+                source: 'LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW', availability: 'UNAVAILABLE', lastCalculatedAt: null,
+                freshnessStatus: 'UNKNOWN', ageSeconds: null, staleAfterSeconds: null, staleReason: 'LAST_CALCULATED_AT_MISSING',
+                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+            },
+        },
+    ],
+    traceId: 'trace-validation-operations-runtime-evidence-smoke',
+};
+
 const INCIDENT_REPLAY_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-08T13:41:00Z',
     diagnosticOnly: true,
@@ -1076,6 +1149,7 @@ async function seedAuthAndGateQStubs(
         preview?: Record<string, unknown>;
         consistencyEvidence?: Record<string, unknown>;
         incidentReplayReview?: Record<string, unknown>;
+        runtimeEvidence?: Record<string, unknown>;
     } = {},
 ): Promise<string[]> {
     const requests: string[] = [];
@@ -1158,6 +1232,14 @@ async function seedAuthAndGateQStubs(
         json: EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE,
     }));
 
+    await page.route('**/api/validation-operations/runtime-evidence/overview', (route: Route) => {
+        expect(route.request().method()).toBe('GET');
+        return route.fulfill({
+            status: 200,
+            json: overrides.runtimeEvidence ?? VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE,
+        });
+    });
+
     await page.route('**/api/incidents/replay/overview', (route: Route) => route.fulfill({
         status: 200,
         json: INCIDENT_REPLAY_OVERVIEW_FIXTURE,
@@ -1236,6 +1318,25 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
 
         const operationsWorkbench = page.getByTestId('validation-operations-workbench');
         await expect(operationsWorkbench).toBeVisible();
+
+        const runtimeEvidence = page.getByTestId('validation-operations-runtime-evidence-panel');
+        await expect(runtimeEvidence).toBeVisible();
+        await expect(view).toContainText('运行证据总览');
+        await expect(runtimeEvidence).toContainText('SHADOW_VALIDATION_WORKFLOW');
+        await expect(runtimeEvidence).toContainText('SHADOW_RUNS');
+        await expect(runtimeEvidence).toContainText('CONSISTENCY_EVIDENCE');
+        await expect(runtimeEvidence).toContainText('INCIDENT_REPLAY_REVIEW');
+        await expect(runtimeEvidence).toContainText('EVALUATION_ARTIFACT_PREVIEW');
+        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('可用性：PARTIAL');
+        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(runtimeEvidence).toContainText('4 / 0 / 1 / 0');
+        await expect(runtimeEvidence).toContainText('仅用于诊断');
+        await expect(runtimeEvidence).toContainText('不构成交易授权');
+        const runtimeEvidenceRequestCount = () => requests.filter((url) => url.includes('/api/validation-operations/runtime-evidence/overview')).length;
+        await expect.poll(runtimeEvidenceRequestCount).toBeGreaterThan(0);
+        const requestsBeforeRefresh = runtimeEvidenceRequestCount();
+        await page.getByTestId('validation-operations-runtime-evidence-card').getByRole('button', {name: '刷新总览'}).click();
+        await expect.poll(runtimeEvidenceRequestCount).toBe(requestsBeforeRefresh + 1);
 
         const operationsSummary = page.getByTestId('validation-operations-top-summary');
         await expect(operationsSummary).toBeVisible();
@@ -1558,6 +1659,33 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
                     staleReason: 'LAST_CALCULATED_AT_MISSING',
                 },
             },
+            runtimeEvidence: {
+                ...VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE,
+                evidenceMetadata: {
+                    ...VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE.evidenceMetadata,
+                    availability: 'UNKNOWN',
+                    lastCalculatedAt: null,
+                    freshnessStatus: 'UNKNOWN',
+                    ageSeconds: null,
+                    staleReason: 'INCOMPLETE_OR_UNKNOWN_EVIDENCE_SOURCES',
+                },
+                availableCount: 0,
+                unavailableCount: 0,
+                unknownAvailabilityCount: 5,
+                freshCount: 0,
+                unknownFreshnessCount: 5,
+                sources: VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE.sources.map((source) => ({
+                    ...source,
+                    evidenceMetadata: {
+                        ...source.evidenceMetadata,
+                        availability: 'UNKNOWN',
+                        lastCalculatedAt: null,
+                        freshnessStatus: 'UNKNOWN',
+                        ageSeconds: null,
+                        staleReason: 'INCOMPLETE_OR_UNKNOWN_EVIDENCE_SOURCES',
+                    },
+                })),
+            },
         });
 
         await page.goto(validationUrl());
@@ -1577,6 +1705,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('可用性：PARTIAL');
         await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
         await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('最近计算时间：未提供');
+        const runtimeEvidence = page.getByTestId('validation-operations-runtime-evidence-panel');
+        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('可用性：UNKNOWN');
+        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(runtimeEvidence).toContainText('暂无权威事实时间');
 
         await expectNoForbiddenCopy(page);
         await expectNoSuccessTagForStatuses(page, ['UNKNOWN', 'NOT_AVAILABLE', 'NOT_IMPLEMENTED']);
