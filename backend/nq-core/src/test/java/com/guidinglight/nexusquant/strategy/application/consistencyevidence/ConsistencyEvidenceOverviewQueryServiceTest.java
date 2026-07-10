@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.strategy.application.consistencyevidence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,6 +12,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.strategy.domain.port.ConsistencyEvidenceOverviewFacts;
 import com.guidinglight.nexusquant.strategy.domain.port.ConsistencyEvidenceOverviewFacts.ConsistencyReportFact;
 import com.guidinglight.nexusquant.strategy.domain.port.ConsistencyEvidenceOverviewQueryPort;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -48,6 +51,11 @@ class ConsistencyEvidenceOverviewQueryServiceTest {
         assertHasMessage(model.warnings(), "NO_CONSISTENCY_EVIDENCE");
         assertHasNextStep(model.nextSteps(), "INSPECT_LOCAL_CONSISTENCY_FACTS");
         assertEquals("NO_CONSISTENCY_EVIDENCE", model.evidenceAnchors().getFirst().sourceVersion());
+        assertEquals("LOCAL_DB_SHADOW_CONSISTENCY_REPORTS", model.evidenceMetadata().source());
+        assertEquals(Availability.UNAVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.UNKNOWN, model.evidenceMetadata().freshnessStatus());
+        assertNull(model.evidenceMetadata().lastCalculatedAt());
+        assertNull(model.evidenceMetadata().ageSeconds());
     }
 
     @Test
@@ -78,6 +86,56 @@ class ConsistencyEvidenceOverviewQueryServiceTest {
         assertHasMessage(model.warnings(), "DIVERGED_IS_DIAGNOSTIC_ONLY");
         assertHasMessage(model.warnings(), "HIGH_CRITICAL_ARE_PRIORITY_ONLY");
         assertHasNextStep(model.nextSteps(), "REVIEW_FAILED_COMPARISON");
+        assertEquals(Availability.AVAILABLE, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.FRESH, model.evidenceMetadata().freshnessStatus());
+        assertEquals(freshGeneratedAt(), model.evidenceMetadata().lastCalculatedAt());
+        assertEquals(60L, model.evidenceMetadata().ageSeconds());
+        assertEquals(604800L, model.evidenceMetadata().staleAfterSeconds());
+    }
+
+    @Test
+    void shouldExposePartialMetadataForEvidenceMissingAnAuthoritativeTimestamp() {
+        ConsistencyEvidenceOverviewReadModel model = service(facts(fact(
+                "PARTIAL",
+                null,
+                metric("fillDelta", 2.0),
+                array("missing report timestamp"),
+                array()
+        ))).overview("trace-partial");
+
+        assertEquals(Availability.PARTIAL, model.evidenceMetadata().availability());
+        assertEquals(FreshnessStatus.UNKNOWN, model.evidenceMetadata().freshnessStatus());
+        assertEquals("LAST_CALCULATED_AT_MISSING", model.evidenceMetadata().staleReason());
+        assertNull(model.evidenceMetadata().lastCalculatedAt());
+        assertNull(model.evidenceMetadata().ageSeconds());
+        assertTrue(model.evidenceMetadata().diagnosticOnly());
+        assertTrue(model.evidenceMetadata().noSideEffect());
+        assertTrue(model.evidenceMetadata().notTradingAuthorization());
+        assertTrue(model.evidenceMetadata().liveDisabled());
+    }
+
+    @Test
+    void shouldMapExistingStaleFactsAndFutureTimestampsFailClosed() {
+        ConsistencyEvidenceOverviewReadModel stale = service(facts(fact(
+                "DIVERGED",
+                Instant.parse("2026-06-30T10:00:00Z"),
+                metric("fillDelta", 2.0),
+                array(),
+                array()
+        ))).overview("trace-stale");
+        ConsistencyEvidenceOverviewReadModel future = service(facts(fact(
+                "DIVERGED",
+                Instant.parse("2026-07-08T10:01:00Z"),
+                metric("fillDelta", 2.0),
+                array(),
+                array()
+        ))).overview("trace-future");
+
+        assertEquals(FreshnessStatus.STALE, stale.evidenceMetadata().freshnessStatus());
+        assertEquals("STALE_THRESHOLD_EXCEEDED", stale.evidenceMetadata().staleReason());
+        assertEquals(FreshnessStatus.UNKNOWN, future.evidenceMetadata().freshnessStatus());
+        assertEquals("LAST_CALCULATED_AT_IN_FUTURE", future.evidenceMetadata().staleReason());
+        assertNull(future.evidenceMetadata().ageSeconds());
     }
 
     @Test

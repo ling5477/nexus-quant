@@ -474,6 +474,19 @@ const CONSISTENCY_EVIDENCE_LATEST_ITEM = {
 
 const CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE = {
     generatedAt: '2026-07-08T14:12:00Z',
+    evidenceMetadata: {
+        source: 'LOCAL_DB_SHADOW_CONSISTENCY_REPORTS',
+        availability: 'AVAILABLE',
+        lastCalculatedAt: '2026-07-08T14:12:00Z',
+        freshnessStatus: 'FRESH',
+        ageSeconds: 0,
+        staleAfterSeconds: 604800,
+        staleReason: null,
+        diagnosticOnly: true,
+        noSideEffect: true,
+        notTradingAuthorization: true,
+        liveDisabled: true,
+    },
     diagnosticOnly: true,
     noSideEffect: true,
     notTradingAuthorization: true,
@@ -1035,6 +1048,7 @@ async function seedAuthAndGateQStubs(
         evaluationGate?: Record<string, unknown>;
         paperShadow?: Record<string, unknown>;
         preview?: Record<string, unknown>;
+        consistencyEvidence?: Record<string, unknown>;
     } = {},
 ): Promise<string[]> {
     const requests: string[] = [];
@@ -1104,7 +1118,7 @@ async function seedAuthAndGateQStubs(
 
     await page.route('**/api/paper-shadow/consistency/evidence/overview', (route: Route) => route.fulfill({
         status: 200,
-        json: CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE,
+        json: overrides.consistencyEvidence ?? CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE,
     }));
 
     await page.route('**/api/incidents/replay/review/overview', (route: Route) => route.fulfill({
@@ -1308,6 +1322,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(consistencyEvidence).toContainText('false（raw metricDelta 不应暴露）');
         await expect(consistencyEvidence).toContainText('INSPECT_CONSISTENCY_EVIDENCE');
         await expect(consistencyEvidence).toContainText('trace-consistency-evidence-smoke');
+        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('LOCAL_DB_SHADOW_CONSISTENCY_REPORTS');
+        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('可用性：AVAILABLE');
+        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('新鲜度：FRESH（新鲜）');
+        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('最近计算时间：');
         await expect(consistencyEvidence).toContainText('LIVE DISABLED（LIVE 关闭）');
         await expect(consistencyEvidence).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
         await expect(consistencyEvidence).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
@@ -1483,6 +1501,17 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
                     {code: 'UNKNOWN_INPUT_FACTS', severity: 'BLOCKER', message: 'Input facts are unknown.'},
                 ],
             },
+            consistencyEvidence: {
+                ...CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE,
+                evidenceMetadata: {
+                    ...CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE.evidenceMetadata,
+                    availability: 'UNAVAILABLE',
+                    lastCalculatedAt: null,
+                    freshnessStatus: 'UNKNOWN',
+                    ageSeconds: null,
+                    staleReason: 'LAST_CALCULATED_AT_MISSING',
+                },
+            },
         });
 
         await page.goto(validationUrl());
@@ -1494,6 +1523,10 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('Resolve missing dataset facts before review.');
         await expect(view).not.toContainText('READY_FOR_SHADOW_REVIEW（可进入 Shadow 评审）');
         await expect(view).not.toContainText('READY_FOR_NO_SIDE_EFFECT_PREVIEW（可生成无副作用预览）');
+        const consistencyEvidence = page.getByTestId('consistency-evidence-overview-panel');
+        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('可用性：UNAVAILABLE');
+        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('最近计算时间：未提供');
 
         await expectNoForbiddenCopy(page);
         await expectNoSuccessTagForStatuses(page, ['UNKNOWN', 'NOT_AVAILABLE', 'NOT_IMPLEMENTED']);

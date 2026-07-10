@@ -18,6 +18,9 @@ import com.guidinglight.nexusquant.strategy.application.consistencyevidence.Cons
 import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceFreshness;
 import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -84,6 +87,14 @@ class ConsistencyEvidenceOverviewControllerTest {
                 .andExpect(jsonPath("$.noSideEffect").value(true))
                 .andExpect(jsonPath("$.notTradingAuthorization").value(true))
                 .andExpect(jsonPath("$.liveDisabled").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.source").value("LOCAL_DB_SHADOW_CONSISTENCY_REPORTS"))
+                .andExpect(jsonPath("$.evidenceMetadata.availability").value("AVAILABLE"))
+                .andExpect(jsonPath("$.evidenceMetadata.freshnessStatus").value("FRESH"))
+                .andExpect(jsonPath("$.evidenceMetadata.lastCalculatedAt").value("2026-07-08T10:00:00Z"))
+                .andExpect(jsonPath("$.evidenceMetadata.diagnosticOnly").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.noSideEffect").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.notTradingAuthorization").value(true))
+                .andExpect(jsonPath("$.evidenceMetadata.liveDisabled").value(true))
                 .andExpect(jsonPath("$.realProviderImplemented").value(false))
                 .andExpect(jsonPath("$.privateTradingImplemented").value(false))
                 .andExpect(jsonPath("$.aiDhRuntimeIntegrated").value(false))
@@ -145,6 +156,19 @@ class ConsistencyEvidenceOverviewControllerTest {
     }
 
     private ConsistencyEvidenceOverviewReadModel overview() {
+        ReadModelEvidenceMetadata evidenceMetadata = new ReadModelEvidenceMetadata(
+                "LOCAL_DB_SHADOW_CONSISTENCY_REPORTS",
+                Availability.AVAILABLE,
+                NOW,
+                FreshnessStatus.FRESH,
+                0L,
+                604800L,
+                null,
+                true,
+                true,
+                true,
+                true
+        );
         ConsistencyEvidenceOverviewReadModel.MetricDeltaSummary metricDelta =
                 new ConsistencyEvidenceOverviewReadModel.MetricDeltaSummary(
                         1,
@@ -209,6 +233,7 @@ class ConsistencyEvidenceOverviewControllerTest {
         freshnessSummary.put("UNKNOWN", 0L);
         return new ConsistencyEvidenceOverviewReadModel(
                 NOW,
+                evidenceMetadata,
                 true,
                 true,
                 true,

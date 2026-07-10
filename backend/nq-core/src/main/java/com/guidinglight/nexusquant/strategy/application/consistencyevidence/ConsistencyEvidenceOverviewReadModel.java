@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.consistencyevidence;
 
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -17,6 +19,7 @@ import java.util.UUID;
  */
 public record ConsistencyEvidenceOverviewReadModel(
         Instant generatedAt,
+        ReadModelEvidenceMetadata evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -46,6 +49,7 @@ public record ConsistencyEvidenceOverviewReadModel(
 ) {
     public ConsistencyEvidenceOverviewReadModel {
         generatedAt = Objects.requireNonNull(generatedAt, "generatedAt must not be null");
+        evidenceMetadata = Objects.requireNonNull(evidenceMetadata, "evidenceMetadata must not be null");
         evidenceItems = evidenceItems == null ? List.of() : List.copyOf(evidenceItems);
         severityBuckets = unmodifiableLinkedMap(severityBuckets);
         freshnessSummary = unmodifiableLinkedMap(freshnessSummary);

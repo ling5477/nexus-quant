@@ -2103,8 +2103,9 @@ function readModelFreshnessState(metadata: ReadModelEvidenceMetadata | null | un
     return 'no_data';
 }
 
-function ReadModelEvidenceMetadataSummary({metadata}: {
-    metadata?: ReadModelEvidenceMetadata | null
+function ReadModelEvidenceMetadataSummary({metadata, testId}: {
+    metadata?: ReadModelEvidenceMetadata | null;
+    testId?: string;
 }) {
     const source = metadata?.source?.trim() || 'UNKNOWN_SOURCE';
     const availability = normalizeStatus(metadata?.availability) || 'UNKNOWN';
@@ -2119,7 +2120,7 @@ function ReadModelEvidenceMetadataSummary({metadata}: {
         : freshness === 'STALE' ? '已过期' : '无法判断新鲜度';
 
     return (
-        <Space data-testid="read-model-evidence-metadata" direction="vertical" size={6}
+        <Space data-testid={testId ?? 'read-model-evidence-metadata'} direction="vertical" size={6}
                style={{display: 'flex'}}>
             <DataFreshness
                 source={`数据来源：${source}`}
@@ -4137,6 +4138,10 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                 />
                 <ConsistencyEvidenceBoundaryBadges overview={overview}/>
                 <ConsistencyEvidenceBoundaryDriftAlert overview={overview}/>
+                <ReadModelEvidenceMetadataSummary
+                    metadata={overview?.evidenceMetadata}
+                    testId="consistency-evidence-metadata"
+                />
                 <ConsistencyEvidenceCounts overview={overview}/>
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>

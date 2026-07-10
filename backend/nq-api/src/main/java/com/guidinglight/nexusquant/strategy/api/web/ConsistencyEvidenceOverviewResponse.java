@@ -17,6 +17,7 @@ import java.util.UUID;
 @Schema(name = "ConsistencyEvidenceOverviewResponse", description = "GateT-2 read-only consistency evidence overview")
 public record ConsistencyEvidenceOverviewResponse(
         Instant generatedAt,
+        ReadModelEvidenceMetadataResponse evidenceMetadata,
         boolean diagnosticOnly,
         boolean noSideEffect,
         boolean notTradingAuthorization,
@@ -47,6 +48,7 @@ public record ConsistencyEvidenceOverviewResponse(
     public static ConsistencyEvidenceOverviewResponse from(ConsistencyEvidenceOverviewReadModel model) {
         return new ConsistencyEvidenceOverviewResponse(
                 model.generatedAt(),
+                ReadModelEvidenceMetadataResponse.from(model.evidenceMetadata()),
                 model.diagnosticOnly(),
                 model.noSideEffect(),
                 model.notTradingAuthorization(),

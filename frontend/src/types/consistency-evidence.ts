@@ -136,6 +136,7 @@ export interface ConsistencyEvidenceItem {
  */
 export interface ConsistencyEvidenceOverviewResponse {
     generatedAt: string;
+    evidenceMetadata?: ReadModelEvidenceMetadata | null;
     diagnosticOnly: boolean;
     noSideEffect: boolean;
     notTradingAuthorization: boolean;
@@ -163,3 +164,4 @@ export interface ConsistencyEvidenceOverviewResponse {
     evidenceAnchors: ConsistencyEvidenceAnchor[];
     traceId: string;
 }
+import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';

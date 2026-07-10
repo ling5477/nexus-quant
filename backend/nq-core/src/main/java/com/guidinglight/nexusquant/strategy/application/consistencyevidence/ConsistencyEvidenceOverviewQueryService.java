@@ -7,6 +7,9 @@ import com.guidinglight.nexusquant.strategy.application.consistencyevidence.Cons
 import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewReadModel.MetricDeltaItem;
 import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewReadModel.MetricDeltaSummary;
 import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewReadModel.NextStep;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculator;
 import com.guidinglight.nexusquant.strategy.domain.port.ConsistencyEvidenceOverviewFacts;
 import com.guidinglight.nexusquant.strategy.domain.port.ConsistencyEvidenceOverviewFacts.ConsistencyReportFact;
 import com.guidinglight.nexusquant.strategy.domain.port.ConsistencyEvidenceOverviewQueryPort;
@@ -102,9 +105,11 @@ public class ConsistencyEvidenceOverviewQueryService {
                 .map(fact -> evidenceItem(fact, generatedAt, traceId))
                 .toList();
         MetricDeltaSummary metricDeltaSummary = aggregateMetricDelta(items);
+        ReadModelEvidenceMetadata evidenceMetadata = evidenceMetadata(facts, items);
 
         return new ConsistencyEvidenceOverviewReadModel(
                 generatedAt,
+                evidenceMetadata,
                 true,
                 true,
                 true,
@@ -131,6 +136,39 @@ public class ConsistencyEvidenceOverviewQueryService {
                 overviewNextSteps(items),
                 overviewEvidenceAnchors(items, generatedAt, traceId),
                 traceId
+        );
+    }
+
+    /**
+     * 从本地 consistency report facts 派生 overview 的统一证据元数据。
+     *
+     * <p>Why: `generatedAt` 是 report 落地时的权威事实时间；HTTP 响应生成时间不能替代它。空事实
+     * 必须显示为 UNAVAILABLE，缺少 report、shadow run 或权威时间的单项为 PARTIAL。新鲜度阈值复用
+     * 当前 overview 已使用的 7 天规则，且只用于诊断，不改变原有 item freshness summary。
+     *
+     * @param facts SELECT-only 本地 consistency report facts
+     * @param items 已派生的只读 evidence items
+     * @return fail-closed 的 read-model evidence metadata
+     */
+    private ReadModelEvidenceMetadata evidenceMetadata(
+            ConsistencyEvidenceOverviewFacts facts,
+            List<ConsistencyEvidenceItem> items
+    ) {
+        Instant lastCalculatedAt = facts.reports().stream()
+                .map(ConsistencyReportFact::generatedAt)
+                .filter(Objects::nonNull)
+                .max(Instant::compareTo)
+                .orElse(null);
+        Availability availability = items.isEmpty()
+                ? Availability.UNAVAILABLE
+                : items.stream().anyMatch(item -> item.evidenceFreshness() == ConsistencyEvidenceFreshness.MISSING)
+                        ? Availability.PARTIAL
+                        : Availability.AVAILABLE;
+        return new ReadModelEvidenceMetadataCalculator(clock).calculate(
+                "LOCAL_DB_SHADOW_CONSISTENCY_REPORTS",
+                availability,
+                lastCalculatedAt,
+                STALE_AFTER
         );
     }
 
