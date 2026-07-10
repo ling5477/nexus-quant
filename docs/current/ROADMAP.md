@@ -3,83 +3,54 @@
 ## 总路线
 
 ```text
-DOC-CLEAN / BASELINE-FIX completed
-  ↓
-GateH completed
-  ↓
-GateI completed
-  ↓
-GateJ completed
-  ↓
-GateK finalized / frozen / tagged
-  ↓
-GateL completed as No-Real Exchange / MarketData Readiness
-  ↓
-GateM finalized / frozen / accepted / tagged
-  ↓
-GateN finalized / frozen / accepted / closed / tagged
-  ↓
-GateO frozen / accepted
-  ↓
-GateP frozen / accepted / tagged / archived
-  ↓
-GateQ frozen / accepted / tagged / archived
-  ↓
 GateR frozen / accepted / tagged
   ↓
 GateS frozen / accepted / tagged
   ↓
 GateT frozen / accepted / tagged
   ↓
-GateU PLAN / NOT STARTED
+GateU-1..5 completed
+  ↓
+GateU FREEZE READY / NOT TAGGED
+  ↓
+GateV NOT STARTED
 ```
+
+更早完成阶段的历史证据入口为 `docs/gates/**` 或 `docs/archive/**`，不覆盖 `docs/current` 的当前状态。
 
 ## 当前阶段
 
-- GateT：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateT release tag：`nq-gatet-freeze`。
-- GateT archive pointer：`docs/gates/gate-t/README.md`。
-- GateT completed scope：Validation Operations、Shadow Validation Workflow、Consistency Evidence、Incident / Replay Review、Evaluation Artifact Preview No-file baseline、Validation Operations Workbench、Runtime Scheduling Readiness Review。
-- GateU：`PLAN / NOT STARTED`（规划 / 未开始）。
+- GateU：`FREEZE READY / NOT TAGGED`（已具备冻结条件 / 尚未打 tag）。
+- GateU-1～GateU-5：`COMPLETED`（已完成）。
+- GateU baseline：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
+- GateU baseline CI：run `29108265105`，`NQ CI Baseline`，`completed / success`。
+- GateU archive pointer：`docs/gates/gate-u/README.md`。
+- GateU tag：`nq-gateu-freeze` 尚不存在。
+- GateV：`NOT STARTED`（未开始）。
 
-## GateT Closeout Summary
+## GateU Closeout Summary
 
 | Batch | 状态 | 目标 |
 | --- | --- | --- |
-| GateT-0 | `COMPLETED`（已完成） | Shadow Validation Operations plan |
-| GateT-1 | `COMPLETED` | Shadow Validation Workflow backend + frontend |
-| GateT-2 | `COMPLETED` | Consistency Evidence backend + frontend |
-| GateT-3 | `COMPLETED` | Incident / Replay Review backend + frontend |
-| GateT-4 | `COMPLETED` | Evaluation Artifact Preview No-file baseline backend + frontend |
-| GateT-5 | `COMPLETED` | Validation Operations Workbench |
-| GateT-6 | `COMPLETED` | Runtime Scheduling Readiness Review；readiness-review only |
-| GateT-FREEZE | `FROZEN / ACCEPTED / TAGGED` | freeze closeout、archive、release tag |
+| GateU-1 | `COMPLETED` | 统一 read-model evidence metadata 与 calculator；Shadow Validation Workflow / Shadow Run metadata |
+| GateU-2 | `COMPLETED` | Consistency Evidence metadata |
+| GateU-3 | `COMPLETED` | Incident / Replay Review metadata |
+| GateU-4 | `COMPLETED` | Evaluation Artifact Preview No-file metadata |
+| GateU-5 | `COMPLETED` | 五来源 Validation Operations Runtime Evidence aggregate GET 与前端总览 |
+| GateU-FREEZE | `FREEZE READY / NOT TAGGED` | 最小证据归档与 release tag 准备；commit / push / tag 未执行 |
 
 ## 下一步规则
 
-下一步只能是 GateU `PLAN / NOT STARTED`。GateU planning 必须另起任务，先确认范围、事实源、禁止边界和 docs budget；不得从 GateT closeout 自动进入 GateU implementation。
-
-任何 backend / frontend / Python / CI / DB 变更、API 新增、migration 新增、runner / scheduler 启动、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter、real permission probe 或真实交易行为都不是 GateT closeout 的一部分，必须另起任务并重新做边界审查。
+1. 用户精确暂存并复核本轮允许文档。
+2. 用户提交并推送 `docs(gateu): freeze validation runtime evidence baseline`。
+3. 等待该新提交对应的 `NQ CI Baseline` 为 `completed / success`。
+4. 由用户创建并推送 annotated tag `nq-gateu-freeze`，随后验证 local / remote tag 与 peeled commit。
+5. 在 tag 实际推送前不得写成 `TAGGED`；不得启动 GateV，不得继续新增 read-model。
 
 ## 当前边界
 
 - LIVE：`DISABLED`（关闭）。
-- AI：`NOT STARTED`（未开始）。
-- DH runtime：`NOT INTEGRATED`（未集成）。
-- Integration-1：`NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
-- RealClient / real provider / private trading adapter / real permission probe：`NOT IMPLEMENTED`（未实现）。
 - Shadow trading：`NOT ENABLED`（未启用）。
-- Python ML readiness：`NO`（否）。
-- Python live execution readiness：`NO`（否）。
-
-## 当前不做
-
-- 不启动 GateU implementation。
-- 不新增后端、前端、research、scripts、deploy、workflow、migration、API、页面或测试。
-- 不新增 Shadow Run 写接口或执行按钮。
-- 不启动 scheduler、后台 runner 或 Shadow trading。
-- 不开启 LIVE。
-- 不接 AI runtime。
-- 不接 DH runtime。
-- 不实现 RealClient、real provider、private trading adapter 或 real permission probe。
-- 不把 readiness、validation、consistency、incident、archive closeout 或 Python artifact 写成真实交易授权。
+- GateU runtime evidence 仅为 GET-only / read-only / no-side-effect / not trading authorization。
+- 不新增 migration、写 SQL、scheduler、runner、内部 HTTP、credential、private endpoint、real provider、RealClient 或真实交易路径。
+- AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；GateV：`NOT STARTED`。

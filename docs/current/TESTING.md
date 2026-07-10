@@ -10897,3 +10897,32 @@ Boundary confirmation：
 - 未新增上传、导入、文件路径输入、Python 执行、review / acknowledge / approve / reject / escalate / closeout 写侧操作，未新增 start / stop / execute / trade 或真实交易入口。
 
 Blocking status：non-blocking。当前可进入提交前复核。
+
+---
+
+## NQ-GATEU-FREEZE-READINESS-AND-RELEASE-PREP（2026-07-11）
+
+结论：**FREEZE READY / READY FOR USER COMMIT**（已具备冻结条件 / 可由用户提交）。当前仍为 `NOT TAGGED`（尚未打 tag）。
+
+Scope：NQ-only；复核 GateU-1～GateU-5 的只读运行证据闭环，创建单一 `docs/gates/gate-u/README.md` 归档入口，并同步允许的 current facts。未修改 backend、frontend、research、scripts、deploy、`.github`、migration、业务代码或测试代码；未执行 commit、push 或 tag。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git status --short` | PASS | 起始 worktree 与 staged 区 clean。 |
+| `git branch --show-current` | PASS | `dev`。 |
+| `git rev-parse HEAD` / `git rev-parse origin/dev` | PASS | 均为 `9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。 |
+| `git log --oneline -15` | REVIEWED | GateU-1～5 独立 commits 可见；GateU-5 为当前 HEAD。 |
+| `git tag --list "nq-gateu-freeze"` | PASS | 空输出，tag 不存在。 |
+| `gh run view 29108265105 --json name,headSha,status,conclusion,createdAt,updatedAt` | PASS | `NQ CI Baseline`，`completed / success`，`headSha` 等于当前 HEAD。 |
+| GateU-1～5 CI | PASS | runs `29096139258`、`29097485546`、`29103173171`、`29106454940`、`29108265105` 均为 `NQ CI Baseline / completed / success`。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-core,nq-api,nq-infra,nq-app -am test` | PASS / BUILD SUCCESS | 23-module reactor 全部 SUCCESS；无 failure / error。 |
+| `npm --prefix frontend run build` | PASS | `tsc -b && vite build` 成功。 |
+| 指定 Playwright smoke / Chromium | PASS / 4 passed | `strategy-validation-paper-shadow-smoke.spec.ts` 与 `shadow-run-detail-smoke.spec.ts`。 |
+
+Known warnings：Maven 有 SLF4J provider、Mockito dynamic agent / Byte Buddy warning；Vite 有 chunk size warning；Playwright WebServer 有 Ant Design v5 / React 19 compatibility warning。均为非阻断 warning。
+
+Boundary confirmation：固定五来源顺序稳定；每来源调用一次；No-file Artifact Preview 未被忽略；只有全部 `AVAILABLE / FRESH` 才能聚合为 `AVAILABLE / FRESH`；四个 safety flags 均为 `true`。未发现 migration、写 SQL、scheduler、runner、内部 HTTP、credential、private endpoint、real provider、RealClient 或真实交易新增。GateV 保持 `NOT STARTED`，LIVE 保持 `DISABLED`，Shadow trading 保持 `NOT ENABLED`。
+
+What was not run：未运行 Python pytest / mypy / ruff，因为 GateU-1～GateU-5 与本轮文档任务均未修改 `research/**`；未执行真实交易所 HTTP / WebSocket，未读取 credential，未启动任何 scheduler / runner / runtime。
+
+Blocking status：non-blocking。下一步由用户精确暂存、提交并推送本轮允许文档；该新提交 CI 成功后，再由用户创建并推送 `nq-gateu-freeze`。

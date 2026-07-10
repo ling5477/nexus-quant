@@ -17038,3 +17038,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未新增 API、migration、前端页面、测试代码、Python runtime、runner、scheduler、RealClient、real provider、private trading adapter、real permission probe 或真实交易行为。
   - GateR / GateS / GateT 保持 `FROZEN / ACCEPTED / TAGGED`；GateU 保持 `PLAN / NOT STARTED`；LIVE 保持 `DISABLED`；AI 保持 `NOT STARTED`；DH runtime 保持 `NOT INTEGRATED`。
 - next action: 完成 staged allowlist、`git diff --cached --check` 和最终提交前复核；推荐 commit message：`docs(gater): move GateR residual docs into archive source`。
+
+## NQ-GATEU-FREEZE-READINESS-AND-RELEASE-PREP
+
+- date: 2026-07-11
+- scope: NQ-only GateU freeze readiness 与 release prep；只复核 GateU-1～GateU-5、归档单一 GateU README，并同步允许的 current facts。
+- result: `FREEZE READY / READY FOR USER COMMIT / NOT TAGGED`（已具备冻结条件 / 可由用户提交 / 尚未打 tag）。
+- baseline:
+  - branch `dev`，起始 worktree / staged clean。
+  - `HEAD == origin/dev == 9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
+  - GateU-5 已是独立 commit `9f278583 feat(gateu): add validation runtime evidence overview`。
+  - current HEAD CI：run `29108265105`，`NQ CI Baseline`，`completed / success`。
+  - `nq-gateu-freeze` 不存在。
+- evidence:
+  - GateU-1 `c276d0ea`、GateU-2 `14f18cba`、GateU-3 `006b8ff9`、GateU-4 `0db719f2`、GateU-5 `9f278583` 均有独立 commit 与 success CI。
+  - 固定五来源、每来源一次、No-file 第五来源保留、availability / freshness fail-closed 与四个 safety flags 已由源码、单测、API test 和 E2E 复核。
+  - Maven reactor `BUILD SUCCESS`；frontend build PASS；指定 Playwright `4 passed`。
+- changed files:
+  - `docs/gates/gate-u/README.md`
+  - `docs/current/STATUS.md`
+  - `docs/current/ROADMAP.md`
+  - `docs/current/TESTING.md`
+  - `docs/current/WORKLOG.md`
+  - `docs/current/FACT_SOURCE_INDEX.md`
+- boundary:
+  - 未修改 backend、frontend、research、scripts、deploy、`.github`、migration、GateR/S/T archive 或 `docs/archive/**`。
+  - 未新增 API、test、migration、CI、read-model、scheduler、runner、durable operator review、Python artifact import、real provider、RealClient、credential/private endpoint 或真实交易。
+  - GateV `NOT STARTED`；LIVE `DISABLED`；Shadow trading `NOT ENABLED`。
+- commit / push / tag: `NOT PERFORMED`（未执行）。
+- next action: 用户精确暂存并提交 `docs(gateu): freeze validation runtime evidence baseline`，push 后等待新 commit CI success，再由用户创建并推送 `nq-gateu-freeze`。
