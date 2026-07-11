@@ -1,16 +1,17 @@
 # GateV 受控验证自动化与人工复核生命周期计划
 
-> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1 为 `IMPLEMENTED / REVIEW ACCEPTED`（已实现 / 复核已接受）。
+> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1 为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
 > 英文名：`Controlled Validation Automation & Durable Operator Review`。
-> 本计划是 GateV 唯一 planning 主线；本计划 CI 通过后直接进入 GateV-1 代码实现，不再增加 plan review、plan freeze 或 planning addendum。
+> 本计划是 GateV 唯一 active plan；GateV-1 已完成 CI acceptance，下一允许批次为 GateV-2。
 
 ## 1. Current Baseline
 
 - Current authority：以 [STATUS.md](STATUS.md) 的 `nq-current-authority` 为唯一阶段事实源。
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），tag 为 `nq-gateu-freeze`。
-- GateV：`PLAN / NOT IMPLEMENTED`；本轮不表示 implementation 已开始。
+- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；不得写成 accepted、frozen 或 tagged。
+- GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `f7d71d5a80241ade049a83fa3f90b3ac6ce46806`，acceptance head `b3dd5f74f154d5ed9e2343bc18e451f48770814f`，CI run `29144345430` 为 `completed / success`。
+- GateV-2：`NOT STARTED`（未开始）；仅作为下一允许任务，不在本轮启动。
 - LIVE `DISABLED`，Shadow trading `NOT ENABLED`，AI `NOT STARTED`，DH runtime `NOT INTEGRATED`，Integration runtime `NOT STARTED`，real provider / private trading `NOT IMPLEMENTED`。
-- 本计划前置已验证：`dev` clean，`HEAD == origin/dev == 624a8da992bc91f0734d3ffac2b8ba83b610a500`；exact-HEAD `NQ CI Baseline` run `29140474700` 为 `completed / success`；authority checker 与 GateU archive checker 通过。
 
 ## 2. GateU Freeze Evidence
 
@@ -166,7 +167,7 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 | Batch | 唯一交付 | 状态边界 |
 | --- | --- | --- |
 | GateV-0 | 本计划、架构决策、首切片选择 | `PLAN / NOT IMPLEMENTED` |
-| GateV-1 | Durable Review Fact Model：两表 migration、domain state machine、repository、测试与同轮 schema review | `IMPLEMENTED / REVIEW ACCEPTED`；无 API、scheduler、frontend |
+| GateV-1 | Durable Review Fact Model：两表 migration、domain state machine、repository、测试与同轮 schema review | `ACCEPTED / CI GREEN`；无 API、scheduler、frontend |
 | GateV-2 | Operator Review Lifecycle API：GET、acknowledge/escalate/resolve/close、RBAC、owner scope、idempotency、audit | `NOT STARTED`；仅本地 review 写侧，不改交易/运行事实 |
 | GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | 不创建 case、不外联、不改 Paper/Shadow/交易状态 |
 | GateV-4 | Review Workbench：既有页面 queue/detail/events/actions 与 targeted E2E | 不实现 Python manifest preview，不新增 route |
@@ -200,4 +201,4 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION
 ```
 
-GateV-1 由用户提交并 push、且该 exact HEAD CI success 后，下一轮才能实现 GateV-2 operator lifecycle API；默认不再新增 GateV-1 review/freeze 文档。GateV-2 仍只允许本地 review lifecycle，不得修改交易或运行事实。
+GateV-1 已由 exact acceptance head `b3dd5f74f154d5ed9e2343bc18e451f48770814f` 的 CI success 关闭。GateV-2 仍为 `NOT STARTED`，只能在 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION` 独立任务中启动；只允许本地 review lifecycle，不得修改交易或运行事实。

@@ -7,7 +7,7 @@
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - Release tag：`nq-gateu-freeze`；tagged commit `48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
-- GateV：`PLAN / NOT IMPLEMENTED`（已规划 / 未实现）；唯一 active plan：[GATEV_PLAN.md](GATEV_PLAN.md)。
+- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；唯一 active plan：[GATEV_PLAN.md](GATEV_PLAN.md)。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
 ## Authority Map
@@ -34,7 +34,7 @@
 
 ## Current Is Not
 
-- GateV 只有 planning 已完成，不是 implementation 已启动。
+- GateV-1 已 `ACCEPTED / CI GREEN`；GateV-2 仍为 `NOT STARTED`，authority sync 不表示 GateV-2 已启动。
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider、private trading adapter 或 real permission probe 已实现。

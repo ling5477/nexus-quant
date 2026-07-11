@@ -10980,3 +10980,28 @@ What was not run：未运行 frontend build/Playwright 与 Python pytest/mypy/ru
 Boundary confirmation：未调用真实交易所，未读取 credential，未启动 scheduler/runner/runtime，未修改策略、Paper、Shadow、risk、account、order 或 ledger 状态。
 
 Blocking status：non-blocking；GateV-1 review 已接受并可由用户提交。GateV-2 仍须等待 GateV-1 commit/push 与 exact-HEAD CI success。
+
+---
+
+## NQ-GATEV-1-POST-CI-ACTIVE-AUTHORITY-SYNC-AND-CHECKER-HARDENING（2026-07-11）
+
+结论：`PASS / CURRENT_AUTHORITY_CONSISTENT`（通过 / current authority 一致）；GateV-2 仍为 `NOT STARTED`（未开始）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `gh run view 29144345430 --json status,conclusion,headSha,name,url` | PASS | `NQ CI Baseline` 为 `completed / success`，`headSha=b3dd5f74f154d5ed9e2343bc18e451f48770814f`，与 `HEAD == origin/dev` 一致。 |
+| PowerShell 5.1 / 7 parser | PASS | `check-current-authority.ps1` 在 Windows PowerShell 5.1 与 PowerShell 7 均无 parser error；脚本保持 UTF-8 BOM 以避免 5.1 误解码中文注释。 |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/check-current-authority.ps1` | PASS | schema v2、GateU tag/peeled commit、GateV active 状态、GateV-1 commit ancestry、CI acceptance head、正文、ROADMAP、active plan 与入口摘要一致。 |
+| 临时 `STATUS.md` 负向回归 5 cases | PASS | active Gate block/body 冲突、accepted batch 仍 pending CI、next action 不一致、implementation commit 缺失、acceptance head 非 descendant 均为 exit code 1，并输出目标标准错误及 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。 |
+| `check-doc-links.ps1 -Roots docs/current` | PASS / 1 WARNING | checked 59，errors 0；既有 `TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` historical ledger warning 不阻断。 |
+| `git diff --check` / legacy current-state scan | PASS | 无 whitespace error；STATUS、GATEV_PLAN、ROADMAP 不再命中 v1 `next_gate_status` 或 GateV-1 pending commit/CI 语义。 |
+
+Scope / Environment：NQ-only current authority 与 docs governance checker；Windows + PowerShell 5.1 / 7；负向副本位于系统临时目录并在测试后删除，未提交 fixture 或生成物。
+
+Known warnings：Git 报告部分 Markdown/PowerShell 文件后续触碰时可能从 LF 转为 CRLF；`git diff --check` 仍为 PASS。Link checker 的单个 GateJ historical ledger warning 为既有非阻断项。
+
+What was not run：按任务要求未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；本轮未修改业务代码、前端或 Python。
+
+Boundary confirmation：未实现 GateV-2，未修改 backend、frontend、migration、CI workflow、Gate archive、LIVE、AI、DH、Integration 或交易状态。
+
+Blocking status：non-blocking；authority sync 与 checker regression 已通过，可由用户提交。该本地 authority-sync commit 自身尚无 CI，GateV-2 只在用户提交/push 且该新 HEAD CI success 后解除执行阻断。

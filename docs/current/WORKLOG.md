@@ -17108,3 +17108,23 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - 未修改 `nq-api`、frontend、research、scripts、deploy、`.github`、历史 migration、Gate archive、README/ROADMAP/API 或依赖文件。
   - 未实现 Controller/API、scheduler、workbench、Python manifest、自动 materialization、交易/账户/订单/ledger 写入、LIVE、AI、DH 或 Integration runtime。
 - next action: 用户提交并 push GateV-1 staged 变更，等待 exact-HEAD CI success；随后才能启动 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`。
+
+## NQ-GATEV-1-POST-CI-ACTIVE-AUTHORITY-SYNC-AND-CHECKER-HARDENING
+
+- date: 2026-07-11
+- scope: NQ-only current authority sync 与 governance checker hardening；不实现 GateV-2。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY FOR USER COMMIT / GATEV-2 UNBLOCKED AFTER CI`（已实现 / 已自审 / 可由用户提交 / CI 后解除 GateV-2 阻断）。
+- authority:
+  - schema v2 分离 GateU last frozen baseline、GateV active Gate、GateV-1 accepted batch 与 GateV-2 next action。
+  - GateV-1 implementation commit `f7d71d5a80241ade049a83fa3f90b3ac6ce46806`，acceptance head `b3dd5f74f154d5ed9e2343bc18e451f48770814f`，CI run `29144345430` 为 `completed / success`。
+  - GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-2 保持 `NOT STARTED`。
+- checker:
+  - 强制 `authority_schema=2`、required key 唯一性、状态 token/组合、GateU tag target、commit existence/ancestry、正文/ROADMAP/active plan/入口语义与 exact next action。
+  - 新增标准错误覆盖 schema、active Gate、active batch、commit/CI fact、next action、ROADMAP 与 active plan mismatch。
+  - 修复 Windows PowerShell 5.1 native Git negative probe 与 UTF-8 BOM 兼容性，确保缺失 commit 返回治理错误而非脚本终止。
+- validation:
+  - PowerShell 5.1 / 7 parse PASS；current authority positive case PASS。
+  - 5 个系统临时目录负向 case 全部按预期 exit 1，测试副本已删除。
+  - docs link checker `59 checked / 1 historical warning / 0 errors / PASS`；legacy current-state scan 无命中；`git diff --check` PASS。
+- boundary: 未修改 backend、frontend、research、deploy、`.github`、migration、Gate archive、AI/DH/Integration 或交易能力；未运行 Maven/frontend/Python tests，原因是未修改业务代码。
+- next action: 用户复核精确 staged diff，提交 `docs(gatev): sync GateV-1 acceptance authority` 并 push；等待该 authority-sync exact HEAD CI success 后，再启动 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`。

@@ -1,11 +1,19 @@
 # Current Status
 
 <!-- nq-current-authority:start
-current_gate=GateU
-current_gate_status=FROZEN|ACCEPTED|TAGGED
-current_gate_tag=nq-gateu-freeze
-next_gate=GateV
-next_gate_status=NOT_STARTED
+authority_schema=2
+last_frozen_gate=GateU
+last_frozen_gate_status=FROZEN|ACCEPTED|TAGGED
+last_frozen_gate_tag=nq-gateu-freeze
+last_frozen_gate_commit=48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab
+active_gate=GateV
+active_gate_status=IN_PROGRESS|NOT_FROZEN
+active_batch=GateV-1
+active_batch_status=ACCEPTED|CI_GREEN
+active_batch_implementation_commit=f7d71d5a80241ade049a83fa3f90b3ac6ce46806
+active_batch_acceptance_head=b3dd5f74f154d5ed9e2343bc18e451f48770814f
+active_batch_ci_run=29144345430
+next_action=NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -13,7 +21,6 @@ dh_runtime=NOT_INTEGRATED
 integration_runtime=NOT_STARTED
 real_provider=NOT_IMPLEMENTED
 private_trading=NOT_IMPLEMENTED
-updated_commit=48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab
 nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件，不得复制一套独立的 current Gate / next Gate 判定。
@@ -28,7 +35,7 @@ nq-current-authority:end -->
 - GateU implementation baseline：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
 - GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；唯一 active plan 为 [GATEV_PLAN.md](GATEV_PLAN.md)。
-- GateV-1：`IMPLEMENTED / REVIEW ACCEPTED`（已实现 / 复核已接受）；当前可由用户提交，尚未形成新 commit/CI 事实。
+- GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit：`f7d71d5a80241ade049a83fa3f90b3ac6ce46806`；CI alignment / acceptance head：`b3dd5f74f154d5ed9e2343bc18e451f48770814f`；`NQ CI Baseline` run `29144345430` 为 `completed / success`。
 - GateV-2：`NOT STARTED`（未开始）。
 
 ## 2. 安全与运行边界
@@ -52,4 +59,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-下一允许动作是用户提交并 push GateV-1 staged 变更，然后等待该 exact HEAD CI success；CI 成功后才能启动 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`。不得把 GateV 整体写成 accepted、frozen 或 tagged。
+下一允许动作：`NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`。GateV-2 仍为 `NOT STARTED`，只能由独立实现任务启动；不得把 GateV 整体写成 accepted、frozen 或 tagged。
