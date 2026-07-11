@@ -2,10 +2,10 @@
 
 ## 1. 当前总状态
 
-- GateU：`FREEZE READY / NOT TAGGED`（已具备冻结条件 / 尚未打 tag）。
+- GateU：`FREEZE READY / TAG PENDING`（已具备冻结条件 / tag 待创建）。
 - GateU-1～GateU-5：`COMPLETED`（已完成）。
 - GateU baseline commit：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
-- GateU current HEAD CI：GitHub Actions run `29108265105`，`NQ CI Baseline`，`completed / success`，`headSha` 与 baseline commit 一致。
+- GateU implementation baseline CI：GitHub Actions run `29108265105`，`NQ CI Baseline`，`completed / success`，`headSha` 与 baseline commit 一致。
 - GateU archive entry：`docs/gates/gate-u/README.md`。
 - GateU release tag：`nq-gateu-freeze` 尚不存在；不得写成 `TAGGED`。
 - GateV：`NOT STARTED`（未开始）。
@@ -41,4 +41,4 @@
 
 ## 5. 下一步
 
-下一步只能是由用户精确暂存本轮 6 个允许文档，提交并推送 `docs(gateu): freeze validation runtime evidence baseline`，等待该新提交对应 `NQ CI Baseline / completed / success`，再由用户创建并推送 `nq-gateu-freeze`。在 tag 实际推送前，GateU 保持 `FREEZE READY / NOT TAGGED`；不得启动 GateV，不得继续新增 read-model。
+当前 `f7d1b224 docs(gateu): freeze validation runtime evidence baseline` 已存在；本轮在其上补齐 durable GateU archive。下一步只能由用户复核并提交本轮精确暂存的 archive completeness 文档，推送后等待该新提交对应 `NQ CI Baseline / completed / success`，再由用户创建并推送 `nq-gateu-freeze`。在 tag 实际创建前，GateU 保持 `FREEZE READY / TAG PENDING`；不得启动 GateV，不得继续新增 read-model。

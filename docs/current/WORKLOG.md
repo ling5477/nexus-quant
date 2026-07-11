@@ -17067,3 +17067,22 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - GateV `NOT STARTED`；LIVE `DISABLED`；Shadow trading `NOT ENABLED`。
 - commit / push / tag: `NOT PERFORMED`（未执行）。
 - next action: 用户精确暂存并提交 `docs(gateu): freeze validation runtime evidence baseline`，push 后等待新 commit CI success，再由用户创建并推送 `nq-gateu-freeze`。
+
+## NQ-GATEU-ARCHIVE-COMPLETENESS-FIX-BEFORE-COMMIT
+
+- date: 2026-07-11
+- scope: NQ-only docs-only；补齐 `docs/gates/gate-u/**` durable archive，只同步允许的 STATUS / ROADMAP / TESTING / WORKLOG / FACT_SOURCE_INDEX。
+- baseline drift: 实际 `HEAD == origin/dev == f7d1b224cbddb8a826b8e587f0ccd258654b53ee`，且该提交已吸收原 6 个 freeze docs；本轮未 reset / amend / 回退，GateU capability baseline 仍为 `9f278583`。
+- result: `ARCHIVE COMPLETE / READY FOR USER COMMIT / TAG PENDING`（归档完整 / 可由用户提交 / tag 待创建）。
+- archive:
+  - 13 个必需 archive 文件均存在并有独立 evidence body。
+  - implementation baseline 明确声明为按 commit、代码、测试与 CI 重建，不伪造不存在的原始 GateU plan。
+  - matrix 覆盖 batch、commit、后端/API/前端、tests、CI、availability/freshness、safety flags、no-side-effect 与 limitations。
+  - GateU-4 保持 No-file `UNAVAILABLE / UNKNOWN`；GateU-5 保持固定五来源、每来源一次与 fail-closed。
+- validation:
+  - README 相对链接全部存在。
+  - `git diff --check` PASS；forbidden-area diffs 为空。
+  - Maven/frontend/Playwright 未重跑，引用已完成的 `BUILD SUCCESS` / `PASS` / `4 passed` 与 CI `29108265105 / success / 9f278583`。
+- boundary: 未修改 forbidden files，未 commit、push、tag；GateV 未启动；LIVE/AI/DH/真实交易边界未触达。
+- next action: 用户复核 staged diff，提交并 push；等待新 HEAD CI success 后再创建 `nq-gateu-freeze`。
+- commit recommendation: `docs(gateu): complete durable freeze archive`。

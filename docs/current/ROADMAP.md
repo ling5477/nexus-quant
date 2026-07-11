@@ -11,7 +11,7 @@ GateT frozen / accepted / tagged
   ↓
 GateU-1..5 completed
   ↓
-GateU FREEZE READY / NOT TAGGED
+GateU FREEZE READY / TAG PENDING
   ↓
 GateV NOT STARTED
 ```
@@ -20,7 +20,7 @@ GateV NOT STARTED
 
 ## 当前阶段
 
-- GateU：`FREEZE READY / NOT TAGGED`（已具备冻结条件 / 尚未打 tag）。
+- GateU：`FREEZE READY / TAG PENDING`（已具备冻结条件 / tag 待创建）。
 - GateU-1～GateU-5：`COMPLETED`（已完成）。
 - GateU baseline：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
 - GateU baseline CI：run `29108265105`，`NQ CI Baseline`，`completed / success`。
@@ -37,12 +37,12 @@ GateV NOT STARTED
 | GateU-3 | `COMPLETED` | Incident / Replay Review metadata |
 | GateU-4 | `COMPLETED` | Evaluation Artifact Preview No-file metadata |
 | GateU-5 | `COMPLETED` | 五来源 Validation Operations Runtime Evidence aggregate GET 与前端总览 |
-| GateU-FREEZE | `FREEZE READY / NOT TAGGED` | 最小证据归档与 release tag 准备；commit / push / tag 未执行 |
+| GateU-FREEZE | `FREEZE READY / TAG PENDING` | Durable archive completeness 补齐；本轮 commit / push / tag 未执行 |
 
 ## 下一步规则
 
-1. 用户精确暂存并复核本轮允许文档。
-2. 用户提交并推送 `docs(gateu): freeze validation runtime evidence baseline`。
+1. 用户精确复核本轮已暂存的 durable archive completeness 文档。
+2. 用户提交并推送本轮补齐；已有 `f7d1b224` 不 reset、不 amend。
 3. 等待该新提交对应的 `NQ CI Baseline` 为 `completed / success`。
 4. 由用户创建并推送 annotated tag `nq-gateu-freeze`，随后验证 local / remote tag 与 peeled commit。
 5. 在 tag 实际推送前不得写成 `TAGGED`；不得启动 GateV，不得继续新增 read-model。

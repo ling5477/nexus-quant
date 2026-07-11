@@ -10926,3 +10926,28 @@ Boundary confirmation：固定五来源顺序稳定；每来源调用一次；No
 What was not run：未运行 Python pytest / mypy / ruff，因为 GateU-1～GateU-5 与本轮文档任务均未修改 `research/**`；未执行真实交易所 HTTP / WebSocket，未读取 credential，未启动任何 scheduler / runner / runtime。
 
 Blocking status：non-blocking。下一步由用户精确暂存、提交并推送本轮允许文档；该新提交 CI 成功后，再由用户创建并推送 `nq-gateu-freeze`。
+
+---
+
+## NQ-GATEU-ARCHIVE-COMPLETENESS-FIX-BEFORE-COMMIT（2026-07-11）
+
+结论：**ARCHIVE COMPLETE / READY FOR USER COMMIT / TAG PENDING**（归档完整 / 可由用户提交 / tag 待创建）。
+
+Scope：NQ-only docs-only；在已存在的 `f7d1b224 docs(gateu): freeze validation runtime evidence baseline` 之上补齐 13-file durable GateU archive，并同步允许的 current facts。未 reset / amend 既有提交，未修改 backend、frontend、research、scripts、deploy、`.github`、migration、其他 Gate、root/current README 或 API.md；未执行 commit、push 或 tag。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| archive manifest + README relative-link check | PASS | 13 个必需文件均存在；README 12 个相对链接全部可解析。 |
+| `git diff --check` | PASS | 无 whitespace error。 |
+| `git diff --name-only` / `git status --short` | PASS / REVIEWED | tracked 与 untracked 变更均限定在 allowlist。 |
+| forbidden-area diffs | PASS | backend、frontend、research、scripts、deploy、`.github`、migration 均为空。 |
+| GateU implementation validation reference | PASS / NOT RERUN | Maven `BUILD SUCCESS`（23-module reactor）、frontend build `PASS`、Playwright `4 passed`。 |
+| GateU implementation baseline CI | PASS | run `29108265105` / `completed / success` / `9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。 |
+
+Known warnings：PowerShell/Git 提示部分 Markdown 在后续 Git 触碰时会从 LF 转为 CRLF；`git diff --check` 仍为 PASS，属于工作区 line-ending 提示。既有 Maven/Vite/Playwright 非阻断 warning 只作为历史验证上下文，不在本轮重跑。
+
+What was not run：按任务要求未重跑 Maven、frontend build、Playwright；未运行 Python pytest/mypy/ruff。原因是本轮只修改文档且未触碰业务代码、测试或 Python artifact implementation。
+
+Boundary：GateU 固定为 `FREEZE READY / TAG PENDING`；`nq-gateu-freeze` 不存在；GateV `NOT STARTED`；LIVE `DISABLED`；AI `NOT STARTED`；DH runtime `NOT INTEGRATED`；四项 safety flags 保持 `true`。
+
+Blocking status：non-blocking。用户提交并 push 本次 archive completeness 后，必须等待该新 HEAD CI success，才能创建和推送 tag。

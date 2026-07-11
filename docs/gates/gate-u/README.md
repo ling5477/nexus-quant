@@ -1,6 +1,27 @@
-# GateU Freeze Evidence
+# GateU Freeze Archive
 
-本文是 GateU-1～GateU-5 的最小冻结证据入口。当前结论为 `FREEZE READY / NOT TAGGED`（已具备冻结条件 / 尚未打 tag）；本文不表示 release tag 已创建或已推送。
+本文是 GateU-1～GateU-5 的 durable freeze archive（持久冻结归档）入口。归档状态固定为：
+
+> GateU：`FREEZE READY / TAG PENDING`（已具备冻结条件 / tag 待创建）
+
+本文不表示 release tag 已创建或已推送。GateU capability baseline 固定为 `9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`；后续 docs commit 不改变实现基线。
+
+## Archive Manifest
+
+| 文件 | 归档职责 |
+| --- | --- |
+| [GATEU_FREEZE_READINESS_REVIEW.md](GATEU_FREEZE_READINESS_REVIEW.md) | freeze readiness 复核、findings 与判定 |
+| [GATEU_FREEZE_CLOSEOUT.md](GATEU_FREEZE_CLOSEOUT.md) | commit / CI / tag closeout 状态与后续动作 |
+| [GATEU_IMPLEMENTATION_BASELINE.md](GATEU_IMPLEMENTATION_BASELINE.md) | 依据 commits、代码、测试与 CI 重建的实现基线 |
+| [GATEU_BATCH_1_5_EVIDENCE_MATRIX.md](GATEU_BATCH_1_5_EVIDENCE_MATRIX.md) | GateU-1～5 跨层证据矩阵 |
+| [GATEU_TESTING_EVIDENCE_SUMMARY.md](GATEU_TESTING_EVIDENCE_SUMMARY.md) | Maven、frontend build、Playwright 与 CI 证据 |
+| [GATEU_BACKEND_EVIDENCE_SUMMARY.md](GATEU_BACKEND_EVIDENCE_SUMMARY.md) | backend read-model 与 aggregate 证据 |
+| [GATEU_API_EVIDENCE_SUMMARY.md](GATEU_API_EVIDENCE_SUMMARY.md) | GET-only API contract 与测试证据 |
+| [GATEU_FRONTEND_EVIDENCE_SUMMARY.md](GATEU_FRONTEND_EVIDENCE_SUMMARY.md) | Strategy Validation 页面、TanStack Query 与 E2E 证据 |
+| [GATEU_PYTHON_ARTIFACT_BOUNDARY_SUMMARY.md](GATEU_PYTHON_ARTIFACT_BOUNDARY_SUMMARY.md) | No-file Artifact Preview 与 Python 未接入边界 |
+| [GATEU_RUNTIME_BOUNDARY_SUMMARY.md](GATEU_RUNTIME_BOUNDARY_SUMMARY.md) | runtime/read-model/no-side-effect 边界 |
+| [GATEU_BOUNDARY_STATEMENT.md](GATEU_BOUNDARY_STATEMENT.md) | NQ-only、LIVE/AI/DH/交易授权禁止声明 |
+| [GATEU_KNOWN_LIMITATIONS_AND_RESIDUALS.md](GATEU_KNOWN_LIMITATIONS_AND_RESIDUALS.md) | 已知限制、allowed residual 与 tag pending 状态 |
 
 ## 1. Frozen Baseline
 
@@ -8,7 +29,7 @@
 - Branch：`dev`。
 - Baseline commit：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
 - Baseline commit subject：`feat(gateu): add validation runtime evidence overview`。
-- `HEAD == origin/dev`：是。
+- GateU implementation baseline 当时的 `HEAD == origin/dev`：是。
 - Baseline CI：GitHub Actions run `29108265105`，`NQ CI Baseline`，`completed / success`，`headSha=9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
 - Release tag：`nq-gateu-freeze` 尚不存在；本任务未创建、未推送 tag。
 
@@ -16,10 +37,10 @@
 
 | Batch | 状态 | Commit | CI | 已接受证据 | 边界 |
 | --- | --- | --- | --- | --- | --- |
-| GateU-1 | `COMPLETED`（已完成） | `c276d0ea6882c96ca091435ad13cdffecfcffeee` | run `29096139258` / `success` | 新增统一 `ReadModelEvidenceMetadata`、`ReadModelEvidenceMetadataCalculator`；Shadow Validation Workflow 与 Shadow Run overview 接入统一 metadata。 | 纯只读诊断 metadata；缺时间、阈值或可用事实时 fail-closed。 |
-| GateU-2 | `COMPLETED` | `14f18cba5a0826922c3b13ed9c7beacc7e186970` | run `29097485546` / `success` | Consistency Evidence overview 接入统一 availability / freshness metadata。 | 复用 SELECT-only 本地事实；不生成 consistency report。 |
-| GateU-3 | `COMPLETED` | `006b8ff9344ce376d7b9779998649d302bdaafef` | run `29103173171` / `success` | Incident / Replay Review overview 接入统一 metadata。 | 不创建 incident、不启动 replay、不新增 durable operator review。 |
-| GateU-4 | `COMPLETED` | `0db719f29e31445bd12c980347617e010a2e331f` | run `29106454940` / `success` | Evaluation Artifact Preview No-file baseline 接入统一 metadata，固定保留 `LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW`。 | `UNAVAILABLE / UNKNOWN` fail-closed；不读文件、不执行 Python、不导入 DB。 |
+| GateU-1 | `COMPLETED`（已完成） | `c276d0ea6882c96ca091435ad13cdffecfcffeee` | success 已确认；旧 batch exact run id 不纳入本次重建证据 | 新增统一 `ReadModelEvidenceMetadata`、`ReadModelEvidenceMetadataCalculator`；Shadow Validation Workflow 与 Shadow Run overview 接入统一 metadata。 | 纯只读诊断 metadata；缺时间、阈值或可用事实时 fail-closed。 |
+| GateU-2 | `COMPLETED` | `14f18cba5a0826922c3b13ed9c7beacc7e186970` | success 已确认；旧 batch exact run id 不纳入本次重建证据 | Consistency Evidence overview 接入统一 availability / freshness metadata。 | 复用 SELECT-only 本地事实；不生成 consistency report。 |
+| GateU-3 | `COMPLETED` | `006b8ff9344ce376d7b9779998649d302bdaafef` | success 已确认；旧 batch exact run id 不纳入本次重建证据 | Incident / Replay Review overview 接入统一 metadata。 | 不创建 incident、不启动 replay、不新增 durable operator review。 |
+| GateU-4 | `COMPLETED` | `0db719f29e31445bd12c980347617e010a2e331f` | success 已确认；旧 batch exact run id 不纳入本次重建证据 | Evaluation Artifact Preview No-file baseline 接入统一 metadata，固定保留 `LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW`。 | `UNAVAILABLE / UNKNOWN` fail-closed；不读文件、不执行 Python、不导入 DB。 |
 | GateU-5 | `COMPLETED` | `9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d` | run `29108265105` / `success` | 新增五来源 runtime evidence aggregate GET、Strategy Validation 页面“运行证据总览”、TanStack Query GET 与手动 refetch。 | 只聚合既有 metadata；不重算底层事实、不启动 runtime。 |
 
 GateU 功能提交之间存在独立提交 `e151db81 chore(frontend): 切换本地端口至51888`；该提交不属于 GateU-1～GateU-5 证据矩阵，也不作为 GateU capability evidence。
@@ -55,11 +76,8 @@ GateU 功能提交之间存在独立提交 `e151db81 chore(frontend): 切换本�
 
 | Evidence | Result |
 | --- | --- |
-| GateU-1 CI | run `29096139258` / `NQ CI Baseline` / `completed / success` |
-| GateU-2 CI | run `29097485546` / `NQ CI Baseline` / `completed / success` |
-| GateU-3 CI | run `29103173171` / `NQ CI Baseline` / `completed / success` |
-| GateU-4 CI | run `29106454940` / `NQ CI Baseline` / `completed / success` |
-| GateU-5 / current HEAD CI | run `29108265105` / `NQ CI Baseline` / `completed / success` |
+| GateU-1～4 CI | 各 batch success 已确认；exact run id 不纳入本次重建证据 |
+| GateU-5 implementation baseline CI | run `29108265105` / `NQ CI Baseline` / `completed / success` / `headSha=9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d` |
 | Maven | `mvn -ntp -f backend/pom.xml -pl nq-core,nq-api,nq-infra,nq-app -am test` -> `BUILD SUCCESS` |
 | Frontend build | `npm --prefix frontend run build` -> PASS |
 | Targeted Playwright | 两个指定 smoke / Chromium -> `4 passed` |
@@ -79,7 +97,7 @@ GateU 只形成 read-model evidence metadata 与只读总览，不新增 migrati
 
 固定状态：
 
-- GateU：`FREEZE READY / NOT TAGGED`（已具备冻结条件 / 尚未打 tag）。
+- GateU：`FREEZE READY / TAG PENDING`（已具备冻结条件 / tag 待创建）。
 - GateU-1～GateU-5：`COMPLETED`（已完成）。
 - GateV：`NOT STARTED`（未开始）。
 - LIVE：`DISABLED`（关闭）。
@@ -108,4 +126,3 @@ git tag -a nq-gateu-freeze `
 
 git push origin nq-gateu-freeze
 ```
-

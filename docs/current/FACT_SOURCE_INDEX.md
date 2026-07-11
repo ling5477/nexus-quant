@@ -1,6 +1,6 @@
 # Current Fact Source Index
 
-本文是 NexusQuant 当前事实源索引。GateU-1～GateU-5 已完成，GateU 当前为 `FREEZE READY / NOT TAGGED`（已具备冻结条件 / 尚未打 tag），最小冻结证据入口为 `docs/gates/gate-u/README.md`。`docs/current` 只保留当前状态、路线、验证、工作记录和仍需作为 current 使用的 API / DB / 架构事实。
+本文是 NexusQuant 当前事实源索引。GateU-1～GateU-5 已完成，GateU 当前为 `FREEZE READY / TAG PENDING`（已具备冻结条件 / tag 待创建），durable freeze archive 入口为 `docs/gates/gate-u/README.md`。`docs/current` 只保留当前状态、路线、验证、工作记录和仍需作为 current 使用的 API / DB / 架构事实。
 
 ## 1. 当前事实源优先级
 
@@ -14,7 +14,7 @@
 6. [WORKLOG.md](WORKLOG.md)：当前工作记录。
 7. [API.md](API.md)：已实现 HTTP API 当前事实。
 8. [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema 当前事实。
-9. [../gates/gate-u/README.md](../gates/gate-u/README.md)：GateU-1～GateU-5 evidence matrix、API / frontend / test / CI / safety evidence 与 release prep；当前为 `FREEZE READY / NOT TAGGED`。
+9. [../gates/gate-u/README.md](../gates/gate-u/README.md)：GateU durable archive manifest，包含 GateU-1～5 implementation baseline、evidence matrix、testing/backend/API/frontend/Python/runtime/boundary/limitations 与 release prep；当前为 `FREEZE READY / TAG PENDING`。
 10. [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)：archive governance hardening 与 GateR/S/T residual move plan；GateT / GateS / GateR move batch 均已执行。
 11. [../gates/gate-t/README.md](../gates/gate-t/README.md)：GateT 历史归档入口。
 12. [../gates/gate-t/GATET_FREEZE_CLOSEOUT.md](../gates/gate-t/GATET_FREEZE_CLOSEOUT.md)：GateT freeze closeout authority。
@@ -37,7 +37,7 @@
 
 ## 2. 当前阶段声明
 
-- GateU：`FREEZE READY / NOT TAGGED`（已具备冻结条件 / 尚未打 tag）；GateU-1～GateU-5 为 `COMPLETED`（已完成）；baseline commit `9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`；current HEAD CI run `29108265105` 为 `completed / success`；`nq-gateu-freeze` 尚不存在。
+- GateU：`FREEZE READY / TAG PENDING`（已具备冻结条件 / tag 待创建）；GateU-1～GateU-5 为 `COMPLETED`（已完成）；implementation baseline commit `9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`；baseline CI run `29108265105` 为 `completed / success`；`nq-gateu-freeze` 尚不存在。
 - GateV：`NOT STARTED`（未开始）。
 - GateT：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），release tag `nq-gatet-freeze`。
 - GateT-0..6：`COMPLETED`（已完成）。
@@ -46,7 +46,7 @@
 
 ## 3. GateU Freeze-ready Facts
 
-- GateU archive entry：`docs/gates/gate-u/README.md`；该单一 README 同时承担 batch evidence matrix、API / frontend evidence index、test / CI / safety evidence、known limitations 与 release prep。
+- GateU archive entry：`docs/gates/gate-u/README.md`；其 manifest 指向 12 份独立 durable evidence body，不再由单一 README 承担全部归档职责。
 - GateU-1～GateU-5 commits：`c276d0ea`、`14f18cba`、`006b8ff9`、`0db719f2`、`9f278583`；五个对应 `NQ CI Baseline` run 均为 `completed / success`。
 - Current endpoint：`GET /api/validation-operations/runtime-evidence/overview`；固定聚合 Shadow Validation Workflow、Shadow Runs、Consistency Evidence、Incident / Replay Review、Evaluation Artifact Preview 五来源。
 - No-file Evaluation Artifact Preview 保留为第五来源并 fail-closed；只在所有来源 `AVAILABLE / FRESH` 时聚合为 `AVAILABLE / FRESH`。
@@ -65,7 +65,7 @@
 
 ## 5. 禁止误写清单
 
-- 不得把 GateU `FREEZE READY / NOT TAGGED` 写成 `TAGGED`、release tag 已推送或 GateV 已启动。
+- 不得把 GateU `FREEZE READY / TAG PENDING` 写成 `TAGGED`、release tag 已推送或 GateV 已启动。
 - 不得把 GateU runtime evidence aggregate 写成 runtime execution、Shadow trading、LIVE readiness 或交易授权。
 - 不得把 GateU freeze readiness 写成新增 read-model 的继续授权。
 - 不得把 GateT GET-only endpoints 写成写接口、runner trigger、scheduler trigger 或交易 endpoint。
