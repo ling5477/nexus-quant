@@ -142,9 +142,16 @@ GateV 只规划 manifest preview，不在首切片实现：
 
 回滚：先回滚应用 wiring，使新表 dormant；Flyway 已应用后不执行 down migration、不编辑历史文件。若必须移除，另建经审查的 forward cleanup migration，并在删除前导出审计证据。GateV-1 必须在同一代码任务内执行独立 schema review、migration contract test 与 PostgreSQL/Testcontainers 验证；不另开 planning review。
 
-## 14. Frontend Candidate Scope
+## 14. GateV-4 Review Workbench Plan
 
-GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench 增加 review queue、case detail、event timeline 和四个有限动作；不新增 route。必须覆盖 loading/empty/error/403/404/409、version conflict、duplicate idempotency、disabled/risky confirmation，并持续展示 `LIVE DISABLED` 与 `not trading authorization`。不实现 Python manifest UI。
+- Status：`NOT STARTED`（未开始）。
+- Formal task ID：`NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。
+- 目标：复用 GateV-2 已接受的本地 review case list/detail/events/lifecycle API，在既有 `/strategies/validation` Validation Operations Workbench 中增加 review queue、case detail、lifecycle event timeline，以及 acknowledge、escalate、resolve、close 四个有限动作；不新增 route。
+- 默认前端范围：React/Vite/Ant Design、state/severity/owner 等既有查询条件、loading/empty/error/conflict/permission-denied 状态、optimistic version conflict、duplicate idempotency、危险操作确认、TanStack Query cache invalidation 与保守安全提示。
+- 既有 API 依赖：`GET /api/validation-review-cases`、`GET /api/validation-review-cases/{caseId}`、`GET /api/validation-review-cases/{caseId}/events`，以及同一 case 路径下的 `POST .../acknowledge`、`POST .../escalate`、`POST .../resolve`、`POST .../close`。GateV-4 不新增或修改 backend endpoint；若最小闭环存在 API gap，implementation 必须先明确报告并 fail closed，不得自行扩大后端范围。
+- 禁止范围：不新建 review case，不删除或 reopen，不增加 approve/authorize/execute/trade 或自动 lifecycle transition；不实现 Python manifest UI，不修改 GateV-3 scheduler，不新增 migration，不触碰 credential、账户、余额、订单、Ledger、LIVE、Shadow trading、AI、DH 或 Integration runtime。
+- 测试方向：frontend build 与 targeted Playwright smoke，覆盖 queue/detail/events/actions、loading/empty/error、403/404/409、version conflict、duplicate idempotency、permission denied、危险操作确认和 cache invalidation；本 planning task 不运行这些实现期测试。
+- 安全语义：所有 review 状态和操作只表达本地人工复核，不代表 trading authorization；页面必须持续展示 `LIVE DISABLED` 与 `not trading authorization`。
 
 ## 15. Test and CI Strategy
 
@@ -177,7 +184,7 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 | GateV-2 | Operator Review Lifecycle API：GET、acknowledge/escalate/resolve/close、RBAC、owner scope、idempotency、audit | `ACCEPTED / CI GREEN`；仅本地 review 写侧，不改交易/运行事实 |
 | GateV-3A | PostgreSQL Advisory Scheduler Lock Prerequisite：通用 contract、transaction-level try lock、稳定 key mapping、Spring composition、真实并发测试 | `ACCEPTED / CI GREEN`；无 `@Scheduled`、migration、业务 callback 或业务副作用 |
 | GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | `ACCEPTED / CI GREEN`；专项 review 无 P0/P1，exact-HEAD CI green；不创建 case、不外联、不改 Paper/Shadow/交易状态 |
-| GateV-4 | Review Workbench：既有页面 queue/detail/events/actions 与 targeted E2E | 不实现 Python manifest preview，不新增 route |
+| GateV-4 | Review Workbench：正式任务 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`；既有页面 queue/detail/events/actions 与 targeted E2E | `NOT STARTED`；不实现 Python manifest preview，不新增 route |
 | GateV-FREEZE | manifest 驱动归档、全量验证、exact-HEAD CI、tag handoff | 不新增实现范围 |
 
 ## 19. Freeze Acceptance Criteria

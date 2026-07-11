@@ -17217,3 +17217,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: targeted 23-module reactor 与 app composition 均 `BUILD SUCCESS`；本地 PostgreSQL integration 因未配置 smoke properties 为 1 skipped；exact-HEAD CI Backend Maven 与 PostgreSQL/Flyway smoke 均 success；authority/link/scope checkers 在状态同步后重跑。
 - boundary: scheduler 默认关闭；无业务写入、交易授权、内部 HTTP、第二套锁、全局 `@EnableScheduling` 或既有 scheduler 误激活；未触碰 GateU/GateV-3A、POM、migration、API、CI、frontend、Python 或 research fixture。
 - next action: 用户提交本次 5 个 current/evidence 文档状态同步；随后执行 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`，将 GateV-3 提升为 accepted baseline 并创建下一 work batch。
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-TASK-ID-RECONCILIATION
+
+- date: 2026-07-11
+- scope: NQ-only documentation-only；基于既有 GateV-4 Review Workbench 范围建立唯一、稳定的 future batch task id，不提升 GateV-3 authority，不初始化或实现 GateV-4。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY FOR USER COMMIT / GATEV-3 AUTHORITY PROMOTION UNBLOCKED AFTER CI`（已实现 / 已自审 / 可由用户提交 / CI 后解除 GateV-3 authority promotion 阻断）。
+- task id: `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`；GateV-4 继续为 `NOT STARTED`，current `next_action` 继续为 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`。
+- scope boundary: future implementation 仅规划复用 GateV-2 已接受的 3 个 GET 与 acknowledge/escalate/resolve/close 四个 POST，在既有 `/strategies/validation` 页面建设 queue/detail/events/actions；若存在 API gap 必须先报告，不得默认新增 backend endpoint。
+- validation: 起始 `HEAD == origin/dev == b209c416e0daf402216140b62785726f5fd116b6`；GitHub Actions run `29155396719` 为 exact-HEAD `NQ CI Baseline / completed / success`；authority、link、task-id、current-next-action 与 scope checks 在修改后执行。
+- boundary: 未修改代码、API、migration、scheduler、checker、CI、archive、README/STATUS；未开启 LIVE、Shadow trading、AI/DH/Integration runtime，未新增 trading authorization。
+- next action: 用户精确提交并 push 本次四个文档，等待新 HEAD CI success；随后重新执行 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`。

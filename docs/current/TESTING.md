@@ -11155,3 +11155,26 @@ P2 non-blocking gaps：未直接断言 processor destroy 后 task 集合清空�
 What was not run：未运行 frontend、Playwright、Python pytest/mypy/ruff；本轮为 NQ backend scheduler review，且未修改 frontend/Python。
 
 Boundary confirmation：scheduler 默认关闭；接受不表示生产启用、LIVE/Shadow trading、交易授权、GateV freeze 或 tag。未修改 GateU aggregate、GateV-3A primitive、POM、migration、API、CI、其他 scheduler、research fixture、frontend 或 Python。
+
+---
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-TASK-ID-RECONCILIATION（2026-07-11）
+
+结论：`PASS / TASK ID RECONCILED / GATEV-4 NOT STARTED`（通过 / task ID 已收敛 / GateV-4 未开始）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / authority / exact-HEAD CI preflight | PASS | branch `dev`；起始 worktree 与 staged clean；`HEAD == origin/dev == b209c416e0daf402216140b62785726f5fd116b6`；authority schema v3 checker 通过；GitHub Actions run `29155396719` 为 `NQ CI Baseline / completed / success`，`headSha` 与 HEAD 精确一致。 |
+| GateV-4 scope and task-id scan | PASS | 既有唯一范围为 `/strategies/validation` Review Workbench；此前不存在 `NQ-GATEV-4-*` 候选，正式 ID 收敛为 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。 |
+| GateV-2 API fact read | PASS | 只读核实 3 个 GET 与 acknowledge/escalate/resolve/close 四个 POST；未修改 API 文档、backend endpoint 或 contract。 |
+| authority / link / current-next-action / scope validation | PASS / 1 EXISTING WARNING | authority 输出 `PASS / CURRENT_AUTHORITY_CONSISTENT`；link checker 为 `62 checked / 1 historical warning / 0 errors / PASS`；GateV-4 distinct task id 为 1；current `next_action` 继续为 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`；禁止路径 diff 为空。 |
+
+Scope / Environment：NQ-only documentation-only task-id reconciliation；Windows + PowerShell；仅修改 GateV current plan、ROADMAP 与 append-only evidence ledger。
+
+Known warnings：GateV-4 implementation 若发现既有 GateV-2 API 无法支持最小闭环，必须先明确报告 API gap，不得在前端实现任务内默认扩大后端范围。
+
+What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；原因是本轮不修改代码、API、migration、scheduler 或 runtime，只定义 future GateV-4 task id 与实施边界。
+
+Boundary confirmation：GateV-4 保持 `NOT STARTED`；未提升 GateV-3 authority，未初始化 GateV-4 work batch，未修改 machine authority、backend、frontend、API、migration、scheduler、LIVE、Shadow trading、AI/DH/Integration runtime 或交易能力。
+
+Blocking status：non-blocking；本任务 commit/push 并取得 exact-HEAD green CI 后，重新执行 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`。
