@@ -4,10 +4,10 @@
 
 ## 1. NQ Current Authority
 
-1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，schema v2 分离最近冻结 Gate、active Gate、active batch、下一动作与 LIVE/AI/DH 等机器可读状态。
+1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，schema v3 分离最近冻结 Gate、active Gate、accepted batch、work batch、下一动作与 LIVE/AI/DH 等机器可读状态。
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
-4. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV 唯一 active plan，定义受控验证自动化、durable operator review 与后续 implementation batch；不决定 current Gate，也不把未启动的 GateV-3 写成已实现。
+4. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV 唯一 active plan，定义受控验证自动化、durable operator review 与当前 work batch 路线；不决定 current Gate 或独立接受 work batch。
 
 ## 2. NQ Capability Authority
 
@@ -66,5 +66,5 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 本节只解释 `STATUS.md`，不形成第二 authority：
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A 已通过 CI acceptance，GateV-3 scheduler 未开始。
+- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；accepted/work batch 与唯一下一动作只读取 `STATUS.md` 和 `ROADMAP.md`，本索引不复制 batch 状态。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。

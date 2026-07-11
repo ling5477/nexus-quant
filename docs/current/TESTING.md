@@ -11089,3 +11089,47 @@ What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy
 Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-3A acceptance 不表示 scheduler 已启用；GateV-3 scheduler 与 GateV-4 均为 `NOT STARTED`。未触碰 LIVE、Shadow、AI/DH/Integration、real provider、credential、账户、订单或 Ledger。
 
 Blocking status：non-blocking；用户提交并 push 本次 authority sync、取得其 exact-HEAD CI success 后，GateV-3 controlled read-only scheduler implementation 才解除执行阻断。
+
+---
+
+## NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION validation（2026-07-11）
+
+结论：`IMPLEMENTED / VALIDATION BLOCKED / AUTHORITY SYNC NOT APPLIED`（已实现 / 验证阻断 / authority 未同步）。GateV-3A 继续为 `ACCEPTED / CI GREEN`，GateV-4 保持 `NOT STARTED`。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| preflight + authority + exact-HEAD CI | PASS | `dev` clean baseline；`HEAD == origin/dev == 79d7a8a2c0f4d7d7011f6a7d166cc1e52550e84d`；CI run `29152662871` 为 `completed / success`；schema v2 与 GateV-3A accepted 一致。 |
+| targeted aggregate / lock / scheduler / app context | PASS / BUILD SUCCESS | GateU aggregate 6 tests、GateV-3A lock 9 tests、新 scheduler 13 tests、app composition 3 tests；覆盖默认关闭、显式开启、配置 fail-fast、单次 aggregate、SUCCESS/DEGRADED/FAILED、未获锁零调用、no-overlap、锁后可重跑、其他 `@Scheduled` 不注册。 |
+| required 23-module scope（本机长期 PostgreSQL） | FAIL / ENVIRONMENT | 既有 V33 applied checksum 与 current resolved checksum 不一致，3 个共享 local context 无法启动；未 repair、未修改 V33。 |
+| required 23-module scope（一次性 PostgreSQL 17 fresh V1..V33） | FAIL / 1 EXISTING FIXTURE ERROR | `nq-core` 239、`nq-infra` 69 / 3 skipped、`nq-scheduler` 49 tests 全部通过；`nq-app` 131 tests / 0 failures / 1 error / 4 skipped，唯一错误为既有 `ResearchBacktestHappyPathLocalTest` fresh DB 缺预置 research fixture。容器已删除。 |
+
+Scope / Environment：NQ-only backend scheduler implementation；Windows + PowerShell；一次性 PostgreSQL 17 使用 disposable CI fake values，不接真实 provider 或 credential。
+
+Known warnings：既有 Mockito dynamic-agent、SLF4J no-provider 与 unchecked compile warning 非阻断。非 JDBC、无限阻塞且不响应 interrupt 的 callback 仍不能被 lock primitive 主动终止；本实现只提供同步 bounded callback，未新增主动强杀或额外 callback thread pool。
+
+Read-only boundary：只调用 `ValidationOperationsRuntimeEvidenceOverviewQueryService.overview(traceId)`；不调用 Controller/HTTP、GateV-2 lifecycle、exchange、credential、Python 或 artifact，不新增 INSERT/UPDATE/DELETE、migration、case/event/report/snapshot/status mutation。
+
+Blocking status：`BLOCKED / AUTHORITY_CHECKER_STATUS_MODEL_INCOMPATIBLE`。当前 checker 要求 `next_action` 对应 GateV-3 在 STATUS/active plan 中为 `NOT STARTED`，但本任务要求写为 `IMPLEMENTED / PENDING REVIEW`，且禁止修改 checker 或 next action；STATUS/GATEV_PLAN 阶段推进因此未应用。Full reactor 的单个既有 research fixture error 同样保持真实记录，但不归类为 GateV-3 scheduler defect。
+
+---
+
+## NQ-GATEV-AUTHORITY-WORK-BATCH-STATUS-MODEL-HARDENING validation（2026-07-11）
+
+结论：`PASS / CURRENT_AUTHORITY_SCHEMA_V3`（通过 / current authority schema v3 已落地）。GateV-3A 保持 `ACCEPTED / CI GREEN`；GateV-3 合法表达为 `IMPLEMENTED / PENDING REVIEW`，但仍未 review、commit 或取得自身 CI。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/check-current-authority.ps1` | PASS | 输出 `PASS / CURRENT_AUTHORITY_CONSISTENT`；accepted baseline、work batch、commit/run sentinel、next-action type 与三份 current 状态文档一致。 |
+| 7 个系统临时目录 STATUS / plan / roadmap case | PASS / 7 of 7 | 覆盖 pending-review 错误 action/commit、ready-to-commit 错误 action、CI pending 错误 commit、CI green 错误 run、accepted commit 不存在，以及正确 pending-review 正例；未提交 fixture。 |
+| `check-doc-links.ps1 -Roots docs/current` | PASS / 1 EXISTING WARNING | `TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有 append-only historical ledger warning；`errors=0`。 |
+| current-state stale scan / `git diff --check` | PASS | schema v2、`active_batch`、GateV-3 `NOT STARTED` 与 implementation next action 在 STATUS/GATEV_PLAN/ROADMAP 零命中；diff whitespace 校验通过。 |
+
+Scope / Environment：NQ-only governance checker + current authority docs；Windows PowerShell 5.1。测试副本仅写入系统临时目录并在结束后删除。
+
+Known warnings：checker 验证 CI run id 为数字并验证 accepted commit ancestry，不在线查询 GitHub run conclusion；GateV-3A run `29152330658` 的 `completed / success` 事实沿用已存在的 post-CI evidence。
+
+What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；本轮未修改 GateV-3 Java/test、API、migration、workflow 或 runtime。
+
+Boundary confirmation：GateV-3 代码保留在当前工作区且默认关闭；本治理任务不构成 GateV-3 review/acceptance，不授权生产 scheduler、LIVE、Shadow trading、AI/DH/Integration runtime、real provider 或 private trading。
+
+Blocking status：non-blocking；用户仅提交/push governance/current 文件并取得 exact-HEAD CI success 后，唯一下一动作是 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-REVIEW`。
