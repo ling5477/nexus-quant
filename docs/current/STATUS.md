@@ -27,7 +27,9 @@ nq-current-authority:end -->
 - Tagged commit CI：GitHub Actions run `29138944526`，`NQ CI Baseline`，`completed / success`，`headSha=48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU implementation baseline：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
-- GateV：`PLAN / NOT IMPLEMENTED`（已规划 / 未实现）；唯一 active plan 为 [GATEV_PLAN.md](GATEV_PLAN.md)。
+- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；唯一 active plan 为 [GATEV_PLAN.md](GATEV_PLAN.md)。
+- GateV-1：`IMPLEMENTED / REVIEW ACCEPTED`（已实现 / 复核已接受）；当前可由用户提交，尚未形成新 commit/CI 事实。
+- GateV-2：`NOT STARTED`（未开始）。
 
 ## 2. 安全与运行边界
 
@@ -50,4 +52,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-本 GateV planning 提交并通过对应 CI 后，下一轮直接执行 `NQ-GATEV-1-DURABLE-REVIEW-FACT-MODEL-MIGRATION-AND-REPOSITORY-IMPLEMENTATION`；不得增加 GateV plan review、plan freeze 或 planning addendum，也不得由本计划自动视为 implementation 已开始。
+下一允许动作是用户提交并 push GateV-1 staged 变更，然后等待该 exact HEAD CI success；CI 成功后才能启动 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`。不得把 GateV 整体写成 accepted、frozen 或 tagged。

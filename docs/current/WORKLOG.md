@@ -17086,3 +17086,25 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary: 未修改 forbidden files，未 commit、push、tag；GateV 未启动；LIVE/AI/DH/真实交易边界未触达。
 - next action: 用户复核 staged diff，提交并 push；等待新 HEAD CI success 后再创建 `nq-gateu-freeze`。
 - commit recommendation: `docs(gateu): complete durable freeze archive`。
+
+## NQ-GATEV-1-DURABLE-REVIEW-FACT-MODEL-MIGRATION-AND-REPOSITORY-IMPLEMENTATION
+
+- date: 2026-07-11
+- scope: NQ-only GateV-1；新增 V33 两张 durable review 表、review domain/state machine、transaction service boundary、JDBC repository 和真实 PostgreSQL tests。
+- result: `CONDITIONAL PASS / FIXES APPLIED / READY FOR USER COMMIT`（条件通过 / 已应用修复 / 可由用户提交）。
+- implementation:
+  - `validation_review_cases` / `validation_review_events` 使用 tenant/owner scope、optimistic version、case-local idempotency 和 append-only accepted events。
+  - 状态机只允许 `OPEN -> ACKNOWLEDGED/ESCALATED -> RESOLVED -> CLOSED` 固定有向流转；非法、自循环和 terminal transition fail-closed。
+  - Repository 在 SQL 层携带 tenant/owner 条件；accepted case update 与 event append 同事务。
+- validation:
+  - Targeted domain/migration tests PASS；JSONB value 使用 defensive copy；真实 PostgreSQL 17.10 Flyway empty-schema V1..V33 PASS。
+  - 真实 repository integration PASS，覆盖 scope、locking、即时/延迟/两个独立事务并发幂等 replay、event 顺序和强制 event failure rollback。
+  - GateV-1 专项 review 补齐与真实 list SQL 顺序匹配的索引，并用 DB CHECK 固化与 domain 相同的合法 event transition 图。
+  - 首次宽测定位到 repository 多 constructor 缺少显式 Spring injection point；最小增加 `@Autowired` 后 targeted local context 3/3 PASS。
+  - 最终 `mvn -ntp -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test` 为 23-module reactor `BUILD SUCCESS`。
+  - 专项 review 的宽测使用一次性 PostgreSQL datasource；首次空库因既有 happy-path test 缺少 legacy account fixture 失败，加入一条临时 SIM account 后重跑通过，未修改既有测试或业务代码。
+  - 临时 PostgreSQL container 已删除；未新增或修改 POM。
+- boundary:
+  - 未修改 `nq-api`、frontend、research、scripts、deploy、`.github`、历史 migration、Gate archive、README/ROADMAP/API 或依赖文件。
+  - 未实现 Controller/API、scheduler、workbench、Python manifest、自动 materialization、交易/账户/订单/ledger 写入、LIVE、AI、DH 或 Integration runtime。
+- next action: 用户提交并 push GateV-1 staged 变更，等待 exact-HEAD CI success；随后才能启动 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`。

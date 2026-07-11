@@ -10951,3 +10951,32 @@ What was not run：按任务要求未重跑 Maven、frontend build、Playwright�
 Boundary：GateU 固定为 `FREEZE READY / TAG PENDING`；`nq-gateu-freeze` 不存在；GateV `NOT STARTED`；LIVE `DISABLED`；AI `NOT STARTED`；DH runtime `NOT INTEGRATED`；四项 safety flags 保持 `true`。
 
 Blocking status：non-blocking。用户提交并 push 本次 archive completeness 后，必须等待该新 HEAD CI success，才能创建和推送 tag。
+
+---
+
+## NQ-GATEV-1-DURABLE-REVIEW-FACT-MODEL-MIGRATION-AND-REPOSITORY-IMPLEMENTATION（2026-07-11）
+
+结论：`CONDITIONAL PASS / FIXES APPLIED / READY FOR USER COMMIT`（条件通过 / 已应用修复 / 可由用户提交）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `mvn -ntp -f backend/pom.xml -pl nq-core,nq-infra -am -DskipTests compile` | PASS / BUILD SUCCESS | 首次 compile 发现 domain helper package visibility，最小修复后 reactor 16/16 SUCCESS。 |
+| Targeted domain/migration tests | PASS | `ValidationReviewStateMachineTest` 5 passed；`ValidationReviewFactModelMigrationContractTest` 2 passed。覆盖全部合法/非法流转、terminal/self-loop、敏感字段与 JSON defensive copy。未配置 datasource 的首次 repository test 按既有约定 skipped，未作为 PostgreSQL 证据。 |
+| `ValidationReviewFlywayPostgresIntegrationTest` with required PostgreSQL | PASS / 1 passed | PostgreSQL 17.10；Flyway 在随机空 schema 与 public 空 schema 均成功执行 V1..V33，33 migrations，current version 33。 |
+| `ValidationReviewRepositoryPostgresIntegrationTest` with required PostgreSQL | PASS / 1 passed | 覆盖 schema/constraint/index/comment、owner/tenant scope、ADMIN same-tenant、bounded list、optimistic lock、即时/延迟/两个独立事务并发幂等、event order、transaction rollback。 |
+| Targeted Spring local context regression | PASS / 3 passed | 首次宽测发现多 constructor repository 缺少显式 injection point；为 production constructor 增加 `@Autowired` 后，原 3 个 ApplicationContext errors 全部恢复。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test` | PASS / BUILD SUCCESS | 最终 23-module reactor 全部 SUCCESS；证明 domain、infra、app assembly 与既有回归兼容。 |
+
+Review fixes：专项 review 发现并关闭 3 项 P1：补充两个独立事务的并发幂等 PostgreSQL 验证；补充与 bounded list `ORDER BY updated_at, id` 匹配的 tenant/owner 与 tenant list indexes；补充 DB legal-transition CHECK 并以直接 SQL `OPEN -> CLOSED` 拒绝测试验证。
+
+Review rerun：PostgreSQL 17.10 随机空 schema V1..V33 1 passed；repository integration 1 passed 且未 skip；targeted domain/migration 7 tests passed。宽范围 reactor 首次在一次性空库因既有 `ResearchBacktestHappyPathLocalTest` 缺少 legacy account fixture 失败；仅向临时库加入一条最小 SIM account 后，以同一 datasource override 重跑，23 modules `BUILD SUCCESS`。未修改该既有测试或业务代码。
+
+Environment：一次性 `postgres:17` Docker container，仅绑定本地测试端口；测试完成后容器已删除。首次尝试拉取 Flyway Docker image timeout，最终使用仓库现有 `nq-app` Flyway PostgreSQL runtime test 完成真实回放，未新增依赖或修改 POM。
+
+Known warnings：Maven 仅出现既有 SLF4J no-provider、Mockito self-attach / dynamic Java agent 与 unchecked compile warning；均未造成 test failure。Markdown line-ending 提示不影响 `git diff --check` 判定。本机默认 local public schema 曾应用 review 前的未提交 V33，本轮未执行 Flyway `repair` 或改写本地 history；最终验证全部使用一次性 fresh PostgreSQL。若后续本机启动出现 V33 checksum mismatch，应只对可丢弃 local DB 重建或经用户确认后 repair，不得对共享库改写历史。
+
+What was not run：未运行 frontend build/Playwright 与 Python pytest/mypy/ruff，因为本轮未修改 frontend 或 research/Python；未运行真实交易或外部 provider 测试，因为本轮明确为本地 durable review fact model。
+
+Boundary confirmation：未调用真实交易所，未读取 credential，未启动 scheduler/runner/runtime，未修改策略、Paper、Shadow、risk、account、order 或 ledger 状态。
+
+Blocking status：non-blocking；GateV-1 review 已接受并可由用户提交。GateV-2 仍须等待 GateV-1 commit/push 与 exact-HEAD CI success。

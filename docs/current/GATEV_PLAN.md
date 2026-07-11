@@ -1,6 +1,6 @@
 # GateV 受控验证自动化与人工复核生命周期计划
 
-> 状态：`PLAN / NOT IMPLEMENTED`（已规划 / 未实现）。
+> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1 为 `IMPLEMENTED / REVIEW ACCEPTED`（已实现 / 复核已接受）。
 > 英文名：`Controlled Validation Automation & Durable Operator Review`。
 > 本计划是 GateV 唯一 planning 主线；本计划 CI 通过后直接进入 GateV-1 代码实现，不再增加 plan review、plan freeze 或 planning addendum。
 
@@ -166,8 +166,8 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 | Batch | 唯一交付 | 状态边界 |
 | --- | --- | --- |
 | GateV-0 | 本计划、架构决策、首切片选择 | `PLAN / NOT IMPLEMENTED` |
-| GateV-1 | Durable Review Fact Model：两表 migration、domain state machine、repository、测试与同轮 schema review | 无 API、scheduler、frontend |
-| GateV-2 | Operator Review Lifecycle API：GET、acknowledge/escalate/resolve/close、RBAC、owner scope、idempotency、audit | 仅本地 review 写侧，不改交易/运行事实 |
+| GateV-1 | Durable Review Fact Model：两表 migration、domain state machine、repository、测试与同轮 schema review | `IMPLEMENTED / REVIEW ACCEPTED`；无 API、scheduler、frontend |
+| GateV-2 | Operator Review Lifecycle API：GET、acknowledge/escalate/resolve/close、RBAC、owner scope、idempotency、audit | `NOT STARTED`；仅本地 review 写侧，不改交易/运行事实 |
 | GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | 不创建 case、不外联、不改 Paper/Shadow/交易状态 |
 | GateV-4 | Review Workbench：既有页面 queue/detail/events/actions 与 targeted E2E | 不实现 Python manifest preview，不新增 route |
 | GateV-FREEZE | manifest 驱动归档、全量验证、exact-HEAD CI、tag handoff | 不新增实现范围 |
@@ -187,6 +187,8 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 
 真实仓库没有可复用 durable review fact；现有 review DTO 明确为派生、未持久化的 recommendation。GateV-1 必须先建立独立事实基础，才能安全实现 lifecycle API 或 scheduler。首切片只包含 migration、domain/state machine、ports/repository 与测试；无 API、scheduler、frontend。migration 的高风险 schema review 在同一实现任务内完成，不产生新的 GateV planning/review 文档。
 
+实现结果：`V33__gate_v_validation_review_fact_model.sql`、review domain/state machine、transaction application boundary、JDBC repository、状态机/migration/真实 PostgreSQL tests 已落地；专项 review 补齐并发幂等、list-order index 与 DB legal-transition CHECK 后通过。该接受只适用于 GateV-1，不得把 GateV 整体写为 accepted 或 frozen。
+
 - 方案 B 后置：没有 durable case/version/event/idempotency 基线时直接做 API 会迫使复用错误表或产生无事实写侧。
 - 方案 C 后置：automation 先于 durable lifecycle 会放大重复、并发与审计缺口；且现有 scheduler 都具有不适合 GateV 的 Paper/exchange/recovery/ledger 语义。
 
@@ -195,7 +197,7 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 下一轮唯一任务名：
 
 ```text
-NQ-GATEV-1-DURABLE-REVIEW-FACT-MODEL-MIGRATION-AND-REPOSITORY-IMPLEMENTATION
+NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION
 ```
 
-下一轮直接进入代码实现；允许范围应限定为新的 Flyway migration、`nq-core` review domain/ports、`nq-infra` JDBC repository、对应 tests，以及 migration 所需最小 `DB_SCHEMA.md`/evidence sync。禁止 API、scheduler、frontend、Python、真实外联、credential 和交易状态修改。
+GateV-1 由用户提交并 push、且该 exact HEAD CI success 后，下一轮才能实现 GateV-2 operator lifecycle API；默认不再新增 GateV-1 review/freeze 文档。GateV-2 仍只允许本地 review lifecycle，不得修改交易或运行事实。

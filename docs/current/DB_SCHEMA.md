@@ -577,3 +577,33 @@ GateR-2 注释与边界：
 - `V32` 所有新增表均包含 PostgreSQL `COMMENT ON TABLE`。
 - `V32` 关键字段均包含 PostgreSQL `COMMENT ON COLUMN`，中文说明 Shadow Run 是本地事实，不保存 credential material，不代表 LIVE ready，不产生真实交易副作用。
 - 本批不新增 HTTP Controller，不新增 API endpoint，不新增前端页面，不启动 Shadow runner，不调用真实交易所，不读取 `.env` 或 credential 文件，不修改真实账户、资金、订单或 ledger 状态。
+
+## GateV-1 Durable Validation Review 本地事实模型
+
+GateV-1 新增 Flyway migration：
+
+- `V33__gate_v_validation_review_fact_model.sql`
+
+当前状态为 `IMPLEMENTED / REVIEW ACCEPTED`（已实现 / 复核已接受）。该状态只表示 GateV-1 schema、domain/state machine、repository 与真实 PostgreSQL 专项复核通过，不表示 GateV accepted/frozen，不表示 review API、scheduler、frontend 或自动 materialization 已实现。
+
+`validation_review_cases`：
+
+- `id` 为 UUID 主键；`tenant_key` 当前由服务端固定为 `NQ_LOCAL`。
+- `owner_id`、`created_by` 与各 lifecycle actor 使用现有 `users.id BIGINT`，外键删除策略为 `RESTRICT`。
+- `state` 仅允许 `OPEN / ACKNOWLEDGED / ESCALATED / RESOLVED / CLOSED`；`CLOSED` 为终态。
+- `severity` 仅允许 `INFO / WARNING / HIGH / CRITICAL`，只表达复核优先级。
+- `version >= 0` 用于 optimistic locking；每个 accepted transition 递增 1。
+- `evidence_anchor` 为 JSONB object，只保存脱敏本地证据锚点；不保存 credential、账户余额、真实订单或 private payload。
+- Actor/time pair、state/time 与时间顺序均有 CHECK 约束。
+- 索引覆盖 tenant/owner/state、tenant/state/severity、两个 bounded list 的 `updated_at/id` 稳定排序和 evidence type/source；未增加全局 case 去重约束。
+
+`validation_review_events`：
+
+- 记录 `ACKNOWLEDGED / ESCALATED / RESOLVED / CLOSED` accepted transition，按 append-only 使用。
+- `(review_case_id, tenant_key)` 复合外键引用 case，删除策略为 `RESTRICT`，避免跨 tenant event。
+- `(review_case_id, idempotency_key)` 唯一；同 key+同 request hash 返回首次 event，同 key+不同 hash fail-closed。
+- DB CHECK 与 domain state machine 使用同一固定合法流转图，直接 SQL 也不能写入跳转或自循环 accepted event。
+- `case_version` 保存 transition 后版本；`request_id`、`trace_id` 和脱敏 metadata 用于本地审计链。
+- 索引覆盖 case/event 顺序、tenant/actor/time 与 trace ID。
+
+GateV-1 所有新增表和关键字段均有中文 COMMENT，明确本地人工复核不代表交易授权、不表示 LIVE ready、不修改 strategy、Paper、Shadow、risk、account、order 或 ledger，也不保存 credential material。
