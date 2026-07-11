@@ -8,11 +8,11 @@ last_frozen_gate_tag=nq-gateu-freeze
 last_frozen_gate_commit=48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab
 active_gate=GateV
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-active_batch=GateV-2
+active_batch=GateV-3A
 active_batch_status=ACCEPTED|CI_GREEN
-active_batch_implementation_commit=99158738ec980f519637af8df75e4153dfa2869f
-active_batch_acceptance_head=99158738ec980f519637af8df75e4153dfa2869f
-active_batch_ci_run=29150549978
+active_batch_implementation_commit=45c7df9799c0534ddd3ee291dc9347076dec9ddd
+active_batch_acceptance_head=45c7df9799c0534ddd3ee291dc9347076dec9ddd
+active_batch_ci_run=29152330658
 next_action=NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION
 live=DISABLED
 shadow_trading=NOT_ENABLED
@@ -38,7 +38,10 @@ nq-current-authority:end -->
 - GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit：`f7d71d5a80241ade049a83fa3f90b3ac6ce46806`；CI alignment / acceptance head：`b3dd5f74f154d5ed9e2343bc18e451f48770814f`；`NQ CI Baseline` run `29144345430` 为 `completed / success`。
 - GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`；`NQ CI Baseline` run `29150549978` 为 `completed / success`，`headSha=99158738ec980f519637af8df75e4153dfa2869f`。
 - GateV-2 仅接受本地 durable review lifecycle：3 个 bounded GET 与 acknowledge/escalate/resolve/close 四个有限 POST，含 RBAC、tenant/owner scope、optimistic locking、idempotency 与脱敏 audit；不创建 case，不影响交易或运行事实，也不构成 trading authorization。
-- GateV-3：`NOT STARTED`（未开始）。PostgreSQL transaction-level advisory lock prerequisite 已形成 local implementation candidate（本地实现候选）与真实多连接并发证据，但尚未获得独立复核、commit 或 exact-HEAD CI acceptance；不包含 `@Scheduled` 或业务 callback。
+- GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`；`NQ CI Baseline` run `29152330658` 为 `completed / success`，`headSha=45c7df9799c0534ddd3ee291dc9347076dec9ddd`。
+- GateV-3A 仅接受 PostgreSQL transaction-level advisory lock primitive：使用 `pg_try_advisory_xact_lock(int,int)`、稳定 key mapping、`REQUIRES_NEW` read-only transaction 与 Spring composition；无 migration、无 `@Scheduled`、无业务 callback 或业务副作用，不表示 scheduler 已启用。
+- GateV-3 scheduler：`NOT STARTED`（未开始）。锁前置已接受，但 scheduler implementation 只能在本次 authority-sync commit/push 且其 exact-HEAD CI success 后由独立任务启动。
+- GateV-4：`NOT STARTED`（未开始）。
 
 ## 2. 安全与运行边界
 
@@ -61,4 +64,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-下一允许动作仍为 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。GateV-3 保持 `NOT STARTED`；只有 PostgreSQL advisory lock prerequisite 经独立复核、用户 commit/push 与 exact-HEAD CI success 接受后，才可继续 scheduler implementation。不得把 GateV-3 或 GateV 整体提前写成 accepted、frozen 或 tagged。
+下一允许动作仍为 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。GateV-3 scheduler 保持 `NOT STARTED`；GateV-3A 锁前置已由 implementation exact-HEAD CI 接受，待本次 authority-sync commit/push 且其 exact-HEAD CI success 后解除 scheduler implementation 的执行阻断。不得把 GateV-3 scheduler 或 GateV 整体提前写成 accepted、frozen 或 tagged。

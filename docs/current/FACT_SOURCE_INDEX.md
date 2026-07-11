@@ -66,5 +66,5 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 本节只解释 `STATUS.md`，不形成第二 authority：
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2 已通过 CI acceptance，GateV-3 未开始。
+- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A 已通过 CI acceptance，GateV-3 scheduler 未开始。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。

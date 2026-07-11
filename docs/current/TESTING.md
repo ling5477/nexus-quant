@@ -11066,3 +11066,26 @@ Scope：NQ-only；仅新增 `nq-scheduler-contracts` 通用 lock contract/value/
 真实锁语义：仅调用 `pg_try_advisory_xact_lock(int,int)`；取锁和 callback 位于同一 `REQUIRES_NEW` read-only transaction 与 transaction-bound connection；不调用 session-level lock/unlock，不建表，不写业务事实。callback 异常、timeout 和 interrupt 均形成非成功结果并使事务 rollback-only；数据库 transaction 结束后自动释放锁。
 
 Boundary confirmation：未修改 `nq-api`、`nq-core`、`nq-scheduler` 业务实现、migration、frontend、research、scripts、deploy、`.github`、Gate archive、POM 或 lock file；未启动 scheduler，未调用 exchange、credential、review lifecycle、Strategy/Paper/Shadow/Risk/Account/Order/Ledger 写侧、Python、artifact、LIVE、AI、DH 或 Integration runtime。
+
+---
+
+## NQ-GATEV-3A-POST-CI-ACTIVE-AUTHORITY-SYNC（2026-07-11）
+
+结论：`PASS / GATEV-3A ACCEPTED / CURRENT AUTHORITY SYNCED`（通过 / GateV-3A 已接受 / current authority 已同步）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / branch / HEAD / origin | PASS | preflight worktree 与 staged clean；branch `dev`；`HEAD == origin/dev == 45c7df9799c0534ddd3ee291dc9347076dec9ddd`。 |
+| `git show 45c7df97...` | PASS | `feat(scheduler): add PostgreSQL advisory lock primitive`，为 GateV-3A implementation commit；实现后无额外 CI fix，因此 acceptance head 相同。 |
+| `gh run view 29152330658 --json status,conclusion,headSha,name,url` | PASS | `NQ CI Baseline` 为 `completed / success`，`headSha=45c7df9799c0534ddd3ee291dc9347076dec9ddd`，与 HEAD 精确一致。 |
+| PostgreSQL advisory lock acceptance | PASS | 接受 transaction-level try lock、稳定 key mapping、`REQUIRES_NEW` read-only transaction 与 Spring composition；无 migration、`@Scheduled`、业务 callback 或业务副作用。 |
+
+Scope / Environment：NQ-only documentation-only current authority sync；Windows + PowerShell；仅同步 Git/GitHub exact-head 已验证事实。
+
+Known warnings：非 JDBC、无限阻塞且不响应 interrupt 的 callback 无法由 lock primitive 主动终止，GateV-3 必须使用 bounded、可取消 callback。既有 fresh-DB `ResearchBacktestHappyPathLocalTest` 缺预置 fixture 属于无关 research fixture 风险，不是 GateV-3A lock defect，也未在本轮修复。
+
+What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；原因是本轮不修改代码、测试、migration、workflow 或 runtime，仅引用 GateV-3A exact-HEAD CI success。
+
+Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-3A acceptance 不表示 scheduler 已启用；GateV-3 scheduler 与 GateV-4 均为 `NOT STARTED`。未触碰 LIVE、Shadow、AI/DH/Integration、real provider、credential、账户、订单或 Ledger。
+
+Blocking status：non-blocking；用户提交并 push 本次 authority sync、取得其 exact-HEAD CI success 后，GateV-3 controlled read-only scheduler implementation 才解除执行阻断。

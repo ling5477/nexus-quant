@@ -1,8 +1,8 @@
 # GateV 受控验证自动化与人工复核生命周期计划
 
-> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
+> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
 > 英文名：`Controlled Validation Automation & Durable Operator Review`。
-> 本计划是 GateV 唯一 active plan；GateV-2 exact-HEAD CI acceptance 已完成，GateV-3 是唯一 next batch，但在本次 authority-sync commit CI 成功前不得启动。
+> 本计划是 GateV 唯一 active plan；GateV-3A exact-HEAD CI acceptance 已完成，GateV-3 scheduler 是唯一 next batch，但在本次 authority-sync commit CI 成功前不得启动。
 
 ## 1. Current Baseline
 
@@ -11,7 +11,8 @@
 - GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；不得写成 accepted、frozen 或 tagged。
 - GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `f7d71d5a80241ade049a83fa3f90b3ac6ce46806`，acceptance head `b3dd5f74f154d5ed9e2343bc18e451f48770814f`，CI run `29144345430` 为 `completed / success`。
 - GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`，CI run `29150549978` 为 `completed / success`。
-- GateV-3：`NOT STARTED`（未开始）；PostgreSQL advisory lock prerequisite 已形成 local implementation candidate（本地实现候选），在独立复核与 exact-HEAD CI acceptance 前不启动 scheduler implementation。
+- GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`，CI run `29152330658` 为 `completed / success`。
+- GateV-3 scheduler：`NOT STARTED`（未开始）；PostgreSQL advisory lock prerequisite 已接受，本次 authority-sync commit exact-HEAD CI success 后才可由独立 implementation task 启动。
 - LIVE `DISABLED`，Shadow trading `NOT ENABLED`，AI `NOT STARTED`，DH runtime `NOT INTEGRATED`，Integration runtime `NOT STARTED`，real provider / private trading `NOT IMPLEMENTED`。
 
 ## 2. GateU Freeze Evidence
@@ -119,7 +120,9 @@ GateV **允许一个新的受控只读 scheduler**，但必须后置到 durable 
 
 安全模型：默认 `enabled=false`；仅显式配置开启；CI profile 固定关闭；仅直接调用本进程本地 query ports；禁止 HTTP、adapter、credential、account、order、ledger、Paper/Shadow mutation；不得创建 review case；bounded batch、query timeout、run timeout、单实例 DB advisory lock 或独立 lock table、overlap prevention；每轮生成 requestId/traceId；成功/失败仅追加脱敏 operational audit/metrics；支持配置热切换或重启禁用。锁获取失败视为 safe skip，不并发补跑。
 
-Lock prerequisite implementation evidence：`SchedulerExecutionLock` contract 与 `SchedulerLockKey` / `SchedulerLockExecution` 保守结果模型位于 `nq-scheduler-contracts`；`nq-infra` 使用 `pg_try_advisory_xact_lock(int,int)`、SHA-256 UTF-8 big-endian 稳定 key mapping 及 `REQUIRES_NEW` read-only transaction；`nq-app` 只负责 Bean composition。当前只是尚未接受的 local implementation candidate，不包含 `@Scheduled`、GateU aggregate 调用、migration、API 或业务写侧；在独立复核与 exact-HEAD CI 接受前，GateV-3 仍保持 `NOT STARTED`。
+Lock prerequisite acceptance evidence：`SchedulerExecutionLock` contract 与 `SchedulerLockKey` / `SchedulerLockExecution` 保守结果模型位于 `nq-scheduler-contracts`；`nq-infra` 使用 `pg_try_advisory_xact_lock(int,int)`、SHA-256 UTF-8 big-endian 稳定 key mapping 及 `REQUIRES_NEW` read-only transaction；`nq-app` 只负责 Bean composition。Implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`，`NQ CI Baseline` run `29152330658` 为 exact-head `completed / success`。GateV-3A 不包含 `@Scheduled`、GateU aggregate 调用、migration、API、业务 callback 或业务写侧，且不表示 scheduler 已启用。
+
+已知 limitation：transaction timeout 可约束 JDBC/transaction 操作，callback 返回后也会按 elapsed time 返回 `TIMED_OUT`；但任意非 JDBC、无限阻塞且不响应 interrupt 的 callback 无法由该 primitive 主动终止。GateV-3 必须继续使用 bounded、可取消的只读 callback，并把 run timeout 与 safe failure audit 作为独立实现验收项。
 
 ## 12. Python Manifest Preview Boundary
 
@@ -172,8 +175,8 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 | GateV-0 | 本计划、架构决策、首切片选择 | `PLAN / NOT IMPLEMENTED` |
 | GateV-1 | Durable Review Fact Model：两表 migration、domain state machine、repository、测试与同轮 schema review | `ACCEPTED / CI GREEN`；无 API、scheduler、frontend |
 | GateV-2 | Operator Review Lifecycle API：GET、acknowledge/escalate/resolve/close、RBAC、owner scope、idempotency、audit | `ACCEPTED / CI GREEN`；仅本地 review 写侧，不改交易/运行事实 |
-| GateV-3A | PostgreSQL Advisory Scheduler Lock Prerequisite：通用 contract、transaction-level try lock、稳定 key mapping、Spring composition、真实并发测试 | Local implementation candidate；尚未接受；无 `@Scheduled`、migration 或业务 callback |
-| GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | `NOT STARTED`；lock prerequisite 接受前不启动；不创建 case、不外联、不改 Paper/Shadow/交易状态 |
+| GateV-3A | PostgreSQL Advisory Scheduler Lock Prerequisite：通用 contract、transaction-level try lock、稳定 key mapping、Spring composition、真实并发测试 | `ACCEPTED / CI GREEN`；无 `@Scheduled`、migration、业务 callback 或业务副作用 |
+| GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | `NOT STARTED`；本次 authority-sync commit CI success 后才可启动；不创建 case、不外联、不改 Paper/Shadow/交易状态 |
 | GateV-4 | Review Workbench：既有页面 queue/detail/events/actions 与 targeted E2E | 不实现 Python manifest preview，不新增 route |
 | GateV-FREEZE | manifest 驱动归档、全量验证、exact-HEAD CI、tag handoff | 不新增实现范围 |
 
@@ -205,6 +208,6 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION
 ```
 
-GateV-2 implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`；`NQ CI Baseline` run `29150549978` 已以 exact `headSha` 完成 `success`。
+GateV-3A implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`；`NQ CI Baseline` run `29152330658` 已以 exact `headSha` 完成 `success`。
 
-下一步是独立复核 GateV-3A PostgreSQL advisory lock primitive；通过后由用户精确提交并 push，取得该 implementation exact-HEAD CI success 后再做 acceptance sync。机器 authority 的 active batch 仍为 GateV-2，`next_action` 仍为 GateV-3；在 GateV-3A 接受前，GateV-3 保持 `NOT STARTED`，不得实现 runner 或 `@Scheduled`。
+GateV-3A lock prerequisite 已接受，机器 authority 的 active batch 为 GateV-3A，`next_action` 为 GateV-3 controlled read-only scheduler implementation。GateV-3 scheduler 仍保持 `NOT STARTED`；用户提交并 push 本次 authority sync、取得其 exact-HEAD CI success 后，才可按独立任务与独立 allowlist 实现 runner 或 `@Scheduled`。

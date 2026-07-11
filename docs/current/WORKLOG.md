@@ -17167,3 +17167,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: targeted infra/app 10 tests PASS；required real PostgreSQL concurrency 1 test PASS / not skipped；required full reactor 在 fresh PostgreSQL 下仅剩既有 `ResearchBacktestHappyPathLocalTest` 缺预置 fixture 的 1 error，未越界修改 research/seed。本机 stale V33 checksum 未 repair，一次性 PostgreSQL 容器已删除。
 - boundary: 未修改 POM、migration、`nq-api`、`nq-core`、`nq-scheduler` 业务代码、frontend、research、scripts、deploy、`.github`、Gate archive；未 commit、push、PR 或 tag。
 - next action: 独立 review GateV-3A；通过后用户精确提交 `feat(scheduler): add PostgreSQL advisory lock primitive` 并 push，等待 exact-HEAD CI success，再继续 GateV-3 controlled read-only scheduler implementation。
+
+## NQ-GATEV-3A-POST-CI-ACTIVE-AUTHORITY-SYNC
+
+- date: 2026-07-11
+- scope: NQ-only documentation-only；将 schema v2 active batch 从 GateV-2 同步为 GateV-3A accepted，并保持 GateV-3 controlled read-only scheduler implementation 为唯一 next action。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY FOR USER COMMIT / GATEV-3 UNBLOCKED AFTER CI`（已实现 / 已自审 / 可由用户提交 / CI 后解除 GateV-3 阻断）。
+- evidence:
+  - GateV-3A implementation commit 与 acceptance head：`45c7df9799c0534ddd3ee291dc9347076dec9ddd`。
+  - GitHub Actions run `29152330658`：`NQ CI Baseline / completed / success`，`headSha=45c7df9799c0534ddd3ee291dc9347076dec9ddd`，与 acceptance head 精确一致。
+  - 接受边界仅为 PostgreSQL transaction-level advisory lock primitive；无 migration、`@Scheduled`、业务 callback 或业务副作用，不表示 scheduler 已启用。
+- validation: authority checker、docs link checker、stale-state scan、`git diff --check`、allowlist/forbidden-scope diff 均执行；未运行 Maven/frontend/Python tests，因为本轮仅同步 exact-HEAD CI authority facts。
+- limitation: 非 JDBC、无限阻塞且不响应 interrupt 的 callback 无法由 lock primitive 主动终止；GateV-3 必须保持 bounded、可取消 callback。既有 fresh-DB research fixture 风险与 GateV-3A 无关，本轮未修复。
+- boundary: GateV 保持 `IN_PROGRESS / NOT_FROZEN`；GateV-3 scheduler 与 GateV-4 保持 `NOT STARTED`；未修改 checker、backend、frontend、research、scripts、deploy、`.github`、migration、Gate archive、API/DB schema 文档或 runtime。
+- next action: 用户复核精确 staged diff，提交 `docs(gatev): sync GateV-3A lock acceptance authority` 并 push；等待该 authority-sync exact HEAD CI success 后，再启动独立 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。
