@@ -11024,3 +11024,26 @@ Blocking status：non-blocking；authority sync 与 checker regression 已通过
 覆盖：OPERATOR/ADMIN tenant-owner scope、bounded list/default-max limit、filter/order/events、GET 无写侧、四个 endpoint 与全部合法/非法/terminal 流转、optimistic conflict、同事务 case/event/audit、event/audit failure rollback、同 key/hash replay、不同 hash reuse conflict、canonical Map 顺序/换行稳定、malformed JSON 脱敏拒绝 audit、保守 DTO、安全字段扫描及统一错误 envelope。
 
 Boundary confirmation：仅修改 validation review core/API/infra 与允许文档；无 migration、case materialization、scheduler、frontend、Python、Strategy/Evaluation/Paper/Shadow/Risk/Account/Order/Ledger、LIVE、real provider、credential、AI/DH/Integration runtime 变更。GateV 保持 `IN PROGRESS / NOT FROZEN`，GateV-2 尚未 accepted，GateV-3 保持 `NOT STARTED`。
+
+---
+
+## NQ-GATEV-2-POST-CI-ACTIVE-AUTHORITY-SYNC（2026-07-11）
+
+结论：`PASS / GATEV-2 ACCEPTED / CURRENT AUTHORITY SYNCED`（通过 / GateV-2 已接受 / current authority 已同步）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `git status --short` / branch / HEAD / origin | PASS | preflight worktree 与 staged clean；branch `dev`；`HEAD == origin/dev == 99158738ec980f519637af8df75e4153dfa2869f`。 |
+| `git show 99158738...` | PASS | `feat(gatev): add operator review lifecycle API`，为 GateV-2 implementation commit；实现后无额外 CI fix commit，因此 acceptance head 相同。 |
+| `gh run view 29150549978 --json status,conclusion,headSha,name,url` | PASS | `NQ CI Baseline` 为 `completed / success`，`headSha=99158738ec980f519637af8df75e4153dfa2869f`，与 HEAD 精确一致。 |
+| authority/link/stale/scope validation | PASS | schema v2、GateV-2 accepted、GateV-3 next action、入口摘要、链接与 allowlist diff 一致。 |
+
+Scope / Environment：NQ-only documentation-only current authority sync；Windows + PowerShell；只同步已由 exact-HEAD CI 证明的 Git/GitHub facts。
+
+Known warnings：link checker 仍可能报告 `TESTING.md` append-only historical ledger 的既有 warning；不覆盖 current authority，也不阻断本次同步。
+
+What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；原因是本轮不修改代码、测试、API、migration、workflow 或 runtime，只引用 GateV-2 exact-HEAD CI success。
+
+Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-2 仅接受本地 review lifecycle，不表示 trading authorization；GateV-3 为 `NOT STARTED`。未实现 scheduler/runner，未触碰 LIVE、Shadow、AI/DH/Integration、real provider、credential、账户、订单或 Ledger。
+
+Blocking status：non-blocking；本次 authority-sync commit/push 并取得其 exact-HEAD CI success 后，GateV-3 implementation 才解除执行阻断。

@@ -17145,3 +17145,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - required 23-module Maven scope 在一次性 PostgreSQL + 最小 legacy SIM fixture 上 `BUILD SUCCESS`；本机 stale V33 checksum 未 repair、未改 migration。
 - boundary: 未修改 migration、POM、frontend、research、scripts、deploy、`.github`、Gate archive、Strategy/Evaluation/Paper/Shadow/Risk/Account/Order/Ledger、LIVE、real provider、credential、AI/DH/Integration runtime；未 commit、push、PR 或 tag。
 - next action: 用户复核 staged diff，提交 `feat(gatev): add operator review lifecycle API` 并 push；等待 exact-HEAD CI success 后再执行独立 GateV-2 post-CI authority sync。GateV-3 保持 `NOT STARTED`。
+
+## NQ-GATEV-2-POST-CI-ACTIVE-AUTHORITY-SYNC
+
+- date: 2026-07-11
+- scope: NQ-only documentation-only；把 schema v2 active batch 从 GateV-1 同步为 GateV-2 accepted，并把唯一 next action 切换到 GateV-3 controlled read-only scheduler implementation。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY FOR USER COMMIT / GATEV-3 UNBLOCKED AFTER CI`（已实现 / 已自审 / 可由用户提交 / CI 后解除 GateV-3 阻断）。
+- evidence:
+  - GateV-2 implementation commit 与 acceptance head：`99158738ec980f519637af8df75e4153dfa2869f`。
+  - GitHub Actions run `29150549978`：`NQ CI Baseline / completed / success`，`headSha` 与 HEAD 精确一致。
+  - GateV-2 仅为本地 durable review lifecycle API，不构成交易授权，不改变 Strategy/Evaluation/Paper/Shadow/Risk/Account/Order/Ledger。
+- validation: authority checker、docs link checker、stale-state scan、`git diff --check`、allowlist/forbidden-scope diff 均执行；未运行 Maven/frontend/Python tests，因为本轮仅同步 exact-HEAD CI authority facts。
+- boundary: GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-3 保持 `NOT STARTED`；未修改 checker、backend、frontend、research、scripts、deploy、`.github`、migration、Gate archive、API/DB schema 文档或 runtime。
+- next action: 用户复核 staged diff，提交 `docs(gatev): sync GateV-2 acceptance authority` 并 push；等待该 authority-sync exact HEAD CI success 后，再启动独立 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。

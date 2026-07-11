@@ -8,12 +8,12 @@ last_frozen_gate_tag=nq-gateu-freeze
 last_frozen_gate_commit=48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab
 active_gate=GateV
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-active_batch=GateV-1
+active_batch=GateV-2
 active_batch_status=ACCEPTED|CI_GREEN
-active_batch_implementation_commit=f7d71d5a80241ade049a83fa3f90b3ac6ce46806
-active_batch_acceptance_head=b3dd5f74f154d5ed9e2343bc18e451f48770814f
-active_batch_ci_run=29144345430
-next_action=NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION
+active_batch_implementation_commit=99158738ec980f519637af8df75e4153dfa2869f
+active_batch_acceptance_head=99158738ec980f519637af8df75e4153dfa2869f
+active_batch_ci_run=29150549978
+next_action=NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -36,8 +36,8 @@ nq-current-authority:end -->
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
 - GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；唯一 active plan 为 [GATEV_PLAN.md](GATEV_PLAN.md)。
 - GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit：`f7d71d5a80241ade049a83fa3f90b3ac6ce46806`；CI alignment / acceptance head：`b3dd5f74f154d5ed9e2343bc18e451f48770814f`；`NQ CI Baseline` run `29144345430` 为 `completed / success`。
-- GateV-2：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）；仅表示本地 worktree 实现与验证完成，尚未提交、push 或取得 exact-HEAD CI acceptance。
-- GateV-2 machine-authority projection：`NOT STARTED`（未开始）；这是 schema v2 checker 在本次 commit/CI 前对 `next_action` 的治理占位，不覆盖上一条本地交付状态，也不表示实现尚未发生。
+- GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`；`NQ CI Baseline` run `29150549978` 为 `completed / success`，`headSha=99158738ec980f519637af8df75e4153dfa2869f`。
+- GateV-2 仅接受本地 durable review lifecycle：3 个 bounded GET 与 acknowledge/escalate/resolve/close 四个有限 POST，含 RBAC、tenant/owner scope、optimistic locking、idempotency 与脱敏 audit；不创建 case，不影响交易或运行事实，也不构成 trading authorization。
 - GateV-3：`NOT STARTED`（未开始）。
 
 ## 2. 安全与运行边界
@@ -61,4 +61,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-机器 authority 的 `next_action` 在 GateV-2 commit 与 exact-HEAD CI success 前继续保持 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`，且 `active_batch` 继续固定为已接受的 GateV-1。当前具体动作是用户复核 staged diff、提交并 push GateV-2，等待 exact-HEAD CI；独立 post-CI authority sync 完成前不得把 GateV-2 写成 accepted，也不得启动 GateV-3。GateV 整体继续保持 `IN PROGRESS / NOT FROZEN`。
+下一允许动作：`NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。GateV-3 仍为 `NOT STARTED`，只能在本次 authority-sync commit/push 并取得其 exact-HEAD CI success 后由独立 implementation task 启动；不得把 GateV 整体写成 accepted、frozen 或 tagged。
