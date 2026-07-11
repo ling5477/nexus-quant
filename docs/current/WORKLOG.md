@@ -17181,3 +17181,29 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - limitation: 非 JDBC、无限阻塞且不响应 interrupt 的 callback 无法由 lock primitive 主动终止；GateV-3 必须保持 bounded、可取消 callback。既有 fresh-DB research fixture 风险与 GateV-3A 无关，本轮未修复。
 - boundary: GateV 保持 `IN_PROGRESS / NOT_FROZEN`；GateV-3 scheduler 与 GateV-4 保持 `NOT STARTED`；未修改 checker、backend、frontend、research、scripts、deploy、`.github`、migration、Gate archive、API/DB schema 文档或 runtime。
 - next action: 用户复核精确 staged diff，提交 `docs(gatev): sync GateV-3A lock acceptance authority` 并 push；等待该 authority-sync exact HEAD CI success 后，再启动独立 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。
+
+## NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION
+
+- date: 2026-07-11
+- scope: NQ-only；在 `nq-scheduler` 新增默认关闭、显式启用、PostgreSQL advisory lock 互斥的 Validation Evidence Scheduler，以及 app composition test；最小同步 STATUS / GATEV_PLAN / TESTING / WORKLOG。
+- result: `BLOCKED / AUTHORITY_CHECKER_STATUS_MODEL_INCOMPATIBLE`；代码与 targeted tests 已完成，但 STATUS/GATEV_PLAN 无法在“不改 checker、不改 next action”的约束下合法表达 `IMPLEMENTED / PENDING REVIEW`。
+- implementation:
+  - 配置前缀 `nq.validation-operations.scheduler`；默认 `enabled=false`，delay/initial-delay/timeout/lock key 启动期 fail-fast，timeout 最大 5 分钟。
+  - 显式开启时隔离注册本任务 `@Scheduled`；不处理或启动既有 Paper/exchange/recovery/ledger scheduled methods。
+  - 使用 GateV-3A `SchedulerExecutionLock` 与稳定 key `validation-operations / runtime-evidence-refresh`；未获锁不调用 aggregate，不 retry，不新增第二套 production JVM lock。
+  - 每轮直接调用 GateU aggregate 一次，生成脱敏 `SUCCESS / DEGRADED / FAILED / SKIPPED_*` 摘要；不保存完整 payload，不创建 review case/event，不执行 lifecycle action 或业务写侧。
+- validation:
+  - targeted aggregate/lock/scheduler/app context 全部通过；新 scheduler 13 tests，覆盖配置、执行、failure mapping、并发 no-overlap、锁后可重跑与 no-side-effect composition。
+  - required reactor 在本机长期 DB 因既有 V33 checksum mismatch 失败；fresh PostgreSQL 17 下仅既有 `ResearchBacktestHappyPathLocalTest` 缺 fixture 的 1 error，`nq-core` / `nq-infra` / `nq-scheduler` 全部通过；临时容器已删除。
+- boundary: 未修改 core aggregate、lock primitive、migration、POM、API、frontend、research、scripts、deploy、CI、Gate archive、README/ROADMAP/FACT_SOURCE_INDEX；未触达 LIVE、Shadow trading、AI/DH/Integration runtime、real provider、credential、账户、订单或 Ledger。
+- next action: 先由独立 governance 任务扩展 checker 的 active-next-batch 状态模型，或由用户明确授权调整 `next_action`；在此之前不得提交本轮为 GateV-3 accepted，也不得启动 GateV-4。
+
+## NQ-GATEV-AUTHORITY-WORK-BATCH-STATUS-MODEL-HARDENING
+
+- date: 2026-07-11
+- scope: NQ-only governance；将 current authority 升级为 schema v3，分离 `last_frozen_gate`、`accepted_batch` 与 `work_batch`，升级 checker 并同步 STATUS / GATEV_PLAN / ROADMAP 与入口摘要。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY FOR USER COMMIT / GATEV-3 REVIEW UNBLOCKED AFTER CI`（已实现 / 已自审 / 可由用户提交 / CI 后解除 GateV-3 review 阻断）。
+- validation: 正向 authority checker PASS；7 个系统临时目录回归 case 全部 PASS；docs link checker PASS / 1 个既有 historical warning；旧 current-state 语义扫描零命中；`git diff --check` 与 scope fence 通过。
+- boundary: 未读取或推断 GateV-3 业务正确性，未修改或暂存 GateV-3 Java/test；未修改 frontend、research、deploy、`.github`、migration、Gate archive、API/DB schema、POM 或 lock file；未开启 scheduler、LIVE、Shadow、AI/DH/Integration runtime、real provider 或 private trading。
+- limitation: checker 对 accepted CI 只校验数字 run id、commit 存在性与 ancestry；run conclusion 仍依赖独立 post-CI evidence，不在本地伪造在线 GitHub 结论。
+- next action: 用户复核并提交仅 governance/current staged diff，推荐 `docs(governance): support in-progress work batch authority`；push 后等待 exact-HEAD CI success，再执行 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-REVIEW`。

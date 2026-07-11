@@ -8,8 +8,7 @@
 - Release tag：`nq-gateu-freeze`；tagged commit `48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
 - GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；唯一 active plan：[GATEV_PLAN.md](GATEV_PLAN.md)。
-- GateV-1、GateV-2、GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
-- GateV-3 scheduler：`NOT STARTED`（未开始）。
+- 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch 状态。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
 ## Authority Map
@@ -36,8 +35,7 @@
 
 ## Current Is Not
 
-- GateV-1、GateV-2、GateV-3A 已 `ACCEPTED / CI GREEN`。
-- GateV-3 scheduler 仍为 `NOT STARTED`，本次 authority sync 不表示 GateV-3 已启动。
+- 本入口不判定 accepted/work batch；其精确状态只读取 [STATUS.md](STATUS.md)。
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider、private trading adapter 或 real permission probe 已实现。
