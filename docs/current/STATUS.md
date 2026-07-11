@@ -38,7 +38,7 @@ nq-current-authority:end -->
 - GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit：`f7d71d5a80241ade049a83fa3f90b3ac6ce46806`；CI alignment / acceptance head：`b3dd5f74f154d5ed9e2343bc18e451f48770814f`；`NQ CI Baseline` run `29144345430` 为 `completed / success`。
 - GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`；`NQ CI Baseline` run `29150549978` 为 `completed / success`，`headSha=99158738ec980f519637af8df75e4153dfa2869f`。
 - GateV-2 仅接受本地 durable review lifecycle：3 个 bounded GET 与 acknowledge/escalate/resolve/close 四个有限 POST，含 RBAC、tenant/owner scope、optimistic locking、idempotency 与脱敏 audit；不创建 case，不影响交易或运行事实，也不构成 trading authorization。
-- GateV-3：`NOT STARTED`（未开始）。
+- GateV-3：`NOT STARTED`（未开始）。PostgreSQL transaction-level advisory lock prerequisite 已形成 local implementation candidate（本地实现候选）与真实多连接并发证据，但尚未获得独立复核、commit 或 exact-HEAD CI acceptance；不包含 `@Scheduled` 或业务 callback。
 
 ## 2. 安全与运行边界
 
@@ -61,4 +61,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-下一允许动作：`NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。GateV-3 仍为 `NOT STARTED`，只能在本次 authority-sync commit/push 并取得其 exact-HEAD CI success 后由独立 implementation task 启动；不得把 GateV 整体写成 accepted、frozen 或 tagged。
+下一允许动作仍为 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。GateV-3 保持 `NOT STARTED`；只有 PostgreSQL advisory lock prerequisite 经独立复核、用户 commit/push 与 exact-HEAD CI success 接受后，才可继续 scheduler implementation。不得把 GateV-3 或 GateV 整体提前写成 accepted、frozen 或 tagged。

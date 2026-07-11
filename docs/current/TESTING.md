@@ -11047,3 +11047,22 @@ What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy
 Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-2 仅接受本地 review lifecycle，不表示 trading authorization；GateV-3 为 `NOT STARTED`。未实现 scheduler/runner，未触碰 LIVE、Shadow、AI/DH/Integration、real provider、credential、账户、订单或 Ledger。
 
 Blocking status：non-blocking；本次 authority-sync commit/push 并取得其 exact-HEAD CI success 后，GateV-3 implementation 才解除执行阻断。
+
+---
+
+## NQ-GATEV-3A-POSTGRESQL-ADVISORY-SCHEDULER-LOCK-PRIMITIVE-IMPLEMENTATION validation（2026-07-11）
+
+结论：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待独立复核）。GateV-3 scheduler 仍为 `NOT STARTED / BLOCKED UNTIL LOCK ACCEPTED`（未开始 / 在锁能力接受前阻断）。
+
+Scope：NQ-only；仅新增 `nq-scheduler-contracts` 通用 lock contract/value/result、`nq-infra` PostgreSQL transaction-level advisory lock implementation 与测试、`nq-app` Bean composition 与装配测试，以及本节最小文档同步。未新增 POM、migration、API、`@Scheduled`、GateU aggregate 调用或业务 callback。
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mvn ... -Dtest=PostgresAdvisoryLockKeyMapperTest,PostgresAdvisorySchedulerExecutionLockTest,SchedulerLockConfigurationTest ... test` | PASS / BUILD SUCCESS（通过 / 构建成功） | infra 9 tests、app 1 test；覆盖稳定 UTF-8/SHA-256/big-endian mapping、key 输入边界、未获锁不执行、callback 一次、callback/数据库异常 cause 与非成功语义、rollback-only、timeout 上限、port-to-implementation composition 与无 `@Scheduled`。 |
+| required real PostgreSQL `PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest` | PASS / 1 TEST / NOT SKIPPED（通过 / 1 项 / 未跳过） | 本机 PostgreSQL，两个独立 transaction manager/连接；覆盖 same-key contention、different-key concurrency、commit/rollback/exception/timeout/interruption 自动释放及无 `scheduler_lock` 表新增。 |
+| `mvn -ntp -f backend/pom.xml -pl nq-scheduler-contracts,nq-infra,nq-app -am test`（本机长期 DB） | FAIL / ENVIRONMENT（失败 / 环境） | 既有 local context tests 因本机数据库 V33 applied checksum `-1276170491` 与 current resolved `1421368418` 不同而失败；未执行 Flyway repair、未修改 migration。 |
+| 相同 required reactor（一次性 PostgreSQL 17） | FAIL / 1 EXISTING FIXTURE ERROR（失败 / 1 个既有 fixture 错误） | fresh V1..V33 后 checksum 问题消除；`nq-infra` 等上游模块成功，`nq-app` 131 tests / 0 failures / 1 error / 4 skipped；唯一错误为既有 `ResearchBacktestHappyPathLocalTest` 依赖预置 research 记录，在 fresh DB 查询得到 0 行。一次性容器已删除。 |
+
+真实锁语义：仅调用 `pg_try_advisory_xact_lock(int,int)`；取锁和 callback 位于同一 `REQUIRES_NEW` read-only transaction 与 transaction-bound connection；不调用 session-level lock/unlock，不建表，不写业务事实。callback 异常、timeout 和 interrupt 均形成非成功结果并使事务 rollback-only；数据库 transaction 结束后自动释放锁。
+
+Boundary confirmation：未修改 `nq-api`、`nq-core`、`nq-scheduler` 业务实现、migration、frontend、research、scripts、deploy、`.github`、Gate archive、POM 或 lock file；未启动 scheduler，未调用 exchange、credential、review lifecycle、Strategy/Paper/Shadow/Risk/Account/Order/Ledger 写侧、Python、artifact、LIVE、AI、DH 或 Integration runtime。

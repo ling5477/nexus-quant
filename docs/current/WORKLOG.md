@@ -17158,3 +17158,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: authority checker、docs link checker、stale-state scan、`git diff --check`、allowlist/forbidden-scope diff 均执行；未运行 Maven/frontend/Python tests，因为本轮仅同步 exact-HEAD CI authority facts。
 - boundary: GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-3 保持 `NOT STARTED`；未修改 checker、backend、frontend、research、scripts、deploy、`.github`、migration、Gate archive、API/DB schema 文档或 runtime。
 - next action: 用户复核 staged diff，提交 `docs(gatev): sync GateV-2 acceptance authority` 并 push；等待该 authority-sync exact HEAD CI success 后，再启动独立 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-IMPLEMENTATION`。
+
+## NQ-GATEV-3A-POSTGRESQL-ADVISORY-SCHEDULER-LOCK-PRIMITIVE-IMPLEMENTATION
+
+- date: 2026-07-11
+- scope: NQ-only backend infrastructure；新增纯 Java scheduler lock contract、PostgreSQL transaction-level advisory lock implementation、Spring composition、稳定 SHA-256 key mapping 与真实多连接并发测试；无 `@Scheduled`、migration、API 或业务 callback。
+- result: `IMPLEMENTED / PENDING REVIEW`（已实现 / 待独立复核）；GateV-3 scheduler 保持 `NOT STARTED / BLOCKED UNTIL LOCK ACCEPTED`。
+- validation: targeted infra/app 10 tests PASS；required real PostgreSQL concurrency 1 test PASS / not skipped；required full reactor 在 fresh PostgreSQL 下仅剩既有 `ResearchBacktestHappyPathLocalTest` 缺预置 fixture 的 1 error，未越界修改 research/seed。本机 stale V33 checksum 未 repair，一次性 PostgreSQL 容器已删除。
+- boundary: 未修改 POM、migration、`nq-api`、`nq-core`、`nq-scheduler` 业务代码、frontend、research、scripts、deploy、`.github`、Gate archive；未 commit、push、PR 或 tag。
+- next action: 独立 review GateV-3A；通过后用户精确提交 `feat(scheduler): add PostgreSQL advisory lock primitive` 并 push，等待 exact-HEAD CI success，再继续 GateV-3 controlled read-only scheduler implementation。
