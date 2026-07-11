@@ -97,6 +97,10 @@ public final class ValidationReviewSensitiveDataGuard {
             for (int index = 0; index < value.size(); index++) {
                 scan(path + "[" + index + "]", value.get(index));
             }
+            return;
+        }
+        if (value.isTextual()) {
+            validateText(path, value.textValue());
         }
     }
 

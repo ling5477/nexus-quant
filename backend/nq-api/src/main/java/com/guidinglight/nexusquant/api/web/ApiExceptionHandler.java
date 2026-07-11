@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundEx
 import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
+import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;
@@ -96,6 +97,25 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiErrorResponse handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, "STATE_CONFLICT", ex.getMessage(), request, List.of());
+    }
+
+    /**
+     * 将 GateV-2 domain failures 映射到既有 ApiErrorResponse，不创建第二套 error envelope。
+     */
+    @ExceptionHandler(ValidationReviewException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidationReviewException(
+            ValidationReviewException ex,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = switch (ex.errorCode()) {
+            case "REVIEW_CASE_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+            case "REVIEW_ACTION_FORBIDDEN" -> HttpStatus.FORBIDDEN;
+            case "REVIEW_CASE_VERSION_CONFLICT", "REVIEW_STATE_TRANSITION_INVALID",
+                    "REVIEW_CASE_TERMINAL_STATE_LOCKED", "IDEMPOTENCY_KEY_REUSED" -> HttpStatus.CONFLICT;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        return ResponseEntity.status(status)
+                .body(build(status, ex.errorCode(), ex.getMessage(), request, List.of()));
     }
 
     @ExceptionHandler(AdminNotInitializedException.class)

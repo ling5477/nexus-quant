@@ -9,7 +9,15 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.guidinglight.nexusquant.audit.infra.jdbc.JdbcAuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.validationreview.application.ValidationReviewAction;
+import com.guidinglight.nexusquant.validationreview.application.ValidationReviewActor;
+import com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationalAuditService;
+import com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationsService;
+import com.guidinglight.nexusquant.validationreview.application.ValidationReviewTransitionService;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;
+import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCaseQuery;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEvent;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewSeverity;
@@ -78,6 +86,8 @@ class ValidationReviewRepositoryPostgresIntegrationTest {
         UUID otherTenantCaseId = UUID.randomUUID();
         UUID atomicCaseId = UUID.randomUUID();
         UUID concurrentCaseId = UUID.randomUUID();
+        UUID auditCaseId = UUID.randomUUID();
+        UUID auditRollbackCaseId = UUID.randomUUID();
         Instant baseTime = Instant.parse("2026-07-11T01:00:00Z");
 
         try {
@@ -94,11 +104,35 @@ class ValidationReviewRepositoryPostgresIntegrationTest {
                     ValidationReviewCase.LOCAL_TENANT_KEY,
                     ownerTwo,
                     caseOneId).isEmpty());
+            assertTrue(repository.findTenantCase(
+                    ValidationReviewCase.LOCAL_TENANT_KEY,
+                    otherTenantCaseId).isEmpty());
             assertEquals(1, repository.listOwnedCases(
                     ValidationReviewCase.LOCAL_TENANT_KEY,
                     ownerOne,
                     10).size());
             assertEquals(2, repository.listTenantCases(ValidationReviewCase.LOCAL_TENANT_KEY, 10).size());
+            assertEquals(2, repository.listTenantCases(
+                    ValidationReviewCase.LOCAL_TENANT_KEY,
+                    new ValidationReviewCaseQuery(
+                            ValidationReviewState.OPEN,
+                            ValidationReviewSeverity.WARNING,
+                            null,
+                            100,
+                            0
+                    )).size());
+            assertEquals(caseOneId, repository.listTenantCases(
+                    ValidationReviewCase.LOCAL_TENANT_KEY,
+                    new ValidationReviewCaseQuery(null, null, null, 1, 1)
+            ).getFirst().id());
+            assertEquals(1, repository.listTenantCases(
+                    ValidationReviewCase.LOCAL_TENANT_KEY,
+                    new ValidationReviewCaseQuery(null, null, ownerOne, 100, 0)
+            ).size());
+            assertTrue(repository.listTenantCases(
+                    ValidationReviewCase.LOCAL_TENANT_KEY,
+                    new ValidationReviewCaseQuery(null, ValidationReviewSeverity.HIGH, null, 100, 0)
+            ).isEmpty());
             assertThrows(IllegalArgumentException.class, () -> repository.listTenantCases("OTHER_TENANT", 10));
             assertThrows(IllegalArgumentException.class, () -> repository.listOwnedCases(
                     ValidationReviewCase.LOCAL_TENANT_KEY,
@@ -274,25 +308,120 @@ class ValidationReviewRepositoryPostgresIntegrationTest {
                     baseTime.plusSeconds(400),
                     suffix
             );
+            assertOperationalAuditTransaction(
+                    jdbcTemplate,
+                    transactions,
+                    repository,
+                    auditCaseId,
+                    auditRollbackCaseId,
+                    ownerOne,
+                    baseTime.plusSeconds(500),
+                    suffix
+            );
         } finally {
+            jdbcTemplate.update("DELETE FROM audit_logs WHERE trace_id IN (?, ?)",
+                    "trc-audit-" + suffix, "trc-audit-rollback-" + suffix);
             jdbcTemplate.update(
-                    "DELETE FROM validation_review_events WHERE review_case_id IN (?, ?, ?, ?, ?)",
+                    "DELETE FROM validation_review_events WHERE review_case_id IN (?, ?, ?, ?, ?, ?, ?)",
                     caseOneId,
                     caseTwoId,
                     otherTenantCaseId,
                     atomicCaseId,
-                    concurrentCaseId
+                    concurrentCaseId,
+                    auditCaseId,
+                    auditRollbackCaseId
             );
             jdbcTemplate.update(
-                    "DELETE FROM validation_review_cases WHERE id IN (?, ?, ?, ?, ?)",
+                    "DELETE FROM validation_review_cases WHERE id IN (?, ?, ?, ?, ?, ?, ?)",
                     caseOneId,
                     caseTwoId,
                     otherTenantCaseId,
                     atomicCaseId,
-                    concurrentCaseId
+                    concurrentCaseId,
+                    auditCaseId,
+                    auditRollbackCaseId
             );
             jdbcTemplate.update("DELETE FROM users WHERE id IN (?, ?)", ownerOne, ownerTwo);
         }
+    }
+
+    private static void assertOperationalAuditTransaction(
+            JdbcTemplate jdbcTemplate,
+            TransactionTemplate transactions,
+            JdbcValidationReviewRepository repository,
+            UUID auditCaseId,
+            UUID auditRollbackCaseId,
+            long ownerId,
+            Instant baseTime,
+            String suffix
+    ) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JdbcAuditLogRepository auditRepository = new JdbcAuditLogRepository(jdbcTemplate, objectMapper);
+        ValidationReviewOperationsService operations = new ValidationReviewOperationsService(
+                repository,
+                new ValidationReviewTransitionService(repository),
+                auditRepository,
+                new ValidationReviewOperationalAuditService(auditRepository),
+                objectMapper
+        );
+        ValidationReviewActor operator = new ValidationReviewActor(ownerId, java.util.Set.of("OPERATOR"));
+        repository.createCase(openCase(auditCaseId, ownerId, "audit-source", baseTime));
+
+        ValidationReviewTransitionResult accepted = transactions.execute(status -> operations.transition(
+                operator,
+                auditCaseId,
+                ValidationReviewAction.ACKNOWLEDGE,
+                0L,
+                "local audit review",
+                JsonNodeFactory.instance.objectNode().put("result", "reviewed"),
+                "idem-audit-" + suffix,
+                "req-audit-" + suffix,
+                "trc-audit-" + suffix
+        ));
+        assertNotNull(accepted);
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM validation_review_events WHERE review_case_id = ?",
+                Integer.class,
+                auditCaseId
+        ));
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM audit_logs WHERE trace_id = ? AND domain = 'VALIDATION_REVIEW'",
+                Integer.class,
+                "trc-audit-" + suffix
+        ));
+
+        repository.createCase(openCase(auditRollbackCaseId, ownerId, "audit-rollback-source", baseTime.plusSeconds(1)));
+        AuditLogRepository failingAudit = (domain, action, actorId, traceId, detail) -> {
+            throw new IllegalStateException("forced operational audit failure");
+        };
+        ValidationReviewOperationsService failingOperations = new ValidationReviewOperationsService(
+                repository,
+                new ValidationReviewTransitionService(repository),
+                failingAudit,
+                new ValidationReviewOperationalAuditService(auditRepository),
+                objectMapper
+        );
+        assertThrows(IllegalStateException.class, () -> transactions.execute(status -> failingOperations.transition(
+                operator,
+                auditRollbackCaseId,
+                ValidationReviewAction.ACKNOWLEDGE,
+                0L,
+                "rollback review",
+                JsonNodeFactory.instance.objectNode(),
+                "idem-audit-rollback-" + suffix,
+                "req-audit-rollback-" + suffix,
+                "trc-audit-rollback-" + suffix
+        )));
+        assertEquals(ValidationReviewState.OPEN, repository.findOwnedCase(
+                ValidationReviewCase.LOCAL_TENANT_KEY,
+                ownerId,
+                auditRollbackCaseId
+        ).orElseThrow().state());
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM validation_review_events WHERE review_case_id = ?",
+                Integer.class,
+                auditRollbackCaseId
+        ));
     }
 
     private static void assertIllegalAcceptedEventRejected(

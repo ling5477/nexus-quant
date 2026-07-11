@@ -11005,3 +11005,22 @@ What was not run：按任务要求未运行 Maven、frontend build、Playwright�
 Boundary confirmation：未实现 GateV-2，未修改 backend、frontend、migration、CI workflow、Gate archive、LIVE、AI、DH、Integration 或交易状态。
 
 Blocking status：non-blocking；authority sync 与 checker regression 已通过，可由用户提交。该本地 authority-sync commit 自身尚无 CI，GateV-2 只在用户提交/push 且该新 HEAD CI success 后解除执行阻断。
+
+---
+
+## NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION（2026-07-11）
+
+结论：`IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| preflight + authority + exact-HEAD CI | PASS | `dev` clean baseline；`HEAD == origin/dev == 0c5bbdbba53001bb1f8100ba606e1014cfadeab5`；CI run `29145355047` 为 `completed / success`；GateV-1 为 `ACCEPTED / CI GREEN`。 |
+| targeted core/API tests | PASS / BUILD SUCCESS | `ValidationReviewOperationsServiceTest` 8 passed、`ValidationReviewRequestHasherTest` 2 passed、`ValidationReviewControllerTest` 5 passed；20-module targeted reactor SUCCESS。首次新增 malformed JSON audit 断言发现 local handler 未显式设置 HTTP 400，补充既有 `BAD_REQUEST` status 后重跑通过。 |
+| disposable PostgreSQL 17 repository integration | PASS / NOT SKIPPED | fresh V1..V33、scope/filter/order/offset、locking、idempotency、event failure rollback、accepted audit atomic rollback 均通过；容器已删除。 |
+| required Maven scope on disposable PostgreSQL | PASS / BUILD SUCCESS | 23-module reactor SUCCESS；`nq-core` 239 tests，`nq-app` 130 tests / 4 skipped，0 failures/errors。一次性库仅补既有 happy-path 所需最小 SIM account fixture，未修改业务代码。 |
+
+本机默认 PostgreSQL 因已应用旧工作区 V33 而出现 Flyway checksum mismatch（Applied `-1276170491` / Resolved `1421368418`）；未 repair、未修改 V33。最终 required Maven 命令在一次性 fresh PostgreSQL 17 上真实通过。既有 SLF4J no-provider、Mockito dynamic-agent 与 unchecked compile warning 均为非阻断。
+
+覆盖：OPERATOR/ADMIN tenant-owner scope、bounded list/default-max limit、filter/order/events、GET 无写侧、四个 endpoint 与全部合法/非法/terminal 流转、optimistic conflict、同事务 case/event/audit、event/audit failure rollback、同 key/hash replay、不同 hash reuse conflict、canonical Map 顺序/换行稳定、malformed JSON 脱敏拒绝 audit、保守 DTO、安全字段扫描及统一错误 envelope。
+
+Boundary confirmation：仅修改 validation review core/API/infra 与允许文档；无 migration、case materialization、scheduler、frontend、Python、Strategy/Evaluation/Paper/Shadow/Risk/Account/Order/Ledger、LIVE、real provider、credential、AI/DH/Integration runtime 变更。GateV 保持 `IN PROGRESS / NOT FROZEN`，GateV-2 尚未 accepted，GateV-3 保持 `NOT STARTED`。

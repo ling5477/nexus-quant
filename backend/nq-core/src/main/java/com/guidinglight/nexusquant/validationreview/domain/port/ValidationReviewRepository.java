@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.validationreview.domain.port;
 
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;
+import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCaseQuery;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEvent;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewTransitionCommand;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewTransitionResult;
@@ -26,11 +27,25 @@ public interface ValidationReviewRepository {
     /** 按 tenant + case id 查询 ADMIN scope；不跨 tenant。 */
     Optional<ValidationReviewCase> findTenantCase(String tenantKey, UUID reviewCaseId);
 
-    /** 按 tenant + owner bounded 查询 OPERATOR case 列表。 */
-    List<ValidationReviewCase> listOwnedCases(String tenantKey, long ownerId, int limit);
+    /** 按 tenant + owner + filter + offset bounded 查询 OPERATOR case 列表。 */
+    List<ValidationReviewCase> listOwnedCases(
+            String tenantKey,
+            long ownerId,
+            ValidationReviewCaseQuery query
+    );
 
-    /** 按 tenant bounded 查询 ADMIN case 列表。 */
-    List<ValidationReviewCase> listTenantCases(String tenantKey, int limit);
+    /** 按 tenant + optional owner + filter + offset bounded 查询 ADMIN case 列表。 */
+    List<ValidationReviewCase> listTenantCases(String tenantKey, ValidationReviewCaseQuery query);
+
+    /** GateV-1 compatibility helper；新 API 使用 query overload。 */
+    default List<ValidationReviewCase> listOwnedCases(String tenantKey, long ownerId, int limit) {
+        return listOwnedCases(tenantKey, ownerId, new ValidationReviewCaseQuery(null, null, null, limit, 0));
+    }
+
+    /** GateV-1 compatibility helper；新 API 使用 query overload。 */
+    default List<ValidationReviewCase> listTenantCases(String tenantKey, int limit) {
+        return listTenantCases(tenantKey, new ValidationReviewCaseQuery(null, null, null, limit, 0));
+    }
 
     /** 按 tenant + owner + case 查询稳定顺序的 append-only events。 */
     List<ValidationReviewEvent> listOwnedEvents(String tenantKey, long ownerId, UUID reviewCaseId, int limit);

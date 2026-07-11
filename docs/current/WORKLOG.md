@@ -17128,3 +17128,20 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
   - docs link checker `59 checked / 1 historical warning / 0 errors / PASS`；legacy current-state scan 无命中；`git diff --check` PASS。
 - boundary: 未修改 backend、frontend、research、deploy、`.github`、migration、Gate archive、AI/DH/Integration 或交易能力；未运行 Maven/frontend/Python tests，原因是未修改业务代码。
 - next action: 用户复核精确 staged diff，提交 `docs(gatev): sync GateV-1 acceptance authority` 并 push；等待该 authority-sync exact HEAD CI success 后，再启动 `NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION`。
+
+## NQ-GATEV-2-OPERATOR-REVIEW-LIFECYCLE-API-IMPLEMENTATION
+
+- date: 2026-07-11
+- scope: NQ-only GateV-2；为既有 durable review facts 增加 3 个 bounded GET、4 个有限 lifecycle POST、RBAC/tenant-owner scope、canonical idempotency hash、optimistic lock、operational audit 与测试。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY TO COMMIT`（已实现 / 已自审 / 可进入提交前复核）。
+- implementation:
+  - OPERATOR 查询/操作固定为 `NQ_LOCAL + currentUserId` SQL scope；ADMIN 固定为 `NQ_LOCAL` tenant scope。
+  - lifecycle 复用 GateV-1 state machine/repository；accepted case/event/audit 同事务，rejected audit 使用独立事务且只含 allowlisted operational fields。
+  - canonical hash 固定 UTF-8、递归 JSON key 排序、换行规范化与 SHA-256；幂等 replay 返回首次 event snapshot，不追加第二条 event。
+  - response 固定四个保守 safety flags，不暴露 evidence anchor、raw event metadata、credential 或 trading authorization 字段。
+- validation:
+  - targeted core/API tests 15 passed，20-module reactor `BUILD SUCCESS`；malformed JSON 在 binding 阶段记录脱敏 rejected audit，并继续复用既有 `MALFORMED_REQUEST` envelope。
+  - disposable PostgreSQL 17 fresh V1..V33 repository integration PASS / not skipped。
+  - required 23-module Maven scope 在一次性 PostgreSQL + 最小 legacy SIM fixture 上 `BUILD SUCCESS`；本机 stale V33 checksum 未 repair、未改 migration。
+- boundary: 未修改 migration、POM、frontend、research、scripts、deploy、`.github`、Gate archive、Strategy/Evaluation/Paper/Shadow/Risk/Account/Order/Ledger、LIVE、real provider、credential、AI/DH/Integration runtime；未 commit、push、PR 或 tag。
+- next action: 用户复核 staged diff，提交 `feat(gatev): add operator review lifecycle API` 并 push；等待 exact-HEAD CI success 后再执行独立 GateV-2 post-CI authority sync。GateV-3 保持 `NOT STARTED`。

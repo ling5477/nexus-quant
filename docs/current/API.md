@@ -575,6 +575,35 @@ GateI-3 固定范围：
 - Paper run 创建时固化 publish snapshot、strategy version snapshot、dataset snapshot、param snapshot、config snapshot。
 - 第一版 orders/trades/positions 为空列表，由后续 GateI-4 风控回写和撮合填充。
 
+## GateV-2 Operator Review Lifecycle API
+
+GateV-2 仅查询和操作已存在的本地 durable review case，不提供 create/materialize、delete、reopen、approve、authorize、execute 或 trade endpoint。所有 endpoint 均要求既有 authenticated user context；tenant 固定由服务端提供为 `NQ_LOCAL`，客户端不能提交或覆盖 tenant、actor、owner、requestId 或 traceId。
+
+### Query endpoints
+
+- `GET /api/validation-review-cases`：支持 `state`、`severity`、`ownerId`、`limit`、`offset`。`limit` 默认 50、最大 100，`offset` 最大 10000；排序固定为 `updated_at DESC, id DESC`。OPERATOR 只能查询自己的 owner scope 且不得提交 `ownerId`，ADMIN 可在同 tenant 内按 owner 筛选。
+- `GET /api/validation-review-cases/{caseId}`：OPERATOR 仅可见自己的 case，ADMIN 仅可见同 tenant case；越权、跨 tenant 与不存在统一 fail-closed 为 404。
+- `GET /api/validation-review-cases/{caseId}/events`：返回最多 100 条 event，排序固定为 `created_at ASC, id ASC`。不暴露 request hash、idempotency key 或 raw metadata。
+
+所有 GET 都是 read-only：不会修改 case、追加 lifecycle event 或记录 transition audit。
+
+### Lifecycle endpoints
+
+- `POST /api/validation-review-cases/{caseId}/acknowledge`
+- `POST /api/validation-review-cases/{caseId}/escalate`
+- `POST /api/validation-review-cases/{caseId}/resolve`
+- `POST /api/validation-review-cases/{caseId}/close`
+
+请求使用既有 `Idempotency-Key` header，body 只允许 `expectedVersion`、`reason` 与可选 JSON object `metadata`。服务端以 UTF-8、递归 JSON key 排序、固定换行规范和 SHA-256 生成 canonical request hash；hash 不包含 requestId/traceId，也不依赖 Map 遍历、默认 locale 或系统时区。reason/metadata 在写入 event 前执行敏感 marker/字段递归检查。
+
+合法流转只复用 GateV-1 状态机：`OPEN -> ACKNOWLEDGED`、`OPEN/ACKNOWLEDGED -> ESCALATED`、`ACKNOWLEDGED/ESCALATED -> RESOLVED`、`RESOLVED -> CLOSED`。accepted case update、单条 lifecycle event 与最小 operational audit 同事务；幂等 replay 不追加第二条 event 或 accepted audit，并返回首次 event 对应 snapshot。
+
+### Response 与错误
+
+Case response 包含 owner、evidence type/source、severity/state、title/summary、version、时间与 lifecycle actor/time，并固定返回 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`。不暴露 evidence anchor、credential/private payload、real account/order 或 trading authorization 字段。
+
+错误继续使用既有 `ApiErrorResponse` envelope：scope 不可见为 404，无 review 权限角色为 403，version conflict、非法/terminal transition 与 idempotency key reuse 为 409，请求字段、bounded pagination 或敏感数据不合法为 400。拒绝类 audit 只允许 `caseId/action/fromState/toState/actorId/requestId/traceId/errorCode`，不记录 reason、metadata、完整 body 或 header。
+
 ## GateI-4 Paper Trading Monitor API
 
 当前已实现的 GateI-4 风控回写、资金曲线、持仓曲线、交易复盘与异常停机入口：

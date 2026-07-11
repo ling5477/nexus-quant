@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;
+import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCaseQuery;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEvent;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEventType;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
@@ -17,6 +18,7 @@ import com.guidinglight.nexusquant.validationreview.domain.port.ValidationReview
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public class JdbcValidationReviewRepository implements ValidationReviewRepository {
 
-    private static final int MAX_LIST_LIMIT = 200;
+    private static final int MAX_LIST_LIMIT = ValidationReviewCaseQuery.MAX_LIMIT;
 
     private static final String CASE_SELECT = """
             SELECT id, tenant_key, owner_id, evidence_type, evidence_source,
@@ -152,30 +154,32 @@ public class JdbcValidationReviewRepository implements ValidationReviewRepositor
 
     /** {@inheritDoc} */
     @Override
-    public List<ValidationReviewCase> listOwnedCases(String tenantKey, long ownerId, int limit) {
+    public List<ValidationReviewCase> listOwnedCases(
+            String tenantKey,
+            long ownerId,
+            ValidationReviewCaseQuery query
+    ) {
         ValidationReviewCase.requireTenant(tenantKey);
         ValidationReviewCase.requirePositive(ownerId, "ownerId");
-        int boundedLimit = requireLimit(limit);
-        return jdbcTemplate.query(
-                CASE_SELECT + " WHERE tenant_key = ? AND owner_id = ? ORDER BY updated_at DESC, id DESC LIMIT ?",
-                caseRowMapper(),
-                tenantKey,
-                ownerId,
-                boundedLimit
-        );
+        Objects.requireNonNull(query, "query must not be null");
+        StringBuilder sql = new StringBuilder(CASE_SELECT)
+                .append(" WHERE tenant_key = ? AND owner_id = ?");
+        List<Object> parameters = new ArrayList<>(List.of(tenantKey, ownerId));
+        appendFilters(sql, parameters, query, false);
+        appendPagination(sql, parameters, query);
+        return jdbcTemplate.query(sql.toString(), caseRowMapper(), parameters.toArray());
     }
 
     /** {@inheritDoc} */
     @Override
-    public List<ValidationReviewCase> listTenantCases(String tenantKey, int limit) {
+    public List<ValidationReviewCase> listTenantCases(String tenantKey, ValidationReviewCaseQuery query) {
         ValidationReviewCase.requireTenant(tenantKey);
-        int boundedLimit = requireLimit(limit);
-        return jdbcTemplate.query(
-                CASE_SELECT + " WHERE tenant_key = ? ORDER BY updated_at DESC, id DESC LIMIT ?",
-                caseRowMapper(),
-                tenantKey,
-                boundedLimit
-        );
+        Objects.requireNonNull(query, "query must not be null");
+        StringBuilder sql = new StringBuilder(CASE_SELECT).append(" WHERE tenant_key = ?");
+        List<Object> parameters = new ArrayList<>(List.of(tenantKey));
+        appendFilters(sql, parameters, query, true);
+        appendPagination(sql, parameters, query);
+        return jdbcTemplate.query(sql.toString(), caseRowMapper(), parameters.toArray());
     }
 
     /** {@inheritDoc} */
@@ -580,6 +584,37 @@ public class JdbcValidationReviewRepository implements ValidationReviewRepositor
             throw new IllegalArgumentException("limit must be between 1 and " + MAX_LIST_LIMIT);
         }
         return limit;
+    }
+
+    private static void appendFilters(
+            StringBuilder sql,
+            List<Object> parameters,
+            ValidationReviewCaseQuery query,
+            boolean includeOwner
+    ) {
+        if (includeOwner && query.ownerId() != null) {
+            sql.append(" AND owner_id = ?");
+            parameters.add(query.ownerId());
+        }
+        if (query.state() != null) {
+            sql.append(" AND state = ?");
+            parameters.add(query.state().name());
+        }
+        if (query.severity() != null) {
+            sql.append(" AND severity = ?");
+            parameters.add(query.severity().name());
+        }
+    }
+
+    private static void appendPagination(
+            StringBuilder sql,
+            List<Object> parameters,
+            ValidationReviewCaseQuery query
+    ) {
+        requireLimit(query.limit());
+        sql.append(" ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?");
+        parameters.add(query.limit());
+        parameters.add(query.offset());
     }
 
     private static void requireScope(String tenantKey, long ownerId, UUID reviewCaseId) {
