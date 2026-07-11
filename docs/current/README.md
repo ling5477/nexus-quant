@@ -7,7 +7,7 @@
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - Release tag：`nq-gateu-freeze`；tagged commit `48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
-- GateV：`NOT STARTED`（未开始）。
+- GateV：`PLAN / NOT IMPLEMENTED`（已规划 / 未实现）；唯一 active plan：[GATEV_PLAN.md](GATEV_PLAN.md)。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
 ## Authority Map
@@ -23,6 +23,7 @@
 | 运行手册 | [RUNBOOK.md](RUNBOOK.md) | 否 |
 | 前端设计系统 | [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md) | 否 |
 | Evidence ledger | [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md) | 否；append-only |
+| GateV active plan | [GATEV_PLAN.md](GATEV_PLAN.md) | 否；只定义批次、边界和下一代码切片 |
 | Workflow / skills | [CODEX_PROJECT_INSTRUCTIONS.md](CODEX_PROJECT_INSTRUCTIONS.md)、[NQ_DH_CODEX_PLUGIN_WORKFLOW.md](NQ_DH_CODEX_PLUGIN_WORKFLOW.md)、[NQ_DH_WORKFLOW_ROUTER_SKILL.md](NQ_DH_WORKFLOW_ROUTER_SKILL.md)、[NQ_DH_CODEX_TASK_TEMPLATES.md](NQ_DH_CODEX_TASK_TEMPLATES.md) | 否；每轮动态读取 STATUS |
 
 ## Historical Evidence
@@ -33,7 +34,7 @@
 
 ## Current Is Not
 
-- 不是 GateV implementation 已启动。
+- GateV 只有 planning 已完成，不是 implementation 已启动。
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider、private trading adapter 或 real permission probe 已实现。

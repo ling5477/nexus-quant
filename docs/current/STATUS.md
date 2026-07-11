@@ -27,7 +27,7 @@ nq-current-authority:end -->
 - Tagged commit CI：GitHub Actions run `29138944526`，`NQ CI Baseline`，`completed / success`，`headSha=48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU implementation baseline：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
-- GateV：`NOT STARTED`（未开始）。
+- GateV：`PLAN / NOT IMPLEMENTED`（已规划 / 未实现）；唯一 active plan 为 [GATEV_PLAN.md](GATEV_PLAN.md)。
 
 ## 2. 安全与运行边界
 
@@ -50,4 +50,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-本治理修复提交并通过对应 CI 后，GateV 可进入单独授权的 planning 任务；不得由 GateU tag 或本治理修复自动启动 GateV implementation。
+本 GateV planning 提交并通过对应 CI 后，下一轮直接执行 `NQ-GATEV-1-DURABLE-REVIEW-FACT-MODEL-MIGRATION-AND-REPOSITORY-IMPLEMENTATION`；不得增加 GateV plan review、plan freeze 或 planning addendum，也不得由本计划自动视为 implementation 已开始。

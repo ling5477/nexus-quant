@@ -8,7 +8,7 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 - Release tag：`nq-gateu-freeze`。
 - Tagged commit：`48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU archive：[docs/gates/gate-u/README.md](docs/gates/gate-u/README.md)。
-- GateV：`NOT STARTED`（未开始）。
+- GateV：`PLAN / NOT IMPLEMENTED`（已规划 / 未实现）；计划入口：[docs/current/GATEV_PLAN.md](docs/current/GATEV_PLAN.md)。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）。
 - AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 
@@ -24,4 +24,4 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 ## Boundary
 
-GateU frozen/tagged 不代表 LIVE、Shadow trading、AI/DH runtime、Integration runtime、RealClient、real provider、private trading 或真实交易已启用。GateV 只能在本治理修复提交并通过 CI 后另起 planning 任务，当前不得启动 implementation。
+GateU frozen/tagged 不代表 LIVE、Shadow trading、AI/DH runtime、Integration runtime、RealClient、real provider、private trading 或真实交易已启用。GateV 当前只有 planning；本 planning 提交通过 CI 后直接进入 GateV-1 durable review fact model 代码实现，当前不得写成已实现。

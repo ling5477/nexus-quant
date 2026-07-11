@@ -7,6 +7,7 @@
 1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，包含 current Gate、tag、next Gate 与 LIVE/AI/DH 等机器可读状态。
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
+4. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV 唯一 active plan，定义受控验证自动化、durable operator review、最多四个 implementation batch 与首个代码切片；不决定 current Gate，也不表示能力已实现。
 
 ## 2. NQ Capability Authority
 
@@ -62,4 +63,4 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 
 ## 9. Current Boundary Summary
 
-本节只解释 `STATUS.md`，不形成第二 authority：GateU 已 frozen/tagged；GateV 为 `NOT STARTED`（未开始）；LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
+本节只解释 `STATUS.md`，不形成第二 authority：GateU 已 frozen/tagged；GateV 为 `PLAN / NOT IMPLEMENTED`（已规划 / 未实现）；LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
