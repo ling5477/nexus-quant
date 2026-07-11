@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=45c7df9799c0534ddd3ee291dc9347076dec9ddd
 accepted_batch_acceptance_head=45c7df9799c0534ddd3ee291dc9347076dec9ddd
 accepted_batch_ci_run=29152330658
 work_batch=GateV-3
-work_batch_status=IMPLEMENTED|PENDING_REVIEW
-work_batch_commit=UNCOMMITTED
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-REVIEW
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=6cbceba9d0fbc0fca67f43e898c416ec64a6fa33
+work_batch_ci_run=29154489746
+next_action=NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -44,7 +44,7 @@ nq-current-authority:end -->
 - GateV-2 仅接受本地 durable review lifecycle：3 个 bounded GET 与 acknowledge/escalate/resolve/close 四个有限 POST，含 RBAC、tenant/owner scope、optimistic locking、idempotency 与脱敏 audit；不创建 case，不影响交易或运行事实，也不构成 trading authorization。
 - GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`；`NQ CI Baseline` run `29152330658` 为 `completed / success`，`headSha=45c7df9799c0534ddd3ee291dc9347076dec9ddd`。
 - GateV-3A 仅接受 PostgreSQL transaction-level advisory lock primitive：使用 `pg_try_advisory_xact_lock(int,int)`、稳定 key mapping、`REQUIRES_NEW` read-only transaction 与 Spring composition；无 migration、无 `@Scheduled`、无业务 callback 或业务副作用，不表示 scheduler 已启用。
-- GateV-3：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）。代码只存在于当前工作区，尚未 review、尚未 commit、尚无 GateV-3 自身 CI；这不表示 scheduler 已被接受或生产启用，默认配置仍关闭。
+- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。专项 review 未发现 P0/P1；实现 commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 已进入 exact-HEAD `f3e96a95fd8f74d2e6ebcbee170f727958b3d584`，`NQ CI Baseline` run `29154489746` 为 `completed / success`。scheduler 默认关闭，不表示生产启用。
 - GateV-4：`NOT STARTED`（未开始）。
 
 ## 2. 安全与运行边界
@@ -68,4 +68,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-下一允许动作精确为 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-REVIEW`。GateV-3A 锁前置继续为 `ACCEPTED / CI GREEN`；GateV-3 只达到工作区 `IMPLEMENTED / PENDING REVIEW`，尚未 review、commit 或取得自身 CI。不得把 GateV-3 scheduler 或 GateV 整体提前写成 accepted、frozen、tagged 或生产启用。
+下一允许动作精确为 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`。GateV-3A 继续作为 accepted baseline；GateV-3 work batch 已专项 review 接受且 exact-HEAD CI green，待独立 post-CI sync 提升为新的 `accepted_batch` 并创建下一 `work_batch`。不得把 scheduler acceptance 写成生产启用，也不得把 GateV 整体提前写成 frozen 或 tagged。

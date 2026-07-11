@@ -11133,3 +11133,25 @@ What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy
 Boundary confirmation：GateV-3 代码保留在当前工作区且默认关闭；本治理任务不构成 GateV-3 review/acceptance，不授权生产 scheduler、LIVE、Shadow trading、AI/DH/Integration runtime、real provider 或 private trading。
 
 Blocking status：non-blocking；用户仅提交/push governance/current 文件并取得 exact-HEAD CI success 后，唯一下一动作是 `NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-REVIEW`。
+
+---
+
+## NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-REVIEW（2026-07-11）
+
+结论：`PASS / ACCEPTED`（通过 / 已接受）。GateV-3 implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 因误提交已先行进入 `dev`；本 review 不要求回退，使用 exact-HEAD `f3e96a95fd8f74d2e6ebcbee170f727958b3d584` 与 CI run `29154489746` 补齐独立 review/CI evidence。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| GateV-3 targeted 23-module reactor | PASS / BUILD SUCCESS | GateU aggregate 6、GateV-3A lock unit 5、GateV-3 scheduler 13、app/lock composition 3 tests 全部 0 failures / 0 errors。 |
+| app composition 独立重跑 | PASS / BUILD SUCCESS | `ValidationEvidenceSchedulerApplicationContextTest` 2 tests；default-disabled 与 enabled composition 均无初始化 query/lock side effect。 |
+| PostgreSQL advisory lock integration 本地重跑 | PASS / 1 SKIPPED | 本地未配置 `nq.postgres.smoke.*`，因此 1 skipped；未伪写为执行通过。 |
+| GitHub Actions exact-HEAD | PASS | `NQ CI Baseline` run `29154489746`，`headSha=f3e96a95...`，`completed / success`；Backend Maven test 与 PostgreSQL/Flyway smoke jobs 均 success。 |
+| static boundary/scheduling scan | PASS | 无全局 `@EnableScheduling`、无第二 processor source、无第二套锁/线程池、无业务写侧、内部 HTTP、Controller、repository 或交易调用。 |
+
+Review evidence：默认 `enabled=false`；enabled 时 processor 仅处理 `ValidationEvidenceScheduler` 且 task count=1；未获锁时 aggregate=0；获锁后 aggregate 恰好一次；无 retry；只返回脱敏摘要；safety flags 固定 fail-closed。
+
+P2 non-blocking gaps：未直接断言 processor destroy 后 task 集合清空；未捕获并断言传给 lock 的 exact key/timeout；properties 边界没有逐项参数化覆盖。现有实现与 Spring 标准 lifecycle inspection 足以确认行为，本轮不因 P2 扩大改动。
+
+What was not run：未运行 frontend、Playwright、Python pytest/mypy/ruff；本轮为 NQ backend scheduler review，且未修改 frontend/Python。
+
+Boundary confirmation：scheduler 默认关闭；接受不表示生产启用、LIVE/Shadow trading、交易授权、GateV freeze 或 tag。未修改 GateU aggregate、GateV-3A primitive、POM、migration、API、CI、其他 scheduler、research fixture、frontend 或 Python。

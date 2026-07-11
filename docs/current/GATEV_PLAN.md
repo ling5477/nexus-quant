@@ -2,7 +2,7 @@
 
 > 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
 > 英文名：`Controlled Validation Automation & Durable Operator Review`。
-> 本计划是 GateV 唯一 active plan；GateV-3A exact-HEAD CI acceptance 已完成，GateV-3 scheduler 已在当前工作区实现，唯一下一动作是独立 review。
+> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 已通过专项 review 与 exact-HEAD CI，唯一下一动作是独立 post-CI active-authority sync。
 
 ## 1. Current Baseline
 
@@ -12,7 +12,7 @@
 - GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `f7d71d5a80241ade049a83fa3f90b3ac6ce46806`，acceptance head `b3dd5f74f154d5ed9e2343bc18e451f48770814f`，CI run `29144345430` 为 `completed / success`。
 - GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`，CI run `29150549978` 为 `completed / success`。
 - GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`，CI run `29152330658` 为 `completed / success`。
-- GateV-3：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待复核）；代码只存在于当前工作区，尚未 review、commit 或取得自身 CI，默认配置仍关闭，不表示 scheduler 已被接受或生产启用。
+- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 已进入 exact-HEAD `f3e96a95fd8f74d2e6ebcbee170f727958b3d584`，CI run `29154489746` 为 `completed / success`。默认配置仍关闭，不表示生产启用。
 - LIVE `DISABLED`，Shadow trading `NOT ENABLED`，AI `NOT STARTED`，DH runtime `NOT INTEGRATED`，Integration runtime `NOT STARTED`，real provider / private trading `NOT IMPLEMENTED`。
 
 ## 2. GateU Freeze Evidence
@@ -176,7 +176,7 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 | GateV-1 | Durable Review Fact Model：两表 migration、domain state machine、repository、测试与同轮 schema review | `ACCEPTED / CI GREEN`；无 API、scheduler、frontend |
 | GateV-2 | Operator Review Lifecycle API：GET、acknowledge/escalate/resolve/close、RBAC、owner scope、idempotency、audit | `ACCEPTED / CI GREEN`；仅本地 review 写侧，不改交易/运行事实 |
 | GateV-3A | PostgreSQL Advisory Scheduler Lock Prerequisite：通用 contract、transaction-level try lock、稳定 key mapping、Spring composition、真实并发测试 | `ACCEPTED / CI GREEN`；无 `@Scheduled`、migration、业务 callback 或业务副作用 |
-| GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | `IMPLEMENTED / PENDING REVIEW`；仅存在于当前工作区，尚未 commit 或 CI；不创建 case、不外联、不改 Paper/Shadow/交易状态 |
+| GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | `ACCEPTED / CI GREEN`；专项 review 无 P0/P1，exact-HEAD CI green；不创建 case、不外联、不改 Paper/Shadow/交易状态 |
 | GateV-4 | Review Workbench：既有页面 queue/detail/events/actions 与 targeted E2E | 不实现 Python manifest preview，不新增 route |
 | GateV-FREEZE | manifest 驱动归档、全量验证、exact-HEAD CI、tag handoff | 不新增实现范围 |
 
@@ -205,9 +205,9 @@ GateV-4 仅在既有 `/strategies/validation` Validation Operations Workbench �
 下一轮唯一任务名：
 
 ```text
-NQ-GATEV-3-CONTROLLED-READONLY-SCHEDULER-REVIEW
+NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC
 ```
 
 GateV-3A implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`；`NQ CI Baseline` run `29152330658` 已以 exact `headSha` 完成 `success`。
 
-GateV-3A lock prerequisite 继续作为 accepted baseline；机器 authority 的 `accepted_batch` 为 GateV-3A，`work_batch` 为 GateV-3，`next_action` 为 GateV-3 controlled read-only scheduler review。GateV-3 代码仅存在于当前工作区，尚未 review、commit 或取得自身 CI；本计划不接受该实现，也不授权生产启用，默认配置仍关闭。
+机器 authority 暂时保留 `accepted_batch=GateV-3A`，并以 `work_batch=GateV-3 / ACCEPTED|CI_GREEN` 记录已完成的 review 与 CI；下一独立 sync 才提升 accepted baseline 并创建后续 work batch。scheduler 默认关闭，本计划不授权生产启用或 GateV freeze。
