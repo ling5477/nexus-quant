@@ -6,7 +6,7 @@
 
 - NQ = NexusQuant，量化交易平台。
 - DH = Decision Hub，多 Agent 决策平台。
-- 当前 NQ：GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ。
+- 每轮先解析 `docs/current/STATUS.md` 的 `nq-current-authority` 区块；本指引不复制具体 current Gate、next Gate 或阶段状态。
 - 当前 DH：只允许只读边界和契约冻结；不允许真实接入 NQ，不允许真实 provider，不允许 LIVE trading。
 - NQ 技术栈：Java 21、Spring Boot 3.5.x、Maven 多模块、React、Vite、Ant Design、TanStack Query、Playwright、PostgreSQL、Flyway、pytest、mypy、ruff。
 
@@ -82,7 +82,7 @@
 - 不同时修改前端、后端、Python、部署、文档，除非任务明确要求。
 - 不提交密钥、token、cookie、exchange secret、tenant data、生产 `.env`。
 - 未执行验证不能写成通过。
-- 不把 GateK-PLAN 写成 GateK implementation started。
+- 不把 `<NEXT_GATE>` planning 写成 implementation started；Gate 名称和状态必须动态读取 `STATUS.md`。
 
 ## NQ 边界
 

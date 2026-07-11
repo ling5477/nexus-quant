@@ -1,6 +1,6 @@
 # Current Modules
 
-本文记录当前模块 owner 和职责边界。当前阶段为 GateR `FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；下一阶段唯一推荐主线是 GateS，GateS-0 为 `PLAN / NOT IMPLEMENTED`（规划 / 未实现），GateS-1 为 `NEXT / NOT IMPLEMENTED`（下一实施候选 / 未实现）。
+本文记录当前模块 owner 和职责边界，不决定 current Gate 或下一阶段。阶段状态必须读取 [STATUS.md](STATUS.md) 的机器可读 authority 区块。
 
 ## 当前禁止误写的事实
 
@@ -9,7 +9,6 @@
 - DH runtime `NOT INTEGRATED`（未集成）。
 - Integration-1 `NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
 - RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
-- GateS backend read model / API / frontend page / Python offline evaluation artifact binding 仍 `NOT IMPLEMENTED`（未实现）。
 
 ## 模块职责
 

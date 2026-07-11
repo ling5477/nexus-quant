@@ -1,6 +1,6 @@
 # NQ / DH Codex Plugin Workflow
 
-本文固化 NexusQuant（NQ）与 Decision Hub（DH）项目中的 Codex 插件路由、任务分类和标准执行流程。当前 NQ 事实源仍以 `docs/current/` 为准：GateJ completed，Next: GateK-PLAN，AI not started，DH integration not started / not connected to NQ。
+本文固化 NexusQuant（NQ）与 Decision Hub（DH）项目中的 Codex 插件路由、任务分类和标准执行流程。每轮必须先解析 `docs/current/STATUS.md` 的 `nq-current-authority` 区块；workflow 不复制具体 current Gate 或 next Gate。
 
 ## 1. 插件总体原则
 
@@ -165,7 +165,7 @@ GitHub 读取部署文件
 - PAPER 和 LIVE 必须隔离。
 - DH 不允许修改 NQ 交易状态。
 - 涉及交易、风控、权限、部署、安全的修改必须输出风险说明。
-- 当前 Next 是 GateK-PLAN；AI、AI 信号、AI 自动交易、AI Paper Trading、DH integration、多交易所扩展均未开始。
+- `<CURRENT_GATE>`、`<NEXT_GATE>` 及 AI、DH、LIVE 等状态必须从 `STATUS.md` 动态读取；不得从本 workflow 的示例推导当前阶段。
 
 ## 7. DH 边界
 

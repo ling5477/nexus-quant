@@ -23,14 +23,14 @@ Do not scan or read credential-bearing or generated areas for docs work unless t
 
 Use this priority order when facts conflict:
 
-1. Current code and actual test/CI results outrank old documentation.
-2. `docs/current/STATUS.md`, `ROADMAP.md`, `TESTING.md`, and `WORKLOG.md` are the current status facts.
-3. `README.md` and `docs/current/README.md` are entry indexes and current-stage summaries.
-4. `docs/current/API.md` documents only real current API, not planned API.
-5. `docs/current/DB_SCHEMA.md` documents only real current schema, not future migrations.
-6. `docs/current/frontend/**` documents frontend design, pages, E2E status, and UI facts.
-7. Historical Gate docs, archive docs, old reviews, and old freeze records are evidence, not authority over current code.
-8. If attachments, prompts, old docs, and current repository facts conflict, perform documentation reconciliation first and do not overwrite current facts blindly.
+1. Current code and actual test/CI results determine capability facts.
+2. `docs/current/STATUS.md` and its `nq-current-authority` block are the only current-stage authority.
+3. `docs/current/ROADMAP.md` defines the next allowed action but cannot override `STATUS.md`.
+4. Root/current README files are entry indexes and short summaries only.
+5. `API.md`, `DB_SCHEMA.md`, `ARCHITECTURE.md`, `MODULES.md`, and frontend docs describe current capabilities; they do not decide the current Gate.
+6. `TESTING.md` and `WORKLOG.md` are append-only evidence ledgers. Historical states in them do not participate in current-stage decisions.
+7. Historical Gate docs, archive docs, old reviews, and old freeze records are evidence, not current authority.
+8. Any current-document conflict with `STATUS.md` requires `BLOCKED / CURRENT_AUTHORITY_CONFLICT` before writing new stage facts.
 
 Do not hard-code the project stage from this skill. Re-read current facts each turn before writing state, Gate, LIVE, AI, DH, real-provider, or test-result claims.
 
@@ -68,7 +68,7 @@ Use these language rules for all new NQ/DH documentation, documentation governan
 - Agent 输出报告的栏目名可以保留英文，但每个栏目内容必须中文为主，并保留精确英文状态值和文件路径。
 - 不得为了中文化而改写英文枚举、API 字段、类名、接口名、文件名或历史 release/tag 事实。
 
-Prefer append-only updates. Do not rewrite history unless the task explicitly asks for a reconciliation edit and the current-control source proves the old line is stale. `WORKLOG.md` and `TESTING.md` should append this turn's result; do not overwrite existing GateK, GateL, GateM, frontend, CI, or integration records.
+Current-control files may replace stale current facts when repository/tag/CI evidence proves the correction. Only `WORKLOG.md` and `TESTING.md` are append-only by default; never rewrite their historical records.
 
 `docs/current` must not expand without current-control value. New docs need a clear reason: stage freeze, P0/P1 risk, security boundary, migration, CI workflow, credential, LIVE, real provider, API contract, DB schema, frontend current fact, acceptance report, or explicit user instruction.
 
@@ -85,16 +85,13 @@ Trigger stage transition archive governance when any of these signals appear:
 - The next phase is selected, or the current route switches to a new Gate or phase.
 - `docs/current` contains accumulated completed-stage evidence that no longer guides current implementation.
 
-Recommended stage-completion order:
+Ordinary Gate freeze completion flow:
 
-1. Stage freeze readiness review.
-2. Stage freeze review.
-3. Release tag and archive record.
-4. Post-stage current archive inventory.
-5. Archive plan review.
-6. Archive move batch.
-7. Archive closeout.
-8. Start next phase plan or review.
+1. In one authorized task, verify readiness and create the complete pre-tag archive from the machine-readable manifest.
+2. Commit/push the archive and wait for exact archive-commit CI success.
+3. Create/push the annotated tag only after CI success.
+4. In the next authorized current-authority sync, record the verified tag in `STATUS.md`; the tagged commit is not required to predict its future tag-object SHA.
+5. Start the next Gate only in a separate authorized task.
 
 `docs/current` should keep only current-control material:
 
@@ -110,15 +107,20 @@ Recommended stage-completion order:
 
 Archive target rules:
 
-- Completed Gate evidence belongs under `docs/gates/<gate-name>/`, following the repository convention such as `docs/gates/gate-j/`, `docs/gates/gate-k/`, `docs/gates/gate-m/`, or `docs/gates/gate-n/`.
+- Completed Gate evidence belongs under the repository convention `docs/gates/<gate-name>/`.
 - Use focused subdirectories when useful: `docs/gates/<gate-name>/frontend/`, `docs/gates/<gate-name>/testing/`, `docs/gates/<gate-name>/freeze/`, or `docs/gates/<gate-name>/ci/`.
 - Superseded non-Gate material may move to `docs/archive/superseded/`.
-- If a prompt spells examples as `docs/gates/GateJ/`, normalize to the repo's current lowercase kebab-case convention unless an existing authoritative directory proves otherwise.
+- If a prompt uses a mixed-case Gate archive example, normalize it to `docs/gates/<gate-name>/` lowercase kebab-case unless an existing authoritative directory proves otherwise.
 - Move historical evidence; do not delete it, rewrite freeze or release facts, overwrite tag-bound history, or present moved evidence as current state.
 - Do not add redirect stubs unless the project already has an explicit stub policy. Prefer updating indexes and references.
-- Keep `TESTING.md` and `WORKLOG.md` append-only and current by default unless the project defines a separate volume strategy.
+- Keep `TESTING.md` and `WORKLOG.md` as append-only evidence ledgers; they may remain under `docs/current` but never decide the current Gate.
 
-Gate archive required files template:
+Gate archive manifest hard gate:
+
+- `scripts/docs/gate-archive-manifest.json` is authoritative for mandatory roles, conditional roles, aliases, strict Gate overrides, and legacy warning policy.
+- Before editing, derive the required paths/roles and compare them with the explicit task allowlist. Missing allowlist coverage requires `BLOCKED / ARCHIVE_ALLOWLIST_INCOMPLETE`.
+- After editing, missing roles, thin evidence bodies, or core broken links require `BLOCKED / ARCHIVE_MANIFEST_INCOMPLETE` or `BLOCKED / ARCHIVE_LINK_BROKEN`.
+- The following list explains roles; it is not a substitute for running the checker.
 
 - Every Gate freeze archive should include `README.md` as the archive entry.
 - Include `<GATE>_FREEZE_CLOSEOUT.md`.
@@ -133,7 +135,7 @@ Gate archive required files template:
 - Include `<GATE>_RUNTIME_OR_SCHEDULING_BOUNDARY_SUMMARY.md` when the Gate touches runtime, scheduler, runner, background jobs, refresh loops, replay, recovery, alerts, or operational readiness.
 - Include `<GATE>_BOUNDARY_STATEMENT.md`.
 - Include `<GATE>_KNOWN_LIMITATIONS_AND_RESIDUALS.md` or an equivalent section that explicitly lists known limitations, deferred items, and allowed residuals.
-- Include tag / commit / CI evidence in the closeout or a dedicated evidence file: local tag, remote tag, peeled commit, HEAD, origin branch, latest CI run id, conclusion, and head SHA.
+- Pre-tag closeout records implementation/archive candidates and CI evidence available at that time. Post-tag current authority records local/remote tag, tag object, peeled commit, and exact tagged-commit CI; do not require a commit to predict its future tag object SHA.
 - Include a `docs/current` cleanup pointer that says which current files remain authoritative, which historical files were moved or are allowed residuals, and what follow-up move batch remains.
 
 Current cleanup hard gate after freeze closeout:
@@ -163,7 +165,7 @@ Evidence matrix minimum fields:
 Thin archive detection:
 
 - An archive file that only says "see `docs/current/<file>`" is thin.
-- A freeze closeout that does not freeze commit, tag, and CI run evidence is thin.
+- A pre-tag freeze closeout that lacks archive candidate commit/CI semantics is thin. A post-tag current sync that omits the verified tag/peeled/CI facts is a current-authority conflict, not a reason to rewrite the tagged archive.
 - A Gate that adds or changes API behavior but lacks API evidence summary is thin.
 - A Gate that adds or changes frontend behavior but lacks frontend evidence summary is thin.
 - A Gate that adds or changes backend, DB, SQL, or migration behavior but lacks backend / DB / migration summary is thin.
@@ -173,7 +175,9 @@ Thin archive detection:
 
 Residual document taxonomy:
 
-- `Current authority`: still-current status, roadmap, API, DB schema, architecture, module, runbook, testing, worklog, or workflow authority.
+- `Current authority`: `STATUS.md` only for stage state; `ROADMAP.md` only for the next allowed route.
+- `Capability authority`: API, DB schema, architecture, module, runbook, and frontend facts; these do not decide the current Gate.
+- `Evidence ledger`: `TESTING.md` and `WORKLOG.md`; append-only and non-authoritative for current stage.
 - `Active current plan`: the next phase or currently authorized plan that still guides implementation.
 - `Allowed residual`: a historical file temporarily kept in `docs/current` for compatibility, audit chain, or unresolved move batch, and explicitly listed in `FACT_SOURCE_INDEX.md`.
 - `Archive pointer only`: a current entry that should retain only a short summary and a pointer to `docs/gates/**` or `docs/archive/**`.
@@ -185,7 +189,7 @@ Residual document taxonomy:
 `FACT_SOURCE_INDEX.md` update rule:
 
 - Every freeze, archive, current residual inventory, archive move batch, or archive closeout must update `FACT_SOURCE_INDEX.md` in the same task unless the user explicitly forbids it.
-- The index must distinguish `current authority`, `gate archive`, `historical evidence`, and `allowed residual`.
+- The index must distinguish NQ current authority, NQ capability authority, evidence ledger, NQ-DH Integration boundary, DH external authority, Gate archive, historical evidence, and allowed residual.
 - The index must state that `docs/gates/**` and `docs/archive/**` are historical evidence and do not override current status in `docs/current`.
 - The index must avoid NQ / DH / NQ-DH Integration line mixing. NQ-only status, DH-only status, and Integration status must be separate facts with separate authority.
 - Allowed residual entries must include reason, target archive path or decision point, and follow-up move batch.
@@ -194,7 +198,7 @@ Cross-line isolation rule:
 
 - NQ-only tasks must not modify DH status or declare DH runtime integration.
 - NQ-only tasks must not create Integration runtime conclusions, real HTTP conclusions, or provider readiness claims.
-- Integration tasks must not modify GateU / GateT / GateS status unless explicitly authorized by the task and verified from current facts.
+- Integration tasks must not modify the NQ current/next Gate unless explicitly authorized and verified from the `STATUS.md` authority block.
 - Shared docs such as `README.md`, `STATUS.md`, `ROADMAP.md`, `TESTING.md`, and `WORKLOG.md` require staged diff review to confirm no NQ / DH / Integration line was accidentally changed.
 
 Freeze / tag verification rule:
@@ -203,22 +207,23 @@ Freeze / tag verification rule:
 - Do not overwrite an existing tag.
 - Do not create or push a freeze tag when latest CI is not `success` for the exact current `HEAD`.
 - Do not create or push a freeze tag when `HEAD` and `origin/<branch>` differ, unless the task explicitly covers the divergence and the user authorizes the release decision.
-- Record the exact CI run id, conclusion, head SHA, tag name, tag message, tagged commit, and remote tag verification in the archive.
+- A complete pre-tag archive may state `TAG PENDING`. After tag creation, sync the exact CI run id, conclusion, head SHA, tag name, tag object, peeled commit, and remote verification into current authority without rewriting tag-bound history.
+- Before freeze/tag handoff run `scripts/docs/check-current-authority.ps1`, `check-gate-archive.ps1`, and `check-doc-links.ps1`.
 
 Docs-only churn prevention rule:
 
 - Docs-only review must not expand indefinitely into review after review without changing a real decision boundary.
 - Except for release tag, freeze, archive, governance hardening, high-risk security / credential / LIVE / real provider decisions, or explicit user request, do not open a standalone docs-only task for wording-only status changes.
 - Minor status wording can be synchronized during the next real development, verification, or archive task when doing so does not blur current facts.
-- GateU must not be delayed for ordinary documentation polish, but P1 archive / current-authority risks must be resolved before GateU planning starts.
+- The next Gate must not be delayed for ordinary wording polish, but P1 archive/current-authority conflicts must be resolved before its planning starts.
 
-No GateU until archive audit passed rule:
+No next Gate until archive audit passed rule:
 
-- If the latest completed Gate archive still depends on `docs/current` historical process docs for core evidence, GateU planning may be blocked until archive / current authority is separated.
-- GateU `PLAN` work may proceed only after archive entry points, current authority, allowed residuals, and follow-up move batches are explicit.
-- This rule blocks GateU planning readiness only; it does not invalidate the previous Gate freeze, release tag, or accepted baseline.
+- If the latest completed Gate archive still depends on `docs/current` historical process docs for core evidence, `<NEXT_GATE>` planning is blocked until archive/current authority is separated.
+- `<NEXT_GATE>` planning may proceed only after manifest, current authority, tag state, and allowed residuals pass the checkers.
+- This blocks next-Gate planning readiness only; it does not invalidate a verified previous release tag.
 
-Archive work must be split into at least three tasks. Do not collapse inventory, approval, and movement into one step.
+Only large historical migrations, multi-Gate mixed migrations, `docs/current` physical slimming, high-risk deletion, or bulk relocation must be split into inventory -> review -> move. Ordinary Gate freeze archive creation must not be split solely to satisfy this migration workflow.
 
 1. Inventory: list candidates only; do not move files. Classify each file as `KEEP_IN_CURRENT`, `MOVE_TO_docs/gates/<gate-name>`, `MOVE_TO_docs/archive/superseded`, `KEEP_BUT_REVIEW_LATER`, or `DO_NOT_TOUCH`. Include reason, risk if moved, and references to update.
 2. Plan review: review one stage candidate set, approve move batches, target paths, and index/reference update scope. Do not move files.
@@ -276,6 +281,8 @@ git status --short
 git diff --check
 git diff --stat
 ```
+
+Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/check-current-authority.ps1`. For freeze/tag work also run `check-gate-archive.ps1` and `check-doc-links.ps1`; checker failures are blocking, not advisory.
 
 When scope boundaries matter, also run scoped forbidden-area checks:
 

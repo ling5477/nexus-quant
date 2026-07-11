@@ -11,10 +11,13 @@ Use this skill before executing NexusQuant or Decision Hub work. The goal is to 
 
 Read these repository documents only as needed for the current task:
 
+- `docs/current/STATUS.md` first; parse the `nq-current-authority` block for current/next Gate and safety state.
 - `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md` for plugin routing and standard workflow.
 - `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md` for the original router specification.
 - `docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md` for common task output templates.
-- `docs/current/README.md` and `AGENTS.md` for current stage, Gate status, prohibited scope, and validation rules.
+- `docs/current/README.md` and `AGENTS.md` for indexes, prohibited scope, and validation rules; they do not override `STATUS.md`.
+
+Skills, templates, router docs, and `AGENTS.md` must not copy a concrete current Gate or next Gate. Examples use `<CURRENT_GATE>` and `<NEXT_GATE>` placeholders.
 
 Do not treat archived documents as current facts unless the user explicitly asks for historical comparison.
 
@@ -98,7 +101,17 @@ Default to code-first / test-first work. Documentation is not a default delivera
 - Prompts for future NQ/DH tasks should state the docs budget explicitly, for example: "docs default unchanged; if recording is needed, only one WORKLOG line is allowed."
 - When documentation is explicitly authorized, apply `nq-docs-writer` rules for fact-source priority, anti-churn, output shape, and validation.
 
-## Step 4.1: Apply Documentation Language Rules
+## Step 4.1: Apply Archive And Authority Fail-fast
+
+- `docs/current/STATUS.md` is the only current-stage authority. Conflicting current docs require `BLOCKED / CURRENT_AUTHORITY_CONFLICT`.
+- `scripts/docs/gate-archive-manifest.json` is a hard gate for Gate freeze work, not a suggestion.
+- Before writing a freeze archive, derive mandatory and applicable conditional roles from the manifest and compare them with the task allowlist.
+- If the allowlist cannot contain every required role, stop with `BLOCKED / ARCHIVE_ALLOWLIST_INCOMPLETE`.
+- If files or independent evidence bodies are missing, stop with `BLOCKED / ARCHIVE_MANIFEST_INCOMPLETE`.
+- An ordinary Gate freeze may create the complete pre-tag archive in one task. Inventory -> review -> move is reserved for large historical migrations, multi-Gate moves, current-doc physical slimming, destructive cleanup, or bulk relocation.
+- Before freeze/tag handoff, run the archive, authority, and link checkers under `scripts/docs/`.
+
+## Step 4.2: Apply Documentation Language Rules
 
 When a task writes or updates documentation, templates, task prompts, skill instructions, review reports, implementation reports, `README`, `STATUS`, `ROADMAP`, `TESTING`, `WORKLOG`, or any `docs/current` explanatory document, enforce the `nq-docs-writer` language governance rules:
 
@@ -118,10 +131,10 @@ For NexusQuant tasks:
 - Do not add real order or cancel paths unless the user explicitly asks and the current Gate allows it.
 - Do not expose credentials, API keys, exchange secrets, tenant data, tokens, cookies, or production env values.
 - Keep PAPER and LIVE isolated; explain isolation points, failure modes, and rollback when touched.
-- Do not write GateK-PLAN as GateK implementation started.
+- Do not write `<NEXT_GATE>` planning as implementation started; read both names and statuses from `STATUS.md` each turn.
 - Do not claim AI, DH integration, multi-exchange expansion, public production readiness, or UI/UX professionalism is complete unless current docs and verification prove it.
 
-Current baseline: GateJ completed; Next is GateK-PLAN; AI not started; DH integration not started and not connected to NQ.
+Current baseline is never hard-coded in this skill. Parse `docs/current/STATUS.md` before every task and fail closed when it is missing, malformed, or conflicts with current entry documents.
 
 ## Step 6: Enforce DH Boundaries
 
@@ -150,7 +163,7 @@ Run validation based on the changed area, or explain why a narrower validation i
 - Backend: `mvn -f backend/pom.xml test` or a justified module-specific Maven test.
 - Frontend: `Set-Location frontend; npm run build; npm run test:e2e`; page work should also use Browser or Chrome verification.
 - Python: `Set-Location research/py; python -m pytest -q; python -m mypy src; python -m ruff check .`.
-- Docs: check links, paths, stage state, forbidden boundaries, duplicate entry points, whether verification claims match executed commands, and `nq-docs-writer` validation when documentation was created or synchronized.
+- Docs: run `scripts/docs/check-current-authority.ps1`; for Gate freeze/tag work also run `check-gate-archive.ps1` and `check-doc-links.ps1`. Check paths, forbidden boundaries, duplicate entry points, and whether validation claims match executed commands.
 - Deployment: check Docker, env examples, health checks, migrations, and rollback.
 
 If validation fails, report the root cause, apply the smallest fix when feasible, and rerun the relevant validation.

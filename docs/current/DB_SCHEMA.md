@@ -382,7 +382,7 @@ GateI-4 不修改历史 migration，不新增无注释表，不新增无注释�
 
 ## GateJ DB Planning Entry
 
-GateJ DB 规划入口为 [GATEJ_DB_PLAN.md](./GATEJ_DB_PLAN.md)。本轮只做规划，不新增 migration。
+GateJ DB 历史规划入口为 [GATEJ_DB_PLAN.md](../gates/gate-j/GATEJ_DB_PLAN.md)。该链接仅用于历史追溯，不决定当前 Gate。
 
 GateJ 规划新增 7 张表：
 

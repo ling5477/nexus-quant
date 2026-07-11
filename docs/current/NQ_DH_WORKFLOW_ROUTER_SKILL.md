@@ -63,6 +63,10 @@
 - excluded files
 - expected output
 
+执行任何 Gate/freeze/current-state 任务前，必须先解析 `docs/current/STATUS.md` 的 `nq-current-authority` 区块。当前/下一 Gate 不得硬编码在 router、skills、模板或 `AGENTS.md` 中。
+
+Gate freeze 还必须从 `scripts/docs/gate-archive-manifest.json` 推导 mandatory/conditional roles：allowlist 不足时输出 `BLOCKED / ARCHIVE_ALLOWLIST_INCOMPLETE`；archive role/thin body 不完整时输出 `BLOCKED / ARCHIVE_MANIFEST_INCOMPLETE`；current 文档冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。
+
 默认排除：
 
 - `node_modules`
@@ -81,7 +85,7 @@
 - 不扫描全仓库，除非任务明确要求全仓库审查。
 - 不修改无关模块。
 - 不修改 LIVE trading、credentials、production env、真实交易路径。
-- NQ 中不得把 GateK-PLAN 写成 GateK implementation started。
+- NQ 中不得把 `<NEXT_GATE>` planning 写成 implementation started；名称和状态每轮从 `STATUS.md` 读取。
 - DH 中不得真实接入 NQ、真实 provider、RealClient 或第三方 relay。
 
 ### Step 5：验证
@@ -92,6 +96,7 @@
 - Frontend：`Set-Location frontend; npm run build; npm run test:e2e`，页面任务加 Browser/Chrome 验证。
 - Python：`Set-Location research/py; python -m pytest -q; python -m mypy src; python -m ruff check .`。
 - Docs：检查链接、路径、阶段状态是否一致，确认未执行验证没有写成通过。
+- Freeze/tag docs：运行 `scripts/docs/check-current-authority.ps1`、`check-gate-archive.ps1` 和 `check-doc-links.ps1`。
 - Deployment：检查 docker、env example、health check、migration、rollback。
 
 ### Step 6：输出

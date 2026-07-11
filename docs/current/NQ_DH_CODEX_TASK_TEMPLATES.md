@@ -76,11 +76,14 @@
 ```text
 任务类型：DOCUMENTATION
 项目：NQ
-范围：docs/current、backend、frontend、python
-目标：生成 GateJ-FREEZE 后的整体架构总结和 GateK 开发计划。
+范围：由 scripts/docs/gate-archive-manifest.json 推导的 <CURRENT_GATE> archive roles，以及明确批准的 current authority 文件
+目标：一次生成 <CURRENT_GATE> 完整 pre-tag archive，并保持 <NEXT_GATE> implementation 未启动。
 要求：使用 GitHub + Documents + Notion。
-输出：架构现状、模块边界、已完成能力、缺口、下一阶段任务。
+前置：先解析 docs/current/STATUS.md；allowlist 覆盖全部 mandatory/conditional roles；运行三个 scripts/docs checker。
+输出：完整 archive manifest、证据正文、边界、验证和 pre-tag handoff。不得把 tag pending 写成 tagged。
 ```
+
+普通 Gate freeze 允许一次形成完整 archive；`inventory -> review -> move` 只用于大规模历史迁移、多 Gate 混合迁移、current 物理瘦身、高风险删除或批量重定位。
 
 ## 6. 一键部署审查模板
 

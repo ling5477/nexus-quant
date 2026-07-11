@@ -1,56 +1,29 @@
 # Roadmap
 
-## 总路线
+本文件只定义下一允许动作和路线。当前 Gate、release tag 与安全状态必须读取 [STATUS.md](STATUS.md) 的 `nq-current-authority` 机器可读区块。
+
+## 当前路线
 
 ```text
-GateR frozen / accepted / tagged
+GateU FROZEN / ACCEPTED / TAGGED
   ↓
-GateS frozen / accepted / tagged
+docs governance dynamic-authority/checker fix
   ↓
-GateT frozen / accepted / tagged
+governance fix commit CI success
   ↓
-GateU-1..5 completed
-  ↓
-GateU FREEZE READY / TAG PENDING
-  ↓
-GateV NOT STARTED
+GateV planning may start in a separately authorized task
 ```
 
-更早完成阶段的历史证据入口为 `docs/gates/**` 或 `docs/archive/**`，不覆盖 `docs/current` 的当前状态。
+## 下一允许动作
 
-## 当前阶段
+1. 用户复核并提交本次 governance fix。
+2. 等待该提交对应 `NQ CI Baseline / completed / success`。
+3. CI 成功后，GateV 可进入单独授权的 planning 任务。
+4. GateV implementation 仍为 `NOT STARTED`（未开始），不得由本路线自动启动。
 
-- GateU：`FREEZE READY / TAG PENDING`（已具备冻结条件 / tag 待创建）。
-- GateU-1～GateU-5：`COMPLETED`（已完成）。
-- GateU baseline：`9f27858375a2ee5c40ee6a7e2d179dcd29cadf4d`。
-- GateU baseline CI：run `29108265105`，`NQ CI Baseline`，`completed / success`。
-- GateU archive pointer：`docs/gates/gate-u/README.md`。
-- GateU tag：`nq-gateu-freeze` 尚不存在。
-- GateV：`NOT STARTED`（未开始）。
+## 路线边界
 
-## GateU Closeout Summary
-
-| Batch | 状态 | 目标 |
-| --- | --- | --- |
-| GateU-1 | `COMPLETED` | 统一 read-model evidence metadata 与 calculator；Shadow Validation Workflow / Shadow Run metadata |
-| GateU-2 | `COMPLETED` | Consistency Evidence metadata |
-| GateU-3 | `COMPLETED` | Incident / Replay Review metadata |
-| GateU-4 | `COMPLETED` | Evaluation Artifact Preview No-file metadata |
-| GateU-5 | `COMPLETED` | 五来源 Validation Operations Runtime Evidence aggregate GET 与前端总览 |
-| GateU-FREEZE | `FREEZE READY / TAG PENDING` | Durable archive completeness 补齐；本轮 commit / push / tag 未执行 |
-
-## 下一步规则
-
-1. 用户精确复核本轮已暂存的 durable archive completeness 文档。
-2. 用户提交并推送本轮补齐；已有 `f7d1b224` 不 reset、不 amend。
-3. 等待该新提交对应的 `NQ CI Baseline` 为 `completed / success`。
-4. 由用户创建并推送 annotated tag `nq-gateu-freeze`，随后验证 local / remote tag 与 peeled commit。
-5. 在 tag 实际推送前不得写成 `TAGGED`；不得启动 GateV，不得继续新增 read-model。
-
-## 当前边界
-
-- LIVE：`DISABLED`（关闭）。
-- Shadow trading：`NOT ENABLED`（未启用）。
-- GateU runtime evidence 仅为 GET-only / read-only / no-side-effect / not trading authorization。
-- 不新增 migration、写 SQL、scheduler、runner、内部 HTTP、credential、private endpoint、real provider、RealClient 或真实交易路径。
-- AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；GateV：`NOT STARTED`。
+- 本文件不重新定义 current Gate；若与 `STATUS.md` 冲突，以 `STATUS.md` 为准并输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。
+- GateU tag 已完成，不再保留创建或推送 `nq-gateu-freeze` 的待办步骤。
+- 不新增 read model、API、migration、frontend page、scheduler、runner、Python runtime 或交易能力。
+- LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 状态由 `STATUS.md` 统一定义。

@@ -5,7 +5,7 @@
 
 ## 0. 项目定位与 Codex 插件路由
 
-NexusQuant（NQ）是通用量化交易平台，本仓库当前处于 **GateJ completed；Next: GateK-PLAN；AI not started；DH integration not started / not connected to NQ**。Decision Hub（DH）是多 Agent 决策平台；在 NQ 中只能作为未来只读边界和契约冻结对象描述，不代表 DH 已接入 NQ。
+NexusQuant（NQ）是通用量化交易平台。每轮任务必须先读取 `docs/current/STATUS.md` 顶部 `nq-current-authority` 机器可读区块；`AGENTS.md`、skills、workflow 和模板不得复制具体 current Gate 或 next Gate。Decision Hub（DH）是多 Agent 决策平台；NQ-only 任务只能读取 NQ 侧集成边界，不得声明或修改 DH current authority。
 
 Codex 执行任务时必须先判断任务类型，再选择最少必要插件或 skill。禁止默认调用所有插件，禁止用插件名义绕过 Gate、Freeze、安全、模块或交易边界。完整路由规则见 `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md`，Router Skill 源规格与维护规范见 `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md`，常用模板见 `docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md`，可复制 Project Instructions 见 `docs/current/CODEX_PROJECT_INSTRUCTIONS.md`。
 
@@ -64,70 +64,26 @@ Risks:
 Next concrete action:
 ```
 
-## 1. 当前阶段
+## 1. 动态阶段与事实源
 
-Current stage: GateJ completed
+- `docs/current/STATUS.md` 是 current Gate、release tag、next Gate、LIVE、AI、DH 与 Integration 状态的唯一 authority。
+- `docs/current/ROADMAP.md` 只定义下一允许动作，不得覆盖 STATUS。
+- root/current README 只做入口、短摘要和 archive pointer。
+- `API.md`、`DB_SCHEMA.md`、`ARCHITECTURE.md`、`MODULES.md` 只描述当前能力，不决定 current Gate。
+- `TESTING.md`、`WORKLOG.md` 是 append-only evidence ledger，不参与当前阶段判定。
+- `docs/gates/**` 与 `docs/archive/**` 是 historical evidence，不覆盖 current authority。
+- 如果 current 文档互相冲突，立即输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；不得凭旧 Gate 文字自行选择阶段。
+- 示例和模板必须使用 `<CURRENT_GATE>`、`<NEXT_GATE>` 占位符，不得把具体历史 Gate 伪装成当前事实。
 
-Previous completed stages:
+### Gate freeze / archive hard gate
 
-- DOC-CLEAN
-- BASELINE-FIX
-- GateH
-- GateI-PLAN
-- GateI-1-WO
-- GateI-2-WO
-- GateI-3-WO
-- GateI-3-FIX
-- GateI-4-WO
-- GateI-4-FIX
-- GateI
-- GateJ-PLAN
-- GateJ-1-WO
-- GateJ-2-WO
-- GateJ-3-WO
-- DOC-CLEAN-2
-- PRE-FREEZE-CODE-AUDIT
-- PRE-FREEZE-CODE-AUDIT-SECOND-PASS
-- AUDIT-FIX
-- GateJ-FREEZE-FIX
-- GateJ-FREEZE-FIX-SECOND-PASS
-- GateJ-FREEZE 30m / 1h / 24h / 7d acceptance
-- GateJ
-
-Next allowed: GateK-PLAN。GateJ-FREEZE 30m / 1h / 24h / 7d acceptance 已通过，GateJ completed，详见 `docs/current/GATEJ_FREEZE_FINAL_ACCEPTANCE_REPORT.md`。GateK-PLAN 只允许规划 GateJ 后的事实源收口、架构基线、前端产品化、部署化、可观测性和安全边界，不代表 GateK 实现、AI 接入、DH 集成、LIVE 或真实交易已启动。
-
-GateJ-FREEZE 最终状态：
-- 30m / 1h / 24h / 7d 连续运行验收 passed。
-- `docs/gates/gate-j/` 已允许作为 GateJ completed 冻结卷宗。
-- AI not started。
-- DH integration not started / not connected to NQ。
-- Multi-exchange expansion not started。
-- UI/UX professionalism remains post-freeze remediation。
-
-GateJ-FREEZE 禁止范围：
-- 不接 AI、不做 AI 信号 / AI 自动交易 / AI Paper Trading。
-- 不做 GateK 任何实现。
-- 不新增业务功能、API、migration。
-- 不改前端页面功能。
-- 不做真实 LIVE 下单、不调用真实交易所下单接口。
-- 不把 GateK 写成 started，除非后续单独开工。
-- 不宣称 UI/UX 专业化已完成。
-- 不宣称公开用户生产就绪。
-
-GateJ 是 Paper Trading 稳定运行阶段，不是 AI 阶段。GateK-PLAN 仍不启动 AI；任何 AI 信号、AI runtime 或 AI Paper Trading 都必须后续另起 Gate / review，当前不得写成 started。
-
-GateJ 只允许 Paper Trading 稳定运行。GateJ 严禁：
-
-- 接 AI。
-- 做 AI 信号、AI 自动交易、AI Paper Trading。
-- 做真实 LIVE 下单。
-- 调用真实交易所下单接口。
-- 做美股/A 股。
-- 做合约全量。
-- 做高频。
-- 做复杂因子平台。
-- 修改历史 migration。
-- 新增无注释表或无注释字段。
+- 普通 Gate freeze 允许一次生成完整 pre-tag archive，不要求拆成 plan/review/freeze 连续文档任务。
+- `scripts/docs/gate-archive-manifest.json` 是 archive role 的机器可读 hard gate。
+- Task allowlist 缺少 mandatory role：`BLOCKED / ARCHIVE_ALLOWLIST_INCOMPLETE`。
+- 文件缺失、role 缺失或只有 thin current pointer：`BLOCKED / ARCHIVE_MANIFEST_INCOMPLETE`。
+- Archive commit CI 成功后才可创建 tag；tag 后只同步 current authority，不要求 tagged commit 预先记录尚未生成的 tag object SHA。
+- Freeze/tag 前必须运行 `scripts/docs/check-gate-archive.ps1`、`check-current-authority.ps1` 与 `check-doc-links.ps1`。
+- `inventory -> review -> move` 三轮只适用于大规模历史迁移、多 Gate 混合迁移、`docs/current` 物理瘦身、高风险删除或大批量重定位。
 
 ## 2. GateI 完成范围
 
@@ -167,9 +123,7 @@ GateI 已整体完成，覆盖以下内容：
 - `docs/current` 是当前事实源。
 - `docs/gates` 只放已完成 Gate 的冻结卷宗。
 - `docs/archive` 只归档，不作为当前开发依据。
-- GateI 已完成并冻结，归档在 `docs/gates/gate-i`。
-- GateH 已完成并冻结，归档在 `docs/gates/gate-h`。
-- GateJ 已完成并冻结，归档在 `docs/gates/gate-j`。
+- 已完成 Gate 的冻结卷宗统一保存在 `docs/gates/gate-*`；具体 current/next Gate 不在本规则文件硬编码。
 - 新 Gate 或新 WO 开始前必须先阅读 `docs/current` 对应计划文档。
 - Code-first default：普通任务必须优先产出代码、测试或可验证行为；docs 不得成为默认产物。
 - Review-only no-diff：review-only / audit-only 任务默认不修改文件，只输出结论；只有阶段 freeze、合同冻结、高风险计划或用户明确要求时才允许写 docs。
@@ -253,7 +207,7 @@ git status --short
 - 不提交本地密钥、`.env`、凭证。
 - 不把 skipped / failed 写成 passed。
 - 不把尚未完成阶段写成 completed。
-- 不创建 `docs/gates/gate-j`，直到 GateJ 整体完成并冻结。
+- 不创建 `<CURRENT_GATE>` 的 frozen archive，直到实现、验证与 freeze 前置满足 manifest hard gate。
 
 ## 9. Codex 执行纪律
 
