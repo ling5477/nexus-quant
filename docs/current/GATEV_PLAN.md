@@ -2,7 +2,7 @@
 
 > 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A、GateV-3 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
 > 英文名：`Controlled Validation Automation & Durable Operator Review`。
-> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 已接受，GateV-4 为唯一 `NOT STARTED` work batch，唯一下一动作是其正式 implementation task。
+> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 已接受，GateV-4 为 `REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可由用户提交）；唯一下一动作是用户提交并 push。
 
 ## 1. Current Baseline
 
@@ -13,7 +13,7 @@
 - GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`，CI run `29150549978` 为 `completed / success`。
 - GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`，CI run `29152330658` 为 `completed / success`。
 - GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33`，acceptance head `b209c416e0daf402216140b62785726f5fd116b6`，CI run `29155396719` 为 `completed / success`。默认配置仍关闭，不表示生产启用。
-- GateV-4：`NOT STARTED`（未开始）；正式任务 ID 为 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。
+- GateV-4：`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可由用户提交）；implementation task 为 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`，尚未 commit 或取得自身 CI。
 - LIVE `DISABLED`，Shadow trading `NOT ENABLED`，AI `NOT STARTED`，DH runtime `NOT INTEGRATED`，Integration runtime `NOT STARTED`，real provider / private trading `NOT IMPLEMENTED`。
 
 ## 2. GateU Freeze Evidence
@@ -145,7 +145,7 @@ GateV 只规划 manifest preview，不在首切片实现：
 
 ## 14. GateV-4 Review Workbench Plan
 
-- Status：`NOT STARTED`（未开始）。
+- Status：`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可由用户提交）。
 - Formal task ID：`NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。
 - 目标：复用 GateV-2 已接受的本地 review case list/detail/events/lifecycle API，在既有 `/strategies/validation` Validation Operations Workbench 中增加 review queue、case detail、lifecycle event timeline，以及 acknowledge、escalate、resolve、close 四个有限动作；不新增 route。
 - 默认前端范围：React/Vite/Ant Design、state/severity/owner 等既有查询条件、loading/empty/error/conflict/permission-denied 状态、optimistic version conflict、duplicate idempotency、危险操作确认、TanStack Query cache invalidation 与保守安全提示。
@@ -153,6 +153,9 @@ GateV 只规划 manifest preview，不在首切片实现：
 - 禁止范围：不新建 review case，不删除或 reopen，不增加 approve/authorize/execute/trade 或自动 lifecycle transition；不实现 Python manifest UI，不修改 GateV-3 scheduler，不新增 migration，不触碰 credential、账户、余额、订单、Ledger、LIVE、Shadow trading、AI、DH 或 Integration runtime。
 - 测试方向：frontend build 与 targeted Playwright smoke，覆盖 queue/detail/events/actions、loading/empty/error、403/404/409、version conflict、duplicate idempotency、permission denied、危险操作确认和 cache invalidation；本 planning task 不运行这些实现期测试。
 - 安全语义：所有 review 状态和操作只表达本地人工复核，不代表 trading authorization；页面必须持续展示 `LIVE DISABLED` 与 `not trading authorization`。
+- 实现结果：已在既有 route 接入 module-separated types/API/query keys/hooks/queue/detail/events/actions；ADMIN 才显示 owner filter，OPERATOR 不传 ownerId；selection 使用 `reviewCaseId` URL 参数恢复；mutation 使用真实 `Idempotency-Key` 与 `expectedVersion/reason` body，不自动 retry，成功后刷新 queue/detail/events，409/422 fail-closed refetch。
+- 专项 review：确认并最小关闭 4 个 P1，覆盖 conflict 后三类 query refresh、精确 mock endpoint 与网络断言、`reviewCaseId`/未知 state fail-closed、UUID 生成失败与确认 case 可见性；未扩大 GateV-4 原范围。
+- 本地验证：`npm run build` 通过；GateV-4 targeted Playwright `4 passed`；既有 Strategy Validation smoke `2 passed`。canonical `NQ-GATEV-4-COMMIT-AND-PUSH` 已由合入的 authority checker compatibility fix 识别为 `COMMIT_AND_PUSH`；尚未 commit 或取得 GateV-4 CI。
 
 ## 15. Test and CI Strategy
 
@@ -185,7 +188,7 @@ GateV 只规划 manifest preview，不在首切片实现：
 | GateV-2 | Operator Review Lifecycle API：GET、acknowledge/escalate/resolve/close、RBAC、owner scope、idempotency、audit | `ACCEPTED / CI GREEN`；仅本地 review 写侧，不改交易/运行事实 |
 | GateV-3A | PostgreSQL Advisory Scheduler Lock Prerequisite：通用 contract、transaction-level try lock、稳定 key mapping、Spring composition、真实并发测试 | `ACCEPTED / CI GREEN`；无 `@Scheduled`、migration、业务 callback 或业务副作用 |
 | GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | `ACCEPTED / CI GREEN`；专项 review 无 P0/P1，exact-HEAD CI green；不创建 case、不外联、不改 Paper/Shadow/交易状态 |
-| GateV-4 | Review Workbench：正式任务 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`；既有页面 queue/detail/events/actions 与 targeted E2E | `NOT STARTED`；不实现 Python manifest preview，不新增 route |
+| GateV-4 | Review Workbench：正式任务 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`；既有页面 queue/detail/events/actions 与 targeted E2E | `REVIEW ACCEPTED / READY TO COMMIT`；未 commit/CI，不实现 Python manifest preview，不新增 route |
 | GateV-FREEZE | manifest 驱动归档、全量验证、exact-HEAD CI、tag handoff | 不新增实现范围 |
 
 ## 19. Freeze Acceptance Criteria
@@ -213,9 +216,9 @@ GateV 只规划 manifest preview，不在首切片实现：
 下一轮唯一任务名：
 
 ```text
-NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION
+NQ-GATEV-4-COMMIT-AND-PUSH
 ```
 
-GateV-3 implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 已由 acceptance head `b209c416e0daf402216140b62785726f5fd116b6` 接受；`NQ CI Baseline` run `29155396719` 对该 acceptance head 为 `completed / success`。
+GateV-4 专项 review 已确认并最小关闭 4 个 P1；authority checker compatibility fix 合入后，frontend build、targeted Playwright 与既有页面 smoke 均重新通过。实现仍为 uncommitted local diff，尚无 GateV-4 CI。
 
-机器 authority 已提升为 `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`，并初始化 `work_batch=GateV-4 / NOT_STARTED`；GateV-4 尚未实现或运行自身 CI。scheduler 默认关闭，本计划不授权生产启用、trading authorization 或 GateV freeze。
+机器 authority 保持 `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`，并更新为 `work_batch=GateV-4 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。下一轮只允许用户提交并 push，随后等待 exact-HEAD CI；本计划不授权 trading authorization、生产启用或 GateV freeze。

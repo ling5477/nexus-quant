@@ -24,6 +24,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {ValidationReviewWorkbench} from '@/components/validation-review/ValidationReviewWorkbench';
 import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import {useConsistencyEvidenceOverview} from '@/hooks/useConsistencyEvidenceOverview';
 import {useEvaluationArtifactPreviewOverview} from '@/hooks/useEvaluationArtifactPreviewOverview';
@@ -6353,12 +6354,13 @@ export function StrategyValidationPage() {
             <Card className="page-card" variant="borderless">
                 <PageHero
                     title="Validation Operations Workbench"
-                    description="只读整合 strategy validation、shadow validation、consistency evidence、incident / replay review 与 Python artifact preview，用于人工复核顺序、证据链路和边界确认。"
-                    badge="GateT-5 · 只读运营复核"
-                    tip="本页不新增 route、API、DB migration、runner、Python 执行入口或交易入口。"
+                    description="整合本地 validation evidence 与 durable review lifecycle，用于人工复核排序、证据检查和有限状态流转。"
+                    badge="GateV-4 · 本地验证审查"
+                    tip="诊断审查不构成交易授权；下方保留 GateT-5 · 只读运营复核 sections，本页不会启动 LIVE、Shadow trading、runner、Python 或交易入口。"
                 />
             </Card>
 
+            <ValidationReviewWorkbench/>
             <ValidationOperationsRuntimeEvidenceOverviewPanel query={runtimeEvidenceQuery}/>
             <ValidationOperationsWorkbench
                 queries={{

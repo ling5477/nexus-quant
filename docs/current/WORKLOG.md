@@ -17245,3 +17245,46 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: authority checker `PASS / CURRENT_AUTHORITY_CONSISTENT`；docs link checker `62 checked / 1 historical warning / 0 errors / PASS`；stale-state scan 零命中；GateV-4 distinct task ID 为 1；`git diff --check` 与 forbidden-scope diff 执行。未运行 Maven/frontend/Playwright/Python tests，因为本轮仅修改文档。
 - boundary: GateV-3 scheduler 保持 default-disabled，只聚合本地 read-only evidence 并使用 PostgreSQL advisory lock；不自动创建/流转 review case，无 durable execution history，不构成 trading authorization；未开启 LIVE、Shadow trading、AI/DH/Integration runtime，未修改代码、测试、checker、CI、migration、scheduler 或交易状态。
 - next action: 用户复核并提交 allowlist staged diff，推荐 `docs(gatev): promote GateV-3 and initialize GateV-4`；push 后等待本 authority-sync exact HEAD CI success，再启动 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`，不再处理 GateV-3。
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION
+
+- date: 2026-07-12
+- scope: NQ-only frontend；在既有 `/strategies/validation` route 接入 GateV-2 durable validation review queue/detail/events 与四类有限 lifecycle actions，最小同步 current authority/evidence docs。
+- result: `IMPLEMENTED / PENDING REVIEW`（已实现 / 待独立复核）；尚未 commit、push 或取得 GateV-4 CI。
+- implementation:
+  - 新增真实 DTO types、集中 API client、query keys、TanStack Query list/detail/events hooks 与 no-retry lifecycle mutation；未新增 dependency 或全局状态。
+  - queue 使用 server-side `limit/offset`、state/severity filter、ADMIN-only owner filter；无 total 时使用上一页/下一页。
+  - selection 使用 `reviewCaseId` URL 参数，刷新后恢复 Drawer detail；events 按服务端顺序展示并明确最多 100 条。
+  - 动作矩阵严格复用 GateV-2 state machine；Modal 二次确认，真实 `expectedVersion/reason` 与 `Idempotency-Key`，pending 防重复，成功刷新 queue/detail/events，409/422 refetch 最新 detail/events，403 后禁用动作。
+  - 页面固定显示“诊断审查流程，不构成交易授权”，不展示或调用 create/delete/reopen/approve/authorize/execute/trade。
+- validation: frontend build PASS；GateV-4 targeted Playwright 4 passed；既有 Strategy Validation smoke 2 passed；authority/link/危险能力/API scope/Git forbidden-scope checks 在 current sync 后执行。
+- boundary: 未修改 backend/API contract、migration、scheduler、advisory lock、review state machine、package/lock、README、API/DB_SCHEMA/ARCHITECTURE/MODULES/FACT_SOURCE_INDEX、LIVE、Shadow trading、AI/DH/Integration runtime 或交易能力。
+- next action: 执行 `NQ-GATEV-4-REVIEW-WORKBENCH-REVIEW`；review 前不得提交为 accepted，review 后再由用户决定 commit/push。
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-REVIEW
+
+- date: 2026-07-12
+- scope: NQ-only review；对未提交 GateV-4 Review Workbench 做 backend contract、DTO、state machine、owner permission、query cache、URL state、error handling 与 targeted Playwright 专项审查；仅允许在原范围内最小关闭 P0/P1。
+- result: `FAIL / P0_P1_BLOCKERS_REMAIN`（失败 / 仍有高优先级治理阻断）；frontend P1 已关闭，但 authority promotion 未通过 checker。
+- findings / fixes:
+  - P1：409/422 后 queue 仍可能显示旧 state/version；已统一 refetch queue/detail/events。
+  - P1：Playwright mock 可接受任意 POST suffix；已限制为精确 3 GET + 4 lifecycle POST，并增加 endpoint allowlist、POST count、UUID header 与三类 refetch 断言。
+  - P1：非法 `reviewCaseId` 与未知 state 未完全 fail-closed；已增加 UUID/长度校验、清理失效选择、history navigation 恢复与未知 state 零动作。
+  - P1：UUID 生成失败缺少可见阻断且确认弹窗未展示 case；已阻止空 key/无效 version/非法动作请求，并显示目标动作和 case ID。
+  - P2：queue error 时空 table/pagination 仍同时可见；按 review-only 规则记录，不扩大 UI 重构。
+- validation: GateV-4 targeted Playwright `4 passed`；既有 Strategy Validation smoke `2 passed`；frontend build PASS（3904 modules transformed）。authority、link、static/API 与 scope/Git 检查在 authority sync 后执行。
+- authority blocker: 规定的 `NQ-GATEV-4-COMMIT-AND-PUSH` 被 checker 识别为 `UNKNOWN`，与 `REVIEW_ACCEPTED|READY_TO_COMMIT` 要求的 `COMMIT_AND_PUSH` 类型冲突；本轮禁止修改 checker，故恢复 `work_batch=GateV-4 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN` 与原 next action。
+- next action: 由独立授权任务修正 authority checker 或明确收敛 canonical commit/push action contract；在此之前不得 commit/push。
+- boundary: 未修改 backend、API contract、migration、dependency、scheduler、advisory lock 或交易能力；不构成 trading authorization，LIVE / Shadow trading 保持关闭，GateV 保持 `IN_PROGRESS / NOT_FROZEN`。
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-REVIEW（checker compatibility rerun）
+
+- date: 2026-07-12
+- scope: NQ-only review closeout；在 authority checker canonical `COMMIT-AND-PUSH` compatibility fix 合入 `dev` 后，对原 GateV-4 15-file worktree fast-forward、回归与 authority 重新收口；不重新开发或扩大范围。
+- result: `PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`（通过 / 复核已接受 / 可由用户提交）。
+- preservation: `HEAD == origin/dev == f0d5a7d5a25b3000be48e82dfa2c4c2001d2b4e6`；fast-forward 无新增提交；15 个 allowlist paths 完整、extra/missing 为 0、staged 为空。
+- validation: checker next-action regression PASS；GateV-4 targeted Playwright `4 passed`；既有 Strategy Validation smoke `2 passed`；frontend build PASS（3904 modules transformed）；authority/link/static/API 与 scope/Git 检查在 current sync 后执行。
+- review: conflict 三类 query refresh、精确 mock/endpoint/network assertions、URL/state fail-closed、UUID failure no-POST、case-aware Modal、pending 单 POST 与 no-trading network 均未回归；P0=0、P1=0。
+- authority: `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`；`work_batch=GateV-4 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；唯一 next action 为 `NQ-GATEV-4-COMMIT-AND-PUSH`。
+- boundary: 未修改 backend、API contract、migration、scheduler、advisory lock、package/lock、交易状态、LIVE、Shadow trading、AI、DH 或 Integration runtime；GateV 未 freeze/tag，Review Workbench 不构成 trading authorization。
+- next action: 用户精确提交 GateV-4 15-file diff，推荐 `feat(frontend): add validation review workbench`，push 后等待 GateV-4 implementation exact-HEAD CI。

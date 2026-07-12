@@ -85,6 +85,14 @@ export const validationOperationsRuntimeEvidenceQueryKeys = {
     overview: () => [...validationOperationsRuntimeEvidenceQueryKeys.all, 'overview'] as const,
 };
 
+export const validationReviewQueryKeys = {
+    all: ['validation-review-cases'] as const,
+    lists: () => [...validationReviewQueryKeys.all, 'list'] as const,
+    list: (request: unknown) => [...validationReviewQueryKeys.lists(), request] as const,
+    detail: (caseId: string) => [...validationReviewQueryKeys.all, 'detail', caseId] as const,
+    events: (caseId: string) => [...validationReviewQueryKeys.all, 'events', caseId] as const,
+};
+
 export const paperShadowQueryKeys = {
     all: ['paper-shadow'] as const,
     consistencyDrilldown: (shadowRunId: string) => [

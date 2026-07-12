@@ -11203,3 +11203,76 @@ What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy
 Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-3 scheduler 默认关闭，仅做本地 read-only evidence aggregate 并使用 PostgreSQL advisory lock，不自动创建或流转 review case，不构成 trading authorization；LIVE 与 Shadow trading 均未开启。
 
 Blocking status：non-blocking；本任务由用户提交、push 并取得 exact-HEAD green CI 后，才允许启动 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。
+
+---
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION（2026-07-12）
+
+结论：`PASS / IMPLEMENTED / PENDING REVIEW`（通过 / 已实现 / 待独立复核）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / authority / exact-HEAD CI preflight | PASS | 起始 branch `dev`、worktree/staged clean；`HEAD == origin/dev == 7a8206a695cff0c51fda4113033a9526c7db8f5c`；run `29178521605` 为 `NQ CI Baseline / completed / success`，`headSha` 精确一致；schema v3 与 GateV-4 `NOT_STARTED` work batch 一致。 |
+| GateV-2 API/DTO/state-machine audit | PASS | 只复用 list/detail/events 与 acknowledge/escalate/resolve/close 7 个 endpoint；真实 pagination、owner scope、`Idempotency-Key`、request body、response fields 与合法 transition 均已核对；无 API gap、dependency change 或 backend change。 |
+| `npm run build` | PASS | `tsc -b && vite build` 成功；3904 modules transformed。既有 >500 kB chunk warning 非阻断。 |
+| `npm run test:e2e -- validation-review-workbench-smoke.spec.ts --reporter=line` | PASS / 4 passed | 覆盖 route、loading/empty/error、queue、state/severity/ADMIN owner filter、OPERATOR owner boundary、limit/offset、URL detail、最多 100 条 events、合法动作、真实 body/header、pending、三类 query refresh、403/404/409、固定 safety copy 和无交易 endpoint。 |
+| `npm run test:e2e -- strategy-validation-paper-shadow-smoke.spec.ts --reporter=line` | PASS / 2 passed | 保留既有 GateT-5 read-only sections 与 stable audit copy；新 workbench 未破坏既有 evidence panels、UNKNOWN/NOT_AVAILABLE fail-closed 或 no-trading boundary。 |
+
+RCA / fixes：首轮 targeted run 因 fixture 向既有 object DTO 返回空数组导致页面异常；改为明确 unavailable。后续发现 Ant table 测量行 selector、Select strict locator 与 Modal/Drawer 同层遮挡，分别通过业务行 selector、combobox locator 和 Modal `zIndex` 修复。既有 smoke 首轮因 hero audit copy 更新失败，保留历史 GateT-5 section 提示后重跑通过；未降低断言。
+
+Scope / Environment：NQ-only frontend implementation；Windows + PowerShell；Playwright Chromium route mocks，不连接真实 backend。
+
+Known warnings：Ant Design v5/React 19 compatibility console warning 与 Vite large chunk warning 为既有非阻断项；当前无 frontend unit-test script。GateV-2 event DTO 不公开 reason/raw metadata，case DTO 不公开 trace/schema/checksum/evidence anchor，页面明确显示未公开且不补造。
+
+What was not run：未运行 Maven、Python、真实 backend E2E 或全量 Playwright matrix；本轮未修改 backend/Python，只执行 GateV-4 targeted smoke 与被接入页面的既有 smoke。
+
+Boundary confirmation：GateV-4 新增模块只调用 GateV-2 validation review endpoints；既有页面其他 evidence GET 保持只读。无 create/delete/reopen/approve/authorize/execute/trade；未请求 order/account/ledger/exchange/credential/LIVE/Shadow trading endpoint；不构成 trading authorization。
+
+Blocking status：non-blocking；下一动作是 `NQ-GATEV-4-REVIEW-WORKBENCH-REVIEW`，尚未 commit、push 或取得 GateV-4 CI。
+
+---
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-REVIEW（2026-07-12）
+
+结论：`FAIL / P0_P1_BLOCKERS_REMAIN`（失败 / 仍有高优先级治理阻断）；4 个 frontend P1 已关闭，但 authority promotion 未通过 checker。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| review preflight | PASS | branch `dev`；`HEAD == origin/dev == 7a8206a695cff0c51fda4113033a9526c7db8f5c`；exact-HEAD run `29178521605` 为 `NQ CI Baseline / completed / success`；staged 为空；起始 authority 为 GateV-4 `IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。 |
+| backend contract / DTO / state-machine comparison | PASS | 精确复用 3 个 GET 与 4 个 lifecycle POST；query/body/envelope/version/owner scope 与 GateV-2 实现一致；无 backend、API contract 或 migration 修改。 |
+| P1 review closure | PASS / 4 fixed | conflict 后刷新 queue/detail/events；Playwright mock 收紧为 exact endpoint 并补强网络契约断言；非法 `reviewCaseId` 与未知 state fail-closed；UUID 生成失败不发请求，Modal 显示目标动作与 case ID。 |
+| `npm run test:e2e -- validation-review-workbench-smoke.spec.ts --reporter=line` | PASS / 4 passed | 精确审计 method/path/query/body、POST 次数、`Idempotency-Key` UUID、`expectedVersion`、成功与 conflict refetch、禁止 endpoint 和无交易网络。预期 mock 的 403/404/409/422/500/503 Chromium resource error 被限定豁免，其他 console error 与全部 pageerror 仍失败。 |
+| `npm run test:e2e -- strategy-validation-paper-shadow-smoke.spec.ts --reporter=line` | PASS / 2 passed | 既有 Strategy Validation 页面回归通过。 |
+| `npm run build` | PASS | `tsc -b && vite build` 成功；3904 modules transformed；既有 >500 kB chunk warning 非阻断。 |
+
+P2：queue query error 时仍会同时渲染空 table/pagination，错误态与数据区不完全互斥；不造成越权、错误成功状态或交易能力，本 review 按规则记录而不扩大 UI 重构。
+
+What was not run：未运行 Maven、Python、真实 backend E2E 或全量 Playwright matrix；本轮未修改 backend/Python，验证聚焦 GateV-4 workbench 与被接入页面。
+
+Boundary confirmation：scheduler、PostgreSQL advisory lock、backend、API contract、migration、依赖和交易能力均未修改；Review Workbench 只处理诊断审查，不构成 trading authorization，也不会开启 LIVE 或 Shadow trading。GateV 保持 `IN PROGRESS / NOT FROZEN`。
+
+Governance blocker：按任务规定尝试 `work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT` 与 `next_action=NQ-GATEV-4-COMMIT-AND-PUSH` 后，checker 返回 `ERROR NEXT_ACTION_TYPE_MISMATCH ... expected=COMMIT_AND_PUSH actual=UNKNOWN` 及 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。checker 仅识别 `COMMIT_AND_PUSH`、`用户提交` 或 `USER_COMMIT` token，而任务要求 hyphenated canonical ID；本轮禁止修改 checker，因此已恢复 pre-review authority。
+
+Next action：独立授权任务需修正 authority checker 或明确收敛 canonical commit/push action contract；在此之前 current authority 仍为 `IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`，不得 commit/push。
+
+---
+
+## NQ-GATEV-4-REVIEW-WORKBENCH-REVIEW（2026-07-12，checker compatibility rerun）
+
+结论：`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`（通过 / 复核已接受 / 可由用户提交）。此前唯一治理 P1 已由合入 `dev` 的 canonical `COMMIT-AND-PUSH` compatibility fix 关闭；本轮未重新开发 GateV-4。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git fast-forward / scope preflight | PASS | `HEAD == origin/dev == f0d5a7d5a25b3000be48e82dfa2c4c2001d2b4e6`；`git merge --ff-only origin/dev` 为 `Already up to date`；15 个 GateV-4 allowlist paths 完整保留，extra/missing 均为 0，staged 为空。 |
+| authority action regression | PASS | `scripts/docs/test-current-authority-next-action.ps1` 验证 `NQ-GATEV-4-COMMIT-AND-PUSH`、underscore/legacy tokens、其他 action types 与负例；完整 `REVIEW_ACCEPTED|READY_TO_COMMIT` fixture 不再产生 `NEXT_ACTION_TYPE_MISMATCH`。 |
+| GateV-4 targeted Playwright | PASS / 4 passed | 复核精确 3 GET + 4 lifecycle POST mock、`Idempotency-Key`/`expectedVersion`、pending 单 POST、成功与 409/422 后 queue/detail/events refresh、非法 URL/未知 state/UUID failure fail-closed，以及无 trading/LIVE/Shadow network。 |
+| Existing Strategy Validation smoke | PASS / 2 passed | 既有 `/strategies/validation` evidence panels 与 `UNKNOWN` / `NOT_AVAILABLE` fail-closed 未回归。 |
+| `npm run build` | PASS | `tsc -b && vite build` 成功；3904 modules transformed。 |
+
+Known warnings：Ant Design v5 / React 19 compatibility console warning、Vite >500 kB chunk warning 与 `TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` historical link warning 均为既有非阻断项。
+
+What was not run：未运行 Maven、Python、真实 backend E2E 或全量 Playwright matrix；本轮没有修改 backend/Python，只重跑 GateV-4 targeted smoke、既有页面 smoke 与 frontend build。
+
+Boundary confirmation：GateV-4 只复用 GateV-2 已接受的 review endpoints；未修改 backend/API contract、migration、scheduler、advisory lock、dependency 或交易状态。Review Workbench 仅表达本地人工复核，不构成 trading authorization，也不会启动 LIVE 或 Shadow trading；GateV 保持 `IN PROGRESS / NOT FROZEN`。
+
+Next action：`NQ-GATEV-4-COMMIT-AND-PUSH`；当前仍为 uncommitted local diff，GateV-4 CI `NOT_RUN`。
