@@ -11178,3 +11178,28 @@ What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy
 Boundary confirmation：GateV-4 保持 `NOT STARTED`；未提升 GateV-3 authority，未初始化 GateV-4 work batch，未修改 machine authority、backend、frontend、API、migration、scheduler、LIVE、Shadow trading、AI/DH/Integration runtime 或交易能力。
 
 Blocking status：non-blocking；本任务 commit/push 并取得 exact-HEAD green CI 后，重新执行 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`。
+
+---
+
+## NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC（2026-07-12）
+
+结论：`PASS / AUTHORITY PROMOTED / GATEV-4 INITIALIZED NOT STARTED`（通过 / authority 已提升 / GateV-4 已初始化但未开始）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / authority preflight | PASS | branch `dev`；起始 worktree 与 staged clean；`HEAD == origin/dev == de7a196f8c034afbf097602075614c6f8886d771`；authority schema v3 checker 通过；转换前为 `accepted_batch=GateV-3A`、`work_batch=GateV-3 / ACCEPTED|CI_GREEN`。 |
+| GateV-3 implementation evidence | PASS | commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 新增 10 个 GateV-3 Java/test 文件，是 acceptance head `b209c416e0daf402216140b62785726f5fd116b6` 的 ancestor；acceptance head 是当前 HEAD ancestor，未发现对应 revert。 |
+| GateV-3 acceptance CI | PASS | GitHub Actions run `29155396719`：`NQ CI Baseline / completed / success`，`headSha=b209c416e0daf402216140b62785726f5fd116b6`。该 run 作为 GateV-3 acceptance evidence，不由后续 planning CI 替代。 |
+| GateV-4 planning commit / CI | PASS | planning commit `de7a196f8c034afbf097602075614c6f8886d771`；GitHub Actions run `29156068291`：`NQ CI Baseline / completed / success`，`headSha` 与 planning commit 精确一致。 |
+| authority promotion | PASS | schema v3 已同步为 `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`，implementation commit `6cbceba9...`、acceptance head `b209c416...`、CI run `29155396719`；`work_batch=GateV-4 / NOT_STARTED`、commit `NONE`、CI `NOT_RUN`。 |
+| authority / link / stale-state / GateV-4 consistency | PASS / 1 EXISTING WARNING | authority 输出 `PASS / CURRENT_AUTHORITY_CONSISTENT`；link checker 为 `62 checked / 1 historical warning / 0 errors / PASS`；stale current-state scan 零命中；GateV-4 distinct task ID 为 1，三份 current 文档均保持 `NOT STARTED`。 |
+
+Scope / Environment：NQ-only documentation-only current authority promotion；Windows + PowerShell；仅同步 allowlist current/entry docs 与 append-only evidence ledger。
+
+Known warnings：`TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 是既有 historical ledger warning，不阻断本任务。GateV-3 仍无 durable execution history；GateV-4 尚未实现、未运行自身测试、未取得自身 CI。
+
+What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；原因是本轮不修改代码、测试、API、migration、scheduler、checker、workflow 或 runtime。
+
+Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-3 scheduler 默认关闭，仅做本地 read-only evidence aggregate 并使用 PostgreSQL advisory lock，不自动创建或流转 review case，不构成 trading authorization；LIVE 与 Shadow trading 均未开启。
+
+Blocking status：non-blocking；本任务由用户提交、push 并取得 exact-HEAD green CI 后，才允许启动 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。

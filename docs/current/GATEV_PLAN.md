@@ -1,8 +1,8 @@
 # GateV 受控验证自动化与人工复核生命周期计划
 
-> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
+> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A、GateV-3 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
 > 英文名：`Controlled Validation Automation & Durable Operator Review`。
-> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 已通过专项 review 与 exact-HEAD CI，唯一下一动作是独立 post-CI active-authority sync。
+> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 已接受，GateV-4 为唯一 `NOT STARTED` work batch，唯一下一动作是其正式 implementation task。
 
 ## 1. Current Baseline
 
@@ -12,7 +12,8 @@
 - GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `f7d71d5a80241ade049a83fa3f90b3ac6ce46806`，acceptance head `b3dd5f74f154d5ed9e2343bc18e451f48770814f`，CI run `29144345430` 为 `completed / success`。
 - GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `99158738ec980f519637af8df75e4153dfa2869f`，CI run `29150549978` 为 `completed / success`。
 - GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`，CI run `29152330658` 为 `completed / success`。
-- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 已进入 exact-HEAD `f3e96a95fd8f74d2e6ebcbee170f727958b3d584`，CI run `29154489746` 为 `completed / success`。默认配置仍关闭，不表示生产启用。
+- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33`，acceptance head `b209c416e0daf402216140b62785726f5fd116b6`，CI run `29155396719` 为 `completed / success`。默认配置仍关闭，不表示生产启用。
+- GateV-4：`NOT STARTED`（未开始）；正式任务 ID 为 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。
 - LIVE `DISABLED`，Shadow trading `NOT ENABLED`，AI `NOT STARTED`，DH runtime `NOT INTEGRATED`，Integration runtime `NOT STARTED`，real provider / private trading `NOT IMPLEMENTED`。
 
 ## 2. GateU Freeze Evidence
@@ -212,9 +213,9 @@ GateV 只规划 manifest preview，不在首切片实现：
 下一轮唯一任务名：
 
 ```text
-NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC
+NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION
 ```
 
-GateV-3A implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`；`NQ CI Baseline` run `29152330658` 已以 exact `headSha` 完成 `success`。
+GateV-3 implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 已由 acceptance head `b209c416e0daf402216140b62785726f5fd116b6` 接受；`NQ CI Baseline` run `29155396719` 对该 acceptance head 为 `completed / success`。
 
-机器 authority 暂时保留 `accepted_batch=GateV-3A`，并以 `work_batch=GateV-3 / ACCEPTED|CI_GREEN` 记录已完成的 review 与 CI；下一独立 sync 才提升 accepted baseline 并创建后续 work batch。scheduler 默认关闭，本计划不授权生产启用或 GateV freeze。
+机器 authority 已提升为 `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`，并初始化 `work_batch=GateV-4 / NOT_STARTED`；GateV-4 尚未实现或运行自身 CI。scheduler 默认关闭，本计划不授权生产启用、trading authorization 或 GateV freeze。

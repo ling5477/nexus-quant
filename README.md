@@ -9,6 +9,7 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 - Tagged commit：`48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU archive：[docs/gates/gate-u/README.md](docs/gates/gate-u/README.md)。
 - GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；active plan：[docs/current/GATEV_PLAN.md](docs/current/GATEV_PLAN.md)。
+- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过），scheduler 默认关闭；GateV-4：`NOT STARTED`（未开始）。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](docs/current/STATUS.md) 和 [ROADMAP.md](docs/current/ROADMAP.md)，本入口不复制 batch 状态。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）。
 - AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。

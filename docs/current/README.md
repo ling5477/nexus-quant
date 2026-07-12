@@ -8,6 +8,7 @@
 - Release tag：`nq-gateu-freeze`；tagged commit `48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
 - GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；唯一 active plan：[GATEV_PLAN.md](GATEV_PLAN.md)。
+- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过），scheduler 默认关闭；GateV-4：`NOT STARTED`（未开始）。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch 状态。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 

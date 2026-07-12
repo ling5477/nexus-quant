@@ -17228,3 +17228,20 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: 起始 `HEAD == origin/dev == b209c416e0daf402216140b62785726f5fd116b6`；GitHub Actions run `29155396719` 为 exact-HEAD `NQ CI Baseline / completed / success`；authority、link、task-id、current-next-action 与 scope checks 在修改后执行。
 - boundary: 未修改代码、API、migration、scheduler、checker、CI、archive、README/STATUS；未开启 LIVE、Shadow trading、AI/DH/Integration runtime，未新增 trading authorization。
 - next action: 用户精确提交并 push 本次四个文档，等待新 HEAD CI success；随后重新执行 `NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC`。
+
+## NQ-GATEV-3-POST-CI-ACTIVE-AUTHORITY-SYNC
+
+- date: 2026-07-12
+- scope: NQ-only documentation-only；在 GateV-4 正式 task ID planning commit 取得 exact-HEAD green CI 后，将 GateV-3 提升为 accepted baseline，并初始化 GateV-4 `NOT_STARTED` work batch。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY FOR USER COMMIT / GATEV-4 UNBLOCKED AFTER CI`（已实现 / 已自审 / 可由用户提交 / CI 后解除 GateV-4 阻断）。
+- evidence:
+  - GateV-3 implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33` 新增 10 个 Java/test 文件；review/reconciliation commit 与 acceptance head 为 `b209c416e0daf402216140b62785726f5fd116b6`。
+  - GateV-3 acceptance run `29155396719` 为 `NQ CI Baseline / completed / success`，`headSha=b209c416e0daf402216140b62785726f5fd116b6`；implementation commit 是 acceptance head ancestor，acceptance head 是当前 planning HEAD ancestor，未发现对应 revert。
+  - GateV-4 planning commit `de7a196f8c034afbf097602075614c6f8886d771` 的 run `29156068291` 为 `NQ CI Baseline / completed / success`，`headSha` 精确一致；正式任务 ID 唯一收敛为 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。
+- authority:
+  - `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`；implementation commit `6cbceba9...`；acceptance head `b209c416...`；CI run `29155396719`。
+  - `work_batch=GateV-4 / NOT_STARTED`；commit `NONE`；CI `NOT_RUN`；唯一 next action 为 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`。
+  - GateV 保持 `IN_PROGRESS / NOT_FROZEN`；GateU 仍是最近 `FROZEN / ACCEPTED / TAGGED` Gate。
+- validation: authority checker `PASS / CURRENT_AUTHORITY_CONSISTENT`；docs link checker `62 checked / 1 historical warning / 0 errors / PASS`；stale-state scan 零命中；GateV-4 distinct task ID 为 1；`git diff --check` 与 forbidden-scope diff 执行。未运行 Maven/frontend/Playwright/Python tests，因为本轮仅修改文档。
+- boundary: GateV-3 scheduler 保持 default-disabled，只聚合本地 read-only evidence 并使用 PostgreSQL advisory lock；不自动创建/流转 review case，无 durable execution history，不构成 trading authorization；未开启 LIVE、Shadow trading、AI/DH/Integration runtime，未修改代码、测试、checker、CI、migration、scheduler 或交易状态。
+- next action: 用户复核并提交 allowlist staged diff，推荐 `docs(gatev): promote GateV-3 and initialize GateV-4`；push 后等待本 authority-sync exact HEAD CI success，再启动 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`，不再处理 GateV-3。

@@ -66,5 +66,5 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 本节只解释 `STATUS.md`，不形成第二 authority：
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；accepted/work batch 与唯一下一动作只读取 `STATUS.md` 和 `ROADMAP.md`，本索引不复制 batch 状态。
+- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-3 已接受且 scheduler 默认关闭，GateV-4 尚未开始。精确 accepted/work batch 与唯一下一动作只读取 `STATUS.md` 和 `ROADMAP.md`。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
