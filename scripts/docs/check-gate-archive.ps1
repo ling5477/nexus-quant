@@ -3,6 +3,7 @@
 只读验证 Gate archive manifest、tag、peeled commit、remote tag 与 tagged-commit CI。
 .NOTES
 脚本不写文件、不修改 Git index、不创建或移动 tag；失败仅输出 BLOCKED 状态并返回非零退出码。
+Default mode preserves strict post-tag validation. -PreTag validates strict archive content only while the target tag is absent.
 #>
 [CmdletBinding()]
 param(
@@ -11,6 +12,8 @@ param(
     [string] $Gate,
 
     [string] $ExpectedTag,
+
+    [switch] $PreTag,
 
     [switch] $RequireRemoteTag,
 
@@ -75,6 +78,40 @@ function Get-GateOrdinal {
     return [int]::MaxValue
 }
 
+function Get-GateLabel {
+    param([string] $GateName)
+
+    # Convert manifest identifiers such as gate-v to authority labels such as GateV without inferring stage state.
+    $segments = @($GateName.Substring(5) -split '-')
+    $suffix = ($segments | ForEach-Object {
+        if ($_.Length -eq 1) { $_.ToUpperInvariant() }
+        else { $_.Substring(0, 1).ToUpperInvariant() + $_.Substring(1) }
+    }) -join ''
+    return "Gate$suffix"
+}
+
+function Read-AuthorityBlock {
+    param([string] $StatusPath)
+
+    # Bind the archive to the current Gate/freeze batch; check-current-authority.ps1 owns the complete authority contract.
+    if (-not (Test-Path -LiteralPath $StatusPath)) { return $null }
+    $content = Read-Utf8File $StatusPath
+    $blockMatches = [regex]::Matches($content, '(?s)<!--\s*nq-current-authority:start\s*(.*?)\s*nq-current-authority:end\s*-->')
+    if ($blockMatches.Count -ne 1) { return $null }
+
+    $authority = @{}
+    foreach ($line in ($blockMatches[0].Groups[1].Value -split '\r?\n')) {
+        if ($line -match '^([a-z_]+)=(.*)$') {
+            $authority[$Matches[1]] = $Matches[2].Trim()
+        }
+    }
+    return $authority
+}
+
+if ($PreTag -and ($RequireRemoteTag -or $RequireCi)) {
+    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' 'PRETAG_MODE_INCOMPATIBLE_WITH_REMOTE_TAG_OR_CI'
+}
+
 $resolvedManifest = Resolve-RepoPath $ManifestPath
 if (-not (Test-Path -LiteralPath $resolvedManifest)) {
     Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "MANIFEST_NOT_FOUND $ManifestPath"
@@ -82,6 +119,25 @@ if (-not (Test-Path -LiteralPath $resolvedManifest)) {
     $manifest = Read-Utf8File $resolvedManifest | ConvertFrom-Json
     if (-not $manifest.schemaVersion) {
         Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' 'MANIFEST_SCHEMA_VERSION_MISSING'
+    }
+    if ($PreTag) {
+        # Pre-tag is a freeze hard gate, so every schema field used by this checker must be present and valid.
+        foreach ($property in @('mandatoryRoles', 'acceptedAliases', 'strictGateOverrides', 'roleBodyPolicy')) {
+            $manifestProperty = $manifest.PSObject.Properties |
+                Where-Object { $_.Name -eq $property } |
+                Select-Object -First 1
+            if ($null -eq $manifestProperty) {
+                Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "MANIFEST_SCHEMA_FIELD_MISSING field=$property"
+            }
+        }
+        $roleBodyPolicyProperty = $manifest.PSObject.Properties |
+            Where-Object { $_.Name -eq 'roleBodyPolicy' } |
+            Select-Object -First 1
+        if ($roleBodyPolicyProperty -and
+            ($manifest.roleBodyPolicy.minimumNonEmptyLines -lt 1 -or
+                $manifest.roleBodyPolicy.minimumIndependentCharacters -lt 1)) {
+            Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' 'MANIFEST_ROLE_BODY_POLICY_INVALID'
+        }
     }
 
     $gateRoot = Join-Path $repoRoot "docs/gates/$Gate"
@@ -104,13 +160,20 @@ if (-not (Test-Path -LiteralPath $resolvedManifest)) {
                 $requiredRoles.Add([string]$role)
             }
         }
+        if ($PreTag -and $null -eq $strictConfig) {
+            Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "PRETAG_STRICT_OVERRIDE_REQUIRED gate=$Gate"
+        }
+        if ($PreTag -and @($requiredRoles | Select-Object -Unique).Count -ne $requiredRoles.Count) {
+            Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "DUPLICATE_REQUIRED_ROLE gate=$Gate"
+        }
 
         Write-Output ("POLICY gate={0} legacyThrough={1} legacy={2} strict={3}" -f
             $Gate, $manifest.legacyThroughGate, $isLegacy, $isStrict)
 
-        $archiveFiles = @(Get-ChildItem -LiteralPath $gateRoot -Recurse -File -Filter '*.md')
+        $allArchiveFiles = @(Get-ChildItem -LiteralPath $gateRoot -Recurse -File)
+        $archiveFiles = @($allArchiveFiles | Where-Object { $_.Extension -eq '.md' })
         $relativeFiles = @{}
-        foreach ($file in $archiveFiles) {
+        foreach ($file in $allArchiveFiles) {
             $relativeFiles[$file.FullName] = $file.FullName.Substring($gateRoot.Length + 1).Replace('\', '/')
         }
 
@@ -140,6 +203,11 @@ if (-not (Test-Path -LiteralPath $resolvedManifest)) {
                     Add-ArchiveWarning "LEGACY_ROLE_MISSING role=$role gate=$Gate"
                 }
                 continue
+            }
+            if ($PreTag -and $roleFiles.Count -gt 1) {
+                Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' ("DUPLICATE_ROLE role={0} files={1}" -f
+                    $role,
+                    (($roleFiles | ForEach-Object { $relativeFiles[$_.FullName] }) -join ','))
             }
 
             $hasIndependentBody = $false
@@ -186,6 +254,33 @@ if (-not (Test-Path -LiteralPath $resolvedManifest)) {
                 $hasIndependentBody)
         }
 
+        if ($PreTag) {
+            # A strict pre-tag archive may contain only declared role files, with one unambiguous role per file.
+            foreach ($file in $allArchiveFiles) {
+                $relative = $relativeFiles[$file.FullName]
+                $matchedRoles = New-Object System.Collections.Generic.List[string]
+                foreach ($role in $requiredRoles) {
+                    # Windows PowerShell 5 can return an unstable collection shape for chained PSObject property indexing.
+                    $aliasProperty = $manifest.acceptedAliases.PSObject.Properties |
+                        Where-Object { $_.Name -eq $role } |
+                        Select-Object -First 1
+                    if ($null -eq $aliasProperty) { continue }
+                    $patterns = @($aliasProperty.Value)
+                    if (@($patterns | Where-Object {
+                        [regex]::IsMatch($relative, [string]$_, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                    }).Count -gt 0) {
+                        $matchedRoles.Add($role)
+                    }
+                }
+                if ($matchedRoles.Count -eq 0) {
+                    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "UNKNOWN_ARCHIVE_FILE file=$relative"
+                } elseif ($matchedRoles.Count -gt 1) {
+                    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' ("AMBIGUOUS_ARCHIVE_ROLE file={0} roles={1}" -f
+                        $relative, ($matchedRoles -join ','))
+                }
+            }
+        }
+
         $readme = Join-Path $gateRoot 'README.md'
         if (Test-Path -LiteralPath $readme) {
             $inFence = $false
@@ -208,15 +303,62 @@ if (-not (Test-Path -LiteralPath $resolvedManifest)) {
             }
         }
 
-        if ($isStrict -and $strictConfig.expectedTag -and -not $ExpectedTag) {
-            $ExpectedTag = [string]$strictConfig.expectedTag
+        $configuredExpectedTag = $null
+        if ($strictConfig) {
+            $expectedTagProperty = $strictConfig.PSObject.Properties['expectedTag']
+            if ($expectedTagProperty) {
+                $configuredExpectedTag = [string]$expectedTagProperty.Value
+            } else {
+                # Both modes must fail closed when a strict override omits its release-tag binding.
+                Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "EXPECTED_TAG_MISSING gate=$Gate"
+            }
         }
-        if ($isStrict -and $ExpectedTag -and $strictConfig.expectedTag -and
-            $ExpectedTag -ne [string]$strictConfig.expectedTag) {
-            Add-ArchiveError 'TAG_TARGET_MISMATCH' "EXPECTED_TAG_CONFLICT manifest=$($strictConfig.expectedTag) argument=$ExpectedTag"
+        if ($isStrict -and $configuredExpectedTag -and -not $ExpectedTag) {
+            $ExpectedTag = $configuredExpectedTag
+        }
+        if ($isStrict -and $ExpectedTag -and $configuredExpectedTag -and
+            $ExpectedTag -ne $configuredExpectedTag) {
+            Add-ArchiveError 'TAG_TARGET_MISMATCH' "EXPECTED_TAG_CONFLICT manifest=$configuredExpectedTag argument=$ExpectedTag"
         }
 
-        if ($ExpectedTag) {
+        if ($PreTag) {
+            $canonicalTag = 'nq-{0}-freeze' -f ($Gate.Replace('-', ''))
+            if (-not $ExpectedTag -or $ExpectedTag -notmatch '^nq-gate[a-z0-9]+-freeze$' -or $ExpectedTag -ne $canonicalTag) {
+                Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "PRETAG_EXPECTED_TAG_INVALID gate=$Gate expectedTag=$ExpectedTag canonical=$canonicalTag"
+            } else {
+                $localTag = Invoke-GitRead @('tag', '--list', $ExpectedTag)
+                if ($localTag -eq $ExpectedTag) {
+                    Add-ArchiveError 'PRETAG_MODE_TAG_ALREADY_EXISTS' "PRETAG_MODE_TAG_ALREADY_EXISTS $ExpectedTag"
+                }
+            }
+
+            $gateLabel = Get-GateLabel $Gate
+            $authority = Read-AuthorityBlock (Join-Path $repoRoot 'docs/current/STATUS.md')
+            if ($null -eq $authority) {
+                Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' 'PRETAG_AUTHORITY_BLOCK_INVALID'
+            } else {
+                $expectedWorkBatch = "$gateLabel-FREEZE"
+                if ($authority.active_gate -ne $gateLabel) {
+                    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "PRETAG_AUTHORITY_GATE_MISMATCH expected=$gateLabel actual=$($authority.active_gate)"
+                }
+                if ($authority.active_gate_status -ne 'IN_PROGRESS|NOT_FROZEN') {
+                    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "PRETAG_AUTHORITY_STATUS_INVALID value=$($authority.active_gate_status)"
+                }
+                if ($authority.work_batch -ne $expectedWorkBatch) {
+                    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "PRETAG_WORK_BATCH_MISMATCH expected=$expectedWorkBatch actual=$($authority.work_batch)"
+                }
+                if ($authority.work_batch_status -notin @('NOT_STARTED', 'IMPLEMENTED|PENDING_REVIEW')) {
+                    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "PRETAG_WORK_STATUS_INVALID value=$($authority.work_batch_status)"
+                }
+                if ($authority.live -ne 'DISABLED') {
+                    Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "PRETAG_LIVE_BOUNDARY_INVALID value=$($authority.live)"
+                }
+                Write-Output ("PRETAG gate={0} expectedTag={1} workBatch={2} workStatus={3}" -f
+                    $gateLabel, $ExpectedTag, $authority.work_batch, $authority.work_batch_status)
+            }
+        }
+
+        if ($ExpectedTag -and -not $PreTag) {
             $localTag = Invoke-GitRead @('tag', '--list', $ExpectedTag)
             if ($localTag -ne $ExpectedTag) {
                 Add-ArchiveError 'TAG_MISSING' "LOCAL_TAG_MISSING $ExpectedTag"
@@ -301,5 +443,9 @@ if ($errors.Count -gt 0) {
     exit 1
 }
 
-Write-Output 'PASS / ARCHIVE_MANIFEST_COMPLETE'
+if ($PreTag) {
+    Write-Output 'PASS / GATE_ARCHIVE_PRETAG_VALID'
+} else {
+    Write-Output 'PASS / ARCHIVE_MANIFEST_COMPLETE'
+}
 exit 0
