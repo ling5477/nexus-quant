@@ -17351,6 +17351,18 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary: LIVE、Shadow trading、AI、DH/Integration runtime、RealClient、real provider、private trading 与 real permission probe 未启用或未实现；operator actions 不构成交易授权。
 - next action: `NQ-GATEW-PLAN-IMPLEMENTATION`；仅允许 GateW planning baseline。
 
+## NQ-GATEW-PLAN-IMPLEMENTATION
+
+- date: 2026-07-13
+- scope: NQ-only docs-only；建立 GateW 单交易所准实盘准备与 Shadow-to-Live 安全门槛计划、current task evidence 与 schema v3 authority sync；唯一 venue 为 OKX Spot。
+- result: `IMPLEMENTED / SELF-REVIEWED / READY_TO_COMMIT`；GateW 保持 `IN_PROGRESS / NOT_FROZEN`，GateW-1 未初始化。
+- planning: 最多 GateW-1..4 + Freeze；首切片为 typed capability matrix、public/private isolation、private endpoint allow/deny、explicit profile 与 fail-closed guard，不访问真实网络/credential，不新增 API/migration，不提交订单。
+- archive governance: `docs/gates/gate-w/source/task-evidence/**` 已由 machine contract/checker regression 支持为 non-role evidence；仍不能替代 GateW archive mandatory/conditional roles。
+- validation: 起始 `dev` clean，`HEAD == origin/dev == f764e765...`；exact-HEAD CI run `29199297388` success；GateV annotated tag/peeled target、next-action、governance lifecycle、post-edit authority、task-evidence policy、doc links、diff/scope checks 全部 PASS；doc links 仅 1 个既有 GateJ historical warning。
+- boundary: 未修改 backend/frontend/research/scripts/deploy/CI/migration/archive；未读取 credential material或调用交易所；LIVE/Shadow/AI/DH/Integration/real provider/private trading/real permission probe 保持 disabled/not started/not implemented。
+- limitation: 具体 OKX endpoint/signature/rate-limit/instrument/error facts留待 GateW-1 当日从官方文档重新核验；首轮 broad `rg` 命中少量 nested target metadata，后续已修正递归排除 glob。
+- next action: `NQ-GATEW-PLAN-COMMIT-AND-PUSH`；exact-HEAD CI green 后直接进入 `NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION`，不新增 plan review/freeze/addendum。
+
 ## NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION
 
 - date: 2026-07-12

@@ -11391,6 +11391,31 @@ Next action：`NQ-GATEW-PLAN-IMPLEMENTATION`；仅建立 GateW planning baseline
 
 ---
 
+## NQ-GATEW-PLAN-IMPLEMENTATION（2026-07-13）
+
+结论：`IMPLEMENTED / SELF-REVIEWED / READY_TO_COMMIT`（已建立 / 已自审 / 可进入提交前复核）。本轮只建立 GateW planning baseline、task evidence 与 current authority sync，不初始化 GateW-1。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git preflight | PASS | branch `dev`；起始 worktree/staged clean；`HEAD == origin/dev == f764e7653cf92cabc3e0c1067ebd558f9373dc19`。 |
+| Current exact-HEAD CI | PASS | `NQ CI Baseline` run `29199297388 / completed / success`。 |
+| GateV release evidence | PASS | `nq-gatev-freeze` 为 annotated tag；peeled target `530ce4e2bde416aa61944262cbfbadca556656cb`。 |
+| Planning audit | PASS | 审计 current docs、GateV archive、指定 adapter/core/infra/risk/scheduler/app 与 frontend target domains；唯一 venue 收敛为 OKX Spot。 |
+| Archive compatibility | SUPPORTED | Governance contract 已允许 current/archive task evidence；`source/task-evidence/**` 为 non-role evidence，不能替代 archive roles。 |
+| Docs governance | PASS | next-action、governance lifecycle、authority、task-evidence policy、doc links、`git diff --check`、evidence existence 与 forbidden-scope diff 均通过；links 为 62 checked / 1 historical warning / 0 errors。 |
+
+Scope / Environment：NQ-only docs-only planning + fact-source reconciliation；Windows + PowerShell。
+
+What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；本轮不修改代码、API、migration、runtime 或 checker，且任务明确要求 docs-only。
+
+Known limitations：未在线核验具体 OKX endpoint/signature/rate-limit/error facts；real permission probe、private read client、durable snapshot/reconciliation/approval 与 7-day soak 均未实现。首轮 broad `rg` 的嵌套 target 排除 glob 不完整，命中少量 Maven metadata，后续已改为 `!**/target/**`。
+
+Boundary confirmation：LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`、Integration runtime `NOT_STARTED`；RealClient、real provider、private trading adapter、real permission probe 未实现；未调用交易所、未读取 credential material、未修改业务代码或交易状态。
+
+Next action：`NQ-GATEW-PLAN-COMMIT-AND-PUSH`；计划 commit exact-HEAD CI green 后直接进入 GateW-1，不新增 plan review/freeze/addendum。
+
+---
+
 ## NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION（2026-07-12）
 
 范围：NQ-only Gate governance scripts、disposable fixtures 与 current governance/evidence docs；未修改业务代码、migration、CI workflow、GateV archive 或 tag。

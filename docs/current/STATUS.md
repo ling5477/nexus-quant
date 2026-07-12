@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6
 accepted_batch_acceptance_head=7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6
 accepted_batch_ci_run=29191014596
 work_batch=GateW-PLAN
-work_batch_status=NOT_STARTED
-work_batch_commit=NONE
+work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
+work_batch_commit=UNCOMMITTED
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEW-PLAN-IMPLEMENTATION
+next_action=NQ-GATEW-PLAN-COMMIT-AND-PUSH
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -35,8 +35,8 @@ nq-current-authority:end -->
 - GateV-FREEZE：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；freeze candidate、implementation commit 与 acceptance head 均为 `7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`，`NQ CI Baseline` run `29191014596` 为 `completed / success`。
 - GateV release closeout exact-HEAD CI：`NQ CI Baseline` run `29191677441`，`completed / success`，`headSha=530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateV durable archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)。它是历史证据，不覆盖本 authority。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；当前仅允许规划，不启动业务实现。
-- GateW-PLAN：`NOT STARTED`（未开始）；commit 为 `NONE`，CI 为 `NOT_RUN`。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；[GateW planning baseline](GATEW_PLAN.md) 已建立并自审，仍不启动业务实现。
+- GateW-PLAN：`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）；commit 为 `UNCOMMITTED`，CI 为 `NOT_RUN`。
 
 ## 2. Archive Compatibility Verification
 
@@ -61,4 +61,4 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 
 ## 4. 下一允许动作
 
-下一允许动作精确为 `NQ-GATEW-PLAN-IMPLEMENTATION`。其中 `IMPLEMENTATION` 是现有 authority checker 的 canonical action 分类 token；本任务仅建立 GateW planning baseline，不启动 GateW 业务实现、scheduler、runner、真实交易或任何 runtime。
+下一允许动作精确为 `NQ-GATEW-PLAN-COMMIT-AND-PUSH`。本任务只允许由用户精确暂存、提交并 push GateW planning diff；不得初始化 GateW-1。计划 commit 取得 exact-HEAD CI green 后，才可直接进入 `NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION`。

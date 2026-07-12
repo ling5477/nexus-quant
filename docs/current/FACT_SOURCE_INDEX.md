@@ -7,8 +7,10 @@
 1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，schema v3 分离最近冻结 Gate、active Gate、accepted batch、work batch、下一动作与 LIVE/AI/DH 等机器可读状态。
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
-4. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 与 GateW planning handoff 的 allowed residual；不决定 current Gate 或独立接受 work batch。
+4. [GATEW_PLAN.md](GATEW_PLAN.md)：GateW active current plan；定义 OKX Spot 单 venue 范围、实施批次和安全边界，不决定 current Gate，也不表示 GateW-1 已启动。
 5. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：Gate checker、lifecycle、evidence 与 release 执行规则；machine contract 位于 `scripts/docs/governance-workflow-contract.json`，两者均不决定 current Gate。
+6. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 与 GateW planning handoff的 allowed residual；不决定 current Gate 或独立接受 work batch。
+7. [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW current task evidence index；只记录不可覆盖 attempt evidence，不决定 current Gate 或 implementation acceptance。
 
 ## 2. NQ Capability Authority
 
@@ -49,6 +51,8 @@
 
 Gate archive 是 historical evidence，不覆盖本文件。
 
+Governance contract 已支持未来 `docs/gates/gate-w/source/task-evidence/**` 作为 approved non-role evidence；它不参与 archive role 计数，也不能替代 mandatory/conditional role。unknown、empty、path traversal 与 symlink/reparse point 仍 fail-closed。
+
 ## 7. Historical Evidence
 
 - `docs/archive/**`：通用历史归档。
@@ -59,11 +63,11 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 
 ## 8. Allowed Residual
 
-- `GATEV_PLAN.md`：为兼容 authority checker 的 active-plan 输入暂留 `docs/current`，内容已标记为 GateV historical context 与 GateW planning handoff；后续 GateW planning 可在明确授权的 archive move batch 中决定其归档路径。
+- `GATEV_PLAN.md`：作为 GateV historical planning context 与 GateW planning handoff 暂留；新 authority checker 不再把它当作 active-plan hard dependency。后续只在明确授权的 archive move batch 中决定归档路径。
 - `TESTING.md`、`WORKLOG.md` 中的旧链接与旧状态属于 append-only evidence；不得据此改变 current Gate。
 
 ## 9. Current Boundary Summary
 
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-PLAN 为 `NOT STARTED`（未开始），不得推断为业务实现已启动。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-PLAN 为 `REVIEW_ACCEPTED / READY_TO_COMMIT`（复核已接受 / 可进入提交前复核），但不得推断 GateW-1 或业务实现已启动。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。

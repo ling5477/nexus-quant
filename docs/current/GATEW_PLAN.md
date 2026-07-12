@@ -1,0 +1,290 @@
+# GateW 单交易所准实盘准备与 Shadow-to-Live 安全门槛计划
+
+英文名：`Single-Venue Pre-Live Readiness & Shadow-to-Live Safety Gate`。
+
+任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
+
+状态：`REVIEW_ACCEPTED / READY_TO_COMMIT`（复核已接受 / 可进入提交前复核）。本状态只表示 GateW planning baseline 已建立；尚未 commit、push 或取得本计划 exact-HEAD CI，GateW-1 也未初始化。
+
+## 1. Current State
+
+- 唯一阶段 authority 是 [STATUS.md](STATUS.md) 的 `nq-current-authority` schema v3 区块。
+- GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
+- GateV-FREEZE 保持最近 accepted baseline：`ACCEPTED / CI_GREEN`；不因 GateW planning 被覆盖。
+- GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
+- GateW-PLAN：本轮从 `NOT_STARTED` 收口到 `REVIEW_ACCEPTED / READY_TO_COMMIT`；commit 为 `UNCOMMITTED`，CI 为 `NOT_RUN`。
+- LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
+- RealClient、real provider、private trading adapter、real permission probe：`NOT IMPLEMENTED`；Python live execution ready：`NO`。
+
+## 2. Goal
+
+GateW 只为一个明确 venue 建立“准实盘但仍不可交易”的安全能力：以 **OKX Spot**、单账户、少量 symbol 为边界，逐步验证 private read-only capability、credential 隔离、permission readiness、账户/余额快照、reconciliation、dry-run order preview、风险前置、安全开关、人工复核证据、read-only soak 与 incident/restore drill。
+
+GateW 的完成条件不是“可以真实下单”，而是证明系统在 LIVE 继续关闭时，能够以可审计、可停止、可恢复、fail-closed 的方式准备后续 GateX 的小资金交易评审。
+
+## 3. Non-goals
+
+- 不选择或并行规划 Binance、Bybit、Gate、Coinbase 或其他 venue 的 private 接入。
+- 不启用 LIVE 或 Shadow trading，不实现真实下单、撤单、改单、转账、提现或资金划拨。
+- 不把既有 `TradingAdapter`、OKX 历史实现、credential metadata、NoReal probe 或 readiness DTO 写成 real-ready。
+- 不接 AI、DH runtime 或 Integration runtime，不改变 NQ 交易状态。
+- 不把 risk preflight、dry-run preview、human approval evidence 或 kill switch 状态解释为 trading authorization。
+- 本 planning task 不修改业务代码、API、migration、checker、CI workflow、部署或 credential material。
+
+## Planning Scope and Change Fence
+
+本轮允许变更仅限：GateW plan、GateW current task evidence/index，以及为 schema v3 authority、入口、路线、fact-source index 和 append-only ledger 所需的最小文档同步。根 `README.md` 只更新阶段入口摘要。
+
+本轮明确禁止修改：`backend/**`、`frontend/**`、`research/**`、`scripts/**`、`deploy/**`、`.github/**`、任何 migration、`docs/gates/**`、`docs/archive/**`、`.agents/**`、POM/package/lock files；禁止读取真实 credential 文件或调用真实交易所。
+
+## 4. GateV / GateW Boundary
+
+GateV 冻结的是本地诊断证据、durable operator review、受控只读 scheduler 与 review workbench。GateV 的 `acknowledge / escalate / resolve / close` 只表达本地诊断复核，不表达交易批准。
+
+GateW 从该 no-trading baseline 出发，新增的重点是 **单 venue private read-only readiness 与 Shadow-to-Live safety gate**。GateW 可以评估和记录 OKX Spot private read-only 事实，但仍不得建立真实订单写路径，也不得复用 GateV review state 作为交易授权或 human approval 的主事实。
+
+## 5. Single-Venue Decision: OKX Spot
+
+GateW 唯一目标交易所为 **OKX Spot**，理由如下：
+
+1. 仓库已有 `nq-adapter-okx`、OKX public/historical adapter、历史 REST/WS/reconciliation 代码与测试证据，可先做当前化隔离审计，不需要同时引入第二套 venue 方言。
+2. 当前产品第一阶段是数字货币现货；Spot 避免合约、杠杆、借贷、资金费率、强平等额外状态和风险模型。
+3. 单 venue、单账户、最多 3 个 allowlisted Spot symbol 可限制 credential、permission、rate limit、reconciliation 和故障恢复的组合复杂度。
+4. 仓库也存在 Binance adapter，但 GateW 明确不扩展其 private capability；Binance 只作为防止跨 venue 误装配的负向测试对象。
+
+该选择只是 planning scope，不证明 OKX private endpoint、credential、账户余额、交易权限或真实订单能力已经可用。
+
+## 6. Verified Existing Capability Inventory
+
+| 领域 | 当前事实 | GateW 处理 |
+| --- | --- | --- |
+| Adapter contract | `AdapterCapability` 已区分 public/private、order、account balance、permission probe 等能力，但尚不是 GateW typed endpoint policy | GateW-1 当前化为 OKX Spot capability matrix 与 default-deny endpoint policy |
+| Public adapter | 已有受 policy/guard 约束的 public marketdata 与 historical path | 与 private client、credential、profile、transport、metrics 完全隔离 |
+| OKX trading adapter | 历史代码包含 place/cancel/query/open-orders/fills 等路径；应用装配依赖 readiness fail-closed | GateW-1 先审计并确保 forbidden mutating capability 不可能从 GateW profile 可达 |
+| Credential | DB 密文、active version、metadata/audit 与结构校验已存在；adapter runtime 默认使用 unconfigured placeholder | GateW 后续只允许 scoped loader 将最小 material 临时交给 read-only private client |
+| Permission probe | Service/port/schema/API 已存在，默认 `NoRealExchangeCredentialPermissionProbePort -> SKIPPED` | GateW-2 才允许显式非默认 profile 下的真实 read-only probe |
+| Trading preflight | 已有 GET-only aggregate，固定 `RISK_PREFLIGHT_BLOCKED`，不调用 adapter/probe/risk/order | GateW-3 扩展候选仍须保持 diagnostic 与 authorization 分离 |
+| Shadow preview | 已有 no-side-effect local preview/read model | GateW-3 建立 venue-rule-aware order preview，但不得依赖 `TradingAdapter` 写接口 |
+| Kill switch | `nq-risk` 已有本地 kill switch risk rule/service | GateW-4 审计其作用域、持久化和 private-read/soak 停止语义；不宣称已满足 GateW |
+| Reconciliation | 历史 OKX scheduler/reconcile/recovery 可查询并写本地 order/trade/ledger | GateW 不直接复用写侧；先建立独立 read-only comparison flow |
+| Frontend | accounts、trading、runtime readiness 页面与 API/hook 已存在 | 只规划 GateW readiness/control evidence，不新增真实下单按钮 |
+
+## 7. Official Fact-Source Rule
+
+所有 OKX endpoint path、HTTP method、签名串、header、权限、rate limit、instrument 字段、fee、错误码和废弃状态，只能来自 implementation 当日重新打开的 OKX API v5 官方文档：<https://www.okx.com/docs-v5/en/>。
+
+GateW-1 必须建立可审计的官方文档事实表，至少记录：官方 URL、页面/章节标题、核验日期、适用产品 `SPOT`、请求是否 private、是否只读、所需 permission、rate-limit 维度、错误码来源、文档版本/变更提示和 reviewer。历史 GateC/GateN/GateO 文档只能帮助定位，不能替代当日官方核验。
+
+本计划不写任何具体 endpoint 结论，也不把仓库中现有 path 常量视为已核验事实。
+
+## 8. Public / Private Adapter Isolation
+
+1. public 与 private 使用不同 contract、client、configuration namespace、Spring profile、transport bean、metrics 与 audit category；public path 不接受 credential 参数或 authenticated signer。
+2. private capability 采用 typed matrix 与 endpoint registry；未登记能力、未知 method/path、产品非 `SPOT`、账户或 symbol 越界一律 default-deny。
+3. GateW private profile 必须显式、非默认且只允许 OKX；CI、default、local、paper、freeze profile 不得因配置缺省自动启用。
+4. private read-only client 不实现或暴露 place/cancel/amend/transfer/withdraw 方法；不得通过 string path 或通用 raw request 绕过 registry。
+5. GateW-1 的测试使用 fake transport，并断言真实网络调用次数为 0；Binance 与未知 venue 必须 fail-closed。
+6. 既有 `OkxExchangeAdapter` 的 mutating/query 历史路径不得直接注入 GateW read-only service；若需要读取能力，使用新的窄 contract 隔离。
+
+## 9. Allowed and Permanently Forbidden OKX Capabilities
+
+### GateW 可进入候选集
+
+以下是 capability 级候选，不是 endpoint 结论；每项都必须先通过官方文档核验、typed allowlist 和独立测试：
+
+- `PERMISSION_READINESS_PROBE`：验证 credential 可认证及只读权限边界。
+- `ACCOUNT_CONFIGURATION_READ`：读取 Spot 账户配置/模式的最小安全摘要。
+- `BALANCE_SNAPSHOT_READ`：读取单账户、allowlisted currency 的余额快照。
+- `OPEN_ORDER_READ`、`ORDER_STATUS_READ`、`FILL_HISTORY_READ`：仅供 GateW-3 reconciliation，且必须与 mutating trading client 物理隔离。
+- `INSTRUMENT_RULE_READ` 与只读 fee/rate 元数据：仅供 tick size、lot size、min notional、fee estimate 和 preview 校验。
+
+### GateW 永久禁止
+
+- place、amend、cancel、batch order、algo order、trigger order 或任何会创建/改变/撤销订单的能力。
+- transfer、withdraw、deposit-address management、sub-account transfer、funding movement 或资金产品操作。
+- leverage、margin、borrow/repay、derivatives、options、futures、swap、position mode mutation。
+- API key 创建/编辑/删除、permission mutation、IP allowlist mutation。
+- 任意通用 raw private request、未分类 endpoint、private WebSocket order channel 或不能证明只读的 endpoint。
+
+## 10. Credential Loading, Decryption, Use and Redaction
+
+- 当前 encrypted payload 以 DB 为主数据源，repository 使用配置的 master key 解密；GateW 不改为 `.env` credential 文件或全局进程变量直读。
+- 后续 loader 必须绑定 owner、tenant、exchange account、credential type、active version、OKX venue 和 read-only operation；缺少任何 scope、key、active 状态或 expected permission 都 fail-closed。
+- 解密只发生在最窄 infrastructure boundary；material 不进入 Controller DTO、domain event、exception message、audit metadata、metrics tag、trace baggage、cache 或持久化 snapshot。
+- private client 只在单次调用生命周期内使用最小字段；禁止输出 raw request/response/header/signature。Java 无法可靠保证不可变 `String` 立即清零，因此设计目标是减少复制、缩短存活期、避免 heap/cache 扩散，并优先使用可覆盖 buffer 的安全封装；不得伪称“已完成内存擦除”。
+- 日志和 evidence 只允许 credential configured/unavailable、credential ID、type、version、masked fingerprint、probe category；任何疑似 secret 统一 `REDACTED`，并由负向测试验证。
+- master key 缺失、解密失败、payload schema 不匹配、credential 非 active、venue/account 不匹配均阻止 probe，不降级为 NoReal 成功或匿名 public 请求。
+
+## 11. Real Permission Probe Definition and Failure Semantics
+
+`real permission probe` 是在显式 GateW read-only profile 下，使用 scoped OKX credential 调用一组经官方文档确认的最小 private read-only capability，以判断“认证可达且权限未超出 GateW 允许范围”。它不是下单测试、资金测试或 LIVE authorization。
+
+结果模型至少包含：`NOT_RUN / IN_PROGRESS / PASSED_READ_ONLY / BLOCKED / FAILED / SKIPPED`，以及脱敏分类：credential unavailable、decrypt failure、auth rejected、IP allowlist mismatch、unexpected trade/funding/withdraw permission、rate limited、timeout、exchange 5xx、invalid response、clock/timestamp failure、unknown。只有所有 required read-only checks 明确通过、无 unexpected permission、无 forbidden call 时才可标记 `PASSED_READ_ONLY`；任何未知或部分成功均 fail-closed。
+
+GateW-2 必须有 hard timeout、无自动重试或仅对安全只读且有 bounded policy 的明确重试、rate-limit backoff、concurrency=1、单账户 scope、request/trace ID 分离与脱敏 audit。真实 credential 或 raw provider response 不进入 task evidence。
+
+## 12. Account / Balance Snapshot Persistence
+
+结论：GateW read-only soak、reconciliation、incident drill 与 freeze 需要 durable snapshot evidence；仅返回瞬时 DTO 不足以审计差异和恢复。但 GateW-1 **不新增 migration**。
+
+现有 legacy `account_snapshots` 与 `accounts` 绑定，不能在未做 schema/owner/retention 审查时直接作为 `exchange_accounts` 的 GateW 事实源。GateW-2 前必须独立 schema review，决定新建 scoped append-only snapshot 表还是经 forward-only migration 建立安全关联。快照只保存业务余额/可用/冻结等 allowlisted 数值、venue timestamp、capture timestamp、account/credential version reference、checksum 和脱敏状态；禁止 credential、raw payload、header、signature 和完整 provider response。
+
+## 13. Reconciliation Fact Source and Difference States
+
+- 远端 OKX read-only snapshot 是“交易所当时观察值”；本地 NQ DB 是“平台当时记录值”。两者均带 observation/capture time、scope 和 freshness，任何一方都不能无时间边界地覆盖另一方。
+- reconciliation 只比较单 OKX Spot 账户、allowlisted symbols/currencies；不写订单、成交、余额、持仓或 ledger，不自动修复。
+- 差异状态至少区分 `MATCHED / LOCAL_ONLY / VENUE_ONLY / VALUE_MISMATCH / STATUS_MISMATCH / STALE / PARTIAL / UNAVAILABLE / ERROR / UNKNOWN`；`UNKNOWN` 和 `PARTIAL` 不得折叠成 matched。
+- 结果要保存 source versions、comparison window、tolerance/rounding policy、difference summary、evidence anchors 与脱敏 error category；raw provider body 禁止持久化。
+- 既有 `OkxRestReconcileService` 会推进本地 order/trade/ledger，不可直接用于 GateW read-only reconciliation。
+
+## 14. Dry-run Order Preview and Venue Rules
+
+GateW-3 的 order preview 是纯计算/只读验证对象：输入显式 account、Spot symbol、side、order type、price/quantity candidate 与已核验 instrument/fee/risk facts，输出 normalized price/quantity、notional、fee estimate、venue-rule violations、risk blockers 和 evidence version。
+
+保证绝不提交订单的结构性要求：
+
+1. preview service 不依赖 `TradingAdapter`、order command、scheduler、HTTP raw client 或任何 mutating port。
+2. GateW private client contract 不暴露 order mutation；preview 不产生或伪造真实 exchange order ID。
+3. endpoint guard 将所有 order/cancel/amend/transfer/withdraw capability 永久 deny；测试断言 forbidden transport 调用为 0。
+4. preview result 固定包含 `notTradingAuthorization=true`、`liveDisabled=true`、`orderSubmitted=false`，并有 TTL/expiry；过期 metadata 必须重新计算。
+5. tick size、lot size、min/max size、min notional、fee tier、rounding mode、quote/base currency 与 instrument status 均来自经官方文档核验并带版本/时间的 facts；未知即 BLOCKED，不猜默认值。
+
+## 15. Risk Preflight vs Trading Authorization
+
+Risk preflight 回答“候选请求是否违反已知风险/venue/数据质量规则”，trading authorization 回答“是否被允许对真实账户执行”。二者必须是不同 contract 和状态机。
+
+GateW 只允许前者保持 read-only/diagnostic；即使所有 risk checks 通过、permission probe 通过、human review 通过、soak 通过，也不能产生 trading authorization。真实授权、最小资金、订单提交和取消必须由后续 GateX 的独立 policy、审批、rollout 和 rollback 决定。
+
+## 16. Kill Switch and Human Approval Evidence
+
+- LIVE 未启用时，kill switch 仍用于一键阻止 private read probe、snapshot capture、reconciliation、preview refresh 和 soak scheduler；默认 engaged/deny，状态未知或存储不可用时 fail-closed。
+- GateW-4 必须验证进程重启、并发任务、缓存、timeout 和 partial failure 下的停止传播，并记录触发者、原因、时间、scope、前后状态和 drill evidence；它不承担取消真实订单，因为 GateW 禁止真实订单。
+- human approval evidence 需要 durable、append-only、可过期、可撤回且绑定具体 snapshot/reconciliation/preview/soak evidence version。它表达“安全门槛已人工复核”而不是“批准交易”。
+- 不复用 GateV `validation_review_cases` 作为交易授权；GateW-4 前进行独立 schema/security review，必要时以 forward-only migration 建立 safety-gate review facts。
+
+## 17. Read-only Soak and Exit Criteria
+
+GateW-4 执行 **连续 7 天** read-only soak，并设置 24 小时早期 checkpoint；scope 固定 1 个 OKX Spot 账户、最多 3 个 allowlisted symbols/currencies，concurrency=1。
+
+必须采集：probe/snapshot/reconciliation 成功率与 freshness、rate-limit/timeout/auth/error 分类、差异数量与收敛时间、scheduler gap/overlap、kill-switch propagation、credential/redaction violations、forbidden endpoint/network attempts、resource usage 和恢复事件。
+
+退出标准：
+
+- forbidden mutating call、真实订单 ID、资金/账户/订单/ledger side effect、credential 泄漏均为 0。
+- P0/P1 finding 为 0；unexpected permission 为 0；所有 unknown/partial 状态均有明确 blocker，不被记作 pass。
+- 计划内 read-only cycle 完成率至少 99.5%，无未解释的连续 gap；rate-limit/timeout/5xx 在既定预算内且恢复行为通过。
+- snapshot freshness 与 reconciliation difference 满足经 review 冻结的阈值；阈值必须在 soak 前写入配置/evidence，不能事后调整以制造通过。
+- kill-switch、backup/restore、incident drill 与 reviewer evidence 均通过，且最新 evidence 未过期。
+
+任一 hard criterion 失败则 soak 重置或明确延期；不得以人工说明覆盖 forbidden call、secret exposure 或 state mutation。
+
+## 18. Backup, Restore and Incident Drill
+
+GateW-4 必须在隔离/可销毁环境验证：snapshot/reconciliation/approval evidence 的备份、校验、restore、schema version、retention 和重放顺序；credential payload/master key 不进入普通 evidence export，恢复后也不得通过日志或报告暴露。
+
+Incident drill 至少覆盖：credential auth failure、rate limit、timeout/5xx、stale snapshot、reconciliation mismatch、unexpected permission、kill-switch trigger、scheduler overlap 与 DB unavailable。每个场景记录 detection、containment、stop、recovery、evidence integrity 和 operator handoff；不调用真实订单或资金接口。
+
+## 19. DB / Migration Decision
+
+- GateW-1：明确 `NO MIGRATION`；只实现 capability/guard/profile/fake-transport 测试。
+- GateW-2 之前：对 permission evidence、exchange-account snapshot 做独立 schema review；只有 durable evidence 确有必要且现有表不能安全承载时才新增 forward-only migration。
+- GateW-3/4：reconciliation result 与 human approval evidence 如需持久化，同样必须有独立 schema、安全、retention 与 restore review；禁止在普通实现中偷加 migration或修改历史 migration。
+- 任何新表/字段必须有中文 comment、敏感信息禁入、owner/account/venue scope、状态 CHECK、append-only/retention 语义和 PostgreSQL/Testcontainers 证据。
+
+## 20. Candidate API Plan
+
+本轮不实现 API。后续只允许规划/实现 authenticated read-only 或 no-side-effect surface：
+
+- permission readiness summary；
+- account configuration snapshot；
+- balance snapshot；
+- reconciliation result；
+- dry-run preview；
+- safety-gate/kill-switch/human-review status。
+
+禁止 place/cancel/amend/transfer/withdraw、enable LIVE、bypass risk、force approval 或通用 raw private endpoint。实际 path、method、request/response 与错误语义必须在对应 implementation 中基于官方文档和现有 `/api/**` 约定复核。
+
+## 21. Frontend Plan
+
+GateW 前端仅在既有专业金融后台中展示：OKX Spot readiness、credential configured/unavailable、permission probe、account/balance snapshot、reconciliation difference、dry-run preview、kill-switch、human-review evidence 与固定 `LIVE DISABLED` 风险提示。
+
+所有 loading/empty/error/stale/expired/blocked/permission-denied/kill-switch-engaged 状态必须可见；风险操作需确认。不得新增成熟实盘终端、真实下单/撤单按钮、LIVE enable、funding/withdraw 控件，也不得把 green readiness 卡片解释为交易授权。
+
+## 22. Implementation Batches
+
+### GateW-1
+
+任务：`NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION`。
+
+最小代码切片：审计现有 OKX adapter/credential path；建立 typed capability matrix、public/private 分离、private endpoint allowlist/denylist、显式非默认 profile 和 fail-closed guard；只用 fake transport；不访问网络、不读取真实 credential、不实现订单提交、不新增 API/migration。必须产出真实 Java 代码和测试，不能再是纯文档任务。
+
+### GateW-2
+
+实现显式非默认 profile 下的 OKX Spot 真实只读 permission probe 与 account/balance snapshot；禁止订单和资金权限，credential 全链路脱敏。进入实现前必须完成独立 security review；若持久化则先完成独立 schema review。
+
+### GateW-3
+
+实现 read-only reconciliation、dry-run order preview、venue rule/fee/notional/tick/lot 校验和 risk preflight；不提交订单、不产生真实订单 ID、不写 account/fund/position/order/ledger。必须完成独立 security + risk + no-side-effect review。
+
+### GateW-4
+
+实现 kill switch、durable human-review evidence、7-day read-only soak、backup/restore 与 incident drill；LIVE 继续关闭。必须完成独立 security + operations + persistence review。
+
+### GateW-FREEZE
+
+汇总 exact-HEAD CI、official-doc evidence、security/schema/risk reviews、soak/restore/incident evidence与 strict archive。Freeze 后真实订单提交、撤单、转账、提现仍关闭；真实小资金下单只能进入 GateX。
+
+## 23. Risk-based Review Requirements
+
+- GateW-1：capability/endpoint guard、profile/wiring、no-network 与 forbidden-path code review；P0/P1 关闭后才接受。
+- GateW-2：独立 credential/private-read security review；存在 migration 时加 DB schema review和 PostgreSQL evidence。
+- GateW-3：独立 security、risk、numeric precision、official venue rule 与 no-side-effect review。
+- GateW-4：独立 security、operations、persistence/retention、backup/restore 与 incident response review。
+- Freeze：复核所有 batch exact acceptance-head CI、跨 batch ancestry、官方事实新鲜度、P0/P1=0、LIVE/Shadow/real-order hard boundary 与 archive checker。
+
+这些 review 是 implementation acceptance 的风险控制，不增加 `NQ-GATEW-PLAN-REVIEW`、plan freeze 或 planning addendum。
+
+## 24. Task-evidence Archive Compatibility
+
+结论：`SUPPORTED`（已支持）。
+
+`governance-workflow-contract.json` 已明确允许 `docs/current/evidence/<line>/README.md`、两位 attempt 文件，以及未来 `docs/gates/<gate>/source/task-evidence/**`。Archive checker 将该目录识别为 approved non-role source evidence：不参与 mandatory/conditional role 计数，nested README 不占顶层 `archive-entry` role，approved path 不触发 `UNKNOWN_ARCHIVE_FILE`。
+
+GateW Freeze 时只复制 accepted attempts 到 archive evidence root，并继续满足 GateW mandatory/conditional role、顶层 README、内容完整性、路径穿越、symlink/reparse point 与 unknown-file hard gate；task evidence 不能替代 plan、testing、boundary、known-limitations 等 archive roles。
+
+## 25. Test and CI Strategy
+
+- GateW-1：capability matrix、unknown/forbidden endpoint、venue/profile/wiring、no-network fake transport、credential-unavailable、Binance/unknown venue deny、mutating adapter unreachable 单元/装配测试。
+- GateW-2：credential scope/redaction、permission state/error taxonomy、timeout/rate-limit/IP allowlist/unexpected permission、PostgreSQL snapshot repository 与 explicit-profile integration；真实 probe 必须是显式手工/安全受控测试，不进入默认 CI。
+- GateW-3：numeric precision/rounding、instrument/fee fact version、reconciliation difference matrix、stale/partial/unknown、preview no-order dependency 与 zero forbidden call 回归。
+- GateW-4：kill-switch propagation、restart/concurrency/failure、approval expiry/revoke、soak metrics、backup/restore checksum 与 incident drill。
+- Freeze：全量 backend、必要 frontend build/E2E、fresh PostgreSQL、docs checkers、strict archive 与 exact-HEAD CI；所有未运行项如实记录。
+
+## 26. Security Boundary
+
+- NQ-only；不修改 DH authority，不启动 Integration runtime。
+- 不读取 `.env`、key/pem、secrets、credential files；不把 credential、signature、header、raw provider payload 写入文档、日志或 evidence。
+- LIVE、Shadow trading、real order submission、cancel、transfer、withdraw 均保持 disabled。
+- public/private、diagnostic/authorization、risk/authorization、human review/authorization、preview/execution 必须是独立 contract。
+- 任意 unknown capability、unknown endpoint、unknown permission、unknown freshness 或 missing evidence 均 fail-closed。
+
+## 27. Findings and Risks
+
+- P0：0。
+- P1：0；GateW-1 尚未实现是 planned state，不是本 planning task 的 defect。
+- P2：`CLAUDE.md` 仍硬编码 GateJ/GateK 历史阶段；它不属于 current authority，本任务不越过 allowlist 修改。现有 OKX trading/reconcile 历史实现包含真实写侧语义，GateW-1 必须证明其在 GateW profile 下不可达。
+- P3：当前 broad audit 首轮 glob 未排除嵌套 `backend/*/target/**`，只读命中了 Maven metadata 列表；后续已改为 `!**/target/**`。未读取 credential 或生成任何变更，但后续任务应直接使用递归排除 glob。
+
+## 28. Final Decision and Next Task
+
+GateW planning baseline：`IMPLEMENTED / SELF-REVIEWED / READY_TO_COMMIT`（已建立 / 已自审 / 可进入提交前复核）。
+
+当前 authority 应保持 GateW `IN_PROGRESS / NOT_FROZEN`、GateV-FREEZE accepted baseline 不变，并将唯一下一动作切换为 `NQ-GATEW-PLAN-COMMIT-AND-PUSH`。不得初始化 GateW-1。
+
+本计划 commit、push 并取得 exact-HEAD `NQ CI Baseline / completed / success` 后，下一 implementation task 直接为：
+
+```text
+NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION
+```
+
+不再新增 GateW plan review、plan freeze 或 planning addendum。
