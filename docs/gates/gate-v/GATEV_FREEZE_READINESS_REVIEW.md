@@ -1,22 +1,24 @@
-# GateV Freeze Readiness / Review 前置
+# GateV Freeze Readiness Review
 
-当前判定：`IMPLEMENTED / PENDING_REVIEW`（已实施 / 待复核），尚未达到 tag authority。
+## 已接受的 release 前置
 
-## 已满足前置
+- `dev`、clean worktree、staged empty，且 `HEAD == origin/dev == 7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`。
+- GateV freeze candidate 的 `NQ CI Baseline` run `29191014596` 为 `completed / success`，`headSha` 精确匹配。
+- `nq-gatev-freeze` 在 local 与 `origin` 均不存在。
+- GateV strict override 与 pre-tag validation mode 已存在；manifest regression 及 12-role pre-tag archive checker 已通过。
+- GateV 全批次 commit、implementation ancestry、PostgreSQL/Flyway、backend、frontend build 与 targeted Playwright 证据均已在 archive 中固定。
 
-- `dev`、clean worktree、staged empty，且 `HEAD == origin/dev`。
-- 当前 exact HEAD CI run `29189447582` 为 `completed / success`。
-- `nq-gateu-freeze` 存在，`nq-gatev-freeze` 不存在。
-- GateV strict override 与 pre-tag validation mode 已存在，manifest regression 全 fixtures 通过。
-- GateV 全批次 commit/ancestry/CI 证据已独立核验。
-- 后端、fresh PostgreSQL/Flyway、scheduler lock、app context、frontend build 与 targeted Playwright 均通过。
+## Release Gate
 
-## Review 必须复核
+1. 仅对 release closeout commit 运行 exact-HEAD CI；candidate CI 不替代该 CI。
+2. CI 为 `completed / success` 且 `headSha` 精确匹配 release closeout commit 后，才创建 annotated `nq-gatev-freeze`。
+3. 验证 tag object、peeled target、remote tag、archive checker、authority checker 与 doc links 后，才将 current authority 切换到 GateV tagged / GateW planning。
 
-- 12 个文件与 manifest role 一一对应，无未知、重复、空壳或伪造 role。
-- operator actions 只有 `acknowledge`、`escalate`、`resolve`、`close`。
-- scheduler 继续默认关闭、只读、无 overlap side effect，所有 case 状态仅为人工诊断复核。
+## Boundary Confirmation
+
+- operator actions 只有 `acknowledge`、`escalate`、`resolve`、`close`；不表示交易、风险、LIVE、Shadow、下单、撤单、转账或提现批准。
+- scheduler 默认关闭且只读；不创建或自动流转 review case。
 - Python manifest preview 保持 `No-file residual / NOT IMPLEMENTED`。
-- GateV 未被写成 `FROZEN`、`ACCEPTED` 或 `TAGGED`；tag 仍不存在。
+- LIVE、Shadow trading、AI、DH runtime、Integration runtime、RealClient、real provider、private trading adapter 与 real permission probe 均未启用或未实现。
 
-Review 接受且 archive commit exact-HEAD CI green 后，才可进入独立 freeze/tag 动作。本文件不预判 review 决策，也不把 pre-tag checker PASS 等同于 freeze acceptance。
+本 review 是 pre-tag historical evidence。它不伪造 tag、tag target、release closeout CI 或最终 authority；这些事实由 post-tag current authority 和实际 Git/GitHub 验证确定。
