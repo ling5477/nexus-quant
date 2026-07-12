@@ -7,7 +7,7 @@
 1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，schema v3 分离最近冻结 Gate、active Gate、accepted batch、work batch、下一动作与 LIVE/AI/DH 等机器可读状态。
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
-4. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV 唯一 active plan，定义受控验证自动化、durable operator review 与当前 work batch 路线；不决定 current Gate 或独立接受 work batch。
+4. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 与 GateW planning handoff 的 allowed residual；不决定 current Gate 或独立接受 work batch。
 
 ## 2. NQ Capability Authority
 
@@ -25,12 +25,12 @@
 - [TESTING.md](TESTING.md)：append-only validation evidence ledger。
 - [WORKLOG.md](WORKLOG.md)：append-only work evidence ledger。
 
-两份 ledger 可保留历史 `PLAN / NOT STARTED`、`PENDING`、失败 run 或旧 Gate 状态；它们不参与当前阶段判定，也不得覆盖 STATUS。
+两份 ledger 的历史状态不参与当前阶段判定，也不得覆盖 STATUS。
 
 ## 4. NQ-DH Integration Boundary
 
 - 本仓库只保存 NQ 侧 contract/mock/test-support 与 no-real boundary。
-- Integration runtime：读取 `STATUS.md`；当前不得由 Integration 历史文档推导为 started。
+- Integration runtime：读取 `STATUS.md`；不得由 Integration 历史文档推导为 started。
 - Integration 文档不得修改 NQ current Gate，也不得把 mock/test-support 写成 real HTTP、real provider 或 LIVE。
 
 ## 5. DH External Authority
@@ -41,31 +41,27 @@
 
 ## 6. Gate Archive
 
+- GateV durable archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)，`FROZEN / ACCEPTED / TAGGED`，release tag 为 `nq-gatev-freeze`。
 - GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
-- GateV pre-tag archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)；状态为 `IMPLEMENTED / PENDING REVIEW`，不是 frozen/tagged authority。
-- GateT / GateS / GateR archive：[../gates/gate-t/README.md](../gates/gate-t/README.md)、[../gates/gate-s/README.md](../gates/gate-s/README.md)、[../gates/gate-r/README.md](../gates/gate-r/README.md)。
 - 其他已完成 Gate：`docs/gates/gate-*`。
 
-Gate archive 是 frozen historical evidence。Pre-tag archive 可以保留当时的 `TAG PENDING` 语境；tag 后 current 状态只在 STATUS 同步，不要求 tagged commit 预先记录尚未生成的 tag object SHA。
+Gate archive 是 historical evidence，不覆盖本文件。
 
 ## 7. Historical Evidence
 
 - `docs/archive/**`：通用历史归档。
 - `docs/gates/*/source/**`：从 current 迁出的过程文档 durable copy。
-- [NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md](NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md)：已执行的治理计划，仅保留 historical governance context，不是 active current plan。
+- GateV 是 evidence workflow 启用前的过渡 Gate；严格 manifest 不允许 task-evidence 非 role 文件。
 
 Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 current authority。
 
 ## 8. Allowed Residual
 
-- `NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md` 暂留 `docs/current` 作为治理兼容入口；分类为 allowed historical context。
-- `TESTING.md`、`WORKLOG.md` 中的旧链接与旧状态属于 append-only evidence；link checker 可报告 warning，但不得据此改变 current Gate。
-- 历史 source copy 的旧相对链接默认 warning；核心 archive entry/current authority 断链仍为 error。
+- `GATEV_PLAN.md`：为兼容 authority checker 的 active-plan 输入暂留 `docs/current`，内容已标记为 GateV historical context 与 GateW planning handoff；后续 GateW planning 可在明确授权的 archive move batch 中决定其归档路径。
+- `TESTING.md`、`WORKLOG.md` 中的旧链接与旧状态属于 append-only evidence；不得据此改变 current Gate。
 
 ## 9. Current Boundary Summary
 
-本节只解释 `STATUS.md`，不形成第二 authority：
-
-- GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-4 已接受，GateV-FREEZE closeout implementation 待 review，scheduler 默认关闭。精确 accepted/work batch 与唯一下一动作只读取 `STATUS.md` 和 `ROADMAP.md`。
+- GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-PLAN 为 `NOT STARTED`（未开始），不得推断为业务实现已启动。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。

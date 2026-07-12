@@ -11367,3 +11367,24 @@ Boundary：GateV 仍为 `IN PROGRESS / NOT FROZEN`；archive 未提交、未取�
 说明：由于 `REVIEW_ACCEPTED` 中间 authority 与 pre-tag checker 存在治理契约冲突，本轮保留 `IMPLEMENTED|PENDING_REVIEW` authority，直接提交 freeze candidate；最终状态将在 exact-HEAD CI 通过后的 release closeout 中一次性同步。
 
 Next action：精确提交并推送 freeze candidate，随后查询该 commit 的 exact-HEAD CI；不得创建 tag。
+
+---
+
+## NQ-GATEV-RELEASE-CLOSEOUT-AND-TAG（2026-07-12）
+
+结论：`PASS / FROZEN / ACCEPTED / TAGGED`（通过 / 已冻结 / 已接受 / 已打 tag）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Freeze candidate CI | PASS | `7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`；`NQ CI Baseline` run `29191014596 / completed / success`，`headSha` 精确一致。 |
+| Release closeout CI | PASS | `530ce4e2bde416aa61944262cbfbadca556656cb`；`NQ CI Baseline` run `29191677441 / completed / success`，`headSha` 精确一致。 |
+| Annotated tag | PASS | `nq-gatev-freeze` tag object `06d5fea2af1765f143f277b111358b3abd8171ce`；peeled target `530ce4e2bde416aa61944262cbfbadca556656cb`。 |
+| Archive / authority / links | PASS | manifest regression、GateV pre-tag archive、post-tag archive、next-action regression、authority checker 与 doc links 均在本任务中执行。 |
+
+Scope / Environment：NQ-only release metadata、archive handoff、tag 与 current authority sync；Windows + PowerShell。未重跑 Maven、frontend build、Playwright 或 Python checks，因为 closeout 未修改代码，候选 exact-HEAD CI 与 GateV 已归档稳定证据覆盖代码基线。
+
+Known warning：长期本地 PostgreSQL V33 checksum drift 保持已披露、未 repair；不影响 disposable fresh DB 与 GitHub CI 的既有通过证据。
+
+Boundary confirmation：LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`、Integration runtime `NOT_STARTED`；RealClient、real provider、private trading adapter、real permission probe 未实现。operator actions 只表示本地人工诊断复核，不构成交易授权。
+
+Next action：`NQ-GATEW-PLAN-IMPLEMENTATION`；仅建立 GateW planning baseline。

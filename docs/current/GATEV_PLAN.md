@@ -1,10 +1,12 @@
-# GateV 受控验证自动化与人工复核生命周期计划
+# GateV Historical Plan and GateW Planning Handoff
 
-> 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A、GateV-3、GateV-4 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
-> 英文名：`Controlled Validation Automation & Durable Operator Review`。
-> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 与 GateV-4 已接受，GateV-FREEZE 为 `IMPLEMENTED / PENDING REVIEW`（已实施 / 待复核）；唯一下一动作是 GateV freeze closeout review。
+- GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`。本文件以下 GateV 内容是 historical planning context，不再决定 current authority。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）。
+- GateV-FREEZE：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
+- GateW-PLAN：`NOT STARTED`（未开始）。
+- 唯一下一动作：`NQ-GATEW-PLAN-IMPLEMENTATION`。`IMPLEMENTATION` 仅是现有 checker 的 action-classification token；只允许建立 GateW planning baseline，不启动 GateW 业务实现。
 
-## 1. Current Baseline
+## 1. GateV Historical Baseline
 
 - Current authority：以 [STATUS.md](STATUS.md) 的 `nq-current-authority` 为唯一阶段事实源。
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），tag 为 `nq-gateu-freeze`。
@@ -212,14 +214,8 @@ GateV 只规划 manifest preview，不在首切片实现：
 - 方案 B 后置：没有 durable case/version/event/idempotency 基线时直接做 API 会迫使复用错误表或产生无事实写侧。
 - 方案 C 后置：automation 先于 durable lifecycle 会放大重复、并发与审计缺口；且现有 scheduler 都具有不适合 GateV 的 Paper/exchange/recovery/ledger 语义。
 
-## 21. Next Concrete Task
+## 21. Current Handoff
 
-下一轮唯一任务名：
+GateV historical evidence 已冻结于 [../gates/gate-v/README.md](../gates/gate-v/README.md)。当前 machine authority 为 `accepted_batch=GateV-FREEZE / ACCEPTED|CI_GREEN / 7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6 / 29191014596`，`work_batch=GateW-PLAN / NOT_STARTED / NONE / NOT_RUN`。
 
-```text
-NQ-GATEV-FREEZE-CLOSEOUT-REVIEW
-```
-
-GateV-4 已提升为 accepted baseline：implementation commit `d7da91a662be1f0fc0bbf64df70ea57318773697` 是 acceptance head `fad9b20900b49fbb918288f8d32d09fc60976444` 的 ancestor，acceptance head exact-HEAD `NQ CI Baseline` run `29181214506` 为 `completed / success`。GateV-FREEZE closeout implementation 已完成并等待 review。
-
-机器 authority 为 `accepted_batch=GateV-4 / ACCEPTED|CI_GREEN`，`work_batch=GateV-FREEZE / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。下一轮只允许 GateV freeze closeout review；本计划不表示 GateV 已 frozen/tagged，不授权 trading authorization、scheduler 生产启用、LIVE 或 Shadow trading。
+下一轮唯一任务名：`NQ-GATEW-PLAN-IMPLEMENTATION`。它只建立 GateW planning baseline；不表示 GateW 业务实现、scheduler 生产启用、trading authorization、LIVE 或 Shadow trading。

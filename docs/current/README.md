@@ -5,11 +5,9 @@
 ## 当前摘要
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- Release tag：`nq-gateu-freeze`；tagged commit `48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
-- GateU durable archive：[../gates/gate-u/README.md](../gates/gate-u/README.md)。
-- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；唯一 active plan：[GATEV_PLAN.md](GATEV_PLAN.md)。
-- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过），scheduler 默认关闭；GateV-4：`NOT STARTED`（未开始）。
-- 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch 状态。
+- GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；仅 `GateW-PLAN / NOT STARTED`（规划尚未开始）被允许。
+- 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
 ## Authority Map
@@ -19,20 +17,15 @@
 | 唯一阶段状态 | [STATUS.md](STATUS.md) | 是 |
 | 下一允许动作 | [ROADMAP.md](ROADMAP.md) | 否 |
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |
-| API 能力 | [API.md](API.md) | 否 |
-| Schema 能力 | [DB_SCHEMA.md](DB_SCHEMA.md) | 否 |
-| 架构 / 模块 | [ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md) | 否 |
-| 运行手册 | [RUNBOOK.md](RUNBOOK.md) | 否 |
-| 前端设计系统 | [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md) | 否 |
+| GateV historical handoff / GateW planning entry | [GATEV_PLAN.md](GATEV_PLAN.md) | 否；仅保留 GateV historical context 与 GateW planning handoff |
+| API / Schema / 架构 | [API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[ARCHITECTURE.md](ARCHITECTURE.md)、[MODULES.md](MODULES.md) | 否 |
 | Evidence ledger | [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md) | 否；append-only |
-| GateV active plan | [GATEV_PLAN.md](GATEV_PLAN.md) | 否；只定义批次、边界和下一代码切片 |
-| Workflow / skills | [CODEX_PROJECT_INSTRUCTIONS.md](CODEX_PROJECT_INSTRUCTIONS.md)、[NQ_DH_CODEX_PLUGIN_WORKFLOW.md](NQ_DH_CODEX_PLUGIN_WORKFLOW.md)、[NQ_DH_WORKFLOW_ROUTER_SKILL.md](NQ_DH_WORKFLOW_ROUTER_SKILL.md)、[NQ_DH_CODEX_TASK_TEMPLATES.md](NQ_DH_CODEX_TASK_TEMPLATES.md) | 否；每轮动态读取 STATUS |
 
 ## Historical Evidence
 
-- Gate archive：`docs/gates/**`，当前最新入口为 [GateU archive](../gates/gate-u/README.md)。
+- Gate archive：`docs/gates/**`；GateV 最新入口为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
 - General archive：`docs/archive/**`。
-- Historical evidence 不覆盖 `STATUS.md`，也不授权下一 Gate implementation。
+- Historical evidence 不覆盖 `STATUS.md`，也不授权 GateW implementation。
 
 ## Current Is Not
 

@@ -5,12 +5,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 ## 当前摘要
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- Release tag：`nq-gateu-freeze`。
-- Tagged commit：`48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab`。
-- GateU archive：[docs/gates/gate-u/README.md](docs/gates/gate-u/README.md)。
-- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；active plan：[docs/current/GATEV_PLAN.md](docs/current/GATEV_PLAN.md)。
-- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过），scheduler 默认关闭；GateV-4：`NOT STARTED`（未开始）。
-- 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](docs/current/STATUS.md) 和 [ROADMAP.md](docs/current/ROADMAP.md)，本入口不复制 batch 状态。
+- GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，archive 为 [docs/gates/gate-v/README.md](docs/gates/gate-v/README.md)。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；仅 `GateW-PLAN / NOT STARTED`（GateW 规划尚未开始）被允许。
+- 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](docs/current/STATUS.md) 和 [ROADMAP.md](docs/current/ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）。
 - AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 
@@ -26,4 +23,4 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 ## Boundary
 
-GateU frozen/tagged 与 GateV active 都不代表 LIVE、Shadow trading、AI/DH runtime、Integration runtime、RealClient、real provider、private trading 或真实交易已启用。具体 accepted/work batch 与下一动作只读取 current authority 与 ROADMAP。
+GateV frozen/tagged 与 GateW planning 均不代表 LIVE、Shadow trading、AI/DH runtime、Integration runtime、RealClient、real provider、private trading 或真实交易已启用。`acknowledge / escalate / resolve / close` 只表示本地人工诊断复核，不构成交易授权。

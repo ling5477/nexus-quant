@@ -7,39 +7,23 @@
 ```text
 GateU FROZEN / ACCEPTED / TAGGED
   ↓
-GateV-0 PLAN / NOT IMPLEMENTED
+GateV FROZEN / ACCEPTED / TAGGED
   ↓
-GateV planning commit CI success
+GateW IN PROGRESS / NOT FROZEN
   ↓
-GateV-1 ACCEPTED / CI GREEN
-  ↓
-GateV-2 ACCEPTED / CI GREEN
-  ↓
-GateV-3A ACCEPTED / CI GREEN
-  ↓
-GateV-3 ACCEPTED / CI GREEN
-  ↓
-GateV-4 ACCEPTED / CI GREEN
-  ↓
-GateV-FREEZE IMPLEMENTED / PENDING REVIEW
+GateW-PLAN NOT STARTED
 ```
 
 ## 下一允许动作
 
-- GateV：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）。
-- GateV-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
-- GateV-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
-- GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
-- GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33`，acceptance head `b209c416e0daf402216140b62785726f5fd116b6`，CI run `29155396719` 为 `completed / success`；scheduler 默认关闭。
-- GateV-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `d7da91a662be1f0fc0bbf64df70ea57318773697`，acceptance head `fad9b20900b49fbb918288f8d32d09fc60976444`，acceptance head exact-HEAD `NQ CI Baseline` run `29181214506` 为 `completed / success`；frontend review、API contract、权限、幂等与 E2E 已接受。
-- GateV-FREEZE：`IMPLEMENTED / PENDING REVIEW`（已实施 / 待复核）；strict pre-tag archive 已建立，work batch 为 `UNCOMMITTED / NOT_RUN`；Python manifest preview 为 `No-file residual / NOT IMPLEMENTED`，GateV 尚未 freeze 或 tag。
-- 唯一下一任务：`NQ-GATEV-FREEZE-CLOSEOUT-REVIEW`。
+- GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，历史证据入口为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
+- GateV-FREEZE：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；candidate/acceptance head 为 `7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`，CI run `29191014596` 为 `completed / success`。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）。
+- GateW-PLAN：`NOT STARTED`（未开始）；`NONE / NOT_RUN`。
+- 唯一下一任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。该名称使用现有 checker 可识别的 `IMPLEMENTATION` 分类 token，但 scope 仅限 GateW planning；不得开始 GateW 业务实现。
 
 ## 路线边界
 
-- 本文件不重新定义 current Gate；若与 `STATUS.md` 冲突，以 `STATUS.md` 为准并输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。
-- GateU tag 已完成，不再保留创建或推送 `nq-gateu-freeze` 的待办步骤。
-- GateV-4 只复用 GateV-2 已接受的 review API，在既有 `/strategies/validation` route 落地；未新增 backend endpoint、migration、scheduler、状态机或交易能力。batch acceptance 不表示 GateV accepted、frozen、tagged 或 trading authorization。
-- GateV-3 因误提交而先于专项 review 进入 CI，现已由独立 acceptance head 与 CI 证据接受；不得把 scheduler acceptance 写成生产启用或 trading authorization。
-- GateV-FREEZE closeout implementation 通过本地完整验证不表示 review 已接受、archive commit CI 已运行或 tag 已创建；scheduler 仍默认关闭，Review Workbench 不构成 trading authorization。
-- LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 状态由 `STATUS.md` 统一定义。
+- GateV tag 是历史 release 事实；不得重打、移动、覆盖或 force update `nq-gatev-freeze`。
+- GateW planning 前不新增业务代码、migration、scheduler、runner、真实 provider、RealClient 或交易能力。
+- LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。
