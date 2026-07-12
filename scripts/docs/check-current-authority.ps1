@@ -96,7 +96,8 @@ function Get-NextActionType {
     if ($Action -match '(?i)(^|-)POST-CI-ACTIVE-AUTHORITY-SYNC$') { return 'POST_CI_SYNC' }
     if ($Action -match '(?i)(^|-)REVIEW$') { return 'REVIEW' }
     if ($Action -match '(?i)(^|-)IMPLEMENTATION$') { return 'IMPLEMENTATION' }
-    if ($Action -match '(?i)COMMIT_AND_PUSH|\u7528\u6237\u63d0\u4ea4|USER_COMMIT') { return 'COMMIT_AND_PUSH' }
+    # Match canonical commit/push tokens with explicit boundaries; do not accept arbitrary word combinations.
+    if ($Action -match '(?i)(?:^|-)COMMIT(?:-|_)AND(?:-|_)PUSH(?:$|-)|(?:^|-)USER_COMMIT(?:$|-)|(?:^|-)\u7528\u6237\u63d0\u4ea4(?:$|-)') { return 'COMMIT_AND_PUSH' }
     if ($Action -match '(?i)CI_WAIT_OR_INVESTIGATION|WAIT.*CI|CI.*INVESTIGATION') { return 'CI_WAIT_OR_INVESTIGATION' }
     if ($Action -match '(?i)BLOCKED|UNBLOCK') { return 'BLOCKED' }
     return 'UNKNOWN'
