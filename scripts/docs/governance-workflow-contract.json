@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "1.0.0",
+  "authoritySchema": "3",
+  "authority": {
+    "activeGateStatuses": [
+      "IN_PROGRESS|NOT_FROZEN"
+    ],
+    "acceptedBatchStatuses": [
+      "ACCEPTED|CI_GREEN"
+    ],
+    "workBatchStatuses": [
+      "NOT_STARTED",
+      "IMPLEMENTED|SELF_REVIEWED",
+      "IMPLEMENTED|PENDING_REVIEW",
+      "REVIEW_ACCEPTED|READY_TO_COMMIT",
+      "COMMITTED|CI_PENDING",
+      "ACCEPTED|CI_GREEN",
+      "BLOCKED"
+    ],
+    "workStatusBodyPatterns": {
+      "NOT_STARTED": "NOT\\s*STARTED",
+      "IMPLEMENTED|SELF_REVIEWED": "IMPLEMENTED\\s*/\\s*SELF[ -]?REVIEWED",
+      "IMPLEMENTED|PENDING_REVIEW": "IMPLEMENTED\\s*/\\s*PENDING\\s*REVIEW",
+      "REVIEW_ACCEPTED|READY_TO_COMMIT": "REVIEW\\s*ACCEPTED\\s*/\\s*READY\\s*TO\\s*COMMIT",
+      "COMMITTED|CI_PENDING": "COMMITTED\\s*/\\s*CI\\s*PENDING",
+      "ACCEPTED|CI_GREEN": "ACCEPTED\\s*/\\s*CI\\s*GREEN",
+      "BLOCKED": "BLOCKED"
+    },
+    "statusToNextActionType": {
+      "NOT_STARTED": "IMPLEMENTATION",
+      "IMPLEMENTED|SELF_REVIEWED": "COMMIT_AND_PUSH",
+      "IMPLEMENTED|PENDING_REVIEW": "REVIEW",
+      "REVIEW_ACCEPTED|READY_TO_COMMIT": "COMMIT_AND_PUSH",
+      "COMMITTED|CI_PENDING": "CI_WAIT_OR_INVESTIGATION",
+      "ACCEPTED|CI_GREEN": "POST_CI_SYNC",
+      "BLOCKED": "BLOCKED"
+    },
+    "workStatusFieldPolicies": {
+      "NOT_STARTED": {
+        "commitPattern": "^NONE$",
+        "ciPattern": "^NOT_RUN$"
+      },
+      "IMPLEMENTED|SELF_REVIEWED": {
+        "commitPattern": "^UNCOMMITTED$",
+        "ciPattern": "^NOT_RUN$"
+      },
+      "IMPLEMENTED|PENDING_REVIEW": {
+        "commitPattern": "^UNCOMMITTED$",
+        "ciPattern": "^NOT_RUN$"
+      },
+      "REVIEW_ACCEPTED|READY_TO_COMMIT": {
+        "commitPattern": "^UNCOMMITTED$",
+        "ciPattern": "^NOT_RUN$"
+      },
+      "COMMITTED|CI_PENDING": {
+        "commitPattern": "^[0-9a-f]{40}$",
+        "ciPattern": "^(PENDING|[0-9]+)$"
+      },
+      "ACCEPTED|CI_GREEN": {
+        "commitPattern": "^[0-9a-f]{40}$",
+        "ciPattern": "^[0-9]+$"
+      },
+      "BLOCKED": {
+        "commitPattern": "^(NONE|UNCOMMITTED|[0-9a-f]{40})$",
+        "ciPattern": "^(NOT_RUN|PENDING|[0-9]+)$"
+      }
+    },
+    "nextActionTypes": [
+      {
+        "name": "POST_CI_SYNC",
+        "pattern": "(?i)(^|-)POST-CI-ACTIVE-AUTHORITY-SYNC$"
+      },
+      {
+        "name": "REVIEW",
+        "pattern": "(?i)(^|-)REVIEW$"
+      },
+      {
+        "name": "IMPLEMENTATION",
+        "pattern": "(?i)(^|-)IMPLEMENTATION$"
+      },
+      {
+        "name": "COMMIT_AND_PUSH",
+        "pattern": "(?i)(?:^|-)(?:COMMIT(?:-|_)AND(?:-|_)PUSH|USER_COMMIT)$"
+      },
+      {
+        "name": "CI_WAIT_OR_INVESTIGATION",
+        "pattern": "(?i)(?:^|-)(?:CI-WAIT-OR-INVESTIGATION|CI_WAIT_OR_INVESTIGATION|WAIT-CI|CI-INVESTIGATION)$"
+      },
+      {
+        "name": "BLOCKED",
+        "pattern": "(?i)(?:^|-)(?:BLOCKED|UNBLOCK)$"
+      }
+    ]
+  },
+  "lifecycles": {
+    "ordinary": {
+      "states": [
+        "NOT_STARTED",
+        "IMPLEMENTED|SELF_REVIEWED",
+        "COMMITTED|CI_PENDING",
+        "ACCEPTED|CI_GREEN"
+      ],
+      "transitions": [
+        "NOT_STARTED->IMPLEMENTED|SELF_REVIEWED",
+        "IMPLEMENTED|SELF_REVIEWED->COMMITTED|CI_PENDING",
+        "COMMITTED|CI_PENDING->ACCEPTED|CI_GREEN"
+      ]
+    },
+    "highRisk": {
+      "riskTypes": [
+        "migration",
+        "ci-workflow",
+        "credential-secret",
+        "live",
+        "real-provider",
+        "private-adapter",
+        "real-outbound",
+        "trading-write-path",
+        "risk-ledger-audit-core",
+        "broad-spring-wiring",
+        "p0-p1-fix"
+      ],
+      "states": [
+        "NOT_STARTED",
+        "IMPLEMENTED|PENDING_REVIEW",
+        "REVIEW_ACCEPTED|READY_TO_COMMIT",
+        "COMMITTED|CI_PENDING",
+        "ACCEPTED|CI_GREEN"
+      ],
+      "transitions": [
+        "NOT_STARTED->IMPLEMENTED|PENDING_REVIEW",
+        "IMPLEMENTED|PENDING_REVIEW->REVIEW_ACCEPTED|READY_TO_COMMIT",
+        "REVIEW_ACCEPTED|READY_TO_COMMIT->COMMITTED|CI_PENDING",
+        "COMMITTED|CI_PENDING->ACCEPTED|CI_GREEN"
+      ]
+    },
+    "freeze": {
+      "steps": [
+        "ARCHIVE_CANDIDATE_REVIEWED",
+        "FREEZE_CANDIDATE_COMMITTED",
+        "FREEZE_CANDIDATE_CI_GREEN",
+        "RELEASE_CLOSEOUT_COMMITTED",
+        "RELEASE_CLOSEOUT_CI_GREEN",
+        "ANNOTATED_TAG_CREATED",
+        "POST_TAG_VALIDATED"
+      ],
+      "authorityReviewCommitRequired": false,
+      "candidateEntryStatuses": [
+        "IMPLEMENTED|PENDING_REVIEW",
+        "REVIEW_ACCEPTED|READY_TO_COMMIT"
+      ]
+    }
+  },
+  "evidence": {
+    "safeExtensions": [
+      ".md"
+    ],
+    "currentPathPattern": "^docs/current/evidence/[a-z0-9][a-z0-9-]*/(?:README\\.md|[A-Z0-9][A-Z0-9._-]*\\.attempt-[0-9]{2}\\.md)$",
+    "archivePathPattern": "^source/task-evidence/(?:README\\.md|[A-Z0-9][A-Z0-9._-]*\\.attempt-[0-9]{2}\\.md)$",
+    "archiveRoot": "source/task-evidence/",
+    "attemptPattern": "^[A-Z0-9][A-Z0-9._-]*\\.attempt-[0-9]{2}\\.md$",
+    "indexFileName": "README.md",
+    "minimumIndexNonWhitespaceCharacters": 10,
+    "minimumAttemptNonWhitespaceCharacters": 80,
+    "placeholderPattern": "(?i)^#?\\s*(TODO|TBD|PLACEHOLDER)\\s*$",
+    "rejectSymlinks": true,
+    "nonRole": true
+  },
+  "release": {
+    "remoteName": "origin",
+    "expectedBranch": "dev",
+    "workflowName": "NQ CI Baseline",
+    "tagPattern": "^nq-gate[a-z0-9]+-freeze$",
+    "requireAnnotatedTag": true,
+    "requireRemoteTag": true,
+    "requireExactHeadCi": true
+  },
+  "hardBlockers": [
+    "DIRTY_WORKTREE",
+    "DEV_NOT_ALIGNED",
+    "CURRENT_HEAD_CI_NOT_GREEN",
+    "CURRENT_AUTHORITY_CONFLICT",
+    "ARCHIVE_ALLOWLIST_INCOMPLETE",
+    "ARCHIVE_MANIFEST_INCOMPLETE",
+    "ARCHIVE_LINK_BROKEN",
+    "TASK_EVIDENCE_INVALID",
+    "RELEASE_COMMIT_INVALID",
+    "RELEASE_CI_NOT_GREEN",
+    "RELEASE_TAG_INVALID",
+    "REMOTE_TAG_INVALID"
+  ]
+}

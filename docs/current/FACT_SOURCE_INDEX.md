@@ -8,6 +8,7 @@
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
 4. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 与 GateW planning handoff 的 allowed residual；不决定 current Gate 或独立接受 work batch。
+5. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：Gate checker、lifecycle、evidence 与 release 执行规则；machine contract 位于 `scripts/docs/governance-workflow-contract.json`，两者均不决定 current Gate。
 
 ## 2. NQ Capability Authority
 
@@ -24,6 +25,7 @@
 
 - [TESTING.md](TESTING.md)：append-only validation evidence ledger。
 - [WORKLOG.md](WORKLOG.md)：append-only work evidence ledger。
+- [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW current task attempt evidence 索引；不参与阶段判定。
 
 两份 ledger 的历史状态不参与当前阶段判定，也不得覆盖 STATUS。
 
@@ -51,7 +53,7 @@ Gate archive 是 historical evidence，不覆盖本文件。
 
 - `docs/archive/**`：通用历史归档。
 - `docs/gates/*/source/**`：从 current 迁出的过程文档 durable copy。
-- GateV 是 evidence workflow 启用前的过渡 Gate；严格 manifest 不允许 task-evidence 非 role 文件。
+- GateV archive 内容保持冻结且不补写 task evidence。新 workflow 允许未来 Gate archive 在 `source/task-evidence/**` 保存 non-role attempt evidence；nested README 不占 archive-entry role，approved root 外未知文件仍 fail-closed。
 
 Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 current authority。
 

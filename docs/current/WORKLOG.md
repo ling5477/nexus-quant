@@ -17350,3 +17350,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - release: closeout commit `530ce4e2bde416aa61944262cbfbadca556656cb`；exact-HEAD CI `29191677441 / completed / success`；annotated tag `nq-gatev-freeze`。
 - boundary: LIVE、Shadow trading、AI、DH/Integration runtime、RealClient、real provider、private trading 与 real permission probe 未启用或未实现；operator actions 不构成交易授权。
 - next action: `NQ-GATEW-PLAN-IMPLEMENTATION`；仅允许 GateW planning baseline。
+
+## NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION
+
+- date: 2026-07-12
+- scope: NQ-only GateW 前置治理；重构 archive/authority/release checker 职责，建立 lifecycle contract 与 task evidence policy；不启动 GateW planning。
+- result: `IMPLEMENTED / PENDING_REVIEW`（已实现 / 待独立复核）。
+- implementation: 新增 machine contract/shared helper/Release checker；Archive checker 只保留 manifest/role/link/evidence；Authority checker只保留 schema/status/action/safety；普通任务 self-review 后可直接提交，高风险任务保留独立 review，Freeze 不要求中间 review-authority commit。
+- evidence: current `docs/current/evidence/gate-w/**` 与 frozen `source/task-evidence/**` 路径正式支持；nested README 为 non-role；unknown/empty/traversal/symlink fail-closed。
+- validation: lifecycle、manifest、next-action fixtures PASS；真实 GateV Authority、post-tag Archive 与 Release checker PASS；doc links 为 current 51/1 historical warning/0 errors、GateV 12/0/0；forbidden-scope diff 为空；GateV tag object/peeled target未修改。
+- boundary: 未修改 backend/frontend/research/deploy/`.github`/migration、GateV archive、docs/archive、`.agents`、root README 或任何 tag；LIVE/Shadow/AI/DH/Integration/real provider/private trading 状态保持不变。
+- next action: `NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION-REVIEW`；review 通过后直接提交与 CI 验证，不增加 freeze/final review/addendum。
