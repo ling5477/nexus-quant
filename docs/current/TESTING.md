@@ -11388,3 +11388,21 @@ Known warning：长期本地 PostgreSQL V33 checksum drift 保持已披露、未
 Boundary confirmation：LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`、Integration runtime `NOT_STARTED`；RealClient、real provider、private trading adapter、real permission probe 未实现。operator actions 只表示本地人工诊断复核，不构成交易授权。
 
 Next action：`NQ-GATEW-PLAN-IMPLEMENTATION`；仅建立 GateW planning baseline。
+
+---
+
+## NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION（2026-07-12）
+
+范围：NQ-only Gate governance scripts、disposable fixtures 与 current governance/evidence docs；未修改业务代码、migration、CI workflow、GateV archive 或 tag。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| `test-governance-workflow-lifecycle.ps1` | PASS | ordinary/high-risk/freeze transition、authority status/action、current/archive evidence、traversal/symlink 与 disposable release positive/negative fixtures；输出 `GOVERNANCE_LIFECYCLE_REGRESSION`、`TASK_EVIDENCE_POLICY_VALID`。 |
+| `test-gate-archive-manifest.ps1` | PASS | strict role、missing/duplicate/unknown/link、nested evidence README、empty/invalid evidence 与 approved-source boundary；输出 `GATE_ARCHIVE_MANIFEST_REGRESSION`。 |
+| `test-current-authority-next-action.ps1` | PASS | contract-driven action classifier 与全部 work status mapping。 |
+| `check-current-authority.ps1` | PASS | schema v3 / GateW-PLAN current authority 保持 `CURRENT_AUTHORITY_CONSISTENT`。 |
+| `check-gate-archive.ps1 -Gate gate-v` | PASS | GateV 12 roles、0 warnings、0 errors；未修改 archive 内容。 |
+| `check-gate-release.ps1 -Gate gate-v` | PASS | release commit `530ce4e2...`、origin/dev ancestry、CI run `29191677441`、annotated local/remote tag 与 peeled target 一致。 |
+| `check-doc-links.ps1`（分别检查 `docs/current`、`docs/gates/gate-v`） | PASS | current 51 links / 1 个既有 GateJ historical warning / 0 errors；GateV 12 links / 0 warnings / 0 errors。 |
+
+环境：Windows + Windows PowerShell 5 compatibility；fixture 仅使用系统临时目录、临时 Git repository 与本地 bare remote，结束后删除。未运行 Maven、frontend build/E2E 或 Python checks，因为禁止范围未修改。最终状态：`IMPLEMENTED / PENDING_REVIEW`；下一动作：`NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION-REVIEW`。
