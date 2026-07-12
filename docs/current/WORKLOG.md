@@ -17315,3 +17315,28 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: authority next-action regression、authority checker、docs link checker、diff/scope 与 staged checks 按本任务要求执行；未运行代码测试，因为本轮只同步文档 authority。
 - boundary: GateV 保持 `IN_PROGRESS / NOT_FROZEN`，尚未 freeze、archive 或 tag；Python manifest preview 保持 No-file residual；scheduler 默认关闭；Review Workbench 不构成 trading authorization；未开启 LIVE、Shadow trading、AI/DH/Integration runtime，未修改业务代码、checker、migration、archive 或交易状态。
 - next action: `NQ-GATEV-FREEZE-CLOSEOUT-IMPLEMENTATION`；本轮不实现 GateV-FREEZE。
+
+## NQ-GATEV-FREEZE-CLOSEOUT-IMPLEMENTATION
+
+- date: 2026-07-12
+- scope: NQ-only documentation / Gate freeze closeout；创建 `docs/gates/gate-v/**` strict pre-tag archive，同步 current authority/evidence ledger；不修改业务代码、scripts、workflow、migration 或既有 Gate archive。
+- result: `IMPLEMENTED / PENDING_REVIEW`（已实施 / 待复核）；GateV 保持 `IN_PROGRESS / NOT_FROZEN`，`nq-gatev-freeze` 仍不存在。
+- archive: 8 个 mandatory roles 与 GateV strict override 的 backend-db、API、frontend、runtime-scheduling 4 个 conditional roles 已建立；Python 为 `No-file residual / NOT IMPLEMENTED`，未伪造额外 role 文件。
+- evidence: GateV-1/2/3A/3/4 commit objects、ancestry 与 exact acceptance-head CI 全部独立核验；当前基线 `e08f18b...` exact-HEAD CI run `29189447582` green。
+- validation: fresh PostgreSQL 16.14 V1..V33/Flyway/repository/advisory-lock/app-context PASS；backend 23/23 modules PASS；frontend build PASS；targeted Playwright 4 + 2 passed；strict archive pre-tag checker PASS。
+- local DB note: 长期 DB V33 checksum drift 导致首跑 fail-closed；未 repair。disposable PostgreSQL 验证完成后已删除容器。
+- authority: `accepted_batch=GateV-4 / ACCEPTED|CI_GREEN` 保持；`work_batch=GateV-FREEZE / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；下一动作为 `NQ-GATEV-FREEZE-CLOSEOUT-REVIEW`。
+- boundary: scheduler 默认关闭；review states/actions 只表达本地人工诊断复核，不构成交易授权；LIVE、Shadow、AI、DH、Integration runtime、real provider/private trading/permission probe 均未启用或未实现。
+- next action: 独立执行 `NQ-GATEV-FREEZE-CLOSEOUT-REVIEW`；review 前不 stage/commit/push/tag。
+
+## NQ-GATEV-FREEZE-CANDIDATE-COMMIT-AND-PUSH
+
+- date: 2026-07-12
+- scope: NQ-only freeze candidate handoff；清理临时 review blocker wording 后，精确提交并推送 GateV 的 18-file closeout candidate。
+- result: GateV freeze archive 已完成实现和人工专项审查，P0/P1 业务与证据问题为 0；保留 `IMPLEMENTED|PENDING_REVIEW` authority，等待该 candidate exact-HEAD CI。
+- evidence: 五个 batch 的 commit object、implementation ancestry 与 exact acceptance-head CI 全部匹配；V33/local review facts、3 GET + 4 action API、advisory lock/default-disabled scheduler、workbench 与 targeted Playwright 证据均与真实代码和测试一致。
+- validation: manifest regression PASS；GateV pre-tag archive 在 `IMPLEMENTED|PENDING_REVIEW` 时为 12 roles、0 warnings、0 errors；next-action/current authority PASS；doc links 76 checked、0 errors。
+- P2: 长期 PostgreSQL V33 checksum drift 已如实保留且未 repair；root/current README 的 GateV-4 旧摘要不属 authority、且不在 allowlist，未扩大修改范围。
+- authority: `accepted_batch=GateV-4 / ACCEPTED|CI_GREEN` 保持；`work_batch=GateV-FREEZE / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；本轮直接提交 candidate，最终状态等待 exact-HEAD CI 后在 release closeout 同步。
+- boundary: review states/actions 仍只表示本地人工诊断复核；不构成 trading authorization，不开启 LIVE、Shadow、AI、DH、Integration、real provider、private trading 或 real permission probe。
+- next action: 精确暂存、commit、push 并查询 freeze candidate exact-HEAD CI；本轮不创建 tag。

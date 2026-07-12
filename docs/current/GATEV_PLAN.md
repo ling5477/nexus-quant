@@ -2,7 +2,7 @@
 
 > 状态：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateV-1、GateV-2、GateV-3A、GateV-3、GateV-4 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
 > 英文名：`Controlled Validation Automation & Durable Operator Review`。
-> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 与 GateV-4 已接受，GateV-FREEZE 为 `NOT STARTED`（未开始）；唯一下一动作是 GateV freeze closeout implementation。
+> 本计划是 GateV 唯一 active plan；GateV-3 scheduler 与 GateV-4 已接受，GateV-FREEZE 为 `IMPLEMENTED / PENDING REVIEW`（已实施 / 待复核）；唯一下一动作是 GateV freeze closeout review。
 
 ## 1. Current Baseline
 
@@ -14,7 +14,7 @@
 - GateV-3A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit 与 acceptance head 均为 `45c7df9799c0534ddd3ee291dc9347076dec9ddd`，CI run `29152330658` 为 `completed / success`。
 - GateV-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `6cbceba9d0fbc0fca67f43e898c416ec64a6fa33`，acceptance head `b209c416e0daf402216140b62785726f5fd116b6`，CI run `29155396719` 为 `completed / success`。默认配置仍关闭，不表示生产启用。
 - GateV-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit `d7da91a662be1f0fc0bbf64df70ea57318773697`，acceptance head `fad9b20900b49fbb918288f8d32d09fc60976444`，exact-HEAD `NQ CI Baseline` run `29181214506` 为 `completed / success`。frontend review、API contract、权限、幂等与 E2E 已接受。
-- GateV-FREEZE：`NOT STARTED`（未开始）；Python manifest preview 保持 No-file residual，GateV 尚未 freeze、archive 或 tag。
+- GateV-FREEZE：`IMPLEMENTED / PENDING REVIEW`（已实施 / 待复核）；[strict pre-tag archive](../gates/gate-v/README.md) 已建立并通过 checker，仍为 `UNCOMMITTED / NOT_RUN`。Python manifest preview 保持 `No-file residual / NOT IMPLEMENTED`，GateV 尚未 freeze 或 tag。
 - LIVE `DISABLED`，Shadow trading `NOT ENABLED`，AI `NOT STARTED`，DH runtime `NOT INTEGRATED`，Integration runtime `NOT STARTED`，real provider / private trading `NOT IMPLEMENTED`。
 
 ## 2. GateU Freeze Evidence
@@ -190,7 +190,7 @@ GateV 只规划 manifest preview，不在首切片实现：
 | GateV-3A | PostgreSQL Advisory Scheduler Lock Prerequisite：通用 contract、transaction-level try lock、稳定 key mapping、Spring composition、真实并发测试 | `ACCEPTED / CI GREEN`；无 `@Scheduled`、migration、业务 callback 或业务副作用 |
 | GateV-3 | Controlled Read-only Scheduler：默认关闭、local query、lock/timeout/bounded batch、failure audit | `ACCEPTED / CI GREEN`；专项 review 无 P0/P1，exact-HEAD CI green；不创建 case、不外联、不改 Paper/Shadow/交易状态 |
 | GateV-4 | Review Workbench：正式任务 `NQ-GATEV-4-REVIEW-WORKBENCH-IMPLEMENTATION`；既有页面 queue/detail/events/actions 与 targeted E2E | `ACCEPTED / CI GREEN`；implementation `d7da91a...`、acceptance head `fad9b209...`、CI `29181214506`，不实现 Python manifest preview，不新增 route |
-| GateV-FREEZE | manifest 驱动归档、全量验证、exact-HEAD CI、tag handoff | `NOT STARTED`；不新增实现范围 |
+| GateV-FREEZE | manifest 驱动归档、全量验证、exact-HEAD CI、tag handoff | `IMPLEMENTED / PENDING REVIEW`；pre-tag archive 已建立，不新增实现范围，不创建 tag |
 
 ## 19. Freeze Acceptance Criteria
 
@@ -217,9 +217,9 @@ GateV 只规划 manifest preview，不在首切片实现：
 下一轮唯一任务名：
 
 ```text
-NQ-GATEV-FREEZE-CLOSEOUT-IMPLEMENTATION
+NQ-GATEV-FREEZE-CLOSEOUT-REVIEW
 ```
 
-GateV-4 已提升为 accepted baseline：implementation commit `d7da91a662be1f0fc0bbf64df70ea57318773697` 是 acceptance head `fad9b20900b49fbb918288f8d32d09fc60976444` 的 ancestor，acceptance head exact-HEAD `NQ CI Baseline` run `29181214506` 为 `completed / success`。GateV-FREEZE 已初始化为 `NOT STARTED`。
+GateV-4 已提升为 accepted baseline：implementation commit `d7da91a662be1f0fc0bbf64df70ea57318773697` 是 acceptance head `fad9b20900b49fbb918288f8d32d09fc60976444` 的 ancestor，acceptance head exact-HEAD `NQ CI Baseline` run `29181214506` 为 `completed / success`。GateV-FREEZE closeout implementation 已完成并等待 review。
 
-机器 authority 为 `accepted_batch=GateV-4 / ACCEPTED|CI_GREEN`，并初始化 `work_batch=GateV-FREEZE / NOT_STARTED / NONE / NOT_RUN`。下一轮只允许 GateV freeze closeout implementation；本计划不表示 freeze 已实现，不授权 trading authorization、scheduler 生产启用、LIVE 或 Shadow trading。
+机器 authority 为 `accepted_batch=GateV-4 / ACCEPTED|CI_GREEN`，`work_batch=GateV-FREEZE / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。下一轮只允许 GateV freeze closeout review；本计划不表示 GateV 已 frozen/tagged，不授权 trading authorization、scheduler 生产启用、LIVE 或 Shadow trading。

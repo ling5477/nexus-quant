@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=d7da91a662be1f0fc0bbf64df70ea57318773697
 accepted_batch_acceptance_head=fad9b20900b49fbb918288f8d32d09fc60976444
 accepted_batch_ci_run=29181214506
 work_batch=GateV-FREEZE
-work_batch_status=NOT_STARTED
-work_batch_commit=NONE
+work_batch_status=IMPLEMENTED|PENDING_REVIEW
+work_batch_commit=UNCOMMITTED
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEV-FREEZE-CLOSEOUT-IMPLEMENTATION
+next_action=NQ-GATEV-FREEZE-CLOSEOUT-REVIEW
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -48,7 +48,7 @@ nq-current-authority:end -->
 - GateV-3 scheduler 默认关闭，只聚合本地 read-only evidence，并使用 GateV-3A PostgreSQL transaction-level advisory lock。它不自动创建或流转 review case，不保存 durable execution history，不构成 trading authorization，也未开启 LIVE 或 Shadow trading。
 - GateV-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。implementation commit `d7da91a662be1f0fc0bbf64df70ea57318773697` 是 acceptance head `fad9b20900b49fbb918288f8d32d09fc60976444` 的 ancestor；该 acceptance head 对应 `NQ CI Baseline` run `29181214506` 为 exact-HEAD `completed / success`。
 - GateV-4 frontend review、API contract、权限、幂等与 E2E 已接受；仅复用 GateV-2 已接受的 7 个 endpoint，未修改 backend contract、migration、scheduler 或状态机。所有 UI 状态只表示本地诊断审查，Review Workbench 不构成 trading authorization。
-- GateV-FREEZE：`NOT STARTED`（未开始）。Python manifest preview 继续为 No-file residual；scheduler 仍默认关闭。GateV 整体仍为 `IN PROGRESS / NOT FROZEN`，尚未 freeze、archive 或 tag。
+- GateV-FREEZE：`IMPLEMENTED / PENDING REVIEW`（已实施 / 待复核）。strict pre-tag archive 已建立并通过 checker；work batch 仍为 `UNCOMMITTED / NOT_RUN`，Python manifest preview 为 `No-file residual / NOT IMPLEMENTED`。GateV 整体仍为 `IN PROGRESS / NOT FROZEN`，尚未 freeze 或 tag。
 
 ## 2. 安全与运行边界
 
@@ -71,4 +71,4 @@ nq-current-authority:end -->
 
 ## 4. 下一允许动作
 
-下一允许动作精确为 `NQ-GATEV-FREEZE-CLOSEOUT-IMPLEMENTATION`。该动作只允许实施 GateV freeze closeout，不表示本轮已经实现 freeze，也不得把 GateV 整体提前写成 accepted、frozen、archived 或 tagged。
+下一允许动作精确为 `NQ-GATEV-FREEZE-CLOSEOUT-REVIEW`。该动作只允许复核未提交的 GateV freeze closeout archive 与验证证据；不得把 GateV 整体提前写成 accepted、frozen 或 tagged，也不得在 review 前创建 tag。
