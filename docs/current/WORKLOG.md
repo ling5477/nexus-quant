@@ -17298,3 +17298,20 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority: `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN` 保持不变；`work_batch=GateV-4 / ACCEPTED|CI_GREEN / d7da91a... / 29180664320`；唯一 next action 为 `NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`。
 - boundary: GateV 仍为 `IN_PROGRESS / NOT_FROZEN`；GateV-FREEZE 尚未初始化；Python manifest preview 是 No-file residual；未修改 backend、frontend、API contract、migration、scheduler、checker、交易状态、LIVE、Shadow、AI、DH 或 Integration runtime，Review Workbench 不构成 trading authorization。
 - next action: 执行 `NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`，将 GateV-4 提升为 accepted baseline 并初始化 GateV-FREEZE；本轮不执行该 transition。
+
+## NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC
+
+- date: 2026-07-12
+- scope: NQ-only documentation-only；基于 GateV-4 implementation commit、authority acceptance head 与当前 exact-HEAD green CI，将 GateV-4 提升为 accepted baseline，并初始化 GateV-FREEZE 为唯一下一 work batch。
+- result: `PASS / AUTHORITY_SYNCED / READY_TO_COMMIT`（通过 / authority 已同步 / 可进入提交前复核）。
+- evidence:
+  - GateV-4 implementation commit：`d7da91a662be1f0fc0bbf64df70ea57318773697`。
+  - GateV-4 acceptance head：`fad9b20900b49fbb918288f8d32d09fc60976444`；implementation commit 是其 ancestor。
+  - acceptance head exact-HEAD CI：`NQ CI Baseline` run `29181214506 / completed / success`，`headSha` 精确一致。
+  - frontend review、API contract、权限、幂等与 E2E 已接受。
+- authority:
+  - `accepted_batch=GateV-4 / ACCEPTED|CI_GREEN`；implementation `d7da91a...`；acceptance head `fad9b209...`；CI run `29181214506`。
+  - `work_batch=GateV-FREEZE / NOT_STARTED`；commit `NONE`；CI `NOT_RUN`。
+- validation: authority next-action regression、authority checker、docs link checker、diff/scope 与 staged checks 按本任务要求执行；未运行代码测试，因为本轮只同步文档 authority。
+- boundary: GateV 保持 `IN_PROGRESS / NOT_FROZEN`，尚未 freeze、archive 或 tag；Python manifest preview 保持 No-file residual；scheduler 默认关闭；Review Workbench 不构成 trading authorization；未开启 LIVE、Shadow trading、AI/DH/Integration runtime，未修改业务代码、checker、migration、archive 或交易状态。
+- next action: `NQ-GATEV-FREEZE-CLOSEOUT-IMPLEMENTATION`；本轮不实现 GateV-FREEZE。

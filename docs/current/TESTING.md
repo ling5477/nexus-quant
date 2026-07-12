@@ -11297,3 +11297,26 @@ What was not run：未运行 Maven、frontend build/Playwright、Python 或真�
 Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-FREEZE 尚未初始化；Python manifest preview 仍为 No-file residual；scheduler 默认关闭；Review Workbench 不构成 trading authorization；LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI/DH/Integration runtime 未启动、real provider/private trading 未实现。
 
 Next action：`NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`。
+
+---
+
+## NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC（2026-07-12）
+
+结论：`PASS / AUTHORITY_SYNCED / READY_TO_COMMIT`（通过 / authority 已同步 / 可进入提交前复核）。GateV-4 已提升为 accepted baseline，GateV-FREEZE 已初始化为 `NOT STARTED`（未开始）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / authority preflight | PASS | branch `dev`；起始 worktree 与 staged clean；`HEAD == origin/dev == fad9b20900b49fbb918288f8d32d09fc60976444`；prestate 精确为 GateV-3 accepted、GateV-4 work batch accepted 与 next action `NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`。 |
+| implementation ancestry | PASS | GateV-4 implementation commit `d7da91a662be1f0fc0bbf64df70ea57318773697` 是 acceptance head `fad9b20900b49fbb918288f8d32d09fc60976444` 的 ancestor。 |
+| acceptance head exact-HEAD CI | PASS | GitHub Actions run `29181214506`：`NQ CI Baseline / completed / success`，`headSha=fad9b20900b49fbb918288f8d32d09fc60976444`。 |
+| accepted evidence | PASS | frontend review、API contract、权限、幂等与 E2E 已接受；Review Workbench 只表达本地人工复核，不构成 trading authorization。 |
+
+Scope / Environment：NQ-only documentation-only current authority promotion；Windows + PowerShell；仅修改 5 份 allowlist current docs。
+
+Known warnings：Python manifest preview 保持 No-file residual；scheduler 仍默认关闭；GateV 尚未 freeze、archive 或 tag。
+
+What was not run：未运行 Maven、frontend build、Playwright、pytest、mypy 或 ruff；原因是本轮不修改代码、测试、API、migration、scheduler、checker、workflow 或 runtime，只同步已验证的 Git/GitHub authority facts。
+
+Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`、Integration runtime `NOT_STARTED`，real provider / private trading `NOT_IMPLEMENTED`。本轮不实现 GateV-FREEZE，不启动 scheduler，不创建 archive 或 tag。
+
+Blocking status：non-blocking；唯一下一动作是 `NQ-GATEV-FREEZE-CLOSEOUT-IMPLEMENTATION`。
