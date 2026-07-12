@@ -11276,3 +11276,24 @@ What was not run：未运行 Maven、Python、真实 backend E2E 或全量 Playw
 Boundary confirmation：GateV-4 只复用 GateV-2 已接受的 review endpoints；未修改 backend/API contract、migration、scheduler、advisory lock、dependency 或交易状态。Review Workbench 仅表达本地人工复核，不构成 trading authorization，也不会启动 LIVE 或 Shadow trading；GateV 保持 `IN PROGRESS / NOT FROZEN`。
 
 Next action：`NQ-GATEV-4-COMMIT-AND-PUSH`；当前仍为 uncommitted local diff，GateV-4 CI `NOT_RUN`。
+
+---
+
+## NQ-GATEV-4-POST-COMMIT-CI-AUTHORITY-ACCEPTANCE（2026-07-12）
+
+结论：`PASS / GATEV4_ACCEPTED / READY_TO_COMMIT`（通过 / GateV-4 已接受 / 可进入下一 authority sync）。本轮只登记已存在的 Git/CI 事实，不提升 `accepted_batch`，不初始化 GateV-FREEZE。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git preflight | PASS | branch `dev`；worktree/staged clean；`HEAD == origin/dev == d7da91a662be1f0fc0bbf64df70ea57318773697`；该 HEAD 是 GateV-4 Review Workbench implementation commit。 |
+| exact-HEAD CI | PASS | GitHub Actions run `29180664320`：`NQ CI Baseline / completed / success`，`headSha=d7da91a662be1f0fc0bbf64df70ea57318773697`。 |
+| authority prestate | PASS | `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`；`work_batch=GateV-4 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；next action 为 `NQ-GATEV-4-COMMIT-AND-PUSH`。 |
+| authority transition | PASS | `accepted_batch` 保持 GateV-3；GateV-4 work batch 仅更新为 `ACCEPTED|CI_GREEN / d7da91a... / 29180664320`，下一动作切换为 `NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`。 |
+
+Scope / Environment：NQ-only documentation-only authority reconciliation；Windows + PowerShell。
+
+What was not run：未运行 Maven、frontend build/Playwright、Python 或真实 backend E2E；本轮没有改代码、测试、API、migration、scheduler、checker 或 runtime，仅登记已存在的 exact-HEAD CI acceptance 事实。
+
+Boundary confirmation：GateV 保持 `IN PROGRESS / NOT FROZEN`；GateV-FREEZE 尚未初始化；Python manifest preview 仍为 No-file residual；scheduler 默认关闭；Review Workbench 不构成 trading authorization；LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI/DH/Integration runtime 未启动、real provider/private trading 未实现。
+
+Next action：`NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`。

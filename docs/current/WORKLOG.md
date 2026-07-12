@@ -17288,3 +17288,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority: `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN`；`work_batch=GateV-4 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；唯一 next action 为 `NQ-GATEV-4-COMMIT-AND-PUSH`。
 - boundary: 未修改 backend、API contract、migration、scheduler、advisory lock、package/lock、交易状态、LIVE、Shadow trading、AI、DH 或 Integration runtime；GateV 未 freeze/tag，Review Workbench 不构成 trading authorization。
 - next action: 用户精确提交 GateV-4 15-file diff，推荐 `feat(frontend): add validation review workbench`，push 后等待 GateV-4 implementation exact-HEAD CI。
+
+## NQ-GATEV-4-POST-COMMIT-CI-AUTHORITY-ACCEPTANCE
+
+- date: 2026-07-12
+- scope: NQ-only documentation-only；登记 GateV-4 已提交、push 且 exact-HEAD CI green 的事实，修正滞后的 work batch authority；不提升 accepted batch，不初始化 GateV-FREEZE。
+- result: `PASS / GATEV4_ACCEPTED / READY_TO_COMMIT`（通过 / GateV-4 已接受 / 可进入下一 authority sync）。
+- evidence: implementation commit / acceptance head `d7da91a662be1f0fc0bbf64df70ea57318773697`；`NQ CI Baseline` run `29180664320 / completed / success`，headSha 精确一致。
+- authority: `accepted_batch=GateV-3 / ACCEPTED|CI_GREEN` 保持不变；`work_batch=GateV-4 / ACCEPTED|CI_GREEN / d7da91a... / 29180664320`；唯一 next action 为 `NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`。
+- boundary: GateV 仍为 `IN_PROGRESS / NOT_FROZEN`；GateV-FREEZE 尚未初始化；Python manifest preview 是 No-file residual；未修改 backend、frontend、API contract、migration、scheduler、checker、交易状态、LIVE、Shadow、AI、DH 或 Integration runtime，Review Workbench 不构成 trading authorization。
+- next action: 执行 `NQ-GATEV-4-POST-CI-ACTIVE-AUTHORITY-SYNC`，将 GateV-4 提升为 accepted baseline 并初始化 GateV-FREEZE；本轮不执行该 transition。
