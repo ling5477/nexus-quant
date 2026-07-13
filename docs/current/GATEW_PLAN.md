@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，`NQ CI Baseline` run `29199785253` 为 `completed / success`；GateW-1 已实施并保持未提交。
+状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`。GateW-2 pre-implementation security review 已接受，implementation 仍为 `NOT_STARTED`。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN：`ACCEPTED / CI_GREEN`；GateW-1：`IMPLEMENTED / SELF REVIEWED`（machine status=`IMPLEMENTED|SELF_REVIEWED`），commit 为 `UNCOMMITTED`，CI 为 `NOT_RUN`。
+- GateW-PLAN：`ACCEPTED / CI_GREEN`；GateW-1：`ACCEPTED / CI_GREEN`；GateW-2：`NOT_STARTED`，security review 为 `PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter、real permission probe：`NOT IMPLEMENTED`；Python live execution ready：`NO`。
 
@@ -277,7 +277,7 @@ GateW Freeze 时只复制 accepted attempts 到 archive evidence root，并继�
 
 ## 28. GateW-1 Implementation Record
 
-`NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION` 已完成 `IMPLEMENTED / SELF_REVIEWED / READY_TO_COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
+`NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION` 已取得 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`。
 
 - 新增 typed `ExchangeCapability`、`EndpointAccessClass`、`EndpointPolicyDecision`、`EndpointGuardReason`；decision 固定 `tradingAuthorization=false`。
 - 新增 `OkxSpotCapabilityMatrix` 与 `OkxSpotEndpointGuard`：public path 仅精确 GET allowlist；private read runtime disabled；order/cancel、transfer/withdraw、unknown 与 URI 变体均 default-deny。具体 private endpoint allowlist 保持空，留待 GateW-2 在官方事实与独立 security review 后建立。
@@ -287,12 +287,59 @@ GateW Freeze 时只复制 accepted attempts 到 archive evidence root，并继�
 
 ## 29. Final Decision and Next Task
 
-当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-PLAN / ACCEPTED|CI_GREEN`；`work_batch=GateW-1 / IMPLEMENTED|SELF_REVIEWED / UNCOMMITTED / NOT_RUN`。
+当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / NOT_STARTED / NONE / NOT_RUN`。
 
 唯一下一动作：
 
 ```text
-NQ-GATEW-1-COMMIT-AND-PUSH
+NQ-GATEW-2-IMPLEMENTATION
 ```
 
-不得初始化 GateW-2。GateW-2 涉及真实 credential 和 private read-only probe，必须先完成独立 security review。
+执行该治理动作前，必须先完成 `NQ-GATEW-2-SECURITY-REVIEW-COMMIT-AND-PUSH` 并取得 review commit exact-HEAD CI green。GateW-2 implementation 不得偏离下方冻结安全基线。
+
+## 30. GateW-2 Pre-implementation Security Baseline
+
+GateW-2 只批准两个 typed operation：
+
+| Operation | Method | Exact path | Query | Permission |
+| --- | --- | --- | --- | --- |
+| `OKX_ACCOUNT_CONFIGURATION_READ` | `GET` | `/api/v5/account/config` | 无 | `Read` |
+| `OKX_ACCOUNT_BALANCE_READ` | `GET` | `/api/v5/account/balance` | 仅 server-side `ccy` allowlist；uppercase、排序、去重、最多 3 个 | `Read` |
+
+协议事实源为 2026-07-13 访问的 OKX 官方 [API guide](https://www.okx.com/docs-v5/en/) 与 [API changelog](https://www.okx.com/docs-v5/log_en/)。private REST header、timestamp、query-in-signature、rate limit 与错误语义必须在实施当日继续以官方页面为准；未确认事实不得加入 production mapping。
+
+### 30.1 Permanent Deny and Contract Shape
+
+- production API 只接收 typed operation；禁止 arbitrary path/method/host/query 和 generic raw request。
+- order submit/cancel/amend、transfer、withdraw、funds movement、unknown operation/path/method/host/query 永久拒绝；GateW-1 mutating/funds deny 不得弱化。
+- config 必须先执行且 permission 集合只能为 read-only；发现 `trade` 或 `withdraw` 立即 blocked，不执行 balance。所有 decision 固定不构成 trading authorization。
+
+### 30.2 Credential Selection and Decrypt Boundary
+
+- selection key 固定 `(ownerId, exchangeAccountId, credentialType=OKX_API_V5)`；account owner、OKX、ACTIVE 与安全 environment 必须一致。
+- 0 个 active credential 为 unavailable，1 个才可继续，>1 为 conflict；disabled/revoked/expired/rotated/inactive 全部排除。禁止 `ORDER BY ... LIMIT 1`、隐式账户选择、credential type fallback 或把 `permission_scope` 当成交易所权限。
+- plaintext 只存在于最窄 infrastructure callback/executor；不得进入 domain、DTO、cache、singleton、日志、审计、evidence 或数据库。可清理 buffer 在 `finally` 清零。现有 immutable `String` decrypt contract 是 P2，GateW-2 不复用其跨层明文路径，也不在本批次做密码学重构。
+
+### 30.3 Signer, Host and Transport Boundary
+
+- signer 仅接 temporary secret context、typed operation、canonical query 与 injected `Clock`；GET body 为空。timestamp 使用官方 UTC ISO-8601 毫秒格式，query 进入 prehash。
+- global host 精确固定为 `https://openapi.okx.com`；redirect 为 NEVER，3xx 失败；regional host 不 fallback，需另行 scope review。demo 仅在显式环境下加入 `x-simulated-trading: 1`，不得自动切换环境。
+- local security limits：connect 2 秒（最大 5 秒）、request/read 5 秒（最大 10 秒）、response 256 KiB、concurrency 1、无自动 retry。禁止 raw request/response、authenticated header、signature、prehash 与 provider body 日志。
+- timeout、network、redirect、oversize、malformed JSON、HTTP、provider code、auth/signature、permission、rate limit、clock skew、environment mismatch、partial response 分别映射 sanitized error taxonomy；任何错误均 fail-closed，不降级为 READY。
+
+### 30.4 Profile, Observation and Persistence
+
+- 必须同时满足 profile `gatew-okx-readonly`、feature flag `nq.gatew.okx-private-readonly.enabled=true`（默认 false）、LIVE false、显式 owner/account/type 与人工触发。
+- default/local/test/CI 不创建真实 private transport，不读取/decrypt credential，不 outbound；禁止 scheduler、runner、`@PostConstruct` network、startup probe、后台轮询和 mutating Bean。
+- 采用方案 A：config/balance 仅返回 in-memory diagnostic observation；固定 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`orderSubmitted=false`。缺失/blank 字段为 `PARTIAL/UNKNOWN`，不得补零。
+- 不写既有 probe metadata、account、audit payload、ledger 或 snapshot；不做 reconciliation，不构成 durable snapshot evidence。本批次 `NO MIGRATION`；durable snapshot 必须另起 schema/migration review。
+
+### 30.5 Manual Smoke and Test Baseline
+
+- `REAL_SMOKE=NOT_RUN`。本 review 与 implementation 默认测试均不要求 API Key；用户不得在聊天、CLI 参数或 evidence 中粘贴明文。
+- 后续 real smoke 只能通过 NQ 本地 credential 管理路径、CI 外人工显式执行并单独取证。Key 只允许 Read，Trade/Withdraw 必须关闭；缺失时 `BLOCKED / API_KEY_REQUIRED`。mock/unit/历史日志不得冒充真实联通。
+- tests 必须覆盖 typed allowlist/canonical query/signer Clock fixture、0/1/>1 credential、owner/type/lifecycle、redaction、timeout/redirect/body limit/no retry、permission/partial/error taxonomy、negative profiles、no startup/no outbound/no persistence，以及 mutating/funds zero-call。
+
+## 31. GateW-2 Security Review Decision
+
+结论：`PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`。P0=0，P1=0。实现严格遵循 baseline、无 migration、无 real smoke 且无 P0/P1 时，完成后只做针对 diff 的精简 security conformance review，不重复完整方案审查；真实 smoke 始终单独记录。

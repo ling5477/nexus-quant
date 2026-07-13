@@ -11453,3 +11453,24 @@ Local test note：full Maven 的既有 local Spring test 对本地 `nexus_quant`
 Boundary：无真实 OKX、无 credential access/decryption、无 private client、无 permission probe、无 API/migration/scheduler/runner、无 order/cancel/transfer/withdraw，LIVE/Shadow/AI/DH/Integration 保持关闭或未启动。public `ALLOW_PUBLIC_READ` 不构成 provider readiness 或 trading authorization。
 
 Next action：`NQ-GATEW-1-COMMIT-AND-PUSH`；不得初始化 GateW-2。
+
+---
+
+## NQ-GATEW-2-SECURITY-REVIEW（2026-07-13）
+
+结论：`PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`（通过 / 安全审查已接受 / 允许按冻结基线实施）。GateW-2 implementation 仍为 `NOT_STARTED`。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / exact-head CI preflight | PASS | `dev` clean、staged empty、`HEAD == origin/dev == 31c8171d...`；`NQ CI Baseline` run `29219687588 / completed / success`。 |
+| GateW-1 commit/CI | PASS | capability/guard commit 为 current HEAD，exact-HEAD CI green；current authority 已从未提交描述纠正为 GateW-1 `ACCEPTED / CI_GREEN`。 |
+| Repository security audit | PASS WITH P2 | 审计 credential selection/decrypt、owner/account、probe、historical signer/client、GateW-1 guard 与 Spring composition；冻结新窄 boundary，禁止复用 generic client、persistent service 和 plaintext cross-layer contract。 |
+| Official protocol review | PASS | 2026-07-13 仅使用 OKX 官方 API guide/changelog，确认两个 private Read operation、authentication/signature/timestamp/query、host、rate limit 和必要错误语义；未调用 API。 |
+| Persistence decision | PLAN A | in-memory diagnostic observation；无 migration、无 DB/probe metadata/audit/ledger/snapshot 写入，不构成 durable snapshot evidence。 |
+| Governance / docs | PASS | lifecycle regression、next-action regression、authority checker、doc links、diff/scope/security scan 的最终结果以本次 task evidence 为准。 |
+
+What was not run：未运行 Maven、frontend build/Playwright 或 Python checks，因为本轮只允许 docs/evidence，未修改 Java、API、migration、frontend、CI 或 research。`REAL_SMOKE=NOT_RUN`；未读取/选择/解密真实 credential，未创建 client/transport/probe，未访问 OKX API。
+
+Boundary：LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`、Integration runtime `NOT_STARTED`；real provider、private trading 与 real permission probe 仍未实现。review authorization 不构成 trading authorization。
+
+Next：先执行 `NQ-GATEW-2-SECURITY-REVIEW-COMMIT-AND-PUSH`；review commit exact-HEAD CI green 后，治理动作 `NQ-GATEW-2-IMPLEMENTATION` 才可执行。

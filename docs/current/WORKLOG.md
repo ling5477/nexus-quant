@@ -17386,3 +17386,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - local DB note: full Maven 的既有 local test 应用了已存在 V33；未新增或修改 migration，未访问生产 DB。
 - P2: `OkxPermissionProbeBoundary` 为 historical/test-only classifier，GateW-2 不得用其字符串 containment 作为 private allowlist guard。
 - next action: `NQ-GATEW-1-COMMIT-AND-PUSH`；exact-HEAD CI green 后再经独立 security review 进入 GateW-2。
+
+## NQ-GATEW-2-SECURITY-REVIEW
+
+- date: 2026-07-13
+- scope: NQ-only pre-implementation security review；只修改 GateW current docs/evidence，冻结 OKX private read-only credential、operation、protocol、transport、profile、redaction、observation 与 manual smoke 基线。
+- result: `PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`；GateW-2 implementation 仍为 `NOT_STARTED / NONE / NOT_RUN`。
+- baseline: 仅 `GET account/config` 与 `GET account/balance` 两个 typed operation；exact host/path/method/query schema、read-only permission、deterministic credential selection、infra-only decrypt callback、no redirect/no retry/bounded response、sanitized errors 与 default-disabled explicit profile。
+- persistence: 选择方案 A，仅 in-memory diagnostic observation；无 migration、无 reconciliation、无 durable snapshot evidence，不写现有 probe/account/audit/ledger 字段。
+- evidence: 补建此前 implementation attempt 的 `BLOCKED / CREDENTIAL_BOUNDARY_UNSAFE` 事实，并新增 security review attempt；GateW-1 已按 commit `31c8171d...` 与 CI run `29219687588` 纠正为 accepted。
+- validation: Git/exact-head CI、官方 OKX docs、repository security audit、governance lifecycle、next-action、authority、doc links、diff/scope checks；未运行 Maven/frontend/Python，因为对应代码禁止修改。
+- safety: 未读取/选择/解密 credential，未调用 OKX，未创建 HTTP client/transport/probe；`REAL_SMOKE=NOT_RUN`，LIVE/Shadow/AI/DH/Integration/private trading 保持关闭或未实现。
+- P2: 现有 decrypt path 返回不可可靠清零的 plaintext `String`；新实现不得复用其跨层 contract。现有 generic OKX client、persistent probe service 和 substring classifier 也禁止复用。
+- next action: 先执行 `NQ-GATEW-2-SECURITY-REVIEW-COMMIT-AND-PUSH`；该 commit exact-HEAD CI green 后执行 `NQ-GATEW-2-IMPLEMENTATION`。
