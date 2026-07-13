@@ -16,7 +16,7 @@ function Get-GovernanceWorkflowContract {
     $contract = $content | ConvertFrom-Json
     # A checker must understand the exact contract shape before it can use any policy from it.
     # Unknown versions fail closed instead of being treated as a forward-compatible extension.
-    if ($contract.schemaVersion -ne '1.1.0' -or $contract.authoritySchema -ne '3' -or
+    if ($contract.schemaVersion -ne '1.2.0' -or $contract.authoritySchema -ne '3' -or
         -not $contract.authority -or -not $contract.lifecycles -or
         -not $contract.lifecycles.transitionPolicies -or -not $contract.evidence -or -not $contract.release) {
         throw "GOVERNANCE_CONTRACT_INVALID path=$Path"
@@ -31,7 +31,7 @@ function Get-GovernanceWorkflowContract {
 function Get-GovernancePropertyValue {
     param([object] $Object, [string] $Name)
 
-    $property = $Object.PSObject.Properties | Where-Object { $_.Name -eq $Name } | Select-Object -First 1
+    $property = $Object.PSObject.Properties | Where-Object { $_.Name -ceq $Name } | Select-Object -First 1
     if ($null -eq $property) { return $null }
     return $property.Value
 }
@@ -42,7 +42,7 @@ function Test-GovernanceExactTokenSet {
     $tokens = @($Value -split '\|')
     if ($tokens.Count -ne $Expected.Count -or @($tokens | Select-Object -Unique).Count -ne $Expected.Count) { return $false }
     foreach ($token in $Expected) {
-        if ($tokens -notcontains $token) { return $false }
+        if ($tokens -cnotcontains $token) { return $false }
     }
     return $true
 }
@@ -64,6 +64,44 @@ function Get-GovernanceExpectedNextActionType {
     return [string]$value
 }
 
+function Get-GovernanceContextValue {
+    param([object] $Context, [string] $Name)
+
+    if ($null -eq $Context) { return $null }
+    if ($Context -is [System.Collections.IDictionary]) {
+        foreach ($key in $Context.Keys) {
+            if ([string]$key -ceq $Name) { return $Context[$key] }
+        }
+        return $null
+    }
+    return Get-GovernancePropertyValue $Context $Name
+}
+
+function Test-GovernanceNextActionForWorkBatch {
+    param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
+
+    if ([string]::IsNullOrWhiteSpace($WorkBatch) -or [string]::IsNullOrWhiteSpace($Action)) { return $false }
+    $expectedType = Get-GovernanceExpectedNextActionType $Contract $Status
+    $actualType = Get-GovernanceNextActionType $Contract $Action
+    if ($expectedType -ceq 'UNKNOWN' -or $actualType -cne $expectedType) { return $false }
+    $expectedPrefix = 'NQ-{0}-' -f $WorkBatch.ToUpperInvariant()
+    return $Action.StartsWith($expectedPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+}
+
+function Test-GovernanceReadinessStatus {
+    param(
+        [object] $Contract,
+        [ValidateSet('ARCHIVE_FREEZE', 'RELEASE')] [string] $Mode,
+        [string] $Status
+    )
+
+    switch ($Mode) {
+        'ARCHIVE_FREEZE' { return @($Contract.lifecycles.freeze.candidateEntryStatuses) -ccontains $Status }
+        'RELEASE' { return @($Contract.authority.acceptedBatchStatuses) -ccontains $Status }
+        default { return $false }
+    }
+}
+
 function Get-GovernanceWorkStatusPattern {
     param([object] $Contract, [string] $Status)
 
@@ -77,7 +115,7 @@ function Test-GovernanceLifecycleTransition {
 
     $definition = Get-GovernancePropertyValue $Contract.lifecycles $Lifecycle
     if ($null -eq $definition) { return $false }
-    return @($definition.transitions) -contains ("{0}->{1}" -f $From, $To)
+    return @($definition.transitions) -ccontains ("{0}->{1}" -f $From, $To)
 }
 
 function Test-GovernanceLifecycleTransitionContext {
@@ -90,7 +128,8 @@ function Test-GovernanceLifecycleTransitionContext {
         [string] $FromCi,
         [string] $ToCommit,
         [string] $ToCi,
-        [bool] $AuthorityCatchUp = $false
+        [bool] $AuthorityCatchUp = $false,
+        [object] $Context = $null
     )
 
     if (-not (Test-GovernanceLifecycleTransition $Contract $Lifecycle $FromStatus $ToStatus)) { return $false }
@@ -123,6 +162,9 @@ function Test-GovernanceLifecycleTransitionContext {
         'FROM_UNCOMMITTED_TO_CONCRETE' {
             if ($FromCommit -cne 'UNCOMMITTED' -or $ToCommit -notmatch '^[0-9a-f]{40}$') { return $false }
         }
+        'TO_UNCOMMITTED' {
+            if ($ToCommit -cne 'UNCOMMITTED') { return $false }
+        }
         default { return $false }
     }
 
@@ -136,7 +178,67 @@ function Test-GovernanceLifecycleTransitionContext {
         'TO_PENDING' {
             if ($ToCi -cne 'PENDING') { return $false }
         }
+        'PENDING_OR_SAME_TO_CONCRETE' {
+            if ($ToCi -notmatch '^[1-9][0-9]*$' -or ($FromCi -cne 'PENDING' -and $FromCi -cne $ToCi)) { return $false }
+        }
+        'CHANGED_TO_CONCRETE' {
+            if ($ToCi -notmatch '^[1-9][0-9]*$' -or $FromCi -ceq $ToCi) { return $false }
+        }
+        'TO_NOT_RUN' {
+            if ($ToCi -cne 'NOT_RUN') { return $false }
+        }
         default { return $false }
+    }
+
+    $requiredMode = Get-GovernancePropertyValue $policy 'mode'
+    if ($null -ne $requiredMode -and (Get-GovernanceContextValue $Context 'mode') -cne [string]$requiredMode) { return $false }
+
+    $workBatchRelation = Get-GovernancePropertyValue $policy 'workBatchRelation'
+    if ($null -ne $workBatchRelation) {
+        switch ([string]$workBatchRelation) {
+            'SAME' {
+                $fromWorkBatch = [string](Get-GovernanceContextValue $Context 'fromWorkBatch')
+                $toWorkBatch = [string](Get-GovernanceContextValue $Context 'toWorkBatch')
+                if ([string]::IsNullOrWhiteSpace($fromWorkBatch) -or
+                    -not [string]::Equals($fromWorkBatch, $toWorkBatch, [System.StringComparison]::Ordinal)) { return $false }
+            }
+            default { return $false }
+        }
+    }
+
+    $acceptedBatchRelation = Get-GovernancePropertyValue $policy 'acceptedBatchRelation'
+    if ($null -ne $acceptedBatchRelation) {
+        switch ([string]$acceptedBatchRelation) {
+            'SAME' {
+                $fromAcceptedBatch = [string](Get-GovernanceContextValue $Context 'fromAcceptedBatch')
+                $toAcceptedBatch = [string](Get-GovernanceContextValue $Context 'toAcceptedBatch')
+                if ([string]::IsNullOrWhiteSpace($fromAcceptedBatch) -or
+                    -not [string]::Equals($fromAcceptedBatch, $toAcceptedBatch, [System.StringComparison]::Ordinal)) { return $false }
+            }
+            default { return $false }
+        }
+    }
+
+    $nextActionRelation = Get-GovernancePropertyValue $policy 'nextActionRelation'
+    if ($null -ne $nextActionRelation) {
+        switch ([string]$nextActionRelation) {
+            'TO_STATUS_SAME_WORK_BATCH' {
+                $toWorkBatch = [string](Get-GovernanceContextValue $Context 'toWorkBatch')
+                $toNextAction = [string](Get-GovernanceContextValue $Context 'toNextAction')
+                if (-not (Test-GovernanceNextActionForWorkBatch $Contract $ToStatus $toWorkBatch $toNextAction)) { return $false }
+            }
+            default { return $false }
+        }
+    }
+
+    $evidenceRequirements = Get-GovernancePropertyValue $policy 'evidenceRequirements'
+    if ($null -ne $evidenceRequirements) {
+        $externalEvidence = Get-GovernanceContextValue $Context 'externalEvidence'
+        if ($null -eq $externalEvidence) { return $false }
+        $requiredExactHeadMatch = Get-GovernancePropertyValue $evidenceRequirements 'exactHeadMatch'
+        if ($requiredExactHeadMatch -eq $true -and (Get-GovernanceContextValue $externalEvidence 'exactHeadMatch') -ne $true) { return $false }
+        $requiredConclusion = Get-GovernancePropertyValue $evidenceRequirements 'ciConclusion'
+        if ($null -ne $requiredConclusion -and (Get-GovernanceContextValue $externalEvidence 'ciConclusion') -cne [string]$requiredConclusion) { return $false }
     }
     return $true
 }
@@ -175,14 +277,24 @@ function Test-GovernanceEvidenceItem {
 function Read-GovernanceAuthorityBlock {
     param([string] $Content)
 
-    $matches = [regex]::Matches($Content, '(?s)<!--\s*nq-current-authority:start\s*(.*?)\s*nq-current-authority:end\s*-->')
-    if ($matches.Count -ne 1) { return $null }
+    $authorityMatches = [regex]::Matches(
+        $Content,
+        '(?s)<!--[ \t]*nq-current-authority:start[ \t]*\r?\n(?<body>.*?)\r?\nnq-current-authority:end[ \t]*-->'
+    )
+    if ($authorityMatches.Count -ne 1) { return $null }
     $authority = @{}
-    foreach ($line in ($matches[0].Groups[1].Value -split '\r?\n')) {
-        $trimmed = $line.Trim()
-        if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
-        if ($trimmed -notmatch '^(?<key>[a-z0-9_]+)=(?<value>.+)$' -or $authority.ContainsKey($Matches.key)) { return $null }
-        $authority[$Matches.key] = $Matches.value.Trim()
+    foreach ($line in ($authorityMatches[0].Groups['body'].Value -split '\r?\n')) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        # Machine authority token 的行和值边界必须原样保留；静默 Trim 会把非 canonical 状态 alias
+        # 错误接受为 authority 事实。
+        if ($line -cne $line.Trim()) { return $null }
+        $lineMatch = [regex]::Match($line, '^(?<key>[a-z0-9_]+)=(?<value>.+)$')
+        if (-not $lineMatch.Success) { return $null }
+        $key = [string]$lineMatch.Groups['key'].Value
+        if ($authority.ContainsKey($key)) { return $null }
+        $value = [string]$lineMatch.Groups['value'].Value
+        if ($value -cne $value.Trim()) { return $null }
+        $authority[$key] = $value
     }
     return $authority
 }

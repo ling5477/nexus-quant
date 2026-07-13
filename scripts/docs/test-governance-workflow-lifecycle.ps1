@@ -29,9 +29,9 @@ function Assert-ContextTransition {
     param(
         [string]$Lifecycle,[string]$From,[string]$To,
         [string]$FromCommit,[string]$FromCi,[string]$ToCommit,[string]$ToCi,
-        [bool]$AuthorityCatchUp,[bool]$Expected,[string]$Scenario
+        [bool]$AuthorityCatchUp,[bool]$Expected,[string]$Scenario,[object]$Context=$null
     )
-    $actual=Test-GovernanceLifecycleTransitionContext $contract $Lifecycle $From $To $FromCommit $FromCi $ToCommit $ToCi $AuthorityCatchUp
+    $actual=Test-GovernanceLifecycleTransitionContext $contract $Lifecycle $From $To $FromCommit $FromCi $ToCommit $ToCi $AuthorityCatchUp $Context
     Assert-Condition ($actual -eq $Expected) "transition-context=$Scenario expected=$Expected actual=$actual"
     Write-Output "PASS fixture=$Scenario lifecycle=$Lifecycle from=$From to=$To catchUp=$AuthorityCatchUp allowed=$actual"
 }
@@ -73,6 +73,7 @@ function Write-AuthorityFixture {
         'REVIEW_ACCEPTED|READY_TO_COMMIT' { 'REVIEW ACCEPTED / READY TO COMMIT' }
         'COMMITTED|CI_PENDING' { 'COMMITTED / CI PENDING' }
         'COMMITTED|CI_FAILED|FIX_REQUIRED' { 'COMMITTED / CI FAILED / FIX REQUIRED' }
+        'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' { 'COMMITTED / CI GREEN / CONTINUE REQUIRED' }
         'ACCEPTED|CI_GREEN' { 'ACCEPTED / CI GREEN' }
         default { $Status }
     }
@@ -116,12 +117,18 @@ nq-current-authority:end -->
 
 try {
     $unsupportedContractPath = Join-Path $tempRoot 'unsupported-contract.json'
-    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.1.0"', '"schemaVersion": "9.0.0"')
+    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.2.0"', '"schemaVersion": "9.0.0"')
     Write-Utf8File $unsupportedContractPath $unsupportedContract
     $unsupportedRejected = $false
     try { $null = Get-GovernanceWorkflowContract $unsupportedContractPath } catch { $unsupportedRejected = $true }
     Assert-Condition $unsupportedRejected 'unsupported contract version was accepted'
     Write-Output 'PASS fixture=unsupported-contract-version-rejected'
+
+    $continuationStatusCount=@($contract.authority.workBatchStatuses | Where-Object { $_ -ceq 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' }).Count
+    Assert-Condition ($continuationStatusCount -eq 1) "green continuation canonical status count=$continuationStatusCount"
+    Assert-Condition ((Get-GovernanceExpectedNextActionType $contract 'committed|ci_green|continue_required') -ceq 'UNKNOWN') 'lowercase continuation status alias was accepted by library'
+    Assert-Condition (-not (Test-GovernanceLifecycleTransition $contract 'highRisk' 'committed|ci_pending' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED')) 'lowercase lifecycle status was accepted by library'
+    Write-Output 'PASS fixture=green-continuation-unique-and-strict-token'
 
     # Ordinary lifecycle: review states are intentionally absent.
     Assert-Transition 'ordinary' 'NOT_STARTED' 'IMPLEMENTED|SELF_REVIEWED' $true 'ordinary-not-started'
@@ -139,8 +146,12 @@ try {
     Assert-Transition 'highRisk' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $true 'high-risk-ci-failed'
     Assert-Transition 'highRisk' 'REVIEW_ACCEPTED|READY_TO_COMMIT' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $true 'high-risk-authority-catch-up'
     Assert-Transition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_PENDING' $true 'high-risk-fix-committed'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $true 'high-risk-ci-pending-to-green-continuation'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $true 'high-risk-post-fix-green-continuation'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' $true 'high-risk-green-continuation-to-pending-review'
     Assert-Transition 'highRisk' 'COMMITTED|CI_PENDING' 'ACCEPTED|CI_GREEN' $true 'high-risk-ci-green'
     Assert-Transition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'ACCEPTED|CI_GREEN' $false 'high-risk-failed-direct-green-rejected'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'ACCEPTED|CI_GREEN' $false 'high-risk-green-continuation-direct-accepted-rejected'
     Assert-Transition 'highRisk' 'IMPLEMENTED|PENDING_REVIEW' 'ACCEPTED|CI_GREEN' $false 'high-risk-direct-accepted-rejected'
     Assert-Transition 'highRisk' 'IMPLEMENTED|SELF_REVIEWED' 'ACCEPTED|CI_GREEN' $false 'high-risk-invalid-combination'
 
@@ -153,14 +164,74 @@ try {
     Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_PENDING' $failedCommit '101' $failedCommit 'PENDING' $false $false 'ci-fix-same-commit-rejected'
     Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'ACCEPTED|CI_GREEN' $failedCommit '101' $failedCommit '102' $false $false 'ci-failed-direct-green-context-rejected'
 
+    $continuationAction='NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW-ATTEMPT-02'
+    $pendingReviewAction='NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-IMPLEMENTATION-REVIEW'
+    $successEvidence=[pscustomobject]@{exactHeadMatch=$true;ciConclusion='success'}
+    $pendingToContinuationContext=[pscustomobject]@{
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-3';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-2'
+        toNextAction=$continuationAction;externalEvidence=$successEvidence
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $fixCommit 'PENDING' $fixCommit '102' $false $true 'ci-pending-green-continuation-context' $pendingToContinuationContext
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $fixCommit '102' $fixCommit '102' $false $true 'ci-bound-run-green-continuation-context' $pendingToContinuationContext
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $fixCommit '103' $fixCommit '102' $false $false 'ci-pending-run-change-rejected' $pendingToContinuationContext
+
+    $reconciliationContext=[pscustomobject]@{
+        mode='POST_FIX_CI_SUCCESS_RECONCILIATION'
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-3';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-2'
+        toNextAction=$continuationAction;externalEvidence=$successEvidence
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $failedCommit '101' $fixCommit '102' $true $true 'post-fix-green-continuation-context' $reconciliationContext
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' '54c7bdd2caee5602441ce983b33c4cd2466ee263' '29253811976' 'fd6a8b2044891fa7edfcba7b5a31cd6dc8636b28' '29260881801' $true $true 'post-fix-green-continuation-real-gatew3' $reconciliationContext
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $failedCommit '101' $failedCommit '102' $true $false 'post-fix-green-continuation-same-commit-rejected' $reconciliationContext
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $failedCommit '101' $fixCommit '101' $true $false 'post-fix-green-continuation-same-run-rejected' $reconciliationContext
+
+    $missingModeContext=[pscustomobject]@{
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-3';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-2'
+        toNextAction=$continuationAction;externalEvidence=$successEvidence
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $failedCommit '101' $fixCommit '102' $true $false 'post-fix-green-continuation-mode-required' $missingModeContext
+    $badExactHeadContext=[pscustomobject]@{
+        mode='POST_FIX_CI_SUCCESS_RECONCILIATION'
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-3';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-2'
+        toNextAction=$continuationAction;externalEvidence=[pscustomobject]@{exactHeadMatch=$false;ciConclusion='success'}
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $failedCommit '101' $fixCommit '102' $true $false 'post-fix-green-continuation-exact-head-required' $badExactHeadContext
+    $badConclusionContext=[pscustomobject]@{
+        mode='POST_FIX_CI_SUCCESS_RECONCILIATION'
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-3';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-2'
+        toNextAction=$continuationAction;externalEvidence=[pscustomobject]@{exactHeadMatch=$true;ciConclusion='failure'}
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $failedCommit '101' $fixCommit '102' $true $false 'post-fix-green-continuation-success-conclusion-required' $badConclusionContext
+
+    $continuationToPendingContext=[pscustomobject]@{
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-3';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-2'
+        toNextAction=$pendingReviewAction
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' $fixCommit '102' 'UNCOMMITTED' 'NOT_RUN' $false $true 'green-continuation-to-pending-review-context' $continuationToPendingContext
+    $changedWorkBatchContext=[pscustomobject]@{
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-4';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-2'
+        toNextAction='NQ-GATEW-4-DRY-RUN-ORDER-PREVIEW-IMPLEMENTATION-REVIEW'
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' $fixCommit '102' 'UNCOMMITTED' 'NOT_RUN' $false $false 'green-continuation-work-batch-change-rejected' $changedWorkBatchContext
+    $changedAcceptedBatchContext=[pscustomobject]@{
+        fromWorkBatch='GateW-3';toWorkBatch='GateW-3';fromAcceptedBatch='GateW-2';toAcceptedBatch='GateW-3'
+        toNextAction=$pendingReviewAction
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' $fixCommit '102' 'UNCOMMITTED' 'NOT_RUN' $false $false 'green-continuation-accepted-batch-change-rejected' $changedAcceptedBatchContext
+
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
+    Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as freeze/archive candidate'
+    Assert-Condition (@($contract.authority.acceptedBatchStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as release-ready batch status'
     Write-Output 'PASS fixture=freeze-without-review-authority-commit'
+    Write-Output 'PASS fixture=green-continuation-archive-freeze-readiness-rejected'
+    Write-Output 'PASS fixture=green-continuation-release-readiness-rejected'
 
     foreach ($path in @(
         'docs/current/evidence/gate-w/README.md',
         'docs/current/evidence/gate-w/NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION.attempt-01.md',
-        'docs/current/evidence/gate-w/NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION-REVIEW.attempt-01.md'
+        'docs/current/evidence/gate-w/NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION-REVIEW.attempt-01.md',
+        'docs/current/evidence/gate-w/NQ-GOVERNANCE-POST-FIX-CI-GREEN-CONTINUATION-HARDENING.attempt-01.md'
     )) {
         Assert-Condition (Test-GovernanceEvidencePath $contract 'current' $path) "current evidence rejected path=$path"
         $currentItem = Get-Item -LiteralPath (Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path $path)
@@ -225,6 +296,35 @@ try {
     Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_PENDING' 'NQ-GATEW-3-WAIT-CI' $fixCommit 'PENDING' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'authority-failed-to-pending-new-fix-commit'
 
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction 'fd6a8b2044891fa7edfcba7b5a31cd6dc8636b28' '29260881801' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'authority-green-continuation-gatew3'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction $uppercaseCommit '29260881801' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'green-continuation-uppercase-hex-commit-accepted'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction 'fd6a8b2044891fa7edfcba7b5a31cd6dc8636b28' '29260881801' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','ARCHIVE_FREEZE') $authorityRoot) $false 'GATE_READINESS_STATUS_INVALID' 'green-continuation-archive-freeze-checker-rejected'
+    Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','RELEASE') $authorityRoot) $false 'GATE_READINESS_STATUS_INVALID' 'green-continuation-release-checker-rejected'
+
+    Write-AuthorityFixture $authorityRoot 'IMPLEMENTED|PENDING_REVIEW' 'NQ-GATEW-FIXTURE-REVIEW' 'UNCOMMITTED' 'NOT_RUN'
+    Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','ARCHIVE_FREEZE') $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'pending-review-archive-freeze-checker-positive'
+    Write-AuthorityFixture $authorityRoot 'ACCEPTED|CI_GREEN' 'NQ-GATEW-FIXTURE-POST-CI-ACTIVE-AUTHORITY-SYNC' $fixCommit '102'
+    Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','RELEASE') $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'accepted-release-checker-positive'
+
+    foreach ($fieldCase in @(
+        @{Commit='UNCOMMITTED';Ci='29260881801';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='green-continuation-uncommitted-rejected'},
+        @{Commit='NONE';Ci='29260881801';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='green-continuation-none-commit-rejected'},
+        @{Commit='fd6a8b2';Ci='29260881801';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='green-continuation-short-commit-rejected'},
+        @{Commit='gggggggggggggggggggggggggggggggggggggggg';Ci='29260881801';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='green-continuation-nonhex-commit-rejected'},
+        @{Commit=$fixCommit;Ci='NOT_RUN';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='green-continuation-not-run-rejected'},
+        @{Commit=$fixCommit;Ci='PENDING';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='green-continuation-pending-run-rejected'},
+        @{Commit=$fixCommit;Ci='NONE';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='green-continuation-none-run-rejected'},
+        @{Commit=$fixCommit;Ci='abc';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='green-continuation-nonnumeric-run-rejected'},
+        @{Commit=$fixCommit;Ci='-1';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='green-continuation-negative-run-rejected'},
+        @{Commit=$fixCommit;Ci='0';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='green-continuation-zero-run-rejected'}
+    )) {
+        Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction $fieldCase.Commit $fieldCase.Ci 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false $fieldCase.Expected $fieldCase.Name
+    }
+
     foreach ($fieldCase in @(
         @{Commit='UNCOMMITTED';Ci='101';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='failed-uncommitted-rejected'},
         @{Commit='NONE';Ci='101';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='failed-none-commit-rejected'},
@@ -264,13 +364,42 @@ try {
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'WORK_BATCH_ACTIVE_GATE_MISMATCH' 'failed-next-gate-work-batch-rejected'
     Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_PENDING' 'NQ-GATEW-3-CI-BLOCKER-FIX' $fixCommit 'PENDING' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'NEXT_ACTION_TYPE_MISMATCH' 'pending-failed-only-action-rejected'
-    foreach ($statusCase in @(
-        @{Status='COMMITTED|CI_FAILURE|FIX_REQUIRED';Name='failed-alias-rejected'},
-        @{Status='committed|ci_failed|fix_required';Name='failed-lowercase-rejected'},
-        @{Status='COMMITTED |CI_FAILED|FIX_REQUIRED';Name='failed-space-variant-rejected'}
+
+    foreach ($actionCase in @(
+        @{Action='NQ-GATEW-4-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW-ATTEMPT-02';Expected='NEXT_ACTION_WORK_BATCH_MISMATCH';Name='green-continuation-next-batch-action-rejected'},
+        @{Action='NQ-GATEW-3-CI-BLOCKER-FIX';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='green-continuation-ci-blocker-action-rejected'},
+        @{Action='NQ-GATEW-3-ARCHIVE-SECURITY-RISK-REVIEW';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='green-continuation-archive-action-rejected'},
+        @{Action='NQ-GATEW-3-ARCHIVE-MOVE-BATCH-SECURITY-RISK-REVIEW';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='green-continuation-archive-move-action-rejected'},
+        @{Action='NQ-GATEW-3-FREEZE';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='green-continuation-freeze-action-rejected'},
+        @{Action='NQ-GATEW-3-RELEASE';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='green-continuation-release-action-rejected'},
+        @{Action='NQ-GATEW-3-IMPLEMENTATION';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='green-continuation-implementation-action-rejected'},
+        @{Action='NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-REVIEW';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='green-continuation-vague-review-action-rejected'}
     )) {
-        Write-AuthorityFixture $authorityRoot $statusCase.Status 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
-        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'WORK_BATCH_STATUS_INVALID' $statusCase.Name
+        Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $actionCase.Action $fixCommit '102' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false $actionCase.Expected $actionCase.Name
+    }
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction $fixCommit '102' 'IN_PROGRESS|NOT_FROZEN' 'GateW-3' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'accepted_batch_and_work_batch_must_differ' 'green-continuation-current-batch-not-accepted'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction $fixCommit '102' 'IN_PROGRESS|NOT_FROZEN' 'GateW-1' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'CI_GREEN_CONTINUATION_ACCEPTED_BATCH_INVALID' 'green-continuation-accepted-predecessor-required'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'NQ-GATEW-4-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW-ATTEMPT-02' $fixCommit '102' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-4'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'CI_GREEN_CONTINUATION_ACCEPTED_BATCH_INVALID' 'green-continuation-work-batch-four-rejected'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction $fixCommit '102' 'FROZEN|ACCEPTED|TAGGED' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'ACTIVE_GATE_STATUS_COMBINATION_INVALID' 'green-continuation-active-gate-frozen-rejected'
+
+    foreach ($statusCase in @(
+        @{Status='COMMITTED|CI_FAILURE|FIX_REQUIRED';Expected='WORK_BATCH_STATUS_INVALID';Name='failed-alias-rejected'},
+        @{Status='committed|ci_failed|fix_required';Expected='WORK_BATCH_STATUS_INVALID';Name='failed-lowercase-rejected'},
+        @{Status='COMMITTED |CI_FAILED|FIX_REQUIRED';Expected='WORK_BATCH_STATUS_INVALID';Name='failed-space-variant-rejected'},
+        @{Status='COMMITTED|CI_GREEN|CONTINUE';Expected='WORK_BATCH_STATUS_INVALID';Name='green-continuation-alias-rejected'},
+        @{Status='committed|ci_green|continue_required';Expected='WORK_BATCH_STATUS_INVALID';Name='green-continuation-lowercase-rejected'},
+        @{Status='COMMITTED |CI_GREEN|CONTINUE_REQUIRED';Expected='WORK_BATCH_STATUS_INVALID';Name='green-continuation-space-variant-rejected'},
+        @{Status=' COMMITTED|CI_GREEN|CONTINUE_REQUIRED';Expected='AUTHORITY_BLOCK_INVALID';Name='green-continuation-leading-space-rejected'},
+        @{Status='COMMITTED|CI_GREEN|CONTINUE_REQUIRED ';Expected='AUTHORITY_BLOCK_INVALID';Name='green-continuation-trailing-space-rejected'}
+    )) {
+        $statusAction = if ($statusCase.Name.StartsWith('green-continuation')) { $continuationAction } else { 'NQ-GATEW-3-CI-BLOCKER-FIX' }
+        Write-AuthorityFixture $authorityRoot $statusCase.Status $statusAction $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false $statusCase.Expected $statusCase.Name
     }
     Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
     $conflictingStatusPath=Join-Path $authorityRoot 'docs/current/STATUS.md'
@@ -280,6 +409,15 @@ try {
     )
     Write-Utf8File $conflictingStatusPath $conflictingStatus
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'failed_state_must_not_claim_ci_green' 'failed-body-ci-green-rejected'
+
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' $continuationAction $fixCommit '102' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    $continuationStatusPath=Join-Path $authorityRoot 'docs/current/STATUS.md'
+    $continuationStatus=[System.IO.File]::ReadAllText($continuationStatusPath,$utf8NoBom).Replace(
+        '- GateW-3: COMMITTED / CI GREEN / CONTINUE REQUIRED.',
+        "- GateW-3: COMMITTED / CI GREEN / CONTINUE REQUIRED.`n- GateW-3: ACCEPTED / CI GREEN."
+    )
+    Write-Utf8File $continuationStatusPath $continuationStatus
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'continuation_state_must_not_claim_accepted' 'green-continuation-body-accepted-rejected'
 
     # Release checker uses a local bare remote and a PATH-scoped gh fixture; no real tag or GitHub state is touched.
     $releaseRoot=Join-Path $tempRoot 'release-repo'

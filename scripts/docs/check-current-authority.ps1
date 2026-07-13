@@ -8,7 +8,9 @@ This checker does not scan Gate archives, tag objects, GitHub Actions, or remote
 param(
     [string] $StatusPath = 'docs/current/STATUS.md',
     [string] $PlanPath = 'docs/current/GATEV_PLAN.md',
-    [string] $RoadmapPath = 'docs/current/ROADMAP.md'
+    [string] $RoadmapPath = 'docs/current/ROADMAP.md',
+    [ValidateSet('NONE', 'ARCHIVE_FREEZE', 'RELEASE')]
+    [string] $ReadinessMode = 'NONE'
 )
 
 Set-StrictMode -Version Latest
@@ -99,6 +101,10 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             if (@($contract.authority.workBatchStatuses) -cnotcontains $authority.work_batch_status) {
                 Add-AuthorityError "WORK_BATCH_STATUS_INVALID value=$($authority.work_batch_status)"
             }
+            if ($ReadinessMode -cne 'NONE' -and
+                -not (Test-GovernanceReadinessStatus $contract $ReadinessMode $authority.work_batch_status)) {
+                Add-AuthorityError "GATE_READINESS_STATUS_INVALID mode=$ReadinessMode status=$($authority.work_batch_status)"
+            }
             if ($authority.accepted_batch -eq $authority.work_batch) {
                 Add-AuthorityError "WORK_BATCH_STATUS_INVALID accepted_batch_and_work_batch_must_differ batch=$($authority.work_batch)"
             }
@@ -129,22 +135,23 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             $actualActionType = Get-GovernanceNextActionType $contract $authority.next_action
             if ($expectedActionType -eq 'UNKNOWN' -or $actualActionType -ne $expectedActionType) {
                 Add-AuthorityError "NEXT_ACTION_TYPE_MISMATCH status=$($authority.work_batch_status) expected=$expectedActionType actual=$actualActionType action=$($authority.next_action)"
-            }
-            $expectedActionPrefix = 'NQ-{0}-' -f $authority.work_batch.ToUpperInvariant()
-            if (-not $authority.next_action.StartsWith($expectedActionPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            } elseif (-not (Test-GovernanceNextActionForWorkBatch $contract $authority.work_batch_status $authority.work_batch $authority.next_action)) {
                 Add-AuthorityError "NEXT_ACTION_WORK_BATCH_MISMATCH work_batch=$($authority.work_batch) action=$($authority.next_action)"
             }
 
-            if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED') {
+            if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED' -or
+                $authority.work_batch_status -ceq 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') {
                 $workBatchMatch = [regex]::Match($authority.work_batch, '^(?<gate>Gate[A-Z0-9]+)-(?<number>[1-9][0-9]*)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
                 if (-not $workBatchMatch.Success -or
                     -not [string]::Equals($workBatchMatch.Groups['gate'].Value, $authority.active_gate, [System.StringComparison]::Ordinal)) {
-                    Add-AuthorityError "CI_FAILED_WORK_BATCH_INVALID active_gate=$($authority.active_gate) work_batch=$($authority.work_batch)"
+                    $errorCode = if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED') { 'CI_FAILED_WORK_BATCH_INVALID' } else { 'CI_GREEN_CONTINUATION_WORK_BATCH_INVALID' }
+                    Add-AuthorityError "$errorCode active_gate=$($authority.active_gate) work_batch=$($authority.work_batch)"
                 } else {
                     $workNumber = [int]$workBatchMatch.Groups['number'].Value
                     $expectedAcceptedBatch = if ($workNumber -eq 1) { "$($authority.active_gate)-PLAN" } else { "$($authority.active_gate)-$($workNumber - 1)" }
                     if (-not [string]::Equals($authority.accepted_batch, $expectedAcceptedBatch, [System.StringComparison]::Ordinal)) {
-                        Add-AuthorityError "CI_FAILED_ACCEPTED_BATCH_INVALID expected=$expectedAcceptedBatch actual=$($authority.accepted_batch) work_batch=$($authority.work_batch)"
+                        $errorCode = if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED') { 'CI_FAILED_ACCEPTED_BATCH_INVALID' } else { 'CI_GREEN_CONTINUATION_ACCEPTED_BATCH_INVALID' }
+                        Add-AuthorityError "$errorCode expected=$expectedAcceptedBatch actual=$($authority.accepted_batch) work_batch=$($authority.work_batch)"
                     }
                 }
             }
@@ -176,6 +183,10 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED' -and
                 (Test-StatusPhrase $statusBody $authority.work_batch 'CI\s*GREEN')) {
                 Add-AuthorityError "WORK_BATCH_BODY_CONTRADICTION batch=$($authority.work_batch) failed_state_must_not_claim_ci_green file=$StatusPath"
+            }
+            if ($authority.work_batch_status -ceq 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' -and
+                (Test-StatusPhrase $statusBody $authority.work_batch 'ACCEPTED\s*/\s*CI\s*GREEN')) {
+                Add-AuthorityError "WORK_BATCH_BODY_CONTRADICTION batch=$($authority.work_batch) continuation_state_must_not_claim_accepted file=$StatusPath"
             }
             if (-not $statusBody.Contains($authority.next_action)) {
                 Add-AuthorityError "NEXT_ACTION_MISMATCH expected=$($authority.next_action) file=$StatusPath"
