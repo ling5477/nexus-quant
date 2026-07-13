@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`；GateW-2 implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，CI run `29230512781`。GateW-3 pre-implementation security/risk review 为 `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
+状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`；GateW-2 implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，CI run `29230512781`。GateW-3 venue-rule facts 为 `REVIEW ACCEPTED / READY TO COMMIT`，dry-run order preview 仍为 `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`，等待 venue-rule exact-head CI 与后续 attempt-02。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
+- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 venue-rule facts：`REVIEW ACCEPTED / READY TO COMMIT`；order preview：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter：`NOT IMPLEMENTED`；GateW-2 private read-only diagnostic probe 已实现并获 CI 接受，但 real smoke/远端 permission verification 为 `NOT_RUN / UNKNOWN`；Python live execution ready：`NO`。
 
@@ -466,7 +466,7 @@ Migration 决策：`MIGRATION REQUIRED / PLAN ACCEPTED`。当前最高版本 V33
 
 实现必须补 V34 migration contract、fresh PostgreSQL V1..V34、V33→V34 upgrade、constraint、repository precision/idempotency/freshness/non-live/sync-failure/no-egress 测试与 full Maven regression，并进入独立 migration/schema conformance review。
 
-Authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / NOT_STARTED / NONE / NOT_RUN`。
+Authority before implementation：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / NOT_STARTED / NONE / NOT_RUN`。
 
 唯一下一动作：
 
@@ -475,3 +475,46 @@ NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION
 ```
 
 venue-rule implementation、schema conformance review 与 exact-head CI green 后，才执行 dry-run order preview security/risk review attempt-02；不得直接进入 order preview implementation 或 GateW-4。
+
+## 37. GateW-3 Venue-rule Facts Implementation
+
+结论：`IMPLEMENTED / PENDING_REVIEW`（已实现 / 待独立复核）。完整 evidence 为 [NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION.attempt-01.md](evidence/gate-w/NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION.attempt-01.md)。
+
+- V34 扩展既有 `instrument_catalog`，保持单一 current fact source；旧行不回填 venue facts，新增列保持 null。
+- OKX reader 只访问固定 Public Instruments endpoint，只接受 Spot，按 server-side allowlist bounded 处理 1..3 symbols，并保存 non-live 状态。
+- canonical checksum 使用固定字段顺序、UTF-8、规范化 decimal、JSON null 与 lowercase SHA-256；`observedAt/syncedAt/freshUntil` 不进入 checksum。
+- `upcChg` 的完整 canonical representation 当前无法随 row 持久化，因此按 review 规则明确后置；不得只保存 effective time 后伪称 planned changes 已纳入 checksum。
+- freshness 使用注入 `Clock`；source/version/checksum、配置、观察时间、状态或必要 facts 缺失/冲突时 fail-closed。
+- manual profile + flag 才装配 public reader/sync service；默认/test/CI 无 reader、无 startup/background/scheduled sync。无 Controller/API、credential/private endpoint、order preview 或 LIVE。
+- 相关 reactor、full Maven 与 disposable PostgreSQL V1→V34 / V33→V34 均通过；当前仍未 commit、未跑 exact-HEAD CI、未获 conformance acceptance。
+
+Authority after implementation：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+
+唯一下一动作：
+
+```text
+NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW
+```
+
+该 review 只审查本轮实际 migration/schema/domain/repository/parser/sync/freshness diff。order preview 仍 blocked；不得创建 Controller、实现 preview、启动 GateW-4 或升级 LIVE/交易授权状态。
+
+## 38. GateW-3 Venue-rule Facts Migration Conformance Review
+
+结论：`PASS / MIGRATION_CONFORMANCE_ACCEPTED / READY_TO_COMMIT`（通过 / migration 符合性已接受 / 可进入提交前复核）。完整 evidence 为 [NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW.attempt-01.md](evidence/gate-w/NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW.attempt-01.md)。
+
+- P0=0、P1=0；review 中无实现修复。
+- V34 仍以 `instrument_catalog` 为唯一 current fact source；历史行保持 null，约束、precision、comments 与真实 PostgreSQL fresh/upgrade 执行通过。
+- OKX Public Instruments 映射、public-only parser、canonical checksum、bounded batch UPSERT 与 fail-closed freshness 通过静态及回归审查。
+- V34 在单行、73,728-byte disposable 样本发生 table rewrite，并请求 `AccessExclusiveLock`；目标表规模/维护窗口未验证，按 P2 保留。
+- 无 credential/private endpoint、Controller/API/frontend、scheduler/runner、order preview、order submission 或 LIVE；未调用真实 OKX。
+- 相关 reactor 与 full Maven 均 23/23 modules `BUILD SUCCESS`；forced disposable PostgreSQL 2 tests / 0 failure/error/skip；治理与 current authority 检查通过。
+
+Authority after review：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+
+唯一下一动作：
+
+```text
+NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH
+```
+
+只允许精确提交已接受范围并等待 exact-head CI；CI green 前不得恢复 dry-run order preview attempt-02，不得启动 GateW-4 或升级 LIVE/交易授权状态。

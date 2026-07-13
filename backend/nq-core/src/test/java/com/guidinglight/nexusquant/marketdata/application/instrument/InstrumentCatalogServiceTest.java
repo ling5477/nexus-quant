@@ -89,6 +89,17 @@ class InstrumentCatalogServiceTest {
         }
 
         @Override
+        public List<InstrumentCatalogItem> findByExchangeAndSymbols(
+                String exchangeCode,
+                List<String> exchangeSymbols
+        ) {
+            return storage.values().stream()
+                    .filter(item -> item.exchangeCode().equalsIgnoreCase(exchangeCode))
+                    .filter(item -> exchangeSymbols.contains(item.exchangeSymbol()))
+                    .toList();
+        }
+
+        @Override
         public InstrumentCatalogUpsertStats upsertAll(List<InstrumentCatalogItem> items, Instant syncedAt) {
             int inserted = 0;
             int updated = 0;
@@ -136,6 +147,14 @@ class InstrumentCatalogServiceTest {
                 updated++;
             }
             return new InstrumentCatalogUpsertStats(inserted, updated);
+        }
+
+        @Override
+        public InstrumentCatalogUpsertStats upsertVenueRuleFacts(
+                List<InstrumentCatalogItem> items,
+                Instant syncedAt
+        ) {
+            return upsertAll(items, syncedAt);
         }
     }
 }

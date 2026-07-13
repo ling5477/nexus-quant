@@ -607,3 +607,22 @@ GateV-1 新增 Flyway migration：
 - 索引覆盖 case/event 顺序、tenant/actor/time 与 trace ID。
 
 GateV-1 所有新增表和关键字段均有中文 COMMENT，明确本地人工复核不代表交易授权、不表示 LIVE ready、不修改 strategy、Paper、Shadow、risk、account、order 或 ledger，也不保存 credential material。
+
+## GateW-3 OKX Spot Venue-rule Current Facts
+
+GateW-3 新增 forward-only Flyway migration：
+
+- `V34__gate_w3_venue_rule_facts.sql`
+
+当前状态为 `REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）。V34 只扩展既有 `instrument_catalog`，不建立第二张 venue-rule 表，不修改历史 migration，不保存 raw provider payload、header、credential、signature 或 private account data。该状态不是 committed 或 CI green。
+
+- `tick_size`、`step_size`、`min_quantity` 扩宽为 `NUMERIC(38,18)`。
+- 新增 nullable numeric：`max_limit_quantity`、`max_market_size`、`max_limit_notional_usd`、`max_market_notional_usd`，均要求 null 或大于 0。
+- `max_market_size_unit` 与 `max_market_size` 必须同时为空，或同时存在且 unit 固定为 `USDT`。
+- 新增 nullable provenance/freshness facts：`source_schema_version`、`observed_at`、`next_rule_effective_at`、`rule_checksum`。
+- `rule_checksum` 必须为 null 或 64 位 lowercase hex；`observed_at <= synced_at`；`next_rule_effective_at` 存在时必须有 `observed_at` 且严格晚于它。
+- `synced_at` 继续只表示数据库写入时间，不等于 provider observation time。
+- 旧行不回填 0、当前时间、schema version 或 checksum；缺失 GateW facts 时由 freshness contract 返回 unavailable/unknown/blocked。
+- 保留既有两个 unique constraints 与 status lookup index，不新增重复索引。
+
+disposable PostgreSQL 16.14 验证：fresh V1→V34 与 V33→V34 均到 version 34；V33 legacy row 新列保持 null，precision、约束、中文 comments、既有 key/index 与 repository lifecycle 通过。单行、73,728-byte 样本在 V34 后 `pg_relation_filepath` 变化，表明本样本发生 table rewrite；独立 lock observation 确认 `ALTER TABLE ... TYPE` 请求 `AccessExclusiveLock`。该风险按 P2 保留，部署前必须按目标表规模与维护窗口复核，不能把 disposable 结果外推成生产无锁结论。

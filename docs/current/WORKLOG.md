@@ -17452,3 +17452,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary: LIVE disabled；无 order/cancel/transfer/withdraw、order/account/position/ledger/event 写入或交易授权；GateW-2 real smoke 仍未运行。
 - authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / NOT_STARTED / NONE / NOT_RUN`。
 - next action: `NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION`；通过 migration/schema conformance review 和 exact-head CI 后，再执行 dry-run order preview security/risk review attempt-02。
+
+## NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION
+
+- date: 2026-07-13
+- scope: NQ-only backend/Flyway/domain/repository/OKX public parser/bounded sync/freshness/tests/current evidence；无 Controller/API/frontend/research/scripts/deploy/CI/pom/历史 migration diff。
+- result: `IMPLEMENTED / PENDING_REVIEW`；V34 扩展 `instrument_catalog` 单一 current fact source，旧行不回填；source/schemaVersion/observedAt/checksum 与 fail-closed freshness 落地。
+- ingestion: public-only fixed endpoint，server-side allowlist 1..3 OKX Spot symbols，non-live 保存；manual profile + flag 才装配，无 credential/private endpoint/startup/background/scheduler sync。
+- checksum: canonical field order + JSON null + normalized decimal + UTF-8 SHA-256 lowercase；planned-effective integrity 进入 checksum；完整 `upcChg` representation 因无法随 current row 持久化而明确后置。
+- validation: final relevant reactor 与 full Maven 均 23/23 modules SUCCESS，最终两次均为 `2:15`；PostgreSQL 16.14 disposable V1→V34 `5313 ms`、V33→V34 `319 ms`，2 tests PASS；governance/authority/static/scope 结果见 task evidence。
+- migration risk: 1-row、73,728-byte upgrade sample relation file changed，需 conformance review 强锁/rewrite/迁移窗口；不推导生产无锁。
+- RCA: CHECK null 三值逻辑、import 编译回归、planned-effective checksum fixture 已最小修复；两次 Windows pagefile/attach 环境失败在资源释放与新增测试去 inline mock 后以原始命令重跑通过。
+- boundary: P0=0/P1=0；无 raw payload/header/signature/credential/private account data，无 order/cancel/preview/LIVE/真实交易；未 stage/commit/push/PR/tag。
+- authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- next action: `NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW`；order preview 仍 blocked，后续必须独立 attempt-02 security/risk review。
+
+## NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW
+
+- date: 2026-07-13
+- scope: NQ-only migration/schema/repository/public metadata/freshness conformance review；implementation 原范围 expected/actual 32/32，新增 review evidence并同步原 current authority ledgers；无 P0/P1 implementation fix。
+- result: `PASS / MIGRATION_CONFORMANCE_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。
+- migration: V34 only、`instrument_catalog` single current fact source、legacy null compatibility、precision/constraints/comments/SQL three-valued logic均通过；fresh V1→V34 与 V33→V34 forced disposable PostgreSQL 2 tests / 0 failure/error/skip。
+- operational risk: 1-row、73,728-byte sample table rewrite；lock observation 显示 `AccessExclusiveLock` waiter 被 reader `AccessShareLock` 阻塞；生产/共享规模和维护窗口未验证，P2。
+- review: public-only exact endpoint/Spot mapping/non-live preservation/fail-closed parser；canonical checksum；bounded 1..3-symbol lookup+batch UPSERT；network outside transaction；fixed Clock freshness；manual profile+flag；default/test/CI no-egress。
+- validation: related reactor 23/23 `BUILD SUCCESS`（05:55）；full Maven 23/23 `BUILD SUCCESS`（02:26）；governance lifecycle/next-action/authority/current links/static/forbidden scope通过。
+- findings: P2 checksum test 无独立 fixed vector、constraint negative matrix未逐项穷尽；P3 既有 Spring test development-password提示日志卫生。review 中 minimal fixes=none。
+- evidence: `docs/current/evidence/gate-w/NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW.attempt-01.md`；此前三份 GateW-3 evidence SHA-256 复核不变。
+- boundary: 未调用真实 OKX/生产 DB，未读取 credential；无 private endpoint/order preview/submission/Controller/API/frontend/scheduler/runner/LIVE；未 stage/commit/push/PR/tag。
+- authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next action: `NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH`；只精确提交已接受范围并等待 exact-head CI，CI green 前不恢复 dry-run order preview attempt-02。

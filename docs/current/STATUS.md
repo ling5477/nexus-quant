@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553
 accepted_batch_acceptance_head=6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553
 accepted_batch_ci_run=29230512781
 work_batch=GateW-3
-work_batch_status=NOT_STARTED
-work_batch_commit=NONE
+work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
+work_batch_commit=UNCOMMITTED
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION
+next_action=NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -35,12 +35,12 @@ nq-current-authority:end -->
 - GateV-FREEZE：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；freeze candidate、implementation commit 与 acceptance head 均为 `7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`，`NQ CI Baseline` run `29191014596` 为 `completed / success`。
 - GateV release closeout exact-HEAD CI：`NQ CI Baseline` run `29191677441`，`completed / success`，`headSha=530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateV durable archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)。它是历史证据，不覆盖本 authority。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；[GateW planning baseline](GATEW_PLAN.md)、GateW-1 capability/guard 与 GateW-2 private read-only diagnostic probe 均已获 exact-HEAD CI 接受。GateW-3 venue-rule schema/security review 已接受，venue-rule facts implementation 为 `NOT_STARTED`（未开始）。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；[GateW planning baseline](GATEW_PLAN.md)、GateW-1 capability/guard 与 GateW-2 private read-only diagnostic probe 均已获 exact-HEAD CI 接受。GateW-3 venue-rule facts 的治理展示状态为 `REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核），machine exact status 为 `REVIEW_ACCEPTED|READY_TO_COMMIT`；尚未 commit、未运行 exact-HEAD CI、未冻结。
 - GateW-PLAN：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，`NQ CI Baseline` run `29199785253` 为 `completed / success`。
 - GateW-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，`NQ CI Baseline` run `29219687588` 为 `completed / success`。该批次只建立 typed capability matrix、default-deny endpoint guard 与 GateW profile Bean 边界。
 - GateW-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，`NQ CI Baseline` run `29230512781` 为 `completed / success`。该接受只覆盖两个 typed private read-only diagnostic operation；`REAL_SMOKE=NOT_RUN`，不表示远端 permission 已验证、LIVE 或交易授权。
-- GateW-3 venue-rule facts：implementation 为 `NOT STARTED`（未开始）；schema/security review 为 `PASS / VENUE_RULE_SCHEMA_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`（通过 / venue-rule schema 审查已接受 / 允许按冻结方案实施）。选择扩展既有 `instrument_catalog`，migration 决策为 `MIGRATION REQUIRED / PLAN ACCEPTED`；候选 V34 只是一份未实施计划，`DB_SCHEMA.md` 仍描述当前 V33。OKX Spot minimum notional 不是已核验的 public instrument fact，必须保持 UNKNOWN 或显式 NQ risk rule。
-- GateW-3 dry-run order preview：仍未获实施授权。必须先完成 venue-rule migration/domain/repository/public-only ingestion、schema conformance review 与 exact-head CI，再重新执行 security/risk review attempt-02。
+- GateW-3 venue-rule facts：治理展示状态为 `REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核），machine exact status 为 `REVIEW_ACCEPTED|READY_TO_COMMIT`；V34、domain/repository、OKX public-only bounded sync、canonical checksum 与 freshness fail-closed 已通过独立 conformance review、相关 reactor、全量 Maven及 disposable PostgreSQL V1→V34 / V33→V34 本地验证。该状态不是 committed 或 CI green；OKX Spot minimum notional 仍不是已核验的 public instrument fact，必须保持 UNKNOWN 或显式 NQ risk rule。
+- GateW-3 dry-run order preview：仍未获实施授权。必须先精确提交 venue-rule facts 并取得 exact-head CI green，再重新执行 security/risk review attempt-02。
 
 ## 2. Archive Compatibility Verification
 
@@ -65,4 +65,4 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 
 ## 4. 下一允许动作
 
-治理 authority 中下一动作精确为 `NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION`。只允许按已接受 evidence 扩展 `instrument_catalog`、domain/repository 与 public-only ingestion，并补 migration/fresh PostgreSQL/repository 测试；不授权 order preview、Controller、credential/private endpoint、scheduler、LIVE 或交易写侧。实现完成后必须先过 migration/schema conformance review 与 exact-head CI，再重跑 dry-run order preview security/risk review attempt-02；不得初始化 GateW-4。
+治理 authority 中下一动作精确为 `NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH`。下一轮只允许精确提交已接受的 venue-rule facts implementation、conformance review evidence 与 current authority diff，并等待 exact-head CI；不授权 order preview、Controller、credential/private endpoint、scheduler、LIVE 或交易写侧。exact-head CI green 后仍须重跑 dry-run order preview security/risk review attempt-02；不得初始化 GateW-4。

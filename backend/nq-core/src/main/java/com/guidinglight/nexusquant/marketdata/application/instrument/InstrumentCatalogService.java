@@ -36,6 +36,17 @@ public class InstrumentCatalogService {
     }
 
     /**
+     * 精确读取 1..3 个 exchange symbols，供 bounded venue-rule sync 比较旧 checksum。
+     */
+    public List<InstrumentCatalogItem> findByExchangeAndSymbols(
+            String exchangeCode,
+            List<String> exchangeSymbols
+    ) {
+        Objects.requireNonNull(exchangeSymbols, "exchangeSymbols must not be null");
+        return instrumentCatalogRepository.findByExchangeAndSymbols(exchangeCode, exchangeSymbols);
+    }
+
+    /**
      * 批量写入最新 instrument 快照。
      */
     public InstrumentCatalogUpsertStats upsertCatalogItems(List<InstrumentCatalogItem> items, Instant syncedAt) {
@@ -45,5 +56,17 @@ public class InstrumentCatalogService {
             return new InstrumentCatalogUpsertStats(0, 0);
         }
         return instrumentCatalogRepository.upsertAll(items, syncedAt);
+    }
+
+    /**
+     * 持久化 1..3 条已完成 parser/checksum 校验的 OKX Spot venue-rule facts。
+     */
+    public InstrumentCatalogUpsertStats upsertVenueRuleFacts(
+            List<InstrumentCatalogItem> items,
+            Instant syncedAt
+    ) {
+        Objects.requireNonNull(items, "items must not be null");
+        Objects.requireNonNull(syncedAt, "syncedAt must not be null");
+        return instrumentCatalogRepository.upsertVenueRuleFacts(items, syncedAt);
     }
 }

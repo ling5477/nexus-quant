@@ -11556,3 +11556,56 @@ Implementation test baseline：V34 migration contract、fresh PostgreSQL V1..V34
 Boundary：无 OKX API、API Key、credential/private endpoint、DB connection/migration、order/ledger/account/position/event 写入、scheduler/runner 或 LIVE。schema/public metadata readiness 不构成 trading authorization。
 
 Next action：`NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION`。dry-run order preview 必须等待 venue-rule implementation + conformance + exact-head CI 后重新审查 attempt-02。
+
+---
+
+## NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION（2026-07-13）
+
+结论：`IMPLEMENTED / PENDING_REVIEW`（已实现 / 待独立复核）。该状态不是 review accepted 或 CI green。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / exact-head CI preflight | PASS | starting `dev` clean、staged empty、`HEAD == origin/dev == f9aaaa2...`；run `29234071167 / completed / success`；review evidence 已包含在 HEAD。 |
+| Migration contract/unit tests | PASS | V34 filename/columns/constraints/comments contract；numeric、checksum、market unit、time order 与 legacy null semantics 覆盖。 |
+| Checksum/freshness/parser/config/sync targeted | PASS | core 11、adapter reader 7、app 9；0 failure/error。 |
+| Relevant reactor | PASS | `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-adapter-okx,nq-app -am test`；23/23 modules SUCCESS；final run `2:15`。 |
+| Full backend | PASS | `mvn -f backend/pom.xml test`；23/23 modules SUCCESS；final run `2:15`；0 failure/error。 |
+| PostgreSQL fresh V1→V34 | PASS | PostgreSQL 16.14 disposable localhost container；`5313 ms`；Flyway v34。 |
+| PostgreSQL V33→V34 | PASS | `319 ms`；Flyway v34；1 legacy row，新 facts null；73,728-byte sample relation file changed。 |
+| Governance / authority | PASS | lifecycle、next-action、authority checker 支持 `IMPLEMENTED|PENDING_REVIEW` 与 conformance-review next action。 |
+| Current doc links | PASS WITH HISTORICAL WARNING | 22 links checked，0 errors；保留既有 GateJ `GATEJ_TEST_PLAN.md` warning。 |
+| Scope / static boundary | PASS | forbidden scopes 无 diff；无 Controller/API/frontend、credential/private endpoint、scheduler、preview 或 LIVE。 |
+
+失败与 RCA 均保留在 task evidence：SQL CHECK three-valued logic、PowerShell `-D` quoting、一次 import 编译回归、Windows pagefile/Mockito attach 环境失败、DB property precondition、planned-effective checksum fixture、authority display pattern 均已做最小修复并在最终原始命令/checker 中通过。
+
+PostgreSQL observation：V33→V34 单行样本发生 relation file 变化，表明本样本 rewrite；未做并发 lock contention 或生产规模测试。独立 conformance review 必须审查强锁、表规模、迁移窗口与 forward rollback。
+
+Known limitations：minimum notional UNKNOWN；完整 `upcChg` canonical representation 后置；无 history table；未访问真实 OKX；无 HTTP operator entry。本轮不实现 order preview。
+
+Next action：`NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW`。conformance 与后续 exact-head CI 前不得执行 dry-run order preview attempt-02 之后的 implementation。
+
+---
+
+## NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW（2026-07-13）
+
+结论：`PASS / MIGRATION_CONFORMANCE_ACCEPTED / READY_TO_COMMIT`（通过 / migration 符合性已接受 / 可进入提交前复核）；P0=0、P1=0，review 中无实现修复。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / exact-head CI / scope | PASS | `dev`；staged empty；`HEAD == origin/dev == f9aaaa2...`；run `29234071167 / completed / success`；implementation scope `expected=32 / actual=32 / extra=0 / missing=0`。 |
+| Forced disposable PostgreSQL | PASS | PostgreSQL 16.14；2 tests / 0 failure/error/skip；fresh V1→V34 `32707 ms`，V33→V34 `2498 ms`；legacy row 1 保持 null。 |
+| Lock/rewrite observation | PASS WITH P2 | 73,728-byte sample relation path changed；reader 持有 `AccessShareLock` 时 V34 waiter 请求未授予的 `AccessExclusiveLock`；生产规模/窗口未验证。 |
+| Relevant reactor | PASS | `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-adapter-okx,nq-app -am test`；23/23 modules SUCCESS；05:55。 |
+| Full backend | PASS | `mvn -f backend/pom.xml test`；23/23 modules SUCCESS；02:26；`nq-app` 150 tests / 0 failure/error / 6 conditional skips。 |
+| Governance / authority / links | PASS | lifecycle、next-action regression、authority checker 通过；current links 0 errors、1 个既有 GateJ historical warning。 |
+| Static/no-egress/forbidden scope | PASS | public-only fixed endpoint；无 credential/private/order preview/controller/scheduler/LIVE；frontend/research/scripts/deploy/.github/docs archives/.agents/pom.xml 无 diff。 |
+
+P2：V34 table rewrite + `AccessExclusiveLock` deployment window；checksum 缺独立 hard-coded fixed vector；constraint negative matrix 未逐项穷尽。P3：既有 Spring test development-password 提示日志卫生。以上均不阻断本轮 conformance acceptance。
+
+Environment：专项 DB 仅 loopback disposable container、无 volume、未 pull；未连接生产 DB，未调用 OKX public/private API，未读取/使用 credential。全量 Maven 中专项 PostgreSQL tests 按既有 guard skip，强制 DB 证据来自独立 required=true run。
+
+Known limitations：minimum notional UNKNOWN；完整 `upcChg` representation 后置；无 history table；无 HTTP operator entry；生产/共享环境 V34 状态与维护窗口未验证。
+
+Boundary：无 order preview/submission、Controller/API/frontend、scheduler/runner、credential/private endpoint、LIVE 或交易授权；未 stage/commit/push/PR/tag。
+
+Next action：`NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH`。只精确提交已接受范围并等待 exact-head CI；CI green 前不得运行 dry-run order preview attempt-02。

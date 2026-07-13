@@ -35,6 +35,23 @@ public class OkxHttpClient {
     private final Map<String, String> staticHeaders;
 
     /**
+     * 构造不持有 credential、signer 或 private header 能力的 public-only client。
+     *
+     * @param httpClient   Java HTTP client
+     * @param objectMapper JSON 解析器
+     * @param baseUrl      OKX public API origin
+     * @param timeout      单次请求超时
+     */
+    public OkxHttpClient(
+            HttpClient httpClient,
+            ObjectMapper objectMapper,
+            String baseUrl,
+            Duration timeout
+    ) {
+        this(httpClient, objectMapper, baseUrl, timeout, null, null, null, false, Map.of());
+    }
+
+    /**
      * @param httpClient        Java HTTP client
      * @param objectMapper      JSON 解析器
      * @param baseUrl           OKX base URL
@@ -75,8 +92,16 @@ public class OkxHttpClient {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.baseUrl = Objects.requireNonNull(baseUrl, "baseUrl must not be null");
         this.timeout = Objects.requireNonNull(timeout, "timeout must not be null");
-        this.signer = Objects.requireNonNull(signer, "signer must not be null");
-        this.timestampProvider = Objects.requireNonNull(timestampProvider, "timestampProvider must not be null");
+        if (authenticated) {
+            this.signer = Objects.requireNonNull(signer, "signer must not be null for authenticated client");
+            this.timestampProvider = Objects.requireNonNull(
+                    timestampProvider,
+                    "timestampProvider must not be null for authenticated client"
+            );
+        } else {
+            this.signer = null;
+            this.timestampProvider = null;
+        }
         this.credentials = credentials;
         this.authenticated = authenticated;
         this.staticHeaders = staticHeaders == null ? Map.of() : Collections.unmodifiableMap(staticHeaders);
