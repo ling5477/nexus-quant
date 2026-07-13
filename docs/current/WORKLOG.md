@@ -17373,3 +17373,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: lifecycle、manifest、next-action fixtures PASS；真实 GateV Authority、post-tag Archive 与 Release checker PASS；doc links 为 current 51/1 historical warning/0 errors、GateV 12/0/0；forbidden-scope diff 为空；GateV tag object/peeled target未修改。
 - boundary: 未修改 backend/frontend/research/deploy/`.github`/migration、GateV archive、docs/archive、`.agents`、root README 或任何 tag；LIVE/Shadow/AI/DH/Integration/real provider/private trading 状态保持不变。
 - next action: `NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION-REVIEW`；review 通过后直接提交与 CI 验证，不增加 freeze/final review/addendum。
+
+## NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION
+
+- date: 2026-07-13
+- scope: NQ-only；在 `nq-adapter-api` / `nq-adapter-okx` 建立 typed capability matrix 与 default-deny endpoint guard，并仅在 `gatew` profile 排除 mutating trading/private WS Bean；不新增 API、migration、dependency、scheduler、runner 或真实私有 runtime。
+- result: `IMPLEMENTED / SELF_REVIEWED / READY_TO_COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
+- implementation: `ExchangeCapability`、`EndpointAccessClass`、`EndpointGuardReason`、`EndpointPolicyDecision`、`OkxSpotCapabilityDefinition`、`OkxSpotCapabilityMatrix`、`OkxSpotEndpointGuard`；所有 decision/matrix row 固定 `tradingAuthorization=false`。public path 只精确 GET allow；private read、mutating、funds 与 unknown fail-closed。
+- profile: `gatew` 不注册 OKX/Binance mutating trading 或 private WS Bean；default/local/test 保持既有 readiness fail-closed 行为。
+- validation: target reactor PASS（adapter-api 81、adapter-okx 46、app 134 tests）；full `mvn -f backend/pom.xml test` 23/23 SUCCESS / 0 failures/errors；lifecycle、next-action 与 authority checker PASS。首个 target reactor 的 helper 同名 compile failure 已最小修复并重跑通过。
+- safety: 未读取/解密 credential，未调用真实 OKX，未启动 permission probe，未下单/撤单/转账/提现，未开启 LIVE/Shadow/AI/DH/Integration；public policy allow 不表示交易授权。
+- local DB note: full Maven 的既有 local test 应用了已存在 V33；未新增或修改 migration，未访问生产 DB。
+- P2: `OkxPermissionProbeBoundary` 为 historical/test-only classifier，GateW-2 不得用其字符串 containment 作为 private allowlist guard。
+- next action: `NQ-GATEW-1-COMMIT-AND-PUSH`；exact-HEAD CI green 后再经独立 security review 进入 GateW-2。

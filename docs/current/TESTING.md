@@ -11431,3 +11431,25 @@ Next action：`NQ-GATEW-PLAN-COMMIT-AND-PUSH`；计划 commit exact-HEAD CI gree
 | `check-doc-links.ps1`（分别检查 `docs/current`、`docs/gates/gate-v`） | PASS | current 51 links / 1 个既有 GateJ historical warning / 0 errors；GateV 12 links / 0 warnings / 0 errors。 |
 
 环境：Windows + Windows PowerShell 5 compatibility；fixture 仅使用系统临时目录、临时 Git repository 与本地 bare remote，结束后删除。未运行 Maven、frontend build/E2E 或 Python checks，因为禁止范围未修改。最终状态：`IMPLEMENTED / PENDING_REVIEW`；下一动作：`NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION-REVIEW`。
+
+---
+
+## NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION（2026-07-13）
+
+结论：`IMPLEMENTED / SELF_REVIEWED / READY_TO_COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / exact-head CI preflight | PASS | `dev` clean、staged empty、`HEAD == origin/dev == 5661a13e...`；`NQ CI Baseline` run `29199785253 / completed / success`。 |
+| Target reactor | PASS | `mvn -f backend/pom.xml -pl nq-adapter-api,nq-adapter-okx,nq-app -am test`：23 modules success；adapter-api 81 tests、adapter-okx 46 tests、app 134 tests（4 configured skips）。 |
+| Full backend Maven | PASS | `mvn -f backend/pom.xml test`：23/23 modules SUCCESS，0 failures/errors；既有 configured skips 保持。 |
+| Governance | PASS | lifecycle regression、next-action regression、authority checker 均通过。 |
+| New guard coverage | PASS | matrix、unknown/null、public GET、private read、mutating、funds movement、query/case/duplicate slash/encoded/dot path 和 `gatew` profile Bean exclusion 已覆盖；不执行 HTTP。 |
+
+RCA：首个 target reactor 在 `OkxSpotCapabilityMatrix` 报 static/instance helper 同名编译错误；仅改名为 `buildDefinitions()` 后重跑通过，无网络、credential 或交易副作用。
+
+Local test note：full Maven 的既有 local Spring test 对本地 `nexus_quant` 应用了已存在 V33；本任务未新增/修改 migration，未访问生产 DB。
+
+Boundary：无真实 OKX、无 credential access/decryption、无 private client、无 permission probe、无 API/migration/scheduler/runner、无 order/cancel/transfer/withdraw，LIVE/Shadow/AI/DH/Integration 保持关闭或未启动。public `ALLOW_PUBLIC_READ` 不构成 provider readiness 或 trading authorization。
+
+Next action：`NQ-GATEW-1-COMMIT-AND-PUSH`；不得初始化 GateW-2。

@@ -4,15 +4,15 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：`REVIEW_ACCEPTED / READY_TO_COMMIT`（复核已接受 / 可进入提交前复核）。本状态只表示 GateW planning baseline 已建立；尚未 commit、push 或取得本计划 exact-HEAD CI，GateW-1 也未初始化。
+状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，`NQ CI Baseline` run `29199785253` 为 `completed / success`；GateW-1 已实施并保持未提交。
 
 ## 1. Current State
 
 - 唯一阶段 authority 是 [STATUS.md](STATUS.md) 的 `nq-current-authority` schema v3 区块。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
-- GateV-FREEZE 保持最近 accepted baseline：`ACCEPTED / CI_GREEN`；不因 GateW planning 被覆盖。
+- GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN：本轮从 `NOT_STARTED` 收口到 `REVIEW_ACCEPTED / READY_TO_COMMIT`；commit 为 `UNCOMMITTED`，CI 为 `NOT_RUN`。
+- GateW-PLAN：`ACCEPTED / CI_GREEN`；GateW-1：`IMPLEMENTED / SELF REVIEWED`（machine status=`IMPLEMENTED|SELF_REVIEWED`），commit 为 `UNCOMMITTED`，CI 为 `NOT_RUN`。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter、real permission probe：`NOT IMPLEMENTED`；Python live execution ready：`NO`。
 
@@ -271,20 +271,28 @@ GateW Freeze 时只复制 accepted attempts 到 archive evidence root，并继�
 ## 27. Findings and Risks
 
 - P0：0。
-- P1：0；GateW-1 尚未实现是 planned state，不是本 planning task 的 defect。
+- P1：0；GateW-1 已按本计划完成 capability/guard/profile 最小实现；real permission probe、private read client 与任何交易写侧仍未实现。
 - P2：`CLAUDE.md` 仍硬编码 GateJ/GateK 历史阶段；它不属于 current authority，本任务不越过 allowlist 修改。现有 OKX trading/reconcile 历史实现包含真实写侧语义，GateW-1 必须证明其在 GateW profile 下不可达。
 - P3：当前 broad audit 首轮 glob 未排除嵌套 `backend/*/target/**`，只读命中了 Maven metadata 列表；后续已改为 `!**/target/**`。未读取 credential 或生成任何变更，但后续任务应直接使用递归排除 glob。
 
-## 28. Final Decision and Next Task
+## 28. GateW-1 Implementation Record
 
-GateW planning baseline：`IMPLEMENTED / SELF-REVIEWED / READY_TO_COMMIT`（已建立 / 已自审 / 可进入提交前复核）。
+`NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION` 已完成 `IMPLEMENTED / SELF_REVIEWED / READY_TO_COMMIT`（已实施 / 已自审 / 可进入提交前复核）。
 
-当前 authority 应保持 GateW `IN_PROGRESS / NOT_FROZEN`、GateV-FREEZE accepted baseline 不变，并将唯一下一动作切换为 `NQ-GATEW-PLAN-COMMIT-AND-PUSH`。不得初始化 GateW-1。
+- 新增 typed `ExchangeCapability`、`EndpointAccessClass`、`EndpointPolicyDecision`、`EndpointGuardReason`；decision 固定 `tradingAuthorization=false`。
+- 新增 `OkxSpotCapabilityMatrix` 与 `OkxSpotEndpointGuard`：public path 仅精确 GET allowlist；private read runtime disabled；order/cancel、transfer/withdraw、unknown 与 URI 变体均 default-deny。具体 private endpoint allowlist 保持空，留待 GateW-2 在官方事实与独立 security review 后建立。
+- `gatew` profile 不注册 OKX/Binance mutating trading Bean、private WebSocket Bean 或会构造 public HTTP client 的 `OkxHistoricalKlineAdapter`；未新增 HTTP client、scheduler、runner、credential loader 或 API。
+- `PUBLIC_MARKET_DATA` 维持既有实现合同但 default runtime disabled；guard 的 `ALLOW_PUBLIC_READ` 仅表示可交给既有 public policy 继续裁决，不表示 default egress、provider readiness 或交易授权。
+- 验证：最小 reactor、全量 `mvn -f backend/pom.xml test` 与治理检查均以本次 evidence 为准；full Maven 测试过程中现有 local Spring 测试对本地 DB 应用了既有 V33，未新增或修改 migration。
 
-本计划 commit、push 并取得 exact-HEAD `NQ CI Baseline / completed / success` 后，下一 implementation task 直接为：
+## 29. Final Decision and Next Task
+
+当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-PLAN / ACCEPTED|CI_GREEN`；`work_batch=GateW-1 / IMPLEMENTED|SELF_REVIEWED / UNCOMMITTED / NOT_RUN`。
+
+唯一下一动作：
 
 ```text
-NQ-GATEW-1-OKX-SPOT-CAPABILITY-AND-ENDPOINT-GUARD-IMPLEMENTATION
+NQ-GATEW-1-COMMIT-AND-PUSH
 ```
 
-不再新增 GateW plan review、plan freeze 或 planning addendum。
+不得初始化 GateW-2。GateW-2 涉及真实 credential 和 private read-only probe，必须先完成独立 security review。

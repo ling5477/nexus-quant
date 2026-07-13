@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 /**
  * OkxHistoricalKlineAdapter 负责 OKX SPOT history-candles 的协议适配。
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Component;
  * 这些差异必须被隔离在 adapter 内，不能污染平台的 marketdata domain。
  */
 @Component
+@Profile("!gatew")
 public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
 
     private static final Map<String, String> SYMBOLS = Map.of(

@@ -13,7 +13,9 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -69,8 +71,20 @@ class ExchangeAdapterConfigurationReadinessTest {
         }
     }
 
-    private static AnnotationConfigApplicationContext newContext() {
+    @Test
+    void gateWProfileDoesNotRegisterMutatingTradingOrPrivateWebSocketBeans() {
+        try (AnnotationConfigApplicationContext context = newContext("gatew")) {
+            assertTrue(context.getBeansOfType(TradingAdapter.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxExchangeAdapter.class).isEmpty());
+            assertTrue(context.getBeansOfType(BinanceExchangeAdapter.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxWsClient.class).isEmpty());
+            assertTrue(context.getBeansOfType(BinanceWsClient.class).isEmpty());
+        }
+    }
+
+    private static AnnotationConfigApplicationContext newContext(String... activeProfiles) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+        context.getEnvironment().setActiveProfiles(activeProfiles);
         context.register(ExchangeAdapterConfiguration.class, ReadinessTestConfiguration.class);
         context.refresh();
         return context;
