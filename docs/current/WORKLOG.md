@@ -17424,3 +17424,31 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary: `REAL_SMOKE=NOT_RUN`、`API_KEY=NOT_REQUIRED`；未访问 OKX/真实 credential，无 order/cancel/transfer/withdraw、LIVE/交易授权、API/frontend/migration/dependency/scheduler/runner/持久化 observation；未 stage/commit/push/PR/tag。
 - authority: `accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next action: `NQ-GATEW-2-COMMIT-AND-PUSH`；只精确提交已接受 diff 并等待 exact-HEAD CI，不初始化 GateW-3。
+
+## NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW
+
+- date: 2026-07-13
+- scope: NQ-only high-risk pre-implementation review；只修改 current docs/evidence，审计 order write chain、mutating ports、risk、venue rules、fee、preview candidates 与 Spring/profile；无 Java/API/migration/frontend/CI diff。
+- preflight: `dev` clean、staged empty、`HEAD == origin/dev == 6543e096...`；exact-HEAD CI run `29230512781` 为 `completed / success`。GateW-2 conformance P0=0/P1=0，故归一化为 `ACCEPTED / CI_GREEN`；`REAL_SMOKE=NOT_RUN`。
+- result: `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。本地 instrument facts 缺少 max quantity、min notional 与可追踪 rule version/freshness contract，不得用 hard-coded common rules、risk defaults 或请求时 network 补齐。
+- baseline: 冻结 `OrderPreviewRequest → OrderIntentNormalizer → LocalVenueRuleResolver → FeeEstimateCalculator → RiskPreflightPreview → DryRunOrderPreviewResult`；internal application service + tests only，首切片 LIMIT only，固定 diagnostic/no-side-effect/not-authorization/LIVE-disabled/order-not-submitted。
+- risk/fee: fee 缺失返回 UNKNOWN、不补零；risk preview 不调用会消费 duplicate/rate-limit state 的 rules，不写 risk event、不预留资金、不创建 approval；permission 因 real smoke 未运行保持 UNKNOWN。
+- validation: lifecycle、next-action、authority checker 均 PASS；doc links 67 checked、0 errors、1 个既有 GateJ historical warning；未运行 Maven/frontend/Python（无代码 diff）。
+- boundary: 未调用 OKX、未访问 credential；无 order/cancel/transfer/withdraw、Controller、migration、persistence、scheduler/runner、LIVE 或交易授权。
+- authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / BLOCKED / NONE / NOT_RUN`；`next_action=NQ-GATEW-3-BLOCKED`。
+- next action: 先以独立授权任务建立或证明完整本地 OKX Spot venue-rule facts，必要 schema/migration 另行 DB/security review；不得开始 GateW-3 implementation 或 GateW-4。
+
+## NQ-GATEW-3-VENUE-RULE-FACTS-SCHEMA-SECURITY-REVIEW
+
+- date: 2026-07-13
+- scope: NQ-only docs/evidence pre-implementation schema/security review；审计 current instrument catalog、OKX public instrument adapter/sync、risk/fee/data-quality，并以 OKX 官方 API guide/changelog 冻结 venue facts、derived facts、risk rules、freshness 和 ingestion；无代码/migration/API/frontend 实现。
+- result: `PASS / VENUE_RULE_SCHEMA_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`；只授权 venue-rule facts implementation，不授权 order preview。
+- schema: 选择扩展 `instrument_catalog`，保持单一事实源；拒绝 `exchange_instrument_rules` 重复事实表和 production immutable fixture。
+- migration: `MIGRATION REQUIRED / PLAN ACCEPTED`；当前最高 V33，候选 `V34__gate_w3_venue_rule_facts.sql`，实施前重新查号；旧行 nullable/no fake backfill，`DB_SCHEMA.md` 在实际 migration 前保持 current V33。
+- official facts: `tickSz/lotSz/minSz/maxLmtSz/maxMktSz/maxLmtAmt/maxMktAmt/state/baseCcy/quoteCcy`；Public Instruments 不提供 OKX Spot minimum notional，故保持 UNKNOWN 或显式 NQ risk rule。
+- freshness: `source/source_schema_version/observed_at/next_rule_effective_at/rule_checksum` 入表；freshUntil/availability/freshness 从 row + configured stale-after 派生；missing/stale/disabled/conflict/version/checksum mismatch fail-closed。
+- ingestion: explicit public-only、OKX Spot、server-side 1..3 symbol allowlist、bounded idempotent UPSERT；保存 non-live state；preview 不触发 network；无 credential/private endpoint/scheduler/runner/startup sync。
+- validation: Git/exact-head CI、repository/schema audit与官方 docs review 已完成；治理、authority、doc link、diff/scope 最终结果见 task evidence。按任务要求未运行 Maven/frontend/Python，未连接 DB 或调用 OKX。
+- boundary: LIVE disabled；无 order/cancel/transfer/withdraw、order/account/position/ledger/event 写入或交易授权；GateW-2 real smoke 仍未运行。
+- authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / NOT_STARTED / NONE / NOT_RUN`。
+- next action: `NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION`；通过 migration/schema conformance review 和 exact-head CI 后，再执行 dry-run order preview security/risk review attempt-02。

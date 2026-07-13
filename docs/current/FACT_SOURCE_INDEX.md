@@ -7,7 +7,7 @@
 1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，schema v3 分离最近冻结 Gate、active Gate、accepted batch、work batch、下一动作与 LIVE/AI/DH 等机器可读状态。
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
-4. [GATEW_PLAN.md](GATEW_PLAN.md)：GateW active current plan；定义 OKX Spot 单 venue、实施批次和 GateW-2 pre-implementation security baseline，不决定 current Gate，也不表示 GateW-2 implementation 已启动。
+4. [GATEW_PLAN.md](GATEW_PLAN.md)：GateW active current plan；定义 OKX Spot 单 venue、实施批次、GateW-2 security baseline、GateW-3 venue-rule fact model 与 no-side-effect preview review，不决定 current Gate。
 5. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：Gate checker、lifecycle、evidence 与 release 执行规则；machine contract 位于 `scripts/docs/governance-workflow-contract.json`，两者均不决定 current Gate。
 6. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 与 GateW planning handoff的 allowed residual；不决定 current Gate 或独立接受 work batch。
 7. [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW current task evidence index；只记录不可覆盖 attempt evidence，不决定 current Gate 或 implementation acceptance。
@@ -69,5 +69,5 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 ## 9. Current Boundary Summary
 
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1 为 `ACCEPTED / CI_GREEN`，GateW-2 security review 已接受但 implementation 为 `NOT_STARTED`。不得把 review authorization 推断为 private runtime、credential access 或 trading authorization 已实现。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI_GREEN`。GateW-3 venue-rule schema/security review 已接受，implementation 为 `NOT_STARTED`；dry-run order preview 仍需 attempt-02 重新审查。GateW-2 `REAL_SMOKE=NOT_RUN`；不得把 read-only diagnostic probe、public metadata readiness、schema review、preview review 或 CI 推断为远端 permission、private trading、LIVE 或 trading authorization。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。

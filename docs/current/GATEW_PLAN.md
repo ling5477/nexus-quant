@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`。GateW-2 pre-implementation security review 已接受，implementation 为 `IMPLEMENTED / PENDING_REVIEW`。
+状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`；GateW-2 implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，CI run `29230512781`。GateW-3 pre-implementation security/risk review 为 `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
 
 ## 1. Current State
 
@@ -12,9 +12,9 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN：`ACCEPTED / CI_GREEN`；GateW-1：`ACCEPTED / CI_GREEN`；GateW-2：`IMPLEMENTED / PENDING_REVIEW`，security review 为 `PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`。
+- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
-- RealClient、real provider、private trading adapter、real permission probe：`NOT IMPLEMENTED`；Python live execution ready：`NO`。
+- RealClient、real provider、private trading adapter：`NOT IMPLEMENTED`；GateW-2 private read-only diagnostic probe 已实现并获 CI 接受，但 real smoke/远端 permission verification 为 `NOT_RUN / UNKNOWN`；Python live execution ready：`NO`。
 
 ## 2. Goal
 
@@ -287,9 +287,9 @@ GateW Freeze 时只复制 accepted attempts 到 archive evidence root，并继�
 
 ## 29. Final Decision and Next Task
 
-当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / NOT_STARTED / NONE / NOT_RUN`。
+历史 authority snapshot（GateW-2 implementation 前）：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / NOT_STARTED / NONE / NOT_RUN`。
 
-唯一下一动作：
+当时唯一下一动作：
 
 ```text
 NQ-GATEW-2-IMPLEMENTATION
@@ -364,12 +364,114 @@ GateW-2 只批准两个 typed operation：
 - 最终 targeted reactor 与全量 Maven 均为 23/23 modules `BUILD SUCCESS`；governance、authority、link、static 与 forbidden-scope 证据记录在 conformance review attempt。
 - `REAL_SMOKE=NOT_RUN`，`API_KEY=NOT_REQUIRED`；无真实 OKX 调用，无 LIVE/交易授权、mutating endpoint、API/frontend/migration/scheduler/runner 或 observation persistence。
 
-当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+历史 authority snapshot（GateW-2 conformance review 完成、提交前）：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 
-唯一下一动作：
+当时唯一下一动作：
 
 ```text
 NQ-GATEW-2-COMMIT-AND-PUSH
 ```
 
 该 action 符合 machine contract 的 `COMMIT_AND_PUSH` 类型；下一轮只精确提交已接受的实际 diff 并等待 exact-HEAD CI，不初始化 GateW-3。
+
+## 34. GateW-2 Exact-HEAD Acceptance Normalization
+
+GateW-2 implementation commit `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553` 已成为 `dev == origin/dev`，其 exact-HEAD `NQ CI Baseline` run `29230512781` 为 `completed / success`。因此 current authority 最小归一化为 GateW-2 `ACCEPTED / CI_GREEN`。
+
+该接受不改变以下事实：`REAL_SMOKE=NOT_RUN`；未证明远端 permission；未开启 LIVE；未建立 private trading、下单、撤单或资金操作授权。
+
+## 35. GateW-3 Dry-run Order Preview Security/Risk Review
+
+结论：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。完整 evidence 为 [NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW.attempt-01.md](evidence/gate-w/NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW.attempt-01.md)。
+
+### 35.1 Frozen no-side-effect architecture
+
+```text
+OrderPreviewRequest
+→ OrderIntentNormalizer
+→ LocalVenueRuleResolver
+→ FeeEstimateCalculator
+→ RiskPreflightPreview
+→ DryRunOrderPreviewResult
+```
+
+- 该链必须物理隔离于 `TradingAdapter`、`TradingVenueGateway`、order command/write/lifecycle、order/trade/fill/event/audit/risk-event/ledger/account/position writer、GateW-2 private transport 和 credential executor。
+- 不得通过 `dryRun=true` 调用真实下单方法，不得生成 order ID，不得写 preview，不得新增 scheduler/runner/startup hook/network client。
+- 第一实现切片仅限 internal application service + tests；无 Controller、无 migration、无 persistence、无 credential、无 private/public runtime network。
+
+### 35.2 Input/result boundary
+
+- 输入必须显式提供 owner/account；固定 OKX Spot、最多 3 个 allowlisted symbol；首切片只允许 `BUY/SELL + LIMIT`，在缺少可靠本地 reference price/slippage contract 时后置 `MARKET`。禁止 margin/futures/options/leverage/transfer/withdraw、raw endpoint、credential 和 provider DTO。
+- quantity/quoteAmount/limitPrice 使用 `BigDecimal`。quantity 仅允许向下计算展示候选，price 必须精确 tick 对齐；任何调整都必须显示 requested/normalized 差异且不得静默标记 ready。
+- 状态只允许 `READY_FOR_REVIEW / BLOCKED / PARTIAL / UNKNOWN`；固定 `diagnosticOnly=true`、`noSideEffect=true`、`notTradingAuthorization=true`、`liveDisabled=true`、`orderSubmitted=false`、`realOrderId=null`。
+
+### 35.3 Venue, fee and risk boundary
+
+- 当前本地 `instrument_catalog` 只具备 symbol/base/quote、status、tick/step、minimum quantity、source/syncedAt 等子集；缺少 maximum quantity、minimum notional 与可返回的 rule version/freshness contract。`OkxInstrumentsCache`/bootstrap fallback 也只覆盖 tick/lot/min/state，且请求时 public refresh 不在允许范围。
+- 不得以硬编码常见规则、risk defaults 或网络补齐。rule 缺失、过期、冲突或 disabled 必须 fail-closed。
+- 仓库无可靠本地 OKX Spot fee schedule；缺失时固定 `feeEstimateStatus=UNKNOWN`，不得补零，且 estimate 不是结算、交易所承诺或最终成交费用。
+- risk preview 只选择纯只读规则；不得直接调用会改变 recent-request/rate-limit state 的 rule，不写 risk event、不消费额度、不预留资金、不创建 approval。GateW-2 real smoke 未执行，permission readiness 必须为 UNKNOWN/blocker。
+
+### 35.4 Unblock criteria and next action
+
+解除阻断前必须以独立授权任务建立或证明完整本地 OKX Spot rule snapshot：symbol/base/quote、tick/step、min/max quantity、min notional、precision、status、source/version、`observedAt/freshUntil`，并对最多 3 个 GateW symbol 保持同版本、可追踪、过期 fail-closed。若需要 schema/migration，必须另经 DB/security review；本审查不授权 migration。
+
+当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / BLOCKED / NONE / NOT_RUN`。
+
+唯一下一动作：
+
+```text
+NQ-GATEW-3-BLOCKED
+```
+
+不得执行 `NQ-GATEW-3-IMPLEMENTATION`，不得初始化 GateW-4。
+
+## 36. GateW-3 Venue-rule Facts Schema/Security Review
+
+结论：`PASS / VENUE_RULE_SCHEMA_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`。完整 evidence 为 [NQ-GATEW-3-VENUE-RULE-FACTS-SCHEMA-SECURITY-REVIEW.attempt-01.md](evidence/gate-w/NQ-GATEW-3-VENUE-RULE-FACTS-SCHEMA-SECURITY-REVIEW.attempt-01.md)。该结论只授权 venue-rule fact implementation，不恢复 dry-run order preview implementation。
+
+### 36.1 Official fact classification
+
+- OKX Public Instruments 的 `tickSz/lotSz/minSz` 分别是价格步长、Spot base-currency 数量步长和 minimum order size；`minSz` 不是 minimum notional。
+- LIMIT/MARKET 最大值分别由 `maxLmtSz/maxMktSz` 表示；`maxLmtAmt/maxMktAmt` 是 USD amount 上限，必须与 quantity 上限分开建模。
+- `state` 只有精确 `live` 可用于 GateW；`suspend/preopen/test`、unknown 或 blank 全部阻断。
+- OKX Spot Public Instruments 未提供可直接用作 venue minimum-notional 的字段；该事实固定为 `UNKNOWN`。若 NQ 配置 minimum notional，只能是内部 risk rule。
+- provider response 不提供可依赖的 schema version 或 observation timestamp；`source_schema_version/observed_at/checksum/fresh_until` 属于 NQ derived facts。
+
+### 36.2 Selected schema and migration
+
+选择方案 A：扩展现有 `instrument_catalog`，保持单一 current fact source。方案 B 会重复 status/tick/lot/min facts并增加 active-version/join 冲突；immutable fixture 只允许 test/fake/sandbox，不能作为 GateW production venue truth。
+
+Migration 决策：`MIGRATION REQUIRED / PLAN ACCEPTED`。当前最高版本 V33，候选为 `V34__gate_w3_venue_rule_facts.sql`；implementation 开始前必须重新查号，不修改历史 migration。
+
+- 将 `tick_size/step_size/min_quantity` 扩为 `NUMERIC(38,18)`。
+- 新增 nullable `max_limit_quantity`、`max_market_size`、`max_market_size_unit`、`max_limit_notional_usd`、`max_market_notional_usd`。
+- 新增 nullable `source_schema_version`、`observed_at`、`next_rule_effective_at`、`rule_checksum`。
+- 不为旧行补 0、当前时间、伪 version/checksum；缺失事实保持 unavailable/unknown。
+- numeric 必须 `> 0`；market size/unit 成对且 GateW OKX Spot unit 只允许 `USDT`；checksum 为 lowercase SHA-256；timestamp 顺序受 CHECK 约束。
+- 保留既有 `(exchange_code, exchange_symbol)` 与 `(exchange_code, internal_symbol)` unique constraints 和 status lookup index；不新建第二表或重复索引。
+- `DB_SCHEMA.md` 继续只描述当前 V33，直到 migration 实际实现并通过验证。
+
+### 36.3 Source, freshness and ingestion
+
+- `source=OKX_PUBLIC_INSTRUMENTS`；`source_schema_version` 是 NQ parser contract，不冒充官方 API version。
+- checksum 取 official venue facts + NQ schema version + relevant planned change 的 canonical JSON SHA-256；排除 observation/write/freshness timestamps。
+- `observed_at` 在完整 public response 成功获取、解析、校验后且 DB write 前记录；`synced_at` 只表示 repository write time。
+- `stale-after` 使用显式配置，建议默认 600 秒、允许 60..86400 秒；配置缺失或非法时 UNKNOWN。`freshUntil=min(observedAt+staleAfter,nextRuleEffectiveAt)`；过期、conflict、checksum/version mismatch、非 LIVE 全部 fail-closed。
+- 复用 public metadata 能力但提取窄 public-only port；显式 operator-triggered，server-side allowlist 仅 1..3 个 OKX Spot symbols。保存所有 allowlisted state，禁止预过滤 non-live。
+- preview 不触发 refresh、不在请求线程联网；无 credential/private endpoint、scheduler/runner/startup/background sync。失败保留旧 snapshot 且不更新 observedAt，使其自然 stale。
+- bounded idempotent UPSERT；相同 checksum 不产生虚假 rule-change，变化只记录 sanitized checksum transition，不保存 raw payload/header/credential。
+
+### 36.4 Implementation gate and next action
+
+实现必须补 V34 migration contract、fresh PostgreSQL V1..V34、V33→V34 upgrade、constraint、repository precision/idempotency/freshness/non-live/sync-failure/no-egress 测试与 full Maven regression，并进入独立 migration/schema conformance review。
+
+Authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / NOT_STARTED / NONE / NOT_RUN`。
+
+唯一下一动作：
+
+```text
+NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION
+```
+
+venue-rule implementation、schema conformance review 与 exact-head CI green 后，才执行 dry-run order preview security/risk review attempt-02；不得直接进入 order preview implementation 或 GateW-4。

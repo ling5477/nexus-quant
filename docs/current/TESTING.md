@@ -11512,3 +11512,47 @@ Next action：`NQ-GATEW-2-SECURITY-CONFORMANCE-REVIEW`。
 - Not run：`REAL_SMOKE=NOT_RUN`；未访问 OKX，未使用 API Key/真实 credential；未运行 frontend/Python（无对应 diff）。
 - Result：`PASS / SECURITY_CONFORMANCE_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。该结果不构成 LIVE 或交易授权。
 - Next action：`NQ-GATEW-2-COMMIT-AND-PUSH`。
+
+---
+
+## NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW（2026-07-13）
+
+结论：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。成功状态 `PASS / SECURITY_RISK_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED` 未达到。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / exact-head CI preflight | PASS | `dev` clean、staged empty、`HEAD == origin/dev == 6543e096...`；`NQ CI Baseline` run `29230512781 / completed / success`。 |
+| GateW-2 commit/CI | PASS | GateW-2 implementation commit 已在 current HEAD；conformance review P0=0/P1=0。authority 最小归一化为 GateW-2 `ACCEPTED / CI_GREEN`；`REAL_SMOKE=NOT_RUN`。 |
+| Order/mutating audit | PASS WITH BLOCKER | 已追踪 Controller → order command/write → venue gateway/adapter 与 order/event/audit/risk/trade/ledger/account/position writers；GateW-3 必须完全物理隔离。 |
+| Venue-rule audit | BLOCKED | 本地模型只有 tick/step/min quantity/status/source/syncedAt 等子集；未发现 max quantity、min notional 与可返回的 rule version/freshness contract。 |
+| Fee/risk audit | PARTIAL | fee schedule 不可用时固定 UNKNOWN；现有 risk pipeline 含会消费 duplicate/rate-limit state 的规则，不可整体复用。 |
+| Governance regression | PASS | lifecycle 与 next-action regression 通过；`BLOCKED → NQ-GATEW-3-BLOCKED` 受 canonical contract 支持。 |
+| Authority checker | PASS | `PASS / CURRENT_AUTHORITY_CONSISTENT`；GateW-2 accepted、GateW-3 blocked。 |
+| Doc links | PASS WITH HISTORICAL WARNING | 67 links checked，0 errors；保留 `TESTING.md` 的既有 GateJ historical warning。 |
+
+What was not run：未运行 Maven、frontend build/Playwright 或 Python checks，因为本轮只允许 docs/evidence 且未修改代码。未调用 OKX public/private API，未读取/选择/解密 credential，`API_KEY=NOT_REQUIRED`，`REAL_SMOKE=NOT_APPLICABLE`。
+
+Boundary：无 Controller、migration、persistence、scheduler/runner、order ID、order/trade/position/ledger/account/event/audit 写入；LIVE 保持 disabled，preview/risk diagnostics 不构成 trading authorization。
+
+Next action：`NQ-GATEW-3-BLOCKED`。必须先以独立授权任务建立或证明完整本地 OKX Spot venue-rule facts；不得执行 GateW-3 implementation 或初始化 GateW-4。
+
+---
+
+## NQ-GATEW-3-VENUE-RULE-FACTS-SCHEMA-SECURITY-REVIEW（2026-07-13）
+
+结论：`PASS / VENUE_RULE_SCHEMA_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`（通过 / venue-rule schema 审查已接受 / 允许按冻结方案实施）。Migration 决策：`MIGRATION REQUIRED / PLAN ACCEPTED`。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / exact-head CI preflight | PASS | `dev`；staged empty；`HEAD == origin/dev == 6543e096...`；run `29230512781 / completed / success`；worktree 仅含用户允许的 9 个既有 GateW-3 blocked review 路径。 |
+| Current schema/code audit | PASS WITH P2 | 审计 V15/V27 `instrument_catalog`、domain/JDBC repository、Controller/sync/cache/parser、data-quality/risk/fee；识别 non-live 被过滤、observedAt 缺失、numeric scale 与逐项 upsert 风险。 |
+| Official OKX protocol review | PASS | 仅阅读 2026-07-13 可访问的 OKX official API guide/changelog/best-practice；确认 tick/lot/min/max/state 字段；未调用 API。 |
+| Schema option review | PASS | 选择扩展 `instrument_catalog`；拒绝重复事实表与 production fixture；候选 V34 只记录为未来实施计划。 |
+| Freshness/security boundary | PASS | source/schemaVersion/observedAt/checksum/configured stale-after/freshUntil 与 disabled/stale/unknown/conflict fail-closed 已冻结；preview zero-network/zero-credential。 |
+| Code tests | NOT RUN | 本轮只允许 docs/evidence，未实现 Java/SQL/API/frontend；按任务要求不运行 Maven/frontend/Python。 |
+
+Implementation test baseline：V34 migration contract、fresh PostgreSQL V1..V34、V33→V34 upgrade、constraint/repository precision/idempotency/freshness/non-live/sync-failure/no-egress 与 full Maven regression。实施后必须独立 migration/schema conformance review。
+
+Boundary：无 OKX API、API Key、credential/private endpoint、DB connection/migration、order/ledger/account/position/event 写入、scheduler/runner 或 LIVE。schema/public metadata readiness 不构成 trading authorization。
+
+Next action：`NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION`。dry-run order preview 必须等待 venue-rule implementation + conformance + exact-head CI 后重新审查 attempt-02。

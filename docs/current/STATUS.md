@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatev-freeze
 last_frozen_gate_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 active_gate=GateW
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateW-1
+accepted_batch=GateW-2
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=31c8171df26bc1eb9f93da19cf0576c0ac48116b
-accepted_batch_acceptance_head=31c8171df26bc1eb9f93da19cf0576c0ac48116b
-accepted_batch_ci_run=29219687588
-work_batch=GateW-2
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
-work_batch_commit=UNCOMMITTED
+accepted_batch_implementation_commit=6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553
+accepted_batch_acceptance_head=6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553
+accepted_batch_ci_run=29230512781
+work_batch=GateW-3
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEW-2-COMMIT-AND-PUSH
+next_action=NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -35,10 +35,12 @@ nq-current-authority:end -->
 - GateV-FREEZE：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；freeze candidate、implementation commit 与 acceptance head 均为 `7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`，`NQ CI Baseline` run `29191014596` 为 `completed / success`。
 - GateV release closeout exact-HEAD CI：`NQ CI Baseline` run `29191677441`，`completed / success`，`headSha=530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateV durable archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)。它是历史证据，不覆盖本 authority。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；[GateW planning baseline](GATEW_PLAN.md) 与 GateW-1 capability/guard 已获 exact-HEAD CI 接受，GateW-2 security review baseline 和实际 diff conformance review 均已通过，当前为 `REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；[GateW planning baseline](GATEW_PLAN.md)、GateW-1 capability/guard 与 GateW-2 private read-only diagnostic probe 均已获 exact-HEAD CI 接受。GateW-3 venue-rule schema/security review 已接受，venue-rule facts implementation 为 `NOT_STARTED`（未开始）。
 - GateW-PLAN：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，`NQ CI Baseline` run `29199785253` 为 `completed / success`。
 - GateW-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，`NQ CI Baseline` run `29219687588` 为 `completed / success`。该批次只建立 typed capability matrix、default-deny endpoint guard 与 GateW profile Bean 边界。
-- GateW-2：`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）。Pre-implementation security review commit `2c7def771b8779c16b98810f09e5758161242ed6` 的 exact-HEAD CI run `29222532638` 为 `completed / success`；本轮 worktree implementation 已完成实际 diff security conformance review，P0=0、P1=0，但仍未提交、CI 未运行，且不表示 real smoke、LIVE 或交易授权。
+- GateW-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，`NQ CI Baseline` run `29230512781` 为 `completed / success`。该接受只覆盖两个 typed private read-only diagnostic operation；`REAL_SMOKE=NOT_RUN`，不表示远端 permission 已验证、LIVE 或交易授权。
+- GateW-3 venue-rule facts：implementation 为 `NOT STARTED`（未开始）；schema/security review 为 `PASS / VENUE_RULE_SCHEMA_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`（通过 / venue-rule schema 审查已接受 / 允许按冻结方案实施）。选择扩展既有 `instrument_catalog`，migration 决策为 `MIGRATION REQUIRED / PLAN ACCEPTED`；候选 V34 只是一份未实施计划，`DB_SCHEMA.md` 仍描述当前 V33。OKX Spot minimum notional 不是已核验的 public instrument fact，必须保持 UNKNOWN 或显式 NQ risk rule。
+- GateW-3 dry-run order preview：仍未获实施授权。必须先完成 venue-rule migration/domain/repository/public-only ingestion、schema conformance review 与 exact-head CI，再重新执行 security/risk review attempt-02。
 
 ## 2. Archive Compatibility Verification
 
@@ -57,10 +59,10 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
 - Integration runtime：`NOT STARTED`（未开始）。
-- RealClient / private trading adapter：`NOT IMPLEMENTED`（未实现）；GateW-2 private read-only diagnostic transport/probe 为 `REVIEW ACCEPTED / READY TO COMMIT`，默认不装配且未做 real smoke。
+- RealClient / private trading adapter：`NOT IMPLEMENTED`（未实现）；GateW-2 private read-only diagnostic transport/probe 为 `ACCEPTED / CI GREEN`，默认不装配且未做 real smoke，不属于交易适配器或交易授权。
 - Python ML readiness / Python live execution readiness：`NO`（否）。
 - `acknowledge`、`escalate`、`resolve`、`close` 只表示本地人工诊断复核；不构成交易授权、LIVE/Shadow 放行，亦不批准下单、撤单、转账或提现。
 
 ## 4. 下一允许动作
 
-治理 authority 中下一允许动作精确为 `NQ-GATEW-2-COMMIT-AND-PUSH`；machine contract 将 `REVIEW_ACCEPTED|READY_TO_COMMIT` 映射到 `COMMIT_AND_PUSH`，该 action 受 checker 支持。下一轮只精确提交并 push 已接受的 GateW-2 diff，等待 exact-HEAD CI；不得初始化 GateW-3。
+治理 authority 中下一动作精确为 `NQ-GATEW-3-VENUE-RULE-FACTS-IMPLEMENTATION`。只允许按已接受 evidence 扩展 `instrument_catalog`、domain/repository 与 public-only ingestion，并补 migration/fresh PostgreSQL/repository 测试；不授权 order preview、Controller、credential/private endpoint、scheduler、LIVE 或交易写侧。实现完成后必须先过 migration/schema conformance review 与 exact-head CI，再重跑 dry-run order preview security/risk review attempt-02；不得初始化 GateW-4。
