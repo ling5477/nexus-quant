@@ -26,8 +26,8 @@ GateW-3 COMMITTED / CI FAILED / FIX REQUIRED
 - GateW-PLAN：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`。
 - GateW-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`。
 - GateW-2：`ACCEPTED / CI GREEN`；implementation/acceptance head `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，CI run `29230512781`。`REAL_SMOKE=NOT_RUN`，不表示远端 permission、LIVE 或交易授权。
-- GateW-3 venue-rule facts：implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；exact-head CI run `29241698510` 已 `completed / failure`，因此 GateW-3 尚未 accepted。
-- 当前治理动作：`NQ-GATEW-3-CI-BLOCKER-FIX`。只修复该失败 run 的 CI blocker；fix 完成 review、commit/push 后回到 `COMMITTED|CI_PENDING`，fix commit exact-head CI green 后才允许接受 GateW-3 并重跑 dry-run order preview security/risk review attempt-02。
+- GateW-3 venue-rule facts：implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；latest committed exact head `54c7bdd2caee5602441ce983b33c4cd2466ee263` 的 CI run `29253811976` 已 `completed / failure`，因此 GateW-3 尚未 accepted。动态 Flyway 与 Playwright timeout fix 已在工作区完成独立 review，结论为 `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`，但尚未 commit/push。
+- 当前治理动作：`NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。只允许精确暂存并提交/push 已接受的 11 路径；形成 fix commit 后回到 `COMMITTED|CI_PENDING`，fix commit exact-head CI green 后才允许接受 GateW-3 并重跑 dry-run order preview security/risk review attempt-02。
 
 ## 路线边界
 

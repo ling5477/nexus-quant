@@ -364,7 +364,6 @@ jobs:
           import org.flywaydb.core.api.MigrationInfo;
 
           public final class BackendCiLegacyAccountFixture {
-              private static final String EXPECTED_VERSION = "33";
               private static final String FIXTURE_ACCOUNT_CODE = "ci-backend-test-account";
 
               private BackendCiLegacyAccountFixture() {
@@ -386,13 +385,18 @@ jobs:
                   flyway.migrate();
                   flyway.validate();
                   MigrationInfo current = flyway.info().current();
-                  String currentVersion = current == null || current.getVersion() == null
-                          ? null
-                          : current.getVersion().getVersion();
-                  if (!EXPECTED_VERSION.equals(currentVersion)) {
+                  if (current == null || current.getVersion() == null) {
                       throw new IllegalStateException(
-                              "Expected Flyway current version " + EXPECTED_VERSION + " but got " + currentVersion);
+                              "Flyway did not produce a current schema version");
                   }
+
+                  MigrationInfo[] pending = flyway.info().pending();
+                  if (pending.length != 0) {
+                      throw new IllegalStateException(
+                              "Flyway still has " + pending.length + " pending migrations");
+                  }
+
+                  String currentVersion = current.getVersion().getVersion();
 
                   try (Connection connection = DriverManager.getConnection(url, user, password)) {
                       insertLegacyAccount(connection);
@@ -423,7 +427,8 @@ jobs:
                       }
                   }
 
-                  System.out.println("Prepared backend CI legacy account fixture after Flyway V" + EXPECTED_VERSION);
+                  System.out.println(
+                          "Prepared backend CI legacy account fixture after Flyway V" + currentVersion);
               }
 
               private static void insertLegacyAccount(Connection connection) throws Exception {
@@ -555,8 +560,6 @@ jobs:
           import org.flywaydb.core.api.MigrationInfo;
 
           public final class FlywaySmoke {
-              private static final String EXPECTED_VERSION = "33";
-
               private FlywaySmoke() {
               }
 
@@ -577,13 +580,18 @@ jobs:
                   flyway.validate();
 
                   MigrationInfo current = flyway.info().current();
-                  String currentVersion = current == null || current.getVersion() == null
-                          ? null
-                          : current.getVersion().getVersion();
-                  if (!EXPECTED_VERSION.equals(currentVersion)) {
+                  if (current == null || current.getVersion() == null) {
                       throw new IllegalStateException(
-                              "Expected Flyway current version " + EXPECTED_VERSION + " but got " + currentVersion);
+                              "Flyway did not produce a current schema version");
                   }
+
+                  MigrationInfo[] pending = flyway.info().pending();
+                  if (pending.length != 0) {
+                      throw new IllegalStateException(
+                              "Flyway still has " + pending.length + " pending migrations");
+                  }
+
+                  String currentVersion = current.getVersion().getVersion();
 
                   try (Connection connection = DriverManager.getConnection(url, user, password);
                           Statement statement = connection.createStatement();
@@ -605,7 +613,7 @@ jobs:
                       }
                   }
 
-                  System.out.println("Flyway empty database smoke reached V" + EXPECTED_VERSION);
+                  System.out.println("Flyway empty database smoke reached V" + currentVersion);
               }
 
               private static String requireEnv(String name) {
@@ -879,7 +887,7 @@ jobs:
   frontend-no-backend-e2e:
     name: Frontend no-backend E2E (Batch 5A)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
 
     permissions:
       contents: read
@@ -907,6 +915,7 @@ jobs:
 
       - name: Install Playwright Chromium
         # Why: 只装 Chromium(含系统依赖);浏览器安装失败 = toolchain/环境失败,直接 fail job,绝不 skip-as-pass。
+        timeout-minutes: 30
         run: npx playwright install --with-deps chromium
 
       - name: Build frontend (production)

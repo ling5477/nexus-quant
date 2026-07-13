@@ -11632,3 +11632,62 @@ Known warnings：仅保留既有 GateJ historical link warning；不阻断本任
 Not run：Maven、frontend、Python、PostgreSQL、Flyway、OKX、GitHub Actions rerun。原因是本任务只修改 governance scripts/docs，实际 CI blocker fix 尚未实施。
 
 Result：`PASS / GOVERNANCE_HARDENING_ACCEPTED / READY_TO_COMMIT`；current authority 为 `GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / 8b54adc6952775dc1a939aad7b0ae849f20f42cf / 29241698510`。
+
+---
+
+## NQ-GATEW-3-CI-BLOCKER-FIX（2026-07-13）
+
+结论：`IMPLEMENTED / PENDING_REVIEW`（已实现 / 待独立复核）。latest committed exact-head CI 仍为 `29253811976 / completed / failure`；本地验证不等于 GitHub CI green，GateW-3 尚未 accepted。
+
+| Command / Evidence | Result | Scope / Environment |
+| --- | --- | --- |
+| Git / GitHub Actions preflight | PASS | `dev` clean/staged empty；starting `HEAD == origin/dev == 54c7bdd2caee5602441ce983b33c4cd2466ee263`；run `29253811976` metadata 与 failed logs 已核验 |
+| Dynamic Flyway static scan | PASS | 两个 workflow helper 不再含 `EXPECTED_VERSION` 或固定 latest-version comparison；migrate/validate/current/pending/cleanDisabled/outOfOrder 合同保留 |
+| Embedded Java extraction/compile | PASS | 从修改后 workflow 真实 heredoc 提取到 `$env:TEMP`；`BackendCiLegacyAccountFixture` 与 `FlywaySmoke` 均 `javac PASS` |
+| Disposable PostgreSQL 16 | PASS | PostgreSQL 16.14、无 volume、loopback 随机端口；fresh V1→V34、34 migrations validate、current=34、pending=0；容器已删除 |
+| Backend fixture | PASS | dynamic V34；legacy row=1、exchange-account row=0、credential row=0 |
+| Frontend install/build | PASS | `npm ci` 183 packages；Vite 8.0.3 production build、3904 modules transformed |
+| Four-spec E2E | PASS | Playwright 1.58.2；四个 allowlisted Chromium spec `4 passed (20.8s)` |
+| Full backend Maven | PASS | `mvn -f backend/pom.xml test`；23/23 reactor modules SUCCESS；`BUILD SUCCESS`；01:08；`nq-app` 150 tests / 0 failures / 0 errors / 5 skipped |
+| Governance | PASS | lifecycle、task-evidence policy、next-action、current authority 均 PASS |
+| Docs links | PASS | 76 checked、0 errors、1 个既有 GateJ historical warning |
+| Immutable evidence | PASS | 五份历史 evidence SHA-256 before/after 相同；`IMMUTABLE_DIFF_LINES=0` |
+
+RCA：current run 的两个 Flyway job 均先成功到 V34，再因 helper 固定 V33 失败；Batch 5A 在 Ubuntu mirror 下载字体依赖时达到 15 分钟 job 上限并取消。修复使用动态 current/pending Flyway 合同与 job/install step 60/30 分钟 timeout，继续保留 `--with-deps chromium`、fail-closed install 与 `if: always()` cleanup。
+
+Validation RCA retained：首次 classpath Maven 命令因 PowerShell `-D` 参数未整体引用而在 goal 前失败；引用后通过。首次 heredoc 提取器对零长度空行过严，修正后编译通过。首次附加 SQL 对文本 version 使用 `max(version)` 返回字典序 `9`；新 fresh container 以最后成功 `installed_rank` 纠正为 34 并重证 34 rows/pending=0。
+
+Environment：Maven 固定 `CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`；未访问 OKX，未使用 API Key/credential，未连接共享或生产数据库。
+
+Known warnings：GitHub runner 的 Node 20 deprecation（`actions/checkout@v4`、`actions/setup-node@v4`）为 P3，本轮不升级；Vite chunk-size 与 Maven/Mockito/SLF4J 既有 warning 非本轮 blocker；current docs 仍有 1 个 GateJ historical link warning。
+
+Not run：未 rerun GitHub Actions；未在 Windows 执行 Linux `--with-deps` 并冒充 Ubuntu system dependency 验证。Ubuntu apt/mirror timeout 只能由 review 后 fix commit 的 exact-head GitHub CI 最终证明。
+
+Boundary：无 migration、业务代码/测试、frontend source、Playwright config、package/lock、API、governance contract/checker、其他 workflow、OKX、credential/private endpoint、LIVE、order preview/submission diff；未 stage/commit/push/PR/tag。
+
+Next action：`NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW`。
+
+---
+
+## NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW（2026-07-13）
+
+结论：`PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`（通过 / CI blocker 修复已接受 / 可进入提交前复核）。P0=0、P1=0；latest committed exact-head CI 仍为 `29253811976 / completed / failure`，GateW-3 尚未 accepted。
+
+| Command / Evidence | Result | Scope / Environment |
+| --- | --- | --- |
+| Exact scope comparison | PASS | implementation authority expected=10、actual=10、extra=0、missing=0、staged=0；review 后候选路径为 11 |
+| Workflow/Flyway static review | PASS | 两个 helper 保留 migrate/validate/current/pending 与 baseline/clean/out-of-order/location 安全边界；固定 latest-version match=0 |
+| Embedded Java extraction/compile | PASS | 从当前 workflow 提取到 `$env:TEMP`；两个 workflow 等价 classpath build 均 23/23 SUCCESS；两个 `javac` exit=0 |
+| Disposable PostgreSQL 16.14 | PASS | `postgres:16`、loopback 随机端口、tmpfs、Docker volume=0；两个 fresh DB 均 V1→V34、validate、current=34、pending=0；容器/TEMP 已清理 |
+| Backend fixture / FlywaySmoke | PASS | fixture legacy/exchange-account/credential=`1/0/0`；smoke history rows=34、latest version=34 |
+| Frontend install/build | PASS | `npm ci` 183 packages；Vite 8.0.3 build、3904 modules transformed |
+| Four-spec E2E | PASS | Playwright 1.58.2；指定 4 spec `4 passed (11.4s)`；生成的 `frontend/test-results-ci` 已删除 |
+| Full backend Maven | PASS | `CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`；23/23 reactor modules SUCCESS；`BUILD SUCCESS`；01:15 |
+| Governance / authority / links | PASS | lifecycle + evidence policy、next-action、current authority 均 PASS；links 76 checked、0 errors、1 个既有 GateJ warning |
+| Static / immutable / forbidden scope | PASS | `git diff --check`；两专项 migration test 无 diff；六份 evidence hash unchanged；历史 diff lines=0；forbidden scope 无 diff |
+
+Known limitations：Windows 本地 Chromium E2E 不证明 Ubuntu `npx playwright install --with-deps chromium` 已在 30/60 分钟预算内恢复；该项只能由 fix commit exact-head GitHub CI 最终验收。未 rerun CI、未访问 OKX、未连接共享/生产数据库、未读取 credential。
+
+Findings：P2 为 root `README.md` 既有且 out-of-scope 的 GateW 摘要漂移；P3 为 GitHub Actions Node 20 runtime deprecation warning。本轮均不扩 scope。
+
+Next action：`NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。

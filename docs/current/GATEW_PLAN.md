@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 venue-rule facts implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；exact-head CI run `29241698510` 已失败，当前为 `COMMITTED / CI FAILED / FIX REQUIRED`（已提交 / CI 已失败 / 必须修复）。dry-run order preview 仍为 `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`，等待 CI blocker fix、fix commit exact-head CI green 与后续 attempt-02。
+状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 venue-rule facts implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；latest committed exact head `54c7bdd2caee5602441ce983b33c4cd2466ee263` 的 CI run `29253811976` 已失败，当前仍为 `COMMITTED / CI FAILED / FIX REQUIRED`（已提交 / CI 已失败 / 必须修复）。动态 Flyway 与 Playwright timeout fix 已独立 review accepted，但尚未 commit/push；dry-run order preview 继续等待 fix commit exact-head CI green 与后续 attempt-02。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 venue-rule facts：`COMMITTED / CI FAILED / FIX REQUIRED`，commit `8b54adc6952775dc1a939aad7b0ae849f20f42cf` / run `29241698510`；order preview：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
+- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 venue-rule facts：`COMMITTED / CI FAILED / FIX REQUIRED`，latest committed exact head `54c7bdd2caee5602441ce983b33c4cd2466ee263` / run `29253811976`；本地 CI blocker fix 为 `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`，尚未 commit/push；order preview 仍未授权。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter：`NOT IMPLEMENTED`；GateW-2 private read-only diagnostic probe 已实现并获 CI 接受，但 real smoke/远端 permission verification 为 `NOT_RUN / UNKNOWN`；Python live execution ready：`NO`。
 
@@ -519,11 +519,12 @@ NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH
 
 该提交动作已由 commit `8b54adc6952775dc1a939aad7b0ae849f20f42cf` 执行；其 exact-head CI run `29241698510` 失败。不得把 review-era pre-commit snapshot 当作 current authority。
 
-## 39. GateW-3 Post-commit CI Failure
+## 39. GateW-3 Post-commit CI Failure and Blocker Fix
 
-Current authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / 8b54adc6952775dc1a939aad7b0ae849f20f42cf / 29241698510`。
+Current authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / 54c7bdd2caee5602441ce983b33c4cd2466ee263 / 29253811976`。
 
 - venue-rule implementation 已提交，migration conformance review 继续有效；failed CI 不撤销二者，也不表示代码已回滚。
-- exact-head run `29241698510` 为 `completed / failure`，因此 GateW-3 尚未 accepted；GateW-2 继续是最近 accepted batch。
-- current next action 仅为 `NQ-GATEW-3-CI-BLOCKER-FIX`。fix 必须完成 review、形成新的 commit、push 后回到 `COMMITTED|CI_PENDING`，再由 fix commit exact-head CI 决定接受。
+- latest committed exact-head run `29253811976` 为 `completed / failure`：两个通用 Flyway helper 在成功迁移/校验到 V34 后固定比较 V33；Batch 5A 的 `npx playwright install --with-deps chromium` 在下载 Ubuntu 字体依赖期间达到 15 分钟 job 上限并被取消。该 run 的 Diff check 已通过，旧 run `29241698510` 的 EOF finding 未再出现。
+- 本轮已将两个 helper 改为 `current version != null + pending migrations=0` 的动态合同，并将 Batch 5A job/install step timeout 分别设为 60/30 分钟；独立 review 已重跑 embedded Java、disposable PostgreSQL、frontend build/4-spec E2E、full Maven 与治理回归并接受该 fix。Ubuntu apt/mirror timeout 仍必须由 fix commit exact-head GitHub CI 最终证明。
+- current next action 仅为 `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。fix 仍未 commit/push；形成新 commit 后回到 `COMMITTED|CI_PENDING`，再由 fix commit exact-head CI 决定接受。
 - 禁止从 failed 直接写成 `ACCEPTED|CI_GREEN`，禁止初始化 GateW-4、GateW Freeze 或 order preview attempt-02，禁止升级 LIVE/交易授权状态。

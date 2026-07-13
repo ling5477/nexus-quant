@@ -17494,3 +17494,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation: JSON、governance lifecycle、next-action、current authority、current doc links、diff/forbidden scope 均 PASS；1 个既有 GateJ historical link warning；四份 immutable GateW evidence SHA-256 前后相同。
 - boundary: 未运行 Maven/frontend/Python/PostgreSQL/Flyway/OKX/CI rerun；未 stage/commit/push/PR/tag；LIVE/Shadow/AI/DH/Integration/real provider/private trading 状态未变。
 - next action: `NQ-GATEW-3-CI-BLOCKER-FIX`；只修复 CI blocker，review 后形成新 fix commit/push 并回到 `COMMITTED|CI_PENDING`，不得初始化 GateW-4/Freeze/order preview。
+
+## NQ-GATEW-3-CI-BLOCKER-FIX
+
+- date: 2026-07-13
+- scope: NQ-only CI workflow/current authority/evidence；只动态化两个 embedded Flyway helper 并将 Batch 5A job/install timeout 改为 60/30 分钟；无 migration、业务代码/测试、frontend source、Playwright config、package/lock、governance contract/checker 或其他 workflow diff。
+- starting facts: `dev` clean/staged empty；`HEAD == origin/dev == 54c7bdd2caee5602441ce983b33c4cd2466ee263`；latest committed exact-head CI run `29253811976` 为 `completed / failure`。
+- root cause: 两个 helper 在 migrate/validate V34 后固定比较 V33；Batch 5A 的 `npx playwright install --with-deps chromium` 在 Ubuntu 字体依赖下载期间达到 15 分钟 job 上限并被取消。
+- implementation: Flyway current/version non-null + pending=0 动态合同，保留 cleanDisabled/outOfOrder/fixture/smoke 边界；Batch 5A job=60、install step=30，继续 Chromium + system deps、fail-closed、无 cache/container/retry/continue-on-error/action/package 升级。
+- validation: 两个 workflow heredoc `javac PASS`；PostgreSQL 16.14 disposable fresh V1→V34、current=34、pending=0、fixture 1/0/0；`npm ci`、frontend build、Playwright 1.58.2 四 spec 4 passed；full Maven 23/23 `BUILD SUCCESS`；governance/authority/doc links PASS。
+- immutable: 五份历史 evidence SHA-256 before/after 相同；`IMMUTABLE_DIFF_LINES=0`。旧 run `29241698510` 的 EOF finding 未在 current run 重现，本轮未修改历史 evidence。
+- result: `IMPLEMENTED / PENDING_REVIEW`；P0=0、P1=0。未 rerun CI，Ubuntu apt/mirror 仍待 fix commit exact-head CI 证明。
+- authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / 54c7bdd2caee5602441ce983b33c4cd2466ee263 / 29253811976`。
+- boundary: 未调用 OKX/读取 credential；无 LIVE、order preview/submission；未 stage/commit/push/PR/tag。
+- next action: `NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW`。
+
+## NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW
+
+- date: 2026-07-13
+- scope: NQ-only independent CI/workflow security/Flyway/Playwright review；implementation comparison authority 精确 10 路径，review 仅新增独立 evidence 并同步 current authority/index。
+- preflight: `dev`；`HEAD == origin/dev == 54c7bdd2caee5602441ce983b33c4cd2466ee263`；staged=0；run `29253811976 / completed / failure / exact head`；scope expected/actual=`10/10`、extra/missing=`0/0`。
+- static review: 两个 Flyway helper 动态化正确，migrate/validate/current/pending 与 baseline/clean/out-of-order/location 安全边界未削弱；V1→V34、V33→V34、V34 contract tests 无 diff。Batch 5A timeout 为 job 60 / install step 30，继续 `--with-deps chromium`、fail-closed、4-spec allowlist，无新增 browser/apt cache、retry、container、continue-on-error 或 action/package drift。
+- runtime: 两个 workflow heredoc `$env:TEMP` compile PASS；PostgreSQL 16.14、tmpfs/no-volume、两个 fresh DB V1→V34、current=34、pending=0、fixture=`1/0/0`、smoke history=34，容器/TEMP 已清理。
+- regression: `npm ci`、frontend build、Playwright 1.58.2 四 spec `4 passed (11.4s)`；full Maven 23/23 `BUILD SUCCESS`；四项 governance/authority/link 验证 PASS；`git diff --check` 与 forbidden-scope checks PASS。
+- immutable: 六份指定 evidence SHA-256 before/after 相同；`IMMUTABLE_DIFF_LINES=0`；implementation evidence 未修改。
+- findings: P0=0、P1=0；P2 为 root README 既有/out-of-scope GateW 摘要漂移；P3 为 Node 20 action-runtime deprecation，本轮不扩 scope。
+- limitation: Windows E2E 不能证明 Ubuntu apt/mirror 恢复；仅 fix commit exact-head GitHub CI 可最终验收 30/60 分钟 timeout。
+- result: `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`；当前 committed exact-head CI 仍 failed，GateW-3 未 accepted，order preview attempt-02 未授权。
+- boundary: 未修改 implementation evidence、migration、backend/frontend/research/scripts/deploy/package/lock/archive；未访问 OKX/credential/LIVE；未 stage/commit/push/rerun CI/PR/tag。
+- next action: `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。
