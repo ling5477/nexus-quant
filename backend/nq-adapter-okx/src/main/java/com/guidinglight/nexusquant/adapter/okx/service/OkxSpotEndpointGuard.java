@@ -62,6 +62,28 @@ public final class OkxSpotEndpointGuard {
         };
     }
 
+    /**
+     * 只接受编译期封闭的 GateW-2 operation；调用方无法提供 method、path、host 或 query map。
+     */
+    public EndpointPolicyDecision evaluatePrivateRead(OkxPrivateReadRequest request) {
+        if (request == null) {
+            return EndpointPolicyDecision.deny(
+                    ExchangeCapability.UNKNOWN,
+                    EndpointAccessClass.UNKNOWN,
+                    EndpointGuardReason.DENY_UNKNOWN_ENDPOINT
+            );
+        }
+        OkxSpotCapabilityDefinition definition = capabilityMatrix.definitionFor(request.operation().capability());
+        if (!definition.implemented()
+                || !definition.runtimeEnabled()
+                || definition.endpointAccessClass() != EndpointAccessClass.PRIVATE_READ_ONLY
+                || !"GET".equals(request.operation().method())
+                || !request.operation().path().equals(request.pathWithQuery().split("\\?", 2)[0])) {
+            return deny(definition, EndpointGuardReason.DENY_UNKNOWN_ENDPOINT);
+        }
+        return EndpointPolicyDecision.allowPrivateReadOnly(definition.capability());
+    }
+
     private EndpointPolicyDecision evaluatePublicRead(
             OkxSpotCapabilityDefinition definition,
             String method,

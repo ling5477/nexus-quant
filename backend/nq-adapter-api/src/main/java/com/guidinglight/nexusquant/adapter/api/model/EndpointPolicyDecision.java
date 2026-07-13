@@ -40,6 +40,20 @@ public record EndpointPolicyDecision(
         );
     }
 
+    /**
+     * 仅允许已类型化、已精确匹配的 private read-only operation 进入专用 transport。
+     * 该决策固定不构成交易授权。
+     */
+    public static EndpointPolicyDecision allowPrivateReadOnly(ExchangeCapability capability) {
+        return new EndpointPolicyDecision(
+                true,
+                capability,
+                EndpointAccessClass.PRIVATE_READ_ONLY,
+                EndpointGuardReason.ALLOW_PRIVATE_READ_ONLY,
+                false
+        );
+    }
+
     public static EndpointPolicyDecision deny(
             ExchangeCapability capability,
             EndpointAccessClass endpointAccessClass,

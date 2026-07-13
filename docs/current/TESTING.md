@@ -11474,3 +11474,41 @@ What was not run：未运行 Maven、frontend build/Playwright 或 Python checks
 Boundary：LIVE `DISABLED`、Shadow trading `NOT ENABLED`、AI `NOT_STARTED`、DH runtime `NOT_INTEGRATED`、Integration runtime `NOT_STARTED`；real provider、private trading 与 real permission probe 仍未实现。review authorization 不构成 trading authorization。
 
 Next：先执行 `NQ-GATEW-2-SECURITY-REVIEW-COMMIT-AND-PUSH`；review commit exact-HEAD CI green 后，治理动作 `NQ-GATEW-2-IMPLEMENTATION` 才可执行。
+
+---
+
+## NQ-GATEW-2-OKX-SPOT-PRIVATE-READONLY-PROBE-IMPLEMENTATION（2026-07-13）
+
+结论：`IMPLEMENTED / PENDING_REVIEW`（已实施 / 待复核）。
+
+| Command / Evidence | Result | Notes |
+| --- | --- | --- |
+| Git / exact-head CI preflight | PASS | `dev` clean、staged empty、`HEAD == origin/dev == 2c7def771b8779c16b98810f09e5758161242ed6`；`NQ CI Baseline` run `29222532638 / completed / success`。 |
+| Security baseline | PASS | current HEAD 为 security review commit，且 exact-HEAD CI green；官方 OKX API guide/changelog 当日复核未发现 protocol drift。 |
+| Target reactor | PASS | `mvn -f backend/pom.xml -pl nq-adapter-api,nq-adapter-okx,nq-core,nq-infra,nq-app -am test`：23/23 modules SUCCESS；0 failures/errors。 |
+| Full backend Maven | PASS | `mvn -f backend/pom.xml test`：最终源码 23/23 modules SUCCESS；0 failures/errors；既有 configured skips 保持。 |
+| GateW focused regression | PASS | typed operations/query、signer Clock fixture、transport 边界、0/1/>1 credential、buffer 清理与 context 防逃逸、config-before-balance、permission fail-closed、partial response、negative profile/no-startup/no-outbound 均覆盖。 |
+| Governance / scope | PASS | lifecycle、next-action、authority、diff check、static security scan、attempt-01 immutable hash 与 forbidden-scope diff 以 Attempt 02 收尾证据为准。 |
+
+RCA：一次定向测试命令因 PowerShell 参数引号错误，在 Maven 解析阶段报 `Unknown lifecycle phase`，测试未启动；修正后通过。最终内存收紧复验首次在 `nq-adapter-okx` 编译阶段发现局部 `ByteBuffer` 遮蔽可清理字段，导致 `Arrays.fill` 参数类型错误；改为显式字段引用后重新执行 target reactor 与 full Maven。两次失败均保留，最终结果只以修正后重跑为准。
+
+Local test note：既有 local Spring tests 只连接本机 PostgreSQL，schema 已为 V33 且 `No migration necessary`；本轮未新增或修改 migration，未连接生产数据库。
+
+Boundary：`REAL_SMOKE=NOT_RUN`，未调用 OKX、未使用真实 credential；无 order/cancel/transfer/withdraw、Controller/frontend、migration、scheduler/runner 或 observation persistence。结果不构成 trading authorization，LIVE 保持 disabled。
+
+Next action：`NQ-GATEW-2-SECURITY-CONFORMANCE-REVIEW`。
+
+## NQ-GATEW-2-SECURITY-CONFORMANCE-REVIEW-CONTINUE
+
+- Date：2026-07-13。
+- Scope：GateW-2 实际 36-path implementation diff 的安全符合性复核、指定 P1 最小修复、fake transport/credential/Spring 回归与 authority 收口；无真实 OKX、API Key、API/frontend/migration。
+- Targeted adapter：`JdkOkxPrivateReadTransportTest` + `OkxPrivateReadRequestTest` 共 12 tests，0 failures/errors。
+- Targeted credential/probe：`JdbcOkxPrivateCredentialExecutorTest` + `OkxPrivateReadonlyProbeServiceTest` 共 14 tests，0 failures/errors。
+- Required reactor：`mvn -f backend/pom.xml -pl nq-adapter-api,nq-adapter-okx,nq-core,nq-infra,nq-app -am test` -> 23/23 modules `SUCCESS`，`BUILD SUCCESS`，5:08。
+- Full regression：`mvn -f backend/pom.xml test` -> 23/23 modules `SUCCESS`，`BUILD SUCCESS`，2:30；`nq-app` 139 tests / 0 failures / 0 errors / 4 skipped。
+- RCA：首轮 continuation reactor 的测试编译缺少一个 import，最小补回后重跑；`ccy` 改为必须提供后，partial-balance fixture 的空 allowlist 导致预期 `PARTIAL` 实际 `BLOCKED`，只改为显式 `BTC` fixture 后 targeted 与两条最终 Maven 全通过。两次快速 targeted 命令另有 PowerShell `-D` 参数引用错误，修正引用后通过，均非源码失败。
+- Environment：既有 Maven `settings.xml` 有未识别 `profiles` 标签 warning，未影响构建；既有 local tests 可连接本机 PostgreSQL，未连接生产 DB、未新增/修改 migration。
+- Security coverage：LIVE property missing/false/true/invalid；credential owner/OKX/account/lifecycle/0/1/>1；cause/message redaction；header control character；callback cross-thread/expiry；config null/empty/multi/dangerous；balance partial/empty/multi/malformed；subscriber receive-time cap；no retry、timeout、redirect、single concurrency、Spring no-startup/no-mutating。
+- Not run：`REAL_SMOKE=NOT_RUN`；未访问 OKX，未使用 API Key/真实 credential；未运行 frontend/Python（无对应 diff）。
+- Result：`PASS / SECURITY_CONFORMANCE_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。该结果不构成 LIVE 或交易授权。
+- Next action：`NQ-GATEW-2-COMMIT-AND-PUSH`。

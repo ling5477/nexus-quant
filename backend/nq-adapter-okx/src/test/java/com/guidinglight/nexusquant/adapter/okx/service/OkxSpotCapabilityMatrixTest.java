@@ -30,23 +30,28 @@ class OkxSpotCapabilityMatrixTest {
     }
 
     @Test
-    void shouldKeepEveryPrivateReadCapabilityContractOnlyAndRuntimeDisabled() {
-        Set<ExchangeCapability> privateReadCapabilities = Set.of(
+    void shouldImplementOnlyGateW2PrivateReadsAndKeepLegacyPermissionReadDisabled() {
+        Set<ExchangeCapability> implementedPrivateReads = Set.of(
                 ExchangeCapability.PRIVATE_ACCOUNT_CONFIGURATION_READ,
-                ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ,
-                ExchangeCapability.PRIVATE_PERMISSION_READ
+                ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ
         );
 
-        for (ExchangeCapability capability : privateReadCapabilities) {
+        for (ExchangeCapability capability : implementedPrivateReads) {
             OkxSpotCapabilityDefinition definition = matrix.definitionFor(capability);
             assertEquals(EndpointAccessClass.PRIVATE_READ_ONLY, definition.endpointAccessClass());
-            assertFalse(definition.implemented());
-            assertFalse(definition.runtimeEnabled());
+            assertTrue(definition.implemented());
+            assertTrue(definition.runtimeEnabled());
             assertTrue(definition.credentialRequired());
             assertTrue(definition.networkRequired());
             assertFalse(definition.tradingAuthorization());
-            assertEquals(EndpointGuardReason.DENY_PRIVATE_RUNTIME_DISABLED, definition.reasonCode());
+            assertEquals(EndpointGuardReason.ALLOW_PRIVATE_READ_ONLY, definition.reasonCode());
         }
+
+        OkxSpotCapabilityDefinition legacyPermissionRead =
+                matrix.definitionFor(ExchangeCapability.PRIVATE_PERMISSION_READ);
+        assertFalse(legacyPermissionRead.implemented());
+        assertFalse(legacyPermissionRead.runtimeEnabled());
+        assertEquals(EndpointGuardReason.DENY_PRIVATE_RUNTIME_DISABLED, legacyPermissionRead.reasonCode());
     }
 
     @Test

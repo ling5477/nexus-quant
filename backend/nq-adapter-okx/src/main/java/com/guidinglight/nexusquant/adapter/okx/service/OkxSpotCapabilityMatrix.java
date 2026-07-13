@@ -56,11 +56,11 @@ public final class OkxSpotCapabilityMatrix {
         );
         definitions.put(
                 ExchangeCapability.PRIVATE_ACCOUNT_CONFIGURATION_READ,
-                privateRead(ExchangeCapability.PRIVATE_ACCOUNT_CONFIGURATION_READ)
+                implementedPrivateRead(ExchangeCapability.PRIVATE_ACCOUNT_CONFIGURATION_READ)
         );
         definitions.put(
                 ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ,
-                privateRead(ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ)
+                implementedPrivateRead(ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ)
         );
         definitions.put(
                 ExchangeCapability.PRIVATE_PERMISSION_READ,
@@ -134,6 +134,18 @@ public final class OkxSpotCapabilityMatrix {
                 true,
                 true,
                 EndpointGuardReason.DENY_PRIVATE_RUNTIME_DISABLED
+        );
+    }
+
+    private static OkxSpotCapabilityDefinition implementedPrivateRead(ExchangeCapability capability) {
+        return definition(
+                capability,
+                EndpointAccessClass.PRIVATE_READ_ONLY,
+                true,
+                true,
+                true,
+                true,
+                EndpointGuardReason.ALLOW_PRIVATE_READ_ONLY
         );
     }
 

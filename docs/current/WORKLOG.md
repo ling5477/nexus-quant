@@ -17399,3 +17399,28 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - safety: 未读取/选择/解密 credential，未调用 OKX，未创建 HTTP client/transport/probe；`REAL_SMOKE=NOT_RUN`，LIVE/Shadow/AI/DH/Integration/private trading 保持关闭或未实现。
 - P2: 现有 decrypt path 返回不可可靠清零的 plaintext `String`；新实现不得复用其跨层 contract。现有 generic OKX client、persistent probe service 和 substring classifier 也禁止复用。
 - next action: 先执行 `NQ-GATEW-2-SECURITY-REVIEW-COMMIT-AND-PUSH`；该 commit exact-HEAD CI green 后执行 `NQ-GATEW-2-IMPLEMENTATION`。
+
+## NQ-GATEW-2-OKX-SPOT-PRIVATE-READONLY-PROBE-IMPLEMENTATION
+
+- date: 2026-07-13
+- scope: NQ-only；在 adapter/infra/app 现有依赖方向内实现 typed OKX private read-only config/balance transport、scoped credential executor、非持久化 probe 与显式 profile 装配；不新增 API、migration、dependency、frontend、scheduler/runner 或 real smoke。
+- result: `IMPLEMENTED / PENDING_REVIEW`（已实施 / 待安全符合性复核）；P0=0，P1=0。
+- implementation: exact GET/path/host/query allowlist；injected Clock signer；NEVER redirect、无 retry、bounded timeout/response/concurrency；owner/account/type 唯一 credential 选择；infra-only 同步 decrypt callback；config-before-balance 与远端 read-only permission fail-closed；脱敏内存 observation。
+- profile: 仅 `gatew-okx-readonly` + flag true + LIVE false 装配 read-only 组件；默认/local/test/CI 无该 transport、无 decrypt、无 startup probe、无 outbound；既有 mutating/private WebSocket Bean 在该 profile 不装配。
+- validation: target reactor 与最终全量 Maven 均 23/23 modules SUCCESS、0 failures/errors；governance、authority、static/scope/diff 检查详见 Attempt 02。保留一次 PowerShell 参数解析失败；内存收紧首轮复验另捕获局部变量遮蔽导致的 adapter 编译错误，显式引用可清理字段后完整重跑通过。
+- safety: `REAL_SMOKE=NOT_RUN`；未访问 OKX、未使用真实 credential、未写 credential/probe/account/audit/ledger/position/snapshot；无 order/cancel/transfer/withdraw，无 LIVE 或交易授权。
+- P2: JDBC/JDK API 边界的短暂 immutable plaintext/authenticated-header `String` 无法可靠清零，但生命周期被限制在 executor/transport 内，未跨层；其余可清理 buffer 在完成、异常或 `finally` 路径覆盖。
+- next action: `NQ-GATEW-2-SECURITY-CONFORMANCE-REVIEW`；只审查实际 diff，不重做完整方案审查，不初始化 GateW-3。
+
+## NQ-GATEW-2-SECURITY-CONFORMANCE-REVIEW-CONTINUE
+
+- date: 2026-07-13
+- scope: NQ-only high-risk security conformance review；以上轮精确 36 paths 为 scope authority，正式裁定并最小关闭 P1，补充 fake transport/credential/Spring 回归；只新增 conformance review evidence。
+- result: `PASS / SECURITY_CONFORMANCE_ACCEPTED / READY_TO_COMMIT`（通过 / 安全符合性已接受 / 可进入提交前复核）；P0=0、P1=0。
+- fixes: LIVE 缺省不装配；credential SQL 同时约束 owner/account/OKX/account ACTIVE/lifecycle；credential/provider parse cause 脱敏；config 多条 fail-closed；credential header 控制字符拒绝；generic callback 改为 thread/callback-bound typed session；partial balance `assetCount=null`；empty/multi/malformed balance 与空 `ccy` allowlist fail-closed。
+- validation: pre-evidence `$expected/$actual=36/36`、extra/missing/staged=0；adapter targeted 12/12、credential/probe targeted 14/14；required reactor 23/23 `BUILD SUCCESS`（5:08）；full Maven 23/23 `BUILD SUCCESS`（2:30）；治理、authority、doc links、static 与 forbidden-scope 见 conformance attempt。
+- RCA: 首轮 continuation 测试编译缺失 import 与收紧 `ccy` 后 fixture 空 allowlist 均已最小修复并完整重跑；快速 targeted PowerShell `-D` 引用错误不属于源码失败。
+- evidence: `docs/current/evidence/gate-w/NQ-GATEW-2-SECURITY-CONFORMANCE-REVIEW.attempt-01.md`；三个既有 attempt/security-review 文件按 SHA-256 复核不变。
+- boundary: `REAL_SMOKE=NOT_RUN`、`API_KEY=NOT_REQUIRED`；未访问 OKX/真实 credential，无 order/cancel/transfer/withdraw、LIVE/交易授权、API/frontend/migration/dependency/scheduler/runner/持久化 observation；未 stage/commit/push/PR/tag。
+- authority: `accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next action: `NQ-GATEW-2-COMMIT-AND-PUSH`；只精确提交已接受 diff 并等待 exact-HEAD CI，不初始化 GateW-3。

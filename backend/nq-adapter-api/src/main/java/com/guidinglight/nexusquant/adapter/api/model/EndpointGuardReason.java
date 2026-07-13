@@ -8,6 +8,7 @@ package com.guidinglight.nexusquant.adapter.api.model;
 public enum EndpointGuardReason {
 
     ALLOW_PUBLIC_READ,
+    ALLOW_PRIVATE_READ_ONLY,
     DENY_PRIVATE_RUNTIME_DISABLED,
     DENY_MUTATING_ENDPOINT,
     DENY_FUNDS_MOVEMENT,

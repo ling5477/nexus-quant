@@ -50,6 +50,23 @@ class OkxSpotEndpointGuardTest {
     }
 
     @Test
+    void shouldAllowOnlyTypedGateW2PrivateReadRequests() {
+        EndpointPolicyDecision config = guard.evaluatePrivateRead(OkxPrivateReadRequest.accountConfiguration());
+        EndpointPolicyDecision balance = guard.evaluatePrivateRead(
+                OkxPrivateReadRequest.accountBalance(List.of("BTC"))
+        );
+        EndpointPolicyDecision unknown = guard.evaluatePrivateRead(null);
+
+        assertTrue(config.allowed());
+        assertTrue(balance.allowed());
+        assertFalse(config.tradingAuthorization());
+        assertFalse(balance.tradingAuthorization());
+        assertEquals(EndpointGuardReason.ALLOW_PRIVATE_READ_ONLY, config.reason());
+        assertFalse(unknown.allowed());
+        assertEquals(EndpointGuardReason.DENY_UNKNOWN_ENDPOINT, unknown.reason());
+    }
+
+    @Test
     void shouldRejectEveryPrivateMutatingMethodBeforeAnyTransport() {
         for (String method : List.of("POST", "PUT", "PATCH", "DELETE")) {
             EndpointPolicyDecision decision = guard.evaluate(

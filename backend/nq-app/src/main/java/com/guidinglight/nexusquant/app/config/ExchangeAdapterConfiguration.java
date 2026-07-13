@@ -54,7 +54,7 @@ public class ExchangeAdapterConfiguration {
      * 先走 readiness fail-closed，当前 no-real / LIVE disabled baseline 下不会触达真实 OKX HTTP 逻辑。
      */
     @Bean
-    @Profile("!gatew")
+    @Profile("!gatew & !gatew-okx-readonly")
     public OkxExchangeAdapter okxTradingAdapter(
             @Value("${nq.okx.adapter.stub-on-bootstrap-failure:false}") boolean stubOnBootstrapFailure,
             AdapterReadinessService readinessService
@@ -77,13 +77,13 @@ public class ExchangeAdapterConfiguration {
      * Binance adapter 在 app 装配层接入 readiness guard，同时保留具体类型 Bean。
      */
     @Bean
-    @Profile("!gatew")
+    @Profile("!gatew & !gatew-okx-readonly")
     public BinanceExchangeAdapter binanceTradingAdapter(AdapterReadinessService readinessService) {
         return new BinanceExchangeAdapter(readinessService);
     }
 
     @Bean
-    @Profile("!gatew")
+    @Profile("!gatew & !gatew-okx-readonly")
     public OkxWsClient okxWsClient() {
         return new OkxWsClient();
     }
@@ -94,7 +94,7 @@ public class ExchangeAdapterConfiguration {
     }
 
     @Bean
-    @Profile("!gatew")
+    @Profile("!gatew & !gatew-okx-readonly")
     public BinanceWsClient binanceWsClient() {
         return new BinanceWsClient();
     }

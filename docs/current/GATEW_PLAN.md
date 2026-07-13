@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`。GateW-2 pre-implementation security review 已接受，implementation 仍为 `NOT_STARTED`。
+状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`。GateW-2 pre-implementation security review 已接受，implementation 为 `IMPLEMENTED / PENDING_REVIEW`。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN：`ACCEPTED / CI_GREEN`；GateW-1：`ACCEPTED / CI_GREEN`；GateW-2：`NOT_STARTED`，security review 为 `PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`。
+- GateW-PLAN：`ACCEPTED / CI_GREEN`；GateW-1：`ACCEPTED / CI_GREEN`；GateW-2：`IMPLEMENTED / PENDING_REVIEW`，security review 为 `PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter、real permission probe：`NOT IMPLEMENTED`；Python live execution ready：`NO`。
 
@@ -343,3 +343,33 @@ GateW-2 只批准两个 typed operation：
 ## 31. GateW-2 Security Review Decision
 
 结论：`PASS / SECURITY_REVIEW_ACCEPTED / IMPLEMENTATION_AUTHORIZED`。P0=0，P1=0。实现严格遵循 baseline、无 migration、无 real smoke 且无 P0/P1 时，完成后只做针对 diff 的精简 security conformance review，不重复完整方案审查；真实 smoke 始终单独记录。
+
+## 32. GateW-2 Implementation Record
+
+结论：`IMPLEMENTED / PENDING_REVIEW`（已实施 / 待复核），P0=0，P1=0。
+
+- 仅新增 `OKX_ACCOUNT_CONFIGURATION_READ` 与 `OKX_ACCOUNT_BALANCE_READ` 两个 typed operation；method、global host、path 与 canonical `ccy` query 全部在 wrapper 内固定，GateW-1 raw/private、mutating 与 funds movement deny 保持不变。
+- 新增 injected `Clock` 的 OKX V5 signer、redirect NEVER、无 retry、bounded timeout、256 KiB 接收上限、单并发 transport；只解析 allowlisted permission 与脱敏 asset count/completeness。
+- credential 以 owner/account/`OKX_API_V5` 精确选择，0/1/>1 分流；仅 infrastructure 同步 callback 内临时解密，context 逃逸被拒绝，可清理 buffer 在 `finally` 覆盖。JDBC/JDK API 边界短暂存在不可可靠清零的 immutable plaintext/authenticated-header `String`，这是 P2；其生命周期限制在 executor/transport 内，未进入 core、DTO、cache、日志、evidence 或异步任务。
+- probe 固定 config-before-balance；仅远端权限集合精确为 read-only 才继续，Trade、Withdraw、unknown、missing、partial 或异常均 fail-closed。observation 只在内存返回，固定 diagnostic/no-side-effect/not-authorization/LIVE-disabled/order-not-submitted。
+- Spring 仅在 `gatew-okx-readonly` + feature flag true + LIVE false 时装配 read-only transport/executor/service；默认、local、test、CI 不装配，不自动 probe、不解密、不外联，且该 profile 排除既有 mutating/private WebSocket Bean。
+- 本轮无 Controller、frontend、migration、dependency、scheduler、runner、持久化 observation 或 real smoke；所有 HTTP 测试使用 fake exchange，未访问 OKX。
+
+## 33. GateW-2 Security Conformance Acceptance and Next Task
+
+结论：`PASS / SECURITY_CONFORMANCE_ACCEPTED / READY_TO_COMMIT`（通过 / 安全符合性已接受 / 可进入提交前复核），P0=0，P1=0。
+
+- 指定八项 P1 候选均已确认并最小关闭：LIVE 缺省 fail-closed、credential SQL account/exchange/lifecycle scope、credential/provider cause 脱敏、config 多条 fail-closed、header control-character 拒绝、generic callback 逃逸收口、unknown balance 不补零。
+- 额外收紧 empty/multi/malformed balance、必须提供 server-side `ccy` allowlist、response buffer 清理、subscriber receive-time cap 与单并发竞争测试。
+- 最终 targeted reactor 与全量 Maven 均为 23/23 modules `BUILD SUCCESS`；governance、authority、link、static 与 forbidden-scope 证据记录在 conformance review attempt。
+- `REAL_SMOKE=NOT_RUN`，`API_KEY=NOT_REQUIRED`；无真实 OKX 调用，无 LIVE/交易授权、mutating endpoint、API/frontend/migration/scheduler/runner 或 observation persistence。
+
+当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-1 / ACCEPTED|CI_GREEN`；`work_batch=GateW-2 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+
+唯一下一动作：
+
+```text
+NQ-GATEW-2-COMMIT-AND-PUSH
+```
+
+该 action 符合 machine contract 的 `COMMIT_AND_PUSH` 类型；下一轮只精确提交已接受的实际 diff 并等待 exact-HEAD CI，不初始化 GateW-3。
