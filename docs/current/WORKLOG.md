@@ -17481,3 +17481,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary: 未调用真实 OKX/生产 DB，未读取 credential；无 private endpoint/order preview/submission/Controller/API/frontend/scheduler/runner/LIVE；未 stage/commit/push/PR/tag。
 - authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next action: `NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH`；只精确提交已接受范围并等待 exact-head CI，CI green 前不恢复 dry-run order preview attempt-02。
+
+## NQ-GOVERNANCE-POST-COMMIT-CI-FAILED-STATE-HARDENING
+
+- date: 2026-07-13
+- scope: NQ-only governance contract/shared library、authority checker、lifecycle/next-action fixtures 与 current authority/evidence；无 CI workflow、backend、migration 或业务测试修改。
+- starting facts: `dev` clean/staged empty；`HEAD == origin/dev == 8b54adc6952775dc1a939aad7b0ae849f20f42cf`；exact-head CI run `29241698510` 为 `completed / failure`。
+- result: `PASS / GOVERNANCE_HARDENING_ACCEPTED / READY_TO_COMMIT`；新增唯一 `COMMITTED|CI_FAILED|FIX_REQUIRED` 状态与 `CI_BLOCKER_FIX` action type，不新增重复 CI conclusion 字段。
+- contract: strict concrete SHA/positive run；pending → failed、显式 authority catch-up、failed → new-fix-commit pending；failed → green 直跳与 same-commit recovery fail-closed。
+- checker: accepted predecessor、active/work/action binding、case-sensitive status、failed/green contradiction；保持纯本地文档一致性校验，不调用 GitHub/网络。
+- authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`active_gate=GateW / IN_PROGRESS|NOT_FROZEN`；`work_batch=GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / 8b54adc6952775dc1a939aad7b0ae849f20f42cf / 29241698510`。
+- validation: JSON、governance lifecycle、next-action、current authority、current doc links、diff/forbidden scope 均 PASS；1 个既有 GateJ historical link warning；四份 immutable GateW evidence SHA-256 前后相同。
+- boundary: 未运行 Maven/frontend/Python/PostgreSQL/Flyway/OKX/CI rerun；未 stage/commit/push/PR/tag；LIVE/Shadow/AI/DH/Integration/real provider/private trading 状态未变。
+- next action: `NQ-GATEW-3-CI-BLOCKER-FIX`；只修复 CI blocker，review 后形成新 fix commit/push 并回到 `COMMITTED|CI_PENDING`，不得初始化 GateW-4/Freeze/order preview。

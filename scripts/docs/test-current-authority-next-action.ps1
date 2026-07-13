@@ -21,6 +21,9 @@ foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'N
     Assert-ActionType $action 'COMMIT_AND_PUSH'
 }
 foreach ($case in @(
+    @{ Action = 'NQ-GATEW-3-CI-BLOCKER-FIX'; Expected = 'CI_BLOCKER_FIX' },
+    @{ Action = 'NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW'; Expected = 'CI_BLOCKER_FIX' },
+    @{ Action = 'NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH'; Expected = 'CI_BLOCKER_FIX' },
     @{ Action = 'NQ-GATEW-REVIEW'; Expected = 'REVIEW' },
     @{ Action = 'NQ-GATEW-PLAN-IMPLEMENTATION'; Expected = 'IMPLEMENTATION' },
     @{ Action = 'NQ-GATEW-POST-CI-ACTIVE-AUTHORITY-SYNC'; Expected = 'POST_CI_SYNC' },
@@ -33,7 +36,13 @@ foreach ($action in @(
     'NQ-GATEW-COMMIT-SOMETHING-PUSH',
     'NQ-GATEW-COMMIT-AND-PUSH-LATER',
     'NQ-GATEW-WAIT-ANYTHING-CI',
-    'NQ-GATEW-UNBLOCKED'
+    'NQ-GATEW-UNBLOCKED',
+    'NQ-GATEW-3-FIX',
+    'NQ-GATEW-3-MIGRATION-FIX',
+    'NQ-GATEW-3-SECURITY-FIX',
+    'NQ-GATEW-3-BLOCKER-FIX',
+    'NQ-GATEW-3-CI-BLOCKER-FIX-LATER',
+    'NQ-GATEW-3-CI-BLOCKER-FIX-SECURITY'
 )) {
     Assert-ActionType $action 'UNKNOWN'
 }

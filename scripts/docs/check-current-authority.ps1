@@ -36,7 +36,7 @@ function Read-Utf8File {
 
 function Test-StatusPhrase {
     param([string] $Content, [string] $Subject, [string] $StatusPattern)
-    $pattern = '(?im)^\s*-\s*{0}(?![A-Za-z0-9])[^\r\n]*{1}' -f [regex]::Escape($Subject), $StatusPattern
+    $pattern = '(?im)^\s*-\s*{0}\s*(?:\x3a|\uff1a)[^\r\n]*{1}' -f [regex]::Escape($Subject), $StatusPattern
     return $Content -match $pattern
 }
 
@@ -90,17 +90,20 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             if (-not (Test-GovernanceExactTokenSet $authority.last_frozen_gate_status @('FROZEN', 'ACCEPTED', 'TAGGED'))) {
                 Add-AuthorityError "LAST_FROZEN_GATE_STATUS_COMBINATION_INVALID value=$($authority.last_frozen_gate_status)"
             }
-            if (@($contract.authority.activeGateStatuses) -notcontains $authority.active_gate_status) {
+            if (@($contract.authority.activeGateStatuses) -cnotcontains $authority.active_gate_status) {
                 Add-AuthorityError "ACTIVE_GATE_STATUS_COMBINATION_INVALID value=$($authority.active_gate_status)"
             }
-            if (@($contract.authority.acceptedBatchStatuses) -notcontains $authority.accepted_batch_status) {
+            if (@($contract.authority.acceptedBatchStatuses) -cnotcontains $authority.accepted_batch_status) {
                 Add-AuthorityError "ACCEPTED_BATCH_STATUS_INVALID value=$($authority.accepted_batch_status)"
             }
-            if (@($contract.authority.workBatchStatuses) -notcontains $authority.work_batch_status) {
+            if (@($contract.authority.workBatchStatuses) -cnotcontains $authority.work_batch_status) {
                 Add-AuthorityError "WORK_BATCH_STATUS_INVALID value=$($authority.work_batch_status)"
             }
             if ($authority.accepted_batch -eq $authority.work_batch) {
                 Add-AuthorityError "WORK_BATCH_STATUS_INVALID accepted_batch_and_work_batch_must_differ batch=$($authority.work_batch)"
+            }
+            if (-not $authority.work_batch.StartsWith($authority.active_gate + '-', [System.StringComparison]::Ordinal)) {
+                Add-AuthorityError "WORK_BATCH_ACTIVE_GATE_MISMATCH active_gate=$($authority.active_gate) work_batch=$($authority.work_batch)"
             }
 
             foreach ($field in @('last_frozen_gate_commit', 'accepted_batch_implementation_commit', 'accepted_batch_acceptance_head')) {
@@ -127,6 +130,24 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             if ($expectedActionType -eq 'UNKNOWN' -or $actualActionType -ne $expectedActionType) {
                 Add-AuthorityError "NEXT_ACTION_TYPE_MISMATCH status=$($authority.work_batch_status) expected=$expectedActionType actual=$actualActionType action=$($authority.next_action)"
             }
+            $expectedActionPrefix = 'NQ-{0}-' -f $authority.work_batch.ToUpperInvariant()
+            if (-not $authority.next_action.StartsWith($expectedActionPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                Add-AuthorityError "NEXT_ACTION_WORK_BATCH_MISMATCH work_batch=$($authority.work_batch) action=$($authority.next_action)"
+            }
+
+            if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED') {
+                $workBatchMatch = [regex]::Match($authority.work_batch, '^(?<gate>Gate[A-Z0-9]+)-(?<number>[1-9][0-9]*)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                if (-not $workBatchMatch.Success -or
+                    -not [string]::Equals($workBatchMatch.Groups['gate'].Value, $authority.active_gate, [System.StringComparison]::Ordinal)) {
+                    Add-AuthorityError "CI_FAILED_WORK_BATCH_INVALID active_gate=$($authority.active_gate) work_batch=$($authority.work_batch)"
+                } else {
+                    $workNumber = [int]$workBatchMatch.Groups['number'].Value
+                    $expectedAcceptedBatch = if ($workNumber -eq 1) { "$($authority.active_gate)-PLAN" } else { "$($authority.active_gate)-$($workNumber - 1)" }
+                    if (-not [string]::Equals($authority.accepted_batch, $expectedAcceptedBatch, [System.StringComparison]::Ordinal)) {
+                        Add-AuthorityError "CI_FAILED_ACCEPTED_BATCH_INVALID expected=$expectedAcceptedBatch actual=$($authority.accepted_batch) work_batch=$($authority.work_batch)"
+                    }
+                }
+            }
 
             foreach ($safetyFact in @{
                 live = 'DISABLED'; shadow_trading = 'NOT_ENABLED'; ai = 'NOT_STARTED';
@@ -151,6 +172,10 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             $workPattern = Get-GovernanceWorkStatusPattern $contract $authority.work_batch_status
             if (-not (Test-StatusPhrase $statusBody $authority.work_batch $workPattern)) {
                 Add-AuthorityError "WORK_BATCH_BODY_CONTRADICTION batch=$($authority.work_batch) expected=$($authority.work_batch_status) file=$StatusPath"
+            }
+            if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED' -and
+                (Test-StatusPhrase $statusBody $authority.work_batch 'CI\s*GREEN')) {
+                Add-AuthorityError "WORK_BATCH_BODY_CONTRADICTION batch=$($authority.work_batch) failed_state_must_not_claim_ci_green file=$StatusPath"
             }
             if (-not $statusBody.Contains($authority.next_action)) {
                 Add-AuthorityError "NEXT_ACTION_MISMATCH expected=$($authority.next_action) file=$StatusPath"

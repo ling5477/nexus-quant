@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：`ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW planning baseline 的 acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`；GateW-1 acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`；GateW-2 implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，CI run `29230512781`。GateW-3 venue-rule facts 为 `REVIEW ACCEPTED / READY TO COMMIT`，dry-run order preview 仍为 `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`，等待 venue-rule exact-head CI 与后续 attempt-02。
+状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 venue-rule facts implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；exact-head CI run `29241698510` 已失败，当前为 `COMMITTED / CI FAILED / FIX REQUIRED`（已提交 / CI 已失败 / 必须修复）。dry-run order preview 仍为 `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`，等待 CI blocker fix、fix commit exact-head CI green 与后续 attempt-02。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 venue-rule facts：`REVIEW ACCEPTED / READY TO COMMIT`；order preview：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
+- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 venue-rule facts：`COMMITTED / CI FAILED / FIX REQUIRED`，commit `8b54adc6952775dc1a939aad7b0ae849f20f42cf` / run `29241698510`；order preview：`BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter：`NOT IMPLEMENTED`；GateW-2 private read-only diagnostic probe 已实现并获 CI 接受，但 real smoke/远端 permission verification 为 `NOT_RUN / UNKNOWN`；Python live execution ready：`NO`。
 
@@ -416,7 +416,7 @@ OrderPreviewRequest
 
 解除阻断前必须以独立授权任务建立或证明完整本地 OKX Spot rule snapshot：symbol/base/quote、tick/step、min/max quantity、min notional、precision、status、source/version、`observedAt/freshUntil`，并对最多 3 个 GateW symbol 保持同版本、可追踪、过期 fail-closed。若需要 schema/migration，必须另经 DB/security review；本审查不授权 migration。
 
-当前 authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / BLOCKED / NONE / NOT_RUN`。
+Security/risk review attempt-01 当时记录了 venue-rule facts 缺口；该 pre-implementation snapshot 已被后续 schema review、implementation commit 与 post-commit failed CI 事实取代，不参与 current authority。
 
 唯一下一动作：
 
@@ -466,7 +466,7 @@ Migration 决策：`MIGRATION REQUIRED / PLAN ACCEPTED`。当前最高版本 V33
 
 实现必须补 V34 migration contract、fresh PostgreSQL V1..V34、V33→V34 upgrade、constraint、repository precision/idempotency/freshness/non-live/sync-failure/no-egress 测试与 full Maven regression，并进入独立 migration/schema conformance review。
 
-Authority before implementation：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / NOT_STARTED / NONE / NOT_RUN`。
+Implementation 开始前的历史 snapshot 只确认 GateW-2 是最近 accepted batch；该 snapshot 已被后续 implementation commit 与 failed CI 事实取代。
 
 唯一下一动作：
 
@@ -486,9 +486,9 @@ venue-rule implementation、schema conformance review 与 exact-head CI green �
 - `upcChg` 的完整 canonical representation 当前无法随 row 持久化，因此按 review 规则明确后置；不得只保存 effective time 后伪称 planned changes 已纳入 checksum。
 - freshness 使用注入 `Clock`；source/version/checksum、配置、观察时间、状态或必要 facts 缺失/冲突时 fail-closed。
 - manual profile + flag 才装配 public reader/sync service；默认/test/CI 无 reader、无 startup/background/scheduled sync。无 Controller/API、credential/private endpoint、order preview 或 LIVE。
-- 相关 reactor、full Maven 与 disposable PostgreSQL V1→V34 / V33→V34 均通过；当前仍未 commit、未跑 exact-HEAD CI、未获 conformance acceptance。
+- 相关 reactor、full Maven 与 disposable PostgreSQL V1→V34 / V33→V34 均通过；随后 migration conformance review 已接受，implementation 已提交为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，其 exact-head CI run `29241698510` 失败。
 
-Authority after implementation：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+Implementation attempt-01 结束时的待 review snapshot 已被 migration conformance acceptance、implementation commit 与 post-commit failed CI 事实取代；current authority 见 §39。
 
 唯一下一动作：
 
@@ -509,12 +509,21 @@ NQ-GATEW-3-VENUE-RULE-FACTS-MIGRATION-CONFORMANCE-REVIEW
 - 无 credential/private endpoint、Controller/API/frontend、scheduler/runner、order preview、order submission 或 LIVE；未调用真实 OKX。
 - 相关 reactor 与 full Maven 均 23/23 modules `BUILD SUCCESS`；forced disposable PostgreSQL 2 tests / 0 failure/error/skip；治理与 current authority 检查通过。
 
-Authority after review：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+Review 完成时的 pre-commit snapshot 已被 commit `8b54adc6952775dc1a939aad7b0ae849f20f42cf` 与 failed run `29241698510` 取代；它不覆盖下方 post-commit CI failure current state。
 
-唯一下一动作：
+Review 完成时的下一动作（已执行）：
 
 ```text
 NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH
 ```
 
-只允许精确提交已接受范围并等待 exact-head CI；CI green 前不得恢复 dry-run order preview attempt-02，不得启动 GateW-4 或升级 LIVE/交易授权状态。
+该提交动作已由 commit `8b54adc6952775dc1a939aad7b0ae849f20f42cf` 执行；其 exact-head CI run `29241698510` 失败。不得把 review-era pre-commit snapshot 当作 current authority。
+
+## 39. GateW-3 Post-commit CI Failure
+
+Current authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`work_batch=GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / 8b54adc6952775dc1a939aad7b0ae849f20f42cf / 29241698510`。
+
+- venue-rule implementation 已提交，migration conformance review 继续有效；failed CI 不撤销二者，也不表示代码已回滚。
+- exact-head run `29241698510` 为 `completed / failure`，因此 GateW-3 尚未 accepted；GateW-2 继续是最近 accepted batch。
+- current next action 仅为 `NQ-GATEW-3-CI-BLOCKER-FIX`。fix 必须完成 review、形成新的 commit、push 后回到 `COMMITTED|CI_PENDING`，再由 fix commit exact-head CI 决定接受。
+- 禁止从 failed 直接写成 `ACCEPTED|CI_GREEN`，禁止初始化 GateW-4、GateW Freeze 或 order preview attempt-02，禁止升级 LIVE/交易授权状态。

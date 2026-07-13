@@ -6,7 +6,7 @@
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`；GateW-3 venue-rule schema review 已接受，implementation 尚未开始，dry-run order preview 仍未获授权。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`；GateW-3 venue-rule implementation 已提交且 migration conformance review 已通过，但 exact-head CI run `29241698510` 失败，当前为 `COMMITTED / CI FAILED / FIX REQUIRED`，dry-run order preview 仍未获授权。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
@@ -37,4 +37,4 @@
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider 或 private trading adapter 已实现；GateW-2 仅是默认不装配的 private read-only diagnostic probe，`REAL_SMOKE=NOT_RUN`，不表示远端 permission 或交易授权。
-- GateW-3 venue-rule implementation authorization 只覆盖本地 public facts/migration；不得把 schema readiness、public metadata、dry-run preview、risk preflight 或 `READY_FOR_REVIEW` 解释成可以交易。
+- GateW-3 failed CI 不表示 implementation/review 被撤销，也不表示 batch 已接受；当前唯一动作是 `NQ-GATEW-3-CI-BLOCKER-FIX`。不得把 schema readiness、public metadata、dry-run preview、risk preflight 或任何 green UI 状态解释成可以交易。

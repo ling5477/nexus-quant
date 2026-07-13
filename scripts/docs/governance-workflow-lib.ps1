@@ -16,8 +16,9 @@ function Get-GovernanceWorkflowContract {
     $contract = $content | ConvertFrom-Json
     # A checker must understand the exact contract shape before it can use any policy from it.
     # Unknown versions fail closed instead of being treated as a forward-compatible extension.
-    if ($contract.schemaVersion -ne '1.0.0' -or $contract.authoritySchema -ne '3' -or
-        -not $contract.authority -or -not $contract.lifecycles -or -not $contract.evidence -or -not $contract.release) {
+    if ($contract.schemaVersion -ne '1.1.0' -or $contract.authoritySchema -ne '3' -or
+        -not $contract.authority -or -not $contract.lifecycles -or
+        -not $contract.lifecycles.transitionPolicies -or -not $contract.evidence -or -not $contract.release) {
         throw "GOVERNANCE_CONTRACT_INVALID path=$Path"
     }
     if ($contract.release.remoteName -ne 'origin' -or $contract.release.expectedBranch -ne 'dev' -or
@@ -77,6 +78,67 @@ function Test-GovernanceLifecycleTransition {
     $definition = Get-GovernancePropertyValue $Contract.lifecycles $Lifecycle
     if ($null -eq $definition) { return $false }
     return @($definition.transitions) -contains ("{0}->{1}" -f $From, $To)
+}
+
+function Test-GovernanceLifecycleTransitionContext {
+    param(
+        [object] $Contract,
+        [ValidateSet('ordinary', 'highRisk')] [string] $Lifecycle,
+        [string] $FromStatus,
+        [string] $ToStatus,
+        [string] $FromCommit,
+        [string] $FromCi,
+        [string] $ToCommit,
+        [string] $ToCi,
+        [bool] $AuthorityCatchUp = $false
+    )
+
+    if (-not (Test-GovernanceLifecycleTransition $Contract $Lifecycle $FromStatus $ToStatus)) { return $false }
+
+    $fromFieldPolicy = Get-GovernancePropertyValue $Contract.authority.workStatusFieldPolicies $FromStatus
+    $toFieldPolicy = Get-GovernancePropertyValue $Contract.authority.workStatusFieldPolicies $ToStatus
+    if ($null -eq $fromFieldPolicy -or $null -eq $toFieldPolicy) { return $false }
+    if ($FromCommit -notmatch [string]$fromFieldPolicy.commitPattern -or $FromCi -notmatch [string]$fromFieldPolicy.ciPattern) { return $false }
+    if ($ToCommit -notmatch [string]$toFieldPolicy.commitPattern -or $ToCi -notmatch [string]$toFieldPolicy.ciPattern) { return $false }
+
+    $policies = @($Contract.lifecycles.transitionPolicies | Where-Object {
+        $_.from -ceq $FromStatus -and $_.to -ceq $ToStatus
+    })
+    if ($policies.Count -ne 1) { return $false }
+    $policy = $policies[0]
+
+    switch ([string]$policy.authorityCatchUp) {
+        'REQUIRED' { if (-not $AuthorityCatchUp) { return $false } }
+        'FORBIDDEN' { if ($AuthorityCatchUp) { return $false } }
+        default { return $false }
+    }
+
+    switch ([string]$policy.commitRelation) {
+        'SAME' {
+            if (-not [string]::Equals($FromCommit, $ToCommit, [System.StringComparison]::OrdinalIgnoreCase)) { return $false }
+        }
+        'CHANGED' {
+            if ([string]::Equals($FromCommit, $ToCommit, [System.StringComparison]::OrdinalIgnoreCase)) { return $false }
+        }
+        'FROM_UNCOMMITTED_TO_CONCRETE' {
+            if ($FromCommit -cne 'UNCOMMITTED' -or $ToCommit -notmatch '^[0-9a-f]{40}$') { return $false }
+        }
+        default { return $false }
+    }
+
+    switch ([string]$policy.ciRelation) {
+        'PENDING_OR_SAME' {
+            if ($FromCi -cne 'PENDING' -and $FromCi -cne $ToCi) { return $false }
+        }
+        'NOT_RUN_TO_CONCRETE' {
+            if ($FromCi -cne 'NOT_RUN' -or $ToCi -notmatch '^[1-9][0-9]*$') { return $false }
+        }
+        'TO_PENDING' {
+            if ($ToCi -cne 'PENDING') { return $false }
+        }
+        default { return $false }
+    }
+    return $true
 }
 
 function Test-GovernanceEvidencePath {

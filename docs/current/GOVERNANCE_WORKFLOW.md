@@ -39,7 +39,51 @@ NOT_STARTED
 
 review 未接受时不得直接写为 `ACCEPTED|CI_GREEN`。风险分类不确定时按高风险处理，并在 evidence 中说明判断依据。
 
-## 4. Freeze 流程
+## 4. Post-commit CI failure 生命周期
+
+当 implementation 已提交且 exact-head CI 已实际完成并失败时，canonical 状态必须是 `COMMITTED|CI_FAILED|FIX_REQUIRED`（已提交 / CI 已失败 / 必须修复）。该状态保留 implementation commit 与已接受 review 的事实，不表示代码回滚、implementation 撤销、CI 尚未运行、CI 仍在运行或 batch 已接受。
+
+字段不变量：
+
+- `work_batch_commit` 必须是 concrete 40-char hexadecimal SHA；不得使用 `UNCOMMITTED`、`NONE`、`NOT_RUN`、空值或短 SHA。
+- `work_batch_ci_run` 必须是正整数 GitHub Actions run ID；不得使用 `NOT_RUN`、`PENDING`、`NONE`、空值、非数字、0 或负数。状态本身已唯一表达 CI conclusion 为 failure，不新增重复的 conclusion/status 字段。
+- `accepted_batch` 必须继续指向同一 active Gate 的上一真正 `ACCEPTED|CI_GREEN` batch；当前 failed `work_batch` 不得提前成为 accepted batch。
+- `active_gate_status` 必须保持 `IN_PROGRESS|NOT_FROZEN`；failed 状态不得初始化下一 batch、进入 Freeze 或 release。
+- 唯一 next-action 类型为 `CI_BLOCKER_FIX`。它只匹配明确的 `CI-BLOCKER-FIX` task，并允许 base、`-REVIEW`、`-COMMIT-AND-PUSH` 三个 phase；checker 还会把 action task prefix 绑定到当前 `work_batch`。
+
+正常失败路径：
+
+```text
+COMMITTED|CI_PENDING
+→ COMMITTED|CI_FAILED|FIX_REQUIRED
+```
+
+两端必须保持同一 implementation commit；失败状态把 `work_batch_ci_run` 固定为已完成失败 run 的正整数 ID。
+
+当 current authority 落后于已经发生的 Git/CI 事实时，允许以下 reconciliation：
+
+```text
+REVIEW_ACCEPTED|READY_TO_COMMIT
+→ COMMITTED|CI_FAILED|FIX_REQUIRED
+```
+
+这只是 authority catch-up，不是推荐的正常路径。它必须显式标记 reconciliation，且从 `UNCOMMITTED / NOT_RUN` 追赶到 concrete commit/failed run；正常路径仍应先进入 `COMMITTED|CI_PENDING`。
+
+修复 lifecycle 固定为：
+
+```text
+COMMITTED|CI_FAILED|FIX_REQUIRED
+→ COMMITTED|CI_PENDING
+→ ACCEPTED|CI_GREEN
+```
+
+第一条 transition 仅在 CI blocker fix 已完成 review、commit 并 push 后使用；`work_batch_commit` 必须换为新的 fix commit，`work_batch_ci_run` 使用 contract 的 `PENDING` 表达和既有 pending-CI action。禁止从 failed 直接进入 `ACCEPTED|CI_GREEN`。
+
+`BLOCKED` 表示提交前或执行中的前置条件阻断；`COMMITTED|CI_FAILED|FIX_REQUIRED` 表示代码已经提交且 exact-head CI 已完成并失败。`COMMITTED|CI_PENDING` 表示 CI 尚未完成或正在等待结果。三者不得互相替代。
+
+该状态本身不是 Git rollback 指令。若最终选择 revert，revert 也必须经过 review、new commit、push 和 `COMMITTED|CI_PENDING`，再由 exact-head CI 决定是否接受；不得只改 authority 文案伪造恢复。
+
+## 5. Freeze 流程
 
 Freeze 固定为：
 
@@ -55,14 +99,14 @@ archive candidate + 人工审查
 
 Freeze candidate 可从 `IMPLEMENTED|PENDING_REVIEW` 直接提交，不强制创建 `REVIEW_ACCEPTED` authority commit。tag 创建前必须通过 candidate 与 release closeout 两次 exact-HEAD CI；tag 必须是 annotated tag，local/remote object 与 peeled target 必须一致，禁止移动或覆盖。
 
-## 5. Active Gate 与 next_action
+## 6. Active Gate 与 next_action
 
 - 未冻结 active Gate 只使用 `active_gate_status=IN_PROGRESS|NOT_FROZEN`。
 - planning 是否开始由 `work_batch_status` 表达，不再使用 `active_gate_status=PLAN|NOT_STARTED`。
 - 合法 `work_batch_status`、状态到 canonical `next_action` 类型的映射由 machine contract 统一定义。
 - checker 只接受可识别的 canonical action token；非法倒退、状态/action 不匹配和字段格式不符均 fail-closed。
 
-## 6. Task evidence
+## 7. Task evidence
 
 Current evidence：
 
@@ -87,7 +131,7 @@ docs/gates/<gate>/source/task-evidence/<TASK-ID>.attempt-<NN>.md
 - 当前只允许 contract 明确列出的安全扩展名与文件名；空文件、路径穿越、编码穿越、symlink/reparse point、approved root 以外文件全部 fail-closed。
 - approved evidence 不触发 `UNKNOWN_ARCHIVE_FILE`；其他未知 archive 文件继续失败。
 
-## 7. Current 核心文档职责
+## 8. Current 核心文档职责
 
 - `STATUS.md`：唯一 current stage authority。
 - `ROADMAP.md`：唯一下一允许路线，不覆盖 STATUS。
@@ -96,7 +140,7 @@ docs/gates/<gate>/source/task-evidence/<TASK-ID>.attempt-<NN>.md
 - `TESTING.md` / `WORKLOG.md`：append-only evidence ledger，不参与 current Gate 判定。
 - `docs/current/evidence/**`：当前任务的 durable attempt evidence，不复制阶段 authority。
 
-## 8. Hard blocker 与 review 风险级别
+## 9. Hard blocker 与 review 风险级别
 
 Machine contract 固化 dirty/alignment/CI、authority conflict、archive allowlist/manifest/link、task evidence、release commit/CI/tag/remote 等 hard blocker。任何 hard blocker 必须输出精确 `BLOCKED`，不得用 warning 绕过。
 
@@ -105,7 +149,7 @@ Machine contract 固化 dirty/alignment/CI、authority conflict、archive allowl
 - P2：不影响当前接受决定但应在后续真实任务修复的覆盖或可维护性问题。
 - P3：表达、可读性或非阻断优化。
 
-## 9. 禁止 churn
+## 10. 禁止 churn
 
 - 不为普通任务强制独立 review。
 - 不为 Freeze 每个中间 authority 状态制造 docs-only commit。
@@ -113,6 +157,6 @@ Machine contract 固化 dirty/alignment/CI、authority conflict、archive allowl
 - 不把 plan/review/freeze 拆成多份重复文档；治理规则只维护本文与 machine contract。
 - 后续 blocker 应回到职责边界、contract 或 regression matrix 一次性修复，不再按单个 blocker 在多个 checker 中追加兼容分支。
 
-## 10. GateW 启用方式
+## 11. GateW 启用方式
 
 本治理任务只启用 GateW evidence 路径与 checker contract，不启动 GateW planning 或业务实现。GateW 后续真实任务从 `docs/current/evidence/gate-w/` 创建 attempt evidence；GateW Freeze 时再把 accepted attempts 复制到 `docs/gates/gate-w/source/task-evidence/`，并由 Archive 与 Release checker 分别验证。current Gate、work batch 与下一动作仍只读取 `STATUS.md`。

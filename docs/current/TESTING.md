@@ -11609,3 +11609,26 @@ Known limitations：minimum notional UNKNOWN；完整 `upcChg` representation �
 Boundary：无 order preview/submission、Controller/API/frontend、scheduler/runner、credential/private endpoint、LIVE 或交易授权；未 stage/commit/push/PR/tag。
 
 Next action：`NQ-GATEW-3-VENUE-RULE-FACTS-COMMIT-AND-PUSH`。只精确提交已接受范围并等待 exact-head CI；CI green 前不得运行 dry-run order preview attempt-02。
+
+## NQ-GOVERNANCE-POST-COMMIT-CI-FAILED-STATE-HARDENING
+
+Date：2026-07-13。
+
+Scope：NQ-only governance contract/shared library、authority checker、lifecycle/next-action regression、current authority/docs/evidence；不修改 CI workflow、backend、migration 或业务测试。
+
+| Command | Result | Scope / Environment |
+| --- | --- | --- |
+| `Get-Content scripts/docs/governance-workflow-contract.json -Raw \| ConvertFrom-Json \| Out-Null` | PASS | 本地 JSON schema parse；无网络 |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/test-governance-workflow-lifecycle.ps1` | `PASS / GOVERNANCE_LIFECYCLE_REGRESSION` | disposable temp Git/authority/release fixtures；release `gh` 为 PATH-scoped fake，无真实 GitHub/tag 写入 |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/test-current-authority-next-action.ps1` | `PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION` | `CI_BLOCKER_FIX` 三种 phase 与严格 negative matcher |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/check-current-authority.ps1` | `PASS / CURRENT_AUTHORITY_CONSISTENT` | 只读 current docs；无 Git/GitHub/网络调用 |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/check-doc-links.ps1 -Roots docs/current` | `PASS / DOC_LINKS_VALID` | errors=0；1 个既有 GateJ historical warning |
+| `git diff --check` 与 forbidden-scope diff | PASS | `.github/backend/frontend/research/deploy/migration/docs/gates/docs/archive/.agents/pom.xml` 均无 diff |
+
+Positive fixtures：pending → failed、显式 reconciliation catch-up、base/review/commit 三种 `CI_BLOCKER_FIX`、new fix commit failed → pending 全部通过。Negative fixtures 覆盖无效 SHA/run、错误 action/batch、accepted/frozen/green 冲突、pending action 错配、alias/case/space 变体、same-commit recovery 与缺失 reconciliation flag，全部按预期失败。
+
+Known warnings：仅保留既有 GateJ historical link warning；不阻断本任务。
+
+Not run：Maven、frontend、Python、PostgreSQL、Flyway、OKX、GitHub Actions rerun。原因是本任务只修改 governance scripts/docs，实际 CI blocker fix 尚未实施。
+
+Result：`PASS / GOVERNANCE_HARDENING_ACCEPTED / READY_TO_COMMIT`；current authority 为 `GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / 8b54adc6952775dc1a939aad7b0ae849f20f42cf / 29241698510`。

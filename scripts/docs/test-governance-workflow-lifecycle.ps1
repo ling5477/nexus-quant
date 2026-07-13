@@ -25,6 +25,16 @@ function Assert-Transition {
     Assert-Condition ($actual -eq $Expected) "transition=$Scenario expected=$Expected actual=$actual"
     Write-Output "PASS fixture=$Scenario lifecycle=$Lifecycle from=$From to=$To allowed=$actual"
 }
+function Assert-ContextTransition {
+    param(
+        [string]$Lifecycle,[string]$From,[string]$To,
+        [string]$FromCommit,[string]$FromCi,[string]$ToCommit,[string]$ToCi,
+        [bool]$AuthorityCatchUp,[bool]$Expected,[string]$Scenario
+    )
+    $actual=Test-GovernanceLifecycleTransitionContext $contract $Lifecycle $From $To $FromCommit $FromCi $ToCommit $ToCi $AuthorityCatchUp
+    Assert-Condition ($actual -eq $Expected) "transition-context=$Scenario expected=$Expected actual=$actual"
+    Write-Output "PASS fixture=$Scenario lifecycle=$Lifecycle from=$From to=$To catchUp=$AuthorityCatchUp allowed=$actual"
+}
 function Invoke-Checker {
     param([string]$Script,[string[]]$Arguments,[string]$WorkingRoot)
     $previous=$ErrorActionPreference; $ErrorActionPreference='Continue'
@@ -50,13 +60,19 @@ function Invoke-FixtureGit {
 }
 
 function Write-AuthorityFixture {
-    param([string]$Root,[string]$Status,[string]$Action,[string]$Commit,[string]$Ci,[string]$ActiveStatus='IN_PROGRESS|NOT_FROZEN')
+    param(
+        [string]$Root,[string]$Status,[string]$Action,[string]$Commit,[string]$Ci,
+        [string]$ActiveStatus='IN_PROGRESS|NOT_FROZEN',
+        [string]$AcceptedBatch='GateV-FREEZE',
+        [string]$WorkBatch='GateW-FIXTURE'
+    )
     $display = switch ($Status) {
         'NOT_STARTED' { 'NOT STARTED' }
         'IMPLEMENTED|SELF_REVIEWED' { 'IMPLEMENTED / SELF-REVIEWED' }
         'IMPLEMENTED|PENDING_REVIEW' { 'IMPLEMENTED / PENDING REVIEW' }
         'REVIEW_ACCEPTED|READY_TO_COMMIT' { 'REVIEW ACCEPTED / READY TO COMMIT' }
         'COMMITTED|CI_PENDING' { 'COMMITTED / CI PENDING' }
+        'COMMITTED|CI_FAILED|FIX_REQUIRED' { 'COMMITTED / CI FAILED / FIX REQUIRED' }
         'ACCEPTED|CI_GREEN' { 'ACCEPTED / CI GREEN' }
         default { $Status }
     }
@@ -70,12 +86,12 @@ last_frozen_gate_tag=nq-gatev-freeze
 last_frozen_gate_commit=1111111111111111111111111111111111111111
 active_gate=GateW
 active_gate_status=$ActiveStatus
-accepted_batch=GateV-FREEZE
+accepted_batch=$AcceptedBatch
 accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=2222222222222222222222222222222222222222
 accepted_batch_acceptance_head=3333333333333333333333333333333333333333
 accepted_batch_ci_run=100
-work_batch=GateW-FIXTURE
+work_batch=$WorkBatch
 work_batch_status=$Status
 work_batch_commit=$Commit
 work_batch_ci_run=$Ci
@@ -91,8 +107,8 @@ nq-current-authority:end -->
 
 - GateV: FROZEN / ACCEPTED / TAGGED.
 - GateW: IN PROGRESS / NOT FROZEN.
-- GateV-FREEZE: ACCEPTED / CI GREEN.
-- GateW-FIXTURE: $display.
+- ${AcceptedBatch}: ACCEPTED / CI GREEN.
+- ${WorkBatch}: $display.
 - Next action: $Action.
 "@
     Write-Utf8File (Join-Path $Root 'docs/current/STATUS.md') $content
@@ -100,7 +116,7 @@ nq-current-authority:end -->
 
 try {
     $unsupportedContractPath = Join-Path $tempRoot 'unsupported-contract.json'
-    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.0.0"', '"schemaVersion": "9.0.0"')
+    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.1.0"', '"schemaVersion": "9.0.0"')
     Write-Utf8File $unsupportedContractPath $unsupportedContract
     $unsupportedRejected = $false
     try { $null = Get-GovernanceWorkflowContract $unsupportedContractPath } catch { $unsupportedRejected = $true }
@@ -110,6 +126,8 @@ try {
     # Ordinary lifecycle: review states are intentionally absent.
     Assert-Transition 'ordinary' 'NOT_STARTED' 'IMPLEMENTED|SELF_REVIEWED' $true 'ordinary-not-started'
     Assert-Transition 'ordinary' 'IMPLEMENTED|SELF_REVIEWED' 'COMMITTED|CI_PENDING' $true 'ordinary-self-reviewed'
+    Assert-Transition 'ordinary' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $true 'ordinary-ci-failed'
+    Assert-Transition 'ordinary' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_PENDING' $true 'ordinary-fix-committed'
     Assert-Transition 'ordinary' 'COMMITTED|CI_PENDING' 'ACCEPTED|CI_GREEN' $true 'ordinary-ci-green'
     Assert-Transition 'ordinary' 'IMPLEMENTED|SELF_REVIEWED' 'REVIEW_ACCEPTED|READY_TO_COMMIT' $false 'ordinary-review-not-required'
     Assert-Transition 'ordinary' 'ACCEPTED|CI_GREEN' 'COMMITTED|CI_PENDING' $false 'ordinary-regression-rejected'
@@ -118,9 +136,22 @@ try {
     Assert-Transition 'highRisk' 'NOT_STARTED' 'IMPLEMENTED|PENDING_REVIEW' $true 'high-risk-pending-review'
     Assert-Transition 'highRisk' 'IMPLEMENTED|PENDING_REVIEW' 'REVIEW_ACCEPTED|READY_TO_COMMIT' $true 'high-risk-review-accepted'
     Assert-Transition 'highRisk' 'REVIEW_ACCEPTED|READY_TO_COMMIT' 'COMMITTED|CI_PENDING' $true 'high-risk-commit'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $true 'high-risk-ci-failed'
+    Assert-Transition 'highRisk' 'REVIEW_ACCEPTED|READY_TO_COMMIT' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $true 'high-risk-authority-catch-up'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_PENDING' $true 'high-risk-fix-committed'
     Assert-Transition 'highRisk' 'COMMITTED|CI_PENDING' 'ACCEPTED|CI_GREEN' $true 'high-risk-ci-green'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'ACCEPTED|CI_GREEN' $false 'high-risk-failed-direct-green-rejected'
     Assert-Transition 'highRisk' 'IMPLEMENTED|PENDING_REVIEW' 'ACCEPTED|CI_GREEN' $false 'high-risk-direct-accepted-rejected'
     Assert-Transition 'highRisk' 'IMPLEMENTED|SELF_REVIEWED' 'ACCEPTED|CI_GREEN' $false 'high-risk-invalid-combination'
+
+    $failedCommit='4444444444444444444444444444444444444444'
+    $fixCommit='5555555555555555555555555555555555555555'
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $failedCommit 'PENDING' $failedCommit '101' $false $true 'ci-failure-context'
+    Assert-ContextTransition 'highRisk' 'REVIEW_ACCEPTED|READY_TO_COMMIT' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'UNCOMMITTED' 'NOT_RUN' $failedCommit '101' $true $true 'authority-catch-up-context'
+    Assert-ContextTransition 'highRisk' 'REVIEW_ACCEPTED|READY_TO_COMMIT' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'UNCOMMITTED' 'NOT_RUN' $failedCommit '101' $false $false 'authority-catch-up-flag-required'
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_PENDING' $failedCommit '101' $fixCommit 'PENDING' $false $true 'ci-fix-new-commit-context'
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'COMMITTED|CI_PENDING' $failedCommit '101' $failedCommit 'PENDING' $false $false 'ci-fix-same-commit-rejected'
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'ACCEPTED|CI_GREEN' $failedCommit '101' $failedCommit '102' $false $false 'ci-failed-direct-green-context-rejected'
 
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
@@ -178,6 +209,77 @@ try {
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'NEXT_ACTION_TYPE_MISMATCH' 'authority-illegal-status-action'
     Write-AuthorityFixture $authorityRoot 'NOT_STARTED' 'NQ-GATEW-FIXTURE-IMPLEMENTATION' 'NONE' 'NOT_RUN' 'PLAN|NOT_STARTED'
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'ACTIVE_GATE_STATUS_COMBINATION_INVALID' 'active-gate-plan-status-rejected'
+
+    foreach ($actionCase in @(
+        @{Action='NQ-GATEW-3-CI-BLOCKER-FIX';Name='authority-ci-blocker-fix'},
+        @{Action='NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW';Name='authority-ci-blocker-fix-review'},
+        @{Action='NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH';Name='authority-ci-blocker-fix-commit'}
+    )) {
+        Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' $actionCase.Action $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' $actionCase.Name
+    }
+    $uppercaseCommit='ABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCD'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $uppercaseCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'failed-uppercase-hex-commit-accepted'
+
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_PENDING' 'NQ-GATEW-3-WAIT-CI' $fixCommit 'PENDING' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'authority-failed-to-pending-new-fix-commit'
+
+    foreach ($fieldCase in @(
+        @{Commit='UNCOMMITTED';Ci='101';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='failed-uncommitted-rejected'},
+        @{Commit='NONE';Ci='101';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='failed-none-commit-rejected'},
+        @{Commit='4444444';Ci='101';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='failed-short-commit-rejected'},
+        @{Commit='gggggggggggggggggggggggggggggggggggggggg';Ci='101';Expected='WORK_BATCH_COMMIT_STATE_MISMATCH';Name='failed-nonhex-commit-rejected'},
+        @{Commit=$failedCommit;Ci='NOT_RUN';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='failed-not-run-rejected'},
+        @{Commit=$failedCommit;Ci='PENDING';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='failed-pending-run-rejected'},
+        @{Commit=$failedCommit;Ci='NONE';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='failed-none-run-rejected'},
+        @{Commit=$failedCommit;Ci='abc';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='failed-nonnumeric-run-rejected'},
+        @{Commit=$failedCommit;Ci='-1';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='failed-negative-run-rejected'},
+        @{Commit=$failedCommit;Ci='0';Expected='WORK_BATCH_CI_STATE_MISMATCH';Name='failed-zero-run-rejected'}
+    )) {
+        Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $fieldCase.Commit $fieldCase.Ci 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false $fieldCase.Expected $fieldCase.Name
+    }
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'AUTHORITY_BLOCK_INVALID' 'failed-empty-run-rejected'
+
+    foreach ($actionCase in @(
+        @{Action='NQ-GATEW-3-IMPLEMENTATION';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='failed-implementation-action-rejected'},
+        @{Action='NQ-GATEW-4-CI-BLOCKER-FIX';Expected='NEXT_ACTION_WORK_BATCH_MISMATCH';Name='failed-next-batch-action-rejected'},
+        @{Action='NQ-GATEW-3-FIX';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='failed-vague-fix-action-rejected'},
+        @{Action='NQ-GATEW-3-MIGRATION-FIX';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='failed-migration-fix-action-rejected'},
+        @{Action='NQ-GATEW-3-SECURITY-FIX';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='failed-security-fix-action-rejected'},
+        @{Action='NQ-GATEW-3-FREEZE';Expected='NEXT_ACTION_TYPE_MISMATCH';Name='failed-freeze-action-rejected'}
+    )) {
+        Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' $actionCase.Action $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false $actionCase.Expected $actionCase.Name
+    }
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-3' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'accepted_batch_and_work_batch_must_differ' 'failed-current-batch-not-accepted'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-1' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'CI_FAILED_ACCEPTED_BATCH_INVALID' 'failed-accepted-predecessor-required'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '101' 'FROZEN|ACCEPTED|TAGGED' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'ACTIVE_GATE_STATUS_COMBINATION_INVALID' 'failed-active-gate-frozen-rejected'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEX-1-CI-BLOCKER-FIX' $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateX-1'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'WORK_BATCH_ACTIVE_GATE_MISMATCH' 'failed-next-gate-work-batch-rejected'
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_PENDING' 'NQ-GATEW-3-CI-BLOCKER-FIX' $fixCommit 'PENDING' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'NEXT_ACTION_TYPE_MISMATCH' 'pending-failed-only-action-rejected'
+    foreach ($statusCase in @(
+        @{Status='COMMITTED|CI_FAILURE|FIX_REQUIRED';Name='failed-alias-rejected'},
+        @{Status='committed|ci_failed|fix_required';Name='failed-lowercase-rejected'},
+        @{Status='COMMITTED |CI_FAILED|FIX_REQUIRED';Name='failed-space-variant-rejected'}
+    )) {
+        Write-AuthorityFixture $authorityRoot $statusCase.Status 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'WORK_BATCH_STATUS_INVALID' $statusCase.Name
+    }
+    Write-AuthorityFixture $authorityRoot 'COMMITTED|CI_FAILED|FIX_REQUIRED' 'NQ-GATEW-3-CI-BLOCKER-FIX' $failedCommit '101' 'IN_PROGRESS|NOT_FROZEN' 'GateW-2' 'GateW-3'
+    $conflictingStatusPath=Join-Path $authorityRoot 'docs/current/STATUS.md'
+    $conflictingStatus=[System.IO.File]::ReadAllText($conflictingStatusPath,$utf8NoBom).Replace(
+        '- GateW-3: COMMITTED / CI FAILED / FIX REQUIRED.',
+        "- GateW-3: COMMITTED / CI FAILED / FIX REQUIRED.`n- GateW-3: ACCEPTED / CI GREEN."
+    )
+    Write-Utf8File $conflictingStatusPath $conflictingStatus
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'failed_state_must_not_claim_ci_green' 'failed-body-ci-green-rejected'
 
     # Release checker uses a local bare remote and a PATH-scoped gh fixture; no real tag or GitHub state is touched.
     $releaseRoot=Join-Path $tempRoot 'release-repo'
