@@ -37,7 +37,22 @@ public final class VenueRuleFreshnessEvaluator {
      * 计算 snapshot 的 availability/freshness；该方法只读、无 IO、无交易副作用。
      */
     public VenueRuleFreshness evaluate(InstrumentCatalogItem item) {
+        return evaluateAt(item, Instant.now(clock));
+    }
+
+    /**
+     * 以显式 evaluationTime 计算 snapshot freshness。
+     *
+     * <p>该入口用于 deterministic diagnostic preview；evaluationTime 仅是 freshness 的比较基准，
+     * 不会替代 provider observation time，也不会刷新或持久化 snapshot。</p>
+     *
+     * @param item           本地持久化的 venue-rule snapshot
+     * @param evaluationTime 调用方冻结的评估时间
+     * @return fail-closed availability/freshness 结果
+     */
+    public VenueRuleFreshness evaluateAt(InstrumentCatalogItem item, Instant evaluationTime) {
         Objects.requireNonNull(item, "item must not be null");
+        Objects.requireNonNull(evaluationTime, "evaluationTime must not be null");
         if (!OkxVenueRuleContract.SOURCE.equals(item.source())) {
             return blocked(item, VenueRuleFreshness.FreshnessStatus.UNKNOWN, null, "SOURCE_MISMATCH");
         }
@@ -63,8 +78,7 @@ public final class VenueRuleFreshnessEvaluator {
         if (item.observedAt() == null) {
             return blocked(item, VenueRuleFreshness.FreshnessStatus.UNKNOWN, null, "OBSERVED_AT_MISSING");
         }
-        Instant now = Instant.now(clock);
-        if (item.observedAt().isAfter(now)) {
+        if (item.observedAt().isAfter(evaluationTime)) {
             return blocked(item, VenueRuleFreshness.FreshnessStatus.UNKNOWN, null, "OBSERVED_AT_IN_FUTURE");
         }
         if (staleAfterSeconds == null
@@ -76,7 +90,7 @@ public final class VenueRuleFreshnessEvaluator {
         if (item.nextRuleEffectiveAt() != null && item.nextRuleEffectiveAt().isBefore(freshUntil)) {
             freshUntil = item.nextRuleEffectiveAt();
         }
-        if (now.isAfter(freshUntil)) {
+        if (evaluationTime.isAfter(freshUntil)) {
             return blocked(item, VenueRuleFreshness.FreshnessStatus.STALE, freshUntil, "FRESH_UNTIL_EXCEEDED");
         }
         return result(

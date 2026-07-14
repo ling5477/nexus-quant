@@ -17523,3 +17523,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result: `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`；当前 committed exact-head CI 仍 failed，GateW-3 未 accepted，order preview attempt-02 未授权。
 - boundary: 未修改 implementation evidence、migration、backend/frontend/research/scripts/deploy/package/lock/archive；未访问 OKX/credential/LIVE；未 stage/commit/push/rerun CI/PR/tag。
 - next action: `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。
+
+## NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW
+
+- date: 2026-07-14
+- reconciliation: canonical `COMMITTED|CI_FAILED|FIX_REQUIRED -> COMMITTED|CI_GREEN|CONTINUE_REQUIRED`；failed `54c7bdd2.../29253811976`、fix `fd6a8b20.../29260881801` exact-head success、governance `ea58c34e.../29271620336` success。
+- review: attempt-01 保持 immutable `BLOCKED / VENUE_RULE_FACTS_UNAVAILABLE`；attempt-02 为 `PASS / LIMIT_ONLY_INTERNAL_PREVIEW_REVIEW_ACCEPTED`，`VENUE_RULE_CAPABILITY_READY=YES`，runtime fact presence/freshness 仍 UNKNOWN。
+- implementation: `nq-core` 新增 bounded read-only instrument port、explicit evaluation-time freshness 与 OKX Spot BUY/SELL LIMIT-only internal preview；BigDecimal、no silent rounding、fail-closed、execution always blocked。
+- risk: 不调用 `PreTradeRiskService`、paper risk 或 order write；minimum notional/fee/permission UNKNOWN，balance/stateful risk NOT_EVALUATED；无复制风险规则。
+- review result: 独立真实 diff review `PASS / LIMIT_ONLY_INTERNAL_ORDER_PREVIEW_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。
+- regression: preview 37 + freshness 8 targeted PASS；指定 reactor 与 full Maven 均 23/23 modules SUCCESS；四项 governance/authority/link checks PASS；IDEA preview problems=0。
+- boundary: 无 Controller/API/frontend/migration/persistence/network/OKX HTTP/private endpoint/credential/balance/order state/ledger/audit/risk mutation/LIVE/DH/AI；accepted batch 仍 GateW-2，GateW 仍 not frozen。
+- authority: `work_batch=GateW-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next action: `NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH`；只精确暂存并提交本轮已接受路径，随后等待 exact-head CI。

@@ -9,17 +9,12 @@ import java.util.List;
 /**
  * InstrumentCatalogRepository 抽象 instrument/symbol 主数据的正式持久化能力。
  */
-public interface InstrumentCatalogRepository {
+public interface InstrumentCatalogRepository extends InstrumentCatalogReadPort {
 
     /**
      * 按交易所列出可见 instrument；exchangeCode 为空时返回全部。
      */
     List<InstrumentCatalogItem> list(String exchangeCode);
-
-    /**
-     * 按交易所和 1..3 个 symbol 精确读取 venue-rule facts；禁止空集合和无边界扫描。
-     */
-    List<InstrumentCatalogItem> findByExchangeAndSymbols(String exchangeCode, List<String> exchangeSymbols);
 
     /**
      * 批量写入最新 instrument 快照。

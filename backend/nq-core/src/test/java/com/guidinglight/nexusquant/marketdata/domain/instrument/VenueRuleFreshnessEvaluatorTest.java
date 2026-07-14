@@ -82,6 +82,21 @@ class VenueRuleFreshnessEvaluatorTest {
     }
 
     @Test
+    void explicitEvaluationTimeShouldMakePreviewDeterministic() {
+        InstrumentCatalogItem snapshot = checksummed(item("LIVE", NOW.minusSeconds(30), null, true));
+        VenueRuleFreshnessEvaluator evaluator = new VenueRuleFreshnessEvaluator(
+                Clock.fixed(NOW.plusSeconds(10_000), ZoneOffset.UTC),
+                600L
+        );
+
+        VenueRuleFreshness first = evaluator.evaluateAt(snapshot, NOW);
+        VenueRuleFreshness second = evaluator.evaluateAt(snapshot, NOW);
+
+        assertEquals(first, second);
+        assertEquals(VenueRuleFreshness.FreshnessStatus.FRESH, first.freshnessStatus());
+    }
+
+    @Test
     void legacyNullFactsShouldRemainUnavailableAndUnknown() {
         InstrumentCatalogItem legacy = new InstrumentCatalogItem(
                 "OKX", "SPOT", "BTC-USDT", "BTC-USDT", "BTC", "USDT", "LIVE",

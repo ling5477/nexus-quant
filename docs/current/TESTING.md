@@ -11691,3 +11691,29 @@ Known limitations：Windows 本地 Chromium E2E 不证明 Ubuntu `npx playwright
 Findings：P2 为 root `README.md` 既有且 out-of-scope 的 GateW 摘要漂移；P3 为 GitHub Actions Node 20 runtime deprecation warning。本轮均不扩 scope。
 
 Next action：`NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。
+
+---
+
+## NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW（2026-07-14）
+
+结论：`PASS / LIMIT_ONLY_INTERNAL_ORDER_PREVIEW_ACCEPTED / READY_TO_COMMIT`（通过 / LIMIT-only internal order preview 已接受 / 可提交）。P0=0、P1=0；GateW-3 尚未整体 accepted，GateW 未 frozen。
+
+| Command / Evidence | Result | Scope / Environment |
+| --- | --- | --- |
+| Governance reconciliation | PASS | failed `54c7bdd2.../29253811976` → fix GREEN `fd6a8b20.../29260881801`；governance run `29271620336` 10/10 jobs success |
+| Preview/freshness targeted | PASS | 45 tests；preview 37 + freshness 8；0 failures/errors/skipped |
+| Targeted reactor | PASS | `mvn -f backend/pom.xml -pl nq-core,nq-risk,nq-infra,nq-app -am test`；23/23 modules SUCCESS；`BUILD SUCCESS` |
+| Full backend Maven | PASS | `mvn -f backend/pom.xml test`；23/23 reactor modules SUCCESS；`BUILD SUCCESS` |
+| Governance lifecycle | `PASS / GOVERNANCE_LIFECYCLE_REGRESSION` | 含 GREEN continuation → pending review、review → commit 合同 |
+| Next-action regression | `PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION` | pre-commit action type 精确为 `COMMIT_AND_PUSH` |
+| Current authority | `PASS / CURRENT_AUTHORITY_CONSISTENT` | `GateW-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN` |
+| Current links | `PASS / DOC_LINKS_VALID` | checked=82、errors=0、1 个既有 GateJ historical warning |
+| Static/scope/IDEA | PASS | `git diff --check`；forbidden changed=0；production prohibited reference=0；preview files problems=0 |
+
+Environment：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`。本地 integration tests 连接 localhost PostgreSQL 并确认 V34 schema；OKX endpoint 保持 disabled，未访问真实 OKX、未读取真实 credential、未执行下单。
+
+Known limitations：`RUNTIME_FACT_PRESENT=UNKNOWN`、`RUNTIME_FACT_FRESH=UNKNOWN`；minimum notional/fee/account permission 为 UNKNOWN，balance/stateful risk 为 NOT_EVALUATED；execution readiness 恒为 BLOCKED。既有 Spring test-only development-password warning 与 Maven/Mockito/SLF4J warning 为 P3，不把值写入 evidence。
+
+Boundary：无 Controller/REST/frontend/migration/preview persistence/network/private endpoint/credential/balance fetch/order write/ledger/audit/risk mutation/LIVE/DH/AI。
+
+Next action：`NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH`。

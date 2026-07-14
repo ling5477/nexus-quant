@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 venue-rule facts implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；latest committed exact head `54c7bdd2caee5602441ce983b33c4cd2466ee263` 的 CI run `29253811976` 已失败，当前仍为 `COMMITTED / CI FAILED / FIX REQUIRED`（已提交 / CI 已失败 / 必须修复）。动态 Flyway 与 Playwright timeout fix 已独立 review accepted，但尚未 commit/push；dry-run order preview 继续等待 fix commit exact-head CI green 与后续 attempt-02。
+状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 venue-rule facts/fix exact-head CI 继续有效；LIMIT-only internal order preview 已通过 attempt-02 security/risk review 与独立 implementation review，当前为 `REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可提交）。下一动作仅为精确提交该实现；GateW-3 尚未整体 accepted。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 venue-rule facts：`COMMITTED / CI FAILED / FIX REQUIRED`，latest committed exact head `54c7bdd2caee5602441ce983b33c4cd2466ee263` / run `29253811976`；本地 CI blocker fix 为 `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`，尚未 commit/push；order preview 仍未授权。
+- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 order preview：`REVIEW ACCEPTED / READY TO COMMIT`；仅允许提交 OKX Spot、BUY/SELL、LIMIT、internal、local-facts-only、no-side-effect 实现。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter：`NOT IMPLEMENTED`；GateW-2 private read-only diagnostic probe 已实现并获 CI 接受，但 real smoke/远端 permission verification 为 `NOT_RUN / UNKNOWN`；Python live execution ready：`NO`。
 
@@ -528,3 +528,37 @@ Current authority：GateW `IN_PROGRESS / NOT_FROZEN`；`accepted_batch=GateW-2 /
 - 本轮已将两个 helper 改为 `current version != null + pending migrations=0` 的动态合同，并将 Batch 5A job/install step timeout 分别设为 60/30 分钟；独立 review 已重跑 embedded Java、disposable PostgreSQL、frontend build/4-spec E2E、full Maven 与治理回归并接受该 fix。Ubuntu apt/mirror timeout 仍必须由 fix commit exact-head GitHub CI 最终证明。
 - current next action 仅为 `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。fix 仍未 commit/push；形成新 commit 后回到 `COMMITTED|CI_PENDING`，再由 fix commit exact-head CI 决定接受。
 - 禁止从 failed 直接写成 `ACCEPTED|CI_GREEN`，禁止初始化 GateW-4、GateW Freeze 或 order preview attempt-02，禁止升级 LIVE/交易授权状态。
+
+## 40. GateW-3 Post-fix CI Green Continuation
+
+Canonical reconciliation 已验证以下 transition：
+
+```text
+COMMITTED|CI_FAILED|FIX_REQUIRED
+→ COMMITTED|CI_GREEN|CONTINUE_REQUIRED
+```
+
+- failed snapshot 为 commit `54c7bdd2caee5602441ce983b33c4cd2466ee263` / run `29253811976` / `failure`。
+- fix snapshot 为 commit `fd6a8b2044891fa7edfcba7b5a31cd6dc8636b28` / run `29260881801` / `completed / success`，且 `headSha` exact match。
+- governance enablement commit `ea58c34e44169e1a459750a0265017c622eea9b6` / run `29271620336` 为 `completed / success`；该 commit 只建立治理合同，不是 preview 或 venue-rule implementation commit。
+- `accepted_batch` 继续为 GateW-2；GateW 继续 `IN_PROGRESS / NOT_FROZEN`；GateW-4 未初始化；LIVE 与 private trading 继续关闭。
+- reconciliation 后的下一动作是 `NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW-ATTEMPT-02`，本轮已执行并通过；current authority 由下方 §41 覆盖。
+
+## 41. GateW-3 LIMIT-only Dry-run Order Preview
+
+Security/risk review attempt-02 结论：`PASS / LIMIT_ONLY_INTERNAL_PREVIEW_REVIEW_ACCEPTED`。完整 evidence 为 [NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW.attempt-02.md](evidence/gate-w/NQ-GATEW-3-DRY-RUN-ORDER-PREVIEW-SECURITY-RISK-REVIEW.attempt-02.md)。
+
+Implementation 完成并进入 `IMPLEMENTED|PENDING_REVIEW`；完整 evidence 为 [NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-IMPLEMENTATION.attempt-01.md](evidence/gate-w/NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-IMPLEMENTATION.attempt-01.md)。独立 review 重新检查真实 diff 后结论为 `PASS / LIMIT_ONLY_INTERNAL_ORDER_PREVIEW_ACCEPTED / READY_TO_COMMIT`；完整 evidence 为 [NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-REVIEW.attempt-01.md](evidence/gate-w/NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-REVIEW.attempt-01.md)。
+
+- 实现只位于 `nq-core`，通过窄化 `InstrumentCatalogReadPort` 读取一个本地 symbol；无 network/provider/credential/account/risk/order write dependency。
+- 输入只允许 OKX Spot、BUY/SELL、LIMIT、BigDecimal price/quantity 和显式 evaluation time；不静默舍入。
+- 输出分离 structural/venue/risk/account/execution；minimum notional、fee、permission 为 UNKNOWN，balance/stateful risk 为 NOT_EVALUATED，execution 永久 BLOCKED。
+- 37 个 preview tests 与 8 个 freshness tests 定向通过；P0=0、P1=0。GateW-3 未 accepted，GateW 未 frozen，LIVE/private trading 未开启。
+
+唯一下一动作：
+
+```text
+NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH
+```
+
+只允许精确暂存本轮已接受的 `nq-core` 与 current docs/evidence diff。提交后必须等待 implementation commit exact-head CI，CI GREEN 前不得进入 post-CI authority sync。
