@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过），LIMIT-only preview 既有 acceptance head/CI 继续有效。GateW-3 bounded read-only reconciliation 已通过 official permission/security review、implementation 与独立 review，当前为 `REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可提交）；尚无本轮 commit/exact-head CI，GateW-3 尚未整体 accepted。
+状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 bounded read-only reconciliation acceptance head `71e1ded5a9896996717549d2a96068356dea7288` 的 exact-head run `29324600871` 已成功，当前为 `COMMITTED / CI GREEN / CONTINUE REQUIRED`（已提交 / CI 已通过 / 需要继续）；GateW-3 尚未整体 accepted。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 read-only reconciliation：`REVIEW ACCEPTED / READY TO COMMIT`；仅允许 OKX Spot、最多 3 symbols、typed `Read` snapshots、bounded local SELECT 与 pure no-side-effect comparator。
+- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 read-only reconciliation：`COMMITTED / CI GREEN / CONTINUE REQUIRED`；仅接受 OKX Spot、最多 3 symbols、typed `Read` snapshots、bounded local SELECT 与 pure no-side-effect comparator。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter：`NOT IMPLEMENTED`；GateW-2 private read-only diagnostic probe 已实现并获 CI 接受，但 real smoke/远端 permission verification 为 `NOT_RUN / UNKNOWN`；Python live execution ready：`NO`。
 

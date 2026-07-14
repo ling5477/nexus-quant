@@ -11770,3 +11770,10 @@ Next action：`NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-
 - Required targeted Maven：`mvn -f backend/pom.xml -pl nq-core,nq-adapter-api,nq-adapter-okx,nq-infra,nq-app -am test`，23/23 reactor modules `SUCCESS`，`BUILD SUCCESS`，exit code 0。
 - Full Maven：`mvn -f backend/pom.xml test`，23/23 reactor modules `SUCCESS`，`BUILD SUCCESS`，exit code 0。
 - 两次 Maven 均设置 `CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`；未访问 OKX。governance hard gate 在 Commit A 前继续执行；当前状态不提前写 CI green。
+
+## 2026-07-14 — GateW-3 read-only reconciliation post-CI sync
+
+- Commit A：`71e1ded5a9896996717549d2a96068356dea7288`；`feat(trading): add read-only order reconciliation`。
+- Exact-head CI：`NQ CI Baseline / 29324600871 / completed / success / headSha=71e1ded5...`；10/10 actual jobs success，bad jobs=0。
+- `Frontend backend E2E smoke` 与 `Run adapter readiness backend E2E` 均为 `success`。
+- Transition：`REVIEW_ACCEPTED|READY_TO_COMMIT → COMMITTED|CI_GREEN|CONTINUE_REQUIRED`；accepted batch 保持 GateW-2，GateW 保持 `IN_PROGRESS|NOT_FROZEN`。

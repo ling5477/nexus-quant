@@ -69,5 +69,5 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 ## 9. Current Boundary Summary
 
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`，preview 既有 acceptance 继续有效。GateW-3 read-only reconciliation 当前为 `REVIEW_ACCEPTED|READY_TO_COMMIT`，唯一下一动作是 `NQ-GATEW-3-READ-ONLY-RECONCILIATION-COMMIT-AND-PUSH`；accepted batch 仍为 GateW-2。GateW-2 `REAL_SMOKE=NOT_RUN`；不得把 fake transport、review acceptance、snapshot match、typed private read 或 CI 推断为真实 permission、账户健康、private trading、LIVE 或 trading authorization。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`。GateW-3 read-only reconciliation acceptance head `71e1ded5...` / run `29324600871` 已成功，当前为 `COMMITTED|CI_GREEN|CONTINUE_REQUIRED`，唯一下一动作是 `NQ-GATEW-3-RISK-PREFLIGHT-SECURITY-RISK-REVIEW-ATTEMPT-01`；accepted batch 仍为 GateW-2。GateW-2 `REAL_SMOKE=NOT_RUN`；不得把 fake transport、snapshot match、typed private read 或 CI 推断为真实 permission、账户健康、private trading、LIVE 或 trading authorization。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
