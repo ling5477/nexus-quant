@@ -58,6 +58,23 @@ function Get-UtcNow {
     return [DateTimeOffset]::UtcNow
 }
 
+function ConvertTo-TrimmedNativeOutput {
+    param([AllowNull()][object[]]$Value)
+
+    return (($Value -join [Environment]::NewLine).Trim())
+}
+
+function ConvertTo-CanonicalUtcTimestamp {
+    param([Parameter(Mandatory = $true)]$Value)
+
+    # PowerShell 7 将 ISO-8601 JSON 字符串自动解析为 DateTime；统一回 UTC round-trip 格式，保证跨引擎 hash 一致。
+    # Windows PowerShell 5.1 + StrictMode 对首次 value-type cast 需要显式的本地变量初始化。
+    $parsedObservedAt = [DateTimeOffset]::MinValue
+    $parsedObservedAt = [DateTimeOffset]$Value
+    $utcObservedAt = $parsedObservedAt.UtcDateTime
+    return $utcObservedAt.ToString('o')
+}
+
 function Get-RuntimeEnvironmentSnapshot {
     $snapshot = @{}
     foreach ($name in $script:RuntimeEnvironmentNames) {
@@ -199,8 +216,11 @@ function Assert-FixedDetachedWorktree {
     if ($LASTEXITCODE -ne 0 -or $status.Count -ne 0) {
         throw 'BLOCKED / HARNESS_WORKTREE_NOT_CLEAN'
     }
-    $branch = [string](& git -C $script:RepoRoot branch --show-current 2>$null)
-    $branch = $branch.Trim()
+    $branchOutput = @(& git -C $script:RepoRoot branch --show-current 2>$null)
+    if ($LASTEXITCODE -ne 0) {
+        throw 'unable to resolve harness branch'
+    }
+    $branch = ConvertTo-TrimmedNativeOutput $branchOutput
     if (-not [string]::IsNullOrWhiteSpace($branch)) {
         throw 'BLOCKED / FIXED_COMMIT_WORKTREE_REQUIRED'
     }
@@ -312,7 +332,12 @@ function Get-ChainState {
         $hashInput = [ordered]@{}
         foreach ($field in $script:SampleFields) {
             if ($field -ne 'recordHash') {
-                $hashInput[$field] = $record.$field
+                $hashInput[$field] = if ($field -eq 'observedAt') {
+                    ConvertTo-CanonicalUtcTimestamp $record.$field
+                }
+                else {
+                    $record.$field
+                }
             }
         }
         $expectedHash = Get-Sha256Text (ConvertTo-CompactJson $hashInput)
@@ -335,7 +360,7 @@ function Append-Sample {
     $state = Get-ChainState $Directory
     $hashInput = [ordered]@{
         sequence                 = [long]$state.NextSequence
-        observedAt               = [string]$Cycle.observedAt
+        observedAt               = (ConvertTo-CanonicalUtcTimestamp $Cycle.observedAt)
         durationMs               = [long]$Cycle.durationMs
         resultStatus             = [string]$Cycle.resultStatus
         reasonCode               = [string]$Cycle.reasonCode
@@ -720,6 +745,8 @@ function Invoke-SelfTest {
             $missingCredentialRejected = $_.Exception.Message -eq 'BLOCKED / API_KEY_REQUIRED'
         }
         if (-not $missingCredentialRejected) { throw 'missing credential preflight was not rejected' }
+        $detachedBranchOutputHandled = (ConvertTo-TrimmedNativeOutput $null) -eq ''
+        if (-not $detachedBranchOutputHandled) { throw 'detached branch output was not handled' }
         [IO.File]::WriteAllText((Join-Path $directory 'samples.jsonl'), '', $script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $directory 'failures.jsonl'), '', $script:Utf8NoBom)
         Write-JsonAtomic (Join-Path $directory 'manifest.json') ([ordered]@{
@@ -762,12 +789,13 @@ function Invoke-SelfTest {
         if (-not $duplicateRejected) { throw 'duplicate sequence was not rejected' }
         return [pscustomobject]@{
             decision = 'PASS / SUPERVISOR_SELF_TEST'
-            cases = 10
+            cases = 11
             hashChain = 'PASS'
             appendOnlySequence = 'PASS'
             resumePreservedExistingSamples = 'PASS'
             duplicateSequenceRejected = 'PASS'
             missingCredentialRejected = 'PASS / API_KEY_REQUIRED'
+            detachedBranchOutputHandled = 'PASS'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))
             cleanupReleasedTemporaryDirectory = $true
             noPrivateNetworkCalled = $true
