@@ -11777,3 +11777,13 @@ Next action：`NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-
 - Exact-head CI：`NQ CI Baseline / 29324600871 / completed / success / headSha=71e1ded5...`；10/10 actual jobs success，bad jobs=0。
 - `Frontend backend E2E smoke` 与 `Run adapter readiness backend E2E` 均为 `success`。
 - Transition：`REVIEW_ACCEPTED|READY_TO_COMMIT → COMMITTED|CI_GREEN|CONTINUE_REQUIRED`；accepted batch 保持 GateW-2，GateW 保持 `IN_PROGRESS|NOT_FROZEN`。
+
+## 2026-07-14 — GateW-3 diagnostic risk preflight
+
+- 环境：`CI=true`、`NQ_NO_OUTBOUND=true`、`NQ_AI_ENABLED=false`、`NQ_DH_RUNTIME_ENABLED=false`、`NQ_REAL_EXCHANGE_ENABLED=false`；未访问 OKX 或 credential。
+- focused：`mvn -f backend/pom.xml -pl nq-core -am '-Dtest=GateW3RiskPreflightServiceTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`，31 tests / 0 failures/errors/skips，BUILD SUCCESS。
+- required targeted：`mvn -f backend/pom.xml -pl nq-core,nq-risk,nq-infra,nq-app -am test`，23/23 reactor modules SUCCESS，BUILD SUCCESS；既有 `PreTradeRiskServiceTest` 5/5 PASS。
+- full Maven：`mvn -f backend/pom.xml test`，23/23 reactor modules SUCCESS，BUILD SUCCESS。
+- warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning；不阻断本轮。
+- 未运行：frontend/Python/PostgreSQL/真实 network/real smoke；本轮无对应实现 diff。
+- 结论：local implementation validation PASS；implementation exact-head GitHub CI 尚未运行，不能写成 CI green。

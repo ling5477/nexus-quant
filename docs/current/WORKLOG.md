@@ -17572,3 +17572,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：`work_batch=GateW-3 / COMMITTED|CI_GREEN|CONTINUE_REQUIRED / 71e1ded5... / 29324600871`；accepted batch 保持 GateW-2，GateW not frozen。
 - boundary：CI 只接受 bounded read-only diagnostic；无真实 OKX/credential/repair/order/ledger/audit/risk mutation/LIVE/Shadow/DH/AI。
 - next action：`NQ-GATEW-3-RISK-PREFLIGHT-SECURITY-RISK-REVIEW-ATTEMPT-01`。
+
+## 2026-07-14 — GateW-3 diagnostic risk preflight
+
+- task：`NQ-GATEW-3-RISK-PREFLIGHT-SECURITY-RISK-REVIEW-ATTEMPT-01 / ROUND_4_COMBINED`。
+- scope：NQ-only `nq-core` internal diagnostic；审查 preview/reconciliation/risk chain 后新增 immutable fact bundle、status/taxonomy/result 与 side-effect-free evaluator；无 API/DB/network/write。
+- result：`PASS / GATEW_3_RISK_PREFLIGHT_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。
+- validation：focused 31/31；required targeted/full Maven 均 23/23 modules SUCCESS；治理检查在提交前执行。
+- boundary：不调用完整 risk chain/stateful rules，不构造 `PlaceOrderCommand`；UNKNOWN/NOT_EVALUATED 显式，execution blocked；无 OKX/credential/LIVE/Shadow/DH/AI。
+- next：`NQ-GATEW-3-RISK-PREFLIGHT-COMMIT-AND-PUSH`；精确提交后等待 implementation exact-head CI，CI green 前不得接受 GateW-3 或初始化 GateW-4。

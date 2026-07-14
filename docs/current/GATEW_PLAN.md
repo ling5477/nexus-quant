@@ -624,3 +624,17 @@ COMMITTED|CI_FAILED|FIX_REQUIRED
 ```text
 NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01
 ```
+
+## 45. GateW-3 Diagnostic Risk Preflight
+
+Security/risk review attempt-01 已冻结 `PASS / GATEW_3_RISK_PREFLIGHT_REVIEW_ACCEPTED`：完整 `PreTradeRiskService`/registry 因 `PlaceOrderCommand` coupling、stateful rule 与 `ALLOW` 语义被拒绝；只允许组合 immutable preview/reconciliation result 与 credential-material-free local metadata snapshots。
+
+Implementation 只在 `nq-core` 新增 internal evaluator；无 Spring 自动装配、Controller/API、DB/network/credential/write dependency。结果固定 `diagnosticOnly/readOnly/noSideEffect=true`、`orderSubmitted/tradingAuthorized=false`、`executionReadiness=BLOCKED`；minimum notional、fee、remote permission 为 UNKNOWN，stateful risk/balance/position 等为 NOT_EVALUATED。
+
+独立 review 结论为 `PASS / GATEW_3_RISK_PREFLIGHT_ACCEPTED / READY_TO_COMMIT`；focused 31/31、required targeted 与 full Maven 均 23/23 modules SUCCESS。当前尚未 commit/push 或取得 implementation exact-head CI，accepted batch 仍为 GateW-2，GateW-3 尚未整体 accepted。
+
+当前唯一下一动作：
+
+```text
+NQ-GATEW-3-RISK-PREFLIGHT-COMMIT-AND-PUSH
+```

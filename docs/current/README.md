@@ -6,7 +6,7 @@
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`。GateW-3 bounded read-only reconciliation acceptance head `71e1ded5...` 的 run `29324600871` 已成功，当前为 `COMMITTED / CI GREEN / CONTINUE REQUIRED`；accepted batch 仍为 GateW-2。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`。GateW-3 risk preflight review 已通过，当前为 `REVIEW ACCEPTED / READY TO COMMIT`；尚未 commit/CI，accepted batch 仍为 GateW-2。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
@@ -19,7 +19,7 @@
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |
 | Gate 治理 workflow | [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md) | 否；定义 checker/lifecycle/evidence/release contract |
 | Current task evidence | [evidence/gate-w/README.md](evidence/gate-w/README.md) | 否；保存不可覆盖 attempt，不决定阶段 |
-| GateW active plan | [GATEW_PLAN.md](GATEW_PLAN.md) | 否；定义 OKX Spot planning、GateW-2 安全基线、GateW-3 venue-rule/preview/read-only reconciliation 边界，不决定 current authority |
+| GateW active plan | [GATEW_PLAN.md](GATEW_PLAN.md) | 否；定义 OKX Spot planning、GateW-2 安全基线、GateW-3 venue-rule/preview/reconciliation/risk-preflight 边界，不决定 current authority |
 | GateV historical handoff / GateW planning entry | [GATEV_PLAN.md](GATEV_PLAN.md) | 否；仅保留 GateV historical context 与 GateW planning handoff |
 | API / Schema / 架构 | [API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[ARCHITECTURE.md](ARCHITECTURE.md)、[MODULES.md](MODULES.md) | 否 |
 | Evidence ledger | [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md) | 否；append-only |
@@ -37,4 +37,4 @@
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider 或 private trading adapter 已实现；GateW-2 仅是默认不装配的 private read-only diagnostic probe，`REAL_SMOKE=NOT_RUN`，不表示远端 permission 或交易授权。
-- GateW-3 reconciliation CI acceptance 不表示 batch 已整体接受；当前唯一动作是 `NQ-GATEW-3-RISK-PREFLIGHT-SECURITY-RISK-REVIEW-ATTEMPT-01`。不得把 typed read capability、snapshot match 或 CI green 解释成真实 permission、账户健康、可以交易或已获 LIVE/交易授权。
+- GateW-3 risk preflight review acceptance 不表示已提交、CI green 或 batch 已整体接受；当前唯一动作是 `NQ-GATEW-3-RISK-PREFLIGHT-COMMIT-AND-PUSH`。不得把 pure diagnostic PASS、snapshot match 或 local metadata 解释成真实 permission、余额充分、账户健康、可以交易或已获 LIVE/交易授权。
