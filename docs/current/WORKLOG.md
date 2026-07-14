@@ -17559,3 +17559,9 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - provenance: preview implementation `eff79d7...` / failed run `29308652349` 保留为历史失败事实；acceptance head 指向含 runner fix 且 CI green 的 `abc5230c...`，不指向 docs-only sync commit。
 - boundary: no preview business change；no Controller/API/migration/network/OKX/private/credential/order/ledger/audit/risk/LIVE/Shadow/DH/AI change。
 - next action: `NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01`。
+## 2026-07-14 — GateW-3 read-only reconciliation
+
+- `PASS / READ_ONLY_RECONCILIATION_REVIEW_ACCEPTED`：官方 Read/Trade/Withdraw permission 已重新区分；仅批准三个 typed `Read` GET operation。
+- 新增 immutable snapshots、narrow read ports、pure comparator、bounded JDBC SELECT 与默认不装配的 scoped OKX remote adapter；拒绝复用 scheduler/recovery/write-side reconcile。
+- 独立 review：`PASS / READ_ONLY_RECONCILIATION_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。下一动作：`NQ-GATEW-3-READ-ONLY-RECONCILIATION-COMMIT-AND-PUSH`。
+- validation：focused 35/35；required targeted Maven 与 full Maven 均 exit code 0、23/23 reactor modules `SUCCESS`、`BUILD SUCCESS`；全程 no-outbound/AI/DH/real-exchange disabled，未访问 OKX。

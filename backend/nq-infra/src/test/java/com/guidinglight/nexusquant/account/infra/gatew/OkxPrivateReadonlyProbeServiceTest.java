@@ -145,11 +145,11 @@ class OkxPrivateReadonlyProbeServiceTest {
         private RecordingTransport transport;
 
         @Override
-        public OkxPrivateReadObservation withActiveCredential(
+        public <T> T withActiveCredential(
                 Long ownerId,
                 Long accountId,
                 String type,
-                CredentialCallback callback
+                CredentialCallback<T> callback
         ) {
             if (!"OKX_API_V5".equals(type)) {
                 throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);

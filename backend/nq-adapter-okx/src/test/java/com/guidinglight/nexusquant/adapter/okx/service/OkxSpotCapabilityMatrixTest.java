@@ -30,10 +30,13 @@ class OkxSpotCapabilityMatrixTest {
     }
 
     @Test
-    void shouldImplementOnlyGateW2PrivateReadsAndKeepLegacyPermissionReadDisabled() {
+    void shouldImplementOnlyFrozenTypedPrivateReadsAndKeepLegacyPermissionReadDisabled() {
         Set<ExchangeCapability> implementedPrivateReads = Set.of(
                 ExchangeCapability.PRIVATE_ACCOUNT_CONFIGURATION_READ,
-                ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ
+                ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ,
+                ExchangeCapability.PRIVATE_OPEN_ORDERS_READ,
+                ExchangeCapability.PRIVATE_ORDER_HISTORY_READ,
+                ExchangeCapability.PRIVATE_RECENT_FILLS_READ
         );
 
         for (ExchangeCapability capability : implementedPrivateReads) {

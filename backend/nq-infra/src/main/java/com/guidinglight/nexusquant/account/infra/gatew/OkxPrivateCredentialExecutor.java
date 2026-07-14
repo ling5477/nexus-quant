@@ -10,16 +10,16 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
  */
 public interface OkxPrivateCredentialExecutor {
 
-    OkxPrivateReadObservation withActiveCredential(
+    <T> T withActiveCredential(
             Long ownerId,
             Long exchangeAccountId,
             String credentialType,
-            CredentialCallback callback
+            CredentialCallback<T> callback
     );
 
     @FunctionalInterface
-    interface CredentialCallback {
-        OkxPrivateReadObservation execute(CredentialSession session);
+    interface CredentialCallback<T> {
+        T execute(CredentialSession session);
     }
 
     /** 只能在 callback 所在线程和 callback 生命周期内执行 typed private read。 */

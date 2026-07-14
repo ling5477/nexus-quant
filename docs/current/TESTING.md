@@ -11762,3 +11762,11 @@ Next action：`NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。
 Preview implementation exact-head failed run `29308652349` 继续作为失败历史保留；本次 success 不是旧 run rerun。`work_batch_commit` 指向取得 exact-head success 的 acceptance head，后续 docs-only sync commit 不替换该值。
 
 Next action：`NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01`。
+## 2026-07-14 — GateW-3 read-only reconciliation review/implementation
+
+- Official permission hard gate：OKX 官方 API v5 `orders-pending`、`orders-history`、`fills` 均为 private `GET` + `Permission: Read`；官方 changelog 已于执行日复核；未使用第三方来源。
+- Focused tests：core 6 + typed adapter 12 + infra/scoped credential 17 = `35 tests / 0 failures / 0 errors`；全部使用 fixed Clock、fake transport、synthetic sanitized payload，零真实 credential/OKX network。
+- Bounds：OKX Spot、最多 3 symbols、1 page/100 records/24h、no retry；local adapter 只有 bounded SELECT，result 恒 `executionReadiness=BLOCKED`。
+- Required targeted Maven：`mvn -f backend/pom.xml -pl nq-core,nq-adapter-api,nq-adapter-okx,nq-infra,nq-app -am test`，23/23 reactor modules `SUCCESS`，`BUILD SUCCESS`，exit code 0。
+- Full Maven：`mvn -f backend/pom.xml test`，23/23 reactor modules `SUCCESS`，`BUILD SUCCESS`，exit code 0。
+- 两次 Maven 均设置 `CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`；未访问 OKX。governance hard gate 在 Commit A 前继续执行；当前状态不提前写 CI green。

@@ -7,7 +7,7 @@
 1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，schema v3 分离最近冻结 Gate、active Gate、accepted batch、work batch、下一动作与 LIVE/AI/DH 等机器可读状态。
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
-4. [GATEW_PLAN.md](GATEW_PLAN.md)：GateW active current plan；定义 OKX Spot 单 venue、实施批次、GateW-2 security baseline、GateW-3 venue-rule fact model 与 no-side-effect preview review，不决定 current Gate。
+4. [GATEW_PLAN.md](GATEW_PLAN.md)：GateW active current plan；定义 OKX Spot 单 venue、GateW-2 security baseline、GateW-3 venue-rule/preview/read-only reconciliation 边界，不决定 current Gate。
 5. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：Gate checker、lifecycle、evidence 与 release 执行规则；machine contract 位于 `scripts/docs/governance-workflow-contract.json`，两者均不决定 current Gate。
 6. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 与 GateW planning handoff的 allowed residual；不决定 current Gate 或独立接受 work batch。
 7. [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW current task evidence index；只记录不可覆盖 attempt evidence，不决定 current Gate 或 implementation acceptance。
@@ -69,5 +69,5 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 ## 9. Current Boundary Summary
 
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`。GateW-3 LIMIT-only preview implementation commit `eff79d7c7ea1b034de4e77c7ec64974c247027f5` 的 run `29308652349` 失败，acceptance head `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc` 的 run `29319269424` 成功，当前为 `COMMITTED|CI_GREEN|CONTINUE_REQUIRED`。唯一下一动作是 `NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01`；accepted batch 仍为 GateW-2。GateW-2 `REAL_SMOKE=NOT_RUN`；不得把本地验证、review accepted、read-only diagnostic probe、public metadata readiness、schema review、preview review 或 CI 推断为 runtime fresh facts、远端 permission、private trading、LIVE 或 trading authorization。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`，preview 既有 acceptance 继续有效。GateW-3 read-only reconciliation 当前为 `REVIEW_ACCEPTED|READY_TO_COMMIT`，唯一下一动作是 `NQ-GATEW-3-READ-ONLY-RECONCILIATION-COMMIT-AND-PUSH`；accepted batch 仍为 GateW-2。GateW-2 `REAL_SMOKE=NOT_RUN`；不得把 fake transport、review acceptance、snapshot match、typed private read 或 CI 推断为真实 permission、账户健康、private trading、LIVE 或 trading authorization。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。

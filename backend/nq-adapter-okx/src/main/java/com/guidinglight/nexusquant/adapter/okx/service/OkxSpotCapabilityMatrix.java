@@ -63,6 +63,18 @@ public final class OkxSpotCapabilityMatrix {
                 implementedPrivateRead(ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ)
         );
         definitions.put(
+                ExchangeCapability.PRIVATE_OPEN_ORDERS_READ,
+                implementedPrivateRead(ExchangeCapability.PRIVATE_OPEN_ORDERS_READ)
+        );
+        definitions.put(
+                ExchangeCapability.PRIVATE_ORDER_HISTORY_READ,
+                implementedPrivateRead(ExchangeCapability.PRIVATE_ORDER_HISTORY_READ)
+        );
+        definitions.put(
+                ExchangeCapability.PRIVATE_RECENT_FILLS_READ,
+                implementedPrivateRead(ExchangeCapability.PRIVATE_RECENT_FILLS_READ)
+        );
+        definitions.put(
                 ExchangeCapability.PRIVATE_PERMISSION_READ,
                 privateRead(ExchangeCapability.PRIVATE_PERMISSION_READ)
         );

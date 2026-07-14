@@ -198,7 +198,9 @@ class JdbcOkxPrivateCredentialExecutorTest {
         assertEquals(OkxPrivateReadError.AUTHENTICATION_FAILURE, expired.category());
 
         Method callback = OkxPrivateCredentialExecutor.CredentialCallback.class.getDeclaredMethods()[0];
-        assertEquals(OkxPrivateReadObservation.class, callback.getReturnType());
+        // GateW-3 将 callback 结果泛型化以返回 immutable normalized snapshot；类型擦除为 Object，
+        // session 的线程绑定和 callback 结束即失效边界保持不变。
+        assertEquals(Object.class, callback.getReturnType());
         assertEquals(OkxPrivateCredentialExecutor.CredentialSession.class, callback.getParameterTypes()[0]);
     }
 

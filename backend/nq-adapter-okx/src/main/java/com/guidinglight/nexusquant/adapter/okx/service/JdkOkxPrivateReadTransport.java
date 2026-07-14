@@ -14,6 +14,8 @@ import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -45,6 +47,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
     private final OkxSpotEndpointGuard endpointGuard;
     private final OkxPrivateRequestSigner signer;
     private final ObjectMapper objectMapper;
+    private final Clock clock;
     private final OkxPrivateHttpExchange exchange;
     private final Duration requestTimeout;
     private final Semaphore concurrency = new Semaphore(1, true);
@@ -74,6 +77,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
             OkxPrivateHttpExchange exchange
     ) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.signer = new OkxPrivateRequestSigner(clock);
         this.endpointGuard = new OkxSpotEndpointGuard();
         this.requestTimeout = validateDuration(requestTimeout, MAX_REQUEST_TIMEOUT, "requestTimeout");
@@ -125,7 +129,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                 if (responseBody.length > MAX_RESPONSE_BYTES) {
                     throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_TOO_LARGE);
                 }
-                return parse(request.operation(), responseBody);
+                return parse(request, responseBody);
             } finally {
                 if (responseBody != null) {
                     java.util.Arrays.fill(responseBody, (byte) 0);
@@ -148,20 +152,27 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
         }
     }
 
-    private OkxPrivateReadResult parse(OkxPrivateReadOperation operation, byte[] payload) {
+    private OkxPrivateReadResult parse(OkxPrivateReadRequest request, byte[] payload) {
         try {
+            OkxPrivateReadOperation operation = request.operation();
             JsonNode root = objectMapper.readTree(payload);
             String providerCode = text(root, "code");
             if (!"0".equals(providerCode)) {
                 throw new OkxPrivateReadException(providerError(providerCode));
             }
             JsonNode data = root.path("data");
-            if (!data.isArray() || data.isEmpty()) {
-                return new OkxPrivateReadResult(operation, Set.of(), 0, false);
+            if (!data.isArray()) {
+                return result(operation, Set.of(), 0, false, List.of(), List.of());
+            }
+            if (request.reconciliationOperation()) {
+                return parseReconciliation(request, data);
+            }
+            if (data.isEmpty()) {
+                return result(operation, Set.of(), 0, false, List.of(), List.of());
             }
             // 两个 account schema 均预期单条；多条一律 fail-closed，避免忽略后续权限或资产数据。
             if (data.size() != 1) {
-                return new OkxPrivateReadResult(operation, Set.of(), 0, false);
+                return result(operation, Set.of(), 0, false, List.of(), List.of());
             }
             if (operation == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ) {
                 return parseConfiguration(data.get(0), operation);
@@ -187,13 +198,13 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                 permissions.add(normalized);
             }
         }
-        return new OkxPrivateReadResult(operation, permissions, 0, !permissions.isEmpty());
+        return result(operation, permissions, 0, !permissions.isEmpty(), List.of(), List.of());
     }
 
     private OkxPrivateReadResult parseBalance(JsonNode row, OkxPrivateReadOperation operation) {
         JsonNode details = row.path("details");
         if (!details.isArray()) {
-            return new OkxPrivateReadResult(operation, Set.of(), 0, false);
+            return result(operation, Set.of(), 0, false, List.of(), List.of());
         }
         boolean complete = !details.isEmpty();
         int count = 0;
@@ -205,7 +216,92 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                     && validDecimal(text(detail, "frozenBal"))
                     && validTimestamp(text(detail, "uTime"));
         }
-        return new OkxPrivateReadResult(operation, Set.of(), count, complete);
+        return result(operation, Set.of(), count, complete, List.of(), List.of());
+    }
+
+    private OkxPrivateReadResult parseReconciliation(OkxPrivateReadRequest request, JsonNode data) {
+        if (data.size() > request.limit()) {
+            return result(request.operation(), Set.of(), 0, false, List.of(), List.of());
+        }
+        boolean complete = data.size() < request.limit();
+        if (request.operation() == OkxPrivateReadOperation.OKX_SPOT_RECENT_FILLS_READ) {
+            List<OkxPrivateFillSnapshot> fills = new ArrayList<>();
+            for (JsonNode row : data) {
+                OkxPrivateFillSnapshot parsed = parseFill(row, request);
+                if (parsed == null) return result(request.operation(), Set.of(), 0, false, List.of(), List.of());
+                fills.add(parsed);
+            }
+            return result(request.operation(), Set.of(), 0, complete, List.of(), fills);
+        }
+        List<OkxPrivateOrderSnapshot> orders = new ArrayList<>();
+        for (JsonNode row : data) {
+            OkxPrivateOrderSnapshot parsed = parseOrder(row, request);
+            if (parsed == null) return result(request.operation(), Set.of(), 0, false, List.of(), List.of());
+            orders.add(parsed);
+        }
+        return result(request.operation(), Set.of(), 0, complete, orders, List.of());
+    }
+
+    private OkxPrivateOrderSnapshot parseOrder(JsonNode row, OkxPrivateReadRequest request) {
+        String orderId = text(row, "ordId");
+        String clientOrderId = blankToNull(text(row, "clOrdId"));
+        String instrumentId = text(row, "instId");
+        String instrumentType = text(row, "instType");
+        String side = lower(text(row, "side"));
+        String orderType = lower(text(row, "ordType"));
+        String state = lower(text(row, "state"));
+        String rawPrice = text(row, "px");
+        BigDecimal price = optionalDecimal(rawPrice);
+        BigDecimal quantity = decimal(text(row, "sz"));
+        BigDecimal filled = decimal(text(row, "accFillSz"));
+        if (blankToNull(orderId) == null
+                || !"SPOT".equals(instrumentType)
+                || !request.instrumentId().equals(instrumentId)
+                || !Set.of("buy", "sell").contains(side)
+                || orderType == null || state == null
+                || (rawPrice != null && !rawPrice.isBlank() && price == null)
+                || (price != null && price.signum() < 0)
+                || quantity == null || quantity.signum() < 0
+                || filled == null || filled.signum() < 0) {
+            return null;
+        }
+        return new OkxPrivateOrderSnapshot(
+                orderId, clientOrderId, instrumentId, side, orderType, price, quantity, filled, state,
+                clock.instant(), request.operation()
+        );
+    }
+
+    private OkxPrivateFillSnapshot parseFill(JsonNode row, OkxPrivateReadRequest request) {
+        String orderId = text(row, "ordId");
+        String clientOrderId = blankToNull(text(row, "clOrdId"));
+        String tradeId = text(row, "tradeId");
+        String instrumentId = text(row, "instId");
+        String instrumentType = text(row, "instType");
+        BigDecimal price = decimal(text(row, "fillPx"));
+        BigDecimal quantity = decimal(text(row, "fillSz"));
+        Instant fillTime = epochMillis(text(row, "fillTime"));
+        if (blankToNull(orderId) == null || blankToNull(tradeId) == null
+                || !"SPOT".equals(instrumentType)
+                || !request.instrumentId().equals(instrumentId)
+                || price == null || price.signum() < 0
+                || quantity == null || quantity.signum() < 0
+                || fillTime == null) {
+            return null;
+        }
+        return new OkxPrivateFillSnapshot(
+                orderId, clientOrderId, tradeId, instrumentId, price, quantity, fillTime, clock.instant()
+        );
+    }
+
+    private OkxPrivateReadResult result(
+            OkxPrivateReadOperation operation,
+            Set<String> permissions,
+            int assetCount,
+            boolean complete,
+            List<OkxPrivateOrderSnapshot> orders,
+            List<OkxPrivateFillSnapshot> fills
+    ) {
+        return new OkxPrivateReadResult(operation, permissions, assetCount, complete, orders, fills, clock.instant());
     }
 
     private static OkxPrivateReadError providerError(String code) {
@@ -286,6 +382,35 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
         } catch (NumberFormatException ex) {
             return false;
         }
+    }
+
+    private static BigDecimal decimal(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return new BigDecimal(value);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private static BigDecimal optionalDecimal(String value) {
+        return value == null || value.isBlank() ? null : decimal(value);
+    }
+
+    private static Instant epochMillis(String value) {
+        try {
+            return value == null || value.isBlank() ? null : Instant.ofEpochMilli(Long.parseLong(value));
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    private static String lower(String value) {
+        return value == null || value.isBlank() ? null : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     /** 接收过程中即执行 byte cap；超限后取消 subscription，避免先无界缓冲再检查。 */

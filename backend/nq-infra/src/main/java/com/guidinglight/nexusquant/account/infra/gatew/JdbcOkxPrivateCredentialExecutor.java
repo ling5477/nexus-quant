@@ -43,11 +43,11 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
     }
 
     @Override
-    public OkxPrivateReadObservation withActiveCredential(
+    public <T> T withActiveCredential(
             Long ownerId,
             Long exchangeAccountId,
             String credentialType,
-            CredentialCallback callback
+            CredentialCallback<T> callback
     ) {
         try {
             return executeScoped(ownerId, exchangeAccountId, credentialType, callback);
@@ -59,11 +59,11 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
         }
     }
 
-    private OkxPrivateReadObservation executeScoped(
+    private <T> T executeScoped(
             Long ownerId,
             Long exchangeAccountId,
             String credentialType,
-            CredentialCallback callback
+            CredentialCallback<T> callback
     ) throws Exception {
         requirePositive(ownerId, "ownerId");
         requirePositive(exchangeAccountId, "exchangeAccountId");
