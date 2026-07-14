@@ -37,13 +37,15 @@ public class KillSwitchRiskRule implements RiskRule {
 
     @Override
     public Optional<RiskDecisionResult> evaluate(RiskContext context) {
-        if (!killSwitchService.isEnabled()) {
+        Objects.requireNonNull(context, "context must not be null");
+        KillSwitchSnapshot snapshot = killSwitchService.snapshot();
+        if (!snapshot.blocksOperations()) {
             return Optional.empty();
         }
         return Optional.of(RiskDecisionResult.reject(
                 RULE_CODE,
                 ruleName(),
-                "system kill switch is enabled",
+                "global kill switch blocks trading operations",
                 true,
                 RiskSeverity.HIGH,
                 context.traceId()

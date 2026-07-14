@@ -8,6 +8,12 @@ import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.app.config.ExchangeAdapterConfiguration;
+import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.risk.service.KillSwitchState;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +23,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,6 +106,32 @@ class GateWOkxPrivateReadonlyConfigurationTest {
         @Bean ObjectMapper objectMapper() { return new ObjectMapper(); }
         @Bean JdbcTemplate jdbcTemplate() { return mock(JdbcTemplate.class); }
         @Bean ExchangeAccountRepository exchangeAccountRepository() { return mock(ExchangeAccountRepository.class); }
+        @Bean KillSwitchService killSwitchService() {
+            KillSwitchStateRepository repository = new KillSwitchStateRepository() {
+                @Override
+                public Optional<KillSwitchState> findByScope(KillSwitchScope scope) {
+                    return Optional.of(new KillSwitchState(
+                            scope,
+                            KillSwitchStatus.DISENGAGED,
+                            1,
+                            "TEST_DISENGAGED",
+                            "TEST_FIXTURE",
+                            Instant.parse("2026-07-13T23:59:59Z"),
+                            "tester",
+                            "trace-config-fixture"
+                    ));
+                }
+
+                @Override
+                public KillSwitchState engage(KillSwitchEngageCommand command) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+            return new KillSwitchService(
+                    repository,
+                    Clock.fixed(Instant.parse("2026-07-14T00:00:00Z"), ZoneOffset.UTC)
+            );
+        }
         @Bean AccountCredentialRuntimeProperties accountCredentialRuntimeProperties() {
             AccountCredentialRuntimeProperties properties = new AccountCredentialRuntimeProperties();
             properties.setMasterKey("test-master-key");

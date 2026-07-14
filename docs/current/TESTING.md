@@ -11795,3 +11795,19 @@ Next action：`NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-
 - completion：venue-rule facts `fd6a8b20.../29260881801`、preview `abc5230c.../29319269424`、reconciliation `71e1ded5.../29324600871`、risk preflight `178b4951.../29332316101` 均重新核验 exact-head success、10/10 jobs。
 - authority：GateW-3 `ACCEPTED|CI_GREEN`；GateW-4 `NOT_STARTED`；GateW `IN_PROGRESS|NOT_FROZEN`。
 - 未验证：docs-only authority-sync Commit B exact-head CI 将在 Commit B push 后验证；其 run 不替换 implementation acceptance head。
+
+## 2026-07-14 — GateW-4 Blocker-1 durable kill switch remediation
+
+结论：`PASS / KILL_SWITCH_DURABILITY_REMEDIATED / STOP_PROPAGATION_PROVEN / READY_TO_COMMIT`（通过 / 持久性 blocker 已修复 / 停止传播已证明 / 可进入提交前复核）；exact-head CI 在 commit/push 前仍为 `NOT_RUN`。
+
+| Command | Result | Scope / environment |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-risk,nq-core,nq-infra,nq-app -am test` | PASS | 23/23 modules SUCCESS，BUILD SUCCESS；`CI=true` + no-outbound/AI/DH/real-exchange disabled |
+| disposable PostgreSQL dedicated test | PASS | Docker 29.6.1；本地已有 `postgres:16-alpine`；fresh V1→V35；两个 Spring context；1 passed / 0 skipped；容器/schema 已清理 |
+| `mvn -f backend/pom.xml test` | PASS | 23/23 modules SUCCESS，BUILD SUCCESS；`nq-risk 11/11`；0 failures/errors |
+
+Coverage：默认 ENGAGED、restart durability、missing/error/invalid/timestamp anomaly fail-closed、optimistic lock、version mismatch、engage idempotency、event append、无 production release surface、immutable snapshot、risk rule、private probe credential/network zero-call、Spring durable composition。
+
+Known warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3，不阻断。Full Maven 中 environment-gated PostgreSQL test 按设计 skipped；其 dedicated required run 已 1/1 通过。
+
+未运行：frontend、Python、真实 OKX、real smoke、restore/incident/soak/human-review/freeze；本轮无对应实现授权。阻断性：本地验证无 blocker；最终接受仍需 remediation commit exact-head `NQ CI Baseline` 10 jobs 全绿。

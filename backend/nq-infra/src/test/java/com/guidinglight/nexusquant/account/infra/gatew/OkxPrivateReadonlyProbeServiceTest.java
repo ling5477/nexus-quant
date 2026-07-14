@@ -10,6 +10,12 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.risk.service.KillSwitchState;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -126,6 +132,50 @@ class OkxPrivateReadonlyProbeServiceTest {
         assertEquals(List.of("CLOCK_SKEW"), observation.blockers());
     }
 
+    @Test
+    void engagedUnknownAndRepositoryFailureStopBeforeCredentialAndNetwork() {
+        assertStoppedBeforeCredentialAndNetwork(
+                killSwitchRepository(KillSwitchStatus.ENGAGED),
+                "KILL_SWITCH_ENGAGED"
+        );
+        assertStoppedBeforeCredentialAndNetwork(
+                killSwitchRepository(null),
+                "KILL_SWITCH_STATE_UNKNOWN"
+        );
+        assertStoppedBeforeCredentialAndNetwork(
+                new FailingKillSwitchRepository(),
+                "KILL_SWITCH_STATE_UNKNOWN"
+        );
+    }
+
+    private static void assertStoppedBeforeCredentialAndNetwork(
+            KillSwitchStateRepository killSwitchRepository,
+            String expectedBlocker
+    ) {
+        TrackingExecutor executor = new TrackingExecutor();
+        RecordingTransport transport = new RecordingTransport(Set.of("READ_ONLY"), true, true);
+        executor.transport = transport;
+        OkxPrivateReadonlyProbeService service = new OkxPrivateReadonlyProbeService(
+                new FailOnAccessAccountRepository(),
+                executor,
+                new KillSwitchService(killSwitchRepository, CLOCK),
+                CLOCK
+        );
+
+        OkxPrivateReadObservation observation = service.probe(
+                7L,
+                9L,
+                "OKX_API_V5",
+                OkxPrivateEnvironment.DEMO,
+                List.of("BTC")
+        );
+
+        assertEquals(OkxPrivateProbeStatus.BLOCKED, observation.probeStatus());
+        assertEquals(List.of(expectedBlocker), observation.blockers());
+        assertEquals(0, executor.callbacks.get());
+        assertTrue(transport.operations.isEmpty());
+    }
+
     private static OkxPrivateReadonlyProbeService service(
             ExchangeAccountSummary account,
             TrackingExecutor executor,
@@ -133,7 +183,38 @@ class OkxPrivateReadonlyProbeServiceTest {
     ) {
         ExchangeAccountRepository repository = new StubAccountRepository(account);
         executor.transport = transport;
-        return new OkxPrivateReadonlyProbeService(repository, executor, CLOCK);
+        return new OkxPrivateReadonlyProbeService(
+                repository,
+                executor,
+                new KillSwitchService(killSwitchRepository(KillSwitchStatus.DISENGAGED), CLOCK),
+                CLOCK
+        );
+    }
+
+    private static KillSwitchStateRepository killSwitchRepository(KillSwitchStatus status) {
+        return new KillSwitchStateRepository() {
+            @Override
+            public Optional<KillSwitchState> findByScope(KillSwitchScope scope) {
+                if (status == null) {
+                    return Optional.empty();
+                }
+                return Optional.of(new KillSwitchState(
+                        scope,
+                        status,
+                        1,
+                        "TEST_STATE",
+                        "TEST_FIXTURE",
+                        CLOCK.instant().minusSeconds(1),
+                        "tester",
+                        "trace-kill-switch-fixture"
+                ));
+            }
+
+            @Override
+            public KillSwitchState engage(KillSwitchEngageCommand command) {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     private static ExchangeAccountSummary account(String exchange, String environment, String status) {
@@ -204,5 +285,34 @@ class OkxPrivateReadonlyProbeServiceTest {
         @Override public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
         @Override public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) { throw new UnsupportedOperationException(); }
         @Override public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
+    }
+
+    private static final class FailOnAccessAccountRepository implements ExchangeAccountRepository {
+        private static AssertionError unexpected() {
+            return new AssertionError("account repository must not be called before kill-switch pass");
+        }
+
+        @Override public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) { throw unexpected(); }
+        @Override public Optional<ExchangeAccountSummary> findById(Long accountId) { throw unexpected(); }
+        @Override public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long accountId) { throw unexpected(); }
+        @Override public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) { throw unexpected(); }
+        @Override public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) { throw unexpected(); }
+        @Override public boolean updateProfile(Long ownerUserId, Long exchangeAccountId, String accountAlias, String externalAccountRef, Instant now) { throw unexpected(); }
+        @Override public boolean enable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw unexpected(); }
+        @Override public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw unexpected(); }
+        @Override public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) { throw unexpected(); }
+        @Override public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) { throw unexpected(); }
+    }
+
+    private static final class FailingKillSwitchRepository implements KillSwitchStateRepository {
+        @Override
+        public Optional<KillSwitchState> findByScope(KillSwitchScope scope) {
+            throw new IllegalStateException("simulated kill-switch repository failure");
+        }
+
+        @Override
+        public KillSwitchState engage(KillSwitchEngageCommand command) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

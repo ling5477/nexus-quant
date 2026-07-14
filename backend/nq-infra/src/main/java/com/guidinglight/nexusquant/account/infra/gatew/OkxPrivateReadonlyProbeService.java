@@ -7,6 +7,9 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -26,15 +29,18 @@ public final class OkxPrivateReadonlyProbeService {
 
     private final ExchangeAccountRepository accountRepository;
     private final OkxPrivateCredentialExecutor credentialExecutor;
+    private final KillSwitchService killSwitchService;
     private final Clock clock;
 
     public OkxPrivateReadonlyProbeService(
             ExchangeAccountRepository accountRepository,
             OkxPrivateCredentialExecutor credentialExecutor,
+            KillSwitchService killSwitchService,
             Clock clock
     ) {
         this.accountRepository = Objects.requireNonNull(accountRepository, "accountRepository must not be null");
         this.credentialExecutor = Objects.requireNonNull(credentialExecutor, "credentialExecutor must not be null");
+        this.killSwitchService = Objects.requireNonNull(killSwitchService, "killSwitchService must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -49,6 +55,13 @@ public final class OkxPrivateReadonlyProbeService {
             Collection<String> currencies
     ) {
         Instant observedAt = clock.instant();
+        KillSwitchSnapshot killSwitch = killSwitchService.snapshot();
+        if (killSwitch.blocksOperations()) {
+            String blocker = killSwitch.status() == KillSwitchStatus.ENGAGED
+                    ? "KILL_SWITCH_ENGAGED"
+                    : "KILL_SWITCH_STATE_UNKNOWN";
+            return blocked(observedAt, blocker);
+        }
         try {
             ExchangeAccountSummary account = requireSafeAccount(ownerId, exchangeAccountId, environment);
             return credentialExecutor.withActiveCredential(
@@ -128,6 +141,10 @@ public final class OkxPrivateReadonlyProbeService {
     }
 
     private OkxPrivateReadObservation blocked(Instant observedAt, OkxPrivateReadError error) {
+        return blocked(observedAt, error.name());
+    }
+
+    private OkxPrivateReadObservation blocked(Instant observedAt, String blocker) {
         return new OkxPrivateReadObservation(
                 OkxPrivateProbeStatus.BLOCKED,
                 observedAt,
@@ -135,7 +152,7 @@ public final class OkxPrivateReadonlyProbeService {
                 Set.of(),
                 null,
                 "UNKNOWN",
-                List.of(error.name()),
+                List.of(blocker),
                 List.of(),
                 true, true, true, false, true, false
         );

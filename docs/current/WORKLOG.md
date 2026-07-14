@@ -17589,3 +17589,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：`accepted_batch=GateW-3 / ACCEPTED|CI_GREEN / 178b4951... / 29332316101`；`work_batch=GateW-4 / NOT_STARTED / NONE / NOT_RUN`；GateW not frozen。
 - boundary：LIVE disabled；Shadow/AI/DH/Integration 未启用；real provider/private trading 未实现。
 - next：`NQ-GATEW-4-IMPLEMENTATION`，但必须在 task 内先通过 security/operations/persistence/backup/incident/soak review hard gates。
+
+## 2026-07-14 — GateW-4 Blocker-1 durable kill switch remediation
+
+- task：`NQ-GATEW-4-BLOCKER-1-KILL-SWITCH-DURABILITY-AND-STOP-PROPAGATION-REMEDIATION`；只关闭 `KILL_SWITCH_DURABILITY_NOT_PROVEN`。
+- scope：`nq-risk/nq-infra/nq-app` durable state、V35、risk rule、private read-only probe stop propagation、Spring composition 与 tests；原 BLOCKED evidence 保留且 SHA-256 不变。
+- result：`PASS / KILL_SWITCH_DURABILITY_REMEDIATED / STOP_PROPAGATION_PROVEN / READY_TO_COMMIT`；P0=0、P1=0；exact-head CI 仍待 commit/push。
+- validation：required targeted 与 full Maven 均 23/23 modules `SUCCESS / BUILD SUCCESS`；disposable PostgreSQL fresh V1→V35、两个 Spring context restart、1/1 passed；credential callback=0、transport operation=0。
+- boundary：默认 ENGAGED；missing/error/unknown/invalid/timestamp anomaly fail-closed；无 production release/disengage、Controller/API、scheduler、真实 credential/network/OKX、交易写侧、restore/incident/soak/human-review/freeze；LIVE disabled。
+- authority：GateW-3 继续 `ACCEPTED|CI_GREEN`；GateW-4 继续 `NOT_STARTED`；next action 保持 `NQ-GATEW-4-IMPLEMENTATION`。
+- next：精确暂存本 remediation allowlist，commit/push 后验证 exact-head `NQ CI Baseline` completed/success、10 jobs、bad=0。

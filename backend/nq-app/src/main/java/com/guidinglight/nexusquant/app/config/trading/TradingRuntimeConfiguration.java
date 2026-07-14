@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.risk.service.AccountTradingEnabledRule;
 import com.guidinglight.nexusquant.risk.service.DuplicateRequestRule;
 import com.guidinglight.nexusquant.risk.service.KillSwitchRiskRule;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
 import com.guidinglight.nexusquant.risk.service.MaxOrderAmountRule;
 import com.guidinglight.nexusquant.risk.service.MinNotionalRule;
 import com.guidinglight.nexusquant.risk.service.OrderPrecisionRule;
@@ -18,6 +19,8 @@ import com.guidinglight.nexusquant.risk.service.SymbolEnabledRule;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Clock;
 
 /**
  * TradingRuntimeConfiguration 负责 trading 域仍需保留在 composition root 的最小运行时装配。
@@ -40,8 +43,8 @@ public class TradingRuntimeConfiguration {
     }
 
     @Bean
-    public KillSwitchService killSwitchService() {
-        return new KillSwitchService();
+    public KillSwitchService killSwitchService(KillSwitchStateRepository repository) {
+        return new KillSwitchService(repository, Clock.systemUTC());
     }
 
     @Bean

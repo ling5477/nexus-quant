@@ -11,9 +11,12 @@ import com.guidinglight.nexusquant.risk.model.RiskContext;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -113,7 +116,32 @@ class PreTradeRiskServiceTest {
     }
 
     private PreTradeRiskService createService(PreTradeRiskSettings settings) {
-        KillSwitchService killSwitchService = new KillSwitchService();
+        Instant now = Instant.parse("2026-03-12T09:00:00Z");
+        KillSwitchState disengaged = new KillSwitchState(
+                KillSwitchScope.GLOBAL_TRADING,
+                KillSwitchStatus.DISENGAGED,
+                1,
+                "TEST_DISENGAGED",
+                "TEST_FIXTURE",
+                now.minusSeconds(1),
+                "tester",
+                "trace-risk-fixture"
+        );
+        KillSwitchStateRepository repository = new KillSwitchStateRepository() {
+            @Override
+            public Optional<KillSwitchState> findByScope(KillSwitchScope scope) {
+                return Optional.of(disengaged);
+            }
+
+            @Override
+            public KillSwitchState engage(KillSwitchEngageCommand command) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        KillSwitchService killSwitchService = new KillSwitchService(
+                repository,
+                Clock.fixed(Instant.parse("2026-03-12T10:00:00Z"), ZoneOffset.UTC)
+        );
         return new PreTradeRiskService(new RiskRuleRegistry(List.of(
                 new KillSwitchRiskRule(killSwitchService),
                 new AccountTradingEnabledRule(settings),

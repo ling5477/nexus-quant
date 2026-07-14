@@ -7,6 +7,7 @@ import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecu
 import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateReadonlyProbeService;
 import com.guidinglight.nexusquant.adapter.okx.service.JdkOkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 
 import java.time.Clock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -60,11 +61,13 @@ public class GateWOkxPrivateReadonlyConfiguration {
     @Bean
     public OkxPrivateReadonlyProbeService gateWOkxPrivateReadonlyProbeService(
             ExchangeAccountRepository exchangeAccountRepository,
-            OkxPrivateCredentialExecutor credentialExecutor
+            OkxPrivateCredentialExecutor credentialExecutor,
+            KillSwitchService killSwitchService
     ) {
         return new OkxPrivateReadonlyProbeService(
                 exchangeAccountRepository,
                 credentialExecutor,
+                killSwitchService,
                 Clock.systemUTC()
         );
     }
