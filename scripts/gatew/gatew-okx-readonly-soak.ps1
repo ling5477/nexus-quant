@@ -44,9 +44,70 @@ $script:ImmediateStopReasons = @(
     'SOAK_DATABASE_CONTAINS_BUSINESS_DATA',
     'SOAK_DATABASE_NOT_LOCAL'
 )
+$script:RuntimeEnvironmentNames = @(
+    'SPRING_PROFILES_ACTIVE', 'NQ_GATEW_OKX_READONLY_SOAK_ENABLED', 'CI', 'NQ_NO_OUTBOUND',
+    'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED', 'NQ_TRANSFER_ENABLED', 'NQ_WITHDRAW_ENABLED',
+    'NQ_AI_ENABLED', 'NQ_DH_RUNTIME_ENABLED', 'NQ_REAL_PROVIDER_ENABLED', 'NQ_REAL_CLIENT_ENABLED',
+    'NQ_REAL_EXCHANGE_ENABLED', 'NQ_GATEW_SOAK_DB_URL', 'NQ_GATEW_SOAK_DB_USER',
+    'NQ_GATEW_SOAK_DB_PASSWORD', 'NQ_ACCOUNT_CREDENTIALS_MASTER_KEY', 'NQ_GATEW_SOAK_OWNER_ID',
+    'NQ_GATEW_SOAK_ACCOUNT_ID', 'NQ_GATEW_SOAK_CURRENCIES', 'NQ_OKX_API_KEY', 'NQ_OKX_API_SECRET',
+    'NQ_OKX_API_PASSPHRASE', 'NQ_OKX_REAL_API_KEY', 'NQ_OKX_REAL_API_SECRET', 'NQ_OKX_REAL_API_PASSPHRASE'
+)
 
 function Get-UtcNow {
     return [DateTimeOffset]::UtcNow
+}
+
+function Get-RuntimeEnvironmentSnapshot {
+    $snapshot = @{}
+    foreach ($name in $script:RuntimeEnvironmentNames) {
+        $snapshot[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    }
+    return $snapshot
+}
+
+function Assert-RuntimeEnvironment {
+    param([Parameter(Mandatory = $true)][hashtable]$Environment)
+
+    foreach ($name in @(
+        'NQ_OKX_API_KEY', 'NQ_OKX_API_SECRET', 'NQ_OKX_API_PASSPHRASE',
+        'NQ_OKX_REAL_API_KEY', 'NQ_OKX_REAL_API_SECRET', 'NQ_OKX_REAL_API_PASSPHRASE'
+    )) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
+            throw 'BLOCKED / DIRECT_OKX_CREDENTIAL_INPUT_FORBIDDEN'
+        }
+    }
+    foreach ($name in @('NQ_ACCOUNT_CREDENTIALS_MASTER_KEY', 'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID')) {
+        if ([string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
+            throw 'BLOCKED / API_KEY_REQUIRED'
+        }
+    }
+    foreach ($name in @('NQ_GATEW_SOAK_DB_URL', 'NQ_GATEW_SOAK_DB_USER', 'NQ_GATEW_SOAK_DB_PASSWORD')) {
+        if ([string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
+            throw 'BLOCKED / SOAK_DATABASE_CONFIG_REQUIRED'
+        }
+    }
+    if ([string]$Environment.SPRING_PROFILES_ACTIVE -ne 'gatew-okx-readonly-soak') {
+        throw 'BLOCKED / SOAK_PROFILE_REQUIRED'
+    }
+    if ([string]$Environment.NQ_GATEW_OKX_READONLY_SOAK_ENABLED -ne 'true') {
+        throw 'BLOCKED / SOAK_FEATURE_FLAG_REQUIRED'
+    }
+    if ([string]$Environment.CI -eq 'true' -or [string]$Environment.NQ_NO_OUTBOUND -eq 'true') {
+        throw 'BLOCKED / SOAK_OUTBOUND_FORBIDDEN_IN_CI'
+    }
+    foreach ($name in @(
+        'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED', 'NQ_TRANSFER_ENABLED', 'NQ_WITHDRAW_ENABLED',
+        'NQ_AI_ENABLED', 'NQ_DH_RUNTIME_ENABLED', 'NQ_REAL_PROVIDER_ENABLED', 'NQ_REAL_CLIENT_ENABLED',
+        'NQ_REAL_EXCHANGE_ENABLED'
+    )) {
+        if ([string]$Environment[$name] -ne 'false') {
+            throw "BLOCKED / ${name}_MUST_BE_FALSE"
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$Environment.NQ_GATEW_SOAK_CURRENCIES)) {
+        throw 'BLOCKED / SOAK_CURRENCY_ALLOWLIST_REQUIRED'
+    }
 }
 
 function Get-Sha256Text {
@@ -423,6 +484,7 @@ function Resolve-Blocker {
 
 function Start-Soak {
     $head = Assert-FixedDetachedWorktree
+    Assert-RuntimeEnvironment (Get-RuntimeEnvironmentSnapshot)
     if ([string]::IsNullOrWhiteSpace($StartingCiRun)) { throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED' }
     Assert-ExactHeadCi $StartingCiRun $head
     $effectiveRunId = if ([string]::IsNullOrWhiteSpace($RunId)) { New-RunId } else { $RunId }
@@ -653,6 +715,11 @@ function Invoke-SelfTest {
     $directory = Get-RunDirectory $testRunId
     [IO.Directory]::CreateDirectory($directory) | Out-Null
     try {
+        $missingCredentialRejected = $false
+        try { Assert-RuntimeEnvironment @{} } catch {
+            $missingCredentialRejected = $_.Exception.Message -eq 'BLOCKED / API_KEY_REQUIRED'
+        }
+        if (-not $missingCredentialRejected) { throw 'missing credential preflight was not rejected' }
         [IO.File]::WriteAllText((Join-Path $directory 'samples.jsonl'), '', $script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $directory 'failures.jsonl'), '', $script:Utf8NoBom)
         Write-JsonAtomic (Join-Path $directory 'manifest.json') ([ordered]@{
@@ -700,6 +767,7 @@ function Invoke-SelfTest {
             appendOnlySequence = 'PASS'
             resumePreservedExistingSamples = 'PASS'
             duplicateSequenceRejected = 'PASS'
+            missingCredentialRejected = 'PASS / API_KEY_REQUIRED'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))
             cleanupReleasedTemporaryDirectory = $true
             noPrivateNetworkCalled = $true
