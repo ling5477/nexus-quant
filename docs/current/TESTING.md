@@ -11829,3 +11829,20 @@ Environment：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTI
 Known warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3，不阻断。Windows PowerShell drill 前两次分别暴露 UTF-8 parser 与 Maven argument/cleanup 问题；最小修复后完整重跑 exit 0，只有最终完整 run 记为 PASS。
 
 未运行：真实 OKX read-only soak，`NOT_RUN / CREDENTIAL_REQUIRED`；按 Round-5 contract 交由 GateW Freeze readiness 判断。Frontend/Python 无 diff，未运行本地额外验证；exact-head GitHub CI 待 Commit A push。
+
+## 2026-07-14 — GateW-4 post-CI acceptance and authority sync
+
+结论：`PASS / GATEW_4_ACCEPTED / OPERATIONAL_SAFETY_ACCEPTED / READY_TO_COMMIT_B`（通过 / GateW-4 已接受 / operational safety 已接受 / 可创建 Commit B）。
+
+| Command / Evidence | Result | Scope / Environment |
+| --- | --- | --- |
+| Commit A exact-head CI | PASS | `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`；run `29339016784 / completed / success / 10 jobs / bad=0` |
+| `test-governance-workflow-lifecycle.ps1` | PASS | `PASS / GOVERNANCE_LIFECYCLE_REGRESSION`；task evidence policy valid |
+| `test-current-authority-next-action.ps1` | PASS | `PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`；`NOT_STARTED → IMPLEMENTATION` contract 保持 |
+| `check-current-authority.ps1` | PASS | GateW-4 `ACCEPTED|CI_GREEN`；GateW-FREEZE `NOT_STARTED`；next action `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION` |
+| `check-doc-links.ps1 -Roots docs/current` | PASS | 103 checked；1 个既有 GateJ historical warning；0 errors |
+| Git diff / forbidden scope | PASS | `git diff --check` exit 0；backend/frontend/research/scripts/deploy/.github/migration/archive/root README/CLAUDE diff 全为空 |
+
+本轮未重跑 Maven、PostgreSQL/Flyway、restore、incident 或 local soak；这些 implementation validation 已在 Commit A evidence 记录并由 exact-head CI 接受：required/full Maven 23/23 `BUILD SUCCESS`、fresh V1→V35、restore、11 incident scenarios、10,000-call local soak 均 PASS。真实 OKX read-only soak继续为 `NOT_RUN / CREDENTIAL_REQUIRED`，由 Freeze readiness hard gate裁决。
+
+Known warning：`docs/current/TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有 historical warning，0 errors，非本轮 blocker。Commit B exact-head CI 只能在 commit/push 后验证，其 run 不替代 GateW-4 implementation acceptance head。

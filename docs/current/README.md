@@ -6,7 +6,7 @@
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2、GateW-3 均为 `ACCEPTED / CI GREEN`。GateW-3 implementation/acceptance head `178b4951...` 的 run `29332316101` 已成功；GateW-4 仅初始化为 `NOT STARTED`。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1 至 GateW-4 均为 `ACCEPTED / CI GREEN`。GateW-4 implementation/acceptance head `07b94f89...` 的 run `29339016784` 已成功；GateW-FREEZE 仅初始化为 `NOT STARTED`。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
@@ -19,7 +19,7 @@
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |
 | Gate 治理 workflow | [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md) | 否；定义 checker/lifecycle/evidence/release contract |
 | Current task evidence | [evidence/gate-w/README.md](evidence/gate-w/README.md) | 否；保存不可覆盖 attempt，不决定阶段 |
-| GateW active plan | [GATEW_PLAN.md](GATEW_PLAN.md) | 否；定义 OKX Spot planning、GateW-2 安全基线、GateW-3 venue-rule/preview/reconciliation/risk-preflight 边界，不决定 current authority |
+| GateW active plan | [GATEW_PLAN.md](GATEW_PLAN.md) | 否；定义 OKX Spot planning、GateW-2 安全基线、GateW-3 diagnostic 边界与 GateW-4 operational safety / Freeze handoff，不决定 current authority |
 | GateV historical handoff / GateW planning entry | [GATEV_PLAN.md](GATEV_PLAN.md) | 否；仅保留 GateV historical context 与 GateW planning handoff |
 | API / Schema / 架构 | [API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[ARCHITECTURE.md](ARCHITECTURE.md)、[MODULES.md](MODULES.md) | 否 |
 | Evidence ledger | [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md) | 否；append-only |
@@ -37,4 +37,4 @@
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider 或 private trading adapter 已实现；GateW-2 仅是默认不装配的 private read-only diagnostic probe，`REAL_SMOKE=NOT_RUN`，不表示远端 permission 或交易授权。
-- GateW-3 acceptance 只接受 pure diagnostic/no-side-effect contract，不表示 GateW frozen 或交易获授权。当前唯一动作是 `NQ-GATEW-4-IMPLEMENTATION`，但必须先在该 task 内通过 security/operations/persistence/backup/incident/soak review hard gates；不得把 local PASS、snapshot match 或 CI green 解释成真实 permission、余额充分、账户健康、可以交易或已获 LIVE/交易授权。
+- GateW-4 acceptance 只接受 internal diagnostic/no-side-effect operational safety contract，不表示 GateW frozen 或交易获授权。当前唯一动作是 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`；Freeze readiness review 是该任务内部第一道 hard gate。不得把 local soak、restore、incident PASS 或 CI green 解释成真实 permission、余额充分、账户健康、可以交易或已获 LIVE/交易授权。

@@ -17,7 +17,9 @@ GateW-2 ACCEPTED / CI GREEN
   ↓
 GateW-3 ACCEPTED / CI GREEN
   ↓
-GateW-4 NOT STARTED
+GateW-4 ACCEPTED / CI GREEN
+  ↓
+GateW-FREEZE NOT STARTED
 ```
 
 ## 下一允许动作
@@ -28,19 +30,20 @@ GateW-4 NOT STARTED
 - GateW-PLAN：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，CI run `29199785253`。
 - GateW-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，CI run `29219687588`。
 - GateW-2：`ACCEPTED / CI GREEN`；implementation/acceptance head `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，CI run `29230512781`。`REAL_SMOKE=NOT_RUN`，不表示远端 permission、LIVE 或交易授权。
-- GateW-3 venue-rule facts：implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；CI blocker fix commit `fd6a8b2044891fa7edfcba7b5a31cd6dc8636b28` 的 exact-head CI run `29260881801` 已 `completed / success`。LIMIT-only internal preview implementation commit `eff79d7c7ea1b034de4e77c7ec64974c247027f5` 的 exact-head run `29308652349` 为 `completed / failure`；acceptance head `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc` 的 exact-head run `29319269424` 为 `completed / success`，当前为 `COMMITTED|CI_GREEN|CONTINUE_REQUIRED`，GateW-3 尚未整体 accepted。
-- GateW-3 read-only reconciliation：implementation/acceptance head `71e1ded5a9896996717549d2a96068356dea7288`，exact-head CI run `29324600871 / completed / success`，10/10 jobs success；当前为 `COMMITTED|CI_GREEN|CONTINUE_REQUIRED`，GateW-3 尚未整体 accepted。
+- GateW-3 venue-rule facts：implementation commit 为 `8b54adc6952775dc1a939aad7b0ae849f20f42cf`，migration conformance review 已通过；CI blocker fix commit `fd6a8b2044891fa7edfcba7b5a31cd6dc8636b28` 的 exact-head CI run `29260881801` 已 `completed / success`。LIMIT-only internal preview implementation commit `eff79d7c7ea1b034de4e77c7ec64974c247027f5` 的 exact-head run `29308652349` 为 `completed / failure`；acceptance head `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc` 的 exact-head run `29319269424` 为 `completed / success`。失败 run 保留为历史事实，venue-rule facts 与 preview 均已纳入 GateW-3 accepted baseline。
+- GateW-3 read-only reconciliation：implementation/acceptance head `71e1ded5a9896996717549d2a96068356dea7288`，exact-head CI run `29324600871 / completed / success`，10/10 jobs success；该 slice 已纳入 GateW-3 accepted baseline。
 - GateW-3 risk preflight：implementation/acceptance head `178b4951ba1406748170022c9940f84beaa8ab81`，exact-head run `29332316101 / completed / success / 10 jobs / bad=0`；GateW-3 已 `ACCEPTED|CI_GREEN`。
-- GateW-4：`NOT_STARTED / NONE / NOT_RUN`；仅完成 governance initialization，尚未通过其内部 review hard gates或进入实现。
-- 当前治理动作：`NQ-GATEW-4-IMPLEMENTATION`。该 task 必须先完成 security、operations、persistence/retention、backup/restore、incident-drill 与 soak design review；未通过前不得直接实现，也不得执行真实 OKX HTTP、读取真实 credential 或 Freeze。
+- GateW-4：`ACCEPTED / CI GREEN`；implementation/acceptance head `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`，exact-head CI run `29339016784 / completed / success / 10 jobs / bad=0`。Blocker-1、operations、persistence/retention、human-review binding、restore、incident 与 local no-egress soak hard gates 均通过。
+- GateW-FREEZE：`NOT_STARTED / NONE / NOT_RUN`；仅完成 governance initialization，GateW 尚未 freeze、archive 或 tag。
+- 当前治理动作：`NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。该 task 必须把 Freeze readiness review 作为内部第一道 hard gate；不得跳过真实 read-only soak residual、archive manifest、authority 与 links 检查，也不得执行真实 OKX HTTP、读取真实 credential 或提前创建 tag。
 
 ## 路线边界
 
 - GateV tag 是历史 release 事实；不得重打、移动、覆盖或 force update `nq-gatev-freeze`。
 - GateW-2 只接受两个冻结的 OKX private read-only typed operation；禁止 raw path、mutating/funds movement、自动 credential 访问、startup/background probe、migration 和把 mock/CI 写成真实 smoke。LIVE、交易授权与订单写侧继续关闭。
-- GateW-3 venue-rule facts commit 仍只覆盖 public metadata 的显式、最多 3 个 OKX Spot symbol 同步和 `instrument_catalog` migration；本轮 preview 仅增加 bounded local read 与 pure diagnostic，不扩大同步范围。当前不得初始化 GateW-4 或 Freeze。
-- GateW-3 preview 只允许本地 deterministic diagnostics；其 acceptance-head exact-head CI 已成功，但这不等于交易授权或 GateW-3 整体接受。禁止 `TradingAdapter`、order command/write/lifecycle、credential/private transport、实时 network、任何 preview persistence，以及通过 `dryRun=true` 复用真实下单链。
+- GateW-3 venue-rule facts 仍只覆盖 public metadata 的显式、最多 3 个 OKX Spot symbol 同步和 `instrument_catalog` migration；preview 仅增加 bounded local read 与 pure diagnostic，不扩大同步范围。GateW-3 已接受，但不构成交易授权。
+- GateW-3 preview 只允许本地 deterministic diagnostics；其 acceptance-head exact-head CI 已成功。禁止 `TradingAdapter`、order command/write/lifecycle、credential/private transport、实时 network、任何 preview persistence，以及通过 `dryRun=true` 复用真实下单链。
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
-- GateW-3 accepted 不等于 GateW frozen；GateW-4 `NOT_STARTED` 不等于 implementation 已开始。GateW-4 hard-gate reviews 必须先行。
+- GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。

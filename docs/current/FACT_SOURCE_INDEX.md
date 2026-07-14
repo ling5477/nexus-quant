@@ -7,7 +7,7 @@
 1. [STATUS.md](STATUS.md)：唯一阶段状态 authority，schema v3 分离最近冻结 Gate、active Gate、accepted batch、work batch、下一动作与 LIVE/AI/DH 等机器可读状态。
 2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作；不得覆盖 STATUS。
 3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer；不得复制独立阶段状态。
-4. [GATEW_PLAN.md](GATEW_PLAN.md)：GateW active current plan；定义 OKX Spot 单 venue、GateW-2 security baseline、GateW-3 venue-rule/preview/read-only reconciliation 边界，不决定 current Gate。
+4. [GATEW_PLAN.md](GATEW_PLAN.md)：GateW active current plan；定义 OKX Spot 单 venue、GateW-2 security baseline、GateW-3 diagnostic 边界、GateW-4 operational safety 与 Freeze handoff，不决定 current Gate。
 5. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：Gate checker、lifecycle、evidence 与 release 执行规则；machine contract 位于 `scripts/docs/governance-workflow-contract.json`，两者均不决定 current Gate。
 6. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 与 GateW planning handoff的 allowed residual；不决定 current Gate 或独立接受 work batch。
 7. [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW current task evidence index；只记录不可覆盖 attempt evidence，不决定 current Gate 或 implementation acceptance。
@@ -69,5 +69,5 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 ## 9. Current Boundary Summary
 
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2、GateW-3 为 `ACCEPTED / CI GREEN`。GateW-3 implementation/acceptance head `178b4951...` / run `29332316101` exact-head success；`work_batch=GateW-4 / NOT_STARTED / NONE / NOT_RUN`，唯一下一动作是 `NQ-GATEW-4-IMPLEMENTATION`，且必须在 task 内先通过 security/operations/persistence/backup/incident/soak review hard gates。GateW-2 `REAL_SMOKE=NOT_RUN`；不得把 pure diagnostic、snapshot match、local metadata 或 CI 推断为真实 permission、账户健康、private trading、LIVE 或 trading authorization。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1 至 GateW-4 为 `ACCEPTED / CI GREEN`。GateW-4 implementation/acceptance head `07b94f89...` / run `29339016784` exact-head success；`work_batch=GateW-FREEZE / NOT_STARTED / NONE / NOT_RUN`，唯一下一动作是 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`，并以 Freeze readiness review 为内部第一道 hard gate。GateW-2 `REAL_SMOKE=NOT_RUN`、GateW-4 real read-only soak `NOT_RUN / CREDENTIAL_REQUIRED`；不得把 pure diagnostic、snapshot match、local metadata、restore/incident/local soak 或 CI 推断为真实 permission、账户健康、private trading、LIVE 或 trading authorization。
 - LIVE 与 Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。

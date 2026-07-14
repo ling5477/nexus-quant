@@ -653,5 +653,14 @@ GateW 继续 `IN_PROGRESS / NOT_FROZEN`；LIVE/Shadow/AI/DH/Integration/real pro
 
 - GateW-4 implementation acceptance 的 soak hard gate 为 fixed-clock、no-egress、internal diagnostic contract 的 bounded local soak：不少于 10,000 次，含并发只读调用、资源关闭、deterministic/fail-closed/zero credential/zero network/zero write 证据。
 - 真实 OKX read-only soak 需要真实 credential，当前必须记录为 `NOT_RUN / CREDENTIAL_REQUIRED`；不得要求在对话中提供密钥，不得用 mock 冒充真实联通。
-- 该 real-soak 未执行项不自动阻断 GateW-4 batch acceptance；必须由 `NQ-GATEW-FREEZE-READINESS-REVIEW` 基于 credential、安全环境和 freeze evidence 完整性判断是否阻断 GateW freeze。
+- 该 real-soak 未执行项不自动阻断 GateW-4 batch acceptance；必须由 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION` 内部第一道 Freeze readiness hard gate 基于 credential、安全环境和 freeze evidence 完整性判断是否阻断 GateW freeze。
 - GateW-4 assessment 始终 `diagnosticOnly/readOnly/noSideEffect`；即使其他 hard gate PASS，也不产生 `TRADE_AUTHORIZED`、`LIVE_APPROVED`、`ORDER_APPROVED` 或 `CAN_TRADE`。
+
+## 44. GateW-4 Post-CI Acceptance 与 GateW-FREEZE 初始化
+
+- GateW-4 implementation/acceptance head 固定为 `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`；`NQ CI Baseline` run `29339016784` 为 exact-head `completed / success`，10/10 jobs success、bad=0。
+- GateW-4 正式为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）；该接受覆盖 durable kill-switch remediation、operations、persistence/retention、human-review evidence binding、disposable restore、11 场景 incident drill、10,000 次 local no-egress soak 与 internal-only assessment。
+- `accepted_batch_acceptance_head` 保持指向 implementation Commit A；后续 docs-only authority-sync Commit B 不替代 implementation/acceptance head。
+- GateW-FREEZE 仅初始化为 `NOT_STARTED / NONE / NOT_RUN`；GateW 继续 `IN_PROGRESS / NOT_FROZEN`，尚未 archive、freeze 或 tag。
+- 唯一下一动作是 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。该任务必须先执行 Freeze readiness review，并对 real read-only soak `NOT_RUN / CREDENTIAL_REQUIRED`、archive manifest、authority、links、known residuals 和 rollback 完整性作出 fail-closed 裁决。
+- LIVE、真实订单提交、撤单、转账与提现继续关闭；Shadow trading、AI、DH/Integration runtime 未启用；real provider/private trading 未实现。

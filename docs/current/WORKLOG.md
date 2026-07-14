@@ -17612,3 +17612,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：无真实 OKX/credential/network/order/cancel/transfer/withdraw/account/position/ledger write；LIVE/Shadow/AI/DH/real provider/private trading 不变。
 - limitation：real read-only soak `NOT_RUN / CREDENTIAL_REQUIRED`，不冒充真实联通；交由 GateW Freeze readiness 决策。
 - next：精确暂存 Commit A，push 后等待 implementation exact-head CI；CI green 前不得接受 GateW-4 或初始化 GateW-FREEZE。
+
+## 2026-07-14 — GateW-4 post-CI acceptance and GateW-FREEZE initialization
+
+- task：`NQ-GATEW-4-POST-CI-ACCEPTANCE-AND-AUTHORITY-SYNC / ROUND_5_RESUME / AUTHORITY_CONFLICT_RESOLUTION`；NQ-only、docs-only。
+- preflight：`dev` clean/staged empty；`HEAD == origin/dev == 07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`；Commit A exact-head run `29339016784 / completed / success / 10 jobs / bad=0`；authority baseline exact match。
+- conflict resolution：沿用现有 governance contract；`work_batch=GateW-FREEZE / NOT_STARTED` 对应 `IMPLEMENTATION` action type，next action 收敛为 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`；未修改 contract/checker/tests。
+- acceptance：GateW-4 `ACCEPTED|CI_GREEN`；implementation/acceptance head 保持 Commit A `07b94f89...`，不改指 docs-only Commit B；GateW 仍 `IN_PROGRESS|NOT_FROZEN`。
+- evidence：新增 `NQ-GATEW-4-POST-CI-AND-BATCH-ACCEPTANCE.attempt-01.md`；原始 35 份 evidence 聚合 SHA-256 `9d10ede0...e09f`，Commit A 后 existing 38 份基线 `c725f328...a64bd`，本轮只新增第 39 份。
+- validation：governance lifecycle、next-action regression、current authority、doc links、diff/forbidden scope 全部 PASS；links 103 checked / 1 existing warning / 0 errors。本轮未重跑 Maven/restore/incident/soak，引用 Commit A 已接受 evidence。
+- boundary：无 backend/frontend/research/scripts/deploy/CI/migration/archive/root README/CLAUDE diff；无 OKX/credential/network/order/cancel/transfer/withdraw/LIVE/Shadow/AI/DH/Integration/real provider/private trading 变更。
+- limitation：real read-only soak `NOT_RUN / CREDENTIAL_REQUIRED`；Freeze readiness review 必须作为 closeout implementation 内部第一道 hard gate。
+- next：精确暂存本轮 allowlist docs，创建并 push Commit B `docs(gatew): accept GateW-4 operational safety`，等待 Commit B exact-head `NQ CI Baseline` 10/10 jobs 全绿；CI green 前不得宣称 Round 5 closed。
