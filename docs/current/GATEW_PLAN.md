@@ -562,3 +562,43 @@ NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH
 ```
 
 只允许精确暂存本轮已接受的 `nq-core` 与 current docs/evidence diff。提交后必须等待 implementation commit exact-head CI，CI GREEN 前不得进入 post-CI authority sync。
+
+## 42. GateW-3 Preview Implementation Exact-head CI Failure Catch-up
+
+Preview implementation review 继续有效，implementation 已提交为 `eff79d7c7ea1b034de4e77c7ec64974c247027f5`。其 `NQ CI Baseline` exact-head run `29308652349` 为 `completed / failure`：实际 10 jobs 中 9 success、1 failure，唯一失败为 `Frontend backend E2E smoke / Run adapter readiness backend E2E`。
+
+失败日志证明 runner 固定等待 `http://127.0.0.1:51888`，而该端口被占用后 Vite 自动切换到 `http://127.0.0.1:51889`；runner 未跟随实际 Vite endpoint，120 秒后超时。该失败不撤销 preview implementation review，不表示 preview business implementation 需要回滚，也不得通过 rerun 旧 job 将偶然通过写成修复。
+
+Authority catch-up 使用既有 high-risk reconciliation contract：
+
+```text
+REVIEW_ACCEPTED|READY_TO_COMMIT
+→ COMMITTED|CI_FAILED|FIX_REQUIRED
+```
+
+- `authorityCatchUp=true`；`work_batch_commit` 从 `UNCOMMITTED` 追赶到 `eff79d7c7ea1b034de4e77c7ec64974c247027f5`，`work_batch_ci_run` 从 `NOT_RUN` 追赶到 `29308652349`。
+- `accepted_batch` 继续为 GateW-2 / `ACCEPTED|CI_GREEN`；GateW 继续 `IN_PROGRESS|NOT_FROZEN`；GateW-3 尚未 accepted。
+- 本修复只允许 frontend E2E runner tooling、确定性回归测试与 current evidence；preview implementation、E2E spec、Vite/Playwright config、package-lock、backend、workflow 与业务前端保持无 diff。
+
+当前唯一下一动作：
+
+```text
+NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW
+```
+
+## 43. GateW-3 Preview CI Blocker Fix Review
+
+Frontend E2E runner fix attempt-02 已完成，独立 conformance review 结论为 `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`。完整 evidence：
+
+- [NQ-GATEW-3-CI-BLOCKER-FIX.attempt-02.md](evidence/gate-w/NQ-GATEW-3-CI-BLOCKER-FIX.attempt-02.md)
+- [NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW.attempt-02.md](evidence/gate-w/NQ-GATEW-3-CI-BLOCKER-FIX-REVIEW.attempt-02.md)
+
+修复使用动态 loopback port、single endpoint、Vite `--strictPort`、Vite early-exit fail-fast 与有界 cleanup；runner unit tests、占用 51888 的真实 local backend E2E、targeted/full Maven 与治理检查均通过。`package-lock.json`、Vite/Playwright config、backend E2E spec、preview implementation 与其他 forbidden scope 无 diff。
+
+Authority 在 Commit A 前继续保持 `COMMITTED|CI_FAILED|FIX_REQUIRED / eff79d7c7ea1b034de4e77c7ec64974c247027f5 / 29308652349`；不得提前写 green continuation。
+
+当前唯一下一动作：
+
+```text
+NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH
+```

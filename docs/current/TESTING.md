@@ -11717,3 +11717,31 @@ Known limitations：`RUNTIME_FACT_PRESENT=UNKNOWN`、`RUNTIME_FACT_FRESH=UNKNOWN
 Boundary：无 Controller/REST/frontend/migration/preview persistence/network/private endpoint/credential/balance fetch/order write/ledger/audit/risk mutation/LIVE/DH/AI。
 
 Next action：`NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH`。
+
+---
+
+## NQ-GATEW-3-CI-BLOCKER-FIX-AND-REVIEW-ATTEMPT-02（2026-07-14）
+
+结论：`PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`（通过 / CI blocker 修复已接受 / 可提交）。P0=0、P1=0；latest committed authority 仍为 `eff79d7c... / 29308652349 / failure`，不得写成 GitHub CI green。
+
+| Command / Evidence | Result | Scope / Environment |
+| --- | --- | --- |
+| Failed CI metadata/log | PASS | run 29308652349；10 jobs=9 success/1 failure；唯一失败 backend E2E step；51888→51889 mismatch + 120s timeout |
+| Authority catch-up | PASS | `REVIEW_ACCEPTED|READY_TO_COMMIT → COMMITTED|CI_FAILED|FIX_REQUIRED`；commit/run concrete；accepted batch 保持 GateW-2 |
+| `npm ci` | PASS | lockfile 安装成功；dependency 与 lock diff=0 |
+| `npm run build` | PASS | clean incremental state；Vite 8.0.3；3904 modules transformed |
+| Runner tests | PASS | Node built-in tests 10/10；syntax checks PASS |
+| 51888 + no-backend | PASS | selected 23595；login smoke 1 passed；无 Vite fallback；listeners cleared |
+| 51888 + local backend | PASS | nq-app 18888 health UP；selected 12255；backend smoke 1 passed；listeners cleared |
+| Strict-port negative | PASS | occupied 51888；Vite exit code 1；runner 0.35s fail-fast；no Playwright |
+| Targeted Maven | PASS | 23/23 modules SUCCESS；02:42 |
+| Full Maven | PASS | 23/23 modules SUCCESS；02:03 |
+| Static/forbidden | PASS | lock/config/spec/business/workflow/research/deploy/migration/archive/skills diff=0 |
+
+RCA retained：首次 build 的 stale TypeScript incremental state 经 `tsc -b --clean` 后原命令通过；两次 backend setup failure 分别为本机 DB identity mismatch 和 Docker host port forwarding，不归因于 runner，所有资源均清理；最终 repo local profile backend E2E 通过。
+
+Environment：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`；未访问 OKX、未读取 `.env`/credential、未执行交易写侧。
+
+Known warnings：既有 Spring local/test generated development password 会出现在原始 Maven log，本记录不保存其值（P2）；Vite chunk-size、Ant Design compatibility/deprecation、Maven settings、Mockito/SLF4J 为 P3。
+
+Next action：`NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。

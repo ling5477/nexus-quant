@@ -17536,3 +17536,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary: 无 Controller/API/frontend/migration/persistence/network/OKX HTTP/private endpoint/credential/balance/order state/ledger/audit/risk mutation/LIVE/DH/AI；accepted batch 仍 GateW-2，GateW 仍 not frozen。
 - authority: `work_batch=GateW-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next action: `NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH`；只精确暂存并提交本轮已接受路径，随后等待 exact-head CI。
+
+## NQ-GATEW-3-CI-BLOCKER-FIX-AND-ROUND-2-CLOSEOUT / Commit A preparation
+
+- date: 2026-07-14
+- preflight: `dev` clean；`HEAD == origin/dev == eff79d7c7ea1b034de4e77c7ec64974c247027f5`；preview implementation exact-head run `29308652349 / completed / failure`。
+- RCA: 唯一失败为 backend E2E step；Vite 因 51888 occupied 自动切到 51889，runner 仍等 51888 并在 120 秒 timeout。
+- authority: 显式 catch-up 到 `GateW-3 / COMMITTED|CI_FAILED|FIX_REQUIRED / eff79d7... / 29308652349`；accepted batch 保持 GateW-2，GateW not frozen。
+- implementation: Node `net` dynamic loopback port；single Vite/wait/Playwright endpoint；`--strictPort`；early-exit fail-fast；SIGTERM + bounded wait + SIGKILL cleanup；strict loopback override validation；无 dependency/lock/config/spec/business diff。
+- regression: runner tests 10/10；51888 occupied 的 no-backend 与 real local-backend E2E 均 PASS；real strict-port conflict 0.35 秒 fail-fast；frontend build PASS；targeted/full Maven 均 23/23 `BUILD SUCCESS`。
+- review: `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。P2 为既有 Spring generated development password log hygiene residual，值未写入 evidence。
+- boundary: 无 preview business/backend/frontend source/workflow/migration/OKX/credential/order/ledger/audit/risk/LIVE/Shadow/DH/AI diff；未 commit/push/rerun old CI。
+- next action: `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`；只精确暂存 14 个实际 allowlist paths，随后等待新 fix commit exact-head CI。

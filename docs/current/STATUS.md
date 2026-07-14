@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553
 accepted_batch_acceptance_head=6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553
 accepted_batch_ci_run=29230512781
 work_batch=GateW-3
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
-work_batch_commit=UNCOMMITTED
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH
+work_batch_status=COMMITTED|CI_FAILED|FIX_REQUIRED
+work_batch_commit=eff79d7c7ea1b034de4e77c7ec64974c247027f5
+work_batch_ci_run=29308652349
+next_action=NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -35,11 +35,11 @@ nq-current-authority:end -->
 - GateV-FREEZE：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；freeze candidate、implementation commit 与 acceptance head 均为 `7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`，`NQ CI Baseline` run `29191014596` 为 `completed / success`。
 - GateV release closeout exact-HEAD CI：`NQ CI Baseline` run `29191677441`，`completed / success`，`headSha=530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateV durable archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)。它是历史证据，不覆盖本 authority。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；[GateW planning baseline](GATEW_PLAN.md)、GateW-1 capability/guard 与 GateW-2 private read-only diagnostic probe 均已获 exact-HEAD CI 接受。GateW-3 LIMIT-only internal order preview 已通过 security/risk 与独立 implementation review，当前为 `REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可提交），machine exact status 为 `REVIEW_ACCEPTED|READY_TO_COMMIT`；GateW 尚未冻结。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；[GateW planning baseline](GATEW_PLAN.md)、GateW-1 capability/guard 与 GateW-2 private read-only diagnostic probe 均已获 exact-HEAD CI 接受。GateW-3 LIMIT-only internal order preview review 继续有效，implementation 已提交为 `eff79d7c7ea1b034de4e77c7ec64974c247027f5`，但 exact-head CI run `29308652349` 失败；当前为 `COMMITTED / CI FAILED / FIX REQUIRED`（已提交 / CI 已失败 / 必须修复），machine exact status 为 `COMMITTED|CI_FAILED|FIX_REQUIRED`；GateW-3 尚未 accepted，GateW 尚未冻结。
 - GateW-PLAN：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，`NQ CI Baseline` run `29199785253` 为 `completed / success`。
 - GateW-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，`NQ CI Baseline` run `29219687588` 为 `completed / success`。该批次只建立 typed capability matrix、default-deny endpoint guard 与 GateW profile Bean 边界。
 - GateW-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，`NQ CI Baseline` run `29230512781` 为 `completed / success`。该接受只覆盖两个 typed private read-only diagnostic operation；`REAL_SMOKE=NOT_RUN`，不表示远端 permission 已验证、LIVE 或交易授权。
-- GateW-3：`REVIEW ACCEPTED / READY TO COMMIT`；venue-rule facts implementation commit `8b54adc6952775dc1a939aad7b0ae849f20f42cf`、migration conformance review 与 fix exact-head CI run `29260881801` 继续有效。attempt-02 为 `PASS / LIMIT_ONLY_INTERNAL_PREVIEW_REVIEW_ACCEPTED`，实现独立 review 为 `PASS / LIMIT_ONLY_INTERNAL_ORDER_PREVIEW_ACCEPTED / READY_TO_COMMIT`。该状态不把 GateW-3 整体升级为 `ACCEPTED|CI_GREEN`。
+- GateW-3：`COMMITTED / CI FAILED / FIX REQUIRED`；venue-rule facts implementation commit `8b54adc6952775dc1a939aad7b0ae849f20f42cf`、migration conformance review 与 fix exact-head CI run `29260881801` 继续有效。attempt-02 为 `PASS / LIMIT_ONLY_INTERNAL_PREVIEW_REVIEW_ACCEPTED`，实现独立 review 为 `PASS / LIMIT_ONLY_INTERNAL_ORDER_PREVIEW_ACCEPTED / READY_TO_COMMIT`；preview implementation commit 为 `eff79d7c7ea1b034de4e77c7ec64974c247027f5`，其 exact-head run `29308652349` 为 `completed / failure`。失败只来自 frontend E2E runner 固定端口与 Vite 自动换端口不一致，不撤销 preview implementation review，也不把 GateW-3 升级为 `ACCEPTED|CI_GREEN`。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 
 ## 2. Archive Compatibility Verification
@@ -65,4 +65,4 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 
 ## 4. 下一允许动作
 
-治理 authority 中下一动作精确为 `NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-COMMIT-AND-PUSH`。只允许精确暂存本轮已接受的 `nq-core` 与 current docs/evidence diff，提交后等待 implementation exact-head CI；本状态不授权 Controller、credential/private endpoint、scheduler、LIVE、交易写侧、GateW-4 或 GateW Freeze，也不把 GateW-3 写成 `ACCEPTED|CI_GREEN`。
+治理 authority 中下一动作精确为 `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。frontend E2E runner 端口修复与独立 review 已通过，只允许精确暂存本轮 tooling/current evidence allowlist 并形成新 fix commit；不得 rerun 旧 job 充当修复，不得修改 preview business implementation。本状态不授权 Controller、credential/private endpoint、scheduler、LIVE、交易写侧、GateW-4 或 GateW Freeze，也不把 GateW-3 写成 `ACCEPTED|CI_GREEN`。

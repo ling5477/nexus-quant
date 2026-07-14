@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test:e2e": "node tests/e2e/run-e2e.mjs"
+    "test:e2e": "node --test tests/e2e/run-e2e-support.test.mjs && node tests/e2e/run-e2e.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
