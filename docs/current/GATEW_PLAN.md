@@ -646,3 +646,12 @@ Risk preflight implementation/acceptance head `178b4951ba1406748170022c9940f84be
 GateW-3 已整体 `ACCEPTED / CI GREEN`；authority 将 `accepted_batch` 投影为 GateW-3，并将 `work_batch` 初始化为 `GateW-4 / NOT_STARTED / NONE / NOT_RUN`。该 transition 没有持久化虚假的 `CI_PENDING` snapshot；`accepted_batch_acceptance_head` 保持指向 risk preflight implementation commit，不改指 docs-only authority sync commit。
 
 GateW 继续 `IN_PROGRESS / NOT_FROZEN`；LIVE/Shadow/AI/DH/Integration/real provider/private trading 状态不变。GateW-4 尚未实现，其唯一下一 task `NQ-GATEW-4-IMPLEMENTATION` 必须先在内部通过 security、operations、persistence/retention、backup/restore、incident-drill 与 soak design review hard gates。
+
+## 43. GateW-4 Round-5 Operational Safety Execution Scope
+
+`ROUND_5_RESUME / ATTEMPT_02` 对早期 §17 的执行门槛作以下窄化，不删除其长期 real read-only soak 目标：
+
+- GateW-4 implementation acceptance 的 soak hard gate 为 fixed-clock、no-egress、internal diagnostic contract 的 bounded local soak：不少于 10,000 次，含并发只读调用、资源关闭、deterministic/fail-closed/zero credential/zero network/zero write 证据。
+- 真实 OKX read-only soak 需要真实 credential，当前必须记录为 `NOT_RUN / CREDENTIAL_REQUIRED`；不得要求在对话中提供密钥，不得用 mock 冒充真实联通。
+- 该 real-soak 未执行项不自动阻断 GateW-4 batch acceptance；必须由 `NQ-GATEW-FREEZE-READINESS-REVIEW` 基于 credential、安全环境和 freeze evidence 完整性判断是否阻断 GateW freeze。
+- GateW-4 assessment 始终 `diagnosticOnly/readOnly/noSideEffect`；即使其他 hard gate PASS，也不产生 `TRADE_AUTHORIZED`、`LIVE_APPROVED`、`ORDER_APPROVED` 或 `CAN_TRADE`。

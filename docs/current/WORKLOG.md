@@ -17599,3 +17599,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：默认 ENGAGED；missing/error/unknown/invalid/timestamp anomaly fail-closed；无 production release/disengage、Controller/API、scheduler、真实 credential/network/OKX、交易写侧、restore/incident/soak/human-review/freeze；LIVE disabled。
 - authority：GateW-3 继续 `ACCEPTED|CI_GREEN`；GateW-4 继续 `NOT_STARTED`；next action 保持 `NQ-GATEW-4-IMPLEMENTATION`。
 - next：精确暂存本 remediation allowlist，commit/push 后验证 exact-head `NQ CI Baseline` completed/success、10 jobs、bad=0。
+
+## 2026-07-14 — GateW-4 operational safety Round-5
+
+- task：`NQ-GATEW-4-IMPLEMENTATION / ROUND_5_RESUME / ATTEMPT_02`；NQ-only。
+- preflight：`dev` clean/staged empty；`HEAD == origin/dev == 89cf600d...`；starting exact-head run `29336417826 / completed / success / 10 jobs / bad=0`；authority consistent。
+- immutable：起始 35 份 attempt evidence 聚合 SHA-256 `9d10ede0...e09f`；原 evidence 无修改/覆盖/重命名/删除。
+- hard gates：Blocker-1、operations、persistence/retention、human-review binding、disposable backup/restore、11-scenario incident、10,000-call local no-egress soak 全部 PASS。
+- implementation：`nq-core` internal-only pure assessment + durable review case/event binder；fixed no-side-effect/no-authority booleans；无 API/scheduler/persistence result。
+- validation：focused 16/16；required targeted/full Maven 均 23/23 modules SUCCESS；fresh/restore V1→V35 35/35；container/dump/temp residual=0。
+- review：P0=0、P1=0；`PASS / GATEW_4_OPERATIONAL_SAFETY_ACCEPTED / READY_TO_COMMIT`。P2 为既有 root README 摘要漂移。
+- boundary：无真实 OKX/credential/network/order/cancel/transfer/withdraw/account/position/ledger write；LIVE/Shadow/AI/DH/real provider/private trading 不变。
+- limitation：real read-only soak `NOT_RUN / CREDENTIAL_REQUIRED`，不冒充真实联通；交由 GateW Freeze readiness 决策。
+- next：精确暂存 Commit A，push 后等待 implementation exact-head CI；CI green 前不得接受 GateW-4 或初始化 GateW-FREEZE。

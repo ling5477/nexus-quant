@@ -11811,3 +11811,21 @@ Coverage：默认 ENGAGED、restart durability、missing/error/invalid/timestamp
 Known warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3，不阻断。Full Maven 中 environment-gated PostgreSQL test 按设计 skipped；其 dedicated required run 已 1/1 通过。
 
 未运行：frontend、Python、真实 OKX、real smoke、restore/incident/soak/human-review/freeze；本轮无对应实现授权。阻断性：本地验证无 blocker；最终接受仍需 remediation commit exact-head `NQ CI Baseline` 10 jobs 全绿。
+
+## 2026-07-14 — GateW-4 operational safety Round-5
+
+结论：`PASS / GATEW_4_OPERATIONAL_SAFETY_ACCEPTED / READY_TO_COMMIT`（通过 / GateW-4 operational safety 已接受 / 可提交）；implementation exact-head CI 尚未运行，不能写成 CI green。
+
+| Command / Evidence | Result | Scope / Environment |
+| --- | --- | --- |
+| focused assessment | PASS | 16 tests；11 incident scenarios；10,000 次、8 workers fixed-clock soak；0 failures/errors/skips |
+| required targeted Maven | PASS | 23/23 reactor modules SUCCESS；BUILD SUCCESS |
+| full Maven | PASS | 23/23 reactor modules SUCCESS；BUILD SUCCESS |
+| disposable restore drill | PASS | PostgreSQL 16 Alpine；fresh V1→V35；35 migrations；dump/destroy/restore；ENGAGED/event/review/constraints verified；残留 0 |
+| static forbidden review | PASS | V35/API/scheduler/frontend/research/deploy/CI/archive/skills diff=0；assessment 无 IO fields |
+
+Environment：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`。未访问 OKX、未读取真实 credential、未执行交易写侧。
+
+Known warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3，不阻断。Windows PowerShell drill 前两次分别暴露 UTF-8 parser 与 Maven argument/cleanup 问题；最小修复后完整重跑 exit 0，只有最终完整 run 记为 PASS。
+
+未运行：真实 OKX read-only soak，`NOT_RUN / CREDENTIAL_REQUIRED`；按 Round-5 contract 交由 GateW Freeze readiness 判断。Frontend/Python 无 diff，未运行本地额外验证；exact-head GitHub CI 待 Commit A push。
