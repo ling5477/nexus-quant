@@ -17624,3 +17624,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：无 backend/frontend/research/scripts/deploy/CI/migration/archive/root README/CLAUDE diff；无 OKX/credential/network/order/cancel/transfer/withdraw/LIVE/Shadow/AI/DH/Integration/real provider/private trading 变更。
 - limitation：real read-only soak `NOT_RUN / CREDENTIAL_REQUIRED`；Freeze readiness review 必须作为 closeout implementation 内部第一道 hard gate。
 - next：精确暂存本轮 allowlist docs，创建并 push Commit B `docs(gatew): accept GateW-4 operational safety`，等待 Commit B exact-head `NQ CI Baseline` 10/10 jobs 全绿；CI green 前不得宣称 Round 5 closed。
+
+## 2026-07-14 — GateW freeze blocker-1 real OKX read-only soak harness preparation
+
+- task：`NQ-GATEW-FREEZE-BLOCKER-1-REAL-OKX-READONLY-SOAK-PREPARATION-AND-START`；NQ-only、security-sensitive exchange integration。
+- implementation：test-only `bootstrap/sample/engage` launcher + PowerShell supervisor；支持 start/status/resume/graceful/failure stop/evidence verify/cleanup；SHA-256 sample chain；默认 168h/900s；bounded retry/consecutive-auth stop。
+- production exception：仅向既有 OKX read-only result/observation 增加 `ipAllowlistConfigured` 布尔事实与 `IP_ALLOWLIST_FAILED` 脱敏分类；balance 前 fail-closed；无 Bean/API/scheduler/dependency/write endpoint。
+- validation：focused support 29/29；required targeted/full Maven 均 23/23 modules SUCCESS、BUILD SUCCESS；PowerShell parser/self-test 10 cases PASS；未调用 real OKX 或读取真实 credential。
+- boundary：LIVE/order submission/transfer/withdraw/AI/DH/real provider 均保持 disabled；无 migration/API/scheduler/frontend/research/deploy/CI/archive diff；GateW authority 不变。
+- result：`PASS / HARNESS_LOCALLY_VALIDATED / READY_TO_COMMIT`；exact-head CI 与 real runtime hard gates pending，soak 尚未开始。
+- next：精确 commit/push harness并等待 exact-head CI 10/10 GREEN；随后在 detached fixed worktree 中满足 credential/IP/isolated DB hard gates后才启动，7-day 期满交由独立 acceptance task。

@@ -49,6 +49,7 @@ class OkxPrivateReadonlyProbeServiceTest {
         ), transport.operations);
         assertEquals(1, executor.callbacks.get());
         assertEquals(OkxPrivateProbeStatus.PASSED_READ_ONLY, observation.probeStatus());
+        assertTrue(observation.ipAllowlistConfigured());
         assertEquals(2, observation.assetCount());
         assertTrue(observation.diagnosticOnly());
         assertTrue(observation.noSideEffect());
@@ -130,6 +131,22 @@ class OkxPrivateReadonlyProbeServiceTest {
         assertEquals(OkxPrivateProbeStatus.BLOCKED, observation.probeStatus());
         assertEquals(List.of(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ), transport.operations);
         assertEquals(List.of("CLOCK_SKEW"), observation.blockers());
+    }
+
+    @Test
+    void blocksMissingIpAllowlistBeforeBalance() {
+        RecordingTransport transport = new RecordingTransport(Set.of("READ_ONLY"), true, true, false);
+
+        OkxPrivateReadObservation observation = service(
+                account("OKX", "LIVE", "ACTIVE"),
+                new TrackingExecutor(),
+                transport
+        ).probe(7L, 9L, "OKX_API_V5", OkxPrivateEnvironment.PRODUCTION, List.of("BTC"));
+
+        assertEquals(OkxPrivateProbeStatus.BLOCKED, observation.probeStatus());
+        assertEquals(List.of(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ), transport.operations);
+        assertEquals(List.of(OkxPrivateReadError.IP_ALLOWLIST_FAILED.name()), observation.blockers());
+        assertFalse(observation.ipAllowlistConfigured());
     }
 
     @Test
@@ -244,13 +261,24 @@ class OkxPrivateReadonlyProbeServiceTest {
         private final Set<String> permissions;
         private final boolean configComplete;
         private final boolean balanceComplete;
+        private final boolean ipAllowlistConfigured;
         private final List<OkxPrivateReadOperation> operations = new ArrayList<>();
         private OkxPrivateReadError failure;
 
         private RecordingTransport(Set<String> permissions, boolean configComplete, boolean balanceComplete) {
+            this(permissions, configComplete, balanceComplete, true);
+        }
+
+        private RecordingTransport(
+                Set<String> permissions,
+                boolean configComplete,
+                boolean balanceComplete,
+                boolean ipAllowlistConfigured
+        ) {
             this.permissions = permissions;
             this.configComplete = configComplete;
             this.balanceComplete = balanceComplete;
+            this.ipAllowlistConfigured = ipAllowlistConfigured;
         }
 
         @Override
@@ -264,7 +292,9 @@ class OkxPrivateReadonlyProbeServiceTest {
                 throw new OkxPrivateReadException(failure);
             }
             return request.operation() == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ
-                    ? new OkxPrivateReadResult(request.operation(), permissions, 0, configComplete)
+                    ? new OkxPrivateReadResult(
+                            request.operation(), permissions, 0, configComplete,
+                            List.of(), List.of(), ipAllowlistConfigured, CLOCK.instant())
                     : new OkxPrivateReadResult(request.operation(), Set.of(), 2, balanceComplete);
         }
     }

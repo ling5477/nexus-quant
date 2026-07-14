@@ -13,6 +13,7 @@ public record OkxPrivateReadObservation(
         Instant observedAt,
         String source,
         Set<String> normalizedPermissions,
+        boolean ipAllowlistConfigured,
         Integer assetCount,
         String dataCompleteness,
         List<String> blockers,
@@ -37,5 +38,41 @@ public record OkxPrivateReadObservation(
         tradingAuthorization = false;
         liveDisabled = true;
         orderSubmitted = false;
+    }
+
+    /** 兼容既有调用方；未显式提供 account-config 事实时按未配置 fail-closed。 */
+    public OkxPrivateReadObservation(
+            OkxPrivateProbeStatus probeStatus,
+            Instant observedAt,
+            String source,
+            Set<String> normalizedPermissions,
+            Integer assetCount,
+            String dataCompleteness,
+            List<String> blockers,
+            List<String> warnings,
+            boolean diagnosticOnly,
+            boolean noSideEffect,
+            boolean notTradingAuthorization,
+            boolean tradingAuthorization,
+            boolean liveDisabled,
+            boolean orderSubmitted
+    ) {
+        this(
+                probeStatus,
+                observedAt,
+                source,
+                normalizedPermissions,
+                false,
+                assetCount,
+                dataCompleteness,
+                blockers,
+                warnings,
+                diagnosticOnly,
+                noSideEffect,
+                notTradingAuthorization,
+                tradingAuthorization,
+                liveDisabled,
+                orderSubmitted
+        );
     }
 }

@@ -11846,3 +11846,18 @@ Known warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning�
 本轮未重跑 Maven、PostgreSQL/Flyway、restore、incident 或 local soak；这些 implementation validation 已在 Commit A evidence 记录并由 exact-head CI 接受：required/full Maven 23/23 `BUILD SUCCESS`、fresh V1→V35、restore、11 incident scenarios、10,000-call local soak 均 PASS。真实 OKX read-only soak继续为 `NOT_RUN / CREDENTIAL_REQUIRED`，由 Freeze readiness hard gate裁决。
 
 Known warning：`docs/current/TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有 historical warning，0 errors，非本轮 blocker。Commit B exact-head CI 只能在 commit/push 后验证，其 run 不替代 GateW-4 implementation acceptance head。
+
+## 2026-07-14 — GateW freeze blocker-1 real OKX read-only soak harness preparation
+
+结论：`PASS / HARNESS_LOCALLY_VALIDATED / READY_TO_COMMIT`（通过 / harness 已完成本地验证 / 可提交）；真实 OKX private read-only sample 与 168 小时 soak 为 `NOT_RUN / NOT_STARTED`（未运行 / 未开始），exact-head CI 为 `NOT_RUN`。
+
+| Command | Result | Scope / Environment |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app -am '-Dtest=GateWOkxReadonlySoakSupportTest,JdkOkxPrivateReadTransportTest,OkxPrivateReadonlyProbeServiceTest' '-Dsurefire.failIfNoSpecifiedTests=false' test` | PASS | 23/23 modules SUCCESS；support 29/29；typed transport/probe suites 通过；无 real credential/network |
+| `mvn -f backend/pom.xml -pl nq-risk,nq-core,nq-infra,nq-app -am test` | PASS | 23/23 modules SUCCESS；BUILD SUCCESS；`nq-app` 182 tests、0 failures/errors、9 environment-gated skipped |
+| `mvn -f backend/pom.xml test` | PASS | 23/23 modules SUCCESS；BUILD SUCCESS；manual real soak launcher 默认 skipped，CI 不出网 |
+| PowerShell parser + `-Action self-test` | PASS | 10 cases；SHA-256 chain、append-only resume、duplicate rejection、cleanup/no-final-summary、zero private network |
+
+已知 warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3、不阻断。早期定向测试命令两次因 PowerShell `-D` quoting 未进入 Maven；RCA 后用单引号参数重跑并通过。开发中一次 test compile 可见性错误与一次脱敏误判已最小修复并由最终 passing runs 覆盖。
+
+未运行：真实 PostgreSQL soak DB bootstrap、真实 credential 解密、真实 OKX private endpoint、首条 real sample、7-day acceptance、frontend、Python。阻断性：本地 harness 无 blocker；commit/push/exact-head CI 与 runtime hard gate 未完成前不得启动 soak或宣称 freeze ready。

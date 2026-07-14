@@ -39,7 +39,7 @@ class JdkOkxPrivateReadTransportTest {
         JdkOkxPrivateReadTransport transport = transport((requestUri, requestHeaders, timeout) -> {
             uri.set(requestUri);
             headers.set(Map.copyOf(requestHeaders));
-            return response(200, "{\"code\":\"0\",\"data\":[{\"perm\":\"read_only\",\"uid\":\"ignored\"}]}");
+            return response(200, "{\"code\":\"0\",\"data\":[{\"perm\":\"read_only\",\"ip\":\"[REDACTED]\",\"uid\":\"ignored\"}]}");
         });
 
         OkxPrivateReadResult result = execute(transport, OkxPrivateReadRequest.accountConfiguration(), OkxPrivateEnvironment.DEMO);
@@ -47,8 +47,29 @@ class JdkOkxPrivateReadTransportTest {
         assertEquals(URI.create("https://openapi.okx.com/api/v5/account/config"), uri.get());
         assertEquals(java.util.Set.of("READ_ONLY"), result.normalizedPermissions());
         assertTrue(result.complete());
+        assertTrue(result.ipAllowlistConfigured());
         assertEquals("1", headers.get().get("x-simulated-trading"));
         assertTrue(headers.get().containsKey("OK-ACCESS-SIGN"));
+    }
+
+    @Test
+    void keepsIpAllowlistContentInsideTransportAndFailsClosedForEmptyBinding() {
+        JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(
+                200,
+                "{\"code\":\"0\",\"data\":[{\"perm\":\"read_only\",\"ip\":\"\"}]}"
+        ));
+
+        OkxPrivateReadResult result = execute(
+                transport,
+                OkxPrivateReadRequest.accountConfiguration(),
+                OkxPrivateEnvironment.PRODUCTION
+        );
+
+        assertTrue(result.complete());
+        assertFalse(result.ipAllowlistConfigured());
+        assertEquals(8, OkxPrivateReadResult.class.getRecordComponents().length);
+        assertTrue(Arrays.stream(OkxPrivateReadResult.class.getRecordComponents())
+                .noneMatch(component -> component.getType().equals(String.class)));
     }
 
     @Test
@@ -243,6 +264,7 @@ class JdkOkxPrivateReadTransportTest {
                 "50101", OkxPrivateReadError.ENVIRONMENT_MISMATCH,
                 "50102", OkxPrivateReadError.CLOCK_SKEW,
                 "50113", OkxPrivateReadError.SIGNATURE_FAILURE,
+                "50035", OkxPrivateReadError.IP_ALLOWLIST_FAILED,
                 "59999", OkxPrivateReadError.OKX_PROVIDER_ERROR
         ).entrySet()) {
             JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(

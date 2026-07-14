@@ -198,7 +198,19 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                 permissions.add(normalized);
             }
         }
-        return result(operation, permissions, 0, !permissions.isEmpty(), List.of(), List.of());
+        // OKX 以空字符串表示当前 API key 未绑定 IP。这里只保留布尔事实，绝不把 allowlist 内容带出 transport。
+        String ipAllowlist = text(row, "ip");
+        boolean ipAllowlistConfigured = ipAllowlist != null && !ipAllowlist.isBlank();
+        return new OkxPrivateReadResult(
+                operation,
+                permissions,
+                0,
+                !permissions.isEmpty(),
+                List.of(),
+                List.of(),
+                ipAllowlistConfigured,
+                clock.instant()
+        );
     }
 
     private OkxPrivateReadResult parseBalance(JsonNode row, OkxPrivateReadOperation operation) {
@@ -310,6 +322,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
             case "50101" -> OkxPrivateReadError.ENVIRONMENT_MISMATCH;
             case "50102" -> OkxPrivateReadError.CLOCK_SKEW;
             case "50113" -> OkxPrivateReadError.SIGNATURE_FAILURE;
+            case "50035" -> OkxPrivateReadError.IP_ALLOWLIST_FAILED;
             default -> OkxPrivateReadError.OKX_PROVIDER_ERROR;
         };
     }

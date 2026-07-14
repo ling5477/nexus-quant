@@ -96,9 +96,24 @@ public final class OkxPrivateReadonlyProbeService {
                     observedAt,
                     null,
                     configuration.normalizedPermissions(),
+                    configuration.ipAllowlistConfigured(),
                     null,
                     "BLOCKED",
                     List.of(OkxPrivateReadError.PERMISSION_BLOCKED.name()),
+                    List.of(),
+                    true, true, true, false, true, false
+            );
+        }
+        if (!configuration.ipAllowlistConfigured()) {
+            return new OkxPrivateReadObservation(
+                    OkxPrivateProbeStatus.BLOCKED,
+                    observedAt,
+                    null,
+                    configuration.normalizedPermissions(),
+                    false,
+                    null,
+                    "BLOCKED",
+                    List.of(OkxPrivateReadError.IP_ALLOWLIST_FAILED.name()),
                     List.of(),
                     true, true, true, false, true, false
             );
@@ -113,6 +128,7 @@ public final class OkxPrivateReadonlyProbeService {
                 observedAt,
                 null,
                 configuration.normalizedPermissions(),
+                configuration.ipAllowlistConfigured(),
                 balance.complete() ? balance.assetCount() : null,
                 balance.complete() ? "COMPLETE" : "PARTIAL",
                 List.of(),
@@ -150,6 +166,7 @@ public final class OkxPrivateReadonlyProbeService {
                 observedAt,
                 null,
                 Set.of(),
+                false,
                 null,
                 "UNKNOWN",
                 List.of(blocker),

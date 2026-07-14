@@ -13,6 +13,7 @@ public record OkxPrivateReadResult(
         boolean complete,
         List<OkxPrivateOrderSnapshot> orders,
         List<OkxPrivateFillSnapshot> fills,
+        boolean ipAllowlistConfigured,
         Instant observedAt
 ) {
     public OkxPrivateReadResult {
@@ -24,6 +25,19 @@ public record OkxPrivateReadResult(
         if (assetCount < 0) throw new IllegalArgumentException("assetCount must not be negative");
     }
 
+    /** 兼容非 account-config 调用；这些结果不携带 IP allowlist 配置事实。 */
+    public OkxPrivateReadResult(
+            OkxPrivateReadOperation operation,
+            Set<String> normalizedPermissions,
+            int assetCount,
+            boolean complete,
+            List<OkxPrivateOrderSnapshot> orders,
+            List<OkxPrivateFillSnapshot> fills,
+            Instant observedAt
+    ) {
+        this(operation, normalizedPermissions, assetCount, complete, orders, fills, false, observedAt);
+    }
+
     /** GateW-2 compatibility constructor. */
     public OkxPrivateReadResult(
             OkxPrivateReadOperation operation,
@@ -31,6 +45,6 @@ public record OkxPrivateReadResult(
             int assetCount,
             boolean complete
     ) {
-        this(operation, normalizedPermissions, assetCount, complete, List.of(), List.of(), Instant.EPOCH);
+        this(operation, normalizedPermissions, assetCount, complete, List.of(), List.of(), false, Instant.EPOCH);
     }
 }
