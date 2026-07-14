@@ -4,7 +4,7 @@
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。
 
-状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 venue-rule facts/fix exact-head CI 继续有效；LIMIT-only internal order preview 已通过 attempt-02 security/risk review 与独立 implementation review，当前为 `REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可提交）。下一动作仅为精确提交该实现；GateW-3 尚未整体 accepted。
+状态：GateW planning baseline、GateW-1 与 GateW-2 均为 `ACCEPTED / CI_GREEN`（已接受 / CI 已通过）。GateW-3 LIMIT-only internal order preview acceptance head `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc` 的 exact-head CI run `29319269424` 已成功，当前为 `COMMITTED / CI GREEN / CONTINUE REQUIRED`（已提交 / CI 已通过 / 需要继续）。下一动作仅为 read-only reconciliation/security/risk review；GateW-3 尚未整体 accepted。
 
 ## 1. Current State
 
@@ -12,7 +12,7 @@
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag 为 `nq-gatev-freeze`，peeled commit 为 `530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateW-PLAN 是当前 accepted baseline：`ACCEPTED / CI_GREEN`；GateV-FREEZE 继续作为最近冻结 Gate 的历史证据，不覆盖 current authority。
 - GateW：`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 order preview：`REVIEW ACCEPTED / READY TO COMMIT`；仅允许提交 OKX Spot、BUY/SELL、LIMIT、internal、local-facts-only、no-side-effect 实现。
+- GateW-PLAN、GateW-1、GateW-2：`ACCEPTED / CI_GREEN`；GateW-2 `REAL_SMOKE=NOT_RUN`。GateW-3 order preview：`COMMITTED / CI GREEN / CONTINUE REQUIRED`；仅允许 OKX Spot、BUY/SELL、LIMIT、internal、local-facts-only、no-side-effect 能力，下一动作仅为 read-only reconciliation/security/risk review。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`；Integration runtime：`NOT STARTED`。
 - RealClient、real provider、private trading adapter：`NOT IMPLEMENTED`；GateW-2 private read-only diagnostic probe 已实现并获 CI 接受，但 real smoke/远端 permission verification 为 `NOT_RUN / UNKNOWN`；Python live execution ready：`NO`。
 
@@ -601,4 +601,26 @@ Authority 在 Commit A 前继续保持 `COMMITTED|CI_FAILED|FIX_REQUIRED / eff79
 
 ```text
 NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH
+```
+
+## 44. GateW-3 Preview Post-fix CI Green Reconciliation
+
+Commit A `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc` 的 `NQ CI Baseline` exact-head run `29319269424` 已 `completed / success`：10 个实际 jobs 全部成功，`Frontend backend E2E smoke / Run adapter readiness backend E2E` 为 success。该 run 是 preview acceptance head 的 CI 证据，不是对旧 failed run 的 rerun。
+
+治理 reconciliation 使用既有 contract：
+
+```text
+COMMITTED|CI_FAILED|FIX_REQUIRED
+→ COMMITTED|CI_GREEN|CONTINUE_REQUIRED
+```
+
+- `mode=POST_FIX_CI_SUCCESS_RECONCILIATION`；`authorityCatchUp=true`；`exactHeadMatch=true`；`ciConclusion=success`。
+- preview implementation commit 保持为 `eff79d7c7ea1b034de4e77c7ec64974c247027f5`，其 failed run 保持为 `29308652349`。
+- `work_batch_commit` 指向 acceptance head `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc`，`work_batch_ci_run` 指向成功 run `29319269424`；后续 docs-only authority sync commit 不替换该 acceptance head。
+- `accepted_batch` 继续为 GateW-2 / `ACCEPTED|CI_GREEN`；GateW 继续 `IN_PROGRESS|NOT_FROZEN`；GateW-3 尚未整体 accepted。
+
+当前唯一下一动作：
+
+```text
+NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01
 ```

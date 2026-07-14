@@ -6,7 +6,7 @@
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`；GateW-3 LIMIT-only internal order preview review 继续有效，implementation commit `eff79d7c7ea1b034de4e77c7ec64974c247027f5` 已存在，但 exact-head CI run `29308652349` 为 `completed / failure`。当前为 `COMMITTED / CI FAILED / FIX REQUIRED`，accepted batch 仍为 GateW-2。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`；GateW-3 LIMIT-only internal order preview implementation commit `eff79d7c7ea1b034de4e77c7ec64974c247027f5` 的 run `29308652349` 失败，acceptance head `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc` 的 exact-head run `29319269424` 已成功。当前为 `COMMITTED / CI GREEN / CONTINUE REQUIRED`，accepted batch 仍为 GateW-2。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
@@ -37,4 +37,4 @@
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider 或 private trading adapter 已实现；GateW-2 仅是默认不装配的 private read-only diagnostic probe，`REAL_SMOKE=NOT_RUN`，不表示远端 permission 或交易授权。
-- GateW-3 preview review accepted 不表示 batch 已接受；E2E runner fix/review 已通过，当前唯一动作是 `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。不得把 failed implementation exact-head CI 或本地 fix validation 写成 GitHub CI green，不得把 venue capability、review PASS 或本地结构 preview 解释成 runtime facts 已存在、可以交易或已获 LIVE/交易授权。
+- GateW-3 preview acceptance 不表示 batch 已整体接受；当前唯一动作是 `NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01`。不得把 CI green、venue capability、review PASS 或本地结构 preview 解释成 runtime facts 已存在、可以交易或已获 LIVE/交易授权。

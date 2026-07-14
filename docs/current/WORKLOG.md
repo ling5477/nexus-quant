@@ -17548,3 +17548,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - review: `PASS / CI_BLOCKER_FIX_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0。P2 为既有 Spring generated development password log hygiene residual，值未写入 evidence。
 - boundary: 无 preview business/backend/frontend source/workflow/migration/OKX/credential/order/ledger/audit/risk/LIVE/Shadow/DH/AI diff；未 commit/push/rerun old CI。
 - next action: `NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`；只精确暂存 14 个实际 allowlist paths，随后等待新 fix commit exact-head CI。
+
+## NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-POST-CI-SYNC
+
+- date: `2026-07-14`。
+- Commit A: `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc`；message `fix(ci): coordinate Vite E2E port dynamically`；已 push `origin/dev`。
+- exact-head CI: `NQ CI Baseline / 29319269424 / completed / success / headSha=abc5230c...`；10 actual jobs 全部 success，`Frontend backend E2E smoke / Run adapter readiness backend E2E` success。
+- transition: `COMMITTED|CI_FAILED|FIX_REQUIRED → COMMITTED|CI_GREEN|CONTINUE_REQUIRED`；`mode=POST_FIX_CI_SUCCESS_RECONCILIATION`、`authorityCatchUp=true`、`exactHeadMatch=true`、`ciConclusion=success`。
+- authority: `accepted_batch=GateW-2 / ACCEPTED|CI_GREEN`；`active_gate=GateW / IN_PROGRESS|NOT_FROZEN`；`work_batch=GateW-3 / COMMITTED|CI_GREEN|CONTINUE_REQUIRED / abc5230c... / 29319269424`。
+- provenance: preview implementation `eff79d7...` / failed run `29308652349` 保留为历史失败事实；acceptance head 指向含 runner fix 且 CI green 的 `abc5230c...`，不指向 docs-only sync commit。
+- boundary: no preview business change；no Controller/API/migration/network/OKX/private/credential/order/ledger/audit/risk/LIVE/Shadow/DH/AI change。
+- next action: `NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01`。

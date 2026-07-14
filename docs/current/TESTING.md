@@ -11692,8 +11692,6 @@ Findings：P2 为 root `README.md` 既有且 out-of-scope 的 GateW 摘要漂移
 
 Next action：`NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。
 
----
-
 ## NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW（2026-07-14）
 
 结论：`PASS / LIMIT_ONLY_INTERNAL_ORDER_PREVIEW_ACCEPTED / READY_TO_COMMIT`（通过 / LIMIT-only internal order preview 已接受 / 可提交）。P0=0、P1=0；GateW-3 尚未整体 accepted，GateW 未 frozen。
@@ -11745,3 +11743,22 @@ Environment：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTI
 Known warnings：既有 Spring local/test generated development password 会出现在原始 Maven log，本记录不保存其值（P2）；Vite chunk-size、Ant Design compatibility/deprecation、Maven settings、Mockito/SLF4J 为 P3。
 
 Next action：`NQ-GATEW-3-CI-BLOCKER-FIX-COMMIT-AND-PUSH`。
+
+---
+
+## NQ-GATEW-3-LIMIT-ONLY-DRY-RUN-ORDER-PREVIEW-POST-CI-SYNC（2026-07-14）
+
+结论：`PASS / LIMIT_ONLY_INTERNAL_ORDER_PREVIEW_ACCEPTED / COMMITTED / CI_GREEN / CONTINUE_REQUIRED`（通过 / LIMIT-only internal order preview 已接受 / 已提交 / CI 已通过 / 需要继续）。GateW-3 尚未整体 accepted，GateW 继续 `IN_PROGRESS / NOT FROZEN`。
+
+| 验证项 | 结果 | 摘要 |
+| --- | --- | --- |
+| Commit A exact-head match | PASS | `abc5230c21ad37b3d01bc7df2cc825579bd3f7dc`；不同于 failed preview implementation commit `eff79d7c...` |
+| NQ CI Baseline | PASS | run `29319269424 / completed / success`；`headSha=abc5230c...` |
+| Actual jobs | PASS | 10 success / 0 bad |
+| Frontend backend E2E smoke | PASS | job success；`Run adapter readiness backend E2E` step success |
+| Reconciliation | PASS | `COMMITTED|CI_FAILED|FIX_REQUIRED → COMMITTED|CI_GREEN|CONTINUE_REQUIRED` |
+| Authority identity | PASS | work batch GateW-3；acceptance head/run 为 `abc5230c... / 29319269424`；accepted batch 保持 GateW-2 |
+
+Preview implementation exact-head failed run `29308652349` 继续作为失败历史保留；本次 success 不是旧 run rerun。`work_batch_commit` 指向取得 exact-head success 的 acceptance head，后续 docs-only sync commit 不替换该值。
+
+Next action：`NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-01`。
