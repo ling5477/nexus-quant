@@ -11787,3 +11787,11 @@ Next action：`NQ-GATEW-3-READ-ONLY-RECONCILIATION-SECURITY-RISK-REVIEW-ATTEMPT-
 - warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning；不阻断本轮。
 - 未运行：frontend/Python/PostgreSQL/真实 network/real smoke；本轮无对应实现 diff。
 - 结论：local implementation validation PASS；implementation exact-head GitHub CI 尚未运行，不能写成 CI green。
+
+## 2026-07-14 — GateW-3 risk preflight exact-head CI and batch acceptance
+
+- Commit A：`178b4951ba1406748170022c9940f84beaa8ab81`；`feat(trading): add diagnostic risk preflight`。
+- Exact-head CI：`NQ CI Baseline / 29332316101 / completed / success / headSha=178b4951...`；10/10 actual jobs success，bad jobs=0。
+- completion：venue-rule facts `fd6a8b20.../29260881801`、preview `abc5230c.../29319269424`、reconciliation `71e1ded5.../29324600871`、risk preflight `178b4951.../29332316101` 均重新核验 exact-head success、10/10 jobs。
+- authority：GateW-3 `ACCEPTED|CI_GREEN`；GateW-4 `NOT_STARTED`；GateW `IN_PROGRESS|NOT_FROZEN`。
+- 未验证：docs-only authority-sync Commit B exact-head CI 将在 Commit B push 后验证；其 run 不替换 implementation acceptance head。

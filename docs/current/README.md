@@ -6,7 +6,7 @@
 
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2 为 `ACCEPTED / CI GREEN`。GateW-3 risk preflight review 已通过，当前为 `REVIEW ACCEPTED / READY TO COMMIT`；尚未 commit/CI，accepted batch 仍为 GateW-2。
+- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1、GateW-2、GateW-3 均为 `ACCEPTED / CI GREEN`。GateW-3 implementation/acceptance head `178b4951...` 的 run `29332316101` 已成功；GateW-4 仅初始化为 `NOT STARTED`。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
@@ -37,4 +37,4 @@
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider 或 private trading adapter 已实现；GateW-2 仅是默认不装配的 private read-only diagnostic probe，`REAL_SMOKE=NOT_RUN`，不表示远端 permission 或交易授权。
-- GateW-3 risk preflight review acceptance 不表示已提交、CI green 或 batch 已整体接受；当前唯一动作是 `NQ-GATEW-3-RISK-PREFLIGHT-COMMIT-AND-PUSH`。不得把 pure diagnostic PASS、snapshot match 或 local metadata 解释成真实 permission、余额充分、账户健康、可以交易或已获 LIVE/交易授权。
+- GateW-3 acceptance 只接受 pure diagnostic/no-side-effect contract，不表示 GateW frozen 或交易获授权。当前唯一动作是 `NQ-GATEW-4-IMPLEMENTATION`，但必须先在该 task 内通过 security/operations/persistence/backup/incident/soak review hard gates；不得把 local PASS、snapshot match 或 CI green 解释成真实 permission、余额充分、账户健康、可以交易或已获 LIVE/交易授权。

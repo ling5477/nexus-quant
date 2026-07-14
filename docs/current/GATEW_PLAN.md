@@ -638,3 +638,11 @@ Implementation 只在 `nq-core` 新增 internal evaluator；无 Spring 自动装
 ```text
 NQ-GATEW-3-RISK-PREFLIGHT-COMMIT-AND-PUSH
 ```
+
+## 46. GateW-3 Risk Preflight Post-CI and Batch Acceptance
+
+Risk preflight implementation/acceptance head `178b4951ba1406748170022c9940f84beaa8ab81` 的 `NQ CI Baseline` run `29332316101` 已 `completed / success`，10/10 actual jobs success、bad jobs=0。venue-rule facts、preview、reconciliation 与 risk preflight 四个 acceptance heads 均重新核验 exact-head CI green，所有冻结 review 为 P0=0/P1=0。
+
+GateW-3 已整体 `ACCEPTED / CI GREEN`；authority 将 `accepted_batch` 投影为 GateW-3，并将 `work_batch` 初始化为 `GateW-4 / NOT_STARTED / NONE / NOT_RUN`。该 transition 没有持久化虚假的 `CI_PENDING` snapshot；`accepted_batch_acceptance_head` 保持指向 risk preflight implementation commit，不改指 docs-only authority sync commit。
+
+GateW 继续 `IN_PROGRESS / NOT_FROZEN`；LIVE/Shadow/AI/DH/Integration/real provider/private trading 状态不变。GateW-4 尚未实现，其唯一下一 task `NQ-GATEW-4-IMPLEMENTATION` 必须先在内部通过 security、operations、persistence/retention、backup/restore、incident-drill 与 soak design review hard gates。
