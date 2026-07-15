@@ -67,9 +67,49 @@ class JdkOkxPrivateReadTransportTest {
 
         assertTrue(result.complete());
         assertFalse(result.ipAllowlistConfigured());
-        assertEquals(8, OkxPrivateReadResult.class.getRecordComponents().length);
+        assertEquals(9, OkxPrivateReadResult.class.getRecordComponents().length);
         assertTrue(Arrays.stream(OkxPrivateReadResult.class.getRecordComponents())
                 .noneMatch(component -> component.getType().equals(String.class)));
+    }
+
+    @Test
+    void comparesExpectedIpByNormalizedExactLiteralWithoutReturningAllowlist() {
+        Map<String, OkxIpAllowlistStatus> cases = Map.of(
+                "203.0.113.9,203.0.113.8", OkxIpAllowlistStatus.MATCHED,
+                "203.0.113.9", OkxIpAllowlistStatus.MISMATCHED,
+                "", OkxIpAllowlistStatus.MISSING,
+                "203.0.113.0/24", OkxIpAllowlistStatus.UNKNOWN,
+                "203.0.113.8,", OkxIpAllowlistStatus.UNKNOWN
+        );
+        for (Map.Entry<String, OkxIpAllowlistStatus> entry : cases.entrySet()) {
+            JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(
+                    200,
+                    "{\"code\":\"0\",\"data\":[{\"perm\":\"read_only\",\"ip\":\""
+                            + entry.getKey() + "\"}]}"
+            ));
+
+            OkxPrivateReadResult result = execute(
+                    transport,
+                    OkxPrivateReadRequest.accountConfiguration("203.0.113.8"),
+                    OkxPrivateEnvironment.PRODUCTION
+            );
+
+            assertEquals(entry.getValue(), result.ipAllowlistStatus());
+        }
+
+        JdkOkxPrivateReadTransport missingField = transport((uri, headers, timeout) -> response(
+                200,
+                "{\"code\":\"0\",\"data\":[{\"perm\":\"read_only\"}]}"
+        ));
+        assertEquals(
+                OkxIpAllowlistStatus.UNKNOWN,
+                execute(missingField, OkxPrivateReadRequest.accountConfiguration("203.0.113.8"),
+                        OkxPrivateEnvironment.PRODUCTION).ipAllowlistStatus()
+        );
+        assertThrows(IllegalArgumentException.class,
+                () -> OkxPrivateReadRequest.accountConfiguration("example.com"));
+        assertThrows(IllegalArgumentException.class,
+                () -> OkxPrivateReadRequest.accountConfiguration("203.0.113.0/24"));
     }
 
     @Test
@@ -169,6 +209,26 @@ class JdkOkxPrivateReadTransportTest {
     }
 
     @Test
+    void classifiesHttpAuthRateLimitAndServerErrorsWithoutRetry() {
+        Map<Integer, OkxPrivateReadError> cases = Map.of(
+                401, OkxPrivateReadError.AUTHENTICATION_FAILURE,
+                403, OkxPrivateReadError.AUTHENTICATION_FAILURE,
+                429, OkxPrivateReadError.RATE_LIMITED,
+                500, OkxPrivateReadError.HTTP_ERROR,
+                503, OkxPrivateReadError.HTTP_ERROR
+        );
+        for (Map.Entry<Integer, OkxPrivateReadError> entry : cases.entrySet()) {
+            AtomicInteger calls = new AtomicInteger();
+            JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> {
+                calls.incrementAndGet();
+                return response(entry.getKey(), "provider-body-must-not-escape");
+            });
+            assertCategory(entry.getValue(), transport);
+            assertEquals(1, calls.get());
+        }
+    }
+
+    @Test
     void failsClosedForMultipleConfigurationRowsIncludingDangerousOrUnknownPermissions() {
         for (String secondPermission : List.of("read_only", "trade", "withdraw", "unknown_scope", "")) {
             JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(
@@ -212,8 +272,14 @@ class JdkOkxPrivateReadTransportTest {
                 new JdkOkxPrivateReadTransport.LimitedBodySubscriber(4);
         AtomicBoolean cancelled = new AtomicBoolean();
         subscriber.onSubscribe(new Flow.Subscription() {
-            @Override public void request(long n) { }
-            @Override public void cancel() { cancelled.set(true); }
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+                cancelled.set(true);
+            }
         });
 
         subscriber.onNext(List.of(ByteBuffer.wrap(new byte[]{1, 2, 3, 4, 5})));
@@ -263,7 +329,11 @@ class JdkOkxPrivateReadTransportTest {
                 "50011", OkxPrivateReadError.RATE_LIMITED,
                 "50101", OkxPrivateReadError.ENVIRONMENT_MISMATCH,
                 "50102", OkxPrivateReadError.CLOCK_SKEW,
+                "50105", OkxPrivateReadError.AUTHENTICATION_FAILURE,
+                "50110", OkxPrivateReadError.IP_ALLOWLIST_FAILED,
+                "50111", OkxPrivateReadError.INVALID_API_KEY,
                 "50113", OkxPrivateReadError.SIGNATURE_FAILURE,
+                "50120", OkxPrivateReadError.PERMISSION_BLOCKED,
                 "50035", OkxPrivateReadError.IP_ALLOWLIST_FAILED,
                 "59999", OkxPrivateReadError.OKX_PROVIDER_ERROR
         ).entrySet()) {

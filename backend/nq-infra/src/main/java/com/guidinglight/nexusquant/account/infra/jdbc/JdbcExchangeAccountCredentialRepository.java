@@ -451,6 +451,8 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
             Long exchangeAccountId,
             String permissionProbeStatus,
             String permissionScope,
+            boolean withdrawEnabled,
+            boolean ipAllowlistRequired,
             String ipAllowlistProbeStatus,
             Instant lastPermissionProbeAt,
             String lastPermissionProbeError,
@@ -462,6 +464,8 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                         UPDATE exchange_account_credentials
                         SET permission_probe_status = ?,
                             permission_scope = ?,
+                            withdraw_enabled = ?,
+                            ip_allowlist_required = ?,
                             ip_allowlist_probe_status = ?,
                             last_permission_probe_at = ?,
                             last_permission_probe_error = ?,
@@ -469,9 +473,12 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                             updated_at = ?
                         WHERE credential_id = ?
                           AND exchange_account_id = ?
+                          AND permission_probe_status = 'IN_PROGRESS'
                         """,
                 permissionProbeStatus,
                 permissionScope,
+                withdrawEnabled,
+                ipAllowlistRequired,
                 ipAllowlistProbeStatus,
                 Timestamp.from(lastPermissionProbeAt),
                 lastPermissionProbeError,

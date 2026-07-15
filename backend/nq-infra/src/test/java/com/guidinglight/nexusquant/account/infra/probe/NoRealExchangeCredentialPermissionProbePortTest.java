@@ -28,6 +28,7 @@ class NoRealExchangeCredentialPermissionProbePortTest {
             NoRealExchangeCredentialPermissionProbePort port = new NoRealExchangeCredentialPermissionProbePort();
 
             ExchangeCredentialPermissionProbeResult result = port.probe(new ExchangeCredentialPermissionProbeRequest(
+                    1L,
                     900001L,
                     1L,
                     "OKX",
@@ -35,8 +36,7 @@ class NoRealExchangeCredentialPermissionProbePortTest {
                     "OKX_API_V5",
                     "PAPER",
                     true,
-                    "trace-no-real-exchange",
-                    "{\"material\":\"not-used\"}"
+                    "trace-no-real-exchange"
             ));
 
             assertEquals("SKIPPED", result.permissionProbeStatus());

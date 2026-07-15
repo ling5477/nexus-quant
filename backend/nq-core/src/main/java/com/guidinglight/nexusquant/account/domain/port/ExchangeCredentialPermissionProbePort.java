@@ -14,6 +14,14 @@ import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionPr
 public interface ExchangeCredentialPermissionProbePort {
 
     /**
+     * 是否允许在全局 LIVE 仍关闭时，对 LIVE account credential 执行唯一 account/config 只读检查。
+     * 默认 false，确保 NoReal、测试 double 和未来未显式审查的 adapter 均保持 fail-closed。
+     */
+    default boolean supportsControlledLiveReadOnlyProbe() {
+        return false;
+    }
+
+    /**
      * 执行一次权限探活并返回脱敏结果。
      *
      * <p>边界：实现不得读写 NQ DB，不得访问其他 Service，不得下单、撤单、转账、提现，

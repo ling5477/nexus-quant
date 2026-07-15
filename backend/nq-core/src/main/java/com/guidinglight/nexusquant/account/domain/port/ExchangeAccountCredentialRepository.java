@@ -164,14 +164,16 @@ public interface ExchangeAccountCredentialRepository {
      * 写回 permission probe 的 latest 脱敏摘要。
      *
      * <p>Why: V31 只提供 latest summary 字段，不新增 history 表；因此 Service 必须一次性写入
-     * status、scope、IP allowlist、脱敏错误和 failed_auth_count 增量。成功路径不得自动清零
-     * failed_auth_count。</p>
+     * status、scope、withdraw、IP allowlist、脱敏错误和 failed_auth_count 增量。实现必须仅在
+     * 当前状态仍为 IN_PROGRESS 时完成 CAS finalize；成功路径不得自动清零 failed_auth_count。</p>
      */
     default boolean markPermissionProbeResult(
             Long credentialId,
             Long exchangeAccountId,
             String permissionProbeStatus,
             String permissionScope,
+            boolean withdrawEnabled,
+            boolean ipAllowlistRequired,
             String ipAllowlistProbeStatus,
             Instant lastPermissionProbeAt,
             String lastPermissionProbeError,

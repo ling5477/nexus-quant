@@ -17,12 +17,28 @@ public interface OkxPrivateCredentialExecutor {
             CredentialCallback<T> callback
     );
 
+    /**
+     * 按服务端 credential reference 精确选择 active credential。
+     * 默认实现保留测试/旧 adapter 兼容；JDBC production executor 必须覆盖并在 SQL 中绑定 credentialId。
+     */
+    default <T> T withActiveCredential(
+            Long ownerId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String credentialType,
+            CredentialCallback<T> callback
+    ) {
+        return withActiveCredential(ownerId, exchangeAccountId, credentialType, callback);
+    }
+
     @FunctionalInterface
     interface CredentialCallback<T> {
         T execute(CredentialSession session);
     }
 
-    /** 只能在 callback 所在线程和 callback 生命周期内执行 typed private read。 */
+    /**
+     * 只能在 callback 所在线程和 callback 生命周期内执行 typed private read。
+     */
     @FunctionalInterface
     interface CredentialSession {
         OkxPrivateReadResult execute(OkxPrivateReadRequest request, OkxPrivateEnvironment environment);

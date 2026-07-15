@@ -17634,3 +17634,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：LIVE/order submission/transfer/withdraw/AI/DH/real provider 均保持 disabled；无 migration/API/scheduler/frontend/research/deploy/CI/archive diff；GateW authority 不变。
 - result：`PASS / HARNESS_LOCALLY_VALIDATED / READY_TO_COMMIT`；exact-head CI 与 real runtime hard gates pending，soak 尚未开始。
 - next：精确 commit/push harness并等待 exact-head CI 10/10 GREEN；随后在 detached fixed worktree 中满足 credential/IP/isolated DB hard gates后才启动，7-day 期满交由独立 acceptance task。
+
+## 2026-07-15 — GateW freeze blocker-2 OKX real read-only permission probe
+
+- task：`NQ-GATEW-FREEZE-BLOCKER-2-OKX-REAL-READONLY-PERMISSION-PROBE-IMPLEMENTATION`；NQ-only、L 级 credential/exchange security implementation。
+- implementation：typed `GET /api/v5/account/config` real read-only port、exact IP/permission fail-closed mapping、exact credential-ID executor、两段短事务与 `IN_PROGRESS` CAS atomic writeback、explicit NoReal-default Spring composition。
+- review：关闭两个 P1——rotation 竞态错误 credential selection，以及失败观测清除既有高风险权限事实；P0=0、P1=0。
+- validation：IntelliJ 23 files errors=0；required targeted/full Maven 均 23/23 modules SUCCESS、BUILD SUCCESS；未调用真实 OKX 或读取真实 credential。
+- boundary：无 API/scheduler/migration/POM/frontend/research/deploy/CI/archive/authority/交易写能力；LIVE/AI/DH/real provider 继续 disabled；GateW 未 freeze。
+- result：`PASS / OKX_REAL_READONLY_PERMISSION_PROBE_ACCEPTED / READY_TO_COMMIT`；commit/push/exact-head CI pending。
+- next：精确暂存并提交 `feat(account): add controlled OKX permission probe`，push `dev`，等待 exact-head `NQ CI Baseline` 10/10 GREEN；随后进入 server bootstrap `ATTEMPT_05`。

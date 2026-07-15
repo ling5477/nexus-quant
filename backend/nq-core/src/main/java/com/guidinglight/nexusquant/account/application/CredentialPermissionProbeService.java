@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
-import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMaterial;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeRequest;
@@ -20,7 +19,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 
 /**
  * CredentialPermissionProbeService 编排 credential permission probe 的本地安全 gate、状态写回和 audit。
@@ -38,14 +37,17 @@ public class CredentialPermissionProbeService {
     private final ExchangeCredentialPermissionProbePort permissionProbePort;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final TransactionOperations transactions;
 
     public CredentialPermissionProbeService(
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository credentialRepository,
             ExchangeCredentialPermissionProbePort permissionProbePort,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            TransactionOperations transactions
     ) {
-        this(exchangeAccountRepository, credentialRepository, permissionProbePort, objectMapper, Clock.systemUTC());
+        this(exchangeAccountRepository, credentialRepository, permissionProbePort, objectMapper,
+                Clock.systemUTC(), transactions);
     }
 
     CredentialPermissionProbeService(
@@ -53,7 +55,8 @@ public class CredentialPermissionProbeService {
             ExchangeAccountCredentialRepository credentialRepository,
             ExchangeCredentialPermissionProbePort permissionProbePort,
             ObjectMapper objectMapper,
-            Clock clock
+            Clock clock,
+            TransactionOperations transactions
     ) {
         this.exchangeAccountRepository = Objects.requireNonNull(
                 exchangeAccountRepository,
@@ -66,23 +69,23 @@ public class CredentialPermissionProbeService {
         this.permissionProbePort = Objects.requireNonNull(permissionProbePort, "permissionProbePort must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.transactions = Objects.requireNonNull(transactions, "transactions must not be null");
     }
 
     /**
      * 触发一次同步 permission probe。
      *
-     * <p>事务/并发：本轮不访问真实交易所，使用 credential row lock + IN_PROGRESS claim 防止重复 probe。
-     * 后续如果接入真实 adapter，应把 port 调用拆出长事务，只保留 claim/finish 两阶段短事务。</p>
+     * <p>事务/并发：claim/skip 与 finalize 分别在短事务内执行；真实 HTTP 位于两段事务之间。
+     * IN_PROGRESS CAS 防止重复 probe，finalize 仅允许更新仍由本次 claim 持有的 IN_PROGRESS 行。</p>
      *
-     * @param ownerUserId 当前认证用户 ID，必须拥有 exchangeAccountId
+     * @param ownerUserId       当前认证用户 ID，必须拥有 exchangeAccountId
      * @param exchangeAccountId 凭证所属账户
-     * @param credentialId 从路径派生的 credentialId，credentialType 也从该记录派生
-     * @param actor 当前认证主体；为空时落为 system
-     * @param command 非敏感控制输入；不得包含 credential material
-     * @param traceId 当前请求 trace id，可空
+     * @param credentialId      从路径派生的 credentialId，credentialType 也从该记录派生
+     * @param actor             当前认证主体；为空时落为 system
+     * @param command           非敏感控制输入；不得包含 credential material
+     * @param traceId           当前请求 trace id，可空
      * @return 脱敏 latest summary，不包含 credential material 或 raw exchange response
      */
-    @Transactional
     public CredentialPermissionProbeSummary probe(
             Long ownerUserId,
             Long exchangeAccountId,
@@ -94,77 +97,161 @@ public class CredentialPermissionProbeService {
         Long normalizedOwnerUserId = requirePositive(ownerUserId, "ownerUserId");
         Long normalizedExchangeAccountId = requirePositive(exchangeAccountId, "exchangeAccountId");
         Long normalizedCredentialId = requirePositive(credentialId, "credentialId");
-        ExchangeAccountSummary account = requireOwnedAccount(normalizedOwnerUserId, normalizedExchangeAccountId);
         String normalizedActor = normalizeActor(actor);
         String normalizedReason = normalizeReason(command == null ? null : command.reason());
         String requestId = UUID.randomUUID().toString();
-        Instant now = Instant.now(clock);
-
-        ExchangeAccountCredentialMaterial locked = credentialRepository.findByCredentialIdForOwnerForUpdate(
+        ProbePreparation preparation = Objects.requireNonNull(transactions.execute(status -> prepare(
                 normalizedOwnerUserId,
                 normalizedExchangeAccountId,
-                normalizedCredentialId
-        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(normalizedExchangeAccountId));
+                normalizedCredentialId,
+                normalizedActor,
+                normalizedReason,
+                command,
+                requestId,
+                traceId
+        )), "permission probe preparation must not be null");
+        if (preparation.completedSummary() != null) {
+            return preparation.completedSummary();
+        }
+        Instant startedAt = Instant.now(clock);
+        ExchangeCredentialPermissionProbeResult result;
+        try {
+            result = permissionProbePort.probe(new ExchangeCredentialPermissionProbeRequest(
+                    preparation.account().ownerUserId(),
+                    preparation.account().exchangeAccountId(),
+                    preparation.credential().credentialId(),
+                    preparation.account().exchangeCode(),
+                    preparation.account().tradeEnv(),
+                    preparation.credential().credentialType(),
+                    normalizeMode(command == null ? null : command.mode()),
+                    Boolean.TRUE.equals(command == null ? null : command.dryRun()),
+                    traceId
+            ));
+        } catch (RuntimeException ex) {
+            result = ExchangeCredentialPermissionProbeResult.failed(
+                    preparation.account().exchangeCode(),
+                    preparation.credential().credentialType(),
+                    "INTERNAL_PROBE_FAILURE",
+                    "UNKNOWN",
+                    requestId,
+                    traceId,
+                    startedAt,
+                    Instant.now(clock)
+            );
+        }
+        ExchangeCredentialPermissionProbeResult completedResult = result;
+        return Objects.requireNonNull(
+                transactions.execute(status -> finalizeProbe(preparation, completedResult)),
+                "permission probe finalization must not be null"
+        );
+    }
 
-        if ("IN_PROGRESS".equals(locked.permissionProbeStatus())) {
-            appendAudit(locked, "PERMISSION_PROBE_SKIPPED", normalizedActor, normalizedReason,
-                    "IN_PROGRESS_CONFLICT", locked.permissionProbeStatus(), "IN_PROGRESS", requestId, traceId, false);
+    private ProbePreparation prepare(
+            Long ownerUserId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String actor,
+            String reason,
+            CredentialPermissionProbeCommand command,
+            String requestId,
+            String traceId
+    ) {
+        ExchangeAccountSummary account = requireOwnedAccount(ownerUserId, exchangeAccountId);
+        ExchangeAccountCredentialSummary credential = credentialRepository.findByCredentialIdForOwner(
+                ownerUserId,
+                exchangeAccountId,
+                credentialId
+        ).orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(exchangeAccountId));
+        if ("IN_PROGRESS".equals(credential.permissionProbeStatus())) {
             throw new IllegalStateException("credential permission probe already in progress");
         }
-        if (!locked.isActive() || !"ACTIVE".equals(locked.credentialStatus())) {
-            return skip(account, locked, normalizedActor, normalizedReason, "CREDENTIAL_NOT_ACTIVE", requestId, traceId, now);
+        Instant now = Instant.now(clock);
+        if (!credentialRepository.markPermissionProbeInProgress(credentialId, exchangeAccountId, now)) {
+            throw new IllegalStateException("credential permission probe already in progress");
         }
-        if ("LIVE".equalsIgnoreCase(account.tradeEnv())) {
-            return skip(account, locked, normalizedActor, normalizedReason, "LIVE_CREDENTIAL_BLOCKED", requestId, traceId, now);
+        if (!credential.isActive() || !"ACTIVE".equals(credential.credentialStatus())) {
+            return completed(account, credential, actor, reason, "CREDENTIAL_NOT_ACTIVE", requestId, traceId, now);
         }
-        if (locked.withdrawEnabled()) {
-            return skip(account, locked, normalizedActor, normalizedReason, "WITHDRAW_ENABLED_RISK", requestId, traceId, now);
+        if ("LIVE".equalsIgnoreCase(account.tradeEnv())
+                && !permissionProbePort.supportsControlledLiveReadOnlyProbe()) {
+            return completed(account, credential, actor, reason, "LIVE_CREDENTIAL_BLOCKED", requestId, traceId, now);
+        }
+        if (credential.withdrawEnabled()) {
+            return completed(account, credential, actor, reason, "WITHDRAW_ENABLED_RISK", requestId, traceId, now);
         }
         if (!paperSafetyGatePassed(command)) {
-            return skip(account, locked, normalizedActor, normalizedReason, "PAPER_SAFETY_GATE_MISSING", requestId, traceId, now);
+            return completed(account, credential, actor, reason, "PAPER_SAFETY_GATE_MISSING", requestId, traceId, now);
         }
-        if (!credentialRepository.markPermissionProbeInProgress(normalizedCredentialId, normalizedExchangeAccountId, now)) {
-            appendAudit(locked, "PERMISSION_PROBE_SKIPPED", normalizedActor, normalizedReason,
-                    "IN_PROGRESS_CONFLICT", locked.permissionProbeStatus(), "IN_PROGRESS", requestId, traceId, false);
-            throw new IllegalStateException("credential permission probe already in progress");
-        }
-        appendAudit(locked, "PERMISSION_PROBE_STARTED", normalizedActor, normalizedReason,
-                null, locked.permissionProbeStatus(), "IN_PROGRESS", requestId, traceId, false);
+        appendAudit(credential, "PERMISSION_PROBE_STARTED", actor, reason,
+                null, credential.permissionProbeStatus(), "IN_PROGRESS", requestId, traceId, false);
+        return new ProbePreparation(account, credential, actor, reason, requestId, traceId, null);
+    }
 
-        Instant startedAt = Instant.now(clock);
-        ExchangeCredentialPermissionProbeResult result = permissionProbePort.probe(new ExchangeCredentialPermissionProbeRequest(
-                account.exchangeAccountId(),
-                locked.credentialId(),
-                account.exchangeCode(),
-                account.tradeEnv(),
-                locked.credentialType(),
-                normalizeMode(command == null ? null : command.mode()),
-                Boolean.TRUE.equals(command == null ? null : command.dryRun()),
+    private ProbePreparation completed(
+            ExchangeAccountSummary account,
+            ExchangeAccountCredentialSummary credential,
+            String actor,
+            String reason,
+            String policyDecision,
+            String requestId,
+            String traceId,
+            Instant now
+    ) {
+        return new ProbePreparation(
+                account,
+                credential,
+                actor,
+                reason,
+                requestId,
                 traceId,
-                locked.decryptedPayloadJson()
-        ));
+                skip(account, credential, actor, reason, policyDecision, requestId, traceId, now)
+        );
+    }
+
+    private CredentialPermissionProbeSummary finalizeProbe(
+            ProbePreparation preparation,
+            ExchangeCredentialPermissionProbeResult result
+    ) {
         Instant finishedAt = result.finishedAt() == null ? Instant.now(clock) : result.finishedAt();
         String finalStatus = normalizeProbeStatus(result.permissionProbeStatus());
         String errorCategory = sanitizeErrorCategory(result.sanitizedErrorCategory());
         boolean incrementFailedAuthCount = shouldIncrementFailedAuthCount(errorCategory);
-        credentialRepository.markPermissionProbeResult(
-                locked.credentialId(),
-                locked.exchangeAccountId(),
+        String observedPermissionScope = normalizePermissionScope(result.detectedPermissionScope());
+        // 认证/网络失败没有产生 permission observation；不得因此清除最后已知的高风险权限事实。
+        String persistedPermissionScope = observedPermissionScope == null
+                ? preparation.credential().permissionScope()
+                : observedPermissionScope;
+        boolean persistedWithdrawEnabled = observedPermissionScope == null
+                ? preparation.credential().withdrawEnabled()
+                : result.withdrawEnabledDetected();
+        String ipStatus = normalizeIpAllowlistStatus(result.ipAllowlistProbeStatus());
+        if (!credentialRepository.markPermissionProbeResult(
+                preparation.credential().credentialId(),
+                preparation.credential().exchangeAccountId(),
                 finalStatus,
-                normalizePermissionScope(result.detectedPermissionScope()),
-                normalizeIpAllowlistStatus(result.ipAllowlistProbeStatus()),
+                persistedPermissionScope,
+                persistedWithdrawEnabled,
+                true,
+                ipStatus,
                 finishedAt,
                 errorCategory,
                 incrementFailedAuthCount,
                 finishedAt
+        )) {
+            throw new IllegalStateException("permission probe result writeback conflict");
+        }
+        appendAudit(preparation.credential(), eventTypeFor(finalStatus), preparation.actor(), preparation.reason(),
+                errorCategory, "IN_PROGRESS", finalStatus,
+                emptyToDefault(result.requestId(), preparation.requestId()),
+                emptyToDefault(result.traceId(), preparation.traceId()), incrementFailedAuthCount,
+                observedPermissionScope, ipStatus);
+        return latest(
+                preparation.account().ownerUserId(),
+                preparation.account().exchangeAccountId(),
+                preparation.credential().credentialId(),
+                emptyToDefault(result.requestId(), preparation.requestId()),
+                emptyToDefault(result.traceId(), preparation.traceId())
         );
-        appendAudit(locked, eventTypeFor(finalStatus), normalizedActor, normalizedReason,
-                errorCategory, "IN_PROGRESS", finalStatus, emptyToDefault(result.requestId(), requestId),
-                emptyToDefault(result.traceId(), traceId), incrementFailedAuthCount,
-                normalizePermissionScope(result.detectedPermissionScope()),
-                normalizeIpAllowlistStatus(result.ipAllowlistProbeStatus()));
-        return latest(normalizedOwnerUserId, normalizedExchangeAccountId, normalizedCredentialId,
-                emptyToDefault(result.requestId(), requestId), emptyToDefault(result.traceId(), traceId));
     }
 
     /**
@@ -194,7 +281,7 @@ public class CredentialPermissionProbeService {
 
     private CredentialPermissionProbeSummary skip(
             ExchangeAccountSummary account,
-            ExchangeAccountCredentialMaterial credential,
+            ExchangeAccountCredentialSummary credential,
             String actor,
             String reason,
             String policyDecision,
@@ -202,24 +289,28 @@ public class CredentialPermissionProbeService {
             String traceId,
             Instant now
     ) {
-        credentialRepository.markPermissionProbeResult(
+        if (!credentialRepository.markPermissionProbeResult(
                 credential.credentialId(),
                 credential.exchangeAccountId(),
                 "SKIPPED",
                 credential.permissionScope(),
+                credential.withdrawEnabled(),
+                true,
                 "SKIPPED",
                 now,
                 policyDecision,
                 false,
                 now
-        );
+        )) {
+            throw new IllegalStateException("permission probe skip writeback conflict");
+        }
         appendAudit(credential, "PERMISSION_PROBE_SKIPPED", actor, reason, policyDecision,
                 credential.permissionProbeStatus(), "SKIPPED", requestId, traceId, false);
         ExchangeAccountCredentialSummary latestCredential = credentialRepository.findByCredentialIdForOwner(
                 account.ownerUserId(),
                 account.exchangeAccountId(),
                 credential.credentialId()
-        ).orElse(credential.toSummary());
+        ).orElse(credential);
         return CredentialPermissionProbeSummary.from(account, latestCredential, requestId, traceId);
     }
 
@@ -250,11 +341,13 @@ public class CredentialPermissionProbeService {
         return "AUTH_FAILED".equals(errorCategory)
                 || "INVALID_API_KEY".equals(errorCategory)
                 || "SIGNATURE_FAILED".equals(errorCategory)
-                || "IP_ALLOWLIST_FAILED".equals(errorCategory);
+                || "IP_ALLOWLIST_FAILED".equals(errorCategory)
+                || "IP_ALLOWLIST_MISSING".equals(errorCategory)
+                || "IP_ALLOWLIST_MISMATCH".equals(errorCategory);
     }
 
     private void appendAudit(
-            ExchangeAccountCredentialMaterial credential,
+            ExchangeAccountCredentialSummary credential,
             String eventType,
             String actor,
             String reason,
@@ -282,7 +375,7 @@ public class CredentialPermissionProbeService {
     }
 
     private void appendAudit(
-            ExchangeAccountCredentialMaterial credential,
+            ExchangeAccountCredentialSummary credential,
             String eventType,
             String actor,
             String reason,
@@ -317,7 +410,7 @@ public class CredentialPermissionProbeService {
     }
 
     private String auditMetadata(
-            ExchangeAccountCredentialMaterial credential,
+            ExchangeAccountCredentialSummary credential,
             String fromStatus,
             String toStatus,
             String policyDecision,
@@ -459,5 +552,16 @@ public class CredentialPermissionProbeService {
 
     private String emptyToDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private record ProbePreparation(
+            ExchangeAccountSummary account,
+            ExchangeAccountCredentialSummary credential,
+            String actor,
+            String reason,
+            String requestId,
+            String traceId,
+            CredentialPermissionProbeSummary completedSummary
+    ) {
     }
 }

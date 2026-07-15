@@ -12,19 +12,31 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.infra.gatew.JdbcOkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
+import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.verification.StructuralExchangeAccountCredentialVerifier;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.core.env.Environment;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.time.Clock;
 
 /**
  * AccountModuleConfiguration 负责 exchange account 域内 Bean 装配。
  */
 @Configuration
-@EnableConfigurationProperties(AccountCredentialRuntimeProperties.class)
+@EnableConfigurationProperties({
+        AccountCredentialRuntimeProperties.class,
+        GateWOkxPermissionProbeProperties.class
+})
 public class AccountModuleConfiguration {
 
     @Bean
@@ -87,8 +99,31 @@ public class AccountModuleConfiguration {
     }
 
     @Bean
-    public ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort() {
-        return new NoRealExchangeCredentialPermissionProbePort();
+    public ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort(
+            ObjectProvider<OkxPrivateCredentialExecutor> credentialExecutorProvider,
+            GateWOkxPermissionProbeProperties permissionProperties,
+            Environment environment
+    ) {
+        OkxPrivateCredentialExecutor executor = credentialExecutorProvider.getIfAvailable();
+        if (!permissionProperties.isEnabled()
+                || !(executor instanceof JdbcOkxPrivateCredentialExecutor)
+                || !exactBoolean(environment, "nq.env-safety.real-exchange-enabled", true)
+                || !exactBoolean(environment, "nq.env-safety.live-enabled", false)
+                || !exactBoolean(environment, "nq.env-safety.real-client-enabled", false)
+                || !exactBoolean(environment, "nq.env-safety.real-provider-enabled", false)
+                || !exactBoolean(environment, "nq.env-safety.no-outbound", false)) {
+            return new NoRealExchangeCredentialPermissionProbePort();
+        }
+        try {
+            return new OkxRealReadonlyPermissionProbePort(
+                    executor,
+                    permissionProperties.getExpectedIp(),
+                    Clock.systemUTC()
+            );
+        } catch (IllegalArgumentException ex) {
+            // expectedIp 缺失/非法时回落 NoReal；错误信息不得回显配置原值。
+            return new NoRealExchangeCredentialPermissionProbePort();
+        }
     }
 
     @Bean
@@ -96,13 +131,20 @@ public class AccountModuleConfiguration {
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
             ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlatformTransactionManager transactionManager
     ) {
         return new CredentialPermissionProbeService(
                 exchangeAccountRepository,
                 exchangeAccountCredentialRepository,
                 exchangeCredentialPermissionProbePort,
-                objectMapper
+                objectMapper,
+                new TransactionTemplate(transactionManager)
         );
+    }
+
+    private static boolean exactBoolean(Environment environment, String name, boolean required) {
+        String value = environment.getProperty(name);
+        return value != null && Boolean.toString(required).equalsIgnoreCase(value.trim());
     }
 }

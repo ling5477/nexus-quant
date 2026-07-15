@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -50,7 +51,7 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
             CredentialCallback<T> callback
     ) {
         try {
-            return executeScoped(ownerId, exchangeAccountId, credentialType, callback);
+            return executeScoped(ownerId, exchangeAccountId, null, credentialType, callback);
         } catch (OkxPrivateReadException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -59,25 +60,44 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
         }
     }
 
+    @Override
+    public <T> T withActiveCredential(
+            Long ownerId,
+            Long exchangeAccountId,
+            Long credentialId,
+            String credentialType,
+            CredentialCallback<T> callback
+    ) {
+        try {
+            return executeScoped(ownerId, exchangeAccountId, credentialId, credentialType, callback);
+        } catch (OkxPrivateReadException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.AUTHENTICATION_FAILURE);
+        }
+    }
+
     private <T> T executeScoped(
             Long ownerId,
             Long exchangeAccountId,
+            Long credentialId,
             String credentialType,
             CredentialCallback<T> callback
     ) throws Exception {
         requirePositive(ownerId, "ownerId");
         requirePositive(exchangeAccountId, "exchangeAccountId");
+        if (credentialId != null) {
+            requirePositive(credentialId, "credentialId");
+        }
         if (!OKX_API_V5.equals(credentialType)) {
             throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
         }
         Objects.requireNonNull(callback, "callback must not be null");
 
         Integer count = jdbcTemplate.queryForObject(
-                credentialSelectionSql("COUNT(1)"),
+                credentialSelectionSql("COUNT(1)", credentialId != null),
                 Integer.class,
-                exchangeAccountId,
-                credentialType,
-                ownerId
+                selectionArguments(exchangeAccountId, credentialType, ownerId, credentialId)
         );
         int candidates = count == null ? 0 : count;
         if (candidates == 0) {
@@ -88,12 +108,9 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
         }
 
         String decryptedPayload = jdbcTemplate.queryForObject(
-                credentialSelectionSql("pgp_sym_decrypt(c.encrypted_payload, ?)"),
+                credentialSelectionSql("pgp_sym_decrypt(c.encrypted_payload, ?)", credentialId != null),
                 String.class,
-                masterKey,
-                exchangeAccountId,
-                credentialType,
-                ownerId
+                decryptArguments(exchangeAccountId, credentialType, ownerId, credentialId)
         );
         char[] apiKey = null;
         char[] secretKey = null;
@@ -133,7 +150,7 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
         }
     }
 
-    private static String credentialSelectionSql(String selection) {
+    private static String credentialSelectionSql(String selection, boolean exactCredential) {
         return """
                 SELECT %s
                 FROM exchange_account_credentials c
@@ -148,7 +165,33 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
                   AND a.owner_user_id = ?
                   AND a.exchange_code = 'OKX'
                   AND a.status = 'ACTIVE'
-                """.formatted(selection);
+                %s
+                """.formatted(
+                selection,
+                exactCredential ? "  AND c.credential_id = ?" : ""
+        );
+    }
+
+    private static Object[] selectionArguments(
+            Long exchangeAccountId,
+            String credentialType,
+            Long ownerId,
+            Long credentialId
+    ) {
+        return credentialId == null
+                ? new Object[]{exchangeAccountId, credentialType, ownerId}
+                : new Object[]{exchangeAccountId, credentialType, ownerId, credentialId};
+    }
+
+    private Object[] decryptArguments(
+            Long exchangeAccountId,
+            String credentialType,
+            Long ownerId,
+            Long credentialId
+    ) {
+        return credentialId == null
+                ? new Object[]{masterKey, exchangeAccountId, credentialType, ownerId}
+                : new Object[]{masterKey, exchangeAccountId, credentialType, ownerId, credentialId};
     }
 
     @Override

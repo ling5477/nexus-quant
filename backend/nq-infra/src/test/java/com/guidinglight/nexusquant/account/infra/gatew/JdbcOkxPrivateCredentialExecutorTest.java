@@ -100,6 +100,24 @@ class JdbcOkxPrivateCredentialExecutorTest {
     }
 
     @Test
+    void exactCredentialPathBindsCredentialIdInCountAndDecryptQueries() {
+        StubJdbcTemplate jdbc = new StubJdbcTemplate(1, validPayload());
+
+        executor(jdbc, successfulTransport()).withActiveCredential(
+                7L, 9L, 42L, "OKX_API_V5", session -> observation()
+        );
+
+        assertEquals(2, jdbc.sql.size());
+        assertEquals(2, jdbc.arguments.size());
+        for (int index = 0; index < jdbc.sql.size(); index++) {
+            assertTrue(jdbc.sql.get(index).replaceAll("\\s+", " ").toUpperCase()
+                    .contains("C.CREDENTIAL_ID = ?"));
+            Object[] arguments = jdbc.arguments.get(index);
+            assertEquals(42L, arguments[arguments.length - 1]);
+        }
+    }
+
+    @Test
     void decryptsOnceExecutesSynchronousSessionAndClearsCredentialBuffers() throws Exception {
         StubJdbcTemplate jdbc = new StubJdbcTemplate(1, validPayload());
         AtomicInteger transportCalls = new AtomicInteger();
@@ -264,6 +282,7 @@ class JdbcOkxPrivateCredentialExecutorTest {
         private final String payload;
         private final AtomicInteger decryptCalls = new AtomicInteger();
         private final List<String> sql = new java.util.ArrayList<>();
+        private final List<Object[]> arguments = new java.util.ArrayList<>();
 
         private StubJdbcTemplate(int candidates, String payload) {
             this.candidates = candidates;
@@ -274,6 +293,7 @@ class JdbcOkxPrivateCredentialExecutorTest {
         @SuppressWarnings("unchecked")
         public <T> T queryForObject(String query, Class<T> requiredType, Object... args) {
             sql.add(query);
+            arguments.add(Arrays.copyOf(args, args.length));
             if (Integer.class.equals(requiredType)) {
                 return (T) Integer.valueOf(candidates);
             }

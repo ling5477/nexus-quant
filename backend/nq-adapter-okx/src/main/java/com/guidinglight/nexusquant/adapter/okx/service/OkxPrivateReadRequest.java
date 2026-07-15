@@ -19,7 +19,8 @@ public record OkxPrivateReadRequest(
         String instrumentId,
         Instant begin,
         Instant end,
-        int limit
+        int limit,
+        String expectedIp
 ) {
     private static final Pattern CURRENCY = Pattern.compile("[A-Z0-9]{2,12}");
     private static final Pattern SPOT_SYMBOL = Pattern.compile("[A-Z0-9]{2,12}-[A-Z0-9]{2,12}");
@@ -33,46 +34,61 @@ public record OkxPrivateReadRequest(
         instrumentId = canonicalInstrument(operation, instrumentId);
         validateWindow(operation, begin, end);
         limit = canonicalLimit(operation, limit);
+        expectedIp = canonicalExpectedIp(operation, expectedIp);
     }
 
-    /** 保留 GateW-2 构造合同；reconciliation operation 必须使用命名工厂。 */
+    /**
+     * 保留 GateW-2 构造合同；reconciliation operation 必须使用命名工厂。
+     */
     public OkxPrivateReadRequest(OkxPrivateReadOperation operation, List<String> currencies) {
-        this(operation, currencies, null, null, null, 0);
+        this(operation, currencies, null, null, null, 0, null);
     }
 
     public static OkxPrivateReadRequest accountConfiguration() {
         return new OkxPrivateReadRequest(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ, List.of());
     }
 
+    /**
+     * 为 permission hard gate 构造带服务端预期 IP 的 account/config typed request。
+     */
+    public static OkxPrivateReadRequest accountConfiguration(String expectedIp) {
+        return new OkxPrivateReadRequest(
+                OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                List.of(), null, null, null, 0, expectedIp
+        );
+    }
+
     public static OkxPrivateReadRequest accountBalance(Collection<String> currencies) {
         return new OkxPrivateReadRequest(
                 OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ,
-                currencies == null ? List.of() : List.copyOf(currencies)
+                currencies == null ? List.of() : List.copyOf(currencies), null, null, null, 0, null
         );
     }
 
     public static OkxPrivateReadRequest openOrders(String instrumentId, int limit) {
         return new OkxPrivateReadRequest(
                 OkxPrivateReadOperation.OKX_SPOT_OPEN_ORDERS_READ,
-                List.of(), instrumentId, null, null, limit
+                List.of(), instrumentId, null, null, limit, null
         );
     }
 
     public static OkxPrivateReadRequest orderHistory(String instrumentId, Instant begin, Instant end, int limit) {
         return new OkxPrivateReadRequest(
                 OkxPrivateReadOperation.OKX_SPOT_ORDER_HISTORY_READ,
-                List.of(), instrumentId, begin, end, limit
+                List.of(), instrumentId, begin, end, limit, null
         );
     }
 
     public static OkxPrivateReadRequest recentFills(String instrumentId, Instant begin, Instant end, int limit) {
         return new OkxPrivateReadRequest(
                 OkxPrivateReadOperation.OKX_SPOT_RECENT_FILLS_READ,
-                List.of(), instrumentId, begin, end, limit
+                List.of(), instrumentId, begin, end, limit, null
         );
     }
 
-    /** 返回同时参与签名和发送的确定性 path；值已通过窄 schema 校验，无通用 URL encoder。 */
+    /**
+     * 返回同时参与签名和发送的确定性 path；值已通过窄 schema 校验，无通用 URL encoder。
+     */
     public String pathWithQuery() {
         return switch (operation) {
             case OKX_ACCOUNT_CONFIGURATION_READ -> operation.path();
@@ -143,7 +159,8 @@ public record OkxPrivateReadRequest(
         boolean required = operation == OkxPrivateReadOperation.OKX_SPOT_ORDER_HISTORY_READ
                 || operation == OkxPrivateReadOperation.OKX_SPOT_RECENT_FILLS_READ;
         if (!required) {
-            if (begin != null || end != null) throw new IllegalArgumentException("operation does not accept time window");
+            if (begin != null || end != null)
+                throw new IllegalArgumentException("operation does not accept time window");
             return;
         }
         Objects.requireNonNull(begin, "begin must not be null");
@@ -164,5 +181,15 @@ public record OkxPrivateReadRequest(
             throw new IllegalArgumentException("record limit must be between 1 and 100");
         }
         return candidate;
+    }
+
+    private static String canonicalExpectedIp(OkxPrivateReadOperation operation, String candidate) {
+        if (operation != OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ) {
+            if (candidate != null) {
+                throw new IllegalArgumentException("operation does not accept expectedIp");
+            }
+            return null;
+        }
+        return candidate == null ? null : OkxIpAddressNormalizer.normalizeLiteral(candidate);
     }
 }

@@ -12,6 +12,9 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionOperations;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -52,7 +55,79 @@ class CredentialPermissionProbeServiceTest {
         assertEquals("READ_ONLY", successAuditMetadata.get("detectedScope").asText());
         assertEquals("PASSED", successAuditMetadata.get("ipAllowlistStatus").asText());
         assertEquals(1, port.calls);
+        assertEquals(2, fixture.transactions.executions);
+        assertFalse(fixture.transactions.active);
         assertFalse(fixture.repository.auditLogs.stream().anyMatch(log -> containsSensitive(log.metadataJson())));
+    }
+
+    @Test
+    void executesPortBetweenTwoShortTransactions() {
+        Fixture fixture = new Fixture("SIM");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
+        boolean[] calledInsideTransaction = {true};
+        ExchangeCredentialPermissionProbePort port = request -> {
+            calledInsideTransaction[0] = fixture.transactions.active;
+            return ExchangeCredentialPermissionProbeResult.succeeded(
+                    "OKX", "OKX_API_V5", "READ_ONLY", "PASSED", "req-tx", request.traceId(),
+                    fixedClock.instant(), fixedClock.instant()
+            );
+        };
+
+        CredentialPermissionProbeSummary summary = fixture.service(port).probe(
+                1L, fixture.account.exchangeAccountId(), credential.credentialId(),
+                "admin", paperCommand(), "trace-tx"
+        );
+
+        assertEquals("SUCCEEDED", summary.permissionProbeStatus());
+        assertFalse(calledInsideTransaction[0]);
+        assertEquals(2, fixture.transactions.executions);
+    }
+
+    @Test
+    void writebackConflictNeverReturnsSuccess() {
+        Fixture fixture = new Fixture("SIM");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
+        fixture.repository.finalWriteAllowed = false;
+
+        IllegalStateException conflict = assertThrows(IllegalStateException.class, () -> fixture.service(
+                RecordingProbePort.success("READ_ONLY")
+        ).probe(1L, fixture.account.exchangeAccountId(), credential.credentialId(),
+                "admin", paperCommand(), "trace-writeback-conflict"));
+
+        assertEquals("permission probe result writeback conflict", conflict.getMessage());
+        assertEquals(List.of("PERMISSION_PROBE_STARTED"),
+                fixture.repository.auditLogs.stream().map(AuditLog::eventType).toList());
+    }
+
+    @Test
+    void controlledReadonlyPortMayInspectLiveCredentialWithoutTradingAuthorization() {
+        Fixture fixture = new Fixture("LIVE");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
+        ExchangeCredentialPermissionProbePort port = new ExchangeCredentialPermissionProbePort() {
+            @Override
+            public boolean supportsControlledLiveReadOnlyProbe() {
+                return true;
+            }
+
+            @Override
+            public ExchangeCredentialPermissionProbeResult probe(ExchangeCredentialPermissionProbeRequest request) {
+                assertEquals("LIVE", request.tradeEnv());
+                assertEquals(1L, request.ownerUserId());
+                return ExchangeCredentialPermissionProbeResult.succeeded(
+                        "OKX", "OKX_API_V5", "READ_ONLY", "PASSED", "req-live-read", request.traceId(),
+                        fixedClock.instant(), fixedClock.instant()
+                );
+            }
+        };
+
+        CredentialPermissionProbeSummary summary = fixture.service(port).probe(
+                1L, fixture.account.exchangeAccountId(), credential.credentialId(),
+                "admin", paperCommand(), "trace-live-read"
+        );
+
+        assertEquals("SUCCEEDED", summary.permissionProbeStatus());
+        assertEquals("READ_ONLY", summary.permissionScope());
+        assertFalse(summary.withdrawEnabled());
     }
 
     @Test
@@ -68,6 +143,23 @@ class CredentialPermissionProbeServiceTest {
         assertEquals("AUTH_FAILED", summary.sanitizedErrorCategory());
         assertEquals(1, summary.failedAuthCount());
         assertEquals(List.of("PERMISSION_PROBE_STARTED", "PERMISSION_PROBE_FAILED"), fixture.repository.auditLogs.stream().map(AuditLog::eventType).toList());
+    }
+
+    @Test
+    void failureWithoutPermissionObservationPreservesLastKnownRiskFacts() {
+        Fixture fixture = new Fixture("SIM");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true)
+                .withPermissionScope("TRADE"));
+
+        CredentialPermissionProbeSummary summary = fixture.service(
+                RecordingProbePort.failed("AUTH_FAILED", "UNKNOWN")
+        ).probe(1L, fixture.account.exchangeAccountId(), credential.credentialId(),
+                "admin", paperCommand(), "trace-preserve-risk");
+
+        assertEquals("FAILED", summary.permissionProbeStatus());
+        assertEquals("TRADE", summary.permissionScope());
+        assertFalse(summary.withdrawEnabled());
+        assertEquals("UNKNOWN", summary.ipAllowlistProbeStatus());
     }
 
     @Test
@@ -164,7 +256,7 @@ class CredentialPermissionProbeServiceTest {
 
         assertEquals("credential permission probe already in progress", conflict.getMessage());
         assertEquals(0, port.calls);
-        assertEquals(List.of("PERMISSION_PROBE_SKIPPED"), fixture.repository.auditLogs.stream().map(AuditLog::eventType).toList());
+        assertTrue(fixture.repository.auditLogs.isEmpty());
     }
 
     @Test
@@ -234,6 +326,7 @@ class CredentialPermissionProbeServiceTest {
         private final ExchangeAccountSummary account;
         private final InMemoryExchangeAccountRepository accountRepository;
         private final InMemoryExchangeAccountCredentialRepository repository = new InMemoryExchangeAccountCredentialRepository();
+        private final RecordingTransactions transactions = new RecordingTransactions();
 
         private Fixture(String tradeEnv) {
             this.account = new ExchangeAccountSummary(900001L, 900001L, 1L, "OKX", tradeEnv, "demo", null, true, "ACTIVE");
@@ -245,7 +338,9 @@ class CredentialPermissionProbeServiceTest {
         }
 
         private CredentialPermissionProbeService service(ExchangeCredentialPermissionProbePort port) {
-            return new CredentialPermissionProbeService(accountRepository, repository, port, objectMapper, fixedClock);
+            return new CredentialPermissionProbeService(
+                    accountRepository, repository, port, objectMapper, fixedClock, transactions
+            );
         }
     }
 
@@ -256,21 +351,61 @@ class CredentialPermissionProbeServiceTest {
             this.account = account;
         }
 
-        @Override public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) { return List.of(account); }
-        @Override public Optional<ExchangeAccountSummary> findById(Long exchangeAccountId) { return Optional.of(account).filter(item -> item.exchangeAccountId().equals(exchangeAccountId)); }
-        @Override public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) { return Optional.of(account).filter(item -> item.ownerUserId().equals(ownerUserId) && item.exchangeAccountId().equals(exchangeAccountId)); }
-        @Override public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) { return Optional.of(account); }
-        @Override public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean updateProfile(Long ownerUserId, Long exchangeAccountId, String accountAlias, String externalAccountRef, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean enable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
+        @Override
+        public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) {
+            return List.of(account);
+        }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findById(Long exchangeAccountId) {
+            return Optional.of(account).filter(item -> item.exchangeAccountId().equals(exchangeAccountId));
+        }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) {
+            return Optional.of(account).filter(item -> item.ownerUserId().equals(ownerUserId) && item.exchangeAccountId().equals(exchangeAccountId));
+        }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) {
+            return Optional.of(account);
+        }
+
+        @Override
+        public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean updateProfile(Long ownerUserId, Long exchangeAccountId, String accountAlias, String externalAccountRef, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean enable(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static final class InMemoryExchangeAccountCredentialRepository implements ExchangeAccountCredentialRepository {
         private final Map<Long, ExchangeAccountCredentialMaterial> storage = new LinkedHashMap<>();
         private final List<AuditLog> auditLogs = new ArrayList<>();
+        private boolean finalWriteAllowed = true;
         private long nextId = 0L;
 
         private ExchangeAccountCredentialMaterial seed(Long exchangeAccountId, CredentialBuilder builder) {
@@ -279,21 +414,80 @@ class CredentialPermissionProbeServiceTest {
             return material;
         }
 
-        @Override public List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).map(ExchangeAccountCredentialMaterial::toSummary).toList(); }
-        @Override public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId, String credentialType) { return listActiveSummaries(ownerUserId, exchangeAccountId).stream().filter(item -> item.credentialType().equals(credentialType)).findFirst(); }
-        @Override public Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType) { return findActiveSummary(1L, exchangeAccountId, credentialType); }
-        @Override public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId, String credentialType) { return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.credentialType().equals(credentialType) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst(); }
-        @Override public Optional<ExchangeAccountCredentialSummary> findByCredentialIdForOwner(Long ownerUserId, Long exchangeAccountId, Long credentialId) { return Optional.ofNullable(storage.get(credentialId)).filter(item -> item.exchangeAccountId().equals(exchangeAccountId)).map(ExchangeAccountCredentialMaterial::toSummary); }
-        @Override public Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(Long ownerUserId, Long exchangeAccountId, Long credentialId) { return findByCredentialIdForOwner(ownerUserId, exchangeAccountId, credentialId).filter(item -> item.isActive() && "ACTIVE".equals(item.credentialStatus())); }
-        @Override public Optional<ExchangeAccountCredentialMaterial> findByCredentialIdForOwnerForUpdate(Long ownerUserId, Long exchangeAccountId, Long credentialId) { return Optional.ofNullable(storage.get(credentialId)).filter(item -> item.exchangeAccountId().equals(exchangeAccountId)); }
-        @Override public boolean existsOtherActiveCredential(Long exchangeAccountId, String credentialType, Long excludedCredentialId) { return false; }
-        @Override public void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt) { throw new UnsupportedOperationException(); }
-        @Override public ExchangeAccountCredentialSummary insertNewVersion(Long exchangeAccountId, String credentialType, String encryptedPayloadJson, int keyVersion, String cipherSuite, String maskedAccessKey, Long rotatedFromCredentialId, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean markVerificationResult(Long credentialId, String verificationStatus, Instant verifiedAt, String lastVerificationError, Instant updatedAt) { throw new UnsupportedOperationException(); }
-        @Override public boolean markEnabled(Long credentialId, Long exchangeAccountId, String verificationStatus, Instant verifiedAt, Instant updatedAt) { throw new UnsupportedOperationException(); }
-        @Override public boolean updateLifecycleStatus(Long credentialId, Long exchangeAccountId, String credentialStatus, boolean active, Instant revokedAt, String revokedBy, String revokeReason, Instant updatedAt) { throw new UnsupportedOperationException(); }
-        @Override public boolean markRotated(Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt) { throw new UnsupportedOperationException(); }
-        @Override public void appendCredentialAuditLog(Long credentialId, Long exchangeAccountId, String eventType, String actor, String reason, String metadataJson, Instant createdAt) { auditLogs.add(new AuditLog(credentialId, exchangeAccountId, eventType, actor, reason, metadataJson, createdAt)); }
+        @Override
+        public List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId) {
+            return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).map(ExchangeAccountCredentialMaterial::toSummary).toList();
+        }
+
+        @Override
+        public Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId, String credentialType) {
+            return listActiveSummaries(ownerUserId, exchangeAccountId).stream().filter(item -> item.credentialType().equals(credentialType)).findFirst();
+        }
+
+        @Override
+        public Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType) {
+            return findActiveSummary(1L, exchangeAccountId, credentialType);
+        }
+
+        @Override
+        public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId, String credentialType) {
+            return storage.values().stream().filter(item -> item.exchangeAccountId().equals(exchangeAccountId) && item.credentialType().equals(credentialType) && item.isActive() && "ACTIVE".equals(item.credentialStatus())).findFirst();
+        }
+
+        @Override
+        public Optional<ExchangeAccountCredentialSummary> findByCredentialIdForOwner(Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+            return Optional.ofNullable(storage.get(credentialId)).filter(item -> item.exchangeAccountId().equals(exchangeAccountId)).map(ExchangeAccountCredentialMaterial::toSummary);
+        }
+
+        @Override
+        public Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+            return findByCredentialIdForOwner(ownerUserId, exchangeAccountId, credentialId).filter(item -> item.isActive() && "ACTIVE".equals(item.credentialStatus()));
+        }
+
+        @Override
+        public Optional<ExchangeAccountCredentialMaterial> findByCredentialIdForOwnerForUpdate(Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+            return Optional.ofNullable(storage.get(credentialId)).filter(item -> item.exchangeAccountId().equals(exchangeAccountId));
+        }
+
+        @Override
+        public boolean existsOtherActiveCredential(Long exchangeAccountId, String credentialType, Long excludedCredentialId) {
+            return false;
+        }
+
+        @Override
+        public void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ExchangeAccountCredentialSummary insertNewVersion(Long exchangeAccountId, String credentialType, String encryptedPayloadJson, int keyVersion, String cipherSuite, String maskedAccessKey, Long rotatedFromCredentialId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean markVerificationResult(Long credentialId, String verificationStatus, Instant verifiedAt, String lastVerificationError, Instant updatedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean markEnabled(Long credentialId, Long exchangeAccountId, String verificationStatus, Instant verifiedAt, Instant updatedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean updateLifecycleStatus(Long credentialId, Long exchangeAccountId, String credentialStatus, boolean active, Instant revokedAt, String revokedBy, String revokeReason, Instant updatedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean markRotated(Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void appendCredentialAuditLog(Long credentialId, Long exchangeAccountId, String eventType, String actor, String reason, String metadataJson, Instant createdAt) {
+            auditLogs.add(new AuditLog(credentialId, exchangeAccountId, eventType, actor, reason, metadataJson, createdAt));
+        }
 
         @Override
         public boolean markPermissionProbeInProgress(Long credentialId, Long exchangeAccountId, Instant updatedAt) {
@@ -306,12 +500,18 @@ class CredentialPermissionProbeServiceTest {
         }
 
         @Override
-        public boolean markPermissionProbeResult(Long credentialId, Long exchangeAccountId, String permissionProbeStatus, String permissionScope, String ipAllowlistProbeStatus, Instant lastPermissionProbeAt, String lastPermissionProbeError, boolean incrementFailedAuthCount, Instant updatedAt) {
+        public boolean markPermissionProbeResult(Long credentialId, Long exchangeAccountId, String permissionProbeStatus,
+                                                 String permissionScope, boolean withdrawEnabled,
+                                                 boolean ipAllowlistRequired, String ipAllowlistProbeStatus,
+                                                 Instant lastPermissionProbeAt, String lastPermissionProbeError,
+                                                 boolean incrementFailedAuthCount, Instant updatedAt) {
             ExchangeAccountCredentialMaterial current = storage.get(credentialId);
-            if (current == null) {
+            if (!finalWriteAllowed || current == null || !"IN_PROGRESS".equals(current.permissionProbeStatus())) {
                 return false;
             }
-            storage.put(credentialId, copy(current, permissionProbeStatus, permissionScope, current.withdrawEnabled(), ipAllowlistProbeStatus, current.failedAuthCount() + (incrementFailedAuthCount ? 1 : 0), lastPermissionProbeAt, lastPermissionProbeError, updatedAt));
+            storage.put(credentialId, copy(current, permissionProbeStatus, permissionScope, withdrawEnabled,
+                    ipAllowlistProbeStatus, current.failedAuthCount() + (incrementFailedAuthCount ? 1 : 0),
+                    lastPermissionProbeAt, lastPermissionProbeError, updatedAt));
             return true;
         }
 
@@ -340,6 +540,22 @@ class CredentialPermissionProbeServiceTest {
         public ExchangeCredentialPermissionProbeResult probe(ExchangeCredentialPermissionProbeRequest request) {
             calls++;
             return result;
+        }
+    }
+
+    private static final class RecordingTransactions implements TransactionOperations {
+        private int executions;
+        private boolean active;
+
+        @Override
+        public <T> T execute(TransactionCallback<T> action) {
+            executions++;
+            active = true;
+            try {
+                return action.doInTransaction(new SimpleTransactionStatus());
+            } finally {
+                active = false;
+            }
         }
     }
 
@@ -403,6 +619,7 @@ class CredentialPermissionProbeServiceTest {
         }
     }
 
-    private record AuditLog(Long credentialId, Long exchangeAccountId, String eventType, String actor, String reason, String metadataJson, Instant createdAt) {
+    private record AuditLog(Long credentialId, Long exchangeAccountId, String eventType, String actor, String reason,
+                            String metadataJson, Instant createdAt) {
     }
 }

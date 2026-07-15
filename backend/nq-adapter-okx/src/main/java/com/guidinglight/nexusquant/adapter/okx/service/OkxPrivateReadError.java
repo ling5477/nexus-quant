@@ -1,6 +1,8 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
-/** 脱敏、fail-closed 的 GateW-2 transport/probe 错误分类。 */
+/**
+ * 脱敏、fail-closed 的 GateW-2 transport/probe 错误分类。
+ */
 public enum OkxPrivateReadError {
     NETWORK_FAILURE,
     TIMEOUT,
@@ -10,6 +12,7 @@ public enum OkxPrivateReadError {
     HTTP_ERROR,
     OKX_PROVIDER_ERROR,
     AUTHENTICATION_FAILURE,
+    INVALID_API_KEY,
     SIGNATURE_FAILURE,
     IP_ALLOWLIST_FAILED,
     PERMISSION_BLOCKED,

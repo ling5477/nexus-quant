@@ -175,7 +175,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                 return result(operation, Set.of(), 0, false, List.of(), List.of());
             }
             if (operation == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ) {
-                return parseConfiguration(data.get(0), operation);
+                return parseConfiguration(data.get(0), request);
             }
             return parseBalance(data.get(0), operation);
         } catch (OkxPrivateReadException ex) {
@@ -186,7 +186,8 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
         }
     }
 
-    private OkxPrivateReadResult parseConfiguration(JsonNode row, OkxPrivateReadOperation operation) {
+    private OkxPrivateReadResult parseConfiguration(JsonNode row, OkxPrivateReadRequest request) {
+        OkxPrivateReadOperation operation = request.operation();
         String permissionText = text(row, "perm");
         if (permissionText == null || permissionText.isBlank()) {
             return new OkxPrivateReadResult(operation, Set.of(), 0, false);
@@ -201,6 +202,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
         // OKX 以空字符串表示当前 API key 未绑定 IP。这里只保留布尔事实，绝不把 allowlist 内容带出 transport。
         String ipAllowlist = text(row, "ip");
         boolean ipAllowlistConfigured = ipAllowlist != null && !ipAllowlist.isBlank();
+        OkxIpAllowlistStatus ipStatus = matchExpectedIp(request.expectedIp(), ipAllowlist);
         return new OkxPrivateReadResult(
                 operation,
                 permissions,
@@ -209,8 +211,35 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                 List.of(),
                 List.of(),
                 ipAllowlistConfigured,
+                ipStatus,
                 clock.instant()
         );
+    }
+
+    private static OkxIpAllowlistStatus matchExpectedIp(String expectedIp, String providerAllowlist) {
+        if (expectedIp == null) {
+            return OkxIpAllowlistStatus.NOT_CHECKED;
+        }
+        if (providerAllowlist == null) {
+            return OkxIpAllowlistStatus.UNKNOWN;
+        }
+        if (providerAllowlist.isBlank()) {
+            return OkxIpAllowlistStatus.MISSING;
+        }
+        boolean matched = false;
+        for (String token : providerAllowlist.split(",", -1)) {
+            if (token.isBlank()) {
+                return OkxIpAllowlistStatus.UNKNOWN;
+            }
+            final String normalized;
+            try {
+                normalized = OkxIpAddressNormalizer.normalizeLiteral(token);
+            } catch (IllegalArgumentException ex) {
+                return OkxIpAllowlistStatus.UNKNOWN;
+            }
+            matched |= expectedIp.equals(normalized);
+        }
+        return matched ? OkxIpAllowlistStatus.MATCHED : OkxIpAllowlistStatus.MISMATCHED;
     }
 
     private OkxPrivateReadResult parseBalance(JsonNode row, OkxPrivateReadOperation operation) {
@@ -321,8 +350,11 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
             case "50011" -> OkxPrivateReadError.RATE_LIMITED;
             case "50101" -> OkxPrivateReadError.ENVIRONMENT_MISMATCH;
             case "50102" -> OkxPrivateReadError.CLOCK_SKEW;
+            case "50105" -> OkxPrivateReadError.AUTHENTICATION_FAILURE;
+            case "50110", "50035" -> OkxPrivateReadError.IP_ALLOWLIST_FAILED;
+            case "50111" -> OkxPrivateReadError.INVALID_API_KEY;
             case "50113" -> OkxPrivateReadError.SIGNATURE_FAILURE;
-            case "50035" -> OkxPrivateReadError.IP_ALLOWLIST_FAILED;
+            case "50120" -> OkxPrivateReadError.PERMISSION_BLOCKED;
             default -> OkxPrivateReadError.OKX_PROVIDER_ERROR;
         };
     }
@@ -426,7 +458,9 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
         return value == null || value.isBlank() ? null : value.trim();
     }
 
-    /** 接收过程中即执行 byte cap；超限后取消 subscription，避免先无界缓冲再检查。 */
+    /**
+     * 接收过程中即执行 byte cap；超限后取消 subscription，避免先无界缓冲再检查。
+     */
     static final class LimitedBodySubscriber implements HttpResponse.BodySubscriber<byte[]> {
         private final int limit;
         private final byte[] buffer;

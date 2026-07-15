@@ -11861,3 +11861,17 @@ Known warning：`docs/current/TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有
 已知 warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3、不阻断。早期定向测试命令两次因 PowerShell `-D` quoting 未进入 Maven；RCA 后用单引号参数重跑并通过。开发中一次 test compile 可见性错误与一次脱敏误判已最小修复并由最终 passing runs 覆盖。
 
 未运行：真实 PostgreSQL soak DB bootstrap、真实 credential 解密、真实 OKX private endpoint、首条 real sample、7-day acceptance、frontend、Python。阻断性：本地 harness 无 blocker；commit/push/exact-head CI 与 runtime hard gate 未完成前不得启动 soak或宣称 freeze ready。
+
+## 2026-07-15 — GateW freeze blocker-2 OKX real read-only permission probe
+
+结论：`PASS / OKX_REAL_READONLY_PERMISSION_PROBE_IMPLEMENTED / ATOMIC_METADATA_WRITEBACK_PROVEN / READY_TO_COMMIT`（通过 / 只读 permission probe 已实现 / 原子写回已证明 / 可提交）；真实 Key、OKX、服务器和 soak 均未运行，exact-head CI 待 commit/push。
+
+| Command | Result | Scope / Environment |
+| --- | --- | --- |
+| IntelliJ errors-only inspection | PASS | 23 个修改/新增 Java 文件，errors=0 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app,nq-adapter-api,nq-adapter-okx -am test` | PASS | 23/23 modules SUCCESS；BUILD SUCCESS；`CI=true`、no-outbound=true、LIVE/AI/DH/real-exchange disabled |
+| `mvn -f backend/pom.xml test` | PASS | 23/23 modules SUCCESS；BUILD SUCCESS；同一安全环境 |
+| authority/archive/link checkers | PASS | current authority consistent；GateV archive manifest complete；docs/current 111 links、0 errors、1 个既有 historical warning |
+| credential/forbidden scope scan | PASS | 29 changed paths；forbidden paths=0；direct credential env/raw leak additions=0 |
+
+已知 warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3、不阻断。未运行 frontend/Python（无 diff）、真实 PostgreSQL、真实 credential、OKX HTTP、服务器部署和 soak。阻断性：本地实现无 P0/P1；implementation commit 的 exact-head CI 通过前不得进入 attempt-05。
