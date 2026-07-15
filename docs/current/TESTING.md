@@ -11875,3 +11875,24 @@ Known warning：`docs/current/TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有
 | credential/forbidden scope scan | PASS | 29 changed paths；forbidden paths=0；direct credential env/raw leak additions=0 |
 
 已知 warnings：既有 SLF4J NOP 与 Mockito dynamic-agent/JDK future warning，P3、不阻断。未运行 frontend/Python（无 diff）、真实 PostgreSQL、真实 credential、OKX HTTP、服务器部署和 soak。阻断性：本地实现无 P0/P1；implementation commit 的 exact-head CI 通过前不得进入 attempt-05。
+
+## 2026-07-15 — GateW OKX read-only soak server bootstrap attempt-05
+
+结论：`BLOCKED / OKX_REJECTED / HTTP_ERROR`（阻断 / OKX 请求未取得可接受结果 / HTTP 错误）；credential 已密文录入，但 permission/IP hard gate 未通过，168 小时 soak 为 `NOT_STARTED`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| fixed commit exact-head CI | PASS | `013620eb95ed88116f8aee209f986fe279d6835f`；run `29428210696 / completed / success / 10 jobs / bad=0` |
+| SSH / listener / health inventory | PASS | hostname exact；NQ `127.0.0.1:18889` health `UP`；PostgreSQL `127.0.0.1:55432`；旧 workloads stopped |
+| artifact verification | PASS | JAR local/remote SHA-256 `0972cce1...b336cb3`；server sparse repo exact fixed commit |
+| PostgreSQL / Flyway | PASS | isolated `nq_gatew_okx_readonly_soak`；V1→V35 `35/35`；`GLOBAL_TRADING / ENGAGED / 1` |
+| credential DB aggregate | PASS | rows/active/encrypted=`1/1/1`；active conflict=0；direct secret env fields absent；secret exposure count=0 |
+| real `GET /api/v5/account/config` | BLOCKED | DB=`FAILED / HTTP_ERROR`；Read/Trade/Withdraw/IP=`NOT_VERIFIED / NOT_VERIFIED / NOT_VERIFIED / UNKNOWN` |
+| atomic metadata writeback | PASS | `last_permission_probe_at` non-null；residual `IN_PROGRESS=0`；STARTED/FAILED audit=`1/1` |
+| supervisor self-test | PASS | `cases=11`；hash chain/append-only/resume/duplicate/detached/cleanup/no-private-network checks PASS |
+| soak evidence | NOT STARTED | runId/PID/manifest/sample/heartbeat=`NONE/NONE/0/0/NOT_CREATED`；final-summary count=0 |
+| docs validation | PASS | `git diff --check`、current authority、docs/current links 与 forbidden-scope checks 全部通过；staged checks 在精确暂存后执行 |
+
+已知 warnings：server `nqgatew` GitHub CLI 未认证；Spring profile composition 无法直接形成 datasource + real read-only probe 的受支持 management runtime；一次性 launcher 在 DB 写回后因缺 JSR-310 module 序列化失败；supervisor remote checkout byte hash 与 canonical Git-content hash存在 EOL representation 差异；服务器内存余量有限。
+
+未运行：`GET /api/v5/account/balance`、真实 sample、168 小时 soak、frontend/Python/Maven rerun。阻断性：permission/IP hard gate 和 server-side exact-head CI authentication 为 P1；不得重跑 probe、启动 soak或写 `READ_ONLY_VERIFIED`，直至独立 remediation 完成。

@@ -17644,3 +17644,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：无 API/scheduler/migration/POM/frontend/research/deploy/CI/archive/authority/交易写能力；LIVE/AI/DH/real provider 继续 disabled；GateW 未 freeze。
 - result：`PASS / OKX_REAL_READONLY_PERMISSION_PROBE_ACCEPTED / READY_TO_COMMIT`；commit/push/exact-head CI pending。
 - next：精确暂存并提交 `feat(account): add controlled OKX permission probe`，push `dev`，等待 exact-head `NQ CI Baseline` 10/10 GREEN；随后进入 server bootstrap `ATTEMPT_05`。
+
+## 2026-07-15 — GateW OKX read-only soak server bootstrap attempt-05
+
+- task：`NQ-GATEW-OKX-READONLY-SOAK-SERVER-DEPLOYMENT-AND-CREDENTIAL-BOOTSTRAP / ATTEMPT_05`；NQ-only、L 级 deployment/credential/real read-only validation。
+- baseline：`dev` clean；`HEAD == origin/dev == 013620eb...`；exact-head run `29428210696 / completed / success / 10 jobs / bad=0`；authority consistent。
+- deployment：server sparse repo detached fixed commit；JAR local/remote SHA-256 `0972cce1...b336cb3`；management app loopback health `UP`；isolated PostgreSQL V1→V35 `35/35`；`GLOBAL_TRADING / ENGAGED / 1`。
+- credential：用户授权根目录 ignored `.env`；三项 secret 只经内存/SSH stdin 传输，localhost API 创建 credential reference `1`；DB rows/active/encrypted=`1/1/1`，secret exposure count=0。
+- real probe：只调用一次 `GET /api/v5/account/config`；DB 最终 `FAILED / HTTP_ERROR`、permission scope NULL、IP UNKNOWN、`IN_PROGRESS=0`、STARTED/FAILED audit=`1/1`。Read/Trade/Withdraw/IP 均未验证。
+- harness：supervisor self-test `11/11 PASS`；runId/PID/manifest/sample/final-summary=`NONE/NONE/0/0/0`；168 小时 soak 未启动。
+- result：`BLOCKED / OKX_REJECTED / HTTP_ERROR`；P0=0。P1 为 permission/IP hard gate 与 server GitHub authentication；P2 为 Spring profile composition、内存余量和 supervisor EOL hash 口径；P3 为 launcher JSR-310 serialization。
+- boundary：无 production code/migration/Controller/scheduler/frontend/research/CI/allowlist/authority diff；无 balance/order/cancel/transfer/withdraw/LIVE/Shadow/AI/DH/private trading 调用或启用。
+- next：独立 remediation 先调查 `/account/config` 非 2xx 的脱敏原因并修复受支持的 runtime composition、server-side GitHub Actions read auth 与 launcher serialization；不得直接重跑 probe或启动 soak。Authority 保持 GateW `IN_PROGRESS|NOT_FROZEN`、GateW-FREEZE `NOT_STARTED`。
