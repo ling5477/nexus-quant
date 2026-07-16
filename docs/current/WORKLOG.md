@@ -17668,3 +17668,18 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`PASS / RUNTIME_REMEDIATION_ACCEPTED / SERVER_GITHUB_AUTHENTICATED / READY_TO_COMMIT`；P0=0、P1=0。Remediation commit/exact-head CI与服务器 deployment仍未执行，不提前写 `CI_GREEN` 或 deployment PASS。
 - boundary：无 API/scheduler/migration/POM/frontend/research/deploy/CI/archive/authority/交易能力 diff；LIVE disabled，permission probe未重跑，soak未启动。
 - next：精确暂存并完成 cached diff review，commit/push后等待 exact-head CI；CI green 后部署新 artifact做 localhost-only composition/serialization/hash验证，不重跑 permission probe、不启动 soak。
+
+## 2026-07-16 — GateW OKX read-only soak server bootstrap attempt-06
+
+- task：`NQ-GATEW-OKX-READONLY-SOAK-SERVER-DEPLOYMENT-AND-CREDENTIAL-BOOTSTRAP / ATTEMPT_06`；NQ-only、L级 deployment/credential/real read-only validation。
+- baseline：`dev` clean；`HEAD == origin/dev == c758b875...`；exact-head run `29503663554 / completed / success / 10 jobs / bad=0`；authority consistent。
+- server：NTP yes；公网 listener仅 SSH；management/PostgreSQL loopback；旧 workloads stopped；`nqgatew` GitHub Actions read auth PASS；fixed supervisor blob `dd842be...`、JAR SHA-256 `09adc29f...`。
+- composition：发现 management进程早于 fixed JAR落盘且两个 direct read-only properties=false覆盖 profile；经 loopback smoke后原子修复配置并重启，Real permission port loaded、NoReal absent、health UP、startup network=0；owner-only rollback backup已保留。
+- credential：复用现有1条 ACTIVE encrypted credential；rows/active/encrypted=`1/1/1`、conflict=0；未重新录入/轮换/展示；direct secret与raw shape count=0。
+- permission：本轮只执行一次真实 `GET /api/v5/account/config`，无重试；`SUCCESS_2XX / SUCCEEDED / READ_ONLY / withdraw=false / IP PASSED`；原子写回 `IN_PROGRESS=0`，STARTED/SUCCEEDED各新增1、FAILED不新增。
+- self-test：fixed supervisor 15/15 PASS；persistent self-test run/evidence/final-summary=`0/0/0`。
+- start：唯一 run `gatew-soak-20260716T145410Z-230ae5be` 在首 cycle evidence写入触发 `SOAK_LAUNCHER_FAILED`；hash-chain PASS、supervisor/run-loop=0、kill switch `ENGAGED / version=3`、final-summary absent；168小时 soak `NOT_STARTED`。
+- RCA：成功 sample category=`ACCOUNT_CONFIG_AND_BALANCE_READ`，同一 launcher sanitizer却拒绝任意 `balance` 子串；fallback sample不能证明真实 cycle outcome，不能启动 acceptance clock。
+- result：`BLOCKED / REAL_OKX_READONLY_PERMISSION_VERIFIED / ATOMIC_METADATA_WRITEBACK_VERIFIED / SOAK_LAUNCHER_FAILED / REAL_OKX_READONLY_SOAK_NOT_STARTED`；P0=0、P1=2。
+- boundary：无 backend/frontend/research/scripts/deploy/.github/migration/contract/allowlist/authority diff；无 LIVE/order/cancel/transfer/withdraw/scheduler/Shadow/AI/DH写侧；未覆盖 attempt-01..05。
+- next：`NQ-GATEW-FREEZE-BLOCKER-1-SOAK-LAUNCHER-EVIDENCE-SANITIZER-REMEDIATION`；修复并补 regression、exact-head CI/deploy后由 `ATTEMPT_07` start。不得重跑 permission probe，不得进入七天 acceptance任务。

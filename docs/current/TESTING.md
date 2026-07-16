@@ -11916,3 +11916,25 @@ Known warning：`docs/current/TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有
 | remediation commit / exact-head CI / server deployment | NOT RUN / PENDING | conformance P1 未关闭前不得宣称通过 |
 
 测试使用 loopback fake HTTP server；真实 OKX calls=`0`，credential material读取=`0`。已知非阻断 warning 为既有 SLF4J NOP、Mockito dynamic-agent/JDK future warning与 checkout EOL warning。Frontend/Python 无 diff，未运行。
+
+## 2026-07-16 — GateW OKX read-only soak server bootstrap attempt-06
+
+结论：`BLOCKED / REAL_OKX_READONLY_PERMISSION_VERIFIED / ATOMIC_METADATA_WRITEBACK_VERIFIED / SOAK_LAUNCHER_FAILED / REAL_OKX_READONLY_SOAK_NOT_STARTED`（阻断 / 只读 permission已验证 / 原子写回已验证 / soak launcher失败 / 真实 soak未开始）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| local/server exact-head and CI | PASS | `dev` clean；`HEAD == origin/dev == c758b875...`；run `29503663554 / completed / success / 10 jobs / bad=0`；server `nqgatew`复核一致 |
+| authority checker | PASS | GateW `IN_PROGRESS|NOT_FROZEN`；GateW-FREEZE `NOT_STARTED`；authority errors=0 |
+| SSH/listener/resource inventory | PASS | NTP yes；公网 listener仅 SSH；NQ/PostgreSQL loopback；旧 workloads stopped；memory/swap/disk足够完成本 attempt |
+| fixed artifact | PASS | supervisor Git blob `dd842be...`；JAR SHA-256 `09adc29f...`；detached server repo tracked diff=0 |
+| corrected composition smoke | PASS | `127.0.0.1:18890`；Real port selected；NoReal absent；health UP；startup OKX calls=0；DB metadata/audit不变；临时进程已停止 |
+| existing encrypted credential | PASS | rows/active/encrypted=`1/1/1`；active conflict=0；direct secret columns/env=0；未录入、轮换或展示 credential |
+| single `GET /api/v5/account/config` | PASS | API 2xx；`SUCCEEDED / READ_ONLY / withdraw=false / IP PASSED`；credential fingerprint匹配；未重试 |
+| atomic metadata/audit | PASS | `updated_at`推进；`IN_PROGRESS=0`；STARTED/SUCCEEDED各新增1、FAILED不新增；forbidden/raw provider material=0 |
+| supervisor self-test | PASS | 15 cases；Git blob/artifact hash、hash-chain、append-only/resume/duplicate、cleanup/no-final-summary/no-private-network全部 PASS |
+| supervisor `start` | BLOCKED | run `gatew-soak-20260716T145410Z-230ae5be`；`BLOCKED / SOAK_LAUNCHER_FAILED`；supervisor/run-loop=0；kill switch `ENGAGED / version=3` |
+| blocked evidence verify | PASS | sample=1 fallback、failure=1、hash-chain PASS、secret/raw shape=0、`supervisor.json`/`final-summary.json` absent |
+
+RCA：`GateWOkxReadonlySoakCycleTest` 对成功 sample写 `ACCOUNT_CONFIG_AND_BALANCE_READ`，但 `writeSanitizedResult` 又拒绝任何含 `balance` 的 JSON；真实 cycle结果因此无法写入 `.cycle-*.json`，supervisor按设计生成 fallback `SOAK_LAUNCHER_FAILED`并 fail-closed ENGAGE。fallback不是有效 real sample，manifest `startedAt`不启动七天 acceptance clock。
+
+Known limitations：SSH前台输出在长 Maven cycle期间断开，但远端唯一 start已完整收口；未重发 start。没有修改代码，因此没有为该 RCA运行修复后 Maven回归。Frontend/Python无 diff，未运行。阻断性：P1；必须先修复 evidence sanitizer一致性、补 regression、完成新 exact-head CI与服务器部署，再由新 attempt启动；permission probe不得重跑。
