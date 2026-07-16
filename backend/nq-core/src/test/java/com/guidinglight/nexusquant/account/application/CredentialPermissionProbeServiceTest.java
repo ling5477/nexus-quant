@@ -94,7 +94,7 @@ class CredentialPermissionProbeServiceTest {
         ).probe(1L, fixture.account.exchangeAccountId(), credential.credentialId(),
                 "admin", paperCommand(), "trace-writeback-conflict"));
 
-        assertEquals("permission probe result writeback conflict", conflict.getMessage());
+        assertEquals("VERSION_CONFLICT", conflict.getMessage());
         assertEquals(List.of("PERMISSION_PROBE_STARTED"),
                 fixture.repository.auditLogs.stream().map(AuditLog::eventType).toList());
     }
@@ -159,7 +159,21 @@ class CredentialPermissionProbeServiceTest {
         assertEquals("FAILED", summary.permissionProbeStatus());
         assertEquals("TRADE", summary.permissionScope());
         assertFalse(summary.withdrawEnabled());
-        assertEquals("UNKNOWN", summary.ipAllowlistProbeStatus());
+        assertEquals("NOT_CHECKED", summary.ipAllowlistProbeStatus());
+    }
+
+    @Test
+    void auditFailureReturnsAtomicWritebackCategory() {
+        Fixture fixture = new Fixture("SIM");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
+        fixture.repository.auditWriteAllowed = false;
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, () -> fixture.service(
+                RecordingProbePort.success("READ_ONLY")
+        ).probe(1L, fixture.account.exchangeAccountId(), credential.credentialId(),
+                "admin", paperCommand(), "trace-atomic-writeback"));
+
+        assertEquals("ATOMIC_WRITEBACK_FAILED", failure.getMessage());
     }
 
     @Test
@@ -406,6 +420,7 @@ class CredentialPermissionProbeServiceTest {
         private final Map<Long, ExchangeAccountCredentialMaterial> storage = new LinkedHashMap<>();
         private final List<AuditLog> auditLogs = new ArrayList<>();
         private boolean finalWriteAllowed = true;
+        private boolean auditWriteAllowed = true;
         private long nextId = 0L;
 
         private ExchangeAccountCredentialMaterial seed(Long exchangeAccountId, CredentialBuilder builder) {
@@ -486,6 +501,9 @@ class CredentialPermissionProbeServiceTest {
 
         @Override
         public void appendCredentialAuditLog(Long credentialId, Long exchangeAccountId, String eventType, String actor, String reason, String metadataJson, Instant createdAt) {
+            if (!auditWriteAllowed && !"PERMISSION_PROBE_STARTED".equals(eventType)) {
+                throw new IllegalStateException("synthetic audit failure");
+            }
             auditLogs.add(new AuditLog(credentialId, exchangeAccountId, eventType, actor, reason, metadataJson, createdAt));
         }
 

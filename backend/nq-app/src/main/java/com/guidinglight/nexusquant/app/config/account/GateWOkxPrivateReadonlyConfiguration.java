@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 
 import java.time.Clock;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,11 +20,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /**
  * GateW-2 显式 composition root。
  *
- * <p>只有 profile=gatew-okx-readonly、feature flag=true 且 LIVE=false 时装配；Bean 创建不读取
- * credential、不执行 probe、不访问网络，也不注册 scheduler/runner/mutating adapter。</p>
+ * <p>只有受控 read-only profile、feature flag=true，且 CI/no-outbound/LIVE/交易写侧全部显式关闭时装配；
+ * Bean 创建不读取 credential、不执行 probe、不访问网络，也不注册 scheduler/runner/mutating adapter。</p>
  */
 @Configuration
-@Profile("gatew-okx-readonly")
+@Profile({"gatew-okx-readonly", "gatew-okx-readonly-soak"})
 @ConditionalOnProperty(
         prefix = "nq.gatew.okx-private-readonly",
         name = "enabled",
@@ -32,7 +33,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 )
 @ConditionalOnProperty(
         prefix = "nq.env-safety",
-        name = "live-enabled",
+        name = {"ci", "live-enabled", "real-exchange-enabled", "real-client-enabled", "real-provider-enabled"},
+        havingValue = "false",
+        matchIfMissing = false
+)
+@ConditionalOnProperty(
+        prefix = "nq.env-safety",
+        name = "no-outbound",
+        havingValue = "false",
+        matchIfMissing = false
+)
+@ConditionalOnProperty(
+        prefix = "nq.gatew.okx-private-readonly",
+        name = {"order-submission-enabled", "transfer-enabled", "withdraw-enabled"},
         havingValue = "false",
         matchIfMissing = false
 )

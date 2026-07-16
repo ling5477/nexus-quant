@@ -1,0 +1,62 @@
+spring:
+  config:
+    activate:
+      on-profile: gatew-okx-readonly-soak
+  datasource:
+    # GateW server 只允许显式注入的 localhost PostgreSQL；缺少任一值时启动失败。
+    url: ${NQ_GATEW_SOAK_DB_URL}
+    username: ${NQ_GATEW_SOAK_DB_USER}
+    password: ${NQ_GATEW_SOAK_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  address: ${NQ_APP_BIND_ADDRESS:127.0.0.1}
+  port: ${NQ_APP_PORT:18889}
+
+nq:
+  env-safety:
+    ci: ${CI:false}
+    live-enabled: ${NQ_LIVE_ENABLED:false}
+    ai-enabled: ${NQ_AI_ENABLED:false}
+    dh-runtime-enabled: ${NQ_DH_RUNTIME_ENABLED:false}
+    real-provider-enabled: ${NQ_REAL_PROVIDER_ENABLED:false}
+    real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
+    real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
+    # 默认 true；只有受控 server attempt 显式 false 才可能装配 real read-only probe。
+    no-outbound: ${NQ_NO_OUTBOUND:true}
+  gatew:
+    okx-private-readonly:
+      enabled: ${NQ_GATEW_OKX_READONLY_SOAK_ENABLED:false}
+      order-submission-enabled: ${NQ_REAL_ORDER_SUBMISSION_ENABLED:false}
+      transfer-enabled: ${NQ_TRANSFER_ENABLED:false}
+      withdraw-enabled: ${NQ_WITHDRAW_ENABLED:false}
+      permission-probe:
+        enabled: ${NQ_GATEW_OKX_PERMISSION_PROBE_ENABLED:false}
+        expected-ip: ${NQ_GATEW_OKX_EXPECTED_IP:}
+  account:
+    credentials:
+      master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY}
+      key-version: ${NQ_ACCOUNT_CREDENTIALS_KEY_VERSION:1}
+      verification-mode: ${NQ_ACCOUNT_CREDENTIALS_VERIFICATION_MODE:STRUCTURAL}
+  security:
+    issuer: ${NQ_SECURITY_ISSUER:nexus-quant-gatew-soak}
+    secret: ${NQ_SECURITY_SECRET}
+    access-token-ttl: ${NQ_SECURITY_ACCESS_TOKEN_TTL:PT1H}
+    users: [ ]
+  instrument:
+    catalog-sync:
+      enabled: false
+  okx:
+    adapter:
+      # 既有交易 adapter 只能形成 readiness-blocked stub，不能触达真实 order path。
+      stub-on-bootstrap-failure: true
+    recovery:
+      enabled: false
+    ws:
+      enabled: false
+  binance:
+    ws:
+      enabled: false

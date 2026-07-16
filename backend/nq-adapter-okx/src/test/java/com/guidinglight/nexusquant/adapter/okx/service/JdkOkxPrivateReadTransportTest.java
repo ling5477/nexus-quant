@@ -1,10 +1,15 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -173,7 +178,7 @@ class JdkOkxPrivateReadTransportTest {
                 OkxPrivateReadException.class,
                 () -> execute(malformed, OkxPrivateReadRequest.accountConfiguration(), OkxPrivateEnvironment.PRODUCTION)
         );
-        assertEquals(OkxPrivateReadError.MALFORMED_RESPONSE, malformedException.category());
+        assertEquals(OkxPrivateReadError.RESPONSE_PARSE_FAILED, malformedException.category());
         assertEquals(null, malformedException.getCause());
         assertFalse(malformedException.toString().contains(providerMarker));
         byte[] oversized = new byte[JdkOkxPrivateReadTransport.MAX_RESPONSE_BYTES + 1];
@@ -185,7 +190,7 @@ class JdkOkxPrivateReadTransportTest {
             calls.incrementAndGet();
             return response(400, "ignored");
         });
-        assertCategory(OkxPrivateReadError.HTTP_ERROR, noRetry);
+        assertCategory(OkxPrivateReadError.HTTP_UNEXPECTED_STATUS, noRetry);
         assertEquals(1, calls.get());
     }
 
@@ -198,33 +203,34 @@ class JdkOkxPrivateReadTransportTest {
             return new OkxPrivateHttpExchange.Response(500, body);
         });
 
-        assertCategory(OkxPrivateReadError.HTTP_ERROR, httpError);
+        assertCategory(OkxPrivateReadError.HTTP_SERVER_ERROR, httpError);
         assertEquals(1, calls.get());
         assertTrue(allZero(body));
 
         JdkOkxPrivateReadTransport timeout = transport((uri, headers, requestTimeout) -> {
             throw new HttpTimeoutException("safe-timeout");
         });
-        assertCategory(OkxPrivateReadError.TIMEOUT, timeout);
+        assertCategory(OkxPrivateReadError.NETWORK_TIMEOUT, timeout);
     }
 
     @Test
-    void classifiesHttpAuthRateLimitAndServerErrorsWithoutRetry() {
+    void classifiesHttpAuthRateLimitServerAndUnexpectedErrorsThroughFakeServer() throws Exception {
         Map<Integer, OkxPrivateReadError> cases = Map.of(
-                401, OkxPrivateReadError.AUTHENTICATION_FAILURE,
-                403, OkxPrivateReadError.AUTHENTICATION_FAILURE,
-                429, OkxPrivateReadError.RATE_LIMITED,
-                500, OkxPrivateReadError.HTTP_ERROR,
-                503, OkxPrivateReadError.HTTP_ERROR
+                401, OkxPrivateReadError.HTTP_UNAUTHORIZED,
+                403, OkxPrivateReadError.HTTP_FORBIDDEN,
+                418, OkxPrivateReadError.HTTP_UNEXPECTED_STATUS,
+                429, OkxPrivateReadError.HTTP_RATE_LIMITED,
+                500, OkxPrivateReadError.HTTP_SERVER_ERROR,
+                503, OkxPrivateReadError.HTTP_SERVER_ERROR
         );
         for (Map.Entry<Integer, OkxPrivateReadError> entry : cases.entrySet()) {
-            AtomicInteger calls = new AtomicInteger();
-            JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> {
-                calls.incrementAndGet();
-                return response(entry.getKey(), "provider-body-must-not-escape");
-            });
-            assertCategory(entry.getValue(), transport);
-            assertEquals(1, calls.get());
+            try (FakeOkxHttpServer server = new FakeOkxHttpServer(
+                    entry.getKey(),
+                    "provider-body-must-not-escape"
+            )) {
+                assertCategory(entry.getValue(), transport(server::exchange));
+                assertEquals(1, server.calls());
+            }
         }
     }
 
@@ -324,27 +330,32 @@ class JdkOkxPrivateReadTransportTest {
     }
 
     @Test
-    void classifiesConfirmedProviderCategoriesWithoutRawMessage() {
+    void classifiesAllowlistedProviderCodesWithoutRawMessageThroughFakeServer() throws Exception {
         for (Map.Entry<String, OkxPrivateReadError> entry : Map.of(
-                "50011", OkxPrivateReadError.RATE_LIMITED,
-                "50101", OkxPrivateReadError.ENVIRONMENT_MISMATCH,
-                "50102", OkxPrivateReadError.CLOCK_SKEW,
-                "50105", OkxPrivateReadError.AUTHENTICATION_FAILURE,
-                "50110", OkxPrivateReadError.IP_ALLOWLIST_FAILED,
-                "50111", OkxPrivateReadError.INVALID_API_KEY,
-                "50113", OkxPrivateReadError.SIGNATURE_FAILURE,
-                "50120", OkxPrivateReadError.PERMISSION_BLOCKED,
-                "50035", OkxPrivateReadError.IP_ALLOWLIST_FAILED,
-                "59999", OkxPrivateReadError.OKX_PROVIDER_ERROR
+                "50011", OkxPrivateReadError.HTTP_RATE_LIMITED,
+                "50101", OkxPrivateReadError.OKX_BUSINESS_REJECTED,
+                "50102", OkxPrivateReadError.OKX_TIMESTAMP_INVALID,
+                "50105", OkxPrivateReadError.OKX_AUTHENTICATION_FAILED,
+                "50110", OkxPrivateReadError.OKX_IP_NOT_ALLOWED,
+                "50111", OkxPrivateReadError.OKX_AUTHENTICATION_FAILED,
+                "50113", OkxPrivateReadError.OKX_SIGNATURE_INVALID,
+                "50120", OkxPrivateReadError.OKX_PERMISSION_DENIED,
+                "50035", OkxPrivateReadError.OKX_IP_NOT_ALLOWED,
+                "59999", OkxPrivateReadError.OKX_BUSINESS_REJECTED
         ).entrySet()) {
-            JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(
+            try (FakeOkxHttpServer server = new FakeOkxHttpServer(
                     200,
-                    "{\"code\":\"" + entry.getKey() + "\",\"msg\":\"provider-sensitive-message\",\"data\":[]}"
-            ));
-            OkxPrivateReadException ex = assertThrows(OkxPrivateReadException.class,
-                    () -> execute(transport, OkxPrivateReadRequest.accountConfiguration(), OkxPrivateEnvironment.PRODUCTION));
-            assertEquals(entry.getValue(), ex.category());
-            assertFalse(ex.getMessage().contains("provider-sensitive-message"));
+                    "{\"code\":\"" + entry.getKey()
+                            + "\",\"msg\":\"provider-sensitive-message\",\"data\":[]}"
+            )) {
+                JdkOkxPrivateReadTransport transport = transport(server::exchange);
+                OkxPrivateReadException ex = assertThrows(OkxPrivateReadException.class,
+                        () -> execute(transport, OkxPrivateReadRequest.accountConfiguration(),
+                                OkxPrivateEnvironment.PRODUCTION));
+                assertEquals(entry.getValue(), ex.category());
+                assertFalse(ex.getMessage().contains("provider-sensitive-message"));
+                assertEquals(1, server.calls());
+            }
         }
     }
 
@@ -386,5 +397,49 @@ class JdkOkxPrivateReadTransportTest {
 
     private static boolean allZero(byte[] value) {
         return Arrays.equals(value, new byte[value.length]);
+    }
+
+    /**
+     * Loopback-only fake server；不会解析或记录 authenticated headers。
+     */
+    private static final class FakeOkxHttpServer implements AutoCloseable {
+        private final HttpServer server;
+        private final HttpClient client = HttpClient.newHttpClient();
+        private final AtomicInteger calls = new AtomicInteger();
+
+        private FakeOkxHttpServer(int status, String body) throws IOException {
+            byte[] payload = body.getBytes(StandardCharsets.UTF_8);
+            server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+            server.createContext("/", exchange -> {
+                calls.incrementAndGet();
+                exchange.sendResponseHeaders(status, payload.length);
+                try (var output = exchange.getResponseBody()) {
+                    output.write(payload);
+                }
+            });
+            server.start();
+        }
+
+        private OkxPrivateHttpExchange.Response exchange(
+                URI ignoredProductionUri,
+                Map<String, String> ignoredAuthenticatedHeaders,
+                Duration timeout
+        ) throws IOException, InterruptedException {
+            URI loopback = URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/fake-okx");
+            HttpResponse<byte[]> response = client.send(
+                    HttpRequest.newBuilder(loopback).timeout(timeout).GET().build(),
+                    HttpResponse.BodyHandlers.ofByteArray()
+            );
+            return new OkxPrivateHttpExchange.Response(response.statusCode(), response.body());
+        }
+
+        private int calls() {
+            return calls.get();
+        }
+
+        @Override
+        public void close() {
+            server.stop(0);
+        }
     }
 }

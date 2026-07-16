@@ -56,7 +56,7 @@ class AccountPermissionProbeCompositionTest {
                     select(provider(executor), properties(true, "203.0.113.8"), environment));
         }
         MockEnvironment realExchangeDisabled = safeEnvironment()
-                .withProperty("nq.env-safety.real-exchange-enabled", "false");
+                .withProperty("nq.env-safety.real-exchange-enabled", "true");
         assertInstanceOf(NoRealExchangeCredentialPermissionProbePort.class,
                 select(provider(executor), properties(true, "203.0.113.8"), realExchangeDisabled));
     }
@@ -77,12 +77,18 @@ class AccountPermissionProbeCompositionTest {
     }
 
     private static MockEnvironment safeEnvironment() {
-        return new MockEnvironment()
-                .withProperty("nq.env-safety.real-exchange-enabled", "true")
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles("gatew-okx-readonly-soak");
+        return environment
+                .withProperty("nq.env-safety.ci", "false")
+                .withProperty("nq.env-safety.real-exchange-enabled", "false")
                 .withProperty("nq.env-safety.live-enabled", "false")
                 .withProperty("nq.env-safety.real-client-enabled", "false")
                 .withProperty("nq.env-safety.real-provider-enabled", "false")
-                .withProperty("nq.env-safety.no-outbound", "false");
+                .withProperty("nq.env-safety.no-outbound", "false")
+                .withProperty("nq.gatew.okx-private-readonly.order-submission-enabled", "false")
+                .withProperty("nq.gatew.okx-private-readonly.transfer-enabled", "false")
+                .withProperty("nq.gatew.okx-private-readonly.withdraw-enabled", "false");
     }
 
     @SuppressWarnings("unchecked")

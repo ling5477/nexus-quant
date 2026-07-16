@@ -17656,3 +17656,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`BLOCKED / OKX_REJECTED / HTTP_ERROR`；P0=0。P1 为 permission/IP hard gate 与 server GitHub authentication；P2 为 Spring profile composition、内存余量和 supervisor EOL hash 口径；P3 为 launcher JSR-310 serialization。
 - boundary：无 production code/migration/Controller/scheduler/frontend/research/CI/allowlist/authority diff；无 balance/order/cancel/transfer/withdraw/LIVE/Shadow/AI/DH/private trading 调用或启用。
 - next：独立 remediation 先调查 `/account/config` 非 2xx 的脱敏原因并修复受支持的 runtime composition、server-side GitHub Actions read auth 与 launcher serialization；不得直接重跑 probe或启动 soak。Authority 保持 GateW `IN_PROGRESS|NOT_FROZEN`、GateW-FREEZE `NOT_STARTED`。
+
+## 2026-07-16 — GateW freeze blocker-3 permission probe runtime remediation
+
+- task：`NQ-GATEW-FREEZE-BLOCKER-3-OKX-PERMISSION-PROBE-RUNTIME-REMEDIATION`；NQ-only、L 级 credential/runtime/security remediation。
+- Phase 0：服务器 `/root/.env` absent；实际 Attempt-05 本机 ignored `.env` 三个 OKX 字段已原子删除，字段 count=0、owner-only ACL、temp=0；服务器 credential rows/active/encrypted=`1/1/1`，字段名 count-only leak scan全 0，未解密 credential重建 pattern。
+- RCA：既有 metadata/audit只保留 `HTTP_ERROR`，logs/evidence无 status/code；结论 `SAFE_DIAGNOSTIC_INSUFFICIENT`，未猜测、未读取 raw response、未重跑真实 probe。
+- implementation：canonical HTTP/OKX/parse/network taxonomy；失败保留最后已知 permission/withdraw/IP 风险事实；`VERSION_CONFLICT / ATOMIC_WRITEBACK_FAILED`；explicit soak profile + NoReal-default composition；Spring Java time mapper regression；supervisor Git blob/artifact SHA-256分离。
+- validation：相关 Java errors=0；required targeted/full Maven均 23/23 modules `SUCCESS / BUILD SUCCESS`；`nq-app` 190 tests、0 failures/errors、8 existing skipped；supervisor self-test 15 cases PASS；authority/archive/link/allowlist/secret/forbidden checks PASS；cached 21 paths、unstaged/untracked=0/0；真实 OKX/network/credential access为 0。
+- server auth：原 broad OAuth credential已移除；`gh 2.45.0` canonical top-level layout仅保留一个 read-only entry。`gh auth status`、authenticated `/user` 与 Actions run均成功，OAuth scopes为空、rate limit=5000；owner/mode=`nqgatew:nqgatew/600`，helper已删除。
+- result：`PASS / RUNTIME_REMEDIATION_ACCEPTED / SERVER_GITHUB_AUTHENTICATED / READY_TO_COMMIT`；P0=0、P1=0。Remediation commit/exact-head CI与服务器 deployment仍未执行，不提前写 `CI_GREEN` 或 deployment PASS。
+- boundary：无 API/scheduler/migration/POM/frontend/research/deploy/CI/archive/authority/交易能力 diff；LIVE disabled，permission probe未重跑，soak未启动。
+- next：精确暂存并完成 cached diff review，commit/push后等待 exact-head CI；CI green 后部署新 artifact做 localhost-only composition/serialization/hash验证，不重跑 permission probe、不启动 soak。

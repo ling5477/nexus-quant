@@ -82,6 +82,14 @@ class GateWOkxPrivateReadonlyConfigurationTest {
         }
         Map<String, Object> properties = new HashMap<>();
         properties.put("nq.gatew.okx-private-readonly.enabled", enabled);
+        properties.put("nq.gatew.okx-private-readonly.order-submission-enabled", false);
+        properties.put("nq.gatew.okx-private-readonly.transfer-enabled", false);
+        properties.put("nq.gatew.okx-private-readonly.withdraw-enabled", false);
+        properties.put("nq.env-safety.ci", false);
+        properties.put("nq.env-safety.real-exchange-enabled", false);
+        properties.put("nq.env-safety.real-client-enabled", false);
+        properties.put("nq.env-safety.real-provider-enabled", false);
+        properties.put("nq.env-safety.no-outbound", false);
         if (live != null) {
             properties.put("nq.env-safety.live-enabled", live);
         }
@@ -103,10 +111,23 @@ class GateWOkxPrivateReadonlyConfigurationTest {
 
     @Configuration
     static class Dependencies {
-        @Bean ObjectMapper objectMapper() { return new ObjectMapper(); }
-        @Bean JdbcTemplate jdbcTemplate() { return mock(JdbcTemplate.class); }
-        @Bean ExchangeAccountRepository exchangeAccountRepository() { return mock(ExchangeAccountRepository.class); }
-        @Bean KillSwitchService killSwitchService() {
+        @Bean
+        ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+
+        @Bean
+        JdbcTemplate jdbcTemplate() {
+            return mock(JdbcTemplate.class);
+        }
+
+        @Bean
+        ExchangeAccountRepository exchangeAccountRepository() {
+            return mock(ExchangeAccountRepository.class);
+        }
+
+        @Bean
+        KillSwitchService killSwitchService() {
             KillSwitchStateRepository repository = new KillSwitchStateRepository() {
                 @Override
                 public Optional<KillSwitchState> findByScope(KillSwitchScope scope) {
@@ -132,7 +153,9 @@ class GateWOkxPrivateReadonlyConfigurationTest {
                     Clock.fixed(Instant.parse("2026-07-14T00:00:00Z"), ZoneOffset.UTC)
             );
         }
-        @Bean AccountCredentialRuntimeProperties accountCredentialRuntimeProperties() {
+
+        @Bean
+        AccountCredentialRuntimeProperties accountCredentialRuntimeProperties() {
             AccountCredentialRuntimeProperties properties = new AccountCredentialRuntimeProperties();
             properties.setMasterKey("test-master-key");
             return properties;

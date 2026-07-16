@@ -86,11 +86,11 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
                 || observed.operation() != OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ
                 || !observed.complete()
                 || observed.normalizedPermissions().isEmpty()) {
-            return failed(request, "RESPONSE_FIELDS_MISSING", ipStatus(observed), false, requestId, startedAt);
+            return failed(request, "RESPONSE_CONTRACT_MISMATCH", ipStatus(observed), false, requestId, startedAt);
         }
         Set<String> permissions = observed.normalizedPermissions();
         if (!KNOWN_PERMISSIONS.containsAll(permissions)) {
-            return failed(request, "UNKNOWN_PERMISSION_TOKEN", ipStatus(observed),
+            return failed(request, "RESPONSE_CONTRACT_MISMATCH", ipStatus(observed),
                     permissions.contains("WITHDRAW"), requestId, startedAt);
         }
         boolean read = permissions.contains("READ_ONLY");
@@ -193,23 +193,26 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
 
     private static String errorCategory(OkxPrivateReadError error) {
         return switch (error) {
-            case AUTHENTICATION_FAILURE -> "AUTH_FAILED";
-            case INVALID_API_KEY -> "INVALID_API_KEY";
-            case SIGNATURE_FAILURE -> "SIGNATURE_FAILED";
-            case CLOCK_SKEW -> "CLOCK_SKEW";
-            case IP_ALLOWLIST_FAILED -> "IP_ALLOWLIST_FAILED";
-            case PERMISSION_BLOCKED -> "PERMISSION_BLOCKED";
-            case RATE_LIMITED -> "RATE_LIMITED";
-            case TIMEOUT -> "TIMEOUT";
+            case HTTP_UNAUTHORIZED -> "HTTP_UNAUTHORIZED";
+            case HTTP_FORBIDDEN -> "HTTP_FORBIDDEN";
+            case HTTP_RATE_LIMITED, RATE_LIMITED -> "HTTP_RATE_LIMITED";
+            case HTTP_SERVER_ERROR -> "HTTP_SERVER_ERROR";
+            case HTTP_UNEXPECTED_STATUS, HTTP_ERROR -> "HTTP_UNEXPECTED_STATUS";
+            case OKX_AUTHENTICATION_FAILED, AUTHENTICATION_FAILURE, INVALID_API_KEY -> "OKX_AUTHENTICATION_FAILED";
+            case OKX_SIGNATURE_INVALID, SIGNATURE_FAILURE -> "OKX_SIGNATURE_INVALID";
+            case OKX_TIMESTAMP_INVALID, CLOCK_SKEW -> "OKX_TIMESTAMP_INVALID";
+            case OKX_IP_NOT_ALLOWED, IP_ALLOWLIST_FAILED -> "OKX_IP_NOT_ALLOWED";
+            case OKX_PERMISSION_DENIED, PERMISSION_BLOCKED -> "OKX_PERMISSION_DENIED";
+            case OKX_BUSINESS_REJECTED, OKX_PROVIDER_ERROR, ENVIRONMENT_MISMATCH -> "OKX_BUSINESS_REJECTED";
+            case RESPONSE_PARSE_FAILED, MALFORMED_RESPONSE -> "RESPONSE_PARSE_FAILED";
+            case RESPONSE_CONTRACT_MISMATCH, PARTIAL_RESPONSE -> "RESPONSE_CONTRACT_MISMATCH";
+            case NETWORK_TIMEOUT, TIMEOUT -> "NETWORK_TIMEOUT";
+            case NETWORK_IO_ERROR, NETWORK_FAILURE -> "NETWORK_IO_ERROR";
             case REDIRECT_REJECTED -> "REDIRECT_REJECTED";
-            case HTTP_ERROR -> "HTTP_ERROR";
-            case OKX_PROVIDER_ERROR -> "PROVIDER_ERROR";
             case RESPONSE_TOO_LARGE -> "RESPONSE_TOO_LARGE";
-            case MALFORMED_RESPONSE, PARTIAL_RESPONSE -> "MALFORMED_RESPONSE";
             case CREDENTIAL_UNAVAILABLE -> "CREDENTIAL_UNAVAILABLE";
             case CREDENTIAL_CONFLICT -> "CREDENTIAL_CONFLICT";
-            case ENVIRONMENT_MISMATCH, ACCOUNT_SCOPE_MISMATCH -> "ACCOUNT_SCOPE_MISMATCH";
-            case NETWORK_FAILURE -> "NETWORK_FAILURE";
+            case ACCOUNT_SCOPE_MISMATCH -> "ACCOUNT_SCOPE_MISMATCH";
         };
     }
 

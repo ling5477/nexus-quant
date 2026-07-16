@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -107,11 +108,17 @@ public class AccountModuleConfiguration {
         OkxPrivateCredentialExecutor executor = credentialExecutorProvider.getIfAvailable();
         if (!permissionProperties.isEnabled()
                 || !(executor instanceof JdbcOkxPrivateCredentialExecutor)
-                || !exactBoolean(environment, "nq.env-safety.real-exchange-enabled", true)
+                || !environment.acceptsProfiles(Profiles.of("gatew-okx-readonly-soak"))
+                || !exactBoolean(environment, "nq.env-safety.ci", false)
+                || !exactBoolean(environment, "nq.env-safety.real-exchange-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.live-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.real-client-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.real-provider-enabled", false)
-                || !exactBoolean(environment, "nq.env-safety.no-outbound", false)) {
+                || !exactBoolean(environment, "nq.env-safety.no-outbound", false)
+                || !exactBoolean(environment,
+                "nq.gatew.okx-private-readonly.order-submission-enabled", false)
+                || !exactBoolean(environment, "nq.gatew.okx-private-readonly.transfer-enabled", false)
+                || !exactBoolean(environment, "nq.gatew.okx-private-readonly.withdraw-enabled", false)) {
             return new NoRealExchangeCredentialPermissionProbePort();
         }
         try {

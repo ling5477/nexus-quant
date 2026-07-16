@@ -26,6 +26,7 @@ $ErrorActionPreference = 'Stop'
 
 $script:ScriptPath = $PSCommandPath
 $script:RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+$script:SupervisorRelativePath = 'scripts/gatew/gatew-okx-readonly-soak.ps1'
 $script:EvidenceRoot = [IO.Path]::GetFullPath((Join-Path $script:RepoRoot 'target\gatew-okx-readonly-soak'))
 $script:Utf8NoBom = [Text.UTF8Encoding]::new($false)
 $script:GenesisHash = '0' * 64
@@ -34,11 +35,20 @@ $script:SampleFields = @(
     'permissionClassification', 'killSwitchObservedState', 'credentialAccessed', 'networkCalled',
     'allowedEndpointCategory', 'traceId', 'previousRecordHash', 'recordHash'
 )
-$script:TransientReasons = @('NETWORK_FAILURE', 'TIMEOUT', 'RATE_LIMITED', 'HTTP_ERROR', 'OKX_PROVIDER_ERROR')
-$script:AuthenticationReasons = @('AUTHENTICATION_FAILURE', 'SIGNATURE_FAILURE')
+$script:TransientReasons = @(
+    'NETWORK_IO_ERROR', 'NETWORK_TIMEOUT', 'HTTP_RATE_LIMITED', 'HTTP_SERVER_ERROR',
+    'HTTP_UNEXPECTED_STATUS', 'OKX_BUSINESS_REJECTED',
+    'NETWORK_FAILURE', 'TIMEOUT', 'RATE_LIMITED', 'HTTP_ERROR', 'OKX_PROVIDER_ERROR'
+)
+$script:AuthenticationReasons = @(
+    'HTTP_UNAUTHORIZED', 'HTTP_FORBIDDEN', 'OKX_AUTHENTICATION_FAILED', 'OKX_SIGNATURE_INVALID',
+    'OKX_TIMESTAMP_INVALID', 'AUTHENTICATION_FAILURE', 'SIGNATURE_FAILURE'
+)
 $script:ImmediateStopReasons = @(
     'FORBIDDEN_ENDPOINT_ATTEMPTED',
     'IP_ALLOWLIST_FAILED',
+    'OKX_IP_NOT_ALLOWED',
+    'OKX_PERMISSION_DENIED',
     'PERMISSION_BLOCKED',
     'KILL_SWITCH_CHANGED_DURING_SAMPLE',
     'SOAK_DATABASE_CONTAINS_BUSINESS_DATA',
@@ -146,6 +156,28 @@ function Get-Sha256File {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-GitBlobObjectId {
+    param([Parameter(Mandatory = $true)][string]$Commit)
+
+    $objectSpec = "${Commit}:$($script:SupervisorRelativePath)"
+    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot rev-parse $objectSpec 2>$null)
+    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$') {
+        throw 'BLOCKED / SUPERVISOR_GIT_BLOB_UNRESOLVED'
+    }
+    return $value.ToLowerInvariant()
+}
+
+function Get-FilteredGitBlobObjectId {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $pathArgument = "--path=$($script:SupervisorRelativePath)"
+    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot hash-object $pathArgument $Path 2>$null)
+    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$') {
+        throw 'git-filtered supervisor blob hash failed'
+    }
+    return $value.ToLowerInvariant()
 }
 
 function ConvertTo-CompactJson {
@@ -552,7 +584,9 @@ function Start-Soak {
             endpointAllowlistVersion      = [string]$bootstrap.endpointAllowlistVersion
             flywayVersion                 = [string]$bootstrap.flywayVersion
             hostFingerprint               = Get-Sha256Text "$env:COMPUTERNAME|$([Environment]::OSVersion.VersionString)"
-            supervisorScriptSha256        = Get-Sha256File $script:ScriptPath
+            # Commit identity 使用 Git blob，不受 Windows/Linux checkout EOL 影响；artifact hash 只证明上传字节。
+            supervisorScriptGitBlob       = Get-GitBlobObjectId $head
+            supervisorArtifactSha256      = Get-Sha256File $script:ScriptPath
             evidenceSchemaVersion         = 'gatew-soak-evidence-v1'
         }
         Write-JsonAtomic (Join-Path $directory 'manifest.json') $manifest
@@ -747,6 +781,23 @@ function Invoke-SelfTest {
         if (-not $missingCredentialRejected) { throw 'missing credential preflight was not rejected' }
         $detachedBranchOutputHandled = (ConvertTo-TrimmedNativeOutput $null) -eq ''
         if (-not $detachedBranchOutputHandled) { throw 'detached branch output was not handled' }
+        $head = Get-HeadCommit
+        $committedBlob = Get-GitBlobObjectId $head
+        $logicalText = [IO.File]::ReadAllText($script:ScriptPath) -replace "`r`n|`r|`n", "`n"
+        $lfCheckout = Join-Path $directory 'supervisor-lf.ps1'
+        $crlfCheckout = Join-Path $directory 'supervisor-crlf.ps1'
+        $uploadedArtifact = Join-Path $directory 'supervisor-uploaded.ps1'
+        [IO.File]::WriteAllText($lfCheckout, $logicalText, $script:Utf8NoBom)
+        [IO.File]::WriteAllText($crlfCheckout, ($logicalText -replace "`n", "`r`n"), $script:Utf8NoBom)
+        [IO.File]::Copy($script:ScriptPath, $uploadedArtifact, $true)
+        $lfBlob = Get-FilteredGitBlobObjectId $lfCheckout
+        $crlfBlob = Get-FilteredGitBlobObjectId $crlfCheckout
+        if ($lfBlob -ne $crlfBlob) {
+            throw 'cross-platform Git blob self-test failed'
+        }
+        if ((Get-Sha256File $script:ScriptPath) -ne (Get-Sha256File $uploadedArtifact)) {
+            throw 'uploaded artifact hash self-test failed'
+        }
         [IO.File]::WriteAllText((Join-Path $directory 'samples.jsonl'), '', $script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $directory 'failures.jsonl'), '', $script:Utf8NoBom)
         Write-JsonAtomic (Join-Path $directory 'manifest.json') ([ordered]@{
@@ -789,13 +840,17 @@ function Invoke-SelfTest {
         if (-not $duplicateRejected) { throw 'duplicate sequence was not rejected' }
         return [pscustomobject]@{
             decision = 'PASS / SUPERVISOR_SELF_TEST'
-            cases = 11
+            cases = 15
             hashChain = 'PASS'
             appendOnlySequence = 'PASS'
             resumePreservedExistingSamples = 'PASS'
             duplicateSequenceRejected = 'PASS'
             missingCredentialRejected = 'PASS / API_KEY_REQUIRED'
             detachedBranchOutputHandled = 'PASS'
+            detachedCommitBlobLookup = 'PASS'
+            windowsCrlfGitBlob = 'PASS'
+            linuxLfGitBlob = 'PASS'
+            uploadedArtifactSha256 = 'PASS'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))
             cleanupReleasedTemporaryDirectory = $true
             noPrivateNetworkCalled = $true

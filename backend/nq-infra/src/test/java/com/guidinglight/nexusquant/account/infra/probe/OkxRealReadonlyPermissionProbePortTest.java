@@ -63,7 +63,7 @@ class OkxRealReadonlyPermissionProbePortTest {
                 Set.of("READ_ONLY", "TRADE"), "TRADE_PERMISSION_ENABLED",
                 Set.of("READ_ONLY", "WITHDRAW"), "WITHDRAW_PERMISSION_ENABLED",
                 Set.of("TRADE"), "READ_PERMISSION_MISSING",
-                Set.of("READ_ONLY", "future_permission"), "UNKNOWN_PERMISSION_TOKEN"
+                Set.of("READ_ONLY", "future_permission"), "RESPONSE_CONTRACT_MISMATCH"
         );
         for (Map.Entry<Set<String>, String> entry : cases.entrySet()) {
             OkxRealReadonlyPermissionProbePort port = port(new FakeExecutor((request, environment) ->
@@ -75,7 +75,7 @@ class OkxRealReadonlyPermissionProbePortTest {
 
         OkxRealReadonlyPermissionProbePort missing = port(new FakeExecutor((request, environment) ->
                 result(Set.of(), false, OkxIpAllowlistStatus.UNKNOWN)));
-        assertEquals("RESPONSE_FIELDS_MISSING", missing.probe(request()).sanitizedErrorCategory());
+        assertEquals("RESPONSE_CONTRACT_MISMATCH", missing.probe(request()).sanitizedErrorCategory());
     }
 
     @Test
@@ -100,16 +100,22 @@ class OkxRealReadonlyPermissionProbePortTest {
 
     @Test
     void mapsSanitizedAuthenticationClockRateAndTransportFailures() {
-        Map<OkxPrivateReadError, String> cases = Map.of(
-                OkxPrivateReadError.AUTHENTICATION_FAILURE, "AUTH_FAILED",
-                OkxPrivateReadError.INVALID_API_KEY, "INVALID_API_KEY",
-                OkxPrivateReadError.SIGNATURE_FAILURE, "SIGNATURE_FAILED",
-                OkxPrivateReadError.CLOCK_SKEW, "CLOCK_SKEW",
-                OkxPrivateReadError.IP_ALLOWLIST_FAILED, "IP_ALLOWLIST_FAILED",
-                OkxPrivateReadError.RATE_LIMITED, "RATE_LIMITED",
-                OkxPrivateReadError.TIMEOUT, "TIMEOUT",
-                OkxPrivateReadError.REDIRECT_REJECTED, "REDIRECT_REJECTED",
-                OkxPrivateReadError.HTTP_ERROR, "HTTP_ERROR"
+        Map<OkxPrivateReadError, String> cases = Map.ofEntries(
+                Map.entry(OkxPrivateReadError.HTTP_UNAUTHORIZED, "HTTP_UNAUTHORIZED"),
+                Map.entry(OkxPrivateReadError.HTTP_FORBIDDEN, "HTTP_FORBIDDEN"),
+                Map.entry(OkxPrivateReadError.HTTP_RATE_LIMITED, "HTTP_RATE_LIMITED"),
+                Map.entry(OkxPrivateReadError.HTTP_SERVER_ERROR, "HTTP_SERVER_ERROR"),
+                Map.entry(OkxPrivateReadError.HTTP_UNEXPECTED_STATUS, "HTTP_UNEXPECTED_STATUS"),
+                Map.entry(OkxPrivateReadError.OKX_AUTHENTICATION_FAILED, "OKX_AUTHENTICATION_FAILED"),
+                Map.entry(OkxPrivateReadError.OKX_SIGNATURE_INVALID, "OKX_SIGNATURE_INVALID"),
+                Map.entry(OkxPrivateReadError.OKX_TIMESTAMP_INVALID, "OKX_TIMESTAMP_INVALID"),
+                Map.entry(OkxPrivateReadError.OKX_IP_NOT_ALLOWED, "OKX_IP_NOT_ALLOWED"),
+                Map.entry(OkxPrivateReadError.OKX_PERMISSION_DENIED, "OKX_PERMISSION_DENIED"),
+                Map.entry(OkxPrivateReadError.OKX_BUSINESS_REJECTED, "OKX_BUSINESS_REJECTED"),
+                Map.entry(OkxPrivateReadError.RESPONSE_PARSE_FAILED, "RESPONSE_PARSE_FAILED"),
+                Map.entry(OkxPrivateReadError.RESPONSE_CONTRACT_MISMATCH, "RESPONSE_CONTRACT_MISMATCH"),
+                Map.entry(OkxPrivateReadError.NETWORK_TIMEOUT, "NETWORK_TIMEOUT"),
+                Map.entry(OkxPrivateReadError.NETWORK_IO_ERROR, "NETWORK_IO_ERROR")
         );
         for (Map.Entry<OkxPrivateReadError, String> entry : cases.entrySet()) {
             OkxRealReadonlyPermissionProbePort port = port(new FakeExecutor((request, environment) -> {

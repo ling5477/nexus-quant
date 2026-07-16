@@ -225,26 +225,35 @@ public class CredentialPermissionProbeService {
                 ? preparation.credential().withdrawEnabled()
                 : result.withdrawEnabledDetected();
         String ipStatus = normalizeIpAllowlistStatus(result.ipAllowlistProbeStatus());
-        if (!credentialRepository.markPermissionProbeResult(
-                preparation.credential().credentialId(),
-                preparation.credential().exchangeAccountId(),
-                finalStatus,
-                persistedPermissionScope,
-                persistedWithdrawEnabled,
-                true,
-                ipStatus,
-                finishedAt,
-                errorCategory,
-                incrementFailedAuthCount,
-                finishedAt
-        )) {
-            throw new IllegalStateException("permission probe result writeback conflict");
+        String persistedIpStatus = observedPermissionScope == null && "UNKNOWN".equals(ipStatus)
+                ? preparation.credential().ipAllowlistProbeStatus()
+                : ipStatus;
+        try {
+            if (!credentialRepository.markPermissionProbeResult(
+                    preparation.credential().credentialId(),
+                    preparation.credential().exchangeAccountId(),
+                    finalStatus,
+                    persistedPermissionScope,
+                    persistedWithdrawEnabled,
+                    true,
+                    persistedIpStatus,
+                    finishedAt,
+                    errorCategory,
+                    incrementFailedAuthCount,
+                    finishedAt
+            )) {
+                throw CredentialPermissionProbeWritebackException.versionConflict();
+            }
+            appendAudit(preparation.credential(), eventTypeFor(finalStatus), preparation.actor(), preparation.reason(),
+                    errorCategory, "IN_PROGRESS", finalStatus,
+                    emptyToDefault(result.requestId(), preparation.requestId()),
+                    emptyToDefault(result.traceId(), preparation.traceId()), incrementFailedAuthCount,
+                    observedPermissionScope, persistedIpStatus);
+        } catch (CredentialPermissionProbeWritebackException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            throw CredentialPermissionProbeWritebackException.atomicWritebackFailed();
         }
-        appendAudit(preparation.credential(), eventTypeFor(finalStatus), preparation.actor(), preparation.reason(),
-                errorCategory, "IN_PROGRESS", finalStatus,
-                emptyToDefault(result.requestId(), preparation.requestId()),
-                emptyToDefault(result.traceId(), preparation.traceId()), incrementFailedAuthCount,
-                observedPermissionScope, ipStatus);
         return latest(
                 preparation.account().ownerUserId(),
                 preparation.account().exchangeAccountId(),
@@ -343,7 +352,12 @@ public class CredentialPermissionProbeService {
                 || "SIGNATURE_FAILED".equals(errorCategory)
                 || "IP_ALLOWLIST_FAILED".equals(errorCategory)
                 || "IP_ALLOWLIST_MISSING".equals(errorCategory)
-                || "IP_ALLOWLIST_MISMATCH".equals(errorCategory);
+                || "IP_ALLOWLIST_MISMATCH".equals(errorCategory)
+                || "HTTP_UNAUTHORIZED".equals(errorCategory)
+                || "HTTP_FORBIDDEN".equals(errorCategory)
+                || "OKX_AUTHENTICATION_FAILED".equals(errorCategory)
+                || "OKX_SIGNATURE_INVALID".equals(errorCategory)
+                || "OKX_IP_NOT_ALLOWED".equals(errorCategory);
     }
 
     private void appendAudit(

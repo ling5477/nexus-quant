@@ -11896,3 +11896,23 @@ Known warning：`docs/current/TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有
 已知 warnings：server `nqgatew` GitHub CLI 未认证；Spring profile composition 无法直接形成 datasource + real read-only probe 的受支持 management runtime；一次性 launcher 在 DB 写回后因缺 JSR-310 module 序列化失败；supervisor remote checkout byte hash 与 canonical Git-content hash存在 EOL representation 差异；服务器内存余量有限。
 
 未运行：`GET /api/v5/account/balance`、真实 sample、168 小时 soak、frontend/Python/Maven rerun。阻断性：permission/IP hard gate 和 server-side exact-head CI authentication 为 P1；不得重跑 probe、启动 soak或写 `READ_ONLY_VERIFIED`，直至独立 remediation 完成。
+
+## 2026-07-16 — GateW freeze blocker-3 permission probe runtime remediation
+
+当前结论：`PASS / RUNTIME_REMEDIATION_ACCEPTED / SERVER_GITHUB_AUTHENTICATED / READY_TO_COMMIT`（通过 / runtime remediation 已接受 / 服务器 GitHub 已认证 / 可提交）；remediation exact-head CI与服务器 deployment保持 `NOT_RUN / PENDING`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Phase-0 plaintext hygiene | PASS | 实际本机 ignored `.env` 三字段 count=0、owner-only protected ACL、temp=0；服务器 `/root/.env` absent，management env 三字段 absent；credential rows/active/encrypted=`1/1/1` |
+| existing `HTTP_ERROR` safe RCA | `SAFE_DIAGNOSTIC_INSUFFICIENT` | metadata/audit只有 `HTTP_ERROR`；status/code category不可恢复；未读 raw response，未重跑 probe |
+| IntelliJ reformat/errors-only | PASS | 相关 Java 文件 errors=0 |
+| required targeted Maven | PASS | 23/23 modules `SUCCESS / BUILD SUCCESS`；CI/no-outbound/AI/DH/real-exchange安全环境 |
+| `mvn -f backend/pom.xml test` | PASS | 23/23 modules `SUCCESS / BUILD SUCCESS`；`nq-app` 190 tests、0 failures/errors、8 existing skipped |
+| supervisor self-test | PASS | 15 cases；CRLF/LF Git blob、detached commit、uploaded artifact SHA-256、hash-chain、no-private-network PASS |
+| authority/archive/link/scope/secret checks | PASS | authority consistent；GateV archive complete；115 links、1 existing warning、0 errors；21 changed paths全在 allowlist；敏感/交易写侧 additions均 0 |
+| server `gh` least-privilege auth | PASS | `gh auth status`、authenticated `/user` 与 Actions run成功；OAuth scopes为空、rate limit=5000；auth file owner/group=`nqgatew/nqgatew`、mode=`600`、token entry=1；helper removed |
+| cached diff review | PASS | 21 paths；`git diff --cached --check` PASS；unstaged/untracked=0/0；cached secret/provider/trading-write/Controller/scheduler additions=0 |
+| real OKX probe / soak | NOT RUN / NOT STARTED | 本 remediation 严禁重跑或启动 |
+| remediation commit / exact-head CI / server deployment | NOT RUN / PENDING | conformance P1 未关闭前不得宣称通过 |
+
+测试使用 loopback fake HTTP server；真实 OKX calls=`0`，credential material读取=`0`。已知非阻断 warning 为既有 SLF4J NOP、Mockito dynamic-agent/JDK future warning与 checkout EOL warning。Frontend/Python 无 diff，未运行。

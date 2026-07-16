@@ -115,13 +115,19 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                     throw new OkxPrivateReadException(OkxPrivateReadError.REDIRECT_REJECTED);
                 }
                 if (response.statusCode() == 429) {
-                    throw new OkxPrivateReadException(OkxPrivateReadError.RATE_LIMITED);
+                    throw new OkxPrivateReadException(OkxPrivateReadError.HTTP_RATE_LIMITED);
                 }
-                if (response.statusCode() == 401 || response.statusCode() == 403) {
-                    throw new OkxPrivateReadException(OkxPrivateReadError.AUTHENTICATION_FAILURE);
+                if (response.statusCode() == 401) {
+                    throw new OkxPrivateReadException(OkxPrivateReadError.HTTP_UNAUTHORIZED);
+                }
+                if (response.statusCode() == 403) {
+                    throw new OkxPrivateReadException(OkxPrivateReadError.HTTP_FORBIDDEN);
+                }
+                if (response.statusCode() >= 500 && response.statusCode() <= 599) {
+                    throw new OkxPrivateReadException(OkxPrivateReadError.HTTP_SERVER_ERROR);
                 }
                 if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                    throw new OkxPrivateReadException(OkxPrivateReadError.HTTP_ERROR);
+                    throw new OkxPrivateReadException(OkxPrivateReadError.HTTP_UNEXPECTED_STATUS);
                 }
                 if (responseBody == null) {
                     throw new OkxPrivateReadException(OkxPrivateReadError.MALFORMED_RESPONSE);
@@ -136,17 +142,17 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                 }
             }
         } catch (HttpTimeoutException ex) {
-            throw new OkxPrivateReadException(OkxPrivateReadError.TIMEOUT, ex);
+            throw new OkxPrivateReadException(OkxPrivateReadError.NETWORK_TIMEOUT, ex);
         } catch (OkxPrivateReadException ex) {
             throw ex;
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new OkxPrivateReadException(OkxPrivateReadError.NETWORK_FAILURE, ex);
+            throw new OkxPrivateReadException(OkxPrivateReadError.NETWORK_IO_ERROR, ex);
         } catch (IOException ex) {
             if (hasCause(ex, ResponseTooLargeIOException.class)) {
                 throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_TOO_LARGE, ex);
             }
-            throw new OkxPrivateReadException(OkxPrivateReadError.NETWORK_FAILURE, ex);
+            throw new OkxPrivateReadException(OkxPrivateReadError.NETWORK_IO_ERROR, ex);
         } finally {
             concurrency.release();
         }
@@ -182,7 +188,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
             throw ex;
         } catch (Exception ex) {
             // Jackson cause 可能携带 raw provider body 片段，只向上传递固定内部分类。
-            throw new OkxPrivateReadException(OkxPrivateReadError.MALFORMED_RESPONSE);
+            throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_PARSE_FAILED);
         }
     }
 
@@ -347,15 +353,13 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
 
     private static OkxPrivateReadError providerError(String code) {
         return switch (code == null ? "" : code) {
-            case "50011" -> OkxPrivateReadError.RATE_LIMITED;
-            case "50101" -> OkxPrivateReadError.ENVIRONMENT_MISMATCH;
-            case "50102" -> OkxPrivateReadError.CLOCK_SKEW;
-            case "50105" -> OkxPrivateReadError.AUTHENTICATION_FAILURE;
-            case "50110", "50035" -> OkxPrivateReadError.IP_ALLOWLIST_FAILED;
-            case "50111" -> OkxPrivateReadError.INVALID_API_KEY;
-            case "50113" -> OkxPrivateReadError.SIGNATURE_FAILURE;
-            case "50120" -> OkxPrivateReadError.PERMISSION_BLOCKED;
-            default -> OkxPrivateReadError.OKX_PROVIDER_ERROR;
+            case "50011" -> OkxPrivateReadError.HTTP_RATE_LIMITED;
+            case "50105", "50111" -> OkxPrivateReadError.OKX_AUTHENTICATION_FAILED;
+            case "50113" -> OkxPrivateReadError.OKX_SIGNATURE_INVALID;
+            case "50102" -> OkxPrivateReadError.OKX_TIMESTAMP_INVALID;
+            case "50110", "50035" -> OkxPrivateReadError.OKX_IP_NOT_ALLOWED;
+            case "50120" -> OkxPrivateReadError.OKX_PERMISSION_DENIED;
+            default -> OkxPrivateReadError.OKX_BUSINESS_REJECTED;
         };
     }
 
