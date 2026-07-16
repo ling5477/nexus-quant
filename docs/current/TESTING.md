@@ -11938,3 +11938,23 @@ Known warning：`docs/current/TESTING.md:8479 -> ./GATEJ_TEST_PLAN.md` 为既有
 RCA：`GateWOkxReadonlySoakCycleTest` 对成功 sample写 `ACCOUNT_CONFIG_AND_BALANCE_READ`，但 `writeSanitizedResult` 又拒绝任何含 `balance` 的 JSON；真实 cycle结果因此无法写入 `.cycle-*.json`，supervisor按设计生成 fallback `SOAK_LAUNCHER_FAILED`并 fail-closed ENGAGE。fallback不是有效 real sample，manifest `startedAt`不启动七天 acceptance clock。
 
 Known limitations：SSH前台输出在长 Maven cycle期间断开，但远端唯一 start已完整收口；未重发 start。没有修改代码，因此没有为该 RCA运行修复后 Maven回归。Frontend/Python无 diff，未运行。阻断性：P1；必须先修复 evidence sanitizer一致性、补 regression、完成新 exact-head CI与服务器部署，再由新 attempt启动；permission probe不得重跑。
+
+## 2026-07-17 — GateW soak launcher evidence sanitizer remediation
+
+当前结论：`PASS / SOAK_LAUNCHER_EVIDENCE_CONTRACT_REMEDIATED / SANITIZER_CONFORMANCE_PROVEN / READY_TO_COMMIT`（通过 / launcher evidence 合同已修复 / sanitizer一致性已证明 / 可进入提交前复核）；commit、exact-head CI与服务器 deployment保持 `UNCOMMITTED / NOT_RUN / PENDING`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| starting exact-head CI | PASS | `4505c474...`；run `29509730259 / completed / success / 10 jobs / bad=0` |
+| focused `GateWOkxReadonlySoakSupportTest` | PASS | 35 tests、0 failures/errors/skips；23/23 reactor modules SUCCESS |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app,nq-adapter-okx -am test` | PASS | 23/23 modules `SUCCESS / BUILD SUCCESS`；`CI=true`、no-outbound=true、AI/DH/real-exchange disabled |
+| `mvn -f backend/pom.xml test` | PASS | 23/23 modules `SUCCESS / BUILD SUCCESS`；`nq-app` 196 tests、0 failures/errors、8 existing skipped |
+| Windows PowerShell 5.1 self-test | PASS | 36 cases；unsafe fixture rejections=15；no private network |
+| PowerShell 7 self-test | PASS | 36 cases；unsafe fixture rejections=15；no private network |
+| cross-engine canonical hash | PASS | `0127615a5334312d890e2d563f787268498f4e9e99f60cab35671a486d4caa59` exact match |
+| authority/archive/link/scope/cached checks | PASS | authority consistent；GateV archive complete；119 links、1 existing warning、0 errors；cached 9 paths全在allowlist；cached check PASS；unstaged/untracked=0/0；custom-regex backstop PASS |
+| real OKX / credential / soak | `0 / 0 / NOT_STARTED` | 未设置运行 profile或credential；manual launcher默认 disabled |
+
+第一次 focused 命令因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifiedTests=false` 被 Maven解析为 lifecycle token，未进入编译；引用两个 `-D` 参数后重跑并通过。已知非阻断 warning：既有 Mockito dynamic-agent/JDK future、SLF4J NOP、unchecked/deprecation与 checkout EOL warning。
+
+未运行：Linux/server offline self-test、artifact SHA-256 remote match、loopback health、remediation exact-head CI、真实 permission probe、真实 OKX config/balance、真实 soak、frontend、Python。阻断性：本地实现无 P0/P1；server deployment只能在 remediation exact-head CI GREEN后执行，且仅允许离线验证。

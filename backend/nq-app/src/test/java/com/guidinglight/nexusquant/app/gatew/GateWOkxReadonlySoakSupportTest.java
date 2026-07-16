@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
@@ -15,6 +18,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,12 +29,20 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-/** GateW soak test-support 的 fail-closed 配置、credential 与 evidence 单元回归。 */
+/**
+ * GateW soak test-support 的 fail-closed 配置、credential 与 evidence 单元回归。
+ */
+@SpringJUnitConfig(classes = GateWOkxReadonlySoakCycleTest.JacksonContext.class)
 class GateWOkxReadonlySoakSupportTest {
 
     @TempDir
     Path tempDir;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Test
     void acceptsOnlyDedicatedLoopbackSoakConfiguration() {
@@ -215,6 +229,25 @@ class GateWOkxReadonlySoakSupportTest {
 
         assertEquals(2, transport.calls());
         assertEquals("ACCOUNT_CONFIG_AND_BALANCE_READ", transport.endpointCategory());
+        assertEquals(GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED, transport.accountConfigProbeStatus());
+        assertEquals(GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED, transport.balanceProbeStatus());
+    }
+
+    @Test
+    void classifiesIncompleteBalanceWithoutPersistingBalanceValues() {
+        OkxPrivateReadTransport delegate = (request, credential, environment) -> new OkxPrivateReadResult(
+                request.operation(), Set.of("READ_ONLY"), 0,
+                request.operation() == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                List.of(), List.of(), true, Instant.EPOCH
+        );
+        GateWOkxReadonlySoakCycleTest.CountingTransport transport =
+                new GateWOkxReadonlySoakCycleTest.CountingTransport(delegate);
+
+        transport.execute(OkxPrivateReadRequest.accountConfiguration(), null, OkxPrivateEnvironment.PRODUCTION);
+        transport.execute(OkxPrivateReadRequest.accountBalance(List.of("BTC")), null, OkxPrivateEnvironment.PRODUCTION);
+
+        assertEquals(GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED, transport.accountConfigProbeStatus());
+        assertEquals(GateWOkxReadonlySoakCycleTest.ProbeStatus.FAILED, transport.balanceProbeStatus());
     }
 
     @Test
@@ -236,6 +269,8 @@ class GateWOkxReadonlySoakSupportTest {
 
         assertEquals("FORBIDDEN_ENDPOINT_ATTEMPTED", error.reasonCode());
         assertEquals(0, transport.calls());
+        assertEquals(GateWOkxReadonlySoakCycleTest.ProbeStatus.NOT_RUN, transport.accountConfigProbeStatus());
+        assertEquals(GateWOkxReadonlySoakCycleTest.ProbeStatus.NOT_RUN, transport.balanceProbeStatus());
     }
 
     @Test
@@ -244,7 +279,7 @@ class GateWOkxReadonlySoakSupportTest {
         GateWOkxReadonlySoakCycleTest.CycleResult result =
                 GateWOkxReadonlySoakCycleTest.CycleResult.blocked("API_KEY_REQUIRED", "UNKNOWN");
 
-        GateWOkxReadonlySoakCycleTest.writeSanitizedResult(config, result);
+        GateWOkxReadonlySoakCycleTest.writeSanitizedResult(config, result, objectMapper);
 
         String json = Files.readString(config.resultFile(), StandardCharsets.UTF_8).toLowerCase();
         assertTrue(json.contains("api_key_required"));
@@ -252,6 +287,170 @@ class GateWOkxReadonlySoakSupportTest {
         assertFalse(json.contains("rawresponse"));
         assertFalse(json.contains("http://"));
         assertFalse(json.contains("https://"));
+    }
+
+    @Test
+    void acceptsSafeSuccessBlockedAndFailedLauncherContracts() throws Exception {
+        GateWOkxReadonlySoakCycleTest.CycleResult success = result(
+                "PASSED_READ_ONLY",
+                "READ_ONLY_SAMPLE_ACCEPTED",
+                "SUCCESS_2XX",
+                "READ_ONLY_WITH_IP_ALLOWLIST",
+                "DISENGAGED",
+                true,
+                true,
+                "ACCOUNT_CONFIG_AND_BALANCE_READ",
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED,
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED
+        );
+        GateWOkxReadonlySoakCycleTest.CycleResult blocked = result(
+                "BLOCKED",
+                "PERMISSION_BLOCKED",
+                "AUTH_ERROR",
+                "UNSAFE_OR_INCOMPLETE",
+                "DISENGAGED",
+                true,
+                true,
+                "ACCOUNT_CONFIGURATION_READ",
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED,
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.NOT_RUN
+        );
+        GateWOkxReadonlySoakCycleTest.CycleResult failed = result(
+                "HARD_FAILURE",
+                "PARTIAL_RESPONSE",
+                "NOT_AVAILABLE",
+                "UNKNOWN",
+                "DISENGAGED",
+                true,
+                true,
+                "ACCOUNT_CONFIG_AND_BALANCE_READ",
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED,
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.FAILED
+        );
+
+        byte[] successJson = GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.serialize(objectMapper, success);
+        byte[] blockedJson = GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.serialize(objectMapper, blocked);
+        byte[] failedJson = GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.serialize(objectMapper, failed);
+
+        JsonNode successTree = objectMapper.readTree(successJson);
+        List<String> fields = new ArrayList<>();
+        successTree.fieldNames().forEachRemaining(fields::add);
+        assertEquals(List.of(
+                "schemaVersion", "cycleId", "observedAt", "durationMs", "resultStatus", "reasonCode",
+                "httpStatusCategory", "permissionClassification", "killSwitchObservedState",
+                "credentialAccessed", "networkCalled", "allowedEndpointCategory",
+                "accountConfigProbeStatus", "balanceProbeStatus", "traceId"
+        ), fields);
+        assertEquals("SUCCEEDED", successTree.path("balanceProbeStatus").asText());
+        assertEquals("BLOCKED", objectMapper.readTree(blockedJson).path("resultStatus").asText());
+        assertEquals("HARD_FAILURE", objectMapper.readTree(failedJson).path("resultStatus").asText());
+    }
+
+    @Test
+    void rejectsUnknownSensitiveNestedAndVariantFieldsAfterSerialization() throws Exception {
+        ObjectNode safe = (ObjectNode) objectMapper.valueToTree(result(
+                "PASSED_READ_ONLY",
+                "READ_ONLY_SAMPLE_ACCEPTED",
+                "SUCCESS_2XX",
+                "READ_ONLY_WITH_IP_ALLOWLIST",
+                "DISENGAGED",
+                true,
+                true,
+                "ACCOUNT_CONFIG_AND_BALANCE_READ",
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED,
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED
+        ));
+        List<ObjectNode> unsafe = new ArrayList<>();
+        unsafe.add(withNumber(safe, "balance", 100));
+        unsafe.add(withText(safe, "availableBalance", "100"));
+        unsafe.add(withObject(safe, "balanceDetail", "equity", "100"));
+        unsafe.add(withText(safe, "currency", "USDT"));
+        unsafe.add(withText(safe, "asset", "USDT"));
+        unsafe.add(withText(safe, "accountId", "account-1"));
+        unsafe.add(withText(safe, "rawResponse", "provider-payload"));
+        unsafe.add(withText(safe, "raw_request", "provider-request"));
+        unsafe.add(withText(safe, "RAW_HEADERS", "provider-headers"));
+        unsafe.add(withText(safe, "apiSecret", "credential-material"));
+        unsafe.add(withText(safe, "AVAILABLE_BALANCE", "100"));
+        unsafe.add(withText(safe, "unknownField", "UNKNOWN"));
+        ObjectNode nestedAllowedField = safe.deepCopy();
+        nestedAllowedField.putObject("balanceProbeStatus").put("status", "SUCCEEDED");
+        unsafe.add(nestedAllowedField);
+        ObjectNode unknownStatus = safe.deepCopy();
+        unknownStatus.put("balanceProbeStatus", "AVAILABLE");
+        unsafe.add(unknownStatus);
+
+        for (ObjectNode candidate : unsafe) {
+            byte[] payload = objectMapper.writeValueAsBytes(candidate);
+            assertThrows(
+                    Exception.class,
+                    () -> GateWOkxReadonlySoakCycleTest.EvidenceSanitizer
+                            .validateSerializedPayload(objectMapper, payload)
+            );
+        }
+    }
+
+    @Test
+    void rejectsPassWithoutBothProvenSafeProbeStatuses() {
+        GateWOkxReadonlySoakCycleTest.CycleResult unsafePass = result(
+                "PASSED_READ_ONLY",
+                "READ_ONLY_SAMPLE_ACCEPTED",
+                "SUCCESS_2XX",
+                "READ_ONLY_WITH_IP_ALLOWLIST",
+                "DISENGAGED",
+                true,
+                true,
+                "ACCOUNT_CONFIG_AND_BALANCE_READ",
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED,
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.UNKNOWN
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.validateDto(unsafePass)
+        );
+    }
+
+    @Test
+    void rejectsContradictoryEndpointAndNetworkEvidence() {
+        GateWOkxReadonlySoakCycleTest.CycleResult contradictory = result(
+                "BLOCKED",
+                "PERMISSION_BLOCKED",
+                "AUTH_ERROR",
+                "UNKNOWN",
+                "DISENGAGED",
+                true,
+                true,
+                "NONE",
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.NOT_RUN,
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.NOT_RUN
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.validateDto(contradictory)
+        );
+    }
+
+    @Test
+    void springManagedObjectMapperPreservesTemporalEnumBooleanAndNullTypes() throws Exception {
+        ManagedMapperFixture fixture = new ManagedMapperFixture(
+                Instant.parse("2026-07-16T00:00:00Z"),
+                OffsetDateTime.parse("2026-07-16T08:00:00+08:00"),
+                LocalDateTime.parse("2026-07-16T08:00:00"),
+                GateWOkxReadonlySoakCycleTest.ProbeStatus.SUCCEEDED,
+                true,
+                null
+        );
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsBytes(fixture));
+
+        assertTrue(json.path("instant").isTextual());
+        assertTrue(json.path("offsetDateTime").isTextual());
+        assertTrue(json.path("localDateTime").isTextual());
+        assertEquals("SUCCEEDED", json.path("probeStatus").asText());
+        assertTrue(json.path("enabled").isBoolean());
+        assertTrue(json.path("nullable").isNull());
     }
 
     @Test
@@ -267,9 +466,69 @@ class GateWOkxReadonlySoakSupportTest {
                 IllegalStateException.class,
                 () -> GateWOkxReadonlySoakCycleTest.writeSanitizedResult(
                         config,
-                        GateWOkxReadonlySoakCycleTest.CycleResult.blocked("SAFE_BLOCK", "UNKNOWN")
+                        GateWOkxReadonlySoakCycleTest.CycleResult.blocked("SAFE_BLOCK", "UNKNOWN"),
+                        objectMapper
                 )
         );
+    }
+
+    private static GateWOkxReadonlySoakCycleTest.CycleResult result(
+            String resultStatus,
+            String reasonCode,
+            String httpStatusCategory,
+            String permissionClassification,
+            String killSwitchObservedState,
+            boolean credentialAccessed,
+            boolean networkCalled,
+            String allowedEndpointCategory,
+            GateWOkxReadonlySoakCycleTest.ProbeStatus accountConfigProbeStatus,
+            GateWOkxReadonlySoakCycleTest.ProbeStatus balanceProbeStatus
+    ) {
+        return new GateWOkxReadonlySoakCycleTest.CycleResult(
+                GateWOkxReadonlySoakCycleTest.LAUNCHER_SCHEMA_VERSION,
+                "gatew-cycle-0123456789abcdef0123456789abcdef",
+                Instant.parse("2026-07-16T00:00:00Z"),
+                1,
+                resultStatus,
+                reasonCode,
+                httpStatusCategory,
+                permissionClassification,
+                killSwitchObservedState,
+                credentialAccessed,
+                networkCalled,
+                allowedEndpointCategory,
+                accountConfigProbeStatus,
+                balanceProbeStatus,
+                "gatew-soak-123e4567-e89b-12d3-a456-426614174000"
+        );
+    }
+
+    private static ObjectNode withNumber(ObjectNode source, String field, int value) {
+        ObjectNode copy = source.deepCopy();
+        copy.put(field, value);
+        return copy;
+    }
+
+    private static ObjectNode withText(ObjectNode source, String field, String value) {
+        ObjectNode copy = source.deepCopy();
+        copy.put(field, value);
+        return copy;
+    }
+
+    private static ObjectNode withObject(ObjectNode source, String field, String nestedField, String value) {
+        ObjectNode copy = source.deepCopy();
+        copy.putObject(field).put(nestedField, value);
+        return copy;
+    }
+
+    private record ManagedMapperFixture(
+            Instant instant,
+            OffsetDateTime offsetDateTime,
+            LocalDateTime localDateTime,
+            GateWOkxReadonlySoakCycleTest.ProbeStatus probeStatus,
+            boolean enabled,
+            String nullable
+    ) {
     }
 
     private void assertConfigBlocked(
@@ -366,7 +625,6 @@ class GateWOkxReadonlySoakSupportTest {
             String ipAllowlistProbeStatus
     ) {
         return new GateWOkxReadonlySoakCycleTest.CredentialGate(
-                "fingerprint",
                 permissionScope,
                 withdrawEnabled,
                 ipAllowlistRequired,

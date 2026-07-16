@@ -17683,3 +17683,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`BLOCKED / REAL_OKX_READONLY_PERMISSION_VERIFIED / ATOMIC_METADATA_WRITEBACK_VERIFIED / SOAK_LAUNCHER_FAILED / REAL_OKX_READONLY_SOAK_NOT_STARTED`；P0=0、P1=2。
 - boundary：无 backend/frontend/research/scripts/deploy/.github/migration/contract/allowlist/authority diff；无 LIVE/order/cancel/transfer/withdraw/scheduler/Shadow/AI/DH写侧；未覆盖 attempt-01..05。
 - next：`NQ-GATEW-FREEZE-BLOCKER-1-SOAK-LAUNCHER-EVIDENCE-SANITIZER-REMEDIATION`；修复并补 regression、exact-head CI/deploy后由 `ATTEMPT_07` start。不得重跑 permission probe，不得进入七天 acceptance任务。
+
+## 2026-07-17 — GateW soak launcher evidence sanitizer remediation
+
+- task：`NQ-GATEW-FREEZE-BLOCKER-1-SOAK-LAUNCHER-EVIDENCE-SANITIZER-REMEDIATION`；NQ-only、L级 security remediation/code/regression/deployment任务。
+- baseline：`dev`；`HEAD == origin/dev == 4505c474...`；starting run `29509730259 / completed / success / 10 jobs / bad=0`；authority consistent。
+- RCA：真实 config+balance cycle输出安全 endpoint/status语义，但旧 substring sanitizer因 `balance` 字样拒绝整个 JSON；旧 fallback只能证明 launcher output缺失，不能证明真实 outcome。
+- implementation：固定15字段 launcher v2 DTO；allowlist/type/enum/semantic sanitizer；config/balance probe status；Spring-managed mapper；atomic output；v2 provenance/hash sample；fallback只用于 output unavailable；v1只读兼容且禁止append/resume/run-loop。
+- regression：focused 35/35；required/full Maven均23/23 modules `SUCCESS / BUILD SUCCESS`；PowerShell 5.1/7各36 cases PASS、unsafe rejection=15，canonical hash exact match。
+- review：P0=0、P1=0、P2=0、P3=0；`PASS / SOAK_LAUNCHER_EVIDENCE_SANITIZER_ACCEPTED / READY_TO_COMMIT`。
+- boundary：真实 OKX calls=0、credential access=0、permission probe未重跑、soak未启动；无 endpoint allowlist/API/scheduler/migration/production composition/frontend/research/deploy/CI/archive/authority/交易能力 diff；旧 blocked run未改。
+- current fact：Commit=`UNCOMMITTED`；remediation exact-head CI=`NOT_RUN`；server deployment=`PENDING`；Authority不变。
+- next：精确暂存9个 allowlist paths，commit/push后等待 exact-head CI 10/10 GREEN；CI green后只部署JAR/supervisor/test-support并运行Linux offline验证，不调用OKX或启动soak。

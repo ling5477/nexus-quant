@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.app.gatew;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.infra.gatew.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateProbeStatus;
@@ -23,15 +25,17 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
+import java.nio.file.StandardCopyOption;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HexFormat;
+import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -47,9 +51,14 @@ import org.flywaydb.core.api.MigrationInfo;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -63,6 +72,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Tag("manual-private-readonly")
 @Tag("gatew-okx-readonly-soak")
 @EnabledIfSystemProperty(named = GateWOkxReadonlySoakCycleTest.REQUIRED_PROPERTY, matches = "true")
+@SpringJUnitConfig(classes = GateWOkxReadonlySoakCycleTest.JacksonContext.class)
 class GateWOkxReadonlySoakCycleTest {
 
     static final String REQUIRED_PROPERTY = "nq.gatew.okxReadonlySoak.required";
@@ -70,12 +80,18 @@ class GateWOkxReadonlySoakCycleTest {
     static final String RESULT_FILE_PROPERTY = "nq.gatew.okxReadonlySoak.resultFile";
     static final String REPO_ROOT_PROPERTY = "nq.gatew.okxReadonlySoak.repoRoot";
     static final String PROFILE = "gatew-okx-readonly-soak";
-    static final String ENDPOINT_ALLOWLIST_VERSION = "gatew-okx-private-readonly-v1";
+    static final String LAUNCHER_SCHEMA_VERSION = "gatew-soak-launcher-v2";
     private static final Set<OkxPrivateReadOperation> SOAK_OPERATIONS = Set.of(
             OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
             OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
     );
     private static final Set<String> TRANSIENT_REASONS = Set.of(
+            OkxPrivateReadError.NETWORK_IO_ERROR.name(),
+            OkxPrivateReadError.NETWORK_TIMEOUT.name(),
+            OkxPrivateReadError.HTTP_RATE_LIMITED.name(),
+            OkxPrivateReadError.HTTP_SERVER_ERROR.name(),
+            OkxPrivateReadError.HTTP_UNEXPECTED_STATUS.name(),
+            OkxPrivateReadError.OKX_BUSINESS_REJECTED.name(),
             OkxPrivateReadError.NETWORK_FAILURE.name(),
             OkxPrivateReadError.TIMEOUT.name(),
             OkxPrivateReadError.RATE_LIMITED.name(),
@@ -83,8 +99,23 @@ class GateWOkxReadonlySoakCycleTest {
             OkxPrivateReadError.OKX_PROVIDER_ERROR.name()
     );
     private static final Set<String> AUTH_REASONS = Set.of(
+            OkxPrivateReadError.HTTP_UNAUTHORIZED.name(),
+            OkxPrivateReadError.HTTP_FORBIDDEN.name(),
+            OkxPrivateReadError.OKX_AUTHENTICATION_FAILED.name(),
+            OkxPrivateReadError.OKX_SIGNATURE_INVALID.name(),
+            OkxPrivateReadError.OKX_TIMESTAMP_INVALID.name(),
             OkxPrivateReadError.AUTHENTICATION_FAILURE.name(),
             OkxPrivateReadError.SIGNATURE_FAILURE.name()
+    );
+    private static final Set<String> BLOCKED_REASONS = Set.of(
+            OkxPrivateReadError.PERMISSION_BLOCKED.name(),
+            OkxPrivateReadError.IP_ALLOWLIST_FAILED.name(),
+            OkxPrivateReadError.OKX_PERMISSION_DENIED.name(),
+            OkxPrivateReadError.OKX_IP_NOT_ALLOWED.name(),
+            OkxPrivateReadError.ACCOUNT_SCOPE_MISMATCH.name(),
+            OkxPrivateReadError.ENVIRONMENT_MISMATCH.name(),
+            OkxPrivateReadError.CREDENTIAL_UNAVAILABLE.name(),
+            OkxPrivateReadError.CREDENTIAL_CONFLICT.name()
     );
     private static final Set<String> SOAK_CONTROL_TABLES = Set.of(
             "flyway_schema_history",
@@ -98,6 +129,12 @@ class GateWOkxReadonlySoakCycleTest {
             "kill_switch_events"
     );
     private static final Pattern SAFE_TABLE_NAME = Pattern.compile("[a-z][a-z0-9_]*");
+    private static final Pattern SAFE_CYCLE_ID = Pattern.compile("gatew-cycle-[a-f0-9]{32}");
+    private static final Pattern SAFE_TRACE_ID = Pattern.compile("gatew-soak-[a-f0-9-]{36}");
+    private static final Pattern SAFE_CLASSIFICATION = Pattern.compile("[A-Z][A-Z0-9_]{1,95}");
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void executeOneSanitizedAction() {
@@ -105,18 +142,18 @@ class GateWOkxReadonlySoakCycleTest {
         CycleResult result;
         try {
             config.assertSafe();
-            result = execute(config);
+            result = execute(config, objectMapper);
         } catch (SafeBlockException ex) {
             result = CycleResult.blocked(ex.reasonCode(), ex.permissionClassification());
         } catch (RuntimeException ex) {
             // JDBC/Flyway/Jackson/provider cause 可能携带本地连接或 payload 片段，不把 cause 带入 test 日志。
-            result = CycleResult.blocked("SOAK_INTERNAL_FAILURE", "UNKNOWN");
+            result = CycleResult.failed("SOAK_INTERNAL_FAILURE", "UNKNOWN");
         }
-        writeSanitizedResult(config, result);
+        writeSanitizedResult(config, result, objectMapper);
         assertTrue(result.schemaSafe(), "cycle result must remain within the sanitized evidence schema");
     }
 
-    private CycleResult execute(SafetyConfig config) {
+    private CycleResult execute(SafetyConfig config, ObjectMapper managedObjectMapper) {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
         dataSource.setUrl(config.databaseUrl());
@@ -142,22 +179,26 @@ class GateWOkxReadonlySoakCycleTest {
         assertLocalServer(jdbc, config.databaseName());
         assertNoBusinessData(jdbc);
         if ("engage".equals(config.action())) {
-            return engage(jdbc, config);
+            return engage(jdbc);
         }
         CredentialGate credential = credentialGate(jdbc, config);
         credential.assertSafe();
 
         return switch (config.action()) {
-            case "bootstrap" -> bootstrap(jdbc, config, credential);
-            case "sample" -> sample(jdbc, config, credential);
+            case "bootstrap" -> bootstrap(jdbc);
+            case "sample" -> sample(jdbc, config, managedObjectMapper);
             default -> throw new SafeBlockException("SOAK_ACTION_INVALID");
         };
     }
 
-    private CycleResult bootstrap(JdbcTemplate jdbc, SafetyConfig config, CredentialGate credential) {
-        long version = disengageIsolatedFixture(jdbc);
+    private CycleResult bootstrap(JdbcTemplate jdbc) {
+        disengageIsolatedFixture(jdbc);
         assertNoBusinessData(jdbc);
         return new CycleResult(
+                LAUNCHER_SCHEMA_VERSION,
+                safeCycleId(),
+                Instant.now(),
+                0,
                 "BOOTSTRAP_READY",
                 "SOAK_ISOLATION_READY",
                 "NOT_CALLED",
@@ -166,19 +207,17 @@ class GateWOkxReadonlySoakCycleTest {
                 false,
                 false,
                 "NONE",
-                safeTraceId(),
-                databaseFingerprint(config),
-                credential.fingerprint(),
-                "35",
-                ENDPOINT_ALLOWLIST_VERSION,
-                Instant.now(),
-                0,
-                false,
-                version
+                ProbeStatus.NOT_RUN,
+                ProbeStatus.NOT_RUN,
+                safeTraceId()
         );
     }
 
-    private CycleResult sample(JdbcTemplate jdbc, SafetyConfig config, CredentialGate credential) {
+    private CycleResult sample(
+            JdbcTemplate jdbc,
+            SafetyConfig config,
+            ObjectMapper managedObjectMapper
+    ) {
         Instant startedAt = Instant.now();
         KillSwitchService killSwitchService = new KillSwitchService(
                 new JdbcKillSwitchStateRepository(jdbc),
@@ -190,13 +229,13 @@ class GateWOkxReadonlySoakCycleTest {
         }
 
         CountingTransport transport = new CountingTransport(
-                new JdkOkxPrivateReadTransport(new ObjectMapper(), Clock.systemUTC())
+                new JdkOkxPrivateReadTransport(managedObjectMapper, Clock.systemUTC())
         );
         OkxPrivateReadonlyProbeService service = new OkxPrivateReadonlyProbeService(
                 new JdbcExchangeAccountRepository(jdbc),
                 new JdbcOkxPrivateCredentialExecutor(
                         jdbc,
-                        new ObjectMapper(),
+                        managedObjectMapper,
                         config.masterKey(),
                         transport
                 ),
@@ -204,62 +243,111 @@ class GateWOkxReadonlySoakCycleTest {
                 Clock.systemUTC()
         );
 
-        OkxPrivateReadObservation observation = service.probe(
-                config.ownerId(),
-                config.exchangeAccountId(),
-                JdbcOkxPrivateCredentialExecutor.OKX_API_V5,
-                OkxPrivateEnvironment.PRODUCTION,
-                config.currencies()
-        );
-        assertNoBusinessData(jdbc);
-        KillSwitchSnapshot after = killSwitchService.snapshot();
-        if (after.status() != KillSwitchStatus.DISENGAGED || after.version() != before.version()) {
-            throw new SafeBlockException("KILL_SWITCH_CHANGED_DURING_SAMPLE");
+        try {
+            OkxPrivateReadObservation observation = service.probe(
+                    config.ownerId(),
+                    config.exchangeAccountId(),
+                    JdbcOkxPrivateCredentialExecutor.OKX_API_V5,
+                    OkxPrivateEnvironment.PRODUCTION,
+                    config.currencies()
+            );
+            assertNoBusinessData(jdbc);
+            KillSwitchSnapshot after = killSwitchService.snapshot();
+            if (after.status() != KillSwitchStatus.DISENGAGED || after.version() != before.version()) {
+                return cycleResult(
+                        "BLOCKED",
+                        "KILL_SWITCH_CHANGED_DURING_SAMPLE",
+                        "NOT_AVAILABLE",
+                        "UNKNOWN",
+                        after.status().name(),
+                        transport,
+                        startedAt
+                );
+            }
+
+            String reason = primaryReason(observation);
+            boolean passed = observation.probeStatus() == OkxPrivateProbeStatus.PASSED_READ_ONLY
+                    && Set.of("READ_ONLY").equals(observation.normalizedPermissions())
+                    && observation.ipAllowlistConfigured()
+                    && observation.noSideEffect()
+                    && observation.liveDisabled()
+                    && !observation.tradingAuthorization()
+                    && !observation.orderSubmitted()
+                    && transport.operations().equals(List.of(
+                            OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                            OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
+                    ));
+            String resultStatus = passed
+                    ? "PASSED_READ_ONLY"
+                    : TRANSIENT_REASONS.contains(reason) || AUTH_REASONS.contains(reason)
+                            ? "TRANSIENT_FAILURE"
+                            : BLOCKED_REASONS.contains(reason) ? "BLOCKED" : "HARD_FAILURE";
+            String permissionClassification = passed
+                    ? "READ_ONLY_WITH_IP_ALLOWLIST"
+                    : observation.normalizedPermissions().isEmpty() ? "UNKNOWN" : "UNSAFE_OR_INCOMPLETE";
+
+            return cycleResult(
+                    resultStatus,
+                    passed ? "READ_ONLY_SAMPLE_ACCEPTED" : reason,
+                    httpStatusCategory(reason, passed),
+                    permissionClassification,
+                    after.status().name(),
+                    transport,
+                    startedAt
+            );
+        } catch (SafeBlockException ex) {
+            return cycleResult(
+                    "BLOCKED",
+                    ex.reasonCode(),
+                    "NOT_AVAILABLE",
+                    ex.permissionClassification(),
+                    before.status().name(),
+                    transport,
+                    startedAt
+            );
+        } catch (RuntimeException ex) {
+            // provider/JDBC/Jackson cause 不进入 launcher DTO；只保留固定失败分类和已观测 typed operation 状态。
+            return cycleResult(
+                    "FAILED",
+                    "SOAK_INTERNAL_FAILURE",
+                    "NOT_AVAILABLE",
+                    "UNKNOWN",
+                    before.status().name(),
+                    transport,
+                    startedAt
+            );
         }
+    }
 
-        String reason = primaryReason(observation);
-        boolean passed = observation.probeStatus() == OkxPrivateProbeStatus.PASSED_READ_ONLY
-                && Set.of("READ_ONLY").equals(observation.normalizedPermissions())
-                && observation.ipAllowlistConfigured()
-                && observation.noSideEffect()
-                && observation.liveDisabled()
-                && !observation.tradingAuthorization()
-                && !observation.orderSubmitted()
-                && transport.operations().equals(List.of(
-                        OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
-                        OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
-                ));
-        String resultStatus = passed
-                ? "PASSED_READ_ONLY"
-                : TRANSIENT_REASONS.contains(reason) || AUTH_REASONS.contains(reason)
-                        ? "TRANSIENT_FAILURE"
-                        : "HARD_FAILURE";
-        String permissionClassification = passed
-                ? "READ_ONLY_WITH_IP_ALLOWLIST"
-                : observation.normalizedPermissions().isEmpty() ? "UNKNOWN" : "UNSAFE_OR_INCOMPLETE";
-
+    private static CycleResult cycleResult(
+            String resultStatus,
+            String reasonCode,
+            String httpStatusCategory,
+            String permissionClassification,
+            String killSwitchObservedState,
+            CountingTransport transport,
+            Instant startedAt
+    ) {
         return new CycleResult(
+                LAUNCHER_SCHEMA_VERSION,
+                safeCycleId(),
+                Instant.now(),
+                Math.max(0, Duration.between(startedAt, Instant.now()).toMillis()),
                 resultStatus,
-                passed ? "READ_ONLY_SAMPLE_ACCEPTED" : reason,
-                httpStatusCategory(reason, passed),
+                reasonCode,
+                httpStatusCategory,
                 permissionClassification,
-                after.status().name(),
+                killSwitchObservedState,
                 transport.calls() > 0,
                 transport.calls() > 0,
                 transport.endpointCategory(),
-                safeTraceId(),
-                databaseFingerprint(config),
-                credential.fingerprint(),
-                "35",
-                ENDPOINT_ALLOWLIST_VERSION,
-                Instant.now(),
-                Math.max(0, Duration.between(startedAt, Instant.now()).toMillis()),
-                AUTH_REASONS.contains(reason),
-                after.version()
+                transport.accountConfigProbeStatus(),
+                transport.balanceProbeStatus(),
+                safeTraceId()
         );
     }
 
-    private CycleResult engage(JdbcTemplate jdbc, SafetyConfig config) {
+    private CycleResult engage(JdbcTemplate jdbc) {
         KillSwitchService service = new KillSwitchService(new JdbcKillSwitchStateRepository(jdbc), Clock.systemUTC());
         KillSwitchSnapshot current = service.snapshot();
         KillSwitchSnapshot engaged = current.status() == KillSwitchStatus.ENGAGED
@@ -269,6 +357,10 @@ class GateWOkxReadonlySoakCycleTest {
             throw new SafeBlockException("KILL_SWITCH_ENGAGE_FAILED");
         }
         return new CycleResult(
+                LAUNCHER_SCHEMA_VERSION,
+                safeCycleId(),
+                Instant.now(),
+                0,
                 "ENGAGED",
                 "SOAK_STOPPED_FAIL_CLOSED",
                 "NOT_CALLED",
@@ -277,44 +369,32 @@ class GateWOkxReadonlySoakCycleTest {
                 false,
                 false,
                 "NONE",
-                safeTraceId(),
-                databaseFingerprint(config),
-                "UNAVAILABLE",
-                "35",
-                ENDPOINT_ALLOWLIST_VERSION,
-                Instant.now(),
-                0,
-                false,
-                engaged.version()
+                ProbeStatus.NOT_RUN,
+                ProbeStatus.NOT_RUN,
+                safeTraceId()
         );
     }
 
     private static CredentialGate credentialGate(JdbcTemplate jdbc, SafetyConfig config) {
         List<CredentialGate> rows = jdbc.query(
                 """
-                        SELECT c.credential_id, c.key_version, c.masked_access_key,
-                               c.permission_scope, c.withdraw_enabled, c.ip_allowlist_required,
-                               c.permission_probe_status, c.ip_allowlist_probe_status,
-                               a.exchange_code, a.trade_env, a.status
-                        FROM exchange_account_credentials c
-                        JOIN exchange_accounts a ON a.exchange_account_id = c.exchange_account_id
-                        WHERE a.owner_user_id = ?
-                          AND a.exchange_account_id = ?
-                          AND a.exchange_code = 'OKX'
-                          AND a.trade_env = 'LIVE'
-                          AND a.status = 'ACTIVE'
-                          AND c.credential_type = 'OKX_API_V5'
-                          AND c.is_active = TRUE
-                          AND c.credential_status = 'ACTIVE'
-                          AND c.revoked_at IS NULL
-                          AND c.rotated_at IS NULL
+                                SELECT c.permission_scope, c.withdraw_enabled, c.ip_allowlist_required,
+                                       c.permission_probe_status, c.ip_allowlist_probe_status,
+                                       a.exchange_code, a.trade_env, a.status
+                                FROM exchange_account_credentials c
+                                JOIN exchange_accounts a ON a.exchange_account_id = c.exchange_account_id
+                                WHERE a.owner_user_id = ?
+                                  AND a.exchange_account_id = ?
+                                  AND a.exchange_code = 'OKX'
+                                  AND a.trade_env = 'LIVE'
+                                  AND a.status = 'ACTIVE'
+                                  AND c.credential_type = 'OKX_API_V5'
+                                  AND c.is_active = TRUE
+                                  AND c.credential_status = 'ACTIVE'
+                                  AND c.revoked_at IS NULL
+                                  AND c.rotated_at IS NULL
                         """,
                 (resultSet, rowNum) -> new CredentialGate(
-                        sha256(String.join("|",
-                                Long.toString(resultSet.getLong("credential_id")),
-                                Integer.toString(resultSet.getInt("key_version")),
-                                Objects.toString(resultSet.getString("masked_access_key"), "MASKED"),
-                                Long.toString(config.exchangeAccountId()))),
                         resultSet.getString("permission_scope"),
                         resultSet.getBoolean("withdraw_enabled"),
                         resultSet.getBoolean("ip_allowlist_required"),
@@ -354,12 +434,12 @@ class GateWOkxReadonlySoakCycleTest {
     private static void assertNoBusinessData(JdbcTemplate jdbc) {
         List<String> tables = jdbc.queryForList(
                 """
-                        SELECT table_name
-                        FROM information_schema.tables
-                        WHERE table_schema = current_schema()
-                          AND table_type = 'BASE TABLE'
-                        ORDER BY table_name
-                """,
+                                SELECT table_name
+                                FROM information_schema.tables
+                                WHERE table_schema = current_schema()
+                                  AND table_type = 'BASE TABLE'
+                                ORDER BY table_name
+                        """,
                 String.class
         );
         List<String> existenceChecks = new ArrayList<>();
@@ -452,33 +532,28 @@ class GateWOkxReadonlySoakCycleTest {
     private static String httpStatusCategory(String reason, boolean passed) {
         if (passed) return "SUCCESS_2XX";
         return switch (reason) {
-            case "RATE_LIMITED" -> "RATE_LIMITED_429";
-            case "HTTP_ERROR", "OKX_PROVIDER_ERROR" -> "EXCHANGE_ERROR";
-            case "AUTHENTICATION_FAILURE", "SIGNATURE_FAILURE", "IP_ALLOWLIST_FAILED" -> "AUTH_ERROR";
-            case "NETWORK_FAILURE", "TIMEOUT" -> "NETWORK_ERROR";
+            case "RATE_LIMITED", "HTTP_RATE_LIMITED" -> "RATE_LIMITED_429";
+            case "HTTP_ERROR", "OKX_PROVIDER_ERROR", "HTTP_SERVER_ERROR",
+                 "HTTP_UNEXPECTED_STATUS", "OKX_BUSINESS_REJECTED" -> "EXCHANGE_ERROR";
+            case "AUTHENTICATION_FAILURE", "SIGNATURE_FAILURE", "HTTP_UNAUTHORIZED", "HTTP_FORBIDDEN",
+                 "OKX_AUTHENTICATION_FAILED", "OKX_SIGNATURE_INVALID", "OKX_TIMESTAMP_INVALID",
+                 "IP_ALLOWLIST_FAILED", "OKX_IP_NOT_ALLOWED", "OKX_PERMISSION_DENIED" -> "AUTH_ERROR";
+            case "NETWORK_FAILURE", "TIMEOUT", "NETWORK_IO_ERROR", "NETWORK_TIMEOUT" -> "NETWORK_ERROR";
             default -> "NOT_AVAILABLE";
         };
-    }
-
-    private static String databaseFingerprint(SafetyConfig config) {
-        return sha256(config.databaseUrl() + "|" + config.databaseUser() + "|" + config.databaseName());
     }
 
     private static String safeTraceId() {
         return "gatew-soak-" + UUID.randomUUID();
     }
 
-    private static String sha256(String value) {
-        try {
-            return HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8))
-            );
-        } catch (Exception ex) {
-            throw new IllegalStateException("SHA-256 unavailable");
-        }
+    private static String safeCycleId() {
+        return "gatew-cycle-" + UUID.randomUUID().toString().replace("-", "");
     }
 
-    static void writeSanitizedResult(SafetyConfig config, CycleResult result) {
+    static void writeSanitizedResult(SafetyConfig config, CycleResult result, ObjectMapper managedObjectMapper) {
+        byte[] json = null;
+        Path temporary = null;
         try {
             Path targetRoot = config.repoRoot().resolve("target").resolve("gatew-okx-readonly-soak").normalize();
             Path output = config.resultFile().normalize();
@@ -486,21 +561,188 @@ class GateWOkxReadonlySoakCycleTest {
                 throw new IllegalArgumentException("resultFile must stay below target/gatew-okx-readonly-soak");
             }
             Files.createDirectories(output.getParent());
-            ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
-            byte[] json = mapper.writeValueAsBytes(result);
-            String text = new String(json, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
-            for (String forbidden : List.of(
-                    "secretkey", "passphrase", "signature", "cookie",
-                    "rawbody", "rawheaders", "rawresponse", "accountid", "balance", "https://", "http://"
-            )) {
-                if (text.contains(forbidden)) {
-                    throw new IllegalStateException("sanitized result contains a forbidden field");
-                }
+            json = EvidenceSanitizer.serialize(managedObjectMapper, result);
+            temporary = output.resolveSibling(output.getFileName() + ".tmp-" + UUID.randomUUID());
+            Files.write(temporary, json);
+            try {
+                Files.move(
+                        temporary,
+                        output,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING
+                );
+            } catch (AtomicMoveNotSupportedException ex) {
+                Files.move(temporary, output, StandardCopyOption.REPLACE_EXISTING);
             }
-            Files.write(output, json);
-            Arrays.fill(json, (byte) 0);
         } catch (Exception ex) {
             throw new IllegalStateException("failed to write sanitized cycle result");
+        } finally {
+            if (json != null) {
+                Arrays.fill(json, (byte) 0);
+            }
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (Exception ignored) {
+                    // 临时文件名与内容均受最小 DTO 约束；删除失败不覆盖原始 fail-closed 结果。
+                }
+            }
+        }
+    }
+
+    /**
+     * 固定 launcher DTO 的序列化前后 allowlist/type/backstop 校验。
+     */
+    static final class EvidenceSanitizer {
+        private static final List<String> ALLOWED_FIELDS = List.of(
+                "schemaVersion",
+                "cycleId",
+                "observedAt",
+                "durationMs",
+                "resultStatus",
+                "reasonCode",
+                "httpStatusCategory",
+                "permissionClassification",
+                "killSwitchObservedState",
+                "credentialAccessed",
+                "networkCalled",
+                "allowedEndpointCategory",
+                "accountConfigProbeStatus",
+                "balanceProbeStatus",
+                "traceId"
+        );
+        private static final Set<String> RESULT_STATUSES = Set.of(
+                "BOOTSTRAP_READY", "ENGAGED", "PASSED_READ_ONLY", "BLOCKED",
+                "TRANSIENT_FAILURE", "HARD_FAILURE", "FAILED"
+        );
+        private static final Set<String> HTTP_STATUS_CATEGORIES = Set.of(
+                "SUCCESS_2XX", "RATE_LIMITED_429", "EXCHANGE_ERROR", "AUTH_ERROR",
+                "NETWORK_ERROR", "NOT_AVAILABLE", "NOT_CALLED"
+        );
+        private static final Set<String> PERMISSION_CLASSIFICATIONS = Set.of(
+                "METADATA_READ_ONLY", "READ_ONLY_WITH_IP_ALLOWLIST", "UNKNOWN",
+                "UNSAFE_OR_INCOMPLETE", "UNSAFE_OR_UNKNOWN", "WITHDRAW_ENABLED",
+                "READ_ONLY_UNVERIFIED_IP"
+        );
+        private static final Set<String> KILL_SWITCH_STATES = Set.of("DISENGAGED", "ENGAGED", "UNKNOWN");
+        private static final Set<String> ENDPOINT_CATEGORIES = Set.of(
+                "NONE", "ACCOUNT_CONFIGURATION_READ", "ACCOUNT_CONFIG_AND_BALANCE_READ", "FORBIDDEN_OR_UNKNOWN"
+        );
+
+        private EvidenceSanitizer() {
+        }
+
+        static byte[] serialize(ObjectMapper managedObjectMapper, CycleResult result) throws Exception {
+            Objects.requireNonNull(managedObjectMapper, "managedObjectMapper must not be null");
+            validateDto(result);
+            byte[] json = managedObjectMapper.writeValueAsBytes(result);
+            validateSerializedPayload(managedObjectMapper, json);
+            return json;
+        }
+
+        static void validateSerializedPayload(ObjectMapper managedObjectMapper, byte[] json) throws Exception {
+            Objects.requireNonNull(managedObjectMapper, "managedObjectMapper must not be null");
+            Objects.requireNonNull(json, "json must not be null");
+            JsonNode root = managedObjectMapper.readTree(json);
+            if (root == null || !root.isObject()) {
+                throw new IllegalArgumentException("launcher evidence must be a JSON object");
+            }
+            List<String> actualFields = new ArrayList<>();
+            Iterator<String> names = root.fieldNames();
+            while (names.hasNext()) {
+                String field = names.next();
+                actualFields.add(field);
+                if (!ALLOWED_FIELDS.contains(field)) {
+                    throw new IllegalArgumentException("launcher evidence contains an unknown or forbidden field");
+                }
+            }
+            if (!ALLOWED_FIELDS.equals(actualFields)) {
+                throw new IllegalArgumentException("launcher evidence field order or completeness is invalid");
+            }
+            for (String field : ALLOWED_FIELDS) {
+                JsonNode value = root.get(field);
+                if (value == null || value.isNull() || value.isContainerNode()) {
+                    throw new IllegalArgumentException("launcher evidence field type is invalid");
+                }
+            }
+            if (!root.get("durationMs").isIntegralNumber()
+                    || !root.get("credentialAccessed").isBoolean()
+                    || !root.get("networkCalled").isBoolean()) {
+                throw new IllegalArgumentException("launcher evidence scalar type is invalid");
+            }
+            for (String field : ALLOWED_FIELDS) {
+                if (!Set.of("durationMs", "credentialAccessed", "networkCalled").contains(field)
+                        && !root.get(field).isTextual()) {
+                    throw new IllegalArgumentException("launcher evidence text field type is invalid");
+                }
+            }
+            String serialized = new String(json, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+            if (serialized.contains("http://") || serialized.contains("https://") || serialized.contains("/api/v5/")) {
+                throw new IllegalArgumentException("launcher evidence contains a forbidden network material shape");
+            }
+            validateDto(managedObjectMapper.treeToValue(root, CycleResult.class));
+        }
+
+        static void validateDto(CycleResult result) {
+            Objects.requireNonNull(result, "result must not be null");
+            if (!LAUNCHER_SCHEMA_VERSION.equals(result.schemaVersion())
+                    || result.cycleId() == null || !SAFE_CYCLE_ID.matcher(result.cycleId()).matches()
+                    || result.observedAt() == null
+                    || result.durationMs() < 0
+                    || result.resultStatus() == null || !RESULT_STATUSES.contains(result.resultStatus())
+                    || result.reasonCode() == null || !SAFE_CLASSIFICATION.matcher(result.reasonCode()).matches()
+                    || result.httpStatusCategory() == null
+                    || !HTTP_STATUS_CATEGORIES.contains(result.httpStatusCategory())
+                    || result.permissionClassification() == null
+                    || !PERMISSION_CLASSIFICATIONS.contains(result.permissionClassification())
+                    || result.killSwitchObservedState() == null
+                    || !KILL_SWITCH_STATES.contains(result.killSwitchObservedState())
+                    || result.allowedEndpointCategory() == null
+                    || !ENDPOINT_CATEGORIES.contains(result.allowedEndpointCategory())
+                    || result.accountConfigProbeStatus() == null
+                    || result.balanceProbeStatus() == null
+                    || result.traceId() == null || !SAFE_TRACE_ID.matcher(result.traceId()).matches()) {
+                throw new IllegalArgumentException("launcher evidence DTO is outside the fixed contract");
+            }
+            if ("PASSED_READ_ONLY".equals(result.resultStatus())
+                    && (!result.credentialAccessed()
+                    || !result.networkCalled()
+                    || !"ACCOUNT_CONFIG_AND_BALANCE_READ".equals(result.allowedEndpointCategory())
+                    || result.accountConfigProbeStatus() != ProbeStatus.SUCCEEDED
+                    || result.balanceProbeStatus() != ProbeStatus.SUCCEEDED)) {
+                throw new IllegalArgumentException("PASS launcher evidence lacks a proven read-only endpoint outcome");
+            }
+            validateEndpointSemantics(result);
+        }
+
+        private static void validateEndpointSemantics(CycleResult result) {
+            boolean noEndpoint = "NONE".equals(result.allowedEndpointCategory());
+            boolean configOnly = "ACCOUNT_CONFIGURATION_READ".equals(result.allowedEndpointCategory());
+            boolean configAndBalance = "ACCOUNT_CONFIG_AND_BALANCE_READ".equals(result.allowedEndpointCategory());
+            if (noEndpoint && (result.credentialAccessed()
+                    || result.networkCalled()
+                    || result.accountConfigProbeStatus() != ProbeStatus.NOT_RUN
+                    || result.balanceProbeStatus() != ProbeStatus.NOT_RUN)) {
+                throw new IllegalArgumentException("no-endpoint launcher evidence contains an impossible probe outcome");
+            }
+            if (!noEndpoint && (!result.credentialAccessed() || !result.networkCalled())) {
+                throw new IllegalArgumentException("endpoint launcher evidence lacks credential/network provenance");
+            }
+            if (configOnly && (!probeOutcomeKnown(result.accountConfigProbeStatus())
+                    || result.balanceProbeStatus() != ProbeStatus.NOT_RUN)) {
+                throw new IllegalArgumentException("config-only launcher evidence has inconsistent probe statuses");
+            }
+            if (configAndBalance && (!probeOutcomeKnown(result.accountConfigProbeStatus())
+                    || !probeOutcomeKnown(result.balanceProbeStatus()))) {
+                throw new IllegalArgumentException("config-and-balance launcher evidence has incomplete probe statuses");
+            }
+            if (!configAndBalance && result.balanceProbeStatus() != ProbeStatus.NOT_RUN) {
+                throw new IllegalArgumentException("balance probe status is outside the allowed endpoint category");
+            }
+        }
+
+        private static boolean probeOutcomeKnown(ProbeStatus status) {
+            return status != ProbeStatus.NOT_RUN && status != ProbeStatus.UNKNOWN;
         }
     }
 
@@ -703,7 +945,6 @@ class GateWOkxReadonlySoakCycleTest {
     }
 
     record CredentialGate(
-            String fingerprint,
             String permissionScope,
             boolean withdrawEnabled,
             boolean ipAllowlistRequired,
@@ -737,6 +978,8 @@ class GateWOkxReadonlySoakCycleTest {
     static final class CountingTransport implements OkxPrivateReadTransport {
         private final OkxPrivateReadTransport delegate;
         private final List<OkxPrivateReadOperation> operations = new ArrayList<>();
+        private final Map<OkxPrivateReadOperation, ProbeStatus> probeStatuses =
+                new EnumMap<>(OkxPrivateReadOperation.class);
 
         CountingTransport(OkxPrivateReadTransport delegate) {
             this.delegate = Objects.requireNonNull(delegate);
@@ -751,12 +994,34 @@ class GateWOkxReadonlySoakCycleTest {
             if (request == null || !SOAK_OPERATIONS.contains(request.operation())) {
                 throw new SafeBlockException("FORBIDDEN_ENDPOINT_ATTEMPTED");
             }
-            operations.add(request.operation());
-            return delegate.execute(request, credential, environment);
+            OkxPrivateReadOperation operation = request.operation();
+            operations.add(operation);
+            probeStatuses.put(operation, ProbeStatus.UNKNOWN);
+            try {
+                OkxPrivateReadResult result = delegate.execute(request, credential, environment);
+                if (result == null || result.operation() != operation) {
+                    probeStatuses.put(operation, ProbeStatus.FAILED);
+                    throw new SafeBlockException("SOAK_TRANSPORT_RESULT_INVALID");
+                }
+                probeStatuses.put(operation, result.complete() ? ProbeStatus.SUCCEEDED : ProbeStatus.FAILED);
+                return result;
+            } catch (SafeBlockException ex) {
+                probeStatuses.put(operation, ProbeStatus.BLOCKED);
+                throw ex;
+            } catch (RuntimeException ex) {
+                probeStatuses.put(operation, ProbeStatus.FAILED);
+                throw ex;
+            }
         }
 
-        int calls() { return operations.size(); }
-        List<OkxPrivateReadOperation> operations() { return List.copyOf(operations); }
+        int calls() {
+            return operations.size();
+        }
+
+        List<OkxPrivateReadOperation> operations() {
+            return List.copyOf(operations);
+        }
+
         String endpointCategory() {
             if (operations.isEmpty()) return "NONE";
             if (operations.equals(List.of(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ))) {
@@ -769,9 +1034,52 @@ class GateWOkxReadonlySoakCycleTest {
             }
             return "FORBIDDEN_OR_UNKNOWN";
         }
+
+        ProbeStatus accountConfigProbeStatus() {
+            return probeStatuses.getOrDefault(
+                    OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                    ProbeStatus.NOT_RUN
+            );
+        }
+
+        ProbeStatus balanceProbeStatus() {
+            return probeStatuses.getOrDefault(
+                    OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ,
+                    ProbeStatus.NOT_RUN
+            );
+        }
     }
 
+    enum ProbeStatus {
+        NOT_RUN,
+        SUCCEEDED,
+        BLOCKED,
+        FAILED,
+        UNKNOWN
+    }
+
+    @JsonPropertyOrder({
+            "schemaVersion",
+            "cycleId",
+            "observedAt",
+            "durationMs",
+            "resultStatus",
+            "reasonCode",
+            "httpStatusCategory",
+            "permissionClassification",
+            "killSwitchObservedState",
+            "credentialAccessed",
+            "networkCalled",
+            "allowedEndpointCategory",
+            "accountConfigProbeStatus",
+            "balanceProbeStatus",
+            "traceId"
+    })
     record CycleResult(
+            String schemaVersion,
+            String cycleId,
+            Instant observedAt,
+            long durationMs,
             String resultStatus,
             String reasonCode,
             String httpStatusCategory,
@@ -780,19 +1088,17 @@ class GateWOkxReadonlySoakCycleTest {
             boolean credentialAccessed,
             boolean networkCalled,
             String allowedEndpointCategory,
-            String traceId,
-            String databaseFingerprint,
-            String credentialReferenceFingerprint,
-            String flywayVersion,
-            String endpointAllowlistVersion,
-            Instant observedAt,
-            long durationMs,
-            boolean authenticationFailure,
-            long killSwitchVersion
+            ProbeStatus accountConfigProbeStatus,
+            ProbeStatus balanceProbeStatus,
+            String traceId
     ) {
         static CycleResult blocked(String reasonCode, String permissionClassification) {
             return new CycleResult(
-                    "HARD_FAILURE",
+                    LAUNCHER_SCHEMA_VERSION,
+                    safeCycleId(),
+                    Instant.now(),
+                    0,
+                    "BLOCKED",
                     reasonCode,
                     "NOT_CALLED",
                     permissionClassification,
@@ -800,26 +1106,45 @@ class GateWOkxReadonlySoakCycleTest {
                     false,
                     false,
                     "NONE",
-                    safeTraceId(),
-                    "UNAVAILABLE",
-                    "UNAVAILABLE",
-                    "UNAVAILABLE",
-                    ENDPOINT_ALLOWLIST_VERSION,
+                    ProbeStatus.NOT_RUN,
+                    ProbeStatus.NOT_RUN,
+                    safeTraceId()
+            );
+        }
+
+        static CycleResult failed(String reasonCode, String permissionClassification) {
+            return new CycleResult(
+                    LAUNCHER_SCHEMA_VERSION,
+                    safeCycleId(),
                     Instant.now(),
                     0,
-                    AUTH_REASONS.contains(reasonCode),
-                    0
+                    "FAILED",
+                    reasonCode,
+                    "NOT_AVAILABLE",
+                    permissionClassification,
+                    "UNKNOWN",
+                    false,
+                    false,
+                    "NONE",
+                    ProbeStatus.NOT_RUN,
+                    ProbeStatus.NOT_RUN,
+                    safeTraceId()
             );
         }
 
         boolean schemaSafe() {
-            return observedAt != null
-                    && resultStatus != null
-                    && reasonCode != null
-                    && traceId != null
-                    && !traceId.isBlank()
-                    && durationMs >= 0;
+            try {
+                EvidenceSanitizer.validateDto(this);
+                return true;
+            } catch (RuntimeException ex) {
+                return false;
+            }
         }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    @ImportAutoConfiguration(JacksonAutoConfiguration.class)
+    static class JacksonContext {
     }
 
     static final class SafeBlockException extends RuntimeException {
