@@ -644,6 +644,11 @@ function ConvertFrom-SystemctlShowOutput {
         if ($separator -le 0) { continue }
         $values[$line.Substring(0, $separator)] = $line.Substring($separator + 1)
     }
+    # systemd 255 omits EnvironmentFiles when no EnvironmentFile is configured, including not-found units.
+    # Normalize only this optional property; real-soak validation still requires the fixed owner-only path.
+    if (-not $values.ContainsKey('EnvironmentFiles')) {
+        $values.EnvironmentFiles = ''
+    }
     $required = @(
         'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ExecMainStatus', 'FragmentPath',
         'User', 'Group', 'WorkingDirectory', 'Restart', 'KillMode', 'TimeoutStopUSec',
@@ -2361,6 +2366,26 @@ function Invoke-SelfTest {
         }
         $caseCount++
         Assert-LinuxUnitContract $activeUnitState $false $true
+        $caseCount++
+
+        $activeNoEnvironmentState = ConvertFrom-SystemctlShowOutput @(
+            $activeUnitLines |
+                Where-Object { $_ -notmatch '^EnvironmentFiles=' } |
+                ForEach-Object { $_ -replace '^PrivateNetwork=no$', 'PrivateNetwork=yes' }
+        )
+        if ([string]$activeNoEnvironmentState.EnvironmentFiles -ne '') {
+            throw 'missing systemd EnvironmentFiles was not normalized to empty'
+        }
+        Assert-LinuxUnitContract $activeNoEnvironmentState $true $false
+        $caseCount++
+
+        $missingRequiredEnvironmentRejected = $false
+        try { Assert-LinuxUnitContract $activeNoEnvironmentState $true $true } catch {
+            $missingRequiredEnvironmentRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
+        }
+        if (-not $missingRequiredEnvironmentRejected) {
+            throw 'real soak accepted a missing systemd EnvironmentFiles property'
+        }
         $caseCount++
 
         $inactiveRejected = $false
