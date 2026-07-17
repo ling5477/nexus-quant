@@ -17695,3 +17695,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：真实 OKX calls=0、credential access=0、permission probe未重跑、soak未启动；无 endpoint allowlist/API/scheduler/migration/production composition/frontend/research/deploy/CI/archive/authority/交易能力 diff；旧 blocked run未改。
 - current fact：Commit=`UNCOMMITTED`；remediation exact-head CI=`NOT_RUN`；server deployment=`PENDING`；Authority不变。
 - next：精确暂存9个 allowlist paths，commit/push后等待 exact-head CI 10/10 GREEN；CI green后只部署JAR/supervisor/test-support并运行Linux offline验证，不调用OKX或启动soak。
+
+## 2026-07-17 — GateW OKX read-only soak server bootstrap attempt-07
+
+- task：`NQ-GATEW-OKX-READONLY-SOAK-SERVER-DEPLOYMENT-AND-CREDENTIAL-BOOTSTRAP / ATTEMPT_07`；NQ-only、L级 real read-only soak start。
+- baseline：`dev` clean；`HEAD == origin/dev == 8bfc2361...`；exact-head run `29517106026 / completed / success / 10 jobs / bad=0`；authority consistent。
+- hard gates：server isolation/artifact/old run/owner-only config/credential permission/Flyway V35/kill switch全部 PASS；permission metadata复用，未重跑 permission probe。
+- self-test：deployed supervisor PowerShell 7.6.3、36/36 PASS、unsafe rejection=15、no private network；persistent evidence/credential metadata/old run/kill switch不变。
+- start：唯一新 v2 run `gatew-soak-20260717T122834Z-eb5ef11c`；首条 config+balance真实 sample为 `PASSED_READ_ONLY`，real outcome proven，hash-chain PASS，failure/fallback/raw/secret=`0/0/0/0`。
+- detachment：Linux `Start-Process -WindowStyle Hidden`抛 `NotSupportedException`，`supervisor.json`未生成；start返回 generic internal error，未重发 start或手工启动 run-loop。
+- recovery：已 `failure-stop`；heartbeat=`FAILURE_STOPPED / OPERATOR_FAILURE_STOP`，PID=0，kill switch=`ENGAGED / version=5`，final-summary absent，公网非 SSH listener=0，旧 run hash不变。
+- result：`BLOCKED / FIRST_REAL_SAMPLE_VERIFIED / SUPERVISOR_DETACHMENT_FAILED / REAL_OKX_READONLY_SOAK_NOT_STARTED`；P0=0、P1=2。首样本不得启动 acceptance clock。
+- boundary：无 code/supervisor/schema/allowlist/migration/credential/permission/authority diff；无 LIVE/order/cancel/transfer/withdraw/AI/DH写侧；本轮只允许的真实 config+balance reads已脱敏留证。
+- next：独立修复 Linux detached process兼容性并补真实 no-network smoke；commit/push/exact-head CI/server部署后由新 `ATTEMPT_08`创建全新 run，不得进入七天 acceptance任务。

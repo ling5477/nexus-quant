@@ -11958,3 +11958,28 @@ Known limitations：SSH前台输出在长 Maven cycle期间断开，但远端唯
 第一次 focused 命令因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifiedTests=false` 被 Maven解析为 lifecycle token，未进入编译；引用两个 `-D` 参数后重跑并通过。已知非阻断 warning：既有 Mockito dynamic-agent/JDK future、SLF4J NOP、unchecked/deprecation与 checkout EOL warning。
 
 未运行：Linux/server offline self-test、artifact SHA-256 remote match、loopback health、remediation exact-head CI、真实 permission probe、真实 OKX config/balance、真实 soak、frontend、Python。阻断性：本地实现无 P0/P1；server deployment只能在 remediation exact-head CI GREEN后执行，且仅允许离线验证。
+
+## 2026-07-17 — GateW OKX read-only soak server bootstrap attempt-07
+
+结论：`BLOCKED / REAL_OKX_READONLY_PERMISSION_METADATA_REUSED / FIRST_REAL_SAMPLE_VERIFIED / SUPERVISOR_DETACHMENT_FAILED / REAL_OKX_READONLY_SOAK_NOT_STARTED`（阻断 / 复用既有只读 permission metadata / 首条真实样本已验证 / supervisor脱离失败 / 真实 soak未启动）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| local/server exact-head and CI | PASS | `HEAD == origin/dev == 8bfc2361...`；run `29517106026 / completed / success / 10 jobs / bad=0`；server detached tracked-clean checkout一致 |
+| authority checker | PASS | GateW `IN_PROGRESS|NOT_FROZEN`；GateW-FREEZE `NOT_STARTED`；LIVE `DISABLED` |
+| SSH/listener/resource/artifact inventory | PASS | NTP yes；公网非 SSH listener=0；NQ/PostgreSQL loopback；JAR/supervisor SHA-256 exact match |
+| credential and permission metadata reuse | PASS | rows/active/encrypted=`1/1/1`；`SUCCEEDED / READ_ONLY / withdraw=false / IP PASSED`；未重跑 permission probe |
+| runtime composition / startup no-call proof | PASS | profile输入与 Real port互斥条件匹配；management启动后 credential/permission/access audit增量=0 |
+| deployed supervisor parameter introspection | PASS | PowerShell 7.6.3；actions、168h下限、900s cadence、`StartingCiRun`均存在 |
+| deployed supervisor self-test | PASS | 36 cases；unsafe rejection=15；schema v2/sanitizer/hash/tamper/artifact/legacy immutable全部 PASS；no private network |
+| start final hard gate | PASS | fixed commit/CI/artifact/server isolation/config/credential/permission/Flyway V35/old run/kill switch全部通过 |
+| single new v2 start | BLOCKED | run `gatew-soak-20260717T122834Z-eb5ef11c`；start返回 `FAIL / SUPERVISOR_INTERNAL_ERROR`；`supervisor.json` absent |
+| first real sample | PASS | config+balance均 `SUCCEEDED`；`PASSED_READ_ONLY`；real outcome proven；failure/fallback/raw/secret=`0/0/0/0` |
+| status / evidence-verify | PASS | `FAILURE_STOPPED / OPERATOR_FAILURE_STOP / PID 0`；sample/valid real PASS=`1/1`；hash-chain verified |
+| failure-stop / safety recovery | PASS | `STOP_REQUESTED / kind=failure`；kill switch `ENGAGED / version=5`；final-summary absent；公网非 SSH listener=0 |
+| Linux detachment RCA | PASS | `/bin/true`无副作用复现；`NotSupportedException`；`Start-Process -WindowStyle Hidden` unsupported |
+| docs validation | PASS | `git diff --check` clean；authority errors=0；doc links errors=0（1个既有 GateJ历史 warning）；forbidden-scope/`STATUS.md`/`ROADMAP.md` diff=0；高置信 secret与尾随空白扫描=0 |
+
+首样本 observedAt=`2026-07-17T12:31:14.0630196Z`，record hash=`87cb4fa2b4a2f293cac6829aa70c026a59678d0ddab330e60f56ad1ab3f07448`。由于 detached supervisor从未建立并已 failure-stop，该时间不得作为持续验收的 `acceptanceStartAt`；acceptance clock=`NOT_STARTED / INVALIDATED_BY_DETACHMENT_FAILURE`。
+
+Known limitations：Linux detached start为 P1；36-case self-test未覆盖真实 Linux `Start-Process` smoke；start安全错误码仅为 generic internal error。未运行 168 小时连续 soak、七天 acceptance、frontend、Python或新的 Maven全量回归；本轮禁止修改 supervisor，因此没有实施修复。下一步必须先独立 remediation、exact-head CI与server部署，再由新 `ATTEMPT_08`创建全新 run。
