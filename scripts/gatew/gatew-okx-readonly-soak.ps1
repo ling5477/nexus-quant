@@ -1297,20 +1297,21 @@ function Find-LinuxSupervisorProcesses {
         [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
     )
 
-    $matches = @()
+    # Keep the accumulator distinct from PowerShell's case-insensitive automatic $Matches variable.
+    $processIds = @()
     foreach ($directory in Get-ChildItem -LiteralPath '/proc' -Directory -ErrorAction SilentlyContinue) {
         if ($directory.Name -notmatch '^[0-9]+$') { continue }
         try {
             $actual = @(Get-LinuxProcessCommandLine ([long]$directory.Name))
             if (Test-LinuxSupervisorProcessMatch $actual $Value $WorkerAction) {
-                $matches += [int]$directory.Name
+                $processIds += [int]$directory.Name
             }
         }
         catch {
             # /proc entries may disappear while enumerating; a vanished process is not residual.
         }
     }
-    return $matches
+    return $processIds
 }
 
 function Assert-LinuxHeartbeatFresh {
@@ -2459,6 +2460,10 @@ function Invoke-SelfTest {
         if (-not $residualRejected) { throw 'residual supervisor process was accepted' }
         $caseCount++
 
+        $enumeratedResiduals = @(Find-LinuxSupervisorProcesses $testRunId 'linux-smoke-loop')
+        Assert-NoResidualSupervisor $enumeratedResiduals
+        $caseCount++
+
         $windowsArguments = @(New-WindowsLoopProcessArguments $testRunId $script:ScriptPath)
         $expectedWindowsArguments = @(
             '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $script:ScriptPath + '"'),
@@ -2854,6 +2859,7 @@ function Invoke-SelfTest {
             systemdUnavailableClassified = 'PASS / SYSTEMD_RUN_UNAVAILABLE'
             transientUnitCreateFailureClassified = 'PASS / TRANSIENT_UNIT_CREATE_FAILED'
             residualProcessContract = 'PASS'
+            linuxResidualEnumeration = 'PASS'
             windowsStartPathPreserved = 'PASS'
             offlineSmokeFixture = 'PASS / credentialAccessed=false / networkCalled=false / acceptanceClockStarted=false'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))
