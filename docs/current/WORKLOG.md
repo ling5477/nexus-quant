@@ -17708,3 +17708,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`BLOCKED / FIRST_REAL_SAMPLE_VERIFIED / SUPERVISOR_DETACHMENT_FAILED / REAL_OKX_READONLY_SOAK_NOT_STARTED`；P0=0、P1=2。首样本不得启动 acceptance clock。
 - boundary：无 code/supervisor/schema/allowlist/migration/credential/permission/authority diff；无 LIVE/order/cancel/transfer/withdraw/AI/DH写侧；本轮只允许的真实 config+balance reads已脱敏留证。
 - next：独立修复 Linux detached process兼容性并补真实 no-network smoke；commit/push/exact-head CI/server部署后由新 `ATTEMPT_08`创建全新 run，不得进入七天 acceptance任务。
+
+## 2026-07-17 — GateW Linux supervisor detachment remediation
+
+- task：`NQ-GATEW-FREEZE-BLOCKER-2-LINUX-SUPERVISOR-DETACHMENT-REMEDIATION`；NQ-only、L级 runtime/security remediation。
+- baseline：`dev`；`HEAD == origin/dev == 7a023c627ff1c63d179abb1740016aae60e95125`；starting run `29581459469 / completed / success / 10 jobs / bad=0`；authority consistent。
+- RCA：Linux `Start-Process -WindowStyle Hidden`在子进程创建前抛`NotSupportedException`；旧PID文件/status/stop没有systemd lifecycle authority，36-case self-test缺少真实Linux detached smoke，错误被折叠为generic internal error。
+- implementation：Linux改用`systemd-run` transient system service；固定`nqgatew`、工作目录、安全属性、owner-only env/sentinel；systemctl权威status、/proc identity、heartbeat、PID reuse/duplicate/residual保护；同步stop/collect/ENGAGE；terminal no-change guard；Windows原路径保留。
+- smoke：新增`linux-smoke-start/status/stop/loop`；`PrivateNetwork=true`、无EnvironmentFile、exact safe schema、credential/network/acceptance均false；新SSH比较MainPID/heartbeat；unit namespace listener=0；stop后清理临时目录。
+- regression：PowerShell 5.1/7各52/52 PASS；WSL真实transient unit property/collect PASS；IDE problems=0；AST forbidden=0；targeted/full Maven均23/23 modules`SUCCESS / BUILD SUCCESS`；secret/scope/diff backstop PASS。
+- review：P0=0、P1=0、P2=0、P3=0；`PASS / LINUX_SUPERVISOR_DETACHMENT_ACCEPTED / READY_TO_COMMIT`。
+- boundary：真实OKX calls=0、credential内容访问=0、permission probe未重跑、真实soak未启动；无API/scheduler/migration/frontend/research/deploy/CI/archive/authority/交易能力diff；历史run未访问或修改。
+- current fact：Commit=`UNCOMMITTED`；exact-head CI=`NOT_RUN`；server deployment/reconnect smoke=`PENDING / NOT_RUN`；Authority不变。
+- next：精确暂存7个allowlist paths并commit/push；exact-head CI 10/10 GREEN后部署fixed supervisor，从两个独立SSH完成offline smoke和历史hash复核；全部通过后才允许后续`ATTEMPT_08`。

@@ -11983,3 +11983,25 @@ Known limitations：SSH前台输出在长 Maven cycle期间断开，但远端唯
 首样本 observedAt=`2026-07-17T12:31:14.0630196Z`，record hash=`87cb4fa2b4a2f293cac6829aa70c026a59678d0ddab330e60f56ad1ab3f07448`。由于 detached supervisor从未建立并已 failure-stop，该时间不得作为持续验收的 `acceptanceStartAt`；acceptance clock=`NOT_STARTED / INVALIDATED_BY_DETACHMENT_FAILURE`。
 
 Known limitations：Linux detached start为 P1；36-case self-test未覆盖真实 Linux `Start-Process` smoke；start安全错误码仅为 generic internal error。未运行 168 小时连续 soak、七天 acceptance、frontend、Python或新的 Maven全量回归；本轮禁止修改 supervisor，因此没有实施修复。下一步必须先独立 remediation、exact-head CI与server部署，再由新 `ATTEMPT_08`创建全新 run。
+
+## 2026-07-17 — GateW Linux supervisor detachment remediation
+
+结论：`PASS / LINUX_SUPERVISOR_DETACHMENT_ACCEPTED / READY_TO_COMMIT`（通过 / Linux supervisor 脱离修复已接受 / 可进入提交前复核）。Commit、exact-head CI、server deployment 与真实跨 SSH no-network smoke 当前为 `UNCOMMITTED / NOT_RUN / PENDING / NOT_RUN`。
+
+安全环境：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Windows PowerShell 5.1 `-Action self-test` | PASS | 52 cases；原36 cases全部保留；systemd args/status/stop/injection/residual/offline smoke/Windows regression新增覆盖通过 |
+| PowerShell 7 `-Action self-test` | PASS | 52 cases；canonical fixture hash与PS5精确一致 |
+| WSL transient system service fixture | PASS | `/bin/sleep` only；安全属性精确生效；active/running/MainPID>0；stop后PID 0、unit not-found |
+| PowerShell AST/native audit | PASS | parse errors=0；forbidden command AST hits=0；动态调用仅固定 executable + 参数数组 |
+| IDEA problems | PASS | `scripts/gatew/gatew-okx-readonly-soak.ps1` errors/warnings=0 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test` | PASS | 23/23 modules `SUCCESS / BUILD SUCCESS`；`nq-app` 196 tests、0 failures/errors、8 existing skipped |
+| `mvn -f backend/pom.xml test` | PASS | 23/23 modules `SUCCESS / BUILD SUCCESS`；同一 no-outbound环境 |
+| static conformance/backstop | PASS | duplicate functions=0；required reason/action missing=0；forbidden changed paths=0；secret literal hits=0；`git diff --check` PASS |
+| real OKX / credential / permission probe / real soak | `0 / 0 / NOT_RERUN / NOT_STARTED` | 本轮没有加载真实 runtime profile或credential |
+
+Known warnings：既有 SLF4J NOP、Mockito dynamic-agent/JDK future、checkout EOL与WSL localhost/NAT warning，均非阻断。WSL没有`pwsh`且未安装依赖，所以只验证真实 systemd property/collect；完整 supervisor smoke留给CI GREEN后的目标服务器。本机`gitleaks`不可用且未下载，本地custom-regex backstop通过，pinned gitleaks留给exact-head CI。
+
+未运行：implementation exact-head CI、服务器detached checkout/artifact match、两个独立SSH reconnect smoke、服务器residual/listener/temp cleanup、历史run post-hash、168小时soak、七天acceptance、frontend、Python。阻断性：本地P0=0/P1=0；在CI与服务器hard gates通过前，不得写`COMMITTED / CI_GREEN / SERVER_DEPLOYED / REAL_NO_NETWORK_DETACHMENT_SMOKE_PROVEN`，不得创建`ATTEMPT_08`新run。
