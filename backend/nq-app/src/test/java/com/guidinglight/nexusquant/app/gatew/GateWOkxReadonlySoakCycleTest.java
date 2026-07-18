@@ -23,12 +23,14 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -132,6 +134,7 @@ class GateWOkxReadonlySoakCycleTest {
     private static final Pattern SAFE_CYCLE_ID = Pattern.compile("gatew-cycle-[a-f0-9]{32}");
     private static final Pattern SAFE_TRACE_ID = Pattern.compile("gatew-soak-[a-f0-9-]{36}");
     private static final Pattern SAFE_CLASSIFICATION = Pattern.compile("[A-Z][A-Z0-9_]{1,95}");
+    private static final Pattern SAFE_RUN_ID = Pattern.compile("gatew-soak-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}");
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -555,15 +558,10 @@ class GateWOkxReadonlySoakCycleTest {
         byte[] json = null;
         Path temporary = null;
         try {
-            Path targetRoot = config.repoRoot().resolve("target").resolve("gatew-okx-readonly-soak").normalize();
-            Path output = config.resultFile().normalize();
-            if (!output.startsWith(targetRoot) || output.equals(targetRoot)) {
-                throw new IllegalArgumentException("resultFile must stay below target/gatew-okx-readonly-soak");
-            }
-            Files.createDirectories(output.getParent());
+            Path output = validatedResultOutput(config);
             json = EvidenceSanitizer.serialize(managedObjectMapper, result);
             temporary = output.resolveSibling(output.getFileName() + ".tmp-" + UUID.randomUUID());
-            Files.write(temporary, json);
+            Files.write(temporary, json, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
             try {
                 Files.move(
                         temporary,
@@ -588,6 +586,68 @@ class GateWOkxReadonlySoakCycleTest {
                 }
             }
         }
+    }
+
+    /**
+     * 仅允许真实 soak 与 offline smoke 的 canonical run root；lexical path 与 real path 必须同时留在边界内。
+     */
+    private static Path validatedResultOutput(SafetyConfig config) throws IOException {
+        Path repoRoot = config.repoRoot().toAbsolutePath().normalize();
+        Path output = config.resultFile().toAbsolutePath().normalize();
+        Path soakRoot = repoRoot.resolve("target").resolve("gatew-okx-readonly-soak").normalize();
+        Path runRoot = canonicalResultRunRoot(soakRoot, output);
+
+        Path realRepoRoot = repoRoot.toRealPath();
+        Path realSoakRoot = soakRoot.toRealPath();
+        Path realRunRoot = runRoot.toRealPath();
+        Path outputParent = output.getParent();
+        if (outputParent == null) {
+            throw new IllegalArgumentException("resultFile must stay below a canonical soak run root");
+        }
+        Path realOutputParent = outputParent.toRealPath();
+        if (!isStrictlyBelow(realSoakRoot, realRepoRoot)
+                || !isStrictlyBelow(realRunRoot, realSoakRoot)
+                || !(realOutputParent.equals(realRunRoot) || isStrictlyBelow(realOutputParent, realRunRoot))) {
+            throw new IllegalArgumentException("resultFile real path escaped a canonical soak run root");
+        }
+        if (Files.isSymbolicLink(output)) {
+            throw new IllegalArgumentException("resultFile symlink is forbidden");
+        }
+        if (Files.exists(output)) {
+            Path realOutput = output.toRealPath();
+            if (!isStrictlyBelow(realOutput, realRunRoot)) {
+                throw new IllegalArgumentException("resultFile real path escaped a canonical soak run root");
+            }
+        }
+        return output;
+    }
+
+    private static Path canonicalResultRunRoot(Path soakRoot, Path output) {
+        if (!output.startsWith(soakRoot)) {
+            throw new IllegalArgumentException("resultFile must stay below a canonical soak run root");
+        }
+        Path relative = soakRoot.relativize(output);
+        int runIdIndex = relative.getNameCount() > 0 && "offline-smoke".equals(relative.getName(0).toString())
+                ? 1
+                : 0;
+        if (relative.getNameCount() <= runIdIndex + 1) {
+            throw new IllegalArgumentException("resultFile must stay below a canonical soak run root");
+        }
+        String runId = relative.getName(runIdIndex).toString();
+        if (!SAFE_RUN_ID.matcher(runId).matches()) {
+            throw new IllegalArgumentException("resultFile must stay below a canonical soak run root");
+        }
+        Path runRoot = runIdIndex == 1
+                ? soakRoot.resolve("offline-smoke").resolve(runId).normalize()
+                : soakRoot.resolve(runId).normalize();
+        if (!output.startsWith(runRoot) || output.equals(runRoot)) {
+            throw new IllegalArgumentException("resultFile must stay below a canonical soak run root");
+        }
+        return runRoot;
+    }
+
+    private static boolean isStrictlyBelow(Path candidate, Path root) {
+        return candidate.startsWith(root) && !candidate.equals(root);
     }
 
     /**
@@ -915,7 +975,13 @@ class GateWOkxReadonlySoakCycleTest {
         private static Path pathProperty(Properties properties, String name) {
             String value = property(properties, name);
             if (value.isBlank()) throw new SafeBlockException(name + "_REQUIRED");
-            return Path.of(value).toAbsolutePath().normalize();
+            Path path = Path.of(value);
+            for (Path segment : path) {
+                if ("..".equals(segment.toString())) {
+                    throw new SafeBlockException("SOAK_PATH_TRAVERSAL");
+                }
+            }
+            return path.toAbsolutePath().normalize();
         }
 
         private static String property(Properties properties, String name) {

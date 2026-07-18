@@ -48,7 +48,7 @@ $script:LinuxSupervisorPath = '/opt/nexus-quant/gatew-soak/app/repo/scripts/gate
 $script:LinuxEnvironmentFile = '/opt/nexus-quant/gatew-soak/config/management.env'
 $script:LinuxRuntimeEnvironmentRoot = '/run/nexus-quant/gatew-soak'
 $script:LinuxEvidenceDirectory = '/opt/nexus-quant/gatew-soak/evidence/gatew-okx-readonly-soak'
-$script:LinuxSmokeDirectory = '/opt/nexus-quant/gatew-soak/app/repo/target/gatew-linux-transient-smoke'
+$script:LinuxSmokeDirectory = '/opt/nexus-quant/gatew-soak/app/repo/target/gatew-okx-readonly-soak/offline-smoke'
 $script:LinuxPowerShellPath = '/usr/bin/pwsh'
 $script:LinuxSystemdRunPath = '/usr/bin/systemd-run'
 $script:LinuxSystemctlPath = '/usr/bin/systemctl'
@@ -60,7 +60,7 @@ $script:LinuxStatPath = '/usr/bin/stat'
 $script:LinuxReadlinkPath = '/usr/bin/readlink'
 $script:LinuxNsenterPath = '/usr/bin/nsenter'
 $script:LinuxSsPath = '/usr/bin/ss'
-$script:LinuxSmokeRoot = [IO.Path]::GetFullPath((Join-Path $script:RepoRoot 'target\gatew-linux-transient-smoke'))
+$script:LinuxSmokeRoot = [IO.Path]::GetFullPath((Join-Path $script:EvidenceRoot 'offline-smoke'))
 $script:LinuxDetachmentReasons = @(
     'SYSTEMD_RUN_UNAVAILABLE',
     'TRANSIENT_UNIT_CREATE_FAILED',
@@ -3102,8 +3102,28 @@ function Invoke-SelfTest {
         }
         $caseCount++
 
+        $expectedOfflineSmokeRoot = [IO.Path]::GetFullPath((Join-Path $script:EvidenceRoot 'offline-smoke'))
+        $offlineRootMatches = [string]::Equals(
+            $script:LinuxSmokeRoot,
+            $expectedOfflineSmokeRoot,
+            [StringComparison]::OrdinalIgnoreCase
+        )
+        $serverOfflineRootMatches = $script:LinuxSmokeDirectory -ceq `
+            '/opt/nexus-quant/gatew-soak/app/repo/target/gatew-okx-readonly-soak/offline-smoke'
+        if (-not $offlineRootMatches -or -not $serverOfflineRootMatches) {
+            throw 'canonical offline smoke root changed'
+        }
+        $caseCount++
+
         $smokeRunId = New-RunId
         $smokeDirectory = Get-LinuxSmokeDirectory $smokeRunId
+        if (-not [string]::Equals(
+                [IO.Path]::GetDirectoryName($smokeDirectory),
+                $expectedOfflineSmokeRoot,
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+            throw 'offline smoke run escaped canonical root'
+        }
         $directories += $smokeDirectory
         [IO.Directory]::CreateDirectory($smokeDirectory) | Out-Null
         [IO.File]::WriteAllText((Join-Path $smokeDirectory 'cycles.jsonl'), '', $script:Utf8NoBom)
@@ -3555,6 +3575,7 @@ function Invoke-SelfTest {
             residualProcessContract = 'PASS'
             linuxResidualEnumeration = 'PASS'
             windowsStartPathPreserved = 'PASS'
+            offlineSmokeCanonicalRoot = 'PASS / target/gatew-okx-readonly-soak/offline-smoke/<runId>'
             offlineSmokeFixture = 'PASS / two-cycle / bootstrap-to-engage / credentialAccessed=false / networkCalled=false / acceptanceClockStarted=false'
             automaticEngageRecoveryFixture = 'PASS / killSwitchObservedState=ENGAGED'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))

@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +38,10 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  */
 @SpringJUnitConfig(classes = GateWOkxReadonlySoakCycleTest.JacksonContext.class)
 class GateWOkxReadonlySoakSupportTest {
+
+    private static final String REAL_RUN_ID = "gatew-soak-20260718T000000Z-0123abcd";
+    private static final String OFFLINE_RUN_ID = "gatew-soak-20260718T000001Z-1234abcd";
+    private static final String SYMLINK_RUN_ID = "gatew-soak-20260718T000002Z-2345abcd";
 
     @TempDir
     Path tempDir;
@@ -274,10 +279,11 @@ class GateWOkxReadonlySoakSupportTest {
     }
 
     @Test
-    void writesOnlySanitizedCycleResultBelowEvidenceRoot() throws Exception {
+    void writesOnlySanitizedCycleResultBelowCanonicalRealSoakRoot() throws Exception {
         GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(baseEnvironment(), baseProperties());
         GateWOkxReadonlySoakCycleTest.CycleResult result =
                 GateWOkxReadonlySoakCycleTest.CycleResult.blocked("API_KEY_REQUIRED", "UNKNOWN");
+        Files.createDirectories(config.resultFile().getParent());
 
         GateWOkxReadonlySoakCycleTest.writeSanitizedResult(config, result, objectMapper);
 
@@ -287,6 +293,25 @@ class GateWOkxReadonlySoakSupportTest {
         assertFalse(json.contains("rawresponse"));
         assertFalse(json.contains("http://"));
         assertFalse(json.contains("https://"));
+    }
+
+    @Test
+    void writesOnlySanitizedCycleResultBelowCanonicalOfflineSmokeRoot() throws Exception {
+        Path output = tempDir.resolve("target/gatew-okx-readonly-soak/offline-smoke")
+                .resolve(OFFLINE_RUN_ID)
+                .resolve("cycle.json");
+        Files.createDirectories(output.getParent());
+        Properties properties = baseProperties();
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY, output.toString());
+        GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(baseEnvironment(), properties);
+
+        GateWOkxReadonlySoakCycleTest.writeSanitizedResult(
+                config,
+                GateWOkxReadonlySoakCycleTest.CycleResult.blocked("SAFE_BLOCK", "UNKNOWN"),
+                objectMapper
+        );
+
+        assertTrue(Files.isRegularFile(output));
     }
 
     @Test
@@ -472,6 +497,57 @@ class GateWOkxReadonlySoakSupportTest {
         );
     }
 
+    @Test
+    void rejectsPathTraversalBeforeNormalization() {
+        Properties properties = baseProperties();
+        Path traversing = tempDir.resolve("target/gatew-okx-readonly-soak")
+                .resolve(REAL_RUN_ID)
+                .resolve("nested")
+                .resolve("..")
+                .resolve("cycle.json");
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY, traversing.toString());
+
+        GateWOkxReadonlySoakCycleTest.SafeBlockException error = assertThrows(
+                GateWOkxReadonlySoakCycleTest.SafeBlockException.class,
+                () -> config(baseEnvironment(), properties)
+        );
+
+        assertEquals("SOAK_PATH_TRAVERSAL", error.reasonCode());
+    }
+
+    @Test
+    void rejectsUnrelatedTargetAndNonCanonicalSoakSubdirectories() throws Exception {
+        assertResultPathRejected(tempDir.resolve("target/unrelated").resolve(REAL_RUN_ID).resolve("cycle.json"));
+        assertResultPathRejected(tempDir.resolve("target/gatew-okx-readonly-soak/not-a-run/cycle.json"));
+    }
+
+    @Test
+    void rejectsSymlinkEscapeWithoutWritingOutsideCanonicalRoot() throws Exception {
+        Path soakRoot = tempDir.resolve("target/gatew-okx-readonly-soak");
+        Path escapedDirectory = tempDir.resolve("escaped-result-directory");
+        Files.createDirectories(soakRoot);
+        Files.createDirectories(escapedDirectory);
+        Path linkedRunRoot = soakRoot.resolve(SYMLINK_RUN_ID);
+        createDirectoryLink(linkedRunRoot, escapedDirectory);
+
+        Properties properties = baseProperties();
+        properties.setProperty(
+                GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY,
+                linkedRunRoot.resolve("cycle.json").toString()
+        );
+        GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(baseEnvironment(), properties);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> GateWOkxReadonlySoakCycleTest.writeSanitizedResult(
+                        config,
+                        GateWOkxReadonlySoakCycleTest.CycleResult.blocked("SAFE_BLOCK", "UNKNOWN"),
+                        objectMapper
+                )
+        );
+        assertFalse(Files.exists(escapedDirectory.resolve("cycle.json")));
+    }
+
     private static GateWOkxReadonlySoakCycleTest.CycleResult result(
             String resultStatus,
             String reasonCode,
@@ -507,6 +583,39 @@ class GateWOkxReadonlySoakSupportTest {
         ObjectNode copy = source.deepCopy();
         copy.put(field, value);
         return copy;
+    }
+
+    private void assertResultPathRejected(Path output) throws Exception {
+        Files.createDirectories(output.getParent());
+        Properties properties = baseProperties();
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY, output.toString());
+        GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(baseEnvironment(), properties);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> GateWOkxReadonlySoakCycleTest.writeSanitizedResult(
+                        config,
+                        GateWOkxReadonlySoakCycleTest.CycleResult.blocked("SAFE_BLOCK", "UNKNOWN"),
+                        objectMapper
+                )
+        );
+    }
+
+    private static void createDirectoryLink(Path link, Path target) throws Exception {
+        try {
+            Files.createSymbolicLink(link, target);
+        } catch (IOException | UnsupportedOperationException ex) {
+            if (!System.getProperty("os.name", "").startsWith("Windows")) {
+                throw ex;
+            }
+            Process process = new ProcessBuilder(
+                    "cmd.exe", "/d", "/c", "mklink", "/J", link.toString(), target.toString()
+            ).redirectErrorStream(true).start();
+            try (var processOutput = process.getInputStream()) {
+                processOutput.readAllBytes();
+            }
+            assertEquals(0, process.waitFor(), "failed to create Windows junction test fixture");
+        }
     }
 
     private static ObjectNode withText(ObjectNode source, String field, String value) {
@@ -608,7 +717,7 @@ class GateWOkxReadonlySoakSupportTest {
         properties.setProperty(GateWOkxReadonlySoakCycleTest.REPO_ROOT_PROPERTY, tempDir.toString());
         properties.setProperty(
                 GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY,
-                tempDir.resolve("target/gatew-okx-readonly-soak/unit/cycle.json").toString()
+                tempDir.resolve("target/gatew-okx-readonly-soak").resolve(REAL_RUN_ID).resolve("cycle.json").toString()
         );
         return properties;
     }
