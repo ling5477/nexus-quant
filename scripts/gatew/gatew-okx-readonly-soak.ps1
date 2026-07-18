@@ -40,12 +40,13 @@ $script:LauncherSchemaVersion = 'gatew-soak-launcher-v2'
 $script:EvidenceSchemaV1 = 'gatew-soak-evidence-v1'
 $script:EvidenceSchemaV2 = 'gatew-soak-evidence-v2'
 $script:LinuxSupervisorSchemaVersion = 'nq-gatew-linux-supervisor-v1'
-$script:LinuxSmokeSchemaVersion = 'nq-gatew-linux-no-network-smoke-v1'
+$script:LinuxSmokeSchemaVersion = 'nq-gatew-linux-two-cycle-closure-v1'
 $script:LinuxRuntimeUser = 'nqgatew'
 $script:LinuxRuntimeGroup = 'nqgatew'
 $script:LinuxWorkingDirectory = '/opt/nexus-quant/gatew-soak'
 $script:LinuxSupervisorPath = '/opt/nexus-quant/gatew-soak/app/repo/scripts/gatew/gatew-okx-readonly-soak.ps1'
 $script:LinuxEnvironmentFile = '/opt/nexus-quant/gatew-soak/config/management.env'
+$script:LinuxRuntimeEnvironmentRoot = '/run/nexus-quant/gatew-soak'
 $script:LinuxEvidenceDirectory = '/opt/nexus-quant/gatew-soak/evidence/gatew-okx-readonly-soak'
 $script:LinuxSmokeDirectory = '/opt/nexus-quant/gatew-soak/app/repo/target/gatew-linux-transient-smoke'
 $script:LinuxPowerShellPath = '/usr/bin/pwsh'
@@ -74,7 +75,8 @@ $script:LinuxDetachmentReasons = @(
     'SUPERVISOR_HEARTBEAT_NOT_ADVANCING',
     'SUPERVISOR_RECONNECT_STATUS_FAILED',
     'SUPERVISOR_STOP_FAILED',
-    'SUPERVISOR_RESIDUAL_PROCESS_FOUND'
+    'SUPERVISOR_RESIDUAL_PROCESS_FOUND',
+    'RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
 )
 $script:LauncherFields = @(
     'schemaVersion', 'cycleId', 'observedAt', 'durationMs', 'resultStatus', 'reasonCode',
@@ -123,6 +125,17 @@ $script:RuntimeEnvironmentNames = @(
     'NQ_GATEW_SOAK_ACCOUNT_ID', 'NQ_GATEW_SOAK_CURRENCIES', 'NQ_OKX_API_KEY', 'NQ_OKX_API_SECRET',
     'NQ_OKX_API_PASSPHRASE', 'NQ_OKX_REAL_API_KEY', 'NQ_OKX_REAL_API_SECRET', 'NQ_OKX_REAL_API_PASSPHRASE'
 )
+$script:DirectOkxEnvironmentNames = @(
+    'NQ_OKX_API_KEY', 'NQ_OKX_API_SECRET', 'NQ_OKX_API_PASSPHRASE',
+    'NQ_OKX_REAL_API_KEY', 'NQ_OKX_REAL_API_SECRET', 'NQ_OKX_REAL_API_PASSPHRASE'
+)
+$script:MaterializedRuntimeEnvironmentNames = @(
+    $script:RuntimeEnvironmentNames | Where-Object { $script:DirectOkxEnvironmentNames -notcontains $_ }
+)
+$script:LinuxSmokeCycleFields = @(
+    'sequence', 'action', 'resultStatus', 'reasonCode', 'killSwitchObservedState',
+    'credentialAccessed', 'networkCalled', 'realCycleOutcomeProven'
+)
 
 function Get-UtcNow {
     return [DateTimeOffset]::UtcNow
@@ -162,10 +175,7 @@ function Get-RuntimeEnvironmentSnapshot {
 function Assert-RuntimeEnvironment {
     param([Parameter(Mandatory = $true)][hashtable]$Environment)
 
-    foreach ($name in @(
-        'NQ_OKX_API_KEY', 'NQ_OKX_API_SECRET', 'NQ_OKX_API_PASSPHRASE',
-        'NQ_OKX_REAL_API_KEY', 'NQ_OKX_REAL_API_SECRET', 'NQ_OKX_REAL_API_PASSPHRASE'
-    )) {
+    foreach ($name in $script:DirectOkxEnvironmentNames) {
         if (-not [string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
             throw 'BLOCKED / DIRECT_OKX_CREDENTIAL_INPUT_FORBIDDEN'
         }
@@ -178,6 +188,15 @@ function Assert-RuntimeEnvironment {
     foreach ($name in @('NQ_GATEW_SOAK_DB_URL', 'NQ_GATEW_SOAK_DB_USER', 'NQ_GATEW_SOAK_DB_PASSWORD')) {
         if ([string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
             throw 'BLOCKED / SOAK_DATABASE_CONFIG_REQUIRED'
+        }
+    }
+    foreach ($name in $script:MaterializedRuntimeEnvironmentNames) {
+        $value = [string]$Environment[$name]
+        # systemd EnvironmentFile does not expand variables; require materialized literal values.
+        if (-not ([string]::IsNullOrWhiteSpace($value))) {
+            if ($value -match '^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$') {
+                throw 'BLOCKED / RUNTIME_ENVIRONMENT_NOT_LITERAL'
+            }
         }
     }
     if ([string]$Environment.SPRING_PROFILES_ACTIVE -ne 'gatew-okx-readonly-soak') {
@@ -201,6 +220,28 @@ function Assert-RuntimeEnvironment {
     if ([string]::IsNullOrWhiteSpace([string]$Environment.NQ_GATEW_SOAK_CURRENCIES)) {
         throw 'BLOCKED / SOAK_CURRENCY_ALLOWLIST_REQUIRED'
     }
+}
+
+function ConvertTo-SystemdEnvironmentFileLiteral {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+    if ($Value.IndexOf([char]0) -ge 0 -or $Value -match "[`r`n]") {
+        throw 'BLOCKED / RUNTIME_ENVIRONMENT_NOT_LITERAL'
+    }
+    # Quoted values remain literal; escape only backslash and double quote for systemd syntax.
+    $escaped = $Value.Replace('\', '\\').Replace('"', '\"')
+    return '"' + $escaped + '"'
+}
+
+function New-LinuxRuntimeEnvironmentContent {
+    param([Parameter(Mandatory = $true)][hashtable]$Environment)
+
+    Assert-RuntimeEnvironment $Environment
+    $lines = foreach ($name in $script:MaterializedRuntimeEnvironmentNames) {
+        $value = [string]$Environment[$name]
+        "$name=$(ConvertTo-SystemdEnvironmentFileLiteral $value)"
+    }
+    return (($lines -join "`n") + "`n")
 }
 
 function Get-Sha256Text {
@@ -526,18 +567,40 @@ function Get-LinuxUnitName {
     return "nq-gatew-soak-$Value.service"
 }
 
+function Get-LinuxRuntimeEnvironmentDirectory {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    Assert-RunId $Value
+    return "$($script:LinuxRuntimeEnvironmentRoot)/$Value"
+}
+
+function Get-LinuxRuntimeEnvironmentFile {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    return "$(Get-LinuxRuntimeEnvironmentDirectory $Value)/worker.env"
+}
+
+function Assert-LinuxRuntimeEnvironmentFilePath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)][string]$EnvironmentFile
+    )
+
+    if ($EnvironmentFile -cne (Get-LinuxRuntimeEnvironmentFile $Value)) {
+        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
+    }
+}
+
 function Assert-LinuxFixedRuntimePaths {
     param(
         [Parameter(Mandatory = $true)][string]$PowerShellPath,
         [Parameter(Mandatory = $true)][string]$SupervisorPath,
-        [Parameter(Mandatory = $true)][string]$WorkingDirectory,
-        [Parameter(Mandatory = $true)][string]$EnvironmentFile
+        [Parameter(Mandatory = $true)][string]$WorkingDirectory
     )
 
     if ($PowerShellPath -cne $script:LinuxPowerShellPath -or
         $SupervisorPath -cne $script:LinuxSupervisorPath -or
-        $WorkingDirectory -cne $script:LinuxWorkingDirectory -or
-        $EnvironmentFile -cne $script:LinuxEnvironmentFile) {
+        $WorkingDirectory -cne $script:LinuxWorkingDirectory) {
         throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
     }
 }
@@ -547,16 +610,26 @@ function New-LinuxTransientUnitArguments {
         [Parameter(Mandatory = $true)][string]$Value,
         [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction,
         [Parameter(Mandatory = $true)][bool]$PrivateNetwork,
+        [Parameter(Mandatory = $true)][bool]$LoopbackOnlyNetwork,
         [Parameter(Mandatory = $true)][bool]$IncludeEnvironmentFile,
         [Parameter(Mandatory = $true)][string]$PowerShellPath,
         [Parameter(Mandatory = $true)][string]$SupervisorPath,
         [Parameter(Mandatory = $true)][string]$WorkingDirectory,
-        [Parameter(Mandatory = $true)][string]$EnvironmentFile
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$EnvironmentFile
     )
 
     Assert-SystemdRunId $Value
     Assert-RunId $Value
-    Assert-LinuxFixedRuntimePaths $PowerShellPath $SupervisorPath $WorkingDirectory $EnvironmentFile
+    Assert-LinuxFixedRuntimePaths $PowerShellPath $SupervisorPath $WorkingDirectory
+    if ($PrivateNetwork -and $LoopbackOnlyNetwork) {
+        throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
+    }
+    if ($IncludeEnvironmentFile) {
+        Assert-LinuxRuntimeEnvironmentFilePath $Value $EnvironmentFile
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($EnvironmentFile)) {
+        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
+    }
     $unitName = Get-LinuxUnitName $Value
     $arguments = @(
         "--unit=$unitName",
@@ -576,8 +649,12 @@ function New-LinuxTransientUnitArguments {
     if ($PrivateNetwork) {
         $arguments += '--property=PrivateNetwork=true'
     }
+    if ($LoopbackOnlyNetwork) {
+        # The closure drill reaches only the local DB; cgroup policy denies non-loopback addresses.
+        $arguments += @('--property=IPAddressDeny=any', '--property=IPAddressAllow=localhost')
+    }
     if ($IncludeEnvironmentFile) {
-        # Values stay in the owner-only fixed file and never enter argv or error output.
+        # Values stay in an owner-only ephemeral file and never enter argv or error output.
         $arguments += "--property=EnvironmentFile=$EnvironmentFile"
     }
     $arguments += @(
@@ -644,15 +721,18 @@ function ConvertFrom-SystemctlShowOutput {
         if ($separator -le 0) { continue }
         $values[$line.Substring(0, $separator)] = $line.Substring($separator + 1)
     }
-    # systemd 255 omits EnvironmentFiles when no EnvironmentFile is configured, including not-found units.
-    # Normalize only this optional property; real-soak validation still requires the fixed owner-only path.
-    if (-not $values.ContainsKey('EnvironmentFiles')) {
-        $values.EnvironmentFiles = ''
+    # systemd 255 may omit unset collection properties, including for collected/not-found units.
+    # Normalize optional values only; active contracts still require exact environment/network policy.
+    foreach ($optional in @('EnvironmentFiles', 'IPAddressDeny', 'IPAddressAllow')) {
+        if (-not $values.ContainsKey($optional)) {
+            $values[$optional] = ''
+        }
     }
     $required = @(
         'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ExecMainStatus', 'FragmentPath',
         'User', 'Group', 'WorkingDirectory', 'Restart', 'KillMode', 'TimeoutStopUSec',
-        'PrivateTmp', 'NoNewPrivileges', 'UMask', 'PrivateNetwork', 'EnvironmentFiles'
+        'PrivateTmp', 'NoNewPrivileges', 'UMask', 'PrivateNetwork', 'EnvironmentFiles',
+        'IPAddressDeny', 'IPAddressAllow'
     )
     foreach ($name in $required) {
         if (-not $values.ContainsKey($name)) {
@@ -683,6 +763,8 @@ function ConvertFrom-SystemctlShowOutput {
         UMask = [string]$values.UMask
         PrivateNetwork = [string]$values.PrivateNetwork
         EnvironmentFiles = [string]$values.EnvironmentFiles
+        IPAddressDeny = [string]$values.IPAddressDeny
+        IPAddressAllow = [string]$values.IPAddressAllow
     }
 }
 
@@ -690,7 +772,8 @@ function Assert-LinuxUnitContract {
     param(
         [Parameter(Mandatory = $true)]$State,
         [Parameter(Mandatory = $true)][bool]$PrivateNetwork,
-        [Parameter(Mandatory = $true)][bool]$IncludeEnvironmentFile
+        [Parameter(Mandatory = $true)][bool]$LoopbackOnlyNetwork,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$EnvironmentFile
     )
 
     if ([string]$State.LoadState -ne 'loaded' -or
@@ -711,11 +794,19 @@ function Assert-LinuxUnitContract {
     }
     $timeoutValid = [string]$State.TimeoutStopUSec -in @('30s', '30sec', '30000000us')
     $privateNetworkExpected = if ($PrivateNetwork) { 'yes' } else { 'no' }
-    $environmentValid = if ($IncludeEnvironmentFile) {
-        [string]$State.EnvironmentFiles -like "*$($script:LinuxEnvironmentFile)*"
+    $environmentValid = if (-not [string]::IsNullOrWhiteSpace($EnvironmentFile)) {
+        [string]$State.EnvironmentFiles -like "*$EnvironmentFile*"
     }
     else {
-        [string]$State.EnvironmentFiles -notlike "*$($script:LinuxEnvironmentFile)*"
+        [string]::IsNullOrWhiteSpace([string]$State.EnvironmentFiles)
+    }
+    $loopbackNetworkValid = if ($LoopbackOnlyNetwork) {
+        ([string]$State.IPAddressDeny -match '(?i)(^|\s)(any|0\.0\.0\.0/0|::/0)(\s|$)') -and
+            ([string]$State.IPAddressAllow -match '(?i)(localhost|127\.0\.0\.0/8|::1)')
+    }
+    else {
+        [string]::IsNullOrWhiteSpace([string]$State.IPAddressDeny) -and
+            [string]::IsNullOrWhiteSpace([string]$State.IPAddressAllow)
     }
     if ([string]$State.Group -ne $script:LinuxRuntimeGroup -or
         [string]$State.WorkingDirectory -ne $script:LinuxWorkingDirectory -or
@@ -726,7 +817,8 @@ function Assert-LinuxUnitContract {
         [string]$State.NoNewPrivileges -ne 'yes' -or
         [string]$State.UMask -ne '0077' -or
         [string]$State.PrivateNetwork -ne $privateNetworkExpected -or
-        -not $environmentValid) {
+        -not $environmentValid -or
+        -not $loopbackNetworkValid) {
         throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
     }
 }
@@ -1060,6 +1152,14 @@ function Invoke-LinuxNativeCommand {
     if (-not (Test-LinuxPlatform) -or -not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
         return [pscustomobject]@{ ExitCode = 127; Lines = @() }
     }
+    try {
+        # sudo -u from /root cannot spawn native commands when the inherited cwd is inaccessible.
+        # All command paths are absolute; a fixed repo cwd removes only that caller dependency.
+        Set-Location -LiteralPath $script:RepoRoot
+    }
+    catch {
+        return [pscustomobject]@{ ExitCode = 126; Lines = @() }
+    }
     $effectivePath = $FilePath
     $effectiveArguments = @($Arguments)
     if ($Privileged -and (Get-LinuxCurrentUserId) -ne 0) {
@@ -1088,7 +1188,8 @@ function Get-LinuxUnitState {
     $properties = @(
         'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ExecMainStatus', 'FragmentPath',
         'User', 'Group', 'WorkingDirectory', 'Restart', 'KillMode', 'TimeoutStopUSec',
-        'PrivateTmp', 'NoNewPrivileges', 'UMask', 'PrivateNetwork', 'EnvironmentFiles'
+        'PrivateTmp', 'NoNewPrivileges', 'UMask', 'PrivateNetwork', 'EnvironmentFiles',
+        'IPAddressDeny', 'IPAddressAllow'
     )
     $result = Invoke-LinuxNativeCommand -FilePath $script:LinuxSystemctlPath -Arguments @(
         'show', $UnitName, '--no-pager', "--property=$($properties -join ',')"
@@ -1112,7 +1213,11 @@ function Assert-LinuxManagedPath {
             throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
         }
         $resolved = ConvertTo-TrimmedNativeOutput $realPath.Lines
-        $roots = @($script:LinuxEvidenceDirectory, $script:LinuxSmokeDirectory)
+        $roots = @(
+            $script:LinuxEvidenceDirectory,
+            $script:LinuxSmokeDirectory,
+            $script:LinuxRuntimeEnvironmentRoot
+        )
     }
     $allowed = $false
     foreach ($root in $roots) {
@@ -1204,6 +1309,74 @@ function Assert-LinuxOwnerOnlyFile {
     if ($metadataResult.ExitCode -ne 0 -or
         $metadata -ne "600 $($script:LinuxRuntimeUser) $($script:LinuxRuntimeGroup)") {
         throw 'FAIL / SUPERVISOR_SENTINEL_INVALID'
+    }
+}
+
+function New-LinuxRuntimeEnvironmentFile {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    if (-not (Test-LinuxPlatform)) {
+        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
+    }
+    $directory = Get-LinuxRuntimeEnvironmentDirectory $Value
+    $path = Get-LinuxRuntimeEnvironmentFile $Value
+    if (Test-Path -LiteralPath $directory) {
+        # A stale file may belong to an older worker environment; never overwrite or reuse it.
+        throw 'BLOCKED / RUNTIME_ENVIRONMENT_STALE'
+    }
+    $temporary = "$path.tmp-$PID"
+    $content = $null
+    try {
+        [IO.Directory]::CreateDirectory($directory) | Out-Null
+        Set-LinuxManagedPathOwnerOnly $directory
+        $content = New-LinuxRuntimeEnvironmentContent (Get-RuntimeEnvironmentSnapshot)
+        [IO.File]::WriteAllText($temporary, $content, $script:Utf8NoBom)
+        Set-LinuxManagedFileOwnerOnly $temporary
+        Move-Item -LiteralPath $temporary -Destination $path
+        Set-LinuxManagedFileOwnerOnly $path
+        Assert-LinuxOwnerOnlyFile $path
+        return $path
+    }
+    catch {
+        $failureMessage = $_.Exception.Message
+        $cleanupFailed = $false
+        if (Test-Path -LiteralPath $directory) {
+            try {
+                Remove-LinuxRuntimeEnvironmentFile $Value
+            }
+            catch {
+                $cleanupFailed = $true
+            }
+        }
+        if ($cleanupFailed) {
+            throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
+        }
+        throw $failureMessage
+    }
+    finally {
+        $content = $null
+        if (Test-Path -LiteralPath $temporary) {
+            try {
+                Remove-Item -LiteralPath $temporary -Force
+            }
+            catch {
+                throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
+            }
+        }
+    }
+}
+
+function Remove-LinuxRuntimeEnvironmentFile {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $directory = Get-LinuxRuntimeEnvironmentDirectory $Value
+    if (-not (Test-Path -LiteralPath $directory)) {
+        return
+    }
+    $resolved = Assert-LinuxManagedPath $directory
+    Remove-Item -LiteralPath $resolved -Recurse -Force
+    if (Test-Path -LiteralPath $resolved) {
+        throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
     }
 }
 
@@ -1403,16 +1576,14 @@ function Start-LinuxTransientUnit {
         [Parameter(Mandatory = $true)][string]$Directory,
         [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction,
         [Parameter(Mandatory = $true)][bool]$PrivateNetwork,
+        [Parameter(Mandatory = $true)][bool]$LoopbackOnlyNetwork,
         [Parameter(Mandatory = $true)][bool]$IncludeEnvironmentFile
     )
 
     Assert-SystemdRunAvailable ((Test-LinuxPlatform) -and
         (Test-Path -LiteralPath $script:LinuxSystemdRunPath -PathType Leaf) -and
         (Test-Path -LiteralPath $script:LinuxSystemctlPath -PathType Leaf))
-    Assert-LinuxFixedRuntimePaths $script:LinuxPowerShellPath $script:ScriptPath $script:LinuxWorkingDirectory $script:LinuxEnvironmentFile
-    if ($IncludeEnvironmentFile) {
-        Assert-LinuxOwnerOnlyFile $script:LinuxEnvironmentFile
-    }
+    Assert-LinuxFixedRuntimePaths $script:LinuxPowerShellPath $script:ScriptPath $script:LinuxWorkingDirectory
     $unitName = Get-LinuxUnitName $Value
     $existing = Get-LinuxUnitState $unitName
     if ([string]$existing.ActiveState -ne 'inactive' -or [long]$existing.MainPID -ne 0) {
@@ -1420,29 +1591,38 @@ function Start-LinuxTransientUnit {
     }
     Assert-NoResidualSupervisor @(Find-LinuxSupervisorProcesses $Value $WorkerAction)
     Set-LinuxManagedPathOwnerOnly $Directory
-    $arguments = @(New-LinuxTransientUnitArguments `
-        -Value $Value `
-        -WorkerAction $WorkerAction `
-        -PrivateNetwork $PrivateNetwork `
-        -IncludeEnvironmentFile $IncludeEnvironmentFile `
-        -PowerShellPath $script:LinuxPowerShellPath `
-        -SupervisorPath $script:LinuxSupervisorPath `
-        -WorkingDirectory $script:LinuxWorkingDirectory `
-        -EnvironmentFile $script:LinuxEnvironmentFile)
-    $start = Invoke-LinuxNativeCommand -FilePath $script:LinuxSystemdRunPath -Arguments $arguments -Privileged
-    Assert-LinuxNativeSuccess $start.ExitCode 'TRANSIENT_UNIT_CREATE_FAILED'
+    $environmentFile = ''
+    $environmentFileCreated = $false
+    $unitStartAttempted = $false
     try {
+        if ($IncludeEnvironmentFile) {
+            $environmentFile = New-LinuxRuntimeEnvironmentFile $Value
+            $environmentFileCreated = $true
+        }
+        $arguments = @(New-LinuxTransientUnitArguments `
+            -Value $Value `
+            -WorkerAction $WorkerAction `
+            -PrivateNetwork $PrivateNetwork `
+            -LoopbackOnlyNetwork $LoopbackOnlyNetwork `
+            -IncludeEnvironmentFile $IncludeEnvironmentFile `
+            -PowerShellPath $script:LinuxPowerShellPath `
+            -SupervisorPath $script:LinuxSupervisorPath `
+            -WorkingDirectory $script:LinuxWorkingDirectory `
+            -EnvironmentFile $environmentFile)
+        $unitStartAttempted = $true
+        $start = Invoke-LinuxNativeCommand -FilePath $script:LinuxSystemdRunPath -Arguments $arguments -Privileged
+        Assert-LinuxNativeSuccess $start.ExitCode 'TRANSIENT_UNIT_CREATE_FAILED'
         $state = $null
         for ($attempt = 0; $attempt -lt 50; $attempt++) {
             $state = Get-LinuxUnitState $unitName
             if ([string]$state.ActiveState -eq 'active' -and [string]$state.SubState -eq 'running') { break }
             Start-Sleep -Milliseconds 200
         }
-        Assert-LinuxUnitContract $state $PrivateNetwork $IncludeEnvironmentFile
+        Assert-LinuxUnitContract $state $PrivateNetwork $LoopbackOnlyNetwork $environmentFile
         Assert-LinuxProcessIdentity $state.MainPID $Value $WorkerAction
         $startedAt = (Get-UtcNow).ToString('o')
         Write-LinuxSupervisorSentinel $Directory $Value $unitName $state.MainPID $startedAt $WorkerAction
-        return [pscustomobject]@{
+        $result = [pscustomobject]@{
             Id = [long]$state.MainPID
             UnitName = $unitName
             StartTime = $startedAt
@@ -1452,10 +1632,35 @@ function Start-LinuxTransientUnit {
             User = $state.User
             FragmentPath = $state.FragmentPath
         }
+        if ($environmentFileCreated) {
+            # service-type=exec proves execve completed; remove the materialized disk copy immediately.
+            Remove-LinuxRuntimeEnvironmentFile $Value
+            $environmentFileCreated = $false
+        }
+        return $result
     }
     catch {
         $failureMessage = $_.Exception.Message
-        try { Stop-LinuxTransientUnit $Value $WorkerAction | Out-Null } catch {
+        $stopFailed = $false
+        if ($unitStartAttempted) {
+            try { Stop-LinuxTransientUnit $Value $WorkerAction | Out-Null } catch {
+                $stopFailed = $true
+            }
+        }
+        $cleanupFailed = $false
+        if ($environmentFileCreated -or (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $Value))) {
+            try {
+                Remove-LinuxRuntimeEnvironmentFile $Value
+                $environmentFileCreated = $false
+            }
+            catch {
+                $cleanupFailed = $true
+            }
+        }
+        if ($cleanupFailed) {
+            throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
+        }
+        if ($stopFailed) {
             throw 'FAIL / SUPERVISOR_STOP_FAILED'
         }
         throw $failureMessage
@@ -1533,7 +1738,7 @@ function Get-SupervisorState {
     $unitName = Get-LinuxUnitName $value
     $state = Get-LinuxUnitState $unitName
     if ([string]$state.ActiveState -eq 'active' -and [string]$state.SubState -eq 'running') {
-        Assert-LinuxUnitContract $state $false $true
+        Assert-LinuxUnitContract $state $false $false (Get-LinuxRuntimeEnvironmentFile $value)
         Assert-LinuxProcessIdentity $state.MainPID $value 'run-loop'
         $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
         if ([string]$manifest.runId -ne $value) {
@@ -1591,6 +1796,7 @@ function Start-LoopProcess {
             -Directory (Get-RunDirectory $Value) `
             -WorkerAction 'run-loop' `
             -PrivateNetwork $false `
+            -LoopbackOnlyNetwork $false `
             -IncludeEnvironmentFile $true
     }
     $executable = (Get-Process -Id $PID).Path
@@ -1992,9 +2198,12 @@ function Get-LinuxSmokeDirectory {
 function Write-LinuxSmokeHeartbeat {
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][ValidateSet('PREPARING', 'RUNNING', 'STOPPED')][string]$State,
+        [Parameter(Mandatory = $true)][ValidateSet('PREPARING', 'RUNNING', 'STOPPED', 'STOP_FAILURE')][string]$State,
         [Parameter(Mandatory = $true)][string]$ReasonCode,
-        [Parameter(Mandatory = $true)][long]$Sequence
+        [Parameter(Mandatory = $true)][long]$Sequence,
+        [Parameter(Mandatory = $true)][bool]$LiteralEnvironmentVerified,
+        [Parameter(Mandatory = $true)][bool]$AutomaticEngageRecovered,
+        [Parameter(Mandatory = $true)][ValidateSet('UNKNOWN', 'DISENGAGED', 'ENGAGED')][string]$KillSwitchObservedState
     )
 
     Write-JsonAtomic (Join-Path $Directory 'heartbeat.json') ([ordered]@{
@@ -2007,22 +2216,60 @@ function Write-LinuxSmokeHeartbeat {
         credentialAccessed = $false
         networkCalled = $false
         acceptanceClockStarted = $false
+        literalEnvironmentVerified = $LiteralEnvironmentVerified
+        automaticEngageRecovered = $AutomaticEngageRecovered
+        killSwitchObservedState = $KillSwitchObservedState
     })
 }
 
+function Write-LinuxSmokeCycle {
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 2)][long]$Sequence,
+        [Parameter(Mandatory = $true)][ValidateSet('bootstrap', 'automatic-engage')][string]$CycleAction,
+        [Parameter(Mandatory = $true)]$Cycle
+    )
+
+    Assert-SupervisorCycle $Cycle
+    if ([bool]$Cycle.credentialAccessed -or [bool]$Cycle.networkCalled) {
+        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
+    }
+    $record = [ordered]@{
+        sequence = $Sequence
+        action = $CycleAction
+        resultStatus = [string]$Cycle.resultStatus
+        reasonCode = [string]$Cycle.reasonCode
+        killSwitchObservedState = [string]$Cycle.killSwitchObservedState
+        credentialAccessed = $false
+        networkCalled = $false
+        realCycleOutcomeProven = [bool]$Cycle.realCycleOutcomeProven
+    }
+    [IO.File]::AppendAllText(
+        (Join-Path $Directory 'cycles.jsonl'),
+        (ConvertTo-CompactJson $record) + [Environment]::NewLine,
+        $script:Utf8NoBom
+    )
+    return [pscustomobject]$record
+}
+
 function Assert-LinuxOfflineSmokeEvidence {
-    param([Parameter(Mandatory = $true)][string]$Directory)
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [switch]$RequireComplete
+    )
 
     $resolved = Assert-LinuxManagedPath $Directory
     $manifest = Read-JsonFile (Join-Path $resolved 'smoke-manifest.json')
     $heartbeat = Read-JsonFile (Join-Path $resolved 'heartbeat.json')
     $manifestFields = @(
         'schemaVersion', 'runId', 'harnessCommit', 'supervisorArtifactSha256', 'startedAt', 'heartbeatSeconds',
+        'expectedCycles', 'environmentContract', 'networkPolicy',
         'credentialAccessed', 'networkCalled', 'acceptanceClockStarted'
     )
     $heartbeatFields = @(
         'schemaVersion', 'runId', 'state', 'reasonCode', 'observedAt', 'sequence',
-        'credentialAccessed', 'networkCalled', 'acceptanceClockStarted'
+        'credentialAccessed', 'networkCalled', 'acceptanceClockStarted',
+        'literalEnvironmentVerified', 'automaticEngageRecovered', 'killSwitchObservedState'
     )
     if ((@($manifest.PSObject.Properties.Name) -join '|') -ne ($manifestFields -join '|') -or
         (@($heartbeat.PSObject.Properties.Name) -join '|') -ne ($heartbeatFields -join '|')) {
@@ -2039,16 +2286,72 @@ function Assert-LinuxOfflineSmokeEvidence {
         -not [DateTimeOffset]::TryParse([string]$manifest.startedAt, [ref]$startedAt) -or
         -not [DateTimeOffset]::TryParse([string]$heartbeat.observedAt, [ref]$observedAt) -or
         [int]$manifest.heartbeatSeconds -lt 1 -or [int]$manifest.heartbeatSeconds -gt 30 -or
+        [int]$manifest.expectedCycles -ne 2 -or
+        [string]$manifest.environmentContract -ne 'EPHEMERAL_LITERAL_V1' -or
+        [string]$manifest.networkPolicy -ne 'LOOPBACK_ONLY' -or
         [long]$heartbeat.sequence -lt 0 -or
+        [string]$heartbeat.state -notin @('PREPARING', 'RUNNING', 'STOPPED', 'STOP_FAILURE') -or
+        [string]$heartbeat.reasonCode -notmatch '^[A-Z][A-Z0-9_]{1,95}$' -or
         $manifest.credentialAccessed -isnot [bool] -or $heartbeat.credentialAccessed -isnot [bool] -or
         $manifest.networkCalled -isnot [bool] -or $heartbeat.networkCalled -isnot [bool] -or
         $manifest.acceptanceClockStarted -isnot [bool] -or $heartbeat.acceptanceClockStarted -isnot [bool] -or
         [bool]$manifest.credentialAccessed -or [bool]$heartbeat.credentialAccessed -or
         [bool]$manifest.networkCalled -or [bool]$heartbeat.networkCalled -or
+        $heartbeat.literalEnvironmentVerified -isnot [bool] -or
+        $heartbeat.automaticEngageRecovered -isnot [bool] -or
+        [string]$heartbeat.killSwitchObservedState -notin @('UNKNOWN', 'DISENGAGED', 'ENGAGED') -or
         [bool]$manifest.acceptanceClockStarted -or [bool]$heartbeat.acceptanceClockStarted) {
         throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
     }
-    $expectedFiles = @('heartbeat.json', 'smoke-manifest.json', 'supervisor.json')
+    $cycles = @()
+    foreach ($line in Get-Content -LiteralPath (Join-Path $resolved 'cycles.jsonl')) {
+        if ([string]::IsNullOrWhiteSpace([string]$line)) {
+            continue
+        }
+        $cycle = $line | ConvertFrom-Json
+        Assert-ExactFields $cycle $script:LinuxSmokeCycleFields 'offline smoke cycle'
+        $expectedAction = if ($cycles.Count -eq 0) {
+            'bootstrap'
+        }
+        else {
+            'automatic-engage'
+        }
+        if ([long]$cycle.sequence -ne ($cycles.Count + 1) -or
+            [string]$cycle.action -ne $expectedAction -or
+            [string]$cycle.resultStatus -notmatch '^[A-Z][A-Z0-9_]{1,95}$' -or
+            [string]$cycle.reasonCode -notmatch '^[A-Z][A-Z0-9_]{1,95}$' -or
+            [string]$cycle.killSwitchObservedState -notin @('UNKNOWN', 'DISENGAGED', 'ENGAGED') -or
+            $cycle.credentialAccessed -isnot [bool] -or $cycle.networkCalled -isnot [bool] -or
+            $cycle.realCycleOutcomeProven -isnot [bool] -or
+            [bool]$cycle.credentialAccessed -or [bool]$cycle.networkCalled) {
+            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
+        }
+        $cycles += $cycle
+    }
+    if ($cycles.Count -gt 2 -or [long]$heartbeat.sequence -gt 2 -or
+        [long]$heartbeat.sequence -ne $cycles.Count) {
+        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
+    }
+    if ($RequireComplete) {
+        $complete = $cycles.Count -eq 2 -and
+            [string]$cycles[0].action -eq 'bootstrap' -and
+            [string]$cycles[0].resultStatus -eq 'BOOTSTRAP_READY' -and
+            [string]$cycles[0].killSwitchObservedState -eq 'DISENGAGED' -and
+            [bool]$cycles[0].realCycleOutcomeProven -and
+            [string]$cycles[1].action -eq 'automatic-engage' -and
+            [string]$cycles[1].resultStatus -eq 'ENGAGED' -and
+            [string]$cycles[1].killSwitchObservedState -eq 'ENGAGED' -and
+            [bool]$cycles[1].realCycleOutcomeProven -and
+            [long]$heartbeat.sequence -eq 2 -and
+            [string]$heartbeat.state -in @('RUNNING', 'STOPPED') -and
+            [bool]$heartbeat.literalEnvironmentVerified -and
+            [bool]$heartbeat.automaticEngageRecovered -and
+            [string]$heartbeat.killSwitchObservedState -eq 'ENGAGED'
+        if (-not $complete) {
+            throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
+        }
+    }
+    $expectedFiles = @('cycles.jsonl', 'heartbeat.json', 'smoke-manifest.json', 'supervisor.json')
     $actualFiles = @(Get-ChildItem -LiteralPath $resolved -File | ForEach-Object { $_.Name } | Sort-Object)
     if (($actualFiles -join '|') -ne (($expectedFiles | Sort-Object) -join '|')) {
         throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
@@ -2064,9 +2367,13 @@ function Assert-LinuxOfflineSmokeEvidence {
         RunId = $value
         HeartbeatSequence = [long]$heartbeat.sequence
         HeartbeatObservedAt = [string]$heartbeat.observedAt
+        CycleCount = $cycles.Count
         CredentialAccessed = $false
         NetworkCalled = $false
         AcceptanceClockStarted = $false
+        LiteralEnvironmentVerified = [bool]$heartbeat.literalEnvironmentVerified
+        AutomaticEngageRecovered = [bool]$heartbeat.automaticEngageRecovered
+        KillSwitchObservedState = [string]$heartbeat.killSwitchObservedState
     }
 }
 
@@ -2084,7 +2391,14 @@ function Get-LinuxPublicListenerCount {
     if ($result.ExitCode -ne 0) {
         throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
     }
-    return @($result.Lines | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count
+    # A loopback-only unit shares the host namespace, so count only listeners owned by this supervisor.
+    # Existing host SSH and loopback management listeners are outside the smoke process contract.
+    $pidPattern = '(^|[^0-9])pid=' + [regex]::Escape([string]$ProcessId) + '([^0-9]|$)'
+    return @(
+        $result.Lines | Where-Object {
+            -not [string]::IsNullOrWhiteSpace([string]$_) -and [string]$_ -match $pidPattern
+        }
+    ).Count
 }
 
 function Remove-LinuxSmokeDirectory {
@@ -2100,11 +2414,13 @@ function Remove-LinuxSmokeDirectory {
 function Start-LinuxSmoke {
     if (-not (Test-LinuxPlatform)) { throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE' }
     $head = Assert-FixedDetachedWorktree
+    Assert-RuntimeEnvironment (Get-RuntimeEnvironmentSnapshot)
     $artifactSha256 = Get-Sha256File $script:ScriptPath
     $effectiveRunId = if ([string]::IsNullOrWhiteSpace($RunId)) { New-RunId } else { $RunId }
     $directory = Get-LinuxSmokeDirectory $effectiveRunId
     if (Test-Path -LiteralPath $directory) { throw 'BLOCKED / RUN_ID_ALREADY_EXISTS' }
     [IO.Directory]::CreateDirectory($directory) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $directory 'cycles.jsonl'), '', $script:Utf8NoBom)
     $startedAt = (Get-UtcNow).ToString('o')
     try {
         Write-JsonAtomic (Join-Path $directory 'smoke-manifest.json') ([ordered]@{
@@ -2114,35 +2430,49 @@ function Start-LinuxSmoke {
             supervisorArtifactSha256 = $artifactSha256
             startedAt = $startedAt
             heartbeatSeconds = $SmokeHeartbeatSeconds
+            expectedCycles = 2
+            environmentContract = 'EPHEMERAL_LITERAL_V1'
+            networkPolicy = 'LOOPBACK_ONLY'
             credentialAccessed = $false
             networkCalled = $false
             acceptanceClockStarted = $false
         })
-        Write-LinuxSmokeHeartbeat $directory 'PREPARING' 'TRANSIENT_UNIT_PENDING' 0
+        Write-LinuxSmokeHeartbeat $directory 'PREPARING' 'TRANSIENT_UNIT_PENDING' 0 $false $false 'UNKNOWN'
         Set-LinuxManagedPathOwnerOnly $directory
         $process = Start-LinuxTransientUnit `
             -Value $effectiveRunId `
             -Directory $directory `
             -WorkerAction 'linux-smoke-loop' `
-            -PrivateNetwork $true `
-            -IncludeEnvironmentFile $false
+            -PrivateNetwork $false `
+            -LoopbackOnlyNetwork $true `
+            -IncludeEnvironmentFile $true
         $heartbeat = $null
-        for ($attempt = 0; $attempt -lt 50; $attempt++) {
+        for ($attempt = 0; $attempt -lt 900; $attempt++) {
             try {
-                $heartbeat = Assert-LinuxHeartbeatFresh $directory ([Math]::Max(10, $SmokeHeartbeatSeconds * 4)) 1
+                $heartbeat = Assert-LinuxHeartbeatFresh $directory ([Math]::Max(10, $SmokeHeartbeatSeconds * 4)) 2
                 break
             }
             catch {
                 if ($_.Exception.Message -ne 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING') { throw }
+                $currentHeartbeat = Read-JsonFile (Join-Path $directory 'heartbeat.json')
+                if ([string]$currentHeartbeat.state -eq 'STOP_FAILURE') {
+                    if ([string]$currentHeartbeat.reasonCode -eq 'KILL_SWITCH_ENGAGE_FAILED') {
+                        throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
+                    }
+                    throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
+                }
                 Start-Sleep -Milliseconds 200
             }
         }
         if ($null -eq $heartbeat) { throw 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING' }
-        $evidence = Assert-LinuxOfflineSmokeEvidence $directory
+        $evidence = Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete
+        if (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $effectiveRunId)) {
+            throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
+        }
         $listenerCount = Get-LinuxPublicListenerCount $process.Id
         if ($listenerCount -ne 0) { throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH' }
         return [pscustomobject]@{
-            decision = 'PASS / LINUX_TRANSIENT_SUPERVISOR_NO_NETWORK_SMOKE_STARTED'
+            decision = 'PASS / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE_STARTED'
             runId = $effectiveRunId
             harnessCommit = $head
             supervisorArtifactSha256 = $artifactSha256
@@ -2154,14 +2484,41 @@ function Start-LinuxSmoke {
             credentialAccessed = $false
             networkCalled = $false
             acceptanceClockStarted = $false
-            privateNetwork = $true
+            literalEnvironmentVerified = $evidence.LiteralEnvironmentVerified
+            automaticEngageRecovered = $evidence.AutomaticEngageRecovered
+            killSwitchObservedState = $evidence.KillSwitchObservedState
+            completedCycles = $evidence.CycleCount
+            privateNetwork = $false
+            loopbackOnlyNetwork = $true
             publicListenerCount = $listenerCount
+            environmentFileLoaded = $true
+            runtimeEnvironmentFilePresent = $false
         }
     }
     catch {
         $failureMessage = $_.Exception.Message
         try { Stop-LinuxTransientUnit $effectiveRunId 'linux-smoke-loop' | Out-Null } catch {
-            throw 'FAIL / SUPERVISOR_STOP_FAILED'
+            $failureMessage = 'FAIL / SUPERVISOR_STOP_FAILED'
+        }
+        if (Test-Path -LiteralPath $directory) {
+            try {
+                $recovery = Invoke-SanitizedCycle 'engage' $directory
+                if ([string]$recovery.resultStatus -ne 'ENGAGED' -or
+                    [string]$recovery.killSwitchObservedState -ne 'ENGAGED') {
+                    $failureMessage = 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
+                }
+            }
+            catch {
+                $failureMessage = 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
+            }
+        }
+        if (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $effectiveRunId)) {
+            try {
+                Remove-LinuxRuntimeEnvironmentFile $effectiveRunId
+            }
+            catch {
+                $failureMessage = 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
+            }
         }
         if (Test-Path -LiteralPath $directory) { Remove-LinuxSmokeDirectory $directory }
         throw $failureMessage
@@ -2179,14 +2536,74 @@ function Run-LinuxSmokeLoop {
     if ([string]$manifest.schemaVersion -ne $script:LinuxSmokeSchemaVersion -or
         [string]$manifest.runId -ne $RunId -or
         [int]$manifest.heartbeatSeconds -lt 1 -or [int]$manifest.heartbeatSeconds -gt 30 -or
+        [int]$manifest.expectedCycles -ne 2 -or
+        [string]$manifest.environmentContract -ne 'EPHEMERAL_LITERAL_V1' -or
+        [string]$manifest.networkPolicy -ne 'LOOPBACK_ONLY' -or
         [bool]$manifest.credentialAccessed -or [bool]$manifest.networkCalled -or
         [bool]$manifest.acceptanceClockStarted) {
         throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
     }
-    $sequence = 0L
+    Assert-RuntimeEnvironment (Get-RuntimeEnvironmentSnapshot)
+    $cyclesPath = Join-Path $directory 'cycles.jsonl'
+    if (-not (Test-Path -LiteralPath $cyclesPath -PathType Leaf) -or
+        (Get-Item -LiteralPath $cyclesPath).Length -ne 0) {
+        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
+    }
+
+    $bootstrapFailure = $null
+    $bootstrapRecorded = $false
+    try {
+        $bootstrap = Invoke-SanitizedCycle 'bootstrap' $directory
+        if ([string]$bootstrap.resultStatus -ne 'BOOTSTRAP_READY' -or
+            [string]$bootstrap.killSwitchObservedState -ne 'DISENGAGED' -or
+            [bool]$bootstrap.credentialAccessed -or [bool]$bootstrap.networkCalled -or
+            -not [bool]$bootstrap.realCycleOutcomeProven) {
+            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
+        }
+        Write-LinuxSmokeCycle $directory 1 'bootstrap' $bootstrap | Out-Null
+        $bootstrapRecorded = $true
+        Write-LinuxSmokeHeartbeat $directory 'RUNNING' 'OFFLINE_BOOTSTRAP_READY' 1 $true $false 'DISENGAGED'
+    }
+    catch {
+        $bootstrapFailure = if ($_.Exception.Message -match '^(BLOCKED|FAIL) / [A-Z0-9_]+$') {
+            $_.Exception.Message
+        }
+        else {
+            'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
+        }
+    }
+
+    $engage = Invoke-SanitizedCycle 'engage' $directory
+    if ([string]$engage.resultStatus -ne 'ENGAGED' -or
+        [string]$engage.killSwitchObservedState -ne 'ENGAGED' -or
+        [bool]$engage.credentialAccessed -or [bool]$engage.networkCalled -or
+        -not [bool]$engage.realCycleOutcomeProven) {
+        $failureSequence = if ($bootstrapRecorded) {
+            1L
+        }
+        else {
+            0L
+        }
+        Write-LinuxSmokeHeartbeat $directory 'STOP_FAILURE' 'KILL_SWITCH_ENGAGE_FAILED' `
+            $failureSequence $true $false 'UNKNOWN'
+        throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
+    }
+    if ($null -ne $bootstrapFailure) {
+        $failureSequence = if ($bootstrapRecorded) {
+            1L
+        }
+        else {
+            0L
+        }
+        Write-LinuxSmokeHeartbeat $directory 'STOP_FAILURE' 'OFFLINE_BOOTSTRAP_FAILED' `
+            $failureSequence $true $true 'ENGAGED'
+        throw $bootstrapFailure
+    }
+
+    Write-LinuxSmokeCycle $directory 2 'automatic-engage' $engage | Out-Null
+    Write-LinuxSmokeHeartbeat $directory 'RUNNING' 'OFFLINE_AUTOMATIC_ENGAGE_RECOVERED' 2 $true $true 'ENGAGED'
     while ($true) {
-        $sequence++
-        Write-LinuxSmokeHeartbeat $directory 'RUNNING' 'OFFLINE_HEARTBEAT' $sequence
+        Write-LinuxSmokeHeartbeat $directory 'RUNNING' 'OFFLINE_TWO_CYCLE_COMPLETE' 2 $true $true 'ENGAGED'
         Start-Sleep -Seconds ([int]$manifest.heartbeatSeconds)
     }
 }
@@ -2195,6 +2612,10 @@ function Get-LinuxSmokeStatus {
     if (-not (Test-LinuxPlatform)) { throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE' }
     $directory = Get-LinuxSmokeDirectory $RunId
     $evidence = Assert-LinuxOfflineSmokeEvidence $directory
+    $complete = $evidence.CycleCount -eq 2
+    if ($complete) {
+        Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete | Out-Null
+    }
     $manifest = Read-JsonFile (Join-Path $directory 'smoke-manifest.json')
     Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
     if ((Get-Sha256File $script:ScriptPath) -ne [string]$manifest.supervisorArtifactSha256) {
@@ -2202,14 +2623,30 @@ function Get-LinuxSmokeStatus {
     }
     $unitName = Get-LinuxUnitName $RunId
     $state = Get-LinuxUnitState $unitName
-    Assert-LinuxUnitContract $state $true $false
+    $environmentFile = Get-LinuxRuntimeEnvironmentFile $RunId
+    Assert-LinuxUnitContract $state $false $true $environmentFile
     Assert-LinuxProcessIdentity $state.MainPID $RunId 'linux-smoke-loop'
     $sentinel = Assert-LinuxSupervisorSentinel $directory $RunId $unitName $state.MainPID 'linux-smoke-loop'
-    $heartbeat = Assert-LinuxHeartbeatFresh $directory ([Math]::Max(10, [int]$manifest.heartbeatSeconds * 4)) 1
+    $minimumSequence = if ($complete) {
+        2L
+    }
+    else {
+        0L
+    }
+    $heartbeat = Assert-LinuxHeartbeatFresh $directory `
+        ([Math]::Max(10, [int]$manifest.heartbeatSeconds * 4)) $minimumSequence
+    if (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $RunId)) {
+        throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
+    }
     $listenerCount = Get-LinuxPublicListenerCount $state.MainPID
     if ($listenerCount -ne 0) { throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH' }
     return [pscustomobject]@{
-        decision = 'PASS / LINUX_TRANSIENT_SUPERVISOR_NO_NETWORK_SMOKE'
+        decision = if ($complete) {
+            'PASS / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE'
+        }
+        else {
+            'PENDING / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE'
+        }
         runId = $RunId
         harnessCommit = $manifest.harnessCommit
         supervisorArtifactSha256 = $manifest.supervisorArtifactSha256
@@ -2224,9 +2661,15 @@ function Get-LinuxSmokeStatus {
         credentialAccessed = $evidence.CredentialAccessed
         networkCalled = $evidence.NetworkCalled
         acceptanceClockStarted = $evidence.AcceptanceClockStarted
-        privateNetwork = ([string]$state.PrivateNetwork -eq 'yes')
+        literalEnvironmentVerified = $evidence.LiteralEnvironmentVerified
+        automaticEngageRecovered = $evidence.AutomaticEngageRecovered
+        killSwitchObservedState = $evidence.KillSwitchObservedState
+        completedCycles = $evidence.CycleCount
+        privateNetwork = $false
+        loopbackOnlyNetwork = $true
         publicListenerCount = $listenerCount
-        environmentFileLoaded = $false
+        environmentFileLoaded = ([string]$state.EnvironmentFiles -like "*$environmentFile*")
+        runtimeEnvironmentFilePresent = $false
     }
 }
 
@@ -2234,10 +2677,17 @@ function Stop-LinuxSmoke {
     if (-not (Test-LinuxPlatform)) { throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE' }
     $directory = Get-LinuxSmokeDirectory $RunId
     $evidence = Assert-LinuxOfflineSmokeEvidence $directory
+    $completionFailure = $null
+    try {
+        Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete | Out-Null
+    }
+    catch {
+        $completionFailure = $_.Exception.Message
+    }
     $unitName = Get-LinuxUnitName $RunId
     $state = Get-LinuxUnitState $unitName
     if ([string]$state.ActiveState -eq 'active') {
-        Assert-LinuxUnitContract $state $true $false
+        Assert-LinuxUnitContract $state $false $true (Get-LinuxRuntimeEnvironmentFile $RunId)
         Assert-LinuxProcessIdentity $state.MainPID $RunId 'linux-smoke-loop'
         Assert-LinuxSupervisorSentinel $directory $RunId $unitName $state.MainPID 'linux-smoke-loop' | Out-Null
         if ((Get-LinuxPublicListenerCount $state.MainPID) -ne 0) {
@@ -2245,12 +2695,37 @@ function Stop-LinuxSmoke {
         }
     }
     $stopped = Stop-LinuxTransientUnit $RunId 'linux-smoke-loop'
-    Write-LinuxSmokeHeartbeat $directory 'STOPPED' 'OPERATOR_SMOKE_STOP' ($evidence.HeartbeatSequence + 1)
+    $killSwitchState = [string]$evidence.KillSwitchObservedState
+    if ($killSwitchState -ne 'ENGAGED') {
+        $recovery = Invoke-SanitizedCycle 'engage' $directory
+        if ([string]$recovery.resultStatus -ne 'ENGAGED' -or
+            [string]$recovery.killSwitchObservedState -ne 'ENGAGED') {
+            throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
+        }
+        $killSwitchState = 'ENGAGED'
+    }
+    if ($null -eq $completionFailure) {
+        Write-LinuxSmokeHeartbeat $directory 'STOPPED' 'OPERATOR_SMOKE_STOP' 2 $true $true 'ENGAGED'
+    }
+    else {
+        Write-LinuxSmokeHeartbeat $directory 'STOP_FAILURE' 'OFFLINE_TWO_CYCLE_INCOMPLETE' `
+            $evidence.HeartbeatSequence $evidence.LiteralEnvironmentVerified `
+            $evidence.AutomaticEngageRecovered $killSwitchState
+    }
     Set-LinuxManagedPathOwnerOnly $directory
-    Assert-LinuxOfflineSmokeEvidence $directory | Out-Null
+    if ($null -eq $completionFailure) {
+        Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete | Out-Null
+    }
+    else {
+        Assert-LinuxOfflineSmokeEvidence $directory | Out-Null
+    }
+    Remove-LinuxRuntimeEnvironmentFile $RunId
     Remove-LinuxSmokeDirectory $directory
+    if ($null -ne $completionFailure) {
+        throw $completionFailure
+    }
     return [pscustomobject]@{
-        decision = 'PASS / LINUX_TRANSIENT_SUPERVISOR_NO_NETWORK_SMOKE_STOPPED'
+        decision = 'PASS / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE_STOPPED'
         runId = $RunId
         unitName = $stopped.UnitName
         mainPidBefore = $stopped.MainPidBefore
@@ -2262,7 +2737,12 @@ function Stop-LinuxSmoke {
         networkCalled = $false
         acceptanceClockStarted = $false
         temporaryFilesRemoved = (-not (Test-Path -LiteralPath $directory))
-        killSwitchChanged = $false
+        runtimeEnvironmentRemoved = (-not (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $RunId)))
+        literalEnvironmentVerified = $true
+        automaticEngageRecovered = $true
+        killSwitchObservedState = 'ENGAGED'
+        terminalStatusVerified = ($stopped.LoadStateAfterCollect -eq 'not-found' -and
+            $stopped.ActiveState -eq 'inactive' -and [long]$stopped.MainPID -eq 0)
     }
 }
 
@@ -2292,15 +2772,66 @@ function Invoke-SelfTest {
     $directories += $directory
     [IO.Directory]::CreateDirectory($directory) | Out-Null
     try {
+        $runtimeEnvironment = @{}
+        foreach ($name in $script:RuntimeEnvironmentNames) {
+            $runtimeEnvironment[$name] = ''
+        }
+        $runtimeEnvironment.SPRING_PROFILES_ACTIVE = 'gatew-okx-readonly-soak'
+        $runtimeEnvironment.NQ_GATEW_OKX_READONLY_SOAK_ENABLED = 'true'
+        $runtimeEnvironment.CI = 'false'
+        $runtimeEnvironment.NQ_NO_OUTBOUND = 'false'
+        foreach ($name in @(
+            'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED', 'NQ_TRANSFER_ENABLED', 'NQ_WITHDRAW_ENABLED',
+            'NQ_AI_ENABLED', 'NQ_DH_RUNTIME_ENABLED', 'NQ_REAL_PROVIDER_ENABLED', 'NQ_REAL_CLIENT_ENABLED',
+            'NQ_REAL_EXCHANGE_ENABLED'
+        )) {
+            $runtimeEnvironment[$name] = 'false'
+        }
+        $runtimeEnvironment.NQ_GATEW_SOAK_DB_URL = 'jdbc:postgresql://127.0.0.1:55432/nq_gatew_soak_fixture'
+        $runtimeEnvironment.NQ_GATEW_SOAK_DB_USER = 'fixture-user'
+        $runtimeEnvironment.NQ_GATEW_SOAK_DB_PASSWORD = 'test'
+        $runtimeEnvironment.NQ_ACCOUNT_CREDENTIALS_MASTER_KEY = 'test'
+        $runtimeEnvironment.NQ_GATEW_SOAK_OWNER_ID = '1'
+        $runtimeEnvironment.NQ_GATEW_SOAK_ACCOUNT_ID = '1'
+        $runtimeEnvironment.NQ_GATEW_SOAK_CURRENCIES = 'BTC'
+        Assert-RuntimeEnvironment $runtimeEnvironment
+        $runtimeContent = New-LinuxRuntimeEnvironmentContent $runtimeEnvironment
+        if ($runtimeContent -notlike '*NQ_GATEW_SOAK_DB_URL="jdbc:postgresql://127.0.0.1:55432/nq_gatew_soak_fixture"*' -or
+            @($script:DirectOkxEnvironmentNames | Where-Object { $runtimeContent -match [regex]::Escape($_) }).Count -ne 0 -or
+            (ConvertTo-SystemdEnvironmentFileLiteral 'alpha\beta"gamma') -cne '"alpha\\beta\"gamma"') {
+            throw 'literal runtime environment self-test failed'
+        }
+        $runtimeContent = $null
+        $caseCount++
+
+        $variableEnvironment = @{}
+        foreach ($name in $runtimeEnvironment.Keys) {
+            $variableEnvironment[$name] = $runtimeEnvironment[$name]
+        }
+        $variableEnvironment.NQ_GATEW_SOAK_DB_URL = '${NQ_GATEW_SOAK_DB_URL_LITERAL}'
+        $variableReferenceRejected = $false
+        try {
+            Assert-RuntimeEnvironment $variableEnvironment
+        }
+        catch {
+            $variableReferenceRejected = $_.Exception.Message -eq 'BLOCKED / RUNTIME_ENVIRONMENT_NOT_LITERAL'
+        }
+        if (-not $variableReferenceRejected) {
+            throw 'runtime variable reference was not rejected'
+        }
+        $caseCount++
+
+        $runtimeEnvironmentFile = Get-LinuxRuntimeEnvironmentFile $testRunId
         $transientArguments = @(New-LinuxTransientUnitArguments `
             -Value $testRunId `
             -WorkerAction 'run-loop' `
             -PrivateNetwork $false `
+            -LoopbackOnlyNetwork $false `
             -IncludeEnvironmentFile $true `
             -PowerShellPath $script:LinuxPowerShellPath `
             -SupervisorPath $script:LinuxSupervisorPath `
             -WorkingDirectory $script:LinuxWorkingDirectory `
-            -EnvironmentFile $script:LinuxEnvironmentFile)
+            -EnvironmentFile $runtimeEnvironmentFile)
         $requiredArguments = @(
             "--unit=$(Get-LinuxUnitName $testRunId)", '--collect', '--service-type=exec',
             "--property=User=$($script:LinuxRuntimeUser)",
@@ -2308,7 +2839,7 @@ function Invoke-SelfTest {
             "--property=WorkingDirectory=$($script:LinuxWorkingDirectory)",
             '--property=Restart=no', '--property=KillMode=mixed', '--property=TimeoutStopSec=30',
             '--property=PrivateTmp=true', '--property=NoNewPrivileges=true', '--property=UMask=0077',
-            "--property=EnvironmentFile=$($script:LinuxEnvironmentFile)", '--',
+            "--property=EnvironmentFile=$runtimeEnvironmentFile", '--',
             $script:LinuxPowerShellPath, '-File', $script:LinuxSupervisorPath,
             '-Action', 'run-loop', '-RunId', $testRunId
         )
@@ -2318,8 +2849,47 @@ function Invoke-SelfTest {
             }
         }
         if ($transientArguments -contains '--property=PrivateNetwork=true' -or
+            $transientArguments -contains '--property=IPAddressDeny=any' -or
             @($transientArguments | Where-Object { $_ -in @('bash', 'sh', 'eval', 'Invoke-Expression') }).Count -ne 0) {
             throw 'Linux transient argument contract self-test exposed a shell or wrong network contract'
+        }
+        $caseCount++
+
+        $offlineArguments = @(New-LinuxTransientUnitArguments `
+            -Value $testRunId `
+            -WorkerAction 'linux-smoke-loop' `
+            -PrivateNetwork $false `
+            -LoopbackOnlyNetwork $true `
+            -IncludeEnvironmentFile $true `
+            -PowerShellPath $script:LinuxPowerShellPath `
+            -SupervisorPath $script:LinuxSupervisorPath `
+            -WorkingDirectory $script:LinuxWorkingDirectory `
+            -EnvironmentFile $runtimeEnvironmentFile)
+        if ($offlineArguments -cnotcontains '--property=IPAddressDeny=any' -or
+            $offlineArguments -cnotcontains '--property=IPAddressAllow=localhost' -or
+            $offlineArguments -contains '--property=PrivateNetwork=true') {
+            throw 'loopback-only transient argument contract self-test failed'
+        }
+        $caseCount++
+
+        $networkPolicyConflictRejected = $false
+        try {
+            New-LinuxTransientUnitArguments `
+                -Value $testRunId `
+                -WorkerAction 'linux-smoke-loop' `
+                -PrivateNetwork $true `
+                -LoopbackOnlyNetwork $true `
+                -IncludeEnvironmentFile $false `
+                -PowerShellPath $script:LinuxPowerShellPath `
+                -SupervisorPath $script:LinuxSupervisorPath `
+                -WorkingDirectory $script:LinuxWorkingDirectory `
+                -EnvironmentFile '' | Out-Null
+        }
+        catch {
+            $networkPolicyConflictRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
+        }
+        if (-not $networkPolicyConflictRejected) {
+            throw 'conflicting network policy was not rejected'
         }
         $caseCount++
 
@@ -2336,16 +2906,38 @@ function Invoke-SelfTest {
                 -Value $testRunId `
                 -WorkerAction 'run-loop' `
                 -PrivateNetwork $false `
+                -LoopbackOnlyNetwork $false `
                 -IncludeEnvironmentFile $true `
                 -PowerShellPath $script:LinuxPowerShellPath `
                 -SupervisorPath '/tmp/attacker.ps1' `
                 -WorkingDirectory $script:LinuxWorkingDirectory `
-                -EnvironmentFile $script:LinuxEnvironmentFile | Out-Null
+                -EnvironmentFile $runtimeEnvironmentFile | Out-Null
         }
         catch {
             $pathInjectionRejected = $_.Exception.Message -eq 'FAIL / LINUX_RUNTIME_PATH_INVALID'
         }
         if (-not $pathInjectionRejected) { throw 'Linux runtime path injection was not rejected' }
+        $caseCount++
+
+        $environmentPathInjectionRejected = $false
+        try {
+            New-LinuxTransientUnitArguments `
+                -Value $testRunId `
+                -WorkerAction 'run-loop' `
+                -PrivateNetwork $false `
+                -LoopbackOnlyNetwork $false `
+                -IncludeEnvironmentFile $true `
+                -PowerShellPath $script:LinuxPowerShellPath `
+                -SupervisorPath $script:LinuxSupervisorPath `
+                -WorkingDirectory $script:LinuxWorkingDirectory `
+                -EnvironmentFile $script:LinuxEnvironmentFile | Out-Null
+        }
+        catch {
+            $environmentPathInjectionRejected = $_.Exception.Message -eq 'FAIL / LINUX_RUNTIME_PATH_INVALID'
+        }
+        if (-not $environmentPathInjectionRejected) {
+            throw 'fixed environment path was accepted for a dynamic run'
+        }
         $caseCount++
 
         if ((Get-LinuxUnitName $testRunId) -cne "nq-gatew-soak-$testRunId.service") {
@@ -2359,14 +2951,15 @@ function Invoke-SelfTest {
             "User=$($script:LinuxRuntimeUser)", "Group=$($script:LinuxRuntimeGroup)",
             "WorkingDirectory=$($script:LinuxWorkingDirectory)", 'Restart=no', 'KillMode=mixed',
             'TimeoutStopUSec=30s', 'PrivateTmp=yes', 'NoNewPrivileges=yes', 'UMask=0077',
-            'PrivateNetwork=no', "EnvironmentFiles=$($script:LinuxEnvironmentFile) (ignore_errors=no)"
+            'PrivateNetwork=no', "EnvironmentFiles=$runtimeEnvironmentFile (ignore_errors=no)",
+            'IPAddressDeny=', 'IPAddressAllow='
         )
         $activeUnitState = ConvertFrom-SystemctlShowOutput $activeUnitLines
         if ($activeUnitState.MainPID -ne 4242 -or $activeUnitState.ActiveState -ne 'active') {
             throw 'systemctl show parsing self-test failed'
         }
         $caseCount++
-        Assert-LinuxUnitContract $activeUnitState $false $true
+        Assert-LinuxUnitContract $activeUnitState $false $false $runtimeEnvironmentFile
         $caseCount++
 
         $activeNoEnvironmentState = ConvertFrom-SystemctlShowOutput @(
@@ -2377,11 +2970,14 @@ function Invoke-SelfTest {
         if ([string]$activeNoEnvironmentState.EnvironmentFiles -ne '') {
             throw 'missing systemd EnvironmentFiles was not normalized to empty'
         }
-        Assert-LinuxUnitContract $activeNoEnvironmentState $true $false
+        Assert-LinuxUnitContract $activeNoEnvironmentState $true $false ''
         $caseCount++
 
         $missingRequiredEnvironmentRejected = $false
-        try { Assert-LinuxUnitContract $activeNoEnvironmentState $true $true } catch {
+        try {
+            Assert-LinuxUnitContract $activeNoEnvironmentState $true $false $runtimeEnvironmentFile
+        }
+        catch {
             $missingRequiredEnvironmentRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
         }
         if (-not $missingRequiredEnvironmentRejected) {
@@ -2393,7 +2989,10 @@ function Invoke-SelfTest {
         $inactiveUnitState = ConvertFrom-SystemctlShowOutput @(
             $activeUnitLines | ForEach-Object { $_ -replace '^ActiveState=active$', 'ActiveState=inactive' }
         )
-        try { Assert-LinuxUnitContract $inactiveUnitState $false $true } catch {
+        try {
+            Assert-LinuxUnitContract $inactiveUnitState $false $false $runtimeEnvironmentFile
+        }
+        catch {
             $inactiveRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_NOT_ACTIVE'
         }
         if (-not $inactiveRejected) { throw 'inactive transient unit was reported as running' }
@@ -2403,7 +3002,10 @@ function Invoke-SelfTest {
         $missingMainPidState = ConvertFrom-SystemctlShowOutput @(
             $activeUnitLines | ForEach-Object { $_ -replace '^MainPID=4242$', 'MainPID=0' }
         )
-        try { Assert-LinuxUnitContract $missingMainPidState $false $true } catch {
+        try {
+            Assert-LinuxUnitContract $missingMainPidState $false $false $runtimeEnvironmentFile
+        }
+        catch {
             $missingMainPidRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_MAIN_PID_MISSING'
         }
         if (-not $missingMainPidRejected) { throw 'zero MainPID was accepted' }
@@ -2413,10 +3015,36 @@ function Invoke-SelfTest {
         $wrongUserState = ConvertFrom-SystemctlShowOutput @(
             $activeUnitLines | ForEach-Object { $_ -replace '^User=nqgatew$', 'User=root' }
         )
-        try { Assert-LinuxUnitContract $wrongUserState $false $true } catch {
+        try {
+            Assert-LinuxUnitContract $wrongUserState $false $false $runtimeEnvironmentFile
+        }
+        catch {
             $unitUserMismatchRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_USER_MISMATCH'
         }
         if (-not $unitUserMismatchRejected) { throw 'wrong transient unit user was accepted' }
+        $caseCount++
+
+        $loopbackOnlyUnitState = ConvertFrom-SystemctlShowOutput @(
+            $activeUnitLines | ForEach-Object {
+                $_ -replace '^IPAddressDeny=$', 'IPAddressDeny=any' `
+                    -replace '^IPAddressAllow=$', 'IPAddressAllow=localhost'
+            }
+        )
+        Assert-LinuxUnitContract $loopbackOnlyUnitState $false $true $runtimeEnvironmentFile
+        $caseCount++
+
+        $terminalUnitState = ConvertFrom-SystemctlShowOutput @(
+            'LoadState=not-found', 'ActiveState=inactive', 'SubState=dead', 'MainPID=0',
+            'ExecMainStatus=0', 'FragmentPath=', 'User=', 'Group=', 'WorkingDirectory=',
+            'Restart=no', 'KillMode=', 'TimeoutStopUSec=', 'PrivateTmp=no',
+            'NoNewPrivileges=no', 'UMask=', 'PrivateNetwork=no'
+        )
+        if ($terminalUnitState.LoadState -ne 'not-found' -or $terminalUnitState.ActiveState -ne 'inactive' -or
+            $terminalUnitState.SubState -ne 'dead' -or [long]$terminalUnitState.MainPID -ne 0 -or
+            $terminalUnitState.EnvironmentFiles -ne '' -or $terminalUnitState.IPAddressDeny -ne '' -or
+            $terminalUnitState.IPAddressAllow -ne '') {
+            throw 'terminal systemctl state self-test failed'
+        }
         $caseCount++
 
         Write-Heartbeat $directory 'SELF_TEST' 'NO_PRIVATE_NETWORK_CALLED'
@@ -2478,6 +3106,7 @@ function Invoke-SelfTest {
         $smokeDirectory = Get-LinuxSmokeDirectory $smokeRunId
         $directories += $smokeDirectory
         [IO.Directory]::CreateDirectory($smokeDirectory) | Out-Null
+        [IO.File]::WriteAllText((Join-Path $smokeDirectory 'cycles.jsonl'), '', $script:Utf8NoBom)
         $smokeStartedAt = (Get-UtcNow).ToString('o')
         Write-JsonAtomic (Join-Path $smokeDirectory 'smoke-manifest.json') ([ordered]@{
             schemaVersion = $script:LinuxSmokeSchemaVersion
@@ -2486,11 +3115,52 @@ function Invoke-SelfTest {
             supervisorArtifactSha256 = '0' * 64
             startedAt = $smokeStartedAt
             heartbeatSeconds = 2
+            expectedCycles = 2
+            environmentContract = 'EPHEMERAL_LITERAL_V1'
+            networkPolicy = 'LOOPBACK_ONLY'
             credentialAccessed = $false
             networkCalled = $false
             acceptanceClockStarted = $false
         })
-        Write-LinuxSmokeHeartbeat $smokeDirectory 'RUNNING' 'OFFLINE_HEARTBEAT' 1
+        $bootstrapFixture = [pscustomobject][ordered]@{
+            schemaVersion = $script:LauncherSchemaVersion
+            cycleId = 'gatew-cycle-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+            observedAt = '2026-07-18T00:00:00Z'
+            durationMs = 1L
+            resultStatus = 'BOOTSTRAP_READY'
+            reasonCode = 'SOAK_ISOLATION_READY'
+            httpStatusCategory = 'NOT_CALLED'
+            permissionClassification = 'METADATA_READ_ONLY'
+            killSwitchObservedState = 'DISENGAGED'
+            credentialAccessed = $false
+            networkCalled = $false
+            allowedEndpointCategory = 'NONE'
+            accountConfigProbeStatus = 'NOT_RUN'
+            balanceProbeStatus = 'NOT_RUN'
+            traceId = 'gatew-soak-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            realCycleOutcomeProven = $true
+        }
+        $engageFixture = [pscustomobject][ordered]@{
+            schemaVersion = $script:LauncherSchemaVersion
+            cycleId = 'gatew-cycle-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+            observedAt = '2026-07-18T00:00:01Z'
+            durationMs = 1L
+            resultStatus = 'ENGAGED'
+            reasonCode = 'SOAK_STOPPED_FAIL_CLOSED'
+            httpStatusCategory = 'NOT_CALLED'
+            permissionClassification = 'METADATA_READ_ONLY'
+            killSwitchObservedState = 'ENGAGED'
+            credentialAccessed = $false
+            networkCalled = $false
+            allowedEndpointCategory = 'NONE'
+            accountConfigProbeStatus = 'NOT_RUN'
+            balanceProbeStatus = 'NOT_RUN'
+            traceId = 'gatew-soak-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+            realCycleOutcomeProven = $true
+        }
+        Write-LinuxSmokeCycle $smokeDirectory 1 'bootstrap' $bootstrapFixture | Out-Null
+        Write-LinuxSmokeCycle $smokeDirectory 2 'automatic-engage' $engageFixture | Out-Null
+        Write-LinuxSmokeHeartbeat $smokeDirectory 'RUNNING' 'OFFLINE_TWO_CYCLE_COMPLETE' 2 $true $true 'ENGAGED'
         Write-JsonAtomic (Join-Path $smokeDirectory 'supervisor.json') ([ordered]@{
             schemaVersion = $script:LinuxSupervisorSchemaVersion
             unitName = Get-LinuxUnitName $smokeRunId
@@ -2499,11 +3169,29 @@ function Invoke-SelfTest {
             runId = $smokeRunId
             workerAction = 'linux-smoke-loop'
         })
-        $offlineSmokeEvidence = Assert-LinuxOfflineSmokeEvidence $smokeDirectory
+        $offlineSmokeEvidence = Assert-LinuxOfflineSmokeEvidence $smokeDirectory -RequireComplete
         if ($offlineSmokeEvidence.CredentialAccessed -or $offlineSmokeEvidence.NetworkCalled -or
-            $offlineSmokeEvidence.AcceptanceClockStarted) {
+            $offlineSmokeEvidence.AcceptanceClockStarted -or $offlineSmokeEvidence.CycleCount -ne 2 -or
+            -not $offlineSmokeEvidence.LiteralEnvironmentVerified -or
+            -not $offlineSmokeEvidence.AutomaticEngageRecovered -or
+            $offlineSmokeEvidence.KillSwitchObservedState -ne 'ENGAGED') {
             throw 'offline smoke fixture crossed credential, network, or acceptance boundary'
         }
+        $caseCount++
+
+        Write-LinuxSmokeHeartbeat $smokeDirectory 'RUNNING' 'OFFLINE_AUTOMATIC_ENGAGE_PENDING' 2 $true $false 'ENGAGED'
+        $incompleteSmokeRejected = $false
+        try {
+            Assert-LinuxOfflineSmokeEvidence $smokeDirectory -RequireComplete | Out-Null
+        }
+        catch {
+            $incompleteSmokeRejected = $_.Exception.Message -eq 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
+        }
+        if (-not $incompleteSmokeRejected) {
+            throw 'incomplete two-cycle smoke fixture was accepted'
+        }
+        Write-LinuxSmokeHeartbeat $smokeDirectory 'RUNNING' 'OFFLINE_TWO_CYCLE_COMPLETE' 2 $true $true 'ENGAGED'
+        Assert-LinuxOfflineSmokeEvidence $smokeDirectory -RequireComplete | Out-Null
         $caseCount++
 
         $missingCredentialRejected = $false
@@ -2851,17 +3539,24 @@ function Invoke-SelfTest {
             windowsCrlfGitBlob = 'PASS'
             linuxLfGitBlob = 'PASS'
             uploadedArtifactSha256 = 'PASS'
+            literalRuntimeEnvironment = 'PASS / EPHEMERAL_LITERAL_V1'
+            runtimeVariableReferenceRejected = 'PASS / RUNTIME_ENVIRONMENT_NOT_LITERAL'
             linuxTransientArgumentContract = 'PASS'
+            linuxLoopbackOnlyArgumentContract = 'PASS / IPAddressDeny=any / IPAddressAllow=localhost'
+            conflictingNetworkPolicyRejected = 'PASS'
             linuxRunIdInjectionRejected = 'PASS'
             linuxRuntimePathInjectionRejected = 'PASS'
+            linuxDynamicEnvironmentPathRequired = 'PASS'
             linuxSystemctlContract = 'PASS'
+            linuxTerminalSystemctlContract = 'PASS / not-found / inactive / MainPID=0'
             linuxHeartbeatAdvanceRequired = 'PASS'
             systemdUnavailableClassified = 'PASS / SYSTEMD_RUN_UNAVAILABLE'
             transientUnitCreateFailureClassified = 'PASS / TRANSIENT_UNIT_CREATE_FAILED'
             residualProcessContract = 'PASS'
             linuxResidualEnumeration = 'PASS'
             windowsStartPathPreserved = 'PASS'
-            offlineSmokeFixture = 'PASS / credentialAccessed=false / networkCalled=false / acceptanceClockStarted=false'
+            offlineSmokeFixture = 'PASS / two-cycle / bootstrap-to-engage / credentialAccessed=false / networkCalled=false / acceptanceClockStarted=false'
+            automaticEngageRecoveryFixture = 'PASS / killSwitchObservedState=ENGAGED'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))
             cleanupReleasedTemporaryDirectory = $true
             noPrivateNetworkCalled = $true
