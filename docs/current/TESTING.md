@@ -12005,3 +12005,28 @@ Known limitations：Linux detached start为 P1；36-case self-test未覆盖真�
 Known warnings：既有 SLF4J NOP、Mockito dynamic-agent/JDK future、checkout EOL与WSL localhost/NAT warning，均非阻断。WSL没有`pwsh`且未安装依赖，所以只验证真实 systemd property/collect；完整 supervisor smoke留给CI GREEN后的目标服务器。本机`gitleaks`不可用且未下载，本地custom-regex backstop通过，pinned gitleaks留给exact-head CI。
 
 未运行：implementation exact-head CI、服务器detached checkout/artifact match、两个独立SSH reconnect smoke、服务器residual/listener/temp cleanup、历史run post-hash、168小时soak、七天acceptance、frontend、Python。阻断性：本地P0=0/P1=0；在CI与服务器hard gates通过前，不得写`COMMITTED / CI_GREEN / SERVER_DEPLOYED / REAL_NO_NETWORK_DETACHMENT_SMOKE_PROVEN`，不得创建`ATTEMPT_08`新run。
+
+## 2026-07-18 — GateW OKX read-only soak server bootstrap attempt-08
+
+结论：`BLOCKED / FIRST_REAL_SAMPLE_VERIFIED / SYSTEMD_DETACHMENT_INITIAL_VERIFIED / SOAK_DATABASE_NOT_LOCAL / AUTOMATIC_KILL_SWITCH_ENGAGE_FAILED / MANUAL_FAILURE_STOP_RECOVERED / REAL_OKX_READONLY_SOAK_NOT_STARTED / SEVEN_DAY_ACCEPTANCE_NOT_STARTED`（阻断 / 首条真实只读样本已验证 / systemd脱离初始验证已通过 / soak数据库本地性失败 / 自动kill switch接合失败 / 人工failure-stop已恢复 / 真实soak未开始 / 七天验收未开始）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| local/server exact-head and CI | PASS | `HEAD == origin/dev == 408bb739...`；run `29595921755 / completed / success / 10 jobs / bad=0`；server detached tracked-clean checkout一致 |
+| authority checker | PASS | GateW `IN_PROGRESS|NOT_FROZEN`；GateW-FREEZE `NOT_STARTED`；LIVE `DISABLED` |
+| server isolation / artifact / historical hash | PASS | 公网非SSH listener=0；management/PostgreSQL loopback；JAR/supervisor exact match；两个历史run SHA-256逐文件不变 |
+| credential and permission metadata reuse | PASS | rows/active/encrypted=`1/1/1`；`SUCCEEDED / READ_ONLY / Trade=false / Withdraw=false / IP PASSED`；未重跑permission probe |
+| deployed supervisor self-test | PASS | PowerShell 55/55；schema/sanitizer/hash/systemd/residual/unsafe rejection通过；credential/network=0 |
+| pre-run rejected control calls | PASS / NO SIDE EFFECT | `HARNESS_WORKTREE_NOT_CLEAN`、`API_KEY_REQUIRED`、两次`EXACT_HEAD_CI_NOT_VERIFIABLE`；runId empty；credential/network=0 |
+| new run / first real sample | PASS | `gatew-soak-20260718T035039Z-dd0be612`；sequence 1 config+balance `SUCCEEDED`；`PASSED_READ_ONLY`；record hash `2ba85953...` |
+| fresh SSH initial detachment | PASS / LATER INVALIDATED | `2026-07-18T03:55:41Z`；same MainPID `3810293`；unit active/running；公网非SSH listener=0 |
+| second cycle | BLOCKED | sequence 2 `SOAK_DATABASE_NOT_LOCAL`；credential/network=`false/false`；endpoint=`NONE`；record hash `4435a3e9...` |
+| automatic fail-close | FAILED | `STOP_FAILURE / KILL_SWITCH_ENGAGE_FAILED`；同一未展开DB环境阻断automatic engage |
+| manual `failure-stop` | PASS | `STOP_COMPLETED`；unit `not-found/inactive/dead`；MainPID/residual=`0/0`；kill switch=`ENGAGED / version=7` |
+| `-Action status` after collect | FAILED / NON-SAFETY-AUTHORITY | `FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED`；terminal status诊断缺口，不能替代systemd/PID/DB事实 |
+| `-Action evidence-verify` | PASS | sample=2、valid real PASS=1、fallback/raw/secret=`0/0/0`；hash-chain verified；final-summary absent |
+| docs validation | PASS | `git diff --check`；authority consistent；124 links/0 errors/1既有warning；allowlist/forbidden/STATUS/ROADMAP/secret assignment checks通过；IDEA errors=0 |
+
+RCA：fixed owner-only `management.env`的三个`NQ_GATEW_SOAK_DB_*`值为变量引用；前台start环境已展开，首cycle通过。systemd `EnvironmentFile=`不执行shell变量展开，worker第二周期在DB/credential/OKX前命中`SOAK_DATABASE_NOT_LOCAL`；automatic engage复用同一无效环境而失败。人工failure-stop使用已展开控制环境完成`DISENGAGED(version 6) → ENGAGED(version 7)`。
+
+Known limitations / 未运行：P1为real worker EnvironmentFile合同与automatic engage recovery；P2为self-test未覆盖该组合路径及terminal status generic failure。未运行168小时连续soak、七天acceptance、frontend、Python或新的Maven回归；本任务禁止代码修复。Evidence docs commit/exact-head CI在commit/push前为`PENDING / NOT_RUN`，属于当前收口的后续hard gate。

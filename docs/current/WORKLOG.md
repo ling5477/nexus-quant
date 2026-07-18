@@ -17721,3 +17721,18 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：真实OKX calls=0、credential内容访问=0、permission probe未重跑、真实soak未启动；无API/scheduler/migration/frontend/research/deploy/CI/archive/authority/交易能力diff；历史run未访问或修改。
 - current fact：Commit=`UNCOMMITTED`；exact-head CI=`NOT_RUN`；server deployment/reconnect smoke=`PENDING / NOT_RUN`；Authority不变。
 - next：精确暂存7个allowlist paths并commit/push；exact-head CI 10/10 GREEN后部署fixed supervisor，从两个独立SSH完成offline smoke和历史hash复核；全部通过后才允许后续`ATTEMPT_08`。
+
+## 2026-07-18 — GateW OKX read-only soak server bootstrap attempt-08
+
+- task：`NQ-GATEW-OKX-READONLY-SOAK-SERVER-DEPLOYMENT-AND-CREDENTIAL-BOOTSTRAP / ATTEMPT_08`；NQ-only、L级real OKX read-only soak start。
+- baseline：`dev` clean；`HEAD == origin/dev == 408bb739...`；runtime exact-head run `29595921755 / completed / success / 10 jobs / bad=0`；authority consistent。
+- hard gates：server isolation、artifact、历史run、encrypted credential、既有`SUCCEEDED / READ_ONLY / PASSED` permission metadata、Flyway V35、启动前kill switch `ENGAGED / version=5`全部通过；permission probe未重跑。
+- self-test：deployed supervisor 55/55 PASS；network/credential access=0；四次run创建前preflight rejection均runId empty且无副作用。
+- start：新v2 run `gatew-soak-20260718T035039Z-dd0be612`；sequence 1真实config+balance sample为`PASSED_READ_ONLY`，hash-chain PASS；fresh SSH初始systemd detachment/same PID验证通过。
+- failure：sequence 2在credential/network前`BLOCKED / SOAK_DATABASE_NOT_LOCAL`；自动fail-close随后`STOP_FAILURE / KILL_SWITCH_ENGAGE_FAILED`，候选acceptanceStartAt失效。
+- recovery：人工`failure-stop`已`STOP_COMPLETED`；unit=`not-found/inactive/dead`、MainPID/residual=`0/0`、公网非SSH listener=0、kill switch=`ENGAGED / version=7`、final-summary absent、evidence hash-chain PASS。
+- RCA：owner-only EnvironmentFile中的三个DB运行值为变量引用；前台环境已展开，而systemd不做shell展开。automatic engage复用同一无效DB环境；人工控制环境成功恢复。
+- validation：`git diff --check`、current authority、docs/current links、路径allowlist、forbidden scope、`STATUS.md`/`ROADMAP.md`、高置信secret assignment和IDEA errors检查均通过；links仅1个既有GateJ warning。
+- result：`BLOCKED / FIRST_REAL_SAMPLE_VERIFIED / SYSTEMD_DETACHMENT_INITIAL_VERIFIED / SOAK_DATABASE_NOT_LOCAL / AUTOMATIC_KILL_SWITCH_ENGAGE_FAILED / MANUAL_FAILURE_STOP_RECOVERED / REAL_OKX_READONLY_SOAK_NOT_STARTED / SEVEN_DAY_ACCEPTANCE_NOT_STARTED`；P0=0、P1=2、P2=2、P3=0。
+- boundary：无code/supervisor/migration/allowlist/credential/permission/authority diff；无LIVE/order/cancel/transfer/withdraw/AI/DH写侧；真实OKX仅sequence 1允许的两个typed GET。
+- next：独立remediation关闭EnvironmentFile变量引用、automatic engage和terminal status缺口，完成新commit/exact-head CI/server验证后才能由新attempt创建全新run；不得resume本run或进入七天acceptance任务。
