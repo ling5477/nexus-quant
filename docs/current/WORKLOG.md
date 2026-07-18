@@ -17736,3 +17736,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`BLOCKED / FIRST_REAL_SAMPLE_VERIFIED / SYSTEMD_DETACHMENT_INITIAL_VERIFIED / SOAK_DATABASE_NOT_LOCAL / AUTOMATIC_KILL_SWITCH_ENGAGE_FAILED / MANUAL_FAILURE_STOP_RECOVERED / REAL_OKX_READONLY_SOAK_NOT_STARTED / SEVEN_DAY_ACCEPTANCE_NOT_STARTED`；P0=0、P1=2、P2=2、P3=0。
 - boundary：无code/supervisor/migration/allowlist/credential/permission/authority diff；无LIVE/order/cancel/transfer/withdraw/AI/DH写侧；真实OKX仅sequence 1允许的两个typed GET。
 - next：独立remediation关闭EnvironmentFile变量引用、automatic engage和terminal status缺口，完成新commit/exact-head CI/server验证后才能由新attempt创建全新run；不得resume本run或进入七天acceptance任务。
+
+## 2026-07-18 — GateW soak tooling redesign decision
+
+- task：`NQ-GATEW-SOAK-TOOLING-REDESIGN-DECISION`；NQ-only、L级 architecture/operational safety/systemd/fail-close/documentation任务。
+- baseline：`dev` clean；`HEAD == origin/dev == 773872e5...`；exact-head run `29641988419 / completed / success / 10 of 10`；authority consistent，GateW `IN_PROGRESS|NOT_FROZEN`、GateW-FREEZE `NOT_STARTED`、LIVE `DISABLED`。
+- diagnosis：transient worker缺少正式runtime owner合同；automatic engage与worker共享DB/environment故障域；operator可伪造`FAILURE_STOPPED`；heartbeat不是create-once terminal；offline smoke未证明两个read-only PASS→cycle3 failure→automatic engage→durable terminal且会删除目录。
+- decision：九维评分选择正式版本化`nq-gatew-soak@.service` + 独立`nq-gatew-soak-failclose@.service`；root-owned control/terminal、worker evidence、ephemeral runtime和systemd credential分权；`ExecStopPost`只记录/触发，不执行唯一recovery。
+- acceptance：保留连续168小时与24小时checkpoint/99.5%/hard-criterion reset；完整loopback-only offline闭环通过前禁止OKX、Attempt-09/10和acceptance clock。
+- scope：仅新增decision evidence并最小更新GateW index/WORKLOG；未改代码、GateW plan、STATUS/ROADMAP、authority，未部署、未访问server/credential/OKX/LIVE/交易写侧。
+- result：`PASS / SOAK_TOOLING_REDESIGN_DECIDED / READY_FOR_SINGLE_IMPLEMENTATION`；decision commit/push/exact-head CI在本记录写入时pending。
+- next：唯一任务`NQ-GATEW-SOAK-TOOLING-REDESIGN-IMPLEMENTATION`，按decision精确allowlist一次完成formal runtime、independent fail-close、terminal state machine和完整offline acceptance；不再创建plan/review/freeze文档链。
