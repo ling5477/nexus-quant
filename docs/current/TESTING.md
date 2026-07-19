@@ -12030,3 +12030,23 @@ Known warnings：既有 SLF4J NOP、Mockito dynamic-agent/JDK future、checkout 
 RCA：fixed owner-only `management.env`的三个`NQ_GATEW_SOAK_DB_*`值为变量引用；前台start环境已展开，首cycle通过。systemd `EnvironmentFile=`不执行shell变量展开，worker第二周期在DB/credential/OKX前命中`SOAK_DATABASE_NOT_LOCAL`；automatic engage复用同一无效环境而失败。人工failure-stop使用已展开控制环境完成`DISENGAGED(version 6) → ENGAGED(version 7)`。
 
 Known limitations / 未运行：P1为real worker EnvironmentFile合同与automatic engage recovery；P2为self-test未覆盖该组合路径及terminal status generic failure。未运行168小时连续soak、七天acceptance、frontend、Python或新的Maven回归；本任务禁止代码修复。Evidence docs commit/exact-head CI在commit/push前为`PENDING / NOT_RUN`，属于当前收口的后续hard gate。
+
+## 2026-07-19 — GateW soak tooling redesign implementation
+
+当前结论：`PASS / FORMAL_SYSTEMD_SOAK_TOOLING_LOCALLY_IMPLEMENTED / P0_0 / P1_0 / READY_TO_COMMIT`（通过 / 正式 systemd soak tooling 已完成本地实现 / 无 P0/P1 / 可进入提交前复核）。Commit、exact-head CI、server deployment 与正式 unit完整离线验收仍为 `UNCOMMITTED / NOT_RUN / PENDING / NOT_RUN`。
+
+安全环境：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| PowerShell 5.1 / 7 三脚本 self-test | PASS | worker/control/fail-close分别为40/20/22 cases；两引擎均通过；credential/network=false |
+| worker AST / forbidden authority / IDEA | PASS | parse errors=0；legacy helper calls=0；`systemd-run`/`linux-smoke-*`/三类 transient helper=0；IDEA problems=0 |
+| GateW Java targeted suite | PASS | 23/23 reactor modules；51 tests、0 failures/errors、2 skipped |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test` | PASS | 合同 no-outbound环境；23/23 modules `SUCCESS / BUILD SUCCESS` |
+| `mvn -f backend/pom.xml test` | PASS | 同一环境；23/23 modules；`nq-app` 211 tests、0 failures/errors、9 skipped |
+| `git diff --check` | PASS | whitespace error=0 |
+| WSL `systemd-analyze verify` | `STRUCTURE_PARSED / FORMAL_PASS_PENDING` | WSL缺`/usr/bin/pwsh`且drvfs权限映射告警；目标服务器安装后必须重新验证，当前不写PASS |
+
+第一次 Java targeted 命令因 PowerShell 未引用`-Dsurefire.failIfNoSpecifiedTests=false`而在编译前退出；引用两个`-D`参数后重跑通过。既有 warning为Mockito dynamic-agent/JDK future、SLF4J NOP、unchecked/deprecation和checkout EOL，非阻断。
+
+未运行：implementation exact-head CI、服务器detached checkout/blob/LF校验、正式`systemd-analyze verify`、安装/daemon-reload、正式unit cycle1/2→fresh SSH→cycle3 failure→OnFailure/fail-close/terminal闭环、服务器owner/mode/symlink、listener和历史hash复核、真实OKX、真实credential、168小时soak、frontend、Python。阻断性：本地P0=0/P1=0；所有远端hard gate通过前不得写`SERVER_DEPLOYED / FULL_OFFLINE_ACCEPTANCE_PROVEN / READY_FOR_ATTEMPT_09`。

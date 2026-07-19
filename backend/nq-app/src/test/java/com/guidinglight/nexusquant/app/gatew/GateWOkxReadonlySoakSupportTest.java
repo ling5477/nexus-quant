@@ -187,6 +187,33 @@ class GateWOkxReadonlySoakSupportTest {
     }
 
     @Test
+    void rejectsSystemdCredentialAndSecretEnvironmentConflict() {
+        Map<String, String> environment = formalSystemdEnvironment();
+
+        GateWOkxReadonlySoakCycleTest.SafeBlockException error = assertThrows(
+                GateWOkxReadonlySoakCycleTest.SafeBlockException.class,
+                () -> config(environment, baseProperties())
+        );
+
+        assertEquals("SYSTEMD_CREDENTIAL_ENV_CONFLICT", error.reasonCode());
+    }
+
+    @Test
+    void rejectsArbitrarySystemdCredentialDirectory() {
+        Map<String, String> environment = formalSystemdEnvironment();
+        environment.remove("NQ_GATEW_SOAK_DB_PASSWORD");
+        environment.remove("NQ_ACCOUNT_CREDENTIALS_MASTER_KEY");
+        environment.put("CREDENTIALS_DIRECTORY", tempDir.resolve("arbitrary-credentials").toString());
+
+        GateWOkxReadonlySoakCycleTest.SafeBlockException error = assertThrows(
+                GateWOkxReadonlySoakCycleTest.SafeBlockException.class,
+                () -> config(environment, baseProperties())
+        );
+
+        assertEquals("SYSTEMD_CREDENTIAL_SOURCE_INVALID", error.reasonCode());
+    }
+
+    @Test
     void acceptsReadOnlyCredentialMetadata() {
         safeCredential().assertSafe();
     }
@@ -708,6 +735,17 @@ class GateWOkxReadonlySoakSupportTest {
         environment.put("NQ_GATEW_SOAK_OWNER_ID", "7");
         environment.put("NQ_GATEW_SOAK_ACCOUNT_ID", "9");
         environment.put("NQ_GATEW_SOAK_CURRENCIES", "BTC,USDT");
+        return environment;
+    }
+
+    private Map<String, String> formalSystemdEnvironment() {
+        Map<String, String> environment = baseEnvironment();
+        environment.put("NQ_GATEW_SECRET_SOURCE", GateWOkxReadonlySoakCycleTest.SYSTEMD_CREDENTIAL_SOURCE);
+        environment.put("NQ_GATEW_FORMAL_SYSTEMD", "true");
+        environment.put(
+                "NQ_GATEW_FORMAL_EVIDENCE_ROOT",
+                Path.of("/var/lib/nexus-quant/gatew-soak", REAL_RUN_ID, "evidence").toString()
+        );
         return environment;
     }
 

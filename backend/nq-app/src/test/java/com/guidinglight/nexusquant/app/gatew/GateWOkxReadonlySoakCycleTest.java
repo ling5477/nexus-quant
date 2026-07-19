@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.account.infra.gatew.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateProbeStatus;
 import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateReadObservation;
@@ -28,6 +30,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -75,7 +78,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Tag("gatew-okx-readonly-soak")
 @EnabledIfSystemProperty(named = GateWOkxReadonlySoakCycleTest.REQUIRED_PROPERTY, matches = "true")
 @SpringJUnitConfig(classes = GateWOkxReadonlySoakCycleTest.JacksonContext.class)
-class GateWOkxReadonlySoakCycleTest {
+public class GateWOkxReadonlySoakCycleTest {
 
     static final String REQUIRED_PROPERTY = "nq.gatew.okxReadonlySoak.required";
     static final String ACTION_PROPERTY = "nq.gatew.okxReadonlySoak.action";
@@ -83,6 +86,8 @@ class GateWOkxReadonlySoakCycleTest {
     static final String REPO_ROOT_PROPERTY = "nq.gatew.okxReadonlySoak.repoRoot";
     static final String PROFILE = "gatew-okx-readonly-soak";
     static final String LAUNCHER_SCHEMA_VERSION = "gatew-soak-launcher-v2";
+    static final String SYSTEMD_CREDENTIAL_SOURCE = "SYSTEMD_CREDENTIALS";
+    static final String FORMAL_STATE_ROOT = "/var/lib/nexus-quant/gatew-soak";
     private static final Set<OkxPrivateReadOperation> SOAK_OPERATIONS = Set.of(
             OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
             OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
@@ -135,25 +140,50 @@ class GateWOkxReadonlySoakCycleTest {
     private static final Pattern SAFE_TRACE_ID = Pattern.compile("gatew-soak-[a-f0-9-]{36}");
     private static final Pattern SAFE_CLASSIFICATION = Pattern.compile("[A-Z][A-Z0-9_]{1,95}");
     private static final Pattern SAFE_RUN_ID = Pattern.compile("gatew-soak-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}");
+    private static final ObjectMapper STANDALONE_OBJECT_MAPPER = JsonMapper.builder()
+            .addModule(new JavaTimeModule())
+            .build();
 
     @Autowired
     private ObjectMapper objectMapper;
 
+    /**
+     * 正式 systemd worker 的固定 Java 入口。部署阶段已离线编译并冻结 classpath；运行阶段
+     * 不再调用 Maven，也不写 repository target。所有配置仍由既有 closed launcher contract 校验。
+     *
+     * @param args 不接受命令行参数；业务参数只允许来自固定 system properties 与 systemd environment
+     */
+    public static void main(String[] args) {
+        if (args.length != 0 || !"true".equals(System.getProperty(REQUIRED_PROPERTY))) {
+            throw new IllegalStateException("GateW soak standalone launcher is not authorized");
+        }
+        GateWOkxReadonlySoakCycleTest launcher = new GateWOkxReadonlySoakCycleTest();
+        CycleResult result = launcher.executeOneSanitizedAction(STANDALONE_OBJECT_MAPPER);
+        if (!result.schemaSafe()) {
+            throw new IllegalStateException("GateW soak standalone result is outside the closed schema");
+        }
+    }
+
     @Test
     void executeOneSanitizedAction() {
+        CycleResult result = executeOneSanitizedAction(objectMapper);
+        assertTrue(result.schemaSafe(), "cycle result must remain within the sanitized evidence schema");
+    }
+
+    private CycleResult executeOneSanitizedAction(ObjectMapper managedObjectMapper) {
         SafetyConfig config = SafetyConfig.from(System.getenv(), System.getProperties());
         CycleResult result;
         try {
             config.assertSafe();
-            result = execute(config, objectMapper);
+            result = execute(config, managedObjectMapper);
         } catch (SafeBlockException ex) {
             result = CycleResult.blocked(ex.reasonCode(), ex.permissionClassification());
         } catch (RuntimeException ex) {
             // JDBC/Flyway/Jackson/provider cause 可能携带本地连接或 payload 片段，不把 cause 带入 test 日志。
             result = CycleResult.failed("SOAK_INTERNAL_FAILURE", "UNKNOWN");
         }
-        writeSanitizedResult(config, result, objectMapper);
-        assertTrue(result.schemaSafe(), "cycle result must remain within the sanitized evidence schema");
+        writeSanitizedResult(config, result, managedObjectMapper);
+        return result;
     }
 
     private CycleResult execute(SafetyConfig config, ObjectMapper managedObjectMapper) {
@@ -277,14 +307,14 @@ class GateWOkxReadonlySoakCycleTest {
                     && !observation.tradingAuthorization()
                     && !observation.orderSubmitted()
                     && transport.operations().equals(List.of(
-                            OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
-                            OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
-                    ));
+                    OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                    OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
+            ));
             String resultStatus = passed
                     ? "PASSED_READ_ONLY"
                     : TRANSIENT_REASONS.contains(reason) || AUTH_REASONS.contains(reason)
-                            ? "TRANSIENT_FAILURE"
-                            : BLOCKED_REASONS.contains(reason) ? "BLOCKED" : "HARD_FAILURE";
+                    ? "TRANSIENT_FAILURE"
+                    : BLOCKED_REASONS.contains(reason) ? "BLOCKED" : "HARD_FAILURE";
             String permissionClassification = passed
                     ? "READ_ONLY_WITH_IP_ALLOWLIST"
                     : observation.normalizedPermissions().isEmpty() ? "UNKNOWN" : "UNSAFE_OR_INCOMPLETE";
@@ -592,6 +622,9 @@ class GateWOkxReadonlySoakCycleTest {
      * 仅允许真实 soak 与 offline smoke 的 canonical run root；lexical path 与 real path 必须同时留在边界内。
      */
     private static Path validatedResultOutput(SafetyConfig config) throws IOException {
+        if (config.formalEvidenceRoot() != null) {
+            return validatedFormalResultOutput(config);
+        }
         Path repoRoot = config.repoRoot().toAbsolutePath().normalize();
         Path output = config.resultFile().toAbsolutePath().normalize();
         Path soakRoot = repoRoot.resolve("target").resolve("gatew-okx-readonly-soak").normalize();
@@ -618,6 +651,48 @@ class GateWOkxReadonlySoakCycleTest {
             if (!isStrictlyBelow(realOutput, realRunRoot)) {
                 throw new IllegalArgumentException("resultFile real path escaped a canonical soak run root");
             }
+        }
+        return output;
+    }
+
+    /**
+     * 正式 Linux worker 只能把 launcher DTO 写入当前 run 的 evidence leaf；control 与 terminal
+     * 位于 sibling root-only 目录，不能由 resultFile 或环境变量改写。
+     */
+    private static Path validatedFormalResultOutput(SafetyConfig config) throws IOException {
+        Path output = config.resultFile().toAbsolutePath().normalize();
+        Path evidenceRoot = config.formalEvidenceRoot().toAbsolutePath().normalize();
+        Path stateRoot = Path.of(FORMAL_STATE_ROOT).toAbsolutePath().normalize();
+        if (!evidenceRoot.startsWith(stateRoot) || evidenceRoot.equals(stateRoot)) {
+            throw new IllegalArgumentException("formal evidence root is outside the fixed state root");
+        }
+        Path relative = stateRoot.relativize(evidenceRoot);
+        if (relative.getNameCount() != 2
+                || !SAFE_RUN_ID.matcher(relative.getName(0).toString()).matches()
+                || !"evidence".equals(relative.getName(1).toString())
+                || !output.startsWith(evidenceRoot)
+                || output.equals(evidenceRoot)) {
+            throw new IllegalArgumentException("resultFile must stay below the formal evidence root");
+        }
+        SafetyConfig.assertNoSymbolicLinkComponents(stateRoot);
+        SafetyConfig.assertNoSymbolicLinkComponents(evidenceRoot);
+        Path realStateRoot = stateRoot.toRealPath();
+        Path realEvidenceRoot = evidenceRoot.toRealPath();
+        Path outputParent = output.getParent();
+        if (outputParent == null) {
+            throw new IllegalArgumentException("resultFile must stay below the formal evidence root");
+        }
+        SafetyConfig.assertNoSymbolicLinkComponents(outputParent);
+        Path realOutputParent = outputParent.toRealPath();
+        if (!isStrictlyBelow(realEvidenceRoot, realStateRoot)
+                || !(realOutputParent.equals(realEvidenceRoot)
+                || isStrictlyBelow(realOutputParent, realEvidenceRoot))
+                || Files.isSymbolicLink(output)) {
+            throw new IllegalArgumentException("resultFile real path escaped the formal evidence root");
+        }
+        if (Files.exists(output, LinkOption.NOFOLLOW_LINKS)
+                && !isStrictlyBelow(output.toRealPath(), realEvidenceRoot)) {
+            throw new IllegalArgumentException("resultFile real path escaped the formal evidence root");
         }
         return output;
     }
@@ -686,7 +761,8 @@ class GateWOkxReadonlySoakCycleTest {
         );
         private static final Set<String> KILL_SWITCH_STATES = Set.of("DISENGAGED", "ENGAGED", "UNKNOWN");
         private static final Set<String> ENDPOINT_CATEGORIES = Set.of(
-                "NONE", "ACCOUNT_CONFIGURATION_READ", "ACCOUNT_CONFIG_AND_BALANCE_READ", "FORBIDDEN_OR_UNKNOWN"
+                "NONE", "ACCOUNT_CONFIGURATION_READ", "ACCOUNT_CONFIG_AND_BALANCE_READ",
+                "OFFLINE_LOCAL_FIXTURE_READ", "FORBIDDEN_OR_UNKNOWN"
         );
 
         private EvidenceSanitizer() {
@@ -764,13 +840,21 @@ class GateWOkxReadonlySoakCycleTest {
                     || result.traceId() == null || !SAFE_TRACE_ID.matcher(result.traceId()).matches()) {
                 throw new IllegalArgumentException("launcher evidence DTO is outside the fixed contract");
             }
-            if ("PASSED_READ_ONLY".equals(result.resultStatus())
-                    && (!result.credentialAccessed()
-                    || !result.networkCalled()
-                    || !"ACCOUNT_CONFIG_AND_BALANCE_READ".equals(result.allowedEndpointCategory())
-                    || result.accountConfigProbeStatus() != ProbeStatus.SUCCEEDED
-                    || result.balanceProbeStatus() != ProbeStatus.SUCCEEDED)) {
-                throw new IllegalArgumentException("PASS launcher evidence lacks a proven read-only endpoint outcome");
+            if ("PASSED_READ_ONLY".equals(result.resultStatus())) {
+                boolean realProviderPass = result.credentialAccessed()
+                        && result.networkCalled()
+                        && "ACCOUNT_CONFIG_AND_BALANCE_READ".equals(result.allowedEndpointCategory())
+                        && result.accountConfigProbeStatus() == ProbeStatus.SUCCEEDED
+                        && result.balanceProbeStatus() == ProbeStatus.SUCCEEDED;
+                boolean offlineFixturePass = !result.credentialAccessed()
+                        && !result.networkCalled()
+                        && "OFFLINE_LOCAL_FIXTURE_READ".equals(result.allowedEndpointCategory())
+                        && result.accountConfigProbeStatus() == ProbeStatus.SUCCEEDED
+                        && result.balanceProbeStatus() == ProbeStatus.SUCCEEDED
+                        && "OFFLINE_READONLY_FIXTURE_ACCEPTED".equals(result.reasonCode());
+                if (!realProviderPass && !offlineFixturePass) {
+                    throw new IllegalArgumentException("PASS launcher evidence lacks a proven read-only outcome");
+                }
             }
             validateEndpointSemantics(result);
         }
@@ -779,6 +863,16 @@ class GateWOkxReadonlySoakCycleTest {
             boolean noEndpoint = "NONE".equals(result.allowedEndpointCategory());
             boolean configOnly = "ACCOUNT_CONFIGURATION_READ".equals(result.allowedEndpointCategory());
             boolean configAndBalance = "ACCOUNT_CONFIG_AND_BALANCE_READ".equals(result.allowedEndpointCategory());
+            boolean offlineFixture = "OFFLINE_LOCAL_FIXTURE_READ".equals(result.allowedEndpointCategory());
+            if (offlineFixture) {
+                if (result.credentialAccessed()
+                        || result.networkCalled()
+                        || result.accountConfigProbeStatus() != ProbeStatus.SUCCEEDED
+                        || result.balanceProbeStatus() != ProbeStatus.SUCCEEDED) {
+                    throw new IllegalArgumentException("offline fixture evidence has unsafe provenance");
+                }
+                return;
+            }
             if (noEndpoint && (result.credentialAccessed()
                     || result.networkCalled()
                     || result.accountConfigProbeStatus() != ProbeStatus.NOT_RUN
@@ -841,6 +935,7 @@ class GateWOkxReadonlySoakCycleTest {
         private final Map<String, String> environment;
         private final Properties properties;
         private final String databaseName;
+        private final Path formalEvidenceRoot;
 
         private SafetyConfig(
                 String action,
@@ -855,7 +950,8 @@ class GateWOkxReadonlySoakCycleTest {
                 List<String> currencies,
                 Map<String, String> environment,
                 Properties properties,
-                String databaseName
+                String databaseName,
+                Path formalEvidenceRoot
         ) {
             this.action = action;
             this.resultFile = resultFile;
@@ -870,6 +966,7 @@ class GateWOkxReadonlySoakCycleTest {
             this.environment = environment;
             this.properties = properties;
             this.databaseName = databaseName;
+            this.formalEvidenceRoot = formalEvidenceRoot;
         }
 
         static SafetyConfig from(Map<String, String> environment, Properties properties) {
@@ -877,14 +974,27 @@ class GateWOkxReadonlySoakCycleTest {
             String url = value(environment, "NQ_GATEW_SOAK_DB_URL");
             String databaseName = databaseName(url);
             boolean credentialAction = !"engage".equals(action);
+            Path formalEvidenceRoot = formalEvidenceRoot(environment);
+            boolean systemdCredentials = SYSTEMD_CREDENTIAL_SOURCE.equals(
+                    value(environment, "NQ_GATEW_SECRET_SOURCE")
+            );
+            Path expectedCredentialDirectory = expectedCredentialDirectory(formalEvidenceRoot);
             return new SafetyConfig(
                     action,
                     pathProperty(properties, RESULT_FILE_PROPERTY),
                     pathProperty(properties, REPO_ROOT_PROPERTY),
                     url,
                     value(environment, "NQ_GATEW_SOAK_DB_USER"),
-                    value(environment, "NQ_GATEW_SOAK_DB_PASSWORD"),
-                    credentialAction ? value(environment, "NQ_ACCOUNT_CREDENTIALS_MASTER_KEY") : "",
+                    secretValue(
+                            environment,
+                            "NQ_GATEW_SOAK_DB_PASSWORD",
+                            "db-password",
+                            systemdCredentials,
+                            expectedCredentialDirectory
+                    ),
+                    credentialAction
+                            ? secretValue(environment, "NQ_ACCOUNT_CREDENTIALS_MASTER_KEY",
+                            "credential-master-key", systemdCredentials, expectedCredentialDirectory) : "",
                     credentialAction
                             ? positiveLong(value(environment, "NQ_GATEW_SOAK_OWNER_ID"), "NQ_GATEW_SOAK_OWNER_ID") : 0,
                     credentialAction
@@ -892,8 +1002,103 @@ class GateWOkxReadonlySoakCycleTest {
                     credentialAction ? currencies(value(environment, "NQ_GATEW_SOAK_CURRENCIES")) : List.of(),
                     Map.copyOf(environment),
                     properties,
-                    databaseName
+                    databaseName,
+                    formalEvidenceRoot
             );
+        }
+
+        private static Path formalEvidenceRoot(Map<String, String> environment) {
+            String raw = value(environment, "NQ_GATEW_FORMAL_EVIDENCE_ROOT");
+            if (raw.isBlank()) return null;
+            Path path = Path.of(raw);
+            for (Path segment : path) {
+                if ("..".equals(segment.toString())) {
+                    throw new SafeBlockException("SOAK_PATH_TRAVERSAL");
+                }
+            }
+            return path.toAbsolutePath().normalize();
+        }
+
+        private static Path expectedCredentialDirectory(Path formalEvidenceRoot) {
+            if (formalEvidenceRoot == null) return null;
+            Path stateRoot = Path.of(FORMAL_STATE_ROOT).toAbsolutePath().normalize();
+            if (!formalEvidenceRoot.startsWith(stateRoot)) {
+                throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+            }
+            Path relative = stateRoot.relativize(formalEvidenceRoot);
+            if (relative.getNameCount() != 2
+                    || !SAFE_RUN_ID.matcher(relative.getName(0).toString()).matches()
+                    || !"evidence".equals(relative.getName(1).toString())) {
+                throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+            }
+            return Path.of(
+                    "/run/credentials",
+                    "nq-gatew-soak@" + relative.getName(0) + ".service"
+            ).toAbsolutePath().normalize();
+        }
+
+        /**
+         * Linux formal service 必须从 systemd credential directory 的固定文件名取 secret；禁止
+         * EnvironmentFile、argv 或任意用户路径作为 secret source。测试/Windows legacy self-test
+         * 未声明 SYSTEMD_CREDENTIALS 时继续使用现有内存 fixture。
+         */
+        private static String secretValue(
+                Map<String, String> environment,
+                String legacyEnvironmentName,
+                String credentialName,
+                boolean systemdCredentials,
+                Path expectedCredentialDirectory
+        ) {
+            if (!systemdCredentials) return value(environment, legacyEnvironmentName);
+            if (!value(environment, legacyEnvironmentName).isBlank()) {
+                throw new SafeBlockException("SYSTEMD_CREDENTIAL_ENV_CONFLICT");
+            }
+            if (!"true".equals(value(environment, "NQ_GATEW_FORMAL_SYSTEMD"))
+                    || expectedCredentialDirectory == null) {
+                throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+            }
+            String directoryValue = value(environment, "CREDENTIALS_DIRECTORY");
+            try {
+                Path directory = Path.of(directoryValue).toAbsolutePath().normalize();
+                Path credential = directory.resolve(credentialName).normalize();
+                if (directoryValue.isBlank()
+                        || !directory.equals(expectedCredentialDirectory)
+                        || !credential.getParent().equals(directory)
+                        || !Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)
+                        || !Files.isRegularFile(credential, LinkOption.NOFOLLOW_LINKS)) {
+                    throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+                }
+                assertNoSymbolicLinkComponents(directory);
+                assertNoSymbolicLinkComponents(credential);
+                if (!directory.toRealPath().equals(expectedCredentialDirectory.toRealPath())) {
+                    throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+                }
+                long size = Files.size(credential);
+                if (size <= 0 || size > 16_384) {
+                    throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+                }
+                String secret = Files.readString(credential, StandardCharsets.UTF_8).strip();
+                if (secret.isBlank() || secret.indexOf('\0') >= 0) {
+                    throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+                }
+                return secret;
+            } catch (SafeBlockException ex) {
+                throw ex;
+            } catch (RuntimeException | IOException ex) {
+                throw new SafeBlockException("SYSTEMD_CREDENTIAL_SOURCE_INVALID");
+            }
+        }
+
+        private static void assertNoSymbolicLinkComponents(Path path) throws IOException {
+            Path absolute = path.toAbsolutePath().normalize();
+            Path current = absolute.getRoot();
+            if (current == null) throw new IOException("path root is missing");
+            for (Path segment : absolute) {
+                current = current.resolve(segment);
+                if (!Files.exists(current, LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(current)) {
+                    throw new IOException("path component is not a stable real path");
+                }
+            }
         }
 
         void assertSafe() {
@@ -992,17 +1197,53 @@ class GateWOkxReadonlySoakCycleTest {
             return Objects.toString(environment.get(name), "").trim();
         }
 
-        String action() { return action; }
-        Path resultFile() { return resultFile; }
-        Path repoRoot() { return repoRoot; }
-        String databaseUrl() { return databaseUrl; }
-        String databaseUser() { return databaseUser; }
-        String databasePassword() { return databasePassword; }
-        String masterKey() { return masterKey; }
-        long ownerId() { return ownerId; }
-        long exchangeAccountId() { return exchangeAccountId; }
-        List<String> currencies() { return currencies; }
-        String databaseName() { return databaseName; }
+        String action() {
+            return action;
+        }
+
+        Path resultFile() {
+            return resultFile;
+        }
+
+        Path repoRoot() {
+            return repoRoot;
+        }
+
+        String databaseUrl() {
+            return databaseUrl;
+        }
+
+        String databaseUser() {
+            return databaseUser;
+        }
+
+        String databasePassword() {
+            return databasePassword;
+        }
+
+        String masterKey() {
+            return masterKey;
+        }
+
+        long ownerId() {
+            return ownerId;
+        }
+
+        long exchangeAccountId() {
+            return exchangeAccountId;
+        }
+
+        List<String> currencies() {
+            return currencies;
+        }
+
+        String databaseName() {
+            return databaseName;
+        }
+
+        Path formalEvidenceRoot() {
+            return formalEvidenceRoot;
+        }
 
         @Override
         public String toString() {
@@ -1227,7 +1468,12 @@ class GateWOkxReadonlySoakCycleTest {
             this.permissionClassification = permissionClassification;
         }
 
-        String reasonCode() { return reasonCode; }
-        String permissionClassification() { return permissionClassification; }
+        String reasonCode() {
+            return reasonCode;
+        }
+
+        String permissionClassification() {
+            return permissionClassification;
+        }
     }
 }

@@ -17747,3 +17747,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - scope：仅新增decision evidence并最小更新GateW index/WORKLOG；未改代码、GateW plan、STATUS/ROADMAP、authority，未部署、未访问server/credential/OKX/LIVE/交易写侧。
 - result：`PASS / SOAK_TOOLING_REDESIGN_DECIDED / READY_FOR_SINGLE_IMPLEMENTATION`；decision commit/push/exact-head CI在本记录写入时pending。
 - next：唯一任务`NQ-GATEW-SOAK-TOOLING-REDESIGN-IMPLEMENTATION`，按decision精确allowlist一次完成formal runtime、independent fail-close、terminal state machine和完整offline acceptance；不再创建plan/review/freeze文档链。
+
+## 2026-07-19 — GateW soak tooling redesign implementation
+
+- task：`NQ-GATEW-SOAK-TOOLING-REDESIGN-IMPLEMENTATION`；`CONTINUE_EXISTING_UNCOMMITTED_WORKTREE`；NQ-only、L级 systemd/runtime/security implementation。
+- baseline：`dev`；`HEAD == origin/dev == aac38cbd...`；staged area empty；8个既有未提交文件全部在allowlist；authority为GateW `IN_PROGRESS|NOT_FROZEN`、GateW-FREEZE `NOT_STARTED`、LIVE `DISABLED`。
+- implementation：正式`nq-gatew-soak@.service` + independent `nq-gatew-soak-failclose@.service`；root control/terminal、worker evidence、0700 runtime/state/control、systemd encrypted credentials、bounded ENGAGED recovery、PID/residual与create-once terminal。
+- P1 closeout：从worker删除旧Linux transient start/status/stop、offline smoke与对应helper/self-test；production source中`systemd-run`、`linux-smoke-*`和三类transient helper均0命中；Linux lifecycle只允许formal root control。
+- regression：PS5.1/7三脚本各40/20/22 cases PASS；AST 0 error；IDEA problems=0；Java targeted 51/0/0/2；合同no-outbound环境下module/full Maven均23/23 modules`SUCCESS / BUILD SUCCESS`，full `nq-app`211/0/0/9。
+- local systemd：WSL完成unit结构解析，但因缺`/usr/bin/pwsh`与drvfs mode映射告警，正式`systemd-analyze verify`保持`PENDING_SERVER`，未误写PASS。
+- findings：P0=0、P1=0、P2=0；P3=1为root README旧短摘要，不在allowlist且不覆盖STATUS，本轮不改。
+- boundary：真实OKX/network/credential access=0；permission probe未重跑；真实soak/acceptance clock未启动；无production Java/API/migration/frontend/research/CI/STATUS/ROADMAP/LIVE/order/cancel/transfer/withdraw/AI/DH diff。
+- current fact：implementation commit=`UNCOMMITTED`；exact-head CI=`NOT_RUN`；server deployment/formal offline acceptance=`PENDING / NOT_RUN`。
+- next：精确暂存并完成cached diff审查，创建唯一implementation commit并push；exact-head CI 10/10 GREEN后仅部署一次，使用正式unit完成离线cycle1/2、fresh SSH、cycle3 failure、independent fail-close与terminal闭环。失败则执行停止线并保持ENGAGED/inactive/PID0/residual0。

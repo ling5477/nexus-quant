@@ -2,8 +2,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet(
-        'start', 'status', 'resume', 'stop', 'failure-stop', 'evidence-verify', 'cleanup', 'run-loop', 'self-test',
-        'linux-smoke-start', 'linux-smoke-status', 'linux-smoke-stop', 'linux-smoke-loop'
+            'start', 'status', 'resume', 'stop', 'failure-stop', 'evidence-verify', 'cleanup', 'run-loop', 'self-test'
     )]
     [string]$Action,
 
@@ -21,63 +20,34 @@ param(
     [ValidateRange(1, 10)]
     [int]$MaxConsecutiveAuthFailures = 3,
 
-    [string]$StartingCiRun,
-
-    [ValidateRange(1, 30)]
-    [int]$SmokeHeartbeatSeconds = 2
+    [string]$StartingCiRun
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $script:ScriptPath = $PSCommandPath
-$script:RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+$configuredRepoRoot = [Environment]::GetEnvironmentVariable('NQ_GATEW_REPO_ROOT', 'Process')
+if ( [string]::IsNullOrWhiteSpace($configuredRepoRoot))
+{
+    $script:RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+}
+else
+{
+    $script:RepoRoot = (Resolve-Path -LiteralPath $configuredRepoRoot).Path
+}
 $script:SupervisorRelativePath = 'scripts/gatew/gatew-okx-readonly-soak.ps1'
 $script:EvidenceRoot = [IO.Path]::GetFullPath((Join-Path $script:RepoRoot 'target\gatew-okx-readonly-soak'))
+$script:FormalStateRoot = '/var/lib/nexus-quant/gatew-soak'
+$script:FormalRuntimeRoot = '/run/nexus-quant/gatew-soak'
+$script:FormalLauncherRoot = '/opt/nexus-quant/gatew-soak/app/launcher'
+$script:LinuxJavaPath = '/usr/bin/java'
 $script:Utf8NoBom = [Text.UTF8Encoding]::new($false)
 $script:GenesisHash = '0' * 64
 $script:LauncherSchemaVersion = 'gatew-soak-launcher-v2'
 $script:EvidenceSchemaV1 = 'gatew-soak-evidence-v1'
 $script:EvidenceSchemaV2 = 'gatew-soak-evidence-v2'
-$script:LinuxSupervisorSchemaVersion = 'nq-gatew-linux-supervisor-v1'
-$script:LinuxSmokeSchemaVersion = 'nq-gatew-linux-two-cycle-closure-v1'
-$script:LinuxRuntimeUser = 'nqgatew'
-$script:LinuxRuntimeGroup = 'nqgatew'
-$script:LinuxWorkingDirectory = '/opt/nexus-quant/gatew-soak'
-$script:LinuxSupervisorPath = '/opt/nexus-quant/gatew-soak/app/repo/scripts/gatew/gatew-okx-readonly-soak.ps1'
-$script:LinuxEnvironmentFile = '/opt/nexus-quant/gatew-soak/config/management.env'
-$script:LinuxRuntimeEnvironmentRoot = '/run/nexus-quant/gatew-soak'
-$script:LinuxEvidenceDirectory = '/opt/nexus-quant/gatew-soak/evidence/gatew-okx-readonly-soak'
-$script:LinuxSmokeDirectory = '/opt/nexus-quant/gatew-soak/app/repo/target/gatew-okx-readonly-soak/offline-smoke'
-$script:LinuxPowerShellPath = '/usr/bin/pwsh'
-$script:LinuxSystemdRunPath = '/usr/bin/systemd-run'
-$script:LinuxSystemctlPath = '/usr/bin/systemctl'
-$script:LinuxIdPath = '/usr/bin/id'
-$script:LinuxSudoPath = '/usr/bin/sudo'
-$script:LinuxChownPath = '/usr/bin/chown'
-$script:LinuxChmodPath = '/usr/bin/chmod'
-$script:LinuxStatPath = '/usr/bin/stat'
 $script:LinuxReadlinkPath = '/usr/bin/readlink'
-$script:LinuxNsenterPath = '/usr/bin/nsenter'
-$script:LinuxSsPath = '/usr/bin/ss'
-$script:LinuxSmokeRoot = [IO.Path]::GetFullPath((Join-Path $script:EvidenceRoot 'offline-smoke'))
-$script:LinuxDetachmentReasons = @(
-    'SYSTEMD_RUN_UNAVAILABLE',
-    'TRANSIENT_UNIT_CREATE_FAILED',
-    'TRANSIENT_UNIT_NOT_ACTIVE',
-    'TRANSIENT_UNIT_MAIN_PID_MISSING',
-    'TRANSIENT_UNIT_USER_MISMATCH',
-    'TRANSIENT_UNIT_PROPERTY_MISMATCH',
-    'LINUX_RUNTIME_PATH_INVALID',
-    'SUPERVISOR_SENTINEL_INVALID',
-    'SUPERVISOR_PROCESS_IDENTITY_MISMATCH',
-    'SUPERVISOR_PROCESS_EXITED',
-    'SUPERVISOR_HEARTBEAT_NOT_ADVANCING',
-    'SUPERVISOR_RECONNECT_STATUS_FAILED',
-    'SUPERVISOR_STOP_FAILED',
-    'SUPERVISOR_RESIDUAL_PROCESS_FOUND',
-    'RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-)
 $script:LauncherFields = @(
     'schemaVersion', 'cycleId', 'observedAt', 'durationMs', 'resultStatus', 'reasonCode',
     'httpStatusCategory', 'permissionClassification', 'killSwitchObservedState',
@@ -130,30 +100,36 @@ $script:DirectOkxEnvironmentNames = @(
     'NQ_OKX_REAL_API_KEY', 'NQ_OKX_REAL_API_SECRET', 'NQ_OKX_REAL_API_PASSPHRASE'
 )
 $script:MaterializedRuntimeEnvironmentNames = @(
-    $script:RuntimeEnvironmentNames | Where-Object { $script:DirectOkxEnvironmentNames -notcontains $_ }
-)
-$script:LinuxSmokeCycleFields = @(
-    'sequence', 'action', 'resultStatus', 'reasonCode', 'killSwitchObservedState',
-    'credentialAccessed', 'networkCalled', 'realCycleOutcomeProven'
+$script:RuntimeEnvironmentNames | Where-Object { $script:DirectOkxEnvironmentNames -notcontains $_ }
 )
 
-function Get-UtcNow {
+function Get-UtcNow
+{
     return [DateTimeOffset]::UtcNow
 }
 
-function Test-LinuxPlatform {
+function Test-LinuxPlatform
+{
     # Windows PowerShell 5.1 has no $IsLinux automatic variable.
     $platform = Get-Variable -Name IsLinux -ErrorAction SilentlyContinue
     return $null -ne $platform -and [bool]$platform.Value
 }
 
-function ConvertTo-TrimmedNativeOutput {
+function Test-FormalSystemdWorker
+{
+    return (Test-LinuxPlatform) -and
+            [Environment]::GetEnvironmentVariable('NQ_GATEW_FORMAL_SYSTEMD', 'Process') -eq 'true'
+}
+
+function ConvertTo-TrimmedNativeOutput
+{
     param([AllowNull()][object[]]$Value)
 
     return (($Value -join [Environment]::NewLine).Trim())
 }
 
-function ConvertTo-CanonicalUtcTimestamp {
+function ConvertTo-CanonicalUtcTimestamp
+{
     param([Parameter(Mandatory = $true)]$Value)
 
     # PowerShell 7 将 ISO-8601 JSON 字符串自动解析为 DateTime；统一回 UTC round-trip 格式，保证跨引擎 hash 一致。
@@ -164,136 +140,142 @@ function ConvertTo-CanonicalUtcTimestamp {
     return $utcObservedAt.ToString('o')
 }
 
-function Get-RuntimeEnvironmentSnapshot {
-    $snapshot = @{}
-    foreach ($name in $script:RuntimeEnvironmentNames) {
+function Get-RuntimeEnvironmentSnapshot
+{
+    $snapshot = @{ }
+    foreach ($name in $script:RuntimeEnvironmentNames)
+    {
         $snapshot[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
     }
     return $snapshot
 }
 
-function Assert-RuntimeEnvironment {
+function Assert-RuntimeEnvironment
+{
     param([Parameter(Mandatory = $true)][hashtable]$Environment)
 
-    foreach ($name in $script:DirectOkxEnvironmentNames) {
-        if (-not [string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
+    foreach ($name in $script:DirectOkxEnvironmentNames)
+    {
+        if (-not [string]::IsNullOrWhiteSpace([string]$Environment[$name]))
+        {
             throw 'BLOCKED / DIRECT_OKX_CREDENTIAL_INPUT_FORBIDDEN'
         }
     }
-    foreach ($name in @('NQ_ACCOUNT_CREDENTIALS_MASTER_KEY', 'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID')) {
-        if ([string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
+    foreach ($name in @('NQ_ACCOUNT_CREDENTIALS_MASTER_KEY', 'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID'))
+    {
+        if ( [string]::IsNullOrWhiteSpace([string]$Environment[$name]))
+        {
             throw 'BLOCKED / API_KEY_REQUIRED'
         }
     }
-    foreach ($name in @('NQ_GATEW_SOAK_DB_URL', 'NQ_GATEW_SOAK_DB_USER', 'NQ_GATEW_SOAK_DB_PASSWORD')) {
-        if ([string]::IsNullOrWhiteSpace([string]$Environment[$name])) {
+    foreach ($name in @('NQ_GATEW_SOAK_DB_URL', 'NQ_GATEW_SOAK_DB_USER', 'NQ_GATEW_SOAK_DB_PASSWORD'))
+    {
+        if ( [string]::IsNullOrWhiteSpace([string]$Environment[$name]))
+        {
             throw 'BLOCKED / SOAK_DATABASE_CONFIG_REQUIRED'
         }
     }
-    foreach ($name in $script:MaterializedRuntimeEnvironmentNames) {
+    foreach ($name in $script:MaterializedRuntimeEnvironmentNames)
+    {
         $value = [string]$Environment[$name]
         # systemd EnvironmentFile does not expand variables; require materialized literal values.
-        if (-not ([string]::IsNullOrWhiteSpace($value))) {
-            if ($value -match '^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$') {
+        if (-not ([string]::IsNullOrWhiteSpace($value)))
+        {
+            if ($value -match '^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$')
+            {
                 throw 'BLOCKED / RUNTIME_ENVIRONMENT_NOT_LITERAL'
             }
         }
     }
-    if ([string]$Environment.SPRING_PROFILES_ACTIVE -ne 'gatew-okx-readonly-soak') {
+    if ([string]$Environment.SPRING_PROFILES_ACTIVE -ne 'gatew-okx-readonly-soak')
+    {
         throw 'BLOCKED / SOAK_PROFILE_REQUIRED'
     }
-    if ([string]$Environment.NQ_GATEW_OKX_READONLY_SOAK_ENABLED -ne 'true') {
+    if ([string]$Environment.NQ_GATEW_OKX_READONLY_SOAK_ENABLED -ne 'true')
+    {
         throw 'BLOCKED / SOAK_FEATURE_FLAG_REQUIRED'
     }
-    if ([string]$Environment.CI -eq 'true' -or [string]$Environment.NQ_NO_OUTBOUND -eq 'true') {
+    if ([string]$Environment.CI -eq 'true' -or [string]$Environment.NQ_NO_OUTBOUND -eq 'true')
+    {
         throw 'BLOCKED / SOAK_OUTBOUND_FORBIDDEN_IN_CI'
     }
     foreach ($name in @(
         'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED', 'NQ_TRANSFER_ENABLED', 'NQ_WITHDRAW_ENABLED',
         'NQ_AI_ENABLED', 'NQ_DH_RUNTIME_ENABLED', 'NQ_REAL_PROVIDER_ENABLED', 'NQ_REAL_CLIENT_ENABLED',
         'NQ_REAL_EXCHANGE_ENABLED'
-    )) {
-        if ([string]$Environment[$name] -ne 'false') {
+    ))
+    {
+        if ([string]$Environment[$name] -ne 'false')
+        {
             throw "BLOCKED / ${name}_MUST_BE_FALSE"
         }
     }
-    if ([string]::IsNullOrWhiteSpace([string]$Environment.NQ_GATEW_SOAK_CURRENCIES)) {
+    if ( [string]::IsNullOrWhiteSpace([string]$Environment.NQ_GATEW_SOAK_CURRENCIES))
+    {
         throw 'BLOCKED / SOAK_CURRENCY_ALLOWLIST_REQUIRED'
     }
 }
 
-function ConvertTo-SystemdEnvironmentFileLiteral {
-    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
-
-    if ($Value.IndexOf([char]0) -ge 0 -or $Value -match "[`r`n]") {
-        throw 'BLOCKED / RUNTIME_ENVIRONMENT_NOT_LITERAL'
-    }
-    # Quoted values remain literal; escape only backslash and double quote for systemd syntax.
-    $escaped = $Value.Replace('\', '\\').Replace('"', '\"')
-    return '"' + $escaped + '"'
-}
-
-function New-LinuxRuntimeEnvironmentContent {
-    param([Parameter(Mandatory = $true)][hashtable]$Environment)
-
-    Assert-RuntimeEnvironment $Environment
-    $lines = foreach ($name in $script:MaterializedRuntimeEnvironmentNames) {
-        $value = [string]$Environment[$name]
-        "$name=$(ConvertTo-SystemdEnvironmentFileLiteral $value)"
-    }
-    return (($lines -join "`n") + "`n")
-}
-
-function Get-Sha256Text {
+function Get-Sha256Text
+{
     param([Parameter(Mandatory = $true)][string]$Text)
 
     $bytes = $script:Utf8NoBom.GetBytes($Text)
     $sha256 = [Security.Cryptography.SHA256]::Create()
-    try {
+    try
+    {
         $hash = $sha256.ComputeHash($bytes)
         return -join ($hash | ForEach-Object { $_.ToString('x2') })
     }
-    finally {
+    finally
+    {
         $sha256.Dispose()
         [Array]::Clear($bytes, 0, $bytes.Length)
     }
 }
 
-function Get-Sha256File {
+function Get-Sha256File
+{
     param([Parameter(Mandatory = $true)][string]$Path)
 
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-function Get-GitBlobObjectId {
+function Get-GitBlobObjectId
+{
     param([Parameter(Mandatory = $true)][string]$Commit)
 
-    $objectSpec = "${Commit}:$($script:SupervisorRelativePath)"
-    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot rev-parse $objectSpec 2>$null)
-    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$') {
+    $objectSpec = "${Commit}:$( $script:SupervisorRelativePath )"
+    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot rev-parse $objectSpec 2> $null)
+    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$')
+    {
         throw 'BLOCKED / SUPERVISOR_GIT_BLOB_UNRESOLVED'
     }
     return $value.ToLowerInvariant()
 }
 
-function Get-FilteredGitBlobObjectId {
+function Get-FilteredGitBlobObjectId
+{
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    $pathArgument = "--path=$($script:SupervisorRelativePath)"
-    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot hash-object $pathArgument $Path 2>$null)
-    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$') {
+    $pathArgument = "--path=$( $script:SupervisorRelativePath )"
+    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot hash-object $pathArgument $Path 2> $null)
+    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$')
+    {
         throw 'git-filtered supervisor blob hash failed'
     }
     return $value.ToLowerInvariant()
 }
 
-function ConvertTo-CompactJson {
+function ConvertTo-CompactJson
+{
     param([Parameter(Mandatory = $true)]$Value)
 
     return ($Value | ConvertTo-Json -Compress -Depth 12)
 }
 
-function Write-JsonAtomic {
+function Write-JsonAtomic
+{
     param(
         [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $true)]$Value
@@ -306,25 +288,61 @@ function Write-JsonAtomic {
     Move-Item -LiteralPath $temporary -Destination $Path -Force
 }
 
-function Read-JsonFile {
+function Write-JsonCreateOnce
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)]$Value
+    )
+
+    $bytes = $script:Utf8NoBom.GetBytes((ConvertTo-CompactJson $Value))
+    $stream = $null
+    try
+    {
+        $stream = [IO.FileStream]::new(
+                $Path,
+                [IO.FileMode]::CreateNew,
+                [IO.FileAccess]::Write,
+                [IO.FileShare]::None,
+                4096,
+                [IO.FileOptions]::WriteThrough
+        )
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Flush($true)
+    }
+    finally
+    {
+        if ($null -ne $stream)
+        {
+            $stream.Dispose()
+        }
+        [Array]::Clear($bytes, 0, $bytes.Length)
+    }
+}
+
+function Read-JsonFile
+{
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf))
+    {
         throw "required evidence file is missing"
     }
     return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json)
 }
 
-function Test-IntegralNumber {
+function Test-IntegralNumber
+{
     param([AllowNull()]$Value)
 
     return $Value -is [byte] -or $Value -is [sbyte] -or
-        $Value -is [int16] -or $Value -is [uint16] -or
-        $Value -is [int32] -or $Value -is [uint32] -or
-        $Value -is [int64] -or $Value -is [uint64]
+            $Value -is [int16] -or $Value -is [uint16] -or
+            $Value -is [int32] -or $Value -is [uint32] -or
+            $Value -is [int64] -or $Value -is [uint64]
 }
 
-function Assert-ExactFields {
+function Assert-ExactFields
+{
     param(
         [Parameter(Mandatory = $true)]$Value,
         [Parameter(Mandatory = $true)][string[]]$Expected,
@@ -332,18 +350,22 @@ function Assert-ExactFields {
     )
 
     $actual = @($Value.PSObject.Properties.Name)
-    if (($actual -join '|') -ne ($Expected -join '|')) {
+    if (($actual -join '|') -ne ($Expected -join '|'))
+    {
         throw "$Category schema is invalid"
     }
 }
 
-function Assert-LauncherCycleResult {
+function Assert-LauncherCycleResult
+{
     param([Parameter(Mandatory = $true)]$Cycle)
 
     Assert-ExactFields -Value $Cycle -Expected $script:LauncherFields -Category 'launcher cycle'
-    foreach ($field in $script:LauncherFields) {
+    foreach ($field in $script:LauncherFields)
+    {
         $value = $Cycle.PSObject.Properties[$field].Value
-        if ($null -eq $value -or $value -is [array] -or $value -is [System.Collections.IDictionary]) {
+        if ($null -eq $value -or $value -is [array] -or $value -is [System.Collections.IDictionary])
+        {
             throw 'launcher cycle contains null or container data'
         }
     }
@@ -351,106 +373,147 @@ function Assert-LauncherCycleResult {
         'schemaVersion', 'cycleId', 'resultStatus', 'reasonCode', 'httpStatusCategory',
         'permissionClassification', 'killSwitchObservedState', 'allowedEndpointCategory',
         'accountConfigProbeStatus', 'balanceProbeStatus', 'traceId'
-    )) {
-        if ($Cycle.PSObject.Properties[$field].Value -isnot [string]) {
+    ))
+    {
+        if ($Cycle.PSObject.Properties[$field].Value -isnot [string])
+        {
             throw 'launcher cycle text field type is invalid'
         }
     }
-    if ([string]$Cycle.schemaVersion -ne $script:LauncherSchemaVersion) {
+    if ([string]$Cycle.schemaVersion -ne $script:LauncherSchemaVersion)
+    {
         throw 'launcher cycle schemaVersion is invalid'
     }
-    if ([string]$Cycle.cycleId -notmatch '^gatew-cycle-[a-f0-9]{32}$') {
+    if ([string]$Cycle.cycleId -notmatch '^gatew-cycle-[a-f0-9]{32}$')
+    {
         throw 'launcher cycle cycleId is invalid'
     }
     if ($Cycle.observedAt -isnot [string] -and
-        $Cycle.observedAt -isnot [DateTime] -and
-        $Cycle.observedAt -isnot [DateTimeOffset]) {
+            $Cycle.observedAt -isnot [DateTime] -and
+            $Cycle.observedAt -isnot [DateTimeOffset])
+    {
         throw 'launcher cycle observedAt type is invalid'
     }
     ConvertTo-CanonicalUtcTimestamp $Cycle.observedAt | Out-Null
-    if (-not (Test-IntegralNumber $Cycle.durationMs) -or [long]$Cycle.durationMs -lt 0) {
+    if (-not (Test-IntegralNumber $Cycle.durationMs) -or [long]$Cycle.durationMs -lt 0)
+    {
         throw 'launcher cycle durationMs is invalid'
     }
-    if (@('BOOTSTRAP_READY', 'ENGAGED', 'PASSED_READ_ONLY', 'BLOCKED', 'TRANSIENT_FAILURE', 'HARD_FAILURE', 'FAILED') -notcontains [string]$Cycle.resultStatus) {
+    if (@('BOOTSTRAP_READY', 'ENGAGED', 'PASSED_READ_ONLY', 'BLOCKED', 'TRANSIENT_FAILURE', 'HARD_FAILURE', 'FAILED') -notcontains [string]$Cycle.resultStatus)
+    {
         throw 'launcher cycle resultStatus is invalid'
     }
-    if ([string]$Cycle.reasonCode -notmatch '^[A-Z][A-Z0-9_]{1,95}$') {
+    if ([string]$Cycle.reasonCode -notmatch '^[A-Z][A-Z0-9_]{1,95}$')
+    {
         throw 'launcher cycle reasonCode is invalid'
     }
-    if (@('SUCCESS_2XX', 'RATE_LIMITED_429', 'EXCHANGE_ERROR', 'AUTH_ERROR', 'NETWORK_ERROR', 'NOT_AVAILABLE', 'NOT_CALLED') -notcontains [string]$Cycle.httpStatusCategory) {
+    if (@('SUCCESS_2XX', 'RATE_LIMITED_429', 'EXCHANGE_ERROR', 'AUTH_ERROR', 'NETWORK_ERROR', 'NOT_AVAILABLE', 'NOT_CALLED') -notcontains [string]$Cycle.httpStatusCategory)
+    {
         throw 'launcher cycle httpStatusCategory is invalid'
     }
     if (@(
         'METADATA_READ_ONLY', 'READ_ONLY_WITH_IP_ALLOWLIST', 'UNKNOWN', 'UNSAFE_OR_INCOMPLETE',
         'UNSAFE_OR_UNKNOWN', 'WITHDRAW_ENABLED', 'READ_ONLY_UNVERIFIED_IP'
-    ) -notcontains [string]$Cycle.permissionClassification) {
+    ) -notcontains [string]$Cycle.permissionClassification)
+    {
         throw 'launcher cycle permissionClassification is invalid'
     }
-    if (@('DISENGAGED', 'ENGAGED', 'UNKNOWN') -notcontains [string]$Cycle.killSwitchObservedState) {
+    if (@('DISENGAGED', 'ENGAGED', 'UNKNOWN') -notcontains [string]$Cycle.killSwitchObservedState)
+    {
         throw 'launcher cycle killSwitchObservedState is invalid'
     }
-    if ($Cycle.credentialAccessed -isnot [bool] -or $Cycle.networkCalled -isnot [bool]) {
+    if ($Cycle.credentialAccessed -isnot [bool] -or $Cycle.networkCalled -isnot [bool])
+    {
         throw 'launcher cycle boolean type is invalid'
     }
-    if (@('NONE', 'ACCOUNT_CONFIGURATION_READ', 'ACCOUNT_CONFIG_AND_BALANCE_READ', 'FORBIDDEN_OR_UNKNOWN') -notcontains [string]$Cycle.allowedEndpointCategory) {
+    if (@(
+        'NONE', 'ACCOUNT_CONFIGURATION_READ', 'ACCOUNT_CONFIG_AND_BALANCE_READ',
+        'FORBIDDEN_OR_UNKNOWN', 'OFFLINE_LOCAL_FIXTURE_READ'
+    ) -notcontains [string]$Cycle.allowedEndpointCategory)
+    {
         throw 'launcher cycle allowedEndpointCategory is invalid'
     }
-    foreach ($field in @('accountConfigProbeStatus', 'balanceProbeStatus')) {
+    foreach ($field in @('accountConfigProbeStatus', 'balanceProbeStatus'))
+    {
         $status = [string]$Cycle.PSObject.Properties[$field].Value
-        if (@('NOT_RUN', 'SUCCEEDED', 'BLOCKED', 'FAILED', 'UNKNOWN') -notcontains $status) {
+        if (@('NOT_RUN', 'SUCCEEDED', 'BLOCKED', 'FAILED', 'UNKNOWN') -notcontains $status)
+        {
             throw "launcher cycle $field is invalid"
         }
     }
-    if ([string]$Cycle.traceId -notmatch '^gatew-soak-[a-f0-9-]{36}$') {
+    if ([string]$Cycle.traceId -notmatch '^gatew-soak-[a-f0-9-]{36}$')
+    {
         throw 'launcher cycle traceId is invalid'
     }
     $serialized = ConvertTo-CompactJson $Cycle
-    if ($serialized -match '(?i)https?://|/api/v5/') {
+    if ($serialized -match '(?i)https?://|/api/v5/')
+    {
         throw 'launcher cycle contains a forbidden network material shape'
     }
-    if ([string]$Cycle.resultStatus -eq 'PASSED_READ_ONLY' -and
-        (-not [bool]$Cycle.credentialAccessed -or -not [bool]$Cycle.networkCalled -or
-        [string]$Cycle.allowedEndpointCategory -ne 'ACCOUNT_CONFIG_AND_BALANCE_READ' -or
-        [string]$Cycle.accountConfigProbeStatus -ne 'SUCCEEDED' -or
-        [string]$Cycle.balanceProbeStatus -ne 'SUCCEEDED')) {
+    $onlinePass = [bool]$Cycle.credentialAccessed -and [bool]$Cycle.networkCalled -and
+            [string]$Cycle.allowedEndpointCategory -eq 'ACCOUNT_CONFIG_AND_BALANCE_READ' -and
+            [string]$Cycle.accountConfigProbeStatus -eq 'SUCCEEDED' -and
+            [string]$Cycle.balanceProbeStatus -eq 'SUCCEEDED'
+    $offlinePass = -not [bool]$Cycle.credentialAccessed -and -not [bool]$Cycle.networkCalled -and
+            [string]$Cycle.allowedEndpointCategory -eq 'OFFLINE_LOCAL_FIXTURE_READ' -and
+            [string]$Cycle.accountConfigProbeStatus -eq 'SUCCEEDED' -and
+            [string]$Cycle.balanceProbeStatus -eq 'SUCCEEDED'
+    if ([string]$Cycle.resultStatus -eq 'PASSED_READ_ONLY' -and -not ($onlinePass -or $offlinePass))
+    {
         throw 'launcher PASS does not prove both allowed read-only probes'
     }
     $noEndpoint = [string]$Cycle.allowedEndpointCategory -eq 'NONE'
     $configOnly = [string]$Cycle.allowedEndpointCategory -eq 'ACCOUNT_CONFIGURATION_READ'
     $configAndBalance = [string]$Cycle.allowedEndpointCategory -eq 'ACCOUNT_CONFIG_AND_BALANCE_READ'
+    $offlineFixture = [string]$Cycle.allowedEndpointCategory -eq 'OFFLINE_LOCAL_FIXTURE_READ'
     $configKnown = [string]$Cycle.accountConfigProbeStatus -in @('SUCCEEDED', 'BLOCKED', 'FAILED')
     $balanceKnown = [string]$Cycle.balanceProbeStatus -in @('SUCCEEDED', 'BLOCKED', 'FAILED')
-    if ($noEndpoint -and ([bool]$Cycle.credentialAccessed -or [bool]$Cycle.networkCalled)) {
+    if ($noEndpoint -and ([bool]$Cycle.credentialAccessed -or [bool]$Cycle.networkCalled))
+    {
         throw 'no-endpoint launcher evidence contains credential/network provenance'
     }
-    if (-not $noEndpoint -and (-not [bool]$Cycle.credentialAccessed -or -not [bool]$Cycle.networkCalled)) {
+    if (-not $noEndpoint -and -not $offlineFixture -and
+            (-not [bool]$Cycle.credentialAccessed -or -not [bool]$Cycle.networkCalled))
+    {
         throw 'endpoint launcher evidence lacks credential/network provenance'
     }
+    if ($offlineFixture -and ([bool]$Cycle.credentialAccessed -or [bool]$Cycle.networkCalled -or
+            -not $configKnown -or -not $balanceKnown))
+    {
+        throw 'offline fixture launcher evidence has unsafe provenance'
+    }
     if ($noEndpoint -and
-        -not (([string]$Cycle.accountConfigProbeStatus -eq 'NOT_RUN' -and [string]$Cycle.balanceProbeStatus -eq 'NOT_RUN') -or
-        ([string]$Cycle.accountConfigProbeStatus -eq 'UNKNOWN' -and [string]$Cycle.balanceProbeStatus -eq 'UNKNOWN'))) {
+            -not (([string]$Cycle.accountConfigProbeStatus -eq 'NOT_RUN' -and [string]$Cycle.balanceProbeStatus -eq 'NOT_RUN') -or
+                    ([string]$Cycle.accountConfigProbeStatus -eq 'UNKNOWN' -and [string]$Cycle.balanceProbeStatus -eq 'UNKNOWN')))
+    {
         throw 'no-endpoint launcher evidence has inconsistent probe statuses'
     }
-    if ($configOnly -and (-not $configKnown -or [string]$Cycle.balanceProbeStatus -ne 'NOT_RUN')) {
+    if ($configOnly -and (-not $configKnown -or [string]$Cycle.balanceProbeStatus -ne 'NOT_RUN'))
+    {
         throw 'config-only launcher evidence has inconsistent probe statuses'
     }
-    if ($configAndBalance -and (-not $configKnown -or -not $balanceKnown)) {
+    if ($configAndBalance -and (-not $configKnown -or -not $balanceKnown))
+    {
         throw 'config-and-balance launcher evidence has incomplete probe statuses'
     }
-    if (-not $configAndBalance -and -not $noEndpoint -and [string]$Cycle.balanceProbeStatus -ne 'NOT_RUN') {
+    if (-not $configAndBalance -and -not $noEndpoint -and -not $offlineFixture -and
+            [string]$Cycle.balanceProbeStatus -ne 'NOT_RUN')
+    {
         throw 'balance probe status is outside the allowed endpoint category'
     }
 }
 
-function ConvertTo-SupervisorCycle {
+function ConvertTo-SupervisorCycle
+{
     param(
         [Parameter(Mandatory = $true)]$Cycle,
         [Parameter(Mandatory = $true)][bool]$RealCycleOutcomeProven
     )
 
     Assert-LauncherCycleResult $Cycle
-    $safe = [ordered]@{}
-    foreach ($field in $script:LauncherFields) {
+    $safe = [ordered]@{ }
+    foreach ($field in $script:LauncherFields)
+    {
         $safe[$field] = $Cycle.PSObject.Properties[$field].Value
     }
     $safe.realCycleOutcomeProven = $RealCycleOutcomeProven
@@ -459,221 +522,113 @@ function ConvertTo-SupervisorCycle {
     return $result
 }
 
-function Assert-SupervisorCycle {
+function Assert-SupervisorCycle
+{
     param([Parameter(Mandatory = $true)]$Cycle)
 
     Assert-ExactFields -Value $Cycle -Expected $script:SupervisorCycleFields -Category 'supervisor cycle'
-    $launcher = [ordered]@{}
-    foreach ($field in $script:LauncherFields) {
+    $launcher = [ordered]@{ }
+    foreach ($field in $script:LauncherFields)
+    {
         $launcher[$field] = $Cycle.PSObject.Properties[$field].Value
     }
     Assert-LauncherCycleResult ([pscustomobject]$launcher)
-    if ($Cycle.realCycleOutcomeProven -isnot [bool]) {
+    if ($Cycle.realCycleOutcomeProven -isnot [bool])
+    {
         throw 'supervisor cycle provenance type is invalid'
     }
     if (-not [bool]$Cycle.realCycleOutcomeProven -and
-        ([string]$Cycle.resultStatus -ne 'FAILED' -or [string]$Cycle.reasonCode -ne 'LAUNCHER_OUTPUT_UNAVAILABLE')) {
+            ([string]$Cycle.resultStatus -ne 'FAILED' -or [string]$Cycle.reasonCode -ne 'LAUNCHER_OUTPUT_UNAVAILABLE'))
+    {
         throw 'fallback cycle provenance is invalid'
     }
     if (-not [bool]$Cycle.realCycleOutcomeProven -and
-        ([string]$Cycle.allowedEndpointCategory -ne 'NONE' -or
-        [string]$Cycle.accountConfigProbeStatus -ne 'UNKNOWN' -or
-        [string]$Cycle.balanceProbeStatus -ne 'UNKNOWN' -or
-        [bool]$Cycle.credentialAccessed -or [bool]$Cycle.networkCalled)) {
+            ([string]$Cycle.allowedEndpointCategory -ne 'NONE' -or
+                    [string]$Cycle.accountConfigProbeStatus -ne 'UNKNOWN' -or
+                    [string]$Cycle.balanceProbeStatus -ne 'UNKNOWN' -or
+                    [bool]$Cycle.credentialAccessed -or [bool]$Cycle.networkCalled))
+    {
         throw 'fallback cycle endpoint provenance is invalid'
     }
-    if ([bool]$Cycle.realCycleOutcomeProven -and [string]$Cycle.reasonCode -eq 'LAUNCHER_OUTPUT_UNAVAILABLE') {
+    if ([bool]$Cycle.realCycleOutcomeProven -and [string]$Cycle.reasonCode -eq 'LAUNCHER_OUTPUT_UNAVAILABLE')
+    {
         throw 'parsed launcher cycle cannot use fallback classification'
     }
     if ([bool]$Cycle.realCycleOutcomeProven -and
-        ([string]$Cycle.accountConfigProbeStatus -eq 'UNKNOWN' -or
-        [string]$Cycle.balanceProbeStatus -eq 'UNKNOWN')) {
+            ([string]$Cycle.accountConfigProbeStatus -eq 'UNKNOWN' -or
+                    [string]$Cycle.balanceProbeStatus -eq 'UNKNOWN'))
+    {
         throw 'parsed launcher cycle contains an unproven probe status'
     }
 }
 
-function New-FallbackCycle {
+function New-FallbackCycle
+{
     $fallback = [pscustomobject][ordered]@{
-        schemaVersion             = $script:LauncherSchemaVersion
-        cycleId                  = "gatew-cycle-$([Guid]::NewGuid().ToString('N'))"
-        observedAt               = (Get-UtcNow).ToString('o')
-        durationMs               = 0L
-        resultStatus             = 'FAILED'
-        reasonCode               = 'LAUNCHER_OUTPUT_UNAVAILABLE'
-        httpStatusCategory       = 'NOT_AVAILABLE'
+        schemaVersion = $script:LauncherSchemaVersion
+        cycleId = "gatew-cycle-$([Guid]::NewGuid().ToString('N') )"
+        observedAt = (Get-UtcNow).ToString('o')
+        durationMs = 0L
+        resultStatus = 'FAILED'
+        reasonCode = 'LAUNCHER_OUTPUT_UNAVAILABLE'
+        httpStatusCategory = 'NOT_AVAILABLE'
         permissionClassification = 'UNKNOWN'
-        killSwitchObservedState  = 'UNKNOWN'
-        credentialAccessed       = $false
-        networkCalled            = $false
-        allowedEndpointCategory  = 'NONE'
+        killSwitchObservedState = 'UNKNOWN'
+        credentialAccessed = $false
+        networkCalled = $false
+        allowedEndpointCategory = 'NONE'
         accountConfigProbeStatus = 'UNKNOWN'
-        balanceProbeStatus       = 'UNKNOWN'
-        traceId                  = "gatew-soak-$([Guid]::NewGuid())"
+        balanceProbeStatus = 'UNKNOWN'
+        traceId = "gatew-soak-$([Guid]::NewGuid() )"
     }
     return ConvertTo-SupervisorCycle $fallback $false
 }
 
-function Get-EvidenceSchemaVersion {
+function Get-EvidenceSchemaVersion
+{
     param([Parameter(Mandatory = $true)][string]$Directory)
 
     $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
     $property = $manifest.PSObject.Properties['evidenceSchemaVersion']
-    if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+    if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value))
+    {
         return $script:EvidenceSchemaV1
     }
     $version = [string]$property.Value
-    if ($version -notin @($script:EvidenceSchemaV1, $script:EvidenceSchemaV2)) {
+    if ($version -notin @($script:EvidenceSchemaV1, $script:EvidenceSchemaV2))
+    {
         throw 'evidence schema version is unsupported'
     }
     return $version
 }
 
-function Get-SampleFields {
+function Get-SampleFields
+{
     param([Parameter(Mandatory = $true)][string]$EvidenceSchemaVersion)
 
-    if ($EvidenceSchemaVersion -eq $script:EvidenceSchemaV1) {
+    if ($EvidenceSchemaVersion -eq $script:EvidenceSchemaV1)
+    {
         return $script:SampleFieldsV1
     }
-    if ($EvidenceSchemaVersion -eq $script:EvidenceSchemaV2) {
+    if ($EvidenceSchemaVersion -eq $script:EvidenceSchemaV2)
+    {
         return $script:SampleFieldsV2
     }
     throw 'evidence schema version is unsupported'
 }
 
-function Assert-RunId {
+function Assert-RunId
+{
     param([Parameter(Mandatory = $true)][string]$Value)
 
-    if ($Value -notmatch '^gatew-soak-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$') {
+    if ($Value -cnotmatch '^gatew-soak-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$')
+    {
         throw 'runId is invalid'
     }
 }
 
-function Assert-SystemdRunId {
-    param([Parameter(Mandatory = $true)][string]$Value)
-
-    # Keep user-controlled identity out of unit names and native arguments.
-    $invalid = [string]::IsNullOrWhiteSpace($Value) -or
-        $Value.Length -gt 96 -or
-        $Value -notmatch '^[a-zA-Z0-9._-]+$'
-    if ($invalid) {
-        throw 'FAIL / TRANSIENT_UNIT_CREATE_FAILED'
-    }
-}
-
-function Get-LinuxUnitName {
-    param([Parameter(Mandatory = $true)][string]$Value)
-
-    Assert-SystemdRunId $Value
-    return "nq-gatew-soak-$Value.service"
-}
-
-function Get-LinuxRuntimeEnvironmentDirectory {
-    param([Parameter(Mandatory = $true)][string]$Value)
-
-    Assert-RunId $Value
-    return "$($script:LinuxRuntimeEnvironmentRoot)/$Value"
-}
-
-function Get-LinuxRuntimeEnvironmentFile {
-    param([Parameter(Mandatory = $true)][string]$Value)
-
-    return "$(Get-LinuxRuntimeEnvironmentDirectory $Value)/worker.env"
-}
-
-function Assert-LinuxRuntimeEnvironmentFilePath {
-    param(
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][string]$EnvironmentFile
-    )
-
-    if ($EnvironmentFile -cne (Get-LinuxRuntimeEnvironmentFile $Value)) {
-        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-    }
-}
-
-function Assert-LinuxFixedRuntimePaths {
-    param(
-        [Parameter(Mandatory = $true)][string]$PowerShellPath,
-        [Parameter(Mandatory = $true)][string]$SupervisorPath,
-        [Parameter(Mandatory = $true)][string]$WorkingDirectory
-    )
-
-    if ($PowerShellPath -cne $script:LinuxPowerShellPath -or
-        $SupervisorPath -cne $script:LinuxSupervisorPath -or
-        $WorkingDirectory -cne $script:LinuxWorkingDirectory) {
-        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-    }
-}
-
-function New-LinuxTransientUnitArguments {
-    param(
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction,
-        [Parameter(Mandatory = $true)][bool]$PrivateNetwork,
-        [Parameter(Mandatory = $true)][bool]$LoopbackOnlyNetwork,
-        [Parameter(Mandatory = $true)][bool]$IncludeEnvironmentFile,
-        [Parameter(Mandatory = $true)][string]$PowerShellPath,
-        [Parameter(Mandatory = $true)][string]$SupervisorPath,
-        [Parameter(Mandatory = $true)][string]$WorkingDirectory,
-        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$EnvironmentFile
-    )
-
-    Assert-SystemdRunId $Value
-    Assert-RunId $Value
-    Assert-LinuxFixedRuntimePaths $PowerShellPath $SupervisorPath $WorkingDirectory
-    if ($PrivateNetwork -and $LoopbackOnlyNetwork) {
-        throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
-    }
-    if ($IncludeEnvironmentFile) {
-        Assert-LinuxRuntimeEnvironmentFilePath $Value $EnvironmentFile
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($EnvironmentFile)) {
-        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-    }
-    $unitName = Get-LinuxUnitName $Value
-    $arguments = @(
-        "--unit=$unitName",
-        '--collect',
-        '--quiet',
-        '--service-type=exec',
-        "--property=User=$($script:LinuxRuntimeUser)",
-        "--property=Group=$($script:LinuxRuntimeGroup)",
-        "--property=WorkingDirectory=$WorkingDirectory",
-        '--property=Restart=no',
-        '--property=KillMode=mixed',
-        '--property=TimeoutStopSec=30',
-        '--property=PrivateTmp=true',
-        '--property=NoNewPrivileges=true',
-        '--property=UMask=0077'
-    )
-    if ($PrivateNetwork) {
-        $arguments += '--property=PrivateNetwork=true'
-    }
-    if ($LoopbackOnlyNetwork) {
-        # The closure drill reaches only the local DB; cgroup policy denies non-loopback addresses.
-        $arguments += @('--property=IPAddressDeny=any', '--property=IPAddressAllow=localhost')
-    }
-    if ($IncludeEnvironmentFile) {
-        # Values stay in an owner-only ephemeral file and never enter argv or error output.
-        $arguments += "--property=EnvironmentFile=$EnvironmentFile"
-    }
-    $arguments += @(
-        '--',
-        $PowerShellPath,
-        '-NoProfile',
-        '-ExecutionPolicy',
-        'Bypass',
-        '-File',
-        $SupervisorPath,
-        '-Action',
-        $WorkerAction,
-        '-RunId',
-        $Value
-    )
-    return $arguments
-}
-
-function New-WindowsLoopProcessArguments {
+function New-WindowsLoopProcessArguments
+{
     param(
         [Parameter(Mandatory = $true)][string]$Value,
         [Parameter(Mandatory = $true)][string]$SupervisorPath
@@ -688,268 +643,396 @@ function New-WindowsLoopProcessArguments {
     return $arguments
 }
 
-function Assert-SystemdRunAvailable {
-    param([Parameter(Mandatory = $true)][bool]$Available)
-
-    if (-not $Available) {
-        throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE'
-    }
-}
-
-function Assert-LinuxNativeSuccess {
-    param(
-        [Parameter(Mandatory = $true)][int]$ExitCode,
-        [Parameter(Mandatory = $true)][ValidateSet(
-            'TRANSIENT_UNIT_CREATE_FAILED',
-            'SUPERVISOR_RECONNECT_STATUS_FAILED',
-            'SUPERVISOR_STOP_FAILED'
-        )][string]$ReasonCode
-    )
-
-    if ($ExitCode -ne 0) {
-        throw "FAIL / $ReasonCode"
-    }
-}
-
-function ConvertFrom-SystemctlShowOutput {
-    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Lines)
-
-    $values = @{}
-    foreach ($lineValue in $Lines) {
-        $line = [string]$lineValue
-        $separator = $line.IndexOf('=')
-        if ($separator -le 0) { continue }
-        $values[$line.Substring(0, $separator)] = $line.Substring($separator + 1)
-    }
-    # systemd 255 may omit unset collection properties, including for collected/not-found units.
-    # Normalize optional values only; active contracts still require exact environment/network policy.
-    foreach ($optional in @('EnvironmentFiles', 'IPAddressDeny', 'IPAddressAllow')) {
-        if (-not $values.ContainsKey($optional)) {
-            $values[$optional] = ''
-        }
-    }
-    $required = @(
-        'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ExecMainStatus', 'FragmentPath',
-        'User', 'Group', 'WorkingDirectory', 'Restart', 'KillMode', 'TimeoutStopUSec',
-        'PrivateTmp', 'NoNewPrivileges', 'UMask', 'PrivateNetwork', 'EnvironmentFiles',
-        'IPAddressDeny', 'IPAddressAllow'
-    )
-    foreach ($name in $required) {
-        if (-not $values.ContainsKey($name)) {
-            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-        }
-    }
-    $mainPid = 0L
-    $execMainStatus = 0
-    if (-not [long]::TryParse([string]$values.MainPID, [ref]$mainPid) -or
-        -not [int]::TryParse([string]$values.ExecMainStatus, [ref]$execMainStatus)) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    return [pscustomobject]@{
-        LoadState = [string]$values.LoadState
-        ActiveState = [string]$values.ActiveState
-        SubState = [string]$values.SubState
-        MainPID = $mainPid
-        ExecMainStatus = $execMainStatus
-        FragmentPath = [string]$values.FragmentPath
-        User = [string]$values.User
-        Group = [string]$values.Group
-        WorkingDirectory = [string]$values.WorkingDirectory
-        Restart = [string]$values.Restart
-        KillMode = [string]$values.KillMode
-        TimeoutStopUSec = [string]$values.TimeoutStopUSec
-        PrivateTmp = [string]$values.PrivateTmp
-        NoNewPrivileges = [string]$values.NoNewPrivileges
-        UMask = [string]$values.UMask
-        PrivateNetwork = [string]$values.PrivateNetwork
-        EnvironmentFiles = [string]$values.EnvironmentFiles
-        IPAddressDeny = [string]$values.IPAddressDeny
-        IPAddressAllow = [string]$values.IPAddressAllow
-    }
-}
-
-function Assert-LinuxUnitContract {
-    param(
-        [Parameter(Mandatory = $true)]$State,
-        [Parameter(Mandatory = $true)][bool]$PrivateNetwork,
-        [Parameter(Mandatory = $true)][bool]$LoopbackOnlyNetwork,
-        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$EnvironmentFile
-    )
-
-    if ([string]$State.LoadState -ne 'loaded' -or
-        [string]$State.ActiveState -ne 'active' -or
-        [string]$State.SubState -ne 'running') {
-        throw 'FAIL / TRANSIENT_UNIT_NOT_ACTIVE'
-    }
-    if ([long]$State.MainPID -le 0) {
-        throw 'FAIL / TRANSIENT_UNIT_MAIN_PID_MISSING'
-    }
-    if ([string]$State.User -ne $script:LinuxRuntimeUser) {
-        throw 'FAIL / TRANSIENT_UNIT_USER_MISMATCH'
-    }
-    $fragmentPath = [string]$State.FragmentPath
-    if (-not [string]::IsNullOrWhiteSpace($fragmentPath) -and
-        -not $fragmentPath.StartsWith('/run/systemd/transient/', [StringComparison]::Ordinal)) {
-        throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
-    }
-    $timeoutValid = [string]$State.TimeoutStopUSec -in @('30s', '30sec', '30000000us')
-    $privateNetworkExpected = if ($PrivateNetwork) { 'yes' } else { 'no' }
-    $environmentValid = if (-not [string]::IsNullOrWhiteSpace($EnvironmentFile)) {
-        [string]$State.EnvironmentFiles -like "*$EnvironmentFile*"
-    }
-    else {
-        [string]::IsNullOrWhiteSpace([string]$State.EnvironmentFiles)
-    }
-    $loopbackNetworkValid = if ($LoopbackOnlyNetwork) {
-        ([string]$State.IPAddressDeny -match '(?i)(^|\s)(any|0\.0\.0\.0/0|::/0)(\s|$)') -and
-            ([string]$State.IPAddressAllow -match '(?i)(localhost|127\.0\.0\.0/8|::1)')
-    }
-    else {
-        [string]::IsNullOrWhiteSpace([string]$State.IPAddressDeny) -and
-            [string]::IsNullOrWhiteSpace([string]$State.IPAddressAllow)
-    }
-    if ([string]$State.Group -ne $script:LinuxRuntimeGroup -or
-        [string]$State.WorkingDirectory -ne $script:LinuxWorkingDirectory -or
-        [string]$State.Restart -ne 'no' -or
-        [string]$State.KillMode -ne 'mixed' -or
-        -not $timeoutValid -or
-        [string]$State.PrivateTmp -ne 'yes' -or
-        [string]$State.NoNewPrivileges -ne 'yes' -or
-        [string]$State.UMask -ne '0077' -or
-        [string]$State.PrivateNetwork -ne $privateNetworkExpected -or
-        -not $environmentValid -or
-        -not $loopbackNetworkValid) {
-        throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
-    }
-}
-
-function Assert-NoResidualSupervisor {
-    param([AllowEmptyCollection()][int[]]$ProcessIds)
-
-    if (@($ProcessIds).Count -ne 0) {
-        throw 'FAIL / SUPERVISOR_RESIDUAL_PROCESS_FOUND'
-    }
-}
-
-function New-RunId {
+function New-RunId
+{
     $timestamp = (Get-UtcNow).ToString('yyyyMMddTHHmmssZ')
     $suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
     return "gatew-soak-$timestamp-$suffix"
 }
 
-function Get-RunDirectory {
+function Assert-NoPathComponentLink
+{
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $normalized = [IO.Path]::GetFullPath($Path)
+    $pathRoot = [IO.Path]::GetPathRoot($normalized)
+    if ( [string]::IsNullOrWhiteSpace($pathRoot))
+    {
+        throw 'BLOCKED / FORMAL_PATH_CONTRACT_INVALID'
+    }
+    $current = $pathRoot
+    $relative = $normalized.Substring($pathRoot.Length)
+    foreach ($segment in @($relative -split '[\\/]' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }))
+    {
+        $current = Join-Path $current $segment
+        if (-not (Test-Path -LiteralPath $current))
+        {
+            throw 'BLOCKED / FORMAL_PATH_CONTRACT_INVALID'
+        }
+        $item = Get-Item -LiteralPath $current -Force
+        if ($null -ne $item.LinkType -or $item.Attributes.ToString() -match 'ReparsePoint')
+        {
+            throw 'BLOCKED / FORMAL_PATH_SYMLINK_FORBIDDEN'
+        }
+    }
+}
+
+function Get-RunDirectory
+{
     param([Parameter(Mandatory = $true)][string]$Value)
 
     Assert-RunId $Value
+    if (Test-FormalSystemdWorker)
+    {
+        $configured = [Environment]::GetEnvironmentVariable('NQ_GATEW_FORMAL_EVIDENCE_ROOT', 'Process')
+        $expected = [IO.Path]::GetFullPath("$( $script:FormalStateRoot )/$Value/evidence")
+        if ([string]::IsNullOrWhiteSpace($configured) -or
+                [IO.Path]::GetFullPath($configured) -cne $expected -or
+                -not (Test-Path -LiteralPath $expected -PathType Container))
+        {
+            throw 'BLOCKED / FORMAL_EVIDENCE_ROOT_INVALID'
+        }
+        Assert-NoPathComponentLink $expected
+        $realPath = Invoke-LinuxNativeCommand `
+            -FilePath $script:LinuxReadlinkPath `
+            -Arguments @('-f', '--', $expected)
+        if ($realPath.ExitCode -ne 0 -or
+                (ConvertTo-TrimmedNativeOutput $realPath.Lines) -cne $expected)
+        {
+            throw 'BLOCKED / FORMAL_EVIDENCE_ROOT_INVALID'
+        }
+        return $expected
+    }
     $candidate = [IO.Path]::GetFullPath((Join-Path $script:EvidenceRoot $Value))
-    if (-not $candidate.StartsWith($script:EvidenceRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    if (-not $candidate.StartsWith($script:EvidenceRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase))
+    {
         throw 'run directory escaped evidence root'
     }
     return $candidate
 }
 
-function Get-HeadCommit {
-    $value = (& git -C $script:RepoRoot rev-parse HEAD 2>$null)
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($value)) {
+function Get-EvidenceRunId
+{
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    $leaf = Split-Path -Leaf $Directory
+    if ($leaf -eq 'evidence' -and (Test-FormalSystemdWorker))
+    {
+        $leaf = Split-Path -Leaf (Split-Path -Parent $Directory)
+    }
+    Assert-RunId $leaf
+    return $leaf
+}
+
+function Get-HeadCommit
+{
+    $value = (& git -C $script:RepoRoot rev-parse HEAD 2> $null)
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($value))
+    {
         throw 'unable to resolve harness commit'
     }
     return $value.Trim().ToLowerInvariant()
 }
 
-function Assert-FixedDetachedWorktree {
+function Assert-FixedDetachedWorktree
+{
     param([string]$ExpectedCommit)
 
-    $status = @(& git -C $script:RepoRoot status --porcelain --untracked-files=no 2>$null)
-    if ($LASTEXITCODE -ne 0 -or $status.Count -ne 0) {
+    $status = @(& git -C $script:RepoRoot status --porcelain --untracked-files=all 2> $null)
+    if ($LASTEXITCODE -ne 0 -or $status.Count -ne 0)
+    {
         throw 'BLOCKED / HARNESS_WORKTREE_NOT_CLEAN'
     }
-    $branchOutput = @(& git -C $script:RepoRoot branch --show-current 2>$null)
-    if ($LASTEXITCODE -ne 0) {
+    $branchOutput = @(& git -C $script:RepoRoot branch --show-current 2> $null)
+    if ($LASTEXITCODE -ne 0)
+    {
         throw 'unable to resolve harness branch'
     }
     $branch = ConvertTo-TrimmedNativeOutput $branchOutput
-    if (-not [string]::IsNullOrWhiteSpace($branch)) {
+    if (-not [string]::IsNullOrWhiteSpace($branch))
+    {
         throw 'BLOCKED / FIXED_COMMIT_WORKTREE_REQUIRED'
     }
     $head = Get-HeadCommit
-    if (-not [string]::IsNullOrWhiteSpace($ExpectedCommit) -and $head -ne $ExpectedCommit.ToLowerInvariant()) {
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedCommit) -and $head -ne $ExpectedCommit.ToLowerInvariant())
+    {
         throw 'BLOCKED / HARNESS_COMMIT_CHANGED'
     }
     return $head
 }
 
-function Assert-ExactHeadCi {
+function Assert-ExactHeadCi
+{
     param(
         [Parameter(Mandatory = $true)][string]$CiRun,
         [Parameter(Mandatory = $true)][string]$Commit
     )
 
-    if ($CiRun -notmatch '^[0-9]+$') {
+    if ($CiRun -notmatch '^[0-9]+$')
+    {
         throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED'
     }
-    $json = (& gh run view $CiRun --json status,conclusion,headSha,jobs 2>$null)
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($json)) {
+    $json = (& gh run view $CiRun --json status,conclusion,headSha,jobs 2> $null)
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($json))
+    {
         throw 'BLOCKED / EXACT_HEAD_CI_NOT_VERIFIABLE'
     }
     $ci = $json | ConvertFrom-Json
     $bad = @($ci.jobs | Where-Object { $_.status -ne 'completed' -or $_.conclusion -ne 'success' })
     if ($ci.status -ne 'completed' -or $ci.conclusion -ne 'success' -or
-        $ci.headSha.ToLowerInvariant() -ne $Commit -or @($ci.jobs).Count -ne 10 -or $bad.Count -ne 0) {
+            $ci.headSha.ToLowerInvariant() -ne $Commit -or @($ci.jobs).Count -ne 10 -or $bad.Count -ne 0)
+    {
         throw 'BLOCKED / EXACT_HEAD_CI_NOT_GREEN'
     }
 }
 
-function Invoke-SanitizedCycle {
+function Get-FormalLauncherClassPath
+{
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    if (-not (Test-FormalSystemdWorker))
+    {
+        throw 'BLOCKED / FORMAL_SYSTEMD_WORKER_REQUIRED'
+    }
+    $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
+    $commit = [string]$manifest.harnessCommit
+    if ($commit -cnotmatch '^[a-f0-9]{40}$')
+    {
+        throw 'BLOCKED / HARNESS_COMMIT_UNRESOLVED'
+    }
+    $bundleRoot = "$( $script:FormalLauncherRoot )/$commit"
+    $testClasses = Join-Path $bundleRoot 'test-classes'
+    $libraries = Join-Path $bundleRoot 'lib'
+    foreach ($path in @($script:FormalLauncherRoot, $bundleRoot, $testClasses, $libraries))
+    {
+        if (-not (Test-Path -LiteralPath $path -PathType Container))
+        {
+            throw 'BLOCKED / FORMAL_LAUNCHER_BUNDLE_MISSING'
+        }
+        Assert-NoPathComponentLink $path
+        $realPath = Invoke-LinuxNativeCommand `
+            -FilePath $script:LinuxReadlinkPath `
+            -Arguments @('-f', '--', $path)
+        if ($realPath.ExitCode -ne 0 -or
+                (ConvertTo-TrimmedNativeOutput $realPath.Lines) -cne ([IO.Path]::GetFullPath($path)))
+        {
+            throw 'BLOCKED / FORMAL_LAUNCHER_BUNDLE_SYMLINK_FORBIDDEN'
+        }
+    }
+    return "$testClasses$( [IO.Path]::PathSeparator )$libraries/*"
+}
+
+function Invoke-FormalJavaLauncher
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet(
+                'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest',
+                'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakFailCloseTest'
+        )]
+        [string]$MainClass,
+        [Parameter(Mandatory = $true)][hashtable]$SystemProperties,
+        [Parameter(Mandatory = $true)][string]$Directory
+    )
+
+    if (-not (Test-Path -LiteralPath $script:LinuxJavaPath -PathType Leaf))
+    {
+        throw 'BLOCKED / FORMAL_JAVA_RUNTIME_MISSING'
+    }
+    $arguments = @('-Xms16m', '-Xmx256m', '-Dfile.encoding=UTF-8')
+    foreach ($name in @($SystemProperties.Keys | Sort-Object))
+    {
+        if ($name -cnotmatch '^[a-z][A-Za-z0-9.]{2,127}$')
+        {
+            throw 'BLOCKED / FORMAL_LAUNCHER_PROPERTY_INVALID'
+        }
+        $value = [string]$SystemProperties[$name]
+        if ($value.IndexOf([char]0) -ge 0 -or $value -match "[`r`n]")
+        {
+            throw 'BLOCKED / FORMAL_LAUNCHER_PROPERTY_INVALID'
+        }
+        $arguments += "-D$name=$value"
+    }
+    $arguments += @('-cp', (Get-FormalLauncherClassPath $Directory), $MainClass)
+    try
+    {
+        $null = & $script:LinuxJavaPath @arguments 2> $null
+    }
+    catch
+    {
+        # Raw Java/JDBC/provider output is never evidence; only the closed result file is consumed.
+    }
+    return [int]$LASTEXITCODE
+}
+
+function Invoke-SanitizedCycle
+{
     param(
         [Parameter(Mandatory = $true)][string]$CycleAction,
         [Parameter(Mandatory = $true)][string]$Directory
     )
 
     $cycleFile = Join-Path $Directory ".cycle-$PID.json"
-    if (Test-Path -LiteralPath $cycleFile) {
+    if (Test-Path -LiteralPath $cycleFile)
+    {
         Remove-Item -LiteralPath $cycleFile -Force
     }
-    $arguments = @(
-        '-f', (Join-Path $script:RepoRoot 'backend\pom.xml'),
-        '-pl', 'nq-app', '-am',
-        '-Dtest=GateWOkxReadonlySoakCycleTest',
-        '-Dsurefire.failIfNoSpecifiedTests=false',
-        '-Dnq.gatew.okxReadonlySoak.required=true',
-        "-Dnq.gatew.okxReadonlySoak.action=$CycleAction",
-        "-Dnq.gatew.okxReadonlySoak.resultFile=$cycleFile",
-        "-Dnq.gatew.okxReadonlySoak.repoRoot=$script:RepoRoot",
-        '--quiet', 'test'
-    )
-    try {
-        try {
-            $null = & mvn @arguments 2>&1
+    try
+    {
+        if (Test-FormalSystemdWorker)
+        {
+            Invoke-FormalJavaLauncher `
+                'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest' `
+                @{
+                'nq.gatew.okxReadonlySoak.required' = 'true'
+                'nq.gatew.okxReadonlySoak.action' = $CycleAction
+                'nq.gatew.okxReadonlySoak.resultFile' = $cycleFile
+                'nq.gatew.okxReadonlySoak.repoRoot' = $script:RepoRoot
+            } `
+                $Directory | Out-Null
         }
-        catch {
-            # A launcher invocation error without a conformant result is handled by the same explicit fallback.
+        else
+        {
+            $arguments = @(
+                '-f', (Join-Path $script:RepoRoot 'backend\pom.xml'),
+                '-pl', 'nq-app', '-am',
+                '-Dtest=GateWOkxReadonlySoakCycleTest',
+                '-Dsurefire.failIfNoSpecifiedTests=false',
+                '-Dnq.gatew.okxReadonlySoak.required=true',
+                "-Dnq.gatew.okxReadonlySoak.action=$CycleAction",
+                "-Dnq.gatew.okxReadonlySoak.resultFile=$cycleFile",
+                "-Dnq.gatew.okxReadonlySoak.repoRoot=$script:RepoRoot",
+                '--offline', '--quiet', 'test'
+            )
+            try
+            {
+                $null = & mvn @arguments 2>&1
+            }
+            catch
+            {
+                # A launcher invocation error without a conformant result uses the closed fallback below.
+            }
         }
-        if (Test-Path -LiteralPath $cycleFile -PathType Leaf) {
-            try {
+        if (Test-Path -LiteralPath $cycleFile -PathType Leaf)
+        {
+            try
+            {
                 $parsed = Read-JsonFile $cycleFile
                 return ConvertTo-SupervisorCycle $parsed $true
             }
-            catch {
+            catch
+            {
                 # Only a missing or non-conformant launcher result may use fallback.
             }
         }
         return New-FallbackCycle
     }
-    finally {
-        if (Test-Path -LiteralPath $cycleFile) {
+    finally
+    {
+        if (Test-Path -LiteralPath $cycleFile)
+        {
             Remove-Item -LiteralPath $cycleFile -Force
         }
     }
 }
 
-function Get-ChainState {
+function Assert-OfflineBootstrapResult
+{
+    param([Parameter(Mandatory = $true)]$Result)
+
+    Assert-ExactFields -Value $Result -Expected @(
+        'schemaVersion', 'action', 'observedAt', 'recoveryStatus', 'killSwitchObservedState',
+        'killSwitchVersion', 'credentialAccessed', 'networkCalled'
+    ) -Category 'offline bootstrap'
+    if ([string]$Result.schemaVersion -ne 'gatew-soak-failclose-v1' -or
+            [string]$Result.action -ne 'offline-bootstrap' -or
+            [string]$Result.recoveryStatus -ne 'OFFLINE_FIXTURE_DISENGAGED' -or
+            [string]$Result.killSwitchObservedState -ne 'DISENGAGED' -or
+            $Result.credentialAccessed -isnot [bool] -or [bool]$Result.credentialAccessed -or
+            $Result.networkCalled -isnot [bool] -or [bool]$Result.networkCalled -or
+            -not (Test-IntegralNumber $Result.killSwitchVersion) -or [long]$Result.killSwitchVersion -lt 1)
+    {
+        throw 'FAIL / OFFLINE_BOOTSTRAP_RESULT_INVALID'
+    }
+}
+
+function Invoke-OfflineTestSupport
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('offline-bootstrap', 'offline-sample', 'offline-controlled-failure')]
+        [string]$OfflineAction,
+        [Parameter(Mandatory = $true)][string]$Directory
+    )
+
+    if (-not (Test-FormalSystemdWorker) -or
+            [Environment]::GetEnvironmentVariable('NQ_GATEW_RUN_MODE', 'Process') -ne 'OFFLINE_ACCEPTANCE')
+    {
+        throw 'BLOCKED / OFFLINE_FORMAL_WORKER_REQUIRED'
+    }
+    $resultFile = Join-Path $Directory ".offline-$OfflineAction-$PID.json"
+    if (Test-Path -LiteralPath $resultFile)
+    {
+        Remove-Item -LiteralPath $resultFile -Force
+    }
+    try
+    {
+        Invoke-FormalJavaLauncher `
+            'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakFailCloseTest' `
+            @{
+            'nq.gatew.soakFailClose.required' = 'true'
+            'nq.gatew.soakFailClose.action' = $OfflineAction
+            'nq.gatew.soakFailClose.resultFile' = $resultFile
+            'nq.gatew.soakFailClose.runId' = $RunId
+        } `
+            $Directory | Out-Null
+        if (-not (Test-Path -LiteralPath $resultFile -PathType Leaf))
+        {
+            if ($OfflineAction -eq 'offline-bootstrap')
+            {
+                throw 'FAIL / OFFLINE_BOOTSTRAP_LAUNCHER_FAILED'
+            }
+            return New-FallbackCycle
+        }
+        try
+        {
+            $parsed = Read-JsonFile $resultFile
+            if ($OfflineAction -eq 'offline-bootstrap')
+            {
+                Assert-OfflineBootstrapResult $parsed
+                return $parsed
+            }
+            return ConvertTo-SupervisorCycle $parsed $true
+        }
+        catch
+        {
+            if ($_.Exception.Message -match '^(BLOCKED|FAIL) / [A-Z0-9_]+$')
+            {
+                throw
+            }
+            if ($OfflineAction -eq 'offline-bootstrap')
+            {
+                throw 'FAIL / OFFLINE_BOOTSTRAP_RESULT_INVALID'
+            }
+            return New-FallbackCycle
+        }
+    }
+    finally
+    {
+        if (Test-Path -LiteralPath $resultFile)
+        {
+            Remove-Item -LiteralPath $resultFile -Force
+        }
+    }
+}
+
+function Get-ChainState
+{
     param([Parameter(Mandatory = $true)][string]$Directory)
 
     $samplesPath = Join-Path $Directory 'samples.jsonl'
-    if (-not (Test-Path -LiteralPath $samplesPath -PathType Leaf)) {
+    if (-not (Test-Path -LiteralPath $samplesPath -PathType Leaf))
+    {
         throw 'samples.jsonl is missing'
     }
     $evidenceSchemaVersion = Get-EvidenceSchemaVersion $Directory
@@ -957,40 +1040,54 @@ function Get-ChainState {
     $expectedSequence = 1L
     $previousHash = $script:GenesisHash
     $count = 0L
-    foreach ($line in Get-Content -LiteralPath $samplesPath) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+    foreach ($line in Get-Content -LiteralPath $samplesPath)
+    {
+        if ( [string]::IsNullOrWhiteSpace($line))
+        {
+            continue
+        }
         $record = $line | ConvertFrom-Json
         $fields = @($record.PSObject.Properties.Name)
-        if (($fields -join '|') -ne ($sampleFields -join '|')) {
+        if (($fields -join '|') -ne ($sampleFields -join '|'))
+        {
             throw 'sample evidence schema is invalid'
         }
-        if ($evidenceSchemaVersion -eq $script:EvidenceSchemaV2) {
-            $supervisorCycle = [ordered]@{}
-            foreach ($field in $script:LauncherFields) {
+        if ($evidenceSchemaVersion -eq $script:EvidenceSchemaV2)
+        {
+            $supervisorCycle = [ordered]@{ }
+            foreach ($field in $script:LauncherFields)
+            {
                 $supervisorCycle[$field] = $record.PSObject.Properties[$field].Value
             }
             $supervisorCycle.realCycleOutcomeProven = $record.realCycleOutcomeProven
             Assert-SupervisorCycle ([pscustomobject]$supervisorCycle)
         }
-        if ([long]$record.sequence -ne $expectedSequence) {
+        if ([long]$record.sequence -ne $expectedSequence)
+        {
             throw 'sample sequence is missing or duplicated'
         }
-        if ($record.previousRecordHash -ne $previousHash) {
+        if ($record.previousRecordHash -ne $previousHash)
+        {
             throw 'sample previousRecordHash is invalid'
         }
-        $hashInput = [ordered]@{}
-        foreach ($field in $sampleFields) {
-            if ($field -ne 'recordHash') {
-                $hashInput[$field] = if ($field -eq 'observedAt') {
+        $hashInput = [ordered]@{ }
+        foreach ($field in $sampleFields)
+        {
+            if ($field -ne 'recordHash')
+            {
+                $hashInput[$field] = if ($field -eq 'observedAt')
+                {
                     ConvertTo-CanonicalUtcTimestamp $record.$field
                 }
-                else {
+                else
+                {
                     $record.$field
                 }
             }
         }
         $expectedHash = Get-Sha256Text (ConvertTo-CompactJson $hashInput)
-        if ($record.recordHash -ne $expectedHash) {
+        if ($record.recordHash -ne $expectedHash)
+        {
             throw 'sample recordHash is invalid'
         }
         $previousHash = $record.recordHash
@@ -1005,7 +1102,8 @@ function Get-ChainState {
     }
 }
 
-function Append-Sample {
+function Append-Sample
+{
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
         [Parameter(Mandatory = $true)]$Cycle
@@ -1013,41 +1111,47 @@ function Append-Sample {
 
     Assert-SupervisorCycle $Cycle
     $state = Get-ChainState $Directory
-    if ($state.EvidenceSchemaVersion -ne $script:EvidenceSchemaV2) {
+    if ($state.EvidenceSchemaVersion -ne $script:EvidenceSchemaV2)
+    {
         throw 'BLOCKED / LEGACY_EVIDENCE_NOT_APPENDABLE'
     }
     $hashInput = [ordered]@{
-        schemaVersion            = [string]$Cycle.schemaVersion
-        sequence                 = [long]$state.NextSequence
-        cycleId                  = [string]$Cycle.cycleId
-        observedAt               = (ConvertTo-CanonicalUtcTimestamp $Cycle.observedAt)
-        durationMs               = [long]$Cycle.durationMs
-        resultStatus             = [string]$Cycle.resultStatus
-        reasonCode               = [string]$Cycle.reasonCode
-        httpStatusCategory       = [string]$Cycle.httpStatusCategory
+        schemaVersion = [string]$Cycle.schemaVersion
+        sequence = [long]$state.NextSequence
+        cycleId = [string]$Cycle.cycleId
+        observedAt = (ConvertTo-CanonicalUtcTimestamp $Cycle.observedAt)
+        durationMs = [long]$Cycle.durationMs
+        resultStatus = [string]$Cycle.resultStatus
+        reasonCode = [string]$Cycle.reasonCode
+        httpStatusCategory = [string]$Cycle.httpStatusCategory
         permissionClassification = [string]$Cycle.permissionClassification
-        killSwitchObservedState  = [string]$Cycle.killSwitchObservedState
-        credentialAccessed       = [bool]$Cycle.credentialAccessed
-        networkCalled            = [bool]$Cycle.networkCalled
-        allowedEndpointCategory  = [string]$Cycle.allowedEndpointCategory
+        killSwitchObservedState = [string]$Cycle.killSwitchObservedState
+        credentialAccessed = [bool]$Cycle.credentialAccessed
+        networkCalled = [bool]$Cycle.networkCalled
+        allowedEndpointCategory = [string]$Cycle.allowedEndpointCategory
         accountConfigProbeStatus = [string]$Cycle.accountConfigProbeStatus
-        balanceProbeStatus       = [string]$Cycle.balanceProbeStatus
-        realCycleOutcomeProven   = [bool]$Cycle.realCycleOutcomeProven
-        traceId                  = [string]$Cycle.traceId
-        previousRecordHash       = [string]$state.LastHash
+        balanceProbeStatus = [string]$Cycle.balanceProbeStatus
+        realCycleOutcomeProven = [bool]$Cycle.realCycleOutcomeProven
+        traceId = [string]$Cycle.traceId
+        previousRecordHash = [string]$state.LastHash
     }
-    $record = [ordered]@{}
-    foreach ($key in $hashInput.Keys) { $record[$key] = $hashInput[$key] }
+    $record = [ordered]@{ }
+    foreach ($key in $hashInput.Keys)
+    {
+        $record[$key] = $hashInput[$key]
+    }
     $record.recordHash = Get-Sha256Text (ConvertTo-CompactJson $hashInput)
     $line = ConvertTo-CompactJson $record
     [IO.File]::AppendAllText((Join-Path $Directory 'samples.jsonl'), $line + [Environment]::NewLine, $script:Utf8NoBom)
-    if ($Cycle.resultStatus -ne 'PASSED_READ_ONLY') {
+    if ($Cycle.resultStatus -ne 'PASSED_READ_ONLY')
+    {
         [IO.File]::AppendAllText((Join-Path $Directory 'failures.jsonl'), $line + [Environment]::NewLine, $script:Utf8NoBom)
     }
     return [pscustomobject]$record
 }
 
-function Write-Heartbeat {
+function Write-Heartbeat
+{
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
         [Parameter(Mandatory = $true)][string]$State,
@@ -1057,747 +1161,242 @@ function Write-Heartbeat {
     )
 
     Write-JsonAtomic (Join-Path $Directory 'heartbeat.json') ([ordered]@{
-        runId                             = Split-Path -Leaf $Directory
-        state                             = $State
-        reasonCode                        = $ReasonCode
-        observedAt                        = (Get-UtcNow).ToString('o')
-        lastSequence                      = $Sequence
+        runId = Get-EvidenceRunId $Directory
+        state = $State
+        reasonCode = $ReasonCode
+        observedAt = (Get-UtcNow).ToString('o')
+        lastSequence = $Sequence
         consecutiveAuthenticationFailures = $ConsecutiveAuthenticationFailures
     })
 }
 
-function Test-Evidence {
+function Get-FormalOfflineAcceptanceState
+{
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    $records = @()
+    foreach ($line in Get-Content -LiteralPath (Join-Path $Directory 'samples.jsonl'))
+    {
+        if (-not [string]::IsNullOrWhiteSpace($line))
+        {
+            $records += ($line | ConvertFrom-Json)
+        }
+    }
+    if ($records.Count -ne 3)
+    {
+        throw 'FAIL / OFFLINE_ACCEPTANCE_CYCLE_COUNT_INVALID'
+    }
+    foreach ($index in 0..1)
+    {
+        $expectedSequence = [long]($index + 1)
+        $record = $records[$index]
+        if ([long]$record.sequence -ne $expectedSequence -or
+                [string]$record.resultStatus -ne 'PASSED_READ_ONLY' -or
+                [string]$record.reasonCode -ne 'OFFLINE_READONLY_FIXTURE_ACCEPTED' -or
+                [string]$record.allowedEndpointCategory -ne 'OFFLINE_LOCAL_FIXTURE_READ' -or
+                [string]$record.accountConfigProbeStatus -ne 'SUCCEEDED' -or
+                [string]$record.balanceProbeStatus -ne 'SUCCEEDED' -or
+                -not [bool]$record.realCycleOutcomeProven -or
+                [bool]$record.credentialAccessed -or [bool]$record.networkCalled)
+        {
+            throw 'FAIL / OFFLINE_ACCEPTANCE_PASS_PROVENANCE_INVALID'
+        }
+    }
+    $failure = $records[2]
+    if ([long]$failure.sequence -ne 3 -or [string]$failure.resultStatus -ne 'FAILED' -or
+            [string]$failure.reasonCode -ne 'CONTROLLED_OFFLINE_CYCLE_3_FAILURE' -or
+            [string]$failure.allowedEndpointCategory -ne 'NONE' -or
+            [string]$failure.accountConfigProbeStatus -ne 'NOT_RUN' -or
+            [string]$failure.balanceProbeStatus -ne 'NOT_RUN' -or
+            -not [bool]$failure.realCycleOutcomeProven -or
+            [bool]$failure.credentialAccessed -or [bool]$failure.networkCalled)
+    {
+        throw 'FAIL / OFFLINE_ACCEPTANCE_FAILURE_PROVENANCE_INVALID'
+    }
+    $failureRecords = @()
+    foreach ($line in Get-Content -LiteralPath (Join-Path $Directory 'failures.jsonl'))
+    {
+        if (-not [string]::IsNullOrWhiteSpace($line))
+        {
+            $failureRecords += ($line | ConvertFrom-Json)
+        }
+    }
+    if ($failureRecords.Count -ne 1 -or
+            [string]$failureRecords[0].recordHash -cne [string]$failure.recordHash)
+    {
+        throw 'FAIL / OFFLINE_ACCEPTANCE_FAILURE_LEDGER_INVALID'
+    }
+    $heartbeat = Read-JsonFile (Join-Path $Directory 'heartbeat.json')
+    if ([string]$heartbeat.runId -cne (Get-EvidenceRunId $Directory) -or
+            [string]$heartbeat.state -ne 'FAILURE_STOPPING' -or
+            [string]$heartbeat.reasonCode -ne 'CONTROLLED_OFFLINE_CYCLE_3_FAILURE' -or
+            [long]$heartbeat.lastSequence -ne 3)
+    {
+        throw 'FAIL / OFFLINE_ACCEPTANCE_HEARTBEAT_INVALID'
+    }
+    return [pscustomobject][ordered]@{
+        cycleCount = 3
+        cycle1 = 'PASS'
+        cycle2 = 'PASS'
+        cycle3 = 'CONTROLLED_FAILURE'
+        lastSuccessfulCycleSequence = 2L
+        lastHeartbeatSequence = 3L
+        credentialAccessed = $false
+        networkCalled = $false
+    }
+}
+
+function Test-Evidence
+{
     param([Parameter(Mandatory = $true)][string]$Directory)
 
     $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
-    if ($manifest.runId -ne (Split-Path -Leaf $Directory)) { throw 'manifest runId mismatch' }
-    if ($manifest.profile -ne 'gatew-okx-readonly-soak') { throw 'manifest profile mismatch' }
-    if ($manifest.venue -ne 'OKX') { throw 'manifest venue mismatch' }
-    if ([int]$manifest.durationHours -lt 168) { throw 'manifest duration is below 168 hours' }
-    if ([int]$manifest.cadenceSeconds -lt 60) { throw 'manifest cadence is invalid' }
-    if (Test-Path -LiteralPath (Join-Path $Directory 'final-summary.json')) {
+    if ($manifest.runId -ne (Get-EvidenceRunId $Directory))
+    {
+        throw 'manifest runId mismatch'
+    }
+    if ($manifest.profile -ne 'gatew-okx-readonly-soak')
+    {
+        throw 'manifest profile mismatch'
+    }
+    if ($manifest.venue -ne 'OKX')
+    {
+        throw 'manifest venue mismatch'
+    }
+    if ([int]$manifest.durationHours -lt 168)
+    {
+        throw 'manifest duration is below 168 hours'
+    }
+    if ([int]$manifest.cadenceSeconds -lt 60)
+    {
+        throw 'manifest cadence is invalid'
+    }
+    if (Test-Path -LiteralPath (Join-Path $Directory 'final-summary.json'))
+    {
         throw 'final-summary.json is acceptance-task-only'
     }
-    foreach ($required in @('samples.jsonl', 'failures.jsonl', 'heartbeat.json')) {
-        if (-not (Test-Path -LiteralPath (Join-Path $Directory $required) -PathType Leaf)) {
+    foreach ($required in @('samples.jsonl', 'failures.jsonl', 'heartbeat.json'))
+    {
+        if (-not (Test-Path -LiteralPath (Join-Path $Directory $required) -PathType Leaf))
+        {
             throw "$required is missing"
         }
     }
     $chain = Get-ChainState $Directory
     $validRealPassSamples = 0L
     $fallbackSamples = 0L
-    foreach ($line in Get-Content -LiteralPath (Join-Path $Directory 'samples.jsonl')) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+    foreach ($line in Get-Content -LiteralPath (Join-Path $Directory 'samples.jsonl'))
+    {
+        if ( [string]::IsNullOrWhiteSpace($line))
+        {
+            continue
+        }
         $sample = $line | ConvertFrom-Json
-        if ($chain.EvidenceSchemaVersion -eq $script:EvidenceSchemaV2) {
+        if ($chain.EvidenceSchemaVersion -eq $script:EvidenceSchemaV2)
+        {
             if ([string]$sample.resultStatus -eq 'PASSED_READ_ONLY' -and
-                [bool]$sample.realCycleOutcomeProven -and
-                [string]$sample.accountConfigProbeStatus -eq 'SUCCEEDED' -and
-                [string]$sample.balanceProbeStatus -eq 'SUCCEEDED') {
+                    [bool]$sample.realCycleOutcomeProven -and
+                    [string]$sample.accountConfigProbeStatus -eq 'SUCCEEDED' -and
+                    [string]$sample.balanceProbeStatus -eq 'SUCCEEDED')
+            {
                 $validRealPassSamples++
             }
-            if (-not [bool]$sample.realCycleOutcomeProven) {
+            if (-not [bool]$sample.realCycleOutcomeProven)
+            {
                 $fallbackSamples++
             }
         }
     }
-    foreach ($path in Get-ChildItem -LiteralPath $Directory -File) {
+    foreach ($path in Get-ChildItem -LiteralPath $Directory -File)
+    {
         $text = Get-Content -LiteralPath $path.FullName -Raw
         if ($text -match '(?i)"(api[-_]?key|secret[-_]?key|secret|passphrase|signature|cookie|raw[-_]?(body|headers|response|request)|account[-_]?id|sub[-_]?account|balance|available[-_]?balance|cash[-_]?balance|equity|currency|asset|position|amount|size|order)"\s*:' -or
-            $text -match '(?i)https?://') {
+                $text -match '(?i)https?://')
+        {
             throw 'evidence contains a forbidden material shape'
         }
     }
+    $offlineAcceptance = if ([string]$manifest.environment -eq 'OFFLINE_ACCEPTANCE' -and
+            [long]$chain.Count -eq 3)
+    {
+        Get-FormalOfflineAcceptanceState $Directory
+    }
+    else
+    {
+        $null
+    }
     return [pscustomobject]@{
-        runId       = $manifest.runId
+        runId = $manifest.runId
         harnessCommit = $manifest.harnessCommit
         sampleCount = $chain.Count
-        lastHash    = $chain.LastHash
+        lastHash = $chain.LastHash
         evidenceSchemaVersion = $chain.EvidenceSchemaVersion
         validRealPassSamples = $validRealPassSamples
         fallbackSamples = $fallbackSamples
         rawResponseCount = 0
         secretExposureCount = 0
-        result      = 'PASS / HASH_CHAIN_VERIFIED'
+        offlineAcceptance = $offlineAcceptance
+        result = 'PASS / HASH_CHAIN_VERIFIED'
     }
 }
 
-function Get-LinuxUserId {
-    param([Parameter(Mandatory = $true)][string]$User)
-
-    if (-not (Test-Path -LiteralPath $script:LinuxIdPath -PathType Leaf)) {
-        throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE'
-    }
-    $output = @(& $script:LinuxIdPath '-u' $User 2>$null)
-    $exitCode = $LASTEXITCODE
-    $value = ConvertTo-TrimmedNativeOutput $output
-    $parsed = 0
-    if ($exitCode -ne 0 -or -not [int]::TryParse($value, [ref]$parsed)) {
-        throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE'
-    }
-    return $parsed
-}
-
-function Get-LinuxCurrentUserId {
-    return Get-LinuxUserId ([Environment]::UserName)
-}
-
-function Invoke-LinuxNativeCommand {
+function Invoke-LinuxNativeCommand
+{
     param(
         [Parameter(Mandatory = $true)][string]$FilePath,
-        [AllowEmptyCollection()][string[]]$Arguments = @(),
-        [switch]$Privileged
+        [AllowEmptyCollection()][string[]]$Arguments = @()
     )
 
-    if (-not (Test-LinuxPlatform) -or -not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+    if (-not (Test-LinuxPlatform) -or -not (Test-Path -LiteralPath $FilePath -PathType Leaf))
+    {
         return [pscustomobject]@{ ExitCode = 127; Lines = @() }
     }
-    try {
-        # sudo -u from /root cannot spawn native commands when the inherited cwd is inaccessible.
-        # All command paths are absolute; a fixed repo cwd removes only that caller dependency.
+    try
+    {
+        # Formal worker只允许调用固定绝对路径做只读路径校验，不提供提权或 systemd 生命周期能力。
         Set-Location -LiteralPath $script:RepoRoot
-    }
-    catch {
-        return [pscustomobject]@{ ExitCode = 126; Lines = @() }
-    }
-    $effectivePath = $FilePath
-    $effectiveArguments = @($Arguments)
-    if ($Privileged -and (Get-LinuxCurrentUserId) -ne 0) {
-        if (-not (Test-Path -LiteralPath $script:LinuxSudoPath -PathType Leaf)) {
-            return [pscustomobject]@{ ExitCode = 126; Lines = @() }
-        }
-        $effectivePath = $script:LinuxSudoPath
-        $effectiveArguments = @('-n', '--', $FilePath) + @($Arguments)
-    }
-    try {
-        $output = @(& $effectivePath @effectiveArguments 2>$null)
+        $output = @(& $FilePath @Arguments 2> $null)
         return [pscustomobject]@{ ExitCode = [int]$LASTEXITCODE; Lines = @($output) }
     }
-    catch {
+    catch
+    {
         return [pscustomobject]@{ ExitCode = 127; Lines = @() }
     }
 }
-
-function Get-LinuxUnitState {
-    param([Parameter(Mandatory = $true)][string]$UnitName)
-
-    if (-not (Test-LinuxPlatform) -or
-        -not (Test-Path -LiteralPath $script:LinuxSystemctlPath -PathType Leaf)) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    $properties = @(
-        'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ExecMainStatus', 'FragmentPath',
-        'User', 'Group', 'WorkingDirectory', 'Restart', 'KillMode', 'TimeoutStopUSec',
-        'PrivateTmp', 'NoNewPrivileges', 'UMask', 'PrivateNetwork', 'EnvironmentFiles',
-        'IPAddressDeny', 'IPAddressAllow'
-    )
-    $result = Invoke-LinuxNativeCommand -FilePath $script:LinuxSystemctlPath -Arguments @(
-        'show', $UnitName, '--no-pager', "--property=$($properties -join ',')"
-    )
-    Assert-LinuxNativeSuccess $result.ExitCode 'SUPERVISOR_RECONNECT_STATUS_FAILED'
-    return ConvertFrom-SystemctlShowOutput $result.Lines
-}
-
-function Assert-LinuxManagedPath {
-    param([Parameter(Mandatory = $true)][string]$Path)
-
-    $resolved = [IO.Path]::GetFullPath($Path)
-    $roots = @($script:EvidenceRoot, $script:LinuxSmokeRoot)
-    if (Test-LinuxPlatform) {
-        if (-not (Test-Path -LiteralPath $script:LinuxReadlinkPath -PathType Leaf) -or
-            -not (Test-Path -LiteralPath $Path)) {
-            throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-        }
-        $realPath = Invoke-LinuxNativeCommand -FilePath $script:LinuxReadlinkPath -Arguments @('-f', '--', $Path)
-        if ($realPath.ExitCode -ne 0) {
-            throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-        }
-        $resolved = ConvertTo-TrimmedNativeOutput $realPath.Lines
-        $roots = @(
-            $script:LinuxEvidenceDirectory,
-            $script:LinuxSmokeDirectory,
-            $script:LinuxRuntimeEnvironmentRoot
-        )
-    }
-    $allowed = $false
-    foreach ($root in $roots) {
-        if ($resolved.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
-            $allowed = $true
-            break
-        }
-    }
-    if (-not $allowed) {
-        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-    }
-    return $resolved
-}
-
-function Set-LinuxManagedPathOwnerOnly {
-    param([Parameter(Mandatory = $true)][string]$Directory)
-
-    $resolved = Assert-LinuxManagedPath $Directory
-    $currentUid = Get-LinuxCurrentUserId
-    $runtimeUid = Get-LinuxUserId $script:LinuxRuntimeUser
-    if ($currentUid -notin @(0, $runtimeUid)) {
-        throw 'FAIL / TRANSIENT_UNIT_CREATE_FAILED'
-    }
-    foreach ($required in @($script:LinuxChownPath, $script:LinuxChmodPath)) {
-        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
-            throw 'FAIL / TRANSIENT_UNIT_CREATE_FAILED'
-        }
-    }
-    if ($currentUid -eq 0) {
-        $ownerResult = Invoke-LinuxNativeCommand -FilePath $script:LinuxChownPath -Arguments @(
-            '-R', '--', "$($script:LinuxRuntimeUser):$($script:LinuxRuntimeGroup)", $resolved
-        )
-        if ($ownerResult.ExitCode -ne 0) { throw 'FAIL / TRANSIENT_UNIT_CREATE_FAILED' }
-    }
-    $allDirectories = @($resolved) + @(
-        Get-ChildItem -LiteralPath $resolved -Directory -Recurse -ErrorAction SilentlyContinue |
-            ForEach-Object { $_.FullName }
-    )
-    $directoryMode = Invoke-LinuxNativeCommand -FilePath $script:LinuxChmodPath -Arguments (@('700', '--') + $allDirectories)
-    if ($directoryMode.ExitCode -ne 0) { throw 'FAIL / TRANSIENT_UNIT_CREATE_FAILED' }
-    $allFiles = @(
-        Get-ChildItem -LiteralPath $resolved -File -Recurse -ErrorAction SilentlyContinue |
-            ForEach-Object { $_.FullName }
-    )
-    if ($allFiles.Count -gt 0) {
-        $fileMode = Invoke-LinuxNativeCommand -FilePath $script:LinuxChmodPath -Arguments (@('600', '--') + $allFiles)
-        if ($fileMode.ExitCode -ne 0) { throw 'FAIL / TRANSIENT_UNIT_CREATE_FAILED' }
-    }
-}
-
-function Set-LinuxManagedFileOwnerOnly {
-    param([Parameter(Mandatory = $true)][string]$Path)
-
-    $resolved = Assert-LinuxManagedPath $Path
-    if (-not (Test-Path -LiteralPath $resolved -PathType Leaf)) {
-        throw 'FAIL / SUPERVISOR_SENTINEL_INVALID'
-    }
-    $currentUid = Get-LinuxCurrentUserId
-    $runtimeUid = Get-LinuxUserId $script:LinuxRuntimeUser
-    if ($currentUid -notin @(0, $runtimeUid)) {
-        throw 'FAIL / SUPERVISOR_SENTINEL_INVALID'
-    }
-    foreach ($required in @($script:LinuxChownPath, $script:LinuxChmodPath)) {
-        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
-            throw 'FAIL / SUPERVISOR_SENTINEL_INVALID'
-        }
-    }
-    if ($currentUid -eq 0) {
-        $ownerResult = Invoke-LinuxNativeCommand -FilePath $script:LinuxChownPath -Arguments @(
-            '--', "$($script:LinuxRuntimeUser):$($script:LinuxRuntimeGroup)", $resolved
-        )
-        if ($ownerResult.ExitCode -ne 0) { throw 'FAIL / SUPERVISOR_SENTINEL_INVALID' }
-    }
-    $modeResult = Invoke-LinuxNativeCommand -FilePath $script:LinuxChmodPath -Arguments @('600', '--', $resolved)
-    if ($modeResult.ExitCode -ne 0) { throw 'FAIL / SUPERVISOR_SENTINEL_INVALID' }
-}
-
-function Assert-LinuxOwnerOnlyFile {
-    param([Parameter(Mandatory = $true)][string]$Path)
-
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf) -or
-        -not (Test-Path -LiteralPath $script:LinuxStatPath -PathType Leaf)) {
-        throw 'FAIL / SUPERVISOR_SENTINEL_INVALID'
-    }
-    $metadataResult = Invoke-LinuxNativeCommand -FilePath $script:LinuxStatPath -Arguments @(
-        '-c', '%a %U %G', '--', $Path
-    )
-    $metadata = ConvertTo-TrimmedNativeOutput $metadataResult.Lines
-    if ($metadataResult.ExitCode -ne 0 -or
-        $metadata -ne "600 $($script:LinuxRuntimeUser) $($script:LinuxRuntimeGroup)") {
-        throw 'FAIL / SUPERVISOR_SENTINEL_INVALID'
-    }
-}
-
-function New-LinuxRuntimeEnvironmentFile {
-    param([Parameter(Mandatory = $true)][string]$Value)
-
-    if (-not (Test-LinuxPlatform)) {
-        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-    }
-    $directory = Get-LinuxRuntimeEnvironmentDirectory $Value
-    $path = Get-LinuxRuntimeEnvironmentFile $Value
-    if (Test-Path -LiteralPath $directory) {
-        # A stale file may belong to an older worker environment; never overwrite or reuse it.
-        throw 'BLOCKED / RUNTIME_ENVIRONMENT_STALE'
-    }
-    $temporary = "$path.tmp-$PID"
-    $content = $null
-    try {
-        [IO.Directory]::CreateDirectory($directory) | Out-Null
-        Set-LinuxManagedPathOwnerOnly $directory
-        $content = New-LinuxRuntimeEnvironmentContent (Get-RuntimeEnvironmentSnapshot)
-        [IO.File]::WriteAllText($temporary, $content, $script:Utf8NoBom)
-        Set-LinuxManagedFileOwnerOnly $temporary
-        Move-Item -LiteralPath $temporary -Destination $path
-        Set-LinuxManagedFileOwnerOnly $path
-        Assert-LinuxOwnerOnlyFile $path
-        return $path
-    }
-    catch {
-        $failureMessage = $_.Exception.Message
-        $cleanupFailed = $false
-        if (Test-Path -LiteralPath $directory) {
-            try {
-                Remove-LinuxRuntimeEnvironmentFile $Value
-            }
-            catch {
-                $cleanupFailed = $true
-            }
-        }
-        if ($cleanupFailed) {
-            throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-        }
-        throw $failureMessage
-    }
-    finally {
-        $content = $null
-        if (Test-Path -LiteralPath $temporary) {
-            try {
-                Remove-Item -LiteralPath $temporary -Force
-            }
-            catch {
-                throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-            }
-        }
-    }
-}
-
-function Remove-LinuxRuntimeEnvironmentFile {
-    param([Parameter(Mandatory = $true)][string]$Value)
-
-    $directory = Get-LinuxRuntimeEnvironmentDirectory $Value
-    if (-not (Test-Path -LiteralPath $directory)) {
-        return
-    }
-    $resolved = Assert-LinuxManagedPath $directory
-    Remove-Item -LiteralPath $resolved -Recurse -Force
-    if (Test-Path -LiteralPath $resolved) {
-        throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-    }
-}
-
-function Get-LinuxExpectedProcessCommandLine {
-    param(
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
-    )
-
-    Assert-RunId $Value
-    return @(
-        $script:LinuxPowerShellPath,
-        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script:LinuxSupervisorPath,
-        '-Action', $WorkerAction, '-RunId', $Value
-    )
-}
-
-function Get-LinuxProcessCommandLine {
-    param([Parameter(Mandatory = $true)][long]$ProcessId)
-
-    $path = "/proc/$ProcessId/cmdline"
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        throw 'FAIL / SUPERVISOR_PROCESS_EXITED'
-    }
-    try {
-        $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($path))
-        return @($text.Split([char]0) | Where-Object { -not [string]::IsNullOrEmpty($_) })
-    }
-    catch {
-        throw 'FAIL / SUPERVISOR_PROCESS_EXITED'
-    }
-}
-
-function Assert-LinuxProcessIdentity {
-    param(
-        [Parameter(Mandatory = $true)][long]$ProcessId,
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
-    )
-
-    $statusPath = "/proc/$ProcessId/status"
-    if (-not (Test-Path -LiteralPath $statusPath -PathType Leaf)) {
-        throw 'FAIL / SUPERVISOR_PROCESS_EXITED'
-    }
-    $uidLine = Get-Content -LiteralPath $statusPath -ErrorAction SilentlyContinue |
-        Where-Object { $_ -match '^Uid:\s+[0-9]+' } |
-        Select-Object -First 1
-    if ([string]$uidLine -notmatch '^Uid:\s+([0-9]+)' -or
-        [int]$Matches[1] -ne (Get-LinuxUserId $script:LinuxRuntimeUser)) {
-        throw 'FAIL / SUPERVISOR_PROCESS_IDENTITY_MISMATCH'
-    }
-    $actual = @(Get-LinuxProcessCommandLine $ProcessId)
-    $expected = @(Get-LinuxExpectedProcessCommandLine $Value $WorkerAction)
-    if (($actual -join [char]31) -cne ($expected -join [char]31)) {
-        throw 'FAIL / SUPERVISOR_PROCESS_IDENTITY_MISMATCH'
-    }
-}
-
-function Test-LinuxSupervisorProcessMatch {
-    param(
-        [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$CommandLine,
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
-    )
-
-    if ($CommandLine.Count -lt 7) { return $false }
-    $executable = [string]$CommandLine[0]
-    if ($executable -cne $script:LinuxPowerShellPath -and
-        [IO.Path]::GetFileName($executable) -cne 'pwsh') {
-        return $false
-    }
-    $scriptFound = @($CommandLine | Where-Object { [string]$_ -ceq $script:LinuxSupervisorPath }).Count -gt 0
-    $actionFound = $false
-    $runIdFound = $false
-    for ($index = 0; $index -lt ($CommandLine.Count - 1); $index++) {
-        if ([string]$CommandLine[$index] -ceq '-Action' -and
-            [string]$CommandLine[$index + 1] -ceq $WorkerAction) {
-            $actionFound = $true
-        }
-        if ([string]$CommandLine[$index] -ceq '-RunId' -and
-            [string]$CommandLine[$index + 1] -ceq $Value) {
-            $runIdFound = $true
-        }
-    }
-    return $scriptFound -and $actionFound -and $runIdFound
-}
-
-function Find-LinuxSupervisorProcesses {
-    param(
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
-    )
-
-    # Keep the accumulator distinct from PowerShell's case-insensitive automatic $Matches variable.
-    $processIds = @()
-    foreach ($directory in Get-ChildItem -LiteralPath '/proc' -Directory -ErrorAction SilentlyContinue) {
-        if ($directory.Name -notmatch '^[0-9]+$') { continue }
-        try {
-            $actual = @(Get-LinuxProcessCommandLine ([long]$directory.Name))
-            if (Test-LinuxSupervisorProcessMatch $actual $Value $WorkerAction) {
-                $processIds += [int]$directory.Name
-            }
-        }
-        catch {
-            # /proc entries may disappear while enumerating; a vanished process is not residual.
-        }
-    }
-    return $processIds
-}
-
-function Assert-LinuxHeartbeatFresh {
-    param(
-        [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][int]$MaximumAgeSeconds,
-        [long]$MinimumSequence = -1,
-        [string]$PreviousObservedAt
-    )
-
-    $heartbeat = Read-JsonFile (Join-Path $Directory 'heartbeat.json')
-    if ([string]$heartbeat.runId -ne (Split-Path -Leaf $Directory)) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    $observedAt = [DateTimeOffset]::MinValue
-    if (-not [DateTimeOffset]::TryParse([string]$heartbeat.observedAt, [ref]$observedAt)) {
-        throw 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING'
-    }
-    $ageSeconds = ((Get-UtcNow) - $observedAt.ToUniversalTime()).TotalSeconds
-    if ($ageSeconds -lt -30 -or $ageSeconds -gt $MaximumAgeSeconds) {
-        throw 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING'
-    }
-    if (-not [string]::IsNullOrWhiteSpace($PreviousObservedAt)) {
-        $previous = [DateTimeOffset]::MinValue
-        if (-not [DateTimeOffset]::TryParse($PreviousObservedAt, [ref]$previous) -or
-            $observedAt.ToUniversalTime() -le $previous.ToUniversalTime()) {
-            throw 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING'
-        }
-    }
-    $sequenceProperty = $heartbeat.PSObject.Properties['sequence']
-    if ($null -eq $sequenceProperty) { $sequenceProperty = $heartbeat.PSObject.Properties['lastSequence'] }
-    if ($MinimumSequence -ge 0 -and
-        ($null -eq $sequenceProperty -or [long]$sequenceProperty.Value -lt $MinimumSequence)) {
-        throw 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING'
-    }
-    return $heartbeat
-}
-
-function Write-LinuxSupervisorSentinel {
-    param(
-        [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][string]$UnitName,
-        [Parameter(Mandatory = $true)][long]$MainPid,
-        [Parameter(Mandatory = $true)][string]$StartedAt,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
-    )
-
-    $path = Join-Path $Directory 'supervisor.json'
-    Write-JsonAtomic $path ([ordered]@{
-        schemaVersion = $script:LinuxSupervisorSchemaVersion
-        unitName = $UnitName
-        mainPid = $MainPid
-        startedAt = $StartedAt
-        runId = $Value
-        workerAction = $WorkerAction
-    })
-    Set-LinuxManagedFileOwnerOnly $path
-    Assert-LinuxOwnerOnlyFile $path
-}
-
-function Assert-LinuxSupervisorSentinel {
-    param(
-        [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][string]$UnitName,
-        [Parameter(Mandatory = $true)][long]$MainPid,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
-    )
-
-    $path = Join-Path $Directory 'supervisor.json'
-    Assert-LinuxOwnerOnlyFile $path
-    $sentinel = Read-JsonFile $path
-    $startedAt = [DateTimeOffset]::MinValue
-    if ([string]$sentinel.schemaVersion -ne $script:LinuxSupervisorSchemaVersion -or
-        [string]$sentinel.unitName -ne $UnitName -or
-        [long]$sentinel.mainPid -ne $MainPid -or
-        [string]$sentinel.runId -ne $Value -or
-        [string]$sentinel.workerAction -ne $WorkerAction -or
-        -not [DateTimeOffset]::TryParse([string]$sentinel.startedAt, [ref]$startedAt)) {
-        throw 'FAIL / SUPERVISOR_SENTINEL_INVALID'
-    }
-    return $sentinel
-}
-
-function Start-LinuxTransientUnit {
-    param(
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction,
-        [Parameter(Mandatory = $true)][bool]$PrivateNetwork,
-        [Parameter(Mandatory = $true)][bool]$LoopbackOnlyNetwork,
-        [Parameter(Mandatory = $true)][bool]$IncludeEnvironmentFile
-    )
-
-    Assert-SystemdRunAvailable ((Test-LinuxPlatform) -and
-        (Test-Path -LiteralPath $script:LinuxSystemdRunPath -PathType Leaf) -and
-        (Test-Path -LiteralPath $script:LinuxSystemctlPath -PathType Leaf))
-    Assert-LinuxFixedRuntimePaths $script:LinuxPowerShellPath $script:ScriptPath $script:LinuxWorkingDirectory
-    $unitName = Get-LinuxUnitName $Value
-    $existing = Get-LinuxUnitState $unitName
-    if ([string]$existing.ActiveState -ne 'inactive' -or [long]$existing.MainPID -ne 0) {
-        throw 'BLOCKED / SOAK_ALREADY_RUNNING'
-    }
-    Assert-NoResidualSupervisor @(Find-LinuxSupervisorProcesses $Value $WorkerAction)
-    Set-LinuxManagedPathOwnerOnly $Directory
-    $environmentFile = ''
-    $environmentFileCreated = $false
-    $unitStartAttempted = $false
-    try {
-        if ($IncludeEnvironmentFile) {
-            $environmentFile = New-LinuxRuntimeEnvironmentFile $Value
-            $environmentFileCreated = $true
-        }
-        $arguments = @(New-LinuxTransientUnitArguments `
-            -Value $Value `
-            -WorkerAction $WorkerAction `
-            -PrivateNetwork $PrivateNetwork `
-            -LoopbackOnlyNetwork $LoopbackOnlyNetwork `
-            -IncludeEnvironmentFile $IncludeEnvironmentFile `
-            -PowerShellPath $script:LinuxPowerShellPath `
-            -SupervisorPath $script:LinuxSupervisorPath `
-            -WorkingDirectory $script:LinuxWorkingDirectory `
-            -EnvironmentFile $environmentFile)
-        $unitStartAttempted = $true
-        $start = Invoke-LinuxNativeCommand -FilePath $script:LinuxSystemdRunPath -Arguments $arguments -Privileged
-        Assert-LinuxNativeSuccess $start.ExitCode 'TRANSIENT_UNIT_CREATE_FAILED'
-        $state = $null
-        for ($attempt = 0; $attempt -lt 50; $attempt++) {
-            $state = Get-LinuxUnitState $unitName
-            if ([string]$state.ActiveState -eq 'active' -and [string]$state.SubState -eq 'running') { break }
-            Start-Sleep -Milliseconds 200
-        }
-        Assert-LinuxUnitContract $state $PrivateNetwork $LoopbackOnlyNetwork $environmentFile
-        Assert-LinuxProcessIdentity $state.MainPID $Value $WorkerAction
-        $startedAt = (Get-UtcNow).ToString('o')
-        Write-LinuxSupervisorSentinel $Directory $Value $unitName $state.MainPID $startedAt $WorkerAction
-        $result = [pscustomobject]@{
-            Id = [long]$state.MainPID
-            UnitName = $unitName
-            StartTime = $startedAt
-            LoadState = $state.LoadState
-            ActiveState = $state.ActiveState
-            SubState = $state.SubState
-            User = $state.User
-            FragmentPath = $state.FragmentPath
-        }
-        if ($environmentFileCreated) {
-            # service-type=exec proves execve completed; remove the materialized disk copy immediately.
-            Remove-LinuxRuntimeEnvironmentFile $Value
-            $environmentFileCreated = $false
-        }
-        return $result
-    }
-    catch {
-        $failureMessage = $_.Exception.Message
-        $stopFailed = $false
-        if ($unitStartAttempted) {
-            try { Stop-LinuxTransientUnit $Value $WorkerAction | Out-Null } catch {
-                $stopFailed = $true
-            }
-        }
-        $cleanupFailed = $false
-        if ($environmentFileCreated -or (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $Value))) {
-            try {
-                Remove-LinuxRuntimeEnvironmentFile $Value
-                $environmentFileCreated = $false
-            }
-            catch {
-                $cleanupFailed = $true
-            }
-        }
-        if ($cleanupFailed) {
-            throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-        }
-        if ($stopFailed) {
-            throw 'FAIL / SUPERVISOR_STOP_FAILED'
-        }
-        throw $failureMessage
-    }
-}
-
-function Stop-LinuxTransientUnit {
-    param(
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][ValidateSet('run-loop', 'linux-smoke-loop')][string]$WorkerAction
-    )
-
-    Assert-SystemdRunAvailable ((Test-LinuxPlatform) -and
-        (Test-Path -LiteralPath $script:LinuxSystemctlPath -PathType Leaf))
-    $unitName = Get-LinuxUnitName $Value
-    $before = Get-LinuxUnitState $unitName
-    $mainPidBefore = [long]$before.MainPID
-    if ([string]$before.ActiveState -ne 'inactive' -or $mainPidBefore -ne 0) {
-        $stop = Invoke-LinuxNativeCommand -FilePath $script:LinuxSystemctlPath -Arguments @('stop', $unitName) -Privileged
-        Assert-LinuxNativeSuccess $stop.ExitCode 'SUPERVISOR_STOP_FAILED'
-    }
-    $after = $null
-    for ($attempt = 0; $attempt -lt 150; $attempt++) {
-        $after = Get-LinuxUnitState $unitName
-        if ([string]$after.ActiveState -eq 'inactive' -and [long]$after.MainPID -eq 0) { break }
-        Start-Sleep -Milliseconds 200
-    }
-    if ([string]$after.ActiveState -ne 'inactive' -or [long]$after.MainPID -ne 0) {
-        throw 'FAIL / SUPERVISOR_STOP_FAILED'
-    }
-    Assert-NoResidualSupervisor @(Find-LinuxSupervisorProcesses $Value $WorkerAction)
-    $null = Invoke-LinuxNativeCommand -FilePath $script:LinuxSystemctlPath -Arguments @('reset-failed', $unitName) -Privileged
-    for ($attempt = 0; $attempt -lt 25; $attempt++) {
-        $collected = Get-LinuxUnitState $unitName
-        if ([string]$collected.LoadState -eq 'not-found') { break }
-        Start-Sleep -Milliseconds 200
-    }
-    if ([string]$collected.LoadState -ne 'not-found') {
-        throw 'FAIL / SUPERVISOR_STOP_FAILED'
-    }
-    return [pscustomobject]@{
-        UnitName = $unitName
-        MainPidBefore = $mainPidBefore
-        ActiveState = $after.ActiveState
-        MainPID = $after.MainPID
-        ResidualProcessCount = 0
-        LoadStateAfterCollect = $collected.LoadState
-    }
-}
-
-function Get-SupervisorState {
+function Get-SupervisorState
+{
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
         [switch]$AllowInactive
     )
 
-    if (-not (Test-LinuxPlatform)) {
-        $path = Join-Path $Directory 'supervisor.json'
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            return [pscustomobject]@{ Running = $false; Pid = 0; StartedAt = $null }
-        }
-        $control = Read-JsonFile $path
-        $process = Get-Process -Id ([int]$control.pid) -ErrorAction SilentlyContinue
-        if ($null -eq $process) {
-            return [pscustomobject]@{ Running = $false; Pid = [int]$control.pid; StartedAt = $control.startedAt }
-        }
-        $actual = $process.StartTime.ToUniversalTime()
-        $expected = [DateTimeOffset]::Parse([string]$control.startedAt).UtcDateTime
-        $sameProcess = [Math]::Abs(($actual - $expected).TotalSeconds) -lt 5
-        return [pscustomobject]@{ Running = $sameProcess; Pid = [int]$control.pid; StartedAt = $control.startedAt }
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
     }
-
-    $value = Split-Path -Leaf $Directory
-    Assert-RunId $value
-    $unitName = Get-LinuxUnitName $value
-    $state = Get-LinuxUnitState $unitName
-    if ([string]$state.ActiveState -eq 'active' -and [string]$state.SubState -eq 'running') {
-        Assert-LinuxUnitContract $state $false $false (Get-LinuxRuntimeEnvironmentFile $value)
-        Assert-LinuxProcessIdentity $state.MainPID $value 'run-loop'
-        $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
-        if ([string]$manifest.runId -ne $value) {
-            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-        }
-        $sentinel = Assert-LinuxSupervisorSentinel $Directory $value $unitName $state.MainPID 'run-loop'
-        $maximumAge = [Math]::Max(60, [int]$manifest.cadenceSeconds + 300)
-        $heartbeat = Assert-LinuxHeartbeatFresh $Directory $maximumAge
-        return [pscustomobject]@{
-            Running = $true
-            Pid = [long]$state.MainPID
-            StartedAt = $sentinel.startedAt
-            UnitName = $unitName
-            LoadState = $state.LoadState
-            ActiveState = $state.ActiveState
-            SubState = $state.SubState
-            ExecMainStatus = $state.ExecMainStatus
-            FragmentPath = $state.FragmentPath
-            User = $state.User
-            HeartbeatObservedAt = $heartbeat.observedAt
-        }
+    $path = Join-Path $Directory 'supervisor.json'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf))
+    {
+        return [pscustomobject]@{ Running = $false; Pid = 0; StartedAt = $null }
     }
-    $residual = @(Find-LinuxSupervisorProcesses $value 'run-loop')
-    if ($residual.Count -gt 0 -and -not $AllowInactive) {
-        throw 'FAIL / SUPERVISOR_RESIDUAL_PROCESS_FOUND'
+    $control = Read-JsonFile $path
+    $process = Get-Process -Id ([int]$control.pid) -ErrorAction SilentlyContinue
+    if ($null -eq $process)
+    {
+        return [pscustomobject]@{ Running = $false; Pid = [int]$control.pid; StartedAt = $control.startedAt }
     }
-    $heartbeatPath = Join-Path $Directory 'heartbeat.json'
-    if (Test-Path -LiteralPath $heartbeatPath -PathType Leaf) {
-        $heartbeat = Read-JsonFile $heartbeatPath
-        if ([string]$heartbeat.state -in @('PREPARING', 'RUNNING', 'DEGRADED') -and -not $AllowInactive) {
-            throw 'FAIL / SUPERVISOR_PROCESS_EXITED'
-        }
-    }
-    return [pscustomobject]@{
-        Running = $false
-        Pid = [long]$state.MainPID
-        StartedAt = $null
-        UnitName = $unitName
-        LoadState = $state.LoadState
-        ActiveState = $state.ActiveState
-        SubState = $state.SubState
-        ExecMainStatus = $state.ExecMainStatus
-        FragmentPath = $state.FragmentPath
-        User = $state.User
-        HeartbeatObservedAt = $null
-    }
+    $actual = $process.StartTime.ToUniversalTime()
+    $expected = [DateTimeOffset]::Parse([string]$control.startedAt).UtcDateTime
+    $sameProcess = [Math]::Abs(($actual - $expected).TotalSeconds) -lt 5
+    return [pscustomobject]@{ Running = $sameProcess; Pid = [int]$control.pid; StartedAt = $control.startedAt }
 }
-
-function Start-LoopProcess {
+function Start-LoopProcess
+{
     param([Parameter(Mandatory = $true)][string]$Value)
 
-    if (Test-LinuxPlatform) {
-        return Start-LinuxTransientUnit `
-            -Value $Value `
-            -Directory (Get-RunDirectory $Value) `
-            -WorkerAction 'run-loop' `
-            -PrivateNetwork $false `
-            -LoopbackOnlyNetwork $false `
-            -IncludeEnvironmentFile $true
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
     }
     $executable = (Get-Process -Id $PID).Path
     $arguments = @(New-WindowsLoopProcessArguments $Value $script:ScriptPath)
@@ -1805,14 +1404,14 @@ function Start-LoopProcess {
     $startedAt = $process.StartTime.ToUniversalTime().ToString('o')
     $directory = Get-RunDirectory $Value
     Write-JsonAtomic (Join-Path $directory 'supervisor.json') ([ordered]@{
-        pid       = $process.Id
+        pid = $process.Id
         startedAt = $startedAt
-        runId     = $Value
+        runId = $Value
     })
     return $process
 }
-
-function Stop-FailClosed {
+function Stop-FailClosed
+{
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
         [Parameter(Mandatory = $true)][string]$ReasonCode,
@@ -1820,61 +1419,106 @@ function Stop-FailClosed {
         [int]$AuthenticationFailures = 0
     )
 
+    # Linux kill-switch authority只属于独立 root finalizer；worker失败必须以非零退出触发它。
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+    }
     $engage = Invoke-SanitizedCycle 'engage' $Directory
     $chain = Get-ChainState $Directory
-    if ($engage.resultStatus -ne 'ENGAGED' -or $engage.killSwitchObservedState -ne 'ENGAGED') {
+    if ($engage.resultStatus -ne 'ENGAGED' -or $engage.killSwitchObservedState -ne 'ENGAGED')
+    {
         Write-Heartbeat $Directory 'STOP_FAILURE' 'KILL_SWITCH_ENGAGE_FAILED' $chain.Count $AuthenticationFailures
-        if (Test-LinuxPlatform) { Set-LinuxManagedPathOwnerOnly $Directory }
         throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
     }
     Write-Heartbeat $Directory $State $ReasonCode $chain.Count $AuthenticationFailures
-    if (Test-LinuxPlatform) { Set-LinuxManagedPathOwnerOnly $Directory }
 }
-
-function Resolve-Blocker {
+function Resolve-Blocker
+{
     param([Parameter(Mandatory = $true)][string]$ReasonCode)
 
-    $decision = switch ($ReasonCode) {
-        'API_KEY_REQUIRED' { 'BLOCKED / API_KEY_REQUIRED' }
-        'PERMISSION_BLOCKED' { 'BLOCKED / CREDENTIAL_PERMISSION_NOT_READONLY' }
-        'CREDENTIAL_PERMISSION_NOT_READONLY' { 'BLOCKED / CREDENTIAL_PERMISSION_NOT_READONLY' }
-        'UNSAFE_CREDENTIAL_PERMISSIONS' { 'BLOCKED / UNSAFE_CREDENTIAL_PERMISSIONS' }
-        'IP_ALLOWLIST_FAILED' { 'BLOCKED / IP_ALLOWLIST_REQUIRED' }
-        'IP_ALLOWLIST_REQUIRED' { 'BLOCKED / IP_ALLOWLIST_REQUIRED' }
-        'SOAK_KILL_SWITCH_FIXTURE_NOT_SAFE' { 'BLOCKED / SOAK_KILL_SWITCH_FIXTURE_NOT_SAFE' }
-        default { "BLOCKED / $ReasonCode" }
+    $decision = switch ($ReasonCode)
+    {
+        'API_KEY_REQUIRED' {
+            'BLOCKED / API_KEY_REQUIRED'
+        }
+        'PERMISSION_BLOCKED' {
+            'BLOCKED / CREDENTIAL_PERMISSION_NOT_READONLY'
+        }
+        'CREDENTIAL_PERMISSION_NOT_READONLY' {
+            'BLOCKED / CREDENTIAL_PERMISSION_NOT_READONLY'
+        }
+        'UNSAFE_CREDENTIAL_PERMISSIONS' {
+            'BLOCKED / UNSAFE_CREDENTIAL_PERMISSIONS'
+        }
+        'IP_ALLOWLIST_FAILED' {
+            'BLOCKED / IP_ALLOWLIST_REQUIRED'
+        }
+        'IP_ALLOWLIST_REQUIRED' {
+            'BLOCKED / IP_ALLOWLIST_REQUIRED'
+        }
+        'SOAK_KILL_SWITCH_FIXTURE_NOT_SAFE' {
+            'BLOCKED / SOAK_KILL_SWITCH_FIXTURE_NOT_SAFE'
+        }
+        default {
+            "BLOCKED / $ReasonCode"
+        }
     }
     return $decision
 }
 
-function Get-OptionalPropertyValue {
+function Get-OptionalPropertyValue
+{
     param(
         [Parameter(Mandatory = $true)]$Object,
         [Parameter(Mandatory = $true)][string]$Name
     )
 
     $property = $Object.PSObject.Properties[$Name]
-    if ($null -eq $property) { return $null }
+    if ($null -eq $property)
+    {
+        return $null
+    }
     return $property.Value
 }
 
-function Start-Soak {
+function Start-Soak
+{
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+    }
     $head = Assert-FixedDetachedWorktree
     Assert-RuntimeEnvironment (Get-RuntimeEnvironmentSnapshot)
-    if ([string]::IsNullOrWhiteSpace($StartingCiRun)) { throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED' }
+    if ( [string]::IsNullOrWhiteSpace($StartingCiRun))
+    {
+        throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED'
+    }
     Assert-ExactHeadCi $StartingCiRun $head
-    $effectiveRunId = if ([string]::IsNullOrWhiteSpace($RunId)) { New-RunId } else { $RunId }
+    $effectiveRunId = if ( [string]::IsNullOrWhiteSpace($RunId))
+    {
+        New-RunId
+    }
+    else
+    {
+        $RunId
+    }
     $directory = Get-RunDirectory $effectiveRunId
-    if (Test-Path -LiteralPath $directory) { throw 'BLOCKED / RUN_ID_ALREADY_EXISTS' }
+    if (Test-Path -LiteralPath $directory)
+    {
+        throw 'BLOCKED / RUN_ID_ALREADY_EXISTS'
+    }
     [IO.Directory]::CreateDirectory($directory) | Out-Null
     [IO.File]::WriteAllText((Join-Path $directory 'samples.jsonl'), '', $script:Utf8NoBom)
     [IO.File]::WriteAllText((Join-Path $directory 'failures.jsonl'), '', $script:Utf8NoBom)
     Write-Heartbeat $directory 'PREPARING' 'HARD_GATES_PENDING'
 
     $bootstrap = Invoke-SanitizedCycle 'bootstrap' $directory
-    if ($bootstrap.resultStatus -ne 'BOOTSTRAP_READY') {
+    if ($bootstrap.resultStatus -ne 'BOOTSTRAP_READY')
+    {
         $engage = Invoke-SanitizedCycle 'engage' $directory
-        if ($engage.resultStatus -ne 'ENGAGED' -or $engage.killSwitchObservedState -ne 'ENGAGED') {
+        if ($engage.resultStatus -ne 'ENGAGED' -or $engage.killSwitchObservedState -ne 'ENGAGED')
+        {
             throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
         }
         Write-Heartbeat $directory 'BLOCKED' ([string]$bootstrap.reasonCode)
@@ -1882,85 +1526,74 @@ function Start-Soak {
     }
 
     $ownershipTransferred = $false
-    $linuxLoopStarted = $false
-    try {
+    try
+    {
         $startedAt = Get-UtcNow
         $manifest = [ordered]@{
-            runId                         = $effectiveRunId
-            harnessCommit                 = $head
-            startingCiRun                 = $StartingCiRun
-            startedAt                     = $startedAt.ToString('o')
-            plannedEndAt                  = $startedAt.AddHours($DurationHours).ToString('o')
-            durationHours                 = $DurationHours
-            cadenceSeconds                = $CadenceSeconds
-            maxTransientRetries           = $MaxTransientRetries
-            maxConsecutiveAuthFailures    = $MaxConsecutiveAuthFailures
-            venue                         = 'OKX'
-            environment                   = 'REAL_OKX_PRIVATE_READONLY'
-            profile                       = 'gatew-okx-readonly-soak'
-            applicationVersion            = "0.1.0-SNAPSHOT+$($head.Substring(0, 12))"
-            endpointAllowlistVersion      = 'gatew-okx-private-readonly-v1'
-            flywayVersion                 = '35'
-            hostFingerprint               = Get-Sha256Text "$env:COMPUTERNAME|$([Environment]::OSVersion.VersionString)"
+            runId = $effectiveRunId
+            harnessCommit = $head
+            startingCiRun = $StartingCiRun
+            startedAt = $startedAt.ToString('o')
+            plannedEndAt = $startedAt.AddHours($DurationHours).ToString('o')
+            durationHours = $DurationHours
+            cadenceSeconds = $CadenceSeconds
+            maxTransientRetries = $MaxTransientRetries
+            maxConsecutiveAuthFailures = $MaxConsecutiveAuthFailures
+            venue = 'OKX'
+            environment = 'REAL_OKX_PRIVATE_READONLY'
+            profile = 'gatew-okx-readonly-soak'
+            applicationVersion = "0.1.0-SNAPSHOT+$($head.Substring(0, 12) )"
+            endpointAllowlistVersion = 'gatew-okx-private-readonly-v1'
+            flywayVersion = '35'
+            hostFingerprint = Get-Sha256Text "$env:COMPUTERNAME|$( [Environment]::OSVersion.VersionString )"
             # Commit identity 使用 Git blob，不受 Windows/Linux checkout EOL 影响；artifact hash 只证明上传字节。
-            supervisorScriptGitBlob       = Get-GitBlobObjectId $head
-            supervisorArtifactSha256      = Get-Sha256File $script:ScriptPath
-            launcherSchemaVersion         = $script:LauncherSchemaVersion
-            evidenceSchemaVersion         = $script:EvidenceSchemaV2
+            supervisorScriptGitBlob = Get-GitBlobObjectId $head
+            supervisorArtifactSha256 = Get-Sha256File $script:ScriptPath
+            launcherSchemaVersion = $script:LauncherSchemaVersion
+            evidenceSchemaVersion = $script:EvidenceSchemaV2
         }
         Write-JsonAtomic (Join-Path $directory 'manifest.json') $manifest
 
         $first = Invoke-SanitizedCycle 'sample' $directory
         $record = Append-Sample $directory $first
-        if ($first.resultStatus -ne 'PASSED_READ_ONLY') {
+        if ($first.resultStatus -ne 'PASSED_READ_ONLY')
+        {
             Stop-FailClosed $directory ([string]$first.reasonCode) 'BLOCKED'
             throw (Resolve-Blocker ([string]$first.reasonCode))
         }
 
         $process = Start-LoopProcess $effectiveRunId
-        if (Test-LinuxPlatform) { $linuxLoopStarted = $true }
         Write-Heartbeat $directory 'RUNNING' 'SOAK_STARTED' $record.sequence
-        if (Test-LinuxPlatform) { Set-LinuxManagedPathOwnerOnly $directory }
         $ownershipTransferred = $true
-        $supervisorStartedAt = if (Test-LinuxPlatform) {
-            [string]$process.StartTime
-        }
-        else {
-            $process.StartTime.ToUniversalTime().ToString('o')
-        }
         return [pscustomobject]@{
-            decision       = 'PASS / REAL_OKX_READONLY_SOAK_PREPARED / SOAK_STARTED / SEVEN_DAY_ACCEPTANCE_PENDING'
-            runId          = $effectiveRunId
-            harnessCommit  = $head
-            startingCiRun  = $StartingCiRun
-            startedAt      = $manifest.startedAt
-            plannedEndAt   = $manifest.plannedEndAt
+            decision = 'PASS / REAL_OKX_READONLY_SOAK_PREPARED / SOAK_STARTED / SEVEN_DAY_ACCEPTANCE_PENDING'
+            runId = $effectiveRunId
+            harnessCommit = $head
+            startingCiRun = $StartingCiRun
+            startedAt = $manifest.startedAt
+            plannedEndAt = $manifest.plannedEndAt
             cadenceSeconds = $CadenceSeconds
-            supervisorPid  = $process.Id
-            unitName       = Get-OptionalPropertyValue $process 'UnitName'
-            mainPid        = [long]$process.Id
-            supervisorStartedAt = $supervisorStartedAt
+            supervisorPid = $process.Id
+            unitName = $null
+            mainPid = [long]$process.Id
+            supervisorStartedAt = $process.StartTime.ToUniversalTime().ToString('o')
             evidenceDirectory = $directory
         }
     }
-    finally {
-        if (-not $ownershipTransferred) {
-            $supervisorStopFailed = $false
-            if ($linuxLoopStarted) {
-                try { Stop-LinuxTransientUnit $effectiveRunId 'run-loop' | Out-Null } catch {
-                    $supervisorStopFailed = $true
-                }
-            }
+    finally
+    {
+        if (-not $ownershipTransferred)
+        {
             $engage = Invoke-SanitizedCycle 'engage' $directory
-            if ($engage.resultStatus -ne 'ENGAGED' -or $engage.killSwitchObservedState -ne 'ENGAGED') {
+            if ($engage.resultStatus -ne 'ENGAGED' -or $engage.killSwitchObservedState -ne 'ENGAGED')
+            {
                 throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
             }
-            if ($supervisorStopFailed) { throw 'FAIL / SUPERVISOR_STOP_FAILED' }
         }
     }
 }
-
-function Wait-ForCadenceOrControl {
+function Wait-ForCadenceOrControl
+{
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
         [Parameter(Mandatory = $true)][int]$Seconds,
@@ -1968,40 +1601,256 @@ function Wait-ForCadenceOrControl {
     )
 
     $deadline = (Get-UtcNow).AddSeconds($Seconds)
-    if ($deadline -gt $PlannedEndAt) { $deadline = $PlannedEndAt }
-    while ((Get-UtcNow) -lt $deadline) {
-        if (Test-Path -LiteralPath (Join-Path $Directory 'stop-request.json')) { return $false }
+    if ($deadline -gt $PlannedEndAt)
+    {
+        $deadline = $PlannedEndAt
+    }
+    while ((Get-UtcNow) -lt $deadline)
+    {
+        if (Test-Path -LiteralPath (Join-Path $Directory 'stop-request.json'))
+        {
+            return $false
+        }
         $remaining = [Math]::Max(1, ($deadline - (Get-UtcNow)).TotalSeconds)
-        Start-Sleep -Seconds ([int][Math]::Min(5, [Math]::Ceiling($remaining)))
+        Start-Sleep -Seconds ([int][Math]::Min(5,[Math]::Ceiling($remaining)))
     }
     return $true
 }
 
-function Run-SoakLoop {
+function Write-FormalWorkerStart
+{
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    Write-JsonCreateOnce (Join-Path $Directory 'worker-start.json') ([ordered]@{
+        schemaVersion = 'gatew-soak-worker-start-v1'
+        runId = $RunId
+        mainPid = [long]$PID
+        unitName = "nq-gatew-soak@$RunId.service"
+        startedAt = (Get-UtcNow).ToString('o')
+    })
+}
+
+function Write-FormalCompletionMarker
+{
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    $chain = Get-ChainState $Directory
+    $lastSuccessfulSequence = 0L
+    foreach ($line in Get-Content -LiteralPath (Join-Path $Directory 'samples.jsonl'))
+    {
+        if ( [string]::IsNullOrWhiteSpace($line))
+        {
+            continue
+        }
+        $sample = $line | ConvertFrom-Json
+        if ([string]$sample.resultStatus -eq 'PASSED_READ_ONLY')
+        {
+            $lastSuccessfulSequence = [long]$sample.sequence
+        }
+    }
+    if ($lastSuccessfulSequence -lt 1 -or $lastSuccessfulSequence -gt [long]$chain.Count)
+    {
+        throw 'FAIL / NATURAL_COMPLETION_PASS_SEQUENCE_INVALID'
+    }
+
+    Write-JsonCreateOnce (Join-Path $Directory 'completion-marker.json') ([ordered]@{
+        schemaVersion = 'gatew-soak-completion-marker-v1'
+        runId = $RunId
+        lastSuccessfulCycleSequence = $lastSuccessfulSequence
+        lastHeartbeatSequence = [long]$chain.Count
+        completedAt = (Get-UtcNow).ToString('o')
+    })
+    Write-Heartbeat $Directory 'COMPLETING' 'NATURAL_COMPLETION_MARKER_WRITTEN' ([long]$chain.Count)
+}
+
+function Run-FormalOfflineAcceptance
+{
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    $heartbeatRaw = [Environment]::GetEnvironmentVariable('NQ_GATEW_OFFLINE_HEARTBEAT_SECONDS', 'Process')
+    $heartbeatSeconds = 0
+    if (-not [int]::TryParse($heartbeatRaw, [ref]$heartbeatSeconds) -or
+            $heartbeatSeconds -lt 1 -or $heartbeatSeconds -gt 30)
+    {
+        throw 'BLOCKED / OFFLINE_HEARTBEAT_CONFIG_INVALID'
+    }
+    Invoke-OfflineTestSupport 'offline-bootstrap' $Directory | Out-Null
+    foreach ($sequence in 1..2)
+    {
+        if ($sequence -gt 1)
+        {
+            Start-Sleep -Seconds $heartbeatSeconds
+        }
+        $cycle = Invoke-OfflineTestSupport 'offline-sample' $Directory
+        $record = Append-Sample $Directory $cycle
+        if ([string]$cycle.resultStatus -ne 'PASSED_READ_ONLY' -or
+                [string]$cycle.allowedEndpointCategory -ne 'OFFLINE_LOCAL_FIXTURE_READ' -or
+                [bool]$cycle.credentialAccessed -or [bool]$cycle.networkCalled -or
+                [string]$cycle.accountConfigProbeStatus -ne 'SUCCEEDED' -or
+                [string]$cycle.balanceProbeStatus -ne 'SUCCEEDED')
+        {
+            Write-Heartbeat $Directory 'FAILURE_STOPPING' 'OFFLINE_PASS_PROVENANCE_INVALID' $record.sequence
+            throw 'FAIL / OFFLINE_PASS_PROVENANCE_INVALID'
+        }
+        Write-Heartbeat $Directory 'RUNNING' 'OFFLINE_READONLY_FIXTURE_ACCEPTED' $record.sequence
+    }
+
+    $failureMarker = "$( $script:FormalRuntimeRoot )/$RunId/offline-cycle-3-failure"
+    while (-not (Test-Path -LiteralPath $failureMarker -PathType Leaf))
+    {
+        Start-Sleep -Seconds $heartbeatSeconds
+        Write-Heartbeat $Directory 'RUNNING' 'OFFLINE_CYCLE_3_FAILURE_PENDING' 2
+    }
+    $controlled = Invoke-OfflineTestSupport 'offline-controlled-failure' $Directory
+    $controlledRecord = Append-Sample $Directory $controlled
+    if ([string]$controlled.resultStatus -ne 'FAILED' -or
+            [string]$controlled.reasonCode -ne 'CONTROLLED_OFFLINE_CYCLE_3_FAILURE' -or
+            [bool]$controlled.credentialAccessed -or [bool]$controlled.networkCalled)
+    {
+        Write-Heartbeat $Directory 'FAILURE_STOPPING' 'OFFLINE_CONTROLLED_FAILURE_NOT_PROVEN' `
+            $controlledRecord.sequence
+        throw 'FAIL / OFFLINE_CONTROLLED_FAILURE_NOT_PROVEN'
+    }
+    Write-Heartbeat $Directory 'FAILURE_STOPPING' 'CONTROLLED_OFFLINE_CYCLE_3_FAILURE' `
+        $controlledRecord.sequence
+    # A nonzero worker exit delegates engage and terminal authority to the independent finalizer.
+    throw 'FAIL / CONTROLLED_OFFLINE_CYCLE_3_FAILURE'
+}
+
+function Run-FormalRealSoak
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)]$Manifest
+    )
+
+    $bootstrap = Invoke-SanitizedCycle 'bootstrap' $Directory
+    if ([string]$bootstrap.resultStatus -ne 'BOOTSTRAP_READY')
+    {
+        Write-Heartbeat $Directory 'FAILURE_STOPPING' ([string]$bootstrap.reasonCode)
+        throw "FAIL / $( [string]$bootstrap.reasonCode )"
+    }
+    $first = Invoke-SanitizedCycle 'sample' $Directory
+    $firstRecord = Append-Sample $Directory $first
+    if ([string]$first.resultStatus -ne 'PASSED_READ_ONLY')
+    {
+        Write-Heartbeat $Directory 'FAILURE_STOPPING' ([string]$first.reasonCode) $firstRecord.sequence
+        throw "FAIL / $( [string]$first.reasonCode )"
+    }
+    Write-Heartbeat $Directory 'RUNNING' 'READ_ONLY_SAMPLE_ACCEPTED' $firstRecord.sequence
+
+    $plannedEndAt = [DateTimeOffset]::Parse([string]$Manifest.plannedEndAt)
+    $authFailures = 0
+    while ((Get-UtcNow) -lt $plannedEndAt)
+    {
+        Wait-ForCadenceOrControl $Directory ([int]$Manifest.cadenceSeconds) $plannedEndAt | Out-Null
+        if ((Get-UtcNow) -ge $plannedEndAt)
+        {
+            break
+        }
+        $retry = 0
+        do
+        {
+            $cycle = Invoke-SanitizedCycle 'sample' $Directory
+            $record = Append-Sample $Directory $cycle
+            if ([string]$cycle.resultStatus -eq 'PASSED_READ_ONLY')
+            {
+                $authFailures = 0
+                Write-Heartbeat $Directory 'RUNNING' 'READ_ONLY_SAMPLE_ACCEPTED' $record.sequence
+                break
+            }
+            $reason = [string]$cycle.reasonCode
+            Write-Heartbeat $Directory 'DEGRADED' $reason $record.sequence $authFailures
+            if ($script:ImmediateStopReasons -contains $reason -or
+                    [string]$cycle.resultStatus -in @('BLOCKED', 'HARD_FAILURE', 'FAILED'))
+            {
+                Write-Heartbeat $Directory 'FAILURE_STOPPING' $reason $record.sequence $authFailures
+                throw "FAIL / $reason"
+            }
+            if ($script:AuthenticationReasons -contains $reason)
+            {
+                $authFailures++
+                if ($authFailures -ge [int]$Manifest.maxConsecutiveAuthFailures)
+                {
+                    Write-Heartbeat $Directory 'FAILURE_STOPPING' 'CONSECUTIVE_AUTHENTICATION_FAILURES' `
+                        $record.sequence $authFailures
+                    throw 'FAIL / CONSECUTIVE_AUTHENTICATION_FAILURES'
+                }
+                break
+            }
+            if ($script:TransientReasons -contains $reason -and
+                    $retry -lt [int]$Manifest.maxTransientRetries)
+            {
+                $retry++
+                Wait-ForCadenceOrControl $Directory ([Math]::Min(120, 30 * $retry)) $plannedEndAt | Out-Null
+                continue
+            }
+            break
+        } while ($true)
+    }
+    Write-FormalCompletionMarker $Directory
+}
+
+function Run-SoakLoop
+{
     $directory = Get-RunDirectory $RunId
     $manifest = Read-JsonFile (Join-Path $directory 'manifest.json')
     Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
     Test-Evidence $directory | Out-Null
     Assert-RunLoopAllowed $directory
+    if (Test-FormalSystemdWorker)
+    {
+        Write-FormalWorkerStart $directory
+        $mode = [Environment]::GetEnvironmentVariable('NQ_GATEW_RUN_MODE', 'Process')
+        if ($mode -eq 'OFFLINE_ACCEPTANCE')
+        {
+            Run-FormalOfflineAcceptance $directory
+            return
+        }
+        if ($mode -eq 'REAL')
+        {
+            Run-FormalRealSoak $directory $manifest
+            return
+        }
+        throw 'BLOCKED / FORMAL_RUN_MODE_INVALID'
+    }
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+    }
     $plannedEndAt = [DateTimeOffset]::Parse([string]$manifest.plannedEndAt)
     $authFailures = 0
 
-    while ((Get-UtcNow) -lt $plannedEndAt) {
+    while ((Get-UtcNow) -lt $plannedEndAt)
+    {
         Wait-ForCadenceOrControl $directory ([int]$manifest.cadenceSeconds) $plannedEndAt | Out-Null
         $stopPath = Join-Path $directory 'stop-request.json'
-        if (Test-Path -LiteralPath $stopPath) {
+        if (Test-Path -LiteralPath $stopPath)
+        {
             $request = Read-JsonFile $stopPath
-            $state = if ($request.kind -eq 'failure') { 'FAILURE_STOPPED' } else { 'STOPPED' }
+            $state = if ($request.kind -eq 'failure')
+            {
+                'FAILURE_STOPPED'
+            }
+            else
+            {
+                'STOPPED'
+            }
             Stop-FailClosed $directory ([string]$request.reasonCode) $state $authFailures
             return
         }
-        if ((Get-UtcNow) -ge $plannedEndAt) { break }
+        if ((Get-UtcNow) -ge $plannedEndAt)
+        {
+            break
+        }
 
         $retry = 0
-        do {
+        do
+        {
             $cycle = Invoke-SanitizedCycle 'sample' $directory
             $record = Append-Sample $directory $cycle
-            if ($cycle.resultStatus -eq 'PASSED_READ_ONLY') {
+            if ($cycle.resultStatus -eq 'PASSED_READ_ONLY')
+            {
                 $authFailures = 0
                 Write-Heartbeat $directory 'RUNNING' 'READ_ONLY_SAMPLE_ACCEPTED' $record.sequence
                 break
@@ -2010,23 +1859,30 @@ function Run-SoakLoop {
             $reason = [string]$cycle.reasonCode
             Write-Heartbeat $directory 'DEGRADED' $reason $record.sequence $authFailures
             if ($script:ImmediateStopReasons -contains $reason -or
-                $cycle.resultStatus -in @('BLOCKED', 'HARD_FAILURE', 'FAILED')) {
+                    $cycle.resultStatus -in @('BLOCKED', 'HARD_FAILURE', 'FAILED'))
+            {
                 Stop-FailClosed $directory $reason 'FAILURE_STOPPED' $authFailures
                 return
             }
-            if ($script:AuthenticationReasons -contains $reason) {
+            if ($script:AuthenticationReasons -contains $reason)
+            {
                 $authFailures++
                 Write-Heartbeat $directory 'DEGRADED' $reason $record.sequence $authFailures
-                if ($authFailures -ge [int]$manifest.maxConsecutiveAuthFailures) {
+                if ($authFailures -ge [int]$manifest.maxConsecutiveAuthFailures)
+                {
                     Stop-FailClosed $directory 'CONSECUTIVE_AUTHENTICATION_FAILURES' 'FAILURE_STOPPED' $authFailures
                     return
                 }
                 break
             }
-            if ($script:TransientReasons -contains $reason -and $retry -lt [int]$manifest.maxTransientRetries) {
+            if ($script:TransientReasons -contains $reason -and $retry -lt [int]$manifest.maxTransientRetries)
+            {
                 $retry++
                 $continueRetry = Wait-ForCadenceOrControl $directory ([Math]::Min(120, 30 * $retry)) $plannedEndAt
-                if (-not $continueRetry) { break }
+                if (-not $continueRetry)
+                {
+                    break
+                }
                 continue
             }
             break
@@ -2035,87 +1891,83 @@ function Run-SoakLoop {
     Stop-FailClosed $directory 'SEVEN_DAY_ELAPSED_ACCEPTANCE_REQUIRED' 'ELAPSED_PENDING_ACCEPTANCE' $authFailures
 }
 
-function Assert-RunResumable {
+function Assert-RunResumable
+{
     param([Parameter(Mandatory = $true)][string]$Directory)
 
     $schemaVersion = Get-EvidenceSchemaVersion $Directory
     $heartbeat = Read-JsonFile (Join-Path $Directory 'heartbeat.json')
-    if ($schemaVersion -ne $script:EvidenceSchemaV2) {
+    if ($schemaVersion -ne $script:EvidenceSchemaV2)
+    {
         throw 'BLOCKED / LEGACY_EVIDENCE_NOT_RESUMABLE'
     }
-    if ([string]$heartbeat.state -notin @('RUNNING', 'DEGRADED')) {
+    if ([string]$heartbeat.state -notin @('RUNNING', 'DEGRADED'))
+    {
         throw 'BLOCKED / TERMINAL_RUN_NOT_RESUMABLE'
     }
 }
 
-function Assert-RunLoopAllowed {
+function Assert-RunLoopAllowed
+{
     param([Parameter(Mandatory = $true)][string]$Directory)
 
     $schemaVersion = Get-EvidenceSchemaVersion $Directory
     $heartbeat = Read-JsonFile (Join-Path $Directory 'heartbeat.json')
-    if ($schemaVersion -ne $script:EvidenceSchemaV2) {
+    if ($schemaVersion -ne $script:EvidenceSchemaV2)
+    {
         throw 'BLOCKED / LEGACY_EVIDENCE_NOT_RUNNABLE'
     }
-    if ([string]$heartbeat.state -notin @('PREPARING', 'RUNNING', 'DEGRADED')) {
+    if ([string]$heartbeat.state -notin @('PREPARING', 'RUNNING', 'DEGRADED'))
+    {
         throw 'BLOCKED / TERMINAL_RUN_NOT_RUNNABLE'
     }
 }
 
-function Resume-Soak {
+function Resume-Soak
+{
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+    }
     $directory = Get-RunDirectory $RunId
     $manifest = Read-JsonFile (Join-Path $directory 'manifest.json')
     Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
     Test-Evidence $directory | Out-Null
     Assert-RunResumable $directory
     $state = Get-SupervisorState $directory -AllowInactive
-    if ($state.Running) { throw 'BLOCKED / SOAK_ALREADY_RUNNING' }
-    if ((Get-UtcNow) -ge [DateTimeOffset]::Parse([string]$manifest.plannedEndAt)) {
+    if ($state.Running)
+    {
+        throw 'BLOCKED / SOAK_ALREADY_RUNNING'
+    }
+    if ((Get-UtcNow) -ge [DateTimeOffset]::Parse([string]$manifest.plannedEndAt))
+    {
         throw 'BLOCKED / SEVEN_DAY_ELAPSED_ACCEPTANCE_REQUIRED'
     }
-    $process = $null
-    try {
-        $process = Start-LoopProcess $RunId
-        $chain = Get-ChainState $directory
-        Write-Heartbeat $directory 'RUNNING' 'SOAK_RESUMED' ($chain.NextSequence - 1)
-        if (Test-LinuxPlatform) { Set-LinuxManagedPathOwnerOnly $directory }
-    }
-    catch {
-        $failureMessage = $_.Exception.Message
-        if (Test-LinuxPlatform) {
-            $supervisorStopFailed = $false
-            if ($null -ne $process) {
-                try { Stop-LinuxTransientUnit $RunId 'run-loop' | Out-Null } catch {
-                    $supervisorStopFailed = $true
-                }
-            }
-            Stop-FailClosed $directory 'SUPERVISOR_RECONNECT_STATUS_FAILED' 'FAILURE_STOPPED'
-            if ($supervisorStopFailed) { throw 'FAIL / SUPERVISOR_STOP_FAILED' }
-        }
-        throw $failureMessage
-    }
-    $supervisorStartedAt = if (Test-LinuxPlatform) {
-        [string]$process.StartTime
-    }
-    else {
-        $process.StartTime.ToUniversalTime().ToString('o')
-    }
+    $process = Start-LoopProcess $RunId
+    $chain = Get-ChainState $directory
+    Write-Heartbeat $directory 'RUNNING' 'SOAK_RESUMED' ($chain.NextSequence - 1)
     return [pscustomobject]@{
         decision = 'SOAK_RESUMED'
         runId = $RunId
         supervisorPid = $process.Id
-        unitName = Get-OptionalPropertyValue $process 'UnitName'
+        unitName = $null
         mainPid = [long]$process.Id
-        supervisorStartedAt = $supervisorStartedAt
+        supervisorStartedAt = $process.StartTime.ToUniversalTime().ToString('o')
     }
 }
-
-function Request-Stop {
+function Request-Stop
+{
     param([bool]$Failure)
 
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+    }
     $directory = Get-RunDirectory $RunId
     $manifest = Read-JsonFile (Join-Path $directory 'manifest.json')
     $heartbeat = Read-JsonFile (Join-Path $directory 'heartbeat.json')
-    if ([string]$heartbeat.state -in @('BLOCKED', 'STOPPED', 'FAILURE_STOPPED', 'ELAPSED_PENDING_ACCEPTANCE')) {
+    if ([string]$heartbeat.state -in @('BLOCKED', 'STOPPED', 'FAILURE_STOPPED', 'ELAPSED_PENDING_ACCEPTANCE'))
+    {
         return [pscustomobject]@{
             decision = 'NO_CHANGE / TERMINAL_RUN'
             runId = $RunId
@@ -2124,635 +1976,91 @@ function Request-Stop {
         }
     }
     Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
-    $state = if (Test-LinuxPlatform) { $null } else { Get-SupervisorState $directory -AllowInactive }
-    $kind = if ($Failure) { 'failure' } else { 'graceful' }
-    $reason = if ($Failure) { 'OPERATOR_FAILURE_STOP' } else { 'OPERATOR_GRACEFUL_STOP' }
+    $state = Get-SupervisorState $directory -AllowInactive
+    $kind = if ($Failure)
+    {
+        'failure'
+    }
+    else
+    {
+        'graceful'
+    }
+    $reason = if ($Failure)
+    {
+        'OPERATOR_FAILURE_STOP'
+    }
+    else
+    {
+        'OPERATOR_GRACEFUL_STOP'
+    }
     Write-JsonAtomic (Join-Path $directory 'stop-request.json') ([ordered]@{
         kind = $kind
         reasonCode = $reason
         requestedAt = (Get-UtcNow).ToString('o')
     })
-    if (Test-LinuxPlatform) {
-        Set-LinuxManagedPathOwnerOnly $directory
-        $stopped = Stop-LinuxTransientUnit $RunId 'run-loop'
-        Stop-FailClosed $directory $reason $(if ($Failure) { 'FAILURE_STOPPED' } else { 'STOPPED' })
-        return [pscustomobject]@{
-            decision = 'STOP_COMPLETED'
-            runId = $RunId
-            kind = $kind
-            unitName = $stopped.UnitName
-            supervisorPid = $stopped.MainPidBefore
-            activeState = $stopped.ActiveState
-            mainPid = $stopped.MainPID
-            residualProcessCount = $stopped.ResidualProcessCount
-            loadStateAfterCollect = $stopped.LoadStateAfterCollect
-            killSwitchObservedState = 'ENGAGED'
+    if (-not $state.Running)
+    {
+        Stop-FailClosed $directory $reason $( if ($Failure)
+        {
+            'FAILURE_STOPPED'
         }
-    }
-    if (-not $state.Running) {
-        Stop-FailClosed $directory $reason $(if ($Failure) { 'FAILURE_STOPPED' } else { 'STOPPED' })
+        else
+        {
+            'STOPPED'
+        } )
     }
     return [pscustomobject]@{ decision = 'STOP_REQUESTED'; runId = $RunId; kind = $kind; supervisorPid = $state.Pid }
 }
-
-function Show-Status {
+function Show-Status
+{
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+    }
     $directory = Get-RunDirectory $RunId
     $manifest = Read-JsonFile (Join-Path $directory 'manifest.json')
     $heartbeat = Read-JsonFile (Join-Path $directory 'heartbeat.json')
     $process = Get-SupervisorState $directory
     $chain = Get-ChainState $directory
     return [pscustomobject]@{
-        runId         = $RunId
-        state         = $heartbeat.state
-        reasonCode    = $heartbeat.reasonCode
+        runId = $RunId
+        state = $heartbeat.state
+        reasonCode = $heartbeat.reasonCode
         processRunning = $process.Running
         supervisorPid = $process.Pid
-        sampleCount   = $chain.Count
-        startedAt     = $manifest.startedAt
-        plannedEndAt  = $manifest.plannedEndAt
+        sampleCount = $chain.Count
+        startedAt = $manifest.startedAt
+        plannedEndAt = $manifest.plannedEndAt
         harnessCommit = $manifest.harnessCommit
-        unitName      = Get-OptionalPropertyValue $process 'UnitName'
+        unitName = Get-OptionalPropertyValue $process 'UnitName'
         unitLoadState = Get-OptionalPropertyValue $process 'LoadState'
         unitActiveState = Get-OptionalPropertyValue $process 'ActiveState'
-        unitSubState  = Get-OptionalPropertyValue $process 'SubState'
+        unitSubState = Get-OptionalPropertyValue $process 'SubState'
         unitExecMainStatus = Get-OptionalPropertyValue $process 'ExecMainStatus'
         unitFragmentPath = Get-OptionalPropertyValue $process 'FragmentPath'
-        unitUser      = Get-OptionalPropertyValue $process 'User'
+        unitUser = Get-OptionalPropertyValue $process 'User'
         supervisorStartedAt = $process.StartedAt
         heartbeatObservedAt = Get-OptionalPropertyValue $process 'HeartbeatObservedAt'
     }
 }
 
-function Get-LinuxSmokeDirectory {
-    param([Parameter(Mandatory = $true)][string]$Value)
-
-    Assert-RunId $Value
-    $root = [IO.Path]::GetFullPath($script:LinuxSmokeRoot)
-    $candidate = [IO.Path]::GetFullPath((Join-Path $root $Value))
-    if (-not $candidate.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
-        throw 'FAIL / LINUX_RUNTIME_PATH_INVALID'
+function Cleanup-RunControlFiles
+{
+    if (Test-LinuxPlatform)
+    {
+        throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
     }
-    return $candidate
-}
-
-function Write-LinuxSmokeHeartbeat {
-    param(
-        [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][ValidateSet('PREPARING', 'RUNNING', 'STOPPED', 'STOP_FAILURE')][string]$State,
-        [Parameter(Mandatory = $true)][string]$ReasonCode,
-        [Parameter(Mandatory = $true)][long]$Sequence,
-        [Parameter(Mandatory = $true)][bool]$LiteralEnvironmentVerified,
-        [Parameter(Mandatory = $true)][bool]$AutomaticEngageRecovered,
-        [Parameter(Mandatory = $true)][ValidateSet('UNKNOWN', 'DISENGAGED', 'ENGAGED')][string]$KillSwitchObservedState
-    )
-
-    Write-JsonAtomic (Join-Path $Directory 'heartbeat.json') ([ordered]@{
-        schemaVersion = $script:LinuxSmokeSchemaVersion
-        runId = Split-Path -Leaf $Directory
-        state = $State
-        reasonCode = $ReasonCode
-        observedAt = (Get-UtcNow).ToString('o')
-        sequence = $Sequence
-        credentialAccessed = $false
-        networkCalled = $false
-        acceptanceClockStarted = $false
-        literalEnvironmentVerified = $LiteralEnvironmentVerified
-        automaticEngageRecovered = $AutomaticEngageRecovered
-        killSwitchObservedState = $KillSwitchObservedState
-    })
-}
-
-function Write-LinuxSmokeCycle {
-    param(
-        [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][ValidateRange(1, 2)][long]$Sequence,
-        [Parameter(Mandatory = $true)][ValidateSet('bootstrap', 'automatic-engage')][string]$CycleAction,
-        [Parameter(Mandatory = $true)]$Cycle
-    )
-
-    Assert-SupervisorCycle $Cycle
-    if ([bool]$Cycle.credentialAccessed -or [bool]$Cycle.networkCalled) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    $record = [ordered]@{
-        sequence = $Sequence
-        action = $CycleAction
-        resultStatus = [string]$Cycle.resultStatus
-        reasonCode = [string]$Cycle.reasonCode
-        killSwitchObservedState = [string]$Cycle.killSwitchObservedState
-        credentialAccessed = $false
-        networkCalled = $false
-        realCycleOutcomeProven = [bool]$Cycle.realCycleOutcomeProven
-    }
-    [IO.File]::AppendAllText(
-        (Join-Path $Directory 'cycles.jsonl'),
-        (ConvertTo-CompactJson $record) + [Environment]::NewLine,
-        $script:Utf8NoBom
-    )
-    return [pscustomobject]$record
-}
-
-function Assert-LinuxOfflineSmokeEvidence {
-    param(
-        [Parameter(Mandatory = $true)][string]$Directory,
-        [switch]$RequireComplete
-    )
-
-    $resolved = Assert-LinuxManagedPath $Directory
-    $manifest = Read-JsonFile (Join-Path $resolved 'smoke-manifest.json')
-    $heartbeat = Read-JsonFile (Join-Path $resolved 'heartbeat.json')
-    $manifestFields = @(
-        'schemaVersion', 'runId', 'harnessCommit', 'supervisorArtifactSha256', 'startedAt', 'heartbeatSeconds',
-        'expectedCycles', 'environmentContract', 'networkPolicy',
-        'credentialAccessed', 'networkCalled', 'acceptanceClockStarted'
-    )
-    $heartbeatFields = @(
-        'schemaVersion', 'runId', 'state', 'reasonCode', 'observedAt', 'sequence',
-        'credentialAccessed', 'networkCalled', 'acceptanceClockStarted',
-        'literalEnvironmentVerified', 'automaticEngageRecovered', 'killSwitchObservedState'
-    )
-    if ((@($manifest.PSObject.Properties.Name) -join '|') -ne ($manifestFields -join '|') -or
-        (@($heartbeat.PSObject.Properties.Name) -join '|') -ne ($heartbeatFields -join '|')) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    $value = Split-Path -Leaf $resolved
-    $startedAt = [DateTimeOffset]::MinValue
-    $observedAt = [DateTimeOffset]::MinValue
-    if ([string]$manifest.schemaVersion -ne $script:LinuxSmokeSchemaVersion -or
-        [string]$heartbeat.schemaVersion -ne $script:LinuxSmokeSchemaVersion -or
-        [string]$manifest.runId -ne $value -or [string]$heartbeat.runId -ne $value -or
-        [string]$manifest.harnessCommit -notmatch '^[a-f0-9]{40}$' -or
-        [string]$manifest.supervisorArtifactSha256 -notmatch '^[a-f0-9]{64}$' -or
-        -not [DateTimeOffset]::TryParse([string]$manifest.startedAt, [ref]$startedAt) -or
-        -not [DateTimeOffset]::TryParse([string]$heartbeat.observedAt, [ref]$observedAt) -or
-        [int]$manifest.heartbeatSeconds -lt 1 -or [int]$manifest.heartbeatSeconds -gt 30 -or
-        [int]$manifest.expectedCycles -ne 2 -or
-        [string]$manifest.environmentContract -ne 'EPHEMERAL_LITERAL_V1' -or
-        [string]$manifest.networkPolicy -ne 'LOOPBACK_ONLY' -or
-        [long]$heartbeat.sequence -lt 0 -or
-        [string]$heartbeat.state -notin @('PREPARING', 'RUNNING', 'STOPPED', 'STOP_FAILURE') -or
-        [string]$heartbeat.reasonCode -notmatch '^[A-Z][A-Z0-9_]{1,95}$' -or
-        $manifest.credentialAccessed -isnot [bool] -or $heartbeat.credentialAccessed -isnot [bool] -or
-        $manifest.networkCalled -isnot [bool] -or $heartbeat.networkCalled -isnot [bool] -or
-        $manifest.acceptanceClockStarted -isnot [bool] -or $heartbeat.acceptanceClockStarted -isnot [bool] -or
-        [bool]$manifest.credentialAccessed -or [bool]$heartbeat.credentialAccessed -or
-        [bool]$manifest.networkCalled -or [bool]$heartbeat.networkCalled -or
-        $heartbeat.literalEnvironmentVerified -isnot [bool] -or
-        $heartbeat.automaticEngageRecovered -isnot [bool] -or
-        [string]$heartbeat.killSwitchObservedState -notin @('UNKNOWN', 'DISENGAGED', 'ENGAGED') -or
-        [bool]$manifest.acceptanceClockStarted -or [bool]$heartbeat.acceptanceClockStarted) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    $cycles = @()
-    foreach ($line in Get-Content -LiteralPath (Join-Path $resolved 'cycles.jsonl')) {
-        if ([string]::IsNullOrWhiteSpace([string]$line)) {
-            continue
-        }
-        $cycle = $line | ConvertFrom-Json
-        Assert-ExactFields $cycle $script:LinuxSmokeCycleFields 'offline smoke cycle'
-        $expectedAction = if ($cycles.Count -eq 0) {
-            'bootstrap'
-        }
-        else {
-            'automatic-engage'
-        }
-        if ([long]$cycle.sequence -ne ($cycles.Count + 1) -or
-            [string]$cycle.action -ne $expectedAction -or
-            [string]$cycle.resultStatus -notmatch '^[A-Z][A-Z0-9_]{1,95}$' -or
-            [string]$cycle.reasonCode -notmatch '^[A-Z][A-Z0-9_]{1,95}$' -or
-            [string]$cycle.killSwitchObservedState -notin @('UNKNOWN', 'DISENGAGED', 'ENGAGED') -or
-            $cycle.credentialAccessed -isnot [bool] -or $cycle.networkCalled -isnot [bool] -or
-            $cycle.realCycleOutcomeProven -isnot [bool] -or
-            [bool]$cycle.credentialAccessed -or [bool]$cycle.networkCalled) {
-            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-        }
-        $cycles += $cycle
-    }
-    if ($cycles.Count -gt 2 -or [long]$heartbeat.sequence -gt 2 -or
-        [long]$heartbeat.sequence -ne $cycles.Count) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    if ($RequireComplete) {
-        $complete = $cycles.Count -eq 2 -and
-            [string]$cycles[0].action -eq 'bootstrap' -and
-            [string]$cycles[0].resultStatus -eq 'BOOTSTRAP_READY' -and
-            [string]$cycles[0].killSwitchObservedState -eq 'DISENGAGED' -and
-            [bool]$cycles[0].realCycleOutcomeProven -and
-            [string]$cycles[1].action -eq 'automatic-engage' -and
-            [string]$cycles[1].resultStatus -eq 'ENGAGED' -and
-            [string]$cycles[1].killSwitchObservedState -eq 'ENGAGED' -and
-            [bool]$cycles[1].realCycleOutcomeProven -and
-            [long]$heartbeat.sequence -eq 2 -and
-            [string]$heartbeat.state -in @('RUNNING', 'STOPPED') -and
-            [bool]$heartbeat.literalEnvironmentVerified -and
-            [bool]$heartbeat.automaticEngageRecovered -and
-            [string]$heartbeat.killSwitchObservedState -eq 'ENGAGED'
-        if (-not $complete) {
-            throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
-        }
-    }
-    $expectedFiles = @('cycles.jsonl', 'heartbeat.json', 'smoke-manifest.json', 'supervisor.json')
-    $actualFiles = @(Get-ChildItem -LiteralPath $resolved -File | ForEach-Object { $_.Name } | Sort-Object)
-    if (($actualFiles -join '|') -ne (($expectedFiles | Sort-Object) -join '|')) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    foreach ($path in Get-ChildItem -LiteralPath $resolved -File) {
-        $text = Get-Content -LiteralPath $path.FullName -Raw
-        if ($text -match '(?i)"(api[-_]?key|secret[-_]?key|secret|passphrase|signature|cookie|raw[-_]?(body|headers|response|request))"\s*:' -or
-            $text -match '(?i)https?://') {
-            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-        }
-    }
-    return [pscustomobject]@{
-        RunId = $value
-        HeartbeatSequence = [long]$heartbeat.sequence
-        HeartbeatObservedAt = [string]$heartbeat.observedAt
-        CycleCount = $cycles.Count
-        CredentialAccessed = $false
-        NetworkCalled = $false
-        AcceptanceClockStarted = $false
-        LiteralEnvironmentVerified = [bool]$heartbeat.literalEnvironmentVerified
-        AutomaticEngageRecovered = [bool]$heartbeat.automaticEngageRecovered
-        KillSwitchObservedState = [string]$heartbeat.killSwitchObservedState
-    }
-}
-
-function Get-LinuxPublicListenerCount {
-    param([Parameter(Mandatory = $true)][long]$ProcessId)
-
-    foreach ($required in @($script:LinuxNsenterPath, $script:LinuxSsPath)) {
-        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
-            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-        }
-    }
-    $result = Invoke-LinuxNativeCommand -FilePath $script:LinuxNsenterPath -Arguments @(
-        '--target', ([string]$ProcessId), '--net', $script:LinuxSsPath, '-H', '-lntup'
-    ) -Privileged
-    if ($result.ExitCode -ne 0) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    # A loopback-only unit shares the host namespace, so count only listeners owned by this supervisor.
-    # Existing host SSH and loopback management listeners are outside the smoke process contract.
-    $pidPattern = '(^|[^0-9])pid=' + [regex]::Escape([string]$ProcessId) + '([^0-9]|$)'
-    return @(
-        $result.Lines | Where-Object {
-            -not [string]::IsNullOrWhiteSpace([string]$_) -and [string]$_ -match $pidPattern
-        }
-    ).Count
-}
-
-function Remove-LinuxSmokeDirectory {
-    param([Parameter(Mandatory = $true)][string]$Directory)
-
-    $resolved = Assert-LinuxManagedPath $Directory
-    Remove-Item -LiteralPath $resolved -Recurse -Force
-    if (Test-Path -LiteralPath $resolved) {
-        throw 'FAIL / SUPERVISOR_STOP_FAILED'
-    }
-}
-
-function Start-LinuxSmoke {
-    if (-not (Test-LinuxPlatform)) { throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE' }
-    $head = Assert-FixedDetachedWorktree
-    Assert-RuntimeEnvironment (Get-RuntimeEnvironmentSnapshot)
-    $artifactSha256 = Get-Sha256File $script:ScriptPath
-    $effectiveRunId = if ([string]::IsNullOrWhiteSpace($RunId)) { New-RunId } else { $RunId }
-    $directory = Get-LinuxSmokeDirectory $effectiveRunId
-    if (Test-Path -LiteralPath $directory) { throw 'BLOCKED / RUN_ID_ALREADY_EXISTS' }
-    [IO.Directory]::CreateDirectory($directory) | Out-Null
-    [IO.File]::WriteAllText((Join-Path $directory 'cycles.jsonl'), '', $script:Utf8NoBom)
-    $startedAt = (Get-UtcNow).ToString('o')
-    try {
-        Write-JsonAtomic (Join-Path $directory 'smoke-manifest.json') ([ordered]@{
-            schemaVersion = $script:LinuxSmokeSchemaVersion
-            runId = $effectiveRunId
-            harnessCommit = $head
-            supervisorArtifactSha256 = $artifactSha256
-            startedAt = $startedAt
-            heartbeatSeconds = $SmokeHeartbeatSeconds
-            expectedCycles = 2
-            environmentContract = 'EPHEMERAL_LITERAL_V1'
-            networkPolicy = 'LOOPBACK_ONLY'
-            credentialAccessed = $false
-            networkCalled = $false
-            acceptanceClockStarted = $false
-        })
-        Write-LinuxSmokeHeartbeat $directory 'PREPARING' 'TRANSIENT_UNIT_PENDING' 0 $false $false 'UNKNOWN'
-        Set-LinuxManagedPathOwnerOnly $directory
-        $process = Start-LinuxTransientUnit `
-            -Value $effectiveRunId `
-            -Directory $directory `
-            -WorkerAction 'linux-smoke-loop' `
-            -PrivateNetwork $false `
-            -LoopbackOnlyNetwork $true `
-            -IncludeEnvironmentFile $true
-        $heartbeat = $null
-        for ($attempt = 0; $attempt -lt 900; $attempt++) {
-            try {
-                $heartbeat = Assert-LinuxHeartbeatFresh $directory ([Math]::Max(10, $SmokeHeartbeatSeconds * 4)) 2
-                break
-            }
-            catch {
-                if ($_.Exception.Message -ne 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING') { throw }
-                $currentHeartbeat = Read-JsonFile (Join-Path $directory 'heartbeat.json')
-                if ([string]$currentHeartbeat.state -eq 'STOP_FAILURE') {
-                    if ([string]$currentHeartbeat.reasonCode -eq 'KILL_SWITCH_ENGAGE_FAILED') {
-                        throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
-                    }
-                    throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-                }
-                Start-Sleep -Milliseconds 200
-            }
-        }
-        if ($null -eq $heartbeat) { throw 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING' }
-        $evidence = Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete
-        if (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $effectiveRunId)) {
-            throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-        }
-        $listenerCount = Get-LinuxPublicListenerCount $process.Id
-        if ($listenerCount -ne 0) { throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH' }
-        return [pscustomobject]@{
-            decision = 'PASS / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE_STARTED'
-            runId = $effectiveRunId
-            harnessCommit = $head
-            supervisorArtifactSha256 = $artifactSha256
-            unitName = $process.UnitName
-            mainPid = [long]$process.Id
-            supervisorStartedAt = [string]$process.StartTime
-            heartbeatSequence = $evidence.HeartbeatSequence
-            heartbeatObservedAt = $evidence.HeartbeatObservedAt
-            credentialAccessed = $false
-            networkCalled = $false
-            acceptanceClockStarted = $false
-            literalEnvironmentVerified = $evidence.LiteralEnvironmentVerified
-            automaticEngageRecovered = $evidence.AutomaticEngageRecovered
-            killSwitchObservedState = $evidence.KillSwitchObservedState
-            completedCycles = $evidence.CycleCount
-            privateNetwork = $false
-            loopbackOnlyNetwork = $true
-            publicListenerCount = $listenerCount
-            environmentFileLoaded = $true
-            runtimeEnvironmentFilePresent = $false
-        }
-    }
-    catch {
-        $failureMessage = $_.Exception.Message
-        try { Stop-LinuxTransientUnit $effectiveRunId 'linux-smoke-loop' | Out-Null } catch {
-            $failureMessage = 'FAIL / SUPERVISOR_STOP_FAILED'
-        }
-        if (Test-Path -LiteralPath $directory) {
-            try {
-                $recovery = Invoke-SanitizedCycle 'engage' $directory
-                if ([string]$recovery.resultStatus -ne 'ENGAGED' -or
-                    [string]$recovery.killSwitchObservedState -ne 'ENGAGED') {
-                    $failureMessage = 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
-                }
-            }
-            catch {
-                $failureMessage = 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
-            }
-        }
-        if (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $effectiveRunId)) {
-            try {
-                Remove-LinuxRuntimeEnvironmentFile $effectiveRunId
-            }
-            catch {
-                $failureMessage = 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-            }
-        }
-        if (Test-Path -LiteralPath $directory) { Remove-LinuxSmokeDirectory $directory }
-        throw $failureMessage
-    }
-}
-
-function Run-LinuxSmokeLoop {
-    if (-not (Test-LinuxPlatform)) { throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE' }
-    $directory = Get-LinuxSmokeDirectory $RunId
-    $manifest = Read-JsonFile (Join-Path $directory 'smoke-manifest.json')
-    Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
-    if ((Get-Sha256File $script:ScriptPath) -ne [string]$manifest.supervisorArtifactSha256) {
-        throw 'BLOCKED / HARNESS_COMMIT_CHANGED'
-    }
-    if ([string]$manifest.schemaVersion -ne $script:LinuxSmokeSchemaVersion -or
-        [string]$manifest.runId -ne $RunId -or
-        [int]$manifest.heartbeatSeconds -lt 1 -or [int]$manifest.heartbeatSeconds -gt 30 -or
-        [int]$manifest.expectedCycles -ne 2 -or
-        [string]$manifest.environmentContract -ne 'EPHEMERAL_LITERAL_V1' -or
-        [string]$manifest.networkPolicy -ne 'LOOPBACK_ONLY' -or
-        [bool]$manifest.credentialAccessed -or [bool]$manifest.networkCalled -or
-        [bool]$manifest.acceptanceClockStarted) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-    Assert-RuntimeEnvironment (Get-RuntimeEnvironmentSnapshot)
-    $cyclesPath = Join-Path $directory 'cycles.jsonl'
-    if (-not (Test-Path -LiteralPath $cyclesPath -PathType Leaf) -or
-        (Get-Item -LiteralPath $cyclesPath).Length -ne 0) {
-        throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-    }
-
-    $bootstrapFailure = $null
-    $bootstrapRecorded = $false
-    try {
-        $bootstrap = Invoke-SanitizedCycle 'bootstrap' $directory
-        if ([string]$bootstrap.resultStatus -ne 'BOOTSTRAP_READY' -or
-            [string]$bootstrap.killSwitchObservedState -ne 'DISENGAGED' -or
-            [bool]$bootstrap.credentialAccessed -or [bool]$bootstrap.networkCalled -or
-            -not [bool]$bootstrap.realCycleOutcomeProven) {
-            throw 'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-        }
-        Write-LinuxSmokeCycle $directory 1 'bootstrap' $bootstrap | Out-Null
-        $bootstrapRecorded = $true
-        Write-LinuxSmokeHeartbeat $directory 'RUNNING' 'OFFLINE_BOOTSTRAP_READY' 1 $true $false 'DISENGAGED'
-    }
-    catch {
-        $bootstrapFailure = if ($_.Exception.Message -match '^(BLOCKED|FAIL) / [A-Z0-9_]+$') {
-            $_.Exception.Message
-        }
-        else {
-            'FAIL / SUPERVISOR_RECONNECT_STATUS_FAILED'
-        }
-    }
-
-    $engage = Invoke-SanitizedCycle 'engage' $directory
-    if ([string]$engage.resultStatus -ne 'ENGAGED' -or
-        [string]$engage.killSwitchObservedState -ne 'ENGAGED' -or
-        [bool]$engage.credentialAccessed -or [bool]$engage.networkCalled -or
-        -not [bool]$engage.realCycleOutcomeProven) {
-        $failureSequence = if ($bootstrapRecorded) {
-            1L
-        }
-        else {
-            0L
-        }
-        Write-LinuxSmokeHeartbeat $directory 'STOP_FAILURE' 'KILL_SWITCH_ENGAGE_FAILED' `
-            $failureSequence $true $false 'UNKNOWN'
-        throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
-    }
-    if ($null -ne $bootstrapFailure) {
-        $failureSequence = if ($bootstrapRecorded) {
-            1L
-        }
-        else {
-            0L
-        }
-        Write-LinuxSmokeHeartbeat $directory 'STOP_FAILURE' 'OFFLINE_BOOTSTRAP_FAILED' `
-            $failureSequence $true $true 'ENGAGED'
-        throw $bootstrapFailure
-    }
-
-    Write-LinuxSmokeCycle $directory 2 'automatic-engage' $engage | Out-Null
-    Write-LinuxSmokeHeartbeat $directory 'RUNNING' 'OFFLINE_AUTOMATIC_ENGAGE_RECOVERED' 2 $true $true 'ENGAGED'
-    while ($true) {
-        Write-LinuxSmokeHeartbeat $directory 'RUNNING' 'OFFLINE_TWO_CYCLE_COMPLETE' 2 $true $true 'ENGAGED'
-        Start-Sleep -Seconds ([int]$manifest.heartbeatSeconds)
-    }
-}
-
-function Get-LinuxSmokeStatus {
-    if (-not (Test-LinuxPlatform)) { throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE' }
-    $directory = Get-LinuxSmokeDirectory $RunId
-    $evidence = Assert-LinuxOfflineSmokeEvidence $directory
-    $complete = $evidence.CycleCount -eq 2
-    if ($complete) {
-        Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete | Out-Null
-    }
-    $manifest = Read-JsonFile (Join-Path $directory 'smoke-manifest.json')
-    Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
-    if ((Get-Sha256File $script:ScriptPath) -ne [string]$manifest.supervisorArtifactSha256) {
-        throw 'BLOCKED / HARNESS_COMMIT_CHANGED'
-    }
-    $unitName = Get-LinuxUnitName $RunId
-    $state = Get-LinuxUnitState $unitName
-    $environmentFile = Get-LinuxRuntimeEnvironmentFile $RunId
-    Assert-LinuxUnitContract $state $false $true $environmentFile
-    Assert-LinuxProcessIdentity $state.MainPID $RunId 'linux-smoke-loop'
-    $sentinel = Assert-LinuxSupervisorSentinel $directory $RunId $unitName $state.MainPID 'linux-smoke-loop'
-    $minimumSequence = if ($complete) {
-        2L
-    }
-    else {
-        0L
-    }
-    $heartbeat = Assert-LinuxHeartbeatFresh $directory `
-        ([Math]::Max(10, [int]$manifest.heartbeatSeconds * 4)) $minimumSequence
-    if (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $RunId)) {
-        throw 'FAIL / RUNTIME_ENVIRONMENT_CLEANUP_FAILED'
-    }
-    $listenerCount = Get-LinuxPublicListenerCount $state.MainPID
-    if ($listenerCount -ne 0) { throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH' }
-    return [pscustomobject]@{
-        decision = if ($complete) {
-            'PASS / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE'
-        }
-        else {
-            'PENDING / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE'
-        }
-        runId = $RunId
-        harnessCommit = $manifest.harnessCommit
-        supervisorArtifactSha256 = $manifest.supervisorArtifactSha256
-        unitName = $unitName
-        loadState = $state.LoadState
-        activeState = $state.ActiveState
-        subState = $state.SubState
-        mainPid = [long]$state.MainPID
-        supervisorStartedAt = $sentinel.startedAt
-        heartbeatSequence = [long]$heartbeat.sequence
-        heartbeatObservedAt = [string]$heartbeat.observedAt
-        credentialAccessed = $evidence.CredentialAccessed
-        networkCalled = $evidence.NetworkCalled
-        acceptanceClockStarted = $evidence.AcceptanceClockStarted
-        literalEnvironmentVerified = $evidence.LiteralEnvironmentVerified
-        automaticEngageRecovered = $evidence.AutomaticEngageRecovered
-        killSwitchObservedState = $evidence.KillSwitchObservedState
-        completedCycles = $evidence.CycleCount
-        privateNetwork = $false
-        loopbackOnlyNetwork = $true
-        publicListenerCount = $listenerCount
-        environmentFileLoaded = ([string]$state.EnvironmentFiles -like "*$environmentFile*")
-        runtimeEnvironmentFilePresent = $false
-    }
-}
-
-function Stop-LinuxSmoke {
-    if (-not (Test-LinuxPlatform)) { throw 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE' }
-    $directory = Get-LinuxSmokeDirectory $RunId
-    $evidence = Assert-LinuxOfflineSmokeEvidence $directory
-    $completionFailure = $null
-    try {
-        Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete | Out-Null
-    }
-    catch {
-        $completionFailure = $_.Exception.Message
-    }
-    $unitName = Get-LinuxUnitName $RunId
-    $state = Get-LinuxUnitState $unitName
-    if ([string]$state.ActiveState -eq 'active') {
-        Assert-LinuxUnitContract $state $false $true (Get-LinuxRuntimeEnvironmentFile $RunId)
-        Assert-LinuxProcessIdentity $state.MainPID $RunId 'linux-smoke-loop'
-        Assert-LinuxSupervisorSentinel $directory $RunId $unitName $state.MainPID 'linux-smoke-loop' | Out-Null
-        if ((Get-LinuxPublicListenerCount $state.MainPID) -ne 0) {
-            throw 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
-        }
-    }
-    $stopped = Stop-LinuxTransientUnit $RunId 'linux-smoke-loop'
-    $killSwitchState = [string]$evidence.KillSwitchObservedState
-    if ($killSwitchState -ne 'ENGAGED') {
-        $recovery = Invoke-SanitizedCycle 'engage' $directory
-        if ([string]$recovery.resultStatus -ne 'ENGAGED' -or
-            [string]$recovery.killSwitchObservedState -ne 'ENGAGED') {
-            throw 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
-        }
-        $killSwitchState = 'ENGAGED'
-    }
-    if ($null -eq $completionFailure) {
-        Write-LinuxSmokeHeartbeat $directory 'STOPPED' 'OPERATOR_SMOKE_STOP' 2 $true $true 'ENGAGED'
-    }
-    else {
-        Write-LinuxSmokeHeartbeat $directory 'STOP_FAILURE' 'OFFLINE_TWO_CYCLE_INCOMPLETE' `
-            $evidence.HeartbeatSequence $evidence.LiteralEnvironmentVerified `
-            $evidence.AutomaticEngageRecovered $killSwitchState
-    }
-    Set-LinuxManagedPathOwnerOnly $directory
-    if ($null -eq $completionFailure) {
-        Assert-LinuxOfflineSmokeEvidence $directory -RequireComplete | Out-Null
-    }
-    else {
-        Assert-LinuxOfflineSmokeEvidence $directory | Out-Null
-    }
-    Remove-LinuxRuntimeEnvironmentFile $RunId
-    Remove-LinuxSmokeDirectory $directory
-    if ($null -ne $completionFailure) {
-        throw $completionFailure
-    }
-    return [pscustomobject]@{
-        decision = 'PASS / LINUX_TRANSIENT_SUPERVISOR_TWO_CYCLE_OFFLINE_SMOKE_STOPPED'
-        runId = $RunId
-        unitName = $stopped.UnitName
-        mainPidBefore = $stopped.MainPidBefore
-        activeState = $stopped.ActiveState
-        mainPid = $stopped.MainPID
-        residualProcessCount = $stopped.ResidualProcessCount
-        loadStateAfterCollect = $stopped.LoadStateAfterCollect
-        credentialAccessed = $false
-        networkCalled = $false
-        acceptanceClockStarted = $false
-        temporaryFilesRemoved = (-not (Test-Path -LiteralPath $directory))
-        runtimeEnvironmentRemoved = (-not (Test-Path -LiteralPath (Get-LinuxRuntimeEnvironmentDirectory $RunId)))
-        literalEnvironmentVerified = $true
-        automaticEngageRecovered = $true
-        killSwitchObservedState = 'ENGAGED'
-        terminalStatusVerified = ($stopped.LoadStateAfterCollect -eq 'not-found' -and
-            $stopped.ActiveState -eq 'inactive' -and [long]$stopped.MainPID -eq 0)
-    }
-}
-
-function Cleanup-RunControlFiles {
     $directory = Get-RunDirectory $RunId
     $state = Get-SupervisorState $directory
-    if ($state.Running) { throw 'BLOCKED / SOAK_STILL_RUNNING' }
+    if ($state.Running)
+    {
+        throw 'BLOCKED / SOAK_STILL_RUNNING'
+    }
     Test-Evidence $directory | Out-Null
-    foreach ($file in Get-ChildItem -LiteralPath $directory -File) {
-        if ($file.Name -like '.cycle-*.json' -or $file.Name -in @('stop-request.json', 'supervisor.json')) {
+    foreach ($file in Get-ChildItem -LiteralPath $directory -File)
+    {
+        if ($file.Name -like '.cycle-*.json' -or $file.Name -in @('stop-request.json', 'supervisor.json'))
+        {
             Remove-Item -LiteralPath $file.FullName -Force
         }
     }
@@ -2764,16 +2072,19 @@ function Cleanup-RunControlFiles {
     }
 }
 
-function Invoke-SelfTest {
+function Invoke-SelfTest
+{
     $directories = @()
     $caseCount = 0
     $testRunId = New-RunId
     $directory = Get-RunDirectory $testRunId
     $directories += $directory
     [IO.Directory]::CreateDirectory($directory) | Out-Null
-    try {
-        $runtimeEnvironment = @{}
-        foreach ($name in $script:RuntimeEnvironmentNames) {
+    try
+    {
+        $runtimeEnvironment = @{ }
+        foreach ($name in $script:RuntimeEnvironmentNames)
+        {
             $runtimeEnvironment[$name] = ''
         }
         $runtimeEnvironment.SPRING_PROFILES_ACTIVE = 'gatew-okx-readonly-soak'
@@ -2784,7 +2095,8 @@ function Invoke-SelfTest {
             'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED', 'NQ_TRANSFER_ENABLED', 'NQ_WITHDRAW_ENABLED',
             'NQ_AI_ENABLED', 'NQ_DH_RUNTIME_ENABLED', 'NQ_REAL_PROVIDER_ENABLED', 'NQ_REAL_CLIENT_ENABLED',
             'NQ_REAL_EXCHANGE_ENABLED'
-        )) {
+        ))
+        {
             $runtimeEnvironment[$name] = 'false'
         }
         $runtimeEnvironment.NQ_GATEW_SOAK_DB_URL = 'jdbc:postgresql://127.0.0.1:55432/nq_gatew_soak_fixture'
@@ -2795,301 +2107,42 @@ function Invoke-SelfTest {
         $runtimeEnvironment.NQ_GATEW_SOAK_ACCOUNT_ID = '1'
         $runtimeEnvironment.NQ_GATEW_SOAK_CURRENCIES = 'BTC'
         Assert-RuntimeEnvironment $runtimeEnvironment
-        $runtimeContent = New-LinuxRuntimeEnvironmentContent $runtimeEnvironment
-        if ($runtimeContent -notlike '*NQ_GATEW_SOAK_DB_URL="jdbc:postgresql://127.0.0.1:55432/nq_gatew_soak_fixture"*' -or
-            @($script:DirectOkxEnvironmentNames | Where-Object { $runtimeContent -match [regex]::Escape($_) }).Count -ne 0 -or
-            (ConvertTo-SystemdEnvironmentFileLiteral 'alpha\beta"gamma') -cne '"alpha\\beta\"gamma"') {
-            throw 'literal runtime environment self-test failed'
-        }
-        $runtimeContent = $null
-        $caseCount++
-
-        $variableEnvironment = @{}
-        foreach ($name in $runtimeEnvironment.Keys) {
+        $variableEnvironment = @{ }
+        foreach ($name in $runtimeEnvironment.Keys)
+        {
             $variableEnvironment[$name] = $runtimeEnvironment[$name]
         }
         $variableEnvironment.NQ_GATEW_SOAK_DB_URL = '${NQ_GATEW_SOAK_DB_URL_LITERAL}'
         $variableReferenceRejected = $false
-        try {
+        try
+        {
             Assert-RuntimeEnvironment $variableEnvironment
         }
-        catch {
+        catch
+        {
             $variableReferenceRejected = $_.Exception.Message -eq 'BLOCKED / RUNTIME_ENVIRONMENT_NOT_LITERAL'
         }
-        if (-not $variableReferenceRejected) {
+        if (-not $variableReferenceRejected)
+        {
             throw 'runtime variable reference was not rejected'
         }
         $caseCount++
 
-        $runtimeEnvironmentFile = Get-LinuxRuntimeEnvironmentFile $testRunId
-        $transientArguments = @(New-LinuxTransientUnitArguments `
-            -Value $testRunId `
-            -WorkerAction 'run-loop' `
-            -PrivateNetwork $false `
-            -LoopbackOnlyNetwork $false `
-            -IncludeEnvironmentFile $true `
-            -PowerShellPath $script:LinuxPowerShellPath `
-            -SupervisorPath $script:LinuxSupervisorPath `
-            -WorkingDirectory $script:LinuxWorkingDirectory `
-            -EnvironmentFile $runtimeEnvironmentFile)
-        $requiredArguments = @(
-            "--unit=$(Get-LinuxUnitName $testRunId)", '--collect', '--service-type=exec',
-            "--property=User=$($script:LinuxRuntimeUser)",
-            "--property=Group=$($script:LinuxRuntimeGroup)",
-            "--property=WorkingDirectory=$($script:LinuxWorkingDirectory)",
-            '--property=Restart=no', '--property=KillMode=mixed', '--property=TimeoutStopSec=30',
-            '--property=PrivateTmp=true', '--property=NoNewPrivileges=true', '--property=UMask=0077',
-            "--property=EnvironmentFile=$runtimeEnvironmentFile", '--',
-            $script:LinuxPowerShellPath, '-File', $script:LinuxSupervisorPath,
-            '-Action', 'run-loop', '-RunId', $testRunId
+        $workerSource = [IO.File]::ReadAllText($script:ScriptPath)
+        $forbiddenLinuxAuthorityTokens = @(
+            ('systemd' + '-run'),
+            ('linux' + '-smoke-'),
+            ('Start-Linux' + 'TransientUnit'),
+            ('Stop-Linux' + 'TransientUnit'),
+            ('New-Linux' + 'TransientUnitArguments')
         )
-        foreach ($argument in $requiredArguments) {
-            if ($transientArguments -cnotcontains $argument) {
-                throw 'Linux transient argument contract self-test failed'
+        foreach ($token in $forbiddenLinuxAuthorityTokens)
+        {
+            if ( $workerSource.Contains($token))
+            {
+                throw 'legacy Linux production authority remains'
             }
         }
-        if ($transientArguments -contains '--property=PrivateNetwork=true' -or
-            $transientArguments -contains '--property=IPAddressDeny=any' -or
-            @($transientArguments | Where-Object { $_ -in @('bash', 'sh', 'eval', 'Invoke-Expression') }).Count -ne 0) {
-            throw 'Linux transient argument contract self-test exposed a shell or wrong network contract'
-        }
-        $caseCount++
-
-        $offlineArguments = @(New-LinuxTransientUnitArguments `
-            -Value $testRunId `
-            -WorkerAction 'linux-smoke-loop' `
-            -PrivateNetwork $false `
-            -LoopbackOnlyNetwork $true `
-            -IncludeEnvironmentFile $true `
-            -PowerShellPath $script:LinuxPowerShellPath `
-            -SupervisorPath $script:LinuxSupervisorPath `
-            -WorkingDirectory $script:LinuxWorkingDirectory `
-            -EnvironmentFile $runtimeEnvironmentFile)
-        if ($offlineArguments -cnotcontains '--property=IPAddressDeny=any' -or
-            $offlineArguments -cnotcontains '--property=IPAddressAllow=localhost' -or
-            $offlineArguments -contains '--property=PrivateNetwork=true') {
-            throw 'loopback-only transient argument contract self-test failed'
-        }
-        $caseCount++
-
-        $networkPolicyConflictRejected = $false
-        try {
-            New-LinuxTransientUnitArguments `
-                -Value $testRunId `
-                -WorkerAction 'linux-smoke-loop' `
-                -PrivateNetwork $true `
-                -LoopbackOnlyNetwork $true `
-                -IncludeEnvironmentFile $false `
-                -PowerShellPath $script:LinuxPowerShellPath `
-                -SupervisorPath $script:LinuxSupervisorPath `
-                -WorkingDirectory $script:LinuxWorkingDirectory `
-                -EnvironmentFile '' | Out-Null
-        }
-        catch {
-            $networkPolicyConflictRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
-        }
-        if (-not $networkPolicyConflictRejected) {
-            throw 'conflicting network policy was not rejected'
-        }
-        $caseCount++
-
-        $runIdInjectionRejected = $false
-        try { Assert-SystemdRunId "$testRunId;id" } catch {
-            $runIdInjectionRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_CREATE_FAILED'
-        }
-        if (-not $runIdInjectionRejected) { throw 'systemd runId injection was not rejected' }
-        $caseCount++
-
-        $pathInjectionRejected = $false
-        try {
-            New-LinuxTransientUnitArguments `
-                -Value $testRunId `
-                -WorkerAction 'run-loop' `
-                -PrivateNetwork $false `
-                -LoopbackOnlyNetwork $false `
-                -IncludeEnvironmentFile $true `
-                -PowerShellPath $script:LinuxPowerShellPath `
-                -SupervisorPath '/tmp/attacker.ps1' `
-                -WorkingDirectory $script:LinuxWorkingDirectory `
-                -EnvironmentFile $runtimeEnvironmentFile | Out-Null
-        }
-        catch {
-            $pathInjectionRejected = $_.Exception.Message -eq 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-        }
-        if (-not $pathInjectionRejected) { throw 'Linux runtime path injection was not rejected' }
-        $caseCount++
-
-        $environmentPathInjectionRejected = $false
-        try {
-            New-LinuxTransientUnitArguments `
-                -Value $testRunId `
-                -WorkerAction 'run-loop' `
-                -PrivateNetwork $false `
-                -LoopbackOnlyNetwork $false `
-                -IncludeEnvironmentFile $true `
-                -PowerShellPath $script:LinuxPowerShellPath `
-                -SupervisorPath $script:LinuxSupervisorPath `
-                -WorkingDirectory $script:LinuxWorkingDirectory `
-                -EnvironmentFile $script:LinuxEnvironmentFile | Out-Null
-        }
-        catch {
-            $environmentPathInjectionRejected = $_.Exception.Message -eq 'FAIL / LINUX_RUNTIME_PATH_INVALID'
-        }
-        if (-not $environmentPathInjectionRejected) {
-            throw 'fixed environment path was accepted for a dynamic run'
-        }
-        $caseCount++
-
-        if ((Get-LinuxUnitName $testRunId) -cne "nq-gatew-soak-$testRunId.service") {
-            throw 'systemd unit name self-test failed'
-        }
-        $caseCount++
-
-        $activeUnitLines = @(
-            'LoadState=loaded', 'ActiveState=active', 'SubState=running', 'MainPID=4242',
-            'ExecMainStatus=0', "FragmentPath=/run/systemd/transient/nq-gatew-soak-$testRunId.service",
-            "User=$($script:LinuxRuntimeUser)", "Group=$($script:LinuxRuntimeGroup)",
-            "WorkingDirectory=$($script:LinuxWorkingDirectory)", 'Restart=no', 'KillMode=mixed',
-            'TimeoutStopUSec=30s', 'PrivateTmp=yes', 'NoNewPrivileges=yes', 'UMask=0077',
-            'PrivateNetwork=no', "EnvironmentFiles=$runtimeEnvironmentFile (ignore_errors=no)",
-            'IPAddressDeny=', 'IPAddressAllow='
-        )
-        $activeUnitState = ConvertFrom-SystemctlShowOutput $activeUnitLines
-        if ($activeUnitState.MainPID -ne 4242 -or $activeUnitState.ActiveState -ne 'active') {
-            throw 'systemctl show parsing self-test failed'
-        }
-        $caseCount++
-        Assert-LinuxUnitContract $activeUnitState $false $false $runtimeEnvironmentFile
-        $caseCount++
-
-        $activeNoEnvironmentState = ConvertFrom-SystemctlShowOutput @(
-            $activeUnitLines |
-                Where-Object { $_ -notmatch '^EnvironmentFiles=' } |
-                ForEach-Object { $_ -replace '^PrivateNetwork=no$', 'PrivateNetwork=yes' }
-        )
-        if ([string]$activeNoEnvironmentState.EnvironmentFiles -ne '') {
-            throw 'missing systemd EnvironmentFiles was not normalized to empty'
-        }
-        Assert-LinuxUnitContract $activeNoEnvironmentState $true $false ''
-        $caseCount++
-
-        $missingRequiredEnvironmentRejected = $false
-        try {
-            Assert-LinuxUnitContract $activeNoEnvironmentState $true $false $runtimeEnvironmentFile
-        }
-        catch {
-            $missingRequiredEnvironmentRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_PROPERTY_MISMATCH'
-        }
-        if (-not $missingRequiredEnvironmentRejected) {
-            throw 'real soak accepted a missing systemd EnvironmentFiles property'
-        }
-        $caseCount++
-
-        $inactiveRejected = $false
-        $inactiveUnitState = ConvertFrom-SystemctlShowOutput @(
-            $activeUnitLines | ForEach-Object { $_ -replace '^ActiveState=active$', 'ActiveState=inactive' }
-        )
-        try {
-            Assert-LinuxUnitContract $inactiveUnitState $false $false $runtimeEnvironmentFile
-        }
-        catch {
-            $inactiveRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_NOT_ACTIVE'
-        }
-        if (-not $inactiveRejected) { throw 'inactive transient unit was reported as running' }
-        $caseCount++
-
-        $missingMainPidRejected = $false
-        $missingMainPidState = ConvertFrom-SystemctlShowOutput @(
-            $activeUnitLines | ForEach-Object { $_ -replace '^MainPID=4242$', 'MainPID=0' }
-        )
-        try {
-            Assert-LinuxUnitContract $missingMainPidState $false $false $runtimeEnvironmentFile
-        }
-        catch {
-            $missingMainPidRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_MAIN_PID_MISSING'
-        }
-        if (-not $missingMainPidRejected) { throw 'zero MainPID was accepted' }
-        $caseCount++
-
-        $unitUserMismatchRejected = $false
-        $wrongUserState = ConvertFrom-SystemctlShowOutput @(
-            $activeUnitLines | ForEach-Object { $_ -replace '^User=nqgatew$', 'User=root' }
-        )
-        try {
-            Assert-LinuxUnitContract $wrongUserState $false $false $runtimeEnvironmentFile
-        }
-        catch {
-            $unitUserMismatchRejected = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_USER_MISMATCH'
-        }
-        if (-not $unitUserMismatchRejected) { throw 'wrong transient unit user was accepted' }
-        $caseCount++
-
-        $loopbackOnlyUnitState = ConvertFrom-SystemctlShowOutput @(
-            $activeUnitLines | ForEach-Object {
-                $_ -replace '^IPAddressDeny=$', 'IPAddressDeny=any' `
-                    -replace '^IPAddressAllow=$', 'IPAddressAllow=localhost'
-            }
-        )
-        Assert-LinuxUnitContract $loopbackOnlyUnitState $false $true $runtimeEnvironmentFile
-        $caseCount++
-
-        $terminalUnitState = ConvertFrom-SystemctlShowOutput @(
-            'LoadState=not-found', 'ActiveState=inactive', 'SubState=dead', 'MainPID=0',
-            'ExecMainStatus=0', 'FragmentPath=', 'User=', 'Group=', 'WorkingDirectory=',
-            'Restart=no', 'KillMode=', 'TimeoutStopUSec=', 'PrivateTmp=no',
-            'NoNewPrivileges=no', 'UMask=', 'PrivateNetwork=no'
-        )
-        if ($terminalUnitState.LoadState -ne 'not-found' -or $terminalUnitState.ActiveState -ne 'inactive' -or
-            $terminalUnitState.SubState -ne 'dead' -or [long]$terminalUnitState.MainPID -ne 0 -or
-            $terminalUnitState.EnvironmentFiles -ne '' -or $terminalUnitState.IPAddressDeny -ne '' -or
-            $terminalUnitState.IPAddressAllow -ne '') {
-            throw 'terminal systemctl state self-test failed'
-        }
-        $caseCount++
-
-        Write-Heartbeat $directory 'SELF_TEST' 'NO_PRIVATE_NETWORK_CALLED'
-        $unchangedHeartbeat = Read-JsonFile (Join-Path $directory 'heartbeat.json')
-        $heartbeatAdvanceRejected = $false
-        try {
-            Assert-LinuxHeartbeatFresh $directory 60 0 ([string]$unchangedHeartbeat.observedAt) | Out-Null
-        }
-        catch {
-            $heartbeatAdvanceRejected = $_.Exception.Message -eq 'FAIL / SUPERVISOR_HEARTBEAT_NOT_ADVANCING'
-        }
-        if (-not $heartbeatAdvanceRejected) { throw 'unchanged supervisor heartbeat was accepted' }
-        $caseCount++
-
-        $systemdUnavailableRejected = $false
-        try { Assert-SystemdRunAvailable $false } catch {
-            $systemdUnavailableRejected = $_.Exception.Message -eq 'BLOCKED / SYSTEMD_RUN_UNAVAILABLE'
-        }
-        if (-not $systemdUnavailableRejected) { throw 'missing systemd-run was not classified' }
-        $caseCount++
-
-        $unitCreateFailureClassified = $false
-        try { Assert-LinuxNativeSuccess 1 'TRANSIENT_UNIT_CREATE_FAILED' } catch {
-            $unitCreateFailureClassified = $_.Exception.Message -eq 'FAIL / TRANSIENT_UNIT_CREATE_FAILED'
-        }
-        if (-not $unitCreateFailureClassified) { throw 'transient unit create failure was not classified' }
-        $caseCount++
-
-        $expectedLinuxCommand = @(Get-LinuxExpectedProcessCommandLine $testRunId 'run-loop')
-        if (-not (Test-LinuxSupervisorProcessMatch $expectedLinuxCommand $testRunId 'run-loop') -or
-            -not (Test-LinuxSupervisorProcessMatch (@($expectedLinuxCommand) + @('-ExtraSafeArgument')) $testRunId 'run-loop') -or
-            (Test-LinuxSupervisorProcessMatch $expectedLinuxCommand (New-RunId) 'run-loop')) {
-            throw 'residual supervisor identity matching self-test failed'
-        }
-        Assert-NoResidualSupervisor @()
-        $caseCount++
-        $residualRejected = $false
-        try { Assert-NoResidualSupervisor @(4242) } catch {
-            $residualRejected = $_.Exception.Message -eq 'FAIL / SUPERVISOR_RESIDUAL_PROCESS_FOUND'
-        }
-        if (-not $residualRejected) { throw 'residual supervisor process was accepted' }
-        $caseCount++
-
-        $enumeratedResiduals = @(Find-LinuxSupervisorProcesses $testRunId 'linux-smoke-loop')
-        Assert-NoResidualSupervisor $enumeratedResiduals
         $caseCount++
 
         $windowsArguments = @(New-WindowsLoopProcessArguments $testRunId $script:ScriptPath)
@@ -3097,131 +2150,31 @@ function Invoke-SelfTest {
             '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $script:ScriptPath + '"'),
             '-Action', 'run-loop', '-RunId', $testRunId
         )
-        if (($windowsArguments -join [char]31) -cne ($expectedWindowsArguments -join [char]31)) {
+        if (($windowsArguments -join [char]31) -cne ($expectedWindowsArguments -join [char]31))
+        {
             throw 'accepted Windows Start-Process arguments changed'
         }
         $caseCount++
 
-        $expectedOfflineSmokeRoot = [IO.Path]::GetFullPath((Join-Path $script:EvidenceRoot 'offline-smoke'))
-        $offlineRootMatches = [string]::Equals(
-            $script:LinuxSmokeRoot,
-            $expectedOfflineSmokeRoot,
-            [StringComparison]::OrdinalIgnoreCase
-        )
-        $serverOfflineRootMatches = $script:LinuxSmokeDirectory -ceq `
-            '/opt/nexus-quant/gatew-soak/app/repo/target/gatew-okx-readonly-soak/offline-smoke'
-        if (-not $offlineRootMatches -or -not $serverOfflineRootMatches) {
-            throw 'canonical offline smoke root changed'
-        }
-        $caseCount++
-
-        $smokeRunId = New-RunId
-        $smokeDirectory = Get-LinuxSmokeDirectory $smokeRunId
-        if (-not [string]::Equals(
-                [IO.Path]::GetDirectoryName($smokeDirectory),
-                $expectedOfflineSmokeRoot,
-                [StringComparison]::OrdinalIgnoreCase
-            )) {
-            throw 'offline smoke run escaped canonical root'
-        }
-        $directories += $smokeDirectory
-        [IO.Directory]::CreateDirectory($smokeDirectory) | Out-Null
-        [IO.File]::WriteAllText((Join-Path $smokeDirectory 'cycles.jsonl'), '', $script:Utf8NoBom)
-        $smokeStartedAt = (Get-UtcNow).ToString('o')
-        Write-JsonAtomic (Join-Path $smokeDirectory 'smoke-manifest.json') ([ordered]@{
-            schemaVersion = $script:LinuxSmokeSchemaVersion
-            runId = $smokeRunId
-            harnessCommit = '0' * 40
-            supervisorArtifactSha256 = '0' * 64
-            startedAt = $smokeStartedAt
-            heartbeatSeconds = 2
-            expectedCycles = 2
-            environmentContract = 'EPHEMERAL_LITERAL_V1'
-            networkPolicy = 'LOOPBACK_ONLY'
-            credentialAccessed = $false
-            networkCalled = $false
-            acceptanceClockStarted = $false
-        })
-        $bootstrapFixture = [pscustomobject][ordered]@{
-            schemaVersion = $script:LauncherSchemaVersion
-            cycleId = 'gatew-cycle-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-            observedAt = '2026-07-18T00:00:00Z'
-            durationMs = 1L
-            resultStatus = 'BOOTSTRAP_READY'
-            reasonCode = 'SOAK_ISOLATION_READY'
-            httpStatusCategory = 'NOT_CALLED'
-            permissionClassification = 'METADATA_READ_ONLY'
-            killSwitchObservedState = 'DISENGAGED'
-            credentialAccessed = $false
-            networkCalled = $false
-            allowedEndpointCategory = 'NONE'
-            accountConfigProbeStatus = 'NOT_RUN'
-            balanceProbeStatus = 'NOT_RUN'
-            traceId = 'gatew-soak-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
-            realCycleOutcomeProven = $true
-        }
-        $engageFixture = [pscustomobject][ordered]@{
-            schemaVersion = $script:LauncherSchemaVersion
-            cycleId = 'gatew-cycle-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-            observedAt = '2026-07-18T00:00:01Z'
-            durationMs = 1L
-            resultStatus = 'ENGAGED'
-            reasonCode = 'SOAK_STOPPED_FAIL_CLOSED'
-            httpStatusCategory = 'NOT_CALLED'
-            permissionClassification = 'METADATA_READ_ONLY'
-            killSwitchObservedState = 'ENGAGED'
-            credentialAccessed = $false
-            networkCalled = $false
-            allowedEndpointCategory = 'NONE'
-            accountConfigProbeStatus = 'NOT_RUN'
-            balanceProbeStatus = 'NOT_RUN'
-            traceId = 'gatew-soak-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
-            realCycleOutcomeProven = $true
-        }
-        Write-LinuxSmokeCycle $smokeDirectory 1 'bootstrap' $bootstrapFixture | Out-Null
-        Write-LinuxSmokeCycle $smokeDirectory 2 'automatic-engage' $engageFixture | Out-Null
-        Write-LinuxSmokeHeartbeat $smokeDirectory 'RUNNING' 'OFFLINE_TWO_CYCLE_COMPLETE' 2 $true $true 'ENGAGED'
-        Write-JsonAtomic (Join-Path $smokeDirectory 'supervisor.json') ([ordered]@{
-            schemaVersion = $script:LinuxSupervisorSchemaVersion
-            unitName = Get-LinuxUnitName $smokeRunId
-            mainPid = 4242
-            startedAt = $smokeStartedAt
-            runId = $smokeRunId
-            workerAction = 'linux-smoke-loop'
-        })
-        $offlineSmokeEvidence = Assert-LinuxOfflineSmokeEvidence $smokeDirectory -RequireComplete
-        if ($offlineSmokeEvidence.CredentialAccessed -or $offlineSmokeEvidence.NetworkCalled -or
-            $offlineSmokeEvidence.AcceptanceClockStarted -or $offlineSmokeEvidence.CycleCount -ne 2 -or
-            -not $offlineSmokeEvidence.LiteralEnvironmentVerified -or
-            -not $offlineSmokeEvidence.AutomaticEngageRecovered -or
-            $offlineSmokeEvidence.KillSwitchObservedState -ne 'ENGAGED') {
-            throw 'offline smoke fixture crossed credential, network, or acceptance boundary'
-        }
-        $caseCount++
-
-        Write-LinuxSmokeHeartbeat $smokeDirectory 'RUNNING' 'OFFLINE_AUTOMATIC_ENGAGE_PENDING' 2 $true $false 'ENGAGED'
-        $incompleteSmokeRejected = $false
-        try {
-            Assert-LinuxOfflineSmokeEvidence $smokeDirectory -RequireComplete | Out-Null
-        }
-        catch {
-            $incompleteSmokeRejected = $_.Exception.Message -eq 'FAIL / KILL_SWITCH_ENGAGE_FAILED'
-        }
-        if (-not $incompleteSmokeRejected) {
-            throw 'incomplete two-cycle smoke fixture was accepted'
-        }
-        Write-LinuxSmokeHeartbeat $smokeDirectory 'RUNNING' 'OFFLINE_TWO_CYCLE_COMPLETE' 2 $true $true 'ENGAGED'
-        Assert-LinuxOfflineSmokeEvidence $smokeDirectory -RequireComplete | Out-Null
-        $caseCount++
-
         $missingCredentialRejected = $false
-        try { Assert-RuntimeEnvironment @{} } catch {
+        try
+        {
+            Assert-RuntimeEnvironment @{ }
+        }
+        catch
+        {
             $missingCredentialRejected = $_.Exception.Message -eq 'BLOCKED / API_KEY_REQUIRED'
         }
-        if (-not $missingCredentialRejected) { throw 'missing credential preflight was not rejected' }
+        if (-not $missingCredentialRejected)
+        {
+            throw 'missing credential preflight was not rejected'
+        }
         $caseCount++
         $detachedBranchOutputHandled = (ConvertTo-TrimmedNativeOutput $null) -eq ''
-        if (-not $detachedBranchOutputHandled) { throw 'detached branch output was not handled' }
+        if (-not $detachedBranchOutputHandled)
+        {
+            throw 'detached branch output was not handled'
+        }
         $caseCount++
         $head = Get-HeadCommit
         $committedBlob = Get-GitBlobObjectId $head
@@ -3234,11 +2187,13 @@ function Invoke-SelfTest {
         [IO.File]::Copy($script:ScriptPath, $uploadedArtifact, $true)
         $lfBlob = Get-FilteredGitBlobObjectId $lfCheckout
         $crlfBlob = Get-FilteredGitBlobObjectId $crlfCheckout
-        if ($lfBlob -ne $crlfBlob) {
+        if ($lfBlob -ne $crlfBlob)
+        {
             throw 'cross-platform Git blob self-test failed'
         }
         $caseCount++
-        if ((Get-Sha256File $script:ScriptPath) -ne (Get-Sha256File $uploadedArtifact)) {
+        if ((Get-Sha256File $script:ScriptPath) -ne (Get-Sha256File $uploadedArtifact))
+        {
             throw 'uploaded artifact hash self-test failed'
         }
         $caseCount++
@@ -3275,8 +2230,85 @@ function Invoke-SelfTest {
         $safeCycle = ConvertTo-SupervisorCycle $safeLauncher $true
         $caseCount++
 
-        $blockedData = [ordered]@{}
-        foreach ($field in $script:LauncherFields) { $blockedData[$field] = $safeLauncher.PSObject.Properties[$field].Value }
+        $formalOfflineRunId = New-RunId
+        $formalOfflineDirectory = Get-RunDirectory $formalOfflineRunId
+        $directories += $formalOfflineDirectory
+        [IO.Directory]::CreateDirectory($formalOfflineDirectory) | Out-Null
+        [IO.File]::WriteAllText((Join-Path $formalOfflineDirectory 'samples.jsonl'), '', $script:Utf8NoBom)
+        [IO.File]::WriteAllText((Join-Path $formalOfflineDirectory 'failures.jsonl'), '', $script:Utf8NoBom)
+        Write-JsonAtomic (Join-Path $formalOfflineDirectory 'manifest.json') ([ordered]@{
+            runId = $formalOfflineRunId; harnessCommit = '0' * 40; startingCiRun = '0'
+            startedAt = '2026-07-18T00:00:00Z'; plannedEndAt = '2026-07-25T00:00:00Z'
+            durationHours = 168; cadenceSeconds = 60; venue = 'OKX'
+            profile = 'gatew-okx-readonly-soak'; environment = 'OFFLINE_ACCEPTANCE'
+            launcherSchemaVersion = $script:LauncherSchemaVersion
+            evidenceSchemaVersion = $script:EvidenceSchemaV2
+        })
+        $offlineCycles = @()
+        foreach ($index in 1..2)
+        {
+            $offlineData = [ordered]@{ }
+            foreach ($field in $script:LauncherFields)
+            {
+                $offlineData[$field] = $safeLauncher.PSObject.Properties[$field].Value
+            }
+            $offlineData.cycleId = 'gatew-cycle-' + ([string]$index * 32)
+            $offlineData.observedAt = "2026-07-18T00:00:0$( $index )Z"
+            $offlineData.resultStatus = 'PASSED_READ_ONLY'
+            $offlineData.reasonCode = 'OFFLINE_READONLY_FIXTURE_ACCEPTED'
+            $offlineData.httpStatusCategory = 'NOT_CALLED'
+            $offlineData.permissionClassification = 'METADATA_READ_ONLY'
+            $offlineData.killSwitchObservedState = 'DISENGAGED'
+            $offlineData.credentialAccessed = $false
+            $offlineData.networkCalled = $false
+            $offlineData.allowedEndpointCategory = 'OFFLINE_LOCAL_FIXTURE_READ'
+            $offlineData.accountConfigProbeStatus = 'SUCCEEDED'
+            $offlineData.balanceProbeStatus = 'SUCCEEDED'
+            $offlineData.traceId = "gatew-soak-00000000-0000-0000-0000-00000000000$index"
+            $offlineCycles += ConvertTo-SupervisorCycle ([pscustomobject]$offlineData) $true
+        }
+        $offlineFailureData = [ordered]@{ }
+        foreach ($field in $script:LauncherFields)
+        {
+            $offlineFailureData[$field] = $safeLauncher.PSObject.Properties[$field].Value
+        }
+        $offlineFailureData.cycleId = 'gatew-cycle-' + ('3' * 32)
+        $offlineFailureData.observedAt = '2026-07-18T00:00:03Z'
+        $offlineFailureData.resultStatus = 'FAILED'
+        $offlineFailureData.reasonCode = 'CONTROLLED_OFFLINE_CYCLE_3_FAILURE'
+        $offlineFailureData.httpStatusCategory = 'NOT_CALLED'
+        $offlineFailureData.permissionClassification = 'UNKNOWN'
+        $offlineFailureData.killSwitchObservedState = 'UNKNOWN'
+        $offlineFailureData.credentialAccessed = $false
+        $offlineFailureData.networkCalled = $false
+        $offlineFailureData.allowedEndpointCategory = 'NONE'
+        $offlineFailureData.accountConfigProbeStatus = 'NOT_RUN'
+        $offlineFailureData.balanceProbeStatus = 'NOT_RUN'
+        $offlineFailureData.traceId = 'gatew-soak-00000000-0000-0000-0000-000000000003'
+        $offlineCycles += ConvertTo-SupervisorCycle ([pscustomobject]$offlineFailureData) $true
+        foreach ($offlineCycle in $offlineCycles)
+        {
+            Append-Sample $formalOfflineDirectory $offlineCycle | Out-Null
+        }
+        Write-Heartbeat $formalOfflineDirectory 'FAILURE_STOPPING' `
+            'CONTROLLED_OFFLINE_CYCLE_3_FAILURE' 3
+        $formalOfflineVerification = Test-Evidence $formalOfflineDirectory
+        if ($formalOfflineVerification.sampleCount -ne 3 -or
+                $formalOfflineVerification.offlineAcceptance.cycle1 -ne 'PASS' -or
+                $formalOfflineVerification.offlineAcceptance.cycle2 -ne 'PASS' -or
+                $formalOfflineVerification.offlineAcceptance.cycle3 -ne 'CONTROLLED_FAILURE' -or
+                $formalOfflineVerification.offlineAcceptance.credentialAccessed -or
+                $formalOfflineVerification.offlineAcceptance.networkCalled)
+        {
+            throw 'formal offline acceptance fixture was not proven'
+        }
+        $caseCount++
+
+        $blockedData = [ordered]@{ }
+        foreach ($field in $script:LauncherFields)
+        {
+            $blockedData[$field] = $safeLauncher.PSObject.Properties[$field].Value
+        }
         $blockedData.cycleId = 'gatew-cycle-1123456789abcdef0123456789abcdef'
         $blockedData.resultStatus = 'BLOCKED'
         $blockedData.reasonCode = 'PERMISSION_BLOCKED'
@@ -3289,8 +2321,11 @@ function Invoke-SelfTest {
         $blockedCycle = ConvertTo-SupervisorCycle ([pscustomobject]$blockedData) $true
         $caseCount++
 
-        $failedData = [ordered]@{}
-        foreach ($field in $script:LauncherFields) { $failedData[$field] = $safeLauncher.PSObject.Properties[$field].Value }
+        $failedData = [ordered]@{ }
+        foreach ($field in $script:LauncherFields)
+        {
+            $failedData[$field] = $safeLauncher.PSObject.Properties[$field].Value
+        }
         $failedData.cycleId = 'gatew-cycle-2123456789abcdef0123456789abcdef'
         $failedData.resultStatus = 'HARD_FAILURE'
         $failedData.reasonCode = 'PARTIAL_RESPONSE'
@@ -3304,8 +2339,9 @@ function Invoke-SelfTest {
 
         $fallbackCycle = New-FallbackCycle
         if ([bool]$fallbackCycle.realCycleOutcomeProven -or
-            [string]$fallbackCycle.resultStatus -ne 'FAILED' -or
-            [string]$fallbackCycle.reasonCode -ne 'LAUNCHER_OUTPUT_UNAVAILABLE') {
+                [string]$fallbackCycle.resultStatus -ne 'FAILED' -or
+                [string]$fallbackCycle.reasonCode -ne 'LAUNCHER_OUTPUT_UNAVAILABLE')
+        {
             throw 'fallback provenance self-test failed'
         }
         $caseCount++
@@ -3328,19 +2364,26 @@ function Invoke-SelfTest {
             [pscustomobject]@{ Field = 'networkCalled'; Value = $false }
         )
         $unsafeRejected = 0
-        foreach ($unsafeCase in $unsafeCases) {
-            $candidate = [ordered]@{}
-            foreach ($field in $script:LauncherFields) { $candidate[$field] = $safeLauncher.PSObject.Properties[$field].Value }
+        foreach ($unsafeCase in $unsafeCases)
+        {
+            $candidate = [ordered]@{ }
+            foreach ($field in $script:LauncherFields)
+            {
+                $candidate[$field] = $safeLauncher.PSObject.Properties[$field].Value
+            }
             $candidate[[string]$unsafeCase.Field] = $unsafeCase.Value
-            try {
+            try
+            {
                 Assert-LauncherCycleResult ([pscustomobject]$candidate)
             }
-            catch {
+            catch
+            {
                 $unsafeRejected++
                 $caseCount++
             }
         }
-        if ($unsafeRejected -ne $unsafeCases.Count) {
+        if ($unsafeRejected -ne $unsafeCases.Count)
+        {
             throw 'unsafe launcher fixture was accepted'
         }
 
@@ -3350,27 +2393,31 @@ function Invoke-SelfTest {
         $fourth = Append-Sample $directory $fallbackCycle
         $state = Get-ChainState $directory
         if ($first.sequence -ne 1 -or $second.sequence -ne 2 -or $third.sequence -ne 3 -or
-            $fourth.sequence -ne 4 -or $state.Count -ne 4 -or
-            $second.previousRecordHash -ne $first.recordHash -or
-            $fourth.previousRecordHash -ne $third.recordHash) {
+                $fourth.sequence -ne 4 -or $state.Count -ne 4 -or
+                $second.previousRecordHash -ne $first.recordHash -or
+                $fourth.previousRecordHash -ne $third.recordHash)
+        {
             throw 'hash-chain self-test failed'
         }
         $caseCount++
         Test-Evidence $directory | Out-Null
         $verification = Test-Evidence $directory
         if ($verification.validRealPassSamples -ne 1 -or $verification.fallbackSamples -ne 1 -or
-            $verification.rawResponseCount -ne 0 -or $verification.secretExposureCount -ne 0) {
+                $verification.rawResponseCount -ne 0 -or $verification.secretExposureCount -ne 0)
+        {
             throw 'fallback/pass/raw/secret evidence counts are invalid'
         }
         $caseCount++
         $beforeResume = @(Get-Content -LiteralPath (Join-Path $directory 'samples.jsonl'))
         $fifth = Append-Sample $directory $safeCycle
         $afterResume = @(Get-Content -LiteralPath (Join-Path $directory 'samples.jsonl'))
-        if ($fifth.sequence -ne 5 -or $afterResume.Count -ne 5) {
+        if ($fifth.sequence -ne 5 -or $afterResume.Count -ne 5)
+        {
             throw 'resume append-only self-test failed'
         }
         for ($index = 0; $index -lt $beforeResume.Count; $index++) {
-            if ($beforeResume[$index] -ne $afterResume[$index]) {
+            if ($beforeResume[$index] -ne $afterResume[$index])
+            {
                 throw 'resume append-only self-test modified existing samples'
             }
         }
@@ -3385,37 +2432,61 @@ function Invoke-SelfTest {
         $tamperedLines[0] = ConvertTo-CompactJson $tampered
         [IO.File]::WriteAllText($samplesPath, ($tamperedLines -join [Environment]::NewLine) + [Environment]::NewLine, $script:Utf8NoBom)
         $tamperRejected = $false
-        try { Get-ChainState $directory | Out-Null } catch { $tamperRejected = $true }
+        try
+        {
+            Get-ChainState $directory | Out-Null
+        }
+        catch
+        {
+            $tamperRejected = $true
+        }
         [IO.File]::WriteAllBytes($samplesPath, $originalSamples)
-        if (-not $tamperRejected) { throw 'tampered hash-chain sample was not rejected' }
+        if (-not $tamperRejected)
+        {
+            throw 'tampered hash-chain sample was not rejected'
+        }
         $caseCount++
 
         [IO.File]::AppendAllText(
-            $samplesPath,
-            $afterResume[0] + [Environment]::NewLine,
-            $script:Utf8NoBom
+                $samplesPath,
+                $afterResume[0] + [Environment]::NewLine,
+                $script:Utf8NoBom
         )
         $duplicateRejected = $false
-        try { Get-ChainState $directory | Out-Null } catch { $duplicateRejected = $true }
+        try
+        {
+            Get-ChainState $directory | Out-Null
+        }
+        catch
+        {
+            $duplicateRejected = $true
+        }
         [IO.File]::WriteAllBytes($samplesPath, $originalSamples)
-        if (-not $duplicateRejected) { throw 'duplicate sequence was not rejected' }
+        if (-not $duplicateRejected)
+        {
+            throw 'duplicate sequence was not rejected'
+        }
         $caseCount++
 
         $canonicalTimestamp = ConvertTo-CanonicalUtcTimestamp '2026-07-16T08:00:00+08:00'
-        if ($canonicalTimestamp -ne '2026-07-16T00:00:00.0000000Z') {
+        if ($canonicalTimestamp -ne '2026-07-16T00:00:00.0000000Z')
+        {
             throw 'timestamp canonicalization self-test failed'
         }
         $caseCount++
 
         $currentCulture = [Threading.Thread]::CurrentThread.CurrentCulture
-        try {
+        try
+        {
             [Threading.Thread]::CurrentThread.CurrentCulture = [Globalization.CultureInfo]::GetCultureInfo('tr-TR')
             $cultureHash = (Get-ChainState $directory).LastHash
         }
-        finally {
+        finally
+        {
             [Threading.Thread]::CurrentThread.CurrentCulture = $currentCulture
         }
-        if ($cultureHash -ne (Get-ChainState $directory).LastHash) {
+        if ($cultureHash -ne (Get-ChainState $directory).LastHash)
+        {
             throw 'culture-independent hash self-test failed'
         }
         $caseCount++
@@ -3423,7 +2494,8 @@ function Invoke-SelfTest {
         $sampleLines = @(Get-Content -LiteralPath $samplesPath)
         $failureLines = @(Get-Content -LiteralPath (Join-Path $directory 'failures.jsonl'))
         $lineEndingHashes = @()
-        foreach ($newline in @("`n", "`r`n")) {
+        foreach ($newline in @("`n", "`r`n"))
+        {
             $copyRunId = New-RunId
             $copyDirectory = Get-RunDirectory $copyRunId
             $directories += $copyDirectory
@@ -3442,7 +2514,8 @@ function Invoke-SelfTest {
             $copyVerification = Test-Evidence $copyDirectory
             $lineEndingHashes += $copyVerification.lastHash
         }
-        if ($lineEndingHashes.Count -ne 2 -or $lineEndingHashes[0] -ne $lineEndingHashes[1]) {
+        if ($lineEndingHashes.Count -ne 2 -or $lineEndingHashes[0] -ne $lineEndingHashes[1])
+        {
             throw 'line-ending-independent hash self-test failed'
         }
         $caseCount++
@@ -3451,15 +2524,26 @@ function Invoke-SelfTest {
         $heartbeatBytes = [IO.File]::ReadAllBytes($heartbeatPath)
         Write-Heartbeat $directory 'BLOCKED' 'LAUNCHER_OUTPUT_UNAVAILABLE'
         $terminalResumeRejected = $false
-        try { Assert-RunResumable $directory } catch {
+        try
+        {
+            Assert-RunResumable $directory
+        }
+        catch
+        {
             $terminalResumeRejected = $_.Exception.Message -eq 'BLOCKED / TERMINAL_RUN_NOT_RESUMABLE'
         }
         $terminalRunLoopRejected = $false
-        try { Assert-RunLoopAllowed $directory } catch {
+        try
+        {
+            Assert-RunLoopAllowed $directory
+        }
+        catch
+        {
             $terminalRunLoopRejected = $_.Exception.Message -eq 'BLOCKED / TERMINAL_RUN_NOT_RUNNABLE'
         }
         [IO.File]::WriteAllBytes($heartbeatPath, $heartbeatBytes)
-        if (-not $terminalResumeRejected -or -not $terminalRunLoopRejected) {
+        if (-not $terminalResumeRejected -or -not $terminalRunLoopRejected)
+        {
             throw 'terminal v2 run was resumable or runnable'
         }
         $caseCount++
@@ -3491,41 +2575,69 @@ function Invoke-SelfTest {
             traceId = 'gatew-soak-v1-self-test'
             previousRecordHash = $script:GenesisHash
         }
-        $legacyRecord = [ordered]@{}
-        foreach ($key in $legacyHashInput.Keys) { $legacyRecord[$key] = $legacyHashInput[$key] }
+        $legacyRecord = [ordered]@{ }
+        foreach ($key in $legacyHashInput.Keys)
+        {
+            $legacyRecord[$key] = $legacyHashInput[$key]
+        }
         $legacyRecord.recordHash = Get-Sha256Text (ConvertTo-CompactJson $legacyHashInput)
         $legacyLine = ConvertTo-CompactJson $legacyRecord
         [IO.File]::WriteAllText((Join-Path $legacyDirectory 'samples.jsonl'), $legacyLine + [Environment]::NewLine, $script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $legacyDirectory 'failures.jsonl'), $legacyLine + [Environment]::NewLine, $script:Utf8NoBom)
         $legacyPaths = @('manifest.json', 'samples.jsonl', 'failures.jsonl', 'heartbeat.json')
-        $legacyHashesBefore = @{}
-        foreach ($name in $legacyPaths) { $legacyHashesBefore[$name] = Get-Sha256File (Join-Path $legacyDirectory $name) }
+        $legacyHashesBefore = @{ }
+        foreach ($name in $legacyPaths)
+        {
+            $legacyHashesBefore[$name] = Get-Sha256File (Join-Path $legacyDirectory $name)
+        }
         $legacyVerification = Test-Evidence $legacyDirectory
         if ($legacyVerification.evidenceSchemaVersion -ne $script:EvidenceSchemaV1 -or
-            $legacyVerification.sampleCount -ne 1 -or $legacyVerification.validRealPassSamples -ne 0) {
+                $legacyVerification.sampleCount -ne 1 -or $legacyVerification.validRealPassSamples -ne 0)
+        {
             throw 'legacy v1 evidence compatibility self-test failed'
         }
         $caseCount++
         $legacyAppendRejected = $false
-        try { Append-Sample $legacyDirectory $safeCycle | Out-Null } catch {
+        try
+        {
+            Append-Sample $legacyDirectory $safeCycle | Out-Null
+        }
+        catch
+        {
             $legacyAppendRejected = $_.Exception.Message -eq 'BLOCKED / LEGACY_EVIDENCE_NOT_APPENDABLE'
         }
-        if (-not $legacyAppendRejected) { throw 'legacy evidence accepted a new append' }
+        if (-not $legacyAppendRejected)
+        {
+            throw 'legacy evidence accepted a new append'
+        }
         $caseCount++
         $legacyResumeRejected = $false
-        try { Assert-RunResumable $legacyDirectory } catch {
+        try
+        {
+            Assert-RunResumable $legacyDirectory
+        }
+        catch
+        {
             $legacyResumeRejected = $_.Exception.Message -eq 'BLOCKED / LEGACY_EVIDENCE_NOT_RESUMABLE'
         }
         $legacyRunLoopRejected = $false
-        try { Assert-RunLoopAllowed $legacyDirectory } catch {
+        try
+        {
+            Assert-RunLoopAllowed $legacyDirectory
+        }
+        catch
+        {
             $legacyRunLoopRejected = $_.Exception.Message -eq 'BLOCKED / LEGACY_EVIDENCE_NOT_RUNNABLE'
         }
-        if (-not $legacyResumeRejected -or -not $legacyRunLoopRejected) {
+        if (-not $legacyResumeRejected -or -not $legacyRunLoopRejected)
+        {
             throw 'legacy blocked run was resumable or runnable'
         }
         $caseCount++
-        foreach ($name in $legacyPaths) {
-            if ($legacyHashesBefore[$name] -ne (Get-Sha256File (Join-Path $legacyDirectory $name))) {
+        foreach ($name in $legacyPaths)
+        {
+            if ($legacyHashesBefore[$name] -ne (Get-Sha256File (Join-Path $legacyDirectory $name)))
+            {
                 throw 'legacy blocked evidence was modified'
             }
         }
@@ -3559,77 +2671,105 @@ function Invoke-SelfTest {
             windowsCrlfGitBlob = 'PASS'
             linuxLfGitBlob = 'PASS'
             uploadedArtifactSha256 = 'PASS'
-            literalRuntimeEnvironment = 'PASS / EPHEMERAL_LITERAL_V1'
-            runtimeVariableReferenceRejected = 'PASS / RUNTIME_ENVIRONMENT_NOT_LITERAL'
-            linuxTransientArgumentContract = 'PASS'
-            linuxLoopbackOnlyArgumentContract = 'PASS / IPAddressDeny=any / IPAddressAllow=localhost'
-            conflictingNetworkPolicyRejected = 'PASS'
-            linuxRunIdInjectionRejected = 'PASS'
-            linuxRuntimePathInjectionRejected = 'PASS'
-            linuxDynamicEnvironmentPathRequired = 'PASS'
-            linuxSystemctlContract = 'PASS'
-            linuxTerminalSystemctlContract = 'PASS / not-found / inactive / MainPID=0'
-            linuxHeartbeatAdvanceRequired = 'PASS'
-            systemdUnavailableClassified = 'PASS / SYSTEMD_RUN_UNAVAILABLE'
-            transientUnitCreateFailureClassified = 'PASS / TRANSIENT_UNIT_CREATE_FAILED'
-            residualProcessContract = 'PASS'
-            linuxResidualEnumeration = 'PASS'
-            windowsStartPathPreserved = 'PASS'
-            offlineSmokeCanonicalRoot = 'PASS / target/gatew-okx-readonly-soak/offline-smoke/<runId>'
-            offlineSmokeFixture = 'PASS / two-cycle / bootstrap-to-engage / credentialAccessed=false / networkCalled=false / acceptanceClockStarted=false'
+            linuxProductionAuthority = 'PASS / FORMAL_ROOT_CONTROL_ONLY'
+            formalOfflineAcceptanceFixture = 'PASS / cycle1+2 read-only / cycle3 controlled failure / no credential / no network'
             automaticEngageRecoveryFixture = 'PASS / killSwitchObservedState=ENGAGED'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))
             cleanupReleasedTemporaryDirectory = $true
             noPrivateNetworkCalled = $true
         }
     }
-    finally {
-        foreach ($candidate in @($directories | Select-Object -Unique)) {
-            if (-not (Test-Path -LiteralPath $candidate)) { continue }
+    finally
+    {
+        foreach ($candidate in @($directories | Select-Object -Unique))
+        {
+            if (-not (Test-Path -LiteralPath $candidate))
+            {
+                continue
+            }
             $resolved = [IO.Path]::GetFullPath($candidate)
             $insideManagedRoot = $resolved.StartsWith(
-                $script:EvidenceRoot + [IO.Path]::DirectorySeparatorChar,
-                [StringComparison]::OrdinalIgnoreCase
-            ) -or $resolved.StartsWith(
-                $script:LinuxSmokeRoot + [IO.Path]::DirectorySeparatorChar,
-                [StringComparison]::OrdinalIgnoreCase
+                    $script:EvidenceRoot + [IO.Path]::DirectorySeparatorChar,
+                    [StringComparison]::OrdinalIgnoreCase
             )
-            if ($insideManagedRoot) {
+            if ($insideManagedRoot)
+            {
                 Remove-Item -LiteralPath $resolved -Recurse -Force
             }
         }
     }
 }
 
-try {
-    $result = switch ($Action) {
-        'start' { Start-Soak }
-        'status' { Show-Status }
-        'resume' { Resume-Soak }
-        'stop' { Request-Stop $false }
-        'failure-stop' { Request-Stop $true }
-        'evidence-verify' { Test-Evidence (Get-RunDirectory $RunId) }
-        'cleanup' { Cleanup-RunControlFiles }
-        'run-loop' { Run-SoakLoop; [pscustomobject]@{ decision = 'SUPERVISOR_EXITED'; runId = $RunId } }
-        'linux-smoke-start' { Start-LinuxSmoke }
-        'linux-smoke-status' { Get-LinuxSmokeStatus }
-        'linux-smoke-stop' { Stop-LinuxSmoke }
-        'linux-smoke-loop' { Run-LinuxSmokeLoop }
-        'self-test' { Invoke-SelfTest }
+try
+{
+    $result = switch ($Action)
+    {
+        'start' {
+            if (Test-LinuxPlatform)
+            {
+                throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+            }
+            Start-Soak
+        }
+        'status' {
+            if (Test-LinuxPlatform)
+            {
+                throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+            }
+            Show-Status
+        }
+        'resume' {
+            if (Test-LinuxPlatform)
+            {
+                throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+            }
+            Resume-Soak
+        }
+        'stop' {
+            if (Test-LinuxPlatform)
+            {
+                throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+            }
+            Request-Stop $false
+        }
+        'failure-stop' {
+            if (Test-LinuxPlatform)
+            {
+                throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
+            }
+            Request-Stop $true
+        }
+        'evidence-verify' {
+            Test-Evidence (Get-RunDirectory $RunId)
+        }
+        'cleanup' {
+            Cleanup-RunControlFiles
+        }
+        'run-loop' {
+            Run-SoakLoop; [pscustomobject]@{ decision = 'SUPERVISOR_EXITED'; runId = $RunId }
+        }
+        'self-test' {
+            Invoke-SelfTest
+        }
     }
-    if ($null -ne $result) {
+    if ($null -ne $result)
+    {
         $result | ConvertTo-Json -Depth 8
     }
 }
-catch {
-    $message = if ($_.Exception.Message -match '^(BLOCKED|FAIL) / [A-Z0-9_]+$') {
+catch
+{
+    $message = if ($_.Exception.Message -match '^(BLOCKED|FAIL) / [A-Z0-9_]+$')
+    {
         $_.Exception.Message
     }
-    else {
+    else
+    {
         'FAIL / SUPERVISOR_INTERNAL_ERROR'
     }
     $failure = [ordered]@{ decision = $message; runId = $RunId }
-    if ($Action -eq 'self-test') {
+    if ($Action -eq 'self-test')
+    {
         $failure.selfTestDetail = $_.Exception.Message
     }
     [pscustomobject]$failure | ConvertTo-Json

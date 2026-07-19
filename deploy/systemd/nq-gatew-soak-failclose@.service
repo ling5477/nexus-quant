@@ -1,0 +1,47 @@
+[Unit]
+Description=NexusQuant GateW independent fail-close finalizer (%i)
+Documentation=file:/opt/nexus-quant/gatew-soak/app/repo/docs/current/evidence/gate-w/README.md
+After=nq-gatew-soak@%i.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/nexus-quant/gatew-soak/app/repo
+Environment=NQ_GATEW_REPO_ROOT=/opt/nexus-quant/gatew-soak/app/repo
+Environment=NQ_GATEW_SECRET_SOURCE=SYSTEMD_CREDENTIALS
+Environment=NQ_GATEW_FORMAL_SYSTEMD=true
+EnvironmentFile=/var/lib/nexus-quant/gatew-soak/%i/control/failclose.env
+LoadCredentialEncrypted=db-password:/etc/nexus-quant/gatew-soak/credentials/db-password.cred
+ExecStart=/usr/bin/pwsh -NoProfile -File /usr/local/libexec/nexus-quant/gatew-okx-readonly-soak-failclose.ps1 -Action finalize -RunId %i
+Restart=no
+TimeoutStartSec=2min
+TimeoutStopSec=30s
+UMask=0077
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+IPAddressDeny=any
+IPAddressAllow=localhost
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadOnlyPaths=/opt/nexus-quant/gatew-soak/app/repo
+ReadOnlyPaths=/opt/nexus-quant/gatew-soak/app/launcher
+ReadOnlyPaths=/var/lib/nexus-quant/gatew-soak/%i/evidence
+ReadWritePaths=/var/lib/nexus-quant/gatew-soak/%i/control
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nq-gatew-soak-failclose-%i
