@@ -98,7 +98,7 @@
       },
       {
         "name": "IMPLEMENTATION",
-        "pattern": "(?i)(^|-)IMPLEMENTATION$"
+        "pattern": "(?i:(^|-)IMPLEMENTATION$)|(?-i:^NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START$)"
       },
       {
         "name": "COMMIT_AND_PUSH",

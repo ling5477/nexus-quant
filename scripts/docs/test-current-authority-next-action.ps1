@@ -17,6 +17,30 @@ function Assert-ActionType {
     Write-Output "PASS action=$Action type=$actual"
 }
 
+$canonicalAttempt09Start = 'NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START'
+$canonicalAttempt09WorkBatch = 'GateW-OKX-READONLY-SOAK-ATTEMPT-09'
+Assert-ActionType $canonicalAttempt09Start 'IMPLEMENTATION'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract 'NOT_STARTED' $canonicalAttempt09WorkBatch $canonicalAttempt09Start)) {
+    throw 'CANONICAL_ATTEMPT_09_START_REJECTED'
+}
+Write-Output 'PASS canonical-attempt-09-start work-batch-match=true'
+
+$invalidAttempt09StartActions = @(
+    'NQ-GATEW-OKX-READONLY-SOAK-ATEMPT-09-START',
+    'NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09',
+    'NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-10-START',
+    'nq-gatew-okx-readonly-soak-attempt-09-start'
+)
+foreach ($action in $invalidAttempt09StartActions) {
+    Assert-ActionType $action 'UNKNOWN'
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract 'NOT_STARTED' $canonicalAttempt09WorkBatch $action) {
+        throw "NON_CANONICAL_ATTEMPT_START_ACCEPTED action=$action"
+    }
+}
+Write-Output 'PASS non-canonical-attempt-start relation=false'
+
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'
 }

@@ -12069,3 +12069,26 @@ Known limitations / 未运行：P1为real worker EnvironmentFile合同与automat
 | Maven full test | 本次未重跑 | 用户要求不重跑已通过的 Maven 全量测试；本记录不把未执行命令写成新 PASS |
 
 Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.service` 既存 warning。`-CleanupOfflineDropIn`完成 PASS 后清理临时 network-policy drop-in，因此清理后再次对历史 run执行完整 control verify会返回`OFFLINE_NETWORK_POLICY_INVALID`；首次 final verify、durable hash chain、terminal与post-run release verifier均已通过。未运行真实 OKX、exchange credential、permission probe、Attempt-09、168小时clock、frontend或Python；阻断性P0=0/P1=0，final deployment仍严格受exact-head CI hard gate约束。
+
+## 2026-07-21 — GateW soak start contract remediation / final immutable release / authority sync
+
+当前结论：`PASS / STALE_DROPINS_CLEANED / KILL_SWITCH_ENGAGED_CONTRACT_FIXED / ACCEPTANCE_CLOCK_WRITE_ONCE_FIXED / SANITIZED_PREREQUISITE_READBACK_PROVEN / IMMUTABLE_RELEASE_REBUILT / FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / COMMITTED / CI_GREEN / SERVER_DEPLOYED / READY_TO_RETRY_ATTEMPT_09`（通过 / stale drop-in 已清理 / kill switch ENGAGED 合同已修复 / acceptance clock write-once 已修复 / 脱敏 prerequisite readback 已证明 / immutable release 已重建 / 完整正式离线验收已证明 / 已提交 / CI 已通过 / 服务器已部署 / 可重新尝试 Attempt-09）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Commit A + exact-head CI | PASS | `0e8e2c128c456542b3f7695c9620e4d170c3f4f6`；run `29766800343 / completed / success / 10 of 10` |
+| local final bundle build | PASS | `EXACT_COMMIT`；releaseId/sourceCommit 均为 Commit A；manifest `5c0af5e...f760f5f1`；129 artifacts |
+| PowerShell 7/5.1 verifier + tamper | PASS | 双 verifier 通过；tamper copy exit 2 / `RELEASE_ARTIFACT_HASH_MISMATCH`；tar `49,690,451` bytes / SHA-256 `f781447d...ec4815` / unsafe paths=0 |
+| root install / activation | PASS | `/opt/nexus-quant/releases/0e8e2c...`；root `0755`、manifest `0644`、`nqgatewWritable=false`；current 与 formal units 固定 Commit A |
+| server helper/installer self-tests | PASS | `pwsh 7.6.3`；control/worker/fail-close=`39/59/41`；installer PASS；credential/network=false |
+| server systemd verify | PASS | exit 0；仅无关既存 `cloudmonitor.service` warning |
+| final formal offline acceptance | PASS | run `gatew-soak-20260720T183517Z-11881656`；cycle1/2 PASS；cycle3 CONTROLLED_FAILURE；`FAILURE_STOPPED`；kill switch `ENGAGED` |
+| fresh SSH / clock simulation | PASS | same MainPID `3998508`；heartbeat advanced；start=max=`2026-07-20T18:38:48.6987335Z`；planned 精确 +168h；second call `NO_CHANGE`；clock `root:nqgatew/0640` |
+| final hash / terminal / cleanup | PASS | 3 samples；hash chain PASS；final hash `1807a63b...314ab`；historical immutable；units/PID/residual/runtime/drop-ins=`0/0/0/absent/0` |
+| canonical next-action regression（PowerShell 7/5.1） | PASS | canonical Attempt-09 START=`IMPLEMENTATION` 且 same batch=true；错拼/缺 START/Attempt-10/大小写近似=`UNKNOWN`；既有 canonical actions/status mappings 全通过 |
+| governance lifecycle / authority / links / diff | PASS / 1 EXISTING WARNING | lifecycle full regression PASS；authority errors=0；current links=`129 checked / 1 GateJ historical warning / 0 errors`；`git diff --check` exit 0 |
+| current request release/acceptance rerun | 未执行 | 按用户限制，Commit B 阶段不重建/部署 release，不重跑 final offline acceptance；复用并同步上述已验证证据 |
+
+已知非阻断项：第一次 Windows PowerShell 5.1 exact build 因 culture-aware sort 与 verifier ordinal sort 不一致返回 `RELEASE_MANIFEST_ARTIFACT_ORDER_INVALID`，失败产物未部署；final 使用目标 runtime PowerShell 7 从同一 clean Commit A 构建，并由 PowerShell 7/5.1 双 verifier 复核。首次 final start 的 SSH 前台会话在 cycle 2 前被远端关闭，但 systemd 唯一 worker继续运行；只读确认后重复 start被合同拒绝，没有第二个 worker，原 control 正常推进到 `RUNNING`。
+
+边界：Attempt-09=`NOT_CREATED / NOT_STARTED`，真实 acceptance clock=`NOT_STARTED`，OKX=`NOT_CALLED`，credential material=`NOT_READ / NOT_OUTPUT`；LIVE、下单、撤单、转账、提现、AI、DH runtime、freeze/archive/tag均未触达。Final offline clock只属于已终止隔离 run，不是正式 168 小时 acceptance clock。

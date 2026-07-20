@@ -17772,3 +17772,19 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：OKX/credential/permission probe/Attempt-09/168h/LIVE/order/cancel/transfer/withdraw/AI/DH均未触达；`/opt/nexus-quant/current`未创建或切换。
 - result：`PASS / CANDIDATE_FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / READY_TO_COMMIT`；P0=0、P1=0。Cleanup后历史offline policy不可从当前unit state重验，已作为P2记录，不影响cleanup前完整PASS。
 - next：精确暂存并创建唯一implementation commit，push `dev`，等待exact-head CI 10/10 GREEN；CI成功后从clean exact-head构建final bundle并完成最终root-owned deployment与正式离线验收。
+
+## 2026-07-21 — GateW soak start contract remediation / immutable release rebuild / authority sync
+
+- task：`NQ-GATEW-SOAK-START-CONTRACT-REMEDIATION-AND-IMMUTABLE-RELEASE-REBUILD`；NQ-only、L级 tooling/security/clock/immutable release/deployment/authority任务。
+- implementation：Commit A `0e8e2c128c456542b3f7695c9620e4d170c3f4f6`；REAL readonly全程要求 kill switch `ENGAGED`，offline fixture隔离；prepare clock固定false/null/null；全 prerequisite后create-once；新增九字段脱敏 prerequisite readback。
+- regression：targeted/module/full Maven与PowerShell helper/bundle/installer/tamper均通过；Commit A exact-head CI run `29766800343 / completed / success / 10 of 10`。
+- stale cleanup：17个历史 run、34个精确 offline drop-in已备份并清理；备份 `/var/backups/nexus-quant/gatew-offline-dropins/20260720T160412Z-17-runs-34-files.tar`，SHA-256 `9a07e46a...ed264`；未泛化删除systemd路径。
+- final release：releaseId/sourceCommit=`0e8e2c...`，`EXACT_COMMIT`；manifest `5c0af5e...f760f5f1`；129 artifacts；root-owned verify、`nqgatewWritable=false`、systemd verify与atomic current switch全部PASS。
+- final acceptance：run `gatew-soak-20260720T183517Z-11881656`；cycle1/2 PASS；fresh SSH同MainPID/heartbeat advanced；offline clock max/+168h/write-once PASS；cycle3 controlled failure；OnFailure/independent fail-close、ENGAGED、`FAILURE_STOPPED`、hash chain与historical immutable PASS。
+- cleanup：worker/fail-close inactive/dead，MainPID/residual/runtime/drop-ins=`0/0/absent/0`；server current继续固定Commit A；上传tar与extract临时目录已精确清理。
+- governance：只对 canonical `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`增加case-sensitive exact `IMPLEMENTATION`分类；PS7/PS5.1正向、错拼、缺START、Attempt-10、大小写近似与所有既有canonical regression均PASS；未修改checker或生命周期主模型。
+- docs validation：governance lifecycle full regression PASS；authority errors=0；current links 129 checked、1个既有GateJ historical warning、0 errors；`git diff --check` exit 0。
+- authority：GateW保持`IN_PROGRESS|NOT_FROZEN`；`work_batch=GateW-OKX-READONLY-SOAK-ATTEMPT-09 / NOT_STARTED / NONE / NOT_RUN`；唯一next action为`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`。
+- boundary：Attempt-09未创建/未启动，真实acceptance clock未启动，OKX未调用，credential material未读取/输出；无LIVE/交易写侧/migration/frontend/research/CI workflow/freeze/archive/tag变更。Commit B不构建、不部署release，不重跑final offline acceptance。
+- result：`PASS / IMMUTABLE_RELEASE_REBUILT / FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / SERVER_DEPLOYED / ATTEMPT_09_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_STARTED / READY_TO_RETRY_ATTEMPT_09`。
+- next：`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`；后续任务必须重新执行全部启动hard gates，不得从offline evidence推导真实clock已启动。

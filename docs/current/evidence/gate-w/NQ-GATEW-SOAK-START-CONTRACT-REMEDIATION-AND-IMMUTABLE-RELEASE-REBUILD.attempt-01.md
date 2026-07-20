@@ -5,8 +5,8 @@
 - 主类型：`GATEW_TOOLING_REMEDIATION`；辅助类型：
   `SECURITY_CONTRACT_FIX / ACCEPTANCE_CLOCK_FIX / SERVER_RUNTIME_CLEANUP / IMMUTABLE_RELEASE_REBUILD / FULL_OFFLINE_ACCEPTANCE`。
 - 归属：NQ-only、L 级高风险任务；GateW 保持 `IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- 本记录当前覆盖实现、本地验证、server candidate immutable release 与完整正式离线验收。Implementation commit、exact-head
-  CI、final release、`current` 切换和 final 离线验收在 Commit A 前均为 `PENDING`。
+- 本记录覆盖实现、本地验证、server candidate/final immutable release、Commit A exact-head CI、`current` 原子切换与两轮完整正式离线验收。
+- Commit B 仅同步本记录、evidence index、current authority 与 canonical Attempt-09 START 治理分类；服务器 runtime 继续固定 Commit A。
 
 ## Scope and boundaries
 
@@ -126,13 +126,75 @@ Maven 环境固定：`CI=true`、`NQ_NO_OUTBOUND=true`、`NQ_AI_ENABLED=false`�
 - Boundary facts：`credentialAccessed=false`、`networkCalled=false`、`OKXCalled=false`；没有创建 Attempt-09/10，也没有启动真实
   acceptance clock。
 
+## Commit A and exact-head CI
+
+- Implementation commit：`0e8e2c128c456542b3f7695c9620e4d170c3f4f6`；message=`fix(gatew): harden readonly soak start contract`。
+- Commit A 已 push 到 `origin/dev`；`NQ CI Baseline` run `29766800343` 的 `headSha` 精确等于 Commit A，状态为
+  `completed / success`，10/10 jobs 全部成功。
+- Commit A 只包含 9 个实现/测试文件与 3 个 Commit A evidence/index 文件；没有 migration、frontend、research 或 CI workflow
+  变更。
+
+## Final immutable release and server activation
+
+- ReleaseId/source commit/source tree mode：
+  `0e8e2c128c456542b3f7695c9620e4d170c3f4f6 / 0e8e2c128c456542b3f7695c9620e4d170c3f4f6 / EXACT_COMMIT`。
+- Manifest SHA-256：`5c0af5e006cf7db6ff507dd24d69fc04c6d8c1229adafbba2ab95319f760f5f1`；artifacts=`129`。
+- Bundle tar：`49,690,451` bytes；SHA-256=
+  `f781447d0a1a12b101f39919802eaf87fcc0b3fe06489d55ec60005f30ec4815`；136 个 tar paths，unsafe path=`0`。
+- Local verifier：PowerShell 7 与 5.1 均 `PASS / IMMUTABLE_RELEASE_VERIFIED`；独立 tamper copy 修改 artifact 后 verifier
+  exit=`2 / RELEASE_ARTIFACT_HASH_MISMATCH`，tamper copy 随后精确清理。
+- 第一次 Windows PowerShell 5.1 exact bundle build 因 culture-aware artifact sort 与 verifier ordinal sort 不一致，返回
+  `RELEASE_MANIFEST_ARTIFACT_ORDER_INVALID`；该失败产物未上传。使用目标 runtime PowerShell 7 从同一 clean detached Commit A
+  重建后通过，未修改 Commit A。
+- Server install：`/opt/nexus-quant/releases/0e8e2c128c456542b3f7695c9620e4d170c3f4f6`；release root=
+  `root:root/0755`，manifest=`root:root/0644`，`nqgatewWritable=false`，server verifier=PASS。
+- Server `pwsh 7.6.3`：control=`39`、worker=`59`、fail-close=`41` cases 与 installer self-test 全部 PASS；
+  `credentialAccessed=false / networkCalled=false`。
+- `systemd-analyze verify` exit=`0`；仅报告无关既存 `cloudmonitor.service` warning。Activation 前后 active units/MainPID/
+  residual/drop-ins 均为 0；`/opt/nexus-quant/current` 与两个 formal unit template 原子绑定 Commit A release。
+
+## Final formal offline acceptance
+
+- RunId：`gatew-soak-20260720T183517Z-11881656`；mode=`OFFLINE_ISOLATED_ACCEPTANCE`；source tree mode=
+  `EXACT_COMMIT`；不是 Attempt-09。
+- Prepare：`PASS / FORMAL_SOAK_PREPARED`；clock=`false/null/null`、clock file absent、control dir=`root:nqgatew/0710`。
+- Cycle 1/2：`PASS / PASS`；首个 config/balance 有效 PASS 均为 `2026-07-20T18:37:16.7062731Z`；唯一 MainPID=
+  `3998508`；credential/network 均为 false。
+- 首次 start SSH 在 sequence 1 后被远端关闭；systemd worker 独立继续运行。新 SSH 只读确认后，重复 start 被合同拒绝为
+  `BLOCKED / RUN_NOT_STARTABLE`，没有第二个 worker；原 control 已把 lifecycle 推进到 `RUNNING`、sequence 2，同一 MainPID。
+- Fresh SSH：heartbeat baseline `sequence=2 / 2026-07-20T18:38:27.6791422Z` 后继续推进；fresh verification=
+  `2026-07-20T18:38:48.6987335Z`；MainPID 始终为 `3998508`。
+- Offline clock simulation：首次 `PASS / ACCEPTANCE_CLOCK_STARTED`，start 精确等于 config/balance/fresh SSH 的最大值
+  `2026-07-20T18:38:48.6987335Z`；planned=`2026-07-27T18:38:48.6987335Z`，精确 `+168h`；第二次调用=
+  `NO_CHANGE / ACCEPTANCE_CLOCK_ALREADY_STARTED`；clock=`root:nqgatew/0640`。same PID/heartbeat/hash=true，forbidden/secret=`0/0`。
+- Cycle 3：`CONTROLLED_FAILURE`；OnFailure terminal=`FAILURE_STOPPED`，reason=`SYSTEMD_WORKER_FAILURE_CONFIRMED`；recovery=
+  `ENGAGE_SUCCEEDED`；kill switch=`ENGAGED`。独立 fail-close 重入返回 `NO_CHANGE / TERMINAL_ALREADY_EXISTS` 并重新验证 terminal。
+- Durable evidence：sample count=`3`；hash chain=`PASS / HASH_CHAIN_VERIFIED`；manifest SHA-256=
+  `16b0242aea3a0d196a561bcd7268153b2c51fa43b75017038410530edb7610a8`；final chain hash=
+  `1807a63bc8c3f9abaf3e55993ddf0a337dca72caa7be8910e11c0552ce0314ab`；historical immutable=true。
+- Terminal cleanup：worker/fail-close=`inactive/dead`，MainPID/residual=`0/0`，runtime absent，run/all GateW offline drop-in=`0/0`，
+  active GateW units=`0`；`current` 仍固定 Commit A。
+- Boundary facts：`credentialAccessed=false`、`networkCalled=false`、`OKXCalled=false`。Final run 的 clock 只属于已终止的隔离
+  offline acceptance；Attempt-09=`NOT_CREATED / NOT_STARTED`，真实 acceptance clock=`NOT_STARTED`。
+
+## Canonical next-action governance
+
+- Commit B 对 `IMPLEMENTATION` 分类只增加精确 case-sensitive canonical action：
+  `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`；不增加模糊 pattern、Attempt-10 或兼容分支。
+- `work_batch=GateW-OKX-READONLY-SOAK-ATTEMPT-09`、`work_batch_status=NOT_STARTED`、commit=`NONE`、CI=`NOT_RUN`；唯一
+  `next_action=NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`。
+- PowerShell 7/5.1 governance regression 均 PASS：canonical 正向分类/同 batch 通过；错拼、缺少 `START`、Attempt-10、大小写近似
+  均为 `UNKNOWN` 且同 batch relation=false；既有 canonical actions 与全部 status mapping 继续通过。
+- Governance lifecycle full regression、current authority checker 与 `git diff --check` 均 PASS；current links=
+  `129 checked / 1 existing GateJ historical warning / 0 errors / PASS`。
+
 ## Findings
 
 - P0：无。
 - P1：无。candidate 已关闭 stale drop-in、REAL kill-switch、acceptance clock UTC/write-once 与独立 fail-close 结构性阻塞。
-- P2：release 内置 helper self-test 按源码树布局需要可写 `target/`；immutable release 原地执行被权限正确拒绝。服务器验证使用
-  SHA-256 相同的受控 `/tmp` harness，并把 `NQ_GATEW_RELEASE_ROOT` 固定到 candidate，结束后精确清理；不影响 formal runtime 或
-  artifact immutability。
+- P2：release 内置 helper self-test 按源码树布局需要可写 `target/`；candidate 使用 SHA-256 相同的受控 `/tmp` harness，结束后精确
+  清理。Windows PowerShell 5.1 exact builder 还存在 culture/ordinal sort 差异；final 使用目标 runtime PowerShell 7 构建，并由
+  PowerShell 7/5.1 双 verifier 复核。两项均不影响 Linux PowerShell 7 formal runtime，但属于后续 tooling hardening 清单。
 - P3：`systemd-analyze verify` 同时输出无关既存 `cloudmonitor.service` 的 `KillMode=none`/legacy PIDFile warning；GateW 两个
   unit verify exit 仍为 0。
 
@@ -144,11 +206,13 @@ Maven 环境固定：`CI=true`、`NQ_NO_OUTBOUND=true`、`NQ_AI_ENABLED=false`�
   168 小时 acceptance clock。
 - 未执行 migration、frontend/research/CI workflow 修改、freeze/archive/tag。
 
-## Decision before Commit A
+## Final decision
 
-`PASS / STALE_DROPINS_CLEANED / KILL_SWITCH_ENGAGED_CONTRACT_FIXED / ACCEPTANCE_CLOCK_WRITE_ONCE_FIXED / SANITIZED_PREREQUISITE_READBACK_PROVEN / CANDIDATE_IMMUTABLE_RELEASE_VERIFIED / CANDIDATE_FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / READY_TO_COMMIT`
+`PASS / STALE_DROPINS_CLEANED / KILL_SWITCH_ENGAGED_CONTRACT_FIXED / ACCEPTANCE_CLOCK_WRITE_ONCE_FIXED / SANITIZED_PREREQUISITE_READBACK_PROVEN / IMMUTABLE_RELEASE_REBUILT / FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / COMMITTED / CI_GREEN / SERVER_DEPLOYED / ATTEMPT_09_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_STARTED / READY_TO_RETRY_ATTEMPT_09`
 （通过 / stale drop-in 已清理 / kill switch ENGAGED 合同已修复 / acceptance clock write-once 已修复 / 脱敏 prerequisite
-readback 已证明 / candidate immutable release 已验证 / candidate 完整正式离线验收已证明 / 可提交）。
+readback 已证明 / immutable release 已重建 / 完整正式离线验收已证明 / 已提交 / CI 已通过 / 服务器已部署 / Attempt-09 未创建 /
+真实 acceptance clock 未启动 / 可重新尝试 Attempt-09）。
 
-Implementation commit=`PENDING`；implementation exact-head CI=`NOT_RUN`；final release/current switch/final offline
-acceptance=`PENDING`。只有 Commit A push 且 exact-head `NQ CI Baseline` 10/10 GREEN 后，才允许构建和部署 final release。
+Implementation commit=`0e8e2c128c456542b3f7695c9620e4d170c3f4f6`；implementation exact-head CI=
+`29766800343 / completed / success / 10 of 10`；server runtime/current 固定 Commit A。唯一下一动作：
+`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`。

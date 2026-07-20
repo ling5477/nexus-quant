@@ -19,7 +19,11 @@ GateW-3 ACCEPTED / CI GREEN
   ↓
 GateW-4 ACCEPTED / CI GREEN
   ↓
-GateW-FREEZE NOT STARTED
+GateW soak start contract remediation PASS / COMMIT A CI GREEN / SERVER DEPLOYED
+  ↓
+GateW-OKX-READONLY-SOAK-ATTEMPT-09 NOT STARTED
+  ↓
+GateW-FREEZE NOT STARTED / FUTURE
 ```
 
 ## 下一允许动作
@@ -34,8 +38,10 @@ GateW-FREEZE NOT STARTED
 - GateW-3 read-only reconciliation：implementation/acceptance head `71e1ded5a9896996717549d2a96068356dea7288`，exact-head CI run `29324600871 / completed / success`，10/10 jobs success；该 slice 已纳入 GateW-3 accepted baseline。
 - GateW-3 risk preflight：implementation/acceptance head `178b4951ba1406748170022c9940f84beaa8ab81`，exact-head run `29332316101 / completed / success / 10 jobs / bad=0`；GateW-3 已 `ACCEPTED|CI_GREEN`。
 - GateW-4：`ACCEPTED / CI GREEN`；implementation/acceptance head `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`，exact-head CI run `29339016784 / completed / success / 10 jobs / bad=0`。Blocker-1、operations、persistence/retention、human-review binding、restore、incident 与 local no-egress soak hard gates 均通过。
-- GateW-FREEZE：`NOT_STARTED / NONE / NOT_RUN`；仅完成 governance initialization，GateW 尚未 freeze、archive 或 tag。
-- 当前治理动作：`NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。该 task 必须把 Freeze readiness review 作为内部第一道 hard gate；不得跳过真实 read-only soak residual、archive manifest、authority 与 links 检查，也不得执行真实 OKX HTTP、读取真实 credential 或提前创建 tag。
+- GateW soak start contract remediation：implementation commit `0e8e2c128c456542b3f7695c9620e4d170c3f4f6`，exact-head CI run `29766800343 / completed / success / 10 of 10`；final immutable release 已部署并通过完整隔离 offline acceptance，服务器 current 继续固定 Commit A。
+- GateW-OKX-READONLY-SOAK-ATTEMPT-09：`NOT_STARTED / NONE / NOT_RUN`；Attempt-09 未创建，真实 acceptance clock 未启动，remediation/final offline acceptance 未调用 OKX或读取 credential material。
+- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag，真实 read-only soak 后续证据仍是 freeze 前置。
+- 当前唯一治理动作：`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`。后续 task 必须重新执行全部 start hard gates；本路线本身不授权自动创建 run、读取 credential、调用 OKX、启动 168 小时时钟或触碰交易写侧。
 
 ## 路线边界
 
@@ -46,4 +52,5 @@ GateW-FREEZE NOT STARTED
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
+- Commit B 只同步治理与证据，服务器 runtime 必须继续固定 Commit A `0e8e2c128c456542b3f7695c9620e4d170c3f4f6`；不得部署 docs commit。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。
