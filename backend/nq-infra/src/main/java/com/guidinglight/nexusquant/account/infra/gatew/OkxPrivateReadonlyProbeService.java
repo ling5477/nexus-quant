@@ -54,12 +54,56 @@ public final class OkxPrivateReadonlyProbeService {
             OkxPrivateEnvironment environment,
             Collection<String> currencies
     ) {
+        return probeWithKillSwitchContract(
+                ownerId,
+                exchangeAccountId,
+                credentialType,
+                environment,
+                currencies,
+                KillSwitchContract.REQUIRE_DISENGAGED
+        );
+    }
+
+    /**
+     * GateW REAL readonly soak 的专用入口。该入口只允许在 GLOBAL_TRADING 持续 ENGAGED 时执行
+     * 两个冻结的只读 operation；它不解除、不修改 kill switch，也不产生交易授权。
+     */
+    public OkxPrivateReadObservation probeWhileKillSwitchEngaged(
+            Long ownerId,
+            Long exchangeAccountId,
+            String credentialType,
+            OkxPrivateEnvironment environment,
+            Collection<String> currencies
+    ) {
+        return probeWithKillSwitchContract(
+                ownerId,
+                exchangeAccountId,
+                credentialType,
+                environment,
+                currencies,
+                KillSwitchContract.REQUIRE_ENGAGED
+        );
+    }
+
+    private OkxPrivateReadObservation probeWithKillSwitchContract(
+            Long ownerId,
+            Long exchangeAccountId,
+            String credentialType,
+            OkxPrivateEnvironment environment,
+            Collection<String> currencies,
+            KillSwitchContract killSwitchContract
+    ) {
         Instant observedAt = clock.instant();
         KillSwitchSnapshot killSwitch = killSwitchService.snapshot();
-        if (killSwitch.blocksOperations()) {
-            String blocker = killSwitch.status() == KillSwitchStatus.ENGAGED
-                    ? "KILL_SWITCH_ENGAGED"
-                    : "KILL_SWITCH_STATE_UNKNOWN";
+        boolean killSwitchRejected = killSwitchContract == KillSwitchContract.REQUIRE_ENGAGED
+                ? killSwitch.status() != KillSwitchStatus.ENGAGED
+                : killSwitch.blocksOperations();
+        if (killSwitchRejected) {
+            String blocker = killSwitch.status() == KillSwitchStatus.UNKNOWN
+                    ? "KILL_SWITCH_STATE_UNKNOWN"
+                    : killSwitchContract == KillSwitchContract.REQUIRE_ENGAGED
+                    ? "KILL_SWITCH_NOT_ENGAGED"
+                    : "KILL_SWITCH_ENGAGED";
             return blocked(observedAt, blocker);
         }
         try {
@@ -173,5 +217,10 @@ public final class OkxPrivateReadonlyProbeService {
                 List.of(),
                 true, true, true, false, true, false
         );
+    }
+
+    private enum KillSwitchContract {
+        REQUIRE_DISENGAGED,
+        REQUIRE_ENGAGED
     }
 }

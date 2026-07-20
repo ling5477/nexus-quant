@@ -52,7 +52,8 @@ LockPersonality=true
 CapabilityBoundingSet=
 AmbientCapabilities=
 ReadOnlyPaths=/opt/nexus-quant/releases
-# ExecStopPost 以 root 写 create-once exit fact；0700 root:root 仍阻止 nqgatew 访问 control。
+# control 为 root:nqgatew/0710：worker 只能遍历并读取 root-owned/0640 clock，不能列目录或改写控制事实；
+# ExecStopPost 仍以 root 写 create-once exit fact。
 ReadWritePaths=/var/lib/nexus-quant/gatew-soak/%i/control
 ReadWritePaths=/run/nexus-quant/gatew-soak/%i
 ReadWritePaths=/var/lib/nexus-quant/gatew-soak/%i/evidence

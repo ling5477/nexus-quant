@@ -87,6 +87,7 @@ $script:ImmediateStopReasons = @(
     'SOAK_DATABASE_NOT_LOCAL'
 )
 $script:RuntimeEnvironmentNames = @(
+    'NQ_GATEW_RUN_MODE',
     'SPRING_PROFILES_ACTIVE', 'NQ_GATEW_OKX_READONLY_SOAK_ENABLED', 'CI', 'NQ_NO_OUTBOUND',
     'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED', 'NQ_TRANSFER_ENABLED', 'NQ_WITHDRAW_ENABLED',
     'NQ_AI_ENABLED', 'NQ_DH_RUNTIME_ENABLED', 'NQ_REAL_PROVIDER_ENABLED', 'NQ_REAL_CLIENT_ENABLED',
@@ -153,6 +154,11 @@ function Get-RuntimeEnvironmentSnapshot
 function Assert-RuntimeEnvironment
 {
     param([Parameter(Mandatory = $true)][hashtable]$Environment)
+
+    if ([string]$Environment.NQ_GATEW_RUN_MODE -ne 'REAL_READONLY_SOAK')
+    {
+        throw 'BLOCKED / SOAK_RUN_MODE_INVALID'
+    }
 
     foreach ($name in $script:DirectOkxEnvironmentNames)
     {
@@ -294,6 +300,18 @@ function Write-JsonCreateOnce
     }
 }
 
+function ConvertFrom-JsonPreservingTimestamps
+{
+    param([Parameter(Mandatory = $true)][string]$Json)
+
+    $parameters = @{ }
+    if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind'))
+    {
+        $parameters.DateKind = 'String'
+    }
+    return ($Json | ConvertFrom-Json @parameters)
+}
+
 function Read-JsonFile
 {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -302,7 +320,7 @@ function Read-JsonFile
     {
         throw "required evidence file is missing"
     }
-    return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json)
+    return ConvertFrom-JsonPreservingTimestamps (Get-Content -LiteralPath $Path -Raw)
 }
 
 function Test-IntegralNumber
@@ -425,10 +443,12 @@ function Assert-LauncherCycleResult
         throw 'launcher cycle contains a forbidden network material shape'
     }
     $onlinePass = [bool]$Cycle.credentialAccessed -and [bool]$Cycle.networkCalled -and
+            [string]$Cycle.killSwitchObservedState -eq 'ENGAGED' -and
             [string]$Cycle.allowedEndpointCategory -eq 'ACCOUNT_CONFIG_AND_BALANCE_READ' -and
             [string]$Cycle.accountConfigProbeStatus -eq 'SUCCEEDED' -and
             [string]$Cycle.balanceProbeStatus -eq 'SUCCEEDED'
     $offlinePass = -not [bool]$Cycle.credentialAccessed -and -not [bool]$Cycle.networkCalled -and
+            [string]$Cycle.killSwitchObservedState -eq 'DISENGAGED' -and
             [string]$Cycle.allowedEndpointCategory -eq 'OFFLINE_LOCAL_FIXTURE_READ' -and
             [string]$Cycle.accountConfigProbeStatus -eq 'SUCCEEDED' -and
             [string]$Cycle.balanceProbeStatus -eq 'SUCCEEDED'
@@ -705,7 +725,7 @@ function Get-ReleaseIdentity
         [Parameter(Mandatory = $true)][string]$ExpectedManifestSha256
     )
 
-    $verifier = Join-Path $script:ReleaseRoot "bin/$($script:ReleaseVerifierName)"
+    $verifier = Join-Path $script:ReleaseRoot "bin/$( $script:ReleaseVerifierName )"
     if (-not (Test-Path -LiteralPath $verifier -PathType Leaf))
     {
         throw 'BLOCKED / RELEASE_VERIFIER_MISSING'
@@ -719,7 +739,7 @@ function Get-ReleaseIdentity
     }
     try
     {
-        $identity = ($output -join "`n") | ConvertFrom-Json
+        $identity = ConvertFrom-JsonPreservingTimestamps ($output -join "`n")
         if ([string]$identity.decision -ne 'PASS / IMMUTABLE_RELEASE_VERIFIED')
         {
             throw 'BLOCKED / RELEASE_VERIFY_FAILED'
@@ -787,10 +807,10 @@ function Get-FormalLauncherClassPath
     $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
     Assert-FormalReleaseBinding $manifest | Out-Null
     foreach ($path in @(
-            "$($script:ReleaseRoot)/launcher/test-support.jar",
-            "$($script:ReleaseRoot)/launcher/modules",
-            "$($script:ReleaseRoot)/launcher/lib"
-        ))
+        "$( $script:ReleaseRoot )/launcher/test-support.jar",
+        "$( $script:ReleaseRoot )/launcher/modules",
+        "$( $script:ReleaseRoot )/launcher/lib"
+    ))
     {
         if (-not (Test-Path -LiteralPath $path))
         {
@@ -799,9 +819,9 @@ function Get-FormalLauncherClassPath
         Assert-NoPathComponentLink $path
     }
     return @(
-        "$($script:ReleaseRoot)/launcher/test-support.jar",
-        "$($script:ReleaseRoot)/launcher/modules/*",
-        "$($script:ReleaseRoot)/launcher/lib/*"
+        "$( $script:ReleaseRoot )/launcher/test-support.jar",
+        "$( $script:ReleaseRoot )/launcher/modules/*",
+        "$( $script:ReleaseRoot )/launcher/lib/*"
     ) -join [IO.Path]::PathSeparator
 }
 
@@ -811,6 +831,7 @@ function Invoke-FormalJavaLauncher
         [Parameter(Mandatory = $true)]
         [ValidateSet(
                 'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest',
+                'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest$PrerequisiteMain',
                 'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakFailCloseTest'
         )]
         [string]$MainClass,
@@ -897,6 +918,86 @@ function Invoke-SanitizedCycle
     }
 }
 
+function Invoke-SanitizedPrerequisiteReadback
+{
+    param([Parameter(Mandatory = $true)][string]$Directory)
+
+    if (-not (Test-FormalSystemdWorker) -or
+            [Environment]::GetEnvironmentVariable('NQ_GATEW_RUN_MODE', 'Process') -ne 'REAL_READONLY_SOAK')
+    {
+        throw 'BLOCKED / REAL_PREREQUISITE_WORKER_REQUIRED'
+    }
+    $resultFile = Join-Path $Directory ".prerequisite-$PID.json"
+    if (Test-Path -LiteralPath $resultFile)
+    {
+        Remove-Item -LiteralPath $resultFile -Force
+    }
+    try
+    {
+        Invoke-FormalJavaLauncher `
+            'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest$PrerequisiteMain' `
+            @{
+            'nq.gatew.okxReadonlySoak.required' = 'true'
+            'nq.gatew.okxReadonlySoak.action' = 'prerequisite'
+            'nq.gatew.okxReadonlySoak.resultFile' = $resultFile
+            'nq.gatew.okxReadonlySoak.repoRoot' = $script:ReleaseRoot
+        } `
+            $Directory | Out-Null
+        if (-not (Test-Path -LiteralPath $resultFile -PathType Leaf))
+        {
+            throw 'FAIL / PREREQUISITE_READBACK_UNAVAILABLE'
+        }
+        $result = Read-JsonFile $resultFile
+        Assert-ExactFields -Value $result -Expected @(
+            'killSwitchEngaged', 'credentialConfigured', 'activeCredentialCount', 'credentialType',
+            'credentialLocalStatus', 'tradePermissionExpectedDisabled',
+            'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
+        ) -Category 'prerequisite readback'
+        foreach ($field in @(
+            'killSwitchEngaged', 'credentialConfigured', 'tradePermissionExpectedDisabled',
+            'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
+        ))
+        {
+            if ($result.PSObject.Properties[$field].Value -isnot [bool])
+            {
+                throw 'FAIL / PREREQUISITE_READBACK_SCHEMA_INVALID'
+            }
+        }
+        $serialized = ConvertTo-CompactJson $result
+        if (-not (Test-IntegralNumber $result.activeCredentialCount) -or
+                [int]$result.activeCredentialCount -lt 0 -or
+                [string]$result.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
+                [string]$result.credentialLocalStatus -notin @(
+                    'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
+                ) -or
+                $serialized -match '(?i)https?://|api[-_]?key|passphrase|signature|encrypted[_-]?payload|jdbc[^\"]*password')
+        {
+            throw 'FAIL / PREREQUISITE_READBACK_SCHEMA_INVALID'
+        }
+        if (-not [bool]$result.killSwitchEngaged -or
+                -not [bool]$result.credentialConfigured -or
+                [int]$result.activeCredentialCount -ne 1 -or
+                [string]$result.credentialType -ne 'OKX_API_V5' -or
+                [string]$result.credentialLocalStatus -ne 'ACTIVE' -or
+                -not [bool]$result.tradePermissionExpectedDisabled -or
+                -not [bool]$result.withdrawPermissionExpectedDisabled -or
+                -not [bool]$result.postgresReachable -or
+                -not [bool]$result.managementHealthy)
+        {
+            throw 'FAIL / PREREQUISITE_READBACK_NOT_READY'
+        }
+        Write-JsonCreateOnce (Join-Path $Directory 'prerequisite-readback.json') $result
+        return $result
+    }
+    finally
+    {
+        if (Test-Path -LiteralPath $resultFile)
+        {
+            Remove-Item -LiteralPath $resultFile -Force
+        }
+    }
+}
+
 function Assert-OfflineBootstrapResult
 {
     param([Parameter(Mandatory = $true)]$Result)
@@ -931,26 +1032,66 @@ function Get-OfflineBootstrapFailureCode
 
     $failureCode = switch ($RecoveryStatus)
     {
-        'ENGAGE_FAILED_DB_ENV_INVALID' { 'OFFLINE_BOOTSTRAP_DB_ENV_INVALID' }
-        'ENGAGE_FAILED_DB_AUTHENTICATION' { 'OFFLINE_BOOTSTRAP_DB_AUTHENTICATION_FAILED' }
-        'ENGAGE_FAILED_DB_UNREACHABLE' { 'OFFLINE_BOOTSTRAP_DB_UNREACHABLE' }
-        'ENGAGE_FAILED_DB_CONTEXT_INIT' { 'OFFLINE_BOOTSTRAP_DB_CONTEXT_INIT_FAILED' }
-        'ENGAGE_FAILED_DB_DRIVER_INIT' { 'OFFLINE_BOOTSTRAP_DB_DRIVER_INIT_FAILED' }
-        'ENGAGE_FAILED_DB_DATASOURCE_CONFIG' { 'OFFLINE_BOOTSTRAP_DB_DATASOURCE_CONFIG_FAILED' }
-        'ENGAGE_FAILED_DB_TEMPLATE_INIT' { 'OFFLINE_BOOTSTRAP_DB_TEMPLATE_INIT_FAILED' }
-        'ENGAGE_FAILED_DB_LOCALITY' { 'OFFLINE_BOOTSTRAP_DB_LOCALITY_FAILED' }
-        'ENGAGE_FAILED_DB_MIGRATION_LOAD' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_LOAD_FAILED' }
-        'ENGAGE_FAILED_DB_MIGRATION_EXECUTE' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_EXECUTE_FAILED' }
-        'ENGAGE_FAILED_DB_MIGRATION_VALIDATE' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_VALIDATE_FAILED' }
-        'ENGAGE_FAILED_DB_MIGRATION_HISTORY' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_HISTORY_FAILED' }
-        'ENGAGE_FAILED_DB_SEED_INITIAL_STATE' { 'OFFLINE_BOOTSTRAP_DB_SEED_INITIAL_STATE_FAILED' }
-        'ENGAGE_FAILED_DB_SEED_UPDATE' { 'OFFLINE_BOOTSTRAP_DB_SEED_UPDATE_FAILED' }
-        'ENGAGE_FAILED_DB_SEED_EVENT' { 'OFFLINE_BOOTSTRAP_DB_SEED_EVENT_FAILED' }
-        'ENGAGE_FAILED_DB_SEED_TRANSACTION' { 'OFFLINE_BOOTSTRAP_DB_SEED_TRANSACTION_FAILED' }
-        'ENGAGE_FAILED_WRITE' { 'OFFLINE_BOOTSTRAP_DB_WRITE_FAILED' }
-        'ENGAGE_FAILED_READBACK' { 'OFFLINE_BOOTSTRAP_DB_READBACK_FAILED' }
-        'ENGAGE_STATUS_UNKNOWN' { 'OFFLINE_BOOTSTRAP_DB_STATUS_UNKNOWN' }
-        default { 'OFFLINE_BOOTSTRAP_RESULT_INVALID' }
+        'ENGAGE_FAILED_DB_ENV_INVALID' {
+            'OFFLINE_BOOTSTRAP_DB_ENV_INVALID'
+        }
+        'ENGAGE_FAILED_DB_AUTHENTICATION' {
+            'OFFLINE_BOOTSTRAP_DB_AUTHENTICATION_FAILED'
+        }
+        'ENGAGE_FAILED_DB_UNREACHABLE' {
+            'OFFLINE_BOOTSTRAP_DB_UNREACHABLE'
+        }
+        'ENGAGE_FAILED_DB_CONTEXT_INIT' {
+            'OFFLINE_BOOTSTRAP_DB_CONTEXT_INIT_FAILED'
+        }
+        'ENGAGE_FAILED_DB_DRIVER_INIT' {
+            'OFFLINE_BOOTSTRAP_DB_DRIVER_INIT_FAILED'
+        }
+        'ENGAGE_FAILED_DB_DATASOURCE_CONFIG' {
+            'OFFLINE_BOOTSTRAP_DB_DATASOURCE_CONFIG_FAILED'
+        }
+        'ENGAGE_FAILED_DB_TEMPLATE_INIT' {
+            'OFFLINE_BOOTSTRAP_DB_TEMPLATE_INIT_FAILED'
+        }
+        'ENGAGE_FAILED_DB_LOCALITY' {
+            'OFFLINE_BOOTSTRAP_DB_LOCALITY_FAILED'
+        }
+        'ENGAGE_FAILED_DB_MIGRATION_LOAD' {
+            'OFFLINE_BOOTSTRAP_DB_MIGRATION_LOAD_FAILED'
+        }
+        'ENGAGE_FAILED_DB_MIGRATION_EXECUTE' {
+            'OFFLINE_BOOTSTRAP_DB_MIGRATION_EXECUTE_FAILED'
+        }
+        'ENGAGE_FAILED_DB_MIGRATION_VALIDATE' {
+            'OFFLINE_BOOTSTRAP_DB_MIGRATION_VALIDATE_FAILED'
+        }
+        'ENGAGE_FAILED_DB_MIGRATION_HISTORY' {
+            'OFFLINE_BOOTSTRAP_DB_MIGRATION_HISTORY_FAILED'
+        }
+        'ENGAGE_FAILED_DB_SEED_INITIAL_STATE' {
+            'OFFLINE_BOOTSTRAP_DB_SEED_INITIAL_STATE_FAILED'
+        }
+        'ENGAGE_FAILED_DB_SEED_UPDATE' {
+            'OFFLINE_BOOTSTRAP_DB_SEED_UPDATE_FAILED'
+        }
+        'ENGAGE_FAILED_DB_SEED_EVENT' {
+            'OFFLINE_BOOTSTRAP_DB_SEED_EVENT_FAILED'
+        }
+        'ENGAGE_FAILED_DB_SEED_TRANSACTION' {
+            'OFFLINE_BOOTSTRAP_DB_SEED_TRANSACTION_FAILED'
+        }
+        'ENGAGE_FAILED_WRITE' {
+            'OFFLINE_BOOTSTRAP_DB_WRITE_FAILED'
+        }
+        'ENGAGE_FAILED_READBACK' {
+            'OFFLINE_BOOTSTRAP_DB_READBACK_FAILED'
+        }
+        'ENGAGE_STATUS_UNKNOWN' {
+            'OFFLINE_BOOTSTRAP_DB_STATUS_UNKNOWN'
+        }
+        default {
+            'OFFLINE_BOOTSTRAP_RESULT_INVALID'
+        }
     }
     return $failureCode
 }
@@ -965,7 +1106,7 @@ function Invoke-OfflineTestSupport
     )
 
     if (-not (Test-FormalSystemdWorker) -or
-            [Environment]::GetEnvironmentVariable('NQ_GATEW_RUN_MODE', 'Process') -ne 'OFFLINE_ACCEPTANCE')
+            [Environment]::GetEnvironmentVariable('NQ_GATEW_RUN_MODE', 'Process') -ne 'OFFLINE_ISOLATED_ACCEPTANCE')
     {
         throw 'BLOCKED / OFFLINE_FORMAL_WORKER_REQUIRED'
     }
@@ -1045,7 +1186,7 @@ function Get-ChainState
         {
             continue
         }
-        $record = $line | ConvertFrom-Json
+        $record = ConvertFrom-JsonPreservingTimestamps $line
         $fields = @($record.PSObject.Properties.Name)
         if (($fields -join '|') -ne ($sampleFields -join '|'))
         {
@@ -1178,7 +1319,7 @@ function Get-FormalOfflineAcceptanceState
     {
         if (-not [string]::IsNullOrWhiteSpace($line))
         {
-            $records += ($line | ConvertFrom-Json)
+            $records += ConvertFrom-JsonPreservingTimestamps $line
         }
     }
     if ($records.Count -ne 3)
@@ -1217,7 +1358,7 @@ function Get-FormalOfflineAcceptanceState
     {
         if (-not [string]::IsNullOrWhiteSpace($line))
         {
-            $failureRecords += ($line | ConvertFrom-Json)
+            $failureRecords += ConvertFrom-JsonPreservingTimestamps $line
         }
     }
     if ($failureRecords.Count -ne 1 -or
@@ -1288,13 +1429,19 @@ function Test-Evidence
     $chain = Get-ChainState $Directory
     $validRealPassSamples = 0L
     $fallbackSamples = 0L
+    $forbiddenEndpointCount = 0L
     foreach ($line in Get-Content -LiteralPath (Join-Path $Directory 'samples.jsonl'))
     {
         if ( [string]::IsNullOrWhiteSpace($line))
         {
             continue
         }
-        $sample = $line | ConvertFrom-Json
+        $sample = ConvertFrom-JsonPreservingTimestamps $line
+        if ([string]$sample.allowedEndpointCategory -eq 'FORBIDDEN_OR_UNKNOWN' -or
+                [string]$sample.reasonCode -eq 'FORBIDDEN_ENDPOINT_ATTEMPTED')
+        {
+            $forbiddenEndpointCount++
+        }
         if ($chain.EvidenceSchemaVersion -eq $script:EvidenceSchemaV2)
         {
             if ([string]$sample.resultStatus -eq 'PASSED_READ_ONLY' -and
@@ -1319,7 +1466,7 @@ function Test-Evidence
             throw 'evidence contains a forbidden material shape'
         }
     }
-    $offlineAcceptance = if ([string]$manifest.environment -eq 'OFFLINE_ACCEPTANCE' -and
+    $offlineAcceptance = if ([string]$manifest.environment -eq 'OFFLINE_ISOLATED_ACCEPTANCE' -and
             [long]$chain.Count -eq 3)
     {
         Get-FormalOfflineAcceptanceState $Directory
@@ -1340,6 +1487,7 @@ function Test-Evidence
         fallbackSamples = $fallbackSamples
         rawResponseCount = 0
         secretExposureCount = 0
+        forbiddenEndpointCount = $forbiddenEndpointCount
         offlineAcceptance = $offlineAcceptance
         result = 'PASS / HASH_CHAIN_VERIFIED'
     }
@@ -1359,7 +1507,14 @@ function Invoke-LinuxNativeCommand
     try
     {
         # Formal worker只允许调用固定绝对路径做只读路径校验，不提供提权或 systemd 生命周期能力。
-        $workingRoot = if (Test-FormalSystemdWorker) { $script:ReleaseRoot } else { $script:WorkspaceRoot }
+        $workingRoot = if (Test-FormalSystemdWorker)
+        {
+            $script:ReleaseRoot
+        }
+        else
+        {
+            $script:WorkspaceRoot
+        }
         Set-Location -LiteralPath $workingRoot
         $output = @(& $FilePath @Arguments 2> $null)
         return [pscustomobject]@{ ExitCode = [int]$LASTEXITCODE; Lines = @($output) }
@@ -1637,6 +1792,69 @@ function Write-FormalWorkerStart
     })
 }
 
+function Get-FormalAcceptanceClockPath
+{
+    return "$( $script:FormalStateRoot )/$RunId/control/acceptance-clock-start.json"
+}
+
+function Read-FormalAcceptanceClock
+{
+    $path = Get-FormalAcceptanceClockPath
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf))
+    {
+        throw 'BLOCKED / ACCEPTANCE_CLOCK_NOT_STARTED'
+    }
+    Assert-NoPathComponentLink $path
+    $clock = Read-JsonFile $path
+    Assert-ExactFields -Value $clock -Expected @(
+        'schemaVersion', 'runId', 'firstValidConfigPassAt', 'firstValidBalancePassAt',
+        'freshSshVerificationAt', 'mainPid', 'sameMainPid', 'heartbeatAdvanced',
+        'hashChainValid', 'forbiddenEndpointCount', 'secretExposureCount',
+        'acceptanceStartAt', 'plannedAcceptanceAt', 'acceptanceClockStarted'
+    ) -Category 'acceptance clock'
+    $configAt = [DateTimeOffset]::MinValue
+    $balanceAt = [DateTimeOffset]::MinValue
+    $freshAt = [DateTimeOffset]::MinValue
+    $startAt = [DateTimeOffset]::MinValue
+    $plannedAt = [DateTimeOffset]::MinValue
+    $schemaInvalid = [string]$clock.schemaVersion -ne 'gatew-soak-acceptance-clock-v1' -or
+            [string]$clock.runId -ne $RunId -or [long]$clock.mainPid -ne [long]$PID -or
+            -not [bool]$clock.sameMainPid -or -not [bool]$clock.heartbeatAdvanced -or
+            -not [bool]$clock.hashChainValid -or [int]$clock.forbiddenEndpointCount -ne 0 -or
+            [int]$clock.secretExposureCount -ne 0 -or -not [bool]$clock.acceptanceClockStarted -or
+            -not [DateTimeOffset]::TryParse([string]$clock.firstValidConfigPassAt, [ref]$configAt) -or
+            -not [DateTimeOffset]::TryParse([string]$clock.firstValidBalancePassAt, [ref]$balanceAt) -or
+            -not [DateTimeOffset]::TryParse([string]$clock.freshSshVerificationAt, [ref]$freshAt) -or
+            -not [DateTimeOffset]::TryParse([string]$clock.acceptanceStartAt, [ref]$startAt) -or
+            -not [DateTimeOffset]::TryParse([string]$clock.plannedAcceptanceAt, [ref]$plannedAt)
+    $latestPrerequisite = @($configAt, $balanceAt, $freshAt) |
+            Sort-Object -Descending | Select-Object -First 1
+    if ($schemaInvalid -or $startAt -ne $latestPrerequisite -or
+            $plannedAt -ne $startAt.AddHours(168))
+    {
+        throw 'BLOCKED / ACCEPTANCE_CLOCK_RECORD_INVALID'
+    }
+    return $clock
+}
+
+function Wait-ForFormalAcceptanceClock
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][long]$LastSequence,
+        [ValidateRange(1, 30)][int]$HeartbeatSeconds = 5
+    )
+
+    while (-not (Test-Path -LiteralPath (Get-FormalAcceptanceClockPath) -PathType Leaf))
+    {
+        Write-Heartbeat $Directory 'RUNNING' 'ACCEPTANCE_CLOCK_START_PENDING' $LastSequence
+        Start-Sleep -Seconds $HeartbeatSeconds
+    }
+    $clock = Read-FormalAcceptanceClock
+    Write-Heartbeat $Directory 'RUNNING' 'ACCEPTANCE_CLOCK_STARTED' $LastSequence
+    return $clock
+}
+
 function Write-FormalCompletionMarker
 {
     param([Parameter(Mandatory = $true)][string]$Directory)
@@ -1649,7 +1867,7 @@ function Write-FormalCompletionMarker
         {
             continue
         }
-        $sample = $line | ConvertFrom-Json
+        $sample = ConvertFrom-JsonPreservingTimestamps $line
         if ([string]$sample.resultStatus -eq 'PASSED_READ_ONLY')
         {
             $lastSuccessfulSequence = [long]$sample.sequence
@@ -1702,6 +1920,8 @@ function Run-FormalOfflineAcceptance
         Write-Heartbeat $Directory 'RUNNING' 'OFFLINE_READONLY_FIXTURE_ACCEPTED' $record.sequence
     }
 
+    Wait-ForFormalAcceptanceClock $Directory 2L $heartbeatSeconds | Out-Null
+
     $failureMarker = "$( $script:FormalRuntimeRoot )/$RunId/offline-cycle-3-failure"
     while (-not (Test-Path -LiteralPath $failureMarker -PathType Leaf))
     {
@@ -1731,6 +1951,7 @@ function Run-FormalRealSoak
         [Parameter(Mandatory = $true)]$Manifest
     )
 
+    Invoke-SanitizedPrerequisiteReadback $Directory | Out-Null
     $bootstrap = Invoke-SanitizedCycle 'bootstrap' $Directory
     if ([string]$bootstrap.resultStatus -ne 'BOOTSTRAP_READY')
     {
@@ -1746,7 +1967,8 @@ function Run-FormalRealSoak
     }
     Write-Heartbeat $Directory 'RUNNING' 'READ_ONLY_SAMPLE_ACCEPTED' $firstRecord.sequence
 
-    $plannedEndAt = [DateTimeOffset]::Parse([string]$Manifest.plannedEndAt)
+    $clock = Wait-ForFormalAcceptanceClock $Directory $firstRecord.sequence
+    $plannedEndAt = [DateTimeOffset]::Parse([string]$clock.plannedAcceptanceAt)
     $authFailures = 0
     while ((Get-UtcNow) -lt $plannedEndAt)
     {
@@ -1812,12 +2034,12 @@ function Run-SoakLoop
     {
         Write-FormalWorkerStart $directory
         $mode = [Environment]::GetEnvironmentVariable('NQ_GATEW_RUN_MODE', 'Process')
-        if ($mode -eq 'OFFLINE_ACCEPTANCE')
+        if ($mode -eq 'OFFLINE_ISOLATED_ACCEPTANCE')
         {
             Run-FormalOfflineAcceptance $directory
             return
         }
-        if ($mode -eq 'REAL')
+        if ($mode -eq 'REAL_READONLY_SOAK')
         {
             Run-FormalRealSoak $directory $manifest
             return
@@ -2084,6 +2306,14 @@ function Invoke-SelfTest
 {
     $directories = @()
     $caseCount = 0
+    $roundTripTimestamp = '2026-07-20T17:39:01.8426894Z'
+    $parsedTimestamp = (ConvertFrom-JsonPreservingTimestamps `
+            "{`"observedAt`":`"$roundTripTimestamp`"}").observedAt
+    if ($parsedTimestamp -isnot [string] -or [string]$parsedTimestamp -cne $roundTripTimestamp)
+    {
+        throw 'JSON timestamp preservation self-test failed'
+    }
+    $caseCount++
     $bootstrapFailureCodes = @{
         ENGAGE_FAILED_DB_ENV_INVALID = 'OFFLINE_BOOTSTRAP_DB_ENV_INVALID'
         ENGAGE_FAILED_DB_AUTHENTICATION = 'OFFLINE_BOOTSTRAP_DB_AUTHENTICATION_FAILED'
@@ -2124,6 +2354,7 @@ function Invoke-SelfTest
         {
             $runtimeEnvironment[$name] = ''
         }
+        $runtimeEnvironment.NQ_GATEW_RUN_MODE = 'REAL_READONLY_SOAK'
         $runtimeEnvironment.SPRING_PROFILES_ACTIVE = 'gatew-okx-readonly-soak'
         $runtimeEnvironment.NQ_GATEW_OKX_READONLY_SOAK_ENABLED = 'true'
         $runtimeEnvironment.CI = 'false'
@@ -2196,7 +2427,7 @@ function Invoke-SelfTest
         $missingCredentialRejected = $false
         try
         {
-            Assert-RuntimeEnvironment @{ }
+            Assert-RuntimeEnvironment @{ NQ_GATEW_RUN_MODE = 'REAL_READONLY_SOAK' }
         }
         catch
         {
@@ -2211,10 +2442,18 @@ function Invoke-SelfTest
             'candidate-0123456789ab-0123456789abcdef-20260719T000000Z' `
             ('a' * 64) ('b' * 40)
         $invalidReleaseRejected = $false
-        try { Assert-ReleaseIdentityValues '../escape' ('a' * 64) ('b' * 40) } catch {
+        try
+        {
+            Assert-ReleaseIdentityValues '../escape' ('a' * 64) ('b' * 40)
+        }
+        catch
+        {
             $invalidReleaseRejected = $_.Exception.Message -eq 'BLOCKED / FORMAL_RELEASE_BINDING_INVALID'
         }
-        if (-not $invalidReleaseRejected) { throw 'invalid release identity self-test failed' }
+        if (-not $invalidReleaseRejected)
+        {
+            throw 'invalid release identity self-test failed'
+        }
         $caseCount += 2
         [IO.File]::WriteAllText((Join-Path $directory 'samples.jsonl'), '', $script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $directory 'failures.jsonl'), '', $script:Utf8NoBom)
@@ -2237,7 +2476,7 @@ function Invoke-SelfTest
             reasonCode = 'READ_ONLY_SAMPLE_ACCEPTED'
             httpStatusCategory = 'SUCCESS_2XX'
             permissionClassification = 'READ_ONLY_WITH_IP_ALLOWLIST'
-            killSwitchObservedState = 'DISENGAGED'
+            killSwitchObservedState = 'ENGAGED'
             credentialAccessed = $true
             networkCalled = $true
             allowedEndpointCategory = 'ACCOUNT_CONFIG_AND_BALANCE_READ'
@@ -2259,7 +2498,7 @@ function Invoke-SelfTest
             runId = $formalOfflineRunId; harnessCommit = '0' * 40; startingCiRun = '0'
             startedAt = '2026-07-18T00:00:00Z'; plannedEndAt = '2026-07-25T00:00:00Z'
             durationHours = 168; cadenceSeconds = 60; venue = 'OKX'
-            profile = 'gatew-okx-readonly-soak'; environment = 'OFFLINE_ACCEPTANCE'
+            profile = 'gatew-okx-readonly-soak'; environment = 'OFFLINE_ISOLATED_ACCEPTANCE'
             launcherSchemaVersion = $script:LauncherSchemaVersion
             evidenceSchemaVersion = $script:EvidenceSchemaV2
         })
@@ -2446,7 +2685,7 @@ function Invoke-SelfTest
         $samplesPath = Join-Path $directory 'samples.jsonl'
         $originalSamples = [IO.File]::ReadAllBytes($samplesPath)
         $tamperedLines = @(Get-Content -LiteralPath $samplesPath)
-        $tampered = $tamperedLines[0] | ConvertFrom-Json
+        $tampered = ConvertFrom-JsonPreservingTimestamps $tamperedLines[0]
         $tampered.reasonCode = 'TAMPERED_SAMPLE'
         $tamperedLines[0] = ConvertTo-CompactJson $tampered
         [IO.File]::WriteAllText($samplesPath, ($tamperedLines -join [Environment]::NewLine) + [Environment]::NewLine, $script:Utf8NoBom)

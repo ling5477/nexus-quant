@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +35,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
@@ -160,6 +166,15 @@ class GateWOkxReadonlySoakSupportTest {
     }
 
     @Test
+    void requiresExplicitRealOrOfflineIsolatedRunMode() {
+        assertConfigBlocked(Map.of("NQ_GATEW_RUN_MODE", "REAL"), Map.of(), "SOAK_RUN_MODE_INVALID");
+
+        Map<String, String> offline = baseEnvironment();
+        offline.put("NQ_GATEW_RUN_MODE", GateWOkxReadonlySoakCycleTest.OFFLINE_ISOLATED_ACCEPTANCE);
+        config(offline, baseProperties()).assertSafe();
+    }
+
+    @Test
     void rejectsInvalidCurrencyAllowlist() {
         assertFromBlocked(Map.of("NQ_GATEW_SOAK_CURRENCIES", "BTC,USDT,ETH,SOL"), "SOAK_CURRENCY_ALLOWLIST_INVALID");
     }
@@ -184,6 +199,27 @@ class GateWOkxReadonlySoakSupportTest {
         config.assertSafe();
         assertEquals(0, config.ownerId());
         assertTrue(config.currencies().isEmpty());
+    }
+
+    @Test
+    void bootstrapAndPrerequisiteDoNotReadCredentialMasterKey() {
+        for (String action : List.of("bootstrap", "prerequisite")) {
+            Map<String, String> environment = baseEnvironment();
+            environment.remove("NQ_ACCOUNT_CREDENTIALS_MASTER_KEY");
+            environment.remove("NQ_GATEW_SOAK_CURRENCIES");
+            Properties properties = baseProperties();
+            properties.setProperty(GateWOkxReadonlySoakCycleTest.ACTION_PROPERTY, action);
+
+            GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(environment, properties);
+
+            config.assertSafe();
+            assertTrue(config.masterKey().isEmpty());
+            if ("bootstrap".equals(action)) {
+                assertEquals(0, config.ownerId());
+            } else {
+                assertEquals(7, config.ownerId());
+            }
+        }
     }
 
     @Test
@@ -348,7 +384,7 @@ class GateWOkxReadonlySoakSupportTest {
                 "READ_ONLY_SAMPLE_ACCEPTED",
                 "SUCCESS_2XX",
                 "READ_ONLY_WITH_IP_ALLOWLIST",
-                "DISENGAGED",
+                "ENGAGED",
                 true,
                 true,
                 "ACCOUNT_CONFIG_AND_BALANCE_READ",
@@ -360,7 +396,7 @@ class GateWOkxReadonlySoakSupportTest {
                 "PERMISSION_BLOCKED",
                 "AUTH_ERROR",
                 "UNSAFE_OR_INCOMPLETE",
-                "DISENGAGED",
+                "ENGAGED",
                 true,
                 true,
                 "ACCOUNT_CONFIGURATION_READ",
@@ -372,7 +408,7 @@ class GateWOkxReadonlySoakSupportTest {
                 "PARTIAL_RESPONSE",
                 "NOT_AVAILABLE",
                 "UNKNOWN",
-                "DISENGAGED",
+                "ENGAGED",
                 true,
                 true,
                 "ACCOUNT_CONFIG_AND_BALANCE_READ",
@@ -405,7 +441,7 @@ class GateWOkxReadonlySoakSupportTest {
                 "READ_ONLY_SAMPLE_ACCEPTED",
                 "SUCCESS_2XX",
                 "READ_ONLY_WITH_IP_ALLOWLIST",
-                "DISENGAGED",
+                "ENGAGED",
                 true,
                 true,
                 "ACCOUNT_CONFIG_AND_BALANCE_READ",
@@ -449,7 +485,7 @@ class GateWOkxReadonlySoakSupportTest {
                 "READ_ONLY_SAMPLE_ACCEPTED",
                 "SUCCESS_2XX",
                 "READ_ONLY_WITH_IP_ALLOWLIST",
-                "DISENGAGED",
+                "ENGAGED",
                 true,
                 true,
                 "ACCOUNT_CONFIG_AND_BALANCE_READ",
@@ -461,6 +497,63 @@ class GateWOkxReadonlySoakSupportTest {
                 IllegalArgumentException.class,
                 () -> GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.validateDto(unsafePass)
         );
+    }
+
+    @Test
+    void prerequisiteReadbackUsesOnlyAllowlistedAggregatesAndFailsClosed() throws Exception {
+        Properties properties = baseProperties();
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.ACTION_PROPERTY, "prerequisite");
+        Path output = tempDir.resolve("target/gatew-okx-readonly-soak")
+                .resolve(REAL_RUN_ID)
+                .resolve("prerequisite.json");
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY, output.toString());
+        Files.createDirectories(output.getParent());
+        Map<String, String> environment = baseEnvironment();
+        environment.remove("NQ_ACCOUNT_CREDENTIALS_MASTER_KEY");
+        environment.remove("NQ_GATEW_SOAK_CURRENCIES");
+        GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(environment, properties);
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("ENGAGED");
+        when(jdbc.queryForList(anyString(), eq(7L), eq(9L))).thenReturn(List.of(Map.of(
+                "exchange_code", "OKX",
+                "trade_env", "LIVE",
+                "status", "ACTIVE"
+        )));
+        when(jdbc.queryForList(anyString(), eq(9L))).thenReturn(List.of(Map.of(
+                "credential_type", "OKX_API_V5",
+                "credential_status", "ACTIVE",
+                "permission_scope", "READ_ONLY",
+                "withdraw_enabled", false
+        )));
+
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback result =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+        GateWOkxReadonlySoakCycleTest.writePrerequisiteResult(config, result, objectMapper);
+
+        assertTrue(result.ready());
+        JsonNode json = objectMapper.readTree(Files.readAllBytes(output));
+        List<String> fields = new ArrayList<>();
+        json.fieldNames().forEachRemaining(fields::add);
+        assertEquals(GateWOkxReadonlySoakCycleTest.PrerequisiteReadback.FIELDS, fields);
+        String serialized = json.toString().toLowerCase();
+        assertFalse(serialized.contains("encrypted_payload"));
+        assertFalse(serialized.contains("api_key"));
+        assertFalse(serialized.contains("passphrase"));
+        assertFalse(serialized.contains("jdbc"));
+
+        JdbcTemplate unavailable = mock(JdbcTemplate.class);
+        when(unavailable.queryForObject(anyString(), eq(String.class)))
+                .thenThrow(new DataAccessResourceFailureException("redacted"));
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback failed =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(unavailable, config, () -> true);
+        assertFalse(failed.postgresReachable());
+        assertFalse(failed.ready());
+
+        when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("DISENGAGED");
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback unsafeKillSwitch =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+        assertFalse(unsafeKillSwitch.killSwitchEngaged());
+        assertFalse(unsafeKillSwitch.ready());
     }
 
     @Test
@@ -717,6 +810,7 @@ class GateWOkxReadonlySoakSupportTest {
         Map<String, String> environment = new HashMap<>();
         environment.put("SPRING_PROFILES_ACTIVE", GateWOkxReadonlySoakCycleTest.PROFILE);
         environment.put("NQ_GATEW_OKX_READONLY_SOAK_ENABLED", "true");
+        environment.put("NQ_GATEW_RUN_MODE", GateWOkxReadonlySoakCycleTest.REAL_READONLY_SOAK);
         environment.put("CI", "false");
         environment.put("NQ_NO_OUTBOUND", "false");
         environment.put("NQ_LIVE_ENABLED", "false");

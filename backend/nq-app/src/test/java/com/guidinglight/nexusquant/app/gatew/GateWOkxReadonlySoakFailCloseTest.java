@@ -150,11 +150,25 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     @Test
+    void acceptsOnlyExplicitFrozenRunModeContract() {
+        assertEquals(
+                RunMode.OFFLINE_ISOLATED_ACCEPTANCE,
+                RunMode.valueOf(GateWOkxReadonlySoakCycleTest.OFFLINE_ISOLATED_ACCEPTANCE)
+        );
+        assertEquals(
+                RunMode.REAL_READONLY_SOAK,
+                RunMode.valueOf(GateWOkxReadonlySoakCycleTest.REAL_READONLY_SOAK)
+        );
+        assertThrows(IllegalArgumentException.class, () -> RunMode.valueOf("OFFLINE_ACCEPTANCE"));
+        assertThrows(IllegalArgumentException.class, () -> RunMode.valueOf("REAL"));
+    }
+
+    @Test
     void controlledOfflineFailureHasClosedNoNetworkProvenance() {
         RuntimeConfig config = new RuntimeConfig(
                 "offline-controlled-failure",
                 "gatew-soak-20260718T000000Z-0123abcd",
-                RunMode.OFFLINE_ACCEPTANCE,
+                RunMode.OFFLINE_ISOLATED_ACCEPTANCE,
                 "jdbc:postgresql://127.0.0.1:55432/gatew_soak",
                 "gatew_soak",
                 "not-used-by-controlled-failure",
@@ -266,7 +280,7 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     private static FailCloseResult offlineBootstrap(RuntimeConfig config) {
-        if (config.mode() != RunMode.OFFLINE_ACCEPTANCE) {
+        if (config.mode() != RunMode.OFFLINE_ISOLATED_ACCEPTANCE) {
             return FailCloseResult.failure("offline-bootstrap", RecoveryStatus.ENGAGE_FAILED_DB_ENV_INVALID);
         }
         try {
@@ -304,8 +318,8 @@ public class GateWOkxReadonlySoakFailCloseTest {
                     isAuthenticationFailure(ex)
                             ? RecoveryStatus.ENGAGE_FAILED_DB_AUTHENTICATION
                             : isConnectionFailure(ex)
-                                    ? RecoveryStatus.ENGAGE_FAILED_DB_UNREACHABLE
-                                    : ex.recoveryStatus()
+                            ? RecoveryStatus.ENGAGE_FAILED_DB_UNREACHABLE
+                            : ex.recoveryStatus()
             );
         } catch (ConfigException ex) {
             return FailCloseResult.failure("offline-bootstrap", RecoveryStatus.ENGAGE_FAILED_DB_ENV_INVALID);
@@ -320,7 +334,7 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     private static GateWOkxReadonlySoakCycleTest.CycleResult offlineSample(RuntimeConfig config) {
-        if (config.mode() != RunMode.OFFLINE_ACCEPTANCE) {
+        if (config.mode() != RunMode.OFFLINE_ISOLATED_ACCEPTANCE) {
             return GateWOkxReadonlySoakCycleTest.CycleResult.blocked(
                     "OFFLINE_FIXTURE_MODE_REQUIRED",
                     "UNKNOWN"
@@ -345,7 +359,7 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     private static GateWOkxReadonlySoakCycleTest.CycleResult offlineControlledFailure(RuntimeConfig config) {
-        if (config.mode() != RunMode.OFFLINE_ACCEPTANCE) {
+        if (config.mode() != RunMode.OFFLINE_ISOLATED_ACCEPTANCE) {
             return GateWOkxReadonlySoakCycleTest.CycleResult.blocked(
                     "OFFLINE_FIXTURE_MODE_REQUIRED",
                     "UNKNOWN"
@@ -772,8 +786,8 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     enum RunMode {
-        REAL,
-        OFFLINE_ACCEPTANCE
+        REAL_READONLY_SOAK,
+        OFFLINE_ISOLATED_ACCEPTANCE
     }
 
     enum RecoveryStatus {
@@ -973,7 +987,7 @@ public class GateWOkxReadonlySoakFailCloseTest {
         }
 
         private static boolean safeSchema(RunMode mode, String schema) {
-            if (mode == RunMode.OFFLINE_ACCEPTANCE) return OFFLINE_SCHEMA.matcher(schema).matches();
+            if (mode == RunMode.OFFLINE_ISOLATED_ACCEPTANCE) return OFFLINE_SCHEMA.matcher(schema).matches();
             return "public".equals(schema);
         }
     }
@@ -990,7 +1004,7 @@ public class GateWOkxReadonlySoakFailCloseTest {
 
     private static Map<String, String> failCloseEnvironment(Path credentialDirectory) {
         Map<String, String> environment = new java.util.HashMap<>();
-        environment.put("NQ_GATEW_RUN_MODE", "OFFLINE_ACCEPTANCE");
+        environment.put("NQ_GATEW_RUN_MODE", GateWOkxReadonlySoakCycleTest.OFFLINE_ISOLATED_ACCEPTANCE);
         environment.put("NQ_GATEW_SOAK_DB_URL", "jdbc:postgresql://127.0.0.1:55432/gatew_soak");
         environment.put("NQ_GATEW_SOAK_DB_USER", "gatew_soak");
         environment.put("NQ_GATEW_SOAK_DB_SCHEMA", "gatew_offline_0123abcd");

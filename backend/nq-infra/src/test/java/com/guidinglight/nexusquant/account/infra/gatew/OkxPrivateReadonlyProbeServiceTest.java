@@ -165,6 +165,58 @@ class OkxPrivateReadonlyProbeServiceTest {
         );
     }
 
+    @Test
+    void realReadonlySoakRequiresEngagedWithoutDisengagingOrBypassingUnknown() {
+        TrackingExecutor engagedExecutor = new TrackingExecutor();
+        RecordingTransport engagedTransport = new RecordingTransport(Set.of("READ_ONLY"), true, true);
+        engagedExecutor.transport = engagedTransport;
+        OkxPrivateReadonlyProbeService engagedService = new OkxPrivateReadonlyProbeService(
+                new StubAccountRepository(account("OKX", "LIVE", "ACTIVE")),
+                engagedExecutor,
+                new KillSwitchService(killSwitchRepository(KillSwitchStatus.ENGAGED), CLOCK),
+                CLOCK
+        );
+
+        OkxPrivateReadObservation accepted = engagedService.probeWhileKillSwitchEngaged(
+                7L,
+                9L,
+                "OKX_API_V5",
+                OkxPrivateEnvironment.PRODUCTION,
+                List.of("BTC")
+        );
+
+        assertEquals(OkxPrivateProbeStatus.PASSED_READ_ONLY, accepted.probeStatus());
+        assertEquals(1, engagedExecutor.callbacks.get());
+        assertEquals(List.of(
+                OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
+        ), engagedTransport.operations);
+
+        for (KillSwitchStatus unsafeStatus : List.of(KillSwitchStatus.DISENGAGED, KillSwitchStatus.UNKNOWN)) {
+            TrackingExecutor blockedExecutor = new TrackingExecutor();
+            RecordingTransport blockedTransport = new RecordingTransport(Set.of("READ_ONLY"), true, true);
+            blockedExecutor.transport = blockedTransport;
+            OkxPrivateReadonlyProbeService blockedService = new OkxPrivateReadonlyProbeService(
+                    new StubAccountRepository(account("OKX", "LIVE", "ACTIVE")),
+                    blockedExecutor,
+                    new KillSwitchService(killSwitchRepository(unsafeStatus), CLOCK),
+                    CLOCK
+            );
+
+            OkxPrivateReadObservation blocked = blockedService.probeWhileKillSwitchEngaged(
+                    7L,
+                    9L,
+                    "OKX_API_V5",
+                    OkxPrivateEnvironment.PRODUCTION,
+                    List.of("BTC")
+            );
+
+            assertEquals(OkxPrivateProbeStatus.BLOCKED, blocked.probeStatus());
+            assertEquals(0, blockedExecutor.callbacks.get());
+            assertTrue(blockedTransport.operations.isEmpty());
+        }
+    }
+
     private static void assertStoppedBeforeCredentialAndNetwork(
             KillSwitchStateRepository killSwitchRepository,
             String expectedBlocker
@@ -293,28 +345,63 @@ class OkxPrivateReadonlyProbeServiceTest {
             }
             return request.operation() == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ
                     ? new OkxPrivateReadResult(
-                            request.operation(), permissions, 0, configComplete,
-                            List.of(), List.of(), ipAllowlistConfigured, CLOCK.instant())
+                    request.operation(), permissions, 0, configComplete,
+                    List.of(), List.of(), ipAllowlistConfigured, CLOCK.instant())
                     : new OkxPrivateReadResult(request.operation(), Set.of(), 2, balanceComplete);
         }
     }
 
     private record StubAccountRepository(ExchangeAccountSummary account) implements ExchangeAccountRepository {
-        @Override public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) { return List.of(account); }
-        @Override public Optional<ExchangeAccountSummary> findById(Long accountId) {
+        @Override
+        public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) {
+            return List.of(account);
+        }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findById(Long accountId) {
             return accountId.equals(account.exchangeAccountId()) ? Optional.of(account) : Optional.empty();
         }
-        @Override public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long accountId) {
+
+        @Override
+        public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long accountId) {
             return ownerUserId.equals(account.ownerUserId()) && accountId.equals(account.exchangeAccountId())
                     ? Optional.of(account) : Optional.empty();
         }
-        @Override public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) { return Optional.empty(); }
-        @Override public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean updateProfile(Long ownerUserId, Long exchangeAccountId, String accountAlias, String externalAccountRef, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean enable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) { throw new UnsupportedOperationException(); }
-        @Override public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) { throw new UnsupportedOperationException(); }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) {
+            return Optional.empty();
+        }
+
+        @Override
+        public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean updateProfile(Long ownerUserId, Long exchangeAccountId, String accountAlias, String externalAccountRef, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean enable(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static final class FailOnAccessAccountRepository implements ExchangeAccountRepository {
@@ -322,16 +409,55 @@ class OkxPrivateReadonlyProbeServiceTest {
             return new AssertionError("account repository must not be called before kill-switch pass");
         }
 
-        @Override public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) { throw unexpected(); }
-        @Override public Optional<ExchangeAccountSummary> findById(Long accountId) { throw unexpected(); }
-        @Override public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long accountId) { throw unexpected(); }
-        @Override public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) { throw unexpected(); }
-        @Override public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) { throw unexpected(); }
-        @Override public boolean updateProfile(Long ownerUserId, Long exchangeAccountId, String accountAlias, String externalAccountRef, Instant now) { throw unexpected(); }
-        @Override public boolean enable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw unexpected(); }
-        @Override public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) { throw unexpected(); }
-        @Override public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) { throw unexpected(); }
-        @Override public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) { throw unexpected(); }
+        @Override
+        public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) {
+            throw unexpected();
+        }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findById(Long accountId) {
+            throw unexpected();
+        }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long accountId) {
+            throw unexpected();
+        }
+
+        @Override
+        public Optional<ExchangeAccountSummary> findDefaultByOwnerUserId(Long ownerUserId) {
+            throw unexpected();
+        }
+
+        @Override
+        public ExchangeAccountSummary create(Long ownerUserId, String exchangeCode, String tradeEnv, String accountAlias, String externalAccountRef, Instant now) {
+            throw unexpected();
+        }
+
+        @Override
+        public boolean updateProfile(Long ownerUserId, Long exchangeAccountId, String accountAlias, String externalAccountRef, Instant now) {
+            throw unexpected();
+        }
+
+        @Override
+        public boolean enable(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw unexpected();
+        }
+
+        @Override
+        public boolean disable(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw unexpected();
+        }
+
+        @Override
+        public void clearDefaultByScope(Long ownerUserId, String exchangeCode, String tradeEnv, Instant now) {
+            throw unexpected();
+        }
+
+        @Override
+        public boolean markDefault(Long ownerUserId, Long exchangeAccountId, Instant now) {
+            throw unexpected();
+        }
     }
 
     private static final class FailingKillSwitchRepository implements KillSwitchStateRepository {

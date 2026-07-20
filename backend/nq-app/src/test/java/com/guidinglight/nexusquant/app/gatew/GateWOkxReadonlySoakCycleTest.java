@@ -27,6 +27,7 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -89,6 +90,8 @@ public class GateWOkxReadonlySoakCycleTest {
     static final String LAUNCHER_SCHEMA_VERSION = "gatew-soak-launcher-v2";
     static final String SYSTEMD_CREDENTIAL_SOURCE = "SYSTEMD_CREDENTIALS";
     static final String FORMAL_STATE_ROOT = "/var/lib/nexus-quant/gatew-soak";
+    static final String REAL_READONLY_SOAK = "REAL_READONLY_SOAK";
+    static final String OFFLINE_ISOLATED_ACCEPTANCE = "OFFLINE_ISOLATED_ACCEPTANCE";
     private static final Set<OkxPrivateReadOperation> SOAK_OPERATIONS = Set.of(
             OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
             OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
@@ -166,6 +169,43 @@ public class GateWOkxReadonlySoakCycleTest {
         }
     }
 
+    /**
+     * 正式 worker 的脱敏 prerequisite 入口。只读取 systemd 注入的 DB password 与治理元数据；
+     * 不读取 credential master key、encrypted_payload 或任何交易所 credential material。
+     */
+    public static final class PrerequisiteMain {
+        private PrerequisiteMain() {
+        }
+
+        public static void main(String[] args) {
+            if (args.length != 0 || !"true".equals(System.getProperty(REQUIRED_PROPERTY))
+                    || !"prerequisite".equals(System.getProperty(ACTION_PROPERTY))) {
+                throw new IllegalStateException("GateW prerequisite launcher is not authorized");
+            }
+            SafetyConfig config = SafetyConfig.from(System.getenv(), System.getProperties());
+            PrerequisiteReadback result;
+            try {
+                config.assertSafe();
+                DriverManagerDataSource dataSource = new DriverManagerDataSource();
+                dataSource.setDriverClassName("org.postgresql.Driver");
+                dataSource.setUrl(config.databaseUrl());
+                dataSource.setUsername(config.databaseUser());
+                dataSource.setPassword(config.databasePassword());
+                result = readPrerequisite(
+                        new JdbcTemplate(dataSource),
+                        config,
+                        GateWOkxReadonlySoakCycleTest::managementHealthy
+                );
+            } catch (RuntimeException ex) {
+                result = PrerequisiteReadback.unavailable();
+            }
+            writePrerequisiteResult(config, result, STANDALONE_OBJECT_MAPPER);
+            if (!result.ready()) {
+                throw new IllegalStateException("GateW prerequisite readback is fail-closed");
+            }
+        }
+    }
+
     @Test
     void executeOneSanitizedAction() {
         CycleResult result = executeOneSanitizedAction(objectMapper);
@@ -216,18 +256,35 @@ public class GateWOkxReadonlySoakCycleTest {
         if ("engage".equals(config.action())) {
             return engage(jdbc);
         }
-        CredentialGate credential = credentialGate(jdbc, config);
-        credential.assertSafe();
-
         return switch (config.action()) {
-            case "bootstrap" -> bootstrap(jdbc);
-            case "sample" -> sample(jdbc, config, managedObjectMapper);
+            case "bootstrap" -> bootstrap(jdbc, config);
+            case "sample" -> {
+                CredentialGate credential = credentialGate(jdbc, config);
+                credential.assertSafe();
+                yield sample(jdbc, config, managedObjectMapper);
+            }
             default -> throw new SafeBlockException("SOAK_ACTION_INVALID");
         };
     }
 
-    private CycleResult bootstrap(JdbcTemplate jdbc) {
-        disengageIsolatedFixture(jdbc);
+    private CycleResult bootstrap(JdbcTemplate jdbc, SafetyConfig config) {
+        KillSwitchService killSwitchService = new KillSwitchService(
+                new JdbcKillSwitchStateRepository(jdbc),
+                Clock.systemUTC()
+        );
+        KillSwitchStatus requiredStatus;
+        if (REAL_READONLY_SOAK.equals(config.runMode())) {
+            requiredStatus = KillSwitchStatus.ENGAGED;
+        } else {
+            prepareOfflineIsolatedFixture(jdbc);
+            requiredStatus = KillSwitchStatus.DISENGAGED;
+        }
+        KillSwitchSnapshot snapshot = killSwitchService.snapshot();
+        if (snapshot.status() != requiredStatus) {
+            throw new SafeBlockException(requiredStatus == KillSwitchStatus.ENGAGED
+                    ? "KILL_SWITCH_NOT_ENGAGED"
+                    : "KILL_SWITCH_NOT_DISENGAGED");
+        }
         assertNoBusinessData(jdbc);
         return new CycleResult(
                 LAUNCHER_SCHEMA_VERSION,
@@ -238,7 +295,7 @@ public class GateWOkxReadonlySoakCycleTest {
                 "SOAK_ISOLATION_READY",
                 "NOT_CALLED",
                 "METADATA_READ_ONLY",
-                KillSwitchStatus.DISENGAGED.name(),
+                requiredStatus.name(),
                 false,
                 false,
                 "NONE",
@@ -259,8 +316,13 @@ public class GateWOkxReadonlySoakCycleTest {
                 Clock.systemUTC()
         );
         KillSwitchSnapshot before = killSwitchService.snapshot();
-        if (before.status() != KillSwitchStatus.DISENGAGED) {
-            throw new SafeBlockException("KILL_SWITCH_NOT_DISENGAGED");
+        KillSwitchStatus requiredStatus = REAL_READONLY_SOAK.equals(config.runMode())
+                ? KillSwitchStatus.ENGAGED
+                : KillSwitchStatus.DISENGAGED;
+        if (before.status() != requiredStatus) {
+            throw new SafeBlockException(requiredStatus == KillSwitchStatus.ENGAGED
+                    ? "KILL_SWITCH_NOT_ENGAGED"
+                    : "KILL_SWITCH_NOT_DISENGAGED");
         }
 
         CountingTransport transport = new CountingTransport(
@@ -279,7 +341,15 @@ public class GateWOkxReadonlySoakCycleTest {
         );
 
         try {
-            OkxPrivateReadObservation observation = service.probe(
+            OkxPrivateReadObservation observation = requiredStatus == KillSwitchStatus.ENGAGED
+                    ? service.probeWhileKillSwitchEngaged(
+                    config.ownerId(),
+                    config.exchangeAccountId(),
+                    JdbcOkxPrivateCredentialExecutor.OKX_API_V5,
+                    OkxPrivateEnvironment.PRODUCTION,
+                    config.currencies()
+            )
+                    : service.probe(
                     config.ownerId(),
                     config.exchangeAccountId(),
                     JdbcOkxPrivateCredentialExecutor.OKX_API_V5,
@@ -288,7 +358,7 @@ public class GateWOkxReadonlySoakCycleTest {
             );
             assertNoBusinessData(jdbc);
             KillSwitchSnapshot after = killSwitchService.snapshot();
-            if (after.status() != KillSwitchStatus.DISENGAGED || after.version() != before.version()) {
+            if (after.status() != requiredStatus || after.version() != before.version()) {
                 return cycleResult(
                         "BLOCKED",
                         "KILL_SWITCH_CHANGED_DURING_SAMPLE",
@@ -495,7 +565,7 @@ public class GateWOkxReadonlySoakCycleTest {
         }
     }
 
-    private static long disengageIsolatedFixture(JdbcTemplate jdbc) {
+    private static long prepareOfflineIsolatedFixture(JdbcTemplate jdbc) {
         TransactionTemplate transaction = new TransactionTemplate(
                 new DataSourceTransactionManager(Objects.requireNonNull(jdbc.getDataSource()))
         );
@@ -586,36 +656,155 @@ public class GateWOkxReadonlySoakCycleTest {
         return "gatew-cycle-" + UUID.randomUUID().toString().replace("-", "");
     }
 
+    static PrerequisiteReadback readPrerequisite(
+            JdbcTemplate jdbc,
+            SafetyConfig config,
+            ManagementHealthProbe managementHealthProbe
+    ) {
+        Objects.requireNonNull(jdbc, "jdbc must not be null");
+        Objects.requireNonNull(config, "config must not be null");
+        Objects.requireNonNull(managementHealthProbe, "managementHealthProbe must not be null");
+        try {
+            String killSwitchStatus = jdbc.queryForObject(
+                    "SELECT status FROM kill_switch_states WHERE scope = 'GLOBAL_TRADING'",
+                    String.class
+            );
+            List<Map<String, Object>> accounts = jdbc.queryForList(
+                    """
+                            SELECT exchange_code, trade_env, status
+                            FROM exchange_accounts
+                            WHERE owner_user_id = ? AND exchange_account_id = ?
+                            """,
+                    config.ownerId(),
+                    config.exchangeAccountId()
+            );
+            List<Map<String, Object>> credentials = jdbc.queryForList(
+                    """
+                            SELECT credential_type, credential_status, permission_scope, withdraw_enabled
+                            FROM exchange_account_credentials
+                            WHERE exchange_account_id = ?
+                              AND is_active = TRUE
+                              AND credential_status = 'ACTIVE'
+                            ORDER BY credential_id
+                            """,
+                    config.exchangeAccountId()
+            );
+
+            boolean accountHealthy = accounts.size() == 1
+                    && "OKX".equals(Objects.toString(accounts.getFirst().get("exchange_code"), ""))
+                    && "LIVE".equals(Objects.toString(accounts.getFirst().get("trade_env"), ""))
+                    && "ACTIVE".equals(Objects.toString(accounts.getFirst().get("status"), ""));
+            boolean singleCredential = credentials.size() == 1;
+            Map<String, Object> credential = singleCredential ? credentials.getFirst() : Map.of();
+            String credentialType = singleCredential
+                    ? Objects.toString(credential.get("credential_type"), "UNKNOWN")
+                    : credentials.isEmpty() ? "UNKNOWN" : "CONFLICT";
+            String credentialLocalStatus = singleCredential
+                    ? Objects.toString(credential.get("credential_status"), "UNKNOWN")
+                    : credentials.isEmpty() ? "UNKNOWN" : "CONFLICT";
+            boolean tradeDisabled = singleCredential
+                    && "READ_ONLY".equals(Objects.toString(credential.get("permission_scope"), ""));
+            boolean withdrawDisabled = singleCredential
+                    && Boolean.FALSE.equals(credential.get("withdraw_enabled"));
+            boolean localManagementHealthy;
+            try {
+                localManagementHealthy = managementHealthProbe.isHealthy();
+            } catch (RuntimeException ex) {
+                localManagementHealthy = false;
+            }
+            return new PrerequisiteReadback(
+                    "ENGAGED".equals(killSwitchStatus),
+                    !credentials.isEmpty(),
+                    credentials.size(),
+                    credentialType,
+                    credentialLocalStatus,
+                    tradeDisabled,
+                    withdrawDisabled,
+                    true,
+                    accountHealthy && localManagementHealthy
+            );
+        } catch (RuntimeException ex) {
+            return PrerequisiteReadback.unavailable();
+        }
+    }
+
+    private static boolean managementHealthy() {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) URI.create("http://127.0.0.1:18889/actuator/health")
+                    .toURL()
+                    .openConnection();
+            connection.setConnectTimeout(2_000);
+            connection.setReadTimeout(2_000);
+            connection.setRequestMethod("GET");
+            connection.setInstanceFollowRedirects(false);
+            if (connection.getResponseCode() != 200) return false;
+            byte[] payload = connection.getInputStream().readNBytes(4_096);
+            try {
+                String body = new String(payload, StandardCharsets.UTF_8);
+                return body.replaceAll("\\s+", "").toUpperCase(Locale.ROOT).contains("\"STATUS\":\"UP\"");
+            } finally {
+                Arrays.fill(payload, (byte) 0);
+            }
+        } catch (IOException | RuntimeException ex) {
+            return false;
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
     static void writeSanitizedResult(SafetyConfig config, CycleResult result, ObjectMapper managedObjectMapper) {
         byte[] json = null;
-        Path temporary = null;
         try {
-            Path output = validatedResultOutput(config);
             json = EvidenceSanitizer.serialize(managedObjectMapper, result);
-            temporary = output.resolveSibling(output.getFileName() + ".tmp-" + UUID.randomUUID());
-            Files.write(temporary, json, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-            try {
-                Files.move(
-                        temporary,
-                        output,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING
-                );
-            } catch (AtomicMoveNotSupportedException ex) {
-                Files.move(temporary, output, StandardCopyOption.REPLACE_EXISTING);
-            }
+            writeSanitizedPayload(validatedResultOutput(config), json);
         } catch (Exception ex) {
             throw new IllegalStateException("failed to write sanitized cycle result");
         } finally {
-            if (json != null) {
-                Arrays.fill(json, (byte) 0);
+            if (json != null) Arrays.fill(json, (byte) 0);
+        }
+    }
+
+    static void writePrerequisiteResult(
+            SafetyConfig config,
+            PrerequisiteReadback result,
+            ObjectMapper managedObjectMapper
+    ) {
+        byte[] json = null;
+        try {
+            PrerequisiteReadback.validate(result);
+            json = managedObjectMapper.writeValueAsBytes(result);
+            JsonNode tree = managedObjectMapper.readTree(json);
+            List<String> fields = new ArrayList<>();
+            tree.fieldNames().forEachRemaining(fields::add);
+            if (!fields.equals(PrerequisiteReadback.FIELDS)
+                    || new String(json, StandardCharsets.UTF_8).matches(
+                    "(?is).*(https?://|api[-_]?key|passphrase|signature|encrypted[_-]?payload|jdbc[^\\\"]*password).*"
+            )) {
+                throw new IllegalArgumentException("prerequisite readback is outside the closed schema");
             }
-            if (temporary != null) {
-                try {
-                    Files.deleteIfExists(temporary);
-                } catch (Exception ignored) {
-                    // 临时文件名与内容均受最小 DTO 约束；删除失败不覆盖原始 fail-closed 结果。
-                }
+            writeSanitizedPayload(validatedResultOutput(config), json);
+        } catch (Exception ex) {
+            throw new IllegalStateException("failed to write sanitized prerequisite result");
+        } finally {
+            if (json != null) Arrays.fill(json, (byte) 0);
+        }
+    }
+
+    private static void writeSanitizedPayload(Path output, byte[] json) throws IOException {
+        Path temporary = output.resolveSibling(output.getFileName() + ".tmp-" + UUID.randomUUID());
+        try {
+            Files.write(temporary, json, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            try {
+                Files.move(temporary, output, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ex) {
+                Files.move(temporary, output, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            try {
+                Files.deleteIfExists(temporary);
+            } catch (Exception ignored) {
+                // 临时文件名与内容均受闭合 DTO 约束；删除失败不覆盖原始 fail-closed 结果。
             }
         }
     }
@@ -845,11 +1034,13 @@ public class GateWOkxReadonlySoakCycleTest {
             if ("PASSED_READ_ONLY".equals(result.resultStatus())) {
                 boolean realProviderPass = result.credentialAccessed()
                         && result.networkCalled()
+                        && KillSwitchStatus.ENGAGED.name().equals(result.killSwitchObservedState())
                         && "ACCOUNT_CONFIG_AND_BALANCE_READ".equals(result.allowedEndpointCategory())
                         && result.accountConfigProbeStatus() == ProbeStatus.SUCCEEDED
                         && result.balanceProbeStatus() == ProbeStatus.SUCCEEDED;
                 boolean offlineFixturePass = !result.credentialAccessed()
                         && !result.networkCalled()
+                        && KillSwitchStatus.DISENGAGED.name().equals(result.killSwitchObservedState())
                         && "OFFLINE_LOCAL_FIXTURE_READ".equals(result.allowedEndpointCategory())
                         && result.accountConfigProbeStatus() == ProbeStatus.SUCCEEDED
                         && result.balanceProbeStatus() == ProbeStatus.SUCCEEDED
@@ -975,7 +1166,8 @@ public class GateWOkxReadonlySoakCycleTest {
             String action = property(properties, ACTION_PROPERTY);
             String url = value(environment, "NQ_GATEW_SOAK_DB_URL");
             String databaseName = databaseName(url);
-            boolean credentialAction = !"engage".equals(action);
+            boolean sampleAction = "sample".equals(action);
+            boolean scopedMetadataAction = sampleAction || "prerequisite".equals(action);
             Path formalEvidenceRoot = formalEvidenceRoot(environment);
             boolean systemdCredentials = SYSTEMD_CREDENTIAL_SOURCE.equals(
                     value(environment, "NQ_GATEW_SECRET_SOURCE")
@@ -994,14 +1186,14 @@ public class GateWOkxReadonlySoakCycleTest {
                             systemdCredentials,
                             expectedCredentialDirectory
                     ),
-                    credentialAction
+                    sampleAction
                             ? secretValue(environment, "NQ_ACCOUNT_CREDENTIALS_MASTER_KEY",
                             "credential-master-key", systemdCredentials, expectedCredentialDirectory) : "",
-                    credentialAction
+                    scopedMetadataAction
                             ? positiveLong(value(environment, "NQ_GATEW_SOAK_OWNER_ID"), "NQ_GATEW_SOAK_OWNER_ID") : 0,
-                    credentialAction
+                    scopedMetadataAction
                             ? positiveLong(value(environment, "NQ_GATEW_SOAK_ACCOUNT_ID"), "NQ_GATEW_SOAK_ACCOUNT_ID") : 0,
-                    credentialAction ? currencies(value(environment, "NQ_GATEW_SOAK_CURRENCIES")) : List.of(),
+                    sampleAction ? currencies(value(environment, "NQ_GATEW_SOAK_CURRENCIES")) : List.of(),
                     Map.copyOf(environment),
                     properties,
                     databaseName,
@@ -1105,7 +1297,12 @@ public class GateWOkxReadonlySoakCycleTest {
 
         void assertSafe() {
             List<String> violations = new ArrayList<>();
-            if (!Set.of("bootstrap", "sample", "engage").contains(action)) violations.add("SOAK_ACTION_INVALID");
+            if (!Set.of("bootstrap", "sample", "engage", "prerequisite").contains(action)) {
+                violations.add("SOAK_ACTION_INVALID");
+            }
+            if (!Set.of(REAL_READONLY_SOAK, OFFLINE_ISOLATED_ACCEPTANCE).contains(runMode())) {
+                violations.add("SOAK_RUN_MODE_INVALID");
+            }
             Set<String> profiles = new LinkedHashSet<>(Arrays.stream(value(environment, "SPRING_PROFILES_ACTIVE").split(","))
                     .map(String::trim).filter(value -> !value.isBlank()).toList());
             if (!profiles.equals(Set.of(PROFILE))) violations.add("SOAK_PROFILE_REQUIRED");
@@ -1127,7 +1324,7 @@ public class GateWOkxReadonlySoakCycleTest {
             if (databaseUrl.isBlank() || databaseUser.isBlank() || databasePassword.isBlank()) {
                 violations.add("SOAK_DATABASE_CONFIG_REQUIRED");
             }
-            if (!"engage".equals(action) && masterKey.isBlank()) violations.add("CREDENTIAL_MASTER_KEY_REQUIRED");
+            if ("sample".equals(action) && masterKey.isBlank()) violations.add("CREDENTIAL_MASTER_KEY_REQUIRED");
             if (!safeDatabaseTarget(databaseUrl, databaseName)) violations.add("SOAK_DATABASE_NOT_LOCAL");
             if (!violations.isEmpty()) throw new SafeBlockException(violations.getFirst());
         }
@@ -1201,6 +1398,10 @@ public class GateWOkxReadonlySoakCycleTest {
 
         String action() {
             return action;
+        }
+
+        String runMode() {
+            return value(environment, "NQ_GATEW_RUN_MODE");
         }
 
         Path resultFile() {
@@ -1281,6 +1482,77 @@ public class GateWOkxReadonlySoakCycleTest {
             if (!"OKX".equals(exchange) || !"LIVE".equals(tradeEnvironment) || !"ACTIVE".equals(accountStatus)) {
                 throw new SafeBlockException("CREDENTIAL_SCOPE_INVALID");
             }
+        }
+    }
+
+    @FunctionalInterface
+    interface ManagementHealthProbe {
+        boolean isHealthy();
+    }
+
+    @JsonPropertyOrder({
+            "killSwitchEngaged",
+            "credentialConfigured",
+            "activeCredentialCount",
+            "credentialType",
+            "credentialLocalStatus",
+            "tradePermissionExpectedDisabled",
+            "withdrawPermissionExpectedDisabled",
+            "postgresReachable",
+            "managementHealthy"
+    })
+    record PrerequisiteReadback(
+            boolean killSwitchEngaged,
+            boolean credentialConfigured,
+            int activeCredentialCount,
+            String credentialType,
+            String credentialLocalStatus,
+            boolean tradePermissionExpectedDisabled,
+            boolean withdrawPermissionExpectedDisabled,
+            boolean postgresReachable,
+            boolean managementHealthy
+    ) {
+        static final List<String> FIELDS = List.of(
+                "killSwitchEngaged",
+                "credentialConfigured",
+                "activeCredentialCount",
+                "credentialType",
+                "credentialLocalStatus",
+                "tradePermissionExpectedDisabled",
+                "withdrawPermissionExpectedDisabled",
+                "postgresReachable",
+                "managementHealthy"
+        );
+
+        static PrerequisiteReadback unavailable() {
+            return new PrerequisiteReadback(
+                    false, false, 0, "UNKNOWN", "UNKNOWN",
+                    false, false, false, false
+            );
+        }
+
+        static void validate(PrerequisiteReadback result) {
+            Objects.requireNonNull(result, "result must not be null");
+            if (result.activeCredentialCount() < 0
+                    || !Set.of("OKX_API_V5", "UNKNOWN", "CONFLICT").contains(result.credentialType())
+                    || !Set.of(
+                    "ACTIVE", "DISABLED", "REVOKED", "EXPIRED", "ROTATED", "UNKNOWN", "CONFLICT"
+            ).contains(result.credentialLocalStatus())
+                    || result.credentialConfigured() != (result.activeCredentialCount() > 0)) {
+                throw new IllegalArgumentException("prerequisite readback is outside the closed schema");
+            }
+        }
+
+        boolean ready() {
+            return killSwitchEngaged
+                    && credentialConfigured
+                    && activeCredentialCount == 1
+                    && "OKX_API_V5".equals(credentialType)
+                    && "ACTIVE".equals(credentialLocalStatus)
+                    && tradePermissionExpectedDisabled
+                    && withdrawPermissionExpectedDisabled
+                    && postgresReachable
+                    && managementHealthy;
         }
     }
 
