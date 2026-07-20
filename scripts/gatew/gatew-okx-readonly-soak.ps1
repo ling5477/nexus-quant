@@ -27,21 +27,21 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $script:ScriptPath = $PSCommandPath
-$configuredRepoRoot = [Environment]::GetEnvironmentVariable('NQ_GATEW_REPO_ROOT', 'Process')
-if ( [string]::IsNullOrWhiteSpace($configuredRepoRoot))
+$configuredReleaseRoot = [Environment]::GetEnvironmentVariable('NQ_GATEW_RELEASE_ROOT', 'Process')
+if ( [string]::IsNullOrWhiteSpace($configuredReleaseRoot))
 {
-    $script:RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+    $script:ReleaseRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 }
 else
 {
-    $script:RepoRoot = (Resolve-Path -LiteralPath $configuredRepoRoot).Path
+    $script:ReleaseRoot = [IO.Path]::GetFullPath($configuredReleaseRoot)
 }
-$script:SupervisorRelativePath = 'scripts/gatew/gatew-okx-readonly-soak.ps1'
-$script:EvidenceRoot = [IO.Path]::GetFullPath((Join-Path $script:RepoRoot 'target\gatew-okx-readonly-soak'))
+$script:WorkspaceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$script:EvidenceRoot = [IO.Path]::GetFullPath((Join-Path $script:WorkspaceRoot 'target\gatew-okx-readonly-soak'))
 $script:FormalStateRoot = '/var/lib/nexus-quant/gatew-soak'
 $script:FormalRuntimeRoot = '/run/nexus-quant/gatew-soak'
-$script:FormalLauncherRoot = '/opt/nexus-quant/gatew-soak/app/launcher'
 $script:LinuxJavaPath = '/usr/bin/java'
+$script:ReleaseVerifierName = 'verify-gatew-release.ps1'
 $script:Utf8NoBom = [Text.UTF8Encoding]::new($false)
 $script:GenesisHash = '0' * 64
 $script:LauncherSchemaVersion = 'gatew-soak-launcher-v2'
@@ -239,32 +239,6 @@ function Get-Sha256File
     param([Parameter(Mandatory = $true)][string]$Path)
 
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-}
-
-function Get-GitBlobObjectId
-{
-    param([Parameter(Mandatory = $true)][string]$Commit)
-
-    $objectSpec = "${Commit}:$( $script:SupervisorRelativePath )"
-    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot rev-parse $objectSpec 2> $null)
-    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$')
-    {
-        throw 'BLOCKED / SUPERVISOR_GIT_BLOB_UNRESOLVED'
-    }
-    return $value.ToLowerInvariant()
-}
-
-function Get-FilteredGitBlobObjectId
-{
-    param([Parameter(Mandatory = $true)][string]$Path)
-
-    $pathArgument = "--path=$( $script:SupervisorRelativePath )"
-    $value = ConvertTo-TrimmedNativeOutput @(& git -C $script:RepoRoot hash-object $pathArgument $Path 2> $null)
-    if ($LASTEXITCODE -ne 0 -or $value -notmatch '^[a-fA-F0-9]{40}([a-fA-F0-9]{24})?$')
-    {
-        throw 'git-filtered supervisor blob hash failed'
-    }
-    return $value.ToLowerInvariant()
 }
 
 function ConvertTo-CompactJson
@@ -724,65 +698,81 @@ function Get-EvidenceRunId
     return $leaf
 }
 
-function Get-HeadCommit
-{
-    $value = (& git -C $script:RepoRoot rev-parse HEAD 2> $null)
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($value))
-    {
-        throw 'unable to resolve harness commit'
-    }
-    return $value.Trim().ToLowerInvariant()
-}
-
-function Assert-FixedDetachedWorktree
-{
-    param([string]$ExpectedCommit)
-
-    $status = @(& git -C $script:RepoRoot status --porcelain --untracked-files=all 2> $null)
-    if ($LASTEXITCODE -ne 0 -or $status.Count -ne 0)
-    {
-        throw 'BLOCKED / HARNESS_WORKTREE_NOT_CLEAN'
-    }
-    $branchOutput = @(& git -C $script:RepoRoot branch --show-current 2> $null)
-    if ($LASTEXITCODE -ne 0)
-    {
-        throw 'unable to resolve harness branch'
-    }
-    $branch = ConvertTo-TrimmedNativeOutput $branchOutput
-    if (-not [string]::IsNullOrWhiteSpace($branch))
-    {
-        throw 'BLOCKED / FIXED_COMMIT_WORKTREE_REQUIRED'
-    }
-    $head = Get-HeadCommit
-    if (-not [string]::IsNullOrWhiteSpace($ExpectedCommit) -and $head -ne $ExpectedCommit.ToLowerInvariant())
-    {
-        throw 'BLOCKED / HARNESS_COMMIT_CHANGED'
-    }
-    return $head
-}
-
-function Assert-ExactHeadCi
+function Get-ReleaseIdentity
 {
     param(
-        [Parameter(Mandatory = $true)][string]$CiRun,
-        [Parameter(Mandatory = $true)][string]$Commit
+        [Parameter(Mandatory = $true)][string]$ExpectedReleaseId,
+        [Parameter(Mandatory = $true)][string]$ExpectedManifestSha256
     )
 
-    if ($CiRun -notmatch '^[0-9]+$')
+    $verifier = Join-Path $script:ReleaseRoot "bin/$($script:ReleaseVerifierName)"
+    if (-not (Test-Path -LiteralPath $verifier -PathType Leaf))
     {
-        throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED'
+        throw 'BLOCKED / RELEASE_VERIFIER_MISSING'
     }
-    $json = (& gh run view $CiRun --json status,conclusion,headSha,jobs 2> $null)
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($json))
+    $output = @(& $verifier -ReleaseRoot $script:ReleaseRoot `
+            -ExpectedReleaseId $ExpectedReleaseId -ExpectedManifestSha256 $ExpectedManifestSha256 `
+            -SkipPosix 2> $null)
+    if ($LASTEXITCODE -ne 0 -or $output.Count -eq 0)
     {
-        throw 'BLOCKED / EXACT_HEAD_CI_NOT_VERIFIABLE'
+        throw 'BLOCKED / RELEASE_VERIFY_FAILED'
     }
-    $ci = $json | ConvertFrom-Json
-    $bad = @($ci.jobs | Where-Object { $_.status -ne 'completed' -or $_.conclusion -ne 'success' })
-    if ($ci.status -ne 'completed' -or $ci.conclusion -ne 'success' -or
-            $ci.headSha.ToLowerInvariant() -ne $Commit -or @($ci.jobs).Count -ne 10 -or $bad.Count -ne 0)
+    try
     {
-        throw 'BLOCKED / EXACT_HEAD_CI_NOT_GREEN'
+        $identity = ($output -join "`n") | ConvertFrom-Json
+        if ([string]$identity.decision -ne 'PASS / IMMUTABLE_RELEASE_VERIFIED')
+        {
+            throw 'BLOCKED / RELEASE_VERIFY_FAILED'
+        }
+        $script:ReleaseRoot = [IO.Path]::GetFullPath([string]$identity.releaseRoot)
+        return $identity
+    }
+    catch
+    {
+        throw 'BLOCKED / RELEASE_VERIFY_FAILED'
+    }
+}
+
+function Assert-FormalReleaseBinding
+{
+    param([Parameter(Mandatory = $true)]$Manifest)
+
+    $releaseId = [string]$Manifest.releaseId
+    $manifestSha256 = [string]$Manifest.releaseManifestSha256
+    Assert-ReleaseIdentityValues $releaseId $manifestSha256 ([string]$Manifest.harnessCommit)
+    $environmentContract = @{
+        NQ_GATEW_RELEASE_ROOT = [string]$script:ReleaseRoot
+        NQ_GATEW_RELEASE_ID = $releaseId
+        NQ_GATEW_RELEASE_MANIFEST_SHA256 = $manifestSha256
+    }
+    foreach ($name in $environmentContract.Keys)
+    {
+        if ([Environment]::GetEnvironmentVariable($name, 'Process') -cne $environmentContract[$name])
+        {
+            throw 'BLOCKED / FORMAL_RELEASE_ENVIRONMENT_CHANGED'
+        }
+    }
+    $identity = Get-ReleaseIdentity $releaseId $manifestSha256
+    if ([string]$identity.sourceCommit -cne [string]$Manifest.harnessCommit)
+    {
+        throw 'BLOCKED / FORMAL_RELEASE_BINDING_CHANGED'
+    }
+    return $identity
+}
+
+function Assert-ReleaseIdentityValues
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$ReleaseId,
+        [Parameter(Mandatory = $true)][string]$ManifestSha256,
+        [Parameter(Mandatory = $true)][string]$SourceCommit
+    )
+
+    if ($ReleaseId -cnotmatch '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16}-[0-9]{8}T[0-9]{6}Z)$' -or
+            $ManifestSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+            $SourceCommit -cnotmatch '^[a-f0-9]{40}$')
+    {
+        throw 'BLOCKED / FORMAL_RELEASE_BINDING_INVALID'
     }
 }
 
@@ -795,31 +785,24 @@ function Get-FormalLauncherClassPath
         throw 'BLOCKED / FORMAL_SYSTEMD_WORKER_REQUIRED'
     }
     $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
-    $commit = [string]$manifest.harnessCommit
-    if ($commit -cnotmatch '^[a-f0-9]{40}$')
+    Assert-FormalReleaseBinding $manifest | Out-Null
+    foreach ($path in @(
+            "$($script:ReleaseRoot)/launcher/test-support.jar",
+            "$($script:ReleaseRoot)/launcher/modules",
+            "$($script:ReleaseRoot)/launcher/lib"
+        ))
     {
-        throw 'BLOCKED / HARNESS_COMMIT_UNRESOLVED'
-    }
-    $bundleRoot = "$( $script:FormalLauncherRoot )/$commit"
-    $testClasses = Join-Path $bundleRoot 'test-classes'
-    $libraries = Join-Path $bundleRoot 'lib'
-    foreach ($path in @($script:FormalLauncherRoot, $bundleRoot, $testClasses, $libraries))
-    {
-        if (-not (Test-Path -LiteralPath $path -PathType Container))
+        if (-not (Test-Path -LiteralPath $path))
         {
             throw 'BLOCKED / FORMAL_LAUNCHER_BUNDLE_MISSING'
         }
         Assert-NoPathComponentLink $path
-        $realPath = Invoke-LinuxNativeCommand `
-            -FilePath $script:LinuxReadlinkPath `
-            -Arguments @('-f', '--', $path)
-        if ($realPath.ExitCode -ne 0 -or
-                (ConvertTo-TrimmedNativeOutput $realPath.Lines) -cne ([IO.Path]::GetFullPath($path)))
-        {
-            throw 'BLOCKED / FORMAL_LAUNCHER_BUNDLE_SYMLINK_FORBIDDEN'
-        }
     }
-    return "$testClasses$( [IO.Path]::PathSeparator )$libraries/*"
+    return @(
+        "$($script:ReleaseRoot)/launcher/test-support.jar",
+        "$($script:ReleaseRoot)/launcher/modules/*",
+        "$($script:ReleaseRoot)/launcher/lib/*"
+    ) -join [IO.Path]::PathSeparator
 }
 
 function Invoke-FormalJavaLauncher
@@ -887,31 +870,9 @@ function Invoke-SanitizedCycle
                 'nq.gatew.okxReadonlySoak.required' = 'true'
                 'nq.gatew.okxReadonlySoak.action' = $CycleAction
                 'nq.gatew.okxReadonlySoak.resultFile' = $cycleFile
-                'nq.gatew.okxReadonlySoak.repoRoot' = $script:RepoRoot
+                'nq.gatew.okxReadonlySoak.repoRoot' = $script:ReleaseRoot
             } `
                 $Directory | Out-Null
-        }
-        else
-        {
-            $arguments = @(
-                '-f', (Join-Path $script:RepoRoot 'backend\pom.xml'),
-                '-pl', 'nq-app', '-am',
-                '-Dtest=GateWOkxReadonlySoakCycleTest',
-                '-Dsurefire.failIfNoSpecifiedTests=false',
-                '-Dnq.gatew.okxReadonlySoak.required=true',
-                "-Dnq.gatew.okxReadonlySoak.action=$CycleAction",
-                "-Dnq.gatew.okxReadonlySoak.resultFile=$cycleFile",
-                "-Dnq.gatew.okxReadonlySoak.repoRoot=$script:RepoRoot",
-                '--offline', '--quiet', 'test'
-            )
-            try
-            {
-                $null = & mvn @arguments 2>&1
-            }
-            catch
-            {
-                # A launcher invocation error without a conformant result uses the closed fallback below.
-            }
         }
         if (Test-Path -LiteralPath $cycleFile -PathType Leaf)
         {
@@ -946,14 +907,52 @@ function Assert-OfflineBootstrapResult
     ) -Category 'offline bootstrap'
     if ([string]$Result.schemaVersion -ne 'gatew-soak-failclose-v1' -or
             [string]$Result.action -ne 'offline-bootstrap' -or
-            [string]$Result.recoveryStatus -ne 'OFFLINE_FIXTURE_DISENGAGED' -or
             [string]$Result.killSwitchObservedState -ne 'DISENGAGED' -or
             $Result.credentialAccessed -isnot [bool] -or [bool]$Result.credentialAccessed -or
             $Result.networkCalled -isnot [bool] -or [bool]$Result.networkCalled -or
             -not (Test-IntegralNumber $Result.killSwitchVersion) -or [long]$Result.killSwitchVersion -lt 1)
     {
+        $failureCode = Get-OfflineBootstrapFailureCode ([string]$Result.recoveryStatus)
+        if ($failureCode -ne 'OFFLINE_BOOTSTRAP_RESULT_INVALID')
+        {
+            throw "FAIL / $failureCode"
+        }
         throw 'FAIL / OFFLINE_BOOTSTRAP_RESULT_INVALID'
     }
+    if ([string]$Result.recoveryStatus -ne 'OFFLINE_FIXTURE_DISENGAGED')
+    {
+        throw "FAIL / $( Get-OfflineBootstrapFailureCode ([string]$Result.recoveryStatus) )"
+    }
+}
+
+function Get-OfflineBootstrapFailureCode
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$RecoveryStatus)
+
+    $failureCode = switch ($RecoveryStatus)
+    {
+        'ENGAGE_FAILED_DB_ENV_INVALID' { 'OFFLINE_BOOTSTRAP_DB_ENV_INVALID' }
+        'ENGAGE_FAILED_DB_AUTHENTICATION' { 'OFFLINE_BOOTSTRAP_DB_AUTHENTICATION_FAILED' }
+        'ENGAGE_FAILED_DB_UNREACHABLE' { 'OFFLINE_BOOTSTRAP_DB_UNREACHABLE' }
+        'ENGAGE_FAILED_DB_CONTEXT_INIT' { 'OFFLINE_BOOTSTRAP_DB_CONTEXT_INIT_FAILED' }
+        'ENGAGE_FAILED_DB_DRIVER_INIT' { 'OFFLINE_BOOTSTRAP_DB_DRIVER_INIT_FAILED' }
+        'ENGAGE_FAILED_DB_DATASOURCE_CONFIG' { 'OFFLINE_BOOTSTRAP_DB_DATASOURCE_CONFIG_FAILED' }
+        'ENGAGE_FAILED_DB_TEMPLATE_INIT' { 'OFFLINE_BOOTSTRAP_DB_TEMPLATE_INIT_FAILED' }
+        'ENGAGE_FAILED_DB_LOCALITY' { 'OFFLINE_BOOTSTRAP_DB_LOCALITY_FAILED' }
+        'ENGAGE_FAILED_DB_MIGRATION_LOAD' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_LOAD_FAILED' }
+        'ENGAGE_FAILED_DB_MIGRATION_EXECUTE' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_EXECUTE_FAILED' }
+        'ENGAGE_FAILED_DB_MIGRATION_VALIDATE' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_VALIDATE_FAILED' }
+        'ENGAGE_FAILED_DB_MIGRATION_HISTORY' { 'OFFLINE_BOOTSTRAP_DB_MIGRATION_HISTORY_FAILED' }
+        'ENGAGE_FAILED_DB_SEED_INITIAL_STATE' { 'OFFLINE_BOOTSTRAP_DB_SEED_INITIAL_STATE_FAILED' }
+        'ENGAGE_FAILED_DB_SEED_UPDATE' { 'OFFLINE_BOOTSTRAP_DB_SEED_UPDATE_FAILED' }
+        'ENGAGE_FAILED_DB_SEED_EVENT' { 'OFFLINE_BOOTSTRAP_DB_SEED_EVENT_FAILED' }
+        'ENGAGE_FAILED_DB_SEED_TRANSACTION' { 'OFFLINE_BOOTSTRAP_DB_SEED_TRANSACTION_FAILED' }
+        'ENGAGE_FAILED_WRITE' { 'OFFLINE_BOOTSTRAP_DB_WRITE_FAILED' }
+        'ENGAGE_FAILED_READBACK' { 'OFFLINE_BOOTSTRAP_DB_READBACK_FAILED' }
+        'ENGAGE_STATUS_UNKNOWN' { 'OFFLINE_BOOTSTRAP_DB_STATUS_UNKNOWN' }
+        default { 'OFFLINE_BOOTSTRAP_RESULT_INVALID' }
+    }
+    return $failureCode
 }
 
 function Invoke-OfflineTestSupport
@@ -1251,6 +1250,10 @@ function Test-Evidence
     param([Parameter(Mandatory = $true)][string]$Directory)
 
     $manifest = Read-JsonFile (Join-Path $Directory 'manifest.json')
+    if (Test-FormalSystemdWorker)
+    {
+        Assert-FormalReleaseBinding $manifest | Out-Null
+    }
     if ($manifest.runId -ne (Get-EvidenceRunId $Directory))
     {
         throw 'manifest runId mismatch'
@@ -1328,6 +1331,8 @@ function Test-Evidence
     return [pscustomobject]@{
         runId = $manifest.runId
         harnessCommit = $manifest.harnessCommit
+        releaseId = Get-OptionalPropertyValue $manifest 'releaseId'
+        releaseManifestSha256 = Get-OptionalPropertyValue $manifest 'releaseManifestSha256'
         sampleCount = $chain.Count
         lastHash = $chain.LastHash
         evidenceSchemaVersion = $chain.EvidenceSchemaVersion
@@ -1354,7 +1359,8 @@ function Invoke-LinuxNativeCommand
     try
     {
         # Formal worker只允许调用固定绝对路径做只读路径校验，不提供提权或 systemd 生命周期能力。
-        Set-Location -LiteralPath $script:RepoRoot
+        $workingRoot = if (Test-FormalSystemdWorker) { $script:ReleaseRoot } else { $script:WorkspaceRoot }
+        Set-Location -LiteralPath $workingRoot
         $output = @(& $FilePath @Arguments 2> $null)
         return [pscustomobject]@{ ExitCode = [int]$LASTEXITCODE; Lines = @($output) }
     }
@@ -1488,13 +1494,16 @@ function Start-Soak
     {
         throw 'BLOCKED / FORMAL_ROOT_CONTROL_REQUIRED'
     }
-    $head = Assert-FixedDetachedWorktree
+    $head = 'artifact-' + (Get-Sha256File $script:ScriptPath)
     Assert-RuntimeEnvironment (Get-RuntimeEnvironmentSnapshot)
     if ( [string]::IsNullOrWhiteSpace($StartingCiRun))
     {
         throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED'
     }
-    Assert-ExactHeadCi $StartingCiRun $head
+    if ($StartingCiRun -cnotmatch '^[1-9][0-9]{0,19}$')
+    {
+        throw 'BLOCKED / EXACT_HEAD_CI_METADATA_REQUIRED'
+    }
     $effectiveRunId = if ( [string]::IsNullOrWhiteSpace($RunId))
     {
         New-RunId
@@ -1546,8 +1555,6 @@ function Start-Soak
             endpointAllowlistVersion = 'gatew-okx-private-readonly-v1'
             flywayVersion = '35'
             hostFingerprint = Get-Sha256Text "$env:COMPUTERNAME|$( [Environment]::OSVersion.VersionString )"
-            # Commit identity 使用 Git blob，不受 Windows/Linux checkout EOL 影响；artifact hash 只证明上传字节。
-            supervisorScriptGitBlob = Get-GitBlobObjectId $head
             supervisorArtifactSha256 = Get-Sha256File $script:ScriptPath
             launcherSchemaVersion = $script:LauncherSchemaVersion
             evidenceSchemaVersion = $script:EvidenceSchemaV2
@@ -1795,7 +1802,10 @@ function Run-SoakLoop
 {
     $directory = Get-RunDirectory $RunId
     $manifest = Read-JsonFile (Join-Path $directory 'manifest.json')
-    Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
+    if (Test-FormalSystemdWorker)
+    {
+        Assert-FormalReleaseBinding $manifest | Out-Null
+    }
     Test-Evidence $directory | Out-Null
     Assert-RunLoopAllowed $directory
     if (Test-FormalSystemdWorker)
@@ -1931,7 +1941,6 @@ function Resume-Soak
     }
     $directory = Get-RunDirectory $RunId
     $manifest = Read-JsonFile (Join-Path $directory 'manifest.json')
-    Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
     Test-Evidence $directory | Out-Null
     Assert-RunResumable $directory
     $state = Get-SupervisorState $directory -AllowInactive
@@ -1975,7 +1984,6 @@ function Request-Stop
             reasonCode = $heartbeat.reasonCode
         }
     }
-    Assert-FixedDetachedWorktree ([string]$manifest.harnessCommit) | Out-Null
     $state = Get-SupervisorState $directory -AllowInactive
     $kind = if ($Failure)
     {
@@ -2076,6 +2084,35 @@ function Invoke-SelfTest
 {
     $directories = @()
     $caseCount = 0
+    $bootstrapFailureCodes = @{
+        ENGAGE_FAILED_DB_ENV_INVALID = 'OFFLINE_BOOTSTRAP_DB_ENV_INVALID'
+        ENGAGE_FAILED_DB_AUTHENTICATION = 'OFFLINE_BOOTSTRAP_DB_AUTHENTICATION_FAILED'
+        ENGAGE_FAILED_DB_UNREACHABLE = 'OFFLINE_BOOTSTRAP_DB_UNREACHABLE'
+        ENGAGE_FAILED_DB_CONTEXT_INIT = 'OFFLINE_BOOTSTRAP_DB_CONTEXT_INIT_FAILED'
+        ENGAGE_FAILED_DB_DRIVER_INIT = 'OFFLINE_BOOTSTRAP_DB_DRIVER_INIT_FAILED'
+        ENGAGE_FAILED_DB_DATASOURCE_CONFIG = 'OFFLINE_BOOTSTRAP_DB_DATASOURCE_CONFIG_FAILED'
+        ENGAGE_FAILED_DB_TEMPLATE_INIT = 'OFFLINE_BOOTSTRAP_DB_TEMPLATE_INIT_FAILED'
+        ENGAGE_FAILED_DB_LOCALITY = 'OFFLINE_BOOTSTRAP_DB_LOCALITY_FAILED'
+        ENGAGE_FAILED_DB_MIGRATION_LOAD = 'OFFLINE_BOOTSTRAP_DB_MIGRATION_LOAD_FAILED'
+        ENGAGE_FAILED_DB_MIGRATION_EXECUTE = 'OFFLINE_BOOTSTRAP_DB_MIGRATION_EXECUTE_FAILED'
+        ENGAGE_FAILED_DB_MIGRATION_VALIDATE = 'OFFLINE_BOOTSTRAP_DB_MIGRATION_VALIDATE_FAILED'
+        ENGAGE_FAILED_DB_MIGRATION_HISTORY = 'OFFLINE_BOOTSTRAP_DB_MIGRATION_HISTORY_FAILED'
+        ENGAGE_FAILED_DB_SEED_INITIAL_STATE = 'OFFLINE_BOOTSTRAP_DB_SEED_INITIAL_STATE_FAILED'
+        ENGAGE_FAILED_DB_SEED_UPDATE = 'OFFLINE_BOOTSTRAP_DB_SEED_UPDATE_FAILED'
+        ENGAGE_FAILED_DB_SEED_EVENT = 'OFFLINE_BOOTSTRAP_DB_SEED_EVENT_FAILED'
+        ENGAGE_FAILED_DB_SEED_TRANSACTION = 'OFFLINE_BOOTSTRAP_DB_SEED_TRANSACTION_FAILED'
+        ENGAGE_FAILED_WRITE = 'OFFLINE_BOOTSTRAP_DB_WRITE_FAILED'
+        ENGAGE_FAILED_READBACK = 'OFFLINE_BOOTSTRAP_DB_READBACK_FAILED'
+        ENGAGE_STATUS_UNKNOWN = 'OFFLINE_BOOTSTRAP_DB_STATUS_UNKNOWN'
+    }
+    foreach ($entry in $bootstrapFailureCodes.GetEnumerator())
+    {
+        if ((Get-OfflineBootstrapFailureCode $entry.Key) -ne $entry.Value)
+        {
+            throw 'offline bootstrap failure taxonomy self-test failed'
+        }
+        $caseCount++
+    }
     $testRunId = New-RunId
     $directory = Get-RunDirectory $testRunId
     $directories += $directory
@@ -2170,33 +2207,15 @@ function Invoke-SelfTest
             throw 'missing credential preflight was not rejected'
         }
         $caseCount++
-        $detachedBranchOutputHandled = (ConvertTo-TrimmedNativeOutput $null) -eq ''
-        if (-not $detachedBranchOutputHandled)
-        {
-            throw 'detached branch output was not handled'
+        Assert-ReleaseIdentityValues `
+            'candidate-0123456789ab-0123456789abcdef-20260719T000000Z' `
+            ('a' * 64) ('b' * 40)
+        $invalidReleaseRejected = $false
+        try { Assert-ReleaseIdentityValues '../escape' ('a' * 64) ('b' * 40) } catch {
+            $invalidReleaseRejected = $_.Exception.Message -eq 'BLOCKED / FORMAL_RELEASE_BINDING_INVALID'
         }
-        $caseCount++
-        $head = Get-HeadCommit
-        $committedBlob = Get-GitBlobObjectId $head
-        $logicalText = [IO.File]::ReadAllText($script:ScriptPath) -replace "`r`n|`r|`n", "`n"
-        $lfCheckout = Join-Path $directory 'supervisor-lf.ps1'
-        $crlfCheckout = Join-Path $directory 'supervisor-crlf.ps1'
-        $uploadedArtifact = Join-Path $directory 'supervisor-uploaded.ps1'
-        [IO.File]::WriteAllText($lfCheckout, $logicalText, $script:Utf8NoBom)
-        [IO.File]::WriteAllText($crlfCheckout, ($logicalText -replace "`n", "`r`n"), $script:Utf8NoBom)
-        [IO.File]::Copy($script:ScriptPath, $uploadedArtifact, $true)
-        $lfBlob = Get-FilteredGitBlobObjectId $lfCheckout
-        $crlfBlob = Get-FilteredGitBlobObjectId $crlfCheckout
-        if ($lfBlob -ne $crlfBlob)
-        {
-            throw 'cross-platform Git blob self-test failed'
-        }
-        $caseCount++
-        if ((Get-Sha256File $script:ScriptPath) -ne (Get-Sha256File $uploadedArtifact))
-        {
-            throw 'uploaded artifact hash self-test failed'
-        }
-        $caseCount++
+        if (-not $invalidReleaseRejected) { throw 'invalid release identity self-test failed' }
+        $caseCount += 2
         [IO.File]::WriteAllText((Join-Path $directory 'samples.jsonl'), '', $script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $directory 'failures.jsonl'), '', $script:Utf8NoBom)
         Write-JsonAtomic (Join-Path $directory 'manifest.json') ([ordered]@{
@@ -2666,13 +2685,12 @@ function Invoke-SelfTest
             terminalRunResumeRejected = 'PASS'
             terminalRunLoopRejected = 'PASS'
             missingCredentialRejected = 'PASS / API_KEY_REQUIRED'
-            detachedBranchOutputHandled = 'PASS'
-            detachedCommitBlobLookup = 'PASS'
-            windowsCrlfGitBlob = 'PASS'
-            linuxLfGitBlob = 'PASS'
-            uploadedArtifactSha256 = 'PASS'
+            releaseIdentityValidation = 'PASS / ID+MANIFEST_HASH+SOURCE_COMMIT'
+            invalidReleaseIdentityRejected = 'PASS'
+            formalRuntimeGitDependency = 'REMOVED'
             linuxProductionAuthority = 'PASS / FORMAL_ROOT_CONTROL_ONLY'
             formalOfflineAcceptanceFixture = 'PASS / cycle1+2 read-only / cycle3 controlled failure / no credential / no network'
+            offlineBootstrapFailureTaxonomy = 'PASS / CLOSED_FIXED_CODES'
             automaticEngageRecoveryFixture = 'PASS / killSwitchObservedState=ENGAGED'
             finalSummaryNotGenerated = (-not (Test-Path -LiteralPath (Join-Path $directory 'final-summary.json')))
             cleanupReleasedTemporaryDirectory = $true

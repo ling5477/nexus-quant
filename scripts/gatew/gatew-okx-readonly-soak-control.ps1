@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet(
-        'install', 'prepare', 'start', 'status', 'verify', 'stop', 'offline-fail',
+        'prepare', 'start', 'status', 'verify', 'stop', 'offline-fail',
         'unit-preflight', 'record-exit', 'self-test'
     )]
     [string]$Action,
@@ -44,10 +44,7 @@ $script:SafeCodePattern = '^[A-Z][A-Z0-9_]{1,95}$'
 $script:StateRoot = '/var/lib/nexus-quant/gatew-soak'
 $script:RuntimeRoot = '/run/nexus-quant/gatew-soak'
 $script:LogRoot = '/var/log/nexus-quant/gatew-soak'
-$script:ConfigRoot = '/etc/nexus-quant/gatew-soak'
 $script:CredentialRoot = '/etc/nexus-quant/gatew-soak/credentials'
-$script:LibexecRoot = '/usr/local/libexec/nexus-quant'
-$script:LauncherRoot = '/opt/nexus-quant/gatew-soak/app/launcher'
 $script:SystemdRoot = '/etc/systemd/system'
 $script:RuntimeSystemdRoot = '/run/systemd/system'
 $script:WorkerTemplate = 'nq-gatew-soak@.service'
@@ -59,23 +56,21 @@ $script:LinuxRuntimeUser = 'nqgatew'
 $script:LinuxRuntimeGroup = 'nqgatew'
 $script:PowerShellPath = '/usr/bin/pwsh'
 $script:SystemctlPath = '/usr/bin/systemctl'
-$script:SystemdAnalyzePath = '/usr/bin/systemd-analyze'
-$script:SystemdCredsPath = '/usr/bin/systemd-creds'
-$script:MavenPath = '/usr/bin/mvn'
-$script:InstallPath = '/usr/bin/install'
 $script:ChownPath = '/usr/bin/chown'
 $script:ChmodPath = '/usr/bin/chmod'
 $script:StatPath = '/usr/bin/stat'
 $script:ReadlinkPath = '/usr/bin/readlink'
 $script:LnPath = '/usr/bin/ln'
 
-$configuredRepoRoot = [Environment]::GetEnvironmentVariable('NQ_GATEW_REPO_ROOT', 'Process')
-if ([string]::IsNullOrWhiteSpace($configuredRepoRoot)) {
-    $script:RepoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$configuredReleaseRoot = [Environment]::GetEnvironmentVariable('NQ_GATEW_RELEASE_ROOT', 'Process')
+if ([string]::IsNullOrWhiteSpace($configuredReleaseRoot)) {
+    $script:ReleaseRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 }
 else {
-    $script:RepoRoot = [IO.Path]::GetFullPath($configuredRepoRoot)
+    $script:ReleaseRoot = [IO.Path]::GetFullPath($configuredReleaseRoot)
 }
+$script:WorkspaceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$script:ReleaseVerifierName = 'verify-gatew-release.ps1'
 
 $script:AllowedTransitions = @{
     PREPARING = @('STARTING', 'BLOCKED', 'OPERATOR_STOPPING')
@@ -150,212 +145,98 @@ function Get-Sha256File {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-function Get-LauncherBundleRoot {
-    param([Parameter(Mandatory = $true)][string]$Commit)
+function New-ReleaseVerifierParameters {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [string]$ExpectedId,
+        [string]$ExpectedManifest
+    )
 
-    if ($Commit -cnotmatch '^[a-f0-9]{40}$') { throw 'BLOCKED / HARNESS_COMMIT_UNRESOLVED' }
-    return "$($script:LauncherRoot)/$Commit"
+    $parameters = @{ ReleaseRoot = $Root }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedId)) {
+        $parameters.ExpectedReleaseId = $ExpectedId
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedManifest)) {
+        $parameters.ExpectedManifestSha256 = $ExpectedManifest
+    }
+    return $parameters
 }
 
-function Assert-LauncherBundle {
+function Get-ReleaseIdentity {
     param(
-        [Parameter(Mandatory = $true)][string]$Commit,
+        [string]$ExpectedReleaseId,
         [string]$ExpectedManifestSha256
     )
 
-    $bundleRoot = Get-LauncherBundleRoot $Commit
-    $manifestPath = Join-Path $bundleRoot 'manifest.json'
-    Assert-PathBelowRoot $script:LauncherRoot $bundleRoot
-    Assert-NoSymlink $script:LauncherRoot
-    Assert-NoSymlink $bundleRoot
-    Assert-NoSymlink $manifestPath
-    if (Test-LinuxPlatform) {
-        Assert-PosixContract $bundleRoot 'directory' '555' 'root' 'root'
-        Assert-PosixContract $manifestPath 'regular file' '444' 'root' 'root'
+    $verifier = Join-Path $script:ReleaseRoot "bin/$($script:ReleaseVerifierName)"
+    if (-not (Test-Path -LiteralPath $verifier -PathType Leaf)) {
+        throw 'BLOCKED / RELEASE_VERIFIER_MISSING'
     }
-    $manifest = Read-JsonFile $manifestPath
-    $fields = @($manifest.PSObject.Properties.Name)
-    if (($fields -join '|') -ne 'schemaVersion|harnessCommit|mainClasses|artifacts' -or
-        [string]$manifest.schemaVersion -ne 'gatew-soak-launcher-bundle-v1' -or
-        [string]$manifest.harnessCommit -cne $Commit -or
-        (@($manifest.mainClasses) -join '|') -cne (
-            'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest|' +
-            'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakFailCloseTest'
-        ) -or @($manifest.artifacts).Count -lt 3) {
-        throw 'BLOCKED / LAUNCHER_BUNDLE_MANIFEST_INVALID'
-    }
-    $seen = @{}
-    foreach ($artifact in @($manifest.artifacts)) {
-        if ((@($artifact.PSObject.Properties.Name) -join '|') -ne 'relativePath|sha256' -or
-            [string]$artifact.relativePath -cnotmatch '^(test-classes/[A-Za-z0-9_$/.-]+[.]class|lib/[0-9]{4}-[a-f0-9]{16}-[A-Za-z0-9_.-]+[.]jar)$' -or
-            [string]$artifact.sha256 -cnotmatch '^[a-f0-9]{64}$' -or
-            $seen.ContainsKey([string]$artifact.relativePath)) {
-            throw 'BLOCKED / LAUNCHER_BUNDLE_MANIFEST_INVALID'
+    $verifierParameters = New-ReleaseVerifierParameters `
+        $script:ReleaseRoot $ExpectedReleaseId $ExpectedManifestSha256
+    $output = @(& $verifier @verifierParameters 2>$null)
+    if ($LASTEXITCODE -ne 0 -or $output.Count -eq 0) { throw 'BLOCKED / RELEASE_VERIFY_FAILED' }
+    try {
+        $identity = ($output -join "`n") | ConvertFrom-Json
+        if ([string]$identity.decision -ne 'PASS / IMMUTABLE_RELEASE_VERIFIED') {
+            throw 'BLOCKED / RELEASE_VERIFY_FAILED'
         }
-        $seen[[string]$artifact.relativePath] = $true
-        $path = Join-Path $bundleRoot ([string]$artifact.relativePath)
-        Assert-PathBelowRoot $bundleRoot $path
-        Assert-NoSymlink $path
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or
-            (Get-Sha256File $path) -cne [string]$artifact.sha256) {
-            throw 'BLOCKED / LAUNCHER_BUNDLE_HASH_MISMATCH'
-        }
-        if (Test-LinuxPlatform) { Assert-PosixContract $path 'regular file' '444' 'root' 'root' }
+        $script:ReleaseRoot = [IO.Path]::GetFullPath([string]$identity.releaseRoot)
+        return $identity
     }
-    foreach ($requiredClass in @(
-        'test-classes/com/guidinglight/nexusquant/app/gatew/GateWOkxReadonlySoakCycleTest.class',
-        'test-classes/com/guidinglight/nexusquant/app/gatew/GateWOkxReadonlySoakFailCloseTest.class'
-    )) {
-        if (-not $seen.ContainsKey($requiredClass)) {
-            throw 'BLOCKED / LAUNCHER_BUNDLE_MANIFEST_INVALID'
-        }
-    }
-    $actualArtifacts = @()
-    foreach ($item in @(Get-ChildItem -LiteralPath $bundleRoot -Force -Recurse)) {
-        Assert-NoSymlink $item.FullName
-        if ($item.PSIsContainer) {
-            if (Test-LinuxPlatform) { Assert-PosixContract $item.FullName 'directory' '555' 'root' 'root' }
-            continue
-        }
-        if ($item.FullName -ceq $manifestPath) { continue }
-        $relative = $item.FullName.Substring($bundleRoot.Length).TrimStart('/', '\').Replace('\', '/')
-        $actualArtifacts += $relative
-    }
-    $actualArtifacts = @($actualArtifacts | Sort-Object -Unique)
-    $declaredArtifacts = @($seen.Keys | Sort-Object -Unique)
-    if (($actualArtifacts -join '|') -cne ($declaredArtifacts -join '|')) {
-        throw 'BLOCKED / LAUNCHER_BUNDLE_MANIFEST_INVALID'
-    }
-    $manifestSha256 = Get-Sha256File $manifestPath
-    if (-not [string]::IsNullOrWhiteSpace($ExpectedManifestSha256) -and
-        $manifestSha256 -cne $ExpectedManifestSha256) {
-        throw 'BLOCKED / LAUNCHER_BUNDLE_HASH_MISMATCH'
-    }
-    return [pscustomobject]@{
-        Root = $bundleRoot
-        ManifestPath = $manifestPath
-        ManifestSha256 = $manifestSha256
-        ArtifactCount = @($manifest.artifacts).Count
-    }
+    catch { throw 'BLOCKED / RELEASE_VERIFY_FAILED' }
 }
 
-function Build-LauncherBundle {
-    param([Parameter(Mandatory = $true)][string]$Commit)
+function Assert-FrozenReleaseBinding {
+    param(
+        [Parameter(Mandatory = $true)]$Config,
+        [switch]$RequireEnvironment
+    )
 
-    Ensure-Directory $script:LauncherRoot 'root:root' '755'
-    $bundleRoot = Get-LauncherBundleRoot $Commit
-    if (Test-Path -LiteralPath $bundleRoot) {
-        return Assert-LauncherBundle $Commit
+    $expectedFields = @(
+        'schemaVersion', 'runId', 'runMode', 'databaseUrl', 'databaseUser', 'databaseSchema',
+        'offlineHeartbeatSeconds', 'releaseId', 'sourceCommit', 'sourceTreeMode',
+        'releaseManifestSha256', 'releaseRoot', 'startingCiRun', 'workerUnit', 'failCloseUnit',
+        'acceptanceClockStarted', 'preparedAt'
+    )
+    if ((@($Config.PSObject.Properties.Name) -join '|') -cne ($expectedFields -join '|') -or
+        [string]$Config.schemaVersion -ne 'gatew-soak-frozen-config-v2' -or
+        [string]$Config.runMode -notin @('REAL', 'OFFLINE_ACCEPTANCE') -or
+        [string]$Config.releaseId -cnotmatch '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16}-[0-9]{8}T[0-9]{6}Z)$' -or
+        [string]$Config.sourceCommit -cnotmatch '^[a-f0-9]{40}$' -or
+        [string]$Config.sourceTreeMode -notin @('CANDIDATE', 'EXACT_COMMIT') -or
+        [string]$Config.releaseManifestSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+        [string]$Config.startingCiRun -cnotmatch '^[1-9][0-9]{0,19}$' -or
+        [bool]$Config.acceptanceClockStarted) {
+        throw 'BLOCKED / FROZEN_RELEASE_BINDING_INVALID'
+    }
+    if ([string]$Config.runMode -eq 'REAL' -and
+        ([string]$Config.sourceTreeMode -ne 'EXACT_COMMIT' -or
+            [string]$Config.releaseId -cne [string]$Config.sourceCommit)) {
+        throw 'BLOCKED / REAL_RUN_EXACT_RELEASE_REQUIRED'
     }
 
-    $backendPom = Join-Path $script:RepoRoot 'backend/pom.xml'
-    $build = Invoke-Native $script:MavenPath @(
-        '--offline', '--quiet', '-f', $backendPom, '-pl', 'nq-app', '-am', '-DskipTests', 'install'
-    ) -AllowFailure
-    if ($build.ExitCode -ne 0) { throw 'FAIL / LAUNCHER_BUNDLE_BUILD_FAILED' }
-
-    $classpathPath = Join-Path $script:RepoRoot 'backend/nq-app/target/gatew-formal-launcher-classpath.txt'
-    if (Test-Path -LiteralPath $classpathPath) { Remove-Item -LiteralPath $classpathPath -Force }
-    $classpath = Invoke-Native $script:MavenPath @(
-        '--offline', '--quiet', '-f', $backendPom, '-pl', 'nq-app',
-        '-DincludeScope=test', '-Dmdep.outputAbsoluteArtifactFilename=true',
-        "-Dmdep.outputFile=$classpathPath", 'dependency:build-classpath'
-    ) -AllowFailure
-    if ($classpath.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $classpathPath -PathType Leaf)) {
-        throw 'FAIL / LAUNCHER_CLASSPATH_BUILD_FAILED'
+    $identity = Get-ReleaseIdentity ([string]$Config.releaseId) ([string]$Config.releaseManifestSha256)
+    if ([string]$identity.sourceCommit -cne [string]$Config.sourceCommit -or
+        [string]$identity.sourceTreeMode -cne [string]$Config.sourceTreeMode -or
+        [IO.Path]::GetFullPath([string]$identity.releaseRoot) -cne
+        [IO.Path]::GetFullPath([string]$Config.releaseRoot)) {
+        throw 'BLOCKED / FROZEN_RELEASE_BINDING_CHANGED'
     }
-
-    $stageRoot = "$($script:LauncherRoot)/.build-$Commit-$PID"
-    Assert-PathBelowRoot $script:LauncherRoot $stageRoot
-    if (Test-Path -LiteralPath $stageRoot) { throw 'BLOCKED / LAUNCHER_BUILD_PATH_EXISTS' }
-    try {
-        Ensure-Directory $stageRoot 'root:root' '700'
-        $classRoot = Join-Path $stageRoot 'test-classes/com/guidinglight/nexusquant/app/gatew'
-        $libRoot = Join-Path $stageRoot 'lib'
-        Ensure-Directory $classRoot 'root:root' '700'
-        Ensure-Directory $libRoot 'root:root' '700'
-        $sourceClassRoot = Join-Path $script:RepoRoot `
-            'backend/nq-app/target/test-classes/com/guidinglight/nexusquant/app/gatew'
-        $classFiles = @(
-            Get-ChildItem -LiteralPath $sourceClassRoot -File |
-                Where-Object {
-                    $_.Name -like 'GateWOkxReadonlySoakCycleTest*.class' -or
-                    $_.Name -like 'GateWOkxReadonlySoakFailCloseTest*.class'
-                } |
-                Sort-Object Name
-        )
-        if ($classFiles.Count -lt 4 -or
-            @($classFiles | Where-Object { $_.Name -eq 'GateWOkxReadonlySoakCycleTest.class' }).Count -ne 1 -or
-            @($classFiles | Where-Object { $_.Name -eq 'GateWOkxReadonlySoakFailCloseTest.class' }).Count -ne 1) {
-            throw 'FAIL / LAUNCHER_TEST_CLASSES_MISSING'
+    if ($RequireEnvironment) {
+        $environmentBinding = @{
+            NQ_GATEW_RELEASE_ROOT = [string]$Config.releaseRoot
+            NQ_GATEW_RELEASE_ID = [string]$Config.releaseId
+            NQ_GATEW_RELEASE_MANIFEST_SHA256 = [string]$Config.releaseManifestSha256
         }
-        $artifacts = @()
-        foreach ($file in $classFiles) {
-            Assert-NoSymlink $file.FullName
-            $destination = Join-Path $classRoot $file.Name
-            Invoke-Native $script:InstallPath @(
-                '-o', 'root', '-g', 'root', '-m', '0444', '--', $file.FullName, $destination
-            ) | Out-Null
-            $artifacts += [pscustomobject][ordered]@{
-                relativePath = "test-classes/com/guidinglight/nexusquant/app/gatew/$($file.Name)"
-                sha256 = Get-Sha256File $destination
+        foreach ($name in $environmentBinding.Keys) {
+            $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+            if ([string]$value -cne [string]$environmentBinding[$name]) {
+                throw 'BLOCKED / RELEASE_ENVIRONMENT_BINDING_CHANGED'
             }
-        }
-
-        $classpathEntries = @(
-            ((Get-Content -LiteralPath $classpathPath -Raw).Trim() -split
-                [regex]::Escape([IO.Path]::PathSeparator)) |
-                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-                Sort-Object -Unique
-        )
-        if ($classpathEntries.Count -lt 1) { throw 'FAIL / LAUNCHER_CLASSPATH_EMPTY' }
-        $index = 0
-        foreach ($entry in $classpathEntries) {
-            $source = [IO.Path]::GetFullPath([string]$entry)
-            if ([IO.Path]::GetExtension($source) -cne '.jar' -or
-                -not (Test-Path -LiteralPath $source -PathType Leaf)) {
-                throw 'FAIL / LAUNCHER_CLASSPATH_ARTIFACT_INVALID'
-            }
-            Assert-NoSymlink $source
-            $sha256 = Get-Sha256File $source
-            $name = '{0:D4}-{1}-{2}' -f $index, $sha256.Substring(0, 16), ([IO.Path]::GetFileName($source))
-            if ($name -cnotmatch '^[0-9]{4}-[a-f0-9]{16}-[A-Za-z0-9_.-]+[.]jar$') {
-                throw 'FAIL / LAUNCHER_CLASSPATH_ARTIFACT_INVALID'
-            }
-            $destination = Join-Path $libRoot $name
-            Invoke-Native $script:InstallPath @(
-                '-o', 'root', '-g', 'root', '-m', '0444', '--', $source, $destination
-            ) | Out-Null
-            $artifacts += [pscustomobject][ordered]@{
-                relativePath = "lib/$name"
-                sha256 = $sha256
-            }
-            $index++
-        }
-        Write-JsonCreateOnce (Join-Path $stageRoot 'manifest.json') ([ordered]@{
-            schemaVersion = 'gatew-soak-launcher-bundle-v1'
-            harnessCommit = $Commit
-            mainClasses = @(
-                'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest',
-                'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakFailCloseTest'
-            )
-            artifacts = @($artifacts)
-        })
-        Set-OwnerMode (Join-Path $stageRoot 'manifest.json') 'root:root' '444'
-        foreach ($directory in @(Get-ChildItem -LiteralPath $stageRoot -Directory -Recurse | Sort-Object FullName -Descending)) {
-            Set-OwnerMode $directory.FullName 'root:root' '555'
-        }
-        Set-OwnerMode $stageRoot 'root:root' '555'
-        Move-Item -LiteralPath $stageRoot -Destination $bundleRoot
-    }
-    finally {
-        if (Test-Path -LiteralPath $stageRoot) {
-            Assert-PathBelowRoot $script:LauncherRoot $stageRoot
-            Remove-Item -LiteralPath $stageRoot -Recurse -Force
         }
     }
-    Assert-FixedDetachedWorktree $Commit | Out-Null
-    return Assert-LauncherBundle $Commit
+    return $identity
 }
 
 function ConvertTo-CompactJson {
@@ -377,7 +258,7 @@ function Read-JsonFile {
 function Write-BytesFlushed {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][byte[]]$Bytes
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][byte[]]$Bytes
     )
 
     $stream = [IO.FileStream]::new(
@@ -400,7 +281,7 @@ function Write-BytesFlushed {
 function Write-TextCreateOnce {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string]$Text
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text
     )
 
     $parent = Split-Path -Parent $Path
@@ -757,47 +638,6 @@ function Set-LifecycleState {
     return Read-JsonFile $path
 }
 
-function Get-HeadCommit {
-    $result = @(& git -C $script:RepoRoot rev-parse HEAD 2>$null)
-    if ($LASTEXITCODE -ne 0) { throw 'BLOCKED / HARNESS_COMMIT_UNRESOLVED' }
-    $value = ConvertTo-TrimmedOutput $result
-    if ($value -notmatch '^[a-f0-9]{40}$') { throw 'BLOCKED / HARNESS_COMMIT_UNRESOLVED' }
-    return $value
-}
-
-function Assert-FixedDetachedWorktree {
-    param([string]$Commit)
-
-    $status = @(& git -C $script:RepoRoot status --porcelain --untracked-files=all 2>$null)
-    if ($LASTEXITCODE -ne 0 -or $status.Count -ne 0) { throw 'BLOCKED / HARNESS_WORKTREE_NOT_CLEAN' }
-    $branch = ConvertTo-TrimmedOutput @(& git -C $script:RepoRoot branch --show-current 2>$null)
-    if ($LASTEXITCODE -ne 0 -or -not [string]::IsNullOrWhiteSpace($branch)) {
-        throw 'BLOCKED / FIXED_COMMIT_WORKTREE_REQUIRED'
-    }
-    $head = Get-HeadCommit
-    if (-not [string]::IsNullOrWhiteSpace($Commit) -and $head -ne $Commit.ToLowerInvariant()) {
-        throw 'BLOCKED / HARNESS_COMMIT_CHANGED'
-    }
-    return $head
-}
-
-function Assert-ExactHeadCi {
-    param(
-        [Parameter(Mandatory = $true)][string]$CiRun,
-        [Parameter(Mandatory = $true)][string]$Commit
-    )
-
-    if ($CiRun -notmatch '^[0-9]+$') { throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED' }
-    $json = @(& gh run view $CiRun --json status,conclusion,headSha,jobs 2>$null)
-    if ($LASTEXITCODE -ne 0 -or $json.Count -eq 0) { throw 'BLOCKED / EXACT_HEAD_CI_NOT_VERIFIABLE' }
-    $ci = ($json -join "`n") | ConvertFrom-Json
-    $bad = @($ci.jobs | Where-Object { $_.status -ne 'completed' -or $_.conclusion -ne 'success' })
-    if ($ci.status -ne 'completed' -or $ci.conclusion -ne 'success' -or
-        [string]$ci.headSha -ne $Commit -or @($ci.jobs).Count -ne 10 -or $bad.Count -ne 0) {
-        throw 'BLOCKED / EXACT_HEAD_CI_NOT_GREEN'
-    }
-}
-
 function Get-HistoricalEvidenceSnapshot {
     param([Parameter(Mandatory = $true)][string]$CurrentRunId)
 
@@ -828,190 +668,6 @@ function Test-HistoricalEvidenceImmutable {
     $before = @(Read-JsonFile $path)
     $after = @(Get-HistoricalEvidenceSnapshot $Value)
     return (ConvertTo-CompactJson $before) -ceq (ConvertTo-CompactJson $after)
-}
-
-function Install-EncryptedCredential {
-    param(
-        [Parameter(Mandatory = $true)][string]$Name,
-        [Parameter(Mandatory = $true)][string]$Destination,
-        [string]$Source
-    )
-
-    if ([string]::IsNullOrWhiteSpace($Source)) {
-        if (-not (Test-Path -LiteralPath $Destination -PathType Leaf)) {
-            throw 'BLOCKED / ENCRYPTED_CREDENTIAL_SOURCE_REQUIRED'
-        }
-        Assert-PathComponentsNoSymlink $Destination
-        Set-OwnerMode $Destination 'root:root' '600'
-        return
-    }
-    $sourcePath = [IO.Path]::GetFullPath($Source)
-    $allowedSource = $sourcePath.StartsWith('/etc/nexus-quant/', [StringComparison]::Ordinal) -or
-        $sourcePath.StartsWith('/opt/nexus-quant/gatew-soak/config/', [StringComparison]::Ordinal)
-    if (-not $allowedSource -or -not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
-        throw 'BLOCKED / ENCRYPTED_CREDENTIAL_SOURCE_INVALID'
-    }
-    Assert-PathComponentsNoSymlink $sourcePath
-    $sourceMetadata = Get-PosixMetadata $sourcePath
-    if ($sourceMetadata.Owner -ne 'root' -or $sourceMetadata.Mode -notin @('400', '600')) {
-        throw 'BLOCKED / ENCRYPTED_CREDENTIAL_SOURCE_INVALID'
-    }
-    if (Test-Path -LiteralPath $Destination) {
-        throw 'BLOCKED / ENCRYPTED_CREDENTIAL_ALREADY_EXISTS'
-    }
-    Assert-PathComponentsNoSymlink (Split-Path -Parent $Destination)
-    $temporary = "$Destination.tmp-$PID"
-    try {
-        $result = Invoke-Native $script:SystemdCredsPath @('encrypt', "--name=$Name", '--', $sourcePath, $temporary) -AllowFailure
-        if ($result.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $temporary -PathType Leaf)) {
-            throw 'FAIL / ENCRYPTED_CREDENTIAL_CREATE_FAILED'
-        }
-        Set-OwnerMode $temporary 'root:root' '600'
-        Move-Item -LiteralPath $temporary -Destination $Destination
-    }
-    finally {
-        if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }
-    }
-}
-
-function Copy-InstalledFile {
-    param(
-        [Parameter(Mandatory = $true)][string]$Source,
-        [Parameter(Mandatory = $true)][string]$Destination,
-        [Parameter(Mandatory = $true)][string]$Mode,
-        [Parameter(Mandatory = $true)][string]$BackupRoot
-    )
-
-    if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) { throw 'BLOCKED / INSTALL_SOURCE_MISSING' }
-    Assert-PathComponentsNoSymlink $Source
-    Assert-PathComponentsNoSymlink (Split-Path -Parent $Destination)
-    if (Test-Path -LiteralPath $Destination -PathType Leaf) {
-        Assert-PathComponentsNoSymlink $Destination
-        Ensure-Directory $BackupRoot 'root:root' '700'
-        Copy-Item -LiteralPath $Destination -Destination (Join-Path $BackupRoot ([IO.Path]::GetFileName($Destination)))
-    }
-    Invoke-Native $script:InstallPath @('-D', '-o', 'root', '-g', 'root', '-m', $Mode, '--', $Source, $Destination) | Out-Null
-}
-
-function Get-InstalledArtifactContracts {
-    return @(
-        [pscustomobject]@{
-            Field = 'workerUnitSha256'
-            Source = Join-Path $script:RepoRoot "deploy/systemd/$($script:WorkerTemplate)"
-            Destination = "$($script:SystemdRoot)/$($script:WorkerTemplate)"
-        },
-        [pscustomobject]@{
-            Field = 'failCloseUnitSha256'
-            Source = Join-Path $script:RepoRoot "deploy/systemd/$($script:FailCloseTemplate)"
-            Destination = "$($script:SystemdRoot)/$($script:FailCloseTemplate)"
-        },
-        [pscustomobject]@{
-            Field = 'workerHelperSha256'
-            Source = Join-Path $script:RepoRoot "scripts/gatew/$($script:WorkerHelperName)"
-            Destination = "$($script:LibexecRoot)/$($script:WorkerHelperName)"
-        },
-        [pscustomobject]@{
-            Field = 'controlHelperSha256'
-            Source = Join-Path $script:RepoRoot "scripts/gatew/$($script:ControlHelperName)"
-            Destination = "$($script:LibexecRoot)/$($script:ControlHelperName)"
-        },
-        [pscustomobject]@{
-            Field = 'failCloseHelperSha256'
-            Source = Join-Path $script:RepoRoot "scripts/gatew/$($script:FailCloseHelperName)"
-            Destination = "$($script:LibexecRoot)/$($script:FailCloseHelperName)"
-        }
-    )
-}
-
-function Assert-InstalledArtifactsMatchCheckout {
-    param([AllowNull()]$Config)
-
-    foreach ($contract in Get-InstalledArtifactContracts) {
-        if (-not (Test-Path -LiteralPath $contract.Source -PathType Leaf) -or
-            -not (Test-Path -LiteralPath $contract.Destination -PathType Leaf)) {
-            throw 'BLOCKED / VERSIONED_ARTIFACT_MISSING'
-        }
-        Assert-PathComponentsNoSymlink $contract.Source
-        Assert-PathComponentsNoSymlink $contract.Destination
-        $sourceHash = Get-Sha256File $contract.Source
-        $installedHash = Get-Sha256File $contract.Destination
-        if ($sourceHash -cne $installedHash) {
-            throw 'BLOCKED / VERSIONED_ARTIFACT_CHECKOUT_MISMATCH'
-        }
-        if ($null -ne $Config -and
-            ([string]$Config.($contract.Field) -cnotmatch '^[a-f0-9]{64}$' -or
-            [string]$Config.($contract.Field) -cne $installedHash)) {
-            throw 'BLOCKED / FROZEN_ARTIFACT_HASH_MISMATCH'
-        }
-    }
-}
-
-function Install-FormalTooling {
-    Assert-RootLinux
-    $head = Assert-FixedDetachedWorktree $ExpectedCommit
-    $launcherBundle = Build-LauncherBundle $head
-    Ensure-Directory $script:StateRoot "root:$($script:LinuxRuntimeGroup)" '710'
-    Ensure-Directory $script:LogRoot "root:$($script:LinuxRuntimeGroup)" '710'
-    Ensure-Directory $script:ConfigRoot 'root:root' '750'
-    Ensure-Directory $script:CredentialRoot 'root:root' '700'
-    Ensure-Directory $script:LibexecRoot 'root:root' '755'
-    $backupRoot = "$($script:StateRoot)/deploy-backups/$((Get-UtcNow).ToString('yyyyMMddTHHmmssZ'))-$($head.Substring(0, 12))"
-    $sources = @{
-        $script:WorkerHelperName = Join-Path $script:RepoRoot 'scripts/gatew/gatew-okx-readonly-soak.ps1'
-        $script:ControlHelperName = Join-Path $script:RepoRoot 'scripts/gatew/gatew-okx-readonly-soak-control.ps1'
-        $script:FailCloseHelperName = Join-Path $script:RepoRoot 'scripts/gatew/gatew-okx-readonly-soak-failclose.ps1'
-    }
-    foreach ($name in $sources.Keys) {
-        Copy-InstalledFile $sources[$name] "$($script:LibexecRoot)/$name" '755' $backupRoot
-    }
-    Copy-InstalledFile `
-        (Join-Path $script:RepoRoot "deploy/systemd/$($script:WorkerTemplate)") `
-        "$($script:SystemdRoot)/$($script:WorkerTemplate)" '644' $backupRoot
-    Copy-InstalledFile `
-        (Join-Path $script:RepoRoot "deploy/systemd/$($script:FailCloseTemplate)") `
-        "$($script:SystemdRoot)/$($script:FailCloseTemplate)" '644' $backupRoot
-    Assert-InstalledArtifactsMatchCheckout $null
-
-    Install-EncryptedCredential 'db-password' "$($script:CredentialRoot)/db-password.cred" $DatabasePasswordSourceFile
-    Install-EncryptedCredential 'credential-master-key' `
-        "$($script:CredentialRoot)/credential-master-key.cred" $MasterKeySourceFile
-    $offlineSource = if ([string]::IsNullOrWhiteSpace($OfflineDatabasePasswordSourceFile)) {
-        $DatabasePasswordSourceFile
-    }
-    else {
-        $OfflineDatabasePasswordSourceFile
-    }
-    Install-EncryptedCredential 'db-password' `
-        "$($script:CredentialRoot)/offline-db-password.cred" $offlineSource
-
-    $verify = Invoke-Native $script:SystemdAnalyzePath @(
-        'verify',
-        "$($script:SystemdRoot)/$($script:WorkerTemplate)",
-        "$($script:SystemdRoot)/$($script:FailCloseTemplate)"
-    ) -AllowFailure
-    if ($verify.ExitCode -ne 0) { throw 'FAIL / SYSTEMD_STATIC_VALIDATION_FAILED' }
-    Invoke-Native $script:SystemctlPath @('daemon-reload') | Out-Null
-    foreach ($template in @($script:WorkerTemplate, $script:FailCloseTemplate)) {
-        $enabled = Invoke-Native $script:SystemctlPath @('is-enabled', $template) -AllowFailure
-        $enabledText = ConvertTo-TrimmedOutput $enabled.Lines
-        if ($enabledText -notin @('disabled', 'static', 'indirect')) {
-            throw 'BLOCKED / FORMAL_UNIT_ENABLEMENT_UNSAFE'
-        }
-    }
-    return [pscustomobject]@{
-        decision = 'PASS / FORMAL_SYSTEMD_TOOLING_INSTALLED'
-        commit = $head
-        workerUnitSha256 = Get-Sha256File "$($script:SystemdRoot)/$($script:WorkerTemplate)"
-        failCloseUnitSha256 = Get-Sha256File "$($script:SystemdRoot)/$($script:FailCloseTemplate)"
-        workerHelperSha256 = Get-Sha256File "$($script:LibexecRoot)/$($script:WorkerHelperName)"
-        controlHelperSha256 = Get-Sha256File "$($script:LibexecRoot)/$($script:ControlHelperName)"
-        failCloseHelperSha256 = Get-Sha256File "$($script:LibexecRoot)/$($script:FailCloseHelperName)"
-        launcherBundleRoot = $launcherBundle.Root
-        launcherBundleManifestSha256 = $launcherBundle.ManifestSha256
-        launcherBundleArtifactCount = $launcherBundle.ArtifactCount
-        permanentEnablement = 'disabled'
-        backupRoot = if (Test-Path -LiteralPath $backupRoot) { $backupRoot } else { $null }
-    }
 }
 
 function Install-OfflineDropIns {
@@ -1058,11 +714,19 @@ function Remove-OfflineDropIns {
 
 function Prepare-FormalRun {
     Assert-RootLinux
-    $head = Assert-FixedDetachedWorktree $ExpectedCommit
-    $launcherBundle = Assert-LauncherBundle $head
-    Assert-InstalledArtifactsMatchCheckout $null
-    if ([string]::IsNullOrWhiteSpace($StartingCiRun)) { throw 'BLOCKED / EXACT_HEAD_CI_REQUIRED' }
-    Assert-ExactHeadCi $StartingCiRun $head
+    $release = Get-ReleaseIdentity
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedCommit) -and
+        [string]$release.sourceCommit -cne $ExpectedCommit.ToLowerInvariant()) {
+        throw 'BLOCKED / RELEASE_SOURCE_COMMIT_MISMATCH'
+    }
+    if ($StartingCiRun -cnotmatch '^[1-9][0-9]{0,19}$') {
+        throw 'BLOCKED / EXACT_HEAD_CI_METADATA_REQUIRED'
+    }
+    if ($RunMode -eq 'REAL' -and
+        ([string]$release.sourceTreeMode -ne 'EXACT_COMMIT' -or
+            [string]$release.releaseId -cne [string]$release.sourceCommit)) {
+        throw 'BLOCKED / REAL_RUN_EXACT_RELEASE_REQUIRED'
+    }
     $effectiveRunId = if ([string]::IsNullOrWhiteSpace($RunId)) { New-RunId } else { $RunId }
     Assert-RunId $effectiveRunId
     $runRoot = Get-RunRoot $effectiveRunId
@@ -1104,6 +768,9 @@ function Prepare-FormalRun {
     $controlRoot = Get-ControlRoot $effectiveRunId
     $evidenceRoot = Get-EvidenceRoot $effectiveRunId
     $workerValues = @{
+        NQ_GATEW_RELEASE_ROOT = [string]$release.releaseRoot
+        NQ_GATEW_RELEASE_ID = [string]$release.releaseId
+        NQ_GATEW_RELEASE_MANIFEST_SHA256 = [string]$release.manifestSha256
         NQ_GATEW_RUN_MODE = $RunMode
         NQ_GATEW_SOAK_DB_URL = $DatabaseUrl
         NQ_GATEW_SOAK_DB_USER = $DatabaseUser
@@ -1127,6 +794,9 @@ function Prepare-FormalRun {
         }
     }
     $failCloseValues = @{
+        NQ_GATEW_RELEASE_ROOT = [string]$release.releaseRoot
+        NQ_GATEW_RELEASE_ID = [string]$release.releaseId
+        NQ_GATEW_RELEASE_MANIFEST_SHA256 = [string]$release.manifestSha256
         NQ_GATEW_RUN_MODE = $RunMode
         NQ_GATEW_SOAK_DB_URL = $DatabaseUrl
         NQ_GATEW_SOAK_DB_USER = $DatabaseUser
@@ -1145,23 +815,21 @@ function Prepare-FormalRun {
         observedAt = (Get-UtcNow).ToString('o')
     })
     Write-JsonCreateOnce (Join-Path $controlRoot 'frozen-config.json') ([ordered]@{
-        schemaVersion = 'gatew-soak-frozen-config-v1'
+        schemaVersion = 'gatew-soak-frozen-config-v2'
         runId = $effectiveRunId
         runMode = $RunMode
         databaseUrl = $DatabaseUrl
         databaseUser = $DatabaseUser
         databaseSchema = $DatabaseSchema
         offlineHeartbeatSeconds = $SmokeHeartbeatSeconds
-        harnessCommit = $head
+        releaseId = [string]$release.releaseId
+        sourceCommit = [string]$release.sourceCommit
+        sourceTreeMode = [string]$release.sourceTreeMode
+        releaseManifestSha256 = [string]$release.manifestSha256
+        releaseRoot = [string]$release.releaseRoot
         startingCiRun = $StartingCiRun
         workerUnit = Get-WorkerUnitName $effectiveRunId
         failCloseUnit = Get-FailCloseUnitName $effectiveRunId
-        workerUnitSha256 = Get-Sha256File "$($script:SystemdRoot)/$($script:WorkerTemplate)"
-        failCloseUnitSha256 = Get-Sha256File "$($script:SystemdRoot)/$($script:FailCloseTemplate)"
-        workerHelperSha256 = Get-Sha256File "$($script:LibexecRoot)/$($script:WorkerHelperName)"
-        controlHelperSha256 = Get-Sha256File "$($script:LibexecRoot)/$($script:ControlHelperName)"
-        failCloseHelperSha256 = Get-Sha256File "$($script:LibexecRoot)/$($script:FailCloseHelperName)"
-        launcherBundleManifestSha256 = $launcherBundle.ManifestSha256
         acceptanceClockStarted = $false
         preparedAt = (Get-UtcNow).ToString('o')
     })
@@ -1173,7 +841,9 @@ function Prepare-FormalRun {
     Write-TextCreateOnce (Join-Path $evidenceRoot 'failures.jsonl') ''
     Write-JsonCreateOnce (Join-Path $evidenceRoot 'manifest.json') ([ordered]@{
         runId = $effectiveRunId
-        harnessCommit = $head
+        harnessCommit = [string]$release.sourceCommit
+        releaseId = [string]$release.releaseId
+        releaseManifestSha256 = [string]$release.manifestSha256
         startingCiRun = $StartingCiRun
         startedAt = $startedAt.ToString('o')
         plannedEndAt = $startedAt.AddHours(168).ToString('o')
@@ -1184,12 +854,11 @@ function Prepare-FormalRun {
         venue = 'OKX'
         environment = $RunMode
         profile = 'gatew-okx-readonly-soak'
-        applicationVersion = "0.1.0-SNAPSHOT+$($head.Substring(0, 12))"
+        applicationVersion = "0.1.0-SNAPSHOT+$(([string]$release.sourceCommit).Substring(0, 12))"
         endpointAllowlistVersion = 'gatew-okx-private-readonly-v1'
         flywayVersion = '35'
         hostFingerprint = 'FORMAL_SYSTEMD_ROOT_CONTROLLED'
-        supervisorScriptGitBlob = (& git -C $script:RepoRoot rev-parse "${head}:scripts/gatew/gatew-okx-readonly-soak.ps1").Trim()
-        supervisorArtifactSha256 = Get-Sha256File "$($script:LibexecRoot)/$($script:WorkerHelperName)"
+        supervisorArtifactSha256 = Get-Sha256File "$($script:ReleaseRoot)/bin/$($script:WorkerHelperName)"
         launcherSchemaVersion = 'gatew-soak-launcher-v2'
         evidenceSchemaVersion = 'gatew-soak-evidence-v2'
     })
@@ -1214,6 +883,8 @@ function Prepare-FormalRun {
         decision = 'PASS / FORMAL_SOAK_PREPARED'
         runId = $effectiveRunId
         runMode = $RunMode
+        releaseId = [string]$release.releaseId
+        releaseManifestSha256 = [string]$release.manifestSha256
         lifecycleState = 'STARTING'
         historicalEvidenceCount = @((Read-JsonFile (Join-Path $controlRoot 'historical-evidence-hashes.json'))).Count
         acceptanceClockStarted = $false
@@ -1347,7 +1018,7 @@ function Start-FormalRun {
     $lifecycle = Read-JsonFile (Get-LifecyclePath $RunId)
     if ([string]$lifecycle.state -ne 'STARTING') { throw 'BLOCKED / RUN_NOT_STARTABLE' }
     $config = Read-JsonFile "$(Get-ControlRoot $RunId)/frozen-config.json"
-    Assert-FixedDetachedWorktree ([string]$config.harnessCommit) | Out-Null
+    Assert-FrozenReleaseBinding $config | Out-Null
     Invoke-Native $script:SystemctlPath @('start', (Get-WorkerUnitName $RunId)) | Out-Null
     $requiredSequence = if ([string]$config.runMode -eq 'OFFLINE_ACCEPTANCE') { 2L } else { 1L }
     $heartbeat = Wait-ForWorkerReady $RunId $requiredSequence
@@ -1371,7 +1042,7 @@ function Start-FormalRun {
 function Get-ResidualWorkerProcesses {
     param([Parameter(Mandatory = $true)][string]$Value)
 
-    $matches = @()
+    $processIds = @()
     if (-not (Test-Path -LiteralPath '/proc' -PathType Container)) { return @() }
     foreach ($directory in Get-ChildItem -LiteralPath '/proc' -Directory -ErrorAction SilentlyContinue) {
         if ($directory.Name -notmatch '^[0-9]+$') { continue }
@@ -1381,14 +1052,14 @@ function Get-ResidualWorkerProcesses {
             if ($command -match [regex]::Escape($script:WorkerHelperName) -and
                 $command -match [regex]::Escape($Value) -and
                 $command -match 'run-loop') {
-                $matches += [long]$directory.Name
+                $processIds += [long]$directory.Name
             }
         }
         catch {
             # /proc entry may disappear during exact identity enumeration.
         }
     }
-    return @($matches)
+    return @($processIds)
 }
 
 function Show-FormalStatus {
@@ -1535,11 +1206,21 @@ function Invoke-WorkerEvidenceVerify {
 
     $previousFormal = [Environment]::GetEnvironmentVariable('NQ_GATEW_FORMAL_SYSTEMD', 'Process')
     $previousEvidence = [Environment]::GetEnvironmentVariable('NQ_GATEW_FORMAL_EVIDENCE_ROOT', 'Process')
+    $previousReleaseRoot = [Environment]::GetEnvironmentVariable('NQ_GATEW_RELEASE_ROOT', 'Process')
+    $previousReleaseId = [Environment]::GetEnvironmentVariable('NQ_GATEW_RELEASE_ID', 'Process')
+    $previousManifestSha256 = [Environment]::GetEnvironmentVariable('NQ_GATEW_RELEASE_MANIFEST_SHA256', 'Process')
     try {
+        $config = Read-JsonFile "$(Get-ControlRoot $Value)/frozen-config.json"
+        Assert-FrozenReleaseBinding $config | Out-Null
         [Environment]::SetEnvironmentVariable('NQ_GATEW_FORMAL_SYSTEMD', 'true', 'Process')
         [Environment]::SetEnvironmentVariable('NQ_GATEW_FORMAL_EVIDENCE_ROOT', (Get-EvidenceRoot $Value), 'Process')
+        [Environment]::SetEnvironmentVariable('NQ_GATEW_RELEASE_ROOT', [string]$config.releaseRoot, 'Process')
+        [Environment]::SetEnvironmentVariable('NQ_GATEW_RELEASE_ID', [string]$config.releaseId, 'Process')
+        [Environment]::SetEnvironmentVariable(
+            'NQ_GATEW_RELEASE_MANIFEST_SHA256', [string]$config.releaseManifestSha256, 'Process'
+        )
         $result = @(& $script:PowerShellPath -NoProfile -File `
-            "$($script:LibexecRoot)/$($script:WorkerHelperName)" `
+            "$($script:ReleaseRoot)/bin/$($script:WorkerHelperName)" `
             -Action evidence-verify -RunId $Value 2>$null)
         if ($LASTEXITCODE -ne 0) { throw 'FAIL / EVIDENCE_VERIFY_FAILED' }
         try { return (($result -join "`n") | ConvertFrom-Json) } catch { throw 'FAIL / EVIDENCE_VERIFY_FAILED' }
@@ -1547,6 +1228,11 @@ function Invoke-WorkerEvidenceVerify {
     finally {
         [Environment]::SetEnvironmentVariable('NQ_GATEW_FORMAL_SYSTEMD', $previousFormal, 'Process')
         [Environment]::SetEnvironmentVariable('NQ_GATEW_FORMAL_EVIDENCE_ROOT', $previousEvidence, 'Process')
+        [Environment]::SetEnvironmentVariable('NQ_GATEW_RELEASE_ROOT', $previousReleaseRoot, 'Process')
+        [Environment]::SetEnvironmentVariable('NQ_GATEW_RELEASE_ID', $previousReleaseId, 'Process')
+        [Environment]::SetEnvironmentVariable(
+            'NQ_GATEW_RELEASE_MANIFEST_SHA256', $previousManifestSha256, 'Process'
+        )
     }
 }
 
@@ -1555,10 +1241,7 @@ function Verify-FormalRun {
     Assert-RunId $RunId
     Assert-RunDirectoryContract $RunId
     $config = Read-JsonFile "$(Get-ControlRoot $RunId)/frozen-config.json"
-    Assert-FixedDetachedWorktree ([string]$config.harnessCommit) | Out-Null
-    Assert-InstalledArtifactsMatchCheckout $config
-    Assert-LauncherBundle ([string]$config.harnessCommit) `
-        ([string]$config.launcherBundleManifestSha256) | Out-Null
+    Assert-FrozenReleaseBinding $config | Out-Null
     $lifecycle = Read-JsonFile (Get-LifecyclePath $RunId)
     $state = Get-UnitState (Get-WorkerUnitName $RunId)
     Assert-FormalWorkerState $state $RunId -AllowInactive
@@ -1627,10 +1310,7 @@ function Invoke-UnitPreflight {
         Assert-PosixContract "$(Get-ControlRoot $RunId)/$name" 'regular file' '600' 'root' 'root'
     }
     $config = Read-JsonFile "$(Get-ControlRoot $RunId)/frozen-config.json"
-    Assert-FixedDetachedWorktree ([string]$config.harnessCommit) | Out-Null
-    Assert-InstalledArtifactsMatchCheckout $config
-    Assert-LauncherBundle ([string]$config.harnessCommit) `
-        ([string]$config.launcherBundleManifestSha256) | Out-Null
+    Assert-FrozenReleaseBinding $config -RequireEnvironment | Out-Null
     $runtimeRoot = Get-RuntimeRoot $RunId
     Assert-PosixContract $runtimeRoot 'directory' '700' $script:LinuxRuntimeUser $script:LinuxRuntimeGroup
     return [pscustomobject]@{ decision = 'PASS / FORMAL_UNIT_PREFLIGHT'; runId = $RunId }
@@ -1708,6 +1388,18 @@ function Record-ExitFact {
 
 function Invoke-ControlSelfTest {
     $caseCount = 0
+    if ([IO.File]::ReadAllText($PSCommandPath).Contains('$' + 'matches = @()')) {
+        throw 'automatic Matches collision self-test failed'
+    }
+    $caseCount++
+    $verifierParameters = New-ReleaseVerifierParameters '/release' ('a' * 40) ('b' * 64)
+    if ($verifierParameters.Count -ne 3 -or
+        [string]$verifierParameters.ReleaseRoot -ne '/release' -or
+        [string]$verifierParameters.ExpectedReleaseId -ne ('a' * 40) -or
+        [string]$verifierParameters.ExpectedManifestSha256 -ne ('b' * 64)) {
+        throw 'release verifier parameter self-test failed'
+    }
+    $caseCount++
     $validRunId = 'gatew-soak-20260718T000000Z-0123abcd'
     Assert-RunId $validRunId
     $caseCount++
@@ -1742,7 +1434,7 @@ function Invoke-ControlSelfTest {
         throw 'operator/failure terminal separation self-test failed'
     }
     $caseCount++
-    $temporaryRoot = Join-Path $script:RepoRoot 'target/gatew-okx-readonly-soak/control-self-test'
+    $temporaryRoot = Join-Path $script:WorkspaceRoot 'target/gatew-okx-readonly-soak/control-self-test'
     $temporary = Join-Path $temporaryRoot ([Guid]::NewGuid().ToString('N'))
     $symlinkTest = 'NOT_AVAILABLE'
     try {
@@ -1753,6 +1445,15 @@ function Invoke-ControlSelfTest {
         try { Write-TextCreateOnce $path '{"safe":false}' } catch { $rejected = $true }
         if (-not $rejected -or (Get-Content -LiteralPath $path -Raw) -ne '{"safe":true}') {
             throw 'create-once self-test failed'
+        }
+        $caseCount++
+
+        $emptyPath = Join-Path $temporary 'create-once-empty.jsonl'
+        Write-TextCreateOnce $emptyPath ''
+        $emptyRejected = $false
+        try { Write-TextCreateOnce $emptyPath '' } catch { $emptyRejected = $true }
+        if (-not $emptyRejected -or (Get-Item -LiteralPath $emptyPath).Length -ne 0) {
+            throw 'zero-length create-once self-test failed'
         }
         $caseCount++
 
@@ -1820,6 +1521,9 @@ function Invoke-ControlSelfTest {
         symlinkOrReparseRejected = $symlinkTest
         operatorFailureTerminalSeparation = 'PASS'
         terminalCreateOnce = 'PASS / O_EXCL_OR_ATOMIC_LINK'
+        zeroLengthCreateOnce = 'PASS / LENGTH_0 / SECOND_CREATE_REJECTED'
+        releaseVerifierParameters = 'PASS / HASHTABLE_SPLATTING'
+        automaticMatchesCollision = 'PASS / FORBIDDEN'
         noNetworkCalled = $true
         credentialAccessed = $false
     }
@@ -1827,7 +1531,6 @@ function Invoke-ControlSelfTest {
 
 try {
     $result = switch ($Action) {
-        'install' { Install-FormalTooling }
         'prepare' { Prepare-FormalRun }
         'start' { Start-FormalRun }
         'status' { Show-FormalStatus }

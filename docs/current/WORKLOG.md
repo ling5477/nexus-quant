@@ -17760,3 +17760,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：真实OKX/network/credential access=0；permission probe未重跑；真实soak/acceptance clock未启动；无production Java/API/migration/frontend/research/CI/STATUS/ROADMAP/LIVE/order/cancel/transfer/withdraw/AI/DH diff。
 - current fact：implementation commit=`UNCOMMITTED`；exact-head CI=`NOT_RUN`；server deployment/formal offline acceptance=`PENDING / NOT_RUN`。
 - next：精确暂存并完成cached diff审查，创建唯一implementation commit并push；exact-head CI 10/10 GREEN后仅部署一次，使用正式unit完成离线cycle1/2、fresh SSH、cycle3 failure、independent fail-close与terminal闭环。失败则执行停止线并保持ENGAGED/inactive/PID0/residual0。
+
+## 2026-07-20 — GateW immutable release bundle / root-owned candidate deployment
+
+- task：`NQ-GATEW-IMMUTABLE-RELEASE-BUNDLE-AND-ROOT-OWNED-DEPLOYMENT`；NQ-only、L级 immutable release/systemd/security/deployment任务。
+- baseline：`dev`；`HEAD == origin/dev == ff92c3bf...`；staged empty；既有 task worktree未修改；authority为GateW `IN_PROGRESS|NOT_FROZEN`、LIVE `DISABLED`。
+- candidate：`candidate-ff92c3bf3f1f-d9a31e99dde93dcd-20260720T104748Z`；manifest `8ff73d61...f695eab`；129 artifacts；root-owned verify、owner/mode、symlink containment、runtime user只读和`systemd-analyze verify`全部PASS；未切换`current`。
+- acceptance：run `gatew-soak-20260720T134751Z-4d122864`；cycle1/2 PASS；fresh SSH同MainPID `3964307`且heartbeat推进；cycle3 controlled failure；independent fail-close `PASS / INDEPENDENT_FAILCLOSE_FINALIZED`；kill switch `ENGAGED`；terminal `FAILURE_STOPPED`。
+- evidence：hash chain `PASS / HASH_CHAIN_VERIFIED`；3 samples；network/credential/clock=false；historical evidence immutable；post-run release 129/129 PASS；active units/MainPID/residual/runtime=`0/0/0/absent`；public non-SSH listener=0。
+- validation：本轮真实执行candidate本地/staging/installed/post-run verifier、root installer、server systemd、fresh SSH、fail-close、listener/health审计；按用户指令未重跑已通过的Maven全量测试。
+- boundary：OKX/credential/permission probe/Attempt-09/168h/LIVE/order/cancel/transfer/withdraw/AI/DH均未触达；`/opt/nexus-quant/current`未创建或切换。
+- result：`PASS / CANDIDATE_FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / READY_TO_COMMIT`；P0=0、P1=0。Cleanup后历史offline policy不可从当前unit state重验，已作为P2记录，不影响cleanup前完整PASS。
+- next：精确暂存并创建唯一implementation commit，push `dev`，等待exact-head CI 10/10 GREEN；CI成功后从clean exact-head构建final bundle并完成最终root-owned deployment与正式离线验收。

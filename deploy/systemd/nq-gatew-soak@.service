@@ -1,6 +1,6 @@
 [Unit]
 Description=NexusQuant GateW read-only soak worker (%i)
-Documentation=file:/opt/nexus-quant/gatew-soak/app/repo/docs/current/evidence/gate-w/README.md
+Documentation=file:/opt/nexus-quant/current/release-manifest.json
 After=network.target
 Wants=network.target
 OnFailure=nq-gatew-soak-failclose@%i.service
@@ -11,16 +11,17 @@ StartLimitIntervalSec=0
 Type=simple
 User=nqgatew
 Group=nqgatew
-WorkingDirectory=/opt/nexus-quant/gatew-soak/app/repo
-Environment=NQ_GATEW_REPO_ROOT=/opt/nexus-quant/gatew-soak/app/repo
+WorkingDirectory=/opt/nexus-quant
+Environment=NQ_GATEW_RELEASE_ROOT=/opt/nexus-quant/current
 Environment=NQ_GATEW_SECRET_SOURCE=SYSTEMD_CREDENTIALS
 Environment=NQ_GATEW_FORMAL_SYSTEMD=true
 EnvironmentFile=/var/lib/nexus-quant/gatew-soak/%i/control/worker.env
 LoadCredentialEncrypted=db-password:/etc/nexus-quant/gatew-soak/credentials/db-password.cred
 LoadCredentialEncrypted=credential-master-key:/etc/nexus-quant/gatew-soak/credentials/credential-master-key.cred
-ExecStartPre=+/usr/bin/pwsh -NoProfile -File /usr/local/libexec/nexus-quant/gatew-okx-readonly-soak-control.ps1 -Action unit-preflight -RunId %i
-ExecStart=/usr/bin/pwsh -NoProfile -File /usr/local/libexec/nexus-quant/gatew-okx-readonly-soak.ps1 -Action run-loop -RunId %i
-ExecStopPost=+/usr/bin/pwsh -NoProfile -File /usr/local/libexec/nexus-quant/gatew-okx-readonly-soak-control.ps1 -Action record-exit -RunId %i -ServiceResult ${SERVICE_RESULT} -ExitCode ${EXIT_CODE} -ExitStatus ${EXIT_STATUS}
+ExecStartPre=+/usr/bin/pwsh -NoProfile -File ${NQ_GATEW_RELEASE_ROOT}/bin/verify-gatew-release.ps1 -ReleaseRoot ${NQ_GATEW_RELEASE_ROOT} -ExpectedReleaseId ${NQ_GATEW_RELEASE_ID} -ExpectedManifestSha256 ${NQ_GATEW_RELEASE_MANIFEST_SHA256}
+ExecStartPre=+/usr/bin/pwsh -NoProfile -File ${NQ_GATEW_RELEASE_ROOT}/bin/gatew-okx-readonly-soak-control.ps1 -Action unit-preflight -RunId %i
+ExecStart=/usr/bin/pwsh -NoProfile -File ${NQ_GATEW_RELEASE_ROOT}/bin/gatew-okx-readonly-soak.ps1 -Action run-loop -RunId %i
+ExecStopPost=+/usr/bin/pwsh -NoProfile -File ${NQ_GATEW_RELEASE_ROOT}/bin/gatew-okx-readonly-soak-control.ps1 -Action record-exit -RunId %i -ServiceResult ${SERVICE_RESULT} -ExitCode ${EXIT_CODE} -ExitStatus ${EXIT_STATUS}
 Restart=no
 KillMode=mixed
 TimeoutStartSec=10min
@@ -50,8 +51,7 @@ RestrictNamespaces=true
 LockPersonality=true
 CapabilityBoundingSet=
 AmbientCapabilities=
-ReadOnlyPaths=/opt/nexus-quant/gatew-soak/app/repo
-ReadOnlyPaths=/opt/nexus-quant/gatew-soak/app/launcher
+ReadOnlyPaths=/opt/nexus-quant/releases
 # ExecStopPost 以 root 写 create-once exit fact；0700 root:root 仍阻止 nqgatew 访问 control。
 ReadWritePaths=/var/lib/nexus-quant/gatew-soak/%i/control
 ReadWritePaths=/run/nexus-quant/gatew-soak/%i

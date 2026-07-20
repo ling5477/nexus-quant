@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.app.gatew;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.risk.infra.jdbc.JdbcKillSwitchStateRepository;
@@ -54,6 +55,7 @@ public class GateWOkxReadonlySoakFailCloseTest {
     private static final Pattern OFFLINE_SCHEMA = Pattern.compile("gatew_offline_[a-f0-9]{8}");
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
             .addModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .build();
 
     /**
@@ -121,13 +123,20 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     @Test
-    void offlinePassHasNoCredentialOrNetworkProvenance() {
+    void offlinePassHasNoCredentialOrNetworkProvenance() throws Exception {
         GateWOkxReadonlySoakCycleTest.CycleResult result = offlineCycle(KillSwitchStatus.DISENGAGED);
         GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.validateDto(result);
         assertEquals("PASSED_READ_ONLY", result.resultStatus());
         assertEquals("OFFLINE_LOCAL_FIXTURE_READ", result.allowedEndpointCategory());
         assertFalse(result.credentialAccessed());
         assertFalse(result.networkCalled());
+        byte[] json = GateWOkxReadonlySoakCycleTest.EvidenceSanitizer.serialize(OBJECT_MAPPER, result);
+        assertTrue(OBJECT_MAPPER.readTree(json).path("observedAt").isTextual());
+        byte[] cycleMapperJson = GateWOkxReadonlySoakCycleTest.STANDALONE_OBJECT_MAPPER.writeValueAsBytes(
+                Map.of("observedAt", Instant.parse("2026-07-19T00:00:00Z"))
+        );
+        assertTrue(GateWOkxReadonlySoakCycleTest.STANDALONE_OBJECT_MAPPER
+                .readTree(cycleMapperJson).path("observedAt").isTextual());
     }
 
     @Test
@@ -175,6 +184,55 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     @Test
+    void authenticationFailureTaxonomyRecognizesSqlStateClass28() {
+        RuntimeException wrapped = new RuntimeException(
+                new java.sql.SQLException("redacted", "28P01")
+        );
+        assertTrue(isAuthenticationFailure(wrapped));
+        assertFalse(isAuthenticationFailure(new IllegalStateException("closed failure")));
+    }
+
+    @Test
+    void bootstrapContextFailureTaxonomyIsClosedAndNeverReportedAsWriteAttempt() {
+        assertEquals(
+                RecoveryStatus.ENGAGE_FAILED_DB_AUTHENTICATION,
+                classifyBootstrapContextFailure(new RuntimeException(
+                        new java.sql.SQLException("redacted", "28P01")
+                ))
+        );
+        assertEquals(
+                RecoveryStatus.ENGAGE_FAILED_DB_UNREACHABLE,
+                classifyBootstrapContextFailure(new RuntimeException(
+                        new java.sql.SQLException("redacted", "08001")
+                ))
+        );
+        assertEquals(
+                RecoveryStatus.ENGAGE_FAILED_DB_CONTEXT_INIT,
+                classifyBootstrapContextFailure(new IllegalStateException("closed failure"))
+        );
+    }
+
+    @Test
+    void offlineSchemaSearchPathResolvesPublicExtensionsWithoutChangingRealSchema() {
+        String url = "jdbc:postgresql://127.0.0.1:55432/gatew_soak";
+
+        assertEquals(
+                url + "?currentSchema=gatew_offline_0123abcd,public&connectTimeout=5&socketTimeout=5",
+                withSchema(url, "gatew_offline_0123abcd")
+        );
+        assertEquals(
+                url + "?currentSchema=public&connectTimeout=5&socketTimeout=5",
+                withSchema(url, "public")
+        );
+        assertEquals(
+                "CREATE SCHEMA gatew_offline_0123abcd",
+                createOfflineSchemaSql("gatew_offline_0123abcd")
+        );
+        assertThrows(ConfigException.class, () -> createOfflineSchemaSql("public"));
+        assertThrows(ConfigException.class, () -> createOfflineSchemaSql("gatew_offline_0123abcd;DROP SCHEMA public"));
+    }
+
+    @Test
     void readBackFailureTaxonomyNeverCollapsesIntoWriteSuccess() {
         assertEquals(
                 RecoveryStatus.ENGAGE_FAILED_READBACK,
@@ -213,11 +271,20 @@ public class GateWOkxReadonlySoakFailCloseTest {
         }
         try {
             DatabaseContext database = database(config, true);
-            TransactionTemplate transaction = new TransactionTemplate(
-                    new DataSourceTransactionManager(database.dataSource())
-            );
-            transaction.executeWithoutResult(ignored -> seedOfflineDisengaged(database.jdbc()));
-            KillSwitchSnapshot readBack = service(database.jdbc()).snapshot();
+            try {
+                TransactionTemplate transaction = new TransactionTemplate(
+                        new DataSourceTransactionManager(database.dataSource())
+                );
+                transaction.executeWithoutResult(ignored -> seedOfflineDisengaged(database.jdbc()));
+            } catch (RuntimeException ex) {
+                return FailCloseResult.failure("offline-bootstrap", seedFailureStatus(ex));
+            }
+            KillSwitchSnapshot readBack;
+            try {
+                readBack = service(database.jdbc()).snapshot();
+            } catch (RuntimeException ex) {
+                return FailCloseResult.failure("offline-bootstrap", classifyReadBackFailure(ex));
+            }
             if (readBack.status() != KillSwitchStatus.DISENGAGED) {
                 return FailCloseResult.failure("offline-bootstrap", RecoveryStatus.ENGAGE_FAILED_READBACK);
             }
@@ -231,6 +298,15 @@ public class GateWOkxReadonlySoakFailCloseTest {
                     false,
                     false
             );
+        } catch (DatabaseStageException ex) {
+            return FailCloseResult.failure(
+                    "offline-bootstrap",
+                    isAuthenticationFailure(ex)
+                            ? RecoveryStatus.ENGAGE_FAILED_DB_AUTHENTICATION
+                            : isConnectionFailure(ex)
+                                    ? RecoveryStatus.ENGAGE_FAILED_DB_UNREACHABLE
+                                    : ex.recoveryStatus()
+            );
         } catch (ConfigException ex) {
             return FailCloseResult.failure("offline-bootstrap", RecoveryStatus.ENGAGE_FAILED_DB_ENV_INVALID);
         } catch (CannotGetJdbcConnectionException ex) {
@@ -238,9 +314,7 @@ public class GateWOkxReadonlySoakFailCloseTest {
         } catch (RuntimeException ex) {
             return FailCloseResult.failure(
                     "offline-bootstrap",
-                    isConnectionFailure(ex)
-                            ? RecoveryStatus.ENGAGE_FAILED_DB_UNREACHABLE
-                            : RecoveryStatus.ENGAGE_FAILED_WRITE
+                    classifyBootstrapContextFailure(ex)
             );
         }
     }
@@ -389,39 +463,94 @@ public class GateWOkxReadonlySoakFailCloseTest {
         return RecoveryStatus.ENGAGE_FAILED_READBACK;
     }
 
+    private static RecoveryStatus classifyBootstrapContextFailure(RuntimeException failure) {
+        if (isAuthenticationFailure(failure)) return RecoveryStatus.ENGAGE_FAILED_DB_AUTHENTICATION;
+        if (isConnectionFailure(failure)) return RecoveryStatus.ENGAGE_FAILED_DB_UNREACHABLE;
+        return RecoveryStatus.ENGAGE_FAILED_DB_CONTEXT_INIT;
+    }
+
     private static DatabaseContext database(RuntimeConfig config, boolean migrateOffline) {
         config.assertSafe();
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl(withSchema(config.databaseUrl(), config.schema()));
-        dataSource.setUsername(config.databaseUser());
-        dataSource.setPassword(config.databasePassword());
+        DriverManagerDataSource dataSource;
         try {
-            dataSource.setLoginTimeout(5);
-        } catch (java.sql.SQLException ex) {
-            throw new ConfigException();
+            dataSource = new DriverManagerDataSource();
+            dataSource.setDriverClassName("org.postgresql.Driver");
+        } catch (RuntimeException ex) {
+            throw databaseStageFailure(migrateOffline, RecoveryStatus.ENGAGE_FAILED_DB_DRIVER_INIT, ex);
         }
-        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-        jdbc.setQueryTimeout(5);
+        try {
+            dataSource.setUrl(withSchema(config.databaseUrl(), config.schema()));
+            dataSource.setUsername(config.databaseUser());
+            dataSource.setPassword(config.databasePassword());
+        } catch (RuntimeException ex) {
+            throw databaseStageFailure(migrateOffline, RecoveryStatus.ENGAGE_FAILED_DB_DATASOURCE_CONFIG, ex);
+        }
+        JdbcTemplate jdbc;
+        try {
+            jdbc = new JdbcTemplate(dataSource);
+            jdbc.setQueryTimeout(5);
+        } catch (RuntimeException ex) {
+            throw databaseStageFailure(migrateOffline, RecoveryStatus.ENGAGE_FAILED_DB_TEMPLATE_INIT, ex);
+        }
 
-        Flyway flyway = Flyway.configure()
-                .dataSource(withSchema(config.databaseUrl(), config.schema()),
-                        config.databaseUser(), config.databasePassword())
-                .locations("classpath:db/migration")
-                .schemas(config.schema())
-                .defaultSchema(config.schema())
-                .createSchemas(migrateOffline)
-                .cleanDisabled(true)
-                .load();
-        if (migrateOffline) flyway.migrate();
-        flyway.validate();
-        MigrationInfo current = flyway.info().current();
-        if (current == null || !"35".equals(current.getVersion().getVersion())
-                || flyway.info().pending().length != 0) {
-            throw new ConfigException();
+        if (migrateOffline) {
+            try {
+                createOfflineSchema(config);
+            } catch (RuntimeException ex) {
+                throw new DatabaseStageException(RecoveryStatus.ENGAGE_FAILED_DB_MIGRATION_LOAD, ex);
+            }
         }
-        String serverAddress = jdbc.queryForObject("SELECT host(inet_server_addr())", String.class);
-        if (!isLoopbackAddress(serverAddress)) throw new ConfigException();
+        Flyway flyway;
+        try {
+            flyway = Flyway.configure()
+                    .dataSource(withSchema(config.databaseUrl(), config.schema()),
+                            config.databaseUser(), config.databasePassword())
+                    .locations("classpath:db/migration")
+                    .schemas(config.schema())
+                    .defaultSchema(config.schema())
+                    .createSchemas(false)
+                    .cleanDisabled(true)
+                    .load();
+        } catch (RuntimeException ex) {
+            throw databaseStageFailure(migrateOffline, RecoveryStatus.ENGAGE_FAILED_DB_MIGRATION_LOAD, ex);
+        }
+        if (migrateOffline) {
+            try {
+                flyway.migrate();
+            } catch (RuntimeException ex) {
+                throw new DatabaseStageException(RecoveryStatus.ENGAGE_FAILED_DB_MIGRATION_EXECUTE, ex);
+            }
+        }
+        try {
+            flyway.validate();
+        } catch (RuntimeException ex) {
+            throw databaseStageFailure(migrateOffline, RecoveryStatus.ENGAGE_FAILED_DB_MIGRATION_VALIDATE, ex);
+        }
+        try {
+            MigrationInfo current = flyway.info().current();
+            if (current == null || !"35".equals(current.getVersion().getVersion())
+                    || flyway.info().pending().length != 0) {
+                throw new ConfigException();
+            }
+        } catch (ConfigException ex) {
+            if (migrateOffline) {
+                throw new DatabaseStageException(RecoveryStatus.ENGAGE_FAILED_DB_MIGRATION_HISTORY, ex);
+            }
+            throw ex;
+        } catch (RuntimeException ex) {
+            throw databaseStageFailure(migrateOffline, RecoveryStatus.ENGAGE_FAILED_DB_MIGRATION_HISTORY, ex);
+        }
+        try {
+            String serverAddress = jdbc.queryForObject("SELECT host(inet_server_addr())", String.class);
+            if (!isLoopbackAddress(serverAddress)) throw new ConfigException();
+        } catch (ConfigException ex) {
+            if (migrateOffline) {
+                throw new DatabaseStageException(RecoveryStatus.ENGAGE_FAILED_DB_LOCALITY, ex);
+            }
+            throw ex;
+        } catch (RuntimeException ex) {
+            throw databaseStageFailure(migrateOffline, RecoveryStatus.ENGAGE_FAILED_DB_LOCALITY, ex);
+        }
         return new DatabaseContext(dataSource, jdbc);
     }
 
@@ -437,34 +566,45 @@ public class GateWOkxReadonlySoakFailCloseTest {
             return;
         }
         if (current.status() != KillSwitchStatus.ENGAGED || current.version() != 1) {
-            throw new ConfigException();
+            throw new SeedStageException(RecoveryStatus.ENGAGE_FAILED_DB_SEED_INITIAL_STATE);
         }
         Instant occurredAt = Instant.now();
-        int updated = jdbc.update(
-                """
-                        UPDATE kill_switch_states
-                        SET status = 'DISENGAGED', version = 2,
-                            reason_code = 'OFFLINE_ACCEPTANCE_FIXTURE',
-                            source = 'OFFLINE_ACCEPTANCE_FIXTURE', updated_at = ?,
-                            updated_by = 'gatew-offline-acceptance',
-                            trace_id = 'gatew-offline-acceptance-fixture'
-                        WHERE scope = 'GLOBAL_TRADING' AND version = 1 AND status = 'ENGAGED'
-                        """,
-                Timestamp.from(occurredAt)
-        );
-        if (updated != 1) throw new ConfigException();
-        jdbc.update(
-                """
-                        INSERT INTO kill_switch_events (
-                            id, scope, from_status, to_status, state_version, reason_code,
-                            source, actor_id, trace_id, occurred_at
-                        ) VALUES (?, 'GLOBAL_TRADING', 'ENGAGED', 'DISENGAGED', 2,
-                                  'OFFLINE_ACCEPTANCE_FIXTURE', 'OFFLINE_ACCEPTANCE_FIXTURE',
-                                  'gatew-offline-acceptance', 'gatew-offline-acceptance-fixture', ?)
-                        """,
-                UUID.randomUUID(),
-                Timestamp.from(occurredAt)
-        );
+        int updated;
+        try {
+            updated = jdbc.update(
+                    """
+                            UPDATE kill_switch_states
+                            SET status = 'DISENGAGED', version = 2,
+                                reason_code = 'OFFLINE_ACCEPTANCE_FIXTURE',
+                                source = 'OFFLINE_ACCEPTANCE_FIXTURE', updated_at = ?,
+                                updated_by = 'gatew-offline-acceptance',
+                                trace_id = 'gatew-offline-acceptance-fixture'
+                            WHERE scope = 'GLOBAL_TRADING' AND version = 1 AND status = 'ENGAGED'
+                            """,
+                    Timestamp.from(occurredAt)
+            );
+        } catch (RuntimeException ex) {
+            throw new SeedStageException(RecoveryStatus.ENGAGE_FAILED_DB_SEED_UPDATE, ex);
+        }
+        if (updated != 1) {
+            throw new SeedStageException(RecoveryStatus.ENGAGE_FAILED_DB_SEED_UPDATE);
+        }
+        try {
+            jdbc.update(
+                    """
+                            INSERT INTO kill_switch_events (
+                                id, scope, from_status, to_status, state_version, reason_code,
+                                source, actor_id, trace_id, occurred_at
+                            ) VALUES (?, 'GLOBAL_TRADING', 'ENGAGED', 'DISENGAGED', 2,
+                                      'OFFLINE_ACCEPTANCE_FIXTURE', 'OFFLINE_ACCEPTANCE_FIXTURE',
+                                      'gatew-offline-acceptance', 'gatew-offline-acceptance-fixture', ?)
+                            """,
+                    UUID.randomUUID(),
+                    Timestamp.from(occurredAt)
+            );
+        } catch (RuntimeException ex) {
+            throw new SeedStageException(RecoveryStatus.ENGAGE_FAILED_DB_SEED_EVENT, ex);
+        }
     }
 
     private static GateWOkxReadonlySoakCycleTest.CycleResult offlineCycle(KillSwitchStatus status) {
@@ -541,7 +681,56 @@ public class GateWOkxReadonlySoakFailCloseTest {
     }
 
     private static String withSchema(String url, String schema) {
-        return url + "?currentSchema=" + schema + "&connectTimeout=5&socketTimeout=5";
+        String searchPath = schema.startsWith("gatew_offline_")
+                ? schema + ",public"
+                : schema;
+        return url + "?currentSchema=" + searchPath + "&connectTimeout=5&socketTimeout=5";
+    }
+
+    private static void createOfflineSchema(RuntimeConfig config) {
+        DriverManagerDataSource schemaDataSource = new DriverManagerDataSource();
+        schemaDataSource.setDriverClassName("org.postgresql.Driver");
+        schemaDataSource.setUrl(withSchema(config.databaseUrl(), "public"));
+        schemaDataSource.setUsername(config.databaseUser());
+        schemaDataSource.setPassword(config.databasePassword());
+        JdbcTemplate schemaJdbc = new JdbcTemplate(schemaDataSource);
+        schemaJdbc.setQueryTimeout(5);
+        Boolean exists = schemaJdbc.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ?)",
+                Boolean.class,
+                config.schema()
+        );
+        if (Boolean.TRUE.equals(exists)) {
+            throw new ConfigException();
+        }
+        schemaJdbc.execute(createOfflineSchemaSql(config.schema()));
+    }
+
+    private static String createOfflineSchemaSql(String schema) {
+        if (!OFFLINE_SCHEMA.matcher(schema).matches()) {
+            throw new ConfigException();
+        }
+        return "CREATE SCHEMA " + schema;
+    }
+
+    private static RuntimeException databaseStageFailure(
+            boolean migrateOffline,
+            RecoveryStatus recoveryStatus,
+            RuntimeException failure
+    ) {
+        return migrateOffline ? new DatabaseStageException(recoveryStatus, failure) : failure;
+    }
+
+    private static RecoveryStatus seedFailureStatus(Throwable failure) {
+        Throwable current = failure;
+        int depth = 0;
+        while (current != null && depth++ < 12) {
+            if (current instanceof SeedStageException seedStageException) {
+                return seedStageException.recoveryStatus();
+            }
+            current = current.getCause();
+        }
+        return RecoveryStatus.ENGAGE_FAILED_DB_SEED_TRANSACTION;
     }
 
     private static boolean isConnectionFailure(Throwable failure) {
@@ -556,6 +745,20 @@ public class GateWOkxReadonlySoakFailCloseTest {
             if (current instanceof java.sql.SQLException sqlException
                     && sqlException.getSQLState() != null
                     && sqlException.getSQLState().startsWith("08")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private static boolean isAuthenticationFailure(Throwable failure) {
+        Throwable current = failure;
+        int depth = 0;
+        while (current != null && depth++ < 12) {
+            if (current instanceof java.sql.SQLException sqlException
+                    && sqlException.getSQLState() != null
+                    && sqlException.getSQLState().startsWith("28")) {
                 return true;
             }
             current = current.getCause();
@@ -579,7 +782,21 @@ public class GateWOkxReadonlySoakFailCloseTest {
         ENGAGE_NOT_REQUIRED_ALREADY_ENGAGED,
         ENGAGE_SUCCEEDED,
         ENGAGE_FAILED_DB_ENV_INVALID,
+        ENGAGE_FAILED_DB_AUTHENTICATION,
         ENGAGE_FAILED_DB_UNREACHABLE,
+        ENGAGE_FAILED_DB_CONTEXT_INIT,
+        ENGAGE_FAILED_DB_DRIVER_INIT,
+        ENGAGE_FAILED_DB_DATASOURCE_CONFIG,
+        ENGAGE_FAILED_DB_TEMPLATE_INIT,
+        ENGAGE_FAILED_DB_LOCALITY,
+        ENGAGE_FAILED_DB_MIGRATION_LOAD,
+        ENGAGE_FAILED_DB_MIGRATION_EXECUTE,
+        ENGAGE_FAILED_DB_MIGRATION_VALIDATE,
+        ENGAGE_FAILED_DB_MIGRATION_HISTORY,
+        ENGAGE_FAILED_DB_SEED_INITIAL_STATE,
+        ENGAGE_FAILED_DB_SEED_UPDATE,
+        ENGAGE_FAILED_DB_SEED_EVENT,
+        ENGAGE_FAILED_DB_SEED_TRANSACTION,
         ENGAGE_FAILED_WRITE,
         ENGAGE_FAILED_READBACK,
         ENGAGE_STATUS_UNKNOWN;
@@ -804,6 +1021,36 @@ public class GateWOkxReadonlySoakFailCloseTest {
     private static final class ConfigException extends RuntimeException {
         private ConfigException() {
             super("GateW fail-close configuration is invalid", null, false, false);
+        }
+    }
+
+    private static final class DatabaseStageException extends RuntimeException {
+        private final RecoveryStatus recoveryStatus;
+
+        private DatabaseStageException(RecoveryStatus recoveryStatus, RuntimeException cause) {
+            super("GateW offline database stage failed", cause, false, false);
+            this.recoveryStatus = recoveryStatus;
+        }
+
+        private RecoveryStatus recoveryStatus() {
+            return recoveryStatus;
+        }
+    }
+
+    private static final class SeedStageException extends RuntimeException {
+        private final RecoveryStatus recoveryStatus;
+
+        private SeedStageException(RecoveryStatus recoveryStatus) {
+            this(recoveryStatus, null);
+        }
+
+        private SeedStageException(RecoveryStatus recoveryStatus, RuntimeException cause) {
+            super("GateW offline seed stage failed", cause, false, false);
+            this.recoveryStatus = recoveryStatus;
+        }
+
+        private RecoveryStatus recoveryStatus() {
+            return recoveryStatus;
         }
     }
 }

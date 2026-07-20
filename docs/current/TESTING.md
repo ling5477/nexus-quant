@@ -12050,3 +12050,22 @@ Known limitations / 未运行：P1为real worker EnvironmentFile合同与automat
 第一次 Java targeted 命令因 PowerShell 未引用`-Dsurefire.failIfNoSpecifiedTests=false`而在编译前退出；引用两个`-D`参数后重跑通过。既有 warning为Mockito dynamic-agent/JDK future、SLF4J NOP、unchecked/deprecation和checkout EOL，非阻断。
 
 未运行：implementation exact-head CI、服务器detached checkout/blob/LF校验、正式`systemd-analyze verify`、安装/daemon-reload、正式unit cycle1/2→fresh SSH→cycle3 failure→OnFailure/fail-close/terminal闭环、服务器owner/mode/symlink、listener和历史hash复核、真实OKX、真实credential、168小时soak、frontend、Python。阻断性：本地P0=0/P1=0；所有远端hard gate通过前不得写`SERVER_DEPLOYED / FULL_OFFLINE_ACCEPTANCE_PROVEN / READY_FOR_ATTEMPT_09`。
+
+## 2026-07-20 — GateW immutable candidate release / root-owned formal offline acceptance
+
+当前结论：`PASS / IMMUTABLE_RELEASE_BUNDLE_PROVEN / ROOT_OWNED_CANDIDATE_DEPLOYMENT_PROVEN / CANDIDATE_FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / READY_TO_COMMIT`（通过 / 不可变 release bundle 已证明 / root-owned candidate 部署已证明 / candidate 正式离线全链已证明 / 可提交）。Implementation commit、exact-head CI、final release 与最终正式离线验收仍为 `UNCOMMITTED / NOT_RUN / NOT_BUILT / NOT_RUN`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| local/staging/installed/post-run release verifier | PASS | candidate `…20260720T104748Z`；manifest `8ff73d61...f695eab`；129 artifacts；SHA-256/size/LF/CR/schema/secret-field/containment通过 |
+| root installer + POSIX audit | PASS | root-owned release；directory `0755`、manifest `0644`、executables `0755`；symlink=0；`nqgatew`不可写 |
+| server `systemd-analyze verify` | PASS | exit 0；两个 formal templates 固定 candidate path；无 `/opt/nexus-quant/current` 切换 |
+| formal `prepare/start` | PASS | run `gatew-soak-20260720T134751Z-4d122864`；cycle1/2 PASS；MainPID `3964307`；heartbeat sequence 2；clock=false |
+| fresh SSH `status` | PASS | 同 MainPID；unit active/running；heartbeat observedAt继续推进 |
+| `offline-fail` + independent fail-close | PASS | cycle3 controlled failure；`FAILURE_STOPPED`；`ENGAGE_SUCCEEDED`；kill switch `ENGAGED` |
+| final control verify（cleanup前） | PASS | `PASS / FORMAL_SOAK_VERIFIED`；hash chain、3 samples、MainPID/residual/runtime=`0/0/absent`；historical immutable=true |
+| durable evidence verify | PASS | cycle1/2 PASS、cycle3 CONTROLLED_FAILURE；network/credential=false；raw/secret exposure=`0/0` |
+| final host audit | PASS | active GateW units=0；public non-SSH listener=0；management HTTP 200；PostgreSQL loopback accepting |
+| Maven full test | 本次未重跑 | 用户要求不重跑已通过的 Maven 全量测试；本记录不把未执行命令写成新 PASS |
+
+Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.service` 既存 warning。`-CleanupOfflineDropIn`完成 PASS 后清理临时 network-policy drop-in，因此清理后再次对历史 run执行完整 control verify会返回`OFFLINE_NETWORK_POLICY_INVALID`；首次 final verify、durable hash chain、terminal与post-run release verifier均已通过。未运行真实 OKX、exchange credential、permission probe、Attempt-09、168小时clock、frontend或Python；阻断性P0=0/P1=0，final deployment仍严格受exact-head CI hard gate约束。

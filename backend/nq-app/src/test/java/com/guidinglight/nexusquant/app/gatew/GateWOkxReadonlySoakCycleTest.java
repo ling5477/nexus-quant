@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.account.infra.gatew.JdbcOkxPrivateCredentialExecutor;
@@ -140,8 +141,9 @@ public class GateWOkxReadonlySoakCycleTest {
     private static final Pattern SAFE_TRACE_ID = Pattern.compile("gatew-soak-[a-f0-9-]{36}");
     private static final Pattern SAFE_CLASSIFICATION = Pattern.compile("[A-Z][A-Z0-9_]{1,95}");
     private static final Pattern SAFE_RUN_ID = Pattern.compile("gatew-soak-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}");
-    private static final ObjectMapper STANDALONE_OBJECT_MAPPER = JsonMapper.builder()
+    static final ObjectMapper STANDALONE_OBJECT_MAPPER = JsonMapper.builder()
             .addModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .build();
 
     @Autowired
