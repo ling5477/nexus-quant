@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet(
-            'prepare', 'start', 'status', 'verify', 'stop', 'offline-fail',
+            'precreate-prerequisite', 'prepare', 'start', 'status', 'verify', 'stop', 'offline-fail',
             'record-fresh-ssh', 'start-acceptance-clock',
             'unit-preflight', 'record-exit', 'self-test'
     )]
@@ -46,6 +46,8 @@ $script:StateRoot = '/var/lib/nexus-quant/gatew-soak'
 $script:RuntimeRoot = '/run/nexus-quant/gatew-soak'
 $script:LogRoot = '/var/log/nexus-quant/gatew-soak'
 $script:CredentialRoot = '/etc/nexus-quant/gatew-soak/credentials'
+$script:PreCreateDescriptorPath = '/etc/nexus-quant/gatew-soak/precreate-prerequisite.json'
+$script:PreCreateResultRoot = '/run'
 $script:SystemdRoot = '/etc/systemd/system'
 $script:RuntimeSystemdRoot = '/run/systemd/system'
 $script:WorkerTemplate = 'nq-gatew-soak@.service'
@@ -56,6 +58,9 @@ $script:FailCloseHelperName = 'gatew-okx-readonly-soak-failclose.ps1'
 $script:LinuxRuntimeUser = 'nqgatew'
 $script:LinuxRuntimeGroup = 'nqgatew'
 $script:PowerShellPath = '/usr/bin/pwsh'
+$script:LinuxJavaPath = '/usr/bin/java'
+$script:SystemdCredsPath = '/usr/bin/systemd-creds'
+$script:DatabasePasswordCredentialName = 'db-password'
 $script:SystemctlPath = '/usr/bin/systemctl'
 $script:ChownPath = '/usr/bin/chown'
 $script:ChmodPath = '/usr/bin/chmod'
@@ -725,6 +730,357 @@ function Assert-LiteralValue
     }
 }
 
+function Assert-PreCreateDescriptorValue
+{
+    param([Parameter(Mandatory = $true)]$Descriptor)
+
+    $fields = @(
+        'schemaVersion', 'databaseHost', 'databasePort', 'databaseName', 'databaseUser',
+        'passwordSecretFile', 'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment'
+    )
+    if ((@($Descriptor.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Descriptor.schemaVersion -cne 'gatew-precreate-prerequisite-v1' -or
+            [string]$Descriptor.databaseHost -notin @('127.0.0.1', 'localhost') -or
+            ($Descriptor.databasePort -isnot [int] -and $Descriptor.databasePort -isnot [long]) -or
+            [long]$Descriptor.databasePort -lt 1 -or [long]$Descriptor.databasePort -gt 65535 -or
+            [string]$Descriptor.databaseName -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,62}$' -or
+            [string]$Descriptor.databaseUser -cnotmatch '^[A-Za-z_][A-Za-z0-9_-]{0,62}$' -or
+            [string]$Descriptor.passwordSecretFile -cne "$( $script:CredentialRoot )/db-password.cred" -or
+            [string]$Descriptor.managementLoopbackUrl -cne 'http://127.0.0.1:18889/actuator/health' -or
+            [string]$Descriptor.expectedCredentialType -cne 'OKX_API_V5' -or
+            [string]$Descriptor.expectedEnvironment -cne 'LIVE')
+    {
+        throw 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'
+    }
+    foreach ($field in @(
+        'databaseHost', 'databaseName', 'databaseUser', 'passwordSecretFile',
+        'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment'
+    ))
+    {
+        Assert-LiteralValue ([string]$Descriptor.PSObject.Properties[$field].Value)
+    }
+    return $Descriptor
+}
+
+function Read-PreCreateDescriptor
+{
+    if (-not (Test-LinuxPlatform))
+    {
+        throw 'BLOCKED / PRECREATE_LINUX_REQUIRED'
+    }
+    Assert-PathComponentsNoSymlink $script:PreCreateDescriptorPath
+    if ((Get-Item -LiteralPath $script:PreCreateDescriptorPath -Force).Length -gt 4096)
+    {
+        throw 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'
+    }
+    Assert-PosixContract $script:PreCreateDescriptorPath 'regular file' '600' 'root' 'root'
+    $descriptor = Assert-PreCreateDescriptorValue (Read-JsonFile $script:PreCreateDescriptorPath)
+    $secretFile = [string]$descriptor.passwordSecretFile
+    Assert-PathBelowRoot $script:CredentialRoot $secretFile
+    Assert-PosixContract $secretFile 'regular file' '600' 'root' 'root'
+    $secretSize = (Get-Item -LiteralPath $secretFile -Force).Length
+    if ($secretSize -lt 1 -or $secretSize -gt 16384)
+    {
+        throw 'BLOCKED / PRECREATE_SECRET_REFERENCE_INVALID'
+    }
+    return $descriptor
+}
+
+function Get-PreCreateDatabaseUrl
+{
+    param([Parameter(Mandatory = $true)]$Descriptor)
+
+    return 'jdbc:postgresql://{0}:{1}/{2}' -f
+        [string]$Descriptor.databaseHost,
+        [long]$Descriptor.databasePort,
+        [string]$Descriptor.databaseName
+}
+
+function Get-PreCreateLauncherClassPath
+{
+    foreach ($path in @(
+        "$( $script:ReleaseRoot )/launcher/test-support.jar",
+        "$( $script:ReleaseRoot )/launcher/modules",
+        "$( $script:ReleaseRoot )/launcher/lib"
+    ))
+    {
+        if (-not (Test-Path -LiteralPath $path))
+        {
+            throw 'BLOCKED / PRECREATE_LAUNCHER_BUNDLE_MISSING'
+        }
+        Assert-PathComponentsNoSymlink $path
+    }
+    return @(
+        "$( $script:ReleaseRoot )/launcher/test-support.jar",
+        "$( $script:ReleaseRoot )/launcher/modules/*",
+        "$( $script:ReleaseRoot )/launcher/lib/*"
+    ) -join [IO.Path]::PathSeparator
+}
+
+function Read-PreCreateDatabasePassword
+{
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $script:SystemdCredsPath -PathType Leaf))
+    {
+        throw 'BLOCKED / PRECREATE_SECRET_READER_MISSING'
+    }
+    $lines = @(& $script:SystemdCredsPath decrypt `
+            "--name=$( $script:DatabasePasswordCredentialName )" --newline=no $Path - 2> $null)
+    if ($LASTEXITCODE -ne 0 -or $lines.Count -ne 1)
+    {
+        throw 'BLOCKED / PRECREATE_DATABASE_SECRET_UNAVAILABLE'
+    }
+    $value = [string]$lines[0]
+    if ([string]::IsNullOrWhiteSpace($value) -or $value.Length -gt 16384 -or
+            $value.IndexOf([char]0) -ge 0 -or $value -match "[`r`n]")
+    {
+        throw 'BLOCKED / PRECREATE_DATABASE_SECRET_UNAVAILABLE'
+    }
+    return $value
+}
+
+function Assert-PreCreateReadback
+{
+    param([Parameter(Mandatory = $true)]$Value)
+
+    $fields = @(
+        'killSwitchEngaged', 'credentialConfigured', 'activeCredentialCount', 'credentialType',
+        'credentialLocalStatus', 'tradePermissionExpectedDisabled',
+        'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
+    )
+    if ((@($Value.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            ($Value.activeCredentialCount -isnot [int] -and $Value.activeCredentialCount -isnot [long]) -or
+            [long]$Value.activeCredentialCount -lt 0 -or
+            [string]$Value.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
+            [string]$Value.credentialLocalStatus -notin @(
+                'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
+            ))
+    {
+        throw 'BLOCKED / PRECREATE_READBACK_INVALID'
+    }
+    foreach ($field in @(
+        'killSwitchEngaged', 'credentialConfigured', 'tradePermissionExpectedDisabled',
+        'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
+    ))
+    {
+        if ($Value.PSObject.Properties[$field].Value -isnot [bool])
+        {
+            throw 'BLOCKED / PRECREATE_READBACK_INVALID'
+        }
+    }
+    $serialized = ConvertTo-CompactJson $Value
+    if ($serialized -match '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|account')
+    {
+        throw 'BLOCKED / PRECREATE_READBACK_INVALID'
+    }
+    return $Value
+}
+
+function New-PreCreateResult
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$CheckedAt,
+        [AllowNull()]$Readback
+    )
+
+    $available = $null -ne $Readback
+    $ready = $available -and
+        [bool]$Readback.postgresReachable -and [bool]$Readback.managementHealthy -and
+        [bool]$Readback.killSwitchEngaged -and [bool]$Readback.credentialConfigured -and
+        [long]$Readback.activeCredentialCount -eq 1 -and
+        [string]$Readback.credentialType -eq 'OKX_API_V5' -and
+        [string]$Readback.credentialLocalStatus -eq 'ACTIVE' -and
+        [bool]$Readback.tradePermissionExpectedDisabled -and
+        [bool]$Readback.withdrawPermissionExpectedDisabled
+    return [pscustomobject][ordered]@{
+        schemaVersion = 'gatew-precreate-prerequisite-result-v1'
+        checkedAt = $CheckedAt
+        postgresReachable = $available -and [bool]$Readback.postgresReachable
+        managementHealthy = $available -and [bool]$Readback.managementHealthy
+        killSwitchEngaged = $available -and [bool]$Readback.killSwitchEngaged
+        credentialConfigured = $available -and [bool]$Readback.credentialConfigured
+        activeCredentialCount = if ($available) { [long]$Readback.activeCredentialCount } else { 0L }
+        credentialType = if ($available) { [string]$Readback.credentialType } else { 'UNKNOWN' }
+        credentialLocalStatus = if ($available) { [string]$Readback.credentialLocalStatus } else { 'UNKNOWN' }
+        tradePermissionExpectedDisabled = $available -and [bool]$Readback.tradePermissionExpectedDisabled
+        withdrawPermissionExpectedDisabled = $available -and [bool]$Readback.withdrawPermissionExpectedDisabled
+        readyForAttemptCreation = $ready
+        diagnosticOnly = $true
+        noSideEffect = $true
+        credentialMaterialExposed = $false
+    }
+}
+
+function Assert-PreCreateResult
+{
+    param([Parameter(Mandatory = $true)]$Value)
+
+    $fields = @(
+        'schemaVersion', 'checkedAt', 'postgresReachable', 'managementHealthy', 'killSwitchEngaged',
+        'credentialConfigured', 'activeCredentialCount', 'credentialType', 'credentialLocalStatus',
+        'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
+        'readyForAttemptCreation', 'diagnosticOnly', 'noSideEffect', 'credentialMaterialExposed'
+    )
+    $checkedAt = [DateTimeOffset]::MinValue
+    if ((@($Value.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Value.schemaVersion -cne 'gatew-precreate-prerequisite-result-v1' -or
+            -not [DateTimeOffset]::TryParse([string]$Value.checkedAt, [ref]$checkedAt) -or
+            ($Value.activeCredentialCount -isnot [int] -and $Value.activeCredentialCount -isnot [long]) -or
+            [long]$Value.activeCredentialCount -lt 0 -or
+            [string]$Value.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
+            [string]$Value.credentialLocalStatus -notin @(
+                'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
+            ) -or
+            -not [bool]$Value.diagnosticOnly -or -not [bool]$Value.noSideEffect -or
+            [bool]$Value.credentialMaterialExposed -or
+            (ConvertTo-CompactJson $Value) -match
+                '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|account')
+    {
+        throw 'BLOCKED / PRECREATE_RESULT_INVALID'
+    }
+    foreach ($field in @(
+        'postgresReachable', 'managementHealthy', 'killSwitchEngaged', 'credentialConfigured',
+        'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
+        'readyForAttemptCreation', 'diagnosticOnly', 'noSideEffect', 'credentialMaterialExposed'
+    ))
+    {
+        if ($Value.PSObject.Properties[$field].Value -isnot [bool])
+        {
+            throw 'BLOCKED / PRECREATE_RESULT_INVALID'
+        }
+    }
+    return $Value
+}
+
+function Invoke-PreCreateJavaReadback
+{
+    param([Parameter(Mandatory = $true)]$Descriptor)
+
+    Get-ReleaseIdentity | Out-Null
+    if (-not (Test-Path -LiteralPath $script:LinuxJavaPath -PathType Leaf))
+    {
+        throw 'BLOCKED / PRECREATE_JAVA_RUNTIME_MISSING'
+    }
+    $token = [Guid]::NewGuid().ToString('N')
+    $resultFile = "$( $script:PreCreateResultRoot )/nq-gatew-precreate-prerequisite-$token.json"
+    if (Test-Path -LiteralPath $resultFile)
+    {
+        throw 'BLOCKED / PRECREATE_RESULT_PATH_CONFLICT'
+    }
+    $password = Read-PreCreateDatabasePassword ([string]$Descriptor.passwordSecretFile)
+    $values = [ordered]@{
+        SPRING_PROFILES_ACTIVE = 'gatew-okx-readonly-soak'
+        NQ_GATEW_OKX_READONLY_SOAK_ENABLED = 'true'
+        NQ_GATEW_RUN_MODE = 'REAL_READONLY_SOAK'
+        CI = 'false'
+        NQ_NO_OUTBOUND = 'false'
+        NQ_LIVE_ENABLED = 'false'
+        NQ_REAL_ORDER_SUBMISSION_ENABLED = 'false'
+        NQ_TRANSFER_ENABLED = 'false'
+        NQ_WITHDRAW_ENABLED = 'false'
+        NQ_AI_ENABLED = 'false'
+        NQ_DH_RUNTIME_ENABLED = 'false'
+        NQ_REAL_PROVIDER_ENABLED = 'false'
+        NQ_REAL_CLIENT_ENABLED = 'false'
+        NQ_REAL_EXCHANGE_ENABLED = 'false'
+        NQ_GATEW_SOAK_DB_URL = Get-PreCreateDatabaseUrl $Descriptor
+        NQ_GATEW_SOAK_DB_USER = [string]$Descriptor.databaseUser
+        NQ_GATEW_SOAK_DB_PASSWORD = $password
+        NQ_GATEW_MANAGEMENT_HEALTH_URL = [string]$Descriptor.managementLoopbackUrl
+        NQ_ACCOUNT_CREDENTIALS_MASTER_KEY = $null
+        NQ_GATEW_SOAK_OWNER_ID = $null
+        NQ_GATEW_SOAK_ACCOUNT_ID = $null
+        NQ_GATEW_SOAK_CURRENCIES = $null
+        NQ_GATEW_FORMAL_EVIDENCE_ROOT = $null
+        NQ_GATEW_SECRET_SOURCE = $null
+        NQ_GATEW_FORMAL_SYSTEMD = $null
+        CREDENTIALS_DIRECTORY = $null
+        NQ_OKX_API_KEY = $null
+        NQ_OKX_API_SECRET = $null
+        NQ_OKX_API_PASSPHRASE = $null
+        NQ_OKX_REAL_API_KEY = $null
+        NQ_OKX_REAL_API_SECRET = $null
+        NQ_OKX_REAL_API_PASSPHRASE = $null
+    }
+    $previous = @{ }
+    try
+    {
+        foreach ($name in $values.Keys)
+        {
+            $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+            [Environment]::SetEnvironmentVariable($name, $values[$name], 'Process')
+        }
+        $arguments = @(
+            '-Xms16m', '-Xmx256m', '-Dfile.encoding=UTF-8',
+            '-Dnq.gatew.okxReadonlySoak.required=true',
+            '-Dnq.gatew.okxReadonlySoak.action=precreate-prerequisite',
+            "-Dnq.gatew.okxReadonlySoak.resultFile=$resultFile",
+            "-Dnq.gatew.okxReadonlySoak.repoRoot=$( $script:ReleaseRoot )",
+            '-cp', (Get-PreCreateLauncherClassPath),
+            'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest$PrerequisiteMain'
+        )
+        try
+        {
+            $null = & $script:LinuxJavaPath @arguments 2> $null
+        }
+        catch
+        {
+            # Java/JDBC details may contain sensitive connection material and are never emitted.
+        }
+        if (-not (Test-Path -LiteralPath $resultFile -PathType Leaf))
+        {
+            throw 'BLOCKED / PRECREATE_READBACK_UNAVAILABLE'
+        }
+        return Assert-PreCreateReadback (Read-JsonFile $resultFile)
+    }
+    finally
+    {
+        foreach ($name in $values.Keys)
+        {
+            [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process')
+        }
+        $password = $null
+        if (Test-Path -LiteralPath $resultFile)
+        {
+            Remove-Item -LiteralPath $resultFile -Force
+        }
+    }
+}
+
+function Invoke-PreCreatePrerequisiteEvaluation
+{
+    param([switch]$ForPrepare)
+
+    $checkedAt = (Get-UtcNow).ToString('o')
+    try
+    {
+        Assert-RootLinux
+        if (-not $ForPrepare -and -not [string]::IsNullOrWhiteSpace($RunId))
+        {
+            throw 'BLOCKED / PRECREATE_RUN_ID_FORBIDDEN'
+        }
+        $descriptor = Read-PreCreateDescriptor
+        return [pscustomobject][ordered]@{
+            Result = Assert-PreCreateResult `
+                (New-PreCreateResult $checkedAt (Invoke-PreCreateJavaReadback $descriptor))
+            Descriptor = $descriptor
+        }
+    }
+    catch
+    {
+        return [pscustomobject][ordered]@{
+            Result = Assert-PreCreateResult (New-PreCreateResult $checkedAt $null)
+            Descriptor = $null
+        }
+    }
+}
+
+function Invoke-PreCreatePrerequisite
+{
+    return (Invoke-PreCreatePrerequisiteEvaluation).Result
+}
+
 function ConvertTo-SystemdLiteral
 {
     param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
@@ -881,6 +1237,24 @@ function Remove-OfflineDropIns
 function Prepare-FormalRun
 {
     Assert-RootLinux
+    if ($RunMode -eq 'REAL_READONLY_SOAK')
+    {
+        if (-not [string]::IsNullOrWhiteSpace($DatabaseUrl) -or
+                -not [string]::IsNullOrWhiteSpace($DatabaseUser) -or
+                -not [string]::IsNullOrWhiteSpace($DatabasePasswordSourceFile))
+        {
+            throw 'BLOCKED / REAL_DATABASE_OPERATOR_INPUT_FORBIDDEN'
+        }
+        $preCreateEvaluation = Invoke-PreCreatePrerequisiteEvaluation -ForPrepare
+        if (-not [bool]$preCreateEvaluation.Result.readyForAttemptCreation -or
+                $null -eq $preCreateEvaluation.Descriptor)
+        {
+            throw 'BLOCKED / PRECREATE_PREREQUISITE_REQUIRED'
+        }
+        $preCreateDescriptor = $preCreateEvaluation.Descriptor
+        $DatabaseUrl = Get-PreCreateDatabaseUrl $preCreateDescriptor
+        $DatabaseUser = [string]$preCreateDescriptor.databaseUser
+    }
     $release = Get-ReleaseIdentity
     if (-not [string]::IsNullOrWhiteSpace($ExpectedCommit) -and
             [string]$release.sourceCommit -cne $ExpectedCommit.ToLowerInvariant())
@@ -911,11 +1285,11 @@ function Prepare-FormalRun
     {
         throw 'BLOCKED / RUN_ID_ALREADY_EXISTS'
     }
-    if ( [string]::IsNullOrWhiteSpace($DatabaseUrl))
+    if ($RunMode -eq 'OFFLINE_ISOLATED_ACCEPTANCE' -and [string]::IsNullOrWhiteSpace($DatabaseUrl))
     {
         $DatabaseUrl = [Environment]::GetEnvironmentVariable('NQ_GATEW_SOAK_DB_URL', 'Process')
     }
-    if ( [string]::IsNullOrWhiteSpace($DatabaseUser))
+    if ($RunMode -eq 'OFFLINE_ISOLATED_ACCEPTANCE' -and [string]::IsNullOrWhiteSpace($DatabaseUser))
     {
         $DatabaseUser = [Environment]::GetEnvironmentVariable('NQ_GATEW_SOAK_DB_USER', 'Process')
     }
@@ -2175,6 +2549,96 @@ function Invoke-ControlSelfTest
         throw 'automatic Matches collision self-test failed'
     }
     $caseCount++
+    $descriptorFixture = [pscustomobject][ordered]@{
+        schemaVersion = 'gatew-precreate-prerequisite-v1'
+        databaseHost = '127.0.0.1'
+        databasePort = 5432
+        databaseName = 'nexus_quant'
+        databaseUser = 'nq_runtime'
+        passwordSecretFile = "$( $script:CredentialRoot )/db-password.cred"
+        managementLoopbackUrl = 'http://127.0.0.1:18889/actuator/health'
+        expectedCredentialType = 'OKX_API_V5'
+        expectedEnvironment = 'LIVE'
+    }
+    Assert-PreCreateDescriptorValue $descriptorFixture | Out-Null
+    if ((Get-PreCreateDatabaseUrl $descriptorFixture) -cne
+            'jdbc:postgresql://127.0.0.1:5432/nexus_quant')
+    {
+        throw 'precreate descriptor URL self-test failed'
+    }
+    $caseCount += 2
+    foreach ($mutation in @(
+        @{ unknownField = 'forbidden' },
+        @{ databaseHost = '${DB_HOST}' },
+        @{ databaseName = '$(whoami)' },
+        @{ databaseUser = 'user`id' },
+        @{ managementLoopbackUrl = 'http://127.0.0.1:18889/actuator/health|id' },
+        @{ passwordSecretFile = '/tmp/db-password' }
+    ))
+    {
+        $candidate = (ConvertTo-CompactJson $descriptorFixture | ConvertFrom-Json)
+        foreach ($name in $mutation.Keys)
+        {
+            if ($null -eq $candidate.PSObject.Properties[$name])
+            {
+                $candidate | Add-Member -NotePropertyName $name -NotePropertyValue $mutation[$name]
+            }
+            else
+            {
+                $candidate.PSObject.Properties[$name].Value = $mutation[$name]
+            }
+        }
+        $blocked = $false
+        try
+        {
+            Assert-PreCreateDescriptorValue $candidate | Out-Null
+        }
+        catch
+        {
+            $blocked = $true
+        }
+        if (-not $blocked)
+        {
+            throw 'precreate descriptor rejection self-test failed'
+        }
+        $caseCount++
+    }
+    $safeReadback = [pscustomobject][ordered]@{
+        killSwitchEngaged = $true
+        credentialConfigured = $true
+        activeCredentialCount = 1
+        credentialType = 'OKX_API_V5'
+        credentialLocalStatus = 'ACTIVE'
+        tradePermissionExpectedDisabled = $true
+        withdrawPermissionExpectedDisabled = $true
+        postgresReachable = $true
+        managementHealthy = $true
+    }
+    Assert-PreCreateReadback $safeReadback | Out-Null
+    $preCreateResult = Assert-PreCreateResult `
+        (New-PreCreateResult '2026-07-21T00:00:00Z' $safeReadback)
+    if (-not [bool]$preCreateResult.readyForAttemptCreation -or
+            [bool]$preCreateResult.credentialMaterialExposed)
+    {
+        throw 'precreate result self-test failed'
+    }
+    $caseCount += 2
+    $source = [IO.File]::ReadAllText($PSCommandPath)
+    $prepareStart = $source.IndexOf('function Prepare-FormalRun', [StringComparison]::Ordinal)
+    $prepareEnd = $source.IndexOf('function ConvertFrom-SystemctlShow', $prepareStart, [StringComparison]::Ordinal)
+    $prepareSource = $source.Substring($prepareStart, $prepareEnd - $prepareStart)
+    $gateIndex = $prepareSource.IndexOf(
+        'Invoke-PreCreatePrerequisiteEvaluation -ForPrepare',
+        [StringComparison]::Ordinal
+    )
+    $runIdIndex = $prepareSource.IndexOf('New-RunId', [StringComparison]::Ordinal)
+    $directoryIndex = $prepareSource.IndexOf('Ensure-Directory', [StringComparison]::Ordinal)
+    if ($gateIndex -lt 0 -or $runIdIndex -lt 0 -or $directoryIndex -lt 0 -or
+            $gateIndex -gt $runIdIndex -or $gateIndex -gt $directoryIndex)
+    {
+        throw 'precreate execution order self-test failed'
+    }
+    $caseCount++
     $roundTripTimestamp = '2026-07-20T17:39:01.8426894Z'
     $parsedTimestamp = (ConvertFrom-JsonPreservingTimestamps `
             "{`"observedAt`":`"$roundTripTimestamp`"}").observedAt
@@ -2491,6 +2955,7 @@ function Invoke-ControlSelfTest
         zeroLengthCreateOnce = 'PASS / LENGTH_0 / SECOND_CREATE_REJECTED'
         releaseVerifierParameters = 'PASS / HASHTABLE_SPLATTING'
         automaticMatchesCollision = 'PASS / FORBIDDEN'
+        preCreatePrerequisite = 'PASS / BEFORE_RUN_ID_AND_DIRECTORY / CLOSED_SCHEMA'
         noNetworkCalled = $true
         credentialAccessed = $false
     }
@@ -2500,6 +2965,9 @@ try
 {
     $result = switch ($Action)
     {
+        'precreate-prerequisite' {
+            Invoke-PreCreatePrerequisite
+        }
         'prepare' {
             Prepare-FormalRun
         }
@@ -2537,10 +3005,20 @@ try
     if ($null -ne $result)
     {
         $result | ConvertTo-Json -Depth 12
+        if ($Action -eq 'precreate-prerequisite' -and
+                -not [bool]$result.readyForAttemptCreation)
+        {
+            exit 2
+        }
     }
 }
 catch
 {
+    if ($Action -eq 'precreate-prerequisite')
+    {
+        New-PreCreateResult ((Get-UtcNow).ToString('o')) $null | ConvertTo-Json -Depth 4
+        exit 2
+    }
     $message = if ($_.Exception.Message -match '^(BLOCKED|FAIL) / [A-Z0-9_]+$')
     {
         $_.Exception.Message

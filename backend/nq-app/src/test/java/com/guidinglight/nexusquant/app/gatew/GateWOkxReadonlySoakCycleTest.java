@@ -36,6 +36,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -178,8 +180,9 @@ public class GateWOkxReadonlySoakCycleTest {
         }
 
         public static void main(String[] args) {
+            String action = System.getProperty(ACTION_PROPERTY);
             if (args.length != 0 || !"true".equals(System.getProperty(REQUIRED_PROPERTY))
-                    || !"prerequisite".equals(System.getProperty(ACTION_PROPERTY))) {
+                    || !("prerequisite".equals(action) || "precreate-prerequisite".equals(action))) {
                 throw new IllegalStateException("GateW prerequisite launcher is not authorized");
             }
             SafetyConfig config = SafetyConfig.from(System.getenv(), System.getProperties());
@@ -191,10 +194,18 @@ public class GateWOkxReadonlySoakCycleTest {
                 dataSource.setUrl(config.databaseUrl());
                 dataSource.setUsername(config.databaseUser());
                 dataSource.setPassword(config.databasePassword());
+                Properties connectionProperties = new Properties();
+                connectionProperties.setProperty("connectTimeout", "2");
+                connectionProperties.setProperty("socketTimeout", "3");
+                connectionProperties.setProperty("loginTimeout", "3");
+                connectionProperties.setProperty("ApplicationName", "nq-gatew-precreate-prerequisite");
+                dataSource.setConnectionProperties(connectionProperties);
+                JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+                jdbc.setQueryTimeout(3);
                 result = readPrerequisite(
-                        new JdbcTemplate(dataSource),
+                        jdbc,
                         config,
-                        GateWOkxReadonlySoakCycleTest::managementHealthy
+                        () -> managementHealthy(config.managementHealthUrl())
                 );
             } catch (RuntimeException ex) {
                 result = PrerequisiteReadback.unavailable();
@@ -669,33 +680,63 @@ public class GateWOkxReadonlySoakCycleTest {
                     "SELECT status FROM kill_switch_states WHERE scope = 'GLOBAL_TRADING'",
                     String.class
             );
-            List<Map<String, Object>> accounts = jdbc.queryForList(
-                    """
-                            SELECT exchange_code, trade_env, status
-                            FROM exchange_accounts
-                            WHERE owner_user_id = ? AND exchange_account_id = ?
-                            """,
-                    config.ownerId(),
-                    config.exchangeAccountId()
-            );
-            List<Map<String, Object>> credentials = jdbc.queryForList(
-                    """
-                            SELECT credential_type, credential_status, permission_scope, withdraw_enabled
-                            FROM exchange_account_credentials
-                            WHERE exchange_account_id = ?
-                              AND is_active = TRUE
-                              AND credential_status = 'ACTIVE'
-                            ORDER BY credential_id
-                            """,
-                    config.exchangeAccountId()
-            );
+            boolean preCreate = "precreate-prerequisite".equals(config.action());
+            List<Map<String, Object>> accounts;
+            List<Map<String, Object>> credentials;
+            if (preCreate) {
+                accounts = List.of();
+                credentials = jdbc.queryForList(
+                        """
+                                SELECT c.credential_type, c.credential_status,
+                                       c.permission_scope, c.withdraw_enabled,
+                                       a.exchange_code, a.trade_env, a.status
+                                FROM exchange_account_credentials c
+                                JOIN exchange_accounts a
+                                  ON a.exchange_account_id = c.exchange_account_id
+                                WHERE a.exchange_code = 'OKX'
+                                  AND a.trade_env = 'LIVE'
+                                  AND a.status = 'ACTIVE'
+                                  AND c.credential_type = 'OKX_API_V5'
+                                  AND c.is_active = TRUE
+                                  AND c.revoked_at IS NULL
+                                  AND c.rotated_at IS NULL
+                                ORDER BY c.credential_id
+                                """
+                );
+            } else {
+                accounts = jdbc.queryForList(
+                        """
+                                SELECT exchange_code, trade_env, status
+                                FROM exchange_accounts
+                                WHERE owner_user_id = ? AND exchange_account_id = ?
+                                """,
+                        config.ownerId(),
+                        config.exchangeAccountId()
+                );
+                credentials = jdbc.queryForList(
+                        """
+                                SELECT credential_type, credential_status, permission_scope, withdraw_enabled
+                                FROM exchange_account_credentials
+                                WHERE exchange_account_id = ?
+                                  AND is_active = TRUE
+                                  AND credential_status = 'ACTIVE'
+                                ORDER BY credential_id
+                                """,
+                        config.exchangeAccountId()
+                );
+            }
 
-            boolean accountHealthy = accounts.size() == 1
+            boolean singleCredential = credentials.size() == 1;
+            Map<String, Object> credential = singleCredential ? credentials.getFirst() : Map.of();
+            boolean accountHealthy = preCreate
+                    ? singleCredential
+                    && "OKX".equals(Objects.toString(credential.get("exchange_code"), ""))
+                    && "LIVE".equals(Objects.toString(credential.get("trade_env"), ""))
+                    && "ACTIVE".equals(Objects.toString(credential.get("status"), ""))
+                    : accounts.size() == 1
                     && "OKX".equals(Objects.toString(accounts.getFirst().get("exchange_code"), ""))
                     && "LIVE".equals(Objects.toString(accounts.getFirst().get("trade_env"), ""))
                     && "ACTIVE".equals(Objects.toString(accounts.getFirst().get("status"), ""));
-            boolean singleCredential = credentials.size() == 1;
-            Map<String, Object> credential = singleCredential ? credentials.getFirst() : Map.of();
             String credentialType = singleCredential
                     ? Objects.toString(credential.get("credential_type"), "UNKNOWN")
                     : credentials.isEmpty() ? "UNKNOWN" : "CONFLICT";
@@ -714,24 +755,25 @@ public class GateWOkxReadonlySoakCycleTest {
             }
             return new PrerequisiteReadback(
                     "ENGAGED".equals(killSwitchStatus),
-                    !credentials.isEmpty(),
+                    !credentials.isEmpty() && accountHealthy,
                     credentials.size(),
                     credentialType,
                     credentialLocalStatus,
                     tradeDisabled,
                     withdrawDisabled,
                     true,
-                    accountHealthy && localManagementHealthy
+                    localManagementHealthy
             );
         } catch (RuntimeException ex) {
             return PrerequisiteReadback.unavailable();
         }
     }
 
-    private static boolean managementHealthy() {
+    private static boolean managementHealthy(String healthUrl) {
         HttpURLConnection connection = null;
         try {
-            connection = (HttpURLConnection) URI.create("http://127.0.0.1:18889/actuator/health")
+            if (!"http://127.0.0.1:18889/actuator/health".equals(healthUrl)) return false;
+            connection = (HttpURLConnection) URI.create(healthUrl)
                     .toURL()
                     .openConnection();
             connection.setConnectTimeout(2_000);
@@ -794,7 +836,18 @@ public class GateWOkxReadonlySoakCycleTest {
     private static void writeSanitizedPayload(Path output, byte[] json) throws IOException {
         Path temporary = output.resolveSibling(output.getFileName() + ".tmp-" + UUID.randomUUID());
         try {
-            Files.write(temporary, json, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            if (Files.getFileStore(output.getParent()).supportsFileAttributeView("posix")) {
+                Files.createFile(
+                        temporary,
+                        PosixFilePermissions.asFileAttribute(Set.of(
+                                PosixFilePermission.OWNER_READ,
+                                PosixFilePermission.OWNER_WRITE
+                        ))
+                );
+                Files.write(temporary, json, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            } else {
+                Files.write(temporary, json, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            }
             try {
                 Files.move(temporary, output, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             } catch (AtomicMoveNotSupportedException ex) {
@@ -813,6 +866,9 @@ public class GateWOkxReadonlySoakCycleTest {
      * 仅允许真实 soak 与 offline smoke 的 canonical run root；lexical path 与 real path 必须同时留在边界内。
      */
     private static Path validatedResultOutput(SafetyConfig config) throws IOException {
+        if ("precreate-prerequisite".equals(config.action())) {
+            return validatedPreCreateResultOutput(config);
+        }
         if (config.formalEvidenceRoot() != null) {
             return validatedFormalResultOutput(config);
         }
@@ -842,6 +898,23 @@ public class GateWOkxReadonlySoakCycleTest {
             if (!isStrictlyBelow(realOutput, realRunRoot)) {
                 throw new IllegalArgumentException("resultFile real path escaped a canonical soak run root");
             }
+        }
+        return output;
+    }
+
+    /**
+     * Pre-create 入口不创建 run/runtime/evidence 目录，只允许在既有 /run 根下使用随机、短生命周期结果文件。
+     */
+    private static Path validatedPreCreateResultOutput(SafetyConfig config) throws IOException {
+        Path runtimeRoot = Path.of("/run").toAbsolutePath().normalize();
+        Path output = config.resultFile().toAbsolutePath().normalize();
+        Path parent = output.getParent();
+        if (parent == null || !parent.equals(runtimeRoot)
+                || !output.getFileName().toString().matches(
+                "nq-gatew-precreate-prerequisite-[a-f0-9]{32}\\.json"
+        ) || Files.isSymbolicLink(output)
+                || !runtimeRoot.toRealPath().equals(parent.toRealPath())) {
+            throw new IllegalArgumentException("precreate result path is outside the fixed runtime root");
         }
         return output;
     }
@@ -1121,6 +1194,7 @@ public class GateWOkxReadonlySoakCycleTest {
         private final String databaseUrl;
         private final String databaseUser;
         private final String databasePassword;
+        private final String managementHealthUrl;
         private final String masterKey;
         private final long ownerId;
         private final long exchangeAccountId;
@@ -1137,6 +1211,7 @@ public class GateWOkxReadonlySoakCycleTest {
                 String databaseUrl,
                 String databaseUser,
                 String databasePassword,
+                String managementHealthUrl,
                 String masterKey,
                 long ownerId,
                 long exchangeAccountId,
@@ -1152,6 +1227,7 @@ public class GateWOkxReadonlySoakCycleTest {
             this.databaseUrl = databaseUrl;
             this.databaseUser = databaseUser;
             this.databasePassword = databasePassword;
+            this.managementHealthUrl = managementHealthUrl;
             this.masterKey = masterKey;
             this.ownerId = ownerId;
             this.exchangeAccountId = exchangeAccountId;
@@ -1186,6 +1262,7 @@ public class GateWOkxReadonlySoakCycleTest {
                             systemdCredentials,
                             expectedCredentialDirectory
                     ),
+                    managementHealthUrl(environment),
                     sampleAction
                             ? secretValue(environment, "NQ_ACCOUNT_CREDENTIALS_MASTER_KEY",
                             "credential-master-key", systemdCredentials, expectedCredentialDirectory) : "",
@@ -1297,7 +1374,7 @@ public class GateWOkxReadonlySoakCycleTest {
 
         void assertSafe() {
             List<String> violations = new ArrayList<>();
-            if (!Set.of("bootstrap", "sample", "engage", "prerequisite").contains(action)) {
+            if (!Set.of("bootstrap", "sample", "engage", "prerequisite", "precreate-prerequisite").contains(action)) {
                 violations.add("SOAK_ACTION_INVALID");
             }
             if (!Set.of(REAL_READONLY_SOAK, OFFLINE_ISOLATED_ACCEPTANCE).contains(runMode())) {
@@ -1325,7 +1402,14 @@ public class GateWOkxReadonlySoakCycleTest {
                 violations.add("SOAK_DATABASE_CONFIG_REQUIRED");
             }
             if ("sample".equals(action) && masterKey.isBlank()) violations.add("CREDENTIAL_MASTER_KEY_REQUIRED");
-            if (!safeDatabaseTarget(databaseUrl, databaseName)) violations.add("SOAK_DATABASE_NOT_LOCAL");
+            boolean safeDatabase = "precreate-prerequisite".equals(action)
+                    ? safePreCreateDatabaseTarget(databaseUrl, databaseName)
+                    : safeDatabaseTarget(databaseUrl, databaseName);
+            if (!safeDatabase) violations.add("SOAK_DATABASE_NOT_LOCAL");
+            if ("precreate-prerequisite".equals(action)
+                    && !"http://127.0.0.1:18889/actuator/health".equals(managementHealthUrl)) {
+                violations.add("MANAGEMENT_HEALTH_TARGET_INVALID");
+            }
             if (!violations.isEmpty()) throw new SafeBlockException(violations.getFirst());
         }
 
@@ -1342,6 +1426,29 @@ public class GateWOkxReadonlySoakCycleTest {
             } catch (RuntimeException ex) {
                 return false;
             }
+        }
+
+        private static boolean safePreCreateDatabaseTarget(String url, String databaseName) {
+            if (url == null || !url.startsWith("jdbc:postgresql://")
+                    || !databaseName.matches("[A-Za-z][A-Za-z0-9_]{0,62}")) return false;
+            try {
+                URI uri = URI.create(url.substring("jdbc:".length()));
+                String host = uri.getHost();
+                return uri.getUserInfo() == null
+                        && uri.getRawQuery() == null
+                        && uri.getRawFragment() == null
+                        && uri.getPort() >= 1 && uri.getPort() <= 65535
+                        && ("127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host));
+            } catch (RuntimeException ex) {
+                return false;
+            }
+        }
+
+        private static String managementHealthUrl(Map<String, String> environment) {
+            String configured = value(environment, "NQ_GATEW_MANAGEMENT_HEALTH_URL");
+            return configured.isBlank()
+                    ? "http://127.0.0.1:18889/actuator/health"
+                    : configured;
         }
 
         private static String databaseName(String url) {
@@ -1422,6 +1529,10 @@ public class GateWOkxReadonlySoakCycleTest {
 
         String databasePassword() {
             return databasePassword;
+        }
+
+        String managementHealthUrl() {
+            return managementHealthUrl;
         }
 
         String masterKey() {

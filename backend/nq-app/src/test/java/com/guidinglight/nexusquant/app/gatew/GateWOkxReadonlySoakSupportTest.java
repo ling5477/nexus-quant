@@ -557,6 +557,87 @@ class GateWOkxReadonlySoakSupportTest {
     }
 
     @Test
+    void preCreatePrerequisiteUsesGlobalSanitizedMetadataWithoutAccountInput() {
+        Properties properties = baseProperties();
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.ACTION_PROPERTY, "precreate-prerequisite");
+        properties.setProperty(
+                GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY,
+                "/run/nq-gatew-precreate-prerequisite-0123456789abcdef0123456789abcdef.json"
+        );
+        Map<String, String> environment = baseEnvironment();
+        environment.put("NQ_GATEW_SOAK_DB_URL", "jdbc:postgresql://127.0.0.1:5432/nexus_quant");
+        environment.put("NQ_GATEW_MANAGEMENT_HEALTH_URL", "http://127.0.0.1:18889/actuator/health");
+        environment.remove("NQ_GATEW_SOAK_OWNER_ID");
+        environment.remove("NQ_GATEW_SOAK_ACCOUNT_ID");
+        environment.remove("NQ_GATEW_SOAK_CURRENCIES");
+        environment.remove("NQ_ACCOUNT_CREDENTIALS_MASTER_KEY");
+        GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(environment, properties);
+        config.assertSafe();
+
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("ENGAGED");
+        Map<String, Object> safeCredential = Map.of(
+                "credential_type", "OKX_API_V5",
+                "credential_status", "ACTIVE",
+                "permission_scope", "READ_ONLY",
+                "withdraw_enabled", false,
+                "exchange_code", "OKX",
+                "trade_env", "LIVE",
+                "status", "ACTIVE"
+        );
+        when(jdbc.queryForList(anyString())).thenReturn(List.of(safeCredential));
+
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback passed =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+        assertTrue(passed.ready());
+        assertEquals(1, passed.activeCredentialCount());
+        assertTrue(passed.tradePermissionExpectedDisabled());
+        assertTrue(passed.withdrawPermissionExpectedDisabled());
+
+        when(jdbc.queryForList(anyString())).thenReturn(List.of(safeCredential, safeCredential));
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback conflict =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+        assertFalse(conflict.ready());
+        assertEquals("CONFLICT", conflict.credentialType());
+
+        Map<String, Object> disabled = new HashMap<>(safeCredential);
+        disabled.put("credential_status", "DISABLED");
+        when(jdbc.queryForList(anyString())).thenReturn(List.of(disabled));
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback inactive =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+        assertFalse(inactive.ready());
+        assertEquals("DISABLED", inactive.credentialLocalStatus());
+
+        when(jdbc.queryForList(anyString())).thenReturn(List.of());
+        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true).ready());
+        when(jdbc.queryForList(anyString())).thenReturn(List.of(safeCredential));
+        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> false).ready());
+        when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("DISENGAGED");
+        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true).ready());
+    }
+
+    @Test
+    void preCreatePrerequisiteRejectsOperatorDatabaseOverrideShapes() {
+        Properties properties = baseProperties();
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.ACTION_PROPERTY, "precreate-prerequisite");
+        properties.setProperty(
+                GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY,
+                "/run/nq-gatew-precreate-prerequisite-0123456789abcdef0123456789abcdef.json"
+        );
+        Map<String, String> environment = baseEnvironment();
+        environment.remove("NQ_GATEW_SOAK_OWNER_ID");
+        environment.remove("NQ_GATEW_SOAK_ACCOUNT_ID");
+        environment.remove("NQ_GATEW_SOAK_CURRENCIES");
+        environment.remove("NQ_ACCOUNT_CREDENTIALS_MASTER_KEY");
+        environment.put("NQ_GATEW_SOAK_DB_URL", "${NQ_DB_URL}");
+
+        assertThrows(
+                GateWOkxReadonlySoakCycleTest.SafeBlockException.class,
+                () -> config(environment, properties).assertSafe()
+        );
+    }
+
+    @Test
     void rejectsContradictoryEndpointAndNetworkEvidence() {
         GateWOkxReadonlySoakCycleTest.CycleResult contradictory = result(
                 "BLOCKED",

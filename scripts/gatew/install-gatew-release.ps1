@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('install', 'install-units', 'activate', 'verify', 'self-test')]
+    [ValidateSet('install', 'install-units', 'activate', 'verify', 'configure-precreate', 'self-test')]
     [string]$Action,
 
     [string]$SourceBundle,
@@ -16,6 +16,11 @@ $script:OptRoot = '/opt/nexus-quant'
 $script:ReleasesRoot = '/opt/nexus-quant/releases'
 $script:CurrentPath = '/opt/nexus-quant/current'
 $script:SystemdRoot = '/etc/systemd/system'
+$script:GateWConfigRoot = '/etc/nexus-quant/gatew-soak'
+$script:PreCreateDescriptorPath = '/etc/nexus-quant/gatew-soak/precreate-prerequisite.json'
+$script:ManagementEnvironmentPath = '/opt/nexus-quant/gatew-soak/config/management.env'
+$script:CredentialRoot = '/etc/nexus-quant/gatew-soak/credentials'
+$script:DatabasePasswordSecretPath = '/etc/nexus-quant/gatew-soak/credentials/db-password.cred'
 $script:WorkerTemplate = 'nq-gatew-soak@.service'
 $script:FailCloseTemplate = 'nq-gatew-soak-failclose@.service'
 $script:ReleaseIdPattern = '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16}-[0-9]{8}T[0-9]{6}Z)$'
@@ -93,6 +98,274 @@ function Assert-PathBelowReleases
     if (-not $normalized.StartsWith($root + '/', [StringComparison]::Ordinal))
     {
         throw 'BLOCKED / RELEASE_INSTALL_PATH_INVALID'
+    }
+}
+
+function Get-PosixMetadata
+{
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path))
+    {
+        throw 'BLOCKED / PRECREATE_CONFIG_PATH_INVALID'
+    }
+    $item = Get-Item -LiteralPath $Path -Force
+    if ($null -ne $item.LinkType -or $item.Attributes.ToString() -match 'ReparsePoint')
+    {
+        throw 'BLOCKED / PRECREATE_CONFIG_PATH_INVALID'
+    }
+    $result = Invoke-Native '/usr/bin/stat' @('-c', '%F|%a|%U|%G', '--', $Path)
+    $parts = (($result.Lines -join "`n").Trim()).Split('|')
+    if ($parts.Count -ne 4)
+    {
+        throw 'BLOCKED / PRECREATE_CONFIG_PATH_INVALID'
+    }
+    return [pscustomobject]@{ Type = $parts[0]; Mode = $parts[1]; Owner = $parts[2]; Group = $parts[3] }
+}
+
+function Assert-StableAbsolutePath
+{
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $normalized = [IO.Path]::GetFullPath($Path)
+    $resolved = Invoke-Native $script:ReadlinkPath @('-f', '--', $normalized)
+    if ((($resolved.Lines -join "`n").Trim()) -cne $normalized)
+    {
+        throw 'BLOCKED / PRECREATE_CONFIG_PATH_INVALID'
+    }
+}
+
+function Assert-RootFileContract
+{
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $metadata = Get-PosixMetadata $Path
+    if ($metadata.Type -notlike '*regular file*' -or $metadata.Mode -ne '600' -or
+            $metadata.Owner -ne 'root' -or $metadata.Group -ne 'root')
+    {
+        throw 'BLOCKED / PRECREATE_CONFIG_OWNERSHIP_INVALID'
+    }
+}
+
+function ConvertFrom-EnvironmentLiteral
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+    $literal = $Value.Trim()
+    if ($literal.Length -ge 2 -and
+            (($literal[0] -eq '"' -and $literal[$literal.Length - 1] -eq '"') -or
+                    ($literal[0] -eq "'" -and $literal[$literal.Length - 1] -eq "'")))
+    {
+        $literal = $literal.Substring(1, $literal.Length - 2)
+    }
+    if ($literal.IndexOf([char]0) -ge 0 -or $literal -match "[`r`n]" -or
+            $literal -match '\$\(' -or $literal -match '`' -or $literal -match '[|<>]')
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    return $literal
+}
+
+function Read-PreCreateSourceValues
+{
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf))
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    $required = @(
+        'NQ_GATEW_SOAK_DB_URL', 'NQ_GATEW_SOAK_DB_USER', 'NQ_GATEW_SOAK_DB_PASSWORD',
+        'NQ_DB_URL', 'NQ_DB_USER', 'NQ_DB_PASSWORD'
+    )
+    $seen = @{ }
+    $values = @{ }
+    foreach ($lineValue in Get-Content -LiteralPath $Path)
+    {
+        $line = [string]$lineValue
+        if ($line -notmatch '^([A-Z][A-Z0-9_]*)=(.*)$')
+        {
+            continue
+        }
+        $name = [string]$Matches[1]
+        if ($name -notin $required)
+        {
+            continue
+        }
+        if ($seen.ContainsKey($name))
+        {
+            throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+        }
+        $seen[$name] = $true
+        $literal = ConvertFrom-EnvironmentLiteral ([string]$Matches[2])
+        if ($name -eq 'NQ_DB_PASSWORD')
+        {
+            if ([string]::IsNullOrWhiteSpace($literal))
+            {
+                throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+            }
+            $values[$name] = 'PRESENT_REDACTED'
+        }
+        else
+        {
+            $values[$name] = $literal
+        }
+    }
+    if (@($required | Where-Object { -not $seen.ContainsKey($_) }).Count -ne 0 -or
+            [string]$values.NQ_GATEW_SOAK_DB_URL -cne '${NQ_DB_URL}' -or
+            [string]$values.NQ_GATEW_SOAK_DB_USER -cne '${NQ_DB_USER}' -or
+            [string]$values.NQ_GATEW_SOAK_DB_PASSWORD -cne '${NQ_DB_PASSWORD}')
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    foreach ($literal in @([string]$values.NQ_DB_URL, [string]$values.NQ_DB_USER))
+    {
+        if ($literal -match '\$\{?[A-Za-z_][A-Za-z0-9_]*\}?' -or
+                $literal -match '%[A-Za-z_][A-Za-z0-9_]*%')
+        {
+            throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+        }
+    }
+    return $values
+}
+
+function Assert-PreCreateDescriptorValue
+{
+    param([Parameter(Mandatory = $true)]$Descriptor)
+
+    $fields = @(
+        'schemaVersion', 'databaseHost', 'databasePort', 'databaseName', 'databaseUser',
+        'passwordSecretFile', 'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment'
+    )
+    if ((@($Descriptor.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Descriptor.schemaVersion -cne 'gatew-precreate-prerequisite-v1' -or
+            [string]$Descriptor.databaseHost -notin @('127.0.0.1', 'localhost') -or
+            ($Descriptor.databasePort -isnot [int] -and $Descriptor.databasePort -isnot [long]) -or
+            [long]$Descriptor.databasePort -lt 1 -or [long]$Descriptor.databasePort -gt 65535 -or
+            [string]$Descriptor.databaseName -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,62}$' -or
+            [string]$Descriptor.databaseUser -cnotmatch '^[A-Za-z_][A-Za-z0-9_-]{0,62}$' -or
+            [string]$Descriptor.passwordSecretFile -cne $script:DatabasePasswordSecretPath -or
+            [string]$Descriptor.managementLoopbackUrl -cne 'http://127.0.0.1:18889/actuator/health' -or
+            [string]$Descriptor.expectedCredentialType -cne 'OKX_API_V5' -or
+            [string]$Descriptor.expectedEnvironment -cne 'LIVE')
+    {
+        throw 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'
+    }
+    return $Descriptor
+}
+
+function New-PreCreateDescriptor
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$ManagementEnvironment,
+        [Parameter(Mandatory = $true)][string]$SecretFile
+    )
+
+    $values = Read-PreCreateSourceValues $ManagementEnvironment
+    $url = [string]$values.NQ_DB_URL
+    if (-not $url.StartsWith('jdbc:postgresql://', [StringComparison]::Ordinal))
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    try
+    {
+        $uri = [Uri]::new($url.Substring('jdbc:'.Length))
+    }
+    catch
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    $databaseName = $uri.AbsolutePath.TrimStart('/')
+    if ($uri.Scheme -cne 'postgresql' -or $uri.Host -notin @('127.0.0.1', 'localhost') -or
+            $uri.Port -lt 1 -or $uri.Port -gt 65535 -or
+            -not [string]::IsNullOrWhiteSpace($uri.UserInfo) -or
+            -not [string]::IsNullOrWhiteSpace($uri.Query) -or
+            -not [string]::IsNullOrWhiteSpace($uri.Fragment) -or
+            $databaseName -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,62}$' -or
+            [string]$values.NQ_DB_USER -cnotmatch '^[A-Za-z_][A-Za-z0-9_-]{0,62}$' -or
+            $SecretFile -cne $script:DatabasePasswordSecretPath)
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    return Assert-PreCreateDescriptorValue ([pscustomobject][ordered]@{
+        schemaVersion = 'gatew-precreate-prerequisite-v1'
+        databaseHost = $uri.Host
+        databasePort = [int]$uri.Port
+        databaseName = $databaseName
+        databaseUser = [string]$values.NQ_DB_USER
+        passwordSecretFile = $SecretFile
+        managementLoopbackUrl = 'http://127.0.0.1:18889/actuator/health'
+        expectedCredentialType = 'OKX_API_V5'
+        expectedEnvironment = 'LIVE'
+    })
+}
+
+function Configure-PreCreateDescriptor
+{
+    Assert-RootLinux
+    Assert-StableAbsolutePath $script:GateWConfigRoot
+    Assert-StableAbsolutePath $script:ManagementEnvironmentPath
+    Assert-StableAbsolutePath $script:DatabasePasswordSecretPath
+    $configRootMetadata = Get-PosixMetadata $script:GateWConfigRoot
+    if ($configRootMetadata.Type -notlike '*directory*' -or
+            $configRootMetadata.Owner -ne 'root' -or $configRootMetadata.Group -ne 'root' -or
+            $configRootMetadata.Mode -notin @('700', '750', '755'))
+    {
+        throw 'BLOCKED / PRECREATE_CONFIG_OWNERSHIP_INVALID'
+    }
+    $sourceMetadata = Get-PosixMetadata $script:ManagementEnvironmentPath
+    if ($sourceMetadata.Type -notlike '*regular file*' -or $sourceMetadata.Mode -ne '600' -or
+            $sourceMetadata.Owner -notin @('root', 'nqgatew') -or
+            $sourceMetadata.Group -cne $sourceMetadata.Owner)
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_OWNERSHIP_INVALID'
+    }
+    Assert-RootFileContract $script:DatabasePasswordSecretPath
+    $descriptor = New-PreCreateDescriptor `
+        $script:ManagementEnvironmentPath $script:DatabasePasswordSecretPath
+    if (Test-Path -LiteralPath $script:PreCreateDescriptorPath)
+    {
+        Assert-RootFileContract $script:PreCreateDescriptorPath
+        if ((Get-Item -LiteralPath $script:PreCreateDescriptorPath -Force).Length -gt 4096)
+        {
+            throw 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'
+        }
+        Assert-PreCreateDescriptorValue `
+            (Get-Content -LiteralPath $script:PreCreateDescriptorPath -Raw | ConvertFrom-Json) | Out-Null
+    }
+    $temporary = "$( $script:GateWConfigRoot )/.precreate-prerequisite-$PID-$([Guid]::NewGuid().ToString('N')).json"
+    try
+    {
+        if (-not (Test-Path -LiteralPath $script:GateWConfigRoot -PathType Container))
+        {
+            throw 'BLOCKED / PRECREATE_CONFIG_PATH_INVALID'
+        }
+        [IO.File]::WriteAllText(
+            $temporary,
+            (($descriptor | ConvertTo-Json -Depth 4) + "`n"),
+            [Text.UTF8Encoding]::new($false)
+        )
+        Invoke-Native $script:ChownPath @('--', 'root:root', $temporary) | Out-Null
+        Invoke-Native $script:ChmodPath @('0600', '--', $temporary) | Out-Null
+        Invoke-Native $script:MvPath @('-T', '--', $temporary, $script:PreCreateDescriptorPath) | Out-Null
+        Assert-RootFileContract $script:PreCreateDescriptorPath
+        Assert-PreCreateDescriptorValue `
+            (Get-Content -LiteralPath $script:PreCreateDescriptorPath -Raw | ConvertFrom-Json) | Out-Null
+        return [pscustomobject]@{
+            decision = 'PASS / PRECREATE_DESCRIPTOR_CONFIGURED'
+            descriptorPath = $script:PreCreateDescriptorPath
+            descriptorOwner = 'root:root'
+            descriptorMode = '0600'
+            secretReferenceContract = 'PASS / ROOT_OWNED_0600'
+            credentialMaterialExposed = $false
+        }
+    }
+    finally
+    {
+        if (Test-Path -LiteralPath $temporary)
+        {
+            Remove-Item -LiteralPath $temporary -Force
+        }
     }
 }
 
@@ -473,11 +746,66 @@ function Invoke-InstallerSelfTest
             throw 'unsafe unit enablement state self-test failed'
         }
     }
+    $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('nq-gatew-installer-' + [Guid]::NewGuid().ToString('N'))
+    try
+    {
+        [IO.Directory]::CreateDirectory($fixtureRoot) | Out-Null
+        $fixture = Join-Path $fixtureRoot 'management.env'
+        [IO.File]::WriteAllText($fixture, @'
+NQ_GATEW_SOAK_DB_URL=${NQ_DB_URL}
+NQ_GATEW_SOAK_DB_USER=${NQ_DB_USER}
+NQ_GATEW_SOAK_DB_PASSWORD=${NQ_DB_PASSWORD}
+NQ_DB_URL=jdbc:postgresql://127.0.0.1:5432/nexus_quant
+NQ_DB_USER=nq_runtime
+NQ_DB_PASSWORD=fixture-only
+IGNORED_FIELD=value
+'@, [Text.UTF8Encoding]::new($false))
+        $descriptor = New-PreCreateDescriptor $fixture $script:DatabasePasswordSecretPath
+        if ([string]$descriptor.databaseName -cne 'nexus_quant' -or
+                [string]$descriptor.databaseUser -cne 'nq_runtime')
+        {
+            throw 'precreate descriptor source self-test failed'
+        }
+        foreach ($unsafe in @(
+            '${UNRESOLVED}', '$(whoami)', '`whoami`', 'nq_runtime|id'
+        ))
+        {
+            $blocked = $false
+            try
+            {
+                ConvertFrom-EnvironmentLiteral $unsafe | Out-Null
+                if ($unsafe -eq '${UNRESOLVED}')
+                {
+                    $candidate = Get-Content -LiteralPath $fixture -Raw
+                    $candidate = $candidate.Replace('NQ_DB_USER=nq_runtime', "NQ_DB_USER=$unsafe")
+                    $unsafeFixture = Join-Path $fixtureRoot ([Guid]::NewGuid().ToString('N') + '.env')
+                    [IO.File]::WriteAllText($unsafeFixture, $candidate, [Text.UTF8Encoding]::new($false))
+                    New-PreCreateDescriptor $unsafeFixture $script:DatabasePasswordSecretPath | Out-Null
+                }
+            }
+            catch
+            {
+                $blocked = $true
+            }
+            if (-not $blocked)
+            {
+                throw 'precreate source rejection self-test failed'
+            }
+        }
+    }
+    finally
+    {
+        if (Test-Path -LiteralPath $fixtureRoot)
+        {
+            Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
+        }
+    }
     return [pscustomobject]@{
         decision = 'PASS / RELEASE_INSTALLER_SELF_TEST'
         releaseIdAllowlist = 'PASS'
         unitEnablementAllowlist = 'PASS'
         candidateActivationGuard = 'PASS / STATIC_CONTRACT'
+        preCreateDescriptor = 'PASS / FIXED_REFERENCE_CHAIN / CLOSED_SCHEMA'
         credentialAccessed = $false
         networkCalled = $false
     }
@@ -498,6 +826,9 @@ try
         }
         'verify' {
             Verify-InstalledRelease
+        }
+        'configure-precreate' {
+            Configure-PreCreateDescriptor
         }
         'self-test' {
             Invoke-InstallerSelfTest
