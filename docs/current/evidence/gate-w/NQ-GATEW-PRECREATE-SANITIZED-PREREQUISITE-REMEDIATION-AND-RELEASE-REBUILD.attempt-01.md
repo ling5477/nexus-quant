@@ -6,8 +6,8 @@
   `PRECREATE_SECURITY_GATE / SANITIZED_DB_READBACK / IMMUTABLE_RELEASE_REBUILD /
   FULL_FORMAL_OFFLINE_ACCEPTANCE / COMMIT_AND_EXACT_HEAD_CI`。
 - 归属：NQ-only、L 级高风险工具链任务；GateW 保持 `IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）。
-- 本记录当前覆盖实现、本地回归与 candidate release/离线验收；Commit A、exact-head CI、final release、服务器
-  `current` 切换、final offline acceptance 与 Commit B 尚未执行，不提前写成通过。
+- 本记录覆盖实现、本地回归、candidate/final release、两轮正式离线验收、Commit A exact-head CI 与服务器部署；
+  Commit B 及其 exact-head CI 需在本记录提交后验证，不提前写成通过。
 
 ## Scope and boundaries
 
@@ -116,29 +116,82 @@ CI 同款 `PAPER / ACTIVE` fixture 后两条要求命令通过，随后已精确
   credential/network=`false/false`，MainPID/residual=`0/0`，runtime absent，offline drop-ins=`0`。
 - candidate 收尾 pre-create 再次 PASS；active units/nonzero MainPID/drop-ins/Attempt-09/REAL runs/REAL clocks 均为 0。
 
-## Pending Commit A and final stages
+## Commit A and exact-head CI
 
-- Implementation commit：`UNCOMMITTED`；Commit A exact-head CI：`NOT_RUN`。
-- Final EXACT_COMMIT release、服务器 `current` 切换、final pre-create、final formal offline acceptance：`NOT_RUN`。
-- Evidence/authority Commit B 与 exact-head CI：`NOT_RUN`。
+- Implementation commit：`1b501488076fae79e15b84579a02f5c580fa51b3`，message=
+  `fix(gatew): add sanitized precreate prerequisite gate`，已 push 到 `origin/dev`。
+- `NQ CI Baseline` run `29837563573`：`completed / success`，`headSha` 精确等于 Commit A，10/10 jobs
+  全部成功；仅有既有 Node.js 20 deprecation annotation，非阻断。
+
+## Final EXACT_COMMIT release and deployment
+
+- Final releaseId/sourceCommit：`1b501488076fae79e15b84579a02f5c580fa51b3`，source tree mode=`EXACT_COMMIT`。
+- Manifest SHA-256：`8cf4ca653cc2eec4564385c59bcc0f90252ce1001798c6c2adcc11f96b7601b6`；
+  artifacts=`129`；PowerShell 7/5.1 verifier 均 PASS。
+- Artifact tamper：exit=`2 / RELEASE_ARTIFACT_HASH_MISMATCH`；临时副本已精确删除。
+- Bundle tar：size=`56,611,840` bytes，SHA-256=
+  `238d56a67712774843bfab51a13bfdc7e98dc86e64f36e2195e7b136341d659f`，paths=`136`，unsafe paths=`0`；
+  上传与解包副本验收后已精确删除。
+- 服务器安装：`/opt/nexus-quant/releases/1b501488076fae79e15b84579a02f5c580fa51b3`，root-owned、
+  `nqgatewWritable=false`、129 artifacts POSIX verify PASS；descriptor/secret reference 均为 `root:root/0600`。
+- Installer self-test PASS；control/worker/fail-close server self-test=`50/59/41` cases PASS，
+  credential/network=`false/false`。control 首次误以非 root 用户运行返回 `NATIVE_COMMAND_FAILED`，零 run/unit/runtime/drop-in
+  副作用；按 root-control 合同重跑后通过。
+- `systemd-analyze verify` exit=`0`；仅输出无关既有 `cloudmonitor.service` warning。
+- Active units/MainPID/runtime/drop-ins 全零后原子切换 `current`；两个 formal unit template 均固定到 Commit A release，
+  activation 未启动 instance。
+
+## Final pre-create verification
+
+- Activation 前后正式 `precreate-prerequisite` 均 PASS；final 输出固定 schema，
+  `postgresReachable/managementHealthy/killSwitchEngaged/credentialConfigured=true`，active metadata 唯一，
+  type/status=`OKX_API_V5/ACTIVE`，trade/withdraw expected-disabled=`true`，
+  `readyForAttemptCreation=true`，`credentialMaterialExposed=false`。
+- Activation 后执行前后 run count=`27 -> 27`、历史 offline clock=`5 -> 5`、临时 result=`0 -> 0`；
+  REAL runs/clocks、Attempt-09 matches、active units、nonzero MainPID、runtime、drop-ins 均为 0。
+- 目标 artifact 固定调用 `systemd-creds decrypt --name=db-password --newline=no`；operator 无需展开 DB URL/user，
+  descriptor 与 secret owner/mode 均通过。
+
+## Final formal offline acceptance
+
+- 验收 run：`gatew-soak-20260721T142741Z-89773ceb`，mode=`OFFLINE_ISOLATED_ACCEPTANCE`，不是 Attempt-09；
+  prepare 绑定 Commit A 与 CI run `29837563573`，acceptance clock 初始为 false/null/null。
+- cycle 1/2 PASS；MainPID=`4046149`；独立 fresh SSH 证明同 PID、heartbeat timestamp advanced。
+  首次调用误把 minimum sample sequence 设为 3，按合同无写入地拒绝；使用实际 cycle baseline sequence 2 重跑 PASS。
+- Clock 首次 `PASS / ACCEPTANCE_CLOCK_STARTED`，start=`2026-07-21T14:30:24.2964080Z`，planned 精确 `+168h`；
+  第二次 `NO_CHANGE / ACCEPTANCE_CLOCK_ALREADY_STARTED`。该 clock 只属于隔离验收，不是真实 acceptance clock。
+- cycle 3=`CONTROLLED_FAILURE`；OnFailure/independent fail-close terminal=`FAILURE_STOPPED`；
+  kill switch recovery=`ENGAGE_SUCCEEDED`，observed=`ENGAGED`。
+- Final verify：`PASS / FORMAL_SOAK_VERIFIED`；sample count=`3`，cycle 1/2 PASS、cycle 3 controlled failure，
+  hash chain=`PASS / HASH_CHAIN_VERIFIED`，historical evidence immutable=true，MainPID/residual=`0/0`，runtime absent。
+- Terminal boundary：credential/network=`false/false`；final pre-create 再次 PASS；结束时 current 固定 Commit A，
+  run directories=`28`、历史 offline clocks=`6`，REAL runs/clocks=`0/0`，Attempt-09 matches=`0`，
+  active units/nonzero MainPID/runtime/drop-ins/pre-create temp results 均为 0。历史 run/evidence 未删除。
+
+## Pending Commit B
+
+- Evidence/authority Commit B：`READY_TO_COMMIT`；exact-head CI：`NOT_RUN`。Commit B 不构建或部署 release，
+  服务器必须继续运行 Commit A。
 
 ## Findings
 
 - P0：无。
 - P1：无；candidate 已关闭 pre-create 顺序、自包含 DB 输入、脱敏 readback、secret reader compatibility 与 fail-closed
   hard gates。
-- P2：SSH 长命令需 `ServerAliveInterval` 才能稳定保留超过 60 秒的 stdout；不影响 systemd worker 独立运行。
-- P3：无。
+- P2：SSH TCP 22 偶发建连超时；同一固定主机/密钥重试成功，systemd worker 独立运行未受影响。
+- P3：两次 operator 参数/用户调用错误均由合同 fail-closed 且无结构副作用，按正确 root/baseline 参数重跑通过。
 
 ## Boundary confirmation
 
 - 未调用 OKX/其他交易所；未读取、解密或输出 exchange credential material；DB password 仅由 root helper 从固定 encrypted
   systemd credential 注入短生命周期 Java process，未输出。
-- 未创建 Attempt-09/10，未启动真实 soak/真实 acceptance clock；candidate clocks 仅属于已终止的隔离 offline run。
+- 未创建 Attempt-09/10，未启动真实 soak/真实 acceptance clock；candidate/final clocks 仅属于已终止的隔离 offline run。
 - 未启用 LIVE、交易写、AI、DH runtime、real provider/client；未修改 migration、frontend、research、`.github`。
 
 ## Current decision
 
 `PASS / PRECREATE_SANITIZED_PREREQUISITE_PROVEN / SELF_CONTAINED_DB_INPUT_PROVEN /
-CANDIDATE_FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / READY_TO_COMMIT_A / ATTEMPT_09_NOT_CREATED /
-ACCEPTANCE_CLOCK_NOT_STARTED`。
+KILL_SWITCH_ENGAGED_VERIFIED / CREDENTIAL_METADATA_SANITIZED / IMMUTABLE_RELEASE_REBUILT /
+FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / IMPLEMENTATION_COMMITTED / IMPLEMENTATION_CI_GREEN /
+SERVER_DEPLOYED / READY_TO_COMMIT_B / ATTEMPT_09_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_STARTED /
+READY_TO_RETRY_ATTEMPT_09`。

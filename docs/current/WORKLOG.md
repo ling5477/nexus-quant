@@ -17788,3 +17788,18 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：Attempt-09未创建/未启动，真实acceptance clock未启动，OKX未调用，credential material未读取/输出；无LIVE/交易写侧/migration/frontend/research/CI workflow/freeze/archive/tag变更。Commit B不构建、不部署release，不重跑final offline acceptance。
 - result：`PASS / IMMUTABLE_RELEASE_REBUILT / FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / SERVER_DEPLOYED / ATTEMPT_09_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_STARTED / READY_TO_RETRY_ATTEMPT_09`。
 - next：`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`；后续任务必须重新执行全部启动hard gates，不得从offline evidence推导真实clock已启动。
+
+## 2026-07-21 — GateW pre-create sanitized prerequisite remediation / release rebuild
+
+- task：`NQ-GATEW-PRECREATE-SANITIZED-PREREQUISITE-REMEDIATION-AND-RELEASE-REBUILD`；NQ-only、L级 pre-create/security/immutable release/deployment/offline acceptance任务。
+- implementation：Commit A `1b501488076fae79e15b84579a02f5c580fa51b3`；新增无 runId 的独立 `precreate-prerequisite`，REAL prepare 在 runId/目录/unit/clock 前执行；operator DB override拒绝；root-owned固定九字段 descriptor 与 fixed encrypted secret reference；sanitized Java local SELECT/readback。
+- regression：GateW targeted 60 tests、SupportTest 46 tests、module/full Maven均PASS；本地 PowerShell control/worker/fail-close=`49/59/41`，server root-control=`50/59/41`；builder/installer/verifier/tamper均PASS。
+- implementation CI：`NQ CI Baseline` run `29837563573 / completed / success / 10 of 10`，headSha精确等于 Commit A。
+- final release：releaseId/sourceCommit=`1b501488...`，`EXACT_COMMIT`；manifest `8cf4ca65...b7601b6`；129 artifacts；root-owned/POSIX、`nqgatewWritable=false`、systemd verify与atomic current switch全部PASS。
+- final pre-create：activation前后均PASS；PostgreSQL/loopback management/kill switch `ENGAGED`/唯一 active `OKX_API_V5` metadata/expected-disabled通过；credential material exposure=false；run/unit/clock/temp副作用=0。
+- final acceptance：run `gatew-soak-20260721T142741Z-89773ceb`；cycle1/2 PASS；fresh SSH同MainPID `4046149`且heartbeat timestamp推进；offline clock create-once/+168h；cycle3 controlled failure；OnFailure/independent fail-close、`ENGAGE_SUCCEEDED / ENGAGED`、`FAILURE_STOPPED`、hash chain与historical immutable PASS。
+- cleanup：MainPID/residual/runtime/drop-ins=`0/0/absent/0`；上传tar与extract临时目录已精确删除；仓库根`target/`确认tracked=0后按授权精确删除；历史run/evidence未删除。
+- authority：GateW保持`IN_PROGRESS|NOT_FROZEN`；work batch `GateW-OKX-READONLY-SOAK-ATTEMPT-09 / NOT_STARTED / NONE / NOT_RUN`；唯一next action保持`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`；runtime release更新为Commit A。
+- boundary：REAL runs/clocks=`0/0`；Attempt-09未创建，真实acceptance clock未启动；OKX/其他交易所未调用，exchange credential material未读取；无LIVE/交易写侧/migration/frontend/research/`.github`/freeze/archive/tag变更。
+- result：`PASS / PRECREATE_SANITIZED_PREREQUISITE_PROVEN / SELF_CONTAINED_DB_INPUT_PROVEN / KILL_SWITCH_ENGAGED_VERIFIED / CREDENTIAL_METADATA_SANITIZED / IMMUTABLE_RELEASE_REBUILT / FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / IMPLEMENTATION_COMMITTED / IMPLEMENTATION_CI_GREEN / SERVER_DEPLOYED / READY_TO_COMMIT_B / ATTEMPT_09_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_STARTED / READY_TO_RETRY_ATTEMPT_09`。
+- next：仅提交/push evidence/current authority Commit B 并等待 exact-head CI；服务器继续固定 Commit A，不部署 docs commit。CI GREEN 后下一任务才是 `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`。

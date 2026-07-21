@@ -12092,3 +12092,26 @@ Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.se
 已知非阻断项：第一次 Windows PowerShell 5.1 exact build 因 culture-aware sort 与 verifier ordinal sort 不一致返回 `RELEASE_MANIFEST_ARTIFACT_ORDER_INVALID`，失败产物未部署；final 使用目标 runtime PowerShell 7 从同一 clean Commit A 构建，并由 PowerShell 7/5.1 双 verifier 复核。首次 final start 的 SSH 前台会话在 cycle 2 前被远端关闭，但 systemd 唯一 worker继续运行；只读确认后重复 start被合同拒绝，没有第二个 worker，原 control 正常推进到 `RUNNING`。
 
 边界：Attempt-09=`NOT_CREATED / NOT_STARTED`，真实 acceptance clock=`NOT_STARTED`，OKX=`NOT_CALLED`，credential material=`NOT_READ / NOT_OUTPUT`；LIVE、下单、撤单、转账、提现、AI、DH runtime、freeze/archive/tag均未触达。Final offline clock只属于已终止隔离 run，不是正式 168 小时 acceptance clock。
+
+## 2026-07-21 — GateW pre-create sanitized prerequisite / final immutable release / offline acceptance
+
+当前结论：`PASS / PRECREATE_SANITIZED_PREREQUISITE_PROVEN / SELF_CONTAINED_DB_INPUT_PROVEN / KILL_SWITCH_ENGAGED_VERIFIED / CREDENTIAL_METADATA_SANITIZED / IMMUTABLE_RELEASE_REBUILT / FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / IMPLEMENTATION_COMMITTED / IMPLEMENTATION_CI_GREEN / SERVER_DEPLOYED / READY_TO_COMMIT_B / READY_TO_RETRY_ATTEMPT_09`（通过 / pre-create 脱敏前置已证明 / 自包含 DB 输入已证明 / kill switch ENGAGED 已验证 / credential metadata 已脱敏 / immutable release 已重建 / 完整正式离线验收已证明 / 实现已提交 / 实现 CI 已通过 / 服务器已部署 / 可提交 evidence / 可重新尝试 Attempt-09）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Commit A + exact-head CI | PASS | `1b501488076fae79e15b84579a02f5c580fa51b3`；run `29837563573 / completed / success / 10 of 10` |
+| clean `EXACT_COMMIT` bundle build | PASS | releaseId/sourceCommit 均为 Commit A；manifest `8cf4ca65...b7601b6`；129 artifacts |
+| PowerShell 7/5.1 verifier + tamper | PASS | 双 verifier；tamper exit 2 / `RELEASE_ARTIFACT_HASH_MISMATCH`；tar `56,611,840` bytes / SHA-256 `238d56a6...41d659f` / 136 paths / unsafe 0 |
+| root install / POSIX verify / activation | PASS | `/opt/nexus-quant/releases/1b501488...`；root-owned；`nqgatewWritable=false`；current 与两个 unit template 固定 Commit A；activation 后 active units=0 |
+| descriptor / secret reference | PASS | `/etc/nexus-quant/gatew-soak/precreate-prerequisite.json` 与 encrypted DB credential reference 均 `root:root/0600`；固定 `systemd-creds --name=db-password --newline=no` |
+| server self-tests | PASS | installer PASS；control/worker/fail-close=`50/59/41` cases；credential/network=false |
+| `systemd-analyze verify` | PASS / EXISTING WARNING | exit 0；仅无关既有 `cloudmonitor.service` `KillMode=none`/legacy PIDFile warning |
+| final pre-create before/after activation | PASS / NO SIDE EFFECT | PostgreSQL/management/ENGAGED/唯一 active OKX metadata/expected-disabled 全通过；run/clock/temp/unit 不变；secret exposure=false |
+| final formal offline acceptance | PASS | run `gatew-soak-20260721T142741Z-89773ceb`；cycle1/2 PASS；fresh SSH same MainPID `4046149`/heartbeat advanced；clock create-once/+168h；cycle3 CONTROLLED_FAILURE |
+| fail-close / final verify | PASS | `FAILURE_STOPPED`；`ENGAGE_SUCCEEDED / ENGAGED`；3 samples；hash chain PASS；historical immutable；credential/network=false；MainPID/residual/runtime=`0/0/absent` |
+| final host boundary | PASS | current=Commit A；REAL runs/clocks=`0/0`；Attempt-09=0；active units/nonzero PID/runtime/drop-ins/pre-create temp=`0/0/0/0/0` |
+| authority checker | PASS | GateW=`IN_PROGRESS|NOT_FROZEN`；work batch Attempt-09=`NOT_STARTED`；next action不变；errors=0 |
+
+执行中两次调用错误均透明保留：control server self-test 首次以非 root 身份运行返回 `NATIVE_COMMAND_FAILED`，零结构副作用后按 root-control 合同重跑通过；fresh-SSH 首次把 minimum sample sequence 误设为 3，未写入记录，按实际 cycle baseline sequence 2 与 heartbeat timestamp 后移合同重跑通过。SSH TCP 22 偶发建连超时，固定主机/密钥重试后成功；不影响独立 systemd worker。仓库根 `target/` 在确认 tracked files=0 后已按授权精确删除，未清理其他未跟踪文件。
+
+未运行：真实 OKX/其他交易所调用、exchange credential material 读取、permission probe、Attempt-09、真实 168 小时 acceptance clock、frontend、Python、freeze/archive/tag。阻断性：P0=0/P1=0；Commit B 与其 exact-head CI 尚待执行，服务器不得部署 Commit B。

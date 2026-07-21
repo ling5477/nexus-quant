@@ -41,7 +41,8 @@ nq-current-authority:end -->
 - GateW-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，`NQ CI Baseline` run `29230512781` 为 `completed / success`。该接受只覆盖两个 typed private read-only diagnostic operation；`REAL_SMOKE=NOT_RUN`，不表示远端 permission 已验证、LIVE 或交易授权。
 - GateW-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。venue-rule facts、LIMIT-only order preview、bounded read-only reconciliation 与 diagnostic risk preflight 的独立 review 均 P0=0/P1=0，四个 acceptance heads 的 exact-head CI 均成功。implementation/acceptance head 为 `178b4951ba1406748170022c9940f84beaa8ab81`，run `29332316101`。
 - GateW-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Blocker-1、operations、persistence/retention、human-review evidence binding、disposable backup/restore、11 场景 incident drill 与 10,000 次 local no-egress soak hard gates 均通过；internal-only assessment 不产生交易授权。Implementation/acceptance head 为 `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`，CI run `29339016784` 为 exact-head `completed / success`。
-- GateW soak start contract remediation：`PASS / COMMITTED / CI GREEN / SERVER DEPLOYED`（通过 / 已提交 / CI 已通过 / 服务器已部署）。Implementation commit `0e8e2c128c456542b3f7695c9620e4d170c3f4f6` 的 exact-head CI run `29766800343` 为 `completed / success / 10 of 10`；服务器 `/opt/nexus-quant/current` 固定指向该 immutable release，129 个 artifacts、manifest、root owner/mode、`nqgatewWritable=false` 与 systemd verify 均通过。
+- GateW soak start contract remediation：`PASS / COMMITTED / CI GREEN / SUPERSEDED BY PRECREATE REMEDIATION`（通过 / 已提交 / CI 已通过 / 已由 pre-create remediation 替代）。Implementation commit `0e8e2c128c456542b3f7695c9620e4d170c3f4f6` 的 exact-head CI run `29766800343` 为 `completed / success / 10 of 10`；该 release 保留为已验证回滚点，不再是服务器 current。
+- GateW pre-create sanitized prerequisite remediation：`PASS / IMPLEMENTATION COMMITTED / IMPLEMENTATION CI GREEN / SERVER DEPLOYED`（通过 / 实现已提交 / 实现 CI 已通过 / 服务器已部署）。Implementation commit `1b501488076fae79e15b84579a02f5c580fa51b3` 的 exact-head CI run `29837563573` 为 `completed / success / 10 of 10`；服务器 `/opt/nexus-quant/current` 固定到该 `EXACT_COMMIT` immutable release，129 artifacts、manifest/POSIX、root owner/mode、`nqgatewWritable=false`、systemd verify、sanitized pre-create 与完整 final offline acceptance 均通过。
 - GateW-OKX-READONLY-SOAK-ATTEMPT-09：`NOT STARTED`（未开始）。Attempt-09 尚未创建，真实 acceptance clock 尚未启动，本轮 remediation/final offline acceptance 没有调用 OKX、读取 credential material 或启动真实 soak。
 - GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；必须等待真实 read-only soak 后续证据，不得从 remediation 的隔离 offline clock 推导真实 168 小时 acceptance 已开始。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
@@ -66,7 +67,7 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 - DH runtime：`NOT INTEGRATED`（未集成）。
 - Integration runtime：`NOT STARTED`（未开始）。
 - RealClient / private trading adapter：`NOT IMPLEMENTED`（未实现）；GateW-2 private read-only diagnostic transport/probe 为 `ACCEPTED / CI GREEN`，默认不装配且未做 real smoke，不属于交易适配器或交易授权。
-- GateW runtime release：`0e8e2c128c456542b3f7695c9620e4d170c3f4f6`；该值是服务器当前 immutable runtime，不因本次 docs/governance Commit B 改变。
+- GateW runtime release：`1b501488076fae79e15b84579a02f5c580fa51b3`；该值是服务器当前 immutable runtime，不因本次 docs/evidence Commit B 改变。
 - Attempt-09：`NOT STARTED / NOT CREATED`（未启动 / 未创建）；真实 acceptance clock：`NOT STARTED`（未启动）；remediation/final offline acceptance：`OKX NOT CALLED / CREDENTIAL MATERIAL NOT READ`（未调用 OKX / 未读取凭证材料）。
 - Python ML readiness / Python live execution readiness：`NO`（否）。
 - `acknowledge`、`escalate`、`resolve`、`close` 只表示本地人工诊断复核；不构成交易授权、LIVE/Shadow 放行，亦不批准下单、撤单、转账或提现。
