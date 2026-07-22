@@ -16,6 +16,7 @@
       "COMMITTED|CI_PENDING",
       "COMMITTED|CI_FAILED|FIX_REQUIRED",
       "COMMITTED|CI_GREEN|CONTINUE_REQUIRED",
+      "RUNNING|PENDING_168H",
       "ACCEPTED|CI_GREEN",
       "BLOCKED"
     ],
@@ -27,6 +28,7 @@
       "COMMITTED|CI_PENDING": "COMMITTED\\s*/\\s*CI\\s*PENDING",
       "COMMITTED|CI_FAILED|FIX_REQUIRED": "COMMITTED\\s*/\\s*CI\\s*FAILED\\s*/\\s*FIX\\s*REQUIRED",
       "COMMITTED|CI_GREEN|CONTINUE_REQUIRED": "COMMITTED\\s*/\\s*CI\\s*GREEN\\s*/\\s*CONTINUE\\s*REQUIRED",
+      "RUNNING|PENDING_168H": "RUNNING\\s*/\\s*PENDING\\s*168H",
       "ACCEPTED|CI_GREEN": "ACCEPTED\\s*/\\s*CI\\s*GREEN",
       "BLOCKED": "BLOCKED"
     },
@@ -38,6 +40,7 @@
       "COMMITTED|CI_PENDING": "CI_WAIT_OR_INVESTIGATION",
       "COMMITTED|CI_FAILED|FIX_REQUIRED": "CI_BLOCKER_FIX",
       "COMMITTED|CI_GREEN|CONTINUE_REQUIRED": "SECURITY_RISK_REVIEW",
+      "RUNNING|PENDING_168H": "SOAK_ACCEPTANCE",
       "ACCEPTED|CI_GREEN": "POST_CI_SYNC",
       "BLOCKED": "BLOCKED"
     },
@@ -70,6 +73,10 @@
         "commitPattern": "^[0-9a-f]{40}$",
         "ciPattern": "^[1-9][0-9]*$"
       },
+      "RUNNING|PENDING_168H": {
+        "commitPattern": "^[0-9a-f]{40}$",
+        "ciPattern": "^[1-9][0-9]*$"
+      },
       "ACCEPTED|CI_GREEN": {
         "commitPattern": "^[0-9a-f]{40}$",
         "ciPattern": "^[0-9]+$"
@@ -80,6 +87,10 @@
       }
     },
     "nextActionTypes": [
+      {
+        "name": "SOAK_ACCEPTANCE",
+        "pattern": "(?-i:^NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE$)"
+      },
       {
         "name": "CI_BLOCKER_FIX",
         "pattern": "(?i)^NQ-[A-Z0-9]+(?:-[A-Z0-9]+)*-CI-BLOCKER-FIX(?:-REVIEW|-COMMIT-AND-PUSH)?$"
@@ -152,9 +163,11 @@
         "COMMITTED|CI_PENDING",
         "COMMITTED|CI_FAILED|FIX_REQUIRED",
         "COMMITTED|CI_GREEN|CONTINUE_REQUIRED",
+        "RUNNING|PENDING_168H",
         "ACCEPTED|CI_GREEN"
       ],
       "transitions": [
+        "NOT_STARTED->RUNNING|PENDING_168H",
         "NOT_STARTED->IMPLEMENTED|PENDING_REVIEW",
         "IMPLEMENTED|PENDING_REVIEW->REVIEW_ACCEPTED|READY_TO_COMMIT",
         "REVIEW_ACCEPTED|READY_TO_COMMIT->COMMITTED|CI_PENDING",

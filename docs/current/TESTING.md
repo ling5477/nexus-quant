@@ -12115,3 +12115,27 @@ Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.se
 执行中两次调用错误均透明保留：control server self-test 首次以非 root 身份运行返回 `NATIVE_COMMAND_FAILED`，零结构副作用后按 root-control 合同重跑通过；fresh-SSH 首次把 minimum sample sequence 误设为 3，未写入记录，按实际 cycle baseline sequence 2 与 heartbeat timestamp 后移合同重跑通过。SSH TCP 22 偶发建连超时，固定主机/密钥重试后成功；不影响独立 systemd worker。仓库根 `target/` 在确认 tracked files=0 后已按授权精确删除，未清理其他未跟踪文件。
 
 未运行：真实 OKX/其他交易所调用、exchange credential material 读取、permission probe、Attempt-09、真实 168 小时 acceptance clock、frontend、Python、freeze/archive/tag。阻断性：P0=0/P1=0；Commit B 与其 exact-head CI 尚待执行，服务器不得部署 Commit B。
+
+## 2026-07-22 — GateW Attempt-09 real OKX read-only soak start
+
+当前结论：`PASS / ATTEMPT_09_CREATED / OKX_CONFIG_PASS / OKX_BALANCE_PASS / SYSTEMD_DETACHMENT_VERIFIED / HEARTBEAT_ADVANCING / HASH_CHAIN_VALID / ACCEPTANCE_CLOCK_STARTED / SOAK_RUNNING / PENDING_168H`（通过 / Attempt-09 已创建 / 两个真实只读探针通过 / systemd 脱离 SSH 已验证 / heartbeat 推进 / hash chain 有效 / 验收时钟已启动 / soak 运行中 / 待满 168 小时）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| local HEAD / starting CI | PASS | `HEAD == origin/dev == 771b878d...`；run `29840306100 / completed / success / 10 of 10` |
+| governance positive/negative regression | PASS | 新状态 `RUNNING|PENDING_168H`；精确 acceptance action通过；错拼、缺 168H、Attempt-10、小写近似拒绝；lifecycle full regression PASS |
+| immutable server baseline | PASS | current=Commit A；129 artifacts；manifest/POSIX/hash/symlink/owner-mode PASS；`nqgatewWritable=false`；systemd verify exit 0 |
+| host isolation | PASS | active units/MainPID/drop-ins/residual/REAL runs/clocks启动前均0；management 18889 HTTP 200；PostgreSQL 55432 accepting；公网非 SSH listener=0 |
+| formal pre-create | PASS / NO SIDE EFFECT | PostgreSQL/management/ENGAGED/唯一 active OKX metadata/expected-disabled/ready均 true；material exposed=false；执行后 run/clock/unit仍0 |
+| formal prepare/start | PASS | run `gatew-soak-20260722T111144Z-ac00f878`；unit active/running；worker `nqgatew`；MainPID `4074358`；clock初始false |
+| first real config + balance | PASS | `SUCCESS_2XX / READ_ONLY_WITH_IP_ALLOWLIST / ACCOUNT_CONFIG_AND_BALANCE_READ / SUCCEEDED / SUCCEEDED`；只调用2个允许 typed GET |
+| fresh SSH / detachment | PASS | 持久化 worker-start与 fresh systemd MainPID均 `4074358`；formal record=`FRESH_SSH_RECORDED`；heartbeat advanced=true |
+| hash chain after advancement | PASS | heartbeat sequence推进到2；随后 sampleCount=3、valid REAL PASS=3、fallback=0；raw/secret/forbidden=`0/0/0`；last hash `ca419e7a...bde8c7` |
+| acceptance clock | PASS | start=`2026-07-22T11:19:59.5201964Z`；planned=`2026-07-29T11:19:59.5201964Z`；精确+168h；owner-mode `root:nqgatew/0640`；相同确认=`NO_CHANGE` |
+| different clock conflict | PASS / ISOLATED SELF-TEST | immutable control 50/50 PASS；不同值二次写入拒绝；self-test network/credential=false；真实 unit持续健康 |
+| final runtime status | PASS / RUNNING | lifecycle RUNNING；unit active/running；MainPID `4074358`；acceptanceClockStarted=true |
+| pre-commit healthy snapshot | PASS | heartbeat sequence=8；sampleCount=9、valid REAL PASS=9、fallback/raw/secret/forbidden=`0/0/0/0`；same PID/clock；hash chain PASS |
+
+透明保留：首次误探测 8080 后按仓库合同纠正为 18889；pre-create 本体 PASS 后尾部 CRLF 包装断言失败；第一次 prepare 的非法字面 runId在创建前被拒绝；start SSH 被远端关闭后未重发，fresh status证明 systemd worker继续运行；第一次缺 formal env 的独立 evidence verifier失败，按 control 固定 formal env重跑后 hash chain PASS。这些错误均未扩大 endpoint、未创建第二个 REAL run、未修改 server config/release/credential。
+
+未运行：Maven、frontend、Python、final offline acceptance、controlled failure、GateW freeze/archive/tag。原因是本轮只运行已验收 immutable tooling并同步治理/evidence；业务源码、unit、deploy、migration与CI workflow均未修改。Evidence commit 与其 exact-head CI 在本记录写入时待本轮后续执行，服务器 runtime继续固定 Commit A。

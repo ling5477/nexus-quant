@@ -17803,3 +17803,18 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：REAL runs/clocks=`0/0`；Attempt-09未创建，真实acceptance clock未启动；OKX/其他交易所未调用，exchange credential material未读取；无LIVE/交易写侧/migration/frontend/research/`.github`/freeze/archive/tag变更。
 - result：`PASS / PRECREATE_SANITIZED_PREREQUISITE_PROVEN / SELF_CONTAINED_DB_INPUT_PROVEN / KILL_SWITCH_ENGAGED_VERIFIED / CREDENTIAL_METADATA_SANITIZED / IMMUTABLE_RELEASE_REBUILT / FULL_FORMAL_OFFLINE_ACCEPTANCE_PROVEN / IMPLEMENTATION_COMMITTED / IMPLEMENTATION_CI_GREEN / SERVER_DEPLOYED / READY_TO_COMMIT_B / ATTEMPT_09_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_STARTED / READY_TO_RETRY_ATTEMPT_09`。
 - next：仅提交/push evidence/current authority Commit B 并等待 exact-head CI；服务器继续固定 Commit A，不部署 docs commit。CI GREEN 后下一任务才是 `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`。
+
+## 2026-07-22 — GateW Attempt-09 real OKX read-only soak started
+
+- task：`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`；NQ-only、L级 production read-only soak start。
+- baseline：`dev` clean；`HEAD == origin/dev == 771b878d...`；starting CI `29840306100 / completed / success / 10 of 10`；authority checker PASS。
+- governance：新增精确 `RUNNING|PENDING_168H -> SOAK_ACCEPTANCE` 与 case-sensitive `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE`；正例、错拼、缺168H、Attempt-10、大小写近似与 lifecycle full regression PASS。
+- hard gate：server current=Commit A；immutable verifier/129 artifacts/POSIX/owner-mode/symlink/hash、`nqgatewWritable=false`、systemd verify、zero unit/PID/drop-in/residual/REAL run/clock、loopback management/PostgreSQL与zero public non-SSH listener均PASS。
+- pre-create：PostgreSQL/management/ENGAGED/唯一 active OKX metadata/expected-disabled/ready全部通过；diagnostic/no-side-effect=true，material exposed=false；未手工展开DB或读取credential文件。
+- start：唯一 run `gatew-soak-20260722T111144Z-ac00f878`；formal unit active/running；worker `nqgatew`；MainPID `4074358`；首次 config/balance=`SUCCESS_2XX / SUCCEEDED / SUCCEEDED / READ_ONLY_WITH_IP_ALLOWLIST`。
+- detachment：start SSH关闭后未重发；fresh SSH证明 worker-start与systemd MainPID相同；formal fresh record、heartbeat推进和drop-in=0通过。
+- evidence：clock后首轮 verifier sampleCount=3；提交前健康快照 heartbeat sequence=8、sampleCount=9、valid REAL PASS=9、fallback/raw/secret/forbidden=`0/0/0/0`；hash chain PASS；latest snapshot hash `f1fd7f9f...aa2f66d`。
+- clock：start=`2026-07-22T11:19:59.5201964Z`，planned=`2026-07-29T11:19:59.5201964Z`，精确+168h；相同确认NO_CHANGE；隔离control self-test验证不同值冲突拒绝且无network/credential。
+- authority：GateW保持`IN_PROGRESS|NOT_FROZEN`；work batch=`RUNNING|PENDING_168H`，绑定runtime Commit A/CI `29837563573`；唯一next action=`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE`。
+- boundary：LIVE/order/cancel/transfer/withdraw/AI/DH均关闭；未改业务源码、unit、deploy、migration、allowlist、credential或server current；未做controlled failure、freeze/archive/tag；健康 soak不得因docs/CI停止。
+- next：精确提交/push本轮治理与evidence，等待evidence commit exact-head CI 10/10 GREEN；planned时间前仅维持健康只读soak与安全监控，不提前执行168h acceptance。

@@ -41,6 +41,39 @@ foreach ($action in $invalidAttempt09StartActions) {
 }
 Write-Output 'PASS non-canonical-attempt-start relation=false'
 
+$canonicalAttempt09Acceptance = 'NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE'
+$attempt09RunningStatus = 'RUNNING|PENDING_168H'
+Assert-ActionType $canonicalAttempt09Acceptance 'SOAK_ACCEPTANCE'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt09RunningStatus $canonicalAttempt09WorkBatch $canonicalAttempt09Acceptance)) {
+    throw 'CANONICAL_ATTEMPT_09_ACCEPTANCE_REJECTED'
+}
+Write-Output 'PASS canonical-attempt-09-acceptance work-batch-match=true'
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' 'NOT_STARTED' $attempt09RunningStatus)) {
+    throw 'ATTEMPT_09_RUNNING_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS canonical-attempt-09-running lifecycle=highRisk'
+
+$invalidAttempt09AcceptanceActions = @(
+    'NQ-GATEW-OKX-READONLY-SOAK-ATEMPT-09-168H-ACCEPTANCE',
+    'NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-ACCEPTANCE',
+    'NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-10-168H-ACCEPTANCE',
+    'nq-gatew-okx-readonly-soak-attempt-09-168h-acceptance'
+)
+foreach ($action in $invalidAttempt09AcceptanceActions) {
+    Assert-ActionType $action 'UNKNOWN'
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt09RunningStatus $canonicalAttempt09WorkBatch $action) {
+        throw "NON_CANONICAL_ATTEMPT_ACCEPTANCE_ACCEPTED action=$action"
+    }
+}
+if (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt09RunningStatus 'GateW-OKX-READONLY-SOAK-ATTEMPT-10' $canonicalAttempt09Acceptance) {
+    throw 'CROSS_ATTEMPT_ACCEPTANCE_ACCEPTED workBatch=Attempt-10'
+}
+Write-Output 'PASS non-canonical-attempt-acceptance relation=false'
+
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'
 }

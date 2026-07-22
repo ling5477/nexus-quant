@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_acceptance_head=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_ci_run=29339016784
 work_batch=GateW-OKX-READONLY-SOAK-ATTEMPT-09
-work_batch_status=NOT_STARTED
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START
+work_batch_status=RUNNING|PENDING_168H
+work_batch_commit=1b501488076fae79e15b84579a02f5c580fa51b3
+work_batch_ci_run=29837563573
+next_action=NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -43,7 +43,7 @@ nq-current-authority:end -->
 - GateW-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Blocker-1、operations、persistence/retention、human-review evidence binding、disposable backup/restore、11 场景 incident drill 与 10,000 次 local no-egress soak hard gates 均通过；internal-only assessment 不产生交易授权。Implementation/acceptance head 为 `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`，CI run `29339016784` 为 exact-head `completed / success`。
 - GateW soak start contract remediation：`PASS / COMMITTED / CI GREEN / SUPERSEDED BY PRECREATE REMEDIATION`（通过 / 已提交 / CI 已通过 / 已由 pre-create remediation 替代）。Implementation commit `0e8e2c128c456542b3f7695c9620e4d170c3f4f6` 的 exact-head CI run `29766800343` 为 `completed / success / 10 of 10`；该 release 保留为已验证回滚点，不再是服务器 current。
 - GateW pre-create sanitized prerequisite remediation：`PASS / IMPLEMENTATION COMMITTED / IMPLEMENTATION CI GREEN / SERVER DEPLOYED`（通过 / 实现已提交 / 实现 CI 已通过 / 服务器已部署）。Implementation commit `1b501488076fae79e15b84579a02f5c580fa51b3` 的 exact-head CI run `29837563573` 为 `completed / success / 10 of 10`；服务器 `/opt/nexus-quant/current` 固定到该 `EXACT_COMMIT` immutable release，129 artifacts、manifest/POSIX、root owner/mode、`nqgatewWritable=false`、systemd verify、sanitized pre-create 与完整 final offline acceptance 均通过。
-- GateW-OKX-READONLY-SOAK-ATTEMPT-09：`NOT STARTED`（未开始）。Attempt-09 尚未创建，真实 acceptance clock 尚未启动，本轮 remediation/final offline acceptance 没有调用 OKX、读取 credential material 或启动真实 soak。
+- GateW-OKX-READONLY-SOAK-ATTEMPT-09：`RUNNING / PENDING 168H`（运行中 / 待满 168 小时）。唯一 run `gatew-soak-20260722T111144Z-ac00f878` 使用正式 systemd unit 与 immutable runtime Commit A；首次 OKX config/balance typed GET、fresh SSH same MainPID、heartbeat 推进、hash chain、zero forbidden/raw/secret 与 kill switch `ENGAGED` 均通过。真实 acceptance clock 为 `2026-07-22T11:19:59.5201964Z` 至 `2026-07-29T11:19:59.5201964Z`；当前只表示 soak 正在运行，不表示 168 小时已接受。
 - GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；必须等待真实 read-only soak 后续证据，不得从 remediation 的隔离 offline clock 推导真实 168 小时 acceptance 已开始。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
@@ -68,10 +68,10 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 - Integration runtime：`NOT STARTED`（未开始）。
 - RealClient / private trading adapter：`NOT IMPLEMENTED`（未实现）；GateW-2 private read-only diagnostic transport/probe 为 `ACCEPTED / CI GREEN`，默认不装配且未做 real smoke，不属于交易适配器或交易授权。
 - GateW runtime release：`1b501488076fae79e15b84579a02f5c580fa51b3`；该值是服务器当前 immutable runtime，不因本次 docs/evidence Commit B 改变。
-- Attempt-09：`NOT STARTED / NOT CREATED`（未启动 / 未创建）；真实 acceptance clock：`NOT STARTED`（未启动）；remediation/final offline acceptance：`OKX NOT CALLED / CREDENTIAL MATERIAL NOT READ`（未调用 OKX / 未读取凭证材料）。
+- Attempt-09：`RUNNING / PENDING 168H`（运行中 / 待满 168 小时）；正式 unit=`active/running`，worker=`nqgatew`，MainPID=`4074358`，kill switch=`ENGAGED`。真实 acceptance clock 已从 `2026-07-22T11:19:59.5201964Z` 原子启动，planned=`2026-07-29T11:19:59.5201964Z`；仅允许 config/balance 两个 typed GET，LIVE、下单、撤单、转账与提现继续关闭。
 - Python ML readiness / Python live execution readiness：`NO`（否）。
 - `acknowledge`、`escalate`、`resolve`、`close` 只表示本地人工诊断复核；不构成交易授权、LIVE/Shadow 放行，亦不批准下单、撤单、转账或提现。
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START`。本状态只允许后续任务重新执行 Attempt-09 的全部启动 hard gates，不表示 Attempt-09 已创建、真实 acceptance clock 已启动、OKX 已调用或 GateW 已冻结；也不授权绕过 credential、kill switch、fresh SSH、same PID、hash chain、zero forbidden/secret、LIVE 或交易写侧边界。
+治理 authority 中唯一下一动作精确为 `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE`。在 planned acceptance 时间前只能保持健康只读 soak 与安全监控，不得提前执行最终验收、freeze/archive/tag，也不得因 docs/CI 问题停止健康 unit；该动作不授权 LIVE、订单、撤单、转账、提现、allowlist 修改、credential 输出或任何交易写侧。
