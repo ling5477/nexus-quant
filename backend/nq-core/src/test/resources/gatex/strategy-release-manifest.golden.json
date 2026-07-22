@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "strategy-release-manifest.v1",
+  "strategyVersionId": "sv-11111111-1111-4111-8111-111111111111",
+  "datasetId": "22222222-2222-4222-8222-222222222222",
+  "evaluationId": "eval-fixture-0001",
+  "dataWindow": {
+    "start": "2025-01-01T00:00:00Z",
+    "end": "2025-03-31T23:59:59Z"
+  },
+  "datasetHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "featureDefinitionVersion": "features.synthetic.v1",
+  "parameters": {
+    "lookbackBars": 20,
+    "entryThreshold": "0.01500000",
+    "longOnly": true
+  },
+  "riskBudget": {
+    "currency": "USDT",
+    "maxGrossExposure": "10000.00",
+    "maxNetExposure": "10000.00",
+    "maxSinglePositionWeight": "0.10000000",
+    "maxDrawdownPct": "0.05000000",
+    "maxOpenPositions": 5
+  },
+  "signalOrWeightSummary": {
+    "summaryType": "WEIGHTS",
+    "grossWeight": "1.00000000",
+    "netWeight": "1.00000000",
+    "entryCount": 3,
+    "description": "Synthetic fixture summary; it is not an execution instruction."
+  },
+  "artifactFiles": [
+    {
+      "logicalName": "evaluation-report",
+      "relativePath": "artifacts/evaluation-report.json",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "sizeBytes": 2048,
+      "mediaType": "application/json"
+    },
+    {
+      "logicalName": "strategy-parameters",
+      "relativePath": "artifacts/strategy-parameters.json",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "sizeBytes": 512,
+      "mediaType": "application/json"
+    }
+  ],
+  "artifactDigest": "100e570938d3b32d85c22c352a6b27641f22b5b639b1c686cd9831111bf023e0",
+  "generatedAt": "2026-07-22T00:00:00Z",
+  "generatorVersion": "nq-research-fixture/1.0",
+  "boundary": {
+    "noCredentialAccess": true,
+    "noPrivateEndpoint": true,
+    "diagnosticOnly": true,
+    "notTradingAuthorization": true
+  }
+}
