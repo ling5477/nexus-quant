@@ -37,4 +37,6 @@
 - 不是 LIVE 或 Shadow trading 已启用。
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider 或 private trading adapter 已实现；GateW-2 仅是默认不装配的 private read-only diagnostic probe，`REAL_SMOKE=NOT_RUN`，不表示远端 permission 或交易授权。
-- GateW-4 acceptance 只接受 internal diagnostic/no-side-effect operational safety contract，不表示 GateW frozen 或交易获授权。当前唯一动作是 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`；Freeze readiness review 是该任务内部第一道 hard gate。不得把 local soak、restore、incident PASS 或 CI green 解释成真实 permission、余额充分、账户健康、可以交易或已获 LIVE/交易授权。
+- GateW-4 acceptance 只接受 internal diagnostic/no-side-effect operational safety contract，不表示 GateW frozen 或交易获授权。
+- 当前唯一允许动作是 `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE`；只能在达到 `plannedAcceptanceAt=2026-07-29T11:19:59.5201964Z` 后执行。
+- GateW freeze closeout 当前仍为 `NOT STARTED`（未开始）；只有 168h acceptance 得出 `ACCEPT`（接受）后才能开始。不得把 local soak、restore、incident PASS 或 CI green 解释成真实 permission、余额充分、账户健康、可以交易、已获 LIVE/交易授权或 freeze readiness。
