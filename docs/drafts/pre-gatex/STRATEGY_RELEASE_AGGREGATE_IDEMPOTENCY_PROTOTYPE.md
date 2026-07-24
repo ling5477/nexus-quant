@@ -33,6 +33,8 @@ Strategy Release 是对现有 `backtest_publish_records` publish 主链的 `EXTE
 publish source of truth。
 
 - `publishId` 对应现有 `publish_record_id`；
+- `releaseId` 是 `publishId` / `publish_record_id` 的领域别名，用于 test-only aggregate 表达，
+  不是独立 UUID，也不是未来 `strategy_releases` 表主键；
 - 现有 publish record 已绑定 backtest、evaluation 与 strategy version facts；
 - `backtest_publish_records.publish_record_id` 是主键；
 - production publish service 对同一 backtest run 复用既有 publish record；
