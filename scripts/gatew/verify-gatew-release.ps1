@@ -16,7 +16,8 @@ $script:ReleaseIdPattern = '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16}
 $script:Sha256Pattern = '^[a-f0-9]{64}$'
 $script:CommitPattern = '^[a-f0-9]{40}$'
 $script:AllowedRoles = @(
-    'worker-helper', 'control-helper', 'failclose-helper', 'release-verifier', 'release-installer',
+    'worker-helper', 'control-helper', 'failclose-helper', 'contract-library',
+    'release-verifier', 'release-installer',
     'systemd-worker-unit', 'systemd-failclose-unit', 'launcher-test-support',
     'launcher-module', 'runtime-library'
 )
@@ -24,7 +25,8 @@ $script:ExecutableRoles = @(
     'worker-helper', 'control-helper', 'failclose-helper', 'release-verifier', 'release-installer'
 )
 $script:LfRoles = @(
-    'worker-helper', 'control-helper', 'failclose-helper', 'release-verifier', 'release-installer',
+    'worker-helper', 'control-helper', 'failclose-helper', 'contract-library',
+    'release-verifier', 'release-installer',
     'systemd-worker-unit', 'systemd-failclose-unit'
 )
 
@@ -436,7 +438,8 @@ function Assert-ManifestContract
     }
 
     foreach ($requiredRole in @(
-        'worker-helper', 'control-helper', 'failclose-helper', 'release-verifier', 'release-installer',
+        'worker-helper', 'control-helper', 'failclose-helper', 'contract-library',
+        'release-verifier', 'release-installer',
         'systemd-worker-unit', 'systemd-failclose-unit', 'launcher-test-support', 'launcher-module', 'runtime-library'
     ))
     {

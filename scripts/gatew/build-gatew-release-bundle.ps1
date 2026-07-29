@@ -527,6 +527,8 @@ function Build-ReleaseBundle
             'bin/gatew-okx-readonly-soak-control.ps1' '0755' $true 'control-helper'
         Add-TextArtifact $stageRoot (Join-Path $script:RepoRoot 'scripts/gatew/gatew-okx-readonly-soak-failclose.ps1') `
             'bin/gatew-okx-readonly-soak-failclose.ps1' '0755' $true 'failclose-helper'
+        Add-TextArtifact $stageRoot (Join-Path $script:RepoRoot 'scripts/gatew/gatew-soak-remediation-contract.psm1') `
+            'bin/gatew-soak-remediation-contract.psm1' '0644' $false 'contract-library'
         Add-TextArtifact $stageRoot (Join-Path $script:RepoRoot 'scripts/gatew/verify-gatew-release.ps1') `
             'bin/verify-gatew-release.ps1' '0755' $true 'release-verifier'
         Add-TextArtifact $stageRoot (Join-Path $script:RepoRoot 'scripts/gatew/install-gatew-release.ps1') `

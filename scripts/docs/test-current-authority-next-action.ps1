@@ -128,11 +128,74 @@ foreach ($action in @(
 }
 Write-Output 'PASS non-canonical-attempt-09-failure-action relation=false'
 
+$remediationImplementedStatus = 'IMPLEMENTED|CI_GREEN|PENDING_SECURITY_REVIEW'
+$remediationWorkBatch = 'GateW-ATTEMPT-09-FAILURE-REMEDIATION'
+$remediationSecurityReview = 'NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW'
+Assert-ActionType $remediationSecurityReview 'FAILURE_REMEDIATION_SECURITY_REVIEW'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $remediationImplementedStatus $remediationWorkBatch $remediationSecurityReview)) {
+    throw 'CANONICAL_ATTEMPT_09_REMEDIATION_SECURITY_REVIEW_REJECTED'
+}
+Write-Output 'PASS canonical-attempt-09-remediation-security-review exact-triple=true'
+
+foreach ($status in @(
+    'IMPLEMENTED|CI_GREEN|PENDING_REVIEW',
+    'IMPLEMENTED|CI_GREEN|PENDING_SECURITY_REVEW',
+    'IMPLEMENTED|CI_GREEN|PENDING_SECURITY_REVIEW|READY',
+    'implemented|ci_green|pending_security_review',
+    $attempt09FailureStatus
+)) {
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $status $remediationWorkBatch $remediationSecurityReview) {
+        throw "NON_CANONICAL_REMEDIATION_STATUS_ACCEPTED status=$status"
+    }
+}
+Write-Output 'PASS non-canonical-remediation-status relation=false'
+
+foreach ($workBatch in @(
+    'GateW-ATEMPT-09-FAILURE-REMEDIATION',
+    'GateW-ATTEMPT-10-FAILURE-REMEDIATION',
+    'GateW-OKX-READONLY-SOAK-ATTEMPT-09',
+    'GateW-ATTEMPT-09-FAILURE-REMEDATION',
+    'gatew-attempt-09-failure-remediation'
+)) {
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $remediationImplementedStatus $workBatch $remediationSecurityReview) {
+        throw "NON_CANONICAL_REMEDIATION_WORK_BATCH_ACCEPTED workBatch=$workBatch"
+    }
+}
+Write-Output 'PASS non-canonical-remediation-work-batch relation=false'
+
+foreach ($action in @(
+    'NQ-GATEW-ATEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW',
+    'NQ-GATEW-ATTEMPT-10-FAILURE-REMEDIATION-SECURITY-REVIEW',
+    'NQ-GATEW-ATTEMPT-09-FAILURE-REMEDATION-SECURITY-REVIEW',
+    'NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURTY-REVIEW',
+    'NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-RISK-REVIEW',
+    'NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW-LATER',
+    'nq-gatew-attempt-09-failure-remediation-security-review'
+)) {
+    $actualType = Get-GovernanceNextActionType $contract $action
+    if ($actualType -ceq 'FAILURE_REMEDIATION_SECURITY_REVIEW') {
+        throw "NON_CANONICAL_REMEDIATION_ACTION_CLASSIFIED_AS_EXACT action=$action"
+    }
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $remediationImplementedStatus $remediationWorkBatch $action) {
+        throw "NON_CANONICAL_REMEDIATION_ACTION_ACCEPTED action=$action"
+    }
+}
+Write-Output 'PASS non-canonical-remediation-action relation=false'
+
 if (-not (Test-GovernanceLifecycleTransition `
         $contract 'highRisk' $attempt09RunningStatus $attempt09FailureStatus)) {
     throw 'ATTEMPT_09_FAILURE_LIFECYCLE_TRANSITION_REJECTED'
 }
 Write-Output 'PASS attempt-09-running-to-failure lifecycle=highRisk'
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $attempt09FailureStatus $remediationImplementedStatus)) {
+    throw 'ATTEMPT_09_REMEDIATION_IMPLEMENTED_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS attempt-09-failure-to-remediation-implemented lifecycle=highRisk'
 
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'

@@ -9,19 +9,11 @@ User=root
 Group=root
 WorkingDirectory=/opt/nexus-quant
 Environment=NQ_GATEW_RELEASE_ROOT=/opt/nexus-quant/current
-Environment=NQ_GATEW_SECRET_SOURCE=SYSTEMD_CREDENTIALS
-Environment=NQ_GATEW_FORMAL_SYSTEMD=true
-Environment=HOME=/run/nexus-quant/gatew-soak-failclose/%i/home
-Environment=XDG_CACHE_HOME=/run/nexus-quant/gatew-soak-failclose/%i/cache
-Environment=XDG_CONFIG_HOME=/run/nexus-quant/gatew-soak-failclose/%i/config
-Environment=XDG_DATA_HOME=/run/nexus-quant/gatew-soak-failclose/%i/data
 EnvironmentFile=/var/lib/nexus-quant/gatew-soak/%i/control/failclose.env
-LoadCredentialEncrypted=db-password:/etc/nexus-quant/gatew-soak/credentials/db-password.cred
-ExecStartPre=+/usr/bin/pwsh -NoProfile -File ${NQ_GATEW_RELEASE_ROOT}/bin/verify-gatew-release.ps1 -ReleaseRoot ${NQ_GATEW_RELEASE_ROOT} -ExpectedReleaseId ${NQ_GATEW_RELEASE_ID} -ExpectedManifestSha256 ${NQ_GATEW_RELEASE_MANIFEST_SHA256}
 ExecStart=/usr/bin/pwsh -NoProfile -File ${NQ_GATEW_RELEASE_ROOT}/bin/gatew-okx-readonly-soak-failclose.ps1 -Action finalize -RunId %i
 Restart=no
-TimeoutStartSec=2min
-TimeoutStopSec=30s
+TimeoutStartSec=30s
+TimeoutStopSec=10s
 RuntimeDirectory=nexus-quant/gatew-soak-failclose/%i
 RuntimeDirectoryMode=0700
 UMask=0077
@@ -36,17 +28,16 @@ ProtectControlGroups=true
 ProtectClock=true
 ProtectHostname=true
 PrivateDevices=true
+PrivateNetwork=true
 RestrictSUIDSGID=true
 RestrictRealtime=true
 RestrictNamespaces=true
 LockPersonality=true
-CapabilityBoundingSet=CAP_DAC_READ_SEARCH
-AmbientCapabilities=CAP_DAC_READ_SEARCH
+CapabilityBoundingSet=
+AmbientCapabilities=
 IPAddressDeny=any
-IPAddressAllow=localhost
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictAddressFamilies=AF_UNIX
 ReadOnlyPaths=/opt/nexus-quant/releases
-ReadOnlyPaths=/var/lib/nexus-quant/gatew-soak/%i/evidence
 ReadWritePaths=/var/lib/nexus-quant/gatew-soak/%i/control
 StandardOutput=journal
 StandardError=journal

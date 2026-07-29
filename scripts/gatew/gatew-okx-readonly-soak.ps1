@@ -1857,10 +1857,14 @@ function Wait-ForFormalAcceptanceClock
 
 function Write-FormalCompletionMarker
 {
-    param([Parameter(Mandatory = $true)][string]$Directory)
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][DateTimeOffset]$PlannedAcceptanceAt
+    )
 
     $chain = Get-ChainState $Directory
     $lastSuccessfulSequence = 0L
+    $lastSuccessfulObservedAt = [DateTimeOffset]::MinValue
     foreach ($line in Get-Content -LiteralPath (Join-Path $Directory 'samples.jsonl'))
     {
         if ( [string]::IsNullOrWhiteSpace($line))
@@ -1871,11 +1875,22 @@ function Write-FormalCompletionMarker
         if ([string]$sample.resultStatus -eq 'PASSED_READ_ONLY')
         {
             $lastSuccessfulSequence = [long]$sample.sequence
+            $parsedObservedAt = [DateTimeOffset]::MinValue
+            if (-not [DateTimeOffset]::TryParse([string]$sample.observedAt, [ref]$parsedObservedAt))
+            {
+                throw 'FAIL / NATURAL_COMPLETION_PASS_TIME_INVALID'
+            }
+            $lastSuccessfulObservedAt = $parsedObservedAt
         }
     }
     if ($lastSuccessfulSequence -lt 1 -or $lastSuccessfulSequence -gt [long]$chain.Count)
     {
         throw 'FAIL / NATURAL_COMPLETION_PASS_SEQUENCE_INVALID'
+    }
+    if ((Get-UtcNow) -lt $PlannedAcceptanceAt -or
+            $lastSuccessfulObservedAt -lt $PlannedAcceptanceAt)
+    {
+        throw 'FAIL / NATURAL_COMPLETION_BEFORE_PLANNED_ACCEPTANCE'
     }
 
     Write-JsonCreateOnce (Join-Path $Directory 'completion-marker.json') ([ordered]@{
@@ -1886,6 +1901,72 @@ function Write-FormalCompletionMarker
         completedAt = (Get-UtcNow).ToString('o')
     })
     Write-Heartbeat $Directory 'COMPLETING' 'NATURAL_COMPLETION_MARKER_WRITTEN' ([long]$chain.Count)
+}
+
+function Invoke-FormalFinalAcceptanceSample
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)]$Manifest
+    )
+
+    $authFailures = 0
+    $transientRetries = 0
+    while ($true)
+    {
+        $cycle = Invoke-SanitizedCycle 'sample' $Directory
+        $record = Append-Sample $Directory $cycle
+        if ([string]$cycle.resultStatus -ceq 'PASSED_READ_ONLY')
+        {
+            Write-Heartbeat $Directory 'RUNNING' 'FINAL_ACCEPTANCE_SAMPLE_ACCEPTED' $record.sequence
+            return $record
+        }
+        $reason = [string]$cycle.reasonCode
+        Write-Heartbeat $Directory 'DEGRADED' $reason $record.sequence $authFailures
+        if ($script:ImmediateStopReasons -ccontains $reason -or
+                ([string]$cycle.resultStatus -cin @('BLOCKED', 'HARD_FAILURE', 'FAILED')))
+        {
+            Write-Heartbeat $Directory 'FAILURE_STOPPING' $reason $record.sequence $authFailures
+            throw "FAIL / $reason"
+        }
+        if ($script:AuthenticationReasons -ccontains $reason)
+        {
+            $authFailures++
+            if ($authFailures -ge [int]$Manifest.maxConsecutiveAuthFailures)
+            {
+                Write-Heartbeat $Directory 'FAILURE_STOPPING' `
+                    'CONSECUTIVE_AUTHENTICATION_FAILURES' $record.sequence $authFailures
+                throw 'FAIL / CONSECUTIVE_AUTHENTICATION_FAILURES'
+            }
+            Start-Sleep -Seconds ([Math]::Min(30, [int]$Manifest.cadenceSeconds))
+            continue
+        }
+        if ($script:TransientReasons -ccontains $reason -and
+                $transientRetries -lt [int]$Manifest.maxTransientRetries)
+        {
+            $transientRetries++
+            Start-Sleep -Seconds ([Math]::Min(120, 30 * $transientRetries))
+            continue
+        }
+        Write-Heartbeat $Directory 'FAILURE_STOPPING' `
+            'FINAL_ACCEPTANCE_SAMPLE_NOT_VALID' $record.sequence $authFailures
+        throw 'FAIL / FINAL_ACCEPTANCE_SAMPLE_NOT_VALID'
+    }
+}
+
+function Wait-ForFormalAcceptanceFinalization
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][long]$LastSequence
+    )
+
+    while ($true)
+    {
+        Write-Heartbeat $Directory 'ACCEPTANCE_READY' `
+            'EXPLICIT_ACCEPTANCE_FINALIZATION_REQUIRED' $LastSequence
+        Start-Sleep -Seconds 5
+    }
 }
 
 function Run-FormalOfflineAcceptance
@@ -2017,7 +2098,9 @@ function Run-FormalRealSoak
             break
         } while ($true)
     }
-    Write-FormalCompletionMarker $Directory
+    $finalRecord = Invoke-FormalFinalAcceptanceSample $Directory $Manifest
+    Write-FormalCompletionMarker $Directory $plannedEndAt
+    Wait-ForFormalAcceptanceFinalization $Directory ([long]$finalRecord.sequence)
 }
 
 function Run-SoakLoop

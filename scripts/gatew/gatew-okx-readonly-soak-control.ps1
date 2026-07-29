@@ -2,7 +2,9 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet(
-            'precreate-prerequisite', 'prepare', 'start', 'status', 'verify', 'stop', 'offline-fail',
+            'precreate-prerequisite', 'prepare', 'start', 'status', 'verify',
+            'verify-evidence', 'verify-acceptance', 'verify-terminal', 'finalize-acceptance',
+            'stop', 'offline-fail',
             'record-fresh-ssh', 'start-acceptance-clock',
             'unit-preflight', 'record-exit', 'self-test'
     )]
@@ -39,6 +41,13 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$script:RemediationContractPath = Join-Path $PSScriptRoot 'gatew-soak-remediation-contract.psm1'
+if (-not (Test-Path -LiteralPath $script:RemediationContractPath -PathType Leaf))
+{
+    throw 'BLOCKED / REMEDIATION_CONTRACT_MISSING'
+}
+Import-Module $script:RemediationContractPath -Force
+
 $script:Utf8NoBom = [Text.UTF8Encoding]::new($false)
 $script:RunIdPattern = '^gatew-soak-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$'
 $script:SafeCodePattern = '^[A-Z][A-Z0-9_]{1,95}$'
@@ -67,6 +76,8 @@ $script:ChmodPath = '/usr/bin/chmod'
 $script:StatPath = '/usr/bin/stat'
 $script:ReadlinkPath = '/usr/bin/readlink'
 $script:LnPath = '/usr/bin/ln'
+$script:IdPath = '/usr/bin/id'
+$script:StopIntentMaxAgeSeconds = 300
 
 $configuredReleaseRoot = [Environment]::GetEnvironmentVariable('NQ_GATEW_RELEASE_ROOT', 'Process')
 if ( [string]::IsNullOrWhiteSpace($configuredReleaseRoot))
@@ -1193,9 +1204,7 @@ function Install-OfflineDropIns
     param([Parameter(Mandatory = $true)][string]$Value)
 
     $workerDropIn = "$( $script:RuntimeSystemdRoot )/$( Get-WorkerUnitName $Value ).d"
-    $failCloseDropIn = "$( $script:RuntimeSystemdRoot )/$( Get-FailCloseUnitName $Value ).d"
     Ensure-Directory $workerDropIn 'root:root' '755'
-    Ensure-Directory $failCloseDropIn 'root:root' '755'
     $credentialPath = "$( $script:CredentialRoot )/offline-db-password.cred"
     $workerContent = @"
 [Service]
@@ -1204,15 +1213,8 @@ LoadCredentialEncrypted=db-password:$credentialPath
 IPAddressDeny=any
 IPAddressAllow=localhost
 "@
-    $failCloseContent = @"
-[Service]
-LoadCredentialEncrypted=
-LoadCredentialEncrypted=db-password:$credentialPath
-"@
     Write-TextReplaceAtomic (Join-Path $workerDropIn 'offline.conf') $workerContent
-    Write-TextReplaceAtomic (Join-Path $failCloseDropIn 'offline.conf') $failCloseContent
     Set-OwnerMode (Join-Path $workerDropIn 'offline.conf') 'root:root' '644'
-    Set-OwnerMode (Join-Path $failCloseDropIn 'offline.conf') 'root:root' '644'
     Invoke-Native $script:SystemctlPath @('daemon-reload') | Out-Null
 }
 
@@ -1367,12 +1369,6 @@ function Prepare-FormalRun
         NQ_GATEW_RELEASE_ROOT = [string]$release.releaseRoot
         NQ_GATEW_RELEASE_ID = [string]$release.releaseId
         NQ_GATEW_RELEASE_MANIFEST_SHA256 = [string]$release.manifestSha256
-        NQ_GATEW_RUN_MODE = $RunMode
-        NQ_GATEW_SOAK_DB_URL = $DatabaseUrl
-        NQ_GATEW_SOAK_DB_USER = $DatabaseUser
-        NQ_GATEW_SOAK_DB_SCHEMA = $DatabaseSchema
-        NQ_GATEW_SECRET_SOURCE = 'SYSTEMD_CREDENTIALS'
-        NQ_GATEW_FORMAL_SYSTEMD = 'true'
     }
     Write-TextCreateOnce (Join-Path $controlRoot 'worker.env') (New-EnvironmentFileContent $workerValues)
     Write-TextCreateOnce (Join-Path $controlRoot 'failclose.env') (New-EnvironmentFileContent $failCloseValues)
@@ -1489,7 +1485,7 @@ function ConvertFrom-SystemctlShow
     foreach ($required in @(
         'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ExecMainStatus', 'FragmentPath',
         'User', 'Group', 'Restart', 'KillMode', 'RuntimeDirectory', 'StateDirectory',
-        'IPAddressDeny', 'IPAddressAllow'
+        'IPAddressDeny', 'IPAddressAllow', 'NRestarts', 'ExecMainStartTimestampMonotonic'
     ))
     {
         if (-not $values.ContainsKey($required))
@@ -1498,8 +1494,15 @@ function ConvertFrom-SystemctlShow
         }
     }
     $mainPid = 0L
+    $nRestarts = 0L
+    $execMainStartTimestampMonotonic = 0L
     $execStatusValue = 0
     [long]::TryParse([string]$values.MainPID, [ref]$mainPid) | Out-Null
+    [long]::TryParse([string]$values.NRestarts, [ref]$nRestarts) | Out-Null
+    [long]::TryParse(
+            [string]$values.ExecMainStartTimestampMonotonic,
+            [ref]$execMainStartTimestampMonotonic
+    ) | Out-Null
     [int]::TryParse([string]$values.ExecMainStatus, [ref]$execStatusValue) | Out-Null
     return [pscustomobject]@{
         LoadState = [string]$values.LoadState
@@ -1516,6 +1519,8 @@ function ConvertFrom-SystemctlShow
         StateDirectory = [string]$values.StateDirectory
         IPAddressDeny = [string]$values.IPAddressDeny
         IPAddressAllow = [string]$values.IPAddressAllow
+        NRestarts = $nRestarts
+        ExecMainStartTimestampMonotonic = $execMainStartTimestampMonotonic
     }
 }
 
@@ -1526,7 +1531,7 @@ function Get-UnitState
     $properties = @(
         'LoadState', 'ActiveState', 'SubState', 'MainPID', 'ExecMainStatus', 'FragmentPath',
         'User', 'Group', 'Restart', 'KillMode', 'RuntimeDirectory', 'StateDirectory',
-        'IPAddressDeny', 'IPAddressAllow'
+        'IPAddressDeny', 'IPAddressAllow', 'NRestarts', 'ExecMainStartTimestampMonotonic'
     )
     $result = Invoke-Native $script:SystemctlPath @(
         'show', $UnitName, '--no-pager', "--property=$( $properties -join ',' )"
@@ -1625,6 +1630,115 @@ function Wait-ForWorkerReady
     throw 'FAIL / WORKER_READY_TIMEOUT'
 }
 
+function Get-UnitStartSnapshotPath
+{
+    param([Parameter(Mandatory = $true)][string]$Value)
+    return "$( Get-ControlRoot $Value )/unit-start-snapshot.json"
+}
+
+function Assert-WorkerStartRecord
+{
+    param(
+        [Parameter(Mandatory = $true)]$Record,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
+
+    $fields = @('schemaVersion', 'runId', 'mainPid', 'unitName', 'startedAt')
+    $startedAt = [DateTimeOffset]::MinValue
+    if ((@($Record.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Record.schemaVersion -cne 'gatew-soak-worker-start-v1' -or
+            [string]$Record.runId -cne $Value -or
+            [long]$Record.mainPid -le 0 -or
+            [string]$Record.unitName -cne (Get-WorkerUnitName $Value) -or
+            -not [DateTimeOffset]::TryParse([string]$Record.startedAt, [ref]$startedAt) -or
+            $startedAt.Offset -ne [TimeSpan]::Zero)
+    {
+        throw 'FAIL / WORKER_START_RECORD_INVALID'
+    }
+    return $Record
+}
+
+function Assert-UnitStartSnapshot
+{
+    param(
+        [Parameter(Mandatory = $true)]$Snapshot,
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)][string]$ReleaseCommit
+    )
+
+    $fields = @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'nRestarts',
+        'execMainStartTimestampMonotonic', 'recordedAt', 'checksum'
+    )
+    $recordedAt = [DateTimeOffset]::MinValue
+    if ((@($Snapshot.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Snapshot.schemaVersion -cne 'gatew-soak-unit-start-v1' -or
+            [string]$Snapshot.runId -cne $Value -or
+            [string]$Snapshot.releaseCommit -cne $ReleaseCommit -or
+            [long]$Snapshot.mainPid -le 0 -or [long]$Snapshot.nRestarts -ne 0 -or
+            [long]$Snapshot.execMainStartTimestampMonotonic -le 0 -or
+            -not [DateTimeOffset]::TryParse([string]$Snapshot.recordedAt, [ref]$recordedAt) -or
+            [string]$Snapshot.checksum -cnotmatch '^[a-f0-9]{64}$')
+    {
+        throw 'FAIL / UNIT_START_SNAPSHOT_INVALID'
+    }
+    $expectedChecksum = Get-GateWRecordChecksum $Snapshot @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'nRestarts',
+        'execMainStartTimestampMonotonic', 'recordedAt'
+    )
+    if ([string]$Snapshot.checksum -cne $expectedChecksum)
+    {
+        throw 'FAIL / UNIT_START_SNAPSHOT_INVALID'
+    }
+    return $Snapshot
+}
+
+function Record-UnitStartSnapshot
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)]$State,
+        [Parameter(Mandatory = $true)]$Config
+    )
+
+    if ([long]$State.MainPID -le 0 -or [long]$State.NRestarts -ne 0 -or
+            [long]$State.ExecMainStartTimestampMonotonic -le 0)
+    {
+        throw 'FAIL / UNIT_START_SNAPSHOT_INVALID'
+    }
+    $workerStartPath = "$( Get-EvidenceRoot $Value )/worker-start.json"
+    $workerStart = Read-JsonFile $workerStartPath
+    Assert-WorkerStartRecord $workerStart $Value | Out-Null
+    if ([long]$workerStart.mainPid -ne [long]$State.MainPID)
+    {
+        throw 'FAIL / UNIT_START_SNAPSHOT_INVALID'
+    }
+    Set-OwnerMode $workerStartPath 'root:root' '600'
+    Assert-PosixContract $workerStartPath 'regular file' '600' 'root' 'root'
+    $record = [ordered]@{
+        schemaVersion = 'gatew-soak-unit-start-v1'
+        runId = $Value
+        releaseCommit = [string]$Config.sourceCommit
+        mainPid = [long]$State.MainPID
+        nRestarts = [long]$State.NRestarts
+        execMainStartTimestampMonotonic = [long]$State.ExecMainStartTimestampMonotonic
+        recordedAt = (Get-UtcNow).ToString('o')
+    }
+    $record.checksum = Get-GateWRecordChecksum ([pscustomobject]$record) @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'nRestarts',
+        'execMainStartTimestampMonotonic', 'recordedAt'
+    )
+    $created = Commit-CreateOnceJsonIdempotent `
+        (Get-UnitStartSnapshotPath $Value) $record 'UNIT_START_SNAPSHOT_CONFLICT'
+    $snapshot = Read-JsonFile (Get-UnitStartSnapshotPath $Value)
+    Assert-UnitStartSnapshot $snapshot $Value ([string]$Config.sourceCommit) | Out-Null
+    if (-not $created)
+    {
+        throw 'FAIL / SECOND_EXEC_MAIN_START'
+    }
+    return $snapshot
+}
+
 function Start-FormalRun
 {
     Assert-RootLinux
@@ -1649,6 +1763,7 @@ function Start-FormalRun
     $heartbeat = Wait-ForWorkerReady $RunId $requiredSequence
     $state = Get-UnitState (Get-WorkerUnitName $RunId)
     Assert-FormalWorkerState $state $RunId
+    $unitStart = Record-UnitStartSnapshot $RunId $state $config
     Set-LifecycleState $RunId 'RUNNING' 'FORMAL_WORKER_RUNNING' | Out-Null
     return [pscustomobject]@{
         decision = 'PASS / FORMAL_SYSTEMD_SOAK_STARTED'
@@ -1658,6 +1773,9 @@ function Start-FormalRun
         activeState = $state.ActiveState
         subState = $state.SubState
         mainPid = $state.MainPID
+        nRestarts = $state.NRestarts
+        execMainStartTimestampMonotonic = $state.ExecMainStartTimestampMonotonic
+        unitStartSnapshotChecksum = $unitStart.checksum
         heartbeatSequence = Get-HeartbeatSequence $heartbeat
         heartbeatObservedAt = $heartbeat.observedAt
         acceptanceClockStarted = $false
@@ -1746,6 +1864,76 @@ function Get-AcceptanceClockProjection
         acceptanceStartAt = [string]$record.acceptanceStartAt
         plannedAcceptanceAt = [string]$record.plannedAcceptanceAt
     }
+}
+
+function Get-AcceptanceClockBindingPath
+{
+    param([Parameter(Mandatory = $true)][string]$Value)
+    return "$( Get-ControlRoot $Value )/acceptance-clock-binding.json"
+}
+
+function Assert-AcceptanceClockBinding
+{
+    param(
+        [Parameter(Mandatory = $true)]$Binding,
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)]$Config
+    )
+
+    $fields = @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid',
+        'acceptanceClockSha256', 'boundAt', 'checksum'
+    )
+    $boundAt = [DateTimeOffset]::MinValue
+    if ((@($Binding.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Binding.schemaVersion -cne 'gatew-soak-acceptance-clock-binding-v1' -or
+            [string]$Binding.runId -cne $Value -or
+            [string]$Binding.releaseCommit -cne [string]$Config.sourceCommit -or
+            [long]$Binding.mainPid -le 0 -or
+            [string]$Binding.acceptanceClockSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+            -not [DateTimeOffset]::TryParse([string]$Binding.boundAt, [ref]$boundAt) -or
+            [string]$Binding.checksum -cnotmatch '^[a-f0-9]{64}$')
+    {
+        throw 'FAIL / ACCEPTANCE_CLOCK_BINDING_INVALID'
+    }
+    $expectedChecksum = Get-GateWRecordChecksum $Binding @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid',
+        'acceptanceClockSha256', 'boundAt'
+    )
+    if ([string]$Binding.checksum -cne $expectedChecksum -or
+            [string]$Binding.acceptanceClockSha256 -cne
+                    (Get-Sha256File (Get-AcceptanceClockPath $Value)))
+    {
+        throw 'FAIL / ACCEPTANCE_CLOCK_DRIFT'
+    }
+    return $Binding
+}
+
+function Commit-AcceptanceClockBinding
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)]$Config,
+        [Parameter(Mandatory = $true)][long]$MainPid
+    )
+
+    $record = [ordered]@{
+        schemaVersion = 'gatew-soak-acceptance-clock-binding-v1'
+        runId = $Value
+        releaseCommit = [string]$Config.sourceCommit
+        mainPid = $MainPid
+        acceptanceClockSha256 = Get-Sha256File (Get-AcceptanceClockPath $Value)
+        boundAt = (Get-UtcNow).ToString('o')
+    }
+    $record.checksum = Get-GateWRecordChecksum ([pscustomobject]$record) @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid',
+        'acceptanceClockSha256', 'boundAt'
+    )
+    Commit-CreateOnceJsonIdempotent `
+        (Get-AcceptanceClockBindingPath $Value) $record 'ACCEPTANCE_CLOCK_BINDING_CONFLICT' | Out-Null
+    $binding = Read-JsonFile (Get-AcceptanceClockBindingPath $Value)
+    Assert-AcceptanceClockBinding $binding $Value $Config | Out-Null
+    return $binding
 }
 
 function Commit-CreateOnceJsonIdempotent
@@ -1969,8 +2157,12 @@ function Start-AcceptanceClock
     Assert-RunId $RunId
     Assert-RunDirectoryContract $RunId
     $clockPath = Get-AcceptanceClockPath $RunId
+    $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
+    Assert-FrozenReleaseBinding $config | Out-Null
     if (Test-Path -LiteralPath $clockPath -PathType Leaf)
     {
+        $binding = Read-JsonFile (Get-AcceptanceClockBindingPath $RunId)
+        Assert-AcceptanceClockBinding $binding $RunId $config | Out-Null
         $projection = Get-AcceptanceClockProjection $RunId
         return [pscustomobject]@{
             decision = 'NO_CHANGE / ACCEPTANCE_CLOCK_ALREADY_STARTED'
@@ -1978,6 +2170,7 @@ function Start-AcceptanceClock
             acceptanceClockStarted = $projection.acceptanceClockStarted
             acceptanceStartAt = $projection.acceptanceStartAt
             plannedAcceptanceAt = $projection.plannedAcceptanceAt
+            acceptanceClockBindingChecksum = $binding.checksum
         }
     }
     $lifecycle = Read-JsonFile (Get-LifecyclePath $RunId)
@@ -1985,8 +2178,6 @@ function Start-AcceptanceClock
     {
         throw 'BLOCKED / RUN_NOT_RUNNING'
     }
-    $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
-    Assert-FrozenReleaseBinding $config | Out-Null
     $fresh = Read-JsonFile "$( Get-ControlRoot $RunId )/fresh-ssh-verification.json"
     $freshExpected = @(
         'schemaVersion', 'runId', 'mainPid', 'baselineHeartbeatSequence', 'observedHeartbeatSequence',
@@ -2034,6 +2225,7 @@ function Start-AcceptanceClock
     $created = Commit-CreateOnceJsonIdempotent $clockPath $record `
         'ACCEPTANCE_CLOCK_ALREADY_STARTED_DIFFERENT' "root:$( $script:LinuxRuntimeGroup )" '640'
     Set-OwnerMode $clockPath "root:$( $script:LinuxRuntimeGroup )" '640'
+    $binding = Commit-AcceptanceClockBinding $RunId $config $state.MainPID
     $projection = Get-AcceptanceClockProjection $RunId
     return [pscustomobject]@{
         decision = if ($created)
@@ -2048,6 +2240,7 @@ function Start-AcceptanceClock
         acceptanceClockStarted = $projection.acceptanceClockStarted
         acceptanceStartAt = $projection.acceptanceStartAt
         plannedAcceptanceAt = $projection.plannedAcceptanceAt
+        acceptanceClockBindingChecksum = $binding.checksum
     }
 }
 
@@ -2116,37 +2309,108 @@ function Show-FormalStatus
     $terminalPath = "$( Get-ControlRoot $RunId )/terminal-status.json"
     $terminal = if (Test-Path -LiteralPath $terminalPath -PathType Leaf)
     {
-        Read-JsonFile $terminalPath
+        $value = Read-JsonFile $terminalPath
+        Assert-GateWTerminalRecord $value | Out-Null
+        $value
     }
     else
     {
         $null
     }
     $clock = Get-AcceptanceClockProjection $RunId
+    $unitStartPath = Get-UnitStartSnapshotPath $RunId
+    $unitStart = if (Test-Path -LiteralPath $unitStartPath -PathType Leaf)
+    {
+        Read-JsonFile $unitStartPath
+    }
+    else
+    {
+        $null
+    }
+    $proofPath = "$( Get-ControlRoot $RunId )/acceptance-verification.json"
+    $proof = if (Test-Path -LiteralPath $proofPath -PathType Leaf)
+    {
+        $value = Read-JsonFile $proofPath
+        Assert-GateWAcceptanceProof $value | Out-Null
+        $value
+    }
+    else
+    {
+        $null
+    }
     return [pscustomobject]@{
         runId = $RunId
         lifecycleState = $lifecycle.state
+        acceptanceResult = if ($null -eq $terminal)
+        {
+            $null
+        }
+        else
+        {
+            $terminal.acceptanceResult
+        }
         terminalStatus = if ($null -eq $terminal)
         {
             $null
         }
         else
         {
-            $terminal.terminalStatus
+            Get-TerminalLifecycleStatus $terminal
+        }
+        terminalChecksum = if ($null -eq $terminal)
+        {
+            $null
+        }
+        else
+        {
+            $terminal.checksum
         }
         unitName = Get-WorkerUnitName $RunId
         loadState = $state.LoadState
         activeState = $state.ActiveState
         subState = $state.SubState
         mainPid = $state.MainPID
+        initialMainPid = if ($null -eq $unitStart)
+        {
+            $null
+        }
+        else
+        {
+            $unitStart.mainPid
+        }
+        nRestarts = $state.NRestarts
+        execMainStartTimestampMonotonic = $state.ExecMainStartTimestampMonotonic
+        initialExecMainStartTimestampMonotonic = if ($null -eq $unitStart)
+        {
+            $null
+        }
+        else
+        {
+            $unitStart.execMainStartTimestampMonotonic
+        }
         residualProcessCount = @(Get-ResidualWorkerProcesses $RunId).Count
         heartbeatSequence = $sequence
         heartbeatObservedAt = $heartbeat.observedAt
+        heartbeatState = $heartbeat.state
+        heartbeatReasonCode = $heartbeat.reasonCode
         unitFragmentPath = $state.FragmentPath
         unitUser = $state.User
         acceptanceClockStarted = $clock.acceptanceClockStarted
         acceptanceStartAt = $clock.acceptanceStartAt
         plannedAcceptanceAt = $clock.plannedAcceptanceAt
+        completionMarkerExists = Test-Path -LiteralPath `
+            "$( Get-EvidenceRoot $RunId )/completion-marker.json" -PathType Leaf
+        acceptanceVerified = $null -ne $proof
+        acceptanceProofChecksum = if ($null -eq $proof)
+        {
+            $null
+        }
+        else
+        {
+            $proof.checksum
+        }
+        exitFactExists = Test-Path -LiteralPath `
+            "$( Get-ControlRoot $RunId )/exit-fact.json" -PathType Leaf
     }
 }
 
@@ -2170,6 +2434,84 @@ function Wait-ForTerminal
     throw 'FAIL / TERMINAL_STATUS_TIMEOUT'
 }
 
+function Get-TerminalLifecycleStatus
+{
+    param([Parameter(Mandatory = $true)]$Terminal)
+
+    Assert-GateWTerminalRecord $Terminal | Out-Null
+    if ([string]$Terminal.acceptanceResult -ceq 'ACCEPTED_168H_READONLY_SOAK')
+    {
+        return 'COMPLETED'
+    }
+    if ([string]$Terminal.stopClassification -ceq 'AUTHORIZED_CONTROLLED_STOP')
+    {
+        $intentPath = "$( Get-ControlRoot ([string]$Terminal.runId) )/stop-intent.json"
+        if (Test-Path -LiteralPath $intentPath -PathType Leaf)
+        {
+            $intent = Read-JsonFile $intentPath
+            Assert-GateWStopIntentRecord $intent | Out-Null
+            if ([string]$intent.checksum -ceq [string]$Terminal.stopIntentChecksum -and
+                    [string]$intent.reasonCode -ceq 'OPERATOR_STOP_REQUESTED')
+            {
+                return 'OPERATOR_STOPPED'
+            }
+        }
+    }
+    return 'FAILURE_STOPPED'
+}
+
+function Get-EffectiveRequesterUid
+{
+    $sudoUid = [Environment]::GetEnvironmentVariable('SUDO_UID', 'Process')
+    $parsed = 0L
+    if (-not [string]::IsNullOrWhiteSpace($sudoUid) -and
+            [long]::TryParse($sudoUid, [ref]$parsed) -and $parsed -ge 0)
+    {
+        return $parsed
+    }
+    $result = Invoke-Native $script:IdPath @('-u')
+    if ($result.ExitCode -ne 0 -or
+            -not [long]::TryParse((ConvertTo-TrimmedOutput $result.Lines), [ref]$parsed) -or
+            $parsed -lt 0)
+    {
+        throw 'FAIL / REQUESTER_UID_UNAVAILABLE'
+    }
+    return $parsed
+}
+
+function Write-ControlledStopIntent
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)][string]$ReasonCode
+    )
+
+    $path = "$( Get-ControlRoot $Value )/stop-intent.json"
+    if (Test-Path -LiteralPath $path -PathType Leaf)
+    {
+        $existing = Read-JsonFile $path
+        Assert-GateWStopIntentRecord $existing | Out-Null
+        if ([string]$existing.runId -cne $Value -or [string]$existing.reasonCode -cne $ReasonCode)
+        {
+            throw 'BLOCKED / STOP_INTENT_CONFLICT'
+        }
+        return $existing
+    }
+    $config = Read-JsonFile "$( Get-ControlRoot $Value )/frozen-config.json"
+    Assert-FrozenReleaseBinding $config | Out-Null
+    $requestedAt = (Get-UtcNow).ToString('o')
+    $requestId = 'gatew-stop-{0}-{1}' -f
+    ([DateTimeOffset]::Parse($requestedAt).ToString('yyyyMMddTHHmmssZ')),
+    ([Guid]::NewGuid().ToString('N').Substring(0, 8))
+    $record = New-GateWStopIntentRecord `
+        $Value $requestId $requestedAt (Get-EffectiveRequesterUid) $ReasonCode ([string]$config.sourceCommit)
+    Write-JsonCreateOnce $path $record
+    Set-OwnerMode $path 'root:root' '600'
+    $written = Read-JsonFile $path
+    Assert-GateWStopIntentRecord $written | Out-Null
+    return $written
+}
+
 function Request-OperatorStop
 {
     Assert-RootLinux
@@ -2178,7 +2520,13 @@ function Request-OperatorStop
     if (Test-Path -LiteralPath $terminalPath -PathType Leaf)
     {
         $terminal = Read-JsonFile $terminalPath
-        return [pscustomobject]@{ decision = 'NO_CHANGE / TERMINAL_RUN'; runId = $RunId; terminalStatus = $terminal.terminalStatus }
+        Assert-GateWTerminalRecord $terminal | Out-Null
+        return [pscustomobject]@{
+            decision = 'NO_CHANGE / TERMINAL_RUN'
+            runId = $RunId
+            terminalStatus = Get-TerminalLifecycleStatus $terminal
+            acceptanceResult = [string]$terminal.acceptanceResult
+        }
     }
     $lock = Enter-TerminalAuthorityLock $RunId
     try
@@ -2186,10 +2534,12 @@ function Request-OperatorStop
         if (Test-Path -LiteralPath $terminalPath -PathType Leaf)
         {
             $terminal = Read-JsonFile $terminalPath
+            Assert-GateWTerminalRecord $terminal | Out-Null
             return [pscustomobject]@{
                 decision = 'NO_CHANGE / TERMINAL_RUN'
                 runId = $RunId
-                terminalStatus = $terminal.terminalStatus
+                terminalStatus = Get-TerminalLifecycleStatus $terminal
+                acceptanceResult = [string]$terminal.acceptanceResult
             }
         }
         $lifecycle = Read-JsonFile (Get-LifecyclePath $RunId)
@@ -2197,14 +2547,7 @@ function Request-OperatorStop
         {
             throw 'BLOCKED / RUN_NOT_OPERATOR_STOPPABLE'
         }
-        Write-JsonCreateOnce "$( Get-ControlRoot $RunId )/intent.json" ([ordered]@{
-            schemaVersion = 'gatew-soak-intent-v1'
-            runId = $RunId
-            intent = 'OPERATOR_STOP'
-            reasonCode = 'OPERATOR_STOP_REQUESTED'
-            requestedAt = (Get-UtcNow).ToString('o')
-        })
-        Set-OwnerMode "$( Get-ControlRoot $RunId )/intent.json" 'root:root' '600'
+        $intent = Write-ControlledStopIntent $RunId 'OPERATOR_STOP_REQUESTED'
         Set-LifecycleState $RunId 'OPERATOR_STOPPING' 'OPERATOR_STOP_REQUESTED' | Out-Null
     }
     finally
@@ -2221,17 +2564,20 @@ function Request-OperatorStop
         throw 'FAIL / FAILCLOSE_FINALIZER_START_FAILED'
     }
     $terminal = Wait-ForTerminal $RunId
-    if ([string]$terminal.terminalStatus -ne 'OPERATOR_STOPPED')
+    Assert-GateWTerminalRecord $terminal | Out-Null
+    if ([string]$terminal.stopClassification -ne 'AUTHORIZED_CONTROLLED_STOP' -or
+            [string]$terminal.acceptanceResult -notin @(
+                'REJECTED_RUNTIME_EXIT', 'REJECTED_INSUFFICIENT_DURATION'
+            ))
     {
         throw 'FAIL / OPERATOR_STOP_NOT_PROVEN'
     }
     return [pscustomobject]@{
-        decision = 'PASS / OPERATOR_STOPPED'
+        decision = 'PASS / AUTHORIZED_CONTROLLED_STOP_REJECTED'
         runId = $RunId
-        terminalStatus = $terminal.terminalStatus
-        killSwitchObservedState = $terminal.killSwitchObservedState
-        mainPid = $terminal.lastKnownMainPid
-        residualProcessCount = $terminal.residualProcessCount
+        acceptanceResult = $terminal.acceptanceResult
+        stopClassification = $terminal.stopClassification
+        stopIntentChecksum = $intent.checksum
     }
 }
 
@@ -2251,19 +2597,25 @@ function Inject-OfflineFailure
     Write-TextCreateOnce $path 'CONTROLLED_OFFLINE_CYCLE_3_FAILURE'
     Set-OwnerMode $path "root:$( $script:LinuxRuntimeGroup )" '440'
     $terminal = Wait-ForTerminal $RunId
-    if ([string]$terminal.terminalStatus -ne 'FAILURE_STOPPED')
+    Assert-GateWTerminalRecord $terminal | Out-Null
+    $terminalStatus = Get-TerminalLifecycleStatus $terminal
+    if ($terminalStatus -cne 'FAILURE_STOPPED' -or
+            [string]$terminal.acceptanceResult -cne 'REJECTED_RUNTIME_EXIT')
     {
         throw 'FAIL / OFFLINE_FAILURE_STOP_NOT_PROVEN'
     }
+    $exitFact = Read-JsonFile "$( Get-ControlRoot $RunId )/exit-fact.json"
     return [pscustomobject]@{
         decision = 'PASS / CONTROLLED_OFFLINE_FAILURE_CLOSED'
         runId = $RunId
-        terminalStatus = $terminal.terminalStatus
+        terminalStatus = $terminalStatus
+        acceptanceResult = [string]$terminal.acceptanceResult
         terminalReasonCode = $terminal.terminalReasonCode
-        killSwitchRecoveryStatus = $terminal.killSwitchRecoveryStatus
-        killSwitchObservedState = $terminal.killSwitchObservedState
-        mainPid = $terminal.lastKnownMainPid
-        residualProcessCount = $terminal.residualProcessCount
+        stopClassification = [string]$terminal.stopClassification
+        killSwitchRecoveryStatus = 'NOT_PERFORMED_LIGHTWEIGHT_FAILCLOSE'
+        killSwitchObservedState = 'NOT_VERIFIED'
+        mainPid = [long]$exitFact.lastKnownMainPid
+        residualProcessCount = @(Get-ResidualWorkerProcesses $RunId).Count
     }
 }
 
@@ -2315,133 +2667,494 @@ function Invoke-WorkerEvidenceVerify
     }
 }
 
-function Verify-FormalRun
+function Verify-FormalEvidence
 {
     Assert-RootLinux
     Assert-RunId $RunId
     Assert-RunDirectoryContract $RunId
     $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
-    Assert-FrozenReleaseBinding $config | Out-Null
-    $lifecycle = Read-JsonFile (Get-LifecyclePath $RunId)
-    $state = Get-UnitState (Get-WorkerUnitName $RunId)
-    Assert-FormalWorkerState $state $RunId -AllowInactive
+    $identity = Assert-FrozenReleaseBinding $config
     $evidence = Invoke-WorkerEvidenceVerify $RunId
-    $terminalPath = "$( Get-ControlRoot $RunId )/terminal-status.json"
-    $terminal = if (Test-Path -LiteralPath $terminalPath -PathType Leaf)
+    if ([string]$evidence.result -cne 'PASS / HASH_CHAIN_VERIFIED' -or
+            [long]$evidence.sampleCount -lt 0 -or
+            [long]$evidence.forbiddenEndpointCount -lt 0 -or
+            [long]$evidence.fallbackSamples -lt 0 -or
+            [long]$evidence.rawResponseCount -lt 0 -or
+            [long]$evidence.secretExposureCount -lt 0 -or
+            [string]$evidence.lastHash -cnotmatch '^[a-f0-9]{64}$')
     {
-        Read-JsonFile $terminalPath
+        throw 'FAIL / FORMAL_EVIDENCE_INVALID'
+    }
+    $manifestPath = "$( Get-EvidenceRoot $RunId )/manifest.json"
+    return [pscustomobject][ordered]@{
+        decision = 'PASS / FORMAL_EVIDENCE_VERIFIED'
+        runId = $RunId
+        releaseCommit = [string]$identity.sourceCommit
+        immutableRelease = [string]$identity.decision
+        hashChain = [string]$evidence.result
+        sampleCount = [long]$evidence.sampleCount
+        lastHash = [string]$evidence.lastHash
+        evidenceSchemaVersion = [string]$evidence.evidenceSchemaVersion
+        forbiddenEndpointCount = [long]$evidence.forbiddenEndpointCount
+        fallbackCount = [long]$evidence.fallbackSamples
+        rawResponseCount = [long]$evidence.rawResponseCount
+        secretExposureCount = [long]$evidence.secretExposureCount
+        evidenceManifestSha256 = Get-Sha256File $manifestPath
+    }
+}
+
+function Get-AcceptanceSampleProjection
+{
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $lastValidSampleAt = $null
+    $sampleCount = 0L
+    $allKillSwitchEngaged = $true
+    foreach ($line in Get-Content -LiteralPath "$( Get-EvidenceRoot $Value )/samples.jsonl")
+    {
+        if ( [string]::IsNullOrWhiteSpace($line))
+        {
+            continue
+        }
+        $sample = ConvertFrom-JsonPreservingTimestamps $line
+        $sampleCount++
+        if ([string]$sample.killSwitchObservedState -cne 'ENGAGED')
+        {
+            $allKillSwitchEngaged = $false
+        }
+        if ([string]$sample.resultStatus -ceq 'PASSED_READ_ONLY' -and
+                [bool]$sample.realCycleOutcomeProven -and
+                [string]$sample.accountConfigProbeStatus -ceq 'SUCCEEDED' -and
+                [string]$sample.balanceProbeStatus -ceq 'SUCCEEDED')
+        {
+            $lastValidSampleAt = ConvertTo-UtcRfc3339 $sample.observedAt
+        }
+    }
+    return [pscustomobject]@{
+        sampleCount = $sampleCount
+        lastValidSampleAt = $lastValidSampleAt
+        allSamplesKillSwitchEngaged = $allKillSwitchEngaged
+    }
+}
+
+function Test-AcceptanceCompletionMarker
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)][long]$SampleCount,
+        [Parameter(Mandatory = $true)][string]$LastValidSampleAt
+    )
+
+    $path = "$( Get-EvidenceRoot $Value )/completion-marker.json"
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf))
+    {
+        return $false
+    }
+    try
+    {
+        $marker = Read-JsonFile $path
+        $completedAt = [DateTimeOffset]::MinValue
+        $lastSample = [DateTimeOffset]::MinValue
+        return (@($marker.PSObject.Properties.Name) -join '|') -ceq
+                'schemaVersion|runId|lastSuccessfulCycleSequence|lastHeartbeatSequence|completedAt' -and
+                [string]$marker.schemaVersion -ceq 'gatew-soak-completion-marker-v1' -and
+                [string]$marker.runId -ceq $Value -and
+                [long]$marker.lastSuccessfulCycleSequence -eq $SampleCount -and
+                [long]$marker.lastHeartbeatSequence -eq $SampleCount -and
+                [DateTimeOffset]::TryParse([string]$marker.completedAt, [ref]$completedAt) -and
+                [DateTimeOffset]::TryParse($LastValidSampleAt, [ref]$lastSample) -and
+                $completedAt -ge $lastSample
+    }
+    catch
+    {
+        return $false
+    }
+}
+
+function New-FormalAcceptanceSnapshot
+{
+    Assert-RootLinux
+    Assert-RunId $RunId
+    Assert-RunDirectoryContract $RunId
+    $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
+    if ([string]$config.runMode -cne 'REAL_READONLY_SOAK')
+    {
+        throw 'BLOCKED / REAL_ACCEPTANCE_MODE_REQUIRED'
+    }
+    $identity = Assert-FrozenReleaseBinding $config
+    $unitStart = Read-JsonFile (Get-UnitStartSnapshotPath $RunId)
+    Assert-UnitStartSnapshot $unitStart $RunId ([string]$config.sourceCommit) | Out-Null
+    $workerStartPath = "$( Get-EvidenceRoot $RunId )/worker-start.json"
+    Assert-PosixContract $workerStartPath 'regular file' '600' 'root' 'root'
+    $workerStartFiles = @(Get-ChildItem -LiteralPath (Get-EvidenceRoot $RunId) `
+        -File -Filter 'worker-start*.json')
+    $workerStart = Read-JsonFile $workerStartPath
+    Assert-WorkerStartRecord $workerStart $RunId | Out-Null
+    $clock = Read-JsonFile (Get-AcceptanceClockPath $RunId)
+    Assert-AcceptanceClockRecord $clock $RunId
+    $clockBinding = Read-JsonFile (Get-AcceptanceClockBindingPath $RunId)
+    Assert-AcceptanceClockBinding $clockBinding $RunId $config | Out-Null
+    $evidence = Verify-FormalEvidence
+    $samples = Get-AcceptanceSampleProjection $RunId
+    $heartbeat = Read-JsonFile "$( Get-EvidenceRoot $RunId )/heartbeat.json"
+    $state = Get-UnitState (Get-WorkerUnitName $RunId)
+    $lastValidSampleAt = if ( [string]::IsNullOrWhiteSpace([string]$samples.lastValidSampleAt))
+    {
+        '1970-01-01T00:00:00.0000000Z'
     }
     else
     {
-        $null
+        [string]$samples.lastValidSampleAt
     }
-    $historicalImmutable = Test-HistoricalEvidenceImmutable $RunId
-    $clock = Get-AcceptanceClockProjection $RunId
-    if ($null -ne $terminal)
-    {
-        Assert-PosixContract $terminalPath 'regular file' '600' 'root' 'root'
-        if (-not $historicalImmutable -or -not [bool]$terminal.historicalEvidenceImmutable)
-        {
-            throw 'FAIL / HISTORICAL_EVIDENCE_CHANGED'
-        }
-        $residualProcessCount = @(Get-ResidualWorkerProcesses $RunId).Count
-        $runtimeDirectoryPresent = Test-Path -LiteralPath (Get-RuntimeRoot $RunId)
-        if ($state.ActiveState -ne 'inactive' -or $state.MainPID -ne 0 -or
-                $residualProcessCount -ne 0 -or $runtimeDirectoryPresent)
-        {
-            throw 'FAIL / TERMINAL_PROCESS_CONTRACT_INVALID'
-        }
-    }
-    if ([string]$config.runMode -eq 'OFFLINE_ISOLATED_ACCEPTANCE')
-    {
-        if ($null -eq $terminal -or [string]$lifecycle.state -ne 'FAILURE_STOPPED' -or
-                [string]$terminal.terminalStatus -ne 'FAILURE_STOPPED' -or
-                [string]$terminal.killSwitchRecoveryStatus -notin @(
-                    'ENGAGE_NOT_REQUIRED_ALREADY_ENGAGED', 'ENGAGE_SUCCEEDED'
-                ) -or [string]$terminal.killSwitchObservedState -ne 'ENGAGED' -or
-                [long]$terminal.lastSuccessfulCycleSequence -ne 2 -or
-                [long]$terminal.lastHeartbeatSequence -ne 3 -or
-                -not [bool]$terminal.acceptanceClockStarted -or
-                [string]$terminal.acceptanceStartAt -ne [string]$clock.acceptanceStartAt -or
-                [string]$terminal.plannedAcceptanceAt -ne [string]$clock.plannedAcceptanceAt -or
-                [bool]$terminal.credentialAccessed -or [bool]$terminal.networkCalled -or
-                $null -eq $evidence.offlineAcceptance -or
-                [int]$evidence.offlineAcceptance.cycleCount -ne 3 -or
-                [string]$evidence.offlineAcceptance.cycle1 -ne 'PASS' -or
-                [string]$evidence.offlineAcceptance.cycle2 -ne 'PASS' -or
-                [string]$evidence.offlineAcceptance.cycle3 -ne 'CONTROLLED_FAILURE' -or
-                [bool]$evidence.offlineAcceptance.credentialAccessed -or
-                [bool]$evidence.offlineAcceptance.networkCalled)
-        {
-            throw 'FAIL / FULL_OFFLINE_ACCEPTANCE_NOT_PROVEN'
-        }
-    }
-    if ($CleanupOfflineDropIn)
-    {
-        Remove-OfflineDropIns $RunId
-    }
-    return [pscustomobject]@{
-        decision = 'PASS / FORMAL_SOAK_VERIFIED'
+    $acceptanceStart = [DateTimeOffset]::Parse([string]$clock.acceptanceStartAt)
+    $lastValidSample = [DateTimeOffset]::Parse($lastValidSampleAt)
+    $observedDuration = [Math]::Max(0.0, ($lastValidSample - $acceptanceStart).TotalSeconds)
+    return [pscustomobject][ordered]@{
+        schemaVersion = 'gatew-soak-acceptance-snapshot-v1'
         runId = $RunId
-        lifecycleState = $lifecycle.state
-        terminalStatus = if ($null -eq $terminal)
-        {
-            $null
-        }
-        else
-        {
-            $terminal.terminalStatus
-        }
-        hashChain = $evidence.result
-        sampleCount = $evidence.sampleCount
-        cycle1 = if ($null -eq $evidence.offlineAcceptance)
-        {
-            $null
-        }
-        else
-        {
-            $evidence.offlineAcceptance.cycle1
-        }
-        cycle2 = if ($null -eq $evidence.offlineAcceptance)
-        {
-            $null
-        }
-        else
-        {
-            $evidence.offlineAcceptance.cycle2
-        }
-        cycle3 = if ($null -eq $evidence.offlineAcceptance)
-        {
-            $null
-        }
-        else
-        {
-            $evidence.offlineAcceptance.cycle3
-        }
-        killSwitchRecoveryStatus = if ($null -eq $terminal)
-        {
-            $null
-        }
-        else
-        {
-            $terminal.killSwitchRecoveryStatus
-        }
-        killSwitchObservedState = if ($null -eq $terminal)
-        {
-            $null
-        }
-        else
-        {
-            $terminal.killSwitchObservedState
-        }
-        mainPid = $state.MainPID
-        residualProcessCount = @(Get-ResidualWorkerProcesses $RunId).Count
-        runtimeDirectoryPresent = Test-Path -LiteralPath (Get-RuntimeRoot $RunId)
-        historicalEvidenceImmutable = $historicalImmutable
-        acceptanceClockStarted = $clock.acceptanceClockStarted
-        acceptanceStartAt = $clock.acceptanceStartAt
-        plannedAcceptanceAt = $clock.plannedAcceptanceAt
+        releaseCommit = [string]$config.sourceCommit
+        unitActiveState = [string]$state.ActiveState
+        unitSubState = [string]$state.SubState
+        mainPid = [long]$state.MainPID
+        initialMainPid = [long]$unitStart.mainPid
+        workerStartMainPid = [long]$workerStart.mainPid
+        nRestarts = [long]$state.NRestarts
+        execMainStartTimestampMonotonic = [long]$state.ExecMainStartTimestampMonotonic
+        initialExecMainStartTimestampMonotonic = [long]$unitStart.execMainStartTimestampMonotonic
+        workerStartCount = $workerStartFiles.Count
+        earlyExitFactExists = Test-Path -LiteralPath "$( Get-ControlRoot $RunId )/exit-fact.json"
+        completionMarkerValid = Test-AcceptanceCompletionMarker `
+            $RunId ([long]$samples.sampleCount) $lastValidSampleAt
+        acceptanceStartAt = [string]$clock.acceptanceStartAt
+        plannedAcceptanceAt = [string]$clock.plannedAcceptanceAt
+        clockMainPid = [long]$clock.mainPid
+        clockRecordSha256 = Get-Sha256File (Get-AcceptanceClockPath $RunId)
+        expectedClockRecordSha256 = [string]$clockBinding.acceptanceClockSha256
+        observedDurationSeconds = $observedDuration
+        requiredDurationSeconds = 604800.0
+        lastValidSampleAt = $lastValidSampleAt
+        heartbeatObservedAt = [string]$heartbeat.observedAt
+        evidenceDecision = [string]$evidence.decision
+        immutableReleaseDecision = [string]$identity.decision
+        sampleCount = [long]$evidence.sampleCount
+        forbiddenEndpointCount = [long]$evidence.forbiddenEndpointCount
+        fallbackCount = [long]$evidence.fallbackCount
+        rawResponseCount = [long]$evidence.rawResponseCount
+        secretExposureCount = [long]$evidence.secretExposureCount
+        allSamplesKillSwitchEngaged = [bool]$samples.allSamplesKillSwitchEngaged
+        evidenceManifestSha256 = [string]$evidence.evidenceManifestSha256
+        evidenceFinalChainHash = [string]$evidence.lastHash
     }
+}
+
+function Verify-FormalAcceptance
+{
+    $snapshot = New-FormalAcceptanceSnapshot
+    $result = Test-GateWAcceptanceSnapshot $snapshot
+    if (-not [bool]$result.accepted)
+    {
+        return [pscustomobject][ordered]@{
+            decision = [string]$result.decision
+            runId = $RunId
+            failureCodes = @($result.failureCodes)
+            observedDurationSeconds = [double]$result.observedDurationSeconds
+            requiredDurationSeconds = [double]$result.requiredDurationSeconds
+            acceptanceProofChecksum = $null
+        }
+    }
+    $path = "$( Get-ControlRoot $RunId )/acceptance-verification.json"
+    $proof = if (Test-Path -LiteralPath $path -PathType Leaf)
+    {
+        $existing = Read-JsonFile $path
+        Assert-GateWAcceptanceProof $existing | Out-Null
+        if ([string]$existing.runId -cne [string]$snapshot.runId -or
+                [string]$existing.releaseCommit -cne [string]$snapshot.releaseCommit -or
+                [long]$existing.mainPid -ne [long]$snapshot.mainPid -or
+                [long]$existing.nRestarts -ne [long]$snapshot.nRestarts -or
+                [long]$existing.execMainStartTimestampMonotonic -ne
+                        [long]$snapshot.execMainStartTimestampMonotonic -or
+                [string]$existing.acceptanceStartAt -cne [string]$snapshot.acceptanceStartAt -or
+                [string]$existing.plannedAcceptanceAt -cne [string]$snapshot.plannedAcceptanceAt -or
+                [double]$existing.observedDurationSeconds -ne
+                        [double]$snapshot.observedDurationSeconds -or
+                [string]$existing.lastValidSampleAt -cne [string]$snapshot.lastValidSampleAt -or
+                [string]$existing.evidenceManifestSha256 -cne
+                        [string]$snapshot.evidenceManifestSha256 -or
+                [string]$existing.evidenceFinalChainHash -cne
+                        [string]$snapshot.evidenceFinalChainHash)
+        {
+            throw 'BLOCKED / ACCEPTANCE_PROOF_CONFLICT'
+        }
+        $existing
+    }
+    else
+    {
+        $newProof = New-GateWAcceptanceProof `
+            -Snapshot $snapshot `
+            -VerifiedAt ((Get-UtcNow).ToString('o'))
+        Write-JsonCreateOnce $path $newProof
+        Set-OwnerMode $path 'root:root' '600'
+        $newProof
+    }
+    return [pscustomobject][ordered]@{
+        decision = 'PASS / FORMAL_SOAK_ACCEPTANCE_VERIFIED'
+        runId = $RunId
+        releaseCommit = $snapshot.releaseCommit
+        mainPid = $snapshot.mainPid
+        nRestarts = $snapshot.nRestarts
+        observedDurationSeconds = $snapshot.observedDurationSeconds
+        requiredDurationSeconds = $snapshot.requiredDurationSeconds
+        lastValidSampleAt = $snapshot.lastValidSampleAt
+        heartbeatObservedAt = $snapshot.heartbeatObservedAt
+        evidenceManifestSha256 = $snapshot.evidenceManifestSha256
+        evidenceFinalChainHash = $snapshot.evidenceFinalChainHash
+        acceptanceProofChecksum = $proof.checksum
+    }
+}
+
+function Verify-FormalTerminal
+{
+    Assert-RootLinux
+    Assert-RunId $RunId
+    Assert-RunDirectoryContract $RunId
+    $controlRoot = Get-ControlRoot $RunId
+    $path = "$controlRoot/terminal-status.json"
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf))
+    {
+        throw 'FAIL / TERMINAL_STATUS_MISSING'
+    }
+    $terminalCandidates = @(Get-ChildItem -LiteralPath $controlRoot `
+        -File -Filter 'terminal-status*.json')
+    if ($terminalCandidates.Count -ne 1 -or
+            [IO.Path]::GetFullPath([string]$terminalCandidates[0].FullName) -cne
+                    [IO.Path]::GetFullPath($path))
+    {
+        throw 'FAIL / TERMINAL_RESULT_CONFLICT'
+    }
+    $terminal = Read-JsonFile $path
+    Assert-GateWTerminalRecord $terminal | Out-Null
+    $config = Read-JsonFile "$controlRoot/frozen-config.json"
+    $identity = Assert-FrozenReleaseBinding $config
+    if ([string]$terminal.runId -cne $RunId -or
+            [string]$terminal.releaseCommit -cne [string]$identity.sourceCommit)
+    {
+        throw 'FAIL / TERMINAL_RELEASE_BINDING_INVALID'
+    }
+    $clock = Get-AcceptanceClockProjection $RunId
+    if ([bool]$clock.acceptanceClockStarted)
+    {
+        $clockBinding = Read-JsonFile (Get-AcceptanceClockBindingPath $RunId)
+        Assert-AcceptanceClockBinding $clockBinding $RunId $config | Out-Null
+    }
+    if ([bool]$clock.acceptanceClockStarted -and
+            ([string]$terminal.acceptanceStartAt -cne [string]$clock.acceptanceStartAt -or
+                    [string]$terminal.plannedAcceptanceAt -cne [string]$clock.plannedAcceptanceAt))
+    {
+        throw 'FAIL / TERMINAL_CLOCK_BINDING_INVALID'
+    }
+    if (-not [bool]$clock.acceptanceClockStarted -and
+            ($null -ne $terminal.acceptanceStartAt -or $null -ne $terminal.plannedAcceptanceAt))
+    {
+        throw 'FAIL / TERMINAL_CLOCK_BINDING_INVALID'
+    }
+    if ([string]$terminal.acceptanceResult -ceq 'ACCEPTED_168H_READONLY_SOAK')
+    {
+        $proofPath = "$( Get-ControlRoot $RunId )/acceptance-verification.json"
+        if (-not (Test-Path -LiteralPath $proofPath -PathType Leaf))
+        {
+            throw 'BLOCKED / ACCEPTANCE_VERIFY_REQUIRED'
+        }
+        $proof = Read-JsonFile $proofPath
+        Assert-GateWAcceptanceProof $proof | Out-Null
+        if ([string]$terminal.terminalReasonCode -cne 'ACCEPTANCE_RESULT_FINALIZED' -or
+                [string]$proof.runId -cne [string]$terminal.runId -or
+                [string]$proof.releaseCommit -cne [string]$terminal.releaseCommit -or
+                [string]$proof.acceptanceStartAt -cne [string]$terminal.acceptanceStartAt -or
+                [string]$proof.plannedAcceptanceAt -cne [string]$terminal.plannedAcceptanceAt -or
+                [string]$terminal.acceptanceVerificationChecksum -cne [string]$proof.checksum -or
+                [string]$terminal.evidenceManifestSha256 -cne [string]$proof.evidenceManifestSha256 -or
+                [string]$terminal.evidenceFinalChainHash -cne [string]$proof.evidenceFinalChainHash)
+        {
+            throw 'FAIL / TERMINAL_ACCEPTANCE_BINDING_INVALID'
+        }
+    }
+    if ([string]$terminal.stopClassification -ceq 'AUTHORIZED_CONTROLLED_STOP')
+    {
+        $intentPath = "$controlRoot/stop-intent.json"
+        if (-not (Test-Path -LiteralPath $intentPath -PathType Leaf))
+        {
+            throw 'FAIL / TERMINAL_STOP_INTENT_BINDING_INVALID'
+        }
+        $intent = Read-JsonFile $intentPath
+        Assert-GateWStopIntentRecord $intent | Out-Null
+        $requestedAt = [DateTimeOffset]::Parse([string]$intent.requestedAt)
+        $finalizedAt = [DateTimeOffset]::Parse([string]$terminal.finalizedAt)
+        if (([string]$intent.runId -cne [string]$terminal.runId) -or
+                ([string]$intent.releaseCommit -cne [string]$terminal.releaseCommit) -or
+                ([string]$intent.checksum -cne [string]$terminal.stopIntentChecksum) -or
+                ([string]$intent.reasonCode -cnotin @(
+                    'OPERATOR_STOP_REQUESTED', 'ACCEPTANCE_FINALIZATION'
+                )) -or $requestedAt -gt $finalizedAt -or
+                (($finalizedAt - $requestedAt).TotalSeconds -gt
+                        $script:StopIntentMaxAgeSeconds -or
+                (([string]$terminal.acceptanceResult -ceq 'ACCEPTED_168H_READONLY_SOAK') -and
+                        ([string]$intent.reasonCode -cne 'ACCEPTANCE_FINALIZATION'))))
+        {
+            throw 'FAIL / TERMINAL_STOP_INTENT_BINDING_INVALID'
+        }
+    }
+    $state = Get-UnitState (Get-WorkerUnitName $RunId)
+    Assert-FormalWorkerState $state $RunId -AllowInactive
+    if ([string]$state.ActiveState -cne 'inactive' -or [long]$state.MainPID -ne 0)
+    {
+        throw 'FAIL / TERMINAL_PROCESS_CONTRACT_INVALID'
+    }
+    return [pscustomobject][ordered]@{
+        decision = 'PASS / FORMAL_TERMINAL_VERIFIED'
+        runId = $RunId
+        acceptanceResult = [string]$terminal.acceptanceResult
+        terminalChecksum = [string]$terminal.checksum
+        releaseCommit = [string]$terminal.releaseCommit
+        stopClassification = [string]$terminal.stopClassification
+    }
+}
+
+function Complete-AcceptedLifecycle
+{
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $lifecycle = Read-JsonFile (Get-LifecyclePath $Value)
+    if ([string]$lifecycle.state -ceq 'COMPLETED')
+    {
+        return $lifecycle
+    }
+    if ([string]$lifecycle.state -cne 'RUNNING')
+    {
+        throw 'BLOCKED / TERMINAL_LIFECYCLE_CONFLICT'
+    }
+    return Set-LifecycleState $Value 'COMPLETED' 'ACCEPTANCE_RESULT_FINALIZED'
+}
+
+function Finalize-FormalAcceptance
+{
+    Assert-RootLinux
+    Assert-RunId $RunId
+    Assert-RunDirectoryContract $RunId
+    $lock = Enter-TerminalAuthorityLock $RunId
+    try
+    {
+        $terminalPath = "$( Get-ControlRoot $RunId )/terminal-status.json"
+        if (Test-Path -LiteralPath $terminalPath -PathType Leaf)
+        {
+            $existing = Read-JsonFile $terminalPath
+            Assert-GateWTerminalRecord $existing | Out-Null
+            $proofPath = "$( Get-ControlRoot $RunId )/acceptance-verification.json"
+            if (-not (Test-Path -LiteralPath $proofPath -PathType Leaf))
+            {
+                throw 'BLOCKED / ACCEPTANCE_VERIFY_REQUIRED'
+            }
+            $existingProof = Read-JsonFile $proofPath
+            Assert-GateWAcceptanceProof $existingProof | Out-Null
+            if ([string]$existing.acceptanceResult -cne 'ACCEPTED_168H_READONLY_SOAK' -or
+                    [string]$existing.runId -cne $RunId -or
+                    [string]$existing.releaseCommit -cne [string]$existingProof.releaseCommit -or
+                    [string]$existing.acceptanceVerificationChecksum -cne
+                            [string]$existingProof.checksum -or
+                    [string]$existing.evidenceManifestSha256 -cne
+                            [string]$existingProof.evidenceManifestSha256 -or
+                    [string]$existing.evidenceFinalChainHash -cne
+                            [string]$existingProof.evidenceFinalChainHash)
+            {
+                throw 'BLOCKED / TERMINAL_RESULT_CONFLICT'
+            }
+            Verify-FormalTerminal | Out-Null
+            Complete-AcceptedLifecycle $RunId | Out-Null
+            return [pscustomobject]@{
+                decision = 'NO_CHANGE / ACCEPTANCE_RESULT_ALREADY_FINALIZED'
+                runId = $RunId
+                acceptanceResult = [string]$existing.acceptanceResult
+                terminalChecksum = [string]$existing.checksum
+            }
+        }
+        $proofPath = "$( Get-ControlRoot $RunId )/acceptance-verification.json"
+        if (-not (Test-Path -LiteralPath $proofPath -PathType Leaf))
+        {
+            throw 'BLOCKED / ACCEPTANCE_VERIFY_REQUIRED'
+        }
+        $proof = Read-JsonFile $proofPath
+        Assert-GateWAcceptanceProof $proof | Out-Null
+        if ([string]$proof.result -cne 'PASS / FORMAL_SOAK_ACCEPTANCE_VERIFIED')
+        {
+            throw 'BLOCKED / ACCEPTANCE_VERIFY_REQUIRED'
+        }
+        $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
+        Assert-FrozenReleaseBinding $config | Out-Null
+        $clock = Get-AcceptanceClockProjection $RunId
+        $state = Get-UnitState (Get-WorkerUnitName $RunId)
+        if ([string]$state.ActiveState -cne 'active' -or [string]$state.SubState -cne 'running' -or
+                [long]$state.MainPID -ne [long]$proof.mainPid -or [long]$state.NRestarts -ne 0 -or
+                [long]$state.ExecMainStartTimestampMonotonic -ne
+                        [long]$proof.execMainStartTimestampMonotonic -or
+                [string]$config.sourceCommit -cne [string]$proof.releaseCommit -or
+                [string]$clock.acceptanceStartAt -cne [string]$proof.acceptanceStartAt -or
+                [string]$clock.plannedAcceptanceAt -cne [string]$proof.plannedAcceptanceAt)
+        {
+            throw 'BLOCKED / ACCEPTANCE_PROOF_STALE'
+        }
+        $intent = Write-ControlledStopIntent $RunId 'ACCEPTANCE_FINALIZATION'
+        Invoke-Native $script:SystemctlPath @('stop', (Get-WorkerUnitName $RunId)) | Out-Null
+        $deadline = (Get-UtcNow).AddSeconds(20)
+        do
+        {
+            $state = Get-UnitState (Get-WorkerUnitName $RunId)
+            if ([string]$state.ActiveState -ceq 'inactive' -and [long]$state.MainPID -eq 0)
+            {
+                break
+            }
+            Start-Sleep -Milliseconds 100
+        } while ((Get-UtcNow) -lt $deadline)
+        if ([string]$state.ActiveState -cne 'inactive' -or [long]$state.MainPID -ne 0)
+        {
+            throw 'FAIL / ACCEPTANCE_WORKER_STOP_FAILED'
+        }
+        $terminal = New-GateWTerminalRecord `
+            -RunId $RunId `
+            -ReleaseCommit ([string]$proof.releaseCommit) `
+            -AcceptanceResult 'ACCEPTED_168H_READONLY_SOAK' `
+            -TerminalReasonCode 'ACCEPTANCE_RESULT_FINALIZED' `
+            -StopClassification 'AUTHORIZED_CONTROLLED_STOP' `
+            -AcceptanceStartAt ([string]$proof.acceptanceStartAt) `
+            -PlannedAcceptanceAt ([string]$proof.plannedAcceptanceAt) `
+            -AcceptanceVerificationChecksum ([string]$proof.checksum) `
+            -EvidenceManifestSha256 ([string]$proof.evidenceManifestSha256) `
+            -EvidenceFinalChainHash ([string]$proof.evidenceFinalChainHash) `
+            -StopIntentChecksum ([string]$intent.checksum) `
+            -FinalizerKind 'EXPLICIT_ACCEPTANCE' `
+            -FinalizedAt ((Get-UtcNow).ToString('o'))
+        Write-JsonCreateOnce $terminalPath $terminal
+        Set-OwnerMode $terminalPath 'root:root' '600'
+        Verify-FormalTerminal | Out-Null
+        Complete-AcceptedLifecycle $RunId | Out-Null
+        return [pscustomobject][ordered]@{
+            decision = 'PASS / ACCEPTANCE_RESULT_FINALIZED'
+            runId = $RunId
+            acceptanceResult = 'ACCEPTED_168H_READONLY_SOAK'
+            terminalChecksum = [string]$terminal.checksum
+            stopIntentChecksum = [string]$intent.checksum
+        }
+    }
+    finally
+    {
+        if ($null -ne $lock)
+        {
+            $lock.Dispose()
+        }
+    }
+}
+
+function Verify-FormalRun
+{
+    throw 'BLOCKED / VERIFY_ACTION_SPLIT_REQUIRED'
 }
 
 function Invoke-UnitPreflight
@@ -2515,13 +3228,42 @@ function Record-ExitFact
     {
         throw 'FAIL / SYSTEMD_EXIT_FACT_INVALID'
     }
+    $recordedAt = Get-UtcNow
+    $stopClassification = 'UNAUTHORIZED_OR_UNKNOWN_STOP'
+    $stopIntentChecksum = 'NOT_PRESENT'
+    $stopIntentPath = "$( Get-ControlRoot $RunId )/stop-intent.json"
+    if (Test-Path -LiteralPath $stopIntentPath -PathType Leaf)
+    {
+        try
+        {
+            $stopIntent = Read-JsonFile $stopIntentPath
+            Assert-GateWStopIntentRecord $stopIntent | Out-Null
+            $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
+            $requestedAt = [DateTimeOffset]::Parse([string]$stopIntent.requestedAt)
+            if ([string]$stopIntent.runId -cne $RunId -or
+                    [string]$stopIntent.releaseCommit -cne [string]$config.sourceCommit -or
+                    $requestedAt -gt $recordedAt -or
+                    ($recordedAt - $requestedAt).TotalSeconds -gt
+                            $script:StopIntentMaxAgeSeconds)
+            {
+                throw 'FAIL / STOP_INTENT_BINDING_INVALID'
+            }
+            $stopClassification = 'AUTHORIZED_CONTROLLED_STOP'
+            $stopIntentChecksum = [string]$stopIntent.checksum
+        }
+        catch
+        {
+            $stopClassification = 'UNAUTHORIZED_OR_UNKNOWN_STOP'
+            $stopIntentChecksum = 'INVALID'
+        }
+    }
     $path = "$( Get-ControlRoot $RunId )/exit-fact.json"
     if (Test-Path -LiteralPath $path -PathType Leaf)
     {
         $existing = Read-JsonFile $path
         if ((@($existing.PSObject.Properties.Name) -join '|') -ne
-                'schemaVersion|runId|serviceResult|exitCode|exitStatus|lastKnownMainPid|recordedAt' -or
-                [string]$existing.schemaVersion -ne 'gatew-soak-exit-fact-v1' -or
+                'schemaVersion|runId|serviceResult|exitCode|exitStatus|lastKnownMainPid|stopClassification|stopIntentChecksum|recordedAt' -or
+                [string]$existing.schemaVersion -ne 'gatew-soak-exit-fact-v2' -or
                 [string]$existing.runId -ne $RunId)
         {
             throw 'FAIL / SYSTEMD_EXIT_FACT_INVALID'
@@ -2529,13 +3271,15 @@ function Record-ExitFact
         return [pscustomobject]@{ decision = 'NO_CHANGE / EXIT_FACT_EXISTS'; runId = $RunId }
     }
     Write-JsonCreateOnce $path ([ordered]@{
-        schemaVersion = 'gatew-soak-exit-fact-v1'
+        schemaVersion = 'gatew-soak-exit-fact-v2'
         runId = $RunId
         serviceResult = $ServiceResult
         exitCode = $ExitCode
         exitStatus = $ExitStatus
         lastKnownMainPid = $LastKnownMainPid
-        recordedAt = (Get-UtcNow).ToString('o')
+        stopClassification = $stopClassification
+        stopIntentChecksum = $stopIntentChecksum
+        recordedAt = $recordedAt.ToString('o')
     })
     Set-OwnerMode $path 'root:root' '600'
     return [pscustomobject]@{ decision = 'PASS / EXIT_FACT_RECORDED'; runId = $RunId }
@@ -2628,8 +3372,8 @@ function Invoke-ControlSelfTest
     $prepareEnd = $source.IndexOf('function ConvertFrom-SystemctlShow', $prepareStart, [StringComparison]::Ordinal)
     $prepareSource = $source.Substring($prepareStart, $prepareEnd - $prepareStart)
     $gateIndex = $prepareSource.IndexOf(
-        'Invoke-PreCreatePrerequisiteEvaluation -ForPrepare',
-        [StringComparison]::Ordinal
+            'Invoke-PreCreatePrerequisiteEvaluation -ForPrepare',
+            [StringComparison]::Ordinal
     )
     $runIdIndex = $prepareSource.IndexOf('New-RunId', [StringComparison]::Ordinal)
     $directoryIndex = $prepareSource.IndexOf('Ensure-Directory', [StringComparison]::Ordinal)
@@ -2980,6 +3724,18 @@ try
         'verify' {
             Verify-FormalRun
         }
+        'verify-evidence' {
+            Verify-FormalEvidence
+        }
+        'verify-acceptance' {
+            Verify-FormalAcceptance
+        }
+        'verify-terminal' {
+            Verify-FormalTerminal
+        }
+        'finalize-acceptance' {
+            Finalize-FormalAcceptance
+        }
         'stop' {
             Request-OperatorStop
         }
@@ -3007,6 +3763,11 @@ try
         $result | ConvertTo-Json -Depth 12
         if ($Action -eq 'precreate-prerequisite' -and
                 -not [bool]$result.readyForAttemptCreation)
+        {
+            exit 2
+        }
+        if ($Action -eq 'verify-acceptance' -and
+                [string]$result.decision -cne 'PASS / FORMAL_SOAK_ACCEPTANCE_VERIFIED')
         {
             exit 2
         }
