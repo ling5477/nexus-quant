@@ -12164,3 +12164,27 @@ Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.se
 - 新负例首次执行时，`NQ-GATEW-ATEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION` 被既有通用 suffix classifier 归为 `IMPLEMENTATION`；精确失败三元组仍拒绝。测试修正为断言其不得成为精确 failure action type 且 mapping 必须拒绝，没有放宽或改变其他 Gate classifier；重跑通过。
 
 边界：没有重跑远端取证、worker、finalizer、prepare、acceptance clock、immutable verifier 或 OKX；没有修改服务器、release、systemd、credential、allowlist、远端 evidence/hash chain。Attempt-10 未创建且未授权；未进入 freeze/archive/tag；Maven/frontend/Python 未运行，因为本轮只改治理 PowerShell 与 current docs/evidence。
+
+## 2026-07-29 — GateW Attempt-09 failure remediation implementation / exact-head CI / immutable build proof
+
+当前结论：`IMPLEMENTED / SELF_REVIEWED / CI_GREEN / PENDING_SECURITY_REVIEW / ATTEMPT_10_NOT_AUTHORIZED`（已实现 / 已自审 / CI 已通过 / 待独立安全审查 / Attempt-10 未获授权）。Implementation commit=`92adff7e55c2200692e892db2189132c243a1ac5`；exact-head CI run=`30474856153 / completed / success / 10 of 10`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| PowerShell 5.1 / 7 control self-test | PASS | 双引擎各 `49` cases；`FORMAL_CONTROL_SELF_TEST` |
+| PowerShell 5.1 / 7 lightweight fail-close self-test | PASS | 双引擎各 `8` cases；`LIGHTWEIGHT_FAILCLOSE_SELF_TEST` |
+| PowerShell 5.1 / 7 worker self-test | PASS | 双引擎各 `59` cases；`SUPERVISOR_SELF_TEST` |
+| PowerShell 5.1 / 7 remediation regression | PASS | 双引擎各 `32` cases；Attempt-09 fixture=`evidence PASS / acceptance FAIL / finalizer BLOCKED`；Attempt-10=false |
+| 最新 fail-close bounded fixture | PASS | `173ms < 30000ms`；无 heavy verifier/network/credential/OKX |
+| PowerShell 5.1 / 7 builder + installer self-test | PASS | LF/deterministic JAR/unit binding/release ID/enablement/pre-create contract通过；network/credential=false |
+| PowerShell 5.1 / 7 governance regressions | PASS | `CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`、`GOVERNANCE_LIFECYCLE_REGRESSION`、`TASK_EVIDENCE_POLICY_VALID` |
+| current authority / current doc links | PASS / 1 EXISTING WARNING | authority errors=`0`；links=`135 checked / 1 GateJ historical warning / 0 errors` |
+| Commit A exact-head CI | PASS | `NQ CI Baseline / 30474856153 / completed / success / headSha=92adff7e... / 10 of 10` |
+| clean `EXACT_COMMIT` canonical bundle build | PASS | releaseId/sourceCommit=`92adff7e...`；manifest `9ab5dd55...e75b`；130 artifacts |
+| local immutable verifier | PASS | schema、closed artifact set、size/SHA-256、UTF-8/LF/no-CR、systemd release binding；LF/BINARY=`8/122`，mode 0755/0644=`5/125`，undeclared=`0` |
+| tamper rejection | PASS | 修改 worker artifact 的副本返回 exit `2 / BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH` |
+| POSIX/ownership | CONTRACT GENERATED / NOT APPLIED | Windows 本地 `posixVerified=false`；manifest mode合同与 installer self-test通过；未做Linux root-owned install或服务器verify |
+
+安全环境：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`。本地 bundle与篡改副本验证后已精确删除。
+
+未运行：SSH、远端取证、远端 finalizer、服务器 install/activate/systemd verify、真实 OKX、credential、permission probe、新168小时soak、Attempt-10、freeze/archive/tag。本地未重复运行与本次 PowerShell/systemd tooling diff无关的全量 Maven/frontend/Python；exact-head CI已实际通过backend/frontend/research/security/DB/E2E全部10个jobs。阻断性：implementation self-review P0=0/P1=0；独立安全审查与任何服务器 deployment 均为后续 hard gate。

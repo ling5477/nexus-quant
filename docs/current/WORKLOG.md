@@ -17834,3 +17834,19 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：未重跑远端取证/finalizer/worker/prepare/clock/OKX，未修改服务器/release/systemd/credential/allowlist/远端 evidence；未创建 Attempt-10，未进入 freeze/archive/tag，未触达 LIVE 或交易写侧。
 - result：`PASS / ATTEMPT_09_FAILURE_INCIDENT_REVIEW_COMPLETED / ROOT_CAUSE_CLASSIFIED / REMEDIATION_REQUIREMENTS_FROZEN / AUTHORITY_SYNCED / READY_TO_COMMIT / ATTEMPT_10_NOT_AUTHORIZED`。
 - next：精确暂存本轮 9 个 allowlist 文件，commit/push 后等待 incident evidence commit 的 exact-head `NQ CI Baseline` 10/10 GREEN；唯一后续治理动作保持 `NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`。
+
+## 2026-07-29 — GateW Attempt-09 failure remediation implementation
+
+- task：`NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`；NQ-only、L级 verifier/continuity/finalizer/stop-attribution/systemd/immutable-release remediation。
+- baseline：`dev`；起始 `HEAD == origin/dev == 017639101ac95d462f84e76fc50e26bc1939467b`；run `30461728822 / completed / success / 10 of 10`；起始 authority 为 Attempt-09 failure remediation implementation。
+- implementation：Commit A `92adff7e55c2200692e892db2189132c243a1ac5`；拆分 `verify-evidence / verify-acceptance / verify-terminal`，旧 `verify` 固定阻断；新增 unit/PID/restart/start/clock/168h/last-sample/heartbeat/hash/release/security/kill-switch hard gates。
+- finalization：自动 fail-close 只读 exit/stop/clock/release基本事实并在30秒预算内写拒绝terminal；显式 acceptance finalizer要求持久化 acceptance proof，write-once/CAS/idempotent/conflict-reject；terminal schema v2双向绑定。
+- stop attribution：root-owned/write-once/checksum stop intent，最大有效期300秒；合法=`AUTHORIZED_CONTROLLED_STOP`，缺失/无效=`UNAUTHORIZED_OR_UNKNOWN_STOP`；不声称阻止root强制操作。
+- regression：PowerShell 5.1/7 的 control/fail-close/worker/remediation=`49/8/59/32` cases全部PASS；Attempt-09 fixture=`FORMAL_EVIDENCE_VERIFIED / FORMAL_SOAK_ACCEPTANCE_REJECTED / ACCEPTANCE_VERIFY_REQUIRED`；Attempt-10=false；builder/installer/governance双引擎PASS。
+- CI：Commit A exact-head `NQ CI Baseline` run `30474856153 / completed / success / 10 of 10`，headSha精确匹配。
+- immutable build：clean `EXACT_COMMIT` bundle 130 artifacts；manifest `9ab5dd5523d0e7beea558491928d814bec790024496f94d09a1d1cf7848be75b`；hash/LF/closed-set通过；篡改副本精确拒绝；本地产物已删除。Windows未施加Linux root ownership，server install/deploy未执行。
+- docs validation：current authority errors=0；current links=`135 checked / 1 GateJ historical warning / 0 errors`；governance exact-triple与lifecycle双引擎PASS。
+- authority：`work_batch=GateW-ATTEMPT-09-FAILURE-REMEDIATION / IMPLEMENTED|CI_GREEN|PENDING_SECURITY_REVIEW / 92adff7e... / 30474856153`；GateW保持`IN_PROGRESS|NOT_FROZEN`；Attempt-09保持`REJECTED`；Attempt-10=`NOT_CREATED|NOT_AUTHORIZED`。
+- boundary：无SSH、远端取证/finalizer、服务器/release/service/credential/OKX/交易写侧修改；未创建Attempt-10，未进入freeze/archive/tag。
+- result：`IMPLEMENTED / SELF_REVIEWED / CI_GREEN / PENDING_SECURITY_REVIEW / ATTEMPT_10_NOT_AUTHORIZED`。
+- next：唯一动作 `NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW`；独立审查通过前不得部署、创建Attempt-10或授权新soak。

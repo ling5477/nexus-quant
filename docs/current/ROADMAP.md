@@ -25,7 +25,9 @@ GateW pre-create sanitized prerequisite remediation PASS / COMMIT A CI GREEN / S
   ↓
 GateW-OKX-READONLY-SOAK-ATTEMPT-09 FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED
   ↓
-NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION
+GateW Attempt-09 failure remediation IMPLEMENTED / CI GREEN / PENDING SECURITY REVIEW
+  ↓
+NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW
   ↓
 Attempt-10 NOT CREATED / NOT AUTHORIZED
   ↓
@@ -47,8 +49,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW soak start contract remediation：implementation commit `0e8e2c128c456542b3f7695c9620e4d170c3f4f6`，exact-head CI run `29766800343 / completed / success / 10 of 10`；该 release 保留为已验证回滚点，已由后续 pre-create remediation release 替代。
 - GateW pre-create sanitized prerequisite remediation：implementation commit `1b501488076fae79e15b84579a02f5c580fa51b3`，exact-head CI run `29837563573 / completed / success / 10 of 10`；final `EXACT_COMMIT` immutable release 已部署，独立 pre-create、self-contained DB input、sanitized metadata readback 与完整 final offline acceptance 均通过，服务器 current 固定 Commit A。
 - GateW-OKX-READONLY-SOAK-ATTEMPT-09：`FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED`；run `gatew-soak-20260722T111144Z-ac00f878` 的有效时长为 `471795.0520427s`，距离 `604800s` 短缺 `133004.9479573s`。Worker 分类=`OPERATOR_OR_AUTOMATION_STOP`、精确发起者=`UNKNOWN`；finalizer 分类=`FINALIZER_SYSTEMD_TIMEOUT`，terminal result 缺失；`FORMAL_SOAK_VERIFIED` 仅覆盖 evidence integrity，不能推导 acceptance。
+- GateW Attempt-09 failure remediation：`IMPLEMENTED / CI GREEN / PENDING SECURITY REVIEW`；implementation commit `92adff7e55c2200692e892db2189132c243a1ac5`，exact-head CI run `30474856153 / completed / success / 10 of 10`。Evidence/acceptance/terminal verifier、continuity/duration/security hard gates、轻量 fail-close、显式 acceptance finalizer、stop intent、terminal v2、32 场景离线回归与 clean exact-commit immutable bundle build proof 已完成；未部署服务器。
 - GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`。
-- 当前唯一治理动作：`NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`。只允许按已冻结要求修复 verifier semantic、continuity/duration/terminal hard gates、finalizer timeout 与回归 fixture；不得重跑远端取证/finalizer、修改服务器、恢复 Attempt-09、创建 Attempt-10、重置 clock、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
+- 当前唯一治理动作：`NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW`。只允许独立审查 implementation commit 的 verifier/finalizer/stop intent/terminal/systemd/immutable-release 安全与 fail-closed 语义；不得部署、重跑远端取证/finalizer、修改服务器、恢复 Attempt-09、创建 Attempt-10、重置 clock、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 
@@ -59,5 +62,5 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
-- Commit B 只同步 current authority 与 evidence，服务器 runtime 必须继续固定 Commit A `1b501488076fae79e15b84579a02f5c580fa51b3`；不得部署 docs commit。
+- 本轮 remediation implementation/evidence commits 均未部署，服务器 runtime 必须继续固定既有 release `1b501488076fae79e15b84579a02f5c580fa51b3`；只有独立安全审查通过后的明确 deployment 任务才能改变服务器 release。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。
