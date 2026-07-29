@@ -74,6 +74,66 @@ if (Test-GovernanceNextActionForWorkBatch `
 }
 Write-Output 'PASS non-canonical-attempt-acceptance relation=false'
 
+$attempt09FailureStatus = 'FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETED'
+$canonicalAttempt09Remediation = 'NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION'
+Assert-ActionType $canonicalAttempt09Remediation 'FAILURE_REMEDIATION_IMPLEMENTATION'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt09FailureStatus $canonicalAttempt09WorkBatch $canonicalAttempt09Remediation)) {
+    throw 'CANONICAL_ATTEMPT_09_FAILURE_REMEDIATION_REJECTED'
+}
+Write-Output 'PASS canonical-attempt-09-failure-remediation exact-triple=true'
+
+foreach ($status in @(
+    $attempt09RunningStatus,
+    'BLOCKED',
+    'FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETE',
+    'failed|acceptance_rejected|incident_review_completed'
+)) {
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $status $canonicalAttempt09WorkBatch $canonicalAttempt09Remediation) {
+        throw "NON_CANONICAL_FAILURE_STATUS_ACCEPTED status=$status"
+    }
+}
+Write-Output 'PASS non-canonical-attempt-09-failure-status relation=false'
+
+foreach ($workBatch in @(
+    'GateW-OKX-READONLY-SOAK-ATEMPT-09',
+    'GateW-OKX-READONLY-SOAK-ATTEMPT-10',
+    'GateW-ATTEMPT-09',
+    'gatew-okx-readonly-soak-attempt-09'
+)) {
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt09FailureStatus $workBatch $canonicalAttempt09Remediation) {
+        throw "NON_CANONICAL_FAILURE_WORK_BATCH_ACCEPTED workBatch=$workBatch"
+    }
+}
+Write-Output 'PASS non-canonical-attempt-09-failure-work-batch relation=false'
+
+foreach ($action in @(
+    'NQ-GATEW-ATEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION',
+    'NQ-GATEW-ATTEMPT-09-FAILURE-REMEDATION-IMPLEMENTATION',
+    'NQ-GATEW-ATTEMPT-09-REMEDIATION-IMPLEMENTATION',
+    'NQ-GATEW-ATTEMPT-10-FAILURE-REMEDIATION-IMPLEMENTATION',
+    'NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION',
+    'nq-gatew-attempt-09-failure-remediation-implementation'
+)) {
+    $actualType = Get-GovernanceNextActionType $contract $action
+    if ($actualType -ceq 'FAILURE_REMEDIATION_IMPLEMENTATION') {
+        throw "NON_CANONICAL_FAILURE_ACTION_CLASSIFIED_AS_EXACT action=$action"
+    }
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt09FailureStatus $canonicalAttempt09WorkBatch $action) {
+        throw "NON_CANONICAL_FAILURE_ACTION_ACCEPTED action=$action"
+    }
+}
+Write-Output 'PASS non-canonical-attempt-09-failure-action relation=false'
+
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $attempt09RunningStatus $attempt09FailureStatus)) {
+    throw 'ATTEMPT_09_FAILURE_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS attempt-09-running-to-failure lifecycle=highRisk'
+
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'
 }

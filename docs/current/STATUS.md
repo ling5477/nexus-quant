@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_acceptance_head=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_ci_run=29339016784
 work_batch=GateW-OKX-READONLY-SOAK-ATTEMPT-09
-work_batch_status=RUNNING|PENDING_168H
+work_batch_status=FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETED
 work_batch_commit=1b501488076fae79e15b84579a02f5c580fa51b3
 work_batch_ci_run=29837563573
-next_action=NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE
+next_action=NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -43,8 +43,8 @@ nq-current-authority:end -->
 - GateW-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Blocker-1、operations、persistence/retention、human-review evidence binding、disposable backup/restore、11 场景 incident drill 与 10,000 次 local no-egress soak hard gates 均通过；internal-only assessment 不产生交易授权。Implementation/acceptance head 为 `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`，CI run `29339016784` 为 exact-head `completed / success`。
 - GateW soak start contract remediation：`PASS / COMMITTED / CI GREEN / SUPERSEDED BY PRECREATE REMEDIATION`（通过 / 已提交 / CI 已通过 / 已由 pre-create remediation 替代）。Implementation commit `0e8e2c128c456542b3f7695c9620e4d170c3f4f6` 的 exact-head CI run `29766800343` 为 `completed / success / 10 of 10`；该 release 保留为已验证回滚点，不再是服务器 current。
 - GateW pre-create sanitized prerequisite remediation：`PASS / IMPLEMENTATION COMMITTED / IMPLEMENTATION CI GREEN / SERVER DEPLOYED`（通过 / 实现已提交 / 实现 CI 已通过 / 服务器已部署）。Implementation commit `1b501488076fae79e15b84579a02f5c580fa51b3` 的 exact-head CI run `29837563573` 为 `completed / success / 10 of 10`；服务器 `/opt/nexus-quant/current` 固定到该 `EXACT_COMMIT` immutable release，129 artifacts、manifest/POSIX、root owner/mode、`nqgatewWritable=false`、systemd verify、sanitized pre-create 与完整 final offline acceptance 均通过。
-- GateW-OKX-READONLY-SOAK-ATTEMPT-09：`RUNNING / PENDING 168H`（运行中 / 待满 168 小时）。唯一 run `gatew-soak-20260722T111144Z-ac00f878` 使用正式 systemd unit 与 immutable runtime Commit A；首次 OKX config/balance typed GET、fresh SSH same MainPID、heartbeat 推进、hash chain、zero forbidden/raw/secret 与 kill switch `ENGAGED` 均通过。真实 acceptance clock 为 `2026-07-22T11:19:59.5201964Z` 至 `2026-07-29T11:19:59.5201964Z`；当前只表示 soak 正在运行，不表示 168 小时已接受。
-- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；必须等待真实 read-only soak 后续证据，不得从 remediation 的隔离 offline clock 推导真实 168 小时 acceptance 已开始。
+- GateW-OKX-READONLY-SOAK-ATTEMPT-09：`FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED`（失败 / 验收已拒绝 / 事件复盘已完成）。唯一 run `gatew-soak-20260722T111144Z-ac00f878` 的最后有效样本为 `2026-07-27T22:23:14.5722391Z`，worker 于 `2026-07-27T22:25:46.8916254Z` 被 systemd stop transaction 以 `TERM` 终止；有效时长 `471795.0520427s < 604800s`，短缺 `133004.9479573s`。`PASS / FORMAL_SOAK_VERIFIED` 只证明现有 verifier 覆盖的 evidence integrity，不构成 168 小时 acceptance。
+- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，必须先完成 verifier/finalizer/continuity 整改。Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -67,11 +67,12 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 - DH runtime：`NOT INTEGRATED`（未集成）。
 - Integration runtime：`NOT STARTED`（未开始）。
 - RealClient / private trading adapter：`NOT IMPLEMENTED`（未实现）；GateW-2 private read-only diagnostic transport/probe 为 `ACCEPTED / CI GREEN`，默认不装配且未做 real smoke，不属于交易适配器或交易授权。
-- GateW runtime release：`1b501488076fae79e15b84579a02f5c580fa51b3`；该值是服务器当前 immutable runtime，不因本次 docs/evidence Commit B 改变。
-- Attempt-09：`RUNNING / PENDING 168H`（运行中 / 待满 168 小时）；正式 unit=`active/running`，worker=`nqgatew`，MainPID=`4074358`，kill switch=`ENGAGED`。真实 acceptance clock 已从 `2026-07-22T11:19:59.5201964Z` 原子启动，planned=`2026-07-29T11:19:59.5201964Z`；仅允许 config/balance 两个 typed GET，LIVE、下单、撤单、转账与提现继续关闭。
+- GateW runtime release：`1b501488076fae79e15b84579a02f5c580fa51b3`；该值是服务器 immutable runtime Commit A，不因本次 governance/docs/evidence Commit B 改变，Commit B 不部署到服务器。
+- Attempt-09：`REJECTED / FAILED_INSUFFICIENT_DURATION`（已拒绝 / 有效时长不足）。初始 MainPID=`4074358`；事件窗口内 systemd 明确执行 stop、另一次 start（PID=`301042`）和第二次 stop，最终 worker unit inactive、MainPID=`0`，continuity 不可恢复。终止分类=`OPERATOR_OR_AUTOMATION_STOP`，精确发起者=`UNKNOWN`；finalizer 分类=`FINALIZER_SYSTEMD_TIMEOUT`，`terminal-status.json=false`。
+- Attempt-10：`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）。不得用新 Attempt、重置 clock、重跑 finalizer 或服务器修改绕过 Attempt-09 的拒绝事实。
 - Python ML readiness / Python live execution readiness：`NO`（否）。
 - `acknowledge`、`escalate`、`resolve`、`close` 只表示本地人工诊断复核；不构成交易授权、LIVE/Shadow 放行，亦不批准下单、撤单、转账或提现。
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE`。在 planned acceptance 时间前只能保持健康只读 soak 与安全监控，不得提前执行最终验收、freeze/archive/tag，也不得因 docs/CI 问题停止健康 unit；该动作不授权 LIVE、订单、撤单、转账、提现、allowlist 修改、credential 输出或任何交易写侧。
+治理 authority 中唯一下一动作精确为 `NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`。该动作只授权实现已冻结的 verifier/finalizer/continuity fail-closed 整改与回归 fixture；不授权远端重取证、重跑 finalizer、恢复 Attempt-09、创建 Attempt-10、修改服务器、部署 release、freeze/archive/tag，也不授权 LIVE、订单、撤单、转账、提现、allowlist 修改、credential 输出或任何交易写侧。

@@ -23,9 +23,11 @@ GateW soak start contract remediation PASS / COMMIT A CI GREEN / SERVER DEPLOYED
   ↓
 GateW pre-create sanitized prerequisite remediation PASS / COMMIT A CI GREEN / SERVER DEPLOYED
   ↓
-GateW-OKX-READONLY-SOAK-ATTEMPT-09 RUNNING / PENDING 168H
+GateW-OKX-READONLY-SOAK-ATTEMPT-09 FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED
   ↓
-NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE AT 2026-07-29T11:19:59.5201964Z
+NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION
+  ↓
+Attempt-10 NOT CREATED / NOT AUTHORIZED
   ↓
 GateW-FREEZE NOT STARTED / FUTURE
 ```
@@ -44,9 +46,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-4：`ACCEPTED / CI GREEN`；implementation/acceptance head `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c`，exact-head CI run `29339016784 / completed / success / 10 jobs / bad=0`。Blocker-1、operations、persistence/retention、human-review binding、restore、incident 与 local no-egress soak hard gates 均通过。
 - GateW soak start contract remediation：implementation commit `0e8e2c128c456542b3f7695c9620e4d170c3f4f6`，exact-head CI run `29766800343 / completed / success / 10 of 10`；该 release 保留为已验证回滚点，已由后续 pre-create remediation release 替代。
 - GateW pre-create sanitized prerequisite remediation：implementation commit `1b501488076fae79e15b84579a02f5c580fa51b3`，exact-head CI run `29837563573 / completed / success / 10 of 10`；final `EXACT_COMMIT` immutable release 已部署，独立 pre-create、self-contained DB input、sanitized metadata readback 与完整 final offline acceptance 均通过，服务器 current 固定 Commit A。
-- GateW-OKX-READONLY-SOAK-ATTEMPT-09：`RUNNING / PENDING 168H`；run `gatew-soak-20260722T111144Z-ac00f878`、systemd MainPID `4074358`；首次 config/balance PASS、fresh SSH same PID、heartbeat/hash chain、zero forbidden/raw/secret 与 clock write-once 均通过；acceptance window=`2026-07-22T11:19:59.5201964Z` 至 `2026-07-29T11:19:59.5201964Z`。
-- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag，真实 read-only soak 后续证据仍是 freeze 前置。
-- 当前唯一治理动作：`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE`。在 planned 时间前不得提前验收或 freeze；当前只允许维持健康 unit 与只读安全监控，不得创建 Attempt-10、重复启动 clock、扩大 OKX endpoint、触碰交易写侧或部署 evidence commit。
+- GateW-OKX-READONLY-SOAK-ATTEMPT-09：`FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED`；run `gatew-soak-20260722T111144Z-ac00f878` 的有效时长为 `471795.0520427s`，距离 `604800s` 短缺 `133004.9479573s`。Worker 分类=`OPERATOR_OR_AUTOMATION_STOP`、精确发起者=`UNKNOWN`；finalizer 分类=`FINALIZER_SYSTEMD_TIMEOUT`，terminal result 缺失；`FORMAL_SOAK_VERIFIED` 仅覆盖 evidence integrity，不能推导 acceptance。
+- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`。
+- 当前唯一治理动作：`NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`。只允许按已冻结要求修复 verifier semantic、continuity/duration/terminal hard gates、finalizer timeout 与回归 fixture；不得重跑远端取证/finalizer、修改服务器、恢复 Attempt-09、创建 Attempt-10、重置 clock、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 

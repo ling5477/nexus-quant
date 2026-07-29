@@ -77,6 +77,21 @@ function Get-GovernanceContextValue {
     return Get-GovernancePropertyValue $Context $Name
 }
 
+function Test-GovernanceExactNextActionMapping {
+    param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
+
+    $mappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
+    if ($null -eq $mappings) { return $false }
+    foreach ($mapping in @($mappings)) {
+        if ([string]$mapping.workBatchStatus -ceq $Status -and
+            [string]$mapping.workBatch -ceq $WorkBatch -and
+            [string]$mapping.nextAction -ceq $Action) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Test-GovernanceNextActionForWorkBatch {
     param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
 
@@ -84,6 +99,13 @@ function Test-GovernanceNextActionForWorkBatch {
     $expectedType = Get-GovernanceExpectedNextActionType $Contract $Status
     $actualType = Get-GovernanceNextActionType $Contract $Action
     if ($expectedType -ceq 'UNKNOWN' -or $actualType -cne $expectedType) { return $false }
+
+    $exactMappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
+    $statusMappings = @($exactMappings | Where-Object { [string]$_.workBatchStatus -ceq $Status })
+    if ($statusMappings.Count -gt 0) {
+        return Test-GovernanceExactNextActionMapping $Contract $Status $WorkBatch $Action
+    }
+
     $expectedPrefix = 'NQ-{0}-' -f $WorkBatch.ToUpperInvariant()
     return $Action.StartsWith($expectedPrefix, [System.StringComparison]::OrdinalIgnoreCase)
 }

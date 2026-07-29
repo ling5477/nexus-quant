@@ -17818,3 +17818,19 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：GateW保持`IN_PROGRESS|NOT_FROZEN`；work batch=`RUNNING|PENDING_168H`，绑定runtime Commit A/CI `29837563573`；唯一next action=`NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE`。
 - boundary：LIVE/order/cancel/transfer/withdraw/AI/DH均关闭；未改业务源码、unit、deploy、migration、allowlist、credential或server current；未做controlled failure、freeze/archive/tag；健康 soak不得因docs/CI停止。
 - next：精确提交/push本轮治理与evidence，等待evidence commit exact-head CI 10/10 GREEN；planned时间前仅维持健康只读soak与安全监控，不提前执行168h acceptance。
+
+## 2026-07-29 — GateW Attempt-09 failure incident review and remediation design
+
+- task：`NQ-GATEW-ATTEMPT-09-FAILURE-INCIDENT-REVIEW-AND-REMEDIATION-DESIGN`；NQ-only、L级 production incident review / systemd forensics / finalizer RCA / verifier contract review / authority failure sync。
+- baseline：`dev`；`HEAD == origin/dev == 557980eaf5e6302d9a46d718b124f0f530aa74f1`；starting exact-head run `30009870551 / completed / success / 10 of 10`。
+- worker RCA：systemd 在 `2026-07-27T22:25:39Z` 发起第一次 stop，worker 于 `22:25:46.8916254Z` 因 `TERM` 退出；随后出现独立 start PID=`301042` 与 `22:27:58Z` 第二次 stop。`RuntimeMaxUSec=infinity`、`Restart=no`，无相关 drop-in/dependency/timer/OOM/reboot；分类=`OPERATOR_OR_AUTOMATION_STOP`，精确发起者=`UNKNOWN`。
+- acceptance：last sample=`2026-07-27T22:23:14.5722391Z`；observed/required/shortfall=`471795.0520427 / 604800 / 133004.9479573s`；Attempt-09=`REJECTED`，soak=`FAILED_INSUFFICIENT_DURATION`，continuity 不可恢复。
+- finalizer RCA：`nq-gatew-soak-failclose@...` 为 oneshot、`TimeoutStartSec=2min`；ExecMain 约 120 秒后被 systemd `TERM`；terminal/completion marker缺失、lifecycle仍`RUNNING`；分类=`FINALIZER_SYSTEMD_TIMEOUT`；未重跑。
+- verifier P1：REAL `control -Action verify` 显式 `-AllowInactive`，terminal为可选；不检查 active/running、initial MainPID continuity、`NRestarts`、observed 168h、last sample达到planned时间或 finalizer success。`PASS / FORMAL_SOAK_VERIFIED` 只证明 evidence integrity，不能作为 acceptance。
+- remediation：冻结 evidence-integrity/acceptance 语义拆分、fail-closed continuity/duration/clock/security/release/terminal/finalizer、bounded finalizer、Attempt-09/inactive/PID-changed/short-duration/missing-terminal/timeout fixtures 与 stop actor audit 要求。
+- governance：新增 contract-driven exact mapping `FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETED + GateW-OKX-READONLY-SOAK-ATTEMPT-09 + NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`；三字段均大小写敏感，未命中状态继续原规则；错误状态、Attempt、action、近似拼写、大小写与 Attempt-10 全部拒绝。
+- validation：首轮 IDE 陈旧全文件格式化覆盖 helper/tests，表面 next-action PASS 无效且 lifecycle 报 `ScriptBlock.ContainsKey`；恢复原格式后仅插入最小 diff。近似 action 首测暴露既有通用 `IMPLEMENTATION` 分类，测试改为验证 exact type/mapping 拒绝而不改变旧语义。最终 next-action、lifecycle、AST、JSON、authority 均 PASS；current links=`134 checked / 1 existing warning / 0 errors`。
+- authority：GateW=`IN_PROGRESS|NOT_FROZEN`；work batch status=`FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETED`，继续绑定 runtime Commit A/CI `1b501488... / 29837563573`；Attempt-10=`NOT_CREATED|NOT_AUTHORIZED`；唯一 next action=`NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`。
+- boundary：未重跑远端取证/finalizer/worker/prepare/clock/OKX，未修改服务器/release/systemd/credential/allowlist/远端 evidence；未创建 Attempt-10，未进入 freeze/archive/tag，未触达 LIVE 或交易写侧。
+- result：`PASS / ATTEMPT_09_FAILURE_INCIDENT_REVIEW_COMPLETED / ROOT_CAUSE_CLASSIFIED / REMEDIATION_REQUIREMENTS_FROZEN / AUTHORITY_SYNCED / READY_TO_COMMIT / ATTEMPT_10_NOT_AUTHORIZED`。
+- next：精确暂存本轮 9 个 allowlist 文件，commit/push 后等待 incident evidence commit 的 exact-head `NQ CI Baseline` 10/10 GREEN；唯一后续治理动作保持 `NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION`。

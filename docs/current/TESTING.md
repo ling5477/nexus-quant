@@ -12139,3 +12139,28 @@ Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.se
 透明保留：首次误探测 8080 后按仓库合同纠正为 18889；pre-create 本体 PASS 后尾部 CRLF 包装断言失败；第一次 prepare 的非法字面 runId在创建前被拒绝；start SSH 被远端关闭后未重发，fresh status证明 systemd worker继续运行；第一次缺 formal env 的独立 evidence verifier失败，按 control 固定 formal env重跑后 hash chain PASS。这些错误均未扩大 endpoint、未创建第二个 REAL run、未修改 server config/release/credential。
 
 未运行：Maven、frontend、Python、final offline acceptance、controlled failure、GateW freeze/archive/tag。原因是本轮只运行已验收 immutable tooling并同步治理/evidence；业务源码、unit、deploy、migration与CI workflow均未修改。Evidence commit 与其 exact-head CI 在本记录写入时待本轮后续执行，服务器 runtime继续固定 Commit A。
+
+## 2026-07-29 — GateW Attempt-09 failure incident review / remediation design / authority failure sync
+
+当前结论：`PASS / ATTEMPT_09_FAILURE_INCIDENT_REVIEW_COMPLETED / ROOT_CAUSE_CLASSIFIED / REMEDIATION_REQUIREMENTS_FROZEN / AUTHORITY_SYNCED / READY_TO_COMMIT / ATTEMPT_10_NOT_AUTHORIZED`（通过 / Attempt-09 失败事件复盘已完成 / 根因已分类 / 整改要求已冻结 / authority 已同步 / 可进入提交前复核 / Attempt-10 未获授权）。Commit 与本次 evidence exact-head CI 在本记录写入时仍为 `UNCOMMITTED / NOT_RUN`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| starting HEAD / CI | PASS | `HEAD == origin/dev == 557980eaf5e6302d9a46d718b124f0f530aa74f1`；run `30009870551 / completed / success / 10 of 10` |
+| worker systemd forensics | ROOT CAUSE CLASSIFIED | 两次明确 stop transaction；首次 worker exit=`2026-07-27T22:25:46.8916254Z / TERM`；中间独立 start PID=`301042`；`RuntimeMaxUSec=infinity`、`Restart=no`、无相关 drop-in/dependency/timer/OOM/reboot；分类=`OPERATOR_OR_AUTOMATION_STOP`，精确发起者=`UNKNOWN` |
+| duration acceptance | REJECTED | last valid sample=`2026-07-27T22:23:14.5722391Z`；observed/required/shortfall=`471795.0520427 / 604800 / 133004.9479573s`；Attempt-09=`FAILED_INSUFFICIENT_DURATION` |
+| finalizer RCA | ROOT CAUSE CLASSIFIED | oneshot `TimeoutStartSec=2min`；ExecMain `22:26:46Z` 至 `22:28:47Z` 后 `TERM`；terminal/completion marker均缺失；分类=`FINALIZER_SYSTEMD_TIMEOUT`；未重跑 |
+| verifier contract review | P1 | REAL verify 使用 `-AllowInactive`；terminal 可缺失；不检查 MainPID continuity、`NRestarts`、observed 168h、last sample reaching planned time 或 finalizer success；`FORMAL_SOAK_VERIFIED` 仅证明 evidence integrity |
+| canonical exact-triple regression | PASS | 正确 failure status/work batch/action 通过；错误状态、work batch、Attempt-10、`ATEMPT`/`REMEDATION`/缺 `FAILURE`、旧完整 batch prefix 与大小写错误均拒绝；原正常生命周期 action 继续通过 |
+| governance lifecycle full regression | PASS | `PASS / GOVERNANCE_LIFECYCLE_REGRESSION`；`PASS / TASK_EVIDENCE_POLICY_VALID` |
+| PowerShell AST / contract JSON | PASS | 3 个 PowerShell 文件 parse errors=0；contract `ConvertFrom-Json` 成功 |
+| current authority | PASS | failure status 与唯一 remediation action 精确一致；`AUTHORITY_CHECK errors=0` |
+| current doc links | PASS / 1 EXISTING WARNING | `134 checked / 1 GateJ historical warning / 0 errors` |
+
+验证透明度：
+
+- 首轮编辑后 IDE 使用陈旧内容全文件格式化，导致新增 exact helper/负例丢失；当时 `test-current-authority-next-action.ps1` 的表面 PASS 无效，不计入验收。同期 lifecycle 回归报 `ScriptBlock.ContainsKey`。
+- 恢复两个 PowerShell 文件的原始格式、仅插入最小 diff 后，两项治理回归通过。
+- 新负例首次执行时，`NQ-GATEW-ATEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION` 被既有通用 suffix classifier 归为 `IMPLEMENTATION`；精确失败三元组仍拒绝。测试修正为断言其不得成为精确 failure action type 且 mapping 必须拒绝，没有放宽或改变其他 Gate classifier；重跑通过。
+
+边界：没有重跑远端取证、worker、finalizer、prepare、acceptance clock、immutable verifier 或 OKX；没有修改服务器、release、systemd、credential、allowlist、远端 evidence/hash chain。Attempt-10 未创建且未授权；未进入 freeze/archive/tag；Maven/frontend/Python 未运行，因为本轮只改治理 PowerShell 与 current docs/evidence。
