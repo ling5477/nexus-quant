@@ -17,7 +17,9 @@ $script:Utf8NoBom = [Text.UTF8Encoding]::new($false)
 $script:RepoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $script:BackendPom = Join-Path $script:RepoRoot 'backend/pom.xml'
 $script:ArtifactRecords = [System.Collections.ArrayList]::new()
-$script:FixedZipTimestamp = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+$script:ReleaseContractPath = Join-Path $PSScriptRoot 'gatew-release-contract.psm1'
+
+Import-Module $script:ReleaseContractPath -Force -DisableNameChecking
 
 function Invoke-Native
 {
@@ -79,6 +81,28 @@ function Get-HeadCommit
     return $value
 }
 
+function Get-SourceCommitTimestamp
+{
+    param([Parameter(Mandatory = $true)][string]$Commit)
+
+    $value = (($( (Get-GitOutput @('show', '-s', '--format=%ct', $Commit)) ) -join "`n").Trim())
+    $epochSeconds = [long]0
+    if (-not [long]::TryParse(
+            $value,
+            [Globalization.NumberStyles]::None,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [ref]$epochSeconds
+        ) -or $epochSeconds -lt 0)
+    {
+        throw 'BLOCKED / RELEASE_SOURCE_TIMESTAMP_INVALID'
+    }
+    $epoch = [DateTimeOffset]::new(1970, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+    return $epoch.AddSeconds($epochSeconds).ToUniversalTime().ToString(
+        "yyyy-MM-dd'T'HH:mm:ss'Z'",
+        [Globalization.CultureInfo]::InvariantCulture
+    )
+}
+
 function Assert-ExactCommitSource
 {
     param([Parameter(Mandatory = $true)][string]$Commit)
@@ -123,7 +147,7 @@ function Get-CandidateDiffSha256
         [void]$descriptor.Append((Get-Sha256File $trackedDiffPath))
         [void]$descriptor.Append("`n")
         $untracked = @(Get-GitOutput @('ls-files', '--others', '--exclude-standard', '--', '.'))
-        foreach ($relative in @($untracked | Sort-Object))
+        foreach ($relative in @(Sort-GateWOrdinalStrings $untracked))
         {
             $normalized = ([string]$relative).Replace('\', '/')
             if ($normalized -match '^(?:target|build|dist|node_modules|test-results|logs|secrets|credentials)/')
@@ -232,72 +256,26 @@ function New-DeterministicJar
         [string[]]$IncludeNamePatterns = @('*')
     )
 
-    Add-Type -AssemblyName System.IO.Compression
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $files = @(
-    Get-ChildItem -LiteralPath $SourceDirectory -File -Recurse |
+    $fileRecords = @(
+        Get-ChildItem -LiteralPath $SourceDirectory -File -Recurse |
             Where-Object {
                 $name = $_.Name
                 @($IncludeNamePatterns | Where-Object { $name -like $_ }).Count -gt 0
             } |
-            Sort-Object FullName
+            ForEach-Object {
+                [pscustomobject]@{
+                    RelativePath = $_.FullName.Substring($SourceDirectory.Length).
+                        TrimStart('/', '\').Replace('\', '/')
+                    File = $_
+                }
+            }
     )
-    if ($files.Count -eq 0)
+    if ($fileRecords.Count -eq 0)
     {
         throw 'BLOCKED / RELEASE_LAUNCHER_CLASSES_MISSING'
     }
-    [IO.Directory]::CreateDirectory((Split-Path -Parent $Destination)) | Out-Null
-    $stream = [IO.FileStream]::new(
-            $Destination, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None
-    )
-    try
-    {
-        $archive = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Create, $true)
-        try
-        {
-            $directories = @{}
-            foreach ($file in $files)
-            {
-                $relative = $file.FullName.Substring($SourceDirectory.Length).TrimStart('/', '\').Replace('\', '/')
-                $separator = $relative.IndexOf('/')
-                while ($separator -ge 0)
-                {
-                    $directories[$relative.Substring(0, $separator + 1)] = $true
-                    $separator = $relative.IndexOf('/', $separator + 1)
-                }
-            }
-            foreach ($directory in @($directories.Keys | Sort-Object))
-            {
-                $entry = $archive.CreateEntry([string]$directory)
-                $entry.LastWriteTime = $script:FixedZipTimestamp
-            }
-            foreach ($file in $files)
-            {
-                $relative = $file.FullName.Substring($SourceDirectory.Length).TrimStart('/', '\').Replace('\', '/')
-                $entry = $archive.CreateEntry($relative, [IO.Compression.CompressionLevel]::Optimal)
-                $entry.LastWriteTime = $script:FixedZipTimestamp
-                $input = [IO.File]::OpenRead($file.FullName)
-                $output = $entry.Open()
-                try
-                {
-                    $input.CopyTo($output)
-                }
-                finally
-                {
-                    $output.Dispose()
-                    $input.Dispose()
-                }
-            }
-        }
-        finally
-        {
-            $archive.Dispose()
-        }
-    }
-    finally
-    {
-        $stream.Dispose()
-    }
+    $relativePaths = @(Sort-GateWOrdinalStrings @($fileRecords.RelativePath))
+    New-GateWCanonicalZip $SourceDirectory $Destination $relativePaths
 }
 
 function Get-BackendModules
@@ -384,12 +362,19 @@ function Build-LauncherArtifacts
     )
     Add-ArtifactRecord $StageRoot $testSupportRelative '0644' 'BINARY' $false 'launcher-test-support'
 
-    $classpathEntries = @(
-    ((Get-Content -LiteralPath $classpathPath -Raw).Trim() -split
-            [regex]::Escape([IO.Path]::PathSeparator)) |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-            Sort-Object -Unique
+    $classpathCandidates = @(
+        ((Get-Content -LiteralPath $classpathPath -Raw).Trim() -split
+                [regex]::Escape([IO.Path]::PathSeparator)) |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
     )
+    $classpathEntries = @()
+    foreach ($entry in @(Sort-GateWOrdinalStrings $classpathCandidates))
+    {
+        if ($classpathEntries.Count -eq 0 -or $classpathEntries[-1] -cne $entry)
+        {
+            $classpathEntries += $entry
+        }
+    }
     $libraryIndex = 0
     foreach ($entry in $classpathEntries)
     {
@@ -497,8 +482,8 @@ function Build-ReleaseBundle
     {
         $baseCommit = $head
         $candidateDiffSha256 = Get-CandidateDiffSha256
-        $releaseId = 'candidate-{0}-{1}-{2}' -f $head.Substring(0, 12),
-        $candidateDiffSha256.Substring(0, 16), ([DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssZ'))
+        $releaseId = 'candidate-{0}-{1}' -f $head.Substring(0, 12),
+        $candidateDiffSha256.Substring(0, 16)
     }
 
     $effectiveOutputRoot = if ( [string]::IsNullOrWhiteSpace($OutputRoot))
@@ -511,7 +496,8 @@ function Build-ReleaseBundle
     }
     [IO.Directory]::CreateDirectory($effectiveOutputRoot) | Out-Null
     $destination = Join-Path $effectiveOutputRoot $releaseId
-    if (Test-Path -LiteralPath $destination)
+    $bundlePath = Join-Path $effectiveOutputRoot ($releaseId + '.tar')
+    if ((Test-Path -LiteralPath $destination) -or (Test-Path -LiteralPath $bundlePath))
     {
         throw 'BLOCKED / RELEASE_OUTPUT_ALREADY_EXISTS'
     }
@@ -529,6 +515,8 @@ function Build-ReleaseBundle
             'bin/gatew-okx-readonly-soak-failclose.ps1' '0755' $true 'failclose-helper'
         Add-TextArtifact $stageRoot (Join-Path $script:RepoRoot 'scripts/gatew/gatew-soak-remediation-contract.psm1') `
             'bin/gatew-soak-remediation-contract.psm1' '0644' $false 'contract-library'
+        Add-TextArtifact $stageRoot $script:ReleaseContractPath `
+            'bin/gatew-release-contract.psm1' '0644' $false 'release-contract'
         Add-TextArtifact $stageRoot (Join-Path $script:RepoRoot 'scripts/gatew/verify-gatew-release.ps1') `
             'bin/verify-gatew-release.ps1' '0755' $true 'release-verifier'
         Add-TextArtifact $stageRoot (Join-Path $script:RepoRoot 'scripts/gatew/install-gatew-release.ps1') `
@@ -541,15 +529,15 @@ function Build-ReleaseBundle
             'systemd/nq-gatew-soak-failclose@.service' 'systemd-failclose-unit' $releaseExecutionRoot
         Build-LauncherArtifacts $stageRoot
 
-        $artifacts = @($script:ArtifactRecords | Sort-Object relativePath)
+        $artifacts = @(Sort-GateWArtifactsOrdinal @($script:ArtifactRecords))
         $manifest = [ordered]@{
-            schemaVersion = 'nq-gatew-release-v1'
+            schemaVersion = 'nq-gatew-release-v2'
             releaseId = $releaseId
             sourceCommit = $head
+            sourceCommitTimestamp = Get-SourceCommitTimestamp $head
             sourceTreeMode = $SourceTreeMode
             baseCommit = $baseCommit
             candidateDiffSha256 = $candidateDiffSha256
-            createdAt = [DateTimeOffset]::UtcNow.ToString('o')
             requiredRuntime = [ordered]@{
                 os = 'linux'
                 powershellMajor = 7
@@ -559,8 +547,7 @@ function Build-ReleaseBundle
             lineEndingPolicy = 'LF'
             artifacts = $artifacts
         }
-        $manifestJson = $manifest | ConvertTo-Json -Depth 8
-        Write-LfText (Join-Path $stageRoot 'release-manifest.json') ($manifestJson + "`n")
+        Write-GateWCanonicalManifest (Join-Path $stageRoot 'release-manifest.json') $manifest
         Move-Item -LiteralPath $stageRoot -Destination $destination
         $verifyScript = Join-Path $destination 'bin/verify-gatew-release.ps1'
         $verifyOutput = @(& $verifyScript -ReleaseRoot $destination -ExpectedReleaseId $releaseId -SkipPosix)
@@ -569,6 +556,15 @@ function Build-ReleaseBundle
             throw 'FAIL / RELEASE_BUILD_VERIFY_FAILED'
         }
         $verification = ($verifyOutput -join "`n") | ConvertFrom-Json
+        New-GateWCanonicalTar $destination $manifest $bundlePath
+        $bundleSha256 = Get-Sha256File $bundlePath
+        $bundleVerifyOutput = @(& $verifyScript -ReleaseRoot $destination `
+            -ExpectedReleaseId $releaseId -ExpectedManifestSha256 $verification.manifestSha256 `
+            -BundlePath $bundlePath -ExpectedBundleSha256 $bundleSha256 -SkipPosix)
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw 'FAIL / RELEASE_BUILD_VERIFY_FAILED'
+        }
         return [pscustomobject]@{
             decision = 'PASS / IMMUTABLE_RELEASE_BUNDLE_BUILT'
             releaseId = $releaseId
@@ -577,6 +573,8 @@ function Build-ReleaseBundle
             baseCommit = $baseCommit
             candidateDiffSha256 = $candidateDiffSha256
             bundleRoot = $destination
+            bundlePath = $bundlePath
+            bundleSha256 = $bundleSha256
             manifestSha256 = [string]$verification.manifestSha256
             artifactCount = [int]$verification.artifactCount
         }
@@ -618,6 +616,7 @@ function Invoke-BuilderSelfTest
         }
         Write-LfText (Join-Path $jarSource 'db/migration/V1__self_test.sql') 'SELECT 1;'
         New-DeterministicJar $jarSource $jarPath
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
         $archive = [IO.Compression.ZipFile]::OpenRead($jarPath)
         try
         {
@@ -646,12 +645,18 @@ function Invoke-BuilderSelfTest
         {
             throw 'exact unit binding self-test failed'
         }
+        $sourceCommitTimestamp = Get-SourceCommitTimestamp (Get-HeadCommit)
+        if ($sourceCommitTimestamp -cnotmatch '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$')
+        {
+            throw 'source commit timestamp self-test failed'
+        }
         return [pscustomobject]@{
             decision = 'PASS / RELEASE_BUNDLE_BUILDER_SELF_TEST'
             lfNormalization = 'PASS'
             candidateDiffSha256 = 'PASS'
             deterministicJarDirectoryEntries = 'PASS'
             unitReleaseBinding = 'PASS'
+            deterministicSourceCommitTimestamp = 'PASS'
             credentialAccessed = $false
             networkCalled = $false
         }

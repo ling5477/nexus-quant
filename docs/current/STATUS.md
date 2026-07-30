@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_acceptance_head=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_ci_run=29339016784
-work_batch=GateW-ATTEMPT-09-FAILURE-REMEDIATION
-work_batch_status=SECURITY_REVIEW_ACCEPTED|CI_GREEN|DEPLOYMENT_PENDING
+work_batch=GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT
+work_batch_status=DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRED
 work_batch_commit=61f0b94fadbc87b883a7365eaacc4e8f63829a88
 work_batch_ci_run=30515021689
-next_action=NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
+next_action=NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -45,6 +45,7 @@ nq-current-authority:end -->
 - GateW pre-create sanitized prerequisite remediation：`PASS / IMPLEMENTATION COMMITTED / IMPLEMENTATION CI GREEN / SERVER DEPLOYED`（通过 / 实现已提交 / 实现 CI 已通过 / 服务器已部署）。Implementation commit `1b501488076fae79e15b84579a02f5c580fa51b3` 的 exact-head CI run `29837563573` 为 `completed / success / 10 of 10`；服务器 `/opt/nexus-quant/current` 固定到该 `EXACT_COMMIT` immutable release，129 artifacts、manifest/POSIX、root owner/mode、`nqgatewWritable=false`、systemd verify、sanitized pre-create 与完整 final offline acceptance 均通过。
 - GateW-OKX-READONLY-SOAK-ATTEMPT-09：`FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED`（失败 / 验收已拒绝 / 事件复盘已完成）。唯一 run `gatew-soak-20260722T111144Z-ac00f878` 的最后有效样本为 `2026-07-27T22:23:14.5722391Z`，worker 于 `2026-07-27T22:25:46.8916254Z` 被 systemd stop transaction 以 `TERM` 终止；有效时长 `471795.0520427s < 604800s`，短缺 `133004.9479573s`。`PASS / FORMAL_SOAK_VERIFIED` 只证明现有 verifier 覆盖的 evidence integrity，不构成 168 小时 acceptance。
 - GateW-ATTEMPT-09-FAILURE-REMEDIATION：`SECURITY REVIEW ACCEPTED / CI GREEN / DEPLOYMENT PENDING`（安全审查已接受 / CI 已通过 / 待部署验证）。Implementation commit `92adff7e55c2200692e892db2189132c243a1ac5` 的 exact-head CI run `30474856153` 为 `completed / success / 10 of 10`；security review/P1 minimal-fix commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 exact-head CI run `30515021689` 为 `completed / success / 10 of 10`。两个 P1 已关闭：completion marker 改由 root control 在其他 acceptance hard gates 全部通过后写入并绑定 release/PID/evidence hash；stop intent 使用精确 reason allowlist 与 stale/no-exit 可审计退休恢复。Clean Commit A `EXACT_COMMIT` bundle 为 130 artifacts，manifest SHA-256 `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`，closed set/hash/LF/mode/篡改拒绝通过；Windows `posixVerified=false`，新 release 未部署服务器。
+- GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT：`DEPLOYMENT VERIFICATION FAILED / REMEDIATION REQUIRED`（部署验证失败 / 需要整改）。同一 source commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 在不同时间重建得到不同 manifest hash：原记录 `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`、rebuild-1 `b25b065c...ed12`、rebuild-2 `9c904671...a7d2`。根因为 hashed manifest 的 `createdAt` 使用实际构建时间，且 runtime-dependent ZIP/JAR 与 culture-sensitive sorting 未形成正式 canonical contract。旧 hash 仅为 `HISTORICAL_NON_REPRODUCIBLE_BUILD_OUTPUT / NOT_DEPLOYABLE_BASELINE`（历史不可复现构建输出 / 不可作为部署基线）；服务器变更为 0，Attempt-10 未创建且未授权。
 - GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，必须先完成 verifier/finalizer/continuity 整改。Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
@@ -76,4 +77,4 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`。该动作只允许对 security review commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 canonical `EXACT_COMMIT` release 执行独立 Linux root install、POSIX owner/mode、worker 不可写、symlink containment、systemd verify 与部署后零运行副作用验证；不得恢复 Attempt-09、创建或启动 Attempt-10、启动新 soak、重置 clock、扩大 OKX endpoint、进入 freeze/archive/tag，也不授权 LIVE、订单、撤单、转账、提现、credential 输出或任何交易写侧。
+治理 authority 中唯一下一动作精确为 `NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX`。该动作只允许修复 canonical release builder/verifier 的确定性 manifest、artifact/JAR closed set 与稳定传输 bundle，并以同一新 exact commit 的两份 detached worktree、PowerShell 5.1/7 和 exact-head CI 证明可复现；禁止 SSH、上传、服务器安装、systemd 操作、Attempt-10、OKX、credential、数据库、GateW freeze、LIVE 与交易写侧。

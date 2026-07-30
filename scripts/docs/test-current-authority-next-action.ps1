@@ -274,6 +274,39 @@ foreach ($action in @(
 }
 Write-Output 'PASS non-canonical-remediation-deployment-action relation=false'
 
+$deploymentFailedStatus = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRED'
+$deploymentWorkBatch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT'
+$reproducibleBuildFix = 'NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX'
+Assert-ActionType $reproducibleBuildFix 'REPRODUCIBLE_BUILD_FIX'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $deploymentFailedStatus $deploymentWorkBatch $reproducibleBuildFix)) {
+    throw 'CANONICAL_REPRODUCIBLE_BUILD_FIX_REJECTED'
+}
+Write-Output 'PASS canonical-reproducible-build-fix exact-triple=true'
+
+$deploymentRetryStatus = 'IMPLEMENTED|CI_GREEN|DEPLOYMENT_RETRY_PENDING'
+$deploymentFixWorkBatch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $deploymentRetryStatus $deploymentFixWorkBatch `
+        $remediationDeploymentVerification)) {
+    throw 'CANONICAL_REPRODUCIBLE_BUILD_DEPLOYMENT_RETRY_REJECTED'
+}
+Write-Output 'PASS canonical-reproducible-build-deployment-retry exact-triple=true'
+
+foreach ($case in @(
+    @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRD'; Batch = $deploymentWorkBatch; Action = $reproducibleBuildFix },
+    @{ Status = $deploymentFailedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-ATTEMPT-10'; Action = $reproducibleBuildFix },
+    @{ Status = $deploymentFailedStatus; Batch = $deploymentWorkBatch; Action = 'NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX-LATER' },
+    @{ Status = 'implemented|ci_green|deployment_retry_pending'; Batch = $deploymentFixWorkBatch; Action = $remediationDeploymentVerification },
+    @{ Status = $deploymentRetryStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX-ATTEMPT-10'; Action = $remediationDeploymentVerification }
+)) {
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $case.Status $case.Batch $case.Action) {
+        throw "NON_CANONICAL_REPRODUCIBLE_BUILD_MAPPING_ACCEPTED status=$($case.Status) batch=$($case.Batch) action=$($case.Action)"
+    }
+}
+Write-Output 'PASS non-canonical-reproducible-build-mapping relation=false'
+
 if (-not (Test-GovernanceLifecycleTransition `
         $contract 'highRisk' $attempt09RunningStatus $attempt09FailureStatus)) {
     throw 'ATTEMPT_09_FAILURE_LIFECYCLE_TRANSITION_REJECTED'
@@ -289,6 +322,16 @@ if (-not (Test-GovernanceLifecycleTransition `
     throw 'REMEDIATION_SECURITY_ACCEPTANCE_LIFECYCLE_TRANSITION_REJECTED'
 }
 Write-Output 'PASS remediation-security-review-to-deployment-pending lifecycle=highRisk'
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $securityReviewAcceptedStatus $deploymentFailedStatus)) {
+    throw 'DEPLOYMENT_VERIFICATION_FAILURE_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS deployment-verification-to-remediation-required lifecycle=highRisk'
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $deploymentFailedStatus $deploymentRetryStatus)) {
+    throw 'REPRODUCIBLE_BUILD_FIX_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS reproducible-build-fix-to-deployment-retry lifecycle=highRisk'
 
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'
@@ -361,13 +404,19 @@ $script:statusFixture = [System.IO.File]::ReadAllText(
 $script:roadmapFixture = [System.IO.File]::ReadAllText(
     (Join-Path $repoRoot 'docs/current/ROADMAP.md'),
     (New-Object System.Text.UTF8Encoding($false)))
+$currentAuthority = Read-GovernanceAuthorityBlock $script:statusFixture
+if ($null -eq $currentAuthority -or
+        [string]::IsNullOrWhiteSpace([string]$currentAuthority.next_action)) {
+    throw 'CURRENT_AUTHORITY_FIXTURE_INVALID'
+}
+$currentNextAction = [string]$currentAuthority.next_action
 
 $currentUniqueAllowedActionIs = [regex]::Unescape('\u5F53\u524D\u552F\u4E00\u5141\u8BB8\u52A8\u4F5C\u662F')
 $canonicalReadme = @(
     '# Current Docs',
     '',
     ('- {0} `{1}`; canonical.' -f
-        $currentUniqueAllowedActionIs, $remediationDeploymentVerification)
+        $currentUniqueAllowedActionIs, $currentNextAction)
 ) -join "`n"
 Assert-CurrentDocsAuthorityCase 'readme-consistent' $canonicalReadme $true
 
@@ -388,7 +437,8 @@ Assert-CurrentDocsAuthorityCase 'readme-old-acceptance' $oldAcceptanceReadme $fa
 $lowercaseReadme = @(
     '# Current Docs',
     '',
-    ('- {0} `nq-gatew-remediation-immutable-release-deployment-verification`; case error.' -f $currentUniqueAllowedActionIs)
+    ('- {0} `{1}`; case error.' -f
+        $currentUniqueAllowedActionIs, $currentNextAction.ToLowerInvariant())
 ) -join "`n"
 Assert-CurrentDocsAuthorityCase 'readme-action-case-error' $lowercaseReadme $false
 

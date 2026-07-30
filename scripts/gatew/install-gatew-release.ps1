@@ -23,7 +23,7 @@ $script:CredentialRoot = '/etc/nexus-quant/gatew-soak/credentials'
 $script:DatabasePasswordSecretPath = '/etc/nexus-quant/gatew-soak/credentials/db-password.cred'
 $script:WorkerTemplate = 'nq-gatew-soak@.service'
 $script:FailCloseTemplate = 'nq-gatew-soak-failclose@.service'
-$script:ReleaseIdPattern = '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16}-[0-9]{8}T[0-9]{6}Z)$'
+$script:ReleaseIdPattern = '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16})$'
 $script:RunuserPath = '/usr/sbin/runuser'
 $script:SystemctlPath = '/usr/bin/systemctl'
 $script:SystemdAnalyzePath = '/usr/bin/systemd-analyze'
@@ -714,7 +714,7 @@ function Invoke-InstallerSelfTest
 {
     foreach ($valid in @(
         '0123456789abcdef0123456789abcdef01234567',
-        'candidate-0123456789ab-0123456789abcdef-20260719T000000Z'
+        'candidate-0123456789ab-0123456789abcdef'
     ))
     {
         Assert-ReleaseId $valid

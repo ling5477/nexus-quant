@@ -12237,3 +12237,18 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 ```
 
 大小写错误、Attempt-10、错拼、附加后缀、错误状态和错误work batch均必须拒绝。Authority sync后GateW仍`IN_PROGRESS|NOT_FROZEN`，Attempt-09仍`REJECTED`，Attempt-10仍`NOT_CREATED|NOT_AUTHORIZED`；服务器runtime继续固定既有`1b501488...` release，本任务未部署。
+
+## 2026-07-30 — GateW reproducible release fix（pre-Commit A）
+
+当前结论：`IMPLEMENTED_LOCALLY / REPRODUCIBILITY_PRE_CI_VERIFIED / COMMIT_A_CI_PENDING / FINAL_DUAL_WORKTREE_PROOF_PENDING / ATTEMPT_10_NOT_AUTHORIZED`（本地已实现 / 提交前可复现性已验证 / Commit A CI 待执行 / 最终双 worktree 证明待执行 / Attempt-10 未授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| PowerShell 5.1 / 7 reproducibility regression | PASS | 双引擎各 16 cases；含 2 秒间隔、不同路径、locale/timezone、不同 commit、dirty、missing/extra/noncanonical/tamper |
+| PowerShell 5.1 / 7 builder self-test | PASS | canonical manifest/JAR/source commit timestamp/LF/unit binding |
+| PowerShell 5.1 / 7 installer self-test | PASS | release ID/enablement/pre-create contract；network/credential=false |
+| PowerShell 5.1 / 7 真实 candidate build | PASS | 131 artifacts；manifest `0275fa23...a522a`、bundle `b9a61a6a...b0626` 两引擎完全一致 |
+| tamper rejection | PASS | exit 2 / `BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH` |
+| governance regressions | PASS | next-action、lifecycle、task-evidence 双引擎通过 |
+
+未运行：Commit A、exact-head CI、Commit A 双 detached worktree exact build、SSH、上传、服务器 install、systemd、Attempt-10、OKX、credential、数据库、GateW freeze。candidate hash 不作为部署基线；阻断性：正式 exact-commit baseline 仍待 Commit A CI 与双 worktree 证明。

@@ -27,7 +27,11 @@ GateW-OKX-READONLY-SOAK-ATTEMPT-09 FAILED / ACCEPTANCE REJECTED / INCIDENT REVIE
   ↓
 GateW Attempt-09 failure remediation SECURITY REVIEW ACCEPTED / CI GREEN / DEPLOYMENT PENDING
   ↓
-NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
+GateW immutable release DEPLOYMENT VERIFICATION FAILED / REMEDIATION REQUIRED
+  ↓
+NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX
+  ↓
+Deployment retry pending after reproducibility proof
   ↓
 Attempt-10 NOT CREATED / NOT AUTHORIZED
   ↓
@@ -50,8 +54,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW pre-create sanitized prerequisite remediation：implementation commit `1b501488076fae79e15b84579a02f5c580fa51b3`，exact-head CI run `29837563573 / completed / success / 10 of 10`；final `EXACT_COMMIT` immutable release 已部署，独立 pre-create、self-contained DB input、sanitized metadata readback 与完整 final offline acceptance 均通过，服务器 current 固定 Commit A。
 - GateW-OKX-READONLY-SOAK-ATTEMPT-09：`FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED`；run `gatew-soak-20260722T111144Z-ac00f878` 的有效时长为 `471795.0520427s`，距离 `604800s` 短缺 `133004.9479573s`。Worker 分类=`OPERATOR_OR_AUTOMATION_STOP`、精确发起者=`UNKNOWN`；finalizer 分类=`FINALIZER_SYSTEMD_TIMEOUT`，terminal result 缺失；`FORMAL_SOAK_VERIFIED` 仅覆盖 evidence integrity，不能推导 acceptance。
 - GateW Attempt-09 failure remediation：`SECURITY REVIEW ACCEPTED / CI GREEN / DEPLOYMENT PENDING`；implementation commit `92adff7e55c2200692e892db2189132c243a1ac5` 的 exact-head CI run `30474856153` 与 security review/P1 fix commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 exact-head CI run `30515021689` 均为 `completed / success / 10 of 10`。两个 P1 已关闭；clean Commit A canonical `EXACT_COMMIT` bundle 为 130 artifacts，manifest `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`，closed set/hash/LF/mode/篡改拒绝通过。Windows `posixVerified=false`；未部署服务器。
+- GateW immutable release deployment verification：`DEPLOYMENT VERIFICATION FAILED / REMEDIATION REQUIRED`（部署验证失败 / 需要整改）。同一 exact commit 的 manifest 因动态 `createdAt` 在不同时间重建为不同 hash；旧 `f2ec7b...` 及两个 rebuild 值只能记为 `HISTORICAL_NON_REPRODUCIBLE_BUILD_OUTPUT / NOT_DEPLOYABLE_BASELINE`，不得继续作为部署基线。服务器变更为 0。
 - GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`。
-- 当前唯一治理动作：`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`。只允许对 security review commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 canonical `EXACT_COMMIT` release 执行独立 Linux root install/POSIX/systemd/deployment 验证；不得恢复 Attempt-09、创建或启动 Attempt-10、启动新 soak、重置 clock、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
+- 当前唯一治理动作：`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX`。只允许修复并验证可复现 release manifest、artifact set、canonical JAR/tar 与供应链回归；不得 SSH、上传、安装、修改 systemd、恢复 Attempt-09、创建 Attempt-10、访问 OKX/credential/数据库、触碰交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 
@@ -62,5 +67,5 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
-- 本轮 remediation implementation/security review commits 均未部署，服务器 runtime 必须继续固定既有 release `1b501488076fae79e15b84579a02f5c580fa51b3`；只有当前明确的 immutable release deployment verification 任务在重新通过全部 Linux hard gates 后才能改变服务器 release。
+- 本轮 reproducible build fix 不部署，服务器 runtime 必须继续固定既有 release `1b501488076fae79e15b84579a02f5c580fa51b3`；只有后续重新授权的 immutable release deployment verification 在通过全部 Linux hard gates 后才能改变服务器 release。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。

@@ -5,6 +5,8 @@ param(
 
     [string]$ExpectedReleaseId,
     [string]$ExpectedManifestSha256,
+    [string]$BundlePath,
+    [string]$ExpectedBundleSha256,
     [switch]$SkipPosix
 )
 
@@ -12,12 +14,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $script:ManifestName = 'release-manifest.json'
-$script:ReleaseIdPattern = '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16}-[0-9]{8}T[0-9]{6}Z)$'
+$script:ReleaseIdPattern = '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16})$'
 $script:Sha256Pattern = '^[a-f0-9]{64}$'
 $script:CommitPattern = '^[a-f0-9]{40}$'
 $script:AllowedRoles = @(
     'worker-helper', 'control-helper', 'failclose-helper', 'contract-library',
-    'release-verifier', 'release-installer',
+    'release-verifier', 'release-installer', 'release-contract',
     'systemd-worker-unit', 'systemd-failclose-unit', 'launcher-test-support',
     'launcher-module', 'runtime-library'
 )
@@ -26,9 +28,12 @@ $script:ExecutableRoles = @(
 )
 $script:LfRoles = @(
     'worker-helper', 'control-helper', 'failclose-helper', 'contract-library',
-    'release-verifier', 'release-installer',
+    'release-verifier', 'release-installer', 'release-contract',
     'systemd-worker-unit', 'systemd-failclose-unit'
 )
+$script:ReleaseContractPath = Join-Path $PSScriptRoot 'gatew-release-contract.psm1'
+
+Import-Module $script:ReleaseContractPath -Force -DisableNameChecking
 
 function Test-LinuxPlatform
 {
@@ -310,11 +315,11 @@ function Assert-ManifestContract
     )
 
     Assert-ExactFields $Manifest @(
-        'schemaVersion', 'releaseId', 'sourceCommit', 'sourceTreeMode', 'baseCommit',
-        'candidateDiffSha256', 'createdAt', 'requiredRuntime', 'lineEndingPolicy', 'artifacts'
+        'schemaVersion', 'releaseId', 'sourceCommit', 'sourceCommitTimestamp', 'sourceTreeMode',
+        'baseCommit', 'candidateDiffSha256', 'requiredRuntime', 'lineEndingPolicy', 'artifacts'
     )
     Assert-NoSecretFieldNames $Manifest
-    if ([string]$Manifest.schemaVersion -ne 'nq-gatew-release-v1' -or
+    if ([string]$Manifest.schemaVersion -ne 'nq-gatew-release-v2' -or
             [string]$Manifest.releaseId -cnotmatch $script:ReleaseIdPattern -or
             [string]$Manifest.sourceCommit -cnotmatch $script:CommitPattern -or
             [string]$Manifest.sourceTreeMode -notin @('CANDIDATE', 'EXACT_COMMIT') -or
@@ -327,9 +332,14 @@ function Assert-ManifestContract
     {
         throw 'BLOCKED / RELEASE_ID_MISMATCH'
     }
-    $createdAt = [DateTimeOffset]::MinValue
-    if (-not [DateTimeOffset]::TryParse([string]$Manifest.createdAt, [ref]$createdAt) -or
-            $createdAt.Offset -ne [TimeSpan]::Zero)
+    $sourceCommitTimestamp = [DateTimeOffset]::MinValue
+    if (-not [DateTimeOffset]::TryParseExact(
+            [string]$Manifest.sourceCommitTimestamp,
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            [Globalization.CultureInfo]::InvariantCulture,
+            [Globalization.DateTimeStyles]::AssumeUniversal,
+            [ref]$sourceCommitTimestamp
+        ))
     {
         throw 'BLOCKED / RELEASE_MANIFEST_SCHEMA_INVALID'
     }
@@ -439,7 +449,7 @@ function Assert-ManifestContract
 
     foreach ($requiredRole in @(
         'worker-helper', 'control-helper', 'failclose-helper', 'contract-library',
-        'release-verifier', 'release-installer',
+        'release-verifier', 'release-installer', 'release-contract',
         'systemd-worker-unit', 'systemd-failclose-unit', 'launcher-test-support', 'launcher-module', 'runtime-library'
     ))
     {
@@ -451,15 +461,15 @@ function Assert-ManifestContract
     Assert-SystemdReleaseBinding $Manifest $Root
 
     $actual = @(
-    Get-ChildItem -LiteralPath $Root -File -Recurse -Force |
+        Get-ChildItem -LiteralPath $Root -File -Recurse -Force |
             ForEach-Object {
                 Assert-NoSymlink $_.FullName
                 $_.FullName.Substring($Root.Length).TrimStart('/', '\').Replace('\', '/')
             } |
-            Where-Object { $_ -ne $script:ManifestName } |
-            Sort-Object
+            Where-Object { $_ -ne $script:ManifestName }
     )
-    $declared = @($seen.Keys | Sort-Object)
+    $actual = @(Sort-GateWOrdinalStrings $actual)
+    $declared = @(Sort-GateWOrdinalStrings @($seen.Keys))
     if (($actual -join '|') -cne ($declared -join '|'))
     {
         throw 'BLOCKED / RELEASE_UNDECLARED_ARTIFACT'
@@ -513,6 +523,43 @@ try
     }
     $manifest = ConvertFrom-ReleaseJson (Get-Content -LiteralPath $manifestPath -Raw)
     Assert-ManifestContract $manifest $resolvedRoot
+    $actualManifestBytes = [IO.File]::ReadAllBytes($manifestPath)
+    $canonicalManifestBytes = Get-GateWCanonicalManifestBytes $manifest
+    try
+    {
+        if ($actualManifestBytes.Length -ne $canonicalManifestBytes.Length)
+        {
+            throw 'BLOCKED / RELEASE_MANIFEST_NOT_CANONICAL'
+        }
+        for ($index = 0; $index -lt $actualManifestBytes.Length; $index++)
+        {
+            if ($actualManifestBytes[$index] -ne $canonicalManifestBytes[$index])
+            {
+                throw 'BLOCKED / RELEASE_MANIFEST_NOT_CANONICAL'
+            }
+        }
+    }
+    finally
+    {
+        [Array]::Clear($actualManifestBytes, 0, $actualManifestBytes.Length)
+        [Array]::Clear($canonicalManifestBytes, 0, $canonicalManifestBytes.Length)
+    }
+    $bundleSha256 = $null
+    if (-not [string]::IsNullOrWhiteSpace($BundlePath) -or
+            -not [string]::IsNullOrWhiteSpace($ExpectedBundleSha256))
+    {
+        if ([string]::IsNullOrWhiteSpace($BundlePath) -or
+                -not (Test-Path -LiteralPath $BundlePath -PathType Leaf) -or
+                $ExpectedBundleSha256 -cnotmatch $script:Sha256Pattern)
+        {
+            throw 'BLOCKED / RELEASE_BUNDLE_HASH_MISMATCH'
+        }
+        $bundleSha256 = Get-Sha256File ([IO.Path]::GetFullPath($BundlePath))
+        if ($bundleSha256 -cne $ExpectedBundleSha256)
+        {
+            throw 'BLOCKED / RELEASE_BUNDLE_HASH_MISMATCH'
+        }
+    }
     [pscustomobject]@{
         decision = 'PASS / IMMUTABLE_RELEASE_VERIFIED'
         releaseId = [string]$manifest.releaseId
@@ -521,6 +568,7 @@ try
         releaseRoot = $resolvedRoot
         manifestSha256 = $manifestSha256
         artifactCount = @($manifest.artifacts).Count
+        bundleSha256 = $bundleSha256
         posixVerified = (Test-LinuxPlatform) -and -not $SkipPosix
     } | ConvertTo-Json -Depth 6
 }
