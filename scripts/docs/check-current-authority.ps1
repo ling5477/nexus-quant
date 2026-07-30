@@ -9,6 +9,7 @@ param(
     [string] $StatusPath = 'docs/current/STATUS.md',
     [string] $PlanPath = 'docs/current/GATEV_PLAN.md',
     [string] $RoadmapPath = 'docs/current/ROADMAP.md',
+    [string] $CurrentDocsPath = 'docs/current',
     [ValidateSet('NONE', 'ARCHIVE_FREEZE', 'RELEASE')]
     [string] $ReadinessMode = 'NONE'
 )
@@ -40,6 +41,53 @@ function Test-StatusPhrase {
     param([string] $Content, [string] $Subject, [string] $StatusPattern)
     $pattern = '(?im)^\s*-\s*{0}\s*(?:\x3a|\uff1a)[^\r\n]*{1}' -f [regex]::Escape($Subject), $StatusPattern
     return $Content -match $pattern
+}
+
+function Get-CurrentNextActionDeclarations {
+    param([string] $RootPath)
+
+    $declarations = New-Object System.Collections.Generic.List[object]
+    $declarationPattern = '^\s*(?:-\s*)?(?:\u5F53\u524D\u552F\u4E00(?:\u5141\u8BB8|\u6CBB\u7406|\u4E0B\u4E00)?\u52A8\u4F5C(?:\u7CBE\u786E)?(?:\u4E3A|\u662F|\uFF1A|:)|\u6CBB\u7406 [Aa]uthority \u4E2D\u552F\u4E00\u4E0B\u4E00\u52A8\u4F5C\u7CBE\u786E\u4E3A)\s*`(?<action>[^`\r\n]+)`(?:[\uFF1B;\u3002]|$)'
+
+    foreach ($file in @(Get-ChildItem -LiteralPath $RootPath -Recurse -File -Filter '*.md' | Sort-Object FullName)) {
+        $content = Read-Utf8File $file.FullName
+        $lines = [regex]::Split($content, '\r?\n')
+        $inFence = $false
+        $fenceCharacter = $null
+
+        for ($index = 0; $index -lt $lines.Count; $index++) {
+            $line = $lines[$index]
+            $fenceMatch = [regex]::Match($line, '^\s*(?<fence>`{3,}|~{3,})')
+            if ($fenceMatch.Success) {
+                $currentFenceCharacter = $fenceMatch.Groups['fence'].Value.Substring(0, 1)
+                if (-not $inFence) {
+                    $inFence = $true
+                    $fenceCharacter = $currentFenceCharacter
+                } elseif ($currentFenceCharacter -ceq $fenceCharacter) {
+                    $inFence = $false
+                    $fenceCharacter = $null
+                }
+                continue
+            }
+            if ($inFence) { continue }
+
+            $declarationMatch = [regex]::Match($line, $declarationPattern)
+            if ($declarationMatch.Success) {
+                $displayPath = $file.FullName
+                $repoPrefix = $repoRoot + [System.IO.Path]::DirectorySeparatorChar
+                if ($file.FullName.StartsWith($repoPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    $displayPath = $file.FullName.Substring($repoPrefix.Length)
+                }
+                $declarations.Add([pscustomobject]@{
+                    Action = $declarationMatch.Groups['action'].Value
+                    File = $displayPath.Replace('\', '/')
+                    Line = $index + 1
+                })
+            }
+        }
+    }
+
+    return $declarations.ToArray()
 }
 
 $resolvedContract = Join-Path $PSScriptRoot 'governance-workflow-contract.json'
@@ -190,6 +238,21 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             }
             if (-not $statusBody.Contains($authority.next_action)) {
                 Add-AuthorityError "NEXT_ACTION_MISMATCH expected=$($authority.next_action) file=$StatusPath"
+            }
+
+            $resolvedCurrentDocs = Resolve-RepoPath $CurrentDocsPath
+            if (-not (Test-Path -LiteralPath $resolvedCurrentDocs -PathType Container)) {
+                Add-AuthorityError "CURRENT_DOCS_NOT_FOUND $CurrentDocsPath"
+            } else {
+                foreach ($declaration in @(Get-CurrentNextActionDeclarations $resolvedCurrentDocs)) {
+                    if (-not [string]::Equals(
+                            $declaration.Action,
+                            $authority.next_action,
+                            [System.StringComparison]::Ordinal)) {
+                        Add-AuthorityError ("CURRENT_DOC_NEXT_ACTION_MISMATCH expected={0} actual={1} file={2} line={3}" -f
+                            $authority.next_action, $declaration.Action, $declaration.File, $declaration.Line)
+                    }
+                }
             }
 
             Write-Output ("AUTHORITY schema={0} last_frozen_gate={1} frozen_status={2} active_gate={3} active_status={4} accepted_batch={5} accepted_status={6} acceptance_head={7} accepted_ci_run={8} work_batch={9} work_status={10} work_commit={11} work_ci_run={12} next_action={13}" -f
