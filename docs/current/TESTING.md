@@ -12292,3 +12292,24 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 已知 warning：`systemd-analyze` 的两条输出来自既有 `cloudmonitor.service`，GateW unit exit 0。worker self-test 默认 test root 指向 immutable release 同级路径，首次以 worker 身份因正确的只读权限失败；使用 SHA-256 与正式 worker artifact 完全相同的一次性 test-root copy 后 59 cases 通过。security runner 的 `-WindowStyle Hidden` 为 Windows-only test harness 参数，只在临时 runner 中去除。
 
 未运行：Attempt-10 正式 prepare/start、真实新 acceptance clock、OKX、credential material、PostgreSQL/management API、168h runtime acceptance、LIVE、交易写侧、freeze/archive/tag。上述未运行项不阻断本轮 release deployment verification，但仍是下一独立任务的 hard gates。
+
+## 2026-07-30 — GateW Attempt-10 preparation/start attempt-01
+
+当前结论：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / IMMUTABLE_RELEASE_ACTIVATED / ATTEMPT_10_NOT_CREATED / UNITS_NOT_STARTED / OKX_NOT_CALLED`（已阻断 / credential 或 permission 前置检查失败 / immutable release 已激活 / Attempt-10 未创建 / units 未启动 / 未调用 OKX）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Local branch/worktree/HEAD/origin | PASS | `dev` clean；`HEAD == origin/dev == 509a9f35...11d` |
+| Starting governance CI | PASS | run `30549800762 / completed / success / 10 of 10`；headSha 精确匹配 |
+| Current authority checker | PASS | errors=`0`；`PASS / CURRENT_AUTHORITY_CONSISTENT` |
+| Server/NTP/sudo/Attempt-09/zero runtime audit | PASS | NTP yes；Attempt-09 inactive/MainPID 0；active GateW/timer/job/pwsh-java worker=`0/0/0/0` |
+| Direct immutable verifier | PASS | source=`c16f27c3...`；manifest=`eaf83f95...e8977`；131 artifacts；POSIX true |
+| Canonical activate | PASS | `EXACT_COMMIT_RELEASE_ACTIVATED`；current 精确为 `c16f27c3...`；active units 0 |
+| Canonical install-units / systemd analyze | PASS | unit links 精确绑定 release；analyze exit 0；worker/fail-close 安全合同通过 |
+| Canonical `precreate-prerequisite` | BLOCKING FAIL | checkedAt=`2026-07-30T14:40:47.4464278Z`；`readyForAttemptCreation=false`；material exposed=false |
+| Sanitized pre-create RCA | PARTIAL | descriptor/secret metadata、management HTTP 200、PostgreSQL listener、launcher bundle、release binding通过；Java readback具体异常因脱敏合同不可见 |
+| Final server invariants | PASS | current=`c16f27c3...`；new run/clock/active unit/timer/job/worker process=`0/0/0/0/0/0` |
+
+已知 warning：`systemd-analyze` 仅报告既有无关 `cloudmonitor.service` warning。首次 verifier 路径使用仓库布局而在脚本加载前失败；改用 release closed-set 的 `bin/` canonical 路径后通过。SSH here-string CRLF 仅影响 activation 后的展示命令，activation 未重发并由独立连接复核。
+
+未运行：`prepare`、RunId 创建、unit-preflight、worker start、OKX config/balance、fresh SSH、acceptance clock、samples、hash chain、`verify-evidence`、`verify-acceptance`、`verify-terminal`、legacy `verify`、168h acceptance、LIVE、交易写侧、freeze/archive/tag。该 pre-create 失败为阻断性结果，禁止直接重试。

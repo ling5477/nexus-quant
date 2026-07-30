@@ -33,7 +33,9 @@ GateW reproducible release fix IMPLEMENTED / CI GREEN / DEPLOYMENT RETRY PENDING
   ↓
 GateW remediation release DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING
   ↓
-NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START
+NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START attempt-01 BLOCKED / PRECREATE FAILED / ATTEMPT-10 NOT CREATED
+  ↓
+NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START（pending pre-create RCA/fix and new production authorization）
   ↓
 GateW-FREEZE NOT STARTED / FUTURE
 ```
@@ -56,9 +58,10 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW Attempt-09 failure remediation：`SECURITY REVIEW ACCEPTED / CI GREEN / DEPLOYMENT PENDING`；implementation commit `92adff7e55c2200692e892db2189132c243a1ac5` 的 exact-head CI run `30474856153` 与 security review/P1 fix commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 exact-head CI run `30515021689` 均为 `completed / success / 10 of 10`。两个 P1 已关闭；clean Commit A canonical `EXACT_COMMIT` bundle 为 130 artifacts，manifest `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`，closed set/hash/LF/mode/篡改拒绝通过。Windows `posixVerified=false`；未部署服务器。
 - GateW immutable release deployment verification：`DEPLOYMENT VERIFICATION FAILED / REMEDIATION REQUIRED`（部署验证失败 / 需要整改）。同一 exact commit 的 manifest 因动态 `createdAt` 在不同时间重建为不同 hash；旧 `f2ec7b...` 及两个 rebuild 值只能记为 `HISTORICAL_NON_REPRODUCIBLE_BUILD_OUTPUT / NOT_DEPLOYABLE_BASELINE`，不得继续作为部署基线。服务器变更为 0。
 - GateW reproducible release fix：`IMPLEMENTED / CI GREEN / DEPLOYMENT RETRY PENDING`。Commit A `c16f27c3c68d2484ad140d0557b879de08b7c78f` 的 exact-head CI run `30537845010` 为 `completed / success / 10 of 10`；两份 detached worktree、PowerShell 5.1/7、间隔 `35.582s` 的 exact build 得到相同 manifest `eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977`、bundle `60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b` 与 131-artifact closed set。该值是下一轮唯一部署基线。
-- GateW remediation immutable release deployment：`DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING`。`c16f27c3...` release 已完成独立 Linux root install、POSIX/ownership、worker write denial、trusted path、systemd、offline remediation/security、Attempt-09 rejected fixture、positive 168h fixture与tamper rejection验证；`current` 未切换，units started=`0`，Attempt-10/clock=`NOT_CREATED / NOT_AUTHORIZED`。
-- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`。
-- 当前唯一治理动作：`NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`。必须重新执行完整 hard gates 后才允许创建/启动 Attempt-10；不得恢复 Attempt-09、复用旧 clock、跳过 pre-create 或 release binding、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
+- GateW remediation immutable release deployment：`DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING`。`c16f27c3...` release 已完成独立 Linux root install、POSIX/ownership、worker write denial、trusted path、systemd、offline remediation/security、Attempt-09 rejected fixture、positive 168h fixture与tamper rejection验证，并已由 canonical installer 原子激活；units started=`0`。
+- GateW Attempt-10 preparation attempt-01：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / ATTEMPT_10_NOT_CREATED`。Canonical pre-create 返回 `readyForAttemptCreation=false`；RunId/state/runtime/clock均未创建，OKX未调用。
+- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / START_BLOCKED`。
+- 当前唯一治理动作仍为 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`，但再次执行前必须先完成独立脱敏 pre-create RCA/fix并重新获得生产授权；不得直接重试、恢复Attempt-09、复用旧clock、跳过pre-create/release binding、扩大OKX endpoint、触碰交易写侧或进入freeze/archive/tag。
 
 ## 路线边界
 
@@ -69,5 +72,5 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
-- 修复版 release `c16f27c3...` 已安装并通过 Linux 验证，但 `/opt/nexus-quant/current` 继续固定既有 release `1b501488076fae79e15b84579a02f5c580fa51b3`；只有下一独立 Attempt-10 preparation/start 任务通过全部 hard gates 后，才能按 canonical installer 合同决定激活，不得手工切换。
+- 修复版 release `c16f27c3...` 已安装、通过 Linux 验证并由 canonical installer 原子激活；unit links 绑定同一 release，未启动 unit。Attempt-10 仍须在 pre-create RCA/fix 后重新通过全部 hard gates，不得手工切换或直接重试。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。

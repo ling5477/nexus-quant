@@ -17906,3 +17906,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - final：latest run仍为Attempt-09；new state/runtime/drop-in/temp residue=`0`；Attempt-10/clock未创建；OKX/credential/database access=`0`；P0=0/P1=0。
 - authority：GateW保持`IN_PROGRESS|NOT_FROZEN`；work batch=`GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT / DEPLOYMENT_VERIFIED|CI_GREEN|ATTEMPT_10_PREPARATION_PENDING`，绑定release source Commit/CI `c16f27c3... / 30537845010`；唯一 next action=`NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`。
 - boundary：未激活new release，未启动任何GateW unit，未创建Attempt-10或clock，未访问OKX/credential/DB，未触达LIVE/交易写侧/freeze/archive/tag；docs commit不部署服务器。
+
+## 2026-07-30 — GateW Attempt-10 preparation/start attempt-01 blocked at pre-create
+
+- task：`NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`；NQ-only、L级 production immutable activation/systemd/pre-create/readonly soak start。
+- baseline：`dev` clean；`HEAD == origin/dev == 509a9f35cdf707bc2598b7263c5638790249111d`；starting governance CI `30549800762 / completed / success / 10 of 10`；release source CI `30537845010`；authority checker PASS。
+- server audit：hostname=`iZrj9gpab986sm4d0bb6agZ`；NTP yes；Attempt-09 inactive/MainPID0；active GateW/timer/job/pwsh-java worker=`0/0/0/0`；宽泛 pgrep 命中归因于管理 Java 的本地 PostgreSQL idle backend，不是 worker residual。
+- release：direct verifier=`IMMUTABLE_RELEASE_VERIFIED`；source=`c16f27c3...`；manifest=`eaf83f95...e8977`；131 artifacts；POSIX true；canonical activate后current精确切换到该release，未重发activation。
+- systemd：canonical install-units PASS；unit links绑定同一release；analyze exit0；worker=`nqgatew/Restart=no/无RuntimeMaxSec`；fail-close=`oneshot/30s/PrivateNetwork/AF_UNIX`；units started=0。
+- pre-create：canonical action在`2026-07-30T14:40:47.4464278Z`返回`readyForAttemptCreation=false`、credential metadata UNKNOWN/0、kill switch/postgres/management false、material exposed=false；按`CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED`停止。
+- RCA：只读脱敏复核确认descriptor闭集/owner/mode、encrypted secret元数据、management HTTP200、PostgreSQL listener、launcher bundle与release binding通过；具体失败收敛于canonical Java readback，因敏感错误抑制无法继续分类。本轮未绕过helper、未解密或捕获底层错误、未重试。
+- final：current=`c16f27c3...`；new RunId/state/runtime/clock、active unit/timer/job/worker process均为0；Attempt-09不变；OKX calls=0。
+- boundary：未执行prepare/start/fresh SSH/clock/sample/verifier/168h；未修改credential/permission/IP allowlist/retry/cadence/release/history；未触达LIVE/order/cancel/transfer/withdraw/freeze/archive/tag。
+- result：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / IMMUTABLE_RELEASE_ACTIVATED / ATTEMPT_10_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_CREATED / UNITS_NOT_STARTED / OKX_NOT_CALLED`。
+- next：machine-readable authority保持Attempt-10 preparation pending与同一canonical action；再次执行前必须先完成独立脱敏pre-create RCA/fix并重新获得生产授权，禁止直接重试。
