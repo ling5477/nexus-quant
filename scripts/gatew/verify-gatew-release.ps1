@@ -33,7 +33,7 @@ $script:LfRoles = @(
 )
 $script:ReleaseContractPath = Join-Path $PSScriptRoot 'gatew-release-contract.psm1'
 
-Import-Module $script:ReleaseContractPath -Force
+Import-Module $script:ReleaseContractPath -Force -DisableNameChecking
 
 function Test-LinuxPlatform
 {

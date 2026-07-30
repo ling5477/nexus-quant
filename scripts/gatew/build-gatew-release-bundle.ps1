@@ -20,7 +20,7 @@ $script:ArtifactRecords = [System.Collections.ArrayList]::new()
 $script:FixedZipTimestamp = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
 $script:ReleaseContractPath = Join-Path $PSScriptRoot 'gatew-release-contract.psm1'
 
-Import-Module $script:ReleaseContractPath -Force
+Import-Module $script:ReleaseContractPath -Force -DisableNameChecking
 
 function Invoke-Native
 {

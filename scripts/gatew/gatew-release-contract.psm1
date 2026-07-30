@@ -5,6 +5,35 @@ $script:Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $script:Ascii = [Text.Encoding]::ASCII
 $script:TarBlockSize = 512
 
+function Sort-GateWOrdinalStrings
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Values)
+
+    $copy = [string[]]@($Values)
+    [Array]::Sort($copy, [StringComparer]::Ordinal)
+    return @($copy)
+}
+
+function Sort-GateWArtifactsOrdinal
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Artifacts)
+
+    $paths = @(Sort-GateWOrdinalStrings @($Artifacts | ForEach-Object { [string]$_.relativePath }))
+    $ordered = @()
+    foreach ($path in $paths)
+    {
+        foreach ($artifact in $Artifacts)
+        {
+            if ([string]$artifact.relativePath -ceq $path)
+            {
+                $ordered += $artifact
+                break
+            }
+        }
+    }
+    return @($ordered)
+}
+
 function ConvertTo-GateWJsonString
 {
     param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
@@ -66,7 +95,7 @@ function ConvertTo-GateWCanonicalManifestJson
 {
     param([Parameter(Mandatory = $true)]$Manifest)
 
-    $artifacts = @($Manifest.artifacts | Sort-Object relativePath)
+    $artifacts = @(Sort-GateWArtifactsOrdinal @($Manifest.artifacts))
     $builder = New-Object Text.StringBuilder
     [void]$builder.Append('{')
     [void]$builder.Append('"schemaVersion":')
@@ -308,7 +337,8 @@ function New-GateWCanonicalTar
                 mode = [string]$_.mode
             }
         })
-    ) | Sort-Object relativePath
+    )
+    $entries = @(Sort-GateWArtifactsOrdinal $entries)
     $mtime = ConvertTo-GateWUnixEpoch ([string]$Manifest.sourceCommitTimestamp)
     $stream = [IO.FileStream]::new(
             $Destination,
@@ -358,6 +388,8 @@ function New-GateWCanonicalTar
 }
 
 Export-ModuleMember -Function @(
+    'Sort-GateWOrdinalStrings',
+    'Sort-GateWArtifactsOrdinal',
     'ConvertTo-GateWCanonicalManifestJson',
     'Get-GateWCanonicalManifestBytes',
     'Write-GateWCanonicalManifest',
