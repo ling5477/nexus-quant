@@ -4,7 +4,7 @@
 
 - 归属：NQ-only。
 - 类型：`REPRODUCIBLE_BUILD_FIX / RELEASE_MANIFEST_CONTRACT_FIX / SUPPLY_CHAIN_REGRESSION / FACT_SOURCE_SYNC / TASK_EVIDENCE / COMMIT_AND_EXACT_HEAD_CI`。
-- 当前阶段：实现与本地验证已进行；Commit A、exact-head CI 与最终双 detached worktree 证明待完成。
+- 当前阶段：实现、Commit A exact-head CI 与最终双 detached worktree 证明均已完成；待 Commit B authority/evidence sync 的 exact-head CI。
 
 ## Root cause
 
@@ -40,18 +40,24 @@ source commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 hashed manifest 写
 | 真实 candidate canonical tar | PowerShell 5.1 / 7 bundle 都为 `b9a61a6aabfd502771d4e3e1b4f1a2b0a56e85efc11a49643e1e3a0b44fb0626` |
 | 真实 candidate artifacts | 两引擎均 `131`，逐 path/size/mode/SHA-256 一致 |
 
-上述 candidate 值只证明当前 diff 的跨引擎实现，不是正式部署基线。正式字段待 Commit A CI 成功后从同一 Commit A 的两份 detached worktree 生成：
+上述 candidate 值只证明 pre-Commit A diff 的跨引擎实现，不是正式部署基线。Commit A CI 成功后，从同一 Commit A 的两份 detached worktree 得到正式证明：
 
-- 新 source commit：`PENDING_COMMIT_A`。
-- worktree A / B：`PENDING_COMMIT_A_CI`。
-- 新 manifest SHA-256：`PENDING_COMMIT_A_CI`。
-- 新 bundle SHA-256：`PENDING_COMMIT_A_CI`。
-- 新 artifact count：`PENDING_COMMIT_A_CI`。
+- 新 source commit：`c16f27c3c68d2484ad140d0557b879de08b7c78f`。
+- Commit A CI：run `30537845010 / completed / success / 10 of 10`，`headSha` 精确等于 Commit A。
+- worktree A：`E:\Project\nexus-quant-gatew-repro-a-c16f`，detached Commit A，PowerShell 5.1，build start `2026-07-30T11:18:55.7893302Z`。
+- worktree B：`E:\Project\nexus-quant-gatew-repro-b-c16f`，detached Commit A，PowerShell 7，build start `2026-07-30T11:19:31.3714507Z`。
+- build start separation：`35.582s`。
+- manifest SHA-256 A / B：`eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977` / 相同；bytes identical=`true`。
+- bundle SHA-256 A / B：`60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b` / 相同；bytes identical=`true`。
+- artifact count A / B：`131 / 131`；path/size/mode/SHA-256 descriptor identical=`true`。
+- closed set：manifest + declared artifacts 与两份 USTAR entry set/order 完全一致；绝对路径、`createdAt`、`build-receipt.json` 均不存在。
+- source commit timestamp：`2026-07-30T11:15:08Z`，精确匹配 Commit A Git epoch。
+- tamper：exit `2`，`BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH`。
 
 ## Findings
 
 - P0：无。
-- P1：Commit A exact-head CI 与最终双 detached worktree exact-commit 重建尚未执行；完成前不得建立新部署基线。
+- P1：无。
 - P2：无开放项。
 - P3：无。
 
@@ -67,4 +73,4 @@ source commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 hashed manifest 写
 
 ## Current decision
 
-`IMPLEMENTED_LOCALLY / REPRODUCIBILITY_PRE_CI_VERIFIED / COMMIT_A_AND_EXACT_HEAD_CI_PENDING / DEPLOYMENT_NOT_AUTHORIZED / ATTEMPT_10_NOT_AUTHORIZED`。
+`IMPLEMENTED / REPRODUCIBLE_RELEASE_VERIFIED / COMMITTED / CI_GREEN / DEPLOYMENT_RETRY_PENDING / ATTEMPT_10_NOT_AUTHORIZED`。

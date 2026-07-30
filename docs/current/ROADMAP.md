@@ -29,9 +29,9 @@ GateW Attempt-09 failure remediation SECURITY REVIEW ACCEPTED / CI GREEN / DEPLO
   ↓
 GateW immutable release DEPLOYMENT VERIFICATION FAILED / REMEDIATION REQUIRED
   ↓
-NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX
+GateW reproducible release fix IMPLEMENTED / CI GREEN / DEPLOYMENT RETRY PENDING
   ↓
-Deployment retry pending after reproducibility proof
+NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
   ↓
 Attempt-10 NOT CREATED / NOT AUTHORIZED
   ↓
@@ -55,8 +55,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-OKX-READONLY-SOAK-ATTEMPT-09：`FAILED / ACCEPTANCE REJECTED / INCIDENT REVIEW COMPLETED`；run `gatew-soak-20260722T111144Z-ac00f878` 的有效时长为 `471795.0520427s`，距离 `604800s` 短缺 `133004.9479573s`。Worker 分类=`OPERATOR_OR_AUTOMATION_STOP`、精确发起者=`UNKNOWN`；finalizer 分类=`FINALIZER_SYSTEMD_TIMEOUT`，terminal result 缺失；`FORMAL_SOAK_VERIFIED` 仅覆盖 evidence integrity，不能推导 acceptance。
 - GateW Attempt-09 failure remediation：`SECURITY REVIEW ACCEPTED / CI GREEN / DEPLOYMENT PENDING`；implementation commit `92adff7e55c2200692e892db2189132c243a1ac5` 的 exact-head CI run `30474856153` 与 security review/P1 fix commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 exact-head CI run `30515021689` 均为 `completed / success / 10 of 10`。两个 P1 已关闭；clean Commit A canonical `EXACT_COMMIT` bundle 为 130 artifacts，manifest `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`，closed set/hash/LF/mode/篡改拒绝通过。Windows `posixVerified=false`；未部署服务器。
 - GateW immutable release deployment verification：`DEPLOYMENT VERIFICATION FAILED / REMEDIATION REQUIRED`（部署验证失败 / 需要整改）。同一 exact commit 的 manifest 因动态 `createdAt` 在不同时间重建为不同 hash；旧 `f2ec7b...` 及两个 rebuild 值只能记为 `HISTORICAL_NON_REPRODUCIBLE_BUILD_OUTPUT / NOT_DEPLOYABLE_BASELINE`，不得继续作为部署基线。服务器变更为 0。
+- GateW reproducible release fix：`IMPLEMENTED / CI GREEN / DEPLOYMENT RETRY PENDING`。Commit A `c16f27c3c68d2484ad140d0557b879de08b7c78f` 的 exact-head CI run `30537845010` 为 `completed / success / 10 of 10`；两份 detached worktree、PowerShell 5.1/7、间隔 `35.582s` 的 exact build 得到相同 manifest `eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977`、bundle `60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b` 与 131-artifact closed set。该值是下一轮唯一部署基线。
 - GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`。
-- 当前唯一治理动作：`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX`。只允许修复并验证可复现 release manifest、artifact set、canonical JAR/tar 与供应链回归；不得 SSH、上传、安装、修改 systemd、恢复 Attempt-09、创建 Attempt-10、访问 OKX/credential/数据库、触碰交易写侧或进入 freeze/archive/tag。
+- 当前唯一治理动作：`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`。只允许使用上述新确定性基线重新执行独立 Linux immutable release deployment verification；不得恢复 Attempt-09、创建 Attempt-10、启动新 soak、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 

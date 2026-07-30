@@ -17883,3 +17883,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - pending：Commit A、exact-head CI 10/10、同一 Commit A 两份 detached worktree 最终重建、新 manifest/bundle/artifact baseline、Commit B 与第二次 exact-head CI。
 - authority：先同步为 `GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT / DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRED`；唯一 next action=`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX`。
 - boundary：server changes=0；无 SSH/upload/install/systemd/Attempt-10/OKX/credential/database/freeze/LIVE/trading write。
+
+## 2026-07-30 — GateW reproducible release fix（post-Commit A CI）
+
+- Commit A：`c16f27c3c68d2484ad140d0557b879de08b7c78f`；exact-head CI run `30537845010 / completed / success / 10 of 10`。
+- final proof：同一 Commit A 的两份 detached worktree，PowerShell 5.1/7，build start 间隔 `35.582s`；manifest bytes、131-artifact path/size/mode/SHA-256 descriptor、USTAR entry set/order 与 bundle bytes 全部一致。
+- baseline：manifest `eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977`；bundle `60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b`；source commit timestamp `2026-07-30T11:15:08Z`。
+- negative proof：无 absolute path / dynamic `createdAt` / build receipt；tamper exit 2，`BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH`。
+- authority：`GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX / IMPLEMENTED|CI_GREEN|DEPLOYMENT_RETRY_PENDING`；唯一 next action=`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`。
+- boundary：server changes=0；无 SSH/upload/install/systemd/Attempt-10/OKX/credential/database/freeze/LIVE/trading write。

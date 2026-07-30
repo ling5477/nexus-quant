@@ -12252,3 +12252,20 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 | governance regressions | PASS | next-action、lifecycle、task-evidence 双引擎通过 |
 
 未运行：Commit A、exact-head CI、Commit A 双 detached worktree exact build、SSH、上传、服务器 install、systemd、Attempt-10、OKX、credential、数据库、GateW freeze。candidate hash 不作为部署基线；阻断性：正式 exact-commit baseline 仍待 Commit A CI 与双 worktree 证明。
+
+## 2026-07-30 — GateW reproducible release fix（post-Commit A CI）
+
+当前结论：`IMPLEMENTED / REPRODUCIBLE_RELEASE_VERIFIED / COMMITTED / CI_GREEN / DEPLOYMENT_RETRY_PENDING / ATTEMPT_10_NOT_AUTHORIZED`（已实现 / 可复现 release 已验证 / 已提交 / CI 已通过 / 待重新部署验证 / Attempt-10 未授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Commit A exact-head CI | PASS | `c16f27c3c68d2484ad140d0557b879de08b7c78f`；run `30537845010 / completed / success / 10 of 10` |
+| detached worktree A | PASS | PowerShell 5.1；start `2026-07-30T11:18:55.7893302Z` |
+| detached worktree B | PASS | PowerShell 7；start `2026-07-30T11:19:31.3714507Z`；与 A 间隔 `35.582s` |
+| manifest bytes / SHA-256 | PASS | A/B bytes identical；`eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977` |
+| artifact descriptor / closed set | PASS | A/B 均 131；path/size/mode/SHA-256 一致；manifest + declared artifacts 精确闭集 |
+| canonical USTAR bytes / SHA-256 | PASS | A/B bytes identical；`60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b` |
+| source timestamp / excluded dynamic data | PASS | `2026-07-30T11:15:08Z` 精确等于 Git epoch；无 `createdAt`、绝对路径、build receipt |
+| tamper rejection | PASS | exit 2 / `BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH` |
+
+未运行：Linux root/POSIX、SSH、上传、服务器 install、systemd、Attempt-10、OKX、credential、数据库、GateW freeze。新 manifest/bundle/artifact set 是下一轮 deployment verification 唯一正式基线。
