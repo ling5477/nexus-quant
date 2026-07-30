@@ -38,5 +38,5 @@
 - 不是 AI / DH / Integration runtime 已启动。
 - 不是 RealClient、real provider 或 private trading adapter 已实现；GateW-2 仅是默认不装配的 private read-only diagnostic probe，`REAL_SMOKE=NOT_RUN`，不表示远端 permission 或交易授权。
 - GateW-4 acceptance 只接受 internal diagnostic/no-side-effect operational safety contract，不表示 GateW frozen 或交易获授权。
-- 当前唯一允许动作是 `NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW`；只允许执行独立安全审查，不授权部署、创建 Attempt-10 或进入 freeze/archive/tag。
+- 当前唯一允许动作是 `NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`；只允许验证固定 security review commit 的 immutable release、Linux root/POSIX/systemd 与部署边界，不授权创建 Attempt-10、启动新 soak 或进入 freeze/archive/tag。
 - GateW freeze closeout 当前仍为 `NOT STARTED`（未开始）；只有 168h acceptance 得出 `ACCEPT`（接受）后才能开始。不得把 local soak、restore、incident PASS 或 CI green 解释成真实 permission、余额充分、账户健康、可以交易、已获 LIVE/交易授权或 freeze readiness。

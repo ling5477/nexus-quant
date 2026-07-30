@@ -2,14 +2,14 @@
 
 ## 1. 当前结论
 
-`CONDITIONAL_PASS / P1_MINIMAL_FIX_LOCALLY_VALIDATED / COMMIT_A_CI_PENDING / EXACT_COMMIT_BUNDLE_PENDING / PENDING_LINUX_ROOT_INSTALL_VERIFICATION / ATTEMPT_10_NOT_AUTHORIZED`（有条件通过 / P1 最小修复已完成本地验证 / Commit A CI 待执行 / 精确提交不可变包待验证 / Linux root 安装验证待执行 / Attempt-10 未获授权）。
+`PASS / GATEW_REMEDIATION_SECURITY_REVIEW_ACCEPTED / COMMITTED / CI_GREEN / LINUX_DEPLOYMENT_VERIFICATION_REQUIRED / ATTEMPT_10_NOT_AUTHORIZED`（通过 / GateW 整改安全审查已接受 / 已提交 / CI 已通过 / 需要 Linux 部署验证 / Attempt-10 未获授权）。
 
 本轮独立复核 Attempt-09 失败整改实现后确认两个 P1，并在原整改文件边界内完成最小修复：
 
 1. `COMPLETION_MARKER_WRITABLE_BY_WORKER`：worker 原先可在自身 evidence 目录写入被 acceptance 信任的 completion marker。
 2. `STOP_INTENT_RECOVERY_AND_REASON_ALLOWLIST`：stop intent 原先接受任意安全格式 reason code，且同输入 stale intent 在无 exit fact 的崩溃恢复窗口中会永久阻断 canonical 重试。
 
-修复后本地 P0=`0`、开放 P1=`0`。本记录写入时尚未创建 Commit A，未取得 Commit A exact-head CI，也未从 clean Commit A 构建新的 `EXACT_COMMIT` canonical bundle，因此不得提前写成最终 `SECURITY_REVIEW_ACCEPTED`。
+修复后 P0=`0`、开放 P1=`0`。Commit A `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 已取得 exact-head `NQ CI Baseline` run `30515021689 / completed / success / 10 of 10`；随后从 clean Commit A 构建并验证 canonical `EXACT_COMMIT` bundle，满足本地全部 release supply-chain hard gates。
 
 ## 2. 基线与 authority
 
@@ -132,14 +132,17 @@ NQ_REAL_EXCHANGE_ENABLED=false
 
 ## 9. Immutable release 与 Linux 残余
 
-当前只完成 builder/verifier/installer 静态审查和双引擎 self-test。必须在 Commit A exact-head CI 10/10 GREEN 后，从 clean Commit A 构建 canonical `EXACT_COMMIT` bundle，并重新证明：
+Commit A exact-head CI 10/10 GREEN 后，已从 clean Commit A 构建 canonical `EXACT_COMMIT` bundle：
 
-- `artifactCount=130`；
-- closed artifact set、manifest hash、每个 artifact size/SHA-256；
-- UTF-8/LF/no-CR 与 `0755/0644` mode contract；
-- undeclared artifacts=`0`，server Git checkout dependency=`0`；
-- tampered artifact 被拒绝；
-- bundle 不含本机绝对路径、credential、日志、临时 evidence。
+- `releaseId/sourceCommit=61f0b94fadbc87b883a7365eaacc4e8f63829a88`；
+- `sourceTreeMode=EXACT_COMMIT`；
+- `manifestSha256=f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`；
+- `artifactCount=130`，closed set declared/actual=`130/130`，missing/extra=`0/0`；
+- LF/BINARY=`8/122`，CR/UTF-8 failure=`0/0`，mode `0755/0644=5/125`；
+- PowerShell 5.1/7 verifier 均为 `PASS / IMMUTABLE_RELEASE_VERIFIED`；
+- 本机绝对路径、server Git checkout dependency、敏感 artifact name、reparse point 均为 `0`；
+- 篡改 worker artifact 的副本返回 exit `2 / BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH`；
+- 篡改副本与最终本地 bundle 均在证据记录后精确清理。
 
 Windows 本地必须继续记录 `posixVerified=false`。root ownership、worker 不可写、symlink 与 systemd installation 只能在后续独立 Linux root install/deployment verification 中证明：
 
@@ -184,21 +187,34 @@ PENDING_LINUX_ROOT_INSTALL_VERIFICATION
 
 - IDE PowerShell inspection 对 cast-heavy 既有表达式存在误报；真实 PowerShell 5.1/7 AST 与执行均通过。本轮未运行会产生大范围噪声的 IDE PowerShell formatter。
 
-## 12. 当前停止线
+## 12. 最终 decision 与 authority after
 
-Commit A、Commit A exact-head CI、新 `EXACT_COMMIT` bundle 与篡改验证完成前，结论保持：
+安全审查结论：
 
 ```text
-CONDITIONAL_PASS /
-P1_MINIMAL_FIX_LOCALLY_VALIDATED /
-COMMIT_A_CI_PENDING /
-EXACT_COMMIT_BUNDLE_PENDING /
-PENDING_LINUX_ROOT_INSTALL_VERIFICATION /
+PASS /
+GATEW_REMEDIATION_SECURITY_REVIEW_ACCEPTED /
+COMMITTED /
+CI_GREEN /
+LINUX_DEPLOYMENT_VERIFICATION_REQUIRED /
 ATTEMPT_10_NOT_AUTHORIZED
 ```
 
-当前唯一下一动作仍为：
+Authority after：
 
 ```text
-NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW
+active_gate=GateW
+active_gate_status=IN_PROGRESS|NOT_FROZEN
+work_batch=GateW-ATTEMPT-09-FAILURE-REMEDIATION
+work_batch_status=SECURITY_REVIEW_ACCEPTED|CI_GREEN|DEPLOYMENT_PENDING
+work_batch_commit=61f0b94fadbc87b883a7365eaacc4e8f63829a88
+work_batch_ci_run=30515021689
+Attempt-09=REJECTED
+Attempt-10=NOT_CREATED|NOT_AUTHORIZED
+```
+
+唯一下一动作：
+
+```text
+NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 ```

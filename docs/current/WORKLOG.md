@@ -17862,3 +17862,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：未连接服务器、未部署、未修改systemd state、未访问OKX/credential、未创建Attempt-10、未启动soak、未进入freeze/archive/tag、未触达LIVE或交易写侧；STATUS/ROADMAP未提前修改。
 - result：`CONDITIONAL_PASS / P1_MINIMAL_FIX_LOCALLY_VALIDATED / COMMIT_A_CI_PENDING / EXACT_COMMIT_BUNDLE_PENDING / ATTEMPT_10_NOT_AUTHORIZED`。
 - next：精确暂存Commit A文件并提交`fix(gatew): close remediation security findings`；push后等待该exact-head CI 10/10 GREEN，未通过则停止authority sync。
+
+## 2026-07-30 — GateW Attempt-09 failure remediation security review（post-CI closeout）
+
+- Commit A：`61f0b94fadbc87b883a7365eaacc4e8f63829a88`；exact-head CI run `30515021689 / completed / success / 10 of 10`。
+- immutable bundle：clean Commit A `EXACT_COMMIT`；manifest `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`；130 artifacts；closed set/hash/LF/mode双引擎PASS；tamper exit 2；本地产物已精确清理。
+- governance：最小新增`SECURITY_REVIEW_ACCEPTED|CI_GREEN|DEPLOYMENT_PENDING`与`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`精确映射、field policy、高风险transition及大小写/Attempt-10/错拼负例；未修改lifecycle主库。
+- authority：work batch保持GateW Attempt-09 remediation，绑定security Commit A/CI；GateW保持`IN_PROGRESS|NOT_FROZEN`；Attempt-09=`REJECTED`；Attempt-10=`NOT_CREATED|NOT_AUTHORIZED`。
+- residual：Windows `posixVerified=false / PENDING_LINUX_ROOT_INSTALL_VERIFICATION`；Linux root ownership/mode/worker不可写/symlink/systemd install只允许在下一独立deployment-verification任务证明。
+- boundary：无server/SSH/deploy/systemd state/OKX/credential/permission probe/Attempt-10/new soak/freeze/archive/tag/LIVE/交易写侧操作。
+- result：`PASS / GATEW_REMEDIATION_SECURITY_REVIEW_ACCEPTED / COMMITTED / CI_GREEN / LINUX_DEPLOYMENT_VERIFICATION_REQUIRED / ATTEMPT_10_NOT_AUTHORIZED`。
+- next：`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`。

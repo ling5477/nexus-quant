@@ -12210,3 +12210,30 @@ Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.se
 一次将多项治理检查放入单个60秒窗口的组合命令超时；超时不计PASS。随后拆分重跑PowerShell 7 lifecycle/task-evidence、authority和doc links均通过。Commit A、exact-head CI和clean Commit A canonical `EXACT_COMMIT` bundle尚未执行，因此不提前写安全审查接受；Windows继续保留`posixVerified=false / PENDING_LINUX_ROOT_INSTALL_VERIFICATION`。
 
 边界：无SSH、服务器、deploy、systemd state、OKX、credential、permission probe、Attempt-10、新soak、freeze/archive/tag、LIVE或交易写侧操作。Authority保持`IMPLEMENTED|CI_GREEN|PENDING_SECURITY_REVIEW`和当前security-review next action。
+
+## 2026-07-30 — GateW Attempt-09 failure remediation security review（post-CI closeout）
+
+最终结论：`PASS / GATEW_REMEDIATION_SECURITY_REVIEW_ACCEPTED / COMMITTED / CI_GREEN / LINUX_DEPLOYMENT_VERIFICATION_REQUIRED / ATTEMPT_10_NOT_AUTHORIZED`（通过 / GateW 整改安全审查已接受 / 已提交 / CI 已通过 / 需要 Linux 部署验证 / Attempt-10 未获授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Commit A | PASS | `61f0b94fadbc87b883a7365eaacc4e8f63829a88`；`fix(gatew): close remediation security findings` |
+| Commit A exact-head CI | PASS | run `30515021689 / completed / success / 10 of 10`；`headSha=61f0b94fadbc87b883a7365eaacc4e8f63829a88` |
+| clean `EXACT_COMMIT` canonical bundle build | PASS | releaseId/sourceCommit=`61f0b94f...`；manifest `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`；130 artifacts |
+| PowerShell 5.1 / 7 immutable verifier | PASS | 双引擎 `IMMUTABLE_RELEASE_VERIFIED`；`posixVerified=false` |
+| closed artifact set | PASS | declared/actual=`130/130`；missing/extra=`0/0` |
+| text/mode contract | PASS | LF/BINARY=`8/122`；CR/UTF-8 failure=`0/0`；mode `0755/0644=5/125` |
+| supply-chain boundary | PASS | local absolute path/server Git dependency/sensitive artifact name/reparse point=`0/0/0/0` |
+| tamper rejection | PASS | worker副本被 exit `2 / RELEASE_ARTIFACT_HASH_MISMATCH` 拒绝 |
+
+本地 bundle与tamper copy均在记录manifest/hash/count后精确清理。Windows无法施加目标Linux root ownership与mode，继续保留`PENDING_LINUX_ROOT_INSTALL_VERIFICATION`；这正是下一独立deployment-verification任务的hard gate，不授权Attempt-10或新soak。
+
+治理合同最小增加精确状态/action三元组与高风险生命周期转换：
+
+```text
+SECURITY_REVIEW_ACCEPTED|CI_GREEN|DEPLOYMENT_PENDING
+GateW-ATTEMPT-09-FAILURE-REMEDIATION
+NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
+```
+
+大小写错误、Attempt-10、错拼、附加后缀、错误状态和错误work batch均必须拒绝。Authority sync后GateW仍`IN_PROGRESS|NOT_FROZEN`，Attempt-09仍`REJECTED`，Attempt-10仍`NOT_CREATED|NOT_AUTHORIZED`；服务器runtime继续固定既有`1b501488...` release，本任务未部署。

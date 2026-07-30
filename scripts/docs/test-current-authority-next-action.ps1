@@ -234,6 +234,46 @@ foreach ($action in @(
 }
 Write-Output 'PASS non-canonical-remediation-action relation=false'
 
+$securityReviewAcceptedStatus = 'SECURITY_REVIEW_ACCEPTED|CI_GREEN|DEPLOYMENT_PENDING'
+$remediationDeploymentVerification =
+        'NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION'
+Assert-ActionType $remediationDeploymentVerification `
+    'REMEDIATION_IMMUTABLE_RELEASE_DEPLOYMENT_VERIFICATION'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $securityReviewAcceptedStatus $remediationWorkBatch `
+        $remediationDeploymentVerification)) {
+    throw 'CANONICAL_REMEDIATION_DEPLOYMENT_VERIFICATION_REJECTED'
+}
+Write-Output 'PASS canonical-remediation-deployment-verification exact-triple=true'
+
+foreach ($status in @(
+    'SECURITY_REVIEW_ACCEPTED|CI_GREEN|DEPLOYMENT_PENDNG',
+    'SECURITY_REVIEW_ACCEPTED|CI_GREEN|DEPLOYMENT_PENDING|READY',
+    'security_review_accepted|ci_green|deployment_pending',
+    $remediationImplementedStatus
+)) {
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $status $remediationWorkBatch $remediationDeploymentVerification) {
+        throw "NON_CANONICAL_DEPLOYMENT_STATUS_ACCEPTED status=$status"
+    }
+}
+foreach ($action in @(
+    'NQ-GATEW-ATTEMPT-10-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION',
+    'NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION-LATER',
+    'NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFCATION',
+    'nq-gatew-remediation-immutable-release-deployment-verification'
+)) {
+    $actualType = Get-GovernanceNextActionType $contract $action
+    if ($actualType -ceq 'REMEDIATION_IMMUTABLE_RELEASE_DEPLOYMENT_VERIFICATION') {
+        throw "NON_CANONICAL_DEPLOYMENT_ACTION_CLASSIFIED_AS_EXACT action=$action"
+    }
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $securityReviewAcceptedStatus $remediationWorkBatch $action) {
+        throw "NON_CANONICAL_DEPLOYMENT_ACTION_ACCEPTED action=$action"
+    }
+}
+Write-Output 'PASS non-canonical-remediation-deployment-action relation=false'
+
 if (-not (Test-GovernanceLifecycleTransition `
         $contract 'highRisk' $attempt09RunningStatus $attempt09FailureStatus)) {
     throw 'ATTEMPT_09_FAILURE_LIFECYCLE_TRANSITION_REJECTED'
@@ -244,6 +284,11 @@ if (-not (Test-GovernanceLifecycleTransition `
     throw 'ATTEMPT_09_REMEDIATION_IMPLEMENTED_LIFECYCLE_TRANSITION_REJECTED'
 }
 Write-Output 'PASS attempt-09-failure-to-remediation-implemented lifecycle=highRisk'
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $remediationImplementedStatus $securityReviewAcceptedStatus)) {
+    throw 'REMEDIATION_SECURITY_ACCEPTANCE_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS remediation-security-review-to-deployment-pending lifecycle=highRisk'
 
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'
@@ -321,9 +366,17 @@ $currentUniqueAllowedActionIs = [regex]::Unescape('\u5F53\u524D\u552F\u4E00\u514
 $canonicalReadme = @(
     '# Current Docs',
     '',
-    ('- {0} `{1}`; canonical.' -f $currentUniqueAllowedActionIs, $remediationSecurityReview)
+    ('- {0} `{1}`; canonical.' -f
+        $currentUniqueAllowedActionIs, $remediationDeploymentVerification)
 ) -join "`n"
 Assert-CurrentDocsAuthorityCase 'readme-consistent' $canonicalReadme $true
+
+$staleSecurityReviewReadme = @(
+    '# Current Docs',
+    '',
+    ('- {0} `{1}`; stale.' -f $currentUniqueAllowedActionIs, $remediationSecurityReview)
+) -join "`n"
+Assert-CurrentDocsAuthorityCase 'readme-stale-security-review' $staleSecurityReviewReadme $false
 
 $oldAcceptanceReadme = @(
     '# Current Docs',
@@ -335,7 +388,7 @@ Assert-CurrentDocsAuthorityCase 'readme-old-acceptance' $oldAcceptanceReadme $fa
 $lowercaseReadme = @(
     '# Current Docs',
     '',
-    ('- {0} `nq-gatew-attempt-09-failure-remediation-security-review`; case error.' -f $currentUniqueAllowedActionIs)
+    ('- {0} `nq-gatew-remediation-immutable-release-deployment-verification`; case error.' -f $currentUniqueAllowedActionIs)
 ) -join "`n"
 Assert-CurrentDocsAuthorityCase 'readme-action-case-error' $lowercaseReadme $false
 
