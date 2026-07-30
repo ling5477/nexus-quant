@@ -293,12 +293,25 @@ if (-not (Test-GovernanceNextActionForWorkBatch `
 }
 Write-Output 'PASS canonical-reproducible-build-deployment-retry exact-triple=true'
 
+$deploymentVerifiedStatus = 'DEPLOYMENT_VERIFIED|CI_GREEN|ATTEMPT_10_PREPARATION_PENDING'
+$attempt10Preparation = 'NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START'
+Assert-ActionType $attempt10Preparation 'ATTEMPT_10_PREPARATION_AND_START'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $deploymentVerifiedStatus $deploymentWorkBatch $attempt10Preparation)) {
+    throw 'CANONICAL_ATTEMPT_10_PREPARATION_REJECTED'
+}
+Write-Output 'PASS canonical-attempt-10-preparation exact-triple=true'
+
 foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRD'; Batch = $deploymentWorkBatch; Action = $reproducibleBuildFix },
     @{ Status = $deploymentFailedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-ATTEMPT-10'; Action = $reproducibleBuildFix },
     @{ Status = $deploymentFailedStatus; Batch = $deploymentWorkBatch; Action = 'NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX-LATER' },
     @{ Status = 'implemented|ci_green|deployment_retry_pending'; Batch = $deploymentFixWorkBatch; Action = $remediationDeploymentVerification },
-    @{ Status = $deploymentRetryStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX-ATTEMPT-10'; Action = $remediationDeploymentVerification }
+    @{ Status = $deploymentRetryStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX-ATTEMPT-10'; Action = $remediationDeploymentVerification },
+    @{ Status = 'DEPLOYMENT_VERIFIED|CI_GREEN|ATTEMPT_10_PREPARATION_PENDNG'; Batch = $deploymentWorkBatch; Action = $attempt10Preparation },
+    @{ Status = $deploymentVerifiedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX'; Action = $attempt10Preparation },
+    @{ Status = $deploymentVerifiedStatus; Batch = $deploymentWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-START' },
+    @{ Status = $deploymentVerifiedStatus; Batch = $deploymentWorkBatch; Action = 'nq-gatew-attempt-10-preparation-and-start' }
 )) {
     if (Test-GovernanceNextActionForWorkBatch `
             $contract $case.Status $case.Batch $case.Action) {
@@ -332,6 +345,11 @@ if (-not (Test-GovernanceLifecycleTransition `
     throw 'REPRODUCIBLE_BUILD_FIX_LIFECYCLE_TRANSITION_REJECTED'
 }
 Write-Output 'PASS reproducible-build-fix-to-deployment-retry lifecycle=highRisk'
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $deploymentRetryStatus $deploymentVerifiedStatus)) {
+    throw 'DEPLOYMENT_RETRY_TO_VERIFIED_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS deployment-retry-to-verified lifecycle=highRisk'
 
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'

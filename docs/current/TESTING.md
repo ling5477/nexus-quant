@@ -12269,3 +12269,26 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 | tamper rejection | PASS | exit 2 / `BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH` |
 
 未运行：Linux root/POSIX、SSH、上传、服务器 install、systemd、Attempt-10、OKX、credential、数据库、GateW freeze。新 manifest/bundle/artifact set 是下一轮 deployment verification 唯一正式基线。
+
+## 2026-07-30 — GateW remediation immutable release Linux deployment verification
+
+当前结论：`PASS / GATEW_REMEDIATION_RELEASE_DEPLOYMENT_VERIFIED / LINUX_ROOT_INSTALL_VERIFIED / POSIX_AND_OWNERSHIP_VERIFIED / SYSTEMD_CONTRACT_VERIFIED / OFFLINE_SECURITY_REGRESSION_PASSED / ATTEMPT_10_NOT_CREATED`（通过 / 整改 release 部署已验证 / Linux root 安装已验证 / POSIX 与 ownership 已验证 / systemd 合同已验证 / 离线安全回归已通过 / Attempt-10 未创建）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| canonical exact-commit rebuild | PASS | source=`c16f27c3...`；manifest=`eaf83f95...e8977`；bundle=`60a11dde...ec1b`；131 artifacts / 132 USTAR；missing/extra/undeclared/absolute/Git/sensitive/reparse=`0` |
+| upload integrity / canonical installer | PASS | remote size/hash/manifest/count exact；正式 release=`/opt/nexus-quant/releases/c16f27c3...`；无 `.install-*` stage |
+| installed verifier / POSIX / ownership | PASS | `IMMUTABLE_RELEASE_VERIFIED`；`posixVerified=true`；root owner/mode、symlink=0、worker关键artifact不可写 |
+| runtime trust fixture | PASS | worker 对 stop-intent/completion/proof/terminal/lock 写入全部拒绝；evidence/runtime最小写通过；fixture residue=0 |
+| systemd analyze / properties | PASS | analyze exit 0；worker=`nqgatew/Restart=no/infinity`；fail-close=`oneshot/30s/PrivateNetwork/AF_UNIX/no capabilities` |
+| installed control/fail-close/worker self-test | PASS | `50 / 8 / 59` cases；fail-close=`1344ms < 30s` |
+| installer self-test / installed verifier | PASS | installer no network/credential；verifier 131 artifacts / POSIX true |
+| Linux remediation regression | PASS | 32 cases；positive 168h PASS；Attempt-09 fixture acceptance FAIL/finalizer BLOCKED；CAS/stop-intent/no-network/no-credential/no-OKX/Attempt-10=false |
+| Linux security regression | PASS | 12 cases；runner 临时移除 Linux 不支持的 `-WindowStyle Hidden`，installed artifact hash保持一致 |
+| Attempt-09 live evidence | PASS / ACCEPTANCE FAIL-CLOSED | historical release binding下 evidence PASS、6146 samples、hash chain PASS；live acceptance=`BLOCKED / REQUIRED_CONTROL_FILE_MISSING`；前后 15 files/3 dirs/aggregate hash完全一致 |
+| legacy verify / tamper rejection | PASS | legacy exit 2=`VERIFY_ACTION_SPLIT_REQUIRED`；tamper exit 2=`RELEASE_ARTIFACT_HASH_MISMATCH` |
+| final server invariants | PASS | `current` unchanged；active units/timers/jobs/process=`0`；new run/runtime/drop-in/temp residue=`0`；Attempt-10/clock未创建 |
+
+已知 warning：`systemd-analyze` 的两条输出来自既有 `cloudmonitor.service`，GateW unit exit 0。worker self-test 默认 test root 指向 immutable release 同级路径，首次以 worker 身份因正确的只读权限失败；使用 SHA-256 与正式 worker artifact 完全相同的一次性 test-root copy 后 59 cases 通过。security runner 的 `-WindowStyle Hidden` 为 Windows-only test harness 参数，只在临时 runner 中去除。
+
+未运行：Attempt-10 正式 prepare/start、真实新 acceptance clock、OKX、credential material、PostgreSQL/management API、168h runtime acceptance、LIVE、交易写侧、freeze/archive/tag。上述未运行项不阻断本轮 release deployment verification，但仍是下一独立任务的 hard gates。

@@ -17892,3 +17892,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - negative proof：无 absolute path / dynamic `createdAt` / build receipt；tamper exit 2，`BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH`。
 - authority：`GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX / IMPLEMENTED|CI_GREEN|DEPLOYMENT_RETRY_PENDING`；唯一 next action=`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`。
 - boundary：server changes=0；无 SSH/upload/install/systemd/Attempt-10/OKX/credential/database/freeze/LIVE/trading write。
+
+## 2026-07-30 — GateW remediation immutable release deployment verification
+
+- task：`NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`；NQ-only、L级 Linux deployment / immutable release / supply-chain / POSIX ownership / systemd / offline security verification。
+- WIP isolation：4 个既有 GateW release tooling 改动精确保存到 `wip/gatew-release-tooling-local-20260730`，commit `9ece62a4` 已 push；未进入 `dev`、未建 PR、未合并。
+- baseline：`dev` clean；`HEAD == origin/dev == 9ec1bd0b39073946208ed3e8d80dabc66651377f`；起始 run `30538600256 / completed / success / 10 of 10`；authority checker PASS。
+- release：source=`c16f27c3...`；manifest=`eaf83f95...e8977`；bundle=`60a11dde...ec1b`；131 artifacts / 132 USTAR；exact rebuild与上传完整性通过。
+- install：canonical installer 将 release 原子安装到 `/opt/nexus-quant/releases/c16f27c3...`；installed verifier、root owner/mode、POSIX、worker write denial、symlink/Git/credential/runtime-evidence exclusion均PASS；`current`始终保持`1b501488...`。
+- trust/systemd：受信路径 worker 写入拒绝、evidence/runtime最小权限、fixture清理通过；systemd analyze exit 0；worker/fail-close合同通过；units/timers/jobs/process=`0`。
+- offline：control/fail-close/worker=`50/8/59`，installer/verifier PASS；remediation/security=`32/12`；positive 168h fixture PASS；Attempt-09 rejected fixture=`evidence PASS / acceptance FAIL / finalizer BLOCKED`；legacy verify与tamper均精确拒绝。
+- Attempt-09 live：绑定 historical immutable release 后 evidence PASS（6146 samples）；acceptance因整改后受控文件缺失而 fail-closed BLOCKED；历史前后均15 files/3 dirs/aggregate hash `43c5e8f2...e570`，零写入。
+- final：latest run仍为Attempt-09；new state/runtime/drop-in/temp residue=`0`；Attempt-10/clock未创建；OKX/credential/database access=`0`；P0=0/P1=0。
+- authority：GateW保持`IN_PROGRESS|NOT_FROZEN`；work batch=`GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT / DEPLOYMENT_VERIFIED|CI_GREEN|ATTEMPT_10_PREPARATION_PENDING`，绑定release source Commit/CI `c16f27c3... / 30537845010`；唯一 next action=`NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`。
+- boundary：未激活new release，未启动任何GateW unit，未创建Attempt-10或clock，未访问OKX/credential/DB，未触达LIVE/交易写侧/freeze/archive/tag；docs commit不部署服务器。

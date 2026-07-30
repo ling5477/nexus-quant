@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_acceptance_head=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_ci_run=29339016784
-work_batch=GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX
-work_batch_status=IMPLEMENTED|CI_GREEN|DEPLOYMENT_RETRY_PENDING
+work_batch=GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT
+work_batch_status=DEPLOYMENT_VERIFIED|CI_GREEN|ATTEMPT_10_PREPARATION_PENDING
 work_batch_commit=c16f27c3c68d2484ad140d0557b879de08b7c78f
 work_batch_ci_run=30537845010
-next_action=NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
+next_action=NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -47,6 +47,7 @@ nq-current-authority:end -->
 - GateW-ATTEMPT-09-FAILURE-REMEDIATION：`SECURITY REVIEW ACCEPTED / CI GREEN / DEPLOYMENT PENDING`（安全审查已接受 / CI 已通过 / 待部署验证）。Implementation commit `92adff7e55c2200692e892db2189132c243a1ac5` 的 exact-head CI run `30474856153` 为 `completed / success / 10 of 10`；security review/P1 minimal-fix commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 的 exact-head CI run `30515021689` 为 `completed / success / 10 of 10`。两个 P1 已关闭：completion marker 改由 root control 在其他 acceptance hard gates 全部通过后写入并绑定 release/PID/evidence hash；stop intent 使用精确 reason allowlist 与 stale/no-exit 可审计退休恢复。Clean Commit A `EXACT_COMMIT` bundle 为 130 artifacts，manifest SHA-256 `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`，closed set/hash/LF/mode/篡改拒绝通过；Windows `posixVerified=false`，新 release 未部署服务器。
 - GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT：`DEPLOYMENT VERIFICATION FAILED / REMEDIATION REQUIRED`（部署验证失败 / 需要整改）。同一 source commit `61f0b94fadbc87b883a7365eaacc4e8f63829a88` 在不同时间重建得到不同 manifest hash：原记录 `f2ec7b00238cb2b718a82d298edc549d41833975ff42f2c8e5412e4db8b704fd`、rebuild-1 `b25b065c...ed12`、rebuild-2 `9c904671...a7d2`。根因为 hashed manifest 的 `createdAt` 使用实际构建时间，且 runtime-dependent ZIP/JAR 与 culture-sensitive sorting 未形成正式 canonical contract。旧 hash 仅为 `HISTORICAL_NON_REPRODUCIBLE_BUILD_OUTPUT / NOT_DEPLOYABLE_BASELINE`（历史不可复现构建输出 / 不可作为部署基线）；服务器变更为 0，Attempt-10 未创建且未授权。
 - GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX：`IMPLEMENTED / CI GREEN / DEPLOYMENT RETRY PENDING`（已实现 / CI 已通过 / 待重新部署验证）。Commit A `c16f27c3c68d2484ad140d0557b879de08b7c78f` 的 exact-head CI run `30537845010` 为 `completed / success / 10 of 10`。同一 Commit A 的两份 detached worktree 分别使用 PowerShell 5.1 / 7 构建，间隔 `35.582s`；manifest bytes、131 个 artifact 的 path/size/mode/SHA-256、canonical USTAR bytes 均完全一致。唯一正式新基线为 manifest SHA-256 `eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977`、bundle SHA-256 `60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b`；tamper 精确返回 `BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH`。该 release 尚未上传、安装或部署。
+- GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT：`DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING`（部署已验证 / release source CI 已通过 / 待 Attempt-10 准备）。Commit `c16f27c3c68d2484ad140d0557b879de08b7c78f` 的 canonical 131-artifact release 已上传并由 canonical installer 安装到独立 Linux release path；bundle/manifest 传输完整性、root ownership、POSIX mode、worker write denial、trusted runtime path、systemd contract、installed self-tests、32-case remediation、12-case security、Attempt-09 rejected fixture、positive 168h fixture 与 tamper rejection全部通过。`/opt/nexus-quant/current` 仍固定 `1b501488...`，units started=`0`，Attempt-10 未创建，acceptance clock 未创建，OKX/credential/database access=`0`。
 - GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，必须先完成 verifier/finalizer/continuity 整改。Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
@@ -78,4 +79,4 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION`。该动作只允许以 Commit A `c16f27c3c68d2484ad140d0557b879de08b7c78f`、manifest `eaf83f95...e8977`、bundle `60a11dde...ec1b`、131 artifacts 的新确定性基线重新执行独立 Linux immutable release deployment verification；不得恢复 Attempt-09、创建或启动 Attempt-10、启动新 soak、扩大 OKX endpoint、进入 freeze/archive/tag，也不授权 LIVE 或交易写侧。
+治理 authority 中唯一下一动作精确为 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`。该动作必须在独立任务中重新执行 pre-create、immutable release、systemd、zero-residual、credential metadata、permission、kill-switch 与新 acceptance clock 全部 hard gates 后，才允许创建并启动唯一 Attempt-10；本轮 deployment verification 本身不创建 Attempt-10、不初始化 clock，也不授权扩大 OKX endpoint、LIVE、交易写侧或进入 freeze/archive/tag。
