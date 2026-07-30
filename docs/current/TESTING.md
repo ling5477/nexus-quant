@@ -12355,3 +12355,25 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 已知 warning：`systemd-analyze` 只报告既有无关 `cloudmonitor.service` warning。首次构建 A 的外层本地命令短超时，但 canonical builder 子进程继续完成；未重放构建，直接用最终 manifest/bundle/verifier取证。canonical response 的 `credentialConfigured=false` 与其他 false/UNKNOWN 字段属于 internal fallback projection，不能解释为已识别运营 blocker。
 
 未运行：`prepare`、`start`、`start-acceptance-clock`、Attempt-10 RunId/state/runtime、OKX/private endpoint、credential material、raw response、手工 SQL、生产 DB write、credential/permission/IP allowlist修改、LIVE、交易写侧、freeze/archive/tag。失败为阻断性代码结果；下一步只允许独立 internal readback RCA/fix。
+
+## 2026-07-31 — GateW Attempt-10 internal readback RCA/fix and release candidate stabilization
+
+当前结论：`PASS / INTERNAL_READBACK_ROOT_CAUSE_FIXED / DISPOSABLE_LINUX_VALIDATION_PASSED / RELEASE_CANDIDATE_STABILIZED / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`（通过 / internal readback 根因已修复 / 一次性 Linux 验证已通过 / release candidate 已稳定 / CI 已通过 / 未开始生产部署 / Attempt-10 未授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| PowerShell 5.1 / 7.6.3 AST + builder self-test | PASS | parser 0 error；CRC32 `123456789 -> cbf43926`；真实 JAR entry readback |
+| control / worker / fail-close / installer | PASS | `66 / 59 / 8 / PASS` |
+| remediation / security / reproducibility | PASS | `32 / 12 / 16 per engine`；PowerShell 5.1/7 release hashes equal |
+| focused Maven | PASS | 49 tests / 0 failures / 0 errors / 2 skipped |
+| final exact-commit CI | PASS | head=`5e7a9c4ef1f3f6f38bb4bd57c738bd53464a9ac6`；run `30576297678 / completed / success / 10 of 10` |
+| final release reproducibility | PASS | manifest=`cbc2c0c4...bce7b`；bundle=`84446b2d...e952d3`；131 artifacts / 132 USTAR；missing/extra/undeclared=`0/0/0` |
+| Linux root/POSIX verifier | PASS | WSL Ubuntu；Java 21.0.12；PowerShell 7.5.2；`IMMUTABLE_RELEASE_VERIFIED`；`posixVerified=true` |
+| canonical helper positive | PASS | `readyForAttemptCreation=true`；stage/code=`COMPLETED/NONE`；Java/config/datasource/driver/query/mapping/JSON=true |
+| canonical helper negative matrix | PASS | account/credential/count/type/status/permission/trade/withdraw/IP/management/PostgreSQL/query 共 15 个 fail-closed 场景 |
+| application read-only proof | PASS | 四张相关表 helper 前后摘要 identical；production DB read/write=`0/0` |
+| disposable cleanup | PASS | WSL runtime/config/secret/health/result、PostgreSQL data root/marker、两个 RC roots 均已删除 |
+
+已知 warning：首次 focused Maven 因 PowerShell `-D` quoting 错误 exit 1，修正后同范围重跑通过；首次 WSL setup 最后一条 `stat` 因 CRLF 尾字符 exit 1，关键 runtime/health/PostgreSQL/owner-mode 已独立复核。中间 commit `f54cdc81...` CI green 但 JAR CRC/结构无效，明确作废；final baseline 只允许 `5e7a9c4e...`。
+
+未运行：生产 SSH/upload/install/activate/systemd 修改、生产 management/PostgreSQL readback、真实 credential/permission/IP allowlist、OKX、Attempt-10、RunId/clock/worker、168h acceptance、LIVE、交易写侧、freeze/archive/tag。真实 PostgreSQL `RESULT_MAPPING_FAILED` 需要 `COUNT(*) > Integer.MAX_VALUE`，未构造海量数据；由 `Long.MAX_VALUE` unit fixture 精确覆盖。以上限制不阻断 disposable release-candidate stabilization，但阻断生产重试。

@@ -327,6 +327,22 @@ if (-not (Test-GovernanceNextActionForWorkBatch `
 }
 Write-Output 'PASS canonical-precreate-internal-readback-fix exact-triple=true'
 
+$releaseCandidateStabilizationStatus =
+        'IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED'
+$releaseCandidateStabilizationWorkBatch =
+        'GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION'
+$releaseCandidateStabilizationReview =
+        'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW'
+Assert-ActionType $releaseCandidateStabilizationReview `
+    'RELEASE_CANDIDATE_STABILIZATION_REVIEW'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateStabilizationStatus `
+        $releaseCandidateStabilizationWorkBatch `
+        $releaseCandidateStabilizationReview)) {
+    throw 'CANONICAL_RELEASE_CANDIDATE_STABILIZATION_REVIEW_REJECTED'
+}
+Write-Output 'PASS canonical-release-candidate-stabilization-review exact-triple=true'
+
 foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRD'; Batch = $deploymentWorkBatch; Action = $reproducibleBuildFix },
     @{ Status = $deploymentFailedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-ATTEMPT-10'; Action = $reproducibleBuildFix },
@@ -344,7 +360,11 @@ foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|CODE_REMEDIATION_REQUIRD'; Batch = $precreateRemediationWorkBatch; Action = $precreateInternalReadbackFix },
     @{ Status = $precreateDeploymentFailedStatus; Batch = 'GateW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-ATTEMPT-10'; Action = $precreateInternalReadbackFix },
     @{ Status = $precreateDeploymentFailedStatus; Batch = $precreateRemediationWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX-LATER' },
-    @{ Status = $precreateDeploymentFailedStatus; Batch = $precreateRemediationWorkBatch; Action = 'nq-gatew-attempt-10-precreate-prerequisite-internal-readback-failure-rca-and-fix' }
+    @{ Status = $precreateDeploymentFailedStatus; Batch = $precreateRemediationWorkBatch; Action = 'nq-gatew-attempt-10-precreate-prerequisite-internal-readback-failure-rca-and-fix' },
+    @{ Status = 'IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED_LATER'; Batch = $releaseCandidateStabilizationWorkBatch; Action = $releaseCandidateStabilizationReview },
+    @{ Status = $releaseCandidateStabilizationStatus; Batch = 'GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-LATER'; Action = $releaseCandidateStabilizationReview },
+    @{ Status = $releaseCandidateStabilizationStatus; Batch = $releaseCandidateStabilizationWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-LATER' },
+    @{ Status = $releaseCandidateStabilizationStatus; Batch = $releaseCandidateStabilizationWorkBatch; Action = 'nq-gatew-attempt-10-release-candidate-stabilization-review' }
 )) {
     if (Test-GovernanceNextActionForWorkBatch `
             $contract $case.Status $case.Batch $case.Action) {
@@ -383,6 +403,12 @@ if (-not (Test-GovernanceLifecycleTransition `
     throw 'DEPLOYMENT_RETRY_TO_VERIFIED_LIFECYCLE_TRANSITION_REJECTED'
 }
 Write-Output 'PASS deployment-retry-to-verified lifecycle=highRisk'
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $precreateDeploymentFailedStatus `
+        $releaseCandidateStabilizationStatus)) {
+    throw 'PRECREATE_READBACK_FIX_TO_STABILIZED_LIFECYCLE_TRANSITION_REJECTED'
+}
+Write-Output 'PASS precreate-readback-fix-to-stabilized lifecycle=highRisk'
 
 foreach ($action in @('NQ-GATEW-COMMIT-AND-PUSH', 'NQ-GATEW-COMMIT_AND_PUSH', 'NQ-GATEW-USER_COMMIT')) {
     Assert-ActionType $action 'COMMIT_AND_PUSH'

@@ -39,7 +39,11 @@ GateW Attempt-10 pre-create prerequisite remediation IMPLEMENTED / CI GREEN / DE
   ↓
 GateW Attempt-10 pre-create remediation DEPLOYMENT VERIFICATION FAILED / CODE REMEDIATION REQUIRED
   ↓
-NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX
+GateW Attempt-10 internal readback RCA/fix IMPLEMENTED / CI GREEN
+  ↓
+GateW Attempt-10 release candidate stabilization IMPLEMENTED / CI GREEN / DISPOSABLE LINUX VALIDATION PASSED
+  ↓
+NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW
   ↓
 GateW-FREEZE NOT STARTED / FUTURE
 ```
@@ -65,8 +69,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW remediation immutable release deployment：`DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING`。`c16f27c3...` release 已完成独立 Linux root install、POSIX/ownership、worker write denial、trusted path、systemd、offline remediation/security、Attempt-09 rejected fixture、positive 168h fixture与tamper rejection验证，并已由 canonical installer 原子激活；units started=`0`。
 - GateW Attempt-10 preparation attempt-01：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / ATTEMPT_10_NOT_CREATED`。Canonical pre-create 返回 `readyForAttemptCreation=false`；RunId/state/runtime/clock均未创建，OKX未调用。
 - GateW Attempt-10 pre-create prerequisite remediation：`DEPLOYMENT VERIFICATION FAILED / CODE REMEDIATION REQUIRED`。Commit A `1561eb60cd46dc1a4618fde6651426c41d7c4e20` 的 release supply chain、Linux install、systemd 与离线回归均通过，但生产 canonical readback 仍返回 `INTERNAL_SANITIZED_READBACK_FAILURE`；current/unit links 已 canonical 回滚到 `c16f27c3...`，Attempt-10 未创建。
-- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / START_BLOCKED`。
-- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX`；只允许脱敏代码级 RCA、最小修复与回归。不得直接重试、恢复 Attempt-09、复用旧 clock、修改生产 credential/permission/IP allowlist、手工 SQL、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
+- GateW Attempt-10 internal readback RCA/fix 与 release candidate stabilization：`IMPLEMENTED / CI GREEN / DISPOSABLE LINUX VALIDATION PASSED`。Readback Commit A `22c6c17a0d6a290679f0bd4808fb38022330c4a0` 增加 Java/JDBC/launcher/JSON/PowerShell 分层 taxonomy、single bounded read-only query 与 Linux-safe runner；final source head `5e7a9c4ef1f3f6f38bb4bd57c738bd53464a9ac6` 修复 canonical ZIP CRC 与 PowerShell `[byte[]]` 写入，exact-head CI run `30576297678 / completed / success / 10 of 10`。同一 head 的双引擎 release bytes 完全一致，并在一次性 WSL/PostgreSQL 通过 root/POSIX verifier、正式 helper 正例、业务 blocker 与连接/查询/management 负例。未连接或修改生产。
+- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`。
+- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；只允许独立审查代码、release supply chain 与 disposable evidence。不得部署或直接重试、恢复 Attempt-09、复用旧 clock、修改生产 credential/permission/IP allowlist、手工 SQL、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 
@@ -77,5 +82,5 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
-- 修复版 release `c16f27c3...` 仍是服务器 current 与 unit links 的 last-known-good immutable release；本轮失败的新 release `1561eb60...` 已安装并保留，但未运行。Attempt-10 仍须在新的 internal readback RCA/fix、独立部署授权和全部 hard gates 后才可能重新申请启动，不得手工切换或直接重试。
+- 修复版 release `c16f27c3...` 仍是服务器 current 与 unit links 的 last-known-good immutable release；失败 release `1561eb60...` 已安装并保留但未运行。本轮 `5e7a9c4e...` release 只在 disposable Linux 验证，未上传或部署。Attempt-10 仍须在独立 stabilization review、独立生产部署授权和全部 hard gates 后才可能重新申请启动，不得手工切换或直接重试。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。

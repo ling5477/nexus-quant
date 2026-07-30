@@ -17944,3 +17944,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential material/raw response/manual SQL/OKX/production DB writes/Attempt-10/clock/worker/LIVE/trading write=`0`；未修改credential/permission/IP allowlist，未进入freeze/archive/tag；本任务临时harness residue=0。
 - result：`FAIL / PRECREATE_REMEDIATION_DEPLOYMENT_VERIFICATION_FAILED / CODE_REMEDIATION_REQUIRED / ROLLED_BACK / ATTEMPT_10_NOT_CREATED`。
 - next：`NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX`；仅允许脱敏代码级RCA/最小修复与回归，不授权生产修改或Attempt-10重试。
+
+## 2026-07-31 — GateW Attempt-10 internal readback RCA/fix and release candidate stabilization
+
+- task：`NQ-GATEW-ATTEMPT-10-PRECREATE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX`；NQ-only、L级 Java/JDBC readback、PowerShell launcher、cross-platform runner、release supply-chain 与 disposable Linux/PostgreSQL 整改。
+- RCA：旧 contract 将 configuration/datasource/driver/connection/query/mapping/serialization、JVM exit、stdout/stderr 与 JSON parse 多层失败收敛成 `INTERNAL_SANITIZED_READBACK_FAILURE`；production historical fallback 不反推 credential/permission/IP 事实。另发现 Linux runner 无条件 `WindowStyle` 以及 canonical ZIP `[uint32]` CRC signed conversion、`[byte[]]` 展开后错误 overload 两个 release 缺陷。
+- implementation：Commit A `22c6c17a...` 增加分层 taxonomy、single bounded SELECT、closed-schema 与 Linux-safe runner；A2 `f54cdc81...` 因 corrupt JAR 作废；A3 `5e7a9c4e...` 修复 CRC/byte-array 并新增标准向量和 entry readback。
+- validation：A3 exact-head CI `30576297678 / completed / success / 10 of 10`；control/worker/fail-close=`66/59/8`，remediation/security/release=`32/12/16 per engine`，focused Maven=`49 tests / 0 failures / 0 errors / 2 skipped`。
+- release：`EXACT_COMMIT 5e7a9c4e...`；manifest=`cbc2c0c4...bce7b`；bundle=`84446b2d...e952d3`；131 artifacts / 132 USTAR；双引擎 manifest/bundle/artifact descriptor bytes identical；closed set/Git/sensitive=`PASS`。
+- disposable：WSL Ubuntu + Java 21.0.12 + PowerShell 7.5.2 + loopback disposable PostgreSQL 17；root/POSIX verifier PASS；canonical helper `ready=true` 正例、15 个业务/基础设施负例、DB state before/after identical 全 PASS。Mapping overflow 未构造海量真实行，由 `Long.MAX_VALUE` unit fixture 覆盖。
+- cleanup：WSL runtime/config/encrypted fake secret/health/result、PostgreSQL data/marker、RC roots 全部删除；fixture 最终 accounts/credentials=`0/0` 后 fast stop。
+- boundary：生产 SSH/deploy/systemd/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag。Disposable fixture 使用假数据与受控 SQL，helper 本身无 DB write。
+- result：`PASS / INTERNAL_READBACK_ROOT_CAUSE_FIXED / DISPOSABLE_LINUX_VALIDATION_PASSED / RELEASE_CANDIDATE_STABILIZED / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`。
+- next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；仅允许独立 review，不授权生产部署或 Attempt-10 重试。
