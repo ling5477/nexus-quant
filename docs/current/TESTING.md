@@ -12188,3 +12188,25 @@ Known warnings / limitations：`systemd-analyze`只报告无关 `cloudmonitor.se
 安全环境：`CI=true / NQ_NO_OUTBOUND=true / NQ_AI_ENABLED=false / NQ_DH_RUNTIME_ENABLED=false / NQ_REAL_EXCHANGE_ENABLED=false`。本地 bundle与篡改副本验证后已精确删除。
 
 未运行：SSH、远端取证、远端 finalizer、服务器 install/activate/systemd verify、真实 OKX、credential、permission probe、新168小时soak、Attempt-10、freeze/archive/tag。本地未重复运行与本次 PowerShell/systemd tooling diff无关的全量 Maven/frontend/Python；exact-head CI已实际通过backend/frontend/research/security/DB/E2E全部10个jobs。阻断性：implementation self-review P0=0/P1=0；独立安全审查与任何服务器 deployment 均为后续 hard gate。
+
+## 2026-07-30 — GateW Attempt-09 failure remediation security review（pre-CI）
+
+当前结论：`CONDITIONAL_PASS / P1_MINIMAL_FIX_LOCALLY_VALIDATED / COMMIT_A_CI_PENDING / EXACT_COMMIT_BUNDLE_PENDING / PENDING_LINUX_ROOT_INSTALL_VERIFICATION / ATTEMPT_10_NOT_AUTHORIZED`（有条件通过 / P1 最小修复已完成本地验证 / Commit A CI 待执行 / 精确提交不可变包待验证 / Linux root 安装验证待执行 / Attempt-10 未获授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| PowerShell 5.1 / 7 control self-test | PASS | 双引擎各 `49` cases；`FORMAL_CONTROL_SELF_TEST` |
+| PowerShell 5.1 / 7 lightweight fail-close self-test | PASS | 双引擎各 `8` cases；`LIGHTWEIGHT_FAILCLOSE_SELF_TEST` |
+| PowerShell 5.1 / 7 worker self-test | PASS | 双引擎各 `59` cases；`SUPERVISOR_SELF_TEST` |
+| PowerShell 5.1 / 7 remediation regression | PASS | 双引擎各 `32` cases；Attempt-09=`evidence PASS / acceptance FAIL / finalizer BLOCKED`；Attempt-10=false |
+| PowerShell 5.1 / 7 security regression | PASS | 双引擎各 `12` cases；root-only marker、marker binding、crash windows、shared lock、双并发顺序、terminal non-overwrite、reason allowlist、stale retirement |
+| PowerShell 5.1 / 7 builder + installer self-test | PASS | release closed-set/LF/mode/installer contract保持通过；network/credential=false |
+| PowerShell 5.1 / 7 governance regressions | PASS | `CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`、`GOVERNANCE_LIFECYCLE_REGRESSION`、`TASK_EVIDENCE_POLICY_VALID` |
+| current authority / current doc links | PASS / 1 EXISTING WARNING | authority errors=`0`；links=`135 checked / 1 GateJ historical warning / 0 errors` |
+| PowerShell AST / `git diff --check` | PASS | changed scripts在两引擎实际执行；whitespace errors=`0` |
+
+安全审查确认并关闭两个 P1：worker 可写受信 completion marker；stop intent 未限制 reason allowlist 且 stale same-input/no-exit 恢复会永久阻断。修复后 marker 由 root control 在其余 acceptance hard gates 全通过后写入 root-owned control 目录并绑定 release/PID/evidence hash；stop intent 只允许两个 canonical reason，同输入 stale/no-exit intent保留原件退休后可创建新 canonical intent，stale-after-exit继续 fail-closed。
+
+一次将多项治理检查放入单个60秒窗口的组合命令超时；超时不计PASS。随后拆分重跑PowerShell 7 lifecycle/task-evidence、authority和doc links均通过。Commit A、exact-head CI和clean Commit A canonical `EXACT_COMMIT` bundle尚未执行，因此不提前写安全审查接受；Windows继续保留`posixVerified=false / PENDING_LINUX_ROOT_INSTALL_VERIFICATION`。
+
+边界：无SSH、服务器、deploy、systemd state、OKX、credential、permission probe、Attempt-10、新soak、freeze/archive/tag、LIVE或交易写侧操作。Authority保持`IMPLEMENTED|CI_GREEN|PENDING_SECURITY_REVIEW`和当前security-review next action。

@@ -295,6 +295,26 @@ try
     {
         throw 'REGRESSION_BAD_STOP_INTENT_CHECKSUM_ACCEPTED'
     }
+    $unknownReasonRejected = $false
+    try
+    {
+        New-GateWStopIntentRecord `
+            -RunId ([string]$good.runId) `
+            -RequestId 'gatew-stop-20260729T112006Z-1234abcd' `
+            -RequestedAt '2026-07-29T11:20:06.0000000Z' `
+            -RequestedByUid 1000 `
+            -ReasonCode 'UNKNOWN_REASON' `
+            -ReleaseCommit ([string]$good.releaseCommit) | Out-Null
+    }
+    catch
+    {
+        $unknownReasonRejected = $_.Exception.Message -ceq
+                'FAIL / STOP_INTENT_SCHEMA_INVALID'
+    }
+    if (-not $unknownReasonRejected)
+    {
+        throw 'REGRESSION_UNKNOWN_STOP_INTENT_REASON_ACCEPTED'
+    }
     Complete-Case 21 'stop-intent-checksum-invalid'
 
     $failCloseStopwatch = [Diagnostics.Stopwatch]::StartNew()
@@ -561,9 +581,19 @@ try
             -not $failCloseUnitText.Contains('TimeoutStartSec=30s') -or
             -not $workerText.Contains('Invoke-FormalFinalAcceptanceSample') -or
             -not $workerText.Contains("'ACCEPTANCE_READY'") -or
+            $workerText.Contains('completion-marker.json') -or
+            -not $workerText.Contains('Confirm-FormalCompletionBoundary') -or
             $acceptanceSnapshotStart -lt 0 -or $acceptanceVerifyIndex -lt 0 -or
             $acceptanceUnitStateIndex -lt $acceptanceVerifyIndex -or
             -not $controlText.Contains('workerStartMainPid') -or
+            -not $controlText.Contains(
+                    '"$( Get-ControlRoot $Value )/completion-marker.json"'
+            ) -or
+            -not $controlText.Contains(
+                    "Assert-PosixContract `$path 'regular file' '600' 'root' 'root'"
+            ) -or
+            -not $controlText.Contains('Commit-AcceptanceCompletionMarker') -or
+            -not $controlText.Contains('stop-intent-retired-') -or
             $controlText -match '\$terminal\.terminalStatus' -or
             -not $controlText.Contains('Complete-AcceptedLifecycle') -or
             -not $controlText.Contains('$identity = Assert-FrozenReleaseBinding $config') -or

@@ -1855,7 +1855,7 @@ function Wait-ForFormalAcceptanceClock
     return $clock
 }
 
-function Write-FormalCompletionMarker
+function Confirm-FormalCompletionBoundary
 {
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
@@ -1893,14 +1893,7 @@ function Write-FormalCompletionMarker
         throw 'FAIL / NATURAL_COMPLETION_BEFORE_PLANNED_ACCEPTANCE'
     }
 
-    Write-JsonCreateOnce (Join-Path $Directory 'completion-marker.json') ([ordered]@{
-        schemaVersion = 'gatew-soak-completion-marker-v1'
-        runId = $RunId
-        lastSuccessfulCycleSequence = $lastSuccessfulSequence
-        lastHeartbeatSequence = [long]$chain.Count
-        completedAt = (Get-UtcNow).ToString('o')
-    })
-    Write-Heartbeat $Directory 'COMPLETING' 'NATURAL_COMPLETION_MARKER_WRITTEN' ([long]$chain.Count)
+    Write-Heartbeat $Directory 'COMPLETING' 'NATURAL_COMPLETION_BOUNDARY_REACHED' ([long]$chain.Count)
 }
 
 function Invoke-FormalFinalAcceptanceSample
@@ -2099,7 +2092,7 @@ function Run-FormalRealSoak
         } while ($true)
     }
     $finalRecord = Invoke-FormalFinalAcceptanceSample $Directory $Manifest
-    Write-FormalCompletionMarker $Directory $plannedEndAt
+    Confirm-FormalCompletionBoundary $Directory $plannedEndAt
     Wait-ForFormalAcceptanceFinalization $Directory ([long]$finalRecord.sequence)
 }
 

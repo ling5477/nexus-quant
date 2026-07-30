@@ -140,7 +140,9 @@ function Assert-GateWStopIntentRecord
             [string]$Record.requestId -cnotmatch '^gatew-stop-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$' -or
             -not (Test-GateWIntegralNumber $Record.requestedByUid) -or
             [long]$Record.requestedByUid -lt 0 -or
-            [string]$Record.reasonCode -cnotmatch $script:SafeCodePattern -or
+            [string]$Record.reasonCode -cnotin @(
+                'OPERATOR_STOP_REQUESTED', 'ACCEPTANCE_FINALIZATION'
+            ) -or
             [string]$Record.releaseCommit -cnotmatch $script:CommitPattern -or
             [string]$Record.checksum -cnotmatch $script:Sha256Pattern)
     {
@@ -155,6 +157,71 @@ function Assert-GateWStopIntentRecord
         throw 'FAIL / STOP_INTENT_CHECKSUM_INVALID'
     }
     return $Record
+}
+
+function New-GateWCompletionMarkerRecord
+{
+    param([Parameter(Mandatory = $true)]$Snapshot)
+
+    $record = [ordered]@{
+        schemaVersion = 'gatew-soak-completion-marker-v2'
+        runId = [string]$Snapshot.runId
+        releaseCommit = [string]$Snapshot.releaseCommit
+        mainPid = [long]$Snapshot.mainPid
+        lastValidSampleAt = [string]$Snapshot.lastValidSampleAt
+        evidenceManifestSha256 = [string]$Snapshot.evidenceManifestSha256
+        evidenceFinalChainHash = [string]$Snapshot.evidenceFinalChainHash
+        completedAt = [string]$Snapshot.lastValidSampleAt
+    }
+    $record.checksum = Get-GateWRecordChecksum ([pscustomobject]$record) @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'lastValidSampleAt',
+        'evidenceManifestSha256', 'evidenceFinalChainHash', 'completedAt'
+    )
+    $value = [pscustomobject]$record
+    Assert-GateWCompletionMarkerRecord $value $Snapshot | Out-Null
+    return $value
+}
+
+function Assert-GateWCompletionMarkerRecord
+{
+    param(
+        [Parameter(Mandatory = $true)]$Marker,
+        [Parameter(Mandatory = $true)]$Snapshot
+    )
+
+    $fields = @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'lastValidSampleAt',
+        'evidenceManifestSha256', 'evidenceFinalChainHash', 'completedAt', 'checksum'
+    )
+    Assert-GateWExactFields $Marker $fields 'COMPLETION_MARKER_SCHEMA_INVALID'
+    $lastSample = ConvertTo-GateWUtcTimestamp `
+        ([string]$Marker.lastValidSampleAt) 'COMPLETION_MARKER_SCHEMA_INVALID'
+    $completedAt = ConvertTo-GateWUtcTimestamp `
+        ([string]$Marker.completedAt) 'COMPLETION_MARKER_SCHEMA_INVALID'
+    if ([string]$Marker.schemaVersion -cne 'gatew-soak-completion-marker-v2' -or
+            [string]$Marker.runId -cne [string]$Snapshot.runId -or
+            [string]$Marker.releaseCommit -cne [string]$Snapshot.releaseCommit -or
+            [long]$Marker.mainPid -le 0 -or
+            [long]$Marker.mainPid -ne [long]$Snapshot.mainPid -or
+            [string]$Marker.lastValidSampleAt -cne [string]$Snapshot.lastValidSampleAt -or
+            [string]$Marker.evidenceManifestSha256 -cne
+                    [string]$Snapshot.evidenceManifestSha256 -or
+            [string]$Marker.evidenceFinalChainHash -cne
+                    [string]$Snapshot.evidenceFinalChainHash -or
+            $completedAt -ne $lastSample -or
+            [string]$Marker.checksum -cnotmatch $script:Sha256Pattern)
+    {
+        throw 'FAIL / COMPLETION_MARKER_SCHEMA_INVALID'
+    }
+    $expected = Get-GateWRecordChecksum $Marker @(
+        'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'lastValidSampleAt',
+        'evidenceManifestSha256', 'evidenceFinalChainHash', 'completedAt'
+    )
+    if ([string]$Marker.checksum -cne $expected)
+    {
+        throw 'FAIL / COMPLETION_MARKER_CHECKSUM_INVALID'
+    }
+    return $Marker
 }
 
 function Test-GateWAcceptanceSnapshot
@@ -590,6 +657,8 @@ Export-ModuleMember -Function @(
     'Get-GateWRecordChecksum',
     'New-GateWStopIntentRecord',
     'Assert-GateWStopIntentRecord',
+    'New-GateWCompletionMarkerRecord',
+    'Assert-GateWCompletionMarkerRecord',
     'Test-GateWAcceptanceSnapshot',
     'New-GateWAcceptanceProof',
     'Assert-GateWAcceptanceProof',

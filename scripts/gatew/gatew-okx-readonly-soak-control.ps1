@@ -2399,7 +2399,7 @@ function Show-FormalStatus
         acceptanceStartAt = $clock.acceptanceStartAt
         plannedAcceptanceAt = $clock.plannedAcceptanceAt
         completionMarkerExists = Test-Path -LiteralPath `
-            "$( Get-EvidenceRoot $RunId )/completion-marker.json" -PathType Leaf
+            "$( Get-ControlRoot $RunId )/completion-marker.json" -PathType Leaf
         acceptanceVerified = $null -ne $proof
         acceptanceProofChecksum = if ($null -eq $proof)
         {
@@ -2486,19 +2486,40 @@ function Write-ControlledStopIntent
         [Parameter(Mandatory = $true)][string]$ReasonCode
     )
 
-    $path = "$( Get-ControlRoot $Value )/stop-intent.json"
+    $controlRoot = Get-ControlRoot $Value
+    $path = "$controlRoot/stop-intent.json"
+    $config = Read-JsonFile "$controlRoot/frozen-config.json"
+    Assert-FrozenReleaseBinding $config | Out-Null
     if (Test-Path -LiteralPath $path -PathType Leaf)
     {
         $existing = Read-JsonFile $path
         Assert-GateWStopIntentRecord $existing | Out-Null
-        if ([string]$existing.runId -cne $Value -or [string]$existing.reasonCode -cne $ReasonCode)
+        $requestedAt = [DateTimeOffset]::Parse([string]$existing.requestedAt)
+        $now = Get-UtcNow
+        if ([string]$existing.runId -cne $Value -or
+                [string]$existing.reasonCode -cne $ReasonCode -or
+                [string]$existing.releaseCommit -cne [string]$config.sourceCommit -or
+                $requestedAt -gt $now)
         {
             throw 'BLOCKED / STOP_INTENT_CONFLICT'
         }
-        return $existing
+        if (($now - $requestedAt).TotalSeconds -le $script:StopIntentMaxAgeSeconds)
+        {
+            return $existing
+        }
+        if (Test-Path -LiteralPath "$controlRoot/exit-fact.json" -PathType Leaf)
+        {
+            throw 'BLOCKED / STOP_INTENT_STALE_AFTER_EXIT'
+        }
+        $retiredPath = "$controlRoot/stop-intent-retired-$( [string]$existing.requestId ).json"
+        Assert-PathBelowRoot $controlRoot $retiredPath
+        if (Test-Path -LiteralPath $retiredPath)
+        {
+            throw 'BLOCKED / STOP_INTENT_RETIREMENT_CONFLICT'
+        }
+        Move-Item -LiteralPath $path -Destination $retiredPath
+        Set-OwnerMode $retiredPath 'root:root' '600'
     }
-    $config = Read-JsonFile "$( Get-ControlRoot $Value )/frozen-config.json"
-    Assert-FrozenReleaseBinding $config | Out-Null
     $requestedAt = (Get-UtcNow).ToString('o')
     $requestId = 'gatew-stop-{0}-{1}' -f
     ([DateTimeOffset]::Parse($requestedAt).ToString('yyyyMMddTHHmmssZ')),
@@ -2543,12 +2564,17 @@ function Request-OperatorStop
             }
         }
         $lifecycle = Read-JsonFile (Get-LifecyclePath $RunId)
-        if ([string]$lifecycle.state -notin @('PREPARING', 'STARTING', 'RUNNING'))
+        if ([string]$lifecycle.state -notin @(
+            'PREPARING', 'STARTING', 'RUNNING', 'OPERATOR_STOPPING'
+        ))
         {
             throw 'BLOCKED / RUN_NOT_OPERATOR_STOPPABLE'
         }
         $intent = Write-ControlledStopIntent $RunId 'OPERATOR_STOP_REQUESTED'
-        Set-LifecycleState $RunId 'OPERATOR_STOPPING' 'OPERATOR_STOP_REQUESTED' | Out-Null
+        if ([string]$lifecycle.state -cne 'OPERATOR_STOPPING')
+        {
+            Set-LifecycleState $RunId 'OPERATOR_STOPPING' 'OPERATOR_STOP_REQUESTED' | Out-Null
+        }
     }
     finally
     {
@@ -2741,34 +2767,42 @@ function Test-AcceptanceCompletionMarker
 {
     param(
         [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][long]$SampleCount,
-        [Parameter(Mandatory = $true)][string]$LastValidSampleAt
+        [Parameter(Mandatory = $true)]$Snapshot
     )
 
-    $path = "$( Get-EvidenceRoot $Value )/completion-marker.json"
+    $path = "$( Get-ControlRoot $Value )/completion-marker.json"
     if (-not (Test-Path -LiteralPath $path -PathType Leaf))
     {
         return $false
     }
     try
     {
+        Assert-PosixContract $path 'regular file' '600' 'root' 'root'
         $marker = Read-JsonFile $path
-        $completedAt = [DateTimeOffset]::MinValue
-        $lastSample = [DateTimeOffset]::MinValue
-        return (@($marker.PSObject.Properties.Name) -join '|') -ceq
-                'schemaVersion|runId|lastSuccessfulCycleSequence|lastHeartbeatSequence|completedAt' -and
-                [string]$marker.schemaVersion -ceq 'gatew-soak-completion-marker-v1' -and
-                [string]$marker.runId -ceq $Value -and
-                [long]$marker.lastSuccessfulCycleSequence -eq $SampleCount -and
-                [long]$marker.lastHeartbeatSequence -eq $SampleCount -and
-                [DateTimeOffset]::TryParse([string]$marker.completedAt, [ref]$completedAt) -and
-                [DateTimeOffset]::TryParse($LastValidSampleAt, [ref]$lastSample) -and
-                $completedAt -ge $lastSample
+        Assert-GateWCompletionMarkerRecord $marker $Snapshot | Out-Null
+        return $true
     }
     catch
     {
         return $false
     }
+}
+
+function Commit-AcceptanceCompletionMarker
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)]$Snapshot
+    )
+
+    $path = "$( Get-ControlRoot $Value )/completion-marker.json"
+    $record = New-GateWCompletionMarkerRecord $Snapshot
+    Commit-CreateOnceJsonIdempotent `
+        $path $record 'COMPLETION_MARKER_CONFLICT' 'root:root' '600' | Out-Null
+    Set-OwnerMode $path 'root:root' '600'
+    $written = Read-JsonFile $path
+    Assert-GateWCompletionMarkerRecord $written $Snapshot | Out-Null
+    return $written
 }
 
 function New-FormalAcceptanceSnapshot
@@ -2809,7 +2843,7 @@ function New-FormalAcceptanceSnapshot
     $acceptanceStart = [DateTimeOffset]::Parse([string]$clock.acceptanceStartAt)
     $lastValidSample = [DateTimeOffset]::Parse($lastValidSampleAt)
     $observedDuration = [Math]::Max(0.0, ($lastValidSample - $acceptanceStart).TotalSeconds)
-    return [pscustomobject][ordered]@{
+    $snapshot = [pscustomobject][ordered]@{
         schemaVersion = 'gatew-soak-acceptance-snapshot-v1'
         runId = $RunId
         releaseCommit = [string]$config.sourceCommit
@@ -2823,8 +2857,7 @@ function New-FormalAcceptanceSnapshot
         initialExecMainStartTimestampMonotonic = [long]$unitStart.execMainStartTimestampMonotonic
         workerStartCount = $workerStartFiles.Count
         earlyExitFactExists = Test-Path -LiteralPath "$( Get-ControlRoot $RunId )/exit-fact.json"
-        completionMarkerValid = Test-AcceptanceCompletionMarker `
-            $RunId ([long]$samples.sampleCount) $lastValidSampleAt
+        completionMarkerValid = $false
         acceptanceStartAt = [string]$clock.acceptanceStartAt
         plannedAcceptanceAt = [string]$clock.plannedAcceptanceAt
         clockMainPid = [long]$clock.mainPid
@@ -2845,12 +2878,30 @@ function New-FormalAcceptanceSnapshot
         evidenceManifestSha256 = [string]$evidence.evidenceManifestSha256
         evidenceFinalChainHash = [string]$evidence.lastHash
     }
+    $snapshot.completionMarkerValid = Test-AcceptanceCompletionMarker $RunId $snapshot
+    return $snapshot
 }
 
 function Verify-FormalAcceptance
 {
     $snapshot = New-FormalAcceptanceSnapshot
     $result = Test-GateWAcceptanceSnapshot $snapshot
+    $markerPath = "$( Get-ControlRoot $RunId )/completion-marker.json"
+    if (-not [bool]$result.accepted -and
+            -not (Test-Path -LiteralPath $markerPath -PathType Leaf))
+    {
+        $preMarkerSnapshot = ConvertFrom-JsonPreservingTimestamps (
+            $snapshot | ConvertTo-Json -Depth 20
+        )
+        $preMarkerSnapshot.completionMarkerValid = $true
+        $preMarkerResult = Test-GateWAcceptanceSnapshot $preMarkerSnapshot
+        if ([bool]$preMarkerResult.accepted)
+        {
+            Commit-AcceptanceCompletionMarker $RunId $snapshot | Out-Null
+            $snapshot.completionMarkerValid = Test-AcceptanceCompletionMarker $RunId $snapshot
+            $result = Test-GateWAcceptanceSnapshot $snapshot
+        }
+    }
     if (-not [bool]$result.accepted)
     {
         return [pscustomobject][ordered]@{
@@ -2966,6 +3017,10 @@ function Verify-FormalTerminal
         }
         $proof = Read-JsonFile $proofPath
         Assert-GateWAcceptanceProof $proof | Out-Null
+        if (-not (Test-AcceptanceCompletionMarker $RunId $proof))
+        {
+            throw 'FAIL / TERMINAL_COMPLETION_MARKER_BINDING_INVALID'
+        }
         if ([string]$terminal.terminalReasonCode -cne 'ACCEPTANCE_RESULT_FINALIZED' -or
                 [string]$proof.runId -cne [string]$terminal.runId -or
                 [string]$proof.releaseCommit -cne [string]$terminal.releaseCommit -or
@@ -3086,6 +3141,10 @@ function Finalize-FormalAcceptance
         if ([string]$proof.result -cne 'PASS / FORMAL_SOAK_ACCEPTANCE_VERIFIED')
         {
             throw 'BLOCKED / ACCEPTANCE_VERIFY_REQUIRED'
+        }
+        if (-not (Test-AcceptanceCompletionMarker $RunId $proof))
+        {
+            throw 'BLOCKED / ACCEPTANCE_COMPLETION_MARKER_REQUIRED'
         }
         $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
         Assert-FrozenReleaseBinding $config | Out-Null

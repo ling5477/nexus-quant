@@ -17850,3 +17850,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：无SSH、远端取证/finalizer、服务器/release/service/credential/OKX/交易写侧修改；未创建Attempt-10，未进入freeze/archive/tag。
 - result：`IMPLEMENTED / SELF_REVIEWED / CI_GREEN / PENDING_SECURITY_REVIEW / ATTEMPT_10_NOT_AUTHORIZED`。
 - next：唯一动作 `NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW`；独立审查通过前不得部署、创建Attempt-10或授权新soak。
+
+## 2026-07-30 — GateW Attempt-09 failure remediation security review（pre-CI）
+
+- task：`NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-SECURITY-REVIEW`；NQ-only、L级 fail-closed/systemd/finalizer/stop-intent/release supply-chain security review。
+- baseline：fact-source reconciliation后`HEAD == origin/dev == 5bd1649d6e1652b54dd15a67c9efa9bd50c24f13`；run `30513313694 / completed / success / 10 of 10`；authority保持remediation `PENDING_SECURITY_REVIEW`。
+- findings：确认两个P1——worker可写受信completion marker；stop intent接受未知reason且stale same-input/no-exit崩溃窗口不可恢复。均在原GateW整改边界内最小关闭，开放P1=0。
+- fix：completion marker改由root control在其他acceptance hard gates全通过后写入`control/`，绑定release/PID/evidence hash并由proof/finalizer/terminal verifier复核；stop reason改为两个值精确allowlist，stale/no-exit原intent退休保留后重建，stale-after-exit继续阻断。
+- regression：PowerShell 5.1/7 control/fail-close/worker/remediation/security=`49/8/59/32/12` cases全部PASS；builder/installer、next-action/lifecycle/task-evidence双引擎PASS；authority errors=0；current links=`135/1 existing warning/0`；`git diff --check` PASS。
+- pending：Commit A、exact-head CI、新clean Commit A `EXACT_COMMIT` 130-artifact bundle、tamper rejection尚未执行；Windows保留`posixVerified=false / PENDING_LINUX_ROOT_INSTALL_VERIFICATION`。
+- boundary：未连接服务器、未部署、未修改systemd state、未访问OKX/credential、未创建Attempt-10、未启动soak、未进入freeze/archive/tag、未触达LIVE或交易写侧；STATUS/ROADMAP未提前修改。
+- result：`CONDITIONAL_PASS / P1_MINIMAL_FIX_LOCALLY_VALIDATED / COMMIT_A_CI_PENDING / EXACT_COMMIT_BUNDLE_PENDING / ATTEMPT_10_NOT_AUTHORIZED`。
+- next：精确暂存Commit A文件并提交`fix(gatew): close remediation security findings`；push后等待该exact-head CI 10/10 GREEN，未通过则停止authority sync。
