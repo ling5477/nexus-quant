@@ -184,6 +184,209 @@ function Write-GateWCanonicalManifest
     [IO.File]::WriteAllBytes($Path, (Get-GateWCanonicalManifestBytes $Manifest))
 }
 
+function Get-GateWCrc32
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][byte[]]$Bytes)
+
+    $table = New-Object uint32[] 256
+    for ($tableIndex = 0; $tableIndex -lt 256; $tableIndex++)
+    {
+        $value = [uint32]$tableIndex
+        for ($bit = 0; $bit -lt 8; $bit++)
+        {
+            if (($value -band 1) -ne 0)
+            {
+                $value = [uint32](($value -shr 1) -bxor [uint32]3988292384)
+            }
+            else
+            {
+                $value = [uint32]($value -shr 1)
+            }
+        }
+        $table[$tableIndex] = $value
+    }
+    $crc = [uint32]4294967295
+    foreach ($byte in $Bytes)
+    {
+        $lookup = [int](($crc -bxor [uint32]$byte) -band 0xFF)
+        $crc = [uint32](($crc -shr 8) -bxor $table[$lookup])
+    }
+    return [uint32]($crc -bxor [uint32]4294967295)
+}
+
+function New-GateWCanonicalZip
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceDirectory,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$RelativePaths
+    )
+
+    if (Test-Path -LiteralPath $Destination)
+    {
+        throw 'BLOCKED / RELEASE_OUTPUT_ALREADY_EXISTS'
+    }
+    $sourceRoot = [IO.Path]::GetFullPath($SourceDirectory).TrimEnd(
+        [IO.Path]::DirectorySeparatorChar,
+        [IO.Path]::AltDirectorySeparatorChar
+    )
+    $filePaths = @(Sort-GateWOrdinalStrings $RelativePaths)
+    if ($filePaths.Count -eq 0)
+    {
+        throw 'BLOCKED / RELEASE_LAUNCHER_CLASSES_MISSING'
+    }
+    $directoryIndex = @{}
+    foreach ($relativePath in $filePaths)
+    {
+        if ([string]::IsNullOrWhiteSpace($relativePath) -or
+                $relativePath -match '\\' -or $relativePath.StartsWith('/') -or
+                $relativePath -match '(^|/)\.\.(/|$)' -or
+                $relativePath -notmatch '^[\x20-\x7e]+$')
+        {
+            throw 'BLOCKED / RELEASE_ARCHIVE_PATH_INVALID'
+        }
+        $separator = $relativePath.IndexOf('/')
+        while ($separator -ge 0)
+        {
+            $directoryIndex[$relativePath.Substring(0, $separator + 1)] = $true
+            $separator = $relativePath.IndexOf('/', $separator + 1)
+        }
+    }
+    $entryDefinitions = @()
+    foreach ($directory in @(Sort-GateWOrdinalStrings @($directoryIndex.Keys)))
+    {
+        $entryDefinitions += [pscustomobject]@{
+            RelativePath = $directory
+            IsDirectory = $true
+            SourcePath = $null
+        }
+    }
+    foreach ($relativePath in $filePaths)
+    {
+        $sourcePath = [IO.Path]::GetFullPath((Join-Path $sourceRoot $relativePath))
+        if (-not $sourcePath.StartsWith(
+                $sourceRoot + [IO.Path]::DirectorySeparatorChar,
+                [StringComparison]::OrdinalIgnoreCase
+            ) -or -not (Test-Path -LiteralPath $sourcePath -PathType Leaf))
+        {
+            throw 'BLOCKED / RELEASE_ARCHIVE_PATH_INVALID'
+        }
+        $entryDefinitions += [pscustomobject]@{
+            RelativePath = $relativePath
+            IsDirectory = $false
+            SourcePath = $sourcePath
+        }
+    }
+
+    [IO.Directory]::CreateDirectory((Split-Path -Parent $Destination)) | Out-Null
+    $stream = [IO.FileStream]::new(
+        $Destination,
+        [IO.FileMode]::CreateNew,
+        [IO.FileAccess]::Write,
+        [IO.FileShare]::None
+    )
+    $writer = [IO.BinaryWriter]::new($stream, $script:Utf8NoBom, $true)
+    $centralRecords = @()
+    try
+    {
+        foreach ($definition in $entryDefinitions)
+        {
+            $nameBytes = $script:Utf8NoBom.GetBytes([string]$definition.RelativePath)
+            $data = if ([bool]$definition.IsDirectory)
+            {
+                New-Object byte[] 0
+            }
+            else
+            {
+                [IO.File]::ReadAllBytes([string]$definition.SourcePath)
+            }
+            if ($nameBytes.Length -gt [uint16]::MaxValue -or
+                    $data.LongLength -gt [uint32]::MaxValue -or
+                    $stream.Position -gt [uint32]::MaxValue)
+            {
+                throw 'BLOCKED / RELEASE_ARCHIVE_METADATA_INVALID'
+            }
+            $crc32 = Get-GateWCrc32 $data
+            $offset = [uint32]$stream.Position
+            $writer.Write([uint32]0x04034B50)
+            $writer.Write([uint16]20)
+            $writer.Write([uint16]0x0800)
+            $writer.Write([uint16]0)
+            $writer.Write([uint16]0)
+            $writer.Write([uint16]33)
+            $writer.Write([uint32]$crc32)
+            $writer.Write([uint32]$data.Length)
+            $writer.Write([uint32]$data.Length)
+            $writer.Write([uint16]$nameBytes.Length)
+            $writer.Write([uint16]0)
+            $writer.Write($nameBytes)
+            $writer.Write($data)
+            $centralRecords += [pscustomobject]@{
+                NameBytes = $nameBytes
+                Crc32 = [uint32]$crc32
+                Size = [uint32]$data.Length
+                Offset = $offset
+                IsDirectory = [bool]$definition.IsDirectory
+            }
+        }
+
+        if ($stream.Position -gt [uint32]::MaxValue -or
+                $centralRecords.Count -gt [uint16]::MaxValue)
+        {
+            throw 'BLOCKED / RELEASE_ARCHIVE_METADATA_INVALID'
+        }
+        $centralOffset = [uint32]$stream.Position
+        foreach ($record in $centralRecords)
+        {
+            $externalAttributes = if ([bool]$record.IsDirectory)
+            {
+                [uint32](([uint64]16877 * [uint64]65536) -bor [uint64]0x10)
+            }
+            else
+            {
+                [uint32]([uint64]33188 * [uint64]65536)
+            }
+            $writer.Write([uint32]0x02014B50)
+            $writer.Write([uint16]0x0314)
+            $writer.Write([uint16]20)
+            $writer.Write([uint16]0x0800)
+            $writer.Write([uint16]0)
+            $writer.Write([uint16]0)
+            $writer.Write([uint16]33)
+            $writer.Write([uint32]$record.Crc32)
+            $writer.Write([uint32]$record.Size)
+            $writer.Write([uint32]$record.Size)
+            $writer.Write([uint16]$record.NameBytes.Length)
+            $writer.Write([uint16]0)
+            $writer.Write([uint16]0)
+            $writer.Write([uint16]0)
+            $writer.Write([uint16]0)
+            $writer.Write($externalAttributes)
+            $writer.Write([uint32]$record.Offset)
+            $writer.Write([byte[]]$record.NameBytes)
+        }
+        $centralSize = [long]$stream.Position - [long]$centralOffset
+        if ($centralSize -gt [uint32]::MaxValue)
+        {
+            throw 'BLOCKED / RELEASE_ARCHIVE_METADATA_INVALID'
+        }
+        $writer.Write([uint32]0x06054B50)
+        $writer.Write([uint16]0)
+        $writer.Write([uint16]0)
+        $writer.Write([uint16]$centralRecords.Count)
+        $writer.Write([uint16]$centralRecords.Count)
+        $writer.Write([uint32]$centralSize)
+        $writer.Write([uint32]$centralOffset)
+        $writer.Write([uint16]0)
+        $writer.Flush()
+    }
+    finally
+    {
+        $writer.Dispose()
+        $stream.Dispose()
+    }
+}
+
 function ConvertTo-GateWOctal
 {
     param(
@@ -393,6 +596,7 @@ Export-ModuleMember -Function @(
     'ConvertTo-GateWCanonicalManifestJson',
     'Get-GateWCanonicalManifestBytes',
     'Write-GateWCanonicalManifest',
+    'New-GateWCanonicalZip',
     'ConvertTo-GateWUnixEpoch',
     'New-GateWCanonicalTar'
 )
