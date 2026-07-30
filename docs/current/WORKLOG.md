@@ -17920,3 +17920,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：未执行prepare/start/fresh SSH/clock/sample/verifier/168h；未修改credential/permission/IP allowlist/retry/cadence/release/history；未触达LIVE/order/cancel/transfer/withdraw/freeze/archive/tag。
 - result：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / IMMUTABLE_RELEASE_ACTIVATED / ATTEMPT_10_NOT_CREATED / ACCEPTANCE_CLOCK_NOT_CREATED / UNITS_NOT_STARTED / OKX_NOT_CALLED`。
 - next：machine-readable authority保持Attempt-10 preparation pending与同一canonical action；再次执行前必须先完成独立脱敏pre-create RCA/fix并重新获得生产授权，禁止直接重试。
+
+## 2026-07-30 — GateW Attempt-10 pre-create prerequisite sanitized RCA/fix
+
+- task：`NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-SANITIZED-RCA-AND-FIX`；NQ-only、L级 production-safe RCA / sanitized diagnostics / conditional minimal fix / exact-head CI。
+- RCA：真实链路为 PowerShell control helper → release test-support launcher → `PrerequisiteMain` → `JdbcTemplate` 本地 PostgreSQL只读聚合 + loopback health → closed-schema JSON；旧 SQL 预过滤和三层统一 fallback 导致具体 blocker 不可区分，代码级根因=`INTERNAL_SANITIZED_READBACK_FAILURE`。
+- production fact：旧 release canonical pre-create exit 2、`readyForAttemptCreation=false`；生产底层 blocker=`UNKNOWN / DEPLOYMENT_VERIFICATION_REQUIRED`，未猜测 credential/permission/IP 状态。
+- implementation：新增单行聚合 readback、permission present/fresh、read/trade/withdraw/IP 状态、closed-set blocker、随机 diagnosticId 与安全 fallback；未读取 credential payload/id/owner/account 值，未新增 migration/API/Bean/DB write/OKX call。
+- validation：focused Maven 60 tests（0 failure/0 error/1 skipped）；control 56、remediation 32、security 12、release 16、governance 全 PASS。Local full Maven 因既有 local DB 缺少 legacy account seed exit 1；Commit A CI 使用正式 fixture 后 10/10 通过。
+- Commit A：`1561eb60cd46dc1a4618fde6651426c41d7c4e20`；exact-head CI run `30559245227 / completed / success / 10 of 10`。
+- boundary：credential material/raw provider response/manual SQL/OKX/production DB writes/server mutations=`0`；Attempt-10/acceptance clock=false；未部署、未调用旧 release 验证新代码、未触达 LIVE/交易写侧/freeze/archive/tag。
+- result：`PASS / ROOT_CAUSE_IDENTIFIED / CODE_FIX_IMPLEMENTED / CI_GREEN / DEPLOYMENT_REQUIRED / ATTEMPT_10_NOT_AUTHORIZED`。
+- next：`NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION`。

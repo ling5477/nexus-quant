@@ -12313,3 +12313,21 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 已知 warning：`systemd-analyze` 仅报告既有无关 `cloudmonitor.service` warning。首次 verifier 路径使用仓库布局而在脚本加载前失败；改用 release closed-set 的 `bin/` canonical 路径后通过。SSH here-string CRLF 仅影响 activation 后的展示命令，activation 未重发并由独立连接复核。
 
 未运行：`prepare`、RunId 创建、unit-preflight、worker start、OKX config/balance、fresh SSH、acceptance clock、samples、hash chain、`verify-evidence`、`verify-acceptance`、`verify-terminal`、legacy `verify`、168h acceptance、LIVE、交易写侧、freeze/archive/tag。该 pre-create 失败为阻断性结果，禁止直接重试。
+
+## 2026-07-30 — GateW Attempt-10 pre-create prerequisite sanitized RCA/fix
+
+当前结论：`PASS / ROOT_CAUSE_IDENTIFIED / CODE_FIX_IMPLEMENTED / CI_GREEN / DEPLOYMENT_REQUIRED / ATTEMPT_10_NOT_AUTHORIZED`（通过 / 已定位根因 / 已实现修复 / CI 已通过 / 需要部署验证 / Attempt-10 未授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| focused Maven support + fail-close | PASS | 60 tests；0 failures；0 errors；1 skipped |
+| PowerShell parser / control self-test | PASS | parser errors=0；56 cases；network=false；credential accessed=false |
+| remediation / security regression | PASS | 32 / 12 cases；Attempt-10=false |
+| release reproducibility regression | PASS | 16 cases；tamper=`RELEASE_ARTIFACT_HASH_MISMATCH`；network/credential/Attempt-10=false |
+| governance next-action / lifecycle / current authority | PASS | 新 remediation status/action canonical triple 与负例通过 |
+| local full Maven | NON-BLOCKING ENVIRONMENT FAILURE | exit 1；唯一错误为既有 `ResearchBacktestHappyPathLocalTest` 缺少 local `accounts` seed；隔离重跑同样失败；未越界写 DB 或修改测试 |
+| Commit A exact-head CI | PASS | `1561eb60cd46dc1a4618fde6651426c41d7c4e20`；run `30559245227 / completed / success / 10 of 10` |
+
+已知 warning：首次 focused Maven 因 PowerShell `-D` 参数未加引号 exit 1，修正 quoting 后通过；IDE PowerShell parser 对既有合法语法误报，原生 parser 为 0 errors；IDE SQL inspection 因未绑定 datasource 报既有 unresolved table。
+
+未运行：新 release 构建/上传/安装、服务器新 release canonical pre-create、Attempt-10 prepare/start、acceptance clock、OKX、credential material、raw provider response、手工 SQL、LIVE、交易写侧、freeze/archive/tag。上述均必须留给下一独立 deployment verification 或后续重新授权任务。

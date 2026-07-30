@@ -35,7 +35,9 @@ GateW remediation release DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATIO
   ↓
 NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START attempt-01 BLOCKED / PRECREATE FAILED / ATTEMPT-10 NOT CREATED
   ↓
-NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START（pending pre-create RCA/fix and new production authorization）
+GateW Attempt-10 pre-create prerequisite remediation IMPLEMENTED / CI GREEN / DEPLOYMENT PENDING
+  ↓
+NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION
   ↓
 GateW-FREEZE NOT STARTED / FUTURE
 ```
@@ -60,8 +62,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW reproducible release fix：`IMPLEMENTED / CI GREEN / DEPLOYMENT RETRY PENDING`。Commit A `c16f27c3c68d2484ad140d0557b879de08b7c78f` 的 exact-head CI run `30537845010` 为 `completed / success / 10 of 10`；两份 detached worktree、PowerShell 5.1/7、间隔 `35.582s` 的 exact build 得到相同 manifest `eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977`、bundle `60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b` 与 131-artifact closed set。该值是下一轮唯一部署基线。
 - GateW remediation immutable release deployment：`DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING`。`c16f27c3...` release 已完成独立 Linux root install、POSIX/ownership、worker write denial、trusted path、systemd、offline remediation/security、Attempt-09 rejected fixture、positive 168h fixture与tamper rejection验证，并已由 canonical installer 原子激活；units started=`0`。
 - GateW Attempt-10 preparation attempt-01：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / ATTEMPT_10_NOT_CREATED`。Canonical pre-create 返回 `readyForAttemptCreation=false`；RunId/state/runtime/clock均未创建，OKX未调用。
+- GateW Attempt-10 pre-create prerequisite remediation：`IMPLEMENTED / CI GREEN / DEPLOYMENT PENDING`。代码级根因=`INTERNAL_SANITIZED_READBACK_FAILURE`；Commit A `1561eb60cd46dc1a4618fde6651426c41d7c4e20` 的 exact-head CI run `30559245227 / completed / success / 10 of 10`。生产底层 blocker 保持 `UNKNOWN`，待新 release 独立部署验证。
 - GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / START_BLOCKED`。
-- 当前唯一治理动作仍为 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`，但再次执行前必须先完成独立脱敏 pre-create RCA/fix并重新获得生产授权；不得直接重试、恢复Attempt-09、复用旧clock、跳过pre-create/release binding、扩大OKX endpoint、触碰交易写侧或进入freeze/archive/tag。
+- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION`；只允许部署并验证新 immutable release 的 canonical sanitized readback。不得直接重试、恢复Attempt-09、复用旧clock、跳过pre-create/release binding、扩大OKX endpoint、触碰交易写侧或进入freeze/archive/tag。
 
 ## 路线边界
 
