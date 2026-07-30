@@ -38,6 +38,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -64,6 +65,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -208,7 +210,7 @@ public class GateWOkxReadonlySoakCycleTest {
                         () -> managementHealthy(config.managementHealthUrl())
                 );
             } catch (RuntimeException ex) {
-                result = PrerequisiteReadback.unavailable();
+                result = PrerequisiteReadback.unavailable(classifyPrerequisiteFailure(ex));
             }
             writePrerequisiteResult(config, result, STANDALONE_OBJECT_MAPPER);
             if (!result.ready()) {
@@ -672,9 +674,19 @@ public class GateWOkxReadonlySoakCycleTest {
             SafetyConfig config,
             ManagementHealthProbe managementHealthProbe
     ) {
+        return readPrerequisite(jdbc, config, managementHealthProbe, Clock.systemUTC());
+    }
+
+    static PrerequisiteReadback readPrerequisite(
+            JdbcTemplate jdbc,
+            SafetyConfig config,
+            ManagementHealthProbe managementHealthProbe,
+            Clock clock
+    ) {
         Objects.requireNonNull(jdbc, "jdbc must not be null");
         Objects.requireNonNull(config, "config must not be null");
         Objects.requireNonNull(managementHealthProbe, "managementHealthProbe must not be null");
+        Objects.requireNonNull(clock, "clock must not be null");
         try {
             String killSwitchStatus = jdbc.queryForObject(
                     "SELECT status FROM kill_switch_states WHERE scope = 'GLOBAL_TRADING'",
@@ -684,25 +696,95 @@ public class GateWOkxReadonlySoakCycleTest {
             List<Map<String, Object>> accounts;
             List<Map<String, Object>> credentials;
             if (preCreate) {
-                accounts = List.of();
-                credentials = jdbc.queryForList(
+                accounts = List.of(jdbc.queryForMap(
                         """
-                                SELECT c.credential_type, c.credential_status,
-                                       c.permission_scope, c.withdraw_enabled,
-                                       a.exchange_code, a.trade_env, a.status
+                                SELECT
+                                    (SELECT COUNT(*) FROM exchange_accounts) AS total_account_count,
+                                    (SELECT COUNT(*) FROM exchange_accounts
+                                      WHERE exchange_code = 'OKX' AND trade_env = 'LIVE')
+                                        AS scoped_account_count,
+                                    (SELECT COUNT(*) FROM exchange_accounts
+                                      WHERE exchange_code = 'OKX' AND trade_env = 'LIVE'
+                                        AND status = 'ACTIVE') AS active_scoped_account_count,
+                                    COUNT(*) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                    ) AS configured_credential_count,
+                                    COUNT(*) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS active_credential_count,
+                                    MAX(c.credential_type) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS credential_type,
+                                    MAX(c.credential_status) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS credential_status,
+                                    MAX(c.permission_scope) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS permission_scope,
+                                    BOOL_OR(c.withdraw_enabled) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS withdraw_enabled,
+                                    BOOL_OR(c.ip_allowlist_required) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS ip_allowlist_required,
+                                    MAX(c.permission_probe_status) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS permission_probe_status,
+                                    MAX(c.last_permission_probe_at) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS last_permission_probe_at,
+                                    MAX(c.ip_allowlist_probe_status) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS ip_allowlist_probe_status,
+                                    MAX(GREATEST(c.updated_at, a.updated_at)) FILTER (
+                                      WHERE a.exchange_code = 'OKX' AND a.trade_env = 'LIVE'
+                                        AND a.status = 'ACTIVE'
+                                        AND c.is_active = TRUE
+                                        AND c.revoked_at IS NULL
+                                        AND c.rotated_at IS NULL
+                                    ) AS metadata_updated_at
                                 FROM exchange_account_credentials c
                                 JOIN exchange_accounts a
                                   ON a.exchange_account_id = c.exchange_account_id
-                                WHERE a.exchange_code = 'OKX'
-                                  AND a.trade_env = 'LIVE'
-                                  AND a.status = 'ACTIVE'
-                                  AND c.credential_type = 'OKX_API_V5'
-                                  AND c.is_active = TRUE
-                                  AND c.revoked_at IS NULL
-                                  AND c.rotated_at IS NULL
-                                ORDER BY c.credential_id
                                 """
-                );
+                ));
+                credentials = List.of();
             } else {
                 accounts = jdbc.queryForList(
                         """
@@ -723,6 +805,91 @@ public class GateWOkxReadonlySoakCycleTest {
                                 ORDER BY credential_id
                                 """,
                         config.exchangeAccountId()
+                );
+            }
+
+            if (preCreate) {
+                Map<String, Object> summary = accounts.getFirst();
+                long totalAccountCount = longValue(summary.get("total_account_count"));
+                long scopedAccountCount = longValue(summary.get("scoped_account_count"));
+                long activeScopedAccountCount = longValue(summary.get("active_scoped_account_count"));
+                long configuredCredentialCount = longValue(summary.get("configured_credential_count"));
+                int activeCredentialCount = Math.toIntExact(longValue(summary.get("active_credential_count")));
+                boolean credentialConfigured = configuredCredentialCount > 0;
+                String rawCredentialType = Objects.toString(summary.get("credential_type"), "UNKNOWN");
+                String credentialType = activeCredentialCount == 1 && "OKX_API_V5".equals(rawCredentialType)
+                        ? rawCredentialType : activeCredentialCount > 1 ? "CONFLICT" : "UNKNOWN";
+                String rawCredentialStatus = Objects.toString(summary.get("credential_status"), "UNKNOWN");
+                String credentialLocalStatus = activeCredentialCount > 1 ? "CONFLICT"
+                        : Set.of("ACTIVE", "DISABLED", "REVOKED", "EXPIRED", "ROTATED")
+                        .contains(rawCredentialStatus) ? rawCredentialStatus : "UNKNOWN";
+                String permissionScope = Objects.toString(summary.get("permission_scope"), "");
+                String permissionProbeStatus =
+                        Objects.toString(summary.get("permission_probe_status"), "NOT_PROBED");
+                Instant permissionProbeAt = instantValue(summary.get("last_permission_probe_at"));
+                Instant metadataUpdatedAt = instantValue(summary.get("metadata_updated_at"));
+                boolean permissionFactPresent = !"NOT_PROBED".equals(permissionProbeStatus)
+                        && permissionProbeAt != null;
+                boolean permissionFactFresh = permissionFactPresent
+                        && metadataUpdatedAt != null
+                        && !permissionProbeAt.isBefore(metadataUpdatedAt)
+                        && !permissionProbeAt.isAfter(clock.instant().plus(Duration.ofMinutes(5)));
+                boolean readPermissionVerified = permissionFactFresh
+                        && "SUCCEEDED".equals(permissionProbeStatus)
+                        && "READ_ONLY".equals(permissionScope);
+                boolean tradeDisabled = "READ_ONLY".equals(permissionScope);
+                boolean withdrawDisabled = !Boolean.TRUE.equals(summary.get("withdraw_enabled"));
+                boolean ipAllowlistVerified = Boolean.TRUE.equals(summary.get("ip_allowlist_required"))
+                        && "PASSED".equals(Objects.toString(summary.get("ip_allowlist_probe_status"), ""));
+                String readPermissionStatus = readPermissionVerified ? "VERIFIED"
+                        : permissionFactPresent ? "NOT_VERIFIED" : "UNKNOWN";
+                String ipAllowlistStatus = ipAllowlistVerified ? "VERIFIED"
+                        : "FAILED".equals(Objects.toString(summary.get("ip_allowlist_probe_status"), ""))
+                        ? "FAILED" : "UNKNOWN";
+                boolean localManagementHealthy;
+                try {
+                    localManagementHealthy = managementHealthProbe.isHealthy();
+                } catch (RuntimeException ex) {
+                    localManagementHealthy = false;
+                }
+                List<String> blockers = new ArrayList<>();
+                if (!"ENGAGED".equals(killSwitchStatus)) blockers.add("KILL_SWITCH_NOT_ENGAGED");
+                if (!localManagementHealthy) blockers.add("MANAGEMENT_UNREACHABLE");
+                if ((totalAccountCount > 0 && scopedAccountCount == 0) || scopedAccountCount > 1
+                        || (scopedAccountCount == 1 && activeScopedAccountCount != 1)) {
+                    blockers.add("ACCOUNT_SCOPE_MISMATCH");
+                } else if (!credentialConfigured) {
+                    blockers.add("CREDENTIAL_NOT_CONFIGURED");
+                } else if (activeCredentialCount != 1) {
+                    blockers.add("ACTIVE_CREDENTIAL_COUNT_INVALID");
+                } else {
+                    if (!"OKX_API_V5".equals(rawCredentialType)) blockers.add("CREDENTIAL_TYPE_MISMATCH");
+                    if (!"ACTIVE".equals(rawCredentialStatus)) {
+                        blockers.add("CREDENTIAL_LOCAL_STATUS_NOT_ACTIVE");
+                    }
+                    if (!permissionFactPresent) blockers.add("PERMISSION_FACT_MISSING");
+                    else if (!permissionFactFresh) blockers.add("PERMISSION_FACT_STALE");
+                    else if (!readPermissionVerified) blockers.add("READ_PERMISSION_NOT_VERIFIED");
+                    if (!tradeDisabled) blockers.add("TRADE_PERMISSION_NOT_DISABLED");
+                    if (!withdrawDisabled) blockers.add("WITHDRAW_PERMISSION_NOT_DISABLED");
+                    if (!ipAllowlistVerified) blockers.add("IP_ALLOWLIST_NOT_VERIFIED");
+                }
+                return new PrerequisiteReadback(
+                        "ENGAGED".equals(killSwitchStatus),
+                        credentialConfigured,
+                        activeCredentialCount,
+                        credentialType,
+                        credentialLocalStatus,
+                        permissionFactPresent,
+                        permissionFactFresh,
+                        readPermissionStatus,
+                        tradeDisabled,
+                        withdrawDisabled,
+                        ipAllowlistStatus,
+                        true,
+                        localManagementHealthy,
+                        List.copyOf(blockers),
+                        safePrerequisiteDiagnosticId()
                 );
             }
 
@@ -759,14 +926,40 @@ public class GateWOkxReadonlySoakCycleTest {
                     credentials.size(),
                     credentialType,
                     credentialLocalStatus,
+                    true,
+                    true,
+                    tradeDisabled ? "VERIFIED" : "NOT_VERIFIED",
                     tradeDisabled,
                     withdrawDisabled,
+                    "VERIFIED",
                     true,
-                    localManagementHealthy
+                    localManagementHealthy,
+                    List.of(),
+                    safePrerequisiteDiagnosticId()
             );
         } catch (RuntimeException ex) {
-            return PrerequisiteReadback.unavailable();
+            return PrerequisiteReadback.unavailable(classifyPrerequisiteFailure(ex));
         }
+    }
+
+    private static long longValue(Object value) {
+        return value instanceof Number number ? number.longValue() : 0L;
+    }
+
+    private static Instant instantValue(Object value) {
+        if (value instanceof Instant instant) return instant;
+        if (value instanceof Timestamp timestamp) return timestamp.toInstant();
+        return null;
+    }
+
+    private static String classifyPrerequisiteFailure(RuntimeException ex) {
+        return ex instanceof DataAccessResourceFailureException
+                ? "POSTGRES_UNREACHABLE"
+                : "INTERNAL_SANITIZED_READBACK_FAILURE";
+    }
+
+    private static String safePrerequisiteDiagnosticId() {
+        return "gatew-precreate-" + UUID.randomUUID().toString().replace("-", "");
     }
 
     private static boolean managementHealthy(String healthUrl) {
@@ -1607,10 +1800,16 @@ public class GateWOkxReadonlySoakCycleTest {
             "activeCredentialCount",
             "credentialType",
             "credentialLocalStatus",
+            "permissionFactPresent",
+            "permissionFactFresh",
+            "readPermissionStatus",
             "tradePermissionExpectedDisabled",
             "withdrawPermissionExpectedDisabled",
+            "ipAllowlistStatus",
             "postgresReachable",
-            "managementHealthy"
+            "managementHealthy",
+            "blockerCodes",
+            "diagnosticId"
     })
     record PrerequisiteReadback(
             boolean killSwitchEngaged,
@@ -1618,27 +1817,57 @@ public class GateWOkxReadonlySoakCycleTest {
             int activeCredentialCount,
             String credentialType,
             String credentialLocalStatus,
+            boolean permissionFactPresent,
+            boolean permissionFactFresh,
+            String readPermissionStatus,
             boolean tradePermissionExpectedDisabled,
             boolean withdrawPermissionExpectedDisabled,
+            String ipAllowlistStatus,
             boolean postgresReachable,
-            boolean managementHealthy
+            boolean managementHealthy,
+            List<String> blockerCodes,
+            String diagnosticId
     ) {
+        private static final Set<String> ALLOWED_BLOCKERS = Set.of(
+                "MANAGEMENT_UNREACHABLE",
+                "POSTGRES_UNREACHABLE",
+                "ACCOUNT_SCOPE_MISMATCH",
+                "CREDENTIAL_NOT_CONFIGURED",
+                "ACTIVE_CREDENTIAL_COUNT_INVALID",
+                "CREDENTIAL_TYPE_MISMATCH",
+                "CREDENTIAL_LOCAL_STATUS_NOT_ACTIVE",
+                "PERMISSION_FACT_MISSING",
+                "PERMISSION_FACT_STALE",
+                "READ_PERMISSION_NOT_VERIFIED",
+                "TRADE_PERMISSION_NOT_DISABLED",
+                "WITHDRAW_PERMISSION_NOT_DISABLED",
+                "IP_ALLOWLIST_NOT_VERIFIED",
+                "INTERNAL_SANITIZED_READBACK_FAILURE",
+                "KILL_SWITCH_NOT_ENGAGED"
+        );
         static final List<String> FIELDS = List.of(
                 "killSwitchEngaged",
                 "credentialConfigured",
                 "activeCredentialCount",
                 "credentialType",
                 "credentialLocalStatus",
+                "permissionFactPresent",
+                "permissionFactFresh",
+                "readPermissionStatus",
                 "tradePermissionExpectedDisabled",
                 "withdrawPermissionExpectedDisabled",
+                "ipAllowlistStatus",
                 "postgresReachable",
-                "managementHealthy"
+                "managementHealthy",
+                "blockerCodes",
+                "diagnosticId"
         );
 
-        static PrerequisiteReadback unavailable() {
+        static PrerequisiteReadback unavailable(String blockerCode) {
             return new PrerequisiteReadback(
                     false, false, 0, "UNKNOWN", "UNKNOWN",
-                    false, false, false, false
+                    false, false, "UNKNOWN", false, false, "UNKNOWN",
+                    false, false, List.of(blockerCode), safePrerequisiteDiagnosticId()
             );
         }
 
@@ -1649,7 +1878,13 @@ public class GateWOkxReadonlySoakCycleTest {
                     || !Set.of(
                     "ACTIVE", "DISABLED", "REVOKED", "EXPIRED", "ROTATED", "UNKNOWN", "CONFLICT"
             ).contains(result.credentialLocalStatus())
-                    || result.credentialConfigured() != (result.activeCredentialCount() > 0)) {
+                    || !Set.of("VERIFIED", "NOT_VERIFIED", "UNKNOWN").contains(result.readPermissionStatus())
+                    || !Set.of("VERIFIED", "FAILED", "UNKNOWN").contains(result.ipAllowlistStatus())
+                    || result.blockerCodes() == null
+                    || result.blockerCodes().stream().anyMatch(code -> !ALLOWED_BLOCKERS.contains(code))
+                    || result.blockerCodes().size() != new LinkedHashSet<>(result.blockerCodes()).size()
+                    || result.diagnosticId() == null
+                    || !result.diagnosticId().matches("^gatew-precreate-[a-f0-9]{32}$")) {
                 throw new IllegalArgumentException("prerequisite readback is outside the closed schema");
             }
         }
@@ -1660,10 +1895,15 @@ public class GateWOkxReadonlySoakCycleTest {
                     && activeCredentialCount == 1
                     && "OKX_API_V5".equals(credentialType)
                     && "ACTIVE".equals(credentialLocalStatus)
+                    && permissionFactPresent
+                    && permissionFactFresh
+                    && "VERIFIED".equals(readPermissionStatus)
                     && tradePermissionExpectedDisabled
                     && withdrawPermissionExpectedDisabled
+                    && "VERIFIED".equals(ipAllowlistStatus)
                     && postgresReachable
-                    && managementHealthy;
+                    && managementHealthy
+                    && blockerCodes.isEmpty();
         }
     }
 

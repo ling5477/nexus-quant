@@ -302,6 +302,19 @@ if (-not (Test-GovernanceNextActionForWorkBatch `
 }
 Write-Output 'PASS canonical-attempt-10-preparation exact-triple=true'
 
+$precreateRemediationStatus = 'IMPLEMENTED|CI_GREEN|DEPLOYMENT_PENDING'
+$precreateRemediationWorkBatch = 'GateW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION'
+$precreateRemediationDeploymentVerification =
+        'NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION'
+Assert-ActionType $precreateRemediationDeploymentVerification `
+    'PRECREATE_PREREQUISITE_REMEDIATION_DEPLOYMENT_VERIFICATION'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $precreateRemediationStatus $precreateRemediationWorkBatch `
+        $precreateRemediationDeploymentVerification)) {
+    throw 'CANONICAL_PRECREATE_REMEDIATION_DEPLOYMENT_VERIFICATION_REJECTED'
+}
+Write-Output 'PASS canonical-precreate-remediation-deployment-verification exact-triple=true'
+
 foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRD'; Batch = $deploymentWorkBatch; Action = $reproducibleBuildFix },
     @{ Status = $deploymentFailedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-ATTEMPT-10'; Action = $reproducibleBuildFix },
@@ -311,7 +324,11 @@ foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFIED|CI_GREEN|ATTEMPT_10_PREPARATION_PENDNG'; Batch = $deploymentWorkBatch; Action = $attempt10Preparation },
     @{ Status = $deploymentVerifiedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-FIX'; Action = $attempt10Preparation },
     @{ Status = $deploymentVerifiedStatus; Batch = $deploymentWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-START' },
-    @{ Status = $deploymentVerifiedStatus; Batch = $deploymentWorkBatch; Action = 'nq-gatew-attempt-10-preparation-and-start' }
+    @{ Status = $deploymentVerifiedStatus; Batch = $deploymentWorkBatch; Action = 'nq-gatew-attempt-10-preparation-and-start' },
+    @{ Status = 'IMPLEMENTED|CI_GREEN|DEPLOYMENT_PENDNG'; Batch = $precreateRemediationWorkBatch; Action = $precreateRemediationDeploymentVerification },
+    @{ Status = $precreateRemediationStatus; Batch = 'GateW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATON'; Action = $precreateRemediationDeploymentVerification },
+    @{ Status = $precreateRemediationStatus; Batch = $precreateRemediationWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-DEPLOYMENT-VERIFICATION' },
+    @{ Status = $precreateRemediationStatus; Batch = $precreateRemediationWorkBatch; Action = 'nq-gatew-attempt-10-precreate-prerequisite-remediation-deployment-verification' }
 )) {
     if (Test-GovernanceNextActionForWorkBatch `
             $contract $case.Status $case.Batch $case.Action) {

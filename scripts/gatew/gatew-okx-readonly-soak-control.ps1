@@ -51,6 +51,26 @@ Import-Module $script:RemediationContractPath -Force
 $script:Utf8NoBom = [Text.UTF8Encoding]::new($false)
 $script:RunIdPattern = '^gatew-soak-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$'
 $script:SafeCodePattern = '^[A-Z][A-Z0-9_]{1,95}$'
+$script:PreCreateBlockerCodes = @(
+    'MANAGEMENT_UNREACHABLE',
+    'POSTGRES_UNREACHABLE',
+    'PROFILE_OR_BEAN_NOT_AVAILABLE',
+    'RESPONSE_CONTRACT_MISMATCH',
+    'RELEASE_BINDING_MISMATCH',
+    'ACCOUNT_SCOPE_MISMATCH',
+    'CREDENTIAL_NOT_CONFIGURED',
+    'ACTIVE_CREDENTIAL_COUNT_INVALID',
+    'CREDENTIAL_TYPE_MISMATCH',
+    'CREDENTIAL_LOCAL_STATUS_NOT_ACTIVE',
+    'PERMISSION_FACT_MISSING',
+    'PERMISSION_FACT_STALE',
+    'READ_PERMISSION_NOT_VERIFIED',
+    'TRADE_PERMISSION_NOT_DISABLED',
+    'WITHDRAW_PERMISSION_NOT_DISABLED',
+    'IP_ALLOWLIST_NOT_VERIFIED',
+    'INTERNAL_SANITIZED_READBACK_FAILURE',
+    'KILL_SWITCH_NOT_ENGAGED'
+)
 $script:StateRoot = '/var/lib/nexus-quant/gatew-soak'
 $script:RuntimeRoot = '/run/nexus-quant/gatew-soak'
 $script:LogRoot = '/var/log/nexus-quant/gatew-soak'
@@ -857,22 +877,32 @@ function Assert-PreCreateReadback
 
     $fields = @(
         'killSwitchEngaged', 'credentialConfigured', 'activeCredentialCount', 'credentialType',
-        'credentialLocalStatus', 'tradePermissionExpectedDisabled',
-        'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
+        'credentialLocalStatus', 'permissionFactPresent', 'permissionFactFresh',
+        'readPermissionStatus', 'tradePermissionExpectedDisabled',
+        'withdrawPermissionExpectedDisabled', 'ipAllowlistStatus',
+        'postgresReachable', 'managementHealthy', 'blockerCodes', 'diagnosticId'
     )
+    $blockerCodes = @($Value.blockerCodes)
     if ((@($Value.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
             ($Value.activeCredentialCount -isnot [int] -and $Value.activeCredentialCount -isnot [long]) -or
             [long]$Value.activeCredentialCount -lt 0 -or
             [string]$Value.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
             [string]$Value.credentialLocalStatus -notin @(
                 'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
-            ))
+            ) -or
+            [string]$Value.readPermissionStatus -notin @('VERIFIED', 'NOT_VERIFIED', 'UNKNOWN') -or
+            [string]$Value.ipAllowlistStatus -notin @('VERIFIED', 'FAILED', 'UNKNOWN') -or
+            $blockerCodes.Count -gt $script:PreCreateBlockerCodes.Count -or
+            @($blockerCodes | Where-Object { [string]$_ -cnotin $script:PreCreateBlockerCodes }).Count -gt 0 -or
+            @($blockerCodes | Select-Object -Unique).Count -ne $blockerCodes.Count -or
+            [string]$Value.diagnosticId -cnotmatch '^gatew-precreate-[a-f0-9]{32}$')
     {
         throw 'BLOCKED / PRECREATE_READBACK_INVALID'
     }
     foreach ($field in @(
-        'killSwitchEngaged', 'credentialConfigured', 'tradePermissionExpectedDisabled',
-        'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
+        'killSwitchEngaged', 'credentialConfigured', 'permissionFactPresent', 'permissionFactFresh',
+        'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
+        'postgresReachable', 'managementHealthy'
     ))
     {
         if ($Value.PSObject.Properties[$field].Value -isnot [bool])
@@ -881,32 +911,79 @@ function Assert-PreCreateReadback
         }
     }
     $serialized = ConvertTo-CompactJson $Value
-    if ($serialized -match '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|account')
+    if ($serialized -match '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|owner|account(?:id|_id|ref|_ref)')
     {
         throw 'BLOCKED / PRECREATE_READBACK_INVALID'
     }
     return $Value
 }
 
+function Get-PreCreateFallbackBlockerCode
+{
+    param([AllowEmptyString()][string]$Message)
+
+    if ($Message -match '(?i)RELEASE|SOURCE_COMMIT|MANIFEST')
+    {
+        return 'RELEASE_BINDING_MISMATCH'
+    }
+    if ($Message -match '(?i)DESCRIPTOR|READBACK_INVALID|RESULT_INVALID')
+    {
+        return 'RESPONSE_CONTRACT_MISMATCH'
+    }
+    if ($Message -match '(?i)DATABASE|SECRET')
+    {
+        return 'POSTGRES_UNREACHABLE'
+    }
+    if ($Message -match '(?i)JAVA_RUNTIME|LAUNCHER_BUNDLE|PROFILE|BEAN')
+    {
+        return 'PROFILE_OR_BEAN_NOT_AVAILABLE'
+    }
+    return 'INTERNAL_SANITIZED_READBACK_FAILURE'
+}
+
 function New-PreCreateResult
 {
     param(
         [Parameter(Mandatory = $true)][string]$CheckedAt,
-        [AllowNull()]$Readback
+        [AllowNull()]$Readback,
+        [string[]]$FallbackBlockerCodes = @('INTERNAL_SANITIZED_READBACK_FAILURE'),
+        [AllowNull()]$ReleaseBindingVerified = $null
     )
 
     $available = $null -ne $Readback
+    $bindingVerified = if ($null -eq $ReleaseBindingVerified)
+    {
+        $available
+    }
+    else
+    {
+        [bool]$ReleaseBindingVerified
+    }
+    $blockerCodes = @()
+    if ($available)
+    {
+        $blockerCodes = @($Readback.blockerCodes)
+    }
+    else
+    {
+        $blockerCodes = @($FallbackBlockerCodes)
+    }
     $ready = $available -and
         [bool]$Readback.postgresReachable -and [bool]$Readback.managementHealthy -and
         [bool]$Readback.killSwitchEngaged -and [bool]$Readback.credentialConfigured -and
         [long]$Readback.activeCredentialCount -eq 1 -and
         [string]$Readback.credentialType -eq 'OKX_API_V5' -and
         [string]$Readback.credentialLocalStatus -eq 'ACTIVE' -and
+        [bool]$Readback.permissionFactPresent -and [bool]$Readback.permissionFactFresh -and
+        [string]$Readback.readPermissionStatus -eq 'VERIFIED' -and
         [bool]$Readback.tradePermissionExpectedDisabled -and
-        [bool]$Readback.withdrawPermissionExpectedDisabled
+        [bool]$Readback.withdrawPermissionExpectedDisabled -and
+        [string]$Readback.ipAllowlistStatus -eq 'VERIFIED' -and
+        $blockerCodes.Count -eq 0
     return [pscustomobject][ordered]@{
         schemaVersion = 'gatew-precreate-prerequisite-result-v1'
         checkedAt = $CheckedAt
+        releaseBindingVerified = $bindingVerified
         postgresReachable = $available -and [bool]$Readback.postgresReachable
         managementHealthy = $available -and [bool]$Readback.managementHealthy
         killSwitchEngaged = $available -and [bool]$Readback.killSwitchEngaged
@@ -914,8 +991,21 @@ function New-PreCreateResult
         activeCredentialCount = if ($available) { [long]$Readback.activeCredentialCount } else { 0L }
         credentialType = if ($available) { [string]$Readback.credentialType } else { 'UNKNOWN' }
         credentialLocalStatus = if ($available) { [string]$Readback.credentialLocalStatus } else { 'UNKNOWN' }
+        permissionFactPresent = $available -and [bool]$Readback.permissionFactPresent
+        permissionFactFresh = $available -and [bool]$Readback.permissionFactFresh
+        readPermissionStatus = if ($available) { [string]$Readback.readPermissionStatus } else { 'UNKNOWN' }
         tradePermissionExpectedDisabled = $available -and [bool]$Readback.tradePermissionExpectedDisabled
         withdrawPermissionExpectedDisabled = $available -and [bool]$Readback.withdrawPermissionExpectedDisabled
+        ipAllowlistStatus = if ($available) { [string]$Readback.ipAllowlistStatus } else { 'UNKNOWN' }
+        blockerCodes = $blockerCodes
+        diagnosticId = if ($available)
+        {
+            [string]$Readback.diagnosticId
+        }
+        else
+        {
+            "gatew-precreate-$( [Guid]::NewGuid().ToString('N') )"
+        }
         readyForAttemptCreation = $ready
         diagnosticOnly = $true
         noSideEffect = $true
@@ -928,11 +1018,15 @@ function Assert-PreCreateResult
     param([Parameter(Mandatory = $true)]$Value)
 
     $fields = @(
-        'schemaVersion', 'checkedAt', 'postgresReachable', 'managementHealthy', 'killSwitchEngaged',
+        'schemaVersion', 'checkedAt', 'releaseBindingVerified',
+        'postgresReachable', 'managementHealthy', 'killSwitchEngaged',
         'credentialConfigured', 'activeCredentialCount', 'credentialType', 'credentialLocalStatus',
+        'permissionFactPresent', 'permissionFactFresh', 'readPermissionStatus',
         'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
+        'ipAllowlistStatus', 'blockerCodes', 'diagnosticId',
         'readyForAttemptCreation', 'diagnosticOnly', 'noSideEffect', 'credentialMaterialExposed'
     )
+    $blockerCodes = @($Value.blockerCodes)
     $checkedAt = [DateTimeOffset]::MinValue
     if ((@($Value.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
             [string]$Value.schemaVersion -cne 'gatew-precreate-prerequisite-result-v1' -or
@@ -943,15 +1037,22 @@ function Assert-PreCreateResult
             [string]$Value.credentialLocalStatus -notin @(
                 'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
             ) -or
+            [string]$Value.readPermissionStatus -notin @('VERIFIED', 'NOT_VERIFIED', 'UNKNOWN') -or
+            [string]$Value.ipAllowlistStatus -notin @('VERIFIED', 'FAILED', 'UNKNOWN') -or
+            $blockerCodes.Count -gt $script:PreCreateBlockerCodes.Count -or
+            @($blockerCodes | Where-Object { [string]$_ -cnotin $script:PreCreateBlockerCodes }).Count -gt 0 -or
+            @($blockerCodes | Select-Object -Unique).Count -ne $blockerCodes.Count -or
+            [string]$Value.diagnosticId -cnotmatch '^gatew-precreate-[a-f0-9]{32}$' -or
             -not [bool]$Value.diagnosticOnly -or -not [bool]$Value.noSideEffect -or
             [bool]$Value.credentialMaterialExposed -or
             (ConvertTo-CompactJson $Value) -match
-                '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|account')
+                '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|owner|account(?:id|_id|ref|_ref)')
     {
         throw 'BLOCKED / PRECREATE_RESULT_INVALID'
     }
     foreach ($field in @(
-        'postgresReachable', 'managementHealthy', 'killSwitchEngaged', 'credentialConfigured',
+        'releaseBindingVerified', 'postgresReachable', 'managementHealthy',
+        'killSwitchEngaged', 'credentialConfigured', 'permissionFactPresent', 'permissionFactFresh',
         'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
         'readyForAttemptCreation', 'diagnosticOnly', 'noSideEffect', 'credentialMaterialExposed'
     ))
@@ -968,7 +1069,6 @@ function Invoke-PreCreateJavaReadback
 {
     param([Parameter(Mandatory = $true)]$Descriptor)
 
-    Get-ReleaseIdentity | Out-Null
     if (-not (Test-Path -LiteralPath $script:LinuxJavaPath -PathType Leaf))
     {
         throw 'BLOCKED / PRECREATE_JAVA_RUNTIME_MISSING'
@@ -1064,6 +1164,7 @@ function Invoke-PreCreatePrerequisiteEvaluation
     param([switch]$ForPrepare)
 
     $checkedAt = (Get-UtcNow).ToString('o')
+    $releaseBindingVerified = $false
     try
     {
         Assert-RootLinux
@@ -1072,6 +1173,8 @@ function Invoke-PreCreatePrerequisiteEvaluation
             throw 'BLOCKED / PRECREATE_RUN_ID_FORBIDDEN'
         }
         $descriptor = Read-PreCreateDescriptor
+        Get-ReleaseIdentity | Out-Null
+        $releaseBindingVerified = $true
         return [pscustomobject][ordered]@{
             Result = Assert-PreCreateResult `
                 (New-PreCreateResult $checkedAt (Invoke-PreCreateJavaReadback $descriptor))
@@ -1080,8 +1183,11 @@ function Invoke-PreCreatePrerequisiteEvaluation
     }
     catch
     {
+        $fallbackBlocker = Get-PreCreateFallbackBlockerCode $_.Exception.Message
         return [pscustomobject][ordered]@{
-            Result = Assert-PreCreateResult (New-PreCreateResult $checkedAt $null)
+            Result = Assert-PreCreateResult (
+                New-PreCreateResult $checkedAt $null @($fallbackBlocker) $releaseBindingVerified
+            )
             Descriptor = $null
         }
     }
@@ -3412,10 +3518,16 @@ function Invoke-ControlSelfTest
         activeCredentialCount = 1
         credentialType = 'OKX_API_V5'
         credentialLocalStatus = 'ACTIVE'
+        permissionFactPresent = $true
+        permissionFactFresh = $true
+        readPermissionStatus = 'VERIFIED'
         tradePermissionExpectedDisabled = $true
         withdrawPermissionExpectedDisabled = $true
+        ipAllowlistStatus = 'VERIFIED'
         postgresReachable = $true
         managementHealthy = $true
+        blockerCodes = @()
+        diagnosticId = 'gatew-precreate-0123456789abcdef0123456789abcdef'
     }
     Assert-PreCreateReadback $safeReadback | Out-Null
     $preCreateResult = Assert-PreCreateResult `
@@ -3426,6 +3538,42 @@ function Invoke-ControlSelfTest
         throw 'precreate result self-test failed'
     }
     $caseCount += 2
+    foreach ($fallbackCase in @(
+        @{ message = 'BLOCKED / RELEASE_SOURCE_COMMIT_MISMATCH'; expected = 'RELEASE_BINDING_MISMATCH' },
+        @{ message = 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'; expected = 'RESPONSE_CONTRACT_MISMATCH' },
+        @{ message = 'BLOCKED / PRECREATE_DATABASE_SECRET_UNAVAILABLE'; expected = 'POSTGRES_UNREACHABLE' },
+        @{ message = 'BLOCKED / PRECREATE_JAVA_RUNTIME_MISSING'; expected = 'PROFILE_OR_BEAN_NOT_AVAILABLE' },
+        @{ message = 'unexpected internal detail'; expected = 'INTERNAL_SANITIZED_READBACK_FAILURE' }
+    ))
+    {
+        if ((Get-PreCreateFallbackBlockerCode ([string]$fallbackCase.message)) -cne
+                [string]$fallbackCase.expected)
+        {
+            throw 'precreate fallback blocker mapping self-test failed'
+        }
+        $caseCount++
+    }
+    $fallbackResult = Assert-PreCreateResult (
+        New-PreCreateResult '2026-07-21T00:00:00Z' $null @('RESPONSE_CONTRACT_MISMATCH')
+    )
+    if ([bool]$fallbackResult.readyForAttemptCreation -or
+            [bool]$fallbackResult.releaseBindingVerified -or
+            @($fallbackResult.blockerCodes).Count -ne 1 -or
+            [string]$fallbackResult.blockerCodes[0] -cne 'RESPONSE_CONTRACT_MISMATCH')
+    {
+        throw 'precreate fallback result self-test failed'
+    }
+    $caseCount++
+    $boundFallbackResult = Assert-PreCreateResult (
+        New-PreCreateResult '2026-07-21T00:00:00Z' $null @('POSTGRES_UNREACHABLE') $true
+    )
+    if ([bool]$boundFallbackResult.readyForAttemptCreation -or
+            -not [bool]$boundFallbackResult.releaseBindingVerified -or
+            [string]$boundFallbackResult.blockerCodes[0] -cne 'POSTGRES_UNREACHABLE')
+    {
+        throw 'precreate bound fallback result self-test failed'
+    }
+    $caseCount++
     $source = [IO.File]::ReadAllText($PSCommandPath)
     $prepareStart = $source.IndexOf('function Prepare-FormalRun', [StringComparison]::Ordinal)
     $prepareEnd = $source.IndexOf('function ConvertFrom-SystemctlShow', $prepareStart, [StringComparison]::Ordinal)

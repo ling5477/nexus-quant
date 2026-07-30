@@ -22,9 +22,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -576,44 +579,142 @@ class GateWOkxReadonlySoakSupportTest {
 
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("ENGAGED");
-        Map<String, Object> safeCredential = Map.of(
-                "credential_type", "OKX_API_V5",
-                "credential_status", "ACTIVE",
-                "permission_scope", "READ_ONLY",
-                "withdraw_enabled", false,
-                "exchange_code", "OKX",
-                "trade_env", "LIVE",
-                "status", "ACTIVE"
-        );
-        when(jdbc.queryForList(anyString())).thenReturn(List.of(safeCredential));
+        Instant now = Instant.parse("2026-07-30T15:00:00Z");
+        Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+        Map<String, Object> safeCredential = safePreCreateSummary(now);
+        when(jdbc.queryForMap(anyString())).thenReturn(safeCredential);
 
         GateWOkxReadonlySoakCycleTest.PrerequisiteReadback passed =
-                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock);
         assertTrue(passed.ready());
         assertEquals(1, passed.activeCredentialCount());
+        assertTrue(passed.permissionFactPresent());
+        assertTrue(passed.permissionFactFresh());
+        assertEquals("VERIFIED", passed.readPermissionStatus());
+        assertEquals("VERIFIED", passed.ipAllowlistStatus());
+        assertTrue(passed.blockerCodes().isEmpty());
         assertTrue(passed.tradePermissionExpectedDisabled());
         assertTrue(passed.withdrawPermissionExpectedDisabled());
 
-        when(jdbc.queryForList(anyString())).thenReturn(List.of(safeCredential, safeCredential));
+        Map<String, Object> conflictSummary = new HashMap<>(safeCredential);
+        conflictSummary.put("active_credential_count", 2L);
+        when(jdbc.queryForMap(anyString())).thenReturn(conflictSummary);
         GateWOkxReadonlySoakCycleTest.PrerequisiteReadback conflict =
-                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock);
         assertFalse(conflict.ready());
         assertEquals("CONFLICT", conflict.credentialType());
+        assertEquals(List.of("ACTIVE_CREDENTIAL_COUNT_INVALID"), conflict.blockerCodes());
 
         Map<String, Object> disabled = new HashMap<>(safeCredential);
         disabled.put("credential_status", "DISABLED");
-        when(jdbc.queryForList(anyString())).thenReturn(List.of(disabled));
+        when(jdbc.queryForMap(anyString())).thenReturn(disabled);
         GateWOkxReadonlySoakCycleTest.PrerequisiteReadback inactive =
-                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true);
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock);
         assertFalse(inactive.ready());
         assertEquals("DISABLED", inactive.credentialLocalStatus());
+        assertTrue(inactive.blockerCodes().contains("CREDENTIAL_LOCAL_STATUS_NOT_ACTIVE"));
 
-        when(jdbc.queryForList(anyString())).thenReturn(List.of());
-        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true).ready());
-        when(jdbc.queryForList(anyString())).thenReturn(List.of(safeCredential));
-        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> false).ready());
+        Map<String, Object> missing = new HashMap<>(safeCredential);
+        missing.put("configured_credential_count", 0L);
+        missing.put("active_credential_count", 0L);
+        when(jdbc.queryForMap(anyString())).thenReturn(missing);
+        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock).ready());
+        when(jdbc.queryForMap(anyString())).thenReturn(safeCredential);
+        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> false, clock).ready());
         when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("DISENGAGED");
-        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true).ready());
+        assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock).ready());
+    }
+
+    @Test
+    void preCreatePrerequisiteClassifiesAllSanitizedOperationalBlockers() {
+        Properties properties = baseProperties();
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.ACTION_PROPERTY, "precreate-prerequisite");
+        properties.setProperty(
+                GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY,
+                "/run/nq-gatew-precreate-prerequisite-0123456789abcdef0123456789abcdef.json"
+        );
+        Map<String, String> environment = baseEnvironment();
+        environment.put("NQ_GATEW_SOAK_DB_URL", "jdbc:postgresql://127.0.0.1:5432/nexus_quant");
+        environment.put("NQ_GATEW_MANAGEMENT_HEALTH_URL", "http://127.0.0.1:18889/actuator/health");
+        environment.remove("NQ_GATEW_SOAK_OWNER_ID");
+        environment.remove("NQ_GATEW_SOAK_ACCOUNT_ID");
+        environment.remove("NQ_GATEW_SOAK_CURRENCIES");
+        environment.remove("NQ_ACCOUNT_CREDENTIALS_MASTER_KEY");
+        GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(environment, properties);
+        Instant now = Instant.parse("2026-07-30T15:00:00Z");
+        Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+
+        assertPreCreateBlocker(config, clock, now, "ACCOUNT_SCOPE_MISMATCH",
+                Map.of("scoped_account_count", 2L, "active_scoped_account_count", 2L));
+        assertPreCreateBlocker(config, clock, now, "CREDENTIAL_NOT_CONFIGURED",
+                Map.of("configured_credential_count", 0L, "active_credential_count", 0L));
+        assertPreCreateBlocker(config, clock, now, "ACTIVE_CREDENTIAL_COUNT_INVALID",
+                Map.of("active_credential_count", 0L));
+        assertPreCreateBlocker(config, clock, now, "ACTIVE_CREDENTIAL_COUNT_INVALID",
+                Map.of("active_credential_count", 2L));
+        assertPreCreateBlocker(config, clock, now, "CREDENTIAL_TYPE_MISMATCH",
+                Map.of("credential_type", "BINANCE_HMAC"));
+        assertPreCreateBlocker(config, clock, now, "CREDENTIAL_LOCAL_STATUS_NOT_ACTIVE",
+                Map.of("credential_status", "DISABLED"));
+        assertPreCreateBlocker(config, clock, now, "PERMISSION_FACT_MISSING",
+                Map.of("permission_probe_status", "NOT_PROBED"));
+        assertPreCreateBlocker(config, clock, now, "PERMISSION_FACT_STALE",
+                Map.of("last_permission_probe_at", Timestamp.from(now.minusSeconds(1))));
+        assertPreCreateBlocker(config, clock, now, "READ_PERMISSION_NOT_VERIFIED",
+                Map.of("permission_probe_status", "FAILED"));
+        assertPreCreateBlocker(config, clock, now, "TRADE_PERMISSION_NOT_DISABLED",
+                Map.of("permission_scope", "TRADE"));
+        assertPreCreateBlocker(config, clock, now, "WITHDRAW_PERMISSION_NOT_DISABLED",
+                Map.of("withdraw_enabled", true));
+        assertPreCreateBlocker(config, clock, now, "IP_ALLOWLIST_NOT_VERIFIED",
+                Map.of("ip_allowlist_probe_status", "UNKNOWN"));
+
+        JdbcTemplate postgresUnavailable = mock(JdbcTemplate.class);
+        when(postgresUnavailable.queryForObject(anyString(), eq(String.class)))
+                .thenThrow(new DataAccessResourceFailureException("must stay redacted"));
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback failed =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(
+                        postgresUnavailable, config, () -> true, clock
+                );
+        assertEquals(List.of("POSTGRES_UNREACHABLE"), failed.blockerCodes());
+        assertFalse(failed.ready());
+    }
+
+    private void assertPreCreateBlocker(
+            GateWOkxReadonlySoakCycleTest.SafetyConfig config,
+            Clock clock,
+            Instant now,
+            String expectedBlocker,
+            Map<String, Object> mutations
+    ) {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("ENGAGED");
+        Map<String, Object> summary = new HashMap<>(safePreCreateSummary(now));
+        summary.putAll(mutations);
+        when(jdbc.queryForMap(anyString())).thenReturn(summary);
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback result =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock);
+        assertFalse(result.ready());
+        assertTrue(result.blockerCodes().contains(expectedBlocker), result.blockerCodes().toString());
+    }
+
+    private Map<String, Object> safePreCreateSummary(Instant now) {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("total_account_count", 1L);
+        summary.put("scoped_account_count", 1L);
+        summary.put("active_scoped_account_count", 1L);
+        summary.put("configured_credential_count", 1L);
+        summary.put("active_credential_count", 1L);
+        summary.put("credential_type", "OKX_API_V5");
+        summary.put("credential_status", "ACTIVE");
+        summary.put("permission_scope", "READ_ONLY");
+        summary.put("withdraw_enabled", false);
+        summary.put("ip_allowlist_required", true);
+        summary.put("permission_probe_status", "SUCCEEDED");
+        summary.put("last_permission_probe_at", Timestamp.from(now));
+        summary.put("ip_allowlist_probe_status", "PASSED");
+        summary.put("metadata_updated_at", Timestamp.from(now));
+        return summary;
     }
 
     @Test
