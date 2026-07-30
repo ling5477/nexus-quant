@@ -89,8 +89,16 @@ function Start-TerminalContender
         '-Role', $Role,
         '-DelayMilliseconds', [string]$DelayMilliseconds
     )
-    return Start-Process -FilePath $engine -ArgumentList $arguments `
-        -PassThru -WindowStyle Hidden
+    $startParameters = @{
+        FilePath = $engine
+        ArgumentList = $arguments
+        PassThru = $true
+    }
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT)
+    {
+        $startParameters.WindowStyle = 'Hidden'
+    }
+    return Start-Process @startParameters
 }
 
 function Invoke-TerminalRace
@@ -140,6 +148,15 @@ try
     $workerText = [IO.File]::ReadAllText($script:WorkerPath)
     $failCloseText = [IO.File]::ReadAllText($script:FailClosePath)
     $contractText = [IO.File]::ReadAllText($script:ContractPath)
+    $securityText = [IO.File]::ReadAllText($PSCommandPath)
+    if (-not $securityText.Contains(
+            'if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT)'
+    ) -or
+            -not $securityText.Contains('$startParameters.WindowStyle = ''Hidden''') -or
+            $securityText.Contains(('-WindowStyle' + ' Hidden')))
+    {
+        throw 'SECURITY_CROSS_PLATFORM_WINDOW_STYLE_INVALID'
+    }
 
     if ($workerText.Contains('completion-marker.json') -or
             -not $workerText.Contains('Confirm-FormalCompletionBoundary') -or

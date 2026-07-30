@@ -880,40 +880,61 @@ function Assert-PreCreateReadback
         'credentialLocalStatus', 'permissionFactPresent', 'permissionFactFresh',
         'readPermissionStatus', 'tradePermissionExpectedDisabled',
         'withdrawPermissionExpectedDisabled', 'ipAllowlistStatus',
-        'postgresReachable', 'managementHealthy', 'blockerCodes', 'diagnosticId'
+        'postgresReachable', 'managementHealthy', 'blockerCodes',
+        'failureStage', 'failureCode',
+        'configurationLoaded', 'datasourceConfigured', 'jdbcDriverLoaded',
+        'postgresConnectionAttempted', 'queryExecuted', 'resultMapped',
+        'diagnosticId'
     )
     $blockerCodes = @($Value.blockerCodes)
     if ((@($Value.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
-            ($Value.activeCredentialCount -isnot [int] -and $Value.activeCredentialCount -isnot [long]) -or
-            [long]$Value.activeCredentialCount -lt 0 -or
-            [string]$Value.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
-            [string]$Value.credentialLocalStatus -notin @(
-                'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
-            ) -or
-            [string]$Value.readPermissionStatus -notin @('VERIFIED', 'NOT_VERIFIED', 'UNKNOWN') -or
-            [string]$Value.ipAllowlistStatus -notin @('VERIFIED', 'FAILED', 'UNKNOWN') -or
-            $blockerCodes.Count -gt $script:PreCreateBlockerCodes.Count -or
-            @($blockerCodes | Where-Object { [string]$_ -cnotin $script:PreCreateBlockerCodes }).Count -gt 0 -or
-            @($blockerCodes | Select-Object -Unique).Count -ne $blockerCodes.Count -or
-            [string]$Value.diagnosticId -cnotmatch '^gatew-precreate-[a-f0-9]{32}$')
+    ($Value.activeCredentialCount -isnot [int] -and $Value.activeCredentialCount -isnot [long]) -or
+    [long]$Value.activeCredentialCount -lt 0 -or
+    [string]$Value.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
+    [string]$Value.credentialLocalStatus -notin @(
+    'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
+    ) -or
+    [string]$Value.readPermissionStatus -notin @('VERIFIED', 'NOT_VERIFIED', 'UNKNOWN') -or
+    [string]$Value.ipAllowlistStatus -notin @('VERIFIED', 'FAILED', 'UNKNOWN') -or
+    $blockerCodes.Count -gt $script:PreCreateBlockerCodes.Count -or
+    @($blockerCodes | Where-Object {
+    [string]$_ -cnotin $script:PreCreateBlockerCodes
+    }).Count -gt 0 -or
+    @($blockerCodes | Select-Object -Unique).Count -ne $blockerCodes.Count -or
+    [string]$Value.failureStage -notin @(
+    'CONFIGURATION_LOADING', 'DATASOURCE_CONFIGURATION', 'JDBC_DRIVER_LOADING',
+    'POSTGRES_CONNECTION', 'QUERY_EXECUTION', 'RESULT_MAPPING',
+    'INTERNAL_READBACK', 'COMPLETED'
+    ) -or
+    [string]$Value.failureCode -notin @(
+    'NONE', 'CONFIGURATION_NOT_LOADED', 'DATASOURCE_NOT_CONFIGURED',
+    'JDBC_DRIVER_NOT_FOUND', 'POSTGRES_CONNECTION_FAILED',
+    'QUERY_EXECUTION_FAILED', 'RESULT_MAPPING_FAILED',
+    'INTERNAL_SANITIZED_READBACK_FAILURE'
+    ) -or
+    (([string]$Value.failureStage -eq 'COMPLETED') -ne
+    ([string]$Value.failureCode -eq 'NONE')) -or
+    [string]$Value.diagnosticId -cnotmatch '^gatew-precreate-[a-f0-9]{32}$')
     {
-        throw 'BLOCKED / PRECREATE_READBACK_INVALID'
+    throw 'BLOCKED / PRECREATE_READBACK_INVALID'
     }
     foreach ($field in @(
-        'killSwitchEngaged', 'credentialConfigured', 'permissionFactPresent', 'permissionFactFresh',
-        'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
-        'postgresReachable', 'managementHealthy'
+    'killSwitchEngaged', 'credentialConfigured', 'permissionFactPresent', 'permissionFactFresh',
+    'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
+    'postgresReachable', 'managementHealthy',
+    'configurationLoaded', 'datasourceConfigured', 'jdbcDriverLoaded',
+    'postgresConnectionAttempted', 'queryExecuted', 'resultMapped'
     ))
     {
-        if ($Value.PSObject.Properties[$field].Value -isnot [bool])
-        {
-            throw 'BLOCKED / PRECREATE_READBACK_INVALID'
-        }
+    if ($Value.PSObject.Properties[$field].Value -isnot [bool])
+    {
+    throw 'BLOCKED / PRECREATE_READBACK_INVALID'
+    }
     }
     $serialized = ConvertTo-CompactJson $Value
-    if ($serialized -match '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|owner|account(?:id|_id|ref|_ref)')
+    if ($serialized -match '(?i)jdbc:|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|owner|account(?:id|_id|ref|_ref)')
     {
-        throw 'BLOCKED / PRECREATE_READBACK_INVALID'
+    throw 'BLOCKED / PRECREATE_READBACK_INVALID'
     }
     return $Value
 }
@@ -947,7 +968,8 @@ function New-PreCreateResult
         [Parameter(Mandatory = $true)][string]$CheckedAt,
         [AllowNull()]$Readback,
         [string[]]$FallbackBlockerCodes = @('INTERNAL_SANITIZED_READBACK_FAILURE'),
-        [AllowNull()]$ReleaseBindingVerified = $null
+        [AllowNull()]$ReleaseBindingVerified = $null,
+        [AllowNull()]$LauncherDiagnostic = $null
     )
 
     $available = $null -ne $Readback
@@ -988,16 +1010,109 @@ function New-PreCreateResult
         managementHealthy = $available -and [bool]$Readback.managementHealthy
         killSwitchEngaged = $available -and [bool]$Readback.killSwitchEngaged
         credentialConfigured = $available -and [bool]$Readback.credentialConfigured
-        activeCredentialCount = if ($available) { [long]$Readback.activeCredentialCount } else { 0L }
-        credentialType = if ($available) { [string]$Readback.credentialType } else { 'UNKNOWN' }
-        credentialLocalStatus = if ($available) { [string]$Readback.credentialLocalStatus } else { 'UNKNOWN' }
+        activeCredentialCount = if ($available)
+        {
+            [long]$Readback.activeCredentialCount
+        }
+        else
+        {
+            0L
+        }
+        credentialType = if ($available)
+        {
+            [string]$Readback.credentialType
+        }
+        else
+        {
+            'UNKNOWN'
+        }
+        credentialLocalStatus = if ($available)
+        {
+            [string]$Readback.credentialLocalStatus
+        }
+        else
+        {
+            'UNKNOWN'
+        }
         permissionFactPresent = $available -and [bool]$Readback.permissionFactPresent
         permissionFactFresh = $available -and [bool]$Readback.permissionFactFresh
-        readPermissionStatus = if ($available) { [string]$Readback.readPermissionStatus } else { 'UNKNOWN' }
+        readPermissionStatus = if ($available)
+        {
+            [string]$Readback.readPermissionStatus
+        }
+        else
+        {
+            'UNKNOWN'
+        }
         tradePermissionExpectedDisabled = $available -and [bool]$Readback.tradePermissionExpectedDisabled
         withdrawPermissionExpectedDisabled = $available -and [bool]$Readback.withdrawPermissionExpectedDisabled
-        ipAllowlistStatus = if ($available) { [string]$Readback.ipAllowlistStatus } else { 'UNKNOWN' }
+        ipAllowlistStatus = if ($available)
+        {
+            [string]$Readback.ipAllowlistStatus
+        }
+        else
+        {
+            'UNKNOWN'
+        }
         blockerCodes = $blockerCodes
+        failureStage = if ($available)
+        {
+            [string]$Readback.failureStage
+        }
+        elseif ($null -ne $LauncherDiagnostic)
+        {
+            [string]$LauncherDiagnostic.failureStage
+        }
+        else
+        {
+            'POWERSHELL_CONTROL'
+        }
+        failureCode = if ($available)
+        {
+            [string]$Readback.failureCode
+        }
+        elseif ($null -ne $LauncherDiagnostic)
+        {
+            [string]$LauncherDiagnostic.failureCode
+        }
+        else
+        {
+            'INTERNAL_SANITIZED_READBACK_FAILURE'
+        }
+        launcherExitCode = if ($null -ne $LauncherDiagnostic)
+        {
+            [long]$LauncherDiagnostic.launcherExitCode
+        }
+        elseif ($available)
+        {
+            if ($ready)
+            {
+                0L
+            }
+            else
+            {
+                2L
+            }
+        }
+        else
+        {
+            -1L
+        }
+        javaStarted = if ($null -ne $LauncherDiagnostic)
+        {
+            [bool]$LauncherDiagnostic.javaStarted
+        }
+        else
+        {
+            $available
+        }
+        configurationLoaded = $available -and [bool]$Readback.configurationLoaded
+        datasourceConfigured = $available -and [bool]$Readback.datasourceConfigured
+        jdbcDriverLoaded = $available -and [bool]$Readback.jdbcDriverLoaded
+        postgresConnectionAttempted = $available -and [bool]$Readback.postgresConnectionAttempted
+        queryExecuted = $available -and [bool]$Readback.queryExecuted
+        resultMapped = $available -and [bool]$Readback.resultMapped
+        jsonSerialized = $available
         diagnosticId = if ($available)
         {
             [string]$Readback.diagnosticId
@@ -1023,46 +1138,177 @@ function Assert-PreCreateResult
         'credentialConfigured', 'activeCredentialCount', 'credentialType', 'credentialLocalStatus',
         'permissionFactPresent', 'permissionFactFresh', 'readPermissionStatus',
         'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
-        'ipAllowlistStatus', 'blockerCodes', 'diagnosticId',
+        'ipAllowlistStatus', 'blockerCodes',
+        'failureStage', 'failureCode', 'launcherExitCode', 'javaStarted',
+        'configurationLoaded', 'datasourceConfigured', 'jdbcDriverLoaded',
+        'postgresConnectionAttempted', 'queryExecuted', 'resultMapped', 'jsonSerialized',
+        'diagnosticId',
         'readyForAttemptCreation', 'diagnosticOnly', 'noSideEffect', 'credentialMaterialExposed'
     )
     $blockerCodes = @($Value.blockerCodes)
     $checkedAt = [DateTimeOffset]::MinValue
     if ((@($Value.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
-            [string]$Value.schemaVersion -cne 'gatew-precreate-prerequisite-result-v1' -or
-            -not [DateTimeOffset]::TryParse([string]$Value.checkedAt, [ref]$checkedAt) -or
-            ($Value.activeCredentialCount -isnot [int] -and $Value.activeCredentialCount -isnot [long]) -or
-            [long]$Value.activeCredentialCount -lt 0 -or
-            [string]$Value.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
-            [string]$Value.credentialLocalStatus -notin @(
-                'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
-            ) -or
-            [string]$Value.readPermissionStatus -notin @('VERIFIED', 'NOT_VERIFIED', 'UNKNOWN') -or
-            [string]$Value.ipAllowlistStatus -notin @('VERIFIED', 'FAILED', 'UNKNOWN') -or
-            $blockerCodes.Count -gt $script:PreCreateBlockerCodes.Count -or
-            @($blockerCodes | Where-Object { [string]$_ -cnotin $script:PreCreateBlockerCodes }).Count -gt 0 -or
-            @($blockerCodes | Select-Object -Unique).Count -ne $blockerCodes.Count -or
-            [string]$Value.diagnosticId -cnotmatch '^gatew-precreate-[a-f0-9]{32}$' -or
-            -not [bool]$Value.diagnosticOnly -or -not [bool]$Value.noSideEffect -or
-            [bool]$Value.credentialMaterialExposed -or
-            (ConvertTo-CompactJson $Value) -match
-                '(?i)jdbc|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|owner|account(?:id|_id|ref|_ref)')
+    [string]$Value.schemaVersion -cne 'gatew-precreate-prerequisite-result-v1' -or
+    -not [DateTimeOffset]::TryParse([string]$Value.checkedAt, [ref]$checkedAt) -or
+    ($Value.activeCredentialCount -isnot [int] -and $Value.activeCredentialCount -isnot [long]) -or
+    [long]$Value.activeCredentialCount -lt 0 -or
+    [string]$Value.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
+    [string]$Value.credentialLocalStatus -notin @(
+    'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
+    ) -or
+    [string]$Value.readPermissionStatus -notin @('VERIFIED', 'NOT_VERIFIED', 'UNKNOWN') -or
+    [string]$Value.ipAllowlistStatus -notin @('VERIFIED', 'FAILED', 'UNKNOWN') -or
+    $blockerCodes.Count -gt $script:PreCreateBlockerCodes.Count -or
+    @($blockerCodes | Where-Object {
+    [string]$_ -cnotin $script:PreCreateBlockerCodes
+    }).Count -gt 0 -or
+    @($blockerCodes | Select-Object -Unique).Count -ne $blockerCodes.Count -or
+    [string]$Value.failureStage -notin @(
+    'CONFIGURATION_LOADING', 'DATASOURCE_CONFIGURATION', 'JDBC_DRIVER_LOADING',
+    'POSTGRES_CONNECTION', 'QUERY_EXECUTION', 'RESULT_MAPPING',
+    'JSON_SERIALIZATION', 'INTERNAL_READBACK', 'COMPLETED', 'JAVA_PROCESS',
+    'OUTPUT_CONTRACT', 'POWERSHELL_JSON_PARSE', 'POWERSHELL_CONTROL'
+    ) -or
+    [string]$Value.failureCode -notin @(
+    'NONE', 'CONFIGURATION_NOT_LOADED', 'DATASOURCE_NOT_CONFIGURED',
+    'JDBC_DRIVER_NOT_FOUND', 'POSTGRES_CONNECTION_FAILED',
+    'QUERY_EXECUTION_FAILED', 'RESULT_MAPPING_FAILED',
+    'JSON_SERIALIZATION_FAILED', 'JAVA_EXECUTABLE_NOT_FOUND',
+    'JAVA_PROCESS_START_FAILED', 'JAVA_PROCESS_EXIT_NONZERO',
+    'MAIN_CLASS_NOT_FOUND', 'CLASSPATH_INCOMPLETE',
+    'OUTPUT_CONTRACT_CONTAMINATED', 'POWERSHELL_JSON_PARSE_FAILED',
+    'INTERNAL_SANITIZED_READBACK_FAILURE'
+    ) -or
+    ($Value.launcherExitCode -isnot [int] -and
+    $Value.launcherExitCode -isnot [long]) -or
+    [string]$Value.diagnosticId -cnotmatch '^gatew-precreate-[a-f0-9]{32}$' -or
+    -not [bool]$Value.diagnosticOnly -or -not [bool]$Value.noSideEffect -or
+    [bool]$Value.credentialMaterialExposed -or
+    ([bool]$Value.readyForAttemptCreation -and (
+    [long]$Value.launcherExitCode -ne 0 -or
+    -not [bool]$Value.javaStarted -or
+    -not [bool]$Value.configurationLoaded -or
+    -not [bool]$Value.datasourceConfigured -or
+    -not [bool]$Value.jdbcDriverLoaded -or
+    -not [bool]$Value.postgresConnectionAttempted -or
+    -not [bool]$Value.queryExecuted -or
+    -not [bool]$Value.resultMapped -or
+    -not [bool]$Value.jsonSerialized -or
+    [string]$Value.failureStage -cne 'COMPLETED' -or
+    [string]$Value.failureCode -cne 'NONE'
+    )) -or
+    (ConvertTo-CompactJson $Value) -match
+    '(?i)jdbc:|password|api[-_]?key|secret|passphrase|signature|encrypted[_-]?payload|decrypted[_-]?payload|owner|account(?:id|_id|ref|_ref)')
     {
-        throw 'BLOCKED / PRECREATE_RESULT_INVALID'
+    throw 'BLOCKED / PRECREATE_RESULT_INVALID'
     }
     foreach ($field in @(
-        'releaseBindingVerified', 'postgresReachable', 'managementHealthy',
-        'killSwitchEngaged', 'credentialConfigured', 'permissionFactPresent', 'permissionFactFresh',
-        'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
-        'readyForAttemptCreation', 'diagnosticOnly', 'noSideEffect', 'credentialMaterialExposed'
+    'releaseBindingVerified', 'postgresReachable', 'managementHealthy',
+    'killSwitchEngaged', 'credentialConfigured', 'permissionFactPresent', 'permissionFactFresh',
+    'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled',
+    'javaStarted', 'configurationLoaded', 'datasourceConfigured', 'jdbcDriverLoaded',
+    'postgresConnectionAttempted', 'queryExecuted', 'resultMapped', 'jsonSerialized',
+    'readyForAttemptCreation', 'diagnosticOnly', 'noSideEffect', 'credentialMaterialExposed'
     ))
     {
-        if ($Value.PSObject.Properties[$field].Value -isnot [bool])
-        {
-            throw 'BLOCKED / PRECREATE_RESULT_INVALID'
-        }
+    if ($Value.PSObject.Properties[$field].Value -isnot [bool])
+    {
+    throw 'BLOCKED / PRECREATE_RESULT_INVALID'
+    }
     }
     return $Value
+}
+
+function Resolve-PreCreateJavaProcessDiagnostic
+{
+    param(
+        [Parameter(Mandatory = $true)][long]$LauncherExitCode,
+        [string[]]$StdoutLines = @(),
+        [string[]]$StderrLines = @(),
+        [Parameter(Mandatory = $true)][bool]$ResultFilePresent
+    )
+
+    $newDiagnostic = {
+        param([string]$Stage, [string]$Code)
+        return [pscustomobject][ordered]@{
+            failureStage = $Stage
+            failureCode = $Code
+        }
+    }
+    if (@($StdoutLines | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_)
+    }).Count -gt 0)
+    {
+        return & $newDiagnostic 'OUTPUT_CONTRACT' 'OUTPUT_CONTRACT_CONTAMINATED'
+    }
+
+    $nonEmptyStderr = @($StderrLines | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_)
+    })
+    if ($nonEmptyStderr.Count -gt 0)
+    {
+        if ($ResultFilePresent)
+        {
+            return & $newDiagnostic 'OUTPUT_CONTRACT' 'OUTPUT_CONTRACT_CONTAMINATED'
+        }
+        if ($nonEmptyStderr.Count -eq 1 -and
+                [string]$nonEmptyStderr[0] -cmatch
+                        '^NQ_GATEW_PRECREATE_FAILURE=([A-Z][A-Z0-9_]{1,95})$')
+        {
+            $failureCode = [string]$Matches[1]
+            $failureStage = switch ($failureCode)
+            {
+                'CONFIGURATION_NOT_LOADED' {
+                    'CONFIGURATION_LOADING'
+                }
+                'DATASOURCE_NOT_CONFIGURED' {
+                    'DATASOURCE_CONFIGURATION'
+                }
+                'JDBC_DRIVER_NOT_FOUND' {
+                    'JDBC_DRIVER_LOADING'
+                }
+                'POSTGRES_CONNECTION_FAILED' {
+                    'POSTGRES_CONNECTION'
+                }
+                'QUERY_EXECUTION_FAILED' {
+                    'QUERY_EXECUTION'
+                }
+                'RESULT_MAPPING_FAILED' {
+                    'RESULT_MAPPING'
+                }
+                'JSON_SERIALIZATION_FAILED' {
+                    'JSON_SERIALIZATION'
+                }
+                default {
+                    $null
+                }
+            }
+            if ($null -ne $failureStage)
+            {
+                return & $newDiagnostic $failureStage $failureCode
+            }
+        }
+        $stderrText = $nonEmptyStderr -join "`n"
+        if ($stderrText -match '(?i)Could not find or load main class|ClassNotFoundException')
+        {
+            return & $newDiagnostic 'JAVA_PROCESS' 'MAIN_CLASS_NOT_FOUND'
+        }
+        if ($stderrText -match '(?i)NoClassDefFoundError')
+        {
+            return & $newDiagnostic 'JAVA_PROCESS' 'CLASSPATH_INCOMPLETE'
+        }
+        return & $newDiagnostic 'OUTPUT_CONTRACT' 'OUTPUT_CONTRACT_CONTAMINATED'
+    }
+
+    if (-not $ResultFilePresent)
+    {
+        if ($LauncherExitCode -ne 0)
+        {
+            return & $newDiagnostic 'JAVA_PROCESS' 'JAVA_PROCESS_EXIT_NONZERO'
+        }
+        return & $newDiagnostic 'JSON_SERIALIZATION' 'JSON_SERIALIZATION_FAILED'
+    }
+    return $null
 }
 
 function Invoke-PreCreateJavaReadback
@@ -1071,10 +1317,17 @@ function Invoke-PreCreateJavaReadback
 
     if (-not (Test-Path -LiteralPath $script:LinuxJavaPath -PathType Leaf))
     {
-        throw 'BLOCKED / PRECREATE_JAVA_RUNTIME_MISSING'
+        return [pscustomobject][ordered]@{
+            readback = $null
+            launcherExitCode = -1L
+            javaStarted = $false
+            failureStage = 'JAVA_PROCESS'
+            failureCode = 'JAVA_EXECUTABLE_NOT_FOUND'
+        }
     }
     $token = [Guid]::NewGuid().ToString('N')
     $resultFile = "$( $script:PreCreateResultRoot )/nq-gatew-precreate-prerequisite-$token.json"
+    $stderrFile = "$( $script:PreCreateResultRoot )/nq-gatew-precreate-stderr-$token.txt"
     if (Test-Path -LiteralPath $resultFile)
     {
         throw 'BLOCKED / PRECREATE_RESULT_PATH_CONFLICT'
@@ -1115,6 +1368,8 @@ function Invoke-PreCreateJavaReadback
         NQ_OKX_REAL_API_PASSPHRASE = $null
     }
     $previous = @{ }
+    $launcherExitCode = -1L
+    $javaStarted = $false
     try
     {
         foreach ($name in $values.Keys)
@@ -1133,17 +1388,83 @@ function Invoke-PreCreateJavaReadback
         )
         try
         {
-            $null = & $script:LinuxJavaPath @arguments 2> $null
+            $stdoutLines = @(& $script:LinuxJavaPath @arguments 2> $stderrFile)
+            $launcherExitCode = [long]$LASTEXITCODE
+            $javaStarted = $true
         }
         catch
         {
-            # Java/JDBC details may contain sensitive connection material and are never emitted.
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $javaStarted
+                failureStage = 'JAVA_PROCESS'
+                failureCode = 'JAVA_PROCESS_START_FAILED'
+            }
         }
-        if (-not (Test-Path -LiteralPath $resultFile -PathType Leaf))
+        $stderrLines = @()
+        if (Test-Path -LiteralPath $stderrFile -PathType Leaf)
         {
-            throw 'BLOCKED / PRECREATE_READBACK_UNAVAILABLE'
+            if ((Get-Item -LiteralPath $stderrFile -Force).Length -gt 4096)
+            {
+                return [pscustomobject][ordered]@{
+                    readback = $null
+                    launcherExitCode = $launcherExitCode
+                    javaStarted = $javaStarted
+                    failureStage = 'OUTPUT_CONTRACT'
+                    failureCode = 'OUTPUT_CONTRACT_CONTAMINATED'
+                }
+            }
+            $stderrLines = @(Get-Content -LiteralPath $stderrFile)
         }
-        return Assert-PreCreateReadback (Read-JsonFile $resultFile)
+        $resultFilePresent = Test-Path -LiteralPath $resultFile -PathType Leaf
+        $processDiagnostic = Resolve-PreCreateJavaProcessDiagnostic `
+            $launcherExitCode $stdoutLines $stderrLines $resultFilePresent
+        if ($null -ne $processDiagnostic)
+        {
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $javaStarted
+                failureStage = [string]$processDiagnostic.failureStage
+                failureCode = [string]$processDiagnostic.failureCode
+            }
+        }
+        try
+        {
+            $parsed = Read-JsonFile $resultFile
+        }
+        catch
+        {
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $javaStarted
+                failureStage = 'POWERSHELL_JSON_PARSE'
+                failureCode = 'POWERSHELL_JSON_PARSE_FAILED'
+            }
+        }
+        try
+        {
+            $readback = Assert-PreCreateReadback $parsed
+        }
+        catch
+        {
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $javaStarted
+                failureStage = 'OUTPUT_CONTRACT'
+                failureCode = 'OUTPUT_CONTRACT_CONTAMINATED'
+            }
+        }
+        return [pscustomobject][ordered]@{
+            readback = $readback
+            launcherExitCode = $launcherExitCode
+            javaStarted = $javaStarted
+            failureStage = [string]$readback.failureStage
+            failureCode = [string]$readback.failureCode
+        }
     }
     finally
     {
@@ -1155,6 +1476,10 @@ function Invoke-PreCreateJavaReadback
         if (Test-Path -LiteralPath $resultFile)
         {
             Remove-Item -LiteralPath $resultFile -Force
+        }
+        if (Test-Path -LiteralPath $stderrFile)
+        {
+            Remove-Item -LiteralPath $stderrFile -Force
         }
     }
 }
@@ -1175,9 +1500,19 @@ function Invoke-PreCreatePrerequisiteEvaluation
         $descriptor = Read-PreCreateDescriptor
         Get-ReleaseIdentity | Out-Null
         $releaseBindingVerified = $true
+        $launcher = Invoke-PreCreateJavaReadback $descriptor
+        $fallbackBlockers = if ($null -eq $launcher.readback)
+        {
+            @('INTERNAL_SANITIZED_READBACK_FAILURE')
+        }
+        else
+        {
+            @()
+        }
         return [pscustomobject][ordered]@{
             Result = Assert-PreCreateResult `
-                (New-PreCreateResult $checkedAt (Invoke-PreCreateJavaReadback $descriptor))
+                (New-PreCreateResult `
+                    $checkedAt $launcher.readback $fallbackBlockers $true $launcher)
             Descriptor = $descriptor
         }
     }
@@ -3527,17 +3862,139 @@ function Invoke-ControlSelfTest
         postgresReachable = $true
         managementHealthy = $true
         blockerCodes = @()
+        failureStage = 'COMPLETED'
+        failureCode = 'NONE'
+        configurationLoaded = $true
+        datasourceConfigured = $true
+        jdbcDriverLoaded = $true
+        postgresConnectionAttempted = $true
+        queryExecuted = $true
+        resultMapped = $true
         diagnosticId = 'gatew-precreate-0123456789abcdef0123456789abcdef'
     }
     Assert-PreCreateReadback $safeReadback | Out-Null
     $preCreateResult = Assert-PreCreateResult `
         (New-PreCreateResult '2026-07-21T00:00:00Z' $safeReadback)
     if (-not [bool]$preCreateResult.readyForAttemptCreation -or
-            [bool]$preCreateResult.credentialMaterialExposed)
+            [bool]$preCreateResult.credentialMaterialExposed -or
+            -not [bool]$preCreateResult.configurationLoaded -or
+            -not [bool]$preCreateResult.datasourceConfigured -or
+            -not [bool]$preCreateResult.jdbcDriverLoaded -or
+            -not [bool]$preCreateResult.postgresConnectionAttempted -or
+            -not [bool]$preCreateResult.queryExecuted -or
+            -not [bool]$preCreateResult.resultMapped -or
+            -not [bool]$preCreateResult.jsonSerialized -or
+            [string]$preCreateResult.failureStage -cne 'COMPLETED' -or
+            [string]$preCreateResult.failureCode -cne 'NONE')
     {
         throw 'precreate result self-test failed'
     }
     $caseCount += 2
+    $processDiagnosticCases = @(
+        @{
+            exitCode = 3L
+            stdout = @()
+            stderr = @()
+            resultPresent = $false
+            stage = 'JAVA_PROCESS'
+            code = 'JAVA_PROCESS_EXIT_NONZERO'
+        },
+        @{
+            exitCode = 1L
+            stdout = @()
+            stderr = @('Error: Could not find or load main class missing.Main')
+            resultPresent = $false
+            stage = 'JAVA_PROCESS'
+            code = 'MAIN_CLASS_NOT_FOUND'
+        },
+        @{
+            exitCode = 1L
+            stdout = @()
+            stderr = @('java.lang.NoClassDefFoundError: org/postgresql/Driver')
+            resultPresent = $false
+            stage = 'JAVA_PROCESS'
+            code = 'CLASSPATH_INCOMPLETE'
+        },
+        @{
+            exitCode = 2L
+            stdout = @()
+            stderr = @('NQ_GATEW_PRECREATE_FAILURE=CONFIGURATION_NOT_LOADED')
+            resultPresent = $false
+            stage = 'CONFIGURATION_LOADING'
+            code = 'CONFIGURATION_NOT_LOADED'
+        },
+        @{
+            exitCode = 2L
+            stdout = @()
+            stderr = @('NQ_GATEW_PRECREATE_FAILURE=JDBC_DRIVER_NOT_FOUND')
+            resultPresent = $false
+            stage = 'JDBC_DRIVER_LOADING'
+            code = 'JDBC_DRIVER_NOT_FOUND'
+        },
+        @{
+            exitCode = 0L
+            stdout = @('warning')
+            stderr = @()
+            resultPresent = $true
+            stage = 'OUTPUT_CONTRACT'
+            code = 'OUTPUT_CONTRACT_CONTAMINATED'
+        },
+        @{
+            exitCode = 0L
+            stdout = @()
+            stderr = @('warning')
+            resultPresent = $true
+            stage = 'OUTPUT_CONTRACT'
+            code = 'OUTPUT_CONTRACT_CONTAMINATED'
+        },
+        @{
+            exitCode = 0L
+            stdout = @()
+            stderr = @()
+            resultPresent = $false
+            stage = 'JSON_SERIALIZATION'
+            code = 'JSON_SERIALIZATION_FAILED'
+        }
+    )
+    foreach ($diagnosticCase in $processDiagnosticCases)
+    {
+        $processDiagnostic = Resolve-PreCreateJavaProcessDiagnostic `
+            ([long]$diagnosticCase.exitCode) `
+            ([string[]]$diagnosticCase.stdout) `
+            ([string[]]$diagnosticCase.stderr) `
+            ([bool]$diagnosticCase.resultPresent)
+        if ([string]$processDiagnostic.failureStage -cne [string]$diagnosticCase.stage -or
+                [string]$processDiagnostic.failureCode -cne [string]$diagnosticCase.code)
+        {
+            throw 'precreate Java process taxonomy self-test failed'
+        }
+        $caseCount++
+    }
+    $successfulProcess = Resolve-PreCreateJavaProcessDiagnostic 0L @() @() $true
+    if ($null -ne $successfulProcess)
+    {
+        throw 'precreate Java success process self-test failed'
+    }
+    $caseCount++
+    $jsonParseLauncher = [pscustomobject][ordered]@{
+        readback = $null
+        launcherExitCode = 0L
+        javaStarted = $true
+        failureStage = 'POWERSHELL_JSON_PARSE'
+        failureCode = 'POWERSHELL_JSON_PARSE_FAILED'
+    }
+    $jsonParseResult = Assert-PreCreateResult (
+    New-PreCreateResult `
+            '2026-07-21T00:00:00Z' $null `
+            @('INTERNAL_SANITIZED_READBACK_FAILURE') $true $jsonParseLauncher
+    )
+    if ([bool]$jsonParseResult.readyForAttemptCreation -or
+            [string]$jsonParseResult.failureStage -cne 'POWERSHELL_JSON_PARSE' -or
+            [string]$jsonParseResult.failureCode -cne 'POWERSHELL_JSON_PARSE_FAILED')
+    {
+        throw 'precreate PowerShell JSON taxonomy self-test failed'
+    }
+    $caseCount++
     foreach ($fallbackCase in @(
         @{ message = 'BLOCKED / RELEASE_SOURCE_COMMIT_MISMATCH'; expected = 'RELEASE_BINDING_MISMATCH' },
         @{ message = 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'; expected = 'RESPONSE_CONTRACT_MISMATCH' },

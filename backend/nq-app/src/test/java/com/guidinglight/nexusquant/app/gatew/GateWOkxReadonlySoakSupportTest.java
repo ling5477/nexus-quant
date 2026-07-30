@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
@@ -36,10 +38,12 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
@@ -542,7 +546,7 @@ class GateWOkxReadonlySoakSupportTest {
         assertFalse(serialized.contains("encrypted_payload"));
         assertFalse(serialized.contains("api_key"));
         assertFalse(serialized.contains("passphrase"));
-        assertFalse(serialized.contains("jdbc"));
+        assertFalse(serialized.contains("jdbc:"));
 
         JdbcTemplate unavailable = mock(JdbcTemplate.class);
         when(unavailable.queryForObject(anyString(), eq(String.class)))
@@ -593,6 +597,14 @@ class GateWOkxReadonlySoakSupportTest {
         assertEquals("VERIFIED", passed.readPermissionStatus());
         assertEquals("VERIFIED", passed.ipAllowlistStatus());
         assertTrue(passed.blockerCodes().isEmpty());
+        assertEquals("COMPLETED", passed.failureStage());
+        assertEquals("NONE", passed.failureCode());
+        assertTrue(passed.configurationLoaded());
+        assertTrue(passed.datasourceConfigured());
+        assertTrue(passed.jdbcDriverLoaded());
+        assertTrue(passed.postgresConnectionAttempted());
+        assertTrue(passed.queryExecuted());
+        assertTrue(passed.resultMapped());
         assertTrue(passed.tradePermissionExpectedDisabled());
         assertTrue(passed.withdrawPermissionExpectedDisabled());
 
@@ -621,7 +633,9 @@ class GateWOkxReadonlySoakSupportTest {
         assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock).ready());
         when(jdbc.queryForMap(anyString())).thenReturn(safeCredential);
         assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> false, clock).ready());
-        when(jdbc.queryForObject(anyString(), eq(String.class))).thenReturn("DISENGAGED");
+        Map<String, Object> disengaged = new HashMap<>(safeCredential);
+        disengaged.put("kill_switch_status", "DISENGAGED");
+        when(jdbc.queryForMap(anyString())).thenReturn(disengaged);
         assertFalse(GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock).ready());
     }
 
@@ -670,14 +684,240 @@ class GateWOkxReadonlySoakSupportTest {
                 Map.of("ip_allowlist_probe_status", "UNKNOWN"));
 
         JdbcTemplate postgresUnavailable = mock(JdbcTemplate.class);
-        when(postgresUnavailable.queryForObject(anyString(), eq(String.class)))
+        when(postgresUnavailable.queryForMap(anyString()))
                 .thenThrow(new DataAccessResourceFailureException("must stay redacted"));
         GateWOkxReadonlySoakCycleTest.PrerequisiteReadback failed =
                 GateWOkxReadonlySoakCycleTest.readPrerequisite(
                         postgresUnavailable, config, () -> true, clock
                 );
         assertEquals(List.of("POSTGRES_UNREACHABLE"), failed.blockerCodes());
+        assertEquals("POSTGRES_CONNECTION", failed.failureStage());
+        assertEquals("POSTGRES_CONNECTION_FAILED", failed.failureCode());
+        assertFalse(failed.queryExecuted());
+        assertFalse(failed.resultMapped());
         assertFalse(failed.ready());
+
+        JdbcTemplate queryFailure = mock(JdbcTemplate.class);
+        when(queryFailure.queryForMap(anyString()))
+                .thenThrow(new org.springframework.jdbc.BadSqlGrammarException(
+                        "readback", "redacted", new java.sql.SQLException("redacted", "42703")
+                ));
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback queryFailed =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(
+                        queryFailure, config, () -> true, clock
+                );
+        assertEquals(List.of("INTERNAL_SANITIZED_READBACK_FAILURE"), queryFailed.blockerCodes());
+        assertEquals("QUERY_EXECUTION", queryFailed.failureStage());
+        assertEquals("QUERY_EXECUTION_FAILED", queryFailed.failureCode());
+        assertFalse(queryFailed.queryExecuted());
+        assertFalse(queryFailed.resultMapped());
+
+        Map<String, Object> invalidMapping = new HashMap<>(safePreCreateSummary(now));
+        invalidMapping.put("active_credential_count", Long.MAX_VALUE);
+        JdbcTemplate mappingFailure = mock(JdbcTemplate.class);
+        when(mappingFailure.queryForMap(anyString())).thenReturn(invalidMapping);
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback mappingFailed =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(
+                        mappingFailure, config, () -> true, clock
+                );
+        assertEquals("RESULT_MAPPING", mappingFailed.failureStage());
+        assertEquals("RESULT_MAPPING_FAILED", mappingFailed.failureCode());
+        assertTrue(mappingFailed.queryExecuted());
+        assertFalse(mappingFailed.resultMapped());
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "nq.gatew.disposableDb.enabled", matches = "true")
+    void preCreatePrerequisiteUsesSingleReadOnlyQueryAgainstDisposablePostgres() throws Exception {
+        String databaseUrl = System.getProperty("nq.gatew.disposableDb.url");
+        String databaseUser = System.getProperty("nq.gatew.disposableDb.user");
+        String databasePassword = System.getProperty(
+                "nq.gatew.disposableDb.password",
+                "unit-test-db-password"
+        );
+        Properties properties = baseProperties();
+        properties.setProperty(GateWOkxReadonlySoakCycleTest.ACTION_PROPERTY, "precreate-prerequisite");
+        properties.setProperty(
+                GateWOkxReadonlySoakCycleTest.RESULT_FILE_PROPERTY,
+                "/run/nq-gatew-precreate-prerequisite-0123456789abcdef0123456789abcdef.json"
+        );
+        Map<String, String> environment = baseEnvironment();
+        environment.put("NQ_GATEW_SOAK_DB_URL", databaseUrl);
+        environment.put("NQ_GATEW_SOAK_DB_USER", databaseUser);
+        environment.put("NQ_GATEW_SOAK_DB_PASSWORD", databasePassword);
+        environment.put("NQ_GATEW_MANAGEMENT_HEALTH_URL", "http://127.0.0.1:18889/actuator/health");
+        environment.remove("NQ_GATEW_SOAK_OWNER_ID");
+        environment.remove("NQ_GATEW_SOAK_ACCOUNT_ID");
+        environment.remove("NQ_GATEW_SOAK_CURRENCIES");
+        environment.remove("NQ_ACCOUNT_CREDENTIALS_MASTER_KEY");
+        GateWOkxReadonlySoakCycleTest.SafetyConfig config = config(environment, properties);
+        config.assertSafe();
+
+        try (Connection connection = DriverManager.getConnection(databaseUrl, databaseUser, databasePassword)) {
+            connection.setAutoCommit(false);
+            JdbcTemplate jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+            try {
+                jdbc.update("DELETE FROM exchange_account_credentials");
+                jdbc.update("DELETE FROM exchange_accounts");
+                jdbc.update("""
+                        UPDATE kill_switch_states
+                        SET status = 'ENGAGED', version = version + 1,
+                            reason_code = 'DISPOSABLE_TEST', source = 'DISPOSABLE_TEST',
+                            updated_at = CURRENT_TIMESTAMP, updated_by = 'DISPOSABLE_TEST',
+                            trace_id = 'DISPOSABLE_TEST'
+                        WHERE scope = 'GLOBAL_TRADING'
+                        """);
+                Instant observedAt = Instant.now();
+                Clock clock = Clock.fixed(observedAt.plusSeconds(2), ZoneOffset.UTC);
+
+                assertRealPreCreateBlocker(jdbc, config, clock, "CREDENTIAL_NOT_CONFIGURED");
+                long ownerUserId = jdbc.queryForObject("SELECT MIN(id) FROM users", Long.class);
+                long accountId = jdbc.queryForObject("""
+                        INSERT INTO exchange_accounts (
+                            owner_user_id, exchange_code, trade_env, account_alias,
+                            is_default, status, created_at, updated_at
+                        ) VALUES (?, 'OKX', 'LIVE', 'gatew-disposable-fixture', FALSE, 'ACTIVE', ?, ?)
+                        RETURNING exchange_account_id
+                        """, Long.class, ownerUserId, Timestamp.from(observedAt), Timestamp.from(observedAt));
+                assertRealPreCreateBlocker(jdbc, config, clock, "CREDENTIAL_NOT_CONFIGURED");
+
+                long credentialId = insertDisposableCredential(
+                        jdbc, accountId, observedAt, false, "OKX_API_V5"
+                );
+                assertRealPreCreateBlocker(jdbc, config, clock, "ACTIVE_CREDENTIAL_COUNT_INVALID");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+                GateWOkxReadonlySoakCycleTest.PrerequisiteReadback positive =
+                        GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock);
+                assertTrue(positive.ready());
+                assertEquals("COMPLETED", positive.failureStage());
+                assertEquals("NONE", positive.failureCode());
+
+                long secondCredentialId = insertDisposableCredential(
+                        jdbc, accountId, observedAt, true, "BINANCE_HMAC"
+                );
+                assertRealPreCreateBlocker(jdbc, config, clock, "ACTIVE_CREDENTIAL_COUNT_INVALID");
+                jdbc.update("DELETE FROM exchange_account_credentials WHERE credential_id = ?", secondCredentialId);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET credential_type = 'BINANCE_HMAC'
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "CREDENTIAL_TYPE_MISMATCH");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET credential_status = 'DISABLED'
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "CREDENTIAL_LOCAL_STATUS_NOT_ACTIVE");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET permission_probe_status = 'NOT_PROBED', last_permission_probe_at = NULL
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "PERMISSION_FACT_MISSING");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET last_permission_probe_at = updated_at - INTERVAL '1 second'
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "PERMISSION_FACT_STALE");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET permission_probe_status = 'FAILED'
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "READ_PERMISSION_NOT_VERIFIED");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET permission_scope = 'TRADE'
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "TRADE_PERMISSION_NOT_DISABLED");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET withdraw_enabled = TRUE
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "WITHDRAW_PERMISSION_NOT_DISABLED");
+                resetDisposableCredential(jdbc, credentialId, observedAt);
+
+                jdbc.update("""
+                        UPDATE exchange_account_credentials
+                        SET ip_allowlist_probe_status = 'UNKNOWN'
+                        WHERE credential_id = ?
+                        """, credentialId);
+                assertRealPreCreateBlocker(jdbc, config, clock, "IP_ALLOWLIST_NOT_VERIFIED");
+            } finally {
+                connection.rollback();
+            }
+        }
+    }
+
+    private long insertDisposableCredential(
+            JdbcTemplate jdbc,
+            long accountId,
+            Instant observedAt,
+            boolean active,
+            String credentialType
+    ) {
+        return jdbc.queryForObject("""
+                        INSERT INTO exchange_account_credentials (
+                            exchange_account_id, credential_type, encrypted_payload, key_version,
+                            verification_status, is_active, credential_status, permission_scope,
+                            withdraw_enabled, ip_allowlist_required, permission_probe_status,
+                            last_permission_probe_at, ip_allowlist_probe_status, created_at, updated_at
+                        ) VALUES (
+                            ?, ?, decode('00', 'hex'), 1,
+                            'VERIFIED', ?, 'ACTIVE', 'READ_ONLY',
+                            FALSE, TRUE, 'SUCCEEDED', ?, 'PASSED', ?, ?
+                        )
+                        RETURNING credential_id
+                        """, Long.class, accountId, credentialType, active, Timestamp.from(observedAt.plusSeconds(1)),
+                Timestamp.from(observedAt), Timestamp.from(observedAt));
+    }
+
+    private void resetDisposableCredential(JdbcTemplate jdbc, long credentialId, Instant observedAt) {
+        jdbc.update("""
+                UPDATE exchange_account_credentials
+                SET credential_type = 'OKX_API_V5',
+                    credential_status = 'ACTIVE',
+                    is_active = TRUE,
+                    revoked_at = NULL,
+                    rotated_at = NULL,
+                    permission_scope = 'READ_ONLY',
+                    withdraw_enabled = FALSE,
+                    ip_allowlist_required = TRUE,
+                    permission_probe_status = 'SUCCEEDED',
+                    last_permission_probe_at = ?,
+                    ip_allowlist_probe_status = 'PASSED',
+                    updated_at = ?
+                WHERE credential_id = ?
+                """, Timestamp.from(observedAt.plusSeconds(1)), Timestamp.from(observedAt), credentialId);
+    }
+
+    private void assertRealPreCreateBlocker(
+            JdbcTemplate jdbc,
+            GateWOkxReadonlySoakCycleTest.SafetyConfig config,
+            Clock clock,
+            String expectedBlocker
+    ) {
+        GateWOkxReadonlySoakCycleTest.PrerequisiteReadback result =
+                GateWOkxReadonlySoakCycleTest.readPrerequisite(jdbc, config, () -> true, clock);
+        assertFalse(result.ready());
+        assertTrue(result.blockerCodes().contains(expectedBlocker), result.blockerCodes().toString());
     }
 
     private void assertPreCreateBlocker(
@@ -700,6 +940,7 @@ class GateWOkxReadonlySoakSupportTest {
 
     private Map<String, Object> safePreCreateSummary(Instant now) {
         Map<String, Object> summary = new HashMap<>();
+        summary.put("kill_switch_status", "ENGAGED");
         summary.put("total_account_count", 1L);
         summary.put("scoped_account_count", 1L);
         summary.put("active_scoped_account_count", 1L);
