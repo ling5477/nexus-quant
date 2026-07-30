@@ -188,30 +188,32 @@ function Get-GateWCrc32
 {
     param([Parameter(Mandatory = $true)][AllowEmptyCollection()][byte[]]$Bytes)
 
-    $table = New-Object uint32[] 256
+    [uint64]$mask = 4294967295
+    [uint64]$polynomial = 3988292384
+    $table = New-Object uint64[] 256
     for ($tableIndex = 0; $tableIndex -lt 256; $tableIndex++)
     {
-        $value = [uint32]$tableIndex
+        [uint64]$value = $tableIndex
         for ($bit = 0; $bit -lt 8; $bit++)
         {
-            if (($value -band 1) -ne 0)
+            if (($value -band [uint64]1) -ne 0)
             {
-                $value = [uint32](($value -shr 1) -bxor [uint32]3988292384)
+                $value = (($value -shr 1) -bxor $polynomial) -band $mask
             }
             else
             {
-                $value = [uint32]($value -shr 1)
+                $value = ($value -shr 1) -band $mask
             }
         }
         $table[$tableIndex] = $value
     }
-    $crc = [uint32]4294967295
+    [uint64]$crc = $mask
     foreach ($byte in $Bytes)
     {
-        $lookup = [int](($crc -bxor [uint32]$byte) -band 0xFF)
-        $crc = [uint32](($crc -shr 8) -bxor $table[$lookup])
+        $lookup = [int](($crc -bxor [uint64]$byte) -band [uint64]255)
+        $crc = (($crc -shr 8) -bxor $table[$lookup]) -band $mask
     }
-    return [uint32]($crc -bxor [uint32]4294967295)
+    return [uint32](($crc -bxor $mask) -band $mask)
 }
 
 function New-GateWCanonicalZip
@@ -292,7 +294,7 @@ function New-GateWCanonicalZip
         foreach ($definition in $entryDefinitions)
         {
             $nameBytes = $script:Utf8NoBom.GetBytes([string]$definition.RelativePath)
-            $data = if ([bool]$definition.IsDirectory)
+            [byte[]]$data = if ([bool]$definition.IsDirectory)
             {
                 New-Object byte[] 0
             }

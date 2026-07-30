@@ -601,6 +601,8 @@ function Invoke-BuilderSelfTest
     $testPath = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '.txt')
     $jarSource = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '-jar-source')
     $jarPath = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '.jar')
+    $crcSource = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '-crc-source')
+    $crcJarPath = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '-crc.jar')
     try
     {
         Write-LfText $testPath "alpha`r`nbeta`r"
@@ -627,10 +629,34 @@ function Invoke-BuilderSelfTest
             {
                 throw 'deterministic jar directory entry self-test failed'
             }
+            $contentEntry = $archive.GetEntry('db/migration/V1__self_test.sql')
+            $entryStream = $contentEntry.Open()
+            $entryBytes = [IO.MemoryStream]::new()
+            try
+            {
+                $entryStream.CopyTo($entryBytes)
+                if ($script:Utf8NoBom.GetString($entryBytes.ToArray()) -cne 'SELECT 1;')
+                {
+                    throw 'deterministic jar entry readback self-test failed'
+                }
+            }
+            finally
+            {
+                $entryBytes.Dispose()
+                $entryStream.Dispose()
+            }
         }
         finally
         {
             $archive.Dispose()
+        }
+        Write-LfText (Join-Path $crcSource 'crc32-vector.txt') '123456789'
+        New-DeterministicJar $crcSource $crcJarPath
+        $crcJarBytes = [IO.File]::ReadAllBytes($crcJarPath)
+        if ($crcJarBytes.Length -lt 18 -or
+                [BitConverter]::ToUInt32($crcJarBytes, 14) -ne [uint32]3421780262)
+        {
+            throw 'CRC32 standard vector self-test failed'
         }
         $unitSource = Join-Path $script:RepoRoot 'deploy/systemd/nq-gatew-soak@.service'
         $candidateRoot = '/opt/nexus-quant/releases/candidate-0123456789ab-0123456789abcdef-20260719T000000Z'
@@ -655,6 +681,8 @@ function Invoke-BuilderSelfTest
             lfNormalization = 'PASS'
             candidateDiffSha256 = 'PASS'
             deterministicJarDirectoryEntries = 'PASS'
+            deterministicJarEntryReadback = 'PASS'
+            crc32StandardVector = 'PASS'
             unitReleaseBinding = 'PASS'
             deterministicSourceCommitTimestamp = 'PASS'
             credentialAccessed = $false
@@ -674,6 +702,14 @@ function Invoke-BuilderSelfTest
         if (Test-Path -LiteralPath $jarPath)
         {
             Remove-Item -LiteralPath $jarPath -Force
+        }
+        if (Test-Path -LiteralPath $crcSource)
+        {
+            Remove-Item -LiteralPath $crcSource -Recurse -Force
+        }
+        if (Test-Path -LiteralPath $crcJarPath)
+        {
+            Remove-Item -LiteralPath $crcJarPath -Force
         }
     }
 }
