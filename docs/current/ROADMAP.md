@@ -37,7 +37,9 @@ NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START attempt-01 BLOCKED / PRECREATE FAILED 
   ↓
 GateW Attempt-10 pre-create prerequisite remediation IMPLEMENTED / CI GREEN / DEPLOYMENT PENDING
   ↓
-NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION
+GateW Attempt-10 pre-create remediation DEPLOYMENT VERIFICATION FAILED / CODE REMEDIATION REQUIRED
+  ↓
+NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX
   ↓
 GateW-FREEZE NOT STARTED / FUTURE
 ```
@@ -62,9 +64,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW reproducible release fix：`IMPLEMENTED / CI GREEN / DEPLOYMENT RETRY PENDING`。Commit A `c16f27c3c68d2484ad140d0557b879de08b7c78f` 的 exact-head CI run `30537845010` 为 `completed / success / 10 of 10`；两份 detached worktree、PowerShell 5.1/7、间隔 `35.582s` 的 exact build 得到相同 manifest `eaf83f95f51fc938d55c4c0235eee86e9de78c67990e142cf3d0b6c62c9e8977`、bundle `60a11dde87a4cbfcff8adbd32966b3dd28463d3399b8ba25db01eb836ed0ec1b` 与 131-artifact closed set。该值是下一轮唯一部署基线。
 - GateW remediation immutable release deployment：`DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING`。`c16f27c3...` release 已完成独立 Linux root install、POSIX/ownership、worker write denial、trusted path、systemd、offline remediation/security、Attempt-09 rejected fixture、positive 168h fixture与tamper rejection验证，并已由 canonical installer 原子激活；units started=`0`。
 - GateW Attempt-10 preparation attempt-01：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / ATTEMPT_10_NOT_CREATED`。Canonical pre-create 返回 `readyForAttemptCreation=false`；RunId/state/runtime/clock均未创建，OKX未调用。
-- GateW Attempt-10 pre-create prerequisite remediation：`IMPLEMENTED / CI GREEN / DEPLOYMENT PENDING`。代码级根因=`INTERNAL_SANITIZED_READBACK_FAILURE`；Commit A `1561eb60cd46dc1a4618fde6651426c41d7c4e20` 的 exact-head CI run `30559245227 / completed / success / 10 of 10`。生产底层 blocker 保持 `UNKNOWN`，待新 release 独立部署验证。
+- GateW Attempt-10 pre-create prerequisite remediation：`DEPLOYMENT VERIFICATION FAILED / CODE REMEDIATION REQUIRED`。Commit A `1561eb60cd46dc1a4618fde6651426c41d7c4e20` 的 release supply chain、Linux install、systemd 与离线回归均通过，但生产 canonical readback 仍返回 `INTERNAL_SANITIZED_READBACK_FAILURE`；current/unit links 已 canonical 回滚到 `c16f27c3...`，Attempt-10 未创建。
 - GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / START_BLOCKED`。
-- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION`；只允许部署并验证新 immutable release 的 canonical sanitized readback。不得直接重试、恢复Attempt-09、复用旧clock、跳过pre-create/release binding、扩大OKX endpoint、触碰交易写侧或进入freeze/archive/tag。
+- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX`；只允许脱敏代码级 RCA、最小修复与回归。不得直接重试、恢复 Attempt-09、复用旧 clock、修改生产 credential/permission/IP allowlist、手工 SQL、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 
@@ -75,5 +77,5 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
-- 修复版 release `c16f27c3...` 已安装、通过 Linux 验证并由 canonical installer 原子激活；unit links 绑定同一 release，未启动 unit。Attempt-10 仍须在 pre-create RCA/fix 后重新通过全部 hard gates，不得手工切换或直接重试。
+- 修复版 release `c16f27c3...` 仍是服务器 current 与 unit links 的 last-known-good immutable release；本轮失败的新 release `1561eb60...` 已安装并保留，但未运行。Attempt-10 仍须在新的 internal readback RCA/fix、独立部署授权和全部 hard gates 后才可能重新申请启动，不得手工切换或直接重试。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。

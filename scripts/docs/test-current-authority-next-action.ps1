@@ -315,6 +315,18 @@ if (-not (Test-GovernanceNextActionForWorkBatch `
 }
 Write-Output 'PASS canonical-precreate-remediation-deployment-verification exact-triple=true'
 
+$precreateDeploymentFailedStatus = 'DEPLOYMENT_VERIFICATION_FAILED|CODE_REMEDIATION_REQUIRED'
+$precreateInternalReadbackFix =
+        'NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX'
+Assert-ActionType $precreateInternalReadbackFix `
+    'PRECREATE_PREREQUISITE_INTERNAL_READBACK_FAILURE_RCA_AND_FIX'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $precreateDeploymentFailedStatus $precreateRemediationWorkBatch `
+        $precreateInternalReadbackFix)) {
+    throw 'CANONICAL_PRECREATE_INTERNAL_READBACK_FIX_REJECTED'
+}
+Write-Output 'PASS canonical-precreate-internal-readback-fix exact-triple=true'
+
 foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRD'; Batch = $deploymentWorkBatch; Action = $reproducibleBuildFix },
     @{ Status = $deploymentFailedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-ATTEMPT-10'; Action = $reproducibleBuildFix },
@@ -328,7 +340,11 @@ foreach ($case in @(
     @{ Status = 'IMPLEMENTED|CI_GREEN|DEPLOYMENT_PENDNG'; Batch = $precreateRemediationWorkBatch; Action = $precreateRemediationDeploymentVerification },
     @{ Status = $precreateRemediationStatus; Batch = 'GateW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATON'; Action = $precreateRemediationDeploymentVerification },
     @{ Status = $precreateRemediationStatus; Batch = $precreateRemediationWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-DEPLOYMENT-VERIFICATION' },
-    @{ Status = $precreateRemediationStatus; Batch = $precreateRemediationWorkBatch; Action = 'nq-gatew-attempt-10-precreate-prerequisite-remediation-deployment-verification' }
+    @{ Status = $precreateRemediationStatus; Batch = $precreateRemediationWorkBatch; Action = 'nq-gatew-attempt-10-precreate-prerequisite-remediation-deployment-verification' },
+    @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|CODE_REMEDIATION_REQUIRD'; Batch = $precreateRemediationWorkBatch; Action = $precreateInternalReadbackFix },
+    @{ Status = $precreateDeploymentFailedStatus; Batch = 'GateW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-ATTEMPT-10'; Action = $precreateInternalReadbackFix },
+    @{ Status = $precreateDeploymentFailedStatus; Batch = $precreateRemediationWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX-LATER' },
+    @{ Status = $precreateDeploymentFailedStatus; Batch = $precreateRemediationWorkBatch; Action = 'nq-gatew-attempt-10-precreate-prerequisite-internal-readback-failure-rca-and-fix' }
 )) {
     if (Test-GovernanceNextActionForWorkBatch `
             $contract $case.Status $case.Batch $case.Action) {

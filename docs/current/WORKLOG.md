@@ -17932,3 +17932,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential material/raw provider response/manual SQL/OKX/production DB writes/server mutations=`0`；Attempt-10/acceptance clock=false；未部署、未调用旧 release 验证新代码、未触达 LIVE/交易写侧/freeze/archive/tag。
 - result：`PASS / ROOT_CAUSE_IDENTIFIED / CODE_FIX_IMPLEMENTED / CI_GREEN / DEPLOYMENT_REQUIRED / ATTEMPT_10_NOT_AUTHORIZED`。
 - next：`NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION`。
+
+## 2026-07-31 — GateW Attempt-10 pre-create remediation deployment verification
+
+- task：`NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION`；NQ-only、L级 exact-commit release / Linux immutable deployment / sanitized readback / systemd static verification。
+- baseline：`dev` clean；起始 `HEAD == origin/dev == ddba18432df6d8368740f28a95e96f87ceac8efb`；governance CI `30560747192` 与 release source CI `30559245227` 均 `completed / success / 10 of 10`；authority checker PASS；source drift=0。
+- release：双 detached worktree、PowerShell 5.1/7 得到相同 manifest `32df4e35...cd55`、bundle `b87e7109...5fc6`、`54,216,704` bytes、131 artifacts / 132 USTAR；本地/远端完整性、staging/installed verifier、root/POSIX/ownership/worker-write/Git/symlink closed set均PASS。
+- systemd/offline：canonical activate/install-units与analyze PASS；units/timers/jobs/worker始终0；installer/control/fail-close=`PASS / 57 / 8`；remediation/security/reproducibility=`32/12/16`。admin harness的root ownership失败与Linux `-WindowStyle Hidden` runner不兼容均只在临时测试编排层复核、修正运行权限/临时UI参数后通过，production artifacts未修改。
+- pre-create：唯一 canonical 调用返回`releaseBindingVerified=true`、`blockerCodes=[INTERNAL_SANITIZED_READBACK_FAILURE]`、`readyForAttemptCreation=false`、material exposed=false；management/PostgreSQL readback未建立，fallback false/UNKNOWN不得解释为运营 credential/permission/IP事实。
+- rollback：canonical status确认Attempt-09 unit inactive/dead、MainPID0、residual0、exit fact存在且Attempt-09后无新state；旧`c16f27c3...`验证通过后，以canonical activate/install-units恢复current/unit links。新`1561eb60...`release保留但未运行。
+- boundary：credential material/raw response/manual SQL/OKX/production DB writes/Attempt-10/clock/worker/LIVE/trading write=`0`；未修改credential/permission/IP allowlist，未进入freeze/archive/tag；本任务临时harness residue=0。
+- result：`FAIL / PRECREATE_REMEDIATION_DEPLOYMENT_VERIFICATION_FAILED / CODE_REMEDIATION_REQUIRED / ROLLED_BACK / ATTEMPT_10_NOT_CREATED`。
+- next：`NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-INTERNAL-READBACK-FAILURE-RCA-AND-FIX`；仅允许脱敏代码级RCA/最小修复与回归，不授权生产修改或Attempt-10重试。

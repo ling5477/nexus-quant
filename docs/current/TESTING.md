@@ -12331,3 +12331,27 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 已知 warning：首次 focused Maven 因 PowerShell `-D` 参数未加引号 exit 1，修正 quoting 后通过；IDE PowerShell parser 对既有合法语法误报，原生 parser 为 0 errors；IDE SQL inspection 因未绑定 datasource 报既有 unresolved table。
 
 未运行：新 release 构建/上传/安装、服务器新 release canonical pre-create、Attempt-10 prepare/start、acceptance clock、OKX、credential material、raw provider response、手工 SQL、LIVE、交易写侧、freeze/archive/tag。上述均必须留给下一独立 deployment verification 或后续重新授权任务。
+
+## 2026-07-31 — GateW Attempt-10 pre-create remediation deployment verification
+
+当前结论：`FAIL / PRECREATE_REMEDIATION_DEPLOYMENT_VERIFICATION_FAILED / CODE_REMEDIATION_REQUIRED / ROLLED_BACK / ATTEMPT_10_NOT_CREATED`（失败 / pre-create 整改部署验证失败 / 需要代码整改 / 已回滚 / Attempt-10 未创建）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| local exact-commit double build | PASS | source=`1561eb60...`；PowerShell 5.1/7；不同 detached worktree、间隔 >2s；manifest/bundle/artifact descriptor/USTAR bytes完全一致 |
+| canonical release identity | PASS | manifest=`32df4e3575c0c3a546c95a30d17f005cb5ba07a5dfb8ede04c4a71389d48cd55`；bundle=`b87e7109a24fcfc0c4f90ae802701f89f77a10ebe14c0af0d7ab4ffc787c5fc6`；`54,216,704` bytes；131 artifacts / 132 USTAR |
+| server preflight | PASS | NTP/sudo/current正常；active GateW/timer/job/pwsh worker=`0/0/0/0`；Attempt-09 unit inactive/dead、MainPID 0；Attempt-09 后无新 state |
+| upload / staging verifier | PASS | 本地/远端 bundle hash/size、manifest hash、USTAR count exact；staging closed set通过 |
+| canonical installer / installed verifier | PASS | root/POSIX/ownership、artifact set、worker write denial、Git/symlink exclusion通过；new release保留在 `/opt/nexus-quant/releases/1561eb60...` |
+| canonical activate / install-units / systemd | PASS | current/unit links曾精确切到new release；analyze exit 0；active/timer/job/worker=`0` |
+| installed verifier / installer / control / fail-close | PASS | verifier/installer通过；control=`57 cases`；fail-close root self-test=`8 cases / 1415ms` |
+| remediation regression | PASS after RCA | 首轮 admin harness因root ownership命令 fail closed；按真实root权限复跑=`32/32`、fail-close=`878ms`、Attempt-10=false |
+| security regression | PASS with harness compatibility | 原 runner 6 cases后仅因Linux不支持`-WindowStyle Hidden`失败；临时去除UI-only参数后`12/12`，installed artifacts未修改 |
+| release reproducibility regression | PASS | `16/16`；tamper与dirty exact worktree精确拒绝；network/credential/Attempt-10=false |
+| canonical `precreate-prerequisite` | BLOCKING FAIL | checkedAt=`2026-07-30T17:02:10.3032262Z`；`releaseBindingVerified=true`；`blockerCodes=[INTERNAL_SANITIZED_READBACK_FAILURE]`；`readyForAttemptCreation=false` |
+| canonical status / rollback | PASS | Attempt-09 unit inactive/dead、MainPID 0、residual 0、exit fact存在；旧 `c16f27c3...` verifier通过并由canonical activate/install-units恢复current与unit links |
+| final server invariants | PASS | current=`c16f27c3...`；new release仅安装保留；active/timer/job/worker=`0`；本任务harness residue=0；Attempt-10未创建 |
+
+已知 warning：`systemd-analyze` 只报告既有无关 `cloudmonitor.service` warning。首次构建 A 的外层本地命令短超时，但 canonical builder 子进程继续完成；未重放构建，直接用最终 manifest/bundle/verifier取证。canonical response 的 `credentialConfigured=false` 与其他 false/UNKNOWN 字段属于 internal fallback projection，不能解释为已识别运营 blocker。
+
+未运行：`prepare`、`start`、`start-acceptance-clock`、Attempt-10 RunId/state/runtime、OKX/private endpoint、credential material、raw response、手工 SQL、生产 DB write、credential/permission/IP allowlist修改、LIVE、交易写侧、freeze/archive/tag。失败为阻断性代码结果；下一步只允许独立 internal readback RCA/fix。
