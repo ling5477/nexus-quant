@@ -192,7 +192,7 @@ function Read-PreCreateSourceValues
         {
             continue
         }
-        if ($seen.ContainsKey($name))
+        if ( $seen.ContainsKey($name))
         {
             throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
         }
@@ -200,7 +200,7 @@ function Read-PreCreateSourceValues
         $literal = ConvertFrom-EnvironmentLiteral ([string]$Matches[2])
         if ($name -eq 'NQ_DB_PASSWORD')
         {
-            if ([string]::IsNullOrWhiteSpace($literal))
+            if ( [string]::IsNullOrWhiteSpace($literal))
             {
                 throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
             }
@@ -333,7 +333,7 @@ function Configure-PreCreateDescriptor
         Assert-PreCreateDescriptorValue `
             (Get-Content -LiteralPath $script:PreCreateDescriptorPath -Raw | ConvertFrom-Json) | Out-Null
     }
-    $temporary = "$( $script:GateWConfigRoot )/.precreate-prerequisite-$PID-$([Guid]::NewGuid().ToString('N')).json"
+    $temporary = "$( $script:GateWConfigRoot )/.precreate-prerequisite-$PID-$([Guid]::NewGuid().ToString('N') ).json"
     try
     {
         if (-not (Test-Path -LiteralPath $script:GateWConfigRoot -PathType Container))
@@ -341,9 +341,9 @@ function Configure-PreCreateDescriptor
             throw 'BLOCKED / PRECREATE_CONFIG_PATH_INVALID'
         }
         [IO.File]::WriteAllText(
-            $temporary,
-            (($descriptor | ConvertTo-Json -Depth 4) + "`n"),
-            [Text.UTF8Encoding]::new($false)
+                $temporary,
+                (($descriptor | ConvertTo-Json -Depth 4) + "`n"),
+                [Text.UTF8Encoding]::new($false)
         )
         Invoke-Native $script:ChownPath @('--', 'root:root', $temporary) | Out-Null
         Invoke-Native $script:ChmodPath @('0600', '--', $temporary) | Out-Null
@@ -759,7 +759,7 @@ NQ_DB_URL=jdbc:postgresql://127.0.0.1:5432/nexus_quant
 NQ_DB_USER=nq_runtime
 NQ_DB_PASSWORD=fixture-only
 IGNORED_FIELD=value
-'@, [Text.UTF8Encoding]::new($false))
+'@,[Text.UTF8Encoding]::new($false))
         $descriptor = New-PreCreateDescriptor $fixture $script:DatabasePasswordSecretPath
         if ([string]$descriptor.databaseName -cne 'nexus_quant' -or
                 [string]$descriptor.databaseUser -cne 'nq_runtime')
@@ -779,7 +779,7 @@ IGNORED_FIELD=value
                     $candidate = Get-Content -LiteralPath $fixture -Raw
                     $candidate = $candidate.Replace('NQ_DB_USER=nq_runtime', "NQ_DB_USER=$unsafe")
                     $unsafeFixture = Join-Path $fixtureRoot ([Guid]::NewGuid().ToString('N') + '.env')
-                    [IO.File]::WriteAllText($unsafeFixture, $candidate, [Text.UTF8Encoding]::new($false))
+                    [IO.File]::WriteAllText($unsafeFixture, $candidate,[Text.UTF8Encoding]::new($false))
                     New-PreCreateDescriptor $unsafeFixture $script:DatabasePasswordSecretPath | Out-Null
                 }
             }

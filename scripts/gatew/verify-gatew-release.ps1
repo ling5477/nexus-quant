@@ -33,7 +33,7 @@ $script:LfRoles = @(
 )
 $script:ReleaseContractPath = Join-Path $PSScriptRoot 'gatew-release-contract.psm1'
 
-Import-Module $script:ReleaseContractPath -Force -DisableNameChecking
+Import-Module $script:ReleaseContractPath -Force
 
 function Test-LinuxPlatform
 {
@@ -339,7 +339,7 @@ function Assert-ManifestContract
             [Globalization.CultureInfo]::InvariantCulture,
             [Globalization.DateTimeStyles]::AssumeUniversal,
             [ref]$sourceCommitTimestamp
-        ))
+    ))
     {
         throw 'BLOCKED / RELEASE_MANIFEST_SCHEMA_INVALID'
     }
@@ -461,15 +461,15 @@ function Assert-ManifestContract
     Assert-SystemdReleaseBinding $Manifest $Root
 
     $actual = @(
-        Get-ChildItem -LiteralPath $Root -File -Recurse -Force |
+    Get-ChildItem -LiteralPath $Root -File -Recurse -Force |
             ForEach-Object {
                 Assert-NoSymlink $_.FullName
                 $_.FullName.Substring($Root.Length).TrimStart('/', '\').Replace('\', '/')
             } |
-            Where-Object { $_ -ne $script:ManifestName }
+            Where-Object { $_ -ne $script:ManifestName } |
+            Sort-Object
     )
-    $actual = @(Sort-GateWOrdinalStrings $actual)
-    $declared = @(Sort-GateWOrdinalStrings @($seen.Keys))
+    $declared = @($seen.Keys | Sort-Object)
     if (($actual -join '|') -cne ($declared -join '|'))
     {
         throw 'BLOCKED / RELEASE_UNDECLARED_ARTIFACT'
