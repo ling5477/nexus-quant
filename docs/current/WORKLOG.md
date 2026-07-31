@@ -18011,6 +18011,7 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - passed：manifest=`d82ae4fc...0c6`、bundle=`9feda6a8...add0`、`131/122/132`、closed set 0/0/0；122/122 JAR、37,551 entries、133,989,252 bytes、full-stream/CRC/duplicate/resource/tamper；Windows PS5.1/PS7 与 no-egress Linux exact build bytes identical；focused Maven 50 tests、offline package、governance checks通过。
 - P1 与 remediation：34-case permanent regression 首次 Windows PS5.1 exit 2 / `MANIFEST_HASH_CHANGED_ACROSS_PATHS`，随后未修复重跑 hash 仍漂移；RCA 为 fixture `CreateEntry(...)` 未固定 `LastWriteTime`。用户明确授权后，仅固定合成 ZIP entry UTC timestamp 并将 path B 移到原有 2 秒间隔后创建，不进入 runtime release。
 - revalidation：PS5.1/PS7/Linux pwsh7 各连续 3 次 34/34；Windows synthetic manifest/bundle 每次固定为 `d79bfaa...daed7` / `4eccc42c...ad74`，Linux每次固定为 `1c556eb...8d68c` / `b71a8f8f...4d1f2`。首次失败保留，P1 经修复关闭。
-- decision：`PASS / RC_REVIEW_ACCEPTED / FULL_STREAM_AND_CRC_VERIFIED / REPRODUCIBILITY_VERIFIED / READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0/P2=0/P3=0。
+- commit/CI：review/remediation commit `15ee2ee2774019f9abf4b238f989b4c7b30db04c` 已推送；exact-head CI run `30653141014 / completed / success / 10 jobs / bad=0`，headSha 精确匹配。
+- decision：`PASS / RC_REVIEW_ACCEPTED / FULL_STREAM_AND_CRC_VERIFIED / REPRODUCIBILITY_VERIFIED / ACCEPTED / CI_GREEN / DEPLOYMENT_AUTHORIZED / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_CREATED`；P0=0/P1=0/P2=0/P3=0。
 - boundary：生产 SSH/deploy/server/current/systemd/DB/OKX/credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag。
-- next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-COMMIT-AND-PUSH`；只允许精确提交本轮 remediation/review，等待 exact-head CI 后再做 authority-sync。
+- next：`NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`；仅下一独立任务可按 fixed runtime event order 执行受控生产 preflight/deployment/start。本轮不执行生产动作。

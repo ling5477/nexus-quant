@@ -147,24 +147,35 @@ freeze/archive/tag=0
 Attempt-09 保持 `REJECTED`；Attempt-10 保持 `NOT_CREATED / NOT_AUTHORIZED`。本轮没有修改
 交易状态机、策略/回测算法、LIVE、AI、DH、real provider 或 private trading 边界。
 
-## 9. Authority transition、rollback 与下一动作
+## 9. Commit/CI、authority after、rollback 与下一动作
 
-Review accepted 阶段按 governance schema `1.3.0`：
+Review/remediation commit 与 exact-head CI：
 
 ```text
+review_commit=15ee2ee2774019f9abf4b238f989b4c7b30db04c
+review_ci_run=30653141014
+review_ci_status=completed
+review_ci_conclusion=success
+review_ci_jobs=10
+review_ci_bad_jobs=0
+review_ci_head_sha=15ee2ee2774019f9abf4b238f989b4c7b30db04c
+
 active_gate=GateW
 active_gate_status=IN_PROGRESS|NOT_FROZEN
 work_batch=GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
-work_batch_commit=UNCOMMITTED
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-COMMIT-AND-PUSH
+work_batch_status=ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED
+work_batch_commit=15ee2ee2774019f9abf4b238f989b4c7b30db04c
+work_batch_ci_run=30653141014
+next_action=NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START
 ```
 
-Review commit exact-head CI 成功前不得转换为 `DEPLOYMENT_AUTHORIZED`。成功后再单独执行
-authority-sync，并保持 runtime artifact source=`5a7e824e...`、production deployment
-`NOT_STARTED`、Attempt-10 `NOT_CREATED`、LIVE `DISABLED`。本轮绝不执行后续生产
-`PREPARATION-AND-START`。
+Runtime state 固定为 Attempt-10=`NOT_CREATED / AUTHORIZED`、production deployment
+`NOT_STARTED`、kill switch=`ENGAGED`、worker/acceptance clock=`NOT_STARTED`、RunId reuse
+`FORBIDDEN`、auto retry=`DISABLED`、LIVE=`DISABLED`。Runtime artifact source 保持
+`5a7e824e...`；review/governance commit 不替换该 source。
 
-若需回滚，forward revert 本轮 review/remediation commit；固定 RC runtime release bytes
-保持不变。不得改写 attempt-01/02、RC source 或首次失败证据。
+唯一下一动作只授权独立 `PREPARATION-AND-START` 任务按固定事件顺序执行生产 hard gates。
+本 review/authority-sync 不执行该任务，不连接生产，也不创建 Attempt-10。
+
+若需回滚，forward revert review/remediation 与 authority-sync commits；固定 RC runtime
+release bytes 保持不变。不得改写 attempt-01/02、RC source 或首次失败证据。
