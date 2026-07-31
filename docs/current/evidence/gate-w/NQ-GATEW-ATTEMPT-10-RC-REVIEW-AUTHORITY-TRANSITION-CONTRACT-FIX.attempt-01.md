@@ -170,7 +170,21 @@ Negative fixtures 覆盖：RC pending/review accepted/CI pending/CI failed 直�
 
 ## 12. Commit、CI 与 rollback
 
-治理实现 commit 使用 `fix(governance): define GateW RC review deployment transition`。由于 commit SHA 与 exact-head CI run 只能在提交后生成，本文件先记录 local validation；提交后的治理 commit/CI 将由同一任务追加到本 evidence，且不得冒充 RC source commit 或 RC review commit。
+治理实现 commit：
+
+```text
+commit=b97d307d0c6abda313354dc3703fa73dafbcd964
+message=fix(governance): define GateW RC review deployment transition
+ci_run=30643903984
+workflow=NQ CI Baseline
+status=completed
+conclusion=success
+head_sha=b97d307d0c6abda313354dc3703fa73dafbcd964
+jobs=10
+bad_jobs=0
+```
+
+该 commit/CI 只证明治理合同修复，不是 RC source commit、RC review commit 或 production deployment evidence。本段由后续 evidence closeout commit 追加；closeout 不修改合同、checker、测试或 current authority，其最终 exact-head CI 记录在本任务最终输出。
 
 回滚：提交前仅反向撤销本任务精确 allowlist diff；提交后使用独立 governance rollback review 与 `git revert <governance-commit>`，原子回滚 contract/library/checker/tests/evidence/index/TESTING，再运行本文件列出的全部治理回归。禁止使用 `git reset --hard` 或 `git checkout -- .`。
 
@@ -188,7 +202,7 @@ PRODUCTION_NOT_ACCESSED /
 ATTEMPT_10_NOT_AUTHORIZED
 ```
 
-提交与 exact-head CI 完成前，结论不包含 `COMMITTED / CI_GREEN`。完成后唯一业务 next action 仍是：
+治理实现 commit 与 exact-head CI 已完成；唯一业务 next action 仍是：
 
 ```text
 NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW

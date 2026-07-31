@@ -12487,3 +12487,7 @@ P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB w
 | Linux PowerShell 7 | `NOT_APPLICABLE` | `.github/workflows` 未执行相关治理脚本；未修改 CI workflow |
 
 首次 link checker 调用遗漏 mandatory `-Roots` 参数，exit 1；以 `-Roots docs/current` 重跑通过，未把调用错误记为首轮通过。未运行 Maven、frontend、Python、PostgreSQL、Flyway、release verifier/builder、生产 SSH/deploy/systemd、生产 DB、credential、OKX、Attempt-10、RunId/worker/168h clock、LIVE、交易写侧、freeze/archive/tag。提交与 exact-head CI 结果将在本任务提交后追加到 task evidence；当前不宣称 `COMMITTED / CI_GREEN`。
+
+## 2026-07-31 — GateW Attempt-10 RC review authority transition contract fix exact-head CI
+
+治理实现 commit `b97d307d0c6abda313354dc3703fa73dafbcd964` 的 `NQ CI Baseline` run `30643903984` 已完成：`completed / success / 10 of 10 / bad=0`，`headSha` 精确匹配。该结果只接受治理合同修复，不代表 RC review accepted、deployment authorized 或 Attempt-10 authorized；current authority 与唯一 next action 保持不变。
