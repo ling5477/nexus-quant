@@ -32,8 +32,18 @@ function Invoke-Native
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Arguments
     )
 
-    $output = @(& $FilePath @Arguments 2>&1)
-    if ($LASTEXITCODE -ne 0)
+    $previousErrorActionPreference = $ErrorActionPreference
+    try
+    {
+        $ErrorActionPreference = 'SilentlyContinue'
+        $output = @(& $FilePath @Arguments 2>&1)
+        $exitCode = [int]$LASTEXITCODE
+    }
+    finally
+    {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($exitCode -ne 0)
     {
         throw 'FAIL / RELEASE_BUILD_COMMAND_FAILED'
     }
@@ -944,15 +954,24 @@ function Invoke-ExactCommitDetachedBuild
     {
         [IO.Path]::GetFullPath($OutputRoot)
     }
-    $tempBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
-    $worktreeRoot = Join-Path $tempBase ('nq-gatew-release-build-' + [Guid]::NewGuid().ToString('N'))
-    $registered = $false
+    $worktreeBase = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT)
+    {
+        [IO.Path]::GetFullPath((Split-Path -Parent $script:RepoRoot))
+    }
+    else
+    {
+        [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+    }
+    $worktreeRoot = Join-Path $worktreeBase (
+        'nqgw-' + [Guid]::NewGuid().ToString('N').Substring(0, 12)
+    )
+    $worktreeAddAttempted = $false
     try
     {
+        $worktreeAddAttempted = $true
         Invoke-Native (Get-Command git -ErrorAction Stop).Source @(
             '-C', $script:RepoRoot, 'worktree', 'add', '--detach', $worktreeRoot, $Commit
         ) | Out-Null
-        $registered = $true
         $childBuilder = Join-Path $worktreeRoot 'scripts/gatew/build-gatew-release-bundle.ps1'
         $engine = (Get-Process -Id $PID).Path
         $childOutput = @(& $engine -NoProfile -File $childBuilder `
@@ -983,14 +1002,26 @@ function Invoke-ExactCommitDetachedBuild
     }
     finally
     {
-        if ($registered)
+        if ($worktreeAddAttempted)
         {
-            $null = & git -C $script:RepoRoot worktree remove --force $worktreeRoot 2> $null
+            $previousErrorActionPreference = $ErrorActionPreference
+            try
+            {
+                $ErrorActionPreference = 'SilentlyContinue'
+                $null = & git -C $script:RepoRoot worktree remove --force $worktreeRoot 2> $null
+            }
+            finally
+            {
+                $ErrorActionPreference = $previousErrorActionPreference
+            }
         }
         if (Test-Path -LiteralPath $worktreeRoot)
         {
             $resolved = [IO.Path]::GetFullPath($worktreeRoot)
-            if (-not $resolved.StartsWith($tempBase, [StringComparison]::OrdinalIgnoreCase))
+            if (-not $resolved.StartsWith(
+                    $worktreeBase + [IO.Path]::DirectorySeparatorChar,
+                    [StringComparison]::OrdinalIgnoreCase
+            ))
             {
                 throw 'FAIL / RELEASE_WORKTREE_CLEANUP_PATH_INVALID'
             }
