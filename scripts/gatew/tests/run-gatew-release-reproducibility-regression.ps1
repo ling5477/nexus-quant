@@ -12,6 +12,7 @@ $script:BuilderPath = Join-Path $script:GateWRoot 'build-gatew-release-bundle.ps
 $script:VerifierPath = Join-Path $script:GateWRoot 'verify-gatew-release.ps1'
 $script:EnginePath = (Get-Process -Id $PID).Path
 $script:Utf8NoBom = New-Object Text.UTF8Encoding($false)
+$script:TestZipEntryTimestamp = [DateTimeOffset]::new(2020, 1, 2, 3, 4, 6, [TimeSpan]::Zero)
 $script:Cases = [Collections.Generic.List[string]]::new()
 
 Import-Module $script:ContractPath -Force -DisableNameChecking
@@ -92,6 +93,7 @@ function Write-TestJar
             foreach ($definition in $Entries)
             {
                 $entry = $archive.CreateEntry([string]$definition.Name)
+                $entry.LastWriteTime = $script:TestZipEntryTimestamp
                 $content = [string]$definition.Content
                 if (-not ([string]$definition.Name).EndsWith('/') -or $content.Length -gt 0)
                 {
@@ -493,10 +495,10 @@ try
     $rootA = Join-Path $tempRoot 'path-a/release'
     $rootB = Join-Path $tempRoot 'unrelated/deeper/path-b/release'
     $manifestA = New-TestRelease $rootA $commitA $timestampA
-    $manifestB = New-TestRelease $rootB $commitA $timestampA
 
     $bytesBefore = Get-GateWCanonicalManifestBytes $manifestA
     Start-Sleep -Seconds 2
+    $manifestB = New-TestRelease $rootB $commitA $timestampA
     $bytesAfter = Get-GateWCanonicalManifestBytes $manifestA
     Assert-Condition (($script:Utf8NoBom.GetString($bytesBefore)) -ceq
             ($script:Utf8NoBom.GetString($bytesAfter))) 'MANIFEST_CHANGED_AFTER_TIME_SEPARATION'

@@ -12491,3 +12491,25 @@ P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB w
 ## 2026-07-31 — GateW Attempt-10 RC review authority transition contract fix exact-head CI
 
 治理实现 commit `b97d307d0c6abda313354dc3703fa73dafbcd964` 的 `NQ CI Baseline` run `30643903984` 已完成：`completed / success / 10 of 10 / bad=0`，`headSha` 精确匹配。该结果只接受治理合同修复，不代表 RC review accepted、deployment authorized 或 Attempt-10 authorized；current authority 与唯一 next action 保持不变。
+
+## 2026-08-01 — GateW Attempt-10 release candidate stabilization review attempt-03
+
+当前结论：`PASS / RC_REVIEW_ACCEPTED / FULL_STREAM_AND_CRC_VERIFIED / REPRODUCIBILITY_VERIFIED / READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| baseline / exact-head CI | PASS | `HEAD == origin/dev == 32c58ba9...`；RC `30632959743`、governance `30643903984`、control `30644173342` 均 `completed / success / 10 jobs / bad=0` |
+| release identity / closed set | PASS | manifest=`d82ae4fc...0c6`、bundle=`9feda6a8...add0`；artifact/JAR/USTAR=`131/122/132`；missing/extra/undeclared=`0/0/0` |
+| JAR full-stream / CRC / duplicate / limits | PASS | 122/122 JAR；37,551 entries / 133,989,252 bytes；empty duplicate dirs=4、files=0；CRC/compression/path/resource negative cases fail-closed |
+| Windows/Linux exact builds | PASS | PS5.1、PS7、Ubuntu 24.04.1/pwsh7.5/JDK21/Git2.43/Maven3.9；manifest、bundle、descriptors bytes identical；USTAR root/POSIX PASS |
+| 34-case initial regression | INITIAL FAIL | 首次 Windows PS5.1 exit 2 / passed=1 / `MANIFEST_HASH_CHANGED_ACROSS_PATHS`；随后三次未修复 34/34 的 hashes 仍为 `b4afd03b...`、`a7c8a9cc...`、`9ecc42aa...` |
+| RCA / authorized minimal fix | REMEDIATED | `CreateEntry(...)` 未固定 `LastWriteTime`；现固定 UTC even-second timestamp，并将 path B 移到 2 秒间隔后创建；不进入 runtime release |
+| permanent regression after fix | PASS | PS5.1 / PS7 / Linux pwsh7 各连续 3 次 34/34；Windows manifest/bundle 固定 `d79bfaa...daed7` / `4eccc42c...ad74`，Linux 固定 `1c556eb...8d68c` / `b71a8f8f...4d1f2` |
+| focused Maven / package | PASS | Windows/Linux 23 modules；50 tests / 0 failures / 0 errors / 1 skipped；canonical offline package PASS |
+| tamper | PASS | exit 2 / `BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH` |
+| governance / docs | PASS | lifecycle、task-evidence、next-action、authority；docs/current links 148 / 0 errors / 1 既有 warning；基线 `git diff --check` PASS |
+
+首次失败与 RCA 保留；P1 经授权最小修复并重复回归关闭，最终 P0=0/P1=0/P2=0/P3=0。
+未运行生产 SSH/deploy/systemd、生产 DB、credential、OKX、Attempt-10、RunId/worker/168h
+clock、LIVE、交易写侧、freeze/archive/tag。唯一 next action 为 review commit/push；exact-head
+CI green 前不授权部署。

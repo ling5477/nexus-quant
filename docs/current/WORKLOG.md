@@ -18003,3 +18003,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：生产 SSH/deploy/server/current/systemd/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag；Attempt-09 仍 REJECTED。
 - result：`IMPLEMENTED / JAR_INTEGRITY_BYPASS_CLOSED / FULL_STREAM_AND_CRC_VERIFIED / DISPOSABLE_LINUX_VALIDATION_PASSED / NEW_RC_READY_FOR_REVIEW / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`；P0=0/P1=0/P2=0/P3=0。
 - next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；仅允许独立 review 新 RC，不授权生产部署或 Attempt-10。
+
+## 2026-08-01 — GateW Attempt-10 release candidate stabilization review attempt-03
+
+- task：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；NQ-only、L级独立 release security/reproducibility/JAR integrity/governance review。
+- baseline：starting `HEAD == origin/dev == 32c58ba9...`；RC source `5a7e824e...`，CI `30632959743`；governance/control CI `30643903984` / `30644173342`；三者均 `completed / success / 10 jobs / bad=0`。
+- passed：manifest=`d82ae4fc...0c6`、bundle=`9feda6a8...add0`、`131/122/132`、closed set 0/0/0；122/122 JAR、37,551 entries、133,989,252 bytes、full-stream/CRC/duplicate/resource/tamper；Windows PS5.1/PS7 与 no-egress Linux exact build bytes identical；focused Maven 50 tests、offline package、governance checks通过。
+- P1 与 remediation：34-case permanent regression 首次 Windows PS5.1 exit 2 / `MANIFEST_HASH_CHANGED_ACROSS_PATHS`，随后未修复重跑 hash 仍漂移；RCA 为 fixture `CreateEntry(...)` 未固定 `LastWriteTime`。用户明确授权后，仅固定合成 ZIP entry UTC timestamp 并将 path B 移到原有 2 秒间隔后创建，不进入 runtime release。
+- revalidation：PS5.1/PS7/Linux pwsh7 各连续 3 次 34/34；Windows synthetic manifest/bundle 每次固定为 `d79bfaa...daed7` / `4eccc42c...ad74`，Linux每次固定为 `1c556eb...8d68c` / `b71a8f8f...4d1f2`。首次失败保留，P1 经修复关闭。
+- decision：`PASS / RC_REVIEW_ACCEPTED / FULL_STREAM_AND_CRC_VERIFIED / REPRODUCIBILITY_VERIFIED / READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0/P2=0/P3=0。
+- boundary：生产 SSH/deploy/server/current/systemd/DB/OKX/credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag。
+- next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-COMMIT-AND-PUSH`；只允许精确提交本轮 remediation/review，等待 exact-head CI 后再做 authority-sync。
