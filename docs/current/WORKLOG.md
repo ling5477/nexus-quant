@@ -17991,3 +17991,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：生产 SSH/deploy/server/current/systemd/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag；审查中未修复 RC。
 - result：`FAIL / GATEW_ATTEMPT_10_RC_REVIEW_REJECTED / RELEASE_CANDIDATE_REMEDIATION_REQUIRED`；P0=0/P1=1/P2=0/P3=0。
 - next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`；只允许最小修复 JAR duplicate-entry/CRC verifier、补回归、建立新的固定 RC 并重新独立审查；不授权生产部署或 Attempt-10。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization fix attempt-02
+
+- task：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`；NQ-only、L级 JAR integrity/full-stream CRC/resource limit/reproducible release/disposable Linux 供应链整改。
+- implementation：Commit A `5a7e824e7e3edc470c55614523a12a2a84286856` 以固定 64 KiB buffer 对每个 JAR entry 读取至 EOF并独立比对 central-directory CRC32；仅完全同名空目录 duplicate 允许计数，重复文件、非空目录、目录/文件、大小写/规范化冲突、路径穿越/绝对路径均拒绝；contract 固定 16,384 entries、256 MiB single entry、1 GiB total/JAR。
+- CI：Commit A exact-head run `30632959743 / completed / success / 10 of 10`。
+- validation：Windows PS5.1/PS7 AST=12/0，release=34 per engine，builder/installer、control/worker/fail-close=`70/59/8`，remediation/security=`32/12`，focused Maven=`50 tests / 0 failures / 0 errors / 1 skipped`，canonical offline package通过。Disposable Linux Ubuntu 24.04.1/pwsh7.5/JDK21/Git2.43/Maven3.9 no-egress 全链通过；route=0、`WindowStyle` patch=0、dirty=0。
+- release：Windows PS5.1/PS7 与 Linux exact build bytes identical；manifest=`d82ae4fc453b3fbf8ed2d0e8ce3767c1d280a615d596f2bdf8f82eacb35a30c6`；bundle=`9feda6a825af58d45c61572a4fc590f7ad231b80c45243562cf68390fa68add0`；131 artifacts / 122 JAR / 132 USTAR；37,551 entries / 133,989,252 bytes read；duplicate empty dirs=4；tamper精确拒绝。
+- governance/cleanup：lifecycle、task-evidence、next-action、authority、docs/current links、`git diff --check` 通过；两份 Windows RC temp、Linux temp 与专用 Docker volume 已精确清理。Link checker 首次遗漏 `-Roots` exit 1，RCA 后正确重跑通过。
+- boundary：生产 SSH/deploy/server/current/systemd/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag；Attempt-09 仍 REJECTED。
+- result：`IMPLEMENTED / JAR_INTEGRITY_BYPASS_CLOSED / FULL_STREAM_AND_CRC_VERIFIED / DISPOSABLE_LINUX_VALIDATION_PASSED / NEW_RC_READY_FOR_REVIEW / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`；P0=0/P1=0/P2=0/P3=0。
+- next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；仅允许独立 review 新 RC，不授权生产部署或 Attempt-10。

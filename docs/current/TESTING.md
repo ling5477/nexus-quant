@@ -12448,3 +12448,26 @@ P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB w
 已知 blocking finding：`scripts/gatew/verify-gatew-release.ps1:354-405` 只枚举 JAR entries，允许同名目录 entry 而不校验其 payload/metadata，且未读取 entry 数据以触发 CRC。该 P1 阻断 release candidate；必须最小修复后产生新 source commit 并重新独立审查。
 
 未运行：Linux Git/Maven-dependent builder、release regression、focused Maven、canonical exact build，以及生产 SSH/deploy/systemd、生产 DB read/write、真实 credential、OKX、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。不存在生产副作用；Attempt-10 继续 `NOT_CREATED / NOT_AUTHORIZED`。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization fix attempt-02
+
+当前结论：`IMPLEMENTED / JAR_INTEGRITY_BYPASS_CLOSED / FULL_STREAM_AND_CRC_VERIFIED / DISPOSABLE_LINUX_VALIDATION_PASSED / NEW_RC_READY_FOR_REVIEW / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| baseline / exact-head CI | PASS | starting `HEAD == origin/dev == 9269e58c...`，run `30630041855 / completed / success / 10 of 10`；Commit A `5a7e824e...` run `30632959743 / completed / success / 10 of 10` |
+| Windows AST / release regression | PASS | PS5.1/PS7：12 files / 0 errors；release regression 34/34 per engine |
+| Windows self-tests | PASS | builder/installer；control/worker/fail-close=`70/59/8`；remediation/security=`32/12`，双引擎通过 |
+| focused Maven / canonical package | PASS | 23 modules；50 tests / 0 failures / 0 errors / 1 skipped；offline `clean package` exit 0 |
+| real JAR full-stream verification | PASS | 131 artifacts / 122 JAR；37,551 entries / 133,989,252 bytes read to EOF；duplicate empty directories=4；duplicate files=0 |
+| permanent negative probes | PASS | 非空 duplicate directory、stale CRC、truncated/invalid compression、duplicate file、path/case/normalized collision、traversal/absolute path 与 3 类资源上限均 fail-closed |
+| Windows A/B exact builds | PASS | PS5.1/PS7 detached worktrees；manifest=`d82ae4fc...0c6`、bundle=`9feda6a8...add0`、131/122/132 与 descriptors bytes identical |
+| disposable Linux | PASS | Ubuntu 24.04.1 / pwsh 7.5.0 / Java+Javac 21.0.11 / Git 2.43.0 / Maven 3.9.12；route=0，AST=12/0，release=34，control/worker/fail-close=71/59/8，remediation/security=32/12，focused Maven 50 tests |
+| Linux exact build / root POSIX verifier | PASS | manifest/bundle/counts/entry bytes 与 Windows 完全一致；canonical USTAR 解包后 `posixVerified=true`；`WindowStyle` patch=0，dirty=0 |
+| canonical tamper | PASS | exit 2 / `BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH` |
+| governance / docs | PASS | lifecycle + task-evidence policy、next-action、current authority、docs/current links 与 `git diff --check` 通过；link checker 145 links / 0 errors / 1 个既有 warning |
+| cleanup | PASS | 两份 Windows RC temp、Linux temp 与专用 Docker volume 已精确删除；未删除其他 volume/image |
+
+编排 RCA：首个 Linux 候选镜像仅有 JRE、无 `javac`，完整 JDK 环境重建后 canonical Maven 通过；直接验证 builder staging root 因 host umask 不满足正式 POSIX 合同而拒绝，改为按正式合同解包 canonical USTAR 后 root/POSIX verifier 通过。未放宽代码或 hard gate。`check-doc-links.ps1` 首次遗漏 mandatory `-Roots` 参数 exit 1，以 `-Roots docs/current` 重跑通过；未把调用错误记为首轮通过。
+
+未运行：生产 SSH/deploy/systemd、生产 DB read/write、真实 credential、OKX、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。Attempt-09 保持 `REJECTED`；Attempt-10 保持 `NOT_CREATED / NOT_AUTHORIZED`。
