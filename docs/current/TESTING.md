@@ -12514,3 +12514,14 @@ P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB w
 未运行生产 SSH/deploy/systemd、生产 DB、credential、OKX、Attempt-10、RunId/worker/168h
 clock、LIVE、交易写侧、freeze/archive/tag。Review exact-head CI 已满足 deployment authorization
 前置；唯一 next action 为独立 `PREPARATION-AND-START`，本轮不执行。
+
+## 2026-08-01 — GateW Attempt-10 preparation authority consistency fix
+
+- task：`NQ-GATEW-ATTEMPT-10-PREPARATION-AUTHORITY-CONSISTENCY-FIX`；范围仅含跨文档 authority checker、永久回归、ROADMAP/evidence 路径合同和 current evidence ledger，生产访问为 0。
+- PowerShell 5.1：`check-current-authority.ps1` exit 0；`test-current-authority-next-action.ps1` exit 0。对齐正例 PASS；authorization、Attempt ID、production deployment、next action、缺失 ROADMAP Attempt 声明、未知授权 token 六类负例均 `FAIL_CLOSED`。
+- PowerShell 7：`pwsh -NoProfile -File scripts/docs/test-current-authority-next-action.ps1` exit 0，双引擎结果一致。
+- governance：`test-governance-workflow-lifecycle.ps1` exit 0，`GOVERNANCE_LIFECYCLE_REGRESSION` 与 `TASK_EVIDENCE_POLICY_VALID` 均 PASS；`test-gate-archive-manifest.ps1` exit 0，archive/task-evidence policy regression PASS。
+- docs links：`check-doc-links.ps1 -Roots docs/current` exit 0，checked=150、errors=0、warnings=1；warning 为既有 `docs/current/TESTING.md -> GATEJ_TEST_PLAN.md` 历史链接，不阻断本任务。
+- 已知失败/RCA：一次非正式内嵌 AST 命令因双层 PowerShell 引号展开失败；正式回归先后暴露并修复 PS5.1 no-BOM 非 ASCII fixture、错误输出污染成功流、lifecycle fixture 缺少 ROADMAP。最终所有正式命令均已重跑通过。
+- 未运行：Maven、frontend、Python 产品测试未运行，因为本轮不改产品代码；生产 SSH、OKX、生产 DB、deployment、Attempt-10、worker、168h clock 均未运行。
+- 结论：本地 `PASS / FULL_GOVERNANCE_REGRESSION_GREEN / READY_TO_COMMIT`；exact-head CI=`NOT_RUN`，提交后 CI 为生产前阻断条件。

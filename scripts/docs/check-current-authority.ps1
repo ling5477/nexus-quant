@@ -43,6 +43,71 @@ function Test-StatusPhrase {
     return $Content -match $pattern
 }
 
+function Read-AttemptDeploymentAuthority {
+    param([string] $Content, [string] $SourceName)
+
+    $pattern = '(?im)^\s*-\s*[^\r\n]*?Attempt-(?<attemptId>[1-9][0-9]*)\s*(?:=|\x3a|\uff1a)\s*`(?<attemptState>[A-Z_]+)\s*/\s*(?<authorizationState>[A-Z0-9_]+)`[^\r\n]*?production deployment\s*=\s*`(?<deploymentState>[A-Z_]+)`'
+    $matches = [regex]::Matches($Content, $pattern)
+    if ($matches.Count -ne 1) {
+        return [pscustomobject]@{
+            IsValid = $false
+            Reason = "field=attempt_declaration expected=1 actual=$($matches.Count)"
+        }
+    }
+
+    $match = $matches[0]
+    $snapshot = [pscustomobject]@{
+        IsValid = $true
+        Reason = ''
+        AttemptId = [int]$match.Groups['attemptId'].Value
+        AttemptState = $match.Groups['attemptState'].Value
+        AuthorizationState = $match.Groups['authorizationState'].Value
+        DeploymentState = $match.Groups['deploymentState'].Value
+    }
+
+    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED')
+    $allowedAuthorizationStates = @(
+        'AUTHORIZED', 'NOT_AUTHORIZED', 'PENDING_168H', 'FAILED', 'STOPPED',
+        'ACCEPTED', 'COMPLETED_168H'
+    )
+    $allowedDeploymentStates = @('NOT_STARTED', 'STARTED', 'STOPPED')
+    $invalidFields = New-Object System.Collections.Generic.List[string]
+    if ($allowedAttemptStates -cnotcontains $snapshot.AttemptState) {
+        [void]$invalidFields.Add("field=attempt_state value=$($snapshot.AttemptState)")
+    }
+    if ($allowedAuthorizationStates -cnotcontains $snapshot.AuthorizationState) {
+        [void]$invalidFields.Add("field=authorization_state value=$($snapshot.AuthorizationState)")
+    }
+    if ($allowedDeploymentStates -cnotcontains $snapshot.DeploymentState) {
+        [void]$invalidFields.Add("field=production_deployment value=$($snapshot.DeploymentState)")
+    }
+    if ($invalidFields.Count -gt 0) {
+        $snapshot.IsValid = $false
+        $snapshot.Reason = $invalidFields -join ','
+    }
+
+    return $snapshot
+}
+
+function Read-RoadmapNextAction {
+    param([string] $Content)
+
+    $pattern = '(?im)^\s*-\s*\u5F53\u524D\u552F\u4E00\u6CBB\u7406\u52A8\u4F5C\u662F\s*`(?<action>[^`\r\n]+)`'
+    $matches = [regex]::Matches($Content, $pattern)
+    if ($matches.Count -ne 1) {
+        return [pscustomobject]@{
+            IsValid = $false
+            Reason = "field=next_action expected=1 actual=$($matches.Count)"
+            Value = ''
+        }
+    }
+    return [pscustomobject]@{
+        IsValid = $true
+        Reason = ''
+        Value = $matches[0].Groups['action'].Value
+    }
+}
+
 function Get-CurrentNextActionDeclarations {
     param([string] $RootPath)
 
@@ -218,6 +283,42 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             }
 
             $statusBody = [regex]::Replace($statusContent, '(?s)<!--\s*nq-current-authority:start.*?nq-current-authority:end\s*-->', '')
+            $resolvedRoadmap = Resolve-RepoPath $RoadmapPath
+            if (-not (Test-Path -LiteralPath $resolvedRoadmap -PathType Leaf)) {
+                Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP field=file path=$RoadmapPath"
+            } else {
+                $roadmapContent = Read-Utf8File $resolvedRoadmap
+                $statusAttemptAuthority = Read-AttemptDeploymentAuthority $statusBody 'STATUS'
+                $roadmapAttemptAuthority = Read-AttemptDeploymentAuthority $roadmapContent 'ROADMAP'
+                if (-not $statusAttemptAuthority.IsValid) {
+                    Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=STATUS $($statusAttemptAuthority.Reason)"
+                }
+                if (-not $roadmapAttemptAuthority.IsValid) {
+                    Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP $($roadmapAttemptAuthority.Reason)"
+                }
+                if ($statusAttemptAuthority.IsValid -and $roadmapAttemptAuthority.IsValid) {
+                    foreach ($field in @('AttemptId', 'AttemptState', 'AuthorizationState', 'DeploymentState')) {
+                        if (-not [string]::Equals(
+                                [string]$statusAttemptAuthority.$field,
+                                [string]$roadmapAttemptAuthority.$field,
+                                [System.StringComparison]::Ordinal)) {
+                            Add-AuthorityError ("CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH field={0} status={1} roadmap={2}" -f
+                                $field, $statusAttemptAuthority.$field, $roadmapAttemptAuthority.$field)
+                        }
+                    }
+                }
+
+                $roadmapNextAction = Read-RoadmapNextAction $roadmapContent
+                if (-not $roadmapNextAction.IsValid) {
+                    Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP $($roadmapNextAction.Reason)"
+                } elseif (
+                    -not [string]::Equals(
+                        $authority.next_action,
+                        $roadmapNextAction.Value,
+                        [System.StringComparison]::Ordinal)) {
+                    Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH field=next_action status=$($authority.next_action) roadmap=$($roadmapNextAction.Value)"
+                }
+            }
             if (-not (Test-StatusPhrase $statusBody $authority.last_frozen_gate 'FROZEN\s*/\s*ACCEPTED\s*/\s*TAGGED')) {
                 Add-AuthorityError "LAST_FROZEN_GATE_BODY_CONTRADICTION gate=$($authority.last_frozen_gate)"
             }

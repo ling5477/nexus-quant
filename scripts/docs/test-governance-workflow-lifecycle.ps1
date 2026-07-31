@@ -79,7 +79,10 @@ function Write-AuthorityFixture {
         [string]$Root,[string]$Status,[string]$Action,[string]$Commit,[string]$Ci,
         [string]$ActiveStatus='IN_PROGRESS|NOT_FROZEN',
         [string]$AcceptedBatch='GateV-FREEZE',
-        [string]$WorkBatch='GateW-FIXTURE'
+        [string]$WorkBatch='GateW-FIXTURE',
+        [string]$AttemptState='NOT_CREATED',
+        [string]$AuthorizationState='AUTHORIZED',
+        [string]$DeploymentState='NOT_STARTED'
     )
     $display = switch ($Status) {
         'NOT_STARTED' { 'NOT STARTED' }
@@ -131,7 +134,21 @@ nq-current-authority:end -->
 - ${WorkBatch}: $display.
 - Next action: $Action.
 "@
+    $attemptLine = '- Attempt-10: `{0} / {1}`; production deployment=`{2}`.' -f `
+        $AttemptState,$AuthorizationState,$DeploymentState
+    $content = $content.TrimEnd() + "`n$attemptLine`n"
     Write-Utf8File (Join-Path $Root 'docs/current/STATUS.md') $content
+
+    $currentUniqueGovernanceActionIs = [regex]::Unescape(
+        '\u5F53\u524D\u552F\u4E00\u6CBB\u7406\u52A8\u4F5C\u662F')
+    $roadmapContent = @(
+        '# Fixture Roadmap',
+        '',
+        ('- Attempt-10=`{0} / {1}`; production deployment=`{2}`.' -f
+            $AttemptState,$AuthorizationState,$DeploymentState),
+        ('- {0} `{1}`; fixture.' -f $currentUniqueGovernanceActionIs,$Action)
+    ) -join "`n"
+    Write-Utf8File (Join-Path $Root 'docs/current/ROADMAP.md') $roadmapContent
 }
 
 try {

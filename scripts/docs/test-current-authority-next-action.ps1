@@ -72,6 +72,55 @@ if (-not (Test-GovernanceNextActionForWorkBatch `
         $contract 'NOT_STARTED' $canonicalAttempt09WorkBatch $canonicalAttempt09Start)) {
     throw 'CANONICAL_ATTEMPT_09_START_REJECTED'
 }
+
+function Assert-CrossDocumentAuthorityCase {
+    param(
+        [string] $Name,
+        [string] $StatusContent,
+        [string] $RoadmapContent,
+        [bool] $ExpectSuccess
+    )
+
+    $caseRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nq-cross-doc-authority-{0}-{1}" -f $Name, [guid]::NewGuid().ToString('N'))
+    $currentDocsRoot = Join-Path $caseRoot 'docs/current'
+    [System.IO.Directory]::CreateDirectory($currentDocsRoot) | Out-Null
+    try {
+        Write-Utf8File (Join-Path $currentDocsRoot 'STATUS.md') $StatusContent
+        Write-Utf8File (Join-Path $currentDocsRoot 'ROADMAP.md') $RoadmapContent
+        $readmeContent = @(
+            '# Current Docs',
+            '',
+            'This test fixture does not duplicate the current next action.'
+        ) -join "`n"
+        Write-Utf8File (Join-Path $currentDocsRoot 'README.md') $readmeContent
+
+        $shellPath = (Get-Process -Id $PID).Path
+        $checkerOutput = @(& $shellPath -NoProfile -ExecutionPolicy Bypass `
+            -File $script:authorityChecker `
+            -StatusPath (Join-Path $currentDocsRoot 'STATUS.md') `
+            -RoadmapPath (Join-Path $currentDocsRoot 'ROADMAP.md') `
+            -CurrentDocsPath $currentDocsRoot 2>&1)
+        $exitCode = $LASTEXITCODE
+
+        if ($ExpectSuccess -and $exitCode -ne 0) {
+            throw "CROSS_DOCUMENT_CASE_UNEXPECTED_FAILURE case=$Name output=$($checkerOutput -join ' | ')"
+        }
+        if (-not $ExpectSuccess -and $exitCode -eq 0) {
+            throw "CROSS_DOCUMENT_CASE_UNEXPECTED_PASS case=$Name output=$($checkerOutput -join ' | ')"
+        }
+        if (-not $ExpectSuccess -and
+            -not ($checkerOutput -match 'CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH')) {
+            throw "CROSS_DOCUMENT_CASE_MISSING_CONFLICT case=$Name output=$($checkerOutput -join ' | ')"
+        }
+
+        $result = if ($ExpectSuccess) { 'PASS' } else { 'FAIL_CLOSED' }
+        Write-Output "PASS cross-document-case=$Name result=$result"
+    } finally {
+        if (Test-Path -LiteralPath $caseRoot) {
+            Remove-Item -LiteralPath $caseRoot -Recurse -Force
+        }
+    }
+}
 Write-Output 'PASS canonical-attempt-09-start work-batch-match=true'
 
 $invalidAttempt09StartActions = @(
@@ -610,6 +659,49 @@ if ($null -eq $currentAuthority -or
     throw 'CURRENT_AUTHORITY_FIXTURE_INVALID'
 }
 $currentNextAction = [string]$currentAuthority.next_action
+
+$canonicalRoadmapAttemptClause = 'Attempt-10=`NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`'
+if (-not $script:roadmapFixture.Contains($canonicalRoadmapAttemptClause)) {
+    throw 'CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID'
+}
+Assert-CrossDocumentAuthorityCase `
+    'attempt-10-authorized-aligned' $script:statusFixture $script:roadmapFixture $true
+
+$authorizationMismatchRoadmap = $script:roadmapFixture.Replace(
+    $canonicalRoadmapAttemptClause,
+    'Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`; production deployment=`NOT_STARTED`')
+Assert-CrossDocumentAuthorityCase `
+    'authorization-mismatch' $script:statusFixture $authorizationMismatchRoadmap $false
+
+$attemptIdMismatchRoadmap = $script:roadmapFixture.Replace(
+    $canonicalRoadmapAttemptClause,
+    'Attempt-11=`NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`')
+Assert-CrossDocumentAuthorityCase `
+    'attempt-id-mismatch' $script:statusFixture $attemptIdMismatchRoadmap $false
+
+$deploymentMismatchRoadmap = $script:roadmapFixture.Replace(
+    $canonicalRoadmapAttemptClause,
+    'Attempt-10=`NOT_CREATED / AUTHORIZED`; production deployment=`STARTED`')
+Assert-CrossDocumentAuthorityCase `
+    'production-deployment-mismatch' $script:statusFixture $deploymentMismatchRoadmap $false
+
+$nextActionMismatchRoadmap = $script:roadmapFixture.Replace(
+    $currentNextAction,
+    'NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE')
+Assert-CrossDocumentAuthorityCase `
+    'next-action-mismatch' $script:statusFixture $nextActionMismatchRoadmap $false
+
+$missingAttemptRoadmap = $script:roadmapFixture.Replace(
+    $canonicalRoadmapAttemptClause,
+    'Attempt-10 authority declaration missing')
+Assert-CrossDocumentAuthorityCase `
+    'roadmap-attempt-missing' $script:statusFixture $missingAttemptRoadmap $false
+
+$unknownAuthorizationRoadmap = $script:roadmapFixture.Replace(
+    $canonicalRoadmapAttemptClause,
+    'Attempt-10=`NOT_CREATED / MAYBE_AUTHORIZED`; production deployment=`NOT_STARTED`')
+Assert-CrossDocumentAuthorityCase `
+    'unknown-authorization-token' $script:statusFixture $unknownAuthorizationRoadmap $false
 
 $currentUniqueAllowedActionIs = [regex]::Unescape('\u5F53\u524D\u552F\u4E00\u5141\u8BB8\u52A8\u4F5C\u662F')
 $canonicalReadme = @(

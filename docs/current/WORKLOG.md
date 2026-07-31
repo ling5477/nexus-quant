@@ -18015,3 +18015,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - decision：`PASS / RC_REVIEW_ACCEPTED / FULL_STREAM_AND_CRC_VERIFIED / REPRODUCIBILITY_VERIFIED / ACCEPTED / CI_GREEN / DEPLOYMENT_AUTHORIZED / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_CREATED`；P0=0/P1=0/P2=0/P3=0。
 - boundary：生产 SSH/deploy/server/current/systemd/DB/OKX/credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag。
 - next：`NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`；仅下一独立任务可按 fixed runtime event order 执行受控生产 preflight/deployment/start。本轮不执行生产动作。
+
+## 2026-08-01 — GateW Attempt-10 preparation authority consistency fix
+
+- task：`NQ-GATEW-ATTEMPT-10-PREPARATION-AUTHORITY-CONSISTENCY-FIX`；NQ-only、current authority reconciliation / evidence attempt path authorization / permanent regression。
+- root cause：`check-current-authority.ps1` 虽声明 `$RoadmapPath`，此前未读取并比较 STATUS/ROADMAP 的 Attempt ID、created/authorization、production deployment；下一生产任务还错误复用了已提交的历史 `attempt-01.md`。
+- implementation：ROADMAP 对齐 Attempt-10=`NOT_CREATED / AUTHORIZED`、deployment=`NOT_STARTED`；README 固定历史 attempt-01 不可变并授权真实生产新建 attempt-02；checker 增加单一声明、known-token、ordinal exact comparison 和 `CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH` fail-closed；永久回归覆盖 1 正例与 6 负例。
+- validation：PS5.1/PS7 next-action/cross-document PASS；authority PASS；完整 lifecycle 与两套 task-evidence policy PASS；docs/current links 150/0 errors/1 既有 warning；schema 1.3.0、contract/library、canonical lifecycle 未修改。
+- boundary：production SSH/private key/credential/OKX/生产 DB/deployment/systemd/current/Attempt-10/RunId/worker/168h clock/LIVE/交易写侧=`0`；未触达 freeze/archive/tag。
+- result：`PASS / CURRENT_AUTHORITY_RECONCILED / ROADMAP_STATUS_ALIGNED / ATTEMPT_02_EVIDENCE_PATH_AUTHORIZED / CHECKER_COVERAGE_FIXED / FULL_GOVERNANCE_REGRESSION_GREEN / READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`。
+- next：提交并推送 `fix(governance): reconcile Attempt-10 deployment authority`，取得 exact-head 10/10 CI GREEN 后，唯一下一动作仍为 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`。
