@@ -7,7 +7,9 @@ param(
     [string]$SourceTreeMode = 'CANDIDATE',
 
     [string]$ExpectedCommit,
-    [string]$OutputRoot
+    [string]$OutputRoot,
+
+    [switch]$DetachedWorktreeBuild
 )
 
 Set-StrictMode -Version Latest
@@ -18,6 +20,8 @@ $script:RepoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $script:BackendPom = Join-Path $script:RepoRoot 'backend/pom.xml'
 $script:ArtifactRecords = [System.Collections.ArrayList]::new()
 $script:ReleaseContractPath = Join-Path $PSScriptRoot 'gatew-release-contract.psm1'
+$script:RequiredJavaMajor = 21
+$script:MavenCommand = 'mvn --offline --quiet -f backend/pom.xml -pl nq-app -am -DskipTests clean package'
 
 Import-Module $script:ReleaseContractPath -Force -DisableNameChecking
 
@@ -112,10 +116,85 @@ function Assert-ExactCommitSource
     {
         throw 'BLOCKED / EXACT_COMMIT_WORKTREE_NOT_CLEAN'
     }
-    if (-not [string]::IsNullOrWhiteSpace($ExpectedCommit) -and
-            $Commit -cne $ExpectedCommit.ToLowerInvariant())
+    Assert-ExpectedSourceCommit $Commit $ExpectedCommit
+}
+
+function Assert-ExpectedSourceCommit
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$ActualCommit,
+        [AllowEmptyString()][string]$Expected
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($Expected) -and
+            $ActualCommit -cne $Expected.ToLowerInvariant())
     {
         throw 'BLOCKED / RELEASE_SOURCE_COMMIT_MISMATCH'
+    }
+}
+
+function Assert-NoPreexistingBuildTargets
+{
+    param([Parameter(Mandatory = $true)][string]$BackendRoot)
+
+    if (@(Get-ChildItem -LiteralPath $BackendRoot -Directory -Recurse -Filter target).Count -ne 0)
+    {
+        throw 'BLOCKED / RELEASE_BUILD_TARGET_PREEXISTS'
+    }
+}
+
+function Get-BuildOutputDescriptor
+{
+    param([Parameter(Mandatory = $true)][string]$BackendRoot)
+
+    $resolvedRoot = [IO.Path]::GetFullPath($BackendRoot).TrimEnd(
+            [IO.Path]::DirectorySeparatorChar,
+            [IO.Path]::AltDirectorySeparatorChar
+    )
+    $filesByRelativePath = @{ }
+    foreach ($targetDirectory in @(
+        Get-ChildItem -LiteralPath $resolvedRoot -Directory -Recurse -Filter target
+    ))
+    {
+        foreach ($file in @(Get-ChildItem -LiteralPath $targetDirectory.FullName -File -Recurse))
+        {
+            $relativePath = $file.FullName.Substring($resolvedRoot.Length).
+                    TrimStart('/', '\').Replace('\', '/')
+            if ($filesByRelativePath.ContainsKey($relativePath))
+            {
+                throw 'FAIL / RELEASE_BUILD_OUTPUT_MUTATED'
+            }
+            $filesByRelativePath[$relativePath] = $file
+        }
+    }
+    if ($filesByRelativePath.Count -eq 0)
+    {
+        throw 'BLOCKED / RELEASE_LAUNCHER_CLASSES_MISSING'
+    }
+    $descriptor = [Text.StringBuilder]::new()
+    foreach ($relativePath in @(Sort-GateWOrdinalStrings @($filesByRelativePath.Keys)))
+    {
+        $file = $filesByRelativePath[$relativePath]
+        [void]$descriptor.Append($relativePath)
+        [void]$descriptor.Append('|')
+        [void]$descriptor.Append([long]$file.Length)
+        [void]$descriptor.Append('|')
+        [void]$descriptor.Append((Get-Sha256File $file.FullName))
+        [void]$descriptor.Append("`n")
+    }
+    return Get-Sha256Text $descriptor.ToString()
+}
+
+function Assert-BuildOutputUnchanged
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$BackendRoot,
+        [Parameter(Mandatory = $true)][string]$ExpectedDescriptor
+    )
+
+    if ((Get-BuildOutputDescriptor $BackendRoot) -cne $ExpectedDescriptor)
+    {
+        throw 'FAIL / RELEASE_BUILD_OUTPUT_MUTATED'
     }
 }
 
@@ -257,7 +336,7 @@ function New-DeterministicJar
     )
 
     $fileRecords = @(
-        Get-ChildItem -LiteralPath $SourceDirectory -File -Recurse |
+    Get-ChildItem -LiteralPath $SourceDirectory -File -Recurse |
             Where-Object {
                 $name = $_.Name
                 @($IncludeNamePatterns | Where-Object { $name -like $_ }).Count -gt 0
@@ -265,7 +344,7 @@ function New-DeterministicJar
             ForEach-Object {
                 [pscustomobject]@{
                     RelativePath = $_.FullName.Substring($SourceDirectory.Length).
-                        TrimStart('/', '\').Replace('\', '/')
+                            TrimStart('/', '\').Replace('\', '/')
                     File = $_
                 }
             }
@@ -315,10 +394,11 @@ function Build-LauncherArtifacts
 {
     param([Parameter(Mandatory = $true)][string]$StageRoot)
 
+    $backendRoot = Split-Path -Parent $script:BackendPom
     $maven = (Get-Command mvn -ErrorAction Stop).Source
     Invoke-Native $maven @(
         '--offline', '--quiet', '-f', $script:BackendPom, '-pl', 'nq-app', '-am',
-        '-DskipTests', 'install'
+        '-DskipTests', 'clean', 'package'
     ) | Out-Null
     $classpathPath = Join-Path $script:RepoRoot 'backend/nq-app/target/gatew-release-classpath.txt'
     if (Test-Path -LiteralPath $classpathPath)
@@ -334,6 +414,7 @@ function Build-LauncherArtifacts
     {
         throw 'FAIL / RELEASE_CLASSPATH_BUILD_FAILED'
     }
+    $buildOutputDescriptor = Get-BuildOutputDescriptor $backendRoot
 
     $modules = @(Get-BackendModules)
     $moduleIndex = 0
@@ -363,9 +444,9 @@ function Build-LauncherArtifacts
     Add-ArtifactRecord $StageRoot $testSupportRelative '0644' 'BINARY' $false 'launcher-test-support'
 
     $classpathCandidates = @(
-        ((Get-Content -LiteralPath $classpathPath -Raw).Trim() -split
-                [regex]::Escape([IO.Path]::PathSeparator)) |
-                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    ((Get-Content -LiteralPath $classpathPath -Raw).Trim() -split
+            [regex]::Escape([IO.Path]::PathSeparator)) |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
     )
     $classpathEntries = @()
     foreach ($entry in @(Sort-GateWOrdinalStrings $classpathCandidates))
@@ -403,6 +484,7 @@ function Build-LauncherArtifacts
     {
         throw 'BLOCKED / RELEASE_RUNTIME_LIBRARY_INVALID'
     }
+    Assert-BuildOutputUnchanged $backendRoot $buildOutputDescriptor
 }
 
 function Add-TextArtifact
@@ -476,10 +558,19 @@ function Build-ReleaseBundle
     $releaseId = $head
     if ($SourceTreeMode -eq 'EXACT_COMMIT')
     {
-        Assert-ExactCommitSource $head
+        if (-not $DetachedWorktreeBuild)
+        {
+            Assert-ExactCommitSource $head
+            return Invoke-ExactCommitDetachedBuild $head
+        }
+        Assert-DetachedExactCommitSource $head
     }
     else
     {
+        if ($DetachedWorktreeBuild)
+        {
+            throw 'BLOCKED / RELEASE_DETACHED_BUILD_MODE_INVALID'
+        }
         $baseCommit = $head
         $candidateDiffSha256 = Get-CandidateDiffSha256
         $releaseId = 'candidate-{0}-{1}' -f $head.Substring(0, 12),
@@ -529,9 +620,14 @@ function Build-ReleaseBundle
             'systemd/nq-gatew-soak-failclose@.service' 'systemd-failclose-unit' $releaseExecutionRoot
         Build-LauncherArtifacts $stageRoot
 
+        $actualJavaMajor = Get-GateWJavaRuntimeMajor
+        if ($actualJavaMajor -ne $script:RequiredJavaMajor)
+        {
+            throw 'BLOCKED / JAVA_MAJOR_VERSION_MISMATCH'
+        }
         $artifacts = @(Sort-GateWArtifactsOrdinal @($script:ArtifactRecords))
         $manifest = [ordered]@{
-            schemaVersion = 'nq-gatew-release-v2'
+            schemaVersion = 'nq-gatew-release-v3'
             releaseId = $releaseId
             sourceCommit = $head
             sourceCommitTimestamp = Get-SourceCommitTimestamp $head
@@ -541,8 +637,13 @@ function Build-ReleaseBundle
             requiredRuntime = [ordered]@{
                 os = 'linux'
                 powershellMajor = 7
-                javaMajor = 17
+                javaMajor = $script:RequiredJavaMajor
                 systemd = $true
+            }
+            buildProvenance = [ordered]@{
+                mavenCommand = $script:MavenCommand
+                javaMajor = $actualJavaMajor
+                cleanDetachedWorktree = ($SourceTreeMode -eq 'EXACT_COMMIT')
             }
             lineEndingPolicy = 'LF'
             artifacts = $artifacts
@@ -577,6 +678,11 @@ function Build-ReleaseBundle
             bundleSha256 = $bundleSha256
             manifestSha256 = [string]$verification.manifestSha256
             artifactCount = [int]$verification.artifactCount
+            jarCount = [int]$verification.jarCount
+            duplicateDirectoryEntries = [int]$verification.duplicateDirectoryEntries
+            requiredJavaMajor = $script:RequiredJavaMajor
+            actualJavaMajor = $actualJavaMajor
+            mavenCommand = $script:MavenCommand
         }
     }
     finally
@@ -603,6 +709,7 @@ function Invoke-BuilderSelfTest
     $jarPath = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '.jar')
     $crcSource = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '-crc-source')
     $crcJarPath = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '-crc.jar')
+    $pollutionRoot = Join-Path $testRoot ([Guid]::NewGuid().ToString('N') + '-pollution')
     try
     {
         Write-LfText $testPath "alpha`r`nbeta`r"
@@ -676,6 +783,97 @@ function Invoke-BuilderSelfTest
         {
             throw 'source commit timestamp self-test failed'
         }
+        foreach ($versionCase in @(
+            @{ Text = 'openjdk version "21.0.12" 2026-07-15'; Major = 21 },
+            @{ Text = 'java version "17.0.15"'; Major = 17 },
+            @{ Text = 'openjdk version "20.0.2"'; Major = 20 },
+            @{ Text = 'openjdk version "22"'; Major = 22 }
+        ))
+        {
+            if ((ConvertFrom-GateWJavaVersionText ([string]$versionCase.Text)) -ne
+                    [int]$versionCase.Major)
+            {
+                throw 'Java version parser self-test failed'
+            }
+        }
+        $unreadableRejected = $false
+        try
+        {
+            ConvertFrom-GateWJavaVersionText 'unparseable runtime output' | Out-Null
+        }
+        catch
+        {
+            $unreadableRejected = $_.Exception.Message -eq 'BLOCKED / JAVA_VERSION_UNREADABLE'
+        }
+        if (-not $unreadableRejected)
+        {
+            throw 'Java unreadable version self-test failed'
+        }
+        $commitMismatchRejected = $false
+        try
+        {
+            Assert-ExpectedSourceCommit ('a' * 40) ('b' * 40)
+        }
+        catch
+        {
+            $commitMismatchRejected =
+            $_.Exception.Message -eq 'BLOCKED / RELEASE_SOURCE_COMMIT_MISMATCH'
+        }
+        if (-not $commitMismatchRejected)
+        {
+            throw 'different source commit self-test failed'
+        }
+        $pollutionBackend = Join-Path $pollutionRoot 'backend'
+        $classesRoot = Join-Path $pollutionBackend 'nq-app/target/classes'
+        Write-LfText (Join-Path $classesRoot 'Injected.class') 'forged-class'
+        $preexistingClassesRejected = $false
+        try
+        {
+            Assert-NoPreexistingBuildTargets $pollutionBackend
+        }
+        catch
+        {
+            $preexistingClassesRejected =
+            $_.Exception.Message -eq 'BLOCKED / RELEASE_BUILD_TARGET_PREEXISTS'
+        }
+        if (-not $preexistingClassesRejected)
+        {
+            throw 'pre-existing target/classes self-test failed'
+        }
+        Remove-Item -LiteralPath (Join-Path $pollutionBackend 'nq-app/target') -Recurse -Force
+        Write-LfText (Join-Path $pollutionBackend 'nq-app/target/nq-app-old.jar') 'old-jar'
+        $preexistingJarRejected = $false
+        try
+        {
+            Assert-NoPreexistingBuildTargets $pollutionBackend
+        }
+        catch
+        {
+            $preexistingJarRejected =
+            $_.Exception.Message -eq 'BLOCKED / RELEASE_BUILD_TARGET_PREEXISTS'
+        }
+        if (-not $preexistingJarRejected)
+        {
+            throw 'pre-existing old JAR self-test failed'
+        }
+        Remove-Item -LiteralPath (Join-Path $pollutionBackend 'nq-app/target') -Recurse -Force
+        Write-LfText (Join-Path $classesRoot 'Canonical.class') 'canonical-class'
+        $cleanDescriptor = Get-BuildOutputDescriptor $pollutionBackend
+        Write-LfText (Join-Path $classesRoot 'InjectedAfterBuild.class') 'forged-after-build'
+        $postBuildMutationRejected = $false
+        try
+        {
+            Assert-BuildOutputUnchanged $pollutionBackend $cleanDescriptor
+        }
+        catch
+        {
+            $postBuildMutationRejected =
+            $_.Exception.Message -eq 'FAIL / RELEASE_BUILD_OUTPUT_MUTATED'
+        }
+        if (-not $postBuildMutationRejected)
+        {
+            throw 'post-build extra class self-test failed'
+        }
         return [pscustomobject]@{
             decision = 'PASS / RELEASE_BUNDLE_BUILDER_SELF_TEST'
             lfNormalization = 'PASS'
@@ -685,6 +883,9 @@ function Invoke-BuilderSelfTest
             crc32StandardVector = 'PASS'
             unitReleaseBinding = 'PASS'
             deterministicSourceCommitTimestamp = 'PASS'
+            javaVersionContract = 'PASS / 17_20_21_22_AND_UNREADABLE'
+            cleanBuildPollutionPolicy =
+            'PASS / TARGET_CLASSES_OLD_JAR_POST_BUILD_CLASS_AND_COMMIT_MISMATCH'
             credentialAccessed = $false
             networkCalled = $false
         }
@@ -710,6 +911,90 @@ function Invoke-BuilderSelfTest
         if (Test-Path -LiteralPath $crcJarPath)
         {
             Remove-Item -LiteralPath $crcJarPath -Force
+        }
+        if (Test-Path -LiteralPath $pollutionRoot)
+        {
+            Remove-Item -LiteralPath $pollutionRoot -Recurse -Force
+        }
+    }
+}
+
+function Assert-DetachedExactCommitSource
+{
+    param([Parameter(Mandatory = $true)][string]$Commit)
+
+    Assert-ExactCommitSource $Commit
+    $null = & git -C $script:RepoRoot symbolic-ref -q HEAD 2> $null
+    if ($LASTEXITCODE -eq 0)
+    {
+        throw 'BLOCKED / RELEASE_BUILD_NOT_DETACHED'
+    }
+    Assert-NoPreexistingBuildTargets (Join-Path $script:RepoRoot 'backend')
+}
+
+function Invoke-ExactCommitDetachedBuild
+{
+    param([Parameter(Mandatory = $true)][string]$Commit)
+
+    $effectiveOutputRoot = if ( [string]::IsNullOrWhiteSpace($OutputRoot))
+    {
+        Join-Path $script:RepoRoot 'target/gatew-release-bundles'
+    }
+    else
+    {
+        [IO.Path]::GetFullPath($OutputRoot)
+    }
+    $tempBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+    $worktreeRoot = Join-Path $tempBase ('nq-gatew-release-build-' + [Guid]::NewGuid().ToString('N'))
+    $registered = $false
+    try
+    {
+        Invoke-Native (Get-Command git -ErrorAction Stop).Source @(
+            '-C', $script:RepoRoot, 'worktree', 'add', '--detach', $worktreeRoot, $Commit
+        ) | Out-Null
+        $registered = $true
+        $childBuilder = Join-Path $worktreeRoot 'scripts/gatew/build-gatew-release-bundle.ps1'
+        $engine = (Get-Process -Id $PID).Path
+        $childOutput = @(& $engine -NoProfile -File $childBuilder `
+            -Action build -SourceTreeMode EXACT_COMMIT -ExpectedCommit $Commit `
+            -OutputRoot $effectiveOutputRoot -DetachedWorktreeBuild 2>&1)
+        $childExitCode = [int]$LASTEXITCODE
+        $childText = ($childOutput -join "`n")
+        try
+        {
+            $result = $childText | ConvertFrom-Json
+        }
+        catch
+        {
+            throw 'FAIL / RELEASE_DETACHED_BUILD_FAILED'
+        }
+        if ($childExitCode -ne 0)
+        {
+            $decision = [string]$result.decision
+            if ($decision -match '^(BLOCKED|FAIL) / [A-Z0-9_]+$')
+            {
+                throw $decision
+            }
+            throw 'FAIL / RELEASE_DETACHED_BUILD_FAILED'
+        }
+        $result | Add-Member -NotePropertyName detachedWorktree `
+            -NotePropertyValue 'CREATED_AND_REMOVED'
+        return $result
+    }
+    finally
+    {
+        if ($registered)
+        {
+            $null = & git -C $script:RepoRoot worktree remove --force $worktreeRoot 2> $null
+        }
+        if (Test-Path -LiteralPath $worktreeRoot)
+        {
+            $resolved = [IO.Path]::GetFullPath($worktreeRoot)
+            if (-not $resolved.StartsWith($tempBase, [StringComparison]::OrdinalIgnoreCase))
+            {
+                throw 'FAIL / RELEASE_WORKTREE_CLEANUP_PATH_INVALID'
+            }
+            Remove-Item -LiteralPath $resolved -Recurse -Force
         }
     }
 }

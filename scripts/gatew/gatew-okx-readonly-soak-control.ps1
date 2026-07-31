@@ -88,6 +88,10 @@ $script:LinuxRuntimeUser = 'nqgatew'
 $script:LinuxRuntimeGroup = 'nqgatew'
 $script:PowerShellPath = '/usr/bin/pwsh'
 $script:LinuxJavaPath = '/usr/bin/java'
+$script:RequiredJavaMajor = 21
+$script:JavaVersionTimeoutSeconds = 10
+$script:JavaProcessTimeoutSeconds = 30
+$script:JavaTerminationWaitSeconds = 5
 $script:SystemdCredsPath = '/usr/bin/systemd-creds'
 $script:DatabasePasswordCredentialName = 'db-password'
 $script:SystemctlPath = '/usr/bin/systemctl'
@@ -148,8 +152,8 @@ function Assert-RunId
 function New-RunId
 {
     return 'gatew-soak-{0}-{1}' -f `
-        (Get-UtcNow).ToString('yyyyMMddTHHmmssZ'),   `
-          ([Guid]::NewGuid().ToString('N').Substring(0, 8))
+        (Get-UtcNow).ToString('yyyyMMddTHHmmssZ'),    `
+           ([Guid]::NewGuid().ToString('N').Substring(0, 8))
 }
 
 function Assert-RootLinux
@@ -326,7 +330,7 @@ function ConvertFrom-JsonPreservingTimestamps
     param([Parameter(Mandatory = $true)][string]$Json)
 
     $parameters = @{ }
-    if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind'))
+    if ( (Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind'))
     {
         $parameters.DateKind = 'String'
     }
@@ -822,9 +826,9 @@ function Get-PreCreateDatabaseUrl
     param([Parameter(Mandatory = $true)]$Descriptor)
 
     return 'jdbc:postgresql://{0}:{1}/{2}' -f
-        [string]$Descriptor.databaseHost,
-        [long]$Descriptor.databasePort,
-        [string]$Descriptor.databaseName
+    [string]$Descriptor.databaseHost,
+    [long]$Descriptor.databasePort,
+    [string]$Descriptor.databaseName
 }
 
 function Get-PreCreateLauncherClassPath
@@ -991,17 +995,17 @@ function New-PreCreateResult
         $blockerCodes = @($FallbackBlockerCodes)
     }
     $ready = $available -and
-        [bool]$Readback.postgresReachable -and [bool]$Readback.managementHealthy -and
-        [bool]$Readback.killSwitchEngaged -and [bool]$Readback.credentialConfigured -and
-        [long]$Readback.activeCredentialCount -eq 1 -and
-        [string]$Readback.credentialType -eq 'OKX_API_V5' -and
-        [string]$Readback.credentialLocalStatus -eq 'ACTIVE' -and
-        [bool]$Readback.permissionFactPresent -and [bool]$Readback.permissionFactFresh -and
-        [string]$Readback.readPermissionStatus -eq 'VERIFIED' -and
-        [bool]$Readback.tradePermissionExpectedDisabled -and
-        [bool]$Readback.withdrawPermissionExpectedDisabled -and
-        [string]$Readback.ipAllowlistStatus -eq 'VERIFIED' -and
-        $blockerCodes.Count -eq 0
+            [bool]$Readback.postgresReachable -and [bool]$Readback.managementHealthy -and
+            [bool]$Readback.killSwitchEngaged -and [bool]$Readback.credentialConfigured -and
+            [long]$Readback.activeCredentialCount -eq 1 -and
+            [string]$Readback.credentialType -eq 'OKX_API_V5' -and
+            [string]$Readback.credentialLocalStatus -eq 'ACTIVE' -and
+            [bool]$Readback.permissionFactPresent -and [bool]$Readback.permissionFactFresh -and
+            [string]$Readback.readPermissionStatus -eq 'VERIFIED' -and
+            [bool]$Readback.tradePermissionExpectedDisabled -and
+            [bool]$Readback.withdrawPermissionExpectedDisabled -and
+            [string]$Readback.ipAllowlistStatus -eq 'VERIFIED' -and
+            $blockerCodes.Count -eq 0
     return [pscustomobject][ordered]@{
         schemaVersion = 'gatew-precreate-prerequisite-result-v1'
         checkedAt = $CheckedAt
@@ -1119,7 +1123,7 @@ function New-PreCreateResult
         }
         else
         {
-            "gatew-precreate-$( [Guid]::NewGuid().ToString('N') )"
+            "gatew-precreate-$([Guid]::NewGuid().ToString('N') )"
         }
         readyForAttemptCreation = $ready
         diagnosticOnly = $true
@@ -1173,8 +1177,10 @@ function Assert-PreCreateResult
     'NONE', 'CONFIGURATION_NOT_LOADED', 'DATASOURCE_NOT_CONFIGURED',
     'JDBC_DRIVER_NOT_FOUND', 'POSTGRES_CONNECTION_FAILED',
     'QUERY_EXECUTION_FAILED', 'RESULT_MAPPING_FAILED',
-    'JSON_SERIALIZATION_FAILED', 'JAVA_EXECUTABLE_NOT_FOUND',
-    'JAVA_PROCESS_START_FAILED', 'JAVA_PROCESS_EXIT_NONZERO',
+    'JSON_SERIALIZATION_FAILED', 'JAVA_RUNTIME_NOT_FOUND',
+    'JAVA_VERSION_UNREADABLE', 'JAVA_MAJOR_VERSION_MISMATCH',
+    'JAVA_PROCESS_START_FAILED', 'JAVA_PROCESS_EXIT_NONZERO', 'JAVA_PROCESS_TIMEOUT',
+    'JAVA_PROCESS_TERMINATION_FAILED', 'JAVA_PROCESS_OUTPUT_READ_FAILED',
     'MAIN_CLASS_NOT_FOUND', 'CLASSPATH_INCOMPLETE',
     'OUTPUT_CONTRACT_CONTAMINATED', 'POWERSHELL_JSON_PARSE_FAILED',
     'INTERNAL_SANITIZED_READBACK_FAILURE'
@@ -1311,6 +1317,319 @@ function Resolve-PreCreateJavaProcessDiagnostic
     return $null
 }
 
+function ConvertTo-NativeProcessArguments
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Arguments)
+
+    $encoded = foreach ($argument in $Arguments)
+    {
+        if ($argument -notmatch '[\s"]')
+        {
+            $argument
+            continue
+        }
+        $builder = [Text.StringBuilder]::new()
+        [void]$builder.Append('"')
+        $backslashes = 0
+        foreach ($character in $argument.ToCharArray())
+        {
+            if ($character -eq '\')
+            {
+                $backslashes++
+                continue
+            }
+            if ($character -eq '"')
+            {
+                [void]$builder.Append(('\' * ($backslashes * 2 + 1)))
+                [void]$builder.Append('"')
+                $backslashes = 0
+                continue
+            }
+            if ($backslashes -gt 0)
+            {
+                [void]$builder.Append(('\' * $backslashes))
+                $backslashes = 0
+            }
+            [void]$builder.Append($character)
+        }
+        if ($backslashes -gt 0)
+        {
+            [void]$builder.Append(('\' * ($backslashes * 2)))
+        }
+        [void]$builder.Append('"')
+        $builder.ToString()
+    }
+    return $encoded -join ' '
+}
+
+function Get-LinuxDescendantProcessIds
+{
+    param([Parameter(Mandatory = $true)][int]$RootProcessId)
+
+    $parents = @{ }
+    foreach ($directory in @(Get-ChildItem -LiteralPath '/proc' -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match '^[0-9]+$' }))
+    {
+        try
+        {
+            $stat = [IO.File]::ReadAllText((Join-Path $directory.FullName 'stat'))
+            if ($stat -match '^[0-9]+ \(.*\) [A-Z] ([0-9]+) ')
+            {
+                $parents[[int]$directory.Name] = [int]$Matches[1]
+            }
+        }
+        catch
+        {
+            # Processes may exit while /proc is enumerated.
+        }
+    }
+    $descendants = [Collections.Generic.List[int]]::new()
+    $frontier = @($RootProcessId)
+    while ($frontier.Count -gt 0)
+    {
+        $next = @()
+        foreach ($parent in $frontier)
+        {
+            foreach ($entry in $parents.GetEnumerator())
+            {
+                if ([int]$entry.Value -eq [int]$parent -and
+                        -not $descendants.Contains([int]$entry.Key))
+                {
+                    $descendants.Add([int]$entry.Key)
+                    $next += [int]$entry.Key
+                }
+            }
+        }
+        $frontier = @($next)
+    }
+    return @($descendants)
+}
+
+function Stop-BoundedProcessTree
+{
+    param([Parameter(Mandatory = $true)][Diagnostics.Process]$Process)
+
+    $descendants = @()
+    if (Test-LinuxPlatform)
+    {
+        $descendants = @(Get-LinuxDescendantProcessIds $Process.Id)
+        $targets = @($descendants)
+        [Array]::Reverse($targets)
+        foreach ($processId in @($targets + $Process.Id))
+        {
+            if (Test-Path -LiteralPath "/proc/$processId")
+            {
+                $null = & '/usr/bin/kill' -TERM -- $processId 2> $null
+            }
+        }
+        Start-Sleep -Milliseconds 250
+        foreach ($processId in @($targets + $Process.Id))
+        {
+            if (Test-Path -LiteralPath "/proc/$processId")
+            {
+                $null = & '/usr/bin/kill' -KILL -- $processId 2> $null
+            }
+        }
+    }
+    else
+    {
+        $taskkill = Join-Path $env:SystemRoot 'System32/taskkill.exe'
+        if (-not (Test-Path -LiteralPath $taskkill -PathType Leaf))
+        {
+            throw 'BLOCKED / JAVA_PROCESS_TERMINATION_FAILED'
+        }
+        $null = & $taskkill /PID $Process.Id /T /F 2> $null
+    }
+    if (-not $Process.WaitForExit($script:JavaTerminationWaitSeconds * 1000))
+    {
+        throw 'BLOCKED / JAVA_PROCESS_TERMINATION_FAILED'
+    }
+    return @($descendants)
+}
+
+function Invoke-BoundedProcess
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 300)][int]$TimeoutSeconds
+    )
+
+    if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf))
+    {
+        return [pscustomobject]@{
+            Started = $false
+            TimedOut = $false
+            TerminationFailed = $false
+            OutputReadFailed = $false
+            ExitCode = -1L
+            Stdout = ''
+            Stderr = ''
+            ProcessId = 0
+            DescendantProcessIds = @()
+        }
+    }
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = [Diagnostics.ProcessStartInfo]::new()
+    $process.StartInfo.FileName = [IO.Path]::GetFullPath($FilePath)
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.CreateNoWindow = $true
+    $process.StartInfo.RedirectStandardOutput = $true
+    $process.StartInfo.RedirectStandardError = $true
+    $argumentListProperty = $process.StartInfo.PSObject.Properties['ArgumentList']
+    if ($null -ne $argumentListProperty)
+    {
+        foreach ($argument in $Arguments)
+        {
+            [void]$process.StartInfo.ArgumentList.Add($argument)
+        }
+    }
+    else
+    {
+        $process.StartInfo.Arguments = ConvertTo-NativeProcessArguments $Arguments
+    }
+    $timedOut = $false
+    $terminationFailed = $false
+    $outputReadFailed = $false
+    $descendants = @()
+    $stdout = ''
+    $stderr = ''
+    try
+    {
+        try
+        {
+            if (-not $process.Start())
+            {
+                throw 'PROCESS_START_RETURNED_FALSE'
+            }
+        }
+        catch
+        {
+            return [pscustomobject]@{
+                Started = $false
+                TimedOut = $false
+                TerminationFailed = $false
+                OutputReadFailed = $false
+                ExitCode = -1L
+                Stdout = ''
+                Stderr = ''
+                ProcessId = 0
+                DescendantProcessIds = @()
+            }
+        }
+        $processId = $process.Id
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit($TimeoutSeconds * 1000))
+        {
+            $timedOut = $true
+            try
+            {
+                $descendants = @(Stop-BoundedProcessTree $process)
+            }
+            catch
+            {
+                $terminationFailed = $true
+            }
+        }
+        if (-not $terminationFailed)
+        {
+            try
+            {
+                if (-not $stdoutTask.Wait(5000) -or -not $stderrTask.Wait(5000))
+                {
+                    throw 'OUTPUT_TASK_TIMEOUT'
+                }
+                $stdout = $stdoutTask.GetAwaiter().GetResult()
+                $stderr = $stderrTask.GetAwaiter().GetResult()
+            }
+            catch
+            {
+                $outputReadFailed = $true
+            }
+        }
+        return [pscustomobject]@{
+            Started = $true
+            TimedOut = $timedOut
+            TerminationFailed = $terminationFailed
+            OutputReadFailed = $outputReadFailed
+            ExitCode = if ($process.HasExited)
+            {
+                [long]$process.ExitCode
+            }
+            else
+            {
+                -1L
+            }
+            Stdout = $stdout
+            Stderr = $stderr
+            ProcessId = $processId
+            DescendantProcessIds = @($descendants)
+        }
+    }
+    finally
+    {
+        $process.Dispose()
+    }
+}
+
+function Get-PreCreateRequiredJavaMajor
+{
+    $manifestPath = Join-Path $script:ReleaseRoot 'release-manifest.json'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf))
+    {
+        throw 'BLOCKED / JAVA_MAJOR_VERSION_MISMATCH'
+    }
+    $manifest = Read-JsonFile $manifestPath
+    if ($null -eq $manifest.requiredRuntime -or
+            [int]$manifest.requiredRuntime.javaMajor -ne $script:RequiredJavaMajor)
+    {
+        throw 'BLOCKED / JAVA_MAJOR_VERSION_MISMATCH'
+    }
+    return [int]$manifest.requiredRuntime.javaMajor
+}
+
+function Get-PreCreateJavaRuntimeMajor
+{
+    $versionProcess = Invoke-BoundedProcess `
+        $script:LinuxJavaPath @('-version') $script:JavaVersionTimeoutSeconds
+    if (-not [bool]$versionProcess.Started)
+    {
+        throw 'BLOCKED / JAVA_RUNTIME_NOT_FOUND'
+    }
+    if ([bool]$versionProcess.TerminationFailed)
+    {
+        throw 'BLOCKED / JAVA_PROCESS_TERMINATION_FAILED'
+    }
+    if ([bool]$versionProcess.TimedOut)
+    {
+        throw 'BLOCKED / JAVA_PROCESS_TIMEOUT'
+    }
+    if ([bool]$versionProcess.OutputReadFailed)
+    {
+        throw 'BLOCKED / JAVA_PROCESS_OUTPUT_READ_FAILED'
+    }
+    if ([long]$versionProcess.ExitCode -ne 0)
+    {
+        throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+    }
+    $text = ([string]$versionProcess.Stdout, [string]$versionProcess.Stderr) -join "`n"
+    if ($text -notmatch '(?m)^(?:openjdk|java) version "([0-9]+)(?:\.([0-9]+))?[^"]*"')
+    {
+        throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+    }
+    $major = [int]$Matches[1]
+    if ($major -eq 1)
+    {
+        if (-not $Matches[2])
+        {
+            throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+        }
+        $major = [int]$Matches[2]
+    }
+    return $major
+}
+
 function Invoke-PreCreateJavaReadback
 {
     param([Parameter(Mandatory = $true)]$Descriptor)
@@ -1322,12 +1641,39 @@ function Invoke-PreCreateJavaReadback
             launcherExitCode = -1L
             javaStarted = $false
             failureStage = 'JAVA_PROCESS'
-            failureCode = 'JAVA_EXECUTABLE_NOT_FOUND'
+            failureCode = 'JAVA_RUNTIME_NOT_FOUND'
+        }
+    }
+    try
+    {
+        $requiredJavaMajor = Get-PreCreateRequiredJavaMajor
+        $actualJavaMajor = Get-PreCreateJavaRuntimeMajor
+        if ($actualJavaMajor -ne $requiredJavaMajor)
+        {
+            throw 'BLOCKED / JAVA_MAJOR_VERSION_MISMATCH'
+        }
+    }
+    catch
+    {
+        $javaFailureCode = if ($_.Exception.Message -match
+                '^BLOCKED / (JAVA_RUNTIME_NOT_FOUND|JAVA_VERSION_UNREADABLE|JAVA_MAJOR_VERSION_MISMATCH|JAVA_PROCESS_TIMEOUT|JAVA_PROCESS_TERMINATION_FAILED|JAVA_PROCESS_OUTPUT_READ_FAILED)$')
+        {
+            [string]$Matches[1]
+        }
+        else
+        {
+            'JAVA_VERSION_UNREADABLE'
+        }
+        return [pscustomobject][ordered]@{
+            readback = $null
+            launcherExitCode = -1L
+            javaStarted = $false
+            failureStage = 'JAVA_PROCESS'
+            failureCode = $javaFailureCode
         }
     }
     $token = [Guid]::NewGuid().ToString('N')
     $resultFile = "$( $script:PreCreateResultRoot )/nq-gatew-precreate-prerequisite-$token.json"
-    $stderrFile = "$( $script:PreCreateResultRoot )/nq-gatew-precreate-stderr-$token.txt"
     if (Test-Path -LiteralPath $resultFile)
     {
         throw 'BLOCKED / PRECREATE_RESULT_PATH_CONFLICT'
@@ -1386,37 +1732,65 @@ function Invoke-PreCreateJavaReadback
             '-cp', (Get-PreCreateLauncherClassPath),
             'com.guidinglight.nexusquant.app.gatew.GateWOkxReadonlySoakCycleTest$PrerequisiteMain'
         )
-        try
+        $processResult = Invoke-BoundedProcess `
+            $script:LinuxJavaPath $arguments $script:JavaProcessTimeoutSeconds
+        $javaStarted = [bool]$processResult.Started
+        $launcherExitCode = [long]$processResult.ExitCode
+        if (-not $javaStarted)
         {
-            $stdoutLines = @(& $script:LinuxJavaPath @arguments 2> $stderrFile)
-            $launcherExitCode = [long]$LASTEXITCODE
-            $javaStarted = $true
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $false
+                failureStage = 'JAVA_PROCESS'
+                failureCode = 'JAVA_PROCESS_START_FAILED'
+            }
         }
-        catch
+        if ([bool]$processResult.TerminationFailed)
         {
             return [pscustomobject][ordered]@{
                 readback = $null
                 launcherExitCode = $launcherExitCode
                 javaStarted = $javaStarted
                 failureStage = 'JAVA_PROCESS'
-                failureCode = 'JAVA_PROCESS_START_FAILED'
+                failureCode = 'JAVA_PROCESS_TERMINATION_FAILED'
             }
         }
-        $stderrLines = @()
-        if (Test-Path -LiteralPath $stderrFile -PathType Leaf)
+        if ([bool]$processResult.TimedOut)
         {
-            if ((Get-Item -LiteralPath $stderrFile -Force).Length -gt 4096)
-            {
-                return [pscustomobject][ordered]@{
-                    readback = $null
-                    launcherExitCode = $launcherExitCode
-                    javaStarted = $javaStarted
-                    failureStage = 'OUTPUT_CONTRACT'
-                    failureCode = 'OUTPUT_CONTRACT_CONTAMINATED'
-                }
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $javaStarted
+                failureStage = 'JAVA_PROCESS'
+                failureCode = 'JAVA_PROCESS_TIMEOUT'
             }
-            $stderrLines = @(Get-Content -LiteralPath $stderrFile)
         }
+        if ([bool]$processResult.OutputReadFailed)
+        {
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $javaStarted
+                failureStage = 'JAVA_PROCESS'
+                failureCode = 'JAVA_PROCESS_OUTPUT_READ_FAILED'
+            }
+        }
+        $stdoutLines = @(([string]$processResult.Stdout -split '\r?\n') |
+                Where-Object { -not [string]::IsNullOrEmpty($_) })
+        $stderrText = [string]$processResult.Stderr
+        if ($script:Utf8NoBom.GetByteCount($stderrText) -gt 4096)
+        {
+            return [pscustomobject][ordered]@{
+                readback = $null
+                launcherExitCode = $launcherExitCode
+                javaStarted = $javaStarted
+                failureStage = 'OUTPUT_CONTRACT'
+                failureCode = 'OUTPUT_CONTRACT_CONTAMINATED'
+            }
+        }
+        $stderrLines = @(($stderrText -split '\r?\n') |
+                Where-Object { -not [string]::IsNullOrEmpty($_) })
         $resultFilePresent = Test-Path -LiteralPath $resultFile -PathType Leaf
         $processDiagnostic = Resolve-PreCreateJavaProcessDiagnostic `
             $launcherExitCode $stdoutLines $stderrLines $resultFilePresent
@@ -1477,10 +1851,6 @@ function Invoke-PreCreateJavaReadback
         {
             Remove-Item -LiteralPath $resultFile -Force
         }
-        if (Test-Path -LiteralPath $stderrFile)
-        {
-            Remove-Item -LiteralPath $stderrFile -Force
-        }
     }
 }
 
@@ -1521,7 +1891,7 @@ function Invoke-PreCreatePrerequisiteEvaluation
         $fallbackBlocker = Get-PreCreateFallbackBlockerCode $_.Exception.Message
         return [pscustomobject][ordered]@{
             Result = Assert-PreCreateResult (
-                New-PreCreateResult $checkedAt $null @($fallbackBlocker) $releaseBindingVerified
+            New-PreCreateResult $checkedAt $null @($fallbackBlocker) $releaseBindingVerified
             )
             Descriptor = $null
         }
@@ -3332,7 +3702,7 @@ function Verify-FormalAcceptance
             -not (Test-Path -LiteralPath $markerPath -PathType Leaf))
     {
         $preMarkerSnapshot = ConvertFrom-JsonPreservingTimestamps (
-            $snapshot | ConvertTo-Json -Depth 20
+        $snapshot | ConvertTo-Json -Depth 20
         )
         $preMarkerSnapshot.completionMarkerValid = $true
         $preMarkerResult = Test-GateWAcceptanceSnapshot $preMarkerSnapshot
@@ -3486,17 +3856,17 @@ function Verify-FormalTerminal
         $requestedAt = [DateTimeOffset]::Parse([string]$intent.requestedAt)
         $finalizedAt = [DateTimeOffset]::Parse([string]$terminal.finalizedAt)
         if (([string]$intent.runId -cne [string]$terminal.runId) -or
-                ([string]$intent.releaseCommit -cne [string]$terminal.releaseCommit) -or
-                ([string]$intent.checksum -cne [string]$terminal.stopIntentChecksum) -or
-                ([string]$intent.reasonCode -cnotin @(
-                    'OPERATOR_STOP_REQUESTED', 'ACCEPTANCE_FINALIZATION'
-                )) -or $requestedAt -gt $finalizedAt -or
-                (($finalizedAt - $requestedAt).TotalSeconds -gt
-                        $script:StopIntentMaxAgeSeconds -or
-                (([string]$terminal.acceptanceResult -ceq 'ACCEPTED_168H_READONLY_SOAK') -and
-                        ([string]$intent.reasonCode -cne 'ACCEPTANCE_FINALIZATION'))))
+        ([string]$intent.releaseCommit -cne [string]$terminal.releaseCommit) -or
+        ([string]$intent.checksum -cne [string]$terminal.stopIntentChecksum) -or
+        ([string]$intent.reasonCode -cnotin @(
+        'OPERATOR_STOP_REQUESTED', 'ACCEPTANCE_FINALIZATION'
+        )) -or $requestedAt -gt $finalizedAt -or
+        (($finalizedAt - $requestedAt).TotalSeconds -gt
+        $script:StopIntentMaxAgeSeconds -or
+        (([string]$terminal.acceptanceResult -ceq 'ACCEPTED_168H_READONLY_SOAK') -and
+        ([string]$intent.reasonCode -cne 'ACCEPTANCE_FINALIZATION'))))
         {
-            throw 'FAIL / TERMINAL_STOP_INTENT_BINDING_INVALID'
+        throw 'FAIL / TERMINAL_STOP_INTENT_BINDING_INVALID'
         }
     }
     $state = Get-UnitState (Get-WorkerUnitName $RunId)
@@ -3976,6 +4346,138 @@ function Invoke-ControlSelfTest
         throw 'precreate Java success process self-test failed'
     }
     $caseCount++
+    $processTestRoot = Join-Path ([IO.Path]::GetTempPath()) (
+    'nq-gatew-process-self-test-' + [Guid]::NewGuid().ToString('N')
+    )
+    [IO.Directory]::CreateDirectory($processTestRoot) | Out-Null
+    try
+    {
+        $processHelper = Join-Path $processTestRoot 'process-helper.ps1'
+        $childPidPath = Join-Path $processTestRoot 'child.pid'
+        $helperText = @'
+param(
+    [Parameter(Mandatory = $true)][string]$Mode,
+    [string]$ChildPidPath
+)
+$ErrorActionPreference = 'Stop'
+switch ($Mode)
+{
+    'quick' {
+        [Console]::Out.WriteLine('quick-stdout')
+        [Console]::Error.WriteLine('quick-stderr')
+        exit 0
+    }
+    'nonzero' {
+        exit 7
+    }
+    'flood' {
+        for ($index = 0; $index -lt 5000; $index++)
+        {
+            [Console]::Out.WriteLine(('o' * 32))
+            [Console]::Error.WriteLine(('e' * 32))
+        }
+        exit 0
+    }
+    'child' {
+        while ($true) { Start-Sleep -Seconds 1 }
+    }
+    'hang' {
+        $engine = (Get-Process -Id $PID).Path
+        $arguments = @(
+            '-NoProfile', '-File', $PSCommandPath, '-Mode', 'child',
+            '-ChildPidPath', $ChildPidPath
+        )
+        $parameters = @{
+            FilePath = $engine
+            ArgumentList = $arguments
+            PassThru = $true
+        }
+        if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT)
+        {
+            $parameters.WindowStyle = 'Hidden'
+        }
+        $child = Start-Process @parameters
+        [IO.File]::WriteAllText($ChildPidPath, [string]$child.Id)
+        while ($true) { Start-Sleep -Seconds 1 }
+    }
+}
+'@
+        [IO.File]::WriteAllText($processHelper, $helperText, $script:Utf8NoBom)
+        $engine = (Get-Process -Id $PID).Path
+        $quick = Invoke-BoundedProcess $engine @(
+            '-NoProfile', '-File', $processHelper, '-Mode', 'quick'
+        ) 5
+        if (-not [bool]$quick.Started -or [bool]$quick.TimedOut -or
+                [bool]$quick.OutputReadFailed -or [long]$quick.ExitCode -ne 0 -or
+                -not ([string]$quick.Stdout).Contains('quick-stdout') -or
+                -not ([string]$quick.Stderr).Contains('quick-stderr'))
+        {
+            throw 'bounded Java quick process self-test failed'
+        }
+        $caseCount++
+
+        $nonzero = Invoke-BoundedProcess $engine @(
+            '-NoProfile', '-File', $processHelper, '-Mode', 'nonzero'
+        ) 5
+        if (-not [bool]$nonzero.Started -or [bool]$nonzero.TimedOut -or
+                [long]$nonzero.ExitCode -ne 7)
+        {
+            throw 'bounded Java nonzero process self-test failed'
+        }
+        $caseCount++
+
+        $flood = Invoke-BoundedProcess $engine @(
+            '-NoProfile', '-File', $processHelper, '-Mode', 'flood'
+        ) 15
+        if ([bool]$flood.TimedOut -or [bool]$flood.OutputReadFailed -or
+                [long]$flood.ExitCode -ne 0 -or
+                ([string]$flood.Stdout).Length -lt 100000 -or
+                ([string]$flood.Stderr).Length -lt 100000)
+        {
+            throw 'bounded Java stdout/stderr process self-test failed'
+        }
+        $caseCount++
+
+        $hung = Invoke-BoundedProcess $engine @(
+            '-NoProfile', '-File', $processHelper, '-Mode', 'hang',
+            '-ChildPidPath', $childPidPath
+        ) 2
+        if (-not [bool]$hung.Started -or -not [bool]$hung.TimedOut -or
+                [bool]$hung.TerminationFailed -or [bool]$hung.OutputReadFailed -or
+                (Get-Process -Id ([int]$hung.ProcessId) -ErrorAction SilentlyContinue))
+        {
+            throw 'bounded Java timeout process self-test failed'
+        }
+        if (Test-Path -LiteralPath $childPidPath -PathType Leaf)
+        {
+            $childProcessId = [int]([IO.File]::ReadAllText($childPidPath).Trim())
+            if (Get-Process -Id $childProcessId -ErrorAction SilentlyContinue)
+            {
+                throw 'bounded Java process-tree cleanup self-test failed'
+            }
+        }
+        else
+        {
+            throw 'bounded Java child process self-test did not start'
+        }
+        $caseCount++
+    }
+    finally
+    {
+        if (Test-Path -LiteralPath $processTestRoot)
+        {
+            $tempBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+            $resolvedProcessRoot = [IO.Path]::GetFullPath($processTestRoot)
+            if (-not $resolvedProcessRoot.StartsWith(
+                    $tempBase,
+                    [StringComparison]::OrdinalIgnoreCase
+            ))
+            {
+                throw 'bounded Java process cleanup path self-test failed'
+            }
+            Remove-Item -LiteralPath $resolvedProcessRoot -Recurse -Force
+        }
+    }
     $jsonParseLauncher = [pscustomobject][ordered]@{
         readback = $null
         launcherExitCode = 0L
@@ -4011,7 +4513,7 @@ function Invoke-ControlSelfTest
         $caseCount++
     }
     $fallbackResult = Assert-PreCreateResult (
-        New-PreCreateResult '2026-07-21T00:00:00Z' $null @('RESPONSE_CONTRACT_MISMATCH')
+    New-PreCreateResult '2026-07-21T00:00:00Z' $null @('RESPONSE_CONTRACT_MISMATCH')
     )
     if ([bool]$fallbackResult.readyForAttemptCreation -or
             [bool]$fallbackResult.releaseBindingVerified -or
@@ -4022,7 +4524,7 @@ function Invoke-ControlSelfTest
     }
     $caseCount++
     $boundFallbackResult = Assert-PreCreateResult (
-        New-PreCreateResult '2026-07-21T00:00:00Z' $null @('POSTGRES_UNREACHABLE') $true
+    New-PreCreateResult '2026-07-21T00:00:00Z' $null @('POSTGRES_UNREACHABLE') $true
     )
     if ([bool]$boundFallbackResult.readyForAttemptCreation -or
             -not [bool]$boundFallbackResult.releaseBindingVerified -or
@@ -4364,6 +4866,8 @@ function Invoke-ControlSelfTest
         releaseVerifierParameters = 'PASS / HASHTABLE_SPLATTING'
         automaticMatchesCollision = 'PASS / FORBIDDEN'
         preCreatePrerequisite = 'PASS / BEFORE_RUN_ID_AND_DIRECTORY / CLOSED_SCHEMA'
+        javaProcessTimeout = "$( $script:JavaProcessTimeoutSeconds )s / PROCESS_TREE_CLEANED"
+        javaProcessOutput = 'PASS / ASYNC_STDOUT_STDERR'
         noNetworkCalled = $true
         credentialAccessed = $false
     }

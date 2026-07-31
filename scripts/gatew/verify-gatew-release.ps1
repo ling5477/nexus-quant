@@ -17,6 +17,9 @@ $script:ManifestName = 'release-manifest.json'
 $script:ReleaseIdPattern = '^(?:[a-f0-9]{40}|candidate-[a-f0-9]{12}-[a-f0-9]{16})$'
 $script:Sha256Pattern = '^[a-f0-9]{64}$'
 $script:CommitPattern = '^[a-f0-9]{40}$'
+$script:RequiredJavaMajor = 21
+$script:CanonicalMavenCommand =
+'mvn --offline --quiet -f backend/pom.xml -pl nq-app -am -DskipTests clean package'
 $script:AllowedRoles = @(
     'worker-helper', 'control-helper', 'failclose-helper', 'contract-library',
     'release-verifier', 'release-installer', 'release-contract',
@@ -307,6 +310,122 @@ function Assert-SystemdReleaseBinding
     }
 }
 
+function Get-JarEntryDescriptor
+{
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    if ([string]::IsNullOrWhiteSpace($Name) -or $Name -match '\\' -or
+            $Name.StartsWith('/') -or $Name -match '^[A-Za-z]:' -or
+            $Name.IndexOf([char]0) -ge 0)
+    {
+        throw 'BLOCKED / RELEASE_JAR_ENTRY_PATH_INVALID'
+    }
+    $isDirectory = $Name.EndsWith('/')
+    $segments = @()
+    foreach ($segment in @($Name.TrimEnd('/') -split '/'))
+    {
+        if ($segment -eq '..')
+        {
+            throw 'BLOCKED / RELEASE_JAR_ENTRY_PATH_INVALID'
+        }
+        if ([string]::IsNullOrEmpty($segment) -or $segment -eq '.')
+        {
+            continue
+        }
+        $segments += $segment
+    }
+    if ($segments.Count -eq 0)
+    {
+        throw 'BLOCKED / RELEASE_JAR_ENTRY_PATH_INVALID'
+    }
+    $canonical = $segments -join '/'
+    if ($isDirectory)
+    {
+        $canonical += '/'
+    }
+    return [pscustomobject]@{
+        Raw = $Name
+        Canonical = $canonical
+        Folded = $canonical.TrimEnd('/').ToUpperInvariant()
+        IsDirectory = $isDirectory
+    }
+}
+
+function Test-JarDuplicateEntryPolicy
+{
+    param(
+        [Parameter(Mandatory = $true)]$Manifest,
+        [Parameter(Mandatory = $true)][string]$Root
+    )
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $jarCount = 0
+    $duplicateDirectoryEntries = 0
+    foreach ($artifact in @($Manifest.artifacts | Where-Object {
+        [string]$_.relativePath -like '*.jar' -and
+                [string]$_.role -in @('launcher-test-support', 'launcher-module', 'runtime-library')
+    }))
+    {
+        $jarCount++
+        $path = Join-Path $Root ([string]$artifact.relativePath)
+        try
+        {
+            $archive = [IO.Compression.ZipFile]::OpenRead($path)
+        }
+        catch
+        {
+            throw 'BLOCKED / RELEASE_JAR_INVALID'
+        }
+        try
+        {
+            $seen = @{ }
+            foreach ($entry in @($archive.Entries))
+            {
+                $descriptor = Get-JarEntryDescriptor ([string]$entry.FullName)
+                $key = [string]$descriptor.Folded
+                if (-not $seen.ContainsKey($key))
+                {
+                    $seen[$key] = $descriptor
+                    continue
+                }
+                $existing = $seen[$key]
+                if ([bool]$existing.IsDirectory -and [bool]$descriptor.IsDirectory -and
+                        [string]$existing.Raw -ceq [string]$descriptor.Raw)
+                {
+                    $duplicateDirectoryEntries++
+                    continue
+                }
+                if ([string]$existing.Raw -ceq [string]$descriptor.Raw)
+                {
+                    throw 'BLOCKED / RELEASE_JAR_DUPLICATE_FILE_ENTRY'
+                }
+                if ([string]$existing.Canonical -cne [string]$descriptor.Canonical -and
+                        [string]::Equals(
+                                [string]$existing.Canonical,
+                                [string]$descriptor.Canonical,
+                                [StringComparison]::OrdinalIgnoreCase
+                        ))
+                {
+                    throw 'BLOCKED / RELEASE_JAR_CASE_COLLISION'
+                }
+                throw 'BLOCKED / RELEASE_JAR_NORMALIZED_PATH_COLLISION'
+            }
+        }
+        finally
+        {
+            $archive.Dispose()
+        }
+    }
+    if ($jarCount -lt 1)
+    {
+        throw 'BLOCKED / RELEASE_JAR_INVALID'
+    }
+    return [pscustomobject]@{
+        JarCount = $jarCount
+        DuplicateDirectoryEntries = $duplicateDirectoryEntries
+    }
+}
+
 function Assert-ManifestContract
 {
     param(
@@ -316,10 +435,11 @@ function Assert-ManifestContract
 
     Assert-ExactFields $Manifest @(
         'schemaVersion', 'releaseId', 'sourceCommit', 'sourceCommitTimestamp', 'sourceTreeMode',
-        'baseCommit', 'candidateDiffSha256', 'requiredRuntime', 'lineEndingPolicy', 'artifacts'
+        'baseCommit', 'candidateDiffSha256', 'requiredRuntime', 'buildProvenance',
+        'lineEndingPolicy', 'artifacts'
     )
     Assert-NoSecretFieldNames $Manifest
-    if ([string]$Manifest.schemaVersion -ne 'nq-gatew-release-v2' -or
+    if ([string]$Manifest.schemaVersion -ne 'nq-gatew-release-v3' -or
             [string]$Manifest.releaseId -cnotmatch $script:ReleaseIdPattern -or
             [string]$Manifest.sourceCommit -cnotmatch $script:CommitPattern -or
             [string]$Manifest.sourceTreeMode -notin @('CANDIDATE', 'EXACT_COMMIT') -or
@@ -363,10 +483,27 @@ function Assert-ManifestContract
     Assert-ExactFields $Manifest.requiredRuntime @('os', 'powershellMajor', 'javaMajor', 'systemd')
     if ([string]$Manifest.requiredRuntime.os -ne 'linux' -or
             [int]$Manifest.requiredRuntime.powershellMajor -ne 7 -or
-            [int]$Manifest.requiredRuntime.javaMajor -ne 17 -or
             $Manifest.requiredRuntime.systemd -isnot [bool] -or -not [bool]$Manifest.requiredRuntime.systemd)
     {
         throw 'BLOCKED / RELEASE_RUNTIME_CONTRACT_INVALID'
+    }
+    if ([int]$Manifest.requiredRuntime.javaMajor -ne $script:RequiredJavaMajor)
+    {
+        throw 'BLOCKED / JAVA_MAJOR_VERSION_MISMATCH'
+    }
+    Assert-ExactFields $Manifest.buildProvenance @(
+        'mavenCommand', 'javaMajor', 'cleanDetachedWorktree'
+    )
+    if ([int]$Manifest.buildProvenance.javaMajor -ne $script:RequiredJavaMajor)
+    {
+        throw 'BLOCKED / JAVA_MAJOR_VERSION_MISMATCH'
+    }
+    if ([string]$Manifest.buildProvenance.mavenCommand -cne $script:CanonicalMavenCommand -or
+            $Manifest.buildProvenance.cleanDetachedWorktree -isnot [bool] -or
+            ([string]$Manifest.sourceTreeMode -eq 'EXACT_COMMIT' -and
+                    -not [bool]$Manifest.buildProvenance.cleanDetachedWorktree))
+    {
+        throw 'BLOCKED / RELEASE_BUILD_PROVENANCE_INVALID'
     }
     if (@($Manifest.artifacts).Count -lt 10)
     {
@@ -523,6 +660,20 @@ try
     }
     $manifest = ConvertFrom-ReleaseJson (Get-Content -LiteralPath $manifestPath -Raw)
     Assert-ManifestContract $manifest $resolvedRoot
+    $javaPath = if (Test-LinuxPlatform)
+    {
+        '/usr/bin/java'
+    }
+    else
+    {
+        $null
+    }
+    $actualJavaMajor = Get-GateWJavaRuntimeMajor $javaPath
+    if ($actualJavaMajor -ne [int]$manifest.requiredRuntime.javaMajor)
+    {
+        throw 'BLOCKED / JAVA_MAJOR_VERSION_MISMATCH'
+    }
+    $jarPolicy = Test-JarDuplicateEntryPolicy $manifest $resolvedRoot
     $actualManifestBytes = [IO.File]::ReadAllBytes($manifestPath)
     $canonicalManifestBytes = Get-GateWCanonicalManifestBytes $manifest
     try
@@ -568,6 +719,10 @@ try
         releaseRoot = $resolvedRoot
         manifestSha256 = $manifestSha256
         artifactCount = @($manifest.artifacts).Count
+        jarCount = [int]$jarPolicy.JarCount
+        duplicateDirectoryEntries = [int]$jarPolicy.DuplicateDirectoryEntries
+        requiredJavaMajor = [int]$manifest.requiredRuntime.javaMajor
+        actualJavaMajor = $actualJavaMajor
         bundleSha256 = $bundleSha256
         posixVerified = (Test-LinuxPlatform) -and -not $SkipPosix
     } | ConvertTo-Json -Depth 6

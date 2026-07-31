@@ -97,6 +97,7 @@ public class GateWOkxReadonlySoakCycleTest {
     static final String FORMAL_STATE_ROOT = "/var/lib/nexus-quant/gatew-soak";
     static final String REAL_READONLY_SOAK = "REAL_READONLY_SOAK";
     static final String OFFLINE_ISOLATED_ACCEPTANCE = "OFFLINE_ISOLATED_ACCEPTANCE";
+    static final long MAX_PREREQUISITE_COUNT = Integer.MAX_VALUE;
     private static final Set<OkxPrivateReadOperation> SOAK_OPERATIONS = Set.of(
             OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
             OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
@@ -915,11 +916,13 @@ public class GateWOkxReadonlySoakCycleTest {
 
         try {
             String killSwitchStatus = Objects.toString(summary.get("kill_switch_status"), "UNKNOWN");
-            long totalAccountCount = longValue(summary.get("total_account_count"));
-            long scopedAccountCount = longValue(summary.get("scoped_account_count"));
-            long activeScopedAccountCount = longValue(summary.get("active_scoped_account_count"));
-            long configuredCredentialCount = longValue(summary.get("configured_credential_count"));
-            int activeCredentialCount = Math.toIntExact(longValue(summary.get("active_credential_count")));
+            long totalAccountCount = strictCountValue(summary.get("total_account_count"));
+            long scopedAccountCount = strictCountValue(summary.get("scoped_account_count"));
+            long activeScopedAccountCount = strictCountValue(summary.get("active_scoped_account_count"));
+            long configuredCredentialCount = strictCountValue(summary.get("configured_credential_count"));
+            int activeCredentialCount = Math.toIntExact(
+                    strictCountValue(summary.get("active_credential_count"))
+            );
             boolean credentialConfigured = configuredCredentialCount > 0;
             String rawCredentialType = Objects.toString(summary.get("credential_type"), "UNKNOWN");
             String credentialType = activeCredentialCount == 1 && "OKX_API_V5".equals(rawCredentialType)
@@ -1012,8 +1015,16 @@ public class GateWOkxReadonlySoakCycleTest {
         }
     }
 
-    private static long longValue(Object value) {
-        return value instanceof Number number ? number.longValue() : 0L;
+    static long strictCountValue(Object value) {
+        if (!(value instanceof Byte || value instanceof Short
+                || value instanceof Integer || value instanceof Long)) {
+            throw new IllegalArgumentException("Prerequisite aggregate count has an unsupported JDBC type");
+        }
+        long count = ((Number) value).longValue();
+        if (count < 0 || count > MAX_PREREQUISITE_COUNT) {
+            throw new IllegalArgumentException("Prerequisite aggregate count is outside the allowed range");
+        }
+        return count;
     }
 
     private static Instant instantValue(Object value) {

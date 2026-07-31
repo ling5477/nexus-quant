@@ -4,6 +4,7 @@ $ErrorActionPreference = 'Stop'
 $script:Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $script:Ascii = [Text.Encoding]::ASCII
 $script:TarBlockSize = 512
+$script:JavaVersionTimeoutMilliseconds = 10000
 
 function Sort-GateWOrdinalStrings
 {
@@ -32,6 +33,118 @@ function Sort-GateWArtifactsOrdinal
         }
     }
     return @($ordered)
+}
+
+function ConvertFrom-GateWJavaVersionText
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
+
+    $versionMatch = [regex]::Match(
+            $Text,
+            '(?m)^(?:openjdk|java) version "([0-9]+)(?:\.([0-9]+))?[^"]*"'
+    )
+    if (-not $versionMatch.Success)
+    {
+        throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+    }
+    $first = 0
+    if (-not [int]::TryParse(
+            $versionMatch.Groups[1].Value,
+            [Globalization.NumberStyles]::None,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [ref]$first
+    ))
+    {
+        throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+    }
+    if ($first -eq 1)
+    {
+        $legacy = 0
+        if (-not $versionMatch.Groups[2].Success -or -not [int]::TryParse(
+                $versionMatch.Groups[2].Value,
+                [Globalization.NumberStyles]::None,
+                [Globalization.CultureInfo]::InvariantCulture,
+                [ref]$legacy
+        ))
+        {
+            throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+        }
+        return $legacy
+    }
+    return $first
+}
+
+function Get-GateWJavaRuntimeMajor
+{
+    param([string]$JavaPath)
+
+    $resolved = $JavaPath
+    if ( [string]::IsNullOrWhiteSpace($resolved))
+    {
+        $command = Get-Command java -ErrorAction SilentlyContinue
+        if ($null -eq $command)
+        {
+            throw 'BLOCKED / JAVA_RUNTIME_NOT_FOUND'
+        }
+        $resolved = $command.Source
+    }
+    if (-not (Test-Path -LiteralPath $resolved -PathType Leaf))
+    {
+        throw 'BLOCKED / JAVA_RUNTIME_NOT_FOUND'
+    }
+
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = [Diagnostics.ProcessStartInfo]::new()
+    $process.StartInfo.FileName = [IO.Path]::GetFullPath($resolved)
+    $process.StartInfo.Arguments = '-version'
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.CreateNoWindow = $true
+    $process.StartInfo.RedirectStandardOutput = $true
+    $process.StartInfo.RedirectStandardError = $true
+    try
+    {
+        try
+        {
+            if (-not $process.Start())
+            {
+                throw 'BLOCKED / JAVA_RUNTIME_NOT_FOUND'
+            }
+        }
+        catch
+        {
+            if ($_.Exception.Message -match '^BLOCKED / ')
+            {
+                throw
+            }
+            throw 'BLOCKED / JAVA_RUNTIME_NOT_FOUND'
+        }
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit($script:JavaVersionTimeoutMilliseconds))
+        {
+            try
+            {
+                $process.Kill()
+                $process.WaitForExit(5000) | Out-Null
+            }
+            catch
+            {
+                # Version discovery stays fail-closed even when cleanup itself fails.
+            }
+            throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+        }
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0)
+        {
+            throw 'BLOCKED / JAVA_VERSION_UNREADABLE'
+        }
+        return ConvertFrom-GateWJavaVersionText (($stdout, $stderr) -join "`n")
+    }
+    finally
+    {
+        $process.Dispose()
+    }
 }
 
 function ConvertTo-GateWJsonString
@@ -120,6 +233,20 @@ function ConvertTo-GateWCanonicalManifestJson
     [void]$builder.Append(([int]$Manifest.requiredRuntime.javaMajor).ToString([Globalization.CultureInfo]::InvariantCulture))
     [void]$builder.Append(',"systemd":')
     [void]$builder.Append($( if ([bool]$Manifest.requiredRuntime.systemd)
+    {
+        'true'
+    }
+    else
+    {
+        'false'
+    } ))
+    [void]$builder.Append('},"buildProvenance":{"mavenCommand":')
+    [void]$builder.Append((ConvertTo-GateWJsonString ([string]$Manifest.buildProvenance.mavenCommand)))
+    [void]$builder.Append(',"javaMajor":')
+    [void]$builder.Append(([int]$Manifest.buildProvenance.javaMajor).
+            ToString([Globalization.CultureInfo]::InvariantCulture))
+    [void]$builder.Append(',"cleanDetachedWorktree":')
+    [void]$builder.Append($( if ([bool]$Manifest.buildProvenance.cleanDetachedWorktree)
     {
         'true'
     }
@@ -229,15 +356,15 @@ function New-GateWCanonicalZip
         throw 'BLOCKED / RELEASE_OUTPUT_ALREADY_EXISTS'
     }
     $sourceRoot = [IO.Path]::GetFullPath($SourceDirectory).TrimEnd(
-        [IO.Path]::DirectorySeparatorChar,
-        [IO.Path]::AltDirectorySeparatorChar
+            [IO.Path]::DirectorySeparatorChar,
+            [IO.Path]::AltDirectorySeparatorChar
     )
     $filePaths = @(Sort-GateWOrdinalStrings $RelativePaths)
     if ($filePaths.Count -eq 0)
     {
         throw 'BLOCKED / RELEASE_LAUNCHER_CLASSES_MISSING'
     }
-    $directoryIndex = @{}
+    $directoryIndex = @{ }
     foreach ($relativePath in $filePaths)
     {
         if ([string]::IsNullOrWhiteSpace($relativePath) -or
@@ -269,7 +396,7 @@ function New-GateWCanonicalZip
         if (-not $sourcePath.StartsWith(
                 $sourceRoot + [IO.Path]::DirectorySeparatorChar,
                 [StringComparison]::OrdinalIgnoreCase
-            ) -or -not (Test-Path -LiteralPath $sourcePath -PathType Leaf))
+        ) -or -not (Test-Path -LiteralPath $sourcePath -PathType Leaf))
         {
             throw 'BLOCKED / RELEASE_ARCHIVE_PATH_INVALID'
         }
@@ -282,10 +409,10 @@ function New-GateWCanonicalZip
 
     [IO.Directory]::CreateDirectory((Split-Path -Parent $Destination)) | Out-Null
     $stream = [IO.FileStream]::new(
-        $Destination,
-        [IO.FileMode]::CreateNew,
-        [IO.FileAccess]::Write,
-        [IO.FileShare]::None
+            $Destination,
+            [IO.FileMode]::CreateNew,
+            [IO.FileAccess]::Write,
+            [IO.FileShare]::None
     )
     $writer = [IO.BinaryWriter]::new($stream, $script:Utf8NoBom, $true)
     $centralRecords = @()
@@ -595,6 +722,8 @@ function New-GateWCanonicalTar
 Export-ModuleMember -Function @(
     'Sort-GateWOrdinalStrings',
     'Sort-GateWArtifactsOrdinal',
+    'ConvertFrom-GateWJavaVersionText',
+    'Get-GateWJavaRuntimeMajor',
     'ConvertTo-GateWCanonicalManifestJson',
     'Get-GateWCanonicalManifestBytes',
     'Write-GateWCanonicalManifest',
