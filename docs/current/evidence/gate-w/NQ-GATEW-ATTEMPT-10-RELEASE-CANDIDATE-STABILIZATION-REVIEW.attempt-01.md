@@ -238,9 +238,9 @@ freeze/archive/tag=0
 
 ## 10. Git / CI 与 authority after
 
-Review evidence commit：`PENDING`。
+Review evidence commit：`9705fdf9e03643cc1cd34d8bc6eb3dd5dc9eb17f`。
 
-Review exact-head CI：`PENDING`。
+Review exact-head CI：`30596025850 / completed / success / 10 of 10`，`headSha=9705fdf9e03643cc1cd34d8bc6eb3dd5dc9eb17f`。
 
 Authority after：
 
