@@ -47,7 +47,9 @@ GateW Attempt-10 release candidate review REJECTED / REMEDIATION REQUIRED
   ↓
 GateW Attempt-10 release candidate stabilization fix IMPLEMENTED / CI GREEN / RC REVIEW PENDING
   ↓
-NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW
+GateW Attempt-10 release candidate review attempt-02 REJECTED / REMEDIATION REQUIRED
+  ↓
+NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX
   ↓
 GateW-FREEZE NOT STARTED / FUTURE
 ```
@@ -74,9 +76,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW Attempt-10 preparation attempt-01：`BLOCKED / CREDENTIAL_OR_PERMISSION_PRECHECK_FAILED / ATTEMPT_10_NOT_CREATED`。Canonical pre-create 返回 `readyForAttemptCreation=false`；RunId/state/runtime/clock均未创建，OKX未调用。
 - GateW Attempt-10 pre-create prerequisite remediation：`DEPLOYMENT VERIFICATION FAILED / CODE REMEDIATION REQUIRED`。Commit A `1561eb60cd46dc1a4618fde6651426c41d7c4e20` 的 release supply chain、Linux install、systemd 与离线回归均通过，但生产 canonical readback 仍返回 `INTERNAL_SANITIZED_READBACK_FAILURE`；current/unit links 已 canonical 回滚到 `c16f27c3...`，Attempt-10 未创建。
 - GateW Attempt-10 internal readback RCA/fix 与旧 release candidate stabilization：固定 RC `5e7a9c4e...` 的实现与 CI 历史证据保留，但独立 review 结论为 `REVIEW REJECTED / REMEDIATION REQUIRED`（审查已拒绝 / 需要整改）。该旧 RC 与废弃提交 `f54cdc81...` 均不得进入生产部署。
-- GateW Attempt-10 release candidate stabilization fix：`IMPLEMENTED / CI GREEN / RC REVIEW PENDING`（已实现 / CI 已通过 / 待 RC 独立审查）。Commit A `8db984f3...` 的 exact-head run `30607922128` 与跨 OS LF checkout follow-up `ef803568...` 的 run `30616271884` 均为 `completed / success / 10 of 10`。唯一新 RC source=`ef803568...`；manifest=`ba5f9c05...52f5`、bundle=`75ef45cf...7c17`、131 artifacts / 122 JAR / 132 USTAR，Windows PowerShell 5.1/7 与 no-egress Linux PowerShell 7 三构建 bytes identical。Java 21/POSIX PASS、Java 17 mismatch、timeout process-tree cleanup、strict mapping、duplicate-entry policy 与 tamper rejection均通过；只允许进入独立 review。
+- GateW Attempt-10 release candidate stabilization fix：实现/CI 历史证据保持有效，但固定 RC `ef803568...` 的独立 attempt-02 review 结论为 `REVIEW REJECTED / REMEDIATION REQUIRED`（审查已拒绝 / 需要整改）。manifest=`ba5f9c05...52f5`、bundle=`75ef45cf...7c17`、131 artifacts / 122 JAR / 132 USTAR 的 Windows clean-build 可复现；Linux non-Git 回归亦通过。阻断 P1 为 `UNSAFE_DUPLICATE_JAR_ENTRY`：verifier 会放行带非空载荷的同名重复目录 entry，且未实际读取 entry data 验证 CRC。不得部署该 RC。
 - GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`。
-- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；只允许对新 fixed RC 做独立 Java/JDBC/process/reproducibility/supply-chain review，不得顺带扩大功能或边界。不得部署或直接重试、恢复 Attempt-09、复用旧 clock、修改生产 credential/permission/IP allowlist、手工 SQL、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
+- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`；只允许修复 JAR duplicate-entry/CRC verifier P1、补最小回归、重建新的固定 RC 并安排新的独立 review，不得顺带扩大功能或边界。不得部署或直接重试、恢复 Attempt-09、复用旧 clock、修改生产 credential/permission/IP allowlist、手工 SQL、扩大 OKX endpoint、触碰交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 

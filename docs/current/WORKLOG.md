@@ -17980,3 +17980,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：生产 SSH/deploy/server/current/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag。Disposable SQL只用于 loopback fixture并已事务回滚。
 - result：`IMPLEMENTED / ALL_RC_FINDINGS_CLOSED / DISPOSABLE_LINUX_VALIDATION_PASSED / NEW_RC_READY_FOR_REVIEW / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`；P0=0/P1=0/P2=0/P3=0。
 - next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；只允许独立审查新 RC，不授权生产部署或 Attempt-10。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization review attempt-02
+
+- task：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；NQ-only、L级 fixed RC security/JAR integrity/disposable Linux/reproducible release 独立审查。
+- baseline：`dev` clean；`HEAD == origin/dev == 5aa0c70f7f0aa83412d6014be500b265443d4283`；starting CI `30618511789` 与 RC `ef803568...` CI `30616271884` 均 `completed / success / 10 of 10`；authority checker PASS；RC 后 production drift=0。
+- validation：Windows PS5.1/PS7 AST=12/0、builder/installer/control/worker/fail-close、release=`23`、remediation/security=`32/12` 通过；focused Maven=`51 tests / 0 failures / 0 errors / 2 skipped`；两份 clean exact-build 重现 manifest=`ba5f9c05...52f5`、bundle=`75ef45cf...7c17`、`131/122/132`。Disposable Linux pwsh7/JDK21/PostgreSQL16 的 AST=12/0、control/worker/fail-close=`71/59/8`、installer、remediation/security=`32/12` 通过；Git/Maven-dependent Linux 项如实 `NOT_RUN`。
+- P1：`scripts/gatew/verify-gatew-release.ps1:354-405` 将名称以 `/` 结尾的同名 duplicate entry 仅计数放行，未验证 zero-length/内容/metadata，且不读取 entry data 触发 CRC。独立临时 probe 的非空 duplicate-directory 与 stale-CRC JAR 在同步 descriptor/canonical manifest 后均错误返回 `PASS / IMMUTABLE_RELEASE_VERIFIED`。该 `UNSAFE_DUPLICATE_JAR_ENTRY` 是 release integrity fail-open。
+- cleanup：Linux disposable container、internal network、volumes、task PostgreSQL、RC detached worktree 与其 `target` 均已精确清理；无残留。
+- boundary：生产 SSH/deploy/server/current/systemd/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag；审查中未修复 RC。
+- result：`FAIL / GATEW_ATTEMPT_10_RC_REVIEW_REJECTED / RELEASE_CANDIDATE_REMEDIATION_REQUIRED`；P0=0/P1=1/P2=0/P3=0。
+- next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`；只允许最小修复 JAR duplicate-entry/CRC verifier、补回归、建立新的固定 RC 并重新独立审查；不授权生产部署或 Attempt-10。

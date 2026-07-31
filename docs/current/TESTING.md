@@ -12428,3 +12428,23 @@ P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB w
 已知非阻断 warning：Mockito/Byte Buddy 在 Java 21 动态加载 test agent。初次 Linux builder 因 disposable Maven prefix/provenance cache 不完整失败；仅补齐公开 cache metadata/artifacts并规范化 mirror marker 后，原 canonical offline 命令通过。初次两个 focused Maven wrapper 命令分别因 heredoc 与 Windows native `-D` argv quoting 失败，测试均未启动；拆分并逐参数加引号后同范围通过。
 
 未运行：生产 SSH/upload/install/activate/systemd、生产 DB read/write、真实 credential、OKX/private endpoint、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。新 RC 仅为 `RC_READY_FOR_REVIEW`，不是 accepted 或 deployable；唯一下一动作是独立 release candidate stabilization review。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization review attempt-02
+
+当前结论：`FAIL / GATEW_ATTEMPT_10_RC_REVIEW_REJECTED / RELEASE_CANDIDATE_REMEDIATION_REQUIRED`（失败 / GateW Attempt-10 RC 审查已拒绝 / release candidate 需要整改）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| baseline / exact-head CI | PASS | `HEAD == origin/dev == 5aa0c70f...`；starting CI `30618511789` 与 RC CI `30616271884` 均 `completed / success / 10 of 10` |
+| production / authority diff | PASS | RC 为 7 个实现/测试/tooling 文件；RC 后仅 current docs/evidence/governance，无 production drift |
+| Windows AST / self-tests | PASS | PS5.1/PS7：12 files / 0 errors；builder、installer、control、worker、fail-close、32-case remediation、12-case security、23-case release regression 通过 |
+| focused Maven | PASS | 23 modules `BUILD SUCCESS`；51 tests / 0 failures / 0 errors / 2 skipped |
+| clean exact-commit rebuild | PASS | 两份 fresh detached worktree、PS5.1/PS7；manifest=`ba5f9c05...52f5`、bundle=`75ef45cf...7c17`、`131 / 122 / 132` 与 descriptors bytes identical |
+| JAR duplicate / CRC probe | BLOCKING FAIL | 同名非空 `conflict/` duplicate entry 与 stale-CRC entry 在更新 artifact SHA/canonical manifest 后均 exit `0`、`PASS / IMMUTABLE_RELEASE_VERIFIED` |
+| disposable Linux non-Git suite | PASS | Ubuntu 24.04 / pwsh 7.5.0 / Java 21.0.9 / task-local PostgreSQL 16；AST=12/0，control=71，worker=59，fail-close=8，installer、remediation=32、security=12 通过 |
+| Linux Git/Maven-dependent items | `NOT_RUN / LINUX_GIT_UNAVAILABLE / LINUX_MAVEN_UNAVAILABLE` | 未下载、安装或联网补齐；不把 Windows 产物当 Linux build 输入 |
+| temporary cleanup | PASS | detached RC worktree、其 `target`、task-local PostgreSQL、container、internal network 与 volumes 均已精确删除 |
+
+已知 blocking finding：`scripts/gatew/verify-gatew-release.ps1:354-405` 只枚举 JAR entries，允许同名目录 entry 而不校验其 payload/metadata，且未读取 entry 数据以触发 CRC。该 P1 阻断 release candidate；必须最小修复后产生新 source commit 并重新独立审查。
+
+未运行：Linux Git/Maven-dependent builder、release regression、focused Maven、canonical exact build，以及生产 SSH/deploy/systemd、生产 DB read/write、真实 credential、OKX、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。不存在生产副作用；Attempt-10 继续 `NOT_CREATED / NOT_AUTHORIZED`。
