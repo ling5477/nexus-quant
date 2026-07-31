@@ -361,6 +361,22 @@ if (-not (Test-GovernanceLifecycleTransition `
 }
 Write-Output 'PASS canonical-release-candidate-stabilization-fix exact-triple=true'
 
+$releaseCandidateFixCompletedStatus = 'IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING'
+$releaseCandidateFixWorkBatch =
+        'GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateFixCompletedStatus `
+        $releaseCandidateFixWorkBatch `
+        $releaseCandidateStabilizationReview)) {
+    throw 'CANONICAL_RELEASE_CANDIDATE_FIX_REVIEW_REJECTED'
+}
+if (-not (Test-GovernanceLifecycleTransition `
+        $contract 'highRisk' $releaseCandidateReviewRejectedStatus `
+        $releaseCandidateFixCompletedStatus)) {
+    throw 'CANONICAL_RELEASE_CANDIDATE_FIX_COMPLETION_TRANSITION_REJECTED'
+}
+Write-Output 'PASS canonical-release-candidate-fix-review exact-triple=true'
+
 foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRD'; Batch = $deploymentWorkBatch; Action = $reproducibleBuildFix },
     @{ Status = $deploymentFailedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-ATTEMPT-10'; Action = $reproducibleBuildFix },
@@ -386,7 +402,13 @@ foreach ($case in @(
     @{ Status = 'REVIEW_REJECTED|REMEDIATION_REQUIRD'; Batch = $releaseCandidateStabilizationWorkBatch; Action = $releaseCandidateStabilizationFix },
     @{ Status = $releaseCandidateReviewRejectedStatus; Batch = 'GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-LATER'; Action = $releaseCandidateStabilizationFix },
     @{ Status = $releaseCandidateReviewRejectedStatus; Batch = $releaseCandidateStabilizationWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX-LATER' },
-    @{ Status = $releaseCandidateReviewRejectedStatus; Batch = $releaseCandidateStabilizationWorkBatch; Action = 'nq-gatew-attempt-10-release-candidate-stabilization-fix' }
+    @{ Status = $releaseCandidateReviewRejectedStatus; Batch = $releaseCandidateStabilizationWorkBatch; Action = 'nq-gatew-attempt-10-release-candidate-stabilization-fix' },
+    @{ Status = 'IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDNG'; Batch = $releaseCandidateFixWorkBatch; Action = $releaseCandidateStabilizationReview },
+    @{ Status = $releaseCandidateFixCompletedStatus; Batch = $releaseCandidateStabilizationWorkBatch; Action = $releaseCandidateStabilizationReview },
+    @{ Status = $releaseCandidateStabilizationStatus; Batch = $releaseCandidateFixWorkBatch; Action = $releaseCandidateStabilizationReview },
+    @{ Status = $releaseCandidateFixCompletedStatus; Batch = 'GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX-LATER'; Action = $releaseCandidateStabilizationReview },
+    @{ Status = $releaseCandidateFixCompletedStatus; Batch = $releaseCandidateFixWorkBatch; Action = 'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-LATER' },
+    @{ Status = $releaseCandidateFixCompletedStatus; Batch = $releaseCandidateFixWorkBatch; Action = 'nq-gatew-attempt-10-release-candidate-stabilization-review' }
 )) {
     if (Test-GovernanceNextActionForWorkBatch `
             $contract $case.Status $case.Batch $case.Action) {

@@ -12403,3 +12403,28 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB write SQL、Attempt/clock、worker/systemd mutation、订单/资金写侧、AI/DH runtime 均为 0。测试中的 DB write 仅用于 disposable fixture。
 
 未运行：生产 SSH/upload/install/activate/systemd、生产 DB read/write、真实 credential、OKX/private endpoint、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。Attempt-10 保持 `NOT_CREATED / NOT_AUTHORIZED`；唯一下一动作是独立 release candidate stabilization fix。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization fix
+
+当前结论：`IMPLEMENTED / ALL_RC_FINDINGS_CLOSED / DISPOSABLE_LINUX_VALIDATION_PASSED / NEW_RC_READY_FOR_REVIEW / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`（已实现 / RC findings 全部关闭 / disposable Linux 验证通过 / 新 RC 可进入审查 / CI 已通过 / 生产部署未开始 / Attempt-10 未授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| Commit A exact-head CI | PASS | `8db984f3369cec7b6f66d613daa13651e211b682`；run `30607922128 / completed / success / 10 of 10` |
+| LF checkout follow-up exact-head CI | PASS | `ef803568ed56905cb9969477e1ad777d5a01faf6`；run `30616271884 / completed / success / 10 of 10` |
+| Windows builder self-test | PASS | PowerShell 5.1 / 7；含 `CORE_AUTOCRLF_FALSE_CORE_EOL_LF` |
+| Linux PowerShell AST | PASS | Ubuntu 24.04.4 / PowerShell 7.5.2；12 files / 0 errors |
+| Linux control / worker / fail-close / installer | PASS | `71 / 59 / 8 / PASS`；timeout=`30s`，process tree cleaned，async stdout/stderr PASS |
+| Linux remediation / security / release | PASS | `32 / 12 / 23`；duplicate/case/normalized/traversal/tamper/dirty 均拒绝 |
+| Linux focused Maven | PASS | 51 tests / 0 failures / 0 errors / 1 skipped；support 48/48，strict mapping 2/2 |
+| disposable PostgreSQL rollback | PASS | loopback PG16；`exchange_accounts=0`、`exchange_account_credentials=0` |
+| Java 21 verifier | PASS | actual/required=`21/21`；`posixVerified=true` |
+| Java 17 verifier | EXPECTED REJECTION | actual=17；exit 2；`BLOCKED / JAVA_MAJOR_VERSION_MISMATCH`；随后恢复 Java 21 |
+| Windows A/B exact build | PASS | PowerShell 5.1/7；fresh detached worktrees；manifest/bundle/descriptors identical |
+| Linux exact build | PASS | no-egress internal network；manifest/bundle/descriptors 与 Windows A/B bytes identical |
+| canonical RC | PASS | source=`ef803568...`；manifest=`ba5f9c05...52f5`；bundle=`75ef45cf...7c17`；131 artifacts / 122 JAR / 132 USTAR / duplicate dirs 4 |
+| canonical RC tamper | EXPECTED REJECTION | exit 2；`BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH`；tamper copy 已删除 |
+
+已知非阻断 warning：Mockito/Byte Buddy 在 Java 21 动态加载 test agent。初次 Linux builder 因 disposable Maven prefix/provenance cache 不完整失败；仅补齐公开 cache metadata/artifacts并规范化 mirror marker 后，原 canonical offline 命令通过。初次两个 focused Maven wrapper 命令分别因 heredoc 与 Windows native `-D` argv quoting 失败，测试均未启动；拆分并逐参数加引号后同范围通过。
+
+未运行：生产 SSH/upload/install/activate/systemd、生产 DB read/write、真实 credential、OKX/private endpoint、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。新 RC 仅为 `RC_READY_FOR_REVIEW`，不是 accepted 或 deployable；唯一下一动作是独立 release candidate stabilization review。

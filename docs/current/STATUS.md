@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_acceptance_head=07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c
 accepted_batch_ci_run=29339016784
-work_batch=GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION
-work_batch_status=REVIEW_REJECTED|REMEDIATION_REQUIRED
-work_batch_commit=5e7a9c4ef1f3f6f38bb4bd57c738bd53464a9ac6
-work_batch_ci_run=30576297678
-next_action=NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX
+work_batch=GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX
+work_batch_status=IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING
+work_batch_commit=ef803568ed56905cb9969477e1ad777d5a01faf6
+work_batch_ci_run=30616271884
+next_action=NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -50,7 +50,8 @@ nq-current-authority:end -->
 - GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT：`DEPLOYMENT VERIFIED / CI GREEN / ATTEMPT-10 PREPARATION PENDING`（部署已验证 / release source CI 已通过 / 待 Attempt-10 准备）。Commit `c16f27c3c68d2484ad140d0557b879de08b7c78f` 的 canonical 131-artifact release 已上传、安装并于 Attempt-10 preparation attempt-01 中由 canonical installer 原子激活；bundle/manifest、root ownership、POSIX mode、worker write denial、trusted runtime path、systemd contract、offline remediation/security、fixture 与 tamper rejection均通过。Canonical `precreate-prerequisite` 随后返回 `readyForAttemptCreation=false`，因此 RunId/state/runtime/clock 均未创建，units started=`0`，OKX calls=`0`。
 - GateW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION：`DEPLOYMENT VERIFICATION FAILED / CODE REMEDIATION REQUIRED`（部署验证失败 / 需要代码整改）。Commit A `1561eb60cd46dc1a4618fde6651426c41d7c4e20` 的 exact-head CI run `30559245227` 为 `completed / success / 10 of 10`；其 131-artifact immutable release 已通过双构建可复现、Linux root/POSIX/ownership、systemd 与离线回归验证，但生产 canonical `precreate-prerequisite` 仍返回 `INTERNAL_SANITIZED_READBACK_FAILURE`，无法建立 management/PostgreSQL readback。Attempt-10、RunId、state/runtime、clock 与 worker 均未创建或启动；服务器已通过 canonical action 回滚 current/unit links 到 `c16f27c3...`，新 release 保留但未运行。
 - GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION：`REVIEW REJECTED / REMEDIATION REQUIRED`（审查已拒绝 / 需要整改）。固定 RC `5e7a9c4ef1f3f6f38bb4bd57c738bd53464a9ac6` 的 exact-head CI run `30576297678` 虽为 `completed / success / 10 of 10`，但独立 review 发现 4 个 P1：Java 21 source 与 release `javaMajor=17` 合同冲突、launcher 无进程级 timeout、固定 RC 无法重建声明的 manifest/bundle hashes、null/type mapping 未进入 `RESULT_MAPPING_FAILED`。另有 1 个 P2：JAR duplicate-entry policy 未形成显式 hard gate。本轮重建 manifest `5d946407...40c`、bundle `475a7037...3a`，与声明 `cbc2c0c4...bce7b` / `84446b2d...e952d3` 不同；RC 不得部署。
-- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝。Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）；release candidate 修复与重新独立审查通过前不得进入生产部署或重试。
+- GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX：`IMPLEMENTED / CI GREEN / RC REVIEW PENDING`（已实现 / CI 已通过 / 待 RC 独立审查）。Commit A `8db984f3369cec7b6f66d613daa13651e211b682` 的 exact-head CI run `30607922128` 与跨 OS LF checkout follow-up `ef803568ed56905cb9969477e1ad777d5a01faf6` 的 exact-head run `30616271884` 均为 `completed / success / 10 of 10`。唯一新 RC source 为 `ef803568...`；Windows PowerShell 5.1/7 与 no-egress Linux PowerShell 7 三次 exact build 的 manifest/bundle/artifact descriptors 精确相同，manifest SHA-256 `ba5f9c0536c3bc142ff6e44f194f12ab3ed29935e432b23e33ec55ed709752f5`、bundle SHA-256 `75ef45cf0d61cd10be76992b981f6b4ebfb3418ad19e66931a286f79016a7c17`、131 artifacts、122 JAR、132 USTAR、4 个允许且已计数的重复目录 entry。Linux Java 21/POSIX verifier、Java 17 mismatch、30s process-tree cleanup、51-test focused Maven、32/12/23 regression 与 tamper rejection 均通过。该 RC 只标记 `RC_READY_FOR_REVIEW / PRODUCTION_DEPLOYMENT_NOT_STARTED`，未被接受或部署。
+- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝。Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）；新 RC 的独立 review 与后续独立生产授权通过前不得进入部署或重试。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -75,10 +76,10 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 - RealClient / private trading adapter：`NOT IMPLEMENTED`（未实现）；GateW-2 private read-only diagnostic transport/probe 为 `ACCEPTED / CI GREEN`，默认不装配且未做 real smoke，不属于交易适配器或交易授权。
 - GateW runtime release：`c16f27c3c68d2484ad140d0557b879de08b7c78f`；该值是服务器已由 canonical installer 激活的 immutable runtime Commit A。Attempt-10 preparation attempt-01 的 governance/docs/evidence commit 不部署到服务器。
 - Attempt-09：`REJECTED / FAILED_INSUFFICIENT_DURATION`（已拒绝 / 有效时长不足）。初始 MainPID=`4074358`；事件窗口内 systemd 明确执行 stop、另一次 start（PID=`301042`）和第二次 stop，最终 worker unit inactive、MainPID=`0`，continuity 不可恢复。终止分类=`OPERATOR_OR_AUTOMATION_STOP`，精确发起者=`UNKNOWN`；finalizer 分类=`FINALIZER_SYSTEMD_TIMEOUT`，`terminal-status.json=false`。
-- Attempt-10：`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）。固定 RC 的独立审查已因 4 个 P1 拒绝；本轮未连接或修改生产，没有 RunId、clock、unit 或 OKX call。不得直接重试、用新 Attempt/重置 clock/重跑 finalizer或其他服务器修改绕过 hard gate、RC 拒绝与 Attempt-09 拒绝事实。
+- Attempt-10：`NOT_CREATED / NOT_AUTHORIZED`（未创建 / 未授权）。旧 RC 已因 4 个 P1 与 1 个 P2 拒绝；新整改 RC 仅达到 `RC_READY_FOR_REVIEW`，尚未独立接受。本轮未连接或修改生产，没有 RunId、clock、unit 或 OKX call。不得直接重试、用新 Attempt/重置 clock/重跑 finalizer或其他服务器修改绕过 hard gate、RC review 与 Attempt-09 拒绝事实。
 - Python ML readiness / Python live execution readiness：`NO`（否）。
 - `acknowledge`、`escalate`、`resolve`、`close` 只表示本地人工诊断复核；不构成交易授权、LIVE/Shadow 放行，亦不批准下单、撤单、转账或提现。
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`。该动作只允许针对本轮 4 个 P1 与 1 个 P2 做独立最小修复、回归与可复现 release 重建；修复后必须重新进行独立 RC review。不得连接生产、部署 release、重试 Attempt-10、创建 RunId/clock/worker，亦不得修改 credential、permission、IP allowlist 或生产数据库；不授权扩大 OKX endpoint、LIVE、交易写侧或进入 freeze/archive/tag。
+治理 authority 中唯一下一动作精确为 `NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`。该动作只允许对 source commit `ef803568ed56905cb9969477e1ad777d5a01faf6`、manifest `ba5f9c05...52f5` 与 bundle `75ef45cf...7c17` 做独立 RC review；不得复用旧 RC 的接受结论，也不得把本修复任务的 self-review 代替独立审查。不得连接生产、部署 release、重试 Attempt-10、创建 RunId/clock/worker，亦不得修改 credential、permission、IP allowlist 或生产数据库；不授权扩大 OKX endpoint、LIVE、交易写侧或进入 freeze/archive/tag。

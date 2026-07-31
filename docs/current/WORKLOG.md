@@ -17969,3 +17969,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：生产SSH/deploy/server/current/DB/OKX/credential=`0`；Attempt-10/RunId/clock/worker=false；未触达LIVE、交易写侧、freeze/archive/tag；审查中未修复RC。
 - result：`FAIL / GATEW_ATTEMPT_10_RC_REVIEW_REJECTED / RELEASE_CANDIDATE_REMEDIATION_REQUIRED`；P0=0/P1=4/P2=1/P3=0。
 - next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`；只允许独立最小修复、回归、重建与后续重新审查，不授权生产部署或Attempt-10重试。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization fix
+
+- task：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`；NQ-only、L级 Java runtime/process timeout/clean build/strict mapping/JAR duplicate policy/disposable Linux/reproducible RC 整改。
+- implementation：Commit A `8db984f3...` 关闭原 4P1+1P2；Linux canonical build暴露 host `core.autocrlf=true` 导致 SQL/CSV resource 跨 OS 字节漂移，follow-up `ef803568...` 仅固定 detached checkout 为 `core.autocrlf=false / core.eol=lf`，未改 migration 或业务逻辑。
+- CI：Commit A run `30607922128` 与 follow-up run `30616271884` 均 `completed / success / 10 of 10`；最终 RC source 为 `ef803568ed56905cb9969477e1ad777d5a01faf6`。
+- validation：Ubuntu 24.04.4 / PowerShell 7.5.2 / Java 21.0.11 / no-egress；AST=12/0，control/worker/fail-close=`71/59/8`，installer PASS，remediation/security/release=`32/12/23`，focused Maven=`51 tests / 0 failures / 0 errors / 1 skipped`；真实 Java 17精确 mismatch，DB rollback=`0/0`。
+- release：Windows PS5.1/PS7 与 Linux三次 exact build bytes identical；manifest=`ba5f9c0536c3bc142ff6e44f194f12ab3ed29935e432b23e33ec55ed709752f5`；bundle=`75ef45cf0d61cd10be76992b981f6b4ebfb3418ad19e66931a286f79016a7c17`；131 artifacts / 122 JAR / 132 USTAR / duplicate dirs 4；tamper精确返回 `RELEASE_ARTIFACT_HASH_MISMATCH`。
+- boundary：生产 SSH/deploy/server/current/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag。Disposable SQL只用于 loopback fixture并已事务回滚。
+- result：`IMPLEMENTED / ALL_RC_FINDINGS_CLOSED / DISPOSABLE_LINUX_VALIDATION_PASSED / NEW_RC_READY_FOR_REVIEW / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`；P0=0/P1=0/P2=0/P3=0。
+- next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；只允许独立审查新 RC，不授权生产部署或 Attempt-10。
