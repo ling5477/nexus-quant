@@ -5,6 +5,20 @@ $script:Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $script:Ascii = [Text.Encoding]::ASCII
 $script:TarBlockSize = 512
 $script:JavaVersionTimeoutMilliseconds = 10000
+$script:JarReadBufferBytes = 65536
+$script:JarMaxEntryCount = 16384
+$script:JarMaxEntryUncompressedBytes = 268435456
+$script:JarMaxTotalUncompressedBytes = 1073741824
+
+function Get-GateWJarIntegrityContract
+{
+    return [pscustomobject][ordered]@{
+        ReadBufferBytes = $script:JarReadBufferBytes
+        MaxEntryCount = $script:JarMaxEntryCount
+        MaxEntryUncompressedBytes = $script:JarMaxEntryUncompressedBytes
+        MaxTotalUncompressedBytes = $script:JarMaxTotalUncompressedBytes
+    }
+}
 
 function Sort-GateWOrdinalStrings
 {
@@ -722,6 +736,7 @@ function New-GateWCanonicalTar
 Export-ModuleMember -Function @(
     'Sort-GateWOrdinalStrings',
     'Sort-GateWArtifactsOrdinal',
+    'Get-GateWJarIntegrityContract',
     'ConvertFrom-GateWJavaVersionText',
     'Get-GateWJavaRuntimeMajor',
     'ConvertTo-GateWCanonicalManifestJson',

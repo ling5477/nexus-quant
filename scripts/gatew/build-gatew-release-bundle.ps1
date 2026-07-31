@@ -689,6 +689,8 @@ function Build-ReleaseBundle
             manifestSha256 = [string]$verification.manifestSha256
             artifactCount = [int]$verification.artifactCount
             jarCount = [int]$verification.jarCount
+            jarEntryCount = [int]$verification.jarEntryCount
+            jarEntryBytesRead = [long]$verification.jarEntryBytesRead
             duplicateDirectoryEntries = [int]$verification.duplicateDirectoryEntries
             requiredJavaMajor = $script:RequiredJavaMajor
             actualJavaMajor = $actualJavaMajor

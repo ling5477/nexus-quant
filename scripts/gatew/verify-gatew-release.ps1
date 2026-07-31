@@ -351,6 +351,215 @@ function Get-JarEntryDescriptor
     }
 }
 
+function Initialize-JarIntegrityTypes
+{
+    if ($null -ne ('NexusQuant.GateW.JarCrc32' -as [type]))
+    {
+        return
+    }
+    Add-Type -TypeDefinition @'
+namespace NexusQuant.GateW
+{
+    public sealed class JarCrc32
+    {
+        private static readonly uint[] Table = CreateTable();
+        private uint value = 0xffffffffu;
+
+        private static uint[] CreateTable()
+        {
+            var table = new uint[256];
+            for (uint index = 0; index < table.Length; index++)
+            {
+                var current = index;
+                for (var bit = 0; bit < 8; bit++)
+                {
+                    current = (current & 1u) != 0
+                        ? (current >> 1) ^ 0xedb88320u
+                        : current >> 1;
+                }
+                table[index] = current;
+            }
+            return table;
+        }
+
+        public void Append(byte[] buffer, int count)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                value = (value >> 8) ^ Table[(value ^ buffer[index]) & 0xffu];
+            }
+        }
+
+        public uint Value { get { return value ^ 0xffffffffu; } }
+    }
+}
+'@
+}
+
+function Read-JarCentralDirectory
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)]$Limits
+    )
+
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    $reader = [IO.BinaryReader]::new($stream, [Text.Encoding]::UTF8, $true)
+    try
+    {
+        if ($stream.Length -lt 22)
+        {
+            throw 'BLOCKED / RELEASE_JAR_INVALID'
+        }
+        $tailLength = [int][Math]::Min([long]65557, $stream.Length)
+        [void]$stream.Seek(-$tailLength, [IO.SeekOrigin]::End)
+        $tail = $reader.ReadBytes($tailLength)
+        if ($tail.Length -ne $tailLength)
+        {
+            throw 'BLOCKED / RELEASE_JAR_INVALID'
+        }
+        $eocdInTail = -1
+        for ($index = $tail.Length - 22; $index -ge 0; $index--)
+        {
+            if ($tail[$index] -eq 0x50 -and $tail[$index + 1] -eq 0x4b -and
+                    $tail[$index + 2] -eq 0x05 -and $tail[$index + 3] -eq 0x06)
+            {
+                $commentLength = [BitConverter]::ToUInt16($tail, $index + 20)
+                if ($index + 22 + $commentLength -eq $tail.Length)
+                {
+                    $eocdInTail = $index
+                    break
+                }
+            }
+        }
+        if ($eocdInTail -lt 0)
+        {
+            throw 'BLOCKED / RELEASE_JAR_INVALID'
+        }
+        $eocdOffset = $stream.Length - $tailLength + $eocdInTail
+        [void]$stream.Seek($eocdOffset + 4, [IO.SeekOrigin]::Begin)
+        $diskNumber = $reader.ReadUInt16()
+        $centralDisk = $reader.ReadUInt16()
+        $entriesOnDisk = $reader.ReadUInt16()
+        $entryCount = $reader.ReadUInt16()
+        $centralSize = $reader.ReadUInt32()
+        $centralOffset = $reader.ReadUInt32()
+        $commentLength = $reader.ReadUInt16()
+        if ($diskNumber -ne 0 -or $centralDisk -ne 0 -or $entriesOnDisk -ne $entryCount -or
+                $entryCount -eq [uint16]::MaxValue -or $centralSize -eq [uint32]::MaxValue -or
+                $centralOffset -eq [uint32]::MaxValue -or
+                $eocdOffset + 22 + $commentLength -ne $stream.Length -or
+                [long]$centralOffset + [long]$centralSize -ne $eocdOffset)
+        {
+            throw 'BLOCKED / RELEASE_JAR_INVALID'
+        }
+        if ([int]$entryCount -gt [int]$Limits.MaxEntryCount)
+        {
+            throw 'BLOCKED / RELEASE_JAR_ENTRY_COUNT_LIMIT_EXCEEDED'
+        }
+
+        [void]$stream.Seek([long]$centralOffset, [IO.SeekOrigin]::Begin)
+        $records = [Collections.Generic.List[object]]::new()
+        [long]$declaredTotal = 0
+        $strictUtf8 = New-Object Text.UTF8Encoding($false, $true)
+        for ($entryIndex = 0; $entryIndex -lt [int]$entryCount; $entryIndex++)
+        {
+            if ($reader.ReadUInt32() -ne [uint32]0x02014b50)
+            {
+                throw 'BLOCKED / RELEASE_JAR_INVALID'
+            }
+            [void]$reader.ReadUInt16()
+            [void]$reader.ReadUInt16()
+            $flags = $reader.ReadUInt16()
+            $compressionMethod = $reader.ReadUInt16()
+            [void]$reader.ReadUInt16()
+            [void]$reader.ReadUInt16()
+            $crc32 = $reader.ReadUInt32()
+            $compressedSize = $reader.ReadUInt32()
+            $uncompressedSize = $reader.ReadUInt32()
+            $nameLength = $reader.ReadUInt16()
+            $extraLength = $reader.ReadUInt16()
+            $entryCommentLength = $reader.ReadUInt16()
+            $entryDisk = $reader.ReadUInt16()
+            [void]$reader.ReadUInt16()
+            $externalAttributes = $reader.ReadUInt32()
+            $localHeaderOffset = $reader.ReadUInt32()
+            if (($flags -band [uint16]1) -ne 0 -or $compressionMethod -notin @(0, 8) -or
+                    $entryDisk -ne 0 -or $compressedSize -eq [uint32]::MaxValue -or
+                    $uncompressedSize -eq [uint32]::MaxValue -or
+                    $localHeaderOffset -eq [uint32]::MaxValue -or $nameLength -eq 0)
+            {
+                throw 'BLOCKED / RELEASE_JAR_INVALID'
+            }
+            $nameBytes = $reader.ReadBytes([int]$nameLength)
+            if ($nameBytes.Length -ne [int]$nameLength)
+            {
+                throw 'BLOCKED / RELEASE_JAR_INVALID'
+            }
+            try
+            {
+                if (($flags -band [uint16]0x0800) -ne 0)
+                {
+                    $name = $strictUtf8.GetString($nameBytes)
+                }
+                else
+                {
+                    if (@($nameBytes | Where-Object { $_ -gt 0x7f }).Count -ne 0)
+                    {
+                        throw 'BLOCKED / RELEASE_JAR_ENTRY_PATH_INVALID'
+                    }
+                    $name = [Text.Encoding]::ASCII.GetString($nameBytes)
+                }
+            }
+            catch
+            {
+                if ($_.Exception.Message -match '^BLOCKED / ')
+                {
+                    throw
+                }
+                throw 'BLOCKED / RELEASE_JAR_ENTRY_PATH_INVALID'
+            }
+            if ([long]$uncompressedSize -gt [long]$Limits.MaxEntryUncompressedBytes)
+            {
+                throw 'BLOCKED / RELEASE_JAR_ENTRY_SIZE_LIMIT_EXCEEDED'
+            }
+            $declaredTotal += [long]$uncompressedSize
+            if ($declaredTotal -gt [long]$Limits.MaxTotalUncompressedBytes)
+            {
+                throw 'BLOCKED / RELEASE_JAR_TOTAL_UNCOMPRESSED_LIMIT_EXCEEDED'
+            }
+            $records.Add([pscustomobject]@{
+                Name = $name
+                Flags = $flags
+                CompressionMethod = $compressionMethod
+                Crc32 = $crc32
+                CompressedSize = [long]$compressedSize
+                UncompressedSize = [long]$uncompressedSize
+                ExternalAttributes = $externalAttributes
+            })
+            [void]$stream.Seek([long]$extraLength + [long]$entryCommentLength, [IO.SeekOrigin]::Current)
+        }
+        if ($stream.Position -ne [long]$centralOffset + [long]$centralSize)
+        {
+            throw 'BLOCKED / RELEASE_JAR_INVALID'
+        }
+        return @($records)
+    }
+    catch
+    {
+        if ($_.Exception.Message -match '^BLOCKED / ')
+        {
+            throw
+        }
+        throw 'BLOCKED / RELEASE_JAR_INVALID'
+    }
+    finally
+    {
+        $reader.Dispose()
+        $stream.Dispose()
+    }
+}
+
 function Test-JarDuplicateEntryPolicy
 {
     param(
@@ -359,15 +568,23 @@ function Test-JarDuplicateEntryPolicy
     )
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Initialize-JarIntegrityTypes
+    $limits = Get-GateWJarIntegrityContract
     $jarCount = 0
+    $jarEntryCount = 0
+    [long]$jarEntryBytesRead = 0
     $duplicateDirectoryEntries = 0
-    foreach ($artifact in @($Manifest.artifacts | Where-Object {
+    $buffer = New-Object byte[] ([int]$limits.ReadBufferBytes)
+    try
+    {
+        foreach ($artifact in @($Manifest.artifacts | Where-Object {
         [string]$_.relativePath -like '*.jar' -and
                 [string]$_.role -in @('launcher-test-support', 'launcher-module', 'runtime-library')
-    }))
-    {
+        }))
+        {
         $jarCount++
         $path = Join-Path $Root ([string]$artifact.relativePath)
+        $centralRecords = @(Read-JarCentralDirectory $path $limits)
         try
         {
             $archive = [IO.Compression.ZipFile]::OpenRead($path)
@@ -378,10 +595,93 @@ function Test-JarDuplicateEntryPolicy
         }
         try
         {
-            $seen = @{ }
-            foreach ($entry in @($archive.Entries))
+            if ($archive.Entries.Count -ne $centralRecords.Count)
             {
+                throw 'BLOCKED / RELEASE_JAR_INVALID'
+            }
+            $seen = @{ }
+            [long]$jarBytesRead = 0
+            for ($entryIndex = 0; $entryIndex -lt $archive.Entries.Count; $entryIndex++)
+            {
+                $entry = $archive.Entries[$entryIndex]
+                $central = $centralRecords[$entryIndex]
+                if ([string]$entry.FullName -cne [string]$central.Name -or
+                        [long]$entry.Length -ne [long]$central.UncompressedSize -or
+                        [long]$entry.CompressedLength -ne [long]$central.CompressedSize)
+                {
+                    throw 'BLOCKED / RELEASE_JAR_INVALID'
+                }
                 $descriptor = Get-JarEntryDescriptor ([string]$entry.FullName)
+                $metadataDirectory = (([uint32]$central.ExternalAttributes -band [uint32]0x10) -ne 0 -or
+                        (([uint32]$central.ExternalAttributes -shr 16) -band [uint32]0xf000) -eq
+                        [uint32]0x4000)
+                if ($metadataDirectory -and -not [bool]$descriptor.IsDirectory)
+                {
+                    throw 'BLOCKED / RELEASE_JAR_ENTRY_PATH_INVALID'
+                }
+                if ([bool]$descriptor.IsDirectory -and [long]$entry.Length -ne 0)
+                {
+                    throw 'BLOCKED / RELEASE_JAR_DIRECTORY_PAYLOAD_NOT_EMPTY'
+                }
+
+                $entryStream = $null
+                [long]$entryBytesRead = 0
+                $crc32 = [NexusQuant.GateW.JarCrc32]::new()
+                try
+                {
+                    try
+                    {
+                        $entryStream = $entry.Open()
+                        while ($true)
+                        {
+                            $read = $entryStream.Read($buffer, 0, $buffer.Length)
+                            if ($read -eq 0)
+                            {
+                                break
+                            }
+                            $entryBytesRead += [long]$read
+                            $jarBytesRead += [long]$read
+                            $jarEntryBytesRead += [long]$read
+                            if ($entryBytesRead -gt [long]$limits.MaxEntryUncompressedBytes)
+                            {
+                                throw 'BLOCKED / RELEASE_JAR_ENTRY_SIZE_LIMIT_EXCEEDED'
+                            }
+                            if ($jarBytesRead -gt [long]$limits.MaxTotalUncompressedBytes)
+                            {
+                                throw 'BLOCKED / RELEASE_JAR_TOTAL_UNCOMPRESSED_LIMIT_EXCEEDED'
+                            }
+                            $crc32.Append($buffer, $read)
+                        }
+                    }
+                    catch
+                    {
+                        if ($_.Exception.Message -match '^BLOCKED / ')
+                        {
+                            throw
+                        }
+                        throw 'BLOCKED / RELEASE_JAR_ENTRY_READ_FAILED'
+                    }
+                }
+                finally
+                {
+                    if ($null -ne $entryStream)
+                    {
+                        $entryStream.Dispose()
+                    }
+                }
+                if ($entryBytesRead -ne [long]$central.UncompressedSize)
+                {
+                    throw 'BLOCKED / RELEASE_JAR_ENTRY_TRUNCATED'
+                }
+                if ([uint32]$crc32.Value -ne [uint32]$central.Crc32)
+                {
+                    throw 'BLOCKED / RELEASE_JAR_ENTRY_CRC_MISMATCH'
+                }
+                if ([bool]$descriptor.IsDirectory -and $entryBytesRead -ne 0)
+                {
+                    throw 'BLOCKED / RELEASE_JAR_DIRECTORY_PAYLOAD_NOT_EMPTY'
+                }
+                $jarEntryCount++
                 $key = [string]$descriptor.Folded
                 if (-not $seen.ContainsKey($key))
                 {
@@ -416,12 +716,19 @@ function Test-JarDuplicateEntryPolicy
             $archive.Dispose()
         }
     }
+    }
+    finally
+    {
+        [Array]::Clear($buffer, 0, $buffer.Length)
+    }
     if ($jarCount -lt 1)
     {
         throw 'BLOCKED / RELEASE_JAR_INVALID'
     }
     return [pscustomobject]@{
         JarCount = $jarCount
+        JarEntryCount = $jarEntryCount
+        JarEntryBytesRead = $jarEntryBytesRead
         DuplicateDirectoryEntries = $duplicateDirectoryEntries
     }
 }
@@ -720,6 +1027,8 @@ try
         manifestSha256 = $manifestSha256
         artifactCount = @($manifest.artifacts).Count
         jarCount = [int]$jarPolicy.JarCount
+        jarEntryCount = [int]$jarPolicy.JarEntryCount
+        jarEntryBytesRead = [long]$jarPolicy.JarEntryBytesRead
         duplicateDirectoryEntries = [int]$jarPolicy.DuplicateDirectoryEntries
         requiredJavaMajor = [int]$manifest.requiredRuntime.javaMajor
         actualJavaMajor = $actualJavaMajor
