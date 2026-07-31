@@ -711,6 +711,21 @@ function Build-ReleaseBundle
     }
 }
 
+function Get-ExactCommitWorktreeAddArguments
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)][string]$Commit
+    )
+
+    return @(
+        '-C', $script:RepoRoot,
+        '-c', 'core.autocrlf=false',
+        '-c', 'core.eol=lf',
+        'worktree', 'add', '--detach', $WorktreeRoot, $Commit
+    )
+}
+
 function Invoke-BuilderSelfTest
 {
     $testRoot = Join-Path $script:RepoRoot 'target/gatew-release-builder/self-test'
@@ -884,6 +899,18 @@ function Invoke-BuilderSelfTest
         {
             throw 'post-build extra class self-test failed'
         }
+        $worktreeArguments = @(Get-ExactCommitWorktreeAddArguments `
+                '/tmp/nqgw-self-test' ('c' * 40))
+        $expectedWorktreeArguments = @(
+            '-C', $script:RepoRoot,
+            '-c', 'core.autocrlf=false',
+            '-c', 'core.eol=lf',
+            'worktree', 'add', '--detach', '/tmp/nqgw-self-test', ('c' * 40)
+        )
+        if (($worktreeArguments -join "`0") -cne ($expectedWorktreeArguments -join "`0"))
+        {
+            throw 'exact commit checkout normalization self-test failed'
+        }
         return [pscustomobject]@{
             decision = 'PASS / RELEASE_BUNDLE_BUILDER_SELF_TEST'
             lfNormalization = 'PASS'
@@ -896,6 +923,8 @@ function Invoke-BuilderSelfTest
             javaVersionContract = 'PASS / 17_20_21_22_AND_UNREADABLE'
             cleanBuildPollutionPolicy =
             'PASS / TARGET_CLASSES_OLD_JAR_POST_BUILD_CLASS_AND_COMMIT_MISMATCH'
+            exactCommitCheckoutNormalization =
+            'PASS / CORE_AUTOCRLF_FALSE_CORE_EOL_LF'
             credentialAccessed = $false
             networkCalled = $false
         }
@@ -969,9 +998,8 @@ function Invoke-ExactCommitDetachedBuild
     try
     {
         $worktreeAddAttempted = $true
-        Invoke-Native (Get-Command git -ErrorAction Stop).Source @(
-            '-C', $script:RepoRoot, 'worktree', 'add', '--detach', $worktreeRoot, $Commit
-        ) | Out-Null
+        $worktreeArguments = @(Get-ExactCommitWorktreeAddArguments $worktreeRoot $Commit)
+        Invoke-Native (Get-Command git -ErrorAction Stop).Source $worktreeArguments | Out-Null
         $childBuilder = Join-Path $worktreeRoot 'scripts/gatew/build-gatew-release-bundle.ps1'
         $engine = (Get-Process -Id $PID).Path
         $childOutput = @(& $engine -NoProfile -File $childBuilder `
