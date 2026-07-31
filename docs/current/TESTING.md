@@ -12377,3 +12377,29 @@ NQ-GATEW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-VERIFICATION
 已知 warning：首次 focused Maven 因 PowerShell `-D` quoting 错误 exit 1，修正后同范围重跑通过；首次 WSL setup 最后一条 `stat` 因 CRLF 尾字符 exit 1，关键 runtime/health/PostgreSQL/owner-mode 已独立复核。中间 commit `f54cdc81...` CI green 但 JAR CRC/结构无效，明确作废；final baseline 只允许 `5e7a9c4e...`。
 
 未运行：生产 SSH/upload/install/activate/systemd 修改、生产 management/PostgreSQL readback、真实 credential/permission/IP allowlist、OKX、Attempt-10、RunId/clock/worker、168h acceptance、LIVE、交易写侧、freeze/archive/tag。真实 PostgreSQL `RESULT_MAPPING_FAILED` 需要 `COUNT(*) > Integer.MAX_VALUE`，未构造海量数据；由 `Long.MAX_VALUE` unit fixture 精确覆盖。以上限制不阻断 disposable release-candidate stabilization，但阻断生产重试。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization review
+
+当前结论：`FAIL / GATEW_ATTEMPT_10_RC_REVIEW_REJECTED / RELEASE_CANDIDATE_REMEDIATION_REQUIRED`（失败 / GateW Attempt-10 RC 审查已拒绝 / release candidate 需要整改）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| baseline / exact-head CI | PASS | `HEAD == origin/dev == bcccf29e...`；starting CI `30579834555` 与 RC CI `30576297678` 均 `completed / success / 10 of 10` |
+| production/authority diff | PASS | RC 6 个 implementation/test/tooling 文件；RC 后仅 current docs/evidence/governance，无 production drift |
+| PowerShell AST / self-tests | PASS | PS5.1/PS7 AST 9 files；builder、installer、control、worker、fail-close通过 |
+| remediation / security / release | PASS | `32/32`；Windows PS5.1/PS7 各 `12/12`；release regression 各 `16/16` |
+| focused Maven | PASS | 49 tests / 0 failures / 0 errors / 2 skipped；23 modules BUILD SUCCESS |
+| exact RC rebuild | BLOCKING FAIL | 两个 detached worktree、PS5.1/PS7重建彼此 identical，但 manifest=`5d946407...40c`、bundle=`475a7037...3a`，无法重建声明 `cbc2c0c4...bce7b` / `84446b2d...e952d3` |
+| declared manifest verification | EXPECTED REJECTION | `BLOCKED / RELEASE_MANIFEST_HASH_MISMATCH` |
+| Java runtime contract | BLOCKING FAIL | backend compile=Java 21；manifest/verifier=`javaMajor=17`；Linux verifier未校验 actual major |
+| Java process timeout | BLOCKING FAIL | launcher同步调用 `/usr/bin/java`，无进程级 timeout/kill/cleanup |
+| null/type mapping | BLOCKING FAIL | 非 `Number` 静默映射 `0L`，未进入 `RESULT_MAPPING_FAILED` |
+| JAR integrity | PASS with P2 | `122/122` CRC/structure PASS；无重复文件 entry；`archunit` 有 4 个重复目录 entry，verifier无 duplicate-entry policy |
+| tamper | PASS | `BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH` |
+| governance / authority / links | PASS | next-action、lifecycle、task-evidence、authority通过；docs links 0 error / 1 既有 warning |
+| PowerShell 7 on Linux rerun | `NOT_RERUN / EVIDENCE_REVIEW_ONLY` | WSL 中 `pwsh` 已由历史任务清理，exit 127；未安装系统包 |
+| temporary cleanup | PASS | detached worktrees注销并 prune；review root/build/tamper 删除，`exists=false` |
+
+P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB write SQL、Attempt/clock、worker/systemd mutation、订单/资金写侧、AI/DH runtime 均为 0。测试中的 DB write 仅用于 disposable fixture。
+
+未运行：生产 SSH/upload/install/activate/systemd、生产 DB read/write、真实 credential、OKX/private endpoint、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。Attempt-10 保持 `NOT_CREATED / NOT_AUTHORIZED`；唯一下一动作是独立 release candidate stabilization fix。

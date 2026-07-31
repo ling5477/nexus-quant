@@ -17957,3 +17957,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：生产 SSH/deploy/systemd/DB/OKX/real credential=`0`；Attempt-10/RunId/clock/worker=false；未触达 LIVE、交易写侧、freeze/archive/tag。Disposable fixture 使用假数据与受控 SQL，helper 本身无 DB write。
 - result：`PASS / INTERNAL_READBACK_ROOT_CAUSE_FIXED / DISPOSABLE_LINUX_VALIDATION_PASSED / RELEASE_CANDIDATE_STABILIZED / CI_GREEN / PRODUCTION_DEPLOYMENT_NOT_STARTED / ATTEMPT_10_NOT_AUTHORIZED`。
 - next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；仅允许独立 review，不授权生产部署或 Attempt-10 重试。
+
+## 2026-07-31 — GateW Attempt-10 release candidate stabilization review
+
+- task：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW`；NQ-only、L级 fixed RC security/Java/JDBC/cross-platform/reproducible release/supply-chain 独立审查。
+- baseline：`dev` clean；`HEAD == origin/dev == bcccf29e...`；starting CI `30579834555` 与 RC `5e7a9c4e...` CI `30576297678` 均 `completed / success / 10 of 10`；RC 后 production drift=0；Attempt-10=false。
+- validation：PS5.1/PS7 AST 与 builder通过；installer/control/worker/fail-close=`PASS/66/59/8`；remediation=`32/32`；Windows security各`12/12`；release各`16/16`；focused Maven=`49 tests / 0 failures / 0 errors / 2 skipped`；JAR=`122/122`；tamper精确拒绝。
+- P1：source编译Java 21但release manifest/verifier声明17且不校验actual major；Java launcher无进程级timeout；fixed RC重建manifest/bundle为`5d946407...40c`/`475a7037...3a`，无法复现声明`cbc2c0c4...bce7b`/`84446b2d...e952d3`；null/type count静默映射0而非`RESULT_MAPPING_FAILED`。
+- P2：`archunit-1.3.0.jar`有4个重复目录entry，虽无重复文件且CRC/结构通过，但verifier未建立duplicate-entry policy。
+- limitation：Linux PowerShell 7本轮因WSL中`pwsh`不存在而`NOT_RERUN / EVIDENCE_REVIEW_ONLY`；未安装系统包。两个detached worktree、双构建输出、tamper副本及review root均已清理。
+- boundary：生产SSH/deploy/server/current/DB/OKX/credential=`0`；Attempt-10/RunId/clock/worker=false；未触达LIVE、交易写侧、freeze/archive/tag；审查中未修复RC。
+- result：`FAIL / GATEW_ATTEMPT_10_RC_REVIEW_REJECTED / RELEASE_CANDIDATE_REMEDIATION_REQUIRED`；P0=0/P1=4/P2=1/P3=0。
+- next：`NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX`；只允许独立最小修复、回归、重建与后续重新审查，不授权生产部署或Attempt-10重试。
