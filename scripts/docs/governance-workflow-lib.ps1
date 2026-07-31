@@ -16,9 +16,10 @@ function Get-GovernanceWorkflowContract {
     $contract = $content | ConvertFrom-Json
     # A checker must understand the exact contract shape before it can use any policy from it.
     # Unknown versions fail closed instead of being treated as a forward-compatible extension.
-    if ($contract.schemaVersion -ne '1.2.0' -or $contract.authoritySchema -ne '3' -or
+    if ($contract.schemaVersion -ne '1.3.0' -or $contract.authoritySchema -ne '3' -or
         -not $contract.authority -or -not $contract.lifecycles -or
-        -not $contract.lifecycles.transitionPolicies -or -not $contract.evidence -or -not $contract.release) {
+        -not $contract.lifecycles.transitionPolicies -or -not $contract.lifecycles.attempt10Runtime -or
+        -not $contract.evidence -or -not $contract.release) {
         throw "GOVERNANCE_CONTRACT_INVALID path=$Path"
     }
     if ($contract.release.remoteName -ne 'origin' -or $contract.release.expectedBranch -ne 'dev' -or
@@ -92,20 +93,51 @@ function Test-GovernanceExactNextActionMapping {
     return $false
 }
 
+function Test-GovernanceScopedNextActionMapping {
+    param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
+
+    $mappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
+    if ($null -eq $mappings) { return $false }
+    foreach ($mapping in @($mappings)) {
+        if ([string](Get-GovernancePropertyValue $mapping 'scope') -ceq 'WORK_BATCH' -and
+            [string]$mapping.workBatchStatus -ceq $Status -and
+            [string]$mapping.workBatch -ceq $WorkBatch -and
+            [string]$mapping.nextAction -ceq $Action) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Test-GovernanceNextActionForWorkBatch {
     param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
 
     if ([string]::IsNullOrWhiteSpace($WorkBatch) -or [string]::IsNullOrWhiteSpace($Action)) { return $false }
     $expectedType = Get-GovernanceExpectedNextActionType $Contract $Status
     $actualType = Get-GovernanceNextActionType $Contract $Action
-    if ($expectedType -ceq 'UNKNOWN' -or $actualType -cne $expectedType) { return $false }
+    if ($expectedType -ceq 'UNKNOWN' -or $actualType -ceq 'UNKNOWN') { return $false }
 
     $exactMappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
-    $statusMappings = @($exactMappings | Where-Object { [string]$_.workBatchStatus -ceq $Status })
-    if ($statusMappings.Count -gt 0) {
-        return Test-GovernanceExactNextActionMapping $Contract $Status $WorkBatch $Action
+    $scopedMappings = @($exactMappings | Where-Object {
+        [string](Get-GovernancePropertyValue $_ 'scope') -ceq 'WORK_BATCH' -and
+        [string]$_.workBatchStatus -ceq $Status -and
+        [string]$_.workBatch -ceq $WorkBatch
+    })
+    if ($scopedMappings.Count -gt 0) {
+        return $actualType -ceq $expectedType -and
+            (Test-GovernanceScopedNextActionMapping $Contract $Status $WorkBatch $Action)
     }
 
+    $statusMappings = @($exactMappings | Where-Object {
+        $scope = Get-GovernancePropertyValue $_ 'scope'
+        $null -eq $scope -and [string]$_.workBatchStatus -ceq $Status
+    })
+    if ($statusMappings.Count -gt 0) {
+        return $actualType -ceq $expectedType -and
+            (Test-GovernanceExactNextActionMapping $Contract $Status $WorkBatch $Action)
+    }
+
+    if ($actualType -cne $expectedType) { return $false }
     $expectedPrefix = 'NQ-{0}-' -f $WorkBatch.ToUpperInvariant()
     return $Action.StartsWith($expectedPrefix, [System.StringComparison]::OrdinalIgnoreCase)
 }
@@ -209,6 +241,9 @@ function Test-GovernanceLifecycleTransitionContext {
         'TO_NOT_RUN' {
             if ($ToCi -cne 'NOT_RUN') { return $false }
         }
+        'SAME' {
+            if ($FromCi -cne $ToCi) { return $false }
+        }
         default { return $false }
     }
 
@@ -223,6 +258,16 @@ function Test-GovernanceLifecycleTransitionContext {
                 $toWorkBatch = [string](Get-GovernanceContextValue $Context 'toWorkBatch')
                 if ([string]::IsNullOrWhiteSpace($fromWorkBatch) -or
                     -not [string]::Equals($fromWorkBatch, $toWorkBatch, [System.StringComparison]::Ordinal)) { return $false }
+            }
+            'EXACT_PAIR' {
+                $fromWorkBatch = [string](Get-GovernanceContextValue $Context 'fromWorkBatch')
+                $toWorkBatch = [string](Get-GovernanceContextValue $Context 'toWorkBatch')
+                $expectedFromWorkBatch = [string](Get-GovernancePropertyValue $policy 'fromWorkBatch')
+                $expectedToWorkBatch = [string](Get-GovernancePropertyValue $policy 'toWorkBatch')
+                if ([string]::IsNullOrWhiteSpace($expectedFromWorkBatch) -or
+                    [string]::IsNullOrWhiteSpace($expectedToWorkBatch) -or
+                    $fromWorkBatch -cne $expectedFromWorkBatch -or
+                    $toWorkBatch -cne $expectedToWorkBatch) { return $false }
             }
             default { return $false }
         }
@@ -261,6 +306,65 @@ function Test-GovernanceLifecycleTransitionContext {
         if ($requiredExactHeadMatch -eq $true -and (Get-GovernanceContextValue $externalEvidence 'exactHeadMatch') -ne $true) { return $false }
         $requiredConclusion = Get-GovernancePropertyValue $evidenceRequirements 'ciConclusion'
         if ($null -ne $requiredConclusion -and (Get-GovernanceContextValue $externalEvidence 'ciConclusion') -cne [string]$requiredConclusion) { return $false }
+    }
+
+    $attempt10RuntimeState = Get-GovernancePropertyValue $policy 'attempt10RuntimeState'
+    if ($null -ne $attempt10RuntimeState) {
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        if (-not (Test-GovernanceAttempt10RuntimeState $Contract ([string]$attempt10RuntimeState) $toRuntimeState)) { return $false }
+    }
+
+    $attempt10RuntimeTransition = Get-GovernancePropertyValue $policy 'attempt10RuntimeTransition'
+    if ($null -ne $attempt10RuntimeTransition) {
+        $fromRuntimeState = Get-GovernanceContextValue $Context 'fromRuntimeState'
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        $runtimeEvents = @(Get-GovernanceContextValue $Context 'runtimeEvents')
+        if (-not (Test-GovernanceAttempt10RuntimeTransition $Contract `
+                ([string]$attempt10RuntimeTransition.from) ([string]$attempt10RuntimeTransition.to) `
+                $fromRuntimeState $toRuntimeState $runtimeEvents)) { return $false }
+    }
+    return $true
+}
+
+function Test-GovernanceAttempt10RuntimeState {
+    param([object] $Contract, [string] $Name, [object] $State)
+
+    if ($null -eq $State -or [string]::IsNullOrWhiteSpace($Name)) { return $false }
+    $runtime = Get-GovernancePropertyValue $Contract.lifecycles 'attempt10Runtime'
+    if ($null -eq $runtime) { return $false }
+    $definitions = @($runtime.states | Where-Object { [string]$_.name -ceq $Name })
+    if ($definitions.Count -ne 1) { return $false }
+    foreach ($field in @($runtime.fields)) {
+        $expected = Get-GovernancePropertyValue $definitions[0] ([string]$field)
+        $actual = Get-GovernanceContextValue $State ([string]$field)
+        if ($null -eq $expected -or $null -eq $actual -or [string]$actual -cne [string]$expected) { return $false }
+    }
+    return $true
+}
+
+function Test-GovernanceAttempt10RuntimeTransition {
+    param(
+        [object] $Contract,
+        [string] $From,
+        [string] $To,
+        [object] $FromState,
+        [object] $ToState,
+        [string[]] $Events
+    )
+
+    $runtime = Get-GovernancePropertyValue $Contract.lifecycles 'attempt10Runtime'
+    if ($null -eq $runtime -or
+        -not (Test-GovernanceAttempt10RuntimeState $Contract $From $FromState) -or
+        -not (Test-GovernanceAttempt10RuntimeState $Contract $To $ToState)) { return $false }
+    $transitions = @($runtime.transitions | Where-Object {
+        [string]$_.from -ceq $From -and [string]$_.to -ceq $To
+    })
+    if ($transitions.Count -ne 1) { return $false }
+    $requiredEvents = @($transitions[0].requiredEvents)
+    $actualEvents = @($Events)
+    if ($requiredEvents.Count -ne $actualEvents.Count) { return $false }
+    for ($index = 0; $index -lt $requiredEvents.Count; $index++) {
+        if ([string]$requiredEvents[$index] -cne [string]$actualEvents[$index]) { return $false }
     }
     return $true
 }

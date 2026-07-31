@@ -35,6 +35,21 @@ function Assert-ContextTransition {
     Assert-Condition ($actual -eq $Expected) "transition-context=$Scenario expected=$Expected actual=$actual"
     Write-Output "PASS fixture=$Scenario lifecycle=$Lifecycle from=$From to=$To catchUp=$AuthorityCatchUp allowed=$actual"
 }
+function Assert-RuntimeState {
+    param([string]$Name,[object]$State,[bool]$Expected,[string]$Scenario)
+    $actual=Test-GovernanceAttempt10RuntimeState $contract $Name $State
+    Assert-Condition ($actual -eq $Expected) "runtime-state=$Scenario expected=$Expected actual=$actual"
+    Write-Output "PASS fixture=$Scenario runtimeState=$Name allowed=$actual"
+}
+function Assert-RuntimeTransition {
+    param(
+        [string]$From,[string]$To,[object]$FromState,[object]$ToState,
+        [string[]]$Events,[bool]$Expected,[string]$Scenario
+    )
+    $actual=Test-GovernanceAttempt10RuntimeTransition $contract $From $To $FromState $ToState $Events
+    Assert-Condition ($actual -eq $Expected) "runtime-transition=$Scenario expected=$Expected actual=$actual"
+    Write-Output "PASS fixture=$Scenario runtimeFrom=$From runtimeTo=$To allowed=$actual"
+}
 function Invoke-Checker {
     param([string]$Script,[string[]]$Arguments,[string]$WorkingRoot)
     $previous=$ErrorActionPreference; $ErrorActionPreference='Continue'
@@ -74,6 +89,10 @@ function Write-AuthorityFixture {
         'COMMITTED|CI_PENDING' { 'COMMITTED / CI PENDING' }
         'COMMITTED|CI_FAILED|FIX_REQUIRED' { 'COMMITTED / CI FAILED / FIX REQUIRED' }
         'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' { 'COMMITTED / CI GREEN / CONTINUE REQUIRED' }
+        'IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING' { 'IMPLEMENTED / CI GREEN / RC REVIEW PENDING' }
+        'RUNNING|PENDING_168H' { 'RUNNING / PENDING 168H' }
+        'REVIEW_REJECTED|REMEDIATION_REQUIRED' { 'REVIEW REJECTED / REMEDIATION REQUIRED' }
+        'ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED' { 'ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED' }
         'ACCEPTED|CI_GREEN' { 'ACCEPTED / CI GREEN' }
         default { $Status }
     }
@@ -117,7 +136,7 @@ nq-current-authority:end -->
 
 try {
     $unsupportedContractPath = Join-Path $tempRoot 'unsupported-contract.json'
-    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.2.0"', '"schemaVersion": "9.0.0"')
+    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.3.0"', '"schemaVersion": "9.0.0"')
     Write-Utf8File $unsupportedContractPath $unsupportedContract
     $unsupportedRejected = $false
     try { $null = Get-GovernanceWorkflowContract $unsupportedContractPath } catch { $unsupportedRejected = $true }
@@ -154,6 +173,21 @@ try {
     Assert-Transition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'ACCEPTED|CI_GREEN' $false 'high-risk-green-continuation-direct-accepted-rejected'
     Assert-Transition 'highRisk' 'IMPLEMENTED|PENDING_REVIEW' 'ACCEPTED|CI_GREEN' $false 'high-risk-direct-accepted-rejected'
     Assert-Transition 'highRisk' 'IMPLEMENTED|SELF_REVIEWED' 'ACCEPTED|CI_GREEN' $false 'high-risk-invalid-combination'
+
+    $rcPendingStatus='IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING'
+    $reviewAcceptedStatus='REVIEW_ACCEPTED|READY_TO_COMMIT'
+    $reviewRejectedStatus='REVIEW_REJECTED|REMEDIATION_REQUIRED'
+    $deploymentAuthorizedStatus='ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED'
+    $attempt10RunningStatus='RUNNING|PENDING_168H'
+    Assert-Transition 'highRisk' $rcPendingStatus $reviewAcceptedStatus $true 'rc-review-accepted'
+    Assert-Transition 'highRisk' $rcPendingStatus $reviewRejectedStatus $true 'rc-review-rejected'
+    Assert-Transition 'highRisk' $reviewAcceptedStatus 'COMMITTED|CI_PENDING' $true 'rc-review-commit-pending'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_PENDING' $deploymentAuthorizedStatus $true 'rc-review-exact-head-ci-authorized'
+    Assert-Transition 'highRisk' $deploymentAuthorizedStatus $attempt10RunningStatus $true 'attempt-10-soak-started'
+    Assert-Transition 'highRisk' $rcPendingStatus $deploymentAuthorizedStatus $false 'rc-pending-direct-deployment-rejected'
+    Assert-Transition 'highRisk' $rcPendingStatus $attempt10RunningStatus $false 'rc-pending-direct-soak-rejected'
+    Assert-Transition 'highRisk' $reviewAcceptedStatus $deploymentAuthorizedStatus $false 'review-accepted-direct-deployment-rejected'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $deploymentAuthorizedStatus $false 'ci-failed-direct-deployment-rejected'
 
     $failedCommit='4444444444444444444444444444444444444444'
     $fixCommit='5555555555555555555555555555555555555555'
@@ -219,6 +253,101 @@ try {
     }
     Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' $fixCommit '102' 'UNCOMMITTED' 'NOT_RUN' $false $false 'green-continuation-accepted-batch-change-rejected' $changedAcceptedBatchContext
 
+    $rcSourceCommit='6666666666666666666666666666666666666666'
+    $rcReviewCommit='7777777777777777777777777777777777777777'
+    $rcFixBatch='GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX'
+    $rcReviewBatch='GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW'
+    $attempt10Batch='GateW-OKX-READONLY-SOAK-ATTEMPT-10'
+    $rcReviewCommitAction='NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-COMMIT-AND-PUSH'
+    $rcReviewCiAction='NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-ACCEPTANCE'
+    $attempt10StartAction='NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START'
+    $attempt10AcceptanceAction='NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE'
+    $rcReviewRemediationAction='NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION'
+
+    $rcAcceptContext=[pscustomobject]@{
+        fromWorkBatch=$rcFixBatch;toWorkBatch=$rcReviewBatch;toNextAction=$rcReviewCommitAction
+    }
+    Assert-ContextTransition 'highRisk' $rcPendingStatus $reviewAcceptedStatus $rcSourceCommit '201' 'UNCOMMITTED' 'NOT_RUN' $false $true 'rc-review-accepted-exact-pair' $rcAcceptContext
+    $wrongRcAcceptPair=[pscustomobject]@{
+        fromWorkBatch='GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION';toWorkBatch=$rcReviewBatch;toNextAction=$rcReviewCommitAction
+    }
+    Assert-ContextTransition 'highRisk' $rcPendingStatus $reviewAcceptedStatus $rcSourceCommit '201' 'UNCOMMITTED' 'NOT_RUN' $false $false 'rc-review-accepted-wrong-source-batch-rejected' $wrongRcAcceptPair
+
+    $rcRejectContext=[pscustomobject]@{
+        fromWorkBatch=$rcFixBatch;toWorkBatch=$rcReviewBatch;toNextAction=$rcReviewRemediationAction
+    }
+    Assert-ContextTransition 'highRisk' $rcPendingStatus $reviewRejectedStatus $rcSourceCommit '201' $rcSourceCommit '201' $false $true 'rc-review-rejected-exact-pair' $rcRejectContext
+
+    $reviewCommitContext=[pscustomobject]@{
+        fromWorkBatch=$rcReviewBatch;toWorkBatch=$rcReviewBatch;toNextAction=$rcReviewCiAction
+    }
+    Assert-ContextTransition 'highRisk' $reviewAcceptedStatus 'COMMITTED|CI_PENDING' 'UNCOMMITTED' 'NOT_RUN' $rcReviewCommit 'PENDING' $false $true 'rc-review-commit-exact-triple' $reviewCommitContext
+
+    $deploymentAuthorizedRuntime=[pscustomobject]@{
+        attemptStatus='NOT_CREATED|AUTHORIZED';productionDeployment='NOT_STARTED';live='DISABLED';killSwitch='ENGAGED'
+        worker='NOT_STARTED';acceptanceClock='NOT_STARTED';runIdReuse='FORBIDDEN';autoRetry='DISABLED'
+    }
+    $preflightBlockedRuntime=[pscustomobject]@{
+        attemptStatus='NOT_CREATED|NOT_AUTHORIZED';productionDeployment='NOT_STARTED';live='DISABLED';killSwitch='ENGAGED'
+        worker='NOT_STARTED';acceptanceClock='NOT_STARTED';runIdReuse='FORBIDDEN';autoRetry='DISABLED'
+    }
+    $permissionBlockedRuntime=[pscustomobject]@{
+        attemptStatus='NOT_CREATED|NOT_AUTHORIZED';productionDeployment='NOT_STARTED';live='DISABLED';killSwitch='ENGAGED'
+        worker='NOT_STARTED';acceptanceClock='NOT_STARTED';runIdReuse='FORBIDDEN';autoRetry='DISABLED'
+    }
+    $soakRunningRuntime=[pscustomobject]@{
+        attemptStatus='RUNNING|SOAK_IN_PROGRESS';productionDeployment='STARTED';live='DISABLED';killSwitch='ENGAGED'
+        worker='RUNNING';acceptanceClock='STARTED';runIdReuse='FORBIDDEN';autoRetry='DISABLED'
+    }
+    $startupFailedRuntime=[pscustomobject]@{
+        attemptStatus='FAILED|STOPPED';productionDeployment='STARTED';live='DISABLED';killSwitch='ENGAGED'
+        worker='STOPPED';acceptanceClock='NOT_STARTED';runIdReuse='FORBIDDEN';autoRetry='DISABLED'
+    }
+
+    foreach ($runtimeCase in @(
+        @{Name='DEPLOYMENT_AUTHORIZED';State=$deploymentAuthorizedRuntime},
+        @{Name='PREFLIGHT_BLOCKED';State=$preflightBlockedRuntime},
+        @{Name='PERMISSION_BLOCKED';State=$permissionBlockedRuntime},
+        @{Name='SOAK_RUNNING';State=$soakRunningRuntime},
+        @{Name='STARTUP_FAILED';State=$startupFailedRuntime}
+    )) { Assert-RuntimeState $runtimeCase.Name $runtimeCase.State $true ("attempt-10-runtime-{0}" -f $runtimeCase.Name.ToLowerInvariant()) }
+
+    $ciAuthorizationContext=[pscustomobject]@{
+        mode='POST_RC_REVIEW_CI_SUCCESS_AUTHORIZATION'
+        fromWorkBatch=$rcReviewBatch;toWorkBatch=$rcReviewBatch;toNextAction=$attempt10StartAction
+        externalEvidence=$successEvidence;toRuntimeState=$deploymentAuthorizedRuntime
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' $deploymentAuthorizedStatus $rcReviewCommit 'PENDING' $rcReviewCommit '202' $false $true 'rc-review-ci-authorizes-deployment' $ciAuthorizationContext
+    $badRcCiContext=[pscustomobject]@{
+        mode='POST_RC_REVIEW_CI_SUCCESS_AUTHORIZATION'
+        fromWorkBatch=$rcReviewBatch;toWorkBatch=$rcReviewBatch;toNextAction=$attempt10StartAction
+        externalEvidence=[pscustomobject]@{exactHeadMatch=$false;ciConclusion='success'};toRuntimeState=$deploymentAuthorizedRuntime
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' $deploymentAuthorizedStatus $rcReviewCommit 'PENDING' $rcReviewCommit '202' $false $false 'rc-review-ci-exact-head-required' $badRcCiContext
+
+    $soakStartEvents=@(
+        'PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED','IMMUTABLE_RELEASE_DEPLOYED',
+        'ATTEMPT_10_CREATED','WORKER_STARTED','FIRST_VALID_HEARTBEAT_CONFIRMED','ACCEPTANCE_CLOCK_STARTED'
+    )
+    $soakStartContext=[pscustomobject]@{
+        fromWorkBatch=$rcReviewBatch;toWorkBatch=$attempt10Batch;toNextAction=$attempt10AcceptanceAction
+        fromRuntimeState=$deploymentAuthorizedRuntime;toRuntimeState=$soakRunningRuntime;runtimeEvents=$soakStartEvents
+    }
+    Assert-ContextTransition 'highRisk' $deploymentAuthorizedStatus $attempt10RunningStatus $rcReviewCommit '202' $rcReviewCommit '202' $false $true 'attempt-10-start-runtime-sequence' $soakStartContext
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' $deploymentAuthorizedRuntime $soakRunningRuntime $soakStartEvents $true 'attempt-10-soak-runtime-transition'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'PREFLIGHT_BLOCKED' $deploymentAuthorizedRuntime $preflightBlockedRuntime @('PRODUCTION_PREFLIGHT_BLOCKED') $true 'attempt-10-preflight-blocked'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'PERMISSION_BLOCKED' $deploymentAuthorizedRuntime $permissionBlockedRuntime @('PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFICATION_BLOCKED') $true 'attempt-10-permission-blocked'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'STARTUP_FAILED' $deploymentAuthorizedRuntime $startupFailedRuntime @('PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED','IMMUTABLE_RELEASE_DEPLOYED','ATTEMPT_10_CREATED','WORKER_STARTED','FIRST_VALID_HEARTBEAT_FAILED') $true 'attempt-10-startup-failed'
+
+    $liveEnabledRuntime=$soakRunningRuntime.PSObject.Copy();$liveEnabledRuntime.live='ENABLED'
+    Assert-RuntimeState 'SOAK_RUNNING' $liveEnabledRuntime $false 'attempt-10-running-live-enabled-rejected'
+    $killSwitchDisengagedRuntime=$soakRunningRuntime.PSObject.Copy();$killSwitchDisengagedRuntime.killSwitch='DISENGAGED'
+    Assert-RuntimeState 'SOAK_RUNNING' $killSwitchDisengagedRuntime $false 'attempt-10-running-kill-switch-disengaged-rejected'
+    $unauthorizedStartedRuntime=$deploymentAuthorizedRuntime.PSObject.Copy();$unauthorizedStartedRuntime.attemptStatus='NOT_CREATED|NOT_AUTHORIZED';$unauthorizedStartedRuntime.productionDeployment='STARTED'
+    Assert-RuntimeState 'DEPLOYMENT_AUTHORIZED' $unauthorizedStartedRuntime $false 'production-started-without-attempt-authorization-rejected'
+    Assert-RuntimeTransition 'PREFLIGHT_BLOCKED' 'SOAK_RUNNING' $preflightBlockedRuntime $soakRunningRuntime $soakStartEvents $false 'attempt-10-not-authorized-to-running-rejected'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' $deploymentAuthorizedRuntime $soakRunningRuntime @('PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED') $false 'attempt-10-incomplete-start-sequence-rejected'
+
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as freeze/archive candidate'
@@ -274,6 +403,19 @@ try {
         @{Status='ACCEPTED|CI_GREEN';Action='NQ-GATEW-FIXTURE-POST-CI-ACTIVE-AUTHORITY-SYNC';Commit='4444444444444444444444444444444444444444';Ci='101';Name='authority-ci-green'}
     )) {
         Write-AuthorityFixture $authorityRoot $case.Status $case.Action $case.Commit $case.Ci
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' $case.Name
+    }
+
+    foreach ($case in @(
+        @{Status=$rcPendingStatus;Batch=$rcFixBatch;Action='NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW';Commit=$rcSourceCommit;Ci='201';Name='authority-rc-review-pending'},
+        @{Status=$reviewAcceptedStatus;Batch=$rcReviewBatch;Action=$rcReviewCommitAction;Commit='UNCOMMITTED';Ci='NOT_RUN';Name='authority-rc-review-accepted'},
+        @{Status='COMMITTED|CI_PENDING';Batch=$rcReviewBatch;Action=$rcReviewCiAction;Commit=$rcReviewCommit;Ci='PENDING';Name='authority-rc-review-ci-pending'},
+        @{Status='COMMITTED|CI_FAILED|FIX_REQUIRED';Batch=$rcReviewBatch;Action='NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-BLOCKER-FIX';Commit=$rcReviewCommit;Ci='202';Name='authority-rc-review-ci-failed'},
+        @{Status=$reviewRejectedStatus;Batch=$rcReviewBatch;Action=$rcReviewRemediationAction;Commit=$rcSourceCommit;Ci='201';Name='authority-rc-review-rejected'},
+        @{Status=$deploymentAuthorizedStatus;Batch=$rcReviewBatch;Action=$attempt10StartAction;Commit=$rcReviewCommit;Ci='202';Name='authority-deployment-authorized'},
+        @{Status=$attempt10RunningStatus;Batch=$attempt10Batch;Action=$attempt10AcceptanceAction;Commit=$rcReviewCommit;Ci='202';Name='authority-attempt-10-running'}
+    )) {
+        Write-AuthorityFixture $authorityRoot $case.Status $case.Action $case.Commit $case.Ci 'IN_PROGRESS|NOT_FROZEN' 'GateV-FREEZE' $case.Batch
         Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' $case.Name
     }
     Write-AuthorityFixture $authorityRoot 'IMPLEMENTED|SELF_REVIEWED' 'NQ-GATEW-FIXTURE-REVIEW' 'UNCOMMITTED' 'NOT_RUN'

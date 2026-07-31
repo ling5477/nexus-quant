@@ -12471,3 +12471,19 @@ P0=0；P1=4；P2=1；P3=0。生产 tooling 增量中的外部 OKX/network、DB w
 编排 RCA：首个 Linux 候选镜像仅有 JRE、无 `javac`，完整 JDK 环境重建后 canonical Maven 通过；直接验证 builder staging root 因 host umask 不满足正式 POSIX 合同而拒绝，改为按正式合同解包 canonical USTAR 后 root/POSIX verifier 通过。未放宽代码或 hard gate。`check-doc-links.ps1` 首次遗漏 mandatory `-Roots` 参数 exit 1，以 `-Roots docs/current` 重跑通过；未把调用错误记为首轮通过。
 
 未运行：生产 SSH/deploy/systemd、生产 DB read/write、真实 credential、OKX、Attempt-10、RunId/clock/worker、LIVE、交易写侧、freeze/archive/tag。Attempt-09 保持 `REJECTED`；Attempt-10 保持 `NOT_CREATED / NOT_AUTHORIZED`。
+
+## 2026-07-31 — GateW Attempt-10 RC review authority transition contract fix
+
+当前结论：`PASS / AUTHORITY_TRANSITION_CONTRACT_DEFINED / ACTION_CLASSIFIER_UPDATED / FULL_LIFECYCLE_REGRESSION_GREEN / CURRENT_AUTHORITY_UNCHANGED / COMMIT_AND_EXACT_HEAD_CI_PENDING / PRODUCTION_NOT_ACCESSED / ATTEMPT_10_NOT_AUTHORIZED`（通过 / authority transition contract 已定义 / action classifier 已更新 / 完整生命周期回归通过 / current authority 未改变 / 提交与 exact-head CI 待执行 / 未访问生产 / Attempt-10 未授权）。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| JSON parse | PASS | governance contract schema `1.3.0` |
+| next-action regression | PASS | Windows PowerShell 5.1 / 7；7 条 RC review exact triple 与相似字符串 fail-closed |
+| governance lifecycle | PASS | Windows PowerShell 5.1 / 7；`PASS / GOVERNANCE_LIFECYCLE_REGRESSION` |
+| task-evidence / archive regression | PASS | `PASS / TASK_EVIDENCE_POLICY_VALID`、`PASS / GATE_ARCHIVE_MANIFEST_REGRESSION`；strict override 不变 |
+| current authority | PASS | `PASS / CURRENT_AUTHORITY_CONSISTENT`；仍为 RC fix `RC_REVIEW_PENDING` |
+| docs/current links | PASS | 147 checked / 0 errors / 1 个既有 GateJ warning |
+| Linux PowerShell 7 | `NOT_APPLICABLE` | `.github/workflows` 未执行相关治理脚本；未修改 CI workflow |
+
+首次 link checker 调用遗漏 mandatory `-Roots` 参数，exit 1；以 `-Roots docs/current` 重跑通过，未把调用错误记为首轮通过。未运行 Maven、frontend、Python、PostgreSQL、Flyway、release verifier/builder、生产 SSH/deploy/systemd、生产 DB、credential、OKX、Attempt-10、RunId/worker/168h clock、LIVE、交易写侧、freeze/archive/tag。提交与 exact-head CI 结果将在本任务提交后追加到 task evidence；当前不宣称 `COMMITTED / CI_GREEN`。

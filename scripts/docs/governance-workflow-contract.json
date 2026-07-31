@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.2.0",
+  "schemaVersion": "1.3.0",
   "authoritySchema": "3",
   "authority": {
     "activeGateStatuses": [
@@ -28,6 +28,7 @@
       "IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED",
       "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING",
       "REVIEW_REJECTED|REMEDIATION_REQUIRED",
+      "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
       "ACCEPTED|CI_GREEN",
       "BLOCKED"
     ],
@@ -51,6 +52,7 @@
       "IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED": "IMPLEMENTED\\s*/\\s*CI\\s*GREEN\\s*/\\s*DISPOSABLE\\s*LINUX\\s*VALIDATION\\s*PASSED",
       "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING": "IMPLEMENTED\\s*/\\s*CI\\s*GREEN\\s*/\\s*RC\\s*REVIEW\\s*PENDING",
       "REVIEW_REJECTED|REMEDIATION_REQUIRED": "REVIEW\\s*REJECTED\\s*/\\s*REMEDIATION\\s*REQUIRED",
+      "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED": "ACCEPTED\\s*/\\s*CI\\s*GREEN\\s*/\\s*DEPLOYMENT\\s*AUTHORIZED",
       "ACCEPTED|CI_GREEN": "ACCEPTED\\s*/\\s*CI\\s*GREEN",
       "BLOCKED": "BLOCKED"
     },
@@ -74,6 +76,7 @@
       "IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED": "RELEASE_CANDIDATE_STABILIZATION_REVIEW",
       "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING": "RELEASE_CANDIDATE_STABILIZATION_REVIEW",
       "REVIEW_REJECTED|REMEDIATION_REQUIRED": "RELEASE_CANDIDATE_STABILIZATION_FIX",
+      "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED": "ATTEMPT_10_PREPARATION_AND_START",
       "ACCEPTED|CI_GREEN": "POST_CI_SYNC",
       "BLOCKED": "BLOCKED"
     },
@@ -154,6 +157,10 @@
         "commitPattern": "^[0-9a-f]{40}$",
         "ciPattern": "^[1-9][0-9]*$"
       },
+      "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED": {
+        "commitPattern": "^[0-9a-f]{40}$",
+        "ciPattern": "^[1-9][0-9]*$"
+      },
       "ACCEPTED|CI_GREEN": {
         "commitPattern": "^[0-9a-f]{40}$",
         "ciPattern": "^[0-9]+$"
@@ -218,6 +225,42 @@
         "workBatchStatus": "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING",
         "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX",
         "nextAction": "NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "REVIEW_ACCEPTED|READY_TO_COMMIT",
+        "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "nextAction": "NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-COMMIT-AND-PUSH"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "COMMITTED|CI_PENDING",
+        "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "nextAction": "NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-ACCEPTANCE"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "nextAction": "NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "RUNNING|PENDING_168H",
+        "workBatch": "GateW-OKX-READONLY-SOAK-ATTEMPT-10",
+        "nextAction": "NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "REVIEW_REJECTED|REMEDIATION_REQUIRED",
+        "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "nextAction": "NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "COMMITTED|CI_FAILED|FIX_REQUIRED",
+        "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "nextAction": "NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-BLOCKER-FIX"
       }
     ],
     "nextActionTypes": [
@@ -239,7 +282,7 @@
       },
       {
         "name": "RELEASE_CANDIDATE_STABILIZATION_FIX",
-        "pattern": "(?-i:^NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX$)"
+        "pattern": "(?-i:^NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-(?:FIX|REVIEW-REMEDIATION)$)"
       },
       {
         "name": "REPRODUCIBLE_BUILD_FIX",
@@ -259,7 +302,7 @@
       },
       {
         "name": "SOAK_ACCEPTANCE",
-        "pattern": "(?-i:^NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-168H-ACCEPTANCE$)"
+        "pattern": "(?-i:^NQ-GATEW-(?:OKX-READONLY-SOAK-ATTEMPT-09|ATTEMPT-10)-168H-ACCEPTANCE$)"
       },
       {
         "name": "CI_BLOCKER_FIX",
@@ -287,7 +330,7 @@
       },
       {
         "name": "CI_WAIT_OR_INVESTIGATION",
-        "pattern": "(?i)(?:^|-)(?:CI-WAIT-OR-INVESTIGATION|CI_WAIT_OR_INVESTIGATION|WAIT-CI|CI-INVESTIGATION)$"
+        "pattern": "(?-i:^NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-ACCEPTANCE$)|(?i)(?:^|-)(?:CI-WAIT-OR-INVESTIGATION|CI_WAIT_OR_INVESTIGATION|WAIT-CI|CI-INVESTIGATION)$"
       },
       {
         "name": "BLOCKED",
@@ -345,6 +388,7 @@
         "IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED",
         "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING",
         "REVIEW_REJECTED|REMEDIATION_REQUIRED",
+        "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
         "ACCEPTED|CI_GREEN"
       ],
       "transitions": [
@@ -360,6 +404,8 @@
         "IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED->REVIEW_REJECTED|REMEDIATION_REQUIRED",
         "REVIEW_REJECTED|REMEDIATION_REQUIRED->IMPLEMENTED|CI_GREEN|DISPOSABLE_LINUX_VALIDATION_PASSED",
         "REVIEW_REJECTED|REMEDIATION_REQUIRED->IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING",
+        "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING->REVIEW_ACCEPTED|READY_TO_COMMIT",
+        "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING->REVIEW_REJECTED|REMEDIATION_REQUIRED",
         "NOT_STARTED->IMPLEMENTED|PENDING_REVIEW",
         "IMPLEMENTED|PENDING_REVIEW->REVIEW_ACCEPTED|READY_TO_COMMIT",
         "REVIEW_ACCEPTED|READY_TO_COMMIT->COMMITTED|CI_PENDING",
@@ -369,10 +415,73 @@
         "COMMITTED|CI_PENDING->COMMITTED|CI_GREEN|CONTINUE_REQUIRED",
         "COMMITTED|CI_FAILED|FIX_REQUIRED->COMMITTED|CI_GREEN|CONTINUE_REQUIRED",
         "COMMITTED|CI_GREEN|CONTINUE_REQUIRED->IMPLEMENTED|PENDING_REVIEW",
+        "COMMITTED|CI_PENDING->ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED->RUNNING|PENDING_168H",
         "COMMITTED|CI_PENDING->ACCEPTED|CI_GREEN"
       ]
     },
     "transitionPolicies": [
+      {
+        "from": "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING",
+        "to": "REVIEW_ACCEPTED|READY_TO_COMMIT",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "TO_UNCOMMITTED",
+        "ciRelation": "TO_NOT_RUN",
+        "workBatchRelation": "EXACT_PAIR",
+        "fromWorkBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX",
+        "toWorkBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH"
+      },
+      {
+        "from": "IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING",
+        "to": "REVIEW_REJECTED|REMEDIATION_REQUIRED",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "SAME",
+        "ciRelation": "SAME",
+        "workBatchRelation": "EXACT_PAIR",
+        "fromWorkBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-FIX",
+        "toWorkBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH"
+      },
+      {
+        "from": "REVIEW_ACCEPTED|READY_TO_COMMIT",
+        "to": "COMMITTED|CI_PENDING",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "FROM_UNCOMMITTED_TO_CONCRETE",
+        "ciRelation": "TO_PENDING",
+        "workBatchRelation": "SAME",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH"
+      },
+      {
+        "from": "COMMITTED|CI_PENDING",
+        "to": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "mode": "POST_RC_REVIEW_CI_SUCCESS_AUTHORIZATION",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "SAME",
+        "ciRelation": "PENDING_OR_SAME_TO_CONCRETE",
+        "workBatchRelation": "SAME",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH",
+        "attempt10RuntimeState": "DEPLOYMENT_AUTHORIZED",
+        "evidenceRequirements": {
+          "exactHeadMatch": true,
+          "ciConclusion": "success"
+        }
+      },
+      {
+        "from": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "to": "RUNNING|PENDING_168H",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "SAME",
+        "ciRelation": "SAME",
+        "workBatchRelation": "EXACT_PAIR",
+        "fromWorkBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
+        "toWorkBatch": "GateW-OKX-READONLY-SOAK-ATTEMPT-10",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH",
+        "attempt10RuntimeTransition": {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "SOAK_RUNNING"
+        }
+      },
       {
         "from": "COMMITTED|CI_PENDING",
         "to": "COMMITTED|CI_FAILED|FIX_REQUIRED",
@@ -449,6 +558,117 @@
         "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH"
       }
     ],
+    "attempt10Runtime": {
+      "fields": [
+        "attemptStatus",
+        "productionDeployment",
+        "live",
+        "killSwitch",
+        "worker",
+        "acceptanceClock",
+        "runIdReuse",
+        "autoRetry"
+      ],
+      "states": [
+        {
+          "name": "DEPLOYMENT_AUTHORIZED",
+          "attemptStatus": "NOT_CREATED|AUTHORIZED",
+          "productionDeployment": "NOT_STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "NOT_STARTED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "PREFLIGHT_BLOCKED",
+          "attemptStatus": "NOT_CREATED|NOT_AUTHORIZED",
+          "productionDeployment": "NOT_STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "NOT_STARTED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "PERMISSION_BLOCKED",
+          "attemptStatus": "NOT_CREATED|NOT_AUTHORIZED",
+          "productionDeployment": "NOT_STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "NOT_STARTED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "SOAK_RUNNING",
+          "attemptStatus": "RUNNING|SOAK_IN_PROGRESS",
+          "productionDeployment": "STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "RUNNING",
+          "acceptanceClock": "STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "STARTUP_FAILED",
+          "attemptStatus": "FAILED|STOPPED",
+          "productionDeployment": "STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "STOPPED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        }
+      ],
+      "transitions": [
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "PREFLIGHT_BLOCKED",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_BLOCKED"
+          ]
+        },
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "PERMISSION_BLOCKED",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_PASSED",
+            "PERMISSION_VERIFICATION_BLOCKED"
+          ]
+        },
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "STARTUP_FAILED",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_PASSED",
+            "PERMISSION_VERIFIED",
+            "IMMUTABLE_RELEASE_DEPLOYED",
+            "ATTEMPT_10_CREATED",
+            "WORKER_STARTED",
+            "FIRST_VALID_HEARTBEAT_FAILED"
+          ]
+        },
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "SOAK_RUNNING",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_PASSED",
+            "PERMISSION_VERIFIED",
+            "IMMUTABLE_RELEASE_DEPLOYED",
+            "ATTEMPT_10_CREATED",
+            "WORKER_STARTED",
+            "FIRST_VALID_HEARTBEAT_CONFIRMED",
+            "ACCEPTANCE_CLOCK_STARTED"
+          ]
+        }
+      ]
+    },
     "freeze": {
       "steps": [
         "ARCHIVE_CANDIDATE_REVIEWED",

@@ -187,8 +187,11 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                 Add-AuthorityError "NEXT_ACTION_WORK_BATCH_MISMATCH work_batch=$($authority.work_batch) action=$($authority.next_action)"
             }
 
-            if ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED' -or
-                $authority.work_batch_status -ceq 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') {
+            $hasScopedExactNextAction = Test-GovernanceScopedNextActionMapping `
+                $contract $authority.work_batch_status $authority.work_batch $authority.next_action
+            if (-not $hasScopedExactNextAction -and
+                ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED' -or
+                    $authority.work_batch_status -ceq 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED')) {
                 $workBatchMatch = [regex]::Match($authority.work_batch, '^(?<gate>Gate[A-Z0-9]+)-(?<number>[1-9][0-9]*)$', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
                 if (-not $workBatchMatch.Success -or
                     -not [string]::Equals($workBatchMatch.Groups['gate'].Value, $authority.active_gate, [System.StringComparison]::Ordinal)) {

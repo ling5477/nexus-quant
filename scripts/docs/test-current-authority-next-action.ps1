@@ -377,6 +377,85 @@ if (-not (Test-GovernanceLifecycleTransition `
 }
 Write-Output 'PASS canonical-release-candidate-fix-review exact-triple=true'
 
+$releaseCandidateReviewWorkBatch =
+        'GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW'
+$releaseCandidateReviewAcceptedStatus = 'REVIEW_ACCEPTED|READY_TO_COMMIT'
+$releaseCandidateReviewCommit =
+        'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-COMMIT-AND-PUSH'
+Assert-ActionType $releaseCandidateReviewCommit 'COMMIT_AND_PUSH'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateReviewAcceptedStatus `
+        $releaseCandidateReviewWorkBatch $releaseCandidateReviewCommit)) {
+    throw 'CANONICAL_RC_REVIEW_COMMIT_REJECTED'
+}
+
+$releaseCandidateReviewCiPendingStatus = 'COMMITTED|CI_PENDING'
+$releaseCandidateReviewCiAcceptance =
+        'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-ACCEPTANCE'
+Assert-ActionType $releaseCandidateReviewCiAcceptance 'CI_WAIT_OR_INVESTIGATION'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateReviewCiPendingStatus `
+        $releaseCandidateReviewWorkBatch $releaseCandidateReviewCiAcceptance)) {
+    throw 'CANONICAL_RC_REVIEW_CI_ACCEPTANCE_REJECTED'
+}
+
+$releaseCandidateDeploymentAuthorizedStatus = 'ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateDeploymentAuthorizedStatus `
+        $releaseCandidateReviewWorkBatch $attempt10Preparation)) {
+    throw 'CANONICAL_RC_REVIEW_DEPLOYMENT_AUTHORIZATION_REJECTED'
+}
+
+$attempt10WorkBatch = 'GateW-OKX-READONLY-SOAK-ATTEMPT-10'
+$attempt10RunningStatus = 'RUNNING|PENDING_168H'
+$attempt10Acceptance = 'NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE'
+Assert-ActionType $attempt10Acceptance 'SOAK_ACCEPTANCE'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt10RunningStatus $attempt10WorkBatch $attempt10Acceptance)) {
+    throw 'CANONICAL_ATTEMPT_10_ACCEPTANCE_REJECTED'
+}
+
+$releaseCandidateReviewRemediation =
+        'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION'
+Assert-ActionType $releaseCandidateReviewRemediation 'RELEASE_CANDIDATE_STABILIZATION_FIX'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateReviewRejectedStatus `
+        $releaseCandidateReviewWorkBatch $releaseCandidateReviewRemediation)) {
+    throw 'CANONICAL_RC_REVIEW_REMEDIATION_REJECTED'
+}
+
+$releaseCandidateReviewCiFailedStatus = 'COMMITTED|CI_FAILED|FIX_REQUIRED'
+$releaseCandidateReviewCiBlockerFix =
+        'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-BLOCKER-FIX'
+Assert-ActionType $releaseCandidateReviewCiBlockerFix 'CI_BLOCKER_FIX'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateReviewCiFailedStatus `
+        $releaseCandidateReviewWorkBatch $releaseCandidateReviewCiBlockerFix)) {
+    throw 'CANONICAL_RC_REVIEW_CI_BLOCKER_FIX_REJECTED'
+}
+Write-Output 'PASS canonical-rc-review-lifecycle exact-triples=7'
+
+foreach ($case in @(
+    @{Status=$releaseCandidateFixCompletedStatus;Batch=$releaseCandidateFixWorkBatch;Action=$attempt10Preparation;Name='rc-pending-direct-deployment'},
+    @{Status=$releaseCandidateReviewAcceptedStatus;Batch=$releaseCandidateReviewWorkBatch;Action=$attempt10Preparation;Name='review-accepted-direct-deployment'},
+    @{Status=$releaseCandidateReviewCiPendingStatus;Batch=$releaseCandidateReviewWorkBatch;Action=$attempt10Preparation;Name='ci-pending-direct-deployment'},
+    @{Status=$releaseCandidateReviewCiFailedStatus;Batch=$releaseCandidateReviewWorkBatch;Action=$attempt10Preparation;Name='ci-failed-direct-deployment'},
+    @{Status=$attempt09RunningStatus;Batch=$canonicalAttempt09WorkBatch;Action=$attempt10Acceptance;Name='attempt-09-to-attempt-10-acceptance'},
+    @{Status=$releaseCandidateReviewAcceptedStatus;Batch=$releaseCandidateFixWorkBatch;Action=$releaseCandidateReviewCommit;Name='wrong-work-batch-correct-review-status'},
+    @{Status=$releaseCandidateFixCompletedStatus;Batch=$releaseCandidateReviewWorkBatch;Action=$releaseCandidateReviewCommit;Name='correct-review-batch-wrong-status'},
+    @{Status=$attempt10RunningStatus;Batch=$attempt10WorkBatch;Action='NQ-GATEW-ATTEMPT-10-FREEZE';Name='freeze-before-168h-acceptance'},
+    @{Status=$attempt10RunningStatus;Batch=$attempt10WorkBatch;Action='NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE-LATER';Name='acceptance-suffix'},
+    @{Status=$releaseCandidateReviewCiPendingStatus;Batch=$releaseCandidateReviewWorkBatch;Action='NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-ACCEPTANCE-LATER';Name='ci-acceptance-suffix'},
+    @{Status=$releaseCandidateReviewRejectedStatus;Batch=$releaseCandidateReviewWorkBatch;Action=$attempt10Preparation;Name='remediation-not-deployment'}
+)) {
+    if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
+        throw "NON_CANONICAL_RC_REVIEW_MAPPING_ACCEPTED case=$($case.Name)"
+    }
+}
+Assert-ActionType 'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-ACCEPTANCE-LATER' 'UNKNOWN'
+Assert-ActionType 'NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE-LATER' 'UNKNOWN'
+Write-Output 'PASS non-canonical-rc-review-mapping relation=false'
+
 foreach ($case in @(
     @{ Status = 'DEPLOYMENT_VERIFICATION_FAILED|REMEDIATION_REQUIRD'; Batch = $deploymentWorkBatch; Action = $reproducibleBuildFix },
     @{ Status = $deploymentFailedStatus; Batch = 'GateW-REMEDIATION-IMMUTABLE-RELEASE-DEPLOYMENT-ATTEMPT-10'; Action = $reproducibleBuildFix },
