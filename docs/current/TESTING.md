@@ -12565,3 +12565,25 @@ P0=0/P1=1/P2=2/P3=1。P1 是 `Prepare-FormalRun` 在 precreate evaluation 恢复
 | `check-current-authority.ps1` | PASS | PowerShell 5.1 / 7；schema 3、Attempt-11 `NOT_CREATED / AUTHORIZED`、deployment `NOT_STARTED` 一致 |
 
 已知未执行项：本段治理同步写入时，authority-sync 提交尚未创建，因此该待提交 head 的 exact-head CI 为 `NOT_RUN`；必须提交推送后取得 10/10 GREEN 才能进入 Attempt-11 production preflight。doc-link 首次曾遗漏 `-Roots` 参数，最终验证必须使用 `-Roots docs/current`。LIVE 保持 `DISABLED`，kill switch 保持 `ENGAGED`；本轮生产 SSH、OKX、DB write、worker 与 acceptance clock 均未执行。
+
+## 2026-08-01 — GateW Attempt-11 preparation and start attempt-01
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| authority/release source exact-head CI | PASS | commit `bfc68b89e81213ad2b240bf26b4118676abfd75e`；run `30698530051 / completed / success / 10 jobs / bad=0` |
+| Windows immutable exact build | PASS | PowerShell 5.1/7 bytes identical；manifest=`f48343f0...e506`；bundle=`5bc25ac8...0db38`；61,222,400 bytes；artifact/JAR/USTAR=`131/122/132` |
+| server staging / installed verifier | PASS | 122/122 JAR、37,551 entries / 133,989,252 bytes full-stream/CRC、duplicate empty dirs=4；installed POSIX/root ownership/worker write denial通过。Staging 首次遗漏 `-SkipPosix` 正确 fail-close，适用参数重跑后通过 |
+| production preflight / activation | PASS WITH KNOWN HISTORICAL WARNING | NTP/PostgreSQL/credential metadata/residual gates通过；system degraded 仅来自已知历史 failed units，未执行 `reset-failed`；current 从 `c16f27c3...` 原子切到 `bfc68b89...` |
+| canonical precreate-prerequisite | PASS | `2026-08-01T12:52:46.2379928Z`；release/management/PostgreSQL/kill switch/persisted permission/IP allowlist通过；`readyForAttemptCreation=true`；未调用 OKX |
+| Attempt-11 prepare | PASS | RunId=`gatew-soak-20260801T125700Z-cb211abb`；cadence=900s；duration=168h；九项 safety flags精确为`false`；clock not started |
+| manual `unit-preflight` diagnostics | EXPECTED FAIL-CLOSED | 缺 systemd Process env 时 `RELEASE_ENVIRONMENT_BINDING_CHANGED`；缺 RuntimeDirectory 时 `PATH_CONTRACT_INVALID`；两次均未改 lifecycle、未启动 worker，不得记为 canonical unit preflight通过 |
+| canonical start | FAIL / SAFE STOP | 唯一 start 调用返回 `WORKER_TERMINATED_DURING_START`；worker MainPID=`456996`，NRestarts=`0`，exit=`exited/2`；journal error=`PREREQUISITE_READBACK_UNAVAILABLE` |
+| heartbeat / hash chain / clock | NOT STARTED | first valid heartbeat、unit-start snapshot、hash-chain起点、acceptance clock均 absent；samples/failures=`0/0` |
+| production boundary | PASS | credential/network/OKX/order/cancel/transfer/withdraw calls=`0`；credential/raw response exposure=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED` |
+| canonical rollback | PASS | current/worker/failclose links恢复`c16f27c3...`；active/jobs/residual=`0/0/0`；失败 release 与 Attempt evidence保留 |
+| task temp cleanup | PASS WITH RCA | 远端 `/tmp` exact prefix match count=`0`；本地三个 `artifacts/20260801-gatew-attempt11-*` 目录不存在；failed release与RunId evidence保留。首轮保留项验证误设`.../runs/<RunId>`路径并exit 1，bounded exact-name find确认真实路径后通过 |
+| governance lifecycle / next-action | PASS | PowerShell 5.1 / 7：Attempt-11 authorized→startup-failed→BLOCKED正例，以及 cross-attempt、缺事件、错 batch、错 runtime负例全部 fail-closed；authority、task-evidence policy同步通过 |
+
+P0=0/P1=1/P2=2/P3=1。P1 是七项 operational runtime values 从 prepare 进程环境继承为空，未从 persisted/pre-create facts 冻结，导致 Java prerequisite 在配置加载阶段退出。P2 为 SSH/SCP reset/timeout 与脱离 systemd 上下文的手工 unit-preflight 可诊断性；P3 为一次 broad journal grep 输出范围过宽。整包 SCP、批处理 parser、staging 参数与 install SSH 断线均保留 RCA；不描述为首轮通过。
+
+本段收口提交的 exact-head CI 在写入时为 `NOT_RUN`，提交推送后必须取得 10/10 GREEN。失败 Attempt-11 不得修改、复用或自动重试；不得创建后续 Attempt、启动 168h clock、进入 freeze/archive/tag 或触碰 LIVE/交易写侧。

@@ -18049,3 +18049,19 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：production SSH/deploy/systemd/DB write/OKX/worker/heartbeat/clock=`0`；credential/raw response/order/cancel/transfer/withdraw exposure/calls=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`；未进入 freeze/archive/tag。
 - result：`PASS / START_CONTRACT_REMEDIATED / RUNTIME_EXACT_HEAD_CI_GREEN / ATTEMPT_10_IMMUTABLE / ATTEMPT_11_AUTHORIZED / AUTHORITY_SYNC_READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`。
 - next：提交并推送治理/authority-sync，取得该 exact head 的 10/10 CI GREEN；之后才允许从 clean exact commit 构建新 immutable release，并执行 `NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START` hard-gated production preflight。
+
+## 2026-08-01 — GateW Attempt-11 preparation and start attempt-01
+
+- task：`NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START`；NQ-only、L 级 production read-only deployment / immutable release / Attempt create / worker start。
+- baseline：`HEAD == origin/dev == bfc68b89e81213ad2b240bf26b4118676abfd75e`；exact-head CI `30698530051 / completed / success / 10 jobs / bad=0`。
+- release：PowerShell 5.1/7 exact build bytes identical；manifest=`f48343f039c83add4816f64ae73821518959de79db11fb7a1eb726f3baace506`，bundle=`5bc25ac8679c1afe463d82d45eb98efe4d7c4a31645f81a74eba960d1180db38`，`131/122/132`；服务器 installed verifier/POSIX/root ownership/worker write denial通过。
+- precreate：release/PostgreSQL/management/kill switch/credential metadata/persisted read permission/trade-withdraw-disabled/IP allowlist均通过，`readyForAttemptCreation=true`；未调用 OKX。
+- attempt：创建唯一 RunId `gatew-soak-20260801T125700Z-cb211abb`；九项 safety flags精确为`false`。Canonical start仅调用一次，worker MainPID=`456996`、NRestarts=`0`，在首 heartbeat 前以`exited/2`退出并返回`PREREQUISITE_READBACK_UNAVAILABLE`。
+- root cause：七项 operational runtime values 从 prepare 的 Process environment 继承为空，未从 canonical persisted/pre-create facts冻结；Java prerequisite配置加载失败且未生成 sanitized result。
+- fail-close/rollback：lifecycle=`FAILURE_STOPPED`，reason=`WORKER_EXIT_WITHOUT_EXPLICIT_ACCEPTANCE`；heartbeat/hash-chain/clock absent，samples/failures=`0/0`；current/unit links已恢复`c16f27c3...`，active/jobs/residual=`0/0/0`；失败 release/RunId/evidence保留。
+- cleanup：远端任务专用`/tmp` staging/tar/15 parts与本地三个gitignored build/upload目录已精确删除；match/existence均为0/false。失败release与`/var/lib/nexus-quant/gatew-soak/gatew-soak-20260801T125700Z-cb211abb`保留。首轮验证误设`.../runs/<RunId>`路径exit 1，随后bounded exact find确认真实路径。
+- RCA：整包 SCP reset后改为15分片并逐片SHA；批处理 parser error未到远端；staging首次遗漏`-SkipPosix`正确 fail-close；install SSH断线后fresh确认原子完成；两次手工 unit-preflight因缺systemd上下文失败且无状态写入；一次 broad journal命令范围过宽。均未写成首轮通过。
+- boundary：credential/network/OKX/order/cancel/transfer/withdraw calls=`0`；credential/raw response exposure=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`；Attempt-10未修改，未进入freeze/archive/tag。
+- governance：新增 Attempt-11 `DEPLOYMENT_AUTHORIZED -> STARTUP_FAILED` 到同 batch `BLOCKED` 的 exact policy，要求六个有序 runtime events；wrong attempt event、缺事件、错 batch、错 runtime state永久负例均 fail-closed。
+- result：`BLOCKED / ATTEMPT_11_STARTUP_FAILED / TERMINALIZED / FIRST_HEARTBEAT_ABSENT / OKX_NOT_CALLED / 168H_SOAK_NOT_STARTED / ROLLED_BACK / LIVE_DISABLED / KILL_SWITCH_ENGAGED`；P0=0/P1=1/P2=2/P3=1。
+- next：`NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START-BLOCKED`；只等待独立 authority/code-remediation 决策。禁止修改/复用失败 RunId、自动重试、创建后续 Attempt、生产重启或进入 acceptance/freeze/archive/tag。

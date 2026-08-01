@@ -468,8 +468,10 @@ $attempt11PreparationWorkBatch = 'GateW-ATTEMPT-11-PREPARATION-AND-START'
 $attempt11Preparation = 'NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START'
 $attempt11WorkBatch = 'GateW-OKX-READONLY-SOAK-ATTEMPT-11'
 $attempt11Acceptance = 'NQ-GATEW-ATTEMPT-11-168H-ACCEPTANCE'
+$attempt11Blocked = 'NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START-BLOCKED'
 Assert-ActionType $attempt11Preparation 'ATTEMPT_PREPARATION_AND_START'
 Assert-ActionType $attempt11Acceptance 'SOAK_ACCEPTANCE'
+Assert-ActionType $attempt11Blocked 'BLOCKED'
 if (-not (Test-GovernanceNextActionForWorkBatch `
         $contract $releaseCandidateDeploymentAuthorizedStatus `
         $attempt11PreparationWorkBatch $attempt11Preparation)) {
@@ -479,18 +481,23 @@ if (-not (Test-GovernanceNextActionForWorkBatch `
         $contract $attempt10RunningStatus $attempt11WorkBatch $attempt11Acceptance)) {
     throw 'CANONICAL_ATTEMPT_11_ACCEPTANCE_REJECTED'
 }
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract 'BLOCKED' $attempt11PreparationWorkBatch $attempt11Blocked)) {
+    throw 'CANONICAL_ATTEMPT_11_BLOCKED_REJECTED'
+}
 foreach ($case in @(
     @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$attempt11PreparationWorkBatch;Action=$attempt10Preparation},
     @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$releaseCandidateReviewWorkBatch;Action=$attempt11Preparation},
     @{Status=$attempt10RunningStatus;Batch=$attempt11WorkBatch;Action=$attempt10Acceptance},
     @{Status=$attempt10RunningStatus;Batch=$attempt10WorkBatch;Action=$attempt11Acceptance},
+    @{Status='BLOCKED';Batch=$attempt11PreparationWorkBatch;Action='NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START-BLOCKED'},
     @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$attempt11PreparationWorkBatch;Action='NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START'}
 )) {
     if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
         throw "CROSS_ATTEMPT_11_MAPPING_ACCEPTED batch=$($case.Batch) action=$($case.Action)"
     }
 }
-Write-Output 'PASS canonical-attempt-11-preparation-and-acceptance exact-triples=true'
+Write-Output 'PASS canonical-attempt-11-preparation-acceptance-and-blocked exact-triples=true'
 
 $releaseCandidateReviewRemediation =
         'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION'

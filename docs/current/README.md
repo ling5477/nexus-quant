@@ -7,7 +7,7 @@
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
 - GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1 至 GateW-4 均为 `ACCEPTED / CI GREEN`。GateW-4 implementation/acceptance head `07b94f89...` 的 run `29339016784` 已成功；GateW-FREEZE 仅初始化为 `NOT STARTED`。
-- GateW Attempt-10 start contract remediation commit `aeacfebd...` 的 exact-head CI run `30697734316` 已 `completed / success / 10 jobs / bad=0`；当前唯一允许动作是受控 `NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START`。
+- GateW Attempt-10 start contract remediation commit `aeacfebd...` 与 Attempt-11 authority/release source `bfc68b89...` 的 exact-head CI 均为 10/10 GREEN；Attempt-11 worker 在首 heartbeat 前 fail-close，当前唯一动作是 `NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START-BLOCKED`。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
@@ -42,5 +42,5 @@
 - Commit `c16f27c3...c78f` 仍是服务器 current 与 unit links 的 last-known-good immutable release。Attempt-10 attempt-02 的 final release `f06a38f2...` 虽已通过 immutable/root/POSIX verifier 并安装，但启动前安全合同失败后已 canonical 回滚；失败 release 保留且未运行。
 - `NQ-GATEW-ATTEMPT-10-PRECREATE-PREREQUISITE-REMEDIATION-DEPLOYMENT-VERIFICATION` 的生产 canonical readback 曾返回 `INTERNAL_SANITIZED_READBACK_FAILURE`，并按 `DEPLOYMENT VERIFICATION FAILED / CODE REMEDIATION REQUIRED`（部署验证失败 / 需要代码整改）回滚到 `c16f27c3...`。旧 fixed RC `5e7a9c4e...` 与整改 RC `ef803568...` 均已被独立 review 拒绝。新 RC `5a7e824e...` 的 JAR full-stream/CRC、Windows/Linux exact build 与 122 JAR 全量读取通过；attempt-03 fixture timestamp P1 已最小修复并三平台重复验证。Review/remediation commit `15ee2ee2...` 的 exact-head CI run `30653141014` 10/10 GREEN，该 review 结果为 `ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED`。
 - Attempt-10=`FAILED / STOPPED`，production deployment=`STOPPED`。唯一 RunId `gatew-soak-20260801T102353Z-932e26a4` 已 terminalize；worker 实际从未启动，OKX calls=`0`，first heartbeat/hash chain/168h clock 均不存在，current/unit links 已回滚。该 run 禁止修改或复用。
-- Attempt-11=`NOT_CREATED / AUTHORIZED`，production deployment=`NOT_STARTED`。只允许从 clean exact commit 构建、验证并部署新 immutable release，创建全新 RunId；LIVE、交易写侧、自动重试与 freeze/archive/tag 继续禁止。
+- Attempt-11=`FAILED / STOPPED`，production deployment=`STOPPED`。唯一 RunId `gatew-soak-20260801T125700Z-cb211abb` 的 worker 在首 heartbeat 前退出并已 fail-close；credential/network/OKX calls=`0/0/0`，current/unit links 已回滚到 `c16f27c3...`。失败 release 与 evidence 保留，RunId 修改、复用、自动重试及创建后续 Attempt 均未获授权。
 - GateW freeze closeout 当前仍为 `NOT STARTED`（未开始）；只有 168h acceptance 得出 `ACCEPT`（接受）后才能开始。不得把 local soak、restore、incident PASS 或 CI green 解释成真实 permission、余额充分、账户健康、可以交易、已获 LIVE/交易授权或 freeze readiness。

@@ -430,6 +430,7 @@
         "COMMITTED|CI_GREEN|CONTINUE_REQUIRED->IMPLEMENTED|PENDING_REVIEW",
         "COMMITTED|CI_PENDING->ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
         "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED->RUNNING|PENDING_168H",
+        "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED->BLOCKED",
         "BLOCKED->ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
         "COMMITTED|CI_PENDING->ACCEPTED|CI_GREEN"
       ]
@@ -529,6 +530,21 @@
         "attempt11RuntimeTransition": {
           "from": "DEPLOYMENT_AUTHORIZED",
           "to": "SOAK_RUNNING"
+        }
+      },
+      {
+        "from": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "to": "BLOCKED",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "SAME",
+        "ciRelation": "SAME",
+        "workBatchRelation": "EXACT_PAIR",
+        "fromWorkBatch": "GateW-ATTEMPT-11-PREPARATION-AND-START",
+        "toWorkBatch": "GateW-ATTEMPT-11-PREPARATION-AND-START",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH",
+        "attempt11RuntimeTransition": {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "STARTUP_FAILED"
         }
       },
       {
